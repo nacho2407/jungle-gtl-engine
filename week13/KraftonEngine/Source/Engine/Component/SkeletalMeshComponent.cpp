@@ -129,18 +129,18 @@ void USkeletalMeshComponent::SetBoneLocationByIndex(int32 BoneIndex, const FVect
 	const FMatrix ComponentWorldInv = GetWorldMatrix().GetInverse();
 	const FVector DesiredComponentLocalLocation = ComponentWorldInv.TransformPositionWithW(NewLocation);
 
-	FMatrix DesiredGlobal = GlobalTransforms[BoneIndex].ToMatrix();
-	DesiredGlobal.SetLocation(DesiredComponentLocalLocation);
+	FTransform DesiredGlobal = GlobalTransforms[BoneIndex];
+	DesiredGlobal.Location = DesiredComponentLocalLocation;
 
 	const int32 ParentIndex = Asset->Bones[BoneIndex].ParentIndex;
 	if (ParentIndex >= 0)
 	{
 		const FMatrix ParentGlobalInv = GlobalTransforms[ParentIndex].ToMatrix().GetInverse();
-		BoneEditLocalTransforms[BoneIndex] = FTransform(DesiredGlobal * ParentGlobalInv);
+		BoneEditLocalTransforms[BoneIndex] = FTransform(DesiredGlobal.ToMatrix() * ParentGlobalInv);
 	}
 	else
 	{
-		BoneEditLocalTransforms[BoneIndex] = FTransform(DesiredGlobal);
+		BoneEditLocalTransforms[BoneIndex] = DesiredGlobal;
 	}
 
 	bUseBoneEditPose = true;
@@ -184,6 +184,19 @@ void USkeletalMeshComponent::SetBoneRotationByIndex(int32 BoneIndex, const FRota
 
 void USkeletalMeshComponent::SetBoneScaleByIndex(int32 BoneIndex, const FVector& NewScale)
 {
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) return;
+
+	EnsureBoneEditPose();
+
+	FTransform LocalTransform = BoneEditLocalTransforms[BoneIndex];
+	LocalTransform.Scale = NewScale;
+
+	BoneEditLocalTransforms[BoneIndex] = LocalTransform;
+
+	bUseBoneEditPose = true;
+	MarkRenderStateDirty();
+	MarkWorldBoundsDirty();
 }
 
 void USkeletalMeshComponent::SetBoneLocalTransformByIndex(int32 BoneIndex, const FTransform& NewLocalTransform)
