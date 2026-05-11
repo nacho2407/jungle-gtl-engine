@@ -72,7 +72,18 @@ void FComponentGizmoTarget::AddWorldRotation(const FQuat& Delta, bool bWorldSpac
 {
 	if (Component)
 	{
-		Component->AddLocalRotation(Delta);
+		if (!bWorldSpace)
+		{
+			FQuat CurrentRotation = Component->GetRelativeQuat();
+			FQuat NewRotation = CurrentRotation * Delta;
+			Component->SetRelativeRotation(NewRotation);
+		}
+		else
+		{
+			FQuat CurrentRotation = Component->GetRelativeQuat();
+			FQuat NewRotation = Delta * CurrentRotation;
+			Component->SetRelativeRotation(NewRotation);
+		}
 	}
 }
 
