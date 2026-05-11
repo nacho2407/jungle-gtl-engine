@@ -40,3 +40,27 @@ void FEditorViewer::Tick(float DeltaTime)
 {
     Client.Tick(DeltaTime);
 }
+
+void FEditorViewer::Resize(int32 Width, int32 Height)
+{
+    if (Width <= 0 || Height <= 0)
+    {
+        return;
+    }
+
+    const FViewportRect& CurRect = Viewport.GetRect();
+
+    if (CurRect.Width == Width && CurRect.Height == Height)
+    {
+        return; // 변화 없음
+    }
+
+    FViewportRect NewRect = {
+        0,
+        0,
+        Width,
+        Height
+    };
+
+    Viewport.SetRect(NewRect);
+}

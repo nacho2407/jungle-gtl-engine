@@ -35,6 +35,11 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 
     ImGui::Begin("Viewer");
 
+	ImVec2 Size = ImGui::GetContentRegionAvail();
+    Size.x = std::max(Size.x, 1.0f);
+    Size.y = std::max(Size.y, 1.0f);
+    EditorEngine->GetViewer().Resize((int32)Size.x, (int32)Size.y);
+
     ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
     ID3D11DeviceContext* DC =
