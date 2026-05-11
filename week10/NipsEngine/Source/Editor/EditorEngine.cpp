@@ -189,6 +189,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     MainPanel.RestoreLastSceneFromProjectSettings();
 
 	FScriptManager::Get().initializeLuaState();
+
+	Viewer.Init(Window, this, GetWorld(), &SelectionManager);
 }
 
 void UEditorEngine::Shutdown()
@@ -209,6 +211,7 @@ void UEditorEngine::Shutdown()
     
     // CloseScene 이후에 ViewportLayout을 내리면 Client 포인터 단절로 인한 역참조를 피할 수 있습니다.
     ViewportLayout.Shutdown();           // 위젯 트리 해제 (소유권: UEditorEngine)
+    Viewer.Shutdown();
     FSlateApplication::Get().Shutdown(); // RootWindow 해제
 
     // 엔진 공통 해제 (Renderer, D3D 등)
@@ -275,6 +278,7 @@ void UEditorEngine::Tick(float DeltaTime)
 
     const auto PanelStart = std::chrono::steady_clock::now();
     ViewportLayout.Tick(DeltaTime);
+    Viewer.Tick(DeltaTime);
     MainPanel.Update();
     const auto PanelEnd = std::chrono::steady_clock::now();
 
