@@ -1,5 +1,5 @@
 {
-        "ImportedName" : "Mat_흰색_거친표면",
+        "ImportedName" : "Mat_?곗깋_嫄곗튇?쒕㈃",
         "Name" : "MultiMaterialCube_Mat_5",
         "Params" : [{
             "Name" : "AmbientColor",
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "PixelShader" : "Shaders/Material/UberLit.hlsl"
       }

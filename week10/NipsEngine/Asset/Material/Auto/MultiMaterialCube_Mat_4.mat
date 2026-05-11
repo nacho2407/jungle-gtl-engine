@@ -1,5 +1,5 @@
 {
-        "ImportedName" : "Mat_파랑_금속",
+        "ImportedName" : "Mat_?뚮옉_湲덉냽",
         "Name" : "MultiMaterialCube_Mat_4",
         "Params" : [{
             "Name" : "AmbientColor",
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "PixelShader" : "Shaders/Material/UberLit.hlsl"
       }

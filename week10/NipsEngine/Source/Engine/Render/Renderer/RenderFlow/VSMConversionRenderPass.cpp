@@ -1,10 +1,24 @@
-﻿#include "VSMConversionRenderPass.h"
+#include "VSMConversionRenderPass.h"
 #include "Render/Resource/ShadowAtlasManager.h"
 #include "Render/Resource/ShaderHelper.h"
+#include "Render/Resource/ShaderPaths.h"
 #include "Core/ResourceManager.h"
 
 namespace
 {
+    FShaderProgram* GetVSMShadowProgram()
+    {
+        FShaderStageKey VSKey;
+        VSKey.FilePath = FShaderPaths::VSMShadow;
+        VSKey.EntryPoint = "VSMShadowVS";
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = FShaderPaths::VSMShadow;
+        PSKey.EntryPoint = "VSMShadowPS";
+
+        return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+    }
+
     bool ShouldRunVSMConversion(const FRenderPassContext* Context)
     {
         return Context && Context->RenderBus && Context->RenderBus->GetShadowFilterMode() == EShadowFilter::VSM;
@@ -198,8 +212,12 @@ bool FVSMConversionRenderPass::DrawVSMConversion(const FRenderPassContext* Conte
     ID3D11ShaderResourceView* ShadowMap = FShadowAtlasManager::Get().GetSRV();
     Context->DeviceContext->PSSetShaderResources(10, 1, &ShadowMap);
 
-    UShader* ShadowShader = FResourceManager::Get().GetShader("Shaders/VSMShadow.hlsl");
-    ShadowShader->Bind(Context->DeviceContext);
+    FShaderProgram* ShadowProgram = GetVSMShadowProgram();
+    if (!ShadowProgram)
+    {
+        return false;
+    }
+    ShadowProgram->Bind(Context->DeviceContext);
     Context->DeviceContext->IASetInputLayout(nullptr);
     Context->DeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
     Context->DeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
@@ -226,7 +244,7 @@ bool FVSMConversionRenderPass::DrawVSMConversion(const FRenderPassContext* Conte
     // depth ,depth^2 기록한 RTV를 SRV로 쓰기 위한 Unbind
     Context->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
-	    // 추가: PS t10 명시적 해제 — VarianceShadowTexture UAV 바인딩 전에 반드시 정리
+	    // 추가: PS t10 명시적 해제 ? VarianceShadowTexture UAV 바인딩 전에 반드시 정리
     ID3D11ShaderResourceView* NullSRV = nullptr;
     Context->DeviceContext->PSSetShaderResources(10, 1, &NullSRV);
     return true;

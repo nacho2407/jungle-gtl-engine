@@ -7,8 +7,8 @@
 #define SHADOW_MAP_CSM_TYPE 0u
 #define SHADOW_MAP_PSM_TYPE 1u
 
-#include "Common.hlsl"
-#include "Lighting.hlsl"
+#include "../Common/Common.hlsli"
+#include "../Common/Lighting.hlsli"
 
 uint SelectPointFace(float3 dir)
 {
@@ -44,7 +44,7 @@ float ComputeShadowPCF(
     float2 shadowMapResolution;
     shadowMap.GetDimensions(shadowMapResolution.x, shadowMapResolution.y);
 
-    float2 texelSize = 1.0 / shadowMapResolution; // 하드코딩 제거
+    float2 texelSize = 1.0 / shadowMapResolution; // ?섎뱶肄붾뵫 ?쒓굅
 
     float shadow = 0.0;
     int count = 0;
@@ -67,51 +67,51 @@ float ComputeShadowPCF(
 }
 
 // ---------------------------------------------------------------------------
-// VSM (Variance Shadow Map) - Chebyshev 상한 기반 그림자 계산
+// VSM (Variance Shadow Map) - Chebyshev ?곹븳 湲곕컲 洹몃┝??怨꾩궛
 //
-// VSM RTV에는 float2(depth, depth*depth) 가 기록되어 있음
-//   M1 = moments.r  = E[x]   (평균 깊이)
-//   M2 = moments.g  = E[x²]  (평균 제곱 깊이)
+// VSM RTV?먮뒗 float2(depth, depth*depth) 媛 湲곕줉?섏뼱 ?덉쓬
+//   M1 = moments.r  = E[x]   (?됯퇏 源딆씠)
+//   M2 = moments.g  = E[x짼]  (?됯퇏 ?쒓낢 源딆씠)
 //
-// 분산: Var = M2 - M1²
-//   - Var가 클수록 해당 텍셀 안에 깊이 변화가 많다 (경계부)
-//   - Var가 작을수록 균일한 표면
+// 遺꾩궛: Var = M2 - M1짼
+//   - Var媛 ?댁닔濡??대떦 ?띿? ?덉뿉 源딆씠 蹂?붽? 留롫떎 (寃쎄퀎遺)
+//   - Var媛 ?묒쓣?섎줉 洹좎씪???쒕㈃
 //
-// Chebyshev 상한: P(occluder >= t) <= Var / (Var + (t - M1)²)
-//   - t  : 현재 픽셀의 light-space depth
-//   - 반환값이 클수록 "lit일 가능성이 높다"
+// Chebyshev ?곹븳: P(occluder >= t) <= Var / (Var + (t - M1)짼)
+//   - t  : ?꾩옱 ?쎌???light-space depth
+//   - 諛섑솚媛믪씠 ?댁닔濡?"lit??媛?μ꽦???믩떎"
 //
-// t <= M1 이면 현재 픽셀이 평균 occluder보다 가까움 → 완전 lit (1.0)
-// t >  M1 이면 Chebyshev 값으로 부드러운 그림자 계산
+// t <= M1 ?대㈃ ?꾩옱 ?쎌????됯퇏 occluder蹂대떎 媛源뚯? ???꾩쟾 lit (1.0)
+// t >  M1 ?대㈃ Chebyshev 媛믪쑝濡?遺?쒕윭??洹몃┝??怨꾩궛
 // ---------------------------------------------------------------------------
 float ComputeShadowVSM(
-    float3      lightSpacePos,   // projCoords (NDC xyz, z는 현재 픽셀 depth)
-    float4      ScaleOffset,     // 아틀라스 ScaleOffset (단일 조명이면 (1,1,0,0))
-    Texture2D   vsmMap,          // VSM RTV 결과 텍스처 (float2: moment1, moment2)
-    SamplerState vsmSampler,     // 비교 없는 일반 sampler (Linear 권장)
-    float       minVariance      // light bleeding 방지용 최소 분산값 (예: 0.00001)
+    float3      lightSpacePos,   // projCoords (NDC xyz, z???꾩옱 ?쎌? depth)
+    float4      ScaleOffset,     // ?꾪??쇱뒪 ScaleOffset (?⑥씪 議곕챸?대㈃ (1,1,0,0))
+    Texture2D   vsmMap,          // VSM RTV 寃곌낵 ?띿뒪泥?(float2: moment1, moment2)
+    SamplerState vsmSampler,     // 鍮꾧탳 ?녿뒗 ?쇰컲 sampler (Linear 沅뚯옣)
+    float       minVariance      // light bleeding 諛⑹???理쒖냼 遺꾩궛媛?(?? 0.00001)
 )
 {
-    // 1. UV 변환 (NDC → [0,1] → 아틀라스 적용)
+    // 1. UV 蹂??(NDC ??[0,1] ???꾪??쇱뒪 ?곸슜)
     float2 uv = lightSpacePos.xy * float2(0.5f, -0.5f) + 0.5f;
     uv = ScaleOffset.xy * uv + ScaleOffset.zw;
 
-    // 2. Moment 샘플링
+    // 2. Moment ?섑뵆留?
     float2 moments = vsmMap.Sample(vsmSampler, uv).rg;
     float M1 = moments.r; // E[x]
-    float M2 = moments.g; // E[x²]
+    float M2 = moments.g; // E[x짼]
 
-    float t = lightSpacePos.z; // 현재 픽셀의 light-space depth
+    float t = lightSpacePos.z; // ?꾩옱 ?쎌???light-space depth
 
-    // 3. 완전 lit 판정: 수신점이 평균 occluder보다 가깝거나 같으면 그림자 없음
+    // 3. ?꾩쟾 lit ?먯젙: ?섏떊?먯씠 ?됯퇏 occluder蹂대떎 媛源앷굅??媛숈쑝硫?洹몃┝???놁쓬
     if (t <= M1)
         return 1.0f;
 
-    // 4. 분산 계산: Var = E[x²] - E[x]²
-    //    minVariance로 clamp해서 수치 불안정 및 light bleeding 완화
+    // 4. 遺꾩궛 怨꾩궛: Var = E[x짼] - E[x]짼
+    //    minVariance濡?clamp?댁꽌 ?섏튂 遺덉븞??諛?light bleeding ?꾪솕
     float variance = max(M2 - M1 * M1, minVariance);
 
-    // 5. Chebyshev 상한: p_max = Var / (Var + (t - M1)²)
+    // 5. Chebyshev ?곹븳: p_max = Var / (Var + (t - M1)짼)
     float delta    = t - M1;
     float pMax     = variance / (variance + delta * delta);
 

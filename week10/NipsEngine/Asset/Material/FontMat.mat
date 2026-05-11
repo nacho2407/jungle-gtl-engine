@@ -1,6 +1,6 @@
 {
     "Name": "FontMat",
-    "Shader": "Shaders/ShaderFont.hlsl",
+    "PixelShader": "Shaders/UI/Font.hlsl",
     "Params": [
         { "Name": "FontAtlas", "Type": "Texture", "Value": "Asset/Font/FontAtlas.dds" }
     ]

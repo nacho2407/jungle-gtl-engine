@@ -1,9 +1,26 @@
-﻿#include "FogRenderPass.h"
+#include "FogRenderPass.h"
 #include "Core/ResourceManager.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
+#include "Render/Resource/ShaderPaths.h"
 #include "Render/Scene/RenderCommand.h"
 #include <algorithm>
+
+namespace
+{
+    FShaderProgram* GetFogProgram()
+    {
+        FShaderStageKey VSKey;
+        VSKey.FilePath = FShaderPaths::PostProcessFog;
+        VSKey.EntryPoint = "mainVS";
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = FShaderPaths::PostProcessFog;
+        PSKey.EntryPoint = "mainPS";
+
+        return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+    }
+}
 
 bool FFogRenderPass::Initialize()
 {
@@ -32,10 +49,10 @@ bool FFogRenderPass::Begin(const FRenderPassContext* Context)
         return false;
     }
 
-    UShader* FogPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/FogPass.hlsl");
-    if (FogPassShader)
+    FShaderProgram* FogProgram = GetFogProgram();
+    if (FogProgram)
     {
-        FogPassShader->Bind(Context->DeviceContext);
+        FogProgram->Bind(Context->DeviceContext);
     }
 
     ID3D11DepthStencilState* DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::StencilWrite);

@@ -139,6 +139,7 @@ void FEditorOverlayCollector::CollectGrid(float GridSpacing, int32 GridHalfLineC
 {
     FRenderCommand Cmd = {};
     Cmd.Type = ERenderCommandType::Grid;
+    Cmd.VertexFactoryType = EVertexFactoryType::Line;
     Cmd.Constants.Grid.GridSpacing = GridSpacing;
     Cmd.Constants.Grid.GridHalfLineCount = GridHalfLineCount;
     Cmd.Constants.Grid.bOrthographic = bOrthographic;
@@ -159,6 +160,7 @@ void FEditorOverlayCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFl
     auto CreateGizmoCmd = [&](bool bInner) {
         FRenderCommand Cmd = {};
         Cmd.Type = ERenderCommandType::Gizmo;
+        Cmd.VertexFactoryType = EVertexFactoryType::Gizmo;
         Cmd.MeshBuffer = GizmoMesh;
 
         Cmd.SectionIndexStart = 0;
@@ -256,6 +258,24 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
         BaseCmd.PerObjectConstants = FPerObjectConstants(primitiveComponent->GetWorldMatrix());
         BaseCmd.SectionIndexStart = 0;
         BaseCmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
+        BaseCmd.VertexFactoryType = EVertexFactoryType::Primitive;
+
+        if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh)
+        {
+            BaseCmd.VertexFactoryType = EVertexFactoryType::StaticMesh;
+        }
+        else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Text)
+        {
+            BaseCmd.VertexFactoryType = EVertexFactoryType::Text;
+        }
+        else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SubUV)
+        {
+            BaseCmd.VertexFactoryType = EVertexFactoryType::SubUV;
+        }
+        else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Billboard)
+        {
+            BaseCmd.VertexFactoryType = EVertexFactoryType::Billboard;
+        }
 
         if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Text)
         {

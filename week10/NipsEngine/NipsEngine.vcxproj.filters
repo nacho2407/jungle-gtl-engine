@@ -4,8 +4,11 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{60bee595-7411-c81f-0e11-0934d02a64bc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\Multipass">
+    <Filter Include="Shaders\PostProcess">
       <UniqueIdentifier>{7e71900e-08bc-2576-2bd3-316530fe3020}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\UI">
+      <UniqueIdentifier>{d20bfe7d-4307-41a9-9016-423bc5f9c001}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source">
       <UniqueIdentifier>{a2c655c5-b907-4abe-9c4e-0ae260b05ced}</UniqueIdentifier>
@@ -751,9 +754,6 @@
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\ObjMtlLoader.cpp">
-      <Filter>Source\Engine\Render\Resource</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\ShaderCompiler.cpp">
@@ -1610,19 +1610,25 @@
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resource\Shader.h">
-      <Filter>Source\Engine\Render\Resource</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\ShaderCompiler.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\ShaderHelper.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\ShaderPaths.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\ShaderTypes.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\ShadowAtlasManager.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Texture.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\VertexFactoryTypes.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\VertexTypes.h">
@@ -1852,11 +1858,11 @@
     <ResourceCompile Include="Source\Engine\Runtime\GameBranding.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\Multipass\PostProcess.hlsl">
-      <Filter>Shaders\Multipass</Filter>
+    <None Include="Shaders\PostProcess\PostProcess.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
     </None>
-    <None Include="Shaders\ScreenOverlay.hlsl">
-      <Filter>Shaders</Filter>
+    <None Include="Shaders\UI\ScreenOverlay.hlsl">
+      <Filter>Shaders\UI</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

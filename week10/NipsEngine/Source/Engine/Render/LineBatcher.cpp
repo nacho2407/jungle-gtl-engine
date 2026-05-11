@@ -1,4 +1,4 @@
-﻿#include <d3d11.h>
+#include <d3d11.h>
 #include "LineBatcher.h"
 #include "Core/EngineTypes.h"
 #include "Core/ResourceManager.h"
@@ -157,6 +157,21 @@ namespace
 		OutBuffer.Reset();
 		return SUCCEEDED(Device->CreateBuffer(&Desc, nullptr, OutBuffer.ReleaseAndGetAddressOf()));
 	}
+
+	FShaderProgram* GetLineShaderProgram()
+	{
+		FShaderStageKey VSKey;
+		VSKey.FilePath = "Shaders/UI/Line.hlsl";
+		VSKey.EntryPoint = "mainVS";
+		VSKey.Target = "vs_5_0";
+
+		FShaderStageKey PSKey;
+		PSKey.FilePath = "Shaders/UI/Line.hlsl";
+		PSKey.EntryPoint = "mainPS";
+		PSKey.Target = "ps_5_0";
+
+		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+	}
 }
 
 void FLineBatcher::Create(ID3D11Device* InDevice)
@@ -182,7 +197,7 @@ void FLineBatcher::Create(ID3D11Device* InDevice)
 	UMaterial* LineMaterial = FResourceManager::Get().GetMaterial("LineMat");
 	if (!LineMaterial)
 	{
-		LineMaterial = FResourceManager::Get().GetOrCreateMaterial("LineMat", "Asset/Material/LineMat.mat", "Shaders/ShaderLine.hlsl");
+		LineMaterial = FResourceManager::Get().GetOrCreateMaterial("LineMat", "Asset/Material/LineMat.mat", "Shaders/UI/Line.hlsl");
 	}
 	if (!LineMaterial)
 	{
@@ -609,7 +624,15 @@ void FLineBatcher::Flush(ID3D11DeviceContext* Context)
 	memcpy(MappedResource.pData, Indices.data(), sizeof(uint32) * RequiredIndexCount);
 	Context->Unmap(IndexBuffer.Get(), 0);
 
-	Material->Bind(Context);
+	FShaderProgram* Program = GetLineShaderProgram();
+	if (!Program)
+	{
+		return;
+	}
+
+	Program->Bind(Context);
+	Material->BindRenderStates(Context);
+	Material->BindParameters(Context, Program->PS);
 
 	UINT Stride = sizeof(FLineVertex);
 	UINT Offset = 0;

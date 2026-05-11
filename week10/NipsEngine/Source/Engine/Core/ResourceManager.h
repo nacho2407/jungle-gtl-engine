@@ -18,7 +18,7 @@
 #include "Core/TextureResourceCache.h"
 #include "Object/FName.h"
 #include "Render/Resource/ComputeShader.h"
-#include "Render/Resource/Shader.h"
+#include "Render/Resource/ShaderTypes.h"
 #include "Render/Resource/Material.h"
 #include "Render/Resource/Texture.h"
 #include "Render/Resource/RenderResources.h"
@@ -56,15 +56,21 @@ public:
 	UTexture* LoadTexture(const FString& Path, ID3D11Device* Device = nullptr);
 	const TArray<FString>& GetTextureFilePath() const;
 
-	UShader* GetShader(const FString& FilePath) const;
-	bool LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
-					const D3D_SHADER_MACRO* Defines = nullptr, uint32 PermutationKey = 0);
-	bool EnsureShaderPermutation(const FString& FilePath, uint32 PermutationKey);
-	void ReloadShader(const FString& Path);
+	// Shader는 이제 VS / PS Stage 단위로 가져오고, Draw 시점에는 Program(VS+PS 조합)을 바인딩합니다.
+	FVertexShader* GetOrCreateVertexShader(const FShaderStageKey& Key, const D3D_SHADER_MACRO* Defines = nullptr);
+	FPixelShader* GetOrCreatePixelShader(const FShaderStageKey& Key, const D3D_SHADER_MACRO* Defines = nullptr);
+	FShaderProgram* GetOrCreateShaderProgram(
+		const FShaderStageKey& VSKey,
+		const FShaderStageKey& PSKey,
+		const D3D_SHADER_MACRO* VSDefines = nullptr,
+		const D3D_SHADER_MACRO* PSDefines = nullptr);
 
 	FComputeShader* GetComputeShader(const FString& Key) const;
     bool LoadComputeShader(const FString& FilePath, const FString& CSEntryPoint,
                            const D3D_SHADER_MACRO* Defines = nullptr, const FString& Key = "");
+
+	// Shader 파일 변경 시 관련 Stage/Program 캐시만 비웁니다. 다음 사용 시 Lazy Compile 됩니다.
+	void InvalidateShaderFile(const FString& Path);
 
 	UMaterial* GetMaterial(const FString& Path) const;
 	UMaterial* GetOrCreateMaterial(const FString& Path, const FString& ShaderName);

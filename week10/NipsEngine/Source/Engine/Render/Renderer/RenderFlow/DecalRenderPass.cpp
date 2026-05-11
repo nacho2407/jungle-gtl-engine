@@ -2,6 +2,37 @@
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
+#include "Render/Resource/ShaderHelper.h"
+#include "Render/Resource/VertexFactoryTypes.h"
+#include "Core/ResourceManager.h"
+
+namespace
+{
+    FShaderProgram* GetDecalShaderProgram(const FRenderCommand& Cmd, uint32 PermutationKey)
+    {
+        if (!Cmd.Material)
+        {
+            return nullptr;
+        }
+
+        const FVertexFactoryDesc& VertexFactoryDesc = FVertexFactoryRegistry::Get(Cmd.VertexFactoryType);
+
+        FShaderStageKey VSKey;
+        VSKey.FilePath = VertexFactoryDesc.VertexShaderPath;
+        VSKey.EntryPoint = VertexFactoryDesc.BasePassVSEntry;
+        VSKey.Target = "vs_5_0";
+        VSKey.PermutationKey = PermutationKey;
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = Cmd.Material->GetPixelShaderPath();
+        PSKey.EntryPoint = Cmd.Material->GetPixelShaderEntryPoint();
+        PSKey.Target = "ps_5_0";
+        PSKey.PermutationKey = PermutationKey;
+
+        TArray<D3D_SHADER_MACRO> Macros = FShaderHelper::BuildUberLitMacros(PermutationKey);
+        return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey, Macros.data(), Macros.data());
+    }
+}
 
 bool FDecalRenderPass::Initialize()
 {
@@ -83,7 +114,16 @@ bool FDecalRenderPass::DrawCommand(const FRenderPassContext* Context)
 
         if (Cmd.Material)
         {
-            Cmd.Material->Bind(Context->DeviceContext, PermutationKey);
+            FShaderProgram* Program = GetDecalShaderProgram(Cmd, PermutationKey);
+            if (!Program)
+            {
+                return false;
+            }
+
+            Program->Bind(Context->DeviceContext);
+            Cmd.Material->BindRenderStates(Context->DeviceContext);
+            Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
+            BindVertexFactoryResources(Context->DeviceContext, Cmd.VertexFactoryType, Cmd);
         }
         CheckOverrideViewMode(Context);  
         Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);

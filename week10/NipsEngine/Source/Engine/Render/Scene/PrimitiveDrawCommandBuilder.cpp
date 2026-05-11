@@ -104,6 +104,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
             Cmd.SourcePrimitive = Primitive;
             Cmd.Type = ERenderCommandType::StaticMesh;
+            Cmd.VertexFactoryType = EVertexFactoryType::StaticMesh;
             Cmd.MeshBuffer = MeshBuffer;
 
             Cmd.SectionIndexStart = Section.StartIndex;
@@ -131,6 +132,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
         FRenderCommand Cmd = {};
         Cmd.Type = ERenderCommandType::Font;
+        Cmd.VertexFactoryType = EVertexFactoryType::Text;
         Cmd.SourcePrimitive = Primitive;
         Cmd.PerObjectConstants = FPerObjectConstants{ TextComp->GetWorldMatrix(), TextComp->GetColor() };
         Cmd.Constants.Font.Text = &Text;
@@ -153,6 +155,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             FColor::White().ToVector4() };
         Cmd.SourcePrimitive = Primitive;
         Cmd.Type = ERenderCommandType::SubUV;
+        Cmd.VertexFactoryType = EVertexFactoryType::SubUV;
         Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_SubUV);
         Cmd.SectionIndexStart = 0;
         Cmd.SectionIndexCount = Cmd.MeshBuffer->GetIndexBuffer().GetIndexCount();
@@ -172,6 +175,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
         FRenderCommand Cmd = {};
         Cmd.Type = ERenderCommandType::Billboard;
+        Cmd.VertexFactoryType = EVertexFactoryType::Billboard;
         Cmd.SourcePrimitive = Primitive;
         Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Billboard);
         Cmd.SectionIndexStart = 0;
@@ -196,6 +200,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
         FRenderCommand Cmd = {};
         Cmd.Type = ERenderCommandType::Primitive;
+        Cmd.VertexFactoryType = EVertexFactoryType::Primitive;
         Cmd.Constants.Fog.FogDensity = HeightFogComp->GetFogDensity();
         Cmd.Constants.Fog.FogColor = HeightFogComp->GetFogInscatteringColor();
         Cmd.Constants.Fog.HeightFalloff = HeightFogComp->GetHeightFalloff();
@@ -251,6 +256,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
             Cmd.SourcePrimitive = Primitive;
             Cmd.Type = ERenderCommandType::StaticMesh;
+            Cmd.VertexFactoryType = EVertexFactoryType::ProceduralMesh;
             Cmd.MeshBuffer = MeshBuffer;
 
             Cmd.SectionIndexStart = 0;

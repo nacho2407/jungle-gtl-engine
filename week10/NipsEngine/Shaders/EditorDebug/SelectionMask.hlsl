@@ -1,4 +1,4 @@
-#include "Common.hlsl"
+#include "../Common/Common.hlsli"
 
 cbuffer SelectionMaskBuffer : register(b12)
 {
@@ -26,6 +26,17 @@ struct VSInputStaticMesh
     float4 Tangent : TANGENT;
 };
 
+struct VSInputSkeletalMesh
+{
+    float3 Position : POSITION;
+    float3 Normal : NORMAL;
+    float2 UV : TEXCOORD;
+    float4 Tangent : TANGENT;
+    float4 Color : COLOR;
+    uint4 BoneIndices : BLENDINDICES;
+    float4 BoneWeights : BLENDWEIGHT;
+};
+
 struct VSOutputPrimitive
 {
     float4 Position : SV_POSITION;
@@ -45,6 +56,14 @@ VSOutputPrimitive VSPrimitive(VSInputPrimitive Input)
 }
 
 VSOutputTextured VSStaticMesh(VSInputStaticMesh Input)
+{
+    VSOutputTextured Output;
+    Output.Position = ApplyMVP(Input.Position);
+    Output.UV = UVOffset + Input.UV * UVScale;
+    return Output;
+}
+
+VSOutputTextured VSSkeletalMesh(VSInputSkeletalMesh Input)
 {
     VSOutputTextured Output;
     Output.Position = ApplyMVP(Input.Position);
