@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -112,6 +112,8 @@ void FEditorMainPanel::RenderEditorPanelWindows(float DeltaTime, bool bDrawEdito
     {
         Widgets.ConsoleWidget.Render(DeltaTime);
     }
+
+	Widgets.ViewerWindowWidget.Render(DeltaTime);
 }
 
 float FEditorMainPanel::ResolveEffectiveDeltaTime(float DeltaTime) const

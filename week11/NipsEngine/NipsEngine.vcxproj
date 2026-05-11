@@ -316,6 +316,7 @@
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\BuildTools\Scripts\BuildSoLoudLib.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(ThirdPartyBinaryConfiguration)&quot; -Platform &quot;$(Platform)&quot;" />
   </Target>
   <ItemGroup>
+    <ClCompile Include="Source\Editor\UI\EditorViewerWindowWidget.cpp" />
     <ClCompile Include="Source\Engine\Asset\SkeletalMesh.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SinusoidalCameraShakePattern.cpp" />
@@ -800,6 +801,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Editor\UI\EditorViewerWindowWidget.h" />
     <ClInclude Include="Source\Engine\Asset\SkeletalMesh.h" />
     <ClInclude Include="Source\Engine\Asset\SkeletalMeshTypes.h" />
     <ClInclude Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.h" />
