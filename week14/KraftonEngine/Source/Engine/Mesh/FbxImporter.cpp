@@ -60,6 +60,52 @@ struct hash<FFbxSkeletalVertexKey>
 };
 }
 
+struct FFbxStaticVertexKey
+{
+	int32 ControlPointIndex = -1;
+	float NormalX = 0.0f;
+	float NormalY = 0.0f;
+	float NormalZ = 0.0f;
+	float UVX = 0.0f;
+	float UVY = 0.0f;
+
+	bool operator==(const FFbxStaticVertexKey& Other) const
+	{
+		return ControlPointIndex == Other.ControlPointIndex
+			&& NormalX == Other.NormalX
+			&& NormalY == Other.NormalY
+			&& NormalZ == Other.NormalZ
+			&& UVX == Other.UVX
+			&& UVY == Other.UVY;
+	}
+};
+
+namespace std
+{
+template<>
+struct hash<FFbxStaticVertexKey>
+{
+	size_t operator()(const FFbxStaticVertexKey& Key) const noexcept
+	{
+		size_t Result = std::hash<int32>()(Key.ControlPointIndex);
+		auto Combine = [&Result](size_t Value)
+			{
+				Result ^= Value + 0x9e3779b9 + (Result << 6) + (Result >> 2);
+			};
+
+		Combine(std::hash<float>()(Key.NormalX));
+		Combine(std::hash<float>()(Key.NormalY));
+		Combine(std::hash<float>()(Key.NormalZ));
+		Combine(std::hash<float>()(Key.UVX));
+		Combine(std::hash<float>()(Key.UVY));
+		return Result;
+	}
+};
+}
+
+static FMatrix ConvertFbxMatrix(const FbxMatrix& FbxMat);
+static FbxAMatrix GetGeometryTransform(FbxNode* Node);
+
 bool FFbxImporter::Import(const FString& FilePath)
 {
 	// FBX import 결과가 바로 엔진 전용 cooked binary cache에 저장되므로,
@@ -115,6 +161,252 @@ bool FFbxImporter::Import(const FString& FilePath)
 	}
 
 	return true;
+}
+
+bool FFbxImporter::ImportStatic(const FString& FilePath, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials)
+{
+	OutMesh = FStaticMesh();
+	OutMaterials.clear();
+
+	MtlInfos.clear();
+	MaterialToSlotIndex.clear();
+
+	FbxManager* SdkManager = FbxManager::Create();
+	FbxIOSettings* ios = FbxIOSettings::Create(SdkManager, IOSROOT);
+	SdkManager->SetIOSettings(ios);
+
+	FbxScene* Scene = FbxScene::Create(SdkManager, "Static FBX Scene");
+	FbxImporter* Importer = FbxImporter::Create(SdkManager, "");
+
+	FString FullPath = FPaths::ToUtf8(FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(FilePath)));
+	if (!Importer->Initialize(FullPath.c_str(), -1, SdkManager->GetIOSettings()))
+	{
+		SdkManager->Destroy();
+		return false;
+	}
+
+	Importer->Import(Scene);
+	Importer->Destroy();
+
+	FbxSystemUnit::m.ConvertScene(Scene);
+
+	FbxAxisSystem UnrealAxisSystem(FbxAxisSystem::eZAxis, FbxAxisSystem::eParityEven, FbxAxisSystem::eLeftHanded);
+	UnrealAxisSystem.DeepConvertScene(Scene);
+
+	TriangulateScene(Scene);
+
+	FbxNode* RootNode = Scene->GetRootNode();
+	if (!RootNode)
+	{
+		SdkManager->Destroy();
+		return false;
+	}
+
+	TArray<FbxNode*> Nodes;
+	CollectNodes(RootNode, 0, Nodes);
+	CollectMaterials(Scene);
+
+	OutMaterials.reserve(MtlInfos.size());
+	for (const FMaterialInfo& MatInfo : MtlInfos)
+	{
+		FStaticMaterial NewMaterial;
+		NewMaterial.MaterialSlotName = MatInfo.Name;
+		NewMaterial.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial(ConvertToMat(&MatInfo));
+		OutMaterials.push_back(NewMaterial);
+	}
+
+	TArray<FVector> StaticTangentSums;
+	TArray<FVector> StaticBitangentSums;
+	bool bNeedsNoneSlot = OutMaterials.empty();
+
+	for (FbxNode* Node : Nodes)
+	{
+		FbxMesh* Mesh = Node->GetMesh();
+		if (!Mesh) continue;
+
+		const int32 SkinCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
+		FbxSkin* Skin = SkinCount > 0 ? static_cast<FbxSkin*>(Mesh->GetDeformer(0, FbxDeformer::eSkin)) : nullptr;
+		if (Skin && Skin->GetClusterCount() > 0)
+		{
+			continue;
+		}
+
+		FbxAMatrix NodeGeometryTransform = GetGeometryTransform(Node);
+		FMatrix MeshToWorld = ConvertFbxMatrix(Node->EvaluateGlobalTransform() * NodeGeometryTransform);
+
+		FbxStringList UVSetNames;
+		Mesh->GetUVSetNames(UVSetNames);
+		const char* UVName = (UVSetNames.GetCount() > 0) ? UVSetNames.GetStringAt(0) : nullptr;
+
+		TArray<int32> LocalToGlobalMaterialIndex;
+		LocalToGlobalMaterialIndex.resize(Node->GetMaterialCount());
+		for (int32 LocalIndex = 0; LocalIndex < Node->GetMaterialCount(); ++LocalIndex)
+		{
+			FbxSurfaceMaterial* Material = Node->GetMaterial(LocalIndex);
+			auto It = MaterialToSlotIndex.find(Material);
+			LocalToGlobalMaterialIndex[LocalIndex] = (It != MaterialToSlotIndex.end()) ? It->second : -1;
+		}
+
+		TMap<int32, TArray<uint32>> SectionIndicesMap;
+		TMap<FFbxStaticVertexKey, uint32> VertexMap;
+
+		for (int32 PolygonIndex = 0; PolygonIndex < Mesh->GetPolygonCount(); ++PolygonIndex)
+		{
+			const int32 LocalMaterialIndex = GetMaterialIndex(Mesh, PolygonIndex);
+			int32 GlobalMaterialIndex = -1;
+			if (LocalMaterialIndex >= 0 && LocalMaterialIndex < static_cast<int32>(LocalToGlobalMaterialIndex.size()))
+			{
+				GlobalMaterialIndex = LocalToGlobalMaterialIndex[LocalMaterialIndex];
+			}
+
+			uint32 TriIndices[3] = {};
+			for (int32 CornerIndex = 0; CornerIndex < 3; ++CornerIndex)
+			{
+				FNormalVertex Vertex;
+				const int32 CPIndex = Mesh->GetPolygonVertex(PolygonIndex, CornerIndex);
+
+				FbxVector4 CP = Mesh->GetControlPointAt(CPIndex);
+				Vertex.pos = MeshToWorld.TransformPositionWithW(FVector((float)CP[0], (float)CP[1], (float)CP[2]));
+
+				FbxVector4 Normal;
+				Mesh->GetPolygonVertexNormal(PolygonIndex, CornerIndex, Normal);
+				Normal.Normalize();
+				Vertex.normal = MeshToWorld.TransformVector(FVector((float)Normal[0], (float)Normal[1], (float)Normal[2]));
+				if (!Vertex.normal.IsNearlyZero())
+				{
+					Vertex.normal.Normalize();
+				}
+
+				Vertex.color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+				Vertex.tex = FVector2(0.0f, 0.0f);
+				if (UVName)
+				{
+					FbxVector2 UV;
+					bool bUnmappedUV = false;
+					const bool bSuccess = Mesh->GetPolygonVertexUV(PolygonIndex, CornerIndex, UVName, UV, bUnmappedUV);
+					if (bSuccess && !bUnmappedUV)
+					{
+						Vertex.tex = FVector2((float)UV[0], 1.0f - (float)UV[1]);
+					}
+				}
+
+				FFbxStaticVertexKey Key;
+				Key.ControlPointIndex = CPIndex;
+				Key.NormalX = Vertex.normal.X;
+				Key.NormalY = Vertex.normal.Y;
+				Key.NormalZ = Vertex.normal.Z;
+				Key.UVX = Vertex.tex.X;
+				Key.UVY = Vertex.tex.Y;
+
+				uint32 VertexIndex = 0;
+				auto It = VertexMap.find(Key);
+				if (It != VertexMap.end())
+				{
+					VertexIndex = It->second;
+				}
+				else
+				{
+					VertexIndex = static_cast<uint32>(OutMesh.Vertices.size());
+					OutMesh.Vertices.push_back(Vertex);
+					StaticTangentSums.push_back(FVector::ZeroVector);
+					StaticBitangentSums.push_back(FVector::ZeroVector);
+					VertexMap[Key] = VertexIndex;
+				}
+
+				TriIndices[CornerIndex] = VertexIndex;
+				SectionIndicesMap[GlobalMaterialIndex].push_back(VertexIndex);
+			}
+
+			const FNormalVertex& V0 = OutMesh.Vertices[TriIndices[0]];
+			const FNormalVertex& V1 = OutMesh.Vertices[TriIndices[1]];
+			const FNormalVertex& V2 = OutMesh.Vertices[TriIndices[2]];
+
+			FVector Edge1 = V1.pos - V0.pos;
+			FVector Edge2 = V2.pos - V0.pos;
+			FVector2 DeltaUV1 = V1.tex - V0.tex;
+			FVector2 DeltaUV2 = V2.tex - V0.tex;
+
+			float Det = DeltaUV1.X * DeltaUV2.Y - DeltaUV1.Y * DeltaUV2.X;
+			if (std::abs(Det) >= 1e-8f)
+			{
+				float InvDet = 1.0f / Det;
+				FVector Tangent = (Edge1 * DeltaUV2.Y - Edge2 * DeltaUV1.Y) * InvDet;
+				FVector Bitangent = (Edge2 * DeltaUV1.X - Edge1 * DeltaUV2.X) * InvDet;
+
+				for (uint32 TriIndex : TriIndices)
+				{
+					StaticTangentSums[TriIndex] += Tangent;
+					StaticBitangentSums[TriIndex] += Bitangent;
+				}
+			}
+		}
+
+		uint32 CurrentBaseIndex = static_cast<uint32>(OutMesh.Indices.size());
+		for (auto& Pair : SectionIndicesMap)
+		{
+			FStaticMeshSection Section;
+			const int32 MatIndex = Pair.first;
+			if (MatIndex >= 0 && MatIndex < static_cast<int32>(MtlInfos.size()))
+			{
+				Section.MaterialSlotName = MtlInfos[MatIndex].Name;
+				Section.MaterialIndex = MatIndex;
+			}
+			else
+			{
+				Section.MaterialSlotName = "None";
+				Section.MaterialIndex = -1;
+				bNeedsNoneSlot = true;
+			}
+
+			Section.FirstIndex = CurrentBaseIndex;
+			Section.NumTriangles = static_cast<uint32>(Pair.second.size() / 3);
+			CurrentBaseIndex += static_cast<uint32>(Pair.second.size());
+			OutMesh.Indices.insert(OutMesh.Indices.end(), Pair.second.begin(), Pair.second.end());
+			OutMesh.Sections.push_back(Section);
+		}
+	}
+
+	if (bNeedsNoneSlot)
+	{
+		FStaticMaterial DefaultMaterial;
+		DefaultMaterial.MaterialSlotName = "None";
+		DefaultMaterial.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial("None");
+		OutMaterials.push_back(DefaultMaterial);
+		const int32 NoneMaterialIndex = static_cast<int32>(OutMaterials.size()) - 1;
+		for (FStaticMeshSection& Section : OutMesh.Sections)
+		{
+			if (Section.MaterialSlotName == "None")
+			{
+				Section.MaterialIndex = NoneMaterialIndex;
+			}
+		}
+	}
+
+	for (uint32 VertexIndex = 0; VertexIndex < static_cast<uint32>(OutMesh.Vertices.size()); ++VertexIndex)
+	{
+		FNormalVertex& Vertex = OutMesh.Vertices[VertexIndex];
+		FVector N = Vertex.normal.Normalized();
+		FVector T = StaticTangentSums[VertexIndex];
+		T = T - N * N.Dot(T);
+
+		if (T.Length() < 1e-8f)
+		{
+			FVector Axis = std::abs(N.Z) < 0.999f ? FVector(0.0f, 0.0f, 1.0f) : FVector(0.0f, 1.0f, 0.0f);
+			T = Axis.Cross(N).Normalized();
+		}
+		else
+		{
+			T.Normalize();
+		}
+
+		FVector B = StaticBitangentSums[VertexIndex];
+		float Handedness = N.Cross(T).Dot(B) < 0.0f ? -1.0f : 1.0f;
+		Vertex.tangent = FVector4(T, Handedness);
+	}
+
+	OutMesh.PathFileName = FilePath;
+	SdkManager->Destroy();
+	return !OutMesh.Vertices.empty() && !OutMesh.Indices.empty();
 }
 
 bool FFbxImporter::Parse(FbxScene* Scene)

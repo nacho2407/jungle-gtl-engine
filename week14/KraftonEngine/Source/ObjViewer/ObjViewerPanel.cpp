@@ -74,8 +74,8 @@ void FObjViewerPanel::RenderMeshList()
 {
 	ImGui::Begin("Mesh List");
 
-	// OBJ Files 섹션
-	if (ImGui::CollapsingHeader("OBJ Files", ImGuiTreeNodeFlags_DefaultOpen))
+	// OBJ/FBX source files 섹션
+	if (ImGui::CollapsingHeader("OBJ/FBX Files", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		const TArray<FMeshAssetListItem>& ObjFiles = FMeshManager::GetAvailableObjFiles();
 

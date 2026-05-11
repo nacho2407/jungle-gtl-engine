@@ -141,6 +141,35 @@ FString FEditorPropertyWidget::OpenObjFileDialog()
 	return FString();
 }
 
+FString FEditorPropertyWidget::OpenStaticMeshFileDialog()
+{
+	wchar_t FilePath[MAX_PATH] = {};
+
+	OPENFILENAMEW Ofn = {};
+	Ofn.lStructSize = sizeof(Ofn);
+	Ofn.hwndOwner = nullptr;
+	Ofn.lpstrFilter = L"Static Mesh Files (*.obj;*.fbx)\0*.obj;*.fbx\0OBJ Files (*.obj)\0*.obj\0FBX Files (*.fbx)\0*.fbx\0All Files (*.*)\0*.*\0";
+	Ofn.lpstrFile = FilePath;
+	Ofn.nMaxFile = MAX_PATH;
+	Ofn.lpstrTitle = L"Import Static Mesh";
+	Ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+
+	if (GetOpenFileNameW(&Ofn))
+	{
+		std::filesystem::path AbsPath = std::filesystem::path(FilePath).lexically_normal();
+		std::filesystem::path RootPath = std::filesystem::path(FPaths::RootDir());
+		std::filesystem::path RelPath = AbsPath.lexically_relative(RootPath);
+
+		if (RelPath.empty() || RelPath.wstring().starts_with(L".."))
+		{
+			return FPaths::ToUtf8(AbsPath.generic_wstring());
+		}
+		return FPaths::ToUtf8(RelPath.generic_wstring());
+	}
+
+	return FString();
+}
+
 FString FEditorPropertyWidget::OpenFbxFileDialog()
 {
 	wchar_t FilePath[MAX_PATH] = {};
@@ -1099,7 +1128,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		ImGui::Text("%s", Prop.Name.c_str());
 		ImGui::SameLine(120);
 
-		float ButtonWidth = ImGui::CalcTextSize("Import OBJ").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+		float ButtonWidth = ImGui::CalcTextSize("Import").x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		float Spacing = ImGui::GetStyle().ItemSpacing.x;
 		ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
 
@@ -1129,25 +1158,24 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			ImGui::EndCombo();
 		}
 
-		// .obj 임포트 버튼
+		// .obj/.fbx static mesh 임포트 버튼
 		ImGui::SameLine();
 
 		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ButtonWidth);
-		if (ImGui::Button("Import OBJ"))
+		if (ImGui::Button("Import"))
 		{
-			FString ObjPath = OpenObjFileDialog();
-			if (!ObjPath.empty())
+			FString MeshPath = OpenStaticMeshFileDialog();
+			if (!MeshPath.empty())
 			{
 				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-				UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(ObjPath, Device);
+				UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(MeshPath, Device);
 				if (Loaded)
 				{
-					*Val = FMeshManager::GetBinaryFilePath(ObjPath);
+					*Val = FMeshManager::GetBinaryFilePath(MeshPath);
 					bChanged = true;
 				}
 			}
 		}
-		// TODO: Import FBX Button 추가
 		break;
 	}
 	// TODO: implement
