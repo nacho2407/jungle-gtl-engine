@@ -4,6 +4,7 @@
 #include "Math/Matrix.h"
 #include "Render/Types/VertexTypes.h"
 #include "SkeletalMeshAsset.h"
+#include "StaticMeshAsset.h"
 
 #include <fbxsdk.h>
 
@@ -19,6 +20,7 @@ class FFbxImporter
 
 public:
 	static bool Import(const FString& FilePath);
+	static bool ImportStatic(const FString& FilePath, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials);
 
 private:
 	static bool Parse(FbxScene* Scene);

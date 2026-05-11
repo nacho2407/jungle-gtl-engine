@@ -16,7 +16,7 @@ void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 	UEngine::Init(InWindow);
 
 	FMeshManager::ScanMeshAssets();
-	//FMeshManager::ScanObjSourceFiles();
+	FMeshManager::ScanMeshSourceFiles();
 
 	// ImGui 패널 초기화
 	Panel.Create(InWindow, Renderer, this);
