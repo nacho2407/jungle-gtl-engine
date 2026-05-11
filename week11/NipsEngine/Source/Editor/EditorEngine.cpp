@@ -190,7 +190,20 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 	FScriptManager::Get().initializeLuaState();
 
-	Viewer.Init(Window, this, GetWorld(), &SelectionManager);
+    // Viewer용 별도 월드 생성
+    FWorldContext& ViewerCtx = CreateWorldContext(EWorldType::ViewerPreview, FName("ViewerPreview"), "Viewer Preview");
+    ApplySpatialIndexMaintenanceSettings(ViewerCtx.World);
+    SpawnDefaultSceneActors(ViewerCtx.World);
+
+    ACubeActor* TestActor = ViewerCtx.World->SpawnActor<ACubeActor>();
+    if (TestActor)
+    {
+        TestActor->InitDefaultComponents();
+        TestActor->SetFName(FName("Test Actor"));
+        TestActor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+    }
+
+	Viewer.Init(Window, this, ViewerCtx.World, &SelectionManager);
 }
 
 void UEditorEngine::Shutdown()
@@ -988,7 +1001,17 @@ void UEditorEngine::ResetViewport()
     if (ViewportClient)
     {
         ViewportClient->CreateCamera();
-        ViewportClient->SetWorld(GetWorld());
+        
+        UWorld* ViewerWorld = nullptr;
+        for (const FWorldContext& Ctx : WorldList)
+        {
+            if (Ctx.WorldType == EWorldType::ViewerPreview)
+            {
+                ViewerWorld = Ctx.World;
+                break;
+            }
+        }
+        ViewportClient->SetWorld(ViewerWorld ? ViewerWorld : GetWorld());
         ViewportClient->ApplyCameraMode();
     }
 
