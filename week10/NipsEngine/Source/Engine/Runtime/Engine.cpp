@@ -328,6 +328,8 @@ void UEngine::DestroyWorldContext(const FName& Handle)
 		if (it->ContextHandle == Handle)
         {
             it->SelectionManager->Shutdown();
+            delete it->SelectionManager;
+            it->SelectionManager = nullptr;
 			it->World->EndPlay(EEndPlayReason::Type::Destroyed);
 			UObjectManager::Get().DestroyObject(it->World);
 			WorldList.erase(it);

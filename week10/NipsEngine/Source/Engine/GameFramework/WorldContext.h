@@ -22,6 +22,11 @@ struct FWorldContext
     FString    ContextName;
     FName      ContextHandle;
     bool       bPaused  = false;  // PIE 일시정지 중이면 WorldTick에서 제외됩니다.
+
+	~FWorldContext()
+	{
+        printf("Test");
+	}
 };
 
 namespace EEndPlayReason
