@@ -35,10 +35,19 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 
     ImGui::Begin("Viewer");
 
-	ImVec2 Size = ImGui::GetContentRegionAvail();
+    ImVec2 ScreenPos = ImGui::GetCursorScreenPos();
+    ImVec2 Size = ImGui::GetContentRegionAvail();
     Size.x = std::max(Size.x, 1.0f);
     Size.y = std::max(Size.y, 1.0f);
-    EditorEngine->GetViewer().Resize((int32)Size.x, (int32)Size.y);
+
+    POINT pt = { (LONG)ScreenPos.x, (LONG)ScreenPos.y };
+    if (EditorEngine->GetWindow())
+    {
+        pt = EditorEngine->GetWindow()->ScreenToClientPoint(pt);
+    }
+
+    FViewportRect NewRect = { (int32)pt.x, (int32)pt.y, (int32)Size.x, (int32)Size.y };
+    EditorEngine->GetViewer().SetRect(NewRect);
 
     ImDrawList* DrawList = ImGui::GetWindowDrawList();
 

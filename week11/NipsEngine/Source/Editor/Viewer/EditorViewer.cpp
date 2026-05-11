@@ -56,11 +56,12 @@ void FEditorViewer::Resize(int32 Width, int32 Height)
     }
 
     FViewportRect NewRect = {
-        0,
-        0,
+        CurRect.X,
+        CurRect.Y,
         Width,
         Height
     };
 
     Viewport.SetRect(NewRect);
+    Client.SetViewportSize((float)Width, (float)Height);
 }

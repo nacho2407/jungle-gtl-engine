@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/ViewportLayout.h"
@@ -51,6 +51,12 @@ void FEditorMainPanel::Update()
                 break;
             }
         }
+
+		const FViewportRect& ViewportRect = EditorEngine->GetViewer().GetViewport().GetRect();
+        if (ViewportRect.Width > 0 && ViewportRect.Height > 0 && ViewportRect.Contains(MouseClientPos.x, MouseClientPos.y))
+        {
+            bMouseOverViewportRect = true;
+        }
     }
 
     bool bHoveredViewportContentWindow = false;
@@ -62,7 +68,9 @@ void FEditorMainPanel::Update()
             const char* HoveredName = HoveredWindow->Name ? HoveredWindow->Name : "";
             bHoveredViewportContentWindow =
                 (std::strcmp(HoveredName, "Viewport") == 0)
-                || (std::strncmp(HoveredName, "Viewport###", 11) == 0);
+                || (std::strncmp(HoveredName, "Viewport###", 11) == 0)
+                || (std::strcmp(HoveredName, "Viewer") == 0)
+                || (std::strncmp(HoveredName, "Viewer###", 9) == 0);
             bHoveredNonViewportWindow = !bHoveredViewportContentWindow;
         }
     }
