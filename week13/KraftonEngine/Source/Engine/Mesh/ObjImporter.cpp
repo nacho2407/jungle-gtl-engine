@@ -369,7 +369,7 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Kd.Y);
 			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Kd.Z);
 		}
-		else if (Prefix == "map_Kd")
+		else if (Prefix == "map_Kd" || Prefix == "map_Bump" || Prefix == "bump" || Prefix == "norm")
 		{
 			if (OutMtlInfos.empty())
 			{
@@ -436,7 +436,15 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 			// 최종적으로 추출된 파일명 할당
 			if (!TextureFileName.empty())
 			{
-				OutMtlInfos.back().map_Kd = FPaths::ResolveAssetPath(MtlFilePath, TextureFileName);
+				FString ResolvedTexturePath = FPaths::ResolveAssetPath(MtlFilePath, TextureFileName);
+				if (Prefix == "map_Kd")
+				{
+					OutMtlInfos.back().map_Kd = ResolvedTexturePath;
+				}
+				else
+				{
+					OutMtlInfos.back().map_Bump = ResolvedTexturePath;
+				}
 			}
 		}
 	}
@@ -484,6 +492,16 @@ FString FObjImporter::ConvertMtlInfoToMat(const FObjMaterialInfo* MtlInfo)
 		JsonData["Parameters"]["SectionColor"][1] = MtlInfo->Kd.Y;
 		JsonData["Parameters"]["SectionColor"][2] = MtlInfo->Kd.Z;
 		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
+	}
+
+	if (!MtlInfo->map_Bump.empty())
+	{
+		JsonData["Textures"]["NormalTexture"] = MtlInfo->map_Bump;
+		JsonData["Parameters"]["HasNormalMap"] = 1.0f;
+	}
+	else
+	{
+		JsonData["Parameters"]["HasNormalMap"] = 0.0f;
 	}
 
 	std::ofstream File(FPaths::ToWide(MatPath));

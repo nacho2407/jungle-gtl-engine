@@ -29,6 +29,7 @@ struct FObjMaterialInfo
 	FString MaterialSlotName = "None"; // newmtl
 	FVector Kd; // diffuse color
 	FString map_Kd; // diffuse texture file path
+	FString map_Bump; // normal/bump texture file path
 
 	FVector Ka; // ambient color
 	FVector Ks; // specular color
