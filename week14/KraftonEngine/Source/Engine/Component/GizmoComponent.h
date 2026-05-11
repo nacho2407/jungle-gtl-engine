@@ -28,6 +28,8 @@ public:
 	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
 	FVector GetVectorForAxis(int32 Axis) const;
+	FVector GetLocalAxisVector(int32 Axis) const;
+
 	void RenderGizmo() {}
 	void SetSelectedActors(const TArray<AActor*>* InSelectedActors) { AllSelectedActors = InSelectedActors; }
 	void SetHolding(bool bHold);

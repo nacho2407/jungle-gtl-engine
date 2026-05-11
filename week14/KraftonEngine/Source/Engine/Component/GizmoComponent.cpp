@@ -265,7 +265,7 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 {
 	if (!Target || !Target->IsValid()) return;
 
-	FVector Axis = GetVectorForAxis(SelectedAxis);
+	FVector Axis = bIsWorldSpace ? GetVectorForAxis(SelectedAxis) : GetLocalAxisVector(SelectedAxis);
 	FQuat DeltaQuat = FQuat::FromAxisAngle(Axis, DragAmount);
 	Target->AddWorldRotation(DeltaQuat, bIsWorldSpace);
 }
@@ -354,6 +354,21 @@ FVector UGizmoComponent::GetVectorForAxis(int32 Axis) const
 		return GetRightVector();
 	case 2:
 		return GetUpVector();
+	default:
+		return FVector(0.f, 0.f, 0.f);
+	}
+}
+
+FVector UGizmoComponent::GetLocalAxisVector(int32 Axis) const
+{
+	switch (Axis)
+	{
+	case 0:
+		return FVector::ForwardVector;
+	case 1:
+		return FVector::RightVector;
+	case 2:
+		return FVector::UpVector;
 	default:
 		return FVector(0.f, 0.f, 0.f);
 	}
@@ -515,7 +530,11 @@ void UGizmoComponent::UpdateGizmoTransform()
 
 	SetWorldLocation(Target->GetWorldLocation());
 
-	if (CurMode == EGizmoMode::Scale || !bIsWorldSpace)
+	if (bIsWorldSpace && CurMode != EGizmoMode::Scale)
+	{
+		SetRelativeRotation(FRotator::ZeroRotator);
+	}
+	else
 	{
 		SetRelativeRotation(Target->GetWorldRotation());
 	}
