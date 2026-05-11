@@ -12,6 +12,6 @@
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "Textures" : {
-    "DiffuseTexture" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week10_Team8\\KraftonEngine\\Data\\Samba Dancing (10).fbm/b0.png"
+    "DiffuseTexture" : "Data/Samba Dancing (10).fbm/b0.png"
   }
 }
