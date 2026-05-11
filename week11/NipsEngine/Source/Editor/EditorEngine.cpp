@@ -178,9 +178,6 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     const FWorldContext* Context = GetWorldContextFromHandle(ActiveWorldHandle);
     ViewportLayout.Init(InWindow, Context->World, Context->SelectionManager, this);
     GetFocusedWorld()->SetActiveCamera(GetCamera());
-
-    // Slate 초기화 및 Viewport Layout 추가
-    FSlateApplication::Get().Initialize();
     ViewportLayout.BuildViewportLayout(static_cast<int32>(Window->GetWidth()), static_cast<int32>(Window->GetHeight()));
 
     // Editor용 렌더 파이프라인 세팅
@@ -191,7 +188,6 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	FScriptManager::Get().initializeLuaState();
 
     // Viewer용 별도 월드 생성
-    /*
     FWorldContext& ViewerCtx = CreateWorldContext(EWorldType::ViewerPreview, FName("ViewerPreview"), "Viewer Preview");
     ApplySpatialIndexMaintenanceSettings(ViewerCtx.World);
     SpawnDefaultSceneActors(ViewerCtx.World);
@@ -205,7 +201,6 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     }
 
 	Viewer.Init(Window, this, ViewerCtx.World, ViewerCtx.SelectionManager);
-	*/
 }
 
 void UEditorEngine::Shutdown()
@@ -1075,6 +1070,7 @@ void UEditorEngine::CloseScene()
         Ctx.SelectionManager->ClearSelection();
         Ctx.SelectionManager->Shutdown();
         delete Ctx.SelectionManager;
+        Ctx.SelectionManager = nullptr;
         UObjectManager::Get().DestroyObject(Ctx.World);
     }
     WorldList.clear();
@@ -1106,7 +1102,30 @@ void UEditorEngine::NewScene()
     ApplySpatialIndexMaintenanceSettings(Ctx.World);
     SpawnDefaultSceneActors(Ctx.World);
 
+	// Selection & Gizmo
+    const FWorldContext* Context = GetWorldContextFromHandle(ActiveWorldHandle);
+    ViewportLayout.Init(Window, Context->World, Context->SelectionManager, this);
     ResetViewport();
+    GetFocusedWorld()->SetActiveCamera(GetCamera());
+
+    // Slate 초기화 및 Viewport Layout 추가
+    FSlateApplication::Get().Initialize();
+    ViewportLayout.BuildViewportLayout(static_cast<int32>(Window->GetWidth()), static_cast<int32>(Window->GetHeight()));
+
+	// Viewer용 별도 월드 생성
+    FWorldContext& ViewerCtx = CreateWorldContext(EWorldType::ViewerPreview, FName("ViewerPreview"), "Viewer Preview");
+    ApplySpatialIndexMaintenanceSettings(ViewerCtx.World);
+    SpawnDefaultSceneActors(ViewerCtx.World);
+
+    ACubeActor* TestActor = ViewerCtx.World->SpawnActor<ACubeActor>();
+    if (TestActor)
+    {
+        TestActor->InitDefaultComponents();
+        TestActor->SetFName(FName("Test Actor"));
+        TestActor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+    }
+
+    Viewer.Init(Window, this, ViewerCtx.World, ViewerCtx.SelectionManager);
 }
 
 bool UEditorEngine::CreateDefaultSceneAsset(const FString& FilePath)
@@ -1219,6 +1238,7 @@ void UEditorEngine::ClearScene()
         Ctx.SelectionManager->ClearSelection();
         Ctx.SelectionManager->Shutdown();
         delete Ctx.SelectionManager;
+        Ctx.SelectionManager = nullptr;
         UObjectManager::Get().DestroyObject(Ctx.World);
     }
 
@@ -1277,6 +1297,7 @@ void UEditorEngine::UnregisterWorld(const FName& Handle)
 			{
                 it->SelectionManager->Shutdown();
                 delete it->SelectionManager;
+                it->SelectionManager = nullptr;
 			}
             WorldList.erase(it);
             return; // 찾아서 지웠으므로 즉시 종료
