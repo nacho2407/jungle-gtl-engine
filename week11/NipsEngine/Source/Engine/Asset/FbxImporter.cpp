@@ -7,153 +7,274 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <cctype>
 
 using namespace fbxsdk;
 
 namespace
 {
-	static FVector ToFVector(const FbxVector4& V)
-	{
-		return FVector(static_cast<float>(V[0]), static_cast<float>(V[1]), static_cast<float>(V[2]));
-	}
+static FVector ToFVector(const FbxVector4& V)
+{
+	return FVector(static_cast<float>(V[0]), static_cast<float>(V[1]), static_cast<float>(V[2]));
+}
 
-	static FVector2 ToFVector2(const FbxVector2& V)
-	{
-		// OBJ 로더와 동일하게 V 좌표 뒤집기
-		return FVector2(static_cast<float>(V[0]), 1.0f - static_cast<float>(V[1]));
-	}
+static FVector2 ToFVector2(const FbxVector2& V)
+{
+	// OBJ 로더와 동일하게 V 좌표 뒤집기
+	return FVector2(static_cast<float>(V[0]), 1.0f - static_cast<float>(V[1]));
+}
 
-	static void GetTangentBitangent(FVector& OutT, FVector& OutB,
-		const FVector& P0, const FVector& P1, const FVector& P2,
-		const FVector2& UV0, const FVector2& UV1, const FVector2& UV2)
-	{
-		FVector E1 = P1 - P0;
-		FVector E2 = P2 - P0;
-		FVector2 dUV1 = UV1 - UV0;
-		FVector2 dUV2 = UV2 - UV0;
-		float Det = dUV1.X * dUV2.Y - dUV1.Y * dUV2.X;
-		float r = (fabs(Det) > 1e-8f) ? (1.0f / Det) : 0.0f;
+static void GetTangentBitangent(FVector& OutT, FVector& OutB,
+	const FVector& P0, const FVector& P1, const FVector& P2,
+	const FVector2& UV0, const FVector2& UV1, const FVector2& UV2)
+{
+	FVector E1 = P1 - P0;
+	FVector E2 = P2 - P0;
+	FVector2 dUV1 = UV1 - UV0;
+	FVector2 dUV2 = UV2 - UV0;
+	float Det = dUV1.X * dUV2.Y - dUV1.Y * dUV2.X;
+	float r = (fabs(Det) > 1e-8f) ? (1.0f / Det) : 0.0f;
 
-		OutT = (E1 * dUV2.Y - E2 * dUV1.Y) * r;
-		OutB = (E2 * dUV1.X - E1 * dUV2.X) * r;
-	}
+	OutT = (E1 * dUV2.Y - E2 * dUV1.Y) * r;
+	OutB = (E2 * dUV1.X - E1 * dUV2.X) * r;
+}
 
-	static FMatrix ToFMatrix(const FbxAMatrix& M)
+static FMatrix ToFMatrix(const FbxAMatrix& M)
+{
+	// row-vector convention
+    return FMatrix(
+        static_cast<float>(M.Get(0, 0)), static_cast<float>(M.Get(0, 1)), static_cast<float>(M.Get(0, 2)), static_cast<float>(M.Get(0, 3)),
+        static_cast<float>(M.Get(1, 0)), static_cast<float>(M.Get(1, 1)), static_cast<float>(M.Get(1, 2)), static_cast<float>(M.Get(1, 3)),
+        static_cast<float>(M.Get(2, 0)), static_cast<float>(M.Get(2, 1)), static_cast<float>(M.Get(2, 2)), static_cast<float>(M.Get(2, 3)),
+        static_cast<float>(M.Get(3, 0)), static_cast<float>(M.Get(3, 1)), static_cast<float>(M.Get(3, 2)), static_cast<float>(M.Get(3, 3)));
+}
+
+struct FTempInfluence
+{
+    int32 BoneIndex = -1;
+    float Weight = 0.0f;
+};
+
+/**
+	* @brief 영향력 상위 4개의 bone을 FSkeletalMeshVertex에 할당
+	*/
+static void AssignTop4Influences(
+    const TArray<FTempInfluence>& SourceInfluences,
+    FSkeletalMeshVertex& OutVertex)
+{
+    for (int32 i = 0; i < 4; ++i)
     {
-		// row-vector convention
-        return FMatrix(
-            static_cast<float>(M.Get(0, 0)), static_cast<float>(M.Get(0, 1)), static_cast<float>(M.Get(0, 2)), static_cast<float>(M.Get(0, 3)),
-            static_cast<float>(M.Get(1, 0)), static_cast<float>(M.Get(1, 1)), static_cast<float>(M.Get(1, 2)), static_cast<float>(M.Get(1, 3)),
-            static_cast<float>(M.Get(2, 0)), static_cast<float>(M.Get(2, 1)), static_cast<float>(M.Get(2, 2)), static_cast<float>(M.Get(2, 3)),
-            static_cast<float>(M.Get(3, 0)), static_cast<float>(M.Get(3, 1)), static_cast<float>(M.Get(3, 2)), static_cast<float>(M.Get(3, 3)));
+		/*
+			* TODO: 이 함수 자체가 임시로 붙인 함수지만, 만약 이 함수를 그대로 사용하고
+			*       BoneIndices를 int32로 바꾼다면 이 부분도 -1로 변경해주세요!
+			*/
+        OutVertex.BoneIndices[i] = 0;
+        OutVertex.BoneWeights[i] = 0.0f;
     }
 
-	struct FTempInfluence
+    if (SourceInfluences.empty())
     {
-        int32 BoneIndex = -1;
-        float Weight = 0.0f;
-    };
+        return;
+    }
 
-	/**
-	 * @brief 영향력 상위 4개의 bone을 FSkeletalMeshVertex에 할당
-	 */
-    static void AssignTop4Influences(
-        const TArray<FTempInfluence>& SourceInfluences,
-        FSkeletalMeshVertex& OutVertex)
+	// 정렬은 그냥 standard sort 활용
+    TArray<FTempInfluence> Sorted = SourceInfluences;
+    std::sort(Sorted.begin(), Sorted.end(), [](const FTempInfluence& A, const FTempInfluence& B)
+                { return A.Weight > B.Weight; });
+
+    int32 WrittenCount = 0;
+    float Sum = 0.0f;
+
+    for (const FTempInfluence& Influence : Sorted)
+    {
+        if (WrittenCount >= 4)
+        {
+            break;
+        }
+
+		/*
+			* TODO: 우선 현재는 BoneIndices가 uint8임을 가정.
+			*       bone 개수가 256개 이상이면 잘림
+			*/
+        if (Influence.BoneIndex < 0 || Influence.BoneIndex > 255 || Influence.Weight <= 0.0f)
+        {
+            continue;
+        }
+
+        OutVertex.BoneIndices[WrittenCount] = static_cast<uint8>(Influence.BoneIndex);
+        OutVertex.BoneWeights[WrittenCount] = Influence.Weight;
+        Sum += Influence.Weight;
+
+        ++WrittenCount;
+    }
+
+    if (Sum <= 1e-6f)
     {
         for (int32 i = 0; i < 4; ++i)
         {
-			/*
-			 * TODO: 이 함수 자체가 임시로 붙인 함수지만, 만약 이 함수를 그대로 사용하고
-			 *       BoneIndices를 int32로 바꾼다면 이 부분도 -1로 변경해주세요!
-			 */
             OutVertex.BoneIndices[i] = 0;
             OutVertex.BoneWeights[i] = 0.0f;
         }
 
-        if (SourceInfluences.empty())
-        {
-            return;
-        }
-
-		// 정렬은 그냥 standard sort 활용
-        TArray<FTempInfluence> Sorted = SourceInfluences;
-        std::sort(Sorted.begin(), Sorted.end(), [](const FTempInfluence& A, const FTempInfluence& B)
-                  { return A.Weight > B.Weight; });
-
-        int32 WrittenCount = 0;
-        float Sum = 0.0f;
-
-        for (const FTempInfluence& Influence : Sorted)
-        {
-            if (WrittenCount >= 4)
-            {
-                break;
-            }
-
-			/*
-			 * TODO: 우선 현재는 BoneIndices가 uint8임을 가정.
-			 *       bone 개수가 256개 이상이면 잘림
-			 */
-            if (Influence.BoneIndex < 0 || Influence.BoneIndex > 255 || Influence.Weight <= 0.0f)
-            {
-                continue;
-            }
-
-            OutVertex.BoneIndices[WrittenCount] = static_cast<uint8>(Influence.BoneIndex);
-            OutVertex.BoneWeights[WrittenCount] = Influence.Weight;
-            Sum += Influence.Weight;
-
-            ++WrittenCount;
-        }
-
-        if (Sum <= 1e-6f)
-        {
-            for (int32 i = 0; i < 4; ++i)
-            {
-                OutVertex.BoneIndices[i] = 0;
-                OutVertex.BoneWeights[i] = 0.0f;
-            }
-
-            return;
-        }
-
-        for (int32 i = 0; i < WrittenCount; ++i)
-        {
-            OutVertex.BoneWeights[i] /= Sum;
-        }
+        return;
     }
 
-	/**
-     * @brief FBX에는 node transform 뿐 아니라 mesh geometry 자체에 추가로 붙는
-     *        숨은 보정 transform이 존재하기 때문에 이를 계산하는 함수
-     */
-	static FbxAMatrix GetGeometryTransform(FbxNode* Node)
+    for (int32 i = 0; i < WrittenCount; ++i)
     {
-        FbxAMatrix Geometry;
-        Geometry.SetIdentity();
+        OutVertex.BoneWeights[i] /= Sum;
+    }
+}
 
-        if (!Node)
-        {
-            return Geometry;
-        }
+/**
+    * @brief FBX에는 node transform 뿐 아니라 mesh geometry 자체에 추가로 붙는
+    *        숨은 보정 transform이 존재하기 때문에 이를 계산하는 함수
+    */
+static FbxAMatrix GetGeometryTransform(FbxNode* Node)
+{
+    FbxAMatrix Geometry;
+    Geometry.SetIdentity();
 
-        const FbxVector4 T = Node->GetGeometricTranslation(FbxNode::eSourcePivot);
-        const FbxVector4 R = Node->GetGeometricRotation(FbxNode::eSourcePivot);
-        const FbxVector4 S = Node->GetGeometricScaling(FbxNode::eSourcePivot);
-
-        Geometry.SetTRS(T, R, S);
+    if (!Node)
+    {
         return Geometry;
     }
 
-	/**
-	 * @brief normal은 translate를 적용하지 않음
-	 */
-    static FbxAMatrix GetNormalTransform(FbxAMatrix Matrix)
+    const FbxVector4 T = Node->GetGeometricTranslation(FbxNode::eSourcePivot);
+    const FbxVector4 R = Node->GetGeometricRotation(FbxNode::eSourcePivot);
+    const FbxVector4 S = Node->GetGeometricScaling(FbxNode::eSourcePivot);
+
+    Geometry.SetTRS(T, R, S);
+    return Geometry;
+}
+
+/**
+	* @brief normal은 translate를 적용하지 않음
+	*/
+static FbxAMatrix GetNormalTransform(FbxAMatrix Matrix)
+{
+    Matrix.SetT(FbxVector4(0, 0, 0, 0));
+    return Matrix;
+}
+
+static FbxAMatrix MakeIdentityFbxMatrix()
+{
+    FbxAMatrix Matrix;
+    Matrix.SetIdentity();
+    return Matrix;
+}
+
+static FbxAMatrix GetGlobalTransformWithGeometry(FbxNode* Node)
+{
+    if (!Node)
     {
-        Matrix.SetT(FbxVector4(0, 0, 0, 0));
-        return Matrix;
+        return MakeIdentityFbxMatrix();
     }
+
+    const FbxAMatrix GlobalTransform = Node->EvaluateGlobalTransform();
+    const FbxAMatrix GeometryTransform = GetGeometryTransform(Node);
+
+    // 기존 Static Mesh importer와 동일 정책
+    return GlobalTransform * GeometryTransform;
+}
+
+static FbxAMatrix GetNormalTransformFromPositionTransform(FbxAMatrix Matrix)
+{
+    Matrix.SetT(FbxVector4(0, 0, 0, 0));
+    return Matrix;
+}
+
+static int32 FindNearestImportedBoneIndex(
+    FbxNode* StartNode,
+    const TMap<FbxNode*, int32>& BoneNodeToIndex)
+{
+    FbxNode* Current = StartNode;
+    while (Current)
+    {
+        auto It = BoneNodeToIndex.find(Current);
+        if (It != BoneNodeToIndex.end())
+        {
+            return It->second;
+        }
+
+        Current = Current->GetParent();
+    }
+
+    return -1;
+}
+
+static std::string ToLowerCopy(const char* InName)
+{
+    std::string Result = InName ? InName : "";
+    std::transform(Result.begin(), Result.end(), Result.begin(), [](unsigned char C)
+                    { return static_cast<char>(std::tolower(C)); });
+    return Result;
+}
+
+static bool ContainsAnyToken(const std::string& Name, const std::initializer_list<const char*> Tokens)
+{
+    for (const char* Token : Tokens)
+    {
+        if (Name.find(Token) != std::string::npos)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool ShouldSkipRigidMeshByName(FbxNode* OwnerNode)
+{
+    const std::string Name = ToLowerCopy(OwnerNode ? OwnerNode->GetName() : "");
+
+    // helper / reference 성격이 강한 이름은 skip
+    return ContainsAnyToken(Name, { "floor",
+                                    "ground",
+                                    "grid",
+                                    "reference",
+                                    "helper",
+                                    "collision",
+                                    "collider",
+                                    "dummy" });
+}
+
+static void ResetVertexInfluences(FSkeletalMeshVertex& Vertex)
+{
+    for (int32 i = 0; i < 4; ++i)
+    {
+        Vertex.BoneIndices[i] = 0;
+        Vertex.BoneWeights[i] = 0.0f;
+    }
+}
+
+static void AssignRigidInfluence(FSkeletalMeshVertex& Vertex, int32 BoneIndex)
+{
+    ResetVertexInfluences(Vertex);
+
+    if (BoneIndex < 0 || BoneIndex > 255)
+    {
+        // TODO: 현재 FSkeletalMeshVertex::BoneIndices가 uint8이므로 255를 넘으면 저장할 수 없음
+        return;
+    }
+
+    Vertex.BoneIndices[0] = static_cast<uint8>(BoneIndex);
+    Vertex.BoneWeights[0] = 1.0f;
+}
+
+static void AppendSkeletalImportReport(const std::string& Message)
+{
+    std::filesystem::create_directories("Saved");
+
+    std::ofstream File("Saved/SkeletalMeshGeometryImportReport.txt", std::ios::out | std::ios::app);
+    if (File.is_open())
+    {
+        File << Message << "\n";
+    }
+}
 }
 
 FStaticMesh* FFbxImporter::Load(const FString& Path, const FStaticMeshLoadOptions& LoadOptions)
@@ -278,12 +399,37 @@ FSkeletalMesh* FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStatic
     FSkeletalMesh* SkeletalMesh = new FSkeletalMesh();
     SkeletalMesh->PathFileName = Path;
 
+    TMap<FbxNode*, int32> BoneNodeToIndex;
+
+    FbxAMatrix ReferenceMeshBindGlobalWithGeometry;
+    ReferenceMeshBindGlobalWithGeometry.SetIdentity();
+
+    bool bHasReferenceMeshBindGlobalWithGeometry = false;
+
     if (FbxNode* RootNode = Scene->GetRootNode())
     {
+        // 1-pass: skin deformer가 있는 mesh만 먼저 처리
         for (int32 i = 0; i < RootNode->GetChildCount(); ++i)
         {
-			// 실제 작업은 여기서 진행
-            CollectSkeletalMeshes(RootNode->GetChild(i), SkeletalMesh);
+            CollectSkeletalMeshes(
+                RootNode->GetChild(i),
+                SkeletalMesh,
+                ESkeletalMeshImportPass::SkinnedMeshes,
+                BoneNodeToIndex,
+                ReferenceMeshBindGlobalWithGeometry,
+                bHasReferenceMeshBindGlobalWithGeometry);
+        }
+
+        // 2-pass: skin deformer가 없는 mesh 중 bone 아래에 붙은 mesh를 rigid mesh로 처리
+        for (int32 i = 0; i < RootNode->GetChildCount(); ++i)
+        {
+            CollectSkeletalMeshes(
+                RootNode->GetChild(i),
+                SkeletalMesh,
+                ESkeletalMeshImportPass::RigidAttachedMeshes,
+                BoneNodeToIndex,
+                ReferenceMeshBindGlobalWithGeometry,
+                bHasReferenceMeshBindGlobalWithGeometry);
         }
     }
 
@@ -622,33 +768,79 @@ void FFbxImporter::ComputeTangents(FStaticMesh* InStaticMesh)
 	}
 }
 
-void FFbxImporter::CollectSkeletalMeshes(FbxNode* Node, FSkeletalMesh* InSkeletalMesh)
+void FFbxImporter::CollectSkeletalMeshes(
+    FbxNode* Node,
+    FSkeletalMesh* InSkeletalMesh,
+    ESkeletalMeshImportPass Pass,
+    TMap<FbxNode*, int32>& BoneNodeToIndex,
+    FbxAMatrix& ReferenceMeshBindGlobalWithGeometry,
+    bool& bHasReferenceMeshBindGlobalWithGeometry)
 {
     if (!Node)
     {
         return;
     }
 
-    if (FbxNodeAttribute* Attr = Node->GetNodeAttribute())
+    if (FbxMesh* Mesh = Node->GetMesh())
     {
-		// FBX node의 polygon mesh geometry만 처리
-        if (Attr->GetAttributeType() == FbxNodeAttribute::eMesh)
-        {
-			// 사실 찐 작업은 여기서 수행...
-            ProcessSkeletalMesh(static_cast<FbxMesh*>(Attr), InSkeletalMesh);
-        }
+        ProcessSkeletalMesh(
+            Mesh,
+            InSkeletalMesh,
+            Pass,
+            BoneNodeToIndex,
+            ReferenceMeshBindGlobalWithGeometry,
+            bHasReferenceMeshBindGlobalWithGeometry);
     }
 
     for (int32 i = 0; i < Node->GetChildCount(); ++i)
     {
-        CollectSkeletalMeshes(Node->GetChild(i), InSkeletalMesh);
+        CollectSkeletalMeshes(
+            Node->GetChild(i),
+            InSkeletalMesh,
+            Pass,
+            BoneNodeToIndex,
+            ReferenceMeshBindGlobalWithGeometry,
+            bHasReferenceMeshBindGlobalWithGeometry);
     }
 }
 
-void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InSkeletalMesh)
+void FFbxImporter::ProcessSkeletalMesh(
+    FbxMesh* Mesh,
+    FSkeletalMesh* InSkeletalMesh,
+    ESkeletalMeshImportPass Pass,
+    TMap<FbxNode*, int32>& BoneNodeToIndex,
+    FbxAMatrix& ReferenceMeshBindGlobalWithGeometry,
+    bool& bHasReferenceMeshBindGlobalWithGeometry)
 {
-	// Mesh: control point / polygon / normal / uv / skin deformer를 가진 geometry
     if (!Mesh || !InSkeletalMesh || Mesh->GetPolygonCount() <= 0)
+    {
+        return;
+    }
+
+    const int32 SkinCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
+
+    if (Pass == ESkeletalMeshImportPass::RigidAttachedMeshes)
+    {
+        if (SkinCount > 0)
+        {
+            return;
+        }
+
+        ProcessRigidAttachedMesh(
+            Mesh,
+            InSkeletalMesh,
+            BoneNodeToIndex,
+            ReferenceMeshBindGlobalWithGeometry,
+            bHasReferenceMeshBindGlobalWithGeometry);
+        return;
+    }
+
+    if (Pass != ESkeletalMeshImportPass::SkinnedMeshes)
+    {
+        return;
+    }
+
+    if (SkinCount <= 0)
     {
         return;
     }
@@ -669,12 +861,8 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
     TArray<TArray<FTempInfluence>> InfluencesByControlPoint;
     InfluencesByControlPoint.resize(ControlPointCount);
 
-    TMap<FbxNode*, int32> BoneNodeToIndex;
-
-	// Skin: 일종의 Cluster 집합
-	const int32 SkinCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
-
-    for (int32 SkinIndex = 0; SkinIndex < SkinCount; SkinIndex++)
+    // cluster link node를 bone으로 등록
+    for (int32 SkinIndex = 0; SkinIndex < SkinCount; ++SkinIndex)
     {
         FbxSkin* Skin = static_cast<FbxSkin*>(Mesh->GetDeformer(SkinIndex, FbxDeformer::eSkin));
         if (!Skin)
@@ -682,9 +870,8 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
             continue;
         }
 
-		// Cluster: 하나의 bone이 가진 weight 테이블
         const int32 ClusterCount = Skin->GetClusterCount();
-        for (int32 ClusterIndex = 0; ClusterIndex < ClusterCount; ClusterIndex++)
+        for (int32 ClusterIndex = 0; ClusterIndex < ClusterCount; ++ClusterIndex)
         {
             FbxCluster* Cluster = Skin->GetCluster(ClusterIndex);
             if (!Cluster || !Cluster->GetLink())
@@ -692,38 +879,45 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
                 continue;
             }
 
-			// Link: 그냥 bone이라고 생각해도 될 듯
             FbxNode* BoneNode = Cluster->GetLink();
             if (BoneNodeToIndex.find(BoneNode) != BoneNodeToIndex.end())
             {
                 continue;
             }
 
-            FbxAMatrix MeshBindGlobal; // mesh node의 bind pose global transform
-            FbxAMatrix LinkBindGlobal; // bone node의 bind pose global transform
+            FbxAMatrix MeshBindGlobal;
+            FbxAMatrix LinkBindGlobal;
 
             Cluster->GetTransformMatrix(MeshBindGlobal);
             Cluster->GetTransformLinkMatrix(LinkBindGlobal);
 
-			// vertex를 mesh local space에 저장할 예정이므로 bone의 global bind transform도 mesh bind 기준 local space로 변환하여 저장
-            const FbxAMatrix BoneBindInMeshSpace = LinkBindGlobal * MeshBindGlobal.Inverse();
+            const FbxAMatrix MeshBindGlobalWithGeometry = MeshBindGlobal * MeshGeometry;
+
+            if (!bHasReferenceMeshBindGlobalWithGeometry)
+            {
+                ReferenceMeshBindGlobalWithGeometry = MeshBindGlobalWithGeometry;
+                bHasReferenceMeshBindGlobalWithGeometry = true;
+            }
+
+            const FbxAMatrix BoneBindInMeshSpace =
+                LinkBindGlobal * MeshBindGlobalWithGeometry.Inverse();
 
             const int32 NewBoneIndex = static_cast<int32>(InSkeletalMesh->Bones.size());
             BoneNodeToIndex[BoneNode] = NewBoneIndex;
 
             FBoneInfo Bone = {};
             Bone.Name = FString(BoneNode->GetName());
-            Bone.ParentIndex = -1; // Bone들의 트리 구조는 아래에서 정리
+            Bone.ParentIndex = -1;
 
             Bone.GlobalBindTransform = ToFMatrix(BoneBindInMeshSpace);
             Bone.InverseBindPose = Bone.GlobalBindTransform.GetInverse();
-            Bone.LocalBindTransform = Bone.GlobalBindTransform; // 임시값
+            Bone.LocalBindTransform = Bone.GlobalBindTransform;
 
             InSkeletalMesh->Bones.push_back(Bone);
         }
     }
 
-	// ParentIndex와 LocalBindTransform 계산
+    // parentIndex와 LocalBindTransform을 계산
     for (auto& Pair : BoneNodeToIndex)
     {
         FbxNode* BoneNode = Pair.first;
@@ -760,7 +954,7 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
         }
     }
 
-    // control point별 influence 수집
+    // control point별 influence를 수집
     for (int32 SkinIndex = 0; SkinIndex < SkinCount; SkinIndex++)
     {
         FbxSkin* Skin = static_cast<FbxSkin*>(Mesh->GetDeformer(SkinIndex, FbxDeformer::eSkin));
@@ -770,7 +964,7 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
         }
 
         const int32 ClusterCount = Skin->GetClusterCount();
-        for (int32 ClusterIndex = 0; ClusterIndex < ClusterCount; ++ClusterIndex)
+        for (int32 ClusterIndex = 0; ClusterIndex < ClusterCount; ClusterIndex++)
         {
             FbxCluster* Cluster = Skin->GetCluster(ClusterIndex);
             if (!Cluster || !Cluster->GetLink())
@@ -810,21 +1004,19 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
         }
     }
 
-	// Material 관련 준비(아직 처리는 X)
+    // material mapping 정보 준비
     FbxLayerElementArrayTemplate<int32>* MaterialIndices = nullptr;
     FbxGeometryElement::EMappingMode MaterialMappingMode = FbxGeometryElement::eByPolygon;
 
     if (Mesh->GetElementMaterial())
     {
-		// Mesh가 polygon마다 material index 정보를 가지고 있음
         MaterialIndices = &Mesh->GetElementMaterial()->GetIndexArray();
         MaterialMappingMode = Mesh->GetElementMaterial()->GetMappingMode();
     }
 
-	// FBX polygon 순서는 material 별로 정렬되어 있지 않을 수 있기 때문에 별도로 모아놨다가 나중에 section 생성에 사용
     TArray<TArray<uint32>> SlotIndices;
 
-    // FBX polygon corner를 FSkeletalMeshVertex로 변환
+    // polygon corner를 FSkeletalMeshVertex로 변환
     const int32 PolygonCount = Mesh->GetPolygonCount();
     for (int32 PolyIdx = 0; PolyIdx < PolygonCount; PolyIdx++)
     {
@@ -851,7 +1043,6 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
                 MatIdx = MaterialIndices->GetAt(0);
             }
 
-			// 실제 material 목록은 OwnerNode가 들고 있음
             if (MatIdx >= 0 && MatIdx < OwnerNode->GetMaterialCount())
             {
                 if (FbxSurfaceMaterial* SurfMat = OwnerNode->GetMaterial(MatIdx))
@@ -876,6 +1067,7 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
             }
 
             FSkeletalMeshVertex Vertex = {};
+            ResetVertexInfluences(Vertex);
 
             FbxVector4 Pos = ControlPoints[CtrlPointIdx];
             Pos = MeshGeometry.MultT(Pos);
@@ -888,12 +1080,7 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
                 Normal = NormalGeometry.MultT(Normal);
 
                 Vertex.Normal = ToFVector(Normal);
-
-                const float Len = Vertex.Normal.Size();
-                if (Len > 1e-6f)
-                {
-                    Vertex.Normal = Vertex.Normal / Len;
-                }
+                Vertex.Normal.NormalizeSafe();
             }
             else
             {
@@ -920,7 +1107,6 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
 
             Vertex.Color = FColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
-			// 상위 4개 influenced만 주입
             AssignTop4Influences(InfluencesByControlPoint[CtrlPointIdx], Vertex);
 
             const uint32 NewIndex = static_cast<uint32>(InSkeletalMesh->Vertices.size());
@@ -929,8 +1115,7 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
         }
     }
 
-    // slot별 index를 합쳐 section 생성
-    for (int32 SlotIdx = 0; SlotIdx < static_cast<int32>(SlotIndices.size()); ++SlotIdx)
+    for (int32 SlotIdx = 0; SlotIdx < static_cast<int32>(SlotIndices.size()); SlotIdx++)
     {
         TArray<uint32>& IndicesPerSlot = SlotIndices[SlotIdx];
         if (IndicesPerSlot.empty())
@@ -952,11 +1137,222 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
     }
 }
 
+void FFbxImporter::ProcessRigidAttachedMesh(
+    FbxMesh* Mesh,
+    FSkeletalMesh* InSkeletalMesh,
+    TMap<FbxNode*, int32>& BoneNodeToIndex,
+    const FbxAMatrix& ReferenceMeshBindGlobalWithGeometry,
+    bool bHasReferenceMeshBindGlobalWithGeometry)
+{
+    if (!Mesh || !InSkeletalMesh || Mesh->GetPolygonCount() <= 0)
+    {
+        return;
+    }
+
+    FbxNode* OwnerNode = Mesh->GetNode();
+    if (!OwnerNode)
+    {
+        return;
+    }
+
+    if (!bHasReferenceMeshBindGlobalWithGeometry)
+    {
+        AppendSkeletalImportReport("[RigidMesh] SKIP: no reference skinned mesh has been imported yet");
+        return;
+    }
+
+    if (ShouldSkipRigidMeshByName(OwnerNode))
+    {
+        std::ostringstream Oss;
+        Oss << "[RigidMesh] SKIP helper mesh | Node=" << OwnerNode->GetName();
+        AppendSkeletalImportReport(Oss.str());
+        return;
+    }
+
+    const int32 AttachBoneIndex = FindNearestImportedBoneIndex(OwnerNode, BoneNodeToIndex);
+    if (AttachBoneIndex < 0)
+    {
+        std::ostringstream Oss;
+        Oss << "[RigidMesh] SKIP no parent bone | Node=" << OwnerNode->GetName();
+        AppendSkeletalImportReport(Oss.str());
+        return;
+    }
+
+    if (AttachBoneIndex > 255)
+    {
+        std::ostringstream Oss;
+        Oss << "[RigidMesh] SKIP attach bone index exceeds uint8 limit | Node="
+            << OwnerNode->GetName()
+            << " | BoneIndex=" << AttachBoneIndex;
+        AppendSkeletalImportReport(Oss.str());
+        return;
+    }
+
+    const FbxVector4* ControlPoints = Mesh->GetControlPoints();
+    if (!ControlPoints)
+    {
+        return;
+    }
+
+    const int32 ControlPointCount = Mesh->GetControlPointsCount();
+
+    const FbxAMatrix OwnerGlobalWithGeometry = GetGlobalTransformWithGeometry(OwnerNode);
+
+    // rigid mesh vertex를 reference skeletal mesh local space로 변환
+    const FbxAMatrix RigidToReferenceMesh =
+        OwnerGlobalWithGeometry * ReferenceMeshBindGlobalWithGeometry.Inverse();
+
+    const FbxAMatrix RigidNormalToReferenceMesh =
+        GetNormalTransformFromPositionTransform(RigidToReferenceMesh);
+
+    FbxLayerElementArrayTemplate<int32>* MaterialIndices = nullptr;
+    FbxGeometryElement::EMappingMode MaterialMappingMode = FbxGeometryElement::eByPolygon;
+
+    if (Mesh->GetElementMaterial())
+    {
+        MaterialIndices = &Mesh->GetElementMaterial()->GetIndexArray();
+        MaterialMappingMode = Mesh->GetElementMaterial()->GetMappingMode();
+    }
+
+    TArray<TArray<uint32>> SlotIndices;
+
+    const int32 PolygonCount = Mesh->GetPolygonCount();
+    const uint32 StartVertexCount = static_cast<uint32>(InSkeletalMesh->Vertices.size());
+
+    for (int32 PolyIdx = 0; PolyIdx < PolygonCount; PolyIdx++)
+    {
+        const int32 PolygonSize = Mesh->GetPolygonSize(PolyIdx);
+        if (PolygonSize != 3)
+        {
+            continue;
+        }
+
+        FString MaterialName = "DefaultWhite";
+
+        if (MaterialIndices && OwnerNode)
+        {
+            int32 MatIdx = 0;
+
+            if (MaterialMappingMode == FbxGeometryElement::eByPolygon &&
+                PolyIdx < MaterialIndices->GetCount())
+            {
+                MatIdx = MaterialIndices->GetAt(PolyIdx);
+            }
+            else if (MaterialMappingMode == FbxGeometryElement::eAllSame &&
+                     MaterialIndices->GetCount() > 0)
+            {
+                MatIdx = MaterialIndices->GetAt(0);
+            }
+
+            if (MatIdx >= 0 && MatIdx < OwnerNode->GetMaterialCount())
+            {
+                if (FbxSurfaceMaterial* SurfMat = OwnerNode->GetMaterial(MatIdx))
+                {
+                    MaterialName = FString(SurfMat->GetName());
+                }
+            }
+        }
+
+        const int32 SlotIdx = GetOrAddMaterialSlot(InSkeletalMesh, MaterialName);
+        if (SlotIdx >= static_cast<int32>(SlotIndices.size()))
+        {
+            SlotIndices.resize(SlotIdx + 1);
+        }
+
+        for (int32 Corner = 0; Corner < 3; Corner++)
+        {
+            const int32 CtrlPointIdx = Mesh->GetPolygonVertex(PolyIdx, Corner);
+            if (CtrlPointIdx < 0 || CtrlPointIdx >= ControlPointCount)
+            {
+                continue;
+            }
+
+            FSkeletalMeshVertex Vertex = {};
+            ResetVertexInfluences(Vertex);
+
+            FbxVector4 Pos = ControlPoints[CtrlPointIdx];
+            Pos = RigidToReferenceMesh.MultT(Pos);
+            Vertex.Position = ToFVector(Pos);
+
+            FbxVector4 Normal(0, 0, 1, 0);
+            if (Mesh->GetPolygonVertexNormal(PolyIdx, Corner, Normal))
+            {
+                Normal[3] = 0.0;
+                Normal = RigidNormalToReferenceMesh.MultT(Normal);
+
+                Vertex.Normal = ToFVector(Normal);
+                Vertex.Normal.NormalizeSafe();
+            }
+            else
+            {
+                Vertex.Normal = FVector(0.0f, 0.0f, 1.0f);
+            }
+
+            Vertex.UVs = FVector2(0.0f, 0.0f);
+            if (Mesh->GetElementUVCount() > 0)
+            {
+                FbxStringList UVNames;
+                Mesh->GetUVSetNames(UVNames);
+
+                if (const char* UVName = UVNames.GetStringAt(0))
+                {
+                    FbxVector2 UV;
+                    bool bUnmapped = false;
+
+                    if (Mesh->GetPolygonVertexUV(PolyIdx, Corner, UVName, UV, bUnmapped))
+                    {
+                        Vertex.UVs = ToFVector2(UV);
+                    }
+                }
+            }
+
+            Vertex.Color = FColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+
+            // skin이 없는 rigid mesh이므로 parent bone 하나에 100% 붙임
+            AssignRigidInfluence(Vertex, AttachBoneIndex);
+
+            const uint32 NewIndex = static_cast<uint32>(InSkeletalMesh->Vertices.size());
+            InSkeletalMesh->Vertices.push_back(Vertex);
+            SlotIndices[SlotIdx].push_back(NewIndex);
+        }
+    }
+
+    for (int32 SlotIdx = 0; SlotIdx < static_cast<int32>(SlotIndices.size()); SlotIdx++)
+    {
+        TArray<uint32>& IndicesPerSlot = SlotIndices[SlotIdx];
+        if (IndicesPerSlot.empty())
+        {
+            continue;
+        }
+
+        FStaticMeshSection NewSection;
+        NewSection.StartIndex = static_cast<uint32>(InSkeletalMesh->Indices.size());
+        NewSection.IndexCount = static_cast<uint32>(IndicesPerSlot.size());
+        NewSection.MaterialSlotIndex = SlotIdx;
+
+        InSkeletalMesh->Indices.insert(
+            InSkeletalMesh->Indices.end(),
+            IndicesPerSlot.begin(),
+            IndicesPerSlot.end());
+
+        InSkeletalMesh->Sections.push_back(NewSection);
+    }
+
+    const uint32 EndVertexCount = static_cast<uint32>(InSkeletalMesh->Vertices.size());
+
+    std::ostringstream Oss;
+    Oss << "[RigidMesh] IMPORT"
+        << " | Node=" << OwnerNode->GetName()
+        << " | AttachBoneIndex=" << AttachBoneIndex
+        << " | AddedVertices=" << (EndVertexCount - StartVertexCount);
+    AppendSkeletalImportReport(Oss.str());
+}
+
 int32 FFbxImporter::GetOrAddMaterialSlot(FSkeletalMesh* InSkeletalMesh, const FString& MaterialName)
 {
     const FString SlotName = MaterialName.empty() ? FString("DefaultWhite") : MaterialName;
 
-    for (int32 i = 0; i < static_cast<int32>(InSkeletalMesh->MaterialSlots.size()); ++i)
+    for (int32 i = 0; i < static_cast<int32>(InSkeletalMesh->MaterialSlots.size()); i++)
     {
         if (InSkeletalMesh->MaterialSlots[i].SlotName == SlotName)
         {
@@ -1052,7 +1448,7 @@ void FFbxImporter::ComputeTangents(FSkeletalMesh* InSkeletalMesh)
         BitangentAcc[I2] += B;
     }
 
-    for (uint64 i = 0; i < VertexCount; ++i)
+    for (uint64 i = 0; i < VertexCount; i++)
     {
         const FVector& N = InSkeletalMesh->Vertices[i].Normal;
         FVector T = TangentAcc[i];
