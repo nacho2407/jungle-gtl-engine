@@ -121,7 +121,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
     case EPrimitiveType::EPT_SkeletalMesh:
     {
-        if (!ShowFlags.bPrimitives) return true;
+        if (!ShowFlags.bPrimitives || !ShowFlags.bSkeletalMesh) return true;
 
         USkeletalMeshComponent* SkeletalMeshComp = static_cast<USkeletalMeshComponent*>(Primitive);
         USkeletalMesh* SkeletalMesh = SkeletalMeshComp->GetSkeletalMesh();
