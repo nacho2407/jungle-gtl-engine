@@ -30,6 +30,7 @@ public:
 	float PerspCamNearClip = 0.1f;
 	float PerspCamFarClip = 1000.0f;
 
+	FViewportCameraControlSettings LevelViewportCameraControls;
 	FEditorViewportSettings LevelViewportSettings[4];
 	FEditorViewportSettings MeshEditorViewportSettings;
 

@@ -543,6 +543,11 @@ void FViewportToolbar::RenderCameraControls(const FToolbarRenderState& State)
 		ImGui::OpenPopup("##CameraPopup");
 	}
 
+	State.CameraSettings().MoveSpeed;
+	ImGui::SameLine(0.0f, 2.0f);
+	ImGui::SetNextItemWidth(48.0f);
+	ImGui::Text("%.3f", State.CameraSettings().MoveSpeed);
+
 	if (ImGui::BeginPopup("##CameraPopup"))
 	{
 		auto& Camera = State.CameraSettings();

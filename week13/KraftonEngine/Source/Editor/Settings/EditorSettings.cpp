@@ -264,7 +264,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	JSON Root = Object();
 
 	// Viewport
-	JSON Viewport = SaveCameraControls(LevelViewportSettings[0].CameraControls);
+	JSON Viewport = SaveCameraControls(LevelViewportCameraControls);
 
 	JSON InitPos = Array(InitViewPos.X, InitViewPos.Y, InitViewPos.Z);
 	Viewport[Key::InitViewPos] = InitPos;
@@ -369,7 +369,7 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 	{
 		JSON Viewport = Root[Key::Viewport];
 
-		LoadCameraControls(Viewport, LevelViewportSettings[0].CameraControls);
+		LoadCameraControls(Viewport, LevelViewportCameraControls);
 
 		if (Viewport.hasKey(Key::InitViewPos))
 		{
