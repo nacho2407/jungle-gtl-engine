@@ -48,4 +48,8 @@ private:
 
     int32 CachedWidth = 0;
     int32 CachedHeight = 0;
+    // Viewer-local gizmo drag state
+    bool bLeftPressedOnHandle = false;
+    bool bLeftHolding = false;
+    POINT LeftMouseDownPos = {0,0};
 };
