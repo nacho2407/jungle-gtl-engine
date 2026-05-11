@@ -62,6 +62,21 @@ struct hash<FFbxSkeletalVertexKey>
 
 bool FFbxImporter::Import(const FString& FilePath)
 {
+	// FBX import 결과가 바로 엔진 전용 cooked binary cache에 저장되므로,
+	// 이전 import의 static 임시 데이터가 섞이지 않게 시작 지점에서 모두 정리
+	Vertices.clear();
+	Indices.clear();
+	Bones.clear();
+	Sections.clear();
+	MeshRanges.clear();
+
+	MtlInfos.clear();
+	MaterialToSlotIndex.clear();
+	SkeletalMaterials.clear();
+
+	TangentSums.clear();
+	BitangentSums.clear();
+
 	FbxManager* SdkManager = FbxManager::Create();
 
 	FbxIOSettings* ios = FbxIOSettings::Create(SdkManager, IOSROOT);
@@ -135,6 +150,7 @@ bool FFbxImporter::Convert()
 		FSkeletalMaterial NewMaterial;
 		NewMaterial.MaterialInterface = MaterialObject;
 		NewMaterial.MaterialSlotName = MatInfo.Name;
+		NewMaterial.MaterialPath = MaterialPath;		// *.mat 파일 Path
 		SkeletalMaterials.push_back(NewMaterial);
 	}
 
@@ -155,6 +171,9 @@ bool FFbxImporter::Convert()
 		FSkeletalMaterial DefaultMaterial;
 		DefaultMaterial.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial("None");
 		DefaultMaterial.MaterialSlotName = "None";
+		DefaultMaterial.MaterialPath = DefaultMaterial.MaterialInterface
+			? DefaultMaterial.MaterialInterface->GetAssetPathFileName()
+			: FString(); // GetOrCreateMaterial("None");이 성공하면 해당 Default Material의 PathFileName을 MaterialPath로 사용.
 		SkeletalMaterials.push_back(DefaultMaterial);
 
 		const int32 NoneMaterialIndex = static_cast<int32>(SkeletalMaterials.size()) - 1;

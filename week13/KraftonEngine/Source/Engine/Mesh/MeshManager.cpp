@@ -1,8 +1,7 @@
-﻿#include "MeshManager.h"
+﻿#include "Mesh/ObjManager.h"
 #include "Mesh/StaticMesh.h"
-#include "Mesh/SkeletalMesh.h"
 #include "Mesh/ObjImporter.h"
-#include "Mesh/FbxImporter.h"
+#include "Mesh/MeshBinaryHeader.h"
 #include "Materials/Material.h"
 #include "Core/Log.h"
 #include "Serialization/WindowsArchive.h"
@@ -10,12 +9,11 @@
 #include "Materials/MaterialManager.h"
 #include <filesystem>
 #include <algorithm>
+#include <cwctype>
 
-TMap<FString, UStaticMesh*> FMeshManager::StaticMeshCache;
-TMap<FString, USkeletalMesh*> FMeshManager::SkeletalMeshCache;
-TArray<FMeshAssetListItem> FMeshManager::AvailableMeshFiles;
-TArray<FMeshAssetListItem> FMeshManager::AvailableObjFiles;
-TArray<FMeshAssetListItem> FMeshManager::AvailableFbxFiles;
+TMap<FString, UStaticMesh*> FObjManager::StaticMeshCache;
+TArray<FMeshAssetListItem> FObjManager::AvailableMeshFiles;
+TArray<FMeshAssetListItem> FObjManager::AvailableObjFiles;
 
 static void EnsureMeshCacheDirExists()
 {
@@ -28,7 +26,144 @@ static void EnsureMeshCacheDirExists()
 	}
 }
 
-UStaticMesh* FMeshManager::LoadStaticMesh(const FString& PathFileName, ID3D11Device* InDevice)
+FString FObjManager::GetBinaryFilePath(const FString& OriginalPath)
+{
+	std::filesystem::path SrcPath(FPaths::ToWide(OriginalPath));
+	std::wstring Ext = SrcPath.extension().wstring();
+	// 비교전에 확장자를 모두 소문자로 변경한다(Bin, bIn, biN등등 대비용)
+	std::transform(Ext.begin(), Ext.end(), Ext.begin(), ::towlower);
+
+	// 이미 bin 경로가 들어온 경우에는 그대로 사용
+	if (Ext == L".bin")
+	{
+		return OriginalPath;
+	}
+
+	EnsureMeshCacheDirExists();
+
+	// 상대 경로로 반환
+	std::filesystem::path RelPath = std::filesystem::path(L"Asset\\MeshCache") / SrcPath.stem();
+	RelPath += L".bin";
+
+	return FPaths::ToUtf8(RelPath.generic_wstring());
+}
+
+
+void FObjManager::ScanMeshAssets()
+{
+	AvailableMeshFiles.clear();
+
+	const std::filesystem::path MeshCacheRoot = FPaths::RootDir() + L"Asset\\MeshCache\\";
+
+
+	if (!std::filesystem::exists(MeshCacheRoot))
+	{
+		return;
+	}
+
+	const std::filesystem::path ProjectRoot(FPaths::RootDir());
+
+
+	for (const auto& Entry : std::filesystem::recursive_directory_iterator(MeshCacheRoot))
+	{
+		if (!Entry.is_regular_file()) continue;
+
+		const std::filesystem::path& Path = Entry.path();
+		if (Path.extension() != L".bin") continue;
+
+		FMeshAssetListItem Item;
+		Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
+		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
+		AvailableMeshFiles.push_back(std::move(Item));
+	}
+}
+
+void FObjManager::ScanObjSourceFiles()
+{
+	AvailableObjFiles.clear();
+
+	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data\\";
+
+	if (!std::filesystem::exists(DataRoot))
+	{
+		return;
+	}
+
+	const std::filesystem::path ProjectRoot(FPaths::RootDir());
+
+
+	for (const auto& Entry : std::filesystem::recursive_directory_iterator(DataRoot))
+	{
+		if (!Entry.is_regular_file()) continue;
+
+		const std::filesystem::path& Path = Entry.path();
+		std::wstring Ext = Path.extension().wstring();
+
+		// 대소문자 무시
+		std::transform(Ext.begin(), Ext.end(), Ext.begin(), ::towlower);
+		if (Ext != L".obj") continue;
+
+		FMeshAssetListItem Item;
+		Item.DisplayName = FPaths::ToUtf8(Path.filename().wstring());
+		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
+		AvailableObjFiles.push_back(std::move(Item));
+	}
+}
+
+const TArray<FMeshAssetListItem>& FObjManager::GetAvailableMeshFiles()
+{
+	return AvailableMeshFiles;
+}
+
+const TArray<FMeshAssetListItem>& FObjManager::GetAvailableObjFiles()
+{
+	return AvailableObjFiles;
+}
+
+UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice)
+{
+	FString CacheKey = GetBinaryFilePath(PathFileName);
+
+	// 옵션이 다를 수 있으므로 기존 캐시 무효화
+	StaticMeshCache.erase(CacheKey);
+
+	UStaticMesh* StaticMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
+
+	FString BinPath = CacheKey;
+
+	// 항상 리빌드 (옵션이 달라질 수 있음)
+	FStaticMesh* NewMeshAsset = new FStaticMesh();
+	TArray<FStaticMaterial> ParsedMaterials;
+
+	if (FObjImporter::Import(PathFileName, Options, *NewMeshAsset, ParsedMaterials))
+	{
+		NewMeshAsset->PathFileName = PathFileName;
+		// MaterialIndex 캐싱을 위해 Materials를 먼저 설정
+
+		StaticMesh->SetStaticMaterials(std::move(ParsedMaterials));
+		StaticMesh->SetStaticMeshAsset(NewMeshAsset);
+
+		// .bin 저장 (메시 지오메트리 + Material JSON 경로 참조)
+		FWindowsBinWriter Writer(BinPath);
+		if (Writer.IsValid())
+		{
+			// StaticMesh임을 나타내는 Header 추가(Magic Number)
+			MeshBinary::WriteHeader(Writer, MeshBinary::StaticMeshMagic);
+			StaticMesh->Serialize(Writer);
+		}
+	}
+
+	StaticMesh->InitResources(InDevice);
+	StaticMeshCache[CacheKey] = StaticMesh;
+
+	// 리프레시
+	ScanMeshAssets();
+	FMaterialManager::Get().ScanMaterialAssets();
+
+	return StaticMesh;
+}
+
+UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11Device* InDevice)
 {
 	FString CacheKey = GetBinaryFilePath(PathFileName);
 
@@ -63,7 +198,16 @@ UStaticMesh* FMeshManager::LoadStaticMesh(const FString& PathFileName, ID3D11Dev
 		FWindowsBinReader Reader(BinPath);
 		if (Reader.IsValid())
 		{
-			StaticMesh->Serialize(Reader);
+			// Magic Number 정보 기반으로 Static Mesh로 Serialize할지 말지 체크(MeshBinaryHeader.h 참고)
+			if (MeshBinary::ReadHeader(Reader, MeshBinary::StaticMeshMagic))
+			{
+				StaticMesh->Serialize(Reader);
+			}
+			else
+			{
+				UE_LOG("Invalid StaticMesh binary header: %s", BinPath.c_str());
+				bNeedRebuild = true;
+			}
 		}
 		else
 		{
@@ -92,6 +236,8 @@ UStaticMesh* FMeshManager::LoadStaticMesh(const FString& PathFileName, ID3D11Dev
 			FWindowsBinWriter Writer(BinPath);
 			if (Writer.IsValid())
 			{
+				// binary 파일 쓰기 작업시 Magic Number 추가
+				MeshBinary::WriteHeader(Writer, MeshBinary::StaticMeshMagic);
 				StaticMesh->Serialize(Writer);
 			}
 		}
@@ -108,127 +254,8 @@ UStaticMesh* FMeshManager::LoadStaticMesh(const FString& PathFileName, ID3D11Dev
 	return StaticMesh;
 }
 
-UStaticMesh* FMeshManager::LoadStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice)
-{
-	FString CacheKey = GetBinaryFilePath(PathFileName);
 
-	// 옵션이 다를 수 있으므로 기존 캐시 무효화
-	StaticMeshCache.erase(CacheKey);
-
-	UStaticMesh* StaticMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
-
-	FString BinPath = CacheKey;
-
-	// 항상 리빌드 (옵션이 달라질 수 있음)
-	FStaticMesh* NewMeshAsset = new FStaticMesh();
-	TArray<FStaticMaterial> ParsedMaterials;
-
-	if (FObjImporter::Import(PathFileName, Options, *NewMeshAsset, ParsedMaterials))
-	{
-		NewMeshAsset->PathFileName = PathFileName;
-		// MaterialIndex 캐싱을 위해 Materials를 먼저 설정
-
-		StaticMesh->SetStaticMaterials(std::move(ParsedMaterials));
-		StaticMesh->SetStaticMeshAsset(NewMeshAsset);
-
-		// .bin 저장 (메시 지오메트리 + Material JSON 경로 참조)
-		FWindowsBinWriter Writer(BinPath);
-		if (Writer.IsValid())
-		{
-			StaticMesh->Serialize(Writer);
-		}
-	}
-
-	StaticMesh->InitResources(InDevice);
-	StaticMeshCache[CacheKey] = StaticMesh;
-
-	// 리프레시
-	ScanMeshAssets();
-	FMaterialManager::Get().ScanMaterialAssets();
-
-	return StaticMesh;
-}
-
-FString FMeshManager::GetBinaryFilePath(const FString& OriginalPath)
-{
-	std::filesystem::path SrcPath(FPaths::ToWide(OriginalPath));
-	std::wstring Ext = SrcPath.extension().wstring();
-
-	// 이미 bin 경로가 들어온 경우에는 그대로 사용
-	if (Ext == L".bin")
-	{
-		return OriginalPath;
-	}
-
-	EnsureMeshCacheDirExists();
-
-	// 상대 경로로 반환
-	std::filesystem::path RelPath = std::filesystem::path(L"Asset\\MeshCache") / SrcPath.stem();
-	RelPath += L".bin";
-
-	return FPaths::ToUtf8(RelPath.generic_wstring());
-}
-
-void FMeshManager::ScanMeshAssets()
-{
-	AvailableMeshFiles.clear();
-
-	const std::filesystem::path MeshCacheRoot = FPaths::RootDir() + L"Asset\\MeshCache\\";
-
-
-	if (!std::filesystem::exists(MeshCacheRoot))
-	{
-		return;
-	}
-
-	const std::filesystem::path ProjectRoot(FPaths::RootDir());
-
-
-	for (const auto& Entry : std::filesystem::recursive_directory_iterator(MeshCacheRoot))
-	{
-		if (!Entry.is_regular_file()) continue;
-
-		const std::filesystem::path& Path = Entry.path();
-		if (Path.extension() != L".bin") continue;
-
-		FMeshAssetListItem Item;
-		Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
-		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
-		AvailableMeshFiles.push_back(std::move(Item));
-	}
-}
-
-void FMeshManager::ScanFbxSourceFiles()
-{
-	AvailableFbxFiles.clear();
-
-	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data\\";
-
-	if (!std::filesystem::exists(DataRoot))
-	{
-		return;
-	}
-
-	const std::filesystem::path ProjectRoot(FPaths::RootDir());
-
-	for (const auto& Entry : std::filesystem::recursive_directory_iterator(DataRoot))
-	{
-		if (!Entry.is_regular_file()) continue;
-
-		const std::filesystem::path& Path = Entry.path();
-		std::wstring Ext = Path.extension().wstring();
-
-		std::transform(Ext.begin(), Ext.end(), Ext.begin(), ::towlower);
-		if (Ext != L".fbx") continue;
-
-		FMeshAssetListItem Item;
-		Item.DisplayName = FPaths::ToUtf8(Path.filename().wstring());
-		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
-		AvailableFbxFiles.push_back(std::move(Item));
-	}
-}
-
-void FMeshManager::ReleaseAllGPU()
+void FObjManager::ReleaseAllGPU()
 {
 	for (auto& [Key, Mesh] : StaticMeshCache)
 	{
@@ -252,47 +279,4 @@ void FMeshManager::ReleaseAllGPU()
 		}
 	}
 	StaticMeshCache.clear();
-}
-
-
-USkeletalMesh* FMeshManager::LoadSkeletalMesh(const FString& PathFileName, ID3D11Device* InDevice)
-{
-	if (SkeletalMeshCache.find(PathFileName) != SkeletalMeshCache.end())
-	{
-		return SkeletalMeshCache[PathFileName];
-	}
-
-	FSkeletalMesh* SkeletalMeshAsset = nullptr;
-	if (!LoadSkeletalMeshAsset(PathFileName, InDevice, SkeletalMeshAsset))
-	{
-		return nullptr;
-	}
-	USkeletalMesh* SkeletalMesh = new USkeletalMesh();
-	SkeletalMesh->SetSkeletalMaterials(std::move(FFbxImporter::SkeletalMaterials));
-	SkeletalMesh->SetSkeletalMeshAsset(SkeletalMeshAsset);
-
-	SkeletalMesh->InitResources(InDevice);
-
-	SkeletalMeshCache[PathFileName] = SkeletalMesh;
-
-	return SkeletalMesh;
-}
-
-bool FMeshManager::LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Device* InDevice, FSkeletalMesh*& OutMesh)
-{
-	if (!FFbxImporter::Import(PathFileName))
-	{
-		//UE_LOG("Failed to import FBX file: %s", FilePath.c_str());
-		return false;
-	}
-
-	OutMesh = new FSkeletalMesh();
-	OutMesh->PathFileName = PathFileName;
-	OutMesh->Vertices = std::move(FFbxImporter::Vertices);
-	OutMesh->Indices = std::move(FFbxImporter::Indices);
-	OutMesh->Sections = std::move(FFbxImporter::Sections);
-	OutMesh->MeshRanges = std::move(FFbxImporter::MeshRanges);
-	OutMesh->Bones = std::move(FFbxImporter::Bones);
-
-	return true;
 }
