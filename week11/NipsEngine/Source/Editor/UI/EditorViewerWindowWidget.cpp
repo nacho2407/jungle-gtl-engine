@@ -21,8 +21,7 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
     if (!EditorEngine)
         return;
 
-    auto& Layout = EditorEngine->GetViewportLayout();
-    auto& SceneViewport = Layout.GetSceneViewport(0);
+    auto& SceneViewport = EditorEngine->GetViewer().GetViewport();
     const FViewportRect& Rect = SceneViewport.GetRect();
 
     if (Rect.Width <= 0 || Rect.Height <= 0)

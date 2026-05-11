@@ -32,6 +32,9 @@ private:
 	 */
 	void RenderViewport(FRenderer& Renderer, int32 ViewportIndex);
 
+	// 기존 Viewport Render 동작 유지, Viewer 에 대한 로직만 추가
+	void RenderViewerViewport(FRenderer& Renderer);
+
 	UEditorEngine* Editor = nullptr;
 	FRenderCollector Collector;
 	FRenderBus Bus;

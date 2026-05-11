@@ -13,6 +13,7 @@
 #include "Editor/Undo/EditorUndoSystem.h"
 #include "Camera/ViewportCamera.h"
 #include "Editor/Viewport/ViewportLayout.h"
+#include "Editor/Viewer/EditorViewer.h"
 
 class UGizmoComponent;
 class FEditorRenderPipeline;
@@ -92,6 +93,8 @@ public:
 	void UnregisterWorld(const FName& Handle);
 	FName GetEditorWorldHandle() const;
 
+	FEditorViewer& GetViewer() { return Viewer; }
+
 private:
 	friend class FEditorUndoSystem;
 
@@ -111,6 +114,7 @@ private:
 
 	FEditorMainPanel MainPanel;
 	FEditorViewportLayout ViewportLayout;
+    FEditorViewer Viewer;	
 
 	FInputPolicyRouter EditorInputRouter;
 	FPIESession PIESession;
