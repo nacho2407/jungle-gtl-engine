@@ -25,6 +25,21 @@ bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, const FString& Sh
         return false;
     }
 
+    // Cache hit early return: 같은 FBX의 첫 material key가 이미 캐시에 있으면 재파싱 회피.
+    // 키 구성은 아래 등록 루프와 동일한 패턴이어야 함.
+    {
+        const fs::path AutoMaterialDir = fs::path(L"Asset") / L"Material" / L"Auto";
+        const FString FirstMaterialName = FImportedMaterialPolicy::MakeImportedMaterialAssetName(NormalizedFbxPath, 0);
+        const fs::path RelativeMatPath = AutoMaterialDir / FPaths::ToWide(FirstMaterialName + ".mat");
+        const FString FirstMaterialKey = FPaths::Normalize(FPaths::ToUtf8(RelativeMatPath.generic_wstring()));
+
+        if (ResourceManager.MaterialCache.ContainsMaterialKey(FirstMaterialKey))
+        {
+            UE_LOG("[FbxMaterialLoadService] Skipped (already cached): %s", NormalizedFbxPath.c_str());
+            return true;
+        }
+    }
+
     UShader* Shader = ResourceManager.GetShader(ShaderName);
     if (!Shader)
     {

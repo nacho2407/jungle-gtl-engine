@@ -78,10 +78,24 @@ namespace
     }
 
     // FBX 텍스처 경로 후보를 검증/변환. 존재하지 않으면 빈 문자열.
-    // 시도 순서: 후보 그대로 (절대 경로) → FBX dir 기준 상대 → 파일명만으로 FBX dir 재귀 검색.
-    FString TryResolveCandidate(const fs::path& FbxDir, const FString& Candidate)
+    // 시도 순서: <FbmDir>/<filename> → 후보 그대로 (절대/상대) → 파일명만으로 FBX dir 재귀 검색.
+    FString TryResolveCandidate(const fs::path& FbxDir, const fs::path& FbmDir, const FString& Candidate)
     {
         if (Candidate.empty()) return {};
+
+        const fs::path FilenameOnly = fs::path(FPaths::ToWide(Candidate)).filename();
+
+        // 0) 임베디드 텍스처가 풀려있는 <fbxname>.fbm/<filename> 우선 시도.
+        //    FBX SDK가 Import 시 자동 추출하므로 가장 일반적인 위치.
+        if (!FbmDir.empty() && !FilenameOnly.empty())
+        {
+            std::error_code Ec;
+            const fs::path FbmCandidate = (FbmDir / FilenameOnly).lexically_normal();
+            if (fs::is_regular_file(FbmCandidate, Ec))
+            {
+                return ToEngineRelativePath(FbmCandidate);
+            }
+        }
 
         // 1) 후보를 그대로 시도 (절대 경로일 수 있음). 상대 경로면 FBX dir에 붙임.
         {
@@ -99,13 +113,12 @@ namespace
         }
 
         // 2) 파일명만 떼서 FBX dir에서 재귀 검색 (ObjMtlLoader와 동일 패턴)
-        const fs::path Filename = fs::path(FPaths::ToWide(Candidate)).filename();
-        if (!Filename.empty())
+        if (!FilenameOnly.empty())
         {
             FString FoundPath;
             if (FFileUtils::FindFileRecursively(
                 FPaths::ToUtf8(FbxDir.generic_wstring()),
-                FPaths::ToUtf8(Filename.generic_wstring()),
+                FPaths::ToUtf8(FilenameOnly.generic_wstring()),
                 FoundPath))
             {
                 const fs::path FoundAbsPath = (FbxDir / fs::path(FPaths::ToWide(FoundPath))).lexically_normal();
@@ -117,7 +130,7 @@ namespace
     }
 
     // FbxFileTexture 객체에서 첫 유효한 경로를 엔진 상대 경로로 반환.
-    FString ResolveFbxTexturePath(const fs::path& FbxDir, FbxFileTexture* Tex)
+    FString ResolveFbxTexturePath(const fs::path& FbxDir, const fs::path& FbmDir, FbxFileTexture* Tex)
     {
         if (!Tex) return {};
 
@@ -126,7 +139,7 @@ namespace
         {
             if (*RelName)
             {
-                FString Resolved = TryResolveCandidate(FbxDir, FString(RelName));
+                FString Resolved = TryResolveCandidate(FbxDir, FbmDir, FString(RelName));
                 if (!Resolved.empty()) return Resolved;
             }
         }
@@ -136,7 +149,7 @@ namespace
         {
             if (*AbsName)
             {
-                FString Resolved = TryResolveCandidate(FbxDir, FString(AbsName));
+                FString Resolved = TryResolveCandidate(FbxDir, FbmDir, FString(AbsName));
                 if (!Resolved.empty()) return Resolved;
             }
         }
@@ -159,14 +172,14 @@ namespace
     // 한 property에 대해 텍스처 추출 + 경로 변환 + FMaterial 필드 채움.
     // 추출 실패 시 OutHasFlag/OutPath은 변경하지 않음 (caller가 default false/empty 유지).
     void TryExtractTexture(FbxSurfaceMaterial* SurfMat, const char* PropName,
-                           const fs::path& FbxDir,
+                           const fs::path& FbxDir, const fs::path& FbmDir,
                            FString& OutPath, bool& OutHasFlag,
                            const char* LogLabel)
     {
         FbxFileTexture* Tex = GetFirstFileTexture(SurfMat, PropName);
         if (!Tex) return;
 
-        const FString TexPath = ResolveFbxTexturePath(FbxDir, Tex);
+        const FString TexPath = ResolveFbxTexturePath(FbxDir, FbmDir, Tex);
         if (!TexPath.empty())
         {
             OutPath = TexPath;
@@ -194,7 +207,10 @@ bool FFbxMaterialLoader::Load(const FString& FbxFilePath,
         return false;
     }
 
-    const fs::path FbxDir = fs::path(FPaths::ToWide(FbxFilePath)).parent_path();
+    const fs::path FbxPathFs = fs::path(FPaths::ToWide(FbxFilePath));
+    const fs::path FbxDir = FbxPathFs.parent_path();
+    // FBX SDK가 임베디드 텍스처를 자동 추출하는 위치: <FbxDir>/<FbxStem>.fbm/
+    const fs::path FbmDir = FbxDir / (FbxPathFs.stem().wstring() + L".fbm");
 
     const int32 MaterialCount = Scene->GetSrcObjectCount<FbxSurfaceMaterial>();
     UE_LOG("[FbxMaterialLoader] %s | FbxSurfaceMaterial count = %d", FbxFilePath.c_str(), MaterialCount);
@@ -219,20 +235,20 @@ bool FFbxMaterialLoader::Load(const FString& FbxFilePath,
         FMaterial& MD = Mat->MaterialData;
 
         // 표준 5개 텍스처 슬롯 추출
-        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sDiffuse,  FbxDir,
+        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sDiffuse,  FbxDir, FbmDir,
             MD.DiffuseTexPath,  MD.bHasDiffuseTexture,  "Diffuse");
-        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sAmbient,  FbxDir,
+        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sAmbient,  FbxDir, FbmDir,
             MD.AmbientTexPath,  MD.bHasAmbientTexture,  "Ambient");
-        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sSpecular, FbxDir,
+        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sSpecular, FbxDir, FbmDir,
             MD.SpecularTexPath, MD.bHasSpecularTexture, "Specular");
-        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sEmissive, FbxDir,
+        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sEmissive, FbxDir, FbmDir,
             MD.EmissiveTexPath, MD.bHasEmissiveTexture, "Emissive");
         // Normal map 우선, 없으면 Bump (FMaterial은 BumpTexPath 한 슬롯에 통합)
-        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sNormalMap, FbxDir,
+        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sNormalMap, FbxDir, FbmDir,
             MD.BumpTexPath, MD.bHasBumpTexture, "Normal");
         if (!MD.bHasBumpTexture)
         {
-            TryExtractTexture(SurfMat, FbxSurfaceMaterial::sBump, FbxDir,
+            TryExtractTexture(SurfMat, FbxSurfaceMaterial::sBump, FbxDir, FbmDir,
                 MD.BumpTexPath, MD.bHasBumpTexture, "Bump");
         }
 
@@ -257,6 +273,38 @@ bool FFbxMaterialLoader::Load(const FString& FbxFilePath,
             TexOrNone(MD.bHasSpecularTexture, MD.SpecularTexPath),
             TexOrNone(MD.bHasEmissiveTexture, MD.EmissiveTexPath),
             TexOrNone(MD.bHasBumpTexture,     MD.BumpTexPath));
+
+        // 표준 5개 슬롯 모두 비었으면 — 다른 property에 텍스처가 붙어있는지 진단.
+        // (Blender Principled BSDF 등이 비표준 property로 export하는 경우 흔함.)
+        const bool bAnyTex = MD.bHasDiffuseTexture || MD.bHasAmbientTexture
+            || MD.bHasSpecularTexture || MD.bHasEmissiveTexture || MD.bHasBumpTexture;
+        if (!bAnyTex)
+        {
+            int32 DiagFound = 0;
+            FbxProperty DiagProp = SurfMat->GetFirstProperty();
+            while (DiagProp.IsValid())
+            {
+                const int32 TexCount = DiagProp.GetSrcObjectCount<FbxFileTexture>();
+                for (int32 t = 0; t < TexCount; ++t)
+                {
+                    FbxFileTexture* T = DiagProp.GetSrcObject<FbxFileTexture>(t);
+                    if (T)
+                    {
+                        UE_LOG_WARNING("[FbxMaterialLoader]       [diag] %s: property '%s' has texture: rel='%s' abs='%s'",
+                            MatName.c_str(),
+                            DiagProp.GetName().Buffer(),
+                            T->GetRelativeFileName(),
+                            T->GetFileName());
+                        ++DiagFound;
+                    }
+                }
+                DiagProp = SurfMat->GetNextProperty(DiagProp);
+            }
+            if (DiagFound == 0)
+            {
+                UE_LOG("[FbxMaterialLoader]       [diag] %s: no FbxFileTexture connected to any property", MatName.c_str());
+            }
+        }
     }
 
     // ObjMtlLoader와 동일하게 MaterialParams에 셰이더 바인딩 정보 채움.
