@@ -50,11 +50,20 @@ void FMeshEditorViewportClient::CreatePreviewGizmo()
 	Gizmo->Deactivate();
 }
 
+void FMeshEditorViewportClient::NotifyViewportResized(int32 NewWidth, int32 NewHeight)
+{
+	if (Viewport)
+	{
+		ViewTransform.AspectRatio = static_cast<float>(NewWidth) / static_cast<float>(NewHeight);
+	}
+}
+
 bool FMeshEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
 {
 	OutPOV.Location = ViewTransform.ViewLocation;
 	OutPOV.Rotation = ViewTransform.ViewRotation;
 	OutPOV.FOV = ViewTransform.FOV;
+	OutPOV.AspectRatio = ViewTransform.AspectRatio;
 	return true;
 }
 
@@ -210,7 +219,6 @@ void FMeshEditorViewportClient::TickInteraction(float DeltaTime)
 	if (!Gizmo || !PreviewWorld) return;
 
 	Gizmo->ApplyScreenSpaceScaling(ViewTransform.ViewLocation, ViewTransform.bIsOrtho, ViewTransform.OrthoZoom);
-
 	Gizmo->SetAxisMask(UGizmoComponent::ComputeAxisMask(RenderOptions.ViewportType, Gizmo->GetMode()));
 
 	if (InputSystem::Get().GetGuiInputState().bUsingMouse && !Gizmo->IsHolding()) return;
