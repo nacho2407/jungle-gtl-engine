@@ -8,6 +8,18 @@ void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 {
 	USkinnedMeshComponent::SetSkeletalMesh(InMesh);
 	InitSkinningCache();
+	// 새 mesh로 바뀌면 기존 bone edit pose를 갱신한다.
+	BoneEditLocalTransforms.clear();
+	bUseBoneEditPose = false;
+
+	if (SkeletalMesh && SkeletalMesh->GetSkeletalMeshAsset())
+	{
+		ResetBoneEditPose();
+	}
+
+	CacheLocalBounds();
+	MarkRenderStateDirty();
+	MarkWorldBoundsDirty();
 }
 
 FMeshBuffer* USkeletalMeshComponent::GetMeshBuffer() const

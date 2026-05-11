@@ -103,7 +103,6 @@ void FSkeletalMeshSceneProxy::RebuildSectionDraws()
 		Draw.Material = FMaterialManager::Get().GetOrCreateMaterial(Section.MaterialSlotName);
 		Draw.FirstIndex = Section.FirstIndex;
 		Draw.IndexCount = Section.IndexCount;
-		// Mesh 바꿀 때 마다 SectionDraw가 누적되지 않도록 clear.. 해주긴 하는데 이걸 꼭 해줘야 하나?
 
 
 		int32 i = Section.MaterialIndex;

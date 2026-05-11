@@ -139,8 +139,18 @@ bool FFbxImporter::Convert()
 	}
 
 	// Default Material 경우 추가
-	bool bNeddsNoneSlot = SkeletalMaterials.empty();
-	if (bNeddsNoneSlot)
+	bool bNeedsNoneSlot = SkeletalMaterials.empty();
+
+	for (const FSkeletalMeshSection& Section : Sections)
+	{
+		if (Section.MaterialSlotName == "None")
+		{
+			bNeedsNoneSlot = true;
+			break;
+		}
+	}
+
+	if (bNeedsNoneSlot)
 	{
 		FSkeletalMaterial DefaultMaterial;
 		DefaultMaterial.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial("None");
