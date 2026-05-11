@@ -50,6 +50,7 @@ void FMeshEditorWidget::Open(UObject* Object)
 	ViewportClient.SetPreviewMeshComponent(Actor->GetComponentByClass<USkeletalMeshComponent>());
 
 	ViewportClient.CreatePreviewGizmo();
+	ViewportClient.ResetCameraToPreviousBounds();
 
 	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
 
@@ -165,6 +166,13 @@ void FMeshEditorWidget::Render(float DeltaTime)
 			{
 				ImGui::Image((ImTextureID)VP->GetSRV(), Size);
 			}
+
+			constexpr float ToolbarHeight = 28.0f;
+
+			ImDrawList* DrawList = ImGui::GetWindowDrawList();
+			DrawList->AddRectFilled(ViewportPos,
+				ImVec2(ViewportPos.x + Size.x, ViewportPos.y + ToolbarHeight),
+				IM_COL32(40, 40, 40, 255));
 
 			FViewportToolbarContext Context;
 			Context.Renderer = &GEngine->GetRenderer();

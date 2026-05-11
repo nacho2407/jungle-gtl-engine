@@ -196,7 +196,7 @@ void USkeletalMeshComponent::SetBoneRotationByIndex(int32 BoneIndex, const FRota
 	}
 
 	bUseBoneEditPose = true;
-	MarkRenderStateDirty();
+	UpdateCPUSkinning();
 	MarkWorldBoundsDirty();
 }
 
