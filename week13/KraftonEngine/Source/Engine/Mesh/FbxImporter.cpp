@@ -81,7 +81,7 @@ bool FFbxImporter::Import(const FString& FilePath)
 	// 임의로 m 변환. UE는 cm 단위
 	FbxSystemUnit::m.ConvertScene(Scene);
 
-	FbxAxisSystem UnrealAxisSystem(FbxAxisSystem::eZAxis, (FbxAxisSystem::EFrontVector) FbxAxisSystem::eParityOdd, FbxAxisSystem::eLeftHanded);
+	FbxAxisSystem UnrealAxisSystem(FbxAxisSystem::eZAxis, FbxAxisSystem::eParityEven, FbxAxisSystem::eLeftHanded);
 	UnrealAxisSystem.DeepConvertScene(Scene);
 
 	TriangulateScene(Scene);
@@ -200,6 +200,20 @@ static FMatrix ConvertFbxMatrix(const FbxMatrix& FbxMat)
 	return Mat;
 }
 
+static FbxAMatrix GetGeometryTransform(FbxNode* Node)
+{
+	FbxAMatrix GeometryTransform;
+	if (!Node)
+	{
+		return GeometryTransform;
+	}
+
+	GeometryTransform.SetT(Node->GetGeometricTranslation(FbxNode::eSourcePivot));
+	GeometryTransform.SetR(Node->GetGeometricRotation(FbxNode::eSourcePivot));
+	GeometryTransform.SetS(Node->GetGeometricScaling(FbxNode::eSourcePivot));
+	return GeometryTransform;
+}
+
 void FFbxImporter::ParseBone(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& OutNodeToIndex)
 {
 	Bones.clear();
@@ -260,15 +274,16 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 		if (!Mesh) continue;
 
 		int32 DeformerCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
-		if (DeformerCount <= 0) continue;
-
-		FbxSkin* Skin = (FbxSkin*)Mesh->GetDeformer(0, FbxDeformer::eSkin);
-		int32 ClusterCount = Skin->GetClusterCount();
+		FbxSkin* Skin = DeformerCount > 0 ? (FbxSkin*)Mesh->GetDeformer(0, FbxDeformer::eSkin) : nullptr;
+		int32 ClusterCount = Skin ? Skin->GetClusterCount() : 0;
+		const bool bHasSkin = Skin && ClusterCount > 0;
+		const int32 RigidBoneIndex = bHasSkin ? -1 : FindNearestParentBoneIndex(Node, NodeToIndex);
 
 		struct WeightData { int32 BoneIndex; float Weight; };
 		TArray<TArray<WeightData>> TempWeights(Mesh->GetControlPointsCount());
-		FMatrix MeshBindGlobal = FMatrix::Identity;
-		bool bHasMeshBindGlobal = false;
+		FbxAMatrix NodeGeometryTransform = GetGeometryTransform(Node);
+		FMatrix MeshBindGlobal = ConvertFbxMatrix(Node->EvaluateGlobalTransform() * NodeGeometryTransform);
+		bool bHasClusterMeshBindGlobal = false;
 
 		for (int32 i = 0; i < ClusterCount; ++i)
 		{
@@ -284,12 +299,12 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 			int32 BoneIndex = It->second;
 			Bones[BoneIndex].InverseBindPoseMatrix = ConvertFbxMatrix(LinkBindMatrix).GetInverse();
 
-			if (!bHasMeshBindGlobal)
+			if (!bHasClusterMeshBindGlobal)
 			{
 				FbxAMatrix MeshBindMatrix;
 				Cluster->GetTransformMatrix(MeshBindMatrix);
 				MeshBindGlobal = ConvertFbxMatrix(MeshBindMatrix);
-				bHasMeshBindGlobal = true;
+				bHasClusterMeshBindGlobal = true;
 			}
 
 			int32* ControlPointIndices = Cluster->GetControlPointIndices();
@@ -349,7 +364,12 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 					return A.Weight > B.Weight;
 				});
 
-				for (int32 k = 0; k < (int32)TempWeights[CPIndex].size() && k < 4; ++k)
+				if (Weights.empty() && RigidBoneIndex >= 0)
+				{
+					Weights.push_back({ RigidBoneIndex, 1.0f });
+				}
+
+				for (int32 k = 0; k < (int32)Weights.size() && k < 4; ++k)
 				{
 					Vertex.BoneIndices[k] = Weights[k].BoneIndex;
 					Vertex.BoneWeights[k] = Weights[k].Weight;

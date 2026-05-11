@@ -87,8 +87,12 @@ bool FSkeletalMeshSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11Devi
 
 			if (AccumWeight <= 0.0f)
 			{
-				SkinnedPos = Src.Position;
-				SkinnedNormal = Src.Normal;
+				SkinnedPos = MeshBindGlobal.TransformPositionWithW(Src.Position);
+				SkinnedNormal = MeshBindGlobal.TransformVector(Src.Normal);
+				if (!SkinnedNormal.IsNearlyZero())
+				{
+					SkinnedNormal.Normalize();
+				}
 			}
 			else if (!SkinnedNormal.IsNearlyZero())
 			{
