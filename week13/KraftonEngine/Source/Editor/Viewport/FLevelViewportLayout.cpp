@@ -27,6 +27,7 @@
 #include "Render/Types/MinimalViewInfo.h"
 #include "Component/GizmoComponent.h"
 #include "Component/Light/LightComponentBase.h"
+#include "UI/Toolbar/GizmoToolbar.h"
 
 #include "GameFramework/StaticMeshActor.h"
 #include "GameFramework/BoxActor.h"
@@ -41,22 +42,6 @@
 
 namespace
 {
-enum class EToolbarIcon : int32
-{
-	Menu = 0,
-	Setting,
-	AddActor,
-	Translate,
-	Rotate,
-	Scale,
-	WorldSpace,
-	LocalSpace,
-	TranslateSnap,
-	RotateSnap,
-	ScaleSnap,
-	ShowFlag,
-	Count
-};
 
 const wchar_t* GetToolbarIconFileName(EToolbarIcon Icon)
 {
@@ -1190,53 +1175,15 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 
 void FLevelViewportLayout::RenderSharedGizmoToolbar(float ToolbarLeft, float ToolbarTop)
 {
-	if (!Editor)
-	{
-		return;
-	}
-
-	UGizmoComponent* Gizmo = Editor->GetGizmo();
-	if (!Gizmo)
-	{
-		return;
-	}
-
-	EnsureToolbarIconsLoaded(RendererPtr);
-
-	constexpr float ToolbarHeight = 28.0f;
-	constexpr float IconSize = 16.0f;
-	constexpr float ButtonPadding = (ToolbarHeight - IconSize) * 0.5f;
-	constexpr float ButtonSpacing = 4.0f;
-	constexpr float PlayStopButtonWidth = 24.0f;
-	constexpr float GroupSpacing = 12.0f;
-	constexpr float ToolbarFallbackIconSize = 14.0f;
-	constexpr float ToolbarMaxIconSize = 16.0f;
-
-	ImGui::SetCursorScreenPos(ImVec2(
-		ToolbarLeft + ButtonPadding + (PlayStopButtonWidth * 2.0f) + ButtonSpacing + GroupSpacing,
-		ToolbarTop + ButtonPadding));
-
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.15f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 1.0f, 1.0f, 0.3f));
-
-	auto DrawGizmoIcon = [&](const char* Id, EToolbarIcon Icon, EGizmoMode TargetMode, const char* FallbackLabel) -> bool
-	{
-		const bool bSelected = (Gizmo->GetMode() == TargetMode);
-		if (bSelected)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-		}
-		const bool bClicked = DrawToolbarIconButton(Id, Icon, FallbackLabel, ToolbarFallbackIconSize, ToolbarMaxIconSize);
-		if (bSelected)
-		{
-			ImGui::PopStyleColor();
-		}
-		return bClicked;
-	};
-
-	// 상단 툴바에서도 Place Actor 컨텍스트 메뉴를 바로 열 수 있게 한다.
-	if (DrawToolbarIconButton("##SharedAddActorIcon", EToolbarIcon::AddActor, "Add", ToolbarFallbackIconSize, ToolbarMaxIconSize))
+	FGizmoToolbarContext Context;
+	Context.Renderer = RendererPtr;
+	Context.Gizmo = Editor->GetGizmo();
+	Context.Settings = &Editor->GetSettings().LevelViewportGizmoSettings;
+	Context.ToolbarLeft = ToolbarLeft;
+	Context.ToolbarTop = ToolbarTop;
+	Context.bReservePlayStopSpace = true;
+	Context.bShowAddActor = true;
+	Context.OnAddActorClicked = [&]()
 	{
 		const FPoint MousePos = { ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y };
 		ContextMenuState.PendingPopupPos = MousePos;
@@ -1260,81 +1207,23 @@ void FLevelViewportLayout::RenderSharedGizmoToolbar(float ToolbarLeft, float Too
 				break;
 			}
 		}
-	}
-
-	ImGui::SameLine(0.0f, GroupSpacing);
-	if (DrawGizmoIcon("##SharedTranslateToolIcon", EToolbarIcon::Translate, EGizmoMode::Translate, "Translate"))
+	};
+	Context.OnCoordSystemToggled = [&]()
 	{
-		Gizmo->SetTranslateMode();
-	}
-	ImGui::SameLine(0.0f, ButtonSpacing);
-	if (DrawGizmoIcon("##SharedRotateToolIcon", EToolbarIcon::Rotate, EGizmoMode::Rotate, "Rotate"))
-	{
-		Gizmo->SetRotateMode();
-	}
-	ImGui::SameLine(0.0f, ButtonSpacing);
-	if (DrawGizmoIcon("##SharedScaleToolIcon", EToolbarIcon::Scale, EGizmoMode::Scale, "Scale"))
-	{
-		Gizmo->SetScaleMode();
-	}
-
-	ImGui::PopStyleColor(3);
-
-	FEditorSettings& Settings = Editor->GetSettings();
-
-	ImGui::SameLine(0.0f, GroupSpacing);
-	const bool bWorldCoord = Settings.CoordSystem == EEditorCoordSystem::World;
-	if (bWorldCoord)
-	{
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-	}
-	if (DrawToolbarIconButton("##SharedCoordSystemIcon",
-		bWorldCoord ? EToolbarIcon::WorldSpace : EToolbarIcon::LocalSpace,
-		bWorldCoord ? "World" : "Local",
-		ToolbarFallbackIconSize,
-		ToolbarMaxIconSize))
-	{
-		Editor->ToggleCoordSystem();
-	}
-	if (bWorldCoord)
-	{
-		ImGui::PopStyleColor();
-	}
-
-	// 스냅 토글과 수치를 같은 자리에서 바꾸고 즉시 Gizmo 설정에 반영한다.
-	auto DrawSnapControl = [&](const char* Id, EToolbarIcon Icon, const char* FallbackLabel, bool& bEnabled, float& Value, float MinValue)
-	{
-		ImGui::SameLine(0.0f, 6.0f);
-		ImGui::PushID(Id);
-		const bool bWasEnabled = bEnabled;
-		if (bWasEnabled)
+		if (Editor)
 		{
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.38f, 0.58f, 0.88f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.22f, 0.42f, 0.72f, 1.0f));
+			Editor->ToggleCoordSystem();
 		}
-		if (DrawToolbarIconButton("##SnapToggle", Icon, FallbackLabel, ToolbarFallbackIconSize, ToolbarMaxIconSize))
+	};
+	Context.OnSettingsChanged = [&]()
+	{
+		if (Editor)
 		{
-			bEnabled = !bEnabled;
+			Editor->ApplyTransformSettingsToGizmo();
 		}
-		if (bWasEnabled)
-		{
-			ImGui::PopStyleColor(3);
-		}
-		ImGui::SameLine(0.0f, 2.0f);
-		ImGui::SetNextItemWidth(48.0f);
-		if (ImGui::InputFloat("##Value", &Value, 0.0f, 0.0f, "%.2f") && Value < MinValue)
-		{
-			Value = MinValue;
-		}
-		ImGui::PopID();
 	};
 
-	DrawSnapControl("TranslateSnap", EToolbarIcon::TranslateSnap, "T", Settings.bEnableTranslationSnap, Settings.TranslationSnapSize, 0.001f);
-	DrawSnapControl("RotateSnap", EToolbarIcon::RotateSnap, "R", Settings.bEnableRotationSnap, Settings.RotationSnapSize, 0.001f);
-	DrawSnapControl("ScaleSnap", EToolbarIcon::ScaleSnap, "S", Settings.bEnableScaleSnap, Settings.ScaleSnapSize, 0.001f);
-
-	Editor->ApplyTransformSettingsToGizmo();
+	FGizmoToolbar::Render(Context);
 }
 
 void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)

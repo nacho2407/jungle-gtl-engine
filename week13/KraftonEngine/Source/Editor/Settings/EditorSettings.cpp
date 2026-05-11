@@ -75,6 +75,8 @@ namespace Key
 
 	// Transform Tools
 	constexpr const char* TransformTools = "TransformTools";
+	constexpr const char* MeshEditorTransformTools = "MeshEditorTransformTools";
+
 	constexpr const char* CoordSystem = "CoordSystem";
 	constexpr const char* bEnableTranslationSnap = "bEnableTranslationSnap";
 	constexpr const char* TranslationSnapSize = "TranslationSnapSize";
@@ -178,14 +180,24 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	Root[Key::PerspectiveCamera] = CamObj;
 
 	JSON TransformObj = Object();
-	TransformObj[Key::CoordSystem] = static_cast<int32>(CoordSystem);
-	TransformObj[Key::bEnableTranslationSnap] = bEnableTranslationSnap;
-	TransformObj[Key::TranslationSnapSize] = TranslationSnapSize;
-	TransformObj[Key::bEnableRotationSnap] = bEnableRotationSnap;
-	TransformObj[Key::RotationSnapSize] = RotationSnapSize;
-	TransformObj[Key::bEnableScaleSnap] = bEnableScaleSnap;
-	TransformObj[Key::ScaleSnapSize] = ScaleSnapSize;
+	TransformObj[Key::CoordSystem] = static_cast<int32>(LevelViewportGizmoSettings.CoordSystem);
+	TransformObj[Key::bEnableTranslationSnap] = LevelViewportGizmoSettings.bEnableTranslationSnap;
+	TransformObj[Key::TranslationSnapSize] = LevelViewportGizmoSettings.TranslationSnapSize;
+	TransformObj[Key::bEnableRotationSnap] = LevelViewportGizmoSettings.bEnableRotationSnap;
+	TransformObj[Key::RotationSnapSize] = LevelViewportGizmoSettings.RotationSnapSize;
+	TransformObj[Key::bEnableScaleSnap] = LevelViewportGizmoSettings.bEnableScaleSnap;
+	TransformObj[Key::ScaleSnapSize] = LevelViewportGizmoSettings.ScaleSnapSize;
 	Root[Key::TransformTools] = TransformObj;
+
+	JSON MeshEditorTransformObj = Object();
+	MeshEditorTransformObj[Key::CoordSystem] = static_cast<int32>(MeshEditorViewportGizmoSettings.CoordSystem);
+	MeshEditorTransformObj[Key::bEnableTranslationSnap] = MeshEditorViewportGizmoSettings.bEnableTranslationSnap;
+	MeshEditorTransformObj[Key::TranslationSnapSize] = MeshEditorViewportGizmoSettings.TranslationSnapSize;
+	MeshEditorTransformObj[Key::bEnableRotationSnap] = MeshEditorViewportGizmoSettings.bEnableRotationSnap;
+	MeshEditorTransformObj[Key::RotationSnapSize] = MeshEditorViewportGizmoSettings.RotationSnapSize;
+	MeshEditorTransformObj[Key::bEnableScaleSnap] = MeshEditorViewportGizmoSettings.bEnableScaleSnap;
+	MeshEditorTransformObj[Key::ScaleSnapSize] = MeshEditorViewportGizmoSettings.ScaleSnapSize;
+	Root[Key::MeshEditorTransformTools] = MeshEditorTransformObj;
 
 	// Ensure directory exists
 	std::filesystem::path FilePath(FPaths::ToWide(Path));
@@ -382,19 +394,37 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 	{
 		JSON TransformObj = Root[Key::TransformTools];
 		if (TransformObj.hasKey(Key::CoordSystem))
-			CoordSystem = static_cast<EEditorCoordSystem>(TransformObj[Key::CoordSystem].ToInt());
+			LevelViewportGizmoSettings.CoordSystem = static_cast<EEditorCoordSystem>(TransformObj[Key::CoordSystem].ToInt());
 		if (TransformObj.hasKey(Key::bEnableTranslationSnap))
-			bEnableTranslationSnap = TransformObj[Key::bEnableTranslationSnap].ToBool();
+			LevelViewportGizmoSettings.bEnableTranslationSnap = TransformObj[Key::bEnableTranslationSnap].ToBool();
 		if (TransformObj.hasKey(Key::TranslationSnapSize))
-			TranslationSnapSize = static_cast<float>(TransformObj[Key::TranslationSnapSize].ToFloat());
+			LevelViewportGizmoSettings.TranslationSnapSize = static_cast<float>(TransformObj[Key::TranslationSnapSize].ToFloat());
 		if (TransformObj.hasKey(Key::bEnableRotationSnap))
-			bEnableRotationSnap = TransformObj[Key::bEnableRotationSnap].ToBool();
+			LevelViewportGizmoSettings.bEnableRotationSnap = TransformObj[Key::bEnableRotationSnap].ToBool();
 		if (TransformObj.hasKey(Key::RotationSnapSize))
-			RotationSnapSize = static_cast<float>(TransformObj[Key::RotationSnapSize].ToFloat());
+			LevelViewportGizmoSettings.RotationSnapSize = static_cast<float>(TransformObj[Key::RotationSnapSize].ToFloat());
 		if (TransformObj.hasKey(Key::bEnableScaleSnap))
-			bEnableScaleSnap = TransformObj[Key::bEnableScaleSnap].ToBool();
+			LevelViewportGizmoSettings.bEnableScaleSnap = TransformObj[Key::bEnableScaleSnap].ToBool();
 		if (TransformObj.hasKey(Key::ScaleSnapSize))
-			ScaleSnapSize = static_cast<float>(TransformObj[Key::ScaleSnapSize].ToFloat());
+			LevelViewportGizmoSettings.ScaleSnapSize = static_cast<float>(TransformObj[Key::ScaleSnapSize].ToFloat());
 	}
 
+	if (Root.hasKey(Key::MeshEditorTransformTools))
+	{
+		JSON MeshEditorTransformObj = Root[Key::MeshEditorTransformTools];
+		if (MeshEditorTransformObj.hasKey(Key::CoordSystem))
+			MeshEditorViewportGizmoSettings.CoordSystem = static_cast<EEditorCoordSystem>(MeshEditorTransformObj[Key::CoordSystem].ToInt());
+		if (MeshEditorTransformObj.hasKey(Key::bEnableTranslationSnap))
+			MeshEditorViewportGizmoSettings.bEnableTranslationSnap = MeshEditorTransformObj[Key::bEnableTranslationSnap].ToBool();
+		if (MeshEditorTransformObj.hasKey(Key::TranslationSnapSize))
+			MeshEditorViewportGizmoSettings.TranslationSnapSize = static_cast<float>(MeshEditorTransformObj[Key::TranslationSnapSize].ToFloat());
+		if (MeshEditorTransformObj.hasKey(Key::bEnableRotationSnap))
+			MeshEditorViewportGizmoSettings.bEnableRotationSnap = MeshEditorTransformObj[Key::bEnableRotationSnap].ToBool();
+		if (MeshEditorTransformObj.hasKey(Key::RotationSnapSize))
+			MeshEditorViewportGizmoSettings.RotationSnapSize = static_cast<float>(MeshEditorTransformObj[Key::RotationSnapSize].ToFloat());
+		if (MeshEditorTransformObj.hasKey(Key::bEnableScaleSnap))
+			MeshEditorViewportGizmoSettings.bEnableScaleSnap = MeshEditorTransformObj[Key::bEnableScaleSnap].ToBool();
+		if (MeshEditorTransformObj.hasKey(Key::ScaleSnapSize))
+			MeshEditorViewportGizmoSettings.ScaleSnapSize = static_cast<float>(MeshEditorTransformObj[Key::ScaleSnapSize].ToFloat());
+	}
 }

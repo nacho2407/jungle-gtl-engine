@@ -10,6 +10,7 @@
 #include "GameFramework/World.h"
 #include "Component/GizmoComponent.h"
 #include "Collision/RayUtils.h"
+#include "Settings/EditorSettings.h"
 
 #include <imgui.h>
 
@@ -341,6 +342,21 @@ void FMeshEditorViewportClient::SyncGizmo()
 	{
 		Gizmo->Deactivate();
 	}
+}
+
+void FMeshEditorViewportClient::ApplyTransformSettingsToGizmo()
+{
+	if (!Gizmo) return;
+
+	const FGizmoToolSettings& Settings = FEditorSettings::Get().MeshEditorViewportGizmoSettings;
+	const bool bForceLocalForScale = Gizmo->GetMode() == EGizmoMode::Scale;
+
+	Gizmo->SetWorldSpace(bForceLocalForScale ? false : Settings.CoordSystem == EEditorCoordSystem::World);
+	Gizmo->SetSnapSettings(
+		Settings.bEnableTranslationSnap, Settings.TranslationSnapSize,
+		Settings.bEnableRotationSnap, Settings.RotationSnapSize,
+		Settings.bEnableScaleSnap, Settings.ScaleSnapSize
+	);
 }
 
 void FMeshEditorViewportClient::HandleDragStart(const FRay& Ray)

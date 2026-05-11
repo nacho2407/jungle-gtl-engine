@@ -7,6 +7,9 @@
 #include "Component/SkeletalMeshComponent.h"
 #include "Viewport/Viewport.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
+#include "GameFramework/StaticMeshActor.h"
+#include "Settings/EditorSettings.h"
+#include "UI/Toolbar/GizmoToolbar.h"
 
 #include <imgui.h>
 
@@ -34,6 +37,10 @@ void FMeshEditorWidget::Open(UObject* Object)
 	ADirectionalLightActor* LightActor = WorldContext.World->SpawnActor<ADirectionalLightActor>();
 	LightActor->InitDefaultComponents();
 	LightActor->SetActorRotation(FVector(0.0f, 45.0f, -45.0f));
+
+	AStaticMeshActor* FloorActor = WorldContext.World->SpawnActor<AStaticMeshActor>();
+	FloorActor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
+	FloorActor->SetActorScale(FVector(10.0f, 10.0f, 1.0f));
 
 	ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
 
@@ -146,7 +153,8 @@ void FMeshEditorWidget::Render(float DeltaTime)
 		float AvailableWidth = ImGui::GetContentRegionAvail().x - DetailsWidth - ImGui::GetStyle().ItemSpacing.x;
 		ImVec2 Size = ImVec2(AvailableWidth, ImGui::GetContentRegionAvail().y);
 
-		ViewportClient.SetViewportRect(ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y, Size.x, Size.y);
+		ImVec2 ViewportPos = ImGui::GetCursorScreenPos();
+		ViewportClient.SetViewportRect(ViewportPos.x, ViewportPos.y, Size.x, Size.y);
 
 		FViewport* VP = ViewportClient.GetViewport();
 		if (VP && Size.x > 0 && Size.y > 0)
@@ -157,6 +165,28 @@ void FMeshEditorWidget::Render(float DeltaTime)
 			{
 				ImGui::Image((ImTextureID)VP->GetSRV(), Size);
 			}
+
+			FGizmoToolbarContext Context;
+			Context.Renderer = &GEngine->GetRenderer();
+			Context.Gizmo = ViewportClient.GetGizmo();
+			Context.Settings = &FEditorSettings::Get().MeshEditorViewportGizmoSettings;
+			Context.ToolbarLeft = ViewportPos.x;
+			Context.ToolbarTop = ViewportPos.y;
+			Context.bReservePlayStopSpace = false;
+			Context.bShowAddActor = false;
+			Context.OnCoordSystemToggled = [&]()
+			{
+				FGizmoToolSettings& Settings = FEditorSettings::Get().MeshEditorViewportGizmoSettings;
+				Settings.CoordSystem = (Settings.CoordSystem == EEditorCoordSystem::World) ? EEditorCoordSystem::Local : EEditorCoordSystem::World;
+
+				ViewportClient.ApplyTransformSettingsToGizmo();
+			};
+			Context.OnSettingsChanged = [&]()
+			{
+				ViewportClient.ApplyTransformSettingsToGizmo();
+			};
+
+			FGizmoToolbar::Render(Context);
 		}
 	}
 	ImGui::EndGroup();

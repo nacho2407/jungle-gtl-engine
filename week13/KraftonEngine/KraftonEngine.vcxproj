@@ -400,6 +400,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Toolbar\GizmoToolbar.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp" />
     <ClCompile Include="Source\Editor\Viewport\MeshEditorViewportClient.cpp" />
@@ -632,6 +633,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Editor\PIE\PIETypes.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
+    <ClInclude Include="Source\Editor\Settings\GizmoToolSettings.h" />
     <ClInclude Include="Source\Editor\Subsystem\AssetFactory.h" />
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
     <ClInclude Include="Source\Editor\UI\Asset\MeshEditorWidget.h" />
@@ -660,6 +662,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentItem.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Toolbar\GizmoToolbar.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\FLevelViewportLayout.h" />
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h" />
