@@ -1027,7 +1027,7 @@ void FFbxImporter::ProcessSkeletalMesh(
             }
 
             const FbxAMatrix BoneBindInMeshSpace =
-                LinkBindGlobal * MeshBindGlobalWithGeometry.Inverse();
+                MeshBindGlobalWithGeometry.Inverse() * LinkBindGlobal;
 
             const int32 NewBoneIndex = static_cast<int32>(InSkeletalMesh->Bones.size());
             BoneNodeToIndex[BoneNode] = NewBoneIndex;
@@ -1327,7 +1327,7 @@ void FFbxImporter::ProcessRigidAttachedMesh(
 
     // rigid mesh vertex를 reference skeletal mesh local space로 변환
     const FbxAMatrix RigidToReferenceMesh =
-        OwnerGlobalWithGeometry * ReferenceMeshBindGlobalWithGeometry.Inverse();
+        ReferenceMeshBindGlobalWithGeometry.Inverse() * OwnerGlobalWithGeometry;
 
     const FbxAMatrix RigidNormalToReferenceMesh =
         GetNormalTransformFromPositionTransform(RigidToReferenceMesh);
