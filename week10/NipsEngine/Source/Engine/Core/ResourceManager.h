@@ -103,6 +103,7 @@ public:
 	 */
 	USkeletalMesh* LoadSkeletalMesh(const FString& Path);
     USkeletalMesh* FindSkeletalMesh(const FString& Path) const;
+	TArray<FString> GetSkeletalMeshPaths() const;
 
 	UCurveFloatAsset* LoadCurve(const FString& Path);
 	UCurveFloatAsset* FindCurve(const FString& Path) const;
@@ -164,5 +165,6 @@ private:
 	TArray<FString> ParticleFilePaths;
 	TArray<FString> FontFilePaths;
 	TArray<FString> TextureFilePaths;
+	TArray<FString> SkeletalMeshFilePaths;
 	TArray<FString> CurveFilePaths;
 };

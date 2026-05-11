@@ -134,6 +134,7 @@ void FResourceManager::ClearDiscoveredResourceLists(bool bClearAtlasCache)
 	MaterialFilePaths.clear();
 	ParticleFilePaths.clear();
 	CurveFilePaths.clear();
+	SkeletalMeshFilePaths.clear();
 	StaticMeshCache.ClearRegistry();
 
 	if (bClearAtlasCache)
@@ -168,6 +169,16 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 		Resource.bPreload = false;
 		Resource.bNormalizeToUnitCube = false;
 		StaticMeshCache.RegisterResource(Resource);
+
+		if (Extension == L".fbx")
+		{
+			const FString AbsolutePath = FPaths::Normalize(FPaths::ToUtf8(FilePath.wstring()));
+			const FFbxMeshContentInfo ContentInfo = FbxImporter.InspectMeshContent(AbsolutePath);
+			if (ContentInfo.bHasSkeletalMesh)
+			{
+				SkeletalMeshFilePaths.push_back(RelativePath);
+			}
+		}
 	}
 	else if (Extension == L".mtl" || Extension == L".mat" || Extension == L".matinst")
 	{
@@ -776,6 +787,10 @@ USkeletalMesh* FResourceManager::LoadSkeletalMesh(const FString& Path)
     LoadedMesh->SetMeshData(LoadedMeshData);
 
     SkeletalMeshMap[NormalizedPath] = LoadedMesh;
+    if (std::find(SkeletalMeshFilePaths.begin(), SkeletalMeshFilePaths.end(), NormalizedPath) == SkeletalMeshFilePaths.end())
+    {
+        SkeletalMeshFilePaths.push_back(NormalizedPath);
+    }
 
     UE_LOG("[SkeletalMeshLoad] Loaded | Path=%s | Vertices=%zu | Indices=%zu | Bones=%zu | Sections=%zu",
            NormalizedPath.c_str(),
@@ -798,6 +813,11 @@ USkeletalMesh* FResourceManager::FindSkeletalMesh(const FString& Path) const
     }
 
     return nullptr;
+}
+
+TArray<FString> FResourceManager::GetSkeletalMeshPaths() const
+{
+    return SkeletalMeshFilePaths;
 }
 
 UCurveFloatAsset* FResourceManager::LoadCurve(const FString& Path)
