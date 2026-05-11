@@ -23,6 +23,8 @@ public:
 
     void Tick(float DeltaTime);
 
+	void Resize(int32 Width, int32 Height);
+
 	ID3D11ShaderResourceView* GetSRV() const
     {
         return Viewport.GetOutSRV();
