@@ -278,7 +278,7 @@ bool USkinnedMeshComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResul
 
 const FAABB& USkinnedMeshComponent::GetWorldAABB() const
 {
-    UpdateWorldAABB();
+    EnsureBoundsUpdated();
     return WorldAABB;
 }
 

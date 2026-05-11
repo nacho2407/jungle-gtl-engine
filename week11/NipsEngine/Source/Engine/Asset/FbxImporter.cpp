@@ -647,7 +647,7 @@ void FFbxImporter::CollectSkeletalMeshes(FbxNode* Node, FSkeletalMesh* InSkeleta
 
 void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InSkeletalMesh)
 {
-	// Mesh: bone이나 control pointer가 다 들어있는 노드
+	// Mesh: control point / polygon / normal / uv / skin deformer를 가진 geometry
     if (!Mesh || !InSkeletalMesh || Mesh->GetPolygonCount() <= 0)
     {
         return;

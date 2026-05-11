@@ -34,10 +34,6 @@ public:
 
     bool ConsumeRenderStateDirty();
 
-    /**
-     * @brief tick이 없어도 skinning 적용이 필요한 상황(에디터에서 bone을 조작하는 등)에서 사용할 수 있는 보조 함수.
-     *        AI가 추천해서 추가해두기는 하는데 에디터에서도 에디터 틱이 들어가는 중이라 실질적으로 필요는 없을 듯
-     */
     void EnsureSkinningUpdated();
 
 protected:
