@@ -4,6 +4,7 @@
 #include "Component/DecalComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/HeightFogComponent.h"
 #include "Component/CameraComponent.h"
@@ -206,6 +207,9 @@ REGISTER_FACTORY(AFogActor)
 
 DEFINE_CLASS(AStaticMeshActor, AActor)
 REGISTER_FACTORY(AStaticMeshActor)
+
+DEFINE_CLASS(ASkeletalMeshActor, AActor)
+REGISTER_FACTORY(ASkeletalMeshActor)
 
 DEFINE_CLASS(ASubUVActor, AActor)
 REGISTER_FACTORY(ASubUVActor)
@@ -492,6 +496,22 @@ void AStaticMeshActor::InitDefaultComponents()
     Text->SetEditorOnly(true);
 
     FVector Extent = StaticMesh->GetWorldAABB().GetExtent();
+    Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
+}
+
+void ASkeletalMeshActor::InitDefaultComponents()
+{
+    auto* SkeletalMesh = AddComponent<USkeletalMeshComponent>();
+    SetRootComponent(SkeletalMesh);
+
+    auto* Text = AddComponent<UTextRenderComponent>();
+    Text->AttachToComponent(SkeletalMesh);
+    Text->SetFont(FName("Default"));
+    Text->SetText("UUID: " + std::to_string(GetUUID()));
+    Text->SetTransient(true);
+    Text->SetEditorOnly(true);
+
+    FVector Extent = SkeletalMesh->GetWorldAABB().GetExtent();
     Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
 }
 

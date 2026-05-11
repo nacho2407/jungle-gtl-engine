@@ -88,6 +88,7 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
 	ImGui::Separator();
 	DrawSpawnItem(18, "Player");
 	DrawSpawnItem(1, "Static Mesh");
+	DrawSpawnItem(19, "Skeletal Mesh");
 	DrawSpawnItem(2, "Text Render");
 	DrawSpawnItem(3, "SubUV");
 	DrawSpawnItem(4, "Billboard");
@@ -282,6 +283,13 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 			Actor->AddTag("Player");
 			Actor->SetActorLocation(SpawnPoint);
 			Actor->AddComponent<UScriptComponent>();
+			break;
+		}
+		case 19:
+		{
+			ASkeletalMeshActor* Actor = World->SpawnActor<ASkeletalMeshActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
 			break;
 		}
 

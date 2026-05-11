@@ -10,25 +10,21 @@
             "Type" : "Vector3",
             "Value" : [1.000000, 1.000000, 1.000000]
           }, {
-            "Name" : "ScrollUV",
-            "Type" : "Vector2",
-            "Value" : [0.000000, 0.000000]
-          }, {
             "Name" : "SpecularColor",
             "Type" : "Vector3",
             "Value" : [0.500000, 0.500000, 0.500000]
           }, {
-            "Name" : "DiffuseMap",
-            "Type" : "Texture",
-            "Value" : ""
+            "Name" : "ScrollUV",
+            "Type" : "Vector2",
+            "Value" : [0.000000, 0.000000]
           }, {
             "Name" : "EmissiveColor",
             "Type" : "Vector3",
             "Value" : [0.000000, 0.000000, 0.000000]
           }, {
-            "Name" : "AmbientMap",
-            "Type" : "Texture",
-            "Value" : ""
+            "Name" : "bHasDiffuseMap",
+            "Type" : "Bool",
+            "Value" : false
           }, {
             "Name" : "Shininess",
             "Type" : "Float",
@@ -37,22 +33,6 @@
             "Name" : "Opacity",
             "Type" : "Float",
             "Value" : 1.000000
-          }, {
-            "Name" : "SpecularMap",
-            "Type" : "Texture",
-            "Value" : ""
-          }, {
-            "Name" : "EmissiveMap",
-            "Type" : "Texture",
-            "Value" : ""
-          }, {
-            "Name" : "BumpMap",
-            "Type" : "Texture",
-            "Value" : ""
-          }, {
-            "Name" : "bHasDiffuseMap",
-            "Type" : "Bool",
-            "Value" : false
           }, {
             "Name" : "bHasSpecularMap",
             "Type" : "Bool",
