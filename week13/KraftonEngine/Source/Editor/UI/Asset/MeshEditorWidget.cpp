@@ -82,8 +82,14 @@ void FMeshEditorWidget::Render(float DeltaTime)
 		VisibleTitle += " *";
 	}
 
+	ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_None;
+	if (ViewportClient.IsMouseOverViewport())
+	{
+		WindowFlags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
+	}
+
 	FString WindowTitle = VisibleTitle + "###MeshEditor";
-	if (!ImGui::Begin(WindowTitle.c_str(), &bWindowOpen))
+	if (!ImGui::Begin(WindowTitle.c_str(), &bWindowOpen, WindowFlags))
 	{
 		ImGui::End();
 		if (!bWindowOpen)
@@ -170,10 +176,51 @@ void FMeshEditorWidget::Render(float DeltaTime)
 		ImGui::Text("Index: %d", SelectedBoneIndex);
 		ImGui::Dummy(ImVec2(0, 10));
 
-		FVector Location = Bone.LocalMatrix.GetLocation();
+		USkeletalMeshComponent* PreviewMeshComponent = ViewportClient.GetPreviewMeshComponent();
+		FTransform LocalTransform = PreviewMeshComponent ? PreviewMeshComponent->GetBoneLocalTransformByIndex(SelectedBoneIndex) : Bone.LocalTransform;
+
+		FVector Location = LocalTransform.Location;
 		if (ImGui::DragFloat3("Location", &Location.X, 0.1f))
 		{
-			Bone.LocalMatrix.SetLocation(Location);
+			LocalTransform.Location = Location;
+
+			if (PreviewMeshComponent)
+			{
+				PreviewMeshComponent->SetBoneLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
+			}
+			else
+			{
+				Bone.LocalTransform = LocalTransform;
+			}
+		}
+
+		FVector Rotation = LocalTransform.GetRotator().ToVector();
+		if (ImGui::DragFloat3("Rotation", &Rotation.X, 0.1f))
+		{
+			LocalTransform.SetRotation(FRotator(Rotation));
+
+			if (PreviewMeshComponent)
+			{
+				PreviewMeshComponent->SetBoneLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
+			}
+			else
+			{
+				Bone.LocalTransform = LocalTransform;
+			}
+		}
+
+		FVector Scale = LocalTransform.Scale;
+		if (ImGui::DragFloat3("Scale", &Scale.X, 0.1f, 0.01f))
+		{
+			LocalTransform.Scale = Scale;
+			if (PreviewMeshComponent)
+			{
+				PreviewMeshComponent->SetBoneLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
+			}
+			else
+			{
+				Bone.LocalTransform = LocalTransform;
+			}
 		}
 	}
 	else

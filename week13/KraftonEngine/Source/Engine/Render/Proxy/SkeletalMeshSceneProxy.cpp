@@ -43,13 +43,56 @@ bool FSkeletalMeshSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11Devi
 
 	SkinnedVertices.resize(Asset->Vertices.size());
 
+	TArray<FTransform> BoneGlobals;
+	SMC->GetCurrentBoneGlobalTransforms(BoneGlobals);
+
+	TArray<FMatrix> SkinMatrices;
+	SkinMatrices.resize(Asset->Bones.size());
+
+	for (int32 BoneIndex = 0; BoneIndex < (int32)Asset->Bones.size(); ++BoneIndex)
+	{
+		if (BoneIndex < static_cast<int32>(BoneGlobals.size()))
+		{
+			SkinMatrices[BoneIndex] = Asset->Bones[BoneIndex].InverseBindPoseMatrix * BoneGlobals[BoneIndex].ToMatrix();
+		}
+	}
+
 	for (int32 i = 0; i < (int32)Asset->Vertices.size(); ++i)
 	{
 		const FVertexPNCTBW& Src = Asset->Vertices[i];
 		FVertexPNCTT& Dst = SkinnedVertices[i];
 
-		Dst.Position = Src.Position;
-		Dst.Normal = Src.Normal;
+		FVector SkinnedPos = FVector::ZeroVector;
+		FVector SkinnedNormal = FVector::ZeroVector;
+		float AccumWeight = 0.0f;
+
+		for (int32 k = 0; k < 4; ++k)
+		{
+			const int32 BoneIndex = Src.BoneIndices[k];
+			const float Weight = Src.BoneWeights[k];
+
+			if (Weight <= 0.0f) continue;
+			if (BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) continue;
+
+			const FMatrix& M = SkinMatrices[BoneIndex];
+
+			SkinnedPos += M.TransformPositionWithW(Src.Position) * Weight;
+			SkinnedNormal += M.TransformVector(Src.Normal) * Weight;
+			AccumWeight += Weight;
+		}
+
+		if (AccumWeight <= 0.0f)
+		{
+			SkinnedPos = Src.Position;
+			SkinnedNormal = Src.Normal;
+		}
+		else if (!SkinnedNormal.IsNearlyZero())
+		{
+			SkinnedNormal.Normalize();
+		}
+
+		Dst.Position = SkinnedPos;
+		Dst.Normal = SkinnedNormal;
 		Dst.Color = Src.Color;
 		Dst.UV = Src.UV;
 		Dst.Tangent = FVector4(1.0f, 0.0f, 0.0f, 1.0f);

@@ -115,6 +115,7 @@ struct FMatrix {
 	void SetAxes(const FVector& Right, const FVector& Up, const FVector& Forward);
 
 	void SetLocation(const FVector& Location);
+	void SetRotation(const FRotator& Rotator);
 };
 
 FVector operator* (const FVector& vector, const FMatrix& matrix);

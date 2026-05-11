@@ -21,6 +21,8 @@ struct FTransform
 	FTransform(const FVector& NewLocation, const FVector& EulerRotation, const FVector& NewScale)
 		: Location(NewLocation), Rotation(FRotator(EulerRotation).ToQuaternion()), Scale(NewScale) {}
 
+	FTransform(const FMatrix& Mat);
+
 	FRotator GetRotator() const { return Rotation.ToRotator(); }
 	void SetRotation(const FRotator& Rot) { Rotation = Rot.ToQuaternion(); }
 	void SetRotation(const FQuat& Quat) { Rotation = Quat; }

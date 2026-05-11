@@ -22,15 +22,19 @@ public:
 	FVector GetBoneLocationByIndex(int32 BoneIndex) const;
 	FRotator GetBoneRotationByIndex(int32 BoneIndex) const;
 	FVector GetBoneScaleByIndex(int32 BoneIndex) const;
+	FTransform GetBoneLocalTransformByIndex(int32 BoneIndex) const;
 
 	void SetBoneLocationByIndex(int32 BoneIndex, const FVector& NewLocation);
 	void SetBoneRotationByIndex(int32 BoneIndex, const FRotator& NewRotation);
 	void SetBoneScaleByIndex(int32 BoneIndex, const FVector& NewScale);
+	void SetBoneLocalTransformByIndex(int32 BoneIndex, const FTransform& NewLocalTransform);
+
+	void GetCurrentBoneGlobalTransforms(TArray<FTransform>& OutGlobals) const;
 
 private:
-	void BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlobals) const;
+	void BuildBoneEditGlobalTransforms(TArray<FTransform>& OutGlobals) const;
 
 private:
-	TArray<FMatrix> BoneEditLocalMatrices;
+	TArray<FTransform> BoneEditLocalTransforms;
 	bool bUseBoneEditPose = false;
 };

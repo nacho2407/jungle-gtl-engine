@@ -50,6 +50,20 @@ void FMeshEditorViewportClient::CreatePreviewGizmo()
 	Gizmo->Deactivate();
 }
 
+bool FMeshEditorViewportClient::IsMouseOverViewport() const
+{
+	if (!bIsRenderable || ViewportScreenRect.Width <= 0.0f || ViewportScreenRect.Height <= 0.0f) return false;
+
+	ImVec2 MousePos = ImGui::GetMousePos();
+	return MousePos.x >= ViewportScreenRect.X && MousePos.x <= (ViewportScreenRect.X + ViewportScreenRect.Width) &&
+		MousePos.y >= ViewportScreenRect.Y && MousePos.y <= (ViewportScreenRect.Y + ViewportScreenRect.Height);
+}
+
+bool FMeshEditorViewportClient::IsGizmoHolding() const
+{
+	return Gizmo && Gizmo->IsHolding();
+}
+
 void FMeshEditorViewportClient::NotifyViewportResized(int32 NewWidth, int32 NewHeight)
 {
 	if (Viewport)
@@ -140,7 +154,7 @@ void FMeshEditorViewportClient::TickShortcuts()
 	{
 		if (const FBone* SelectedBone = GetSelectedBone())
 		{
-			FVector TargetLoc = SelectedBone->GlobalMatrix.GetLocation();
+			FVector TargetLoc = SelectedBone->GlobalTransform.Location;
 
 			if (PreviewActor && PreviewActor->GetRootComponent())
 			{
