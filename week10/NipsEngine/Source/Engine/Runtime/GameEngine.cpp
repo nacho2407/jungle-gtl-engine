@@ -206,6 +206,10 @@ void UGameEngine::LoadGameSettings()
         {
             GetMutableRuntimeShowFlags().bShadow = ParseBoolValue(Value, GetRuntimeShowFlags().bShadow);
         }
+        else if (Key == "bSkeletalMesh" || Key == "SkeletalMesh")
+        {
+            GetMutableRuntimeShowFlags().bSkeletalMesh = ParseBoolValue(Value, GetRuntimeShowFlags().bSkeletalMesh);
+        }
     }
 }
 

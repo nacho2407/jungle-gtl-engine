@@ -220,6 +220,7 @@ void FEditorMainPanel::RenderEditorDebugPanel(float DeltaTime)
     if (ImGui::CollapsingHeader("Show Flags", ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::Checkbox("Primitives", &Settings.ShowFlags.bPrimitives);
+        ImGui::Checkbox("Skeletal Mesh", &Settings.ShowFlags.bSkeletalMesh);
         ImGui::Checkbox("BillboardText", &Settings.ShowFlags.bBillboardText);
         ImGui::Checkbox("Axis", &Settings.ShowFlags.bAxis);
         ImGui::Checkbox("Grid", &Settings.ShowFlags.bGrid);
