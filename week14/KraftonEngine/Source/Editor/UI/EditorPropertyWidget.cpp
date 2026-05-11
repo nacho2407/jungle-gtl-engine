@@ -25,7 +25,6 @@
 #include "Object/ObjectIterator.h"
 #include "Materials/Material.h"
 #include "Mesh/MeshManager.h"
-#include "Mesh/FbxManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Platform/Paths.h"
@@ -1175,8 +1174,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			}
 			if (bSelectedNone)
 				ImGui::SetItemDefaultFocus();
-			const TArray<FFbxListItem>& FbxFiles = FFbxManager::GetAvailableFbxFiles();
-			for (const FFbxListItem& Item : FbxFiles)
+			const TArray<FMeshAssetListItem>& FbxFiles = FMeshManager::GetAvailableFbxFiles();
+			for (const FMeshAssetListItem& Item : FbxFiles)
 			{
 				bool bSelected = (*Val == Item.FullPath);
 				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
@@ -1200,7 +1199,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			if (!FbxPath.empty())
 			{
 				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-				USkeletalMesh* Loaded = FFbxManager::LoadFbxSkeletalMesh(FbxPath, Device);
+				USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(FbxPath, Device);
 				if (Loaded)
 				{
 					*Val = Loaded->GetAssetPathFileName();

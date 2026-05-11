@@ -8,7 +8,7 @@
 #include "Platform/Paths.h"
 #include "Serialization/SceneSaveManager.h"
 #include "Mesh/SkeletalMesh.h"
-#include "Mesh/FbxManager.h"
+#include "Mesh/MeshManager.h"
 
 bool ContentBrowserElement::RenderSelectSpace(ContentBrowserContext& Context)
 {
@@ -139,7 +139,7 @@ void MeshElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 		return;
 	}
 	const FString FilePath = FPaths::ToUtf8(ContentItem.Path.wstring());
-	if (USkeletalMesh* MeshAsset = FFbxManager::LoadFbxSkeletalMesh(FilePath, Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice()))
+	if (USkeletalMesh* MeshAsset = FMeshManager::LoadSkeletalMesh(FilePath, Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice()))
 	{
 		Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
 	}

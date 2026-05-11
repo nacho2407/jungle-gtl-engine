@@ -1,7 +1,7 @@
 ﻿#include "SkeletalMeshActor.h"
 #include "Runtime/Engine.h"
 #include "Component/SkeletalMeshComponent.h"
-#include "Mesh/FbxManager.h"
+#include "Mesh/MeshManager.h"
 
 IMPLEMENT_CLASS(ASkeletalMeshActor, AActor)
 
@@ -16,7 +16,7 @@ void ASkeletalMeshActor::InitDefaultComponents(const FString& SkeletalMeshFileNa
 	SetRootComponent(SkeletalMeshComponent);
 
 	ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-	USkeletalMesh* Asset = FFbxManager::LoadFbxSkeletalMesh(SkeletalMeshFileName, Device);
+	USkeletalMesh* Asset = FMeshManager::LoadSkeletalMesh(SkeletalMeshFileName, Device);
 
 	SkeletalMeshComponent->SetSkeletalMesh(Asset);
 }

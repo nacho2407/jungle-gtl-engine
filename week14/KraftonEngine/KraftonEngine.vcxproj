@@ -505,7 +505,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\Math\Transform.cpp" />
     <ClCompile Include="Source\Engine\Math\Vector.cpp" />
     <ClCompile Include="Source\Engine\Mesh\FbxImporter.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\FbxManager.cpp" />
     <ClCompile Include="Source\Engine\Mesh\MeshSimplifier.cpp" />
     <ClCompile Include="Source\Engine\Mesh\ObjImporter.cpp" />
     <ClCompile Include="Source\Engine\Mesh\SkeletalMesh.cpp" />
@@ -786,7 +785,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Math\Transform.h" />
     <ClInclude Include="Source\Engine\Math\Vector.h" />
     <ClInclude Include="Source\Engine\Mesh\FbxImporter.h" />
-    <ClInclude Include="Source\Engine\Mesh\FbxManager.h" />
     <ClInclude Include="Source\Engine\Mesh\MeshSimplifier.h" />
     <ClInclude Include="Source\Engine\Mesh\ObjImporter.h" />
     <ClInclude Include="Source\Engine\Mesh\SkeletalMesh.h" />
