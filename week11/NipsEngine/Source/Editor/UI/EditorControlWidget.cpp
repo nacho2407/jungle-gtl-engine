@@ -133,7 +133,7 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 			return false;
 		}
 	}
-	if (PrimitiveType == 17)
+	if (PrimitiveType == 18)
 	{
 		Count = 1;
 		if (HasPlacedPlayer(World))
