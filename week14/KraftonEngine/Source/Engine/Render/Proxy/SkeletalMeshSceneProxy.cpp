@@ -46,56 +46,73 @@ bool FSkeletalMeshSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11Devi
 	TArray<FTransform> BoneGlobals;
 	SMC->GetCurrentBoneGlobalTransforms(BoneGlobals);
 
-	TArray<FMatrix> SkinMatrices;
-	SkinMatrices.resize(Asset->Bones.size());
-
-	for (int32 BoneIndex = 0; BoneIndex < (int32)Asset->Bones.size(); ++BoneIndex)
+	auto SkinVertexRange = [&](uint32 VertexStart, uint32 VertexEnd, const FMatrix& MeshBindGlobal)
 	{
-		if (BoneIndex < static_cast<int32>(BoneGlobals.size()))
+		TArray<FMatrix> SkinMatrices;
+		SkinMatrices.resize(Asset->Bones.size(), FMatrix::Identity);
+
+		for (int32 BoneIndex = 0; BoneIndex < (int32)Asset->Bones.size(); ++BoneIndex)
 		{
-			SkinMatrices[BoneIndex] = Asset->Bones[BoneIndex].InverseBindPoseMatrix * BoneGlobals[BoneIndex].ToMatrix();
+			if (BoneIndex < static_cast<int32>(BoneGlobals.size()))
+			{
+				SkinMatrices[BoneIndex] =
+					MeshBindGlobal * Asset->Bones[BoneIndex].InverseBindPoseMatrix * BoneGlobals[BoneIndex].ToMatrix();
+			}
+		}
+
+		VertexEnd = std::min<uint32>(VertexEnd, (uint32)Asset->Vertices.size());
+		for (uint32 i = VertexStart; i < VertexEnd; ++i)
+		{
+			const FVertexPNCTBW& Src = Asset->Vertices[i];
+			FVertexPNCTT& Dst = SkinnedVertices[i];
+
+			FVector SkinnedPos = FVector::ZeroVector;
+			FVector SkinnedNormal = FVector::ZeroVector;
+			float AccumWeight = 0.0f;
+
+			for (int32 k = 0; k < 4; ++k)
+			{
+				const int32 BoneIndex = Src.BoneIndices[k];
+				const float Weight = Src.BoneWeights[k];
+
+				if (Weight <= 0.0f) continue;
+				if (BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) continue;
+
+				const FMatrix& M = SkinMatrices[BoneIndex];
+
+				SkinnedPos += M.TransformPositionWithW(Src.Position) * Weight;
+				SkinnedNormal += M.TransformVector(Src.Normal) * Weight;
+				AccumWeight += Weight;
+			}
+
+			if (AccumWeight <= 0.0f)
+			{
+				SkinnedPos = Src.Position;
+				SkinnedNormal = Src.Normal;
+			}
+			else if (!SkinnedNormal.IsNearlyZero())
+			{
+				SkinnedNormal.Normalize();
+			}
+
+			Dst.Position = SkinnedPos;
+			Dst.Normal = SkinnedNormal;
+			Dst.Color = Src.Color;
+			Dst.UV = Src.UV;
+			Dst.Tangent = FVector4(1.0f, 0.0f, 0.0f, 1.0f);
+		}
+	};
+
+	if (!Asset->MeshRanges.empty())
+	{
+		for (const FSkeletalMeshRange& Range : Asset->MeshRanges)
+		{
+			SkinVertexRange(Range.VertexStart, Range.VertexEnd, Range.MeshBindGlobal);
 		}
 	}
-
-	for (int32 i = 0; i < (int32)Asset->Vertices.size(); ++i)
+	else
 	{
-		const FVertexPNCTBW& Src = Asset->Vertices[i];
-		FVertexPNCTT& Dst = SkinnedVertices[i];
-
-		FVector SkinnedPos = FVector::ZeroVector;
-		FVector SkinnedNormal = FVector::ZeroVector;
-		float AccumWeight = 0.0f;
-
-		for (int32 k = 0; k < 4; ++k)
-		{
-			const int32 BoneIndex = Src.BoneIndices[k];
-			const float Weight = Src.BoneWeights[k];
-
-			if (Weight <= 0.0f) continue;
-			if (BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) continue;
-
-			const FMatrix& M = SkinMatrices[BoneIndex];
-
-			SkinnedPos += M.TransformPositionWithW(Src.Position) * Weight;
-			SkinnedNormal += M.TransformVector(Src.Normal) * Weight;
-			AccumWeight += Weight;
-		}
-
-		if (AccumWeight <= 0.0f)
-		{
-			SkinnedPos = Src.Position;
-			SkinnedNormal = Src.Normal;
-		}
-		else if (!SkinnedNormal.IsNearlyZero())
-		{
-			SkinnedNormal.Normalize();
-		}
-
-		Dst.Position = SkinnedPos;
-		Dst.Normal = SkinnedNormal;
-		Dst.Color = Src.Color;
-		Dst.UV = Src.UV;
-		Dst.Tangent = FVector4(1.0f, 0.0f, 0.0f, 1.0f);
+		SkinVertexRange(0, (uint32)Asset->Vertices.size(), FMatrix::Identity);
 	}
 
 	const uint32 VertexCount = static_cast<uint32>(SkinnedVertices.size());

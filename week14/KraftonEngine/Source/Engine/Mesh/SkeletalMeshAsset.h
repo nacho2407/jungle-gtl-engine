@@ -70,6 +70,15 @@ struct FSkeletalMaterial
 	}
 };
 
+struct FSkeletalMeshRange
+{
+	uint32 VertexStart = 0;
+	uint32 VertexEnd = 0;
+	uint32 FirstIndex = 0;
+	uint32 IndexCount = 0;
+	FMatrix MeshBindGlobal = FMatrix::Identity;
+};
+
 struct FSkeletalMesh
 {
 	FString PathFileName;
@@ -78,6 +87,7 @@ struct FSkeletalMesh
 	TArray<uint32> Indices;
 
 	TArray<FSkeletalMeshSection> Sections;
+	TArray<FSkeletalMeshRange> MeshRanges;
 
 	TArray<FBone> Bones;
 
