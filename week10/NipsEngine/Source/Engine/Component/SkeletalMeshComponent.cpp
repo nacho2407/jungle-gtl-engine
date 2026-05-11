@@ -7,11 +7,10 @@ REGISTER_FACTORY(USkeletalMeshComponent)
 
 void USkeletalMeshComponent::TickComponent(float DeltaTime)
 {
-    /* 
-	 * note: 10주차 발제에서는 애니메이션이 없으므로 여기서 매 프레임 pose를 바꾸지 않음
-	 *       나중에 애니메이션이 들어오면 여기에서 pose를 갱신하고 MarkSkinningDirty()를 호출
-     */
     USkinnedMeshComponent::TickComponent(DeltaTime);
+
+	// Pose가 바뀐 경우에만 실제 CPU skinning이 수행(dirty flag 이용)
+    EnsureSkinningUpdated();
 }
 
 void USkeletalMeshComponent::ResetToBindPose()
