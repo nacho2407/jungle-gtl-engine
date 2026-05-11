@@ -573,6 +573,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\Render\Scene\FScene.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\SceneEnvironment.cpp" />
     <ClCompile Include="Source\Engine\Render\Shader\Shader.cpp" />
+    <ClCompile Include="Source\Engine\Render\Shader\ShaderCache.cpp" />
     <ClCompile Include="Source\Engine\Render\Shader\ShaderManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Shadow\AtlasQuadTreeBase.cpp" />
     <ClCompile Include="Source\Engine\Render\Shadow\AtlasQuadTreePoint.cpp" />
@@ -861,6 +862,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Render\Scene\FScene.h" />
     <ClInclude Include="Source\Engine\Render\Scene\SceneEnvironment.h" />
     <ClInclude Include="Source\Engine\Render\Shader\Shader.h" />
+    <ClInclude Include="Source\Engine\Render\Shader\ShaderCache.h" />
     <ClInclude Include="Source\Engine\Render\Shader\ShaderInclude.h" />
     <ClInclude Include="Source\Engine\Render\Shader\ShaderManager.h" />
     <ClInclude Include="Source\Engine\Render\Shadow\AtlasQuadTreeBase.h" />

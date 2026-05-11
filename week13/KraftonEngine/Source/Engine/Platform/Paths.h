@@ -22,6 +22,7 @@ public:
 	static std::wstring SaveDir();        // Saves/
 	static std::wstring DumpDir();        // Saves/Dump/
 	static std::wstring LogDir();         // Saves/Logs/
+	static std::wstring ShaderCacheDir(); // Saves/ShaderCache/
 	static std::wstring SettingsDir();    // Settings/
 
 	// 주요 파일 경로
