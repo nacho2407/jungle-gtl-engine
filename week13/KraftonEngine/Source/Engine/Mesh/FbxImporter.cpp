@@ -179,7 +179,9 @@ void FFbxImporter::CollectMaterials(FbxScene* Scene)
 				FbxFileTexture* Texture = DiffuseProp.GetSrcObject<FbxFileTexture>(0);
 				if (Texture)
 				{
-					MatInfo.TexturePath = Texture->GetFileName();
+					// 1차 방어: Texture Path를 상대경로로 수정해서 MatInfo에 넣도록 수정
+					FString RawTexturePath = Texture->GetFileName();
+					MatInfo.TexturePath = FPaths::MakeProjectRelative(RawTexturePath);
 				}
 			}
 		}
@@ -590,7 +592,9 @@ FString FFbxImporter::ConvertToMat(const FMaterialInfo* MaterialInfo)
 
 	if (!MaterialInfo->TexturePath.empty())
 	{
-		JsonData["Textures"]["DiffuseTexture"] = MaterialInfo->TexturePath;
+		// 2차 방어: TexturePath 상대경로로 수정
+		FString TexturePath = FPaths::MakeProjectRelative(MaterialInfo->TexturePath);
+		JsonData["Textures"]["DiffuseTexture"] = TexturePath;
 
 		JsonData["Parameters"]["SectionColor"][0] = 1.0f;
 		JsonData["Parameters"]["SectionColor"][1] = 1.0f;
