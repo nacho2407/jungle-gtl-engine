@@ -6,7 +6,7 @@
 #include "Core/ResourceManager.h"
 #include "Object/ObjectFactory.h"
 #include "Render/Resource/ObjMtlLoader.h"
-#include "Render/Resource/Shader.h"
+#include "Render/Resource/ShaderPaths.h"
 
 #include <algorithm>
 #include <cwctype>
@@ -45,13 +45,6 @@ bool FMaterialLoadService::Load(const FString& MtlFilePath, const FString& Shade
 		}
 
 		return bLoadedMaterial;
-	}
-
-	UShader* Shader = ResourceManager.GetShader(ShaderName);
-	if (!Shader)
-	{
-		UE_LOG_WARNING("Shader not found for material: %s", ShaderName.c_str());
-		return false;
 	}
 
 	TMap<FString, UMaterial*> Parsed;
@@ -113,7 +106,7 @@ bool FMaterialLoadService::Load(const FString& MtlFilePath, const FString& Shade
 			Mat->ImportedName = Name;
 		}
 		Mat->FilePath = MaterialAssetPath;
-		Mat->SetShader(Shader);
+		Mat->SetPixelShader(ShaderName, FShaderPaths::GetDefaultPixelShaderEntryPoint(ShaderName));
 
 		UMaterial* ExistingMaterial = ResourceManager.MaterialCache.FindMaterialByKey(MaterialKey);
 		if (ExistingMaterial)

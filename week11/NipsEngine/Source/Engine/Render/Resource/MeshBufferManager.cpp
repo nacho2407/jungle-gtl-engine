@@ -114,7 +114,7 @@ FMeshBuffer* FMeshBufferManager::GetStaticMeshBuffer(const UStaticMesh* StaticMe
     }
 
     FMeshBuffer& NewBuffer = TargetMap[StaticMeshAsset];
-    NewBuffer.CreateForStaticMesh(Device, Vertices, Indices);
+    NewBuffer.CreateImmutableVertices(Device, Vertices, Indices);
     
 
     return &NewBuffer;
@@ -146,7 +146,7 @@ FMeshBuffer* FMeshBufferManager::GetProcMeshBuffer(uint32 ProcMeshCompUUID, cons
     }
 
     FMeshBuffer& NewBuffer = ProcMeshBufferMap[ProcMeshCompUUID];
-    NewBuffer.CreateForStaticMesh(Device, Vertices, Indices);
+    NewBuffer.CreateImmutableVertices(Device, Vertices, Indices);
 
     return &NewBuffer;
 }

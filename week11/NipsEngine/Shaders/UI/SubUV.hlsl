@@ -1,4 +1,4 @@
-#include "Common.hlsl"
+#include "../Common/Common.hlsli"
 
 Texture2D SubUVAtlas : register(t0);
 SamplerState SubUVSampler : register(s0);

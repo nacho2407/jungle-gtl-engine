@@ -6,6 +6,7 @@
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Material.h"
+#include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/Texture.h"
 #include "SimpleJSON/json.hpp"
 
@@ -292,7 +293,7 @@ bool FMaterialSerializationService::SerializeMaterial(const FString& MatFilePath
 	{
 		Root["ImportedName"] = Material->ImportedName;
 	}
-	Root["Shader"] = Material->Shader ? Material->Shader->FilePath : "";
+	Root["PixelShader"] = Material->GetPixelShaderPath();
 
 	JSON Params = JSON::Make(JSON::Class::Array);
 	for (const auto& [ParamName, ParamValue] : Material->MaterialParams)
@@ -317,7 +318,7 @@ bool FMaterialSerializationService::SerializeMaterialInstance(const FString& Mat
 	const FString NormalizedMatInstFilePath = FPaths::Normalize(MatInstFilePath);
 	JSON Root = JSON::Make(JSON::Class::Object);
 
-	// 이름에는 이제 파일 경로를 넣는 것으로 통일. 파일 경로가 없으면 기존 방식대로 이름을 넣음
+	// ?대쫫?먮뒗 ?댁젣 ?뚯씪 寃쎈줈瑜??ｋ뒗 寃껋쑝濡??듭씪. ?뚯씪 寃쎈줈媛 ?놁쑝硫?湲곗〈 諛⑹떇?濡??대쫫???ｌ쓬
 	Root["Name"] = MaterialInstance->GetFilePath().empty() ? NormalizedMatInstFilePath : FPaths::Normalize(MaterialInstance->GetFilePath());
 	Root["Parent"] = (MaterialInstance->Parent && !MaterialInstance->Parent->GetFilePath().empty())
 		? FPaths::Normalize(MaterialInstance->Parent->GetFilePath())
@@ -399,8 +400,9 @@ bool FMaterialSerializationService::DeserializeMaterial(const FString& MatFilePa
 	}
 
 	const FString MatName = Root["Name"].ToString();
-	const FString ShaderPath = Root["Shader"].ToString();
+	const FString ShaderPath = Root["PixelShader"].ToString();
 	UMaterial* Material = ResourceManager.GetOrCreateMaterial(MatName, NormalizedMatFilePath, ShaderPath);
+	Material->SetPixelShader(ShaderPath, FShaderPaths::GetDefaultPixelShaderEntryPoint(ShaderPath));
 	if (Root.hasKey("ImportedName"))
 	{
 		Material->ImportedName = Root["ImportedName"].ToString();

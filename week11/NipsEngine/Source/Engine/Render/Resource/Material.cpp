@@ -1,19 +1,108 @@
 ﻿#include "Material.h"
 #include "Core/ResourceManager.h"
 
+#include <cstring>
+
 DEFINE_CLASS(UMaterialInterface, UObject)
 DEFINE_CLASS(UMaterial, UMaterialInterface)
 DEFINE_CLASS(UMaterialInstance, UMaterialInterface)
 
-
-void UMaterial::Bind(ID3D11DeviceContext* Context, uint32 PermutationKey) const
+namespace
 {
-	if (!Shader) return;
-	if (!FResourceManager::Get().EnsureShaderPermutation(Shader->FilePath, PermutationKey))
+	uint32 AlignConstantBufferSize(uint32 Size)
+	{
+		return (Size + 15u) & ~15u;
+	}
+
+    uint32 GetMaterialConstantBufferSlot(const FShaderReflectionInfo& Reflection)
+	{
+	    return 2;
+	}
+
+	void CopyMaterialParamToBuffer(TArray<uint8>& CBufferData, const FShaderVariableReflection& VarInfo, const FMaterialParamValue& ParamValue)
+	{
+		if (VarInfo.Offset + VarInfo.Size > CBufferData.size())
+		{
+			return;
+		}
+
+		switch (ParamValue.Type)
+		{
+		case EMaterialParamType::Bool:
+		{
+			uint32 BoolVal = std::get<bool>(ParamValue.Value) ? 1 : 0;
+			std::memcpy(CBufferData.data() + VarInfo.Offset, &BoolVal, sizeof(uint32));
+			break;
+		}
+		case EMaterialParamType::Int:
+		{
+			int32 Val = std::get<int32>(ParamValue.Value);
+			std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(int32));
+			break;
+		}
+		case EMaterialParamType::UInt:
+		{
+			uint32 UIntVal = std::get<uint32>(ParamValue.Value);
+			std::memcpy(CBufferData.data() + VarInfo.Offset, &UIntVal, sizeof(uint32));
+			break;
+		}
+		case EMaterialParamType::Float:
+		{
+			float Val = std::get<float>(ParamValue.Value);
+			std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(float));
+			break;
+		}
+		case EMaterialParamType::Vector2:
+		{
+			FVector2 Val = std::get<FVector2>(ParamValue.Value);
+			std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(FVector2));
+			break;
+		}
+		case EMaterialParamType::Vector3:
+		{
+			FVector Val = std::get<FVector>(ParamValue.Value);
+			std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(FVector));
+			break;
+		}
+		case EMaterialParamType::Vector4:
+		{
+			FVector4 Val = std::get<FVector4>(ParamValue.Value);
+			std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(FVector4));
+			break;
+		}
+		case EMaterialParamType::Matrix4:
+		{
+			FMatrix Val = std::get<FMatrix>(ParamValue.Value);
+			std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(FMatrix));
+			break;
+		}
+		default:
+			break;
+		}
+	}
+}
+
+UMaterial::~UMaterial()
+{
+	ReleaseMaterialConstantBuffer();
+}
+
+void UMaterial::ReleaseMaterialConstantBuffer() const
+{
+	if (MaterialConstantBuffer)
+	{
+		MaterialConstantBuffer->Release();
+		MaterialConstantBuffer = nullptr;
+	}
+	MaterialConstantBufferSize = 0;
+}
+
+void UMaterial::BindRenderStates(ID3D11DeviceContext* Context) const
+{
+	if (!Context)
 	{
 		return;
 	}
-	Shader->Bind(Context, PermutationKey);
 
 	auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(DepthStencilType);
 	auto BlendState = FResourceManager::Get().GetOrCreateBlendState(BlendType);
@@ -25,99 +114,103 @@ void UMaterial::Bind(ID3D11DeviceContext* Context, uint32 PermutationKey) const
 	Context->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
 	Context->RSSetState(RasterizerState);
 	Context->PSSetSamplers(0, 1, &Sampler);
-
-	ApplyParams(Context, MaterialParams, PermutationKey);
 }
 
-void UMaterial::ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params, uint32 PermutationKey) const
+void UMaterial::BindParameters(ID3D11DeviceContext* Context, const FPixelShader* PixelShader) const
 {
-	TArray<uint8> CBufferData(Shader->GetCBufferSize());
+	ApplyParams(Context, MaterialParams, PixelShader);
+}
 
-	for (const auto& [Name, ParamValue] : Params)
+void UMaterial::ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params, const FPixelShader* PixelShader) const
+{
+	if (!Context || !PixelShader)
 	{
-		FShaderVariableInfo VarInfo;
-		if (Shader->GetShaderVariableInfo(Name, VarInfo))
+		return;
+	}
+
+	const FShaderReflectionInfo& Reflection = PixelShader->Reflection;
+	const uint32 RawCBufferSize = Reflection.ConstantBufferSize;
+	if (RawCBufferSize > 0)
+	{
+		const uint32 CBufferSize = AlignConstantBufferSize(RawCBufferSize);
+		TArray<uint8> CBufferData(CBufferSize);
+
+		for (const auto& [Name, ParamValue] : Params)
 		{
-			switch (ParamValue.Type)
+			auto VarIt = Reflection.Variables.find(Name);
+			if (VarIt != Reflection.Variables.end())
 			{
-			case EMaterialParamType::Bool:
-			{
-				uint32 BoolVal = std::get<bool>(ParamValue.Value) ? 1 : 0;
-				std::memcpy(CBufferData.data() + VarInfo.Offset, &BoolVal, sizeof(uint32));
-				break;
-			}
-			case EMaterialParamType::Int:
-			{
-				int32 Val = std::get<int32>(ParamValue.Value);
-				std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(int32));
-				break;
-			}
-			case EMaterialParamType::UInt:
-			{
-				uint32 UIntVal = std::get<uint32>(ParamValue.Value);
-				std::memcpy(CBufferData.data() + VarInfo.Offset, &UIntVal, sizeof(uint32));
-				break;
-			}
-			case EMaterialParamType::Float:
-			{
-				float Val = std::get<float>(ParamValue.Value);
-				std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(float));
-				break;
-			}
-			case EMaterialParamType::Vector2:
-			{
-				FVector2 Val = std::get<FVector2>(ParamValue.Value);
-				std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(FVector2));
-				break;
-			}
-			case EMaterialParamType::Vector3:
-			{
-				FVector Val = std::get<FVector>(ParamValue.Value);
-				std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(FVector));
-				break;
-			}
-			case EMaterialParamType::Vector4:
-			{
-				FVector4 Val = std::get<FVector4>(ParamValue.Value);
-				std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(FVector4));
-				break;
-			}
-			case EMaterialParamType::Matrix4:
-			{
-				FMatrix Val = std::get<FMatrix>(ParamValue.Value);
-				std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(FMatrix));
-				break;
-			}
-			default:
-				break;
+				CopyMaterialParamToBuffer(CBufferData, VarIt->second, ParamValue);
 			}
 		}
-		else
+
+		if (!MaterialConstantBuffer || MaterialConstantBufferSize != CBufferSize)
 		{
-			if (ParamValue.Type == EMaterialParamType::Texture && std::holds_alternative<UTexture*>(ParamValue.Value))
+			ReleaseMaterialConstantBuffer();
+
+			ID3D11Device* Device = nullptr;
+			Context->GetDevice(&Device);
+			if (Device)
 			{
-				int32 Slot = Shader->GetTextureBindSlot(Name);
-				if (Slot >= 0)
+				D3D11_BUFFER_DESC Desc = {};
+				Desc.Usage = D3D11_USAGE_DEFAULT;
+				Desc.ByteWidth = CBufferSize;
+				Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+				if (SUCCEEDED(Device->CreateBuffer(&Desc, nullptr, &MaterialConstantBuffer)))
 				{
-					UTexture* TextureAsset = std::get<UTexture*>(ParamValue.Value);
-					if (TextureAsset)
-					{
-						ID3D11ShaderResourceView* SRV = TextureAsset->GetSRV();
-						Context->PSSetShaderResources(Slot, 1, &SRV);
-					}
+					MaterialConstantBufferSize = CBufferSize;
 				}
+				Device->Release();
 			}
+		}
+
+		if (MaterialConstantBuffer)
+		{
+			const uint32 Slot = GetMaterialConstantBufferSlot(Reflection);
+			Context->UpdateSubresource(MaterialConstantBuffer, 0, nullptr, CBufferData.data(), 0, 0);
+			Context->VSSetConstantBuffers(Slot, 1, &MaterialConstantBuffer);
+			Context->PSSetConstantBuffers(Slot, 1, &MaterialConstantBuffer);
 		}
 	}
 
-	Shader->UpdateAndBindCBuffer(Context, CBufferData.data(), 2, static_cast<uint32>(CBufferData.size()), PermutationKey);
+	for (const auto& [Name, ParamValue] : Params)
+	{
+		if (ParamValue.Type != EMaterialParamType::Texture || !std::holds_alternative<UTexture*>(ParamValue.Value))
+		{
+			continue;
+		}
+
+		auto SlotIt = Reflection.TextureBindSlots.find(Name);
+		if (SlotIt == Reflection.TextureBindSlots.end())
+		{
+			continue;
+		}
+
+		UTexture* TextureAsset = std::get<UTexture*>(ParamValue.Value);
+		if (TextureAsset)
+		{
+			ID3D11ShaderResourceView* SRV = TextureAsset->GetSRV();
+			const uint32 Slot = SlotIt->second;
+			Context->PSSetShaderResources(Slot, 1, &SRV);
+		}
+	}
 }
 
-void UMaterialInstance::Bind(ID3D11DeviceContext* Context, uint32 PermutationKey) const
+void UMaterialInstance::BindRenderStates(ID3D11DeviceContext* Context) const
 {
-	if (!Parent) return;
+	if (Parent)
+	{
+		Parent->BindRenderStates(Context);
+	}
+}
 
-	Parent->Bind(Context, PermutationKey);
+void UMaterialInstance::BindParameters(ID3D11DeviceContext* Context, const FPixelShader* PixelShader) const
+{
+	if (!Parent)
+	{
+		return;
+	}
 
 	TMap<FString, FMaterialParamValue> CombinedParams;
 	Parent->GatherAllParams(CombinedParams);
@@ -126,5 +219,5 @@ void UMaterialInstance::Bind(ID3D11DeviceContext* Context, uint32 PermutationKey
 		CombinedParams[Name] = Value;
 	}
 
-	Parent->ApplyParams(Context, CombinedParams, PermutationKey);
+	Parent->ApplyParams(Context, CombinedParams, PixelShader);
 }

@@ -1,8 +1,28 @@
-﻿#include "DepthPrePass.h"
+#include "DepthPrePass.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
+#include "Render/Resource/ShaderPaths.h"
+#include "Render/Resource/VertexFactoryTypes.h"
 #include "Core/ResourceManager.h"
+
+namespace
+{
+	FShaderProgram* GetDepthPrepassProgram(EVertexFactoryType VertexFactoryType)
+	{
+		const FVertexFactoryDesc& VertexFactory = FVertexFactoryRegistry::Get(VertexFactoryType);
+
+		FShaderStageKey VSKey;
+		VSKey.FilePath = VertexFactory.DepthPassVSPath.empty() ? FShaderPaths::DepthPrepass : VertexFactory.DepthPassVSPath;
+		VSKey.EntryPoint = VertexFactory.DepthPassVSEntry;
+
+		FShaderStageKey PSKey;
+		PSKey.FilePath = FShaderPaths::DepthPrepass;
+		PSKey.EntryPoint = "DepthPrepassPS";
+
+		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+	}
+}
 
 bool FDepthPrePass::Initialize()
 {
@@ -32,12 +52,6 @@ bool FDepthPrePass::Begin(const FRenderPassContext* Context)
 
 bool FDepthPrePass::DrawCommand(const FRenderPassContext* Context)
 {
-	UShader* DepthShader = FResourceManager::Get().GetShader("Shaders/DepthPrepass.hlsl");
-	if (DepthShader == nullptr)
-	{
-		return false;
-	}
-
 	const FRenderBus* RenderBus = Context->RenderBus;
 	const TArray<FRenderCommand>& OpaqueCmds = RenderBus->GetCommands(ERenderPass::Opaque);
 
@@ -67,7 +81,15 @@ bool FDepthPrePass::DrawCommand(const FRenderPassContext* Context)
 
 		uint32 Offset = 0;
 		Context->DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
-		DepthShader->Bind(Context->DeviceContext);
+
+		FShaderProgram* Program = GetDepthPrepassProgram(Cmd.VertexFactoryType);
+		if (!Program)
+		{
+			continue;
+		}
+
+		Program->Bind(Context->DeviceContext);
+		BindVertexFactoryResources(Context->DeviceContext, Cmd.VertexFactoryType, Cmd);
         CheckOverrideViewMode(Context);  
 
 		ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();

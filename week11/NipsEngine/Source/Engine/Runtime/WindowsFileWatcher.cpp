@@ -3,7 +3,6 @@
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Core/Logging/Log.h"
-#include "Render/Resource/Shader.h"
 
 #include <chrono>
 
@@ -173,7 +172,10 @@ void FWindowsFileWatcher::ProcessPendingChanges()
 			UE_LOG("[ShaderHotReload] Stable change detected: %s", FPaths::ToUtf8(Path.wstring()).c_str());
 
 			FString RelativePath = FPaths::ToUtf8(FPaths::ToRelative(Path.wstring()));
-			FResourceManager::Get().ReloadShader(RelativePath);
+
+			// 기존처럼 UShader를 즉시 다시 만들지 않고, 해당 파일을 참조하는 Stage/Program 캐시만 비웁니다.
+			// 실제 재컴파일은 다음 Draw에서 필요한 조합이 요청될 때 Lazy Compile로 처리됩니다.
+			FResourceManager::Get().InvalidateShaderFile(RelativePath);
 		}
 
 		It = PendingChanges.erase(It);

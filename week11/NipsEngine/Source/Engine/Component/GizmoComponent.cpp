@@ -1,4 +1,4 @@
-﻿#include "GizmoComponent.h"
+#include "GizmoComponent.h"
 #include "GameFramework/AActor.h"
 #include "Component/SceneComponent.h"
 #include "Object/Object.h"
@@ -16,7 +16,7 @@ UGizmoComponent::UGizmoComponent()
 	GizmoMeshData = &FEditorMeshLibrary::GetTranslationGizmo();
 
 	// Gizmo 전용 Material 생성
-	Material = FResourceManager::Get().GetOrCreateMaterial("GizmoMaterial", "Shaders/Gizmo.hlsl");
+	Material = FResourceManager::Get().GetOrCreateMaterial("GizmoMaterial", "Shaders/EditorDebug/Gizmo.hlsl");
 }
 
 const FMeshData* UGizmoComponent::GetActiveMeshData() const

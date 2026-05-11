@@ -2,9 +2,68 @@
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
+#include "Render/Resource/ShaderHelper.h"
+#include "Render/Resource/VertexFactoryTypes.h"
+#include "Core/ResourceManager.h"
 
 namespace
 {
+    uint32 BuildTranslucentPermutationKey(const FRenderPassContext* Context, const UMaterialInterface* Material)
+    {
+        uint32 PermutationKey = (uint32)ELightingModel::Unlit;
+        switch (Context->RenderBus->GetViewMode())
+        {
+        case EViewMode::Lit_Gouraud:
+            PermutationKey = (uint32)ELightingModel::Gouraud;
+            break;
+        case EViewMode::Lit_Lambert:
+            PermutationKey = (uint32)ELightingModel::Lambert;
+            break;
+        case EViewMode::Lit_BlinnPhong:
+            PermutationKey = (uint32)ELightingModel::BlinnPhong;
+            break;
+        case EViewMode::Heatmap:
+            PermutationKey = (uint32)ELightingModel::Heatmap;
+            break;
+        }
+
+        if (Material)
+        {
+            if (Material->HasDiffuseMap()) PermutationKey |= (uint32)EShaderFeature::HasDiffuseMap;
+            if (Material->HasNormalMap()) PermutationKey |= (uint32)EShaderFeature::HasNormalMap;
+            if (Material->HasSpecularMap()) PermutationKey |= (uint32)EShaderFeature::HasSpecularMap;
+            if (Material->HasEmissiveMap()) PermutationKey |= (uint32)EShaderFeature::HasEmissiveMap;
+            if (Material->HasAlphaMask()) PermutationKey |= (uint32)EShaderFeature::HasAlphaMask;
+        }
+
+        return PermutationKey;
+    }
+
+    FShaderProgram* GetTranslucentShaderProgram(const FRenderCommand& Cmd, uint32 PermutationKey)
+    {
+        if (!Cmd.Material)
+        {
+            return nullptr;
+        }
+
+        const FVertexFactoryDesc& VertexFactoryDesc = FVertexFactoryRegistry::Get(Cmd.VertexFactoryType);
+
+        FShaderStageKey VSKey;
+        VSKey.FilePath = VertexFactoryDesc.VertexShaderPath;
+        VSKey.EntryPoint = VertexFactoryDesc.BasePassVSEntry;
+        VSKey.Target = "vs_5_0";
+        VSKey.PermutationKey = PermutationKey;
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = Cmd.Material->GetPixelShaderPath();
+        PSKey.EntryPoint = Cmd.Material->GetPixelShaderEntryPoint();
+        PSKey.Target = "ps_5_0";
+        PSKey.PermutationKey = PermutationKey;
+
+        TArray<D3D_SHADER_MACRO> Macros = FShaderHelper::BuildUberLitMacros(PermutationKey);
+        return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey, Macros.data(), Macros.data());
+    }
+
     bool DrawMeshCommandsForPass(const FRenderPassContext* Context, ERenderPass Pass)
     {
         const TArray<FRenderCommand>& Commands = Context->RenderBus->GetCommands(Pass);
@@ -44,7 +103,17 @@ namespace
 
             if (Cmd.Material != nullptr)
             {
-                Cmd.Material->Bind(Context->DeviceContext);
+                const uint32 PermutationKey = BuildTranslucentPermutationKey(Context, Cmd.Material);
+                FShaderProgram* Program = GetTranslucentShaderProgram(Cmd, PermutationKey);
+                if (!Program)
+                {
+                    continue;
+                }
+
+                Program->Bind(Context->DeviceContext);
+                Cmd.Material->BindRenderStates(Context->DeviceContext);
+                Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
+                BindVertexFactoryResources(Context->DeviceContext, Cmd.VertexFactoryType, Cmd);
             }
 
             Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);

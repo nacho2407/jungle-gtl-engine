@@ -54,5 +54,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "PixelShader" : "Shaders/Material/UberLit.hlsl"
       }

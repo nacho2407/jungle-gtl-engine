@@ -1,8 +1,26 @@
-﻿#include <d3d11.h>
+#include <d3d11.h>
 #include "Core/Logging/Log.h"
 #include "SubUVBatcher.h"
 #include "Core/CoreTypes.h"
 #include "Core/ResourceManager.h"
+
+namespace
+{
+	FShaderProgram* GetSubUVShaderProgram()
+	{
+		FShaderStageKey VSKey;
+		VSKey.FilePath = "Shaders/UI/SubUV.hlsl";
+		VSKey.EntryPoint = "VS";
+		VSKey.Target = "vs_5_0";
+
+		FShaderStageKey PSKey;
+		PSKey.FilePath = "Shaders/UI/SubUV.hlsl";
+		PSKey.EntryPoint = "PS";
+		PSKey.Target = "ps_5_0";
+
+		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+	}
+}
 
 void FSubUVBatcher::Create(ID3D11Device* InDevice)
 {
@@ -15,7 +33,7 @@ void FSubUVBatcher::Create(ID3D11Device* InDevice)
 	UMaterial* SubUVMaterial = FResourceManager::Get().GetMaterial("SubUVMat");
 	if (!SubUVMaterial)
 	{
-		SubUVMaterial = FResourceManager::Get().GetOrCreateMaterial("SubUVMat", "Asset/Material/SubUVMat.mat", "Shaders/ShaderSubUV.hlsl");
+		SubUVMaterial = FResourceManager::Get().GetOrCreateMaterial("SubUVMat", "Asset/Material/SubUVMat.mat", "Shaders/UI/SubUV.hlsl");
 	}
 	if (!SubUVMaterial)
 	{
@@ -71,7 +89,7 @@ void FSubUVBatcher::AddSprite(UTexture* Texture,
                               float Height,
 							  FColor Color)
 {
-	// Batch�� ����ְų� SRV�� 
+	// Batch?? ??????? SRV?? 
 	if (Batches.empty() || Batches.back().Texture != Texture)
 	{
 		FSRVBatch batch;
@@ -87,10 +105,10 @@ void FSubUVBatcher::AddSprite(UTexture* Texture,
     const float HalfW = Width  * WorldScale.Y * 0.25f;
     const float HalfH = Height * WorldScale.Z * 0.25f;
 
-    FVector v0 = WorldPos + CamRight * (-HalfW) + CamUp * ( HalfH); // �»�
-    FVector v1 = WorldPos + CamRight * ( HalfW) + CamUp * ( HalfH); // ���
-    FVector v2 = WorldPos + CamRight * (-HalfW) + CamUp * (-HalfH); // ����
-    FVector v3 = WorldPos + CamRight * ( HalfW) + CamUp * (-HalfH); // ����
+    FVector v0 = WorldPos + CamRight * (-HalfW) + CamUp * ( HalfH); // ?≫?
+    FVector v1 = WorldPos + CamRight * ( HalfW) + CamUp * ( HalfH); // ???
+    FVector v2 = WorldPos + CamRight * (-HalfW) + CamUp * (-HalfH); // ????
+    FVector v3 = WorldPos + CamRight * ( HalfW) + CamUp * (-HalfH); // ????
 
 	uint32 LocalBase = static_cast<uint32>(Vertices.size()) 
 		- static_cast<uint32>(Batches.back().BaseVertex);
@@ -141,6 +159,14 @@ void FSubUVBatcher::Flush(ID3D11DeviceContext* Context, bool bWireframe)
     Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	UMaterial* Mat = Cast<UMaterial>(Material);
+	FShaderProgram* Program = GetSubUVShaderProgram();
+	if (!Program || !Mat)
+	{
+		return;
+	}
+
+	Program->Bind(Context);
+	Material->BindRenderStates(Context);
 
     // Context->PSSetShaderResources(0, 1, &SRV);
 	for (const FSRVBatch& Batch : Batches)
@@ -148,7 +174,7 @@ void FSubUVBatcher::Flush(ID3D11DeviceContext* Context, bool bWireframe)
 		if (!Batch.Texture || Batch.IndexCount == 0) continue;
 
 		Mat->SetTexture("SubUVAtlas", Batch.Texture);
-		Material->Bind(Context);
+		Material->BindParameters(Context, Program->PS);
         if (bWireframe)
         {
             ID3D11RasterizerState* WireRS = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::WireFrame);

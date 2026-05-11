@@ -1,5 +1,5 @@
 {
     "Name": "SubUVMat",
-    "Shader": "Shaders/ShaderSubUV.hlsl",
+    "PixelShader": "Shaders/UI/SubUV.hlsl",
     "Params": []
 }

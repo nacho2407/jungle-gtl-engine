@@ -1,5 +1,22 @@
-﻿#include "SandervistanRenderPass.h"
+#include "SandervistanRenderPass.h"
 #include "Core/ResourceManager.h"
+#include "Render/Resource/ShaderPaths.h"
+
+namespace
+{
+    FShaderProgram* GetSandevistanProgram()
+    {
+        FShaderStageKey VSKey;
+        VSKey.FilePath = FShaderPaths::PostProcessSandervistan;
+        VSKey.EntryPoint = "mainVS";
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = FShaderPaths::PostProcessSandervistan;
+        PSKey.EntryPoint = "mainPS";
+
+        return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+    }
+}
 
 bool FSandevistanRenderPass::Initialize()
 {
@@ -15,7 +32,7 @@ bool FSandevistanRenderPass::Begin(const FRenderPassContext* Context)
 {
     const FRenderTargetSet* RT = Context->RenderTargets;
 
-    // ⚠️ 안전: ping-pong 필요 (임시 RT)
+    // ?? 안전: ping-pong 필요 (임시 RT)
     ID3D11RenderTargetView* RTVs[1] = { RT->SceneSandervistanRTV };
     Context->DeviceContext->OMSetRenderTargets(1, RTVs, nullptr);
 
@@ -46,8 +63,12 @@ bool FSandevistanRenderPass::Begin(const FRenderPassContext* Context)
     Context->DeviceContext->PSSetConstantBuffers(11, 1, &buffer);
 
     // Shader 바인딩
-    UShader* shader = FResourceManager::Get().GetShader("Shaders/Multipass/SandervistanPass.hlsl");
-    shader->Bind(Context->DeviceContext);
+    FShaderProgram* Program = GetSandevistanProgram();
+    if (!Program)
+    {
+        return false;
+    }
+    Program->Bind(Context->DeviceContext);
 
     // Fullscreen triangle
     Context->DeviceContext->IASetInputLayout(nullptr);
