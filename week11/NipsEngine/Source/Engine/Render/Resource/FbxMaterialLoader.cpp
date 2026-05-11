@@ -1,11 +1,17 @@
 #include "FbxMaterialLoader.h"
 
+#include "Asset/FileUtils.h"
 #include "Core/Logging/Log.h"
+#include "Core/Paths.h"
+#include "Core/ResourceManager.h"
 #include "Object/ObjectFactory.h"
 
 #include <fbxsdk.h>
 
+#include <filesystem>
+
 using namespace fbxsdk;
+namespace fs = std::filesystem;
 
 namespace
 {
@@ -57,11 +63,103 @@ namespace
 
         return true;
     }
+
+    // 절대 경로를 엔진 root 기준 상대 경로로 변환.
+    FString ToEngineRelativePath(const fs::path& Path)
+    {
+        std::error_code Ec;
+        const fs::path Root(FPaths::RootDir());  // RootDir는 이미 wstring
+        fs::path RelativePath = fs::relative(Path, Root, Ec);
+        if (Ec || RelativePath.empty())
+        {
+            return FPaths::ToUtf8(Path.lexically_normal().generic_wstring());
+        }
+        return FPaths::ToUtf8(RelativePath.lexically_normal().generic_wstring());
+    }
+
+    // FBX 텍스처 경로 후보를 검증/변환. 존재하지 않으면 빈 문자열.
+    // 시도 순서: 후보 그대로 (절대 경로) → FBX dir 기준 상대 → 파일명만으로 FBX dir 재귀 검색.
+    FString TryResolveCandidate(const fs::path& FbxDir, const FString& Candidate)
+    {
+        if (Candidate.empty()) return {};
+
+        // 1) 후보를 그대로 시도 (절대 경로일 수 있음). 상대 경로면 FBX dir에 붙임.
+        {
+            fs::path P(FPaths::ToWide(Candidate));
+            if (P.is_relative())
+            {
+                P = FbxDir / P;
+            }
+            P = P.lexically_normal();
+            std::error_code Ec;
+            if (fs::exists(P, Ec) && fs::is_regular_file(P, Ec))
+            {
+                return ToEngineRelativePath(P);
+            }
+        }
+
+        // 2) 파일명만 떼서 FBX dir에서 재귀 검색 (ObjMtlLoader와 동일 패턴)
+        const fs::path Filename = fs::path(FPaths::ToWide(Candidate)).filename();
+        if (!Filename.empty())
+        {
+            FString FoundPath;
+            if (FFileUtils::FindFileRecursively(
+                FPaths::ToUtf8(FbxDir.generic_wstring()),
+                FPaths::ToUtf8(Filename.generic_wstring()),
+                FoundPath))
+            {
+                const fs::path FoundAbsPath = (FbxDir / fs::path(FPaths::ToWide(FoundPath))).lexically_normal();
+                return ToEngineRelativePath(FoundAbsPath);
+            }
+        }
+
+        return {};
+    }
+
+    // FbxFileTexture 객체에서 첫 유효한 경로를 엔진 상대 경로로 반환.
+    FString ResolveFbxTexturePath(const fs::path& FbxDir, FbxFileTexture* Tex)
+    {
+        if (!Tex) return {};
+
+        // 우선순위 1: RelativeFileName (다른 머신으로 옮겨다닌 자산에 안정적)
+        if (const char* RelName = Tex->GetRelativeFileName())
+        {
+            if (*RelName)
+            {
+                FString Resolved = TryResolveCandidate(FbxDir, FString(RelName));
+                if (!Resolved.empty()) return Resolved;
+            }
+        }
+
+        // 우선순위 2: 절대 FileName (저작자 머신 기준 — 경로가 안 맞을 수 있음)
+        if (const char* AbsName = Tex->GetFileName())
+        {
+            if (*AbsName)
+            {
+                FString Resolved = TryResolveCandidate(FbxDir, FString(AbsName));
+                if (!Resolved.empty()) return Resolved;
+            }
+        }
+
+        return {};
+    }
+
+    // surface material의 특정 property에 연결된 첫 번째 FbxFileTexture를 찾는다.
+    FbxFileTexture* GetFirstFileTexture(FbxSurfaceMaterial* SurfMat, const char* PropName)
+    {
+        if (!SurfMat || !PropName) return nullptr;
+        FbxProperty Prop = SurfMat->FindProperty(PropName);
+        if (!Prop.IsValid()) return nullptr;
+
+        const int32 Count = Prop.GetSrcObjectCount<FbxFileTexture>();
+        if (Count <= 0) return nullptr;
+        return Prop.GetSrcObject<FbxFileTexture>(0);
+    }
 }
 
 bool FFbxMaterialLoader::Load(const FString& FbxFilePath,
                               TMap<FString, UMaterial*>& OutMaterialAssets,
-                              ID3D11Device* /*Device*/,
+                              ID3D11Device* Device,
                               TArray<FString>* OutMaterialOrder)
 {
     FbxManager* Manager = nullptr;
@@ -70,6 +168,8 @@ bool FFbxMaterialLoader::Load(const FString& FbxFilePath,
     {
         return false;
     }
+
+    const fs::path FbxDir = fs::path(FPaths::ToWide(FbxFilePath)).parent_path();
 
     const int32 MaterialCount = Scene->GetSrcObjectCount<FbxSurfaceMaterial>();
     UE_LOG("[FbxMaterialLoader] %s | FbxSurfaceMaterial count = %d", FbxFilePath.c_str(), MaterialCount);
@@ -82,7 +182,6 @@ bool FFbxMaterialLoader::Load(const FString& FbxFilePath,
         const FString MatName = FString(SurfMat->GetName());
         if (MatName.empty()) continue;
 
-        // 중복 방지 (동일 이름의 surface material이 있을 가능성).
         if (OutMaterialAssets.find(MatName) != OutMaterialAssets.end())
         {
             UE_LOG_WARNING("[FbxMaterialLoader] Duplicate material name skipped: %s", MatName.c_str());
@@ -93,6 +192,22 @@ bool FFbxMaterialLoader::Load(const FString& FbxFilePath,
         Mat->ImportedName = MatName;
         ExtractMaterialProperties(SurfMat, Mat->MaterialData);
 
+        // Diffuse texture 추출
+        if (FbxFileTexture* DiffuseTex = GetFirstFileTexture(SurfMat, FbxSurfaceMaterial::sDiffuse))
+        {
+            const FString TexPath = ResolveFbxTexturePath(FbxDir, DiffuseTex);
+            if (!TexPath.empty())
+            {
+                Mat->MaterialData.DiffuseTexPath = TexPath;
+                Mat->MaterialData.bHasDiffuseTexture = true;
+            }
+            else
+            {
+                UE_LOG_WARNING("[FbxMaterialLoader] Diffuse texture not found on disk: %s / %s",
+                    DiffuseTex->GetRelativeFileName(), DiffuseTex->GetFileName());
+            }
+        }
+
         OutMaterialAssets[MatName] = Mat;
         if (OutMaterialOrder)
         {
@@ -100,10 +215,46 @@ bool FFbxMaterialLoader::Load(const FString& FbxFilePath,
         }
 
         const FMaterial& M = Mat->MaterialData;
-        UE_LOG("[FbxMaterialLoader]   [%d] %s (type=%s) | Diffuse=(%.2f,%.2f,%.2f) Shininess=%.2f Opacity=%.2f",
+        UE_LOG("[FbxMaterialLoader]   [%d] %s (type=%s) | Diffuse=(%.2f,%.2f,%.2f) Shininess=%.2f Opacity=%.2f DiffTex=%s",
             i, MatName.c_str(), SurfMat->GetClassId().GetName(),
             M.DiffuseColor.X, M.DiffuseColor.Y, M.DiffuseColor.Z,
-            M.Shininess, M.Opacity);
+            M.Shininess, M.Opacity,
+            M.bHasDiffuseTexture ? M.DiffuseTexPath.c_str() : "(none)");
+    }
+
+    // ObjMtlLoader와 동일하게 MaterialParams에 셰이더 바인딩 정보 채움.
+    // 이걸 안 하면 UMaterial이 cache에 등록돼도 셰이더는 default 값을 사용해 까맣게 나옴.
+    UTexture* DefaultWhite = FResourceManager::Get().GetTexture("DefaultWhite");
+
+    for (auto& [Name, Mat] : OutMaterialAssets)
+    {
+        if (!Mat) continue;
+        const FMaterial& MD = Mat->MaterialData;
+
+        Mat->MaterialParams["AmbientColor"]  = FMaterialParamValue(MD.AmbientColor);
+        Mat->MaterialParams["DiffuseColor"]  = FMaterialParamValue(MD.DiffuseColor);
+        Mat->MaterialParams["SpecularColor"] = FMaterialParamValue(MD.SpecularColor);
+        Mat->MaterialParams["EmissiveColor"] = FMaterialParamValue(MD.EmissiveColor);
+        Mat->MaterialParams["Shininess"]     = FMaterialParamValue(MD.Shininess);
+        Mat->MaterialParams["Opacity"]       = FMaterialParamValue(MD.Opacity);
+
+        if (MD.bHasDiffuseTexture)
+            Mat->MaterialParams["DiffuseMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(MD.DiffuseTexPath, Device));
+        else
+            Mat->MaterialParams["DiffuseMap"] = FMaterialParamValue(DefaultWhite);
+
+        Mat->MaterialParams["AmbientMap"]  = FMaterialParamValue(DefaultWhite);
+        Mat->MaterialParams["SpecularMap"] = FMaterialParamValue(DefaultWhite);
+        Mat->MaterialParams["EmissiveMap"] = FMaterialParamValue(DefaultWhite);
+        Mat->MaterialParams["BumpMap"]     = FMaterialParamValue(DefaultWhite);
+
+        Mat->MaterialParams["bHasDiffuseMap"]  = FMaterialParamValue(MD.bHasDiffuseTexture);
+        Mat->MaterialParams["bHasSpecularMap"] = FMaterialParamValue(false);
+        Mat->MaterialParams["bHasAmbientMap"]  = FMaterialParamValue(false);
+        Mat->MaterialParams["bHasEmissiveMap"] = FMaterialParamValue(false);
+        Mat->MaterialParams["bHasBumpMap"]     = FMaterialParamValue(false);
+
+        Mat->MaterialParams["ScrollUV"] = FMaterialParamValue(FVector2(0.0f, 0.0f));
     }
 
     Manager->Destroy();
