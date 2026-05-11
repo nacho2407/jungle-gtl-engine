@@ -1,5 +1,6 @@
 #include "Core/FbxMaterialLoadService.h"
 
+#include "Core/AssetPathPolicy.h"
 #include "Core/ImportedMaterialPolicy.h"
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
@@ -11,6 +12,18 @@
 #include <filesystem>
 
 namespace fs = std::filesystem;
+
+namespace
+{
+    // 인덱스 i에 대한 .mat asset 경로 생성. 등록 / 디스크 저장 / 디스크 로드 모두 동일 키 사용.
+    FString MakeFbxMaterialAssetPath(const FString& NormalizedFbxPath, int32 Index)
+    {
+        const fs::path AutoMaterialDir = fs::path(L"Asset") / L"Material" / L"Auto";
+        const FString MatName = FImportedMaterialPolicy::MakeImportedMaterialAssetName(NormalizedFbxPath, Index);
+        const fs::path RelativeMatPath = AutoMaterialDir / FPaths::ToWide(MatName + ".mat");
+        return FPaths::Normalize(FPaths::ToUtf8(RelativeMatPath.generic_wstring()));
+    }
+}
 
 FFbxMaterialLoadService::FFbxMaterialLoadService(FResourceManager& InResourceManager)
     : ResourceManager(InResourceManager)
@@ -25,17 +38,47 @@ bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, const FString& Sh
         return false;
     }
 
-    // Cache hit early return: 같은 FBX의 첫 material key가 이미 캐시에 있으면 재파싱 회피.
-    // 키 구성은 아래 등록 루프와 동일한 패턴이어야 함.
+    // Cache hit early return (in-memory): 같은 FBX의 첫 material key가 이미 캐시에 있으면 즉시 반환.
+    const FString FirstMaterialKey = MakeFbxMaterialAssetPath(NormalizedFbxPath, 0);
+    if (ResourceManager.MaterialCache.ContainsMaterialKey(FirstMaterialKey))
     {
-        const fs::path AutoMaterialDir = fs::path(L"Asset") / L"Material" / L"Auto";
-        const FString FirstMaterialName = FImportedMaterialPolicy::MakeImportedMaterialAssetName(NormalizedFbxPath, 0);
-        const fs::path RelativeMatPath = AutoMaterialDir / FPaths::ToWide(FirstMaterialName + ".mat");
-        const FString FirstMaterialKey = FPaths::Normalize(FPaths::ToUtf8(RelativeMatPath.generic_wstring()));
+        UE_LOG("[FbxMaterialLoadService] Skipped (already cached): %s", NormalizedFbxPath.c_str());
+        return true;
+    }
 
-        if (ResourceManager.MaterialCache.ContainsMaterialKey(FirstMaterialKey))
+    // Disk cache fallback: 이전 import에서 .mat을 디스크에 저장해두었으면 그것부터 로드.
+    // FBX scene 파싱 비용(~4초)을 회피하고 엔진 재시작 후에도 material 상태 유지.
+    if (FAssetPathPolicy::FileExists(FirstMaterialKey))
+    {
+        int32 LoadedCount = 0;
+        for (int32 Index = 0; ; ++Index)
         {
-            UE_LOG("[FbxMaterialLoadService] Skipped (already cached): %s", NormalizedFbxPath.c_str());
+            const FString MatAssetPath = MakeFbxMaterialAssetPath(NormalizedFbxPath, Index);
+            if (!FAssetPathPolicy::FileExists(MatAssetPath))
+            {
+                break;
+            }
+            if (!ResourceManager.DeserializeMaterial(MatAssetPath))
+            {
+                UE_LOG_WARNING("[FbxMaterialLoadService] Failed to deserialize cached material: %s", MatAssetPath.c_str());
+                continue;
+            }
+            // Slot alias 복원: ImportedName(=원본 FBX material name) → MaterialKey.
+            // 디스크 .mat에 ImportedName 필드가 저장돼있어서 가능.
+            if (UMaterial* Mat = ResourceManager.GetMaterial(MatAssetPath))
+            {
+                if (!Mat->ImportedName.empty())
+                {
+                    ResourceManager.MaterialCache.SetMaterialSlotAlias(
+                        FImportedMaterialPolicy::MakeMaterialSlotAliasKey(NormalizedFbxPath, Mat->ImportedName),
+                        MatAssetPath);
+                }
+            }
+            ++LoadedCount;
+        }
+        if (LoadedCount > 0)
+        {
+            UE_LOG("[FbxMaterialLoadService] Loaded %d materials from disk cache: %s", LoadedCount, NormalizedFbxPath.c_str());
             return true;
         }
     }
@@ -62,7 +105,9 @@ bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, const FString& Sh
         return true;
     }
 
-    const fs::path AutoMaterialDir = fs::path(L"Asset") / L"Material" / L"Auto";
+    // .mat 디스크 저장을 위해 Asset/Material/Auto/ 디렉토리 보장.
+    std::error_code Ec;
+    fs::create_directories(fs::path(L"Asset") / L"Material" / L"Auto", Ec);
 
     for (int32 MaterialIndex = 0; MaterialIndex < static_cast<int32>(MaterialOrder.size()); ++MaterialIndex)
     {
@@ -73,11 +118,9 @@ bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, const FString& Sh
         UMaterial* Mat = ParsedIt->second;
         if (!Mat) continue;
 
-        // .mat asset 자산 키 (디스크 파일 생성은 안 함 — in-memory key only)
-        const FString MaterialName = FImportedMaterialPolicy::MakeImportedMaterialAssetName(NormalizedFbxPath, MaterialIndex);
-        const fs::path RelativeMatPath = AutoMaterialDir / FPaths::ToWide(MaterialName + ".mat");
-        const FString MaterialAssetPath = FPaths::Normalize(FPaths::ToUtf8(RelativeMatPath.generic_wstring()));
+        const FString MaterialAssetPath = MakeFbxMaterialAssetPath(NormalizedFbxPath, MaterialIndex);
         const FString MaterialKey = MaterialAssetPath;
+        const FString MaterialName = FImportedMaterialPolicy::MakeImportedMaterialAssetName(NormalizedFbxPath, MaterialIndex);
 
         Mat->Name = MaterialName;
         if (Mat->ImportedName.empty()) Mat->ImportedName = Name;
@@ -115,9 +158,13 @@ bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, const FString& Sh
             FImportedMaterialPolicy::MakeMaterialSlotAliasKey(NormalizedFbxPath, Name),
             MaterialKey);
 
-        UE_LOG("[FbxMaterialLoadService] Registered: %s → %s", Name.c_str(), MaterialKey.c_str());
+        // 디스크 저장 — 다음 import 시 disk cache fallback이 FBX 재파싱 회피하도록.
+        if (!ResourceManager.SerializeMaterial(MaterialAssetPath, Mat))
+        {
+            UE_LOG_WARNING("[FbxMaterialLoadService] Failed to serialize material to disk: %s", MaterialAssetPath.c_str());
+        }
 
-        // 텍스처 로드는 B2 이후에 추가. B1엔 bHasXxxTexture가 모두 false라 skip.
+        UE_LOG("[FbxMaterialLoadService] Registered: %s → %s", Name.c_str(), MaterialKey.c_str());
     }
 
     UE_LOG("[FbxMaterialLoadService] Loaded %zu materials from %s",
