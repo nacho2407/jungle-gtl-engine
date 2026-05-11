@@ -18,10 +18,11 @@ public:
 	
 private:
 	void RebuildSectionDraws();
-
-private:
 	USkeletalMeshComponent* GetSkeletalMeshComponent() const;
 
+private:
 	mutable FDynamicVertexBuffer DynamicVertexBuffer;
-	mutable TArray<FVertexPNCTT> SkinnedVertices;
+	mutable uint64 UploadedSkinnedRevision = 0;
+	uint32 CachedDynamicVertexCount = 0;
+	mutable bool bDynamicBufferNeedsCreate = true;
 };

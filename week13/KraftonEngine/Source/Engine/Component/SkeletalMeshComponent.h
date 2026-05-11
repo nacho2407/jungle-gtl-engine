@@ -11,6 +11,8 @@ public:
 	USkeletalMeshComponent() = default;
 	~USkeletalMeshComponent() override = default;
 
+	void SetSkeletalMesh(USkeletalMesh* InMesh) override;
+
 	FMeshBuffer* GetMeshBuffer() const override;
 	FMeshDataView GetMeshDataView() const override;
 
@@ -30,11 +32,21 @@ public:
 	void SetBoneLocalTransformByIndex(int32 BoneIndex, const FTransform& NewLocalTransform);
 
 	void GetCurrentBoneGlobalTransforms(TArray<FTransform>& OutGlobals) const;
+	const TArray<FVertexPNCTT>& GetSkinnedVertices() const { return SkinnedVertices; }
+	uint64 GetSkinnedRevision() const { return SkinnedRevision; }
+	
+protected:
+	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 
 private:
+	void InitSkinningCache();
+	void UpdateCPUSkinning();
 	void BuildBoneEditGlobalTransforms(TArray<FTransform>& OutGlobals) const;
 
 private:
 	TArray<FTransform> BoneEditLocalTransforms;
 	bool bUseBoneEditPose = false;
+
+	TArray<FVertexPNCTT> SkinnedVertices;
+	uint64 SkinnedRevision = 0;
 };
