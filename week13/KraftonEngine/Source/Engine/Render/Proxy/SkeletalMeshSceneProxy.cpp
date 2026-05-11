@@ -82,6 +82,8 @@ bool FSkeletalMeshSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11Devi
 
 void FSkeletalMeshSceneProxy::RebuildSectionDraws()
 {
+	SectionDraws.clear();
+
 	USkeletalMeshComponent* SMC = GetSkeletalMeshComponent();
 	USkeletalMesh* Mesh = SMC->GetSkeletalMesh();
 	if (!Mesh || !Mesh->GetSkeletalMeshAsset())

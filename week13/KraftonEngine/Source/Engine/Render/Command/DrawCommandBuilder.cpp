@@ -124,12 +124,12 @@ void FDrawCommandBuilder::ApplyMaterialRenderState(FDrawCommandRenderState& OutS
 // ============================================================
 void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSceneProxy& Proxy, ERenderPass Pass)
 {
-	if (!Proxy.GetMeshBuffer() || !Proxy.GetMeshBuffer()->IsValid()) return;
-
+	// if (!Proxy.GetMeshBuffer() || !Proxy.GetMeshBuffer()->IsValid()) return;
 	ID3D11DeviceContext* Ctx = CachedContext;
 
 	FDrawCommandBuffer ProxyBuffer;
 	if (!Proxy.PrepareDrawBuffer(CachedDevice, Ctx, ProxyBuffer)) return;
+	if (!ProxyBuffer.HasBuffers()) return;
 
 	// PassState → RenderState 변환 (Wireframe 오버라이드 포함)
 	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(Pass, CollectViewMode);
