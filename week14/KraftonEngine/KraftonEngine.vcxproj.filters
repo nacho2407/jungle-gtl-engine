@@ -779,9 +779,6 @@
     <ClCompile Include="Source\Engine\Mesh\ObjImporter.cpp">
       <Filter>Source\Engine\Mesh</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Mesh\ObjManager.cpp">
-      <Filter>Source\Engine\Mesh</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Mesh\StaticMesh.cpp">
       <Filter>Source\Engine\Mesh</Filter>
     </ClCompile>
@@ -1144,6 +1141,13 @@
     <ClCompile Include="Source\Engine\Component\SkeletalMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\SkeletalMeshActor.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\MeshManager.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\MeshEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Toolbar\ViewportToolbar.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\MeshEditorViewportClient.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\MeshEditorViewportClient.h" />
+    <ClCompile Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.cpp" />
+    <ClCompile Include="Source\Engine\Gizmo\ComponentGizmoTarget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1567,9 +1571,6 @@
       <Filter>Source\Engine\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Mesh\ObjImporter.h">
-      <Filter>Source\Engine\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Mesh\ObjManager.h">
       <Filter>Source\Engine\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Mesh\StaticMesh.h">
@@ -2822,6 +2823,15 @@
     <ClInclude Include="Source\Engine\Component\SkeletalMeshComponent.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.h" />
     <ClInclude Include="Source\Engine\GameFramework\SkeletalMeshActor.h" />
+    <ClInclude Include="Source\Engine\Mesh\MeshManager.h" />
+    <ClInclude Include="Source\Editor\Settings\EditorViewportSettings.h" />
+    <ClInclude Include="Source\Editor\Settings\GizmoToolSettings.h" />
+    <ClInclude Include="Source\Editor\Settings\ViewportCameraControlSettings.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\MeshEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Toolbar\ViewportToolbar.h" />
+    <ClInclude Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.h" />
+    <ClInclude Include="Source\Engine\Gizmo\ComponentGizmoTarget.h" />
+    <ClInclude Include="Source\Engine\Gizmo\GizmoTransformTarget.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

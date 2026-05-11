@@ -10,7 +10,7 @@
 #include "Game/Component/CarDirtComponent.h"
 #include "Game/Component/DirtComponent.h"
 #include "Engine/Runtime/Engine.h"
-#include "Mesh/ObjManager.h"
+#include "Mesh/MeshManager.h"
 #include "Core/CollisionTypes.h"
 #include "Core/Log.h"
 #include "Math/Rotator.h"
@@ -50,7 +50,7 @@ void ACarPawn::InitChassisComponents(const FString& StaticMeshFileName, const FS
 	if (GEngine)
 	{
 		ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-		if (UStaticMesh* Asset = FObjManager::LoadObjStaticMesh(StaticMeshFileName, Device))
+		if (UStaticMesh* Asset = FMeshManager::LoadStaticMesh(StaticMeshFileName, Device))
 			Mesh->SetStaticMesh(Asset);
 	}
 	Mesh->SetRelativeLocation(FVector(0.15f, 0.0f, -0.6f));
@@ -139,7 +139,7 @@ void ACarPawn::InitPlayerControlledComponents(const FString& LuaCameraScriptFile
 	if (GEngine)
 	{
 		ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-		if (UStaticMesh* HandleAsset = FObjManager::LoadObjStaticMesh("Data/Truck/TruckHandle.obj", Device))
+		if (UStaticMesh* HandleAsset = FMeshManager::LoadStaticMesh("Data/Truck/TruckHandle.obj", Device))
 			Handle->SetStaticMesh(HandleAsset);
 	}
 
@@ -158,7 +158,7 @@ void ACarPawn::InitPlayerControlledComponents(const FString& LuaCameraScriptFile
 	if (GEngine)
 	{
 		ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-		TireAsset = FObjManager::LoadObjStaticMesh("Data/Truck/TruckTire.obj", Device);
+		TireAsset = FMeshManager::LoadStaticMesh("Data/Truck/TruckTire.obj", Device);
 	}
 	for (int i = 0; i < 4; ++i)
 	{

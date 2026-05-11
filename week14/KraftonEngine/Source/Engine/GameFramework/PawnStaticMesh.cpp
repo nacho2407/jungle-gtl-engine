@@ -1,7 +1,7 @@
-#include "GameFramework/PawnStaticMesh.h"
+﻿#include "GameFramework/PawnStaticMesh.h"
 #include "Component/StaticMeshComponent.h"
 #include "Engine/Runtime/Engine.h"
-#include "Mesh/ObjManager.h"
+#include "Mesh/MeshManager.h"
 
 IMPLEMENT_CLASS(APawnStaticMesh, APawn)
 
@@ -11,7 +11,7 @@ void APawnStaticMesh::InitDefaultComponents(const FString& StaticMeshFileName)
 	SetRootComponent(StaticMeshComponent);
 
 	ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-	UStaticMesh* Asset = FObjManager::LoadObjStaticMesh(StaticMeshFileName, Device);
+	UStaticMesh* Asset = FMeshManager::LoadStaticMesh(StaticMeshFileName, Device);
 	StaticMeshComponent->SetStaticMesh(Asset);
 }
 

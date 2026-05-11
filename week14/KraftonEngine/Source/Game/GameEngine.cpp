@@ -5,7 +5,7 @@
 #include "Engine/Runtime/EngineInitHooks.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Lua/LuaScriptManager.h"
-#include "Mesh/ObjManager.h"
+#include "Mesh/MeshManager.h"
 #include "Profiling/Timer.h"
 #include <windows.h>  // VK_ESCAPE
 #include "Viewport/Viewport.h"
@@ -43,7 +43,7 @@ namespace
 		for (const char* Path : MeshPaths)
 		{
 			const auto T0 = std::chrono::steady_clock::now();
-			UStaticMesh* Mesh = FObjManager::LoadObjStaticMesh(std::string(Path), Device);
+			UStaticMesh* Mesh = FMeshManager::LoadStaticMesh(std::string(Path), Device);
 			const auto T1 = std::chrono::steady_clock::now();
 			const double Ms = std::chrono::duration<double, std::milli>(T1 - T0).count();
 			UE_LOG("[Preload] %s -> %s (%.1f ms)", Path, Mesh ? "OK" : "FAILED", Ms);

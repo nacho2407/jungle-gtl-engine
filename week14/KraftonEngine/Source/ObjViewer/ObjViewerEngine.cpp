@@ -4,7 +4,7 @@
 #include "Engine/Runtime/WindowsWindow.h"
 #include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
-#include "Mesh/ObjManager.h"
+#include "Mesh/MeshManager.h"
 #include "Component/StaticMeshComponent.h"
 #include "GameFramework/AActor.h"
 #include "Viewport/Viewport.h"
@@ -15,8 +15,8 @@ void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 {
 	UEngine::Init(InWindow);
 
-	FObjManager::ScanMeshAssets();
-	FObjManager::ScanObjSourceFiles();
+	FMeshManager::ScanMeshAssets();
+	//FMeshManager::ScanObjSourceFiles();
 
 	// ImGui 패널 초기화
 	Panel.Create(InWindow, Renderer, this);
@@ -87,7 +87,7 @@ void UObjViewerEngine::LoadPreviewMesh(const FString& MeshPath)
 
 	// 메시 로드
 	ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
-	UStaticMesh* Mesh = FObjManager::LoadObjStaticMesh(MeshPath, Device);
+	UStaticMesh* Mesh = FMeshManager::LoadStaticMesh(MeshPath, Device);
 	if (!Mesh) return;
 
 	// 프리뷰 액터 생성
@@ -116,7 +116,7 @@ void UObjViewerEngine::ImportObjWithOptions(const FString& ObjPath, const FImpor
 
 	// 옵션 기반 메시 로드 (캐시 무효화 + .bin 저장)
 	ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
-	UStaticMesh* Mesh = FObjManager::LoadObjStaticMesh(ObjPath, Options, Device);
+	UStaticMesh* Mesh = FMeshManager::LoadStaticMesh(ObjPath, Options, Device);
 	if (!Mesh) return;
 
 	// 프리뷰 액터 생성
@@ -128,6 +128,6 @@ void UObjViewerEngine::ImportObjWithOptions(const FString& ObjPath, const FImpor
 	PreviewActor->SetRootComponent(MeshComp);
 
 	// 리프레시 + 카메라 리셋
-	FObjManager::ScanObjSourceFiles();
+	//FMeshManager::ScanObjSourceFiles();
 	ViewportClient.ResetCamera();
 }
