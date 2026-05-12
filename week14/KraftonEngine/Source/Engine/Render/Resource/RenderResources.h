@@ -241,8 +241,30 @@ struct FTileCullingResource
 	void Release();
 };
 
+struct FPerSceneShadowResources
+{
+	FShadowMapResources Resources;
+	FConstantBuffer ConstantBuffer;
+
+	void Create(ID3D11Device* Device)
+	{
+		if (!ConstantBuffer.GetBuffer())
+		{
+			ConstantBuffer.Create(Device, sizeof(FShadowCBData));
+		}
+	}
+
+	void Release()
+	{
+		Resources.Release();
+		ConstantBuffer.Release();
+	}
+};
+
 struct FSystemResources
 {
+	ID3D11Device* Device = nullptr;
+
 	// --- Frame CB (b0) ---
 	FConstantBuffer FrameBuffer;				// b0 — ECBSlot::Frame
 
@@ -257,8 +279,7 @@ struct FSystemResources
 	FClusteredLightCuller  ClusteredLightCuller;
 
 	// --- Shadow ---
-	FShadowMapResources ShadowResources;			// t21-t25 텍스처/SRV/StructuredBuffer
-	FConstantBuffer ShadowConstantBuffer;			// b5 — ECBSlot::Shadow
+	TMap<const FScene*, FPerSceneShadowResources> PerSceneShadowResources;
 
 	// --- Render State Managers ---
 	FRasterizerStateManager RasterizerStateManager;
@@ -299,4 +320,7 @@ struct FSystemResources
 	void BindClusterCullingResources(FD3DDevice& Device);
 	void UnbindClusterCullingResources(FD3DDevice& Device);
 	void SubmitCullingDebugLines(ID3D11DeviceContext* DC, class UWorld* World);
+
+	FPerSceneShadowResources& GetShadowResourcesForScene(const FScene* Scene);
+	void ReleaseShadowResourcesForScene(const FScene* Scene);
 };

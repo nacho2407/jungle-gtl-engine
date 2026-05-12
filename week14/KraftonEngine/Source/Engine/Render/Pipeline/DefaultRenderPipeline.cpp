@@ -51,6 +51,6 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	}
 
 	Renderer.BeginFrame();
-	Renderer.Render(Frame, *Scene);
+	Renderer.Render(Frame, World, *Scene);
 	Renderer.EndFrame();
 }

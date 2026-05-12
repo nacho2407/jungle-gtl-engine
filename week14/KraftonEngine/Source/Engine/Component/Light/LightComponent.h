@@ -15,6 +15,11 @@ public:
 	float GetShadowNormalBias() const { return ShadowNormalBias; } 
 	float GetShadowSharpen() const { return ShadowSharpen; }
 
+	void SetShadowBias(float V) { ShadowBias = V; }
+	void SetShadowSlopeBias(float V) { ShadowSlopeBias = V; }
+	void SetShadowNormalBias(float V) { ShadowNormalBias = V; }
+	void SetShadowSharpen(float V) { ShadowSharpen = V; }
+
 protected:
 	float ShadowResolutionScale = 1.0f;
 	float ShadowBias = -0.0001f;
