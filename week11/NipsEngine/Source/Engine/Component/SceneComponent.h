@@ -3,6 +3,7 @@
 #include "Engine/Geometry/Transform.h"
 #include "Component/ActorComponent.h"
 #include "Math/Utils.h"
+#include "Object/FName.h"
 
 class AActor;
 
@@ -19,13 +20,18 @@ public:
 	virtual void Serialize(FArchive& Ar) override;
 
 	// Parent Relation Manager
-	void AttachToComponent(USceneComponent* InParent);
+	void AttachToComponent(USceneComponent* InParent, const FName& InSocketName = FName::None);
 	void SetParent(USceneComponent* NewParent);
 	USceneComponent* GetParent() const { return ParentComponent; }
+	const FName& GetAttachSocketName() const { return AttachSocketName; }
 	void AddChild(USceneComponent* NewChild);
 	void RemoveChild(USceneComponent* Child);
 	bool ContainsChild(const USceneComponent* Child) const;
 	const TArray<USceneComponent*>& GetChildren() const { return ChildComponents; }
+
+	// Socket API — default는 socket 없음. SkinnedMeshComponent 등에서 override.
+	virtual bool       HasSocket(const FName& SocketName) const { (void)SocketName; return false; }
+	virtual FTransform GetSocketTransform(const FName& SocketName) const { (void)SocketName; return GetWorldTransform(); }
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
@@ -82,6 +88,9 @@ protected:
 protected:
 	USceneComponent* ParentComponent = nullptr;
 	TArray<USceneComponent*> ChildComponents;
+
+	// 부모의 socket 이름. FName::None이면 일반 parent-child attach.
+	FName AttachSocketName;
 
 	mutable FMatrix CachedWorldMatrix{};
 	mutable FTransform CachedWorldTransform{};

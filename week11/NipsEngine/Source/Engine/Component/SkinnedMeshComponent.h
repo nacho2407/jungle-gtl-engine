@@ -36,6 +36,10 @@ public:
 
     void EnsureSkinningUpdated();
 
+    // Socket API override — mesh asset의 Sockets 정의를 사용.
+    bool       HasSocket(const FName& SocketName) const override;
+    FTransform GetSocketTransform(const FName& SocketName) const override;
+
 protected:
     void InitializePoseFromBindPose();
     void UpdateCurrentGlobalPose();
