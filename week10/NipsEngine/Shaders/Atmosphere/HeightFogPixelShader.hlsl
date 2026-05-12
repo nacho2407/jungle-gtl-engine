@@ -1,4 +1,4 @@
-#include "Common.hlsl"
+#include "../Common/Common.hlsli"
 
 Texture2D SceneTexture : register(t0);
 Texture2D DepthTexture : register(t1);

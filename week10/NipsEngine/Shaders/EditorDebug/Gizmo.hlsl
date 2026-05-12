@@ -1,4 +1,4 @@
-#include "Common.hlsl"
+#include "../Common/Common.hlsli"
 
 cbuffer GizmoBuffer : register(b2)
 {

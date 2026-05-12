@@ -1,5 +1,5 @@
-{
+﻿{
     "Name": "SubUVMat",
-    "Shader": "Shaders/ShaderSubUV.hlsl",
+    "ShaderType" : "UISubUV",
     "Params": []
 }

@@ -1,5 +1,22 @@
-﻿#include "PostProcessRenderPass.h"
+#include "PostProcessRenderPass.h"
 #include "Core/ResourceManager.h"
+#include "Render/Resource/ShaderPaths.h"
+
+namespace
+{
+    FShaderProgram* GetPostProcessProgram()
+    {
+        FShaderStageKey VSKey;
+        VSKey.FilePath = FShaderPaths::PostProcessMain;
+        VSKey.EntryPoint = "mainVS";
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = FShaderPaths::PostProcessMain;
+        PSKey.EntryPoint = "mainPS";
+
+        return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+    }
+}
 
 bool FPostProcessRenderPass::Initialize()
 {
@@ -56,8 +73,12 @@ bool FPostProcessRenderPass::Begin(const FRenderPassContext* Context)
     Context->DeviceContext->PSSetConstantBuffers(11, 1, &buffer);
 
     // Shader 바인딩
-    UShader* shader = FResourceManager::Get().GetShader("Shaders/Multipass/PostProcess.hlsl");
-    shader->Bind(Context->DeviceContext);
+    FShaderProgram* Program = GetPostProcessProgram();
+    if (!Program)
+    {
+        return false;
+    }
+    Program->Bind(Context->DeviceContext);
 
     // Fullscreen triangle
     Context->DeviceContext->IASetInputLayout(nullptr);

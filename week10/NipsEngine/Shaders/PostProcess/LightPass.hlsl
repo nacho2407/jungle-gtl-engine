@@ -1,4 +1,4 @@
-#include "../Common.hlsl"
+#include "../Common/Common.hlsli"
 
 // GBuffer
 Texture2D SceneColor : register(t0);
@@ -76,7 +76,7 @@ float4 mainPS(VSOutput input) : SV_TARGET
         
         float visual;
         
-        // HLSL에서 row-major로 들어온 것을 반영해 원근 투영
+        // HLSL?먯꽌 row-major濡??ㅼ뼱??寃껋쓣 諛섏쁺???먭렐 ?ъ쁺
         if (Projection[3][3] < 0.5f)
         {
             // return float4(1.0f, 0.0f, 0.0f, 1.0f);
@@ -84,12 +84,12 @@ float4 mainPS(VSOutput input) : SV_TARGET
             float B = Projection[3][2];
             float zView = abs(B / (depth - A));
             
-            float DepthDensity = 0.05f; // 상황에 따라 0.01f ~ 0.001f 등 조절
+            float DepthDensity = 0.05f; // ?곹솴???곕씪 0.01f ~ 0.001f ??議곗젅
             
-            // 거리가 멀어질수록 exp 안의 음수값이 커져 visual이 0(검정)에 수렴
+            // 嫄곕━媛 硫?댁쭏?섎줉 exp ?덉쓽 ?뚯닔媛믪씠 而ㅼ졇 visual??0(寃?????섎졃
             visual = saturate(exp(-zView * DepthDensity));
         }
-        else // 직교 투영
+        else // 吏곴탳 ?ъ쁺
         {
             visual = 1.0f - depth;
         }

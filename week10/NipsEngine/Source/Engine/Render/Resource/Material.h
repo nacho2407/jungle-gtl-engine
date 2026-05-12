@@ -2,7 +2,8 @@
 
 #include "Object/Object.h"
 #include "Texture.h"
-#include "Shader.h"
+#include "MaterialShaderTypes.h"
+#include "ShaderTypes.h"
 #include "RenderResources.h"
 #include <variant>
 
@@ -86,8 +87,16 @@ public:
 	virtual bool HasSpecularMap() const = 0;
 	virtual bool HasEmissiveMap() const = 0;
 	virtual bool HasAlphaMask() const = 0;
+
+	// Material은 Shader 파일 경로가 아니라 재질 셰이딩 타입만 소유합니다.
+	// 실제 PixelShader 경로와 EntryPoint는 MaterialShaderTypes helper가 변환합니다.
+	virtual EMaterialShaderType GetShaderType() const = 0;
+	virtual const FString& GetPixelShaderPath() const = 0;
+	virtual const FString& GetPixelShaderEntryPoint() const = 0;
 	
-	virtual void Bind(ID3D11DeviceContext* Context, uint32 PermutationKey = 0) const = 0;
+	// RenderPass는 Program을 먼저 바인딩하고, Material은 상태와 파라미터만 바인딩합니다.
+	virtual void BindRenderStates(ID3D11DeviceContext* Context) const = 0;
+	virtual void BindParameters(ID3D11DeviceContext* Context, const FPixelShader* PixelShader) const = 0;
 	virtual bool GetParam(const FString& Name, FMaterialParamValue& OutValue) const = 0;
 
 	virtual void SetParam(const FString& Name, const FMaterialParamValue& Value) = 0;
@@ -114,16 +123,20 @@ public:
 	FString FilePath;
 	FString ImportedName;
 
+	// Material은 HLSL 파일 경로를 직접 저장하지 않고, 재질 셰이딩 타입만 저장합니다.
+	// Static/Skeletal 여부와 VS 선택은 RenderCommand의 VertexFactoryType이 결정합니다.
+	EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit;
+
 	FMaterial MaterialData;
 	TMap<FString, FMaterialParamValue> MaterialParams;
-
-	UShader* Shader = nullptr;
 
 	ESamplerType SamplerType = ESamplerType::EST_Linear;
 	EDepthStencilType DepthStencilType = EDepthStencilType::Default;
 	EBlendType BlendType = EBlendType::Opaque;
 	ERasterizerType RasterizerType = ERasterizerType::SolidBackCull;
 	D3D11_PRIMITIVE_TOPOLOGY PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+	~UMaterial() override;
 
 	const FString& GetName() const override { return Name; }
 	FString& GetNameRef() override { return Name; }
@@ -187,11 +200,13 @@ public:
 		return MaterialData.bHasEmissiveTexture;
 	}
 	bool HasAlphaMask() const override { return false; }
+	EMaterialShaderType GetShaderType() const override { return ShaderType; }
+	const FString& GetPixelShaderPath() const override { return GetMaterialPixelShaderPath(ShaderType); }
+	const FString& GetPixelShaderEntryPoint() const override { return GetMaterialPixelShaderEntryPoint(ShaderType); }
 
-	void SetShader(UShader* InShader)
+	void SetShaderType(EMaterialShaderType InShaderType)
 	{
-		Shader = InShader;
-		if (!Shader) return;
+		ShaderType = InShaderType;
 	}
 
 	void SetParam(const FString& Name, const FMaterialParamValue& Value)
@@ -209,9 +224,10 @@ public:
 		return false;
 	}
 
-	virtual void Bind(ID3D11DeviceContext* Context, uint32 PermutationKey = 0) const override;
+	void BindRenderStates(ID3D11DeviceContext* Context) const override;
+	void BindParameters(ID3D11DeviceContext* Context, const FPixelShader* PixelShader) const override;
 
-	void ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params, uint32 PermutationKey = 0) const;
+	void ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params, const FPixelShader* PixelShader) const;
 
 	void GatherAllParams(TMap<FString, FMaterialParamValue>& OutParams) const
 	{
@@ -220,6 +236,12 @@ public:
 			OutParams[Key] = Param;
 		}
 	}
+
+private:
+	void ReleaseMaterialConstantBuffer() const;
+
+	mutable ID3D11Buffer* MaterialConstantBuffer = nullptr;
+	mutable uint32 MaterialConstantBufferSize = 0;
 };
 
 class UMaterialInstance : public UMaterialInterface
@@ -314,6 +336,18 @@ public:
 		return Parent ? Parent->HasEmissiveMap() : false;
 	}
 	bool HasAlphaMask() const override { return Parent ? Parent->HasAlphaMask() : false; }
+	EMaterialShaderType GetShaderType() const override
+	{
+		return Parent ? Parent->GetShaderType() : EMaterialShaderType::SurfaceLit;
+	}
+	const FString& GetPixelShaderPath() const override
+	{
+		return GetMaterialPixelShaderPath(GetShaderType());
+	}
+	const FString& GetPixelShaderEntryPoint() const override
+	{
+		return GetMaterialPixelShaderEntryPoint(GetShaderType());
+	}
 
 	static UMaterialInstance* Create(UMaterial* Material)
 	{
@@ -337,7 +371,8 @@ public:
 		return Parent ? Parent->GetParam(Name, OutValue) : false;
 	}
 
-	void Bind(ID3D11DeviceContext* Context, uint32 PermutationKey = 0) const override;
+	void BindRenderStates(ID3D11DeviceContext* Context) const override;
+	void BindParameters(ID3D11DeviceContext* Context, const FPixelShader* PixelShader) const override;
 
 	void GatherAllParams(TMap<FString, FMaterialParamValue>& OutParams) const
 	{

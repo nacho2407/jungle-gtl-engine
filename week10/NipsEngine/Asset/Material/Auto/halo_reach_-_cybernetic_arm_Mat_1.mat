@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "ShoulderPad_Mat",
         "Name" : "halo_reach_-_cybernetic_arm_Mat_1",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

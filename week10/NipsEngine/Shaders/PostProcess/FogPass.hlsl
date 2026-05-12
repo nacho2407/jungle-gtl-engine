@@ -1,4 +1,4 @@
-#include "../Common.hlsl"
+#include "../Common/Common.hlsli"
 
 // GBuffer
 Texture2D SceneColor : register(t0);

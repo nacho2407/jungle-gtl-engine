@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "M_TiledMetal01",
         "Name" : "map1_Mat_49",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

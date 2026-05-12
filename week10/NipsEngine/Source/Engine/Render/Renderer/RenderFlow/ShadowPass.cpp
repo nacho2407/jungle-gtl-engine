@@ -1,7 +1,10 @@
-﻿#include "ShadowPass.h"
+#include "ShadowPass.h"
 
 #include "Core/ResourceManager.h"
+#include "Render/Resource/ShaderHelper.h"
+#include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/ShadowAtlasManager.h"
+#include "Render/Resource/VertexFactoryTypes.h"
 #include "Component/PostProcess/Light/LightComponent.h"
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
 #include "Component/PostProcess/Light/PointLightComponent.h"
@@ -34,12 +37,34 @@ namespace
 
 		return Cast<ULightComponent>(Request.LightComponent);
 	}
+
+	FShaderProgram* GetShadowProgram(EVertexFactoryType VertexFactoryType, uint32 ShadowKey)
+	{
+		const FVertexFactoryDesc& VertexFactory = FVertexFactoryRegistry::Get(VertexFactoryType);
+		auto Macros = FShaderHelper::BuildShadowMapMacros(static_cast<EShadowMap>(ShadowKey));
+
+		FShaderStageKey VSKey;
+		VSKey.FilePath = VertexFactory.ShadowPassVSPath.empty() ? FShaderPaths::Shadow : VertexFactory.ShadowPassVSPath;
+		VSKey.EntryPoint = VertexFactory.ShadowPassVSEntry;
+		VSKey.PermutationKey = ShadowKey;
+
+		FShaderStageKey PSKey;
+		PSKey.FilePath = FShaderPaths::Shadow;
+		PSKey.EntryPoint = "ShadowPS";
+		PSKey.PermutationKey = ShadowKey;
+
+		return FResourceManager::Get().GetOrCreateShaderProgram(
+			VSKey,
+			PSKey,
+			Macros.data(),
+			Macros.data(),
+			&VertexFactory.PositionOnlyLayout);
+	}
 }
 
 void FShadowPass::RenderShadowDepth(
 	const FRenderPassContext* Context,
 	FConstantBuffer* ShadowBuffer,
-	UShader* ShadowShader,
 	const TArray<FRenderCommand>& OpaqueCmds,
 	ID3D11DepthStencilView* ShadowDSV,
 	const D3D11_VIEWPORT& ShadowViewport,
@@ -59,7 +84,6 @@ void FShadowPass::RenderShadowDepth(
 	ID3D11Buffer* cb4 = ShadowBuffer->GetBuffer();
 	DeviceContext->VSSetConstantBuffers(4, 1, &cb4);
 	DeviceContext->PSSetConstantBuffers(4, 1, &cb4);
-	ShadowShader->Bind(DeviceContext, ShadowKey);
 
 	for (const auto& Cmd : OpaqueCmds)
 	{
@@ -87,6 +111,15 @@ void FShadowPass::RenderShadowDepth(
 
 		uint32 Offset = 0;
 		DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+
+		FShaderProgram* Program = GetShadowProgram(Cmd.VertexFactoryType, ShadowKey);
+		if (!Program)
+		{
+			continue;
+		}
+
+		Program->Bind(DeviceContext);
+		BindVertexFactoryResources(DeviceContext, Cmd.VertexFactoryType, Cmd);
 		CheckOverrideViewMode(Context);
 
 		ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
@@ -147,14 +180,6 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	{
 		return true;
 	}
-
-	UShader* ShadowShader = FResourceManager::Get().GetShader("Shaders/Shadow.hlsl");
-	if (ShadowShader == nullptr)
-	{
-		return false;
-	}
-
-	ShadowShader->Bind(Context->DeviceContext);
 
 	FConstantBuffer* ShadowBuffer = &Context->RenderResources->ShadowBuffer;
 	FShadowAtlasManager& ShadowAtlasManager = FShadowAtlasManager::Get();
@@ -262,7 +287,6 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 				RenderShadowDepth(
 					Context,
 					ShadowBuffer,
-					ShadowShader,
 					OpaqueCmds,
 					ShadowDSV,
 					ShadowViewport,
@@ -387,7 +411,6 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 				RenderShadowDepth(
 					Context,
 					ShadowBuffer,
-					ShadowShader,
 					OpaqueCmds,
 					DSV,
 					ShadowViewport,
@@ -514,7 +537,6 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		RenderShadowDepth(
 			Context,
 			ShadowBuffer,
-			ShadowShader,
 			OpaqueCmds,
 			ShadowDSV,
 			ShadowViewport,

@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "MI_Rollets",
         "Name" : "map1_Mat_17",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : true
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

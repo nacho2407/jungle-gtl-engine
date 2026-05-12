@@ -7,7 +7,6 @@
 #include "Core/ResourceManager.h"
 #include "Object/ObjectFactory.h"
 #include "Render/Resource/FbxMaterialLoader.h"
-#include "Render/Resource/Shader.h"
 
 #include <filesystem>
 
@@ -30,7 +29,7 @@ FFbxMaterialLoadService::FFbxMaterialLoadService(FResourceManager& InResourceMan
 {
 }
 
-bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, const FString& ShaderName, ID3D11Device* Device)
+bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device)
 {
     const FString NormalizedFbxPath = FPaths::Normalize(FbxFilePath);
     if (NormalizedFbxPath.empty())
@@ -83,13 +82,6 @@ bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, const FString& Sh
         }
     }
 
-    UShader* Shader = ResourceManager.GetShader(ShaderName);
-    if (!Shader)
-    {
-        UE_LOG_WARNING("[FbxMaterialLoadService] Shader not found: %s", ShaderName.c_str());
-        return false;
-    }
-
     TMap<FString, UMaterial*> Parsed;
     TArray<FString> MaterialOrder;
     if (!FFbxMaterialLoader::Load(NormalizedFbxPath, Parsed, Device, &MaterialOrder))
@@ -125,7 +117,7 @@ bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, const FString& Sh
         Mat->Name = MaterialName;
         if (Mat->ImportedName.empty()) Mat->ImportedName = Name;
         Mat->FilePath = MaterialAssetPath;
-        Mat->SetShader(Shader);
+        Mat->SetShaderType(ShaderType);
 
         // 중복 등록 가드: 이미 같은 key가 있다면 재사용하고 새 객체는 폐기.
         UMaterial* ExistingMaterial = ResourceManager.MaterialCache.FindMaterialByKey(MaterialKey);

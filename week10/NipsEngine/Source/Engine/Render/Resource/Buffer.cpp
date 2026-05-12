@@ -1,6 +1,8 @@
-﻿#include "Buffer.h"
-#include <d3d11.h>
+#include "Buffer.h"
+
 #include <cstring>
+#include <d3d11.h>
+
 #pragma region __FMESHBUFFER__
 
 void FMeshBuffer::Create(ID3D11Device* InDevice, const FMeshData& InMeshData)
@@ -12,35 +14,18 @@ void FMeshBuffer::Create(ID3D11Device* InDevice, const FMeshData& InMeshData)
 		return;
 	}
 
-	VertexBuffer.Create(InDevice, InMeshData.Vertices, static_cast<uint32>(sizeof(FVertex) * InMeshData.Vertices.size()), sizeof(FVertex));
-	if (!InMeshData.Indices.empty())
-	{
-		IndexBuffer.Create(InDevice, InMeshData.Indices, static_cast<uint32>(sizeof(uint32) * InMeshData.Indices.size()));
-	}
+	CreateImmutableVertices(InDevice, InMeshData.Vertices, InMeshData.Indices);
 }
 
-void FMeshBuffer::CreateForStaticMesh(ID3D11Device* InDevice, const TArray<FNormalVertex>& InVertices, const TArray<uint32>& InIndices)
+void FMeshBuffer::CreateImmutableVertexBuffer(ID3D11Device* InDevice, const void* InVertexData, uint32 InVertexCount, uint32 InVertexStride, const TArray<uint32>& InIndices)
 {
-	if (InVertices.empty() || !InDevice)
+	if (!InDevice || !InVertexData || InVertexCount == 0 || InVertexStride == 0)
 	{
+		Release();
 		return;
 	}
 
-	const uint32 Stride     = sizeof(FNormalVertex);
-	const uint32 ByteWidth  = static_cast<uint32>(Stride * InVertices.size());
-
-	D3D11_BUFFER_DESC Desc  = {};
-	Desc.ByteWidth           = ByteWidth;
-	Desc.Usage               = D3D11_USAGE_IMMUTABLE;
-	Desc.BindFlags           = D3D11_BIND_VERTEX_BUFFER;
-
-	D3D11_SUBRESOURCE_DATA SRD = { InVertices.data() };
-
-	ID3D11Buffer* RawBuffer = nullptr;
-	if (SUCCEEDED(InDevice->CreateBuffer(&Desc, &SRD, &RawBuffer)))
-	{
-		VertexBuffer.SetRaw(RawBuffer, static_cast<uint32>(InVertices.size()), Stride);
-	}
+	VertexBuffer.CreateRaw(InDevice, InVertexData, InVertexCount, InVertexStride, false);
 
 	if (!InIndices.empty())
 	{
@@ -48,37 +33,25 @@ void FMeshBuffer::CreateForStaticMesh(ID3D11Device* InDevice, const TArray<FNorm
 	}
 }
 
-void FMeshBuffer::CreateForSkeletalMesh(ID3D11Device* InDevice, const TArray<FNormalVertex>& InVertices, const TArray<uint32>& InIndices)
+void FMeshBuffer::CreateDynamicVertexBuffer(ID3D11Device* InDevice, uint32 InMaxVertexCount, uint32 InVertexStride, const TArray<uint32>& InIndices)
 {
-	if (InVertices.empty() || !InDevice)
+	if (!InDevice || InMaxVertexCount == 0 || InVertexStride == 0)
 	{
+		Release();
 		return;
 	}
 
-	const uint32 Stride = sizeof(FNormalVertex);
-	const uint32 ByteWidth = static_cast<uint32>(Stride * InVertices.size());
+	VertexBuffer.CreateRaw(InDevice, nullptr, InMaxVertexCount, InVertexStride, true);
 
-	// vertex buffer는 dynamic으로 사용
-	VertexBuffer.CreateDynamic(InDevice, ByteWidth, Stride);
-
-	// index buffer는 여전히 immutable
 	if (!InIndices.empty())
 	{
 		IndexBuffer.Create(InDevice, InIndices, static_cast<uint32>(sizeof(uint32) * InIndices.size()));
 	}
 }
 
-void FMeshBuffer::UpdateSkeletalVertices(ID3D11DeviceContext* InDeviceContext, const TArray<FNormalVertex>& InVertices)
+void FMeshBuffer::UpdateDynamicVertexBuffer(ID3D11DeviceContext* InDeviceContext, const void* InVertexData, uint32 InVertexCount)
 {
-	if (InVertices.empty())
-	{
-		return;
-	}
-
-	VertexBuffer.UpdateDynamic(
-		InDeviceContext,
-		InVertices.data(),
-		static_cast<uint32>(sizeof(FNormalVertex) * InVertices.size()));
+	VertexBuffer.UpdateRaw(InDeviceContext, InVertexData, InVertexCount);
 }
 
 void FMeshBuffer::Release()
@@ -91,7 +64,7 @@ void FMeshBuffer::Release()
 
 #pragma region __FVERTEXBUFFER__
 
-void FVertexBuffer::Create(ID3D11Device* InDevice, const TArray<FVertex> & InData, uint32 InByteWidth, uint32 InStride)
+void FVertexBuffer::Create(ID3D11Device* InDevice, const TArray<FVertex>& InData, uint32 InByteWidth, uint32 InStride)
 {
 	if (InData.empty() || InByteWidth == 0)
 	{
@@ -101,15 +74,15 @@ void FVertexBuffer::Create(ID3D11Device* InDevice, const TArray<FVertex> & InDat
 		return;
 	}
 
-	D3D11_BUFFER_DESC vertexBufferDesc = {};
-	vertexBufferDesc.ByteWidth = InByteWidth;
-	vertexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	D3D11_BUFFER_DESC VertexBufferDesc = {};
+	VertexBufferDesc.ByteWidth = InByteWidth;
+	VertexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	VertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
-	D3D11_SUBRESOURCE_DATA vertexBufferSRD = { InData.data() };
-	
-	HRESULT hr = InDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferSRD, Buffer.ReleaseAndGetAddressOf());
-	if (FAILED(hr))
+	D3D11_SUBRESOURCE_DATA VertexBufferSRD = { InData.data() };
+
+	HRESULT Hr = InDevice->CreateBuffer(&VertexBufferDesc, &VertexBufferSRD, Buffer.ReleaseAndGetAddressOf());
+	if (FAILED(Hr))
 	{
 		Release();
 		VertexCount = 0;
@@ -118,35 +91,42 @@ void FVertexBuffer::Create(ID3D11Device* InDevice, const TArray<FVertex> & InDat
 	}
 
 	VertexCount = static_cast<uint32>(InData.size());
+	VertexCapacity = VertexCount;
 	Stride = InStride;
 }
 
-void FVertexBuffer::CreateDynamic(ID3D11Device* InDevice, uint32 InByteWidth, uint32 InStride)
+void FVertexBuffer::CreateRaw(ID3D11Device* InDevice, const void* InData, uint32 InVertexCount, uint32 InStride, bool bDynamic)
 {
-	if (!InDevice || InByteWidth == 0 || InStride == 0)
+	if (!InDevice || InVertexCount == 0 || InStride == 0 || (!bDynamic && !InData))
 	{
 		Release();
 		VertexCount = 0;
+		VertexCapacity = 0;
 		Stride = InStride;
 		return;
 	}
 
-	D3D11_BUFFER_DESC VertexBufferDesc = {};
-	VertexBufferDesc.ByteWidth = InByteWidth;
-	VertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	VertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	VertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	D3D11_BUFFER_DESC Desc = {};
+	Desc.ByteWidth = InVertexCount * InStride;
+	Desc.Usage = bDynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_IMMUTABLE;
+	Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	Desc.CPUAccessFlags = bDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 
-	HRESULT hr = InDevice->CreateBuffer(&VertexBufferDesc, nullptr, Buffer.ReleaseAndGetAddressOf());
-	if (FAILED(hr))
+	D3D11_SUBRESOURCE_DATA SRD = {};
+	SRD.pSysMem = InData;
+
+	HRESULT Hr = InDevice->CreateBuffer(&Desc, InData ? &SRD : nullptr, Buffer.ReleaseAndGetAddressOf());
+	if (FAILED(Hr))
 	{
 		Release();
 		VertexCount = 0;
+		VertexCapacity = 0;
 		Stride = InStride;
 		return;
 	}
 
-	VertexCount = InByteWidth / InStride;
+	VertexCount = bDynamic ? 0 : InVertexCount;
+	VertexCapacity = InVertexCount;
 	Stride = InStride;
 }
 
@@ -155,39 +135,38 @@ void FVertexBuffer::SetRaw(ID3D11Buffer* InBuffer, uint32 InVertexCount, uint32 
 	Release();
 	Buffer.Attach(InBuffer);
 	VertexCount = InVertexCount;
-	Stride      = InStride;
+	VertexCapacity = InVertexCount;
+	Stride = InStride;
 }
 
 void FVertexBuffer::Release()
 {
 	Buffer.Reset();
+	VertexCount = 0;
+	VertexCapacity = 0;
+	Stride = 0;
 }
 
-//	 Vertex buffer�� Immutable�� ���������Ƿ� ������Ʈ�� �Ұ�. ������Ʈ�� �ʿ��ϴٸ� Dynamic���� ����
 void FVertexBuffer::Update(ID3D11DeviceContext* InDeviceContext, const TArray<uint32>& InData, uint32 InByteWidth)
 {
-	//	 Do nothing
+	(void)InDeviceContext;
+	(void)InData;
+	(void)InByteWidth;
 }
 
-void FVertexBuffer::UpdateDynamic(ID3D11DeviceContext* InDeviceContext, const void* InData, uint32 InByteWidth)
+void FVertexBuffer::UpdateRaw(ID3D11DeviceContext* InDeviceContext, const void* InData, uint32 InVertexCount)
 {
-	if (Buffer.Get() == nullptr || !InDeviceContext || !InData || InByteWidth == 0 || Stride == 0)
+	if (!InDeviceContext || Buffer.Get() == nullptr || !InData || InVertexCount == 0 || InVertexCount > VertexCapacity || Stride == 0)
 	{
 		return;
 	}
 
-	const uint32 CapacityByteWidth = VertexCount * Stride;
-	if (InByteWidth > CapacityByteWidth)
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
+	if (SUCCEEDED(InDeviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
 	{
-		return;
-	}
-
-	D3D11_MAPPED_SUBRESOURCE MappedResource = {};
-	if (SUCCEEDED(InDeviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource)))
-	{
-		std::memcpy(MappedResource.pData, InData, InByteWidth);
+		std::memcpy(Mapped.pData, InData, static_cast<size_t>(InVertexCount) * Stride);
 		InDeviceContext->Unmap(Buffer.Get(), 0);
-		VertexCount = InByteWidth / Stride;
+		VertexCount = InVertexCount;
 	}
 }
 
@@ -200,17 +179,15 @@ ID3D11Buffer* FVertexBuffer::GetBuffer() const
 
 #pragma region __FCONSTANTBUFFER__
 
-//	 Constant buffer�� Dynamic���� �����Ͽ� ������Ʈ�� �����ϵ��� ����
 void FConstantBuffer::Create(ID3D11Device* InDevice, uint32 InByteWidth)
 {
-	D3D11_BUFFER_DESC constantBufferDesc = {};
+	D3D11_BUFFER_DESC ConstantBufferDesc = {};
+	ConstantBufferDesc.ByteWidth = (InByteWidth + 0xf) & 0xfffffff0;
+	ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	constantBufferDesc.ByteWidth = (InByteWidth + 0xf) & 0xfffffff0;
-	constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;	
-	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-	InDevice->CreateBuffer(&constantBufferDesc, nullptr, Buffer.ReleaseAndGetAddressOf());
+	InDevice->CreateBuffer(&ConstantBufferDesc, nullptr, Buffer.ReleaseAndGetAddressOf());
 }
 
 void FConstantBuffer::Release()
@@ -218,23 +195,20 @@ void FConstantBuffer::Release()
 	Buffer.Reset();
 }
 
-//	Constant buffer�� Dynamic���� ���������Ƿ� ������Ʈ�� ����. ������Ʈ�� �ʿ��ϴٸ� Map/Unmap�� �̿��Ͽ� ������Ʈ
-//	InData�� Constant buffer�� ������Ʈ�� �������� �������Դϴ�. InByteWidth�� ������Ʈ�� �������� �� byte ũ���Դϴ�.
-//	��, InData�� FPerObjectConstants ����ü�� �������Դϴ�.
-void FConstantBuffer::Update(ID3D11DeviceContext* InDeviceContext, const void * InData, uint32 InByteWidth)
+void FConstantBuffer::Update(ID3D11DeviceContext* InDeviceContext, const void* InData, uint32 InByteWidth)
 {
 	if (Buffer)
 	{
-		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
-		InDeviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
+		D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR;
+		InDeviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR);
 
-		std::memcpy(constantbufferMSR.pData, InData, InByteWidth);
+		std::memcpy(ConstantBufferMSR.pData, InData, InByteWidth);
 
 		InDeviceContext->Unmap(Buffer.Get(), 0);
 	}
 }
 
-ID3D11Buffer* FConstantBuffer::GetBuffer() 
+ID3D11Buffer* FConstantBuffer::GetBuffer()
 {
 	return Buffer.Get();
 }
@@ -252,16 +226,15 @@ void FIndexBuffer::Create(ID3D11Device* InDevice, const TArray<uint32>& InData, 
 		return;
 	}
 
-	D3D11_BUFFER_DESC indexBufferDesc = {};
+	D3D11_BUFFER_DESC IndexBufferDesc = {};
+	IndexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	IndexBufferDesc.ByteWidth = InByteWidth;
+	IndexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 
-	indexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-	indexBufferDesc.ByteWidth = InByteWidth;	//	NOTE : Total byte width of the buffer, not the count of indices
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	D3D11_SUBRESOURCE_DATA IndexBufferSRD = { InData.data() };
 
-	D3D11_SUBRESOURCE_DATA indexBufferSRD = { InData.data() };
-
-	HRESULT hr = InDevice->CreateBuffer(&indexBufferDesc, &indexBufferSRD, Buffer.ReleaseAndGetAddressOf());
-	if (FAILED(hr))
+	HRESULT Hr = InDevice->CreateBuffer(&IndexBufferDesc, &IndexBufferSRD, Buffer.ReleaseAndGetAddressOf());
+	if (FAILED(Hr))
 	{
 		Release();
 		IndexCount = 0;
@@ -278,54 +251,70 @@ void FIndexBuffer::Release()
 
 void FIndexBuffer::Update(ID3D11DeviceContext* InDeviceContext, const TArray<uint32>& InData, uint32 InByteWidth)
 {
-	//	 Do nothing
+	(void)InDeviceContext;
+	(void)InData;
+	(void)InByteWidth;
 }
 
-void FStructuredBuffer::Create(ID3D11Device* InDevice, uint32 InElementSize, uint32 InMaxElements, bool bEnableUAV) {
-	if (InElementSize == 0) {
+ID3D11Buffer* FIndexBuffer::GetBuffer() const
+{
+	return Buffer.Get();
+}
+
+#pragma endregion
+
+#pragma region __FSTRUCTUREDBUFFER__
+
+void FStructuredBuffer::Create(ID3D11Device* InDevice, uint32 InElementSize, uint32 InMaxElements, bool bEnableUAV)
+{
+	if (InElementSize == 0)
+	{
 		Release();
 		return;
 	}
 
 	ElementSize = InElementSize;
 
-	D3D11_BUFFER_DESC desc = {};
-	desc.ByteWidth = InElementSize * InMaxElements;
-	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	desc.StructureByteStride = InElementSize;
-
-	if (bEnableUAV) {
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-		desc.CPUAccessFlags = 0;
-	}
-	else {
-		desc.Usage = D3D11_USAGE_DYNAMIC;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	}
-
-	InDevice->CreateBuffer(&desc, nullptr, Buffer.ReleaseAndGetAddressOf());
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = InMaxElements;
-	InDevice->CreateShaderResourceView(Buffer.Get(), &srvDesc, SRV.ReleaseAndGetAddressOf());
+	D3D11_BUFFER_DESC Desc = {};
+	Desc.ByteWidth = InElementSize * InMaxElements;
+	Desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	Desc.StructureByteStride = InElementSize;
 
 	if (bEnableUAV)
 	{
-		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-		uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-		uavDesc.Buffer.FirstElement = 0;
-		uavDesc.Buffer.NumElements = InMaxElements;
-		InDevice->CreateUnorderedAccessView(Buffer.Get(), &uavDesc, UAV.ReleaseAndGetAddressOf());
+		Desc.Usage = D3D11_USAGE_DEFAULT;
+		Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+		Desc.CPUAccessFlags = 0;
+	}
+	else
+	{
+		Desc.Usage = D3D11_USAGE_DYNAMIC;
+		Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	}
+
+	InDevice->CreateBuffer(&Desc, nullptr, Buffer.ReleaseAndGetAddressOf());
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc = {};
+	SrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	SrvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	SrvDesc.Buffer.FirstElement = 0;
+	SrvDesc.Buffer.NumElements = InMaxElements;
+	InDevice->CreateShaderResourceView(Buffer.Get(), &SrvDesc, SRV.ReleaseAndGetAddressOf());
+
+	if (bEnableUAV)
+	{
+		D3D11_UNORDERED_ACCESS_VIEW_DESC UavDesc = {};
+		UavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		UavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+		UavDesc.Buffer.FirstElement = 0;
+		UavDesc.Buffer.NumElements = InMaxElements;
+		InDevice->CreateUnorderedAccessView(Buffer.Get(), &UavDesc, UAV.ReleaseAndGetAddressOf());
 	}
 }
 
-void FStructuredBuffer::Release() {
+void FStructuredBuffer::Release()
+{
 	Buffer.Reset();
 	UAV.Reset();
 	SRV.Reset();
@@ -335,41 +324,38 @@ void FStructuredBuffer::Release() {
 
 void FStructuredBuffer::Update(ID3D11DeviceContext* InContext, const void* InData, uint32 InElementCount)
 {
-    if (!Buffer || !InData)
-        return;
+	if (!Buffer || !InData)
+	{
+		return;
+	}
 
-    D3D11_BUFFER_DESC desc;
-    Buffer->GetDesc(&desc);
+	D3D11_BUFFER_DESC Desc;
+	Buffer->GetDesc(&Desc);
 
-    if (desc.Usage == D3D11_USAGE_DYNAMIC)
-    {
-        D3D11_MAPPED_SUBRESOURCE msr;
-        if (SUCCEEDED(InContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr)))
-        {
-            std::memcpy(msr.pData, InData, InElementCount * ElementSize);
-            InContext->Unmap(Buffer.Get(), 0);
-        }
-    }
-    else
-    {
-        InContext->UpdateSubresource(Buffer.Get(), 0, nullptr, InData, 0, 0);
-    }
-    Count = InElementCount;
+	if (Desc.Usage == D3D11_USAGE_DYNAMIC)
+	{
+		D3D11_MAPPED_SUBRESOURCE Msr;
+		if (SUCCEEDED(InContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Msr)))
+		{
+			std::memcpy(Msr.pData, InData, InElementCount * ElementSize);
+			InContext->Unmap(Buffer.Get(), 0);
+		}
+	}
+	else
+	{
+		InContext->UpdateSubresource(Buffer.Get(), 0, nullptr, InData, 0, 0);
+	}
+	Count = InElementCount;
 }
 
-ID3D11ShaderResourceView* FStructuredBuffer::GetSRV() const {
+ID3D11ShaderResourceView* FStructuredBuffer::GetSRV() const
+{
 	return SRV.Get();
 }
 
 ID3D11UnorderedAccessView* FStructuredBuffer::GetUAV() const
 {
-    return UAV.Get();
-}
-
-ID3D11Buffer * FIndexBuffer::GetBuffer() const
-{
-	return Buffer.Get();
+	return UAV.Get();
 }
 
 #pragma endregion
-

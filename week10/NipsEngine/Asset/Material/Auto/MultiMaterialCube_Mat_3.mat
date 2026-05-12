@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "Mat_초록_매트",
         "Name" : "MultiMaterialCube_Mat_3",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

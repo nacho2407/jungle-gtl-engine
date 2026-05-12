@@ -7,7 +7,6 @@
 #include "Core/ResourceManager.h"
 #include "Object/ObjectFactory.h"
 #include "Render/Resource/ObjMtlLoader.h"
-#include "Render/Resource/Shader.h"
 
 #include <algorithm>
 #include <cwctype>
@@ -20,7 +19,7 @@ FMaterialLoadService::FMaterialLoadService(FResourceManager& InResourceManager)
 {
 }
 
-bool FMaterialLoadService::Load(const FString& MtlFilePath, const FString& ShaderName, ID3D11Device* Device)
+bool FMaterialLoadService::Load(const FString& MtlFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device)
 {
 	const FString NormalizedMtlFilePath = FPaths::Normalize(MtlFilePath);
 	if (NormalizedMtlFilePath.empty())
@@ -39,7 +38,7 @@ bool FMaterialLoadService::Load(const FString& MtlFilePath, const FString& Shade
 			return false;
 		}
 
-		const bool bLoadedMaterial = Load(ResolvedMtlPath, ShaderName, Device);
+		const bool bLoadedMaterial = Load(ResolvedMtlPath, ShaderType, Device);
 		if (bLoadedMaterial)
 		{
 			ResourceManager.RegisterObjMaterialSlotAliases(NormalizedMtlFilePath, ResolvedMtlPath);
@@ -50,16 +49,7 @@ bool FMaterialLoadService::Load(const FString& MtlFilePath, const FString& Shade
 
 	if (RequestedExtension == L".fbx")
 	{
-		// FBX는 내장 surface material을 가지므로 별도 서비스로 위임.
-		// (OBJ→MTL 같은 사이드카 파일 분리 단계 불필요)
-		return FFbxMaterialLoadService(ResourceManager).Load(NormalizedMtlFilePath, ShaderName, Device);
-	}
-
-	UShader* Shader = ResourceManager.GetShader(ShaderName);
-	if (!Shader)
-	{
-		UE_LOG_WARNING("Shader not found for material: %s", ShaderName.c_str());
-		return false;
+		return FFbxMaterialLoadService(ResourceManager).Load(NormalizedMtlFilePath, ShaderType, Device);
 	}
 
 	TMap<FString, UMaterial*> Parsed;
@@ -121,7 +111,7 @@ bool FMaterialLoadService::Load(const FString& MtlFilePath, const FString& Shade
 			Mat->ImportedName = Name;
 		}
 		Mat->FilePath = MaterialAssetPath;
-		Mat->SetShader(Shader);
+		Mat->SetShaderType(ShaderType);
 
 		UMaterial* ExistingMaterial = ResourceManager.MaterialCache.FindMaterialByKey(MaterialKey);
 		if (ExistingMaterial)

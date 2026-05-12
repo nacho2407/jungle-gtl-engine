@@ -37,7 +37,6 @@ namespace
 		return true;
 #endif
 	}
-
 }
 
 #pragma region __BINARY__
@@ -233,7 +232,7 @@ void FResourceManager::InitializeDefaultWhiteTexture(ID3D11Device* Device)
 
 void FResourceManager::InitializeDefaultMaterial(ID3D11Device* Device)
 {
-	UMaterial* DefaultMat = GetOrCreateMaterial("DefaultWhite", "Shaders/UberLit.hlsl");
+	UMaterial* DefaultMat = GetOrCreateMaterial("DefaultWhite", EMaterialShaderType::SurfaceLit);
 	DefaultMat->MaterialParams["AmbientColor"] = FMaterialParamValue(DefaultMat->MaterialData.AmbientColor);
 	DefaultMat->MaterialParams["DiffuseColor"] = FMaterialParamValue(DefaultMat->MaterialData.DiffuseColor);
 	DefaultMat->MaterialParams["SpecularColor"] = FMaterialParamValue(DefaultMat->MaterialData.SpecularColor);
@@ -278,17 +277,17 @@ void FResourceManager::InitializeDefaultMaterial(ID3D11Device* Device)
 
 void FResourceManager::InitializeOutlineMaterial()
 {
-	UMaterial* OutlineMat = GetOrCreateMaterial("OutlineMaterial", "Shaders/OutlinePostProcess.hlsl");
+	UMaterial* OutlineMat = GetOrCreateMaterial("OutlineMaterial", EMaterialShaderType::EditorOutline);
 	OutlineMat->SetParam("OutlineColor", FMaterialParamValue(FVector4(1.0f, 0.5f, 0.0f, 1.0f)));
 	OutlineMat->SetParam("OutlineThicknessPixels", FMaterialParamValue(5.0f));
 	OutlineMat->SetParam("OutlineViewportSize", FMaterialParamValue(FVector2(800.0f, 600.0f)));
     OutlineMat->SetParam("OutlineViewportOrigin", FMaterialParamValue(FVector2(0.0f, 0.0f)));
 }
 
-//	RootPath ??륁맄????덈뮉 筌뤴뫀諭?????揶쎛??Asset??????뤿연 ?λ뜃由??獄?????怨밸릭????λ땾
+//	RootPath ??瑜곷쭊?????덈츎 嶺뚮ㅄ維獄??????띠럾???Asset??????琉우뿰 ?貫?껆뵳?????????⑤갭由????貫??
 void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 {
-	//	?λ뜃由??
+	//	?貫?껆뵳??
 	ClearDiscoveredResourceLists(false);
 
 	InitializeDefaultResources(CachedDevice.Get());
@@ -393,7 +392,7 @@ void FResourceManager::DeleteAllCacheFiles()
 		}
 	}
 
-	// ???遺얠젂?醫듼봺 ?類ｂ봺
+	// ????븐뼚???ル벣遊??筌먲퐘遊?
 	for (auto It = fs::recursive_directory_iterator(BinRootPath);
 		 It != fs::recursive_directory_iterator();
 		 ++It)
@@ -447,31 +446,38 @@ void FResourceManager::ReleaseGPUResources()
 	CachedDevice.Reset();
 }
 
-bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
-								  const D3D_SHADER_MACRO* Defines, uint32 PermutationKey)
+FVertexShader* FResourceManager::GetOrCreateVertexShader(
+	const FShaderStageKey& Key,
+	const D3D_SHADER_MACRO* Defines,
+	const FVertexLayoutDesc* VertexLayout)
 {
-	return ShaderCache.LoadShader(FilePath, VSEntryPoint, PSEntryPoint, Defines, PermutationKey, CachedDevice.Get());
+	return ShaderCache.GetOrCreateVertexShader(Key, Defines, CachedDevice.Get(), VertexLayout);
 }
 
-bool FResourceManager::EnsureShaderPermutation(const FString& FilePath, uint32 PermutationKey)
+FPixelShader* FResourceManager::GetOrCreatePixelShader(const FShaderStageKey& Key, const D3D_SHADER_MACRO* Defines)
 {
-	return ShaderCache.EnsureShaderPermutation(FilePath, PermutationKey, CachedDevice.Get());
+	return ShaderCache.GetOrCreatePixelShader(Key, Defines, CachedDevice.Get());
 }
 
-void FResourceManager::ReloadShader(const FString& FilePath)
+FShaderProgram* FResourceManager::GetOrCreateShaderProgram(
+	const FShaderStageKey& VSKey,
+	const FShaderStageKey& PSKey,
+	const D3D_SHADER_MACRO* VSDefines,
+	const D3D_SHADER_MACRO* PSDefines,
+	const FVertexLayoutDesc* VertexLayout)
 {
-	ShaderCache.ReloadShader(FilePath, CachedDevice.Get());
-}
-
-UShader* FResourceManager::GetShader(const FString& FilePath) const
-{
-	return ShaderCache.GetShader(FilePath);
+	return ShaderCache.GetOrCreateProgram(VSKey, PSKey, VSDefines, PSDefines, CachedDevice.Get(), VertexLayout);
 }
 
 bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString& EntryPoint,
                                          const D3D_SHADER_MACRO* Defines, const FString& Key)
 {
 	return ShaderCache.LoadComputeShader(FilePath, EntryPoint, Defines, Key, CachedDevice.Get());
+}
+
+void FResourceManager::InvalidateShaderFile(const FString& FilePath)
+{
+	ShaderCache.InvalidateShaderFile(FilePath);
 }
 
 FComputeShader* FResourceManager::GetComputeShader(const FString& Key) const
@@ -494,8 +500,8 @@ UMaterial* FResourceManager::GetMaterial(const FString& MaterialName) const
 	return MaterialCache.GetMaterial(MaterialName);
 }
 
-// 筌띲끆而삭퉪?????곸뵠 揶쎛??揶쏄쑬???Material????밴쉐
-UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Path, const FString& ShaderName)
+// 嶺뚮씞?녻뚯궘??????怨몃턄 ?띠럾????띠룄????Material????諛댁뎽
+UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Path, EMaterialShaderType ShaderType)
 {
 	UMaterial* Material = GetMaterial(Path);
 	if (Material)
@@ -507,15 +513,14 @@ UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Path, const FStr
 	Material->Name = Path;
 	Material->FilePath = Path;
 
-	UShader* Shader = GetShader(ShaderName);
-	Material->SetShader(Shader);
+	Material->SetShaderType(ShaderType);
 
 	MaterialCache.RegisterMaterial(Path, Material);
 
 	return Material;
 }
 
-UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Name, const FString& Path, const FString& ShaderName)
+UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Name, const FString& Path, EMaterialShaderType ShaderType)
 {
 	UMaterial* Material = GetMaterial(Name);
 	if (Material)
@@ -527,17 +532,16 @@ UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Name, const FStr
 	Material->Name = Name;
 	Material->FilePath = Path;
 
-	UShader* Shader = GetShader(ShaderName);
-	Material->SetShader(Shader);
+	Material->SetShaderType(ShaderType);
 
 	MaterialCache.RegisterMaterial(Name, Material);
 
 	return Material;
 }
 
-bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& ShaderName, ID3D11Device* Device)
+bool FResourceManager::LoadMaterial(const FString& MtlFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device)
 {
-	return FMaterialLoadService(*this).Load(MtlFilePath, ShaderName, Device);
+	return FMaterialLoadService(*this).Load(MtlFilePath, ShaderType, Device);
 }
 
 void FResourceManager::RegisterObjMaterialSlotAliases(const FString& ObjPath, const FString& MtlPath)
@@ -771,7 +775,7 @@ USkeletalMesh* FResourceManager::LoadSkeletalMesh(const FString& Path)
         return FoundMesh;
     }
 
-    LoadMaterial(NormalizedPath, "Shaders/UberLit.hlsl");
+    LoadMaterial(NormalizedPath, EMaterialShaderType::SurfaceLit);
 
     FStaticMeshLoadOptions LoadOptions;
     FSkeletalMesh* LoadedMeshData = FbxImporter.LoadSkeletalMesh(NormalizedPath, LoadOptions);
