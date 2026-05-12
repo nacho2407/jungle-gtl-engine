@@ -51,6 +51,7 @@ void FMeshEditorWidget::Open(UObject* Object)
 	ViewportClient.SetPreviewMeshComponent(Actor->GetComponentByClass<USkeletalMeshComponent>());
 
 	ViewportClient.CreatePreviewGizmo();
+	ViewportClient.CreateBoneDebugComponent();
 	ViewportClient.ResetCameraToPreviousBounds();
 
 	WorldContext.World->SetEditorPOVProvider(&ViewportClient);

@@ -75,6 +75,7 @@ private:
 	// 동적 지오메트리
 	FLineGeometry  EditorLines;
 	FLineGeometry  GridLines;
+	FLineGeometry  DebugBoneLines;
 	FFontGeometry  FontGeometry;
 
 	// PerObject CB 풀
