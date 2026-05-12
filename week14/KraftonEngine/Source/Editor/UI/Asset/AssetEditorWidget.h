@@ -2,6 +2,7 @@
 #include "UI/EditorWidget.h"
 
 class UObject;
+class IEditorPreviewViewportClient;
 
 class FAssetEditorWidget : public FEditorWidget
 {
@@ -12,6 +13,9 @@ public:
 
 	virtual void Open(UObject* Object);
 	virtual void Close();
+	virtual void Tick(float DeltaTime) {}
+
+	virtual void CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const {}
 
 	UObject* GetEditedObject() const { return EditedObject; }
 	bool IsOpen() const { return bOpen; }

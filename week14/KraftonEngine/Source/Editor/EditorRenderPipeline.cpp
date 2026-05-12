@@ -1,7 +1,7 @@
 ﻿#include "EditorRenderPipeline.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
-#include "Editor/Viewport/MeshEditorViewportClient.h"
+#include "Editor/Viewport/EditorPreviewViewportClient.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Render/Scene/FScene.h"
 #include "Viewport/Viewport.h"
@@ -100,15 +100,18 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		RenderViewport(ViewportClient, Renderer);
 	}
 
-	if (FMeshEditorViewportClient* MeshVC = Editor->GetMeshEditorViewportClient())
+	TArray<IEditorPreviewViewportClient*> PreviewViewportClients;
+	Editor->CollectAssetEditorPreviewViewportClients(PreviewViewportClients);
+
+	for (IEditorPreviewViewportClient* PreviewVC : PreviewViewportClients)
 	{
-		if (MeshVC->IsRenderable() && MeshVC->GetPreviewWorld())
+		if (PreviewVC->IsRenderable() && PreviewVC->GetPreviewWorld())
 		{
-			FScene& PreviewScene = MeshVC->GetPreviewWorld()->GetScene();
+			FScene& PreviewScene = PreviewVC->GetPreviewWorld()->GetScene();
 			++Renderer.GetResources().GetShadowResourcesForScene(&PreviewScene).Resources.FrameGeneration;
 
-			SCOPE_STAT_CAT("RenderMeshViewport", "2_Render");
-			RenderMeshViewport(MeshVC, Renderer);
+			SCOPE_STAT_CAT("RenderPreviewViewport", "2_Render");
+			RenderPreviewViewport(PreviewVC, Renderer);
 		}
 	}
 
@@ -349,7 +352,7 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 	}
 }
 
-void FEditorRenderPipeline::RenderMeshViewport(FMeshEditorViewportClient* VC, FRenderer& Renderer)
+void FEditorRenderPipeline::RenderPreviewViewport(IEditorPreviewViewportClient* VC, FRenderer& Renderer)
 {
 	FViewport* VP = VC->GetViewport();
 	UWorld* World = VC->GetPreviewWorld();

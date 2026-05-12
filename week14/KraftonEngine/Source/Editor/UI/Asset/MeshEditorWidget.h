@@ -14,6 +14,9 @@ public:
 
 	void Open(UObject* Object) override;
 	void Close() override;
+	void Tick(float DeltaTime) override;
+
+	void CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const override;
 
 	void Render(float DeltaTime) override;
 
