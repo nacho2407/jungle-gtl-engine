@@ -502,6 +502,7 @@ void AStaticMeshActor::InitDefaultComponents()
 void ASkeletalMeshActor::InitDefaultComponents()
 {
     auto* SkeletalMesh = AddComponent<USkeletalMeshComponent>();
+    SkeletalMesh->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/SimpleCharacter.fbx"));
     SetRootComponent(SkeletalMesh);
 
     auto* Text = AddComponent<UTextRenderComponent>();
