@@ -35,7 +35,15 @@ bool FAssetPathPolicy::IsCurveAssetPath(const FString& Path)
 			return static_cast<char>(std::tolower(Ch));
 		});
 
-	return EndsWith(FileName, ".curve") || EndsWith(FileName, ".curve.json");
+	return EndsWith(FileName, ".curve");
+}
+
+bool FAssetPathPolicy::IsSequenceAssetPath(const FString& Path)
+{
+	std::filesystem::path FsPath(FPaths::ToWide(FPaths::Normalize(Path)));
+	std::wstring Extension = FsPath.extension().wstring();
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
+	return Extension == L".sequence";
 }
 
 bool FAssetPathPolicy::IsSerializedMaterialAssetPath(const FString& Path)

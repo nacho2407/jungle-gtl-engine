@@ -32,13 +32,6 @@ namespace
                 return static_cast<char>(std::tolower(Ch));
             });
 
-        const FString CurveJsonSuffix = ".curve.json";
-        if (LowerPath.size() >= CurveJsonSuffix.size() &&
-            LowerPath.compare(LowerPath.size() - CurveJsonSuffix.size(), CurveJsonSuffix.size(), CurveJsonSuffix) == 0)
-        {
-            return true;
-        }
-
         return std::filesystem::path(FPaths::ToWide(LowerPath)).extension() == L".curve";
     }
 }
@@ -108,8 +101,7 @@ bool FCurveAssetLoader::Save(const FString& Path, const UCurveFloatAsset* Curve)
 
 bool FCurveAssetLoader::SupportsExtension(const FString& Extension) const
 {
-    return Extension == ".curve" || Extension == "curve" ||
-        Extension == ".curve.json" || Extension == "curve.json";
+    return Extension == ".curve" || Extension == "curve";
 }
 
 FString FCurveAssetLoader::GetLoaderName() const

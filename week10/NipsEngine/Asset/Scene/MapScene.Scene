@@ -1816,7 +1816,7 @@
             "ApplyModes" : [0, 1, 1, 0],
             "BindingGuids" : ["6FF1B2CF-793A4470-859B3AE2-AE03C1C5", "E6AED0CE-6E004302-B6AF91D5-A7D05201", "1CC77E35-F90548C0-A879CF2B-450E5523", "ED2CAB25-668B4AA1-B8B3DE09-AA975364"],
             "ChannelNames" : ["Y", "X", "Y", "X"],
-            "CurveAssetPaths" : ["Asset/Curve/PlayerDead.curve.json", "Asset/Curve/Test.curve.json", "Asset/Curve/PlayerDeadY.curve.json", "Asset/Curve/PlayerDeadR_X.curve.json"],
+            "CurveAssetPaths" : ["Asset/Curve/PlayerDead.curve", "Asset/Curve/Test.curve", "Asset/Curve/PlayerDeadY.curve", "Asset/Curve/PlayerDeadR_X.curve"],
             "Duration" : 1.500000,
             "Durations" : [1.400000, 2.000000, 2.000000, 1.000000],
             "Loop" : false,

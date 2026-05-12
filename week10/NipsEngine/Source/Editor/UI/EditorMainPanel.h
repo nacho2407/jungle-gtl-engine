@@ -10,6 +10,8 @@ class FRenderer;
 class UEditorEngine;
 class UMaterialInterface;
 class UPrimitiveComponent;
+class UActorSequenceComponent;
+class UCurveFloatAsset;
 class FWindowsWindow;
 struct ID3D11Device;
 
@@ -45,6 +47,13 @@ public:
 	void OpenMaterialAsset(UMaterialInterface* Material);
 	void OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex);
 	void OpenCurveAsset(const FString& CurvePath);
+	void OpenCurveFromActorSequence(
+		UCurveFloatAsset* Curve,
+		UActorSequenceComponent* SequenceComp,
+		const FString& SourceLabel,
+		const FString& SourcePath = "",
+		int32 InitialSelectedKeyIndex = -1);
+	void OpenActorSequencer(UActorSequenceComponent* SequenceComp);
 	void PushFooterLog(const FString& Message);
 	void RequestPIEViewportInputFocus();
 	bool SpawnPrefabAtOrigin(const FString& PayloadPath);

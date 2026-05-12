@@ -28,6 +28,7 @@ void FEditorMainPanel::InitializeEditorWidgets(UEditorEngine* InEditorEngine)
 {
     Widgets.ConsoleWidget.Initialize(InEditorEngine);
     Widgets.ContentBrowserWidget.Initialize(InEditorEngine);
+    Widgets.ActorSequencerWidget.Initialize(InEditorEngine);
     Widgets.ControlWidget.Initialize(InEditorEngine);
     Widgets.CurveEditorWidget.Initialize(InEditorEngine);
     Widgets.MaterialWidget.Initialize(InEditorEngine);
@@ -44,6 +45,26 @@ void FEditorMainPanel::InitializeEditorWidgets(UEditorEngine* InEditorEngine)
 void FEditorMainPanel::OpenCurveAsset(const FString& CurvePath)
 {
     Widgets.CurveEditorWidget.OpenCurveAsset(CurvePath);
+}
+
+void FEditorMainPanel::OpenCurveFromActorSequence(
+    UCurveFloatAsset* Curve,
+    UActorSequenceComponent* SequenceComp,
+    const FString& SourceLabel,
+    const FString& SourcePath,
+    int32 InitialSelectedKeyIndex)
+{
+    Widgets.CurveEditorWidget.OpenCurveFromActorSequence(
+        Curve,
+        SequenceComp,
+        SourceLabel,
+        SourcePath,
+        InitialSelectedKeyIndex);
+}
+
+void FEditorMainPanel::OpenActorSequencer(UActorSequenceComponent* SequenceComp)
+{
+    Widgets.ActorSequencerWidget.Open(SequenceComp);
 }
 
 void FEditorMainPanel::BindEditorWidgetCallbacks()
@@ -75,4 +96,5 @@ void FEditorMainPanel::ResetWidgetSelections()
 {
     Widgets.PropertyWidget.ResetSelection();
     Widgets.MaterialWidget.ResetSelection();
+    Widgets.ActorSequencerWidget.ResetTarget();
 }

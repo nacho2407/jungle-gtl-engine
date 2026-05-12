@@ -24,8 +24,17 @@ public:
     UActorSequence* GetSequence();
     UActorSequencePlayer* GetSequencePlayer();
     UActorSequencePlayer* GetPreviewSequencePlayer();
-    bool ShouldRestoreOnStop() const { return bRestoreOnStop; }
-    void SetRestoreOnStop(bool bInRestoreOnStop) { bRestoreOnStop = bInRestoreOnStop; }
+
+    bool IsAutoPlay() const { return bAutoPlay; }
+    void SetAutoPlay(bool bInAutoPlay) { bAutoPlay = bInAutoPlay; }
+    bool IsLooping() const;
+    void SetLooping(bool bInLooping);
+    float GetPlayRate() const { return PlayRate; }
+    void SetPlayRate(float InPlayRate);
+    bool ShouldPauseAtEnd() const { return bPauseAtEnd; }
+    void SetPauseAtEnd(bool bInPauseAtEnd);
+    float GetStartOffsetSeconds() const { return StartOffsetSeconds; }
+    void SetStartOffsetSeconds(float InStartOffsetSeconds);
 
     void MarkSequenceDirty();
 
@@ -40,6 +49,7 @@ private:
     void EnsureSequence();
     void EnsureSequencePlayer(ESequencePlayerContext Context);
     void EnsurePreviewSequencePlayer();
+    void ApplyPlaybackSettings(UActorSequencePlayer* Player);
 
 private:
     UActorSequence* Sequence = nullptr;
@@ -47,5 +57,7 @@ private:
     UActorSequencePlayer* PreviewSequencePlayer = nullptr;
 
     bool bAutoPlay = true;
-    bool bRestoreOnStop = true;
+    bool bPauseAtEnd = false;
+    float PlayRate = 1.0f;
+    float StartOffsetSeconds = 0.0f;
 };

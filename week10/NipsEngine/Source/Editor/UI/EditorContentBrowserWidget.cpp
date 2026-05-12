@@ -960,7 +960,7 @@ bool FEditorContentBrowserWidget::CreateMaterialAsset()
 
 bool FEditorContentBrowserWidget::CreateCurveAsset()
 {
-	const std::filesystem::path NewPath = MakeUniquePath(CurrentPath / L"New Curve.curve.json");
+	const std::filesystem::path NewPath = MakeUniquePath(CurrentPath / L"New Curve.curve");
 	const FString RelativePath = MakeRelativeProjectPath(NewPath);
 
 	UCurveFloatAsset* Curve = UObjectManager::Get().CreateObject<UCurveFloatAsset>();
@@ -1328,6 +1328,14 @@ void FEditorContentBrowserWidget::DrawAssetPreview()
 		return;
 	}
 
+	if (IsSequenceAsset(Extension))
+	{
+		ImGui::Spacing();
+		ImGui::TextDisabled("Sequence Asset");
+		ImGui::TextWrapped(".sequence is reserved for future Level Sequence / Animation Sequence assets.");
+		return;
+	}
+
 	if (IsPrefabAsset(Extension))
 	{
 		ImGui::Spacing();
@@ -1616,6 +1624,10 @@ ImU32 FEditorContentBrowserWidget::GetItemColor(const FContentItem& Item) const
 	{
 		return ImGui::GetColorU32(ImVec4(0.42f, 0.50f, 0.78f, 1.0f));
 	}
+	if (IsSequenceAsset(Item.Extension))
+	{
+		return ImGui::GetColorU32(ImVec4(0.78f, 0.55f, 0.34f, 1.0f));
+	}
 	if (Item.Extension == ".prefab")
 	{
 		return ImGui::GetColorU32(ImVec4(0.58f, 0.72f, 0.92f, 1.0f));
@@ -1670,19 +1682,13 @@ bool FEditorContentBrowserWidget::IsMaterialAsset(const FString& Extension) cons
 
 bool FEditorContentBrowserWidget::IsCurveAsset(const std::filesystem::path& Path) const
 {
-	const FString Filename = ToLower(FPaths::ToUtf8(Path.filename().wstring()));
 	const FString Extension = ToLower(FPaths::ToUtf8(Path.extension().wstring()));
-	if (Extension == ".curve")
-	{
-		return true;
-	}
+	return Extension == ".curve";
+}
 
-	const FString CurveJsonSuffix = ".curve.json";
-	if (Filename.size() < CurveJsonSuffix.size())
-	{
-		return false;
-	}
-	return Filename.compare(Filename.size() - CurveJsonSuffix.size(), CurveJsonSuffix.size(), CurveJsonSuffix) == 0;
+bool FEditorContentBrowserWidget::IsSequenceAsset(const FString& Extension) const
+{
+	return Extension == ".sequence";
 }
 
 bool FEditorContentBrowserWidget::IsPrefabAsset(const FString& Extension) const
