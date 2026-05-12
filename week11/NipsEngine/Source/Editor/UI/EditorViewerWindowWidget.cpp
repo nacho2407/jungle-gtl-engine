@@ -43,8 +43,9 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 
     ImVec2 FullSize = ImGui::GetContentRegionAvail();
 
-    float LeftWidth = FullSize.x * 0.25f;
-    float RightWidth = FullSize.x - LeftWidth;
+    float LeftWidth = FullSize.x * 0.2f;
+    float RightWidth = FullSize.x * 0.2f;
+    float CenterWidth = FullSize.x - LeftWidth - RightWidth;
 
     // =====================================================
     // LEFT: Skeleton Tree
@@ -87,9 +88,9 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
     ImGui::SameLine();
 
     // =====================================================
-    // RIGHT: Viewport
+    // CENTER: Viewport
     // =====================================================
-    ImGui::BeginChild("ViewportPanel", ImVec2(RightWidth, 0), false);
+    ImGui::BeginChild("ViewportPanel", ImVec2(CenterWidth, 0), false);
 
     ImVec2 ScreenPos = ImGui::GetCursorScreenPos();
     ImVec2 Size = ImGui::GetContentRegionAvail();
@@ -126,8 +127,80 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 
     ImGui::EndChild();
 
+    ImGui::SameLine();
+
+    // =====================================================
+    // RIGHT: Bone Details
+    // =====================================================
+    ImGui::BeginChild("BoneDetailsPanel", ImVec2(RightWidth, 0), true);
+    ImGui::Text("Bone Details");
+    ImGui::Separator();
+    if (SelectedBoneIndex != -1 && SkelMeshComp)
+    {
+        RenderBoneDetails(SkelMeshComp);
+    }
+    else
+    {
+        ImGui::TextDisabled("No bone selected.");
+    }
+    ImGui::EndChild();
+
     ImGui::End();
     ImGui::PopStyleVar();
+}
+
+void FEditorViewerWindowWidget::RenderBoneDetails(USkeletalMeshComponent* SkelComp)
+{
+    if (!SkelComp || SelectedBoneIndex == -1) return;
+
+    const FBoneInfo& Bone = SkelComp->GetSkeletalMesh()->GetMeshData()->Bones[SelectedBoneIndex];
+    ImGui::Text("Bone: %s (Index: %d)", Bone.Name.c_str(), SelectedBoneIndex);
+    ImGui::Spacing();
+
+    FMatrix LocalTransform = SkelComp->GetBoneLocalTransform(SelectedBoneIndex);
+    FVector Location, Scale;
+    FMatrix RotationMatrix;
+    LocalTransform.Decompose(Location, RotationMatrix, Scale);
+
+    // 외부(기즈모 등)에서 회전이 변경되었는지 확인
+    FVector CurrentEuler = RotationMatrix.GetEuler();
+
+	if ((CurrentEuler - FMatrix::MakeRotationEuler(CachedRotation).GetEuler()).Size() > 0.01f)
+    {
+        CachedRotation = CurrentEuler;
+    }
+
+    bool bEdited = false;
+
+    auto DrawTransformField = [&](const char* Label, FVector& Value, float Speed) {
+        float Arr[3] = { Value.X, Value.Y, Value.Z };
+        if (ImGui::DragFloat3(Label, Arr, Speed))
+        {
+            Value = FVector(Arr[0], Arr[1], Arr[2]);
+            return true;
+        }
+        return false;
+    };
+
+    ImGui::Text("Transform (Local)");
+    if (DrawTransformField("Location", Location, 0.1f)) bEdited = true;
+    if (DrawTransformField("Rotation", CachedRotation, 0.1f)) bEdited = true;
+    if (DrawTransformField("Scale", Scale, 0.01f)) bEdited = true;
+
+    if (bEdited)
+    {
+        FMatrix NewLocal = FMatrix::MakeTRS(Location, FMatrix::MakeRotationEuler(CachedRotation), Scale);
+        SkelComp->SetBoneLocalTransform(SelectedBoneIndex, NewLocal);
+
+        // Gizmo 위치 업데이트
+        auto& Viewer = EditorEngine->GetViewer();
+        FViewportClient* BaseClient = Viewer.GetViewport().GetClient();
+        FEditorViewportClient* EditorClient = static_cast<FEditorViewportClient*>(BaseClient);
+        if (UGizmoComponent* Gizmo = EditorClient->GetGizmo())
+        {
+            Gizmo->UpdateGizmoTransform();
+        }
+    }
 }
 
 void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBoneInfo>& Bones, const TArray<TArray<int32>>& Children)
@@ -172,6 +245,13 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
 				{
 					USkeletalMeshComponent* SkelComp = ViewTarget->GetSkeletalMeshComponent();
 					Gizmo->SetProxy(std::make_shared<FBoneTransformProxy>(SkelComp, SelectedBoneIndex));
+
+                    // 초기 회전값 캐싱 (Euler Jitter 방지)
+                    FMatrix LocalTransform = SkelComp->GetBoneLocalTransform(SelectedBoneIndex);
+                    FVector dummyL, dummyS;
+                    FMatrix RotM;
+                    LocalTransform.Decompose(dummyL, RotM, dummyS);
+                    CachedRotation = RotM.GetEuler();
 				}
 			}
 		}

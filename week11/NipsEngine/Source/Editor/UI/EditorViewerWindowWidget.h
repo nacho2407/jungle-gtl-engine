@@ -13,7 +13,11 @@ public:
         const TArray<TArray<int32>>& Children);
 
 private:
+    void RenderBoneDetails(class USkeletalMeshComponent* SkelComp);
+
+private:
     TArray<TArray<int32>> Children;
     FSkeletalMesh* CachedMesh = nullptr;
     int32 SelectedBoneIndex = -1;
+    FVector CachedRotation;
 };
