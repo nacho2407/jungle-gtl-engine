@@ -550,16 +550,6 @@ void UEditorEngine::CreateViewerWorld()
     // Viewer용 별도 월드 생성
     FWorldContext& ViewerCtx = CreateWorldContext(EWorldType::ViewerPreview, FName("ViewerPreview"), "Viewer Preview");
     ApplySpatialIndexMaintenanceSettings(ViewerCtx.World);
-    SpawnDefaultSceneActors(ViewerCtx.World);
-
-    ACubeActor* TestActor = ViewerCtx.World->SpawnActor<ACubeActor>();
-    if (TestActor)
-    {
-        TestActor->InitDefaultComponents();
-        TestActor->SetFName(FName("Test Actor"));
-        TestActor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
-    }
-
     Viewer.Init(Window, this, ViewerCtx.World, ViewerCtx.SelectionManager);
 }
 

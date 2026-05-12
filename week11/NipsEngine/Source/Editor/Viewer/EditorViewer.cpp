@@ -4,6 +4,7 @@
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Geometry/Ray.h"
 #include "Component/GizmoComponent.h"
+#include "GameFramework/PrimitiveActors.h"
 #include "imgui.h"
 
 void FEditorViewer::Init(
@@ -32,6 +33,31 @@ void FEditorViewer::Init(
 	// 임시
 	FViewportRect Rect = { 0, 0, 300, 300 };
     Viewport.SetRect(Rect);
+
+	// Build 는 Viewer 담당
+	ADirectionalLightActor* DirectionalLight = InWorld->SpawnActor<ADirectionalLightActor>();
+    if (DirectionalLight)
+    {
+        DirectionalLight->InitDefaultComponents();
+        DirectionalLight->SetFName(FName("Directional Light"));
+        DirectionalLight->SetActorLocation(FVector(0.0f, 0.0f, 13.0f));
+        DirectionalLight->SetActorRotation(FVector(0.0f, 44.0f, 0.0f));
+    }
+
+    AAmbientLightActor* AmbientLight = InWorld->SpawnActor<AAmbientLightActor>();
+    if (AmbientLight)
+    {
+        AmbientLight->InitDefaultComponents();
+        AmbientLight->SetFName(FName("Ambient Light"));
+        AmbientLight->SetActorLocation(FVector(0.0f, 0.0f, 15.0f));
+    }
+
+    InWorld->SyncSpatialIndex();
+
+    ViewTarget = InWorld->SpawnActor<ASkeletalMeshActor>();
+    ViewTarget->InitDefaultComponents();
+    ViewTarget->SetFName(FName("ViewerActor"));
+    ViewTarget->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
 }
 
 void FEditorViewer::Shutdown()
