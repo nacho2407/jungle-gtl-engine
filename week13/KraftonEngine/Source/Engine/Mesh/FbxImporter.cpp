@@ -108,6 +108,11 @@ struct hash<FFbxStaticVertexKey>
 static FMatrix ConvertFbxMatrix(const FbxMatrix& FbxMat);
 static FbxAMatrix GetGeometryTransform(FbxNode* Node);
 
+static bool IsValidControlPointIndex(const FbxMesh* Mesh, int32 ControlPointIndex)
+{
+	return Mesh && ControlPointIndex >= 0 && ControlPointIndex < Mesh->GetControlPointsCount();
+}
+
 bool FFbxImporter::Import(const FString& FilePath)
 {
 	// FBX import 결과가 바로 엔진 전용 cooked binary cache에 저장되므로,
@@ -126,22 +131,48 @@ bool FFbxImporter::Import(const FString& FilePath)
 	BitangentSums.clear();
 
 	FbxManager* SdkManager = FbxManager::Create();
+	if (!SdkManager)
+	{
+		return false;
+	}
 
 	FbxIOSettings* ios = FbxIOSettings::Create(SdkManager, IOSROOT);
+	if (!ios)
+	{
+		SdkManager->Destroy();
+		return false;
+	}
 	SdkManager->SetIOSettings(ios);
 
 	FbxScene* Scene = FbxScene::Create(SdkManager, "My Scene");
+	if (!Scene)
+	{
+		SdkManager->Destroy();
+		return false;
+	}
 
 	FbxImporter* Importer = FbxImporter::Create(SdkManager, "");
+	if (!Importer)
+	{
+		SdkManager->Destroy();
+		return false;
+	}
 
 	FString FullPath = FPaths::ToUtf8(FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(FilePath)));
 
 	if (!Importer->Initialize(FullPath.c_str(), -1, SdkManager->GetIOSettings()))
 	{
+		Importer->Destroy();
+		SdkManager->Destroy();
 		return false;
 	}
 
-	Importer->Import(Scene);
+	if (!Importer->Import(Scene))
+	{
+		Importer->Destroy();
+		SdkManager->Destroy();
+		return false;
+	}
 	Importer->Destroy();
 
 	// 임의로 m 변환. UE는 cm 단위
@@ -154,14 +185,17 @@ bool FFbxImporter::Import(const FString& FilePath)
 
 	if (!Parse(Scene))
 	{
+		SdkManager->Destroy();
 		return false;
 	}
 
 	if (!Convert())
 	{
+		SdkManager->Destroy();
 		return false;
 	}
 
+	SdkManager->Destroy();
 	return true;
 }
 
@@ -174,11 +208,24 @@ bool FFbxImporter::ImportStatic(const FString& FilePath, const FImportOptions* O
 	MaterialToSlotIndex.clear();
 
 	FbxManager* SdkManager = FbxManager::Create();
+	if (!SdkManager) return false;
+
 	FbxIOSettings* ios = FbxIOSettings::Create(SdkManager, IOSROOT);
+	if (!ios)
+	{
+		SdkManager->Destroy();
+		return false;
+	}
 	SdkManager->SetIOSettings(ios);
 
 	FbxScene* Scene = FbxScene::Create(SdkManager, "Static FBX Scene");
 	FbxImporter* Importer = FbxImporter::Create(SdkManager, "");
+	if (!Scene || !Importer)
+	{
+		if (Importer) Importer->Destroy();
+		SdkManager->Destroy();
+		return false;
+	}
 
 	FString FullPath = FPaths::ToUtf8(FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(FilePath)));
 	if (!Importer->Initialize(FullPath.c_str(), -1, SdkManager->GetIOSettings()))
@@ -187,7 +234,12 @@ bool FFbxImporter::ImportStatic(const FString& FilePath, const FImportOptions* O
 		return false;
 	}
 
-	Importer->Import(Scene);
+	if (!Importer->Import(Scene))
+	{
+		Importer->Destroy();
+		SdkManager->Destroy();
+		return false;
+	}
 	Importer->Destroy();
 
 	FbxSystemUnit::m.ConvertScene(Scene);
@@ -223,6 +275,8 @@ bool FFbxImporter::ImportStatic(const FString& FilePath, const FImportOptions* O
 
 	for (FbxNode* Node : Nodes)
 	{
+		if (!Node) continue;
+
 		FbxMesh* Mesh = Node->GetMesh();
 		if (!Mesh) continue;
 
@@ -271,6 +325,11 @@ bool FFbxImporter::ImportStatic(const FString& FilePath, const FImportOptions* O
 
 		for (int32 PolygonIndex = 0; PolygonIndex < Mesh->GetPolygonCount(); ++PolygonIndex)
 		{
+			if (Mesh->GetPolygonSize(PolygonIndex) != 3)
+			{
+				continue;
+			}
+
 			const int32 LocalMaterialIndex = GetMaterialIndex(Mesh, PolygonIndex);
 			int32 GlobalMaterialIndex = -1;
 			if (LocalMaterialIndex >= 0 && LocalMaterialIndex < static_cast<int32>(LocalToGlobalMaterialIndex.size()))
@@ -279,10 +338,17 @@ bool FFbxImporter::ImportStatic(const FString& FilePath, const FImportOptions* O
 			}
 
 			uint32 TriIndices[3] = {};
+			uint32 PendingSectionIndices[3] = {};
+			bool bValidTriangle = true;
 			for (int32 CornerIndex = 0; CornerIndex < 3; ++CornerIndex)
 			{
 				FNormalVertex Vertex;
 				const int32 CPIndex = Mesh->GetPolygonVertex(PolygonIndex, CornerIndex);
+				if (!IsValidControlPointIndex(Mesh, CPIndex))
+				{
+					bValidTriangle = false;
+					break;
+				}
 
 				FbxVector4 CP = Mesh->GetControlPointAt(CPIndex);
 				Vertex.pos = MeshToWorld.TransformPositionWithW(FVector((float)CP[0], (float)CP[1], (float)CP[2]));
@@ -333,6 +399,16 @@ bool FFbxImporter::ImportStatic(const FString& FilePath, const FImportOptions* O
 				}
 
 				TriIndices[CornerIndex] = VertexIndex;
+				PendingSectionIndices[CornerIndex] = VertexIndex;
+			}
+
+			if (!bValidTriangle)
+			{
+				continue;
+			}
+
+			for (uint32 VertexIndex : PendingSectionIndices)
+			{
 				SectionIndicesMap[GlobalMaterialIndex].push_back(VertexIndex);
 			}
 
@@ -730,7 +806,10 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 		for (int32 i = 0; i < ClusterCount; ++i)
 		{
 			FbxCluster* Cluster = Skin->GetCluster(i);
+			if (!Cluster) continue;
+
 			FbxNode* LinkNode = Cluster->GetLink();
+			if (!LinkNode) continue;
 
 			auto It = NodeToIndex.find(LinkNode);
 			if (It == NodeToIndex.end()) continue;
@@ -752,11 +831,25 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 			int32* ControlPointIndices = Cluster->GetControlPointIndices();
 			double* ControlPointWeights = Cluster->GetControlPointWeights();
 			int32 NumIndices = Cluster->GetControlPointIndicesCount();
+			if (!ControlPointIndices || !ControlPointWeights || NumIndices <= 0)
+			{
+				continue;
+			}
 
 			for (int32 j = 0; j < NumIndices; ++j)
 			{
 				int32 CPIndex = ControlPointIndices[j];
+				if (!IsValidControlPointIndex(Mesh, CPIndex))
+				{
+					continue;
+				}
+
 				float Weight = (float)ControlPointWeights[j];
+				if (Weight <= 0.0f)
+				{
+					continue;
+				}
+
 				TempWeights[CPIndex].push_back({ BoneIndex, Weight });
 			}
 		}
@@ -783,6 +876,11 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 
 		for (int32 i = 0; i < Mesh->GetPolygonCount(); ++i)
 		{
+			if (Mesh->GetPolygonSize(i) != 3)
+			{
+				continue;
+			}
+
 			int32 LocalMaterialIndex = GetMaterialIndex(Mesh, i);
 			int32 GlobalMaterialIndex = -1;
 
@@ -792,10 +890,17 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 				GlobalMaterialIndex = LocalToGlobalMaterialIndex[LocalMaterialIndex];
 			}
 			uint32 TriIndices[3] = {};
+			uint32 PendingSectionIndices[3] = {};
+			bool bValidTriangle = true;
 			for (int32 j = 0; j < 3; ++j)
 			{
 				FVertexPNCTBW Vertex;
 				int32 CPIndex = Mesh->GetPolygonVertex(i, j);
+				if (!IsValidControlPointIndex(Mesh, CPIndex))
+				{
+					bValidTriangle = false;
+					break;
+				}
 
 				FbxVector4 CP = Mesh->GetControlPointAt(CPIndex);
 				Vertex.Position = FVector((float)CP[0], (float)CP[1], (float)CP[2]);
@@ -864,6 +969,16 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 					VertexMap[Key] = VertexIndex;
 				}
 				TriIndices[j] = VertexIndex;
+				PendingSectionIndices[j] = VertexIndex;
+			}
+
+			if (!bValidTriangle)
+			{
+				continue;
+			}
+
+			for (uint32 VertexIndex : PendingSectionIndices)
+			{
 				SectionIndicesMap[GlobalMaterialIndex].push_back(VertexIndex);
 			}
 
