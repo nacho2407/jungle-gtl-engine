@@ -329,11 +329,11 @@ void FEditorSceneWidget::Render(float DeltaTime)
             FString PrefabPath;
             if (PromptSavePrefabAs(RenameTarget, PrefabPath) && FPrefabManager::SaveActorPrefab(RenameTarget, PrefabPath))
             {
-                EditorEngine->GetMainPanel().PushFooterLog("Prefab saved");
+                EditorEngine->GetNotificationService().Info("Prefab saved");
             }
             else
             {
-                EditorEngine->GetMainPanel().PushFooterLog("Prefab save canceled or failed");
+                EditorEngine->GetNotificationService().Warning("Prefab save canceled or failed");
             }
             ImGui::CloseCurrentPopup();
         }
@@ -347,7 +347,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
                 LastClickedActorIndex = -1;
                 World->RebuildSpatialIndex();
                 EditorEngine->GetSceneService().MarkDirty();
-                EditorEngine->GetMainPanel().PushFooterLog("Actor placed from Outliner");
+                EditorEngine->GetNotificationService().Info("Actor placed from Outliner");
             }
             ImGui::EndMenu();
         }
@@ -610,7 +610,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
             EditorEngine->GetUndoSystem().CaptureSnapshot("Rename Actor");
             PendingRenameActor->SetFName(FName(UniqueName));
             EditorEngine->GetSceneService().MarkDirty();
-            EditorEngine->GetMainPanel().PushFooterLog("Actor renamed");
+            EditorEngine->GetNotificationService().Info("Actor renamed");
             PendingRenameActor = nullptr;
             ImGui::CloseCurrentPopup();
         }

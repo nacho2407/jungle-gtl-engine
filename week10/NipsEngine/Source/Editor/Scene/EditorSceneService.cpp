@@ -322,7 +322,7 @@ void FEditorSceneService::PushFooterLog(const FString& Message) const
 {
 	if (EditorEngine && !Message.empty())
 	{
-		EditorEngine->GetMainPanel().PushFooterLog(Message);
+		EditorEngine->GetNotificationService().Info(Message);
 	}
 }
 

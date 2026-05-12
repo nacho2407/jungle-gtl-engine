@@ -9,7 +9,7 @@ bool FEditorMainPanel::CanCloseEditor()
 
 bool FEditorMainPanel::RequestNewScene()
 {
-    return EditorEngine && EditorEngine->GetSceneService().NewScene().bSuccess;
+    return EditorEngine && EditorEngine->GetCommandSystem().Execute(EEditorCommand::NewScene);
 }
 
 void FEditorMainPanel::RestoreLastSceneFromProjectSettings()
@@ -35,12 +35,12 @@ bool FEditorMainPanel::RequestLoadSceneWithDialog()
         return false;
     }
 
-    return EditorEngine->GetSceneService().OpenScene(PickedPath, false).bSuccess;
+    return EditorEngine->GetCommandSystem().Execute(EEditorCommand::OpenScene, { PickedPath });
 }
 
 bool FEditorMainPanel::RequestSaveScene()
 {
-    return EditorEngine && EditorEngine->GetSceneService().SaveScene().bSuccess;
+    return EditorEngine && EditorEngine->GetCommandSystem().Execute(EEditorCommand::SaveScene);
 }
 
 bool FEditorMainPanel::RequestSaveSceneAsWithDialog()
@@ -51,5 +51,5 @@ bool FEditorMainPanel::RequestSaveSceneAsWithDialog()
         return false;
     }
 
-    return EditorEngine && EditorEngine->GetSceneService().SaveSceneToFilePath(PickedPath).bSuccess;
+    return EditorEngine && EditorEngine->GetCommandSystem().Execute(EEditorCommand::SaveSceneAs, { PickedPath });
 }
