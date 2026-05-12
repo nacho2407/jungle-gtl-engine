@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Common/RenderTypes.h"
 #include "Engine/Geometry/Ray.h"
@@ -58,13 +58,13 @@ class FEditorViewportClient : public FViewportClient, public IPIESessionShellCom
 	friend class FEditorViewportNavigationTool;
 
 public:
-	enum class ETransformMode
-	{
-		Select,
-		Translate,
-		Rotate,
-		Scale,
-	};
+    enum class ETransformMode
+    {
+        Select,
+        Translate,
+        Rotate,
+        Scale,
+    };
 
 	void Initialize(FWindowsWindow* InWindow, UEditorEngine* InEditor);
 	UWorld* GetFocusedWorld() const { return World; }

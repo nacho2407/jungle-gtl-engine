@@ -962,6 +962,7 @@
     <ClCompile Include="Source\Engine\Component\SkeletalMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SkinnedMeshComponent.cpp" />
     <ClCompile Include="Source\Editor\Viewer\EditorViewer.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\SkeletalMeshViewportClient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Audio\AudioSystem.h">
@@ -1858,6 +1859,7 @@
     <ClInclude Include="Source\Engine\Component\SkeletalMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\SkinnedMeshComponent.h" />
     <ClInclude Include="Source\Editor\Viewer\EditorViewer.h" />
+    <ClInclude Include="Source\Editor\Viewport\SkeletalMeshViewportClient.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Source\Engine\Runtime\GameBranding.rc" />
