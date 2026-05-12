@@ -19,10 +19,12 @@ public:
 
 	FVector GetWorldLocation() const override;
 	FRotator GetWorldRotation() const override;
+	FQuat GetWorldQuat() const override;
 	FVector GetWorldScale() const override;
 
 	void SetWorldLocation(const FVector& NewLocation) override;
 	void SetWorldRotation(const FRotator& NewRotation) override;
+	void SetWorldRotation(const FQuat& NewQuat) override;
 	void SetWorldScale(const FVector& NewScale) override;
 
 	void AddWorldOffset(const FVector& Delta) override;

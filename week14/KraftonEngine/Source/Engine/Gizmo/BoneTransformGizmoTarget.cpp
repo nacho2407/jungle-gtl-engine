@@ -32,6 +32,11 @@ FRotator FBoneTransformGizmoTarget::GetWorldRotation() const
 	return MeshComponent ? MeshComponent->GetBoneRotationByIndex(BoneIndex) : FRotator::ZeroRotator;
 }
 
+FQuat FBoneTransformGizmoTarget::GetWorldQuat() const
+{
+	return MeshComponent ? MeshComponent->GetBoneQuatByIndex(BoneIndex) : FQuat::Identity;
+}
+
 FVector FBoneTransformGizmoTarget::GetWorldScale() const
 {
 	return MeshComponent ? MeshComponent->GetBoneScaleByIndex(BoneIndex) : FVector::OneVector;
@@ -54,6 +59,16 @@ void FBoneTransformGizmoTarget::SetWorldRotation(const FRotator& NewRotation)
 	{
 		FRotator CurrentRotation = GetWorldRotation();
 		FQuat DeltaQuat = (NewRotation - CurrentRotation).ToQuaternion();
+		AddWorldRotation(DeltaQuat, true);
+	}
+}
+
+void FBoneTransformGizmoTarget::SetWorldRotation(const FQuat& NewQuat)
+{
+	if (MeshComponent)
+	{
+		FQuat CurrentQuat = GetWorldQuat();
+		FQuat DeltaQuat = NewQuat * CurrentQuat.Inverse();
 		AddWorldRotation(DeltaQuat, true);
 	}
 }
@@ -82,9 +97,9 @@ void FBoneTransformGizmoTarget::AddWorldRotation(const FQuat& Delta, bool bWorld
 {
 	if (MeshComponent)
 	{
-		FRotator CurrentRotation = GetWorldRotation();
-		FQuat NewRotation = Delta * FQuat::FromRotator(CurrentRotation);
-		MeshComponent->SetBoneRotationByIndex(BoneIndex, NewRotation.ToRotator());
+		FQuat CurrentRotation = GetWorldQuat();
+		FQuat NewRotation = bWorldSpace ? Delta * CurrentRotation : CurrentRotation * Delta;
+		MeshComponent->SetBoneRotationByIndex(BoneIndex, NewRotation);
 	}
 }
 

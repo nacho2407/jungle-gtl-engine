@@ -119,6 +119,18 @@ FRotator USkeletalMeshComponent::GetBoneRotationByIndex(int32 BoneIndex) const
 	return BoneWorldMatrix.ToQuat().GetNormalized().ToRotator();
 }
 
+FQuat USkeletalMeshComponent::GetBoneQuatByIndex(int32 BoneIndex) const
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) return FQuat::Identity;
+
+	TArray<FTransform> GlobalTransforms;
+	BuildBoneEditGlobalTransforms(GlobalTransforms);
+
+	const FMatrix BoneWorldMatrix = GlobalTransforms[BoneIndex].ToMatrix() * GetWorldMatrix();
+	return BoneWorldMatrix.ToQuat().GetNormalized();
+}
+
 FVector USkeletalMeshComponent::GetBoneScaleByIndex(int32 BoneIndex) const
 {
 	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
@@ -186,10 +198,46 @@ void USkeletalMeshComponent::SetBoneRotationByIndex(int32 BoneIndex, const FRota
 	const FQuat ComponentWorldQuat = GetWorldMatrix().ToQuat().GetNormalized();
 	const FQuat ComponentWorldQuatInv = ComponentWorldQuat.Inverse();
 
-	const FQuat DesiredComponentLocalQuat = ComponentWorldQuat * NewRotation.ToQuaternion();
+	const FQuat DesiredWorldQuat = NewRotation.ToQuaternion().GetNormalized();
+	const FQuat DesiredComponentGlobalQuat = (DesiredWorldQuat * ComponentWorldQuatInv).GetNormalized();
 
 	FTransform DesiredGlobal = GlobalTransforms[BoneIndex];
-	DesiredGlobal.Rotation = DesiredComponentLocalQuat.GetNormalized();
+	DesiredGlobal.Rotation = DesiredComponentGlobalQuat;
+
+	const int32 ParentIndex = Asset->Bones[BoneIndex].ParentIndex;
+	if (ParentIndex >= 0)
+	{
+		const FMatrix ParentGlobalInv = GlobalTransforms[ParentIndex].ToMatrix().GetInverse();
+		BoneEditLocalTransforms[BoneIndex] = FTransform(DesiredGlobal.ToMatrix() * ParentGlobalInv);
+	}
+	else
+	{
+		BoneEditLocalTransforms[BoneIndex] = DesiredGlobal;
+	}
+
+	bUseBoneEditPose = true;
+	UpdateCPUSkinning();
+	MarkWorldBoundsDirty();
+}
+
+void USkeletalMeshComponent::SetBoneRotationByIndex(int32 BoneIndex, const FQuat& NewQuat)
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) return;
+
+	EnsureBoneEditPose();
+
+	TArray<FTransform> GlobalTransforms;
+	BuildBoneEditGlobalTransforms(GlobalTransforms);
+
+	const FQuat ComponentWorldQuat = GetWorldMatrix().ToQuat().GetNormalized();
+	const FQuat ComponentWorldQuatInv = ComponentWorldQuat.Inverse();
+
+	const FQuat DesiredWorldQuat = NewQuat.GetNormalized();
+	const FQuat DesiredComponentGlobalQuat = (DesiredWorldQuat * ComponentWorldQuatInv).GetNormalized();
+
+	FTransform DesiredGlobal = GlobalTransforms[BoneIndex];
+	DesiredGlobal.Rotation = DesiredComponentGlobalQuat;
 
 	const int32 ParentIndex = Asset->Bones[BoneIndex].ParentIndex;
 	if (ParentIndex >= 0)

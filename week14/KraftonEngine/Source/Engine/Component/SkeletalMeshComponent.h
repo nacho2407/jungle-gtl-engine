@@ -23,11 +23,13 @@ public:
 
 	FVector GetBoneLocationByIndex(int32 BoneIndex) const;
 	FRotator GetBoneRotationByIndex(int32 BoneIndex) const;
+	FQuat GetBoneQuatByIndex(int32 BoneIndex) const;
 	FVector GetBoneScaleByIndex(int32 BoneIndex) const;
 	FTransform GetBoneLocalTransformByIndex(int32 BoneIndex) const;
 
 	void SetBoneLocationByIndex(int32 BoneIndex, const FVector& NewLocation);
 	void SetBoneRotationByIndex(int32 BoneIndex, const FRotator& NewRotation);
+	void SetBoneRotationByIndex(int32 BoneIndex, const FQuat& NewQuat);
 	void SetBoneScaleByIndex(int32 BoneIndex, const FVector& NewScale);
 	void SetBoneLocalTransformByIndex(int32 BoneIndex, const FTransform& NewLocalTransform);
 
