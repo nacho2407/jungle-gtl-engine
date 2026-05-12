@@ -143,7 +143,7 @@ public:
 
 	// 프로퍼티 시스템 — UObject 에서 상속
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void PostEditProperty(const char* PropertyName) override {}
+	void PostEditProperty(const char* PropertyName) override;
 
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
 
@@ -168,6 +168,8 @@ protected:
 	UWorld* OwningWorld = nullptr;
 
 	FVector PendingActorLocation = FVector(0, 0, 0);
+	FVector PendingActorRotation = FVector(0, 0, 0);
+	FVector PendingActorScale = FVector(1, 1, 1);
 
 	bool bVisible = true;
 	bool bIsActive = true;

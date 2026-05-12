@@ -5,6 +5,7 @@
 #include "Core/PropertyTypes.h"
 
 class AActor;
+class UObject;
 class UActorComponent;
 class UActorSequenceComponent;
 class UCurveFloatAsset;
@@ -26,8 +27,11 @@ public:
     static AActor* GetLiveOwner(UActorSequenceComponent* SequenceComp);
 
     static void CollectAnimatableScalarProperties(
-        UActorComponent* Component,
+        UObject* Object,
         TArray<FPropertyDescriptor>& OutProps);
+    static UObject* ResolveBindingObject(
+        UActorSequenceComponent* SequenceComp,
+        const FActorSequenceBinding& Binding);
     static UActorComponent* ResolveBindingComponent(
         UActorSequenceComponent* SequenceComp,
         const FActorSequenceBinding& Binding);
@@ -39,7 +43,7 @@ public:
 
     static bool AddTrackForProperty(
         UActorSequenceComponent* SequenceComp,
-        UActorComponent* TargetComponent,
+        UObject* TargetObject,
         const FPropertyDescriptor& Property,
         const char* ChannelName);
 
@@ -62,6 +66,17 @@ public:
         UActorSequenceComponent* SequenceComp,
         const FActorSequenceChannelHandle& Handle,
         int32 KeyIndex);
+    static bool DeleteTrackByDisplayIndex(
+        UActorSequenceComponent* SequenceComp,
+        int32 DisplayIndex);
+    static bool SetApplyModeByDisplayIndex(
+        UActorSequenceComponent* SequenceComp,
+        int32 DisplayIndex,
+        ECurveApplyMode ApplyMode);
+    static bool SetTimeMappingModeByDisplayIndex(
+        UActorSequenceComponent* SequenceComp,
+        int32 DisplayIndex,
+        ECurveTimeMappingMode TimeMappingMode);
     static bool RemoveKeyNearTime(
         UActorSequenceComponent* SequenceComp,
         const FActorSequenceChannelHandle& Handle,

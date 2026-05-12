@@ -36,6 +36,8 @@ private:
     bool bVisible = false;
     float ViewStartTime = -0.5f;
     float ViewEndTime = 5.5f;
+    float TrackScrollY = 0.0f;
+    int32 LastSequencerRowCount = 0;
     int32 SelectedTrackIndex = -1;
     int32 SelectedKeyTrackIndex = -1;
     int32 SelectedKeyIndex = -1;
@@ -49,6 +51,6 @@ private:
     int32 DraggingKeyIndex = -1;
     int32 ContextTrackIndex = -1;
     float ContextSequenceTime = 0.0f;
-    FGuid PendingAddPropertyComponentGuid;
+    FGuid PendingAddPropertyObjectGuid;
     TArray<FGuid> PinnedComponentGuids;
 };
