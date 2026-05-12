@@ -187,12 +187,17 @@ namespace
         return false;
     }
 
-    UActorComponent* ResolveComponent(UActorSequenceComponent* SequenceComp, const FActorSequenceBinding& Binding)
+    UObject* ResolveObject(UActorSequenceComponent* SequenceComp, const FActorSequenceBinding& Binding)
     {
         AActor* Owner = FEditorActorSequenceEditModel::GetLiveOwner(SequenceComp);
         if (!Owner)
         {
             return nullptr;
+        }
+
+        if (Owner->GetName() == Binding.Binding.TargetObjectName)
+        {
+            return Owner;
         }
 
         for (UActorComponent* Component : Owner->GetComponents())
@@ -226,14 +231,14 @@ namespace
         const FActorSequenceChannel& Channel,
         FPropertyDescriptor& OutProperty)
     {
-        UActorComponent* Component = ResolveComponent(SequenceComp, Binding);
-        if (!Component || Track.PropertyPath.empty())
+        UObject* Object = ResolveObject(SequenceComp, Binding);
+        if (!Object || Track.PropertyPath.empty())
         {
             return false;
         }
 
         TArray<FPropertyDescriptor> Properties;
-        FEditorActorSequenceEditModel::CollectAnimatableScalarProperties(Component, Properties);
+        FEditorActorSequenceEditModel::CollectAnimatableScalarProperties(Object, Properties);
         for (const FPropertyDescriptor& Property : Properties)
         {
             if (!Property.Name || Track.PropertyPath != Property.Name)
@@ -287,17 +292,17 @@ AActor* FEditorActorSequenceEditModel::GetLiveOwner(UActorSequenceComponent* Seq
 }
 
 void FEditorActorSequenceEditModel::CollectAnimatableScalarProperties(
-    UActorComponent* Component,
+    UObject* Object,
     TArray<FPropertyDescriptor>& OutProps)
 {
     OutProps.clear();
-    if (!Component || !UObjectManager::Get().ContainsObject(Component))
+    if (!Object || !UObjectManager::Get().ContainsObject(Object))
     {
         return;
     }
 
     TArray<FPropertyDescriptor> Props;
-    Component->GetEditableProperties(Props);
+    Object->GetEditableProperties(Props);
     for (const FPropertyDescriptor& Prop : Props)
     {
         if (IsSequencerScalarProperty(Prop))
@@ -307,11 +312,18 @@ void FEditorActorSequenceEditModel::CollectAnimatableScalarProperties(
     }
 }
 
+UObject* FEditorActorSequenceEditModel::ResolveBindingObject(
+    UActorSequenceComponent* SequenceComp,
+    const FActorSequenceBinding& Binding)
+{
+    return ResolveObject(SequenceComp, Binding);
+}
+
 UActorComponent* FEditorActorSequenceEditModel::ResolveBindingComponent(
     UActorSequenceComponent* SequenceComp,
     const FActorSequenceBinding& Binding)
 {
-    return ResolveComponent(SequenceComp, Binding);
+    return Cast<UActorComponent>(ResolveObject(SequenceComp, Binding));
 }
 
 FString FEditorActorSequenceEditModel::MakeComponentLabel(AActor* Owner, UActorComponent* Component)
@@ -397,13 +409,13 @@ void FEditorActorSequenceEditModel::GetChannelNames(EActorSequenceTrackType Trac
 
 bool FEditorActorSequenceEditModel::AddTrackForProperty(
     UActorSequenceComponent* SequenceComp,
-    UActorComponent* TargetComponent,
+    UObject* TargetObject,
     const FPropertyDescriptor& Property,
     const char* ChannelName)
 {
     if (!IsSequenceComponentLive(SequenceComp)
-        || !TargetComponent
-        || !UObjectManager::Get().ContainsObject(TargetComponent)
+        || !TargetObject
+        || !UObjectManager::Get().ContainsObject(TargetObject)
         || !IsSequencerScalarProperty(Property))
     {
         return false;
@@ -415,9 +427,13 @@ bool FEditorActorSequenceEditModel::AddTrackForProperty(
         return false;
     }
 
-    TargetComponent->EnsurePersistentGuid();
-    const FGuid& TargetGuid = TargetComponent->GetPersistentGuid();
-    const FString TargetName = TargetComponent->GetName();
+    const UActorComponent* TargetComponent = Cast<UActorComponent>(TargetObject);
+    if (UActorComponent* MutableTargetComponent = Cast<UActorComponent>(TargetObject))
+    {
+        MutableTargetComponent->EnsurePersistentGuid();
+    }
+    const FGuid TargetGuid = TargetComponent ? TargetComponent->GetPersistentGuid() : FGuid();
+    const FString TargetName = TargetObject->GetName();
     const FString PropertyPath = Property.Name;
     const EActorSequenceTrackType TrackType = GetTrackType(Property.Type);
     const char* SafeChannelName = ChannelName ? ChannelName : GetDefaultChannelName(Property.Type);
@@ -677,6 +693,99 @@ bool FEditorActorSequenceEditModel::DeleteKeyByIndex(
     FloatCurve.Keys.erase(FloatCurve.Keys.begin() + KeyIndex);
     FloatCurve.SortKeys();
     Handle.Channel->Playback.Curve = Curve;
+    return true;
+}
+
+bool FEditorActorSequenceEditModel::DeleteTrackByDisplayIndex(
+    UActorSequenceComponent* SequenceComp,
+    int32 DisplayIndex)
+{
+    if (!IsSequenceComponentLive(SequenceComp) || DisplayIndex < 0)
+    {
+        return false;
+    }
+
+    UActorSequence* Sequence = SequenceComp->GetSequence();
+    if (!Sequence)
+    {
+        return false;
+    }
+
+    int32 CurrentIndex = 0;
+    for (auto BindingIt = Sequence->Bindings.begin(); BindingIt != Sequence->Bindings.end(); ++BindingIt)
+    {
+        FActorSequenceBinding& Binding = *BindingIt;
+        for (auto TrackIt = Binding.Tracks.begin(); TrackIt != Binding.Tracks.end(); ++TrackIt)
+        {
+            FActorSequenceTrack& Track = *TrackIt;
+            for (auto SectionIt = Track.Sections.begin(); SectionIt != Track.Sections.end(); ++SectionIt)
+            {
+                FActorSequenceSection& Section = *SectionIt;
+                for (auto ChannelIt = Section.Channels.begin(); ChannelIt != Section.Channels.end(); ++ChannelIt)
+                {
+                    if (CurrentIndex == DisplayIndex)
+                    {
+                        Section.Channels.erase(ChannelIt);
+                        if (Section.Channels.empty())
+                        {
+                            Track.Sections.erase(SectionIt);
+                        }
+                        if (Track.Sections.empty())
+                        {
+                            Binding.Tracks.erase(TrackIt);
+                        }
+                        if (Binding.Tracks.empty())
+                        {
+                            Sequence->Bindings.erase(BindingIt);
+                        }
+                        return true;
+                    }
+                    ++CurrentIndex;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+bool FEditorActorSequenceEditModel::SetApplyModeByDisplayIndex(
+    UActorSequenceComponent* SequenceComp,
+    int32 DisplayIndex,
+    ECurveApplyMode ApplyMode)
+{
+    FActorSequenceChannelHandle Handle;
+    if (!ResolveChannelByDisplayIndex(SequenceComp, DisplayIndex, Handle) || !Handle.Channel)
+    {
+        return false;
+    }
+
+    if (Handle.Channel->Playback.ApplyMode == ApplyMode)
+    {
+        return false;
+    }
+
+    Handle.Channel->Playback.ApplyMode = ApplyMode;
+    return true;
+}
+
+bool FEditorActorSequenceEditModel::SetTimeMappingModeByDisplayIndex(
+    UActorSequenceComponent* SequenceComp,
+    int32 DisplayIndex,
+    ECurveTimeMappingMode TimeMappingMode)
+{
+    FActorSequenceChannelHandle Handle;
+    if (!ResolveChannelByDisplayIndex(SequenceComp, DisplayIndex, Handle) || !Handle.Channel)
+    {
+        return false;
+    }
+
+    if (Handle.Channel->Playback.TimeMappingMode == TimeMappingMode)
+    {
+        return false;
+    }
+
+    Handle.Channel->Playback.TimeMappingMode = TimeMappingMode;
     return true;
 }
 

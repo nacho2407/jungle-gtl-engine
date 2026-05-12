@@ -635,16 +635,16 @@ void UActorSequencePlayer::ResolveTracks()
                     Resolved.SourceTrack = &Track;
                     Resolved.SourceSection = &Section;
                     Resolved.SourceChannel = &Channel;
-                    Resolved.ResolvedComponent = ResolveComponent(Binding.Binding);
+                    Resolved.ResolvedObject = ResolveObject(Binding.Binding);
                     Resolved.ResolvedCurve = Channel.Playback.Curve
                         ? Channel.Playback.Curve
                         : FResourceManager::Get().LoadCurve(Channel.Playback.CurveAssetPath);
                     const bool bPropertyResolved = ResolveProperty(
-                        Resolved.ResolvedComponent,
+                        Resolved.ResolvedObject,
                         Track,
                         Channel,
                         Resolved.ResolvedProperty);
-                    Resolved.bValid = Resolved.ResolvedComponent != nullptr
+                    Resolved.bValid = Resolved.ResolvedObject != nullptr
                         && Resolved.ResolvedCurve != nullptr
                         && bPropertyResolved
                         && CacheBaseValue(Resolved);
@@ -706,9 +706,9 @@ void UActorSequencePlayer::ClearAppliedValues()
                 Resolved.ResolvedProperty,
                 Resolved.SourceChannel ? Resolved.SourceChannel->ChannelName : "Value",
                 Resolved.BaseFloatValue);
-            if (Resolved.ResolvedComponent)
+            if (Resolved.ResolvedObject)
             {
-                Resolved.ResolvedComponent->PostEditChangeProperty(
+                Resolved.ResolvedObject->PostEditChangeProperty(
                     { Resolved.ResolvedProperty.Name, EPropertyChangeType::ValueSet });
             }
         }
@@ -732,18 +732,25 @@ bool UActorSequencePlayer::IsOwnerLive() const
 bool UActorSequencePlayer::IsResolvedTrackLive(const FResolvedActorSequenceTrack& Resolved) const
 {
     if (!IsOwnerLive()
-        || !Resolved.ResolvedComponent
-        || !UObjectManager::Get().ContainsObject(Resolved.ResolvedComponent))
+        || !Resolved.ResolvedObject
+        || !UObjectManager::Get().ContainsObject(Resolved.ResolvedObject))
     {
         return false;
     }
 
     AActor* OwnerActor = OwnerComponent->GetOwner();
+    if (Resolved.ResolvedObject == OwnerActor)
+    {
+        return true;
+    }
+
     const TArray<UActorComponent*>& Components = OwnerActor->GetComponents();
-    return std::find(Components.begin(), Components.end(), Resolved.ResolvedComponent) != Components.end();
+    UActorComponent* ResolvedComponent = Cast<UActorComponent>(Resolved.ResolvedObject);
+    return ResolvedComponent
+        && std::find(Components.begin(), Components.end(), ResolvedComponent) != Components.end();
 }
 
-UActorComponent* UActorSequencePlayer::ResolveComponent(const FSequenceObjectBinding& Binding) const
+UObject* UActorSequencePlayer::ResolveObject(const FSequenceObjectBinding& Binding) const
 {
     if (!IsOwnerLive())
     {
@@ -751,6 +758,11 @@ UActorComponent* UActorSequencePlayer::ResolveComponent(const FSequenceObjectBin
     }
 
     AActor* OwnerActor = OwnerComponent->GetOwner();
+    if (OwnerActor && OwnerActor->GetName() == Binding.TargetObjectName)
+    {
+        return OwnerActor;
+    }
+
     for (UActorComponent* Component : OwnerActor->GetComponents())
     {
         if (Component
@@ -776,18 +788,18 @@ UActorComponent* UActorSequencePlayer::ResolveComponent(const FSequenceObjectBin
 }
 
 bool UActorSequencePlayer::ResolveProperty(
-    UActorComponent* Component,
+    UObject* Object,
     const FActorSequenceTrack& Track,
     const FActorSequenceChannel& Channel,
     FPropertyDescriptor& OutProperty) const
 {
-    if (!Component || !UObjectManager::Get().ContainsObject(Component) || Track.PropertyPath.empty())
+    if (!Object || !UObjectManager::Get().ContainsObject(Object) || Track.PropertyPath.empty())
     {
         return false;
     }
 
     TArray<FPropertyDescriptor> Properties;
-    Component->GetEditableProperties(Properties);
+    Object->GetEditableProperties(Properties);
 
     for (const FPropertyDescriptor& Property : Properties)
     {
@@ -855,7 +867,7 @@ void UActorSequencePlayer::ApplyFloat(FResolvedActorSequenceTrack& Resolved, flo
         bResolveDirty = true;
         return;
     }
-    Resolved.ResolvedComponent->PostEditChangeProperty(
+    Resolved.ResolvedObject->PostEditChangeProperty(
         {
             Resolved.ResolvedProperty.Name,
             Context == ESequencePlayerContext::EditorPreview

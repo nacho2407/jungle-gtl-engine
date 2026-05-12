@@ -87,7 +87,7 @@ struct FResolvedActorSequenceTrack
     FActorSequenceTrack* SourceTrack = nullptr;
     FActorSequenceSection* SourceSection = nullptr;
     FActorSequenceChannel* SourceChannel = nullptr;
-    UActorComponent* ResolvedComponent = nullptr;
+    UObject* ResolvedObject = nullptr;
     UCurveFloatAsset* ResolvedCurve = nullptr;
     FPropertyDescriptor ResolvedProperty;
     float BaseFloatValue = 0.0f;
@@ -144,8 +144,8 @@ private:
 
     bool IsOwnerLive() const;
     bool IsResolvedTrackLive(const FResolvedActorSequenceTrack& Resolved) const;
-    UActorComponent* ResolveComponent(const FSequenceObjectBinding& Binding) const;
-    bool ResolveProperty(UActorComponent* Component, const FActorSequenceTrack& Track, const FActorSequenceChannel& Channel, FPropertyDescriptor& OutProperty) const;
+    UObject* ResolveObject(const FSequenceObjectBinding& Binding) const;
+    bool ResolveProperty(UObject* Object, const FActorSequenceTrack& Track, const FActorSequenceChannel& Channel, FPropertyDescriptor& OutProperty) const;
     bool CacheBaseValue(FResolvedActorSequenceTrack& Resolved) const;
     void ApplyFloat(FResolvedActorSequenceTrack& Resolved, float CurveValue);
 

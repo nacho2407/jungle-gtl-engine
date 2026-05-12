@@ -58,6 +58,21 @@ namespace
         return nullptr;
     }
 
+    UObject* FindSequenceObjectByGuid(AActor* Owner, const FGuid& Guid)
+    {
+        if (!Owner)
+        {
+            return nullptr;
+        }
+
+        if (!Guid.IsValid())
+        {
+            return Owner;
+        }
+
+        return FindComponentByGuid(Owner, Guid);
+    }
+
     bool ContainsComponent(const TArray<UActorComponent*>& Components, UActorComponent* Candidate)
     {
         return std::find(Components.begin(), Components.end(), Candidate) != Components.end();
@@ -74,6 +89,46 @@ namespace
             || TrackType == EActorSequenceTrackType::Vec4
             || TrackType == EActorSequenceTrackType::Color
             || TrackType == EActorSequenceTrackType::Transform;
+    }
+
+    const char* ToApplyModeLabel(ECurveApplyMode Mode)
+    {
+        switch (Mode)
+        {
+        case ECurveApplyMode::Additive:
+            return "Add";
+        case ECurveApplyMode::Multiply:
+            return "Mul";
+        case ECurveApplyMode::Absolute:
+        default:
+            return "Abs";
+        }
+    }
+
+    const char* ToApplyModeMenuLabel(ECurveApplyMode Mode)
+    {
+        switch (Mode)
+        {
+        case ECurveApplyMode::Additive:
+            return "Additive";
+        case ECurveApplyMode::Multiply:
+            return "Multiply";
+        case ECurveApplyMode::Absolute:
+        default:
+            return "Absolute";
+        }
+    }
+
+    const char* ToTimeMappingLabel(ECurveTimeMappingMode Mode)
+    {
+        switch (Mode)
+        {
+        case ECurveTimeMappingMode::CurveTime:
+            return "Curve";
+        case ECurveTimeMappingMode::NormalizedTime:
+        default:
+            return "Norm";
+        }
     }
 }
 
@@ -94,6 +149,7 @@ void FEditorActorSequencerWidget::Open(UActorSequenceComponent* InSequenceCompon
     bDraggingKey = false;
     DraggingKeyTrackIndex = -1;
     DraggingKeyIndex = -1;
+    TrackScrollY = 0.0f;
 
     if (UActorSequence* Sequence = SequenceComponent ? SequenceComponent->GetSequence() : nullptr)
     {
@@ -120,6 +176,7 @@ void FEditorActorSequencerWidget::ResetTarget()
     bDraggingKey = false;
     DraggingKeyTrackIndex = -1;
     DraggingKeyIndex = -1;
+    TrackScrollY = 0.0f;
 }
 
 void FEditorActorSequencerWidget::Render(float DeltaTime)
@@ -195,11 +252,13 @@ void FEditorActorSequencerWidget::DrawToolbar(UActorSequenceComponent* SequenceC
 
     ImGui::BeginChild("##ActorSequencerToolbar", ImVec2(0.0f, SequencerToolbarHeight), false, ImGuiWindowFlags_NoScrollbar);
 
-    if (ImGui::Button("+ Add"))
+    ImGui::BeginDisabled();
+    ImGui::Button("+ Add");
+    ImGui::EndDisabled();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
     {
-        ImGui::OpenPopup("##ActorSequencerAddTrack");
+        ImGui::SetTooltip("Use the + button on the Actor or Component row.");
     }
-    DrawAddTrackPopup(SequenceComp);
 
     ImGui::SameLine();
     const bool bCanAddKey = SelectedTrackIndex >= 0;
@@ -240,7 +299,7 @@ void FEditorActorSequencerWidget::DrawToolbar(UActorSequenceComponent* SequenceC
     ImGui::Text("30 fps");
 
     ImGui::SameLine();
-    ImGui::TextDisabled("| Wheel: Zoom  RMB/MMB Drag: Pan  LMB Ruler Drag: Playhead");
+    ImGui::TextDisabled("| Ctrl+Wheel: Zoom  Tree Wheel: Scroll  RMB/MMB Drag: Pan  LMB Ruler Drag: Playhead");
 
     if (PreviewPlayer)
     {
@@ -335,102 +394,142 @@ void FEditorActorSequencerWidget::DrawAddPropertyPopup(UActorSequenceComponent* 
     }
 
     AActor* Owner = FEditorActorSequenceEditModel::GetLiveOwner(SequenceComp);
-    UActorComponent* Component = FindComponentByGuid(Owner, PendingAddPropertyComponentGuid);
-    if (!Component)
+    UObject* TargetObject = FindSequenceObjectByGuid(Owner, PendingAddPropertyObjectGuid);
+    if (!TargetObject)
     {
-        ImGui::TextDisabled("No component");
+        ImGui::TextDisabled("No target");
         ImGui::EndPopup();
         return;
     }
 
-    const FString ComponentLabel = FEditorActorSequenceEditModel::MakeComponentLabel(Owner, Component);
-    ImGui::TextUnformatted(ComponentLabel.c_str());
-    ImGui::Separator();
-
-    TArray<FPropertyDescriptor> Properties;
-    FEditorActorSequenceEditModel::CollectAnimatableScalarProperties(Component, Properties);
-    if (Properties.empty())
+    const auto DrawPropertyMenuItems = [&](UObject* Object) -> bool
     {
-        ImGui::TextDisabled("No sequencer-compatible properties");
-        ImGui::EndPopup();
-        return;
-    }
-
-    for (const FPropertyDescriptor& Property : Properties)
-    {
-        if (!Property.Name)
+        if (!Object)
         {
-            continue;
+            return false;
         }
 
-        TArray<const char*> ChannelNames;
-        FEditorActorSequenceEditModel::GetChannelNames(
-            FEditorActorSequenceEditModel::GetTrackType(Property.Type),
-            ChannelNames);
-
-        if (ChannelNames.size() <= 1)
+        TArray<FPropertyDescriptor> Properties;
+        FEditorActorSequenceEditModel::CollectAnimatableScalarProperties(Object, Properties);
+        if (Properties.empty())
         {
-            if (ImGui::MenuItem(Property.Name))
-            {
-                FEditorActorSequenceEditModel::CaptureSequenceUndo(EditorEngine, "Add Actor Sequence Track");
-                if (FEditorActorSequenceEditModel::AddTrackForProperty(
-                    SequenceComp,
-                    Component,
-                    Property,
-                    FEditorActorSequenceEditModel::GetDefaultChannelName(Property.Type)))
-                {
-                    FEditorActorSequenceEditModel::NotifySequenceEdited(
-                        EditorEngine,
-                        SequenceComp,
-                        "Add Actor Sequence Track",
-                        false);
-                }
-            }
-            continue;
+            ImGui::TextDisabled("No sequencer-compatible properties");
+            return false;
         }
 
-        if (ImGui::BeginMenu(Property.Name))
+        bool bAnyChanged = false;
+        for (const FPropertyDescriptor& Property : Properties)
         {
-            if (ImGui::MenuItem("All Channels"))
+            if (!Property.Name)
             {
-                FEditorActorSequenceEditModel::CaptureSequenceUndo(EditorEngine, "Add Actor Sequence Channels");
-                bool bChanged = false;
-                for (const char* ChannelName : ChannelNames)
-                {
-                    bChanged |= FEditorActorSequenceEditModel::AddTrackForProperty(
-                        SequenceComp,
-                        Component,
-                        Property,
-                        ChannelName);
-                }
-                if (bChanged)
-                {
-                    FEditorActorSequenceEditModel::NotifySequenceEdited(
-                        EditorEngine,
-                        SequenceComp,
-                        "Add Actor Sequence Channels",
-                        false);
-                }
+                continue;
             }
 
-            ImGui::Separator();
-            for (const char* ChannelName : ChannelNames)
+            TArray<const char*> ChannelNames;
+            FEditorActorSequenceEditModel::GetChannelNames(
+                FEditorActorSequenceEditModel::GetTrackType(Property.Type),
+                ChannelNames);
+
+            if (ChannelNames.size() <= 1)
             {
-                if (ImGui::MenuItem(ChannelName))
+                if (ImGui::MenuItem(Property.Name))
                 {
                     FEditorActorSequenceEditModel::CaptureSequenceUndo(EditorEngine, "Add Actor Sequence Track");
                     if (FEditorActorSequenceEditModel::AddTrackForProperty(
                         SequenceComp,
-                        Component,
+                        Object,
                         Property,
-                        ChannelName))
+                        FEditorActorSequenceEditModel::GetDefaultChannelName(Property.Type)))
                     {
                         FEditorActorSequenceEditModel::NotifySequenceEdited(
                             EditorEngine,
                             SequenceComp,
                             "Add Actor Sequence Track",
                             false);
+                        bAnyChanged = true;
                     }
+                }
+                continue;
+            }
+
+            if (ImGui::BeginMenu(Property.Name))
+            {
+                if (ImGui::MenuItem("All Channels"))
+                {
+                    FEditorActorSequenceEditModel::CaptureSequenceUndo(EditorEngine, "Add Actor Sequence Channels");
+                    bool bChanged = false;
+                    for (const char* ChannelName : ChannelNames)
+                    {
+                        bChanged |= FEditorActorSequenceEditModel::AddTrackForProperty(
+                            SequenceComp,
+                            Object,
+                            Property,
+                            ChannelName);
+                    }
+                    if (bChanged)
+                    {
+                        FEditorActorSequenceEditModel::NotifySequenceEdited(
+                            EditorEngine,
+                            SequenceComp,
+                            "Add Actor Sequence Channels",
+                            false);
+                        bAnyChanged = true;
+                    }
+                }
+
+                ImGui::Separator();
+                for (const char* ChannelName : ChannelNames)
+                {
+                    if (ImGui::MenuItem(ChannelName))
+                    {
+                        FEditorActorSequenceEditModel::CaptureSequenceUndo(EditorEngine, "Add Actor Sequence Track");
+                        if (FEditorActorSequenceEditModel::AddTrackForProperty(
+                            SequenceComp,
+                            Object,
+                            Property,
+                            ChannelName))
+                        {
+                            FEditorActorSequenceEditModel::NotifySequenceEdited(
+                                EditorEngine,
+                                SequenceComp,
+                                "Add Actor Sequence Track",
+                                false);
+                            bAnyChanged = true;
+                        }
+                    }
+                }
+                ImGui::EndMenu();
+            }
+        }
+        return bAnyChanged;
+    };
+
+    const bool bTargetIsActor = TargetObject == Owner;
+    const FString TargetLabel = bTargetIsActor
+        ? ("Actor  " + Owner->GetName())
+        : FEditorActorSequenceEditModel::MakeComponentLabel(Owner, Cast<UActorComponent>(TargetObject));
+    ImGui::TextUnformatted(TargetLabel.c_str());
+    ImGui::Separator();
+
+    DrawPropertyMenuItems(TargetObject);
+
+    if (bTargetIsActor)
+    {
+        ImGui::Separator();
+        if (ImGui::BeginMenu("Components"))
+        {
+            for (UActorComponent* Component : Owner->GetComponents())
+            {
+                if (!Component)
+                {
+                    continue;
+                }
+
+                const FString ComponentLabel = FEditorActorSequenceEditModel::MakeComponentLabel(Owner, Component);
+                if (ImGui::BeginMenu(ComponentLabel.c_str()))
+                {
+                    DrawPropertyMenuItems(Component);
+                    ImGui::EndMenu();
                 }
             }
             ImGui::EndMenu();
@@ -513,7 +612,10 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
     DrawList->AddLine(ImVec2(PanelPos.x, TrackTop), ImVec2(PanelEnd.x, TrackTop), BorderColor);
     DrawList->AddRect(PanelPos, PanelEnd, BorderColor);
 
-    ImGui::InvisibleButton("##ActorSequencerCanvas", PanelSize);
+    ImGui::InvisibleButton(
+        "##ActorSequencerCanvas",
+        PanelSize,
+        ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_MouseButtonMiddle);
     const bool bCanvasHovered = ImGui::IsItemHovered();
     const bool bCanvasActive = ImGui::IsItemActive();
     const ImVec2 Mouse = ImGui::GetIO().MousePos;
@@ -542,9 +644,12 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
 
     const float PlaybackStartX = TimeToX(PlaybackStart);
     const float PlaybackEndX = TimeToX(PlaybackEnd);
+    const float CurrentTime = PreviewPlayer ? PreviewPlayer->GetCurrentTime() : 0.0f;
+    const float PlayheadX = TimeToX(CurrentTime);
     const bool bMouseInRuler = Mouse.x >= TimelineX && Mouse.y >= PanelPos.y && Mouse.y <= TrackTop;
-    const bool bHitStartHandle = bMouseInRuler && std::fabs(Mouse.x - PlaybackStartX) <= 8.0f;
-    const bool bHitEndHandle = bMouseInRuler && std::fabs(Mouse.x - PlaybackEndX) <= 8.0f;
+    const bool bHitPlayheadHandle = bMouseInRuler && std::fabs(Mouse.x - PlayheadX) <= 8.0f;
+    const bool bHitStartHandle = bMouseInRuler && !bHitPlayheadHandle && std::fabs(Mouse.x - PlaybackStartX) <= 8.0f;
+    const bool bHitEndHandle = bMouseInRuler && !bHitPlayheadHandle && std::fabs(Mouse.x - PlaybackEndX) <= 8.0f;
 
     if (bCanvasHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
     {
@@ -627,7 +732,13 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
         }
     }
 
-    if (bCanvasHovered && std::fabs(ImGui::GetIO().MouseWheel) > 0.0f)
+    const bool bMouseInTrackTree = bCanvasHovered
+        && Mouse.x >= PanelPos.x
+        && Mouse.x < TimelineX
+        && Mouse.y >= TrackTop
+        && Mouse.y <= PanelEnd.y;
+
+    if (bCanvasHovered && std::fabs(ImGui::GetIO().MouseWheel) > 0.0f && ImGui::GetIO().KeyCtrl)
     {
         const float MouseTime = XToTime(std::clamp(Mouse.x, TimelineX, PanelEnd.x));
         const float ZoomFactor = ImGui::GetIO().MouseWheel > 0.0f ? 0.85f : 1.0f / 0.85f;
@@ -635,6 +746,15 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
         const float AnchorAlpha = std::clamp((MouseTime - ViewStartTime) / VisibleRange, 0.0f, 1.0f);
         ViewStartTime = MouseTime - NewRange * AnchorAlpha;
         ViewEndTime = ViewStartTime + NewRange;
+    }
+    else if (bMouseInTrackTree && std::fabs(ImGui::GetIO().MouseWheel) > 0.0f)
+    {
+        const float ContentHeight = std::max(0.0f, static_cast<float>(LastSequencerRowCount) * SequencerRowHeight);
+        const float MaxScrollY = std::max(0.0f, ContentHeight - TrackHeight);
+        TrackScrollY = std::clamp(
+            TrackScrollY - ImGui::GetIO().MouseWheel * SequencerRowHeight * 2.0f,
+            0.0f,
+            MaxScrollY);
     }
 
     if (bCanvasActive
@@ -704,10 +824,6 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
         IM_COL32(220, 24, 24, 255),
         2.0f);
 
-    const float CurrentTime = PreviewPlayer ? PreviewPlayer->GetCurrentTime() : 0.0f;
-    const float PlayheadX = TimeToX(CurrentTime);
-    DrawList->AddLine(ImVec2(PlayheadX, PanelPos.y), ImVec2(PlayheadX, PanelEnd.y), IM_COL32(245, 245, 245, 255), 2.0f);
-    DrawList->AddRectFilled(ImVec2(PlayheadX - 6.0f, PanelPos.y + 2.0f), ImVec2(PlayheadX + 6.0f, PanelPos.y + 16.0f), IM_COL32(255, 64, 64, 255), 2.0f);
     {
         char StartLabel[32];
         char EndLabel[32];
@@ -768,9 +884,11 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
         FActorSequenceChannel& Channel,
         int32 Depth)
     {
-        const float RowY = TrackTop + RowIndex * SequencerRowHeight;
-        if (RowY > PanelEnd.y)
+        const float RowY = TrackTop + RowIndex * SequencerRowHeight - TrackScrollY;
+        if (RowY + SequencerRowHeight < TrackTop || RowY > PanelEnd.y)
         {
+            ++RowIndex;
+            ++DisplayTrackIndex;
             return;
         }
 
@@ -788,6 +906,16 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
             ImVec2(PanelPos.x + 30.0f + Depth * 14.0f, RowY + 7.0f),
             ImGui::GetColorU32(ImGuiCol_Text),
             Label.c_str());
+
+        const FString ModeLabel =
+            FString(ToApplyModeLabel(Channel.Playback.ApplyMode))
+            + "/"
+            + ToTimeMappingLabel(Channel.Playback.TimeMappingMode);
+        const ImVec2 ModeTextSize = ImGui::CalcTextSize(ModeLabel.c_str());
+        DrawList->AddText(
+            ImVec2(TimelineX - ModeTextSize.x - 36.0f, RowY + 7.0f),
+            ImGui::GetColorU32(ImGuiCol_TextDisabled),
+            ModeLabel.c_str());
 
         const float PlaybackRangeMinX = std::max(TimelineX + 2.0f, TimeToX(PlaybackStart));
         const float PlaybackRangeMaxX = std::min(PanelEnd.x - 2.0f, TimeToX(PlaybackEnd));
@@ -838,6 +966,13 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
             && Mouse.x <= PanelEnd.x
             && Mouse.y >= RowMin.y
             && Mouse.y < RowMax.y;
+        const bool bRowLabelHovered =
+            bCanvasHovered
+            && Mouse.x >= PanelPos.x
+            && Mouse.x < TimelineX
+            && Mouse.y >= RowMin.y
+            && Mouse.y < RowMax.y;
+        const bool bRowHovered = bRowTimelineHovered || bRowLabelHovered;
         const bool bSectionHovered =
             bSectionVisible
             && bCanvasHovered
@@ -925,11 +1060,15 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
                 SelectedKeyIndex = -1;
             }
         }
-        if (bRowTimelineHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+        if (bRowHovered
+            && ImGui::IsMouseReleased(ImGuiMouseButton_Right)
+            && !ImGui::IsMouseDragging(ImGuiMouseButton_Right, ImGui::GetIO().MouseDragThreshold))
         {
             SelectedTrackIndex = DisplayTrackIndex;
             ContextTrackIndex = DisplayTrackIndex;
-            ContextSequenceTime = SnapSequencerTime(XToTime(Mouse.x));
+            ContextSequenceTime = bRowTimelineHovered
+                ? SnapSequencerTime(XToTime(Mouse.x))
+                : (PreviewPlayer ? PreviewPlayer->GetCurrentTime() : Sequence->StartTime);
             SelectedKeyTrackIndex = HoveredKeyIndex >= 0 ? DisplayTrackIndex : -1;
             SelectedKeyIndex = HoveredKeyIndex;
             ImGui::OpenPopup("##ActorSequencerTrackContext");
@@ -1047,6 +1186,58 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
         {
             ImGui::TextDisabled("%s", MakeTrackLabel(Track, Channel).c_str());
             ImGui::Text("Time: %.3f", ContextSequenceTime);
+            if (ImGui::BeginMenu("Apply Mode"))
+            {
+                const ECurveApplyMode Modes[] =
+                {
+                    ECurveApplyMode::Absolute,
+                    ECurveApplyMode::Additive,
+                    ECurveApplyMode::Multiply,
+                };
+                for (ECurveApplyMode Mode : Modes)
+                {
+                    const bool bSelected = Channel.Playback.ApplyMode == Mode;
+                    if (ImGui::MenuItem(ToApplyModeMenuLabel(Mode), nullptr, bSelected))
+                    {
+                        FEditorActorSequenceEditModel::CaptureSequenceUndo(EditorEngine, "Edit Actor Sequence Apply Mode");
+                        if (FEditorActorSequenceEditModel::SetApplyModeByDisplayIndex(SequenceComp, DisplayTrackIndex, Mode))
+                        {
+                            FEditorActorSequenceEditModel::NotifySequenceEdited(
+                                EditorEngine,
+                                SequenceComp,
+                                "Edit Actor Sequence Apply Mode",
+                                false);
+                        }
+                    }
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Time Mapping"))
+            {
+                const ECurveTimeMappingMode Modes[] =
+                {
+                    ECurveTimeMappingMode::CurveTime,
+                    ECurveTimeMappingMode::NormalizedTime,
+                };
+                for (ECurveTimeMappingMode Mode : Modes)
+                {
+                    const bool bSelected = Channel.Playback.TimeMappingMode == Mode;
+                    if (ImGui::MenuItem(ToTimeMappingLabel(Mode), nullptr, bSelected))
+                    {
+                        FEditorActorSequenceEditModel::CaptureSequenceUndo(EditorEngine, "Edit Actor Sequence Time Mapping");
+                        if (FEditorActorSequenceEditModel::SetTimeMappingModeByDisplayIndex(SequenceComp, DisplayTrackIndex, Mode))
+                        {
+                            FEditorActorSequenceEditModel::NotifySequenceEdited(
+                                EditorEngine,
+                                SequenceComp,
+                                "Edit Actor Sequence Time Mapping",
+                                false);
+                        }
+                    }
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::Separator();
             if (ImGui::MenuItem("Add Key Here"))
             {
                 FActorSequenceChannelHandle Handle;
@@ -1105,6 +1296,26 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
                 }
             }
             ImGui::EndDisabled();
+            ImGui::Separator();
+            if (ImGui::MenuItem("Remove Track"))
+            {
+                FEditorActorSequenceEditModel::CaptureSequenceUndo(EditorEngine, "Remove Actor Sequence Track");
+                if (FEditorActorSequenceEditModel::DeleteTrackByDisplayIndex(SequenceComp, DisplayTrackIndex))
+                {
+                    if (SelectedTrackIndex == DisplayTrackIndex)
+                    {
+                        SelectedTrackIndex = -1;
+                    }
+                    SelectedKeyTrackIndex = -1;
+                    SelectedKeyIndex = -1;
+                    ContextTrackIndex = -1;
+                    FEditorActorSequenceEditModel::NotifySequenceEdited(
+                        EditorEngine,
+                        SequenceComp,
+                        "Remove Actor Sequence Track",
+                        false);
+                }
+            }
             ImGui::EndPopup();
         }
 
@@ -1124,9 +1335,10 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
 
     const auto DrawTrackGroupRow = [&](const FActorSequenceTrack& Track, int32 Depth)
     {
-        const float RowY = TrackTop + RowIndex * SequencerRowHeight;
-        if (RowY > PanelEnd.y)
+        const float RowY = TrackTop + RowIndex * SequencerRowHeight - TrackScrollY;
+        if (RowY + SequencerRowHeight < TrackTop || RowY > PanelEnd.y)
         {
+            ++RowIndex;
             return;
         }
 
@@ -1141,12 +1353,12 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
         ++RowIndex;
     };
 
-    const auto DrawComponentTracks = [&](UActorComponent* Component, int32 Depth)
+    const auto DrawObjectTracks = [&](UObject* Object, int32 Depth)
     {
         for (FActorSequenceBinding& Binding : Sequence->Bindings)
         {
-            UActorComponent* BindingComponent = FEditorActorSequenceEditModel::ResolveBindingComponent(SequenceComp, Binding);
-            if (BindingComponent != Component)
+            UObject* BindingObject = FEditorActorSequenceEditModel::ResolveBindingObject(SequenceComp, Binding);
+            if (BindingObject != Object)
             {
                 continue;
             }
@@ -1182,9 +1394,12 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
             return;
         }
 
-        const float RowY = TrackTop + RowIndex * SequencerRowHeight;
-        if (RowY > PanelEnd.y)
+        const float RowY = TrackTop + RowIndex * SequencerRowHeight - TrackScrollY;
+        const bool bRowVisible = RowY + SequencerRowHeight >= TrackTop && RowY <= PanelEnd.y;
+        if (!bRowVisible)
         {
+            ++RowIndex;
+            DrawObjectTracks(Component, Depth);
             return;
         }
 
@@ -1212,13 +1427,13 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
             && Mouse.y <= PlusMax.y)
         {
             Component->EnsurePersistentGuid();
-            PendingAddPropertyComponentGuid = Component->GetPersistentGuid();
+            PendingAddPropertyObjectGuid = Component->GetPersistentGuid();
             PinComponent(Component);
             ImGui::OpenPopup("##ActorSequencerAddProperty");
         }
 
         ++RowIndex;
-        DrawComponentTracks(Component, Depth);
+        DrawObjectTracks(Component, Depth);
     };
 
     std::function<void(USceneComponent*, int32)> DrawSceneComponentTree = [&](USceneComponent* SceneComponent, int32 Depth)
@@ -1241,33 +1456,34 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
 
     if (Owner)
     {
-        const ImVec2 ActorRowMin(PanelPos.x, TrackTop);
-        const ImVec2 ActorRowMax(PanelEnd.x, TrackTop + SequencerRowHeight);
-        DrawList->AddRectFilled(ActorRowMin, ActorRowMax, WithAlpha(HeaderColor, 0.30f));
-        DrawList->AddLine(ImVec2(PanelPos.x, ActorRowMax.y), ImVec2(PanelEnd.x, ActorRowMax.y), WithAlpha(BorderColor, 0.75f));
-        const FString ActorLabel = "Actor  " + Owner->GetName();
-        DrawList->AddText(ImVec2(PanelPos.x + 12.0f, TrackTop + 7.0f), ImGui::GetColorU32(ImGuiCol_Text), ActorLabel.c_str());
-        const ImVec2 PlusMin(TimelineX - 28.0f, TrackTop + 5.0f);
-        const ImVec2 PlusMax(TimelineX - 8.0f, TrackTop + SequencerRowHeight - 5.0f);
-        DrawList->AddRectFilled(PlusMin, PlusMax, WithAlpha(SelectedColor, 0.65f), 3.0f);
-        DrawList->AddText(ImVec2(PlusMin.x + 6.0f, PlusMin.y + 1.0f), ImGui::GetColorU32(ImGuiCol_Text), "+");
-
-        if (bCanvasHovered
-            && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
-            && Mouse.x >= PlusMin.x
-            && Mouse.x <= PlusMax.x
-            && Mouse.y >= PlusMin.y
-            && Mouse.y <= PlusMax.y)
+        const float ActorRowY = TrackTop - TrackScrollY;
+        const bool bActorRowVisible = ActorRowY + SequencerRowHeight >= TrackTop && ActorRowY <= PanelEnd.y;
+        if (bActorRowVisible)
         {
-            if (UActorComponent* RootComponent = Owner->GetRootComponent())
+            const ImVec2 ActorRowMin(PanelPos.x, ActorRowY);
+            const ImVec2 ActorRowMax(PanelEnd.x, ActorRowY + SequencerRowHeight);
+            DrawList->AddRectFilled(ActorRowMin, ActorRowMax, WithAlpha(HeaderColor, 0.30f));
+            DrawList->AddLine(ImVec2(PanelPos.x, ActorRowMax.y), ImVec2(PanelEnd.x, ActorRowMax.y), WithAlpha(BorderColor, 0.75f));
+            const FString ActorLabel = "Actor  " + Owner->GetName();
+            DrawList->AddText(ImVec2(PanelPos.x + 12.0f, ActorRowY + 7.0f), ImGui::GetColorU32(ImGuiCol_Text), ActorLabel.c_str());
+            const ImVec2 PlusMin(TimelineX - 28.0f, ActorRowY + 5.0f);
+            const ImVec2 PlusMax(TimelineX - 8.0f, ActorRowY + SequencerRowHeight - 5.0f);
+            DrawList->AddRectFilled(PlusMin, PlusMax, WithAlpha(SelectedColor, 0.65f), 3.0f);
+            DrawList->AddText(ImVec2(PlusMin.x + 6.0f, PlusMin.y + 1.0f), ImGui::GetColorU32(ImGuiCol_Text), "+");
+
+            if (bCanvasHovered
+                && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
+                && Mouse.x >= PlusMin.x
+                && Mouse.x <= PlusMax.x
+                && Mouse.y >= PlusMin.y
+                && Mouse.y <= PlusMax.y)
             {
-                RootComponent->EnsurePersistentGuid();
-                PendingAddPropertyComponentGuid = RootComponent->GetPersistentGuid();
-                PinComponent(RootComponent);
+                PendingAddPropertyObjectGuid = FGuid();
                 ImGui::OpenPopup("##ActorSequencerAddProperty");
             }
         }
         ++RowIndex;
+        DrawObjectTracks(Owner, 0);
     }
 
     if (Owner)
@@ -1293,11 +1509,31 @@ void FEditorActorSequencerWidget::DrawSequencer(UActorSequenceComponent* Sequenc
 
     DrawAddPropertyPopup(SequenceComp);
 
+    LastSequencerRowCount = RowIndex;
+    const float ContentHeight = std::max(0.0f, static_cast<float>(LastSequencerRowCount) * SequencerRowHeight);
+    const float MaxScrollY = std::max(0.0f, ContentHeight - TrackHeight);
+    TrackScrollY = std::clamp(TrackScrollY, 0.0f, MaxScrollY);
+
     if (TrackCount == 0)
     {
         DrawList->AddText(
-            ImVec2(PanelPos.x + 16.0f, TrackTop + SequencerRowHeight + 16.0f),
+            ImVec2(PanelPos.x + 16.0f, TrackTop + SequencerRowHeight + 16.0f - TrackScrollY),
             ImGui::GetColorU32(ImGuiCol_TextDisabled),
             "No tracks");
     }
+
+    const float DrawPlayheadTime = PreviewPlayer ? PreviewPlayer->GetCurrentTime() : CurrentTime;
+    const float DrawPlayheadX = TimeToX(DrawPlayheadTime);
+    DrawList->PushClipRect(ImVec2(TimelineX, PanelPos.y), PanelEnd, true);
+    DrawList->AddLine(
+        ImVec2(DrawPlayheadX, PanelPos.y),
+        ImVec2(DrawPlayheadX, PanelEnd.y),
+        IM_COL32(245, 245, 245, 255),
+        2.0f);
+    DrawList->AddRectFilled(
+        ImVec2(DrawPlayheadX - 6.0f, PanelPos.y + 2.0f),
+        ImVec2(DrawPlayheadX + 6.0f, PanelPos.y + 16.0f),
+        IM_COL32(255, 64, 64, 255),
+        2.0f);
+    DrawList->PopClipRect();
 }
