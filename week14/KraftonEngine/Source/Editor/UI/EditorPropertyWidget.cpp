@@ -24,6 +24,7 @@
 #include "Object/FName.h"
 #include "Object/ObjectIterator.h"
 #include "Materials/Material.h"
+#include "Mesh/MeshImportOptions.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/SkeletalMesh.h"
@@ -43,6 +44,14 @@
 
 namespace
 {
+	bool IsFbxFilePath(const FString& Path)
+	{
+		std::filesystem::path FilePath(FPaths::ToWide(Path));
+		std::wstring Extension = FilePath.extension().wstring();
+		std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
+		return Extension == L".fbx";
+	}
+
 	bool ShouldHideInComponentTree(const UActorComponent* Component, bool bShowEditorOnlyComponents)
 	{
 		if (!Component)
@@ -1167,14 +1176,61 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			FString MeshPath = OpenStaticMeshFileDialog();
 			if (!MeshPath.empty())
 			{
-				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-				UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(MeshPath, Device);
-				if (Loaded)
+				if (IsFbxFilePath(MeshPath))
 				{
-					*Val = FMeshManager::GetBinaryFilePath(MeshPath);
-					bChanged = true;
+					PendingStaticMeshImportPath = MeshPath;
+					PendingStaticMeshImportTarget = Val;
+					PendingStaticFbxSkinnedMeshPolicy =
+						FImportOptions::Default().StaticFbxSkinnedMeshPolicy == EStaticFbxSkinnedMeshPolicy::ImportBindPoseAsStatic ? 1 : 0;
+					ImGui::OpenPopup("Static FBX Import Options");
+				}
+				else
+				{
+					ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+					UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(MeshPath, Device);
+					if (Loaded)
+					{
+						*Val = FMeshManager::GetBinaryFilePath(MeshPath);
+						bChanged = true;
+					}
 				}
 			}
+		}
+
+		if (ImGui::BeginPopupModal("Static FBX Import Options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::TextUnformatted("Skinned mesh handling");
+			ImGui::RadioButton("Skip skinned meshes", &PendingStaticFbxSkinnedMeshPolicy, 0);
+			ImGui::RadioButton("Import bind pose as static mesh", &PendingStaticFbxSkinnedMeshPolicy, 1);
+
+			if (ImGui::Button("Import"))
+			{
+				FImportOptions Options = FImportOptions::Default();
+				Options.StaticFbxSkinnedMeshPolicy = PendingStaticFbxSkinnedMeshPolicy == 1
+					? EStaticFbxSkinnedMeshPolicy::ImportBindPoseAsStatic
+					: EStaticFbxSkinnedMeshPolicy::Skip;
+
+				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+				UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(PendingStaticMeshImportPath, Options, Device);
+				if (Loaded && PendingStaticMeshImportTarget)
+				{
+					*PendingStaticMeshImportTarget = FMeshManager::GetBinaryFilePath(PendingStaticMeshImportPath);
+					bChanged = true;
+				}
+
+				PendingStaticMeshImportPath.clear();
+				PendingStaticMeshImportTarget = nullptr;
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel"))
+			{
+				PendingStaticMeshImportPath.clear();
+				PendingStaticMeshImportTarget = nullptr;
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
 		}
 		break;
 	}
