@@ -106,10 +106,31 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 // ============================================================
 // FilterVisibleProxies — visibility/occlusion 필터 → RenderableProxies
 // ============================================================
+static bool ShouldCollectProxyForView(const FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame)
+{
+	if (!Proxy)
+		return false;
+
+	// Light View에서는 EditorOnly 프록시(빌보드 아이콘 등) 제외
+	if (Frame.bIsLightView && Proxy->HasProxyFlag(EPrimitiveProxyFlags::EditorOnly))
+		return false;
+
+	if (!Frame.RenderOptions.ShowFlags.bStaticMesh &&
+		Proxy->HasProxyFlag(EPrimitiveProxyFlags::StaticMesh))
+		return false;
+
+	if (!Frame.RenderOptions.ShowFlags.bSkeletalMesh &&
+		Proxy->HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh))
+		return false;
+
+	if (!Proxy->IsVisible())
+		return false;
+
+	return true;
+}
+
 void FRenderCollector::FilterVisibleProxies(const FFrameContext& Frame, FScene& Scene, FCollectOutput& Output)
 {
-	if (!Frame.RenderOptions.ShowFlags.bPrimitives) return;
-
 	SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
 
 	Output.VisibleProxySet.reserve(Output.FrustumVisibleProxies.size());
@@ -131,24 +152,29 @@ void FRenderCollector::FilterVisibleProxies(const FFrameContext& Frame, FScene& 
 
 	for (FPrimitiveSceneProxy* Proxy : Output.FrustumVisibleProxies)
 	{
-		// Light View에서는 EditorOnly 프록시(빌보드 아이콘 등) 제외
-		if (Frame.bIsLightView && Proxy->HasProxyFlag(EPrimitiveProxyFlags::EditorOnly))
+		
+		if (!ShouldCollectProxyForView(Proxy, Frame))
+		{
 			continue;
+		}
 
 		UpdateProxyLOD(Proxy, Frame.LODContext);
 		LOD_STATS_RECORD(Proxy->GetCurrentLOD());
 
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::PerViewportUpdate))
+		{
 			Proxy->UpdatePerViewport(Frame);
-
-		if (!Proxy->IsVisible())
-			continue;
+		}
 
 		if (OcclusionMut)
+		{
 			OcclusionMut->GatherAABB(Proxy);
+		}
 
 		if (Occlusion && !Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull) && Occlusion->IsOccluded(Proxy))
+		{
 			continue;
+		}
 
 		Output.RenderableProxies.push_back(Proxy);
 	}
