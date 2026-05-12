@@ -7,10 +7,12 @@
 #include "Component/PostProcess/Light/PointLightComponent.h"
 #include "Component/PostProcess/Light/SpotlightComponent.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Core/ResourceManager.h"
+#include "Engine/Asset/SkeletalMesh.h"
 #include "Engine/Asset/StaticMesh.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -242,6 +244,23 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
             auto* StaticMeshComp = static_cast<UStaticMeshComponent*>(primitiveComponent);
             MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMeshComp->GetStaticMesh());
         }
+        else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SkeletalMesh)
+        {
+            auto* SkeletalMeshComp = static_cast<USkeletalMeshComponent*>(primitiveComponent);
+            USkeletalMesh* SkeletalMesh = SkeletalMeshComp->GetSkeletalMesh();
+            if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData()) continue;
+
+            // 메인 render pass(CollectWorld)가 이 함수 *전*에 같은 프레임에 돌면서
+            // skinning + 버퍼 업로드를 이미 끝낸 상태. 여기서는 dirty flag를 소비하지 않고
+            // bNeedsUpload=false로 캐시된 버퍼만 가져온다.
+            SkeletalMeshComp->EnsureSkinningUpdated();
+            MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
+                SkeletalMeshComp->GetUUID(),
+                SkeletalMesh,
+                SkeletalMeshComp->GetSkinnedVertices(),
+                SkeletalMesh->GetIndices(),
+                /*bNeedsUpload=*/ false);
+        }
         else
         {
             MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
@@ -263,6 +282,10 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
         if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh)
         {
             BaseCmd.VertexFactoryType = EVertexFactoryType::StaticMesh;
+        }
+        else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SkeletalMesh)
+        {
+            BaseCmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
         }
         else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Text)
         {
@@ -353,6 +376,38 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
                 FRenderCommand MaskCmd = BaseCmd;
                 MaskCmd.Type = ERenderCommandType::SelectionMask;
                 MaskCmd.Material = Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(0));
+                RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
+            }
+        }
+        else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SkeletalMesh)
+        {
+            USkeletalMeshComponent* SkeletalMeshComp = static_cast<USkeletalMeshComponent*>(primitiveComponent);
+            const USkeletalMesh* SkeletalMesh = SkeletalMeshComp->GetSkeletalMesh();
+            const TArray<FStaticMeshSection>& Sections = SkeletalMesh ? SkeletalMesh->GetSections() : TArray<FStaticMeshSection>();
+
+            if (!Sections.empty())
+            {
+                for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
+                {
+                    const FStaticMeshSection& Section = Sections[SectionIdx];
+                    if (Section.IndexCount == 0)
+                    {
+                        continue;
+                    }
+
+                    FRenderCommand MaskCmd = BaseCmd;
+                    MaskCmd.Type = ERenderCommandType::SelectionMask;
+                    MaskCmd.SectionIndexStart = Section.StartIndex;
+                    MaskCmd.SectionIndexCount = Section.IndexCount;
+                    MaskCmd.Material = Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(SectionIdx));
+                    RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
+                }
+            }
+            else
+            {
+                FRenderCommand MaskCmd = BaseCmd;
+                MaskCmd.Type = ERenderCommandType::SelectionMask;
+                MaskCmd.Material = Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(0));
                 RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
             }
         }
