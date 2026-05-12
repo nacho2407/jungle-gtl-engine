@@ -1,6 +1,8 @@
 ﻿#include "EditorViewerWindowWidget.h"
 #include "Editor/EditorEngine.h"
 #include "Viewport/ViewportLayout.h"
+#include "GameFramework/PrimitiveActors.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "imgui.h"
 
 namespace
@@ -14,6 +16,11 @@ void SetOpaqueBlendStateCallback(const ImDrawList*, const ImDrawCmd* Cmd)
     const float BlendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
     DeviceContext->OMSetBlendState(nullptr, BlendFactor, 0xffffffff);
 }
+}
+
+void FEditorViewerWindowWidget::Initialize(UEditorEngine* InEditorEngine)
+{
+    FEditorWidget::Initialize(InEditorEngine);
 }
 
 void FEditorViewerWindowWidget::Render(float DeltaTime)
@@ -37,59 +44,39 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
     float RightWidth = FullSize.x - LeftWidth;
 
     // =====================================================
-    // LEFT: Skeleton Tree (dummy bone data)
+    // LEFT: Skeleton Tree
     // =====================================================
     ImGui::BeginChild("SkeletonPanel", ImVec2(LeftWidth, 0), true);
 
     ImGui::Text("Skeleton");
 
-    if (ImGui::TreeNode("Root"))
+	ASkeletalMeshActor* ViewTarget = EditorEngine->GetViewer().GetViewTarget();
+    USkeletalMeshComponent* SkelMeshComp = ViewTarget->GetSkeletalMeshComponent();
+    FSkeletalMesh* MeshData = SkelMeshComp->GetSkeletalMesh()->GetMeshData();
+
+	if (CachedMesh != MeshData)
+	{
+        CachedMesh = MeshData;
+
+		Children.clear();
+        Children.resize(MeshData->Bones.size());
+
+        for (int32 i = 0; i < MeshData->Bones.size(); ++i)
+        {
+            int32 Parent = MeshData->Bones[i].ParentIndex;
+            if (Parent >= 0)
+            {
+                Children[Parent].push_back(i);
+            }
+        }
+	}
+
+	for (int32 i = 0; i < MeshData->Bones.size(); ++i)
     {
-        if (ImGui::TreeNode("Pelvis"))
+        if (MeshData->Bones[i].ParentIndex == -1)
         {
-            ImGui::BulletText("Spine_01");
-            ImGui::BulletText("Spine_02");
-            ImGui::BulletText("Chest");
-            ImGui::TreePop();
+            DrawBoneNode(i, MeshData->Bones, Children);
         }
-
-        if (ImGui::TreeNode("Head"))
-        {
-            ImGui::BulletText("Neck");
-            ImGui::BulletText("Head");
-            ImGui::TreePop();
-        }
-
-        if (ImGui::TreeNode("Left Arm"))
-        {
-            ImGui::BulletText("UpperArm_L");
-            ImGui::BulletText("LowerArm_L");
-            ImGui::BulletText("Hand_L");
-            ImGui::TreePop();
-        }
-
-        if (ImGui::TreeNode("Right Arm"))
-        {
-            ImGui::BulletText("UpperArm_R");
-            ImGui::BulletText("LowerArm_R");
-            ImGui::BulletText("Hand_R");
-            ImGui::TreePop();
-        }
-
-        if (ImGui::TreeNode("Legs"))
-        {
-            ImGui::BulletText("Thigh_L");
-            ImGui::BulletText("Calf_L");
-            ImGui::BulletText("Foot_L");
-
-            ImGui::BulletText("Thigh_R");
-            ImGui::BulletText("Calf_R");
-            ImGui::BulletText("Foot_R");
-
-            ImGui::TreePop();
-        }
-
-        ImGui::TreePop();
     }
 
     ImGui::EndChild();
@@ -138,4 +125,45 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 
     ImGui::End();
     ImGui::PopStyleVar();
+}
+
+void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBoneInfo>& Bones, const TArray<TArray<int32>>& Children)
+{
+    const FBoneInfo& Bone = Bones[BoneIndex];
+
+    ImGuiTreeNodeFlags Flags =
+        ImGuiTreeNodeFlags_OpenOnArrow |
+        ImGuiTreeNodeFlags_SpanAvailWidth;
+
+    if (Children[BoneIndex].size() == 0)
+    {
+        Flags |= ImGuiTreeNodeFlags_Leaf;
+    }
+
+    if (SelectedBoneIndex == BoneIndex)
+    {
+        Flags |= ImGuiTreeNodeFlags_Selected;
+    }
+
+    bool bOpen = ImGui::TreeNodeEx(
+        (void*)(intptr_t)BoneIndex,
+        Flags,
+        "%s",
+        Bone.Name.c_str());
+
+    // 클릭 처리 (중요)
+    if (ImGui::IsItemClicked())
+    {
+        SelectedBoneIndex = BoneIndex;
+    }
+
+    if (bOpen)
+    {
+        for (int32 ChildIndex : Children[BoneIndex])
+        {
+            DrawBoneNode(ChildIndex, Bones, Children);
+        }
+
+        ImGui::TreePop();
+    }
 }
