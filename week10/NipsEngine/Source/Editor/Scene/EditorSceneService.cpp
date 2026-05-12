@@ -33,7 +33,7 @@ FEditorSceneOperationResult FEditorSceneService::NewScene()
 
 	EditorEngine->GetMainPanel().ResetWidgetSelections();
 	EditorEngine->NewScene();
-	EditorEngine->GetUndoSystem().ClearHistory();
+	EditorEngine->GetUndoSystem().ClearAllHistory();
 	strncpy_s(SceneName, sizeof(SceneName), "Untitled", _TRUNCATE);
 	ClearCurrentScenePath();
 	bSceneDirty = false;
@@ -94,7 +94,7 @@ FEditorSceneOperationResult FEditorSceneService::OpenScene(const FString& FilePa
 
 	SetCurrentScenePath(FilePath);
 	bSceneDirty = false;
-	EditorEngine->GetUndoSystem().ClearHistory();
+	EditorEngine->GetUndoSystem().ClearAllHistory();
 	PushFooterLog("Level loaded");
 	EditorEngine->CreateViewerWorld();
 	return MakeResult(LoadCtx.World != nullptr, LoadCtx.World ? "Level loaded" : "Level load failed", FilePath);
