@@ -186,7 +186,7 @@ void USkinnedMeshComponent::EnsureBoneEditPose()
 
 	for (const FBone& Bone : Asset->Bones)
 	{
-		BoneEditLocalMatrices.push_back(Bone.LocalTransform.ToMatrix());
+		BoneEditLocalMatrices.push_back(Bone.LocalMatrix);
 	}
 
 	bUseBoneEditPose = true;
@@ -204,7 +204,7 @@ void USkinnedMeshComponent::ResetBoneEditPose()
 	BoneEditLocalMatrices.reserve(Asset->Bones.size());
 	for (const FBone& Bone : Asset->Bones)
 	{
-		BoneEditLocalMatrices.push_back(Bone.LocalTransform.ToMatrix());
+		BoneEditLocalMatrices.push_back(Bone.LocalMatrix);
 	}
 }
 
@@ -271,7 +271,7 @@ FTransform USkinnedMeshComponent::GetBoneLocalTransformByIndex(int32 BoneIndex) 
 		return MatrixToEditorTransform(BoneEditLocalMatrices[BoneIndex]);
 	}
 
-	return Asset->Bones[BoneIndex].LocalTransform.ToMatrix();
+	return Asset->Bones[BoneIndex].LocalMatrix;
 }
 
 void USkinnedMeshComponent::SetBoneLocationByIndex(int32 BoneIndex, const FVector& NewLocation)
@@ -475,7 +475,7 @@ void USkinnedMeshComponent::BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlob
 	{
 		// edit pose가 skeleton 크기와 맞을 때만 override를 사용해 stale cache를 방지한다.
 		const FMatrix LocalMatrix = (bUseBoneEditPose && BoneEditLocalMatrices.size() == BoneCount)
-			? BoneEditLocalMatrices[i] : Asset->Bones[i].LocalTransform.ToMatrix();
+			? BoneEditLocalMatrices[i] : Asset->Bones[i].LocalMatrix;
 
 		// asset bone order가 parent-first라는 전제에 맞춰 부모 global을 누적한다.
 		const int32 ParentIndex = Asset->Bones[i].ParentIndex;

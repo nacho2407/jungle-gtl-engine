@@ -2,6 +2,7 @@
 #include "Platform/Paths.h"
 #include "Core/Log.h"
 #include "MeshImportOptions.h"
+#include "Math/MathUtils.h"
 
 #include <filesystem>
 #include <fstream>
@@ -641,8 +642,8 @@ static int32 AddSyntheticRootBoneIfNeeded(FbxNode* Node, TArray<FBone>& Bones, T
 
 	FMatrix GlobalMatrix = ConvertFbxMatrix(Node->EvaluateGlobalTransform());
 
-	Bone.LocalTransform = FTransform(ConvertFbxMatrix(Node->EvaluateLocalTransform()));
-	Bone.GlobalTransform = FTransform(GlobalMatrix);
+	Bone.LocalMatrix = ConvertFbxMatrix(Node->EvaluateLocalTransform());
+	Bone.GlobalMatrix = GlobalMatrix;
 	Bone.InverseBindPoseMatrix = GlobalMatrix.GetInverse();
 
 	const int32 NewBoneIndex = (int32)Bones.size();
@@ -674,8 +675,8 @@ void FFbxImporter::ParseBone(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Out
 
 			FbxMatrix LocalMatrix = Node->EvaluateLocalTransform();
 			FbxMatrix GlobalMatrix = Node->EvaluateGlobalTransform();
-			Bone.LocalTransform = FTransform(ConvertFbxMatrix(LocalMatrix));
-			Bone.GlobalTransform = FTransform(ConvertFbxMatrix(GlobalMatrix));
+			Bone.LocalMatrix = ConvertFbxMatrix(LocalMatrix);
+			Bone.GlobalMatrix = ConvertFbxMatrix(GlobalMatrix);
 
 			int32 NewBoneIndex = (int32)Bones.size();
 			Bones.push_back(Bone);
