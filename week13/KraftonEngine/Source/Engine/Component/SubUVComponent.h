@@ -32,8 +32,6 @@ public:
 	bool IsFinished() const { return !bLoop && bIsExecute; }
 	void Play() { FrameIndex = 0; TimeAccumulator = 0.0f; bIsExecute = false; } // 처음부터 다시 재생
 
-	// Sprite Size(Width/Height)는 UBillboardComponent로 끌어올림 — 상속받아 사용.
-
 	// --- Property / Serialization ---
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;

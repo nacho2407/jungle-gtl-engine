@@ -21,9 +21,6 @@ FPrimitiveSceneProxy* USubUVComponent::CreateSceneProxy()
 
 void USubUVComponent::Serialize(FArchive& Ar)
 {
-	// UBillboardComponent::Serialize가 TextureName/Width/Height를 처리한다.
-	// SubUV는 자체 ParticleResource를 쓰므로 Billboard의 TextureName은 사용하지 않지만,
-	// 직렬화 일관성을 위해 Super 호출은 유지한다 (Width/Height는 공통).
 	UBillboardComponent::Serialize(Ar);
 
 	Ar << ParticleName;
@@ -80,11 +77,9 @@ void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 {
 	// Billboard의 Texture 프로퍼티는 SubUV에서 의미가 없으므로 의도적으로 스킵.
 	// UPrimitiveComponent로 직접 올라가 공통 트랜스폼 등만 가져온 뒤,
-	// Width/Height(상속 멤버)와 SubUV 고유 프로퍼티만 노출한다.
+	// SubUV 고유 프로퍼티만 노출한다.
 	UPrimitiveComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Particle",  EPropertyType::Name,  "Particle", &ParticleName });
-	OutProps.push_back({ "Width",     EPropertyType::Float, "Particle", &Width,  0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Height",    EPropertyType::Float, "Particle", &Height, 0.1f, 100.0f, 0.1f });
 	OutProps.push_back({ "Play Rate", EPropertyType::Float, "Particle", &PlayRate, 1.0f, 120.0f, 1.0f });
 	OutProps.push_back({ "bLoop",     EPropertyType::Bool,  "Particle", &bLoop });
 }
@@ -100,11 +95,6 @@ void USubUVComponent::PostEditProperty(const char* PropertyName)
 		SetParticle(ParticleName);
 		// 파티클 교체 시 UV 그리드/텍스처가 바뀌므로 Mesh 단계까지 dirty.
 		MarkProxyDirty(EDirtyFlag::Mesh);
-	}
-	else if (strcmp(PropertyName, "Width") == 0 || strcmp(PropertyName, "Height") == 0)
-	{
-		MarkProxyDirty(EDirtyFlag::Transform);
-		MarkWorldBoundsDirty();
 	}
 }
 

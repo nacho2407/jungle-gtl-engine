@@ -333,6 +333,7 @@ void UPrimitiveComponent::UpdateWorldAABB() const
 }
 
 /* 현재 쓰이지 않는 코드입니다*/
+// -> 쓰이고 있음
 bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
 	FMeshDataView View = GetMeshDataView();

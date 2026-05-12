@@ -20,16 +20,13 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
+	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
+
 	void SetBillboardEnabled(bool bEnable) { bIsBillboard = bEnable; }
 
 	// --- Material ---
 	void SetMaterial(class UMaterial* InMaterial);
 	class UMaterial* GetMaterial() const { return Material; }
-
-	// --- Sprite Size (월드 공간) ---
-	void SetSpriteSize(float InWidth, float InHeight) { Width = InWidth; Height = InHeight; }
-	float GetWidth()  const { return Width; }
-	float GetHeight() const { return Height; }
 
 	// 주어진 카메라 방향으로 빌보드 월드 행렬을 계산 (per-view 렌더링용)
 	FMatrix ComputeBillboardMatrix(const FVector& CameraForward) const;
@@ -42,8 +39,5 @@ protected:
 
 	FMaterialSlot MaterialSlot;
 	UMaterial* Material = nullptr;
-
-	float Width  = 1.0f;
-	float Height = 1.0f;
 };
 

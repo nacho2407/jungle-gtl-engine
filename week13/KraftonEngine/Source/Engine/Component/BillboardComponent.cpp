@@ -22,8 +22,6 @@ void UBillboardComponent::Serialize(FArchive& Ar)
 	UPrimitiveComponent::Serialize(Ar);
 	Ar << bIsBillboard;
 	Ar << MaterialSlot.Path;
-	Ar << Width;
-	Ar << Height;
 }
 
 void UBillboardComponent::PostDuplicate()
@@ -60,8 +58,6 @@ void UBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Material", EPropertyType::MaterialSlot, "Rendering", &MaterialSlot });
-	OutProps.push_back({ "Width",  EPropertyType::Float, "Rendering", &Width,  0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Height", EPropertyType::Float, "Rendering", &Height, 0.1f, 100.0f, 0.1f });
 }
 
 void UBillboardComponent::PostEditProperty(const char* PropertyName)
@@ -83,12 +79,6 @@ void UBillboardComponent::PostEditProperty(const char* PropertyName)
 			}
 		}
 		MarkRenderStateDirty();
-	}
-	else if (strcmp(PropertyName, "Width") == 0 || strcmp(PropertyName, "Height") == 0)
-	{
-		// Width/Height는 빌보드 쿼드 크기를 결정하므로 트랜스폼/월드 바운드 모두 갱신해야 한다.
-		MarkProxyDirty(EDirtyFlag::Transform);
-		MarkWorldBoundsDirty();
 	}
 }
 
@@ -119,6 +109,31 @@ void UBillboardComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	CachedWorldMatrix = FMatrix::MakeScaleMatrix(GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(WorldLocation);
 
 	UpdateWorldAABB();
+}
+
+bool UBillboardComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
+{
+	FMatrix BillboardWorldMatrix = ComputeBillboardMatrix(Ray.Direction);
+	FMatrix InvWorldMatrix = BillboardWorldMatrix.GetInverse();
+
+	FRay LocalRay;
+	LocalRay.Origin = InvWorldMatrix.TransformPositionWithW(Ray.Origin);
+	LocalRay.Direction = InvWorldMatrix.TransformVector(Ray.Direction).Normalized();
+
+	float t = -LocalRay.Origin.X / LocalRay.Direction.X;
+	if (t < 0.0f) return false;
+
+	FVector LocalHitPos = LocalRay.Origin + LocalRay.Direction * t;
+	if (LocalHitPos.Y < -0.5f || LocalHitPos.Y > 0.5f ||
+		LocalHitPos.Z < -0.5f || LocalHitPos.Z > 0.5f)
+	{
+		return false;
+	}
+
+	FVector WorldHitPos = BillboardWorldMatrix.TransformPositionWithW(LocalHitPos);
+	OutHitResult.Distance = (WorldHitPos - Ray.Origin).Length();
+	OutHitResult.HitComponent = this;
+	return true;
 }
 
 FMatrix UBillboardComponent::ComputeBillboardMatrix(const FVector& CameraForward) const
