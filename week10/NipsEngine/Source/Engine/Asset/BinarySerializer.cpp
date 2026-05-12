@@ -38,7 +38,7 @@ constexpr uint32 STATIC_MESH_BINARY_MAGIC = 0x4853454D; // 'MESH'
 constexpr uint32 STATIC_MESH_BINARY_VERSION = 1;
 
 constexpr uint32 SKELETAL_MESH_BINARY_MAGIC   = 0x534D4B53; // 'SKMS'
-constexpr uint32 SKELETAL_MESH_BINARY_VERSION = 1;
+constexpr uint32 SKELETAL_MESH_BINARY_VERSION = 2;          // v2: Sockets 블록 추가
 
 //	Vailidation Checkers
 constexpr uint32 MAX_STATIC_MESH_VERTEX_COUNT   = 10'000'000;
@@ -52,6 +52,7 @@ constexpr uint32 MAX_SKELETAL_MESH_INDEX_COUNT    = 30'000'000;
 constexpr uint32 MAX_SKELETAL_MESH_SECTION_COUNT  = 100'000;
 constexpr uint32 MAX_SKELETAL_MESH_SLOTNAME_COUNT = 1024;
 constexpr uint32 MAX_SKELETAL_MESH_BONE_COUNT     = 65'536;
+constexpr uint32 MAX_SKELETAL_MESH_SOCKET_COUNT   = 1024;
 
 static bool IsValidStaticMeshHeader(const FStaticMeshBinaryHeader& Header)
 {
@@ -95,7 +96,8 @@ static bool IsValidSkeletalMeshHeader(const FSkeletalMeshBinaryHeader& Header)
 		return false;
 	}
 
-	if (Header.Version != SKELETAL_MESH_BINARY_VERSION)
+	// v1과 v2 모두 수용. v1은 SocketCount가 0인 것으로 간주.
+	if (Header.Version != 1 && Header.Version != SKELETAL_MESH_BINARY_VERSION)
 	{
 		return false;
 	}
@@ -121,6 +123,11 @@ static bool IsValidSkeletalMeshHeader(const FSkeletalMeshBinaryHeader& Header)
 	}
 
 	if (Header.BoneCount > MAX_SKELETAL_MESH_BONE_COUNT)
+	{
+		return false;
+	}
+
+	if (Header.SocketCount > MAX_SKELETAL_MESH_SOCKET_COUNT)
 	{
 		return false;
 	}
@@ -692,6 +699,7 @@ bool FBinarySerializer::ReadStaticMeshHeader(const FString& BinaryPath, FStaticM
 
 void FBinarySerializer::WriteSkeletalHeader(std::ofstream& Out, const FSkeletalMeshBinaryHeader& Header)
 {
+	// Save는 항상 v2 포맷으로 기록 (SocketCount 포함).
 	WriteUInt32LE(Out, Header.MagicNumber);
 	WriteUInt32LE(Out, Header.Version);
 	WriteUInt32LE(Out, Header.VertexCount);
@@ -699,19 +707,32 @@ void FBinarySerializer::WriteSkeletalHeader(std::ofstream& Out, const FSkeletalM
 	WriteUInt32LE(Out, Header.SectionCount);
 	WriteUInt32LE(Out, Header.SlotCount);
 	WriteUInt32LE(Out, Header.BoneCount);
+	WriteUInt32LE(Out, Header.SocketCount);
 	WriteUInt64LE(Out, Header.SourceFileWriteTime);
 }
 
 bool FBinarySerializer::ReadSkeletalHeader(std::ifstream& In, FSkeletalMeshBinaryHeader& OutHeader) const
 {
-	return ReadUInt32LE(In, OutHeader.MagicNumber)
-		&& ReadUInt32LE(In, OutHeader.Version)
-		&& ReadUInt32LE(In, OutHeader.VertexCount)
-		&& ReadUInt32LE(In, OutHeader.IndexCount)
-		&& ReadUInt32LE(In, OutHeader.SectionCount)
-		&& ReadUInt32LE(In, OutHeader.SlotCount)
-		&& ReadUInt32LE(In, OutHeader.BoneCount)
-		&& ReadUInt64LE(In, OutHeader.SourceFileWriteTime);
+	// v1: SocketCount 필드 없음. v2부터 SocketCount 포함.
+	if (!ReadUInt32LE(In, OutHeader.MagicNumber))   return false;
+	if (!ReadUInt32LE(In, OutHeader.Version))       return false;
+	if (!ReadUInt32LE(In, OutHeader.VertexCount))   return false;
+	if (!ReadUInt32LE(In, OutHeader.IndexCount))    return false;
+	if (!ReadUInt32LE(In, OutHeader.SectionCount))  return false;
+	if (!ReadUInt32LE(In, OutHeader.SlotCount))     return false;
+	if (!ReadUInt32LE(In, OutHeader.BoneCount))     return false;
+
+	if (OutHeader.Version >= 2)
+	{
+		if (!ReadUInt32LE(In, OutHeader.SocketCount)) return false;
+	}
+	else
+	{
+		OutHeader.SocketCount = 0;
+	}
+
+	if (!ReadUInt64LE(In, OutHeader.SourceFileWriteTime)) return false;
+	return true;
 }
 
 void FBinarySerializer::WriteMatrix4x4(std::ofstream& Out, const FMatrix& M)
@@ -960,6 +981,88 @@ bool FBinarySerializer::ReadBones(std::ifstream& In, FSkeletalMesh& OutData, uin
 	return In.good();
 }
 
+void FBinarySerializer::WriteSockets(std::ofstream& Out, const FSkeletalMesh& Data)
+{
+	uint32 Count = static_cast<uint32>(Data.Sockets.size());
+	WriteUInt32LE(Out, Count);
+
+	for (const FSkeletalMeshSocket& Socket : Data.Sockets)
+	{
+		// FName은 표시용 문자열로 영속화 — 로드 시 FNamePool로 재구성됨.
+		FString SocketName = Socket.Name.ToString();
+		WriteString(Out, SocketName);
+
+		WriteInt32LE(Out, Socket.BoneIndex);
+
+		WriteFloatLE(Out, Socket.RelativeLocation.X);
+		WriteFloatLE(Out, Socket.RelativeLocation.Y);
+		WriteFloatLE(Out, Socket.RelativeLocation.Z);
+
+		WriteFloatLE(Out, Socket.RelativeRotation.Pitch);
+		WriteFloatLE(Out, Socket.RelativeRotation.Yaw);
+		WriteFloatLE(Out, Socket.RelativeRotation.Roll);
+
+		WriteFloatLE(Out, Socket.RelativeScale.X);
+		WriteFloatLE(Out, Socket.RelativeScale.Y);
+		WriteFloatLE(Out, Socket.RelativeScale.Z);
+	}
+}
+
+bool FBinarySerializer::ReadSockets(std::ifstream& In, FSkeletalMesh& OutData, uint32 SocketCount) const
+{
+	uint32 Count = 0;
+	if (!ReadUInt32LE(In, Count))
+	{
+		return false;
+	}
+
+	if (Count != SocketCount || Count > MAX_SKELETAL_MESH_SOCKET_COUNT)
+	{
+		In.setstate(std::ios::failbit);
+		return false;
+	}
+
+	OutData.Sockets.resize(Count);
+
+	for (FSkeletalMeshSocket& Socket : OutData.Sockets)
+	{
+		FString SocketName;
+		if (!ReadString(In, SocketName))
+		{
+			return false;
+		}
+		Socket.Name = FName(SocketName);
+
+		if (!ReadInt32LE(In, Socket.BoneIndex))
+		{
+			return false;
+		}
+
+		if (!ReadFloatLE(In, Socket.RelativeLocation.X) ||
+			!ReadFloatLE(In, Socket.RelativeLocation.Y) ||
+			!ReadFloatLE(In, Socket.RelativeLocation.Z))
+		{
+			return false;
+		}
+
+		if (!ReadFloatLE(In, Socket.RelativeRotation.Pitch) ||
+			!ReadFloatLE(In, Socket.RelativeRotation.Yaw) ||
+			!ReadFloatLE(In, Socket.RelativeRotation.Roll))
+		{
+			return false;
+		}
+
+		if (!ReadFloatLE(In, Socket.RelativeScale.X) ||
+			!ReadFloatLE(In, Socket.RelativeScale.Y) ||
+			!ReadFloatLE(In, Socket.RelativeScale.Z))
+		{
+			return false;
+		}
+	}
+
+	return In.good();
+}
+
 void FBinarySerializer::WriteSkeletalBounds(std::ofstream& Out, const FSkeletalMesh& Data)
 {
 	WriteFloatLE(Out, Data.LocalBounds.Min.X);
@@ -997,6 +1100,7 @@ bool FBinarySerializer::SaveSkeletalMesh(const FString& BinaryPath, const FStrin
 	Header.SectionCount = static_cast<uint32>(Data.Sections.size());
 	Header.SlotCount    = static_cast<uint32>(Data.MaterialSlots.size());
 	Header.BoneCount    = static_cast<uint32>(Data.Bones.size());
+	Header.SocketCount  = static_cast<uint32>(Data.Sockets.size());
 	Header.SourceFileWriteTime = GetFileWriteTimeTicks(SourcePath);
 
 	if (!IsValidSkeletalMeshHeader(Header))
@@ -1020,6 +1124,7 @@ bool FBinarySerializer::SaveSkeletalMesh(const FString& BinaryPath, const FStrin
 	}
 
 	WriteBones(Out, Data);
+	WriteSockets(Out, Data);
 	WriteSkeletalBounds(Out, Data);
 
 	return Out.good();
@@ -1091,6 +1196,19 @@ bool FBinarySerializer::LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMes
 		return false;
 	}
 
+	// v2부터 Sockets 블록. v1 .bin은 Header.SocketCount==0으로 들어와서 자연스럽게 skip.
+	if (Header.Version >= 2)
+	{
+		if (!ReadSockets(In, OutData, Header.SocketCount))
+		{
+			return false;
+		}
+	}
+	else
+	{
+		OutData.Sockets.clear();
+	}
+
 	if (!ReadSkeletalBounds(In, OutData))
 	{
 		return false;
@@ -1106,7 +1224,8 @@ bool FBinarySerializer::LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMes
 	      OutData.Indices.size()       == Header.IndexCount   &&
 	      OutData.Sections.size()      == Header.SectionCount &&
 	      OutData.MaterialSlots.size() == Header.SlotCount    &&
-	      OutData.Bones.size()         == Header.BoneCount))
+	      OutData.Bones.size()         == Header.BoneCount    &&
+	      OutData.Sockets.size()       == Header.SocketCount))
 	{
 		return false;
 	}
