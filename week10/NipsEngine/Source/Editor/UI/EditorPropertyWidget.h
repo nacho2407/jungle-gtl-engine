@@ -49,6 +49,7 @@ private:
 	void RenderComponentProperties();
 	void RenderPropertyWidget(struct FPropertyDescriptor& Prop);
 	void RenderSceneComponentRefWidget(struct FPropertyDescriptor& Prop, AActor* Owner);
+	void RenderSkeletalBonePoseDebug(class USkeletalMeshComponent* Comp);
 	void RenderInterpControlPoints(class UInterpToMovementComponent* Comp);
 	void RenderMaterialPreviewTooltip(UMaterialInterface* Material);
 	void RefreshMaterialSlotCache(bool bForce = false);
@@ -71,6 +72,7 @@ private:
 	FEditorActorSequenceDetails ActorSequenceDetails;
 	TArray<FString> CachedMaterialSlotNames;
 	TArray<UMaterialInterface*> CachedMaterialSlotMaterials;
+	TMap<uint32, int32> SelectedSkeletalBoneByComponent;
 	bool bDetailsLocked = false;
 	bool bActorSelected   = true; // true: Actor details, false: Component details
 	bool bOpenDetailsContextMenu = false;
