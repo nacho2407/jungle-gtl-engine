@@ -28,6 +28,8 @@ public:
         FRectProvider InRectProvider,
         FWorldResolver InWorldResolver);
 
+    FViewportClient* GetFocusedClient() const;
+
     bool Tick(float DeltaTime, FViewportInputContext& OutContext, FInteractionBinding& OutBinding);
 
 private:
@@ -128,6 +130,8 @@ public:
     }
 
     bool Tick(float DeltaTime, FViewportInputContext& OutContext, FInteractionBinding& OutBinding);
+
+    FViewportClient* GetFocusedClient() const { return Router.GetFocusedClient(); }
 
     const FInputFrameDispatch& GetLastDispatch() const { return LastDispatch; }
     const FInputSideEffectPermissions& GetSideEffectPermissions() const { return LastDispatch.SideEffects; }

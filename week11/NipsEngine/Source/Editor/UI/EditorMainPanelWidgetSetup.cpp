@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
 
@@ -38,6 +38,7 @@ void FEditorMainPanel::InitializeEditorWidgets(UEditorEngine* InEditorEngine)
     Widgets.PlayStreamWidget.Initialize(InEditorEngine);
     Widgets.ToolbarWidget.Initialize(InEditorEngine);
     Widgets.RuntimeUIPreviewWidget.Initialize(InEditorEngine);
+    Widgets.ViewerWindowWidget.Initialize(InEditorEngine);
 }
 
 void FEditorMainPanel::OpenCurveAsset(const FString& CurvePath)

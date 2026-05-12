@@ -396,6 +396,21 @@ void FInputRouter::RegisterTarget(
     Targets.push_back(std::move(Entry));
 }
 
+FViewportClient* FInputRouter::GetFocusedClient() const
+{
+    if (FocusedViewport)
+    {
+        for (const auto& Entry : Targets)
+        {
+            if (Entry.Viewport == FocusedViewport)
+            {
+                return Entry.Client;
+            }
+        }
+    }
+    return nullptr;
+}
+
 bool FInputRouter::Tick(float DeltaTime, FViewportInputContext& OutContext, FInteractionBinding& OutBinding)
 {
     const FInputSystemSnapshot InputSnapshot = InputSystem::Get().TickAndMakeSnapshot();
