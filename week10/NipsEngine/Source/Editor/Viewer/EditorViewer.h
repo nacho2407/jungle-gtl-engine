@@ -10,6 +10,7 @@ class UWorld;
 class FSelectionManager;
 class FWindowsWindow;
 struct ID3D11ShaderResourceView;
+class ASkeletalMeshActor;
 
 class FEditorViewer
 {
@@ -36,6 +37,9 @@ public:
     }
 
 	FSceneViewport& GetViewport() { return Viewport; }
+
+	// 우선은 Skeletal Mesh Viewer 테스트용으로 추상화 안함
+	ASkeletalMeshActor* GetViewTarget() const { return ViewTarget; }
 
 private:
 
