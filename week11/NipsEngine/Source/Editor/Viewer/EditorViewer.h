@@ -41,6 +41,8 @@ public:
 	// 우선은 Skeletal Mesh Viewer 테스트용으로 추상화 안함
 	ASkeletalMeshActor* GetViewTarget() const { return ViewTarget; }
 
+	void ChangeTarget(const FString& InFileName);
+
 	int32 SelectedBoneIndex = -1;
 	FVector CachedRotation;
 

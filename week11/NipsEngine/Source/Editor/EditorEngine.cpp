@@ -183,12 +183,9 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     // Editor용 렌더 파이프라인 세팅
     SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
 
-    // MainPanel.RestoreLastSceneFromProjectSettings();
+    MainPanel.RestoreLastSceneFromProjectSettings();
 
 	FScriptManager::Get().initializeLuaState();
-
-	CreateViewer();
-    CreateViewer();
 }
 
 void UEditorEngine::Shutdown()
@@ -562,7 +559,7 @@ void UEditorEngine::WorldTick(float DeltaTime)
     ProcessPendingSceneOpen();
 }
 
-FEditorViewer* UEditorEngine::CreateViewer()
+FEditorViewer* UEditorEngine::CreateViewer(FString InFileName)
 {
     static int32 ViewerCounter = 0;
     FString HandleStr = "__ViewerPreview_" + std::to_string(ViewerCounter++);
@@ -574,6 +571,7 @@ FEditorViewer* UEditorEngine::CreateViewer()
 
     auto NewViewer = std::make_unique<FEditorViewer>();
     NewViewer->Init(Window, this, ViewerCtx.World, ViewerCtx.SelectionManager);
+    NewViewer->ChangeTarget(InFileName);
 
     FEditorViewer* Result = NewViewer.get();
     Viewers.push_back(std::move(NewViewer));
@@ -1153,8 +1151,6 @@ void UEditorEngine::NewScene()
     // Slate 초기화 및 Viewport Layout 추가
     FSlateApplication::Get().Initialize();
     ViewportLayout.BuildViewportLayout(static_cast<int32>(Window->GetWidth()), static_cast<int32>(Window->GetHeight()));
-
-	CreateViewer();
 }
 
 bool UEditorEngine::CreateDefaultSceneAsset(const FString& FilePath)

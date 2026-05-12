@@ -237,7 +237,7 @@ private:
 
 	// 지금은 4개 Viewport 고정 존재 상황이라 다음과 같이 처리
 	FViewportRenderResource ViewportResources[4];
-    TArray<FViewportRenderResource> ViewerViewportResources;
+    TArray<std::unique_ptr<FViewportRenderResource>> ViewerViewportResources;
 	FViewportRenderResource PreviewResource;
     FViewportRenderResource GameFrameResource;
 };
