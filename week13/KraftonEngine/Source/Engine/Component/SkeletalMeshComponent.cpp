@@ -15,18 +15,15 @@ void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 
 	if (SkeletalMesh && SkeletalMesh->GetSkeletalMeshAsset())
 	{
+		// 1. BoneEditLocalTransforms을 InMesh 기준으로 다시 갱신한다.
 		ResetBoneEditPose();
+
+		// 2. 실제 그릴 정점 생성
+		// UpdateCPUSkinning();
 	}
 
-	CacheLocalBounds();
-	// MarkRenderStateDirty();
+	MarkRenderStateDirty();
 	MarkWorldBoundsDirty();
-	/*MarkProxyDirty(EDirtyFlag::Mesh);
-	MarkProxyDirty(EDirtyFlag::Material);*/
-	// 강제로 Update
-	// TODO: 원인 파악 반드시 해야함
-	SceneProxy->UpdateMesh();
-	SceneProxy->UpdateMaterial();
 }
 
 FMeshBuffer* USkeletalMeshComponent::GetMeshBuffer() const
@@ -51,6 +48,48 @@ FMeshDataView USkeletalMeshComponent::GetMeshDataView() const
 	View.IndexCount = (uint32)Asset->Indices.size();
 	return View;
 }
+
+//void USkeletalMeshComponent::UpdateWorldAABB() const
+//{
+//	if (SkinnedVertices.empty())
+//	{
+//		USkinnedMeshComponent::UpdateWorldAABB();
+//		return;
+//	}
+//
+//	const FMatrix& WorldMatrix = CachedWorldMatrix;
+//
+//	FVector WorldMin = WorldMatrix.TransformPositionWithW(SkinnedVertices[0].Position);
+//	FVector WorldMax = WorldMin;
+//
+//	for (const FVertexPNCTT& Vertex : SkinnedVertices)
+//	{
+//		const FVector WorldPos = WorldMatrix.TransformPositionWithW(Vertex.Position);
+//
+//		WorldMin.X = std::min(WorldMin.X, WorldPos.X);
+//		WorldMin.Y = std::min(WorldMin.Y, WorldPos.Y);
+//		WorldMin.Z = std::min(WorldMin.Z, WorldPos.Z);
+//
+//		WorldMax.X = std::max(WorldMax.X, WorldPos.X);
+//		WorldMax.Y = std::max(WorldMax.Y, WorldPos.Y);
+//		WorldMax.Z = std::max(WorldMax.Z, WorldPos.Z);
+//	}
+//
+//	constexpr float MinExtent = 1.0f;
+//
+//	FVector Center = (WorldMin + WorldMax) * 0.5f;
+//	FVector Extent = (WorldMax - WorldMin) * 0.5f;
+//
+//	Extent.X = std::max(Extent.X, MinExtent);
+//	Extent.Y = std::max(Extent.Y, MinExtent);
+//	Extent.Z = std::max(Extent.Z, MinExtent);
+//
+//	WorldAABBMinLocation = Center - Extent;
+//	WorldAABBMaxLocation = Center + Extent;
+//
+//	bWorldAABBDirty = false;
+//	bHasValidWorldAABB = true;
+//}
 
 FPrimitiveSceneProxy* USkeletalMeshComponent::CreateSceneProxy()
 {
@@ -324,6 +363,7 @@ void USkeletalMeshComponent::InitSkinningCache()
 	FSkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset();
 	SkinnedVertices.resize(Asset->Vertices.size());
 	UpdateCPUSkinning();
+	// UpdateWorldAABB();
 }
 
 void USkeletalMeshComponent::UpdateCPUSkinning()
@@ -438,6 +478,7 @@ void USkeletalMeshComponent::UpdateCPUSkinning()
 	}
 
 	++SkinnedRevision;
+	// UpdateWorldAABB();
 }
 
 void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)

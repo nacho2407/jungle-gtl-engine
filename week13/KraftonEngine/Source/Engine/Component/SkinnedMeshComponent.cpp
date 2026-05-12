@@ -35,9 +35,9 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 		OverrideMaterials.clear();
 		MaterialSlots.clear();
 	}
-	CacheLocalBounds();
-	MarkRenderStateDirty();
-	MarkWorldBoundsDirty();
+	// CacheLocalBounds();
+	// MarkRenderStateDirty();
+	// MarkWorldBoundsDirty();
 }
 
 void USkinnedMeshComponent::CacheLocalBounds()
