@@ -1,8 +1,7 @@
 ﻿#pragma once
 
+#include "Viewport/EditorPreviewViewportClient.h"
 #include "Viewport/ViewportClient.h"
-#include "Render/Types/POVProvider.h"
-#include "Render/Types/ViewTypes.h"
 #include "Editor/Viewport/ViewportCameraTransform.h"
 #include "Mesh/SkeletalMeshAsset.h"
 #include "Editor/Slate/SWindow.h"
@@ -18,7 +17,7 @@ class AActor;
 class USkeletalMesh;
 class UBoneDebugComponent;
 
-class FMeshEditorViewportClient : public FViewportClient, public IPOVProvider
+class FMeshEditorViewportClient : public FViewportClient, public IEditorPreviewViewportClient
 {
 public:
 	void Initialize(ID3D11Device* Device, uint32 Width, uint32 Height);
@@ -33,18 +32,21 @@ public:
 	void SetPreviewMeshComponent(USkeletalMeshComponent* InComp) { PreviewMeshComponent = InComp; }
 	void SetViewportRect(float X, float Y, float Width, float Height) { ViewportScreenRect = { X, Y, Width, Height }; }
 
-	bool IsRenderable() const { return bIsRenderable; }
-	bool IsMouseOverViewport() const;
+	bool IsRenderable() const override { return bIsRenderable; }
+	bool IsMouseOverViewport() const override;
+
 	bool IsGizmoHolding() const;
 
-	FViewport* GetViewport() const { return Viewport; }
-	UWorld* GetPreviewWorld() const { return PreviewWorld; }
+	FViewport* GetViewport() const override { return Viewport; }
+	UWorld* GetPreviewWorld() const override { return PreviewWorld; }
+
 	UGizmoComponent* GetGizmo() const { return Gizmo; }
 	USkeletalMeshComponent* GetPreviewMeshComponent() const { return PreviewMeshComponent; }
-	FViewportRenderOptions& GetRenderOptions() { return RenderOptions; }
-	const FViewportRenderOptions& GetRenderOptions() const { return RenderOptions; }
 
-	void NotifyViewportResized(int32 NewWidth, int32 NewHeight);
+	FViewportRenderOptions& GetRenderOptions() override { return RenderOptions; }
+	const FViewportRenderOptions& GetRenderOptions() const override { return RenderOptions; }
+
+	void NotifyViewportResized(int32 NewWidth, int32 NewHeight) override;
 
 	bool GetCameraView(FMinimalViewInfo& OutPOV) const override;
 

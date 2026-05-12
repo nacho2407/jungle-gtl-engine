@@ -19,6 +19,10 @@
 #include "Editor/UI/ImGuiSetting.h"
 #include "Editor/UI/NotificationToast.h"
 
+#include "Editor/UI/Asset/FloatCurveEditorWidget.h"
+#include "Editor/UI/Asset/CameraShakeEditorWidget.h"
+#include "Editor/UI/Asset/MeshEditorWidget.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <random>
@@ -81,6 +85,10 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	StatWidget.Initialize(InEditorEngine);
 	ContentBrowserWidget.Initialize(InEditorEngine, InRenderer.GetFD3DDevice().GetDevice());
 	ShadowMapDebugWidget.Initialize(InEditorEngine);
+
+	AssetEditorManager.RegisterEditor<FFloatCurveEditorWidget>();
+	AssetEditorManager.RegisterEditor<FCameraShakeEditorWidget>();
+	AssetEditorManager.RegisterEditor<FMeshEditorWidget>();
 }
 
 void FEditorMainPanel::Release()
@@ -94,6 +102,11 @@ void FEditorMainPanel::Release()
 void FEditorMainPanel::SaveToSettings() const
 {
 	ContentBrowserWidget.SaveToSettings();
+}
+
+void FEditorMainPanel::TickAssetEditors(float DeltaTime)
+{
+	AssetEditorManager.Tick(DeltaTime);
 }
 
 void FEditorMainPanel::Render(float DeltaTime)
@@ -173,9 +186,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 	RenderConsoleDrawer(DeltaTime);
 	RenderFooterOverlay(DeltaTime);
 
-	FloatCurveEditorWidget.Render(DeltaTime);
-	CameraShakeEditorWidget.Render(DeltaTime);
-	MeshEditorWidget.Render(DeltaTime);
+	AssetEditorManager.Render(DeltaTime);
 
 	// 토스트 알림 (항상 최상위에 표시)
 	FNotificationToast::Render();
@@ -706,7 +717,11 @@ void FEditorMainPanel::Update()
 	// 뷰포트 슬롯 위에서는 bUsingMouse를 해제해야 TickInteraction이 동작
 	bool bWantMouse = IO.WantCaptureMouse;
 	bool bWantKeyboard = IO.WantCaptureKeyboard || bShowShortcutOverlay;
-	if (EditorEngine && (EditorEngine->IsMouseOverViewport() || MeshEditorWidget.IsMouseOverViewport()))
+
+	const bool bMouseOverViewport = EditorEngine && EditorEngine->IsMouseOverViewport();
+	const bool bMouseOverAssetPreviewViewport = IsMouseOverAssetEditorPreviewViewport();
+
+	if (bMouseOverViewport || bMouseOverAssetPreviewViewport)
 	{
 		bWantMouse = false;
 		if (!IO.WantTextInput && !bShowShortcutOverlay)
@@ -877,18 +892,5 @@ void FEditorMainPanel::RestoreEditorWindowsAfterPIE()
 
 void FEditorMainPanel::OpenAssetEditorForObject(UObject* Object)
 {
-	if (FloatCurveEditorWidget.CanEdit(Object))
-	{
-		FloatCurveEditorWidget.Open(Object);
-	}
-	
-	if (CameraShakeEditorWidget.CanEdit(Object))
-	{
-		CameraShakeEditorWidget.Open(Object);
-	}
-
-	if (MeshEditorWidget.CanEdit(Object))
-	{
-		MeshEditorWidget.Open(Object);
-	}
+	AssetEditorManager.OpenEditorForObject(Object);
 }
