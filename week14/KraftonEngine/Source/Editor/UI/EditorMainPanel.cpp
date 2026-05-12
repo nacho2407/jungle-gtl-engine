@@ -20,6 +20,7 @@
 #include "Editor/UI/NotificationToast.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <random>
 #include <utility>
 
@@ -64,6 +65,15 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
 	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
 
+	ImGuiStyle& Style = ImGui::GetStyle();
+	ImVec4* Colors = Style.Colors;
+	
+	Colors[ImGuiCol_FrameBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.0f);
+	Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.20f, 0.20f, 0.20f, 1.0f);
+	Colors[ImGuiCol_FrameBgActive] = ImVec4(0.24f, 0.24f, 0.24f, 1.0f);
+	Colors[ImGuiCol_CheckMark] = ImVec4(0.82f, 0.82f, 0.82f, 1.0f);
+	Colors[ImGuiCol_Border] = ImVec4(0.28f, 0.28f, 0.28f, 1.0f);
+
 	ConsoleWidget.Initialize(InEditorEngine);
 	ControlWidget.Initialize(InEditorEngine);
 	PropertyWidget.Initialize(InEditorEngine);
@@ -92,8 +102,10 @@ void FEditorMainPanel::Render(float DeltaTime)
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 	RenderMainMenuBar();
+
+	const float FooterHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+	RenderMainDockSpace(FooterHeight);
 
 	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
 	if (EditorEngine)
@@ -255,6 +267,44 @@ void FEditorMainPanel::RenderMainMenuBar()
 	}
 
 	ImGui::EndMainMenuBar();
+}
+
+void FEditorMainPanel::RenderMainDockSpace(float ReservedBottomHeight)
+{
+	ImGuiViewport* MainViewport = ImGui::GetMainViewport();
+	if (!MainViewport)
+	{
+		return;
+	}
+
+	ImVec2 DockSpaceSize = MainViewport->WorkSize;
+	DockSpaceSize.y = max(1.0f, DockSpaceSize.y - ReservedBottomHeight);
+
+	ImGui::SetNextWindowPos(MainViewport->WorkPos);
+	ImGui::SetNextWindowSize(DockSpaceSize);
+	ImGui::SetNextWindowViewport(MainViewport->ID);
+
+	ImGuiWindowFlags HostWindowFlags = ImGuiWindowFlags_NoTitleBar
+		| ImGuiWindowFlags_NoCollapse
+		| ImGuiWindowFlags_NoResize
+		| ImGuiWindowFlags_NoMove
+		| ImGuiWindowFlags_NoDocking
+		| ImGuiWindowFlags_NoBringToFrontOnFocus
+		| ImGuiWindowFlags_NoNavFocus;
+
+	char Label[32];
+	std::snprintf(Label, sizeof(Label), "WindowOverViewport_%08X", MainViewport->ID);
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGui::Begin(Label, nullptr, HostWindowFlags);
+	ImGui::PopStyleVar(3);
+
+	ImGuiID DockSpaceId = ImGui::GetID("DockSpace");
+	ImGui::DockSpace(DockSpaceId, ImVec2(0.0f, 0.0f));
+
+	ImGui::End();
 }
 
 void FEditorMainPanel::RenderShortcutOverlay()
