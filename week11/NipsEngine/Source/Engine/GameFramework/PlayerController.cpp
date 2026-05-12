@@ -18,6 +18,9 @@ REGISTER_FACTORY(APlayerController)
 
 namespace
 {
+    constexpr float FallbackCameraMoveSpeed = 10.0f;
+    constexpr float FallbackCameraMouseSensitivity = 0.15f;
+
 	FQuat MakeViewQuatFromCamera(UCameraComponent* Camera)
 	{
 		if (!Camera)
@@ -56,7 +59,15 @@ void APlayerController::BeginPlay()
 		}
 		else
 		{
-			UE_LOG_ERROR("[PlayerController] Player actor with tag 'Player' is missing. Default pawn will not be spawned.");
+			if (AFallbackCameraActor* FallbackCamera = SpawnFallbackCameraActor())
+			{
+				Possess(FallbackCamera);
+				UE_LOG_WARNING("[PlayerController] Player actor with tag 'Player' is missing. Fallback camera actor was created.");
+			}
+			else
+			{
+				UE_LOG_ERROR("[PlayerController] Player actor with tag 'Player' is missing and fallback camera creation failed.");
+			}
 		}
 	}
 	UpdateRuntimeCameraFromViewTarget();
@@ -72,6 +83,7 @@ void APlayerController::Tick(float DeltaTime)
 {
 	AActor::Tick(DeltaTime);
 
+	LastInputDeltaTime = std::max(0.0f, DeltaTime);
 	UpdatePossessedActorMovement(DeltaTime);
 	UpdateRuntimeCameraFromViewTarget(DeltaTime);
 }
@@ -123,6 +135,26 @@ AActor* APlayerController::SpawnDefaultPawn()
 	return Pawn;
 }
 
+AFallbackCameraActor* APlayerController::SpawnFallbackCameraActor()
+{
+	UWorld* World = GetFocusedWorld();
+	if (!World)
+	{
+		return nullptr;
+	}
+
+	AFallbackCameraActor* CameraActor = World->SpawnActor<AFallbackCameraActor>();
+	if (!CameraActor)
+	{
+		return nullptr;
+	}
+
+	CameraActor->InitDefaultComponents();
+	CameraActor->SetFName(FName("Fallback Camera"));
+	ApplyFallbackCameraTransform(CameraActor);
+	return CameraActor;
+}
+
 void APlayerController::ApplyInitialPawnTransform(ADefaultPlayerActor* Pawn, const FVector& SpawnLocation, const FVector& SpawnRotation)
 {
 	if (!Pawn)
@@ -155,6 +187,35 @@ void APlayerController::ApplyPlayerStartTransform(AActor* Pawn, const FVector& S
 	if (UCameraComponent* PawnCamera = FindCameraComponent(Pawn))
 	{
 		PawnCamera->SetRelativeRotation(FVector(0.0f, SpawnRotation.Y, 0.0f));
+	}
+}
+
+void APlayerController::ApplyFallbackCameraTransform(AFallbackCameraActor* CameraActor)
+{
+	if (!CameraActor)
+	{
+		return;
+	}
+
+	FVector SpawnLocation = RuntimeCamera.GetLocation();
+	FVector SpawnRotation = RuntimeCamera.GetRotation().Euler();
+	if (AActor* Start = FindPlayerStart())
+	{
+		SpawnLocation = Start->GetActorLocation();
+		SpawnRotation = Start->GetActorRotation();
+	}
+
+	CameraActor->SetActorLocation(SpawnLocation);
+	if (UCameraComponent* Camera = CameraActor->GetCameraComponent())
+	{
+		Camera->SetRelativeRotation(FVector(0.0f, SpawnRotation.Y, SpawnRotation.Z));
+		FCameraState CameraState = Camera->GetCameraState();
+		CameraState.FOV = RuntimeCamera.GetFOV();
+		CameraState.NearZ = RuntimeCamera.GetNearPlane();
+		CameraState.FarZ = RuntimeCamera.GetFarPlane();
+		CameraState.bIsOrthogonal = RuntimeCamera.IsOrthographic();
+		CameraState.OrthoWidth = RuntimeCamera.GetOrthoHeight();
+		Camera->SetCameraState(CameraState);
 	}
 }
 
@@ -333,6 +394,12 @@ void APlayerController::HandleKeyPressed(int VK)
 
 void APlayerController::HandleKeyDown(int VK)
 {
+	if (IsPossessingFallbackCamera())
+	{
+		MoveFallbackCamera(VK, LastInputDeltaTime);
+		return;
+	}
+
 	// Lua 게임 로직이 Engine.API.Input을 통해 raw input을 직접 읽습니다.
 	// 여기서 기본 WASD 이동을 처리하면 Lua 이동과 중복되므로 PlayerController는 입력을 소비하지 않습니다.
 	(void)VK;
@@ -345,6 +412,16 @@ void APlayerController::HandleKeyReleased(int VK)
 
 void APlayerController::HandleMouseMove(float DeltaX, float DeltaY)
 {
+	if (IsPossessingFallbackCamera())
+	{
+		if (UCameraComponent* Camera = GetViewTargetCamera())
+		{
+			Camera->AddYawInput(DeltaX * FallbackCameraMouseSensitivity);
+			Camera->AddPitchInput(-DeltaY * FallbackCameraMouseSensitivity);
+		}
+		return;
+	}
+
 	// 마우스 회전 역시 Lua 쪽 Player/InputManager가 필요에 따라 처리합니다.
 	// PlayerController는 ViewTarget Camera를 RuntimeCamera에 반영하는 것까지만 담당합니다.
 	(void)DeltaX;
@@ -730,10 +807,62 @@ void APlayerController::UpdateRuntimeCameraFromViewTarget(float DeltaTime)
 
 void APlayerController::OnPossess(AActor* InActor)
 {
-	PlayerCameraManager->SetViewTarget(InActor);
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->SetViewTarget(InActor);
+	}
+
+	if (IsPossessingFallbackCamera())
+	{
+		SetInputModeGameOnly();
+	}
 }
 
 void APlayerController::OnUnPossess(AActor* OldActor)
 {
-    PlayerCameraManager->SetViewTarget(this);
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->SetViewTarget(this);
+	}
+}
+
+bool APlayerController::IsPossessingFallbackCamera() const
+{
+	return PossessedActor && PossessedActor->IsA<AFallbackCameraActor>();
+}
+
+void APlayerController::MoveFallbackCamera(int VK, float DeltaTime)
+{
+	UCameraComponent* Camera = GetViewTargetCamera();
+	if (!Camera)
+	{
+		return;
+	}
+
+	const float Distance = FallbackCameraMoveSpeed * std::max(0.0f, DeltaTime);
+	switch (VK)
+	{
+	case 'W':
+		Camera->MoveForward(Distance);
+		break;
+	case 'S':
+		Camera->MoveForward(-Distance);
+		break;
+	case 'D':
+		Camera->MoveRight(Distance);
+		break;
+	case 'A':
+		Camera->MoveRight(-Distance);
+		break;
+	case 'E':
+	case VK_SPACE:
+		Camera->MoveUp(Distance);
+		break;
+	case 'Q':
+	case VK_CONTROL:
+		Camera->MoveUp(-Distance);
+		break;
+	default:
+		break;
+	}
 }

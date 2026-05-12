@@ -149,26 +149,41 @@ void UCameraComponent::SetViewRotationDegrees(float PitchDegrees, float YawDegre
 {
 	PitchDegrees = MathUtil::Clamp(PitchDegrees, -89.0f, 89.0f);
 
-	// Current engine convention inferred from existing code:
-	// RelativeRotation.Y = Pitch
-	// RelativeRotation.Z = Yaw
-	// RelativeRotation.X = Roll
-	FVector RotationEuler = GetRelativeRotation();
-	RotationEuler.X = 0.0f;          // Roll = 0
-	RotationEuler.Y = PitchDegrees;  // Pitch
-	RotationEuler.Z = YawDegrees;    // Yaw
+	const float PitchRad = MathUtil::DegreesToRadians(PitchDegrees);
+	const float YawRad = MathUtil::DegreesToRadians(YawDegrees);
 
-	SetRelativeRotation(RotationEuler);
+	FVector Forward(
+		std::cos(PitchRad) * std::cos(YawRad),
+		std::cos(PitchRad) * std::sin(YawRad),
+		std::sin(PitchRad));
+	Forward = Forward.GetSafeNormal();
+
+	FVector Right = FVector::CrossProduct(FVector::UpVector, Forward).GetSafeNormal();
+	if (Right.IsNearlyZero())
+	{
+		return;
+	}
+
+	FVector Up = FVector::CrossProduct(Forward, Right).GetSafeNormal();
+
+	FMatrix RotationMatrix = FMatrix::Identity;
+	RotationMatrix.SetAxes(Forward, Right, Up);
+
+	FQuat NewRotation(RotationMatrix);
+	NewRotation.Normalize();
+	SetRelativeRotationQuat(NewRotation);
 }
 
 float UCameraComponent::GetPitchDegrees() const
 {
-	return GetRelativeRotation().Y;
+	const FVector Forward = GetRelativeQuat().GetForwardVector().GetSafeNormal();
+	return MathUtil::RadiansToDegrees(std::asin(MathUtil::Clamp(Forward.Z, -1.0f, 1.0f)));
 }
 
 float UCameraComponent::GetYawDegrees() const
 {
-	return GetRelativeRotation().Z;
+	const FVector Forward = GetRelativeQuat().GetForwardVector().GetSafeNormal();
+	return MathUtil::RadiansToDegrees(std::atan2(Forward.Y, Forward.X));
 }
 
 void UCameraComponent::AddYawInput(float DeltaYawDegrees)
