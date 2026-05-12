@@ -768,7 +768,7 @@ void FEditorCurveEditorWidget::StartReferencePreview()
     bReferencePreviewActive = !ReferencePreviewTargets.empty();
     if (EditorEngine)
     {
-        EditorEngine->GetMainPanel().PushFooterLog(
+        EditorEngine->GetNotificationService().Info(
             bReferencePreviewActive
                 ? "Curve reference preview started"
                 : "No ActorSequence reference found for curve");
@@ -856,7 +856,7 @@ bool FEditorCurveEditorWidget::SaveCurve()
     {
         if (EditorEngine)
         {
-            EditorEngine->GetMainPanel().PushFooterLog("Curve save failed");
+            EditorEngine->GetNotificationService().Error("Curve save failed");
         }
         return false;
     }
@@ -864,7 +864,7 @@ bool FEditorCurveEditorWidget::SaveCurve()
     bDirty = false;
     if (EditorEngine)
     {
-        EditorEngine->GetMainPanel().PushFooterLog("Curve saved");
+        EditorEngine->GetNotificationService().Info("Curve saved");
     }
     return true;
 }

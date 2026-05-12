@@ -247,7 +247,7 @@ bool FEditorMaterialWidget::CreateInstanceForCurrentMaterial()
 	{
 		if (SelectedMaterialPtr && SelectedMaterialPtr->IsA<UMaterialInstance>())
 		{
-			EditorEngine->GetMainPanel().PushFooterLog("Material is already an instance");
+			EditorEngine->GetNotificationService().Info("Material is already an instance");
 		}
 		return false;
 	}
@@ -267,13 +267,13 @@ bool FEditorMaterialWidget::CreateInstanceForCurrentMaterial()
 	} while (std::filesystem::exists(FinalPath));
 
 	const FString InstancePath = FPaths::Normalize(FPaths::ToString(FinalPath.generic_wstring()));
-	UMaterialInstance* NewInstance = FResourceManager::Get().CreateMaterialInstance(InstancePath, BaseMat);
+	UMaterialInstance* NewInstance = EditorEngine->GetAssetService().CreateMaterialInstance(InstancePath, BaseMat);
 	if (!NewInstance)
 	{
 		return false;
 	}
 
-	if (!FResourceManager::Get().SerializeMaterialInstance(InstancePath, NewInstance))
+	if (!EditorEngine->GetAssetService().SaveMaterialInstance(InstancePath, NewInstance))
 	{
 		return false;
 	}
@@ -282,14 +282,14 @@ bool FEditorMaterialWidget::CreateInstanceForCurrentMaterial()
 	if (EditingSlotOwner && EditingSlotIndex >= 0 && EditingSlotIndex < EditingSlotOwner->GetNumMaterials())
 	{
 		EditingSlotOwner->SetMaterial(EditingSlotIndex, NewInstance);
-		EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+		EditorEngine->GetSceneService().MarkDirty();
 	}
 	else
 	{
 		AssetEditingMaterialPtr = NewInstance;
 	}
 
-	EditorEngine->GetMainPanel().PushFooterLog("Material instance created");
+	EditorEngine->GetNotificationService().Info("Material instance created");
 	return true;
 }
 
@@ -440,6 +440,15 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 		ImGui::BeginDisabled();
 	}
 
+	auto SaveSelectedMaterialInstance = [this]()
+	{
+		UMaterialInstance* Instance = Cast<UMaterialInstance>(SelectedMaterialPtr);
+		if (EditorEngine && Instance)
+		{
+			EditorEngine->GetAssetService().SaveMaterialInstance(SelectedMaterialPtr->GetFilePath(), Instance);
+		}
+	};
+
 	for (auto& [ParamName, ParamValue] : DisplayParams)
 	{
 		switch (ParamValue.Type)
@@ -448,49 +457,49 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 			if (ImGui::Checkbox(ParamName.c_str(), &std::get<bool>(ParamValue.Value)))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
-				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
+				SaveSelectedMaterialInstance();
 			}
 			break;
 		case EMaterialParamType::Int:
 			if (ImGui::DragInt(ParamName.c_str(), &std::get<int32>(ParamValue.Value)))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
-				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
+				SaveSelectedMaterialInstance();
 			}
 			break;
 		case EMaterialParamType::UInt:
 			if (ImGui::DragInt(ParamName.c_str(), reinterpret_cast<int32*>(&std::get<uint32>(ParamValue.Value))))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
-				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
+				SaveSelectedMaterialInstance();
 			}
 			break;
 		case EMaterialParamType::Float:
 			if (ImGui::DragFloat(ParamName.c_str(), &std::get<float>(ParamValue.Value), 0.01f))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
-				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
+				SaveSelectedMaterialInstance();
 			}
 			break;
 		case EMaterialParamType::Vector2:
 			if (ImGui::DragFloat2(ParamName.c_str(), &std::get<FVector2>(ParamValue.Value).X, 0.01f))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
-				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
+				SaveSelectedMaterialInstance();
 			}
 			break;
 		case EMaterialParamType::Vector3:
 			if (ImGui::DragFloat3(ParamName.c_str(), &std::get<FVector>(ParamValue.Value).X, 0.01f))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
-				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
+				SaveSelectedMaterialInstance();
 			}
 			break;
 		case EMaterialParamType::Vector4:
 			if (ImGui::DragFloat4(ParamName.c_str(), &std::get<FVector4>(ParamValue.Value).X, 0.01f))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
-				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
+				SaveSelectedMaterialInstance();
 			}
 			break;
 		case EMaterialParamType::Texture:
@@ -506,7 +515,6 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 			ImGui::BeginGroup();
 			ImGui::Text("%s", ParamName.c_str());
 			
-			const TArray<FString>& TextureList = FResourceManager::Get().GetTextureFilePath();
 			FString CurrentPath = CurrentTex ? CurrentTex->GetName() : "None";
 
 			ImGui::SetNextItemWidth(200.0f);
@@ -524,7 +532,7 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 						{
 							ParamValue.Value = Texture;
 							SelectedMaterialPtr->SetParam(ParamName, ParamValue);
-							FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
+							SaveSelectedMaterialInstance();
 						}
 						if (bSelected) ImGui::SetItemDefaultFocus();
 					}

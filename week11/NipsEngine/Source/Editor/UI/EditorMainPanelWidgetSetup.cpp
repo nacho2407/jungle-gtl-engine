@@ -54,7 +54,6 @@ void FEditorMainPanel::BindEditorWidgetCallbacks()
             QueueRuntimeUIDrawCallback(ImGui::GetWindowDrawList(), Context);
         });
     Widgets.ToolbarWidget.SetViewportOverlayWidget(&Widgets.ViewportOverlayWidget);
-    Widgets.ToolbarWidget.SetSceneWidget(&Widgets.SceneWidget);
     Widgets.ToolbarWidget.SetPlayStreamWidget(&Widgets.PlayStreamWidget);
     Widgets.ToolbarWidget.SetPIEViewportFullscreenCallback([this](bool bEnabled) { SetPIEViewportFullscreenEnabled(bEnabled); });
     Widgets.ToolbarWidget.SetBuildGameCallback([this]() { RequestBuildGame(); });

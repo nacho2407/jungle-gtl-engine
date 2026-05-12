@@ -1,5 +1,6 @@
 #include "Editor/UI/EditorMainPanel.h"
 
+#include "Editor/EditorEngine.h"
 #include "Editor/Packaging/GamePackager.h"
 #include "Editor/Settings/ProjectSettings.h"
 #include "Editor/UI/EditorMainPanelPackagingHelpers.h"
@@ -21,7 +22,7 @@ void FEditorMainPanel::RequestBuildGame()
         return;
     }
 
-    if (Widgets.SceneWidget.IsSceneDirty() && !Widgets.SceneWidget.PromptSaveIfDirty())
+    if (EditorEngine && EditorEngine->GetSceneService().IsDirty() && !EditorEngine->GetSceneService().PromptSaveIfDirty())
     {
         PushFooterLog("Packaging canceled");
         return;
@@ -43,9 +44,9 @@ void FEditorMainPanel::RequestBuildGame()
         BuildGameState.PendingSettings.OutputDirectory =
             FEditorMainPanelPackagingHelpers::MakeDefaultPackageOutputDirectory(BuildGameState.PendingSettings.GameName);
     }
-    if (Widgets.SceneWidget.HasCurrentSceneFilePath())
+    if (EditorEngine && EditorEngine->GetSceneService().HasCurrentScenePath())
     {
-        BuildGameState.PendingSettings.StartupScene = Widgets.SceneWidget.GetCurrentSceneFilePath();
+        BuildGameState.PendingSettings.StartupScene = EditorEngine->GetSceneService().GetCurrentScenePath();
         ProjectSettings.SetLastScenePath(BuildGameState.PendingSettings.StartupScene);
         ProjectSettings.SaveToFile(FProjectSettings::GetDefaultSettingsPath());
     }
