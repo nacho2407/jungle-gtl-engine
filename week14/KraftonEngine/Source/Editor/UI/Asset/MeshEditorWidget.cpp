@@ -1,6 +1,7 @@
 ﻿#include "MeshEditorWidget.h"
 
 #include "Mesh/StaticMesh.h"
+#include "Mesh/StaticMeshAsset.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
 #include "Runtime/Engine.h"
@@ -14,6 +15,19 @@
 #include "Slate/SlateApplication.h"
 
 #include <imgui.h>
+
+namespace
+{
+	FString FormatMeshStatCount(size_t Value)
+	{
+		FString Result = std::to_string(Value);
+		for (int32 InsertPos = static_cast<int32>(Result.length()) - 3; InsertPos > 0; InsertPos -= 3)
+		{
+			Result.insert(static_cast<size_t>(InsertPos), ",");
+		}
+		return Result;
+	}
+}
 
 bool FMeshEditorWidget::CanEdit(UObject* Object) const
 {
@@ -111,13 +125,17 @@ void FMeshEditorWidget::Render(float DeltaTime)
 	static float DetailsWidth = 300.0f;
 
 	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
+	UStaticMesh* StaticMesh = Cast<UStaticMesh>(EditedObject);
 
 	bool bWindowOpen = true;
 	FString VisibleTitle = "Mesh Editor";
-	if (!SkeletalMesh->GetAssetPathFileName().empty())
+	const FString AssetPath = SkeletalMesh
+		? SkeletalMesh->GetAssetPathFileName()
+		: (StaticMesh ? StaticMesh->GetAssetPathFileName() : FString());
+	if (!AssetPath.empty())
 	{
 		VisibleTitle += " - ";
-		VisibleTitle += SkeletalMesh->GetAssetPathFileName();
+		VisibleTitle += AssetPath;
 	}
 	if (IsDirty())
 	{
@@ -149,11 +167,14 @@ void FMeshEditorWidget::Render(float DeltaTime)
 	{
 		const FSkeletalMesh* Asset = SkeletalMesh->GetSkeletalMeshAsset();
 
-		for (int32 i = 0; i < static_cast<int32>(Asset->Bones.size()); ++i)
+		if (Asset)
 		{
-			if (Asset->Bones[i].ParentIndex == -1)
+			for (int32 i = 0; i < static_cast<int32>(Asset->Bones.size()); ++i)
 			{
-				RenderBoneTree(Asset, i);
+				if (Asset->Bones[i].ParentIndex == -1)
+				{
+					RenderBoneTree(Asset, i);
+				}
 			}
 		}
 	}
@@ -232,6 +253,7 @@ void FMeshEditorWidget::Render(float DeltaTime)
 			};
 
 			FViewportToolbar::Render(Context);
+			RenderMeshStatsOverlay(DrawList, ViewportPos);
 		}
 	}
 	ImGui::EndGroup();
@@ -311,6 +333,42 @@ void FMeshEditorWidget::Render(float DeltaTime)
 	{
 		Close();
 	}
+}
+
+void FMeshEditorWidget::RenderMeshStatsOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos) const
+{
+	if (!DrawList || !EditedObject)
+	{
+		return;
+	}
+
+	size_t VertexCount = 0;
+	size_t TriangleCount = 0;
+
+	if (const USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
+	{
+		if (const FSkeletalMesh* Asset = SkeletalMesh->GetSkeletalMeshAsset())
+		{
+			VertexCount = Asset->Vertices.size();
+			TriangleCount = Asset->Indices.size() / 3;
+		}
+	}
+	else if (const UStaticMesh* StaticMesh = Cast<UStaticMesh>(EditedObject))
+	{
+		if (const FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset())
+		{
+			VertexCount = Asset->Vertices.size();
+			TriangleCount = Asset->Indices.size() / 3;
+		}
+	}
+
+	const FString Text =
+		"Triangles: " + FormatMeshStatCount(TriangleCount) + "\n" +
+		"Vertices: " + FormatMeshStatCount(VertexCount);
+
+	const ImVec2 TextPos(ViewportPos.x + 8.0f, ViewportPos.y + 36.0f);
+	DrawList->AddText(ImVec2(TextPos.x + 1.0f, TextPos.y + 1.0f), IM_COL32(0, 0, 0, 220), Text.c_str());
+	DrawList->AddText(TextPos, IM_COL32(235, 238, 242, 255), Text.c_str());
 }
 
 void FMeshEditorWidget::RenderBoneTree(const FSkeletalMesh* Asset, int32 Index)
