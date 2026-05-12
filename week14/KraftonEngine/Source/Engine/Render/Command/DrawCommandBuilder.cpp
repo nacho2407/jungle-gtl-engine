@@ -8,6 +8,7 @@
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Render/Proxy/ShapeSceneProxy.h"
+#include "Render/Proxy/BoneDebugSceneProxy.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/RenderConstants.h"
 #include "Render/RenderPass/PassRenderStateTable.h"
@@ -30,6 +31,7 @@ void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* In
 
 	EditorLines.Create(InDevice);
 	GridLines.Create(InDevice);
+	DebugBoneLines.Create(InDevice);
 	FontGeometry.Create(InDevice);
 
 	FogCB.Create(InDevice, sizeof(FFogConstants));
@@ -47,6 +49,7 @@ void FDrawCommandBuilder::Release()
 {
 	EditorLines.Release();
 	GridLines.Release();
+	DebugBoneLines.Release();
 	FontGeometry.Release();
 
 	for (auto& Pair : PerSceneObjectCBPool)
@@ -82,6 +85,7 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 	// 동적 지오메트리 초기화
 	EditorLines.Clear();
 	GridLines.Clear();
+	DebugBoneLines.Clear();
 	FontGeometry.Clear();
 	FontGeometry.ClearScreen();
 
@@ -304,7 +308,19 @@ void FDrawCommandBuilder::BuildProxyCommands(const FFrameContext& Frame, FScene&
 
 	for (FPrimitiveSceneProxy* Proxy : Output.RenderableProxies)
 	{
-		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::WireShape))
+		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::BoneDebug))
+		{
+			const FBoneDebugSceneProxy* BoneProxy = static_cast<const FBoneDebugSceneProxy*>(Proxy);
+			for (const FWireLine& Line : BoneProxy->GetCachedLines())
+			{
+				DebugBoneLines.AddLine(Line.Start, Line.End, BoneProxy->GetBoneColor());
+			}
+			for (const FWireLine& Line : BoneProxy->GetCachedParentBoneLines())
+			{
+				DebugBoneLines.AddLine(Line.Start, Line.End, BoneProxy->GetParentBoneColor());
+			}
+		}
+		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::WireShape))
 		{
 			if (bShowCollision)
 			{
@@ -471,6 +487,11 @@ void FDrawCommandBuilder::BuildEditorLineCommands(EViewMode ViewMode)
 
 	EmitLineCommand(EditorLines, EditorShader, EditorLinesRS);
 	EmitLineCommand(GridLines, EditorShader, EditorLinesRS);
+
+	FDrawCommandRenderState BoneLinesRS = EditorLinesRS;
+	BoneLinesRS.DepthStencil = EDepthStencilState::NoDepth;
+
+	EmitLineCommand(DebugBoneLines, EditorShader, BoneLinesRS);
 }
 
 // ============================================================

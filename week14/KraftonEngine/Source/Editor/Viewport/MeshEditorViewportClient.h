@@ -16,6 +16,7 @@ class FWindowsWindow;
 class UWorld;
 class AActor;
 class USkeletalMesh;
+class UBoneDebugComponent;
 
 class FMeshEditorViewportClient : public FViewportClient, public IPOVProvider
 {
@@ -24,6 +25,7 @@ public:
 	void Release();
 
 	void CreatePreviewGizmo();
+	void CreateBoneDebugComponent();
 	void ResetCameraToPreviousBounds();
 
 	void SetPreviewWorld(UWorld* InWorld) { PreviewWorld = InWorld; }
@@ -75,6 +77,7 @@ private:
 	FBoneTransformGizmoTarget BoneTarget;
 	UGizmoComponent* Gizmo = nullptr;
 	USkeletalMeshComponent* PreviewMeshComponent = nullptr;
+	UBoneDebugComponent* BoneDebugComponent = nullptr;
 
 	UWorld* PreviewWorld = nullptr;
 	AActor* PreviewActor = nullptr;

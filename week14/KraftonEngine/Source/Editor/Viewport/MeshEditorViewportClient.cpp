@@ -10,6 +10,7 @@
 #include "GameFramework/World.h"
 #include "Component/GizmoComponent.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Component/BoneDebugComponent.h"
 #include "Collision/RayUtils.h"
 #include "Settings/EditorSettings.h"
 #include "Slate/SlateApplication.h"
@@ -39,6 +40,7 @@ void FMeshEditorViewportClient::Release()
 
 	UObjectManager::Get().DestroyObject(Gizmo);
 	Gizmo = nullptr;
+	BoneDebugComponent = nullptr;
 
 	bIsRenderable = false;
 
@@ -51,6 +53,14 @@ void FMeshEditorViewportClient::CreatePreviewGizmo()
 	Gizmo->SetScene(&PreviewWorld->GetScene());
 	Gizmo->CreateRenderState();
 	Gizmo->Deactivate();
+}
+
+void FMeshEditorViewportClient::CreateBoneDebugComponent()
+{
+	BoneDebugComponent = PreviewActor->AddComponent<UBoneDebugComponent>();
+	BoneDebugComponent->SetTargetMeshComponent(PreviewMeshComponent);
+	BoneDebugComponent->SetSelectedBoneIndex(SelectedBoneIndex);
+	BoneDebugComponent->CreateRenderState();
 }
 
 void FMeshEditorViewportClient::ResetCameraToPreviousBounds()
@@ -169,6 +179,12 @@ void FMeshEditorViewportClient::SetSelectedBone(USkeletalMesh* Mesh, int32 BoneI
 	else if (Gizmo)
 	{
 		Gizmo->Deactivate();
+	}
+
+	if (BoneDebugComponent)
+	{
+		BoneDebugComponent->SetTargetMeshComponent(PreviewMeshComponent);
+		BoneDebugComponent->SetSelectedBoneIndex(BoneIndex);
 	}
 }
 
