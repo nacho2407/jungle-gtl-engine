@@ -6,6 +6,7 @@
 #include "Core/MaterialLoadService.h"
 #include "Core/MaterialSerializationService.h"
 #include "Core/ResourceMemoryReporter.h"
+#include "Core/SkeletalMeshLoadService.h"
 #include "Core/StaticMeshLoadService.h"
 
 #include <algorithm>
@@ -65,6 +66,24 @@ bool FResourceManager::IsStaticMeshBinaryValid(const FString& SourcePath, const 
 	FStaticMeshBinaryHeader Header;
 	const FString NormalizedBinaryPath = FPaths::Normalize(BinaryPath);
 	if (!BinarySerializer.ReadStaticMeshHeader(NormalizedBinaryPath, Header))
+	{
+		return false;
+	}
+
+	const uint64 SourceWriteTime = GetFileWriteTimeTicks(FPaths::Normalize(SourcePath));
+	if (SourceWriteTime == 0)
+	{
+		return false;
+	}
+
+	return Header.SourceFileWriteTime == SourceWriteTime;
+}
+
+bool FResourceManager::IsSkeletalMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const
+{
+	FSkeletalMeshBinaryHeader Header;
+	const FString NormalizedBinaryPath = FPaths::Normalize(BinaryPath);
+	if (!BinarySerializer.ReadSkeletalMeshHeader(NormalizedBinaryPath, Header))
 	{
 		return false;
 	}
@@ -764,42 +783,7 @@ TArray<FString> FResourceManager::GetStaticMeshPaths() const
 
 USkeletalMesh* FResourceManager::LoadSkeletalMesh(const FString& Path)
 {
-    const FString NormalizedPath = FPaths::Normalize(Path);
-
-    if (USkeletalMesh* FoundMesh = FindSkeletalMesh(NormalizedPath))
-    {
-        return FoundMesh;
-    }
-
-    LoadMaterial(NormalizedPath, "Shaders/UberLit.hlsl");
-
-    FStaticMeshLoadOptions LoadOptions;
-    FSkeletalMesh* LoadedMeshData = FbxImporter.LoadSkeletalMesh(NormalizedPath, LoadOptions);
-    if (!LoadedMeshData)
-    {
-        UE_LOG_ERROR("[SkeletalMeshLoad] Failed | Path=%s", NormalizedPath.c_str());
-        return nullptr;
-    }
-
-    ResolveSkeletalMeshMaterialSlots(NormalizedPath, LoadedMeshData);
-
-    USkeletalMesh* LoadedMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
-    LoadedMesh->SetMeshData(LoadedMeshData);
-
-    SkeletalMeshMap[NormalizedPath] = LoadedMesh;
-    if (std::find(SkeletalMeshFilePaths.begin(), SkeletalMeshFilePaths.end(), NormalizedPath) == SkeletalMeshFilePaths.end())
-    {
-        SkeletalMeshFilePaths.push_back(NormalizedPath);
-    }
-
-    UE_LOG("[SkeletalMeshLoad] Loaded | Path=%s | Vertices=%zu | Indices=%zu | Bones=%zu | Sections=%zu",
-           NormalizedPath.c_str(),
-           LoadedMesh->GetVertices().size(),
-           LoadedMesh->GetIndices().size(),
-           LoadedMesh->GetBones().size(),
-           LoadedMesh->GetSections().size());
-
-    return LoadedMesh;
+    return FSkeletalMeshLoadService(*this).Load(Path);
 }
 
 USkeletalMesh* FResourceManager::FindSkeletalMesh(const FString& Path) const

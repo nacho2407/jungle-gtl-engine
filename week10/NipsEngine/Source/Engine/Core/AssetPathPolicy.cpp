@@ -104,3 +104,23 @@ FString FAssetPathPolicy::MakeWritableStaticMeshCacheBinaryPath(const FString& S
 	std::filesystem::path BinaryPath = BinDir / BinaryFileName;
 	return FPaths::ToString(BinaryPath.wstring());
 }
+
+FString FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(const FString& SourcePath)
+{
+	// StaticMesh와 stem 이 겹칠 수 있어 SkeletalMesh 전용 루트로 분리.
+	const FString NormalizedSourcePath = FPaths::Normalize(SourcePath);
+	std::filesystem::path SourceFsPath(FPaths::ToWide(NormalizedSourcePath));
+
+	std::filesystem::path BinDir = std::filesystem::path(FPaths::RootDir()) / "Asset" / "SkeletalMesh" / "Bin";
+
+	if (!std::filesystem::exists(BinDir))
+	{
+		std::filesystem::create_directories(BinDir);
+	}
+
+	std::filesystem::path BinaryFileName = SourceFsPath.stem();
+	BinaryFileName += ".bin";
+
+	std::filesystem::path BinaryPath = BinDir / BinaryFileName;
+	return FPaths::ToString(BinaryPath.wstring());
+}

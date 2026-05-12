@@ -13,4 +13,6 @@ public:
 	static FString MakeSiblingStaticMeshBinaryPath(const FString& SourcePath);
 	static FString MakeStaticMeshCacheBinaryPath(const FString& SourcePath);
 	static FString MakeWritableStaticMeshCacheBinaryPath(const FString& SourcePath);
+
+	static FString MakeWritableSkeletalMeshCacheBinaryPath(const FString& SourcePath);
 };

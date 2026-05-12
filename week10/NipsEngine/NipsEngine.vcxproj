@@ -636,6 +636,7 @@
     <ClCompile Include="Source\Engine\Core\ResourceMemoryReporter.cpp" />
     <ClCompile Include="Source\Engine\Core\RenderStateResourceCache.cpp" />
     <ClCompile Include="Source\Engine\Core\ShaderResourceCache.cpp" />
+    <ClCompile Include="Source\Engine\Core\SkeletalMeshLoadService.cpp" />
     <ClCompile Include="Source\Engine\Core\StaticMeshLoadService.cpp" />
     <ClCompile Include="Source\Engine\Core\StaticMeshResourceCache.cpp" />
     <ClCompile Include="Source\Engine\Core\TextureAssetMetaService.cpp" />
@@ -947,6 +948,7 @@
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Core\RenderStateResourceCache.h" />
     <ClInclude Include="Source\Engine\Core\ShaderResourceCache.h" />
+    <ClInclude Include="Source\Engine\Core\SkeletalMeshLoadService.h" />
     <ClInclude Include="Source\Engine\Core\StaticMeshLoadService.h" />
     <ClInclude Include="Source\Engine\Core\StaticMeshResourceCache.h" />
     <ClInclude Include="Source\Engine\Core\TextureAssetMetaService.h" />

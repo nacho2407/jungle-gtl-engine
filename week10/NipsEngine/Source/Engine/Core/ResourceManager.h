@@ -29,6 +29,7 @@
 class FMaterialLoadService;
 class FMaterialSerializationService;
 class FStaticMeshLoadService;
+class FSkeletalMeshLoadService;
 class FFbxMaterialLoadService;
 
 // 리소스를 관리하는 싱글턴.
@@ -38,6 +39,7 @@ class FResourceManager : public TSingleton<FResourceManager>
 	friend class FMaterialLoadService;
 	friend class FMaterialSerializationService;
 	friend class FStaticMeshLoadService;
+	friend class FSkeletalMeshLoadService;
 	friend class FFbxMaterialLoadService;
 
 public:
@@ -128,6 +130,7 @@ private:
 	void InitializeOutlineMaterial();
 	uint64 GetFileWriteTimeTicks(const FString& Path) const;
 	bool IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
+	bool IsSkeletalMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	void PreloadStaticMeshes();
 	UStaticMesh* CreateStaticMeshFromLoadedData(FStaticMesh* LoadedMeshData, const FString& LogPath, bool bLogLodTiming, bool bLogLodSkipped) const;
 	
