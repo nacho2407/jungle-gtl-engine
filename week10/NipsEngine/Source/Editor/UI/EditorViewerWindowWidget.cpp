@@ -109,11 +109,6 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 
     POINT pt = { (LONG)ScreenPos.x, (LONG)ScreenPos.y };
 
-    if (EditorEngine->GetWindow())
-    {
-        pt = EditorEngine->GetWindow()->ScreenToClientPoint(pt);
-    }
-
     FViewportRect NewRect;
     NewRect.X = (int32)pt.x;
     NewRect.Y = (int32)pt.y;
@@ -121,6 +116,11 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
     NewRect.Height = (int32)Size.y;
 
     SceneViewport.SetRect(NewRect);
+
+	if (auto* Client = SceneViewport.GetClient())
+    {
+        Client->SetViewportSize((float)NewRect.Width, (float)NewRect.Height);
+    }
 
     ImDrawList* DrawList = ImGui::GetWindowDrawList();
 

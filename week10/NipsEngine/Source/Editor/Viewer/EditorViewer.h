@@ -23,7 +23,6 @@ public:
 
     void Tick(float DeltaTime);
 
-	void Resize(int32 Width, int32 Height);
     void SetRect(const FViewportRect& InRect) 
     { 
         Viewport.SetRect(InRect); 
@@ -45,11 +44,4 @@ private:
 
     UEditorEngine* Editor = nullptr;
     FWindowsWindow* Window = nullptr;
-
-    int32 CachedWidth = 0;
-    int32 CachedHeight = 0;
-    // Viewer-local gizmo drag state
-    bool bLeftPressedOnHandle = false;
-    bool bLeftHolding = false;
-    POINT LeftMouseDownPos = {0,0};
 };
