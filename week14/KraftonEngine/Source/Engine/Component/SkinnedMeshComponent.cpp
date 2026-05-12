@@ -157,15 +157,8 @@ void USkinnedMeshComponent::UpdateWorldAABB() const
 		WorldMax.Z = std::max(WorldMax.Z, WorldPos.Z);
 	}
 
-	// 너무 얇은 bounds는 culling/query에서 사라지기 쉬워 축별 최소 두께를 보장한다.
-	constexpr float MinExtent = 1.0f;
-
 	FVector Center = (WorldMin + WorldMax) * 0.5f;
 	FVector Extent = (WorldMax - WorldMin) * 0.5f;
-
-	Extent.X = std::max(Extent.X, MinExtent);
-	Extent.Y = std::max(Extent.Y, MinExtent);
-	Extent.Z = std::max(Extent.Z, MinExtent);
 
 	WorldAABBMinLocation = Center - Extent;
 	WorldAABBMaxLocation = Center + Extent;
