@@ -589,6 +589,12 @@ static FMatrix ConvertFbxMatrix(const FbxMatrix& FbxMat)
 	return Mat;
 }
 
+static bool IsSkeletonNode(FbxNode* Node)
+{
+	FbxNodeAttribute* Attr = Node ? Node->GetNodeAttribute() : nullptr;
+	return Attr && Attr->GetAttributeType() == FbxNodeAttribute::eSkeleton;
+}
+
 static FbxAMatrix GetGeometryTransform(FbxNode* Node)
 {
 	FbxAMatrix GeometryTransform;
@@ -603,6 +609,48 @@ static FbxAMatrix GetGeometryTransform(FbxNode* Node)
 	return GeometryTransform;
 }
 
+static int32 AddSyntheticRootBoneIfNeeded(FbxNode* Node, TArray<FBone>& Bones, TMap<FbxNode*, int32>& OutNodeToIndex)
+{
+	if (!Node || !Node->GetParent() || IsSkeletonNode(Node))
+	{
+		return -1;
+	}
+
+	auto Existing = OutNodeToIndex.find(Node);
+	if (Existing != OutNodeToIndex.end())
+	{
+		return Existing->second;
+	}
+
+	FBone Bone;
+	Bone.Name = Node->GetName();
+	Bone.ParentIndex = -1;
+
+	FbxNode* Parent = Node->GetParent();
+	while (Parent)
+	{
+		auto It = OutNodeToIndex.find(Parent);
+		if (It != OutNodeToIndex.end())
+		{
+			Bone.ParentIndex = It->second;
+			break;
+		}
+
+		Parent = Parent->GetParent();
+	}
+
+	FMatrix GlobalMatrix = ConvertFbxMatrix(Node->EvaluateGlobalTransform());
+
+	Bone.LocalTransform = FTransform(ConvertFbxMatrix(Node->EvaluateLocalTransform()));
+	Bone.GlobalTransform = FTransform(GlobalMatrix);
+	Bone.InverseBindPoseMatrix = GlobalMatrix.GetInverse();
+
+	const int32 NewBoneIndex = (int32)Bones.size();
+	Bones.push_back(Bone);
+	OutNodeToIndex[Node] = NewBoneIndex;
+	return NewBoneIndex;
+}
+
 void FFbxImporter::ParseBone(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& OutNodeToIndex)
 {
 	Bones.clear();
@@ -612,14 +660,17 @@ void FFbxImporter::ParseBone(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Out
 	{
 		FbxNode* Node = Nodes[i];
 
-		FbxNodeAttribute* Attr = Node->GetNodeAttribute();
-		if (Attr && Attr->GetAttributeType() == FbxNodeAttribute::eSkeleton)
+		if (IsSkeletonNode(Node))
 		{
 			FBone Bone;
 			Bone.Name = Node->GetName();
 
 			FbxNode* ParentNode = Node->GetParent();
 			Bone.ParentIndex = FindNearestParentBoneIndex(Node, OutNodeToIndex);
+			if (Bone.ParentIndex < 0)
+			{
+				Bone.ParentIndex = AddSyntheticRootBoneIfNeeded(ParentNode, Bones, OutNodeToIndex);
+			}
 
 			FbxMatrix LocalMatrix = Node->EvaluateLocalTransform();
 			FbxMatrix GlobalMatrix = Node->EvaluateGlobalTransform();

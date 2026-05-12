@@ -1,63 +1,41 @@
 ﻿#include "ViewportToolbar.h"
 #include "Component/GizmoComponent.h"
+#include "Editor/UI/EditorTextureManager.h"
 #include "Render/Pipeline/Renderer.h"
-#include "Render/Device/D3DDevice.h"
 #include "Platform/Paths.h"
 #include "Settings/EditorViewportSettings.h"
 #include "Settings/GizmoToolSettings.h"
 
 #include <imgui.h>
-#include "WICTextureLoader.h"
 
 #pragma region Toolbar Icon Helper
-static const wchar_t* GetToolbarIconFileName(EToolbarIcon Icon)
+static FString GetToolbarIconPath(EToolbarIcon Icon)
 {
+	const wchar_t* FileName = L"";
 	switch (Icon)
 	{
-	case EToolbarIcon::Menu: return L"Menu.png";
-	case EToolbarIcon::Setting: return L"Setting.png";
-	case EToolbarIcon::AddActor: return L"Add_Actor.png";
-	case EToolbarIcon::Translate: return L"Translate.png";
-	case EToolbarIcon::Rotate: return L"Rotate.png";
-	case EToolbarIcon::Scale: return L"Scale.png";
-	case EToolbarIcon::WorldSpace: return L"WorldSpace.png";
-	case EToolbarIcon::LocalSpace: return L"LocalSpace.png";
-	case EToolbarIcon::TranslateSnap: return L"Translate_Snap.png";
-	case EToolbarIcon::RotateSnap: return L"Rotate_Snap.png";
-	case EToolbarIcon::ScaleSnap: return L"Scale_Snap.png";
-	case EToolbarIcon::ShowFlag: return L"Show_Flag.png";
-	case EToolbarIcon::Camera: return L"Camera.png";
-	default: return L"";
-	}
-}
-
-static ID3D11ShaderResourceView** GetToolbarIconTable()
-{
-	static ID3D11ShaderResourceView* ToolbarIcons[static_cast<int32>(EToolbarIcon::Count)] = {};
-	return ToolbarIcons;
-}
-
-static bool bToolbarIconsLoaded = false;
-
-static void EnsureToolbarIconsLoaded(FRenderer* Renderer)
-{
-	if (bToolbarIconsLoaded || !Renderer) return;
-
-	ID3D11Device* Device = Renderer->GetFD3DDevice().GetDevice();
-	ID3D11ShaderResourceView** ToolbarIcons = GetToolbarIconTable();
-	const std::wstring IconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/ToolIcons/");
-	for (int32 i = 0; i < static_cast<int32>(EToolbarIcon::Count); ++i)
-	{
-		const std::wstring FilePath = IconDir + GetToolbarIconFileName(static_cast<EToolbarIcon>(i));
-		DirectX::CreateWICTextureFromFile(Device, FilePath.c_str(), nullptr, &ToolbarIcons[i]);
+	case EToolbarIcon::Menu: FileName = L"Menu.png"; break;
+	case EToolbarIcon::Setting: FileName = L"Setting.png"; break;
+	case EToolbarIcon::AddActor: FileName = L"Add_Actor.png"; break;
+	case EToolbarIcon::Translate: FileName = L"Translate.png"; break;
+	case EToolbarIcon::Rotate: FileName = L"Rotate.png"; break;
+	case EToolbarIcon::Scale: FileName = L"Scale.png"; break;
+	case EToolbarIcon::WorldSpace: FileName = L"WorldSpace.png"; break;
+	case EToolbarIcon::LocalSpace: FileName = L"LocalSpace.png"; break;
+	case EToolbarIcon::TranslateSnap: FileName = L"Translate_Snap.png"; break;
+	case EToolbarIcon::RotateSnap: FileName = L"Rotate_Snap.png"; break;
+	case EToolbarIcon::ScaleSnap: FileName = L"Scale_Snap.png"; break;
+	case EToolbarIcon::ShowFlag: FileName = L"Show_Flag.png"; break;
+	case EToolbarIcon::Camera: FileName = L"Camera.png"; break;
+	default: break;
 	}
 
-	bToolbarIconsLoaded = true;
+	return FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), L"Editor/ToolIcons/", FileName));
 }
 
 static ImVec2 GetToolbarIconRenderSize(EToolbarIcon Icon, float FallbackSize, float MaxIconSize)
 {
-	ID3D11ShaderResourceView* IconSRV = GetToolbarIconTable()[static_cast<int32>(Icon)];
+	ID3D11ShaderResourceView* IconSRV = FEditorTextureManager::Get().GetOrLoadIcon(GetToolbarIconPath(Icon));
 	if (!IconSRV)
 	{
 		return ImVec2(FallbackSize, FallbackSize);
@@ -94,7 +72,7 @@ static ImVec2 GetToolbarIconRenderSize(EToolbarIcon Icon, float FallbackSize, fl
 
 static bool DrawToolbarIconButton(const char* Id, EToolbarIcon Icon, const char* FallbackLabel, float FallbackSize, float MaxIconSize)
 {
-	ID3D11ShaderResourceView* IconSRV = GetToolbarIconTable()[static_cast<int32>(Icon)];
+	ID3D11ShaderResourceView* IconSRV = FEditorTextureManager::Get().GetOrLoadIcon(GetToolbarIconPath(Icon));
 	if (!IconSRV)
 	{
 		return ImGui::Button(FallbackLabel);
@@ -167,8 +145,6 @@ static void SameLineIfNeeded(bool& bHasItem, float Spacing)
 void FViewportToolbar::Render(const FViewportToolbarContext& Context)
 {
 	if (!Context.Settings) return;
-
-	EnsureToolbarIconsLoaded(Context.Renderer);
 
 	FToolbarRenderState RenderState(Context);
 

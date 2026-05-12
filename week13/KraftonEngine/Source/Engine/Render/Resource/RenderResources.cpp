@@ -74,9 +74,10 @@ void FTileCullingResource::Release()
 
 void FSystemResources::Create(ID3D11Device* InDevice)
 {
-	FrameBuffer.Create(InDevice, sizeof(FFrameConstants));
-	LightingConstantBuffer.Create(InDevice, sizeof(FLightingCBData));
-	ShadowConstantBuffer.Create(InDevice, sizeof(FShadowCBData));
+	Device = InDevice;
+
+	FrameBuffer.Create(InDevice, sizeof(FFrameConstants), "FrameBuffer");
+	LightingConstantBuffer.Create(InDevice, sizeof(FLightingCBData), "LightingConstantBuffer");
 	ForwardLights.Create(InDevice, 32);
 
 	RasterizerStateManager.Create(InDevice);
@@ -792,7 +793,12 @@ void FShadowMapResources::Release()
 
 void FSystemResources::Release()
 {
-	ShadowResources.Release();
+	for (auto& Pair : PerSceneShadowResources)
+	{
+		Pair.second.Release();
+	}
+	PerSceneShadowResources.clear();
+	Device = nullptr;
 
 	SamplerStateManager.Release();
 	BlendStateManager.Release();
@@ -801,7 +807,6 @@ void FSystemResources::Release()
 
 	FrameBuffer.Release();
 	LightingConstantBuffer.Release();
-	ShadowConstantBuffer.Release();
 	ForwardLights.Release();
 	TileCullingResource.Release();
 }
@@ -1025,4 +1030,23 @@ void FSystemResources::UnbindClusterCullingResources(FD3DDevice& Device)
 void FSystemResources::SubmitCullingDebugLines(ID3D11DeviceContext* DC, UWorld* World)
 {
 	TileBasedCulling.SubmitVisualizationDebugLines(DC, World);
+}
+
+FPerSceneShadowResources& FSystemResources::GetShadowResourcesForScene(const FScene* Scene)
+{
+	FPerSceneShadowResources& SceneResources = PerSceneShadowResources[Scene];
+	if (Device)
+	{
+		SceneResources.Create(Device);
+	}
+	return SceneResources;
+}
+
+void FSystemResources::ReleaseShadowResourcesForScene(const FScene* Scene)
+{
+	auto It = PerSceneShadowResources.find(Scene);
+	if (It == PerSceneShadowResources.end()) return;
+
+	It->second.Release();
+	PerSceneShadowResources.erase(It);
 }

@@ -17,7 +17,6 @@ public:
 	static std::wstring AudioDir();       // Asset/Audio/
 	static std::wstring SceneDir();       // Asset/Scene/
 	static std::wstring ScriptDir();	  // Asset/Script/
-	static std::wstring EditorAssetDir(); // Asset/Editor/
 	static std::wstring DataDir();        // Data/
 	static std::wstring SaveDir();        // Saves/
 	static std::wstring DumpDir();        // Saves/Dump/
@@ -32,6 +31,20 @@ public:
 
 	// 경로 결합: FPaths::Combine(L"Asset/Scene", L"Default.Scene")
 	static std::wstring Combine(const std::wstring& Base, const std::wstring& Child);
+
+	template<typename... Rest>
+	static std::wstring Combine(const std::wstring& Base, const std::wstring& Child, const Rest&... More)
+	{
+		std::wstring Result = Combine(Base, Child);
+		if constexpr (sizeof...(More) == 0)
+		{
+			return Result;
+		}
+		else
+		{
+			return Combine(Result, More...);
+		}
+	}
 
 	// 디렉터리가 없으면 재귀적으로 생성
 	static void CreateDir(const std::wstring& Path);

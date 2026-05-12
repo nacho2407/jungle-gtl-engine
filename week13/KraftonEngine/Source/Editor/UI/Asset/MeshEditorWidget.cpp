@@ -5,6 +5,7 @@
 #include "Mesh/SkeletalMeshAsset.h"
 #include "Runtime/Engine.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Component/Light/DirectionalLightComponent.h"
 #include "Viewport/Viewport.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
 #include "GameFramework/StaticMeshActor.h"
@@ -34,14 +35,19 @@ void FMeshEditorWidget::Open(UObject* Object)
 		Comp->SetSkeletalMesh(Mesh);
 		Actor->SetRootComponent(Comp);
 	}
+	Actor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
 
 	ADirectionalLightActor* LightActor = WorldContext.World->SpawnActor<ADirectionalLightActor>();
 	LightActor->InitDefaultComponents();
 	LightActor->SetActorRotation(FVector(0.0f, 45.0f, -45.0f));
+	UDirectionalLightComponent* LightComp = LightActor->GetComponentByClass<UDirectionalLightComponent>();
+	LightComp->SetShadowBias(0.0f);
+	LightComp->PushToScene();
 
 	AStaticMeshActor* FloorActor = WorldContext.World->SpawnActor<AStaticMeshActor>();
 	FloorActor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
-	FloorActor->SetActorScale(FVector(10.0f, 10.0f, 1.0f));
+	FloorActor->SetActorLocation(FVector(0.0f, 0.0f, -0.05f));
+	FloorActor->SetActorScale(FVector(10.0f, 10.0f, 0.02f));
 
 	ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
 
@@ -64,6 +70,12 @@ void FMeshEditorWidget::Open(UObject* Object)
 void FMeshEditorWidget::Close()
 {
 	FAssetEditorWidget::Close();
+
+	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
+	{
+		FScene& PreviewScene = PreviewWorld->GetScene();
+		GEngine->GetRenderer().GetResources().ReleaseShadowResourcesForScene(&PreviewScene);
+	}
 
 	GEngine->DestroyWorldContext(FName("MeshEditorPreview"));
 

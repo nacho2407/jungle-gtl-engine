@@ -15,5 +15,5 @@ struct ContentBrowserContext final
 
 	UEditorEngine* EditorEngine;
 
-	bool bIsNeedRefresh = false;
+	bool bPendingContentRefresh = false;
 };

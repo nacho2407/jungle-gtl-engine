@@ -73,7 +73,7 @@ void FGameRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	FCollectOutput Output;
 	CollectCommands(Scene, Renderer, Output);
 
-	Renderer.Render(Frame, *Scene);
+	Renderer.Render(Frame, World, *Scene);
 
 	Renderer.BeginFrame();
 	Renderer.BlitToBackBuffer(VP->GetSRV());
