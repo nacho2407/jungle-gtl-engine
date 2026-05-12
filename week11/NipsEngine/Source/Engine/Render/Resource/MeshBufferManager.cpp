@@ -18,6 +18,26 @@ namespace
 		QuadMeshData.Indices = { 0, 1, 2, 0, 2, 3 };
 		return QuadMeshData;
 	}
+
+	bool UpdateSkeletalMeshBufferVertices(ID3D11Device* Device, FMeshBuffer& Buffer, const TArray<FNormalVertex>& Vertices)
+	{
+		if (!Device)
+		{
+			return false;
+		}
+
+		ID3D11DeviceContext* DeviceContext = nullptr;
+		Device->GetImmediateContext(&DeviceContext);
+		if (!DeviceContext)
+		{
+			return false;
+		}
+
+		Buffer.UpdateSkeletalVertices(DeviceContext, Vertices);
+		DeviceContext->Release();
+
+		return true;
+	}
 }
 
 void FMeshBufferManager::Create(ID3D11Device* InDevice)
@@ -58,6 +78,14 @@ void FMeshBufferManager::Release()
 	}
 
 	ProcMeshBufferMap.clear();
+
+	for (auto& pair : SkeletalMeshBufferMap)
+	{
+		pair.second.Release();
+	}
+
+	SkeletalMeshBufferMap.clear();
+	SkeletalMeshSourceMap.clear();
     
     Device = nullptr;
 }
@@ -149,4 +177,48 @@ FMeshBuffer* FMeshBufferManager::GetProcMeshBuffer(uint32 ProcMeshCompUUID, cons
     NewBuffer.CreateForStaticMesh(Device, Vertices, Indices);
 
     return &NewBuffer;
+}
+
+FMeshBuffer* FMeshBufferManager::GetSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload)
+{
+	if (!Device || !SkeletalMeshAsset || Vertices.empty() || Indices.empty())
+	{
+		return nullptr;
+	}
+
+	auto It = SkeletalMeshBufferMap.find(SkeletalMeshCompUUID);
+	if (It != SkeletalMeshBufferMap.end())
+	{
+		FMeshBuffer& Existing = It->second;
+		if (Existing.IsValid())
+		{
+			auto SourceIt = SkeletalMeshSourceMap.find(SkeletalMeshCompUUID);
+			const bool bSameSourceMesh = SourceIt != SkeletalMeshSourceMap.end() && SourceIt->second == SkeletalMeshAsset;
+			const uint32 ExistingVertexCount = Existing.GetVertexBuffer().GetVertexCount();
+			const uint32 ExistingIndexCount = Existing.GetIndexBuffer().GetIndexCount();
+			const bool bSameSize =
+				ExistingVertexCount == static_cast<uint32>(Vertices.size()) &&
+				ExistingIndexCount == static_cast<uint32>(Indices.size());
+
+			// 개수만 확인하면 mesh 교체 시 vertex / index 개수가 우연히 같은 경우에 index buffer를 잘못 재사용하는 경우가 생길 수 있음~
+			if (bSameSourceMesh && bSameSize)
+			{
+				if (bNeedsUpload)
+				{
+					UpdateSkeletalMeshBufferVertices(Device, Existing, Vertices);
+				}
+
+				return &Existing;
+			}
+
+			Existing.Release();
+		}
+	}
+
+	FMeshBuffer& NewBuffer = SkeletalMeshBufferMap[SkeletalMeshCompUUID];
+	NewBuffer.CreateForSkeletalMesh(Device, Vertices, Indices);
+	UpdateSkeletalMeshBufferVertices(Device, NewBuffer, Vertices);
+	SkeletalMeshSourceMap[SkeletalMeshCompUUID] = SkeletalMeshAsset;
+
+	return NewBuffer.IsValid() ? &NewBuffer : nullptr;
 }
