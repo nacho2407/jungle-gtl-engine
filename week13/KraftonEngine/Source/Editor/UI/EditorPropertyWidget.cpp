@@ -596,7 +596,6 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 	DrawList->AddText(TextMin, TextColor, Preview);
 	DrawList->PopClipRect();
 
-	ImGui::SetNextWindowPos(ComboMin, ImGuiCond_Appearing, ImVec2(1.0f, 0.0f));
 	ImGui::SetNextWindowSizeConstraints(ImVec2(220.0f, 320.0f), ImVec2(FLT_MAX, 520.0f));
 	if (ImGui::BeginPopup("##ComponentClassPopup"))
 	{
