@@ -35,7 +35,6 @@ public:
 	bool CanCloseApplication() override;
 	void WorldTick(float DeltaTime) override;
 
-	void CreateViewerWorld();
     FEditorViewer* CreateViewer();
     void RemoveViewer(FEditorViewer* InViewer);
 

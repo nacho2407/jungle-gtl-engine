@@ -187,7 +187,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 	FScriptManager::Get().initializeLuaState();
 
-	CreateViewerWorld();
+	CreateViewer();
+    CreateViewer();
 }
 
 void UEditorEngine::Shutdown()
@@ -485,7 +486,7 @@ void UEditorEngine::RegisterViewportInputTargets()
                     static_cast<float>(ViewportRect.Height));
                 return true;
             },
-            [this, Index]()
+            [this, Index]() -> UWorld*
             {
                 FEditorViewportClient* Client = ViewportLayout.GetViewportClient(Index);
                 return Client ? Client->GetFocusedWorld() : nullptr;
@@ -522,7 +523,6 @@ void UEditorEngine::RegisterViewportInputTargets()
                 },
                 [this, Index]() -> UWorld*
                 {
-                    if (Index >= Viewers.size()) return nullptr;
                     FEditorViewportClient* Client = static_cast<FEditorViewportClient*>(Viewers[Index]->GetViewport().GetClient());
                     return Client ? Client->GetFocusedWorld() : nullptr;
                 });
@@ -535,8 +535,9 @@ void UEditorEngine::WorldTick(float DeltaTime)
     // 포커스된 뷰포트의 카메라를 해당 월드의 ActiveCamera로 설정합니다.
     // PIE Possessed 상태에서는 PlayerController의 RuntimeCamera가 게임 카메라를 소유하므로
     // 여기서 Editor viewport camera로 덮어쓰면 WASD/Mouse Look 결과가 화면에 반영되지 않습니다.
-    const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
-    FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
+    FEditorViewportClient* FocusedClient =
+        static_cast<FEditorViewportClient*>(EditorInputRouter.GetFocusedClient());
+
     if (FocusedClient && FocusedClient->AllowsEditorWorldControl())
     {
         if (UWorld* FocusedWorld = FocusedClient->GetFocusedWorld())
@@ -559,11 +560,6 @@ void UEditorEngine::WorldTick(float DeltaTime)
     }
 
     ProcessPendingSceneOpen();
-}
-
-void UEditorEngine::CreateViewerWorld()
-{
-    CreateViewer();
 }
 
 FEditorViewer* UEditorEngine::CreateViewer()
@@ -1218,8 +1214,13 @@ const FViewportCamera* UEditorEngine::GetCamera() const
 
 UWorld* UEditorEngine::GetFocusedWorld() const
 {
-    const FEditorViewportClient* FocusedClient =
-        ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex());
+	const FEditorViewportClient* FocusedClient = static_cast<FEditorViewportClient*>(EditorInputRouter.GetFocusedClient());
+
+	if (!FocusedClient)
+	{
+        return ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex())->GetFocusedWorld();
+	}
+
     return FocusedClient ? FocusedClient->GetFocusedWorld() : nullptr;
 }
 
@@ -1237,8 +1238,8 @@ EViewportPlayState UEditorEngine::GetEditorState() const
 {
     const int32 StateViewportIndex =
         PIESession.ResolveActiveViewportIndex(ViewportLayout.GetLastFocusedViewportIndex());
-    const FEditorViewportClient* FocusedClient =
-        ViewportLayout.GetViewportClient(StateViewportIndex);
+
+	const FEditorViewportClient* FocusedClient = static_cast<FEditorViewportClient*>(EditorInputRouter.GetFocusedClient());
 
     return FocusedClient ? FocusedClient->GetPlayState() : EViewportPlayState::Editing;
 }
@@ -1296,6 +1297,8 @@ void UEditorEngine::ClearScene()
             ViewportClient->SetWorld(nullptr);
         }
     }
+
+	Viewers.clear();
 }
 
 // 이미 생성된 월드를 컨텍스트에 등록합니다.

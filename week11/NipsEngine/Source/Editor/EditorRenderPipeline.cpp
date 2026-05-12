@@ -372,6 +372,7 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
         // 2. RenderTarget 확보
         FViewportRenderResource& ViewportResource =
             Editor->GetRenderer().AcquireViewerViewportResource(
+                (uint32)i,
                 Rect.Width,
                 Rect.Height);
 
