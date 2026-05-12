@@ -157,6 +157,9 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
     UEngine::Init(InWindow);
     UndoSystem.SetOwner(this);
+    CommandSystem.Initialize(this);
+    AssetService.Initialize(this);
+    NotificationService.Initialize(this);
     SceneService.Initialize(this);
     GetRmlUiSystem().Initialize(GetRenderer(), "EditorPIE", 1, 1);
     InputSystem::Get().SetOwnerWindow(Window ? Window->GetHWND() : nullptr);
@@ -637,9 +640,7 @@ int32 UEditorEngine::DeleteActors(const TArray<AActor*>& Actors)
     if (DeletedCount > 0)
     {
         SceneService.MarkDirty();
-
-        MainPanel.PushFooterLog(
-            DeletedCount > 1 ? "Actors deleted" : "Actor deleted");
+        NotificationService.Info(DeletedCount > 1 ? "Actors deleted" : "Actor deleted");
     }
 
     return DeletedCount;
@@ -820,21 +821,21 @@ void UEditorEngine::StartPlaySessionNow()
     if (!HasPlayerStart(SourceWorld))
     {
         UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player Start is missing.");
-        MainPanel.PushFooterLog("PIE failed: Player Start is missing");
+        NotificationService.Error("PIE failed: Player Start is missing");
         return;
     }
     AActor* PlayerActor = FindTaggedPlayerActor(SourceWorld);
     if (!PlayerActor)
     {
         UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player actor with tag 'Player' is missing.");
-        MainPanel.PushFooterLog("PIE failed: Player actor is missing");
+        NotificationService.Error("PIE failed: Player actor is missing");
         return;
     }
     if (!HasCameraComponent(PlayerActor))
     {
         UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player actor has no CameraComponent: %s",
             PlayerActor->GetFName().ToString().c_str());
-        MainPanel.PushFooterLog("PIE failed: Player CameraComponent is missing");
+        NotificationService.Error("PIE failed: Player CameraComponent is missing");
         return;
     }
 

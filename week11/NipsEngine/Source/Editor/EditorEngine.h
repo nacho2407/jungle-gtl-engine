@@ -10,6 +10,9 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/PIE/PIESession.h"
+#include "Editor/Asset/EditorAssetService.h"
+#include "Editor/Command/EditorCommandSystem.h"
+#include "Editor/Notification/EditorNotificationService.h"
 #include "Editor/Scene/EditorSceneService.h"
 #include "Editor/Undo/EditorUndoSystem.h"
 #include "Camera/ViewportCamera.h"
@@ -57,6 +60,12 @@ public:
 
 	FEditorUndoSystem& GetUndoSystem() { return UndoSystem; }
 	const FEditorUndoSystem& GetUndoSystem() const { return UndoSystem; }
+	FEditorCommandSystem& GetCommandSystem() { return CommandSystem; }
+	const FEditorCommandSystem& GetCommandSystem() const { return CommandSystem; }
+	FEditorAssetService& GetAssetService() { return AssetService; }
+	const FEditorAssetService& GetAssetService() const { return AssetService; }
+	FEditorNotificationService& GetNotificationService() { return NotificationService; }
+	const FEditorNotificationService& GetNotificationService() const { return NotificationService; }
 	FEditorSceneService& GetSceneService() { return SceneService; }
 	const FEditorSceneService& GetSceneService() const { return SceneService; }
 
@@ -117,6 +126,9 @@ private:
 
 	FInputPolicyRouter EditorInputRouter;
 	FPIESession PIESession;
+	FEditorCommandSystem CommandSystem;
+	FEditorAssetService AssetService;
+	FEditorNotificationService NotificationService;
 	FEditorSceneService SceneService;
 
     FEditorUndoSystem UndoSystem;

@@ -22,7 +22,7 @@ bool FEditorUndoSystem::CaptureSnapshot(const char* Reason)
 	const bool bCaptured = PushSnapshot(std::move(Snapshot), Reason, bClearedRedo);
 	if (bClearedRedo)
 	{
-		Owner->GetMainPanel().PushFooterLog("Redo history cleared");
+		Owner->GetNotificationService().Info("Redo history cleared");
 	}
 	return bCaptured;
 }
@@ -44,7 +44,7 @@ bool FEditorUndoSystem::Undo()
 	const bool bRestored = Owner->RestoreSceneSnapshot(Previous.Snapshot);
 	if (bRestored)
 	{
-		Owner->GetMainPanel().PushFooterLog("Undo: " + Previous.Label);
+		Owner->GetNotificationService().Info("Undo: " + Previous.Label);
 	}
 	return bRestored;
 }
@@ -66,7 +66,7 @@ bool FEditorUndoSystem::Redo()
 	const bool bRestored = Owner->RestoreSceneSnapshot(Next.Snapshot);
 	if (bRestored)
 	{
-		Owner->GetMainPanel().PushFooterLog("Redo: " + Next.Label);
+		Owner->GetNotificationService().Info("Redo: " + Next.Label);
 	}
 	return bRestored;
 }
@@ -88,7 +88,7 @@ bool FEditorUndoSystem::RestoreHistoryIndex(int32 Index)
 	const bool bRestored = Owner->RestoreSceneSnapshot(Target.Snapshot);
 	if (bRestored)
 	{
-		Owner->GetMainPanel().PushFooterLog("History restored: " + Target.Label);
+		Owner->GetNotificationService().Info("History restored: " + Target.Label);
 	}
 	return bRestored;
 }
@@ -103,7 +103,7 @@ void FEditorUndoSystem::ClearHistory()
 
 	if (ClearStorage())
 	{
-		Owner->GetMainPanel().PushFooterLog("Undo history cleared");
+		Owner->GetNotificationService().Info("Undo history cleared");
 	}
 }
 

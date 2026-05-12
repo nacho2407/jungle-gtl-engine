@@ -43,6 +43,15 @@
     <Filter Include="Source\Editor\Undo">
       <UniqueIdentifier>{8d5ce3f6-5e3d-43c4-aac1-e091f780fb9e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Asset">
+      <UniqueIdentifier>{f58bcf52-84c0-49d7-8ad0-46f40fa28bbf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\Command">
+      <UniqueIdentifier>{b1f8c610-f6e8-42df-aeb9-aad8fa0d2d44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\Notification">
+      <UniqueIdentifier>{ee3508aa-0746-43c0-9985-c4d7b423d7f4}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\Scene">
       <UniqueIdentifier>{d0d71215-9875-4e77-a9dc-5b4dbb0f5836}</UniqueIdentifier>
     </Filter>
@@ -206,6 +215,15 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
       <Filter>Source\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Asset\EditorAssetService.cpp">
+      <Filter>Source\Editor\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Command\EditorCommandSystem.cpp">
+      <Filter>Source\Editor\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Notification\EditorNotificationService.cpp">
+      <Filter>Source\Editor\Notification</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Scene\EditorSceneService.cpp">
       <Filter>Source\Editor\Scene</Filter>
@@ -988,6 +1006,15 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\PIE\PIESession.h">
       <Filter>Source\Editor\PIE</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Asset\EditorAssetService.h">
+      <Filter>Source\Editor\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Command\EditorCommandSystem.h">
+      <Filter>Source\Editor\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Notification\EditorNotificationService.h">
+      <Filter>Source\Editor\Notification</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Scene\EditorSceneService.h">
       <Filter>Source\Editor\Scene</Filter>

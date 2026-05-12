@@ -763,11 +763,14 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		}
 		else if (Item.Extension == ".scene")
 		{
-			EditorEngine->GetSceneService().OpenScene(FPaths::ToUtf8(Item.Path.wstring()));
+			FEditorCommandArgs Args;
+			Args.ScenePath = FPaths::ToUtf8(Item.Path.wstring());
+			Args.bPromptSave = true;
+			EditorEngine->GetCommandSystem().Execute(EEditorCommand::OpenScene, Args);
 		}
 		else if (IsPrefabAsset(Item.Extension))
 		{
-			EditorEngine->GetMainPanel().PushFooterLog("Prefab selected. Drag to viewport or right-click to spawn.");
+			EditorEngine->GetNotificationService().Info("Prefab selected. Drag to viewport or right-click to spawn.");
 		}
 		else
 		{
