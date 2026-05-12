@@ -7,10 +7,6 @@
 
 #include <algorithm>
 #include <cfloat>
-#include <filesystem>
-#include <fstream>
-#include <sstream>
-#include <iomanip>
 #include <cctype>
 
 using namespace fbxsdk;
@@ -60,8 +56,8 @@ struct FTempInfluence
 };
 
 /**
-	* @brief 영향력 상위 4개의 bone을 FSkeletalMeshVertex에 할당
-	*/
+ * @brief 영향력 상위 4개의 bone을 FSkeletalMeshVertex에 할당
+ */
 static void AssignTop4Influences(
     const TArray<FTempInfluence>& SourceInfluences,
     FSkeletalMeshVertex& OutVertex)
@@ -69,9 +65,8 @@ static void AssignTop4Influences(
     for (int32 i = 0; i < 4; ++i)
     {
 		/*
-			* TODO: 이 함수 자체가 임시로 붙인 함수지만, 만약 이 함수를 그대로 사용하고
-			*       BoneIndices를 int32로 바꾼다면 이 부분도 -1로 변경해주세요!
-			*/
+		 * note: BoneIndices를 int32로 바꾼다면 이 부분도 -1로 변경해주세요!
+		 */
         OutVertex.BoneIndices[i] = 0;
         OutVertex.BoneWeights[i] = 0.0f;
     }
@@ -97,9 +92,9 @@ static void AssignTop4Influences(
         }
 
 		/*
-			* TODO: 우선 현재는 BoneIndices가 uint8임을 가정.
-			*       bone 개수가 256개 이상이면 잘림
-			*/
+		 * note: 우선 현재는 BoneIndices가 uint8임을 가정.
+		 *       bone 개수가 256개 이상이면 잘림
+		 */
         if (Influence.BoneIndex < 0 || Influence.BoneIndex > 255 || Influence.Weight <= 0.0f)
         {
             continue;
@@ -130,9 +125,9 @@ static void AssignTop4Influences(
 }
 
 /**
-    * @brief FBX에는 node transform 뿐 아니라 mesh geometry 자체에 추가로 붙는
-    *        숨은 보정 transform이 존재하기 때문에 이를 계산하는 함수
-    */
+ * @brief FBX에는 node transform 뿐 아니라 mesh geometry 자체에 추가로 붙는
+ *        숨은 보정 transform이 존재하기 때문에 이를 계산하는 함수
+ */
 static FbxAMatrix GetGeometryTransform(FbxNode* Node)
 {
     FbxAMatrix Geometry;
@@ -152,8 +147,8 @@ static FbxAMatrix GetGeometryTransform(FbxNode* Node)
 }
 
 /**
-	* @brief normal은 translate를 적용하지 않음
-	*/
+ * @brief normal은 translate를 적용하지 않음
+ */
 static FbxAMatrix GetNormalTransform(FbxAMatrix Matrix)
 {
     Matrix.SetT(FbxVector4(0, 0, 0, 0));
@@ -358,16 +353,6 @@ static void AssignRigidInfluence(FSkeletalMeshVertex& Vertex, int32 BoneIndex)
     Vertex.BoneWeights[0] = 1.0f;
 }
 
-static void AppendSkeletalImportReport(const std::string& Message)
-{
-    std::filesystem::create_directories("Saved");
-
-    std::ofstream File("Saved/SkeletalMeshGeometryImportReport.txt", std::ios::out | std::ios::app);
-    if (File.is_open())
-    {
-        File << Message << "\n";
-    }
-}
 }
 
 FStaticMesh* FFbxImporter::Load(const FString& Path, const FStaticMeshLoadOptions& LoadOptions)
@@ -1282,34 +1267,27 @@ void FFbxImporter::ProcessRigidAttachedMesh(
 
     if (!bHasImportedSkinnedMesh)
     {
-        AppendSkeletalImportReport("[RigidMesh] SKIP: no reference skinned mesh has been imported yet");
+        UE_LOG_WARNING("[FbxImporter] Skip rigid mesh before skinned mesh import | Node=%s", OwnerNode->GetName());
         return;
     }
 
     if (ShouldSkipRigidMeshByName(OwnerNode))
     {
-        std::ostringstream Oss;
-        Oss << "[RigidMesh] SKIP helper mesh | Node=" << OwnerNode->GetName();
-        AppendSkeletalImportReport(Oss.str());
         return;
     }
 
     const int32 AttachBoneIndex = FindNearestImportedBoneIndex(OwnerNode, BoneNodeToIndex);
     if (AttachBoneIndex < 0)
     {
-        std::ostringstream Oss;
-        Oss << "[RigidMesh] SKIP no parent bone | Node=" << OwnerNode->GetName();
-        AppendSkeletalImportReport(Oss.str());
         return;
     }
 
     if (AttachBoneIndex > 255)
     {
-        std::ostringstream Oss;
-        Oss << "[RigidMesh] SKIP attach bone index exceeds uint8 limit | Node="
-            << OwnerNode->GetName()
-            << " | BoneIndex=" << AttachBoneIndex;
-        AppendSkeletalImportReport(Oss.str());
+        UE_LOG_WARNING(
+            "[FbxImporter] Skip rigid mesh because attach bone index exceeds uint8 limit | Node=%s | BoneIndex=%d",
+            OwnerNode->GetName(),
+            AttachBoneIndex);
         return;
     }
 
@@ -1337,7 +1315,6 @@ void FFbxImporter::ProcessRigidAttachedMesh(
     TArray<TArray<uint32>> SlotIndices;
 
     const int32 PolygonCount = Mesh->GetPolygonCount();
-    const uint32 StartVertexCount = static_cast<uint32>(InSkeletalMesh->Vertices.size());
 
     for (int32 PolyIdx = 0; PolyIdx < PolygonCount; PolyIdx++)
     {
@@ -1457,15 +1434,6 @@ void FFbxImporter::ProcessRigidAttachedMesh(
 
         InSkeletalMesh->Sections.push_back(NewSection);
     }
-
-    const uint32 EndVertexCount = static_cast<uint32>(InSkeletalMesh->Vertices.size());
-
-    std::ostringstream Oss;
-    Oss << "[RigidMesh] IMPORT"
-        << " | Node=" << OwnerNode->GetName()
-        << " | AttachBoneIndex=" << AttachBoneIndex
-        << " | AddedVertices=" << (EndVertexCount - StartVertexCount);
-    AppendSkeletalImportReport(Oss.str());
 }
 
 int32 FFbxImporter::GetOrAddMaterialSlot(FSkeletalMesh* InSkeletalMesh, const FString& MaterialName)
