@@ -44,6 +44,36 @@ namespace
 		return Normalized;
 	}
 
+	uint32 HashVertexLayout(const FVertexLayoutDesc* Layout)
+	{
+		if (!Layout || Layout->Elements.empty())
+		{
+			return 0;
+		}
+
+		size_t Hash = std::hash<uint32>{}(Layout->Stride);
+		for (const FVertexElementDesc& Element : Layout->Elements)
+		{
+			Hash ^= std::hash<FString>{}(Element.SemanticName) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+			Hash ^= std::hash<uint32>{}(Element.SemanticIndex) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+			Hash ^= std::hash<uint32>{}(static_cast<uint32>(Element.Format)) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+			Hash ^= std::hash<uint32>{}(Element.InputSlot) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+			Hash ^= std::hash<uint32>{}(Element.AlignedByteOffset) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+		}
+
+		return static_cast<uint32>(Hash);
+	}
+
+	FShaderStageKey NormalizeVertexStageKey(const FShaderStageKey& Key, const FVertexLayoutDesc* VertexLayout)
+	{
+		FShaderStageKey Normalized = NormalizeStageKey(Key);
+		if (Normalized.InputLayoutHash == 0)
+		{
+			Normalized.InputLayoutHash = HashVertexLayout(VertexLayout);
+		}
+		return Normalized;
+	}
+
 	void ReflectShaderStage(ID3DBlob* Blob, FShaderReflectionInfo& OutReflection)
 	{
 		if (!Blob)
@@ -189,9 +219,53 @@ namespace
 		Reflector->Release();
 		return bCreated;
 	}
+
+	bool BuildInputLayoutFromDesc(
+		const FVertexLayoutDesc& VertexLayout,
+		ID3DBlob* VSBlob,
+		ID3D11Device* Device,
+		ID3D11InputLayout** OutInputLayout)
+	{
+		if (!VSBlob || !Device || !OutInputLayout)
+		{
+			return false;
+		}
+
+		if (VertexLayout.Elements.empty())
+		{
+			*OutInputLayout = nullptr;
+			return true;
+		}
+
+		TArray<D3D11_INPUT_ELEMENT_DESC> InputElements;
+		InputElements.reserve(VertexLayout.Elements.size());
+		for (const FVertexElementDesc& Element : VertexLayout.Elements)
+		{
+			D3D11_INPUT_ELEMENT_DESC ElementDesc = {};
+			ElementDesc.SemanticName = Element.SemanticName.c_str();
+			ElementDesc.SemanticIndex = Element.SemanticIndex;
+			ElementDesc.Format = Element.Format;
+			ElementDesc.InputSlot = Element.InputSlot;
+			ElementDesc.AlignedByteOffset = Element.AlignedByteOffset;
+			ElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+			ElementDesc.InstanceDataStepRate = 0;
+			InputElements.push_back(ElementDesc);
+		}
+
+		return SUCCEEDED(Device->CreateInputLayout(
+			InputElements.data(),
+			static_cast<UINT>(InputElements.size()),
+			VSBlob->GetBufferPointer(),
+			VSBlob->GetBufferSize(),
+			OutInputLayout));
+	}
 }
 
-FVertexShader* FShaderResourceCache::GetOrCreateVertexShader(const FShaderStageKey& Key, const D3D_SHADER_MACRO* Defines, ID3D11Device* Device)
+FVertexShader* FShaderResourceCache::GetOrCreateVertexShader(
+	const FShaderStageKey& Key,
+	const D3D_SHADER_MACRO* Defines,
+	ID3D11Device* Device,
+	const FVertexLayoutDesc* VertexLayout)
 {
 	if (!Device)
 	{
@@ -199,7 +273,7 @@ FVertexShader* FShaderResourceCache::GetOrCreateVertexShader(const FShaderStageK
 	}
 
 	// 같은 StageKey는 한 번만 컴파일하고 이후에는 캐시된 Stage를 재사용합니다.
-	const FShaderStageKey NormalizedKey = NormalizeStageKey(Key);
+	const FShaderStageKey NormalizedKey = NormalizeVertexStageKey(Key, VertexLayout);
 	auto It = VertexShaders.find(NormalizedKey);
 	if (It != VertexShaders.end())
 	{
@@ -237,7 +311,11 @@ FVertexShader* FShaderResourceCache::GetOrCreateVertexShader(const FShaderStageK
 		return nullptr;
 	}
 
-	if (!BuildInputLayoutFromReflection(CompileResult.Blob, Device, &NewShader->InputLayout))
+	const bool bHasExplicitLayout = VertexLayout && !VertexLayout->Elements.empty();
+	const bool bInputLayoutCreated = bHasExplicitLayout
+		? BuildInputLayoutFromDesc(*VertexLayout, CompileResult.Blob, Device, &NewShader->InputLayout)
+		: BuildInputLayoutFromReflection(CompileResult.Blob, Device, &NewShader->InputLayout);
+	if (!bInputLayoutCreated)
 	{
 		UE_LOG_ERROR("Failed to create vertex input layout: %s:%s", NormalizedKey.FilePath.c_str(), NormalizedKey.EntryPoint.c_str());
 		CompileResult.Blob->Release();
@@ -309,18 +387,19 @@ FShaderProgram* FShaderResourceCache::GetOrCreateProgram(
 	const FShaderStageKey& PSKey,
 	const D3D_SHADER_MACRO* VSDefines,
 	const D3D_SHADER_MACRO* PSDefines,
-	ID3D11Device* Device)
+	ID3D11Device* Device,
+	const FVertexLayoutDesc* VertexLayout)
 {
 	// Program은 VS/PS를 소유하지 않습니다.
 	// Stage Cache에 있는 포인터를 조합해서 바인딩 단위만 만들어 둡니다.
-	FShaderProgramKey ProgramKey = { NormalizeStageKey(VSKey), NormalizeStageKey(PSKey) };
+	FShaderProgramKey ProgramKey = { NormalizeVertexStageKey(VSKey, VertexLayout), NormalizeStageKey(PSKey) };
 	auto It = ShaderPrograms.find(ProgramKey);
 	if (It != ShaderPrograms.end())
 	{
 		return It->second;
 	}
 
-	FVertexShader* VS = GetOrCreateVertexShader(ProgramKey.VS, VSDefines, Device);
+	FVertexShader* VS = GetOrCreateVertexShader(ProgramKey.VS, VSDefines, Device, VertexLayout);
 	FPixelShader* PS = GetOrCreatePixelShader(ProgramKey.PS, PSDefines, Device);
 	if (!VS || !PS)
 	{

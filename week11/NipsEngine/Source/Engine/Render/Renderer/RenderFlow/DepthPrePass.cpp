@@ -20,7 +20,12 @@ namespace
 		PSKey.FilePath = FShaderPaths::DepthPrepass;
 		PSKey.EntryPoint = "DepthPrepassPS";
 
-		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+		return FResourceManager::Get().GetOrCreateShaderProgram(
+			VSKey,
+			PSKey,
+			nullptr,
+			nullptr,
+			&VertexFactory.PositionOnlyLayout);
 	}
 }
 

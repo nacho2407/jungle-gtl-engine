@@ -67,20 +67,24 @@ static FShaderProgram* GetSelectionMaskProgram(const FRenderCommand& Cmd)
 
     const char* VSEntry = "VSPrimitive";
     const char* PSEntry = "PSPrimitive";
+    const FVertexLayoutDesc* VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::Primitive).SelectionLayout;
     if (ShaderKey == 1)
     {
         VSEntry = "VSStaticMesh";
         PSEntry = "PSTextured";
+        VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::StaticMesh).SelectionLayout;
     }
     else if (ShaderKey == 2)
     {
         VSEntry = "VSBillboard";
         PSEntry = "PSTextured";
+        VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::Billboard).SelectionLayout;
     }
     else if (ShaderKey == 3)
     {
         VSEntry = "VSSkeletalMesh";
         PSEntry = "PSTextured";
+        VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::SkeletalMesh).SelectionLayout;
     }
 
     FShaderStageKey VSKey;
@@ -93,7 +97,12 @@ static FShaderProgram* GetSelectionMaskProgram(const FRenderCommand& Cmd)
     PSKey.EntryPoint = PSEntry;
     PSKey.PermutationKey = ShaderKey;
 
-    return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+    return FResourceManager::Get().GetOrCreateShaderProgram(
+        VSKey,
+        PSKey,
+        nullptr,
+        nullptr,
+        VertexLayout);
 }
 
 static void BuildSelectionMaskConstants(

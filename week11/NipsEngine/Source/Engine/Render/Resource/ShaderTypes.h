@@ -16,13 +16,15 @@ struct FShaderStageKey
     FString EntryPoint;
     FString Target;
     uint32 PermutationKey = 0;
+    uint32 InputLayoutHash = 0;
 
     bool operator==(const FShaderStageKey& Other) const
     {
         return FilePath == Other.FilePath
             && EntryPoint == Other.EntryPoint
             && Target == Other.Target
-            && PermutationKey == Other.PermutationKey;
+            && PermutationKey == Other.PermutationKey
+            && InputLayoutHash == Other.InputLayoutHash;
     }
 };
 
@@ -35,6 +37,7 @@ struct FShaderStageKeyHasher
         Hash ^= std::hash<FString>{}(Key.EntryPoint) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
         Hash ^= std::hash<FString>{}(Key.Target) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
         Hash ^= std::hash<uint32>{}(Key.PermutationKey) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+        Hash ^= std::hash<uint32>{}(Key.InputLayoutHash) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
         return Hash;
     }
 };

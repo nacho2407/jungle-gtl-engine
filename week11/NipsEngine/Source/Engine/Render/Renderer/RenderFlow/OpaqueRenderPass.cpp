@@ -194,7 +194,8 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
                VSKey,
                PSKey,
                Macros.data(),
-               Macros.data());
+               Macros.data(),
+               &VertexFactoryDesc.VertexLayout);
 
            if (!Program)
            {

@@ -433,9 +433,12 @@ void FResourceManager::ReleaseGPUResources()
 	CachedDevice.Reset();
 }
 
-FVertexShader* FResourceManager::GetOrCreateVertexShader(const FShaderStageKey& Key, const D3D_SHADER_MACRO* Defines)
+FVertexShader* FResourceManager::GetOrCreateVertexShader(
+	const FShaderStageKey& Key,
+	const D3D_SHADER_MACRO* Defines,
+	const FVertexLayoutDesc* VertexLayout)
 {
-	return ShaderCache.GetOrCreateVertexShader(Key, Defines, CachedDevice.Get());
+	return ShaderCache.GetOrCreateVertexShader(Key, Defines, CachedDevice.Get(), VertexLayout);
 }
 
 FPixelShader* FResourceManager::GetOrCreatePixelShader(const FShaderStageKey& Key, const D3D_SHADER_MACRO* Defines)
@@ -447,9 +450,10 @@ FShaderProgram* FResourceManager::GetOrCreateShaderProgram(
 	const FShaderStageKey& VSKey,
 	const FShaderStageKey& PSKey,
 	const D3D_SHADER_MACRO* VSDefines,
-	const D3D_SHADER_MACRO* PSDefines)
+	const D3D_SHADER_MACRO* PSDefines,
+	const FVertexLayoutDesc* VertexLayout)
 {
-	return ShaderCache.GetOrCreateProgram(VSKey, PSKey, VSDefines, PSDefines, CachedDevice.Get());
+	return ShaderCache.GetOrCreateProgram(VSKey, PSKey, VSDefines, PSDefines, CachedDevice.Get(), VertexLayout);
 }
 
 bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString& EntryPoint,

@@ -4,10 +4,21 @@
 #include "Core/CoreTypes.h"
 #include "Core/ResourceManager.h"
 
+#include <cstddef>
+
 namespace
 {
 	FShaderProgram* GetSubUVShaderProgram()
 	{
+		static const FVertexLayoutDesc SubUVVertexLayout = {
+			{
+				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, Position)) },
+				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, TexCoord)) },
+				{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, Color)) },
+			},
+			sizeof(FTextureVertex)
+		};
+
 		FShaderStageKey VSKey;
 		VSKey.FilePath = "Shaders/UI/SubUV.hlsl";
 		VSKey.EntryPoint = "VS";
@@ -18,7 +29,12 @@ namespace
 		PSKey.EntryPoint = "PS";
 		PSKey.Target = "ps_5_0";
 
-		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+		return FResourceManager::Get().GetOrCreateShaderProgram(
+			VSKey,
+			PSKey,
+			nullptr,
+			nullptr,
+			&SubUVVertexLayout);
 	}
 }
 

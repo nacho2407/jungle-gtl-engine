@@ -30,7 +30,12 @@ namespace
         PSKey.PermutationKey = PermutationKey;
 
         TArray<D3D_SHADER_MACRO> Macros = FShaderHelper::BuildUberLitMacros(PermutationKey);
-        return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey, Macros.data(), Macros.data());
+        return FResourceManager::Get().GetOrCreateShaderProgram(
+            VSKey,
+            PSKey,
+            Macros.data(),
+            Macros.data(),
+            &VertexFactoryDesc.VertexLayout);
     }
 }
 
