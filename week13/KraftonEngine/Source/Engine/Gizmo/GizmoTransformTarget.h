@@ -18,10 +18,12 @@ public:
 
 	virtual FVector GetWorldLocation() const = 0;
 	virtual FRotator GetWorldRotation() const = 0;
+	virtual FQuat GetWorldQuat() const = 0;
 	virtual FVector GetWorldScale() const = 0;
 
 	virtual void SetWorldLocation(const FVector& NewLocation) = 0;
 	virtual void SetWorldRotation(const FRotator& NewRotation) = 0;
+	virtual void SetWorldRotation(const FQuat& NewQuat) = 0;
 	virtual void SetWorldScale(const FVector& NewScale) = 0;
 
 	virtual void AddWorldOffset(const FVector& Delta) = 0;

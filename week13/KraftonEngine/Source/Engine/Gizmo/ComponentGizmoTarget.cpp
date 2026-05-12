@@ -31,6 +31,11 @@ FRotator FComponentGizmoTarget::GetWorldRotation() const
 	return Component ? Component->GetWorldRotation() : FRotator::ZeroRotator;
 }
 
+FQuat FComponentGizmoTarget::GetWorldQuat() const
+{
+	return Component ? Component->GetRelativeQuat() : FQuat::Identity;
+}
+
 FVector FComponentGizmoTarget::GetWorldScale() const
 {
 	return Component ? Component->GetWorldScale() : FVector::OneVector;
@@ -49,6 +54,14 @@ void FComponentGizmoTarget::SetWorldRotation(const FRotator& NewRotation)
 	if (Component)
 	{
 		Component->SetRelativeRotation(NewRotation);
+	}
+}
+
+void FComponentGizmoTarget::SetWorldRotation(const FQuat& NewQuat)
+{
+	if (Component)
+	{
+		Component->SetRelativeRotation(NewQuat);
 	}
 }
 
