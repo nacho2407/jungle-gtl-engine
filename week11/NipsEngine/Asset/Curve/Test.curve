@@ -1,6 +1,6 @@
 {
         "ArriveTangents" : [-47.167912, -1.370119, 0.773273],
-        "AssetPath" : "Asset/Curve/Test.curve.json",
+        "AssetPath" : "Asset/Curve/Test.curve",
         "InterpModes" : [2, 2, 2],
         "LeaveTangents" : [0.000000, -0.671924, -42.492451],
         "ObjectName" : "UCurveFloatAsset_0",

@@ -1,6 +1,6 @@
 {
         "ArriveTangents" : [0.000000, 0.000000, 0.000000, 0.000000, 0.000000],
-        "AssetPath" : "Asset/Curve/PlayerDeadY.curve.json",
+        "AssetPath" : "Asset/Curve/PlayerDeadY.curve",
         "InterpModes" : [1, 2, 2, 2, 1],
         "LeaveTangents" : [0.000000, 0.000000, 0.000000, 0.000000, 0.000000],
         "ObjectName" : "UCurveFloatAsset_5",

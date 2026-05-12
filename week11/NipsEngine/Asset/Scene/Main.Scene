@@ -348,7 +348,7 @@
             "ApplyModes" : [1],
             "BindingGuids" : ["A3014D4F-A32249C3-9D1E4697-F362FA0F"],
             "ChannelNames" : ["Y"],
-            "CurveAssetPaths" : ["Asset/Curve/MainCamera.curve.json"],
+            "CurveAssetPaths" : ["Asset/Curve/MainCamera.curve"],
             "Duration" : 1.000000,
             "Durations" : [1.000000],
             "Loop" : false,

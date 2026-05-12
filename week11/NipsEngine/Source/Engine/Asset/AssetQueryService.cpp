@@ -108,7 +108,7 @@ namespace
                 return static_cast<char>(std::tolower(Ch));
             });
 
-        return EndsWith(FileName, ".curve") || EndsWith(FileName, ".curve.json");
+        return EndsWith(FileName, ".curve");
     }
 
     TArray<FString> ListAssetFiles(const std::filesystem::path& SubDirectory, std::initializer_list<const char*> Extensions)

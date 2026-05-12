@@ -13,13 +13,14 @@
 #include "ImGui/imgui.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cfloat>
 #include <cmath>
 
 namespace
 {
-    constexpr float CurveEditorGridUnit = 0.1f;
-    constexpr float CurveEditorSnapUnit = 0.05f;
+    constexpr float CurveEditorGridUnit = 0.05f;
+    constexpr float CurveEditorSnapUnit = 0.01f;
     constexpr float CurveEditorMinPixelsPerUnit = 24.0f;
     constexpr float CurveEditorMaxPixelsPerUnit = 420.0f;
     constexpr float CurveEditorMaxTangent = 100.0f;
@@ -39,6 +40,8 @@ void FEditorCurveEditorWidget::OpenCurveAsset(const FString& CurvePath)
 {
     StopReferencePreview();
     CurrentPath = CurvePath;
+    SourceLabel.clear();
+    SourceSequenceComponent = nullptr;
     CurrentCurve = FResourceManager::Get().LoadCurve(CurrentPath);
     SelectedKeyIndex = CurrentCurve && !CurrentCurve->GetCurve().Keys.empty() ? 0 : -1;
     ActiveKeyDragIndex = -1;
@@ -47,8 +50,38 @@ void FEditorCurveEditorWidget::OpenCurveAsset(const FString& CurvePath)
     ContextKeyIndex = -1;
     ContextTime = 0.0f;
     ContextValue = 0.0f;
+    bCurveViewInitialized = false;
     bDirty = false;
     bVisible = true;
+    bOpenedFromActorSequence = false;
+}
+
+void FEditorCurveEditorWidget::OpenCurveFromActorSequence(
+    UCurveFloatAsset* Curve,
+    UActorSequenceComponent* SequenceComp,
+    const FString& SourceLabelText,
+    const FString& SourcePath,
+    int32 InitialSelectedKeyIndex)
+{
+    StopReferencePreview();
+    CurrentPath = SourcePath;
+    CurrentCurve = Curve;
+    SourceSequenceComponent = SequenceComp;
+    SourceLabel = SourceLabelText;
+    const int32 KeyCount = CurrentCurve ? static_cast<int32>(CurrentCurve->GetCurve().Keys.size()) : 0;
+    SelectedKeyIndex = KeyCount > 0
+        ? std::clamp(InitialSelectedKeyIndex >= 0 ? InitialSelectedKeyIndex : 0, 0, KeyCount - 1)
+        : -1;
+    ActiveKeyDragIndex = -1;
+    ActiveTangentKeyIndex = -1;
+    ActiveTangentHandle = -1;
+    ContextKeyIndex = -1;
+    ContextTime = 0.0f;
+    ContextValue = 0.0f;
+    bCurveViewInitialized = false;
+    bDirty = false;
+    bVisible = CurrentCurve != nullptr;
+    bOpenedFromActorSequence = true;
 }
 
 void FEditorCurveEditorWidget::Render(float DeltaTime)
@@ -63,7 +96,8 @@ void FEditorCurveEditorWidget::Render(float DeltaTime)
     ImGui::SetNextWindowSize(ImVec2(620.0f, 520.0f), ImGuiCond_FirstUseEver);
 
     bool bOpen = bVisible;
-    if (!ImGui::Begin("Curve Editor", &bOpen))
+    const char* WindowTitle = bOpenedFromActorSequence ? "Curve Editor - Actor Sequence" : "Curve Editor";
+    if (!ImGui::Begin(WindowTitle, &bOpen))
     {
         if (!bOpen)
         {
@@ -100,48 +134,71 @@ void FEditorCurveEditorWidget::Render(float DeltaTime)
 
 void FEditorCurveEditorWidget::DrawToolbar()
 {
-    ImGui::Text("Asset: %s", CurrentPath.empty() ? "<None>" : CurrentPath.c_str());
+    ImGui::Text("%s: %s",
+        bOpenedFromActorSequence ? "Source" : "Asset",
+        CurrentPath.empty() ? (bOpenedFromActorSequence ? "Embedded Actor Sequence Curve" : "<None>") : CurrentPath.c_str());
     if (bDirty)
     {
         ImGui::SameLine();
         ImGui::TextDisabled("*");
     }
-
-    ImGui::BeginDisabled(!CurrentCurve || CurrentPath.empty() || !bDirty);
-    if (ImGui::Button("Save"))
+    if (bOpenedFromActorSequence)
     {
-        SaveCurve();
-    }
-    ImGui::EndDisabled();
-
-    ImGui::SameLine();
-    ImGui::BeginDisabled(CurrentPath.empty());
-    if (ImGui::Button("Reload"))
-    {
-        ReloadCurve();
-    }
-    ImGui::EndDisabled();
-
-    ImGui::SameLine();
-    ImGui::BeginDisabled(!CurrentCurve || CurrentPath.empty());
-    if (!bReferencePreviewActive)
-    {
-        if (ImGui::Button("Preview References"))
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.55f, 0.78f, 1.0f, 1.0f), "from Actor Sequence");
+        if (!SourceLabel.empty())
         {
-            StartReferencePreview();
+            ImGui::TextDisabled("Track: %s", SourceLabel.c_str());
         }
+        ImGui::TextDisabled("Embedded curve. Saved with the owning Scene/Prefab.");
     }
-    else
-    {
-        if (ImGui::Button("Stop Reference Preview"))
-        {
-            StopReferencePreview();
-        }
-    }
-    ImGui::EndDisabled();
 
+    if (!bOpenedFromActorSequence)
+    {
+        ImGui::BeginDisabled(!CurrentCurve || CurrentPath.empty() || !bDirty);
+        if (ImGui::Button("Save"))
+        {
+            SaveCurve();
+        }
+        ImGui::EndDisabled();
+
+        ImGui::SameLine();
+        ImGui::BeginDisabled(CurrentPath.empty());
+        if (ImGui::Button("Reload"))
+        {
+            ReloadCurve();
+        }
+        ImGui::EndDisabled();
+
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!CurrentCurve || CurrentPath.empty());
+        if (!bReferencePreviewActive)
+        {
+            if (ImGui::Button("Preview References"))
+            {
+                StartReferencePreview();
+            }
+        }
+        else
+        {
+            if (ImGui::Button("Stop Reference Preview"))
+            {
+                StopReferencePreview();
+            }
+        }
+        ImGui::EndDisabled();
+    }
+
+    if (!bOpenedFromActorSequence)
+    {
+        ImGui::SameLine();
+    }
+    if (ImGui::Button("Fit"))
+    {
+        bCurveViewInitialized = false;
+    }
     ImGui::SameLine();
-    ImGui::TextDisabled("Ctrl+Wheel: Zoom | Alt: Free drag");
+    ImGui::TextDisabled("Wheel: Zoom | RMB/MMB: Pan | F: Fit | Alt: Free drag");
 }
 
 void FEditorCurveEditorWidget::DrawCurveCanvas()
@@ -157,7 +214,7 @@ void FEditorCurveEditorWidget::DrawCurveCanvas()
         "##CurveCanvasScroll",
         ImVec2(0.0f, ChildHeight),
         true,
-        ImGuiWindowFlags_HorizontalScrollbar);
+        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
     CanvasHeight = std::clamp(CanvasHeight, 260.0f, 1200.0f);
     CanvasPixelsPerUnit = std::clamp(
@@ -167,7 +224,7 @@ void FEditorCurveEditorWidget::DrawCurveCanvas()
 
     if (Curve.Keys.empty())
     {
-        const ImVec2 CanvasSize(720.0f, CanvasHeight);
+        const ImVec2 CanvasSize(std::max(720.0f, ImGui::GetContentRegionAvail().x), CanvasHeight);
         const ImVec2 CanvasPos = ImGui::GetCursorScreenPos();
         const ImVec2 CanvasEnd(CanvasPos.x + CanvasSize.x, CanvasPos.y + CanvasSize.y);
         ImDrawList* DrawList = ImGui::GetWindowDrawList();
@@ -263,12 +320,34 @@ void FEditorCurveEditorWidget::DrawCurveCanvas()
     MinValue = std::floor(MinValue / CurveEditorGridUnit) * CurveEditorGridUnit;
     MaxValue = std::ceil(MaxValue / CurveEditorGridUnit) * CurveEditorGridUnit;
 
-    const float MinCanvasWidth = 720.0f;
-    const float TimeRange = std::max(0.0001f, MaxTime - MinTime);
-    const float ValueRange = std::max(0.0001f, MaxValue - MinValue);
+    if (!bCurveViewInitialized)
+    {
+        ViewMinTime = MinTime;
+        ViewMaxTime = MaxTime;
+        ViewMinValue = MinValue;
+        ViewMaxValue = MaxValue;
+        bCurveViewInitialized = true;
+    }
+
+    if (std::fabs(ViewMaxTime - ViewMinTime) < 0.0001f)
+    {
+        ViewMaxTime = ViewMinTime + 1.0f;
+    }
+    if (std::fabs(ViewMaxValue - ViewMinValue) < 0.0001f)
+    {
+        ViewMinValue -= 0.5f;
+        ViewMaxValue += 0.5f;
+    }
+
+    MinTime = ViewMinTime;
+    MaxTime = ViewMaxTime;
+    MinValue = ViewMinValue;
+    MaxValue = ViewMaxValue;
+
+    const float MinCanvasWidth = std::max(720.0f, ImGui::GetContentRegionAvail().x);
     const ImVec2 CanvasSize(
-        std::max(MinCanvasWidth, TimeRange * CanvasPixelsPerUnit),
-        std::max(CanvasHeight, ValueRange * CanvasPixelsPerUnit));
+        MinCanvasWidth,
+        std::max(CanvasHeight, 260.0f));
     const ImVec2 CanvasPos = ImGui::GetCursorScreenPos();
     const ImVec2 CanvasEnd(CanvasPos.x + CanvasSize.x, CanvasPos.y + CanvasSize.y);
 
@@ -278,14 +357,7 @@ void FEditorCurveEditorWidget::DrawCurveCanvas()
 
     ImGui::InvisibleButton("##CurveCanvas", CanvasSize);
     const ImVec2 AfterCanvasCursorPos = ImGui::GetCursorScreenPos();
-    if (ImGui::IsItemHovered() && ImGui::GetIO().KeyCtrl && std::fabs(ImGui::GetIO().MouseWheel) > 0.0f)
-    {
-        const float ZoomFactor = ImGui::GetIO().MouseWheel > 0.0f ? 1.1f : 1.0f / 1.1f;
-        CanvasPixelsPerUnit = std::clamp(
-            CanvasPixelsPerUnit * ZoomFactor,
-            CurveEditorMinPixelsPerUnit,
-            CurveEditorMaxPixelsPerUnit);
-    }
+    const bool bCanvasHovered = ImGui::IsItemHovered();
 
     const auto ClampToCanvas = [&](const ImVec2& Pos) -> ImVec2
     {
@@ -311,8 +383,57 @@ void FEditorCurveEditorWidget::DrawCurveCanvas()
         OutValue = MinValue + (MaxValue - MinValue) * Y01;
     };
 
+    if (bCanvasHovered && std::fabs(ImGui::GetIO().MouseWheel) > 0.0f)
+    {
+        float MouseTime = 0.0f;
+        float MouseValue = 0.0f;
+        ToCurve(ClampToCanvas(ImGui::GetIO().MousePos), MouseTime, MouseValue);
+
+        const float ZoomFactor = ImGui::GetIO().MouseWheel > 0.0f ? 0.85f : 1.0f / 0.85f;
+        const float TimeRangeBefore = std::max(0.0001f, ViewMaxTime - ViewMinTime);
+        const float ValueRangeBefore = std::max(0.0001f, ViewMaxValue - ViewMinValue);
+        const float TimeAnchor = std::clamp((MouseTime - ViewMinTime) / TimeRangeBefore, 0.0f, 1.0f);
+        const float ValueAnchor = std::clamp((MouseValue - ViewMinValue) / ValueRangeBefore, 0.0f, 1.0f);
+        const float NewTimeRange = std::clamp(TimeRangeBefore * ZoomFactor, 0.001f, 100000.0f);
+        const float NewValueRange = std::clamp(ValueRangeBefore * ZoomFactor, 0.001f, 100000.0f);
+
+        ViewMinTime = MouseTime - NewTimeRange * TimeAnchor;
+        ViewMaxTime = ViewMinTime + NewTimeRange;
+        ViewMinValue = MouseValue - NewValueRange * ValueAnchor;
+        ViewMaxValue = ViewMinValue + NewValueRange;
+
+        MinTime = ViewMinTime;
+        MaxTime = ViewMaxTime;
+        MinValue = ViewMinValue;
+        MaxValue = ViewMaxValue;
+    }
+
+    if (bCanvasHovered
+        && (ImGui::IsMouseDragging(ImGuiMouseButton_Right) || ImGui::IsMouseDragging(ImGuiMouseButton_Middle)))
+    {
+        const float TimeDelta = -(ImGui::GetIO().MouseDelta.x / std::max(1.0f, CanvasSize.x)) * (ViewMaxTime - ViewMinTime);
+        const float ValueDelta = (ImGui::GetIO().MouseDelta.y / std::max(1.0f, CanvasSize.y)) * (ViewMaxValue - ViewMinValue);
+        ViewMinTime += TimeDelta;
+        ViewMaxTime += TimeDelta;
+        ViewMinValue += ValueDelta;
+        ViewMaxValue += ValueDelta;
+
+        MinTime = ViewMinTime;
+        MaxTime = ViewMaxTime;
+        MinValue = ViewMinValue;
+        MaxValue = ViewMaxValue;
+    }
+
+    if (bCanvasHovered && ImGui::IsKeyPressed(ImGuiKey_F, false))
+    {
+        bCurveViewInitialized = false;
+    }
+
     const ImU32 GridColor = ImGui::GetColorU32(ImGuiCol_TextDisabled);
     const ImU32 MinorGridColor = ImGui::GetColorU32(ImGuiCol_Border);
+    const ImU32 LabelColor = ImGui::GetColorU32(ImGuiCol_TextDisabled);
+    const bool bLabelEveryTimeGrid = (CurveEditorGridUnit / std::max(0.0001f, MaxTime - MinTime)) * CanvasSize.x >= 44.0f;
+    const bool bLabelEveryValueGrid = (CurveEditorGridUnit / std::max(0.0001f, MaxValue - MinValue)) * CanvasSize.y >= 24.0f;
     DrawList->PushClipRect(CanvasPos, CanvasEnd, true);
     const float GridTimeStart = std::ceil(MinTime / CurveEditorGridUnit) * CurveEditorGridUnit;
     for (float Time = GridTimeStart; Time <= MaxTime + 0.0001f; Time += CurveEditorGridUnit)
@@ -320,6 +441,12 @@ void FEditorCurveEditorWidget::DrawCurveCanvas()
         const float X = ToCanvas(Time, MinValue).x;
         const bool bMajor = (std::abs(std::round(Time) - Time) < 0.0001f);
         DrawList->AddLine(ImVec2(X, CanvasPos.y), ImVec2(X, CanvasEnd.y), bMajor ? GridColor : MinorGridColor);
+        if (bMajor || bLabelEveryTimeGrid)
+        {
+            char Label[32];
+            std::snprintf(Label, sizeof(Label), "%.2f", Time);
+            DrawList->AddText(ImVec2(X + 3.0f, CanvasPos.y + 3.0f), LabelColor, Label);
+        }
     }
     const float GridValueStart = std::ceil(MinValue / CurveEditorGridUnit) * CurveEditorGridUnit;
     for (float Value = GridValueStart; Value <= MaxValue + 0.0001f; Value += CurveEditorGridUnit)
@@ -327,6 +454,12 @@ void FEditorCurveEditorWidget::DrawCurveCanvas()
         const float Y = ToCanvas(MinTime, Value).y;
         const bool bMajor = (std::abs(std::round(Value) - Value) < 0.0001f);
         DrawList->AddLine(ImVec2(CanvasPos.x, Y), ImVec2(CanvasEnd.x, Y), bMajor ? GridColor : MinorGridColor);
+        if (bMajor || bLabelEveryValueGrid)
+        {
+            char Label[32];
+            std::snprintf(Label, sizeof(Label), "%.2f", Value);
+            DrawList->AddText(ImVec2(CanvasPos.x + 4.0f, Y - 12.0f), LabelColor, Label);
+        }
     }
 
     const int32 SampleCount = std::max(128, static_cast<int32>(CanvasSize.x / 4.0f));
@@ -374,7 +507,7 @@ void FEditorCurveEditorWidget::DrawCurveCanvas()
         ActiveTangentHandle = -1;
     }
 
-    if (ImGui::IsItemHovered()
+    if (bCanvasHovered
         && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
         && HoveredKeyIndex >= 0)
     {
@@ -382,7 +515,7 @@ void FEditorCurveEditorWidget::DrawCurveCanvas()
         ActiveKeyDragIndex = HoveredKeyIndex;
     }
 
-    if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    if (bCanvasHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
     {
         float PopupTime = 0.0f;
         float PopupValue = 0.0f;
@@ -426,6 +559,8 @@ void FEditorCurveEditorWidget::DrawCurveCanvas()
             DragTime = SnapCurveEditorValue(DragTime, CurveEditorSnapUnit);
             DragValue = SnapCurveEditorValue(DragValue, CurveEditorSnapUnit);
         }
+        DragTime = std::clamp(DragTime, ViewMinTime, ViewMaxTime);
+        DragValue = std::clamp(DragValue, ViewMinValue, ViewMaxValue);
 
         MutableCurve.Keys[ActiveKeyDragIndex].Time = DragTime;
         MutableCurve.Keys[ActiveKeyDragIndex].Value = DragValue;
@@ -509,6 +644,7 @@ void FEditorCurveEditorWidget::DrawCurveCanvas()
                     float DragTime = 0.0f;
                     float DragValue = 0.0f;
                     ToCurve(ClampToCanvas(ImGui::GetIO().MousePos), DragTime, DragValue);
+                    DragValue = std::clamp(DragValue, ViewMinValue, ViewMaxValue);
 
                     const bool bLeaveHandle = HandleIndex == 1;
                     const float Tangent = ClampCurveEditorTangent(bLeaveHandle
@@ -697,6 +833,7 @@ void FEditorCurveEditorWidget::AddKeyAt(float Time, float Value)
     ActiveKeyDragIndex = -1;
     ActiveTangentKeyIndex = -1;
     ActiveTangentHandle = -1;
+    bCurveViewInitialized = false;
     MarkDirty();
 }
 
@@ -731,6 +868,7 @@ void FEditorCurveEditorWidget::RemoveKeyAtIndex(int32 KeyIndex)
     ActiveKeyDragIndex = -1;
     ActiveTangentKeyIndex = -1;
     ActiveTangentHandle = -1;
+    bCurveViewInitialized = false;
     MarkDirty();
 }
 
@@ -843,6 +981,10 @@ bool FEditorCurveEditorWidget::DoesSequenceReferenceCurrentCurve(UActorSequenceC
 void FEditorCurveEditorWidget::MarkDirty()
 {
     bDirty = true;
+    if (bOpenedFromActorSequence && SourceSequenceComponent)
+    {
+        SourceSequenceComponent->MarkSequenceDirty();
+    }
 }
 
 bool FEditorCurveEditorWidget::SaveCurve()
@@ -878,6 +1020,7 @@ bool FEditorCurveEditorWidget::ReloadCurve()
 
     CurrentCurve = FResourceManager::Get().LoadCurve(CurrentPath);
     SelectedKeyIndex = CurrentCurve && !CurrentCurve->GetCurve().Keys.empty() ? 0 : -1;
+    bCurveViewInitialized = false;
     bDirty = false;
     return CurrentCurve != nullptr;
 }

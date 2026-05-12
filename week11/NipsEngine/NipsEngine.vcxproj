@@ -528,6 +528,14 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorActorSequenceEditModel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorActorSequencerWidget.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
@@ -875,6 +883,8 @@
     <ClInclude Include="Source\Editor\UI\EditorMaterialWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorPlayStreamWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorActorSequenceDetails.h" />
+    <ClInclude Include="Source\Editor\UI\EditorActorSequenceEditModel.h" />
+    <ClInclude Include="Source\Editor\UI\EditorActorSequencerWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorRuntimeUIPreviewWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h" />

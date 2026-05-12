@@ -98,15 +98,23 @@ namespace
     ECurveApplyMode LuaParseCurveApplyMode(const FString& Text)
     {
         const FString Lower = LuaToLower(Text);
-        if (Lower == "add")
+        if (Lower.empty() || Lower == "absolute")
         {
-            return ECurveApplyMode::Add;
+            return ECurveApplyMode::Absolute;
+        }
+        if (Lower == "additive")
+        {
+            return ECurveApplyMode::Additive;
         }
         if (Lower == "multiply")
         {
             return ECurveApplyMode::Multiply;
         }
-        return ECurveApplyMode::Direct;
+
+        UE_LOG_WARNING(
+            "[ActorSequence] Unsupported applyMode '%s'. Use Absolute, Additive, or Multiply.",
+            Text.c_str());
+        return ECurveApplyMode::Absolute;
     }
 
     ECurveTimeMappingMode LuaParseCurveTimeMappingMode(const FString& Text)
@@ -157,7 +165,7 @@ namespace
         TrackDesc.PlayRate = Desc["playRate"].get_or(Desc["PlayRate"].get_or(1.0f));
         TrackDesc.bLoop = Desc["loop"].get_or(Desc["Loop"].get_or(false));
         TrackDesc.ApplyMode = LuaParseCurveApplyMode(
-            Desc["applyMode"].get_or(Desc["ApplyMode"].get_or(FString("Direct"))));
+            Desc["applyMode"].get_or(Desc["ApplyMode"].get_or(FString("Absolute"))));
         TrackDesc.TimeMappingMode = LuaParseCurveTimeMappingMode(
             Desc["timeMappingMode"].get_or(Desc["TimeMappingMode"].get_or(FString("NormalizedTime"))));
 
@@ -368,7 +376,16 @@ void FScriptManager::BindComponentTypes()
     LUA_METHOD(Stop, Stop);
     LUA_METHOD(GetSequence, GetSequence);
     LUA_METHOD(GetSequencePlayer, GetSequencePlayer);
-    LUA_METHOD(SetRestoreOnStop, SetRestoreOnStop);
+    LUA_METHOD(IsAutoPlay, IsAutoPlay);
+    LUA_METHOD(SetAutoPlay, SetAutoPlay);
+    LUA_METHOD(IsLooping, IsLooping);
+    LUA_METHOD(SetLooping, SetLooping);
+    LUA_METHOD(GetPlayRate, GetPlayRate);
+    LUA_METHOD(SetPlayRate, SetPlayRate);
+    LUA_METHOD(ShouldPauseAtEnd, ShouldPauseAtEnd);
+    LUA_METHOD(SetPauseAtEnd, SetPauseAtEnd);
+    LUA_METHOD(GetStartOffsetSeconds, GetStartOffsetSeconds);
+    LUA_METHOD(SetStartOffsetSeconds, SetStartOffsetSeconds);
     LUA_SET(AddFloatTrack, &LuaAddActorSequenceFloatTrack);
     LUA_END_TYPE();
 }
