@@ -5,6 +5,7 @@
 #include "Math/Utils.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cmath>
 
 namespace
@@ -160,6 +161,14 @@ namespace
 
 	FShaderProgram* GetLineShaderProgram()
 	{
+		static const FVertexLayoutDesc LineVertexLayout = {
+			{
+				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FLineVertex, Position)) },
+				{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FLineVertex, Color)) },
+			},
+			sizeof(FLineVertex)
+		};
+
 		FShaderStageKey VSKey;
 		VSKey.FilePath = "Shaders/UI/Line.hlsl";
 		VSKey.EntryPoint = "mainVS";
@@ -170,7 +179,12 @@ namespace
 		PSKey.EntryPoint = "mainPS";
 		PSKey.Target = "ps_5_0";
 
-		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+		return FResourceManager::Get().GetOrCreateShaderProgram(
+			VSKey,
+			PSKey,
+			nullptr,
+			nullptr,
+			&LineVertexLayout);
 	}
 }
 

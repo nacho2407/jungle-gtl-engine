@@ -53,7 +53,12 @@ namespace
 		PSKey.EntryPoint = "ShadowPS";
 		PSKey.PermutationKey = ShadowKey;
 
-		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey, Macros.data(), Macros.data());
+		return FResourceManager::Get().GetOrCreateShaderProgram(
+			VSKey,
+			PSKey,
+			Macros.data(),
+			Macros.data(),
+			&VertexFactory.PositionOnlyLayout);
 	}
 }
 

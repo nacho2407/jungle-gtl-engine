@@ -57,13 +57,17 @@ public:
 	const TArray<FString>& GetTextureFilePath() const;
 
 	// Shader는 이제 VS / PS Stage 단위로 가져오고, Draw 시점에는 Program(VS+PS 조합)을 바인딩합니다.
-	FVertexShader* GetOrCreateVertexShader(const FShaderStageKey& Key, const D3D_SHADER_MACRO* Defines = nullptr);
+	FVertexShader* GetOrCreateVertexShader(
+		const FShaderStageKey& Key,
+		const D3D_SHADER_MACRO* Defines = nullptr,
+		const FVertexLayoutDesc* VertexLayout = nullptr);
 	FPixelShader* GetOrCreatePixelShader(const FShaderStageKey& Key, const D3D_SHADER_MACRO* Defines = nullptr);
 	FShaderProgram* GetOrCreateShaderProgram(
 		const FShaderStageKey& VSKey,
 		const FShaderStageKey& PSKey,
 		const D3D_SHADER_MACRO* VSDefines = nullptr,
-		const D3D_SHADER_MACRO* PSDefines = nullptr);
+		const D3D_SHADER_MACRO* PSDefines = nullptr,
+		const FVertexLayoutDesc* VertexLayout = nullptr);
 
 	FComputeShader* GetComputeShader(const FString& Key) const;
     bool LoadComputeShader(const FString& FilePath, const FString& CSEntryPoint,

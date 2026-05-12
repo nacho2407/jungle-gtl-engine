@@ -46,7 +46,12 @@ namespace
 		PSKey.EntryPoint = Cmd.Material->GetPixelShaderEntryPoint();
 		PSKey.Target = "ps_5_0";
 
-		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+		return FResourceManager::Get().GetOrCreateShaderProgram(
+			VSKey,
+			PSKey,
+			nullptr,
+			nullptr,
+			&VertexFactoryDesc.VertexLayout);
 	}
 
 	FShaderProgram* GetOutlineProgram(const UMaterialInterface* Material)
@@ -88,19 +93,23 @@ namespace
 	{
 		const char* VSEntryPoint = "VSPrimitive";
 		const char* PSEntryPoint = "PSOpaque";
+		const FVertexLayoutDesc* VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::Primitive).SelectionLayout;
 		switch (ShaderKey)
 		{
 		case 1:
 			VSEntryPoint = "VSStaticMesh";
 			PSEntryPoint = "PSTextured";
+			VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::StaticMesh).SelectionLayout;
 			break;
 		case 2:
 			VSEntryPoint = "VSBillboard";
 			PSEntryPoint = "PSTextured";
+			VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::Billboard).SelectionLayout;
 			break;
 		case 3:
 			VSEntryPoint = "VSSkeletalMesh";
 			PSEntryPoint = "PSTextured";
+			VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::SkeletalMesh).SelectionLayout;
 			break;
 		default:
 			break;
@@ -116,7 +125,12 @@ namespace
 		PSKey.EntryPoint = PSEntryPoint;
 		PSKey.Target = "ps_5_0";
 
-		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+		return FResourceManager::Get().GetOrCreateShaderProgram(
+			VSKey,
+			PSKey,
+			nullptr,
+			nullptr,
+			VertexLayout);
 	}
 }
 
@@ -251,7 +265,8 @@ void FRenderer::Create(HWND hWindow)
 			FShaderStageKey{ FShaderPaths::Shadow, "ShadowVS", "vs_5_0", ShadowMapIdx },
 			FShaderStageKey{ FShaderPaths::Shadow, "ShadowPS", "ps_5_0", ShadowMapIdx },
 			Macros.data(),
-			Macros.data());
+			Macros.data(),
+			&FVertexFactoryRegistry::Get(EVertexFactoryType::StaticMesh).PositionOnlyLayout);
 	}
 
 }

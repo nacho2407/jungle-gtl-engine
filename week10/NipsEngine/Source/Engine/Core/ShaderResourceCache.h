@@ -11,7 +11,11 @@ class FShaderResourceCache
 public:
 	// Shader Stage는 VS / PS 단위로 따로 캐싱합니다.
 	// 기존 UShader처럼 VS+PS를 한 덩어리로 묶지 않기 때문에 PS 재사용이 가능합니다.
-	FVertexShader* GetOrCreateVertexShader(const FShaderStageKey& Key, const D3D_SHADER_MACRO* Defines, ID3D11Device* Device);
+	FVertexShader* GetOrCreateVertexShader(
+		const FShaderStageKey& Key,
+		const D3D_SHADER_MACRO* Defines,
+		ID3D11Device* Device,
+		const FVertexLayoutDesc* VertexLayout = nullptr);
 	FPixelShader* GetOrCreatePixelShader(const FShaderStageKey& Key, const D3D_SHADER_MACRO* Defines, ID3D11Device* Device);
 
 	// 실제 Draw에서 바인딩할 Program입니다.
@@ -21,7 +25,8 @@ public:
 		const FShaderStageKey& PSKey,
 		const D3D_SHADER_MACRO* VSDefines,
 		const D3D_SHADER_MACRO* PSDefines,
-		ID3D11Device* Device);
+		ID3D11Device* Device,
+		const FVertexLayoutDesc* VertexLayout = nullptr);
 
 	FComputeShader* GetComputeShader(const FString& Key) const;
 	bool LoadComputeShader(const FString& FilePath, const FString& EntryPoint,

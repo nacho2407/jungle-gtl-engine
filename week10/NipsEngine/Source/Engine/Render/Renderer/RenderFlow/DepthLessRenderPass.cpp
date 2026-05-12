@@ -26,7 +26,12 @@ namespace
         PSKey.EntryPoint = Cmd.Material->GetPixelShaderEntryPoint();
         PSKey.Target = "ps_5_0";
 
-        return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+        return FResourceManager::Get().GetOrCreateShaderProgram(
+            VSKey,
+            PSKey,
+            nullptr,
+            nullptr,
+            &VertexFactoryDesc.VertexLayout);
     }
 }
 

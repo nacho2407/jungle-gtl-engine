@@ -4,6 +4,9 @@
 #include "Core/Containers/String.h"
 #include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/ShaderTypes.h"
+#include "Render/Resource/VertexTypes.h"
+
+#include <cstddef>
 
 struct FRenderCommand;
 struct ID3D11DeviceContext;
@@ -37,6 +40,8 @@ struct FVertexFactoryDesc
     FString ShadowPassVSEntry;
     FString SelectionPassVSEntry;
     FVertexLayoutDesc VertexLayout;
+    FVertexLayoutDesc PositionOnlyLayout;
+    FVertexLayoutDesc SelectionLayout;
 };
 
 class FVertexFactoryRegistry
@@ -46,6 +51,57 @@ public:
     // GPU Skinning처럼 리소스 바인딩 규칙이 복잡해지면 객체 모델로 확장하면 됩니다.
     static const FVertexFactoryDesc& Get(EVertexFactoryType Type)
     {
+        static const FVertexLayoutDesc NormalVertexLayout = {
+            {
+                { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Position)) },
+                { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Color)) },
+                { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Normal)) },
+                { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, UVs)) },
+                { "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Tangent)) },
+            },
+            sizeof(FNormalVertex)
+        };
+        static const FVertexLayoutDesc SkeletalVertexLayout = {
+            {
+                { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, Position)) },
+                { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, Normal)) },
+                { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, UVs)) },
+                { "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, Tangent)) },
+                { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, Color)) },
+                { "BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, BoneIndices)) },
+                { "BLENDWEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, BoneWeights)) },
+            },
+            sizeof(FSkeletalMeshVertex)
+        };
+        static const FVertexLayoutDesc PrimitiveVertexLayout = {
+            {
+                { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FVertex, Position)) },
+                { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FVertex, Color)) },
+            },
+            sizeof(FVertex)
+        };
+        static const FVertexLayoutDesc TextureVertexLayout = {
+            {
+                { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, Position)) },
+                { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, TexCoord)) },
+                { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, Color)) },
+            },
+            sizeof(FTextureVertex)
+        };
+        static const FVertexLayoutDesc TexturePositionUVLayout = {
+            {
+                { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, Position)) },
+                { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, TexCoord)) },
+            },
+            sizeof(FTextureVertex)
+        };
+        static const FVertexLayoutDesc PositionOnlyLayout = {
+            {
+                { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0 },
+            },
+            0
+        };
+
         static const FVertexFactoryDesc StaticMeshDesc = {
             FShaderPaths::MaterialUberLit,
             FShaderPaths::DepthPrepass,
@@ -55,7 +111,9 @@ public:
             "DepthPrepassVS",
             "ShadowVS",
             "VSStaticMesh",
-            {}
+            NormalVertexLayout,
+            PositionOnlyLayout,
+            NormalVertexLayout
         };
         static const FVertexFactoryDesc SkeletalMeshDesc = {
             FShaderPaths::MaterialUberLit,
@@ -66,7 +124,9 @@ public:
             "DepthPrepassVS",
             "ShadowVS",
             "VSSkeletalMesh",
-            {}
+            SkeletalVertexLayout,
+            PositionOnlyLayout,
+            SkeletalVertexLayout
         };
         static const FVertexFactoryDesc DecalDesc = {
             FShaderPaths::MaterialDecal,
@@ -77,7 +137,9 @@ public:
             "DepthPrepassVS",
             "ShadowVS",
             "VSStaticMesh",
-            {}
+            NormalVertexLayout,
+            PositionOnlyLayout,
+            NormalVertexLayout
         };
         static const FVertexFactoryDesc GizmoDesc = {
             FShaderPaths::EditorGizmo,
@@ -88,7 +150,48 @@ public:
             "VS",
             "VS",
             "VS",
-            {}
+            PrimitiveVertexLayout,
+            PrimitiveVertexLayout,
+            PrimitiveVertexLayout
+        };
+        static const FVertexFactoryDesc PrimitiveDesc = {
+            FShaderPaths::EditorPrimitive,
+            FShaderPaths::DepthPrepass,
+            FShaderPaths::Shadow,
+            FShaderPaths::EditorSelectionMask,
+            "VS",
+            "DepthPrepassVS",
+            "ShadowVS",
+            "VSPrimitive",
+            PrimitiveVertexLayout,
+            PositionOnlyLayout,
+            PrimitiveVertexLayout
+        };
+        static const FVertexFactoryDesc TexturedQuadDesc = {
+            FShaderPaths::UISubUV,
+            FShaderPaths::DepthPrepass,
+            FShaderPaths::Shadow,
+            FShaderPaths::EditorSelectionMask,
+            "VS",
+            "DepthPrepassVS",
+            "ShadowVS",
+            "VSBillboard",
+            TextureVertexLayout,
+            PositionOnlyLayout,
+            PrimitiveVertexLayout
+        };
+        static const FVertexFactoryDesc TextDesc = {
+            FShaderPaths::UIFont,
+            FShaderPaths::DepthPrepass,
+            FShaderPaths::Shadow,
+            FShaderPaths::EditorSelectionMask,
+            "VS",
+            "DepthPrepassVS",
+            "ShadowVS",
+            "VSBillboard",
+            TexturePositionUVLayout,
+            PositionOnlyLayout,
+            PrimitiveVertexLayout
         };
 
         switch (Type)
@@ -99,6 +202,14 @@ public:
             return DecalDesc;
         case EVertexFactoryType::Gizmo:
             return GizmoDesc;
+        case EVertexFactoryType::Primitive:
+        case EVertexFactoryType::Line:
+            return PrimitiveDesc;
+        case EVertexFactoryType::Billboard:
+        case EVertexFactoryType::SubUV:
+            return TexturedQuadDesc;
+        case EVertexFactoryType::Text:
+            return TextDesc;
         case EVertexFactoryType::StaticMesh:
         case EVertexFactoryType::ProceduralMesh:
         default:

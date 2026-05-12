@@ -4,10 +4,20 @@
 #include "Core/ResourceManager.h"
 #include "Render/Resource/RenderResources.h"
 
+#include <cstddef>
+
 namespace
 {
 	FShaderProgram* GetFontShaderProgram()
 	{
+		static const FVertexLayoutDesc FontVertexLayout = {
+			{
+				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, Position)) },
+				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, TexCoord)) },
+			},
+			sizeof(FTextureVertex)
+		};
+
 		FShaderStageKey VSKey;
 		VSKey.FilePath = "Shaders/UI/Font.hlsl";
 		VSKey.EntryPoint = "VS";
@@ -18,7 +28,12 @@ namespace
 		PSKey.EntryPoint = "PS";
 		PSKey.Target = "ps_5_0";
 
-		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+		return FResourceManager::Get().GetOrCreateShaderProgram(
+			VSKey,
+			PSKey,
+			nullptr,
+			nullptr,
+			&FontVertexLayout);
 	}
 }
 
