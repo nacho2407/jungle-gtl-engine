@@ -3,6 +3,9 @@
 #include "Viewport/ViewportLayout.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Component/GizmoComponent.h"
+#include "Component/TransformProxy.h"
+#include "Editor/Viewport/EditorViewportClient.h"
 #include "imgui.h"
 
 namespace
@@ -155,6 +158,23 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
     if (ImGui::IsItemClicked())
     {
         SelectedBoneIndex = BoneIndex;
+
+		if (EditorEngine)
+		{
+			auto& Viewer = EditorEngine->GetViewer();
+			FViewportClient* BaseClient = Viewer.GetViewport().GetClient();
+			FEditorViewportClient* EditorClient = static_cast<FEditorViewportClient*>(BaseClient);
+
+			if (UGizmoComponent* Gizmo = EditorClient->GetGizmo())
+			{
+				ASkeletalMeshActor* ViewTarget = Viewer.GetViewTarget();
+				if (ViewTarget)
+				{
+					USkeletalMeshComponent* SkelComp = ViewTarget->GetSkeletalMeshComponent();
+					Gizmo->SetProxy(std::make_shared<FBoneTransformProxy>(SkelComp, SelectedBoneIndex));
+				}
+			}
+		}
     }
 
     if (bOpen)
