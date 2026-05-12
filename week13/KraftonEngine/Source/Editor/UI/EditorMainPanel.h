@@ -44,6 +44,7 @@ public:
 
 private:
 	void RenderMainMenuBar();
+	void RenderMainDockSpace(float ReservedBottomHeight);
 	void RenderShortcutOverlay();
 	void RenderEditorDebugPanel();
 	void RenderConsoleDrawer(float DeltaTime);

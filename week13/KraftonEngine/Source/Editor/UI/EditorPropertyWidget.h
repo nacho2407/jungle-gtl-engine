@@ -24,6 +24,8 @@ private:
 
 	void PropagatePropertyChange(const FString& PropName, const TArray<AActor*>& SelectedActors);
 
+	void AddComponentToActor(AActor* Actor, UClass* ComponentClass);
+
 	static FString OpenObjFileDialog();
 	static FString OpenStaticMeshFileDialog();
 	static FString OpenFbxFileDialog();
