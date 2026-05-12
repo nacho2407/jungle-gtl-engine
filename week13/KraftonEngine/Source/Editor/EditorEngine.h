@@ -19,6 +19,7 @@ class FEditorViewportClient;
 class FOverlayStatSystem;
 class AActor;
 class UGameViewportClient;
+class IEditorPreviewViewportClient;
 struct FPerspectiveCameraData;
 
 class UEditorEngine : public UEngine
@@ -81,7 +82,7 @@ public:
 	void SetActiveViewport(FLevelEditorViewportClient* InClient) { ViewportLayout.SetActiveViewport(InClient); }
 	FLevelEditorViewportClient* GetActiveViewport() const { return ViewportLayout.GetActiveViewport(); }
 
-	FMeshEditorViewportClient* GetMeshEditorViewportClient() { return MainPanel.GetMeshEditorViewportClient(); }
+	void CollectAssetEditorPreviewViewportClients(TArray<IEditorPreviewViewportClient*>& OutClients) const { MainPanel.CollectAssetEditorPreviewViewportClients(OutClients); }
 
 	void ToggleViewportSplit() { ViewportLayout.ToggleViewportSplit(); }
 	bool IsSplitViewport() const { return ViewportLayout.IsSplitViewport(); }

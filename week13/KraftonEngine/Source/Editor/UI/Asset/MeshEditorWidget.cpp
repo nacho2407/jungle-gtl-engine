@@ -84,6 +84,22 @@ void FMeshEditorWidget::Close()
 	ViewportClient.Release();
 }
 
+void FMeshEditorWidget::Tick(float DeltaTime)
+{
+	if (ViewportClient.IsRenderable())
+	{
+		ViewportClient.Tick(DeltaTime);
+	}
+}
+
+void FMeshEditorWidget::CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const
+{
+	if (IsOpen())
+	{
+		OutClients.push_back(const_cast<FMeshEditorViewportClient*>(&ViewportClient));
+	}
+}
+
 void FMeshEditorWidget::Render(float DeltaTime)
 {
 	if (!IsOpen() || !EditedObject)
