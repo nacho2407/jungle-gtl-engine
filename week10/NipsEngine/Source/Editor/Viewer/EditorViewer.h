@@ -45,4 +45,6 @@ private:
 
     UEditorEngine* Editor = nullptr;
     FWindowsWindow* Window = nullptr;
+
+	ASkeletalMeshActor* ViewTarget = nullptr;
 };

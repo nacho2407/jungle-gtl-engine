@@ -501,18 +501,18 @@ void AStaticMeshActor::InitDefaultComponents()
 
 void ASkeletalMeshActor::InitDefaultComponents()
 {
-    auto* SkeletalMesh = AddComponent<USkeletalMeshComponent>();
-    SkeletalMesh->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/SimpleCharacter.fbx"));
-    SetRootComponent(SkeletalMesh);
+    SkeletalMeshComp = AddComponent<USkeletalMeshComponent>();
+    SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/SimpleCharacter.fbx"));
+    SetRootComponent(SkeletalMeshComp);
 
     auto* Text = AddComponent<UTextRenderComponent>();
-    Text->AttachToComponent(SkeletalMesh);
+    Text->AttachToComponent(SkeletalMeshComp);
     Text->SetFont(FName("Default"));
     Text->SetText("UUID: " + std::to_string(GetUUID()));
     Text->SetTransient(true);
     Text->SetEditorOnly(true);
 
-    FVector Extent = SkeletalMesh->GetWorldAABB().GetExtent();
+    FVector Extent = SkeletalMeshComp->GetWorldAABB().GetExtent();
     Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
 }
 
