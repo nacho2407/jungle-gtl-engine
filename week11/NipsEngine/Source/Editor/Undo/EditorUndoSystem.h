@@ -1,8 +1,7 @@
 #pragma once
 
-#include "Core/Containers/Array.h"
-#include "Core/Containers/String.h"
-#include "Core/CoreTypes.h"
+#include "Core/CoreMinimal.h"
+#include "Object/FName.h"
 
 #include <cstddef>
 
@@ -10,8 +9,15 @@ class UEditorEngine;
 
 struct FUndoSnapshotEntry
 {
+	FName WorldHandle;
 	FString Label;
 	FString Snapshot;
+};
+
+struct FWorldUndoHistory
+{
+	TArray<FUndoSnapshotEntry> UndoHistory;
+	TArray<FUndoSnapshotEntry> RedoHistory;
 };
 
 struct FUndoHistoryStats
@@ -33,30 +39,37 @@ public:
 	bool Redo();
 	bool RestoreHistoryIndex(int32 Index);
 	void ClearHistory();
+	void ClearHistory(const FName& WorldHandle);
+	void ClearAllHistory();
 
 	bool IsRestoring() const { return bRestoring; }
 	void BeginRestore() { bRestoring = true; }
 	void EndRestore() { bRestoring = false; }
 
-	const TArray<FUndoSnapshotEntry>& GetUndoHistory() const { return UndoHistory; }
-	const TArray<FUndoSnapshotEntry>& GetRedoHistory() const { return RedoHistory; }
+	const TArray<FUndoSnapshotEntry>& GetUndoHistory() const;
+	const TArray<FUndoSnapshotEntry>& GetRedoHistory() const;
 	FUndoHistoryStats GetStats() const;
 
 private:
 	friend class UEditorEngine;
 
 	void SetOwner(UEditorEngine* InOwner) { Owner = InOwner; }
-	bool PushSnapshot(FString Snapshot, const char* Reason, bool& bOutClearedRedo);
-	bool PopUndoSnapshot(FString CurrentSnapshot, FUndoSnapshotEntry& OutEntry);
-	bool PopRedoSnapshot(FString CurrentSnapshot, FUndoSnapshotEntry& OutEntry);
-	bool RestoreHistorySnapshotIndex(int32 Index, FString CurrentSnapshot, FUndoSnapshotEntry& OutEntry);
+	FName GetActiveWorldHandle() const;
+	FWorldUndoHistory* FindHistory(const FName& WorldHandle);
+	const FWorldUndoHistory* FindHistory(const FName& WorldHandle) const;
+	FWorldUndoHistory& GetOrCreateHistory(const FName& WorldHandle);
+	bool PushSnapshot(const FName& WorldHandle, FString Snapshot, const char* Reason, bool& bOutClearedRedo);
+	bool PopUndoSnapshot(const FName& WorldHandle, FString CurrentSnapshot, FUndoSnapshotEntry& OutEntry);
+	bool PopRedoSnapshot(const FName& WorldHandle, FString CurrentSnapshot, FUndoSnapshotEntry& OutEntry);
+	bool RestoreHistorySnapshotIndex(const FName& WorldHandle, int32 Index, FString CurrentSnapshot, FUndoSnapshotEntry& OutEntry);
 	bool ClearStorage();
+	bool ClearStorage(const FName& WorldHandle);
 	void PushWithLimit(TArray<FUndoSnapshotEntry>& History, FUndoSnapshotEntry Entry);
 
 private:
 	UEditorEngine* Owner = nullptr;
-	TArray<FUndoSnapshotEntry> UndoHistory;
-	TArray<FUndoSnapshotEntry> RedoHistory;
+	TMap<FName, FWorldUndoHistory, FName::Hash> HistoriesByWorld;
+	mutable TArray<FUndoSnapshotEntry> EmptyHistory;
 	bool bRestoring = false;
 
 	static constexpr int32 MaxUndoHistory = 50;

@@ -5,14 +5,12 @@
 #include <functional>
 
 class FEditorViewportOverlayWidget;
-class FEditorSceneWidget;
 class FEditorPlayStreamWidget;
 
 class FEditorToolbarWidget : public FEditorWidget
 {
 public:
 	void SetViewportOverlayWidget(FEditorViewportOverlayWidget* InViewportOverlayWidget);
-	void SetSceneWidget(FEditorSceneWidget* InSceneWidget);
 	void SetPlayStreamWidget(FEditorPlayStreamWidget* InPlayStreamWidget);
 	void SetPIEViewportFullscreenCallback(std::function<void(bool)> InCallback);
 	void SetBuildGameCallback(std::function<void()> InCallback);
@@ -41,7 +39,6 @@ private:
 	void RenderHelpMenu();
 
 	FEditorViewportOverlayWidget* ViewportOverlayWidget = nullptr;
-	FEditorSceneWidget* SceneWidget = nullptr;
 	FEditorPlayStreamWidget* PlayStreamWidget = nullptr;
 
 	bool* bShowConsole = nullptr;

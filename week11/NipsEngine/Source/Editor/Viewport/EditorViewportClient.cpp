@@ -768,13 +768,13 @@ void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Con
 
 	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Undo) && Editor)
 	{
-		Editor->GetUndoSystem().Undo();
+		Editor->GetCommandSystem().Execute(EEditorCommand::Undo);
 		return;
 	}
 
 	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Redo) && Editor)
 	{
-		Editor->GetUndoSystem().Redo();
+		Editor->GetCommandSystem().Execute(EEditorCommand::Redo);
 		return;
 	}
 
