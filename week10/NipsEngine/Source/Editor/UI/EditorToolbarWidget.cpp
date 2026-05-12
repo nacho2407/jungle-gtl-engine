@@ -341,6 +341,15 @@ void FEditorToolbarWidget::RenderViewMenu()
 	if (bShowContentBrowser) ImGui::MenuItem("Content Browser", "Ctrl+Space", bShowContentBrowser);
 	if (bShowRuntimeUIPreview) ImGui::MenuItem("Runtime UI Preview", nullptr, bShowRuntimeUIPreview);
 
+	ImGui::Separator();
+	if (ImGui::MenuItem("New Viewer"))
+	{
+		if (EditorEngine)
+		{
+			EditorEngine->CreateViewer();
+		}
+	}
+
 	ImGui::EndMenu();
 }
 
