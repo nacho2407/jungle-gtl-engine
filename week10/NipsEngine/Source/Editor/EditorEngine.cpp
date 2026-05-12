@@ -20,7 +20,9 @@
 #include "Slate/SSplitterH.h"
 #include "Settings/EditorSettings.h"
 #include <algorithm>
+#if STATS
 #include <chrono>
+#endif
 #include <filesystem>
 #include <unordered_set>
 #include <utility>
@@ -155,6 +157,10 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
     UEngine::Init(InWindow);
     UndoSystem.SetOwner(this);
+    CommandSystem.Initialize(this);
+    AssetService.Initialize(this);
+    NotificationService.Initialize(this);
+    SceneService.Initialize(this);
     GetRmlUiSystem().Initialize(GetRenderer(), "EditorPIE", 1, 1);
     InputSystem::Get().SetOwnerWindow(Window ? Window->GetHWND() : nullptr);
     EditorInputRouter.SetOwnerWindow(Window ? Window->GetHWND() : nullptr);
@@ -228,6 +234,7 @@ bool UEditorEngine::CanCloseApplication()
 
 void UEditorEngine::Tick(float DeltaTime)
 {
+#if STATS
     const auto FrameStart = std::chrono::steady_clock::now();
     const EViewportPlayState StateAtFrameStart = GetEditorState();
 
@@ -235,11 +242,14 @@ void UEditorEngine::Tick(float DeltaTime)
     const auto UpdateEnd = std::chrono::steady_clock::now();
 
     const auto PlayRequestStart = std::chrono::steady_clock::now();
+#endif
     ProcessQueuedPlaySessionRequests();
+#if STATS
     const auto PlayRequestEnd = std::chrono::steady_clock::now();
     const EViewportPlayState StateAfterPlayRequests = GetEditorState();
 
     const auto InputSetupStart = std::chrono::steady_clock::now();
+#endif
     const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
     const bool bGuiKeyboardCaptureForViewport =
         (GuiState.bUsingKeyboard || GuiState.bUsingTextInput) && !GuiState.bAllowViewportMouseFocus;
@@ -264,13 +274,17 @@ void UEditorEngine::Tick(float DeltaTime)
         InputSystem::Get().SetGuiViewportMouseFocusAllowed(true);
         PIESession.ConsumeViewportInputFocusFrame();
     }
+#if STATS
     const auto InputSetupEnd = std::chrono::steady_clock::now();
 
     const auto InputRouteStart = std::chrono::steady_clock::now();
+#endif
     FViewportInputContext RoutedInputContext;
     FInteractionBinding RoutedInputBinding;
     EditorInputRouter.Tick(DeltaTime, RoutedInputContext, RoutedInputBinding);
+#if STATS
     const auto InputRouteEnd = std::chrono::steady_clock::now();
+#endif
 
     // Viewer 호버링 상태 동기화 (기존 Layout 외부에 있으므로 수동 동기화 필요)
     if (FEditorViewportClient* ViewerClient = static_cast<FEditorViewportClient*>(Viewer.GetViewport().GetClient()))
@@ -281,21 +295,27 @@ void UEditorEngine::Tick(float DeltaTime)
         }
     }
 
+#if STATS
     const auto PanelStart = std::chrono::steady_clock::now();
+#endif
     ViewportLayout.Tick(DeltaTime);
     Viewer.Tick(DeltaTime);
     MainPanel.Update();
+#if STATS
     const auto PanelEnd = std::chrono::steady_clock::now();
 
     const auto WorldStart = std::chrono::steady_clock::now();
+#endif
     WorldTick(DeltaTime);
+#if STATS
     const auto WorldEnd = std::chrono::steady_clock::now();
 
     const auto RenderStart = std::chrono::steady_clock::now();
+#endif
     Render(DeltaTime);
+#if STATS
     const auto RenderEnd = std::chrono::steady_clock::now();
 
-#if STATS
     static int32 PostPIETraceFrames = 0;
     static int32 PostPIETraceFrameIndex = 0;
     static std::chrono::steady_clock::time_point LastSlowFrameLogTime = {};
@@ -609,10 +629,8 @@ int32 UEditorEngine::DeleteActors(const TArray<AActor*>& Actors)
     // 4. UI 업데이트
     if (DeletedCount > 0)
     {
-        MainPanel.GetSceneWidget().MarkSceneDirty();
-
-        MainPanel.PushFooterLog(
-            DeletedCount > 1 ? "Actors deleted" : "Actor deleted");
+        SceneService.MarkDirty();
+        NotificationService.Info(DeletedCount > 1 ? "Actors deleted" : "Actor deleted");
     }
 
     return DeletedCount;
@@ -630,7 +648,7 @@ FString UEditorEngine::CaptureSceneSnapshot() const
     return FSceneSaveManager::SaveToString(*Ctx, nullptr);
 }
 
-bool UEditorEngine::RestoreSceneSnapshot(const FString& Snapshot)
+bool UEditorEngine::RestoreSceneSnapshot(const FString& Snapshot, const FName& RestoreWorldHandle)
 {
     if (Snapshot.empty())
     {
@@ -661,11 +679,12 @@ bool UEditorEngine::RestoreSceneSnapshot(const FString& Snapshot)
     ClearScene();
 
     LoadCtx.WorldType = EWorldType::Editor;
-    LoadCtx.ContextHandle = FName("UndoRedoScene");
+    LoadCtx.ContextHandle = RestoreWorldHandle != FName::None ? RestoreWorldHandle : FName("UndoRedoScene");
     LoadCtx.ContextName = "Undo/Redo Scene";
     WorldList.push_back(LoadCtx);
     SetActiveWorld(LoadCtx.ContextHandle);
     ApplySpatialIndexMaintenanceSettings(LoadCtx.World);
+    CreateViewerWorld();
     ResetViewport();
 
     const FEditorCameraState& CameraToRestore = LoadedCam.bValid ? LoadedCam : CurrentCam;
@@ -689,7 +708,7 @@ bool UEditorEngine::RestoreSceneSnapshot(const FString& Snapshot)
     {
         World->RebuildSpatialIndex();
     }
-    MainPanel.GetSceneWidget().MarkSceneDirty();
+    SceneService.MarkDirty();
     UndoSystem.EndRestore();
     return true;
 }
@@ -793,27 +812,27 @@ void UEditorEngine::StartPlaySessionNow()
     if (!HasPlayerStart(SourceWorld))
     {
         UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player Start is missing.");
-        MainPanel.PushFooterLog("PIE failed: Player Start is missing");
+        NotificationService.Error("PIE failed: Player Start is missing");
         return;
     }
     AActor* PlayerActor = FindTaggedPlayerActor(SourceWorld);
     if (!PlayerActor)
     {
         UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player actor with tag 'Player' is missing.");
-        MainPanel.PushFooterLog("PIE failed: Player actor is missing");
+        NotificationService.Error("PIE failed: Player actor is missing");
         return;
     }
     if (!HasCameraComponent(PlayerActor))
     {
         UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player actor has no CameraComponent: %s",
             PlayerActor->GetFName().ToString().c_str());
-        MainPanel.PushFooterLog("PIE failed: Player CameraComponent is missing");
+        NotificationService.Error("PIE failed: Player CameraComponent is missing");
         return;
     }
 
     bPendingSceneOpen = false;
     PendingSceneOpenPath.clear();
-    CurrentScenePath = MainPanel.GetSceneWidget().GetCurrentSceneFilePath();
+    CurrentScenePath = SceneService.GetCurrentScenePath();
     SourceWorld->SetGlobalTimeScale(1.0f);
     SetRuntimeInputMode(ERuntimeInputMode::GameAndUI);
     GetRmlUiSystem().UnloadGameplayDocuments();
@@ -904,11 +923,15 @@ void UEditorEngine::StopPlaySession()
 
 void UEditorEngine::StopPlaySessionNow()
 {
+#if STATS
     const auto StopStart = std::chrono::steady_clock::now();
+#endif
     if (GetEditorState() == EViewportPlayState::Editing && !PIESession.HasAnyViewportWorld())
         return;
 
+#if STATS
     const auto PrepStart = std::chrono::steady_clock::now();
+#endif
     bPendingSceneOpen = false;
     PendingSceneOpenPath.clear();
     CurrentScenePath.clear();
@@ -921,10 +944,12 @@ void UEditorEngine::StopPlaySessionNow()
     int32 FocusedIdx = PIESession.ResolveActiveViewportIndex(ViewportLayout.GetLastFocusedViewportIndex());
     FocusedIdx = PIESession.ResolveRegisteredViewportIndex(FocusedIdx);
     FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
+#if STATS
     const auto PrepEnd = std::chrono::steady_clock::now();
 
     // 기존 PIE 월드를 해제합니다.
     const auto WorldCleanupStart = std::chrono::steady_clock::now();
+#endif
     FName PIEHandle;
     if (PIESession.RemoveViewportWorld(FocusedIdx, PIEHandle))
     {
@@ -937,10 +962,12 @@ void UEditorEngine::StopPlaySessionNow()
             GetAudioSystem().StopAll();
         }
     }
+#if STATS
     const auto WorldCleanupEnd = std::chrono::steady_clock::now();
 
     // 원본 에디터 월드를 검색합니다.
     const auto RestoreWorldStart = std::chrono::steady_clock::now();
+#endif
     FName EditorHandle = GetEditorWorldHandle();
     UWorld* EditorWorld = nullptr;
     
@@ -952,10 +979,12 @@ void UEditorEngine::StopPlaySessionNow()
             EditorWorld = Ctx->World;
         }
     }
+#if STATS
     const auto RestoreWorldEnd = std::chrono::steady_clock::now();
 
     // 원본 에디터 월드로 뷰포트 및 상태를 복구합니다.
     const auto ViewportRestoreStart = std::chrono::steady_clock::now();
+#endif
     ViewportLayout.SetLastFocusedViewportIndex(FocusedIdx);
     FocusedClient->EndPIE(EditorWorld);
     SetEditorState(EViewportPlayState::Editing);
@@ -973,14 +1002,19 @@ void UEditorEngine::StopPlaySessionNow()
         Ctx.SelectionManager->ClearSelection();
 	}
 
+#if STATS
     const auto ViewportRestoreEnd = std::chrono::steady_clock::now();
 
     const auto RmlUnloadStart = std::chrono::steady_clock::now();
+#endif
     GetRmlUiSystem().UnloadGameplayDocuments();
+#if STATS
     const auto RmlUnloadEnd = std::chrono::steady_clock::now();
 
     const auto LuaResetStart = std::chrono::steady_clock::now();
+#endif
     FScriptManager::Get().ResetLuaState();
+#if STATS
     const auto LuaResetEnd = std::chrono::steady_clock::now();
 
     const auto StopEnd = std::chrono::steady_clock::now();
@@ -999,10 +1033,12 @@ void UEditorEngine::StopPlaySessionNow()
            WorldList.size(),
            ActiveWorldHandle.ToString().c_str(),
            GetRmlUiSystem().GetDocumentCount());
+#endif
 }
 
 void UEditorEngine::ResetViewport()
 {
+    FWorldContext* ActiveContext = GetWorldContextFromHandle(ActiveWorldHandle);
     for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
     {
         FEditorViewportClient* ViewportClient = ViewportLayout.GetViewportClient(i);
@@ -1010,6 +1046,8 @@ void UEditorEngine::ResetViewport()
         {
             ViewportClient->CreateCamera();
             ViewportClient->SetWorld(GetWorld());
+            ViewportClient->SetSelectionManager(ActiveContext ? ActiveContext->SelectionManager : nullptr);
+            ViewportClient->SetGizmo(ActiveContext && ActiveContext->SelectionManager ? ActiveContext->SelectionManager->GetGizmo() : nullptr);
             ViewportClient->ApplyCameraMode();
         }
     }
@@ -1020,15 +1058,19 @@ void UEditorEngine::ResetViewport()
         ViewportClient->CreateCamera();
         
         UWorld* ViewerWorld = nullptr;
+        FSelectionManager* ViewerSelectionManager = nullptr;
         for (const FWorldContext& Ctx : WorldList)
         {
             if (Ctx.WorldType == EWorldType::ViewerPreview)
             {
                 ViewerWorld = Ctx.World;
+                ViewerSelectionManager = Ctx.SelectionManager;
                 break;
             }
         }
         ViewportClient->SetWorld(ViewerWorld ? ViewerWorld : GetWorld());
+        ViewportClient->SetSelectionManager(ViewerSelectionManager ? ViewerSelectionManager : (ActiveContext ? ActiveContext->SelectionManager : nullptr));
+        ViewportClient->SetGizmo(ViewerSelectionManager ? ViewerSelectionManager->GetGizmo() : (ActiveContext && ActiveContext->SelectionManager ? ActiveContext->SelectionManager->GetGizmo() : nullptr));
         ViewportClient->ApplyCameraMode();
     }
 
@@ -1226,6 +1268,7 @@ FEditorRenderPipeline* UEditorEngine::GetEditorRenderPipeline() const
 void UEditorEngine::ClearScene()
 {
     UnbindActorDestroyedListener(ActorDestroyedListenerWorld);
+    Viewer.ClearViewTarget();
 
     for (FWorldContext& Ctx : WorldList)
     {
@@ -1280,6 +1323,10 @@ void UEditorEngine::UnregisterWorld(const FName& Handle)
     {
         if (it->ContextHandle == Handle)
         {
+            if (!UndoSystem.IsRestoring())
+            {
+                UndoSystem.ClearHistory(Handle);
+            }
             if (it->World)
             {
                 if (it->World == ActorDestroyedListenerWorld)

@@ -1,7 +1,6 @@
 ﻿#include "Editor/UI/EditorSceneWidget.h"
 
 #include "Editor/EditorEngine.h"
-#include "Editor/Settings/ProjectSettings.h"
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/Viewport/ViewportLayout.h"
 #include "Engine/Core/Common.h"
@@ -10,7 +9,6 @@
 
 #include "ImGui/imgui.h"
 #include "Component/GizmoComponent.h"
-#include "Serialization/SceneSaveManager.h"
 #include "Serialization/PrefabManager.h"
 
 #include <Windows.h>
@@ -18,8 +16,6 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
-
-#include "Core/ResourceManager.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -134,250 +130,6 @@ void FEditorSceneWidget::Initialize(UEditorEngine* InEditorEngine)
 	FEditorWidget::Initialize(InEditorEngine);
 }
 
-void FEditorSceneWidget::NewScene()
-{
-	if (!EditorEngine)
-	{
-		return;
-	}
-
-	if (!PromptSaveIfDirty())
-	{
-		return;
-	}
-
-	EditorEngine->GetMainPanel().ResetWidgetSelections();
-	EditorEngine->NewScene();
-	EditorEngine->GetUndoSystem().ClearHistory();
-	strncpy_s(SceneName, IM_ARRAYSIZE(SceneName), "Untitled", _TRUNCATE);
-	CurrentSceneFilePath.clear();
-	bSceneDirty = false;
-	FProjectSettings::Get().SetLastScenePath("");
-	FProjectSettings::Get().SaveToFile(FProjectSettings::GetDefaultSettingsPath());
-	EditorEngine->GetMainPanel().PushFooterLog("New level created");
-	NewSceneNotificationTimer = common::constants::ImGui::NotificationTimer;
-}
-
-bool FEditorSceneWidget::SaveScene()
-{
-	if (CurrentSceneFilePath.empty())
-	{
-		FString PickedPath;
-		if (!PromptSaveSceneAs(PickedPath))
-		{
-			return false;
-		}
-		return SaveSceneToFilePath(PickedPath);
-	}
-
-	return SaveSceneToFilePath(CurrentSceneFilePath);
-}
-
-void FEditorSceneWidget::LoadScene()
-{
-	if (!EditorEngine || SceneFiles.empty() || SelectedSceneIndex < 0)
-	{
-		return;
-	}
-
-	std::filesystem::path ScenePath = std::filesystem::path(FSceneSaveManager::GetSceneDirectory())
-		/ (FPaths::ToWide(SceneFiles[SelectedSceneIndex]) + FSceneSaveManager::SceneExtension);
-	LoadSceneFromFilePath(FPaths::ToUtf8(ScenePath.wstring()));
-}
-
-bool FEditorSceneWidget::SaveSceneToFilePath(const FString& FilePath)
-{
-	if (!EditorEngine)
-	{
-		return false;
-	}
-
-	std::filesystem::path TargetPath = std::filesystem::path(FPaths::ToWide(FilePath));
-	const bool bNameOnlySave = !TargetPath.has_parent_path() && TargetPath.root_path().empty();
-	if (TargetPath.extension().empty())
-	{
-		TargetPath += FSceneSaveManager::SceneExtension;
-	}
-
-	const FString FinalSceneName = FPaths::ToUtf8(TargetPath.stem().wstring());
-	strncpy_s(SceneName, IM_ARRAYSIZE(SceneName), FinalSceneName.c_str(), _TRUNCATE);
-
-	FWorldContext* Ctx = EditorEngine->GetWorldContextFromHandle(EditorEngine->GetActiveWorldHandle());
-	if (!Ctx)
-	{
-		return false;
-	}
-
-	FEditorCameraState CamState;
-	if (const FViewportCamera* Cam = EditorEngine->GetCamera())
-	{
-		CamState.Location = Cam->GetLocation();
-		CamState.Rotation = FRotator(Cam->GetRotation());
-		CamState.FOV = Cam->GetFOV() * (180.f / 3.14159265358979f);
-		CamState.NearClip = Cam->GetNearPlane();
-		CamState.FarClip = Cam->GetFarPlane();
-		CamState.bValid = true;
-	}
-
-	const std::filesystem::path SavePath = bNameOnlySave
-		? (std::filesystem::path(FSceneSaveManager::GetSceneDirectory()) / (FPaths::ToWide(FinalSceneName) + FSceneSaveManager::SceneExtension))
-		: TargetPath;
-	if (!FSceneSaveManager::SaveToFilePath(FPaths::ToUtf8(SavePath.wstring()), *Ctx, &CamState))
-	{
-		return false;
-	}
-
-	const std::filesystem::path StoredPath = bNameOnlySave
-		? (std::filesystem::path(FSceneSaveManager::GetSceneDirectory()) / (FPaths::ToWide(FinalSceneName) + FSceneSaveManager::SceneExtension))
-		: TargetPath;
-	SetCurrentScenePath(FPaths::ToUtf8(StoredPath.wstring()));
-	bSceneDirty = false;
-	EditorEngine->GetUndoSystem().ClearHistory();
-	EditorEngine->GetMainPanel().PushFooterLog("Level saved");
-	SceneSaveNotificationTimer = common::constants::ImGui::NotificationTimer;
-	return true;
-}
-
-bool FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath, bool bPromptSave)
-{
-	if (!EditorEngine)
-	{
-		return false;
-	}
-
-	if (bPromptSave && !PromptSaveIfDirty())
-	{
-		return false;
-	}
-
-	EditorEngine->GetMainPanel().ResetWidgetSelections();
-	EditorEngine->ClearScene();
-	FWorldContext LoadCtx;
-	FEditorCameraState LoadedCam;
-	//FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, &LoadedCam);
-	FSceneSaveManager::Load(FilePath, LoadCtx, &LoadedCam);
-	if (LoadCtx.World)
-	{
-		EditorEngine->GetWorldList().push_back(LoadCtx);
-		EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
-		EditorEngine->ApplySpatialIndexMaintenanceSettings(LoadCtx.World);
-		
-		EditorEngine->GetViewportLayout().Init(EditorEngine->GetWindow(), LoadCtx.World, LoadCtx.SelectionManager, EditorEngine);
-        EditorEngine->GetViewportLayout().BuildViewportLayout(static_cast<int32>(EditorEngine->GetWindow()->GetWidth()), static_cast<int32>(EditorEngine->GetWindow()->GetHeight()));
-	}
-	EditorEngine->ResetViewport();
-
-	// ResetViewport 가 카메라를 InitViewPos 로 초기화하므로 그 이후에 덮어씁니다
-	if (LoadedCam.bValid)
-	{
-		if (FViewportCamera* Cam = EditorEngine->GetCamera())
-		{
-			Cam->SetLocation(LoadedCam.Location);
-			Cam->SetRotation(FQuat(LoadedCam.Rotation));
-			Cam->SetFOV(LoadedCam.FOV * (3.14159265358979f / 180.f));
-			Cam->SetNearPlane(LoadedCam.NearClip);
-			Cam->SetFarPlane(LoadedCam.FarClip);
-			// ApplyCameraMode 가 설정한 TargetLocation(기본값)이 남아 있으면
-			// 다음 Tick 에서 EditorWorldController 가 카메라를 되돌려 버리므로
-			// 새 위치로 동기화한다.
-			EditorEngine->GetViewportLayout().GetViewportClient(0)->SyncCameraTarget();
-		}
-	}
-
-	SetCurrentScenePath(FilePath);
-	bSceneDirty = false;
-	EditorEngine->GetUndoSystem().ClearHistory();
-	EditorEngine->GetMainPanel().PushFooterLog("Level loaded");
-	SceneLoadNotificationTimer = common::constants::ImGui::NotificationTimer;
-
-	EditorEngine->CreateViewerWorld();
-	return LoadCtx.World != nullptr;
-}
-
-void FEditorSceneWidget::RefreshSceneAndAssets()
-{
-	FResourceManager::Get().RefreshFromAssetDirectory(FPaths::ToUtf8(FPaths::AssetDirectoryPath()));
-}
-
-FString FEditorSceneWidget::GetCurrentSceneDisplayPath() const
-{
-	if (CurrentSceneFilePath.empty())
-	{
-		return bSceneDirty ? "Unsaved *" : "Unsaved";
-	}
-
-	std::filesystem::path SceneDir = std::filesystem::path(FSceneSaveManager::GetSceneDirectory()).lexically_normal();
-	std::filesystem::path ScenePath = std::filesystem::path(FPaths::ToWide(CurrentSceneFilePath)).lexically_normal();
-	std::error_code Ec;
-	std::filesystem::path RelativePath = std::filesystem::relative(ScenePath, SceneDir.parent_path(), Ec);
-	FString Display = Ec ? FPaths::ToUtf8(ScenePath.filename().wstring()) : FPaths::ToUtf8(RelativePath.wstring());
-	std::replace(Display.begin(), Display.end(), '/', '\\');
-	return bSceneDirty ? Display + " *" : Display;
-}
-
-bool FEditorSceneWidget::PromptSaveIfDirty()
-{
-	if (!bSceneDirty)
-	{
-		return true;
-	}
-
-	HWND Owner = EditorEngine && EditorEngine->GetWindow() ? EditorEngine->GetWindow()->GetHWND() : nullptr;
-	const int Result = MessageBoxW(
-		Owner,
-		L"Current level has unsaved changes. Save before continuing?",
-		L"Unsaved Level",
-		MB_ICONWARNING | MB_YESNOCANCEL | MB_DEFBUTTON1);
-
-	if (Result == IDCANCEL)
-	{
-		return false;
-	}
-	if (Result == IDNO)
-	{
-		return true;
-	}
-	return SaveScene();
-}
-
-bool FEditorSceneWidget::PromptSaveSceneAs(FString& OutFilePath) const
-{
-	OutFilePath.clear();
-
-	WCHAR FileBuffer[MAX_PATH] = {};
-	std::filesystem::path SceneDir(FSceneSaveManager::GetSceneDirectory());
-	SceneDir = SceneDir.lexically_normal();
-	if (!SceneDir.is_absolute())
-	{
-		SceneDir = std::filesystem::path(FPaths::ToAbsolute(SceneDir.wstring()));
-	}
-	SceneDir.make_preferred();
-	std::error_code CreateDirEc;
-	std::filesystem::create_directories(SceneDir, CreateDirEc);
-
-	const std::wstring InitialDir = SceneDir.wstring();
-	const std::wstring DefaultFile = (SceneDir / L"Untitled.Scene").wstring();
-	wcsncpy_s(FileBuffer, MAX_PATH, DefaultFile.c_str(), _TRUNCATE);
-
-	OPENFILENAMEW DialogDesc = {};
-	DialogDesc.lStructSize = sizeof(DialogDesc);
-	DialogDesc.hwndOwner = EditorEngine && EditorEngine->GetWindow() ? EditorEngine->GetWindow()->GetHWND() : nullptr;
-	DialogDesc.lpstrFilter = L"Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
-	DialogDesc.lpstrFile = FileBuffer;
-	DialogDesc.nMaxFile = MAX_PATH;
-	DialogDesc.lpstrInitialDir = InitialDir.c_str();
-	DialogDesc.lpstrDefExt = L"Scene";
-	DialogDesc.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
-
-	if (!GetSaveFileNameW(&DialogDesc))
-	{
-		return false;
-	}
-
-	OutFilePath = FPaths::ToUtf8(FileBuffer);
-	return true;
-}
-
 bool FEditorSceneWidget::PromptSavePrefabAs(const AActor* Actor, FString& OutFilePath) const
 {
 	OutFilePath.clear();
@@ -419,15 +171,6 @@ bool FEditorSceneWidget::PromptSavePrefabAs(const AActor* Actor, FString& OutFil
 
 	OutFilePath = FPaths::ToUtf8(FileBuffer);
 	return true;
-}
-
-void FEditorSceneWidget::SetCurrentScenePath(const FString& FilePath)
-{
-	CurrentSceneFilePath = FPaths::Normalize(FilePath);
-	const FString FinalSceneName = FPaths::ToUtf8(std::filesystem::path(FPaths::ToWide(CurrentSceneFilePath)).stem().wstring());
-	strncpy_s(SceneName, IM_ARRAYSIZE(SceneName), FinalSceneName.c_str(), _TRUNCATE);
-	FProjectSettings::Get().SetLastScenePath(CurrentSceneFilePath);
-	FProjectSettings::Get().SaveToFile(FProjectSettings::GetDefaultSettingsPath());
 }
 
 void FEditorSceneWidget::Render(float DeltaTime)
@@ -586,11 +329,11 @@ void FEditorSceneWidget::Render(float DeltaTime)
             FString PrefabPath;
             if (PromptSavePrefabAs(RenameTarget, PrefabPath) && FPrefabManager::SaveActorPrefab(RenameTarget, PrefabPath))
             {
-                EditorEngine->GetMainPanel().PushFooterLog("Prefab saved");
+                EditorEngine->GetNotificationService().Info("Prefab saved");
             }
             else
             {
-                EditorEngine->GetMainPanel().PushFooterLog("Prefab save canceled or failed");
+                EditorEngine->GetNotificationService().Warning("Prefab save canceled or failed");
             }
             ImGui::CloseCurrentPopup();
         }
@@ -603,8 +346,8 @@ void FEditorSceneWidget::Render(float DeltaTime)
             {
                 LastClickedActorIndex = -1;
                 World->RebuildSpatialIndex();
-                MarkSceneDirty();
-                EditorEngine->GetMainPanel().PushFooterLog("Actor placed from Outliner");
+                EditorEngine->GetSceneService().MarkDirty();
+                EditorEngine->GetNotificationService().Info("Actor placed from Outliner");
             }
             ImGui::EndMenu();
         }
@@ -866,8 +609,8 @@ void FEditorSceneWidget::Render(float DeltaTime)
             const FString UniqueName = MakeUniqueActorName(PendingRenameActor, RenameActorName);
             EditorEngine->GetUndoSystem().CaptureSnapshot("Rename Actor");
             PendingRenameActor->SetFName(FName(UniqueName));
-            MarkSceneDirty();
-            EditorEngine->GetMainPanel().PushFooterLog("Actor renamed");
+            EditorEngine->GetSceneService().MarkDirty();
+            EditorEngine->GetNotificationService().Info("Actor renamed");
             PendingRenameActor = nullptr;
             ImGui::CloseCurrentPopup();
         }

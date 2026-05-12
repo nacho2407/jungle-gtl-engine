@@ -256,7 +256,7 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
         }
 
         ImGui::SameLine();
-        FString SceneLabel = FString("Level: ") + Widgets.SceneWidget.GetCurrentSceneDisplayPath();
+        FString SceneLabel = FString("Level: ") + EditorEngine->GetSceneService().GetCurrentSceneDisplayPath();
         if (EditorEngine->GetEditorState() != EViewportPlayState::Editing)
         {
             const FString ActiveScenePath = EditorEngine->GetCurrentScenePath();
