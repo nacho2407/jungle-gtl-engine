@@ -261,6 +261,9 @@ bool FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath, bool bPr
 		EditorEngine->GetWorldList().push_back(LoadCtx);
 		EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
 		EditorEngine->ApplySpatialIndexMaintenanceSettings(LoadCtx.World);
+		
+		EditorEngine->GetViewportLayout().Init(EditorEngine->GetWindow(), LoadCtx.World, LoadCtx.SelectionManager, EditorEngine);
+        EditorEngine->GetViewportLayout().BuildViewportLayout(static_cast<int32>(EditorEngine->GetWindow()->GetWidth()), static_cast<int32>(EditorEngine->GetWindow()->GetHeight()));
 	}
 	EditorEngine->ResetViewport();
 
@@ -286,6 +289,8 @@ bool FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath, bool bPr
 	EditorEngine->GetUndoSystem().ClearHistory();
 	EditorEngine->GetMainPanel().PushFooterLog("Level loaded");
 	SceneLoadNotificationTimer = common::constants::ImGui::NotificationTimer;
+
+	EditorEngine->CreateViewerWorld();
 	return LoadCtx.World != nullptr;
 }
 

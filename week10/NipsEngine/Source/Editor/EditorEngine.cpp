@@ -183,24 +183,11 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     // Editor용 렌더 파이프라인 세팅
     SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
 
-    MainPanel.RestoreLastSceneFromProjectSettings();
+    // MainPanel.RestoreLastSceneFromProjectSettings();
 
 	FScriptManager::Get().initializeLuaState();
 
-    // Viewer용 별도 월드 생성
-    FWorldContext& ViewerCtx = CreateWorldContext(EWorldType::ViewerPreview, FName("ViewerPreview"), "Viewer Preview");
-    ApplySpatialIndexMaintenanceSettings(ViewerCtx.World);
-    SpawnDefaultSceneActors(ViewerCtx.World);
-
-    ACubeActor* TestActor = ViewerCtx.World->SpawnActor<ACubeActor>();
-    if (TestActor)
-    {
-        TestActor->InitDefaultComponents();
-        TestActor->SetFName(FName("Test Actor"));
-        TestActor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
-    }
-
-	Viewer.Init(Window, this, ViewerCtx.World, ViewerCtx.SelectionManager);
+	CreateViewerWorld();
 }
 
 void UEditorEngine::Shutdown()
@@ -556,6 +543,24 @@ void UEditorEngine::WorldTick(float DeltaTime)
     }
 
     ProcessPendingSceneOpen();
+}
+
+void UEditorEngine::CreateViewerWorld()
+{
+    // Viewer용 별도 월드 생성
+    FWorldContext& ViewerCtx = CreateWorldContext(EWorldType::ViewerPreview, FName("ViewerPreview"), "Viewer Preview");
+    ApplySpatialIndexMaintenanceSettings(ViewerCtx.World);
+    SpawnDefaultSceneActors(ViewerCtx.World);
+
+    ACubeActor* TestActor = ViewerCtx.World->SpawnActor<ACubeActor>();
+    if (TestActor)
+    {
+        TestActor->InitDefaultComponents();
+        TestActor->SetFName(FName("Test Actor"));
+        TestActor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+    }
+
+    Viewer.Init(Window, this, ViewerCtx.World, ViewerCtx.SelectionManager);
 }
 
 int32 UEditorEngine::DeleteActors(const TArray<AActor*>& Actors)
@@ -1271,6 +1276,8 @@ FWorldContext& UEditorEngine::RegisterWorld(UWorld* InWorld, EWorldType Type, co
     Context.World = InWorld;
     Context.ContextName = Name;
     Context.ContextHandle = Handle;
+    Context.SelectionManager = new FSelectionManager;
+    Context.SelectionManager->Init();
     
     WorldList.push_back(Context);
     return WorldList.back();
