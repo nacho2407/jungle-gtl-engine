@@ -514,6 +514,31 @@ void ASkeletalMeshActor::InitDefaultComponents()
 
     FVector Extent = SkeletalMeshComp->GetWorldAABB().GetExtent();
     Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Socket Save/Load 검증용 테스트 — 에디터에서 "HandSocket"을 정의·저장 후
+    // 재시작하면 이 코드가 cube를 그 socket에 attach해서 위치를 시각화함.
+    // transient + editorOnly로 scene 저장/게임 빌드 양쪽에서 자동으로 제외.
+    // ─────────────────────────────────────────────────────────────────────
+    //{
+    //    const FName HandSocketName("HandSocket");
+    //    USkeletalMesh* Mesh = SkeletalMeshComp->GetSkeletalMesh();
+    //    if (Mesh && Mesh->HasSocket(HandSocketName))
+    //    {
+    //        UStaticMeshComponent* HandTest = AddComponent<UStaticMeshComponent>();
+    //        HandTest->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
+    //        HandTest->SetTransient(true);
+    //        HandTest->SetEditorOnly(true);
+    //        HandTest->AttachToComponent(SkeletalMeshComp, HandSocketName);
+    //        UE_LOG("[SocketTest] HandSocket found on %s — attached test cube",
+    //               Mesh->GetAssetPathFileName().c_str());
+    //    }
+    //    else if (Mesh)
+    //    {
+    //        UE_LOG("[SocketTest] HandSocket not found on %s — create via editor and Save",
+    //               Mesh->GetAssetPathFileName().c_str());
+    //    }
+    //}
 }
 
 void ASubUVActor::InitDefaultComponents()

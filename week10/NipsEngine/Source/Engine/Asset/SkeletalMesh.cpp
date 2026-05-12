@@ -1,8 +1,15 @@
 ﻿#include "SkeletalMesh.h"
 
 #include "Core/Logging/Log.h"
+#include "Engine/Geometry/Transform.h"
 
 DEFINE_CLASS(USkeletalMesh, UObject)
+
+FMatrix FSkeletalMeshSocket::GetRelativeTransform() const
+{
+    // row-vector 규약: v · S · R · T  (FTransform::ToMatrixWithScale가 동일 합성)
+    return FTransform(RelativeRotation, RelativeLocation, RelativeScale).ToMatrixWithScale();
+}
 
 USkeletalMesh::~USkeletalMesh()
 {
@@ -109,6 +116,35 @@ const TArray<FStaticMeshMaterialSlot>& USkeletalMesh::GetMaterialSlots() const
 {
     static const TArray<FStaticMeshMaterialSlot> Empty = {};
     return MeshData ? MeshData->MaterialSlots : Empty;
+}
+
+const TArray<FSkeletalMeshSocket>& USkeletalMesh::GetSockets() const
+{
+    static const TArray<FSkeletalMeshSocket> Empty = {};
+    return MeshData ? MeshData->Sockets : Empty;
+}
+
+const FSkeletalMeshSocket* USkeletalMesh::FindSocket(const FName& Name) const
+{
+    if (!MeshData || !Name.IsValid())
+    {
+        return nullptr;
+    }
+
+    for (const FSkeletalMeshSocket& Socket : MeshData->Sockets)
+    {
+        if (Socket.Name == Name)
+        {
+            return &Socket;
+        }
+    }
+
+    return nullptr;
+}
+
+bool USkeletalMesh::HasSocket(const FName& Name) const
+{
+    return FindSocket(Name) != nullptr;
 }
 
 const FAABB& USkeletalMesh::GetLocalBounds() const

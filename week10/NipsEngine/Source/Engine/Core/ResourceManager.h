@@ -117,6 +117,9 @@ public:
     USkeletalMesh* FindSkeletalMesh(const FString& Path) const;
 	TArray<FString> GetSkeletalMeshPaths() const;
 
+	// 에디터에서 socket 등 mesh data 변경 후 writable cache(.bin)에 저장.
+	bool SaveSkeletalMesh(USkeletalMesh* Mesh);
+
 	UCurveFloatAsset* LoadCurve(const FString& Path);
 	UCurveFloatAsset* FindCurve(const FString& Path) const;
 	bool SaveCurve(const FString& Path, const UCurveFloatAsset* Curve);

@@ -808,6 +808,19 @@ TArray<FString> FResourceManager::GetSkeletalMeshPaths() const
     return SkeletalMeshFilePaths;
 }
 
+bool FResourceManager::SaveSkeletalMesh(USkeletalMesh* Mesh)
+{
+    if (!Mesh) return false;
+    FSkeletalMesh* Data = Mesh->GetMeshData();
+    if (!Data) return false;
+
+    const FString FbxPath = Mesh->GetAssetPathFileName();
+    if (FbxPath.empty()) return false;
+
+    const FString BinPath = FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(FbxPath);
+    return BinarySerializer.SaveSkeletalMesh(BinPath, FbxPath, *Data);
+}
+
 UCurveFloatAsset* FResourceManager::LoadCurve(const FString& Path)
 {
 	const FString NormalizedPath = FPaths::Normalize(Path);

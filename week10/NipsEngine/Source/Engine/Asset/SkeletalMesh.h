@@ -31,6 +31,11 @@ public:
     const TArray<FStaticMeshSection>& GetSections() const;
     const TArray<FStaticMeshMaterialSlot>& GetMaterialSlots() const;
 
+    // Sockets
+    const TArray<FSkeletalMeshSocket>& GetSockets() const;
+    const FSkeletalMeshSocket*         FindSocket(const FName& Name) const;
+    bool                               HasSocket(const FName& Name) const;
+
     const FAABB& GetLocalBounds() const;
 
     bool HasValidMeshData() const;
