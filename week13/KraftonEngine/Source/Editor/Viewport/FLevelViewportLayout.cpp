@@ -3,6 +3,7 @@
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Editor/Settings/EditorSettings.h"
+#include "Editor/UI/EditorTextureManager.h"
 #include "Core/ProjectSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Engine/Runtime/WindowsWindow.h"
@@ -23,7 +24,6 @@
 #include "Math/MathUtils.h"
 #include "Platform/Paths.h"
 #include "ImGui/imgui.h"
-#include "WICTextureLoader.h"
 #include "Component/CameraComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "Component/GizmoComponent.h"
@@ -43,123 +43,6 @@
 
 namespace
 {
-
-const wchar_t* GetToolbarIconFileName(EToolbarIcon Icon)
-{
-	switch (Icon)
-	{
-	case EToolbarIcon::Menu: return L"Menu.png";
-	case EToolbarIcon::Setting: return L"Setting.png";
-	case EToolbarIcon::AddActor: return L"Add_Actor.png";
-	case EToolbarIcon::Translate: return L"Translate.png";
-	case EToolbarIcon::Rotate: return L"Rotate.png";
-	case EToolbarIcon::Scale: return L"Scale.png";
-	case EToolbarIcon::WorldSpace: return L"WorldSpace.png";
-	case EToolbarIcon::LocalSpace: return L"LocalSpace.png";
-	case EToolbarIcon::TranslateSnap: return L"Translate_Snap.png";
-	case EToolbarIcon::RotateSnap: return L"Rotate_Snap.png";
-	case EToolbarIcon::ScaleSnap: return L"Scale_Snap.png";
-	case EToolbarIcon::ShowFlag: return L"Show_Flag.png";
-	case EToolbarIcon::Camera: return L"Camera.png";
-	default: return L"";
-	}
-}
-
-ID3D11ShaderResourceView** GetToolbarIconTable()
-{
-	static ID3D11ShaderResourceView* ToolbarIcons[static_cast<int32>(EToolbarIcon::Count)] = {};
-	return ToolbarIcons;
-}
-
-bool bToolbarIconsLoaded = false;
-
-void ReleaseToolbarIcons()
-{
-	if (!bToolbarIconsLoaded)
-	{
-		return;
-	}
-
-	ID3D11ShaderResourceView** ToolbarIcons = GetToolbarIconTable();
-	for (int32 i = 0; i < static_cast<int32>(EToolbarIcon::Count); ++i)
-	{
-		if (ToolbarIcons[i])
-		{
-			ToolbarIcons[i]->Release();
-			ToolbarIcons[i] = nullptr;
-		}
-	}
-
-	bToolbarIconsLoaded = false;
-}
-
-void EnsureToolbarIconsLoaded(FRenderer* RendererPtr)
-{
-	if (bToolbarIconsLoaded || !RendererPtr)
-	{
-		return;
-	}
-
-	ID3D11Device* Device = RendererPtr->GetFD3DDevice().GetDevice();
-	ID3D11ShaderResourceView** ToolbarIcons = GetToolbarIconTable();
-	const std::wstring IconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/ToolIcons/");
-	for (int32 i = 0; i < static_cast<int32>(EToolbarIcon::Count); ++i)
-	{
-		const std::wstring FilePath = IconDir + GetToolbarIconFileName(static_cast<EToolbarIcon>(i));
-		DirectX::CreateWICTextureFromFile(Device, FilePath.c_str(), nullptr, &ToolbarIcons[i]);
-	}
-
-	bToolbarIconsLoaded = true;
-}
-
-ImVec2 GetToolbarIconRenderSize(EToolbarIcon Icon, float FallbackSize, float MaxIconSize)
-{
-	ID3D11ShaderResourceView* IconSRV = GetToolbarIconTable()[static_cast<int32>(Icon)];
-	if (!IconSRV)
-	{
-		return ImVec2(FallbackSize, FallbackSize);
-	}
-
-	ID3D11Resource* Resource = nullptr;
-	IconSRV->GetResource(&Resource);
-	if (!Resource)
-	{
-		return ImVec2(FallbackSize, FallbackSize);
-	}
-
-	ImVec2 IconSize(FallbackSize, FallbackSize);
-	D3D11_RESOURCE_DIMENSION Dimension = D3D11_RESOURCE_DIMENSION_UNKNOWN;
-	Resource->GetType(&Dimension);
-	if (Dimension == D3D11_RESOURCE_DIMENSION_TEXTURE2D)
-	{
-		ID3D11Texture2D* Texture2D = static_cast<ID3D11Texture2D*>(Resource);
-		D3D11_TEXTURE2D_DESC Desc{};
-		Texture2D->GetDesc(&Desc);
-		IconSize = ImVec2(static_cast<float>(Desc.Width), static_cast<float>(Desc.Height));
-	}
-	Resource->Release();
-
-	if (IconSize.x > MaxIconSize || IconSize.y > MaxIconSize)
-	{
-		const float Scale = (IconSize.x > IconSize.y) ? (MaxIconSize / IconSize.x) : (MaxIconSize / IconSize.y);
-		IconSize.x *= Scale;
-		IconSize.y *= Scale;
-	}
-
-	return IconSize;
-}
-
-bool DrawToolbarIconButton(const char* Id, EToolbarIcon Icon, const char* FallbackLabel, float FallbackSize, float MaxIconSize)
-{
-	ID3D11ShaderResourceView* IconSRV = GetToolbarIconTable()[static_cast<int32>(Icon)];
-	if (!IconSRV)
-	{
-		return ImGui::Button(FallbackLabel);
-	}
-
-	const ImVec2 IconSize = GetToolbarIconRenderSize(Icon, FallbackSize, MaxIconSize);
-	return ImGui::ImageButton(Id, reinterpret_cast<ImTextureID>(IconSRV), IconSize);
-}
 }
 
 // ─── 레이아웃별 슬롯 수 ─────────────────────────────────────
@@ -207,14 +90,10 @@ void FLevelViewportLayout::LoadLayoutIcons(ID3D11Device* Device)
 {
 	if (!Device) return;
 
-	std::wstring IconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/Icons/");
-
 	for (int32 i = 0; i < static_cast<int32>(EViewportLayout::MAX); ++i)
 	{
-		std::wstring Path = IconDir + GetLayoutIconFileName(static_cast<EViewportLayout>(i));
-		DirectX::CreateWICTextureFromFile(
-			Device, Path.c_str(),
-			nullptr, &LayoutIcons[i]);
+		const std::wstring Path = FPaths::Combine(FPaths::AssetDir(), L"Editor/Icons/", GetLayoutIconFileName(static_cast<EViewportLayout>(i)));
+		LayoutIcons[i] = FEditorTextureManager::Get().GetOrLoadIcon(FPaths::ToUtf8(Path));
 	}
 }
 
@@ -222,11 +101,7 @@ void FLevelViewportLayout::ReleaseLayoutIcons()
 {
 	for (int32 i = 0; i < static_cast<int32>(EViewportLayout::MAX); ++i)
 	{
-		if (LayoutIcons[i])
-		{
-			LayoutIcons[i]->Release();
-			LayoutIcons[i] = nullptr;
-		}
+		LayoutIcons[i] = nullptr;
 	}
 }
 
@@ -308,7 +183,6 @@ void FLevelViewportLayout::Release()
 	LevelViewportClients.clear();
 
 	ReleaseLayoutIcons();
-	ReleaseToolbarIcons();
 	PlayToolbar.Release();
 }
 

@@ -94,7 +94,7 @@ void DirectoryElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 {
 	Context.CurrentPath = ContentItem.Path;
 	Context.PendingRevealPath = ContentItem.Path;
-	Context.bIsNeedRefresh = true;
+	Context.bPendingContentRefresh = true;
 }
 
 void SceneElement::OnDoubleLeftClicked(ContentBrowserContext& Context)

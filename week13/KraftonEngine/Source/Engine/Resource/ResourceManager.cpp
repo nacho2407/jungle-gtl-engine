@@ -98,24 +98,6 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
 	}
 }
 
-void FResourceManager::LoadFromDirectory(const FString& Path, ID3D11Device* InDevice)
-{
-
-	std::wstring RootPath = FPaths::RootDir();
-
-	for (const auto& Entry : std::filesystem::recursive_directory_iterator(FPaths::ToWide(Path)))
-	{
-		if (Entry.path().extension() != ".png")
-			continue;
-
-		UTexture2D::LoadFromFile(FPaths::ToUtf8(Entry.path()), InDevice);
-
-		DirectX::CreateWICTextureFromFile(
-			InDevice, (Entry.path()).c_str(),
-			nullptr, LoadedResource[FPaths::ToUtf8(Entry.path().lexically_relative(RootPath).generic_wstring())].GetAddressOf());
-	}
-}
-
 bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 {
 	if (!Device)

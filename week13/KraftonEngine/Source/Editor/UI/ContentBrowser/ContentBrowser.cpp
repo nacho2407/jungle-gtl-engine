@@ -3,10 +3,9 @@
 #include "ContentBrowserElement.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Subsystem/AssetFactory.h"
+#include "Editor/UI/EditorTextureManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
-#include "Resource/ResourceManager.h"
-#include "WICTextureLoader.h"
 #include "EditorEngine.h"
 
 #include <algorithm>
@@ -87,16 +86,12 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 	FEditorWidget::Initialize(InEditor);
 	if (!InDevice) return;
 
-	const std::wstring IconDir = L"Asset/Editor/Icons/";
-
-	ICons["Default"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"StartMerge_42x.png"));
-	ICons["Directory"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"Folder_Base_256x.png"));
-	ICons[".Scene"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"World_64x.png"));
-	ICons[".obj"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"icon_MatEd_Mesh_40x.png"));
-	ICons[".mat"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"Sphere_64x.png"));
-	ICons[".curve"] = ICons["Default"];
-	ICons[".shake"] = ICons["Default"];
-	ICons[".fbx"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"icon_MatEd_Mesh_40x.png"));
+	IconFileMap[".Scene"] = L"World_64x.png";
+	IconFileMap[".obj"] = L"icon_MatEd_Mesh_40x.png";
+	IconFileMap[".mat"] = L"Sphere_64x.png";
+	IconFileMap[".curve"] = L"StartMerge_42x.png";
+	IconFileMap[".shake"] = L"StartMerge_42x.png";
+	IconFileMap[".fbx"] = L"icon_MatEd_Mesh_40x.png";
 
 	ContentBrowserContext Context;
 	Context.ContentSize = ImVec2(50, 50);
@@ -116,6 +111,12 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 	}
 
 	(void)DeltaTime;
+
+	if (BrowserContext.bPendingContentRefresh)
+	{
+		RefreshContent();
+		BrowserContext.bPendingContentRefresh = false;
+	}
 
 	ImGui::SameLine();
 	std::wstring PathText = BrowserContext.CurrentPath;
@@ -162,7 +163,7 @@ void FEditorContentBrowserWidget::Refresh()
 	RootNode = BuildDirectoryTree(FPaths::RootDir());
 	RefreshContent();
 
-	BrowserContext.bIsNeedRefresh = false;
+	BrowserContext.bPendingContentRefresh = false;
 }
 
 void FEditorContentBrowserWidget::SetIconSize(float Size)
@@ -184,58 +185,70 @@ void FEditorContentBrowserWidget::SaveToSettings() const
 
 void FEditorContentBrowserWidget::RefreshContent()
 {
+	FEditorTextureManager::Get().ClearThumbnails();
 	CachedBrowserElements.clear();
 	TArray<FContentItem> CurrentContents = ReadDirectory(BrowserContext.CurrentPath);
 	for (const auto& Content : CurrentContents)
 	{
 		std::shared_ptr<ContentBrowserElement> Element;
 		FString Extension = FPaths::ToUtf8(Content.Path.extension());
+		for (char& Character : Extension)
+		{
+			Character = static_cast<char>(std::tolower(static_cast<unsigned char>(Character)));
+		}
+		ID3D11ShaderResourceView* Icon = nullptr;
 
 		if (Content.bIsDirectory)
 		{
 			Element = std::make_shared<DirectoryElement>();
-			Element->SetIcon(ICons["Directory"].Get());
+			Icon = FEditorTextureManager::Get().GetOrLoadIcon(FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), L"Editor/Icons/", L"Folder_Base_256x.png")));
 		}
-		else if (Content.Path.extension() == ".Scene")
+		else if (Extension == ".scene")
 		{
 			Element = std::make_shared<SceneElement>();
-			Element->SetIcon(ICons[Extension].Get());
 		}
-		else if (Content.Path.extension() == ".obj")
+		else if (Extension == ".obj")
 		{
 			Element = std::make_shared<ObjectElement>();
-			Element->SetIcon(ICons[Extension].Get());
 		}
-		else if (Content.Path.extension() == ".mat")
+		else if (Extension == ".mat")
 		{
 			Element = std::make_shared<MaterialElement>();
-			Element->SetIcon(ICons[Extension].Get());
 		}
-		else if (Content.Path.extension() == ".curve")
+		else if (Extension == ".curve")
 		{
 			Element = std::make_shared<FloatCurveElement>();
-			Element->SetIcon(ICons[Extension].Get());
 		}
-		else if (Content.Path.extension() == ".shake")
+		else if (Extension == ".shake")
 		{
 			Element = std::make_shared<CameraShakeElement>();
-			Element->SetIcon(ICons[Extension].Get());
 		}
-		else if (Content.Path.extension() == ".fbx")
+		else if (Extension == ".fbx")
 		{
 			Element = std::make_shared<MeshElement>();
-			Element->SetIcon(ICons[Extension].Get());
 		}
-		else if (Content.Path.extension() == ".png" || Content.Path.extension() == ".PNG")
+		else if (Extension == ".png")
 		{
 			Element = std::make_shared<PNGElement>();
-			Element->SetIcon(FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring())).Get());
+			Icon = FEditorTextureManager::Get().GetOrLoadThumbnail(FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring()));
 		}
 		else
 		{
 			Element = std::make_shared<ContentBrowserElement>();
-			Element->SetIcon(ICons["Default"].Get());
 		}
+
+		if (!Icon)
+		{
+			std::wstring IconFileName = L"StartMerge_42x.png";
+			if (auto It = IconFileMap.find(Extension); It != IconFileMap.end())
+			{
+				IconFileName = It->second;
+			}
+
+			Icon = FEditorTextureManager::Get().GetOrLoadIcon(FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), L"Editor/Icons/", IconFileName)));
+		}
+
+		Element->SetIcon(Icon);
 
 		Element->SetContent(Content);
 		CachedBrowserElements.push_back(std::move(Element));
@@ -259,8 +272,11 @@ void FEditorContentBrowserWidget::DrawDirNode(FDirNode InNode)
 	bool bIsOpen = ImGui::TreeNodeEx(FPaths::ToUtf8(InNode.Self.Name).c_str(), Flag);
 	if (ImGui::IsItemClicked())
 	{
-		BrowserContext.CurrentPath = InNode.Self.Path;
-		RefreshContent();
+		if (BrowserContext.CurrentPath != InNode.Self.Path)
+		{
+			BrowserContext.CurrentPath = InNode.Self.Path;
+			RefreshContent();
+		}
 	}
 
 	if (!bIsOpen)
