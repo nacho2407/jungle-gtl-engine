@@ -123,9 +123,6 @@ static bool ShouldCollectProxyForView(const FPrimitiveSceneProxy* Proxy, const F
 		Proxy->HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh))
 		return false;
 
-	if (!Proxy->IsVisible())
-		return false;
-
 	return true;
 }
 
@@ -164,6 +161,11 @@ void FRenderCollector::FilterVisibleProxies(const FFrameContext& Frame, FScene& 
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::PerViewportUpdate))
 		{
 			Proxy->UpdatePerViewport(Frame);
+		}
+
+		if (!Proxy->IsVisible())
+		{
+			continue;
 		}
 
 		if (OcclusionMut)
