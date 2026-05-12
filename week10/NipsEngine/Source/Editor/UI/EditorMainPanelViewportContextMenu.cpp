@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 #include "Editor/UI/EditorMainPanelPlacementHelpers.h"
 
 #include "Editor/EditorEngine.h"
@@ -198,7 +198,9 @@ void FEditorMainPanel::RenderViewportContextMenu()
     FEditorViewportState& State = Layout.GetViewportState(FocusedIndex);
     const bool bEditorControl = Client && Client->AllowsEditorWorldControl();
     const bool bPIEActive = Client && Client->IsPIEActive();
-    const bool bHasSelection = !EditorEngine->GetSelectionManager().IsEmpty();
+
+	const FWorldContext* Ctx = Client ? EditorEngine->GetWorldContextFromWorld(Client->GetFocusedWorld()) : nullptr;
+    const bool bHasSelection = Ctx ? !Ctx->SelectionManager->IsEmpty() : false;
 
     ImGui::TextDisabled("%s", FEditorMainPanelPlacementHelpers::GetViewportSlotName(FocusedIndex));
     ImGui::Separator();

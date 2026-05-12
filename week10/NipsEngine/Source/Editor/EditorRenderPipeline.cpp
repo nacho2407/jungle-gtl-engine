@@ -165,6 +165,8 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
         {
             RenderViewport(Renderer, i);
         }
+
+		RenderViewerViewport(Renderer);
         ViewportsEnd = std::chrono::steady_clock::now();
 
         BackBufferStart = std::chrono::steady_clock::now();
@@ -299,8 +301,8 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 	if (bDrawEditorViewportHelpers)
     {
         Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, SceneView.bOrthographic);
-
-        if (UGizmoComponent* Gizmo = Editor->GetGizmo())
+        const FWorldContext* Ctx = Editor->GetWorldContextFromWorld(World);
+        if (UGizmoComponent* Gizmo = Ctx->SelectionManager->GetGizmo())
         {
             if (SceneView.bOrthographic)
                 Gizmo->ApplyScreenSpaceScalingOrtho(SceneView.CameraOrthoHeight);
@@ -308,8 +310,8 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
                 Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
         }
 
-        Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus, VC->GetViewportState()->bHovered);
-        Collector.CollectSelection(Editor->GetSelectionManager().GetSelectedActors(), ShowFlags, ViewMode, Bus, bDrawEditorViewportHelpers);
+        Collector.CollectGizmo(Ctx->SelectionManager->GetGizmo(), ShowFlags, Bus, VC->GetViewportState()->bHovered);
+        Collector.CollectSelection(Ctx->SelectionManager->GetSelectedActors(), ShowFlags, ViewMode, Bus, bDrawEditorViewportHelpers);
     }
 
     // 4. CPU 배처 데이터 준비 → GPU 드로우 (SetSubViewport 영역에만 출력됨)
@@ -341,6 +343,149 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
                Bus.LightInfos.size(),
                Bus.ShadowLightRequests.size(),
                ViewportCullingStats[ViewportIndex].TotalVisiblePrimitiveCount);
+    }
+#endif
+}
+
+void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
+{
+    const auto ViewportRenderStart = std::chrono::steady_clock::now();
+
+    // Viewer Viewport 가져오기
+    FEditorViewer& Viewer = Editor->GetViewer();
+    FSceneViewport& SceneViewport = Viewer.GetViewport();
+    FEditorViewportClient* VC = SceneViewport.GetClient();
+
+    if (!VC)
+        return;
+
+    // 1. SceneView 생성
+    FSceneView SceneView;
+    VC->BuildSceneView(SceneView);
+
+    const FViewportRect& Rect = SceneViewport.GetRect();
+    if (Rect.Width <= 0 || Rect.Height <= 0)
+        return;
+
+    // 2. RenderTarget 확보
+    FViewportRenderResource& ViewportResource =
+        Editor->GetRenderer().AcquireViewerViewportResource(
+            Rect.Width,
+            Rect.Height);
+
+    SceneViewport.SetRenderTargetSet(&ViewportResource.GetView());
+
+    // 3. Begin
+    Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets());
+
+    // 4. Bus 세팅
+    Bus.Clear();
+
+    UWorld* World = VC->GetFocusedWorld();
+    if (!World)
+        return;
+
+    const FEditorSettings& Settings = Editor->GetSettings();
+    const FShowFlags& ShowFlags = Settings.ShowFlags;
+    const EViewMode ViewMode = SceneView.ViewMode;
+
+    const FViewportCamera* Camera = VC->GetRenderCamera();
+    if (!Camera)
+        return;
+
+    Bus.SetViewProjection(
+        SceneView.ViewMatrix,
+        SceneView.ProjectionMatrix,
+        Camera->GetNearPlane(),
+        Camera->GetFarPlane());
+
+    Bus.SetRenderSettings(ViewMode, ShowFlags);
+    Bus.SetLightCullMode(SceneView.LightCullMode);
+    Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
+    Bus.SetViewportSize(FVector2((float)Rect.Width, (float)Rect.Height));
+    Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
+    Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
+    Bus.SetCascadeVis(VC->GetViewportState()->bShowCascadeVis);
+
+    // Sandevistan 유지
+    if (World->IsSandervistanActivated())
+    {
+        Bus.bSandevistanEnabled = true;
+        Bus.SandevistanIntensity = 1.0f;
+    }
+    else
+    {
+        Bus.bSandevistanEnabled = false;
+        Bus.SandevistanIntensity = 0.0f;
+    }
+
+    // 5. Collect
+    const FFrustum& ViewFrustum = SceneView.CameraFrustum;
+    const bool bDrawEditorViewportHelpers =
+        VC->AllowsEditorWorldControl();
+
+    Collector.CollectWorld(
+        World,
+        ShowFlags,
+        ViewMode,
+        Bus,
+        &ViewFrustum,
+        bDrawEditorViewportHelpers);
+
+    // 🔹 Editor helper 그대로 유지
+    if (bDrawEditorViewportHelpers)
+    {
+        Collector.CollectGrid(
+            Settings.GridSpacing,
+            Settings.GridHalfLineCount,
+            Bus,
+            SceneView.bOrthographic);
+        const FWorldContext* Ctx = Editor->GetWorldContextFromWorld(World);
+        if (UGizmoComponent* Gizmo = Ctx->SelectionManager->GetGizmo())
+        {
+            if (SceneView.bOrthographic)
+                Gizmo->ApplyScreenSpaceScalingOrtho(SceneView.CameraOrthoHeight);
+            else
+                Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
+        }
+
+        Collector.CollectGizmo(
+            Ctx->SelectionManager->GetGizmo(),
+            ShowFlags,
+            Bus,
+            VC->GetViewportState()->bHovered);
+
+        Collector.CollectSelection(
+            Ctx->SelectionManager->GetSelectedActors(),
+            ShowFlags,
+            ViewMode,
+            Bus,
+            bDrawEditorViewportHelpers);
+    }
+
+    // 6. Draw
+    Renderer.PrepareBatchers(Bus);
+    Renderer.Render(Bus);
+    Renderer.RenderScreenOverlays(Bus, false);
+
+    // 7. ID Pick
+    TArray<AActor*> IdPickActors;
+    Renderer.RenderEditorIdPickBuffer(
+        Bus,
+        ViewportResource,
+        IdPickActors);
+
+    SceneViewport.SetEditorIdPickActors(std::move(IdPickActors));
+
+#if STATS
+    const double RenderSec =
+        std::chrono::duration<double>(
+            std::chrono::steady_clock::now() - ViewportRenderStart)
+            .count();
+
+    if (RenderSec >= 0.018)
+    {
+        UE_LOG("[ViewerRenderPerf] Time=%.4fs", RenderSec);
     }
 #endif
 }
