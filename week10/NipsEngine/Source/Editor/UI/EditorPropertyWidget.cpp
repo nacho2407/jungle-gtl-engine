@@ -20,12 +20,14 @@
 #include "Component/PostProcess/Light/PointLightComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/Paths.h"
+#include "Core/Logging/Log.h"
 #include "Math/Color.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Material.h"
 #include "Asset/StaticMesh.h"
 #include "Object/FName.h"
 #include <algorithm>
+#include <chrono>
 #include <cctype>
 #include <filesystem>
 #include <functional>
@@ -51,6 +53,19 @@ namespace UIConstants
 
 namespace
 {
+	using FDetailsPerfClock = std::chrono::steady_clock;
+
+	double DetailsPerfMs(FDetailsPerfClock::time_point Start, FDetailsPerfClock::time_point End)
+	{
+		return std::chrono::duration<double, std::milli>(End - Start).count();
+	}
+
+	const TArray<FString>& EmptyAssetNames()
+	{
+		static const TArray<FString> Empty;
+		return Empty;
+	}
+
 	static bool DrawXButton(const char* id, float size = UIConstants::XButtonSize)
 	{
 		ImGui::PushID(id);
@@ -776,7 +791,7 @@ void FEditorPropertyWidget::RenderDetailsContextMenu(AActor* PrimaryActor, const
 					AttachAndSelectNewComponent(PrimaryActor, NewComp, AddAttachTarget);
 					if (EditorEngine)
 					{
-						EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+						EditorEngine->GetSceneService().MarkDirty();
 					}
 				}
 			}
@@ -1063,7 +1078,7 @@ void FEditorPropertyWidget::DeleteSelectedComponent(AActor* Owner)
 	Owner->RemoveComponent(ComponentToDelete);
 	if (EditorEngine)
 	{
-		EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+		EditorEngine->GetSceneService().MarkDirty();
 	}
 }
 
@@ -1147,7 +1162,9 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		DrawDetailsSeparator();
 		DrawDetailsSectionLabel("Sprite Texture");
 
-		const TArray<FString>& TextureList = FResourceManager::Get().GetTextureFilePath();
+		const TArray<FString>& TextureList = EditorEngine
+			? EditorEngine->GetAssetService().GetTextureAssetPaths()
+			: EmptyAssetNames();
 		const FString CurrentName = BillboardComp->GetTextureName();
 
 		if (ImGui::BeginCombo("##SpriteTexture", CurrentName.empty() ? "None" : CurrentName.c_str()))
@@ -1266,7 +1283,7 @@ void FEditorPropertyWidget::RenderActorTags(AActor* PrimaryActor, const TArray<A
 				}
 				if (bChanged && EditorEngine)
 				{
-					EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+					EditorEngine->GetSceneService().MarkDirty();
 				}
 			}
 			ImGui::PopID();
@@ -1305,7 +1322,7 @@ void FEditorPropertyWidget::RenderActorTags(AActor* PrimaryActor, const TArray<A
 			NewActorTagBuffer[0] = '\0';
 			if (EditorEngine)
 			{
-				EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+				EditorEngine->GetSceneService().MarkDirty();
 			}
 		}
 	}
@@ -1348,7 +1365,7 @@ void FEditorPropertyWidget::RenderComponentTags(UActorComponent* Component)
 					Component->RemoveTag(Tag);
 					if (EditorEngine)
 					{
-						EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+						EditorEngine->GetSceneService().MarkDirty();
 					}
 				}
 			}
@@ -1380,7 +1397,7 @@ void FEditorPropertyWidget::RenderComponentTags(UActorComponent* Component)
 			NewComponentTagBuffer[0] = '\0';
 			if (EditorEngine)
 			{
-				EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+				EditorEngine->GetSceneService().MarkDirty();
 			}
 		}
 	}
@@ -1388,6 +1405,17 @@ void FEditorPropertyWidget::RenderComponentTags(UActorComponent* Component)
 
 void FEditorPropertyWidget::RenderComponentProperties()
 {
+	bDetailsPerfTraceFrame = false;
+	if (SelectedComponent != LastDetailsPerfComponent)
+	{
+		LastDetailsPerfComponent = SelectedComponent;
+		bDetailsPerfTraceFrame =
+			SelectedComponent &&
+			(Cast<UStaticMeshComponent>(SelectedComponent) || Cast<USkeletalMeshComponent>(SelectedComponent));
+	}
+
+	const FDetailsPerfClock::time_point TotalStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
+
 	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
 	RenderEditableName("Name##Component", SelectedComponent, &bFocusComponentNameNextFrame); // 편집 가능한 UI
 	RenderComponentTags(SelectedComponent);
@@ -1396,9 +1424,12 @@ void FEditorPropertyWidget::RenderComponentProperties()
 
 	// PropertyDescriptor 기반 자동 위젯 렌더링
 	TArray<FPropertyDescriptor> Props;
+	const FDetailsPerfClock::time_point PropertiesStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
 	SelectedComponent->GetEditableProperties(Props);
+	const FDetailsPerfClock::time_point PropertiesEnd = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
 
 	AActor* Owner = SelectedComponent->GetOwner();
+	double PropertyWidgetMs = 0.0;
 
 	for (auto& Prop : Props)
     {
@@ -1427,11 +1458,21 @@ void FEditorPropertyWidget::RenderComponentProperties()
 
         if (Prop.Type == EPropertyType::SceneComponentRef)
         {
+            const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
             RenderSceneComponentRefWidget(Prop, Owner);
+            if (bDetailsPerfTraceFrame)
+            {
+                PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
+            }
         }
         else
         {
+            const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
             RenderPropertyWidget(Prop);
+            if (bDetailsPerfTraceFrame)
+            {
+                PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
+            }
         }
 
         if (bIsScriptName)
@@ -1454,9 +1495,15 @@ void FEditorPropertyWidget::RenderComponentProperties()
         }
     }
 	// Special: InterpToMovementComponent control points + behaviour + actions
+	double SkeletalDebugMs = 0.0;
 	if (USkeletalMeshComponent* SkeletalComp = Cast<USkeletalMeshComponent>(SelectedComponent))
 	{
+		const FDetailsPerfClock::time_point SkeletalStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
 		RenderSkeletalBonePoseDebug(SkeletalComp);
+		if (bDetailsPerfTraceFrame)
+		{
+			SkeletalDebugMs = DetailsPerfMs(SkeletalStart, FDetailsPerfClock::now());
+		}
 	}
 
 	if (UInterpToMovementComponent* InterpComp = Cast<UInterpToMovementComponent>(SelectedComponent))
@@ -1492,7 +1539,7 @@ void FEditorPropertyWidget::RenderComponentProperties()
             {
                 if (EditorEngine)
                 {
-                    EditorEngine->GetMainPanel().PushFooterLog("Script name is empty");
+                    EditorEngine->GetNotificationService().Warning("Script name is empty");
                 }
             }
             else
@@ -1507,7 +1554,7 @@ void FEditorPropertyWidget::RenderComponentProperties()
                 {
                     if (EditorEngine)
                     {
-                        EditorEngine->GetMainPanel().PushFooterLog("Script create failed");
+                        EditorEngine->GetNotificationService().Error("Script create failed");
                     }
                     return;
                 }
@@ -1516,7 +1563,7 @@ void FEditorPropertyWidget::RenderComponentProperties()
                 ScriptComp->ReloadLuaProperties();
                 if (EditorEngine)
                 {
-                    EditorEngine->GetMainPanel().PushFooterLog("Script created");
+                    EditorEngine->GetNotificationService().Info("Script created");
                 }
             }
         }
@@ -1527,12 +1574,12 @@ void FEditorPropertyWidget::RenderComponentProperties()
             {
                 if (EditorEngine)
                 {
-                    EditorEngine->GetMainPanel().PushFooterLog("No script selected");
+                    EditorEngine->GetNotificationService().Warning("No script selected");
                 }
             }
             else if (!ScriptMgr.EditScript(ScriptPath) && EditorEngine)
             {
-                EditorEngine->GetMainPanel().PushFooterLog("Script file not found");
+                EditorEngine->GetNotificationService().Warning("Script file not found");
             }
         }
 	}
@@ -1545,6 +1592,21 @@ void FEditorPropertyWidget::RenderComponentProperties()
         const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
 		static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
 		Ctx->SelectionManager->GetGizmo()->UpdateGizmoTransform();
+	}
+
+	if (bDetailsPerfTraceFrame)
+	{
+		const double GetEditablePropertiesMs = DetailsPerfMs(PropertiesStart, PropertiesEnd);
+		const double TotalMs = DetailsPerfMs(TotalStart, FDetailsPerfClock::now());
+		UE_LOG(
+			"[DetailsPerf] Component=%s Type=%s Total=%.2fms GetEditableProperties=%.2fms PropertyWidgets=%.2fms SkeletalDebug=%.2fms Props=%zu",
+			SelectedComponent ? SelectedComponent->GetFName().ToString().c_str() : "<None>",
+			SelectedComponent ? SelectedComponent->GetTypeInfo()->name : "<None>",
+			TotalMs,
+			GetEditablePropertiesMs,
+			PropertyWidgetMs,
+			SkeletalDebugMs,
+			Props.size());
 	}
 }
 
@@ -1652,7 +1714,9 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 
 		if (strcmp(Prop.Name, "StaticMesh") == 0)
 		{
-			TArray<FString> MeshPaths = FResourceManager::Get().GetStaticMeshPaths();
+			const TArray<FString>& MeshPaths = EditorEngine
+				? EditorEngine->GetAssetService().GetStaticMeshAssetPaths()
+				: EmptyAssetNames();
 			if (!MeshPaths.empty())
 			{
 				const FString Current = *Val;
@@ -1677,7 +1741,9 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		}
 		else if (strcmp(Prop.Name, "SkeletalMesh") == 0)
 		{
-			TArray<FString> MeshPaths = FResourceManager::Get().GetSkeletalMeshPaths();
+			const TArray<FString>& MeshPaths = EditorEngine
+				? EditorEngine->GetAssetService().GetSkeletalMeshAssetPaths()
+				: EmptyAssetNames();
 			if (!MeshPaths.empty())
 			{
 				const FString Current = *Val;
@@ -1872,7 +1938,9 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 			{
 				if (!Cast<USubUVComponent>(SelectedComponent))
 				{
-					const TArray<FString>& TexturePaths = FResourceManager::Get().GetTextureFilePath();
+					const TArray<FString>& TexturePaths = EditorEngine
+						? EditorEngine->GetAssetService().GetTextureAssetPaths()
+						: EmptyAssetNames();
 					if (ImGui::BeginCombo("Sprite Texture", Current.empty() ? "<None>" : Current.c_str()))
 					{
 						for (const FString& TexturePath : TexturePaths)
@@ -1898,9 +1966,9 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		// 리소스 키와 매칭되는 프로퍼티면 콤보 박스로 렌더링
 		TArray<FString> Names;
 		if (strcmp(Prop.Name, "Font") == 0)
-			Names = FResourceManager::Get().GetFontNames();
+			Names = EditorEngine ? EditorEngine->GetAssetService().GetFontNames() : EmptyAssetNames();
 		else if (strcmp(Prop.Name, "Particle") == 0)
-			Names = FResourceManager::Get().GetParticleNames();
+			Names = EditorEngine ? EditorEngine->GetAssetService().GetParticleNames() : EmptyAssetNames();
 
 		if (!Names.empty())
 		{
@@ -1935,11 +2003,12 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	case EPropertyType::Material:
 	{
 		TArray<UMaterialInterface*>* Slots = static_cast<TArray<UMaterialInterface*>*>(Prop.ValuePtr);
-		if (!Slots)
+		if (!Slots || !EditorEngine)
 		{
 			break;
 		}
-		RefreshMaterialSlotCache();
+		FEditorAssetService& AssetService = EditorEngine->GetAssetService();
+		const TArray<FString>& MaterialNames = AssetService.GetMaterialInterfaceNames();
 
 		DrawDetailsSeparator();
 		DrawDetailsSectionLabel(Prop.Name);
@@ -1948,6 +2017,9 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		{
 			ImGui::PushID(SlotIndex);
 			UMaterialInterface* CurrentMaterial = (*Slots)[SlotIndex];
+			const FString CurrentMaterialIdentifier = CurrentMaterial
+				? (CurrentMaterial->GetFilePath().empty() ? CurrentMaterial->GetName() : FPaths::Normalize(CurrentMaterial->GetFilePath()))
+				: FString();
 			const FString CurrentLabel = CurrentMaterial
 				? (CurrentMaterial->GetFilePath().empty() ? CurrentMaterial->GetName() : FPaths::Normalize(CurrentMaterial->GetFilePath()))
 				: FString("None");
@@ -1975,22 +2047,21 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 					ImGui::SetItemDefaultFocus();
 				}
 
-				for (int32 MaterialIndex = 0; MaterialIndex < static_cast<int32>(CachedMaterialSlotNames.size()); ++MaterialIndex)
+				for (int32 MaterialIndex = 0; MaterialIndex < static_cast<int32>(MaterialNames.size()); ++MaterialIndex)
 				{
 					ImGui::PushID(MaterialIndex);
-					UMaterialInterface* Candidate = CachedMaterialSlotMaterials[MaterialIndex];
-					if (!Candidate)
-					{
-						ImGui::PopID();
-						continue;
-					}
-
-					const FString& MaterialLabel = CachedMaterialSlotNames[MaterialIndex].empty()
+					const FString& MaterialLabel = MaterialNames[MaterialIndex].empty()
 						? FString("<Unnamed Material>")
-						: CachedMaterialSlotNames[MaterialIndex];
-					const bool bSelected = Candidate == CurrentMaterial;
+						: MaterialNames[MaterialIndex];
+					const bool bSelected = (CurrentMaterialIdentifier == MaterialLabel);
 					if (ImGui::Selectable(MaterialLabel.c_str(), bSelected))
 					{
+						UMaterialInterface* Candidate = AssetService.ResolveMaterialInterfaceByIndex(MaterialIndex);
+						if (!Candidate)
+						{
+							ImGui::PopID();
+							continue;
+						}
 						if (EditorEngine)
 						{
 							EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Material Slot");
@@ -2005,7 +2076,10 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 					}
 					if (ImGui::IsItemHovered())
 					{
-						RenderMaterialPreviewTooltip(Candidate);
+						if (UMaterialInterface* Candidate = AssetService.ResolveMaterialInterfaceByIndex(MaterialIndex))
+						{
+							RenderMaterialPreviewTooltip(Candidate);
+						}
 					}
 					ImGui::PopID();
 				}
@@ -2163,38 +2237,13 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		SelectedComponent->PostEditChangeProperty({ Prop.Name, EPropertyChangeType::ValueSet });
 		if (EditorEngine)
 		{
-			EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+			EditorEngine->GetSceneService().MarkDirty();
 		}
 	}
 
 	if (ImGui::IsItemDeactivatedAfterEdit() || !ImGui::IsAnyItemActive())
 	{
 		bPropertyEditUndoCaptured = false;
-	}
-}
-
-void FEditorPropertyWidget::RefreshMaterialSlotCache(bool bForce)
-{
-	if (!bForce && !CachedMaterialSlotNames.empty())
-	{
-		return;
-	}
-
-	CachedMaterialSlotNames.clear();
-	CachedMaterialSlotMaterials.clear();
-
-	TArray<FString> Names = FResourceManager::Get().GetMaterialInterfaceNames();
-	CachedMaterialSlotNames.reserve(Names.size());
-	CachedMaterialSlotMaterials.reserve(Names.size());
-	for (const FString& Name : Names)
-	{
-		UMaterialInterface* Material = FResourceManager::Get().GetMaterialInterface(Name);
-		if (!Material)
-		{
-			continue;
-		}
-		CachedMaterialSlotNames.push_back(Name);
-		CachedMaterialSlotMaterials.push_back(Material);
 	}
 }
 
@@ -2213,21 +2262,21 @@ void FEditorPropertyWidget::RenderMaterialPreviewTooltip(UMaterialInterface* Mat
 	}
 	ImGui::Separator();
 
-	FMaterialParamValue ParamValue;
-	if (Material->GetParam("DiffuseMap", ParamValue)
-		&& ParamValue.Type == EMaterialParamType::Texture
-		&& std::holds_alternative<UTexture*>(ParamValue.Value))
+	if (UTexture* PreviewTexture = EditorEngine->GetAssetService().GetMaterialPreviewTexture(Material))
 	{
-		if (UTexture* Texture = std::get<UTexture*>(ParamValue.Value))
+		if (ID3D11ShaderResourceView* SRV = PreviewTexture->GetSRV())
 		{
-			if (ID3D11ShaderResourceView* SRV = Texture->GetSRV())
-			{
-				ImGui::Image(reinterpret_cast<ImTextureID>(SRV), ImVec2(128.0f, 128.0f));
-				ImGui::Separator();
-			}
+			ImGui::Image(reinterpret_cast<ImTextureID>(SRV), ImVec2(128.0f, 128.0f));
+			ImGui::Separator();
 		}
 	}
+	else
+	{
+		ImGui::TextDisabled("No texture preview.");
+		ImGui::Separator();
+	}
 
+	FMaterialParamValue ParamValue;
 	auto DrawColorParam = [](const char* Label, const ImVec4& Color)
 	{
 		ImGui::ColorButton(Label, Color, ImGuiColorEditFlags_NoTooltip, ImVec2(34.0f, 18.0f));
@@ -2261,6 +2310,7 @@ void FEditorPropertyWidget::RenderMaterialPreviewTooltip(UMaterialInterface* Mat
 
 void FEditorPropertyWidget::RenderSkeletalBonePoseDebug(USkeletalMeshComponent* Comp)
 {
+	const FDetailsPerfClock::time_point DebugStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
 	if (!Comp)
 	{
 		return;
@@ -2390,6 +2440,15 @@ void FEditorPropertyWidget::RenderSkeletalBonePoseDebug(USkeletalMeshComponent* 
 	}
 
 	ImGui::PopID();
+
+	if (bDetailsPerfTraceFrame)
+	{
+		UE_LOG(
+			"[DetailsPerf] SkeletalBoneDebug Bones=%zu SelectedBone=%d Time=%.2fms",
+			Bones.size(),
+			SelectedBoneIndex,
+			DetailsPerfMs(DebugStart, FDetailsPerfClock::now()));
+	}
 }
 
 void FEditorPropertyWidget::RenderInterpControlPoints(UInterpToMovementComponent* Comp)
@@ -2448,7 +2507,7 @@ void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UA
 			FString SceneName = "Default";
 			if (EditorEngine)
 			{
-				SceneName = EditorEngine->GetMainPanel().GetSceneWidget().GetSceneName();
+				SceneName = EditorEngine->GetSceneService().GetSceneName();
 			}
             ScriptComp->SetScriptName(MakeDefaultScriptName(SceneName, PrimaryActor));
 		}
@@ -2481,7 +2540,7 @@ void FEditorPropertyWidget::RenderEditableName(const char* Label, T* TargetObjec
 		TargetObject->SetFName(FName(NameBuf));
 		if (EditorEngine)
 		{
-			EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+			EditorEngine->GetSceneService().MarkDirty();
 		}
 	}
 }

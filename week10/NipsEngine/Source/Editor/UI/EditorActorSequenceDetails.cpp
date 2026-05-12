@@ -285,7 +285,7 @@ void FEditorActorSequenceDetails::MarkEdited(
 
 	if (EditorEngine)
 	{
-		EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+		EditorEngine->GetSceneService().MarkDirty();
 	}
 }
 
