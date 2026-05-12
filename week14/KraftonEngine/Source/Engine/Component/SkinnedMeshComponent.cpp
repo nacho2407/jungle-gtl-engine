@@ -3,7 +3,8 @@
 #include "Serialization/Archive.h"
 #include "Runtime/Engine.h"
 #include "Mesh/MeshManager.h"
-#include <Core/Log.h>
+#include "Collision/RayUtils.h"
+#include "Core/Log.h"
 
 IMPLEMENT_CLASS(USkinnedMeshComponent, UMeshComponent)
 HIDE_FROM_COMPONENT_LIST(USkinnedMeshComponent)
@@ -776,6 +777,46 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 			}
 		}
 	}
+}
+
+bool USkinnedMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
+{
+	if (!SkeletalMesh)
+	{
+		return false;
+	}
+
+	FSkeletalMesh* Asset = SkeletalMesh->GetSkeletalMeshAsset();
+	if (!Asset || Asset->Indices.empty() || SkinnedVertices.empty())
+	{
+		return false;
+	}
+
+	if (SkinnedVertices.size() != Asset->Vertices.size())
+	{
+		return false;
+	}
+
+	const FMatrix& WorldMatrix = GetWorldMatrix();
+	const FMatrix& WorldInverse = GetWorldInverseMatrix();
+
+	// SkinnedVertices 기반으로 Picking
+	const bool bHit = FRayUtils::RaycastTriangles(
+		Ray,
+		WorldMatrix,
+		WorldInverse,
+		SkinnedVertices.data(),
+		sizeof(FVertexPNCTT),
+		Asset->Indices.data(),
+		static_cast<uint32>(Asset->Indices.size()),
+		OutHitResult);
+
+	if (bHit)
+	{
+		OutHitResult.HitComponent = this;
+	}
+
+	return bHit;
 }
 
 void USkinnedMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)

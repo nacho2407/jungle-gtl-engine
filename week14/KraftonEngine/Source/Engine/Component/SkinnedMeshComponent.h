@@ -38,6 +38,7 @@ public:
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
+	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
 	const FString& GetSkeletalMeshPath() const { return SkeletalMeshPath; }
 
