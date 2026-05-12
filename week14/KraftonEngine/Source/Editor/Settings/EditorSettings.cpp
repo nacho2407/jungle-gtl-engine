@@ -21,7 +21,8 @@ namespace Key
 
 	// Slot Render Options
 	constexpr const char* ViewMode = "ViewMode";
-	constexpr const char* bPrimitives = "bPrimitives";
+	constexpr const char* bStaticMesh = "bStaticMesh";
+	constexpr const char* bSkeletalMesh = "bSkeletalMesh";
 	constexpr const char* bGrid = "bGrid";
 	constexpr const char* bWorldAxis = "bWorldAxis";
 	constexpr const char* bGizmo = "bGizmo";
@@ -125,7 +126,8 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	JSON Obj = Object();
 	Obj[Key::ViewMode] = static_cast<int32>(Opts.ViewMode);
 	Obj[Key::ViewportType] = static_cast<int32>(Opts.ViewportType);
-	Obj[Key::bPrimitives] = Opts.ShowFlags.bPrimitives;
+	Obj[Key::bStaticMesh] = Opts.ShowFlags.bStaticMesh;
+	Obj[Key::bSkeletalMesh] = Opts.ShowFlags.bSkeletalMesh;
 	Obj[Key::bGrid] = Opts.ShowFlags.bGrid;
 	Obj[Key::bWorldAxis] = Opts.ShowFlags.bWorldAxis;
 	Obj[Key::bGizmo] = Opts.ShowFlags.bGizmo;
@@ -163,8 +165,10 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.ViewMode = static_cast<EViewMode>(Obj[Key::ViewMode].ToInt());
 	if (Obj.hasKey(Key::ViewportType))
 		Opts.ViewportType = static_cast<ELevelViewportType>(Obj[Key::ViewportType].ToInt());
-	if (Obj.hasKey(Key::bPrimitives))
-		Opts.ShowFlags.bPrimitives = Obj[Key::bPrimitives].ToBool();
+	if (Obj.hasKey(Key::bStaticMesh))
+		Opts.ShowFlags.bStaticMesh = Obj[Key::bStaticMesh].ToBool();
+	if (Obj.hasKey(Key::bSkeletalMesh))
+		Opts.ShowFlags.bSkeletalMesh = Obj[Key::bSkeletalMesh].ToBool();
 	if (Obj.hasKey(Key::bGrid))
 		Opts.ShowFlags.bGrid = Obj[Key::bGrid].ToBool();
 	if (Obj.hasKey(Key::bWorldAxis))

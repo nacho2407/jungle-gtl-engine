@@ -33,6 +33,7 @@ namespace
 FStaticMeshSceneProxy::FStaticMeshSceneProxy(UStaticMeshComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
+	ProxyFlags |= EPrimitiveProxyFlags::StaticMesh;
 }
 
 UStaticMeshComponent* FStaticMeshSceneProxy::GetStaticMeshComponent() const

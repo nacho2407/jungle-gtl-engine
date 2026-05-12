@@ -584,7 +584,8 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 	{
 		ImGui::Text("Show Flags");
 
-		ImGui::Checkbox("Primitives", &RenderOptions.ShowFlags.bPrimitives);
+		ImGui::Checkbox("bStaticMesh", &RenderOptions.ShowFlags.bStaticMesh);
+		ImGui::Checkbox("SkeletalMesh", &RenderOptions.ShowFlags.bSkeletalMesh);
 		ImGui::Checkbox("Grid", &RenderOptions.ShowFlags.bGrid);
 		ImGui::Checkbox("World Axis", &RenderOptions.ShowFlags.bWorldAxis);
 		ImGui::Checkbox("Gizmo", &RenderOptions.ShowFlags.bGizmo);

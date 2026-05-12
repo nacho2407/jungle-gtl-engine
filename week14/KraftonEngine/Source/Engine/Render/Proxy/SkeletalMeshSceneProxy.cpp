@@ -8,6 +8,7 @@
 FSkeletalMeshSceneProxy::FSkeletalMeshSceneProxy(USkeletalMeshComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
+	ProxyFlags |= EPrimitiveProxyFlags::SkeletalMesh;
 }
 
 FSkeletalMeshSceneProxy::~FSkeletalMeshSceneProxy()
