@@ -58,10 +58,11 @@ public:
 	void SetBoneLocalTransformByIndex(int32 BoneIndex, const FTransform& NewLocalTransform);
 
 	void GetCurrentBoneGlobalTransforms(TArray<FTransform>& OutGlobals) const;
+	void GetCurrentBoneGlobalMatrices(TArray<FMatrix>& OutGlobals) const;
 	const TArray<FVertexPNCTT>& GetSkinnedVertices() const { return SkinnedVertices; }
 	uint64 GetSkinnedRevision() const { return SkinnedRevision; }
-	FMeshBuffer* GetMeshBuffer() const;
-	FMeshDataView GetMeshDataView() const;
+	FMeshBuffer* GetMeshBuffer() const override;
+	FMeshDataView GetMeshDataView() const override;
 
 protected:
 	// Tick/skinning 섹션: animation system 없이 현재 bone edit pose를 매 frame CPU skinning 결과로 반영한다.
@@ -70,6 +71,7 @@ protected:
 	void InitSkinningCache();
 	void UpdateCPUSkinning();
 	void BuildBoneEditGlobalTransforms(TArray<FTransform>& OutGlobals) const;
+	void BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlobals) const;
 
 protected:
 	// Mesh/material state는 SetSkeletalMesh와 PostEditProperty가 같은 경로를 쓰도록 여기서 소유한다.
@@ -79,7 +81,7 @@ protected:
 	TArray<FMaterialSlot> MaterialSlots;
 
 	// Bone edit pose는 asset 원본 bone을 직접 바꾸지 않고 component-local override로만 유지한다.
-	TArray<FTransform> BoneEditLocalTransforms;
+	TArray<FMatrix> BoneEditLocalMatrices;
 	bool bUseBoneEditPose = false;
 
 	// SceneProxy는 이 결과와 revision만 보고 dynamic vertex buffer를 갱신한다.
