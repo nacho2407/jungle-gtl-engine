@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorPlayToolbarWidget.h"
+﻿#include "Editor/UI/EditorPlayToolbarWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/PIE/PIETypes.h"
@@ -65,7 +65,7 @@ void FEditorPlayToolbarWidget::Render(float Width)
 		return bClicked;
 	};
 
-	ID3D11ShaderResourceView* PlayIcon = FEditorTextureManager::Get().GetOrLoadIcon(FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), L"Editor/Icons/Play.png")));
+	ID3D11ShaderResourceView* PlayIcon = FEditorTextureManager::Get().GetOrLoadIcon(FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), L"Editor/Icons/icon_playInSelectedViewport_16x.png")));
 	if (DrawIconButton("##PIE_Play", PlayIcon, "Play", /*bDisabled=*/bPlaying))
 	{
 		FRequestPlaySessionParams Params;
@@ -74,7 +74,7 @@ void FEditorPlayToolbarWidget::Render(float Width)
 
 	ImGui::SameLine(0.0f, ButtonSpacing);
 
-	ID3D11ShaderResourceView* StopIcon = FEditorTextureManager::Get().GetOrLoadIcon(FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), L"Editor/Icons/Stop.png")));
+	ID3D11ShaderResourceView* StopIcon = FEditorTextureManager::Get().GetOrLoadIcon(FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), L"Editor/Icons/generic_stop_16x.png")));
 	if (DrawIconButton("##PIE_Stop", StopIcon, "Stop", /*bDisabled=*/!bPlaying))
 	{
 		Editor->RequestEndPlayMap();
