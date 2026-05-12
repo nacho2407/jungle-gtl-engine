@@ -3,7 +3,7 @@
 
 ULineBatchComponent::ULineBatchComponent()
 {
-	UMaterial* Mat = FResourceManager::Get().GetOrCreateMaterial("LineMaterial", "Shaders/UI/Line.hlsl");
+	UMaterial* Mat = FResourceManager::Get().GetOrCreateMaterial("LineMaterial", EMaterialShaderType::UILine);
 	Mat->DepthStencilType = EDepthStencilType::Default;
 	Mat->BlendType = EBlendType::AlphaBlend;
 	Mat->RasterizerType = ERasterizerType::SolidBackCull;

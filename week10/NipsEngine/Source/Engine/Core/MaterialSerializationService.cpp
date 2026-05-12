@@ -6,7 +6,6 @@
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Material.h"
-#include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/Texture.h"
 #include "SimpleJSON/json.hpp"
 
@@ -293,7 +292,7 @@ bool FMaterialSerializationService::SerializeMaterial(const FString& MatFilePath
 	{
 		Root["ImportedName"] = Material->ImportedName;
 	}
-	Root["PixelShader"] = Material->GetPixelShaderPath();
+	Root["ShaderType"] = ToString(Material->GetShaderType());
 
 	JSON Params = JSON::Make(JSON::Class::Array);
 	for (const auto& [ParamName, ParamValue] : Material->MaterialParams)
@@ -400,9 +399,15 @@ bool FMaterialSerializationService::DeserializeMaterial(const FString& MatFilePa
 	}
 
 	const FString MatName = Root["Name"].ToString();
-	const FString ShaderPath = Root["PixelShader"].ToString();
-	UMaterial* Material = ResourceManager.GetOrCreateMaterial(MatName, NormalizedMatFilePath, ShaderPath);
-	Material->SetPixelShader(ShaderPath, FShaderPaths::GetDefaultPixelShaderEntryPoint(ShaderPath));
+	EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit;
+	if (!TryParseMaterialShaderType(Root["ShaderType"].ToString(), ShaderType))
+	{
+		UE_LOG_ERROR("Invalid or missing material ShaderType: %s", NormalizedMatFilePath.c_str());
+		return false;
+	}
+
+	UMaterial* Material = ResourceManager.GetOrCreateMaterial(MatName, NormalizedMatFilePath, ShaderType);
+	Material->SetShaderType(ShaderType);
 	if (Root.hasKey("ImportedName"))
 	{
 		Material->ImportedName = Root["ImportedName"].ToString();

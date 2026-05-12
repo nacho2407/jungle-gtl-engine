@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "Prosthetic_Mat",
         "Name" : "halo_reach_-_cybernetic_arm_Mat_0",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

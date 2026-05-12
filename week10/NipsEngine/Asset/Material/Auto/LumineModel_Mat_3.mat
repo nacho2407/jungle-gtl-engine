@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "?쇘쇋",
         "Name" : "LumineModel_Mat_3",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

@@ -913,7 +913,7 @@ bool FEditorContentBrowserWidget::CreateMaterialAsset()
 	const FString RelativePath = MakeRelativeProjectPath(NewPath);
 	const FString MaterialName = FPaths::ToUtf8(NewPath.stem().wstring());
 
-	UMaterial* Material = FResourceManager::Get().GetOrCreateMaterial(MaterialName, RelativePath, "Shaders/Material/UberLit.hlsl");
+	UMaterial* Material = FResourceManager::Get().GetOrCreateMaterial(MaterialName, RelativePath, EMaterialShaderType::SurfaceLit);
 	if (!Material)
 	{
 		return false;

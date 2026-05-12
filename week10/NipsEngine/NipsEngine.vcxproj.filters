@@ -1616,6 +1616,9 @@
     <ClInclude Include="Source\Engine\Render\Resource\ShaderHelper.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\MaterialShaderTypes.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\ShaderPaths.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>

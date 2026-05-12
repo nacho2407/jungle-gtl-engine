@@ -16,7 +16,7 @@ UGizmoComponent::UGizmoComponent()
 	GizmoMeshData = &FEditorMeshLibrary::GetTranslationGizmo();
 
 	// Gizmo 전용 Material 생성
-	Material = FResourceManager::Get().GetOrCreateMaterial("GizmoMaterial", "Shaders/EditorDebug/Gizmo.hlsl");
+	Material = FResourceManager::Get().GetOrCreateMaterial("GizmoMaterial", EMaterialShaderType::EditorGizmo);
 }
 
 const FMeshData* UGizmoComponent::GetActiveMeshData() const

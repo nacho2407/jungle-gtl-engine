@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "머티리얼",
         "Name" : "cube_Mat_0",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

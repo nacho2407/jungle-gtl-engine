@@ -1045,6 +1045,7 @@
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShaderCompiler.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShaderHelper.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\MaterialShaderTypes.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShaderPaths.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShaderTypes.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShadowAtlasManager.h" />

@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "Material_BTC",
         "Name" : "Sketchfab_2021_07_22_16_18_59_Mat_1",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : true
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

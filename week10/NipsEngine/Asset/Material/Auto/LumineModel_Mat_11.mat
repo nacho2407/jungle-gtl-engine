@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "裤子",
         "Name" : "LumineModel_Mat_11",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

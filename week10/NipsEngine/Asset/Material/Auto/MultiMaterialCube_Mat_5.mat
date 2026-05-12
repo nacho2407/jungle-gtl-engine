@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "Mat_?곗깋_嫄곗튇?쒕㈃",
         "Name" : "MultiMaterialCube_Mat_5",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

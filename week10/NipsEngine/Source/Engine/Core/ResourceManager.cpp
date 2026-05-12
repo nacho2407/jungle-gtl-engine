@@ -23,7 +23,6 @@
 #include "Asset/BinarySerializer.h"
 #include "Asset/StaticMeshTypes.h"
 #include "Asset/StaticMeshSimplifier.h"
-#include "Render/Resource/ShaderPaths.h"
 #include "Render/Scene/RenderCommand.h"
 
 namespace
@@ -220,7 +219,7 @@ void FResourceManager::InitializeDefaultWhiteTexture(ID3D11Device* Device)
 
 void FResourceManager::InitializeDefaultMaterial(ID3D11Device* Device)
 {
-	UMaterial* DefaultMat = GetOrCreateMaterial("DefaultWhite", "Shaders/Material/UberLit.hlsl");
+	UMaterial* DefaultMat = GetOrCreateMaterial("DefaultWhite", EMaterialShaderType::SurfaceLit);
 	DefaultMat->MaterialParams["AmbientColor"] = FMaterialParamValue(DefaultMat->MaterialData.AmbientColor);
 	DefaultMat->MaterialParams["DiffuseColor"] = FMaterialParamValue(DefaultMat->MaterialData.DiffuseColor);
 	DefaultMat->MaterialParams["SpecularColor"] = FMaterialParamValue(DefaultMat->MaterialData.SpecularColor);
@@ -265,7 +264,7 @@ void FResourceManager::InitializeDefaultMaterial(ID3D11Device* Device)
 
 void FResourceManager::InitializeOutlineMaterial()
 {
-	UMaterial* OutlineMat = GetOrCreateMaterial("OutlineMaterial", "Shaders/PostProcess/Outline.hlsl");
+	UMaterial* OutlineMat = GetOrCreateMaterial("OutlineMaterial", EMaterialShaderType::EditorOutline);
 	OutlineMat->SetParam("OutlineColor", FMaterialParamValue(FVector4(1.0f, 0.5f, 0.0f, 1.0f)));
 	OutlineMat->SetParam("OutlineThicknessPixels", FMaterialParamValue(5.0f));
 	OutlineMat->SetParam("OutlineViewportSize", FMaterialParamValue(FVector2(800.0f, 600.0f)));
@@ -485,7 +484,7 @@ UMaterial* FResourceManager::GetMaterial(const FString& MaterialName) const
 }
 
 // 嶺뚮씞?녻뚯궘??????怨몃턄 ?띠럾????띠룄????Material????諛댁뎽
-UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Path, const FString& ShaderName)
+UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Path, EMaterialShaderType ShaderType)
 {
 	UMaterial* Material = GetMaterial(Path);
 	if (Material)
@@ -497,14 +496,14 @@ UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Path, const FStr
 	Material->Name = Path;
 	Material->FilePath = Path;
 
-	Material->SetPixelShader(ShaderName, FShaderPaths::GetDefaultPixelShaderEntryPoint(ShaderName));
+	Material->SetShaderType(ShaderType);
 
 	MaterialCache.RegisterMaterial(Path, Material);
 
 	return Material;
 }
 
-UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Name, const FString& Path, const FString& ShaderName)
+UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Name, const FString& Path, EMaterialShaderType ShaderType)
 {
 	UMaterial* Material = GetMaterial(Name);
 	if (Material)
@@ -516,16 +515,16 @@ UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Name, const FStr
 	Material->Name = Name;
 	Material->FilePath = Path;
 
-	Material->SetPixelShader(ShaderName, FShaderPaths::GetDefaultPixelShaderEntryPoint(ShaderName));
+	Material->SetShaderType(ShaderType);
 
 	MaterialCache.RegisterMaterial(Name, Material);
 
 	return Material;
 }
 
-bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& ShaderName, ID3D11Device* Device)
+bool FResourceManager::LoadMaterial(const FString& MtlFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device)
 {
-	return FMaterialLoadService(*this).Load(MtlFilePath, ShaderName, Device);
+	return FMaterialLoadService(*this).Load(MtlFilePath, ShaderType, Device);
 }
 
 void FResourceManager::RegisterObjMaterialSlotAliases(const FString& ObjPath, const FString& MtlPath)

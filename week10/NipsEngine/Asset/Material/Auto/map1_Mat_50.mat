@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "M_Wall02",
         "Name" : "map1_Mat_50",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : true
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

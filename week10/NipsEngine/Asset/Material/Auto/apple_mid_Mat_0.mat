@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "MatID_1",
         "Name" : "apple_mid_Mat_0",
         "Params" : [{
@@ -54,5 +54,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

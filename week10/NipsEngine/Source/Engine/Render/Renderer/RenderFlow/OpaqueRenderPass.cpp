@@ -172,12 +172,8 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            // VertexFactory는 Mesh 타입에 맞는 VS를 고르고, Material은 표면용 PS만 제공합니다.
            // 여기서 두 정보를 합쳐 실제 Draw에 사용할 FShaderProgram을 만듭니다.
            const FVertexFactoryDesc& VertexFactoryDesc = FVertexFactoryRegistry::Get(Cmd.VertexFactoryType);
-           const FString PixelShaderPath = Cmd.Material->GetPixelShaderPath().empty()
-               ? FString("Shaders/Material/UberLit.hlsl")
-               : Cmd.Material->GetPixelShaderPath();
-           const FString PixelEntryPoint = Cmd.Material->GetPixelShaderEntryPoint().empty()
-               ? FString("mainPS")
-               : Cmd.Material->GetPixelShaderEntryPoint();
+           const FString& PixelShaderPath = Cmd.Material->GetPixelShaderPath();
+           const FString& PixelEntryPoint = Cmd.Material->GetPixelShaderEntryPoint();
 
            FShaderStageKey VSKey;
            VSKey.FilePath = VertexFactoryDesc.VertexShaderPath;
