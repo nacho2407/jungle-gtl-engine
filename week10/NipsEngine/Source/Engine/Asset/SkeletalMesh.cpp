@@ -60,22 +60,43 @@ const TArray<FBoneInfo>& USkeletalMesh::GetBones() const
     return MeshData ? MeshData->Bones : Empty;
 }
 
-const TArray<FMatrix>& USkeletalMesh::GetInverseBindPoses() const
+const FBoneInfo* USkeletalMesh::GetBoneInfo(int32 BoneIndex) const
 {
-    static const TArray<FMatrix> Empty = {};
-    return MeshData ? MeshData->InverseBindPoseMatrices : Empty;
+    if (!MeshData)
+    {
+        return nullptr;
+    }
+
+    if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(MeshData->Bones.size()))
+    {
+        return nullptr;
+    }
+
+    return &MeshData->Bones[BoneIndex];
 }
 
-const TArray<FMatrix>& USkeletalMesh::GetReferenceLocalPose() const
+const FMatrix& USkeletalMesh::GetLocalBindTransform(int32 BoneIndex) const
 {
-    static const TArray<FMatrix> Empty = {};
-    return MeshData ? MeshData->ReferenceLocalPose : Empty;
+    static const FMatrix Identity = FMatrix::Identity;
+
+    const FBoneInfo* Bone = GetBoneInfo(BoneIndex);
+    return Bone ? Bone->LocalBindTransform : Identity;
 }
 
-const TArray<FMatrix>& USkeletalMesh::GetReferenceGlobalPose() const
+const FMatrix& USkeletalMesh::GetGlobalBindTransform(int32 BoneIndex) const
 {
-    static const TArray<FMatrix> Empty = {};
-    return MeshData ? MeshData->ReferenceGlobalPose : Empty;
+    static const FMatrix Identity = FMatrix::Identity;
+
+    const FBoneInfo* Bone = GetBoneInfo(BoneIndex);
+    return Bone ? Bone->GlobalBindTransform : Identity;
+}
+
+const FMatrix& USkeletalMesh::GetInverseBindPose(int32 BoneIndex) const
+{
+    static const FMatrix Identity = FMatrix::Identity;
+
+    const FBoneInfo* Bone = GetBoneInfo(BoneIndex);
+    return Bone ? Bone->InverseBindPose : Identity;
 }
 
 const TArray<FStaticMeshSection>& USkeletalMesh::GetSections() const

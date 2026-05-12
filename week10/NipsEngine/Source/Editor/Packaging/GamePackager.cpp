@@ -1,4 +1,4 @@
-#include "Editor/Packaging/GamePackager.h"
+﻿#include "Editor/Packaging/GamePackager.h"
 
 #include "Asset/BinarySerializer.h"
 #include "Asset/ObjLoader.h"
@@ -1490,6 +1490,7 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
     GameIni << "SplashMinSeconds=" << std::max(3.0f, Settings.SplashMinSeconds) << "\n";
     GameIni << "\n[Render]\n";
     GameIni << "bShadow=" << (FEditorSettings::Get().ShowFlags.bShadow ? "true" : "false") << "\n";
+    GameIni << "bSkeletalMesh=" << (FEditorSettings::Get().ShowFlags.bSkeletalMesh ? "true" : "false") << "\n";
     GameIni.close();
     EmitBuildLog("Wrote Settings/Game.ini");
 

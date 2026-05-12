@@ -4,6 +4,7 @@
 #include "Asset/CurveFloatAsset.h"
 #include "Asset/FbxImporter.h"
 #include "Asset/ObjLoader.h"
+#include "Asset/SkeletalMesh.h"
 #include "Asset/StaticMesh.h"
 #include "Core/AtlasResourceCache.h"
 #include "Core/CurveResourceCache.h"
@@ -97,6 +98,13 @@ public:
 	UStaticMesh* FindStaticMesh(const FString& Path) const;
 	TArray<FString> GetStaticMeshPaths() const;
 
+	/*
+	 * note: 병합하면서 충돌이 발생하거나 동일한 로직의 함수가 있다면 날려버리셔도 됩니다
+	 */
+	USkeletalMesh* LoadSkeletalMesh(const FString& Path);
+    USkeletalMesh* FindSkeletalMesh(const FString& Path) const;
+	TArray<FString> GetSkeletalMeshPaths() const;
+
 	UCurveFloatAsset* LoadCurve(const FString& Path);
 	UCurveFloatAsset* FindCurve(const FString& Path) const;
 	bool SaveCurve(const FString& Path, const UCurveFloatAsset* Curve);
@@ -128,6 +136,8 @@ private:
 	UMaterial* GetMaterialForStaticMeshSlot(const FString& SourcePath, const FString& SlotName) const;
 	void ResolveStaticMeshMaterialSlots(const FString& SourcePath, FStaticMesh* StaticMesh) const;
 
+	void ResolveSkeletalMeshMaterialSlots(const FString& SourcePath, FSkeletalMesh* SkeletalMesh) const;
+
 	FResourceManager() = default;
 	~FResourceManager() { ReleaseGPUResources(); }
 
@@ -147,11 +157,14 @@ private:
 	FStaticMeshResourceCache StaticMeshCache;
 	FAtlasResourceCache AtlasCache;
 
+	TMap<FString, USkeletalMesh*> SkeletalMeshMap;
+
 	/* Paths */
 	TArray<FString> ObjFilePaths;
 	TArray<FString> MaterialFilePaths;
 	TArray<FString> ParticleFilePaths;
 	TArray<FString> FontFilePaths;
 	TArray<FString> TextureFilePaths;
+	TArray<FString> SkeletalMeshFilePaths;
 	TArray<FString> CurveFilePaths;
 };

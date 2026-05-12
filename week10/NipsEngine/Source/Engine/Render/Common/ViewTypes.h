@@ -26,6 +26,7 @@ enum class ELightCullMode : int32
 struct FShowFlags
 {
     bool bPrimitives = true;
+    bool bSkeletalMesh = true;
     bool bGrid = true;
     bool bAxis = true;
     bool bGizmo = true;

@@ -1,16 +1,30 @@
-#pragma once
+﻿#pragma once
 
-#include "Asset/StaticMeshTypes.h"
 #include "Asset/IAssetLoader.h"
-#include <Core/ResourceTypes.h>
+#include "Asset/SkeletalMeshTypes.h"
+#include "Asset/StaticMeshTypes.h"
+#include "Core/ResourceTypes.h"
 
 namespace fbxsdk
 {
 	class FbxManager;
 	class FbxScene;
 	class FbxNode;
-	class FbxMesh;
+    class FbxMesh;
+    class FbxAMatrix;
 }
+
+enum class ESkeletalMeshImportPass
+{
+    SkinnedMeshes,
+    RigidAttachedMeshes
+};
+
+struct FFbxMeshContentInfo
+{
+    bool bHasStaticMesh = false;
+    bool bHasSkeletalMesh = false;
+};
 
 class FFbxImporter : public IAssetLoader
 {
@@ -22,6 +36,10 @@ public:
 
 	bool SupportsExtension(const FString& Extension) const override;
 	FString GetLoaderName() const override;
+
+	FSkeletalMesh* LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOptions& LoadOptions);
+
+	FFbxMeshContentInfo InspectMeshContent(const FString& Path);
 
 private:
 	bool ImportScene(const FString& Path, fbxsdk::FbxManager* Manager, fbxsdk::FbxScene* Scene);
@@ -35,4 +53,28 @@ private:
 
 	void NormalizePositionsToUnitCube(FStaticMesh* InStaticMesh);
 	void ComputeTangents(FStaticMesh* InStaticMesh);
+
+    void CollectSkeletalMeshes(
+        fbxsdk::FbxNode* Node,
+        FSkeletalMesh* InSkeletalMesh,
+        ESkeletalMeshImportPass Pass,
+        TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex,
+        bool& bHasImportedSkinnedMesh);
+
+    void ProcessSkeletalMesh(
+        fbxsdk::FbxMesh* Mesh,
+        FSkeletalMesh* InSkeletalMesh,
+        ESkeletalMeshImportPass Pass,
+        TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex,
+        bool& bHasImportedSkinnedMesh);
+
+    void ProcessRigidAttachedMesh(
+        fbxsdk::FbxMesh* Mesh,
+        FSkeletalMesh* InSkeletalMesh,
+        TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex,
+        bool bHasImportedSkinnedMesh);
+
+    int32 GetOrAddMaterialSlot(FSkeletalMesh* InSkeletalMesh, const FString& MaterialName);
+    FAABB BuildLocalBounds(FSkeletalMesh* InSkeletalMesh) const;
+    void ComputeTangents(FSkeletalMesh* InSkeletalMesh);
 };

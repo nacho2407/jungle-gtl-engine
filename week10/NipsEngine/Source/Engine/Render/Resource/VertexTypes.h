@@ -32,6 +32,7 @@ struct FSkeletalMeshVertex
     FVector4 Tangent;
 
     // Bone influence (핵심)
+    // TODO: invalid bone 표현이나 256개 이상의 bone 표현을 위해 int32로 변경을 고려
     uint8 BoneIndices[4];
     float BoneWeights[4];
 };

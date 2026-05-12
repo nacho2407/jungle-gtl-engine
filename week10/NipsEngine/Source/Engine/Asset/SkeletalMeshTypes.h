@@ -22,11 +22,7 @@ struct FSkeletalMesh
 
     TArray<FBoneInfo> Bones;
 
-    TArray<FMatrix> InverseBindPoseMatrices;
-
-    // Reference Pose
-    TArray<FMatrix> ReferenceLocalPose;
-    TArray<FMatrix> ReferenceGlobalPose;
+    // 변환 행렬의 경우 FBoneInfo에만 두도록 처리
 
     // Material
 	// StaticMeshSection 이긴 하나, StaticMesh 에 종속된 개념이 아니라 이름은 나중에 바꿔야할것으로 보임
