@@ -89,7 +89,7 @@ void FEditorMainPanel::RenderUndoHistoryPanel(float DeltaTime)
     ImGui::BeginDisabled(!bCanUndo);
     if (ImGui::Button("Undo", ImVec2(86.0f, 0.0f)))
     {
-        EditorEngine->GetUndoSystem().Undo();
+        EditorEngine->GetCommandSystem().Execute(EEditorCommand::Undo);
     }
     ImGui::EndDisabled();
 
@@ -97,7 +97,7 @@ void FEditorMainPanel::RenderUndoHistoryPanel(float DeltaTime)
     ImGui::BeginDisabled(!bCanRedo);
     if (ImGui::Button("Redo", ImVec2(86.0f, 0.0f)))
     {
-        EditorEngine->GetUndoSystem().Redo();
+        EditorEngine->GetCommandSystem().Execute(EEditorCommand::Redo);
     }
     ImGui::EndDisabled();
 
@@ -105,7 +105,7 @@ void FEditorMainPanel::RenderUndoHistoryPanel(float DeltaTime)
     ImGui::BeginDisabled(!bCanUndo && !bCanRedo);
     if (ImGui::Button("Clear", ImVec2(86.0f, 0.0f)))
     {
-        EditorEngine->GetUndoSystem().ClearHistory();
+        EditorEngine->GetCommandSystem().Execute(EEditorCommand::ClearUndoHistory);
     }
     ImGui::EndDisabled();
 
@@ -137,7 +137,9 @@ void FEditorMainPanel::RenderUndoHistoryPanel(float DeltaTime)
             const FString Label = UndoEntries[Index].Label.empty() ? FString("Scene Edit") : UndoEntries[Index].Label;
             if (ImGui::Selectable(Label.c_str()))
             {
-                EditorEngine->GetUndoSystem().RestoreHistoryIndex(Index);
+                FEditorCommandArgs Args;
+                Args.HistoryIndex = Index;
+                EditorEngine->GetCommandSystem().Execute(EEditorCommand::RestoreUndoHistoryIndex, Args);
             }
             ImGui::PopID();
         }

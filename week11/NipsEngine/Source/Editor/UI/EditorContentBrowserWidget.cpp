@@ -763,11 +763,14 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		}
 		else if (Item.Extension == ".scene")
 		{
-			EditorEngine->GetMainPanel().GetSceneWidget().LoadSceneFromFilePath(FPaths::ToUtf8(Item.Path.wstring()));
+			FEditorCommandArgs Args;
+			Args.ScenePath = FPaths::ToUtf8(Item.Path.wstring());
+			Args.bPromptSave = true;
+			EditorEngine->GetCommandSystem().Execute(EEditorCommand::OpenScene, Args);
 		}
 		else if (IsPrefabAsset(Item.Extension))
 		{
-			EditorEngine->GetMainPanel().PushFooterLog("Prefab selected. Drag to viewport or right-click to spawn.");
+			EditorEngine->GetNotificationService().Info("Prefab selected. Drag to viewport or right-click to spawn.");
 		}
 		else
 		{
@@ -1002,7 +1005,7 @@ bool FEditorContentBrowserWidget::CreateSceneAsset()
 	}
 
 	const std::filesystem::path NewPath = MakeUniquePath(CurrentPath / L"New Scene.Scene");
-	if (!EditorEngine->CreateDefaultSceneAsset(FPaths::ToUtf8(NewPath.wstring())))
+	if (!EditorEngine->GetSceneService().CreateSceneAsset(FPaths::ToUtf8(NewPath.wstring())).bSuccess)
 	{
 		return false;
 	}

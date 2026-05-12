@@ -129,7 +129,7 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 		Count = 1;
 		if (HasPlayerStart(World))
 		{
-			EditorEngine->GetMainPanel().PushFooterLog("Player Start already exists");
+			EditorEngine->GetNotificationService().Info("Player Start already exists");
 			return false;
 		}
 	}
@@ -138,7 +138,7 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 		Count = 1;
 		if (HasPlacedPlayer(World))
 		{
-			EditorEngine->GetMainPanel().PushFooterLog("Player actor already exists");
+			EditorEngine->GetNotificationService().Info("Player actor already exists");
 			return false;
 		}
 	}

@@ -52,7 +52,6 @@ private:
 	void RenderSkeletalBonePoseDebug(class USkeletalMeshComponent* Comp);
 	void RenderInterpControlPoints(class UInterpToMovementComponent* Comp);
 	void RenderMaterialPreviewTooltip(UMaterialInterface* Material);
-	void RefreshMaterialSlotCache(bool bForce = false);
 
 	// 유틸리티
 	void AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp, class USceneComponent* AttachTargetOverride = nullptr);
@@ -69,11 +68,11 @@ private:
 	AActor* LockedDetailsActor = nullptr;
 	UStaticMesh* MaterialSlotPreviewMesh = nullptr;
 	FEditorActorSequenceDetails ActorSequenceDetails;
-	TArray<FString> CachedMaterialSlotNames;
-	TArray<UMaterialInterface*> CachedMaterialSlotMaterials;
 	TMap<uint32, int32> SelectedSkeletalBoneByComponent;
+	UActorComponent* LastDetailsPerfComponent = nullptr;
 	bool bDetailsLocked = false;
 	bool bActorSelected   = true; // true: Actor details, false: Component details
+	bool bDetailsPerfTraceFrame = false;
 	bool bOpenDetailsContextMenu = false;
 	bool bPropertyEditUndoCaptured = false;
 	bool bFocusActorNameNextFrame = false;
