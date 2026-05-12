@@ -47,6 +47,8 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 		sprintf_s(WindowName, "Viewer##%p", &Viewer);
 
 		bool bOpen = true;
+		// Make the viewer window reasonably large on first creation
+		ImGui::SetNextWindowSize(ImVec2(900, 600), ImGuiCond_FirstUseEver);
 		if (ImGui::Begin(WindowName, &bOpen))
 		{
 			ImVec2 FullSize = ImGui::GetContentRegionAvail();
