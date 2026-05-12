@@ -2286,7 +2286,7 @@ void FEditorPropertyWidget::RenderSkeletalBonePoseDebug(USkeletalMeshComponent* 
 	}
 
 	DrawDetailsSeparator();
-	DrawDetailsSectionLabel("Bone Pose");
+	DrawDetailsSectionLabel("Bone Pose Debug");
 	ImGui::Spacing();
 
 	ImGui::PushID(Comp);
@@ -2322,22 +2322,38 @@ void FEditorPropertyWidget::RenderSkeletalBonePoseDebug(USkeletalMeshComponent* 
 		ImGui::EndCombo();
 	}
 
-	FMatrix LocalTransform = Comp->GetBoneLocalTransform(SelectedBoneIndex);
-	FVector Translation;
-	FMatrix RotationMatrix;
-	FVector Scale;
-	if (!LocalTransform.Decompose(Translation, RotationMatrix, Scale))
-	{
-		LocalTransform = Mesh->GetLocalBindTransform(SelectedBoneIndex);
-		if (!LocalTransform.Decompose(Translation, RotationMatrix, Scale))
-		{
-			Translation = LocalTransform.GetTranslation();
-			RotationMatrix = FMatrix::Identity;
-			Scale = FVector(1.0f, 1.0f, 1.0f);
-		}
-	}
+	const uint32 MeshId = Mesh->GetUUID();
+	TMap<int32, FSkeletalBonePoseEditState>& BonePoseEditStates = SkeletalBonePoseEditStatesByComponent[ComponentId];
+	FSkeletalBonePoseEditState& EditState = BonePoseEditStates[SelectedBoneIndex];
 
-	FVector RotationEuler = RotationMatrix.GetEuler();
+	const auto ResetEditStateToIdentityOffset = [](FSkeletalBonePoseEditState& State, uint32 InMeshId, int32 InBoneIndex)
+	{
+		State.MeshId = InMeshId;
+		State.BoneIndex = InBoneIndex;
+		State.LocationOffset = FVector::ZeroVector;
+		State.RotationOffset = FVector::ZeroVector;
+		State.ScaleOffset = FVector::OneVector;
+	};
+
+	const auto InitializeEditStateFromCurrentPose = [Comp, Mesh, MeshId](FSkeletalBonePoseEditState& State, int32 BoneIndex)
+	{
+		State.MeshId = MeshId;
+		State.BoneIndex = BoneIndex;
+
+		const FMatrix& BindLocalTransform = Mesh->GetLocalBindTransform(BoneIndex);
+		const FMatrix CurrentLocalTransform = Comp->GetBoneLocalTransform(BoneIndex);
+		const FMatrix OffsetTransformMatrix = CurrentLocalTransform * BindLocalTransform.GetInverse();
+		const FTransform OffsetTransform(OffsetTransformMatrix);
+
+		State.LocationOffset = OffsetTransform.GetTranslation();
+		State.RotationOffset = OffsetTransform.Rotator().Euler();
+		State.ScaleOffset = OffsetTransform.GetScale3D();
+	};
+
+	if (EditState.MeshId != MeshId || EditState.BoneIndex != SelectedBoneIndex)
+	{
+		InitializeEditStateFromCurrentPose(EditState, SelectedBoneIndex);
+	}
 
 	auto DrawVec3 = [this](const char* Label, FVector& Value, float Speed) -> bool
 	{
@@ -2356,18 +2372,19 @@ void FEditorPropertyWidget::RenderSkeletalBonePoseDebug(USkeletalMeshComponent* 
 		return bEdited;
 	};
 
-	const bool bTranslationEdited = DrawVec3("Location", Translation, 0.1f);
-	const bool bRotationEdited = DrawVec3("Rotation", RotationEuler, 0.1f);
-	const bool bScaleEdited = DrawVec3("Scale", Scale, 0.01f);
+	const bool bTranslationEdited = DrawVec3("Location Offset", EditState.LocationOffset, 0.1f);
+	const bool bRotationEdited = DrawVec3("Rotation Offset", EditState.RotationOffset, 0.1f);
+	const bool bScaleEdited = DrawVec3("Scale Offset", EditState.ScaleOffset, 0.01f);
 
 	if (bTranslationEdited || bRotationEdited || bScaleEdited)
 	{
-		const FMatrix NewRotationMatrix = bRotationEdited
-			? FMatrix::MakeRotationEuler(RotationEuler)
-			: RotationMatrix;
-		Comp->SetBoneLocalTransform(
-			SelectedBoneIndex,
-			FMatrix::MakeTRS(Translation, NewRotationMatrix, Scale));
+		const FTransform OffsetTransform(
+			FQuat::MakeFromEuler(EditState.RotationOffset),
+			EditState.LocationOffset,
+			EditState.ScaleOffset);
+		const FMatrix NewLocalTransform =
+			OffsetTransform.ToMatrixWithScale() * Mesh->GetLocalBindTransform(SelectedBoneIndex);
+		Comp->SetBoneLocalTransform(SelectedBoneIndex, NewLocalTransform);
 	}
 
 	const float HalfWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
@@ -2377,6 +2394,7 @@ void FEditorPropertyWidget::RenderSkeletalBonePoseDebug(USkeletalMeshComponent* 
 		{
 			EditorEngine->GetUndoSystem().CaptureSnapshot("Reset Bone Pose");
 		}
+		ResetEditStateToIdentityOffset(EditState, MeshId, SelectedBoneIndex);
 		Comp->SetBoneLocalTransform(SelectedBoneIndex, Mesh->GetLocalBindTransform(SelectedBoneIndex));
 	}
 	ImGui::SameLine();
@@ -2387,6 +2405,7 @@ void FEditorPropertyWidget::RenderSkeletalBonePoseDebug(USkeletalMeshComponent* 
 			EditorEngine->GetUndoSystem().CaptureSnapshot("Reset Bone Pose");
 		}
 		Comp->ResetToBindPose();
+		BonePoseEditStates.clear();
 	}
 
 	ImGui::PopID();
