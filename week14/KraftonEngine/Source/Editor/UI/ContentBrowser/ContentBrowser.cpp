@@ -88,10 +88,12 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 
 	IconFileMap[".Scene"] = L"World_64x.png";
 	IconFileMap[".obj"] = L"icon_MatEd_Mesh_40x.png";
+	IconFileMap[".statbin"] = L"icon_MatEd_Mesh_40x.png";
 	IconFileMap[".mat"] = L"Sphere_64x.png";
 	IconFileMap[".curve"] = L"StartMerge_42x.png";
 	IconFileMap[".shake"] = L"StartMerge_42x.png";
 	IconFileMap[".fbx"] = L"icon_MatEd_Mesh_40x.png";
+	IconFileMap[".sketbin"] = L"icon_MatEd_Mesh_40x.png";
 
 	ContentBrowserContext Context;
 	Context.ContentSize = ImVec2(50, 50);
@@ -207,7 +209,7 @@ void FEditorContentBrowserWidget::RefreshContent()
 		{
 			Element = std::make_shared<SceneElement>();
 		}
-		else if (Extension == ".obj")
+		else if (Extension == ".obj" || Extension == ".statbin")
 		{
 			Element = std::make_shared<ObjectElement>();
 		}
@@ -223,7 +225,7 @@ void FEditorContentBrowserWidget::RefreshContent()
 		{
 			Element = std::make_shared<CameraShakeElement>();
 		}
-		else if (Extension == ".fbx")
+		else if (Extension == ".fbx" || Extension == ".sketbin")
 		{
 			Element = std::make_shared<MeshElement>();
 		}
