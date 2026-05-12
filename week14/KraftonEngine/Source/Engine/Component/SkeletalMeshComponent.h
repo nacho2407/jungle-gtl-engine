@@ -15,6 +15,7 @@ public:
 
 	FMeshBuffer* GetMeshBuffer() const override;
 	FMeshDataView GetMeshDataView() const override;
+	// void UpdateWorldAABB() const override;
 
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
 
