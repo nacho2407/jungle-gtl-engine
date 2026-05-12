@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "M_ShopSignsNeonFlickering01_SM_Neon18",
         "Name" : "map1_Mat_37",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

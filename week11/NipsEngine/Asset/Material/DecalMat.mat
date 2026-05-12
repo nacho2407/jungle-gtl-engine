@@ -1,6 +1,6 @@
-{
+﻿{
     "Name": "DecalMat",
-    "PixelShader": "Shaders/Material/Decal.hlsl",
+    "ShaderType" : "Decal",
     "Params": [
         { "Name": "InvDecalWorld",
           "Type": "Matrix4",

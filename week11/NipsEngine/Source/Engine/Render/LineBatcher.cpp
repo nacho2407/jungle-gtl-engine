@@ -197,7 +197,7 @@ void FLineBatcher::Create(ID3D11Device* InDevice)
 	UMaterial* LineMaterial = FResourceManager::Get().GetMaterial("LineMat");
 	if (!LineMaterial)
 	{
-		LineMaterial = FResourceManager::Get().GetOrCreateMaterial("LineMat", "Asset/Material/LineMat.mat", "Shaders/UI/Line.hlsl");
+		LineMaterial = FResourceManager::Get().GetOrCreateMaterial("LineMat", "Asset/Material/LineMat.mat", EMaterialShaderType::UILine);
 	}
 	if (!LineMaterial)
 	{

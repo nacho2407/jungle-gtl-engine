@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "Bark",
         "Name" : "Lowpoly_tree_sample_Mat_0",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

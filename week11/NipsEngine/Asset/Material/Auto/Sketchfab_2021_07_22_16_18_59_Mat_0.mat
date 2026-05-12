@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "Baked",
         "Name" : "Sketchfab_2021_07_22_16_18_59_Mat_0",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

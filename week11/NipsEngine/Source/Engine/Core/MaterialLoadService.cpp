@@ -6,7 +6,6 @@
 #include "Core/ResourceManager.h"
 #include "Object/ObjectFactory.h"
 #include "Render/Resource/ObjMtlLoader.h"
-#include "Render/Resource/ShaderPaths.h"
 
 #include <algorithm>
 #include <cwctype>
@@ -19,7 +18,7 @@ FMaterialLoadService::FMaterialLoadService(FResourceManager& InResourceManager)
 {
 }
 
-bool FMaterialLoadService::Load(const FString& MtlFilePath, const FString& ShaderName, ID3D11Device* Device)
+bool FMaterialLoadService::Load(const FString& MtlFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device)
 {
 	const FString NormalizedMtlFilePath = FPaths::Normalize(MtlFilePath);
 	if (NormalizedMtlFilePath.empty())
@@ -38,7 +37,7 @@ bool FMaterialLoadService::Load(const FString& MtlFilePath, const FString& Shade
 			return false;
 		}
 
-		const bool bLoadedMaterial = Load(ResolvedMtlPath, ShaderName, Device);
+		const bool bLoadedMaterial = Load(ResolvedMtlPath, ShaderType, Device);
 		if (bLoadedMaterial)
 		{
 			ResourceManager.RegisterObjMaterialSlotAliases(NormalizedMtlFilePath, ResolvedMtlPath);
@@ -106,7 +105,7 @@ bool FMaterialLoadService::Load(const FString& MtlFilePath, const FString& Shade
 			Mat->ImportedName = Name;
 		}
 		Mat->FilePath = MaterialAssetPath;
-		Mat->SetPixelShader(ShaderName, FShaderPaths::GetDefaultPixelShaderEntryPoint(ShaderName));
+		Mat->SetShaderType(ShaderType);
 
 		UMaterial* ExistingMaterial = ResourceManager.MaterialCache.FindMaterialByKey(MaterialKey);
 		if (ExistingMaterial)

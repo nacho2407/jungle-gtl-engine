@@ -2,6 +2,7 @@
 
 #include "Object/Object.h"
 #include "Texture.h"
+#include "MaterialShaderTypes.h"
 #include "ShaderTypes.h"
 #include "RenderResources.h"
 #include <variant>
@@ -87,8 +88,9 @@ public:
 	virtual bool HasEmissiveMap() const = 0;
 	virtual bool HasAlphaMask() const = 0;
 
-	// Material은 더 이상 VS를 소유하지 않습니다.
-	// 표면을 어떻게 칠할지에 해당하는 PixelShader 정보만 제공합니다.
+	// Material은 Shader 파일 경로가 아니라 재질 셰이딩 타입만 소유합니다.
+	// 실제 PixelShader 경로와 EntryPoint는 MaterialShaderTypes helper가 변환합니다.
+	virtual EMaterialShaderType GetShaderType() const = 0;
 	virtual const FString& GetPixelShaderPath() const = 0;
 	virtual const FString& GetPixelShaderEntryPoint() const = 0;
 	
@@ -121,10 +123,9 @@ public:
 	FString FilePath;
 	FString ImportedName;
 
-	// 기존 Shader(VS+PS) 경로 대신 PixelShader만 저장합니다.
-	// Static/Skeletal 여부는 RenderCommand의 VertexFactoryType이 결정합니다.
-	FString PixelShaderPath;
-	FString PixelShaderEntryPoint = "mainPS";
+	// Material은 HLSL 파일 경로를 직접 저장하지 않고, 재질 셰이딩 타입만 저장합니다.
+	// Static/Skeletal 여부와 VS 선택은 RenderCommand의 VertexFactoryType이 결정합니다.
+	EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit;
 
 	FMaterial MaterialData;
 	TMap<FString, FMaterialParamValue> MaterialParams;
@@ -199,13 +200,13 @@ public:
 		return MaterialData.bHasEmissiveTexture;
 	}
 	bool HasAlphaMask() const override { return false; }
-	const FString& GetPixelShaderPath() const override { return PixelShaderPath; }
-	const FString& GetPixelShaderEntryPoint() const override { return PixelShaderEntryPoint; }
+	EMaterialShaderType GetShaderType() const override { return ShaderType; }
+	const FString& GetPixelShaderPath() const override { return GetMaterialPixelShaderPath(ShaderType); }
+	const FString& GetPixelShaderEntryPoint() const override { return GetMaterialPixelShaderEntryPoint(ShaderType); }
 
-	void SetPixelShader(const FString& ShaderPath, const FString& EntryPoint = "mainPS")
+	void SetShaderType(EMaterialShaderType InShaderType)
 	{
-		PixelShaderPath = ShaderPath;
-		PixelShaderEntryPoint = EntryPoint;
+		ShaderType = InShaderType;
 	}
 
 	void SetParam(const FString& Name, const FMaterialParamValue& Value)
@@ -335,15 +336,17 @@ public:
 		return Parent ? Parent->HasEmissiveMap() : false;
 	}
 	bool HasAlphaMask() const override { return Parent ? Parent->HasAlphaMask() : false; }
+	EMaterialShaderType GetShaderType() const override
+	{
+		return Parent ? Parent->GetShaderType() : EMaterialShaderType::SurfaceLit;
+	}
 	const FString& GetPixelShaderPath() const override
 	{
-		static const FString Empty;
-		return Parent ? Parent->GetPixelShaderPath() : Empty;
+		return GetMaterialPixelShaderPath(GetShaderType());
 	}
 	const FString& GetPixelShaderEntryPoint() const override
 	{
-		static const FString Empty;
-		return Parent ? Parent->GetPixelShaderEntryPoint() : Empty;
+		return GetMaterialPixelShaderEntryPoint(GetShaderType());
 	}
 
 	static UMaterialInstance* Create(UMaterial* Material)

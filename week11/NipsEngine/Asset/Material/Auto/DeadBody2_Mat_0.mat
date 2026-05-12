@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "material_0",
         "Name" : "DeadBody2_Mat_0",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : true
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

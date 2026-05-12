@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "Mat_주황_금속",
         "Name" : "MultiMaterialCube_Mat_2",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

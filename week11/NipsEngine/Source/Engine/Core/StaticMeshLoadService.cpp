@@ -95,7 +95,7 @@ UStaticMesh* FStaticMeshLoadService::LoadBinaryDrop(const FString& NormalizedPat
 		}
 		if (FAssetPathPolicy::FileExists(SourcePath))
 		{
-			ResourceManager.LoadMaterial(SourcePath, "Shaders/Material/UberLit.hlsl");
+			ResourceManager.LoadMaterial(SourcePath, EMaterialShaderType::SurfaceLit);
 		}
 	}
 
@@ -120,7 +120,7 @@ UStaticMesh* FStaticMeshLoadService::LoadBinaryDrop(const FString& NormalizedPat
 
 UStaticMesh* FStaticMeshLoadService::LoadObjOrCachedBinary(const FString& NormalizedPath)
 {
-	ResourceManager.LoadMaterial(NormalizedPath, "Shaders/Material/UberLit.hlsl");
+	ResourceManager.LoadMaterial(NormalizedPath, EMaterialShaderType::SurfaceLit);
 
 	FStaticMeshLoadOptions LoadOptions = ResourceManager.StaticMeshCache.GetLoadOptions(NormalizedPath);
 	const FString BinaryPath = FAssetPathPolicy::MakeWritableStaticMeshCacheBinaryPath(NormalizedPath);

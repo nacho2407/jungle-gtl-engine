@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "MI_CityWall",
         "Name" : "map1_Mat_3",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : true
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

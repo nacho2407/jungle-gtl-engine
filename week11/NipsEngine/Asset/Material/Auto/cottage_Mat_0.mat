@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "cottage_texture.001",
         "Name" : "cottage_Mat_0",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "PixelShader" : "Shaders/Material/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }
