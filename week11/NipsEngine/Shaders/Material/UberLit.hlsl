@@ -1,6 +1,6 @@
-#include "Common.hlsl"
-#include "Lighting.hlsl"
-#include "ShadowFunction.hlsl"
+#include "../Common/Common.hlsli"
+#include "../Common/Lighting.hlsli"
+#include "../Common/ShadowFunction.hlsli"
 
 cbuffer StaticMeshBuffer : register(b2)
 {
@@ -49,7 +49,7 @@ TextureCubeArray<float> PointShadowCube : register(t12);
 SamplerState SampleState : register(s0);
 SamplerComparisonState ShadowSampler : register(s1);
 
-Texture2D VSMMap : register(t11); // 상단 선언부에 추가
+Texture2D VSMMap : register(t11); // ?곷떒 ?좎뼵遺??異붽?
 
 struct VSInput
 {
@@ -58,6 +58,17 @@ struct VSInput
     float3 Normal : NORMAL;
     float2 UV : TEXCOORD;
     float4 Tangent : TANGENT;
+};
+
+struct SkeletalVSInput
+{
+    float3 Position : POSITION;
+    float3 Normal : NORMAL;
+    float2 UV : TEXCOORD;
+    float4 Tangent : TANGENT;
+    float4 Color : COLOR;
+    uint4 BoneIndices : BLENDINDICES;
+    float4 BoneWeights : BLENDWEIGHT;
 };
 
 struct PSInput
@@ -118,6 +129,17 @@ PSInput mainVS(VSInput input)
     return output;
 }
 
+PSInput SkeletalMeshVS(SkeletalVSInput input)
+{
+    VSInput passThrough;
+    passThrough.Position = input.Position;
+    passThrough.Color = input.Color;
+    passThrough.Normal = input.Normal;
+    passThrough.UV = input.UV;
+    passThrough.Tangent = input.Tangent;
+    return mainVS(passThrough);
+}
+
 #if HAS_NORMAL_MAP
 float3 PerturbNormal(float3 worldNormal, float4 worldTangent, float2 uv)
 {
@@ -170,7 +192,7 @@ uint SelectDirectionalCascade(float CameraDepth)
 
 float ComputeBias(float LightSpaceZ, float ConstantBias, float SlopeScaleBias)
 {
-    // 가장 기울기가 큰 것으로 SlopBias 가중치를 결정
+    // 媛??湲곗슱湲곌? ??寃껋쑝濡?SlopBias 媛以묒튂瑜?寃곗젙
     float dz_dx = ddx(LightSpaceZ);
     float dz_dy = ddy(LightSpaceZ);
     float slope = max(abs(dz_dx), abs(dz_dy));
@@ -236,7 +258,7 @@ float CalculateShadow(float4 worldPos)
 #else
     float ShadowFactor = ComputeShadowPCF(projCoords, cascadeShadowData.ScaleOffset, (int) cascadeShadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
 #endif   
-    // 마지막 인덱스 제외하고 블렌드
+    // 留덉?留??몃뜳???쒖쇅?섍퀬 釉붾젋??
     if (CascadeIndex < DirectionalCascadeCount - 1)
     {
         int NextCascade = CascadeIndex + 1;
@@ -349,16 +371,16 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     
         uint  sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
         uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
-        float weight = saturate(float(clusterData.y) / 64.0); // MAX_LIGHTS_PER_TILE 기준
+        float weight = saturate(float(clusterData.y) / 64.0); // MAX_LIGHTS_PER_TILE 湲곗?
 #elif CULLING_MODEL_TILED
         uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
         uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
         uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
-        float weight = saturate((float)tileData.y / 64.0f); // MAX_LIGHTS_PER_TILE 기준
+        float weight = saturate((float)tileData.y / 64.0f); // MAX_LIGHTS_PER_TILE 湲곗?
 #endif
     float3 heatmapColor = GetHeatmapColor(weight);
     
-    // 타일 경계선 시각화 (선택 사항: 타일의 가장자리 1픽셀을 어둡게 처리)
+    // ???寃쎄퀎???쒓컖??(?좏깮 ?ы빆: ??쇱쓽 媛?μ옄由?1?쎌????대몼寃?泥섎━)
     uint2 pixelInTile = uint2(input.ClipPos.xy) % TILE_SIZE;
     if (pixelInTile.x == 0 || pixelInTile.y == 0)
     {

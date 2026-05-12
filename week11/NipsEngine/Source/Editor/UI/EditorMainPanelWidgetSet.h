@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/UI/EditorContentBrowserWidget.h"
@@ -12,6 +12,7 @@
 #include "Editor/UI/EditorStatWidget.h"
 #include "Editor/UI/EditorToolbarWidget.h"
 #include "Editor/UI/EditorViewportOverlayWidget.h"
+#include "Editor/UI/EditorViewerWindowWidget.h"
 
 struct FEditorMainPanelWidgetSet
 {
@@ -27,4 +28,5 @@ struct FEditorMainPanelWidgetSet
 	FEditorToolbarWidget ToolbarWidget;
 	FEditorPlayStreamWidget PlayStreamWidget;
 	FEditorRuntimeUIPreviewWidget RuntimeUIPreviewWidget;
+    FEditorViewerWindowWidget ViewerWindowWidget;
 };

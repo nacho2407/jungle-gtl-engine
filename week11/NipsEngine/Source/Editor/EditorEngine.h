@@ -13,6 +13,7 @@
 #include "Editor/Undo/EditorUndoSystem.h"
 #include "Camera/ViewportCamera.h"
 #include "Editor/Viewport/ViewportLayout.h"
+#include "Editor/Viewer/EditorViewer.h"
 
 class UGizmoComponent;
 class FEditorRenderPipeline;
@@ -34,13 +35,14 @@ public:
 	bool CanCloseApplication() override;
 	void WorldTick(float DeltaTime) override;
 
-	UGizmoComponent* GetGizmo() const;
+	void CreateViewerWorld();
 
 	// 퍼스펙티브 카메라(인덱스 0)를 반환합니다.
 	FViewportCamera* GetCamera();
 	const FViewportCamera* GetCamera() const;
 
 	UWorld* GetFocusedWorld() const;
+    FWorldContext* GetFocusedWorldContext();
 	EViewportPlayState GetEditorState() const;
 	void SetEditorState(EViewportPlayState InState);
 
@@ -60,9 +62,6 @@ public:
 
 	FEditorSettings& GetSettings() { return FEditorSettings::Get(); }
 	const FEditorSettings& GetSettings() const { return FEditorSettings::Get(); }
-
-	FSelectionManager& GetSelectionManager() { return SelectionManager; }
-	const FSelectionManager& GetSelectionManager() const { return SelectionManager; }
 
 	FEditorViewportLayout& GetViewportLayout() { return ViewportLayout; }
 	const FEditorViewportLayout& GetViewportLayout() const { return ViewportLayout; }
@@ -92,6 +91,8 @@ public:
 	void UnregisterWorld(const FName& Handle);
 	FName GetEditorWorldHandle() const;
 
+	FEditorViewer& GetViewer() { return Viewer; }
+
 private:
 	friend class FEditorUndoSystem;
 
@@ -107,10 +108,9 @@ private:
 	void OnSceneWorldWillUnload(UWorld* OldWorld) override;
 	void OnSceneWorldLoaded(UWorld* NewWorld) override;
 
-	FSelectionManager SelectionManager;
-
 	FEditorMainPanel MainPanel;
 	FEditorViewportLayout ViewportLayout;
+    FEditorViewer Viewer;	
 
 	FInputPolicyRouter EditorInputRouter;
 	FPIESession PIESession;

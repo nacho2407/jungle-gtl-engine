@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "表情",
         "Name" : "LumineModel_Mat_9",
         "Params" : [{
@@ -50,5 +50,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

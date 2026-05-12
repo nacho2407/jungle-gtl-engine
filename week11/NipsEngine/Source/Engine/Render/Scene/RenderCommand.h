@@ -9,6 +9,7 @@
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Resource/Material.h"
+#include "Render/Resource/VertexFactoryTypes.h"
 #include "Render/Device/D3DDevice.h"
 #include "Core/CoreMinimal.h"
 #include "Core/ResourceTypes.h"
@@ -37,6 +38,7 @@ enum class ERenderCommandType
 	Font,		// TextRenderComponent — FontBatcher 경유
 	SubUV,		// SubUVComponent     — SubUVBatcher 경유
 	StaticMesh,	// UStaticMeshComponent — OBJ 메시 퐁셰이딩
+	SkeletalMesh,
 	Decal,
 	Light,
 };
@@ -397,6 +399,10 @@ struct FRenderCommand
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
 	UMaterialInterface* Material = nullptr;
+
+	// MeshBuffer의 Vertex Data를 어떤 VS/입력 규칙으로 해석할지 결정합니다.
+	// Material과 분리되어 있어 같은 Material을 StaticMesh / SkeletalMesh가 같이 사용할 수 있습니다.
+	EVertexFactoryType VertexFactoryType = EVertexFactoryType::StaticMesh;
 	uint32 SectionIndexStart = 0;
 	uint32 SectionIndexCount = 0;
 

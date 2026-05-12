@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "M_ShopSignsNeon01",
         "Name" : "map1_Mat_35",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

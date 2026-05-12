@@ -466,6 +466,11 @@ bool FEditorViewportClient::ProcessInput(FViewportInputContext& Context)
 	if (!bHasCamera)
 		return false;
 
+	if (State)
+	{
+		State->bHovered = Context.bHovered;
+	}
+
 	TickInput(Context);
 	bRoutedInputProcessedThisFrame = true;
 	return true;

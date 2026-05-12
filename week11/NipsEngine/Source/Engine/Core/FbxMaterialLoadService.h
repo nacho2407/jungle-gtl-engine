@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/CoreMinimal.h"
+#include "Render/Resource/MaterialShaderTypes.h"
 
 class FResourceManager;
 struct ID3D11Device;
@@ -14,7 +15,7 @@ class FFbxMaterialLoadService
 public:
     explicit FFbxMaterialLoadService(FResourceManager& InResourceManager);
 
-    bool Load(const FString& FbxFilePath, const FString& ShaderName, ID3D11Device* Device);
+    bool Load(const FString& FbxFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device);
 
 private:
     FResourceManager& ResourceManager;

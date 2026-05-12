@@ -868,7 +868,8 @@ void FEditorViewportOverlayWidget::RenderSplitterBar(ImDrawList* DrawList)
 	if (FSlateApplication::Get().GetCapturedWidget() || InputSystem::Get().GetMiddleDragging())
 		 return;
 	// 우클릭 + 기즈모 홀딩 중에는 하이라이트를 표시하지 않음
-	bool bIsHodingGizmo = EditorEngine->GetGizmo()->IsHolding();
+    const FWorldContext* Ctx = EditorEngine->GetFocusedWorldContext();
+	bool bIsHodingGizmo = Ctx->SelectionManager->GetGizmo()->IsHolding();
 
 	 if (bIsHodingGizmo || InputSystem::Get().GetRightDragging())
 	 {

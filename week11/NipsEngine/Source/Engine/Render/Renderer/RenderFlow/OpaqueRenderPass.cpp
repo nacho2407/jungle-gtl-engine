@@ -1,10 +1,11 @@
-﻿#include "OpaqueRenderPass.h"
+#include "OpaqueRenderPass.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
 #include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/ShadowAtlasManager.h"
+#include "Render/Resource/VertexFactoryTypes.h"
 #include "Core/ResourceManager.h"
 #include "Component/PostProcess/Light/LightComponent.h"
 
@@ -168,7 +169,45 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 		   if (Cmd.Material->HasEmissiveMap()) PermutationKey |= (uint32)EShaderFeature::HasEmissiveMap;
 		   if (Cmd.Material->HasAlphaMask()) PermutationKey |= (uint32)EShaderFeature::HasAlphaMask;
 
-           Cmd.Material->Bind(Context->DeviceContext, PermutationKey);
+           // VertexFactory는 Mesh 타입에 맞는 VS를 고르고, Material은 표면용 PS만 제공합니다.
+           // 여기서 두 정보를 합쳐 실제 Draw에 사용할 FShaderProgram을 만듭니다.
+           const FVertexFactoryDesc& VertexFactoryDesc = FVertexFactoryRegistry::Get(Cmd.VertexFactoryType);
+           const FString& PixelShaderPath = Cmd.Material->GetPixelShaderPath();
+           const FString& PixelEntryPoint = Cmd.Material->GetPixelShaderEntryPoint();
+
+           FShaderStageKey VSKey;
+           VSKey.FilePath = VertexFactoryDesc.VertexShaderPath;
+           VSKey.EntryPoint = VertexFactoryDesc.BasePassVSEntry;
+           VSKey.Target = "vs_5_0";
+           VSKey.PermutationKey = PermutationKey;
+
+           FShaderStageKey PSKey;
+           PSKey.FilePath = PixelShaderPath;
+           PSKey.EntryPoint = PixelEntryPoint;
+           PSKey.Target = "ps_5_0";
+           PSKey.PermutationKey = PermutationKey;
+
+           // PermutationKey는 ViewMode / LightCulling / Shadow / Material Feature를 한 번에 담습니다.
+           // VS와 PS가 같은 define 조건으로 컴파일되어야 하므로 동일한 Macros를 넘깁니다.
+           TArray<D3D_SHADER_MACRO> Macros = FShaderHelper::BuildUberLitMacros(PermutationKey);
+           FShaderProgram* Program = FResourceManager::Get().GetOrCreateShaderProgram(
+               VSKey,
+               PSKey,
+               Macros.data(),
+               Macros.data(),
+               &VertexFactoryDesc.VertexLayout);
+
+           if (!Program)
+           {
+               return false;
+           }
+
+           Program->Bind(Context->DeviceContext);
+           Cmd.Material->BindRenderStates(Context->DeviceContext);
+           Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
+
+           // 현재는 CPU Skinning이라 추가 바인딩이 없지만, GPU Skinning에서는 여기서 Bone Buffer가 붙습니다.
+           BindVertexFactoryResources(Context->DeviceContext, Cmd.VertexFactoryType, Cmd);
        }
 
        auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);

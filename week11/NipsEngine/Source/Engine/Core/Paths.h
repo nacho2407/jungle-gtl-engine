@@ -22,7 +22,7 @@ public:
     static std::wstring ScriptDir();        // Lua/
 
 	// 주요 파일 경로
-	static std::wstring ShaderFilePath(); // Shaders/ShaderW0.hlsl
+	static std::wstring ShaderFilePath(); // Shaders/Material/UberLit.hlsl
 	static std::wstring SettingsFilePath();  // Settings/Editor.ini
 	static std::wstring ViewerSettingsFilePath(); // Settings/ObjViewer.ini
 	static std::wstring AssetDirectoryPath();  // Settings/Resource.ini

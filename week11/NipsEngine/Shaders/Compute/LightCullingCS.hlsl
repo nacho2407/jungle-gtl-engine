@@ -1,6 +1,6 @@
 #define CS_SHADER
-#include "Common.hlsl"
-#include "Lighting.hlsl"
+#include "../Common/Common.hlsli"
+#include "../Common/Lighting.hlsli"
 
 RWStructuredBuffer<uint>  CulledIndexBuffer : register(u0);
 RWStructuredBuffer<uint2> TileBuffer        : register(u1);

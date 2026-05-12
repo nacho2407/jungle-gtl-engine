@@ -6,7 +6,6 @@
 
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/VertexTypes.h"
-#include "Render/Resource/Shader.h"
 
 #include "Render/Scene/RenderBus.h"
 #include "Render/Device/D3DDevice.h"
@@ -140,7 +139,6 @@ struct FPassBatcherBinding
 // 패스별 기본 렌더 상태 — Single Source of Truth
 struct FPassRenderState
 {
-	UShader*                 Shader         = nullptr; // nullptr → batcher가 자체 셰이더 사용
 	bool                     bWireframeAware = false;  // Wireframe 모드 시 래스터라이저 전환
 };
 
@@ -174,7 +172,8 @@ public:
 
 	// 현재는 Resource 를 Handle 이 아니라, 고정된 4개의 Viewport 에 대한 Index 를 통해 관리
 	// 추가로 VP 를 받아서 원래 해당하는 Resource 를 찾아야하는데 현재는 Index 로 찾는 중
-	FViewportRenderResource& AcquireViewportResource(uint32 W, uint32 H, int32 Index);
+    FViewportRenderResource& AcquireViewportResource(uint32 W, uint32 H, int32 Index);
+    FViewportRenderResource& AcquireViewerViewportResource(uint32 W, uint32 H);
     void InitializeViewportResource(uint32 Width, uint32 Height, int32 Index);
     void ReleaseViewportResource(int32 Index);
 	FViewportRenderResource& AcquirePreviewResource(uint32 W, uint32 H);
@@ -236,6 +235,7 @@ private:
 
 	// 지금은 4개 Viewport 고정 존재 상황이라 다음과 같이 처리
 	FViewportRenderResource ViewportResources[4];
+    FViewportRenderResource ViewerViewportResource;
 	FViewportRenderResource PreviewResource;
     FViewportRenderResource GameFrameResource;
 };

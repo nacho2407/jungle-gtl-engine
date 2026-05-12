@@ -28,9 +28,6 @@ namespace
 			StartsWith(Text, "[PIEPerf]") ||
 			StartsWith(Text, "[EditorPipelinePerf]") ||
 			StartsWith(Text, "[EditorRenderPerf]") ||
-			StartsWith(Text, "[GPUFramePerf]") ||
-			StartsWith(Text, "[D3DPresentPerf]") ||
-			StartsWith(Text, "[ScenePerf]") ||
 			StartsWith(Text, "[RmlUiPerf]");
 	}
 

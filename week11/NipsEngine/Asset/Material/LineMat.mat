@@ -1,5 +1,5 @@
-{
+﻿{
     "Name": "LineMat",
-    "Shader": "Shaders/ShaderLine.hlsl",
+    "ShaderType" : "UILine",
     "Params": []
 }
