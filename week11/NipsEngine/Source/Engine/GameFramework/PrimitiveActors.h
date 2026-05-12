@@ -129,6 +129,11 @@ public:
 	ASkeletalMeshActor() = default;
 
 	void InitDefaultComponents();
+
+	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComp; }
+
+private:
+    USkeletalMeshComponent* SkeletalMeshComp = nullptr;
 };
 
 class ASubUVActor : public AActor
