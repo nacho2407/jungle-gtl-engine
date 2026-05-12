@@ -1,5 +1,5 @@
-{
-        "ImportedName" : "眼睛",
+﻿{
+        "ImportedName" : "?쇘씃",
         "Name" : "LumineModel_Mat_4",
         "Params" : [{
             "Name" : "AmbientColor",
@@ -20,7 +20,7 @@
           }, {
             "Name" : "DiffuseMap",
             "Type" : "Texture",
-            "Value" : "Asset/Mesh/Lumine/头发.png"
+            "Value" : "Asset/Mesh/Lumine/鸚닷룕.png"
           }, {
             "Name" : "EmissiveColor",
             "Type" : "Vector3",
@@ -54,5 +54,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

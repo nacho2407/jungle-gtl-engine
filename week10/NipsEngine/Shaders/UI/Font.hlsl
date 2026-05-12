@@ -1,11 +1,11 @@
-#include "Common.hlsl"
+#include "../Common/Common.hlsli"
 
 Texture2D FontAtlas : register(t0);
 SamplerState FontSampler : register(s0);
 
 struct VSInput
 {
-    float3 position : POSITION; // CPU Billboard — 월드 좌표
+    float3 position : POSITION; // CPU Billboard ???붾뱶 醫뚰몴
     float2 texCoord : TEXCOORD;
 };
 
@@ -30,11 +30,11 @@ float4 PS(PSInput input) : SV_TARGET
     {
         if (col.r < 0.1f)
         {
-            discard; // 검은 배경 제거    
+            discard; // 寃? 諛곌꼍 ?쒓굅
         }
         return col;
     }
-    
+
     return float4(WireframeRGB, 1.0f);
 
 }

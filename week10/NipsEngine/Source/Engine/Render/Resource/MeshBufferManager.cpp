@@ -19,7 +19,7 @@ namespace
 		return QuadMeshData;
 	}
 
-	bool UpdateSkeletalMeshBufferVertices(ID3D11Device* Device, FMeshBuffer& Buffer, const TArray<FNormalVertex>& Vertices)
+	bool UpdateSkeletalMeshBufferVertices(ID3D11Device* Device, FMeshBuffer& Buffer, const TArray<FSkeletalMeshVertex>& Vertices)
 	{
 		if (!Device)
 		{
@@ -33,7 +33,7 @@ namespace
 			return false;
 		}
 
-		Buffer.UpdateSkeletalVertices(DeviceContext, Vertices);
+		Buffer.UpdateDynamicVertices(DeviceContext, Vertices);
 		DeviceContext->Release();
 
 		return true;
@@ -142,7 +142,7 @@ FMeshBuffer* FMeshBufferManager::GetStaticMeshBuffer(const UStaticMesh* StaticMe
     }
 
     FMeshBuffer& NewBuffer = TargetMap[StaticMeshAsset];
-    NewBuffer.CreateForStaticMesh(Device, Vertices, Indices);
+    NewBuffer.CreateImmutableVertices(Device, Vertices, Indices);
     
 
     return &NewBuffer;
@@ -174,12 +174,12 @@ FMeshBuffer* FMeshBufferManager::GetProcMeshBuffer(uint32 ProcMeshCompUUID, cons
     }
 
     FMeshBuffer& NewBuffer = ProcMeshBufferMap[ProcMeshCompUUID];
-    NewBuffer.CreateForStaticMesh(Device, Vertices, Indices);
+    NewBuffer.CreateImmutableVertices(Device, Vertices, Indices);
 
     return &NewBuffer;
 }
 
-FMeshBuffer* FMeshBufferManager::GetSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload)
+FMeshBuffer* FMeshBufferManager::GetSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FSkeletalMeshVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload)
 {
 	if (!Device || !SkeletalMeshAsset || Vertices.empty() || Indices.empty())
 	{
@@ -216,7 +216,7 @@ FMeshBuffer* FMeshBufferManager::GetSkeletalMeshBuffer(uint32 SkeletalMeshCompUU
 	}
 
 	FMeshBuffer& NewBuffer = SkeletalMeshBufferMap[SkeletalMeshCompUUID];
-	NewBuffer.CreateForSkeletalMesh(Device, Vertices, Indices);
+	NewBuffer.CreateDynamicVertices<FSkeletalMeshVertex>(Device, static_cast<uint32>(Vertices.size()), Indices);
 	UpdateSkeletalMeshBufferVertices(Device, NewBuffer, Vertices);
 	SkeletalMeshSourceMap[SkeletalMeshCompUUID] = SkeletalMeshAsset;
 

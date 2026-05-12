@@ -1,5 +1,5 @@
-{
-        "ImportedName" : "Mat_빨강_플라스틱",
+﻿{
+        "ImportedName" : "Mat_鍮④컯_?뚮씪?ㅽ떛",
         "Name" : "MultiMaterialCube_Mat_1",
         "Params" : [{
             "Name" : "AmbientColor",
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

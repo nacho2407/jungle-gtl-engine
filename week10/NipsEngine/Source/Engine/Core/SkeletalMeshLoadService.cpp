@@ -22,7 +22,7 @@ USkeletalMesh* FSkeletalMeshLoadService::Load(const FString& Path)
 		return FoundMesh;
 	}
 
-	ResourceManager.LoadMaterial(NormalizedPath, "Shaders/UberLit.hlsl");
+	ResourceManager.LoadMaterial(NormalizedPath, EMaterialShaderType::SurfaceLit);
 
 	return LoadSourceOrCachedBinary(NormalizedPath);
 }

@@ -1,4 +1,4 @@
-﻿#include "Renderer.h"
+#include "Renderer.h"
 
 #include <array>
 #include <iostream>
@@ -18,10 +18,121 @@
 #include "Render/Renderer/RenderTarget/RenderTargetFactory.h"
 #include "Render/Renderer/RenderTarget/DepthStencilFactory.h"
 #include "Render/Resource/ShaderHelper.h"
+#include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/ShadowAtlasManager.h"
+#include "Render/Resource/VertexFactoryTypes.h"
 #include "Core/Logging/Log.h"
 
 #include <unordered_map>
+
+namespace
+{
+	FShaderProgram* GetProgramForMaterialCommand(const FRenderCommand& Cmd)
+	{
+		if (!Cmd.Material)
+		{
+			return nullptr;
+		}
+
+		const FVertexFactoryDesc& VertexFactoryDesc = FVertexFactoryRegistry::Get(Cmd.VertexFactoryType);
+
+		FShaderStageKey VSKey;
+		VSKey.FilePath = VertexFactoryDesc.VertexShaderPath;
+		VSKey.EntryPoint = VertexFactoryDesc.BasePassVSEntry;
+		VSKey.Target = "vs_5_0";
+
+		FShaderStageKey PSKey;
+		PSKey.FilePath = Cmd.Material->GetPixelShaderPath();
+		PSKey.EntryPoint = Cmd.Material->GetPixelShaderEntryPoint();
+		PSKey.Target = "ps_5_0";
+
+		return FResourceManager::Get().GetOrCreateShaderProgram(
+			VSKey,
+			PSKey,
+			nullptr,
+			nullptr,
+			&VertexFactoryDesc.VertexLayout);
+	}
+
+	FShaderProgram* GetOutlineProgram(const UMaterialInterface* Material)
+	{
+		if (!Material)
+		{
+			return nullptr;
+		}
+
+		FShaderStageKey VSKey;
+		VSKey.FilePath = Material->GetPixelShaderPath();
+		VSKey.EntryPoint = "VS";
+		VSKey.Target = "vs_5_0";
+
+		FShaderStageKey PSKey;
+		PSKey.FilePath = Material->GetPixelShaderPath();
+		PSKey.EntryPoint = Material->GetPixelShaderEntryPoint();
+		PSKey.Target = "ps_5_0";
+
+		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+	}
+
+	FShaderProgram* GetFullscreenProgram(const FString& ShaderPath, const FString& VSEntryPoint = "mainVS", const FString& PSEntryPoint = "mainPS")
+	{
+		FShaderStageKey VSKey;
+		VSKey.FilePath = ShaderPath;
+		VSKey.EntryPoint = VSEntryPoint;
+		VSKey.Target = "vs_5_0";
+
+		FShaderStageKey PSKey;
+		PSKey.FilePath = ShaderPath;
+		PSKey.EntryPoint = PSEntryPoint;
+		PSKey.Target = "ps_5_0";
+
+		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+	}
+
+	FShaderProgram* GetEditorIdPickProgram(uint32 ShaderKey)
+	{
+		const char* VSEntryPoint = "VSPrimitive";
+		const char* PSEntryPoint = "PSOpaque";
+		const FVertexLayoutDesc* VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::Primitive).SelectionLayout;
+		switch (ShaderKey)
+		{
+		case 1:
+			VSEntryPoint = "VSStaticMesh";
+			PSEntryPoint = "PSTextured";
+			VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::StaticMesh).SelectionLayout;
+			break;
+		case 2:
+			VSEntryPoint = "VSBillboard";
+			PSEntryPoint = "PSTextured";
+			VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::Billboard).SelectionLayout;
+			break;
+		case 3:
+			VSEntryPoint = "VSSkeletalMesh";
+			PSEntryPoint = "PSTextured";
+			VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::SkeletalMesh).SelectionLayout;
+			break;
+		default:
+			break;
+		}
+
+		FShaderStageKey VSKey;
+		VSKey.FilePath = FShaderPaths::EditorIDPick;
+		VSKey.EntryPoint = VSEntryPoint;
+		VSKey.Target = "vs_5_0";
+
+		FShaderStageKey PSKey;
+		PSKey.FilePath = FShaderPaths::EditorIDPick;
+		PSKey.EntryPoint = PSEntryPoint;
+		PSKey.Target = "ps_5_0";
+
+		return FResourceManager::Get().GetOrCreateShaderProgram(
+			VSKey,
+			PSKey,
+			nullptr,
+			nullptr,
+			VertexLayout);
+	}
+}
 
 static uint32 GetOrAssignEditorPickId(
     AActor* Actor,
@@ -129,52 +240,33 @@ void FRenderer::Create(HWND hWindow)
 	}
 
 	FResourceManager::Get().SetCachedDevice(Device.GetDevice());
-    FResourceManager::Get().LoadShader("Shaders/ShaderSubUV.hlsl", "VS", "PS");
-    FResourceManager::Get().LoadShader("Shaders/Gizmo.hlsl", "VS", "PS");
-    FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS");
-    FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VSPrimitive", "PSPrimitive", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VSStaticMesh", "PSTextured", nullptr, 1);
-    FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VSBillboard", "PSTextured", nullptr, 2);
-    FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS");
-    FResourceManager::Get().LoadShader("Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS");
-    FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS");
-    FResourceManager::Get().LoadShader("Shaders/Multipass/SandervistanPass.hlsl", "mainVS", "mainPS");
-    FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS");
-    FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS");
-    FResourceManager::Get().LoadShader("Shaders/Multipass/PostProcess.hlsl", "mainVS", "mainPS");
-    FResourceManager::Get().LoadShader("Shaders/ScreenOverlay.hlsl", "mainVS", "mainPS");
-    FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS");
-    FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS");
-	FResourceManager::Get().LoadShader("Shaders/DepthPrepass.hlsl", "DepthPrepassVS", "DepthPrepassPS");
-	FResourceManager::Get().LoadShader("Shaders/Shadow.hlsl", "ShadowVS", "ShadowPS");
-    FResourceManager::Get().LoadShader("Shaders/VSMShadow.hlsl", "VSMShadowVS", "VSMShadowPS");
-	FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS");
-    FResourceManager::Get().LoadShader("Shaders/IDPick.hlsl", "VSPrimitive", "PSOpaque", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/IDPick.hlsl", "VSStaticMesh", "PSTextured", nullptr, 1);
-    FResourceManager::Get().LoadShader("Shaders/IDPick.hlsl", "VSBillboard", "PSTextured", nullptr, 2);
-    FResourceManager::Get().LoadShader("Shaders/IDPickDebug.hlsl", "VS", "PS");
 
-	FResourceManager::Get().LoadComputeShader("Shaders/LightCullingCS.hlsl", "main",
+	FResourceManager::Get().LoadComputeShader("Shaders/Compute/LightCullingCS.hlsl", "main",
 		FShaderHelper::BuildLightCullingCSMacros(ELightCullMode::Clustered).data(), "LightCullingCS_Clustered");
-	FResourceManager::Get().LoadComputeShader("Shaders/LightCullingCS.hlsl", "main",
+	FResourceManager::Get().LoadComputeShader("Shaders/Compute/LightCullingCS.hlsl", "main",
 		FShaderHelper::BuildLightCullingCSMacros(ELightCullMode::Tiled).data(), "LightCullingCS_Tiled");
 
     {
         auto Macros = FShaderHelper::BuildVSMBlurCSMacros(EVSMBlurPass::Horizontal);
         FResourceManager::Get().LoadComputeShader(
-            "Shaders/VSMBlurComputeShader.hlsl", "main", Macros.data(), "VSMBlur_H");
+            "Shaders/Shadow/VSMBlurComputeShader.hlsl", "main", Macros.data(), "VSMBlur_H");
     }
     {
         auto Macros = FShaderHelper::BuildVSMBlurCSMacros(EVSMBlurPass::Vertical);
         FResourceManager::Get().LoadComputeShader(
-            "Shaders/VSMBlurComputeShader.hlsl", "main", Macros.data(), "VSMBlur_V");
+            "Shaders/Shadow/VSMBlurComputeShader.hlsl", "main", Macros.data(), "VSMBlur_V");
     }
 
 	// Uber ShadowMap
 	for (uint32 ShadowMapIdx = 0; ShadowMapIdx < static_cast<uint32>(EShadowMap::MAX); ++ShadowMapIdx)
 	{
-		FResourceManager::Get().LoadShader("Shaders/Shadow.hlsl", "ShadowVS", "ShadowPS",
-			FShaderHelper::BuildShadowMapMacros(static_cast<EShadowMap>(ShadowMapIdx)).data(), ShadowMapIdx);
+		auto Macros = FShaderHelper::BuildShadowMapMacros(static_cast<EShadowMap>(ShadowMapIdx));
+		FResourceManager::Get().GetOrCreateShaderProgram(
+			FShaderStageKey{ FShaderPaths::Shadow, "ShadowVS", "vs_5_0", ShadowMapIdx },
+			FShaderStageKey{ FShaderPaths::Shadow, "ShadowPS", "ps_5_0", ShadowMapIdx },
+			Macros.data(),
+			Macros.data(),
+			&FVertexFactoryRegistry::Get(EVertexFactoryType::StaticMesh).PositionOnlyLayout);
 	}
 
 }
@@ -216,7 +308,7 @@ void FRenderer::CreateResources()
 	EditorLineBatcher.Create(Device.GetDevice());
 	GridLineBatcher.Create(Device.GetDevice());
 
-	// 텍스처는 ResourceManager가 소유 — Batcher 는 셰이더/버퍼만 초기화
+	// 텍스처는 ResourceManager가 소유 ? Batcher 는 셰이더/버퍼만 초기화
 	FontBatcher.Create(Device.GetDevice());
 	SubUVBatcher.Create(Device.GetDevice());
 
@@ -457,13 +549,6 @@ void FRenderer::RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewpor
         return;
     }
 
-    UShader* PickShader = FResourceManager::Get().GetShader("Shaders/IDPick.hlsl");
-    UShader* DebugShader = FResourceManager::Get().GetShader("Shaders/IDPickDebug.hlsl");
-    if (!PickShader || !DebugShader)
-    {
-        return;
-    }
-
     UpdateFrameBuffer(Context, InRenderBus);
 
     const float ClearId[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -519,9 +604,9 @@ void FRenderer::RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewpor
 
             ID3D11ShaderResourceView* TextureSRV = DefaultSRV;
             uint32 ShaderKey = 0;
-            if (Command.Type == ERenderCommandType::StaticMesh)
+            if (Command.Type == ERenderCommandType::StaticMesh || Command.Type == ERenderCommandType::SkeletalMesh)
             {
-                ShaderKey = 1;
+                ShaderKey = Command.VertexFactoryType == EVertexFactoryType::SkeletalMesh ? 3 : 1;
                 ID3D11ShaderResourceView* DiffuseSRV = GetDiffuseSRV(Command.Material);
                 TextureSRV = DiffuseSRV ? DiffuseSRV : DefaultSRV;
                 PickingConstants.bUseAlphaTest = DiffuseSRV ? 1u : 0u;
@@ -579,7 +664,12 @@ void FRenderer::RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewpor
             Context->PSSetConstantBuffers(12, 1, &PickingBuffer);
 
             Context->PSSetShaderResources(0, 1, &TextureSRV);
-            PickShader->Bind(Context, ShaderKey);
+            FShaderProgram* PickProgram = GetEditorIdPickProgram(ShaderKey);
+            if (!PickProgram)
+            {
+                continue;
+            }
+            PickProgram->Bind(Context);
             DrawIdPickCommand(Context, Command);
         }
     }
@@ -595,7 +685,12 @@ void FRenderer::RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewpor
 
         ID3D11ShaderResourceView* IdSRV = Resource.EditorIdPickSRV.Get();
         Context->PSSetShaderResources(0, 1, &IdSRV);
-        DebugShader->Bind(Context);
+        FShaderProgram* DebugProgram = GetFullscreenProgram(FShaderPaths::EditorIDPickDebug, "VS", "PS");
+        if (!DebugProgram)
+        {
+            return;
+        }
+        DebugProgram->Bind(Context);
         Context->Draw(3, 0);
     }
 
@@ -638,8 +733,8 @@ void FRenderer::CompositeCurrentSceneToBackBuffer()
     ID3D11Buffer* FXAACB = Resources.FXAAConstantBuffer.GetBuffer();
     Context->PSSetConstantBuffers(10, 1, &FXAACB);
 
-    UShader* BlitShader = FResourceManager::Get().GetShader("Shaders/Multipass/FXAAPass.hlsl");
-    if (!BlitShader)
+    FShaderProgram* BlitProgram = GetFullscreenProgram(FShaderPaths::PostProcessFXAA);
+    if (!BlitProgram)
     {
         static bool bLoggedMissingBlitShader = false;
         if (!bLoggedMissingBlitShader)
@@ -655,7 +750,7 @@ void FRenderer::CompositeCurrentSceneToBackBuffer()
     Context->PSSetSamplers(0, 1, &Sampler);
     Context->PSSetShaderResources(0, 1, &SourceSRV);
 
-    BlitShader->Bind(Context);
+    BlitProgram->Bind(Context);
     Context->IASetInputLayout(nullptr);
     Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
     Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
@@ -680,8 +775,8 @@ void FRenderer::RenderScreenOverlays(const FRenderBus& InRenderBus, bool bTarget
         ? Device.GetFrameBufferRTV()
         : SceneFinalRTV.Get();
     ID3D11DeviceContext* Context = Device.GetDeviceContext();
-    UShader* OverlayShader = FResourceManager::Get().GetShader("Shaders/ScreenOverlay.hlsl");
-    if (!TargetRTV || !Context || !OverlayShader)
+    FShaderProgram* OverlayProgram = GetFullscreenProgram(FShaderPaths::UIScreenOverlay);
+    if (!TargetRTV || !Context || !OverlayProgram)
     {
         return;
     }
@@ -693,7 +788,7 @@ void FRenderer::RenderScreenOverlays(const FRenderBus& InRenderBus, bool bTarget
     Context->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
     Context->RSSetState(RasterizerState);
 
-    OverlayShader->Bind(Context);
+    OverlayProgram->Bind(Context);
     Context->IASetInputLayout(nullptr);
     Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
     Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
@@ -784,6 +879,35 @@ FViewportRenderResource& FRenderer::AcquireViewportResource(uint32 Width, uint32
     InitializeViewportResource(Width, Height, Index);
 
     return Res;
+}
+
+FViewportRenderResource& FRenderer::AcquireViewerViewportResource(uint32 W, uint32 H)
+{
+    if (Device.GetDevice() == nullptr || W == 0 || H == 0)
+    {
+        ReleaseRenderResource(ViewerViewportResource);
+        return ViewerViewportResource;
+    }
+
+    const bool bSameSize =
+        (ViewerViewportResource.Width == W) &&
+        (ViewerViewportResource.Height == H);
+
+    const bool bResourcesValid =
+        (ViewerViewportResource.ColorRTV != nullptr) &&
+        (ViewerViewportResource.SelectionMaskRTV != nullptr) &&
+        (ViewerViewportResource.DepthStencilView != nullptr);
+
+    if (bSameSize && bResourcesValid)
+    {
+        return ViewerViewportResource;
+    }
+
+    ReleaseRenderResource(ViewerViewportResource);
+    InitializeRenderResource(ViewerViewportResource, W, H);
+    InitializeEditorIdPickResource(ViewerViewportResource, W, H);
+
+    return ViewerViewportResource;
 }
 
 void FRenderer::InitializeViewportResource(uint32 Width, uint32 Height, int32 Index)
@@ -987,29 +1111,19 @@ void FRenderer::InitializePassRenderStates()
 	using E = ERenderPass;
 	auto& S = PassRenderStates;
 
-	UShader* PrimitiveShader = FResourceManager::Get().GetShader("Shaders/Primitive.hlsl");
-	UShader* DecalShader = FResourceManager::Get().GetShader("Shaders/ShaderDecal.hlsl");
-	UShader* LightPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/LightPass.hlsl");
-	UShader* FogPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/FogPass.hlsl");
-	UShader* FXAAShader = FResourceManager::Get().GetShader("Shaders/Multipass/FXAAPass.hlsl");
-	UShader* SelectionMaskShader = FResourceManager::Get().GetShader("Shaders/SelectionMask.hlsl");
-	UShader* EditorShader = FResourceManager::Get().GetShader("Shaders/Editor.hlsl");
-	UShader* GizmoShader = FResourceManager::Get().GetShader("Shaders/Gizmo.hlsl");
-	UShader* OutlineShader = FResourceManager::Get().GetShader("Shaders/OutlinePostProcess.hlsl");
-
-	S[(uint32)E::Opaque] = { PrimitiveShader, false };
-	S[(uint32)E::Decal] = { DecalShader, false };
-	S[(uint32)E::Light] = { LightPassShader, false};
-	S[(uint32)E::Translucent] = { PrimitiveShader, false };
-	S[(uint32)E::Fog] = { FogPassShader, false};
-    S[(uint32)E::FXAA] = { FXAAShader, false};
-	S[(uint32)E::SelectionMask] = { SelectionMaskShader, false };
-	S[(uint32)E::Editor] = { EditorShader, true };
-	S[(uint32)E::Grid] = { EditorShader, false };
-	S[(uint32)E::DepthLess] = { GizmoShader, false };
-	S[(uint32)E::Font] = { nullptr, true };
-	S[(uint32)E::SubUV] = { nullptr, true };
-    S[(uint32)E::PostProcessOutline] = { OutlineShader, false};
+	S[(uint32)E::Opaque] = { false };
+	S[(uint32)E::Decal] = { false };
+	S[(uint32)E::Light] = { false };
+	S[(uint32)E::Translucent] = { false };
+	S[(uint32)E::Fog] = { false };
+    S[(uint32)E::FXAA] = { false };
+	S[(uint32)E::SelectionMask] = { false };
+	S[(uint32)E::Editor] = { true };
+	S[(uint32)E::Grid] = { false };
+	S[(uint32)E::DepthLess] = { false };
+	S[(uint32)E::Font] = { true };
+	S[(uint32)E::SubUV] = { true };
+    S[(uint32)E::PostProcessOutline] = { false };
 
 }
 
@@ -1260,10 +1374,6 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 	//Device.SetRasterizerState(Rasterizer);
 	Context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	if (State.Shader)
-	{
-		State.Shader->Bind(Context);
-	}
 }
 
 void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context, ERenderCommandType& LastCommandType)
@@ -1282,7 +1392,13 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 	case ERenderCommandType::PostProcessOutline:
 	{
 		UMaterial* OutlineMaterial = Cast<UMaterial>(InCmd.Material);
-		InCmd.Material->Bind(Context);
+		FShaderProgram* Program = GetOutlineProgram(OutlineMaterial);
+		if (Program)
+		{
+			Program->Bind(Context);
+			OutlineMaterial->BindRenderStates(Context);
+			OutlineMaterial->BindParameters(Context, Program->PS);
+		}
 		break;
 	}
 	}
@@ -1313,7 +1429,14 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 
 	if (InCommand.Material)
 	{
-		InCommand.Material->Bind(InDeviceContext);
+		FShaderProgram* Program = GetProgramForMaterialCommand(InCommand);
+		if (Program)
+		{
+			Program->Bind(InDeviceContext);
+			InCommand.Material->BindRenderStates(InDeviceContext);
+			InCommand.Material->BindParameters(InDeviceContext, Program->PS);
+			BindVertexFactoryResources(InDeviceContext, InCommand.VertexFactoryType, InCommand);
+		}
 	}
 
 	InDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
@@ -1385,7 +1508,7 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus
 
 void FRenderer::UpdateUberBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus)
 {
-	// Update Decal struct buf and textures — one entry per unique decal
+	// Update Decal struct buf and textures ? one entry per unique decal
     TArray<UTexture*> DecalTextures;
     TArray<FDecalInfo> DecalConstantArray;
     const auto& Cmds = InRenderBus.GetCommands(ERenderPass::Decal);

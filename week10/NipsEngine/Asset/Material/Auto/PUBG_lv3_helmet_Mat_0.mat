@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "TT_checker_2048x2048_UV_GRID.002",
         "Name" : "PUBG_lv3_helmet_Mat_0",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : true
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

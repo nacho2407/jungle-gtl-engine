@@ -2,7 +2,6 @@
 #include "RenderPass.h"
 
 class FConstantBuffer;
-class UShader;
 struct FShadowConstants;
 struct ID3D11DepthStencilView;
 struct D3D11_VIEWPORT;
@@ -34,7 +33,6 @@ private:
 	void RenderShadowDepth(
 		const FRenderPassContext* Context,
 		FConstantBuffer* ShadowBuffer,
-		UShader* ShadowShader,
 		const TArray<FRenderCommand>& OpaqueCmds,
 		ID3D11DepthStencilView* ShadowDSV,
 		const D3D11_VIEWPORT& ShadowViewport,

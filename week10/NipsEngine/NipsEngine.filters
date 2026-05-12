@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Shaders">
@@ -108,31 +108,31 @@
     <FxCompile Include="Shaders\Common.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Editor.hlsl">
+    <FxCompile Include="Shaders\EditorDebug\Editor.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Gizmo.hlsl">
+    <FxCompile Include="Shaders\EditorDebug\Gizmo.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\OutlinePostProcess.hlsl">
+    <FxCompile Include="Shaders\PostProcess\Outline.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Primitive.hlsl">
+    <FxCompile Include="Shaders\EditorDebug\Primitive.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\SelectionMask.hlsl">
+    <FxCompile Include="Shaders\EditorDebug\SelectionMask.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderFont.hlsl">
+    <FxCompile Include="Shaders\UI\Font.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderLine.hlsl">
+    <FxCompile Include="Shaders\UI\Line.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderStaticMesh.hlsl">
+    <FxCompile Include="Shaders\Material\UberLit.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderSubUV.hlsl">
+    <FxCompile Include="Shaders\UI\SubUV.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
@@ -345,9 +345,6 @@
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp">
-      <Filter>Source\Engine\Render\Resource</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Scene\RenderBus.cpp">
@@ -753,9 +750,6 @@
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h">
-      <Filter>Source\Engine\Render\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resource\Shader.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\VertexTypes.h">

@@ -1,5 +1,5 @@
-#include "Common.hlsl"
-#include "Lighting.hlsl"
+#include "../Common/Common.hlsli"
+#include "../Common/Lighting.hlsli"
 
 SamplerState SampleState : register(s0);
 

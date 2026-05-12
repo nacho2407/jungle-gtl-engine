@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "Prosthetic_Mat",
         "Name" : "cyber_arm_right_Mat_0",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

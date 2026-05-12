@@ -1,6 +1,23 @@
-﻿#include "FXAARenderPass.h"
+#include "FXAARenderPass.h"
 #include "Core/ResourceManager.h"
+#include "Render/Resource/ShaderPaths.h"
 #include <algorithm>
+
+namespace
+{
+    FShaderProgram* GetFXAAProgram()
+    {
+        FShaderStageKey VSKey;
+        VSKey.FilePath = FShaderPaths::PostProcessFXAA;
+        VSKey.EntryPoint = "mainVS";
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = FShaderPaths::PostProcessFXAA;
+        PSKey.EntryPoint = "mainPS";
+
+        return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+    }
+}
 
 bool FFXAARenderPass::Initialize()
 {
@@ -38,8 +55,12 @@ bool FFXAARenderPass::Begin(const FRenderPassContext* Context)
 
     Context->DeviceContext->PSSetConstantBuffers(10, 1, &cb10);
 
-    UShader* FXAAShader = FResourceManager::Get().GetShader("Shaders/Multipass/FXAAPass.hlsl");
-    FXAAShader->Bind(Context->DeviceContext);
+    FShaderProgram* FXAAProgram = GetFXAAProgram();
+    if (!FXAAProgram)
+    {
+        return false;
+    }
+    FXAAProgram->Bind(Context->DeviceContext);
 
     /**
      * 풀스크린 쿼드에 그리는데, mainVS 에서	정점 데이터를 생성하기 때문에 IA 단계에서 별도의

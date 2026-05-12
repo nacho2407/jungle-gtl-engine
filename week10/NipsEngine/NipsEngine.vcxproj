@@ -316,11 +316,14 @@
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\BuildTools\Scripts\BuildSoLoudLib.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(ThirdPartyBinaryConfiguration)&quot; -Platform &quot;$(Platform)&quot;" />
   </Target>
   <ItemGroup>
+    <ClCompile Include="Source\Editor\UI\EditorViewerWindowWidget.cpp" />
+    <ClCompile Include="Source\Editor\Viewer\EditorViewer.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\SkeletalMeshViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Asset\SkeletalMesh.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SinusoidalCameraShakePattern.cpp" />
-    <None Include="Shaders\Multipass\PostProcess.hlsl" />
-    <None Include="Shaders\ScreenOverlay.hlsl" />
+    <None Include="Shaders\PostProcess\PostProcess.hlsl" />
+    <None Include="Shaders\UI\ScreenOverlay.hlsl" />
     <ClCompile Include="Source\Engine\Camera\CameraShakeBase.cpp" />
     <ClCompile Include="Source\Engine\Camera\CameraModifier_CameraShake.cpp" />
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp" />
@@ -723,7 +726,6 @@
     <ClCompile Include="Source\Engine\Render\Resource\FbxMaterialLoader.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ObjMtlLoader.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ShaderCompiler.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ShaderHelper.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ShadowAtlasManager.cpp" />
@@ -803,6 +805,9 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Editor\UI\EditorViewerWindowWidget.h" />
+    <ClInclude Include="Source\Editor\Viewer\EditorViewer.h" />
+    <ClInclude Include="Source\Editor\Viewport\SkeletalMeshViewportClient.h" />
     <ClInclude Include="Source\Engine\Asset\SkeletalMesh.h" />
     <ClInclude Include="Source\Engine\Asset\SkeletalMeshTypes.h" />
     <ClInclude Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.h" />
@@ -1053,11 +1058,14 @@
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ObjMtlLoader.h" />
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\Shader.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShaderCompiler.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShaderHelper.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\MaterialShaderTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\ShaderPaths.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\ShaderTypes.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShadowAtlasManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Texture.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\VertexFactoryTypes.h" />
     <ClInclude Include="Source\Engine\Render\Resource\VertexTypes.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderBus.h" />
     <ClInclude Include="Source\Engine\Render\Scene\DecalCommandBuilder.h" />
@@ -1129,7 +1137,15 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Shaders\Multipass\" />
+    <Folder Include="Shaders\Common\" />
+    <Folder Include="Shaders\Material\" />
+    <Folder Include="Shaders\UI\" />
+    <Folder Include="Shaders\EditorDebug\" />
+    <Folder Include="Shaders\Depth\" />
+    <Folder Include="Shaders\Shadow\" />
+    <Folder Include="Shaders\PostProcess\" />
+    <Folder Include="Shaders\Compute\" />
+    <Folder Include="Shaders\Atmosphere\" />
     <Folder Include="ThirdParty\SoLoud\" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "Tree",
         "Name" : "Lowpoly_tree_sample_Mat_1",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

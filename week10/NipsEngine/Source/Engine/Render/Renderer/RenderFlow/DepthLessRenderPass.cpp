@@ -2,6 +2,38 @@
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
+#include "Render/Resource/VertexFactoryTypes.h"
+#include "Core/ResourceManager.h"
+
+namespace
+{
+    FShaderProgram* GetDepthLessShaderProgram(const FRenderCommand& Cmd)
+    {
+        if (!Cmd.Material)
+        {
+            return nullptr;
+        }
+
+        const FVertexFactoryDesc& VertexFactoryDesc = FVertexFactoryRegistry::Get(Cmd.VertexFactoryType);
+
+        FShaderStageKey VSKey;
+        VSKey.FilePath = VertexFactoryDesc.VertexShaderPath;
+        VSKey.EntryPoint = VertexFactoryDesc.BasePassVSEntry;
+        VSKey.Target = "vs_5_0";
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = Cmd.Material->GetPixelShaderPath();
+        PSKey.EntryPoint = Cmd.Material->GetPixelShaderEntryPoint();
+        PSKey.Target = "ps_5_0";
+
+        return FResourceManager::Get().GetOrCreateShaderProgram(
+            VSKey,
+            PSKey,
+            nullptr,
+            nullptr,
+            &VertexFactoryDesc.VertexLayout);
+    }
+}
 
 bool FDepthLessRenderPass::Initialize()
 {
@@ -66,7 +98,16 @@ bool FDepthLessRenderPass::DrawCommand(const FRenderPassContext* Context)
 
         if (Cmd.Material != nullptr)
         {
-            Cmd.Material->Bind(Context->DeviceContext);
+            FShaderProgram* Program = GetDepthLessShaderProgram(Cmd);
+            if (!Program)
+            {
+                continue;
+            }
+
+            Program->Bind(Context->DeviceContext);
+            Cmd.Material->BindRenderStates(Context->DeviceContext);
+            Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
+            BindVertexFactoryResources(Context->DeviceContext, Cmd.VertexFactoryType, Cmd);
         }
 
         Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);

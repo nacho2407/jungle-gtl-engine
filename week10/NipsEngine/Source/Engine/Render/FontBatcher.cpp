@@ -1,8 +1,41 @@
-﻿#include <d3d11.h>
+#include <d3d11.h>
 #include "FontBatcher.h"
 #include "Core/CoreTypes.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/RenderResources.h"
+
+#include <cstddef>
+
+namespace
+{
+	FShaderProgram* GetFontShaderProgram()
+	{
+		static const FVertexLayoutDesc FontVertexLayout = {
+			{
+				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, Position)) },
+				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, TexCoord)) },
+			},
+			sizeof(FTextureVertex)
+		};
+
+		FShaderStageKey VSKey;
+		VSKey.FilePath = "Shaders/UI/Font.hlsl";
+		VSKey.EntryPoint = "VS";
+		VSKey.Target = "vs_5_0";
+
+		FShaderStageKey PSKey;
+		PSKey.FilePath = "Shaders/UI/Font.hlsl";
+		PSKey.EntryPoint = "PS";
+		PSKey.Target = "ps_5_0";
+
+		return FResourceManager::Get().GetOrCreateShaderProgram(
+			VSKey,
+			PSKey,
+			nullptr,
+			nullptr,
+			&FontVertexLayout);
+	}
+}
 
 void FFontBatcher::Create(ID3D11Device* InDevice)
 {
@@ -16,7 +49,7 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	UMaterial* Mat = FResourceManager::Get().GetMaterial("FontMat");
 	if (!Mat)
 	{
-		Mat = FResourceManager::Get().GetOrCreateMaterial("FontMat", "Asset/Material/FontMat.mat", "Shaders/ShaderFont.hlsl");
+		Mat = FResourceManager::Get().GetOrCreateMaterial("FontMat", "Asset/Material/FontMat.mat", EMaterialShaderType::UIFont);
 	}
 	if (!Mat)
 	{
@@ -254,8 +287,20 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Reso
 	memcpy(mapped.pData, Indices.data(), sizeof(uint32) * Indices.size());
 	Context->Unmap(IndexBuffer.Get(), 0);
 
-	// 셰이더 바인딩
-	FontMaterial->Bind(Context);
+	FShaderProgram* Program = GetFontShaderProgram();
+	if (!Program)
+	{
+		return;
+	}
+
+	if (Resource->Texture)
+	{
+		FontMaterial->SetTexture("FontAtlas", Resource->Texture);
+	}
+
+	Program->Bind(Context);
+	FontMaterial->BindRenderStates(Context);
+	FontMaterial->BindParameters(Context, Program->PS);
     if (bWireframe)
     {
         ID3D11RasterizerState* WireRS = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::WireFrame);

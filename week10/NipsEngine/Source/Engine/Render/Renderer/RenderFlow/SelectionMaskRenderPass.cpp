@@ -1,9 +1,11 @@
-﻿#include "SelectionMaskRenderPass.h"
+#include "SelectionMaskRenderPass.h"
 #include "Core/ResourceManager.h"
 #include "Component/PrimitiveComponent.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
+#include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/Texture.h"
+#include "Render/Resource/VertexFactoryTypes.h"
 
 static ID3D11ShaderResourceView* GetTextureSRVFromParam(const FMaterialParamValue& Param)
 {
@@ -34,6 +36,11 @@ static ID3D11ShaderResourceView* GetDiffuseSRV(UMaterialInterface* Material)
 
 static uint32 GetSelectionMaskShaderKey(const FRenderCommand& Cmd)
 {
+    if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh)
+    {
+        return 3;
+    }
+
     UPrimitiveComponent* Primitive = Cmd.SourcePrimitive;
     if (!Primitive)
     {
@@ -52,6 +59,50 @@ static uint32 GetSelectionMaskShaderKey(const FRenderCommand& Cmd)
     }
 
     return 0;
+}
+
+static FShaderProgram* GetSelectionMaskProgram(const FRenderCommand& Cmd)
+{
+    const uint32 ShaderKey = GetSelectionMaskShaderKey(Cmd);
+
+    const char* VSEntry = "VSPrimitive";
+    const char* PSEntry = "PSPrimitive";
+    const FVertexLayoutDesc* VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::Primitive).SelectionLayout;
+    if (ShaderKey == 1)
+    {
+        VSEntry = "VSStaticMesh";
+        PSEntry = "PSTextured";
+        VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::StaticMesh).SelectionLayout;
+    }
+    else if (ShaderKey == 2)
+    {
+        VSEntry = "VSBillboard";
+        PSEntry = "PSTextured";
+        VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::Billboard).SelectionLayout;
+    }
+    else if (ShaderKey == 3)
+    {
+        VSEntry = "VSSkeletalMesh";
+        PSEntry = "PSTextured";
+        VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::SkeletalMesh).SelectionLayout;
+    }
+
+    FShaderStageKey VSKey;
+    VSKey.FilePath = FShaderPaths::EditorSelectionMask;
+    VSKey.EntryPoint = VSEntry;
+    VSKey.PermutationKey = ShaderKey;
+
+    FShaderStageKey PSKey;
+    PSKey.FilePath = FShaderPaths::EditorSelectionMask;
+    PSKey.EntryPoint = PSEntry;
+    PSKey.PermutationKey = ShaderKey;
+
+    return FResourceManager::Get().GetOrCreateShaderProgram(
+        VSKey,
+        PSKey,
+        nullptr,
+        nullptr,
+        VertexLayout);
 }
 
 static void BuildSelectionMaskConstants(
@@ -155,16 +206,16 @@ bool FSelectionMaskRenderPass::DrawCommand(const FRenderPassContext* Context)
         return true;
     }
 
-    UShader* SelectionMaskShader = FResourceManager::Get().GetShader("Shaders/SelectionMask.hlsl");
-    if (!SelectionMaskShader)
-    {
-        return true;
-    }
-
     for (const FRenderCommand& Cmd : Commands)
     {
-        const uint32 ShaderKey = GetSelectionMaskShaderKey(Cmd);
-        SelectionMaskShader->Bind(Context->DeviceContext, ShaderKey);
+        FShaderProgram* Program = GetSelectionMaskProgram(Cmd);
+        if (!Program)
+        {
+            continue;
+        }
+
+        Program->Bind(Context->DeviceContext);
+        BindVertexFactoryResources(Context->DeviceContext, Cmd.VertexFactoryType, Cmd);
 
         Context->RenderResources->PerObjectConstantBuffer.Update(Context->DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
         ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();

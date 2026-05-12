@@ -1,9 +1,9 @@
-﻿#include "LineBatchComponent.h"
+#include "LineBatchComponent.h"
 #include "Core/ResourceManager.h"
 
 ULineBatchComponent::ULineBatchComponent()
 {
-	UMaterial* Mat = FResourceManager::Get().GetOrCreateMaterial("LineMaterial", "Shaders/ShaderLine.hlsl");
+	UMaterial* Mat = FResourceManager::Get().GetOrCreateMaterial("LineMaterial", EMaterialShaderType::UILine);
 	Mat->DepthStencilType = EDepthStencilType::Default;
 	Mat->BlendType = EBlendType::AlphaBlend;
 	Mat->RasterizerType = ERasterizerType::SolidBackCull;

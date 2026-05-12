@@ -14,8 +14,8 @@
 #include "GameFramework/World.h"
 #include "Runtime/Script/ScriptManager.h"
 #include "Serialization/SceneSaveManager.h"
+#include "Editor/Selection/SelectionManager.h"
 
-#include <chrono>
 #include <filesystem>
 
 DEFINE_CLASS(UEngine, UObject)
@@ -177,7 +177,6 @@ void UEngine::ProcessPendingSceneOpen()
 
 bool UEngine::OpenSceneNow(const FString& ScenePath)
 {
-	const auto SceneOpenStart = std::chrono::steady_clock::now();
 	FWorldContext* ActiveContext = GetWorldContextFromHandle(ActiveWorldHandle);
 	if (!ActiveContext)
 	{
@@ -192,9 +191,7 @@ bool UEngine::OpenSceneNow(const FString& ScenePath)
 	}
 
 	FWorldContext LoadedContext;
-	const auto LoadStart = std::chrono::steady_clock::now();
 	FSceneSaveManager::Load(ScenePath, LoadedContext, nullptr);
-	const auto LoadEnd = std::chrono::steady_clock::now();
 	if (!LoadedContext.World)
 	{
 		return false;
@@ -205,24 +202,18 @@ bool UEngine::OpenSceneNow(const FString& ScenePath)
 	const FName TargetHandle = ActiveContext->ContextHandle;
 	const FString TargetName = ActiveContext->ContextName;
 
-	const auto UnloadStart = std::chrono::steady_clock::now();
 	OnSceneWorldWillUnload(OldWorld);
 	if (OldWorld)
 	{
 		OldWorld->EndPlay(EEndPlayReason::Type::LevelTransition);
 	}
-	const auto LuaResetStart = std::chrono::steady_clock::now();
 	if (TargetWorldType == EWorldType::Game || TargetWorldType == EWorldType::PIE)
 	{
 		FScriptManager::Get().ResetLuaState();
 	}
-	const auto LuaResetEnd = std::chrono::steady_clock::now();
-	const auto UnloadEnd = std::chrono::steady_clock::now();
 
-	const auto SyncStart = std::chrono::steady_clock::now();
 	LoadedContext.World->SetWorldType(TargetWorldType);
 	LoadedContext.World->SyncSpatialIndex();
-	const auto SyncEnd = std::chrono::steady_clock::now();
 
 	ActiveContext->WorldType = TargetWorldType;
 	ActiveContext->World = LoadedContext.World;
@@ -232,40 +223,18 @@ bool UEngine::OpenSceneNow(const FString& ScenePath)
 	SetActiveWorld(TargetHandle);
 	CurrentScenePath = ScenePath;
 
-	const auto LoadedHookStart = std::chrono::steady_clock::now();
 	OnSceneWorldLoaded(ActiveContext->World);
-	const auto LoadedHookEnd = std::chrono::steady_clock::now();
 
-	const auto BeginPlayStart = std::chrono::steady_clock::now();
 	if (TargetWorldType == EWorldType::Game || TargetWorldType == EWorldType::PIE)
 	{
 		ActiveContext->World->BeginPlay();
 	}
-	const auto BeginPlayEnd = std::chrono::steady_clock::now();
 
-	const auto DestroyStart = std::chrono::steady_clock::now();
 	if (OldWorld)
 	{
 		UObjectManager::Get().DestroyObject(OldWorld);
 	}
-	const auto DestroyEnd = std::chrono::steady_clock::now();
 
-	const auto SceneOpenEnd = std::chrono::steady_clock::now();
-	auto ToSec = [](std::chrono::steady_clock::duration Duration)
-	{
-		return std::chrono::duration<double>(Duration).count();
-	};
-
-	UE_LOG("[ScenePerf] Opened scene: %s | Total=%.4fs Load=%.4fs Unload=%.4fs LuaReset=%.4fs Spatial=%.4fs OnLoaded=%.4fs BeginPlay=%.4fs DestroyOld=%.4fs",
-	       ScenePath.c_str(),
-	       ToSec(SceneOpenEnd - SceneOpenStart),
-	       ToSec(LoadEnd - LoadStart),
-	       ToSec(UnloadEnd - UnloadStart),
-	       ToSec(LuaResetEnd - LuaResetStart),
-	       ToSec(SyncEnd - SyncStart),
-	       ToSec(LoadedHookEnd - LoadedHookStart),
-	       ToSec(BeginPlayEnd - BeginPlayStart),
-	       ToSec(DestroyEnd - DestroyStart));
 	return true;
 }
 
@@ -310,6 +279,8 @@ FWorldContext& UEngine::CreateWorldContext(EWorldType Type, const FName& Handle,
 	Context.ContextHandle = Handle;
 	Context.ContextName = Name.empty() ? Handle.ToString() : Name;
 	Context.World = UObjectManager::Get().CreateObject<UWorld>();
+    Context.SelectionManager = new FSelectionManager;
+    Context.SelectionManager->Init();
 	if (Context.World)
 	{
 		Context.World->SetWorldType(Type);
@@ -323,7 +294,10 @@ void UEngine::DestroyWorldContext(const FName& Handle)
 	for (auto it = WorldList.begin(); it != WorldList.end(); ++it)
 	{
 		if (it->ContextHandle == Handle)
-		{
+        {
+            it->SelectionManager->Shutdown();
+            delete it->SelectionManager;
+            it->SelectionManager = nullptr;
 			it->World->EndPlay(EEndPlayReason::Type::Destroyed);
 			UObjectManager::Get().DestroyObject(it->World);
 			WorldList.erase(it);

@@ -106,6 +106,7 @@ void FDecalCommandBuilder::CollectDecal(UPrimitiveComponent* Primitive, const FS
 
             FRenderCommand Cmd = {};
             Cmd.Type = ERenderCommandType::Decal;
+            Cmd.VertexFactoryType = EVertexFactoryType::Decal;
             Cmd.PerObjectConstants = FPerObjectConstants{ Prim->GetWorldMatrix(), FColor::White().ToVector4() };
             Cmd.MeshBuffer = MeshBuffer;
 
