@@ -72,6 +72,7 @@ private:
 	TArray<FString> CachedMaterialSlotNames;
 	TArray<UMaterialInterface*> CachedMaterialSlotMaterials;
 	TMap<uint32, int32> SelectedSkeletalBoneByComponent;
+
 	bool bDetailsLocked = false;
 	bool bActorSelected   = true; // true: Actor details, false: Component details
 	bool bOpenDetailsContextMenu = false;
@@ -81,4 +82,22 @@ private:
 	float LastDeltaTime = 0.0f;
 	char NewActorTagBuffer[128] = "";
 	char NewComponentTagBuffer[128] = "";
+
+	// for skeletal mesh bone pose debug
+    /**
+	 * @brief bind pose를 기준으로 얼마나 움직였는지에 대한 offset
+	 */
+	struct FSkeletalBonePoseEditState
+    {
+        uint32 MeshId = 0;
+        int32 BoneIndex = -1;
+        FVector LocationOffset = FVector::ZeroVector;
+        FVector RotationOffset = FVector::ZeroVector;
+        FVector ScaleOffset = FVector::OneVector;
+    };
+
+	/**
+	 * @brief 같은 USkeletalMeshComponent 안에서도 bone마다 UI 편집 상태를 따로 기억하기 위한 캐시
+	 */
+    TMap<uint32, TMap<int32, FSkeletalBonePoseEditState>> SkeletalBonePoseEditStatesByComponent;
 };
