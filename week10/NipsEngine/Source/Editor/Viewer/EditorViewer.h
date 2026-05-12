@@ -43,6 +43,7 @@ public:
 
 	// 우선은 Skeletal Mesh Viewer 테스트용으로 추상화 안함
 	ASkeletalMeshActor* GetViewTarget() const { return ViewTarget; }
+    void ClearViewTarget() { ViewTarget = nullptr; }
 
     // Socket Preview Mesh API (Phase 4) — 휘발성. transient + editorOnly로
     // scene 저장과 게임 빌드 양쪽에서 자동으로 빠짐.

@@ -55,27 +55,41 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
     ImGui::Text("Skeleton");
 
 	ASkeletalMeshActor* ViewTarget = EditorEngine->GetViewer().GetViewTarget();
-    USkeletalMeshComponent* SkelMeshComp = ViewTarget->GetSkeletalMeshComponent();
-    FSkeletalMesh* MeshData = SkelMeshComp->GetSkeletalMesh()->GetMeshData();
+    USkeletalMeshComponent* SkelMeshComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+    USkeletalMesh* SkeletalMesh = SkelMeshComp ? SkelMeshComp->GetSkeletalMesh() : nullptr;
+    FSkeletalMesh* MeshData = SkeletalMesh ? SkeletalMesh->GetMeshData() : nullptr;
 
     // 헬퍼들이 참조할 transient 캐시 (Render 호출 범위에서만 유효)
     CachedSkComp = SkelMeshComp;
 
-	if (CachedMesh != MeshData)
-	{
+    if (!MeshData)
+    {
+        CachedMesh = nullptr;
+        Children.clear();
+        BoneToSocketIndices.clear();
+        SelectedBoneIndex = -1;
+        SelectedSocketIndex = -1;
+        bMeshDirty = false;
+        ImGui::TextDisabled("No skeletal mesh");
+    }
+    else if (CachedMesh != MeshData)
+    {
         CachedMesh = MeshData;
         SelectedBoneIndex = -1;
         SelectedSocketIndex = -1;
         bMeshDirty = false;
 
         RebuildBoneTreeCaches(MeshData);
-	}
+    }
 
-	for (int32 i = 0; i < MeshData->Bones.size(); ++i)
+	if (MeshData)
     {
-        if (MeshData->Bones[i].ParentIndex == -1)
+        for (int32 i = 0; i < MeshData->Bones.size(); ++i)
         {
-            DrawBoneNode(i, MeshData->Bones, Children);
+            if (MeshData->Bones[i].ParentIndex == -1)
+            {
+                DrawBoneNode(i, MeshData->Bones, Children);
+            }
         }
     }
 

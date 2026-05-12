@@ -1,4 +1,4 @@
-﻿{
+{
         "ImportedName" : "DicePaper",
         "Name" : "Dice_Mat_0",
         "Params" : [{
@@ -10,13 +10,13 @@
             "Type" : "Vector3",
             "Value" : [0.800000, 0.800000, 0.800000]
           }, {
-            "Name" : "SpecularColor",
-            "Type" : "Vector3",
-            "Value" : [0.000000, 0.000000, 0.000000]
-          }, {
             "Name" : "ScrollUV",
             "Type" : "Vector2",
             "Value" : [0.000000, 0.000000]
+          }, {
+            "Name" : "SpecularColor",
+            "Type" : "Vector3",
+            "Value" : [0.000000, 0.000000, 0.000000]
           }, {
             "Name" : "DiffuseMap",
             "Type" : "Texture",
@@ -26,6 +26,10 @@
             "Type" : "Vector3",
             "Value" : [0.000000, 0.000000, 0.000000]
           }, {
+            "Name" : "AmbientMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
             "Name" : "Shininess",
             "Type" : "Float",
             "Value" : 0.000000
@@ -33,6 +37,18 @@
             "Name" : "Opacity",
             "Type" : "Float",
             "Value" : 1.000000
+          }, {
+            "Name" : "SpecularMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
+            "Name" : "EmissiveMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
+            "Name" : "BumpMap",
+            "Type" : "Texture",
+            "Value" : ""
           }, {
             "Name" : "bHasDiffuseMap",
             "Type" : "Bool",

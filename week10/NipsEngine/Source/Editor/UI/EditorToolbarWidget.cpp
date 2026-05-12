@@ -1,9 +1,9 @@
 #include "Editor/UI/EditorToolbarWidget.h"
 
 #include "Editor/EditorEngine.h"
-#include "Editor/UI/EditorSceneWidget.h"
 #include "Editor/UI/EditorViewportOverlayWidget.h"
 #include "Editor/UI/EditorPlayStreamWidget.h"
+#include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Serialization/SceneSaveManager.h"
 #include "ImGui/imgui.h"
@@ -106,11 +106,6 @@ void FEditorToolbarWidget::SetViewportOverlayWidget(FEditorViewportOverlayWidget
 	ViewportOverlayWidget = InViewportOverlayWidget;
 }
 
-void FEditorToolbarWidget::SetSceneWidget(FEditorSceneWidget* InSceneWidget)
-{
-	SceneWidget = InSceneWidget;
-}
-
 void FEditorToolbarWidget::SetPlayStreamWidget(FEditorPlayStreamWidget* InPlayStreamWidget)
 {
 	PlayStreamWidget = InPlayStreamWidget;
@@ -157,20 +152,20 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 	(void)DeltaTime;
 
 	const ImGuiIO& IO = ImGui::GetIO();
-	if (SceneWidget && !IO.WantTextInput && IO.KeyCtrl)
+	if (EditorEngine && !IO.WantTextInput && IO.KeyCtrl)
 	{
 		if (ImGui::IsKeyPressed(ImGuiKey_N, false))
 		{
-			SceneWidget->NewScene();
+			EditorEngine->GetCommandSystem().Execute(EEditorCommand::NewScene);
 		}
 		if (ImGui::IsKeyPressed(ImGuiKey_O, false))
 		{
-			if (SceneWidget->PromptSaveIfDirty())
+			if (EditorEngine->GetSceneService().PromptSaveIfDirty())
 			{
 				FString PickedPath;
 				if (OpenSceneFileDialog(PickedPath))
 				{
-					SceneWidget->LoadSceneFromFilePath(PickedPath, false);
+					EditorEngine->GetCommandSystem().Execute(EEditorCommand::OpenScene, { PickedPath });
 				}
 			}
 		}
@@ -181,12 +176,12 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 				FString PickedPath;
 				if (SaveSceneFileDialog(PickedPath))
 				{
-					SceneWidget->SaveSceneToFilePath(PickedPath);
+					EditorEngine->GetCommandSystem().Execute(EEditorCommand::SaveSceneAs, { PickedPath });
 				}
 			}
 			else
 			{
-				SceneWidget->SaveScene();
+				EditorEngine->GetCommandSystem().Execute(EEditorCommand::SaveScene);
 			}
 		}
 	}
@@ -220,33 +215,33 @@ void FEditorToolbarWidget::RenderFilesMenu()
 		return;
 	}
 
-	if (SceneWidget)
+	if (EditorEngine)
 	{
 		if (ImGui::MenuItem("New Scene", "Ctrl+N"))
 		{
-			SceneWidget->NewScene();
+			EditorEngine->GetCommandSystem().Execute(EEditorCommand::NewScene);
 		}
 		if (ImGui::MenuItem("Load Scene", "Ctrl+O"))
 		{
-			if (SceneWidget->PromptSaveIfDirty())
+			if (EditorEngine->GetSceneService().PromptSaveIfDirty())
 			{
 				FString PickedPath;
 				if (OpenSceneFileDialog(PickedPath))
 				{
-					SceneWidget->LoadSceneFromFilePath(PickedPath, false);
+					EditorEngine->GetCommandSystem().Execute(EEditorCommand::OpenScene, { PickedPath });
 				}
 			}
 		}
 		if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
 		{
-			SceneWidget->SaveScene();
+			EditorEngine->GetCommandSystem().Execute(EEditorCommand::SaveScene);
 		}
 		if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
 		{
 			FString PickedPath;
 			if (SaveSceneFileDialog(PickedPath))
 			{
-				SceneWidget->SaveSceneToFilePath(PickedPath);
+				EditorEngine->GetCommandSystem().Execute(EEditorCommand::SaveSceneAs, { PickedPath });
 			}
 		}
 
@@ -254,7 +249,7 @@ void FEditorToolbarWidget::RenderFilesMenu()
 
 		if (ImGui::MenuItem("Reload Asset From Disk"))
 		{
-			SceneWidget->RefreshSceneAndAssets();
+			EditorEngine->GetCommandSystem().Execute(EEditorCommand::RefreshAssets);
 		}
 		if (ImGui::MenuItem("Open Asset Folder"))
 		{
@@ -301,15 +296,15 @@ void FEditorToolbarWidget::RenderEditMenu()
 		return;
 	}
 
-	const bool bCanUndo = EditorEngine && !EditorEngine->GetUndoSystem().GetUndoHistory().empty();
-	const bool bCanRedo = EditorEngine && !EditorEngine->GetUndoSystem().GetRedoHistory().empty();
+	const bool bCanUndo = EditorEngine && EditorEngine->GetCommandSystem().CanExecute(EEditorCommand::Undo);
+	const bool bCanRedo = EditorEngine && EditorEngine->GetCommandSystem().CanExecute(EEditorCommand::Redo);
 	if (ImGui::MenuItem("Undo", "Ctrl+Z", false, bCanUndo) && EditorEngine)
 	{
-		EditorEngine->GetUndoSystem().Undo();
+		EditorEngine->GetCommandSystem().Execute(EEditorCommand::Undo);
 	}
 	if (ImGui::MenuItem("Redo", "Ctrl+Shift+Z", false, bCanRedo) && EditorEngine)
 	{
-		EditorEngine->GetUndoSystem().Redo();
+		EditorEngine->GetCommandSystem().Execute(EEditorCommand::Redo);
 	}
 
 	ImGui::Separator();
