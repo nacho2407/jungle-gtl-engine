@@ -72,10 +72,10 @@ void FEditorMainPanel::Update()
         {
             const char* HoveredName = HoveredWindow->Name ? HoveredWindow->Name : "";
             bHoveredViewportContentWindow =
-                (std::strcmp(HoveredName, "Viewport") == 0)
-                || (std::strncmp(HoveredName, "Viewport###", 11) == 0)
-                || (std::strcmp(HoveredName, "Viewer") == 0)
-                || (std::strncmp(HoveredName, "Viewer/ViewportPanel###", 9) == 0);
+                (std::strcmp(HoveredName, "Viewport") == 0) 
+				|| (std::strncmp(HoveredName, "Viewport###", 11) == 0) 
+				|| (std::strncmp(HoveredName, "Viewer##", 8) == 0) 
+				|| (std::strcmp(HoveredName, "ViewportPanel") == 0);
             bHoveredNonViewportWindow = !bHoveredViewportContentWindow;
         }
     }
