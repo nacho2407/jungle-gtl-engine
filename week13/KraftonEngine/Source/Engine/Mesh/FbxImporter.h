@@ -8,6 +8,8 @@
 
 #include <fbxsdk.h>
 
+struct FImportOptions;
+
 class FFbxImporter
 {
 	struct FMaterialInfo
@@ -20,7 +22,7 @@ class FFbxImporter
 
 public:
 	static bool Import(const FString& FilePath);
-	static bool ImportStatic(const FString& FilePath, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials);
+	static bool ImportStatic(const FString& FilePath, const FImportOptions* Options, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials);
 
 private:
 	static bool Parse(FbxScene* Scene);

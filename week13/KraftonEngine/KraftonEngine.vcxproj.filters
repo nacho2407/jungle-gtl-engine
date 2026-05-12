@@ -1025,12 +1025,6 @@
     <ClCompile Include="Source\Engine\Texture\Texture2D.cpp">
       <Filter>Source\Engine\Texture</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\UI\SSplitter.cpp">
-      <Filter>Source\Engine\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\UI\SWindow.cpp">
-      <Filter>Source\Engine\UI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\UI\UIManager.cpp">
       <Filter>Source\Engine\UI</Filter>
     </ClCompile>
@@ -1147,6 +1141,9 @@
     <ClCompile Include="Source\Editor\Viewport\MeshEditorViewportClient.h" />
     <ClCompile Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.cpp" />
     <ClCompile Include="Source\Engine\Gizmo\ComponentGizmoTarget.cpp" />
+    <ClCompile Include="Source\Editor\Slate\SlateApplication.cpp" />
+    <ClCompile Include="Source\Editor\Slate\SSplitter.cpp" />
+    <ClCompile Include="Source\Editor\Slate\SWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1904,15 +1901,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Texture\Texture2D.h">
       <Filter>Source\Engine\Texture</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\SSplitter.h">
-      <Filter>Source\Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\SWidget.h">
-      <Filter>Source\Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\SWindow.h">
-      <Filter>Source\Engine\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\UIManager.h">
       <Filter>Source\Engine\UI</Filter>
@@ -2833,6 +2821,11 @@
     <ClInclude Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.h" />
     <ClInclude Include="Source\Engine\Gizmo\ComponentGizmoTarget.h" />
     <ClInclude Include="Source\Engine\Gizmo\GizmoTransformTarget.h" />
+    <ClInclude Include="Source\Editor\Slate\SlateApplication.h" />
+    <ClInclude Include="Source\Editor\Slate\SSplitter.h" />
+    <ClInclude Include="Source\Editor\Slate\SWidget.h" />
+    <ClInclude Include="Source\Editor\Slate\SWindow.h" />
+    <ClInclude Include="Source\Engine\Mesh\MeshImportOptions.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
