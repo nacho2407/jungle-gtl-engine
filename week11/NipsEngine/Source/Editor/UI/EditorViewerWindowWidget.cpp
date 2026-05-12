@@ -51,10 +51,18 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
     ImGui::Text("Skeleton");
 
 	ASkeletalMeshActor* ViewTarget = EditorEngine->GetViewer().GetViewTarget();
-    USkeletalMeshComponent* SkelMeshComp = ViewTarget->GetSkeletalMeshComponent();
-    FSkeletalMesh* MeshData = SkelMeshComp->GetSkeletalMesh()->GetMeshData();
+    USkeletalMeshComponent* SkelMeshComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+    USkeletalMesh* SkeletalMesh = SkelMeshComp ? SkelMeshComp->GetSkeletalMesh() : nullptr;
+    FSkeletalMesh* MeshData = SkeletalMesh ? SkeletalMesh->GetMeshData() : nullptr;
 
-	if (CachedMesh != MeshData)
+    if (!MeshData)
+    {
+        CachedMesh = nullptr;
+        Children.clear();
+        SelectedBoneIndex = -1;
+        ImGui::TextDisabled("No skeletal mesh");
+    }
+	else if (CachedMesh != MeshData)
 	{
         CachedMesh = MeshData;
 
@@ -71,11 +79,14 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
         }
 	}
 
-	for (int32 i = 0; i < MeshData->Bones.size(); ++i)
+	if (MeshData)
     {
-        if (MeshData->Bones[i].ParentIndex == -1)
+        for (int32 i = 0; i < MeshData->Bones.size(); ++i)
         {
-            DrawBoneNode(i, MeshData->Bones, Children);
+            if (MeshData->Bones[i].ParentIndex == -1)
+            {
+                DrawBoneNode(i, MeshData->Bones, Children);
+            }
         }
     }
 

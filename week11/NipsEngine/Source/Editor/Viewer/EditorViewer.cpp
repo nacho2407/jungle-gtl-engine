@@ -63,6 +63,7 @@ void FEditorViewer::Init(
 void FEditorViewer::Shutdown()
 {
     Viewport.SetClient(nullptr);
+    ViewTarget = nullptr;
 }
 
 void FEditorViewer::Tick(float DeltaTime)

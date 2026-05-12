@@ -684,6 +684,7 @@ bool UEditorEngine::RestoreSceneSnapshot(const FString& Snapshot, const FName& R
     WorldList.push_back(LoadCtx);
     SetActiveWorld(LoadCtx.ContextHandle);
     ApplySpatialIndexMaintenanceSettings(LoadCtx.World);
+    CreateViewerWorld();
     ResetViewport();
 
     const FEditorCameraState& CameraToRestore = LoadedCam.bValid ? LoadedCam : CurrentCam;
@@ -1267,6 +1268,7 @@ FEditorRenderPipeline* UEditorEngine::GetEditorRenderPipeline() const
 void UEditorEngine::ClearScene()
 {
     UnbindActorDestroyedListener(ActorDestroyedListenerWorld);
+    Viewer.ClearViewTarget();
 
     for (FWorldContext& Ctx : WorldList)
     {
