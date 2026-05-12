@@ -98,6 +98,19 @@ public:
 	void InitDefaultComponents() override;
 };
 
+class AFallbackCameraActor : public AActor
+{
+public:
+    DECLARE_CLASS(AFallbackCameraActor, AActor)
+    AFallbackCameraActor() = default;
+
+    void InitDefaultComponents() override;
+    UCameraComponent* GetCameraComponent() const { return CameraComp; }
+
+private:
+    UCameraComponent* CameraComp = nullptr;
+};
+
 class AFogActor : public AActor
 {
 public:

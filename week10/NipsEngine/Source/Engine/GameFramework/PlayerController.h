@@ -5,6 +5,7 @@
 
 class UCameraComponent;
 class ADefaultPlayerActor;
+class AFallbackCameraActor;
 class APlayerCameraManager;
 enum class ECameraBlendType;
 
@@ -19,6 +20,7 @@ public:
 	void ConfigureRuntimeCameraFromViewport(const FViewportCamera* SourceCamera);
 
 	virtual AActor* SpawnDefaultPawn();
+    virtual AFallbackCameraActor* SpawnFallbackCameraActor();
 	void Possess(AActor* InActor);
 	void UnPossess();
 
@@ -81,6 +83,7 @@ protected:
 	// 게임별 이동/공격/상호작용 입력은 Lua가 Engine.API.Input(InputSystem)을 통해 직접 읽고 처리합니다.
 	virtual void ApplyInitialPawnTransform(ADefaultPlayerActor* Pawn, const FVector& SpawnLocation, const FVector& SpawnRotation);
 	virtual void ApplyPlayerStartTransform(AActor* Pawn, const FVector& SpawnLocation, const FVector& SpawnRotation);
+    virtual void ApplyFallbackCameraTransform(AFallbackCameraActor* CameraActor);
 
 	virtual void UpdatePossessedActorMovement(float DeltaTime);
 	virtual void UpdateRuntimeCameraFromViewTarget(float DeltaTime = 0.0f);
@@ -89,6 +92,8 @@ protected:
 
 	virtual void OnPossess(AActor* InActor);
 	virtual void OnUnPossess(AActor* OldActor);
+    bool IsPossessingFallbackCamera() const;
+    void MoveFallbackCamera(int VK, float DeltaTime);
 
 protected:
 	AActor* PossessedActor = nullptr;
@@ -135,4 +140,5 @@ protected:
 
 	FCameraShakeState CameraShake;
 	FCameraFOVState CameraFOV;
+    float LastInputDeltaTime = 0.0f;
 };
