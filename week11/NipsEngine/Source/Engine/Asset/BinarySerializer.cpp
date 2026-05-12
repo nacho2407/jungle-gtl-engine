@@ -1111,19 +1111,6 @@ bool FBinarySerializer::LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMes
 		return false;
 	}
 
-	//	flat 캐시는 Bones에서 도출 — 디스크에는 굳이 굽지 않고 로드 후 한 번 채움.
-	//	(Bones의 세 행렬이 곧 캐시의 원본 값이라 재계산 없이 그대로 복사하면 됨.)
-	const uint32 BoneCount = Header.BoneCount;
-	OutData.ReferenceLocalPose.resize(BoneCount);
-	OutData.ReferenceGlobalPose.resize(BoneCount);
-	OutData.InverseBindPoseMatrices.resize(BoneCount);
-	for (uint32 i = 0; i < BoneCount; ++i)
-	{
-		OutData.ReferenceLocalPose[i]      = OutData.Bones[i].LocalBindTransform;
-		OutData.ReferenceGlobalPose[i]     = OutData.Bones[i].GlobalBindTransform;
-		OutData.InverseBindPoseMatrices[i] = OutData.Bones[i].InverseBindPose;
-	}
-
 	return true;
 }
 
