@@ -1,20 +1,15 @@
 #include "Editor/UI/EditorMainPanel.h"
 
-#include "Editor/Settings/ProjectSettings.h"
-#include "Engine/Core/Paths.h"
-#include "Core/Logging/Log.h"
-
-#include <filesystem>
+#include "Editor/EditorEngine.h"
 
 bool FEditorMainPanel::CanCloseEditor()
 {
-    return Widgets.SceneWidget.PromptSaveIfDirty();
+    return EditorEngine ? EditorEngine->GetSceneService().PromptSaveIfDirty() : true;
 }
 
 bool FEditorMainPanel::RequestNewScene()
 {
-    Widgets.SceneWidget.NewScene();
-    return true;
+    return EditorEngine && EditorEngine->GetSceneService().NewScene().bSuccess;
 }
 
 void FEditorMainPanel::RestoreLastSceneFromProjectSettings()
@@ -24,40 +19,12 @@ void FEditorMainPanel::RestoreLastSceneFromProjectSettings()
         return;
     }
 
-    FProjectSettings& ProjectSettings = FProjectSettings::Get();
-    if (ProjectSettings.HasSavedLastScenePath())
-    {
-        const FString StoredScenePath = ProjectSettings.LastScenePath;
-        const std::filesystem::path ScenePath(FPaths::ToAbsolute(FPaths::ToWide(StoredScenePath)));
-
-        std::error_code Ec;
-        const bool bSceneExists = std::filesystem::exists(ScenePath, Ec) && !Ec;
-        Ec.clear();
-        const bool bSceneFile = bSceneExists && std::filesystem::is_regular_file(ScenePath, Ec) && !Ec;
-        if (bSceneFile)
-        {
-            if (Widgets.SceneWidget.LoadSceneFromFilePath(FPaths::ToUtf8(ScenePath.wstring()), false))
-            {
-                return;
-            }
-
-            UE_LOG_WARNING("[ProjectSettings] Failed to load last scene: %s", StoredScenePath.c_str());
-        }
-        else
-        {
-            UE_LOG_WARNING(
-                "[ProjectSettings] Last scene path is invalid, opening New Scene: %s",
-                StoredScenePath.c_str()
-            );
-        }
-    }
-
-    Widgets.SceneWidget.NewScene();
+    EditorEngine->GetSceneService().RestoreLastScene();
 }
 
 bool FEditorMainPanel::RequestLoadSceneWithDialog()
 {
-    if (!Widgets.SceneWidget.PromptSaveIfDirty())
+    if (!EditorEngine || !EditorEngine->GetSceneService().PromptSaveIfDirty())
     {
         return false;
     }
@@ -68,12 +35,12 @@ bool FEditorMainPanel::RequestLoadSceneWithDialog()
         return false;
     }
 
-    return Widgets.SceneWidget.LoadSceneFromFilePath(PickedPath, false);
+    return EditorEngine->GetSceneService().OpenScene(PickedPath, false).bSuccess;
 }
 
 bool FEditorMainPanel::RequestSaveScene()
 {
-    return Widgets.SceneWidget.SaveScene();
+    return EditorEngine && EditorEngine->GetSceneService().SaveScene().bSuccess;
 }
 
 bool FEditorMainPanel::RequestSaveSceneAsWithDialog()
@@ -84,5 +51,5 @@ bool FEditorMainPanel::RequestSaveSceneAsWithDialog()
         return false;
     }
 
-    return Widgets.SceneWidget.SaveSceneToFilePath(PickedPath);
+    return EditorEngine && EditorEngine->GetSceneService().SaveSceneToFilePath(PickedPath).bSuccess;
 }

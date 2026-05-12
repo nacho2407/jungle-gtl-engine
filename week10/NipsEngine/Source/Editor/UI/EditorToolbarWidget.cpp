@@ -1,9 +1,9 @@
 #include "Editor/UI/EditorToolbarWidget.h"
 
 #include "Editor/EditorEngine.h"
-#include "Editor/UI/EditorSceneWidget.h"
 #include "Editor/UI/EditorViewportOverlayWidget.h"
 #include "Editor/UI/EditorPlayStreamWidget.h"
+#include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Serialization/SceneSaveManager.h"
 #include "ImGui/imgui.h"
@@ -106,11 +106,6 @@ void FEditorToolbarWidget::SetViewportOverlayWidget(FEditorViewportOverlayWidget
 	ViewportOverlayWidget = InViewportOverlayWidget;
 }
 
-void FEditorToolbarWidget::SetSceneWidget(FEditorSceneWidget* InSceneWidget)
-{
-	SceneWidget = InSceneWidget;
-}
-
 void FEditorToolbarWidget::SetPlayStreamWidget(FEditorPlayStreamWidget* InPlayStreamWidget)
 {
 	PlayStreamWidget = InPlayStreamWidget;
@@ -157,20 +152,20 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 	(void)DeltaTime;
 
 	const ImGuiIO& IO = ImGui::GetIO();
-	if (SceneWidget && !IO.WantTextInput && IO.KeyCtrl)
+	if (EditorEngine && !IO.WantTextInput && IO.KeyCtrl)
 	{
 		if (ImGui::IsKeyPressed(ImGuiKey_N, false))
 		{
-			SceneWidget->NewScene();
+			EditorEngine->GetSceneService().NewScene();
 		}
 		if (ImGui::IsKeyPressed(ImGuiKey_O, false))
 		{
-			if (SceneWidget->PromptSaveIfDirty())
+			if (EditorEngine->GetSceneService().PromptSaveIfDirty())
 			{
 				FString PickedPath;
 				if (OpenSceneFileDialog(PickedPath))
 				{
-					SceneWidget->LoadSceneFromFilePath(PickedPath, false);
+					EditorEngine->GetSceneService().OpenScene(PickedPath, false);
 				}
 			}
 		}
@@ -181,12 +176,12 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 				FString PickedPath;
 				if (SaveSceneFileDialog(PickedPath))
 				{
-					SceneWidget->SaveSceneToFilePath(PickedPath);
+					EditorEngine->GetSceneService().SaveSceneToFilePath(PickedPath);
 				}
 			}
 			else
 			{
-				SceneWidget->SaveScene();
+				EditorEngine->GetSceneService().SaveScene();
 			}
 		}
 	}
@@ -220,33 +215,33 @@ void FEditorToolbarWidget::RenderFilesMenu()
 		return;
 	}
 
-	if (SceneWidget)
+	if (EditorEngine)
 	{
 		if (ImGui::MenuItem("New Scene", "Ctrl+N"))
 		{
-			SceneWidget->NewScene();
+			EditorEngine->GetSceneService().NewScene();
 		}
 		if (ImGui::MenuItem("Load Scene", "Ctrl+O"))
 		{
-			if (SceneWidget->PromptSaveIfDirty())
+			if (EditorEngine->GetSceneService().PromptSaveIfDirty())
 			{
 				FString PickedPath;
 				if (OpenSceneFileDialog(PickedPath))
 				{
-					SceneWidget->LoadSceneFromFilePath(PickedPath, false);
+					EditorEngine->GetSceneService().OpenScene(PickedPath, false);
 				}
 			}
 		}
 		if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
 		{
-			SceneWidget->SaveScene();
+			EditorEngine->GetSceneService().SaveScene();
 		}
 		if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
 		{
 			FString PickedPath;
 			if (SaveSceneFileDialog(PickedPath))
 			{
-				SceneWidget->SaveSceneToFilePath(PickedPath);
+				EditorEngine->GetSceneService().SaveSceneToFilePath(PickedPath);
 			}
 		}
 
@@ -254,7 +249,7 @@ void FEditorToolbarWidget::RenderFilesMenu()
 
 		if (ImGui::MenuItem("Reload Asset From Disk"))
 		{
-			SceneWidget->RefreshSceneAndAssets();
+			FResourceManager::Get().RefreshFromAssetDirectory(FPaths::ToUtf8(FPaths::AssetDirectoryPath()));
 		}
 		if (ImGui::MenuItem("Open Asset Folder"))
 		{

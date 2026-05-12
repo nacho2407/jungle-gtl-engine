@@ -282,7 +282,7 @@ bool FEditorMaterialWidget::CreateInstanceForCurrentMaterial()
 	if (EditingSlotOwner && EditingSlotIndex >= 0 && EditingSlotIndex < EditingSlotOwner->GetNumMaterials())
 	{
 		EditingSlotOwner->SetMaterial(EditingSlotIndex, NewInstance);
-		EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+		EditorEngine->GetSceneService().MarkDirty();
 	}
 	else
 	{
