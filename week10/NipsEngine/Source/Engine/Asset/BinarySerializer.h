@@ -5,6 +5,8 @@
 #include <fstream>
 
 struct FStaticMesh;
+struct FSkeletalMesh;
+struct FMatrix;
 
 /*
  *	[주의사항]
@@ -18,7 +20,20 @@ struct FStaticMeshBinaryHeader
 	uint32 IndexCount = 0;
 	uint32 SectionCount = 0;
 	uint32 SlotCount = 0;
-	
+
+	uint64 SourceFileWriteTime = 0;
+};
+
+struct FSkeletalMeshBinaryHeader
+{
+	uint32 MagicNumber = 0x534D4B53;	// 'SKMS' (Skeletal MeSh)
+	uint32 Version = 1;
+	uint32 VertexCount = 0;
+	uint32 IndexCount = 0;
+	uint32 SectionCount = 0;
+	uint32 SlotCount = 0;
+	uint32 BoneCount = 0;
+
 	uint64 SourceFileWriteTime = 0;
 };
 
@@ -27,9 +42,13 @@ class FBinarySerializer
 public:
 	bool SaveStaticMesh(const FString& BinaryPath, const FString& SourcePath, const FStaticMesh& Data);
 	bool LoadStaticMesh(const FString& BinaryPath, FStaticMesh& OutData);
-	
+
+	bool SaveSkeletalMesh(const FString& BinaryPath, const FString& SourcePath, const FSkeletalMesh& Data);
+	bool LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMesh& OutData);
+
 	//	Header Read + 검사 장치
 	bool ReadStaticMeshHeader(const FString& BinaryPath, FStaticMeshBinaryHeader& OutHeader) const;
+	bool ReadSkeletalMeshHeader(const FString& BinaryPath, FSkeletalMeshBinaryHeader& OutHeader) const;
 
 private:
 	
@@ -60,4 +79,23 @@ private:
 
 	void WriteBounds(std::ofstream& Out, const FStaticMesh& Data);
 	bool ReadBounds(std::ifstream& In, FStaticMesh& OutData) const;
+
+	/* Skeletal Mesh */
+	void WriteSkeletalHeader(std::ofstream& Out, const FSkeletalMeshBinaryHeader& Header);
+	bool ReadSkeletalHeader(std::ifstream& In, FSkeletalMeshBinaryHeader& OutHeader) const;
+
+	void WriteMatrix4x4(std::ofstream& Out, const FMatrix& M);
+	bool ReadMatrix4x4(std::ifstream& In, FMatrix& OutM) const;
+
+	void WriteSkeletalVertices(std::ofstream& Out, const FSkeletalMesh& Data);
+	bool ReadSkeletalVertices(std::ifstream& In, FSkeletalMesh& OutData, uint32 VertexCount) const;
+
+	void WriteSkeletalSections(std::ofstream& Out, const FSkeletalMesh& Data);
+	bool ReadSkeletalSections(std::ifstream& In, FSkeletalMesh& OutData, uint32 SectionCount) const;
+
+	void WriteBones(std::ofstream& Out, const FSkeletalMesh& Data);
+	bool ReadBones(std::ifstream& In, FSkeletalMesh& OutData, uint32 BoneCount) const;
+
+	void WriteSkeletalBounds(std::ofstream& Out, const FSkeletalMesh& Data);
+	bool ReadSkeletalBounds(std::ifstream& In, FSkeletalMesh& OutData) const;
 };
