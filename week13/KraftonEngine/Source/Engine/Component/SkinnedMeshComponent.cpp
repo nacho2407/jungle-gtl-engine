@@ -778,7 +778,8 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 		}
 	}
 }
-
+// SkinnedComponent는 Picking시 사용하는 Position Data가 
+// SkeletalMesh의 Raw Data가 아닌 Skinning이 처리된 후의 SkinnedVertices 데이터를 사용한다.
 bool USkinnedMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
 	if (!SkeletalMesh)

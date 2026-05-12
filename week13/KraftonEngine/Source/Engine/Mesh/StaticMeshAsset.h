@@ -47,7 +47,8 @@ struct FStaticMaterial
 		// 1. 슬롯 이름 직렬화 (메시 섹션과 매핑용)
 		Ar << Mat.MaterialSlotName;
 
-		// 2. Material은 .bin에 직접 저장하지 않고 Asset/Materials/Auto/*.mat 경로만 저장
+		// 2. Material 포인터는 실행마다 달라질 수 있다.
+		// .statbin에는 다시 찾을 수 있는 .mat 경로만 저장한다.
 		if (Ar.IsSaving() && Mat.MaterialInterface)
 		{
 			Mat.MaterialPath = Mat.MaterialInterface->GetAssetPathFileName();

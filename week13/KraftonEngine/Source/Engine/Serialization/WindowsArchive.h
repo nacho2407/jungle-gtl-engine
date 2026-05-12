@@ -24,7 +24,7 @@ public:
 	}
 
 	// 파일이 정상적으로 열렸는지 확인
-	bool IsValid() const { return FileStream.is_open(); }
+	bool IsValid() const { return FileStream.is_open() && FileStream.good(); }
 
 	void Serialize(void* Data, size_t Num) override
 	{
@@ -53,7 +53,7 @@ public:
 		if (FileStream.is_open()) FileStream.close();
 	}
 
-	bool IsValid() const { return FileStream.is_open(); }
+	bool IsValid() const { return FileStream.is_open() && FileStream.good(); }
 
 	void Serialize(void* Data, size_t Num) override
 	{

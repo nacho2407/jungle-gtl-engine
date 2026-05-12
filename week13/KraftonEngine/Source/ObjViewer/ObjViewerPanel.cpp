@@ -102,8 +102,8 @@ void FObjViewerPanel::RenderMeshList()
 
 	ImGui::Separator();
 
-	// Cached Meshes (.bin) 섹션
-	if (ImGui::CollapsingHeader("Cached Meshes (.bin)", ImGuiTreeNodeFlags_DefaultOpen))
+	// Cached Static Meshes(.statbin) 섹션
+	if (ImGui::CollapsingHeader("Cached Static Meshes (.statbin)", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
 

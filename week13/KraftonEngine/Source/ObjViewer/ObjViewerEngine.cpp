@@ -114,7 +114,7 @@ void UObjViewerEngine::ImportObjWithOptions(const FString& ObjPath, const FImpor
 		World->DestroyActor(Actor);
 	}
 
-	// 옵션 기반 메시 로드 (캐시 무효화 + .bin 저장)
+	// 옵션 기반 메시 로드 (캐시 무효화 + .statbin 저장)
 	ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
 	UStaticMesh* Mesh = FMeshManager::LoadStaticMesh(ObjPath, Options, Device);
 	if (!Mesh) return;

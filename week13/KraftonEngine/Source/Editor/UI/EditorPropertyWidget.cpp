@@ -1232,7 +1232,9 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 					UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(MeshPath, Device);
 					if (Loaded)
 					{
-						*Val = FMeshManager::GetBinaryFilePath(MeshPath);
+						// Component에는 바로 로드할 .statbin 경로를 저장한다.
+						// Scene을 다시 열 때 원본 import를 반복하지 않기 위해서다.
+						*Val = FMeshManager::GetStaticMeshBinaryFilePath(MeshPath);
 						bChanged = true;
 					}
 				}
@@ -1256,7 +1258,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 				UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(PendingStaticMeshImportPath, Options, Device);
 				if (Loaded && PendingStaticMeshImportTarget)
 				{
-					*PendingStaticMeshImportTarget = FMeshManager::GetBinaryFilePath(PendingStaticMeshImportPath);
+					// 옵션을 적용해 만든 결과도 .statbin 경로로 남긴다.
+					*PendingStaticMeshImportTarget = FMeshManager::GetStaticMeshBinaryFilePath(PendingStaticMeshImportPath);
 					bChanged = true;
 				}
 
@@ -1297,8 +1300,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			}
 			if (bSelectedNone)
 				ImGui::SetItemDefaultFocus();
-			const TArray<FMeshAssetListItem>& FbxFiles = FMeshManager::GetAvailableFbxFiles();
-			for (const FMeshAssetListItem& Item : FbxFiles)
+			const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
+			for (const FMeshAssetListItem& Item : MeshFiles)
 			{
 				bool bSelected = (*Val == Item.FullPath);
 				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
@@ -1325,7 +1328,9 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 				USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(FbxPath, Device);
 				if (Loaded)
 				{
-					*Val = Loaded->GetAssetPathFileName();
+					// Component에는 바로 로드할 .sketbin 경로를 저장한다.
+					// 원본 FBX 경로는 Binary 안의 PathFileName에만 남긴다.
+					*Val = FMeshManager::GetSkeletalMeshBinaryFilePath(FbxPath);
 					bChanged = true;
 				}
 			}

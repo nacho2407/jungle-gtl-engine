@@ -39,12 +39,15 @@ public:
 	static const TArray<FMeshAssetListItem>& GetAvailableStaticMeshFiles() { return AvailableStaticMeshFiles; };
 	static const TArray<FMeshAssetListItem>& GetAvailableSkeletalMeshFiles() { return AvailableSkeletalMeshFiles; };
 	static const TArray<FMeshAssetListItem>& GetAvailableObjFiles() { return AvailableStaticMeshSourceFiles; }
-	static const TArray<FMeshAssetListItem>& GetAvailableFbxFiles() { return AvailableSkeletalMeshFiles; }
+	static const TArray<FMeshAssetListItem>& GetAvailableFbxFiles() { return AvailableFbxSourceFiles; }
 
 	// 캐시된 StaticMesh GPU 리소스 해제 (Shutdown 시 Device 해제 전 호출)
 	static void ReleaseAllGPU();
 	static void ScanMeshAssets();
-	static FString GetBinaryFilePath(const FString& OriginalPath);
+	static FString GetStaticMeshBinaryFilePath(const FString& SourcePath);
+	static FString GetSkeletalMeshBinaryFilePath(const FString& SourcePath);
+	static bool IsStaticMeshBinaryPath(const FString& Path);
+	static bool IsSkeletalMeshBinaryPath(const FString& Path);
 
 public:
 	static TMap<FString, UStaticMesh*> StaticMeshCache;
@@ -52,5 +55,6 @@ public:
 	static TArray<FMeshAssetListItem> AvailableStaticMeshFiles;
 	static TArray<FMeshAssetListItem> AvailableStaticMeshSourceFiles;
 	static TArray<FMeshAssetListItem> AvailableSkeletalMeshFiles;
+	static TArray<FMeshAssetListItem> AvailableFbxSourceFiles;
 };
 
