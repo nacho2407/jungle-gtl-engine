@@ -292,10 +292,11 @@ void FEditorViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
 	
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-        SceneViewports[i].SetRect(Rects[i]);
+		const FViewportRect SceneRect = MakeSceneViewportRect(i, Rects[i]);
+        SceneViewports[i].SetRect(SceneRect);
 		SceneViewports[i].GetClient()->SetViewportSize(
-			static_cast<float>(Rects[i].Width),
-			static_cast<float>(Rects[i].Height));
+			static_cast<float>(SceneRect.Width),
+			static_cast<float>(SceneRect.Height));
 	}
 }
 
@@ -482,6 +483,7 @@ void FEditorViewportLayout::SetLayoutModeAnimated(EEditorViewportLayoutMode InMo
 	ComputeLayoutRects(LayoutMode, SingleViewportIndex, RootSplitterV->GetRect(), LayoutTransitionTargetRects);
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
+		LayoutTransitionTargetRects[i] = MakeSceneViewportRect(i, LayoutTransitionTargetRects[i]);
 		AnchorHiddenRect(LayoutTransitionTargetRects[i]);
 	}
 
@@ -541,12 +543,12 @@ void FEditorViewportLayout::SyncViewportRects()
 		{
 			if (i == SingleViewportIndex)
 			{
-				const FViewportRect VR(
+				const FViewportRect PaneRect(
 					static_cast<int32>(Full.X),
 					static_cast<int32>(Full.Y),
 					static_cast<int32>(Full.Width),
 					static_cast<int32>(Full.Height));
-				SetViewportRect(i, VR);
+				SetViewportRect(i, MakeSceneViewportRect(i, PaneRect));
 			}
 			else
 			{
@@ -568,7 +570,7 @@ void FEditorViewportLayout::SyncViewportRects()
 		// if (!ViewportWidgets[i]) continue;
 
 		const FRect& R = ViewportWidgets[i].GetRect();
-		const FViewportRect VR(
+		const FViewportRect PaneRect(
 			static_cast<int32>(R.X),
 			static_cast<int32>(R.Y),
 			static_cast<int32>(R.Width),
@@ -577,7 +579,7 @@ void FEditorViewportLayout::SyncViewportRects()
 
 		// 스플리터 드래그로 바뀐 크기를 ViewportState, SceneViewport,
 		// ViewportClient 카메라 종횡비에 모두 반영합니다.
-		SetViewportRect(i, VR);
+		SetViewportRect(i, MakeSceneViewportRect(i, PaneRect));
 	}
 }
 
@@ -595,6 +597,48 @@ void FEditorViewportLayout::SetViewportRect(int32 Index, const FViewportRect& Re
 			static_cast<float>(Rect.Width),
 			static_cast<float>(Rect.Height));
 	}
+}
+
+void FEditorViewportLayout::SetViewportChromeTopInset(int32 Index, int32 InPixels)
+{
+	if (Index < 0 || Index >= MaxViewports)
+	{
+		return;
+	}
+
+	const int32 ClampedPixels = std::max(0, InPixels);
+	if (ViewportChromeTopInsets[Index] == ClampedPixels)
+	{
+		return;
+	}
+
+	ViewportChromeTopInsets[Index] = ClampedPixels;
+	SyncViewportRects();
+}
+
+int32 FEditorViewportLayout::GetViewportChromeTopInset(int32 Index) const
+{
+	if (Index < 0 || Index >= MaxViewports)
+	{
+		return 0;
+	}
+
+	return ViewportChromeTopInsets[Index];
+}
+
+FViewportRect FEditorViewportLayout::MakeSceneViewportRect(int32 Index, const FViewportRect& PaneRect) const
+{
+	if (PaneRect.Width <= 0 || PaneRect.Height <= 0)
+	{
+		return FViewportRect(0, 0, 0, 0);
+	}
+
+	const int32 TopInset = std::clamp(GetViewportChromeTopInset(Index), 0, PaneRect.Height);
+	return FViewportRect(
+		PaneRect.X,
+		PaneRect.Y + TopInset,
+		PaneRect.Width,
+		std::max(0, PaneRect.Height - TopInset));
 }
 
 int32 FEditorViewportLayout::GetLayoutSlotCount(EEditorViewportLayoutMode InMode)
@@ -622,7 +666,7 @@ void FEditorViewportLayout::ApplyPresetViewportRects(const FRect& FullRect)
 	ComputeLayoutRects(LayoutMode, SingleViewportIndex, FullRect, Rects);
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-		SetViewportRect(i, Rects[i]);
+		SetViewportRect(i, MakeSceneViewportRect(i, Rects[i]));
 	}
 }
 

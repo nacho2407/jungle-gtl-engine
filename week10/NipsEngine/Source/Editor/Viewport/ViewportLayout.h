@@ -56,6 +56,7 @@ class FEditorViewportLayout : FViewportLayout
 {
 public:
 	static constexpr int32 MaxViewports = 4;
+	static constexpr int32 DefaultViewportToolbarHeight = 34;
 
 	// Lifecycle
 	void Init(FWindowsWindow* InWindow, UWorld* World, FSelectionManager* SelectionManager, UEditorEngine* EditorEngine);
@@ -93,6 +94,8 @@ public:
 	bool IsLayoutTransitionActive() const { return bLayoutTransitionActive; }
 	int32 GetActiveViewportCount() const;
 	const FViewportRect& GetHostRect() const { return HostRect; }
+	void SetViewportChromeTopInset(int32 Index, int32 InPixels);
+	int32 GetViewportChromeTopInset(int32 Index) const;
 	void SetLastFocusedViewportIndex(int32 Index);
 	void SetLayoutMode(EEditorViewportLayoutMode InMode, int32 FocusIndex = -1);
 	void SetLayoutModeAnimated(EEditorViewportLayoutMode InMode, int32 FocusIndex = -1);
@@ -128,6 +131,7 @@ public:
 
 private:
 	void SetViewportRect(int32 Index, const FViewportRect& Rect);
+	FViewportRect MakeSceneViewportRect(int32 Index, const FViewportRect& PaneRect) const;
 	void ApplyPresetViewportRects(const FRect& FullRect);
 	void ComputeLayoutRects(EEditorViewportLayoutMode InMode, int32 InSingleViewportIndex, const FRect& FullRect, FViewportRect (&OutRects)[MaxViewports]) const;
 	void TickLayoutTransition(float DeltaTime);
@@ -167,6 +171,13 @@ private:
 	SViewport ViewportWidgets[MaxViewports] = {};
 	FSceneViewport SceneViewports[MaxViewports] = {};
     FEditorViewportClient ViewportClients[MaxViewports] = {};
+	int32 ViewportChromeTopInsets[MaxViewports] =
+	{
+		DefaultViewportToolbarHeight,
+		DefaultViewportToolbarHeight,
+		DefaultViewportToolbarHeight,
+		DefaultViewportToolbarHeight
+	};
 
 	// 캐싱 목적 Window 소유(소유권은 WindowsApplication)
 	FWindowsWindow* Window = nullptr;
