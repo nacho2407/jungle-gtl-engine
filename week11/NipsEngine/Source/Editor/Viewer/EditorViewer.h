@@ -3,6 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Editor/Viewport/FSceneViewport.h"
 #include "Editor/Viewport/EditorViewportClient.h"
+#include "Editor/Viewport/SkeletalMeshViewportClient.h"
 
 class UEditorEngine;
 class UWorld;
@@ -40,7 +41,7 @@ private:
 
 private:
     FSceneViewport Viewport;
-    FEditorViewportClient Client;
+    FSkeletalMeshViewportClient Client;
 
     UEditorEngine* Editor = nullptr;
     FWindowsWindow* Window = nullptr;

@@ -318,6 +318,7 @@
   <ItemGroup>
     <ClCompile Include="Source\Editor\UI\EditorViewerWindowWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewer\EditorViewer.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\SkeletalMeshViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Asset\SkeletalMesh.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SinusoidalCameraShakePattern.cpp" />
@@ -804,6 +805,7 @@
   <ItemGroup>
     <ClInclude Include="Source\Editor\UI\EditorViewerWindowWidget.h" />
     <ClInclude Include="Source\Editor\Viewer\EditorViewer.h" />
+    <ClInclude Include="Source\Editor\Viewport\SkeletalMeshViewportClient.h" />
     <ClInclude Include="Source\Engine\Asset\SkeletalMesh.h" />
     <ClInclude Include="Source\Engine\Asset\SkeletalMeshTypes.h" />
     <ClInclude Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.h" />
