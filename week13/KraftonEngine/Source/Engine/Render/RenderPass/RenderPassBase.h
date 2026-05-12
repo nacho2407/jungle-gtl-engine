@@ -6,6 +6,7 @@ class FD3DDevice;
 class FDrawCommandList;
 class FRenderer;
 class FScene;
+class UWorld;
 struct FFrameContext;
 struct FStateCache;
 struct FSystemResources;
@@ -22,6 +23,7 @@ struct FPassContext
 	FSystemResources&    Resources;
 	FDrawCommandList&    CommandList;
 	FRenderer*           Renderer;
+	UWorld*				 World = nullptr;
 	FScene*              Scene = nullptr;
 };
 

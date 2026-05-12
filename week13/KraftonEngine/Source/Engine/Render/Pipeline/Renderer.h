@@ -22,7 +22,7 @@ public:
 
 	// --- Render phase: 정렬 + GPU 제출 ---
 	void BeginFrame();
-	void Render(const FFrameContext& Frame, FScene& Scene);
+	void Render(const FFrameContext& Frame, UWorld* World, FScene& Scene);
 	void EndFrame();
 	
 	void BlitToBackBuffer(ID3D11ShaderResourceView* SourceSRV);

@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorShadowMapDebugWidget.h"
+﻿#include "Editor/UI/EditorShadowMapDebugWidget.h"
 #include "Editor/EditorEngine.h"
 #include "Runtime/Engine.h"
 #include "Render/Pipeline/Renderer.h"
@@ -258,8 +258,6 @@ void EditorShadowMapDebugWidget::RenderVizPass(
 
 void EditorShadowMapDebugWidget::Render(float DeltaTime)
 {
-	(void)DeltaTime;
-
 	if (!ImGui::Begin("Shadow Map Debug"))
 	{
 		ImGui::End();
@@ -267,7 +265,9 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 	}
 
 	FRenderer& Renderer = GEngine->GetRenderer();
-	const FShadowMapResources& SR = Renderer.GetResources().ShadowResources;
+	UWorld* World = GEngine->GetWorld();
+	FScene* Scene = World ? &World->GetScene() : nullptr;
+	const FShadowMapResources& SR = Renderer.GetResources().GetShadowResourcesForScene(Scene).Resources;
 	FShadowMapPass* ShadowPass = Renderer.GetPipeline().FindPass<FShadowMapPass>();
 
 	FSelectedLightInfo SelLight = FindSelectedLight();

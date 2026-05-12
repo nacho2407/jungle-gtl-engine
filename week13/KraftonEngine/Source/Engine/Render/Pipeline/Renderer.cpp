@@ -81,7 +81,7 @@ void FRenderer::BeginFrame()
 // Render — 정렬 + GPU 제출
 // BeginCollect + Collector + BuildDynamicCommands 이후에 호출.
 // ============================================================
-void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
+void FRenderer::Render(const FFrameContext& Frame, UWorld* World, FScene& Scene)
 {
 	FDrawCallStats::Reset();
 
@@ -108,7 +108,7 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	Cache.RTV = Frame.ViewportRTV;
 	Cache.DSV = Frame.ViewportDSV;
 
-	FPassContext PassCtx{ Device, Frame, Cache, Resources, CommandList, this, &Scene };
+	FPassContext PassCtx{ Device, Frame, Cache, Resources, CommandList, this, World, &Scene };
 	Pipeline.Execute(PassCtx);
 
 	CleanupPassState(Cache);

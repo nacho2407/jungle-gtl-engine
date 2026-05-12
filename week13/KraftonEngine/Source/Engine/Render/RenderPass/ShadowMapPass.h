@@ -12,6 +12,7 @@
 
 struct FShadowMapResources;
 class FSceneEnvironment;
+class FScene;
 class FPrimitiveSceneProxy;
 class FSpatialPartition;
 
@@ -41,6 +42,7 @@ public:
 	// 마지막 프레임의 Atlas 할당 결과 (에디터 디버그용)
 	const TArray<FAtlasRegion>& GetLastSpotAtlasRegions() const { return SpotAtlasRegion; }
 	const TArray<FAtlasRegion>& GetLastPointAtlasRegions() const { return PointAtlasRegion; }
+	void ReleaseSceneState(const FScene* Scene);
 
 private:
 	// ── 라이트 타입별 Shadow 렌더링 ──
@@ -84,6 +86,33 @@ private:
 		float BlurRadius;
 	};
 
+	struct FPerSceneShadowPassState
+	{
+		FShadowCBData ShadowCBCache = {};
+
+		TArray<FAtlasRegion> SpotAtlasRegion;
+
+		TArray<FAtlasRegion> PointAtlasRegion;
+
+		TArray<uint32> VisibleShadowSpotIndices;
+		TArray<uint32> VisibleShadowPointIndices;
+
+		TArray<TArray<uint32>> SpotPageGroups;
+		TArray<TArray<uint32>> PointPageGroups;
+
+		TArray<uint32> SpotScaledResolutions;
+		TArray<uint32> PointScaledResolutions;
+
+		TArray<int32> SpotShadowIndexMap;
+		TArray<int32> PointShadowIndexMap;
+
+		uint32 LastDrawCasterCount = 0;
+		uint32 LastRenderedGeneration = 0;
+	};
+
+	void LoadSceneState(const FScene* Scene);
+	void StoreSceneState(const FScene* Scene);
+
 private:
 	// Shadow 렌더링용 PerObject CB (b1) — Pass 전용 (light ViewProj 기준 Model 기록)
 	FConstantBuffer ShadowPerObjectCB;
@@ -122,4 +151,6 @@ private:
 
 	// 다중 뷰포트: 이미 렌더링한 프레임 세대 (Execute 스킵용)
 	uint32 LastRenderedGeneration = 0;
+
+	TMap<const FScene*, FPerSceneShadowPassState> PerScenePassStates;
 };
