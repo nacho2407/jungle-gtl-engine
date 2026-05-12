@@ -10,6 +10,7 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/PIE/PIESession.h"
+#include "Editor/Scene/EditorSceneService.h"
 #include "Editor/Undo/EditorUndoSystem.h"
 #include "Camera/ViewportCamera.h"
 #include "Editor/Viewport/ViewportLayout.h"
@@ -50,15 +51,14 @@ public:
 	int32 DeleteActors(const TArray<AActor*>& Actors);
 	void ResetViewport();
 	void CloseScene();
-	void NewScene();
-
-	bool CreateDefaultSceneAsset(const FString& FilePath);
 
 	void SetActiveWorld(const FName& Handle) override;
 	void ApplySpatialIndexMaintenanceSettings(UWorld* TargetWorld = nullptr);
 
 	FEditorUndoSystem& GetUndoSystem() { return UndoSystem; }
 	const FEditorUndoSystem& GetUndoSystem() const { return UndoSystem; }
+	FEditorSceneService& GetSceneService() { return SceneService; }
+	const FEditorSceneService& GetSceneService() const { return SceneService; }
 
 	FEditorSettings& GetSettings() { return FEditorSettings::Get(); }
 	const FEditorSettings& GetSettings() const { return FEditorSettings::Get(); }
@@ -95,10 +95,13 @@ public:
 
 private:
 	friend class FEditorUndoSystem;
+	friend class FEditorSceneService;
 
 	void ProcessQueuedPlaySessionRequests();
 	void StartPlaySessionNow();
 	void StopPlaySessionNow();
+	void NewScene();
+	bool CreateDefaultSceneAsset(const FString& FilePath);
 	APlayerController* SpawnPIEPlayerController(
 		UWorld* PIEWorld,
 		FEditorViewportClient* FocusedClient
@@ -114,14 +117,15 @@ private:
 
 	FInputPolicyRouter EditorInputRouter;
 	FPIESession PIESession;
+	FEditorSceneService SceneService;
+
+    FEditorUndoSystem UndoSystem;
 
 	bool bStartPlaySessionQueued = false;
 	bool bStopPlaySessionQueued = false;
 
 	int32 ActorDestroyedListenerId = 0;
 	UWorld* ActorDestroyedListenerWorld = nullptr;
-
-	FEditorUndoSystem UndoSystem;
 
 private:
 	void HandleActorDestroyed(AActor* Actor);

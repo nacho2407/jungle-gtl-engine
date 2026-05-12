@@ -763,7 +763,7 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		}
 		else if (Item.Extension == ".scene")
 		{
-			EditorEngine->GetMainPanel().GetSceneWidget().LoadSceneFromFilePath(FPaths::ToUtf8(Item.Path.wstring()));
+			EditorEngine->GetSceneService().OpenScene(FPaths::ToUtf8(Item.Path.wstring()));
 		}
 		else if (IsPrefabAsset(Item.Extension))
 		{
@@ -1002,7 +1002,7 @@ bool FEditorContentBrowserWidget::CreateSceneAsset()
 	}
 
 	const std::filesystem::path NewPath = MakeUniquePath(CurrentPath / L"New Scene.Scene");
-	if (!EditorEngine->CreateDefaultSceneAsset(FPaths::ToUtf8(NewPath.wstring())))
+	if (!EditorEngine->GetSceneService().CreateSceneAsset(FPaths::ToUtf8(NewPath.wstring())).bSuccess)
 	{
 		return false;
 	}

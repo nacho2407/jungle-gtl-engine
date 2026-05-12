@@ -776,7 +776,7 @@ void FEditorPropertyWidget::RenderDetailsContextMenu(AActor* PrimaryActor, const
 					AttachAndSelectNewComponent(PrimaryActor, NewComp, AddAttachTarget);
 					if (EditorEngine)
 					{
-						EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+						EditorEngine->GetSceneService().MarkDirty();
 					}
 				}
 			}
@@ -1063,7 +1063,7 @@ void FEditorPropertyWidget::DeleteSelectedComponent(AActor* Owner)
 	Owner->RemoveComponent(ComponentToDelete);
 	if (EditorEngine)
 	{
-		EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+		EditorEngine->GetSceneService().MarkDirty();
 	}
 }
 
@@ -1266,7 +1266,7 @@ void FEditorPropertyWidget::RenderActorTags(AActor* PrimaryActor, const TArray<A
 				}
 				if (bChanged && EditorEngine)
 				{
-					EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+					EditorEngine->GetSceneService().MarkDirty();
 				}
 			}
 			ImGui::PopID();
@@ -1305,7 +1305,7 @@ void FEditorPropertyWidget::RenderActorTags(AActor* PrimaryActor, const TArray<A
 			NewActorTagBuffer[0] = '\0';
 			if (EditorEngine)
 			{
-				EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+				EditorEngine->GetSceneService().MarkDirty();
 			}
 		}
 	}
@@ -1348,7 +1348,7 @@ void FEditorPropertyWidget::RenderComponentTags(UActorComponent* Component)
 					Component->RemoveTag(Tag);
 					if (EditorEngine)
 					{
-						EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+						EditorEngine->GetSceneService().MarkDirty();
 					}
 				}
 			}
@@ -1380,7 +1380,7 @@ void FEditorPropertyWidget::RenderComponentTags(UActorComponent* Component)
 			NewComponentTagBuffer[0] = '\0';
 			if (EditorEngine)
 			{
-				EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+				EditorEngine->GetSceneService().MarkDirty();
 			}
 		}
 	}
@@ -2163,7 +2163,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		SelectedComponent->PostEditChangeProperty({ Prop.Name, EPropertyChangeType::ValueSet });
 		if (EditorEngine)
 		{
-			EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+			EditorEngine->GetSceneService().MarkDirty();
 		}
 	}
 
@@ -2448,7 +2448,7 @@ void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UA
 			FString SceneName = "Default";
 			if (EditorEngine)
 			{
-				SceneName = EditorEngine->GetMainPanel().GetSceneWidget().GetSceneName();
+				SceneName = EditorEngine->GetSceneService().GetSceneName();
 			}
             ScriptComp->SetScriptName(MakeDefaultScriptName(SceneName, PrimaryActor));
 		}
@@ -2481,7 +2481,7 @@ void FEditorPropertyWidget::RenderEditableName(const char* Label, T* TargetObjec
 		TargetObject->SetFName(FName(NameBuf));
 		if (EditorEngine)
 		{
-			EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+			EditorEngine->GetSceneService().MarkDirty();
 		}
 	}
 }
