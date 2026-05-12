@@ -41,6 +41,7 @@ public:
 	FConstantBuffer& operator=(FConstantBuffer&&) noexcept;
 
 	void Create(ID3D11Device* InDevice, uint32 InByteWidth);
+	void Create(ID3D11Device* InDevice, uint32 InByteWidth, const char* DebugName);
 	void Release();
 
 	void Update(ID3D11DeviceContext* InDeviceContext, const void* InData, uint32 InByteWidth);

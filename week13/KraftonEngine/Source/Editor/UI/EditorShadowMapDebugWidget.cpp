@@ -165,7 +165,7 @@ void EditorShadowMapDebugWidget::EnsureVizRT(ID3D11Device* Dev, uint32 Size)
 	Dev->CreateShaderResourceView(VizTexture, nullptr, &VizSRV);
 
 	if (!VizCB.GetBuffer())
-		VizCB.Create(Dev, sizeof(FShadowVisCBData));
+	VizCB.Create(Dev, sizeof(FShadowVisCBData), "ShadowVizCB");
 }
 
 void EditorShadowMapDebugWidget::ReleaseVizRT()

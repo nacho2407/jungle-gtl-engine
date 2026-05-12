@@ -250,7 +250,7 @@ struct FPerSceneShadowResources
 	{
 		if (!ConstantBuffer.GetBuffer())
 		{
-			ConstantBuffer.Create(Device, sizeof(FShadowCBData));
+			ConstantBuffer.Create(Device, sizeof(FShadowCBData), "ShadowCB");
 		}
 	}
 

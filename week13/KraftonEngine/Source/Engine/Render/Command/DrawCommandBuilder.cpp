@@ -34,15 +34,15 @@ void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* In
 	DebugBoneLines.Create(InDevice);
 	FontGeometry.Create(InDevice);
 
-	FogCB.Create(InDevice, sizeof(FFogConstants));
-	OutlineCB.Create(InDevice, sizeof(FOutlinePostProcessConstants));
-	SceneDepthCB.Create(InDevice, sizeof(FSceneDepthPConstants));
-	FXAACB.Create(InDevice, sizeof(FFXAAConstants));
-	GammaCorrectionCB.Create(InDevice, sizeof(FGammaCorrectionConstants));
-	
-	CameraFadeCB.Create(InDevice, sizeof(FCameraFadeConstants));
-	CameraVignetteCB.Create(InDevice, sizeof(FCameraVignetteConstants));
-	CameraLetterboxCB.Create(InDevice, sizeof(FCameraLetterboxConstants));
+	FogCB.Create(InDevice, sizeof(FFogConstants), "FogCB");
+	OutlineCB.Create(InDevice, sizeof(FOutlinePostProcessConstants), "OutlineCB");
+	SceneDepthCB.Create(InDevice, sizeof(FSceneDepthPConstants), "SceneDepthCB");
+	FXAACB.Create(InDevice, sizeof(FFXAAConstants), "FXAACB");
+	GammaCorrectionCB.Create(InDevice, sizeof(FGammaCorrectionConstants), "GammaCorrectionCB");
+
+	CameraFadeCB.Create(InDevice, sizeof(FCameraFadeConstants), "CameraFadeCB");
+	CameraVignetteCB.Create(InDevice, sizeof(FCameraVignetteConstants), "CameraVignetteCB");
+	CameraLetterboxCB.Create(InDevice, sizeof(FCameraLetterboxConstants), "CameraLetterboxCB");
 }
 
 void FDrawCommandBuilder::Release()
@@ -739,7 +739,7 @@ void FDrawCommandBuilder::EnsurePerObjectCBPoolCapacity(FScene* Scene, uint32 Re
 
 	for (size_t Index = OldCount; Index < Pool.size(); ++Index)
 	{
-		Pool[Index].Create(CachedDevice, sizeof(FPerObjectConstants));
+		Pool[Index].Create(CachedDevice, sizeof(FPerObjectConstants), "PerObjectCB");
 	}
 }
 

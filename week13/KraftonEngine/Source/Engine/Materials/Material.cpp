@@ -42,7 +42,7 @@ void FMaterialConstantBuffer::Init(ID3D11Device* InDevice, uint32 InSize, uint32
 	Release();
 
 	uint32 AlignedSize = (InSize + 15) & ~15;
-	GPUBuffer.Create(InDevice, AlignedSize);
+	GPUBuffer.Create(InDevice, AlignedSize, "MaterialGPUBuffer");
 	CPUData = new uint8[AlignedSize]();
 	Size = AlignedSize;
 	SlotIndex = InSlot;
