@@ -163,13 +163,7 @@ void UEditorEngine::Tick(float DeltaTime)
 		VC->Tick(DeltaTime);
 	}
 
-	if (FMeshEditorViewportClient* MeshVC = MainPanel.GetMeshEditorViewportClient())
-	{
-		if (MeshVC->IsRenderable())
-		{
-			MeshVC->Tick(DeltaTime);
-		}
-	}
+	MainPanel.TickAssetEditors(DeltaTime);
 
 	WorldTick(DeltaTime);
 	Render(DeltaTime);

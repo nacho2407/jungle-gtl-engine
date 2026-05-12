@@ -10,21 +10,22 @@
 #include "Editor/UI/EditorProjectSettingsWidget.h"
 #include "Editor/UI/EditorWorldSettingsWidget.h"
 #include "Editor/UI/ContentBrowser/ContentBrowser.h"
-#include "Editor/UI/Asset/FloatCurveEditorWidget.h"
-#include "Editor/UI/Asset/CameraShakeEditorWidget.h"
-#include "Editor/UI/Asset/MeshEditorWidget.h"
+#include "Editor/UI/Asset/AssetEditorManager.h"
 #include "Math/Vector.h"
 
 class AActor;
 class FRenderer;
 class UEditorEngine;
 class FWindowsWindow;
+class IEditorPreviewViewportClient;
 
 class FEditorMainPanel
 {
 public:
 	void Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine);
 	void Release();
+
+	void TickAssetEditors(float DeltaTime);
 	void Render(float DeltaTime);
 	void Update();
 	void SaveToSettings() const;
@@ -39,8 +40,8 @@ public:
 	float GetContentBrowserIconSize() const { return ContentBrowserWidget.GetIconSize(); }
 
 	void OpenAssetEditorForObject(UObject* Object);
-
-	FMeshEditorViewportClient* GetMeshEditorViewportClient() { return MeshEditorWidget.GetViewportClient(); }
+	void CollectAssetEditorPreviewViewportClients(TArray<IEditorPreviewViewportClient*>& OutClients) const { AssetEditorManager.CollectPreviewViewportClients(OutClients); }
+	bool IsMouseOverAssetEditorPreviewViewport() const { return AssetEditorManager.IsMouseOverAnyEditorViewport(); }
 
 private:
 	void RenderMainMenuBar();
@@ -64,9 +65,7 @@ private:
 	EditorShadowMapDebugWidget ShadowMapDebugWidget;
 	EditorProjectSettingsWidget ProjectSettingsWidget;
 	EditorWorldSettingsWidget WorldSettingsWidget;
-	FFloatCurveEditorWidget FloatCurveEditorWidget;
-	FCameraShakeEditorWidget CameraShakeEditorWidget;
-	FMeshEditorWidget MeshEditorWidget;
+	FAssetEditorManager AssetEditorManager;
 
 	bool bShowWidgetList = false;
 	bool bShowShortcutOverlay = false;
