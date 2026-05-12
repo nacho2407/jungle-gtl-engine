@@ -413,6 +413,7 @@ void USkinnedMeshComponent::SkinVerticesCPU()
 	// index buffer는 당연히 재사용!
     const TArray<FSkeletalMeshVertex>& SourceVertices = SkeletalMesh->GetVertices();
     const TArray<FBoneInfo>& Bones = SkeletalMesh->GetBones();
+    const int32 BoneCount = static_cast<int32>(Bones.size());
 
     SkinnedVertices.resize(SourceVertices.size());
 
@@ -425,11 +426,10 @@ void USkinnedMeshComponent::SkinVerticesCPU()
         float ValidWeightSum = 0.0f;
         for (int32 InfluenceIndex = 0; InfluenceIndex < 4; ++InfluenceIndex)
         {
-			// TODO: BoneIndices는 아직 uint8임. 나중에 int32로 바뀔 것을 고려
             const int32 BoneIndex = Src.BoneIndices[InfluenceIndex];
             const float Weight = Src.BoneWeights[InfluenceIndex];
 
-            if (BoneIndex >= 0 && BoneIndex < static_cast<int32>(Bones.size()) && Weight > 0.0f)
+            if (BoneIndex < BoneCount && Weight > 0.0f)
             {
                 ValidWeightSum += Weight;
             }
@@ -446,15 +446,15 @@ void USkinnedMeshComponent::SkinVerticesCPU()
         FVector SkinnedPosition = FVector::ZeroVector;
         FVector SkinnedNormal = FVector::ZeroVector;
         FVector SkinnedTangent = FVector::ZeroVector;
+        const FVector SourceTangent(Src.Tangent.X, Src.Tangent.Y, Src.Tangent.Z);
 
 		// 실제 skinning 계산 루프
         for (int32 InfluenceIndex = 0; InfluenceIndex < 4; ++InfluenceIndex)
         {
-            // TODO: 여기도 마찬가지로 BoneIndices는 아직 uint8이라는 것을 고려할 것. 나중에 int32로 바뀔 것을 고려
             const int32 BoneIndex = Src.BoneIndices[InfluenceIndex];
             const float RawWeight = Src.BoneWeights[InfluenceIndex];
 
-            if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(Bones.size()) || RawWeight <= 0.0f)
+            if (BoneIndex >= BoneCount || RawWeight <= 0.0f)
             {
                 continue;
             }
@@ -465,14 +465,22 @@ void USkinnedMeshComponent::SkinVerticesCPU()
 
             SkinnedPosition += SkinMatrix.TransformPosition(Src.Position) * Weight;
             SkinnedNormal += SkinMatrix.TransformVector(Src.Normal) * Weight;
-
-            const FVector SourceTangent(Src.Tangent.X, Src.Tangent.Y, Src.Tangent.Z);
             SkinnedTangent += SkinMatrix.TransformVector(SourceTangent) * Weight;
         }
 
 		// 여러 bone들을 섞으면 쿠크다스 normal이 또 깨질 수 있으므로 여기서 다시 normalize
-        SkinnedNormal.NormalizeSafe();
-        SkinnedTangent.NormalizeSafe();
+		// fallback은 영벡터 대신 원래 normal / tangent
+        if (!SkinnedNormal.NormalizeSafe())
+        {
+            SkinnedNormal = Src.Normal;
+            SkinnedNormal.NormalizeSafe();
+        }
+
+        if (!SkinnedTangent.NormalizeSafe())
+        {
+            SkinnedTangent = SourceTangent;
+            SkinnedTangent.NormalizeSafe();
+        }
 
         SkinnedVertices[VertexIndex].Position = SkinnedPosition;
         SkinnedVertices[VertexIndex].Color = Src.Color;
