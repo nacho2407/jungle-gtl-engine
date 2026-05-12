@@ -242,6 +242,7 @@ Rml::CompiledGeometryHandle FRmlRenderInterfaceD3D11::CompileGeometry(Rml::Span<
 		delete Geometry;
 		return 0;
 	}
+	Geometry->VertexBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("RmlGeometryVertexBuffer"), "RmlGeometryVertexBuffer");
 
 	D3D11_BUFFER_DESC IBDesc = {};
 	IBDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -255,6 +256,7 @@ Rml::CompiledGeometryHandle FRmlRenderInterfaceD3D11::CompileGeometry(Rml::Span<
 		ReleaseGeometry(reinterpret_cast<Rml::CompiledGeometryHandle>(Geometry));
 		return 0;
 	}
+	Geometry->IndexBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("RmlGeometryIndexBuffer"), "RmlGeometryIndexBuffer");
 
 	return reinterpret_cast<Rml::CompiledGeometryHandle>(Geometry);
 }
@@ -491,6 +493,7 @@ void FRmlRenderInterfaceD3D11::CreateConstantBuffer()
 	Desc.ByteWidth = sizeof(FRmlPerFrameCB);
 	Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	Device->CreateBuffer(&Desc, nullptr, &PerFrameCB);
+	PerFrameCB->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("RmlPerFrameCB"), "RmlPerFrameCB");
 
 	CreateWhiteTexture();
 
@@ -523,6 +526,8 @@ void FRmlRenderInterfaceD3D11::CreateWhiteTexture()
 	if (SUCCEEDED(Device->CreateTexture2D(&TextureDesc, &InitialData, &Texture)))
 	{
 		Device->CreateShaderResourceView(Texture, nullptr, &WhiteTextureSRV);
+		Texture->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("RmlWhiteTexture"), "RmlWhiteTexture");
+		WhiteTextureSRV->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("RmlWhiteTextureSRV"), "RmlWhiteTextureSRV");
 		Texture->Release();
 	}
 }

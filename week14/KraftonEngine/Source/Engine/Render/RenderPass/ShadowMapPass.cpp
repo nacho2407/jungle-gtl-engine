@@ -41,6 +41,49 @@ FShadowMapPass::~FShadowMapPass()
 	ShadowLightCB.Release();
 }
 
+void FShadowMapPass::ReleaseSceneState(const FScene* Scene)
+{
+	PerScenePassStates.erase(Scene);
+}
+
+void FShadowMapPass::LoadSceneState(const FScene* Scene)
+{
+	FPerSceneShadowPassState& State = PerScenePassStates[Scene];
+
+	ShadowCBCache = State.ShadowCBCache;
+	SpotAtlasRegion = State.SpotAtlasRegion;
+	PointAtlasRegion = State.PointAtlasRegion;
+	VisibleShadowSpotIndices = State.VisibleShadowSpotIndices;
+	VisibleShadowPointIndices = State.VisibleShadowPointIndices;
+	SpotPageGroups = State.SpotPageGroups;
+	PointPageGroups = State.PointPageGroups;
+	SpotScaledResolutions = State.SpotScaledResolutions;
+	PointScaledResolutions = State.PointScaledResolutions;
+	SpotShadowIndexMap = State.SpotShadowIndexMap;
+	PointShadowIndexMap = State.PointShadowIndexMap;
+	LastDrawCasterCount = State.LastDrawCasterCount;
+	LastRenderedGeneration = State.LastRenderedGeneration;
+}
+
+void FShadowMapPass::StoreSceneState(const FScene* Scene)
+{
+	FPerSceneShadowPassState& State = PerScenePassStates[Scene];
+
+	State.ShadowCBCache = ShadowCBCache;
+	State.SpotAtlasRegion = SpotAtlasRegion;
+	State.PointAtlasRegion = PointAtlasRegion;
+	State.VisibleShadowSpotIndices = VisibleShadowSpotIndices;
+	State.VisibleShadowPointIndices = VisibleShadowPointIndices;
+	State.SpotPageGroups = SpotPageGroups;
+	State.PointPageGroups = PointPageGroups;
+	State.SpotScaledResolutions = SpotScaledResolutions;
+	State.PointScaledResolutions = PointScaledResolutions;
+	State.SpotShadowIndexMap = SpotShadowIndexMap;
+	State.PointShadowIndexMap = PointShadowIndexMap;
+	State.LastDrawCasterCount = LastDrawCasterCount;
+	State.LastRenderedGeneration = LastRenderedGeneration;
+}
+
 // ============================================================
 // SetupShadowRenderState — SRV 언바인딩 + 공용 렌더 상태
 // ============================================================
@@ -60,9 +103,9 @@ void FShadowMapPass::SetupShadowRenderState(FD3DDevice& Device, FSystemResources
 	// CB 생성 (한 번만)
 	ID3D11Device* Dev = Device.GetDevice();
 	if (!ShadowPerObjectCB.GetBuffer())
-		ShadowPerObjectCB.Create(Dev, sizeof(FPerObjectConstants));
+		ShadowPerObjectCB.Create(Dev, sizeof(FPerObjectConstants), "ShadowPerObjectCB");
 	if (!ShadowLightCB.GetBuffer())
-		ShadowLightCB.Create(Dev, sizeof(FMatrix));
+		ShadowLightCB.Create(Dev, sizeof(FMatrix), "ShadowLightCB");
 
 	// ImGui 등 외부 코드가 D3D state를 직접 변경할 수 있으므로 캐시 무효화
 	Resources.ResetRenderStateCache();
@@ -92,10 +135,13 @@ void FShadowMapPass::SetupShadowRenderState(FD3DDevice& Device, FSystemResources
 
 bool FShadowMapPass::BeginPass(const FPassContext& Ctx)
 {
+	LoadSceneState(Ctx.Scene);
+
 	const auto& Shadow = FProjectSettings::Get().Shadow;
 	if (!Shadow.bEnabled)
 	{
-		FShadowMapResources& Res = Ctx.Resources.ShadowResources;
+		FPerSceneShadowResources& SceneShadow = Ctx.Resources.GetShadowResourcesForScene(Ctx.Scene);
+		FShadowMapResources& Res = SceneShadow.Resources;
 		if (Res.CSM.IsValid() || Res.Spot.IsValid() || Res.Point.IsValid())
 		{
 			// GPU 리소스 해제
@@ -108,8 +154,8 @@ bool FShadowMapPass::BeginPass(const FPassContext& Ctx)
 
 			// Shadow CB (b5) 초기화 → 셰이더에서 NumCSMCascades=0 등으로 early-out
 			ShadowCBCache = {};
-			Ctx.Resources.ShadowConstantBuffer.Update(DC, &ShadowCBCache, sizeof(FShadowCBData));
-			ID3D11Buffer* b5 = Ctx.Resources.ShadowConstantBuffer.GetBuffer();
+			SceneShadow.ConstantBuffer.Update(DC, &ShadowCBCache, sizeof(FShadowCBData));
+			ID3D11Buffer* b5 = SceneShadow.ConstantBuffer.GetBuffer();
 			DC->PSSetConstantBuffers(ECBSlot::Shadow, 1, &b5);
 		}
 
@@ -118,6 +164,7 @@ bool FShadowMapPass::BeginPass(const FPassContext& Ctx)
 		SHADOW_STATS_SET_MEMORY(0);
 		SHADOW_STATS_SET_RESOLUTION(0);
 
+		StoreSceneState(Ctx.Scene);
 		return false;
 	}
 
@@ -136,7 +183,8 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 
 	SHADOW_STATS_RESET();
 
-	FShadowMapResources& ShadowRes = Ctx.Resources.ShadowResources;
+	FPerSceneShadowResources& SceneShadow = Ctx.Resources.GetShadowResourcesForScene(Ctx.Scene);
+	FShadowMapResources& ShadowRes = SceneShadow.Resources;
 
 	// CSM은 카메라 프러스텀 기반 → 뷰포트마다 재렌더링
 	RenderDirectionalShadows(Ctx, ShadowRes);
@@ -163,7 +211,8 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 void FShadowMapPass::EndPass(const FPassContext& Ctx)
 {
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
-	FShadowMapResources& ShadowRes = Ctx.Resources.ShadowResources;
+	FPerSceneShadowResources& SceneShadow = Ctx.Resources.GetShadowResourcesForScene(Ctx.Scene);
+	FShadowMapResources& ShadowRes = SceneShadow.Resources;
 
 	// 메인 RT/DSV 복원
 	Ctx.Resources.SetRasterizerState(Ctx.Device, ERasterizerState::SolidBackCull);
@@ -185,6 +234,7 @@ void FShadowMapPass::EndPass(const FPassContext& Ctx)
 	UpdateShadowCB(Ctx);
 	PatchLightBuffer(Ctx);
 	UpdateShadowStats(ShadowRes);
+	StoreSceneState(Ctx.Scene);
 }
 
 // ============================================================
@@ -266,6 +316,10 @@ void FShadowMapPass::UpdateShadowStats(const FShadowMapResources& Res)
 
 void FShadowMapPass::BindShadowSRVs(ID3D11DeviceContext* DC, FShadowMapResources& Res)
 {
+	ID3D11ShaderResourceView* nullSRVs[5] = {};
+	DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 5, nullSRVs);
+	DC->VSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 5, nullSRVs);
+
 	if (CurrentFilterMode == EShadowFilterMode::VSM)
 	{
 		// VSM: moment texture SRV 바인딩 (R32G32_FLOAT)
@@ -352,7 +406,8 @@ void FShadowMapPass::UploadLightViewProj(ID3D11DeviceContext* DC, const FMatrix&
 void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 {
 	ID3D11Device* Dev = Ctx.Device.GetDevice();
-	FShadowMapResources& Res = Ctx.Resources.ShadowResources;
+	FPerSceneShadowResources& SceneShadow = Ctx.Resources.GetShadowResourcesForScene(Ctx.Scene);
+	FShadowMapResources& Res = SceneShadow.Resources;
 	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
 	const auto& ProjShadow = FProjectSettings::Get().Shadow;
 	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
@@ -578,14 +633,15 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 void FShadowMapPass::UpdateShadowCB(const FPassContext& Ctx)
 {
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
-	FShadowMapResources& Res = Ctx.Resources.ShadowResources;
+	FPerSceneShadowResources& SceneShadow = Ctx.Resources.GetShadowResourcesForScene(Ctx.Scene);
+	FShadowMapResources& Res = SceneShadow.Resources;
 
 	ShadowCBCache.CSMResolution = Res.CSM.Resolution;
 	ShadowCBCache.SpotAtlasResolution  = Res.Spot.Resolution > 0 ? Res.Spot.Resolution : 4096;
 	ShadowCBCache.PointAtlasResolution = Res.Point.Resolution > 0 ? Res.Point.Resolution : 4096;
 
-	Ctx.Resources.ShadowConstantBuffer.Update(DC, &ShadowCBCache, sizeof(FShadowCBData));
-	ID3D11Buffer* b5 = Ctx.Resources.ShadowConstantBuffer.GetBuffer();
+	SceneShadow.ConstantBuffer.Update(DC, &ShadowCBCache, sizeof(FShadowCBData));
+	ID3D11Buffer* b5 = SceneShadow.ConstantBuffer.GetBuffer();
 	DC->PSSetConstantBuffers(ECBSlot::Shadow, 1, &b5);
 	DC->VSSetConstantBuffers(ECBSlot::Shadow, 1, &b5);
 }
@@ -675,12 +731,8 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, F
 
 void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVolume& LightFrustum)
 {
-	FSpatialPartition* Partition = nullptr;
-	if (GEngine)
-	{
-		if (UWorld* World = GEngine->GetWorld())
-			Partition = &World->GetPartition();
-	}
+	UWorld* World = Ctx.World;
+	FSpatialPartition* Partition = World ? &World->GetPartition() : nullptr;
 	DrawShadowCasters(Ctx.Device.GetDeviceContext(), *Ctx.Scene, Ctx.Resources, LightFrustum, Partition);
 }
 

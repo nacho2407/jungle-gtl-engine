@@ -313,16 +313,45 @@ void FMeshEditorViewportClient::TickInteraction(float DeltaTime)
 	float ScrollNotches = InputSystem::Get().GetScrollNotches();
 	if (ScrollNotches != 0.0f)
 	{
-		if (ViewTransform.bIsOrtho)
+		if (bool bIsRightButtonDown = InputSystem::Get().GetKey(VK_RBUTTON))
 		{
-			float NewWidth = ViewTransform.OrthoZoom - ScrollNotches * ZoomSpeed * DeltaTime;
-			ViewTransform.OrthoZoom = Clamp(NewWidth, 0.1f, 1000.0f);
+			float& MoveSpeed = FEditorSettings::Get().MeshEditorViewportSettings.CameraControls.MoveSpeed;
+			if (ScrollNotches < 0.0f)
+			{
+				MoveSpeed = MoveSpeed * 0.9f;
+			}
+			else
+			{
+				MoveSpeed = MoveSpeed * 1.1f;
+			}
+
+			if (MoveSpeed > 1000.0f)
+			{
+				MoveSpeed = 1000.0f;
+			}
+			if (MoveSpeed < 0.001f)
+			{
+				MoveSpeed = 0.001f;
+			}
 		}
 		else
 		{
-			TargetLocation += ViewTransform.ViewRotation.GetForwardVector() * (ScrollNotches * ZoomSpeed * 0.015f);
+			if (ViewTransform.bIsOrtho)
+			{
+				// D.2: ViewTransform 직접 갱신.
+				float NewWidth = ViewTransform.OrthoZoom - ScrollNotches * ZoomSpeed * DeltaTime;
+				ViewTransform.OrthoZoom = Clamp(NewWidth, 0.1f, 1000.0f);
+			}
+			else
+			{
+				//foot zoom 발줌은 절대 delta time를 곱하지 않음. 노치당 이동 거리가 일정해야 하기 때문.
+				// Instead of moving directly, update TargetLocation for smooth zoom
+				TargetLocation += ViewTransform.ViewRotation.GetForwardVector() * (ScrollNotches * ZoomSpeed * 0.015f);
+				// UnrealEngine의 Mouse Scroll Camera Speed는 노치당 5
+			}
 		}
 	}
+
 
 	ImVec2 MousePos = ImGui::GetIO().MousePos;
 	float LocalMouseX = MousePos.x - ViewportScreenRect.X;

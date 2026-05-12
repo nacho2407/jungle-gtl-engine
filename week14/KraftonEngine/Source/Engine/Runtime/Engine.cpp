@@ -70,11 +70,6 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	}
 
 	{
-		SCOPE_STARTUP_STAT("ResourceManager::LoadFromDir");
-		FResourceManager::Get().LoadFromDirectory(FPaths::ToUtf8(FPaths::EditorAssetDir()), Device);
-	}
-
-	{
 		SCOPE_STARTUP_STAT("RenderPipeline::Create");
 		SetRenderPipeline(std::make_unique<FDefaultRenderPipeline>(this, Renderer));
 	}

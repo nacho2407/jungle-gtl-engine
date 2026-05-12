@@ -86,7 +86,8 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	Renderer.SubmitCullingDebugLines(Editor->GetWorld());
 
 	// Shadow depth는 라이트 시점 → 뷰포트 무관. 프레임당 1회만 렌더링.
-	++Renderer.GetResources().ShadowResources.FrameGeneration;
+	FScene& Scene = Editor->GetWorld()->GetScene();
+	++Renderer.GetResources().GetShadowResourcesForScene(&Scene).Resources.FrameGeneration;
 
 	for (FLevelEditorViewportClient* ViewportClient : Editor->GetLevelViewportClients())
 	{
@@ -101,8 +102,11 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 	if (FMeshEditorViewportClient* MeshVC = Editor->GetMeshEditorViewportClient())
 	{
-		if (MeshVC->IsRenderable())
+		if (MeshVC->IsRenderable() && MeshVC->GetPreviewWorld())
 		{
+			FScene& PreviewScene = MeshVC->GetPreviewWorld()->GetScene();
+			++Renderer.GetResources().GetShadowResourcesForScene(&PreviewScene).Resources.FrameGeneration;
+
 			SCOPE_STAT_CAT("RenderMeshViewport", "2_Render");
 			RenderMeshViewport(MeshVC, Renderer);
 		}
@@ -180,7 +184,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	// GPU 정렬 + 제출
 	{
 		SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
-		Renderer.Render(Frame, Scene);
+		Renderer.Render(Frame, World, Scene);
 	}
 
 	// GPU Occlusion — Render 후 DepthBuffer가 유효할 때 디스패치 (이 뷰포트 전용)
@@ -382,5 +386,5 @@ void FEditorRenderPipeline::RenderMeshViewport(FMeshEditorViewportClient* VC, FR
 	Collector.Collect(World, Frame, Output);
 	Builder.BuildCommands(Frame, &Scene, Output);
 
-	Renderer.Render(Frame, Scene);
+	Renderer.Render(Frame, World, Scene);
 }
