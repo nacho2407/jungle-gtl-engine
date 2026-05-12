@@ -236,7 +236,7 @@ void FMeshEditorWidget::Render(float DeltaTime)
 		ImGui::Dummy(ImVec2(0, 10));
 
 		USkeletalMeshComponent* PreviewMeshComponent = ViewportClient.GetPreviewMeshComponent();
-		FTransform LocalTransform = PreviewMeshComponent ? PreviewMeshComponent->GetBoneLocalTransformByIndex(SelectedBoneIndex) : Bone.LocalTransform;
+		FTransform LocalTransform = PreviewMeshComponent ? PreviewMeshComponent->GetBoneLocalTransformByIndex(SelectedBoneIndex) : FTransform(Bone.LocalMatrix);
 
 		FVector Location = LocalTransform.Location;
 		if (ImGui::DragFloat3("Location", &Location.X, 0.1f))
@@ -249,7 +249,7 @@ void FMeshEditorWidget::Render(float DeltaTime)
 			}
 			else
 			{
-				Bone.LocalTransform = LocalTransform;
+				Bone.LocalMatrix = LocalTransform.ToMatrix();
 			}
 		}
 
@@ -264,7 +264,7 @@ void FMeshEditorWidget::Render(float DeltaTime)
 			}
 			else
 			{
-				Bone.LocalTransform = LocalTransform;
+				Bone.LocalMatrix = LocalTransform.ToMatrix();
 			}
 		}
 
@@ -278,7 +278,7 @@ void FMeshEditorWidget::Render(float DeltaTime)
 			}
 			else
 			{
-				Bone.LocalTransform = LocalTransform;
+				Bone.LocalMatrix = LocalTransform.ToMatrix();
 			}
 		}
 	}

@@ -4,7 +4,6 @@
 #include "Render/Types/VertexTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Math/Matrix.h"
-#include "Math/Transform.h"
 #include "Serialization/Archive.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
@@ -17,28 +16,21 @@ inline void SerializeSkeletalMatrix(FArchive& Ar, FMatrix& Matrix)
 	Ar.Serialize(Matrix.Data, sizeof(float) * 16);
 }
 
-inline void SerializeSkeletalTransform(FArchive& Ar, FTransform& Transform)
-{
-	Ar.Serialize(&Transform.Location, sizeof(FVector));
-	Ar.Serialize(&Transform.Rotation, sizeof(FQuat));
-	Ar.Serialize(&Transform.Scale, sizeof(FVector));
-}
-
 struct FBone
 {
 	FString Name;
 	int32 ParentIndex;
 
-	FTransform LocalTransform;
-	FTransform GlobalTransform;
+	FMatrix LocalMatrix;
+	FMatrix GlobalMatrix;
 	FMatrix InverseBindPoseMatrix;
 
 	friend FArchive& operator<<(FArchive& Ar, FBone& Bone)
 	{
 		Ar << Bone.Name;
 		Ar << Bone.ParentIndex;
-		SerializeSkeletalTransform(Ar, Bone.LocalTransform);
-		SerializeSkeletalTransform(Ar, Bone.GlobalTransform);
+		SerializeSkeletalMatrix(Ar, Bone.LocalMatrix);
+		SerializeSkeletalMatrix(Ar, Bone.GlobalMatrix);
 		SerializeSkeletalMatrix(Ar, Bone.InverseBindPoseMatrix);
 		return Ar;
 	}
