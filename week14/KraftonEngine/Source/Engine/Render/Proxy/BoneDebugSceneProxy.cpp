@@ -101,6 +101,7 @@ void FBoneDebugSceneProxy::UpdateTransform()
 void FBoneDebugSceneProxy::RebuildLines()
 {
 	CachedLines.clear();
+	CachedParentBoneLines.clear();
 
 	UBoneDebugComponent* Comp = static_cast<UBoneDebugComponent*>(GetOwner());
 	if (!Comp) return;

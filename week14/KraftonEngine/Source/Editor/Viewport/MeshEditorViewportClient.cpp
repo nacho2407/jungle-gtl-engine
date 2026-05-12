@@ -297,7 +297,7 @@ void FMeshEditorViewportClient::TickInput(float DeltaTime)
 
 void FMeshEditorViewportClient::TickInteraction(float DeltaTime)
 {
-	if (!FSlateApplication::Get().DoesClientOwnKeyboardInput(this)) return;
+	if (!FSlateApplication::Get().DoesClientOwnMouseInput(this)) return;
 
 	if (!Gizmo || !PreviewWorld) return;
 
