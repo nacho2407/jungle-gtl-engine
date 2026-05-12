@@ -64,9 +64,6 @@ static void AssignTop4Influences(
 {
     for (int32 i = 0; i < 4; ++i)
     {
-		/*
-		 * note: BoneIndices를 int32로 바꾼다면 이 부분도 -1로 변경해주세요!
-		 */
         OutVertex.BoneIndices[i] = 0;
         OutVertex.BoneWeights[i] = 0.0f;
     }
@@ -92,8 +89,7 @@ static void AssignTop4Influences(
         }
 
 		/*
-		 * note: 우선 현재는 BoneIndices가 uint8임을 가정.
-		 *       bone 개수가 256개 이상이면 잘림
+		 * note: 현재 BoneIndices가 uint8이라서 bone 개수가 256개 이상이면 무시
 		 */
         if (Influence.BoneIndex < 0 || Influence.BoneIndex > 255 || Influence.Weight <= 0.0f)
         {
@@ -345,7 +341,9 @@ static void AssignRigidInfluence(FSkeletalMeshVertex& Vertex, int32 BoneIndex)
 
     if (BoneIndex < 0 || BoneIndex > 255)
     {
-        // TODO: 현재 FSkeletalMeshVertex::BoneIndices가 uint8이므로 255를 넘으면 저장할 수 없음
+        /*
+         * note: 현재 BoneIndices가 uint8이라서 BoneIndex가 255 이상이면 무시
+         */
         return;
     }
 
