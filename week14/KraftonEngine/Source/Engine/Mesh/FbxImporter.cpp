@@ -1,6 +1,7 @@
 ﻿#include "FbxImporter.h"
 #include "Platform/Paths.h"
 #include "Core/Log.h"
+#include "MeshImportOptions.h"
 
 #include <filesystem>
 #include <fstream>
@@ -163,7 +164,7 @@ bool FFbxImporter::Import(const FString& FilePath)
 	return true;
 }
 
-bool FFbxImporter::ImportStatic(const FString& FilePath, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials)
+bool FFbxImporter::ImportStatic(const FString& FilePath, const FImportOptions* Options, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials)
 {
 	OutMesh = FStaticMesh();
 	OutMaterials.clear();
@@ -226,13 +227,25 @@ bool FFbxImporter::ImportStatic(const FString& FilePath, FStaticMesh& OutMesh, T
 
 		const int32 SkinCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
 		FbxSkin* Skin = SkinCount > 0 ? static_cast<FbxSkin*>(Mesh->GetDeformer(0, FbxDeformer::eSkin)) : nullptr;
-		if (Skin && Skin->GetClusterCount() > 0)
-		{
-			continue;
-		}
+		const bool bHasSkin = Skin && Skin->GetClusterCount() > 0;
 
 		FbxAMatrix NodeGeometryTransform = GetGeometryTransform(Node);
 		FMatrix MeshToWorld = ConvertFbxMatrix(Node->EvaluateGlobalTransform() * NodeGeometryTransform);
+
+		if (bHasSkin && Options)
+		{
+			switch (Options->StaticFbxSkinnedMeshPolicy)
+			{
+			case EStaticFbxSkinnedMeshPolicy::Skip:
+				continue;
+			case EStaticFbxSkinnedMeshPolicy::ImportBindPoseAsStatic:
+				FbxAMatrix MeshBindMatrix;
+				Skin->GetCluster(0)->GetTransformMatrix(MeshBindMatrix);
+				MeshToWorld = ConvertFbxMatrix(MeshBindMatrix);
+				break;
+			}
+		}
+
 
 		FbxStringList UVSetNames;
 		Mesh->GetUVSetNames(UVSetNames);

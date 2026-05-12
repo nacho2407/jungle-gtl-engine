@@ -2,6 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
+#include "MeshImportOptions.h"
 
 struct FStaticMesh;
 struct FStaticMeshSection;
@@ -38,27 +39,6 @@ struct FObjMaterialInfo
 	int32 illum; // illumination model
 };
 
-// 블렌더 스타일 Forward 축 선택
-enum class EForwardAxis : uint8
-{
-	X, NegX,   // +X, -X
-	Y, NegY,   // +Y, -Y
-	Z, NegZ    // +Z, -Z
-};
-
-enum class EWindingOrder : uint8
-{
-	CCW_to_CW,  // OBJ CCW → DX CW (인덱스 [0,2,1]) — 기본값
-	Keep         // 원본 유지 [0,1,2]
-};
-
-struct FImportOptions
-{
-	float Scale = 1.0f;
-	EForwardAxis ForwardAxis = EForwardAxis::NegY;  // Blender 기본: Z-up, -Y Forward
-	EWindingOrder WindingOrder = EWindingOrder::CCW_to_CW;
-	static FImportOptions Default() { return {}; }
-};
 
 // OBJ/MTL 파싱 + Raw→Cooked 변환
 struct FObjImporter

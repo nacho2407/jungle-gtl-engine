@@ -56,7 +56,7 @@ static bool ImportStaticMeshByExtension(const FString& PathFileName, const FImpo
 
 	if (Ext == L".fbx")
 	{
-		return FFbxImporter::ImportStatic(PathFileName, OutMesh, OutMaterials);
+		return FFbxImporter::ImportStatic(PathFileName, Options, OutMesh, OutMaterials);
 	}
 
 	UE_LOG("Unsupported static mesh format: %s", PathFileName.c_str());
