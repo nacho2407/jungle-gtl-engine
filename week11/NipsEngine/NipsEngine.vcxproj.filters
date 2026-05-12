@@ -540,6 +540,9 @@
     <ClCompile Include="Source\Engine\Core\ShaderResourceCache.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Core\SkeletalMeshLoadService.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Core\StaticMeshLoadService.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
@@ -1311,6 +1314,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\ShaderResourceCache.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\SkeletalMeshLoadService.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\StaticMeshLoadService.h">
