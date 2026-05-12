@@ -459,6 +459,8 @@ FString FFbxImporter::GetLoaderName() const
 
 FSkeletalMesh* FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOptions& LoadOptions)
 {
+    (void)LoadOptions;
+
     const double StartTime = FPlatformTime::Seconds();
     UE_LOG("[FbxImporter] Start loading Skeletal FBX: %s", Path.c_str());
 
@@ -494,10 +496,7 @@ FSkeletalMesh* FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStatic
 
     TMap<FbxNode*, int32> BoneNodeToIndex;
 
-    FbxAMatrix ReferenceMeshBindGlobalWithGeometry;
-    ReferenceMeshBindGlobalWithGeometry.SetIdentity();
-
-    bool bHasReferenceMeshBindGlobalWithGeometry = false;
+    bool bHasImportedSkinnedMesh = false;
 
     if (FbxNode* RootNode = Scene->GetRootNode())
     {
@@ -509,8 +508,7 @@ FSkeletalMesh* FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStatic
                 SkeletalMesh,
                 ESkeletalMeshImportPass::SkinnedMeshes,
                 BoneNodeToIndex,
-                ReferenceMeshBindGlobalWithGeometry,
-                bHasReferenceMeshBindGlobalWithGeometry);
+                bHasImportedSkinnedMesh);
         }
 
         // 2-pass: skin deformer가 없는 mesh 중 bone 아래에 붙은 mesh를 rigid mesh로 처리
@@ -521,8 +519,7 @@ FSkeletalMesh* FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStatic
                 SkeletalMesh,
                 ESkeletalMeshImportPass::RigidAttachedMeshes,
                 BoneNodeToIndex,
-                ReferenceMeshBindGlobalWithGeometry,
-                bHasReferenceMeshBindGlobalWithGeometry);
+                bHasImportedSkinnedMesh);
         }
     }
 
@@ -533,12 +530,6 @@ FSkeletalMesh* FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStatic
         UE_LOG_ERROR("[FbxImporter] No skeletal geometry or bones found: %s", Path.c_str());
         delete SkeletalMesh;
         return nullptr;
-    }
-
-	// 단위를 일정 범위로 맞추기
-    if (LoadOptions.bNormalizeToUnitCube)
-    {
-        NormalizePositionsToUnitCube(SkeletalMesh);
     }
 
     SkeletalMesh->LocalBounds = BuildLocalBounds(SkeletalMesh);
@@ -900,8 +891,7 @@ void FFbxImporter::CollectSkeletalMeshes(
     FSkeletalMesh* InSkeletalMesh,
     ESkeletalMeshImportPass Pass,
     TMap<FbxNode*, int32>& BoneNodeToIndex,
-    FbxAMatrix& ReferenceMeshBindGlobalWithGeometry,
-    bool& bHasReferenceMeshBindGlobalWithGeometry)
+    bool& bHasImportedSkinnedMesh)
 {
     if (!Node)
     {
@@ -915,8 +905,7 @@ void FFbxImporter::CollectSkeletalMeshes(
             InSkeletalMesh,
             Pass,
             BoneNodeToIndex,
-            ReferenceMeshBindGlobalWithGeometry,
-            bHasReferenceMeshBindGlobalWithGeometry);
+            bHasImportedSkinnedMesh);
     }
 
     for (int32 i = 0; i < Node->GetChildCount(); ++i)
@@ -926,8 +915,7 @@ void FFbxImporter::CollectSkeletalMeshes(
             InSkeletalMesh,
             Pass,
             BoneNodeToIndex,
-            ReferenceMeshBindGlobalWithGeometry,
-            bHasReferenceMeshBindGlobalWithGeometry);
+            bHasImportedSkinnedMesh);
     }
 }
 
@@ -936,8 +924,7 @@ void FFbxImporter::ProcessSkeletalMesh(
     FSkeletalMesh* InSkeletalMesh,
     ESkeletalMeshImportPass Pass,
     TMap<FbxNode*, int32>& BoneNodeToIndex,
-    FbxAMatrix& ReferenceMeshBindGlobalWithGeometry,
-    bool& bHasReferenceMeshBindGlobalWithGeometry)
+    bool& bHasImportedSkinnedMesh)
 {
     if (!Mesh || !InSkeletalMesh || Mesh->GetPolygonCount() <= 0)
     {
@@ -957,8 +944,7 @@ void FFbxImporter::ProcessSkeletalMesh(
             Mesh,
             InSkeletalMesh,
             BoneNodeToIndex,
-            ReferenceMeshBindGlobalWithGeometry,
-            bHasReferenceMeshBindGlobalWithGeometry);
+            bHasImportedSkinnedMesh);
         return;
     }
 
@@ -983,7 +969,10 @@ void FFbxImporter::ProcessSkeletalMesh(
     const int32 ControlPointCount = Mesh->GetControlPointsCount();
 
     const FbxAMatrix MeshGeometry = GetGeometryTransform(OwnerNode);
-    const FbxAMatrix NormalGeometry = GetNormalTransform(MeshGeometry);
+
+    FbxAMatrix MeshBindGlobalWithGeometry;
+    MeshBindGlobalWithGeometry.SetIdentity();
+    bool bHasMeshBindGlobalWithGeometry = false;
 
     TArray<TArray<FTempInfluence>> InfluencesByControlPoint;
     InfluencesByControlPoint.resize(ControlPointCount);
@@ -1007,10 +996,6 @@ void FFbxImporter::ProcessSkeletalMesh(
             }
 
             FbxNode* BoneNode = Cluster->GetLink();
-            if (BoneNodeToIndex.find(BoneNode) != BoneNodeToIndex.end())
-            {
-                continue;
-            }
 
             FbxAMatrix MeshBindGlobal;
             FbxAMatrix LinkBindGlobal;
@@ -1018,16 +1003,22 @@ void FFbxImporter::ProcessSkeletalMesh(
             Cluster->GetTransformMatrix(MeshBindGlobal);
             Cluster->GetTransformLinkMatrix(LinkBindGlobal);
 
-            const FbxAMatrix MeshBindGlobalWithGeometry = MeshBindGlobal * MeshGeometry;
-
-            if (!bHasReferenceMeshBindGlobalWithGeometry)
+            const FbxAMatrix ClusterMeshBindGlobalWithGeometry = MeshBindGlobal * MeshGeometry;
+            if (!bHasMeshBindGlobalWithGeometry)
             {
-                ReferenceMeshBindGlobalWithGeometry = MeshBindGlobalWithGeometry;
-                bHasReferenceMeshBindGlobalWithGeometry = true;
+                MeshBindGlobalWithGeometry = ClusterMeshBindGlobalWithGeometry;
+                bHasMeshBindGlobalWithGeometry = true;
             }
 
-            const FbxAMatrix BoneBindInMeshSpace =
-                MeshBindGlobalWithGeometry.Inverse() * LinkBindGlobal;
+            if (!bHasImportedSkinnedMesh)
+            {
+                bHasImportedSkinnedMesh = true;
+            }
+
+            if (BoneNodeToIndex.find(BoneNode) != BoneNodeToIndex.end())
+            {
+                continue;
+            }
 
             const int32 NewBoneIndex = static_cast<int32>(InSkeletalMesh->Bones.size());
             BoneNodeToIndex[BoneNode] = NewBoneIndex;
@@ -1036,13 +1027,21 @@ void FFbxImporter::ProcessSkeletalMesh(
             Bone.Name = FString(BoneNode->GetName());
             Bone.ParentIndex = -1;
 
-            Bone.GlobalBindTransform = ToFMatrix(BoneBindInMeshSpace);
+            Bone.GlobalBindTransform = ToFMatrix(LinkBindGlobal);
             Bone.InverseBindPose = Bone.GlobalBindTransform.GetInverse();
             Bone.LocalBindTransform = Bone.GlobalBindTransform;
 
             InSkeletalMesh->Bones.push_back(Bone);
         }
     }
+
+    if (!bHasMeshBindGlobalWithGeometry)
+    {
+        return;
+    }
+
+    const FbxAMatrix NormalBindGlobalWithGeometry =
+        GetNormalTransformFromPositionTransform(MeshBindGlobalWithGeometry);
 
     // parentIndex와 LocalBindTransform을 계산
     for (auto& Pair : BoneNodeToIndex)
@@ -1197,14 +1196,14 @@ void FFbxImporter::ProcessSkeletalMesh(
             ResetVertexInfluences(Vertex);
 
             FbxVector4 Pos = ControlPoints[CtrlPointIdx];
-            Pos = MeshGeometry.MultT(Pos);
+            Pos = MeshBindGlobalWithGeometry.MultT(Pos);
             Vertex.Position = ToFVector(Pos);
 
             FbxVector4 Normal(0, 0, 1, 0);
             if (Mesh->GetPolygonVertexNormal(PolyIdx, Corner, Normal))
             {
                 Normal[3] = 0.0;
-                Normal = NormalGeometry.MultT(Normal);
+                Normal = NormalBindGlobalWithGeometry.MultT(Normal);
 
                 Vertex.Normal = ToFVector(Normal);
                 Vertex.Normal.NormalizeSafe();
@@ -1268,8 +1267,7 @@ void FFbxImporter::ProcessRigidAttachedMesh(
     FbxMesh* Mesh,
     FSkeletalMesh* InSkeletalMesh,
     TMap<FbxNode*, int32>& BoneNodeToIndex,
-    const FbxAMatrix& ReferenceMeshBindGlobalWithGeometry,
-    bool bHasReferenceMeshBindGlobalWithGeometry)
+    bool bHasImportedSkinnedMesh)
 {
     if (!Mesh || !InSkeletalMesh || Mesh->GetPolygonCount() <= 0)
     {
@@ -1282,7 +1280,7 @@ void FFbxImporter::ProcessRigidAttachedMesh(
         return;
     }
 
-    if (!bHasReferenceMeshBindGlobalWithGeometry)
+    if (!bHasImportedSkinnedMesh)
     {
         AppendSkeletalImportReport("[RigidMesh] SKIP: no reference skinned mesh has been imported yet");
         return;
@@ -1324,13 +1322,8 @@ void FFbxImporter::ProcessRigidAttachedMesh(
     const int32 ControlPointCount = Mesh->GetControlPointsCount();
 
     const FbxAMatrix OwnerGlobalWithGeometry = GetGlobalTransformWithGeometry(OwnerNode);
-
-    // rigid mesh vertex를 reference skeletal mesh local space로 변환
-    const FbxAMatrix RigidToReferenceMesh =
-        ReferenceMeshBindGlobalWithGeometry.Inverse() * OwnerGlobalWithGeometry;
-
-    const FbxAMatrix RigidNormalToReferenceMesh =
-        GetNormalTransformFromPositionTransform(RigidToReferenceMesh);
+    const FbxAMatrix OwnerNormalGlobalWithGeometry =
+        GetNormalTransformFromPositionTransform(OwnerGlobalWithGeometry);
 
     FbxLayerElementArrayTemplate<int32>* MaterialIndices = nullptr;
     FbxGeometryElement::EMappingMode MaterialMappingMode = FbxGeometryElement::eByPolygon;
@@ -1398,14 +1391,14 @@ void FFbxImporter::ProcessRigidAttachedMesh(
             ResetVertexInfluences(Vertex);
 
             FbxVector4 Pos = ControlPoints[CtrlPointIdx];
-            Pos = RigidToReferenceMesh.MultT(Pos);
+            Pos = OwnerGlobalWithGeometry.MultT(Pos);
             Vertex.Position = ToFVector(Pos);
 
             FbxVector4 Normal(0, 0, 1, 0);
             if (Mesh->GetPolygonVertexNormal(PolyIdx, Corner, Normal))
             {
                 Normal[3] = 0.0;
-                Normal = RigidNormalToReferenceMesh.MultT(Normal);
+                Normal = OwnerNormalGlobalWithGeometry.MultT(Normal);
 
                 Vertex.Normal = ToFVector(Normal);
                 Vertex.Normal.NormalizeSafe();
@@ -1510,14 +1503,6 @@ FAABB FFbxImporter::BuildLocalBounds(FSkeletalMesh* InSkeletalMesh) const
     }
 
     return Bounds;
-}
-
-void FFbxImporter::NormalizePositionsToUnitCube(FSkeletalMesh* InSkeletalMesh)
-{
-    (void)InSkeletalMesh;
-
-    // TODO: 현재는 일단 Skip
-    UE_LOG("[FbxImporter] NormalizePositionsToUnitCube skipped for SkeletalMesh.");
 }
 
 void FFbxImporter::ComputeTangents(FSkeletalMesh* InSkeletalMesh)

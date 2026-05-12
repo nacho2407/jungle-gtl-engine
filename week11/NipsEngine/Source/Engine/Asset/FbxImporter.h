@@ -66,26 +66,22 @@ private:
         FSkeletalMesh* InSkeletalMesh,
         ESkeletalMeshImportPass Pass,
         TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex,
-        fbxsdk::FbxAMatrix& ReferenceMeshBindGlobalWithGeometry,
-        bool& bHasReferenceMeshBindGlobalWithGeometry);
+        bool& bHasImportedSkinnedMesh);
 
     void ProcessSkeletalMesh(
         fbxsdk::FbxMesh* Mesh,
         FSkeletalMesh* InSkeletalMesh,
         ESkeletalMeshImportPass Pass,
         TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex,
-        fbxsdk::FbxAMatrix& ReferenceMeshBindGlobalWithGeometry,
-        bool& bHasReferenceMeshBindGlobalWithGeometry);
+        bool& bHasImportedSkinnedMesh);
 
     void ProcessRigidAttachedMesh(
         fbxsdk::FbxMesh* Mesh,
         FSkeletalMesh* InSkeletalMesh,
         TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex,
-        const fbxsdk::FbxAMatrix& ReferenceMeshBindGlobalWithGeometry,
-        bool bHasReferenceMeshBindGlobalWithGeometry);
+        bool bHasImportedSkinnedMesh);
 
     int32 GetOrAddMaterialSlot(FSkeletalMesh* InSkeletalMesh, const FString& MaterialName);
     FAABB BuildLocalBounds(FSkeletalMesh* InSkeletalMesh) const;
-    void NormalizePositionsToUnitCube(FSkeletalMesh* InSkeletalMesh);
     void ComputeTangents(FSkeletalMesh* InSkeletalMesh);
 };
