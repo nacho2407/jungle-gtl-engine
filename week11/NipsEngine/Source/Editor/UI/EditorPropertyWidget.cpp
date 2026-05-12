@@ -1442,6 +1442,11 @@ void FEditorPropertyWidget::RenderComponentProperties()
         }
     }
 	// Special: InterpToMovementComponent control points + behaviour + actions
+	if (USkeletalMeshComponent* SkeletalComp = Cast<USkeletalMeshComponent>(SelectedComponent))
+	{
+		RenderSkeletalBonePoseDebug(SkeletalComp);
+	}
+
 	if (UInterpToMovementComponent* InterpComp = Cast<UInterpToMovementComponent>(SelectedComponent))
 	{
 		RenderInterpControlPoints(InterpComp);
@@ -2238,6 +2243,139 @@ void FEditorPropertyWidget::RenderMaterialPreviewTooltip(UMaterialInterface* Mat
 		DrawColorParam("Emissive", ImVec4(Color.X, Color.Y, Color.Z, 1.0f));
 	}
 	ImGui::EndTooltip();
+}
+
+void FEditorPropertyWidget::RenderSkeletalBonePoseDebug(USkeletalMeshComponent* Comp)
+{
+	if (!Comp)
+	{
+		return;
+	}
+
+	USkeletalMesh* Mesh = Comp->GetSkeletalMesh();
+	if (!Mesh)
+	{
+		return;
+	}
+
+	const TArray<FBoneInfo>& Bones = Mesh->GetBones();
+	if (Bones.empty())
+	{
+		return;
+	}
+
+	const uint32 ComponentId = Comp->GetUUID();
+	int32& SelectedBoneIndex = SelectedSkeletalBoneByComponent[ComponentId];
+	if (SelectedBoneIndex < 0 || SelectedBoneIndex >= static_cast<int32>(Bones.size()))
+	{
+		SelectedBoneIndex = 0;
+	}
+
+	DrawDetailsSeparator();
+	DrawDetailsSectionLabel("Bone Pose");
+	ImGui::Spacing();
+
+	ImGui::PushID(Comp);
+
+	const auto MakeBoneLabel = [&Bones](int32 BoneIndex) -> FString
+	{
+		if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(Bones.size()))
+		{
+			return "None";
+		}
+
+		return std::to_string(BoneIndex) + ": " + Bones[BoneIndex].Name;
+	};
+
+	const FString CurrentLabel = MakeBoneLabel(SelectedBoneIndex);
+	if (ImGui::BeginCombo("Bone", CurrentLabel.c_str()))
+	{
+		for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
+		{
+			const FString Label = MakeBoneLabel(BoneIndex);
+			const bool bSelected = SelectedBoneIndex == BoneIndex;
+			if (ImGui::Selectable(Label.c_str(), bSelected))
+			{
+				SelectedBoneIndex = BoneIndex;
+			}
+
+			if (bSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+
+		ImGui::EndCombo();
+	}
+
+	FMatrix LocalTransform = Comp->GetBoneLocalTransform(SelectedBoneIndex);
+	FVector Translation;
+	FMatrix RotationMatrix;
+	FVector Scale;
+	if (!LocalTransform.Decompose(Translation, RotationMatrix, Scale))
+	{
+		LocalTransform = Mesh->GetLocalBindTransform(SelectedBoneIndex);
+		if (!LocalTransform.Decompose(Translation, RotationMatrix, Scale))
+		{
+			Translation = LocalTransform.GetTranslation();
+			RotationMatrix = FMatrix::Identity;
+			Scale = FVector(1.0f, 1.0f, 1.0f);
+		}
+	}
+
+	FVector RotationEuler = RotationMatrix.GetEuler();
+
+	auto DrawVec3 = [this](const char* Label, FVector& Value, float Speed) -> bool
+	{
+		float Values[3] = { Value.X, Value.Y, Value.Z };
+		const bool bEdited = ImGui::DragFloat3(Label, Values, Speed);
+		if (ImGui::IsItemActivated() && EditorEngine)
+		{
+			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Bone Pose");
+		}
+
+		if (bEdited)
+		{
+			Value = FVector(Values[0], Values[1], Values[2]);
+		}
+
+		return bEdited;
+	};
+
+	const bool bTranslationEdited = DrawVec3("Location", Translation, 0.1f);
+	const bool bRotationEdited = DrawVec3("Rotation", RotationEuler, 0.1f);
+	const bool bScaleEdited = DrawVec3("Scale", Scale, 0.01f);
+
+	if (bTranslationEdited || bRotationEdited || bScaleEdited)
+	{
+		const FMatrix NewRotationMatrix = bRotationEdited
+			? FMatrix::MakeRotationEuler(RotationEuler)
+			: RotationMatrix;
+		Comp->SetBoneLocalTransform(
+			SelectedBoneIndex,
+			FMatrix::MakeTRS(Translation, NewRotationMatrix, Scale));
+	}
+
+	const float HalfWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+	if (ImGui::Button("Reset Bone", ImVec2(HalfWidth, 0.0f)))
+	{
+		if (EditorEngine)
+		{
+			EditorEngine->GetUndoSystem().CaptureSnapshot("Reset Bone Pose");
+		}
+		Comp->SetBoneLocalTransform(SelectedBoneIndex, Mesh->GetLocalBindTransform(SelectedBoneIndex));
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Reset Pose", ImVec2(-1.0f, 0.0f)))
+	{
+		if (EditorEngine)
+		{
+			EditorEngine->GetUndoSystem().CaptureSnapshot("Reset Bone Pose");
+		}
+		Comp->ResetToBindPose();
+	}
+
+	ImGui::PopID();
 }
 
 void FEditorPropertyWidget::RenderInterpControlPoints(UInterpToMovementComponent* Comp)
