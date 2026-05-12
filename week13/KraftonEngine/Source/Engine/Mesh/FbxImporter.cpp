@@ -228,21 +228,26 @@ bool FFbxImporter::ImportStatic(const FString& FilePath, const FImportOptions* O
 		const int32 SkinCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
 		FbxSkin* Skin = SkinCount > 0 ? static_cast<FbxSkin*>(Mesh->GetDeformer(0, FbxDeformer::eSkin)) : nullptr;
 		const bool bHasSkin = Skin && Skin->GetClusterCount() > 0;
+		const EStaticFbxSkinnedMeshPolicy SkinnedMeshPolicy = Options
+			? Options->StaticFbxSkinnedMeshPolicy
+			: EStaticFbxSkinnedMeshPolicy::Skip;
 
 		FbxAMatrix NodeGeometryTransform = GetGeometryTransform(Node);
 		FMatrix MeshToWorld = ConvertFbxMatrix(Node->EvaluateGlobalTransform() * NodeGeometryTransform);
 
-		if (bHasSkin && Options)
+		if (bHasSkin)
 		{
-			switch (Options->StaticFbxSkinnedMeshPolicy)
+			switch (SkinnedMeshPolicy)
 			{
 			case EStaticFbxSkinnedMeshPolicy::Skip:
 				continue;
 			case EStaticFbxSkinnedMeshPolicy::ImportBindPoseAsStatic:
+			{
 				FbxAMatrix MeshBindMatrix;
 				Skin->GetCluster(0)->GetTransformMatrix(MeshBindMatrix);
 				MeshToWorld = ConvertFbxMatrix(MeshBindMatrix);
 				break;
+			}
 			}
 		}
 
