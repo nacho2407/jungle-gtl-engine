@@ -117,6 +117,70 @@ Widget
   X 다른 Widget의 내부 API 직접 호출 금지
 ```
 
+---
+
+## 12. Undo System Refactoring Batch
+
+### Current Problem
+
+Current Undo/Redo stores one global snapshot stack for the active editor scene. This is simple, but it becomes unsafe once the editor owns multiple worlds such as the main editor world, viewer preview world, material preview world, skeletal mesh viewer world, and PIE world.
+
+The crash case we confirmed is:
+
+```text
+Undo restores the scene
+-> old world / old selection / old gizmo are destroyed
+-> viewport still references an old gizmo
+-> gizmo visibility update touches a destroyed owner/world
+-> access violation
+```
+
+Latest crash log points to:
+
+```text
+AActor::GetFocusedWorld
+UPrimitiveComponent::NotifySpatialIndexDirty
+UPrimitiveComponent::SetVisibility
+FEditorTransformInteraction::ApplyTransformModeToGizmo
+```
+
+### Target Structure
+
+Use world-scoped snapshot stacks first. Do not convert every edit into object-level transactions yet.
+
+```text
+FEditorUndoSystem
+  -> HistoriesByWorld[WorldHandle]
+       -> UndoHistory[]
+       -> RedoHistory[]
+```
+
+Existing call sites can keep using:
+
+```cpp
+CaptureSnapshot("Edit Property");
+Undo();
+Redo();
+```
+
+Internally, those calls resolve the current active world handle.
+
+### Batch Plan
+
+```text
+Batch 1. Add WorldHandle to undo snapshot entries.
+Batch 2. Store undo/redo history per world handle.
+Batch 3. Preserve the logical world handle during Undo/Redo restore.
+Batch 4. Rebind viewport clients to the restored world's selection manager and gizmo.
+Batch 5. Clear world-specific undo history when a world is destroyed.
+```
+
+### Why Snapshot First
+
+Snapshot undo does not keep long-lived actor/component pointers. This avoids most dangling pointer issues and keeps current serialized scene coverage intact.
+
+Object-level transactions can be added later for high-frequency edits such as transform, rename, property edit, and material slot edit.
+
 핵심 규칙은 이렇다.
 
 ```text
