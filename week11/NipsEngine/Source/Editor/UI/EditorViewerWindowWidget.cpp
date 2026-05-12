@@ -31,133 +31,149 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
     if (!EditorEngine)
         return;
 
-    auto& SceneViewport = EditorEngine->GetViewer().GetViewport();
-
-    ID3D11ShaderResourceView* SRV = SceneViewport.GetOutSRV();
-    if (!SRV)
-        return;
-
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
-    ImGui::Begin("Viewer");
-
-    ImVec2 FullSize = ImGui::GetContentRegionAvail();
-
-    float LeftWidth = FullSize.x * 0.2f;
-    float RightWidth = FullSize.x * 0.2f;
-    float CenterWidth = FullSize.x - LeftWidth - RightWidth;
-
-    // =====================================================
-    // LEFT: Skeleton Tree
-    // =====================================================
-    ImGui::BeginChild("SkeletonPanel", ImVec2(LeftWidth, 0), true);
-
-    ImGui::Text("Skeleton");
-
-	ASkeletalMeshActor* ViewTarget = EditorEngine->GetViewer().GetViewTarget();
-    USkeletalMeshComponent* SkelMeshComp = ViewTarget->GetSkeletalMeshComponent();
-    FSkeletalMesh* MeshData = SkelMeshComp->GetSkeletalMesh()->GetMeshData();
-
-	if (CachedMesh != MeshData)
+	auto& Viewers = EditorEngine->GetViewers();
+	for (int32 i = 0; i < (int32)Viewers.size(); ++i)
 	{
-        CachedMesh = MeshData;
+		auto& Viewer = *Viewers[i];
+		FSceneViewport& SceneViewport = Viewer.GetViewport();
 
-		Children.clear();
-        Children.resize(MeshData->Bones.size());
+		ID3D11ShaderResourceView* SRV = SceneViewport.GetOutSRV();
+		if (!SRV)
+			continue;
 
-        for (int32 i = 0; i < MeshData->Bones.size(); ++i)
-        {
-            int32 Parent = MeshData->Bones[i].ParentIndex;
-            if (Parent >= 0)
-            {
-                Children[Parent].push_back(i);
-            }
-        }
+		char WindowName[64];
+		sprintf_s(WindowName, "Viewer##%p", &Viewer);
+
+		bool bOpen = true;
+		if (ImGui::Begin(WindowName, &bOpen))
+		{
+			ImVec2 FullSize = ImGui::GetContentRegionAvail();
+
+			float LeftWidth = FullSize.x * 0.2f;
+			float RightWidth = FullSize.x * 0.2f;
+			float CenterWidth = FullSize.x - LeftWidth - RightWidth;
+
+			// =====================================================
+			// LEFT: Skeleton Tree
+			// =====================================================
+			ImGui::BeginChild("SkeletonPanel", ImVec2(LeftWidth, 0), true);
+
+			ImGui::Text("Skeleton");
+
+			ASkeletalMeshActor* ViewTarget = Viewer.GetViewTarget();
+			USkeletalMeshComponent* SkelMeshComp = ViewTarget->GetSkeletalMeshComponent();
+			FSkeletalMesh* MeshData = SkelMeshComp->GetSkeletalMesh()->GetMeshData();
+
+			if (CachedMesh != MeshData)
+			{
+				CachedMesh = MeshData;
+
+				Children.clear();
+				Children.resize(MeshData->Bones.size());
+
+				for (int32 j = 0; j < (int32)MeshData->Bones.size(); ++j)
+				{
+					int32 Parent = MeshData->Bones[j].ParentIndex;
+					if (Parent >= 0)
+					{
+						Children[Parent].push_back(j);
+					}
+				}
+			}
+
+			for (int32 j = 0; j < (int32)MeshData->Bones.size(); ++j)
+			{
+				if (MeshData->Bones[j].ParentIndex == -1)
+				{
+					DrawBoneNode(Viewer, j, MeshData->Bones, Children);
+				}
+			}
+
+			ImGui::EndChild();
+
+			ImGui::SameLine();
+
+			// =====================================================
+			// CENTER: Viewport
+			// =====================================================
+			ImGui::BeginChild("ViewportPanel", ImVec2(CenterWidth, 0), false);
+
+			ImVec2 ScreenPos = ImGui::GetCursorScreenPos();
+			ImVec2 Size = ImGui::GetContentRegionAvail();
+
+			Size.x = std::max(Size.x, 1.0f);
+			Size.y = std::max(Size.y, 1.0f);
+
+			POINT pt = { (LONG)ScreenPos.x, (LONG)ScreenPos.y };
+
+			FViewportRect NewRect;
+			NewRect.X = (int32)pt.x;
+			NewRect.Y = (int32)pt.y;
+			NewRect.Width = (int32)Size.x;
+			NewRect.Height = (int32)Size.y;
+
+			SceneViewport.SetRect(NewRect);
+
+			if (auto* Client = SceneViewport.GetClient())
+			{
+				Client->SetViewportSize((float)NewRect.Width, (float)NewRect.Height);
+			}
+
+			ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+			ID3D11DeviceContext* DC =
+				EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
+
+			DrawList->AddCallback(SetOpaqueBlendStateCallback, DC);
+
+			// Render viewport
+			ImGui::Image((ImTextureID)SRV, Size);
+
+			DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+
+			ImGui::EndChild();
+
+			ImGui::SameLine();
+
+			// =====================================================
+			// RIGHT: Bone Details
+			// =====================================================
+			ImGui::BeginChild("BoneDetailsPanel", ImVec2(RightWidth, 0), true);
+			ImGui::Text("Bone Details");
+			ImGui::Separator();
+			if (Viewer.SelectedBoneIndex != -1 && SkelMeshComp)
+			{
+				RenderBoneDetails(Viewer, SkelMeshComp);
+			}
+			else
+			{
+				ImGui::TextDisabled("No bone selected.");
+			}
+			ImGui::EndChild();
+		}
+		ImGui::End();
+
+		if (!bOpen)
+		{
+			EditorEngine->RemoveViewer(&Viewer);
+			break; // List modified, stop for this frame
+		}
 	}
 
-	for (int32 i = 0; i < MeshData->Bones.size(); ++i)
-    {
-        if (MeshData->Bones[i].ParentIndex == -1)
-        {
-            DrawBoneNode(i, MeshData->Bones, Children);
-        }
-    }
-
-    ImGui::EndChild();
-
-    ImGui::SameLine();
-
-    // =====================================================
-    // CENTER: Viewport
-    // =====================================================
-    ImGui::BeginChild("ViewportPanel", ImVec2(CenterWidth, 0), false);
-
-    ImVec2 ScreenPos = ImGui::GetCursorScreenPos();
-    ImVec2 Size = ImGui::GetContentRegionAvail();
-
-    Size.x = std::max(Size.x, 1.0f);
-    Size.y = std::max(Size.y, 1.0f);
-
-    POINT pt = { (LONG)ScreenPos.x, (LONG)ScreenPos.y };
-
-    FViewportRect NewRect;
-    NewRect.X = (int32)pt.x;
-    NewRect.Y = (int32)pt.y;
-    NewRect.Width = (int32)Size.x;
-    NewRect.Height = (int32)Size.y;
-
-    SceneViewport.SetRect(NewRect);
-
-	if (auto* Client = SceneViewport.GetClient())
-    {
-        Client->SetViewportSize((float)NewRect.Width, (float)NewRect.Height);
-    }
-
-    ImDrawList* DrawList = ImGui::GetWindowDrawList();
-
-    ID3D11DeviceContext* DC =
-        EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
-
-    DrawList->AddCallback(SetOpaqueBlendStateCallback, DC);
-
-    // Render viewport
-    ImGui::Image((ImTextureID)SRV, Size);
-
-    DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
-
-    ImGui::EndChild();
-
-    ImGui::SameLine();
-
-    // =====================================================
-    // RIGHT: Bone Details
-    // =====================================================
-    ImGui::BeginChild("BoneDetailsPanel", ImVec2(RightWidth, 0), true);
-    ImGui::Text("Bone Details");
-    ImGui::Separator();
-    if (SelectedBoneIndex != -1 && SkelMeshComp)
-    {
-        RenderBoneDetails(SkelMeshComp);
-    }
-    else
-    {
-        ImGui::TextDisabled("No bone selected.");
-    }
-    ImGui::EndChild();
-
-    ImGui::End();
     ImGui::PopStyleVar();
 }
 
-void FEditorViewerWindowWidget::RenderBoneDetails(USkeletalMeshComponent* SkelComp)
+void FEditorViewerWindowWidget::RenderBoneDetails(FEditorViewer& Viewer, USkeletalMeshComponent* SkelComp)
 {
-    if (!SkelComp || SelectedBoneIndex == -1) return;
+    if (!SkelComp || Viewer.SelectedBoneIndex == -1) return;
 
-    const FBoneInfo& Bone = SkelComp->GetSkeletalMesh()->GetMeshData()->Bones[SelectedBoneIndex];
-    ImGui::Text("Bone: %s (Index: %d)", Bone.Name.c_str(), SelectedBoneIndex);
+    const FBoneInfo& Bone = SkelComp->GetSkeletalMesh()->GetMeshData()->Bones[Viewer.SelectedBoneIndex];
+    ImGui::Text("Bone: %s (Index: %d)", Bone.Name.c_str(), Viewer.SelectedBoneIndex);
     ImGui::Spacing();
 
-    FMatrix LocalTransform = SkelComp->GetBoneLocalTransform(SelectedBoneIndex);
+    FMatrix LocalTransform = SkelComp->GetBoneLocalTransform(Viewer.SelectedBoneIndex);
     FVector Location, Scale;
     FMatrix RotationMatrix;
     LocalTransform.Decompose(Location, RotationMatrix, Scale);
@@ -165,9 +181,9 @@ void FEditorViewerWindowWidget::RenderBoneDetails(USkeletalMeshComponent* SkelCo
     // 외부(기즈모 등)에서 회전이 변경되었는지 확인
     FVector CurrentEuler = RotationMatrix.GetEuler();
 
-	if ((CurrentEuler - FMatrix::MakeRotationEuler(CachedRotation).GetEuler()).Size() > 0.01f)
+	if ((CurrentEuler - FMatrix::MakeRotationEuler(Viewer.CachedRotation).GetEuler()).Size() > 0.01f)
     {
-        CachedRotation = CurrentEuler;
+        Viewer.CachedRotation = CurrentEuler;
     }
 
     bool bEdited = false;
@@ -184,16 +200,15 @@ void FEditorViewerWindowWidget::RenderBoneDetails(USkeletalMeshComponent* SkelCo
 
     ImGui::Text("Transform (Local)");
     if (DrawTransformField("Location", Location, 0.1f)) bEdited = true;
-    if (DrawTransformField("Rotation", CachedRotation, 0.1f)) bEdited = true;
+    if (DrawTransformField("Rotation", Viewer.CachedRotation, 0.1f)) bEdited = true;
     if (DrawTransformField("Scale", Scale, 0.01f)) bEdited = true;
 
     if (bEdited)
     {
-        FMatrix NewLocal = FMatrix::MakeTRS(Location, FMatrix::MakeRotationEuler(CachedRotation), Scale);
-        SkelComp->SetBoneLocalTransform(SelectedBoneIndex, NewLocal);
+        FMatrix NewLocal = FMatrix::MakeTRS(Location, FMatrix::MakeRotationEuler(Viewer.CachedRotation), Scale);
+        SkelComp->SetBoneLocalTransform(Viewer.SelectedBoneIndex, NewLocal);
 
         // Gizmo 위치 업데이트
-        auto& Viewer = EditorEngine->GetViewer();
         FViewportClient* BaseClient = Viewer.GetViewport().GetClient();
         FEditorViewportClient* EditorClient = static_cast<FEditorViewportClient*>(BaseClient);
         if (UGizmoComponent* Gizmo = EditorClient->GetGizmo())
@@ -203,7 +218,7 @@ void FEditorViewerWindowWidget::RenderBoneDetails(USkeletalMeshComponent* SkelCo
     }
 }
 
-void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBoneInfo>& Bones, const TArray<TArray<int32>>& Children)
+void FEditorViewerWindowWidget::DrawBoneNode(FEditorViewer& Viewer, int32 BoneIndex, const TArray<FBoneInfo>& Bones, const TArray<TArray<int32>>& Children)
 {
     const FBoneInfo& Bone = Bones[BoneIndex];
 
@@ -216,7 +231,7 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
         Flags |= ImGuiTreeNodeFlags_Leaf;
     }
 
-    if (SelectedBoneIndex == BoneIndex)
+    if (Viewer.SelectedBoneIndex == BoneIndex)
     {
         Flags |= ImGuiTreeNodeFlags_Selected;
     }
@@ -230,11 +245,10 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
     // 클릭 처리 (중요)
     if (ImGui::IsItemClicked())
     {
-        SelectedBoneIndex = BoneIndex;
+        Viewer.SelectedBoneIndex = BoneIndex;
 
 		if (EditorEngine)
 		{
-			auto& Viewer = EditorEngine->GetViewer();
 			FViewportClient* BaseClient = Viewer.GetViewport().GetClient();
 			FEditorViewportClient* EditorClient = static_cast<FEditorViewportClient*>(BaseClient);
 
@@ -244,14 +258,14 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
 				if (ViewTarget)
 				{
 					USkeletalMeshComponent* SkelComp = ViewTarget->GetSkeletalMeshComponent();
-					Gizmo->SetProxy(std::make_shared<FBoneTransformProxy>(SkelComp, SelectedBoneIndex));
+					Gizmo->SetProxy(std::make_shared<FBoneTransformProxy>(SkelComp, Viewer.SelectedBoneIndex));
 
                     // 초기 회전값 캐싱 (Euler Jitter 방지)
-                    FMatrix LocalTransform = SkelComp->GetBoneLocalTransform(SelectedBoneIndex);
+                    FMatrix LocalTransform = SkelComp->GetBoneLocalTransform(Viewer.SelectedBoneIndex);
                     FVector dummyL, dummyS;
                     FMatrix RotM;
                     LocalTransform.Decompose(dummyL, RotM, dummyS);
-                    CachedRotation = RotM.GetEuler();
+                    Viewer.CachedRotation = RotM.GetEuler();
 				}
 			}
 		}
@@ -261,7 +275,7 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
     {
         for (int32 ChildIndex : Children[BoneIndex])
         {
-            DrawBoneNode(ChildIndex, Bones, Children);
+            DrawBoneNode(Viewer, ChildIndex, Bones, Children);
         }
 
         ImGui::TreePop();

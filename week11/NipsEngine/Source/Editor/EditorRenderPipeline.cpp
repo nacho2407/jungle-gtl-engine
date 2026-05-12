@@ -349,145 +349,148 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 
 void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
 {
-    const auto ViewportRenderStart = std::chrono::steady_clock::now();
+    TArray<std::unique_ptr<FEditorViewer>>& Viewers = Editor->GetViewers();
 
-    // Viewer Viewport 가져오기
-    FEditorViewer& Viewer = Editor->GetViewer();
-    FSceneViewport& SceneViewport = Viewer.GetViewport();
-    FEditorViewportClient* VC = SceneViewport.GetClient();
+	for (size_t i = 0; i < Viewers.size(); i++)
+	{
+        const auto ViewportRenderStart = std::chrono::steady_clock::now();
 
-    if (!VC)
-        return;
+        FSceneViewport& SceneViewport = Viewers[i]->GetViewport();
+        FEditorViewportClient* VC = SceneViewport.GetClient();
 
-    // 1. SceneView 생성
-    FSceneView SceneView;
-    VC->BuildSceneView(SceneView);
+        if (!VC)
+            return;
 
-    const FViewportRect& Rect = SceneViewport.GetRect();
-    if (Rect.Width <= 0 || Rect.Height <= 0)
-        return;
+        // 1. SceneView 생성
+        FSceneView SceneView;
+        VC->BuildSceneView(SceneView);
 
-    // 2. RenderTarget 확보
-    FViewportRenderResource& ViewportResource =
-        Editor->GetRenderer().AcquireViewerViewportResource(
-            Rect.Width,
-            Rect.Height);
+        const FViewportRect& Rect = SceneViewport.GetRect();
+        if (Rect.Width <= 0 || Rect.Height <= 0)
+            return;
 
-    SceneViewport.SetRenderTargetSet(&ViewportResource.GetView());
+        // 2. RenderTarget 확보
+        FViewportRenderResource& ViewportResource =
+            Editor->GetRenderer().AcquireViewerViewportResource(
+                Rect.Width,
+                Rect.Height);
 
-    // 3. Begin
-    Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets());
+        SceneViewport.SetRenderTargetSet(&ViewportResource.GetView());
 
-    // 4. Bus 세팅
-    Bus.Clear();
+        // 3. Begin
+        Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets());
 
-    UWorld* World = VC->GetFocusedWorld();
-    if (!World)
-        return;
+        // 4. Bus 세팅
+        Bus.Clear();
 
-    const FEditorSettings& Settings = Editor->GetSettings();
-    const FShowFlags& ShowFlags = Settings.ShowFlags;
-    const EViewMode ViewMode = SceneView.ViewMode;
+        UWorld* World = VC->GetFocusedWorld();
+        if (!World)
+            return;
 
-    const FViewportCamera* Camera = VC->GetRenderCamera();
-    if (!Camera)
-        return;
+        const FEditorSettings& Settings = Editor->GetSettings();
+        const FShowFlags& ShowFlags = Settings.ShowFlags;
+        const EViewMode ViewMode = SceneView.ViewMode;
 
-    Bus.SetViewProjection(
-        SceneView.ViewMatrix,
-        SceneView.ProjectionMatrix,
-        Camera->GetNearPlane(),
-        Camera->GetFarPlane());
+        const FViewportCamera* Camera = VC->GetRenderCamera();
+        if (!Camera)
+            return;
 
-    Bus.SetRenderSettings(ViewMode, ShowFlags);
-    Bus.SetLightCullMode(SceneView.LightCullMode);
-    Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
-    Bus.SetViewportSize(FVector2((float)Rect.Width, (float)Rect.Height));
-    Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
-    Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
-    Bus.SetCascadeVis(VC->GetViewportState()->bShowCascadeVis);
+        Bus.SetViewProjection(
+            SceneView.ViewMatrix,
+            SceneView.ProjectionMatrix,
+            Camera->GetNearPlane(),
+            Camera->GetFarPlane());
 
-    // Sandevistan 유지
-    if (World->IsSandervistanActivated())
-    {
-        Bus.bSandevistanEnabled = true;
-        Bus.SandevistanIntensity = 1.0f;
-    }
-    else
-    {
-        Bus.bSandevistanEnabled = false;
-        Bus.SandevistanIntensity = 0.0f;
-    }
+        Bus.SetRenderSettings(ViewMode, ShowFlags);
+        Bus.SetLightCullMode(SceneView.LightCullMode);
+        Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
+        Bus.SetViewportSize(FVector2((float)Rect.Width, (float)Rect.Height));
+        Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
+        Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
+        Bus.SetCascadeVis(VC->GetViewportState()->bShowCascadeVis);
 
-    // 5. Collect
-    const FFrustum& ViewFrustum = SceneView.CameraFrustum;
-    const bool bDrawEditorViewportHelpers =
-        VC->AllowsEditorWorldControl();
-
-    Collector.CollectWorld(
-        World,
-        ShowFlags,
-        ViewMode,
-        Bus,
-        &ViewFrustum,
-        bDrawEditorViewportHelpers);
-
-    // 🔹 Editor helper 그대로 유지
-    if (bDrawEditorViewportHelpers)
-    {
-        Collector.CollectGrid(
-            Settings.GridSpacing,
-            Settings.GridHalfLineCount,
-            Bus,
-            SceneView.bOrthographic);
-        const FWorldContext* Ctx = Editor->GetWorldContextFromWorld(World);
-        if (UGizmoComponent* Gizmo = Ctx->SelectionManager->GetGizmo())
+        // Sandevistan 유지
+        if (World->IsSandervistanActivated())
         {
-            if (SceneView.bOrthographic)
-                Gizmo->ApplyScreenSpaceScalingOrtho(SceneView.CameraOrthoHeight);
-            else
-                Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
+            Bus.bSandevistanEnabled = true;
+            Bus.SandevistanIntensity = 1.0f;
+        }
+        else
+        {
+            Bus.bSandevistanEnabled = false;
+            Bus.SandevistanIntensity = 0.0f;
         }
 
-        Collector.CollectGizmo(
-            Ctx->SelectionManager->GetGizmo(),
-            ShowFlags,
-            Bus,
-            VC->GetViewportState()->bHovered);
+        // 5. Collect
+        const FFrustum& ViewFrustum = SceneView.CameraFrustum;
+        const bool bDrawEditorViewportHelpers =
+            VC->AllowsEditorWorldControl();
 
-        Collector.CollectSelection(
-            Ctx->SelectionManager->GetSelectedActors(),
+        Collector.CollectWorld(
+            World,
             ShowFlags,
             ViewMode,
             Bus,
+            &ViewFrustum,
             bDrawEditorViewportHelpers);
-    }
 
-    // 6. Draw
-    Renderer.PrepareBatchers(Bus);
-    Renderer.Render(Bus);
-    Renderer.RenderScreenOverlays(Bus, false);
+        // 🔹 Editor helper 그대로 유지
+        if (bDrawEditorViewportHelpers)
+        {
+            Collector.CollectGrid(
+                Settings.GridSpacing,
+                Settings.GridHalfLineCount,
+                Bus,
+                SceneView.bOrthographic);
+            const FWorldContext* Ctx = Editor->GetWorldContextFromWorld(World);
+            if (UGizmoComponent* Gizmo = Ctx->SelectionManager->GetGizmo())
+            {
+                if (SceneView.bOrthographic)
+                    Gizmo->ApplyScreenSpaceScalingOrtho(SceneView.CameraOrthoHeight);
+                else
+                    Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
+            }
 
-    // 7. ID Pick
-    TArray<AActor*> IdPickActors;
-    Renderer.RenderEditorIdPickBuffer(
-        Bus,
-        ViewportResource,
-        IdPickActors);
+            Collector.CollectGizmo(
+                Ctx->SelectionManager->GetGizmo(),
+                ShowFlags,
+                Bus,
+                VC->GetViewportState()->bHovered);
 
-    SceneViewport.SetEditorIdPickActors(std::move(IdPickActors));
+            Collector.CollectSelection(
+                Ctx->SelectionManager->GetSelectedActors(),
+                ShowFlags,
+                ViewMode,
+                Bus,
+                bDrawEditorViewportHelpers);
+        }
+
+        // 6. Draw
+        Renderer.PrepareBatchers(Bus);
+        Renderer.Render(Bus);
+        Renderer.RenderScreenOverlays(Bus, false);
+
+        // 7. ID Pick
+        TArray<AActor*> IdPickActors;
+        Renderer.RenderEditorIdPickBuffer(
+            Bus,
+            ViewportResource,
+            IdPickActors);
+
+        SceneViewport.SetEditorIdPickActors(std::move(IdPickActors));
 
 #if STATS
-    const double RenderSec =
-        std::chrono::duration<double>(
-            std::chrono::steady_clock::now() - ViewportRenderStart)
-            .count();
+        const double RenderSec =
+            std::chrono::duration<double>(
+                std::chrono::steady_clock::now() - ViewportRenderStart)
+                .count();
 
-    if (RenderSec >= 0.018)
-    {
-        UE_LOG("[ViewerRenderPerf] Time=%.4fs", RenderSec);
-    }
+        if (RenderSec >= 0.018)
+        {
+            UE_LOG("[ViewerRenderPerf] Time=%.4fs", RenderSec);
+        }
 #endif
+	}
 }
 
 const FRenderCollector::FCullingStats& FEditorRenderPipeline::GetViewportCullingStats(int32 ViewportIndex) const

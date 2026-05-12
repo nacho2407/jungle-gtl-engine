@@ -36,6 +36,8 @@ public:
 	void WorldTick(float DeltaTime) override;
 
 	void CreateViewerWorld();
+    FEditorViewer* CreateViewer();
+    void RemoveViewer(FEditorViewer* InViewer);
 
 	// 퍼스펙티브 카메라(인덱스 0)를 반환합니다.
 	FViewportCamera* GetCamera();
@@ -91,7 +93,8 @@ public:
 	void UnregisterWorld(const FName& Handle);
 	FName GetEditorWorldHandle() const;
 
-	FEditorViewer& GetViewer() { return Viewer; }
+	const TArray<std::unique_ptr<FEditorViewer>>& GetViewers() const { return Viewers; }
+    TArray<std::unique_ptr<FEditorViewer>>& GetViewers() { return Viewers; }
 
 private:
 	friend class FEditorUndoSystem;
@@ -110,7 +113,7 @@ private:
 
 	FEditorMainPanel MainPanel;
 	FEditorViewportLayout ViewportLayout;
-    FEditorViewer Viewer;	
+    TArray<std::unique_ptr<FEditorViewer>> Viewers;	
 
 	FInputPolicyRouter EditorInputRouter;
 	FPIESession PIESession;

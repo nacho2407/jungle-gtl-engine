@@ -52,11 +52,16 @@ void FEditorMainPanel::Update()
             }
         }
 
-		const FViewportRect& ViewportRect = EditorEngine->GetViewer().GetViewport().GetRect();
-        if (ViewportRect.Width > 0 && ViewportRect.Height > 0 && ViewportRect.Contains(MouseClientPos.x, MouseClientPos.y))
-        {
-            bMouseOverViewportRect = true;
-        }
+		TArray<std::unique_ptr<FEditorViewer>>& Viewers = EditorEngine->GetViewers();
+		for (size_t i = 0; i < Viewers.size(); i++)
+		{
+            const FViewportRect& ViewportRect = Viewers[i]->GetViewport().GetRect();
+            if (ViewportRect.Width > 0 && ViewportRect.Height > 0 && ViewportRect.Contains(MouseClientPos.x, MouseClientPos.y))
+            {
+                bMouseOverViewportRect = true;
+                break;
+            }
+		}
     }
 
     bool bHoveredViewportContentWindow = false;
