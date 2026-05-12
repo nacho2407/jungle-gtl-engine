@@ -103,9 +103,9 @@ void FShadowMapPass::SetupShadowRenderState(FD3DDevice& Device, FSystemResources
 	// CB 생성 (한 번만)
 	ID3D11Device* Dev = Device.GetDevice();
 	if (!ShadowPerObjectCB.GetBuffer())
-		ShadowPerObjectCB.Create(Dev, sizeof(FPerObjectConstants));
+		ShadowPerObjectCB.Create(Dev, sizeof(FPerObjectConstants), "ShadowPerObjectCB");
 	if (!ShadowLightCB.GetBuffer())
-		ShadowLightCB.Create(Dev, sizeof(FMatrix));
+		ShadowLightCB.Create(Dev, sizeof(FMatrix), "ShadowLightCB");
 
 	// ImGui 등 외부 코드가 D3D state를 직접 변경할 수 있으므로 캐시 무효화
 	Resources.ResetRenderStateCache();

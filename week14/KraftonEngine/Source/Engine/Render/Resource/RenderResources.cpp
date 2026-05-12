@@ -76,8 +76,8 @@ void FSystemResources::Create(ID3D11Device* InDevice)
 {
 	Device = InDevice;
 
-	FrameBuffer.Create(InDevice, sizeof(FFrameConstants));
-	LightingConstantBuffer.Create(InDevice, sizeof(FLightingCBData));
+	FrameBuffer.Create(InDevice, sizeof(FFrameConstants), "FrameBuffer");
+	LightingConstantBuffer.Create(InDevice, sizeof(FLightingCBData), "LightingConstantBuffer");
 	ForwardLights.Create(InDevice, 32);
 
 	RasterizerStateManager.Create(InDevice);

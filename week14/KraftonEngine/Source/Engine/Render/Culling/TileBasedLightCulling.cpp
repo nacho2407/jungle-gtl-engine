@@ -19,6 +19,7 @@ void FTileCullingVisualizer::Initialize(ID3D11Device* InDevice)
 	cbDesc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
 	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	Device->CreateBuffer(&cbDesc, nullptr, &VisCullingCB);
+	VisCullingCB->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("VisCullingCB"), "VisCullingCB");
 
 	// GPU StructuredBuffer (u3)
 	D3D11_BUFFER_DESC bufDesc = {};
@@ -28,6 +29,7 @@ void FTileCullingVisualizer::Initialize(ID3D11Device* InDevice)
 	bufDesc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 	bufDesc.StructureByteStride = sizeof(FVector4);
 	Device->CreateBuffer(&bufDesc, nullptr, &VisBuffer);
+	VisBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("VisBuffer"), "VisBuffer");
 
 	D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.Format             = DXGI_FORMAT_UNKNOWN;
@@ -41,6 +43,7 @@ void FTileCullingVisualizer::Initialize(ID3D11Device* InDevice)
 	stagingDesc.Usage          = D3D11_USAGE_STAGING;
 	stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 	Device->CreateBuffer(&stagingDesc, nullptr, &VisStagingBuf);
+	VisStagingBuf->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("VisStagingBuf"), "VisStagingBuf");
 
 	ReadbackData_.resize(kElementCount);
 }
@@ -183,6 +186,7 @@ void FTileBasedLightCulling::Initialize(ID3D11Device* InDevice)
 	cbDesc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
 	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	Device->CreateBuffer(&cbDesc, nullptr, &TileCullingCB);
+	TileCullingCB->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("TileCullingCB"), "TileCullingCB");
 
 	Visualizer.Initialize(Device);
 
