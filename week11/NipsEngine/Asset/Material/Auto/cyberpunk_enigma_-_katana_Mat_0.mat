@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "Handle",
         "Name" : "cyberpunk_enigma_-_katana_Mat_0",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

@@ -1,5 +1,5 @@
-{
-        "ImportedName" : "Mat_노랑_광택",
+﻿{
+        "ImportedName" : "Mat_?몃옉_愿묓깮",
         "Name" : "MultiMaterialCube_Mat_0",
         "Params" : [{
             "Name" : "AmbientColor",
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

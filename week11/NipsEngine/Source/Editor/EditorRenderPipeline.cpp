@@ -599,6 +599,7 @@ ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(
 
 			FRenderCommand Cmd = {};
 			Cmd.Type = ERenderCommandType::StaticMesh;
+			Cmd.VertexFactoryType = EVertexFactoryType::StaticMesh;
 			Cmd.MeshBuffer = MeshBuffer;
 			Cmd.Material = Material;
 			Cmd.SectionIndexStart = Section.StartIndex;
@@ -612,6 +613,7 @@ ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(
 	{
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::StaticMesh;
+		Cmd.VertexFactoryType = EVertexFactoryType::StaticMesh;
 		Cmd.MeshBuffer = MeshBuffer;
 		Cmd.Material = Material;
 		Cmd.SectionIndexStart = 0;

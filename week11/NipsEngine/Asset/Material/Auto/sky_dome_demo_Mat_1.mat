@@ -1,4 +1,4 @@
-{
+﻿{
         "Name" : "sky_dome_demo_Mat_1",
         "Params" : [{
             "Name" : "AmbientColor",
@@ -69,5 +69,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

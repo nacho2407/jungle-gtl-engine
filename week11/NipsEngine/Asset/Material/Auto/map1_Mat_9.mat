@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "MI_Glow02",
         "Name" : "map1_Mat_9",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

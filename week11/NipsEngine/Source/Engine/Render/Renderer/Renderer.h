@@ -6,7 +6,6 @@
 
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/VertexTypes.h"
-#include "Render/Resource/Shader.h"
 
 #include "Render/Scene/RenderBus.h"
 #include "Render/Device/D3DDevice.h"
@@ -140,7 +139,6 @@ struct FPassBatcherBinding
 // 패스별 기본 렌더 상태 — Single Source of Truth
 struct FPassRenderState
 {
-	UShader*                 Shader         = nullptr; // nullptr → batcher가 자체 셰이더 사용
 	bool                     bWireframeAware = false;  // Wireframe 모드 시 래스터라이저 전환
 };
 

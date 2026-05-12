@@ -23,7 +23,7 @@ public:
     const TArray<FMatrix>& GetCurrentLocalPose() const { return CurrentLocalPose; }
     const TArray<FMatrix>& GetCurrentGlobalPose() const { return CurrentGlobalPose; }
     const TArray<FMatrix>& GetSkinningMatrices() const { return SkinningMatrices; }
-    const TArray<FNormalVertex>& GetSkinnedVertices() const { return SkinnedVertices; }
+    const TArray<FSkeletalMeshVertex>& GetSkinnedVertices() const { return SkinnedVertices; }
 
     void MarkSkinningDirty() { bSkinningDirty = true; }
 
@@ -50,12 +50,6 @@ protected:
     void MarkRenderStateDirty() { bRenderStateDirty = true; }
     void EnsureBoundsUpdated() const;
 
-	/**
-	 * @brief CPU skinning에서는 FSkeletonMeshVertex를 입력받아 FNormalVector를 출력하므로,
-	 *        influence가 없을 때 원본을 복사하여 FNormalVertex로 변환하는 함수가 필요함
-	 */
-    FNormalVertex ConvertToNormalVertexWithoutSkinning(const FSkeletalMeshVertex& Source) const;
-
 protected:
     USkeletalMesh* SkeletalMesh = nullptr;
     FString SkeletalMeshPath;
@@ -64,7 +58,7 @@ protected:
     TArray<FMatrix> CurrentGlobalPose;
     TArray<FMatrix> SkinningMatrices;
 
-    TArray<FNormalVertex> SkinnedVertices;
+    TArray<FSkeletalMeshVertex> SkinnedVertices;
 
     bool bEnableCPUSkinning = true;
     bool bSkinningDirty = true;

@@ -1,5 +1,5 @@
-{
-        "ImportedName" : "手套",
+﻿{
+        "ImportedName" : "?뗥쪞",
         "Name" : "LumineModel_Mat_1",
         "Params" : [{
             "Name" : "AmbientColor",
@@ -20,7 +20,7 @@
           }, {
             "Name" : "DiffuseMap",
             "Type" : "Texture",
-            "Value" : "Asset/Mesh/Lumine/衣服.png"
+            "Value" : "Asset/Mesh/Lumine/烏ｆ쐨.png"
           }, {
             "Name" : "EmissiveColor",
             "Type" : "Vector3",
@@ -54,5 +54,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

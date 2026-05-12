@@ -3,6 +3,29 @@
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/Material.h"
 
+namespace
+{
+    FShaderProgram* GetOutlineShaderProgram(const UMaterialInterface* Material)
+    {
+        if (!Material)
+        {
+            return nullptr;
+        }
+
+        FShaderStageKey VSKey;
+        VSKey.FilePath = Material->GetPixelShaderPath();
+        VSKey.EntryPoint = "VS";
+        VSKey.Target = "vs_5_0";
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = Material->GetPixelShaderPath();
+        PSKey.EntryPoint = Material->GetPixelShaderEntryPoint();
+        PSKey.Target = "ps_5_0";
+
+        return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+    }
+}
+
 bool FPostProcessOutlineRenderPass::Initialize()
 {
     return true;
@@ -43,7 +66,15 @@ bool FPostProcessOutlineRenderPass::DrawCommand(const FRenderPassContext* Contex
     {
         if (Cmd.Material != nullptr)
         {
-            Cmd.Material->Bind(Context->DeviceContext);
+            FShaderProgram* Program = GetOutlineShaderProgram(Cmd.Material);
+            if (!Program)
+            {
+                continue;
+            }
+
+            Program->Bind(Context->DeviceContext);
+            Cmd.Material->BindRenderStates(Context->DeviceContext);
+            Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
         }
         Context->DeviceContext->Draw(3, 0);
     }

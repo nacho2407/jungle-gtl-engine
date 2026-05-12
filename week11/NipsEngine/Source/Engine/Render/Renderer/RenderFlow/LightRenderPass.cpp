@@ -1,5 +1,22 @@
-﻿#include "LightRenderPass.h"
+#include "LightRenderPass.h"
 #include "Core/ResourceManager.h"
+#include "Render/Resource/ShaderPaths.h"
+
+namespace
+{
+    FShaderProgram* GetLightPassProgram()
+    {
+        FShaderStageKey VSKey;
+        VSKey.FilePath = FShaderPaths::PostProcessLight;
+        VSKey.EntryPoint = "mainVS";
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = FShaderPaths::PostProcessLight;
+        PSKey.EntryPoint = "mainPS";
+
+        return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
+    }
+}
 
 bool FLightRenderPass::Initialize()
 {
@@ -69,8 +86,12 @@ bool FLightRenderPass::Begin(const FRenderPassContext* Context)
     };
     Context->DeviceContext->PSSetShaderResources(14, 2, ShadowInfoSRVs);
 
-    UShader* LightPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/LightPass.hlsl");
-    LightPassShader->Bind(Context->DeviceContext);
+    FShaderProgram* LightPassProgram = GetLightPassProgram();
+    if (!LightPassProgram)
+    {
+        return false;
+    }
+    LightPassProgram->Bind(Context->DeviceContext);
 
     /**
      * LightPass 는 풀스크린 쿼드에 그려지는데, mainVS 에서	정점 데이터를 생성하기 때문에 IA 단계에서 별도의

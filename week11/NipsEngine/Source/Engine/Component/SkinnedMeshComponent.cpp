@@ -1,4 +1,4 @@
-﻿#include "SkinnedMeshComponent.h"
+#include "SkinnedMeshComponent.h"
 
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Material.h"
@@ -164,7 +164,7 @@ void USkinnedMeshComponent::UpdateWorldAABB() const
 
     if (bEnableCPUSkinning && !SkinnedVertices.empty())
     {
-        for (const FNormalVertex& Vertex : SkinnedVertices)
+        for (const FSkeletalMeshVertex& Vertex : SkinnedVertices)
         {
             WorldAABB.Expand(WorldMatrix.TransformPosition(Vertex.Position));
         }
@@ -214,7 +214,7 @@ bool USkinnedMeshComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResul
         return false;
     }
 
-    const TArray<FNormalVertex>& Vertices = SkinnedVertices;
+    const TArray<FSkeletalMeshVertex>& Vertices = SkinnedVertices;
     const TArray<uint32>& Indices = SkeletalMesh->GetIndices();
 
     if (Vertices.empty() || Indices.empty())
@@ -438,7 +438,7 @@ void USkinnedMeshComponent::SkinVerticesCPU()
 		// weight가 하나도 없으면 원본 그대로 복사(아주 작은 오차값 허용)
         if (ValidWeightSum <= 1e-6f)
         {
-            SkinnedVertices[VertexIndex] = ConvertToNormalVertexWithoutSkinning(Src);
+            SkinnedVertices[VertexIndex] = Src;
             continue;
         }
 
@@ -482,11 +482,11 @@ void USkinnedMeshComponent::SkinVerticesCPU()
             SkinnedTangent.NormalizeSafe();
         }
 
-        SkinnedVertices[VertexIndex].Position = SkinnedPosition;
-        SkinnedVertices[VertexIndex].Color = Src.Color;
-        SkinnedVertices[VertexIndex].Normal = SkinnedNormal;
-        SkinnedVertices[VertexIndex].UVs = Src.UVs;
-        SkinnedVertices[VertexIndex].Tangent = FVector4(SkinnedTangent.X, SkinnedTangent.Y, SkinnedTangent.Z, Src.Tangent.W);
+        FSkeletalMeshVertex& Dst = SkinnedVertices[VertexIndex];
+        Dst = Src;
+        Dst.Position = SkinnedPosition;
+        Dst.Normal = SkinnedNormal;
+        Dst.Tangent = FVector4(SkinnedTangent.X, SkinnedTangent.Y, SkinnedTangent.Z, Src.Tangent.W);
     }
 }
 
@@ -498,15 +498,4 @@ void USkinnedMeshComponent::EnsureBoundsUpdated() const
     }
 
     const_cast<USkinnedMeshComponent*>(this)->UpdateWorldAABB();
-}
-
-FNormalVertex USkinnedMeshComponent::ConvertToNormalVertexWithoutSkinning(const FSkeletalMeshVertex& Source) const
-{
-    FNormalVertex Out = {};
-    Out.Position = Source.Position;
-    Out.Color = Source.Color;
-    Out.Normal = Source.Normal;
-    Out.UVs = Source.UVs;
-    Out.Tangent = Source.Tangent;
-    return Out;
 }

@@ -369,7 +369,7 @@ void FEditorContentBrowserWidget::DrawToolbar()
 	}
 	ImGui::SameLine();
 	ImGui::BeginDisabled(BackHistory.empty());
-	if (ImGui::SmallButton("◀"))
+	if (ImGui::SmallButton("?"))
 	{
 		NavigateBack();
 	}
@@ -379,7 +379,7 @@ void FEditorContentBrowserWidget::DrawToolbar()
 		ImGui::SetTooltip("Back");
 	}
 	ImGui::SameLine();
-	if (ImGui::SmallButton("▲"))
+	if (ImGui::SmallButton("??))
 	{
 		const std::filesystem::path Parent = CurrentPath.parent_path();
 		if (!Parent.empty() && Parent != CurrentPath)
@@ -913,7 +913,7 @@ bool FEditorContentBrowserWidget::CreateMaterialAsset()
 	const FString RelativePath = MakeRelativeProjectPath(NewPath);
 	const FString MaterialName = FPaths::ToUtf8(NewPath.stem().wstring());
 
-	UMaterial* Material = FResourceManager::Get().GetOrCreateMaterial(MaterialName, RelativePath, "Shaders/UberLit.hlsl");
+	UMaterial* Material = FResourceManager::Get().GetOrCreateMaterial(MaterialName, RelativePath, EMaterialShaderType::SurfaceLit);
 	if (!Material)
 	{
 		return false;

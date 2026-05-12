@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "M_Asphalt01.001",
         "Name" : "map1_Mat_29",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : true
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }

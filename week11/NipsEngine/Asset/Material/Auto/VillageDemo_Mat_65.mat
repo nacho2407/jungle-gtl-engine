@@ -1,4 +1,4 @@
-{
+﻿{
         "ImportedName" : "162_mat",
         "Name" : "VillageDemo_Mat_65",
         "Params" : [{
@@ -70,5 +70,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Shader" : "Shaders/UberLit.hlsl"
+        "ShaderType" : "SurfaceLit"
       }
