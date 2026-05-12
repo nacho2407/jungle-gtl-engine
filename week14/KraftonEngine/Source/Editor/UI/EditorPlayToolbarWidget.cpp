@@ -2,32 +2,20 @@
 
 #include "Editor/EditorEngine.h"
 #include "Editor/PIE/PIETypes.h"
+#include "Editor/UI/EditorTextureManager.h"
 #include "Platform/Paths.h"
 #include "ImGui/imgui.h"
-#include "WICTextureLoader.h"
-
-#include <d3d11.h>
 
 void FEditorPlayToolbarWidget::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
 {
 	Editor = InEditor;
 	if (!InDevice) return;
 
-	const std::wstring IconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/Icons/");
-
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"icon_playInSelectedViewport_16x.png").c_str(),
-		nullptr, &PlayIcon);
-
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"generic_stop_16x.png").c_str(),
-		nullptr, &StopIcon);
+	const std::wstring IconDir = FPaths::Combine(FPaths::AssetDir(), L"Editor/Icons/");
 }
 
 void FEditorPlayToolbarWidget::Release()
 {
-	if (PlayIcon) { PlayIcon->Release(); PlayIcon = nullptr; }
-	if (StopIcon) { StopIcon->Release(); StopIcon = nullptr; }
 	Editor = nullptr;
 }
 
@@ -77,6 +65,7 @@ void FEditorPlayToolbarWidget::Render(float Width)
 		return bClicked;
 	};
 
+	ID3D11ShaderResourceView* PlayIcon = FEditorTextureManager::Get().GetOrLoadIcon(FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), L"Editor/Icons/Play.png")));
 	if (DrawIconButton("##PIE_Play", PlayIcon, "Play", /*bDisabled=*/bPlaying))
 	{
 		FRequestPlaySessionParams Params;
@@ -85,6 +74,7 @@ void FEditorPlayToolbarWidget::Render(float Width)
 
 	ImGui::SameLine(0.0f, ButtonSpacing);
 
+	ID3D11ShaderResourceView* StopIcon = FEditorTextureManager::Get().GetOrLoadIcon(FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), L"Editor/Icons/Stop.png")));
 	if (DrawIconButton("##PIE_Stop", StopIcon, "Stop", /*bDisabled=*/!bPlaying))
 	{
 		Editor->RequestEndPlayMap();

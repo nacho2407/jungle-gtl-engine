@@ -17,6 +17,7 @@
 #include "Editor/Slate/SlateApplication.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/UI/EditorFileUtils.h"
+#include "Editor/UI/EditorTextureManager.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Object/ObjectFactory.h"
 #include "Mesh/MeshManager.h"
@@ -76,6 +77,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	// 에디터 전용 초기화
 	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 	FProjectSettings::Get().LoadFromFile(FProjectSettings::GetDefaultPath());
+	FEditorTextureManager::Get().Initialize(Renderer.GetFD3DDevice().GetDevice());
 
 	{
 		SCOPE_STARTUP_STAT("EditorMainPanel::Create");
@@ -121,6 +123,7 @@ void UEditorEngine::Shutdown()
 
 	// 뷰포트 레이아웃 해제
 	ViewportLayout.Release();
+	FEditorTextureManager::Get().Shutdown();
 
 	// 엔진 공통 해제 (Renderer, D3D 등)
 	UEngine::Shutdown();

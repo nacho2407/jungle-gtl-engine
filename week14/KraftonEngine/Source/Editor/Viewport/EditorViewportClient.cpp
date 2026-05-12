@@ -542,7 +542,6 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 			{
 				MoveSpeed = 0.001f;
 			}
-			UE_LOG("MoveSpeed: %f", MoveSpeed);
 		}
 		else
 		{
