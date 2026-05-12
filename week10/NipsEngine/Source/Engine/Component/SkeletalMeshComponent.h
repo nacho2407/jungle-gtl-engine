@@ -24,4 +24,7 @@ public:
 
     void SetBoneLocalTransform(int32 BoneIndex, const FMatrix& NewLocalTransform);
     const FMatrix& GetBoneLocalTransform(int32 BoneIndex) const;
+
+    FMatrix GetBoneGlobalTransform(int32 BoneIndex) const;
+    void SetBoneGlobalTransform(int32 BoneIndex, const FMatrix& NewGlobalTransform);
 };
