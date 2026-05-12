@@ -658,7 +658,7 @@ FString UEditorEngine::CaptureSceneSnapshot() const
     return FSceneSaveManager::SaveToString(*Ctx, nullptr);
 }
 
-bool UEditorEngine::RestoreSceneSnapshot(const FString& Snapshot)
+bool UEditorEngine::RestoreSceneSnapshot(const FString& Snapshot, const FName& RestoreWorldHandle)
 {
     if (Snapshot.empty())
     {
@@ -689,7 +689,7 @@ bool UEditorEngine::RestoreSceneSnapshot(const FString& Snapshot)
     ClearScene();
 
     LoadCtx.WorldType = EWorldType::Editor;
-    LoadCtx.ContextHandle = FName("UndoRedoScene");
+    LoadCtx.ContextHandle = RestoreWorldHandle != FName::None ? RestoreWorldHandle : FName("UndoRedoScene");
     LoadCtx.ContextName = "Undo/Redo Scene";
     WorldList.push_back(LoadCtx);
     SetActiveWorld(LoadCtx.ContextHandle);
@@ -1047,6 +1047,7 @@ void UEditorEngine::StopPlaySessionNow()
 
 void UEditorEngine::ResetViewport()
 {
+    FWorldContext* ActiveContext = GetWorldContextFromHandle(ActiveWorldHandle);
     for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
     {
         FEditorViewportClient* ViewportClient = ViewportLayout.GetViewportClient(i);
@@ -1054,6 +1055,8 @@ void UEditorEngine::ResetViewport()
         {
             ViewportClient->CreateCamera();
             ViewportClient->SetWorld(GetWorld());
+            ViewportClient->SetSelectionManager(ActiveContext ? ActiveContext->SelectionManager : nullptr);
+            ViewportClient->SetGizmo(ActiveContext && ActiveContext->SelectionManager ? ActiveContext->SelectionManager->GetGizmo() : nullptr);
             ViewportClient->ApplyCameraMode();
         }
     }
@@ -1064,15 +1067,19 @@ void UEditorEngine::ResetViewport()
         ViewportClient->CreateCamera();
         
         UWorld* ViewerWorld = nullptr;
+        FSelectionManager* ViewerSelectionManager = nullptr;
         for (const FWorldContext& Ctx : WorldList)
         {
             if (Ctx.WorldType == EWorldType::ViewerPreview)
             {
                 ViewerWorld = Ctx.World;
+                ViewerSelectionManager = Ctx.SelectionManager;
                 break;
             }
         }
         ViewportClient->SetWorld(ViewerWorld ? ViewerWorld : GetWorld());
+        ViewportClient->SetSelectionManager(ViewerSelectionManager ? ViewerSelectionManager : (ActiveContext ? ActiveContext->SelectionManager : nullptr));
+        ViewportClient->SetGizmo(ViewerSelectionManager ? ViewerSelectionManager->GetGizmo() : (ActiveContext && ActiveContext->SelectionManager ? ActiveContext->SelectionManager->GetGizmo() : nullptr));
         ViewportClient->ApplyCameraMode();
     }
 
@@ -1324,6 +1331,10 @@ void UEditorEngine::UnregisterWorld(const FName& Handle)
     {
         if (it->ContextHandle == Handle)
         {
+            if (!UndoSystem.IsRestoring())
+            {
+                UndoSystem.ClearHistory(Handle);
+            }
             if (it->World)
             {
                 if (it->World == ActorDestroyedListenerWorld)

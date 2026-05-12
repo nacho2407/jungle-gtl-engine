@@ -116,7 +116,7 @@ private:
 		FEditorViewportClient* FocusedClient
 	);
 	FString CaptureSceneSnapshot() const;
-	bool RestoreSceneSnapshot(const FString& Snapshot);
+	bool RestoreSceneSnapshot(const FString& Snapshot, const FName& RestoreWorldHandle = FName::None);
 	void OnSceneWorldWillUnload(UWorld* OldWorld) override;
 	void OnSceneWorldLoaded(UWorld* NewWorld) override;
 
