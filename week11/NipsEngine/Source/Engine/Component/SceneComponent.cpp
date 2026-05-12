@@ -18,6 +18,7 @@ void USceneComponent::PostDuplicate(UObject* Original)
     // 부모-자식 관계는 Actor::PostDuplicate() 에서 DuplicateSubTree 를 통해 복원됩니다.
     ParentComponent = nullptr;
     ChildComponents.clear();
+    AttachSocketName = FName::None;
 }
 
 void USceneComponent::Serialize(FArchive& Ar)
@@ -36,6 +37,7 @@ void USceneComponent::Serialize(FArchive& Ar)
 	Ar << "Location" << RelativeLocation;
 	Ar << "Rotation" << RelativeRotation;
 	Ar << "Scale" << RelativeScale3D;
+	Ar << "AttachSocket" << AttachSocketName;
 }
 USceneComponent::USceneComponent()
 {
@@ -65,14 +67,15 @@ USceneComponent::~USceneComponent()
 	ChildComponents.clear();
 }
 
-void USceneComponent::AttachToComponent(USceneComponent* InParent)
+void USceneComponent::AttachToComponent(USceneComponent* InParent, const FName& InSocketName)
 {
 	if (InParent == nullptr || InParent == this)
 	{
 		return;
 	}
 
-	SetParent(InParent);
+	AttachSocketName = InSocketName;
+	SetParent(InParent);   // 내부에서 MarkTransformDirty 호출됨
 }
 
 void USceneComponent::SetParent(USceneComponent* NewParent)
@@ -255,7 +258,17 @@ void USceneComponent::UpdateWorldMatrix() const
 
 	if (ParentComponent != nullptr)
 	{
-		CachedWorldTransform = RelativeTransform * ParentComponent->GetWorldTransform();
+		// Socket 기반 attach: 부모가 해당 socket을 가지고 있으면 socket world transform 기준.
+		// 아니면 (혹은 AttachSocketName이 None/존재하지 않음) 부모의 일반 world transform 기준.
+		// 참고: FName::None도 IsValid()는 true이므로 명시적 비교 사용.
+		if (AttachSocketName != FName::None && ParentComponent->HasSocket(AttachSocketName))
+		{
+			CachedWorldTransform = RelativeTransform * ParentComponent->GetSocketTransform(AttachSocketName);
+		}
+		else
+		{
+			CachedWorldTransform = RelativeTransform * ParentComponent->GetWorldTransform();
+		}
 	}
 	else
 	{

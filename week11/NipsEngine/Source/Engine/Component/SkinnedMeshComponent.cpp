@@ -323,6 +323,52 @@ void USkinnedMeshComponent::EnsureSkinningUpdated()
     bSkinningDirty = false;
     MarkBoundsDirty();
     MarkRenderStateDirty();
+
+    // Bone 자세가 새로 계산됐으므로, *내* socket으로 붙은 child의 world transform이 stale.
+    // FName::None도 IsValid이므로 명시적 != 비교 + HasSocket 둘 다 확인.
+    for (USceneComponent* Child : ChildComponents)
+    {
+        if (!Child) continue;
+        const FName& SocketName = Child->GetAttachSocketName();
+        if (SocketName != FName::None && HasSocket(SocketName))
+        {
+            Child->MarkTransformDirty();   // 자식 손주까지 재귀 dirty 전파됨
+        }
+    }
+}
+
+bool USkinnedMeshComponent::HasSocket(const FName& SocketName) const
+{
+    return SkeletalMesh ? SkeletalMesh->HasSocket(SocketName) : false;
+}
+
+FTransform USkinnedMeshComponent::GetSocketTransform(const FName& SocketName) const
+{
+    if (!SkeletalMesh)
+    {
+        return GetWorldTransform();
+    }
+
+    const FSkeletalMeshSocket* Socket = SkeletalMesh->FindSocket(SocketName);
+    if (!Socket)
+    {
+        return GetWorldTransform();
+    }
+
+    if (Socket->BoneIndex < 0 || Socket->BoneIndex >= static_cast<int32>(CurrentGlobalPose.size()))
+    {
+        return GetWorldTransform();
+    }
+
+    // row-vector 규약: v · SocketRel · BoneGlobal · ActorWorld
+    //   SocketRel    : 본 local 기준 socket offset
+    //   BoneGlobal   : 현재 본 자세 (fbx-world 공간, EnsureSkinningUpdated가 미리 갱신)
+    //   ActorWorld   : 액터의 game-world 변환
+    const FMatrix SocketRel  = Socket->GetRelativeTransform();
+    const FMatrix BoneGlobal = CurrentGlobalPose[Socket->BoneIndex];
+    const FMatrix ActorWorld = GetWorldMatrix();
+    const FMatrix Combined   = SocketRel * BoneGlobal * ActorWorld;
+    return FTransform(Combined);
 }
 
 void USkinnedMeshComponent::InitializePoseFromBindPose()

@@ -27,12 +27,13 @@ struct FStaticMeshBinaryHeader
 struct FSkeletalMeshBinaryHeader
 {
 	uint32 MagicNumber = 0x534D4B53;	// 'SKMS' (Skeletal MeSh)
-	uint32 Version = 1;
+	uint32 Version = 2;					// v2: Sockets 블록 추가
 	uint32 VertexCount = 0;
 	uint32 IndexCount = 0;
 	uint32 SectionCount = 0;
 	uint32 SlotCount = 0;
 	uint32 BoneCount = 0;
+	uint32 SocketCount = 0;				// v2 신규
 
 	uint64 SourceFileWriteTime = 0;
 };
@@ -95,6 +96,9 @@ private:
 
 	void WriteBones(std::ofstream& Out, const FSkeletalMesh& Data);
 	bool ReadBones(std::ifstream& In, FSkeletalMesh& OutData, uint32 BoneCount) const;
+
+	void WriteSockets(std::ofstream& Out, const FSkeletalMesh& Data);
+	bool ReadSockets(std::ifstream& In, FSkeletalMesh& OutData, uint32 SocketCount) const;
 
 	void WriteSkeletalBounds(std::ofstream& Out, const FSkeletalMesh& Data);
 	bool ReadSkeletalBounds(std::ifstream& In, FSkeletalMesh& OutData) const;
