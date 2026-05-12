@@ -45,6 +45,8 @@ public:
 
 	int32 SelectedBoneIndex = -1;
 	FVector CachedRotation;
+    // Local holder for gizmo-selected actors when using bone proxy in the viewer.
+    TArray<AActor*> GizmoSelectedActors;
 
 private:
     FSceneViewport Viewport;

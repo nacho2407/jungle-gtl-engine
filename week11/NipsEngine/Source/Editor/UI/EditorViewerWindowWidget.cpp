@@ -249,28 +249,45 @@ void FEditorViewerWindowWidget::DrawBoneNode(FEditorViewer& Viewer, int32 BoneIn
     {
         Viewer.SelectedBoneIndex = BoneIndex;
 
-		if (EditorEngine)
-		{
-			FViewportClient* BaseClient = Viewer.GetViewport().GetClient();
-			FEditorViewportClient* EditorClient = static_cast<FEditorViewportClient*>(BaseClient);
+        if (EditorEngine)
+        {
+            FViewportClient* BaseClient = Viewer.GetViewport().GetClient();
+            FEditorViewportClient* EditorClient = static_cast<FEditorViewportClient*>(BaseClient);
 
-			if (UGizmoComponent* Gizmo = EditorClient->GetGizmo())
-			{
-				ASkeletalMeshActor* ViewTarget = Viewer.GetViewTarget();
-				if (ViewTarget)
-				{
-					USkeletalMeshComponent* SkelComp = ViewTarget->GetSkeletalMeshComponent();
-					Gizmo->SetProxy(std::make_shared<FBoneTransformProxy>(SkelComp, Viewer.SelectedBoneIndex));
+            ASkeletalMeshActor* ViewTarget = Viewer.GetViewTarget();
+            if (ViewTarget)
+            {
+                // Ensure the actor is selected in the SelectionManager so gizmo
+                // hover and click handling are routed to the gizmo immediately.
+                if (FSelectionManager* SelMgr = EditorClient->GetSelectionManager())
+                {
+                    SelMgr->Select(ViewTarget);
+                }
 
-                    // 초기 회전값 캐싱 (Euler Jitter 방지)
-                    FMatrix LocalTransform = SkelComp->GetBoneLocalTransform(Viewer.SelectedBoneIndex);
-                    FVector dummyL, dummyS;
-                    FMatrix RotM;
-                    LocalTransform.Decompose(dummyL, RotM, dummyS);
-                    Viewer.CachedRotation = RotM.GetEuler();
-				}
-			}
-		}
+                if (UGizmoComponent* Gizmo = EditorClient->GetGizmo())
+                {
+                    USkeletalMeshComponent* SkelComp = ViewTarget->GetSkeletalMeshComponent();
+                    if (SkelComp)
+                    {
+                        // Make gizmo aware of the selected actors list from SelectionManager
+                        if (FSelectionManager* SelMgr = EditorClient->GetSelectionManager())
+                        {
+                            Gizmo->SetSelectedActors(&SelMgr->GetSelectedActors());
+                        }
+
+                        // Override proxy to target the bone itself
+                        Gizmo->SetProxy(std::make_shared<FBoneTransformProxy>(SkelComp, Viewer.SelectedBoneIndex));
+
+                        // 초기 회전값 캐싱 (Euler Jitter 방지)
+                        FMatrix LocalTransform = SkelComp->GetBoneLocalTransform(Viewer.SelectedBoneIndex);
+                        FVector dummyL, dummyS;
+                        FMatrix RotM;
+                        LocalTransform.Decompose(dummyL, RotM, dummyS);
+                        Viewer.CachedRotation = RotM.GetEuler();
+                    }
+                }
+            }
+        }
     }
 
     if (bOpen)
