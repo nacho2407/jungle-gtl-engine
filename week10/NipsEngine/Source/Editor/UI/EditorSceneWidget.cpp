@@ -290,7 +290,6 @@ bool FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath, bool bPr
 	EditorEngine->GetMainPanel().PushFooterLog("Level loaded");
 	SceneLoadNotificationTimer = common::constants::ImGui::NotificationTimer;
 
-	EditorEngine->CreateViewer();
 	return LoadCtx.World != nullptr;
 }
 

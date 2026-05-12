@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorToolbarWidget.h"
+﻿#include "Editor/UI/EditorToolbarWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/UI/EditorSceneWidget.h"
@@ -340,15 +340,6 @@ void FEditorToolbarWidget::RenderViewMenu()
 	if (bShowStatProfiler) ImGui::MenuItem("Stat Profiler", nullptr, bShowStatProfiler);
 	if (bShowContentBrowser) ImGui::MenuItem("Content Browser", "Ctrl+Space", bShowContentBrowser);
 	if (bShowRuntimeUIPreview) ImGui::MenuItem("Runtime UI Preview", nullptr, bShowRuntimeUIPreview);
-
-	ImGui::Separator();
-	if (ImGui::MenuItem("New Viewer"))
-	{
-		if (EditorEngine)
-		{
-			EditorEngine->CreateViewer();
-		}
-	}
 
 	ImGui::EndMenu();
 }

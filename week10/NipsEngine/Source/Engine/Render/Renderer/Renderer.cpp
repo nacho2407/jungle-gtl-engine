@@ -788,12 +788,13 @@ FViewportRenderResource& FRenderer::AcquireViewportResource(uint32 Width, uint32
 
 FViewportRenderResource& FRenderer::AcquireViewerViewportResource(uint32 Index, uint32 W, uint32 H)
 {
-    if (Index >= (int32)ViewerViewportResources.size())
+    // 필요한 만큼 unique_ptr로 확장 (재할당해도 내부 객체 주소 불변)
+    while (Index >= (uint32)ViewerViewportResources.size())
     {
-        ViewerViewportResources.resize(Index + 1);
+        ViewerViewportResources.push_back(std::make_unique<FViewportRenderResource>());
     }
 
-    FViewportRenderResource& Resource = ViewerViewportResources[Index];
+    FViewportRenderResource& Resource = *ViewerViewportResources[Index];
 
     if (Device.GetDevice() == nullptr || W == 0 || H == 0)
     {

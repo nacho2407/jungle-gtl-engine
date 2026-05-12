@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorContentBrowserWidget.h"
+﻿#include "Editor/UI/EditorContentBrowserWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/EditorRenderPipeline.h"
@@ -768,6 +768,10 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		else if (IsPrefabAsset(Item.Extension))
 		{
 			EditorEngine->GetMainPanel().PushFooterLog("Prefab selected. Drag to viewport or right-click to spawn.");
+		}
+		else if (Item.Extension == ".fbx")
+		{
+            EditorEngine->CreateViewer(MakeRelativeProjectPath(Item.Path));
 		}
 		else
 		{

@@ -35,7 +35,7 @@ public:
 	bool CanCloseApplication() override;
 	void WorldTick(float DeltaTime) override;
 
-    FEditorViewer* CreateViewer();
+    FEditorViewer* CreateViewer(FString InFileName);
     void RemoveViewer(FEditorViewer* InViewer);
 
 	// 퍼스펙티브 카메라(인덱스 0)를 반환합니다.

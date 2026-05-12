@@ -5,6 +5,8 @@
 #include "Engine/Geometry/Ray.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/PrimitiveActors.h"
+#include "Component/SkeletalMeshComponent.h"
+#include "Core/ResourceManager.h"
 #include "imgui.h"
 
 void FEditorViewer::Init(
@@ -68,4 +70,11 @@ void FEditorViewer::Shutdown()
 void FEditorViewer::Tick(float DeltaTime)
 {
     Client.Tick(DeltaTime);
+}
+
+void FEditorViewer::ChangeTarget(const FString& InFileName)
+{
+    USkeletalMesh* SkelMesh = FResourceManager::Get().LoadSkeletalMesh(InFileName.c_str());
+    if (SkelMesh)
+	    ViewTarget->GetSkeletalMeshComponent()->SetSkeletalMesh(SkelMesh);
 }
