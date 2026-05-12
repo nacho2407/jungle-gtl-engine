@@ -27,17 +27,23 @@ bool FAudioManager::Initialize()
 
 void FAudioManager::Shutdown()
 {
+	if (!System)
+	{
+		MasterGroup = nullptr;
+		BGMChannel = nullptr;
+		LoopChannels.clear();
+		Audios.clear();
+		return;
+	}
+
+	StopBGM();
+	StopAllLoops();
 	if (MasterGroup)
 	{
 		MasterGroup->stop();
+		MasterGroup = nullptr;
 	}
-	BGMChannel = nullptr;
-	LoopChannels.clear();
-
-	if (System)
-	{
-		System->update();
-	}
+	System->update();
 
 	for (auto& Pair : Audios)
 	{
@@ -47,14 +53,11 @@ void FAudioManager::Shutdown()
 		}
 	}
 	Audios.clear();
-	
-	if (System)
-	{
-		System->update();
-		System->close();
-		System->release();
-		System = nullptr;
-	}
+
+	System->update();
+	System->close();
+	System->release();
+	System = nullptr;
 }
 
 void FAudioManager::Tick()
