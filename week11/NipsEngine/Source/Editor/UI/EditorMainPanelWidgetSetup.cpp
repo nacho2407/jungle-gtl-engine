@@ -56,12 +56,13 @@ void FEditorMainPanel::FlushOpenViewerWidgets()
 
     for (auto* Viewer : PendingOpenViewers)
     {
-        auto& WidgetPtr = V.emplace_back(std::make_unique<FEditorViewerWindowWidget>());
-        FEditorViewerWindowWidget& Widget = *WidgetPtr;
+        auto WidgetPtr = std::make_unique<FEditorViewerWindowWidget>();
 
-        Widget.Initialize(EditorEngine);
-        Widget.SetViewer(Viewer);
-        Widget.SetOpen(true);
+        WidgetPtr->Initialize(EditorEngine);
+        WidgetPtr->SetViewer(Viewer);
+        WidgetPtr->SetOpen(true);
+
+        Widgets.ViewerWindowWidgets.emplace_back(std::move(WidgetPtr));
     }
 
     PendingOpenViewers.clear();
