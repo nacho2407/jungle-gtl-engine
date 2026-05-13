@@ -1,5 +1,6 @@
-#include "CameraShakeEditorWidget.h"
+﻿#include "CameraShakeEditorWidget.h"
 
+#include "Asset/AssetPackage.h"
 #include "CameraShake/CameraShakeAsset.h"
 #include "CameraShake/CameraShakeManager.h"
 #include "Editor/EditorEngine.h"
@@ -37,10 +38,12 @@ namespace
 			if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("FloatCurveContentItem"))
 			{
 				const FContentItem* Item = static_cast<const FContentItem*>(Payload->Data);
-				if (Item && Item->Path.extension() == ".curve")
+				FString PackagePath = FPaths::ToUtf8(Item->Path.lexically_relative(FPaths::RootDir()).generic_wstring());
+
+				EAssetPackageType Type = EAssetPackageType::Unknown;
+				if (FAssetPackage::GetPackageType(PackagePath, Type) && Type == EAssetPackageType::FloatCurve)
 				{
-					OutPath = FPaths::MakeProjectRelative(FPaths::ToUtf8(Item->Path.wstring()));
-					ImGui::EndDragDropTarget();
+					OutPath = PackagePath;
 					return true;
 				}
 			}

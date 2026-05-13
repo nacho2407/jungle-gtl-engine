@@ -125,26 +125,12 @@ static FAssetImportMetadata MakeImportMetadata(const FString& SourcePath)
 	return Metadata;
 }
 
-static bool LoadPackageMetadata(const FString& BinaryPath, EAssetPackageType ExpectedType, FAssetImportMetadata& OutMetadata)
-{
-	FWindowsBinReader Reader(BinaryPath);
-	if (!Reader.IsValid()) return false;
-
-	FAssetPackageHeader Header;
-	Reader << Header;
-
-	if (!Header.IsValid(ExpectedType)) return false;
-
-	Reader << OutMetadata;
-	return Reader.IsValid();
-}
-
 static bool IsPackageSourceStale(const FString& BinaryPath, EAssetPackageType ExpectedType, bool& bOutMissingSource)
 {
 	bOutMissingSource = false;
 
 	FAssetImportMetadata Metadata;
-	if (!LoadPackageMetadata(BinaryPath, ExpectedType, Metadata)) return true;
+	if (!FAssetPackage::ReadMetadata(BinaryPath, ExpectedType, Metadata)) return true;
 
 	uint64 CurrentTimestamp = 0;
 	uint64 CurrentFileSize = 0;
@@ -338,7 +324,7 @@ FString FMeshManager::GetSkeletalMeshBinaryFilePath(const FString& SourcePath)
 
 bool FMeshManager::IsAssetPackagePath(const FString& Path)
 {
-	return GetLowerExtension(Path) == MeshBinary::AssetPackageExtension;
+	return FAssetPackage::IsAssetPackagePath(Path);
 }
 
 bool FMeshManager::ReimportStaticMesh(const FString& BinaryPath, ID3D11Device* Device, UStaticMesh*& OutStaticMesh)
@@ -346,7 +332,7 @@ bool FMeshManager::ReimportStaticMesh(const FString& BinaryPath, ID3D11Device* D
 	OutStaticMesh = nullptr;
 
 	FAssetImportMetadata Metadata;
-	if (!LoadPackageMetadata(BinaryPath, EAssetPackageType::StaticMesh, Metadata)) return false;
+	if (!FAssetPackage::ReadMetadata(BinaryPath, EAssetPackageType::StaticMesh, Metadata)) return false;
 
 	uint64 CurrentTimestamp = 0;
 	uint64 CurrentFileSize = 0;
@@ -389,7 +375,7 @@ bool FMeshManager::ReimportSkeletalMesh(const FString& BinaryPath, ID3D11Device*
 	OutSkeletalMesh = nullptr;
 
 	FAssetImportMetadata Metadata;
-	if (!LoadPackageMetadata(BinaryPath, EAssetPackageType::SkeletalMesh, Metadata)) return false;
+	if (!FAssetPackage::ReadMetadata(BinaryPath, EAssetPackageType::SkeletalMesh, Metadata)) return false;
 
 	uint64 CurrentTimestamp = 0;
 	uint64 CurrentFileSize = 0;
@@ -426,18 +412,14 @@ bool FMeshManager::ReimportSkeletalMesh(const FString& BinaryPath, ID3D11Device*
 
 bool FMeshManager::IsStaticMeshPackage(const FString& Path)
 {
-	if (!IsAssetPackagePath(Path)) return false;
-
 	FAssetImportMetadata Metadata;
-	return LoadPackageMetadata(Path, EAssetPackageType::StaticMesh, Metadata);
+	return FAssetPackage::ReadMetadata(Path, EAssetPackageType::StaticMesh, Metadata);
 }
 
 bool FMeshManager::IsSkeletalMeshPackage(const FString& Path)
 {
-	if (!IsAssetPackagePath(Path)) return false;
-
 	FAssetImportMetadata Metadata;
-	return LoadPackageMetadata(Path, EAssetPackageType::SkeletalMesh, Metadata);
+	return FAssetPackage::ReadMetadata(Path, EAssetPackageType::SkeletalMesh, Metadata);
 }
 
 void FMeshManager::ScanMeshAssets()
@@ -470,11 +452,11 @@ void FMeshManager::ScanMeshAssets()
 		FString RelPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
 
 		FAssetImportMetadata Metadata;
-		if (LoadPackageMetadata(RelPath, EAssetPackageType::StaticMesh, Metadata))
+		if (FAssetPackage::ReadMetadata(RelPath, EAssetPackageType::StaticMesh, Metadata))
 		{
 			TargetList = &AvailableStaticMeshFiles;
 		}
-		else if (LoadPackageMetadata(RelPath, EAssetPackageType::SkeletalMesh, Metadata))
+		else if (FAssetPackage::ReadMetadata(RelPath, EAssetPackageType::SkeletalMesh, Metadata))
 		{
 			TargetList = &AvailableSkeletalMeshFiles;
 		}

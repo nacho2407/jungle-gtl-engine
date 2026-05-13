@@ -12,7 +12,7 @@ public:
 	UFloatCurveAsset* Load(const FString& Path);
 	UFloatCurveAsset* Find(const FString& Path) const;
 	
-	void Save(UFloatCurveAsset* Asset);
+	bool Save(UFloatCurveAsset* Asset);
 
 private:
 	TMap<FString, UFloatCurveAsset*> LoadedCurves;
