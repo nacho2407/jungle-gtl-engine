@@ -14,6 +14,8 @@ public:
 	virtual void Render(ContentBrowserContext& Context);
 	virtual void RenderDetail() {};
 
+	virtual void RenderContextMenu(ContentBrowserContext& Context) {}
+
 	void SetIcon(ID3D11ShaderResourceView* InIcon) { Icon = InIcon; }
 	void SetContent(FContentItem InContent) { ContentItem = InContent; }
 
@@ -48,6 +50,8 @@ public:
 class ObjectElement final : public ContentBrowserElement
 {
 public:
+	void RenderContextMenu(ContentBrowserContext& Context) override;
+
 	virtual const char* GetDragItemType() override { return "ObjectContentItem"; }
 };
 
@@ -67,6 +71,8 @@ public:
 class MeshElement final : public ContentBrowserElement
 {
 public:
+	void RenderContextMenu(ContentBrowserContext& Context) override;
+
 	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
 };
 

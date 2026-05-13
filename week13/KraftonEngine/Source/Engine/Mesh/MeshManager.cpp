@@ -9,6 +9,7 @@
 #include "Serialization/WindowsArchive.h"
 #include "Engine/Platform/Paths.h"
 #include "Materials/MaterialManager.h"
+#include "Asset/AssetPackage.h"
 
 #include <algorithm>
 #include <cwctype>
@@ -53,23 +54,107 @@ static FString NormalizeProjectPath(const FString& Path)
 	return FPaths::MakeProjectRelative(Path);
 }
 
-static FString GetMeshBinaryFilePath(const FString& SourcePath, const wchar_t* Extension)
+static FString GetMeshPackageFilePath(const FString& SourcePath, EAssetPackageType Type)
 {
 	std::filesystem::path SrcPath(FPaths::ToWide(SourcePath));
 	std::wstring Ext = SrcPath.extension().wstring();
 	std::transform(Ext.begin(), Ext.end(), Ext.begin(), ::towlower);
 
-	if (Ext == Extension)
+	if (Ext == MeshBinary::AssetPackageExtension)
 	{
 		return NormalizeProjectPath(SourcePath);
 	}
 
-	EnsureMeshCacheDirExists();
-
 	// 경로는 동일하지만, 확장자를 나눠서 Mesh 타입을 알 수 있게 한다.
-	std::filesystem::path RelPath = std::filesystem::path(L"Asset/MeshCache") / SrcPath.stem();
-	RelPath += Extension;
-	return FPaths::ToUtf8(RelPath.generic_wstring());
+	std::filesystem::path ProjectRelative = std::filesystem::path(FPaths::ToWide(FPaths::MakeProjectRelative(SourcePath))).lexically_normal();
+
+	std::filesystem::path AssetPath = std::filesystem::path(L"Content") / ProjectRelative;
+
+	if (Type == EAssetPackageType::StaticMesh)
+	{
+		AssetPath.replace_filename(AssetPath.stem().wstring() + L"_StaticMesh" + L".uasset");
+	}
+	else if (Type == EAssetPackageType::SkeletalMesh)
+	{
+		AssetPath.replace_filename(AssetPath.stem().wstring() + L"_SkeletalMesh" + L".uasset");
+	}
+	else
+	{
+		UE_LOG("GetMeshPackageFilePath failed: unsupported asset package type. SourcePath=%s", SourcePath.c_str());
+		return FString();
+	}
+
+	std::filesystem::path FullAssetPath = std::filesystem::path(FPaths::RootDir()) / AssetPath;
+
+	FPaths::CreateDir(FullAssetPath.parent_path().wstring());
+
+	return FPaths::ToUtf8(AssetPath.generic_wstring());
+}
+
+static std::filesystem::path ResolveProjectPath(const FString& Path)
+{
+	std::filesystem::path FullPath(FPaths::ToWide(Path));
+	if (!FullPath.is_absolute())
+	{
+		FullPath = std::filesystem::path(FPaths::RootDir()) / FullPath;
+	}
+	return FullPath.lexically_normal();
+}
+
+static bool TryGetSourceFileState(const FString& SourcePath, uint64& OutTimestamp, uint64& OutFileSize)
+{
+	std::filesystem::path FullPath = ResolveProjectPath(SourcePath);
+
+	if (!std::filesystem::exists(FullPath) || !std::filesystem::is_regular_file(FullPath)) return false;
+
+	OutFileSize = static_cast<uint64>(std::filesystem::file_size(FullPath));
+
+	const auto WriteTime = std::filesystem::last_write_time(FullPath);
+	OutTimestamp = static_cast<uint64>(WriteTime.time_since_epoch().count());
+
+	return true;
+}
+
+static FAssetImportMetadata MakeImportMetadata(const FString& SourcePath)
+{
+	FAssetImportMetadata Metadata;
+	Metadata.SourcePath = NormalizeProjectPath(SourcePath);
+
+	TryGetSourceFileState(SourcePath, Metadata.SourceTimestamp, Metadata.SourceFileSize);
+
+	return Metadata;
+}
+
+static bool LoadPackageMetadata(const FString& BinaryPath, EAssetPackageType ExpectedType, FAssetImportMetadata& OutMetadata)
+{
+	FWindowsBinReader Reader(BinaryPath);
+	if (!Reader.IsValid()) return false;
+
+	FAssetPackageHeader Header;
+	Reader << Header;
+
+	if (!Header.IsValid(ExpectedType)) return false;
+
+	Reader << OutMetadata;
+	return Reader.IsValid();
+}
+
+static bool IsPackageSourceStale(const FString& BinaryPath, EAssetPackageType ExpectedType, bool& bOutMissingSource)
+{
+	bOutMissingSource = false;
+
+	FAssetImportMetadata Metadata;
+	if (!LoadPackageMetadata(BinaryPath, ExpectedType, Metadata)) return true;
+
+	uint64 CurrentTimestamp = 0;
+	uint64 CurrentFileSize = 0;
+	if (!TryGetSourceFileState(Metadata.SourcePath, CurrentTimestamp, CurrentFileSize))
+	{
+		bOutMissingSource = true;
+		return true;
+	}
+
+	return !Metadata.MatchesSource(CurrentTimestamp, CurrentFileSize);
 }
 
 static bool IsSupportedStaticMeshSourcePath(const FString& Path)
@@ -114,8 +199,18 @@ static bool LoadStaticMeshBinary(UStaticMesh* StaticMesh, const FString& BinaryP
 
 	try
 	{
-		// .statbin은 StaticMesh 전용 파일이다.
-		// 확장자로 이미 타입을 알 수 있으므로 바로 StaticMesh 데이터로 읽는다.
+		FAssetPackageHeader Header;
+		Reader << Header;
+
+		if (!Header.IsValid(EAssetPackageType::StaticMesh))
+		{
+			UE_LOG("StaticMesh binary read failed: invalid file header. Path=%s", BinaryPath.c_str());
+			return false;
+		}
+
+		FAssetImportMetadata Metadata;
+		Reader << Metadata;
+
 		StaticMesh->Serialize(Reader);
 	}
 	catch (const std::exception&)
@@ -133,7 +228,7 @@ static bool LoadStaticMeshBinary(UStaticMesh* StaticMesh, const FString& BinaryP
 	return true;
 }
 
-static bool SaveStaticMeshBinary(UStaticMesh* StaticMesh, const FString& BinaryPath)
+static bool SaveStaticMeshBinary(UStaticMesh* StaticMesh, const FString& BinaryPath, const FString& SourcePath)
 {
 	FWindowsBinWriter Writer(BinaryPath);
 	if (!Writer.IsValid())
@@ -144,8 +239,13 @@ static bool SaveStaticMeshBinary(UStaticMesh* StaticMesh, const FString& BinaryP
 
 	try
 	{
-		// .statbin에는 UStaticMesh 데이터만 저장한다.
-		// 타입 표시는 파일 확장자가 맡는다.
+		FAssetPackageHeader Header;
+		Header.Type = static_cast<uint32>(EAssetPackageType::StaticMesh);
+		Writer << Header;
+
+		FAssetImportMetadata Metadata = MakeImportMetadata(SourcePath);
+		Writer << Metadata;
+
 		StaticMesh->Serialize(Writer);
 	}
 	catch (const std::exception&)
@@ -168,8 +268,18 @@ static bool LoadSkeletalMeshBinary(USkeletalMesh* SkeletalMesh, const FString& B
 
 	try
 	{
-		// .sketbin은 SkeletalMesh 전용 파일이다.
-		// Bone, SkinWeight, Section 정보를 포함하므로 StaticMesh와 섞어 읽지 않는다.
+		FAssetPackageHeader Header;
+		Reader << Header;
+
+		if (!Header.IsValid(EAssetPackageType::SkeletalMesh))
+		{
+			UE_LOG("SkeletalMesh binary read failed: invalid file header. Path=%s", BinaryPath.c_str());
+			return false;
+		}
+
+		FAssetImportMetadata Metadata;
+		Reader << Metadata;
+
 		SkeletalMesh->Serialize(Reader);
 	}
 	catch (const std::exception&)
@@ -187,7 +297,7 @@ static bool LoadSkeletalMeshBinary(USkeletalMesh* SkeletalMesh, const FString& B
 	return true;
 }
 
-static bool SaveSkeletalMeshBinary(USkeletalMesh* SkeletalMesh, const FString& BinaryPath)
+static bool SaveSkeletalMeshBinary(USkeletalMesh* SkeletalMesh, const FString& BinaryPath, const FString& SourcePath)
 {
 	FWindowsBinWriter Writer(BinaryPath);
 	if (!Writer.IsValid())
@@ -198,8 +308,13 @@ static bool SaveSkeletalMeshBinary(USkeletalMesh* SkeletalMesh, const FString& B
 
 	try
 	{
-		// .sketbin에는 USkeletalMesh 데이터만 저장한다.
-		// 타입 표시는 파일 확장자가 맡는다.
+		FAssetPackageHeader Header;
+		Header.Type = static_cast<uint32>(EAssetPackageType::SkeletalMesh);
+		Writer << Header;
+
+		FAssetImportMetadata Metadata = MakeImportMetadata(SourcePath);
+		Writer << Metadata;
+
 		SkeletalMesh->Serialize(Writer);
 	}
 	catch (const std::exception&)
@@ -213,22 +328,116 @@ static bool SaveSkeletalMeshBinary(USkeletalMesh* SkeletalMesh, const FString& B
 
 FString FMeshManager::GetStaticMeshBinaryFilePath(const FString& SourcePath)
 {
-	return GetMeshBinaryFilePath(SourcePath, MeshBinary::StaticMeshBinaryExtension);
+	return GetMeshPackageFilePath(SourcePath, EAssetPackageType::StaticMesh);
 }
 
 FString FMeshManager::GetSkeletalMeshBinaryFilePath(const FString& SourcePath)
 {
-	return GetMeshBinaryFilePath(SourcePath, MeshBinary::SkeletalMeshBinaryExtension);
+	return GetMeshPackageFilePath(SourcePath, EAssetPackageType::SkeletalMesh);
 }
 
-bool FMeshManager::IsStaticMeshBinaryPath(const FString& Path)
+bool FMeshManager::IsAssetPackagePath(const FString& Path)
 {
-	return GetLowerExtension(Path) == MeshBinary::StaticMeshBinaryExtension;
+	return GetLowerExtension(Path) == MeshBinary::AssetPackageExtension;
 }
 
-bool FMeshManager::IsSkeletalMeshBinaryPath(const FString& Path)
+bool FMeshManager::ReimportStaticMesh(const FString& BinaryPath, ID3D11Device* Device, UStaticMesh*& OutStaticMesh)
 {
-	return GetLowerExtension(Path) == MeshBinary::SkeletalMeshBinaryExtension;
+	OutStaticMesh = nullptr;
+
+	FAssetImportMetadata Metadata;
+	if (!LoadPackageMetadata(BinaryPath, EAssetPackageType::StaticMesh, Metadata)) return false;
+
+	uint64 CurrentTimestamp = 0;
+	uint64 CurrentFileSize = 0;
+	if (!TryGetSourceFileState(Metadata.SourcePath, CurrentTimestamp, CurrentFileSize))
+	{
+		UE_LOG("StaticMesh reimport failed: source file is missing. Package=%s, Source=%s", BinaryPath.c_str(), Metadata.SourcePath.c_str());
+		return false;
+	}
+
+	std::unique_ptr<FStaticMesh> NewMeshAsset = std::make_unique<FStaticMesh>();
+	TArray<FStaticMaterial> ParsedMaterials;
+	if (!ImportStaticMeshByExtension(Metadata.SourcePath, nullptr, *NewMeshAsset, ParsedMaterials))
+	{
+		return false;
+	}
+
+	const FString PackagePath = NormalizeProjectPath(BinaryPath);
+	StaticMeshCache.erase(PackagePath);
+
+	UStaticMesh* StaticMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
+	NewMeshAsset->PathFileName = Metadata.SourcePath;
+	StaticMesh->SetStaticMaterials(std::move(ParsedMaterials));
+	StaticMesh->SetStaticMeshAsset(NewMeshAsset.release());
+
+	if (!SaveStaticMeshBinary(StaticMesh, PackagePath, Metadata.SourcePath)) return false;
+
+	StaticMesh->InitResources(Device);
+	StaticMesh->SetAssetPathFileName(PackagePath);
+	StaticMeshCache[PackagePath] = StaticMesh;
+	OutStaticMesh = StaticMesh;
+
+	ScanMeshAssets();
+	FMaterialManager::Get().ScanMaterialAssets();
+
+	return true;
+}
+
+bool FMeshManager::ReimportSkeletalMesh(const FString& BinaryPath, ID3D11Device* Device, USkeletalMesh*& OutSkeletalMesh)
+{
+	OutSkeletalMesh = nullptr;
+
+	FAssetImportMetadata Metadata;
+	if (!LoadPackageMetadata(BinaryPath, EAssetPackageType::SkeletalMesh, Metadata)) return false;
+
+	uint64 CurrentTimestamp = 0;
+	uint64 CurrentFileSize = 0;
+	if (!TryGetSourceFileState(Metadata.SourcePath, CurrentTimestamp, CurrentFileSize))
+	{
+		UE_LOG("SkeletalMesh reimport failed: source file is missing. Package=%s, Source=%s", BinaryPath.c_str(), Metadata.SourcePath.c_str());
+		return false;
+	}
+
+	FSkeletalMesh* ImportedMesh = nullptr;
+	if (!LoadSkeletalMeshAsset(Metadata.SourcePath, Device, ImportedMesh))
+	{
+		return false;
+	}
+
+	const FString PackagePath = NormalizeProjectPath(BinaryPath);
+	SkeletalMeshCache.erase(PackagePath);
+
+	USkeletalMesh* SkeletalMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
+	SkeletalMesh->SetSkeletalMaterials(std::move(FFbxImporter::SkeletalMaterials));
+	SkeletalMesh->SetSkeletalMeshAsset(ImportedMesh);
+	if (!SaveSkeletalMeshBinary(SkeletalMesh, PackagePath, Metadata.SourcePath)) return false;
+
+	SkeletalMesh->InitResources(Device);
+	SkeletalMesh->SetAssetPathFileName(PackagePath);
+	SkeletalMeshCache[PackagePath] = SkeletalMesh;
+	OutSkeletalMesh = SkeletalMesh;
+
+	ScanMeshAssets();
+	FMaterialManager::Get().ScanMaterialAssets();
+
+	return true;
+}
+
+bool FMeshManager::IsStaticMeshPackage(const FString& Path)
+{
+	if (!IsAssetPackagePath(Path)) return false;
+
+	FAssetImportMetadata Metadata;
+	return LoadPackageMetadata(Path, EAssetPackageType::StaticMesh, Metadata);
+}
+
+bool FMeshManager::IsSkeletalMeshPackage(const FString& Path)
+{
+	if (!IsAssetPackagePath(Path)) return false;
+
+	FAssetImportMetadata Metadata;
+	return LoadPackageMetadata(Path, EAssetPackageType::SkeletalMesh, Metadata);
 }
 
 void FMeshManager::ScanMeshAssets()
@@ -236,7 +445,7 @@ void FMeshManager::ScanMeshAssets()
 	AvailableStaticMeshFiles.clear();
 	AvailableSkeletalMeshFiles.clear();
 
-	const std::filesystem::path MeshCacheRoot = FPaths::RootDir() + L"Asset/MeshCache/";
+	const std::filesystem::path MeshCacheRoot = FPaths::RootDir() + L"Content\\";
 	if (!std::filesystem::exists(MeshCacheRoot))
 	{
 		return;
@@ -252,14 +461,20 @@ void FMeshManager::ScanMeshAssets()
 		std::wstring Ext = Path.extension().wstring();
 		std::transform(Ext.begin(), Ext.end(), Ext.begin(), ::towlower);
 
+		if (Ext != MeshBinary::StaticMeshBinaryExtension) continue;	
+
 		// MeshCache 목록은 새 확장자만 보여준다.
 		// Static은 .statbin, Skeletal은 .sketbin으로 분리해서 수집한다.
 		TArray<FMeshAssetListItem>* TargetList = nullptr;
-		if (Ext == MeshBinary::StaticMeshBinaryExtension)
+
+		FString RelPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
+
+		FAssetImportMetadata Metadata;
+		if (LoadPackageMetadata(RelPath, EAssetPackageType::StaticMesh, Metadata))
 		{
 			TargetList = &AvailableStaticMeshFiles;
 		}
-		else if (Ext == MeshBinary::SkeletalMeshBinaryExtension)
+		else if (LoadPackageMetadata(RelPath, EAssetPackageType::SkeletalMesh, Metadata))
 		{
 			TargetList = &AvailableSkeletalMeshFiles;
 		}
@@ -270,7 +485,7 @@ void FMeshManager::ScanMeshAssets()
 
 		FMeshAssetListItem Item;
 		Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
-		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
+		Item.FullPath = RelPath;
 		TargetList->push_back(std::move(Item));
 	}
 }
@@ -307,10 +522,10 @@ void FMeshManager::ScanMeshSourceFiles()
 
 UStaticMesh* FMeshManager::LoadStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice)
 {
-	const std::wstring Ext = GetLowerExtension(PathFileName);
-	if (Ext == MeshBinary::SkeletalMeshBinaryExtension)
+	const bool bInputIsPackage = IsAssetPackagePath(PathFileName);
+	if (bInputIsPackage)
 	{
-		UE_LOG("StaticMesh load failed: SkeletalMesh binary(.sketbin) cannot be loaded as StaticMesh. Path=%s", PathFileName.c_str());
+		UE_LOG("StaticMesh load failed: StaticMesh binary cannot be loaded as StaticMesh. Path=%s", PathFileName.c_str());
 		return nullptr;
 	}
 	if (!IsSupportedStaticMeshSourcePath(PathFileName))
@@ -340,9 +555,10 @@ UStaticMesh* FMeshManager::LoadStaticMesh(const FString& PathFileName, const FIm
 
 	// import가 끝난 StaticMesh는 .statbin으로 저장한다.
 	// 다음 로드부터는 무거운 원본 파싱을 건너뛸 수 있다.
-	SaveStaticMeshBinary(StaticMesh, CacheKey);
+	SaveStaticMeshBinary(StaticMesh, CacheKey, PathFileName);
 
 	StaticMesh->InitResources(InDevice);
+	StaticMesh->SetAssetPathFileName(CacheKey);
 	StaticMeshCache[CacheKey] = StaticMesh;
 
 	ScanMeshAssets();
@@ -353,21 +569,15 @@ UStaticMesh* FMeshManager::LoadStaticMesh(const FString& PathFileName, const FIm
 
 UStaticMesh* FMeshManager::LoadStaticMesh(const FString& PathFileName, ID3D11Device* InDevice)
 {
-	const std::wstring Ext = GetLowerExtension(PathFileName);
-	if (Ext == MeshBinary::SkeletalMeshBinaryExtension)
-	{
-		UE_LOG("StaticMesh load failed: SkeletalMesh binary(.sketbin) cannot be loaded as StaticMesh. Path=%s", PathFileName.c_str());
-		return nullptr;
-	}
-
-	const bool bInputIsBinary = Ext == MeshBinary::StaticMeshBinaryExtension;
-	if (!bInputIsBinary && !IsSupportedStaticMeshSourcePath(PathFileName))
+	const bool bInputIsPackage = IsAssetPackagePath(PathFileName);
+	if (!bInputIsPackage && !IsSupportedStaticMeshSourcePath(PathFileName))
 	{
 		UE_LOG("StaticMesh load failed: unsupported path. Path=%s", PathFileName.c_str());
 		return nullptr;
 	}
 
 	const FString CacheKey = GetStaticMeshBinaryFilePath(PathFileName);
+	
 	auto It = StaticMeshCache.find(CacheKey);
 	if (It != StaticMeshCache.end())
 	{
@@ -380,12 +590,19 @@ UStaticMesh* FMeshManager::LoadStaticMesh(const FString& PathFileName, ID3D11Dev
 		UStaticMesh* StaticMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
 		if (LoadStaticMeshBinary(StaticMesh, CacheKey))
 		{
+			bool bMissingSource = false;
+			if (IsPackageSourceStale(CacheKey, EAssetPackageType::StaticMesh, bMissingSource))
+			{
+				UE_LOG("StaticMesh package is stale. Package=%s MissingSource=%s", CacheKey.c_str(), bMissingSource ? "true" : "false");
+			}
+
 			StaticMesh->InitResources(InDevice);
+			StaticMesh->SetAssetPathFileName(CacheKey);
 			StaticMeshCache[CacheKey] = StaticMesh;
 			return StaticMesh;
 		}
 
-		if (bInputIsBinary)
+		if (bInputIsPackage)
 		{
 			// Binary 경로만 받으면 원본 위치를 확실히 알 수 없다.
 			// 이 경우에는 새 import를 시도하지 않고 실패로 끝낸다.
@@ -394,7 +611,7 @@ UStaticMesh* FMeshManager::LoadStaticMesh(const FString& PathFileName, ID3D11Dev
 
 		UE_LOG("StaticMesh binary load failed: source path is available, reimporting. Source=%s Binary=%s", PathFileName.c_str(), CacheKey.c_str());
 	}
-	else if (bInputIsBinary)
+	else if (bInputIsPackage)
 	{
 		UE_LOG("StaticMesh load failed: StaticMesh binary file does not exist. Path=%s", CacheKey.c_str());
 		return nullptr;
@@ -415,9 +632,10 @@ UStaticMesh* FMeshManager::LoadStaticMesh(const FString& PathFileName, ID3D11Dev
 
 	// .statbin이 없을 때만 원본 파일을 import한다.
 	// import가 성공하면 바로 캐시 파일을 만들어 둔다.
-	SaveStaticMeshBinary(StaticMesh, CacheKey);
+	SaveStaticMeshBinary(StaticMesh, CacheKey, PathFileName);
 
 	StaticMesh->InitResources(InDevice);
+	StaticMesh->SetAssetPathFileName(CacheKey);
 	StaticMeshCache[CacheKey] = StaticMesh;
 
 	ScanMeshAssets();
@@ -501,14 +719,9 @@ void FMeshManager::ReleaseAllGPU()
 USkeletalMesh* FMeshManager::LoadSkeletalMesh(const FString& PathFileName, ID3D11Device* InDevice)
 {
 	const std::wstring Ext = GetLowerExtension(PathFileName);
-	if (Ext == MeshBinary::StaticMeshBinaryExtension)
-	{
-		UE_LOG("SkeletalMesh load failed: StaticMesh binary(.statbin) cannot be loaded as SkeletalMesh. Path=%s", PathFileName.c_str());
-		return nullptr;
-	}
 
-	const bool bInputIsBinary = Ext == MeshBinary::SkeletalMeshBinaryExtension;
-	if (!bInputIsBinary && !IsSupportedSkeletalMeshSourcePath(PathFileName))
+	const bool bInputIsPackage = IsAssetPackagePath(PathFileName);
+	if (!bInputIsPackage && !IsSupportedSkeletalMeshSourcePath(PathFileName))
 	{
 		UE_LOG("SkeletalMesh load failed: unsupported path. Path=%s", PathFileName.c_str());
 		return nullptr;
@@ -527,19 +740,26 @@ USkeletalMesh* FMeshManager::LoadSkeletalMesh(const FString& PathFileName, ID3D1
 		USkeletalMesh* SkeletalMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
 		if (LoadSkeletalMeshBinary(SkeletalMesh, CacheKey))
 		{
+			bool bMissingSource = false;
+			if (IsPackageSourceStale(CacheKey, EAssetPackageType::SkeletalMesh, bMissingSource))
+			{
+				UE_LOG("SkeletalMesh package is stale. Package=%s MissingSource=%s", CacheKey.c_str(), bMissingSource ? "true" : "false");
+			}
+
 			SkeletalMesh->InitResources(InDevice);
+			SkeletalMesh->SetAssetPathFileName(CacheKey);
 			SkeletalMeshCache[CacheKey] = SkeletalMesh;
 			return SkeletalMesh;
 		}
 
-		if (bInputIsBinary)
+		if (bInputIsPackage)
 		{
 			return nullptr;
 		}
 
 		UE_LOG("SkeletalMesh binary load failed: source path is available, reimporting. Source=%s Binary=%s", PathFileName.c_str(), CacheKey.c_str());
 	}
-	else if (bInputIsBinary)
+	else if (bInputIsPackage)
 	{
 		UE_LOG("SkeletalMesh load failed: SkeletalMesh binary file does not exist. Path=%s", CacheKey.c_str());
 		return nullptr;
@@ -558,9 +778,10 @@ USkeletalMesh* FMeshManager::LoadSkeletalMesh(const FString& PathFileName, ID3D1
 
 	// SkeletalMesh는 Bone, Section, Vertex/Index까지 함께 저장한다.
 	// StaticMesh와 섞이지 않도록 .sketbin으로 따로 캐시한다.
-	SaveSkeletalMeshBinary(SkeletalMesh, CacheKey);
+	SaveSkeletalMeshBinary(SkeletalMesh, CacheKey, PathFileName);
 
 	SkeletalMesh->InitResources(InDevice);
+	SkeletalMesh->SetAssetPathFileName(CacheKey);
 	SkeletalMeshCache[CacheKey] = SkeletalMesh;
 
 	ScanMeshAssets();

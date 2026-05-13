@@ -10,6 +10,8 @@
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/MeshManager.h"
 
+#include <algorithm>
+
 bool ContentBrowserElement::RenderSelectSpace(ContentBrowserContext& Context)
 {
 	FString Name = FPaths::ToUtf8(ContentItem.Name);
@@ -45,6 +47,12 @@ void ContentBrowserElement::Render(ContentBrowserContext& Context)
 		Context.SelectedElement = shared_from_this();
 		bIsSelected = true;
 		OnLeftClicked(Context);
+	}
+
+	if (ImGui::BeginPopupContextItem())
+	{
+		RenderContextMenu(Context);
+		ImGui::EndPopup();
 	}
 
 	bool bDoubleClicked = ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
@@ -105,6 +113,30 @@ void SceneElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	EditorEngine->LoadSceneFromPath(FilePath);
 }
 
+void ObjectElement::RenderContextMenu(ContentBrowserContext& Context)
+{
+	FString Extension = FPaths::ToUtf8(ContentItem.Path.extension());
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
+
+	FString PackagePath = FPaths::ToUtf8(ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring());
+
+	if (Extension == ".uasset" && FMeshManager::IsStaticMeshPackage(PackagePath))
+	{
+		if (ImGui::MenuItem("Reimport"))
+		{
+			UStaticMesh* Reimported = nullptr;
+
+			if (Context.EditorEngine)
+			{
+				FMeshManager::ReimportStaticMesh(
+					PackagePath,
+					Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice(),
+					Reimported);
+			}
+		}
+	}
+}
+
 void FloatCurveElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 {
 	if (!Context.EditorEngine)
@@ -129,6 +161,30 @@ void CameraShakeElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	if (UCameraShakeAsset* ShakeAsset = FCameraShakeManager::Get().Load(FilePath))
 	{
 		Context.EditorEngine->OpenAssetEditorForObject(ShakeAsset);
+	}
+}
+
+void MeshElement::RenderContextMenu(ContentBrowserContext& Context)
+{
+	FString Extension = FPaths::ToUtf8(ContentItem.Path.extension());
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
+
+	FString PackagePath = FPaths::ToUtf8(ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring());
+
+	if (Extension == ".uasset" && FMeshManager::IsSkeletalMeshPackage(PackagePath))
+	{
+		if (ImGui::MenuItem("Reimport"))
+		{
+			USkeletalMesh* Reimported = nullptr;
+
+			if (Context.EditorEngine)
+			{
+				FMeshManager::ReimportSkeletalMesh(
+					PackagePath,
+					Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice(),
+					Reimported);
+			}
+		}
 	}
 }
 

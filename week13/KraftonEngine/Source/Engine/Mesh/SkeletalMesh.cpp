@@ -28,15 +28,6 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 	}
 }
 
-const FString& USkeletalMesh::GetAssetPathFileName() const
-{
-	if (SkeletalMeshAsset)
-	{
-		return SkeletalMeshAsset->PathFileName;
-	}
-	return EmptyPath;
-}
-
 void USkeletalMesh::SetSkeletalMeshAsset(FSkeletalMesh* InMesh)
 {
 	SkeletalMeshAsset = InMesh;

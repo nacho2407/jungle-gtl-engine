@@ -6,6 +6,7 @@
 #include "Editor/UI/EditorTextureManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
+#include "Mesh/MeshManager.h"
 #include "EditorEngine.h"
 
 #include <algorithm>
@@ -88,12 +89,11 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 
 	IconFileMap[".Scene"] = L"World_64x.png";
 	IconFileMap[".obj"] = L"icon_MatEd_Mesh_40x.png";
-	IconFileMap[".statbin"] = L"icon_MatEd_Mesh_40x.png";
 	IconFileMap[".mat"] = L"Sphere_64x.png";
 	IconFileMap[".curve"] = L"StartMerge_42x.png";
 	IconFileMap[".shake"] = L"StartMerge_42x.png";
 	IconFileMap[".fbx"] = L"icon_MatEd_Mesh_40x.png";
-	IconFileMap[".sketbin"] = L"icon_MatEd_Mesh_40x.png";
+	IconFileMap[".uasset"] = L"icon_MatEd_Mesh_40x.png";
 
 	ContentBrowserContext Context;
 	Context.ContentSize = ImVec2(50, 50);
@@ -209,7 +209,7 @@ void FEditorContentBrowserWidget::RefreshContent()
 		{
 			Element = std::make_shared<SceneElement>();
 		}
-		else if (Extension == ".obj" || Extension == ".statbin")
+		else if (Extension == ".obj")
 		{
 			Element = std::make_shared<ObjectElement>();
 		}
@@ -225,7 +225,7 @@ void FEditorContentBrowserWidget::RefreshContent()
 		{
 			Element = std::make_shared<CameraShakeElement>();
 		}
-		else if (Extension == ".fbx" || Extension == ".sketbin")
+		else if (Extension == ".fbx")
 		{
 			Element = std::make_shared<MeshElement>();
 		}
@@ -233,6 +233,23 @@ void FEditorContentBrowserWidget::RefreshContent()
 		{
 			Element = std::make_shared<PNGElement>();
 			Icon = FEditorTextureManager::Get().GetOrLoadThumbnail(FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring()));
+		}
+		else if (Extension == ".uasset")
+		{
+			FString PackagePath = FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring());
+
+			if (FMeshManager::IsStaticMeshPackage(PackagePath))
+			{
+				Element = std::make_shared<ObjectElement>();
+			}
+			else if (FMeshManager::IsSkeletalMeshPackage(PackagePath))
+			{
+				Element = std::make_shared<MeshElement>();
+			}
+			else
+			{
+				Element = std::make_shared<ContentBrowserElement>();
+			}
 		}
 		else
 		{
