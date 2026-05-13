@@ -245,6 +245,11 @@ void FRenderCollector::CollectSkeletonBones(USkeletalMeshComponent* SkComp, FRen
 	EditorOverlayCollector.CollectSkeletonBones(SkComp, RenderBus);
 }
 
+void FRenderCollector::CollectSingleBone(USkeletalMeshComponent* SkComp, int32 BoneIndex, FRenderBus& RenderBus)
+{
+	EditorOverlayCollector.CollectSingleBone(SkComp, BoneIndex, RenderBus);
+}
+
 void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus, bool bIsActiveOperation)
 {
 	EditorOverlayCollector.CollectGizmo(Gizmo, ShowFlags, RenderBus, MeshBufferManager, bIsActiveOperation);

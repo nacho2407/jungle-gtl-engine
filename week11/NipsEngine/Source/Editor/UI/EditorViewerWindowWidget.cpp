@@ -165,6 +165,10 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 			{
 				ImGui::MenuItem("Skeletal Mesh", nullptr, &VFlags.bShowSkeletalMesh);
 				ImGui::MenuItem("Bones",         nullptr, &VFlags.bShowBones);
+				// 종속 옵션 — Bones가 꺼져있으면 의미 없으니 disable.
+				ImGui::BeginDisabled(!VFlags.bShowBones);
+				ImGui::MenuItem("Only Selected Bone", nullptr, &VFlags.bShowOnlySelectedBone);
+				ImGui::EndDisabled();
 				ImGui::EndPopup();
 			}
 			ImGui::Separator();
