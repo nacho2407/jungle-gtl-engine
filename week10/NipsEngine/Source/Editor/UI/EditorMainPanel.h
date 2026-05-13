@@ -11,6 +11,7 @@ class UEditorEngine;
 class UMaterialInterface;
 class UPrimitiveComponent;
 class FWindowsWindow;
+class FEditorViewer;
 struct ID3D11Device;
 
 class FEditorMainPanel
@@ -45,6 +46,10 @@ public:
 	void OpenMaterialAsset(UMaterialInterface* Material);
 	void OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex);
 	void OpenCurveAsset(const FString& CurvePath);
+    void OpenViewer(FEditorViewer* Viewer);
+    void CloseViewer(FEditorViewer* Viewer);
+    void FlushClosedViewerWidgets();
+
 	void PushFooterLog(const FString& Message);
 	void RequestPIEViewportInputFocus();
 	bool SpawnPrefabAtOrigin(const FString& PayloadPath);
