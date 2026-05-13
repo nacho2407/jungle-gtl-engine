@@ -34,7 +34,7 @@ static void EnsureMeshCacheDirExists()
 	static bool bCreated = false;
 	if (!bCreated)
 	{
-		std::wstring CacheDir = FPaths::RootDir() + L"Asset\\MeshCache\\";
+		std::wstring CacheDir = FPaths::RootDir() + L"Asset/MeshCache/";
 		FPaths::CreateDir(CacheDir);
 		bCreated = true;
 	}
@@ -67,7 +67,7 @@ static FString GetMeshBinaryFilePath(const FString& SourcePath, const wchar_t* E
 	EnsureMeshCacheDirExists();
 
 	// 경로는 동일하지만, 확장자를 나눠서 Mesh 타입을 알 수 있게 한다.
-	std::filesystem::path RelPath = std::filesystem::path(L"Asset\\MeshCache") / SrcPath.stem();
+	std::filesystem::path RelPath = std::filesystem::path(L"Asset/MeshCache") / SrcPath.stem();
 	RelPath += Extension;
 	return FPaths::ToUtf8(RelPath.generic_wstring());
 }
@@ -236,7 +236,7 @@ void FMeshManager::ScanMeshAssets()
 	AvailableStaticMeshFiles.clear();
 	AvailableSkeletalMeshFiles.clear();
 
-	const std::filesystem::path MeshCacheRoot = FPaths::RootDir() + L"Asset\\MeshCache\\";
+	const std::filesystem::path MeshCacheRoot = FPaths::RootDir() + L"Asset/MeshCache/";
 	if (!std::filesystem::exists(MeshCacheRoot))
 	{
 		return;
@@ -279,7 +279,7 @@ void FMeshManager::ScanMeshSourceFiles()
 {
 	AvailableStaticMeshSourceFiles.clear();
 
-	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data\\";
+	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data/";
 
 	if (!std::filesystem::exists(DataRoot))
 	{
@@ -430,7 +430,7 @@ void FMeshManager::ScanFbxSourceFiles()
 {
 	AvailableFbxSourceFiles.clear();
 
-	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data\\";
+	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data/";
 
 	if (!std::filesystem::exists(DataRoot))
 	{
