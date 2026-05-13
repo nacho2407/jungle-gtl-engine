@@ -226,7 +226,7 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
             }
             const char* ConsoleLabel = Widgets.ConsoleWidget.IsFloatingWindowMode()
                 ? "Console Window"
-                : (bDrawerOpen ? "Console ▲" : "Console ▼");
+                : (bDrawerOpen ? "Console ▼" : "Console ▲");
             if (ImGui::Button(ConsoleLabel))
             {
                 if (Widgets.ConsoleWidget.IsFloatingWindowMode())
