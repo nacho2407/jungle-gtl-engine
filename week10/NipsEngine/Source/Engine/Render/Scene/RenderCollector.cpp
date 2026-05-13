@@ -240,6 +240,11 @@ void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, F
 	EditorOverlayCollector.CollectGrid(GridSpacing, GridHalfLineCount, RenderBus, bOrthographic);
 }
 
+void FRenderCollector::CollectSkeletonBones(USkeletalMeshComponent* SkComp, FRenderBus& RenderBus)
+{
+	EditorOverlayCollector.CollectSkeletonBones(SkComp, RenderBus);
+}
+
 void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus, bool bIsActiveOperation)
 {
 	EditorOverlayCollector.CollectGizmo(Gizmo, ShowFlags, RenderBus, MeshBufferManager, bIsActiveOperation);

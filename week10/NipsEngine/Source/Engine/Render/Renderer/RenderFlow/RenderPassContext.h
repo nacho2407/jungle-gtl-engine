@@ -22,6 +22,7 @@ struct FRenderPassContext
     FSubUVBatcher* SubUVBatcher = nullptr;
     FLineBatcher* GridLineBatcher = nullptr;
     FLineBatcher* EditorLineBatcher = nullptr;
+    FLineBatcher* EditorOverlayLineBatcher = nullptr;   // 깊이 무시 와이어 (본 등)
 
 	ID3D11RenderTargetView* FinalRTV = nullptr;
     ID3D11ShaderResourceView* FinalSRV = nullptr;

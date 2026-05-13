@@ -148,6 +148,37 @@ void FEditorOverlayCollector::CollectGrid(float GridSpacing, int32 GridHalfLineC
     RenderBus.AddCommand(ERenderPass::Grid, Cmd);
 }
 
+void FEditorOverlayCollector::CollectSkeletonBones(USkeletalMeshComponent* SkComp, FRenderBus& RenderBus) const
+{
+    if (!SkComp || !SkComp->HasValidMesh()) return;
+
+    const USkeletalMesh* Mesh = SkComp->GetSkeletalMesh();
+    const TArray<FBoneInfo>& Bones = Mesh->GetBones();
+    const int32 BoneCount = static_cast<int32>(Bones.size());
+
+    const FVector4 BoneColor(1.0f, 0.85f, 0.0f, 1.0f);   // 노란빛
+    const float WidthRatio    = 0.1f;
+    const float EndpointRatio = 0.06f;
+
+    for (int32 i = 0; i < BoneCount; ++i)
+    {
+        const int32 ParentIdx = Bones[i].ParentIndex;
+        if (ParentIdx < 0) continue;   // 루트는 부모가 없어 본 1개를 그릴 수 없음
+
+        const FMatrix ChildWorld  = SkComp->GetBoneWorldMatrix(i);
+        const FMatrix ParentWorld = SkComp->GetBoneWorldMatrix(ParentIdx);
+
+        FRenderCommand Cmd = {};
+        Cmd.Type = ERenderCommandType::DebugBone;
+        Cmd.Constants.Bone.Start               = ParentWorld.GetTranslation();
+        Cmd.Constants.Bone.End                 = ChildWorld.GetTranslation();
+        Cmd.Constants.Bone.Color               = BoneColor;
+        Cmd.Constants.Bone.WidthRatio          = WidthRatio;
+        Cmd.Constants.Bone.EndpointRadiusRatio = EndpointRatio;
+        RenderBus.AddCommand(ERenderPass::EditorOverlay, Cmd);
+    }
+}
+
 void FEditorOverlayCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus,
                                            FMeshBufferManager& MeshBufferManager, bool bIsActiveOperation) const
 {

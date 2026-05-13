@@ -12,6 +12,7 @@ class FTranslucentRenderPass;
 class FSelectionMaskRenderPass;
 class FGridRenderPass;
 class FEditorRenderPass;
+class FEditorOverlayRenderPass;
 class FDepthLessRenderPass;
 class FPostProcessOutlineRenderPass;
 class FOpaqueRenderPass;
@@ -48,6 +49,7 @@ private:
     std::shared_ptr<FSelectionMaskRenderPass> SelectionMaskRenderPass;
     std::shared_ptr<FGridRenderPass> GridRenderPass;
     std::shared_ptr<FEditorRenderPass> EditorRenderPass;
+    std::shared_ptr<FEditorOverlayRenderPass> EditorOverlayRenderPass;
     std::shared_ptr<FDepthLessRenderPass> DepthLessRenderPass;
     std::shared_ptr<FPostProcessOutlineRenderPass> PostProcessOutlineRenderPass;
     std::shared_ptr<FSandevistanRenderPass> SandevistanRenderPass;
