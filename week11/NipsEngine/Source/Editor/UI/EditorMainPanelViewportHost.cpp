@@ -4,11 +4,13 @@
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/Viewport/ViewportLayout.h"
 #include "Engine/Input/InputSystem.h"
+#include "Engine/Runtime/WindowsWindow.h"
 #include "Render/Renderer/Renderer.h"
 
 #include "ImGui/imgui.h"
 
 #include <cstdio>
+#include <cmath>
 
 namespace
 {
@@ -20,6 +22,39 @@ void SetOpaqueBlendStateCallback(const ImDrawList*, const ImDrawCmd* Cmd)
 
     const float BlendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
     DeviceContext->OMSetBlendState(nullptr, BlendFactor, 0xffffffff);
+}
+
+bool UsesAbsoluteImGuiCoordinates()
+{
+    return (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0;
+}
+
+POINT ImGuiScreenToClientPoint(FWindowsWindow* Window, const ImVec2& Point)
+{
+    POINT Result =
+    {
+        static_cast<LONG>(std::lround(Point.x)),
+        static_cast<LONG>(std::lround(Point.y))
+    };
+    if (Window && Window->GetHWND() && UsesAbsoluteImGuiCoordinates())
+    {
+        ::ScreenToClient(Window->GetHWND(), &Result);
+    }
+    return Result;
+}
+
+ImVec2 ClientToImGuiScreenPoint(FWindowsWindow* Window, int32 X, int32 Y)
+{
+    POINT Result =
+    {
+        static_cast<LONG>(X),
+        static_cast<LONG>(Y)
+    };
+    if (Window && Window->GetHWND() && UsesAbsoluteImGuiCoordinates())
+    {
+        ::ClientToScreen(Window->GetHWND(), &Result);
+    }
+    return ImVec2(static_cast<float>(Result.x), static_cast<float>(Result.y));
 }
 } // namespace
 
@@ -43,9 +78,10 @@ void FEditorMainPanel::RenderViewportHostWindow()
     if (ContentSize.x > 1.0f && ContentSize.y > 1.0f)
     {
         const ImVec2 ContentPos = ImGui::GetCursorScreenPos();
+        const POINT ContentClientPos = ImGuiScreenToClientPoint(Window, ContentPos);
         const FViewportRect HostRect(
-            static_cast<int32>(ContentPos.x),
-            static_cast<int32>(ContentPos.y),
+            static_cast<int32>(ContentClientPos.x),
+            static_cast<int32>(ContentClientPos.y),
             static_cast<int32>(ContentSize.x),
             static_cast<int32>(ContentSize.y));
 
@@ -86,9 +122,8 @@ void FEditorMainPanel::RenderViewportHostWindow()
             ImVec2 Size = ImVec2(
                 static_cast<float>(ViewportRect.Width),
                 static_cast<float>(ViewportRect.Height));
-            ImGui::SetCursorScreenPos(ImVec2(
-                static_cast<float>(ViewportRect.X),
-                static_cast<float>(ViewportRect.Y)));
+            const ImVec2 ViewportScreenPos = ClientToImGuiScreenPoint(Window, ViewportRect.X, ViewportRect.Y);
+            ImGui::SetCursorScreenPos(ViewportScreenPos);
             ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
             if (SceneColorSRV)
@@ -116,10 +151,11 @@ void FEditorMainPanel::RenderViewportHostWindow()
             const bool bHovered = State.bHovered;
             if (bFocused || bHovered || PIEFlashAlpha > 0.0f)
             {
-                const ImVec2 OutlineMin(static_cast<float>(ViewportRect.X), static_cast<float>(ViewportRect.Y));
-                const ImVec2 OutlineMax(
-                    static_cast<float>(ViewportRect.X + ViewportRect.Width),
-                    static_cast<float>(ViewportRect.Y + ViewportRect.Height));
+                const ImVec2 OutlineMin = ViewportScreenPos;
+                const ImVec2 OutlineMax = ClientToImGuiScreenPoint(
+                    Window,
+                    ViewportRect.X + ViewportRect.Width,
+                    ViewportRect.Y + ViewportRect.Height);
                 const ImU32 OutlineColor = bFocused ? IM_COL32(82, 168, 255, 235) : IM_COL32(170, 190, 210, 120);
                 DrawList->AddRect(OutlineMin, OutlineMax, OutlineColor, 0.0f, 0, bFocused ? 2.0f : 1.0f);
                 if (PIEFlashAlpha > 0.0f)
@@ -182,12 +218,10 @@ void FEditorMainPanel::RenderViewportHostWindow()
                     continue;
 
                 const int32 ToolbarY = ViewportRect.Y - MenuBarHeight;
-                const float LocalX = static_cast<float>(ViewportRect.X - HostRect.X);
-                const float LocalY = static_cast<float>(ToolbarY - HostRect.Y);
-                if (LocalX < 0.0f || LocalY < 0.0f)
+                if (ViewportRect.X < HostRect.X || ToolbarY < HostRect.Y)
                     continue;
 
-                ImGui::SetCursorScreenPos(ImVec2(ContentPos.x + LocalX, ContentPos.y + LocalY));
+                ImGui::SetCursorScreenPos(ClientToImGuiScreenPoint(Window, ViewportRect.X, ToolbarY));
 
                 char ChildID[32];
                 snprintf(ChildID, sizeof(ChildID), "##VPMenu%d", DrawIndex);

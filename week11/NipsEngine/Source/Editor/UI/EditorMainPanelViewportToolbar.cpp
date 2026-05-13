@@ -23,15 +23,15 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
     const bool bPIEPossessed = Client->IsPIEPossessed();
 
     ImGui::PushID(ViewportIndex);
-    constexpr float ToolbarLeftPadding = 8.0f;
-    const float CenteredToolbarY = std::max(0.0f, (ImGui::GetWindowHeight() - ImGui::GetFrameHeight()) * 0.5f);
-    ImGui::SetCursorPos(ImVec2(ToolbarLeftPadding, CenteredToolbarY));
-
     if (bPIEPossessed)
     {
         ImGui::PopID();
         return;
     }
+
+    constexpr float ToolbarLeftPadding = 8.0f;
+    const float CenteredToolbarY = std::max(0.0f, (ImGui::GetWindowHeight() - ImGui::GetFrameHeight()) * 0.5f);
+    ImGui::SetCursorPos(ImVec2(ToolbarLeftPadding, CenteredToolbarY));
 
     if (DrawViewportIconButton(
         "##SelectMode",

@@ -89,6 +89,11 @@ private:
 	void RenderEditorToolbar();
 	void RenderDockSpace();
 	void RenderViewportHostWindow();
+	void LoadGameModeSettingsPanelBuffers();
+	void SaveProjectGameModeSettingsPanelBuffers();
+	void SaveWorldGameModeSettingsPanelBuffers();
+	void RenderProjectSettingsPanel();
+	void RenderWorldSettingsPanel();
 	FViewportRect GetPIEFixedAspectViewportRect(const FViewportRect& SourceRect) const;
 	void ApplyPIEFixedAspectViewportRect();
 	void RenderRuntimeUIForPIEViewport(const FViewportRect& ViewportRect, float DeltaTime);
@@ -134,6 +139,7 @@ private:
 
 	FEditorMainPanelVisibilityState PanelVisibility;
 	FEditorMainPanelBuildGameModalState BuildGameState;
+	FEditorMainPanelGameModeSettingsState GameModeSettingsState;
 	FEditorMainPanelDebugGridState DebugGridState;
 	FEditorMainPanelConsoleDrawerState ConsoleState;
 	FEditorMainPanelFooterEventState FooterEventState;

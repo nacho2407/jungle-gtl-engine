@@ -1,25 +1,25 @@
 ﻿#include "GameFramework/PlayerController.h"
 
 #include "Component/CameraComponent.h"
-#include "Component/SpringArmComponent.h"
 #include "Core/Logging/Log.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/Engine.h"
+#include "Camera/ShakePattern/SinusoidalCameraShakePattern.h"
+#include "GameFramework/DefaultPawn.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
 #include "Math/Utils.h"
 #include "Camera/PlayerCameraManager.h"
 
 #include <algorithm>
-#include <cmath>
 
 DEFINE_CLASS(APlayerController, AActor)
 REGISTER_FACTORY(APlayerController)
 
 namespace
 {
-    constexpr float FallbackCameraMoveSpeed = 10.0f;
-    constexpr float FallbackCameraMouseSensitivity = 0.15f;
+    constexpr float DefaultPawnMoveSpeed = 10.0f;
+    constexpr float DefaultPawnMouseSensitivity = 0.15f;
 
 	FQuat MakeViewQuatFromCamera(UCameraComponent* Camera)
 	{
@@ -39,35 +39,21 @@ void APlayerController::BeginPlay()
 	AActor::BeginPlay();
 
 	SpawnPlayerCameraManager();
-
-	if (!PossessedActor)
+	if (PossessedPawn)
 	{
-		if (AActor* PlacedPlayer = FindPlacedPlayerActor())
-		{
-			FVector SpawnLocation = PlacedPlayer->GetActorLocation();
-			FVector SpawnRotation = PlacedPlayer->GetActorRotation();
-			if (AActor* Start = FindPlayerStart())
-			{
-				SpawnLocation = Start->GetActorLocation();
-				SpawnRotation = Start->GetActorRotation();
-			}
+		OnPossess(PossessedPawn);
+	}
 
-			ApplyPlayerStartTransform(PlacedPlayer, SpawnLocation, SpawnRotation);
-			Possess(PlacedPlayer);
-			UE_LOG("[PlayerController] Possessed placed player actor: %s",
-				PlacedPlayer->GetFName().ToString().c_str());
+	if (!PossessedPawn)
+	{
+		if (ADefaultPawn* DefaultPawn = SpawnDefaultPawnFallback())
+		{
+			Possess(DefaultPawn);
+			UE_LOG_WARNING("[PlayerController] No pawn was provided by GameMode. DefaultPawn fallback was created.");
 		}
 		else
 		{
-			if (AFallbackCameraActor* FallbackCamera = SpawnFallbackCameraActor())
-			{
-				Possess(FallbackCamera);
-				UE_LOG_WARNING("[PlayerController] Player actor with tag 'Player' is missing. Fallback camera actor was created.");
-			}
-			else
-			{
-				UE_LOG_ERROR("[PlayerController] Player actor with tag 'Player' is missing and fallback camera creation failed.");
-			}
+			UE_LOG_ERROR("[PlayerController] No pawn was provided by GameMode and DefaultPawn fallback creation failed.");
 		}
 	}
 	UpdateRuntimeCameraFromViewTarget();
@@ -76,15 +62,14 @@ void APlayerController::BeginPlay()
 		World->SetActiveCamera(&RuntimeCamera);
 	}
 	UE_LOG("[PlayerController] BeginPlay. Possessed=%s",
-		PossessedActor ? PossessedActor->GetFName().ToString().c_str() : "None");
+		PossessedPawn ? PossessedPawn->GetFName().ToString().c_str() : "None");
 }
 
 void APlayerController::Tick(float DeltaTime)
 {
 	AActor::Tick(DeltaTime);
 
-	LastInputDeltaTime = std::max(0.0f, DeltaTime);
-	UpdatePossessedActorMovement(DeltaTime);
+	UpdateDefaultPawnFromInput(DeltaTime);
 	UpdateRuntimeCameraFromViewTarget(DeltaTime);
 }
 
@@ -102,7 +87,7 @@ void APlayerController::ConfigureRuntimeCameraFromViewport(const FViewportCamera
 	RuntimeCamera.SetProjectionType(EViewportProjectionType::Perspective);
 }
 
-AActor* APlayerController::SpawnDefaultPawn()
+ADefaultPawn* APlayerController::SpawnDefaultPawnFallback()
 {
 	UWorld* World = GetFocusedWorld();
 	if (!World)
@@ -110,89 +95,21 @@ AActor* APlayerController::SpawnDefaultPawn()
 		return nullptr;
 	}
 
-	FVector SpawnLocation = FVector::ZeroVector;
-	FVector SpawnRotation = FVector::ZeroVector;
-	if (AActor* Start = FindPlayerStart())
-	{
-		SpawnLocation = Start->GetActorLocation();
-		SpawnRotation = Start->GetActorRotation();
-	}
-
-	ADefaultPlayerActor* Pawn = World->SpawnActor<ADefaultPlayerActor>();
-	if (!Pawn)
+	ADefaultPawn* DefaultPawn = World->SpawnActor<ADefaultPawn>();
+	if (!DefaultPawn)
 	{
 		return nullptr;
 	}
 
-	Pawn->InitDefaultComponents();
-	Pawn->SetFName(FName("Default Player"));
-	Pawn->AddTag("Player");
-	ApplyInitialPawnTransform(Pawn, SpawnLocation, SpawnRotation);
-
-	Possess(Pawn);
-	UE_LOG("[PlayerController] Spawned default pawn at (%.2f, %.2f, %.2f).",
-		SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
-	return Pawn;
+	DefaultPawn->InitDefaultComponents();
+	DefaultPawn->SetFName(FName("DefaultPawn"));
+	ApplyDefaultPawnFallbackTransform(DefaultPawn);
+	return DefaultPawn;
 }
 
-AFallbackCameraActor* APlayerController::SpawnFallbackCameraActor()
+void APlayerController::ApplyDefaultPawnFallbackTransform(ADefaultPawn* DefaultPawn)
 {
-	UWorld* World = GetFocusedWorld();
-	if (!World)
-	{
-		return nullptr;
-	}
-
-	AFallbackCameraActor* CameraActor = World->SpawnActor<AFallbackCameraActor>();
-	if (!CameraActor)
-	{
-		return nullptr;
-	}
-
-	CameraActor->InitDefaultComponents();
-	CameraActor->SetFName(FName("Fallback Camera"));
-	ApplyFallbackCameraTransform(CameraActor);
-	return CameraActor;
-}
-
-void APlayerController::ApplyInitialPawnTransform(ADefaultPlayerActor* Pawn, const FVector& SpawnLocation, const FVector& SpawnRotation)
-{
-	if (!Pawn)
-	{
-		return;
-	}
-
-	ApplyPlayerStartTransform(Pawn, SpawnLocation, SpawnRotation);
-}
-
-void APlayerController::ApplyPlayerStartTransform(AActor* Pawn, const FVector& SpawnLocation, const FVector& SpawnRotation)
-{
-	if (!Pawn)
-	{
-		return;
-	}
-
-	Pawn->SetActorLocation(SpawnLocation);
-	Pawn->SetActorRotation(FVector(0.0f, 0.0f, SpawnRotation.Z));
-
-	if (ADefaultPlayerActor* DefaultPawn = Cast<ADefaultPlayerActor>(Pawn))
-	{
-		if (USpringArmComponent* SpringArm = DefaultPawn->GetSpringArmComponent())
-		{
-			SpringArm->SetRelativeRotation(FVector::ZeroVector);
-			SpringArm->UpdateSocketChildren();
-		}
-	}
-
-	if (UCameraComponent* PawnCamera = FindCameraComponent(Pawn))
-	{
-		PawnCamera->SetRelativeRotation(FVector(0.0f, SpawnRotation.Y, 0.0f));
-	}
-}
-
-void APlayerController::ApplyFallbackCameraTransform(AFallbackCameraActor* CameraActor)
-{
-	if (!CameraActor)
+	if (!DefaultPawn)
 	{
 		return;
 	}
@@ -205,8 +122,8 @@ void APlayerController::ApplyFallbackCameraTransform(AFallbackCameraActor* Camer
 		SpawnRotation = Start->GetActorRotation();
 	}
 
-	CameraActor->SetActorLocation(SpawnLocation);
-	if (UCameraComponent* Camera = CameraActor->GetCameraComponent())
+	DefaultPawn->SetActorLocation(SpawnLocation);
+	if (UCameraComponent* Camera = DefaultPawn->GetCameraComponent())
 	{
 		Camera->SetRelativeRotation(FVector(0.0f, SpawnRotation.Y, SpawnRotation.Z));
 		FCameraState CameraState = Camera->GetCameraState();
@@ -219,17 +136,38 @@ void APlayerController::ApplyFallbackCameraTransform(AFallbackCameraActor* Camer
 	}
 }
 
-void APlayerController::Possess(AActor* InActor)
+void APlayerController::Possess(APawn* InPawn)
 {
-	PossessedActor = InActor;
-	OnPossess(PossessedActor);
+	if (PossessedPawn == InPawn)
+	{
+		return;
+	}
+
+	if (PossessedPawn)
+	{
+		APawn* OldPawn = PossessedPawn;
+		PossessedPawn = nullptr;
+		OldPawn->UnPossessed();
+		OnUnPossess(OldPawn);
+	}
+
+	PossessedPawn = InPawn;
+	if (PossessedPawn)
+	{
+		PossessedPawn->PossessedBy(this);
+	}
+	OnPossess(PossessedPawn);
 }
 
 void APlayerController::UnPossess()
 {
-	AActor* OldActor = PossessedActor;
-	PossessedActor = nullptr;
-	OnUnPossess(OldActor);
+	APawn* OldPawn = PossessedPawn;
+	PossessedPawn = nullptr;
+	if (OldPawn)
+	{
+		OldPawn->UnPossessed();
+	}
+	OnUnPossess(OldPawn);
 }
 
 void APlayerController::NotifyObservedActorDestroyed(AActor* DestroyedActor)
@@ -240,11 +178,15 @@ void APlayerController::NotifyObservedActorDestroyed(AActor* DestroyedActor)
 	}
 
 	bool bCleared = false;
-	if (PossessedActor == DestroyedActor)
+	if (PossessedPawn == DestroyedActor)
 	{
-		AActor* OldActor = PossessedActor;
-		PossessedActor = nullptr;
-		OnUnPossess(OldActor);
+		APawn* OldPawn = PossessedPawn;
+		PossessedPawn = nullptr;
+		if (OldPawn)
+		{
+			OldPawn->UnPossessed();
+		}
+		OnUnPossess(OldPawn);
 		bCleared = true;
 	}
 
@@ -340,16 +282,29 @@ void APlayerController::PlayCameraShake(float Intensity, float Duration)
 
 void APlayerController::PlayCameraShakeDetailed(float LocationAmplitude, float RotationAmplitudeDegrees, float Frequency, float Duration)
 {
-	CameraShake.bActive = Duration > 0.0f && (LocationAmplitude > 0.0f || RotationAmplitudeDegrees > 0.0f);
-	CameraShake.Elapsed = 0.0f;
-	CameraShake.Duration = std::max(0.0f, Duration);
-	CameraShake.Frequency = std::max(0.1f, Frequency);
-	CameraShake.LocationAmplitude = std::max(0.0f, LocationAmplitude);
-	CameraShake.RotationAmplitudeDegrees = std::max(0.0f, RotationAmplitudeDegrees);
-	CameraShake.Seed += 1.0f;
-	CameraShake.PhaseX = CameraShake.Seed * 1.37f;
-	CameraShake.PhaseY = CameraShake.Seed * 2.11f + 1.7f;
-	CameraShake.PhaseZ = CameraShake.Seed * 2.89f + 3.1f;
+	if (!PlayerCameraManager || Duration <= 0.0f)
+	{
+		return;
+	}
+
+	USinusoidalCameraShakePattern* Pattern =
+		UObjectManager::Get().CreateObject<USinusoidalCameraShakePattern>();
+	if (!Pattern)
+	{
+		return;
+	}
+
+	const float SafeLocationAmplitude = std::max(0.0f, LocationAmplitude);
+	const float SafeRotationAmplitude = std::max(0.0f, RotationAmplitudeDegrees);
+	const float SafeFrequency = std::max(0.1f, Frequency);
+	Pattern->LocationAmplitude = FVector(SafeLocationAmplitude, SafeLocationAmplitude, SafeLocationAmplitude);
+	Pattern->LocationFrequency = FVector(SafeFrequency, SafeFrequency * 1.13f, SafeFrequency * 1.31f);
+	Pattern->LocationPhase = FVector(0.0f, 1.7f, 3.1f);
+	Pattern->RotationAmplitudeDeg = FVector(SafeRotationAmplitude, SafeRotationAmplitude, SafeRotationAmplitude * 0.5f);
+	Pattern->RotationFrequency = FVector(SafeFrequency * 1.07f, SafeFrequency * 0.93f, SafeFrequency * 1.21f);
+	Pattern->RotationPhase = FVector(1.7f, 0.0f, 3.1f);
+
+	PlayerCameraManager->StartCameraShake(Pattern, 1.0f, Duration);
 }
 
 void APlayerController::LerpCameraFOVDegrees(float TargetFOVDegrees, float Duration)
@@ -378,7 +333,6 @@ void APlayerController::ResetCameraFOV(float Duration)
 
 void APlayerController::StopCameraEffects()
 {
-	CameraShake.bActive = false;
 	CameraFOV.bActive = false;
 	CameraFOV.bOverrideActive = false;
 	if (PlayerCameraManager)
@@ -387,91 +341,37 @@ void APlayerController::StopCameraEffects()
 	}
 }
 
-void APlayerController::HandleKeyPressed(int VK)
+void APlayerController::ProcessInputSnapshot(const FGameplayInputSnapshot& Snapshot)
 {
-	(void)VK;
+	ReceiveInputSnapshot(Snapshot);
+	DispatchInputActionsToPawn();
 }
 
-void APlayerController::HandleKeyDown(int VK)
+void APlayerController::ReceiveInputSnapshot(const FGameplayInputSnapshot& Snapshot)
 {
-	if (IsPossessingFallbackCamera())
+	CurrentInputSnapshot = Snapshot;
+}
+
+const FInputActionState* APlayerController::FindInputAction(const FString& ActionName) const
+{
+	return CurrentInputSnapshot.FindAction(ActionName);
+}
+
+void APlayerController::DispatchInputActionsToPawn()
+{
+	if (!PossessedPawn)
 	{
-		MoveFallbackCamera(VK, LastInputDeltaTime);
 		return;
 	}
 
-	// Lua 게임 로직이 Engine.API.Input을 통해 raw input을 직접 읽습니다.
-	// 여기서 기본 WASD 이동을 처리하면 Lua 이동과 중복되므로 PlayerController는 입력을 소비하지 않습니다.
-	(void)VK;
-}
-
-void APlayerController::HandleKeyReleased(int VK)
-{
-	(void)VK;
-}
-
-void APlayerController::HandleMouseMove(float DeltaX, float DeltaY)
-{
-	if (IsPossessingFallbackCamera())
+	for (const auto& Pair : CurrentInputSnapshot.GetActions())
 	{
-		if (UCameraComponent* Camera = GetViewTargetCamera())
+		const FInputActionState& Action = Pair.second;
+		if (Action.TriggerEvent != EInputTriggerEvent::None)
 		{
-			Camera->AddYawInput(DeltaX * FallbackCameraMouseSensitivity);
-			Camera->AddPitchInput(-DeltaY * FallbackCameraMouseSensitivity);
+			PossessedPawn->OnInputAction(Action);
 		}
-		return;
 	}
-
-	// 마우스 회전 역시 Lua 쪽 Player/InputManager가 필요에 따라 처리합니다.
-	// PlayerController는 ViewTarget Camera를 RuntimeCamera에 반영하는 것까지만 담당합니다.
-	(void)DeltaX;
-	(void)DeltaY;
-}
-
-void APlayerController::HandleMouseMoveAbsolute(float X, float Y)
-{
-	(void)X;
-	(void)Y;
-}
-
-void APlayerController::HandleMouseButtonPressed(int VK, float X, float Y)
-{
-	(void)VK;
-	(void)X;
-	(void)Y;
-}
-
-void APlayerController::HandleMouseButtonDown(int VK, float DeltaX, float DeltaY)
-{
-	(void)VK;
-	(void)DeltaX;
-	(void)DeltaY;
-}
-
-void APlayerController::HandleMouseButtonReleased(int VK, float X, float Y)
-{
-	(void)VK;
-	(void)X;
-	(void)Y;
-}
-
-void APlayerController::HandleMouseDrag(int VK, float DeltaX, float DeltaY)
-{
-	(void)VK;
-	(void)DeltaX;
-	(void)DeltaY;
-}
-
-void APlayerController::HandleMouseDragEnd(int VK, float X, float Y)
-{
-	(void)VK;
-	(void)X;
-	(void)Y;
-}
-
-void APlayerController::HandleMouseWheel(float Notch)
-{
-	(void)Notch;
 }
 
 AActor* APlayerController::GetViewTargetActor() const
@@ -544,45 +444,6 @@ AActor* APlayerController::FindPlayerStart() const
 	return nullptr;
 }
 
-AActor* APlayerController::FindPlacedPlayerActor() const
-{
-	const UWorld* World = GetFocusedWorld();
-	if (!World)
-	{
-		return nullptr;
-	}
-
-	AActor* FirstTaggedPlayer = nullptr;
-	for (AActor* Actor : World->GetActors())
-	{
-		if (!Actor || Actor == this || Actor->IsA<APlayerController>() || Actor->IsA<APlayerStart>())
-		{
-			continue;
-		}
-
-		const bool bHasCamera = FindCameraComponent(Actor) != nullptr;
-		if (Actor->HasTag("Player"))
-		{
-			if (!FirstTaggedPlayer)
-			{
-				FirstTaggedPlayer = Actor;
-			}
-
-			if (bHasCamera)
-			{
-				return Actor;
-			}
-		}
-	}
-
-	if (FirstTaggedPlayer)
-	{
-		UE_LOG_WARNING("[PlayerController] Actor tagged Player has no CameraComponent: %s",
-			FirstTaggedPlayer->GetFName().ToString().c_str());
-	}
-	return nullptr;
-}
-
 bool APlayerController::IsActorInCurrentWorld(const AActor* Actor) const
 {
 	const UWorld* World = GetFocusedWorld();
@@ -603,15 +464,13 @@ bool APlayerController::IsActorInCurrentWorld(const AActor* Actor) const
 
 void APlayerController::ClearInvalidViewTarget()
 {
-	if (PossessedActor && !IsActorInCurrentWorld(PossessedActor))
+	if (PossessedPawn && !IsActorInCurrentWorld(PossessedPawn))
 	{
-		PossessedActor = nullptr;
+		APawn* OldPawn = PossessedPawn;
+		PossessedPawn = nullptr;
+		OldPawn->UnPossessed();
+		OnUnPossess(OldPawn);
 	}
-}
-
-void APlayerController::UpdatePossessedActorMovement(float DeltaTime)
-{
-	(void)DeltaTime;
 }
 
 void APlayerController::UpdateCameraFOVEffect(float DeltaTime, float BaseFOV)
@@ -648,53 +507,6 @@ void APlayerController::UpdateCameraFOVEffect(float DeltaTime, float BaseFOV)
 			CameraFOV.bOverrideActive = false;
 		}
 		CameraFOV.bActive = false;
-	}
-}
-
-void APlayerController::ApplyCameraShakeEffect(float DeltaTime)
-{
-	// PC 에서 직접적으로 Camera 조작하는 거 방지 (해당 코드는 Legacy 임)
-    assert(false && "PlayerCameraManager 쪽으로 로직 옮기는 중입니다.");
-
-	if (!CameraShake.bActive)
-	{
-		return;
-	}
-
-	if (CameraShake.Duration <= 0.0f)
-	{
-		CameraShake.bActive = false;
-		return;
-	}
-
-	CameraShake.Elapsed += std::max(0.0f, DeltaTime);
-	const float NormalizedTime = MathUtil::Clamp(CameraShake.Elapsed / CameraShake.Duration, 0.0f, 1.0f);
-	const float Fade = 1.0f - NormalizedTime;
-	const float WaveTime = CameraShake.Elapsed * CameraShake.Frequency * MathUtil::TwoPi;
-
-	const float OffsetX = std::sin(WaveTime + CameraShake.PhaseX) * CameraShake.LocationAmplitude * Fade;
-	const float OffsetY = std::sin(WaveTime * 1.13f + CameraShake.PhaseY) * CameraShake.LocationAmplitude * Fade;
-	const float OffsetZ = std::sin(WaveTime * 1.31f + CameraShake.PhaseZ) * CameraShake.LocationAmplitude * Fade;
-
-	const FVector BaseLocation = RuntimeCamera.GetLocation();
-	const FVector ShakeLocation =
-		BaseLocation
-		+ RuntimeCamera.GetRightVector() * OffsetX
-		+ RuntimeCamera.GetForwardVector() * OffsetY
-		+ RuntimeCamera.GetUpVector() * OffsetZ;
-	RuntimeCamera.SetLocation(ShakeLocation);
-
-	const float Pitch = std::sin(WaveTime * 1.07f + CameraShake.PhaseY) * CameraShake.RotationAmplitudeDegrees * Fade;
-	const float Yaw = std::sin(WaveTime * 0.93f + CameraShake.PhaseX) * CameraShake.RotationAmplitudeDegrees * Fade;
-	const float Roll = std::sin(WaveTime * 1.21f + CameraShake.PhaseZ) * CameraShake.RotationAmplitudeDegrees * 0.5f * Fade;
-	FQuat ShakeRotation = FQuat::MakeFromEuler(FVector(Roll, Pitch, Yaw));
-	FQuat NewRotation = RuntimeCamera.GetRotation() * ShakeRotation;
-	NewRotation.Normalize();
-	RuntimeCamera.SetRotation(NewRotation);
-
-	if (CameraShake.Elapsed >= CameraShake.Duration)
-	{
-		CameraShake.bActive = false;
 	}
 }
 
@@ -798,71 +610,80 @@ void APlayerController::UpdateRuntimeCameraFromViewTarget(float DeltaTime)
 	RuntimeCamera.SetLocation(ViewInfo.Location);
     RuntimeCamera.SetRotation(ViewInfo.Rotation);
     UpdateCameraFOVEffect(DeltaTime, ViewInfo.FOV);
-    RuntimeCamera.SetNearPlane(ViewInfo.NearZ);
+	RuntimeCamera.SetNearPlane(ViewInfo.NearZ);
 	RuntimeCamera.SetFarPlane(ViewInfo.FarZ);
     RuntimeCamera.SetOrthoHeight(ViewInfo.OrthoWidth);
-	
-	// ApplyCameraShakeEffect(DeltaTime);
 }
 
-void APlayerController::OnPossess(AActor* InActor)
+void APlayerController::OnPossess(APawn* InPawn)
 {
 	if (PlayerCameraManager)
 	{
-		PlayerCameraManager->SetViewTarget(InActor);
+		PlayerCameraManager->SetViewTarget(InPawn);
 	}
 
-	if (IsPossessingFallbackCamera())
+	if (IsPossessingDefaultPawn())
 	{
 		SetInputModeGameOnly();
 	}
 }
 
-void APlayerController::OnUnPossess(AActor* OldActor)
+void APlayerController::OnUnPossess(APawn* OldPawn)
 {
+	(void)OldPawn;
 	if (PlayerCameraManager)
 	{
 		PlayerCameraManager->SetViewTarget(this);
 	}
 }
 
-bool APlayerController::IsPossessingFallbackCamera() const
+bool APlayerController::IsPossessingDefaultPawn() const
 {
-	return PossessedActor && PossessedActor->IsA<AFallbackCameraActor>();
+	return PossessedPawn && PossessedPawn->IsA<ADefaultPawn>();
 }
 
-void APlayerController::MoveFallbackCamera(int VK, float DeltaTime)
+void APlayerController::UpdateDefaultPawnFromInput(float DeltaTime)
 {
+	if (!IsPossessingDefaultPawn())
+	{
+		return;
+	}
+
 	UCameraComponent* Camera = GetViewTargetCamera();
 	if (!Camera)
 	{
 		return;
 	}
 
-	const float Distance = FallbackCameraMoveSpeed * std::max(0.0f, DeltaTime);
-	switch (VK)
+	const float Distance = DefaultPawnMoveSpeed * std::max(0.0f, DeltaTime);
+	if (const FInputActionState* Move = FindInputAction("Move"))
 	{
-	case 'W':
-		Camera->MoveForward(Distance);
-		break;
-	case 'S':
-		Camera->MoveForward(-Distance);
-		break;
-	case 'D':
-		Camera->MoveRight(Distance);
-		break;
-	case 'A':
-		Camera->MoveRight(-Distance);
-		break;
-	case 'E':
-	case VK_SPACE:
-		Camera->MoveUp(Distance);
-		break;
-	case 'Q':
-	case VK_CONTROL:
-		Camera->MoveUp(-Distance);
-		break;
-	default:
-		break;
+		const FVector2 Axis = Move->Value.Axis2D;
+		if (Axis.Y != 0.0f)
+		{
+			Camera->MoveForward(Axis.Y * Distance);
+		}
+		if (Axis.X != 0.0f)
+		{
+			Camera->MoveRight(Axis.X * Distance);
+		}
+	}
+
+	if (const FInputActionState* MoveVertical = FindInputAction("MoveVertical"))
+	{
+		if (MoveVertical->Value.Axis1D != 0.0f)
+		{
+			Camera->MoveUp(MoveVertical->Value.Axis1D * Distance);
+		}
+	}
+
+	if (const FInputActionState* Look = FindInputAction("Look"))
+	{
+		const FVector2 Axis = Look->Value.Axis2D;
+		if (Axis.X != 0.0f || Axis.Y != 0.0f)
+		{
+			Camera->AddYawInput(Axis.X * DefaultPawnMouseSensitivity);
+			Camera->AddPitchInput(-Axis.Y * DefaultPawnMouseSensitivity);
+		}
 	}
 }

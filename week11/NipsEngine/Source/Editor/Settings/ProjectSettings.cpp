@@ -13,6 +13,8 @@ namespace ProjectKey
 	constexpr const char* StartupScene = "StartupScene";
 	constexpr const char* IncludedScenes = "IncludedScenes";
 	constexpr const char* PlayerControllerClass = "PlayerControllerClass";
+	constexpr const char* DefaultPawnClass = "DefaultPawnClass";
+	constexpr const char* DefaultPawnPrefabPath = "DefaultPawnPrefabPath";
 	constexpr const char* OutputDirectory = "OutputDirectory";
 	constexpr const char* IconPath = "IconPath";
 	constexpr const char* SplashImagePath = "SplashImagePath";
@@ -60,6 +62,8 @@ void FProjectSettings::SaveToFile(const FString& Path) const
 	Build[ProjectKey::GameName] = BuildSettings.GameName;
 	Build[ProjectKey::StartupScene] = BuildSettings.StartupScene;
 	Build[ProjectKey::PlayerControllerClass] = BuildSettings.PlayerControllerClass;
+	Build[ProjectKey::DefaultPawnClass] = BuildSettings.DefaultPawnClass;
+	Build[ProjectKey::DefaultPawnPrefabPath] = BuildSettings.DefaultPawnPrefabPath;
 	Build[ProjectKey::OutputDirectory] = BuildSettings.OutputDirectory;
 	Build[ProjectKey::IconPath] = BuildSettings.IconPath;
 	Build[ProjectKey::SplashImagePath] = BuildSettings.SplashImagePath;
@@ -116,6 +120,10 @@ void FProjectSettings::LoadFromFile(const FString& Path)
 			BuildSettings.StartupScene = FPaths::Normalize(Build[ProjectKey::StartupScene].ToString());
 		if (Build.hasKey(ProjectKey::PlayerControllerClass))
 			BuildSettings.PlayerControllerClass = Build[ProjectKey::PlayerControllerClass].ToString();
+		if (Build.hasKey(ProjectKey::DefaultPawnClass))
+			BuildSettings.DefaultPawnClass = Build[ProjectKey::DefaultPawnClass].ToString();
+		if (Build.hasKey(ProjectKey::DefaultPawnPrefabPath))
+			BuildSettings.DefaultPawnPrefabPath = FPaths::Normalize(Build[ProjectKey::DefaultPawnPrefabPath].ToString());
 		if (Build.hasKey(ProjectKey::OutputDirectory))
 			BuildSettings.OutputDirectory = FPaths::Normalize(Build[ProjectKey::OutputDirectory].ToString());
 		if (Build.hasKey(ProjectKey::IconPath))

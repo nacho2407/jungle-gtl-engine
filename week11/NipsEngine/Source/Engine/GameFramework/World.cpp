@@ -38,6 +38,7 @@ void UWorld::PostDuplicate(UObject* Original)
 
     // 프로퍼티 시스템에 노출되지 않은 필드를 직접 복사합니다.
     WorldType      = OrigWorld->WorldType;
+    GameModeSettings = OrigWorld->GameModeSettings;
     ActiveCamera   = OrigWorld->ActiveCamera;
     bHasBegunPlay  = false; // 항상 미시작 상태로 시작
 

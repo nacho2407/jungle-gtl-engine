@@ -1,7 +1,9 @@
 ﻿#include "Runtime/Script/API/LuaEngineAPIBindings.h"
 
+#include "Engine/Input/GameplayInputTypes.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/Engine.h"
+#include "GameFramework/PlayerController.h"
 #include "Math/Vector.h"
 
 #include <Windows.h>
@@ -132,43 +134,43 @@ namespace
     class FLuaInputView
     {
     public:
-        bool IsKeyDown(int32 KeyCode) const
+        bool IsRawKeyDown(int32 KeyCode) const
         {
             return CanReadGameplayKey(KeyCode) && InputSystem::Get().GetKey(KeyCode);
         }
 
-        bool IsKeyPressed(int32 KeyCode) const
+        bool IsRawKeyPressed(int32 KeyCode) const
         {
             return CanReadGameplayKey(KeyCode) && InputSystem::Get().GetKeyDown(KeyCode);
         }
 
-        bool IsKeyReleased(int32 KeyCode) const
+        bool IsRawKeyReleased(int32 KeyCode) const
         {
             return CanReadGameplayKey(KeyCode) && InputSystem::Get().GetKeyUp(KeyCode);
         }
 
-        bool IsMouseButtonDown(int32 KeyCode) const
+        bool IsRawMouseButtonDown(int32 KeyCode) const
         {
             return CanReadGameplayKey(KeyCode)
                 && IsMouseButtonCode(KeyCode)
                 && InputSystem::Get().GetKey(KeyCode);
         }
 
-        bool IsMouseButtonPressed(int32 KeyCode) const
+        bool IsRawMouseButtonPressed(int32 KeyCode) const
         {
             return CanReadGameplayKey(KeyCode)
                 && IsMouseButtonCode(KeyCode)
                 && InputSystem::Get().GetKeyDown(KeyCode);
         }
 
-        bool IsMouseButtonReleased(int32 KeyCode) const
+        bool IsRawMouseButtonReleased(int32 KeyCode) const
         {
             return CanReadGameplayKey(KeyCode)
                 && IsMouseButtonCode(KeyCode)
                 && InputSystem::Get().GetKeyUp(KeyCode);
         }
 
-        FVector GetMouseDelta() const
+        FVector GetRawMouseDelta() const
         {
             if (!CanReadGameplayMouseAxis())
             {
@@ -180,17 +182,17 @@ namespace
                 0.0f);
         }
 
-        int32 GetScrollDelta() const
+        int32 GetRawScrollDelta() const
         {
             return CanReadGameplayMouseAxis() ? InputSystem::Get().GetScrollDelta() : 0;
         }
 
-        float GetScrollNotches() const
+        float GetRawScrollNotches() const
         {
             return CanReadGameplayMouseAxis() ? InputSystem::Get().GetScrollNotches() : 0.0f;
         }
 
-        bool IsAnyMouseButtonDown() const
+        bool IsAnyRawMouseButtonDown() const
         {
             return CanReadGameplayMouseAxis() && InputSystem::Get().IsAnyMouseButtonDown();
         }
@@ -267,6 +269,36 @@ namespace
         return IsValidInputKeyCode(KeyCode) && InputSystem::Get().GetKeyUp(KeyCode);
     }
 
+    const FInputActionState* FindGameplayActionState(const FString& ActionName)
+    {
+        APlayerController* PlayerController = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+        if (!PlayerController)
+        {
+            return nullptr;
+        }
+
+        if (const FInputActionState* State = PlayerController->FindInputAction(ActionName))
+        {
+            return State;
+        }
+
+        const FString NormalizedName = NormalizeInputName(ActionName);
+        for (const auto& Pair : PlayerController->GetInputSnapshot().GetActions())
+        {
+            if (NormalizeInputName(Pair.first) == NormalizedName)
+            {
+                return &Pair.second;
+            }
+        }
+        return nullptr;
+    }
+
+    bool IsActionTriggerEvent(const FString& ActionName, EInputTriggerEvent TriggerEvent)
+    {
+        const FInputActionState* State = FindGameplayActionState(ActionName);
+        return State && State->TriggerEvent == TriggerEvent;
+    }
+
     void AppendUtf8(FString& Out, uint32_t Codepoint)
     {
         if (Codepoint < 0x20 || Codepoint == 0x7F || Codepoint > 0x10FFFF)
@@ -324,37 +356,37 @@ namespace FLuaEngineAPI
     {
         sol::table Input = Lua.create_table();
 
-        Input["IsKeyDown"] = sol::overload(
+        Input["IsRawKeyDown"] = sol::overload(
             [](const FString& KeyName) -> bool
             {
                 const int32 KeyCode = ResolveInputKeyCode(KeyName);
-                return FLuaInputView().IsKeyDown(KeyCode);
+                return FLuaInputView().IsRawKeyDown(KeyCode);
             },
             [](int32 KeyCode) -> bool
             {
-                return FLuaInputView().IsKeyDown(KeyCode);
+                return FLuaInputView().IsRawKeyDown(KeyCode);
             });
 
-        Input["IsKeyPressed"] = sol::overload(
+        Input["IsRawKeyPressed"] = sol::overload(
             [](const FString& KeyName) -> bool
             {
                 const int32 KeyCode = ResolveInputKeyCode(KeyName);
-                return FLuaInputView().IsKeyPressed(KeyCode);
+                return FLuaInputView().IsRawKeyPressed(KeyCode);
             },
             [](int32 KeyCode) -> bool
             {
-                return FLuaInputView().IsKeyPressed(KeyCode);
+                return FLuaInputView().IsRawKeyPressed(KeyCode);
             });
 
-        Input["IsKeyReleased"] = sol::overload(
+        Input["IsRawKeyReleased"] = sol::overload(
             [](const FString& KeyName) -> bool
             {
                 const int32 KeyCode = ResolveInputKeyCode(KeyName);
-                return FLuaInputView().IsKeyReleased(KeyCode);
+                return FLuaInputView().IsRawKeyReleased(KeyCode);
             },
             [](int32 KeyCode) -> bool
             {
-                return FLuaInputView().IsKeyReleased(KeyCode);
+                return FLuaInputView().IsRawKeyReleased(KeyCode);
             });
 
         Input["IsUIKeyDown"] = sol::overload(
@@ -387,6 +419,48 @@ namespace FLuaEngineAPI
                 return IsUIInputKeyReleased(KeyCode);
             });
 
+        Input["GetActionBool"] = [](const FString& ActionName) -> bool
+        {
+            const FInputActionState* State = FindGameplayActionState(ActionName);
+            return State ? State->Value.BoolValue : false;
+        };
+
+        Input["GetActionAxis1D"] = [](const FString& ActionName) -> float
+        {
+            const FInputActionState* State = FindGameplayActionState(ActionName);
+            return State ? State->Value.Axis1D : 0.0f;
+        };
+
+        Input["GetActionAxis2D"] = [](const FString& ActionName) -> FVector
+        {
+            const FInputActionState* State = FindGameplayActionState(ActionName);
+            if (!State)
+            {
+                return FVector::ZeroVector;
+            }
+            return FVector(State->Value.Axis2D.X, State->Value.Axis2D.Y, 0.0f);
+        };
+
+        Input["WasActionStarted"] = [](const FString& ActionName) -> bool
+        {
+            return IsActionTriggerEvent(ActionName, EInputTriggerEvent::Started);
+        };
+
+        Input["IsActionTriggered"] = [](const FString& ActionName) -> bool
+        {
+            return IsActionTriggerEvent(ActionName, EInputTriggerEvent::Triggered);
+        };
+
+        Input["WasActionCompleted"] = [](const FString& ActionName) -> bool
+        {
+            return IsActionTriggerEvent(ActionName, EInputTriggerEvent::Completed);
+        };
+
+        Input["WasActionCanceled"] = [](const FString& ActionName) -> bool
+        {
+            return IsActionTriggerEvent(ActionName, EInputTriggerEvent::Canceled);
+        };
+
         Input["ConsumeTextInput"] = []() -> FString
         {
             FString Result;
@@ -397,63 +471,63 @@ namespace FLuaEngineAPI
             return Result;
         };
 
-        Input["IsMouseDown"] = sol::overload(
+        Input["IsRawMouseDown"] = sol::overload(
             [](const FString& ButtonName) -> bool
             {
                 const int32 KeyCode = ResolveInputKeyCode(ButtonName);
-                return FLuaInputView().IsMouseButtonDown(KeyCode);
+                return FLuaInputView().IsRawMouseButtonDown(KeyCode);
             },
             [](int32 KeyCode) -> bool
             {
-                return FLuaInputView().IsMouseButtonDown(KeyCode);
+                return FLuaInputView().IsRawMouseButtonDown(KeyCode);
             });
 
-        Input["IsMousePressed"] = sol::overload(
+        Input["IsRawMousePressed"] = sol::overload(
             [](const FString& ButtonName) -> bool
             {
                 const int32 KeyCode = ResolveInputKeyCode(ButtonName);
-                return FLuaInputView().IsMouseButtonPressed(KeyCode);
+                return FLuaInputView().IsRawMouseButtonPressed(KeyCode);
             },
             [](int32 KeyCode) -> bool
             {
-                return FLuaInputView().IsMouseButtonPressed(KeyCode);
+                return FLuaInputView().IsRawMouseButtonPressed(KeyCode);
             });
 
-        Input["IsMouseReleased"] = sol::overload(
+        Input["IsRawMouseReleased"] = sol::overload(
             [](const FString& ButtonName) -> bool
             {
                 const int32 KeyCode = ResolveInputKeyCode(ButtonName);
-                return FLuaInputView().IsMouseButtonReleased(KeyCode);
+                return FLuaInputView().IsRawMouseButtonReleased(KeyCode);
             },
             [](int32 KeyCode) -> bool
             {
-                return FLuaInputView().IsMouseButtonReleased(KeyCode);
+                return FLuaInputView().IsRawMouseButtonReleased(KeyCode);
             });
 
-        Input["GetMousePosition"] = []() -> FVector
+        Input["GetRawMousePosition"] = []() -> FVector
         {
             const POINT MousePos = InputSystem::Get().GetMousePos();
             return FVector(static_cast<float>(MousePos.x), static_cast<float>(MousePos.y), 0.0f);
         };
 
-        Input["GetMouseDelta"] = []() -> FVector
+        Input["GetRawMouseDelta"] = []() -> FVector
         {
-            return FLuaInputView().GetMouseDelta();
+            return FLuaInputView().GetRawMouseDelta();
         };
 
-        Input["GetScrollDelta"] = []() -> int32
+        Input["GetRawScrollDelta"] = []() -> int32
         {
-            return FLuaInputView().GetScrollDelta();
+            return FLuaInputView().GetRawScrollDelta();
         };
 
-        Input["GetScrollNotches"] = []() -> float
+        Input["GetRawScrollNotches"] = []() -> float
         {
-            return FLuaInputView().GetScrollNotches();
+            return FLuaInputView().GetRawScrollNotches();
         };
 
-        Input["IsAnyMouseButtonDown"] = []() -> bool
+        Input["IsAnyRawMouseButtonDown"] = []() -> bool
         {
-            return FLuaInputView().IsAnyMouseButtonDown();
+            return FLuaInputView().IsAnyRawMouseButtonDown();
         };
 
         Input["SetInputMode"] = [](const FString& Mode)

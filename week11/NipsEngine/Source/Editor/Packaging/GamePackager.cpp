@@ -1475,6 +1475,8 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
     GameIni << "ExecutableName=" << FPaths::ToUtf8(PackageExeName.wstring()) << "\n";
     GameIni << "StartupScene=" << NormalizeSceneForPackage(Settings.StartupScene) << "\n";
     GameIni << "PlayerControllerClass=" << Settings.PlayerControllerClass << "\n";
+    GameIni << "DefaultPawnClass=" << Settings.DefaultPawnClass << "\n";
+    GameIni << "DefaultPawnPrefabPath=" << Settings.DefaultPawnPrefabPath << "\n";
     GameIni << "\n[Scenes]\n";
     GameIni << "Count=" << IncludedScenes.size() << "\n";
     for (size_t SceneIndex = 0; SceneIndex < IncludedScenes.size(); ++SceneIndex)

@@ -32,6 +32,7 @@ void FEditorMainPanel::InitializeImGuiContext()
 
     ImGuiIO& IO = ImGui::GetIO();
     IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    IO.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     IO.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     IO.MouseDrawCursor = false;
     ConfigureImGuiStyle();

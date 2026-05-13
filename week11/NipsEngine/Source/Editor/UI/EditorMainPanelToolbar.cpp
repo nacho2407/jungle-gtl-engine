@@ -39,7 +39,6 @@ const char* GetMainToolbarViewModeName(EViewMode Mode)
         return "Lit";
     }
 }
-
 } // namespace
 
 void FEditorMainPanel::RenderEditorToolbar()

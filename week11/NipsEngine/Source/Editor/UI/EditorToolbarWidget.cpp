@@ -132,6 +132,8 @@ void FEditorToolbarWidget::SetPanelVisibilityRefs(
 	bool* InShowContentBrowser,
 	bool* InShowUndoHistory,
 	bool* InShowRuntimeUIPreview,
+	bool* InShowProjectSettings,
+	bool* InShowWorldSettings,
 	bool* InPIEViewportFullscreenEnabled)
 {
 	bShowConsole = InShowConsole;
@@ -144,6 +146,8 @@ void FEditorToolbarWidget::SetPanelVisibilityRefs(
 	bShowContentBrowser = InShowContentBrowser;
 	bShowUndoHistory = InShowUndoHistory;
 	bShowRuntimeUIPreview = InShowRuntimeUIPreview;
+	bShowProjectSettings = InShowProjectSettings;
+	bShowWorldSettings = InShowWorldSettings;
 	bPIEViewportFullscreenEnabled = InPIEViewportFullscreenEnabled;
 }
 
@@ -201,7 +205,7 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 	RenderFilesMenu();
 	RenderEditMenu();
 	RenderBuildMenu();
-	RenderViewMenu();
+	RenderWindowMenu();
 	RenderSettingsMenu();
 	RenderHelpMenu();
 
@@ -320,9 +324,9 @@ void FEditorToolbarWidget::RenderEditMenu()
 	ImGui::EndMenu();
 }
 
-void FEditorToolbarWidget::RenderViewMenu()
+void FEditorToolbarWidget::RenderWindowMenu()
 {
-	if (!ImGui::BeginMenu("View"))
+	if (!ImGui::BeginMenu("Window"))
 	{
 		return;
 	}
@@ -335,6 +339,8 @@ void FEditorToolbarWidget::RenderViewMenu()
 	if (bShowStatProfiler) ImGui::MenuItem("Stat Profiler", nullptr, bShowStatProfiler);
 	if (bShowContentBrowser) ImGui::MenuItem("Content Browser", "Ctrl+Space", bShowContentBrowser);
 	if (bShowRuntimeUIPreview) ImGui::MenuItem("Runtime UI Preview", nullptr, bShowRuntimeUIPreview);
+	if (bShowProjectSettings) ImGui::MenuItem("Project Settings", nullptr, bShowProjectSettings);
+	if (bShowWorldSettings) ImGui::MenuItem("World Settings", nullptr, bShowWorldSettings);
 
 	ImGui::EndMenu();
 }

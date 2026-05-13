@@ -56,6 +56,8 @@ struct FEditorMainPanelPIEPanelVisibilitySnapshot
 	bool bShowPlayStream = true;
 	bool bShowEditorDebug = false;
 	bool bShowContentBrowser = false;
+	bool bShowProjectSettings = false;
+	bool bShowWorldSettings = false;
 	bool bConsoleDrawerVisible = false;
 	bool bViewportSettingsVisible = false;
 	bool bGroupedStatOverlayVisible = false;
@@ -74,6 +76,8 @@ struct FEditorMainPanelVisibilityState
 	bool bShowContentBrowser = false;
 	bool bShowUndoHistory = false;
 	bool bShowRuntimeUIPreview = false;
+	bool bShowProjectSettings = false;
+	bool bShowWorldSettings = false;
 };
 
 struct FEditorMainPanelPIEViewportLayoutSnapshot
@@ -100,7 +104,6 @@ struct FEditorMainPanelViewportIconResources
 	ID3D11ShaderResourceView* ToolIcons[static_cast<int32>(EEditorMainPanelViewportToolIcon::Count)] = {};
 	ID3D11ShaderResourceView* LayoutIcons[static_cast<int32>(EEditorViewportLayoutMode::Max)] = {};
 	ID3D11ShaderResourceView* SaveIcon = nullptr;
-	ID3D11ShaderResourceView* HotReloadIcon = nullptr;
 	ID3D11ShaderResourceView* AddActorIcon = nullptr;
 };
 
@@ -114,9 +117,23 @@ struct FEditorMainPanelBuildGameModalState
 	char StartupSceneBuffer[MAX_PATH] = "Asset/Scene/Default.scene";
 	char SceneListAddBuffer[MAX_PATH] = "";
 	char PlayerControllerClassBuffer[128] = "APlayerController";
+	char DefaultPawnClassBuffer[128] = "ADefaultPawn";
+	char DefaultPawnPrefabPathBuffer[MAX_PATH] = "";
 	char OutputDirectoryBuffer[MAX_PATH] = "Builds/Windows/NipsGame";
 	char IconPathBuffer[MAX_PATH] = "";
 	char SplashImagePathBuffer[MAX_PATH] = "";
+};
+
+struct FEditorMainPanelGameModeSettingsState
+{
+	bool bLoaded = false;
+	char PlayerControllerClassBuffer[128] = "APlayerController";
+	char DefaultPawnClassBuffer[128] = "ADefaultPawn";
+	char DefaultPawnPrefabPathBuffer[MAX_PATH] = "";
+	bool bSceneOverrideGameMode = false;
+	char ScenePlayerControllerClassBuffer[128] = "APlayerController";
+	char SceneDefaultPawnClassBuffer[128] = "ADefaultPawn";
+	char SceneDefaultPawnPrefabPathBuffer[MAX_PATH] = "";
 };
 
 struct FEditorMainPanelConsoleDrawerState

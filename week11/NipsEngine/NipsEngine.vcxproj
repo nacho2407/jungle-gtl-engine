@@ -436,6 +436,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorMainPanelGameModeSettings.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorMainPanelInput.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
@@ -673,8 +677,10 @@
     <ClCompile Include="Source\Engine\Core\Logging\Stats.cpp" />
     <ClCompile Include="Source\Engine\Core\Logging\Timer.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\DefaultPawn.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\GameModeBase.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Pawn.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PrimitiveActors.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
@@ -683,6 +689,7 @@
     <ClCompile Include="Source\Engine\Geometry\OBB.cpp" />
     <ClCompile Include="Source\Engine\Geometry\Plane.cpp" />
     <ClCompile Include="Source\Engine\Geometry\Transform.cpp" />
+    <ClCompile Include="Source\Engine\Input\GameplayInputTypes.cpp" />
     <ClCompile Include="Source\Engine\Input\InputRouter.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
     <ClCompile Include="Source\Editor\Input\BaseEditorController.cpp">
@@ -1002,8 +1009,10 @@
     <ClInclude Include="Source\Engine\Core\Logging\Stats.h" />
     <ClInclude Include="Source\Engine\Core\Logging\Timer.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\DefaultPawn.h" />
     <ClInclude Include="Source\Engine\GameFramework\GameModeBase.h" />
     <ClInclude Include="Source\Engine\GameFramework\Level.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Pawn.h" />
     <ClInclude Include="Source\Engine\GameFramework\PlayerController.h" />
     <ClInclude Include="Source\Engine\GameFramework\PrimitiveActors.h" />
     <ClInclude Include="Source\Engine\GameFramework\World.h" />
@@ -1017,6 +1026,7 @@
     <ClInclude Include="Source\Engine\Geometry\Transform.h" />
     <ClInclude Include="Source\Engine\Geometry\Triangle.h" />
     <ClInclude Include="Source\Engine\Input\CursorControl.h" />
+    <ClInclude Include="Source\Engine\Input\GameplayInputTypes.h" />
     <ClInclude Include="Source\Engine\Input\InputBinding.h" />
     <ClInclude Include="Source\Engine\Input\InputRouter.h" />
     <ClInclude Include="Source\Engine\Input\InputSystem.h" />
