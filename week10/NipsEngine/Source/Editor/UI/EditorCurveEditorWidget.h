@@ -12,6 +12,12 @@ public:
     void Render(float DeltaTime) override;
 
     void OpenCurveAsset(const FString& CurvePath);
+    void OpenCurveFromActorSequence(
+        UCurveFloatAsset* Curve,
+        UActorSequenceComponent* SequenceComp,
+        const FString& SourceLabel,
+        const FString& SourcePath = "",
+        int32 InitialSelectedKeyIndex = -1);
     bool IsVisible() const { return bVisible; }
 
 private:
@@ -32,7 +38,9 @@ private:
     bool ReloadCurve();
 
     FString CurrentPath;
+    FString SourceLabel;
     UCurveFloatAsset* CurrentCurve = nullptr;
+    UActorSequenceComponent* SourceSequenceComponent = nullptr;
     int32 SelectedKeyIndex = -1;
     int32 ActiveKeyDragIndex = -1;
     int32 ActiveTangentKeyIndex = -1;
@@ -43,7 +51,13 @@ private:
     TArray<UActorSequenceComponent*> ReferencePreviewTargets;
     float CanvasHeight = 320.0f;
     float CanvasPixelsPerUnit = 120.0f;
+    float ViewMinTime = 0.0f;
+    float ViewMaxTime = 1.0f;
+    float ViewMinValue = -0.5f;
+    float ViewMaxValue = 0.5f;
+    bool bCurveViewInitialized = false;
     bool bVisible = false;
     bool bDirty = false;
     bool bReferencePreviewActive = false;
+    bool bOpenedFromActorSequence = false;
 };

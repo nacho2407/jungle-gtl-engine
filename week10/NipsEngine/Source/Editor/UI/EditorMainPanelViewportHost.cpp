@@ -51,13 +51,22 @@ void FEditorMainPanel::RenderViewportHostWindow()
 
         GuiState.bViewportHostVisible = true;
         GuiState.ViewportHostRect = HostRect;
-        EditorEngine->GetViewportLayout().SetHostRect(HostRect);
-        ApplyPIEFixedAspectViewportRect();
-
         FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
-        const int32 FocusedViewportIndex = Layout.GetLastFocusedViewportIndex();
         const bool bPIEActive = EditorEngine->GetEditorState() != EViewportPlayState::Editing;
         const int32 ActivePIEViewportIndex = EditorEngine->GetPIESession().GetActiveViewportIndex();
+        for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
+        {
+            const FEditorViewportClient* Client = Layout.GetViewportClient(i);
+            const bool bHideToolbar = bPIEActive && Client && Client->IsPIEPossessed();
+            Layout.SetViewportChromeTopInset(
+                i,
+                bHideToolbar ? 0 : FEditorViewportLayout::DefaultViewportToolbarHeight);
+        }
+
+        Layout.SetHostRect(HostRect);
+        ApplyPIEFixedAspectViewportRect();
+
+        const int32 FocusedViewportIndex = Layout.GetLastFocusedViewportIndex();
         auto DrawSceneViewport = [&](int32 ViewportIndex)
         {
             if (bPIEActive && ActivePIEViewportIndex >= 0 && ViewportIndex != ActivePIEViewportIndex)
@@ -139,7 +148,6 @@ void FEditorMainPanel::RenderViewportHostWindow()
 
         // Per-viewport menu overlay.
         {
-            constexpr float MenuBarH = 34.0f;
             const bool bOnlyFocusedToolbar = Layout.IsLayoutTransitionActive();
 
             for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
@@ -158,7 +166,7 @@ void FEditorMainPanel::RenderViewportHostWindow()
                 {
                     const bool bHidePIEViewportToolbar =
                         EditorEngine->GetEditorState() != EViewportPlayState::Editing && Client->IsPIEPossessed();
-                    Client->SetViewportInputDeadZoneTop(bHidePIEViewportToolbar ? 0.0f : MenuBarH);
+                    Client->SetViewportInputDeadZoneTop(0.0f);
                     if (bHidePIEViewportToolbar)
                     {
                         continue;
@@ -169,8 +177,13 @@ void FEditorMainPanel::RenderViewportHostWindow()
                 if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
                     continue;
 
+                const int32 MenuBarHeight = Layout.GetViewportChromeTopInset(DrawIndex);
+                if (MenuBarHeight <= 0)
+                    continue;
+
+                const int32 ToolbarY = ViewportRect.Y - MenuBarHeight;
                 const float LocalX = static_cast<float>(ViewportRect.X - HostRect.X);
-                const float LocalY = static_cast<float>(ViewportRect.Y - HostRect.Y);
+                const float LocalY = static_cast<float>(ToolbarY - HostRect.Y);
                 if (LocalX < 0.0f || LocalY < 0.0f)
                     continue;
 
@@ -193,7 +206,7 @@ void FEditorMainPanel::RenderViewportHostWindow()
                     ImGuiWindowFlags_NoNav |
                     ImGuiWindowFlags_NoFocusOnAppearing;
 
-                if (ImGui::BeginChild(ChildID, ImVec2(static_cast<float>(ViewportRect.Width), MenuBarH), false, OverlayFlags))
+                if (ImGui::BeginChild(ChildID, ImVec2(static_cast<float>(ViewportRect.Width), static_cast<float>(MenuBarHeight)), false, OverlayFlags))
                 {
                     ImGui::PushID(DrawIndex);
                     RenderViewportIconToolbarForIndex(DrawIndex);

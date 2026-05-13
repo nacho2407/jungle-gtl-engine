@@ -197,14 +197,6 @@ namespace
         return ToLowerAscii(FPaths::ToUtf8(std::filesystem::path(FPaths::ToWide(Path)).extension().generic_wstring()));
     }
 
-    bool IsCurveJsonAssetPath(const FString& Path)
-    {
-        const FString LowerPath = ToLowerAscii(FPaths::Normalize(Path));
-        constexpr const char* CurveJsonSuffix = ".curve.json";
-        return LowerPath.size() >= std::strlen(CurveJsonSuffix)
-            && LowerPath.compare(LowerPath.size() - std::strlen(CurveJsonSuffix), std::strlen(CurveJsonSuffix), CurveJsonSuffix) == 0;
-    }
-
     bool ValidateOptionalBrandingFile(const FString& Path, std::initializer_list<const char*> Extensions, const char* Label, FString& OutMessage)
     {
         if (Path.empty())
@@ -281,6 +273,8 @@ namespace
             || Extension == ".ogg"
             || Extension == ".lua"
             || Extension == ".prefab"
+            || Extension == ".curve"
+            || Extension == ".sequence"
             || Extension == ".rml"
             || Extension == ".rcss"
             || Extension == ".meta"
@@ -678,7 +672,6 @@ namespace
 
         const FString NormalizedPath = NormalizeAssetPathForPackage(Path);
         const FString Extension = GetLowerExtension(NormalizedPath);
-        const bool bIsCurveJson = IsCurveJsonAssetPath(NormalizedPath);
 
         if (Extension == ".obj" || Extension == ".bin")
         {
@@ -686,7 +679,7 @@ namespace
             return CookStaticMeshDependency(Context, NormalizedPath, IgnoredCookedPath, OutMessage);
         }
 
-        if (Extension.empty() || Extension == ".scene" || (!bIsCurveJson && !IsRuntimeCopyExtension(Extension)))
+        if (Extension.empty() || Extension == ".scene" || !IsRuntimeCopyExtension(Extension))
         {
             return true;
         }
@@ -887,7 +880,11 @@ namespace
         {
             return false;
         }
-        if (!AddRuntimeFilesByExtension(Context, "Asset/Curve", { ".curve", ".json" }, OutMessage))
+        if (!AddRuntimeFilesByExtension(Context, "Asset/Curve", { ".curve" }, OutMessage))
+        {
+            return false;
+        }
+        if (!AddRuntimeFilesByExtension(Context, "Asset/Sequence", { ".sequence" }, OutMessage))
         {
             return false;
         }

@@ -108,6 +108,10 @@ void FEditorMainPanel::RenderEditorPanelWindows(float DeltaTime, bool bDrawEdito
     {
         Widgets.CurveEditorWidget.Render(DeltaTime);
     }
+    if (bDrawEditorPanels && Widgets.ActorSequencerWidget.IsVisible())
+    {
+        Widgets.ActorSequencerWidget.Render(DeltaTime);
+    }
     if (bDrawEditorPanels && PanelVisibility.bShowConsole && Widgets.ConsoleWidget.IsFloatingWindowMode())
     {
         Widgets.ConsoleWidget.Render(DeltaTime);

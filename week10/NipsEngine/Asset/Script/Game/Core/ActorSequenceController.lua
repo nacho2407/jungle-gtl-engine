@@ -77,20 +77,20 @@ function ActorSequenceController.PlayCutTrigger(actor)
     if sequence == nil or triggerComponent == nil then
         return nil
     end
-    if sequence.SetRestoreOnStop ~= nil then
-        sequence:SetRestoreOnStop(false)
+    if sequence.SetPauseAtEnd ~= nil then
+        sequence:SetPauseAtEnd(true)
     end
 
     if not actor:HasTag(CUT_SEQUENCE_BOUND_TAG) then
         local added = sequence:AddFloatTrack({
             targetComponent = triggerComponent:GetName(),
             targetPropertyPath = "Presentation Trigger",
-            curveAssetPath = "Asset/Curve/TitleCutTrigger.curve.json",
+            curveAssetPath = "Asset/Curve/TitleCutTrigger.curve",
             startTime = 0.0,
             duration = 1.0,
             playRate = 1.0,
             loop = false,
-            applyMode = "Direct",
+            applyMode = "Absolute",
             timeMappingMode = "NormalizedTime"
         })
         if not added then
