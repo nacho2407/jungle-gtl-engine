@@ -41,4 +41,6 @@ private:
 	uint32 InstanceId;
 	FName PreviewWorldHandle = FName::None;
 	FString WindowIdSuffix;
+
+	bool bPendingClose = false;
 };

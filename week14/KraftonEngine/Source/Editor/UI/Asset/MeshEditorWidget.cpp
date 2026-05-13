@@ -128,6 +128,14 @@ void FMeshEditorWidget::CollectPreviewViewports(TArray<IEditorPreviewViewportCli
 
 void FMeshEditorWidget::Render(float DeltaTime)
 {
+	// Imgui::Image에 들고있는 SRV가 렌더링 전에 close가 되어 viewport에 있는 자원이 해제되는
+	// lifetime issue가 매우 간헐적으로 발생함. 따라서 1프레임 뒤에 해제한다.
+	if (bPendingClose)
+	{
+		Close();
+		bPendingClose = false;
+		return;
+	}
 	if (!IsOpen() || !EditedObject)
 	{
 		return;
@@ -345,7 +353,7 @@ void FMeshEditorWidget::Render(float DeltaTime)
 
 	if (!bWindowOpen)
 	{
-		Close();
+		bPendingClose = true;
 	}
 }
 
