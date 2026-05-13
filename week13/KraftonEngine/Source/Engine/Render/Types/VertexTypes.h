@@ -51,7 +51,7 @@ struct FVertexPNCTBW
 	FVector2 UV;
 	FVector4 Tangent;
 
-	int32 BoneIndices[4] = { 0, 0, 0, 0 };
+	int32 BoneIndices[4] = { -1, -1, -1, -1 };
 	float BoneWeights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 };
 

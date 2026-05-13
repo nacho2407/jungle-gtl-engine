@@ -19,11 +19,11 @@ inline void SerializeSkeletalMatrix(FArchive& Ar, FMatrix& Matrix)
 struct FBone
 {
 	FString Name;
-	int32 ParentIndex;
+	int32 ParentIndex = -1;
 
-	FMatrix LocalMatrix;
-	FMatrix GlobalMatrix;
-	FMatrix InverseBindPoseMatrix;
+	FMatrix LocalMatrix = FMatrix::Identity;
+	FMatrix GlobalMatrix = FMatrix::Identity;
+	FMatrix InverseBindPoseMatrix = FMatrix::Identity;
 
 	friend FArchive& operator<<(FArchive& Ar, FBone& Bone)
 	{
