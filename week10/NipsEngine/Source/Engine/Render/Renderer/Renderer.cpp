@@ -1159,6 +1159,11 @@ void FRenderer::InitializePassBatchers()
 				const auto& S = Cmd.Constants.SpotLight;
 				EditorLineBatcher.AddSpotLight(S.Position, S.Direction, S.Range, S.InnerAngle, S.OuterAngle, S.Color);
 			}
+			else if (Cmd.Type == ERenderCommandType::DebugLine)
+			{
+				const auto& L = Cmd.Constants.Line;
+				EditorLineBatcher.AddLine(L.Start, L.End, L.Color);
+			}
 		},
 		/*.Flush   =*/ [this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			FlushLineBatcher(EditorLineBatcher, Pass, Bus, Ctx);

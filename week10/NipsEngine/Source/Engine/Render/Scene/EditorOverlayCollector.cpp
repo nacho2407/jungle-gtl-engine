@@ -148,6 +148,33 @@ void FEditorOverlayCollector::CollectGrid(float GridSpacing, int32 GridHalfLineC
     RenderBus.AddCommand(ERenderPass::Grid, Cmd);
 }
 
+void FEditorOverlayCollector::CollectSkeletonBones(USkeletalMeshComponent* SkComp, FRenderBus& RenderBus) const
+{
+    if (!SkComp || !SkComp->HasValidMesh()) return;
+
+    const USkeletalMesh* Mesh = SkComp->GetSkeletalMesh();
+    const TArray<FBoneInfo>& Bones = Mesh->GetBones();
+    const int32 BoneCount = static_cast<int32>(Bones.size());
+
+    const FVector4 BoneColor(1.0f, 0.85f, 0.0f, 1.0f);   // 노란빛 — 본 와이어 기본 색
+
+    for (int32 i = 0; i < BoneCount; ++i)
+    {
+        const int32 ParentIdx = Bones[i].ParentIndex;
+        if (ParentIdx < 0) continue;   // 루트는 부모가 없어 선 1개를 그릴 수 없음
+
+        const FMatrix ChildWorld  = SkComp->GetBoneWorldMatrix(i);
+        const FMatrix ParentWorld = SkComp->GetBoneWorldMatrix(ParentIdx);
+
+        FRenderCommand Cmd = {};
+        Cmd.Type = ERenderCommandType::DebugLine;
+        Cmd.Constants.Line.Start = ParentWorld.GetTranslation();
+        Cmd.Constants.Line.End   = ChildWorld.GetTranslation();
+        Cmd.Constants.Line.Color = BoneColor;
+        RenderBus.AddCommand(ERenderPass::Editor, Cmd);
+    }
+}
+
 void FEditorOverlayCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus,
                                            FMeshBufferManager& MeshBufferManager, bool bIsActiveOperation) const
 {

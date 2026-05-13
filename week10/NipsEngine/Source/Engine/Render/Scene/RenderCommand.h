@@ -34,6 +34,7 @@ enum class ERenderCommandType
 	DebugDirectionalLight,
 	DebugPointLight,
 	DebugSpotlight,
+	DebugLine,
 	Grid,		// Grid 패스 — LineBatcher 경유
 	Font,		// TextRenderComponent — FontBatcher 경유
 	SubUV,		// SubUVComponent     — SubUVBatcher 경유
@@ -268,6 +269,15 @@ struct FSpotLightConstants
 	FColor Color;
 };
 
+struct FLineConstants
+{
+	FVector Start;
+	float   Padding0;
+	FVector End;
+	float   Padding1;
+	FVector4 Color;
+};
+
 struct FGridConstants
 {
 	float GridSpacing;
@@ -415,6 +425,7 @@ struct FRenderCommand
 		FDirectionalLightConstants DirectionalLight;
 		FPointLightConstants PointLight;
 		FSpotLightConstants SpotLight;
+		FLineConstants Line;
 		FGridConstants Grid;
 		FFontConstants Font;
 		FSubUVConstants SubUV;
