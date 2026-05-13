@@ -653,10 +653,13 @@ void FEditorViewportClient::TickInput(const FViewportInputContext& Context)
 	if (!bHasCamera)
 		return;
 
-	const float VX = State ? static_cast<float>(Viewport->GetRect().X) : 0.f;
-	const float VY = State ? static_cast<float>(Viewport->GetRect().Y) : 0.f;
+	const FViewportRect* CurrentRect = Viewport ? &Viewport->GetRect() : nullptr;
+	const float VX = CurrentRect ? static_cast<float>(CurrentRect->X) : 0.f;
+	const float VY = CurrentRect ? static_cast<float>(CurrentRect->Y) : 0.f;
+	const float VW = (CurrentRect && CurrentRect->Width > 0) ? static_cast<float>(CurrentRect->Width) : WindowWidth;
+	const float VH = (CurrentRect && CurrentRect->Height > 0) ? static_cast<float>(CurrentRect->Height) : WindowHeight;
 
-	InputRouter.SetViewportDim(VX, VY, WindowWidth, WindowHeight);
+	InputRouter.SetViewportDim(VX, VY, VW, VH);
 	if (InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController &&
 		IsPassiveEditorViewportHover(Context))
 	{
@@ -780,49 +783,70 @@ void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Con
 		FocusPrimarySelection();
 	}
 
-	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Undo) && Editor)
+	if (bSceneEditingShortcutsEnabled &&
+		!bInPIE &&
+		EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Undo) &&
+		Editor)
 	{
 		Editor->GetCommandSystem().Execute(EEditorCommand::Undo);
 		return;
 	}
 
-	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Redo) && Editor)
+	if (bSceneEditingShortcutsEnabled &&
+		!bInPIE &&
+		EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Redo) &&
+		Editor)
 	{
 		Editor->GetCommandSystem().Execute(EEditorCommand::Redo);
 		return;
 	}
 
-	if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::DeleteSelection))
+	if (bSceneEditingShortcutsEnabled &&
+		EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::DeleteSelection))
 	{
 		DeleteSelectedActors();
 	}
 
-	if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::SelectAll))
+	if (bSceneEditingShortcutsEnabled &&
+		EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::SelectAll))
 	{
 		SelectAllActors();
 	}
 
-	if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::DuplicateSelection))
+	if (bSceneEditingShortcutsEnabled &&
+		EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::DuplicateSelection))
 	{
 		DuplicateSelection();
 	}
 
-	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::NewScene) && Editor)
+	if (bSceneEditingShortcutsEnabled &&
+		!bInPIE &&
+		EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::NewScene) &&
+		Editor)
 	{
 		Editor->GetMainPanel().RequestNewScene();
 	}
 
-	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::LoadScene) && Editor)
+	if (bSceneEditingShortcutsEnabled &&
+		!bInPIE &&
+		EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::LoadScene) &&
+		Editor)
 	{
 		Editor->GetMainPanel().RequestLoadSceneWithDialog();
 	}
 
-	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::SaveScene) && Editor)
+	if (bSceneEditingShortcutsEnabled &&
+		!bInPIE &&
+		EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::SaveScene) &&
+		Editor)
 	{
 		Editor->GetMainPanel().RequestSaveScene();
 	}
 
-	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::SaveSceneAs) && Editor)
+	if (bSceneEditingShortcutsEnabled &&
+		!bInPIE &&
+		EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::SaveSceneAs) &&
+		Editor)
 	{
 		Editor->GetMainPanel().RequestSaveSceneAsWithDialog();
 	}
@@ -885,15 +909,19 @@ bool FEditorViewportClient::HandleCommandInput(const FViewportInputContext& Cont
 
 	const bool bInPIE = IsPIEActive();
 	const bool bPIEPossessed = IsPIEPossessed();
-	const TArray<EEditorViewportAction> CommandActions = bPIEPossessed
-		? TArray<EEditorViewportAction>
+	TArray<EEditorViewportAction> CommandActions;
+	if (bPIEPossessed)
+	{
+		CommandActions =
 		{
 			EEditorViewportAction::EndPIE,
 			EEditorViewportAction::TogglePIEPossessEject,
 			EEditorViewportAction::ReleasePIEMouseFocus
-		}
-		: (bInPIE
-		? TArray<EEditorViewportAction>
+		};
+	}
+	else if (bInPIE)
+	{
+		CommandActions =
 		{
 			EEditorViewportAction::EndPIE,
 			EEditorViewportAction::TogglePIEPossessEject,
@@ -909,8 +937,11 @@ bool FEditorViewportClient::HandleCommandInput(const FViewportInputContext& Cont
 			EEditorViewportAction::DeleteSelection,
 			EEditorViewportAction::SelectAll,
 			EEditorViewportAction::DuplicateSelection
-		}
-		: TArray<EEditorViewportAction>
+		};
+	}
+	else
+	{
+		CommandActions =
 		{
 			EEditorViewportAction::CycleMode,
 			EEditorViewportAction::SetModeSelect,
@@ -919,17 +950,22 @@ bool FEditorViewportClient::HandleCommandInput(const FViewportInputContext& Cont
 			EEditorViewportAction::SetModeTranslate,
 			EEditorViewportAction::SetModeRotate,
 			EEditorViewportAction::SetModeScale,
-			EEditorViewportAction::FocusSelection,
-			EEditorViewportAction::Undo,
-			EEditorViewportAction::Redo,
-			EEditorViewportAction::DeleteSelection,
-			EEditorViewportAction::SelectAll,
-			EEditorViewportAction::DuplicateSelection,
-			EEditorViewportAction::NewScene,
-			EEditorViewportAction::LoadScene,
-			EEditorViewportAction::SaveScene,
-			EEditorViewportAction::SaveSceneAs
-		});
+			EEditorViewportAction::FocusSelection
+		};
+
+		if (bSceneEditingShortcutsEnabled)
+		{
+			CommandActions.push_back(EEditorViewportAction::Undo);
+			CommandActions.push_back(EEditorViewportAction::Redo);
+			CommandActions.push_back(EEditorViewportAction::DeleteSelection);
+			CommandActions.push_back(EEditorViewportAction::SelectAll);
+			CommandActions.push_back(EEditorViewportAction::DuplicateSelection);
+			CommandActions.push_back(EEditorViewportAction::NewScene);
+			CommandActions.push_back(EEditorViewportAction::LoadScene);
+			CommandActions.push_back(EEditorViewportAction::SaveScene);
+			CommandActions.push_back(EEditorViewportAction::SaveSceneAs);
+		}
+	}
 
 	bool bTriggered = false;
 	for (EEditorViewportAction Action : CommandActions)
@@ -967,33 +1003,58 @@ bool FEditorViewportClient::HandleGizmoInput(const FViewportInputContext& Contex
 		return false;
 	}
 
-	const bool bGizmoDragArmed = Gizmo && (Gizmo->IsPressedOnHandle() || Gizmo->IsHolding());
 	if (IsPointerInViewportInputDeadZone(Context)
 		|| !Gizmo
 		|| !Gizmo->IsVisible()
 		|| TransformMode == ETransformMode::Select
-		|| (IsBoxSelectionChordActive(Context) && !bGizmoDragArmed))
+		|| IsBoxSelectionChordActive(Context))
 	{
 		return false;
 	}
 
+	const float LocalX = static_cast<float>(Context.MouseLocalPos.x);
+	const float LocalY = static_cast<float>(Context.MouseLocalPos.y);
+	const auto BuildMouseRay = [&]() -> FRay
+	{
+		const FViewportRect& Rect = Viewport ? Viewport->GetRect() : FViewportRect{};
+		const float ViewportWidth = Rect.Width > 0 ? static_cast<float>(Rect.Width) : WindowWidth;
+		const float ViewportHeight = Rect.Height > 0 ? static_cast<float>(Rect.Height) : WindowHeight;
+		return Camera.DeprojectScreenToWorld(LocalX, LocalY, ViewportWidth, ViewportHeight);
+	};
+
+	bool bGizmoDragArmed = Gizmo->IsPressedOnHandle() || Gizmo->IsHolding();
+	const bool bLeftPressOrDragStart =
+		Context.WasPressed(VK_LBUTTON) ||
+		Context.WasPointerDragStarted(EPointerButton::Left) ||
+		(Context.Frame.bLeftDragging && !bGizmoDragArmed && Gizmo->IsHovered());
+
+	if (bLeftPressOrDragStart && !bGizmoDragArmed)
+	{
+		FHitResult HitResult{};
+		if (Gizmo->RaycastMesh(BuildMouseRay(), HitResult))
+		{
+			if (Context.WasPressed(VK_LBUTTON))
+			{
+				InputRouter.RouteMouseInput(EMouseInputType::E_LeftMouseClicked, LocalX, LocalY);
+			}
+			Gizmo->SetPressedOnHandle(true);
+			bGizmoDragArmed = true;
+		}
+	}
+
 	if (Context.Frame.bLeftDragging && bGizmoDragArmed)
 	{
-		if (!bGizmoDragUndoCaptured && Editor)
+		if (!bGizmoDragUndoCaptured && Editor && bSceneEditingShortcutsEnabled)
 		{
 			Editor->GetUndoSystem().CaptureSnapshot("Transform Actors");
 			bGizmoDragUndoCaptured = true;
 		}
-		const float LocalX = static_cast<float>(Context.MouseLocalPos.x);
-		const float LocalY = static_cast<float>(Context.MouseLocalPos.y);
 		InputRouter.RouteMouseInput(EMouseInputType::E_LeftMouseDragged, LocalX, LocalY);
 		return true;
 	}
 
 	if (Context.WasPointerDragEnded(EPointerButton::Left) && Gizmo->IsHolding())
 	{
-		const float LocalX = static_cast<float>(Context.MouseLocalPos.x);
-		const float LocalY = static_cast<float>(Context.MouseLocalPos.y);
 		InputRouter.RouteMouseInput(EMouseInputType::E_LeftMouseDragEnded, LocalX, LocalY);
 		bGizmoDragUndoCaptured = false;
 		return true;
@@ -1001,7 +1062,18 @@ bool FEditorViewportClient::HandleGizmoInput(const FViewportInputContext& Contex
 
 	if (Context.WasReleased(VK_LBUTTON))
 	{
+		if (Gizmo->IsPressedOnHandle() || Gizmo->IsHolding())
+		{
+			InputRouter.RouteMouseInput(EMouseInputType::E_LeftMouseButtonUp, LocalX, LocalY);
+			bGizmoDragUndoCaptured = false;
+			return true;
+		}
 		bGizmoDragUndoCaptured = false;
+	}
+
+	if (bGizmoDragArmed)
+	{
+		return true;
 	}
 
 	return false;

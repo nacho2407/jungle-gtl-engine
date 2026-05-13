@@ -21,10 +21,6 @@ public:
 	virtual UMaterialInterface* GetMaterial(int32 SlotIndex) const override { return (SlotIndex == 0) ? Materials[0] : nullptr; }
 	virtual int32 GetNumMaterials() const override { return 1; }
 
-	// Legacy single-slot access
-	void SetMaterial(UMaterialInterface* InMaterial) { SetMaterial(0, InMaterial); }
-	UMaterialInterface* GetMaterial() const { return GetMaterial(0); }
-
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 

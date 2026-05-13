@@ -60,7 +60,7 @@ void FDecalCommandBuilder::CollectDecal(UPrimitiveComponent* Primitive, const FS
     FScopeCycleCounter RenderDecalScope({});
 
     UDecalComponent* DecalComp = static_cast<UDecalComponent*>(Primitive);
-    UMaterialInterface* Material = Cast<UMaterialInterface>(DecalComp->GetMaterial());
+    UMaterialInterface* Material = Cast<UMaterialInterface>(DecalComp->GetMaterial(0));
 
     UWorld* World = DecalComp->GetOwner() ? DecalComp->GetOwner()->GetFocusedWorld() : nullptr;
     if (World == nullptr)

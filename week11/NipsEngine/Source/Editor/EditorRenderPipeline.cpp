@@ -361,7 +361,7 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
         FEditorViewportClient* VC = SceneViewport.GetClient();
 
         if (!VC)
-            return;
+            continue;
 
         // 1. SceneView 생성
         FSceneView SceneView;
@@ -369,7 +369,7 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
 
         const FViewportRect& Rect = SceneViewport.GetRect();
         if (Rect.Width <= 0 || Rect.Height <= 0)
-            return;
+            continue;
 
         // 2. RenderTarget 확보
         FViewportRenderResource& ViewportResource =
@@ -388,21 +388,33 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
 
         UWorld* World = VC->GetFocusedWorld();
         if (!World)
-            return;
+            continue;
 
         const FEditorSettings& Settings = Editor->GetSettings();
-        // Viewer 전용 토글로 글로벌 ShowFlags를 오버라이드.
-        // 글로벌 Settings를 mutate하지 않도록 로컬 복사 후 viewer 플래그만 덮어쓴다.
-        FShowFlags ShowFlags = Settings.ShowFlags;
-        {
-            const FSkeletalViewerShowFlags& VFlags = Viewers[i]->GetClient().GetShowFlags();
-            ShowFlags.bSkeletalMesh = VFlags.bShowSkeletalMesh;
-        }
-        const EViewMode ViewMode = SceneView.ViewMode;
+        const FSkeletalViewerShowFlags& VFlags = Viewers[i]->GetClient().GetShowFlags();
+
+        // ViewerPreview는 Level Editor의 전역 표시 상태를 상속하지 않는다.
+        // Asset 검사 도구로서 필요한 표면/오버레이만 명시적으로 켠다.
+        FShowFlags ShowFlags = {};
+        ShowFlags.bPrimitives = true;
+        ShowFlags.bSkeletalMesh = VFlags.bShowSkeletalMesh;
+        ShowFlags.bGrid = true;
+        ShowFlags.bAxis = true;
+        ShowFlags.bGizmo = true;
+        ShowFlags.bBillboardText = false;
+        ShowFlags.bBoundingVolume = VFlags.bShowBoundingBox;
+        ShowFlags.bBVHBoundingVolume = false;
+        ShowFlags.bEnableLOD = false;
+        ShowFlags.bDecals = false;
+        ShowFlags.bFog = false;
+        ShowFlags.bShadow = false;
+        ShowFlags.bGammaCorrection = false;
+        ShowFlags.GammaValue = Settings.ShowFlags.GammaValue;
+        const EViewMode ViewMode = EViewMode::Lit_BlinnPhong;
 
         const FViewportCamera* Camera = VC->GetRenderCamera();
         if (!Camera)
-            return;
+            continue;
 
         Bus.SetViewProjection(
             SceneView.ViewMatrix,
@@ -411,7 +423,7 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
             Camera->GetFarPlane());
 
         Bus.SetRenderSettings(ViewMode, ShowFlags);
-        Bus.SetLightCullMode(SceneView.LightCullMode);
+        Bus.SetLightCullMode(ELightCullMode::None);
         Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
         Bus.SetViewportSize(FVector2((float)Rect.Width, (float)Rect.Height));
         Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
@@ -451,6 +463,7 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
                 Settings.GridHalfLineCount,
                 Bus,
                 SceneView.bOrthographic);
+
             const FWorldContext* Ctx = Editor->GetWorldContextFromWorld(World);
             if (UGizmoComponent* Gizmo = Ctx->SelectionManager->GetGizmo())
             {
@@ -466,17 +479,19 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
                 Bus,
                 VC->GetViewportState()->bHovered);
 
-            Collector.CollectSelection(
-                Ctx->SelectionManager->GetSelectedActors(),
-                ShowFlags,
-                ViewMode,
-                Bus,
-                bDrawEditorViewportHelpers);
+            if (VFlags.bShowOutline)
+            {
+                Collector.CollectSelection(
+                    Ctx->SelectionManager->GetSelectedActors(),
+                    ShowFlags,
+                    ViewMode,
+                    Bus,
+                    bDrawEditorViewportHelpers);
+            }
         }
 
         // Viewer 전용: 본 와이어 드로우 (skeleton mesh viewer 토글)
         {
-            const FSkeletalViewerShowFlags& VFlags = Viewers[i]->GetClient().GetShowFlags();
             if (VFlags.bShowBones)
             {
                 if (ASkeletalMeshActor* ViewTarget = Viewers[i]->GetViewTarget())
@@ -486,7 +501,7 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
                         SkComp->EnsureSkinningUpdated();   // 본 자세 최신화 보장
                         if (VFlags.bShowOnlySelectedBone)
                         {
-                            const int32 BoneIdx = Viewers[i]->SelectedBoneIndex;
+                            const int32 BoneIdx = Viewers[i]->GetSelectedBoneIndex();
                             if (BoneIdx >= 0)
                             {
                                 Collector.CollectSingleBone(SkComp, BoneIdx, Bus);
@@ -497,6 +512,23 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
                             Collector.CollectSkeletonBones(SkComp, Bus);
                         }
                     }
+                }
+            }
+        }
+
+        if (VFlags.bShowBoundingBox)
+        {
+            if (ASkeletalMeshActor* ViewTarget = Viewers[i]->GetViewTarget())
+            {
+                if (USkeletalMeshComponent* SkComp = ViewTarget->GetSkeletalMeshComponent())
+                {
+                    FRenderCommand BoundsCmd = {};
+                    const FAABB Bounds = SkComp->GetWorldAABB();
+                    BoundsCmd.Type = ERenderCommandType::DebugBox;
+                    BoundsCmd.Constants.AABB.Min = Bounds.Min;
+                    BoundsCmd.Constants.AABB.Max = Bounds.Max;
+                    BoundsCmd.Constants.AABB.Color = FColor::White();
+                    Bus.AddCommand(ERenderPass::Editor, BoundsCmd);
                 }
             }
         }

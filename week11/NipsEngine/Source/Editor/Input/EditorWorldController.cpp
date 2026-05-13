@@ -98,7 +98,7 @@ void FEditorWorldController::OnLeftMouseClick(float X, float Y)
     FRay       Ray = Camera->DeprojectScreenToWorld(X, Y, ViewportWidth, ViewportHeight);
     FHitResult HitResult{};
 
-    if (Gizmo && Gizmo->IsVisible() && FRayCollision::RaycastComponent(Gizmo, Ray, HitResult))
+    if (Gizmo && Gizmo->IsVisible() && Gizmo->RaycastMesh(Ray, HitResult))
     {
         Gizmo->SetPressedOnHandle(true);
         return;

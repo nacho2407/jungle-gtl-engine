@@ -10,6 +10,7 @@ class FEditorViewerWindowWidget : public FEditorWidget
 public:
     void Initialize(UEditorEngine* InEditorEngine) override;
     void Render(float DeltaTime) override;
+    void RenderEmbedded(float DeltaTime);
     void DrawBoneNode(
         int32 BoneIndex,
         const TArray<FBoneInfo>& Bones,
@@ -25,6 +26,9 @@ public:
     void SetOpen(bool NewOpen) { bOpen = NewOpen; }
 
     FString GetWindowName() const;
+	void RequestSaveMesh();
+	bool CanSaveMesh() const;
+	bool IsMeshDirty() const { return bMeshDirty; }
 
 private:
     // bone tree 캐시들. CachedMesh가 바뀌면 둘 다 재빌드.
@@ -50,6 +54,7 @@ private:
     bool    IsSocketNameUnique(const FString& Candidate, int32 IgnoreIdx) const;
 
 	void RenderBoneDetails(USkeletalMeshComponent* SkelComp);
+    void RenderContent(float DeltaTime);
     void Shutdown();
 
     TArray<TArray<int32>> Children;             // bone idx → child bone indices
@@ -57,8 +62,6 @@ private:
     FSkeletalMesh* CachedMesh = nullptr;
     USkeletalMeshComponent* CachedSkComp = nullptr;   // Render() 내내만 유효한 transient cache
 
-    int32 SelectedBoneIndex = -1;
-    int32 SelectedSocketIndex = -1;   // -1이면 미선택. SelectedBoneIndex와 상호 배타.
     int32 PendingPreviewPickerSocketIdx = -1;  // picker modal 트리거; -1이면 닫힌 상태
     int32 RenameSocketIdx = -1;                // rename modal 트리거; -1이면 닫힌 상태
     char  RenameBuffer[256] = {};

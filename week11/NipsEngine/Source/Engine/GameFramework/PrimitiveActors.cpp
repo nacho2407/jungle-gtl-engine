@@ -583,7 +583,7 @@ void ADecalSpotLightActor::InitDefaultComponents()
     {
         DecalMat = FResourceManager::Get().GetMaterialInterface("DefaultWhite");
     }
-    Decal->SetMaterial(DecalMat);
+    Decal->SetMaterial(0, DecalMat);
     if (DecalMat)
     {
         DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));

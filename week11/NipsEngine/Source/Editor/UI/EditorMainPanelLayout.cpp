@@ -10,13 +10,15 @@ void FEditorMainPanel::RenderDockSpace()
         return;
     }
 
+    constexpr float EditorTabStripHeight = 30.0f;
     constexpr float EditorToolbarHeight = 40.0f;
     constexpr float FooterHeight = 32.0f;
-    const ImVec2 DockPos(MainViewport->WorkPos.x, MainViewport->WorkPos.y + EditorToolbarHeight);
+    const float TopChromeHeight = EditorTabStripHeight + EditorToolbarHeight;
+    const ImVec2 DockPos(MainViewport->WorkPos.x, MainViewport->WorkPos.y + TopChromeHeight);
     const ImVec2 DockSize(
         MainViewport->WorkSize.x,
-        (MainViewport->WorkSize.y > (FooterHeight + EditorToolbarHeight))
-            ? (MainViewport->WorkSize.y - FooterHeight - EditorToolbarHeight)
+        (MainViewport->WorkSize.y > (FooterHeight + TopChromeHeight))
+            ? (MainViewport->WorkSize.y - FooterHeight - TopChromeHeight)
             : 0.0f);
 
     ImGui::SetNextWindowPos(DockPos, ImGuiCond_Always);

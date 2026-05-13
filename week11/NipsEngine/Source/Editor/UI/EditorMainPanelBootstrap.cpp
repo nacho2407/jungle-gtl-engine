@@ -20,6 +20,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
     EditorEngine = InEditorEngine;
 
     LoadProjectSettings();
+    EditorTabs.ResetToLevelEditor();
     InitializeImGuiBackend(InWindow, InRenderer);
     InitializeEditorWidgets(InEditorEngine);
     BindEditorWidgetCallbacks();
