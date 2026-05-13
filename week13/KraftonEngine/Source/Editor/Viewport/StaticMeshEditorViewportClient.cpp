@@ -50,7 +50,7 @@ void FStaticMeshEditorViewportClient::ResetCameraToPreviewBounds()
 
 	const float FovRadians = ViewTransform.FOV;
 	const float Distance = Radius / std::tan(FovRadians * 0.5f) * 1.25f;
-	const FVector ViewDir = FVector(-1.0f, -1.0f, 0.6f).Normalized();
+	const FVector ViewDir = FVector(-1.0f, -1.0f, -0.6f).Normalized();
 
 	ViewTransform.ViewLocation = Center - ViewDir * Distance;
 	ViewTransform.LookAt(Center);
