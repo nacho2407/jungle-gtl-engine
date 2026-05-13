@@ -298,6 +298,18 @@ void FMeshEditorWidget::Render(float DeltaTime)
 			{
 				ViewportClient.ApplyTransformSettingsToGizmo();
 			};
+			Context.OnRenderViewModeExtras = [&]()
+			{
+				const EBoneDebugDrawMode CurrentBoneDrawMode = ViewportClient.GetBoneDebugDrawMode();
+				int32 BoneDrawMode = static_cast<int32>(CurrentBoneDrawMode);
+				ImGui::Text("Bone Display");
+				ImGui::RadioButton("Selected Bone", &BoneDrawMode, static_cast<int32>(EBoneDebugDrawMode::SelectedOnly));
+				ImGui::RadioButton("All Bones", &BoneDrawMode, static_cast<int32>(EBoneDebugDrawMode::AllBones));
+				if (BoneDrawMode != static_cast<int32>(CurrentBoneDrawMode))
+				{
+					ViewportClient.SetBoneDebugDrawMode(static_cast<EBoneDebugDrawMode>(BoneDrawMode));
+				}
+			};
 
 			FViewportToolbar::Render(Context);
 			RenderMeshStatsOverlay(DrawList, ViewportPos);

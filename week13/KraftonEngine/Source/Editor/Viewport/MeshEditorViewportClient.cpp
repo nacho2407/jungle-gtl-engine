@@ -200,6 +200,19 @@ const FBone* FMeshEditorViewportClient::GetSelectedBone() const
 	return &Asset->Bones[SelectedBoneIndex];
 }
 
+EBoneDebugDrawMode FMeshEditorViewportClient::GetBoneDebugDrawMode() const
+{
+	return BoneDebugComponent ? BoneDebugComponent->GetDrawMode() : EBoneDebugDrawMode::SelectedOnly;
+}
+
+void FMeshEditorViewportClient::SetBoneDebugDrawMode(EBoneDebugDrawMode InDrawMode)
+{
+	if (BoneDebugComponent)
+	{
+		BoneDebugComponent->SetDrawMode(InDrawMode);
+	}
+}
+
 void FMeshEditorViewportClient::TickShortcuts()
 {
 	if (!FSlateApplication::Get().DoesClientOwnKeyboardInput(this)) return;

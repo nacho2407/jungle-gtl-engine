@@ -7,6 +7,7 @@
 #include "Editor/Slate/SWindow.h"
 #include "Core/RayTypes.h"
 #include "Gizmo/BoneTransformGizmoTarget.h"
+#include "Component/BoneDebugComponent.h"
 
 #include <d3d11.h>
 
@@ -15,7 +16,6 @@ class FWindowsWindow;
 class UWorld;
 class AActor;
 class USkeletalMesh;
-class UBoneDebugComponent;
 
 class FMeshEditorViewportClient : public FViewportClient, public IEditorPreviewViewportClient
 {
@@ -54,6 +54,9 @@ public:
 
 	void SetSelectedBone(USkeletalMesh* Mesh, int32 BoneIndex);
 	const FBone* GetSelectedBone() const;
+
+	EBoneDebugDrawMode GetBoneDebugDrawMode() const;
+	void SetBoneDebugDrawMode(EBoneDebugDrawMode InDrawMode);
 
 	void ApplyTransformSettingsToGizmo();
 
