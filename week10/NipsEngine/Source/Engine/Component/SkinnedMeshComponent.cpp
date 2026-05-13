@@ -342,6 +342,16 @@ bool USkinnedMeshComponent::HasSocket(const FName& SocketName) const
     return SkeletalMesh ? SkeletalMesh->HasSocket(SocketName) : false;
 }
 
+FMatrix USkinnedMeshComponent::GetBoneWorldMatrix(int32 BoneIndex) const
+{
+    if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(CurrentGlobalPose.size()))
+    {
+        return GetWorldMatrix();
+    }
+    // row-vector 규약: BoneWorld = BoneGlobal · ActorWorld (GetSocketTransform과 동일)
+    return CurrentGlobalPose[BoneIndex] * GetWorldMatrix();
+}
+
 FTransform USkinnedMeshComponent::GetSocketTransform(const FName& SocketName) const
 {
     if (!SkeletalMesh)

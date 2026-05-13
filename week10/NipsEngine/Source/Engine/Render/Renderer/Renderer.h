@@ -209,6 +209,7 @@ private:
 	FRenderTargetSet CurrentRenderTargets;
 	FRenderResources Resources;
 	FLineBatcher   EditorLineBatcher;
+	FLineBatcher   EditorOverlayLineBatcher;   // 깊이 무시 — ERenderPass::EditorOverlay 전용
 	FLineBatcher   GridLineBatcher;
 	FFontBatcher   FontBatcher;
 	FSubUVBatcher  SubUVBatcher;

@@ -705,6 +705,9 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\EditorRenderPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\EditorOverlayRenderPass.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FXAARenderPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
@@ -1581,6 +1584,9 @@
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\EditorRenderPass.h">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\EditorOverlayRenderPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FXAARenderPass.h">

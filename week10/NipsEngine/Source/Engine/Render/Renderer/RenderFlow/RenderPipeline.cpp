@@ -13,6 +13,7 @@
 #include "SelectionMaskRenderPass.h"
 #include "GridRenderPass.h"
 #include "EditorRenderPass.h"
+#include "EditorOverlayRenderPass.h"
 #include "DepthLessRenderPass.h"
 #include "PostProcessOutlineRenderPass.h"
 #include "VSMConversionRenderPass.h"
@@ -44,6 +45,7 @@ namespace
             "RenderPass.SelectionMask",
             "RenderPass.Grid",
             "RenderPass.Editor",
+            "RenderPass.EditorOverlay",
             "RenderPass.DepthLess",
             "RenderPass.PostProcessOutline",
         };
@@ -93,6 +95,9 @@ bool FRenderPipeline::Initialize()
     EditorRenderPass = std::make_shared<FEditorRenderPass>();
     EditorRenderPass->Initialize();
 
+    EditorOverlayRenderPass = std::make_shared<FEditorOverlayRenderPass>();
+    EditorOverlayRenderPass->Initialize();
+
     DepthLessRenderPass = std::make_shared<FDepthLessRenderPass>();
     DepthLessRenderPass->Initialize();
 
@@ -135,6 +140,7 @@ bool FRenderPipeline::Initialize()
     RenderPasses.push_back(SelectionMaskRenderPass);
     RenderPasses.push_back(GridRenderPass);
     RenderPasses.push_back(EditorRenderPass);
+    RenderPasses.push_back(EditorOverlayRenderPass);
     RenderPasses.push_back(DepthLessRenderPass);
     RenderPasses.push_back(PostProcessOutlineRenderPass);
 
@@ -239,6 +245,12 @@ void FRenderPipeline::Release()
     {
         EditorRenderPass->Release();
         EditorRenderPass.reset();
+    }
+
+    if (EditorOverlayRenderPass)
+    {
+        EditorOverlayRenderPass->Release();
+        EditorOverlayRenderPass.reset();
     }
 
     if (DepthLessRenderPass)
