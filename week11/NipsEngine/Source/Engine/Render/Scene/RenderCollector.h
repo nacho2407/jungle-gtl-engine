@@ -14,6 +14,7 @@ class AActor;
 class UPrimitiveComponent;
 class UGizmoComponent;
 class ULightComponentBase;
+class USkeletalMeshComponent;
 struct FFrustum;
 
 class FRenderCollector {
@@ -49,6 +50,7 @@ public:
 	                      FRenderBus& RenderBus, bool bIncludeEditorOnlyPrimitives = false);
 	void CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus, bool bIsActiveOperation);
 	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus, bool bOrthographic = false);
+	void CollectSkeletonBones(USkeletalMeshComponent* SkComp, FRenderBus& RenderBus);
 	FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0)
 	{
 		return MeshBufferManager.GetStaticMeshBuffer(StaticMeshAsset, LODLevel);

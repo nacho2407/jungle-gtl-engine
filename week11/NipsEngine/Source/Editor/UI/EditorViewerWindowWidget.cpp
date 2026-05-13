@@ -120,6 +120,25 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
     // =====================================================
     ImGui::BeginChild("ViewportPanel", ImVec2(RightWidth, 0), false);
 
+    // Show 옵션 풀다운. 메인 뷰포트의 BeginMenu("Show") 패턴을 popup 버전으로 옮긴 형태.
+    // 실제 렌더 분기는 후속 단계에서 연결.
+    {
+        FSkeletalViewerShowFlags& VFlags =
+            EditorEngine->GetViewer().GetClient().GetShowFlags();
+
+        if (ImGui::Button("Show"))
+        {
+            ImGui::OpenPopup("SkeletalViewerShowPopup");
+        }
+        if (ImGui::BeginPopup("SkeletalViewerShowPopup"))
+        {
+            ImGui::MenuItem("Skeletal Mesh", nullptr, &VFlags.bShowSkeletalMesh);
+            ImGui::MenuItem("Bones",         nullptr, &VFlags.bShowBones);
+            ImGui::EndPopup();
+        }
+        ImGui::Separator();
+    }
+
     ImVec2 ScreenPos = ImGui::GetCursorScreenPos();
     ImVec2 Size = ImGui::GetContentRegionAvail();
 
