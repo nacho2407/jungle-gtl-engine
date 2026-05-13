@@ -15,6 +15,8 @@
 #include <cfloat>
 #include <cmath>
 
+#include "Component/PostProcess/Light/AmbientLightComponent.h"
+
 namespace
 {
 float DistanceSquaredRaySegment(const FRay& Ray, const FVector& SegmentStart, const FVector& SegmentEnd, float& OutRayT)
@@ -176,6 +178,8 @@ void FEditorViewer::Init(
         AmbientLight->SetFName(FName("Viewer Ambient Light"));
         AmbientLight->SetActorLocation(FVector(100000.0f, 100000.0f, 100000.0f));
     }
+    
+    AmbientLight->FindComponent<UAmbientLightComponent>()->Intensity = 0.7f;
 
     InWorld->SyncSpatialIndex();
 }
