@@ -9,8 +9,6 @@
 
 IMPLEMENT_CLASS(UStaticMesh, UObject)
 
-static const FString EmptyPath;
-
 UStaticMesh::~UStaticMesh()
 {
 	if (StaticMeshAsset)
@@ -114,15 +112,6 @@ void UStaticMesh::InitResources(ID3D11Device* InDevice)
 		}
 		bHasLOD = true;
 	}*/
-}
-
-const FString& UStaticMesh::GetAssetPathFileName() const
-{
-	if (StaticMeshAsset)
-	{
-		return StaticMeshAsset->PathFileName;
-	}
-	return EmptyPath;
 }
 
 void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InMesh)

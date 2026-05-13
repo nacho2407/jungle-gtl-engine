@@ -13,7 +13,9 @@ public:
 
 	void Serialize(FArchive& Ar);
 
-	const FString& GetAssetPathFileName() const;
+	const FString& GetAssetPathFileName() const { return AssetPathFileName; }
+	void SetAssetPathFileName(const FString& InPathFileName) { AssetPathFileName = InPathFileName; }
+
 	void SetSkeletalMeshAsset(FSkeletalMesh* InMesh);
 	FSkeletalMesh* GetSkeletalMeshAsset() const;
 	void SetSkeletalMaterials(TArray<FSkeletalMaterial>&& InMaterials);
@@ -25,6 +27,8 @@ private:
 	void CacheSectionMaterialIndices();
 
 private:
+	FString AssetPathFileName = "None";
+
 	FSkeletalMesh* SkeletalMeshAsset = nullptr;
 	TArray<FSkeletalMaterial> SkeletalMaterials;
 };
