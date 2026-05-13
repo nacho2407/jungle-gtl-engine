@@ -509,6 +509,24 @@ void UEditorEngine::RegisterViewportInputTargets()
             {
                 FEditorViewportClient* Client = ViewportLayout.GetViewportClient(Index);
                 return Client ? Client->GetFocusedWorld() : nullptr;
+            },
+            [this, Index]() -> int32
+            {
+                // EditorViewport를 감싸는 ImGui window 이름
+                ImGuiWindow* Win = ImGui::FindWindowByName("Viewport");
+                if (!Win)
+                    return 0;
+
+                ImGuiContext* Ctx = ImGui::GetCurrentContext();
+                if (!Ctx)
+                    return 0;
+
+                for (int32 i = 0; i < Ctx->Windows.Size; ++i)
+                {
+                    if (Ctx->Windows[i] == Win)
+                        return i;
+                }
+                return 0;
             });
     }
 
@@ -555,6 +573,25 @@ void UEditorEngine::RegisterViewportInputTargets()
                 {
                     FEditorViewportClient* Client = static_cast<FEditorViewportClient*>(Viewers[Index]->GetViewport().GetClient());
                     return Client ? Client->GetFocusedWorld() : nullptr;
+                },
+                [this, Index]() -> int32
+                {
+                    char WindowName[64];
+                    FEditorViewer* ViewerRawPtr = Viewers[Index].get();
+                    sprintf_s(WindowName, "Viewer##%p", ViewerRawPtr);
+
+                    ImGuiContext* Ctx = ImGui::GetCurrentContext();
+                    if (!Ctx)
+                        return 0;
+
+                    for (int32 i = 0; i < Ctx->Windows.Size; ++i)
+                    {
+                        if (Ctx->Windows[i] && strcmp(Ctx->Windows[i]->Name, WindowName) == 0)
+                        {
+                            return i; // 배열 뒤쪽일수록 앞에 그려짐
+                        }
+                    }
+                    return 0;
                 });
         }
     }
