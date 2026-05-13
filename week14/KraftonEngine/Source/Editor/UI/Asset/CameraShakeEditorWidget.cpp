@@ -1,5 +1,6 @@
-#include "CameraShakeEditorWidget.h"
+﻿#include "CameraShakeEditorWidget.h"
 
+#include "Asset/AssetPackage.h"
 #include "CameraShake/CameraShakeAsset.h"
 #include "CameraShake/CameraShakeManager.h"
 #include "Editor/EditorEngine.h"
@@ -37,10 +38,12 @@ namespace
 			if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("FloatCurveContentItem"))
 			{
 				const FContentItem* Item = static_cast<const FContentItem*>(Payload->Data);
-				if (Item && Item->Path.extension() == ".curve")
+				FString PackagePath = FPaths::ToUtf8(Item->Path.lexically_relative(FPaths::RootDir()).generic_wstring());
+
+				EAssetPackageType Type = EAssetPackageType::Unknown;
+				if (FAssetPackage::GetPackageType(PackagePath, Type) && Type == EAssetPackageType::FloatCurve)
 				{
-					OutPath = FPaths::MakeProjectRelative(FPaths::ToUtf8(Item->Path.wstring()));
-					ImGui::EndDragDropTarget();
+					OutPath = PackagePath;
 					return true;
 				}
 			}
@@ -75,7 +78,7 @@ namespace
 		}
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("Double-click to open curve. Drop a .curve asset here.");
+			ImGui::SetTooltip("Double-click to open curve. Drop a FloatCurve asset here.");
 		}
 		return bChanged;
 	}
@@ -409,8 +412,10 @@ void FCameraShakeEditorWidget::Render(float DeltaTime)
 
 	if (ImGui::Button("Save"))
 	{
-		FCameraShakeManager::Get().Save(ShakeAsset);
-		ClearDirty();
+		if (FCameraShakeManager::Get().Save(ShakeAsset))
+		{
+			ClearDirty();
+		}
 	}
 	ImGui::SameLine();
 	ImGui::TextDisabled("%s", ShakeAsset->GetSourcePath().empty() ? "Unsaved asset" : ShakeAsset->GetSourcePath().c_str());

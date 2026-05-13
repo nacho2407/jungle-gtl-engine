@@ -12,7 +12,7 @@ public:
 	UCameraShakeAsset* Load(const FString& Path);
 	UCameraShakeAsset* Find(const FString& Path) const;
 
-	void Save(UCameraShakeAsset* Asset);
+	bool Save(UCameraShakeAsset* Asset);
 
 private:
 	TMap<FString, UCameraShakeAsset*> LoadedShakes;

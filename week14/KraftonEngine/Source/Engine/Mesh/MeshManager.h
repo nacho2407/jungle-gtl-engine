@@ -46,8 +46,13 @@ public:
 	static void ScanMeshAssets();
 	static FString GetStaticMeshBinaryFilePath(const FString& SourcePath);
 	static FString GetSkeletalMeshBinaryFilePath(const FString& SourcePath);
-	static bool IsStaticMeshBinaryPath(const FString& Path);
-	static bool IsSkeletalMeshBinaryPath(const FString& Path);
+	static bool IsAssetPackagePath(const FString& Path);
+
+	static bool ReimportStaticMesh(const FString& BinaryPath, ID3D11Device* Device, UStaticMesh*& OutStaticMesh);
+	static bool ReimportSkeletalMesh(const FString& BinaryPath, ID3D11Device* Device, USkeletalMesh*& OutSkeletalMesh);
+
+	static bool IsStaticMeshPackage(const FString& Path);
+	static bool IsSkeletalMeshPackage(const FString& Path);
 
 public:
 	static TMap<FString, UStaticMesh*> StaticMeshCache;

@@ -2,10 +2,10 @@
 #include "Platform/Paths.h"
 #include "Object/ObjectFactory.h"
 
+#include "Serialization/Archive.h"
+
 #include <fstream>
 #include <sstream>
-
-#include <SimpleJSON/json.hpp>
 
 IMPLEMENT_CLASS(UFloatCurveAsset, UObject)
 
@@ -13,87 +13,50 @@ UFloatCurveAsset::~UFloatCurveAsset()
 {
 }
 
-bool UFloatCurveAsset::LoadFromFile(const FString& Path)
+static FArchive& operator<<(FArchive& Ar, FCurveKey& Key)
 {
-	using namespace json;
+	Ar << Key.Time;
+	Ar << Key.Value;
 
-	std::ifstream File(FPaths::ToWide(Path));
-	if (!File.is_open())
+	int32 InterpMode = static_cast<int32>(Key.InterpMode);
+	Ar << InterpMode;
+	if (Ar.IsLoading())
 	{
-		return false;
+		Key.InterpMode = static_cast<ECurveInterpMode>(InterpMode);
 	}
 
-	std::stringstream Buffer;
-	Buffer << File.rdbuf();
-
-	JSON Root = JSON::Load(Buffer.str());
-	if (Root.IsNull())
+	int32 TangentMode = static_cast<int32>(Key.TangentMode);
+	Ar << TangentMode;
+	if (Ar.IsLoading())
 	{
-		return false;
+		Key.TangentMode = static_cast<ECurveTangentMode>(TangentMode);
 	}
 
-	Curve.Reset();
+	Ar << Key.ArriveTangent;
+	Ar << Key.LeaveTangent;
 
-	if (Root.hasKey("DefaultValue"))
-	{
-		Curve.DefaultValue = Root["DefaultValue"].ToFloat();
-	}
-	if (Root.hasKey("PreExtrapMode"))
-	{
-		Curve.PreExtrapMode = static_cast<ECurveExtrapMode>(Root["PreExtrapMode"].ToInt());
-	}
-	if (Root.hasKey("PostExtrapMode"))
-	{
-		Curve.PostExtrapMode = static_cast<ECurveExtrapMode>(Root["PostExtrapMode"].ToInt());
-	}
-	if (Root.hasKey("Keys"))
-	{
-		for (auto& KeyJson : Root["Keys"].ArrayRange())
-		{
-			FCurveKey Key = {};
-			if (KeyJson.hasKey("Time")) Key.Time = KeyJson["Time"].ToFloat();
-			if (KeyJson.hasKey("Value")) Key.Value = KeyJson["Value"].ToFloat();
-			if (KeyJson.hasKey("InterpMode")) Key.InterpMode = static_cast<ECurveInterpMode>(KeyJson["InterpMode"].ToInt());
-			if (KeyJson.hasKey("ArriveTangent")) Key.ArriveTangent = KeyJson["ArriveTangent"].ToFloat();
-			if (KeyJson.hasKey("LeaveTangent")) Key.LeaveTangent = KeyJson["LeaveTangent"].ToFloat();
-			Curve.Keys.push_back(Key);
-		}
-	}
-
-	Curve.SortKeys();
-	return true;
+	return Ar;
 }
 
-bool UFloatCurveAsset::SaveToFile(const FString& Path) const
+void UFloatCurveAsset::Serialize(FArchive& Ar)
 {
-	using namespace json;
+	Ar << Curve.DefaultValue;
 
-	JSON Root = json::Object();
-	Root["Version"] = 1;
-	Root["DefaultValue"] = Curve.DefaultValue;
-	Root["PreExtrapMode"] = static_cast<int>(Curve.PreExtrapMode);
-	Root["PostExtrapMode"] = static_cast<int>(Curve.PostExtrapMode);
+	int32 PreExtrap = static_cast<int32>(Curve.PreExtrapMode);
+	int32 PostExtrap = static_cast<int32>(Curve.PostExtrapMode);
+	Ar << PreExtrap;
+	Ar << PostExtrap;
 
-	JSON Keys = json::Array();
-	for (const FCurveKey& Key : Curve.Keys)
+	if (Ar.IsLoading())
 	{
-		JSON KeyJson = json::Object();
-		KeyJson["Time"] = Key.Time;
-		KeyJson["Value"] = Key.Value;
-		KeyJson["InterpMode"] = static_cast<int>(Key.InterpMode);
-		KeyJson["ArriveTangent"] = Key.ArriveTangent;
-		KeyJson["LeaveTangent"] = Key.LeaveTangent;
-		Keys.append(KeyJson);
+		Curve.PreExtrapMode = static_cast<ECurveExtrapMode>(PreExtrap);
+		Curve.PostExtrapMode = static_cast<ECurveExtrapMode>(PostExtrap);
 	}
 
-	Root["Keys"] = Keys;
+	Ar << Curve.Keys;
 
-	std::ofstream File(FPaths::ToWide(Path));
-	if (!File.is_open())
+	if (Ar.IsLoading())
 	{
-		return false;
+		Curve.SortKeys();
 	}
-
-	File << Root.dump(4);
-	return true;
 }

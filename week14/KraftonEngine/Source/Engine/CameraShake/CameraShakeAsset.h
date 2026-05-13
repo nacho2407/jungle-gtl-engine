@@ -3,6 +3,8 @@
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 
+class FArchive;
+
 enum class ECameraShakeType : uint8
 {
 	Sequence,
@@ -44,6 +46,7 @@ public:
 
 	bool LoadFromFile(const FString& Path);
 	bool SaveToFile(const FString& Path) const;
+	void Serialize(FArchive& Ar) override;
 
 	void SetSourcePath(const FString& Path) { SourcePath = Path; }
 	const FString& GetSourcePath() const { return SourcePath; }

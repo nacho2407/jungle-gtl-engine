@@ -1,11 +1,15 @@
 ﻿#include "ContentBrowser.h"
 
+#include "Asset/AssetPackage.h"
+#include "CameraShake/CameraShakeAsset.h"
+#include "CameraShake/CameraShakeManager.h"
 #include "ContentBrowserElement.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Subsystem/AssetFactory.h"
 #include "Editor/UI/EditorTextureManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
+#include "Mesh/MeshManager.h"
 #include "EditorEngine.h"
 
 #include <algorithm>
@@ -88,15 +92,13 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 
 	IconFileMap[".Scene"] = L"World_64x.png";
 	IconFileMap[".obj"] = L"icon_MatEd_Mesh_40x.png";
-	IconFileMap[".statbin"] = L"icon_MatEd_Mesh_40x.png";
 	IconFileMap[".mat"] = L"Sphere_64x.png";
-	IconFileMap[".curve"] = L"StartMerge_42x.png";
 	IconFileMap[".shake"] = L"StartMerge_42x.png";
 	IconFileMap[".fbx"] = L"icon_MatEd_Mesh_40x.png";
-	IconFileMap[".sketbin"] = L"icon_MatEd_Mesh_40x.png";
+	IconFileMap[".uasset"] = L"icon_MatEd_Mesh_40x.png";
 
 	ContentBrowserContext Context;
-	Context.ContentSize = ImVec2(50, 50);
+	Context.ContentSize = ImVec2(112, 112);
 	Context.EditorEngine = InEditor;
 	BrowserContext = Context;
 	LoadFromSettings();
@@ -129,7 +131,7 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 	int Size = static_cast<int>(BrowserContext.ContentSize.x);
 	BrowserContext.ContentSize = ImVec2(static_cast<float>(Size), static_cast<float>(Size));
 
-	if (!ImGui::BeginTable("ContentBrowserLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
+	if (!ImGui::BeginTable("ContentBrowserLayout", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
 	{
 		ImGui::End();
 		return;
@@ -137,6 +139,7 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 
 	ImGui::TableSetupColumn("Directory", ImGuiTableColumnFlags_WidthFixed, 250.0f);
 	ImGui::TableSetupColumn("Content", ImGuiTableColumnFlags_WidthStretch);
+	ImGui::TableSetupColumn("Details", ImGuiTableColumnFlags_WidthFixed, 260.0f);
 
 	ImGui::TableNextColumn();
 	{
@@ -153,10 +156,24 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		ImGui::EndChild();
 	}
 
-	if (BrowserContext.SelectedElement)
-		BrowserContext.SelectedElement->RenderDetail();
+	ImGui::TableNextColumn();
+	{
+		ImGui::BeginChild("DetailsPanel", ImVec2(0, 0), true);
+
+		if (BrowserContext.SelectedElement)
+		{
+			BrowserContext.SelectedElement->RenderDetail();
+		}
+		else
+		{
+			ImGui::TextDisabled("No asset selected");
+		}
+
+		ImGui::EndChild();
+	}
 
 	ImGui::EndTable();
+
 	ImGui::End();
 }
 
@@ -170,7 +187,7 @@ void FEditorContentBrowserWidget::Refresh()
 
 void FEditorContentBrowserWidget::SetIconSize(float Size)
 {
-	const float ClampedSize = (std::max)(20.0f, (std::min)(Size, 100.0f));
+	const float ClampedSize = (std::max)(72.0f, (std::min)(Size, 160.0f));
 	BrowserContext.ContentSize = ImVec2(ClampedSize, ClampedSize);
 }
 
@@ -209,7 +226,7 @@ void FEditorContentBrowserWidget::RefreshContent()
 		{
 			Element = std::make_shared<SceneElement>();
 		}
-		else if (Extension == ".obj" || Extension == ".statbin")
+		else if (Extension == ".obj")
 		{
 			Element = std::make_shared<ObjectElement>();
 		}
@@ -225,7 +242,7 @@ void FEditorContentBrowserWidget::RefreshContent()
 		{
 			Element = std::make_shared<CameraShakeElement>();
 		}
-		else if (Extension == ".fbx" || Extension == ".sketbin")
+		else if (Extension == ".fbx")
 		{
 			Element = std::make_shared<MeshElement>();
 		}
@@ -233,6 +250,33 @@ void FEditorContentBrowserWidget::RefreshContent()
 		{
 			Element = std::make_shared<PNGElement>();
 			Icon = FEditorTextureManager::Get().GetOrLoadThumbnail(FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring()));
+		}
+		else if (Extension == ".uasset")
+		{
+			FString PackagePath = FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring());
+
+			EAssetPackageType Type = EAssetPackageType::Unknown;
+			if (FAssetPackage::GetPackageType(PackagePath, Type))
+			{
+				switch (Type)
+				{
+				case EAssetPackageType::StaticMesh:
+					Element = std::make_shared<ObjectElement>();
+					break;
+				case EAssetPackageType::SkeletalMesh:
+					Element = std::make_shared<MeshElement>();
+					break;
+				case EAssetPackageType::FloatCurve:
+					Element = std::make_shared<FloatCurveElement>();
+					break;
+				case EAssetPackageType::CameraShake:
+					Element = std::make_shared<CameraShakeElement>();
+					break;
+				default:
+					Element = std::make_shared<ContentBrowserElement>();
+					break;
+				}
+			}
 		}
 		else
 		{
@@ -347,6 +391,21 @@ void FEditorContentBrowserWidget::DrawContents()
 						if (UFloatCurveAsset* CurveAsset = FFloatCurveManager::Get().Load(CreatedPath))
 						{
 							BrowserContext.EditorEngine->OpenAssetEditorForObject(CurveAsset);
+						}
+					}
+				}
+			}
+			if (ImGui::MenuItem("Camera Shake"))
+			{
+				FString CreatedPath;
+				if (FAssetFactory::CreateCameraShake(FPaths::ToUtf8(BrowserContext.CurrentPath), "NewCameraShake", CreatedPath))
+				{
+					Refresh();
+					if (BrowserContext.EditorEngine)
+					{
+						if (UCameraShakeAsset* ShakeAsset = FCameraShakeManager::Get().Load(CreatedPath))
+						{
+							BrowserContext.EditorEngine->OpenAssetEditorForObject(ShakeAsset);
 						}
 					}
 				}
