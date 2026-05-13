@@ -113,7 +113,10 @@ void FEditorMainPanel::RenderEditorPanelWindows(float DeltaTime, bool bDrawEdito
         Widgets.ConsoleWidget.Render(DeltaTime);
     }
 
-	Widgets.ViewerWindowWidget.Render(DeltaTime);
+	for (auto& ViewerWidget : Widgets.ViewerWindowWidgets)
+        ViewerWidget.Render(DeltaTime);
+
+	FlushClosedViewerWidgets();
 }
 
 float FEditorMainPanel::ResolveEffectiveDeltaTime(float DeltaTime) const

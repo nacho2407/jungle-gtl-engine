@@ -38,12 +38,29 @@ void FEditorMainPanel::InitializeEditorWidgets(UEditorEngine* InEditorEngine)
     Widgets.PlayStreamWidget.Initialize(InEditorEngine);
     Widgets.ToolbarWidget.Initialize(InEditorEngine);
     Widgets.RuntimeUIPreviewWidget.Initialize(InEditorEngine);
-    Widgets.ViewerWindowWidget.Initialize(InEditorEngine);
 }
 
 void FEditorMainPanel::OpenCurveAsset(const FString& CurvePath)
 {
     Widgets.CurveEditorWidget.OpenCurveAsset(CurvePath);
+}
+
+void FEditorMainPanel::OpenViewer(FEditorViewer* Viewer)
+{
+	auto& Widget = Widgets.ViewerWindowWidgets.emplace_back();
+    Widget.Initialize(EditorEngine);
+    Widget.SetViewer(Viewer);
+    Widget.SetOpen(true);
+}
+
+void FEditorMainPanel::FlushClosedViewerWidgets()
+{
+    auto& V = Widgets.ViewerWindowWidgets;
+    V.erase(
+        std::remove_if(V.begin(), V.end(),
+                       [](const FEditorViewerWindowWidget& W)
+                       { return !W.IsOpen(); }),
+        V.end());
 }
 
 void FEditorMainPanel::BindEditorWidgetCallbacks()
