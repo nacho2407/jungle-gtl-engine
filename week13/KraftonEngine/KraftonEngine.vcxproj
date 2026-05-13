@@ -448,6 +448,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\Component\SpringArmComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SubUVComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\TemporaryBoneAnimatorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Light\AmbientLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Light\DirectionalLightComponent.cpp" />
@@ -725,6 +726,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Component\SpringArmComponent.h" />
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\SubUVComponent.h" />
+    <ClInclude Include="Source\Engine\Component\TemporaryBoneAnimatorComponent.h" />
     <ClInclude Include="Source\Engine\Component\TextRenderComponent.h" />
     <ClInclude Include="Source\Engine\Component\Light\AmbientLightComponent.h" />
     <ClInclude Include="Source\Engine\Component\Light\DirectionalLightComponent.h" />
