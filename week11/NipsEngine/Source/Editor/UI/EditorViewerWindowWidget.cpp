@@ -140,13 +140,16 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 			Size.x = std::max(Size.x, 1.0f);
 			Size.y = std::max(Size.y, 1.0f);
 
-			POINT pt = { (LONG)ScreenPos.x, (LONG)ScreenPos.y };
+			
+			ImGui::InvisibleButton("ViewportCanvas", Size);
+            ImVec2 Min = ImGui::GetItemRectMin();
+            ImVec2 Max = ImGui::GetItemRectMax();
 
 			FViewportRect NewRect;
-			NewRect.X = (int32)pt.x;
-			NewRect.Y = (int32)pt.y;
-			NewRect.Width = (int32)Size.x;
-			NewRect.Height = (int32)Size.y;
+            NewRect.X = (int32)Min.x;
+            NewRect.Y = (int32)Min.y;
+            NewRect.Width = (int32)(Max.x - Min.x);
+            NewRect.Height = (int32)(Max.y - Min.y);
 
 			SceneViewport.SetRect(NewRect);
 
@@ -163,7 +166,7 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 			DrawList->AddCallback(SetOpaqueBlendStateCallback, DC);
 
 			// Render viewport
-			ImGui::Image((ImTextureID)SRV, Size);
+            DrawList->AddImage((ImTextureID)SRV, Min, Max);
 
 			DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
 
