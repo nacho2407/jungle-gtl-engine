@@ -1,7 +1,8 @@
-#include "EditorTextureManager.h"
+﻿#include "EditorTextureManager.h"
 
 #include "Platform/Paths.h"
 #include "WICTextureLoader.h"
+#include "Core/Log.h"
 
 #include <filesystem>
 
@@ -55,6 +56,7 @@ ID3D11ShaderResourceView* FEditorTextureManager::GetOrLoadIcon(const FString& Pa
 	ID3D11ShaderResourceView* Texture = LoadTextureFromDisk(Path);
 	if (!Texture)
 	{
+		UE_LOG("[EditorTextureManager] Failed to load texture: %s", Path.c_str());
 		return nullptr;
 	}
 
@@ -72,6 +74,7 @@ ID3D11ShaderResourceView* FEditorTextureManager::GetOrLoadThumbnail(const FStrin
 	ID3D11ShaderResourceView* Texture = LoadTextureFromDisk(Path);
 	if (!Texture)
 	{
+		UE_LOG("[EditorTextureManager] Failed to load texture: %s", Path.c_str());
 		return nullptr;
 	}
 

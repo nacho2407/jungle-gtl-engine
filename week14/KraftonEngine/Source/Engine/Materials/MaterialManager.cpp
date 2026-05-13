@@ -12,7 +12,7 @@ void FMaterialManager::ScanMaterialAssets()
 {
 	AvailableMaterialFiles.clear();
 
-	const std::filesystem::path MaterialRoot = FPaths::RootDir() + L"Asset\\Materials\\";
+	const std::filesystem::path MaterialRoot = FPaths::RootDir() + L"Asset/Materials/";
 
 	if (!std::filesystem::exists(MaterialRoot))
 	{
