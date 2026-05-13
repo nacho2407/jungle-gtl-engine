@@ -3,8 +3,9 @@
 #include "PrimitiveComponent.h"
 #include "Core/CoreMinimal.h"
 #include "Render/Resource/Material.h"
+#include <memory>
 
-class AActor;
+class ITransformProxy;
 class USceneComponent;
 struct FMeshData;
 
@@ -19,10 +20,7 @@ private:
 		End
 	};
 
-	AActor* TargetActor = nullptr;
-	USceneComponent* TargetComponent = nullptr;
-	uint32 TargetActorUUID = 0;
-	uint32 TargetComponentUUID = 0;
+	std::shared_ptr<ITransformProxy> Proxy;
 	const TArray<AActor*>* AllSelectedActors = nullptr;
 	EGizmoMode CurMode = EGizmoMode::Translate;
 	FVector LastIntersectionLocation;
@@ -74,14 +72,13 @@ public:
 
 	FVector GetVectorForAxis(int32 Axis);
 	void RenderGizmo() {}
-	void SetTarget(AActor* NewTarget);
-	void SetTargetComponent(USceneComponent* NewTarget);
+	void SetProxy(std::shared_ptr<ITransformProxy> InProxy);
+	inline std::shared_ptr<ITransformProxy> GetProxy() const { return Proxy; }
 	void SetSelectedActors(const TArray<AActor*>* InSelectedActors) { AllSelectedActors = InSelectedActors; }
 	void SetHolding(bool bHold);
 	inline bool IsHolding() const { return bIsHolding; }
 	inline bool IsHovered() const { return SelectedAxis != -1; }
 	bool HasTarget() const;
-	inline AActor* GetTarget() const { return TargetActor; }
 	inline int32 GetSelectedAxis() const { return SelectedAxis; }
 
 	inline void SetPressedOnHandle(bool bPressed) { bPressedOnHandle = bPressed; }

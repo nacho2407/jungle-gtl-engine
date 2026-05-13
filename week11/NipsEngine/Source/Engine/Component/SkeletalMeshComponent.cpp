@@ -42,3 +42,38 @@ const FMatrix& USkeletalMeshComponent::GetBoneLocalTransform(int32 BoneIndex) co
 
     return CurrentLocalPose[BoneIndex];
 }
+
+FMatrix USkeletalMeshComponent::GetBoneGlobalTransform(int32 BoneIndex) const
+{
+    if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(CurrentGlobalPose.size()))
+    {
+        return FMatrix::Identity;
+    }
+
+    return CurrentGlobalPose[BoneIndex] * GetWorldMatrix();
+}
+
+void USkeletalMeshComponent::SetBoneGlobalTransform(int32 BoneIndex, const FMatrix& NewGlobalTransform)
+{
+    if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(CurrentLocalPose.size()))
+    {
+        return;
+    }
+
+    const TArray<FBoneInfo>& Bones = SkeletalMesh->GetBones();
+    int32 ParentIndex = Bones[BoneIndex].ParentIndex;
+
+    FMatrix ParentGlobalTransform;
+    if (ParentIndex >= 0)
+    {
+        ParentGlobalTransform = CurrentGlobalPose[ParentIndex] * GetWorldMatrix();
+    }
+    else
+    {
+        ParentGlobalTransform = GetWorldMatrix();
+    }
+
+    // Local = Global * ParentGlobal.Inverse
+    FMatrix NewLocalTransform = NewGlobalTransform * ParentGlobalTransform.GetInverse();
+    SetBoneLocalTransform(BoneIndex, NewLocalTransform);
+}

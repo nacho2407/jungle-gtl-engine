@@ -52,11 +52,16 @@ void FEditorMainPanel::Update()
             }
         }
 
-		const FViewportRect& ViewportRect = EditorEngine->GetViewer().GetViewport().GetRect();
-        if (ViewportRect.Width > 0 && ViewportRect.Height > 0 && ViewportRect.Contains(MouseClientPos.x, MouseClientPos.y))
-        {
-            bMouseOverViewportRect = true;
-        }
+		TArray<std::unique_ptr<FEditorViewer>>& Viewers = EditorEngine->GetViewers();
+		for (size_t i = 0; i < Viewers.size(); i++)
+		{
+            const FViewportRect& ViewportRect = Viewers[i]->GetViewport().GetRect();
+            if (ViewportRect.Width > 0 && ViewportRect.Height > 0 && ViewportRect.Contains(MouseClientPos.x, MouseClientPos.y))
+            {
+                bMouseOverViewportRect = true;
+                break;
+            }
+		}
     }
 
     bool bHoveredViewportContentWindow = false;
@@ -67,10 +72,10 @@ void FEditorMainPanel::Update()
         {
             const char* HoveredName = HoveredWindow->Name ? HoveredWindow->Name : "";
             bHoveredViewportContentWindow =
-                (std::strcmp(HoveredName, "Viewport") == 0)
-                || (std::strncmp(HoveredName, "Viewport###", 11) == 0)
-                || (std::strcmp(HoveredName, "Viewer") == 0)
-                || (std::strncmp(HoveredName, "Viewer/ViewportPanel###", 9) == 0);
+                (std::strcmp(HoveredName, "Viewport") == 0) 
+				|| (std::strncmp(HoveredName, "Viewport###", 11) == 0) 
+				|| (std::strncmp(HoveredName, "Viewer##", 8) == 0) 
+				|| (std::strcmp(HoveredName, "ViewportPanel") == 0);
             bHoveredNonViewportWindow = !bHoveredViewportContentWindow;
         }
     }
