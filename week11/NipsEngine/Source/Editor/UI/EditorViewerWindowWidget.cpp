@@ -82,14 +82,12 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 	{
 		ImVec2 FullSize = ImGui::GetContentRegionAvail();
 
-		float LeftWidth = FullSize.x * 0.2f;
-		float RightWidth = FullSize.x * 0.2f;
-		float CenterWidth = FullSize.x - LeftWidth - RightWidth;
+		float CenterWidth = FullSize.x - LeftPanelWidth - RightPanelWidth - (ImGui::GetStyle().ItemSpacing.x * 2.0f);
 
 		// =====================================================
 		// LEFT: Skeleton Tree
 		// =====================================================
-		ImGui::BeginChild("SkeletonPanel", ImVec2(LeftWidth, 0), true);
+		ImGui::BeginChild("SkeletonPanel", ImVec2(LeftPanelWidth, 0), true);
 
 		ImGui::Text("Skeleton");
 
@@ -152,7 +150,15 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 
 		ImGui::EndChild();
 
-		ImGui::SameLine();
+        // Left Splitter
+        ImGui::SameLine();
+        ImGui::Button("##left_splitter", ImVec2(2.0f, -1.0f));
+        if (ImGui::IsItemActive())
+        {
+            LeftPanelWidth += ImGui::GetIO().MouseDelta.x;
+            LeftPanelWidth = std::clamp(LeftPanelWidth, 100.0f, FullSize.x * 0.4f);
+        }
+        ImGui::SameLine();
 
 		// =====================================================
 		// CENTER: Viewport
@@ -213,21 +219,39 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 
 		ImGui::EndChild();
 
-		ImGui::SameLine();
+        // Right Splitter
+        ImGui::SameLine();
+        ImGui::Button("##right_splitter", ImVec2(2.0f, -1.0f));
+        if (ImGui::IsItemActive())
+        {
+            RightPanelWidth -= ImGui::GetIO().MouseDelta.x;
+            RightPanelWidth = std::clamp(RightPanelWidth, 100.0f, FullSize.x * 0.4f);
+        }
+        ImGui::SameLine();
 
 		// =====================================================
 		// RIGHT: Bone Details
 		// =====================================================
-		ImGui::BeginChild("BoneDetailsPanel", ImVec2(RightWidth, 0), true);
-		ImGui::Text("Bone Details");
+		ImGui::BeginChild("BoneDetailsPanel", ImVec2(RightPanelWidth, 0), true);
+		ImGui::Text("Details");
 		ImGui::Separator();
 		if (Viewer->SelectedBoneIndex != -1 && SkelMeshComp)
 		{
 			RenderBoneDetails(SkelMeshComp);
 		}
+        else if (SelectedSocketIndex != -1 && SkelMeshComp)
+        {
+            // Socket details (Location, Rotation, Scale already in Left Panel, but showing something here is good)
+            if (CachedMesh && SelectedSocketIndex < (int32)CachedMesh->Sockets.size())
+            {
+                ImGui::Text("Socket: %s", CachedMesh->Sockets[SelectedSocketIndex].Name.ToString().c_str());
+                ImGui::Separator();
+                ImGui::Text("Selected Socket for transformation.");
+            }
+        }
 		else
 		{
-			ImGui::TextDisabled("No bone selected.");
+			ImGui::TextDisabled("No bone or socket selected.");
 		}
 		ImGui::EndChild();
 	}
@@ -431,7 +455,37 @@ void FEditorViewerWindowWidget::DrawSocketNode(int32 SocketIdx)
     if (ImGui::IsItemClicked())
     {
         SelectedSocketIndex = SocketIdx;
-        SelectedBoneIndex = -1;
+        Viewer->SelectedBoneIndex = -1;
+
+        if (EditorEngine)
+        {
+            FViewportClient* BaseClient = Viewer->GetViewport().GetClient();
+            FEditorViewportClient* EditorClient = static_cast<FEditorViewportClient*>(BaseClient);
+
+            ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+            if (ViewTarget)
+            {
+                if (FSelectionManager* SelMgr = EditorClient->GetSelectionManager())
+                {
+                    SelMgr->Select(ViewTarget);
+                }
+
+                if (UGizmoComponent* Gizmo = EditorClient->GetGizmo())
+                {
+                    USkeletalMeshComponent* SkelComp = ViewTarget->GetSkeletalMeshComponent();
+                    if (SkelComp)
+                    {
+                        if (FSelectionManager* SelMgr = EditorClient->GetSelectionManager())
+                        {
+                            Gizmo->SetSelectedActors(&SelMgr->GetSelectedActors());
+                        }
+
+                        // Use the new FSocketTransformProxy
+                        Gizmo->SetProxy(std::make_shared<FSocketTransformProxy>(SkelComp, Socket.Name));
+                    }
+                }
+            }
+        }
     }
 
     // 우클릭 컨텍스트

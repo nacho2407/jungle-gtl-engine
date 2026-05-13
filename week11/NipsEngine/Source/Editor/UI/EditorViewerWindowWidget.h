@@ -66,4 +66,7 @@ private:
 
 	FEditorViewer* Viewer = nullptr;
     bool bOpen = false;
+
+    float LeftPanelWidth = 250.0f;
+    float RightPanelWidth = 250.0f;
 };
