@@ -592,9 +592,11 @@ FEditorViewer* UEditorEngine::CreateViewer(FString InFileName)
     auto NewViewer = std::make_unique<FEditorViewer>();
     NewViewer->Init(Window, this, ViewerCtx.World, ViewerCtx.SelectionManager);
     NewViewer->ChangeTarget(InFileName);
+    MainPanel.OpenViewer(NewViewer.get());
 
     FEditorViewer* Result = NewViewer.get();
     Viewers.push_back(std::move(NewViewer));
+
     return Result;
 }
 
@@ -604,6 +606,9 @@ void UEditorEngine::RemoveViewer(FEditorViewer* InViewer)
     {
         if (it->get() == InViewer)
         {
+			// CloseViewer 는 여기서 처리하지않고 MainPanel 내에서 Pending 으로 처리하게 한다
+			// Widget 쪽에서 이미 bOpen = false 처리돼있으므로 그걸 기반으로 처리될 것임
+			
             // Find world handle and unregister
             if (FEditorViewportClient* Client = static_cast<FEditorViewportClient*>((*it)->GetViewport().GetClient()))
             {

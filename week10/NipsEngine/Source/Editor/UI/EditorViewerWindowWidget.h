@@ -3,6 +3,7 @@
 #include "Asset/SkeletalMeshTypes.h"
 
 class USkeletalMeshComponent;
+class FEditorViewer;
 
 class FEditorViewerWindowWidget : public FEditorWidget
 {
@@ -10,13 +11,18 @@ public:
     void Initialize(UEditorEngine* InEditorEngine) override;
     void Render(float DeltaTime) override;
     void DrawBoneNode(
-        class FEditorViewer& Viewer,
         int32 BoneIndex,
         const TArray<FBoneInfo>& Bones,
         const TArray<TArray<int32>>& Children);
 
     // Bone tree에 socket을 leaf 노드로 표시. SocketIdx는 CachedMesh->Sockets 배열 인덱스.
-    void DrawSocketNode(FEditorViewer& Viewer, int32 SocketIdx);
+    void DrawSocketNode(int32 SocketIdx);
+
+	void SetViewer(FEditorViewer* InViewer) { Viewer = InViewer; }
+    FEditorViewer* GetViewer() const { return Viewer; }
+
+	bool IsOpen() const { return bOpen; }
+    void SetOpen(bool NewOpen) { bOpen = NewOpen; }
 
 private:
     // bone tree 캐시들. CachedMesh가 바뀌면 둘 다 재빌드.
@@ -26,22 +32,23 @@ private:
 
     // Socket 편집 액션들. Render()안에서만 호출 — CachedMesh/CachedSkComp가 유효한 시점.
     void    AddSocketOnBone(int32 BoneIdx);
-    void DeleteSocket(FEditorViewer& Viewer, int32 SocketIdx);
-    bool HasPreview(FEditorViewer& Viewer, const FName& SocketName) const;
+    void DeleteSocket(int32 SocketIdx);
+    bool HasPreview(const FName& SocketName) const;
     FString GenerateUniqueSocketName(const char* Base = "Socket") const;
 
     // 모달 picker — Render() 끝에서 호출하여 그림.
-    void DrawPreviewPickerModal(FEditorViewer& Viewer);
+    void DrawPreviewPickerModal();
 
     // 좌측 패널 하단의 선택된 socket properties 편집기 + Save Mesh 버튼.
     void    DrawSocketInspector();
     void    TriggerSaveMesh();
 
     // Rename 다이얼로그
-    void DrawRenameModal(FEditorViewer& Viewer);
+    void DrawRenameModal();
     bool    IsSocketNameUnique(const FString& Candidate, int32 IgnoreIdx) const;
 
-	void RenderBoneDetails(FEditorViewer& Viewer, USkeletalMeshComponent* SkelComp);
+	void RenderBoneDetails(USkeletalMeshComponent* SkelComp);
+    void Shutdown();
 
     TArray<TArray<int32>> Children;             // bone idx → child bone indices
     TArray<TArray<int32>> BoneToSocketIndices;  // bone idx → socket array indices
@@ -54,4 +61,7 @@ private:
     int32 RenameSocketIdx = -1;                // rename modal 트리거; -1이면 닫힌 상태
     char  RenameBuffer[256] = {};
     bool  bMeshDirty = false;         // socket 데이터 변경 후 Save 트리거용
+
+	FEditorViewer* Viewer = nullptr;
+    bool bOpen = false;
 };
