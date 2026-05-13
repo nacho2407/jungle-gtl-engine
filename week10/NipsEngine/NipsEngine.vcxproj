@@ -714,6 +714,7 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DepthLessRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DepthPrePass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\EditorRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\EditorOverlayRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FXAARenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FogRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.cpp" />
@@ -1048,6 +1049,7 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DepthLessRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DepthPrePass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\EditorRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\EditorOverlayRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FXAARenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FogRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.h" />

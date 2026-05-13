@@ -306,6 +306,13 @@ void FRenderer::CreateResources()
     //FShadowAtlasManager::Get().VSMInitialize(Device.GetDevice()); /// VSM 추가 -> ShadowAtlas의 Resource로 사용하도록 이 호출 삭제해주면 됨
 
 	EditorLineBatcher.Create(Device.GetDevice());
+	{
+		FLineBatcherDesc OverlayDesc;
+		OverlayDesc.MaterialName  = "LineMatOverlay";   // 별도 머티리얼 인스턴스 — 같은 .mat 자산 재활용
+		OverlayDesc.MaterialPath  = "Asset/Material/LineMat.mat";
+		OverlayDesc.DepthStencil  = EDepthStencilType::AlwaysOnTop;
+		EditorOverlayLineBatcher.Create(Device.GetDevice(), OverlayDesc);
+	}
 	GridLineBatcher.Create(Device.GetDevice());
 
 	// 텍스처는 ResourceManager가 소유 ? Batcher 는 셰이더/버퍼만 초기화
@@ -360,6 +367,7 @@ void FRenderer::Release()
 	FGPUProfiler::Get().Shutdown();
 
 	EditorLineBatcher.Release();
+	EditorOverlayLineBatcher.Release();
 	GridLineBatcher.Release();
 	FontBatcher.Release();
 	SubUVBatcher.Release();
@@ -533,6 +541,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
     RenderPassContext->SubUVBatcher = &SubUVBatcher;
     RenderPassContext->GridLineBatcher = &GridLineBatcher;
     RenderPassContext->EditorLineBatcher = &EditorLineBatcher;
+    RenderPassContext->EditorOverlayLineBatcher = &EditorOverlayLineBatcher;
 	RenderPipeline.Render(RenderPassContext.get());
 	
 	SceneFinalSRV = RenderPipeline.GetOutSRV();
@@ -1119,6 +1128,7 @@ void FRenderer::InitializePassRenderStates()
     S[(uint32)E::FXAA] = { false };
 	S[(uint32)E::SelectionMask] = { false };
 	S[(uint32)E::Editor] = { true };
+	S[(uint32)E::EditorOverlay] = { true };
 	S[(uint32)E::Grid] = { false };
 	S[(uint32)E::DepthLess] = { false };
 	S[(uint32)E::Font] = { true };
@@ -1167,6 +1177,32 @@ void FRenderer::InitializePassBatchers()
 		},
 		/*.Flush   =*/ [this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			FlushLineBatcher(EditorLineBatcher, Pass, Bus, Ctx);
+		}
+	};
+
+	// --- EditorOverlay 패스: 항상 위에 보이는 디버그 와이어 (본 등) → EditorOverlayLineBatcher ---
+	PassBatchers[(uint32)ERenderPass::EditorOverlay] = {
+		/*.Clear   =*/ [this]() { EditorOverlayLineBatcher.Clear(); },
+		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus&) {
+			if (Cmd.Type == ERenderCommandType::DebugLine)
+			{
+				const auto& L = Cmd.Constants.Line;
+				EditorOverlayLineBatcher.AddLine(L.Start, L.End, L.Color);
+			}
+			else if (Cmd.Type == ERenderCommandType::DebugBone)
+			{
+				const auto& B = Cmd.Constants.Bone;
+				EditorOverlayLineBatcher.AddBoneOctahedron(B.Start, B.End, B.Color, B.WidthRatio);
+
+				// 양 끝점 sphere — 본 길이에 비례한 작은 와이어 구.
+				const float Length = (B.End - B.Start).Size();
+				const float SphereRadius = Length * B.EndpointRadiusRatio;
+				EditorOverlayLineBatcher.AddWireSphere(B.Start, SphereRadius, B.Color, 12);
+				EditorOverlayLineBatcher.AddWireSphere(B.End,   SphereRadius, B.Color, 12);
+			}
+		},
+		/*.Flush   =*/ [this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			FlushLineBatcher(EditorOverlayLineBatcher, Pass, Bus, Ctx);
 		}
 	};
 
