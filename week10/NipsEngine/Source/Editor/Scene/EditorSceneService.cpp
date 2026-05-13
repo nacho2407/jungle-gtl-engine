@@ -1,4 +1,4 @@
-#include "Editor/Scene/EditorSceneService.h"
+﻿#include "Editor/Scene/EditorSceneService.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/ProjectSettings.h"
@@ -96,7 +96,6 @@ FEditorSceneOperationResult FEditorSceneService::OpenScene(const FString& FilePa
 	bSceneDirty = false;
 	EditorEngine->GetUndoSystem().ClearAllHistory();
 	PushFooterLog("Level loaded");
-	EditorEngine->CreateViewerWorld();
 	return MakeResult(LoadCtx.World != nullptr, LoadCtx.World ? "Level loaded" : "Level load failed", FilePath);
 }
 

@@ -10,12 +10,13 @@ public:
     void Initialize(UEditorEngine* InEditorEngine) override;
     void Render(float DeltaTime) override;
     void DrawBoneNode(
+        class FEditorViewer& Viewer,
         int32 BoneIndex,
         const TArray<FBoneInfo>& Bones,
         const TArray<TArray<int32>>& Children);
 
     // Bone tree에 socket을 leaf 노드로 표시. SocketIdx는 CachedMesh->Sockets 배열 인덱스.
-    void DrawSocketNode(int32 SocketIdx);
+    void DrawSocketNode(FEditorViewer& Viewer, int32 SocketIdx);
 
 private:
     // bone tree 캐시들. CachedMesh가 바뀌면 둘 다 재빌드.
@@ -25,20 +26,22 @@ private:
 
     // Socket 편집 액션들. Render()안에서만 호출 — CachedMesh/CachedSkComp가 유효한 시점.
     void    AddSocketOnBone(int32 BoneIdx);
-    void    DeleteSocket(int32 SocketIdx);
-    bool    HasPreview(const FName& SocketName) const;
+    void DeleteSocket(FEditorViewer& Viewer, int32 SocketIdx);
+    bool HasPreview(FEditorViewer& Viewer, const FName& SocketName) const;
     FString GenerateUniqueSocketName(const char* Base = "Socket") const;
 
     // 모달 picker — Render() 끝에서 호출하여 그림.
-    void    DrawPreviewPickerModal();
+    void DrawPreviewPickerModal(FEditorViewer& Viewer);
 
     // 좌측 패널 하단의 선택된 socket properties 편집기 + Save Mesh 버튼.
     void    DrawSocketInspector();
     void    TriggerSaveMesh();
 
     // Rename 다이얼로그
-    void    DrawRenameModal();
+    void DrawRenameModal(FEditorViewer& Viewer);
     bool    IsSocketNameUnique(const FString& Candidate, int32 IgnoreIdx) const;
+
+	void RenderBoneDetails(FEditorViewer& Viewer, USkeletalMeshComponent* SkelComp);
 
     TArray<TArray<int32>> Children;             // bone idx → child bone indices
     TArray<TArray<int32>> BoneToSocketIndices;  // bone idx → socket array indices

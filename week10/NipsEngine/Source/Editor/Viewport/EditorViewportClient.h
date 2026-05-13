@@ -88,6 +88,8 @@ public:
 	void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
 	void SetSelectionManager(FSelectionManager* InSelectionManager);
 
+	FSelectionManager* GetSelectionManager() const { return SelectionManager; }
+
 	UGizmoComponent* GetGizmo() { return Gizmo; }
 
 	/** Override to also resize the camera. */
