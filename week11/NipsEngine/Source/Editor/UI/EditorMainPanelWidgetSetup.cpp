@@ -48,19 +48,34 @@ void FEditorMainPanel::OpenCurveAsset(const FString& CurvePath)
 
 void FEditorMainPanel::OpenViewer(FEditorViewer* Viewer)
 {
-	auto& Widget = Widgets.ViewerWindowWidgets.emplace_back();
-    Widget.Initialize(EditorEngine);
-    Widget.SetViewer(Viewer);
-    Widget.SetOpen(true);
+    PendingOpenViewers.push_back(Viewer);
+}
+
+void FEditorMainPanel::FlushOpenViewerWidgets()
+{
+    auto& V = Widgets.ViewerWindowWidgets;
+
+    for (auto* Viewer : PendingOpenViewers)
+    {
+        auto WidgetPtr = std::make_unique<FEditorViewerWindowWidget>();
+
+        WidgetPtr->Initialize(EditorEngine);
+        WidgetPtr->SetViewer(Viewer);
+        WidgetPtr->SetOpen(true);
+
+        Widgets.ViewerWindowWidgets.emplace_back(std::move(WidgetPtr));
+    }
+
+    PendingOpenViewers.clear();
 }
 
 void FEditorMainPanel::CloseViewer(FEditorViewer* Viewer)
 {
 	// Open false 처리 후 Flush
     for (auto& Widget : Widgets.ViewerWindowWidgets)
-		if (Widget.GetViewer() == Viewer)
+		if (Widget->GetViewer() == Viewer)
 		{
-            Widget.SetOpen(false);
+            Widget->SetOpen(false);
             break;
 		}
 }
@@ -70,8 +85,8 @@ void FEditorMainPanel::FlushClosedViewerWidgets()
     auto& V = Widgets.ViewerWindowWidgets;
     V.erase(
         std::remove_if(V.begin(), V.end(),
-                       [](const FEditorViewerWindowWidget& W)
-                       { return !W.IsOpen(); }),
+                       [](const std::unique_ptr<FEditorViewerWindowWidget>& W)
+                       { return !W->IsOpen(); }),
         V.end());
 }
 

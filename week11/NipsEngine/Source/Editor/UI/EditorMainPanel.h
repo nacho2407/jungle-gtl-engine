@@ -49,6 +49,7 @@ public:
 	void OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex);
 	void OpenCurveAsset(const FString& CurvePath);
     void OpenViewer(FEditorViewer* Viewer);
+    void FlushOpenViewerWidgets();
     void CloseViewer(FEditorViewer* Viewer);
     void FlushClosedViewerWidgets();
 	void OpenCurveFromActorSequence(
@@ -131,6 +132,7 @@ private:
 
 	ImVector<ImWchar> FontGlyphRanges; // Keep alive until the font atlas is built.
 	FEditorMainPanelWidgetSet Widgets;
+    TArray<FEditorViewer*> PendingOpenViewers;
 
 	FEditorMainPanelVisibilityState PanelVisibility;
 	FEditorMainPanelBuildGameModalState BuildGameState;
@@ -142,4 +144,5 @@ private:
 	FEditorMainPanelRuntimeUIDrawCallbackState RuntimeUIDrawState;
 	FEditorFooterLogSystem FooterLogSystem;
 	FEditorMainPanelViewportIconResources IconResources;
+
 };

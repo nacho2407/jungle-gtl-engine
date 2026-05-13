@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <functional>
 #include <windows.h>
@@ -13,6 +13,7 @@ class FInputRouter
 public:
     using FRectProvider = std::function<bool(FRect&)>;
     using FWorldResolver = std::function<UWorld*()>;
+	using FZOrderProvider = std::function<int32()>;
 
     void SetOwnerWindow(HWND InOwnerWindow) { OwnerWindow = InOwnerWindow; }
     void SetImGuiCaptureState(bool bCaptureMouse, bool bCaptureKeyboard);
@@ -26,7 +27,8 @@ public:
         FViewportClient* InClient,
         EInteractionDomain InDomain,
         FRectProvider InRectProvider,
-        FWorldResolver InWorldResolver);
+        FWorldResolver InWorldResolver,
+		FZOrderProvider InZOrderProvider = nullptr);
 
     FViewportClient* GetFocusedClient() const;
 
@@ -40,6 +42,7 @@ private:
         EInteractionDomain Domain = EInteractionDomain::Editor;
         FRectProvider      RectProvider;
         FWorldResolver     WorldResolver;
+        FZOrderProvider ZOrderProvider;
     };
 
     static bool IsPointInRect(const POINT& Point, const FRect& Rect);
@@ -108,6 +111,7 @@ class FInputPolicyRouter
 public:
     using FRectProvider = FInputRouter::FRectProvider;
     using FWorldResolver = FInputRouter::FWorldResolver;
+	using FZOrderProvider = FInputRouter::FZOrderProvider;
 
     void SetOwnerWindow(HWND InOwnerWindow) { Router.SetOwnerWindow(InOwnerWindow); }
     void SetImGuiCaptureState(bool bCaptureMouse, bool bCaptureKeyboard) { Router.SetImGuiCaptureState(bCaptureMouse, bCaptureKeyboard); }
@@ -124,9 +128,10 @@ public:
         FViewportClient* InClient,
         EInteractionDomain InDomain,
         FRectProvider InRectProvider,
-        FWorldResolver InWorldResolver)
+        FWorldResolver InWorldResolver,
+        FZOrderProvider InZOrderProvider = nullptr)
     {
-        Router.RegisterTarget(InViewport, InClient, InDomain, InRectProvider, InWorldResolver);
+        Router.RegisterTarget(InViewport, InClient, InDomain, InRectProvider, InWorldResolver, InZOrderProvider);
     }
 
     bool Tick(float DeltaTime, FViewportInputContext& OutContext, FInteractionBinding& OutBinding);
