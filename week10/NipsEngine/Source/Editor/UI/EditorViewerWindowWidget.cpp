@@ -47,6 +47,13 @@ void FEditorViewerWindowWidget::Shutdown()
     bOpen = false;
 }
 
+FString FEditorViewerWindowWidget::GetWindowName() const
+{
+    char WindowName[64];
+    sprintf_s(WindowName, "Viewer##%p", Viewer);
+    return FString(WindowName);
+}
+
 void FEditorViewerWindowWidget::Render(float DeltaTime)
 {
     if (!bOpen)
@@ -67,12 +74,11 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
     if (!SRV)
         return;
 
-	char WindowName[64];
-	sprintf_s(WindowName, "Viewer##%p", Viewer);
+	FString WindowName = GetWindowName();
 
 	// Make the viewer window reasonably large on first creation
 	ImGui::SetNextWindowSize(ImVec2(900, 600), ImGuiCond_FirstUseEver);
-	if (ImGui::Begin(WindowName, &bOpen))
+	if (ImGui::Begin(WindowName.c_str(), &bOpen))
 	{
 		ImVec2 FullSize = ImGui::GetContentRegionAvail();
 

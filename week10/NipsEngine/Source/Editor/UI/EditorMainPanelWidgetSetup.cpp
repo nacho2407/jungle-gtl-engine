@@ -48,6 +48,24 @@ void FEditorMainPanel::OpenCurveAsset(const FString& CurvePath)
 
 void FEditorMainPanel::OpenViewer(FEditorViewer* Viewer)
 {
+    for (auto& Widget : Widgets.ViewerWindowWidgets)
+    {
+        if (Widget->GetViewer() == Viewer)
+        {
+            Widget->SetOpen(true);
+            ImGui::SetWindowFocus(Widget->GetWindowName().c_str());
+            return;
+        }
+    }
+
+    for (auto* Pending : PendingOpenViewers)
+    {
+        if (Pending == Viewer)
+        {
+            return;
+        }
+    }
+
     PendingOpenViewers.push_back(Viewer);
 }
 

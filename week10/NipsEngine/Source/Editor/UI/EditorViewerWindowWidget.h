@@ -24,6 +24,8 @@ public:
 	bool IsOpen() const { return bOpen; }
     void SetOpen(bool NewOpen) { bOpen = NewOpen; }
 
+    FString GetWindowName() const;
+
 private:
     // bone tree 캐시들. CachedMesh가 바뀌면 둘 다 재빌드.
     // socket을 add/delete할 때도 BoneToSocketIndices만 다시 빌드해야 한다.
