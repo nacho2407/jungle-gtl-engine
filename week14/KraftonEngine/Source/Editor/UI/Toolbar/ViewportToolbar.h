@@ -58,6 +58,7 @@ struct FViewportToolbarContext
 	std::function<void()> OnAddActorClicked;
 	std::function<void()> OnCoordSystemToggled;
 	std::function<void()> OnSettingsChanged;
+	std::function<void()> OnRenderViewModeExtras;
 
 	std::function<void(int32)> OnLayoutSelected;
 	std::function<void()> OnToggleLayout;

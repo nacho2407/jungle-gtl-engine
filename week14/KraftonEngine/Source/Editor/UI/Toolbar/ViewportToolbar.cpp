@@ -566,6 +566,13 @@ void FViewportToolbar::RenderViewMode(const FToolbarRenderState& State)
 		ImGui::RadioButton("Light Culling", &CurrentMode, static_cast<int32>(EViewMode::LightCulling));
 
 		RenderOptions.ViewMode = static_cast<EViewMode>(CurrentMode);
+
+		if (State.Context.OnRenderViewModeExtras)
+		{
+			ImGui::Separator();
+			State.Context.OnRenderViewModeExtras();
+		}
+
 		ImGui::EndPopup();
 	}
 }
