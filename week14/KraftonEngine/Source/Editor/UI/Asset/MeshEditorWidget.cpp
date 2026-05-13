@@ -1,7 +1,5 @@
 ﻿#include "MeshEditorWidget.h"
 
-#include "Mesh/StaticMesh.h"
-#include "Mesh/StaticMeshAsset.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
 #include "Runtime/Engine.h"
@@ -41,7 +39,7 @@ FMeshEditorWidget::FMeshEditorWidget()
 
 bool FMeshEditorWidget::CanEdit(UObject* Object) const
 {
-	return Object && (Object->IsA<UStaticMesh>() || Object->IsA<USkeletalMesh>());
+	return Object && Object->IsA<USkeletalMesh>();
 }
 
 void FMeshEditorWidget::Open(UObject* Object)
@@ -139,13 +137,10 @@ void FMeshEditorWidget::Render(float DeltaTime)
 	static float DetailsWidth = 300.0f;
 
 	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
-	UStaticMesh* StaticMesh = Cast<UStaticMesh>(EditedObject);
 
 	bool bWindowOpen = true;
 	FString VisibleTitle = "Mesh Editor";
-	const FString AssetPath = SkeletalMesh
-		? SkeletalMesh->GetAssetPathFileName()
-		: (StaticMesh ? StaticMesh->GetAssetPathFileName() : FString());
+	const FString AssetPath = SkeletalMesh ? SkeletalMesh->GetAssetPathFileName() : FString();
 	if (!AssetPath.empty())
 	{
 		VisibleTitle += " - ";
@@ -367,14 +362,6 @@ void FMeshEditorWidget::RenderMeshStatsOverlay(ImDrawList* DrawList, const ImVec
 	if (const USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
 	{
 		if (const FSkeletalMesh* Asset = SkeletalMesh->GetSkeletalMeshAsset())
-		{
-			VertexCount = Asset->Vertices.size();
-			TriangleCount = Asset->Indices.size() / 3;
-		}
-	}
-	else if (const UStaticMesh* StaticMesh = Cast<UStaticMesh>(EditedObject))
-	{
-		if (const FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset())
 		{
 			VertexCount = Asset->Vertices.size();
 			TriangleCount = Asset->Indices.size() / 3;

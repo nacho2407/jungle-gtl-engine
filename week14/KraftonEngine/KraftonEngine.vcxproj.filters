@@ -1136,9 +1136,11 @@
     <ClCompile Include="Source\Engine\GameFramework\SkeletalMeshActor.cpp" />
     <ClCompile Include="Source\Engine\Mesh\MeshManager.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\MeshEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\StaticMeshEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Toolbar\ViewportToolbar.cpp" />
     <ClCompile Include="Source\Editor\Viewport\MeshEditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\MeshEditorViewportClient.h" />
+    <ClCompile Include="Source\Editor\Viewport\StaticMeshEditorViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.cpp" />
     <ClCompile Include="Source\Engine\Gizmo\ComponentGizmoTarget.cpp" />
     <ClCompile Include="Source\Editor\Slate\SlateApplication.cpp" />
@@ -2823,8 +2825,10 @@
     <ClInclude Include="Source\Editor\Settings\GizmoToolSettings.h" />
     <ClInclude Include="Source\Editor\Settings\ViewportCameraControlSettings.h" />
     <ClInclude Include="Source\Editor\UI\Asset\MeshEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\StaticMeshEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Toolbar\ViewportToolbar.h" />
     <ClInclude Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.h" />
+    <ClInclude Include="Source\Editor\Viewport\StaticMeshEditorViewportClient.h" />
     <ClInclude Include="Source\Engine\Gizmo\ComponentGizmoTarget.h" />
     <ClInclude Include="Source\Engine\Gizmo\GizmoTransformTarget.h" />
     <ClInclude Include="Source\Editor\Slate\SlateApplication.h" />
