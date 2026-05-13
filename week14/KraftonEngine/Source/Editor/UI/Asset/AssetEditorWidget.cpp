@@ -9,6 +9,7 @@ void FAssetEditorWidget::Open(UObject* Object)
 
 	EditedObject = Object;
 	bOpen = true;
+	RequestFocus();
 	ClearDirty();
 }
 
@@ -16,5 +17,6 @@ void FAssetEditorWidget::Close()
 {
 	EditedObject = nullptr;
 	bOpen = false;
+	bFocusRequested = false;
 	ClearDirty();
 }

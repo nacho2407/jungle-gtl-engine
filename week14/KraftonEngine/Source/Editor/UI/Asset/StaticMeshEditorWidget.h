@@ -15,6 +15,7 @@ public:
 	FStaticMeshEditorWidget();
 
 	bool CanEdit(UObject* Object) const override;
+	bool IsEditingObject(UObject* Object) const override;
 
 	void Open(UObject* Object) override;
 	void Close() override;
