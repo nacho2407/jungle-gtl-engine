@@ -5,6 +5,9 @@
 #include "Component/SkeletalMeshComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
+#include "Component/GizmoComponent.h"
+#include "Component/TransformProxy.h"
+#include "Editor/Viewport/EditorViewportClient.h"
 #include "imgui.h"
 
 #include <cstdio>
@@ -27,155 +30,264 @@ void FEditorViewerWindowWidget::Initialize(UEditorEngine* InEditorEngine)
     FEditorWidget::Initialize(InEditorEngine);
 }
 
+void FEditorViewerWindowWidget::Shutdown()
+{
+    Children.clear();
+    BoneToSocketIndices.clear();
+    CachedMesh = nullptr;
+    CachedSkComp = nullptr; 
+
+    SelectedBoneIndex = -1;
+    SelectedSocketIndex = -1;           
+    PendingPreviewPickerSocketIdx = -1; 
+    RenameSocketIdx = -1;               
+    bMeshDirty = false; 
+
+    Viewer = nullptr;
+    bOpen = false;
+}
+
 void FEditorViewerWindowWidget::Render(float DeltaTime)
 {
+    if (!bOpen)
+        return;
+
     if (!EditorEngine)
         return;
 
-    auto& SceneViewport = EditorEngine->GetViewer().GetViewport();
-
-    ID3D11ShaderResourceView* SRV = SceneViewport.GetOutSRV();
-    if (!SRV)
+	if (!Viewer)
         return;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
-    ImGui::Begin("Viewer");
+	FSceneViewport& SceneViewport = Viewer->GetViewport();
 
-    ImVec2 FullSize = ImGui::GetContentRegionAvail();
+	ID3D11ShaderResourceView* SRV = SceneViewport.GetOutSRV();
 
-    float LeftWidth = FullSize.x * 0.25f;
-    float RightWidth = FullSize.x - LeftWidth;
+    if (!SRV)
+        return;
 
-    // =====================================================
-    // LEFT: Skeleton Tree
-    // =====================================================
-    ImGui::BeginChild("SkeletonPanel", ImVec2(LeftWidth, 0), true);
+	char WindowName[64];
+	sprintf_s(WindowName, "Viewer##%p", &Viewer);
 
-    ImGui::Text("Skeleton");
+	// Make the viewer window reasonably large on first creation
+	ImGui::SetNextWindowSize(ImVec2(900, 600), ImGuiCond_FirstUseEver);
+	if (ImGui::Begin(WindowName, &bOpen))
+	{
+		ImVec2 FullSize = ImGui::GetContentRegionAvail();
 
-	ASkeletalMeshActor* ViewTarget = EditorEngine->GetViewer().GetViewTarget();
-    USkeletalMeshComponent* SkelMeshComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
-    USkeletalMesh* SkeletalMesh = SkelMeshComp ? SkelMeshComp->GetSkeletalMesh() : nullptr;
-    FSkeletalMesh* MeshData = SkeletalMesh ? SkeletalMesh->GetMeshData() : nullptr;
+		float LeftWidth = FullSize.x * 0.2f;
+		float RightWidth = FullSize.x * 0.2f;
+		float CenterWidth = FullSize.x - LeftWidth - RightWidth;
 
-    // 헬퍼들이 참조할 transient 캐시 (Render 호출 범위에서만 유효)
-    CachedSkComp = SkelMeshComp;
+		// =====================================================
+		// LEFT: Skeleton Tree
+		// =====================================================
+		ImGui::BeginChild("SkeletonPanel", ImVec2(LeftWidth, 0), true);
 
-    if (!MeshData)
-    {
-        CachedMesh = nullptr;
-        Children.clear();
-        BoneToSocketIndices.clear();
-        SelectedBoneIndex = -1;
-        SelectedSocketIndex = -1;
-        bMeshDirty = false;
-        ImGui::TextDisabled("No skeletal mesh");
-    }
-    else if (CachedMesh != MeshData)
-    {
-        CachedMesh = MeshData;
-        SelectedBoneIndex = -1;
-        SelectedSocketIndex = -1;
-        bMeshDirty = false;
+		ImGui::Text("Skeleton");
 
-        RebuildBoneTreeCaches(MeshData);
-    }
+		ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+		USkeletalMeshComponent* SkelMeshComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+		USkeletalMesh* SkeletalMesh = SkelMeshComp ? SkelMeshComp->GetSkeletalMesh() : nullptr;
+		FSkeletalMesh* MeshData = SkeletalMesh ? SkeletalMesh->GetMeshData() : nullptr;
 
-	if (MeshData)
-    {
-        for (int32 i = 0; i < MeshData->Bones.size(); ++i)
-        {
-            if (MeshData->Bones[i].ParentIndex == -1)
-            {
-                DrawBoneNode(i, MeshData->Bones, Children);
-            }
-        }
-    }
+		// 헬퍼들이 참조할 transient 캐시 (Render 호출 범위에서만 유효)
+		CachedSkComp = SkelMeshComp;
 
-    // 컨텍스트 메뉴에서 PendingPreviewPickerSocketIdx가 셋되면 모달 오픈.
-    // (BeginPopupContextItem 안에서 OpenPopup하지 않고 *바깥*에서 하는 것이 안전 — popup 스택 충돌 방지)
-    if (PendingPreviewPickerSocketIdx >= 0 && !ImGui::IsPopupOpen("PickStaticMesh"))
-    {
-        ImGui::OpenPopup("PickStaticMesh");
-    }
-    DrawPreviewPickerModal();
+		if (!MeshData)
+		{
+			CachedMesh = nullptr;
+			Children.clear();
+			BoneToSocketIndices.clear();
+			SelectedBoneIndex = -1;
+			SelectedSocketIndex = -1;
+			bMeshDirty = false;
+			ImGui::TextDisabled("No skeletal mesh");
+		}
+		else if (CachedMesh != MeshData)
+		{
+			CachedMesh = MeshData;
+			SelectedBoneIndex = -1;
+			SelectedSocketIndex = -1;
+			bMeshDirty = false;
 
-    if (RenameSocketIdx >= 0 && !ImGui::IsPopupOpen("RenameSocket"))
-    {
-        ImGui::OpenPopup("RenameSocket");
-    }
-    DrawRenameModal();
+			RebuildBoneTreeCaches(MeshData);
+		}
 
-    // 선택된 socket의 properties 편집기 + Save 버튼 (좌측 패널 하단)
-    ImGui::Separator();
-    DrawSocketInspector();
+		if (MeshData)
+		{
+			for (int32 j = 0; j < MeshData->Bones.size(); ++j)
+			{
+				if (MeshData->Bones[j].ParentIndex == -1)
+				{
+					DrawBoneNode(j, MeshData->Bones, Children);
+				}
+			}
+		}
 
-    ImGui::EndChild();
+		// 컨텍스트 메뉴에서 PendingPreviewPickerSocketIdx가 셋되면 모달 오픈.
+		// (BeginPopupContextItem 안에서 OpenPopup하지 않고 *바깥*에서 하는 것이 안전 — popup 스택 충돌 방지)
+		if (PendingPreviewPickerSocketIdx >= 0 && !ImGui::IsPopupOpen("PickStaticMesh"))
+		{
+			ImGui::OpenPopup("PickStaticMesh");
+		}
+		DrawPreviewPickerModal();
 
-    ImGui::SameLine();
+		if (RenameSocketIdx >= 0 && !ImGui::IsPopupOpen("RenameSocket"))
+		{
+			ImGui::OpenPopup("RenameSocket");
+		}
+		DrawRenameModal();
 
-    // =====================================================
-    // RIGHT: Viewport
-    // =====================================================
-    ImGui::BeginChild("ViewportPanel", ImVec2(RightWidth, 0), false);
+		// 선택된 socket의 properties 편집기 + Save 버튼 (좌측 패널 하단)
+		ImGui::Separator();
+		DrawSocketInspector();
 
-    // Show 옵션 풀다운. 메인 뷰포트의 BeginMenu("Show") 패턴을 popup 버전으로 옮긴 형태.
-    // 실제 렌더 분기는 후속 단계에서 연결.
-    {
-        FSkeletalViewerShowFlags& VFlags =
-            EditorEngine->GetViewer().GetClient().GetShowFlags();
+		ImGui::EndChild();
 
-        if (ImGui::Button("Show"))
-        {
-            ImGui::OpenPopup("SkeletalViewerShowPopup");
-        }
-        if (ImGui::BeginPopup("SkeletalViewerShowPopup"))
-        {
-            ImGui::MenuItem("Skeletal Mesh", nullptr, &VFlags.bShowSkeletalMesh);
-            ImGui::MenuItem("Bones",         nullptr, &VFlags.bShowBones);
-            ImGui::EndPopup();
-        }
-        ImGui::Separator();
-    }
+		ImGui::SameLine();
 
-    ImVec2 ScreenPos = ImGui::GetCursorScreenPos();
-    ImVec2 Size = ImGui::GetContentRegionAvail();
+		// =====================================================
+		// CENTER: Viewport
+		// =====================================================
+		ImGui::BeginChild("ViewportPanel", ImVec2(CenterWidth, 0), false);
 
-    Size.x = std::max(Size.x, 1.0f);
-    Size.y = std::max(Size.y, 1.0f);
+		// Show 옵션 풀다운. 메인 뷰포트의 BeginMenu("Show") 패턴을 popup 버전으로 옮긴 형태.
+		{
+			FSkeletalViewerShowFlags& VFlags = Viewer->GetClient().GetShowFlags();
 
-    POINT pt = { (LONG)ScreenPos.x, (LONG)ScreenPos.y };
+			if (ImGui::Button("Show"))
+			{
+				ImGui::OpenPopup("SkeletalViewerShowPopup");
+			}
+			if (ImGui::BeginPopup("SkeletalViewerShowPopup"))
+			{
+				ImGui::MenuItem("Skeletal Mesh", nullptr, &VFlags.bShowSkeletalMesh);
+				ImGui::MenuItem("Bones",         nullptr, &VFlags.bShowBones);
+				ImGui::EndPopup();
+			}
+			ImGui::Separator();
+		}
 
-    FViewportRect NewRect;
-    NewRect.X = (int32)pt.x;
-    NewRect.Y = (int32)pt.y;
-    NewRect.Width = (int32)Size.x;
-    NewRect.Height = (int32)Size.y;
+		ImVec2 ScreenPos = ImGui::GetCursorScreenPos();
+		ImVec2 Size = ImGui::GetContentRegionAvail();
 
-    SceneViewport.SetRect(NewRect);
+		Size.x = std::max(Size.x, 1.0f);
+		Size.y = std::max(Size.y, 1.0f);
 
-	if (auto* Client = SceneViewport.GetClient())
-    {
-        Client->SetViewportSize((float)NewRect.Width, (float)NewRect.Height);
-    }
+			
+		ImGui::InvisibleButton("ViewportCanvas", Size);
+        ImVec2 Min = ImGui::GetItemRectMin();
+        ImVec2 Max = ImGui::GetItemRectMax();
 
-    ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		FViewportRect NewRect;
+        NewRect.X = (int32)Min.x;
+        NewRect.Y = (int32)Min.y;
+        NewRect.Width = (int32)(Max.x - Min.x);
+        NewRect.Height = (int32)(Max.y - Min.y);
 
-    ID3D11DeviceContext* DC =
-        EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
+		SceneViewport.SetRect(NewRect);
 
-    DrawList->AddCallback(SetOpaqueBlendStateCallback, DC);
+		if (auto* Client = SceneViewport.GetClient())
+		{
+			Client->SetViewportSize((float)NewRect.Width, (float)NewRect.Height);
+		}
 
-    // Render viewport
-    ImGui::Image((ImTextureID)SRV, Size);
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
-    DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+		ID3D11DeviceContext* DC =
+			EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
 
-    ImGui::EndChild();
+		DrawList->AddCallback(SetOpaqueBlendStateCallback, DC);
 
-    ImGui::End();
+		// Render viewport
+        DrawList->AddImage((ImTextureID)SRV, Min, Max);
+
+		DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+
+		ImGui::EndChild();
+
+		ImGui::SameLine();
+
+		// =====================================================
+		// RIGHT: Bone Details
+		// =====================================================
+		ImGui::BeginChild("BoneDetailsPanel", ImVec2(RightWidth, 0), true);
+		ImGui::Text("Bone Details");
+		ImGui::Separator();
+		if (Viewer->SelectedBoneIndex != -1 && SkelMeshComp)
+		{
+			RenderBoneDetails(SkelMeshComp);
+		}
+		else
+		{
+			ImGui::TextDisabled("No bone selected.");
+		}
+		ImGui::EndChild();
+	}
+	ImGui::End();
+
     ImGui::PopStyleVar();
+
+	if (!bOpen)
+    {
+        EditorEngine->RemoveViewer(Viewer);
+        Shutdown();
+    }
+}
+
+void FEditorViewerWindowWidget::RenderBoneDetails(USkeletalMeshComponent* SkelComp)
+{
+    if (!SkelComp || Viewer->SelectedBoneIndex == -1) return;
+
+    const FBoneInfo& Bone = SkelComp->GetSkeletalMesh()->GetMeshData()->Bones[Viewer->SelectedBoneIndex];
+    ImGui::Text("Bone: %s (Index: %d)", Bone.Name.c_str(), Viewer->SelectedBoneIndex);
+    ImGui::Spacing();
+
+    FMatrix LocalTransform = SkelComp->GetBoneLocalTransform(Viewer->SelectedBoneIndex);
+    FVector Location, Scale;
+    FMatrix RotationMatrix;
+    LocalTransform.Decompose(Location, RotationMatrix, Scale);
+
+    // 외부(기즈모 등)에서 회전이 변경되었는지 확인
+    FVector CurrentEuler = RotationMatrix.GetEuler();
+
+	if ((CurrentEuler - FMatrix::MakeRotationEuler(Viewer->CachedRotation).GetEuler()).Size() > 0.01f)
+    {
+        Viewer->CachedRotation = CurrentEuler;
+    }
+
+    bool bEdited = false;
+
+    auto DrawTransformField = [&](const char* Label, FVector& Value, float Speed) {
+        float Arr[3] = { Value.X, Value.Y, Value.Z };
+        if (ImGui::DragFloat3(Label, Arr, Speed))
+        {
+            Value = FVector(Arr[0], Arr[1], Arr[2]);
+            return true;
+        }
+        return false;
+    };
+
+    ImGui::Text("Transform (Local)");
+    if (DrawTransformField("Location", Location, 0.1f)) bEdited = true;
+    if (DrawTransformField("Rotation", Viewer->CachedRotation, 0.1f)) bEdited = true;
+    if (DrawTransformField("Scale", Scale, 0.01f)) bEdited = true;
+
+    if (bEdited)
+    {
+        FMatrix NewLocal = FMatrix::MakeTRS(Location, FMatrix::MakeRotationEuler(Viewer->CachedRotation), Scale);
+        SkelComp->SetBoneLocalTransform(Viewer->SelectedBoneIndex, NewLocal);
+
+        // Gizmo 위치 업데이트
+        FViewportClient* BaseClient = Viewer->GetViewport().GetClient();
+        FEditorViewportClient* EditorClient = static_cast<FEditorViewportClient*>(BaseClient);
+        if (UGizmoComponent* Gizmo = EditorClient->GetGizmo())
+        {
+            Gizmo->UpdateGizmoTransform();
+        }
+    }
 }
 
 void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBoneInfo>& Bones, const TArray<TArray<int32>>& Children)
@@ -196,7 +308,7 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
         Flags |= ImGuiTreeNodeFlags_Leaf;
     }
 
-    if (SelectedBoneIndex == BoneIndex)
+    if (Viewer->SelectedBoneIndex == BoneIndex)
     {
         Flags |= ImGuiTreeNodeFlags_Selected;
     }
@@ -210,8 +322,47 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
     // 클릭 → bone 선택. socket 선택은 해제 (상호 배타).
     if (ImGui::IsItemClicked())
     {
-        SelectedBoneIndex = BoneIndex;
-        SelectedSocketIndex = -1;
+        Viewer->SelectedBoneIndex = BoneIndex;
+
+        if (EditorEngine)
+        {
+            FViewportClient* BaseClient = Viewer->GetViewport().GetClient();
+            FEditorViewportClient* EditorClient = static_cast<FEditorViewportClient*>(BaseClient);
+
+            ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+            if (ViewTarget)
+            {
+                // Ensure the actor is selected in the SelectionManager so gizmo
+                // hover and click handling are routed to the gizmo immediately.
+                if (FSelectionManager* SelMgr = EditorClient->GetSelectionManager())
+                {
+                    SelMgr->Select(ViewTarget);
+                }
+
+                if (UGizmoComponent* Gizmo = EditorClient->GetGizmo())
+                {
+                    USkeletalMeshComponent* SkelComp = ViewTarget->GetSkeletalMeshComponent();
+                    if (SkelComp)
+                    {
+                        // Make gizmo aware of the selected actors list from SelectionManager
+                        if (FSelectionManager* SelMgr = EditorClient->GetSelectionManager())
+                        {
+                            Gizmo->SetSelectedActors(&SelMgr->GetSelectedActors());
+                        }
+
+                        // Override proxy to target the bone itself
+                        Gizmo->SetProxy(std::make_shared<FBoneTransformProxy>(SkelComp, Viewer->SelectedBoneIndex));
+
+                        // 초기 회전값 캐싱 (Euler Jitter 방지)
+                        FMatrix LocalTransform = SkelComp->GetBoneLocalTransform(Viewer->SelectedBoneIndex);
+                        FVector dummyL, dummyS;
+                        FMatrix RotM;
+                        LocalTransform.Decompose(dummyL, RotM, dummyS);
+                        Viewer->CachedRotation = RotM.GetEuler();
+                    }
+                }
+            }
+        }
     }
 
     // 우클릭 컨텍스트
@@ -292,7 +443,7 @@ void FEditorViewerWindowWidget::DrawSocketNode(int32 SocketIdx)
         {
             if (EditorEngine)
             {
-                EditorEngine->GetViewer().ClearSocketPreview(Socket.Name);
+                Viewer->ClearSocketPreview(Socket.Name);
             }
         }
 
@@ -412,7 +563,7 @@ void FEditorViewerWindowWidget::DeleteSocket(int32 SocketIdx)
     const FName SocketName = CachedMesh->Sockets[SocketIdx].Name;
     if (EditorEngine)
     {
-        EditorEngine->GetViewer().ClearSocketPreview(SocketName);
+        Viewer->ClearSocketPreview(SocketName);
     }
 
     // (2) Sockets 배열에서 erase. 다른 socket들의 인덱스가 시프트됨.
@@ -442,7 +593,7 @@ void FEditorViewerWindowWidget::DeleteSocket(int32 SocketIdx)
 bool FEditorViewerWindowWidget::HasPreview(const FName& SocketName) const
 {
     if (!EditorEngine) return false;
-    return EditorEngine->GetViewer().FindPreviewMesh(SocketName) != nullptr;
+    return Viewer->FindPreviewMesh(SocketName) != nullptr;
 }
 
 void FEditorViewerWindowWidget::DrawSocketInspector()
@@ -583,11 +734,11 @@ void FEditorViewerWindowWidget::DrawRenameModal()
         FString PreviewPath;
         if (EditorEngine)
         {
-            UStaticMeshComponent* Preview = EditorEngine->GetViewer().FindPreviewMesh(OldName);
+            UStaticMeshComponent* Preview = Viewer->FindPreviewMesh(OldName);
             if (Preview && Preview->GetStaticMesh())
             {
                 PreviewPath = Preview->GetStaticMesh()->GetAssetPathFileName();
-                EditorEngine->GetViewer().ClearSocketPreview(OldName);
+                Viewer->ClearSocketPreview(OldName);
             }
         }
 
@@ -595,7 +746,7 @@ void FEditorViewerWindowWidget::DrawRenameModal()
 
         if (!PreviewPath.empty() && EditorEngine)
         {
-            EditorEngine->GetViewer().SetSocketPreviewMesh(NewName, PreviewPath);
+            Viewer->SetSocketPreviewMesh(NewName, PreviewPath);
         }
 
         bMeshDirty = true;
@@ -644,7 +795,7 @@ void FEditorViewerWindowWidget::DrawPreviewPickerModal()
                 PendingPreviewPickerSocketIdx < static_cast<int32>(CachedMesh->Sockets.size()))
             {
                 const FName SocketName = CachedMesh->Sockets[PendingPreviewPickerSocketIdx].Name;
-                EditorEngine->GetViewer().SetSocketPreviewMesh(SocketName, Path);
+                Viewer->SetSocketPreviewMesh(SocketName, Path);
             }
             PendingPreviewPickerSocketIdx = -1;
             ImGui::CloseCurrentPopup();

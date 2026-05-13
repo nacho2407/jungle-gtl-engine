@@ -890,33 +890,35 @@ FViewportRenderResource& FRenderer::AcquireViewportResource(uint32 Width, uint32
     return Res;
 }
 
-FViewportRenderResource& FRenderer::AcquireViewerViewportResource(uint32 W, uint32 H)
+FViewportRenderResource& FRenderer::AcquireViewerViewportResource(uint32 Index, uint32 W, uint32 H)
 {
+    // 필요한 만큼 unique_ptr로 확장 (재할당해도 내부 객체 주소 불변)
+    while (Index >= (uint32)ViewerViewportResources.size())
+    {
+        ViewerViewportResources.push_back(std::make_unique<FViewportRenderResource>());
+    }
+
+    FViewportRenderResource& Resource = *ViewerViewportResources[Index];
+
     if (Device.GetDevice() == nullptr || W == 0 || H == 0)
     {
-        ReleaseRenderResource(ViewerViewportResource);
-        return ViewerViewportResource;
+        ReleaseRenderResource(Resource);
+        return Resource;
     }
 
-    const bool bSameSize =
-        (ViewerViewportResource.Width == W) &&
-        (ViewerViewportResource.Height == H);
-
+    const bool bSameSize = (Resource.Width == W) && (Resource.Height == H);
     const bool bResourcesValid =
-        (ViewerViewportResource.ColorRTV != nullptr) &&
-        (ViewerViewportResource.SelectionMaskRTV != nullptr) &&
-        (ViewerViewportResource.DepthStencilView != nullptr);
+        (Resource.ColorRTV != nullptr) &&
+        (Resource.SelectionMaskRTV != nullptr) &&
+        (Resource.DepthStencilView != nullptr);
 
     if (bSameSize && bResourcesValid)
-    {
-        return ViewerViewportResource;
-    }
+        return Resource;
 
-    ReleaseRenderResource(ViewerViewportResource);
-    InitializeRenderResource(ViewerViewportResource, W, H);
-    InitializeEditorIdPickResource(ViewerViewportResource, W, H);
-
-    return ViewerViewportResource;
+    ReleaseRenderResource(Resource);
+    InitializeRenderResource(Resource, W, H);
+    InitializeEditorIdPickResource(Resource, W, H);
+    return Resource;
 }
 
 void FRenderer::InitializeViewportResource(uint32 Width, uint32 Height, int32 Index)

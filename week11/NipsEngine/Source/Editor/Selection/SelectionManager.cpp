@@ -4,6 +4,7 @@
 #include "Component/ActorComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/SceneComponent.h"
+#include "Component/TransformProxy.h"
 
 void FSelectionManager::Init()
 {
@@ -284,11 +285,11 @@ void FSelectionManager::SyncGizmo()
 	if (USceneComponent* SceneComponent = Cast<USceneComponent>(SelectedComponent))
 	{
 		Gizmo->SetSelectedActors(nullptr);
-		Gizmo->SetTargetComponent(SceneComponent);
+		Gizmo->SetProxy(std::make_shared<FComponentTransformProxy>(SceneComponent));
 	}
 	else if (Primary)
 	{
-		Gizmo->SetTarget(Primary);
+		Gizmo->SetProxy(std::make_shared<FActorTransformProxy>(Primary));
 		Gizmo->SetSelectedActors(&SelectedActors);
 	}
 	else

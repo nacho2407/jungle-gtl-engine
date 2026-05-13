@@ -28,5 +28,5 @@ struct FEditorMainPanelWidgetSet
 	FEditorToolbarWidget ToolbarWidget;
 	FEditorPlayStreamWidget PlayStreamWidget;
 	FEditorRuntimeUIPreviewWidget RuntimeUIPreviewWidget;
-    FEditorViewerWindowWidget ViewerWindowWidget;
+    TArray<FEditorViewerWindowWidget> ViewerWindowWidgets;
 };

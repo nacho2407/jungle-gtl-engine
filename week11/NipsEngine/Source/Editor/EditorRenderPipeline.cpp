@@ -351,164 +351,168 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 
 void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
 {
-    const auto ViewportRenderStart = std::chrono::steady_clock::now();
+    TArray<std::unique_ptr<FEditorViewer>>& Viewers = Editor->GetViewers();
 
-    // Viewer Viewport 가져오기
-    FEditorViewer& Viewer = Editor->GetViewer();
-    FSceneViewport& SceneViewport = Viewer.GetViewport();
-    FEditorViewportClient* VC = SceneViewport.GetClient();
+	for (size_t i = 0; i < Viewers.size(); i++)
+	{
+        const auto ViewportRenderStart = std::chrono::steady_clock::now();
 
-    if (!VC)
-        return;
+        FSceneViewport& SceneViewport = Viewers[i]->GetViewport();
+        FEditorViewportClient* VC = SceneViewport.GetClient();
 
-    // 1. SceneView 생성
-    FSceneView SceneView;
-    VC->BuildSceneView(SceneView);
+        if (!VC)
+            return;
 
-    const FViewportRect& Rect = SceneViewport.GetRect();
-    if (Rect.Width <= 0 || Rect.Height <= 0)
-        return;
+        // 1. SceneView 생성
+        FSceneView SceneView;
+        VC->BuildSceneView(SceneView);
 
-    // 2. RenderTarget 확보
-    FViewportRenderResource& ViewportResource =
-        Editor->GetRenderer().AcquireViewerViewportResource(
-            Rect.Width,
-            Rect.Height);
+        const FViewportRect& Rect = SceneViewport.GetRect();
+        if (Rect.Width <= 0 || Rect.Height <= 0)
+            return;
 
-    SceneViewport.SetRenderTargetSet(&ViewportResource.GetView());
+        // 2. RenderTarget 확보
+        FViewportRenderResource& ViewportResource =
+            Editor->GetRenderer().AcquireViewerViewportResource(
+                (uint32)i,
+                Rect.Width,
+                Rect.Height);
 
-    // 3. Begin
-    Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets());
+        SceneViewport.SetRenderTargetSet(&ViewportResource.GetView());
 
-    // 4. Bus 세팅
-    Bus.Clear();
+        // 3. Begin
+        Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets());
 
-    UWorld* World = VC->GetFocusedWorld();
-    if (!World)
-        return;
+        // 4. Bus 세팅
+        Bus.Clear();
 
-    const FEditorSettings& Settings = Editor->GetSettings();
-    // Viewer 전용 토글로 글로벌 ShowFlags를 오버라이드.
-    // 글로벌 Settings를 mutate하지 않도록 로컬 복사 후 viewer 플래그만 덮어쓴다.
-    FShowFlags ShowFlags = Settings.ShowFlags;
-    {
-        const FSkeletalViewerShowFlags& VFlags = Viewer.GetClient().GetShowFlags();
-        ShowFlags.bSkeletalMesh = VFlags.bShowSkeletalMesh;
-    }
-    const EViewMode ViewMode = SceneView.ViewMode;
+        UWorld* World = VC->GetFocusedWorld();
+        if (!World)
+            return;
 
-    const FViewportCamera* Camera = VC->GetRenderCamera();
-    if (!Camera)
-        return;
-
-    Bus.SetViewProjection(
-        SceneView.ViewMatrix,
-        SceneView.ProjectionMatrix,
-        Camera->GetNearPlane(),
-        Camera->GetFarPlane());
-
-    Bus.SetRenderSettings(ViewMode, ShowFlags);
-    Bus.SetLightCullMode(SceneView.LightCullMode);
-    Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
-    Bus.SetViewportSize(FVector2((float)Rect.Width, (float)Rect.Height));
-    Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
-    Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
-    Bus.SetCascadeVis(VC->GetViewportState()->bShowCascadeVis);
-
-    // Sandevistan 유지
-    if (World->IsSandervistanActivated())
-    {
-        Bus.bSandevistanEnabled = true;
-        Bus.SandevistanIntensity = 1.0f;
-    }
-    else
-    {
-        Bus.bSandevistanEnabled = false;
-        Bus.SandevistanIntensity = 0.0f;
-    }
-
-    // 5. Collect
-    const FFrustum& ViewFrustum = SceneView.CameraFrustum;
-    const bool bDrawEditorViewportHelpers =
-        VC->AllowsEditorWorldControl();
-
-    Collector.CollectWorld(
-        World,
-        ShowFlags,
-        ViewMode,
-        Bus,
-        &ViewFrustum,
-        bDrawEditorViewportHelpers);
-
-    // 🔹 Editor helper 그대로 유지
-    if (bDrawEditorViewportHelpers)
-    {
-        Collector.CollectGrid(
-            Settings.GridSpacing,
-            Settings.GridHalfLineCount,
-            Bus,
-            SceneView.bOrthographic);
-        const FWorldContext* Ctx = Editor->GetWorldContextFromWorld(World);
-        if (UGizmoComponent* Gizmo = Ctx->SelectionManager->GetGizmo())
+        const FEditorSettings& Settings = Editor->GetSettings();
+        // Viewer 전용 토글로 글로벌 ShowFlags를 오버라이드.
+        // 글로벌 Settings를 mutate하지 않도록 로컬 복사 후 viewer 플래그만 덮어쓴다.
+        FShowFlags ShowFlags = Settings.ShowFlags;
         {
-            if (SceneView.bOrthographic)
-                Gizmo->ApplyScreenSpaceScalingOrtho(SceneView.CameraOrthoHeight);
-            else
-                Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
+            const FSkeletalViewerShowFlags& VFlags = Viewers[i]->GetClient().GetShowFlags();
+            ShowFlags.bSkeletalMesh = VFlags.bShowSkeletalMesh;
+        }
+        const EViewMode ViewMode = SceneView.ViewMode;
+
+        const FViewportCamera* Camera = VC->GetRenderCamera();
+        if (!Camera)
+            return;
+
+        Bus.SetViewProjection(
+            SceneView.ViewMatrix,
+            SceneView.ProjectionMatrix,
+            Camera->GetNearPlane(),
+            Camera->GetFarPlane());
+
+        Bus.SetRenderSettings(ViewMode, ShowFlags);
+        Bus.SetLightCullMode(SceneView.LightCullMode);
+        Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
+        Bus.SetViewportSize(FVector2((float)Rect.Width, (float)Rect.Height));
+        Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
+        Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
+        Bus.SetCascadeVis(VC->GetViewportState()->bShowCascadeVis);
+
+        // Sandevistan 유지
+        if (World->IsSandervistanActivated())
+        {
+            Bus.bSandevistanEnabled = true;
+            Bus.SandevistanIntensity = 1.0f;
+        }
+        else
+        {
+            Bus.bSandevistanEnabled = false;
+            Bus.SandevistanIntensity = 0.0f;
         }
 
-        Collector.CollectGizmo(
-            Ctx->SelectionManager->GetGizmo(),
-            ShowFlags,
-            Bus,
-            VC->GetViewportState()->bHovered);
+        // 5. Collect
+        const FFrustum& ViewFrustum = SceneView.CameraFrustum;
+        const bool bDrawEditorViewportHelpers =
+            VC->AllowsEditorWorldControl();
 
-        Collector.CollectSelection(
-            Ctx->SelectionManager->GetSelectedActors(),
+        Collector.CollectWorld(
+            World,
             ShowFlags,
             ViewMode,
             Bus,
+            &ViewFrustum,
             bDrawEditorViewportHelpers);
-    }
 
-    // Viewer 전용: 본 와이어 드로우 (skeleton mesh viewer에서만 동작)
-    if (Viewer.GetClient().GetShowFlags().bShowBones)
-    {
-        if (ASkeletalMeshActor* ViewTarget = Viewer.GetViewTarget())
+        // 🔹 Editor helper 그대로 유지
+        if (bDrawEditorViewportHelpers)
         {
-            if (USkeletalMeshComponent* SkComp = ViewTarget->GetSkeletalMeshComponent())
+            Collector.CollectGrid(
+                Settings.GridSpacing,
+                Settings.GridHalfLineCount,
+                Bus,
+                SceneView.bOrthographic);
+            const FWorldContext* Ctx = Editor->GetWorldContextFromWorld(World);
+            if (UGizmoComponent* Gizmo = Ctx->SelectionManager->GetGizmo())
             {
-                SkComp->EnsureSkinningUpdated();   // 본 자세 최신화 보장
-                Collector.CollectSkeletonBones(SkComp, Bus);
+                if (SceneView.bOrthographic)
+                    Gizmo->ApplyScreenSpaceScalingOrtho(SceneView.CameraOrthoHeight);
+                else
+                    Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
+            }
+
+            Collector.CollectGizmo(
+                Ctx->SelectionManager->GetGizmo(),
+                ShowFlags,
+                Bus,
+                VC->GetViewportState()->bHovered);
+
+            Collector.CollectSelection(
+                Ctx->SelectionManager->GetSelectedActors(),
+                ShowFlags,
+                ViewMode,
+                Bus,
+                bDrawEditorViewportHelpers);
+        }
+
+        // Viewer 전용: 본 와이어 드로우 (skeleton mesh viewer 토글)
+        if (Viewers[i]->GetClient().GetShowFlags().bShowBones)
+        {
+            if (ASkeletalMeshActor* ViewTarget = Viewers[i]->GetViewTarget())
+            {
+                if (USkeletalMeshComponent* SkComp = ViewTarget->GetSkeletalMeshComponent())
+                {
+                    SkComp->EnsureSkinningUpdated();   // 본 자세 최신화 보장
+                    Collector.CollectSkeletonBones(SkComp, Bus);
+                }
             }
         }
-    }
 
-    // 6. Draw
-    Renderer.PrepareBatchers(Bus);
-    Renderer.Render(Bus);
-    Renderer.RenderScreenOverlays(Bus, false);
+        // 6. Draw
+        Renderer.PrepareBatchers(Bus);
+        Renderer.Render(Bus);
+        Renderer.RenderScreenOverlays(Bus, false);
 
-    // 7. ID Pick
-    TArray<AActor*> IdPickActors;
-    Renderer.RenderEditorIdPickBuffer(
-        Bus,
-        ViewportResource,
-        IdPickActors);
+        // 7. ID Pick
+        TArray<AActor*> IdPickActors;
+        Renderer.RenderEditorIdPickBuffer(
+            Bus,
+            ViewportResource,
+            IdPickActors);
 
-    SceneViewport.SetEditorIdPickActors(std::move(IdPickActors));
+        SceneViewport.SetEditorIdPickActors(std::move(IdPickActors));
 
 #if STATS
-    const double RenderSec =
-        std::chrono::duration<double>(
-            std::chrono::steady_clock::now() - ViewportRenderStart)
-            .count();
+        const double RenderSec =
+            std::chrono::duration<double>(
+                std::chrono::steady_clock::now() - ViewportRenderStart)
+                .count();
 
-    if (RenderSec >= 0.018)
-    {
-        UE_LOG("[ViewerRenderPerf] Time=%.4fs", RenderSec);
-    }
+        if (RenderSec >= 0.018)
+        {
+            UE_LOG("[ViewerRenderPerf] Time=%.4fs", RenderSec);
+        }
 #endif
+	}
 }
 
 const FRenderCollector::FCullingStats& FEditorRenderPipeline::GetViewportCullingStats(int32 ViewportIndex) const

@@ -8,6 +8,8 @@
 #include "Component/SkeletalMeshComponent.h"
 #include "Core/ResourceManager.h"
 #include "GameFramework/PrimitiveActors.h"
+#include "Component/SkeletalMeshComponent.h"
+#include "Core/ResourceManager.h"
 #include "imgui.h"
 
 void FEditorViewer::Init(
@@ -139,4 +141,11 @@ UStaticMeshComponent* FEditorViewer::FindPreviewMesh(const FName& SocketName) co
 {
     auto It = SocketPreviewMeshes.find(SocketName);
     return It != SocketPreviewMeshes.end() ? It->second : nullptr;
+}
+
+void FEditorViewer::ChangeTarget(const FString& InFileName)
+{
+    USkeletalMesh* SkelMesh = FResourceManager::Get().LoadSkeletalMesh(InFileName.c_str());
+    if (SkelMesh)
+	    ViewTarget->GetSkeletalMeshComponent()->SetSkeletalMesh(SkelMesh);
 }
