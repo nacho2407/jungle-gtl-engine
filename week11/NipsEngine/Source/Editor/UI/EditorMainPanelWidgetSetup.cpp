@@ -53,6 +53,17 @@ void FEditorMainPanel::OpenViewer(FEditorViewer* Viewer)
     Widget.SetOpen(true);
 }
 
+void FEditorMainPanel::CloseViewer(FEditorViewer* Viewer)
+{
+	// Open false 처리 후 Flush
+    for (auto& Widget : Widgets.ViewerWindowWidgets)
+		if (Widget.GetViewer() == Viewer)
+		{
+            Widget.SetOpen(false);
+            break;
+		}
+}
+
 void FEditorMainPanel::FlushClosedViewerWidgets()
 {
     auto& V = Widgets.ViewerWindowWidgets;
