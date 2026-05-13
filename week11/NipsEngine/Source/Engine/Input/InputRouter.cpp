@@ -380,7 +380,8 @@ void FInputRouter::RegisterTarget(
     FViewportClient* InClient,
     EInteractionDomain InDomain,
     FRectProvider InRectProvider,
-    FWorldResolver InWorldResolver)
+    FWorldResolver InWorldResolver,
+    FZOrderProvider InZOrderProvider)
 {
     if (!InViewport || !InClient || !InRectProvider)
     {
@@ -393,6 +394,7 @@ void FInputRouter::RegisterTarget(
     Entry.Domain = InDomain;
     Entry.RectProvider = std::move(InRectProvider);
     Entry.WorldResolver = std::move(InWorldResolver);
+    Entry.ZOrderProvider = std::move(InZOrderProvider);
     Targets.push_back(std::move(Entry));
 }
 
@@ -780,28 +782,35 @@ bool FInputRouter::TryFindHoveredTarget(const POINT& MouseClientPos, FTargetEntr
     OutHoveredEntry = nullptr;
     OutHoveredRect = {};
 
+    FTargetEntry* BestEntry = nullptr;
+    FRect BestRect = {};
+    int32 BestZOrder = -1;
+
     for (FTargetEntry& Entry : Targets)
     {
         FRect Rect = {};
         if (!Entry.RectProvider(Rect))
-        {
             continue;
-        }
-
         const FRect HitRect = GetInsetRect(Rect, ViewportInputDeadZonePixels);
         if (HitRect.Width <= 0.0f || HitRect.Height <= 0.0f)
-        {
             continue;
-        }
-        if (IsPointInRect(MouseClientPos, HitRect))
+        if (!IsPointInRect(MouseClientPos, HitRect))
+            continue;
+
+        const int32 ZOrder = Entry.ZOrderProvider ? Entry.ZOrderProvider() : 0;
+        if (!BestEntry || ZOrder > BestZOrder)
         {
-            OutHoveredEntry = &Entry;
-            OutHoveredRect = Rect;
-            return true;
+            BestEntry = &Entry;
+            BestRect = Rect;
+            BestZOrder = ZOrder;
         }
     }
 
-    return false;
+    if (!BestEntry)
+        return false;
+    OutHoveredEntry = BestEntry;
+    OutHoveredRect = BestRect;
+    return true;
 }
 
 FInputRouter::FTargetEntry* FInputRouter::ResolveDispatchTarget(FTargetEntry* HoveredEntry, const FRect& HoveredRect, bool bAnyPointerDown, FRect& OutTargetRect)
