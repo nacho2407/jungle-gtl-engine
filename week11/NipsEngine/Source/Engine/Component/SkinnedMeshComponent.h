@@ -25,6 +25,10 @@ public:
     const TArray<FMatrix>& GetSkinningMatrices() const { return SkinningMatrices; }
     const TArray<FSkeletalMeshVertex>& GetSkinnedVertices() const { return SkinnedVertices; }
 
+    // 본 i의 월드 변환 (component-space pose × actor world). 인덱스가 범위 밖이면 컴포넌트 월드 행렬을 반환.
+    // 본 자세 최신화는 GetSocketTransform과 동일 컨벤션 — 호출 측이 사전에 EnsureSkinningUpdated를 보장.
+    FMatrix GetBoneWorldMatrix(int32 BoneIndex) const;
+
     void MarkSkinningDirty() { bSkinningDirty = true; }
 
     void UpdateWorldAABB() const override;

@@ -5,6 +5,7 @@
 
 #include "Render/Common/ViewTypes.h"
 #include "Render/Resource/Material.h"
+#include "Render/Resource/RenderResources.h"
 
 #include "Geometry/OBB.h"
 
@@ -33,6 +34,15 @@ struct FLineVertex
 //
 // 파트 B가 구현, 파트 A(Renderer)가 매 프레임 호출
 // ============================================================
+// LineBatcher 인스턴스마다 머티리얼/DSV가 다를 수 있도록 Create에 옵션 인자로 전달.
+// 기본값은 기존 EditorLineBatcher/GridLineBatcher 동작 그대로.
+struct FLineBatcherDesc
+{
+	const char* MaterialName  = "LineMat";
+	const char* MaterialPath  = "Asset/Material/LineMat.mat";
+	EDepthStencilType DepthStencil = EDepthStencilType::DepthReadOnly;
+};
+
 class FLineBatcher
 {
 public:
@@ -40,7 +50,7 @@ public:
 	~FLineBatcher() = default;
 
 	// ---- 초기화 / 해제 ----
-	void Create(ID3D11Device* Device);
+	void Create(ID3D11Device* Device, const FLineBatcherDesc& Desc = {});
 	void Release();
 
 	// ---- 라인 축적 API ----
@@ -71,6 +81,13 @@ public:
 
 	// SpotLight의 원뿔 와이어프레임
 	void AddSpotLight(const FVector& Position, const FVector& Direction, float Range, float InnerConeAngleDeg, float OuterConeAngleDeg, const FColor& Color);
+
+	// Blender/UE 본 와이어 — 옥타헤드론(부모 근처 4-각 단면을 양 끝점에 연결한 8면체) 12 edges.
+	// Start: 부모 본 위치, End: 자식 본 위치. Width는 본 길이 대비 비율(기본 0.1).
+	void AddBoneOctahedron(const FVector& Start, const FVector& End, const FVector4& Color, float WidthRatio = 0.1f);
+
+	// 와이어 sphere — xy/xz/yz 평면 원 3개. 본 끝점 시각화용.
+	void AddWireSphere(const FVector& Center, float Radius, const FVector4& Color, int32 Segments = 12);
 
 	/**
 	 * @brief 카메라 기준의 grid patch와 축 보조선을 생성합니다.

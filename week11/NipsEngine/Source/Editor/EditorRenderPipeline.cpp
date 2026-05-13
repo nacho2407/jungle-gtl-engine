@@ -11,6 +11,8 @@
 #include "Core/Logging/Log.h"
 #include "Runtime/SceneView.h"
 #include "Engine/Component/GizmoComponent.h"
+#include "Engine/Component/SkeletalMeshComponent.h"
+#include "GameFramework/PrimitiveActors.h"
 #include "Asset/StaticMesh.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Resource/Material.h"
@@ -389,7 +391,13 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
             return;
 
         const FEditorSettings& Settings = Editor->GetSettings();
-        const FShowFlags& ShowFlags = Settings.ShowFlags;
+        // Viewer 전용 토글로 글로벌 ShowFlags를 오버라이드.
+        // 글로벌 Settings를 mutate하지 않도록 로컬 복사 후 viewer 플래그만 덮어쓴다.
+        FShowFlags ShowFlags = Settings.ShowFlags;
+        {
+            const FSkeletalViewerShowFlags& VFlags = Viewers[i]->GetClient().GetShowFlags();
+            ShowFlags.bSkeletalMesh = VFlags.bShowSkeletalMesh;
+        }
         const EViewMode ViewMode = SceneView.ViewMode;
 
         const FViewportCamera* Camera = VC->GetRenderCamera();
@@ -464,6 +472,19 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
                 ViewMode,
                 Bus,
                 bDrawEditorViewportHelpers);
+        }
+
+        // Viewer 전용: 본 와이어 드로우 (skeleton mesh viewer 토글)
+        if (Viewers[i]->GetClient().GetShowFlags().bShowBones)
+        {
+            if (ASkeletalMeshActor* ViewTarget = Viewers[i]->GetViewTarget())
+            {
+                if (USkeletalMeshComponent* SkComp = ViewTarget->GetSkeletalMeshComponent())
+                {
+                    SkComp->EnsureSkinningUpdated();   // 본 자세 최신화 보장
+                    Collector.CollectSkeletonBones(SkComp, Bus);
+                }
+            }
         }
 
         // 6. Draw

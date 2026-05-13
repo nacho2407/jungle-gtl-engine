@@ -128,6 +128,12 @@ ID3D11DepthStencilState* FRenderStateResourceCache::GetOrCreateDepthStencilState
 		Desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
 		Desc.BackFace = Desc.FrontFace;
 		break;
+	case EDepthStencilType::AlwaysOnTop:
+		Desc.DepthEnable = TRUE;
+		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		Desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+		Desc.StencilEnable = FALSE;
+		break;
 	}
 
 	TComPtr<ID3D11DepthStencilState> DepthStencilState;
