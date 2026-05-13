@@ -159,7 +159,6 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 		Size.x = std::max(Size.x, 1.0f);
 		Size.y = std::max(Size.y, 1.0f);
 
-			
 		ImGui::InvisibleButton("ViewportCanvas", Size);
         ImVec2 Min = ImGui::GetItemRectMin();
         ImVec2 Max = ImGui::GetItemRectMax();
