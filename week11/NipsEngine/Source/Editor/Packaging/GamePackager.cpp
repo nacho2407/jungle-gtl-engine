@@ -22,9 +22,6 @@
 
 namespace
 {
-    constexpr const wchar_t* MSBuildPath =
-        L"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\MSBuild.exe";
-
     void EmitBuildLog(const FString& Message);
     void EmitBuildLogWidePath(const char* Prefix, const std::filesystem::path& Path);
 
@@ -109,6 +106,348 @@ namespace
                 }
                 Root = Parent;
             }
+        }
+
+        return {};
+    }
+
+    bool PathExistsNoThrow(const std::filesystem::path& Path)
+    {
+        std::error_code Ec;
+        return !Path.empty() && std::filesystem::exists(Path, Ec) && !std::filesystem::is_directory(Path, Ec);
+    }
+
+    FString TrimAscii(FString Value)
+    {
+        const size_t Start = Value.find_first_not_of(" \t\r\n");
+        if (Start == FString::npos)
+        {
+            return {};
+        }
+
+        const size_t End = Value.find_last_not_of(" \t\r\n");
+        return Value.substr(Start, End - Start + 1);
+    }
+
+    std::filesystem::path GetEnvironmentPath(const wchar_t* Name)
+    {
+        const DWORD RequiredSize = GetEnvironmentVariableW(Name, nullptr, 0);
+        if (RequiredSize == 0)
+        {
+            return {};
+        }
+
+        std::wstring Buffer(RequiredSize, L'\0');
+        const DWORD WrittenSize = GetEnvironmentVariableW(Name, Buffer.data(), RequiredSize);
+        if (WrittenSize == 0 || WrittenSize >= RequiredSize)
+        {
+            return {};
+        }
+
+        Buffer.resize(WrittenSize);
+        return std::filesystem::path(Buffer);
+    }
+
+    bool ReadPipeOutputRaw(HANDLE ReadPipe, FString& OutOutput)
+    {
+        DWORD AvailableBytes = 0;
+        if (!PeekNamedPipe(ReadPipe, nullptr, 0, nullptr, &AvailableBytes, nullptr))
+        {
+            return false;
+        }
+
+        if (AvailableBytes == 0)
+        {
+            return true;
+        }
+
+        std::vector<char> Buffer(std::min<DWORD>(AvailableBytes, 4096));
+        DWORD BytesRead = 0;
+        if (!ReadFile(ReadPipe, Buffer.data(), static_cast<DWORD>(Buffer.size()), &BytesRead, nullptr) || BytesRead == 0)
+        {
+            return false;
+        }
+
+        OutOutput.append(Buffer.data(), BytesRead);
+        return true;
+    }
+
+    bool RunHiddenProcessAndCapture(const std::wstring& CommandLine, const std::filesystem::path& WorkingDirectory, FString& OutOutput)
+    {
+        SECURITY_ATTRIBUTES SecurityAttributes = {};
+        SecurityAttributes.nLength = sizeof(SecurityAttributes);
+        SecurityAttributes.bInheritHandle = TRUE;
+
+        HANDLE ReadPipe = nullptr;
+        HANDLE WritePipe = nullptr;
+        if (!CreatePipe(&ReadPipe, &WritePipe, &SecurityAttributes, 0))
+        {
+            return false;
+        }
+        SetHandleInformation(ReadPipe, HANDLE_FLAG_INHERIT, 0);
+
+        STARTUPINFOW StartupInfo = {};
+        StartupInfo.cb = sizeof(StartupInfo);
+        StartupInfo.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+        StartupInfo.wShowWindow = SW_HIDE;
+        StartupInfo.hStdOutput = WritePipe;
+        StartupInfo.hStdError = WritePipe;
+        StartupInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+
+        PROCESS_INFORMATION ProcessInfo = {};
+        std::wstring MutableCommandLine = CommandLine;
+        const std::wstring WorkingDir = WorkingDirectory.empty() ? std::wstring() : WorkingDirectory.wstring();
+        const wchar_t* WorkingDirPtr = WorkingDir.empty() ? nullptr : WorkingDir.c_str();
+        if (!CreateProcessW(nullptr, MutableCommandLine.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr,
+                            WorkingDirPtr, &StartupInfo, &ProcessInfo))
+        {
+            CloseHandle(ReadPipe);
+            CloseHandle(WritePipe);
+            return false;
+        }
+
+        CloseHandle(WritePipe);
+        while (WaitForSingleObject(ProcessInfo.hProcess, 50) == WAIT_TIMEOUT)
+        {
+            if (!ReadPipeOutputRaw(ReadPipe, OutOutput))
+            {
+                break;
+            }
+        }
+
+        while (ReadPipeOutputRaw(ReadPipe, OutOutput))
+        {
+            DWORD AvailableBytes = 0;
+            if (!PeekNamedPipe(ReadPipe, nullptr, 0, nullptr, &AvailableBytes, nullptr) || AvailableBytes == 0)
+            {
+                break;
+            }
+        }
+        CloseHandle(ReadPipe);
+
+        DWORD ExitCode = 1;
+        GetExitCodeProcess(ProcessInfo.hProcess, &ExitCode);
+        CloseHandle(ProcessInfo.hThread);
+        CloseHandle(ProcessInfo.hProcess);
+        return ExitCode == 0;
+    }
+
+    std::filesystem::path FindVSWherePath()
+    {
+        const std::filesystem::path ProgramFilesX86 = GetEnvironmentPath(L"ProgramFiles(x86)");
+        const std::filesystem::path ProgramFiles = GetEnvironmentPath(L"ProgramFiles");
+
+        const std::filesystem::path Candidates[] = {
+            ProgramFilesX86 / L"Microsoft Visual Studio" / L"Installer" / L"vswhere.exe",
+            ProgramFiles / L"Microsoft Visual Studio" / L"Installer" / L"vswhere.exe",
+            std::filesystem::path(L"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe"),
+            std::filesystem::path(L"C:\\Program Files\\Microsoft Visual Studio\\Installer\\vswhere.exe"),
+        };
+
+        for (const std::filesystem::path& Candidate : Candidates)
+        {
+            if (PathExistsNoThrow(Candidate))
+            {
+                return Candidate;
+            }
+        }
+        return {};
+    }
+
+    bool TryResolveMSBuildWithVSWhereArgs(
+        const std::filesystem::path& VSWherePath,
+        const std::wstring& ExtraArgs,
+        std::filesystem::path& OutPath)
+    {
+        const wchar_t* FindPatterns[] = {
+            L"MSBuild\\Current\\Bin\\amd64\\MSBuild.exe",
+            L"MSBuild\\Current\\Bin\\MSBuild.exe",
+        };
+
+        for (const wchar_t* FindPattern : FindPatterns)
+        {
+            FString Output;
+            const std::wstring CommandLine =
+                L"\"" + VSWherePath.wstring()
+                + L"\" " + ExtraArgs + L" -find \""
+                + std::wstring(FindPattern) + L"\"";
+
+            if (!RunHiddenProcessAndCapture(CommandLine, VSWherePath.parent_path(), Output))
+            {
+                continue;
+            }
+
+            size_t Start = 0;
+            while (Start < Output.size())
+            {
+                const size_t End = Output.find_first_of("\r\n", Start);
+                const FString Line = TrimAscii(Output.substr(Start, End == FString::npos ? FString::npos : End - Start));
+                if (!Line.empty())
+                {
+                    const std::filesystem::path Candidate(FPaths::ToWide(Line));
+                    if (PathExistsNoThrow(Candidate))
+                    {
+                        OutPath = Candidate.lexically_normal();
+                        return true;
+                    }
+                }
+
+                if (End == FString::npos)
+                {
+                    break;
+                }
+                Start = End + 1;
+            }
+        }
+
+        return false;
+    }
+
+    bool TryResolveMSBuildWithVSWhere(std::filesystem::path& OutPath)
+    {
+        const std::filesystem::path VSWherePath = FindVSWherePath();
+        if (!PathExistsNoThrow(VSWherePath))
+        {
+            return false;
+        }
+
+        const wchar_t* Queries[] = {
+            // Packaging builds a C++ project, so prefer VS/BuildTools instances that explicitly contain the VC toolchain.
+            L"-latest -products * -requires Microsoft.Component.MSBuild -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+            L"-all -products * -requires Microsoft.Component.MSBuild -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+            // Keep a looser fallback for custom/minimal installs where the component id is not reported as expected.
+            L"-latest -products * -requires Microsoft.Component.MSBuild",
+            L"-all -products * -requires Microsoft.Component.MSBuild",
+        };
+
+        for (const wchar_t* Query : Queries)
+        {
+            if (TryResolveMSBuildWithVSWhereArgs(VSWherePath, Query, OutPath))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    std::filesystem::path SearchMSBuildOnPath()
+    {
+        std::vector<wchar_t> Buffer(32768);
+        const DWORD Length = SearchPathW(nullptr, L"MSBuild.exe", nullptr, static_cast<DWORD>(Buffer.size()), Buffer.data(), nullptr);
+        if (Length > 0 && Length < Buffer.size())
+        {
+            const std::filesystem::path Candidate(Buffer.data());
+            if (PathExistsNoThrow(Candidate))
+            {
+                return Candidate.lexically_normal();
+            }
+        }
+        return {};
+    }
+
+    void AddMSBuildCandidatesForVSInstall(const std::filesystem::path& InstallRoot, std::vector<std::filesystem::path>& OutCandidates)
+    {
+        OutCandidates.push_back(InstallRoot / L"MSBuild" / L"Current" / L"Bin" / L"amd64" / L"MSBuild.exe");
+        OutCandidates.push_back(InstallRoot / L"MSBuild" / L"Current" / L"Bin" / L"MSBuild.exe");
+        OutCandidates.push_back(InstallRoot / L"MSBuild" / L"15.0" / L"Bin" / L"amd64" / L"MSBuild.exe");
+        OutCandidates.push_back(InstallRoot / L"MSBuild" / L"15.0" / L"Bin" / L"MSBuild.exe");
+    }
+
+    void AddInstalledVisualStudioMSBuildCandidates(std::vector<std::filesystem::path>& OutCandidates)
+    {
+        std::vector<std::filesystem::path> VisualStudioRoots;
+        const std::filesystem::path ProgramFiles = GetEnvironmentPath(L"ProgramFiles");
+        const std::filesystem::path ProgramFilesX86 = GetEnvironmentPath(L"ProgramFiles(x86)");
+        if (!ProgramFiles.empty())
+        {
+            VisualStudioRoots.push_back(ProgramFiles / L"Microsoft Visual Studio");
+        }
+        if (!ProgramFilesX86.empty())
+        {
+            VisualStudioRoots.push_back(ProgramFilesX86 / L"Microsoft Visual Studio");
+        }
+        VisualStudioRoots.push_back(std::filesystem::path(L"C:\\Program Files\\Microsoft Visual Studio"));
+        VisualStudioRoots.push_back(std::filesystem::path(L"C:\\Program Files (x86)\\Microsoft Visual Studio"));
+
+        for (const std::filesystem::path& Root : VisualStudioRoots)
+        {
+            std::error_code RootEc;
+            if (!std::filesystem::exists(Root, RootEc))
+            {
+                continue;
+            }
+
+            std::error_code VersionEc;
+            for (const std::filesystem::directory_entry& VersionEntry : std::filesystem::directory_iterator(Root, VersionEc))
+            {
+                if (VersionEc)
+                {
+                    break;
+                }
+
+                std::error_code IsDirEc;
+                if (!VersionEntry.is_directory(IsDirEc))
+                {
+                    continue;
+                }
+
+                std::error_code EditionEc;
+                for (const std::filesystem::directory_entry& EditionEntry : std::filesystem::directory_iterator(VersionEntry.path(), EditionEc))
+                {
+                    if (EditionEc)
+                    {
+                        break;
+                    }
+
+                    std::error_code EditionIsDirEc;
+                    if (EditionEntry.is_directory(EditionIsDirEc))
+                    {
+                        AddMSBuildCandidatesForVSInstall(EditionEntry.path(), OutCandidates);
+                    }
+                }
+            }
+        }
+    }
+
+    std::filesystem::path ResolveMSBuildPath()
+    {
+        const std::filesystem::path EnvOverride = GetEnvironmentPath(L"MSBUILD_EXE_PATH");
+        if (PathExistsNoThrow(EnvOverride))
+        {
+            EmitBuildLogWidePath("MSBuild resolved from MSBUILD_EXE_PATH = ", EnvOverride);
+            return EnvOverride.lexically_normal();
+        }
+
+        std::filesystem::path VSWhereMSBuildPath;
+        if (TryResolveMSBuildWithVSWhere(VSWhereMSBuildPath))
+        {
+            EmitBuildLogWidePath("MSBuild resolved by vswhere = ", VSWhereMSBuildPath);
+            return VSWhereMSBuildPath;
+        }
+
+        std::vector<std::filesystem::path> Candidates;
+        AddInstalledVisualStudioMSBuildCandidates(Candidates);
+        std::sort(Candidates.begin(), Candidates.end(), [](const std::filesystem::path& A, const std::filesystem::path& B)
+        {
+            return A.wstring() > B.wstring();
+        });
+
+        for (const std::filesystem::path& Candidate : Candidates)
+        {
+            if (PathExistsNoThrow(Candidate))
+            {
+                const std::filesystem::path Result = Candidate.lexically_normal();
+                EmitBuildLogWidePath("MSBuild resolved from Visual Studio install = ", Result);
+                return Result;
+            }
+        }
+
+        const std::filesystem::path PathMSBuild = SearchMSBuildOnPath();
+        if (PathExistsNoThrow(PathMSBuild))
+        {
+            EmitBuildLogWidePath("MSBuild resolved from PATH = ", PathMSBuild);
+            return PathMSBuild;
         }
 
         return {};
@@ -1233,8 +1572,16 @@ bool FGamePackager::RunMSBuild(const FGameBuildSettings& Settings, FString& OutM
     EmitBuildLogWidePath("Solution = ", SolutionPath);
     UE_LOG("[Build] Configuration = %s", Configuration.c_str());
 
+    const std::filesystem::path MSBuildPath = ResolveMSBuildPath();
+    if (!PathExistsNoThrow(MSBuildPath))
+    {
+        OutMessage = "MSBuild.exe not found. Install Visual Studio with MSBuild tools, or set MSBUILD_EXE_PATH.";
+        EmitBuildLog(OutMessage);
+        return false;
+    }
+
     std::wstring CommandLine =
-        L"\"" + std::wstring(MSBuildPath) + L"\" \"" + SolutionPath.wstring()
+        L"\"" + MSBuildPath.wstring() + L"\" \"" + SolutionPath.wstring()
         + L"\" /p:Configuration=" + FPaths::ToWide(Configuration)
         + L" /p:Platform=x64 /v:minimal";
 
