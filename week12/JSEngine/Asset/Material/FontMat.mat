@@ -1,0 +1,7 @@
+﻿{
+    "Name": "FontMat",
+    "ShaderType" : "UIFont",
+    "Params": [
+        { "Name": "FontAtlas", "Type": "Texture", "Value": "Asset/Font/FontAtlas.dds" }
+    ]
+}

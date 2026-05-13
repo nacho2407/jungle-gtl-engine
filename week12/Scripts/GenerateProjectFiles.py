@@ -1,6 +1,6 @@
 """
 GenerateProjectFiles.py — Auto-generate .vcxproj, .vcxproj.filters
-for NipsEngine from the on-disk folder structure.
+for JSEngine from the on-disk folder structure.
 
 Usage:
     python Scripts/GenerateProjectFiles.py
@@ -16,8 +16,10 @@ from pathlib import Path
 # ──────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent.parent
 
-PROJECT_NAME = "NipsEngine"
-PROJECT_DIR = ROOT / PROJECT_NAME
+SOLUTION_NAME = "JSEngine"
+PROJECT_NAME = "JSEngine"
+PROJECT_DIR_NAME = "JSEngine"
+PROJECT_DIR = ROOT / PROJECT_DIR_NAME
 PROJECT_GUID = "{55068e81-c0a0-49f9-ab7b-54aea968722b}"
 ROOT_NAMESPACE = "Week2"
 
@@ -418,7 +420,7 @@ def generate_sln():
     guid_upper = PROJECT_GUID.upper()
     lines.append(
         f'Project("{VS_PROJECT_TYPE}") = "{PROJECT_NAME}", '
-        f'"{PROJECT_NAME}\\{PROJECT_NAME}.vcxproj", "{guid_upper}"'
+        f'"{PROJECT_DIR_NAME}\\{PROJECT_NAME}.vcxproj", "{guid_upper}"'
     )
     lines.append("EndProject")
 
@@ -450,7 +452,7 @@ def generate_sln():
     lines.append("EndGlobal")
     lines.append("")
 
-    sln_path = ROOT / f"{PROJECT_NAME}.sln"
+    sln_path = ROOT / f"{SOLUTION_NAME}.sln"
     with open(sln_path, "w", encoding="utf-8-sig", newline="\r\n") as f:
         f.write("\n".join(lines))
 
@@ -478,7 +480,7 @@ def main():
     print(f"  {PROJECT_NAME}.vcxproj.filters")
 
     generate_sln()
-    print(f"  {PROJECT_NAME}.sln")
+    print(f"  {SOLUTION_NAME}.sln")
 
     print("Done!")
 

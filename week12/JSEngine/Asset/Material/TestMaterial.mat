@@ -1,0 +1,7 @@
+﻿{
+    "Name": "TestMaterial",
+    "ShaderType" : "SurfaceLit",
+    "Params": [
+        { "Name": "Diffuse", "Type": "FVector4", "Value": [1.0, 1.0, 1.0, 1.0] }
+    ]
+}
