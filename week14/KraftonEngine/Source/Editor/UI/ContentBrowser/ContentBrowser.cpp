@@ -98,7 +98,7 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 	IconFileMap[".uasset"] = L"icon_MatEd_Mesh_40x.png";
 
 	ContentBrowserContext Context;
-	Context.ContentSize = ImVec2(50, 50);
+	Context.ContentSize = ImVec2(112, 112);
 	Context.EditorEngine = InEditor;
 	BrowserContext = Context;
 	LoadFromSettings();
@@ -131,7 +131,7 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 	int Size = static_cast<int>(BrowserContext.ContentSize.x);
 	BrowserContext.ContentSize = ImVec2(static_cast<float>(Size), static_cast<float>(Size));
 
-	if (!ImGui::BeginTable("ContentBrowserLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
+	if (!ImGui::BeginTable("ContentBrowserLayout", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
 	{
 		ImGui::End();
 		return;
@@ -139,6 +139,7 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 
 	ImGui::TableSetupColumn("Directory", ImGuiTableColumnFlags_WidthFixed, 250.0f);
 	ImGui::TableSetupColumn("Content", ImGuiTableColumnFlags_WidthStretch);
+	ImGui::TableSetupColumn("Details", ImGuiTableColumnFlags_WidthFixed, 260.0f);
 
 	ImGui::TableNextColumn();
 	{
@@ -155,10 +156,24 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		ImGui::EndChild();
 	}
 
-	if (BrowserContext.SelectedElement)
-		BrowserContext.SelectedElement->RenderDetail();
+	ImGui::TableNextColumn();
+	{
+		ImGui::BeginChild("DetailsPanel", ImVec2(0, 0), true);
+
+		if (BrowserContext.SelectedElement)
+		{
+			BrowserContext.SelectedElement->RenderDetail();
+		}
+		else
+		{
+			ImGui::TextDisabled("No asset selected");
+		}
+
+		ImGui::EndChild();
+	}
 
 	ImGui::EndTable();
+
 	ImGui::End();
 }
 
@@ -172,7 +187,7 @@ void FEditorContentBrowserWidget::Refresh()
 
 void FEditorContentBrowserWidget::SetIconSize(float Size)
 {
-	const float ClampedSize = (std::max)(20.0f, (std::min)(Size, 100.0f));
+	const float ClampedSize = (std::max)(72.0f, (std::min)(Size, 160.0f));
 	BrowserContext.ContentSize = ImVec2(ClampedSize, ClampedSize);
 }
 
