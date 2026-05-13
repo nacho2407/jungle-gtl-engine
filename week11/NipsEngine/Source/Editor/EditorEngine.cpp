@@ -26,6 +26,8 @@
 #include <filesystem>
 #include <unordered_set>
 #include <utility>
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_internal.h"
 
 DEFINE_CLASS(UEditorEngine, UEngine)
 REGISTER_FACTORY(UEditorEngine)
@@ -524,13 +526,24 @@ void UEditorEngine::RegisterViewportInputTargets()
                 EInteractionDomain::Editor,
                 [this, Index](FRect& OutRect)
                 {
-                    if (Index >= Viewers.size()) return false;
+                    if (Index >= (int32)Viewers.size())
+                        return false;
+
+                    // Viewer ImGui window가 실제로 보이는지 확인
+                    char WindowName[64];
+                    FEditorViewer* ViewerPtr = Viewers[Index].get();
+                    sprintf_s(WindowName, "Viewer##%p", ViewerPtr);
+                    ImGuiWindow* Win = ImGui::FindWindowByName(WindowName);
+                    if (!Win || !Win->WasActive || Win->Hidden)
+                    {
+                        return false;
+                    }
+
                     const FViewportRect& ViewportRect = Viewers[Index]->GetViewport().GetRect();
                     if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
                     {
                         return false;
                     }
-
                     OutRect = FRect(
                         static_cast<float>(ViewportRect.X),
                         static_cast<float>(ViewportRect.Y),
