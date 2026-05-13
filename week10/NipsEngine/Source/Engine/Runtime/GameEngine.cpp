@@ -2,6 +2,7 @@
 
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
+#include "Engine/Input/GameplayInputTypes.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "GameFramework/GameModeBase.h"
@@ -40,6 +41,36 @@ namespace
     constexpr int RuntimeUILayoutWidth = 1920;
     constexpr int RuntimeUILayoutHeight = 1080;
 
+    FInputFrame BuildStandaloneGameplayInputFrame(
+        const InputSystem& Input,
+        uint64 FrameNumber,
+        HWND SourceWindow)
+    {
+        FInputFrame Frame{};
+        Frame.FrameNumber = FrameNumber;
+        Frame.SourceWindow = SourceWindow;
+        Frame.MouseInputMode = Input.IsUsingRawMouse()
+            ? EMouseInputMode::Relative
+            : EMouseInputMode::Absolute;
+        Frame.MouseScreenPos = Input.GetMousePos();
+        Frame.MouseDelta = { Input.MouseDeltaX(), Input.MouseDeltaY() };
+        Frame.WheelNotches = Input.GetScrollNotches();
+        Frame.bLeftDragging = Input.GetLeftDragging();
+        Frame.bMiddleDragging = Input.GetMiddleDragging();
+        Frame.bRightDragging = Input.GetRightDragging();
+        Frame.LeftDragVector = Input.GetLeftDragVector();
+        Frame.MiddleDragVector = Input.GetMiddleDragVector();
+        Frame.RightDragVector = Input.GetRightDragVector();
+
+        for (int VK = 0; VK < 256; ++VK)
+        {
+            Frame.KeyDown[VK] = Input.GetKey(VK);
+            Frame.KeyPressed[VK] = Input.GetKeyDown(VK);
+            Frame.KeyReleased[VK] = Input.GetKeyUp(VK);
+        }
+        return Frame;
+    }
+
     bool ParseBoolValue(const FString& Value, bool DefaultValue)
     {
         FString Lower = Value;
@@ -62,14 +93,6 @@ namespace
         return DefaultValue;
     }
 
-    bool IsMouseButtonVK(int VK)
-    {
-        return VK == VK_LBUTTON
-            || VK == VK_RBUTTON
-            || VK == VK_MBUTTON
-            || VK == VK_XBUTTON1
-            || VK == VK_XBUTTON2;
-    }
 }
 
 void UGameEngine::Init(FWindowsWindow* InWindow)
@@ -202,6 +225,14 @@ void UGameEngine::LoadGameSettings()
         {
             StartupSettings.PlayerControllerClass = Value;
         }
+        else if (Key == "DefaultPawnClass")
+        {
+            StartupSettings.DefaultPawnClass = Value;
+        }
+        else if (Key == "DefaultPawnPrefabPath")
+        {
+            StartupSettings.DefaultPawnPrefabPath = FPaths::Normalize(Value);
+        }
         else if (Key == "bShadow" || Key == "Shadow")
         {
             GetMutableRuntimeShowFlags().bShadow = ParseBoolValue(Value, GetRuntimeShowFlags().bShadow);
@@ -288,7 +319,31 @@ AGameModeBase* UGameEngine::EnsureGameMode()
     }
 
     GameMode->SetFName(FName("GameMode"));
-    GameMode->SetPlayerControllerClass(StartupSettings.PlayerControllerClass);
+    FString PlayerControllerClass = StartupSettings.PlayerControllerClass.empty()
+        ? FString("APlayerController")
+        : StartupSettings.PlayerControllerClass;
+    FString DefaultPawnClass = StartupSettings.DefaultPawnClass.empty()
+        ? FString("ADefaultPawn")
+        : StartupSettings.DefaultPawnClass;
+    FString DefaultPawnPrefabPath = StartupSettings.DefaultPawnPrefabPath;
+
+    const FWorldGameModeSettings& SceneGameModeSettings = World->GetGameModeSettings();
+    if (SceneGameModeSettings.bOverrideGameMode)
+    {
+        if (!SceneGameModeSettings.PlayerControllerClass.empty())
+        {
+            PlayerControllerClass = SceneGameModeSettings.PlayerControllerClass;
+        }
+        if (!SceneGameModeSettings.DefaultPawnClass.empty())
+        {
+            DefaultPawnClass = SceneGameModeSettings.DefaultPawnClass;
+        }
+        DefaultPawnPrefabPath = SceneGameModeSettings.DefaultPawnPrefabPath;
+    }
+
+    GameMode->SetPlayerControllerClass(PlayerControllerClass);
+    GameMode->SetDefaultPawnClass(DefaultPawnClass);
+    GameMode->SetDefaultPawnPrefabPath(DefaultPawnPrefabPath);
     return GameMode;
 }
 
@@ -311,8 +366,7 @@ void UGameEngine::EnsurePlayerController()
         return;
     }
 
-    RuntimeGameMode->SetPlayerControllerClass(StartupSettings.PlayerControllerClass);
-    PlayerController = RuntimeGameMode->EnsurePlayerController(
+    PlayerController = RuntimeGameMode->BootstrapPlayer(
         nullptr,
         Window ? static_cast<uint32>(Window->GetWidth()) : 1920u,
         Window ? static_cast<uint32>(Window->GetHeight()) : 1080u,
@@ -416,85 +470,30 @@ void UGameEngine::PumpPlayerInput(InputSystem& Input)
         return;
     }
 
-    for (int VK = 0; VK < 256; ++VK)
-    {
-        if (IsMouseButtonVK(VK))
-        {
-            const POINT MousePos = Input.GetMousePos();
-            if (Input.GetKeyDown(VK))
-            {
-                PlayerController->HandleMouseButtonPressed(VK, static_cast<float>(MousePos.x), static_cast<float>(MousePos.y));
-            }
-            if (Input.GetKey(VK))
-            {
-                PlayerController->HandleMouseButtonDown(VK, static_cast<float>(Input.MouseDeltaX()), static_cast<float>(Input.MouseDeltaY()));
-            }
-            if (Input.GetKeyUp(VK))
-            {
-                PlayerController->HandleMouseButtonReleased(VK, static_cast<float>(MousePos.x), static_cast<float>(MousePos.y));
-            }
-            continue;
-        }
+    const FInputFrame Frame = BuildStandaloneGameplayInputFrame(
+        Input,
+        ++PlayerInputFrameCounter,
+        Window ? Window->GetHWND() : nullptr);
+    FGameplayInputSnapshot Snapshot = FDefaultGameplayInputMapping::BuildSnapshot(Frame);
+    PlayerController->ProcessInputSnapshot(Snapshot);
 
-        if (Input.GetKeyDown(VK))
+    if (!bLoggedFirstInput)
+    {
+        for (int VK = 0; VK < 256; ++VK)
         {
-            PlayerController->HandleKeyPressed(VK);
-            if (!bLoggedFirstInput)
+            if (Input.GetKeyDown(VK))
             {
                 UE_LOG("[GameEngine] First key input received: VK=%d", VK);
                 bLoggedFirstInput = true;
+                break;
             }
         }
-        if (Input.GetKey(VK))
-        {
-            PlayerController->HandleKeyDown(VK);
-        }
-        if (Input.GetKeyUp(VK))
-        {
-            PlayerController->HandleKeyReleased(VK);
-        }
     }
 
-    if (Input.MouseMoved())
+    if (!bLoggedFirstInput && Input.MouseMoved())
     {
-        PlayerController->HandleMouseMove(static_cast<float>(Input.MouseDeltaX()), static_cast<float>(Input.MouseDeltaY()));
-        if (!bLoggedFirstInput)
-        {
-            UE_LOG("[GameEngine] First mouse input received: dx=%d dy=%d", Input.MouseDeltaX(), Input.MouseDeltaY());
-            bLoggedFirstInput = true;
-        }
-    }
-
-    if (Input.GetLeftDragging())
-    {
-        PlayerController->HandleMouseDrag(VK_LBUTTON, static_cast<float>(Input.MouseDeltaX()), static_cast<float>(Input.MouseDeltaY()));
-    }
-    if (Input.GetLeftDragEnd())
-    {
-        const POINT MousePos = Input.GetMousePos();
-        PlayerController->HandleMouseDragEnd(VK_LBUTTON, static_cast<float>(MousePos.x), static_cast<float>(MousePos.y));
-    }
-    if (Input.GetMiddleDragging())
-    {
-        PlayerController->HandleMouseDrag(VK_MBUTTON, static_cast<float>(Input.MouseDeltaX()), static_cast<float>(Input.MouseDeltaY()));
-    }
-    if (Input.GetMiddleDragEnd())
-    {
-        const POINT MousePos = Input.GetMousePos();
-        PlayerController->HandleMouseDragEnd(VK_MBUTTON, static_cast<float>(MousePos.x), static_cast<float>(MousePos.y));
-    }
-    if (Input.GetRightDragging())
-    {
-        PlayerController->HandleMouseDrag(VK_RBUTTON, static_cast<float>(Input.MouseDeltaX()), static_cast<float>(Input.MouseDeltaY()));
-    }
-    if (Input.GetRightDragEnd())
-    {
-        const POINT MousePos = Input.GetMousePos();
-        PlayerController->HandleMouseDragEnd(VK_RBUTTON, static_cast<float>(MousePos.x), static_cast<float>(MousePos.y));
-    }
-    if (Input.GetScrollDelta() != 0)
-    {
-        PlayerController->HandleMouseWheel(Input.GetScrollNotches());
+        UE_LOG("[GameEngine] First mouse input received: dx=%d dy=%d", Input.MouseDeltaX(), Input.MouseDeltaY());
+        bLoggedFirstInput = true;
     }
 }
 

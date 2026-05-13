@@ -10,8 +10,6 @@
 #include "Component/TextRenderComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
-#include "Runtime/Script/ScriptManager.h"
-#include "Runtime/Script/ScriptComponent.h"
 
 #include "GameFramework/PrimitiveActors.h"
 
@@ -36,22 +34,6 @@ namespace
 		return false;
 	}
 
-	bool HasPlacedPlayer(UWorld* World)
-	{
-		if (!World)
-		{
-			return false;
-		}
-
-		for (AActor* Actor : World->GetActors())
-		{
-			if (Actor && Actor->HasTag("Player"))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
 }
 
 void FEditorControlWidget::Initialize(UEditorEngine* InEditorEngine)
@@ -86,9 +68,8 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
 
 	DrawSpawnItem(0, "Empty Actor");
 	ImGui::Separator();
-	DrawSpawnItem(18, "Player");
 	DrawSpawnItem(1, "Static Mesh");
-	DrawSpawnItem(19, "Skeletal Mesh");
+	DrawSpawnItem(18, "Skeletal Mesh");
 	DrawSpawnItem(2, "Text Render");
 	DrawSpawnItem(3, "SubUV");
 	DrawSpawnItem(4, "Billboard");
@@ -133,16 +114,6 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 			return false;
 		}
 	}
-	if (PrimitiveType == 18)
-	{
-		Count = 1;
-		if (HasPlacedPlayer(World))
-		{
-			EditorEngine->GetNotificationService().Info("Player actor already exists");
-			return false;
-		}
-	}
-
 	EditorEngine->GetUndoSystem().CaptureSnapshot("Place Actor");
 	for (int32 i = 0; i < Count; i++)
 	{
@@ -276,16 +247,6 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 		    break;
 		}
 		case 18:
-		{
-			ADefaultPlayerActor* Actor = World->SpawnActor<ADefaultPlayerActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetFName(FName("Player"));
-			Actor->AddTag("Player");
-			Actor->SetActorLocation(SpawnPoint);
-			Actor->AddComponent<UScriptComponent>();
-			break;
-		}
-		case 19:
 		{
 			ASkeletalMeshActor* Actor = World->SpawnActor<ASkeletalMeshActor>();
 			Actor->InitDefaultComponents();

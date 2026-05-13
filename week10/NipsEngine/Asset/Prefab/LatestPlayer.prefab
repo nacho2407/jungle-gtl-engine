@@ -1,6 +1,6 @@
 {
   "Actor" : {
-    "ClassName" : "ADefaultPlayerActor",
+    "ClassName" : "ADefaultPawn",
     "Components" : [{
         "ClassName" : "USceneComponent",
         "Editor Only" : false,

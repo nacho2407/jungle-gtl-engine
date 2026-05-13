@@ -98,6 +98,8 @@ struct FInputFrame
     float WheelNotches = 0.0f;
 
     bool  KeyDown[256] = {};
+    bool  KeyPressed[256] = {};
+    bool  KeyReleased[256] = {};
     bool  bLeftDragging = false;
     bool  bMiddleDragging = false;
     bool  bRightDragging = false;
@@ -106,6 +108,8 @@ struct FInputFrame
     POINT RightDragVector = { 0, 0 };
 
     bool IsDown(int32 VK) const { return VK >= 0 && VK < 256 && KeyDown[VK]; }
+    bool WasPressed(int32 VK) const { return VK >= 0 && VK < 256 && KeyPressed[VK]; }
+    bool WasReleased(int32 VK) const { return VK >= 0 && VK < 256 && KeyReleased[VK]; }
     bool IsCtrlDown() const { return IsDown(VK_CONTROL); }
     bool IsAltDown() const { return IsDown(VK_MENU); }
     bool IsShiftDown() const { return IsDown(VK_SHIFT); }

@@ -78,11 +78,6 @@ void FEditorMainPanel::LoadViewportToolIcons(ID3D11Device* Device)
         const std::wstring SaveIconPath = IconDir + L"Save.png";
         DirectX::CreateWICTextureFromFile(Device, SaveIconPath.c_str(), nullptr, &IconResources.SaveIcon);
     }
-    if (!IconResources.HotReloadIcon)
-    {
-        const std::wstring HotReloadIconPath = IconDir + L"HotReload.png";
-        DirectX::CreateWICTextureFromFile(Device, HotReloadIconPath.c_str(), nullptr, &IconResources.HotReloadIcon);
-    }
 
     const std::wstring LayoutIconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/Icons/");
     for (int32 i = 0; i < static_cast<int32>(EEditorViewportLayoutMode::Max); ++i)
@@ -125,10 +120,5 @@ void FEditorMainPanel::ReleaseViewportToolIcons()
     {
         IconResources.SaveIcon->Release();
         IconResources.SaveIcon = nullptr;
-    }
-    if (IconResources.HotReloadIcon)
-    {
-        IconResources.HotReloadIcon->Release();
-        IconResources.HotReloadIcon = nullptr;
     }
 }

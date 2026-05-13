@@ -270,11 +270,9 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
 		ImGui::SameLine();
 
         {
-            const char* Label = "Hot Reload";
-            ImGuiStyle& Style = ImGui::GetStyle();
-            const float IconSize = 18.0f;
-            const float ButtonWidth = 120.0f;
-            const float TotalWidth = IconSize + Style.ItemSpacing.x + ButtonWidth;
+            const char* Label = "Lua Hot Reload";
+            const float ButtonWidth = 136.0f;
+            const float TotalWidth = ButtonWidth;
             const float RightX = ImGui::GetWindowContentRegionMax().x;
             const float ButtonStartX = RightX - TotalWidth;
 
@@ -295,9 +293,6 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
             }
 
             ImGui::SetCursorPosX(ButtonStartX);
-            ImGui::Image((ImTextureID)IconResources.HotReloadIcon, ImVec2(IconSize, IconSize));
-            ImGui::SameLine();
-
             if (ImGui::Button(Label, ImVec2(ButtonWidth, 0.0f)))
             {
                 FScriptManager::Get().HotReloadScripts();

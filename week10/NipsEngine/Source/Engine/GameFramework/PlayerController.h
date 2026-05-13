@@ -1,11 +1,11 @@
 ﻿#pragma once
 
 #include "GameFramework/AActor.h"
+#include "GameFramework/Pawn.h"
 #include "Camera/ViewportCamera.h"
+#include "Engine/Input/GameplayInputTypes.h"
 
 class UCameraComponent;
-class ADefaultPlayerActor;
-class AFallbackCameraActor;
 class APlayerCameraManager;
 enum class ECameraBlendType;
 
@@ -19,9 +19,7 @@ public:
 
 	void ConfigureRuntimeCameraFromViewport(const FViewportCamera* SourceCamera);
 
-	virtual AActor* SpawnDefaultPawn();
-    virtual AFallbackCameraActor* SpawnFallbackCameraActor();
-	void Possess(AActor* InActor);
+	void Possess(APawn* InPawn);
 	void UnPossess();
 
 	void NotifyObservedActorDestroyed(AActor* DestroyedActor);
@@ -51,22 +49,16 @@ public:
 	void SetCameraLetterbox(float TargetAspect = 16.0f / 9.0f);
 	void ClearCameraLetterbox();
 
-	virtual void HandleKeyPressed(int VK);
-	virtual void HandleKeyDown(int VK);
-	virtual void HandleKeyReleased(int VK);
-	virtual void HandleMouseMove(float DeltaX, float DeltaY);
-	virtual void HandleMouseMoveAbsolute(float X, float Y);
-	virtual void HandleMouseButtonPressed(int VK, float X, float Y);
-	virtual void HandleMouseButtonDown(int VK, float DeltaX, float DeltaY);
-	virtual void HandleMouseButtonReleased(int VK, float X, float Y);
-	virtual void HandleMouseDrag(int VK, float DeltaX, float DeltaY);
-	virtual void HandleMouseDragEnd(int VK, float X, float Y);
-	virtual void HandleMouseWheel(float Notch);
+	void ProcessInputSnapshot(const FGameplayInputSnapshot& Snapshot);
+	void ReceiveInputSnapshot(const FGameplayInputSnapshot& Snapshot);
+	const FGameplayInputSnapshot& GetInputSnapshot() const { return CurrentInputSnapshot; }
+	const FInputActionState* FindInputAction(const FString& ActionName) const;
 
 	FViewportCamera* GetRuntimeCamera() { return &RuntimeCamera; }
 	const FViewportCamera* GetRuntimeCamera() const { return &RuntimeCamera; }
     APlayerCameraManager* GetPlayerCameraManager() const { return PlayerCameraManager; }
-	AActor* GetPossessedActor() const { return PossessedActor; }
+	APawn* GetPawn() const { return PossessedPawn; }
+	AActor* GetPossessedActor() const { return PossessedPawn; }
     AActor* GetViewTargetActor() const;
     UCameraComponent* GetViewTargetCamera() const;
 
@@ -75,29 +67,21 @@ public:
 protected:
 	UCameraComponent* FindCameraComponent(AActor* Actor) const;
 	virtual AActor* FindPlayerStart() const;
-	virtual AActor* FindPlacedPlayerActor() const;
 	bool IsActorInCurrentWorld(const AActor* Actor) const;
 	void ClearInvalidViewTarget();
 
-	// 기본 PlayerController는 GameClient/PIE 시작 시 플레이어 Pawn과 Camera를 보장하는 bootstrap 역할만 담당합니다.
-	// 게임별 이동/공격/상호작용 입력은 Lua가 Engine.API.Input(InputSystem)을 통해 직접 읽고 처리합니다.
-	virtual void ApplyInitialPawnTransform(ADefaultPlayerActor* Pawn, const FVector& SpawnLocation, const FVector& SpawnRotation);
-	virtual void ApplyPlayerStartTransform(AActor* Pawn, const FVector& SpawnLocation, const FVector& SpawnRotation);
-    virtual void ApplyFallbackCameraTransform(AFallbackCameraActor* CameraActor);
-
-	virtual void UpdatePossessedActorMovement(float DeltaTime);
+	// 기본 PlayerController는 GameInputBridge/GameEngine에서 만든 gameplay action snapshot을 Pawn 쪽으로 전달합니다.
+	void DispatchInputActionsToPawn();
 	virtual void UpdateRuntimeCameraFromViewTarget(float DeltaTime = 0.0f);
 	void UpdateCameraFOVEffect(float DeltaTime, float BaseFOV);
-	void ApplyCameraShakeEffect(float DeltaTime);
 
-	virtual void OnPossess(AActor* InActor);
-	virtual void OnUnPossess(AActor* OldActor);
-    bool IsPossessingFallbackCamera() const;
-    void MoveFallbackCamera(int VK, float DeltaTime);
+	virtual void OnPossess(APawn* InPawn);
+	virtual void OnUnPossess(APawn* OldPawn);
 
 protected:
-	AActor* PossessedActor = nullptr;
+	APawn* PossessedPawn = nullptr;
     APlayerCameraManager* PlayerCameraManager = nullptr;
+	FGameplayInputSnapshot CurrentInputSnapshot;
 
     struct FPendingCameraFade
     {
@@ -112,20 +96,6 @@ protected:
 
 	FViewportCamera RuntimeCamera;
 
-	struct FCameraShakeState
-	{
-		bool bActive = false;
-		float Elapsed = 0.0f;
-		float Duration = 0.0f;
-		float Frequency = 18.0f;
-		float LocationAmplitude = 0.0f;
-		float RotationAmplitudeDegrees = 0.0f;
-		float PhaseX = 0.0f;
-		float PhaseY = 1.7f;
-		float PhaseZ = 3.1f;
-		float Seed = 0.0f;
-	};
-
 	struct FCameraFOVState
 	{
 		bool bActive = false;
@@ -138,7 +108,5 @@ protected:
 		float OverrideFOV = 0.0f;
 	};
 
-	FCameraShakeState CameraShake;
 	FCameraFOVState CameraFOV;
-    float LastInputDeltaTime = 0.0f;
 };

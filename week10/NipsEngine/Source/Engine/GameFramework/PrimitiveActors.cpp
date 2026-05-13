@@ -7,8 +7,6 @@
 #include "Component/SkeletalMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/HeightFogComponent.h"
-#include "Component/CameraComponent.h"
-#include "Component/SpringArmComponent.h"
 
 #include "Component/PostProcess/Light/AmbientLightComponent.h"
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
@@ -196,14 +194,8 @@ REGISTER_FACTORY(AAttachTestActor)
 DEFINE_CLASS(ASceneActor, AActor)
 REGISTER_FACTORY(ASceneActor)
 
-DEFINE_CLASS(ADefaultPlayerActor, AActor)
-REGISTER_FACTORY(ADefaultPlayerActor)
-
 DEFINE_CLASS(APlayerStart, AActor)
 REGISTER_FACTORY(APlayerStart)
-
-DEFINE_CLASS(AFallbackCameraActor, AActor)
-REGISTER_FACTORY(AFallbackCameraActor)
 
 DEFINE_CLASS(AFogActor, AActor)
 REGISTER_FACTORY(AFogActor)
@@ -358,83 +350,6 @@ void ASceneActor::InitDefaultComponents()
     Billboard->SetTextureName("Asset/Texture/EmptyActor.png");
 }
 
-void ADefaultPlayerActor::InitDefaultComponents()
-{
-    auto* SceneRoot = AddComponent<USceneComponent>();
-    SetRootComponent(SceneRoot);
-
-    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-    Billboard->AttachToComponent(SceneRoot);
-    Billboard->SetEditorOnly(true);
-    Billboard->SetTextureName("Asset/Texture/Pawn_64x.png");
-
-    auto* BodySection = AddComponent<USceneComponent>();
-    BodySection->AttachToComponent(SceneRoot);
-    BodySection->SetRelativeScale(FVector(1, 1, 1));
-    BodySection->SetRelativeRotation(FVector(0.0f, 15.9f, 13.1f));
-    BodySection->SetRelativeLocation(FVector(0.2f, 0.5f, 1.3f));
-
-    auto* KatanaComp = AddComponent<UStaticMeshComponent>();
-    KatanaComp->AttachToComponent(BodySection);
-    KatanaComp->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/cyberpunk_katana/katana.obj"));
-    KatanaComp->SetRelativeScale(FVector(3.0f, 3.0f, 1.0f));
-    KatanaComp->SetRelativeRotation(FVector(180, 0, -103.3f));
-    KatanaComp->SetRelativeLocation(FVector(0.52f, -0.8f, 0.0f));
-    KatanaComp->SetEnableCull(false);
-
-    auto* ArmComp = AddComponent<UStaticMeshComponent>();
-    ArmComp->AttachToComponent(BodySection);
-    ArmComp->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/cyberpunk_arm/cyberpunk_arm_right.obj"));
-    ArmComp->SetRelativeScale(FVector(1.0f, 1.0f, 1.0f));
-    ArmComp->SetRelativeRotation(FVector(82.8f, 17.3f, 53.4f));
-    ArmComp->SetRelativeLocation(FVector(0, 0, 0));
-    ArmComp->SetEnableCull(false);
-
-    SpringArmComp = AddComponent<USpringArmComponent>();
-    SpringArmComp->AttachToComponent(SceneRoot);
-    SpringArmComp->SetRelativeLocation(FVector(0.0f, 0.0f, 1.6f));
-    SpringArmComp->SetTargetArmLength(0.f);
-    SpringArmComp->SetSocketOffset(FVector::ZeroVector);
-
-    CameraComp = AddComponent<UCameraComponent>();
-    CameraComp->AttachToComponent(SpringArmComp);
-    CameraComp->SetRelativeLocation(SpringArmComp->GetSocketLocalLocation());
-    CameraComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-    SpringArmComp->UpdateSocketChildren();
-}
-
-void ADefaultPlayerActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{
-    AActor::OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
-}
-
-void ADefaultPlayerActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-    // // 적에 대해서만 Overlap 수행 (현재는 적이 Destructible 로만 구성됨)
-    //    ADestructibleActor* Enemy = Cast<ADestructibleActor>(OtherActor);
-    // if (Enemy && Enemy->GetSliceCount() == 0)
-    // {
-    //        AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-    // }
-    if (!OtherActor)
-    {
-        return;
-    }
-
-    if (OtherActor->HasTag("Enemy") || OtherActor->HasTag("BoundingBox") || OtherActor->HasTag("Wall"))
-    {
-        AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-    }
-}
-
-void ADefaultPlayerActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-    // 적에 대해서만 Overlap 수행 (현재는 적이 Destructible 로만 구성됨)
-    ADestructibleActor* Enemy = Cast<ADestructibleActor>(OtherActor);
-    if (Enemy && Enemy->GetSliceCount() == 0)
-        AActor::OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-}
-
 void APlayerStart::InitDefaultComponents()
 {
     auto* SceneRoot = AddComponent<USceneComponent>();
@@ -444,13 +359,6 @@ void APlayerStart::InitDefaultComponents()
     Billboard->AttachToComponent(SceneRoot);
     Billboard->SetEditorOnly(true);
     Billboard->SetTextureName("Asset/Texture/PlayerStart_64x.PNG");
-}
-
-void AFallbackCameraActor::InitDefaultComponents()
-{
-    CameraComp = AddComponent<UCameraComponent>();
-    SetRootComponent(CameraComp);
-    AddTag("FallbackCamera");
 }
 
 void AFogActor::InitDefaultComponents()
@@ -1489,9 +1397,10 @@ void ABoundsBoxActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActo
 
 void ABoundsBoxActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    //Enemy거나 Player일때만 Overlap Event
-    if (!OtherActor->IsA<ADestructibleActor>() && !OtherActor->IsA<ADefaultPlayerActor>())
+    if (!OtherActor || (!OtherActor->IsA<ADestructibleActor>() && !OtherActor->IsA<APawn>()))
+    {
         return;
+    }
 
     AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 }

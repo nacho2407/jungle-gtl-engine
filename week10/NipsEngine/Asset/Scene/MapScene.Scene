@@ -1620,7 +1620,7 @@
       "UUID" : 6285,
       "Visible" : true
     }, {
-      "ClassName" : "ADefaultPlayerActor",
+      "ClassName" : "ADefaultPawn",
       "Components" : [{
           "ClassName" : "USceneComponent",
           "Editor Only" : false,
