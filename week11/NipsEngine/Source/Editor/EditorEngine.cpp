@@ -631,6 +631,15 @@ void UEditorEngine::WorldTick(float DeltaTime)
 
 FEditorViewer* UEditorEngine::CreateViewer(FString InFileName)
 {
+    for (const auto& Viewer : Viewers)
+    {
+        if (Viewer->GetFileName() == InFileName)
+        {
+            MainPanel.OpenViewer(Viewer.get());
+            return Viewer.get();
+        }
+    }
+
     static int32 ViewerCounter = 0;
     FString HandleStr = "__ViewerPreview_" + std::to_string(ViewerCounter++);
     FName Handle(HandleStr.c_str());

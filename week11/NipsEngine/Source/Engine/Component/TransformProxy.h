@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreMinimal.h"
 #include "Math/Matrix.h"
@@ -85,5 +85,62 @@ public:
     {
         if (!SkelComp) return;
         SkelComp->SetBoneGlobalTransform(BoneIndex, M);
+    }
+};
+
+class FSocketTransformProxy : public ITransformProxy
+{
+    USkeletalMeshComponent* SkelComp;
+    FName SocketName;
+
+public:
+    FSocketTransformProxy(USkeletalMeshComponent* InSkelComp, const FName& InSocketName)
+        : SkelComp(InSkelComp), SocketName(InSocketName) {}
+
+    virtual FMatrix GetTransform() const override
+    {
+        if (!SkelComp)
+            return FMatrix::Identity;
+        return SkelComp->GetSocketTransform(SocketName).ToMatrixWithScale();
+    }
+
+    virtual void SetTransform(const FMatrix& M) override
+    {
+        if (!SkelComp || !SkelComp->GetSkeletalMesh())
+            return;
+
+        FSkeletalMesh* MeshData = SkelComp->GetSkeletalMesh()->GetMeshData();
+        if (!MeshData)
+            return;
+
+        for (auto& Socket : MeshData->Sockets)
+        {
+            if (Socket.Name != SocketName)
+                continue;
+
+            FTransform TargetWorld(M);
+            TargetWorld.NormalizeRotation();
+
+            const FTransform BoneGlobal(SkelComp->GetCurrentGlobalPose()[Socket.BoneIndex]);
+            const FTransform ComponentWorld(SkelComp->GetWorldTransform());
+
+            const FTransform ParentWorld = BoneGlobal * ComponentWorld;
+            const FTransform Rel = TargetWorld * ParentWorld.Inverse();
+            Socket.RelativeLocation = Rel.GetLocation();
+
+            FQuat SafeQuat = Rel.GetRotation();
+            SafeQuat.Normalize();
+            Socket.RelativeRotation = FRotator(SafeQuat);
+
+            FVector SafeScale = Rel.GetScale3D();
+            SafeScale.X = std::max(0.001f, SafeScale.X);
+            SafeScale.Y = std::max(0.001f, SafeScale.Y);
+            SafeScale.Z = std::max(0.001f, SafeScale.Z);
+
+            Socket.RelativeScale = SafeScale;
+
+            SkelComp->MarkSkinningDirty();
+            break;
+        }
     }
 };
