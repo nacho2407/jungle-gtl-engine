@@ -606,8 +606,7 @@ void UEditorEngine::RemoveViewer(FEditorViewer* InViewer)
     {
         if (it->get() == InViewer)
         {
-			// CloseViewer 는 여기서 처리하지않고 MainPanel 내에서 Pending 으로 처리하게 한다
-			// Widget 쪽에서 이미 bOpen = false 처리돼있으므로 그걸 기반으로 처리될 것임
+            MainPanel.CloseViewer(InViewer);
 			
             // Find world handle and unregister
             if (FEditorViewportClient* Client = static_cast<FEditorViewportClient*>((*it)->GetViewport().GetClient()))
@@ -1168,12 +1167,15 @@ void UEditorEngine::CloseScene()
 
     for (auto& ViewerPtr : Viewers)
     {
+        MainPanel.CloseViewer(ViewerPtr.get());
         if (FEditorViewportClient* ViewportClient = static_cast<FEditorViewportClient*>(ViewerPtr->GetViewport().GetClient()))
         {
             ViewportClient->DestroyCamera();
             ViewportClient->SetWorld(nullptr);
         }
     }
+
+	Viewers.clear();
 }
 
 void UEditorEngine::NewScene()
@@ -1329,6 +1331,7 @@ void UEditorEngine::ClearScene()
 	
     for (auto& ViewerPtr : Viewers)
     {
+        MainPanel.CloseViewer(ViewerPtr.get());
         ViewerPtr->ClearViewTarget();
 
         if (FEditorViewportClient* ViewportClient = static_cast<FEditorViewportClient*>(ViewerPtr->GetViewport().GetClient()))

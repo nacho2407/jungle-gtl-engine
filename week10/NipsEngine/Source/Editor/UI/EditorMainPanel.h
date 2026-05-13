@@ -47,6 +47,7 @@ public:
 	void OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex);
 	void OpenCurveAsset(const FString& CurvePath);
     void OpenViewer(FEditorViewer* Viewer);
+    void CloseViewer(FEditorViewer* Viewer);
     void FlushClosedViewerWidgets();
 
 	void PushFooterLog(const FString& Message);
