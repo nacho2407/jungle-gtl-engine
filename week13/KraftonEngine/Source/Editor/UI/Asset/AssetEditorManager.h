@@ -3,6 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Editor/UI/Asset/AssetEditorWidget.h"
 
+#include <functional>
 #include <memory>
 
 class UObject;
@@ -14,12 +15,12 @@ public:
 	~FAssetEditorManager();
 
 	template<typename TEditor, typename... TArgs>
-	TEditor& RegisterEditor(TArgs&&... Args)
+	void RegisterEditor(TArgs&&... Args)
 	{
-		auto Editor = std::make_unique<TEditor>(std::forward<TArgs>(Args)...);
-		TEditor& Ref = *Editor;
-		Editors.push_back(std::move(Editor));
-		return Ref;
+		EditorFactories.push_back([Args...]()
+		{
+			return std::make_unique<TEditor>(Args...);
+		});
 	}
 
 	void Tick(float DeltaTime);
@@ -31,6 +32,9 @@ public:
 
 	bool IsMouseOverAnyEditorViewport() const;
 
+	void RemoveClosedEditors();
+
 private:
-	TArray<std::unique_ptr<FAssetEditorWidget>> Editors;
+	TArray<std::function<std::unique_ptr<FAssetEditorWidget>()>> EditorFactories;
+	TArray<std::unique_ptr<FAssetEditorWidget>> OpenEditors;
 };

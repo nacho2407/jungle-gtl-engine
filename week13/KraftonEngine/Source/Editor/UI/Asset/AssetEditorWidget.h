@@ -17,6 +17,8 @@ public:
 
 	virtual void CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const {}
 
+	virtual bool AllowsMultipleInstances() const { return false; }
+
 	UObject* GetEditedObject() const { return EditedObject; }
 	bool IsOpen() const { return bOpen; }
 

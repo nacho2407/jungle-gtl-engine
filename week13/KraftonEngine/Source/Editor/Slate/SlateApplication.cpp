@@ -103,6 +103,20 @@ void FSlateApplication::UpdateInputOwner()
 	}
 }
 
+void FSlateApplication::BringViewportToFront(FViewportClient* Client)
+{
+	if (!Client) return;
+
+	auto It = std::find_if(RegisteredViewports.begin(), RegisteredViewports.end(),
+		[Client](const FViewportInfo& Info) { return Info.Client == Client; });
+
+	if (It == RegisteredViewports.end()) return;
+
+	FViewportInfo Info = *It;
+	RegisteredViewports.erase(It);
+	RegisteredViewports.push_back(Info);
+}
+
 bool FSlateApplication::DoesClientOwnMouseInput(FViewportClient* Client) const
 {
 	return Client && (Client == CapturedClient || Client == HoveredClient);
