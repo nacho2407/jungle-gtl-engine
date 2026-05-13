@@ -5,10 +5,10 @@ param(
 $ErrorActionPreference = "Stop"
 
 $Root = Split-Path -Parent $PSScriptRoot
-$SourceRoot = Join-Path $Root "NipsEngine/Source"
+$SourceRoot = Join-Path $Root "JSEngine/Source"
 $EngineRoot = Join-Path $SourceRoot "Engine"
 $EditorEngineHeader = Join-Path $SourceRoot "Editor/EditorEngine.h"
-$ProjectFile = Join-Path $Root "NipsEngine/NipsEngine.vcxproj"
+$ProjectFile = Join-Path $Root "JSEngine/JSEngine.vcxproj"
 
 if (!(Test-Path $SourceRoot)) {
     Write-Error "Source root not found: $SourceRoot"
