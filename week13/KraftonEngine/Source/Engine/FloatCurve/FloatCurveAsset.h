@@ -2,6 +2,8 @@
 #include "Object/Object.h"
 #include "Math/FloatCurve.h"
 
+class FArchive;
+
 class UFloatCurveAsset : public UObject
 {
 public:
@@ -10,14 +12,13 @@ public:
 	UFloatCurveAsset() = default;
 	~UFloatCurveAsset() override;
 
-	bool LoadFromFile(const FString& Path);
-	bool SaveToFile(const FString& Path) const;
-
 	FFloatCurve& GetCurve() { return Curve; }
 	const FFloatCurve& GetCurve() const { return Curve; }
 
 	void SetSourcePath(const FString& InPath) { SourcePath = InPath; }
 	const FString& GetSourcePath() const { return SourcePath; }
+
+	void Serialize(FArchive& Ar) override;
 
 private:
 	FFloatCurve Curve;

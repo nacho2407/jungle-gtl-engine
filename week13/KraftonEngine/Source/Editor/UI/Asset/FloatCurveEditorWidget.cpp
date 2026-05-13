@@ -1,6 +1,7 @@
 ﻿#include "FloatCurveEditorWidget.h"
 
 #include "FloatCurve/FloatCurveAsset.h"
+#include "FloatCurve/FloatCurveManager.h"
 #include "Object/Object.h"
 
 #include <algorithm>
@@ -223,8 +224,7 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 
 	if (ImGui::Button("Save"))
 	{
-		const FString& SourcePath = CurveAsset->GetSourcePath();
-		if (!SourcePath.empty() && CurveAsset->SaveToFile(SourcePath))
+		if (FFloatCurveManager::Get().Save(CurveAsset))
 		{
 			ClearDirty();
 		}

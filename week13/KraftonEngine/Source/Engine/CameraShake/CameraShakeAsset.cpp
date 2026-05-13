@@ -1,6 +1,7 @@
 ﻿#include "CameraShakeAsset.h"
 #include "Object/ObjectFactory.h"
 #include "Platform/Paths.h"
+#include "Serialization/Archive.h"
 
 #include <fstream>
 #include <sstream>
@@ -47,6 +48,56 @@ static FRotator ReadRotator(json::JSON& Object, const FString& Key, const FRotat
 
 UCameraShakeAsset::~UCameraShakeAsset()
 {
+}
+
+static void SerializeVector(FArchive& Ar, FVector& Value)
+{
+	Ar << Value.X;
+	Ar << Value.Y;
+	Ar << Value.Z;
+}
+
+static void SerializeRotator(FArchive& Ar, FRotator& Value)
+{
+	Ar << Value.Pitch;
+	Ar << Value.Yaw;
+	Ar << Value.Roll;
+}
+
+void UCameraShakeAsset::Serialize(FArchive& Ar)
+{
+	Ar << Version;
+
+	int32 Type = static_cast<int32>(ShakeType);
+	Ar << Type;
+	if (Ar.IsLoading())
+	{
+		ShakeType = static_cast<ECameraShakeType>(Type);
+	}
+
+	Ar << Duration;
+	Ar << BlendInTime;
+	Ar << BlendOutTime;
+	Ar << bSingleInstance;
+
+	Ar << Sequence.LocXCurvePath;
+	Ar << Sequence.LocYCurvePath;
+	Ar << Sequence.LocZCurvePath;
+
+	Ar << Sequence.PitchCurvePath;
+	Ar << Sequence.YawCurvePath;
+	Ar << Sequence.RollCurvePath;
+
+	Ar << Sequence.FOVCurvePath;
+
+	SerializeVector(Ar, WaveOscillator.LocationAmplitude);
+	SerializeVector(Ar, WaveOscillator.LocationFrequency);
+
+	SerializeRotator(Ar, WaveOscillator.RotationAmplitude);
+	SerializeRotator(Ar, WaveOscillator.RotationFrequency);
+
+	Ar << WaveOscillator.FOVAmplitude;
+	Ar << WaveOscillator.FOVFrequency;
 }
 
 bool UCameraShakeAsset::LoadFromFile(const FString& Path)

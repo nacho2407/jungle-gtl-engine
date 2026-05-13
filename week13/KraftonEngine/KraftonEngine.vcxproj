@@ -373,6 +373,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorTextureManager.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorPreviewViewportClient.h" />
+    <ClCompile Include="Source\Engine\Asset\AssetPackage.cpp" />
     <ClCompile Include="Source\Engine\Mesh\MeshManager.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
@@ -637,6 +638,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h" />
     <ClInclude Include="Source\Editor\UI\EditorTextureManager.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h" />
+    <ClInclude Include="Source\Engine\Asset\AssetPackage.h" />
     <ClInclude Include="Source\Engine\Mesh\MeshImportOptions.h" />
     <ClInclude Include="Source\Engine\Mesh\MeshManager.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
