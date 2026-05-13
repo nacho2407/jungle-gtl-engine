@@ -72,6 +72,8 @@ void FEditorMainPanel::RenderMainViewport(float DeltaTime)
 
 void FEditorMainPanel::RenderEditorPanelWindows(float DeltaTime, bool bDrawEditorPanels)
 {
+    FlushOpenViewerWidgets();
+
     if (bDrawEditorPanels && PanelVisibility.bShowControl)
     {
         Widgets.ControlWidget.Render(DeltaTime);
@@ -114,7 +116,7 @@ void FEditorMainPanel::RenderEditorPanelWindows(float DeltaTime, bool bDrawEdito
     }
 
 	for (auto& ViewerWidget : Widgets.ViewerWindowWidgets)
-        ViewerWidget.Render(DeltaTime);
+        ViewerWidget->Render(DeltaTime);
 
 	FlushClosedViewerWidgets();
 }
