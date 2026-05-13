@@ -22,6 +22,7 @@
 #include "Editor/UI/Asset/FloatCurveEditorWidget.h"
 #include "Editor/UI/Asset/CameraShakeEditorWidget.h"
 #include "Editor/UI/Asset/MeshEditorWidget.h"
+#include "Editor/UI/Asset/StaticMeshEditorWidget.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -89,6 +90,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	AssetEditorManager.RegisterEditor<FFloatCurveEditorWidget>();
 	AssetEditorManager.RegisterEditor<FCameraShakeEditorWidget>();
 	AssetEditorManager.RegisterEditor<FMeshEditorWidget>();
+	AssetEditorManager.RegisterEditor<FStaticMeshEditorWidget>();
 }
 
 void FEditorMainPanel::Release()

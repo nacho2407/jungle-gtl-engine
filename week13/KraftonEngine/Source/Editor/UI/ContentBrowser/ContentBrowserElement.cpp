@@ -8,6 +8,7 @@
 #include "CameraShake/CameraShakeManager.h"
 #include "Platform/Paths.h"
 #include "Serialization/SceneSaveManager.h"
+#include "Mesh/StaticMesh.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/MeshManager.h"
 
@@ -309,6 +310,32 @@ void ObjectElement::RenderContextMenu(ContentBrowserContext& Context)
 			}
 		}
 	}
+}
+
+void ObjectElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		ShellExecuteW(nullptr, L"open", ContentItem.Path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+		return;
+	}
+
+	FString Extension = FPaths::ToUtf8(ContentItem.Path.extension());
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
+
+	const FString FilePath = FPaths::ToUtf8(ContentItem.Path.wstring());
+	const FString PackagePath = FPaths::ToUtf8(ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring());
+
+	if (Extension == ".uasset" && FMeshManager::IsStaticMeshPackage(PackagePath))
+	{
+		if (UStaticMesh* MeshAsset = FMeshManager::LoadStaticMesh(FilePath, Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice()))
+		{
+			Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
+		}
+		return;
+	}
+
+	ShellExecuteW(nullptr, L"open", ContentItem.Path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 void FloatCurveElement::OnDoubleLeftClicked(ContentBrowserContext& Context)

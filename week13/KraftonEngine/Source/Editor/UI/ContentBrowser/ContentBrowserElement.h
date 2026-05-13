@@ -56,6 +56,7 @@ class ObjectElement final : public ContentBrowserElement
 {
 public:
 	void RenderContextMenu(ContentBrowserContext& Context) override;
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
 
 	virtual const char* GetDragItemType() override { return "ObjectContentItem"; }
 
