@@ -1,0 +1,3 @@
+// Default editor/runtime application icon.
+// GameClient packaging uses GameBranding.rc so packaged games can override this.
+101 ICON "Resources\\Editor\\Branding\\JS-Engine-Logo.ico"

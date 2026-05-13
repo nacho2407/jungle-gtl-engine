@@ -2,7 +2,7 @@
 setlocal
 
 set SOLUTION_DIR=%~dp0
-set PROJECT_DIR=%SOLUTION_DIR%NipsEngine
+set PROJECT_DIR=%SOLUTION_DIR%JSEngine
 set BUILD_OUTPUT=%PROJECT_DIR%\Bin\Release
 set RELEASE_DIR=%SOLUTION_DIR%ReleaseBuild
 
@@ -23,7 +23,7 @@ echo ============================================
 :: 1. MSBuild로 Release x64 빌드
 echo.
 echo [1/3] Building Release x64...
-msbuild "%SOLUTION_DIR%NipsEngine.sln" /p:Configuration=Release /p:Platform=x64 /m /v:minimal
+msbuild "%SOLUTION_DIR%JSEngine.sln" /p:Configuration=Release /p:Platform=x64 /m /v:minimal
 if %ERRORLEVEL% neq 0 (
     echo BUILD FAILED
     pause
@@ -41,7 +41,7 @@ echo.
 echo [3/3] Copying files...
 
 :: 실행 파일 (루트에)
-copy "%BUILD_OUTPUT%\NipsEngine.exe" "%RELEASE_DIR%\" >nul
+copy "%BUILD_OUTPUT%\JSEngine.exe" "%RELEASE_DIR%\" >nul
 
 :: ImGui 레이아웃 (도킹 설정 포함)
 if exist "%PROJECT_DIR%\imgui.ini" copy "%PROJECT_DIR%\imgui.ini" "%RELEASE_DIR%\" >nul
@@ -71,7 +71,7 @@ echo  Build complete: %RELEASE_DIR%
 echo ============================================
 echo.
 echo  ReleaseBuild/
-echo    NipsEngine.exe
+echo    JSEngine.exe
 echo    imgui.ini
 echo    Shaders/
 echo    Asset/Scene/
