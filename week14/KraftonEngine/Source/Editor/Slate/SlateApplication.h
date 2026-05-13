@@ -24,6 +24,7 @@ public:
 	void UnregisterViewport(FViewportClient* Client);
 
 	void UpdateInputOwner();
+	void BringViewportToFront(FViewportClient* Client);
 
 	FViewportClient* GetHoveredViewportClient() const { return HoveredClient; }
 	FViewportClient* GetFocusedViewportClient() const { return FocusedClient; }

@@ -29,6 +29,16 @@ namespace
 	}
 }
 
+static uint32 GNextMeshEditorInstanceId = 0;
+
+FMeshEditorWidget::FMeshEditorWidget()
+	: InstanceId(GNextMeshEditorInstanceId++)
+{
+	const FString Id = std::to_string(InstanceId);
+	PreviewWorldHandle = FName("MeshEditorPreview_" + Id);
+	WindowIdSuffix = "###MeshEditor_" + Id;
+}
+
 bool FMeshEditorWidget::CanEdit(UObject* Object) const
 {
 	return Object && (Object->IsA<UStaticMesh>() || Object->IsA<USkeletalMesh>());
@@ -38,7 +48,7 @@ void FMeshEditorWidget::Open(UObject* Object)
 {
 	FAssetEditorWidget::Open(Object);
 
-	FWorldContext& WorldContext = GEngine->CreateWorldContext(EWorldType::EditorPreview, FName("MeshEditorPreview"));
+	FWorldContext& WorldContext = GEngine->CreateWorldContext(EWorldType::EditorPreview, PreviewWorldHandle);
 	WorldContext.World->SetWorldType(EWorldType::EditorPreview);
 	WorldContext.World->InitWorld();
 
@@ -89,9 +99,13 @@ void FMeshEditorWidget::Close()
 	{
 		FScene& PreviewScene = PreviewWorld->GetScene();
 		GEngine->GetRenderer().GetResources().ReleaseShadowResourcesForScene(&PreviewScene);
+
+		if (PreviewWorldHandle.IsValid())
+		{
+			GEngine->DestroyWorldContext(PreviewWorldHandle);
+		}
 	}
 
-	GEngine->DestroyWorldContext(FName("MeshEditorPreview"));
 
 	FSlateApplication::Get().UnregisterViewport(&ViewportClient);
 
@@ -148,7 +162,7 @@ void FMeshEditorWidget::Render(float DeltaTime)
 		WindowFlags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
 	}
 
-	FString WindowTitle = VisibleTitle + "###MeshEditor";
+	FString WindowTitle = VisibleTitle + WindowIdSuffix;
 	if (!ImGui::Begin(WindowTitle.c_str(), &bWindowOpen, WindowFlags))
 	{
 		ImGui::End();
@@ -157,6 +171,11 @@ void FMeshEditorWidget::Render(float DeltaTime)
 			Close();
 		}
 		return;
+	}
+
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+	{
+		FSlateApplication::Get().BringViewportToFront(&ViewportClient);
 	}
 
 	ImGui::BeginChild("BoneHierarchy", ImVec2(HierarchyWidth, 0), true);

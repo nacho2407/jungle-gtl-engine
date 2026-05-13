@@ -10,7 +10,7 @@ struct ImVec2;
 class FMeshEditorWidget : public FAssetEditorWidget
 {
 public:
-	FMeshEditorWidget() = default;
+	FMeshEditorWidget();
 
 	bool CanEdit(UObject* Object) const override;
 
@@ -19,6 +19,8 @@ public:
 	void Tick(float DeltaTime) override;
 
 	void CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const override;
+
+	bool AllowsMultipleInstances() const override { return true; }
 
 	void Render(float DeltaTime) override;
 
@@ -35,4 +37,8 @@ private:
 	FMeshEditorViewportClient ViewportClient;
 
 	int32 SelectedBoneIndex = -1;
+
+	uint32 InstanceId;
+	FName PreviewWorldHandle = FName::None;
+	FString WindowIdSuffix;
 };
