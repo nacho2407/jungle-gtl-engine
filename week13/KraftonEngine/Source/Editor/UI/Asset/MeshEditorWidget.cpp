@@ -42,6 +42,26 @@ bool FMeshEditorWidget::CanEdit(UObject* Object) const
 	return Object && Object->IsA<USkeletalMesh>();
 }
 
+bool FMeshEditorWidget::IsEditingObject(UObject* Object) const
+{
+	if (FAssetEditorWidget::IsEditingObject(Object))
+	{
+		return true;
+	}
+
+	const USkeletalMesh* CurrentMesh = Cast<USkeletalMesh>(EditedObject);
+	const USkeletalMesh* RequestedMesh = Cast<USkeletalMesh>(Object);
+	if (!IsOpen() || !CurrentMesh || !RequestedMesh)
+	{
+		return false;
+	}
+
+	const FString& CurrentPath = CurrentMesh->GetAssetPathFileName();
+	return !CurrentPath.empty()
+		&& CurrentPath != "None"
+		&& CurrentPath == RequestedMesh->GetAssetPathFileName();
+}
+
 void FMeshEditorWidget::Open(UObject* Object)
 {
 	FAssetEditorWidget::Open(Object);
@@ -166,6 +186,11 @@ void FMeshEditorWidget::Render(float DeltaTime)
 	}
 
 	FString WindowTitle = VisibleTitle + WindowIdSuffix;
+	if (ConsumeFocusRequest())
+	{
+		ImGui::SetNextWindowFocus();
+	}
+
 	if (!ImGui::Begin(WindowTitle.c_str(), &bWindowOpen, WindowFlags))
 	{
 		ImGui::End();

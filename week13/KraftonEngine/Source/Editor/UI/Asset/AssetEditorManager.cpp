@@ -28,6 +28,17 @@ void FAssetEditorManager::Render(float DeltaTime)
 
 bool FAssetEditorManager::OpenEditorForObject(UObject* Object)
 {
+	RemoveClosedEditors();
+
+	for (const auto& Editor : OpenEditors)
+	{
+		if (Editor && Editor->IsEditingObject(Object))
+		{
+			Editor->RequestFocus();
+			return true;
+		}
+	}
+
 	for (const auto& Editor : OpenEditors)
 	{
 		if (Editor->CanEdit(Object) && !Editor->AllowsMultipleInstances())
