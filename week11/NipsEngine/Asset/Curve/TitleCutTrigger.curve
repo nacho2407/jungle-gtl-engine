@@ -1,6 +1,6 @@
 {
         "ArriveTangents" : [0.000000, 0.000000],
-        "AssetPath" : "Asset/Curve/TitleCutTrigger.curve.json",
+        "AssetPath" : "Asset/Curve/TitleCutTrigger.curve",
         "InterpModes" : [1, 1],
         "LeaveTangents" : [0.000000, 0.000000],
         "ObjectName" : "UCurveFloatAsset_0",

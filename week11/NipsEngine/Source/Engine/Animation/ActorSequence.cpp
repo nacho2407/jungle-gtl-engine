@@ -13,6 +13,18 @@
 
 namespace
 {
+    float ResolveSequenceStartTime(const UActorSequence* Sequence, float StartOffsetSeconds)
+    {
+        if (!Sequence)
+        {
+            return 0.0f;
+        }
+
+        const float StartTime = Sequence->StartTime;
+        const float EndTime = Sequence->StartTime + std::max(0.0f, Sequence->Duration);
+        return std::clamp(StartTime + std::max(0.0f, StartOffsetSeconds), StartTime, EndTime);
+    }
+
     bool IsValueChannel(const FString& ChannelName)
     {
         return ChannelName.empty() || ChannelName == "Value";
@@ -23,6 +35,18 @@ namespace
         if (!Property.ValuePtr)
         {
             return false;
+        }
+
+        if (Property.Type == EPropertyType::Bool && IsValueChannel(ChannelName))
+        {
+            OutValue = *static_cast<bool*>(Property.ValuePtr) ? 1.0f : 0.0f;
+            return true;
+        }
+
+        if (Property.Type == EPropertyType::Int && IsValueChannel(ChannelName))
+        {
+            OutValue = static_cast<float>(*static_cast<int32*>(Property.ValuePtr));
+            return true;
         }
 
         if (Property.Type == EPropertyType::Float && IsValueChannel(ChannelName))
@@ -76,6 +100,31 @@ namespace
             }
         }
 
+        if (Property.Type == EPropertyType::Vec4)
+        {
+            const FVector4* Value = static_cast<const FVector4*>(Property.ValuePtr);
+            if (ChannelName == "X")
+            {
+                OutValue = Value->X;
+                return true;
+            }
+            if (ChannelName == "Y")
+            {
+                OutValue = Value->Y;
+                return true;
+            }
+            if (ChannelName == "Z")
+            {
+                OutValue = Value->Z;
+                return true;
+            }
+            if (ChannelName == "W")
+            {
+                OutValue = Value->W;
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -84,6 +133,18 @@ namespace
         if (!Property.ValuePtr)
         {
             return false;
+        }
+
+        if (Property.Type == EPropertyType::Bool && IsValueChannel(ChannelName))
+        {
+            *static_cast<bool*>(Property.ValuePtr) = NewValue >= 0.5f;
+            return true;
+        }
+
+        if (Property.Type == EPropertyType::Int && IsValueChannel(ChannelName))
+        {
+            *static_cast<int32*>(Property.ValuePtr) = static_cast<int32>(std::round(NewValue));
+            return true;
         }
 
         if (Property.Type == EPropertyType::Float && IsValueChannel(ChannelName))
@@ -137,6 +198,31 @@ namespace
             }
         }
 
+        if (Property.Type == EPropertyType::Vec4)
+        {
+            FVector4* Value = static_cast<FVector4*>(Property.ValuePtr);
+            if (ChannelName == "X")
+            {
+                Value->X = NewValue;
+                return true;
+            }
+            if (ChannelName == "Y")
+            {
+                Value->Y = NewValue;
+                return true;
+            }
+            if (ChannelName == "Z")
+            {
+                Value->Z = NewValue;
+                return true;
+            }
+            if (ChannelName == "W")
+            {
+                Value->W = NewValue;
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -144,8 +230,14 @@ namespace
     {
         switch (PropertyType)
         {
+        case EPropertyType::Bool:
+            return EActorSequenceTrackType::Bool;
+        case EPropertyType::Int:
+            return EActorSequenceTrackType::Int;
         case EPropertyType::Vec3:
             return EActorSequenceTrackType::Vec3;
+        case EPropertyType::Vec4:
+            return EActorSequenceTrackType::Vec4;
         case EPropertyType::Color:
             return EActorSequenceTrackType::Color;
         case EPropertyType::Float:
@@ -164,6 +256,7 @@ REGISTER_FACTORY(UActorSequencePlayer)
 void UActorSequence::Serialize(FArchive& Ar)
 {
     UObject::Serialize(Ar);
+    Ar << "StartTime" << StartTime;
     Ar << "Duration" << Duration;
     Ar << "Loop" << bLoop;
 
@@ -182,6 +275,13 @@ void UActorSequence::Serialize(FArchive& Ar)
     TArray<int32> TrackLoops;
     TArray<int32> ApplyModes;
     TArray<int32> TimeMappingModes;
+    TArray<int32> InlineCurveKeyCounts;
+    TArray<float> InlineCurveTimes;
+    TArray<float> InlineCurveValues;
+    TArray<int32> InlineCurveInterpModes;
+    TArray<int32> InlineCurveTangentModes;
+    TArray<float> InlineCurveArriveTangents;
+    TArray<float> InlineCurveLeaveTangents;
 
     if (Ar.IsSaving())
     {
@@ -208,6 +308,26 @@ void UActorSequence::Serialize(FArchive& Ar)
                         TrackLoops.push_back(Section.bLoop ? 1 : 0);
                         ApplyModes.push_back(static_cast<int32>(Channel.Playback.ApplyMode));
                         TimeMappingModes.push_back(static_cast<int32>(Channel.Playback.TimeMappingMode));
+
+                        const UCurveFloatAsset* Curve = Channel.Playback.Curve
+                            ? Channel.Playback.Curve
+                            : (!Channel.Playback.CurveAssetPath.empty()
+                                ? FResourceManager::Get().LoadCurve(Channel.Playback.CurveAssetPath)
+                                : nullptr);
+                        const FFloatCurve* FloatCurve = Curve ? &Curve->GetCurve() : nullptr;
+                        InlineCurveKeyCounts.push_back(FloatCurve ? static_cast<int32>(FloatCurve->Keys.size()) : 0);
+                        if (FloatCurve)
+                        {
+                            for (const FCurveKey& Key : FloatCurve->Keys)
+                            {
+                                InlineCurveTimes.push_back(Key.Time);
+                                InlineCurveValues.push_back(Key.Value);
+                                InlineCurveInterpModes.push_back(static_cast<int32>(Key.InterpMode));
+                                InlineCurveTangentModes.push_back(static_cast<int32>(Key.TangentMode));
+                                InlineCurveArriveTangents.push_back(Key.ArriveTangent);
+                                InlineCurveLeaveTangents.push_back(Key.LeaveTangent);
+                            }
+                        }
                     }
                 }
             }
@@ -229,11 +349,19 @@ void UActorSequence::Serialize(FArchive& Ar)
     Ar << "TrackLoops" << TrackLoops;
     Ar << "ApplyModes" << ApplyModes;
     Ar << "TimeMappingModes" << TimeMappingModes;
+    Ar << "InlineCurveKeyCounts" << InlineCurveKeyCounts;
+    Ar << "InlineCurveTimes" << InlineCurveTimes;
+    Ar << "InlineCurveValues" << InlineCurveValues;
+    Ar << "InlineCurveInterpModes" << InlineCurveInterpModes;
+    Ar << "InlineCurveTangentModes" << InlineCurveTangentModes;
+    Ar << "InlineCurveArriveTangents" << InlineCurveArriveTangents;
+    Ar << "InlineCurveLeaveTangents" << InlineCurveLeaveTangents;
 
     if (Ar.IsLoading())
     {
         Bindings.clear();
         const size_t TrackCount = TargetPropertyPaths.size();
+        size_t InlineKeyOffset = 0;
 
         for (size_t Index = 0; Index < TrackCount; ++Index)
         {
@@ -323,10 +451,42 @@ void UActorSequence::Serialize(FArchive& Ar)
             Channel.Playback.CurveAssetPath = Index < CurveAssetPaths.size() ? CurveAssetPaths[Index] : "";
             Channel.Playback.ApplyMode = Index < ApplyModes.size()
                 ? static_cast<ECurveApplyMode>(ApplyModes[Index])
-                : ECurveApplyMode::Direct;
+                : ECurveApplyMode::Absolute;
             Channel.Playback.TimeMappingMode = Index < TimeMappingModes.size()
                 ? static_cast<ECurveTimeMappingMode>(TimeMappingModes[Index])
                 : ECurveTimeMappingMode::NormalizedTime;
+
+            const int32 InlineKeyCount = Index < InlineCurveKeyCounts.size()
+                ? std::max(0, InlineCurveKeyCounts[Index])
+                : 0;
+            if (InlineKeyCount > 0)
+            {
+                UCurveFloatAsset* InlineCurve = UObjectManager::Get().CreateObject<UCurveFloatAsset>();
+                if (InlineCurve)
+                {
+                    FFloatCurve& FloatCurve = InlineCurve->GetMutableCurve();
+                    FloatCurve.Keys.clear();
+                    for (int32 KeyIndex = 0; KeyIndex < InlineKeyCount; ++KeyIndex)
+                    {
+                        const size_t SourceIndex = InlineKeyOffset + static_cast<size_t>(KeyIndex);
+                        FCurveKey Key;
+                        Key.Time = SourceIndex < InlineCurveTimes.size() ? InlineCurveTimes[SourceIndex] : 0.0f;
+                        Key.Value = SourceIndex < InlineCurveValues.size() ? InlineCurveValues[SourceIndex] : 0.0f;
+                        Key.InterpMode = SourceIndex < InlineCurveInterpModes.size()
+                            ? static_cast<ECurveInterpMode>(InlineCurveInterpModes[SourceIndex])
+                            : ECurveInterpMode::Cubic;
+                        Key.TangentMode = SourceIndex < InlineCurveTangentModes.size()
+                            ? static_cast<ECurveTangentMode>(InlineCurveTangentModes[SourceIndex])
+                            : ECurveTangentMode::Auto;
+                        Key.ArriveTangent = SourceIndex < InlineCurveArriveTangents.size() ? InlineCurveArriveTangents[SourceIndex] : 0.0f;
+                        Key.LeaveTangent = SourceIndex < InlineCurveLeaveTangents.size() ? InlineCurveLeaveTangents[SourceIndex] : 0.0f;
+                        FloatCurve.Keys.push_back(Key);
+                    }
+                    FloatCurve.SortKeys();
+                    Channel.Playback.Curve = InlineCurve;
+                }
+            }
+            InlineKeyOffset += static_cast<size_t>(InlineKeyCount);
             Section->Channels.push_back(Channel);
         }
     }
@@ -340,7 +500,7 @@ void UActorSequencePlayer::Initialize(
     OwnerComponent = InOwner;
     Sequence = InSequence;
     Context = InContext;
-    CurrentTime = 0.0f;
+    CurrentTime = ResolveSequenceStartTime(Sequence, StartOffsetSeconds);
     bPlaying = false;
     bPaused = false;
     MarkResolveDirty();
@@ -348,6 +508,15 @@ void UActorSequencePlayer::Initialize(
 
 void UActorSequencePlayer::Play()
 {
+    if (Sequence)
+    {
+        const float StartTime = Sequence->StartTime;
+        const float EndTime = Sequence->StartTime + std::max(0.0f, Sequence->Duration);
+        if (CurrentTime < StartTime || CurrentTime >= EndTime)
+        {
+            CurrentTime = ResolveSequenceStartTime(Sequence, StartOffsetSeconds);
+        }
+    }
     bPlaying = true;
     bPaused = false;
 }
@@ -364,7 +533,7 @@ void UActorSequencePlayer::Stop()
 {
     bPlaying = false;
     bPaused = false;
-    CurrentTime = 0.0f;
+    CurrentTime = ResolveSequenceStartTime(Sequence, StartOffsetSeconds);
     ClearAppliedValues();
 }
 
@@ -380,17 +549,30 @@ void UActorSequencePlayer::Tick(float DeltaTime)
         ResolveTracks();
     }
 
+    const float StartTime = Sequence->StartTime;
+    const float EndTime = Sequence->StartTime + std::max(0.0f, Sequence->Duration);
+    if (CurrentTime < StartTime)
+    {
+        CurrentTime = StartTime;
+    }
+
     CurrentTime += DeltaTime * PlayRate;
-    if (Sequence->Duration > 0.0f && CurrentTime > Sequence->Duration)
+    if (Sequence->Duration > 0.0f && CurrentTime > EndTime)
     {
         if (Sequence->bLoop)
         {
-            CurrentTime = std::fmod(CurrentTime, Sequence->Duration);
+            CurrentTime = StartTime + std::fmod(CurrentTime - StartTime, Sequence->Duration);
         }
         else
         {
-            CurrentTime = Sequence->Duration;
+            CurrentTime = EndTime;
             Evaluate(CurrentTime);
+            if (bPauseAtEnd)
+            {
+                bPlaying = false;
+                bPaused = true;
+                return;
+            }
             Stop();
             return;
         }
@@ -406,12 +588,23 @@ void UActorSequencePlayer::SetCurrentTime(float InCurrentTime)
         return;
     }
 
-    CurrentTime = std::max(0.0f, InCurrentTime);
+    const float StartTime = Sequence->StartTime;
+    const float EndTime = Sequence->StartTime + std::max(0.0f, Sequence->Duration);
+    CurrentTime = std::clamp(InCurrentTime, StartTime, EndTime);
     if (bResolveDirty)
     {
         ResolveTracks();
     }
     Evaluate(CurrentTime);
+}
+
+void UActorSequencePlayer::SetStartOffset(float InStartOffsetSeconds)
+{
+    StartOffsetSeconds = std::max(0.0f, InStartOffsetSeconds);
+    if (!bPlaying && Sequence)
+    {
+        CurrentTime = ResolveSequenceStartTime(Sequence, StartOffsetSeconds);
+    }
 }
 
 void UActorSequencePlayer::MarkResolveDirty()
@@ -442,16 +635,16 @@ void UActorSequencePlayer::ResolveTracks()
                     Resolved.SourceTrack = &Track;
                     Resolved.SourceSection = &Section;
                     Resolved.SourceChannel = &Channel;
-                    Resolved.ResolvedComponent = ResolveComponent(Binding.Binding);
+                    Resolved.ResolvedObject = ResolveObject(Binding.Binding);
                     Resolved.ResolvedCurve = Channel.Playback.Curve
                         ? Channel.Playback.Curve
                         : FResourceManager::Get().LoadCurve(Channel.Playback.CurveAssetPath);
                     const bool bPropertyResolved = ResolveProperty(
-                        Resolved.ResolvedComponent,
+                        Resolved.ResolvedObject,
                         Track,
                         Channel,
                         Resolved.ResolvedProperty);
-                    Resolved.bValid = Resolved.ResolvedComponent != nullptr
+                    Resolved.bValid = Resolved.ResolvedObject != nullptr
                         && Resolved.ResolvedCurve != nullptr
                         && bPropertyResolved
                         && CacheBaseValue(Resolved);
@@ -509,19 +702,14 @@ void UActorSequencePlayer::ClearAppliedValues()
             && Resolved.bHasBaseValue
             && Resolved.ResolvedProperty.ValuePtr)
         {
-            const bool bShouldRestore = Context == ESequencePlayerContext::EditorPreview
-                || (OwnerComponent && OwnerComponent->ShouldRestoreOnStop());
-            if (bShouldRestore)
+            SetScalarChannelValue(
+                Resolved.ResolvedProperty,
+                Resolved.SourceChannel ? Resolved.SourceChannel->ChannelName : "Value",
+                Resolved.BaseFloatValue);
+            if (Resolved.ResolvedObject)
             {
-                SetScalarChannelValue(
-                    Resolved.ResolvedProperty,
-                    Resolved.SourceChannel ? Resolved.SourceChannel->ChannelName : "Value",
-                    Resolved.BaseFloatValue);
-                if (Resolved.ResolvedComponent)
-                {
-                    Resolved.ResolvedComponent->PostEditChangeProperty(
-                        { Resolved.ResolvedProperty.Name, EPropertyChangeType::ValueSet });
-                }
+                Resolved.ResolvedObject->PostEditChangeProperty(
+                    { Resolved.ResolvedProperty.Name, EPropertyChangeType::ValueSet });
             }
         }
         Resolved.LastValue = 0.0f;
@@ -544,18 +732,25 @@ bool UActorSequencePlayer::IsOwnerLive() const
 bool UActorSequencePlayer::IsResolvedTrackLive(const FResolvedActorSequenceTrack& Resolved) const
 {
     if (!IsOwnerLive()
-        || !Resolved.ResolvedComponent
-        || !UObjectManager::Get().ContainsObject(Resolved.ResolvedComponent))
+        || !Resolved.ResolvedObject
+        || !UObjectManager::Get().ContainsObject(Resolved.ResolvedObject))
     {
         return false;
     }
 
     AActor* OwnerActor = OwnerComponent->GetOwner();
+    if (Resolved.ResolvedObject == OwnerActor)
+    {
+        return true;
+    }
+
     const TArray<UActorComponent*>& Components = OwnerActor->GetComponents();
-    return std::find(Components.begin(), Components.end(), Resolved.ResolvedComponent) != Components.end();
+    UActorComponent* ResolvedComponent = Cast<UActorComponent>(Resolved.ResolvedObject);
+    return ResolvedComponent
+        && std::find(Components.begin(), Components.end(), ResolvedComponent) != Components.end();
 }
 
-UActorComponent* UActorSequencePlayer::ResolveComponent(const FSequenceObjectBinding& Binding) const
+UObject* UActorSequencePlayer::ResolveObject(const FSequenceObjectBinding& Binding) const
 {
     if (!IsOwnerLive())
     {
@@ -563,6 +758,11 @@ UActorComponent* UActorSequencePlayer::ResolveComponent(const FSequenceObjectBin
     }
 
     AActor* OwnerActor = OwnerComponent->GetOwner();
+    if (OwnerActor && OwnerActor->GetName() == Binding.TargetObjectName)
+    {
+        return OwnerActor;
+    }
+
     for (UActorComponent* Component : OwnerActor->GetComponents())
     {
         if (Component
@@ -588,28 +788,24 @@ UActorComponent* UActorSequencePlayer::ResolveComponent(const FSequenceObjectBin
 }
 
 bool UActorSequencePlayer::ResolveProperty(
-    UActorComponent* Component,
+    UObject* Object,
     const FActorSequenceTrack& Track,
     const FActorSequenceChannel& Channel,
     FPropertyDescriptor& OutProperty) const
 {
-    if (!Component || !UObjectManager::Get().ContainsObject(Component) || Track.PropertyPath.empty())
+    if (!Object || !UObjectManager::Get().ContainsObject(Object) || Track.PropertyPath.empty())
     {
         return false;
     }
 
     TArray<FPropertyDescriptor> Properties;
-    Component->GetEditableProperties(Properties);
+    Object->GetEditableProperties(Properties);
 
     for (const FPropertyDescriptor& Property : Properties)
     {
         if (!Property.Name || Track.PropertyPath != Property.Name)
         {
             continue;
-        }
-        if (!HasPropertyUsage(Property.UsageFlags, EPropertyUsageFlags::Animatable))
-        {
-            return false;
         }
         OutProperty = Property;
         float TestValue = 0.0f;
@@ -651,10 +847,10 @@ void UActorSequencePlayer::ApplyFloat(FResolvedActorSequenceTrack& Resolved, flo
     float Result = CurveValue;
     switch (Resolved.SourceChannel->Playback.ApplyMode)
     {
-    case ECurveApplyMode::Direct:
+    case ECurveApplyMode::Absolute:
         Result = CurveValue;
         break;
-    case ECurveApplyMode::Add:
+    case ECurveApplyMode::Additive:
         Result = Resolved.BaseFloatValue + CurveValue;
         break;
     case ECurveApplyMode::Multiply:
@@ -671,7 +867,7 @@ void UActorSequencePlayer::ApplyFloat(FResolvedActorSequenceTrack& Resolved, flo
         bResolveDirty = true;
         return;
     }
-    Resolved.ResolvedComponent->PostEditChangeProperty(
+    Resolved.ResolvedObject->PostEditChangeProperty(
         {
             Resolved.ResolvedProperty.Name,
             Context == ESequencePlayerContext::EditorPreview

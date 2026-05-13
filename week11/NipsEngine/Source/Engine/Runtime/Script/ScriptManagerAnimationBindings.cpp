@@ -13,6 +13,7 @@ void FScriptManager::BindAnimationTypes()
     LUA_END_TYPE();
 
     LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UActorSequence, "ActorSequence", UObject)
+    LUA_FIELD(StartTime, StartTime);
     LUA_FIELD(Duration, Duration);
     LUA_FIELD(Loop, bLoop);
     LUA_END_TYPE();

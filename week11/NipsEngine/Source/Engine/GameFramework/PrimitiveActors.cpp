@@ -202,6 +202,9 @@ REGISTER_FACTORY(ADefaultPlayerActor)
 DEFINE_CLASS(APlayerStart, AActor)
 REGISTER_FACTORY(APlayerStart)
 
+DEFINE_CLASS(AFallbackCameraActor, AActor)
+REGISTER_FACTORY(AFallbackCameraActor)
+
 DEFINE_CLASS(AFogActor, AActor)
 REGISTER_FACTORY(AFogActor)
 
@@ -441,6 +444,13 @@ void APlayerStart::InitDefaultComponents()
     Billboard->AttachToComponent(SceneRoot);
     Billboard->SetEditorOnly(true);
     Billboard->SetTextureName("Asset/Texture/PlayerStart_64x.PNG");
+}
+
+void AFallbackCameraActor::InitDefaultComponents()
+{
+    CameraComp = AddComponent<UCameraComponent>();
+    SetRootComponent(CameraComp);
+    AddTag("FallbackCamera");
 }
 
 void AFogActor::InitDefaultComponents()

@@ -864,23 +864,17 @@ void UEditorEngine::StartPlaySessionNow()
     if (!FocusedClient || !SourceWorld) return;
     if (!HasPlayerStart(SourceWorld))
     {
-        UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player Start is missing.");
-        NotificationService.Error("PIE failed: Player Start is missing");
-        return;
+        UE_LOG_WARNING("[PIE] Player Start is missing. PlayerController will use the viewport camera as fallback.");
     }
     AActor* PlayerActor = FindTaggedPlayerActor(SourceWorld);
     if (!PlayerActor)
     {
-        UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player actor with tag 'Player' is missing.");
-        NotificationService.Error("PIE failed: Player actor is missing");
-        return;
+        UE_LOG_WARNING("[PIE] Player actor with tag 'Player' is missing. Fallback camera actor will be created.");
     }
-    if (!HasCameraComponent(PlayerActor))
+    else if (!HasCameraComponent(PlayerActor))
     {
-        UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player actor has no CameraComponent: %s",
+        UE_LOG_WARNING("[PIE] Player actor has no CameraComponent. Fallback camera actor will be created instead: %s",
             PlayerActor->GetFName().ToString().c_str());
-        NotificationService.Error("PIE failed: Player CameraComponent is missing");
-        return;
     }
 
     bPendingSceneOpen = false;

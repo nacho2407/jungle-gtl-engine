@@ -18,8 +18,11 @@ enum class ESequencePlayerContext
 
 enum class EActorSequenceTrackType
 {
+    Bool,
+    Int,
     Float,
     Vec3,
+    Vec4,
     Color,
     Transform
 };
@@ -74,7 +77,7 @@ struct FActorSequenceFloatTrackDesc
 
     bool bLoop = false;
 
-    ECurveApplyMode ApplyMode = ECurveApplyMode::Direct;
+    ECurveApplyMode ApplyMode = ECurveApplyMode::Absolute;
     ECurveTimeMappingMode TimeMappingMode = ECurveTimeMappingMode::NormalizedTime;
 };
 
@@ -84,7 +87,7 @@ struct FResolvedActorSequenceTrack
     FActorSequenceTrack* SourceTrack = nullptr;
     FActorSequenceSection* SourceSection = nullptr;
     FActorSequenceChannel* SourceChannel = nullptr;
-    UActorComponent* ResolvedComponent = nullptr;
+    UObject* ResolvedObject = nullptr;
     UCurveFloatAsset* ResolvedCurve = nullptr;
     FPropertyDescriptor ResolvedProperty;
     float BaseFloatValue = 0.0f;
@@ -98,6 +101,7 @@ class UActorSequence : public UObject
 public:
     DECLARE_CLASS(UActorSequence, UObject)
 
+    float StartTime = 0.0f;
     float Duration = 1.0f;
     bool bLoop = false;
     TArray<FActorSequenceBinding> Bindings;
@@ -124,6 +128,13 @@ public:
     float GetCurrentTime() const { return CurrentTime; }
     bool IsPlaying() const { return bPlaying; }
 
+    void SetPlayRate(float InPlayRate) { PlayRate = InPlayRate; }
+    float GetPlayRate() const { return PlayRate; }
+    void SetPauseAtEnd(bool bInPauseAtEnd) { bPauseAtEnd = bInPauseAtEnd; }
+    bool ShouldPauseAtEnd() const { return bPauseAtEnd; }
+    void SetStartOffset(float InStartOffsetSeconds);
+    float GetStartOffset() const { return StartOffsetSeconds; }
+
     void MarkResolveDirty();
 
 private:
@@ -133,8 +144,8 @@ private:
 
     bool IsOwnerLive() const;
     bool IsResolvedTrackLive(const FResolvedActorSequenceTrack& Resolved) const;
-    UActorComponent* ResolveComponent(const FSequenceObjectBinding& Binding) const;
-    bool ResolveProperty(UActorComponent* Component, const FActorSequenceTrack& Track, const FActorSequenceChannel& Channel, FPropertyDescriptor& OutProperty) const;
+    UObject* ResolveObject(const FSequenceObjectBinding& Binding) const;
+    bool ResolveProperty(UObject* Object, const FActorSequenceTrack& Track, const FActorSequenceChannel& Channel, FPropertyDescriptor& OutProperty) const;
     bool CacheBaseValue(FResolvedActorSequenceTrack& Resolved) const;
     void ApplyFloat(FResolvedActorSequenceTrack& Resolved, float CurveValue);
 
@@ -145,9 +156,11 @@ private:
 
     float CurrentTime = 0.0f;
     float PlayRate = 1.0f;
+    float StartOffsetSeconds = 0.0f;
 
     bool bPlaying = false;
     bool bPaused = false;
+    bool bPauseAtEnd = false;
     bool bResolveDirty = true;
 
     TArray<FResolvedActorSequenceTrack> ResolvedTracks;

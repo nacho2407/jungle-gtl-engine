@@ -127,18 +127,20 @@ bool UActorSequenceComponent::AddFloatTrack(const FActorSequenceFloatTrackDesc& 
     TArray<FPropertyDescriptor> Properties;
     TargetComponent->GetEditableProperties(Properties);
 
-    const bool bCanAnimateProperty = std::any_of(
-        Properties.begin(),
-        Properties.end(),
-        [&Desc](const FPropertyDescriptor& Property)
+    FPropertyDescriptor* TargetProperty = nullptr;
+    for (FPropertyDescriptor& Property : Properties)
+    {
+        if (Property.Name
+            && Desc.TargetPropertyPath == Property.Name
+            && Property.Type == EPropertyType::Float
+            && HasPropertyUsage(Property.UsageFlags, EPropertyUsageFlags::Animatable))
         {
-            return Property.Name
-                && Desc.TargetPropertyPath == Property.Name
-                && Property.Type == EPropertyType::Float
-                && HasPropertyUsage(Property.UsageFlags, EPropertyUsageFlags::Animatable);
-        });
+            TargetProperty = &Property;
+            break;
+        }
+    }
 
-    if (!bCanAnimateProperty)
+    if (!TargetProperty)
     {
         return false;
     }
@@ -166,6 +168,31 @@ bool UActorSequenceComponent::AddFloatTrack(const FActorSequenceFloatTrackDesc& 
     Channel.ChannelName = "Value";
     Channel.Playback.CurveAssetPath = Desc.CurveAssetPath;
     Channel.Playback.Curve = Desc.Curve;
+    if (!Channel.Playback.Curve && Channel.Playback.CurveAssetPath.empty())
+    {
+        UCurveFloatAsset* InlineCurve = UObjectManager::Get().CreateObject<UCurveFloatAsset>();
+        if (InlineCurve)
+        {
+            const float InitialValue = TargetProperty->ValuePtr
+                ? *static_cast<float*>(TargetProperty->ValuePtr)
+                : 0.0f;
+            FFloatCurve& FloatCurve = InlineCurve->GetMutableCurve();
+            FloatCurve.Keys.clear();
+
+            FCurveKey StartKey;
+            StartKey.Time = 0.0f;
+            StartKey.Value = InitialValue;
+            StartKey.InterpMode = ECurveInterpMode::Cubic;
+            StartKey.TangentMode = ECurveTangentMode::Auto;
+            FloatCurve.Keys.push_back(StartKey);
+
+            FCurveKey EndKey = StartKey;
+            EndKey.Time = 1.0f;
+            FloatCurve.Keys.push_back(EndKey);
+            FloatCurve.SortKeys();
+            Channel.Playback.Curve = InlineCurve;
+        }
+    }
     Channel.Playback.ApplyMode = Desc.ApplyMode;
     Channel.Playback.TimeMappingMode = Desc.TimeMappingMode;
 
@@ -197,6 +224,39 @@ UActorSequencePlayer* UActorSequenceComponent::GetPreviewSequencePlayer()
     return PreviewSequencePlayer;
 }
 
+bool UActorSequenceComponent::IsLooping() const
+{
+    return Sequence ? Sequence->bLoop : false;
+}
+
+void UActorSequenceComponent::SetLooping(bool bInLooping)
+{
+    EnsureSequence();
+    Sequence->bLoop = bInLooping;
+    MarkSequenceDirty();
+}
+
+void UActorSequenceComponent::SetPlayRate(float InPlayRate)
+{
+    PlayRate = InPlayRate;
+    ApplyPlaybackSettings(SequencePlayer);
+    ApplyPlaybackSettings(PreviewSequencePlayer);
+}
+
+void UActorSequenceComponent::SetPauseAtEnd(bool bInPauseAtEnd)
+{
+    bPauseAtEnd = bInPauseAtEnd;
+    ApplyPlaybackSettings(SequencePlayer);
+    ApplyPlaybackSettings(PreviewSequencePlayer);
+}
+
+void UActorSequenceComponent::SetStartOffsetSeconds(float InStartOffsetSeconds)
+{
+    StartOffsetSeconds = std::max(0.0f, InStartOffsetSeconds);
+    ApplyPlaybackSettings(SequencePlayer);
+    ApplyPlaybackSettings(PreviewSequencePlayer);
+}
+
 void UActorSequenceComponent::MarkSequenceDirty()
 {
     if (SequencePlayer)
@@ -220,19 +280,15 @@ void UActorSequenceComponent::TickComponent(float DeltaTime)
 void UActorSequenceComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     UActorComponent::GetEditableProperties(OutProps);
-    EnsureSequence();
-
-    OutProps.push_back({ "Auto Play", EPropertyType::Bool, &bAutoPlay });
-    OutProps.push_back({ "Restore On Stop", EPropertyType::Bool, &bRestoreOnStop });
-    OutProps.push_back({ "Sequence Duration", EPropertyType::Float, &Sequence->Duration, 0.0f, 600.0f, 0.01f });
-    OutProps.push_back({ "Sequence Loop", EPropertyType::Bool, &Sequence->bLoop });
 }
 
 void UActorSequenceComponent::Serialize(FArchive& Ar)
 {
     UActorComponent::Serialize(Ar);
     Ar << "AutoPlay" << bAutoPlay;
-    Ar << "RestoreOnStop" << bRestoreOnStop;
+    Ar << "PauseAtEnd" << bPauseAtEnd;
+    Ar << "PlayRate" << PlayRate;
+    Ar << "StartOffsetSeconds" << StartOffsetSeconds;
 
     EnsureSequence();
     Ar.BeginObject("Sequence");
@@ -251,9 +307,14 @@ void UActorSequenceComponent::PostDuplicate(UObject* Original)
     }
 
     EnsureSequence();
+    Sequence->StartTime = SourceComponent->Sequence->StartTime;
     Sequence->Duration = SourceComponent->Sequence->Duration;
     Sequence->bLoop = SourceComponent->Sequence->bLoop;
     Sequence->Bindings = SourceComponent->Sequence->Bindings;
+    bAutoPlay = SourceComponent->bAutoPlay;
+    bPauseAtEnd = SourceComponent->bPauseAtEnd;
+    PlayRate = SourceComponent->PlayRate;
+    StartOffsetSeconds = SourceComponent->StartOffsetSeconds;
 
     for (FActorSequenceBinding& Binding : Sequence->Bindings)
     {
@@ -285,6 +346,7 @@ void UActorSequenceComponent::EnsureSequencePlayer(ESequencePlayerContext Contex
     {
         SequencePlayer = UObjectManager::Get().CreateObject<UActorSequencePlayer>();
         SequencePlayer->Initialize(this, Sequence, Context);
+        ApplyPlaybackSettings(SequencePlayer);
     }
 }
 
@@ -295,5 +357,18 @@ void UActorSequenceComponent::EnsurePreviewSequencePlayer()
     {
         PreviewSequencePlayer = UObjectManager::Get().CreateObject<UActorSequencePlayer>();
         PreviewSequencePlayer->Initialize(this, Sequence, ESequencePlayerContext::EditorPreview);
+        ApplyPlaybackSettings(PreviewSequencePlayer);
     }
+}
+
+void UActorSequenceComponent::ApplyPlaybackSettings(UActorSequencePlayer* Player)
+{
+    if (!Player)
+    {
+        return;
+    }
+
+    Player->SetPlayRate(PlayRate);
+    Player->SetPauseAtEnd(bPauseAtEnd);
+    Player->SetStartOffset(StartOffsetSeconds);
 }

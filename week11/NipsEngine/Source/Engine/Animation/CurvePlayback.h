@@ -13,8 +13,8 @@ enum class ECurveTimeMappingMode : uint8
 //  Curve의 Evaluated된 값을 어떻게 적용할지
 enum class ECurveApplyMode : uint8
 {
-    Direct = 0,
-    Add,
+    Absolute = 0,
+    Additive,
     Multiply,
 };
 
@@ -34,7 +34,7 @@ struct FCurvePlaybackDesc
 
 struct FSequenceCurvePlaybackDesc : public FCurvePlaybackDesc
 {
-    ECurveApplyMode ApplyMode = ECurveApplyMode::Direct;
+    ECurveApplyMode ApplyMode = ECurveApplyMode::Absolute;
 };
 
 struct FCurvePlaybackEvalResult
