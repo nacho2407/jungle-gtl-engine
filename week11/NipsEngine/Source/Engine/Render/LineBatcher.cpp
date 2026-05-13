@@ -188,7 +188,7 @@ namespace
 	}
 }
 
-void FLineBatcher::Create(ID3D11Device* InDevice)
+void FLineBatcher::Create(ID3D11Device* InDevice, const FLineBatcherDesc& Desc)
 {
 	Release();
 
@@ -208,17 +208,17 @@ void FLineBatcher::Create(ID3D11Device* InDevice)
 		return;
 	}
 
-	UMaterial* LineMaterial = FResourceManager::Get().GetMaterial("LineMat");
+	UMaterial* LineMaterial = FResourceManager::Get().GetMaterial(Desc.MaterialName);
 	if (!LineMaterial)
 	{
-		LineMaterial = FResourceManager::Get().GetOrCreateMaterial("LineMat", "Asset/Material/LineMat.mat", EMaterialShaderType::UILine);
+		LineMaterial = FResourceManager::Get().GetOrCreateMaterial(Desc.MaterialName, Desc.MaterialPath, EMaterialShaderType::UILine);
 	}
 	if (!LineMaterial)
 	{
 		Release();
 		return;
 	}
-	LineMaterial->DepthStencilType = EDepthStencilType::DepthReadOnly;
+	LineMaterial->DepthStencilType = Desc.DepthStencil;
 	LineMaterial->BlendType = EBlendType::AlphaBlend;
 	LineMaterial->RasterizerType = ERasterizerType::SolidBackCull;
 	LineMaterial->SamplerType = ESamplerType::EST_Linear;
@@ -454,6 +454,67 @@ void FLineBatcher::AddSpotLight(const FVector& Position, const FVector& Directio
 
 	FVector4 InnerColor = FColor::Green().ToVector4();
 	DrawCone(InnerConeAngleDeg, InnerColor, 16);
+}
+
+void FLineBatcher::AddBoneOctahedron(const FVector& Start, const FVector& End, const FVector4& Color, float WidthRatio)
+{
+	const FVector Delta = End - Start;
+	const float Length  = Delta.Size();
+	if (Length <= MathUtil::Epsilon) return;
+
+	const FVector Forward = Delta / Length;
+	FVector Up, Right;
+	Forward.FindBestAxisVectors(Up, Right);
+
+	// 어깨 단면: 본 시작점에서 짧게(길이의 ~10%) 떨어진 위치, 작은 마름모.
+	const float ShoulderOffset = Length * MathUtil::Clamp(WidthRatio, 0.02f, 0.4f);
+	const float Radius         = ShoulderOffset;   // 단면 반경 = 어깨 거리
+	const FVector ShoulderCenter = Start + Forward * ShoulderOffset;
+
+	const FVector P0 = ShoulderCenter + Up    * Radius;   // 위
+	const FVector P1 = ShoulderCenter + Right * Radius;   // 우
+	const FVector P2 = ShoulderCenter - Up    * Radius;   // 아래
+	const FVector P3 = ShoulderCenter - Right * Radius;   // 좌
+
+	const uint32 Base = static_cast<uint32>(IndexedVertices.size());
+	IndexedVertices.emplace_back(Start, Color);  // Base + 0
+	IndexedVertices.emplace_back(End,   Color);  // Base + 1
+	IndexedVertices.emplace_back(P0,    Color);  // Base + 2
+	IndexedVertices.emplace_back(P1,    Color);  // Base + 3
+	IndexedVertices.emplace_back(P2,    Color);  // Base + 4
+	IndexedVertices.emplace_back(P3,    Color);  // Base + 5
+
+	// 12 edges: Start→어깨4 (4), End→어깨4 (4), 어깨 4점 사각형 (4).
+	static constexpr uint32 EdgeIdx[] = {
+		0, 2,  0, 3,  0, 4,  0, 5,   // Start → P0..P3
+		1, 2,  1, 3,  1, 4,  1, 5,   // End   → P0..P3
+		2, 3,  3, 4,  4, 5,  5, 2,   // 사각형 어깨 경계
+	};
+	for (uint32 I : EdgeIdx) Indices.push_back(Base + I);
+}
+
+void FLineBatcher::AddWireSphere(const FVector& Center, float Radius, const FVector4& Color, int32 Segments)
+{
+	if (Radius <= MathUtil::Epsilon || Segments < 4) return;
+
+	const float AngleStep = MathUtil::TwoPi / static_cast<float>(Segments);
+
+	auto AddCircle = [&](const FVector& AxisU, const FVector& AxisV)
+	{
+		const uint32 BaseV = static_cast<uint32>(IndexedVertices.size());
+		for (int32 i = 0; i < Segments; ++i)
+		{
+			const float A = static_cast<float>(i) * AngleStep;
+			const FVector P = Center + AxisU * (std::cos(A) * Radius) + AxisV * (std::sin(A) * Radius);
+			IndexedVertices.emplace_back(P, Color);
+			Indices.push_back(BaseV + static_cast<uint32>(i));
+			Indices.push_back(BaseV + static_cast<uint32>((i + 1) % Segments));
+		}
+	};
+
+	AddCircle(FVector(1, 0, 0), FVector(0, 1, 0));   // XY
+	AddCircle(FVector(1, 0, 0), FVector(0, 0, 1));   // XZ
+	AddCircle(FVector(0, 1, 0), FVector(0, 0, 1));   // YZ
 }
 
 void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount,

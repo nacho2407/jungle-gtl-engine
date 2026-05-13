@@ -54,7 +54,10 @@ enum class EDepthStencilType
 
 	// --- 기즈모 전용 ---
 	GizmoInside,
-	GizmoOutside
+	GizmoOutside,
+
+	// 깊이 무시 — 항상 통과 + 깊이 쓰기 없음 (본 와이어 등 always-on-top 디버그)
+	AlwaysOnTop,
 };
 
 enum class EBlendType
