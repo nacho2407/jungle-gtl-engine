@@ -11,6 +11,14 @@ class UCameraComponent;
 class ULineBatchComponent;
 class FViewportCamera;
 
+struct FWorldGameModeSettings
+{
+	bool bOverrideGameMode = false;
+	FString PlayerControllerClass = "APlayerController";
+	FString DefaultPawnClass = "ADefaultPawn";
+	FString DefaultPawnPrefabPath;
+};
+
 class UWorld : public UObject {
 public:
     using FActorDestroyedListener = std::function<void(AActor*)>;
@@ -88,6 +96,10 @@ public:
 	EWorldType GetWorldType() const { return WorldType; }
 	void SetWorldType(EWorldType InWorldType) { WorldType = InWorldType; }
 
+	FWorldGameModeSettings& GetGameModeSettings() { return GameModeSettings; }
+	const FWorldGameModeSettings& GetGameModeSettings() const { return GameModeSettings; }
+	void SetGameModeSettings(const FWorldGameModeSettings& InSettings) { GameModeSettings = InSettings; }
+
 	// Actor 삭제 시 하위 시스템들이 들고 있는 Actor의 raw pointer가 위험해지는 것을 방지하기 위한 리스너 시스템
 	int32 AddActorDestroyedListener(FActorDestroyedListener Listener);
     void RemoveActorDestroyedListener(int32 ListenerId);
@@ -110,6 +122,7 @@ public:
 
 private:
 	EWorldType WorldType = EWorldType::Editor;
+	FWorldGameModeSettings GameModeSettings;
 	ULevel* PersistentLevel = nullptr;
 	FViewportCamera* ActiveCamera = nullptr;
     FWorldSpatialIndex SpatialIndex;

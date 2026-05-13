@@ -113,7 +113,7 @@ function IntroState:Tick(context, dt)
         return
     end
 
-    if Engine.API.Input.IsKeyPressed("Space") then
+    if Engine.API.Input.WasActionStarted("Confirm") then
         if self.pageFinished then
             self:Advance(context)
         else

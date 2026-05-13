@@ -5,6 +5,7 @@
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Engine/Slate/SlateApplication.h"
+#include "Engine/Runtime/WindowsWindow.h"
 #include "ImGui/imgui.h"
 #include "Engine/Object/ObjectIterator.h"
 #include "Engine/Asset/StaticMesh.h"
@@ -72,6 +73,26 @@ namespace
 		return ImVec2(
 			ImagePos.x + ImageSize.x * (static_cast<float>(X) / AtlasSize),
 			ImagePos.y + ImageSize.y * (static_cast<float>(Y) / AtlasSize));
+	}
+
+	bool UsesAbsoluteImGuiCoordinates()
+	{
+		return (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0;
+	}
+
+	ImVec2 ClientToImGuiScreenPoint(UEditorEngine* EditorEngine, float X, float Y)
+	{
+		POINT Result =
+		{
+			static_cast<LONG>(X),
+			static_cast<LONG>(Y)
+		};
+		FWindowsWindow* Window = EditorEngine ? EditorEngine->GetWindow() : nullptr;
+		if (Window && Window->GetHWND() && UsesAbsoluteImGuiCoordinates())
+		{
+			::ClientToScreen(Window->GetHWND(), &Result);
+		}
+		return ImVec2(static_cast<float>(Result.x), static_cast<float>(Result.y));
 	}
 } // namespace
 
@@ -166,7 +187,8 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
         const FViewportRect& Rect = Layout.GetSceneViewport(FocusedIdx).GetRect();
         if (Rect.Width > 1 && Rect.Height > 1)
         {
-            OverlayPos = ImVec2(
+            OverlayPos = ClientToImGuiScreenPoint(
+				EditorEngine,
                 static_cast<float>(Rect.X + Rect.Width) - 340.0f,
                 static_cast<float>(Rect.Y) + 42.0f);
         }
@@ -534,8 +556,10 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 
 		// 툴바 바로 아래 좌측에 고정
 		ImGui::SetNextWindowPos(
-            ImVec2(static_cast<float>(ViewportRect.X) + 8.f,
-                   static_cast<float>(ViewportRect.Y) + 32.f),
+            ClientToImGuiScreenPoint(
+				EditorEngine,
+				static_cast<float>(ViewportRect.X) + 8.f,
+				static_cast<float>(ViewportRect.Y) + 32.f),
 			ImGuiCond_Always);
 		ImGui::SetNextWindowBgAlpha(0.3f);
 
@@ -732,7 +756,8 @@ void FEditorViewportOverlayWidget::RenderGroupedStatOverlay(float DeltaTime)
     constexpr float OverlayMarginX = 12.0f;
     constexpr float OverlayMarginY = 15.0f;
     ImGui::SetNextWindowPos(
-        ImVec2(
+        ClientToImGuiScreenPoint(
+			EditorEngine,
             static_cast<float>(ViewportRect.X) + OverlayMarginX,
             static_cast<float>(ViewportRect.Y) + PaneToolbarHeight + OverlayMarginY),
         ImGuiCond_Always);
@@ -920,9 +945,11 @@ void FEditorViewportOverlayWidget::RenderSplitterBar(ImDrawList* DrawList)
 			if (bCrossHovered)       Color = CrossHoverColor;
 			else if (bSplitterHover) Color = HoverColor;
 
+			const ImVec2 BarMin = ClientToImGuiScreenPoint(EditorEngine, Bar.X, Bar.Y);
+			const ImVec2 BarMax = ClientToImGuiScreenPoint(EditorEngine, Bar.X + Bar.Width, Bar.Y + Bar.Height);
 			DrawList->AddRectFilled(
-				ImVec2(Bar.X, Bar.Y),
-				ImVec2(Bar.X + Bar.Width, Bar.Y + Bar.Height),
+				BarMin,
+				BarMax,
 				Color);
 		}
 
@@ -930,9 +957,11 @@ void FEditorViewportOverlayWidget::RenderSplitterBar(ImDrawList* DrawList)
 		if (Cross)
 		{
 			const FRect CR = Cross->GetCrossRect();
+			const ImVec2 CrossMin = ClientToImGuiScreenPoint(EditorEngine, CR.X, CR.Y);
+			const ImVec2 CrossMax = ClientToImGuiScreenPoint(EditorEngine, CR.X + CR.Width, CR.Y + CR.Height);
 			DrawList->AddRectFilled(
-				ImVec2(CR.X, CR.Y),
-				ImVec2(CR.X + CR.Width, CR.Y + CR.Height),
+				CrossMin,
+				CrossMax,
 				bCrossHovered ? CrossHoverColor : BarColor);
 		}
 	}
@@ -949,7 +978,7 @@ void FEditorViewportOverlayWidget::RenderViewportFocusOverlay()
 	const ImGuiViewport* MainViewport = ImGui::GetMainViewport();
 	const FViewportRect& HostRect = Layout.GetHostRect();
 	const ImVec2 OverlayPos = (HostRect.Width > 0 && HostRect.Height > 0)
-		? ImVec2(static_cast<float>(HostRect.X), static_cast<float>(HostRect.Y))
+		? ClientToImGuiScreenPoint(EditorEngine, static_cast<float>(HostRect.X), static_cast<float>(HostRect.Y))
 		: (MainViewport ? MainViewport->WorkPos : ImVec2(0.0f, 0.0f));
 	const ImVec2 OverlaySize = (HostRect.Width > 0 && HostRect.Height > 0)
 		? ImVec2(static_cast<float>(HostRect.Width), static_cast<float>(HostRect.Height))
@@ -993,8 +1022,12 @@ void FEditorViewportOverlayWidget::RenderViewportFocusOverlay()
 			continue;
 		}
 
-		const ImVec2 Min(static_cast<float>(ViewportRect.X), static_cast<float>(ViewportRect.Y));
-		const ImVec2 Max(
+		const ImVec2 Min = ClientToImGuiScreenPoint(
+			EditorEngine,
+			static_cast<float>(ViewportRect.X),
+			static_cast<float>(ViewportRect.Y));
+		const ImVec2 Max = ClientToImGuiScreenPoint(
+			EditorEngine,
 			static_cast<float>(ViewportRect.X + ViewportRect.Width),
 			static_cast<float>(ViewportRect.Y + ViewportRect.Height));
 		const ImU32 Color = bFocused ? IM_COL32(82, 168, 255, 235) : IM_COL32(170, 190, 210, 120);
@@ -1045,8 +1078,14 @@ void FEditorViewportOverlayWidget::RenderBoxSelectionOverlay()
 		const float MaxX = static_cast<float>(std::max(Start.x, End.x));
 		const float MaxY = static_cast<float>(std::max(Start.y, End.y));
 
-		const ImVec2 P0(static_cast<float>(ViewportRect.X) + MinX, static_cast<float>(ViewportRect.Y) + MinY);
-        const ImVec2 P1(static_cast<float>(ViewportRect.X) + MaxX, static_cast<float>(ViewportRect.Y) + MaxY);
+		const ImVec2 P0 = ClientToImGuiScreenPoint(
+			EditorEngine,
+			static_cast<float>(ViewportRect.X) + MinX,
+			static_cast<float>(ViewportRect.Y) + MinY);
+        const ImVec2 P1 = ClientToImGuiScreenPoint(
+			EditorEngine,
+			static_cast<float>(ViewportRect.X) + MaxX,
+			static_cast<float>(ViewportRect.Y) + MaxY);
 		DrawList->AddRectFilled(P0, P1, FillColor);
 		DrawList->AddRect(P0, P1, RectColor, 0.0f, 0, 1.5f);
 	}

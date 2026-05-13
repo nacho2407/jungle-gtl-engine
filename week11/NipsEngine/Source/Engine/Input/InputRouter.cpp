@@ -185,6 +185,16 @@ void ApplyViewportBlockMask(
         InOutContext.Frame.KeyDown[VK_MBUTTON] = false;
         InOutContext.Frame.KeyDown[VK_XBUTTON1] = false;
         InOutContext.Frame.KeyDown[VK_XBUTTON2] = false;
+        InOutContext.Frame.KeyPressed[VK_LBUTTON] = false;
+        InOutContext.Frame.KeyPressed[VK_RBUTTON] = false;
+        InOutContext.Frame.KeyPressed[VK_MBUTTON] = false;
+        InOutContext.Frame.KeyPressed[VK_XBUTTON1] = false;
+        InOutContext.Frame.KeyPressed[VK_XBUTTON2] = false;
+        InOutContext.Frame.KeyReleased[VK_LBUTTON] = false;
+        InOutContext.Frame.KeyReleased[VK_RBUTTON] = false;
+        InOutContext.Frame.KeyReleased[VK_MBUTTON] = false;
+        InOutContext.Frame.KeyReleased[VK_XBUTTON1] = false;
+        InOutContext.Frame.KeyReleased[VK_XBUTTON2] = false;
         InOutContext.Frame.bLeftDragging = false;
         InOutContext.Frame.bMiddleDragging = false;
         InOutContext.Frame.bRightDragging = false;
@@ -203,6 +213,8 @@ void ApplyViewportBlockMask(
             if (!IsMouseButtonKey(VK) && !IsPIEShellCommandKey(VK) && !IsModifierKey(VK))
             {
                 InOutContext.Frame.KeyDown[VK] = false;
+                InOutContext.Frame.KeyPressed[VK] = false;
+                InOutContext.Frame.KeyReleased[VK] = false;
             }
         }
     }
@@ -259,6 +271,8 @@ FInputFrame BuildFrameFromSnapshot(const FInputSystemSnapshot& Snapshot, uint64 
     for (int32 VK = 0; VK < 256; ++VK)
     {
         Frame.KeyDown[VK] = Snapshot.KeyDown[VK];
+        Frame.KeyPressed[VK] = Snapshot.KeyPressed[VK];
+        Frame.KeyReleased[VK] = Snapshot.KeyReleased[VK];
     }
     return Frame;
 }

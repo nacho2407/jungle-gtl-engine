@@ -19,6 +19,7 @@
 #include "Slate/SSplitterV.h"
 #include "Slate/SSplitterH.h"
 #include "Settings/EditorSettings.h"
+#include "Settings/ProjectSettings.h"
 #include <algorithm>
 #if STATS
 #include <chrono>
@@ -73,40 +74,6 @@ namespace
             }
         }
         return false;
-    }
-
-    bool HasCameraComponent(AActor* Actor)
-    {
-        if (!Actor)
-        {
-            return false;
-        }
-
-        for (UActorComponent* Component : Actor->GetComponents())
-        {
-            if (Cast<UCameraComponent>(Component))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    AActor* FindTaggedPlayerActor(UWorld* World)
-    {
-        if (!World)
-        {
-            return nullptr;
-        }
-
-        for (AActor* Actor : World->GetActors())
-        {
-            if (Actor && !Actor->IsA<APlayerController>() && !Actor->IsA<APlayerStart>() && Actor->HasTag("Player"))
-            {
-                return Actor;
-            }
-        }
-        return nullptr;
     }
 
     void SpawnDefaultSceneActors(UWorld* World)
@@ -872,7 +839,30 @@ APlayerController* UEditorEngine::SpawnPIEPlayerController(UWorld* PIEWorld, FEd
         return nullptr;
     }
 
-    constexpr const char* DefaultPIEPlayerControllerClass = "APlayerController";
+    FProjectSettings& ProjectSettings = FProjectSettings::Get();
+    ProjectSettings.LoadFromFile(FProjectSettings::GetDefaultSettingsPath());
+    FGameBuildSettings PlaySettings = ProjectSettings.BuildSettings;
+    if (PlaySettings.PlayerControllerClass.empty())
+    {
+        PlaySettings.PlayerControllerClass = "APlayerController";
+    }
+    if (PlaySettings.DefaultPawnClass.empty())
+    {
+        PlaySettings.DefaultPawnClass = "ADefaultPawn";
+    }
+    const FWorldGameModeSettings& SceneGameModeSettings = PIEWorld->GetGameModeSettings();
+    if (SceneGameModeSettings.bOverrideGameMode)
+    {
+        if (!SceneGameModeSettings.PlayerControllerClass.empty())
+        {
+            PlaySettings.PlayerControllerClass = SceneGameModeSettings.PlayerControllerClass;
+        }
+        if (!SceneGameModeSettings.DefaultPawnClass.empty())
+        {
+            PlaySettings.DefaultPawnClass = SceneGameModeSettings.DefaultPawnClass;
+        }
+        PlaySettings.DefaultPawnPrefabPath = SceneGameModeSettings.DefaultPawnPrefabPath;
+    }
 
     AGameModeBase* GameMode = PIEWorld->SpawnActor<AGameModeBase>();
     if (!GameMode)
@@ -883,9 +873,11 @@ APlayerController* UEditorEngine::SpawnPIEPlayerController(UWorld* PIEWorld, FEd
     }
 
     GameMode->SetFName(FName("PIE_GameMode"));
-    GameMode->SetPlayerControllerClass(DefaultPIEPlayerControllerClass);
+    GameMode->SetPlayerControllerClass(PlaySettings.PlayerControllerClass);
+    GameMode->SetDefaultPawnClass(PlaySettings.DefaultPawnClass);
+    GameMode->SetDefaultPawnPrefabPath(PlaySettings.DefaultPawnPrefabPath);
 
-    APlayerController* PlayerController = GameMode->EnsurePlayerController(
+    APlayerController* PlayerController = GameMode->BootstrapPlayer(
         FocusedClient->GetCamera(),
         0,
         0,
@@ -923,17 +915,7 @@ void UEditorEngine::StartPlaySessionNow()
     if (!FocusedClient || !SourceWorld) return;
     if (!HasPlayerStart(SourceWorld))
     {
-        UE_LOG_WARNING("[PIE] Player Start is missing. PlayerController will use the viewport camera as fallback.");
-    }
-    AActor* PlayerActor = FindTaggedPlayerActor(SourceWorld);
-    if (!PlayerActor)
-    {
-        UE_LOG_WARNING("[PIE] Player actor with tag 'Player' is missing. Fallback camera actor will be created.");
-    }
-    else if (!HasCameraComponent(PlayerActor))
-    {
-        UE_LOG_WARNING("[PIE] Player actor has no CameraComponent. Fallback camera actor will be created instead: %s",
-            PlayerActor->GetFName().ToString().c_str());
+        UE_LOG_WARNING("[PIE] Player Start is missing. GameMode will spawn DefaultPawn at the default transform.");
     }
 
     bPendingSceneOpen = false;

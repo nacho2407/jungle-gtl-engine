@@ -14,6 +14,8 @@ struct FGameBuildSettings
     FString StartupScene = "Asset/Scene/Main.Scene";
     TArray<FString> IncludedScenes;
     FString PlayerControllerClass = "APlayerController";
+    FString DefaultPawnClass = "ADefaultPawn";
+    FString DefaultPawnPrefabPath;
     FString OutputDirectory = "Builds/Windows/NipsGame";
     FString IconPath;
     FString SplashImagePath;

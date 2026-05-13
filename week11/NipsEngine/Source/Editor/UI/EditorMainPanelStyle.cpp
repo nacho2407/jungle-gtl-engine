@@ -38,6 +38,11 @@ void FEditorMainPanel::ConfigureImGuiStyle()
     Style.Colors[ImGuiCol_CheckMark] = ImVec4(0.32f, 0.61f, 0.93f, 1.0f);
     Style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.32f, 0.61f, 0.93f, 1.0f);
     Style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.39f, 0.69f, 0.97f, 1.0f);
+
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        Style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
 }
 
 void FEditorMainPanel::LoadEditorFonts()

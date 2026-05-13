@@ -5,14 +5,85 @@
 #include "Editor/Settings/ProjectSettings.h"
 #include "Editor/UI/EditorMainPanelPackagingHelpers.h"
 #include "Engine/Core/Paths.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 #include "Math/Utils.h"
+#include "Object/ObjectFactory.h"
 
 #include "ImGui/imgui.h"
 
+#include <algorithm>
 #include <cfloat>
 #include <chrono>
+#include <cstring>
 #include <filesystem>
 #include <future>
+
+namespace
+{
+TArray<const FTypeInfo*> GetPackagingTypesAssignableTo(const FTypeInfo* BaseType)
+{
+    TArray<const FTypeInfo*> Types;
+    if (!BaseType)
+    {
+        return Types;
+    }
+
+    TArray<const FTypeInfo*> RegisteredTypes;
+    FObjectFactory::Get().GetRegisteredTypeInfos(RegisteredTypes);
+    for (const FTypeInfo* Type : RegisteredTypes)
+    {
+        if (Type && Type->IsA(BaseType))
+        {
+            Types.push_back(Type);
+        }
+    }
+
+    std::sort(
+        Types.begin(),
+        Types.end(),
+        [](const FTypeInfo* A, const FTypeInfo* B)
+        {
+            const char* AName = A ? A->name : "";
+            const char* BName = B ? B->name : "";
+            return std::strcmp(AName, BName) < 0;
+        });
+    return Types;
+}
+
+bool DrawPackagingClassCombo(const char* Id, char* Buffer, size_t BufferSize, const FTypeInfo* BaseType)
+{
+    bool bChanged = false;
+    const TArray<const FTypeInfo*> Types = GetPackagingTypesAssignableTo(BaseType);
+    const char* CurrentLabel = Buffer && Buffer[0] != '\0' ? Buffer : "None";
+
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    if (ImGui::BeginCombo(Id, CurrentLabel))
+    {
+        for (const FTypeInfo* Type : Types)
+        {
+            if (!Type || !Type->name)
+            {
+                continue;
+            }
+
+            const bool bSelected = Buffer && std::strcmp(Buffer, Type->name) == 0;
+            if (ImGui::Selectable(Type->name, bSelected))
+            {
+                strncpy_s(Buffer, BufferSize, Type->name, _TRUNCATE);
+                bChanged = true;
+            }
+            if (bSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    return bChanged;
+}
+} // namespace
 
 void FEditorMainPanel::RequestBuildGame()
 {
@@ -39,6 +110,10 @@ void FEditorMainPanel::RequestBuildGame()
     {
         BuildGameState.PendingSettings.PlayerControllerClass = "APlayerController";
     }
+    if (BuildGameState.PendingSettings.DefaultPawnClass.empty())
+    {
+        BuildGameState.PendingSettings.DefaultPawnClass = "ADefaultPawn";
+    }
     if (BuildGameState.PendingSettings.OutputDirectory.empty())
     {
         BuildGameState.PendingSettings.OutputDirectory =
@@ -63,6 +138,8 @@ void FEditorMainPanel::RequestBuildGame()
     strncpy_s(BuildGameState.StartupSceneBuffer, BuildGameState.PendingSettings.StartupScene.c_str(), _TRUNCATE);
     strncpy_s(BuildGameState.SceneListAddBuffer, "", _TRUNCATE);
     strncpy_s(BuildGameState.PlayerControllerClassBuffer, BuildGameState.PendingSettings.PlayerControllerClass.c_str(), _TRUNCATE);
+    strncpy_s(BuildGameState.DefaultPawnClassBuffer, BuildGameState.PendingSettings.DefaultPawnClass.c_str(), _TRUNCATE);
+    strncpy_s(BuildGameState.DefaultPawnPrefabPathBuffer, BuildGameState.PendingSettings.DefaultPawnPrefabPath.c_str(), _TRUNCATE);
     strncpy_s(BuildGameState.OutputDirectoryBuffer, BuildGameState.PendingSettings.OutputDirectory.c_str(), _TRUNCATE);
     strncpy_s(BuildGameState.IconPathBuffer, BuildGameState.PendingSettings.IconPath.c_str(), _TRUNCATE);
     strncpy_s(BuildGameState.SplashImagePathBuffer, BuildGameState.PendingSettings.SplashImagePath.c_str(), _TRUNCATE);
@@ -152,11 +229,35 @@ void FEditorMainPanel::RenderBuildGameModal()
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted("Player Controller");
         ImGui::TableSetColumnIndex(1);
-        ImGui::SetNextItemWidth(-FLT_MIN);
-        ImGui::InputText(
+        DrawPackagingClassCombo(
             "##PackagePlayerController",
             BuildGameState.PlayerControllerClassBuffer,
-            IM_ARRAYSIZE(BuildGameState.PlayerControllerClassBuffer)
+            IM_ARRAYSIZE(BuildGameState.PlayerControllerClassBuffer),
+            &APlayerController::s_TypeInfo
+        );
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Default Pawn");
+        ImGui::TableSetColumnIndex(1);
+        DrawPackagingClassCombo(
+            "##PackageDefaultPawnClass",
+            BuildGameState.DefaultPawnClassBuffer,
+            IM_ARRAYSIZE(BuildGameState.DefaultPawnClassBuffer),
+            &APawn::s_TypeInfo
+        );
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Pawn Prefab");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputText(
+            "##PackageDefaultPawnPrefab",
+            BuildGameState.DefaultPawnPrefabPathBuffer,
+            IM_ARRAYSIZE(BuildGameState.DefaultPawnPrefabPathBuffer)
         );
 
         ImGui::TableNextRow();
@@ -318,6 +419,8 @@ void FEditorMainPanel::RenderBuildGameModal()
     const FString GameName = BuildGameState.GameNameBuffer;
     const FString StartupScene = FPaths::Normalize(BuildGameState.StartupSceneBuffer);
     const FString PlayerControllerClass = FPaths::Normalize(BuildGameState.PlayerControllerClassBuffer);
+    const FString DefaultPawnClass = FPaths::Normalize(BuildGameState.DefaultPawnClassBuffer);
+    const FString DefaultPawnPrefabPath = FPaths::Normalize(BuildGameState.DefaultPawnPrefabPathBuffer);
     const FString OutputDirectory = FPaths::Normalize(BuildGameState.OutputDirectoryBuffer);
     const FString IconPath = FPaths::Normalize(BuildGameState.IconPathBuffer);
     const FString SplashImagePath = FPaths::Normalize(BuildGameState.SplashImagePathBuffer);
@@ -325,6 +428,10 @@ void FEditorMainPanel::RenderBuildGameModal()
     const bool bValidScene =
         !StartupScene.empty() && std::filesystem::exists(FPaths::ToAbsolute(FPaths::ToWide(StartupScene)));
     const bool bValidPlayerController = !PlayerControllerClass.empty();
+    const bool bValidDefaultPawn = !DefaultPawnClass.empty();
+    const bool bValidDefaultPawnPrefab =
+        DefaultPawnPrefabPath.empty() ||
+        std::filesystem::exists(FPaths::ToAbsolute(FPaths::ToWide(DefaultPawnPrefabPath)));
     const bool bValidOutput = !OutputDirectory.empty();
     const std::wstring IconExt = FEditorMainPanelPackagingHelpers::ToLowerPathExtension(IconPath);
     const std::wstring SplashExt = FEditorMainPanelPackagingHelpers::ToLowerPathExtension(SplashImagePath);
@@ -362,6 +469,9 @@ void FEditorMainPanel::RenderBuildGameModal()
     ImGui::Text("Scenes to Copy: %d", static_cast<int32>(BuildGameState.PendingSettings.IncludedScenes.size()));
     ImGui::Text("Icon: %s", IconPath.empty() ? "(none)" : IconPath.c_str());
     ImGui::Text("Splash: %s", SplashImagePath.empty() ? "(none)" : SplashImagePath.c_str());
+    ImGui::Text("Default Pawn: %s", DefaultPawnClass.c_str());
+    ImGui::Text("Pawn Prefab: %s", DefaultPawnPrefabPath.empty() ? "(none)" : DefaultPawnPrefabPath.c_str());
+    ImGui::TextDisabled("Pawn prefab root must derive from APawn. If set, it overrides Default Pawn Class.");
 
     if (bValidScene)
     {
@@ -378,6 +488,14 @@ void FEditorMainPanel::RenderBuildGameModal()
     if (!bValidPlayerController)
     {
         ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Player controller class is empty.");
+    }
+    if (!bValidDefaultPawn)
+    {
+        ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Default pawn class is empty.");
+    }
+    if (!bValidDefaultPawnPrefab)
+    {
+        ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Pawn prefab path does not exist.");
     }
     if (!bValidOutput)
     {
@@ -405,6 +523,8 @@ void FEditorMainPanel::RenderBuildGameModal()
         bValidGameName &&
         bValidScene &&
         bValidPlayerController &&
+        bValidDefaultPawn &&
+        bValidDefaultPawnPrefab &&
         bValidOutput &&
         bValidIcon &&
         bValidSplash &&
@@ -419,6 +539,8 @@ void FEditorMainPanel::RenderBuildGameModal()
         BuildGameState.PendingSettings.GameName = GameName;
         BuildGameState.PendingSettings.StartupScene = StartupScene;
         BuildGameState.PendingSettings.PlayerControllerClass = PlayerControllerClass;
+        BuildGameState.PendingSettings.DefaultPawnClass = DefaultPawnClass;
+        BuildGameState.PendingSettings.DefaultPawnPrefabPath = DefaultPawnPrefabPath;
         BuildGameState.PendingSettings.OutputDirectory = OutputDirectory;
         BuildGameState.PendingSettings.IconPath = IconPath;
         BuildGameState.PendingSettings.SplashImagePath = SplashImagePath;

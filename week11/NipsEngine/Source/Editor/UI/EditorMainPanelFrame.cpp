@@ -106,6 +106,14 @@ void FEditorMainPanel::RenderEditorPanelWindows(float DeltaTime, bool bDrawEdito
     {
         Widgets.RuntimeUIPreviewWidget.Render(DeltaTime);
     }
+    if (bDrawEditorPanels && PanelVisibility.bShowProjectSettings)
+    {
+        RenderProjectSettingsPanel();
+    }
+    if (bDrawEditorPanels && PanelVisibility.bShowWorldSettings)
+    {
+        RenderWorldSettingsPanel();
+    }
     if (bDrawEditorPanels && Widgets.CurveEditorWidget.IsVisible())
     {
         Widgets.CurveEditorWidget.Render(DeltaTime);
@@ -176,4 +184,11 @@ void FEditorMainPanel::EndImGuiFrame()
 {
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+    const ImGuiIO& IO = ImGui::GetIO();
+    if (IO.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
 }

@@ -68,7 +68,7 @@ function PlayingState:Tick(context, dt)
     local game = context.managers.Game
     context.managers.UI:SetHUD(game:GetSnapshot())
 
-    if Engine.API.Input.IsKeyPressed("Escape") or Engine.API.Input.IsKeyPressed("Q") then
+    if Engine.API.Input.WasActionStarted("Pause") then
         context.stateMachine:Push("Pause")
     end
 end
