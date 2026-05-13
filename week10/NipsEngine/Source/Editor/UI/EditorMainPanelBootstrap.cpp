@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/Settings/ProjectSettings.h"
 #include "Engine/Core/Paths.h"

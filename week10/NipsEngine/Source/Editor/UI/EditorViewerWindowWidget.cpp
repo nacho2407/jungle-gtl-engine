@@ -68,7 +68,7 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
         return;
 
 	char WindowName[64];
-	sprintf_s(WindowName, "Viewer##%p", &Viewer);
+	sprintf_s(WindowName, "Viewer##%p", Viewer);
 
 	// Make the viewer window reasonably large on first creation
 	ImGui::SetNextWindowSize(ImVec2(900, 600), ImGuiCond_FirstUseEver);
@@ -176,7 +176,6 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 		Size.x = std::max(Size.x, 1.0f);
 		Size.y = std::max(Size.y, 1.0f);
 
-			
 		ImGui::InvisibleButton("ViewportCanvas", Size);
         ImVec2 Min = ImGui::GetItemRectMin();
         ImVec2 Max = ImGui::GetItemRectMax();

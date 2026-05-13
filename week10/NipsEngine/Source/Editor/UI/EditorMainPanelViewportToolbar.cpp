@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 #include "Editor/UI/EditorMainPanelViewportToolbarHelpers.h"
 
 #include "Editor/EditorEngine.h"
@@ -29,6 +29,7 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
 
     if (bPIEPossessed)
     {
+        ImGui::Dummy(ImVec2(0.0f, 0.0f));
         ImGui::PopID();
         return;
     }
