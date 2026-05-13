@@ -168,7 +168,7 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 	HInstance = InHInstance;
 
 	WCHAR WindowClass[] = L"JungleWindowClass";
-	WCHAR Title[] = L"Game Tech Lab";
+	WCHAR Title[] = L"JS Engine";
 	HICON WindowIcon = LoadIconW(HInstance, MAKEINTRESOURCEW(101));
 	WNDCLASSW WndClass = { 0, StaticWndProc, 0, 0, HInstance, WindowIcon, LoadCursorW(nullptr, IDC_ARROW), 0, 0, WindowClass };
 

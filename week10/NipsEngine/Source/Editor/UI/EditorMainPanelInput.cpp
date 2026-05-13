@@ -1,7 +1,10 @@
 ﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/UI/EditorViewerWindowWidget.h"
+#include "Editor/Viewer/EditorViewer.h"
 #include "Editor/Viewport/ViewportLayout.h"
+#include "Component/GizmoComponent.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 
@@ -11,13 +14,124 @@
 #include <cstring>
 #include <imm.h>
 
+namespace
+{
+	bool CanExecuteLevelEditorSceneCommand(UEditorEngine* EditorEngine)
+	{
+		return EditorEngine && EditorEngine->GetEditorState() == EViewportPlayState::Editing;
+	}
+
+	bool HasActiveViewerViewportOperation(UEditorEngine* EditorEngine)
+	{
+		if (!EditorEngine)
+		{
+			return false;
+		}
+
+		for (const std::unique_ptr<FEditorViewer>& Viewer : EditorEngine->GetViewers())
+		{
+			if (!Viewer)
+			{
+				continue;
+			}
+			if (!EditorEngine->GetMainPanel().ShouldRouteViewerViewportInput(Viewer.get()))
+			{
+				continue;
+			}
+
+			FEditorViewportClient& Client = Viewer->GetClient();
+			UGizmoComponent* Gizmo = Client.GetGizmo();
+			if (Gizmo && (Gizmo->IsHolding() || Gizmo->IsPressedOnHandle()))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+}
+
+void FEditorMainPanel::BuildActiveEditorCommandList(FEditorCommandList& OutCommands)
+{
+	OutCommands.Clear();
+
+	const FEditorTabId RoutingTabId = GetInputRoutingTabId();
+	if (RoutingTabId.Kind == EEditorTabKind::SkeletalMeshViewer ||
+		RoutingTabId.Kind == EEditorTabKind::StaticMeshViewer)
+	{
+		FEditorViewerWindowWidget* ViewerWidget = FindViewerWidgetForTab(RoutingTabId);
+		if (!ViewerWidget)
+		{
+			return;
+		}
+
+		OutCommands.MapAction(
+			EEditorCommandId::Save,
+			{ static_cast<int32>(ImGuiKey_S), true, false, false },
+			[ViewerWidget]()
+			{
+				ViewerWidget->RequestSaveMesh();
+			},
+			[ViewerWidget]()
+			{
+				return ViewerWidget->CanSaveMesh();
+			});
+		return;
+	}
+
+	if (RoutingTabId.Kind != EEditorTabKind::LevelEditor || !RoutingTabId.PayloadId.empty())
+	{
+		return;
+	}
+
+	// 현재 Level Editor 문맥에서만 Scene 저장 명령을 받는다.
+	OutCommands.MapAction(
+		EEditorCommandId::Save,
+		{ static_cast<int32>(ImGuiKey_S), true, false, false },
+		[this]()
+		{
+			RequestSaveScene();
+		},
+		[this]()
+		{
+			return CanExecuteLevelEditorSceneCommand(EditorEngine);
+		});
+
+	OutCommands.MapAction(
+		EEditorCommandId::SaveAs,
+		{ static_cast<int32>(ImGuiKey_S), true, true, false },
+		[this]()
+		{
+			RequestSaveSceneAsWithDialog();
+		},
+		[this]()
+		{
+			return CanExecuteLevelEditorSceneCommand(EditorEngine);
+		});
+}
+
+bool FEditorMainPanel::ExecuteActiveEditorShortcut(const FEditorShortcut& Shortcut)
+{
+	FEditorCommandList Commands;
+	BuildActiveEditorCommandList(Commands);
+	return Commands.TryExecuteShortcut(Shortcut);
+}
+
+bool FEditorMainPanel::ExecuteActiveEditorCommand(EEditorCommandId CommandId)
+{
+	FEditorCommandList Commands;
+	BuildActiveEditorCommandList(Commands);
+	return Commands.TryExecuteCommand(CommandId);
+}
+
 void FEditorMainPanel::Update()
 {
     ImGuiIO& IO = ImGui::GetIO();
 
     FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
     const bool bMouseOverContentBrowser = Widgets.ContentBrowserWidget.IsMouseOverBrowser();
-    bool bViewportOperationActive = Layout.HasActiveOperationViewport() && !bMouseOverContentBrowser;
+    bool bViewportOperationActive =
+        (Layout.HasActiveOperationViewport() || HasActiveViewerViewportOperation(EditorEngine)) &&
+        !bMouseOverContentBrowser;
 
     if (bViewportOperationActive)
     {
@@ -42,19 +156,27 @@ void FEditorMainPanel::Update()
     if (Window)
     {
         POINT MouseClientPos = Window->ScreenToClientPoint(InputSystem::Get().GetMousePos());
-        for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
-        {
-            const FViewportRect& ViewportRect = Layout.GetSceneViewport(i).GetRect();
-            if (ViewportRect.Width > 0 && ViewportRect.Height > 0 && ViewportRect.Contains(MouseClientPos.x, MouseClientPos.y))
-            {
-                bMouseOverViewportRect = true;
-                break;
-            }
-        }
+		if (ShouldRouteLevelViewportInput())
+		{
+			for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
+			{
+				const FViewportRect& ViewportRect = Layout.GetSceneViewport(i).GetRect();
+				if (ViewportRect.Width > 0 && ViewportRect.Height > 0 && ViewportRect.Contains(MouseClientPos.x, MouseClientPos.y))
+				{
+					bMouseOverViewportRect = true;
+					break;
+				}
+			}
+		}
 
 		TArray<std::unique_ptr<FEditorViewer>>& Viewers = EditorEngine->GetViewers();
 		for (size_t i = 0; i < Viewers.size(); i++)
 		{
+			if (!ShouldRouteViewerViewportInput(Viewers[i].get()))
+			{
+				continue;
+			}
+
             const FViewportRect& ViewportRect = Viewers[i]->GetViewport().GetRect();
             if (ViewportRect.Width > 0 && ViewportRect.Height > 0 && ViewportRect.Contains(MouseClientPos.x, MouseClientPos.y))
             {
@@ -80,14 +202,17 @@ void FEditorMainPanel::Update()
         }
     }
 
-    if (!bHoveredViewportContentWindow
-        && bMouseOverViewportRect
-        && !bHoveredNonViewportWindow
+    // Viewport input ownership is decided by the routed viewport rect first.
+    // ImGui child window names differ between embedded and detached documents, so
+    // name-based hover checks are only a hint.
+    if (bMouseOverViewportRect
         && !bMouseOverContentBrowser
         && !bAnyUIItemActive
-        && !bAnyPopupOpen)
+        && !bAnyPopupOpen
+        && !bAnyDragDropActive)
     {
         bHoveredViewportContentWindow = true;
+        bHoveredNonViewportWindow = false;
     }
 
     if (bMouseOverContentBrowser)

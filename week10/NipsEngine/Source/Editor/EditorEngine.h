@@ -23,6 +23,7 @@ class UGizmoComponent;
 class FEditorRenderPipeline;
 class AActor;
 class APlayerController;
+class FViewport;
 
 class UEditorEngine : public UEngine
 {
@@ -82,6 +83,7 @@ public:
 
 	void RenderUI(float DeltaTime);
 	void RegisterViewportInputTargets();
+	void FocusViewportInput(FViewport* Viewport);
 
 	void RequestPIEViewportInputFocus(int32 FrameCount = 3);
 	FPIESession& GetPIESession() { return PIESession; }

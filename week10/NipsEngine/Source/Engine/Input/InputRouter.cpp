@@ -5,6 +5,7 @@
 
 #include "Engine/Input/CursorControl.h"
 #include "Engine/Input/InputSystem.h"
+#include "Engine/Input/InputWindowFocus.h"
 #include "Engine/Runtime/Viewport.h"
 #include "Engine/Runtime/ViewportClient.h"
 
@@ -583,7 +584,7 @@ bool FInputRouter::EnsureRoutingEnvironmentReady()
         return false;
     }
 
-    if (GetForegroundWindow() != OwnerWindow)
+    if (!InputWindowFocus::IsForegroundWindowOwnedByCurrentProcess())
     {
         ClearRoutingStateAndMouseControl();
         return false;

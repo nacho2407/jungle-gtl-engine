@@ -2,6 +2,8 @@
 
 #include <windows.h>
 
+#include "Engine/Input/InputWindowFocus.h"
+
 struct FCursorControlState
 {
     bool  bHideInClient = false;
@@ -83,7 +85,7 @@ private:
 
     static void ApplyPlatformState(const FCursorControlState& State)
     {
-        const bool bOwnerForeground = State.OwnerWindow != nullptr && ::GetForegroundWindow() == State.OwnerWindow;
+        const bool bOwnerForeground = State.OwnerWindow != nullptr && InputWindowFocus::IsForegroundWindowOwnedByCurrentProcess();
         const bool bOwnerCaptured = State.OwnerWindow != nullptr && ::GetCapture() == State.OwnerWindow;
         const bool bHasValidOwner = bOwnerForeground || bOwnerCaptured;
         const bool bShouldHideCursor = State.bHideInClient && bHasValidOwner;

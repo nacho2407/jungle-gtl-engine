@@ -1,9 +1,11 @@
 ﻿#pragma once
 
 #include "ImGui/imgui.h"
+#include "Editor/UI/EditorCommandContext.h"
 #include "Editor/UI/EditorFooterLogSystem.h"
 #include "Editor/UI/EditorMainPanelState.h"
 #include "Editor/UI/EditorMainPanelWidgetSet.h"
+#include "Editor/UI/EditorTabManager.h"
 #include "Editor/Viewport/ViewportLayout.h"
 
 class FRenderer;
@@ -48,7 +50,9 @@ public:
 	void OpenMaterialAsset(UMaterialInterface* Material);
 	void OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex);
 	void OpenCurveAsset(const FString& CurvePath);
-    void OpenViewer(FEditorViewer* Viewer);
+	void OpenViewer(FEditorViewer* Viewer);
+	void RequestDockViewer(FEditorViewer* Viewer);
+	void RenderViewerToolbarControls(FEditorViewer* Viewer);
     void FlushOpenViewerWidgets();
     void CloseViewer(FEditorViewer* Viewer);
     void FlushClosedViewerWidgets();
@@ -64,6 +68,16 @@ public:
 	bool SpawnPrefabAtOrigin(const FString& PayloadPath);
 	bool CanCloseEditor();
 	void RestoreLastSceneFromProjectSettings();
+	bool IsLevelEditorViewportVisible() const;
+	bool IsViewerViewportVisible(FEditorViewer* Viewer) const;
+
+	// Viewport input routing rule:
+	// 1. Level viewport input is owned only by the active Level tab.
+	// 2. Visible viewer viewports are registered as input targets; hovered/focused window and z-order decide the actual owner.
+	// 3. UI widgets never talk to viewport clients directly for input ownership; they only expose visibility/focus state here.
+	bool ShouldRouteLevelViewportInput() const;
+	bool ShouldRouteViewerViewportInput(FEditorViewer* Viewer) const;
+	int32 GetViewerViewportZOrder(FEditorViewer* Viewer) const;
 
 	void ResetWidgetSelections();
 
@@ -78,16 +92,29 @@ private:
 	void LoadEditorFonts();
 	void BeginImGuiFrame();
 	void HandleContentBrowserShortcut();
+	void BuildActiveEditorCommandList(FEditorCommandList& OutCommands);
+	bool ExecuteActiveEditorShortcut(const FEditorShortcut& Shortcut);
+	bool ExecuteActiveEditorCommand(EEditorCommandId CommandId);
+	bool RenderActiveDocumentMainMenu();
 	void RenderToolbarAndDock(float DeltaTime);
 	void RenderMainViewport(float DeltaTime);
 	void RenderEditorPanelWindows(float DeltaTime, bool bDrawEditorPanels);
 	float ResolveEffectiveDeltaTime(float DeltaTime) const;
+	bool IsLevelEditorTabActive() const;
+	FEditorViewerWindowWidget* FindViewerWidgetForTab(const FEditorTabId& TabId) const;
+	void RenderActiveViewerDocument(float DeltaTime);
 	void UpdateConsoleDrawerAnimation(float EffectiveDeltaTime);
 	void RenderLateFrameOverlays(float DeltaTime, float EffectiveDeltaTime, bool bDrawEditorPanels);
 	void EndImGuiFrame();
+	void ActivateEditorTab(const FEditorTabId& TabId);
+	bool RequestCloseEditorTab(const FEditorTabId& TabId);
+	void RequestDetachEditorTab(const FEditorTabId& TabId, bool bDetached);
+	FEditorTabId GetInputRoutingTabId() const;
 
 	// Layout and viewport rendering
+	void RenderEditorTabStrip();
 	void RenderEditorToolbar();
+	void RenderActiveDocumentToolbar();
 	void RenderDockSpace();
 	void RenderViewportHostWindow();
 	void LoadGameModeSettingsPanelBuffers();
@@ -137,6 +164,7 @@ private:
 
 	ImVector<ImWchar> FontGlyphRanges; // Keep alive until the font atlas is built.
 	FEditorMainPanelWidgetSet Widgets;
+	FEditorTabManager EditorTabs;
     TArray<FEditorViewer*> PendingOpenViewers;
 
 	FEditorMainPanelVisibilityState PanelVisibility;

@@ -108,6 +108,8 @@ public:
 	void  RequestToggleCoordinateSpace();
 	void  RequestSelectAtViewportLocalPoint(float LocalX, float LocalY, bool bToggle, bool bAdditive);
 	ETransformMode GetTransformMode() const { return TransformMode; }
+	void SetSceneEditingShortcutsEnabled(bool bEnabled) { bSceneEditingShortcutsEnabled = bEnabled; }
+	bool AreSceneEditingShortcutsEnabled() const { return bSceneEditingShortcutsEnabled; }
 
 	// Camera lifecycle
 	void CreateCamera();
@@ -232,6 +234,7 @@ private:
 	bool  bControlLocked = false;
 	bool  bRoutedInputProcessedThisFrame = false;
 	bool  bGizmoDragUndoCaptured = false;
+	bool  bSceneEditingShortcutsEnabled = true;
 	ETransformMode TransformMode = ETransformMode::Translate;
 	float ViewportInputDeadZoneTop = 0.0f;
 	float PIEStartOutlineFlashRemaining = 0.0f;

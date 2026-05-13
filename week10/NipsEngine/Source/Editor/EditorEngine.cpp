@@ -257,14 +257,22 @@ void UEditorEngine::Tick(float DeltaTime)
     const auto InputRouteEnd = std::chrono::steady_clock::now();
 #endif
 
-    // Viewer 호버링 상태 동기화 (기존 Layout 외부에 있으므로 수동 동기화 필요)
+    // Viewer는 FEditorViewportLayout 밖에 있으므로 routed input 결과를 기준으로
+    // active/hover 상태를 직접 동기화한다. Focus 여부만 보면 클릭/드래그 중
+    // 기즈모 하이라이트와 조작 상태가 프레임 단위로 흔들릴 수 있다.
     for (auto& ViewerPtr : Viewers)
     {
         if (FEditorViewportClient* ViewerClient = static_cast<FEditorViewportClient*>(ViewerPtr->GetViewport().GetClient()))
         {
             if (FEditorViewportState* State = ViewerClient->GetViewportState())
             {
-                State->bHovered = (EditorInputRouter.GetFocusedClient() == ViewerClient);
+                const bool bRoutedToViewer = RoutedInputContext.TargetClient == ViewerClient;
+                State->bHovered =
+                    bRoutedToViewer &&
+                    (RoutedInputContext.bHovered ||
+                     RoutedInputContext.bCaptured ||
+                     RoutedInputContext.bRelativeMouseMode ||
+                     RoutedInputContext.bFocused);
             }
         }
     }
@@ -444,63 +452,71 @@ void UEditorEngine::RegisterViewportInputTargets()
 {
     EditorInputRouter.ClearTargets();
 
-    for (int32 Index = 0; Index < FEditorViewportLayout::MaxViewports; ++Index)
+    if (MainPanel.ShouldRouteLevelViewportInput())
     {
-        FSceneViewport& SceneViewport = ViewportLayout.GetSceneViewport(Index);
-        FEditorViewportClient* ViewportClient = ViewportLayout.GetViewportClient(Index);
-        if (!ViewportClient)
+        for (int32 Index = 0; Index < FEditorViewportLayout::MaxViewports; ++Index)
         {
-            continue;
+            FSceneViewport& SceneViewport = ViewportLayout.GetSceneViewport(Index);
+            FEditorViewportClient* ViewportClient = ViewportLayout.GetViewportClient(Index);
+            if (!ViewportClient)
+            {
+                continue;
+            }
+
+            EditorInputRouter.RegisterTarget(
+                &SceneViewport,
+                ViewportClient,
+                ViewportClient->GetPlayState() == EViewportPlayState::Playing ? EInteractionDomain::PIE : EInteractionDomain::Editor,
+                [this, Index](FRect& OutRect)
+                {
+                    const FViewportRect& ViewportRect = ViewportLayout.GetSceneViewport(Index).GetRect();
+                    if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
+                    {
+                        return false;
+                    }
+
+                    OutRect = FRect(
+                        static_cast<float>(ViewportRect.X),
+                        static_cast<float>(ViewportRect.Y),
+                        static_cast<float>(ViewportRect.Width),
+                        static_cast<float>(ViewportRect.Height));
+                    return true;
+                },
+                [this, Index]() -> UWorld*
+                {
+                    FEditorViewportClient* Client = ViewportLayout.GetViewportClient(Index);
+                    return Client ? Client->GetFocusedWorld() : nullptr;
+                },
+                [this, Index]() -> int32
+                {
+                    // EditorViewport를 감싸는 ImGui window 이름
+                    ImGuiWindow* Win = ImGui::FindWindowByName("Viewport");
+                    if (!Win)
+                        return 0;
+
+                    ImGuiContext* Ctx = ImGui::GetCurrentContext();
+                    if (!Ctx)
+                        return 0;
+
+                    for (int32 i = 0; i < Ctx->Windows.Size; ++i)
+                    {
+                        if (Ctx->Windows[i] == Win)
+                            return i;
+                    }
+                    return 0;
+                });
         }
-
-        EditorInputRouter.RegisterTarget(
-            &SceneViewport,
-            ViewportClient,
-            ViewportClient->GetPlayState() == EViewportPlayState::Playing ? EInteractionDomain::PIE : EInteractionDomain::Editor,
-            [this, Index](FRect& OutRect)
-            {
-                const FViewportRect& ViewportRect = ViewportLayout.GetSceneViewport(Index).GetRect();
-                if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
-                {
-                    return false;
-                }
-
-                OutRect = FRect(
-                    static_cast<float>(ViewportRect.X),
-                    static_cast<float>(ViewportRect.Y),
-                    static_cast<float>(ViewportRect.Width),
-                    static_cast<float>(ViewportRect.Height));
-                return true;
-            },
-            [this, Index]() -> UWorld*
-            {
-                FEditorViewportClient* Client = ViewportLayout.GetViewportClient(Index);
-                return Client ? Client->GetFocusedWorld() : nullptr;
-            },
-            [this, Index]() -> int32
-            {
-                // EditorViewport를 감싸는 ImGui window 이름
-                ImGuiWindow* Win = ImGui::FindWindowByName("Viewport");
-                if (!Win)
-                    return 0;
-
-                ImGuiContext* Ctx = ImGui::GetCurrentContext();
-                if (!Ctx)
-                    return 0;
-
-                for (int32 i = 0; i < Ctx->Windows.Size; ++i)
-                {
-                    if (Ctx->Windows[i] == Win)
-                        return i;
-                }
-                return 0;
-            });
     }
 
     // Viewer 등록
     for (int32 Index = 0; Index < (int32)Viewers.size(); ++Index)
     {
         auto& ViewerPtr = Viewers[Index];
+        if (!MainPanel.ShouldRouteViewerViewportInput(ViewerPtr.get()))
+        {
+            continue;
+        }
+
         FSceneViewport& ViewerViewport = ViewerPtr->GetViewport();
         FEditorViewportClient* ViewerClient = static_cast<FEditorViewportClient*>(ViewerViewport.GetClient());
         if (ViewerClient)
@@ -513,16 +529,6 @@ void UEditorEngine::RegisterViewportInputTargets()
                 {
                     if (Index >= (int32)Viewers.size())
                         return false;
-
-                    // Viewer ImGui window가 실제로 보이는지 확인
-                    char WindowName[64];
-                    FEditorViewer* ViewerPtr = Viewers[Index].get();
-                    sprintf_s(WindowName, "Viewer##%p", ViewerPtr);
-                    ImGuiWindow* Win = ImGui::FindWindowByName(WindowName);
-                    if (!Win || !Win->WasActive || Win->Hidden)
-                    {
-                        return false;
-                    }
 
                     const FViewportRect& ViewportRect = Viewers[Index]->GetViewport().GetRect();
                     if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
@@ -538,30 +544,36 @@ void UEditorEngine::RegisterViewportInputTargets()
                 },
                 [this, Index]() -> UWorld*
                 {
+                    if (Index < 0 || Index >= static_cast<int32>(Viewers.size()))
+                    {
+                        return nullptr;
+                    }
+
                     FEditorViewportClient* Client = static_cast<FEditorViewportClient*>(Viewers[Index]->GetViewport().GetClient());
                     return Client ? Client->GetFocusedWorld() : nullptr;
                 },
                 [this, Index]() -> int32
                 {
-                    char WindowName[64];
-                    FEditorViewer* ViewerRawPtr = Viewers[Index].get();
-                    sprintf_s(WindowName, "Viewer##%p", ViewerRawPtr);
-
-                    ImGuiContext* Ctx = ImGui::GetCurrentContext();
-                    if (!Ctx)
-                        return 0;
-
-                    for (int32 i = 0; i < Ctx->Windows.Size; ++i)
+                    if (Index < 0 || Index >= static_cast<int32>(Viewers.size()))
                     {
-                        if (Ctx->Windows[i] && strcmp(Ctx->Windows[i]->Name, WindowName) == 0)
-                        {
-                            return i; // 배열 뒤쪽일수록 앞에 그려짐
-                        }
+                        return 0;
                     }
-                    return 0;
+
+                    FEditorViewer* ViewerRawPtr = Viewers[Index].get();
+                    return MainPanel.GetViewerViewportZOrder(ViewerRawPtr);
                 });
         }
     }
+}
+
+void UEditorEngine::FocusViewportInput(FViewport* Viewport)
+{
+    if (!Viewport)
+    {
+        return;
+    }
+
+    EditorInputRouter.ForceViewportFocus(Viewport);
 }
 
 void UEditorEngine::WorldTick(float DeltaTime)
@@ -613,7 +625,6 @@ FEditorViewer* UEditorEngine::CreateViewer(FString InFileName)
 
     FWorldContext& ViewerCtx = CreateWorldContext(EWorldType::ViewerPreview, Handle, "Viewer Preview");
     ApplySpatialIndexMaintenanceSettings(ViewerCtx.World);
-    SpawnDefaultSceneActors(ViewerCtx.World);
 
     auto NewViewer = std::make_unique<FEditorViewer>();
     NewViewer->Init(Window, this, ViewerCtx.World, ViewerCtx.SelectionManager);
@@ -756,10 +767,19 @@ bool UEditorEngine::RestoreSceneSnapshot(const FString& Snapshot, const FName& R
 
     UndoSystem.BeginRestore();
     MainPanel.ResetWidgetSelections();
-    ClearScene();
+
+    // Scene undo/redo는 현재 editor scene world만 교체한다.
+    // ViewerPreview world까지 ClearScene()으로 함께 파괴하면, 같은 프레임의
+    // input routing target/focus가 이미 사라진 viewer viewport를 가리킬 수 있다.
+    const FName TargetWorldHandle =
+        RestoreWorldHandle != FName::None ? RestoreWorldHandle : ActiveWorldHandle;
+    if (TargetWorldHandle != FName::None)
+    {
+        UnregisterWorld(TargetWorldHandle);
+    }
 
     LoadCtx.WorldType = EWorldType::Editor;
-    LoadCtx.ContextHandle = RestoreWorldHandle != FName::None ? RestoreWorldHandle : FName("UndoRedoScene");
+    LoadCtx.ContextHandle = TargetWorldHandle != FName::None ? TargetWorldHandle : FName("UndoRedoScene");
     LoadCtx.ContextName = "Undo/Redo Scene";
     WorldList.push_back(LoadCtx);
     SetActiveWorld(LoadCtx.ContextHandle);
@@ -1176,6 +1196,8 @@ void UEditorEngine::SetActiveWorld(const FName& Handle)
 
 void UEditorEngine::CloseScene()
 {
+    EditorInputRouter.ClearViewportFocus();
+    EditorInputRouter.ClearTargets();
     UnbindActorDestroyedListener(ActorDestroyedListenerWorld);
 
     for (FWorldContext& Ctx : WorldList)
@@ -1339,19 +1361,40 @@ FEditorRenderPipeline* UEditorEngine::GetEditorRenderPipeline() const
 
 void UEditorEngine::ClearScene()
 {
+    EditorInputRouter.ClearViewportFocus();
+    EditorInputRouter.ClearTargets();
     UnbindActorDestroyedListener(ActorDestroyedListenerWorld);
- 
-    for (FWorldContext& Ctx : WorldList)
+
+    for (auto It = WorldList.begin(); It != WorldList.end();)
     {
-        Ctx.World->EndPlay(EEndPlayReason::Type::LevelTransition);
-        Ctx.SelectionManager->ClearSelection();
-        Ctx.SelectionManager->Shutdown();
-        delete Ctx.SelectionManager;
-        Ctx.SelectionManager = nullptr;
-        UObjectManager::Get().DestroyObject(Ctx.World);
+        FWorldContext& Ctx = *It;
+        if (Ctx.WorldType == EWorldType::ViewerPreview)
+        {
+            ++It;
+            continue;
+        }
+
+        if (Ctx.World)
+        {
+            if (Ctx.World == ActorDestroyedListenerWorld)
+            {
+                UnbindActorDestroyedListener(Ctx.World);
+            }
+            Ctx.World->EndPlay(EEndPlayReason::Type::LevelTransition);
+            UObjectManager::Get().DestroyObject(Ctx.World);
+        }
+
+        if (Ctx.SelectionManager)
+        {
+            Ctx.SelectionManager->ClearSelection();
+            Ctx.SelectionManager->Shutdown();
+            delete Ctx.SelectionManager;
+            Ctx.SelectionManager = nullptr;
+        }
+
+        It = WorldList.erase(It);
     }
 
-    WorldList.clear();
     ActiveWorldHandle = FName::None;
 
     for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
@@ -1363,20 +1406,6 @@ void UEditorEngine::ClearScene()
             ViewportClient->SetWorld(nullptr);
         }
     }
-	
-    for (auto& ViewerPtr : Viewers)
-    {
-        MainPanel.CloseViewer(ViewerPtr.get());
-        ViewerPtr->ClearViewTarget();
-
-        if (FEditorViewportClient* ViewportClient = static_cast<FEditorViewportClient*>(ViewerPtr->GetViewport().GetClient()))
-        {
-            ViewportClient->DestroyCamera();
-            ViewportClient->SetWorld(nullptr);
-        }
-    }
-
-	Viewers.clear();
 }
 
 // 이미 생성된 월드를 컨텍스트에 등록합니다.

@@ -1,9 +1,12 @@
 ﻿#pragma once
 
+#include "Core/CoreTypes.h"
 #include "Editor/UI/EditorWidget.h"
 
 #include <functional>
 
+enum class EEditorCommandId : uint8;
+struct FEditorShortcut;
 class FEditorViewportOverlayWidget;
 class FEditorPlayStreamWidget;
 
@@ -14,6 +17,10 @@ public:
 	void SetPlayStreamWidget(FEditorPlayStreamWidget* InPlayStreamWidget);
 	void SetPIEViewportFullscreenCallback(std::function<void(bool)> InCallback);
 	void SetBuildGameCallback(std::function<void()> InCallback);
+	void SetActiveCommandHandlers(
+		std::function<bool(const FEditorShortcut&)> InShortcutHandler,
+		std::function<bool(EEditorCommandId)> InCommandHandler);
+	void SetActiveMenuRenderer(std::function<bool()> InMenuRenderer);
 	void SetPanelVisibilityRefs(
 		bool* InShowConsole,
 		bool* InShowControl,
@@ -58,4 +65,7 @@ private:
 	bool* bPIEViewportFullscreenEnabled = nullptr;
 	std::function<void(bool)> PIEViewportFullscreenCallback;
 	std::function<void()> BuildGameCallback;
+	std::function<bool(const FEditorShortcut&)> ActiveShortcutHandler;
+	std::function<bool(EEditorCommandId)> ActiveCommandHandler;
+	std::function<bool()> ActiveMenuRenderer;
 };

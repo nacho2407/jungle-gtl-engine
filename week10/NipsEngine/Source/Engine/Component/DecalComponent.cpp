@@ -21,7 +21,7 @@ UDecalComponent::UDecalComponent()
 		Mat = FResourceManager::Get().GetMaterial("DefaultWhite");
 		UE_LOG_WARNING("[DecalComponent] DecalMat is missing. Falling back to DefaultWhite.");
 	}
-	SetMaterial(Mat);
+	SetMaterial(0, Mat);
 
 	if (Mat)
 	{
@@ -41,7 +41,7 @@ void UDecalComponent::PostDuplicate(UObject* Original)
     UPrimitiveComponent::PostDuplicate(Original);
 
     const UDecalComponent* Orig = Cast<UDecalComponent>(Original);
-	SetMaterial(Orig->GetMaterial()); // 얕은 복사 — ResourceManager 가 소유
+	SetMaterial(0, Orig->GetMaterial(0)); // 얕은 복사 — ResourceManager 가 소유
 }
 
 void UDecalComponent::Serialize(FArchive& Ar)
@@ -78,7 +78,7 @@ void UDecalComponent::Serialize(FArchive& Ar)
 	{
 		if (!MaterialIdentifier.empty())
 		{
-			SetMaterial(FResourceManager::Get().GetMaterialInterface(MaterialIdentifier));
+			SetMaterial(0, FResourceManager::Get().GetMaterialInterface(MaterialIdentifier));
 		}
 	}
 }

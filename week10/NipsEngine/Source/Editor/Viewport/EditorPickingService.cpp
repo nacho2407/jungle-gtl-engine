@@ -25,9 +25,11 @@ bool FEditorPickingService::ResolveActorForSelection(
 {
 	OutActor = nullptr;
 	const FEditorSettings& EditorSettings = FEditorSettings::Get();
-	if (EditorSettings.PickingMode == EEditorPickingMode::IdBuffer && PickActorByIdAtViewportLocalPoint(Viewport, Editor, LocalX, LocalY, OutActor))
+	if (EditorSettings.PickingMode == EEditorPickingMode::IdBuffer &&
+		PickActorByIdAtViewportLocalPoint(Viewport, Editor, LocalX, LocalY, OutActor) &&
+		OutActor)
 	{
-		return OutActor != nullptr;
+		return true;
 	}
 
 	return PickActorByRayAtViewportLocalPoint(World, Camera, Viewport, LocalX, LocalY, OutActor);

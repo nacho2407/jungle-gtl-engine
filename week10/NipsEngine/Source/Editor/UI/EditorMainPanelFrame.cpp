@@ -1,5 +1,7 @@
 ﻿#include "Editor/UI/EditorMainPanel.h"
 
+#include "Editor/Viewer/EditorViewer.h"
+
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
@@ -60,49 +62,58 @@ void FEditorMainPanel::RenderToolbarAndDock(float DeltaTime)
     {
         CloseContentBrowser();
     }
+    RenderEditorTabStrip();
     RenderEditorToolbar();
     RenderDockSpace();
 }
 
 void FEditorMainPanel::RenderMainViewport(float DeltaTime)
 {
-    RenderViewportHostWindow();
-    Widgets.ViewportOverlayWidget.RenderViewportFrameOverlays(DeltaTime);
+	FlushOpenViewerWidgets();
+
+    if (IsLevelEditorTabActive())
+    {
+        RenderViewportHostWindow();
+        Widgets.ViewportOverlayWidget.RenderViewportFrameOverlays(DeltaTime);
+        return;
+    }
+
+    RenderActiveViewerDocument(DeltaTime);
 }
 
 void FEditorMainPanel::RenderEditorPanelWindows(float DeltaTime, bool bDrawEditorPanels)
 {
-    FlushOpenViewerWidgets();
+    const bool bLevelEditorTabActive = IsLevelEditorTabActive();
 
-    if (bDrawEditorPanels && PanelVisibility.bShowControl)
+    if (bDrawEditorPanels && bLevelEditorTabActive && PanelVisibility.bShowControl)
     {
         Widgets.ControlWidget.Render(DeltaTime);
     }
-    if (bDrawEditorPanels && PanelVisibility.bShowMaterialEditor)
+    if (bDrawEditorPanels && bLevelEditorTabActive && PanelVisibility.bShowMaterialEditor)
     {
         Widgets.MaterialWidget.Render(DeltaTime);
     }
-    if (bDrawEditorPanels && PanelVisibility.bShowProperty)
+    if (bDrawEditorPanels && bLevelEditorTabActive && PanelVisibility.bShowProperty)
     {
         Widgets.PropertyWidget.Render(DeltaTime);
     }
-    if (bDrawEditorPanels && PanelVisibility.bShowSceneManager)
+    if (bDrawEditorPanels && bLevelEditorTabActive && PanelVisibility.bShowSceneManager)
     {
         Widgets.SceneWidget.Render(DeltaTime);
     }
-    if (bDrawEditorPanels && PanelVisibility.bShowStatProfiler)
+    if (bDrawEditorPanels && bLevelEditorTabActive && PanelVisibility.bShowStatProfiler)
     {
         Widgets.StatWidget.Render(DeltaTime);
     }
-    if (bDrawEditorPanels)
+    if (bDrawEditorPanels && bLevelEditorTabActive)
     {
         RenderEditorDebugPanel(DeltaTime);
     }
-    if (bDrawEditorPanels)
+    if (bDrawEditorPanels && bLevelEditorTabActive)
     {
         RenderUndoHistoryPanel(DeltaTime);
     }
-    if (bDrawEditorPanels && PanelVisibility.bShowRuntimeUIPreview)
+    if (bDrawEditorPanels && bLevelEditorTabActive && PanelVisibility.bShowRuntimeUIPreview)
     {
         Widgets.RuntimeUIPreviewWidget.Render(DeltaTime);
     }
@@ -114,11 +125,11 @@ void FEditorMainPanel::RenderEditorPanelWindows(float DeltaTime, bool bDrawEdito
     {
         RenderWorldSettingsPanel();
     }
-    if (bDrawEditorPanels && Widgets.CurveEditorWidget.IsVisible())
+    if (bDrawEditorPanels && bLevelEditorTabActive && Widgets.CurveEditorWidget.IsVisible())
     {
         Widgets.CurveEditorWidget.Render(DeltaTime);
     }
-    if (bDrawEditorPanels && Widgets.ActorSequencerWidget.IsVisible())
+    if (bDrawEditorPanels && bLevelEditorTabActive && Widgets.ActorSequencerWidget.IsVisible())
     {
         Widgets.ActorSequencerWidget.Render(DeltaTime);
     }
@@ -127,8 +138,26 @@ void FEditorMainPanel::RenderEditorPanelWindows(float DeltaTime, bool bDrawEdito
         Widgets.ConsoleWidget.Render(DeltaTime);
     }
 
-	for (auto& ViewerWidget : Widgets.ViewerWindowWidgets)
-        ViewerWidget->Render(DeltaTime);
+	for (auto& Widget : Widgets.ViewerWindowWidgets)
+	{
+		if (!Widget || !Widget->IsOpen())
+		{
+			continue;
+		}
+
+		FEditorViewer* Viewer = Widget->GetViewer();
+		if (!Viewer)
+		{
+			continue;
+		}
+
+		FEditorTabId TabId;
+		TabId = MakeEditorViewerTabId(Viewer->GetFileName(), Viewer);
+		if (EditorTabs.IsTabDetached(TabId))
+		{
+			Widget->Render(DeltaTime);
+		}
+	}
 
 	FlushClosedViewerWidgets();
 }

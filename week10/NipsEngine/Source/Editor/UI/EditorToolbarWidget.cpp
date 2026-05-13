@@ -1,6 +1,7 @@
 ﻿#include "Editor/UI/EditorToolbarWidget.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/UI/EditorCommandContext.h"
 #include "Editor/UI/EditorViewportOverlayWidget.h"
 #include "Editor/UI/EditorPlayStreamWidget.h"
 #include "Core/Paths.h"
@@ -121,6 +122,19 @@ void FEditorToolbarWidget::SetBuildGameCallback(std::function<void()> InCallback
 	BuildGameCallback = std::move(InCallback);
 }
 
+void FEditorToolbarWidget::SetActiveCommandHandlers(
+	std::function<bool(const FEditorShortcut&)> InShortcutHandler,
+	std::function<bool(EEditorCommandId)> InCommandHandler)
+{
+	ActiveShortcutHandler = std::move(InShortcutHandler);
+	ActiveCommandHandler = std::move(InCommandHandler);
+}
+
+void FEditorToolbarWidget::SetActiveMenuRenderer(std::function<bool()> InMenuRenderer)
+{
+	ActiveMenuRenderer = std::move(InMenuRenderer);
+}
+
 void FEditorToolbarWidget::SetPanelVisibilityRefs(
 	bool* InShowConsole,
 	bool* InShowControl,
@@ -175,7 +189,16 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 		}
 		if (ImGui::IsKeyPressed(ImGuiKey_S, false))
 		{
-			if (IO.KeyShift)
+			const FEditorShortcut Shortcut
+			{
+				static_cast<int32>(ImGuiKey_S),
+				true,
+				IO.KeyShift,
+				IO.KeyAlt
+			};
+
+			const bool bHandledByActiveContext = ActiveShortcutHandler && ActiveShortcutHandler(Shortcut);
+			if (!bHandledByActiveContext && IO.KeyShift)
 			{
 				FString PickedPath;
 				if (SaveSceneFileDialog(PickedPath))
@@ -183,7 +206,7 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 					EditorEngine->GetCommandSystem().Execute(EEditorCommand::SaveSceneAs, { PickedPath });
 				}
 			}
-			else
+			else if (!bHandledByActiveContext)
 			{
 				EditorEngine->GetCommandSystem().Execute(EEditorCommand::SaveScene);
 			}
@@ -202,12 +225,16 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 		return;
 	}
 
-	RenderFilesMenu();
-	RenderEditMenu();
-	RenderBuildMenu();
-	RenderWindowMenu();
-	RenderSettingsMenu();
-	RenderHelpMenu();
+	const bool bHandledByActiveContext = ActiveMenuRenderer && ActiveMenuRenderer();
+	if (!bHandledByActiveContext)
+	{
+		RenderFilesMenu();
+		RenderEditMenu();
+		RenderBuildMenu();
+		RenderWindowMenu();
+		RenderSettingsMenu();
+		RenderHelpMenu();
+	}
 
 	ImGui::EndMainMenuBar();
 }
@@ -238,14 +265,24 @@ void FEditorToolbarWidget::RenderFilesMenu()
 		}
 		if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
 		{
-			EditorEngine->GetCommandSystem().Execute(EEditorCommand::SaveScene);
+			const bool bHandledByActiveContext =
+				ActiveCommandHandler && ActiveCommandHandler(EEditorCommandId::Save);
+			if (!bHandledByActiveContext)
+			{
+				EditorEngine->GetCommandSystem().Execute(EEditorCommand::SaveScene);
+			}
 		}
 		if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
 		{
-			FString PickedPath;
-			if (SaveSceneFileDialog(PickedPath))
+			const bool bHandledByActiveContext =
+				ActiveCommandHandler && ActiveCommandHandler(EEditorCommandId::SaveAs);
+			if (!bHandledByActiveContext)
 			{
-				EditorEngine->GetCommandSystem().Execute(EEditorCommand::SaveSceneAs, { PickedPath });
+				FString PickedPath;
+				if (SaveSceneFileDialog(PickedPath))
+				{
+					EditorEngine->GetCommandSystem().Execute(EEditorCommand::SaveSceneAs, { PickedPath });
+				}
 			}
 		}
 

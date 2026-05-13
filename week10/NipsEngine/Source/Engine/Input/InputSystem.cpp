@@ -1,10 +1,11 @@
 ﻿#include "Engine/Input/InputSystem.h"
+#include "Engine/Input/InputWindowFocus.h"
 #include <cmath>
 
 void InputSystem::Tick()
 {
-    // 윈도우 포커스가 없으면 모든 입력 상태 해제
-    if (OwnerHWnd && GetForegroundWindow() != OwnerHWnd)
+    // 메인 창 또는 ImGui platform window 등 현재 프로세스 창에 포커스가 없으면 입력 상태 해제.
+    if (OwnerHWnd && !InputWindowFocus::IsForegroundWindowOwnedByCurrentProcess())
     {
         HandleOutOfFocusTick();
         return;

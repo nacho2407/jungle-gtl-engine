@@ -54,9 +54,16 @@ void FEditorMainPanel::RenderEditorToolbar()
         return;
     }
 
+    if (!IsLevelEditorTabActive())
+    {
+        RenderActiveDocumentToolbar();
+        return;
+    }
+
+    constexpr float TabStripHeight = 30.0f;
     constexpr float ToolbarHeight = 40.0f;
     constexpr float ButtonSize = 30.0f;
-    const ImVec2 ToolbarPos(MainViewport->WorkPos.x, MainViewport->WorkPos.y);
+    const ImVec2 ToolbarPos(MainViewport->WorkPos.x, MainViewport->WorkPos.y + TabStripHeight);
     const ImVec2 ToolbarSize(MainViewport->WorkSize.x, ToolbarHeight);
 
     ImGui::SetNextWindowPos(ToolbarPos, ImGuiCond_Always);

@@ -579,9 +579,9 @@ void FScriptManager::BindDecalTypes()
     LUA_METHOD(GetDecalMatrix, GetDecalMatrix);
     LUA_METHOD(GetDecalColor, GetDecalColor);
     LUA_SET(GetMaterial, [](UDecalComponent& Self)
-            { return Self.GetMaterial(); });
+            { return Self.GetMaterial(0); });
     LUA_SET(SetMaterial, [](UDecalComponent& Self, UMaterialInterface* Material)
-            { Self.SetMaterial(Material); });
+            { Self.SetMaterial(0, Material); });
     LUA_RO_PROPERTY(DecalMatrix, GetDecalMatrix);
     LUA_RO_PROPERTY(DecalColor, GetDecalColor);
     LUA_RO_PROPERTY(NumMaterials, GetNumMaterials);

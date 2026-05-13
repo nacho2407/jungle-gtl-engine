@@ -1,8 +1,11 @@
 ﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Viewer/EditorViewer.h"
 
 #include "ImGui/imgui.h"
+
+#include <algorithm>
 
 FEditorPropertyWidget& FEditorMainPanel::GetPropertyWidget()
 {
@@ -48,12 +51,27 @@ void FEditorMainPanel::OpenCurveAsset(const FString& CurvePath)
 
 void FEditorMainPanel::OpenViewer(FEditorViewer* Viewer)
 {
+    FEditorTabId ViewerTabId;
+    if (Viewer)
+    {
+        ViewerTabId = MakeEditorViewerTabId(Viewer->GetFileName(), Viewer);
+        EditorTabs.OpenOrFocusTab(ViewerTabId, MakeEditorViewerTabLabel(Viewer->GetFileName()));
+    }
+
     for (auto& Widget : Widgets.ViewerWindowWidgets)
     {
         if (Widget->GetViewer() == Viewer)
         {
             Widget->SetOpen(true);
-            ImGui::SetWindowFocus(Widget->GetWindowName().c_str());
+            if (EditorTabs.IsTabDetached(ViewerTabId))
+            {
+                ImGui::SetWindowFocus(Widget->GetWindowName().c_str());
+                const TArray<FEditorTabEntry>& Tabs = EditorTabs.GetTabs();
+                if (!Tabs.empty())
+                {
+                    ActivateEditorTab(Tabs[0].Id);
+                }
+            }
             return;
         }
     }
@@ -89,11 +107,20 @@ void FEditorMainPanel::FlushOpenViewerWidgets()
 
 void FEditorMainPanel::CloseViewer(FEditorViewer* Viewer)
 {
+	if (!Viewer)
+	{
+		return;
+	}
+
+	EditorTabs.CloseTab(MakeEditorViewerTabId(Viewer->GetFileName(), Viewer));
+	PendingOpenViewers.erase(std::remove(PendingOpenViewers.begin(), PendingOpenViewers.end(), Viewer), PendingOpenViewers.end());
+
 	// Open false 처리 후 Flush
     for (auto& Widget : Widgets.ViewerWindowWidgets)
 		if (Widget->GetViewer() == Viewer)
 		{
             Widget->SetOpen(false);
+			Widget->SetViewer(nullptr);
             break;
 		}
 }
@@ -104,7 +131,7 @@ void FEditorMainPanel::FlushClosedViewerWidgets()
     V.erase(
         std::remove_if(V.begin(), V.end(),
                        [](const std::unique_ptr<FEditorViewerWindowWidget>& W)
-                       { return !W->IsOpen(); }),
+                       { return !W || !W->IsOpen() || !W->GetViewer(); }),
         V.end());
 }
 
@@ -139,6 +166,20 @@ void FEditorMainPanel::BindEditorWidgetCallbacks()
     Widgets.ToolbarWidget.SetPlayStreamWidget(&Widgets.PlayStreamWidget);
     Widgets.ToolbarWidget.SetPIEViewportFullscreenCallback([this](bool bEnabled) { SetPIEViewportFullscreenEnabled(bEnabled); });
     Widgets.ToolbarWidget.SetBuildGameCallback([this]() { RequestBuildGame(); });
+    Widgets.ToolbarWidget.SetActiveCommandHandlers(
+        [this](const FEditorShortcut& Shortcut)
+        {
+            return ExecuteActiveEditorShortcut(Shortcut);
+        },
+        [this](EEditorCommandId CommandId)
+        {
+            return ExecuteActiveEditorCommand(CommandId);
+        });
+    Widgets.ToolbarWidget.SetActiveMenuRenderer(
+        [this]()
+        {
+            return RenderActiveDocumentMainMenu();
+        });
     Widgets.ToolbarWidget.SetPanelVisibilityRefs(
         &PanelVisibility.bShowConsole,
         &PanelVisibility.bShowControl,

@@ -44,7 +44,6 @@ public:
 	FSkeletalMeshViewportClient&       GetClient()       { return Client; }
 	const FSkeletalMeshViewportClient& GetClient() const { return Client; }
 
-	// 우선은 Skeletal Mesh Viewer 테스트용으로 추상화 안함
 	ASkeletalMeshActor* GetViewTarget() const { return ViewTarget; }
     void ClearViewTarget() { ViewTarget = nullptr; }
 
@@ -58,22 +57,28 @@ public:
 	void ChangeTarget(const FString& InFileName);
 
     const FString& GetFileName() const { return FileName; }
+    void SelectBone(int32 BoneIndex);
+    void SelectSocket(int32 SocketIndex);
+    void ClearSelection();
+    void NotifySocketDeleted(int32 SocketIndex);
+    bool HandleBonePick(float LocalX, float LocalY);
+    bool TryPickBone(float LocalX, float LocalY, int32& OutBoneIndex) const;
 
-	int32 SelectedBoneIndex = -1;
-	FVector CachedRotation;
-    // Local holder for gizmo-selected actors when using bone proxy in the viewer.
-    TArray<AActor*> GizmoSelectedActors;
+    int32 GetSelectedBoneIndex() const { return SelectedBoneIndex; }
+    int32 GetSelectedSocketIndex() const { return SelectedSocketIndex; }
+    FVector& GetCachedBoneRotation() { return CachedRotation; }
+    const FVector& GetCachedBoneRotation() const { return CachedRotation; }
 
 private:
     FSceneViewport Viewport;
     FSkeletalMeshViewportClient Client;
-
-    UEditorEngine* Editor = nullptr;
-    FWindowsWindow* Window = nullptr;
-
 	ASkeletalMeshActor* ViewTarget = nullptr;
 
     FString FileName;
 
     TMap<FName, UStaticMeshComponent*, FName::Hash> SocketPreviewMeshes;
+
+    int32 SelectedBoneIndex = -1;
+    int32 SelectedSocketIndex = -1;
+    FVector CachedRotation;
 };

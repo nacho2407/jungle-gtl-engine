@@ -27,6 +27,7 @@ void USkeletalMeshComponent::SetBoneLocalTransform(int32 BoneIndex, const FMatri
     }
 
     CurrentLocalPose[BoneIndex] = NewLocalTransform;
+    UpdateCurrentGlobalPose();
     MarkSkinningDirty();
 }
 
@@ -60,7 +61,17 @@ void USkeletalMeshComponent::SetBoneGlobalTransform(int32 BoneIndex, const FMatr
         return;
     }
 
+    if (!SkeletalMesh)
+    {
+        return;
+    }
+
     const TArray<FBoneInfo>& Bones = SkeletalMesh->GetBones();
+    if (BoneIndex >= static_cast<int32>(Bones.size()))
+    {
+        return;
+    }
+
     int32 ParentIndex = Bones[BoneIndex].ParentIndex;
 
     FMatrix ParentGlobalTransform;
