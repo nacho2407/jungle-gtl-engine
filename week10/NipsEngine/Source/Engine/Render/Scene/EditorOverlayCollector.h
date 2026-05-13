@@ -31,6 +31,9 @@ public:
     // 최신화되어 있어야 함 — 호출 측이 EnsureSkinningUpdated 사전 보장.
     void CollectSkeletonBones(USkeletalMeshComponent* SkComp, FRenderBus& RenderBus) const;
 
+    // 선택된 본 1개만 발행. ParentIdx<0(루트)인 본은 시각화 컨벤션 상 그릴 수 없어 스킵.
+    void CollectSingleBone(USkeletalMeshComponent* SkComp, int32 BoneIndex, FRenderBus& RenderBus) const;
+
 private:
     bool CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode,
                                   FRenderBus& RenderBus, FMeshBufferManager& MeshBufferManager,

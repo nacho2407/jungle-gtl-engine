@@ -51,6 +51,7 @@ public:
 	void CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus, bool bIsActiveOperation);
 	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus, bool bOrthographic = false);
 	void CollectSkeletonBones(USkeletalMeshComponent* SkComp, FRenderBus& RenderBus);
+	void CollectSingleBone(USkeletalMeshComponent* SkComp, int32 BoneIndex, FRenderBus& RenderBus);
 	FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0)
 	{
 		return MeshBufferManager.GetStaticMeshBuffer(StaticMeshAsset, LODLevel);

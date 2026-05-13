@@ -475,14 +475,28 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
         }
 
         // Viewer 전용: 본 와이어 드로우 (skeleton mesh viewer 토글)
-        if (Viewers[i]->GetClient().GetShowFlags().bShowBones)
         {
-            if (ASkeletalMeshActor* ViewTarget = Viewers[i]->GetViewTarget())
+            const FSkeletalViewerShowFlags& VFlags = Viewers[i]->GetClient().GetShowFlags();
+            if (VFlags.bShowBones)
             {
-                if (USkeletalMeshComponent* SkComp = ViewTarget->GetSkeletalMeshComponent())
+                if (ASkeletalMeshActor* ViewTarget = Viewers[i]->GetViewTarget())
                 {
-                    SkComp->EnsureSkinningUpdated();   // 본 자세 최신화 보장
-                    Collector.CollectSkeletonBones(SkComp, Bus);
+                    if (USkeletalMeshComponent* SkComp = ViewTarget->GetSkeletalMeshComponent())
+                    {
+                        SkComp->EnsureSkinningUpdated();   // 본 자세 최신화 보장
+                        if (VFlags.bShowOnlySelectedBone)
+                        {
+                            const int32 BoneIdx = Viewers[i]->SelectedBoneIndex;
+                            if (BoneIdx >= 0)
+                            {
+                                Collector.CollectSingleBone(SkComp, BoneIdx, Bus);
+                            }
+                        }
+                        else
+                        {
+                            Collector.CollectSkeletonBones(SkComp, Bus);
+                        }
+                    }
                 }
             }
         }
