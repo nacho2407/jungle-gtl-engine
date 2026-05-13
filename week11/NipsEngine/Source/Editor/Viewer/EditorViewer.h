@@ -57,6 +57,8 @@ public:
 
 	void ChangeTarget(const FString& InFileName);
 
+    const FString& GetFileName() const { return FileName; }
+
 	int32 SelectedBoneIndex = -1;
 	FVector CachedRotation;
     // Local holder for gizmo-selected actors when using bone proxy in the viewer.
@@ -70,6 +72,8 @@ private:
     FWindowsWindow* Window = nullptr;
 
 	ASkeletalMeshActor* ViewTarget = nullptr;
+
+    FString FileName;
 
     TMap<FName, UStaticMeshComponent*, FName::Hash> SocketPreviewMeshes;
 };

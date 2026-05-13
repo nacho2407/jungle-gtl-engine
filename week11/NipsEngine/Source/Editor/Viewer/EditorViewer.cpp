@@ -145,6 +145,7 @@ UStaticMeshComponent* FEditorViewer::FindPreviewMesh(const FName& SocketName) co
 
 void FEditorViewer::ChangeTarget(const FString& InFileName)
 {
+    FileName = InFileName;
     USkeletalMesh* SkelMesh = FResourceManager::Get().LoadSkeletalMesh(InFileName.c_str());
     if (SkelMesh)
 	    ViewTarget->GetSkeletalMeshComponent()->SetSkeletalMesh(SkelMesh);
