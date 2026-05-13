@@ -1,5 +1,6 @@
-#include "Editor/Subsystem/AssetFactory.h"
+﻿#include "Editor/Subsystem/AssetFactory.h"
 
+#include "FloatCurve/FloatCurveManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
 #include "Object/ObjectFactory.h"
 #include "Platform/Paths.h"
@@ -46,7 +47,7 @@ bool FAssetFactory::CreateFloatCurve(const FString& DirectoryPath, const FString
 		return false;
 	}
 
-	const std::filesystem::path AssetPath = BuildUniqueAssetPath(Directory, AssetName, L".curve");
+	const std::filesystem::path AssetPath = BuildUniqueAssetPath(Directory, AssetName, L".uasset");
 
 	UFloatCurveAsset* NewAsset = UObjectManager::Get().CreateObject<UFloatCurveAsset>();
 	NewAsset->SetSourcePath(FPaths::ToUtf8(AssetPath.wstring()));
@@ -57,7 +58,7 @@ bool FAssetFactory::CreateFloatCurve(const FString& DirectoryPath, const FString
 	Curve.AddKey(1.0f, 1.0f);
 	Curve.SortKeys();
 
-	const bool bSaved = NewAsset->SaveToFile(NewAsset->GetSourcePath());
+	bool bSaved = FFloatCurveManager::Get().Save(NewAsset);
 	UObjectManager::Get().DestroyObject(NewAsset);
 
 	if (!bSaved)

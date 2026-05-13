@@ -1144,6 +1144,12 @@
     <ClCompile Include="Source\Editor\Slate\SlateApplication.cpp" />
     <ClCompile Include="Source\Editor\Slate\SSplitter.cpp" />
     <ClCompile Include="Source\Editor\Slate\SWindow.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorTextureManager.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\EditorPreviewViewportClient.h" />
+    <ClCompile Include="Source\Engine\Component\BoneDebugComponent.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\BoneDebugSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Asset\AssetPackage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -2826,6 +2832,12 @@
     <ClInclude Include="Source\Editor\Slate\SWidget.h" />
     <ClInclude Include="Source\Editor\Slate\SWindow.h" />
     <ClInclude Include="Source\Engine\Mesh\MeshImportOptions.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h" />
+    <ClInclude Include="Source\Editor\UI\EditorTextureManager.h" />
+    <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h" />
+    <ClInclude Include="Source\Engine\Component\BoneDebugComponent.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\BoneDebugSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Asset\AssetPackage.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

@@ -1,5 +1,6 @@
 ﻿#include "ContentBrowser.h"
 
+#include "Asset/AssetPackage.h"
 #include "ContentBrowserElement.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Subsystem/AssetFactory.h"
@@ -90,7 +91,6 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 	IconFileMap[".Scene"] = L"World_64x.png";
 	IconFileMap[".obj"] = L"icon_MatEd_Mesh_40x.png";
 	IconFileMap[".mat"] = L"Sphere_64x.png";
-	IconFileMap[".curve"] = L"StartMerge_42x.png";
 	IconFileMap[".shake"] = L"StartMerge_42x.png";
 	IconFileMap[".fbx"] = L"icon_MatEd_Mesh_40x.png";
 	IconFileMap[".uasset"] = L"icon_MatEd_Mesh_40x.png";
@@ -238,17 +238,24 @@ void FEditorContentBrowserWidget::RefreshContent()
 		{
 			FString PackagePath = FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring());
 
-			if (FMeshManager::IsStaticMeshPackage(PackagePath))
+			EAssetPackageType Type = EAssetPackageType::Unknown;
+			if (FAssetPackage::GetPackageType(PackagePath, Type))
 			{
-				Element = std::make_shared<ObjectElement>();
-			}
-			else if (FMeshManager::IsSkeletalMeshPackage(PackagePath))
-			{
-				Element = std::make_shared<MeshElement>();
-			}
-			else
-			{
-				Element = std::make_shared<ContentBrowserElement>();
+				switch (Type)
+				{
+				case EAssetPackageType::StaticMesh:
+					Element = std::make_shared<ObjectElement>();
+					break;
+				case EAssetPackageType::SkeletalMesh:
+					Element = std::make_shared<MeshElement>();
+					break;
+				case EAssetPackageType::FloatCurve:
+					Element = std::make_shared<FloatCurveElement>();
+					break;
+				default:
+					Element = std::make_shared<ContentBrowserElement>();
+					break;
+				}
 			}
 		}
 		else
