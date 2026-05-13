@@ -9,19 +9,19 @@ class IBaseEditorController
 {
   public:
     virtual ~IBaseEditorController() = default;
-    virtual void OnMouseMove(float DeltaX, float DeltaY) = 0;
-    virtual void OnMouseMoveAbsolute(float X, float Y) {}
-    virtual void OnLeftMouseClick(float X, float Y) = 0;    // LMB down
-    virtual void OnLeftMouseDragEnd(float X, float Y) = 0;  // LMB drag released
-    virtual void OnLeftMouseButtonUp(float X, float Y) = 0; // LMB up (no drag)
-    virtual void OnRightMouseClick(float DeltaX, float DeltaY) = 0;
-    virtual void OnLeftMouseDrag(float X, float Y) = 0; // drag in progress (X/Y = viewport-local pos)
-    virtual void OnRightMouseDrag(float DeltaX, float DeltaY) = 0;
-    virtual void OnMiddleMouseDrag(float DeltaX, float DeltaY) = 0;
-    virtual void OnKeyPressed(int VK) = 0;
-    virtual void OnKeyDown(int VK) = 0;
-    virtual void OnKeyReleased(int VK) = 0;
-    virtual void OnWheelScrolled(float Notch) = 0;
+    virtual void OnMouseMove(float, float) {}
+    virtual void OnMouseMoveAbsolute(float, float) {}
+    virtual void OnLeftMouseClick(float, float) {}    // LMB down
+    virtual void OnLeftMouseDragEnd(float, float) {}  // LMB drag released
+    virtual void OnLeftMouseButtonUp(float, float) {} // LMB up (no drag)
+    virtual void OnRightMouseClick(float, float) {}
+    virtual void OnLeftMouseDrag(float, float) {} // drag in progress (X/Y = viewport-local pos)
+    virtual void OnRightMouseDrag(float, float) {}
+    virtual void OnMiddleMouseDrag(float, float) {}
+    virtual void OnKeyPressed(int) {}
+    virtual void OnKeyDown(int) {}
+    virtual void OnKeyReleased(int) {}
+    virtual void OnWheelScrolled(float) {}
 	virtual void Tick(float InDeltaTime) { DeltaTime = InDeltaTime; }
 
     void SetViewportDim(float X, float Y, float Width, float Height);

@@ -26,6 +26,8 @@ private:
         FString GameName = "NipsGame";
         FString StartupScene = "Asset/Scene/Default.scene";
         FString PlayerControllerClass = "APlayerController";
+        FString DefaultPawnClass = "ADefaultPawn";
+        FString DefaultPawnPrefabPath;
     };
 
     void LoadGameSettings();
@@ -45,4 +47,5 @@ private:
     APlayerController* PlayerController = nullptr;
     bool bLoggedInputCapture = false;
     bool bLoggedFirstInput = false;
+    uint64 PlayerInputFrameCounter = 0;
 };

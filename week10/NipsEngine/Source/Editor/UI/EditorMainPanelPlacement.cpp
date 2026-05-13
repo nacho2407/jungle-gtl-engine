@@ -7,6 +7,7 @@
 #include "Editor/Viewport/ViewportLayout.h"
 #include "Engine/Component/StaticMeshComponent.h"
 #include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Input/InputSystem.h"
 #include "Engine/Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "GameFramework/PrimitiveActors.h"
@@ -233,7 +234,19 @@ void FEditorMainPanel::HandleContentBrowserViewportDrop()
         return;
     }
 
-    const ImVec2 MousePos = ImGui::GetIO().MousePos;
+    POINT MouseClientPos = {};
+    if (Window)
+    {
+        MouseClientPos = Window->ScreenToClientPoint(InputSystem::Get().GetMousePos());
+    }
+    else
+    {
+        const ImVec2 MousePos = ImGui::GetIO().MousePos;
+        MouseClientPos = POINT{
+            static_cast<LONG>(MousePos.x),
+            static_cast<LONG>(MousePos.y)
+        };
+    }
     FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
     const int32 FocusedViewportIndex = Layout.GetLastFocusedViewportIndex();
     auto TryDropOnViewport = [&](int32 ViewportIndex) -> bool
@@ -249,21 +262,21 @@ void FEditorMainPanel::HandleContentBrowserViewportDrop()
         {
             return false;
         }
-        if (MousePos.x < static_cast<float>(Rect.X) ||
-            MousePos.x >= static_cast<float>(Rect.X + Rect.Width) ||
-            MousePos.y < static_cast<float>(Rect.Y) ||
-            MousePos.y >= static_cast<float>(Rect.Y + Rect.Height))
+        if (MouseClientPos.x < Rect.X ||
+            MouseClientPos.x >= Rect.X + Rect.Width ||
+            MouseClientPos.y < Rect.Y ||
+            MouseClientPos.y >= Rect.Y + Rect.Height)
         {
             return false;
         }
 
         const float LocalX = MathUtil::Clamp(
-            MousePos.x - static_cast<float>(Rect.X),
+            static_cast<float>(MouseClientPos.x - Rect.X),
             0.0f,
             std::max(0.0f, static_cast<float>(Rect.Width - 1))
         );
         const float LocalY = MathUtil::Clamp(
-            MousePos.y - static_cast<float>(Rect.Y),
+            static_cast<float>(MouseClientPos.y - Rect.Y),
             0.0f,
             std::max(0.0f, static_cast<float>(Rect.Height - 1))
         );

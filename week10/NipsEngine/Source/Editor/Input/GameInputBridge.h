@@ -3,24 +3,15 @@
 
 class FViewportCamera;
 class APlayerController;
+struct FViewportInputContext;
 
 class FGameInputBridge : public IBaseEditorController
 {
   public:
     void Tick(float InDeltaTime) override;
     void OnMouseMove(float DeltaX, float DeltaY) override;
-    void OnMouseMoveAbsolute(float X, float Y) override;
-    void OnLeftMouseClick(float X, float Y) override;
-    void OnLeftMouseDragEnd(float X, float Y) override;
-    void OnLeftMouseButtonUp(float X, float Y) override;
-    void OnRightMouseClick(float DeltaX, float DeltaY) override;
-    void OnLeftMouseDrag(float X, float Y) override;
-    void OnRightMouseDrag(float DeltaX, float DeltaY) override;
-    void OnMiddleMouseDrag(float DeltaX, float DeltaY) override;
-    void OnKeyPressed(int VK) override;
     void OnKeyDown(int VK) override;
-    void OnKeyReleased(int VK) override;
-    void OnWheelScrolled(float Notch) override;
+    void ProcessInputContext(const FViewportInputContext& Context);
 
     void SetCamera(FViewportCamera* InCamera);
     void SetCamera(FViewportCamera& InCamera);

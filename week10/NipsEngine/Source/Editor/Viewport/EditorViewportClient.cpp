@@ -669,6 +669,20 @@ void FEditorViewportClient::TickInput(const FViewportInputContext& Context)
 		bRoutedInputProcessedThisFrame = true;
 		return;
 	}
+
+	if (InputRouter.GetActiveController() == EActiveEditorController::GameInputBridge)
+	{
+		if (HandleCommandInput(Context))
+		{
+			return;
+		}
+		if (!IsPIEMouseFocusReleased() && IsRuntimeGameInputCaptured())
+		{
+			InputRouter.GetGameInputBridge().ProcessInputContext(Context);
+		}
+		return;
+	}
+
 	TickInputContexts(Context);
 }
 

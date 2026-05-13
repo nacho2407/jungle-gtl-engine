@@ -1,12 +1,13 @@
 #include "GameInputBridge.h"
 #include "Camera/ViewportCamera.h"
-#include "Engine/Input/InputSystem.h"
+#include "Engine/Input/GameplayInputTypes.h"
 #include "GameFramework/PlayerController.h"
 
 #include <windows.h>
 
-void FGameInputBridge::Tick(float InDeltaTime) {
-	DeltaTime = InDeltaTime;
+void FGameInputBridge::Tick(float InDeltaTime)
+{
+    DeltaTime = InDeltaTime;
     if (PlayerController)
     {
         if (const FViewportCamera* RuntimeCamera = PlayerController->GetRuntimeCamera())
@@ -29,15 +30,25 @@ void FGameInputBridge::Tick(float InDeltaTime) {
     Camera->SetLocation(CurrentLocation + (TargetLocation - CurrentLocation) * LerpAlpha);
 }
 
+void FGameInputBridge::ProcessInputContext(const FViewportInputContext& Context)
+{
+    if (!PlayerController)
+    {
+        return;
+    }
+
+    const FGameplayInputSnapshot Snapshot = FDefaultGameplayInputMapping::BuildSnapshot(Context);
+    PlayerController->ProcessInputSnapshot(Snapshot);
+}
+
 void FGameInputBridge::OnMouseMove(float DeltaX, float DeltaY)
 {
     if (PlayerController)
     {
-        PlayerController->HandleMouseMove(DeltaX, DeltaY);
         return;
     }
 
-	if (!Camera)
+    if (!Camera)
         return;
 
     if (Camera->IsOrthographic())
@@ -59,129 +70,19 @@ void FGameInputBridge::OnMouseMove(float DeltaX, float DeltaY)
     }
 }
 
-void FGameInputBridge::OnMouseMoveAbsolute(float X, float Y)
-{
-    if (PlayerController)
-    {
-        PlayerController->HandleMouseMoveAbsolute(X, Y);
-    }
-}
-
-void FGameInputBridge::OnLeftMouseClick(float X, float Y)
-{
-    if (PlayerController)
-    {
-        PlayerController->HandleMouseButtonPressed(VK_LBUTTON, X, Y);
-        return;
-    }
-}
-
-void FGameInputBridge::OnLeftMouseDragEnd(float X, float Y)
-{
-    if (PlayerController)
-    {
-        PlayerController->HandleMouseDragEnd(VK_LBUTTON, X, Y);
-        PlayerController->HandleMouseButtonReleased(VK_LBUTTON, X, Y);
-    }
-}
-
-void FGameInputBridge::OnLeftMouseButtonUp(float X, float Y)
-{
-    if (PlayerController)
-    {
-        PlayerController->HandleMouseButtonReleased(VK_LBUTTON, X, Y);
-    }
-}
-
-void FGameInputBridge::OnRightMouseClick(float DeltaX, float DeltaY)
-{
-    if (PlayerController)
-    {
-        PlayerController->HandleMouseButtonPressed(VK_RBUTTON, DeltaX, DeltaY);
-    }
-}
-
-void FGameInputBridge::OnLeftMouseDrag(float X, float Y)
-{
-    if (PlayerController)
-    {
-        PlayerController->HandleMouseDrag(VK_LBUTTON, X, Y);
-    }
-}
-
-void FGameInputBridge::OnRightMouseDrag(float DeltaX, float DeltaY)
-{
-    if (PlayerController)
-    {
-        PlayerController->HandleMouseDrag(VK_RBUTTON, DeltaX, DeltaY);
-        PlayerController->HandleMouseButtonDown(VK_RBUTTON, DeltaX, DeltaY);
-    }
-}
-
-void FGameInputBridge::OnMiddleMouseDrag(float DeltaX, float DeltaY)
-{
-    if (PlayerController)
-    {
-        PlayerController->HandleMouseDrag(VK_MBUTTON, DeltaX, DeltaY);
-        PlayerController->HandleMouseButtonDown(VK_MBUTTON, DeltaX, DeltaY);
-    }
-}
-
-void FGameInputBridge::OnKeyPressed(int VK)
-{
-    if (PlayerController)
-    {
-        PlayerController->HandleKeyPressed(VK);
-    }
-}
-
 void FGameInputBridge::OnKeyDown(int VK)
 {
     if (PlayerController)
     {
-        PlayerController->HandleKeyDown(VK);
         return;
     }
 
-    // WASD continuous movement + arrow key rotation (called every frame the key is held)
     if (!Camera)
         return;
 
     const float MoveSpeed = 10.f;
     FVector     Move = FVector(0, 0, 0);
-    //switch (VK)
-    //{
-    //case 'W':
-    //    Move.X += MoveSpeed;
-    //    break;
-    //case 'A':
-    //    Move.Y -= MoveSpeed;
-    //    break;
-    //case 'S':
-    //    Move.X -= MoveSpeed;
-    //    break;
-    //case 'D':
-    //    Move.Y += MoveSpeed;
-    //    break;
-    //}
-
-    //if (Move.X != 0.f || Move.Y != 0.f)
-    //{
-    //    // Constrain movement to the horizontal plane (no flying)
-    //    Move *= DeltaTime;
-    //    FVector Forward = Camera->GetForwardVector();
-    //    Forward.Z = 0.f;
-    //    if (Forward.Size() > 1e-4f)
-    //        Forward.Normalize();
-    //    FVector Right = Camera->GetRightVector();
-    //    Right.Z = 0.f;
-    //    if (Right.Size() > 1e-4f)
-    //        Right.Normalize();
-    //    TargetLocation += Forward * Move.X + Right * Move.Y;
-    //}
-
-	// Allow flying
-	switch (VK)
+    switch (VK)
     {
     case 'W':
         Move += Camera->GetForwardVector() * MoveSpeed;
@@ -233,22 +134,6 @@ void FGameInputBridge::OnKeyDown(int VK)
     }
 }
 
-
-void FGameInputBridge::OnKeyReleased(int VK)
-{
-    if (PlayerController)
-    {
-        PlayerController->HandleKeyReleased(VK);
-    }
-}
-
-void FGameInputBridge::OnWheelScrolled(float Notch)
-{
-    if (PlayerController)
-    {
-        PlayerController->HandleMouseWheel(Notch);
-    }
-}
 
 void FGameInputBridge::SetCamera(FViewportCamera* InCamera)
 {

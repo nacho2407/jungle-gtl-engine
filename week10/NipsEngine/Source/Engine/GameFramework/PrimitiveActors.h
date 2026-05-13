@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "AActor.h"
+#include "GameFramework/Pawn.h"
 #include "Core/Delegates/Delegate.h"
 #include "Core/CollisionTypes.h"
 
@@ -10,8 +11,6 @@ class ULightComponent;
 class UBillboardComponent;
 class UHeightFogComponent;
 class UBoxComponent;
-class UCameraComponent;
-class USpringArmComponent;
 class UProjectileMovementComponent;
 class UProceduralMeshComponent;
 class UStaticMesh;
@@ -66,29 +65,6 @@ public:
     void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 };
 
-//  PIE 용 임시 액터
-class ADefaultPlayerActor : public ASceneActor
-{
-public:
-	DECLARE_CLASS(ADefaultPlayerActor, AActor)
-	ADefaultPlayerActor() = default;
-
-	void InitDefaultComponents() override;
-	UCameraComponent* GetCameraComponent() const { return CameraComp; }
-	USpringArmComponent* GetSpringArmComponent() const { return SpringArmComp; }
-    
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
-    void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
-    void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
-	void OnTakeDamage(int32 InDamage) { Health = std::max(0, Health - InDamage); }
-
-private:
-	USpringArmComponent* SpringArmComp = nullptr;
-	UCameraComponent* CameraComp = nullptr;
-
-	int32 Health = 100;
-};
-
 class APlayerStart : public AActor
 {
 public:
@@ -96,19 +72,6 @@ public:
 	APlayerStart() = default;
 
 	void InitDefaultComponents() override;
-};
-
-class AFallbackCameraActor : public AActor
-{
-public:
-    DECLARE_CLASS(AFallbackCameraActor, AActor)
-    AFallbackCameraActor() = default;
-
-    void InitDefaultComponents() override;
-    UCameraComponent* GetCameraComponent() const { return CameraComp; }
-
-private:
-    UCameraComponent* CameraComp = nullptr;
 };
 
 class AFogActor : public AActor

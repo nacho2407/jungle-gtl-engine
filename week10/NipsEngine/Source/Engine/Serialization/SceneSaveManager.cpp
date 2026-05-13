@@ -35,6 +35,11 @@ namespace SceneKeys
 	static constexpr const char* UUID               = "UUID";
 	static constexpr const char* Components         = "Components";
 	static constexpr const char* WorldType          = "WorldType";
+	static constexpr const char* WorldSettings      = "WorldSettings";
+	static constexpr const char* OverrideGameMode   = "OverrideGameMode";
+	static constexpr const char* PlayerControllerClass = "PlayerControllerClass";
+	static constexpr const char* DefaultPawnClass   = "DefaultPawnClass";
+	static constexpr const char* DefaultPawnPrefabPath = "DefaultPawnPrefabPath";
 	static constexpr const char* ContextName        = "ContextName";
 	static constexpr const char* ContextHandle      = "ContextHandle";
 	static constexpr const char* Actors             = "Actors";
@@ -229,7 +234,7 @@ static json::JSON BuildSceneSnapshotJson(const FString& SceneName, FWorldContext
 
 	FString FinalName = SceneName.empty() ? "Snapshot" : SceneName;
 
-	int32 Version = 5;
+	int32 Version = 6;
 	uint32 NextUUID = EngineStatics::GetNextUUID();
 
 	Writer << SceneKeys::ClassName << WorldContext.World->GetTypeInfo()->name;
@@ -237,6 +242,13 @@ static json::JSON BuildSceneSnapshotJson(const FString& SceneName, FWorldContext
 	Writer << SceneKeys::WorldType << WorldTypeToString(WorldContext.WorldType);
 	Writer << SceneKeys::Version << Version;
 	Writer << SceneKeys::NextUUID << NextUUID;
+
+	const FWorldGameModeSettings& GameModeSettings = WorldContext.World->GetGameModeSettings();
+	Root[SceneKeys::WorldSettings] = json::Object();
+	Root[SceneKeys::WorldSettings][SceneKeys::OverrideGameMode] = GameModeSettings.bOverrideGameMode;
+	Root[SceneKeys::WorldSettings][SceneKeys::PlayerControllerClass] = GameModeSettings.PlayerControllerClass;
+	Root[SceneKeys::WorldSettings][SceneKeys::DefaultPawnClass] = GameModeSettings.DefaultPawnClass;
+	Root[SceneKeys::WorldSettings][SceneKeys::DefaultPawnPrefabPath] = GameModeSettings.DefaultPawnPrefabPath;
 
 	FEditorCameraState* CamState = const_cast<FEditorCameraState*>(CameraState);
 	FVector CamRotation = CamState ? CamState->Rotation.Euler() : FVector::ZeroVector;
@@ -374,6 +386,27 @@ void FSceneSaveManager::Load(const FString& FilePath, FWorldContext& OutWorldCon
 
 	UWorld* World = static_cast<UWorld*>(WorldObj);
 	EWorldType WorldType = Root.hasKey(SceneKeys::WorldType) ? StringToWorldType(Root[SceneKeys::WorldType].ToString()) : EWorldType::Editor;
+	if (Root.hasKey(SceneKeys::WorldSettings))
+	{
+		json::JSON& WorldSettingsNode = Root[SceneKeys::WorldSettings];
+		FWorldGameModeSettings GameModeSettings;
+		GameModeSettings.bOverrideGameMode = WorldSettingsNode.hasKey(SceneKeys::OverrideGameMode)
+			? WorldSettingsNode[SceneKeys::OverrideGameMode].ToBool()
+			: false;
+		GameModeSettings.PlayerControllerClass = GetJsonString(
+			WorldSettingsNode,
+			SceneKeys::PlayerControllerClass,
+			GameModeSettings.PlayerControllerClass);
+		GameModeSettings.DefaultPawnClass = GetJsonString(
+			WorldSettingsNode,
+			SceneKeys::DefaultPawnClass,
+			GameModeSettings.DefaultPawnClass);
+		GameModeSettings.DefaultPawnPrefabPath = FPaths::Normalize(GetJsonString(
+			WorldSettingsNode,
+			SceneKeys::DefaultPawnPrefabPath,
+			GameModeSettings.DefaultPawnPrefabPath));
+		World->SetGameModeSettings(GameModeSettings);
+	}
 
 	// UUID 카운터 복원
 	if (Root.hasKey(SceneKeys::NextUUID))
