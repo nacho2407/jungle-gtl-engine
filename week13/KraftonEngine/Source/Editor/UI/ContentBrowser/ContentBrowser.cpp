@@ -1,6 +1,8 @@
 ﻿#include "ContentBrowser.h"
 
 #include "Asset/AssetPackage.h"
+#include "CameraShake/CameraShakeAsset.h"
+#include "CameraShake/CameraShakeManager.h"
 #include "ContentBrowserElement.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Subsystem/AssetFactory.h"
@@ -252,6 +254,9 @@ void FEditorContentBrowserWidget::RefreshContent()
 				case EAssetPackageType::FloatCurve:
 					Element = std::make_shared<FloatCurveElement>();
 					break;
+				case EAssetPackageType::CameraShake:
+					Element = std::make_shared<CameraShakeElement>();
+					break;
 				default:
 					Element = std::make_shared<ContentBrowserElement>();
 					break;
@@ -371,6 +376,21 @@ void FEditorContentBrowserWidget::DrawContents()
 						if (UFloatCurveAsset* CurveAsset = FFloatCurveManager::Get().Load(CreatedPath))
 						{
 							BrowserContext.EditorEngine->OpenAssetEditorForObject(CurveAsset);
+						}
+					}
+				}
+			}
+			if (ImGui::MenuItem("Camera Shake"))
+			{
+				FString CreatedPath;
+				if (FAssetFactory::CreateCameraShake(FPaths::ToUtf8(BrowserContext.CurrentPath), "NewCameraShake", CreatedPath))
+				{
+					Refresh();
+					if (BrowserContext.EditorEngine)
+					{
+						if (UCameraShakeAsset* ShakeAsset = FCameraShakeManager::Get().Load(CreatedPath))
+						{
+							BrowserContext.EditorEngine->OpenAssetEditorForObject(ShakeAsset);
 						}
 					}
 				}

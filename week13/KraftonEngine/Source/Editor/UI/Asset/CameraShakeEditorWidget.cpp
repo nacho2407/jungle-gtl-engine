@@ -78,7 +78,7 @@ namespace
 		}
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("Double-click to open curve. Drop a .curve asset here.");
+			ImGui::SetTooltip("Double-click to open curve. Drop a FloatCurve asset here.");
 		}
 		return bChanged;
 	}
@@ -412,8 +412,10 @@ void FCameraShakeEditorWidget::Render(float DeltaTime)
 
 	if (ImGui::Button("Save"))
 	{
-		FCameraShakeManager::Get().Save(ShakeAsset);
-		ClearDirty();
+		if (FCameraShakeManager::Get().Save(ShakeAsset))
+		{
+			ClearDirty();
+		}
 	}
 	ImGui::SameLine();
 	ImGui::TextDisabled("%s", ShakeAsset->GetSourcePath().empty() ? "Unsaved asset" : ShakeAsset->GetSourcePath().c_str());
