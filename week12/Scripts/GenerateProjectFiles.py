@@ -32,23 +32,6 @@ CONFIGURATIONS = [
     ("Debug", "x64"),
     ("Release", "x64"),
     ("ObjViewer", "x64"),
-    ("GameClientDebug", "x64"),
-    ("GameClientRelease", "x64"),
-]
-
-# Keep the solution configuration order stable so Visual Studio does not fall
-# back to the first generated configuration after project-file regeneration.
-SOLUTION_CONFIGURATIONS = [
-    ("Debug", "x64", "Debug", "x64"),
-    ("Debug", "x86", "Debug", "Win32"),
-    ("GameClientDebug", "x64", "GameClientDebug", "x64"),
-    ("GameClientDebug", "x86", "GameClientDebug", "x64"),
-    ("GameClientRelease", "x64", "GameClientRelease", "x64"),
-    ("GameClientRelease", "x86", "GameClientRelease", "x64"),
-    ("ObjViewer", "x64", "ObjViewer", "x64"),
-    ("ObjViewer", "x86", "ObjViewer", "x64"),
-    ("Release", "x64", "Release", "x64"),
-    ("Release", "x86", "Release", "Win32"),
 ]
 
 # Directories to recursively scan for source files
@@ -159,14 +142,6 @@ def collect_all_filters(files: dict[str, list[str]]) -> set[str]:
     return filters
 
 
-def is_release_configuration(config: str) -> bool:
-    return config in {"Release", "ObjViewer", "GameClientDebug", "GameClientRelease"}
-
-
-def is_game_client_configuration(config: str) -> bool:
-    return config in {"GameClientDebug", "GameClientRelease"}
-
-
 # ──────────────────────────────────────────────
 # XML Generation
 # ──────────────────────────────────────────────
@@ -227,7 +202,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
     for cfg, plat in CONFIGURATIONS:
         cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond, Label="Configuration")
-        is_release = is_release_configuration(cfg)
+        is_release = cfg == "Release" or cfg == "ObjViewer"
         ET.SubElement(pg, "ConfigurationType").text = "Application"
         ET.SubElement(pg, "UseDebugLibraries").text = "false" if is_release else "true"
         ET.SubElement(pg, "PlatformToolset").text = "v143"
@@ -258,8 +233,6 @@ def generate_vcxproj(files: dict[str, list[str]]):
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond)
         ET.SubElement(pg, "OutDir").text = f"$(ProjectDir)Bin\\$(Configuration)\\"
         ET.SubElement(pg, "IntDir").text = f"$(ProjectDir)Build\\$(Configuration)\\"
-        if is_game_client_configuration(cfg):
-            ET.SubElement(pg, "TargetName").text = "JSEngineGame"
         ET.SubElement(pg, "IncludePath").text = include_path_value
         ET.SubElement(pg, "LibraryPath").text = library_path_value
         ET.SubElement(pg, "LocalDebuggerWorkingDirectory").text = "$(ProjectDir)"
@@ -271,9 +244,8 @@ def generate_vcxproj(files: dict[str, list[str]]):
         cl = ET.SubElement(idg, "ClCompile")
         ET.SubElement(cl, "WarningLevel").text = "Level3"
 
-        is_release = is_release_configuration(cfg)
+        is_release = cfg == "Release" or cfg == "ObjViewer"
         is_viewer = cfg == "ObjViewer"
-        is_game_client = is_game_client_configuration(cfg)
         is_win32 = plat == "Win32"
         is_x64 = plat == "x64"
 
@@ -283,12 +255,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
 
         ET.SubElement(cl, "SDLCheck").text = "true"
 
-        if is_game_client:
-            defs = "NDEBUG;_CONSOLE;WITH_EDITOR=0;IS_GAME_CLIENT=1;IS_OBJ_VIEWER=0;"
-            if cfg == "GameClientDebug":
-                defs += "GAME_DEVELOPMENT=1;"
-            defs += "NOMINMAX;%(PreprocessorDefinitions);"
-        elif is_win32:
+        if is_win32:
             defs = f"WIN32;{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;NOMINMAX;%(PreprocessorDefinitions);"
         else:
             defs = f"{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;NOMINMAX;%(PreprocessorDefinitions);"
@@ -447,7 +414,7 @@ def generate_sln():
     lines.append("")
     lines.append("Microsoft Visual Studio Solution File, Format Version 12.00")
     lines.append("# Visual Studio Version 17")
-    lines.append("VisualStudioVersion = 17.14.37012.4")
+    lines.append("VisualStudioVersion = 17.14.37012.4 d17.14")
     lines.append("MinimumVisualStudioVersion = 10.0.40219.1")
 
     guid_upper = PROJECT_GUID.upper()
@@ -461,15 +428,17 @@ def generate_sln():
 
     # SolutionConfigurationPlatforms
     lines.append("\tGlobalSection(SolutionConfigurationPlatforms) = preSolution")
-    for sln_cfg, sln_plat, _, _ in SOLUTION_CONFIGURATIONS:
-        lines.append(f"\t\t{sln_cfg}|{sln_plat} = {sln_cfg}|{sln_plat}")
+    for cfg, plat in CONFIGURATIONS:
+        sln_plat = "x86" if plat == "Win32" else plat
+        lines.append(f"\t\t{cfg}|{sln_plat} = {cfg}|{sln_plat}")
     lines.append("\tEndGlobalSection")
 
     # ProjectConfigurationPlatforms
     lines.append("\tGlobalSection(ProjectConfigurationPlatforms) = postSolution")
-    for sln_cfg, sln_plat, proj_cfg, proj_plat in SOLUTION_CONFIGURATIONS:
-        lines.append(f"\t\t{guid_upper}.{sln_cfg}|{sln_plat}.ActiveCfg = {proj_cfg}|{proj_plat}")
-        lines.append(f"\t\t{guid_upper}.{sln_cfg}|{sln_plat}.Build.0 = {proj_cfg}|{proj_plat}")
+    for cfg, plat in CONFIGURATIONS:
+        sln_plat = "x86" if plat == "Win32" else plat
+        lines.append(f"\t\t{guid_upper}.{cfg}|{sln_plat}.ActiveCfg = {cfg}|{plat}")
+        lines.append(f"\t\t{guid_upper}.{cfg}|{sln_plat}.Build.0 = {cfg}|{plat}")
     lines.append("\tEndGlobalSection")
 
     lines.append("\tGlobalSection(SolutionProperties) = preSolution")
