@@ -81,11 +81,11 @@ AActor* UWorld::SpawnActorByTypeName(const FString& TypeName)
 
     Actor->SetWorld(this);
     Actor->InitDefaultComponents();
+    PersistentLevel->AddActor(Actor);
     if (bHasBegunPlay)
     {
         Actor->BeginPlay();
     }
-    PersistentLevel->AddActor(Actor);
     SpatialIndex.FlushDirtyBounds();
     return Actor;
 }

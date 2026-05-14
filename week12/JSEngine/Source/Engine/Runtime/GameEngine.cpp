@@ -221,6 +221,10 @@ void UGameEngine::LoadGameSettings()
         {
             StartupSettings.StartupScene = Value;
         }
+        else if (Key == "GameModeClass")
+        {
+            StartupSettings.GameModeClass = Value;
+        }
         else if (Key == "PlayerControllerClass")
         {
             StartupSettings.PlayerControllerClass = Value;
@@ -311,14 +315,9 @@ AGameModeBase* UGameEngine::EnsureGameMode()
         return nullptr;
     }
 
-    GameMode = World->SpawnActor<AGameModeBase>();
-    if (!GameMode)
-    {
-        UE_LOG_ERROR("[GameEngine] Failed to spawn GameMode.");
-        return nullptr;
-    }
-
-    GameMode->SetFName(FName("GameMode"));
+    FString GameModeClass = StartupSettings.GameModeClass.empty()
+        ? FString("AGameModeBase")
+        : StartupSettings.GameModeClass;
     FString PlayerControllerClass = StartupSettings.PlayerControllerClass.empty()
         ? FString("APlayerController")
         : StartupSettings.PlayerControllerClass;
@@ -330,6 +329,10 @@ AGameModeBase* UGameEngine::EnsureGameMode()
     const FWorldGameModeSettings& SceneGameModeSettings = World->GetGameModeSettings();
     if (SceneGameModeSettings.bOverrideGameMode)
     {
+        if (!SceneGameModeSettings.GameModeClass.empty())
+        {
+            GameModeClass = SceneGameModeSettings.GameModeClass;
+        }
         if (!SceneGameModeSettings.PlayerControllerClass.empty())
         {
             PlayerControllerClass = SceneGameModeSettings.PlayerControllerClass;
@@ -341,6 +344,26 @@ AGameModeBase* UGameEngine::EnsureGameMode()
         DefaultPawnPrefabPath = SceneGameModeSettings.DefaultPawnPrefabPath;
     }
 
+    AActor* GameModeActor = World->SpawnActorByTypeName(GameModeClass);
+    GameMode = Cast<AGameModeBase>(GameModeActor);
+    if (!GameMode && GameModeActor)
+    {
+        UE_LOG_ERROR("[GameEngine] GameModeClass must derive from AGameModeBase: %s", GameModeClass.c_str());
+        World->DestroyActor(GameModeActor);
+    }
+    if (!GameMode)
+    {
+        UE_LOG_WARNING("[GameEngine] Falling back to AGameModeBase.");
+        GameModeClass = "AGameModeBase";
+        GameMode = World->SpawnActor<AGameModeBase>();
+    }
+    if (!GameMode)
+    {
+        UE_LOG_ERROR("[GameEngine] Failed to spawn GameMode.");
+        return nullptr;
+    }
+
+    GameMode->SetFName(FName(GameModeClass));
     GameMode->SetPlayerControllerClass(PlayerControllerClass);
     GameMode->SetDefaultPawnClass(DefaultPawnClass);
     GameMode->SetDefaultPawnPrefabPath(DefaultPawnPrefabPath);
