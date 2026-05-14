@@ -195,6 +195,7 @@ class InputSystem : public TSingleton<InputSystem>
     // Window handle for focus check
     HWND OwnerHWnd = nullptr;
     EInputFocusLossPolicy FocusLossPolicy = EInputFocusLossPolicy::ResetAllInputs;
+    bool bHadInputFocus = true;
 
     // UI capture state
     FGuiInputState GuiState{};

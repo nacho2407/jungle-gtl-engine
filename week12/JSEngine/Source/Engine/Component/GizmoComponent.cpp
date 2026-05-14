@@ -1,4 +1,4 @@
-#include "GizmoComponent.h"
+﻿#include "GizmoComponent.h"
 #include "GameFramework/AActor.h"
 #include "Component/SceneComponent.h"
 #include "Object/Object.h"
@@ -280,8 +280,10 @@ void UGizmoComponent::TranslateTarget(float DragAmount)
 
 	if (AllSelectedActors)
 	{
+		AActor* PrimaryActor = AllSelectedActors->empty() ? nullptr : AllSelectedActors->back();
 		for (AActor* Actor : *AllSelectedActors)
 		{
+			if (Actor == PrimaryActor) continue;
 			if (Actor) Actor->AddActorWorldOffset(ConstrainedDelta);
 		}
 	}
@@ -321,8 +323,10 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 
 	if (AllSelectedActors)
 	{
+		AActor* PrimaryActor = AllSelectedActors->empty() ? nullptr : AllSelectedActors->back();
 		for (AActor* Actor : *AllSelectedActors)
 		{
+			if (Actor == PrimaryActor) continue;
 			ApplyRotation(Actor);
 		}
 	}
@@ -384,8 +388,10 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 
 	if (AllSelectedActors)
 	{
+		AActor* PrimaryActor = AllSelectedActors->empty() ? nullptr : AllSelectedActors->back();
 		for (AActor* Actor : *AllSelectedActors)
 		{
+			if (Actor == PrimaryActor) continue;
 			ApplyScale(Actor);
 		}
 	}
