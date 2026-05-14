@@ -2211,6 +2211,7 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
     GameIni << "GameName=" << Settings.GameName << "\n";
     GameIni << "ExecutableName=" << FPaths::ToUtf8(PackageExeName.wstring()) << "\n";
     GameIni << "StartupScene=" << NormalizeSceneForPackage(Settings.StartupScene) << "\n";
+    GameIni << "GameModeClass=" << Settings.GameModeClass << "\n";
     GameIni << "PlayerControllerClass=" << Settings.PlayerControllerClass << "\n";
     GameIni << "DefaultPawnClass=" << Settings.DefaultPawnClass << "\n";
     GameIni << "DefaultPawnPrefabPath=" << Settings.DefaultPawnPrefabPath << "\n";

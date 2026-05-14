@@ -214,11 +214,21 @@ void AGameModeBase::ApplyPlayerStartTransform(APawn* Pawn, const FVector& SpawnL
         return;
     }
 
-    Pawn->SetActorLocation(SpawnLocation);
-    Pawn->SetActorRotation(FVector(0.0f, 0.0f, SpawnRotation.Z));
-
     if (UCameraComponent* Camera = Pawn->FindComponent<UCameraComponent>())
     {
-        Camera->SetRelativeRotation(FVector(0.0f, SpawnRotation.Y, 0.0f));
+        Pawn->SetActorLocation(SpawnLocation);
+        if (Pawn->GetRootComponent() == Camera)
+        {
+            Camera->SetRelativeRotation(FVector(0.0f, SpawnRotation.Y, SpawnRotation.Z));
+        }
+        else
+        {
+            Pawn->SetActorRotation(FVector(0.0f, 0.0f, SpawnRotation.Z));
+            Camera->SetRelativeRotation(FVector(0.0f, SpawnRotation.Y, 0.0f));
+        }
+        return;
     }
+
+    Pawn->SetActorLocation(SpawnLocation);
+    Pawn->SetActorRotation(FVector(0.0f, 0.0f, SpawnRotation.Z));
 }

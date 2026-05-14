@@ -5,6 +5,7 @@
 #include "Editor/Settings/ProjectSettings.h"
 #include "Editor/UI/EditorMainPanelPackagingHelpers.h"
 #include "Engine/Core/Paths.h"
+#include "GameFramework/GameModeBase.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "Math/Utils.h"
@@ -106,6 +107,10 @@ void FEditorMainPanel::RequestBuildGame()
     {
         BuildGameState.PendingSettings.GameName = "JSEngineGame";
     }
+    if (BuildGameState.PendingSettings.GameModeClass.empty())
+    {
+        BuildGameState.PendingSettings.GameModeClass = "AGameModeBase";
+    }
     if (BuildGameState.PendingSettings.PlayerControllerClass.empty())
     {
         BuildGameState.PendingSettings.PlayerControllerClass = "APlayerController";
@@ -137,6 +142,7 @@ void FEditorMainPanel::RequestBuildGame()
     strncpy_s(BuildGameState.GameNameBuffer, BuildGameState.PendingSettings.GameName.c_str(), _TRUNCATE);
     strncpy_s(BuildGameState.StartupSceneBuffer, BuildGameState.PendingSettings.StartupScene.c_str(), _TRUNCATE);
     strncpy_s(BuildGameState.SceneListAddBuffer, "", _TRUNCATE);
+    strncpy_s(BuildGameState.GameModeClassBuffer, BuildGameState.PendingSettings.GameModeClass.c_str(), _TRUNCATE);
     strncpy_s(BuildGameState.PlayerControllerClassBuffer, BuildGameState.PendingSettings.PlayerControllerClass.c_str(), _TRUNCATE);
     strncpy_s(BuildGameState.DefaultPawnClassBuffer, BuildGameState.PendingSettings.DefaultPawnClass.c_str(), _TRUNCATE);
     strncpy_s(BuildGameState.DefaultPawnPrefabPathBuffer, BuildGameState.PendingSettings.DefaultPawnPrefabPath.c_str(), _TRUNCATE);
@@ -206,6 +212,18 @@ void FEditorMainPanel::RenderBuildGameModal()
                 strncpy_s(BuildGameState.OutputDirectoryBuffer, NewOutputDirectory.c_str(), _TRUNCATE);
             }
         }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Game Mode");
+        ImGui::TableSetColumnIndex(1);
+        DrawPackagingClassCombo(
+            "##PackageGameMode",
+            BuildGameState.GameModeClassBuffer,
+            IM_ARRAYSIZE(BuildGameState.GameModeClassBuffer),
+            &AGameModeBase::s_TypeInfo
+        );
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
@@ -424,6 +442,7 @@ void FEditorMainPanel::RenderBuildGameModal()
 
     const FString GameName = BuildGameState.GameNameBuffer;
     const FString StartupScene = FPaths::Normalize(BuildGameState.StartupSceneBuffer);
+    const FString GameModeClass = FPaths::Normalize(BuildGameState.GameModeClassBuffer);
     const FString PlayerControllerClass = FPaths::Normalize(BuildGameState.PlayerControllerClassBuffer);
     const FString DefaultPawnClass = FPaths::Normalize(BuildGameState.DefaultPawnClassBuffer);
     const FString DefaultPawnPrefabPath = FPaths::Normalize(BuildGameState.DefaultPawnPrefabPathBuffer);
@@ -434,6 +453,7 @@ void FEditorMainPanel::RenderBuildGameModal()
     const bool bValidGameName = !GameName.empty();
     const bool bValidScene =
         !StartupScene.empty() && std::filesystem::exists(FPaths::ToAbsolute(FPaths::ToWide(StartupScene)));
+    const bool bValidGameMode = !GameModeClass.empty();
     const bool bValidPlayerController = !PlayerControllerClass.empty();
     const bool bValidDefaultPawn = !DefaultPawnClass.empty();
     const bool bValidDefaultPawnPrefab =
@@ -477,6 +497,7 @@ void FEditorMainPanel::RenderBuildGameModal()
     ImGui::Text("Scenes to Copy: %d", static_cast<int32>(BuildGameState.PendingSettings.IncludedScenes.size()));
     ImGui::Text("Icon: %s", IconPath.empty() ? "(none)" : IconPath.c_str());
     ImGui::Text("Splash: %s", SplashImagePath.empty() ? "(none)" : SplashImagePath.c_str());
+    ImGui::Text("Game Mode: %s", GameModeClass.c_str());
     ImGui::Text("Default Pawn: %s", DefaultPawnClass.c_str());
     ImGui::Text("Pawn Prefab: %s", DefaultPawnPrefabPath.empty() ? "(none)" : DefaultPawnPrefabPath.c_str());
     ImGui::TextDisabled("Pawn prefab root must derive from APawn. If set, it overrides Default Pawn Class.");
@@ -492,6 +513,10 @@ void FEditorMainPanel::RenderBuildGameModal()
     if (!bValidGameName)
     {
         ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Game name is empty.");
+    }
+    if (!bValidGameMode)
+    {
+        ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Game mode class is empty.");
     }
     if (!bValidPlayerController)
     {
@@ -530,6 +555,7 @@ void FEditorMainPanel::RenderBuildGameModal()
     const bool bCanBuild =
         bValidGameName &&
         bValidScene &&
+        bValidGameMode &&
         bValidPlayerController &&
         bValidDefaultPawn &&
         bValidDefaultPawnPrefab &&
@@ -546,6 +572,7 @@ void FEditorMainPanel::RenderBuildGameModal()
     {
         BuildGameState.PendingSettings.GameName = GameName;
         BuildGameState.PendingSettings.StartupScene = StartupScene;
+        BuildGameState.PendingSettings.GameModeClass = GameModeClass;
         BuildGameState.PendingSettings.PlayerControllerClass = PlayerControllerClass;
         BuildGameState.PendingSettings.DefaultPawnClass = DefaultPawnClass;
         BuildGameState.PendingSettings.DefaultPawnPrefabPath = DefaultPawnPrefabPath;

@@ -117,6 +117,7 @@ struct FEditorMainPanelBuildGameModalState
 	char GameNameBuffer[128] = "JSEngineGame";
 	char StartupSceneBuffer[MAX_PATH] = "Asset/Scene/Default.scene";
 	char SceneListAddBuffer[MAX_PATH] = "";
+	char GameModeClassBuffer[128] = "AGameModeBase";
 	char PlayerControllerClassBuffer[128] = "APlayerController";
 	char DefaultPawnClassBuffer[128] = "ADefaultPawn";
 	char DefaultPawnPrefabPathBuffer[MAX_PATH] = "";
@@ -128,10 +129,12 @@ struct FEditorMainPanelBuildGameModalState
 struct FEditorMainPanelGameModeSettingsState
 {
 	bool bLoaded = false;
+	char GameModeClassBuffer[128] = "AGameModeBase";
 	char PlayerControllerClassBuffer[128] = "APlayerController";
 	char DefaultPawnClassBuffer[128] = "ADefaultPawn";
 	char DefaultPawnPrefabPathBuffer[MAX_PATH] = "";
 	bool bSceneOverrideGameMode = false;
+	char SceneGameModeClassBuffer[128] = "AGameModeBase";
 	char ScenePlayerControllerClassBuffer[128] = "APlayerController";
 	char SceneDefaultPawnClassBuffer[128] = "ADefaultPawn";
 	char SceneDefaultPawnPrefabPathBuffer[MAX_PATH] = "";
