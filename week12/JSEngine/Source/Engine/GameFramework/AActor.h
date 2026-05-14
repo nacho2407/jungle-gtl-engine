@@ -94,6 +94,10 @@ public:
 	{
 		if (RootComponent) RootComponent->SetRelativeRotation(NewRotation);
 	}
+	void SetActorRotationQuat(const FQuat& Q)
+	{
+		if (RootComponent) RootComponent->SetRelativeRotationQuat(Q);
+	}
 
 	// Transform — Scale
 	FVector GetActorScale() const
