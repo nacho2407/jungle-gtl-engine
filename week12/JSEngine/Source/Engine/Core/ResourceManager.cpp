@@ -8,6 +8,7 @@
 #include "Core/ResourceMemoryReporter.h"
 #include "Core/SkeletalMeshLoadService.h"
 #include "Core/StaticMeshLoadService.h"
+#include "Object/Object.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -460,6 +461,12 @@ void FResourceManager::ReleaseGPUResources()
 	CurveCache.Release();
 
 	RenderStateCache.Release();
+
+	for (auto& [Path, Mesh] : SkeletalMeshMap)
+	{
+		UObjectManager::Get().DestroyObject(Mesh);
+	}
+	SkeletalMeshMap.clear();
 
 	DefaultWhiteTexture.Reset();
 	CachedDevice.Reset();
