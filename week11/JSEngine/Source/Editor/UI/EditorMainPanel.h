@@ -122,6 +122,7 @@ private:
 	void RenderDockSpace();
 	void RenderViewportHostWindow();
 	void LoadGameModeSettingsPanelBuffers();
+	void LoadWorldGameModeSettingsPanelBuffers();
 	void SaveProjectGameModeSettingsPanelBuffers();
 	void SaveWorldGameModeSettingsPanelBuffers();
 	void RenderProjectSettingsPanel();

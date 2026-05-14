@@ -49,10 +49,15 @@ APlayerController* AGameModeBase::EnsurePlayerController(
         return nullptr;
     }
 
-    PlayerController = Cast<APlayerController>(World->SpawnActorByTypeName(PlayerControllerClass));
+    AActor* ControllerActor = World->SpawnActorByTypeName(PlayerControllerClass);
+    PlayerController = Cast<APlayerController>(ControllerActor);
     if (!PlayerController)
     {
         UE_LOG_ERROR("[GameMode] Failed to spawn PlayerController class: %s", PlayerControllerClass.c_str());
+        if (ControllerActor)
+        {
+            World->DestroyActor(ControllerActor);
+        }
         if (FallbackCamera)
         {
             World->SetActiveCamera(FallbackCamera);
