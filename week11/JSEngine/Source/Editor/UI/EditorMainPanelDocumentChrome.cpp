@@ -1,5 +1,6 @@
 #include "Editor/UI/EditorMainPanel.h"
 
+#include "Editor/UI/EditorChromeConstants.h"
 #include "Editor/UI/EditorMainPanelViewportToolbarHelpers.h"
 #include "Editor/Viewer/EditorViewer.h"
 #include "Editor/Viewport/EditorViewportClient.h"
@@ -16,9 +17,11 @@ void FEditorMainPanel::RenderActiveDocumentToolbar()
 		return;
 	}
 
-	constexpr float TabStripHeight = 30.0f;
-	constexpr float ToolbarHeight = 40.0f;
-	const ImVec2 ToolbarPos(MainViewport->WorkPos.x, MainViewport->WorkPos.y + TabStripHeight);
+	constexpr float TabStripHeight = FEditorChromeMetrics::TabStripHeight;
+	constexpr float ToolbarHeight = FEditorChromeMetrics::DocumentToolbarHeight;
+	const ImVec2 ToolbarPos(
+		MainViewport->WorkPos.x,
+		MainViewport->WorkPos.y + FEditorChromeMetrics::ApplicationTitleBarHeight + TabStripHeight);
 	const ImVec2 ToolbarSize(MainViewport->WorkSize.x, ToolbarHeight);
 
 	ImGui::SetNextWindowPos(ToolbarPos, ImGuiCond_Always);
@@ -45,6 +48,12 @@ void FEditorMainPanel::RenderActiveDocumentToolbar()
 		if (Viewer)
 		{
 			RenderViewerToolbarControls(Viewer);
+		}
+		else if (ActiveTab && ActiveTab->Id.Kind == EEditorTabKind::RuntimeUIPreview)
+		{
+			ImGui::TextDisabled("Runtime UI Preview");
+			ImGui::SameLine();
+			ImGui::TextUnformatted(Widgets.RuntimeUIPreviewWidget.GetPreviewDocumentPath().c_str());
 		}
 		else
 		{
@@ -404,6 +413,9 @@ bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 			break;
 		case EEditorTabKind::ActorSequencer:
 			ImGui::TextDisabled("Actor Sequencer");
+			break;
+		case EEditorTabKind::RuntimeUIPreview:
+			ImGui::TextDisabled("Runtime UI Preview");
 			break;
 		default:
 			ImGui::TextDisabled("Document");

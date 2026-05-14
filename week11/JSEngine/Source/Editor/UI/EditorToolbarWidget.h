@@ -17,6 +17,7 @@ public:
 	void SetPlayStreamWidget(FEditorPlayStreamWidget* InPlayStreamWidget);
 	void SetPIEViewportFullscreenCallback(std::function<void(bool)> InCallback);
 	void SetBuildGameCallback(std::function<void()> InCallback);
+	void SetRuntimeUIPreviewOpenCallback(std::function<void()> InCallback);
 	void SetActiveCommandHandlers(
 		std::function<bool(const FEditorShortcut&)> InShortcutHandler,
 		std::function<bool(EEditorCommandId)> InCommandHandler);
@@ -36,6 +37,8 @@ public:
 		bool* InShowWorldSettings,
 		bool* InPIEViewportFullscreenEnabled);
 	virtual void Render(float DeltaTime) override;
+	void ProcessShortcuts();
+	void RenderMenuContents();
 	bool OpenSceneFileDialog(FString& OutFilePath) const;
 	bool SaveSceneFileDialog(FString& OutFilePath) const;
 
@@ -65,6 +68,7 @@ private:
 	bool* bPIEViewportFullscreenEnabled = nullptr;
 	std::function<void(bool)> PIEViewportFullscreenCallback;
 	std::function<void()> BuildGameCallback;
+	std::function<void()> RuntimeUIPreviewOpenCallback;
 	std::function<bool(const FEditorShortcut&)> ActiveShortcutHandler;
 	std::function<bool(EEditorCommandId)> ActiveCommandHandler;
 	std::function<bool()> ActiveMenuRenderer;

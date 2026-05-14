@@ -50,9 +50,11 @@ public:
 	void OpenMaterialAsset(UMaterialInterface* Material);
 	void OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex);
 	void OpenCurveAsset(const FString& CurvePath);
+	void OpenRuntimeUIPreviewAsset(const FString& RmlPath = "");
 	void OpenViewer(FEditorViewer* Viewer);
 	void RequestDockViewer(FEditorViewer* Viewer);
 	void RenderViewerToolbarControls(FEditorViewer* Viewer);
+	ID3D11ShaderResourceView* GetHomeIconResource() const { return IconResources.HomeIcon; }
     void FlushOpenViewerWidgets();
     void CloseViewer(FEditorViewer* Viewer);
     void FlushClosedViewerWidgets();
@@ -95,6 +97,7 @@ private:
 	void BuildActiveEditorCommandList(FEditorCommandList& OutCommands);
 	bool ExecuteActiveEditorShortcut(const FEditorShortcut& Shortcut);
 	bool ExecuteActiveEditorCommand(EEditorCommandId CommandId);
+	void RenderApplicationChrome(float DeltaTime);
 	bool RenderActiveDocumentMainMenu();
 	void RenderToolbarAndDock(float DeltaTime);
 	void RenderMainViewport(float DeltaTime);
@@ -103,6 +106,7 @@ private:
 	bool IsLevelEditorTabActive() const;
 	FEditorViewerWindowWidget* FindViewerWidgetForTab(const FEditorTabId& TabId) const;
 	void RenderActiveViewerDocument(float DeltaTime);
+	void RenderRuntimeUIPreviewDocument(float DeltaTime);
 	void UpdateConsoleDrawerAnimation(float EffectiveDeltaTime);
 	void RenderLateFrameOverlays(float DeltaTime, float EffectiveDeltaTime, bool bDrawEditorPanels);
 	void EndImGuiFrame();
@@ -133,6 +137,7 @@ private:
 	void RenderViewportMenuBarForIndex(int32 ViewportIndex);
 	void RenderViewportIconToolbarForIndex(int32 ViewportIndex);
 	bool SpawnStaticMeshFromContentPath(const FString& PayloadPath, int32 ViewportIndex, float LocalX, float LocalY);
+	bool SpawnSkeletalMeshFromContentPath(const FString& PayloadPath, int32 ViewportIndex, float LocalX, float LocalY);
 	bool SpawnPrefabFromContentPath(const FString& PayloadPath, int32 ViewportIndex, float LocalX, float LocalY);
 	void HandleContentBrowserViewportDrop();
 	bool DrawViewportTextButton(const char* Id, const char* Label, bool bPairFirst = false, bool bPairSecond = false);

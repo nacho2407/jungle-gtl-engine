@@ -65,6 +65,7 @@ private:
 	FDirNode BuildDirectoryTree(const std::filesystem::path& DirPath) const;
 	TArray<FContentItem> ReadDirectory(const std::filesystem::path& DirPath) const;
 	void DrawBrowserContents();
+	void DrawFloatingWindowChrome(bool& bOpen);
 	void DrawToolbar();
 	void DrawDirectoryNode(const FDirNode& Node);
 	void DrawContentGrid();

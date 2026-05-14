@@ -410,7 +410,8 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
         ShowFlags.bShadow = false;
         ShowFlags.bGammaCorrection = false;
         ShowFlags.GammaValue = Settings.ShowFlags.GammaValue;
-        const EViewMode ViewMode = EViewMode::Lit_BlinnPhong;
+        const FEditorViewportState* ViewportState = VC->GetViewportState();
+        const EViewMode ViewMode = ViewportState ? ViewportState->ViewMode : EViewMode::Lit_BlinnPhong;
 
         const FViewportCamera* Camera = VC->GetRenderCamera();
         if (!Camera)
@@ -423,12 +424,12 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
             Camera->GetFarPlane());
 
         Bus.SetRenderSettings(ViewMode, ShowFlags);
-        Bus.SetLightCullMode(ELightCullMode::None);
+        Bus.SetLightCullMode(ViewportState ? ViewportState->LightCullMode : ELightCullMode::None);
         Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
         Bus.SetViewportSize(FVector2((float)Rect.Width, (float)Rect.Height));
         Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
         Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
-        Bus.SetCascadeVis(VC->GetViewportState()->bShowCascadeVis);
+        Bus.SetCascadeVis(ViewportState ? ViewportState->bShowCascadeVis : false);
 
         // Sandevistan 유지
         if (World->IsSandervistanActivated())

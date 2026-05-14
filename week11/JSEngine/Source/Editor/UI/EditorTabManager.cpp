@@ -34,6 +34,26 @@ FString MakeEditorViewerTabLabel(const FString& ViewerFileName)
 	return SlashIndex == FString::npos ? ViewerFileName : ViewerFileName.substr(SlashIndex + 1);
 }
 
+FEditorTabId MakeRuntimeUIPreviewTabId()
+{
+	FEditorTabId TabId;
+	TabId.Kind = EEditorTabKind::RuntimeUIPreview;
+	TabId.PayloadId = "__RuntimeUIPreview";
+	return TabId;
+}
+
+FString MakeRuntimeUIPreviewTabLabel(const FString& DocumentPath)
+{
+	if (DocumentPath.empty())
+	{
+		return "Runtime UI Preview";
+	}
+
+	const size_t SlashIndex = DocumentPath.find_last_of("/\\");
+	const FString FileName = SlashIndex == FString::npos ? DocumentPath : DocumentPath.substr(SlashIndex + 1);
+	return FileName.empty() ? "Runtime UI Preview" : FileName;
+}
+
 void FEditorTabManager::ResetToLevelEditor()
 {
 	Tabs.clear();
@@ -102,6 +122,18 @@ bool FEditorTabManager::SetActiveTab(const FEditorTabId& Id)
 	}
 
 	ActiveTabIndex = Index;
+	return true;
+}
+
+bool FEditorTabManager::SetTabLabel(const FEditorTabId& Id, const FString& Label)
+{
+	const int32 Index = FindTabIndex(Id);
+	if (Index < 0)
+	{
+		return false;
+	}
+
+	Tabs[Index].Label = Label;
 	return true;
 }
 

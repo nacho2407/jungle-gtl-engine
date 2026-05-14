@@ -11,6 +11,19 @@
 // ImGui Win32 메시지 핸들러
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, unsigned int Msg, WPARAM wParam, LPARAM lParam);
 
+namespace
+{
+int32 GetResizeBorderThicknessX()
+{
+	return GetSystemMetrics(SM_CXFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER);
+}
+
+int32 GetResizeBorderThicknessY()
+{
+	return GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER);
+}
+}
+
 LRESULT CALLBACK FWindowsApplication::StaticWndProc(HWND hWnd, unsigned int Msg, WPARAM wParam, LPARAM lParam)
 {
 	FWindowsApplication* App = reinterpret_cast<FWindowsApplication*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
@@ -32,6 +45,12 @@ LRESULT CALLBACK FWindowsApplication::StaticWndProc(HWND hWnd, unsigned int Msg,
 
 LRESULT FWindowsApplication::WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam, LPARAM lParam)
 {
+	LRESULT CustomChromeResult = 0;
+	if (HandleCustomChromeMessage(hWnd, Msg, wParam, lParam, CustomChromeResult))
+	{
+		return CustomChromeResult;
+	}
+
 	if (Msg == WM_CHAR)
 	{
 		const uint32_t Codepoint = static_cast<uint32_t>(wParam);
@@ -174,7 +193,7 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 
 	RegisterClassW(&WndClass);
 
-	const DWORD WindowStyle = WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW;
+	const DWORD WindowStyle = WS_OVERLAPPEDWINDOW & ~WS_CAPTION;
 	RECT WindowRect = { 0, 0, 1920, 1080 };
 	AdjustWindowRectEx(&WindowRect, WindowStyle, FALSE, 0);
 
@@ -182,7 +201,7 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 		0,
 		WindowClass,
 		Title,
-		WindowStyle,
+		WindowStyle | WS_VISIBLE,
 		CW_USEDEFAULT, CW_USEDEFAULT,
 		WindowRect.right - WindowRect.left,
 		WindowRect.bottom - WindowRect.top,
@@ -199,6 +218,15 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 		SendMessageW(HWindow, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(WindowIcon));
 	}
 
+	SetWindowPos(
+		HWindow,
+		nullptr,
+		0,
+		0,
+		0,
+		0,
+		SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+
 	RAWINPUTDEVICE RawMouseDevice = {};
 	RawMouseDevice.usUsagePage = 0x01;
 	RawMouseDevice.usUsage = 0x02;
@@ -206,7 +234,7 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 	RawMouseDevice.hwndTarget = HWindow;
 	RegisterRawInputDevices(&RawMouseDevice, 1, sizeof(RAWINPUTDEVICE));
 
-	Window.Initialize(HWindow);
+	Window.Initialize(HWindow, Title);
 	return true;
 }
 
@@ -232,4 +260,136 @@ void FWindowsApplication::Destroy()
 	{
 		DestroyWindow(Window.GetHWND());
 	}
+}
+
+void FWindowsApplication::SetCustomTitleBarMetrics(int32 Height, const std::vector<FWindowHitTestRect>& InteractiveRects)
+{
+	Window.SetCustomTitleBarMetrics(Height, InteractiveRects);
+}
+
+void FWindowsApplication::MinimizeWindow()
+{
+	Window.Minimize();
+}
+
+void FWindowsApplication::ToggleMaximizeWindow()
+{
+	Window.ToggleMaximize();
+}
+
+void FWindowsApplication::CloseWindow()
+{
+	Window.Close();
+}
+
+bool FWindowsApplication::IsWindowMaximized() const
+{
+	return Window.IsWindowMaximized();
+}
+
+const wchar_t* FWindowsApplication::GetWindowTitle() const
+{
+	return Window.GetTitle().c_str();
+}
+
+bool FWindowsApplication::HandleCustomChromeMessage(HWND hWnd, unsigned int Msg, WPARAM wParam, LPARAM lParam, LRESULT& OutResult)
+{
+	switch (Msg)
+	{
+	case WM_NCCALCSIZE:
+		OutResult = 0;
+		return true;
+	case WM_NCACTIVATE:
+		OutResult = 1;
+		return true;
+	case WM_GETMINMAXINFO:
+		UpdateMaximizedBounds(hWnd, reinterpret_cast<MINMAXINFO*>(lParam));
+		OutResult = 0;
+		return true;
+	case WM_NCHITTEST:
+		OutResult = HitTestCustomChrome(hWnd, lParam);
+		return true;
+	default:
+		return false;
+	}
+}
+
+LRESULT FWindowsApplication::HitTestCustomChrome(HWND hWnd, LPARAM lParam) const
+{
+	POINT CursorPosition = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+	POINT ClientPosition = CursorPosition;
+	ScreenToClient(hWnd, &ClientPosition);
+
+	RECT ClientRect = {};
+	GetClientRect(hWnd, &ClientRect);
+
+	const bool bCanResize =
+		!Window.IsWindowMaximized() &&
+		((GetWindowLongW(hWnd, GWL_STYLE) & WS_THICKFRAME) != 0);
+	if (bCanResize)
+	{
+		const int32 ResizeBorderX = GetResizeBorderThicknessX();
+		const int32 ResizeBorderY = GetResizeBorderThicknessY();
+
+		const bool bOnLeft = ClientPosition.x >= 0 && ClientPosition.x < ResizeBorderX;
+		const bool bOnRight = ClientPosition.x < ClientRect.right && ClientPosition.x >= ClientRect.right - ResizeBorderX;
+		const bool bOnTop = ClientPosition.y >= 0 && ClientPosition.y < ResizeBorderY;
+		const bool bOnBottom = ClientPosition.y < ClientRect.bottom && ClientPosition.y >= ClientRect.bottom - ResizeBorderY;
+
+		if (bOnTop && bOnLeft) return HTTOPLEFT;
+		if (bOnTop && bOnRight) return HTTOPRIGHT;
+		if (bOnBottom && bOnLeft) return HTBOTTOMLEFT;
+		if (bOnBottom && bOnRight) return HTBOTTOMRIGHT;
+		if (bOnLeft) return HTLEFT;
+		if (bOnRight) return HTRIGHT;
+		if (bOnTop) return HTTOP;
+		if (bOnBottom) return HTBOTTOM;
+	}
+
+	const FCustomTitleBarState& TitleBarState = Window.GetCustomTitleBarState();
+	if (TitleBarState.TitleBarHeight > 0 &&
+		ClientPosition.y >= 0 &&
+		ClientPosition.y < TitleBarState.TitleBarHeight)
+	{
+		for (const FWindowHitTestRect& Rect : TitleBarState.InteractiveRects)
+		{
+			if (Rect.Contains(ClientPosition.x, ClientPosition.y))
+			{
+				return HTCLIENT;
+			}
+		}
+		return HTCAPTION;
+	}
+
+	return HTCLIENT;
+}
+
+void FWindowsApplication::UpdateMaximizedBounds(HWND hWnd, MINMAXINFO* InOutMinMaxInfo) const
+{
+	if (!InOutMinMaxInfo)
+	{
+		return;
+	}
+
+	HMONITOR Monitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+	if (!Monitor)
+	{
+		return;
+	}
+
+	MONITORINFO MonitorInfo = {};
+	MonitorInfo.cbSize = sizeof(MONITORINFO);
+	if (!GetMonitorInfoW(Monitor, &MonitorInfo))
+	{
+		return;
+	}
+
+	const RECT& MonitorRect = MonitorInfo.rcMonitor;
+	const RECT& WorkRect = MonitorInfo.rcWork;
+
+	InOutMinMaxInfo->ptMaxPosition.x = WorkRect.left - MonitorRect.left;
+	InOutMinMaxInfo->ptMaxPosition.y = WorkRect.top - MonitorRect.top;
+	InOutMinMaxInfo->ptMaxSize.x = WorkRect.right - WorkRect.left;
+	InOutMinMaxInfo->ptMaxSize.y = WorkRect.bottom - WorkRect.top;
+	InOutMinMaxInfo->ptMaxTrackSize = InOutMinMaxInfo->ptMaxSize;
 }

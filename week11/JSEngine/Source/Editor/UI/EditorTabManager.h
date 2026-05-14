@@ -10,6 +10,7 @@ enum class EEditorTabKind : uint8
 	MaterialEditor,
 	CurveEditor,
 	ActorSequencer,
+	RuntimeUIPreview,
 };
 
 struct FEditorTabId
@@ -31,6 +32,8 @@ struct FEditorTabEntry
 
 FEditorTabId MakeEditorViewerTabId(const FString& ViewerFileName, const void* FallbackAddress = nullptr);
 FString MakeEditorViewerTabLabel(const FString& ViewerFileName);
+FEditorTabId MakeRuntimeUIPreviewTabId();
+FString MakeRuntimeUIPreviewTabLabel(const FString& DocumentPath);
 
 class FEditorTabManager
 {
@@ -40,6 +43,7 @@ public:
 	const FEditorTabEntry& OpenOrFocusTab(const FEditorTabId& Id, const FString& Label, bool bCanClose = true);
 	bool CloseTab(const FEditorTabId& Id);
 	bool SetActiveTab(const FEditorTabId& Id);
+	bool SetTabLabel(const FEditorTabId& Id, const FString& Label);
 
 	const FEditorTabEntry* GetActiveTab() const;
 	EEditorTabKind GetActiveTabKind() const;

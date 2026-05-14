@@ -114,7 +114,6 @@ void FEditorMainPanel::CloseConsoleDrawer()
 void FEditorMainPanel::OpenContentBrowser()
 {
     PanelVisibility.bShowContentBrowser = true;
-    Widgets.ContentBrowserWidget.OpenAssetRoot();
     Widgets.ContentBrowserWidget.SetVisible(true);
     CloseConsoleDrawer();
 }

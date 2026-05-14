@@ -46,6 +46,17 @@ IMGUI_IMPL_API void     ImGui_ImplWin32_EnableDpiAwareness();
 IMGUI_IMPL_API float    ImGui_ImplWin32_GetDpiScaleForHwnd(void* hwnd);       // HWND hwnd
 IMGUI_IMPL_API float    ImGui_ImplWin32_GetDpiScaleForMonitor(void* monitor); // HMONITOR monitor
 
+struct ImGui_ImplWin32_CustomChromeRect
+{
+    int Left;
+    int Top;
+    int Right;
+    int Bottom;
+};
+
+IMGUI_IMPL_API void     ImGui_ImplWin32_SetCustomChrome(void* hwnd, int title_bar_height, const ImGui_ImplWin32_CustomChromeRect* interactive_rects, int interactive_rect_count);
+IMGUI_IMPL_API void     ImGui_ImplWin32_ClearCustomChrome(void* hwnd);
+
 // Transparency related helpers (optional) [experimental]
 // - Use to enable alpha compositing transparency with the desktop.
 // - Use together with e.g. clearing your framebuffer with zero-alpha.
