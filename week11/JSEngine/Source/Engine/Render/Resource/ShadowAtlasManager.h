@@ -215,6 +215,7 @@ struct FShadowAtlasCube
         SrvDesc.TextureCubeArray.NumCubes = MAX_SHADOW_CUBES;
         hr = Device->CreateShaderResourceView(CubeShadowMap.Get(), &SrvDesc, CubeSRV.ReleaseAndGetAddressOf());
     }
+    void Release();
 
 	bool AllocateCube(int32& OutCubeIndex) {
 		if (CurrentCubeCount < MAX_SHADOW_CUBES)
@@ -376,6 +377,7 @@ struct FShadowAtlas
         hr = Device->CreateUnorderedAccessView(BlurIntermediateTexture.Get(), &BlurUAVDesc, BlurIntermediateUAV.ReleaseAndGetAddressOf());
 
 	}
+    void Release();
 
     bool IsValid() const { return ShadowMapAtlas != nullptr && ShadowDSV != nullptr && ShadowSRV != nullptr; }
     bool IsValidVSM() const { return VarianceShadowTexture != nullptr && VarianceShadowRTV != nullptr && VarianceShadowSRV != nullptr && VarianceShadowUAV != nullptr; }

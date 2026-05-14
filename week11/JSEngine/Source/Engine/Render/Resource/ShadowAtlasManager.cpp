@@ -21,6 +21,38 @@ namespace
 	}
 }
 
+void FShadowAtlas::Release()
+{
+	ShadowMapAtlas.Reset();
+    ShadowDSV.Reset();
+    ShadowSRV.Reset();
+
+    VarianceShadowTexture.Reset();
+    VarianceShadowRTV.Reset();
+    VarianceShadowSRV.Reset();
+    VarianceShadowUAV.Reset();
+
+    BlurIntermediateTexture.Reset();
+    BlurIntermediateSRV.Reset();
+    BlurIntermediateUAV.Reset();
+}
+
+void FShadowAtlasCube::Release()
+{	
+	CubeShadowMap.Reset();
+    CubeSRV.Reset();
+
+	for (int i = 0; i < MAX_SHADOW_CUBES; i++)
+	{
+		for (int j = 0; j < CUBE_FACE_COUNT; j++)
+		{
+            CubeDSV[i][j].Reset();
+            CubeDebugTexture[i][j].Reset();
+            CubeDebugSRV[i][j].Reset();
+		}
+	}
+}
+
 void FShadowAtlasManager::Initialize(ID3D11Device* InDevice)
 {
 	if (InDevice == nullptr) return;
@@ -38,6 +70,14 @@ void FShadowAtlasManager::Release()
 		delete RootNode;
 		RootNode = nullptr;
 	}
+
+	Device.Reset();
+    ShadowMap.Reset();
+    ShadowDSV.Reset();
+    ShadowSRV.Reset();
+
+	ShadowMapAtlas.Release();
+	ShadowCubeMapArray.Release();
 }
 
 bool FShadowAtlasManager::AllocateTile(int32 ResolutionScale, FShadowAtlasTile& OutTile)
