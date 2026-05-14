@@ -391,18 +391,18 @@ void InputSystem::SetCursorVisibility(bool bVisible)
 {
     if (bVisible)
     {
-        while (LogShowCursorCall("InputSystem::SetCursorVisibility(true)", TRUE) < 0) {}
-        while (LogShowCursorCall("InputSystem::SetCursorVisibility(true)", FALSE) >= 0) {}
-        LogShowCursorCall("InputSystem::SetCursorVisibility(true)", TRUE);
+        // while (LogShowCursorCall("InputSystem::SetCursorVisibility(true)", TRUE) < 0) {}
+        // while (LogShowCursorCall("InputSystem::SetCursorVisibility(true)", FALSE) >= 0) {}
+        // LogShowCursorCall("InputSystem::SetCursorVisibility(true)", TRUE);
         SetCursor(LoadCursorW(nullptr, IDC_ARROW));
         bIsCursorVisible = true;
     }
     else
     {
-        while (LogShowCursorCall("InputSystem::SetCursorVisibility(false)", TRUE) < 0) {}
-        while (LogShowCursorCall("InputSystem::SetCursorVisibility(false)", FALSE) >= 0) {}
-        LogShowCursorCall("InputSystem::SetCursorVisibility(false)", TRUE);
-        LogShowCursorCall("InputSystem::SetCursorVisibility(false)", FALSE);
+        // while (LogShowCursorCall("InputSystem::SetCursorVisibility(false)", TRUE) < 0) {}
+        // while (LogShowCursorCall("InputSystem::SetCursorVisibility(false)", FALSE) >= 0) {}
+        // LogShowCursorCall("InputSystem::SetCursorVisibility(false)", TRUE);
+        // LogShowCursorCall("InputSystem::SetCursorVisibility(false)", FALSE);
         bIsCursorVisible = false;
     }
 }
