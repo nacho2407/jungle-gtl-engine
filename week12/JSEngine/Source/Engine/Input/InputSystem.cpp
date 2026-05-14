@@ -19,10 +19,27 @@ int32 LogShowCursorCall(const char* Caller, BOOL bShow)
 void InputSystem::Tick()
 {
     // 메인 창 또는 ImGui platform window 등 현재 프로세스 창에 포커스가 없으면 입력 상태 해제.
-    if (OwnerHWnd && !InputWindowFocus::IsForegroundWindowOwnedByCurrentProcess())
+    const bool bHasInputFocus = !OwnerHWnd || InputWindowFocus::IsForegroundWindowOwnedByCurrentProcess();
+    if (!bHasInputFocus)
     {
-        HandleOutOfFocusTick();
+        if (bHadInputFocus)
+        {
+            HandleOutOfFocusTick();
+            bHadInputFocus = false;
+        }
         return;
+    }
+
+    if (!bHadInputFocus)
+    {
+        bHadInputFocus = true;
+		// 뷰포트를 눌렀을 때 카메라 델타가 튀지 않도록 하기 위한 방어 코드
+        GetCursorPos(&MousePos);
+        PrevMousePos = MousePos;
+        FrameMouseDeltaX = 0;
+        FrameMouseDeltaY = 0;
+        RawMouseDeltaAccumX = 0;
+        RawMouseDeltaAccumY = 0;
     }
 
     SampleKeyStates();
