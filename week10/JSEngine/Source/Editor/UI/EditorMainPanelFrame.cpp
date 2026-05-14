@@ -53,7 +53,7 @@ void FEditorMainPanel::HandleContentBrowserShortcut()
 void FEditorMainPanel::RenderToolbarAndDock(float DeltaTime)
 {
     const bool bContentBrowserVisibleBeforeMenu = PanelVisibility.bShowContentBrowser;
-    Widgets.ToolbarWidget.Render(DeltaTime);
+    RenderApplicationChrome(DeltaTime);
     if (!bContentBrowserVisibleBeforeMenu && PanelVisibility.bShowContentBrowser)
     {
         OpenContentBrowser();
@@ -75,6 +75,12 @@ void FEditorMainPanel::RenderMainViewport(float DeltaTime)
     {
         RenderViewportHostWindow();
         Widgets.ViewportOverlayWidget.RenderViewportFrameOverlays(DeltaTime);
+        return;
+    }
+
+    if (EditorTabs.GetActiveTabKind() == EEditorTabKind::RuntimeUIPreview)
+    {
+        RenderRuntimeUIPreviewDocument(DeltaTime);
         return;
     }
 
@@ -112,10 +118,6 @@ void FEditorMainPanel::RenderEditorPanelWindows(float DeltaTime, bool bDrawEdito
     if (bDrawEditorPanels && bLevelEditorTabActive)
     {
         RenderUndoHistoryPanel(DeltaTime);
-    }
-    if (bDrawEditorPanels && bLevelEditorTabActive && PanelVisibility.bShowRuntimeUIPreview)
-    {
-        Widgets.RuntimeUIPreviewWidget.Render(DeltaTime);
     }
     if (bDrawEditorPanels && PanelVisibility.bShowProjectSettings)
     {

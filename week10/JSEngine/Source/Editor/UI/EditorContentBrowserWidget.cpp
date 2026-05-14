@@ -2,6 +2,7 @@
 
 #include "Editor/EditorEngine.h"
 #include "Editor/EditorRenderPipeline.h"
+#include "Editor/UI/EditorChromeConstants.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Asset/CurveFloatAsset.h"
@@ -11,11 +12,13 @@
 #include "Render/Resource/Material.h"
 #include "Render/Renderer/Renderer.h"
 #include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_win32.h"
 
 #include <algorithm>
 #include <cctype>
 #include <d3d11.h>
 #include <fstream>
+#include <functional>
 #include <Windows.h>
 #include <shellapi.h>
 
@@ -74,6 +77,154 @@ FString ToLower(FString Value)
 	std::transform(Value.begin(), Value.end(), Value.begin(),
 		[](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
 	return Value;
+}
+
+void ApplyContentBrowserWindowClass()
+{
+	ImGuiWindowClass WindowClass;
+	WindowClass.ClassId = 0x4A534342u; // "JSCB" - content browser detached window class
+	WindowClass.ViewportFlagsOverrideSet =
+		ImGuiViewportFlags_NoAutoMerge |
+		ImGuiViewportFlags_NoDecoration;
+	WindowClass.ViewportFlagsOverrideClear = ImGuiViewportFlags_NoTaskBarIcon;
+	ImGui::SetNextWindowClass(&WindowClass);
+}
+
+HWND GetCurrentViewportHwnd()
+{
+	ImGuiViewport* Viewport = ImGui::GetWindowViewport();
+	if (!Viewport)
+	{
+		return nullptr;
+	}
+	return static_cast<HWND>(Viewport->PlatformHandleRaw ? Viewport->PlatformHandleRaw : Viewport->PlatformHandle);
+}
+
+ImGui_ImplWin32_CustomChromeRect MakeChromeRect(const ImVec2& Min, const ImVec2& Max, const ImVec2& WindowPos)
+{
+	return ImGui_ImplWin32_CustomChromeRect{
+		static_cast<int>(Min.x - WindowPos.x),
+		static_cast<int>(Min.y - WindowPos.y),
+		static_cast<int>(Max.x - WindowPos.x),
+		static_cast<int>(Max.y - WindowPos.y)
+	};
+}
+
+void AddChromeRect(ImGui_ImplWin32_CustomChromeRect* Rects, int& Count, const ImVec2& Min, const ImVec2& Max, const ImVec2& WindowPos)
+{
+	if (Count >= 16)
+	{
+		return;
+	}
+	Rects[Count++] = MakeChromeRect(Min, Max, WindowPos);
+}
+
+bool IsViewportMaximized(HWND Hwnd)
+{
+	return Hwnd && ::IsZoomed(Hwnd) != FALSE;
+}
+
+void ToggleViewportMaximize(HWND Hwnd)
+{
+	if (!Hwnd)
+	{
+		return;
+	}
+	::PostMessageW(Hwnd, WM_SYSCOMMAND, IsViewportMaximized(Hwnd) ? SC_RESTORE : SC_MAXIMIZE, 0);
+}
+
+bool DrawContentBrowserWindowButton(
+	const char* Id,
+	const char* Tooltip,
+	const ImVec2& Size,
+	const ImVec4& HoverColor,
+	const ImVec4& ActiveColor,
+	const std::function<void(ImDrawList*, const ImVec2&, const ImVec2&, ImU32)>& DrawIcon)
+{
+	ImGui::PushID(Id);
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, HoverColor);
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ActiveColor);
+
+	const bool bClicked = ImGui::InvisibleButton("##Button", Size);
+	const bool bHovered = ImGui::IsItemHovered();
+	const bool bActive = ImGui::IsItemActive();
+	const ImVec2 Min = ImGui::GetItemRectMin();
+	const ImVec2 Max = ImGui::GetItemRectMax();
+	const ImU32 BgColor = ImGui::GetColorU32(
+		bActive ? ActiveColor : (bHovered ? HoverColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f)));
+
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	DrawList->AddRectFilled(Min, Max, BgColor, 0.0f);
+	DrawIcon(DrawList, Min, Max, ImGui::GetColorU32(ImVec4(0.82f, 0.85f, 0.90f, 1.0f)));
+
+	if (bHovered && Tooltip)
+	{
+		ImGui::SetTooltip("%s", Tooltip);
+	}
+
+	ImGui::PopStyleColor(3);
+	ImGui::PopID();
+	return bClicked;
+}
+
+bool DrawContentBrowserArrowButton(
+	const char* Id,
+	const char* Tooltip,
+	const ImVec2& Size,
+	bool bPointUp,
+	bool bEnabled)
+{
+	ImGui::PushID(Id);
+	if (!bEnabled)
+	{
+		ImGui::BeginDisabled();
+	}
+
+	const bool bClicked = ImGui::InvisibleButton("##ArrowButton", Size) && bEnabled;
+	const bool bHovered = bEnabled && ImGui::IsItemHovered();
+	const bool bActive = bEnabled && ImGui::IsItemActive();
+	const ImVec2 Min = ImGui::GetItemRectMin();
+	const ImVec2 Max = ImGui::GetItemRectMax();
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	const ImVec4 BgColor = bActive
+		? ImVec4(0.20f, 0.24f, 0.31f, 1.0f)
+		: (bHovered ? ImVec4(0.17f, 0.20f, 0.26f, 1.0f) : ImVec4(0.14f, 0.16f, 0.20f, 1.0f));
+	const ImVec4 BorderColor = bEnabled
+		? ImVec4(0.24f, 0.28f, 0.35f, 1.0f)
+		: ImVec4(0.18f, 0.20f, 0.24f, 1.0f);
+	const ImU32 IconColor = ImGui::GetColorU32(
+		bEnabled ? ImVec4(0.80f, 0.85f, 0.94f, 1.0f) : ImVec4(0.42f, 0.45f, 0.52f, 1.0f));
+
+	DrawList->AddRectFilled(Min, Max, ImGui::GetColorU32(BgColor), 6.0f);
+	DrawList->AddRect(Min, Max, ImGui::GetColorU32(BorderColor), 6.0f);
+
+	const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
+	if (bPointUp)
+	{
+		DrawList->AddLine(ImVec2(Center.x, Center.y - 5.5f), ImVec2(Center.x - 6.0f, Center.y + 1.0f), IconColor, 1.8f);
+		DrawList->AddLine(ImVec2(Center.x, Center.y - 5.5f), ImVec2(Center.x + 6.0f, Center.y + 1.0f), IconColor, 1.8f);
+		DrawList->AddLine(ImVec2(Center.x, Center.y - 4.0f), ImVec2(Center.x, Center.y + 6.0f), IconColor, 1.8f);
+	}
+	else
+	{
+		DrawList->AddLine(ImVec2(Center.x - 6.0f, Center.y), ImVec2(Center.x + 6.0f, Center.y), IconColor, 1.8f);
+		DrawList->AddLine(ImVec2(Center.x - 6.0f, Center.y), ImVec2(Center.x - 1.0f, Center.y - 5.0f), IconColor, 1.8f);
+		DrawList->AddLine(ImVec2(Center.x - 6.0f, Center.y), ImVec2(Center.x - 1.0f, Center.y + 5.0f), IconColor, 1.8f);
+	}
+
+	if (!bEnabled)
+	{
+		ImGui::EndDisabled();
+	}
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && Tooltip)
+	{
+		ImGui::SetTooltip("%s", Tooltip);
+	}
+
+	ImGui::PopID();
+	return bClicked;
 }
 }
 
@@ -166,6 +317,7 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 	}
 	else
 	{
+		ApplyContentBrowserWindowClass();
 		const float Width = std::min(1040.0f, WorkSize.x - 48.0f);
 		const float Height = std::min(620.0f, WorkSize.y - 96.0f);
 		const ImVec2 WindowPos(
@@ -174,22 +326,32 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		ImGui::SetNextWindowPos(WindowPos, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowSize(ImVec2(Width, Height), ImGuiCond_FirstUseEver);
 	}
-	if (MainViewport)
+	if (bDrawerMode && MainViewport)
 	{
 		ImGui::SetNextWindowViewport(MainViewport->ID);
 	}
 	ImGui::SetNextWindowBgAlpha(0.96f * AnimAlpha);
 
+	int32 PushedStyleVarCount = 0;
 	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, AnimAlpha);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, bDrawerMode ? 0.0f : 8.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 8.0f));
+	++PushedStyleVarCount;
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	++PushedStyleVarCount;
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, bDrawerMode ? ImVec2(10.0f, 8.0f) : ImVec2(0.0f, 0.0f));
+	++PushedStyleVarCount;
+	if (!bDrawerMode)
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(13.0f, 8.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(9.0f, 4.0f));
+		PushedStyleVarCount += 2;
+	}
 
 	bool bOpen = bVisible;
 	const ImGuiWindowFlags Flags =
 		ImGuiWindowFlags_NoDocking |
 		(bDrawerMode
 			? (ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)
-			: ImGuiWindowFlags_NoCollapse);
+			: (ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar));
 	if (!ImGui::Begin(bDrawerMode ? "##EditorContentBrowserDrawer" : "Content Browser", &bOpen, Flags))
 	{
 		BrowserScreenMin = ImGui::GetWindowPos();
@@ -197,7 +359,7 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		bHasBrowserScreenRect = true;
 		bMouseOverBrowser = IsMouseOverBrowser();
 		ImGui::End();
-		ImGui::PopStyleVar(3);
+		ImGui::PopStyleVar(PushedStyleVarCount);
 		bVisible = bOpen;
 		return;
 	}
@@ -209,10 +371,28 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		IsMouseOverBrowser()
 		|| ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
 
-	DrawBrowserContents();
+	if (bDrawerMode)
+	{
+		DrawBrowserContents();
+	}
+	else
+	{
+		DrawFloatingWindowChrome(bOpen);
+		if (bOpen)
+		{
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 8.0f));
+			if (ImGui::BeginChild("##ContentBrowserFloatingBody", ImVec2(0.0f, 0.0f), false))
+			{
+				DrawBrowserContents();
+			}
+			ImGui::EndChild();
+			ImGui::PopStyleVar();
+		}
+	}
 
+	bVisible = bOpen;
 	ImGui::End();
-	ImGui::PopStyleVar(3);
+	ImGui::PopStyleVar(PushedStyleVarCount);
 }
 
 bool FEditorContentBrowserWidget::IsMouseOverBrowser() const
@@ -255,6 +435,11 @@ bool FEditorContentBrowserWidget::ConsumeReleasedDragPayload(FString& OutPayload
 
 void FEditorContentBrowserWidget::DrawBrowserContents()
 {
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) && ImGui::IsMouseClicked(3))
+	{
+		NavigateBack();
+	}
+
 	DrawToolbar();
 	ImGui::Separator();
 
@@ -300,42 +485,224 @@ void FEditorContentBrowserWidget::DrawBrowserContents()
 	DrawRenamePopup();
 }
 
+void FEditorContentBrowserWidget::DrawFloatingWindowChrome(bool& bOpen)
+{
+	if (!ImGui::BeginMenuBar())
+	{
+		return;
+	}
+
+	constexpr float WindowButtonWidth = 48.0f;
+	constexpr float TitleBarHeight = FEditorChromeMetrics::ApplicationTitleBarHeight;
+	constexpr float LogoSize = 28.0f;
+	constexpr float LogoPaddingX = 4.0f;
+	constexpr float MenuLogoGap = 8.0f;
+	constexpr float MenuStartX = LogoPaddingX + LogoSize + MenuLogoGap;
+
+	HWND ViewportHwnd = GetCurrentViewportHwnd();
+	const ImVec2 WindowPos = ImGui::GetWindowPos();
+	const ImVec2 WindowSize = ImGui::GetWindowSize();
+	const float ButtonStartX = std::max(0.0f, WindowSize.x - WindowButtonWidth * 3.0f);
+
+	ImGui_ImplWin32_CustomChromeRect ChromeRects[16] = {};
+	int ChromeRectCount = 0;
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	ID3D11ShaderResourceView* HomeIcon = EditorEngine ? EditorEngine->GetMainPanel().GetHomeIconResource() : nullptr;
+	const ImVec2 LogoMin(WindowPos.x + LogoPaddingX, WindowPos.y + (TitleBarHeight - LogoSize) * 0.5f);
+	const ImVec2 LogoMax(LogoMin.x + LogoSize, LogoMin.y + LogoSize);
+	if (HomeIcon)
+	{
+		DrawList->AddImage(reinterpret_cast<ImTextureID>(HomeIcon), LogoMin, LogoMax);
+	}
+	else
+	{
+		DrawList->AddRectFilled(LogoMin, LogoMax, ImGui::GetColorU32(ImVec4(0.95f, 0.78f, 0.12f, 1.0f)), 0.0f);
+		DrawList->AddText(
+			ImVec2(LogoMin.x + 4.0f, LogoMin.y + 5.0f),
+			ImGui::GetColorU32(ImVec4(0.08f, 0.09f, 0.11f, 1.0f)),
+			"JS");
+	}
+	AddChromeRect(ChromeRects, ChromeRectCount, LogoMin, LogoMax, WindowPos);
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.0f, 12.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(14.0f, 8.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
+
+	ImGui::SetCursorPosX(MenuStartX);
+	if (ImGui::BeginMenu("File"))
+	{
+		if (ImGui::MenuItem("Close"))
+		{
+			bOpen = false;
+		}
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("Edit"))
+	{
+		if (ImGui::MenuItem("Rename", "F2", false, !SelectedPath.empty()))
+		{
+			RequestRenameSelectedItem();
+		}
+		if (ImGui::MenuItem("Delete", "Del", false, !SelectedPath.empty()))
+		{
+			DeleteSelectedItem();
+		}
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("Asset"))
+	{
+		if (ImGui::MenuItem("Refresh"))
+		{
+			Refresh();
+		}
+		ImGui::Separator();
+		if (ImGui::MenuItem("Go to Asset Root"))
+		{
+			OpenAssetRoot();
+		}
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("Window"))
+	{
+		if (ImGui::MenuItem("Drawer Mode"))
+		{
+			PresentationMode = EPresentationMode::Drawer;
+		}
+		if (ImGui::MenuItem("Close"))
+		{
+			bOpen = false;
+		}
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("Help"))
+	{
+		ImGui::TextDisabled("Content Browser");
+		ImGui::TextDisabled("Double-click assets to open, or drag them into the viewport.");
+		ImGui::EndMenu();
+	}
+
+	const float MenuEndX = std::min(ButtonStartX, ImGui::GetCursorScreenPos().x - WindowPos.x + 8.0f);
+	AddChromeRect(
+		ChromeRects,
+		ChromeRectCount,
+		ImVec2(WindowPos.x, WindowPos.y),
+		ImVec2(WindowPos.x + MenuEndX, WindowPos.y + TitleBarHeight),
+		WindowPos);
+
+	const char* Title = "Content Browser";
+	const ImVec2 TitleSize = ImGui::CalcTextSize(Title);
+	const float TitleX = std::clamp(
+		MenuEndX + (ButtonStartX - MenuEndX - TitleSize.x) * 0.5f,
+		MenuEndX + 8.0f,
+		std::max(MenuEndX + 8.0f, ButtonStartX - TitleSize.x - 8.0f));
+	DrawList->AddText(
+		ImVec2(WindowPos.x + TitleX, WindowPos.y + (TitleBarHeight - TitleSize.y) * 0.5f),
+		ImGui::GetColorU32(ImVec4(0.72f, 0.76f, 0.84f, 1.0f)),
+		Title);
+
+	const ImVec2 ButtonSize(WindowButtonWidth, TitleBarHeight);
+	ImGui::SetCursorPos(ImVec2(ButtonStartX, 0.0f));
+	if (DrawContentBrowserWindowButton(
+		"ContentBrowserMinimize",
+		"Minimize",
+		ButtonSize,
+		ImVec4(0.14f, 0.16f, 0.20f, 1.0f),
+		ImVec4(0.18f, 0.20f, 0.25f, 1.0f),
+		[](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
+		{
+			const float Y = (Min.y + Max.y) * 0.5f + 4.0f;
+			InDrawList->AddLine(ImVec2(Min.x + 17.0f, Y), ImVec2(Max.x - 17.0f, Y), Color, 1.6f);
+		}))
+	{
+		if (ViewportHwnd)
+		{
+			::PostMessageW(ViewportHwnd, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+		}
+	}
+	AddChromeRect(ChromeRects, ChromeRectCount, ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), WindowPos);
+
+	ImGui::SameLine(0.0f, 0.0f);
+	if (DrawContentBrowserWindowButton(
+		"ContentBrowserMaximize",
+		IsViewportMaximized(ViewportHwnd) ? "Restore" : "Maximize",
+		ButtonSize,
+		ImVec4(0.14f, 0.16f, 0.20f, 1.0f),
+		ImVec4(0.18f, 0.20f, 0.25f, 1.0f),
+		[ViewportHwnd](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
+		{
+			const bool bMaximized = IsViewportMaximized(ViewportHwnd);
+			const ImVec2 A(Min.x + 17.0f, Min.y + 12.0f);
+			const ImVec2 B(Max.x - 17.0f, Max.y - 12.0f);
+			if (bMaximized)
+			{
+				InDrawList->AddRect(ImVec2(A.x + 3.0f, A.y), ImVec2(B.x + 3.0f, B.y - 3.0f), Color, 0.0f, 0, 1.4f);
+				InDrawList->AddRect(ImVec2(A.x, A.y + 3.0f), ImVec2(B.x, B.y), Color, 0.0f, 0, 1.4f);
+			}
+			else
+			{
+				InDrawList->AddRect(A, B, Color, 0.0f, 0, 1.4f);
+			}
+		}))
+	{
+		ToggleViewportMaximize(ViewportHwnd);
+	}
+	AddChromeRect(ChromeRects, ChromeRectCount, ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), WindowPos);
+
+	ImGui::SameLine(0.0f, 0.0f);
+	if (DrawContentBrowserWindowButton(
+		"ContentBrowserClose",
+		"Close",
+		ButtonSize,
+		ImVec4(0.62f, 0.18f, 0.20f, 1.0f),
+		ImVec4(0.46f, 0.10f, 0.13f, 1.0f),
+		[](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
+		{
+			InDrawList->AddLine(ImVec2(Min.x + 17.0f, Min.y + 12.0f), ImVec2(Max.x - 17.0f, Max.y - 12.0f), Color, 1.6f);
+			InDrawList->AddLine(ImVec2(Max.x - 17.0f, Min.y + 12.0f), ImVec2(Min.x + 17.0f, Max.y - 12.0f), Color, 1.6f);
+		}))
+	{
+		bOpen = false;
+	}
+	AddChromeRect(ChromeRects, ChromeRectCount, ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), WindowPos);
+
+	ImGui_ImplWin32_SetCustomChrome(ViewportHwnd, static_cast<int>(TitleBarHeight), ChromeRects, ChromeRectCount);
+	ImGui::PopStyleVar(3);
+	ImGui::EndMenuBar();
+}
+
 void FEditorContentBrowserWidget::DrawToolbar()
 {
 	{
 	const float ItemSpacing = ImGui::GetStyle().ItemSpacing.x;
-	if (ImGui::SmallButton("Refresh"))
+	constexpr float ToolbarButtonHeight = 28.0f;
+	constexpr float ArrowButtonWidth = 34.0f;
+	const ImVec2 RefreshButtonSize(68.0f, ToolbarButtonHeight);
+	const ImVec2 ModeButtonSize(116.0f, ToolbarButtonHeight);
+	const ImVec2 ArrowButtonSize(ArrowButtonWidth, ToolbarButtonHeight);
+
+	if (ImGui::Button("Refresh", RefreshButtonSize))
 	{
 		Refresh();
 	}
 	ImGui::SameLine();
-	if (ImGui::SmallButton(IsDrawerMode() ? "Window Mode" : "Drawer Mode"))
+	if (ImGui::Button(IsDrawerMode() ? "Window Mode" : "Drawer Mode", ModeButtonSize))
 	{
 		PresentationMode = IsDrawerMode() ? EPresentationMode::FloatingWindow : EPresentationMode::Drawer;
 	}
 	ImGui::SameLine();
-	ImGui::BeginDisabled(BackHistory.empty());
-	if (ImGui::SmallButton("<"))
+	if (DrawContentBrowserArrowButton("Back", "Back", ArrowButtonSize, false, !BackHistory.empty()))
 	{
 		NavigateBack();
 	}
-	ImGui::EndDisabled();
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-	{
-		ImGui::SetTooltip("Back");
-	}
 	ImGui::SameLine();
-	if (ImGui::SmallButton("Up"))
+	if (DrawContentBrowserArrowButton("Up", "Up", ArrowButtonSize, true, true))
 	{
 		const std::filesystem::path Parent = CurrentPath.parent_path();
 		if (!Parent.empty() && Parent != CurrentPath)
 		{
 			NavigateTo(Parent);
 		}
-	}
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("Up");
 	}
 	ImGui::SameLine();
 	const float RemainingWidth = ImGui::GetContentRegionAvail().x;
@@ -775,6 +1142,10 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		else if (Item.Extension == ".fbx")
 		{
             EditorEngine->CreateViewer(MakeRelativeProjectPath(Item.Path));
+		}
+		else if (Item.Extension == ".rml")
+		{
+			EditorEngine->GetMainPanel().OpenRuntimeUIPreviewAsset(MakeRelativeProjectPath(Item.Path));
 		}
 		else
 		{
@@ -1571,7 +1942,7 @@ FString FEditorContentBrowserWidget::MakeDisplayPath(const std::filesystem::path
 
 FString FEditorContentBrowserWidget::GetPayloadType(const FContentItem& Item) const
 {
-	if (Item.Extension == ".obj" || Item.Extension == ".bin")
+	if (Item.Extension == ".obj" || Item.Extension == ".fbx" || Item.Extension == ".bin")
 	{
 		return "ObjectContentItem";
 	}

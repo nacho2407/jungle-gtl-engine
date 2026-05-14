@@ -1,5 +1,6 @@
 #include "Editor/UI/EditorMainPanel.h"
 
+#include "Editor/UI/EditorChromeConstants.h"
 #include "ImGui/imgui.h"
 
 void FEditorMainPanel::RenderDockSpace()
@@ -10,10 +11,8 @@ void FEditorMainPanel::RenderDockSpace()
         return;
     }
 
-    constexpr float EditorTabStripHeight = 30.0f;
-    constexpr float EditorToolbarHeight = 40.0f;
-    constexpr float FooterHeight = 32.0f;
-    const float TopChromeHeight = EditorTabStripHeight + EditorToolbarHeight;
+    constexpr float FooterHeight = FEditorChromeMetrics::FooterHeight;
+    const float TopChromeHeight = FEditorChromeMetrics::MainTopHeight();
     const ImVec2 DockPos(MainViewport->WorkPos.x, MainViewport->WorkPos.y + TopChromeHeight);
     const ImVec2 DockSize(
         MainViewport->WorkSize.x,

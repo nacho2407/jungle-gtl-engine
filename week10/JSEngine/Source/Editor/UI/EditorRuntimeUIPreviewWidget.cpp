@@ -133,6 +133,33 @@ void FEditorRuntimeUIPreviewWidget::Render(float DeltaTime)
 		return;
 	}
 
+	DrawContent(DeltaTime);
+	ImGui::End();
+}
+
+void FEditorRuntimeUIPreviewWidget::RenderEmbedded(float DeltaTime)
+{
+	DrawContent(DeltaTime);
+}
+
+bool FEditorRuntimeUIPreviewWidget::OpenPreviewDocument(const FString& Path)
+{
+	if (!Path.empty() && !SetPreviewDocumentPath(Path))
+	{
+		return false;
+	}
+
+	RefreshPreviewDocument();
+	return bPreviewDocumentLoaded;
+}
+
+FString FEditorRuntimeUIPreviewWidget::GetPreviewDocumentPath() const
+{
+	return PreviewDocumentPathBuffer;
+}
+
+void FEditorRuntimeUIPreviewWidget::DrawContent(float DeltaTime)
+{
 	DrawToolbar();
 	ImGui::Separator();
 
@@ -152,16 +179,24 @@ void FEditorRuntimeUIPreviewWidget::Render(float DeltaTime)
 		DrawAuthoringGuidance();
 		ImGui::EndTable();
 	}
-	ImGui::End();
 }
 
 void FEditorRuntimeUIPreviewWidget::DrawToolbar()
 {
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 6.0f));
 	ImGui::BeginChild("##RmlRuntimeUIPreviewToolbar", ImVec2(0.0f, 82.0f), false, ImGuiWindowFlags_NoScrollbar);
 	const float ButtonWidth = 72.0f;
-	const float PathWidth = std::max(180.0f, ImGui::GetContentRegionAvail().x - (ButtonWidth * 3.0f) - (ImGui::GetStyle().ItemSpacing.x * 4.0f));
+	const float PathLabelWidth = ImGui::CalcTextSize("RML").x;
+	const float InputCheckWidth = 86.0f;
+	const float PathWidth = std::max(
+		220.0f,
+		ImGui::GetContentRegionAvail().x - PathLabelWidth - (ButtonWidth * 2.0f) - InputCheckWidth - (ImGui::GetStyle().ItemSpacing.x * 6.0f));
+
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextUnformatted("RML");
+	ImGui::SameLine();
 	ImGui::SetNextItemWidth(PathWidth);
-	if (ImGui::InputText("RML", PreviewDocumentPathBuffer, IM_ARRAYSIZE(PreviewDocumentPathBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
+	if (ImGui::InputText("##RmlRuntimeUIPreviewPath", PreviewDocumentPathBuffer, IM_ARRAYSIZE(PreviewDocumentPathBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
 	{
 		RefreshPreviewDocument();
 	}
@@ -189,8 +224,11 @@ void FEditorRuntimeUIPreviewWidget::DrawToolbar()
 	const int32 PresetCount = static_cast<int32>(sizeof(PreviewResolutionPresets) / sizeof(PreviewResolutionPresets[0]));
 	const char* CurrentPreset = PreviewResolutionPresets[std::clamp(ResolutionPresetIndex, 0, PresetCount - 1)].Label;
 	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f);
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextUnformatted("Resolution");
+	ImGui::SameLine();
 	ImGui::SetNextItemWidth(140.0f);
-	if (ImGui::BeginCombo("Resolution", CurrentPreset))
+	if (ImGui::BeginCombo("##RmlRuntimeUIPreviewResolution", CurrentPreset))
 	{
 		for (int32 i = 0; i < PresetCount; ++i)
 		{
@@ -218,11 +256,15 @@ void FEditorRuntimeUIPreviewWidget::DrawToolbar()
 	}
 
 	ImGui::SameLine();
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextUnformatted("Zoom");
+	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120.0f);
-	ImGui::SliderFloat("Zoom", &PreviewZoom, 0.25f, 1.5f, "%.2fx");
+	ImGui::SliderFloat("##RmlRuntimeUIPreviewZoom", &PreviewZoom, 0.25f, 1.5f, "%.2fx");
 	ImGui::SameLine();
 	ImGui::Checkbox("Guide", &bShowGuidance);
 	ImGui::EndChild();
+	ImGui::PopStyleVar();
 }
 
 void FEditorRuntimeUIPreviewWidget::DrawPreviewSurface(float DeltaTime)

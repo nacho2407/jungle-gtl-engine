@@ -28,7 +28,7 @@ public:
     FString GetWindowName() const;
 	void RequestSaveMesh();
 	bool CanSaveMesh() const;
-	bool IsMeshDirty() const { return bMeshDirty; }
+	bool IsMeshDirty() const;
 
 private:
     // bone tree 캐시들. CachedMesh가 바뀌면 둘 다 재빌드.
@@ -37,6 +37,9 @@ private:
     void RebuildBoneToSocketIndices(const FSkeletalMesh* MeshData);
 
     // Socket 편집 액션들. Render()안에서만 호출 — CachedMesh/CachedSkComp가 유효한 시점.
+    void QueueBoneSubtreeOpenState(int32 BoneIdx, bool bOpen);
+    void ApplyPendingBoneTreeOpenState(const FSkeletalMesh* MeshData);
+    void SetBoneSubtreeOpenState(int32 BoneIdx, const TArray<TArray<int32>>& InChildren, bool bOpen);
     void    AddSocketOnBone(int32 BoneIdx);
     void DeleteSocket(int32 SocketIdx);
     bool HasPreview(const FName& SocketName) const;
@@ -55,7 +58,13 @@ private:
 
 	void RenderBoneDetails(USkeletalMeshComponent* SkelComp);
     void RenderContent(float DeltaTime);
+	void RenderDetachedDocumentChrome(bool& bDockRequested, bool& bCloseRequested);
+	void RenderDetachedDocumentToolbar(bool& bDockRequested);
     void Shutdown();
+	FSkeletalMesh* ResolveCurrentMeshData() const;
+	uint64 ComputeEditableMeshSignature(const FSkeletalMesh* MeshData) const;
+	void ResetMeshDirtyBaseline();
+	bool HasMeshAssetEdits() const;
 
     TArray<TArray<int32>> Children;             // bone idx → child bone indices
     TArray<TArray<int32>> BoneToSocketIndices;  // bone idx → socket array indices
@@ -64,8 +73,12 @@ private:
 
     int32 PendingPreviewPickerSocketIdx = -1;  // picker modal 트리거; -1이면 닫힌 상태
     int32 RenameSocketIdx = -1;                // rename modal 트리거; -1이면 닫힌 상태
+    int32 PendingBoneTreeOpenStateRoot = -1;
+    bool bPendingBoneTreeOpenStateValue = false;
     char  RenameBuffer[256] = {};
-    bool  bMeshDirty = false;         // socket 데이터 변경 후 Save 트리거용
+    bool  bMeshDirty = false;         // socket 등 mesh asset 데이터 변경 후 Save 트리거용
+	uint64 CleanMeshEditSignature = 0;
+	bool bHasCleanMeshEditSignature = false;
 
 	FEditorViewer* Viewer = nullptr;
     bool bOpen = false;

@@ -122,6 +122,11 @@ void FEditorToolbarWidget::SetBuildGameCallback(std::function<void()> InCallback
 	BuildGameCallback = std::move(InCallback);
 }
 
+void FEditorToolbarWidget::SetRuntimeUIPreviewOpenCallback(std::function<void()> InCallback)
+{
+	RuntimeUIPreviewOpenCallback = std::move(InCallback);
+}
+
 void FEditorToolbarWidget::SetActiveCommandHandlers(
 	std::function<bool(const FEditorShortcut&)> InShortcutHandler,
 	std::function<bool(EEditorCommandId)> InCommandHandler)
@@ -169,6 +174,26 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 {
 	(void)DeltaTime;
 
+	ProcessShortcuts();
+
+	ImVec2 OriginalPadding = ImGui::GetStyle().FramePadding;
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(OriginalPadding.x, 5.0f));
+
+	bool bMenuBarOpened = ImGui::BeginMainMenuBar();
+
+	ImGui::PopStyleVar();
+
+	if (!bMenuBarOpened)
+	{
+		return;
+	}
+
+	RenderMenuContents();
+	ImGui::EndMainMenuBar();
+}
+
+void FEditorToolbarWidget::ProcessShortcuts()
+{
 	const ImGuiIO& IO = ImGui::GetIO();
 	if (EditorEngine && !IO.WantTextInput && IO.KeyCtrl)
 	{
@@ -212,19 +237,10 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 			}
 		}
 	}
+}
 
-	ImVec2 OriginalPadding = ImGui::GetStyle().FramePadding;
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(OriginalPadding.x, 5.0f));
-
-	bool bMenuBarOpened = ImGui::BeginMainMenuBar();
-
-	ImGui::PopStyleVar();
-
-	if (!bMenuBarOpened)
-	{
-		return;
-	}
-
+void FEditorToolbarWidget::RenderMenuContents()
+{
 	const bool bHandledByActiveContext = ActiveMenuRenderer && ActiveMenuRenderer();
 	if (!bHandledByActiveContext)
 	{
@@ -235,8 +251,6 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 		RenderSettingsMenu();
 		RenderHelpMenu();
 	}
-
-	ImGui::EndMainMenuBar();
 }
 
 void FEditorToolbarWidget::RenderFilesMenu()
@@ -375,7 +389,17 @@ void FEditorToolbarWidget::RenderWindowMenu()
 	if (bShowMaterialEditor) ImGui::MenuItem("Material Editor", nullptr, bShowMaterialEditor);
 	if (bShowStatProfiler) ImGui::MenuItem("Stat Profiler", nullptr, bShowStatProfiler);
 	if (bShowContentBrowser) ImGui::MenuItem("Content Browser", "Ctrl+Space", bShowContentBrowser);
-	if (bShowRuntimeUIPreview) ImGui::MenuItem("Runtime UI Preview", nullptr, bShowRuntimeUIPreview);
+	if (RuntimeUIPreviewOpenCallback)
+	{
+		if (ImGui::MenuItem("Runtime UI Preview"))
+		{
+			RuntimeUIPreviewOpenCallback();
+		}
+	}
+	else if (bShowRuntimeUIPreview)
+	{
+		ImGui::MenuItem("Runtime UI Preview", nullptr, bShowRuntimeUIPreview);
+	}
 	if (bShowProjectSettings) ImGui::MenuItem("Project Settings", nullptr, bShowProjectSettings);
 	if (bShowWorldSettings) ImGui::MenuItem("World Settings", nullptr, bShowWorldSettings);
 

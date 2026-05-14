@@ -4,6 +4,21 @@
 
 #include "ImGui/imgui.h"
 
+void FEditorMainPanel::OpenRuntimeUIPreviewAsset(const FString& RmlPath)
+{
+    if (!RmlPath.empty())
+    {
+        Widgets.RuntimeUIPreviewWidget.OpenPreviewDocument(RmlPath);
+    }
+
+    const FString DocumentPath = Widgets.RuntimeUIPreviewWidget.GetPreviewDocumentPath();
+    const FEditorTabId TabId = MakeRuntimeUIPreviewTabId();
+    const FString TabLabel = MakeRuntimeUIPreviewTabLabel(DocumentPath);
+    EditorTabs.OpenOrFocusTab(TabId, TabLabel);
+    EditorTabs.SetTabLabel(TabId, TabLabel);
+    ActivateEditorTab(TabId);
+}
+
 void FEditorMainPanel::QueueRuntimeUIDrawCallback(
     ImDrawList* DrawList,
     const FRuntimeUIRenderContext& Context

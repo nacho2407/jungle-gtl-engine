@@ -1,5 +1,6 @@
 #include "Editor/UI/EditorMainPanel.h"
 
+#include "Editor/UI/EditorChromeConstants.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/Viewport/ViewportLayout.h"
@@ -60,10 +61,12 @@ void FEditorMainPanel::RenderEditorToolbar()
         return;
     }
 
-    constexpr float TabStripHeight = 30.0f;
-    constexpr float ToolbarHeight = 40.0f;
+    constexpr float TabStripHeight = FEditorChromeMetrics::TabStripHeight;
+    constexpr float ToolbarHeight = FEditorChromeMetrics::DocumentToolbarHeight;
     constexpr float ButtonSize = 30.0f;
-    const ImVec2 ToolbarPos(MainViewport->WorkPos.x, MainViewport->WorkPos.y + TabStripHeight);
+    const ImVec2 ToolbarPos(
+        MainViewport->WorkPos.x,
+        MainViewport->WorkPos.y + FEditorChromeMetrics::ApplicationTitleBarHeight + TabStripHeight);
     const ImVec2 ToolbarSize(MainViewport->WorkSize.x, ToolbarHeight);
 
     ImGui::SetNextWindowPos(ToolbarPos, ImGuiCond_Always);

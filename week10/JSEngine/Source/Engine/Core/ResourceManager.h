@@ -116,6 +116,7 @@ public:
 	USkeletalMesh* LoadSkeletalMesh(const FString& Path);
     USkeletalMesh* FindSkeletalMesh(const FString& Path) const;
 	TArray<FString> GetSkeletalMeshPaths() const;
+	FFbxMeshContentInfo InspectFbxMeshContent(const FString& Path);
 
 	// 에디터에서 socket 등 mesh data 변경 후 writable cache(.bin)에 저장.
 	bool SaveSkeletalMesh(USkeletalMesh* Mesh);

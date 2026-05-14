@@ -5,6 +5,7 @@
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/Viewport/FSceneViewport.h"
 #include "Editor/Viewport/ViewportLayout.h"
+#include "Engine/Component/SkeletalMeshComponent.h"
 #include "Engine/Component/StaticMeshComponent.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Input/InputSystem.h"
@@ -39,7 +40,10 @@ std::wstring GetLowerExtension(const std::filesystem::path& Path)
     return Extension;
 }
 
-FString ResolveStaticMeshDropLoadPath(const FString& PayloadPath)
+bool ResolveProjectDropPath(
+    const FString& PayloadPath,
+    std::filesystem::path& OutAbsolutePath,
+    std::filesystem::path& OutRelativePath)
 {
     std::filesystem::path Path(FPaths::ToWide(PayloadPath));
     const std::filesystem::path RootPath = std::filesystem::path(FPaths::RootDir()).lexically_normal();
@@ -52,11 +56,25 @@ FString ResolveStaticMeshDropLoadPath(const FString& PayloadPath)
     const std::filesystem::path RelativePath = Path.lexically_relative(RootPath);
     if (RelativePath.empty() || HasParentDirectoryReference(RelativePath))
     {
+        return false;
+    }
+
+    OutAbsolutePath = Path;
+    OutRelativePath = RelativePath;
+    return true;
+}
+
+FString ResolveStaticMeshDropLoadPath(const FString& PayloadPath)
+{
+    std::filesystem::path Path;
+    std::filesystem::path RelativePath;
+    if (!ResolveProjectDropPath(PayloadPath, Path, RelativePath))
+    {
         return {};
     }
 
     const std::wstring Extension = GetLowerExtension(Path);
-    if (Extension == L".obj")
+    if (Extension == L".obj" || Extension == L".fbx")
     {
         return FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
     }
@@ -65,6 +83,40 @@ FString ResolveStaticMeshDropLoadPath(const FString& PayloadPath)
         return FPaths::Normalize(FPaths::ToUtf8(Path.generic_wstring()));
     }
     return {};
+}
+
+FString ResolveSkeletalMeshDropLoadPath(const FString& PayloadPath)
+{
+    std::filesystem::path Path;
+    std::filesystem::path RelativePath;
+    if (!ResolveProjectDropPath(PayloadPath, Path, RelativePath))
+    {
+        return {};
+    }
+
+    if (GetLowerExtension(Path) != L".fbx")
+    {
+        return {};
+    }
+
+    return FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
+}
+
+FString ResolveFbxDropInspectPath(const FString& PayloadPath)
+{
+    std::filesystem::path Path;
+    std::filesystem::path RelativePath;
+    if (!ResolveProjectDropPath(PayloadPath, Path, RelativePath))
+    {
+        return {};
+    }
+
+    if (GetLowerExtension(Path) != L".fbx")
+    {
+        return {};
+    }
+
+    return FPaths::Normalize(FPaths::ToUtf8(Path.generic_wstring()));
 }
 }
 
@@ -126,6 +178,76 @@ bool FEditorMainPanel::SpawnStaticMeshFromContentPath(
     Ctx->SelectionManager->Select(Actor);
     EditorEngine->GetSceneService().MarkDirty();
     PushFooterLog("StaticMesh actor placed from Content Browser");
+    return true;
+}
+
+bool FEditorMainPanel::SpawnSkeletalMeshFromContentPath(
+    const FString& PayloadPath,
+    int32 ViewportIndex,
+    float LocalX,
+    float LocalY
+)
+{
+    if (!EditorEngine)
+    {
+        return false;
+    }
+
+    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+    FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
+    if (!Client || !Client->AllowsEditorWorldControl())
+    {
+        return false;
+    }
+
+    const FString MeshLoadPath = ResolveSkeletalMeshDropLoadPath(PayloadPath);
+    const FString InspectPath = ResolveFbxDropInspectPath(PayloadPath);
+    if (MeshLoadPath.empty() || InspectPath.empty())
+    {
+        return false;
+    }
+
+    const FFbxMeshContentInfo ContentInfo = FResourceManager::Get().InspectFbxMeshContent(InspectPath);
+    if (!ContentInfo.bHasSkeletalMesh)
+    {
+        return false;
+    }
+
+    USkeletalMesh* Mesh = FResourceManager::Get().LoadSkeletalMesh(MeshLoadPath);
+    if (!Mesh || !Mesh->HasValidMeshData())
+    {
+        PushFooterLog("Failed to load dropped skeletal mesh");
+        return false;
+    }
+
+    UWorld* World = EditorEngine->GetFocusedWorld();
+    if (!World)
+    {
+        return false;
+    }
+
+    EditorEngine->GetUndoSystem().CaptureSnapshot("Place Skeletal Mesh");
+    ASkeletalMeshActor* Actor = World->SpawnActor<ASkeletalMeshActor>();
+    if (!Actor)
+    {
+        return false;
+    }
+
+    Actor->InitDefaultComponents();
+    Actor->SetActorLocation(FEditorMainPanelPlacementHelpers::ComputePlacementLocation(Client, LocalX, LocalY));
+    if (USkeletalMeshComponent* SkeletalMeshComp = Actor->GetSkeletalMeshComponent())
+    {
+        SkeletalMeshComp->SetSkeletalMesh(Mesh);
+    }
+
+    const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(Client->GetFocusedWorld());
+    Layout.SetLastFocusedViewportIndex(ViewportIndex);
+    if (Ctx && Ctx->SelectionManager)
+    {
+        Ctx->SelectionManager->Select(Actor);
+    }
+    EditorEngine->GetSceneService().MarkDirty();
+    PushFooterLog("SkeletalMesh actor placed from Content Browser");
     return true;
 }
 
@@ -283,6 +405,10 @@ void FEditorMainPanel::HandleContentBrowserViewportDrop()
         if (PayloadType == "PrefabContentItem")
         {
             return SpawnPrefabFromContentPath(PayloadPath, ViewportIndex, LocalX, LocalY);
+        }
+        if (SpawnSkeletalMeshFromContentPath(PayloadPath, ViewportIndex, LocalX, LocalY))
+        {
+            return true;
         }
         return SpawnStaticMeshFromContentPath(PayloadPath, ViewportIndex, LocalX, LocalY);
     };

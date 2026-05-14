@@ -140,7 +140,7 @@ static uint64 GetFileWriteTimeTicks(const FString& Path)
 {
 	namespace fs = std::filesystem;
 
-	fs::path FilePath(FPaths::ToWide(Path));
+	fs::path FilePath(FPaths::ToAbsolute(FPaths::ToWide(Path)));
 	if (!fs::exists(FilePath))
 	{
 		return 0;
@@ -545,7 +545,7 @@ bool FBinarySerializer::ReadBounds(std::ifstream& In, FStaticMesh& OutData) cons
 //	보내는 순서와 읽는 순서는 동일 (Header + Body 순서를 고정 -> protocol의 정의)
 bool FBinarySerializer::SaveStaticMesh(const FString& BinaryPath, const FString& SourcePath, const FStaticMesh& Data)
 {
-	std::ofstream Out(BinaryPath, std::ios::binary);
+	std::ofstream Out(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath))), std::ios::binary);
 	if (!Out.is_open())
 	{
 		return false;
@@ -588,7 +588,7 @@ bool FBinarySerializer::SaveStaticMesh(const FString& BinaryPath, const FString&
 
 bool FBinarySerializer::LoadStaticMesh(const FString& BinaryPath, FStaticMesh& OutData)
 {
-	std::ifstream In(std::filesystem::path(FPaths::ToWide(BinaryPath)), std::ios::binary);
+	std::ifstream In(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath))), std::ios::binary);
 	if (!In.is_open())
 	{
 		return false;
@@ -664,7 +664,7 @@ bool FBinarySerializer::LoadStaticMesh(const FString& BinaryPath, FStaticMesh& O
 
 bool FBinarySerializer::ReadStaticMeshHeader(const FString& BinaryPath, FStaticMeshBinaryHeader& OutHeader) const
 {
-	std::ifstream In(std::filesystem::path(FPaths::ToWide(BinaryPath)), std::ios::binary);
+	std::ifstream In(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath))), std::ios::binary);
 	if (!In.is_open())
 	{
 		return false;
@@ -1086,7 +1086,7 @@ bool FBinarySerializer::ReadSkeletalBounds(std::ifstream& In, FSkeletalMesh& Out
 
 bool FBinarySerializer::SaveSkeletalMesh(const FString& BinaryPath, const FString& SourcePath, const FSkeletalMesh& Data)
 {
-	std::ofstream Out(BinaryPath, std::ios::binary);
+	std::ofstream Out(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath))), std::ios::binary);
 	if (!Out.is_open())
 	{
 		return false;
@@ -1132,7 +1132,7 @@ bool FBinarySerializer::SaveSkeletalMesh(const FString& BinaryPath, const FStrin
 
 bool FBinarySerializer::LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMesh& OutData)
 {
-	std::ifstream In(std::filesystem::path(FPaths::ToWide(BinaryPath)), std::ios::binary);
+	std::ifstream In(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath))), std::ios::binary);
 	if (!In.is_open())
 	{
 		return false;
@@ -1235,7 +1235,7 @@ bool FBinarySerializer::LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMes
 
 bool FBinarySerializer::ReadSkeletalMeshHeader(const FString& BinaryPath, FSkeletalMeshBinaryHeader& OutHeader) const
 {
-	std::ifstream In(std::filesystem::path(FPaths::ToWide(BinaryPath)), std::ios::binary);
+	std::ifstream In(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath))), std::ios::binary);
 	if (!In.is_open())
 	{
 		return false;

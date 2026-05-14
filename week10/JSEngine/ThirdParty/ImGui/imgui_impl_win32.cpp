@@ -109,6 +109,121 @@ typedef DWORD(WINAPI* PFN_XInputGetCapabilities)(DWORD, DWORD, XINPUT_CAPABILITI
 typedef DWORD(WINAPI* PFN_XInputGetState)(DWORD, XINPUT_STATE*);
 #endif
 
+static const char* IMGUI_IMPL_WIN32_CUSTOM_CHROME_PROP = "IMGUI_CUSTOM_CHROME";
+static const int IMGUI_IMPL_WIN32_CUSTOM_CHROME_MAX_RECTS = 32;
+
+struct ImGui_ImplWin32_CustomChromeData
+{
+    int TitleBarHeight = 0;
+    int InteractiveRectCount = 0;
+    ImGui_ImplWin32_CustomChromeRect InteractiveRects[IMGUI_IMPL_WIN32_CUSTOM_CHROME_MAX_RECTS] = {};
+};
+
+static bool ImGui_ImplWin32_RectContains(const ImGui_ImplWin32_CustomChromeRect& rect, int x, int y)
+{
+    return x >= rect.Left && x < rect.Right && y >= rect.Top && y < rect.Bottom;
+}
+
+static ImGui_ImplWin32_CustomChromeData* ImGui_ImplWin32_GetCustomChromeData(HWND hwnd)
+{
+    return (ImGui_ImplWin32_CustomChromeData*)::GetPropA(hwnd, IMGUI_IMPL_WIN32_CUSTOM_CHROME_PROP);
+}
+
+static void ImGui_ImplWin32_ApplyCustomChromeStyle(HWND hwnd)
+{
+    if (hwnd == nullptr)
+        return;
+
+    const DWORD current_style = (DWORD)::GetWindowLongW(hwnd, GWL_STYLE);
+    const DWORD desired_style = (current_style | WS_POPUP | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX) & ~WS_CAPTION;
+    if (current_style == desired_style)
+        return;
+
+    ::SetWindowLongW(hwnd, GWL_STYLE, desired_style);
+    ::SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+}
+
+static LRESULT ImGui_ImplWin32_CustomChromeHitTest(HWND hwnd, LPARAM lParam)
+{
+    ImGui_ImplWin32_CustomChromeData* chrome = ImGui_ImplWin32_GetCustomChromeData(hwnd);
+    if (chrome == nullptr || chrome->TitleBarHeight <= 0)
+        return 0;
+
+    POINT client_pos = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+    ::ScreenToClient(hwnd, &client_pos);
+
+    RECT client_rect = {};
+    ::GetClientRect(hwnd, &client_rect);
+
+    if (!::IsZoomed(hwnd))
+    {
+        int border_x = ::GetSystemMetrics(SM_CXSIZEFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER);
+        int border_y = ::GetSystemMetrics(SM_CYSIZEFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER);
+        if (border_x < 6) border_x = 6;
+        if (border_y < 6) border_y = 6;
+
+        const bool on_left = client_pos.x >= 0 && client_pos.x < border_x;
+        const bool on_right = client_pos.x < client_rect.right && client_pos.x >= client_rect.right - border_x;
+        const bool on_top = client_pos.y >= 0 && client_pos.y < border_y;
+        const bool on_bottom = client_pos.y < client_rect.bottom && client_pos.y >= client_rect.bottom - border_y;
+
+        if (on_top && on_left) return HTTOPLEFT;
+        if (on_top && on_right) return HTTOPRIGHT;
+        if (on_bottom && on_left) return HTBOTTOMLEFT;
+        if (on_bottom && on_right) return HTBOTTOMRIGHT;
+        if (on_left) return HTLEFT;
+        if (on_right) return HTRIGHT;
+        if (on_top) return HTTOP;
+        if (on_bottom) return HTBOTTOM;
+    }
+
+    if (client_pos.y >= 0 && client_pos.y < chrome->TitleBarHeight)
+    {
+        for (int i = 0; i < chrome->InteractiveRectCount; ++i)
+            if (ImGui_ImplWin32_RectContains(chrome->InteractiveRects[i], client_pos.x, client_pos.y))
+                return HTCLIENT;
+        return HTCAPTION;
+    }
+
+    return HTCLIENT;
+}
+
+IMGUI_IMPL_API void ImGui_ImplWin32_SetCustomChrome(void* hwnd, int title_bar_height, const ImGui_ImplWin32_CustomChromeRect* interactive_rects, int interactive_rect_count)
+{
+    HWND native_hwnd = (HWND)hwnd;
+    if (native_hwnd == nullptr)
+        return;
+
+    ImGui_ImplWin32_CustomChromeData* chrome = ImGui_ImplWin32_GetCustomChromeData(native_hwnd);
+    if (chrome == nullptr)
+    {
+        chrome = IM_NEW(ImGui_ImplWin32_CustomChromeData)();
+        ::SetPropA(native_hwnd, IMGUI_IMPL_WIN32_CUSTOM_CHROME_PROP, chrome);
+    }
+
+    chrome->TitleBarHeight = title_bar_height;
+    chrome->InteractiveRectCount = interactive_rect_count;
+    if (chrome->InteractiveRectCount > IMGUI_IMPL_WIN32_CUSTOM_CHROME_MAX_RECTS)
+        chrome->InteractiveRectCount = IMGUI_IMPL_WIN32_CUSTOM_CHROME_MAX_RECTS;
+    if (chrome->InteractiveRectCount < 0)
+        chrome->InteractiveRectCount = 0;
+
+    for (int i = 0; i < chrome->InteractiveRectCount; ++i)
+        chrome->InteractiveRects[i] = interactive_rects[i];
+
+    ImGui_ImplWin32_ApplyCustomChromeStyle(native_hwnd);
+}
+
+IMGUI_IMPL_API void ImGui_ImplWin32_ClearCustomChrome(void* hwnd)
+{
+    HWND native_hwnd = (HWND)hwnd;
+    if (native_hwnd == nullptr)
+        return;
+
+    if (ImGui_ImplWin32_CustomChromeData* chrome = (ImGui_ImplWin32_CustomChromeData*)::RemovePropA(native_hwnd, IMGUI_IMPL_WIN32_CUSTOM_CHROME_PROP))
+        IM_DELETE(chrome);
+}
+
 // Clang/GCC warnings with -Weverything
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -1191,7 +1306,10 @@ static void ImGui_ImplWin32_DestroyWindow(ImGuiViewport* viewport)
             ::SetCapture(bd->hWnd);
         }
         if (vd->Hwnd && vd->HwndOwned)
+        {
+            ImGui_ImplWin32_ClearCustomChrome(vd->Hwnd);
             ::DestroyWindow(vd->Hwnd);
+        }
         vd->Hwnd = nullptr;
         IM_DELETE(vd);
     }
@@ -1412,6 +1530,10 @@ static LRESULT CALLBACK ImGui_ImplWin32_WndProcHandler_PlatformWindow(HWND hWnd,
     {
         switch (msg)
         {
+        case WM_NCCALCSIZE:
+            if (ImGui_ImplWin32_GetCustomChromeData(hWnd) != nullptr)
+                return 0;
+            break;
         case WM_CLOSE:
             viewport->PlatformRequestClose = true;
             return 0; // 0 = Operating system will ignore the message and not destroy the window. We close ourselves.
@@ -1432,6 +1554,8 @@ static LRESULT CALLBACK ImGui_ImplWin32_WndProcHandler_PlatformWindow(HWND hWnd,
             // your main loop after calling UpdatePlatformWindows(). Iterate all viewports/platform windows and pass the flag to your windowing system.
             if (viewport->Flags & ImGuiViewportFlags_NoInputs)
                 result = HTTRANSPARENT;
+            else if (LRESULT custom_result = ImGui_ImplWin32_CustomChromeHitTest(hWnd, lParam))
+                result = custom_result;
             break;
         }
     }

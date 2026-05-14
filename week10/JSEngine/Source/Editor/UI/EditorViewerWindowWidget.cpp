@@ -1,5 +1,6 @@
 ﻿#include "EditorViewerWindowWidget.h"
 #include "Editor/EditorEngine.h"
+#include "Editor/UI/EditorChromeConstants.h"
 #include "Editor/Viewer/EditorViewer.h"
 #include "Viewport/ViewportLayout.h"
 #include "GameFramework/PrimitiveActors.h"
@@ -11,10 +12,12 @@
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "imgui.h"
+#include "ImGui/imgui_impl_win32.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <cmath>
+#include <functional>
 
 namespace
 {
@@ -71,6 +74,127 @@ FString GetViewerAssetLabel(FEditorViewer* Viewer)
 {
     return Viewer ? GetBaseFileNameWithoutExtension(Viewer->GetFileName()) : FString("Viewer");
 }
+
+void ApplyDetachedDocumentWindowClass()
+{
+    ImGuiWindowClass WindowClass;
+    WindowClass.ClassId = 0x4A534457u; // "JSDW" - detached document window class
+    WindowClass.ViewportFlagsOverrideSet =
+        ImGuiViewportFlags_NoAutoMerge |
+        ImGuiViewportFlags_NoDecoration;
+    WindowClass.ViewportFlagsOverrideClear = ImGuiViewportFlags_NoTaskBarIcon;
+    ImGui::SetNextWindowClass(&WindowClass);
+}
+
+HWND GetCurrentViewportHwnd()
+{
+    ImGuiViewport* Viewport = ImGui::GetWindowViewport();
+    if (!Viewport)
+    {
+        return nullptr;
+    }
+    return static_cast<HWND>(Viewport->PlatformHandleRaw ? Viewport->PlatformHandleRaw : Viewport->PlatformHandle);
+}
+
+ImGui_ImplWin32_CustomChromeRect MakeChromeRect(const ImVec2& Min, const ImVec2& Max, const ImVec2& WindowPos)
+{
+    return ImGui_ImplWin32_CustomChromeRect{
+        static_cast<int>(Min.x - WindowPos.x),
+        static_cast<int>(Min.y - WindowPos.y),
+        static_cast<int>(Max.x - WindowPos.x),
+        static_cast<int>(Max.y - WindowPos.y)
+    };
+}
+
+void AddChromeRect(ImGui_ImplWin32_CustomChromeRect* Rects, int& Count, const ImVec2& Min, const ImVec2& Max, const ImVec2& WindowPos)
+{
+    if (Count >= 16)
+    {
+        return;
+    }
+    Rects[Count++] = MakeChromeRect(Min, Max, WindowPos);
+}
+
+bool IsViewportMaximized(HWND Hwnd)
+{
+    return Hwnd && ::IsZoomed(Hwnd) != FALSE;
+}
+
+void ToggleViewportMaximize(HWND Hwnd)
+{
+    if (!Hwnd)
+    {
+        return;
+    }
+    ::PostMessageW(Hwnd, WM_SYSCOMMAND, IsViewportMaximized(Hwnd) ? SC_RESTORE : SC_MAXIMIZE, 0);
+}
+
+bool DrawDetachedWindowButton(
+    const char* Id,
+    const char* Tooltip,
+    const ImVec2& Size,
+    const ImVec4& HoverColor,
+    const ImVec4& ActiveColor,
+    const std::function<void(ImDrawList*, const ImVec2&, const ImVec2&, ImU32)>& DrawIcon)
+{
+    ImGui::PushID(Id);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, HoverColor);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ActiveColor);
+
+    const bool bClicked = ImGui::InvisibleButton("##Button", Size);
+    const bool bHovered = ImGui::IsItemHovered();
+    const bool bActive = ImGui::IsItemActive();
+    const ImVec2 Min = ImGui::GetItemRectMin();
+    const ImVec2 Max = ImGui::GetItemRectMax();
+    const ImU32 BgColor = ImGui::GetColorU32(
+        bActive ? ActiveColor : (bHovered ? HoverColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f)));
+
+    ImDrawList* DrawList = ImGui::GetWindowDrawList();
+    DrawList->AddRectFilled(Min, Max, BgColor, 0.0f);
+    DrawIcon(DrawList, Min, Max, ImGui::GetColorU32(ImVec4(0.82f, 0.85f, 0.90f, 1.0f)));
+
+    if (bHovered && Tooltip)
+    {
+        ImGui::SetTooltip("%s", Tooltip);
+    }
+
+    ImGui::PopStyleColor(3);
+    ImGui::PopID();
+    return bClicked;
+}
+
+constexpr uint64 MeshEditHashOffset = 14695981039346656037ull;
+constexpr uint64 MeshEditHashPrime = 1099511628211ull;
+
+uint64 HashBytes(uint64 Seed, const void* Data, size_t Size)
+{
+    const unsigned char* Bytes = static_cast<const unsigned char*>(Data);
+    for (size_t Index = 0; Index < Size; ++Index)
+    {
+        Seed ^= static_cast<uint64>(Bytes[Index]);
+        Seed *= MeshEditHashPrime;
+    }
+    return Seed;
+}
+
+template <typename T>
+uint64 HashValue(uint64 Seed, const T& Value)
+{
+    return HashBytes(Seed, &Value, sizeof(T));
+}
+
+uint64 HashString(uint64 Seed, const FString& Value)
+{
+    const uint64 Length = static_cast<uint64>(Value.size());
+    Seed = HashValue(Seed, Length);
+    return Value.empty() ? Seed : HashBytes(Seed, Value.data(), Value.size());
+}
+
+uint64 HashMatrix(uint64 Seed, const FMatrix& Matrix)
+{
+    return HashBytes(Seed, Matrix.M, sizeof(Matrix.M));
+}
 }
 
 void FEditorViewerWindowWidget::Initialize(UEditorEngine* InEditorEngine)
@@ -88,6 +212,8 @@ void FEditorViewerWindowWidget::Shutdown()
     PendingPreviewPickerSocketIdx = -1; 
     RenameSocketIdx = -1;               
     bMeshDirty = false; 
+    CleanMeshEditSignature = 0;
+    bHasCleanMeshEditSignature = false;
 
     Viewer = nullptr;
     bOpen = false;
@@ -109,7 +235,12 @@ bool FEditorViewerWindowWidget::CanSaveMesh() const
 
 	ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
 	USkeletalMeshComponent* SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
-	return SkelComp && SkelComp->GetSkeletalMesh();
+	return SkelComp && SkelComp->GetSkeletalMesh() && HasMeshAssetEdits();
+}
+
+bool FEditorViewerWindowWidget::IsMeshDirty() const
+{
+	return HasMeshAssetEdits();
 }
 
 void FEditorViewerWindowWidget::RequestSaveMesh()
@@ -129,8 +260,96 @@ void FEditorViewerWindowWidget::RequestSaveMesh()
 
 	if (FResourceManager::Get().SaveSkeletalMesh(Mesh))
 	{
-		bMeshDirty = false;
+		ResetMeshDirtyBaseline();
 	}
+}
+
+FSkeletalMesh* FEditorViewerWindowWidget::ResolveCurrentMeshData() const
+{
+	if (CachedMesh)
+	{
+		return CachedMesh;
+	}
+
+	if (!Viewer)
+	{
+		return nullptr;
+	}
+
+	ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+	USkeletalMeshComponent* SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+	USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
+	return Mesh ? Mesh->GetMeshData() : nullptr;
+}
+
+uint64 FEditorViewerWindowWidget::ComputeEditableMeshSignature(const FSkeletalMesh* MeshData) const
+{
+	if (!MeshData)
+	{
+		return 0;
+	}
+
+	uint64 Hash = MeshEditHashOffset;
+
+	Hash = HashValue(Hash, static_cast<uint64>(MeshData->Bones.size()));
+	for (const FBoneInfo& Bone : MeshData->Bones)
+	{
+		Hash = HashString(Hash, Bone.Name);
+		Hash = HashValue(Hash, Bone.ParentIndex);
+		Hash = HashMatrix(Hash, Bone.LocalBindTransform);
+		Hash = HashMatrix(Hash, Bone.GlobalBindTransform);
+		Hash = HashMatrix(Hash, Bone.InverseBindPose);
+	}
+
+	Hash = HashValue(Hash, static_cast<uint64>(MeshData->Sockets.size()));
+	for (const FSkeletalMeshSocket& Socket : MeshData->Sockets)
+	{
+		Hash = HashString(Hash, Socket.Name.ToString());
+		Hash = HashValue(Hash, Socket.BoneIndex);
+		Hash = HashValue(Hash, Socket.RelativeLocation.X);
+		Hash = HashValue(Hash, Socket.RelativeLocation.Y);
+		Hash = HashValue(Hash, Socket.RelativeLocation.Z);
+		Hash = HashValue(Hash, Socket.RelativeRotation.Pitch);
+		Hash = HashValue(Hash, Socket.RelativeRotation.Yaw);
+		Hash = HashValue(Hash, Socket.RelativeRotation.Roll);
+		Hash = HashValue(Hash, Socket.RelativeScale.X);
+		Hash = HashValue(Hash, Socket.RelativeScale.Y);
+		Hash = HashValue(Hash, Socket.RelativeScale.Z);
+	}
+
+	return Hash;
+}
+
+void FEditorViewerWindowWidget::ResetMeshDirtyBaseline()
+{
+	FSkeletalMesh* MeshData = ResolveCurrentMeshData();
+	if (!MeshData)
+	{
+		CleanMeshEditSignature = 0;
+		bHasCleanMeshEditSignature = false;
+		bMeshDirty = false;
+		return;
+	}
+
+	CleanMeshEditSignature = ComputeEditableMeshSignature(MeshData);
+	bHasCleanMeshEditSignature = true;
+	bMeshDirty = false;
+}
+
+bool FEditorViewerWindowWidget::HasMeshAssetEdits() const
+{
+	FSkeletalMesh* MeshData = ResolveCurrentMeshData();
+	if (!MeshData)
+	{
+		return false;
+	}
+
+	if (bMeshDirty)
+	{
+		return true;
+	}
+
+	return bHasCleanMeshEditSignature && ComputeEditableMeshSignature(MeshData) != CleanMeshEditSignature;
 }
 
 void FEditorViewerWindowWidget::Render(float DeltaTime)
@@ -145,132 +364,44 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
         return;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(13.0f, 8.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(9.0f, 4.0f));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.055f, 0.060f, 0.072f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.055f, 0.060f, 0.072f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.18f, 0.20f, 0.25f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.15f, 0.17f, 0.22f, 1.0f));
 
 	FString WindowName = GetWindowName();
 	bool bDockRequested = false;
 	bool bCloseRequested = false;
 
+    // Detached document는 borderless secondary viewport로 띄우고,
+    // Win32 backend에 titlebar hit-test 정보를 넘겨 native window처럼 움직이게 한다.
+    ApplyDetachedDocumentWindowClass();
 	// Make the viewer window reasonably large on first creation.
 	ImGui::SetNextWindowSize(ImVec2(900, 600), ImGuiCond_FirstUseEver);
+    if (const ImGuiViewport* MainViewport = ImGui::GetMainViewport())
+    {
+        ImGui::SetNextWindowPos(
+            ImVec2(MainViewport->Pos.x + 120.0f, MainViewport->Pos.y + 90.0f),
+            ImGuiCond_FirstUseEver);
+    }
 	constexpr ImGuiWindowFlags WindowFlags =
 		ImGuiWindowFlags_MenuBar |
-		ImGuiWindowFlags_NoCollapse;
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoCollapse;
 	if (ImGui::Begin(WindowName.c_str(), &bOpen, WindowFlags))
 	{
-		if (ImGui::BeginMenuBar())
-		{
-			if (ImGui::BeginMenu("File"))
-			{
-				if (ImGui::MenuItem("Save Mesh", "Ctrl+S"))
-				{
-					RequestSaveMesh();
-				}
-				ImGui::Separator();
-				if (ImGui::MenuItem("Close"))
-				{
-					bCloseRequested = true;
-				}
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Edit"))
-			{
-				ImGui::MenuItem("Undo", "Ctrl+Z", false, false);
-				ImGui::MenuItem("Redo", "Ctrl+Shift+Z", false, false);
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Asset"))
-			{
-				if (ImGui::MenuItem("Save Mesh"))
-				{
-					RequestSaveMesh();
-				}
-				ImGui::MenuItem("Reimport Mesh", nullptr, false, false);
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Window"))
-			{
-				if (ImGui::MenuItem("Dock Back"))
-				{
-					bDockRequested = true;
-				}
-				if (ImGui::MenuItem("Close"))
-				{
-					bCloseRequested = true;
-				}
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Tools"))
-			{
-				FSkeletalViewerShowFlags& ShowFlags = Viewer->GetClient().GetShowFlags();
-				ImGui::MenuItem("Bones", nullptr, &ShowFlags.bShowBones);
-				ImGui::MenuItem("Bounding Box", nullptr, &ShowFlags.bShowBoundingBox);
-				ImGui::MenuItem("Outline", nullptr, &ShowFlags.bShowOutline);
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Help"))
-			{
-				ImGui::TextDisabled("Skeletal Mesh Previewer");
-				ImGui::EndMenu();
-			}
-			ImGui::EndMenuBar();
-		}
-
-		constexpr ImGuiWindowFlags StripFlags =
-			ImGuiWindowFlags_NoScrollbar |
-			ImGuiWindowFlags_NoScrollWithMouse;
-		ImGui::BeginChild("##DetachedViewerTabStrip", ImVec2(0.0f, 32.0f), false, StripFlags);
-		ImGui::SetCursorPos(ImVec2(10.0f, 5.0f));
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.11f, 0.12f, 0.15f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.18f, 0.20f, 0.25f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.17f, 0.22f, 1.0f));
-		const FString AssetLabel = GetViewerAssetLabel(Viewer);
-		char TabLabel[256];
-		snprintf(TabLabel, sizeof(TabLabel), "  Mesh  %s  x  ##DetachedViewerAssetTab", AssetLabel.c_str());
-		if (ImGui::Button(TabLabel, ImVec2(std::min(280.0f, ImGui::CalcTextSize(TabLabel).x + 22.0f), 24.0f)))
-		{
-		}
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip("%s", Viewer->GetFileName().c_str());
-		}
-		if (ImGui::IsItemClicked(ImGuiMouseButton_Middle))
-		{
-			bCloseRequested = true;
-		}
-		const ImVec2 TabMin = ImGui::GetItemRectMin();
-		const ImVec2 TabMax = ImGui::GetItemRectMax();
-		const ImVec2 CloseMin(TabMax.x - 21.0f, TabMin.y + 3.0f);
-		const ImVec2 CloseMax(TabMax.x - 5.0f, TabMin.y + 19.0f);
-		if (ImGui::IsMouseHoveringRect(CloseMin, CloseMax) && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-		{
-			bCloseRequested = true;
-		}
-		ImGui::PopStyleColor(3);
-		ImGui::EndChild();
-
-		constexpr ImGuiWindowFlags ToolbarFlags =
-			ImGuiWindowFlags_NoScrollbar |
-			ImGuiWindowFlags_NoScrollWithMouse;
-		ImGui::BeginChild("##DetachedViewerToolbar", ImVec2(0.0f, 40.0f), false, ToolbarFlags);
-		ImGui::SetCursorPos(ImVec2(8.0f, 6.0f));
-		if (ImGui::Button("Save"))
-		{
-			RequestSaveMesh();
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Dock"))
-		{
-			bDockRequested = true;
-		}
-		ImGui::SameLine(0.0f, 12.0f);
-		EditorEngine->GetMainPanel().RenderViewerToolbarControls(Viewer);
-		ImGui::EndChild();
-
+        RenderDetachedDocumentChrome(bDockRequested, bCloseRequested);
+        RenderDetachedDocumentToolbar(bDockRequested);
 		RenderContent(DeltaTime);
 	}
 	ImGui::End();
 
-    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(4);
+    ImGui::PopStyleVar(5);
 
 	if (bDockRequested)
 	{
@@ -287,6 +418,235 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
         EditorEngine->RemoveViewer(Viewer);
         Shutdown();
     }
+}
+
+void FEditorViewerWindowWidget::RenderDetachedDocumentChrome(bool& bDockRequested, bool& bCloseRequested)
+{
+    if (!Viewer || !ImGui::BeginMenuBar())
+    {
+        return;
+    }
+
+    constexpr float WindowButtonWidth = 48.0f;
+    constexpr float TitleBarHeight = FEditorChromeMetrics::ApplicationTitleBarHeight;
+    constexpr float LogoSize = 28.0f;
+    constexpr float LogoPaddingX = 4.0f;
+    constexpr float MenuLogoGap = 8.0f;
+    constexpr float MenuStartX = LogoPaddingX + LogoSize + MenuLogoGap;
+
+    HWND ViewportHwnd = GetCurrentViewportHwnd();
+    const ImVec2 WindowPos = ImGui::GetWindowPos();
+    const ImVec2 WindowSize = ImGui::GetWindowSize();
+    const float ButtonStartX = std::max(0.0f, WindowSize.x - WindowButtonWidth * 3.0f);
+
+    ImGui_ImplWin32_CustomChromeRect ChromeRects[16] = {};
+    int ChromeRectCount = 0;
+
+    ImDrawList* DrawList = ImGui::GetWindowDrawList();
+    ID3D11ShaderResourceView* HomeIcon = EditorEngine ? EditorEngine->GetMainPanel().GetHomeIconResource() : nullptr;
+    const ImVec2 LogoMin(WindowPos.x + LogoPaddingX, WindowPos.y + (TitleBarHeight - LogoSize) * 0.5f);
+    const ImVec2 LogoMax(LogoMin.x + LogoSize, LogoMin.y + LogoSize);
+    if (HomeIcon)
+    {
+        DrawList->AddImage(reinterpret_cast<ImTextureID>(HomeIcon), LogoMin, LogoMax);
+    }
+    else
+    {
+        DrawList->AddRectFilled(LogoMin, LogoMax, ImGui::GetColorU32(ImVec4(0.95f, 0.78f, 0.12f, 1.0f)), 0.0f);
+        DrawList->AddText(
+            ImVec2(LogoMin.x + 4.0f, LogoMin.y + 5.0f),
+            ImGui::GetColorU32(ImVec4(0.08f, 0.09f, 0.11f, 1.0f)),
+            "JS");
+    }
+    AddChromeRect(ChromeRects, ChromeRectCount, LogoMin, LogoMax, WindowPos);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.0f, 12.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(14.0f, 8.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
+
+    ImGui::SetCursorPosX(MenuStartX);
+
+    const bool bCanSaveMesh = CanSaveMesh();
+    const char* SaveMeshLabel = IsMeshDirty() ? "Save Mesh *" : "Save Mesh";
+
+    if (ImGui::BeginMenu("File"))
+    {
+        if (ImGui::MenuItem(SaveMeshLabel, "Ctrl+S", false, bCanSaveMesh))
+        {
+            RequestSaveMesh();
+        }
+        ImGui::Separator();
+        if (ImGui::MenuItem("Close"))
+        {
+            bCloseRequested = true;
+        }
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Edit"))
+    {
+        ImGui::MenuItem("Undo", "Ctrl+Z", false, false);
+        ImGui::MenuItem("Redo", "Ctrl+Shift+Z", false, false);
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Asset"))
+    {
+        if (ImGui::MenuItem(SaveMeshLabel, nullptr, false, bCanSaveMesh))
+        {
+            RequestSaveMesh();
+        }
+        ImGui::MenuItem("Reimport Mesh", nullptr, false, false);
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Window"))
+    {
+        if (ImGui::MenuItem("Dock Back"))
+        {
+            bDockRequested = true;
+        }
+        if (ImGui::MenuItem("Close"))
+        {
+            bCloseRequested = true;
+        }
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Tools"))
+    {
+        FSkeletalViewerShowFlags& ShowFlags = Viewer->GetClient().GetShowFlags();
+        ImGui::MenuItem("Bones", nullptr, &ShowFlags.bShowBones);
+        ImGui::MenuItem("Bounding Box", nullptr, &ShowFlags.bShowBoundingBox);
+        ImGui::MenuItem("Outline", nullptr, &ShowFlags.bShowOutline);
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Help"))
+    {
+        ImGui::TextDisabled("Skeletal Mesh Previewer");
+        ImGui::EndMenu();
+    }
+
+    const float MenuEndX = std::min(ButtonStartX, ImGui::GetCursorScreenPos().x - WindowPos.x + 8.0f);
+    AddChromeRect(
+        ChromeRects,
+        ChromeRectCount,
+        ImVec2(WindowPos.x, WindowPos.y),
+        ImVec2(WindowPos.x + MenuEndX, WindowPos.y + TitleBarHeight),
+        WindowPos);
+
+    const FString AssetLabel = GetViewerAssetLabel(Viewer);
+    const ImVec2 TitleSize = ImGui::CalcTextSize(AssetLabel.c_str());
+    const float TitleX = std::clamp(
+        MenuEndX + (ButtonStartX - MenuEndX - TitleSize.x) * 0.5f,
+        MenuEndX + 8.0f,
+        std::max(MenuEndX + 8.0f, ButtonStartX - TitleSize.x - 8.0f));
+    DrawList->AddText(
+        ImVec2(WindowPos.x + TitleX, WindowPos.y + (TitleBarHeight - TitleSize.y) * 0.5f),
+        ImGui::GetColorU32(ImVec4(0.72f, 0.76f, 0.84f, 1.0f)),
+        AssetLabel.c_str());
+
+    const ImVec2 ButtonSize(WindowButtonWidth, TitleBarHeight);
+    ImGui::SetCursorPos(ImVec2(ButtonStartX, 0.0f));
+    if (DrawDetachedWindowButton(
+        "DetachedMinimize",
+        "Minimize",
+        ButtonSize,
+        ImVec4(0.14f, 0.16f, 0.20f, 1.0f),
+        ImVec4(0.18f, 0.20f, 0.25f, 1.0f),
+        [](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
+        {
+            const float Y = (Min.y + Max.y) * 0.5f + 4.0f;
+            InDrawList->AddLine(ImVec2(Min.x + 17.0f, Y), ImVec2(Max.x - 17.0f, Y), Color, 1.6f);
+        }))
+    {
+        if (ViewportHwnd)
+        {
+            ::PostMessageW(ViewportHwnd, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+        }
+    }
+    AddChromeRect(ChromeRects, ChromeRectCount, ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), WindowPos);
+
+    ImGui::SameLine(0.0f, 0.0f);
+    if (DrawDetachedWindowButton(
+        "DetachedMaximize",
+        IsViewportMaximized(ViewportHwnd) ? "Restore" : "Maximize",
+        ButtonSize,
+        ImVec4(0.14f, 0.16f, 0.20f, 1.0f),
+        ImVec4(0.18f, 0.20f, 0.25f, 1.0f),
+        [ViewportHwnd](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
+        {
+            const bool bMaximized = IsViewportMaximized(ViewportHwnd);
+            const ImVec2 A(Min.x + 17.0f, Min.y + 12.0f);
+            const ImVec2 B(Max.x - 17.0f, Max.y - 12.0f);
+            if (bMaximized)
+            {
+                InDrawList->AddRect(ImVec2(A.x + 3.0f, A.y), ImVec2(B.x + 3.0f, B.y - 3.0f), Color, 0.0f, 0, 1.4f);
+                InDrawList->AddRect(ImVec2(A.x, A.y + 3.0f), ImVec2(B.x, B.y), Color, 0.0f, 0, 1.4f);
+            }
+            else
+            {
+                InDrawList->AddRect(A, B, Color, 0.0f, 0, 1.4f);
+            }
+        }))
+    {
+        ToggleViewportMaximize(ViewportHwnd);
+    }
+    AddChromeRect(ChromeRects, ChromeRectCount, ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), WindowPos);
+
+    ImGui::SameLine(0.0f, 0.0f);
+    if (DrawDetachedWindowButton(
+        "DetachedClose",
+        "Close",
+        ButtonSize,
+        ImVec4(0.62f, 0.18f, 0.20f, 1.0f),
+        ImVec4(0.46f, 0.10f, 0.13f, 1.0f),
+        [](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
+        {
+            InDrawList->AddLine(ImVec2(Min.x + 17.0f, Min.y + 12.0f), ImVec2(Max.x - 17.0f, Max.y - 12.0f), Color, 1.6f);
+            InDrawList->AddLine(ImVec2(Max.x - 17.0f, Min.y + 12.0f), ImVec2(Min.x + 17.0f, Max.y - 12.0f), Color, 1.6f);
+        }))
+    {
+        bCloseRequested = true;
+    }
+    AddChromeRect(ChromeRects, ChromeRectCount, ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), WindowPos);
+
+    ImGui_ImplWin32_SetCustomChrome(ViewportHwnd, static_cast<int>(TitleBarHeight), ChromeRects, ChromeRectCount);
+    ImGui::PopStyleVar(3);
+    ImGui::EndMenuBar();
+}
+
+void FEditorViewerWindowWidget::RenderDetachedDocumentToolbar(bool& bDockRequested)
+{
+    if (!Viewer || !EditorEngine)
+    {
+        return;
+    }
+
+    constexpr ImGuiWindowFlags ToolbarFlags =
+        ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoScrollWithMouse;
+    ImGui::BeginChild("##DetachedViewerToolbar", ImVec2(0.0f, 40.0f), false, ToolbarFlags);
+    ImGui::SetCursorPos(ImVec2(8.0f, 6.0f));
+
+    const bool bCanSaveMesh = CanSaveMesh();
+    if (!bCanSaveMesh)
+    {
+        ImGui::BeginDisabled();
+    }
+    if (ImGui::Button(IsMeshDirty() ? "Save *" : "Save"))
+    {
+        RequestSaveMesh();
+    }
+    if (!bCanSaveMesh)
+    {
+        ImGui::EndDisabled();
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Dock"))
+    {
+        bDockRequested = true;
+    }
+    ImGui::SameLine(0.0f, 12.0f);
+    EditorEngine->GetMainPanel().RenderViewerToolbarControls(Viewer);
+    ImGui::EndChild();
 }
 
 void FEditorViewerWindowWidget::RenderEmbedded(float DeltaTime)
@@ -341,7 +701,7 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 			{
 				Viewer->ClearSelection();
 			}
-			bMeshDirty = false;
+			ResetMeshDirtyBaseline();
 			ImGui::TextDisabled("No skeletal mesh");
 		}
 		else if (CachedMesh != MeshData)
@@ -351,13 +711,14 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 			{
 				Viewer->ClearSelection();
 			}
-			bMeshDirty = false;
 
 			RebuildBoneTreeCaches(MeshData);
+			ResetMeshDirtyBaseline();
 		}
 
 		if (MeshData)
 		{
+            ApplyPendingBoneTreeOpenState(MeshData);
 			for (int32 j = 0; j < MeshData->Bones.size(); ++j)
 			{
 				if (MeshData->Bones[j].ParentIndex == -1)
@@ -583,6 +944,17 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
         {
             AddSocketOnBone(BoneIndex);
         }
+        ImGui::Separator();
+
+        const bool bCanToggleChildren = bHasBoneChildren || bHasSocketChildren;
+        if (ImGui::MenuItem("Expand Children", nullptr, false, bCanToggleChildren))
+        {
+            QueueBoneSubtreeOpenState(BoneIndex, true);
+        }
+        if (ImGui::MenuItem("Collapse Children", nullptr, false, bCanToggleChildren))
+        {
+            QueueBoneSubtreeOpenState(BoneIndex, false);
+        }
         ImGui::EndPopup();
     }
 
@@ -604,6 +976,63 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
         }
 
         ImGui::TreePop();
+    }
+}
+
+void FEditorViewerWindowWidget::QueueBoneSubtreeOpenState(int32 BoneIdx, bool bOpen)
+{
+    PendingBoneTreeOpenStateRoot = BoneIdx;
+    bPendingBoneTreeOpenStateValue = bOpen;
+}
+
+void FEditorViewerWindowWidget::ApplyPendingBoneTreeOpenState(const FSkeletalMesh* MeshData)
+{
+    if (!MeshData || PendingBoneTreeOpenStateRoot < 0)
+    {
+        return;
+    }
+
+    SetBoneSubtreeOpenState(PendingBoneTreeOpenStateRoot, Children, bPendingBoneTreeOpenStateValue);
+    PendingBoneTreeOpenStateRoot = -1;
+}
+
+void FEditorViewerWindowWidget::SetBoneSubtreeOpenState(
+    int32 BoneIdx,
+    const TArray<TArray<int32>>& InChildren,
+    bool bOpen)
+{
+    if (BoneIdx < 0 || BoneIdx >= static_cast<int32>(InChildren.size()))
+    {
+        return;
+    }
+
+    ImGuiStorage* Storage = ImGui::GetStateStorage();
+    if (!Storage)
+    {
+        return;
+    }
+
+    const void* NodePtr = reinterpret_cast<void*>(static_cast<intptr_t>(BoneIdx));
+    const ImGuiID NodeId = ImGui::GetID(NodePtr);
+
+    // Expand는 부모가 먼저 열려야 화면에서 즉시 전체 subtree가 보인다.
+    if (bOpen)
+    {
+        Storage->SetInt(NodeId, 1);
+    }
+
+    ImGui::PushID(NodePtr);
+    for (int32 ChildIndex : InChildren[BoneIdx])
+    {
+        SetBoneSubtreeOpenState(ChildIndex, InChildren, bOpen);
+    }
+    ImGui::PopID();
+
+    // Collapse는 자식부터 닫고 마지막에 부모를 닫아야,
+    // 부모를 다시 열었을 때 이전에 열려 있던 하위 노드가 되살아나지 않는다.
+    if (!bOpen)
+    {
+        Storage->SetInt(NodeId, 0);
     }
 }
 
@@ -811,9 +1240,9 @@ void FEditorViewerWindowWidget::DrawSocketInspector()
 {
     // Save 상태는 socket 선택 여부와 무관하게 항상 보이는 게 편함.
     auto DrawSaveButton = [&]() {
-        const bool bCanSave = bMeshDirty && CachedSkComp && CachedSkComp->GetSkeletalMesh();
+        const bool bCanSave = CanSaveMesh();
         if (!bCanSave) ImGui::BeginDisabled();
-        const char* Label = bMeshDirty ? "Save Mesh *" : "Save Mesh";
+        const char* Label = IsMeshDirty() ? "Save Mesh *" : "Save Mesh";
         if (ImGui::Button(Label))
         {
             TriggerSaveMesh();
