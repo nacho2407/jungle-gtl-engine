@@ -2,6 +2,7 @@
 
 #include <windows.h>
 
+#include "Engine/Core/Logging/Log.h"
 #include "Engine/Input/InputWindowFocus.h"
 
 struct FCursorControlState
@@ -51,17 +52,27 @@ private:
     static inline FCursorControlState GState{};
     static inline bool bCursorHidden = false;
 
+    static int32 LogShowCursorCall(const char* Caller, BOOL bShow)
+    {
+        const int32 Result = ::ShowCursor(bShow);
+        UE_LOG("[CursorDebug] ShowCursor Caller=%s Arg=%s Result=%d",
+            Caller,
+            bShow ? "TRUE" : "FALSE",
+            Result);
+        return Result;
+    }
+
     static void NormalizeCursorCounterVisible()
     {
-        while (::ShowCursor(TRUE) < 0) {}
-        while (::ShowCursor(FALSE) >= 0) {}
-        ::ShowCursor(TRUE);
+        while (LogShowCursorCall("FCursorControl::NormalizeCursorCounterVisible", TRUE) < 0) {}
+        while (LogShowCursorCall("FCursorControl::NormalizeCursorCounterVisible", FALSE) >= 0) {}
+        LogShowCursorCall("FCursorControl::NormalizeCursorCounterVisible", TRUE);
     }
 
     static void NormalizeCursorCounterHidden()
     {
         NormalizeCursorCounterVisible();
-        ::ShowCursor(FALSE);
+        LogShowCursorCall("FCursorControl::NormalizeCursorCounterHidden", FALSE);
     }
 
     static void RestoreArrowCursor()

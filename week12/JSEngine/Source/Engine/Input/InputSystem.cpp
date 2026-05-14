@@ -1,6 +1,20 @@
 ﻿#include "Engine/Input/InputSystem.h"
 #include "Engine/Input/InputWindowFocus.h"
+#include "Engine/Core/Logging/Log.h"
 #include <cmath>
+
+namespace
+{
+int32 LogShowCursorCall(const char* Caller, BOOL bShow)
+{
+    const int32 Result = ShowCursor(bShow);
+    UE_LOG("[CursorDebug] ShowCursor Caller=%s Arg=%s Result=%d",
+        Caller,
+        bShow ? "TRUE" : "FALSE",
+        Result);
+    return Result;
+}
+}
 
 void InputSystem::Tick()
 {
@@ -360,18 +374,18 @@ void InputSystem::SetCursorVisibility(bool bVisible)
 {
     if (bVisible)
     {
-        while (ShowCursor(TRUE) < 0) {}
-        while (ShowCursor(FALSE) >= 0) {}
-        ShowCursor(TRUE);
+        while (LogShowCursorCall("InputSystem::SetCursorVisibility(true)", TRUE) < 0) {}
+        while (LogShowCursorCall("InputSystem::SetCursorVisibility(true)", FALSE) >= 0) {}
+        LogShowCursorCall("InputSystem::SetCursorVisibility(true)", TRUE);
         SetCursor(LoadCursorW(nullptr, IDC_ARROW));
         bIsCursorVisible = true;
     }
     else
     {
-        while (ShowCursor(TRUE) < 0) {}
-        while (ShowCursor(FALSE) >= 0) {}
-        ShowCursor(TRUE);
-        ShowCursor(FALSE);
+        while (LogShowCursorCall("InputSystem::SetCursorVisibility(false)", TRUE) < 0) {}
+        while (LogShowCursorCall("InputSystem::SetCursorVisibility(false)", FALSE) >= 0) {}
+        LogShowCursorCall("InputSystem::SetCursorVisibility(false)", TRUE);
+        LogShowCursorCall("InputSystem::SetCursorVisibility(false)", FALSE);
         bIsCursorVisible = false;
     }
 }
