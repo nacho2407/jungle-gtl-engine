@@ -1,6 +1,7 @@
 #include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/UI/EditorChromeConstants.h"
 #include "Editor/Viewer/EditorViewer.h"
 #include "Editor/Viewport/EditorViewportClient.h"
 
@@ -11,6 +12,9 @@
 
 namespace
 {
+	constexpr float HomeTabWidth = 44.0f;
+	constexpr float HomeIconSize = 28.0f;
+
 	struct FEditorTabVisual
 	{
 		ImVec4 AccentColor;
@@ -33,6 +37,8 @@ namespace
 			return { ImVec4(0.72f, 0.42f, 0.95f, 1.0f), "Curve Editor" };
 		case EEditorTabKind::ActorSequencer:
 			return { ImVec4(0.36f, 0.52f, 0.94f, 1.0f), "Actor Sequencer" };
+		case EEditorTabKind::RuntimeUIPreview:
+			return { ImVec4(0.86f, 0.58f, 0.22f, 1.0f), "Runtime UI Preview" };
 		default:
 			return { ImVec4(0.58f, 0.62f, 0.70f, 1.0f), "Editor Tab" };
 		}
@@ -54,6 +60,8 @@ namespace
 			return "Curve";
 		case EEditorTabKind::ActorSequencer:
 			return "Sequencer";
+		case EEditorTabKind::RuntimeUIPreview:
+			return "RuntimeUI";
 		default:
 			return "Tab";
 		}
@@ -88,8 +96,10 @@ void FEditorMainPanel::RenderEditorTabStrip()
 		return;
 	}
 
-	constexpr float TabStripHeight = 30.0f;
-	const ImVec2 TabStripPos(MainViewport->WorkPos.x, MainViewport->WorkPos.y);
+	constexpr float TabStripHeight = FEditorChromeMetrics::TabStripHeight;
+	const ImVec2 TabStripPos(
+		MainViewport->WorkPos.x,
+		MainViewport->WorkPos.y + FEditorChromeMetrics::ApplicationTitleBarHeight);
 	const ImVec2 TabStripSize(MainViewport->WorkSize.x, TabStripHeight);
 
 	ImGui::SetNextWindowPos(TabStripPos, ImGuiCond_Always);
@@ -128,8 +138,8 @@ void FEditorMainPanel::RenderEditorTabStrip()
 
 		ImGui::PushID("HomeTab");
 		const ImVec2 HomeMin = ImGui::GetCursorScreenPos();
-		const ImVec2 HomeMax(HomeMin.x + 32.0f, HomeMin.y + 30.0f);
-		ImGui::InvisibleButton("##Home", ImVec2(32.0f, 30.0f));
+		const ImVec2 HomeMax(HomeMin.x + HomeTabWidth, HomeMin.y + TabStripHeight);
+		ImGui::InvisibleButton("##Home", ImVec2(HomeTabWidth, TabStripHeight));
 		const bool bHomeHovered = ImGui::IsItemHovered();
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !Tabs.empty())
 		{
@@ -141,17 +151,21 @@ void FEditorMainPanel::RenderEditorTabStrip()
 			ImGui::GetColorU32(bHomeHovered ? ImVec4(0.095f, 0.102f, 0.125f, 1.0f) : ImVec4(0.065f, 0.070f, 0.085f, 1.0f)));
 		if (IconResources.HomeIcon)
 		{
+			const ImVec2 IconMin(
+				HomeMin.x + (HomeTabWidth - HomeIconSize) * 0.5f,
+				HomeMin.y + (TabStripHeight - HomeIconSize) * 0.5f);
+			const ImVec2 IconMax(IconMin.x + HomeIconSize, IconMin.y + HomeIconSize);
 			DrawList->AddImage(
 				reinterpret_cast<ImTextureID>(IconResources.HomeIcon),
-				ImVec2(HomeMin.x + 5.0f, HomeMin.y + 4.0f),
-				ImVec2(HomeMax.x - 5.0f, HomeMax.y - 4.0f));
+				IconMin,
+				IconMax);
 		}
 		else
 		{
 			const ImU32 HomeColor = ImGui::GetColorU32(ImVec4(0.60f, 0.65f, 0.74f, 1.0f));
-			DrawList->AddLine(ImVec2(HomeMin.x + 9.0f, HomeMin.y + 16.0f), ImVec2(HomeMin.x + 16.0f, HomeMin.y + 9.0f), HomeColor, 1.6f);
-			DrawList->AddLine(ImVec2(HomeMin.x + 16.0f, HomeMin.y + 9.0f), ImVec2(HomeMin.x + 23.0f, HomeMin.y + 16.0f), HomeColor, 1.6f);
-			DrawList->AddRect(ImVec2(HomeMin.x + 11.0f, HomeMin.y + 16.0f), ImVec2(HomeMin.x + 21.0f, HomeMin.y + 23.0f), HomeColor, 1.0f, 0, 1.4f);
+			const ImVec2 Center((HomeMin.x + HomeMax.x) * 0.5f, (HomeMin.y + HomeMax.y) * 0.5f);
+			DrawList->AddCircle(Center, 12.0f, HomeColor, 24, 1.5f);
+			DrawList->AddText(ImVec2(Center.x - 7.0f, Center.y - 7.0f), HomeColor, "JS");
 		}
 		if (bHomeHovered)
 		{
@@ -181,7 +195,7 @@ void FEditorMainPanel::RenderEditorTabStrip()
 			}
 			const FEditorTabVisual Visual = GetTabVisual(Tab.Id.Kind);
 			constexpr float TabWidth = 180.0f;
-			constexpr float TabHeight = 30.0f;
+			const float TabHeight = TabStripHeight;
 
 			ImGui::PushID(Index);
 			const ImVec2 TabMin = ImGui::GetCursorScreenPos();
@@ -190,7 +204,7 @@ void FEditorMainPanel::RenderEditorTabStrip()
 			const bool bHovered = ImGui::IsItemHovered();
 
 			const float CloseSize = 16.0f;
-			const ImVec2 CloseMin(TabMax.x - CloseSize - 7.0f, TabMin.y + 7.0f);
+			const ImVec2 CloseMin(TabMax.x - CloseSize - 7.0f, TabMin.y + (TabHeight - CloseSize) * 0.5f);
 			const ImVec2 CloseMax(CloseMin.x + CloseSize, CloseMin.y + CloseSize);
 			const bool bCloseHovered =
 				Tab.bCanClose && ImGui::IsMouseHoveringRect(CloseMin, CloseMax);
@@ -231,7 +245,7 @@ void FEditorMainPanel::RenderEditorTabStrip()
 			DrawList->AddRectFilled(TabMin, TabMax, TabBg, 0.0f);
 			DrawList->AddRect(TabMin, TabMax, BorderColor);
 
-			const ImVec2 IconCenter(TabMin.x + 17.0f, TabMin.y + 15.0f);
+			const ImVec2 IconCenter(TabMin.x + 17.0f, TabMin.y + TabHeight * 0.5f);
 			DrawList->AddCircleFilled(IconCenter, 5.0f, ImGui::GetColorU32(Visual.AccentColor), 12);
 			if (Tab.Id.Kind == EEditorTabKind::LevelEditor)
 			{
@@ -249,10 +263,10 @@ void FEditorMainPanel::RenderEditorTabStrip()
 			}
 
 			const ImU32 TextColor = ImGui::GetColorU32(bActive ? ImVec4(0.88f, 0.91f, 0.96f, 1.0f) : ImVec4(0.58f, 0.62f, 0.70f, 1.0f));
-			const ImVec2 TextMin(TabMin.x + 32.0f, TabMin.y + 7.0f);
+			const ImVec2 TextMin(TabMin.x + 32.0f, TabMin.y + (TabHeight - ImGui::GetTextLineHeight()) * 0.5f);
 			const ImVec2 TextMax(
 				Tab.bCanClose ? CloseMin.x - 5.0f : TabMax.x - 10.0f,
-				TabMin.y + 24.0f);
+				TabMax.y - 5.0f);
 			ImGui::PushStyleColor(ImGuiCol_Text, TextColor);
 			ImGui::RenderTextEllipsis(
 				DrawList,
@@ -292,7 +306,8 @@ void FEditorMainPanel::RenderEditorTabStrip()
 
 			if (Tab.bCanClose && ImGui::BeginPopupContextItem("##TabContext"))
 			{
-				if (ImGui::MenuItem(Tab.bDetached ? "Dock Tab" : "Detach Tab"))
+				const bool bCanDetach = FindViewerWidgetForTab(Tab.Id) != nullptr;
+				if (bCanDetach && ImGui::MenuItem(Tab.bDetached ? "Dock Tab" : "Detach Tab"))
 				{
 					PendingDetachTabId = Tab.Id;
 					bHasPendingDetach = true;
@@ -414,12 +429,18 @@ void FEditorMainPanel::RequestDetachEditorTab(const FEditorTabId& TabId, bool bD
 	const FEditorTabEntry* ActiveBefore = EditorTabs.GetActiveTab();
 	const bool bWasActive = ActiveBefore && ActiveBefore->Id.Matches(TabId);
 
+	FEditorViewerWindowWidget* ViewerWidget = FindViewerWidgetForTab(TabId);
+	if (!ViewerWidget)
+	{
+		return;
+	}
+
 	if (!EditorTabs.SetTabDetached(TabId, bDetached))
 	{
 		return;
 	}
 
-	if (FEditorViewerWindowWidget* ViewerWidget = FindViewerWidgetForTab(TabId))
+	if (ViewerWidget)
 	{
 		ViewerWidget->SetOpen(true);
 		if (bDetached)

@@ -140,6 +140,25 @@ void FEditorMainPanel::RenderActiveViewerDocument(float DeltaTime)
 	ImGui::End();
 }
 
+void FEditorMainPanel::RenderRuntimeUIPreviewDocument(float DeltaTime)
+{
+	const FEditorTabEntry* ActiveTab = EditorTabs.GetActiveTab();
+	if (!ActiveTab || ActiveTab->Id.Kind != EEditorTabKind::RuntimeUIPreview)
+	{
+		return;
+	}
+
+	constexpr ImGuiWindowFlags WindowFlags = 0;
+	if (!ImGui::Begin("Viewport", nullptr, WindowFlags))
+	{
+		ImGui::End();
+		return;
+	}
+
+	Widgets.RuntimeUIPreviewWidget.RenderEmbedded(DeltaTime);
+	ImGui::End();
+}
+
 void FEditorMainPanel::RequestDockViewer(FEditorViewer* Viewer)
 {
 	if (!Viewer)

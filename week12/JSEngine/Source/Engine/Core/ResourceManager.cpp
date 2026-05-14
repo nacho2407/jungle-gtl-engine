@@ -808,6 +808,11 @@ TArray<FString> FResourceManager::GetSkeletalMeshPaths() const
     return SkeletalMeshFilePaths;
 }
 
+FFbxMeshContentInfo FResourceManager::InspectFbxMeshContent(const FString& Path)
+{
+    return FbxImporter.InspectMeshContent(Path);
+}
+
 bool FResourceManager::SaveSkeletalMesh(USkeletalMesh* Mesh)
 {
     if (!Mesh) return false;

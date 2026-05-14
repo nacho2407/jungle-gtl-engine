@@ -10,9 +10,13 @@ class FEditorRuntimeUIPreviewWidget : public FEditorWidget
 public:
 	void Initialize(UEditorEngine* InEditorEngine) override;
 	void Render(float DeltaTime) override;
+	void RenderEmbedded(float DeltaTime);
 	void SetRmlRenderQueue(std::function<void(const FRuntimeUIRenderContext&)> InQueueCallback);
+	bool OpenPreviewDocument(const FString& Path);
+	FString GetPreviewDocumentPath() const;
 
 private:
+	void DrawContent(float DeltaTime);
 	void DrawToolbar();
 	void DrawPreviewSurface(float DeltaTime);
 	void DrawDocumentInfo() const;
@@ -28,7 +32,7 @@ private:
 	std::function<void(const FRuntimeUIRenderContext&)> QueueRmlRenderContext;
 	TArray<FString> PreviewActionEvents;
 	char PreviewScreenIdBuffer[64] = "__RuntimeUIPreview";
-	char PreviewDocumentPathBuffer[260] = "Asset/UI/Game/Title.rml";
+	char PreviewDocumentPathBuffer[260] = "Asset/UI/Test/Test.rml";
 	int32 ResolutionPresetIndex = 0;
 	int32 CustomWidth = 1920;
 	int32 CustomHeight = 1080;
