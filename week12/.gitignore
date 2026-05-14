@@ -453,22 +453,28 @@ FodyWeavers.xsd
 CMakeLists.txt
 
 # ignore Build Files
-NipsEngine/Build/
-NipsEngine/DerivedData/
-NipsEngine/Saves/**
+JSEngine/Build/
+JSEngine/DerivedData/
+JSEngine/Saves/**
 Builds/
 
 # Asset 폴더 관련 (그때그때 필요한 파일만 저장하도록 변경)
-!NipsEngine/Asset/Mesh/**
-!NipsEngine/Asset/**/*.meta
+!JSEngine/Asset/Mesh/**
+!JSEngine/Asset/**/*.meta
 
-NipsEngine/Asset/Mesh/Bin/**
-NipsEngine/Asset/Scene/**
+JSEngine/Asset/Mesh/Bin/**
+JSEngine/Asset/Scene/**
 
 # FBX SDK runtime libs - re-include (gitignore의 [Dd]ebug/, [Rr]elease/ 패턴으로 인해 무시되는 것을 복구)
-!NipsEngine/ThirdParty/FBX/lib/**
+!JSEngine/ThirdParty/FBX/lib/**
+!JSEngine/ThirdParty/RmlUi/Lib/**/
+!JSEngine/ThirdParty/RmlUi/Lib/**/*.lib
+JSEngine/ThirdParty/RmlUi/Lib/**/*.manifest
+!JSEngine/ThirdParty/SoLoud/Lib/**/
+!JSEngine/ThirdParty/SoLoud/Lib/**/*.lib
+JSEngine/ThirdParty/SoLoud/Lib/**/*.manifest
 
 # Week9 Game Scene
-!NipsEngine/Asset/Scene/MapScene.Scene
-!NipsEngine/Asset/Scene/Intro.Scene
-!NipsEngine/Asset/Scene/Main.Scene
+!JSEngine/Asset/Scene/MapScene.Scene
+!JSEngine/Asset/Scene/Intro.Scene
+!JSEngine/Asset/Scene/Main.Scene

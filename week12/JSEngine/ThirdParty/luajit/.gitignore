@@ -2,9 +2,11 @@
 *.so
 *.obj
 *.lib
+!src/lua51.lib
 *.exp
 *.pdb
 *.dll
+!src/lua51.dll
 *.exe
 *.manifest
 *.dmp
