@@ -25,6 +25,7 @@ private:
     {
         FString GameName = "JSEngineGame";
         FString StartupScene = "Asset/Scene/Default.scene";
+        FString GameModeClass = "AGameModeBase";
         FString PlayerControllerClass = "APlayerController";
         FString DefaultPawnClass = "ADefaultPawn";
         FString DefaultPawnPrefabPath;

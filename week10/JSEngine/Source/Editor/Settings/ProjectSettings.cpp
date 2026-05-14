@@ -12,6 +12,7 @@ namespace ProjectKey
 	constexpr const char* GameName = "GameName";
 	constexpr const char* StartupScene = "StartupScene";
 	constexpr const char* IncludedScenes = "IncludedScenes";
+	constexpr const char* GameModeClass = "GameModeClass";
 	constexpr const char* PlayerControllerClass = "PlayerControllerClass";
 	constexpr const char* DefaultPawnClass = "DefaultPawnClass";
 	constexpr const char* DefaultPawnPrefabPath = "DefaultPawnPrefabPath";
@@ -61,6 +62,7 @@ void FProjectSettings::SaveToFile(const FString& Path) const
 	JSON Build = Object();
 	Build[ProjectKey::GameName] = BuildSettings.GameName;
 	Build[ProjectKey::StartupScene] = BuildSettings.StartupScene;
+	Build[ProjectKey::GameModeClass] = BuildSettings.GameModeClass;
 	Build[ProjectKey::PlayerControllerClass] = BuildSettings.PlayerControllerClass;
 	Build[ProjectKey::DefaultPawnClass] = BuildSettings.DefaultPawnClass;
 	Build[ProjectKey::DefaultPawnPrefabPath] = BuildSettings.DefaultPawnPrefabPath;
@@ -118,6 +120,8 @@ void FProjectSettings::LoadFromFile(const FString& Path)
 			BuildSettings.GameName = Build[ProjectKey::GameName].ToString();
 		if (Build.hasKey(ProjectKey::StartupScene))
 			BuildSettings.StartupScene = FPaths::Normalize(Build[ProjectKey::StartupScene].ToString());
+		if (Build.hasKey(ProjectKey::GameModeClass))
+			BuildSettings.GameModeClass = Build[ProjectKey::GameModeClass].ToString();
 		if (Build.hasKey(ProjectKey::PlayerControllerClass))
 			BuildSettings.PlayerControllerClass = Build[ProjectKey::PlayerControllerClass].ToString();
 		if (Build.hasKey(ProjectKey::DefaultPawnClass))

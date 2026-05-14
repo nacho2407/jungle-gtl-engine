@@ -37,6 +37,7 @@ namespace SceneKeys
 	static constexpr const char* WorldType          = "WorldType";
 	static constexpr const char* WorldSettings      = "WorldSettings";
 	static constexpr const char* OverrideGameMode   = "OverrideGameMode";
+	static constexpr const char* GameModeClass      = "GameModeClass";
 	static constexpr const char* PlayerControllerClass = "PlayerControllerClass";
 	static constexpr const char* DefaultPawnClass   = "DefaultPawnClass";
 	static constexpr const char* DefaultPawnPrefabPath = "DefaultPawnPrefabPath";
@@ -246,6 +247,7 @@ static json::JSON BuildSceneSnapshotJson(const FString& SceneName, FWorldContext
 	const FWorldGameModeSettings& GameModeSettings = WorldContext.World->GetGameModeSettings();
 	Root[SceneKeys::WorldSettings] = json::Object();
 	Root[SceneKeys::WorldSettings][SceneKeys::OverrideGameMode] = GameModeSettings.bOverrideGameMode;
+	Root[SceneKeys::WorldSettings][SceneKeys::GameModeClass] = GameModeSettings.GameModeClass;
 	Root[SceneKeys::WorldSettings][SceneKeys::PlayerControllerClass] = GameModeSettings.PlayerControllerClass;
 	Root[SceneKeys::WorldSettings][SceneKeys::DefaultPawnClass] = GameModeSettings.DefaultPawnClass;
 	Root[SceneKeys::WorldSettings][SceneKeys::DefaultPawnPrefabPath] = GameModeSettings.DefaultPawnPrefabPath;
@@ -393,6 +395,10 @@ void FSceneSaveManager::Load(const FString& FilePath, FWorldContext& OutWorldCon
 		GameModeSettings.bOverrideGameMode = WorldSettingsNode.hasKey(SceneKeys::OverrideGameMode)
 			? WorldSettingsNode[SceneKeys::OverrideGameMode].ToBool()
 			: false;
+		GameModeSettings.GameModeClass = GetJsonString(
+			WorldSettingsNode,
+			SceneKeys::GameModeClass,
+			GameModeSettings.GameModeClass);
 		GameModeSettings.PlayerControllerClass = GetJsonString(
 			WorldSettingsNode,
 			SceneKeys::PlayerControllerClass,

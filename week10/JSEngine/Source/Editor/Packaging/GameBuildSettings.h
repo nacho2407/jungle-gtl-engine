@@ -13,6 +13,7 @@ struct FGameBuildSettings
     FString GameName = "JSEngineGame";
     FString StartupScene = "Asset/Scene/Main.Scene";
     TArray<FString> IncludedScenes;
+    FString GameModeClass = "AGameModeBase";
     FString PlayerControllerClass = "APlayerController";
     FString DefaultPawnClass = "ADefaultPawn";
     FString DefaultPawnPrefabPath;

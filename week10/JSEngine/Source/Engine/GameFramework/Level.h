@@ -16,17 +16,8 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override {}
 	void PostEditProperty(const char* PropertyName) override {}
 
-	void AddActor(AActor* Actor) 
-	{
-        if (bDoingTick)
-            PendingAddActors.push_back(Actor);
-        else
-			Actors.push_back(Actor); 
-	}
-	void RemoveActor(AActor* Actor) {
-		auto it = std::find(Actors.begin(), Actors.end(), Actor);
-		if (it != Actors.end()) Actors.erase(it);
-	}
+	void AddActor(AActor* Actor);
+	void RemoveActor(AActor* Actor);
 
 	const TArray<AActor*>& GetActors() const { return Actors; }
 
@@ -35,8 +26,12 @@ public:
 	void TickGame(float DeltaTime);     // 활성화된 모든 액터를 틱 (PIE / Game)
 	void EndPlay(EEndPlayReason::Type EndPlayReason);
 private:
+	void FlushPendingActorMutations();
+	bool ContainsActor(const TArray<AActor*>& ActorList, AActor* Actor) const;
+
 	TArray<AActor*> Actors;
     TArray<AActor*> PendingAddActors;
-    bool bDoingTick = false;
+	TArray<AActor*> PendingRemoveActors;
+	bool bIteratingActors = false;
 };
 

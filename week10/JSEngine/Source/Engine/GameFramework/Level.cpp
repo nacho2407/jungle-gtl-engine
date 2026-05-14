@@ -1,5 +1,7 @@
 ﻿#include "Level.h"
 
+#include <algorithm>
+
 DEFINE_CLASS(ULevel, UObject)
 REGISTER_FACTORY(ULevel)
 
@@ -13,8 +15,17 @@ ULevel::~ULevel()
             UObjectManager::Get().DestroyObject(Actor);
         }
     }
-    
+    for (AActor* Actor : PendingAddActors)
+    {
+        if (Actor && !ContainsActor(Actors, Actor))
+        {
+            UObjectManager::Get().DestroyObject(Actor);
+        }
+    }
+
     Actors.clear();
+    PendingAddActors.clear();
+    PendingRemoveActors.clear();
 }
 
 /* @brief 액터 배열을 얕은 복사한 뒤 각 액터를 깊은 복사로 교체합니다. */
@@ -31,42 +42,122 @@ void ULevel::PostDuplicate(UObject* Original)
     }
 }
 
+bool ULevel::ContainsActor(const TArray<AActor*>& ActorList, AActor* Actor) const
+{
+    return Actor && std::find(ActorList.begin(), ActorList.end(), Actor) != ActorList.end();
+}
+
+void ULevel::AddActor(AActor* Actor)
+{
+    if (!Actor || ContainsActor(Actors, Actor) || ContainsActor(PendingAddActors, Actor))
+    {
+        return;
+    }
+
+    if (bIteratingActors)
+    {
+        PendingAddActors.push_back(Actor);
+        return;
+    }
+
+    Actors.push_back(Actor);
+}
+
+void ULevel::RemoveActor(AActor* Actor)
+{
+    if (!Actor)
+    {
+        return;
+    }
+
+    PendingAddActors.erase(
+        std::remove(PendingAddActors.begin(), PendingAddActors.end(), Actor),
+        PendingAddActors.end());
+
+    if (bIteratingActors)
+    {
+        for (AActor*& ExistingActor : Actors)
+        {
+            if (ExistingActor == Actor)
+            {
+                ExistingActor = nullptr;
+                break;
+            }
+        }
+
+        if (!ContainsActor(PendingRemoveActors, Actor))
+        {
+            PendingRemoveActors.push_back(Actor);
+        }
+        return;
+    }
+
+    Actors.erase(std::remove(Actors.begin(), Actors.end(), Actor), Actors.end());
+}
+
+void ULevel::FlushPendingActorMutations()
+{
+    Actors.erase(
+        std::remove_if(
+            Actors.begin(),
+            Actors.end(),
+            [this](AActor* Actor)
+            {
+                return !Actor || ContainsActor(PendingRemoveActors, Actor);
+            }),
+        Actors.end());
+
+    for (AActor* Actor : PendingAddActors)
+    {
+        if (Actor && !ContainsActor(PendingRemoveActors, Actor) && !ContainsActor(Actors, Actor))
+        {
+            Actors.push_back(Actor);
+        }
+    }
+
+    PendingAddActors.clear();
+    PendingRemoveActors.clear();
+}
+
 void ULevel::BeginPlay()
 {
-	for (AActor* Actor : Actors)
+    bIteratingActors = true;
+    const int32 InitialActorCount = static_cast<int32>(Actors.size());
+	for (int32 Index = 0; Index < InitialActorCount && Index < static_cast<int32>(Actors.size()); ++Index)
 	{
+        AActor* Actor = Actors[Index];
 		if (Actor)
 		{
 			Actor->BeginPlay();
 		}
 	}
+    bIteratingActors = false;
+    FlushPendingActorMutations();
 }
 
 void ULevel::TickEditor(float DeltaTime)
 {
-    for (AActor* Actor : Actors)
+    bIteratingActors = true;
+    const int32 InitialActorCount = static_cast<int32>(Actors.size());
+    for (int32 Index = 0; Index < InitialActorCount && Index < static_cast<int32>(Actors.size()); ++Index)
     {
+        AActor* Actor = Actors[Index];
         if (Actor && Actor->IsActive() && Actor->ShouldTickInEditor())
         {
             Actor->Tick(DeltaTime);
         }
     }
+    bIteratingActors = false;
+    FlushPendingActorMutations();
 }
 
 void ULevel::TickGame(float DeltaTime)
 {
-    bDoingTick = true;
-	if (!PendingAddActors.empty())
-	{
-		for (AActor* Actor : PendingAddActors)
-		{
-            Actors.push_back(Actor);
-		}
-        PendingAddActors.clear();
-	}
-
-    for (AActor* Actor : Actors)
+    bIteratingActors = true;
+    const int32 InitialActorCount = static_cast<int32>(Actors.size());
+    for (int32 Index = 0; Index < InitialActorCount && Index < static_cast<int32>(Actors.size()); ++Index)
     {
+        AActor* Actor = Actors[Index];
         if (Actor && Actor->IsActive())
         {
             Actor->Tick(DeltaTime);
@@ -74,16 +165,22 @@ void ULevel::TickGame(float DeltaTime)
                 Actor->MarkPendingKill();
         }
     }
-    bDoingTick = false;
+    bIteratingActors = false;
+    FlushPendingActorMutations();
 }
 
 void ULevel::EndPlay(EEndPlayReason::Type EndPlayReason)
 {
-	for (AActor* Actor : Actors)
+    bIteratingActors = true;
+    const int32 InitialActorCount = static_cast<int32>(Actors.size());
+	for (int32 Index = 0; Index < InitialActorCount && Index < static_cast<int32>(Actors.size()); ++Index)
 	{
+        AActor* Actor = Actors[Index];
 		if (Actor)
 		{
 			Actor->EndPlay(EndPlayReason);
 		}
 	}
+    bIteratingActors = false;
+    FlushPendingActorMutations();
 }

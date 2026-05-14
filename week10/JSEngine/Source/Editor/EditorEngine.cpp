@@ -862,6 +862,10 @@ APlayerController* UEditorEngine::SpawnPIEPlayerController(UWorld* PIEWorld, FEd
     FProjectSettings& ProjectSettings = FProjectSettings::Get();
     ProjectSettings.LoadFromFile(FProjectSettings::GetDefaultSettingsPath());
     FGameBuildSettings PlaySettings = ProjectSettings.BuildSettings;
+    if (PlaySettings.GameModeClass.empty())
+    {
+        PlaySettings.GameModeClass = "AGameModeBase";
+    }
     if (PlaySettings.PlayerControllerClass.empty())
     {
         PlaySettings.PlayerControllerClass = "APlayerController";
@@ -873,6 +877,10 @@ APlayerController* UEditorEngine::SpawnPIEPlayerController(UWorld* PIEWorld, FEd
     const FWorldGameModeSettings& SceneGameModeSettings = PIEWorld->GetGameModeSettings();
     if (SceneGameModeSettings.bOverrideGameMode)
     {
+        if (!SceneGameModeSettings.GameModeClass.empty())
+        {
+            PlaySettings.GameModeClass = SceneGameModeSettings.GameModeClass;
+        }
         if (!SceneGameModeSettings.PlayerControllerClass.empty())
         {
             PlaySettings.PlayerControllerClass = SceneGameModeSettings.PlayerControllerClass;
@@ -884,7 +892,19 @@ APlayerController* UEditorEngine::SpawnPIEPlayerController(UWorld* PIEWorld, FEd
         PlaySettings.DefaultPawnPrefabPath = SceneGameModeSettings.DefaultPawnPrefabPath;
     }
 
-    AGameModeBase* GameMode = PIEWorld->SpawnActor<AGameModeBase>();
+    AActor* GameModeActor = PIEWorld->SpawnActorByTypeName(PlaySettings.GameModeClass);
+    AGameModeBase* GameMode = Cast<AGameModeBase>(GameModeActor);
+    if (!GameMode && GameModeActor)
+    {
+        UE_LOG_ERROR("[EditorEngine] GameModeClass must derive from AGameModeBase: %s", PlaySettings.GameModeClass.c_str());
+        PIEWorld->DestroyActor(GameModeActor);
+    }
+    if (!GameMode)
+    {
+        UE_LOG_WARNING("[EditorEngine] Falling back to AGameModeBase for PIE.");
+        PlaySettings.GameModeClass = "AGameModeBase";
+        GameMode = PIEWorld->SpawnActor<AGameModeBase>();
+    }
     if (!GameMode)
     {
         PIEWorld->SetActiveCamera(FocusedClient->GetCamera());
@@ -892,7 +912,7 @@ APlayerController* UEditorEngine::SpawnPIEPlayerController(UWorld* PIEWorld, FEd
         return nullptr;
     }
 
-    GameMode->SetFName(FName("PIE_GameMode"));
+    GameMode->SetFName(FName(PlaySettings.GameModeClass));
     GameMode->SetPlayerControllerClass(PlaySettings.PlayerControllerClass);
     GameMode->SetDefaultPawnClass(PlaySettings.DefaultPawnClass);
     GameMode->SetDefaultPawnPrefabPath(PlaySettings.DefaultPawnPrefabPath);

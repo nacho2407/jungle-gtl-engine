@@ -14,6 +14,7 @@ class FViewportCamera;
 struct FWorldGameModeSettings
 {
 	bool bOverrideGameMode = false;
+	FString GameModeClass = "AGameModeBase";
 	FString PlayerControllerClass = "APlayerController";
 	FString DefaultPawnClass = "ADefaultPawn";
 	FString DefaultPawnPrefabPath;
@@ -42,11 +43,11 @@ public:
         // create and register an actor
         T* Actor = UObjectManager::Get().CreateObject<T>();
         Actor->SetWorld(this);
+		PersistentLevel->AddActor(Actor);
         if (bHasBegunPlay)
         {
             Actor->BeginPlay();
         }
-		PersistentLevel->AddActor(Actor);
         SpatialIndex.FlushDirtyBounds();
         return Actor;
     }
