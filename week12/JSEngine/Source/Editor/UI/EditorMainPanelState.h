@@ -13,6 +13,7 @@
 #include <future>
 
 class FEditorMainPanel;
+class UWorld;
 struct ID3D11ShaderResourceView;
 
 enum class EEditorMainPanelViewportToolIcon : int32
@@ -129,6 +130,7 @@ struct FEditorMainPanelBuildGameModalState
 struct FEditorMainPanelGameModeSettingsState
 {
 	bool bLoaded = false;
+	UWorld* CachedWorld = nullptr;
 	char GameModeClassBuffer[128] = "AGameModeBase";
 	char PlayerControllerClassBuffer[128] = "APlayerController";
 	char DefaultPawnClassBuffer[128] = "ADefaultPawn";

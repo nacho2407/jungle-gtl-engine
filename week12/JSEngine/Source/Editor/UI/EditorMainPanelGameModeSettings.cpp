@@ -193,14 +193,20 @@ void FEditorMainPanel::LoadGameModeSettingsPanelBuffers()
     strncpy_s(GameModeSettingsState.DefaultPawnClassBuffer, Settings.DefaultPawnClass.c_str(), _TRUNCATE);
     strncpy_s(GameModeSettingsState.DefaultPawnPrefabPathBuffer, Settings.DefaultPawnPrefabPath.c_str(), _TRUNCATE);
 
-    const UWorld* World = EditorEngine ? EditorEngine->GetFocusedWorld() : nullptr;
+    LoadWorldGameModeSettingsPanelBuffers();
+    GameModeSettingsState.bLoaded = true;
+}
+
+void FEditorMainPanel::LoadWorldGameModeSettingsPanelBuffers()
+{
+    UWorld* World = EditorEngine ? EditorEngine->GetFocusedWorld() : nullptr;
+    GameModeSettingsState.CachedWorld = World;
     const FWorldGameModeSettings SceneSettings = World ? World->GetGameModeSettings() : FWorldGameModeSettings{};
     GameModeSettingsState.bSceneOverrideGameMode = SceneSettings.bOverrideGameMode;
     strncpy_s(GameModeSettingsState.SceneGameModeClassBuffer, SceneSettings.GameModeClass.c_str(), _TRUNCATE);
     strncpy_s(GameModeSettingsState.ScenePlayerControllerClassBuffer, SceneSettings.PlayerControllerClass.c_str(), _TRUNCATE);
     strncpy_s(GameModeSettingsState.SceneDefaultPawnClassBuffer, SceneSettings.DefaultPawnClass.c_str(), _TRUNCATE);
     strncpy_s(GameModeSettingsState.SceneDefaultPawnPrefabPathBuffer, SceneSettings.DefaultPawnPrefabPath.c_str(), _TRUNCATE);
-    GameModeSettingsState.bLoaded = true;
 }
 
 void FEditorMainPanel::SaveProjectGameModeSettingsPanelBuffers()
@@ -312,9 +318,14 @@ void FEditorMainPanel::RenderProjectSettingsPanel()
 
 void FEditorMainPanel::RenderWorldSettingsPanel()
 {
+    UWorld* CurrentWorld = EditorEngine ? EditorEngine->GetFocusedWorld() : nullptr;
     if (!GameModeSettingsState.bLoaded)
     {
         LoadGameModeSettingsPanelBuffers();
+    }
+    else if (GameModeSettingsState.CachedWorld != CurrentWorld)
+    {
+        LoadWorldGameModeSettingsPanelBuffers();
     }
 
     ImGui::SetNextWindowSize(ImVec2(500.0f, 280.0f), ImGuiCond_FirstUseEver);
