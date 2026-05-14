@@ -5,6 +5,7 @@
 #include "Render/Mesh/MeshManager.h"
 #include "Core/ResourceManager.h"
 #include "TransformProxy.h"
+#include "Engine/Input/InputSystem.h"
 
 DEFINE_CLASS(UGizmoComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UGizmoComponent)
@@ -35,6 +36,17 @@ void UGizmoComponent::SetHolding(bool bHold)
 	if (bHold)
 	{
 		PendingSnapDelta = 0.0f;
+
+		// 드래그 시작 시 마우스 고정 및 숨김
+		POINT MousePos = InputSystem::Get().GetMousePos();
+		InputSystem::Get().LockMouse(true, (float)MousePos.x, (float)MousePos.y, 0, 0);
+		InputSystem::Get().SetCursorVisibility(false);
+	}
+	else
+	{
+		// 드래그 종료 시 마우스 고정 해제 및 표시
+		InputSystem::Get().LockMouse(false);
+		InputSystem::Get().SetCursorVisibility(true);
 	}
 
 	bIsHolding = bHold;
