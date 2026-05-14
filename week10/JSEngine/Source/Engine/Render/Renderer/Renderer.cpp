@@ -1,4 +1,4 @@
-#include "Renderer.h"
+﻿#include "Renderer.h"
 
 #include <array>
 #include <iostream>
@@ -365,6 +365,18 @@ void FRenderer::Release()
     Resources.LightPassConstantBuffer.Release();
     Resources.VSMConstantBuffer.Release();
 	FGPUProfiler::Get().Shutdown();
+
+	DecalTextureArray.Reset();
+    DecalTextureArraySRV.Reset();
+    SceneFinalRTV.Reset();
+    SceneFinalSRV.Reset();
+	
+	for (int i = 0; i < ViewerViewportResources.size(); i++)
+	{
+        ViewerViewportResources[i].reset();
+	}
+
+	ViewerViewportResources.clear();
 
 	EditorLineBatcher.Release();
 	EditorOverlayLineBatcher.Release();
