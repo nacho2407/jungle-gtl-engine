@@ -31,6 +31,8 @@
 #include <cmath>
 #include <random>
 
+#include "Animation/AnimSequence.h"
+
 namespace
 {
 constexpr const char* CubeMeshPath = "Asset/Mesh/Cube.obj";
@@ -423,6 +425,11 @@ void ASkeletalMeshActor::InitDefaultComponents()
     SkeletalMeshComp = AddComponent<USkeletalMeshComponent>();
     SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/SimpleCharacter.fbx"));
     SetRootComponent(SkeletalMeshComp);
+    // 디버그용. 추후 삭제.
+    /*UDebugAnimSequence* DebugAnim =
+        UObjectManager::Get().CreateObject<UDebugAnimSequence>();
+
+    SkeletalMeshComp->PlayAnimation(DebugAnim, true);*/
 
     auto* Text = AddComponent<UTextRenderComponent>();
     Text->AttachToComponent(SkeletalMeshComp);

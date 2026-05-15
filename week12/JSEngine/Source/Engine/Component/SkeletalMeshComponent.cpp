@@ -32,7 +32,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 
         FPoseContext PoseContext;
         PoseContext.LocalPose.resize(CurrentLocalPose.size());
-
+        // PoseContext.LocalPose = CurrentLocalPose; // Instance 디버그용
         if (AnimInstance->EvaluatePose(PoseContext))
         {
             ApplyAnimationPose(PoseContext);
