@@ -23,7 +23,6 @@ public:
 	float GetPreviousTime() const { return PreviousTime; }
 	USkeletalMeshComponent* GetOwnerComponent() const { return OwnerComponent; }
 
-protected:
 	void TriggerAnimNotifies(UAnimSequenceBase* Sequence, float InPreviousTime, float InCurrentTime, bool bLooped, bool bReverse);
 
 protected:

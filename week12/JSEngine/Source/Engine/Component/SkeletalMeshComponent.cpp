@@ -196,6 +196,10 @@ void USkeletalMeshComponent::SetAnimationPosition(float InTime)
 
 void USkeletalMeshComponent::HandleAnimNotify(const FAnimNotifyEvent& Notify)
 {
-    // 컴포넌트 소유 Actor에게 이벤트 전달.
-    // if (Owner) Owner->HandleAnimNotify(Notify);
+    UE_LOG("[AnimNotify] %s triggered at %.3f", Notify.NotifyName.ToString().c_str(), Notify.TriggerTime);
+
+    if (AActor* OwnerActor = GetOwner())
+    {
+        // OwnerActor->HandleAnimNotify(Notify);
+    }
 }

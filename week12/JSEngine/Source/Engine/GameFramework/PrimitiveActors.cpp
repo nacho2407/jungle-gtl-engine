@@ -429,8 +429,13 @@ void ASkeletalMeshActor::InitDefaultComponents()
     /*UDebugAnimSequence* DebugAnim =
         UObjectManager::Get().CreateObject<UDebugAnimSequence>();
 
+    DebugAnim->AddNotify(1.0f, FName("FootStep"));
+    DebugAnim->AddNotify(2.5f, FName("AttackHit"));
+    DebugAnim->AddNotify(4.0f, FName("EndCheck"));
+
     SkeletalMeshComp->PlayAnimation(DebugAnim, true);*/
 
+    // 여기까지가 Animation Debug 코드.
     auto* Text = AddComponent<UTextRenderComponent>();
     Text->AttachToComponent(SkeletalMeshComp);
     Text->SetFont(FName("Default"));

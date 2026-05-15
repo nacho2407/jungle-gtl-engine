@@ -12,9 +12,10 @@ public:
 	virtual float GetPlayLength() const { return PlayLength; }
 	virtual const TArray<FAnimNotifyEvent>& GetNotifies() const { return Notifies; }
 	virtual bool GetAnimationPose(float Time, FPoseContext& OutPose) const { return false; }
+	void AddNotify(float InTriggerTime, const FName& InNotifyName);
 
 protected:
-	float PlayLength = 2.0f;
+	float PlayLength = 5.0f;
 	TArray<FAnimNotifyEvent> Notifies;
 };
 

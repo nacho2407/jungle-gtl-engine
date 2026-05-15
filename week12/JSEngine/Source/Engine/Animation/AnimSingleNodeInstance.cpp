@@ -98,7 +98,7 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaTime)
         }
     }
 
-    // TriggerAnimNotifes 호출
+    TriggerAnimNotifies(CurrentAnimation, PreviousTime, CurrentTime, bLooped, bReverse);
 }
 
 bool UAnimSingleNodeInstance::EvaluatePose(FPoseContext& OutPoseContext)
