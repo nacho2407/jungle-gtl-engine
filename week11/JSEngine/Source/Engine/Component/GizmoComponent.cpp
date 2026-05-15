@@ -679,27 +679,30 @@ void UGizmoComponent::UpdateGizmoTransform()
 		return;
 	}
 
-	SetWorldLocation(Proxy->GetTransform().GetOrigin());
+    FMatrix M = Proxy->GetTransform();
+    FVector T, S;
+    FMatrix R;
+    M.Decompose(T, R, S);
+    FQuat TargetQuat = FQuat(R);
+    TargetQuat.Normalize();
 
-	FVector TargetRot = GetTargetRotation();
+    SetWorldLocation(M.GetOrigin());
 
-	switch (CurMode)
-	{
-	case EGizmoMode::Scale:
-		SetRelativeRotation(TargetRot);
-		GizmoMeshData = &FEditorMeshLibrary::Get().GetScaleGizmo();
-		break;
-
-	case EGizmoMode::Rotate:
-		SetRelativeRotation(bIsWorldSpace ? FVector() : TargetRot);
-		GizmoMeshData = &FEditorMeshLibrary::Get().GetRotationGizmo();
-		break;
-
-	case EGizmoMode::Translate:
-		SetRelativeRotation(bIsWorldSpace ? FVector() : TargetRot);
-		GizmoMeshData = &FEditorMeshLibrary::Get().GetTranslationGizmo();
-		break;
-	}
+    switch (CurMode)
+    {
+    case EGizmoMode::Scale:
+        SetRelativeRotationQuat(TargetQuat);
+        GizmoMeshData = &FEditorMeshLibrary::Get().GetScaleGizmo();
+        break;
+    case EGizmoMode::Rotate:
+        SetRelativeRotationQuat(bIsWorldSpace ? FQuat::Identity : TargetQuat);
+        GizmoMeshData = &FEditorMeshLibrary::Get().GetRotationGizmo();
+        break;
+    case EGizmoMode::Translate:
+        SetRelativeRotationQuat(bIsWorldSpace ? FQuat::Identity : TargetQuat);
+        GizmoMeshData = &FEditorMeshLibrary::Get().GetTranslationGizmo();
+        break;
+    }
 }
 
 void UGizmoComponent::ApplyScreenSpaceScaling(const FVector& CameraLocation)
