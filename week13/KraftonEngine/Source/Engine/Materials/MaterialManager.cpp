@@ -7,6 +7,7 @@
 #include "Render/Resource/Buffer.h"
 #include "Texture/Texture2D.h"
 #include "Render/Pipeline/Renderer.h"
+#include "Materials/Material.h"
 
 void FMaterialManager::ScanMaterialAssets()
 {
@@ -415,9 +416,14 @@ void FMaterialManager::Release()
 			Pair.second = nullptr;
 		}
 	}
+
 	TemplateCache.clear();
 
-	// 2. MaterialCache — UMaterial은 UObjectManager가 수명을 관리하므로 캐시 맵만 비움
+	// 2. GPU 버퍼를 Device 해제 전에 명시 해제, UObject 수명은 UObjectManager가 관리
+	for (auto& [Key, Mat] : MaterialCache)
+	{
+		if (Mat) Mat->ReleaseGPUBuffers();
+	}
 	MaterialCache.clear();
 
 	// 3. Device 참조 해제

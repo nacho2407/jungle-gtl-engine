@@ -29,6 +29,8 @@
 Texture2D DiffuseTexture : register(t0);
 Texture2D NormalTexture : register(t1);
 
+StructuredBuffer<float4x4> SkinMatrices : register(t13);
+
 
 // ── Per-Object Material (b2) — 기존 StaticMesh 와 레이아웃 동일 (호환성) ──
 cbuffer PerShader1 : register(b2)
@@ -37,6 +39,7 @@ cbuffer PerShader1 : register(b2)
     float HasNormalMap;
     float3 _pad;
 };
+
 
 // 머티리얼 확장 파라미터 — 팀원 A CB 시스템 완성 후 b2 확장 예정
 static const float4 g_DefaultEmissive = float4(0, 0, 0, 0);
@@ -59,11 +62,50 @@ struct UberVS_Output
 #endif
 };
 
-
 // =============================================================================
 // Vertex Shader
 // =============================================================================
-UberVS_Output VS(VS_Input_PNCTT input)
+UberVS_Output VS_StaticMesh(VS_Input_PNCTT input)
+{
+    UberVS_Output output;
+    
+    float3x3 M = (float3x3) Model;
+
+    float4 worldPos4 = mul(float4(input.position, 1.0f), Model);
+    output.worldPos = worldPos4.xyz;
+    output.position = mul(mul(worldPos4, View), Projection);
+    output.normal = normalize(mul(input.normal, (float3x3) NormalMatrix));
+    output.color = input.color * SectionColor;
+    output.texcoord = input.texcoord;
+
+    float3 T = normalize(mul(input.tangent.xyz, M));
+    T = normalize(T - output.normal * dot(output.normal, T));
+    output.tangent = float4(T, input.tangent.w);
+
+#if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
+    float3 N =  output.normal;
+
+    if (HasNormalMap > 0.5f)
+    {
+        float3 B = normalize(cross(N, T) * input.tangent.w);
+        float3x3 TBN = float3x3(T, B, N);
+
+        float3 tangentNormal = NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
+
+        N = normalize(mul(tangentNormal, TBN));
+    }
+
+    float3 V = normalize(CameraWorldPos - output.worldPos);
+    output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N);
+    output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess);
+
+#endif
+
+    return output;
+}
+
+// GPU Skinning
+UberVS_Output VS_SkeletalMesh(VS_Input_PNCTTBB input)
 {
     UberVS_Output output;
     

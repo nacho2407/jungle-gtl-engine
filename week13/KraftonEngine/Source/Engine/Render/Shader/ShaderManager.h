@@ -10,28 +10,50 @@
 struct FShaderKey
 {
 	FString Path;
+	FString VSEntryPoint = "VS";
+	FString PSEntryPoint = "PS";
 	uint64  PathHash = 0;
 	uint64  DefinesHash = 0;
+	uint64  EntryHash = 0;
 
 	FShaderKey(const FString& InPath)
 		: Path(InPath)
 		, PathHash(std::hash<FString>{}(InPath))
 		, DefinesHash(0)
+		, EntryHash(HashEntryPoints(VSEntryPoint, PSEntryPoint))
 	{}
 
 	FShaderKey(const FString& InPath, const D3D_SHADER_MACRO* InDefines)
 		: Path(InPath)
 		, PathHash(std::hash<FString>{}(InPath))
 		, DefinesHash(HashDefines(InDefines))
+		, EntryHash(HashEntryPoints(VSEntryPoint, PSEntryPoint))
+	{}
+
+	FShaderKey(const FString& InPath, const D3D_SHADER_MACRO* InDefines, const FString& InVSEntryPoint, const FString& InPSEntryPoint = "PS")
+		: Path(InPath)
+		, VSEntryPoint(InVSEntryPoint)
+		, PSEntryPoint(InPSEntryPoint)
+		, PathHash(std::hash<FString>{}(InPath))
+		, DefinesHash(HashDefines(InDefines))
+		, EntryHash(HashEntryPoints(VSEntryPoint, PSEntryPoint))
 	{}
 
 	bool operator==(const FShaderKey& Other) const
 	{
 		return PathHash == Other.PathHash
-			&& DefinesHash == Other.DefinesHash;
+			&& DefinesHash == Other.DefinesHash
+			&& EntryHash == Other.EntryHash;
 	}
 
 private:
+	static uint64 HashEntryPoints(const FString& VSEntryPoint, const FString& PSEntryPoint)
+	{
+		const uint64 VSHash = std::hash<FString>{}(VSEntryPoint);
+		const uint64 PSHash = std::hash<FString>{}(PSEntryPoint);
+		return VSHash ^ (PSHash * 0x9e3779b97f4a7c15ULL);
+	}
+
 	static uint64 HashDefines(const D3D_SHADER_MACRO* Defines)
 	{
 		if (!Defines)
@@ -56,7 +78,9 @@ namespace std
 	{
 		size_t operator()(const FShaderKey& K) const
 		{
-			return static_cast<size_t>(K.PathHash ^ (K.DefinesHash * 0x9e3779b97f4a7c15ULL));
+			return static_cast<size_t>(K.PathHash
+				^ (K.DefinesHash * 0x9e3779b97f4a7c15ULL)
+				^ (K.EntryHash * 0xbf58476d1ce4e5b9ULL));
 		}
 	};
 }
@@ -94,11 +118,55 @@ namespace EShaderPath
 
 namespace EUberLitDefines
 {
+	namespace EntryPoint
+	{
+		inline constexpr const char* StaticMeshVS = "VS_StaticMesh";
+		inline constexpr const char* SkeletalMeshVS = "VS_SkeletalMesh";
+		inline constexpr const char* PS = "PS";
+	}
+
+	enum class ELightingModel : uint8
+	{
+		Default,
+		Unlit,
+		Gouraud,
+		Lambert,
+		Phong,
+	};
+
+	enum class EVertexFactory : uint8
+	{
+		StaticMesh,
+		SkeletalMesh,
+	};
+
 	inline const D3D_SHADER_MACRO Default[] = { {"LIGHTING_MODEL_PHONG", "1"}, {nullptr, nullptr} };
 	inline const D3D_SHADER_MACRO Unlit[] = { {"LIGHTING_MODEL_UNLIT", "1"}, {nullptr, nullptr} };
 	inline const D3D_SHADER_MACRO Gouraud[] = { {"LIGHTING_MODEL_GOURAUD", "1"}, {nullptr, nullptr} };
 	inline const D3D_SHADER_MACRO Lambert[] = { {"LIGHTING_MODEL_LAMBERT", "1"}, {nullptr, nullptr} };
 	inline const D3D_SHADER_MACRO Phong[] = { {"LIGHTING_MODEL_PHONG", "1"}, {nullptr, nullptr} };
+
+	inline const D3D_SHADER_MACRO* GetDefines(ELightingModel LightingModel, EVertexFactory VertexFactory)
+	{
+		(void)VertexFactory;
+		switch (LightingModel)
+		{
+		case ELightingModel::Unlit:   return Unlit;
+		case ELightingModel::Gouraud: return Gouraud;
+		case ELightingModel::Lambert: return Lambert;
+		case ELightingModel::Phong:   return Phong;
+		case ELightingModel::Default:
+		default:                      return Default;
+		}
+	}
+
+	inline FShaderKey MakePermutationKey(ELightingModel LightingModel, EVertexFactory VertexFactory)
+	{
+		const char* VSEntryPoint = VertexFactory == EVertexFactory::SkeletalMesh
+			? EntryPoint::SkeletalMeshVS
+			: EntryPoint::StaticMeshVS;
+		return FShaderKey(EShaderPath::UberLit, GetDefines(LightingModel, VertexFactory), VSEntryPoint, EntryPoint::PS);
+	}
 }
 
 // 셰이더별 저장된 매크로 정보 (핫 리로드 시 재컴파일에 사용)
@@ -152,6 +220,8 @@ public:
 	FShader* GetOrCreate(const FShaderKey& Key, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
 	FShader* PreCompile(const FShaderKey& Key, const D3D_SHADER_MACRO* Defines, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
 	FShader* GetOrCreate(const FString& Path, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification) { return GetOrCreate(FShaderKey(Path), ErrorMode); }
+	FShader* GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel LightingModel, EUberLitDefines::EVertexFactory VertexFactory,
+		EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
 	FShader* FindOrCreate(const FString& Path);
 
 	// Compute Shader — 캐시 기반. 호출자는 포인터만 보관, FShaderManager가 소유 + 핫 리로드.
