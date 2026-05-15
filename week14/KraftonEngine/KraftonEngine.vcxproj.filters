@@ -2848,6 +2848,7 @@
     <ClInclude Include="Source\Engine\Component\BoneDebugComponent.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\BoneDebugSceneProxy.h" />
     <ClInclude Include="Source\Engine\Asset\AssetPackage.h" />
+    <ClInclude Include="Source\Engine\Object\ObjectMacros.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

@@ -7,6 +7,7 @@ class AActor;
 class UWorld;
 class FScene;
 
+UCLASS()
 class UActorComponent : public UObject
 {
     friend struct FActorComponentTickFunction;
@@ -14,7 +15,7 @@ class UActorComponent : public UObject
 
 public:
 	DECLARE_CLASS(UActorComponent, UObject)
-	DECLARE_REFLECTED_PROPERTIES(UActorComponent)
+	GENERATED_BODY()
 
 	virtual void BeginPlay();
 	virtual void EndPlay() {};

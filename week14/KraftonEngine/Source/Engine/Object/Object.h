@@ -5,6 +5,7 @@
 #include "Core/Singleton.h"
 #include "Core/PropertyTypes.h"
 #include "Object/UClass.h"
+#include "Object/ObjectMacros.h"
 
 class FArchive;
 
@@ -79,6 +80,7 @@ namespace {                                                                \
 class UObject;
 inline bool IsValid(const UObject* Object);
 
+UCLASS()
 class UObject
 {
 public:

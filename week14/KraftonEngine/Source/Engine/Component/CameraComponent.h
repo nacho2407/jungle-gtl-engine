@@ -16,11 +16,12 @@ struct FCameraState
 	bool bIsOrthogonal = false;
 };
 
+UCLASS()
 class UCameraComponent : public USceneComponent
 {
 public:
 	DECLARE_CLASS(UCameraComponent, USceneComponent)
-	DECLARE_REFLECTED_PROPERTIES(UCameraComponent)
+	GENERATED_BODY()
 
 	UCameraComponent() = default;
 

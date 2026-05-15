@@ -11,11 +11,12 @@ class USceneComponent;
  * USceneComponent를 움직이는 로직들의 베이스 클래스.
  * 실제 이동 로직은 자식 클래스에서 담당합니다.
  */
+UCLASS()
 class UMovementComponent : public UActorComponent
 {
 public:
 	DECLARE_CLASS(UMovementComponent, UActorComponent)
-	DECLARE_REFLECTED_PROPERTIES(UMovementComponent)
+	GENERATED_BODY()
 
 	UMovementComponent() = default;
 	~UMovementComponent() override = default;

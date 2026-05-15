@@ -7,11 +7,12 @@
 
 class AActor;
 
+UCLASS()
 class USceneComponent : public UActorComponent
 {
 public:
 	DECLARE_CLASS(USceneComponent, UActorComponent)
-	DECLARE_REFLECTED_PROPERTIES(USceneComponent)
+	GENERATED_BODY()
 
 	USceneComponent();
 	~USceneComponent();
