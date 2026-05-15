@@ -1,4 +1,6 @@
 ﻿#include "SkeletalMesh.h"
+
+#include "Animation/Skeleton.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 
@@ -14,6 +16,7 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 	}
 
 	Ar << SkeletalMeshAsset->PathFileName;
+	Ar << SkeletalMeshAsset->SkeletonPath;
 	Ar << SkeletalMeshAsset->Vertices;
 	Ar << SkeletalMeshAsset->Indices;
 	Ar << SkeletalMeshAsset->Sections;
@@ -23,6 +26,7 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 
 	if (Ar.IsLoading())
 	{
+		SkeletonPath = SkeletalMeshAsset->SkeletonPath;
 		CacheSectionMaterialIndices();
 		SkeletalMeshAsset->bBoundsValid = false;
 	}
@@ -78,6 +82,49 @@ void USkeletalMesh::InitResources(ID3D11Device* InDevice)
 
 	SkeletalMeshAsset->RenderBuffer = std::make_unique<FMeshBuffer>();
 	SkeletalMeshAsset->RenderBuffer->Create(InDevice, RenderMeshData);
+}
+
+void USkeletalMesh::SetSkeleton(USkeleton* InSkeleton)
+{
+	Skeleton = InSkeleton;
+
+	if (Skeleton)
+	{
+		SkeletonPath = Skeleton->GetAssetPathFileName();
+	}
+	else
+	{
+		SkeletonPath = "None";
+	}
+
+	if (SkeletalMeshAsset)
+	{
+		SkeletalMeshAsset->SkeletonPath = SkeletonPath;
+	}
+}
+
+USkeleton* USkeletalMesh::GetSkeleton() const
+{
+	return Skeleton;
+}
+
+void USkeletalMesh::SetSkeletonPath(const FString& InSkeletonPath)
+{
+	SkeletonPath = InSkeletonPath;
+
+	if (SkeletalMeshAsset)
+	{
+		SkeletalMeshAsset->SkeletonPath = SkeletonPath;
+	}
+}
+
+const FString& USkeletalMesh::GetSkeletonPath() const
+{
+	if (SkeletalMeshAsset && !SkeletalMeshAsset->SkeletonPath.empty())
+	{
+		return SkeletalMeshAsset->SkeletonPath;
+	}
+	return SkeletonPath;
 }
 
 void USkeletalMesh::CacheSectionMaterialIndices()

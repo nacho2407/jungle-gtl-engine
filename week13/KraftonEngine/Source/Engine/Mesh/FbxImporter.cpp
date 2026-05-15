@@ -1,4 +1,4 @@
-﻿#include "FbxImporter.h"
+#include "FbxImporter.h"
 #include "Platform/Paths.h"
 #include "Core/Log.h"
 #include "MeshImportOptions.h"
@@ -6,17 +6,27 @@
 
 #include <filesystem>
 #include <fstream>
+#include <algorithm>
+#include <cmath>
 
-TArray<FBone> FFbxImporter::Bones;
-TArray<FVertexPNCTBW> FFbxImporter::Vertices;
-TArray<uint32> FFbxImporter::Indices;
-TArray<FSkeletalMeshSection> FFbxImporter::Sections;
-TArray<FSkeletalMeshRange> FFbxImporter::MeshRanges;
+#include "Animation/AnimDataModel.h"
+#include "Animation/AnimSequence.h"
+#include "Animation/SkeletonTypes.h"
+#include "Math/Transform.h"
+#include "Object/Object.h"
+
+TArray<FBone>                       FFbxImporter::Bones;
+TArray<FVertexPNCTBW>               FFbxImporter::Vertices;
+TArray<uint32>                      FFbxImporter::Indices;
+TArray<FSkeletalMeshSection>        FFbxImporter::Sections;
+TArray<FSkeletalMeshRange>          FFbxImporter::MeshRanges;
 TArray<FFbxImporter::FMaterialInfo> FFbxImporter::MtlInfos;
-TArray<FSkeletalMaterial> FFbxImporter::SkeletalMaterials;
-TArray<FVector> FFbxImporter::TangentSums;
-TArray<FVector> FFbxImporter::BitangentSums;
-TMap<FbxSurfaceMaterial*, int32> FFbxImporter::MaterialToSlotIndex;
+TArray<FSkeletalMaterial>           FFbxImporter::SkeletalMaterials;
+TArray<FVector>                     FFbxImporter::TangentSums;
+TArray<FVector>                     FFbxImporter::BitangentSums;
+TMap<FbxSurfaceMaterial*, int32>    FFbxImporter::MaterialToSlotIndex;
+FReferenceSkeleton                  FFbxImporter::ImportedSkeleton;
+TArray<UAnimSequence*>              FFbxImporter::ImportedAnimSequences;
 
 
 struct FFbxSkeletalVertexKey
@@ -60,6 +70,59 @@ struct hash<FFbxSkeletalVertexKey>
 		return Result;
 	}
 };
+}
+
+namespace
+{
+	static float GetSceneSampleRate(FbxScene* Scene)
+	{
+		if (!Scene)
+		{
+			return 30.0f;
+		}
+
+		const FbxTime::EMode TimeMode = Scene->GetGlobalSettings().GetTimeMode();
+		const double         Rate     = FbxTime::GetFrameRate(TimeMode);
+
+		return Rate > 1.0f ? static_cast<float>(Rate) : 30.0f;
+	}
+
+	static bool TryResolveAnimationTimeRange(FbxScene* Scene, FbxAnimStack* AnimStack, double& OutStartSecond, double& OutEndSecond)
+	{
+		if (!Scene || !AnimStack)
+		{
+			return false;
+		}
+
+		auto TrySpan = [&](const FbxTimeSpan& Span) -> bool
+		{
+			const double Start = Span.GetStart().GetSecondDouble();
+			const double End   = Span.GetStop().GetSecondDouble();
+
+			if (End <= Start)
+			{
+				return false;
+			}
+
+			OutStartSecond = Start;
+			OutEndSecond   = End;
+			return true;
+		};
+
+		if (TrySpan(AnimStack->GetLocalTimeSpan()))
+		{
+			return true;
+		}
+
+		if (TrySpan(AnimStack->GetReferenceTimeSpan()))
+		{
+			return true;
+		}
+
+		FbxTimeSpan TimelineSpan;
+		Scene->GetGlobalSettings().GetTimelineDefaultTimeSpan(TimelineSpan);
+		return TrySpan(TimelineSpan);
+	}
 }
 
 struct FFbxStaticVertexKey
@@ -129,6 +192,9 @@ bool FFbxImporter::Import(const FString& FilePath)
 
 	TangentSums.clear();
 	BitangentSums.clear();
+
+	ImportedSkeleton.Bones.clear();
+	ImportedAnimSequences.clear();
 
 	FbxManager* SdkManager = FbxManager::Create();
 	if (!SdkManager)
@@ -521,6 +587,9 @@ bool FFbxImporter::Parse(FbxScene* Scene)
 
 	ParseBone(Nodes, NodeToIndex);
 	ParseSkin(Nodes, NodeToIndex);
+
+	FinalizeSkeletonFromBones();
+	ParseAnimation(Scene, NodeToIndex);
 	
 	return true;
 }
@@ -1082,6 +1151,143 @@ void FFbxImporter::BuildTangentsForVertexRange(const uint32 VertexStart)
 		float Handedness = N.Cross(T).Dot(B) < 0.0f ? -1.0f : 1.0f;
 
 		Vertices[i].Tangent = FVector4(T, Handedness);
+	}
+}
+
+void FFbxImporter::FinalizeSkeletonFromBones()
+{
+	ImportedSkeleton.Bones.clear();
+	ImportedSkeleton.Bones.reserve(Bones.size());
+
+	for (const FBone& Bone : Bones)
+	{
+		FReferenceBone RefBone;
+		RefBone.Name            = Bone.Name;
+		RefBone.ParentIndex     = Bone.ParentIndex;
+		RefBone.LocalBindPose   = Bone.LocalMatrix;
+		RefBone.GlobalBindPose  = Bone.GlobalMatrix;
+		RefBone.InverseBindPose = Bone.InverseBindPoseMatrix;
+		ImportedSkeleton.Bones.push_back(RefBone);
+	}
+}
+
+void FFbxImporter::ParseAnimation(FbxScene* Scene, const TMap<FbxNode*, int32>& NodeToIndex)
+{
+	ImportedAnimSequences.clear();
+
+	if (!Scene || Bones.empty() || NodeToIndex.empty()) return;
+
+	const int32 AnimStackCount = Scene->GetSrcObjectCount<FbxAnimStack>();
+	if (AnimStackCount <= 0)
+	{
+		return;
+	}
+
+	const float SampleRate = GetSceneSampleRate(Scene);
+
+	for (int32 StackIndex = 0; StackIndex < AnimStackCount; ++StackIndex)
+	{
+		FbxAnimStack* AnimStack = Scene->GetSrcObject<FbxAnimStack>(StackIndex);
+		if (!AnimStack) continue;
+
+		Scene->SetCurrentAnimationStack(AnimStack);
+
+		double StartSeconds = 0.0;
+		double EndSeconds   = 0.0;
+
+		if (!TryResolveAnimationTimeRange(Scene, AnimStack, StartSeconds, EndSeconds))
+		{
+			continue;
+		}
+
+		const double DurationSeconds = EndSeconds - StartSeconds;
+		if (DurationSeconds <= 0.0)
+		{
+			continue;
+		}
+
+		const int32 NumFrames = std::max(1, static_cast<int32>(std::ceil(DurationSeconds * static_cast<double>(SampleRate))) + 1);
+
+		UAnimDataModel* DataModel = UObjectManager::Get().CreateObject<UAnimDataModel>();
+		DataModel->SetTiming(static_cast<float>(DurationSeconds), SampleRate, NumFrames);
+		DataModel->BoneAnimationTracks.resize(Bones.size());
+
+		for (int32 NodeIndex = 0; NodeIndex < static_cast<int32>(Bones.size()); ++NodeIndex)
+		{
+			FBoneAnimationTrack& Track = DataModel->BoneAnimationTracks[NodeIndex];
+
+			Track.BoneTreeIndex = NodeIndex;
+			Track.InternalTrackData.PosKeys.reserve(NumFrames);
+			Track.InternalTrackData.RotKeys.reserve(NumFrames);
+			Track.InternalTrackData.ScaleKeys.reserve(NumFrames);
+		}
+
+		for (int32 FrameIndex = 0; FrameIndex < NumFrames; ++FrameIndex)
+		{
+			const double LocalSeconds = std::min(static_cast<double>(FrameIndex) / static_cast<double>(SampleRate), DurationSeconds);
+
+			FbxTime Time;
+			Time.SetSecondDouble(StartSeconds + LocalSeconds);
+
+			TArray<FMatrix> BoneGlobals;
+			BoneGlobals.resize(Bones.size());
+
+			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
+			{
+				BoneGlobals[BoneIndex] = Bones[BoneIndex].GlobalMatrix;
+			}
+
+			for (const auto& Pair : NodeToIndex)
+			{
+				FbxNode*    BoneNode  = Pair.first;
+				const int32 BoneIndex = Pair.second;
+
+				if (!BoneNode)
+				{
+					continue;
+				}
+
+				if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(Bones.size()))
+				{
+					continue;
+				}
+
+				BoneGlobals[BoneIndex] = ConvertFbxMatrix(BoneNode->EvaluateGlobalTransform(Time));
+			}
+
+			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
+			{
+				FMatrix LocalMatrix = BoneGlobals[BoneIndex];
+
+				const int32 ParentIndex = Bones[BoneIndex].ParentIndex;
+				if (ParentIndex >= 0 && ParentIndex < static_cast<int32>(Bones.size()))
+				{
+					LocalMatrix = BoneGlobals[BoneIndex] * BoneGlobals[ParentIndex].GetInverse();
+				}
+
+				FTransform LocalTransform(LocalMatrix);
+
+				FRawAnimSequenceTrack& Raw = DataModel->BoneAnimationTracks[BoneIndex].InternalTrackData;
+
+				Raw.PosKeys.push_back(LocalTransform.Location);
+
+				Raw.RotKeys.push_back(LocalTransform.Rotation.GetNormalized());
+				Raw.ScaleKeys.push_back(LocalTransform.Scale);
+			}
+		}
+
+		UAnimSequence* Sequence = UObjectManager::Get().CreateObject<UAnimSequence>();
+
+		FString AnimName = AnimStack->GetName() ? FString(AnimStack->GetName()) : FString("Anim");
+		if (AnimName.empty())
+		{
+			AnimName = "Anim";
+		}
+
+		Sequence->SetFName(FName(AnimName));
+		Sequence->SetDataModel(DataModel);
+
+		ImportedAnimSequences.push_back(Sequence);
 	}
 }
 
