@@ -1,4 +1,4 @@
-#include "Core/SkeletalMeshLoadService.h"
+﻿#include "Core/SkeletalMeshLoadService.h"
 
 #include "Core/AssetPathPolicy.h"
 #include "Core/Logging/Log.h"
@@ -56,7 +56,13 @@ USkeletalMesh* FSkeletalMeshLoadService::LoadSourceOrCachedBinary(const FString&
 	if (LoadedMeshData == nullptr)
 	{
 		const auto SourceStart = std::chrono::steady_clock::now();
-		LoadedMeshData = ResourceManager.FbxImporter.LoadSkeletalMesh(NormalizedPath, LoadOptions);
+        FSkeletalMeshImportData ImportData;
+        if (!ResourceManager.FbxImporter.LoadSkeletalMesh(NormalizedPath, LoadOptions, ImportData))
+        {
+            return nullptr;
+        }
+        LoadedMeshData = ImportData.MeshData;
+
 		const auto SourceEnd = std::chrono::steady_clock::now();
 		SourceLoadSec = std::chrono::duration<double>(SourceEnd - SourceStart).count();
 

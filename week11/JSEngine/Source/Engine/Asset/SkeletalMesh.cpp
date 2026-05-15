@@ -64,22 +64,23 @@ const TArray<uint32>& USkeletalMesh::GetIndices() const
 const TArray<FBoneInfo>& USkeletalMesh::GetBones() const
 {
     static const TArray<FBoneInfo> Empty = {};
+    const FReferenceSkeleton* RefSkeleton = GetReferenceSkeleton();
+
+	if (RefSkeleton)
+        return RefSkeleton->RefBones;
     return MeshData ? MeshData->Bones : Empty;
 }
 
 const FBoneInfo* USkeletalMesh::GetBoneInfo(int32 BoneIndex) const
 {
-    if (!MeshData)
+    const TArray<FBoneInfo>& Bones = GetBones();
+
+    if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(Bones.size()))
     {
         return nullptr;
     }
 
-    if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(MeshData->Bones.size()))
-    {
-        return nullptr;
-    }
-
-    return &MeshData->Bones[BoneIndex];
+    return &Bones[BoneIndex];
 }
 
 const FMatrix& USkeletalMesh::GetLocalBindTransform(int32 BoneIndex) const
@@ -155,7 +156,24 @@ const FAABB& USkeletalMesh::GetLocalBounds() const
 
 bool USkeletalMesh::HasValidMeshData() const
 {
-    return MeshData != nullptr && !MeshData->Vertices.empty() && !MeshData->Indices.empty() && !MeshData->Bones.empty();
+	return MeshData != nullptr && !MeshData->Vertices.empty() && !MeshData->Indices.empty() && !GetBones().empty();
+}
+
+void USkeletalMesh::SetSkeleton(USkeleton* InSkeleton)
+{
+    Skeleton = InSkeleton;
+}
+
+USkeleton* USkeletalMesh::GetSkeleton() const
+{
+    return Skeleton;
+}
+
+const FReferenceSkeleton* USkeletalMesh::GetReferenceSkeleton() const
+{
+    if (Skeleton)
+        return &Skeleton->GetReferenceSkeleton();
+    return nullptr;
 }
 
 void USkeletalMesh::RebuildLocalBoundsFromMeshData()

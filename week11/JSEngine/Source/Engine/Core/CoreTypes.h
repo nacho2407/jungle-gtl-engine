@@ -35,3 +35,23 @@ using SIZE_T = std::size_t;
 using ANSICHAR = char;
 using WIDECHAR = wchar_t;
 using TCHAR = WIDECHAR;
+inline uint32 GetTypeHash(uint32 Value)
+{
+    return Value;
+}
+
+inline uint32 GetTypeHash(int32 Value)
+{
+    return static_cast<uint32>(Value);
+}
+
+inline uint32 GetTypeHash(uint64 Value)
+{
+    return static_cast<uint32>(Value ^ (Value >> 32));
+}
+template <typename T>
+inline uint32 GetTypeHash(T* Ptr)
+{
+    const uintptr_t Value = reinterpret_cast<uintptr_t>(Ptr);
+    return static_cast<uint32>(Value ^ (Value >> 32));
+}

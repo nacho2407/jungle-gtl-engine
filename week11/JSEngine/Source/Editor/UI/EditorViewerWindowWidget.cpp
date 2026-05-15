@@ -852,7 +852,19 @@ void FEditorViewerWindowWidget::RenderBoneDetails(USkeletalMeshComponent* SkelCo
     const int32 SelectedBoneIndex = Viewer ? Viewer->GetSelectedBoneIndex() : -1;
     if (!SkelComp || SelectedBoneIndex == -1) return;
 
-    const FBoneInfo& Bone = SkelComp->GetSkeletalMesh()->GetMeshData()->Bones[SelectedBoneIndex];
+    USkeletalMesh* SkeletalMesh = SkelComp->GetSkeletalMesh();
+    if (!SkeletalMesh)
+    {
+        return;
+    }
+
+    const TArray<FBoneInfo>& Bones = SkeletalMesh->GetBones();
+    if (SelectedBoneIndex < 0 || SelectedBoneIndex >= static_cast<int32>(Bones.size()))
+    {
+        return;
+    }
+
+    const FBoneInfo& Bone = Bones[SelectedBoneIndex];
     ImGui::Text("Bone: %s (Index: %d)", Bone.Name.c_str(), SelectedBoneIndex);
     ImGui::Spacing();
 

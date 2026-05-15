@@ -39,10 +39,14 @@ public:
     const FAABB& GetLocalBounds() const;
 
     bool HasValidMeshData() const;
+    void SetSkeleton(USkeleton* InSkeleton);
+    USkeleton* GetSkeleton() const;
+    const FReferenceSkeleton* GetReferenceSkeleton() const;
 
 private:
     void RebuildLocalBoundsFromMeshData();
 
 private:
+    USkeleton* Skeleton = nullptr;
     FSkeletalMesh* MeshData = nullptr;
 };

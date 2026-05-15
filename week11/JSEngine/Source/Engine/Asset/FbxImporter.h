@@ -4,7 +4,7 @@
 #include "Asset/SkeletalMeshTypes.h"
 #include "Asset/StaticMeshTypes.h"
 #include "Core/ResourceTypes.h"
-
+#include <cstdint>
 namespace fbxsdk
 {
 	class FbxManager;
@@ -37,7 +37,7 @@ public:
 	bool SupportsExtension(const FString& Extension) const override;
 	FString GetLoaderName() const override;
 
-	FSkeletalMesh* LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOptions& LoadOptions);
+	bool LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOptions& LoadOptions, FSkeletalMeshImportData& OutData);
 
 	FFbxMeshContentInfo InspectMeshContent(const FString& Path);
 
@@ -54,21 +54,23 @@ private:
 	void NormalizePositionsToUnitCube(FStaticMesh* InStaticMesh);
 	void ComputeTangents(FStaticMesh* InStaticMesh);
 
-    void CollectSkeletalMeshes(
-        fbxsdk::FbxNode* Node,
-        FSkeletalMesh* InSkeletalMesh,
-        ESkeletalMeshImportPass Pass,
-        TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex,
-        bool& bHasImportedSkinnedMesh);
+	void CollectSkeletalMeshes(
+			fbxsdk::FbxNode* Node,
+			FSkeletalMesh* InSkeletalMesh,
+			FReferenceSkeleton& InOutReferenceSkeleton,
+			ESkeletalMeshImportPass Pass,
+			TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex,
+			bool& bHasImportedSkinnedMesh);
 
     void ProcessSkeletalMesh(
         fbxsdk::FbxMesh* Mesh,
         FSkeletalMesh* InSkeletalMesh,
+		FReferenceSkeleton& InOutReferenceSkeleton,
         ESkeletalMeshImportPass Pass,
         TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex,
         bool& bHasImportedSkinnedMesh);
 
-    void ProcessRigidAttachedMesh(
+	void ProcessRigidAttachedMesh(
         fbxsdk::FbxMesh* Mesh,
         FSkeletalMesh* InSkeletalMesh,
         TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex,
