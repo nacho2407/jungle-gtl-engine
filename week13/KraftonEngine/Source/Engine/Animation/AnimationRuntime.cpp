@@ -8,44 +8,41 @@
 namespace
 {
 	constexpr float MatrixDecomposeTolerance = 1.0e-6f;
+}
 
-	// 본 로컬 행렬을 FTransform 으로 분해. SkinnedMeshComponent.cpp 의
-	// MatrixToEditorTransform 과 동일한 패턴 — scale 을 row 단위로 제거한 뒤 회전 추출.
-	// FBone::LocalMatrix 는 row-major 가정.
-	FTransform DecomposeMatrix(const FMatrix& Mat)
+FTransform FAnimationRuntime::DecomposeMatrix(const FMatrix& Mat)
+{
+	FTransform T;
+	T.Location = Mat.GetLocation();
+	T.Scale    = Mat.GetScale();
+
+	FMatrix Rot = Mat;
+	Rot.M[3][0] = 0.0f;
+	Rot.M[3][1] = 0.0f;
+	Rot.M[3][2] = 0.0f;
+	Rot.M[3][3] = 1.0f;
+
+	if (std::fabs(T.Scale.X) > MatrixDecomposeTolerance)
 	{
-		FTransform T;
-		T.Location = Mat.GetLocation();
-		T.Scale    = Mat.GetScale();
-
-		FMatrix Rot = Mat;
-		Rot.M[3][0] = 0.0f;
-		Rot.M[3][1] = 0.0f;
-		Rot.M[3][2] = 0.0f;
-		Rot.M[3][3] = 1.0f;
-
-		if (std::fabs(T.Scale.X) > MatrixDecomposeTolerance)
-		{
-			Rot.M[0][0] /= T.Scale.X;
-			Rot.M[0][1] /= T.Scale.X;
-			Rot.M[0][2] /= T.Scale.X;
-		}
-		if (std::fabs(T.Scale.Y) > MatrixDecomposeTolerance)
-		{
-			Rot.M[1][0] /= T.Scale.Y;
-			Rot.M[1][1] /= T.Scale.Y;
-			Rot.M[1][2] /= T.Scale.Y;
-		}
-		if (std::fabs(T.Scale.Z) > MatrixDecomposeTolerance)
-		{
-			Rot.M[2][0] /= T.Scale.Z;
-			Rot.M[2][1] /= T.Scale.Z;
-			Rot.M[2][2] /= T.Scale.Z;
-		}
-
-		T.Rotation = Rot.ToQuat().GetNormalized();
-		return T;
+		Rot.M[0][0] /= T.Scale.X;
+		Rot.M[0][1] /= T.Scale.X;
+		Rot.M[0][2] /= T.Scale.X;
 	}
+	if (std::fabs(T.Scale.Y) > MatrixDecomposeTolerance)
+	{
+		Rot.M[1][0] /= T.Scale.Y;
+		Rot.M[1][1] /= T.Scale.Y;
+		Rot.M[1][2] /= T.Scale.Y;
+	}
+	if (std::fabs(T.Scale.Z) > MatrixDecomposeTolerance)
+	{
+		Rot.M[2][0] /= T.Scale.Z;
+		Rot.M[2][1] /= T.Scale.Z;
+		Rot.M[2][2] /= T.Scale.Z;
+	}
+
+	T.Rotation = Rot.ToQuat().GetNormalized();
+	return T;
 }
 
 void FPoseContext::ResetToRefPose()
@@ -58,7 +55,7 @@ void FPoseContext::ResetToRefPose()
 	Pose.resize(Bones.size());
 	for (size_t i = 0; i < Bones.size(); ++i)
 	{
-		Pose[i] = DecomposeMatrix(Bones[i].LocalMatrix);
+		Pose[i] = FAnimationRuntime::DecomposeMatrix(Bones[i].LocalMatrix);
 	}
 }
 
