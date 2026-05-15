@@ -7,12 +7,22 @@
 
 #include "Render/Resource/Buffer.h"
 
+constexpr uint32 MaxGPUSkinBones = 128;
+
+struct FBoneMatrixConstants
+{
+	FMatrix BoneMatrices[MaxGPUSkinBones];
+	uint32 BoneCount = 0;
+	float Padding[3] = { 0.0f, 0.0f, 0.0f };
+};
+
 struct FRenderResources
 {
 	FConstantBuffer FrameBuffer;					// b0
     FConstantBuffer PerObjectConstantBuffer;        // b1
 	FConstantBuffer LightBuffer;					// b3 (Ambient, Directional Light)		
 	FConstantBuffer ShadowBuffer;                   // b4
+	FConstantBuffer BoneMatrixConstantBuffer;       // b5 (GPU Skinning bone matrices)
     FConstantBuffer LightPassConstantBuffer;        // b7
     FConstantBuffer FogPassConstantBuffer;          // b9
 	FConstantBuffer FXAAConstantBuffer;             // b10

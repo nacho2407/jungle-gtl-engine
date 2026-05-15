@@ -1,4 +1,5 @@
 #include "../Common/Common.hlsli"
+#include "../Common/SkeletalSkinning.hlsli"
 #include "../Common/Lighting.hlsli"
 #include "../Common/ShadowFunction.hlsli"
 
@@ -131,12 +132,19 @@ PSInput mainVS(VSInput input)
 
 PSInput SkeletalMeshVS(SkeletalVSInput input)
 {
+    FSkinningResult Skinned = ApplyLinearBlendSkinning(
+        input.Position,
+        input.Normal,
+        input.Tangent.xyz,
+        input.BoneIndices,
+        input.BoneWeights);
+
     VSInput passThrough;
-    passThrough.Position = input.Position;
+    passThrough.Position = Skinned.Position;
     passThrough.Color = input.Color;
-    passThrough.Normal = input.Normal;
+    passThrough.Normal = Skinned.Normal;
     passThrough.UV = input.UV;
-    passThrough.Tangent = input.Tangent;
+    passThrough.Tangent = float4(Skinned.Tangent, input.Tangent.w);
     return mainVS(passThrough);
 }
 

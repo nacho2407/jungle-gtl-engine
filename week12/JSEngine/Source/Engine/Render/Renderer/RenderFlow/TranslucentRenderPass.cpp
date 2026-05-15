@@ -118,7 +118,11 @@ namespace
                 Program->Bind(Context->DeviceContext);
                 Cmd.Material->BindRenderStates(Context->DeviceContext);
                 Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
-                BindVertexFactoryResources(Context->DeviceContext, Cmd.VertexFactoryType, Cmd);
+                BindVertexFactoryResources(
+                    Context->DeviceContext,
+                    Cmd.VertexFactoryType,
+                    Cmd.bUseBoneMatrixConstants ? &Cmd.BoneMatrixConstants : nullptr,
+                    Context->RenderResources);
             }
 
             Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);

@@ -12,10 +12,33 @@
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Scene/RenderBus.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace
 {
+    FBoneMatrixConstants BuildBoneMatrixConstants(const USkeletalMeshComponent* SkeletalMeshComp)
+    {
+        FBoneMatrixConstants Constants = {};
+        if (!SkeletalMeshComp)
+        {
+            return Constants;
+        }
+
+        const TArray<FMatrix>& SkinningMatrices = SkeletalMeshComp->GetSkinningMatrices();
+        const uint32 BoneCount = static_cast<uint32>((std::min)(
+            SkinningMatrices.size(),
+            static_cast<size_t>(MaxGPUSkinBones)));
+
+        Constants.BoneCount = BoneCount;
+        for (uint32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
+        {
+            Constants.BoneMatrices[BoneIndex] = SkinningMatrices[BoneIndex];
+        }
+
+        return Constants;
+    }
+
     FMatrix MakeViewBillboardMatrix(const UPrimitiveComponent* Primitive, const FRenderBus& RenderBus)
     {
         const FMatrix WorldMatrix = Primitive->GetWorldMatrix();
@@ -132,13 +155,21 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
         SkeletalMeshComp->EnsureSkinningUpdated();
         const bool bNeedsUpload = SkeletalMeshComp->ConsumeRenderStateDirty();
 
-        const TArray<FSkeletalMeshVertex>& SkinnedVertices = SkeletalMeshComp->GetSkinnedVertices();
+        const bool bUseCPUSkinning = SkeletalMeshComp->GetSkinningMode() == ESkinningMode::CPU;
+        const bool bUseGPUSkinning = SkeletalMeshComp->GetSkinningMode() == ESkinningMode::GPU;
+        const FBoneMatrixConstants BoneMatrixConstants = bUseGPUSkinning
+            ? BuildBoneMatrixConstants(SkeletalMeshComp)
+            : FBoneMatrixConstants{};
+        const TArray<FSkeletalMeshVertex>& RenderVertices =
+            bUseCPUSkinning ? SkeletalMeshComp->GetSkinnedVertices() : SkeletalMesh->GetVertices();
         const TArray<uint32>& Indices = SkeletalMesh->GetIndices(); // 이건 immutable이라 걍 asset에서 들고와도 댐
 
+        // CPU Skinning은 component별 SkinnedVertices를 dynamic VB에 올린다.
+        // GPU Skinning은 원본 asset vertices를 사용한다. 이후 GPU 경로는 asset 공유 immutable buffer로 분리 예정.
         FMeshBuffer* MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
             SkeletalMeshComp->GetUUID(),
             SkeletalMesh,
-            SkinnedVertices,
+            RenderVertices,
             Indices,
             bNeedsUpload);
         if (!MeshBuffer) return true;
@@ -152,6 +183,8 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.Type = ERenderCommandType::SkeletalMesh;
             Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
             Cmd.MeshBuffer = MeshBuffer;
+            Cmd.bUseBoneMatrixConstants = true;
+            Cmd.BoneMatrixConstants = BoneMatrixConstants;
             Cmd.SectionIndexStart = 0;
             Cmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
             Cmd.Material = SkeletalMeshComp->GetMaterial(0);
@@ -177,6 +210,8 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.Type = ERenderCommandType::SkeletalMesh;
             Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
             Cmd.MeshBuffer = MeshBuffer;
+            Cmd.bUseBoneMatrixConstants = true;
+            Cmd.BoneMatrixConstants = BoneMatrixConstants;
 
             Cmd.SectionIndexStart = Section.StartIndex;
             Cmd.SectionIndexCount = Section.IndexCount;

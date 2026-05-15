@@ -5,10 +5,10 @@
 #include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/ShaderTypes.h"
 #include "Render/Resource/VertexTypes.h"
+#include "Render/Resource/RenderResources.h"
 
 #include <cstddef>
 
-struct FRenderCommand;
 struct ID3D11DeviceContext;
 
 // Mesh Vertex 데이터를 어떤 방식으로 해석할지 나타내는 타입입니다.
@@ -221,11 +221,22 @@ public:
 inline void BindVertexFactoryResources(
     ID3D11DeviceContext* Context,
     EVertexFactoryType Type,
-    const FRenderCommand& Cmd)
+    const FBoneMatrixConstants* BoneMatrixConstants,
+    FRenderResources* RenderResources)
 {
-    // 현재 CPU Skinning은 이미 갱신된 VertexBuffer를 넘기므로 추가 리소스가 없습니다.
-    // 이후 GPU Skinning을 넣으면 여기서 BoneMatrixBuffer 같은 VF 전용 리소스를 바인딩합니다.
-    (void)Context;
-    (void)Type;
-    (void)Cmd;
+    if (!Context || !RenderResources)
+    {
+        return;
+    }
+
+    if (Type == EVertexFactoryType::SkeletalMesh && BoneMatrixConstants)
+    {
+        RenderResources->BoneMatrixConstantBuffer.Update(
+            Context,
+            BoneMatrixConstants,
+            sizeof(FBoneMatrixConstants));
+
+        ID3D11Buffer* BoneBuffer = RenderResources->BoneMatrixConstantBuffer.GetBuffer();
+        Context->VSSetConstantBuffers(5, 1, &BoneBuffer);
+    }
 }

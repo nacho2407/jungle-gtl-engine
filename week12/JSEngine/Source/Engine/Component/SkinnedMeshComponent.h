@@ -79,7 +79,7 @@ protected:
 
     TArray<FSkeletalMeshVertex> SkinnedVertices;
 
-    ESkinningMode SkinningMode = ESkinningMode::CPU;
+    ESkinningMode SkinningMode = ESkinningMode::GPU;
     bool bSkinningDirty = true;
 
     mutable bool bBoundsDirty = true;

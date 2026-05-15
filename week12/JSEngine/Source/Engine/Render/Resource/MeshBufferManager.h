@@ -38,9 +38,11 @@ public:
 	void Create(ID3D11Device* InDevice);
 	void Release();
 
-	FMeshBuffer& GetMeshBuffer(EPrimitiveType InPrimitiveType);
+    FMeshBuffer& GetMeshBuffer(EPrimitiveType InPrimitiveType);
     FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0);
     // Key by component UUID and accept raw section data to avoid header coupling with ProceduralMeshComponent.
     FMeshBuffer* GetProcMeshBuffer(uint32 ProcMeshCompUUID, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices);
+    // CPU Skinning passes component SkinnedVertices. GPU Skinning currently passes source asset vertices;
+    // TODO: split GPU Skinning into an asset-shared immutable vertex buffer path.
 	FMeshBuffer* GetSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FSkeletalMeshVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload);
 };

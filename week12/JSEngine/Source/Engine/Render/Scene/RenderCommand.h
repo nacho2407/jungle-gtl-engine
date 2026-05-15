@@ -9,6 +9,7 @@
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Resource/Material.h"
+#include "Render/Resource/RenderResources.h"
 #include "Render/Resource/VertexFactoryTypes.h"
 #include "Render/Device/D3DDevice.h"
 #include "Core/CoreMinimal.h"
@@ -430,6 +431,9 @@ struct FRenderCommand
 	EVertexFactoryType VertexFactoryType = EVertexFactoryType::StaticMesh;
 	uint32 SectionIndexStart = 0;
 	uint32 SectionIndexCount = 0;
+
+	bool bUseBoneMatrixConstants = false;
+	FBoneMatrixConstants BoneMatrixConstants = {};
 
 	FBoundingBox WorldAABB;
 
