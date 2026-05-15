@@ -10,6 +10,13 @@ enum class ESkinningMode : uint8
     GPU
 };
 
+enum class ESkinningModeOverride : uint8
+{
+    Component,
+    CPU,
+    GPU
+};
+
 class USkinnedMeshComponent : public UMeshComponent
 {
 public:
@@ -28,6 +35,11 @@ public:
 
     void SetSkinningMode(ESkinningMode InMode);
     ESkinningMode GetSkinningMode() const { return SkinningMode; }
+    ESkinningMode GetResolvedSkinningMode() const;
+
+    static void SetGlobalSkinningModeOverride(ESkinningMode InMode);
+    static void ClearGlobalSkinningModeOverride();
+    static ESkinningModeOverride GetGlobalSkinningModeOverride();
 
     bool SetCurrentLocalPose(const TArray<FMatrix>& InLocalPose);
 
@@ -80,6 +92,7 @@ protected:
     TArray<FSkeletalMeshVertex> SkinnedVertices;
 
     ESkinningMode SkinningMode = ESkinningMode::GPU;
+    ESkinningMode LastResolvedSkinningMode = ESkinningMode::GPU;
     bool bSkinningDirty = true;
 
     mutable bool bBoundsDirty = true;

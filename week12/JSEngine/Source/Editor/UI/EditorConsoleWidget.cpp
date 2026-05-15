@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "Component/SkinnedMeshComponent.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/ViewportLayout.h"
 #include "Engine/Object/FName.h"
@@ -157,6 +158,7 @@ FEditorConsoleWidget::FEditorConsoleWidget()
 	RegisterCommand("recommend", "Alias for suggest.", [this](const TArray<FString>& Args) { CmdSuggest(Args); });
 	RegisterCommand("recommendations", "Alias for suggest.", [this](const TArray<FString>& Args) { CmdSuggest(Args); });
 	RegisterCommand("stat", "Viewport and editor stats. Usage: stat <fps|memory|history|nametable|cascadevis|none>", [this](const TArray<FString>& Args) { CmdStat(Args); });
+	RegisterCommand("skinning", "Set global skeletal mesh skinning override. Usage: skinning <cpu|gpu|component>", [this](const TArray<FString>& Args) { CmdSkinning(Args); });
 
 	RegisterCommand("shadow", "Set shadow options. Usage: shadow filter <pcf|vsm>", [this](const TArray<FString>& Args){ CmdShadow(Args); });
 }
@@ -565,6 +567,13 @@ void FEditorConsoleWidget::CmdSuggest(const TArray<FString>& Args)
 		AddLog("  shadow filter vsm     Use VSM shadow filtering\n");
 		bPrinted = true;
 	}
+	if (Prefix.empty() || FString("skinning").find(Prefix) == 0)
+	{
+		AddLog("  skinning cpu          Use CPU Skinning for skeletal meshes\n");
+		AddLog("  skinning gpu          Use GPU Skinning for skeletal meshes\n");
+		AddLog("  skinning component    Use each component's own skinning mode\n");
+		bPrinted = true;
+	}
 	if (Prefix.empty() || FString("help").find(Prefix) == 0 || FString("commands").find(Prefix) == 0)
 	{
 		AddLog("  commands              List every command\n");
@@ -834,6 +843,38 @@ void FEditorConsoleWidget::PrintHistoryStats()
 	AddLog("  Entry Storage: %s\n", FormatBytes(Stats.EntryOverheadBytes).c_str());
 	AddLog("  Approx Total : %s\n", FormatBytes(Stats.ApproxTotalBytes).c_str());
 	AddLog("--------------------------\n");
+}
+
+void FEditorConsoleWidget::CmdSkinning(const TArray<FString>& Args)
+{
+	if (Args.size() < 2)
+	{
+		AddLog("[WARN] Usage: skinning <cpu|gpu|component>\n");
+		return;
+	}
+
+	const FString ModeText = ToLowerCopy(Args[1]);
+	if (ModeText == "cpu")
+	{
+		USkinnedMeshComponent::SetGlobalSkinningModeOverride(ESkinningMode::CPU);
+		AddLog("Global skinning mode override changed to CPU.\n");
+	}
+	else if (ModeText == "gpu")
+	{
+		USkinnedMeshComponent::SetGlobalSkinningModeOverride(ESkinningMode::GPU);
+		AddLog("Global skinning mode override changed to GPU.\n");
+	}
+	else if (ModeText == "component" || ModeText == "default" || ModeText == "auto")
+	{
+		USkinnedMeshComponent::ClearGlobalSkinningModeOverride();
+		AddLog("Global skinning mode override cleared. Components use their own skinning mode.\n");
+	}
+	else
+	{
+		AddLog("[ERROR] Invalid skinning mode: %s\n", Args[1].c_str());
+		AddLog("[WARN] Usage: skinning <cpu|gpu|component>\n");
+		return;
+	}
 }
 
 void FEditorConsoleWidget::CmdShadow(const TArray<FString>& Args)
