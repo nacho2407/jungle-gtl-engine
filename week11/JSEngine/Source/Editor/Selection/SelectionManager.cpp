@@ -289,8 +289,11 @@ void FSelectionManager::SyncGizmo()
 	}
 	else if (Primary)
 	{
-		Gizmo->SetProxy(std::make_shared<FActorTransformProxy>(Primary));
-		Gizmo->SetSelectedActors(&SelectedActors);
+        std::shared_ptr<FActorTransformProxy> ActorTransformProxy = std::make_shared<FActorTransformProxy>();
+        for (AActor* Actor : SelectedActors)
+            ActorTransformProxy->AddTarget(Actor);
+
+        Gizmo->SetProxy(ActorTransformProxy);
 	}
 	else
 	{

@@ -80,6 +80,10 @@ public:
 	// Transform — Location
 	FVector GetActorLocation() const;
 	void SetActorLocation(const FVector& Location);
+    void SetActorRotationQuat(const FQuat& Q)
+    {
+        if (RootComponent) RootComponent->SetRelativeRotationQuat(Q);
+    }
 	void AddActorWorldOffset(const FVector& Delta)
 	{
 		if (RootComponent) RootComponent->AddWorldOffset(Delta);
