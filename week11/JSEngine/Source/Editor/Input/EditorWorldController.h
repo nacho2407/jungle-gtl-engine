@@ -44,6 +44,7 @@ class FEditorWorldController : public IBaseEditorController
     float GetMoveSpeed() const { return MoveSpeed; }
     void  SetMoveSpeed(float InSpeed) { MoveSpeed = InSpeed; }
     FVector GetTargetLocation() const { return TargetLocation; }
+    bool HasPendingCameraTransition(float LocationTolerance = 1.e-3f, float RotationTolerance = 1.e-4f) const;
     void  SetTargetLocation(FVector InTargetLoc)
     {
         TargetLocation = InTargetLoc;
