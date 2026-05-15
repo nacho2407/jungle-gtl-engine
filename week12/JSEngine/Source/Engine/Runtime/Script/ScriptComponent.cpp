@@ -286,8 +286,7 @@ namespace
         OutDesc.Max = LuaProp.bHasMax ? LuaProp.Max : 1.0f;
         OutDesc.Speed = 0.1f;
 
-        OutDesc.EnumNames = nullptr;
-        OutDesc.EnumCount = 0;
+        OutDesc.EnumMeta = nullptr;
         OutDesc.ExtraData = nullptr;
 
         return true;

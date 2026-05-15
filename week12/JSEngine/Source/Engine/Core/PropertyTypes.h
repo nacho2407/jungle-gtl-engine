@@ -10,6 +10,7 @@
 // 에디터에서 자동 위젯 매핑에 사용되는 프로퍼티 타입
 enum class EPropertyType : uint8_t
 {
+	Unknown,
 	Bool,
 	Int,
 	Float,
@@ -69,28 +70,108 @@ struct FSRVDisplayInfo
 	float UV1Y = 1.f;
 };
 
+struct FEnumMetaData;
+
 // UObject가 노출하는 공통 프로퍼티 디스크립터
 struct FPropertyDescriptor
 {
-	const char*   Name;
-	EPropertyType Type;
-	void*         ValuePtr;
+	const char*   Name = nullptr;
+	EPropertyType Type = EPropertyType::Unknown;
+	void*         ValuePtr = nullptr;
+
+	EPropertyUsageFlags UsageFlags = EPropertyUsageFlags::Editable;
 
 	// float 범위 힌트 (DragFloat 등에서 사용)
-	float Min	= 0.0f;
-	float Max	= 0.0f;
+	float Min   = 0.0f;
+	float Max   = 0.0f;
 	float Speed = 0.1f;
 
-	// Enum Metadata
-	const char** EnumNames  = nullptr;
-	uint32		 EnumCount  = 0;
+	const char* DisplayName = nullptr;
+
+	// Enum 프로퍼티는 EnumMeta만 참조합니다.
+	const FEnumMetaData* EnumMeta = nullptr;
 
 	// 타입별 추가 메타데이터, 일단 SRV 정보를 저장하기 위해서 사용
 	void* ExtraData = nullptr;
 
-	EPropertyUsageFlags UsageFlags = EPropertyUsageFlags::Editable;
-	const char* DisplayName = nullptr;
-	uint8 EnumSize = sizeof(int32);
+	FPropertyDescriptor() = default;
+
+	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr)
+		: Name(InName)
+		, Type(InType)
+		, ValuePtr(InValuePtr)
+	{
+	}
+
+	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr, float InMin)
+		: Name(InName)
+		, Type(InType)
+		, ValuePtr(InValuePtr)
+		, Min(InMin)
+	{
+	}
+
+	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr,
+		float InMin, float InMax, float InSpeed)
+		: Name(InName)
+		, Type(InType)
+		, ValuePtr(InValuePtr)
+		, Min(InMin)
+		, Max(InMax)
+		, Speed(InSpeed)
+	{
+	}
+
+	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr,
+		float InMin, float InMax, float InSpeed,
+		void* InExtraData,
+		EPropertyUsageFlags InUsageFlags = EPropertyUsageFlags::Editable,
+		const char* InDisplayName = nullptr,
+		const FEnumMetaData* InEnumMeta = nullptr)
+		: Name(InName)
+		, Type(InType)
+		, ValuePtr(InValuePtr)
+		, UsageFlags(InUsageFlags)
+		, Min(InMin)
+		, Max(InMax)
+		, Speed(InSpeed)
+		, DisplayName(InDisplayName)
+		, EnumMeta(InEnumMeta)
+		, ExtraData(InExtraData)
+	{
+	}
+
+	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr,
+		float InMin, float InMax, float InSpeed,
+		const char** /*LegacyEnumNames*/,
+		uint32 /*LegacyEnumCount*/,
+		void* InExtraData,
+		EPropertyUsageFlags InUsageFlags = EPropertyUsageFlags::Editable,
+		const char* InDisplayName = nullptr)
+		: Name(InName)
+		, Type(InType)
+		, ValuePtr(InValuePtr)
+		, UsageFlags(InUsageFlags)
+		, Min(InMin)
+		, Max(InMax)
+		, Speed(InSpeed)
+		, DisplayName(InDisplayName)
+		, ExtraData(InExtraData)
+	{
+	}
+
+	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr,
+		float InMin, float InMax, float InSpeed,
+		const char** /*LegacyEnumNames*/,
+		uint32 /*LegacyEnumCount*/)
+		: Name(InName)
+		, Type(InType)
+		, ValuePtr(InValuePtr)
+		, Min(InMin)
+		, Max(InMax)
+		, Speed(InSpeed)
+	{
+	}
 };
 
 /** 각 프로퍼티의 Size 값을 반환합니다. 0을 반환하는 경우 특수 케이스입니다.

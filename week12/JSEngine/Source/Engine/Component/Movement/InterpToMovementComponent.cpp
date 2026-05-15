@@ -14,11 +14,11 @@ namespace {
 	}
 
 	float GetYaw(const FVector& NormDir) {
-        return asinf(NormDir.Z);
+		return asinf(NormDir.Z);
 	}
 
 	float GetPitch(const FVector& NormDir) {
-        return atan2f(NormDir.Y, NormDir.X);
+		return atan2f(NormDir.Y, NormDir.X);
 	}
 }
 
@@ -27,10 +27,10 @@ void UInterpToMovementComponent::BeginPlay() {
 	for (auto& ControlPoint : ControlPoints) {
 		ControlPoint += UpdatedComponent->GetWorldLocation();
 	}
-    if (bAutoActivate)
-    {
-        Initiate();
-    }
+	if (bAutoActivate)
+	{
+		Initiate();
+	}
 }
 
 void UInterpToMovementComponent::TickComponent(float DeltaTime) {
@@ -45,32 +45,30 @@ void UInterpToMovementComponent::TickComponent(float DeltaTime) {
 }
 
 void UInterpToMovementComponent::PostDuplicate(UObject* Original) {
-    UActorComponent::PostDuplicate(Original);
-    const UInterpToMovementComponent* Orig = Cast<UInterpToMovementComponent>(Original);
+	UActorComponent::PostDuplicate(Original);
+	const UInterpToMovementComponent* Orig = Cast<UInterpToMovementComponent>(Original);
 
-    // Copy configuration
-    ControlPoints		= Orig->ControlPoints;
-    Duration			= Orig->Duration;
-    InterpBehaviour		= Orig->InterpBehaviour;
+	// Copy configuration
+	ControlPoints		= Orig->ControlPoints;
+	Duration			= Orig->Duration;
+	InterpBehaviour		= Orig->InterpBehaviour;
 
-    Elapsed				= 0.f;
-    bisLerping			= false;
-    bPing				= true;
-    CurrentPointID		= 0;
-    NextPointID			= 1;
-    TotalDistance		= 0.f;
-    NextDistRatio		= 0.f;
+	Elapsed				= 0.f;
+	bisLerping			= false;
+	bPing				= true;
+	CurrentPointID		= 0;
+	NextPointID			= 1;
+	TotalDistance		= 0.f;
+	NextDistRatio		= 0.f;
 }
 
 void UInterpToMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) {
-    UMovementComponent::GetEditableProperties(OutProps);
+	UMovementComponent::GetEditableProperties(OutProps);
 
-    OutProps.push_back({ "Auto Activate",		  EPropertyType::Bool,		 &bAutoActivate });
-    OutProps.push_back({ "Orient To Movement",	  EPropertyType::Bool,		 &bFaceTargetDir });
+	OutProps.push_back({ "Auto Activate",		  EPropertyType::Bool,		 &bAutoActivate });
+	OutProps.push_back({ "Orient To Movement",	  EPropertyType::Bool,		 &bFaceTargetDir });
 	OutProps.push_back({ "Interp Duration",		  EPropertyType::Float,      &Duration,       0.1f, 2048.0f, 0.1f });
-	static const char* InterpBehaviourNames[] = { "One Shot", "One Shot Reverse", "Loop", "Ping-Pong" };
-	OutProps.push_back({ "Interp Mode",			  EPropertyType::Enum,		 &InterpBehaviour, 0,0,0, InterpBehaviourNames, 4});
-    OutProps.push_back({ "Control Points",		  EPropertyType::Vec3Array,  &ControlPoints });
+	OutProps.push_back({ "Control Points",		  EPropertyType::Vec3Array,  &ControlPoints });
 }
 
 // --- Control Point Management--------------------------------------------
@@ -113,7 +111,7 @@ void UInterpToMovementComponent::Initiate() {
 	bisLerping = true;
 
 	for (size_t i = ControlPoints.size() - 1; i > 0; i--)
-    {
+	{
 		TotalDistance += FVector::Dist(ControlPoints[i], ControlPoints[i - 1]);
 	}
 
@@ -129,7 +127,7 @@ void UInterpToMovementComponent::Initiate() {
 }
 
 void UInterpToMovementComponent::Reset() {
-    bPing			= true;
+	bPing			= true;
 	Elapsed			= 0.f;
 	CurrentPointID	= 0;
 	NextPointID		= 1;
@@ -158,22 +156,22 @@ void UInterpToMovementComponent::Pong() {
 	// Backward
 	if (!bPing) return;
 	bPing = false;
-    CurrentPointID = (uint32)(ControlPoints.size() - 1);
-    NextPointID	   = (uint32)(ControlPoints.size() - 2);
+	CurrentPointID = (uint32)(ControlPoints.size() - 1);
+	NextPointID	   = (uint32)(ControlPoints.size() - 2);
 }
 
 void UInterpToMovementComponent::UpdateLerp(float DeltaTime) {
-    // Lerp
-    if (ControlPoints.size() <= 1 || NextPointID >= ControlPoints.size())
-        return;
-    float Alpha = (Elapsed / (Duration * NextDistRatio));
-    UpdatedComponent->SetWorldLocation(FVector::Lerp(ControlPoints[CurrentPointID], ControlPoints[NextPointID], Alpha));
+	// Lerp
+	if (ControlPoints.size() <= 1 || NextPointID >= ControlPoints.size())
+		return;
+	float Alpha = (Elapsed / (Duration * NextDistRatio));
+	UpdatedComponent->SetWorldLocation(FVector::Lerp(ControlPoints[CurrentPointID], ControlPoints[NextPointID], Alpha));
 
-    // Check if target point has been reached
-    if (Alpha >= 1.f)
-    {
-        DestinationReached();
-    }
+	// Check if target point has been reached
+	if (Alpha >= 1.f)
+	{
+		DestinationReached();
+	}
 }
 
 void UInterpToMovementComponent::FaceTargetDir(float DeltaTime) {
@@ -217,9 +215,9 @@ void UInterpToMovementComponent::DestinationReached() {
 	}
 
 	if (!bPing && NextPointID <= 0)
-    {
-        EndOfChain();
-        return;
+	{
+		EndOfChain();
+		return;
 	}
 
 	Elapsed = 0;
@@ -230,41 +228,41 @@ void UInterpToMovementComponent::DestinationReached() {
 		CurrentPointID += 1;
 		NextPointID    += 1;
 	}
-    SetNextDistRatio();
+	SetNextDistRatio();
 	SetRotationSpeed();
 }
 
 void UInterpToMovementComponent::EndOfChain() {
-    switch (InterpBehaviour)
-    {
-    case EInterpBehaviour::OneShot:
-    {
+	switch (InterpBehaviour)
+	{
+	case EInterpBehaviour::OneShot:
+	{
 		bisLerping = false;
-        return;
-    }
-    case EInterpBehaviour::OneShotReverse:
-    {
-        ResetAndHalt();
-        return;
-    }
-    case EInterpBehaviour::Loop:
-    {
+		return;
+	}
+	case EInterpBehaviour::OneShotReverse:
+	{
+		ResetAndHalt();
+		return;
+	}
+	case EInterpBehaviour::Loop:
+	{
 		float CachedDist = TotalDistance;
-        Reset();
+		Reset();
 		TotalDistance	 = CachedDist;
 		SetNextDistRatio();
-        return;
-    }
-    case EInterpBehaviour::PingPong:
-    {
-        Elapsed = 0;
-        if (bPing)
-            Pong();
-        else
-            Ping();
-        return;
-    }
-    }
+		return;
+	}
+	case EInterpBehaviour::PingPong:
+	{
+		Elapsed = 0;
+		if (bPing)
+			Pong();
+		else
+			Ping();
+		return;
+	}
+	}
 }
 
 void UInterpToMovementComponent::SetNextDistRatio() {
@@ -273,12 +271,12 @@ void UInterpToMovementComponent::SetNextDistRatio() {
 		return;
 	}
 
-    NextDistRatio =
+	NextDistRatio =
 		FVector::Dist(ControlPoints[CurrentPointID], ControlPoints[NextPointID]) / TotalDistance;
 }
 
 void UInterpToMovementComponent::SetRotationSpeed() {
-    float InvSpeed = Duration / (TotalDistance * NextDistRatio);
-    float MinDuration = 0.8f;
-    RotateDuration = MinDuration < InvSpeed ? MinDuration : InvSpeed;
+	float InvSpeed = Duration / (TotalDistance * NextDistRatio);
+	float MinDuration = 0.8f;
+	RotateDuration = MinDuration < InvSpeed ? MinDuration : InvSpeed;
 }

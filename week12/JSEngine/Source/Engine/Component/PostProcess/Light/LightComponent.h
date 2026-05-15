@@ -5,6 +5,7 @@
 
 class UMaterialInterface;
 
+UCLASS()
 class ULightComponent : public ULightComponentBase {
 public:
 	DECLARE_CLASS(ULightComponent, ULightComponentBase)
@@ -45,10 +46,11 @@ public:
 	float ShadowSharpen = 0.5f;
 
 	// 디버그용으로 Shadow Atlas에서 해당 라이트의 타일 위치와 크기를 저장하는 변수, 현재 지워도됩니다
-    FVector4 DebugShadowAtlasScaleOffset;
-    bool bHasDebugShadowAtlasTile = false;
-    float DebugShadowCubeIndex;
-    bool bHasDebugShadowCubeTile = false;
+	FVector4 DebugShadowAtlasScaleOffset;
+	bool bHasDebugShadowAtlasTile = false;
+	float DebugShadowCubeIndex;
+	bool bHasDebugShadowCubeTile = false;
 protected:
+	UPROPERTY(DisplayName = "ShadowMapType")
 	EShadowMap eShadowMapType = EShadowMap::CSM;
 };

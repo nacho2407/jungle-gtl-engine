@@ -20,6 +20,7 @@
 #include "Component/PostProcess/Light/PointLightComponent.h"
 #include "Core/EditorResourcePaths.h"
 #include "Core/PropertyTypes.h"
+#include "Core/Reflection/ReflectionRegistry.h"
 #include "Core/Paths.h"
 #include "Core/Logging/Log.h"
 #include "Math/Color.h"
@@ -138,30 +139,30 @@ namespace
 		return FString(DisplayName) + "##" + Prop.Name;
 	}
 
-	static int32 ReadEnumPropertyValue(const FPropertyDescriptor& Prop)
+	static int64 ReadEnumPropertyValue(const FPropertyDescriptor& Prop)
 	{
-		if (!Prop.ValuePtr) 
+		if (!Prop.ValuePtr || !Prop.EnumMeta) 
 			return 0;
 
-		switch (Prop.EnumSize)
+		switch (Prop.EnumMeta->Size)
 		{
-		case 1: return static_cast<int32>(*static_cast<uint8*>(Prop.ValuePtr));
-		case 2: return static_cast<int32>(*static_cast<uint16*>(Prop.ValuePtr));
-		case 4: return *static_cast<int32*>(Prop.ValuePtr);
-		case 8: return static_cast<int32>(*static_cast<int64*>(Prop.ValuePtr));
+		case 1: return static_cast<int64>(*static_cast<uint8*>(Prop.ValuePtr));
+		case 2: return static_cast<int64>(*static_cast<uint16*>(Prop.ValuePtr));
+		case 4: return static_cast<int64>(*static_cast<int32*>(Prop.ValuePtr));
+		case 8: return static_cast<int64>(*static_cast<int64*>(Prop.ValuePtr));
 		default: return 0;
 		}
 	}
 
-	static void WriteEnumPropertyValue(const FPropertyDescriptor& Prop, int32 Value)
+	static void WriteEnumPropertyValue(const FPropertyDescriptor& Prop, int64 Value)
 	{
-		if (!Prop.ValuePtr)  return;
+		if (!Prop.ValuePtr || !Prop.EnumMeta) return;
 
-		switch (Prop.EnumSize)
+		switch (Prop.EnumMeta->Size)
 		{
 		case 1: *static_cast<uint8*>(Prop.ValuePtr) = static_cast<uint8>(Value); break;
 		case 2: *static_cast<uint16*>(Prop.ValuePtr) = static_cast<uint16>(Value); break;
-		case 4: *static_cast<int32*>(Prop.ValuePtr) = Value; break;
+		case 4: *static_cast<int32*>(Prop.ValuePtr) = static_cast<int32>(Value); break;
 		case 8: *static_cast<int64*>(Prop.ValuePtr) = static_cast<int64>(Value); break;
 		default: break;
 		}
@@ -2185,12 +2186,36 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 	}
 	case EPropertyType::Enum:
 	{
-		if (Prop.EnumNames && Prop.EnumCount)
+		if (Prop.EnumMeta && Prop.EnumMeta->Values && Prop.EnumMeta->Count > 0)
 		{
-			int32 CurrentValue = ReadEnumPropertyValue(Prop);
-			if (ImGui::Combo(Label, &CurrentValue, Prop.EnumNames, Prop.EnumCount))
+			const int64 CurrentValue = ReadEnumPropertyValue(Prop);
+			int32 CurrentIndex = 0;
+			for (uint32 Index = 0; Index < Prop.EnumMeta->Count; ++Index)
 			{
-				WriteEnumPropertyValue(Prop, CurrentValue);
+				if (Prop.EnumMeta->Values[Index].Value == CurrentValue)
+				{
+					CurrentIndex = static_cast<int32>(Index);
+					break;
+				}
+			}
+
+			const auto ComboGetter = [](void* Data, int Index) -> const char*
+			{
+				const FEnumMetaData* EnumMeta = static_cast<const FEnumMetaData*>(Data);
+				if (!EnumMeta || Index < 0 || static_cast<uint32>(Index) >= EnumMeta->Count)
+				{
+					return "";
+				}
+
+				const FEnumValueMetaData& ValueMeta = EnumMeta->Values[Index];
+				return (ValueMeta.DisplayName && ValueMeta.DisplayName[0] != '\0')
+					? ValueMeta.DisplayName
+					: ValueMeta.Name;
+			};
+
+			if (ImGui::Combo(Label, &CurrentIndex, ComboGetter, const_cast<FEnumMetaData*>(Prop.EnumMeta), static_cast<int>(Prop.EnumMeta->Count)))
+			{
+				WriteEnumPropertyValue(Prop, Prop.EnumMeta->Values[CurrentIndex].Value);
 				bChanged = true;
 			}
 		}

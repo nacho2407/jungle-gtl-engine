@@ -37,21 +37,6 @@ TYPE_MAP = {
     'USceneComponent*': 'EPropertyType::SceneComponentRef',
 }
 
-# 각 Type의 기본 Element Size입니다.
-TYPE_SIZE_MAP = {
-    'bool': 1,
-    'int32': 4,
-    'int': 4,
-    'float': 4,
-    'FVector': 12,
-    'FVector4': 16,
-    'FString': 0,
-    'FName': 0,
-    'FColor': 4,
-    'TArray<FVector>': 0,
-    'USceneComponent*': 8,
-}
-
 # Enum의 underlying type 크기를 구하기 위한 테이블입니다.
 ENUM_SIZE_MAP = {
     'bool': 1,
@@ -492,14 +477,18 @@ def parse_enum_members(enum_body):
         if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', name):
             continue
 
+        known_values[name] = value
+        next_value = value + 1
+
+        if umeta_metadata.get('Hidden') is True:
+            continue
+
         display_name = get_metadata_value(umeta_metadata, 'DisplayName', 'Display') or name
         values.append({
             'name': name,
             'display_name': display_name,
             'value': value,
         })
-        known_values[name] = value
-        next_value = value + 1
 
     return values
 
@@ -568,21 +557,14 @@ def collect_enums():
             if semi >= len(content) or content[semi] != ';':
                 continue
 
-            underlying_type = normalize_enum_underlying_type(header_match.group('underlying') or 'int32')
-            enum_size = ENUM_SIZE_MAP.get(underlying_type)
-            if enum_size is None:
-                print(
-                    f"Reflection warning: UENUM '{enum_name}' has unsupported underlying type '{underlying_type}' in {header_path.relative_to(ROOT)}; skipped.",
-                    file=sys.stderr,
-                )
-                continue
-
+            # enum 크기는 생성된 C++ 코드에서 sizeof(EnumType)으로 계산합니다.
+            # 따라서 파서가 C++ typedef/using/플랫폼별 정수 타입 크기를 모두 알 필요가 없습니다.
             namespace_parts = find_enclosing_namespaces(content, enum_start)
             qualified_name = qualify_name(namespace_parts, enum_name)
             enum_infos.append({
                 'name': enum_name,
                 'qualified_name': qualified_name,
-                'size': enum_size,
+                'size_expr': f'sizeof({qualified_name})',
                 'values': parse_enum_members(content[open_brace + 1:close_brace]),
             })
 
@@ -655,7 +637,7 @@ def generate_enum_metadata(enum_infos):
         blocks.append(
             f'static const FEnumValueMetaData {values_array_name}[] = {{\n{values_body}}};\n'
             f'static const FEnumMetaData {enum_meta_name} = {{ '
-            f'{cpp_string_literal(enum_name)}, {enum_info["size"]}, {values_array_name}, {len(values)} }};'
+            f'{cpp_string_literal(enum_name)}, static_cast<uint8>({enum_info["size_expr"]}), {values_array_name}, {len(values)} }};'
         )
     return '\n\n'.join(blocks)
 
@@ -722,20 +704,20 @@ def find_uproperties_in_class(content, class_info):
     return properties
 
 
-# C++ 타입이 enum인지 기본 지원 타입인지 판정하고, EPropertyType, enum metadata, element size를 반환합니다.
+# C++ 타입이 enum인지 기본 지원 타입인지 판정하고, EPropertyType과 enum metadata를 반환합니다.
 def resolve_property_type(cpp_type, enum_map):
     enum_info = enum_map.get(cpp_type)
     if not enum_info and '::' in cpp_type:
         enum_info = enum_map.get(cpp_type.split('::')[-1])
 
     if enum_info:
-        return 'EPropertyType::Enum', enum_info, enum_info['size']
+        return 'EPropertyType::Enum', enum_info
 
     property_type = TYPE_MAP.get(cpp_type)
     if property_type:
-        return property_type, None, TYPE_SIZE_MAP.get(cpp_type, 0)
+        return property_type, None
 
-    return None, None, 0
+    return None, None
 
 
 # 클래스 하나의 리플렉션 정보를 ClassName.gen.cpp 파일로 생성합니다.
@@ -748,7 +730,6 @@ def generate_class_file(header_path, class_name, properties, used_enums):
         f'{{ "{p["name"]}", {p["property_type"]}, offsetof({class_name}, {p["name"]}), '
         f'EPropertyUsageFlags::Editable, {p["min"]}, {p["max"]}, {p["speed"]}, '
         f'{cpp_string_literal(p["display_name"])}, '
-        f'{p["element_size"]}, '
         f'{("&" + make_enum_meta_name(p["enum_info"]["qualified_name"])) if p["enum_info"] else "nullptr"} }}'
         for p in properties
     )
@@ -809,7 +790,7 @@ def parse_header_and_generate(header_path, enum_map):
                 )
                 continue
 
-            property_type, enum_info, element_size = resolve_property_type(cpp_type, enum_map)
+            property_type, enum_info = resolve_property_type(cpp_type, enum_map)
             if not property_type:
                 warn_unknown_type(header_path, cpp_type, var_name)
                 continue
@@ -826,7 +807,6 @@ def parse_header_and_generate(header_path, enum_map):
                 'max': cpp_float_literal(get_metadata_value(metadata, 'Max', 'ClampMax', 'UIMax'), '0.0f'),
                 'speed': cpp_float_literal(get_metadata_value(metadata, 'Speed', 'Step'), '0.1f'),
                 'enum_info': enum_info,
-                'element_size': element_size,
             })
 
         generate_class_file(header_path, class_name, properties, used_enums)

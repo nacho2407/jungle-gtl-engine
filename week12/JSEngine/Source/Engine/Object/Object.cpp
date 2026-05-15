@@ -90,9 +90,9 @@ void UObject::CopyPropertiesFrom(UObject* Src)
 		}
 		case EPropertyType::Enum:
 		{
-			if (SrcProp.EnumSize > 0 && SrcProp.EnumSize == DstProp->EnumSize)
+			if (SrcProp.EnumMeta && DstProp->EnumMeta && SrcProp.EnumMeta->Size == DstProp->EnumMeta->Size)
 			{
-				memcpy(DstProp->ValuePtr, SrcProp.ValuePtr, SrcProp.EnumSize);
+				memcpy(DstProp->ValuePtr, SrcProp.ValuePtr, SrcProp.EnumMeta->Size);
 				this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
 			}
 			break;
@@ -153,7 +153,6 @@ void UObject::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 				Desc.Max = PropMeta.Max;
 				Desc.Speed = PropMeta.Speed;
 				Desc.DisplayName = PropMeta.DisplayName;
-			    Desc.ElementSize = PropMeta.ElementSize;
 			    Desc.EnumMeta = PropMeta.EnumMeta;
 				OutProps.push_back(Desc);
 			}

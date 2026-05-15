@@ -4,7 +4,7 @@
 class UDirectionalLightComponent : public ULightComponent
 {
 public:
-    DECLARE_CLASS(UDirectionalLightComponent, ULightComponent)
+	DECLARE_CLASS(UDirectionalLightComponent, ULightComponent)
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 protected:
