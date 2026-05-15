@@ -1054,9 +1054,9 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 	{
 		int32* Val = static_cast<int32*>(Prop.ValuePtr);
 		if (Prop.Min != 0.0f || Prop.Max != 0.0f)
-			bChanged = ImGui::DragInt("##Value", Val, (int32)Prop.Speed, (int32)Prop.Min, (int32)Prop.Max);
+			bChanged = ImGui::DragInt("##Value", Val, Prop.Speed, (int32)Prop.Min, (int32)Prop.Max);
 		else
-			bChanged = ImGui::DragInt("##Value", Val, (int32)Prop.Speed);
+			bChanged = ImGui::DragInt("##Value", Val, Prop.Speed);
 		break;
 	}
 	case EPropertyType::Float:

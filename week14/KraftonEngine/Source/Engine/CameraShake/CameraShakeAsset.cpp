@@ -24,9 +24,9 @@ static FVector ReadVector(json::JSON& Object, const FString& Key, const FVector&
 	}
 
 	return FVector(
-		Array[0].ToFloat(),
-		Array[1].ToFloat(),
-		Array[2].ToFloat());
+		static_cast<float>(Array[0].ToFloat()),
+		static_cast<float>(Array[1].ToFloat()),
+		static_cast<float>(Array[2].ToFloat()));
 }
 
 static FRotator ReadRotator(json::JSON& Object, const FString& Key, const FRotator& DefaultValue)
@@ -41,9 +41,9 @@ static FRotator ReadRotator(json::JSON& Object, const FString& Key, const FRotat
 		return DefaultValue;
 	}
 	return FRotator(
-		Array[0].ToFloat(),
-		Array[1].ToFloat(),
-		Array[2].ToFloat());
+		static_cast<float>(Array[0].ToFloat()),
+		static_cast<float>(Array[1].ToFloat()),
+		static_cast<float>(Array[2].ToFloat()));
 }
 
 UCameraShakeAsset::~UCameraShakeAsset()
@@ -141,15 +141,15 @@ bool UCameraShakeAsset::LoadFromFile(const FString& Path)
 
 	if (Root.hasKey("Duration"))
 	{
-		Duration = Root["Duration"].ToFloat();
+		Duration = static_cast<float>(Root["Duration"].ToFloat());
 	}
 	if (Root.hasKey("BlendInTime"))
 	{
-		BlendInTime = Root["BlendInTime"].ToFloat();
+		BlendInTime = static_cast<float>(Root["BlendInTime"].ToFloat());
 	}
 	if (Root.hasKey("BlendOutTime"))
 	{
-		BlendOutTime = Root["BlendOutTime"].ToFloat();
+		BlendOutTime = static_cast<float>(Root["BlendOutTime"].ToFloat());
 	}
 	if (Root.hasKey("bSingleInstance"))
 	{
@@ -183,11 +183,11 @@ bool UCameraShakeAsset::LoadFromFile(const FString& Path)
 
 		if (WaveJson.hasKey("FOVAmplitude"))
 		{
-			WaveOscillator.FOVAmplitude = WaveJson["FOVAmplitude"].ToFloat();
+			WaveOscillator.FOVAmplitude = static_cast<float>(WaveJson["FOVAmplitude"].ToFloat());
 		}
 		if (WaveJson.hasKey("FOVFrequency"))
 		{
-			WaveOscillator.FOVFrequency = WaveJson["FOVFrequency"].ToFloat();
+			WaveOscillator.FOVFrequency = static_cast<float>(WaveJson["FOVFrequency"].ToFloat());
 		}
 	}
 

@@ -57,7 +57,7 @@ void FVertexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 In
 		Stride = InStride;
 		return;
 	}
-	Buffer->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("VertexBuffer"), "VertexBuffer");
+	Buffer->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("VertexBuffer")), "VertexBuffer");
 
 	VertexCount = InVertexCount;
 	Stride = InStride;
@@ -117,7 +117,7 @@ void FConstantBuffer::Create(ID3D11Device* InDevice, uint32 InByteWidth, const c
 	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
 	InDevice->CreateBuffer(&constantBufferDesc, nullptr, &Buffer);
-	Buffer->SetPrivateData(WKPDID_D3DDebugObjectName, strlen(DebugName ? DebugName : "ConstantBuffer"), DebugName ? DebugName : "ConstantBuffer");
+	Buffer->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen(DebugName ? DebugName : "ConstantBuffer")), DebugName ? DebugName : "ConstantBuffer");
 }
 
 void FConstantBuffer::Release()
@@ -197,7 +197,7 @@ void FIndexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 InI
 		IndexCount = 0;
 		return;
 	}
-	Buffer->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("IndexBuffer"), "IndexBuffer");
+	Buffer->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("IndexBuffer")), "IndexBuffer");
 	IndexCount = InIndexCount;
 	MemoryStats::AddIndexBufferMemory(InByteWidth);
 }
@@ -238,7 +238,7 @@ void FDynamicVertexBuffer::Create(ID3D11Device* InDevice, uint32 InMaxCount, uin
 	Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	InDevice->CreateBuffer(&Desc, nullptr, &Buffer);
-	Buffer->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("DynamicVertexBuffer"), "DynamicVertexBuffer");
+	Buffer->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("DynamicVertexBuffer")), "DynamicVertexBuffer");
 }
 
 void FDynamicVertexBuffer::Release()
@@ -287,7 +287,7 @@ void FDynamicIndexBuffer::Create(ID3D11Device* InDevice, uint32 InMaxCount)
 	Desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	InDevice->CreateBuffer(&Desc, nullptr, &Buffer);
-	Buffer->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("DynamicIndexBuffer"), "DynamicIndexBuffer");
+	Buffer->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("DynamicIndexBuffer")), "DynamicIndexBuffer");
 }
 
 void FDynamicIndexBuffer::Release()
