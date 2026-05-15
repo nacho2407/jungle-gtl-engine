@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "Core/Log.h"
+
 DEFINE_CLASS(UAnimSequence, UAnimSequenceBase)
 
 namespace
@@ -33,6 +35,19 @@ namespace
         }
 
         return std::clamp(Time, 0.0f, Length);
+    }
+
+    static float TimeToFrameFloat(float Time, float Length, int32 NumFrames, bool bLooping)
+    {
+        if (Length <= 0.0f || NumFrames <= 1)
+        {
+            return 0.0f;
+        }
+
+        const float EvalTime = NormalizeTime(Time, Length, bLooping);
+        const float Alpha    = std::clamp(EvalTime / Length, 0.0f, 1.0f);
+
+        return Alpha * static_cast<float>(NumFrames - 1);
     }
 
     template <typename T>
@@ -115,25 +130,29 @@ int32 UAnimSequence::GetNumberOfFrames() const
 
 int32 UAnimSequence::TimeToFrame(float TimeSeconds) const
 {
-    if (!DataModel || DataModel->NumFrames <= 1 || DataModel->FrameRate <= 0.0f)
+    if (!DataModel || DataModel->NumFrames <= 0)
     {
         return 0;
     }
 
-    const float Time = NormalizeTime(TimeSeconds, DataModel->PlayLength, false);
-    const int32 Frame = static_cast<int32>(std::floor(Time * DataModel->FrameRate));
+    const float FrameFloat = TimeToFrameFloat(TimeSeconds, DataModel->PlayLength, DataModel->NumFrames, false);
 
+    const int32 Frame = static_cast<int32>(std::floor(FrameFloat));
     return std::clamp(Frame, 0, DataModel->NumFrames - 1);
 }
 
 float UAnimSequence::FrameToTime(int32 FrameIndex) const
 {
-    if (!DataModel || DataModel->FrameRate <= 0.0f)
+    if (!DataModel || DataModel->NumFrames <= 1 || DataModel->PlayLength <= 0.0f)
     {
         return 0.0f;
     }
 
-    return static_cast<float>(FrameIndex) / DataModel->FrameRate;
+    const int32 ClampedFrame = std::clamp(FrameIndex, 0, DataModel->NumFrames - 1);
+
+    const float Alpha = static_cast<float>(ClampedFrame) / static_cast<float>(DataModel->NumFrames - 1);
+
+    return Alpha * DataModel->PlayLength;
 }
 
 void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext& Ctx) const
@@ -166,14 +185,13 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
     }
 
     const int32 NumFrames = DataModel->NumFrames;
-    if (NumFrames <= 0 || DataModel->FrameRate <= 0.0f)
+    if (NumFrames <= 0)
     {
         return;
     }
 
-    const float EvalTime = NormalizeTime(Ctx.CurrentTime, DataModel->PlayLength, Ctx.bLooping);
-    const float FrameFloat = EvalTime * DataModel->FrameRate;
-
+    const float FrameFloat = TimeToFrameFloat(Ctx.CurrentTime, DataModel->PlayLength, NumFrames, Ctx.bLooping);
+    
     const int32 Frame0 = std::clamp(
         static_cast<int32>(std::floor(FrameFloat)),
         0,
@@ -238,11 +256,22 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
     }
 }
 
-bool UAnimSequence::GetAnimationPose(float TimeSeconds, USkeletalMesh* InSkeletalMesh, TArray<FTransform>& OutLocalPose) const
+bool UAnimSequence::GetAnimationPose(float TimeSeconds, USkeletalMesh* InSkeletalMesh, TArray<FTransform>& OutLocalPose, bool bLooping) const
 {
     OutLocalPose.clear();
 
     if (!InSkeletalMesh)
+    {
+        return false;
+    }
+
+    if (!IsCompatibleWith(InSkeletalMesh))
+    {
+        UE_LOG("Animation pose failed: skeleton mismatch. Anim=%s SkeletonPath=%s", GetName().c_str(), SkeletonPath.c_str());
+        return false;
+    }
+
+    if (DataModel->BoneAnimationTracks.empty() || DataModel->NumFrames <= 0)
     {
         return false;
     }
@@ -252,14 +281,20 @@ bool UAnimSequence::GetAnimationPose(float TimeSeconds, USkeletalMesh* InSkeleta
     Context.ResetToRefPose();
 
     FAnimExtractContext ExtractContext;
-    ExtractContext.CurrentTime = TimeSeconds;
-    ExtractContext.bLooping = true;
+    ExtractContext.CurrentTime        = TimeSeconds;
+    ExtractContext.bLooping           = bLooping;
     ExtractContext.bExtractRootMotion = false;
 
     GetBonePose(Context, ExtractContext);
 
     OutLocalPose = Context.Pose;
     return !OutLocalPose.empty();
+}
+
+bool UAnimSequence::GetAnimationPoseAtFrame(int32 FrameIndex, USkeletalMesh* InSkeletalMesh, TArray<FTransform>& OutLocalPose) const
+{
+    const float TimeSeconds = FrameToTime(FrameIndex);
+    return GetAnimationPose(TimeSeconds, InSkeletalMesh, OutLocalPose, false);
 }
 
 bool UAnimSequence::IsCompatibleWith(const USkeleton* InSkeleton) const
@@ -290,4 +325,27 @@ bool UAnimSequence::IsCompatibleWith(const USkeletalMesh* InSkeletalMesh) const
     }
 
     return SkeletonPath == InSkeletalMesh->GetSkeletonPath();
+}
+
+const FBoneAnimationTrack* UAnimSequence::FindBoneTrackByIndex(int32 BoneIndex) const
+{
+    if (!DataModel)
+    {
+        return nullptr;
+    }
+
+    for (const FBoneAnimationTrack& Track : DataModel->BoneAnimationTracks)
+    {
+        if (Track.BoneTreeIndex == BoneIndex)
+        {
+            return &Track;
+        }
+    }
+    return nullptr;
+}
+
+const FRawAnimSequenceTrack* UAnimSequence::FindTrackByBoneIndex(int32 TrackIndex) const
+{
+    const FBoneAnimationTrack* Track = FindBoneTrackByIndex(TrackIndex);
+    return Track ? &Track->InternalTrackData : nullptr;
 }

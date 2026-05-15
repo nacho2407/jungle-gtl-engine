@@ -36,7 +36,9 @@ public:
     float FrameToTime(int32 FrameIndex) const;
     int32 GetNumberOfFrames() const;
 
-    bool GetAnimationPose(float TimeSeconds, USkeletalMesh* InSkeletalMesh, TArray<FTransform>& OutLocalPose) const;
+    bool GetAnimationPose(float TimeSeconds, USkeletalMesh* InSkeletalMesh, TArray<FTransform>& OutLocalPose, bool bLooping = false) const;
+
+    bool GetAnimationPoseAtFrame(int32 FrameIndex, USkeletalMesh* InSkeletalMesh, TArray<FTransform>& OutLocalPose) const;
 
     const FString& GetSkeletonPath() const
     {
@@ -70,6 +72,9 @@ public:
     {
         AssetPathFileName = InPath;
     }
+    
+    const FBoneAnimationTrack* FindBoneTrackByIndex(int32 BoneIndex) const;
+    const FRawAnimSequenceTrack* FindTrackByBoneIndex(int32 TrackIndex) const;
 
 private:
     UAnimDataModel* DataModel = nullptr;

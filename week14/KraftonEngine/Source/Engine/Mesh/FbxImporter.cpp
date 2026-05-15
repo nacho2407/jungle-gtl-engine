@@ -28,6 +28,7 @@ TMap<FbxSurfaceMaterial*, int32>    FFbxImporter::MaterialToSlotIndex;
 FReferenceSkeleton                  FFbxImporter::ImportedSkeleton;
 TArray<UAnimSequence*>              FFbxImporter::ImportedAnimSequences;
 
+static FMatrix ConvertFbxMatrix(const FbxMatrix& FbxMat);
 
 struct FFbxSkeletalVertexKey
 {
@@ -123,6 +124,332 @@ namespace
 		Scene->GetGlobalSettings().GetTimelineDefaultTimeSpan(TimelineSpan);
 		return TrySpan(TimelineSpan);
 	}
+
+	struct FFbxTransformCurveSet
+	{
+		FbxAnimCurve* Translation[3] = { nullptr, nullptr, nullptr };
+		FbxAnimCurve* Rotation[3]    = { nullptr, nullptr, nullptr };
+		FbxAnimCurve* Scale[3]       = { nullptr, nullptr, nullptr };
+
+		bool HasAnyCurve() const
+		{
+			return Translation[0] || Translation[1] || Translation[2] || Rotation[0] || Rotation[1] || Rotation[2] || Scale[0] || Scale[1] || Scale[2];
+		}
+	};
+
+	static FFbxTransformCurveSet GetTransformCurveSet(FbxNode* Node, FbxAnimLayer* AnimLayer)
+	{
+		FFbxTransformCurveSet Curves;
+
+		if (!Node || !AnimLayer)
+		{
+			return Curves;
+		}
+
+		const char* Axes[3] = { FBXSDK_CURVENODE_COMPONENT_X, FBXSDK_CURVENODE_COMPONENT_Y, FBXSDK_CURVENODE_COMPONENT_Z };
+
+		for (int32 AxisIndex = 0; AxisIndex < 3; ++AxisIndex)
+		{
+			Curves.Translation[AxisIndex] = Node->LclTranslation.GetCurve(AnimLayer, Axes[AxisIndex]);
+			Curves.Rotation[AxisIndex]    = Node->LclRotation.GetCurve(AnimLayer, Axes[AxisIndex]);
+			Curves.Scale[AxisIndex]       = Node->LclScaling.GetCurve(AnimLayer, Axes[AxisIndex]);
+		}
+
+		return Curves;
+	}
+
+	static double EvaluateCurveOrDefault(FbxAnimCurve* Curve, const FbxTime& Time, double DefaultValue)
+	{
+		return Curve ? Curve->Evaluate(Time) : DefaultValue;
+	}
+
+	static FbxDouble3 EvaluateFbxPropertyCurve(FbxPropertyT<FbxDouble3>& Property, FbxAnimLayer* AnimLayer, const FbxTime& Time)
+	{
+		const FbxDouble3 DefaultValue = Property.Get();
+
+		if (!AnimLayer)
+		{
+			return DefaultValue;
+		}
+
+		const char* Axes[3] = { FBXSDK_CURVENODE_COMPONENT_X, FBXSDK_CURVENODE_COMPONENT_Y, FBXSDK_CURVENODE_COMPONENT_Z };
+
+		FbxDouble3 Result;
+		for (int32 AxisIndex = 0; AxisIndex < 3; ++AxisIndex)
+		{
+			FbxAnimCurve* Curve = Property.GetCurve(AnimLayer, Axes[AxisIndex]);
+			Result[AxisIndex]   = EvaluateCurveOrDefault(Curve, Time, DefaultValue[AxisIndex]);
+		}
+
+		return Result;
+	}
+
+	static FbxAMatrix MakeFbxTranslationMatrix(const FbxVector4& Translation)
+	{
+		FbxAMatrix Matrix;
+		Matrix.SetIdentity();
+		Matrix.SetT(Translation);
+		return Matrix;
+	}
+
+	static FbxAMatrix MakeFbxScalingMatrix(const FbxVector4& Scale)
+	{
+		FbxAMatrix Matrix;
+		Matrix.SetIdentity();
+		Matrix.SetS(Scale);
+		return Matrix;
+	}
+
+	static FbxAMatrix MakeFbxAxisRotationMatrix(int32 AxisIndex, double Degree)
+	{
+		FbxVector4 Euler(0.0, 0.0, 0.0, 0.0);
+		Euler[AxisIndex] = Degree;
+
+		FbxAMatrix Matrix;
+		Matrix.SetIdentity();
+		Matrix.SetR(Euler);
+		return Matrix;
+	}
+
+	static FbxAMatrix MakeFbxRotationMatrixByOrder(const FbxVector4& EulerDegree, EFbxRotationOrder RotationOrder)
+	{
+		const FbxAMatrix RX = MakeFbxAxisRotationMatrix(0, EulerDegree[0]);
+		const FbxAMatrix RY = MakeFbxAxisRotationMatrix(1, EulerDegree[1]);
+		const FbxAMatrix RZ = MakeFbxAxisRotationMatrix(2, EulerDegree[2]);
+
+		switch (RotationOrder)
+		{
+		case eEulerXYZ:
+			return RX * RY * RZ;
+		case eEulerXZY:
+			return RX * RZ * RY;
+		case eEulerYZX:
+			return RY * RZ * RX;
+		case eEulerYXZ:
+			return RY * RX * RZ;
+		case eEulerZXY:
+			return RZ * RX * RY;
+		case eEulerZYX:
+			return RZ * RY * RX;
+		case eSphericXYZ: default:
+			return RX * RY * RZ;
+		}
+	}
+
+	static FbxAMatrix EvaluateLocalFbxMatrixFromCurves(FbxNode* Node, FbxAnimLayer* AnimLayer, const FbxTime& Time)
+	{
+		FbxAMatrix Identity;
+		Identity.SetIdentity();
+
+		if (!Node)
+		{
+			return Identity;
+		}
+
+		const FbxDouble3 TranslationValue = EvaluateFbxPropertyCurve(Node->LclTranslation, AnimLayer, Time);
+		const FbxDouble3 RotationValue    = EvaluateFbxPropertyCurve(Node->LclRotation, AnimLayer, Time);
+		const FbxDouble3 ScaleValue       = EvaluateFbxPropertyCurve(Node->LclScaling, AnimLayer, Time);
+
+		const FbxVector4 LclTranslation = FbxVector4(TranslationValue[0], TranslationValue[1], TranslationValue[2], 0.0f);
+		const FbxVector4 LclRotation    = FbxVector4(RotationValue[0], RotationValue[1], RotationValue[2], 0.0f);
+		const FbxVector4 LclScaling     = FbxVector4(ScaleValue[0], ScaleValue[1], ScaleValue[2], 0.0f);
+
+		EFbxRotationOrder RotationOrder = eEulerXYZ;
+		Node->GetRotationOrder(FbxNode::eSourcePivot, RotationOrder);
+
+		const bool bRotationActive = Node->GetRotationActive();
+
+		const FbxAMatrix TranslationMatrix    = MakeFbxTranslationMatrix(LclTranslation);
+		const FbxAMatrix RotationOffsetMatrix = MakeFbxTranslationMatrix(Node->GetRotationOffset(FbxNode::eSourcePivot));
+		const FbxAMatrix RotationPivotMatrix  = MakeFbxTranslationMatrix(Node->GetRotationPivot(FbxNode::eSourcePivot));
+		const FbxAMatrix PreRotationMatrix    = bRotationActive ? MakeFbxRotationMatrixByOrder(Node->GetPreRotation(FbxNode::eSourcePivot), RotationOrder)
+		: Identity;
+		const FbxAMatrix RotationMatrix = MakeFbxRotationMatrixByOrder(LclRotation, RotationOrder);
+
+		const FbxAMatrix PostRotationMatrix = bRotationActive ? MakeFbxRotationMatrixByOrder(Node->GetPostRotation(FbxNode::eSourcePivot), RotationOrder)
+		: Identity;
+
+		const FbxAMatrix ScalingOffsetMatrix = MakeFbxTranslationMatrix(Node->GetScalingOffset(FbxNode::eSourcePivot));
+
+		const FbxAMatrix ScalingPivotMatrix = MakeFbxTranslationMatrix(Node->GetScalingPivot(FbxNode::eSourcePivot));
+
+		const FbxAMatrix ScalingMatrix = MakeFbxScalingMatrix(LclScaling);
+
+		return TranslationMatrix * RotationOffsetMatrix * RotationPivotMatrix * PreRotationMatrix * RotationMatrix * PostRotationMatrix.Inverse() *
+		RotationPivotMatrix.Inverse() * ScalingOffsetMatrix * ScalingPivotMatrix * ScalingMatrix * ScalingPivotMatrix.Inverse();
+	}
+
+	static FTransform EvaluateLocalTransformFromCurves(FbxNode* Node, FbxAnimLayer* AnimLayer, const FbxTime& Time)
+	{
+		const FbxAMatrix LocalMatrix = EvaluateLocalFbxMatrixFromCurves(Node, AnimLayer, Time);
+		return FTransform(ConvertFbxMatrix(LocalMatrix));
+	}
+
+	static double ComputeFbxMatrixMaxError(const FbxMatrix& A, const FbxMatrix& B)
+	{
+		double MaxError = 0.0;
+
+		for (int32 Row = 0; Row < 4; ++Row)
+		{
+			for (int32 Col = 0; Col < 4; ++Col)
+			{
+				MaxError = std::max(MaxError, std::abs(A.Get(Row, Col) - B.Get(Row, Col)));
+			}
+		}
+
+		return MaxError;
+	}
+
+	static int32 CountSourceCurveKeys(const UAnimDataModel* DataModel)
+	{
+		if (!DataModel)
+		{
+			return 0;
+		}
+
+		int32 Count = 0;
+		for (const FBoneAnimationTrack& Track : DataModel->BoneAnimationTracks)
+		{
+			for (const FSourceTransformCurveLayer& Layer : Track.InternalTrackData.SourceCurveLayers)
+			{
+				Count += static_cast<int32>(Layer.Translation.X.Keys.size());
+				Count += static_cast<int32>(Layer.Translation.Y.Keys.size());
+				Count += static_cast<int32>(Layer.Translation.Z.Keys.size());
+				Count += static_cast<int32>(Layer.Rotation.X.Keys.size());
+				Count += static_cast<int32>(Layer.Rotation.Y.Keys.size());
+				Count += static_cast<int32>(Layer.Rotation.Z.Keys.size());
+				Count += static_cast<int32>(Layer.Scale.X.Keys.size());
+				Count += static_cast<int32>(Layer.Scale.Y.Keys.size());
+				Count += static_cast<int32>(Layer.Scale.Z.Keys.size());
+			}
+		}
+
+		return Count;
+	}
+
+	static int32 CountTransformCurveKeys(const FFbxTransformCurveSet& Curves)
+	{
+		int32 Count = 0;
+		for (int32 AxisIndex = 0; AxisIndex < 3; ++AxisIndex)
+		{
+			Count += Curves.Translation[AxisIndex] ? Curves.Translation[AxisIndex]->KeyGetCount() : 0;
+			Count += Curves.Rotation[AxisIndex] ? Curves.Rotation[AxisIndex]->KeyGetCount() : 0;
+			Count += Curves.Scale[AxisIndex] ? Curves.Scale[AxisIndex]->KeyGetCount() : 0;
+		}
+		return Count;
+	}
+
+	static int32 CountAnimatedCurveBones(const TMap<FbxNode*, int32>& NodeToIndex, FbxAnimLayer* AnimLayer)
+	{
+		int32 Count = 0;
+		for (const auto& Pair : NodeToIndex)
+		{
+			if (GetTransformCurveSet(Pair.first, AnimLayer).HasAnyCurve())
+			{
+				++Count;
+			}
+		}
+		return Count;
+	}
+
+	static int32 CountTransformCurveKeys(const TMap<FbxNode*, int32>& NodeToIndex, FbxAnimLayer* AnimLayer)
+	{
+		int32 Count = 0;
+		for (const auto& Pair : NodeToIndex)
+		{
+			Count += CountTransformCurveKeys(GetTransformCurveSet(Pair.first, AnimLayer));
+		}
+		return Count;
+	}
+
+	static void CopyFbxFloatCurve(FbxAnimCurve* SourceCurve, double StartSeconds, FRawFloatCurve& OutCurve)
+	{
+		OutCurve.Keys.clear();
+
+		if (!SourceCurve)
+		{
+			return;
+		}
+
+		const int32 KeyCount = SourceCurve->KeyGetCount();
+		OutCurve.Keys.reserve(KeyCount);
+
+		for (int32 KeyIndex = 0; KeyIndex < KeyCount; ++KeyIndex)
+		{
+			FRawFloatCurveKey NewKey;
+
+			NewKey.TimeSeconds   = static_cast<float>(SourceCurve->KeyGetTime(KeyIndex).GetSecondDouble() - StartSeconds);
+			NewKey.Value         = static_cast<float>(SourceCurve->KeyGetValue(KeyIndex));
+			NewKey.Interpolation = static_cast<int32>(SourceCurve->KeyGetInterpolation(KeyIndex));
+			NewKey.TangentMode   = static_cast<int32>(SourceCurve->KeyGetTangentMode(KeyIndex));
+
+			OutCurve.Keys.push_back(NewKey);
+		}
+	}
+
+	static void CopyFbxVectorCurve(FbxAnimCurve* CurveX, FbxAnimCurve* CurveY, FbxAnimCurve* CurveZ, double StartSeconds, FRawVectorCurve& OutCurve)
+	{
+		CopyFbxFloatCurve(CurveX, StartSeconds, OutCurve.X);
+		CopyFbxFloatCurve(CurveY, StartSeconds, OutCurve.Y);
+		CopyFbxFloatCurve(CurveZ, StartSeconds, OutCurve.Z);
+	}
+
+	static void CopySourceTransformCurves(FbxNode* Node, FbxAnimStack* AnimStack, double StartSeconds, FRawAnimSequenceTrack& OutRawTrack)
+	{
+		OutRawTrack.SourceCurveLayers.clear();
+
+		if (!Node || !AnimStack)
+		{
+			return;
+		}
+
+		const char* Axes[3] = { FBXSDK_CURVENODE_COMPONENT_X, FBXSDK_CURVENODE_COMPONENT_Y, FBXSDK_CURVENODE_COMPONENT_Z };
+
+		const int32 LayerCount = AnimStack->GetMemberCount<FbxAnimLayer>();
+
+		for (int32 LayerIndex = 0; LayerIndex < LayerCount; ++LayerIndex)
+		{
+			FbxAnimLayer* AnimLayer = AnimStack->GetMember<FbxAnimLayer>(LayerIndex);
+			if (!AnimLayer)
+			{
+				continue;
+			}
+
+			FSourceTransformCurveLayer LayerCurves;
+			LayerCurves.LayerIndex = LayerIndex;
+			LayerCurves.LayerName  = AnimLayer->GetName() ? FString(AnimLayer->GetName()) : FString();
+
+			CopyFbxVectorCurve(
+				Node->LclTranslation.GetCurve(AnimLayer, Axes[0]),
+				Node->LclTranslation.GetCurve(AnimLayer, Axes[1]),
+				Node->LclTranslation.GetCurve(AnimLayer, Axes[2]),
+				StartSeconds,
+				LayerCurves.Translation
+			);
+
+			CopyFbxVectorCurve(
+				Node->LclRotation.GetCurve(AnimLayer, Axes[0]),
+				Node->LclRotation.GetCurve(AnimLayer, Axes[1]),
+				Node->LclRotation.GetCurve(AnimLayer, Axes[2]),
+				StartSeconds,
+				LayerCurves.Rotation
+			);
+
+			CopyFbxVectorCurve(
+				Node->LclScaling.GetCurve(AnimLayer, Axes[0]),
+				Node->LclScaling.GetCurve(AnimLayer, Axes[1]),
+				Node->LclScaling.GetCurve(AnimLayer, Axes[2]),
+				StartSeconds,
+				LayerCurves.Scale
+			);
+
+			if (LayerCurves.HasAnyKeys())
+			{
+				OutRawTrack.SourceCurveLayers.push_back(LayerCurves);
+			}
+		}
+	}
+
 }
 
 struct FFbxStaticVertexKey
@@ -1175,7 +1502,10 @@ void FFbxImporter::ParseAnimation(FbxScene* Scene, const TMap<FbxNode*, int32>& 
 {
 	ImportedAnimSequences.clear();
 
-	if (!Scene || Bones.empty() || NodeToIndex.empty()) return;
+	if (!Scene || Bones.empty() || NodeToIndex.empty())
+	{
+		return;
+	}
 
 	const int32 AnimStackCount = Scene->GetSrcObjectCount<FbxAnimStack>();
 	if (AnimStackCount <= 0)
@@ -1188,9 +1518,35 @@ void FFbxImporter::ParseAnimation(FbxScene* Scene, const TMap<FbxNode*, int32>& 
 	for (int32 StackIndex = 0; StackIndex < AnimStackCount; ++StackIndex)
 	{
 		FbxAnimStack* AnimStack = Scene->GetSrcObject<FbxAnimStack>(StackIndex);
-		if (!AnimStack) continue;
+		if (!AnimStack)
+		{
+			continue;
+		}
 
 		Scene->SetCurrentAnimationStack(AnimStack);
+
+		const int32 AnimLayerCount = AnimStack->GetMemberCount<FbxAnimLayer>();
+		if (AnimLayerCount <= 0)
+		{
+			UE_LOG("Animation import skipped: AnimLayer not found. Stack=%s", AnimStack->GetName());
+			continue;
+		}
+
+		FbxAnimLayer* AnimLayer = AnimStack->GetMember<FbxAnimLayer>(0);
+		if (!AnimLayer)
+		{
+			UE_LOG("Animation import skipped: Base AnimLayer not found. Stack=%s", AnimStack->GetName());
+			continue;
+		}
+
+		if (AnimLayerCount > 1)
+		{
+			UE_LOG(
+				"Warning: Multiple FBX animation layers detected. Direct curve bake uses base layer only. Stack=%s, LayerCount=%d",
+				AnimStack->GetName(),
+				AnimLayerCount
+			);
+		}
 
 		double StartSeconds = 0.0;
 		double EndSeconds   = 0.0;
@@ -1208,19 +1564,55 @@ void FFbxImporter::ParseAnimation(FbxScene* Scene, const TMap<FbxNode*, int32>& 
 
 		const int32 NumFrames = std::max(1, static_cast<int32>(std::ceil(DurationSeconds * static_cast<double>(SampleRate))) + 1);
 
+		const int32 AnimatedCurveBoneCount = CountAnimatedCurveBones(NodeToIndex, AnimLayer);
+		const int32 TransformCurveKeyCount = CountTransformCurveKeys(NodeToIndex, AnimLayer);
+
+		UE_LOG(
+			"Animation curve import: Stack=%s, Layer=%s, SampleRate=%.2f, NumFrames=%d, CurveBones=%d, CurveKeys=%d",
+			AnimStack->GetName(),
+			AnimLayer->GetName(),
+			SampleRate,
+			NumFrames,
+			AnimatedCurveBoneCount,
+			TransformCurveKeyCount
+		);
+
 		UAnimDataModel* DataModel = UObjectManager::Get().CreateObject<UAnimDataModel>();
 		DataModel->SetTiming(static_cast<float>(DurationSeconds), SampleRate, NumFrames);
 		DataModel->BoneAnimationTracks.resize(Bones.size());
 
-		for (int32 NodeIndex = 0; NodeIndex < static_cast<int32>(Bones.size()); ++NodeIndex)
+		for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
 		{
-			FBoneAnimationTrack& Track = DataModel->BoneAnimationTracks[NodeIndex];
+			FBoneAnimationTrack& Track = DataModel->BoneAnimationTracks[BoneIndex];
 
-			Track.BoneTreeIndex = NodeIndex;
+			Track.BoneTreeIndex = BoneIndex;
 			Track.InternalTrackData.PosKeys.reserve(NumFrames);
 			Track.InternalTrackData.RotKeys.reserve(NumFrames);
 			Track.InternalTrackData.ScaleKeys.reserve(NumFrames);
 		}
+
+		for (const auto& Pair : NodeToIndex)
+		{
+			FbxNode*    BoneNode  = Pair.first;
+			const int32 BoneIndex = Pair.second;
+
+			if (!BoneNode)
+			{
+				continue;
+			}
+
+			if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(DataModel->BoneAnimationTracks.size()))
+			{
+				continue;
+			}
+
+			FRawAnimSequenceTrack& RawTrack = DataModel->BoneAnimationTracks[BoneIndex].InternalTrackData;
+
+			CopySourceTransformCurves(BoneNode, AnimStack, StartSeconds, RawTrack);
+		}
+
+		const int32 SourceCurveKeyCount = CountSourceCurveKeys(DataModel);
+		UE_LOG("Animation source curves stored: Stack=%s, LayerCount=%d, SourceCurveKeys=%d", AnimStack->GetName(), AnimLayerCount, SourceCurveKeyCount);
 
 		for (int32 FrameIndex = 0; FrameIndex < NumFrames; ++FrameIndex)
 		{
@@ -1229,12 +1621,13 @@ void FFbxImporter::ParseAnimation(FbxScene* Scene, const TMap<FbxNode*, int32>& 
 			FbxTime Time;
 			Time.SetSecondDouble(StartSeconds + LocalSeconds);
 
-			TArray<FMatrix> BoneGlobals;
-			BoneGlobals.resize(Bones.size());
+			// 기본값은 bind/local pose다. FBX node가 있는 bone은 아래에서 curve 평가값으로 덮어쓴다.
+			TArray<FTransform> BoneLocalTransforms;
+			BoneLocalTransforms.resize(Bones.size());
 
 			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
 			{
-				BoneGlobals[BoneIndex] = Bones[BoneIndex].GlobalMatrix;
+				BoneLocalTransforms[BoneIndex] = FTransform(Bones[BoneIndex].LocalMatrix);
 			}
 
 			for (const auto& Pair : NodeToIndex)
@@ -1252,25 +1645,39 @@ void FFbxImporter::ParseAnimation(FbxScene* Scene, const TMap<FbxNode*, int32>& 
 					continue;
 				}
 
-				BoneGlobals[BoneIndex] = ConvertFbxMatrix(BoneNode->EvaluateGlobalTransform(Time));
+				// 직접 계산 지점:
+				// BoneNode->EvaluateGlobalTransform(Time) 사용 금지.
+				// LclTranslation / LclRotation / LclScaling의 FbxAnimCurve를 직접 Evaluate하고,
+				// FBX node local transform 공식(pivot/offset/pre/post rotation 포함)을 직접 적용한다.
+				const FbxAMatrix DirectLocalMatrix = EvaluateLocalFbxMatrixFromCurves(BoneNode, AnimLayer, Time);
+
+				// 검증 전용. 저장값은 DirectLocalMatrix를 사용한다.
+				if (FrameIndex == 0 || FrameIndex == NumFrames / 2 || FrameIndex == NumFrames - 1)
+				{
+					const FbxAMatrix SdkLocalMatrix = BoneNode->EvaluateLocalTransform(Time);
+					const double     Error          = ComputeFbxMatrixMaxError(DirectLocalMatrix, SdkLocalMatrix);
+
+					if (Error > 0.001)
+					{
+						UE_LOG(
+							"FBX direct curve transform mismatch: Stack=%s, Bone=%s, Frame=%d, Error=%.6f",
+							AnimStack->GetName(),
+							BoneNode->GetName(),
+							FrameIndex,
+							Error
+						);
+					}
+				}
+
+				BoneLocalTransforms[BoneIndex] = FTransform(ConvertFbxMatrix(DirectLocalMatrix));
 			}
 
 			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
 			{
-				FMatrix LocalMatrix = BoneGlobals[BoneIndex];
-
-				const int32 ParentIndex = Bones[BoneIndex].ParentIndex;
-				if (ParentIndex >= 0 && ParentIndex < static_cast<int32>(Bones.size()))
-				{
-					LocalMatrix = BoneGlobals[BoneIndex] * BoneGlobals[ParentIndex].GetInverse();
-				}
-
-				FTransform LocalTransform(LocalMatrix);
-
-				FRawAnimSequenceTrack& Raw = DataModel->BoneAnimationTracks[BoneIndex].InternalTrackData;
+				const FTransform&      LocalTransform = BoneLocalTransforms[BoneIndex];
+				FRawAnimSequenceTrack& Raw            = DataModel->BoneAnimationTracks[BoneIndex].InternalTrackData;
 
 				Raw.PosKeys.push_back(LocalTransform.Location);
-
 				Raw.RotKeys.push_back(LocalTransform.Rotation.GetNormalized());
 				Raw.ScaleKeys.push_back(LocalTransform.Scale);
 			}
