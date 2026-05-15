@@ -21,6 +21,11 @@
         sizeof(ClassName)                                              \
     };
 
+// 1. 매크로 정의 (C++ 컴파일러는 무시하고, C# 파서만 읽을 껍데기)
+#define UCLASS()
+#define UPROPERTY(...)
+#define GENERATED_BODY()
+
 enum EClassFlags : uint32_t
 {
 	CF_None = 0,
@@ -44,6 +49,24 @@ struct FTypeInfo
 		}
 		return false;
 	}
+};
+
+// 2. 리플렉션 & 에디터용 메타데이터
+struct FPropertyInfo
+{
+    FName Name;
+    FString Type;
+    size_t Offset;
+    bool bIsEditAnywhere; // 에디터 UI에 그릴지 여부
+};
+
+// 3. 클래스 전체 정보 (+ GC 연동)
+struct FClassInfo
+{
+    FName ClassName;
+    TArray<FPropertyInfo> Properties; // 에디터/직렬화용 전체 프로퍼티
+
+    TArray<size_t> GcPointerOffsets;
 };
 
 class UObject
@@ -110,6 +133,12 @@ public:
 	virtual void Serialize(FArchive& Ar);
 
 	static const FTypeInfo s_TypeInfo;
+
+	bool bIsReachable = false;        // GC 마킹용 플래그
+    FClassInfo* MyClassInfo = nullptr; // 내 설계도 정보
+
+	virtual struct FClassInfo* GetStaticClass() { return nullptr; }
+
 
 protected:
 	FName ObjectName;
