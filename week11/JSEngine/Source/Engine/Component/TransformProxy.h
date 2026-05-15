@@ -32,7 +32,7 @@ public:
         if (M.Decompose(Translation, Rotation, Scale))
         {
             Actor->SetActorLocation(Translation);
-            Actor->SetActorRotation(Rotation.GetEuler());
+            Actor->SetActorRotationQuat(FQuat(Rotation));
             Actor->SetActorScale(Scale);
         }
     }
