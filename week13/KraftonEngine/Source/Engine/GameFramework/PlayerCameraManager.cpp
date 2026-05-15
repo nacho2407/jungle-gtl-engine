@@ -560,7 +560,7 @@ float APlayerCameraManager::ApplyBlendFunction(float Alpha, FViewTargetTransitio
 	case EViewTargetBlendFunction::VTBlend_EaseOut:
 		return 1.0f - (1.0f - Alpha) * (1.0f - Alpha);
 	case EViewTargetBlendFunction::VTBlend_EaseInOut:
-		return Alpha < 0.5f ? 2.0f * Alpha * Alpha : 1.0f - std::pow(-2.0f * Alpha + 2.0f, 2) / 2.0f;
+		return Alpha < 0.5f ? 2.0f * Alpha * Alpha : 1.0f - std::pow(-2.0f * Alpha + 2.0f, 2.0f) / 2.0f;
 	case EViewTargetBlendFunction::VTBlend_PreBlended:
 		return Alpha; // TODO(B): PreBlended 는 별도 처리 필요할 수 있음.
 	default:
