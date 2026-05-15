@@ -18,6 +18,7 @@
 #include "Component/HeightFogComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/ClassTypes.h"
+#include "Asset/AssetRegistry.h"
 #include "Math/FloatCurve.h"
 #include "Lua/LuaScriptManager.h"
 #include "Resource/ResourceManager.h"
@@ -932,6 +933,7 @@ void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, con
 				case EPropertyType::SceneComponentRef:
 				case EPropertyType::StaticMeshRef:  *static_cast<FString*>(DstProp.ValuePtr) = *static_cast<FString*>(SrcProp->ValuePtr); break;
 				case EPropertyType::SkeletalMeshRef: *static_cast<FString*>(DstProp.ValuePtr) = *static_cast<FString*>(SrcProp->ValuePtr); break;
+				case EPropertyType::ObjectRef:      *static_cast<FString*>(DstProp.ValuePtr) = *static_cast<FString*>(SrcProp->ValuePtr); break;
 				case EPropertyType::Name:           *static_cast<FName*>(DstProp.ValuePtr) = *static_cast<FName*>(SrcProp->ValuePtr); break;
 				case EPropertyType::MaterialSlot:   *static_cast<FMaterialSlot*>(DstProp.ValuePtr) = *static_cast<FMaterialSlot*>(SrcProp->ValuePtr); break;
 				case EPropertyType::Enum:           Size = SrcProp->EnumSize; break;
@@ -1194,8 +1196,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			if (bSelectedNone)
 				ImGui::SetItemDefaultFocus();
 
-			const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
-			for (const FMeshAssetListItem& Item : MeshFiles)
+			const TArray<FAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
+			for (const FAssetListItem& Item : MeshFiles)
 			{
 				bool bSelected = (*Val == Item.FullPath);
 				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
@@ -1300,8 +1302,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			}
 			if (bSelectedNone)
 				ImGui::SetItemDefaultFocus();
-			const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
-			for (const FMeshAssetListItem& Item : MeshFiles)
+			const TArray<FAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
+			for (const FAssetListItem& Item : MeshFiles)
 			{
 				bool bSelected = (*Val == Item.FullPath);
 				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
@@ -1334,6 +1336,37 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 					bChanged = true;
 				}
 			}
+		}
+		break;
+	}
+	case EPropertyType::ObjectRef:
+	{
+		// 일반 자산 레퍼런스 콤보 — type-name 으로 FAssetRegistry 에 질의.
+		// Import 같은 타입 특이 액션은 없음. 필요 시 type-name 별 분기로 확장.
+		FString* Val = static_cast<FString*>(Prop.ValuePtr);
+		FString Preview = (Val->empty() || *Val == "None") ? "None" : GetStemFromPath(*Val);
+		if (ImGui::BeginCombo(Prop.Name.c_str(), Preview.c_str()))
+		{
+			bool bSelectedNone = (Val->empty() || *Val == "None");
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				*Val = "None";
+				bChanged = true;
+			}
+			if (bSelectedNone) ImGui::SetItemDefaultFocus();
+
+			const TArray<FAssetListItem>& Items = FAssetRegistry::ListByTypeName(Prop.AssetTypeName);
+			for (const FAssetListItem& Item : Items)
+			{
+				bool bSelected = (*Val == Item.FullPath);
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				{
+					*Val = Item.FullPath;
+					bChanged = true;
+				}
+				if (bSelected) ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
 		}
 		break;
 	}

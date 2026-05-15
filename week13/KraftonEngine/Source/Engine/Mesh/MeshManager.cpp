@@ -19,10 +19,10 @@
 
 TMap<FString, UStaticMesh*> FMeshManager::StaticMeshCache;
 TMap<FString, USkeletalMesh*> FMeshManager::SkeletalMeshCache;
-TArray<FMeshAssetListItem> FMeshManager::AvailableStaticMeshFiles;
-TArray<FMeshAssetListItem> FMeshManager::AvailableStaticMeshSourceFiles;
-TArray<FMeshAssetListItem> FMeshManager::AvailableSkeletalMeshFiles;
-TArray<FMeshAssetListItem> FMeshManager::AvailableFbxSourceFiles;
+TArray<FAssetListItem> FMeshManager::AvailableStaticMeshFiles;
+TArray<FAssetListItem> FMeshManager::AvailableStaticMeshSourceFiles;
+TArray<FAssetListItem> FMeshManager::AvailableSkeletalMeshFiles;
+TArray<FAssetListItem> FMeshManager::AvailableFbxSourceFiles;
 
 FMeshManager& FMeshManager::Get()
 {
@@ -447,7 +447,7 @@ void FMeshManager::ScanMeshAssets()
 
 		// MeshCache 목록은 새 확장자만 보여준다.
 		// Static은 .statbin, Skeletal은 .sketbin으로 분리해서 수집한다.
-		TArray<FMeshAssetListItem>* TargetList = nullptr;
+		TArray<FAssetListItem>* TargetList = nullptr;
 
 		FString RelPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
 
@@ -465,7 +465,7 @@ void FMeshManager::ScanMeshAssets()
 			continue;
 		}
 
-		FMeshAssetListItem Item;
+		FAssetListItem Item;
 		Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
 		Item.FullPath = RelPath;
 		TargetList->push_back(std::move(Item));
@@ -495,7 +495,7 @@ void FMeshManager::ScanMeshSourceFiles()
 		std::transform(Ext.begin(), Ext.end(), Ext.begin(), ::towlower);
 		if (Ext != L".obj" && Ext != L".fbx") continue;
 
-		FMeshAssetListItem Item;
+		FAssetListItem Item;
 		Item.DisplayName = FPaths::ToUtf8(Path.filename().wstring());
 		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
 		AvailableStaticMeshSourceFiles.push_back(std::move(Item));
@@ -649,7 +649,7 @@ void FMeshManager::ScanFbxSourceFiles()
 		std::transform(Ext.begin(), Ext.end(), Ext.begin(), ::towlower);
 		if (Ext != L".fbx") continue;
 
-		FMeshAssetListItem Item;
+		FAssetListItem Item;
 		Item.DisplayName = FPaths::ToUtf8(Path.filename().wstring());
 		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
 		AvailableFbxSourceFiles.push_back(std::move(Item));
