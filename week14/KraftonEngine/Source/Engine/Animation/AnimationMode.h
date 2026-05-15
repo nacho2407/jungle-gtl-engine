@@ -1,0 +1,24 @@
+﻿#pragma once
+
+#include "Core/CoreTypes.h"
+
+class UAnimSequenceBase;
+
+// USkinnedMeshComponent 가 AnimInstance 를 어떤 방식으로 관리할지 결정한다.
+// UE 의 EAnimationMode 와 의미 동일 — Blueprint 자리가 우리 환경엔 없으므로
+// AnimationCustom 으로 의역 (= 사용자가 UAnimInstance 자식 클래스를 지정).
+enum class EAnimationMode : uint8
+{
+	None,                  // 애니메이션 없음. 컴포넌트의 BoneEdit 만 동작.
+	AnimationSingleNode,   // 시퀀스 1개 재생. AnimationData 의 AnimToPlay 사용.
+	AnimationCustom,       // AnimInstanceClass 로 지정한 UAnimInstance 자식 인스턴스화 (FSM 등).
+};
+
+// SingleNode 모드에서 직렬화/에디터 노출용으로 묶어 두는 재생 파라미터.
+struct FSingleAnimationPlayData
+{
+	UAnimSequenceBase* AnimToPlay = nullptr;
+	float PlayRate                = 1.0f;
+	bool  bLooping                = true;
+	bool  bPlaying                = true;
+};
