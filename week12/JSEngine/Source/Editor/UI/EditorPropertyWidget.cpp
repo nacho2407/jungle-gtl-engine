@@ -138,6 +138,35 @@ namespace
 		return FString(DisplayName) + "##" + Prop.Name;
 	}
 
+	static int32 ReadEnumPropertyValue(const FPropertyDescriptor& Prop)
+	{
+		if (!Prop.ValuePtr) 
+			return 0;
+
+		switch (Prop.EnumSize)
+		{
+		case 1: return static_cast<int32>(*static_cast<uint8*>(Prop.ValuePtr));
+		case 2: return static_cast<int32>(*static_cast<uint16*>(Prop.ValuePtr));
+		case 4: return *static_cast<int32*>(Prop.ValuePtr);
+		case 8: return static_cast<int32>(*static_cast<int64*>(Prop.ValuePtr));
+		default: return 0;
+		}
+	}
+
+	static void WriteEnumPropertyValue(const FPropertyDescriptor& Prop, int32 Value)
+	{
+		if (!Prop.ValuePtr)  return;
+
+		switch (Prop.EnumSize)
+		{
+		case 1: *static_cast<uint8*>(Prop.ValuePtr) = static_cast<uint8>(Value); break;
+		case 2: *static_cast<uint16*>(Prop.ValuePtr) = static_cast<uint16>(Value); break;
+		case 4: *static_cast<int32*>(Prop.ValuePtr) = Value; break;
+		case 8: *static_cast<int64*>(Prop.ValuePtr) = static_cast<int64>(Value); break;
+		default: break;
+		}
+	}
+
 	static bool IsLiveActor(AActor* Actor)
 	{
 		return Actor
@@ -1628,8 +1657,8 @@ void FEditorPropertyWidget::RenderComponentProperties()
 
 bool FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& Prop, AActor* Owner)
 {
-    bool bChanged = false;
-    
+	bool bChanged = false;
+	
 	// ValuePtr은 USceneComponent* 변수의 주소 (USceneComponent**)
 	USceneComponent** ValuePtr = reinterpret_cast<USceneComponent**>(Prop.ValuePtr);
 	USceneComponent* CurrentComp = *ValuePtr;
@@ -1669,15 +1698,15 @@ bool FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& P
 			if (ImGui::Selectable(SelectableId, bSelected))
 			{
 				*ValuePtr = SceneComp;
-			    bChanged = true;
+				bChanged = true;
 			}
 			if (bSelected)
 				ImGui::SetItemDefaultFocus();
 		}
 		ImGui::EndCombo();
 	}
-    
-    return bChanged;
+	
+	return bChanged;
 }
 
 void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObject* TargetObject)
@@ -1730,23 +1759,23 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 	}
 	case EPropertyType::SceneComponentRef:
 	{
-	    AActor* Owner = nullptr;
-	    
-	    if (AActor* Actor = Cast<AActor>(NotifyTarget))
-	    {
-	        Owner = Actor;
-	    }
-	    else if (UActorComponent* Comp = Cast<UActorComponent>(NotifyTarget))
-	    {
-	        Owner = Comp->GetOwner();
-	    }
-	    else if (SelectedComponent)
-	    {
-	        Owner = SelectedComponent->GetOwner();
-	    }
-	    
-	    bChanged = RenderSceneComponentRefWidget(Prop, Owner);
-	    break;
+		AActor* Owner = nullptr;
+		
+		if (AActor* Actor = Cast<AActor>(NotifyTarget))
+		{
+			Owner = Actor;
+		}
+		else if (UActorComponent* Comp = Cast<UActorComponent>(NotifyTarget))
+		{
+			Owner = Comp->GetOwner();
+		}
+		else if (SelectedComponent)
+		{
+			Owner = SelectedComponent->GetOwner();
+		}
+		
+		bChanged = RenderSceneComponentRefWidget(Prop, Owner);
+		break;
 	}
 	case EPropertyType::String:
 	{
@@ -2156,9 +2185,15 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 	}
 	case EPropertyType::Enum:
 	{
-		int* Val = static_cast<int*>(Prop.ValuePtr);
 		if (Prop.EnumNames && Prop.EnumCount)
-			bChanged = ImGui::Combo(Label, Val, Prop.EnumNames, Prop.EnumCount);
+		{
+			int32 CurrentValue = ReadEnumPropertyValue(Prop);
+			if (ImGui::Combo(Label, &CurrentValue, Prop.EnumNames, Prop.EnumCount))
+			{
+				WriteEnumPropertyValue(Prop, CurrentValue);
+				bChanged = true;
+			}
+		}
 		break;
 	}
 	case EPropertyType::Vec3Array:

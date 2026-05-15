@@ -10,88 +10,87 @@
 // 에디터에서 자동 위젯 매핑에 사용되는 프로퍼티 타입
 enum class EPropertyType : uint8_t
 {
-    Bool,
-    Int,
-    Float,
-    Vec3,
-    Vec4,
-    String,
-    Name,              // FName — 문자열 풀 기반 이름 (리소스 키 등)
-    SceneComponentRef, // USceneComponent* 변수의 주소 (MovementComponent를 위한 Enum값
-    Vec3Array,         // TArray<FVector>* - variable-length array of FVector
-                       // 필요 시 Enum, Color 등 추가
+	Bool,
+	Int,
+	Float,
+	Vec3,
+	Vec4,
+	String,
+	Name,              // FName — 문자열 풀 기반 이름 (리소스 키 등)
+	SceneComponentRef, // USceneComponent* 변수의 주소 (MovementComponent를 위한 Enum값
+	Vec3Array,         // TArray<FVector>* - variable-length array of FVector
 	Enum,
 	Color,
-
-	Material, // TODO: 수정필요
+	Material, // TO-DO: 수정필요
 	SRV,
-    CubeSRV, // Shadow Cube Map Face SRV
+	CubeSRV, // Shadow Cube Map Face SRV
 };
 
 enum class EPropertyUsageFlags : uint8_t
 {
-    None = 0,
-    Editable = 1 << 0,
-    Animatable = 1 << 1,
+	None = 0,
+	Editable = 1 << 0,
+	Animatable = 1 << 1,
 };
 
 constexpr EPropertyUsageFlags operator|(EPropertyUsageFlags Lhs, EPropertyUsageFlags Rhs)
 {
-    return static_cast<EPropertyUsageFlags>(
-        static_cast<uint8_t>(Lhs) | static_cast<uint8_t>(Rhs));
+	return static_cast<EPropertyUsageFlags>(
+		static_cast<uint8_t>(Lhs) | static_cast<uint8_t>(Rhs));
 }
 
 constexpr bool HasPropertyUsage(EPropertyUsageFlags Value, EPropertyUsageFlags Flag)
 {
-    return (static_cast<uint8_t>(Value) & static_cast<uint8_t>(Flag)) != 0;
+	return (static_cast<uint8_t>(Value) & static_cast<uint8_t>(Flag)) != 0;
 }
 
 enum class EPropertyChangeType : uint8_t
 {
-    ValueSet,
-    Interactive,
-    Preview,
-    Runtime,
+	ValueSet,
+	Interactive,
+	Preview,
+	Runtime,
 };
 
 struct FPropertyChangedEvent
 {
-    const char* PropertyName = nullptr;
-    EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet;
+	const char* PropertyName = nullptr;
+	EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet;
 };
 
 // SRV 정보
 struct FSRVDisplayInfo
 {
-    float ImageWidth  = 256.f;
-    float ImageHeight = 256.f;
-    float UV0X = 0.f;
-    float UV0Y = 0.f;
-    float UV1X = 1.f;
-    float UV1Y = 1.f;
+	float ImageWidth  = 256.f;
+	float ImageHeight = 256.f;
+	float UV0X = 0.f;
+	float UV0Y = 0.f;
+	float UV1X = 1.f;
+	float UV1Y = 1.f;
 };
 
 // UObject가 노출하는 공통 프로퍼티 디스크립터
 struct FPropertyDescriptor
 {
-    const char*   Name;
-    EPropertyType Type;
-    void*         ValuePtr;
+	const char*   Name;
+	EPropertyType Type;
+	void*         ValuePtr;
 
-    // float 범위 힌트 (DragFloat 등에서 사용)
-    float Min	= 0.0f;
-    float Max	= 0.0f;
-    float Speed = 0.1f;
+	// float 범위 힌트 (DragFloat 등에서 사용)
+	float Min	= 0.0f;
+	float Max	= 0.0f;
+	float Speed = 0.1f;
 
 	// Enum Metadata
 	const char** EnumNames  = nullptr;
 	uint32		 EnumCount  = 0;
 
-    // 타입별 추가 메타데이터 일단 SRV 정보를 저장하기 위해서 사용
-    void* ExtraData = nullptr;
+	// 타입별 추가 메타데이터, 일단 SRV 정보를 저장하기 위해서 사용
+	void* ExtraData = nullptr;
 
-    EPropertyUsageFlags UsageFlags = EPropertyUsageFlags::Editable;
-    const char* DisplayName = nullptr;
+	EPropertyUsageFlags UsageFlags = EPropertyUsageFlags::Editable;
+	const char* DisplayName = nullptr;
+	uint8 EnumSize = sizeof(int32);
 };
 
 /** 각 프로퍼티의 Size 값을 반환합니다. 0을 반환하는 경우 특수 케이스입니다.
@@ -99,19 +98,19 @@ struct FPropertyDescriptor
  **/
 inline size_t GetPropertySize(EPropertyType Type)
 {
-    switch (Type)
-    {
-    case EPropertyType::Bool:   return sizeof(bool);
-    case EPropertyType::Int:    return sizeof(int32);
-    case EPropertyType::Float:  return sizeof(float);
-    case EPropertyType::Vec3:   return sizeof(FVector);
-    case EPropertyType::Color:	return sizeof(FColor);
-    case EPropertyType::Vec4:   return sizeof(FVector4);
-    // String, Name 은 ValuePtr 기반 특수 처리
-    case EPropertyType::String: return 0;
-    case EPropertyType::Name:   return 0;
-    // 포인터 — Duplicate 호출 측에서 직접 처리
-    case EPropertyType::SceneComponentRef: return 0;
-    default: return 0;
-    }
+	switch (Type)
+	{
+	case EPropertyType::Bool:   return sizeof(bool);
+	case EPropertyType::Int:    return sizeof(int32);
+	case EPropertyType::Float:  return sizeof(float);
+	case EPropertyType::Vec3:   return sizeof(FVector);
+	case EPropertyType::Color:	return sizeof(FColor);
+	case EPropertyType::Vec4:   return sizeof(FVector4);
+	// String, Name 은 ValuePtr 기반 특수 처리
+	case EPropertyType::String: return 0;
+	case EPropertyType::Name:   return 0;
+	// 포인터 — Duplicate 호출 측에서 직접 처리
+	case EPropertyType::SceneComponentRef: return 0;
+	default: return 0;
+	}
 }
