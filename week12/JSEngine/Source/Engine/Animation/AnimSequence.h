@@ -1,0 +1,134 @@
+#pragma once
+#include "AnimTypes.h"
+#include "Core/CoreMinimal.h"
+#include "Object/Object.h"
+
+using FVector3f = FVector;
+using FQuat4f = FQuat;
+
+struct FFrameRate
+{
+    int32 Numerator = 30;
+    int32 Denominator = 1;
+
+    float AsDecimal() const
+    {
+        return Denominator != 0 ? static_cast<float>(Numerator) / static_cast<float>(Denominator) : 0.0f;
+    }
+};
+
+struct FRawAnimSequenceTrack
+{
+    TArray<FVector3f> PosKeys;
+    TArray<FQuat4f> RotKeys;
+    TArray<FVector3f> ScaleKeys;
+};
+
+struct FBoneAnimationTrack
+{
+    FName Name;
+    FRawAnimSequenceTrack InternalTrack;
+};
+
+struct FAnimationCurveData
+{
+};
+
+class UAnimationAsset : public UObject
+{
+public:
+    DECLARE_CLASS(UAnimationAsset, UObject)
+
+    UAnimationAsset() = default;
+    ~UAnimationAsset() override = default;
+};
+
+class UAnimDataModel : public UObject
+{
+public:
+    DECLARE_CLASS(UAnimDataModel, UObject)
+
+    UAnimDataModel() = default;
+    ~UAnimDataModel() override = default;
+
+    virtual const TArray<FBoneAnimationTrack>& GetBoneAnimationTracks() const;
+    TArray<FBoneAnimationTrack>& GetMutableBoneAnimationTracks();
+
+    float GetPlayLength() const { return PlayLength; }
+    void SetPlayLength(float InPlayLength) { PlayLength = InPlayLength; }
+
+    const FFrameRate& GetFrameRate() const { return FrameRate; }
+    void SetFrameRate(const FFrameRate& InFrameRate) { FrameRate = InFrameRate; }
+
+    int32 GetNumberOfFrames() const { return NumberOfFrames; }
+    void SetNumberOfFrames(int32 InNumberOfFrames) { NumberOfFrames = InNumberOfFrames; }
+
+    int32 GetNumberOfKeys() const { return NumberOfKeys; }
+    void SetNumberOfKeys(int32 InNumberOfKeys) { NumberOfKeys = InNumberOfKeys; }
+
+    const FAnimationCurveData& GetCurveData() const { return CurveData; }
+    FAnimationCurveData& GetMutableCurveData() { return CurveData; }
+
+private:
+    TArray<FBoneAnimationTrack> BoneAnimationTracks;
+    float PlayLength = 0.0f;
+    FFrameRate FrameRate;
+    int32 NumberOfFrames = 0;
+    int32 NumberOfKeys = 0;
+    FAnimationCurveData CurveData;
+};
+
+class UAnimSequenceBase : public UAnimationAsset
+{
+public:
+    DECLARE_CLASS(UAnimSequenceBase, UAnimationAsset)
+    virtual ~UAnimSequenceBase() = default;
+
+    UAnimDataModel* GetDataModel() const { return DataModel; }
+    void SetDataModel(UAnimDataModel* InDataModel) { DataModel = InDataModel; }
+
+    virtual float GetPlayLength() const { return PlayLength; }
+    virtual const TArray<FAnimNotifyEvent>& GetNotifies() const { return Notifies; }
+    virtual bool GetAnimationPose(float Time, FPoseContext& OutPose) const { return false; }
+    void AddNotify(float InTriggerTime, const FName& InNotifyName);
+
+protected:
+    float PlayLength = 5.0f;
+    TArray<FAnimNotifyEvent> Notifies;
+    UAnimDataModel* DataModel = nullptr;
+};
+
+class UAnimSequence : public UAnimSequenceBase
+{
+public:
+    DECLARE_CLASS(UAnimSequence, UAnimSequenceBase)
+    UAnimSequence() = default;
+    ~UAnimSequence() override = default;
+
+    bool GetAnimationPose(float Time, FPoseContext& OutPose) const override;
+};
+
+// Debug용. 추후 삭제.
+class UDebugAnimSequence : public UAnimSequenceBase
+{
+public:
+    DECLARE_CLASS(UDebugAnimSequence, UAnimSequenceBase)
+
+    float GetPlayLength() const override { return 5.0f; }
+    bool GetAnimationPose(float Time, FPoseContext& OutPose) const override
+    {
+        if (OutPose.LocalPose.size() <= 1)
+        {
+            return false;
+        }
+
+        const float Angle = std::sin(Time * 6.283185f) * 30.0f;
+
+        FMatrix Base = OutPose.LocalPose[1];
+        FMatrix AnimRot = FMatrix::MakeRotationEuler(FVector(0.0f, 0.0f, Angle));
+
+        OutPose.LocalPose[1] = AnimRot * Base;
+
+        return true;
+    }
+};

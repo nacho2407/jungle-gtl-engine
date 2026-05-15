@@ -128,7 +128,11 @@ bool FDecalRenderPass::DrawCommand(const FRenderPassContext* Context)
             Program->Bind(Context->DeviceContext);
             Cmd.Material->BindRenderStates(Context->DeviceContext);
             Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
-            BindVertexFactoryResources(Context->DeviceContext, Cmd.VertexFactoryType, Cmd);
+            BindVertexFactoryResources(
+                Context->DeviceContext,
+                Cmd.VertexFactoryType,
+                Context->RenderBus->GetBoneMatrixConstants(Cmd),
+                Context->RenderResources);
         }
         CheckOverrideViewMode(Context);  
         Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);

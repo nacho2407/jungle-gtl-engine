@@ -23,6 +23,10 @@ public:
 	void AddCommand(ERenderPass Pass, const FRenderCommand& InCommand);
 	void AddCommand(ERenderPass Pass, FRenderCommand&& InCommand);
 	const TArray<FRenderCommand>& GetCommands(ERenderPass Pass) const;
+	uint32 AllocateBoneMatrixConstants();
+	FBoneMatrixConstants* GetMutableBoneMatrixConstants(uint32 Index);
+	const FBoneMatrixConstants* GetBoneMatrixConstants(uint32 Index) const;
+	const FBoneMatrixConstants* GetBoneMatrixConstants(const FRenderCommand& Cmd) const;
 
 	// Getter,Setter
 	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj, float InNearPlane, float InFarPlane);
@@ -95,6 +99,7 @@ public:
 
 private:
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
+	TArray<FBoneMatrixConstants> BoneMatrixConstantsPool;
 
 	FMatrix  View;
 	FMatrix  Proj;

@@ -1,5 +1,6 @@
 ﻿#include "MeshBufferManager.h"
 
+#include "Asset/SkeletalMesh.h"
 #include "Asset/StaticMesh.h"
 #include "Component/ProceduralMeshComponent.h"
 
@@ -79,13 +80,20 @@ void FMeshBufferManager::Release()
 
 	ProcMeshBufferMap.clear();
 
-	for (auto& pair : SkeletalMeshBufferMap)
+	for (auto& pair : CPUSkeletalMeshBufferMap)
 	{
 		pair.second.Release();
 	}
 
-	SkeletalMeshBufferMap.clear();
-	SkeletalMeshSourceMap.clear();
+	CPUSkeletalMeshBufferMap.clear();
+	CPUSkeletalMeshSourceMap.clear();
+
+	for (auto& pair : GPUSkeletalMeshBufferMap)
+	{
+		pair.second.Release();
+	}
+
+	GPUSkeletalMeshBufferMap.clear();
     
     Device = nullptr;
 }
@@ -179,21 +187,21 @@ FMeshBuffer* FMeshBufferManager::GetProcMeshBuffer(uint32 ProcMeshCompUUID, cons
     return &NewBuffer;
 }
 
-FMeshBuffer* FMeshBufferManager::GetSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FSkeletalMeshVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload)
+FMeshBuffer* FMeshBufferManager::GetCPUSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FSkeletalMeshVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload)
 {
 	if (!Device || !SkeletalMeshAsset || Vertices.empty() || Indices.empty())
 	{
 		return nullptr;
 	}
 
-	auto It = SkeletalMeshBufferMap.find(SkeletalMeshCompUUID);
-	if (It != SkeletalMeshBufferMap.end())
+	auto It = CPUSkeletalMeshBufferMap.find(SkeletalMeshCompUUID);
+	if (It != CPUSkeletalMeshBufferMap.end())
 	{
 		FMeshBuffer& Existing = It->second;
 		if (Existing.IsValid())
 		{
-			auto SourceIt = SkeletalMeshSourceMap.find(SkeletalMeshCompUUID);
-			const bool bSameSourceMesh = SourceIt != SkeletalMeshSourceMap.end() && SourceIt->second == SkeletalMeshAsset;
+			auto SourceIt = CPUSkeletalMeshSourceMap.find(SkeletalMeshCompUUID);
+			const bool bSameSourceMesh = SourceIt != CPUSkeletalMeshSourceMap.end() && SourceIt->second == SkeletalMeshAsset;
 			const uint32 ExistingVertexCount = Existing.GetVertexBuffer().GetVertexCount();
 			const uint32 ExistingIndexCount = Existing.GetIndexBuffer().GetIndexCount();
 			const bool bSameSize =
@@ -215,10 +223,36 @@ FMeshBuffer* FMeshBufferManager::GetSkeletalMeshBuffer(uint32 SkeletalMeshCompUU
 		}
 	}
 
-	FMeshBuffer& NewBuffer = SkeletalMeshBufferMap[SkeletalMeshCompUUID];
+	FMeshBuffer& NewBuffer = CPUSkeletalMeshBufferMap[SkeletalMeshCompUUID];
 	NewBuffer.CreateDynamicVertices<FSkeletalMeshVertex>(Device, static_cast<uint32>(Vertices.size()), Indices);
 	UpdateSkeletalMeshBufferVertices(Device, NewBuffer, Vertices);
-	SkeletalMeshSourceMap[SkeletalMeshCompUUID] = SkeletalMeshAsset;
+	CPUSkeletalMeshSourceMap[SkeletalMeshCompUUID] = SkeletalMeshAsset;
+
+	return NewBuffer.IsValid() ? &NewBuffer : nullptr;
+}
+
+FMeshBuffer* FMeshBufferManager::GetGPUSkeletalMeshBuffer(const USkeletalMesh* SkeletalMeshAsset)
+{
+	if (!Device || !SkeletalMeshAsset || !SkeletalMeshAsset->HasValidMeshData())
+	{
+		return nullptr;
+	}
+
+	auto It = GPUSkeletalMeshBufferMap.find(SkeletalMeshAsset);
+	if (It != GPUSkeletalMeshBufferMap.end())
+	{
+		return It->second.IsValid() ? &It->second : nullptr;
+	}
+
+	const TArray<FSkeletalMeshVertex>& Vertices = SkeletalMeshAsset->GetVertices();
+	const TArray<uint32>& Indices = SkeletalMeshAsset->GetIndices();
+	if (Vertices.empty() || Indices.empty())
+	{
+		return nullptr;
+	}
+
+	FMeshBuffer& NewBuffer = GPUSkeletalMeshBufferMap[SkeletalMeshAsset];
+	NewBuffer.CreateImmutableVertices(Device, Vertices, Indices);
 
 	return NewBuffer.IsValid() ? &NewBuffer : nullptr;
 }

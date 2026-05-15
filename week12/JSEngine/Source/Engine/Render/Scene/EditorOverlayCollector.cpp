@@ -309,12 +309,14 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
             // skinning + 버퍼 업로드를 이미 끝낸 상태. 여기서는 dirty flag를 소비하지 않고
             // bNeedsUpload=false로 캐시된 버퍼만 가져온다.
             SkeletalMeshComp->EnsureSkinningUpdated();
-            MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
-                SkeletalMeshComp->GetUUID(),
-                SkeletalMesh,
-                SkeletalMeshComp->GetSkinnedVertices(),
-                SkeletalMesh->GetIndices(),
-                /*bNeedsUpload=*/ false);
+            MeshBuffer = SkeletalMeshComp->GetSkinningMode() == ESkinningMode::GPU
+                ? MeshBufferManager.GetGPUSkeletalMeshBuffer(SkeletalMesh)
+                : MeshBufferManager.GetCPUSkeletalMeshBuffer(
+                    SkeletalMeshComp->GetUUID(),
+                    SkeletalMesh,
+                    SkeletalMeshComp->GetSkinnedVertices(),
+                    SkeletalMesh->GetIndices(),
+                    /*bNeedsUpload=*/ false);
         }
         else
         {

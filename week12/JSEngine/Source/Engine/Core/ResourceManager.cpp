@@ -15,6 +15,7 @@
 #include <chrono>
 #include <cwctype>
 #include "Asset/FileUtils.h"
+#include "Animation/AnimSequence.h"
 
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
@@ -154,6 +155,7 @@ void FResourceManager::ClearDiscoveredResourceLists(bool bClearAtlasCache)
 	ParticleFilePaths.clear();
 	CurveFilePaths.clear();
 	SkeletalMeshFilePaths.clear();
+    AnimSequenceFilePaths.clear();
 	StaticMeshCache.ClearRegistry();
 
 	if (bClearAtlasCache)
@@ -197,6 +199,10 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 			{
 				SkeletalMeshFilePaths.push_back(RelativePath);
 			}
+            if (ContentInfo.bHasAnimation)
+            {
+                AnimSequenceFilePaths.push_back(RelativePath);
+            }
 		}
 	}
 	else if (Extension == L".mtl" || Extension == L".mat" || Extension == L".matinst")
@@ -874,6 +880,43 @@ bool FResourceManager::SaveCurve(const FString& Path, const UCurveFloatAsset* Cu
 TArray<FString> FResourceManager::GetCurvePaths() const
 {
 	return CurveFilePaths;
+}
+
+UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
+{
+    const FString NormalizedPath = FPaths::Normalize(Path);
+
+    if (UAnimSequence* FoundSequence = FindAnimSequence(NormalizedPath))
+    {
+        return FoundSequence;
+    }
+
+    UAnimSequence* LoadedSequence = FbxImporter.LoadAnimSequence(NormalizedPath);
+    if (!LoadedSequence)
+    {
+        UE_LOG_ERROR("[AnimSequenceLoad] Failed | Path=%s", NormalizedPath.c_str());
+        return nullptr;
+    }
+
+    AnimSequenceMap[NormalizedPath] = LoadedSequence;
+    if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), NormalizedPath) == AnimSequenceFilePaths.end())
+    {
+        AnimSequenceFilePaths.push_back(NormalizedPath);
+    }
+
+    return LoadedSequence;
+}
+
+UAnimSequence* FResourceManager::FindAnimSequence(const FString& Path) const
+{
+    const FString NormalizedPath = FPaths::Normalize(Path);
+    auto It = AnimSequenceMap.find(NormalizedPath);
+    return It != AnimSequenceMap.end() ? It->second : nullptr;
+}
+
+TArray<FString> FResourceManager::GetAnimSequencePaths() const
+{
+    return AnimSequenceFilePaths;
 }
 
 const TArray<FString>& FResourceManager::GetTextureFilePath() const

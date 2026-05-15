@@ -9,15 +9,13 @@
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Resource/Material.h"
-#include "Render/Resource/VertexFactoryTypes.h"
-#include "Render/Device/D3DDevice.h"
 #include "Core/CoreMinimal.h"
 #include "Core/ResourceTypes.h"
 
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 #include "Component/PostProcess/Light/LightComponent.h"
-
+#include "Render/Resource/VertexFactoryTypes.h"
 
 struct ID3D11ShaderResourceView;
 class UPrimitiveComponent;
@@ -53,6 +51,15 @@ enum EShadowLightType : int32
 };
 
 constexpr uint32 InvalidShadowIndex = static_cast<uint32>(-1);
+constexpr uint32 InvalidBoneMatrixConstantsIndex = static_cast<uint32>(-1);
+constexpr uint32 MaxGPUSkinBones = 256;
+
+struct FBoneMatrixConstants
+{
+	FMatrix BoneMatrices[MaxGPUSkinBones];
+	uint32 BoneCount = 0;
+	float Padding[3] = { 0.0f, 0.0f, 0.0f };
+};
 
 //PerObject
 struct FPerObjectConstants
@@ -430,6 +437,9 @@ struct FRenderCommand
 	EVertexFactoryType VertexFactoryType = EVertexFactoryType::StaticMesh;
 	uint32 SectionIndexStart = 0;
 	uint32 SectionIndexCount = 0;
+
+	bool bUseBoneMatrixConstants = false;
+	uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
 
 	FBoundingBox WorldAABB;
 

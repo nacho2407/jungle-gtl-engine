@@ -206,8 +206,11 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            Cmd.Material->BindRenderStates(Context->DeviceContext);
            Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
 
-           // 현재는 CPU Skinning이라 추가 바인딩이 없지만, GPU Skinning에서는 여기서 Bone Buffer가 붙습니다.
-           BindVertexFactoryResources(Context->DeviceContext, Cmd.VertexFactoryType, Cmd);
+           BindVertexFactoryResources(
+               Context->DeviceContext,
+               Cmd.VertexFactoryType,
+               Context->RenderBus->GetBoneMatrixConstants(Cmd),
+               Context->RenderResources);
        }
 
        auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);

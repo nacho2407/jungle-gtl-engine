@@ -12,10 +12,31 @@
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Scene/RenderBus.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace
 {
+    void BuildBoneMatrixConstants(const USkeletalMeshComponent* SkeletalMeshComp, FBoneMatrixConstants& OutConstants)
+    {
+        OutConstants = {};
+        if (!SkeletalMeshComp)
+        {
+            return;
+        }
+
+        const TArray<FMatrix>& SkinningMatrices = SkeletalMeshComp->GetSkinningMatrices();
+        const uint32 BoneCount = static_cast<uint32>((std::min)(
+            SkinningMatrices.size(),
+            static_cast<size_t>(MaxGPUSkinBones)));
+
+        OutConstants.BoneCount = BoneCount;
+        for (uint32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
+        {
+            OutConstants.BoneMatrices[BoneIndex] = SkinningMatrices[BoneIndex];
+        }
+    }
+
     FMatrix MakeViewBillboardMatrix(const UPrimitiveComponent* Primitive, const FRenderBus& RenderBus)
     {
         const FMatrix WorldMatrix = Primitive->GetWorldMatrix();
@@ -132,15 +153,27 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
         SkeletalMeshComp->EnsureSkinningUpdated();
         const bool bNeedsUpload = SkeletalMeshComp->ConsumeRenderStateDirty();
 
-        const TArray<FSkeletalMeshVertex>& SkinnedVertices = SkeletalMeshComp->GetSkinnedVertices();
+        const bool bUseCPUSkinning = SkeletalMeshComp->GetSkinningMode() == ESkinningMode::CPU;
+        const bool bUseGPUSkinning = SkeletalMeshComp->GetSkinningMode() == ESkinningMode::GPU;
+        uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
+        if (bUseGPUSkinning)
+        {
+            BoneMatrixConstantsIndex = RenderBus.AllocateBoneMatrixConstants();
+            if (FBoneMatrixConstants* Constants = RenderBus.GetMutableBoneMatrixConstants(BoneMatrixConstantsIndex))
+            {
+                BuildBoneMatrixConstants(SkeletalMeshComp, *Constants);
+            }
+        }
         const TArray<uint32>& Indices = SkeletalMesh->GetIndices(); // 이건 immutable이라 걍 asset에서 들고와도 댐
 
-        FMeshBuffer* MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
-            SkeletalMeshComp->GetUUID(),
-            SkeletalMesh,
-            SkinnedVertices,
-            Indices,
-            bNeedsUpload);
+        FMeshBuffer* MeshBuffer = bUseGPUSkinning
+            ? MeshBufferManager.GetGPUSkeletalMeshBuffer(SkeletalMesh)
+            : MeshBufferManager.GetCPUSkeletalMeshBuffer(
+                SkeletalMeshComp->GetUUID(),
+                SkeletalMesh,
+                SkeletalMeshComp->GetSkinnedVertices(),
+                Indices,
+                bNeedsUpload);
         if (!MeshBuffer) return true;
 
         const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();
@@ -152,6 +185,8 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.Type = ERenderCommandType::SkeletalMesh;
             Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
             Cmd.MeshBuffer = MeshBuffer;
+            Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
+            Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
             Cmd.SectionIndexStart = 0;
             Cmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
             Cmd.Material = SkeletalMeshComp->GetMaterial(0);
@@ -177,6 +212,8 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.Type = ERenderCommandType::SkeletalMesh;
             Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
             Cmd.MeshBuffer = MeshBuffer;
+            Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
+            Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
 
             Cmd.SectionIndexStart = Section.StartIndex;
             Cmd.SectionIndexCount = Section.IndexCount;

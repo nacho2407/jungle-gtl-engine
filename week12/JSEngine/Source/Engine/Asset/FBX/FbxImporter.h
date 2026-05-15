@@ -12,7 +12,10 @@ namespace fbxsdk
 	class FbxNode;
     class FbxMesh;
     class FbxAMatrix;
+    class FbxAnimStack;
 }
+
+class UAnimSequence;
 
 enum class ESkeletalMeshImportPass
 {
@@ -24,6 +27,13 @@ struct FFbxMeshContentInfo
 {
     bool bHasStaticMesh = false;
     bool bHasSkeletalMesh = false;
+    bool bHasAnimation = false;
+};
+
+struct FFbxAnimImportOptions
+{
+    FString StackName;
+    int32 SampleRate = 30;
 };
 
 class FFbxImporter : public IAssetLoader
@@ -38,6 +48,9 @@ public:
 	FString GetLoaderName() const override;
 
 	FSkeletalMesh* LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOptions& LoadOptions);
+
+    UAnimSequence* LoadAnimSequence(const FString& Path);
+    UAnimSequence* LoadAnimSequence(const FString& Path, const FFbxAnimImportOptions& ImportOptions);
 
 	FFbxMeshContentInfo InspectMeshContent(const FString& Path);
 

@@ -11,6 +11,7 @@ void FRenderBus::Clear()
 	AmbientLightInfo	 = {};
 	DirectionalLightInfo = {};
 	ShadowLightRequests.clear();
+	BoneMatrixConstantsPool.clear();
     VignetteIntensity = 0.0f;
     VignetteRadius = 0.75f;
     VignetteSmoothness = 0.35f;
@@ -34,6 +35,39 @@ void FRenderBus::AddCommand(ERenderPass Pass, FRenderCommand&& InCommand)
 const TArray<FRenderCommand>& FRenderBus::GetCommands(ERenderPass Pass) const
 {
 	return PassQueues[(uint32)Pass];
+}
+
+uint32 FRenderBus::AllocateBoneMatrixConstants()
+{
+	BoneMatrixConstantsPool.emplace_back();
+	return static_cast<uint32>(BoneMatrixConstantsPool.size() - 1);
+}
+
+FBoneMatrixConstants* FRenderBus::GetMutableBoneMatrixConstants(uint32 Index)
+{
+	if (Index == InvalidBoneMatrixConstantsIndex || Index >= static_cast<uint32>(BoneMatrixConstantsPool.size()))
+	{
+		return nullptr;
+	}
+
+	return &BoneMatrixConstantsPool[Index];
+}
+
+const FBoneMatrixConstants* FRenderBus::GetBoneMatrixConstants(uint32 Index) const
+{
+	if (Index == InvalidBoneMatrixConstantsIndex || Index >= static_cast<uint32>(BoneMatrixConstantsPool.size()))
+	{
+		return nullptr;
+	}
+
+	return &BoneMatrixConstantsPool[Index];
+}
+
+const FBoneMatrixConstants* FRenderBus::GetBoneMatrixConstants(const FRenderCommand& Cmd) const
+{
+	return Cmd.bUseBoneMatrixConstants
+		? GetBoneMatrixConstants(Cmd.BoneMatrixConstantsIndex)
+		: nullptr;
 }
 
 void FRenderBus::SetViewProjection(const FMatrix& InView, const FMatrix& InProj, float InNearPlane, float InFarPlane)
