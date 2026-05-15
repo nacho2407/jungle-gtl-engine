@@ -164,18 +164,16 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
                 BuildBoneMatrixConstants(SkeletalMeshComp, *Constants);
             }
         }
-        const TArray<FSkeletalMeshVertex>& RenderVertices =
-            bUseCPUSkinning ? SkeletalMeshComp->GetSkinnedVertices() : SkeletalMesh->GetVertices();
         const TArray<uint32>& Indices = SkeletalMesh->GetIndices(); // 이건 immutable이라 걍 asset에서 들고와도 댐
 
-        // CPU Skinning은 component별 SkinnedVertices를 dynamic VB에 올린다.
-        // GPU Skinning은 원본 asset vertices를 사용한다. 이후 GPU 경로는 asset 공유 immutable buffer로 분리 예정.
-        FMeshBuffer* MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
-            SkeletalMeshComp->GetUUID(),
-            SkeletalMesh,
-            RenderVertices,
-            Indices,
-            bNeedsUpload);
+        FMeshBuffer* MeshBuffer = bUseGPUSkinning
+            ? MeshBufferManager.GetGPUSkeletalMeshBuffer(SkeletalMesh)
+            : MeshBufferManager.GetCPUSkeletalMeshBuffer(
+                SkeletalMeshComp->GetUUID(),
+                SkeletalMesh,
+                SkeletalMeshComp->GetSkinnedVertices(),
+                Indices,
+                bNeedsUpload);
         if (!MeshBuffer) return true;
 
         const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();
