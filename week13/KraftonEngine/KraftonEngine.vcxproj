@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -127,57 +127,57 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;.;$(IncludePath)</IncludePath>
     <LibraryPath>ThirdParty\RmlUi\Debug;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\debug;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;.;$(IncludePath)</IncludePath>
     <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Game|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;.;$(IncludePath)</IncludePath>
     <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;.;$(IncludePath)</IncludePath>
-    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;.;$(IncludePath)</IncludePath>
-    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -220,7 +220,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;WITH_EDITOR=1;FBXSDK_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -238,8 +238,7 @@
 xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmodL.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\debug\bin\*.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
-xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"
-</Command>
+xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -248,7 +247,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;FBXSDK_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -266,8 +265,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
-xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
-</Command>
+xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">
@@ -295,7 +293,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=0;WITH_STANDALONE=1;STATS=0;FBXSDK_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=0;WITH_STANDALONE=1;STATS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -313,8 +311,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
-xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
-</Command>
+xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
@@ -323,7 +320,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;IS_OBJ_VIEWER=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=1;IS_OBJ_VIEWER=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -334,13 +331,14 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.dll" "$(OutDir)"
-xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
+xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
@@ -349,7 +347,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;STATS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=1;STATS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -360,30 +358,26 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.dll" "$(OutDir)"
-xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
+xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorTextureManager.cpp" />
-    <ClCompile Include="Source\Editor\Viewport\EditorPreviewViewportClient.h" />
-    <ClCompile Include="Source\Engine\Asset\AssetPackage.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\MeshManager.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
+    <ClCompile Include="Source\Editor\Slate\SSplitter.cpp" />
+    <ClCompile Include="Source\Editor\Slate\SWindow.cpp" />
     <ClCompile Include="Source\Editor\Slate\SlateApplication.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\AssetFactory.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\MeshEditorWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\StaticMeshEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorDragSource.cpp" />
@@ -396,14 +390,18 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Editor\UI\EditorSceneWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorShadowMapDebugWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorStatWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorTextureManager.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorViewportWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorWorldSettingsWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\ImGuiSetting.cpp" />
     <ClCompile Include="Source\Editor\UI\NotificationToast.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\MeshEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\StaticMeshEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp" />
@@ -411,9 +409,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp" />
     <ClCompile Include="Source\Editor\Viewport\MeshEditorViewportClient.cpp" />
-    <ClCompile Include="Source\Editor\Viewport\MeshEditorViewportClient.h" />
     <ClCompile Include="Source\Editor\Viewport\StaticMeshEditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\ViewportCameraTransform.cpp" />
+    <ClCompile Include="Source\Engine\Asset\AssetPackage.cpp" />
     <ClCompile Include="Source\Engine\Audio\AudioManager.cpp" />
     <ClCompile Include="Source\Engine\CameraShake\CameraShakeAsset.cpp" />
     <ClCompile Include="Source\Engine\CameraShake\CameraShakeManager.cpp" />
@@ -512,6 +510,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\Math\Transform.cpp" />
     <ClCompile Include="Source\Engine\Math\Vector.cpp" />
     <ClCompile Include="Source\Engine\Mesh\FbxImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\MeshManager.cpp" />
     <ClCompile Include="Source\Engine\Mesh\MeshSimplifier.cpp" />
     <ClCompile Include="Source\Engine\Mesh\ObjImporter.cpp" />
     <ClCompile Include="Source\Engine\Mesh\SkeletalMesh.cpp" />
@@ -599,8 +598,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
     <ClCompile Include="Source\Engine\Texture\Texture2D.cpp" />
-    <ClCompile Include="Source\Editor\Slate\SSplitter.cpp" />
-    <ClCompile Include="Source\Editor\Slate\SWindow.cpp" />
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
     <ClCompile Include="Source\Engine\UI\UserWidget.cpp" />
     <ClCompile Include="Source\Engine\Viewport\GameViewportClient.cpp" />
@@ -638,12 +635,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h" />
-    <ClInclude Include="Source\Editor\UI\EditorTextureManager.h" />
-    <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h" />
-    <ClInclude Include="Source\Engine\Asset\AssetPackage.h" />
-    <ClInclude Include="Source\Engine\Mesh\MeshImportOptions.h" />
-    <ClInclude Include="Source\Engine\Mesh\MeshManager.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
     <ClInclude Include="Source\Editor\PIE\PIETypes.h" />
@@ -652,11 +643,12 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Editor\Settings\EditorViewportSettings.h" />
     <ClInclude Include="Source\Editor\Settings\GizmoToolSettings.h" />
     <ClInclude Include="Source\Editor\Settings\ViewportCameraControlSettings.h" />
+    <ClInclude Include="Source\Editor\Slate\SSplitter.h" />
+    <ClInclude Include="Source\Editor\Slate\SWidget.h" />
+    <ClInclude Include="Source\Editor\Slate\SWindow.h" />
     <ClInclude Include="Source\Editor\Slate\SlateApplication.h" />
     <ClInclude Include="Source\Editor\Subsystem\AssetFactory.h" />
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\MeshEditorWidget.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\StaticMeshEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorControlWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorDragSource.h" />
@@ -669,25 +661,33 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorShadowMapDebugWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorStatWidget.h" />
+    <ClInclude Include="Source\Editor\UI\EditorTextureManager.h" />
     <ClInclude Include="Source\Editor\UI\EditorViewportWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorWorldSettingsWidget.h" />
     <ClInclude Include="Source\Editor\UI\ImGuiSetting.h" />
     <ClInclude Include="Source\Editor\UI\NotificationToast.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\MeshEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\StaticMeshEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentItem.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.h" />
     <ClInclude Include="Source\Editor\UI\Toolbar\ViewportToolbar.h" />
+    <ClInclude Include="Source\Editor\Viewport\EditorPreviewViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h" />
     <ClInclude Include="Source\Editor\Viewport\FLevelViewportLayout.h" />
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\MeshEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\StaticMeshEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportCameraTransform.h" />
+    <ClInclude Include="Source\Engine\Asset\AssetPackage.h" />
     <ClInclude Include="Source\Engine\Audio\AudioManager.h" />
     <ClInclude Include="Source\Engine\CameraShake\CameraShakeAsset.h" />
     <ClInclude Include="Source\Engine\CameraShake\CameraShakeManager.h" />
@@ -711,9 +711,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Component\CylindricalBillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\DecalComponent.h" />
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h" />
-    <ClInclude Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.h" />
-    <ClInclude Include="Source\Engine\Gizmo\ComponentGizmoTarget.h" />
-    <ClInclude Include="Source\Engine\Gizmo\GizmoTransformTarget.h" />
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
     <ClInclude Include="Source\Engine\Component\LuaScriptComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
@@ -788,6 +785,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\GameFramework\Light\DirectionalLightActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Light\PointLightActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Light\SpotLightActor.h" />
+    <ClInclude Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.h" />
+    <ClInclude Include="Source\Engine\Gizmo\ComponentGizmoTarget.h" />
+    <ClInclude Include="Source\Engine\Gizmo\GizmoTransformTarget.h" />
     <ClInclude Include="Source\Engine\Input\InputSystem.h" />
     <ClInclude Include="Source\Engine\Lua\LuaScriptManager.h" />
     <ClInclude Include="Source\Engine\Materials\Material.h" />
@@ -801,6 +801,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Math\Vector.h" />
     <ClInclude Include="Source\Engine\Mesh\FbxImporter.h" />
     <ClInclude Include="Source\Engine\Mesh\MeshBinary.h" />
+    <ClInclude Include="Source\Engine\Mesh\MeshImportOptions.h" />
+    <ClInclude Include="Source\Engine\Mesh\MeshManager.h" />
     <ClInclude Include="Source\Engine\Mesh\MeshSimplifier.h" />
     <ClInclude Include="Source\Engine\Mesh\ObjImporter.h" />
     <ClInclude Include="Source\Engine\Mesh\SkeletalMesh.h" />
@@ -917,9 +919,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
     <ClInclude Include="Source\Engine\Serialization\WindowsArchive.h" />
     <ClInclude Include="Source\Engine\Texture\Texture2D.h" />
-    <ClInclude Include="Source\Editor\Slate\SSplitter.h" />
-    <ClInclude Include="Source\Editor\Slate\SWidget.h" />
-    <ClInclude Include="Source\Editor\Slate\SWindow.h" />
     <ClInclude Include="Source\Engine\UI\UIManager.h" />
     <ClInclude Include="Source\Engine\UI\UserWidget.h" />
     <ClInclude Include="Source\Engine\Viewport\GameViewportClient.h" />
@@ -947,6 +946,287 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\ObjViewer\ObjViewerPanel.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerRenderPipeline.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerViewportClient.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fbxsdk_def.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fbxsdk_nsbegin.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fbxsdk_nsend.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fbxsdk_version.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxclassid.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxconnectionpoint.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxdatatypes.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxemitter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxevent.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxeventhandler.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxlistener.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxloadingstrategy.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxmanager.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxmodule.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxobject.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxperipheral.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxplugin.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxplugincontainer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxproperty.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxpropertydef.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxpropertyhandle.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxpropertypage.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxpropertytypes.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxquery.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxqueryevent.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxscopedloadingdirectory.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxscopedloadingfilename.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxstream.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxsymbol.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxsystemunit.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxxref.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\arch\fbxalloc.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\arch\fbxarch.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\arch\fbxdebug.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\arch\fbxnew.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\arch\fbxstdcompliant.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\arch\fbxtypes.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxarray.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxbitset.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxcharptrset.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxcontainerallocators.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxdynamicarray.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxfile.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxfolder.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxhashmap.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxintrusivelist.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxmap.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxmemorypool.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxmultimap.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxpair.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxredblacktree.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxset.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxstatus.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxstring.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxstringlist.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxtime.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxtimecode.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxutils.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxaffinematrix.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxdualquaternion.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxmath.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxmatrix.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxquaternion.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxtransforms.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxvector2.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxvector4.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\sync\fbxatomic.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\sync\fbxclock.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\sync\fbxsync.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\sync\fbxthread.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxbase64coder.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxcallbacks.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxexporter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxexternaldocreflistener.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxfiletokens.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxglobalcamerasettings.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxgloballightsettings.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxglobalsettings.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxgobo.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbximporter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxiobase.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxiopluginregistry.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxiosettings.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxiosettingspath.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxprogress.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxreader.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxstatistics.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxstatisticsfbx.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxwriter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxcolladaanimationelement.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxcolladaelement.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxcolladaiostream.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxcolladanamespace.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxcolladatokens.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxcolladautils.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxreadercollada14.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxwritercollada14.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxio.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxreaderfbx5.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxreaderfbx6.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxreaderfbx7.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxwriterfbx5.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxwriterfbx6.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxwriterfbx7.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxaudio.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxaudiolayer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxaxissystem.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxcollection.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxcollectionexclusive.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxcontainer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxcontainertemplate.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxdisplaylayer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxdocument.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxdocumentinfo.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxenvironment.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxgroupname.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxlibrary.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxmediaclip.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxobjectfilter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxobjectmetadata.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxobjectscontainer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxpose.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxreference.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxscene.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxselectionnode.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxselectionset.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxtakeinfo.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxthumbnail.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxvideo.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimcurve.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimcurvebase.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimcurvefilters.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimcurvenode.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimevalclassic.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimevalstate.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimevaluator.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimlayer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimstack.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimutilities.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxcharacter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxcharacternodename.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxcharacterpose.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraint.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintaim.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintcustom.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintparent.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintposition.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintrotation.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintscale.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintsinglechainik.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintutils.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxcontrolset.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxhik2fbxcharacter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxblendshape.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxblendshapechannel.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxcache.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxcachedeffect.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxcamera.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxcamerastereo.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxcameraswitcher.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxcluster.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxdeformer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxgenericnode.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxgeometry.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxgeometrybase.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxgeometryweightedmap.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxlayer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxlayercontainer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxlight.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxlimitsutilities.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxline.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxlodgroup.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxmarker.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxmesh.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxnode.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxnodeattribute.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxnull.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxnurbs.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxnurbscurve.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxnurbssurface.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxopticalreference.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxpatch.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxproceduralgeometry.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxshape.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxskeleton.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxskin.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxsubdeformer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxsubdiv.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxtrimnurbssurface.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxvertexcachedeformer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxweightedmapping.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxbindingoperator.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxbindingsentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxbindingtable.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxbindingtablebase.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxbindingtableentry.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxconstantentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxfiletexture.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbximplementation.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbximplementationfilter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbximplementationutils.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxlayeredtexture.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxlayerentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxoperatorentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxproceduraltexture.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxpropertyentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxsemanticentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxshadingconventions.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxsurfacelambert.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxsurfacematerial.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxsurfacematerialutils.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxsurfacephong.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxtexture.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxclonemanager.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxdeformationsevaluator.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxembeddedfilesaccumulator.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxgeometryconverter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxmanipulators.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxmaterialconverter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxnamehandler.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxprocessor.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxprocessorshaderdependency.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxprocessorxref.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxprocessorxrefuserlib.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrenamingstrategy.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrenamingstrategybase.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrenamingstrategyfbx5.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrenamingstrategyfbx6.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrenamingstrategyfbx7.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrenamingstrategyutilities.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrootnodeutility.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxscenecheckutility.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxusernotification.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\HTMLparser.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\HTMLtree.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\SAX.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\SAX2.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\c14n.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\catalog.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\chvalid.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\debugXML.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\dict.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\encoding.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\entities.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\globals.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\hash.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\list.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\nanoftp.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\nanohttp.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\parser.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\parserInternals.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\pattern.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\relaxng.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\schemasInternals.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\schematron.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\threads.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\tree.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\uri.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\valid.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xinclude.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xlink.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlIO.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlautomata.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlerror.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlexports.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlmemory.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlmodule.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlreader.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlregexp.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlsave.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlschemas.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlschemastypes.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlstring.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlunicode.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlversion.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlwriter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xpath.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xpathInternals.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xpointer.h" />
     <ClInclude Include="ThirdParty\fmod\include\fmod.h" />
     <ClInclude Include="ThirdParty\fmod\include\fmod.hpp" />
     <ClInclude Include="ThirdParty\fmod\include\fmod_codec.h" />
@@ -957,7 +1237,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="ThirdParty\fmod\include\fmod_output.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
-    <ClInclude Include="ThirdParty\ImGui\imgui_curve.hpp" />
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_win32.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui_internal.h" />
