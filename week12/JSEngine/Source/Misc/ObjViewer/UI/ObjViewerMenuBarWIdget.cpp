@@ -18,19 +18,6 @@
 #include <commdlg.h>
 #include <filesystem>
 
-namespace
-{
-int32 LogShowCursorCall(const char* Caller, BOOL bShow)
-{
-    const int32 Result = ShowCursor(bShow);
-    UE_LOG("[CursorDebug] ShowCursor Caller=%s Arg=%s Result=%d",
-        Caller,
-        bShow ? "TRUE" : "FALSE",
-        Result);
-    return Result;
-}
-}
-
 void FObjViewerMenuBarWidget::Render(float DeltaTime)
 {
 	if (ImGui::BeginMainMenuBar())
@@ -124,7 +111,7 @@ FString FObjViewerMenuBarWidget::OpenFileDialog(const wchar_t* Filter)
     ofn.nFilterIndex = 1;
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
-    LogShowCursorCall("FObjViewerMenuBarWidget::OpenFileDialog", TRUE);  // 엔진 내부의 커서 숨김 초기화
+    ShowCursor(TRUE); // 엔진 내부의 커서 숨김 초기화
 
     if (GetOpenFileNameW(&ofn) == TRUE)
     {

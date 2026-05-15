@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <windows.h>
 
@@ -55,24 +55,20 @@ private:
     static int32 LogShowCursorCall(const char* Caller, BOOL bShow)
     {
         const int32 Result = ::ShowCursor(bShow);
-        UE_LOG("[CursorDebug] ShowCursor Caller=%s Arg=%s Result=%d",
-            Caller,
-            bShow ? "TRUE" : "FALSE",
-            Result);
         return Result;
     }
 
     static void NormalizeCursorCounterVisible()
     {
-        while (LogShowCursorCall("FCursorControl::NormalizeCursorCounterVisible", TRUE) < 0) {}
-        while (LogShowCursorCall("FCursorControl::NormalizeCursorCounterVisible", FALSE) >= 0) {}
-        LogShowCursorCall("FCursorControl::NormalizeCursorCounterVisible", TRUE);
+        while (::ShowCursor(TRUE) < 0) {}
+        while (::ShowCursor(FALSE) >= 0) {}
+        ::ShowCursor(TRUE);
     }
 
     static void NormalizeCursorCounterHidden()
     {
         NormalizeCursorCounterVisible();
-        LogShowCursorCall("FCursorControl::NormalizeCursorCounterHidden", FALSE);
+        ::ShowCursor(FALSE);
     }
 
     static void RestoreArrowCursor()
