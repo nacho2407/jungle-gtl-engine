@@ -70,6 +70,10 @@ namespace
             return nullptr;
         }
 
+        // FBX에서 FbxAnimStack은 Maya/Blender 등의 take 또는 clip에 가까운 단위다.
+        // 이 importer는 모든 stack을 한 번에 가져오지 않고, 옵션으로 지정된 stack 하나를
+        // UAnimSequence 하나의 후보로 사용한다. StackName이 비어 있으면 현재 stack을 우선하고,
+        // 현재 stack도 없으면 scene의 첫 번째 stack을 기본 animation clip으로 선택한다.
         if (FbxAnimStack* CurrentStack = Scene->GetCurrentAnimationStack())
         {
             return CurrentStack;
@@ -90,6 +94,9 @@ namespace
             return false;
         }
 
+        // LclTranslation/LclRotation/LclScaling 같은 FBX vector property는
+        // X/Y/Z component별 FbxAnimCurve를 가질 수 있다. 여기서는 curve 값을 아직
+        // 샘플링하지 않고, 해당 node를 animation track 후보로 볼 수 있는지만 검사한다.
         return HasCurveKeys(Property.GetCurve(Layer, FBXSDK_CURVENODE_COMPONENT_X)) ||
                HasCurveKeys(Property.GetCurve(Layer, FBXSDK_CURVENODE_COMPONENT_Y)) ||
                HasCurveKeys(Property.GetCurve(Layer, FBXSDK_CURVENODE_COMPONENT_Z));
@@ -117,6 +124,9 @@ namespace
         const int32 LayerCount = Stack->GetMemberCount<FbxAnimLayer>();
         for (int32 LayerIndex = 0; LayerIndex < LayerCount; ++LayerIndex)
         {
+            // 하나의 AnimStack 안에는 여러 FbxAnimLayer가 있을 수 있다.
+            // 이 구현에서는 layer별 curve를 직접 합성해 저장하지는 않지만,
+            // 어느 layer에든 transform curve key가 있으면 이 node를 animated node로 본다.
             FbxAnimLayer* Layer = Stack->GetMember<FbxAnimLayer>(LayerIndex);
             if (NodeHasTransformCurveKeys(Node, Layer))
             {
@@ -198,6 +208,8 @@ namespace
         FbxNode* RootNode = Scene->GetRootNode();
         for (int32 ChildIndex = 0; ChildIndex < RootNode->GetChildCount(); ++ChildIndex)
         {
+            // 정상적인 skeletal animation FBX라면 bone node들이 eSkeleton attribute를 가진다.
+            // 먼저 skeleton node들을 수집해서 각 bone에 대응하는 animation track 후보로 사용한다.
             CollectSkeletonNodesRecursive(RootNode->GetChild(ChildIndex), Nodes);
         }
 
@@ -222,6 +234,10 @@ namespace
     {
         FbxTimeSpan TimeSpan;
 
+        // Animation clip의 길이는 우선 AnimStack 자체의 LocalTimeSpan을 따른다.
+        // 이것이 비어 있으면 TakeInfo의 LocalTimeSpan을 보고, 마지막으로 scene timeline을 사용한다.
+        // 따라서 curve key의 min/max를 직접 계산하는 방식은 아니며, FBX에 기록된 take/timeline
+        // 범위를 기준으로 균일 샘플링할 시간을 정한다.
         if (Stack)
         {
             TimeSpan = Stack->GetLocalTimeSpan();
@@ -282,14 +298,23 @@ namespace
 
     void AppendSampledLocalTransform(FbxNode* Node, const FbxTime& SampleTime, FRawAnimSequenceTrack& OutTrack)
     {
+        // 실제 animation key 생성 지점이다.
+        // FBX의 LclTranslation/LclRotation/LclScaling curve를 component별로 직접 평가해서
+        // Pos/Rot/Scale을 조립하지 않고, FBX SDK의 EvaluateLocalTransform()에 맡긴다.
+        // 이 호출은 현재 scene에 설정된 FbxAnimStack과 그 안의 FbxAnimLayer/curve,
+        // rotation order, pivot, pre/post rotation 같은 FBX transform 규칙을 반영한 local transform을 돌려준다.
         const FbxAMatrix LocalTransform = Node->EvaluateLocalTransform(SampleTime);
         const FTransform EngineTransform(ToFMatrix(LocalTransform));
 
+        // UAnimDataModel에 들어갈 bone track의 원시 키 배열이다.
+        // Unreal의 FRawAnimSequenceTrack과 같은 형태로 위치, 회전, 스케일 키를 각각 따로 저장한다.
         OutTrack.PosKeys.push_back(EngineTransform.GetTranslation());
 
         FQuat Rotation = EngineTransform.GetRotation().GetNormalized();
         if (!OutTrack.RotKeys.empty())
         {
+            // Quaternion은 q와 -q가 같은 회전을 뜻하므로, 연속된 key 사이에서 갑자기 부호가 뒤집히면
+            // 보간 경로가 길어질 수 있다. 이전 key와 같은 반구에 놓이도록 보정해 짧은 회전 경로를 유지한다.
             Rotation.EnforceShortestArcWith(OutTrack.RotKeys.back());
         }
         OutTrack.RotKeys.push_back(Rotation);
@@ -386,6 +411,8 @@ UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path, const FFbxAni
 
     Scene->SetCurrentAnimationStack(AnimStack);
 
+    // 여기부터는 "선택된 FbxAnimStack 하나 -> UAnimSequence 하나"로 변환하는 단계다.
+    // CurrentAnimationStack을 바꿔 두어야 이후 EvaluateLocalTransform()이 이 stack의 animation curve를 기준으로 평가된다.
     const TArray<FbxNode*> TrackNodes = CollectAnimationTrackNodes(Scene, AnimStack);
     if (TrackNodes.empty())
     {
@@ -399,6 +426,8 @@ UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path, const FFbxAni
     const int32 KeyCount = ComputeSampleKeyCount(TimeSpan, SampleRate);
     const double DurationSeconds = std::max(0.0, TimeSpan.GetDuration().GetSecondDouble());
 
+    // 최종 산출물은 UAnimSequence이고, 실제 editable animation data는 UAnimDataModel에 저장된다.
+    // DataModel에는 frame rate, 재생 길이, frame/key 개수와 함께 여러 FBoneAnimationTrack이 들어간다.
     UAnimSequence* AnimSequence = UObjectManager::Get().CreateObject<UAnimSequence>();
     UAnimDataModel* DataModel = UObjectManager::Get().CreateObject<UAnimDataModel>();
     AnimSequence->SetDataModel(DataModel);
@@ -424,12 +453,17 @@ UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path, const FFbxAni
         Track.InternalTrack.RotKeys.reserve(KeyCount);
         Track.InternalTrack.ScaleKeys.reserve(KeyCount);
 
+        // 하나의 FbxNode가 하나의 FBoneAnimationTrack이 된다.
+        // Track.Name에는 bone/node 이름을 넣고, InternalTrack(FRawAnimSequenceTrack)에
+        // sample time마다 평가한 PosKeys/RotKeys/ScaleKeys를 순서대로 쌓는다.
         for (int32 KeyIndex = 0; KeyIndex < KeyCount; ++KeyIndex)
         {
             const FbxTime SampleTime = MakeSampleTime(TimeSpan, KeyIndex, KeyCount);
             AppendSampledLocalTransform(Node, SampleTime, Track.InternalTrack);
         }
 
+        // 여러 bone track이 UAnimDataModel의 BoneAnimationTracks 배열에 들어가고,
+        // 그 DataModel을 가진 UAnimSequence가 LoadAnimSequence()의 최종 결과가 된다.
         Tracks.push_back(std::move(Track));
     }
 
