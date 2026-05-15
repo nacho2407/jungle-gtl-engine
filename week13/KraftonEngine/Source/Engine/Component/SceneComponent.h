@@ -7,6 +7,8 @@
 
 class AActor;
 
+#include "SceneComponent.generated.h"
+
 UCLASS()
 class USceneComponent : public UActorComponent
 {

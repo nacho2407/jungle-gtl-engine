@@ -240,31 +240,31 @@ json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj)
 	if (!Obj) return Props;
 	
 	//기존 방식: UObject::GetEditableProperties 로 반환된 프로퍼티 목록을 순회하며 직렬화
-	TArray<FPropertyDescriptor> Descriptors;
-	Obj->GetEditableProperties(Descriptors);
+	//TArray<FPropertyDescriptor> Descriptors;
+	//Obj->GetEditableProperties(Descriptors);
 
-	for (const auto& Prop : Descriptors) {
-		Props[Prop.Name] = Prop.Serialize();
-	}
-	return Props;
-
-	//TArray<FProperty> Properties;
-	//Obj->GetClass()->GetProperties(Properties);
-	//for (const FProperty& Prop : Properties)
-	//{
-	//	if ((Prop.Flags & PF_Save) == 0)
-	//	{
-	//		continue;
-	//	}
-
-	//	FPropertyDescriptor Desc = Prop.ToDescriptor(Obj);
-	//	if (!Desc.ValuePtr)
-	//	{
-	//		continue;
-	//	}
-	//	Props[Desc.Name] = Desc.Serialize();
+	//for (const auto& Prop : Descriptors) {
+	//	Props[Prop.Name] = Prop.Serialize();
 	//}
 	//return Props;
+
+	TArray<FProperty> Properties;
+	Obj->GetClass()->GetProperties(Properties);
+	for (const FProperty& Prop : Properties)
+	{
+		if ((Prop.Flags & PF_Save) == 0)
+		{
+			continue;
+		}
+
+		FPropertyDescriptor Desc = Prop.ToDescriptor(Obj);
+		if (!Desc.ValuePtr)
+		{
+			continue;
+		}
+		Props[Desc.Name] = Desc.Serialize();
+	}
+	return Props;
 }
 
 // ---- Camera helpers ----
@@ -474,54 +474,54 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 {
 	if (!Obj) return;
 
-	// 기존 방식: UObject::GetEditableProperties 로 반환된 프로퍼티 목록을 순회하며 역직렬화
-	TArray<FPropertyDescriptor> Descriptors;
-	Obj->GetEditableProperties(Descriptors);
+	//// 기존 방식: UObject::GetEditableProperties 로 반환된 프로퍼티 목록을 순회하며 역직렬화
+	//TArray<FPropertyDescriptor> Descriptors;
+	//Obj->GetEditableProperties(Descriptors);
 
-	for (auto& Prop : Descriptors) {
-		if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
-		json::JSON& Value = PropsJSON[Prop.Name.c_str()];
-		Prop.Deserialize(Value);
-		Obj->PostEditProperty(Prop.Name.c_str());
-	}
-
-	//// 2nd pass: PostEditProperty가 새 프로퍼티를 추가할 수 있음
-	//// (예: SetStaticMesh → MaterialSlots 생성 → "Element N" 디스크립터 추가)
-	TArray<FPropertyDescriptor> Descriptors2;
-	Obj->GetEditableProperties(Descriptors2);
-
-	for (size_t i = Descriptors.size(); i < Descriptors2.size(); ++i) {
-		auto& Prop = Descriptors2[i];
-		if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
-		json::JSON& Value = PropsJSON[Prop.Name.c_str()];
-		Prop.Deserialize(Value);
-		Obj->PostEditProperty(Prop.Name.c_str());
-	}
-
-	//TArray<FProperty> Properties;
-	//Obj->GetClass()->GetProperties(Properties);
-	//for (const FProperty& Property : Properties)
-	//{
-	//	if((Property.Flags & PF_Save) == 0)
-	//	{
-	//		continue;
-	//	}
-
-	//	if (PropsJSON.hasKey(Property.Name))
-	//	{
-	//		continue;
-	//	}
-
-	//	FPropertyDescriptor Desc = Property.ToDescriptor(Obj);
-	//	if(!Desc.ValuePtr)
-	//	{
-	//		continue;
-	//	}
-
-	//	json::JSON& Value = PropsJSON[Property.Name];
-	//	Desc.Deserialize(Value);
-	//	Obj->PostEditProperty(Property.Name);
+	//for (auto& Prop : Descriptors) {
+	//	if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
+	//	json::JSON& Value = PropsJSON[Prop.Name.c_str()];
+	//	Prop.Deserialize(Value);
+	//	Obj->PostEditProperty(Prop.Name.c_str());
 	//}
+
+	////// 2nd pass: PostEditProperty가 새 프로퍼티를 추가할 수 있음
+	////// (예: SetStaticMesh → MaterialSlots 생성 → "Element N" 디스크립터 추가)
+	//TArray<FPropertyDescriptor> Descriptors2;
+	//Obj->GetEditableProperties(Descriptors2);
+
+	//for (size_t i = Descriptors.size(); i < Descriptors2.size(); ++i) {
+	//	auto& Prop = Descriptors2[i];
+	//	if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
+	//	json::JSON& Value = PropsJSON[Prop.Name.c_str()];
+	//	Prop.Deserialize(Value);
+	//	Obj->PostEditProperty(Prop.Name.c_str());
+	//}
+
+	TArray<FProperty> Properties;
+	Obj->GetClass()->GetProperties(Properties);
+	for (const FProperty& Property : Properties)
+	{
+		if((Property.Flags & PF_Save) == 0)
+		{
+			continue;
+		}
+
+		if (!PropsJSON.hasKey(Property.Name))
+		{
+			continue;
+		}
+
+		FPropertyDescriptor Desc = Property.ToDescriptor(Obj);
+		if(!Desc.ValuePtr)
+		{
+			continue;
+		}
+
+		json::JSON& Value = PropsJSON[Property.Name];
+		Desc.Deserialize(Value);
+		Obj->PostEditProperty(Property.Name);
+	}
 
 }
 
