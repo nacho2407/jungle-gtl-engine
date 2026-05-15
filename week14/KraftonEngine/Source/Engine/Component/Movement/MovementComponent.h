@@ -15,6 +15,7 @@ class UMovementComponent : public UActorComponent
 {
 public:
 	DECLARE_CLASS(UMovementComponent, UActorComponent)
+	DECLARE_REFLECTED_PROPERTIES(UMovementComponent)
 
 	UMovementComponent() = default;
 	~UMovementComponent() override = default;

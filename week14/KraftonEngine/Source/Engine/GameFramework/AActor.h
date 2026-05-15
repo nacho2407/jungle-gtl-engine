@@ -19,6 +19,7 @@ class AActor : public UObject
     friend struct FActorTickFunction;
 public:
 	DECLARE_CLASS(AActor, UObject)
+	DECLARE_REFLECTED_PROPERTIES(AActor)
 	AActor();
 	~AActor() override;
 

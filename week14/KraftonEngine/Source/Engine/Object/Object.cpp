@@ -60,9 +60,24 @@ void UObject::Serialize(FArchive& Ar)
 	Ar << ObjectName;
 }
 
-void UObject::GetEditableProperties(TArray<FPropertyDescriptor>& /*OutProps*/)
+void UObject::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	// 기본 UObject는 에디터에 노출할 프로퍼티 없음.
+	TArray<FProperty> Properties;
+	GetClass()->GetProperties(Properties);
+
+	for (const FProperty& Property : Properties)
+	{
+		if ((Property.Flags & PF_Edit) == 0)
+		{
+			continue;
+		}
+
+		FPropertyDescriptor Desc = Property.ToDescriptor(this);
+		if(Desc.ValuePtr)
+		{
+			OutProps.push_back(Desc);
+		}
+	}
 }
 
 void UObject::PostEditProperty(const char* /*PropertyName*/)

@@ -10,7 +10,15 @@
 
 #include <algorithm>
 
-IMPLEMENT_CLASS(AActor, UObject)
+IMPLEMENT_CLASS_WITH_PROPERTIES(AActor, UObject)
+
+BEGIN_PROPERTY_REGISTRATION(AActor)
+	EDIT_PROPERTY(AActor, PendingActorLocation, "Location", EPropertyType::Vec3, "Transform")
+	EDIT_PROPERTY(AActor, PendingActorRotation, "Rotation", EPropertyType::Rotator, "Transform")
+	EDIT_PROPERTY(AActor, PendingActorScale, "Scale", EPropertyType::Vec3, "Transform")
+	EDIT_PROPERTY(AActor, PendingActorVisible, "Visible", EPropertyType::Bool, "Actor")
+	EDIT_PROPERTY(AActor, PendingTagsString, "Tags", EPropertyType::String, "Actor")
+END_PROPERTY_REGISTRATION()
 
 AActor::AActor()
 {
@@ -443,21 +451,15 @@ UObject* AActor::Duplicate(UObject* NewOuter) const
 
 void AActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	UObject::GetEditableProperties(OutProps);
-
 	PendingActorLocation = GetActorLocation();
 	PendingActorRotation = GetActorRotation();
 	PendingActorScale = GetActorScale();
 	PendingActorVisible = bVisible;
 
-	OutProps.push_back({ "Location", EPropertyType::Vec3, "Transform", &PendingActorLocation });
-	OutProps.push_back({ "Rotation", EPropertyType::Rotator, "Transform", &PendingActorRotation });
-	OutProps.push_back({ "Scale", EPropertyType::Vec3, "Transform", &PendingActorScale });
-	OutProps.push_back({ "Visible", EPropertyType::Bool, "Actor", &PendingActorVisible });
-
 	// Tags — 콤마 구분 단일 문자열로 편집. PostEditProperty 가 다시 split 해서 Tags 갱신.
 	PendingTagsString = JoinTagsCommaSep(Tags);
-	OutProps.push_back({ "Tags", EPropertyType::String, "Actor", &PendingTagsString });
+
+	UObject::GetEditableProperties(OutProps);
 }
 
 void AActor::PostEditProperty(const char* PropertyName)

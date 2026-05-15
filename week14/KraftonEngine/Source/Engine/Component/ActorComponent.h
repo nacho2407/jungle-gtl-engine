@@ -14,6 +14,7 @@ class UActorComponent : public UObject
 
 public:
 	DECLARE_CLASS(UActorComponent, UObject)
+	DECLARE_REFLECTED_PROPERTIES(UActorComponent)
 
 	virtual void BeginPlay();
 	virtual void EndPlay() {};
