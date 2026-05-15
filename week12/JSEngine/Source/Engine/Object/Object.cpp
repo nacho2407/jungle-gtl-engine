@@ -143,6 +143,8 @@ void UObject::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
                 Desc.UsageFlags = PropMeta.UsageFlags;
                 Desc.Min = PropMeta.Min;
                 Desc.Max = PropMeta.Max;
+                Desc.Speed = PropMeta.Speed;
+                Desc.DisplayName = PropMeta.DisplayName;
                 OutProps.push_back(Desc);
             }
         }

@@ -119,6 +119,25 @@ namespace
 		ImGui::TextUnformatted(Label);
 	}
 
+	static const char* GetPropertyDisplayName(const FPropertyDescriptor& Prop)
+	{
+		return (Prop.DisplayName && Prop.DisplayName[0] != '\0') ? Prop.DisplayName : Prop.Name;
+	}
+
+	static FString MakePropertyWidgetLabel(const FPropertyDescriptor& Prop)
+	{
+		const char* DisplayName = GetPropertyDisplayName(Prop);
+		if (!DisplayName)
+		{
+			return "";
+		}
+		if (!Prop.Name || strcmp(DisplayName, Prop.Name) == 0)
+		{
+			return DisplayName;
+		}
+		return FString(DisplayName) + "##" + Prop.Name;
+	}
+
 	static bool IsLiveActor(AActor* Actor)
 	{
 		return Actor
@@ -1465,23 +1484,11 @@ void FEditorPropertyWidget::RenderComponentProperties()
 			}
 		}
 
-		if (Prop.Type == EPropertyType::SceneComponentRef)
+		const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
+		RenderPropertyWidget(Prop);
+		if (bDetailsPerfTraceFrame)
 		{
-			const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
-			RenderSceneComponentRefWidget(Prop, Owner);
-			if (bDetailsPerfTraceFrame)
-			{
-				PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
-			}
-		}
-		else
-		{
-			const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
-			RenderPropertyWidget(Prop);
-			if (bDetailsPerfTraceFrame)
-			{
-				PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
-			}
+			PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
 		}
 
 		if (bIsScriptName)
@@ -1619,8 +1626,10 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	}
 }
 
-void FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& Prop, AActor* Owner)
+bool FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& Prop, AActor* Owner)
 {
+    bool bChanged = false;
+    
 	// ValuePtr은 USceneComponent* 변수의 주소 (USceneComponent**)
 	USceneComponent** ValuePtr = reinterpret_cast<USceneComponent**>(Prop.ValuePtr);
 	USceneComponent* CurrentComp = *ValuePtr;
@@ -1647,7 +1656,8 @@ void FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& P
 	};
 
 	FString CurrentLabel = GetLabel(CurrentComp);
-	if (ImGui::BeginCombo(Prop.Name, CurrentLabel.c_str()))
+	const FString WidgetLabel = MakePropertyWidgetLabel(Prop);
+	if (ImGui::BeginCombo(WidgetLabel.c_str(), CurrentLabel.c_str()))
 	{
 		for (USceneComponent* SceneComp : SceneComps)
 		{
@@ -1658,65 +1668,85 @@ void FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& P
 				GetLabel(SceneComp).c_str(), static_cast<void*>(SceneComp));
 			if (ImGui::Selectable(SelectableId, bSelected))
 			{
-				if (EditorEngine)
-				{
-					EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Component Reference");
-				}
 				*ValuePtr = SceneComp;
-				SelectedComponent->PostEditChangeProperty({ Prop.Name, EPropertyChangeType::ValueSet });
+			    bChanged = true;
 			}
 			if (bSelected)
 				ImGui::SetItemDefaultFocus();
 		}
 		ImGui::EndCombo();
 	}
+    
+    return bChanged;
 }
 
 void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObject* TargetObject)
 {
 	bool bChanged = false;
 	UObject* NotifyTarget = TargetObject ? TargetObject : SelectedComponent;
+	const FString WidgetLabel = MakePropertyWidgetLabel(Prop);
+	const char* Label = WidgetLabel.c_str();
 
 	switch (Prop.Type)
 	{
 	case EPropertyType::Bool:
 	{
 		bool* Val = static_cast<bool*>(Prop.ValuePtr);
-		bChanged = ImGui::Checkbox(Prop.Name, Val);
+		bChanged = ImGui::Checkbox(Label, Val);
 		break;
 	}
 	case EPropertyType::Int:
 	{
 		int32* Val = static_cast<int32*>(Prop.ValuePtr);
-		bChanged = ImGui::DragInt(Prop.Name, Val);
+		bChanged = ImGui::DragInt(Label, Val);
 		break;
 	}
 	case EPropertyType::Float:
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
 		if (Prop.Min != 0.0f || Prop.Max != 0.0f)
-			bChanged = ImGui::DragFloat(Prop.Name, Val, Prop.Speed, Prop.Min, Prop.Max);
+			bChanged = ImGui::DragFloat(Label, Val, Prop.Speed, Prop.Min, Prop.Max);
 		else
-			bChanged = ImGui::DragFloat(Prop.Name, Val, Prop.Speed);
+			bChanged = ImGui::DragFloat(Label, Val, Prop.Speed);
 		break;
 	}
 	case EPropertyType::Vec3:
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
-		bChanged = ImGui::DragFloat3(Prop.Name, Val, Prop.Speed);
+		bChanged = ImGui::DragFloat3(Label, Val, Prop.Speed);
 		break;
 	}
 	case EPropertyType::Vec4:
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
-		bChanged = ImGui::ColorEdit4(Prop.Name, Val);
+		bChanged = ImGui::ColorEdit4(Label, Val);
 		break;
 	}
 	case EPropertyType::Color:
 	{
 		FColor* Val = static_cast<FColor*>(Prop.ValuePtr);
-		bChanged = ImGui::ColorEdit4(Prop.Name, &Val->R);
+		bChanged = ImGui::ColorEdit4(Label, &Val->R);
 		break;
+	}
+	case EPropertyType::SceneComponentRef:
+	{
+	    AActor* Owner = nullptr;
+	    
+	    if (AActor* Actor = Cast<AActor>(NotifyTarget))
+	    {
+	        Owner = Actor;
+	    }
+	    else if (UActorComponent* Comp = Cast<UActorComponent>(NotifyTarget))
+	    {
+	        Owner = Comp->GetOwner();
+	    }
+	    else if (SelectedComponent)
+	    {
+	        Owner = SelectedComponent->GetOwner();
+	    }
+	    
+	    bChanged = RenderSceneComponentRefWidget(Prop, Owner);
+	    break;
 	}
 	case EPropertyType::String:
 	{
@@ -1730,7 +1760,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 			if (!MeshPaths.empty())
 			{
 				const FString Current = *Val;
-				if (ImGui::BeginCombo(Prop.Name, Current.empty() ? "<None>" : Current.c_str()))
+				if (ImGui::BeginCombo(Label, Current.empty() ? "<None>" : Current.c_str()))
 				{
 					for (const FString& Path : MeshPaths)
 					{
@@ -1757,7 +1787,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 			if (!MeshPaths.empty())
 			{
 				const FString Current = *Val;
-				if (ImGui::BeginCombo(Prop.Name, Current.empty() ? "<None>" : Current.c_str()))
+				if (ImGui::BeginCombo(Label, Current.empty() ? "<None>" : Current.c_str()))
 				{
 					for (const FString& Path : MeshPaths)
 					{
@@ -1779,7 +1809,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 			{
 				char Buf[256];
 				strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
-				if (ImGui::InputText(Prop.Name, Buf, sizeof(Buf)))
+				if (ImGui::InputText(Label, Buf, sizeof(Buf)))
 				{
 					*Val = Buf;
 					bChanged = true;
@@ -1929,7 +1959,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 		{
 			char Buf[256];
 			strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
-			if (ImGui::InputText(Prop.Name, Buf, sizeof(Buf)))
+			if (ImGui::InputText(Label, Buf, sizeof(Buf)))
 			{
 				*Val = Buf;
 				bChanged = true;
@@ -1982,7 +2012,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 
 		if (!Names.empty())
 		{
-			if (ImGui::BeginCombo(Prop.Name, Current.c_str()))
+			if (ImGui::BeginCombo(Label, Current.c_str()))
 			{
 				for (const auto& Name : Names)
 				{
@@ -2002,7 +2032,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 		{
 			char Buf[256];
 			strncpy_s(Buf, sizeof(Buf), Current.c_str(), _TRUNCATE);
-			if (ImGui::InputText(Prop.Name, Buf, sizeof(Buf)))
+			if (ImGui::InputText(Label, Buf, sizeof(Buf)))
 			{
 				*Val = FName(Buf);
 				bChanged = true;
@@ -2021,7 +2051,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 		const TArray<FString>& MaterialNames = AssetService.GetMaterialInterfaceNames();
 
 		DrawDetailsSeparator();
-		DrawDetailsSectionLabel(Prop.Name);
+		DrawDetailsSectionLabel(GetPropertyDisplayName(Prop));
 		ImGui::PushID(Prop.Name);
 		for (int32 SlotIndex = 0; SlotIndex < static_cast<int32>(Slots->size()); ++SlotIndex)
 		{
@@ -2128,7 +2158,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 	{
 		int* Val = static_cast<int*>(Prop.ValuePtr);
 		if (Prop.EnumNames && Prop.EnumCount)
-			bChanged = ImGui::Combo(Prop.Name, Val, Prop.EnumNames, Prop.EnumCount);
+			bChanged = ImGui::Combo(Label, Val, Prop.EnumNames, Prop.EnumCount);
 		break;
 	}
 	case EPropertyType::Vec3Array:
@@ -2136,7 +2166,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 		TArray<FVector>* Arr = static_cast<TArray<FVector>*>(Prop.ValuePtr);
 		int32 ToRemove = -1;
 
-		ImGui::Text("%s", Prop.Name);
+		ImGui::Text("%s", GetPropertyDisplayName(Prop));
 		ImGui::Spacing();
 
 		for (int32 i = 0; i < static_cast<int32>(Arr->size()); i++)

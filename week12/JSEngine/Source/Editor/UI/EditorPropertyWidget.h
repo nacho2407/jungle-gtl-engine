@@ -48,7 +48,7 @@ private:
 	void RenderComponentTags(UActorComponent* Component);
 	void RenderComponentProperties();
 	void RenderPropertyWidget(struct FPropertyDescriptor& Prop, UObject* TargetObject = nullptr);
-	void RenderSceneComponentRefWidget(struct FPropertyDescriptor& Prop, AActor* Owner);
+	bool RenderSceneComponentRefWidget(struct FPropertyDescriptor& Prop, AActor* Owner);
 	void RenderSkeletalBonePoseDebug(class USkeletalMeshComponent* Comp);
 	void RenderInterpControlPoints(class UInterpToMovementComponent* Comp);
 	void RenderMaterialPreviewTooltip(UMaterialInterface* Material);

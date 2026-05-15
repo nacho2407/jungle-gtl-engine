@@ -17,6 +17,8 @@ struct FPropertyMetaData
     
     float Min = 0.0f;
     float Max = 0.0f;
+    float Speed = 0.1f;
+    const char* DisplayName = nullptr;
 };
 
 // 파싱된 클래스의 영구 메타데이터

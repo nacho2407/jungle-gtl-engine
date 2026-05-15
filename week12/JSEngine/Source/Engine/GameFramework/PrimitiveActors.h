@@ -1,8 +1,6 @@
 ﻿#pragma once
 
 #include "AActor.h"
-#include "GameFramework/Pawn.h"
-#include "Core/Delegates/Delegate.h"
 #include "Core/CollisionTypes.h"
 
 class UTextRenderComponent;
@@ -295,7 +293,6 @@ public:
 private:
     UBoxComponent* BoxComponent = nullptr;
 };
-
 class AMainSceneDestructibleActor;
 
 class UMainSceneDestructibleComponent : public UActorComponent
