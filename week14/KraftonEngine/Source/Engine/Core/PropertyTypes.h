@@ -37,6 +37,7 @@ struct FMaterialSlot
 };
 
 struct FPropertyDescriptor;
+class UObject;
 
 // 구조체 자기기술 함수: 구조체 포인터로부터 하위 프로퍼티를 생성
 using FStructPropertyFunc = void(*)(void* StructPtr, std::vector<FPropertyDescriptor>& OutProps);
@@ -66,4 +67,33 @@ struct FPropertyDescriptor
 	// 헤더에 SimpleJSON 의존을 들이지 않기 위해 본문은 PropertyTypes.cpp 에 둔다.
 	json::JSON Serialize() const;
 	void	   Deserialize(json::JSON& Value);
+};
+
+enum EPropertyFlags : uint32
+{
+	PF_None = 0,
+	PF_Edit = 1 << 0,
+	PF_Save = 1 << 1,
+	PF_ReadOnly = 1 << 2,
+	PF_Transient = 1 << 3, //저장, 로드에서 제외
+};
+
+struct FProperty
+{
+	const char* Name = nullptr;
+	EPropertyType Type = EPropertyType::Bool;
+	const char* Category = nullptr;
+	uint32 Flags = PF_None;
+
+	void* (*GetValuePtr)(UObject* Object) = nullptr;	//객체 안에 있는 실제 프로퍼티 값의 주소를 반환
+
+	float Min = 0.0f;	
+	float Max = 0.0f;
+	float Speed = 0.1f;	//에디터 드래그 입력 시 값 변화량
+
+	const char** EnumNames = nullptr;	//콤보박스/드롭다운용 이름 배열
+	uint32 EnumCount = 0;
+	uint32 EnumSize = sizeof(int32);
+
+	FStructPropertyFunc StructFunc = nullptr;
 };

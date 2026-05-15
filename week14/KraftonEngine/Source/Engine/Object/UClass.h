@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Core/PropertyTypes.h"
 
 #include <cstring>
 
@@ -43,6 +44,24 @@ public:
 		return (ClassFlags & Flags) != 0;
 	}
 
+	void AddProperty(const FProperty& Property)
+	{
+		Properties.push_back(Property);
+	}
+
+	void GetProperties(TArray<FProperty>& OutProperties, bool bIncludeSuper = true) const
+	{
+		if (bIncludeSuper && SuperClass)
+		{
+			SuperClass->GetProperties(OutProperties, true);
+		}
+
+		for (const FProperty& Prop : Properties)
+		{
+			OutProperties.push_back(Prop);
+		}
+	}
+
 	// --- Global class registry ---
 	static TArray<UClass*>& GetAllClasses()
 	{
@@ -68,6 +87,8 @@ private:
 	UClass*     SuperClass  = nullptr;
 	size_t      Size        = 0;
 	uint32      ClassFlags  = CF_None;
+
+	TArray<FProperty> Properties;
 };
 
 // static initializer 에서 UClass를 전역 레지스트리에 등록
