@@ -2,6 +2,10 @@
 
 #include "Component/SkinnedMeshComponent.h"
 
+struct FPoseContext;
+class UAnimInstance;
+class UAnimSequenceBase;
+struct FAnimNotifyEvent;
 /**
  * @brief Unreal Engine 스타일에서는 skinned mesh가 skeleton을 이용하는 mesh를 표현하고,
  *        skeletal mesh는 실제로 actor에 붙어서 애니메이션을 붙일 수 있는 component로 사용되고 있으므로
@@ -16,6 +20,10 @@ public:
     USkeletalMeshComponent() = default;
     ~USkeletalMeshComponent() override = default;
 
+    virtual void Serialize(FArchive& Ar) override;
+    virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    virtual void PostEditProperty(const char* PropertyName) override;
+
     void TickComponent(float DeltaTime) override;
 
     EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_SkeletalMesh; }
@@ -27,4 +35,25 @@ public:
 
     FMatrix GetBoneGlobalTransform(int32 BoneIndex) const;
     void SetBoneGlobalTransform(int32 BoneIndex, const FMatrix& NewGlobalTransform);
+
+    void SetAnimInstance(UAnimInstance* InAnimInstance) { AnimInstance = InAnimInstance; }
+    UAnimInstance* GetAnimInstance() const { return AnimInstance; }
+
+    // 애니메이션
+    void PlayAnimation(UAnimSequenceBase* NewAnimToPlay, bool bLooping);
+
+    void SetAnimation(UAnimSequenceBase* NewAnimToPlay);
+    void Play(bool bLooping);
+    void Stop();
+    void Pause();
+    void SetPlayRate(float InPlayRate);
+    void SetAnimationPosition(float InTime);
+
+    // 노티파이 수신 (Actor나 Character로 전달)
+    virtual void HandleAnimNotify(const FAnimNotifyEvent& Notify);
+    void ApplyAnimationPose(const FPoseContext& PoseContext);
+
+private:
+    UAnimInstance* AnimInstance = nullptr;
+    FString AnimationAssetPath;
 };
