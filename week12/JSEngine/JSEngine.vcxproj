@@ -1281,6 +1281,9 @@
   <Target Name="CopyLuaJitRuntimeDll" AfterTargets="Build" Condition="Exists('$(ProjectDir)ThirdParty\luajit\src\lua51.dll')">
     <Copy SourceFiles="$(ProjectDir)ThirdParty\luajit\src\lua51.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>
+  <Target Name="CopyFbxSdkRuntimeDll" AfterTargets="Build" Condition="'$(Platform)'=='x64' and '$(Configuration)'!='ObjViewer' and Exists('$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration)\libfbxsdk.dll')">
+    <Copy SourceFiles="$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration)\libfbxsdk.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
   <ImportGroup Label="ExtensionTargets">
     <Import Project="packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets" Condition="Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" />
   </ImportGroup>

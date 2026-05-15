@@ -91,7 +91,7 @@ NUGET_PACKAGES = [
     ("directxtk_desktop_win10", "2025.10.28.2"),
 ]
 
-GAME_CLIENT_CONFIGS = {"GameClientDebug", "GameClientRelease"}
+GAME_CLIENT_CONFIGS = ("GameClientDebug", "GameClientRelease")
 EDITOR_SELECTION_CPP = "Source\\Editor\\Selection\\SelectionManager.cpp"
 
 NS = "http://schemas.microsoft.com/developer/msbuild/2003"
@@ -534,6 +534,21 @@ def add_post_targets_and_nuget_imports(proj):
         copy_lua,
         "Copy",
         SourceFiles="$(ProjectDir)ThirdParty\\luajit\\src\\lua51.dll",
+        DestinationFolder="$(OutDir)",
+        SkipUnchangedFiles="true",
+    )
+
+    copy_fbx = add_text(
+        proj,
+        "Target",
+        Name="CopyFbxSdkRuntimeDll",
+        AfterTargets="Build",
+        Condition="'$(Platform)'=='x64' and '$(Configuration)'!='ObjViewer' and Exists('$(ProjectDir)ThirdParty\\FBX\\lib\\$(FbxSdkConfiguration)\\libfbxsdk.dll')",
+    )
+    add_text(
+        copy_fbx,
+        "Copy",
+        SourceFiles="$(ProjectDir)ThirdParty\\FBX\\lib\\$(FbxSdkConfiguration)\\libfbxsdk.dll",
         DestinationFolder="$(OutDir)",
         SkipUnchangedFiles="true",
     )
