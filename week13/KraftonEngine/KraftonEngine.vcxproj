@@ -695,6 +695,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\Viewport\MeshEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\StaticMeshEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportCameraTransform.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimationTypes.h" />
     <ClInclude Include="Source\Engine\Animation\AnimDataModel.h" />
     <ClInclude Include="Source\Engine\Animation\AnimExtractContext.h" />
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
