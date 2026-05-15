@@ -28,6 +28,7 @@ private:
 	float Radius = 0.1f;
 	const float ScaleSensitivity = 1.0f;
 	int32 SelectedAxis = -1;
+	FVector DraggingRotationAxis;
 	bool bIsFirstFrameOfDrag = true;
 	bool bIsHolding = false;
 	bool bIsWorldSpace = true;

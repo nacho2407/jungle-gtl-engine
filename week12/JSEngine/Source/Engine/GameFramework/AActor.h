@@ -101,6 +101,10 @@ public:
 	{
 		if (RootComponent) RootComponent->SetRelativeRotationQuat(Q);
 	}
+	FQuat GetActorRotationQuat() const
+	{
+		return RootComponent ? RootComponent->GetRelativeQuat() : FQuat::Identity;
+	}
 
 	// Transform — Scale
 	FVector GetActorScale() const

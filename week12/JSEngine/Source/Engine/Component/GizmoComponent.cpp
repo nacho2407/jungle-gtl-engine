@@ -286,10 +286,12 @@ bool UGizmoComponent::HasTarget() const
 
 void UGizmoComponent::TranslateTarget(float DragAmount)
 {
-	if (!Proxy) return;
+	if (!Proxy)
+	{
+		return;
+	}
 
 	FVector ConstrainedDelta = GetVectorForAxis(SelectedAxis) * DragAmount;
-
 	AddWorldOffset(ConstrainedDelta);
 
 	FMatrix M = Proxy->GetTransform();
@@ -299,106 +301,54 @@ void UGizmoComponent::TranslateTarget(float DragAmount)
 
 void UGizmoComponent::RotateTarget(float DragAmount)
 {
-	if (!Proxy) return;
-
-	FVector RotationAxis = GetVectorForAxis(SelectedAxis);
-	RotationAxis.NormalizeSafe();
-	FQuat DeltaQuat(RotationAxis, DragAmount);
-	const FVector Pivot = GetTargetLocation();
+	if (!Proxy)
+	{
+		return;
+	}
 
 	FMatrix M = Proxy->GetTransform();
 	FVector Translation, Scale;
-	FMatrix Rotation;
-	M.Decompose(Translation, Rotation, Scale);
+	FMatrix RotationMat;
+	M.Decompose(Translation, RotationMat, Scale);
 
-	FQuat CurQuat = FQuat(Rotation);
+	FQuat CurQuat = FQuat(RotationMat);
+	FQuat DeltaQuat(DraggingRotationAxis, DragAmount);
 	FQuat NewQuat = CurQuat * DeltaQuat;
 	NewQuat.Normalize();
 
-	M = FMatrix::MakeTRS(Translation, NewQuat.ToMatrix(), Scale);
-	Proxy->SetTransform(M);
-
-	auto ApplyRotation = [&](AActor* Actor)
-		{
-			if (!Actor || !Actor->GetRootComponent()) return;
-			const FVector OffsetFromPivot = Actor->GetActorLocation() - Pivot;
-			Actor->SetActorLocation(Pivot + DeltaQuat.RotateVector(OffsetFromPivot));
-			
-			FQuat ActorCurQuat = FQuat::MakeFromEuler(Actor->GetActorRotation());
-			FQuat ActorNewQuat = ActorCurQuat * DeltaQuat;
-			Actor->SetActorRotation(ActorNewQuat.Euler());
-		};
-
-	if (AllSelectedActors)
-	{
-		for (AActor* Actor : *AllSelectedActors)
-		{
-			ApplyRotation(Actor);
-		}
-	}
+	Proxy->SetTransform(FMatrix::MakeTRS(Translation, NewQuat.ToMatrix(), Scale));
 }
 
 void UGizmoComponent::ScaleTarget(float DragAmount)
 {
-	if (!Proxy) return;
-
-	float ScaleDelta = DragAmount * ScaleSensitivity;
-	const FVector Pivot = GetTargetLocation();
-	FVector ScaleAxis = GetVectorForAxis(SelectedAxis);
-	ScaleAxis.NormalizeSafe();
-	const float PivotScaleFactor = std::max(0.001f, 1.0f + ScaleDelta);
+	if (!Proxy)
+	{
+		return;
+	}
 
 	FMatrix M = Proxy->GetTransform();
-	FVector NewScale = M.GetScaleVector();
+	FVector Translation, Scale;
+	FMatrix RotationMat;
+	M.Decompose(Translation, RotationMat, Scale);
+
+	float ScaleDelta = DragAmount * ScaleSensitivity;
 	switch (SelectedAxis)
 	{
-	case 0: NewScale.X += ScaleDelta; break;
-	case 1: NewScale.Y += ScaleDelta; break;
-	case 2: NewScale.Z += ScaleDelta; break;
-	default: break;
+	case 0:
+		Scale.X += ScaleDelta;
+		break;
+	case 1:
+		Scale.Y += ScaleDelta;
+		break;
+	case 2:
+		Scale.Z += ScaleDelta;
+		break;
 	}
-	NewScale.X = std::max(0.001f, NewScale.X);
-	NewScale.Y = std::max(0.001f, NewScale.Y);
-	NewScale.Z = std::max(0.001f, NewScale.Z);
-	
-	FVector Translation, dummyScale;
-	FMatrix Rotation;
-	M.Decompose(Translation, Rotation, dummyScale);
-	M = FMatrix::MakeTRS(Translation, Rotation, NewScale);
-	Proxy->SetTransform(M);
+	Scale.X = std::max(0.001f, Scale.X);
+	Scale.Y = std::max(0.001f, Scale.Y);
+	Scale.Z = std::max(0.001f, Scale.Z);
 
-	auto ApplyScale = [&](AActor* Actor)
-		{
-			if (!Actor) return;
-			if (AllSelectedActors && !ScaleAxis.IsNearlyZero())
-			{
-				const FVector OffsetFromPivot = Actor->GetActorLocation() - Pivot;
-				const float AxisDistance = OffsetFromPivot.DotProduct(ScaleAxis);
-				const FVector AxisOffset = ScaleAxis * AxisDistance;
-				const FVector PerpendicularOffset = OffsetFromPivot - AxisOffset;
-				Actor->SetActorLocation(Pivot + PerpendicularOffset + AxisOffset * PivotScaleFactor);
-			}
-
-			FVector ActorNewScale = Actor->GetActorScale();
-			switch (SelectedAxis)
-			{
-			case 0: ActorNewScale.X += ScaleDelta; break;
-			case 1: ActorNewScale.Y += ScaleDelta; break;
-			case 2: ActorNewScale.Z += ScaleDelta; break;
-			}
-			ActorNewScale.X = std::max(0.001f, ActorNewScale.X);
-			ActorNewScale.Y = std::max(0.001f, ActorNewScale.Y);
-			ActorNewScale.Z = std::max(0.001f, ActorNewScale.Z);
-			Actor->SetActorScale(ActorNewScale);
-		};
-
-	if (AllSelectedActors)
-	{
-		for (AActor* Actor : *AllSelectedActors)
-		{
-			ApplyScale(Actor);
-		}
-	}
+	Proxy->SetTransform(FMatrix::MakeTRS(Translation, RotationMat, Scale));
 }
 
 void UGizmoComponent::SetTargetLocation(FVector NewLocation)
@@ -655,6 +605,12 @@ void UGizmoComponent::UpdateDrag(const FRay& Ray)
 			Deactivate();
 		}
 		return;
+	}
+
+	if (bIsFirstFrameOfDrag)
+	{
+		DraggingRotationAxis = GetVectorForAxis(SelectedAxis);
+		DraggingRotationAxis.NormalizeSafe();
 	}
 
 	if (CurMode == EGizmoMode::Rotate)
