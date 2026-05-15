@@ -153,9 +153,8 @@ void UObject::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 				Desc.Max = PropMeta.Max;
 				Desc.Speed = PropMeta.Speed;
 				Desc.DisplayName = PropMeta.DisplayName;
-				Desc.EnumNames = PropMeta.EnumNames;
-				Desc.EnumCount = PropMeta.EnumCount;
-				Desc.EnumSize = PropMeta.EnumSize;
+			    Desc.ElementSize = PropMeta.ElementSize;
+			    Desc.EnumMeta = PropMeta.EnumMeta;
 				OutProps.push_back(Desc);
 			}
 		}

@@ -7,6 +7,22 @@
 #include "Core/Containers/String.h"
 #include "Core/Reflection/ReflectionMacros.h"
 
+struct FEnumValueMetaData
+{
+    const char* Name;
+    const char* DisplayName;
+    int64 Value;
+};
+
+// 파싱된 Enum 타입에 대한 메타데이터
+struct FEnumMetaData
+{
+    const char* Name;
+    uint8 Size;
+    const FEnumValueMetaData* Values;
+    uint32 ValueCount;
+};
+
 // 파싱된 프로퍼티의 영구 메타데이터
 struct FPropertyMetaData
 {
@@ -21,9 +37,8 @@ struct FPropertyMetaData
 
 	const char* DisplayName = nullptr;
 
-	const char** EnumNames = nullptr;
-	uint32 EnumCount = 0;
-	uint8 EnumSize = sizeof(int32);
+	uint8 ElementSize = 0;
+    const FEnumMetaData* EnumMetaData = nullptr;
 };
 
 // 파싱된 클래스의 영구 메타데이터

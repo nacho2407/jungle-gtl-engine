@@ -1,13 +1,15 @@
 ﻿#pragma once
 #include "MovementComponent.h"
 
+UENUM()
 enum class EInterpBehaviour {
-	OneShot,
-	OneShotReverse,
-	Loop,
-	PingPong,
+	OneShot UMETA(DisplayName = "One Shot"),
+	OneShotReverse UMETA(DisplayName = "One Shot Reverse"),
+	Loop UMETA(DisplayName = "Loop"),
+	PingPong UMETA(DisplayName = "Ping Pong"),
 };
 
+UCLASS()
 class UInterpToMovementComponent : public UMovementComponent {
 public:
 	DECLARE_CLASS(UInterpToMovementComponent, UMovementComponent)
@@ -70,6 +72,7 @@ private:
 	void				FaceTargetDir(float DeltaTime);
 
 private:
+    UPROPERTY()
 	EInterpBehaviour	InterpBehaviour		= EInterpBehaviour::OneShot;
 	TArray<FVector>		ControlPoints;
 	uint32				CurrentPointID		= 0;

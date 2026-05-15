@@ -6,6 +6,7 @@
 
 class AActor;
 
+UCLASS()
 class UActorComponent : public UObject
 {
 public:
@@ -72,10 +73,19 @@ protected:
 	FGuid PersistentGuid;
 
 private:
+	UPROPERTY()
 	bool bIsActive = true;
+
+	UPROPERTY()
 	bool bAutoActivate = true;
+
+	UPROPERTY()
 	bool bCanEverTick = true;
+
+	UPROPERTY()
 	bool bTransient = false; // 런타임에만 존재해야 하며, 저장되어서는 안 되는 객체에 붙입니다. (UUID 컴포넌트)
+
+	UPROPERTY()
 	bool bIsEditorOnly = false;
 };
 
