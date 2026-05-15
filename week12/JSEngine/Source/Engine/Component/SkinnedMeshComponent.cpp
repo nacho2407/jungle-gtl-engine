@@ -145,6 +145,24 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
     MarkSkinningDirty();
 }
 
+bool USkinnedMeshComponent::SetCurrentLocalPose(const TArray<FMatrix>& InLocalPose)
+{
+    if (!HasValidMesh())
+    {
+        return false;
+    }
+
+    const int32 BoneCount = static_cast<int32>(SkeletalMesh->GetBones().size());
+    if (static_cast<int32>(InLocalPose.size()) != BoneCount)
+    {
+        return false;
+    }
+
+    CurrentLocalPose = InLocalPose;
+    MarkSkinningDirty();
+    return true;
+}
+
 void USkinnedMeshComponent::UpdateWorldAABB() const
 {
     WorldAABB.Reset();

@@ -20,6 +20,8 @@ public:
     USkeletalMesh* GetSkeletalMesh() const { return SkeletalMesh; }
     bool HasValidMesh() const { return SkeletalMesh != nullptr && SkeletalMesh->HasValidMeshData(); }
 
+    bool SetCurrentLocalPose(const TArray<FMatrix>& InLocalPose);
+
     const TArray<FMatrix>& GetCurrentLocalPose() const { return CurrentLocalPose; }
     const TArray<FMatrix>& GetCurrentGlobalPose() const { return CurrentGlobalPose; }
     const TArray<FMatrix>& GetSkinningMatrices() const { return SkinningMatrices; }
