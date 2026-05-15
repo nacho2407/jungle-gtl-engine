@@ -84,9 +84,14 @@ public:
 	inline void SetPressedOnHandle(bool bPressed) { bPressedOnHandle = bPressed; }
 	inline bool IsPressedOnHandle() const { return bPressedOnHandle; }
 
+	inline bool IsFirstFrameOfDrag() const { return bIsFirstFrameOfDrag; }
+
 	void UpdateHoveredAxis(int Index);
 	void UpdateDrag(const FRay& Ray);
 	void DragEnd();
+
+	float VirtualMouseX = 0.0f;
+	float VirtualMouseY = 0.0f;
 
 	void SetTargetLocation(FVector NewLocation);
 	void SetTargetRotation(FVector NewRotation);

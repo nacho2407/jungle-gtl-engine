@@ -184,14 +184,22 @@ void FEditorWorldController::OnLeftMouseDrag(float X, float Y)
     if (!Gizmo || !Gizmo->IsVisible() || !Camera)
         return;
 
-    FRay Ray = Camera->DeprojectScreenToWorld(X, Y, ViewportWidth, ViewportHeight);
-
     // First frame of drag: arm the gizmo hold
     if (Gizmo->IsPressedOnHandle() && !Gizmo->IsHolding())
+    {
         Gizmo->SetHolding(true);
+        Gizmo->VirtualMouseX = X;
+        Gizmo->VirtualMouseY = Y;
+    }
 
     if (Gizmo->IsHolding())
+    {
+        Gizmo->VirtualMouseX += InputSystem::Get().MouseDeltaX();
+        Gizmo->VirtualMouseY += InputSystem::Get().MouseDeltaY();
+
+        FRay Ray = Camera->DeprojectScreenToWorld(Gizmo->VirtualMouseX, Gizmo->VirtualMouseY, ViewportWidth, ViewportHeight);
         Gizmo->UpdateDrag(Ray);
+    }
 }
 
 void FEditorWorldController::OnLeftMouseDragEnd(float X, float Y)
