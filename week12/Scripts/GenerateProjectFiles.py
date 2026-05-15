@@ -1,19 +1,19 @@
 """
-GenerateProjectFiles.py — Auto-generate .vcxproj, .vcxproj.filters
-for JSEngine from the on-disk folder structure.
+Generate Visual Studio solution/project files for JSEngine.
 
-Usage:
-    python Scripts/GenerateProjectFiles.py
+The generated project is intentionally self-contained: it wires generated
+reflection code, NuGet package restore, static third-party library builds,
+runtime DLL copy steps, game/editor configuration defines, and per-config file
+exclusion rules.
 """
 
 import hashlib
 import os
+import runpy
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-# ──────────────────────────────────────────────
-# Constants
-# ──────────────────────────────────────────────
+
 ROOT = Path(__file__).resolve().parent.parent
 
 SOLUTION_NAME = "JSEngine"
@@ -32,396 +32,604 @@ CONFIGURATIONS = [
     ("Debug", "x64"),
     ("Release", "x64"),
     ("ObjViewer", "x64"),
+    ("GameClientDebug", "x64"),
+    ("GameClientRelease", "x64"),
 ]
 
-# Directories to recursively scan for source files
-SCAN_DIRS = ["Source", "ThirdParty"]
+SOLUTION_CONFIGURATIONS = [
+    ("Debug", "x64", "Debug", "x64"),
+    ("Debug", "x86", "Debug", "Win32"),
+    ("GameClientDebug", "x64", "GameClientDebug", "x64"),
+    ("GameClientDebug", "x86", "GameClientDebug", "x64"),
+    ("GameClientRelease", "x64", "GameClientRelease", "x64"),
+    ("GameClientRelease", "x86", "GameClientRelease", "x64"),
+    ("ObjViewer", "x64", "ObjViewer", "x64"),
+    ("ObjViewer", "x86", "ObjViewer", "x64"),
+    ("Release", "x64", "Release", "x64"),
+    ("Release", "x86", "Release", "Win32"),
+]
 
-# Directories to scan for shader files
-SHADER_DIRS = ["Shaders"]
+SOURCE_SCAN_DIRS = ["Source"]
+THIRD_PARTY_SCAN_DIRS = [
+    "ThirdParty\\ImGui",
+    "ThirdParty\\SimpleJSON",
+]
+THIRD_PARTY_SINGLE_FILES = [
+    "ThirdParty\\luajit\\src\\lua.h",
+]
+SHADER_SCAN_DIRS = ["Shaders"]
+ROOT_FILES = ["main.cpp"]
 
-# File extensions to include
 SOURCE_EXTS = {".cpp", ".c", ".cc", ".cxx"}
 HEADER_EXTS = {".h", ".hpp", ".hxx", ".inl"}
 SHADER_EXTS = {".hlsl", ".hlsli"}
+RESOURCE_EXTS = {".rc"}
 NATVIS_EXTS = {".natvis"}
 NONE_EXTS = {".natstepfilter", ".config"}
 
-# Root-level files to include (relative to project dir)
-ROOT_FILES = ["main.cpp"]
-
-# Include paths (relative to project dir)
-INCLUDE_PATHS = [
+INCLUDE_PATHS_EDITOR = [
     "Source\\Engine",
     "Source",
     "ThirdParty",
+    "ThirdParty\\SoLoud\\include",
+    "ThirdParty\\RmlUi\\Include",
     "ThirdParty\\ImGui",
     "Source\\Editor",
     ".",
 ]
+INCLUDE_PATHS_GAME = [
+    "Source\\Engine",
+    "Source",
+    "ThirdParty",
+    "ThirdParty\\SoLoud\\include",
+    "ThirdParty\\RmlUi\\Include",
+    "ThirdParty\\ImGui",
+    ".",
+]
 
-# Library paths (relative to project dir)
-LIBRARY_PATHS = []
-
-# NuGet packages (id, version) — restored via packages.config
 NUGET_PACKAGES = [
     ("directxtk_desktop_win10", "2025.10.28.2"),
 ]
 
+GAME_CLIENT_CONFIGS = {"GameClientDebug", "GameClientRelease"}
+EDITOR_SELECTION_CPP = "Source\\Editor\\Selection\\SelectionManager.cpp"
+
 NS = "http://schemas.microsoft.com/developer/msbuild/2003"
 
 
-# ──────────────────────────────────────────────
-# Helpers
-# ──────────────────────────────────────────────
-def scan_files(project_dir: Path) -> dict[str, list[str]]:
-    """Scan directories and collect files grouped by type."""
-    result = {"ClCompile": [], "ClInclude": [], "FxCompile": [], "Natvis": [], "None": []}
+def xml_attr(**kwargs):
+    return {key: value for key, value in kwargs.items() if value is not None}
 
-    # Scan source/header directories
-    for scan_dir in SCAN_DIRS:
-        full_dir = project_dir / scan_dir
-        if not full_dir.exists():
+
+def condition(config, platform):
+    return f"'$(Configuration)|$(Platform)'=='{config}|{platform}'"
+
+
+def add_text(parent, tag, text=None, **attrs):
+    elem = ET.SubElement(parent, tag, xml_attr(**attrs))
+    if text is not None:
+        elem.text = text
+    return elem
+
+
+def run_reflection_generation():
+    script = ROOT / "Scripts" / "GenerateReflection.py"
+    if script.exists():
+        print("Generating reflection code...")
+        runpy.run_path(str(script), run_name="__main__")
+
+
+def add_file(files, kind, rel_path):
+    rel = rel_path.replace("/", "\\")
+    if rel not in files[kind]:
+        files[kind].append(rel)
+
+
+def classify_file(files, full_path, project_dir):
+    rel = full_path.relative_to(project_dir)
+    rel_str = str(rel).replace("/", "\\")
+    ext = full_path.suffix.lower()
+
+    if ext in SOURCE_EXTS:
+        add_file(files, "ClCompile", rel_str)
+    elif ext in HEADER_EXTS:
+        add_file(files, "ClInclude", rel_str)
+    elif ext in RESOURCE_EXTS:
+        add_file(files, "ResourceCompile", rel_str)
+    elif ext in NATVIS_EXTS:
+        add_file(files, "Natvis", rel_str)
+    elif ext in NONE_EXTS:
+        add_file(files, "None", rel_str)
+
+
+def scan_tree(files, project_dir, rel_dir):
+    root = project_dir / rel_dir
+    if not root.exists():
+        return
+
+    for dirpath, _, filenames in os.walk(root):
+        for fname in sorted(filenames):
+            classify_file(files, Path(dirpath) / fname, project_dir)
+
+
+def scan_shaders(files, project_dir):
+    for shader_dir in SHADER_SCAN_DIRS:
+        root = project_dir / shader_dir
+        if not root.exists():
             continue
-        for dirpath, _, filenames in os.walk(full_dir):
+        for dirpath, _, filenames in os.walk(root):
             for fname in sorted(filenames):
                 full = Path(dirpath) / fname
-                rel = full.relative_to(project_dir)
-                rel_str = str(rel).replace("/", "\\")
-                ext = full.suffix.lower()
+                if full.suffix.lower() in SHADER_EXTS:
+                    add_file(files, "None", str(full.relative_to(project_dir)).replace("/", "\\"))
 
-                if ext in SOURCE_EXTS:
-                    result["ClCompile"].append(rel_str)
-                elif ext in HEADER_EXTS:
-                    result["ClInclude"].append(rel_str)
-                elif ext in NATVIS_EXTS:
-                    result["Natvis"].append(rel_str)
-                elif ext in NONE_EXTS:
-                    result["None"].append(rel_str)
 
-    # Scan shader directories
-    for shader_dir in SHADER_DIRS:
-        full_dir = project_dir / shader_dir
-        if not full_dir.exists():
-            continue
-        for dirpath, _, filenames in os.walk(full_dir):
-            for fname in sorted(filenames):
-                full = Path(dirpath) / fname
-                rel = full.relative_to(project_dir)
-                rel_str = str(rel).replace("/", "\\")
-                ext = full.suffix.lower()
+def scan_files(project_dir):
+    files = {
+        "ClCompile": [],
+        "ClInclude": [],
+        "ResourceCompile": [],
+        "Natvis": [],
+        "None": [],
+    }
 
-                if ext in SHADER_EXTS:
-                    result["FxCompile"].append(rel_str)
+    for scan_dir in SOURCE_SCAN_DIRS:
+        scan_tree(files, project_dir, scan_dir)
 
-    # Add root-level files
+    for scan_dir in THIRD_PARTY_SCAN_DIRS:
+        scan_tree(files, project_dir, scan_dir)
+
+    for single_file in THIRD_PARTY_SINGLE_FILES:
+        full = project_dir / single_file
+        if full.exists():
+            classify_file(files, full, project_dir)
+
+    scan_shaders(files, project_dir)
+
     for root_file in ROOT_FILES:
         full = project_dir / root_file
         if full.exists():
-            result["ClCompile"].append(root_file.replace("/", "\\"))
+            classify_file(files, full, project_dir)
 
-    return result
+    for kind in files:
+        files[kind] = sorted(files[kind])
+
+    return files
 
 
-def get_filter(rel_path: str) -> str:
-    """Return the filter (directory portion) from a relative path."""
+def get_filter(rel_path):
     parts = rel_path.replace("/", "\\").rsplit("\\", 1)
     return parts[0] if len(parts) > 1 else ""
 
 
-def collect_all_filters(files: dict[str, list[str]]) -> set[str]:
-    """Collect all unique filter paths including parent paths."""
+def collect_all_filters(files):
     filters = set()
     for file_list in files.values():
-        for f in file_list:
-            filt = get_filter(f)
-            if filt:
-                parts = filt.split("\\")
-                for i in range(1, len(parts) + 1):
-                    filters.add("\\".join(parts[:i]))
+        for item in file_list:
+            filt = get_filter(item)
+            if not filt:
+                continue
+            parts = filt.split("\\")
+            for index in range(1, len(parts) + 1):
+                filters.add("\\".join(parts[:index]))
     return filters
 
 
-# ──────────────────────────────────────────────
-# XML Generation
-# ──────────────────────────────────────────────
+def is_release_like(config):
+    return config in {"Release", "ObjViewer", "GameClientDebug", "GameClientRelease"}
+
+
+def is_game_client(config):
+    return config in GAME_CLIENT_CONFIGS
+
+
+def get_include_paths(config):
+    return INCLUDE_PATHS_GAME if is_game_client(config) else INCLUDE_PATHS_EDITOR
+
+
+def get_definitions(config, platform):
+    defs = []
+    if platform == "Win32":
+        defs.append("WIN32")
+
+    defs.append("NDEBUG" if is_release_like(config) else "_DEBUG")
+    defs.append("_CONSOLE")
+
+    if is_game_client(config):
+        defs += ["WITH_EDITOR=0", "IS_GAME_CLIENT=1", "IS_OBJ_VIEWER=0"]
+        if config == "GameClientDebug":
+            defs.append("GAME_DEVELOPMENT=1")
+    else:
+        defs.append("WITH_EDITOR=1")
+
+    defs += [
+        "FBXSDK_SHARED",
+        "WITH_MINIAUDIO",
+        "RMLUI_STATIC_LIB",
+        "_CRT_SECURE_NO_WARNINGS",
+        "NOMINMAX",
+    ]
+
+    if platform == "x64":
+        defs += ["SOL_LUA_VERSION=501", "SOL_LUAJIT=1"]
+
+    if config == "ObjViewer":
+        defs.append("IS_OBJ_VIEWER=1")
+
+    defs.append("%(PreprocessorDefinitions)")
+    return ";".join(defs) + ";"
+
+
+def needs_luajit(config, platform):
+    return platform == "x64" and config != "ObjViewer"
+
+
+def needs_fbx(config, platform):
+    return platform == "x64" and config != "ObjViewer"
+
+
+def cl_additional_includes(config, platform):
+    includes = []
+    if is_game_client(config):
+        includes.append("$(ProjectDir)Source\\Editor")
+    if needs_luajit(config, platform):
+        includes.append("$(ProjectDir)ThirdParty\\luajit\\src")
+    includes += [
+        "$(ProjectDir)ThirdParty\\SoLoud\\include",
+        "$(ProjectDir)ThirdParty\\RmlUi\\Include",
+        "$(ProjectDir)ThirdParty",
+    ]
+    if needs_fbx(config, platform):
+        includes.append("$(ProjectDir)ThirdParty\\FBX\\include")
+    includes.append("%(AdditionalIncludeDirectories)")
+    return ";".join(includes)
+
+
+def link_library_dirs(config, platform):
+    dirs = [
+        "$(ProjectDir)packages\\directxtk_desktop_win10.2025.10.28.2\\native\\lib\\$(DirectXTKPlatform)\\$(DirectXTKBinaryConfiguration)",
+        "$(ProjectDir)ThirdParty\\RmlUi\\Lib\\$(Platform)\\$(ThirdPartyBinaryConfiguration)",
+        "$(ProjectDir)ThirdParty\\SoLoud\\Lib\\$(Platform)\\$(ThirdPartyBinaryConfiguration)",
+    ]
+    if needs_fbx(config, platform):
+        dirs.append("$(ProjectDir)ThirdParty\\FBX\\lib\\$(FbxSdkConfiguration)")
+    if needs_luajit(config, platform):
+        dirs.append("$(ProjectDir)ThirdParty\\luajit\\src")
+    dirs.append("%(AdditionalLibraryDirectories)")
+    return ";".join(dirs)
+
+
+def link_dependencies(config, platform):
+    deps = ["DirectXTK.lib", "RmlUiCore.lib", "SoLoud.lib"]
+    if needs_fbx(config, platform):
+        deps.append("libfbxsdk.lib")
+    if needs_luajit(config, platform):
+        deps += ["gdiplus.lib", "lua51.lib"]
+    deps.append("%(AdditionalDependencies)")
+    return ";".join(deps)
+
+
+def should_exclude_from_game_client(rel_path):
+    if rel_path.startswith("Source\\Misc\\ObjViewer\\"):
+        return True
+    if rel_path.startswith("Source\\Editor\\") and rel_path != EDITOR_SELECTION_CPP:
+        return True
+    return False
+
+
+def add_game_client_exclusions(elem, rel_path):
+    if not should_exclude_from_game_client(rel_path):
+        return
+    for config in GAME_CLIENT_CONFIGS:
+        add_text(elem, "ExcludedFromBuild", "true", Condition=condition(config, "x64"))
+
+
+def add_resource_exclusions(elem, rel_path):
+    if rel_path.endswith("Source\\Engine\\Runtime\\AppIcon.rc"):
+        for config, platform in [
+            ("Debug", "Win32"),
+            ("Release", "Win32"),
+            ("ObjViewer", "x64"),
+            ("GameClientDebug", "x64"),
+            ("GameClientRelease", "x64"),
+        ]:
+            add_text(elem, "ExcludedFromBuild", "true", Condition=condition(config, platform))
+    elif rel_path.endswith("Source\\Engine\\Runtime\\GameBranding.rc"):
+        for config, platform in [
+            ("Debug", "x64"),
+            ("Release", "x64"),
+        ]:
+            add_text(elem, "ExcludedFromBuild", "true", Condition=condition(config, platform))
+
+
 def indent_xml(elem, level=0):
-    """Add indentation to XML tree."""
-    i = "\n" + "  " * level
+    indent = "\n" + "  " * level
     if len(elem):
         if not elem.text or not elem.text.strip():
-            elem.text = i + "  "
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
+            elem.text = indent + "  "
         for child in elem:
             indent_xml(child, level + 1)
         if not child.tail or not child.tail.strip():
-            child.tail = i
-    else:
-        if level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = i
+            child.tail = indent
+    if level and (not elem.tail or not elem.tail.strip()):
+        elem.tail = indent
     if level == 0:
         elem.tail = "\n"
 
 
-def write_xml(root_elem, filepath: Path, bom=False):
-    """Write XML tree to file with proper declaration."""
+def write_xml(root_elem, filepath, bom=False):
     indent_xml(root_elem)
     tree = ET.ElementTree(root_elem)
-    with open(filepath, "w", encoding="utf-8", newline="\r\n") as f:
-        if bom:
-            f.write("\ufeff")
+    encoding = "utf-8-sig" if bom else "utf-8"
+    with open(filepath, "w", encoding=encoding, newline="\r\n") as f:
         f.write('<?xml version="1.0" encoding="utf-8"?>\n')
         tree.write(f, encoding="unicode", xml_declaration=False)
 
 
-# ──────────────────────────────────────────────
-# .vcxproj
-# ──────────────────────────────────────────────
-def generate_vcxproj(files: dict[str, list[str]]):
-    proj = ET.Element("Project", DefaultTargets="Build", xmlns=NS)
+def add_project_configuration_group(proj):
+    item_group = add_text(proj, "ItemGroup", Label="ProjectConfigurations")
+    for config, platform in CONFIGURATIONS:
+        pc = add_text(item_group, "ProjectConfiguration", Include=f"{config}|{platform}")
+        add_text(pc, "Configuration", config)
+        add_text(pc, "Platform", platform)
 
-    # ProjectConfigurations
-    ig = ET.SubElement(proj, "ItemGroup", Label="ProjectConfigurations")
-    for cfg, plat in CONFIGURATIONS:
-        pc = ET.SubElement(ig, "ProjectConfiguration", Include=f"{cfg}|{plat}")
-        ET.SubElement(pc, "Configuration").text = cfg
-        ET.SubElement(pc, "Platform").text = plat
 
-    # Globals
-    pg = ET.SubElement(proj, "PropertyGroup", Label="Globals")
-    ET.SubElement(pg, "VCProjectVersion").text = "17.0"
-    ET.SubElement(pg, "Keyword").text = "Win32Proj"
-    ET.SubElement(pg, "ProjectGuid").text = PROJECT_GUID
-    ET.SubElement(pg, "RootNamespace").text = ROOT_NAMESPACE
-    ET.SubElement(pg, "WindowsTargetPlatformVersion").text = "10.0"
+def add_configuration_properties(proj):
+    for config, platform in CONFIGURATIONS:
+        pg = add_text(proj, "PropertyGroup", Condition=condition(config, platform), Label="Configuration")
+        add_text(pg, "ConfigurationType", "Application")
+        add_text(pg, "UseDebugLibraries", "false" if is_release_like(config) else "true")
+        add_text(pg, "PlatformToolset", "v143")
+        if is_release_like(config):
+            add_text(pg, "WholeProgramOptimization", "true")
+        add_text(pg, "CharacterSet", "Unicode")
 
-    ET.SubElement(proj, "Import", Project="$(VCTargetsPath)\\Microsoft.Cpp.Default.props")
 
-    # Configuration properties
-    for cfg, plat in CONFIGURATIONS:
-        cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
-        pg = ET.SubElement(proj, "PropertyGroup", Condition=cond, Label="Configuration")
-        is_release = cfg == "Release" or cfg == "ObjViewer"
-        ET.SubElement(pg, "ConfigurationType").text = "Application"
-        ET.SubElement(pg, "UseDebugLibraries").text = "false" if is_release else "true"
-        ET.SubElement(pg, "PlatformToolset").text = "v143"
-        if is_release:
-            ET.SubElement(pg, "WholeProgramOptimization").text = "true"
-        ET.SubElement(pg, "CharacterSet").text = "Unicode"
+def add_property_sheets(proj):
+    for config, platform in CONFIGURATIONS:
+        group = add_text(proj, "ImportGroup", Label="PropertySheets", Condition=condition(config, platform))
+        add_text(
+            group,
+            "Import",
+            Project="$(UserRootDir)\\Microsoft.Cpp.$(Platform).user.props",
+            Condition="exists('$(UserRootDir)\\Microsoft.Cpp.$(Platform).user.props')",
+            Label="LocalAppDataPlatform",
+        )
 
-    ET.SubElement(proj, "Import", Project="$(VCTargetsPath)\\Microsoft.Cpp.props")
-    ET.SubElement(proj, "ImportGroup", Label="ExtensionSettings")
-    ET.SubElement(proj, "ImportGroup", Label="Shared")
 
-    # PropertySheets
-    for cfg, plat in CONFIGURATIONS:
-        cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
-        ig = ET.SubElement(proj, "ImportGroup", Label="PropertySheets", Condition=cond)
-        ET.SubElement(ig, "Import",
-                      Project="$(UserRootDir)\\Microsoft.Cpp.$(Platform).user.props",
-                      Condition="exists('$(UserRootDir)\\Microsoft.Cpp.$(Platform).user.props')",
-                      Label="LocalAppDataPlatform")
+def add_config_property_groups(proj):
+    for config, platform in CONFIGURATIONS:
+        pg = add_text(proj, "PropertyGroup", Condition=condition(config, platform))
+        add_text(pg, "OutDir", "$(ProjectDir)Bin\\$(Configuration)\\")
+        add_text(pg, "IntDir", "$(ProjectDir)Build\\$(Configuration)\\")
+        if is_game_client(config):
+            add_text(pg, "TargetName", "JSEngineGame")
+        add_text(pg, "IncludePath", ";".join(get_include_paths(config)) + ";$(IncludePath)")
+        add_text(pg, "LibraryPath", "$(LibraryPath)")
+        add_text(pg, "LocalDebuggerWorkingDirectory", "$(ProjectDir)")
 
-    ET.SubElement(proj, "PropertyGroup", Label="UserMacros")
 
-    # OutDir, IntDir, IncludePath, LibraryPath, WorkingDirectory for all configurations
-    include_path_value = ";".join(INCLUDE_PATHS) + ";$(IncludePath)"
-    library_path_value = ";".join(LIBRARY_PATHS) + ";$(LibraryPath)" if LIBRARY_PATHS else "$(LibraryPath)"
-    for cfg, plat in CONFIGURATIONS:
-        cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
-        pg = ET.SubElement(proj, "PropertyGroup", Condition=cond)
-        ET.SubElement(pg, "OutDir").text = f"$(ProjectDir)Bin\\$(Configuration)\\"
-        ET.SubElement(pg, "IntDir").text = f"$(ProjectDir)Build\\$(Configuration)\\"
-        ET.SubElement(pg, "IncludePath").text = include_path_value
-        ET.SubElement(pg, "LibraryPath").text = library_path_value
-        ET.SubElement(pg, "LocalDebuggerWorkingDirectory").text = "$(ProjectDir)"
+def add_item_definition_groups(proj):
+    for config, platform in CONFIGURATIONS:
+        idg = add_text(proj, "ItemDefinitionGroup", Condition=condition(config, platform))
+        cl = add_text(idg, "ClCompile")
+        add_text(cl, "WarningLevel", "Level3")
+        if is_release_like(config):
+            add_text(cl, "FunctionLevelLinking", "true")
+            add_text(cl, "IntrinsicFunctions", "true")
+        add_text(cl, "SDLCheck", "true")
+        add_text(cl, "PreprocessorDefinitions", get_definitions(config, platform))
+        add_text(cl, "MultiProcessorCompilation", "true")
+        add_text(cl, "ConformanceMode", "true")
+        add_text(cl, "AdditionalOptions", "/utf-8 /bigobj %(AdditionalOptions)")
+        add_text(cl, "ExceptionHandling", "Async")
+        if platform == "x64":
+            add_text(cl, "LanguageStandard", "stdcpp20")
+        add_text(
+            cl,
+            "AdditionalIncludeDirectories",
+            "$(ProjectDir)packages\\directxtk_desktop_win10.2025.10.28.2\\include;" + cl_additional_includes(config, platform),
+        )
 
-    # ItemDefinitionGroups
-    for cfg, plat in CONFIGURATIONS:
-        cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
-        idg = ET.SubElement(proj, "ItemDefinitionGroup", Condition=cond)
-        cl = ET.SubElement(idg, "ClCompile")
-        ET.SubElement(cl, "WarningLevel").text = "Level3"
+        link = add_text(idg, "Link")
+        add_text(link, "SubSystem", "Windows" if platform == "x64" else "Console")
+        add_text(link, "GenerateDebugInformation", "true")
+        add_text(link, "AdditionalLibraryDirectories", link_library_dirs(config, platform))
+        add_text(link, "AdditionalDependencies", link_dependencies(config, platform))
 
-        is_release = cfg == "Release" or cfg == "ObjViewer"
-        is_viewer = cfg == "ObjViewer"
-        is_win32 = plat == "Win32"
-        is_x64 = plat == "x64"
 
-        if is_release:
-            ET.SubElement(cl, "FunctionLevelLinking").text = "true"
-            ET.SubElement(cl, "IntrinsicFunctions").text = "true"
+def add_shared_build_properties(proj):
+    pg = add_text(proj, "PropertyGroup")
+    add_text(pg, "ThirdPartyBinaryConfiguration", "Release")
+    add_text(pg, "ThirdPartyBinaryConfiguration", "Debug", Condition="'$(Configuration)'=='Debug'")
+    add_text(pg, "FbxSdkConfiguration", "release")
+    add_text(pg, "FbxSdkConfiguration", "debug", Condition="'$(Configuration)'=='Debug'")
+    add_text(pg, "DirectXTKBinaryConfiguration", "Release")
+    add_text(pg, "DirectXTKBinaryConfiguration", "Debug", Condition="'$(Configuration)'=='Debug'")
+    add_text(pg, "DirectXTKPlatform", "$(Platform)")
+    add_text(pg, "DirectXTKPlatform", "x86", Condition="'$(Platform)'=='Win32'")
 
-        ET.SubElement(cl, "SDLCheck").text = "true"
 
-        if is_win32:
-            defs = f"WIN32;{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;NOMINMAX;%(PreprocessorDefinitions);"
-        else:
-            defs = f"{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;NOMINMAX;%(PreprocessorDefinitions);"
-            
-        if is_viewer:
-            defs += "IS_OBJ_VIEWER=1;"
-        ET.SubElement(cl, "PreprocessorDefinitions").text = defs
+def add_build_targets(proj):
+    restore = add_text(
+        proj,
+        "Target",
+        Name="RestoreNuGetPackages",
+        BeforeTargets="PrepareForBuild",
+        Condition="!Exists('$(ProjectDir)packages\\directxtk_desktop_win10.2025.10.28.2\\build\\native\\directxtk_desktop_win10.targets')",
+    )
+    restore_command = (
+        "powershell -NoProfile -ExecutionPolicy Bypass -Command "
+        "\"$ErrorActionPreference='Stop'; "
+        "$toolsDir = Join-Path '$(MSBuildProjectDirectory)' 'Build\\NuGet'; "
+        "$nuget = Join-Path $toolsDir 'nuget.exe'; "
+        "if (!(Test-Path $nuget)) { "
+        "New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null; "
+        "Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile $nuget "
+        "}; "
+        "& $nuget restore '$(MSBuildProjectDirectory)\\packages.config' "
+        "-PackagesDirectory '$(MSBuildProjectDirectory)\\packages' "
+        "-ConfigFile '$(MSBuildProjectDirectory)\\..\\nuget.config'\""
+    )
+    add_text(restore, "Exec", Command=restore_command)
 
-        ET.SubElement(cl, "MultiProcessorCompilation").text = "true"
-        ET.SubElement(cl, "ConformanceMode").text = "true"
-        ET.SubElement(cl, "AdditionalOptions").text = "/utf-8 %(AdditionalOptions)"
-        ET.SubElement(cl, "ExceptionHandling").text = "Async"
-
-        if is_x64:
-            ET.SubElement(cl, "LanguageStandard").text = "stdcpp20"
-
-        link = ET.SubElement(idg, "Link")
-        ET.SubElement(link, "SubSystem").text = "Windows" if is_x64 else "Console"
-        ET.SubElement(link, "GenerateDebugInformation").text = "true"
-
-    generate_reflection = ET.SubElement(proj, "Target", Name="GenerateReflectionCode", BeforeTargets="ClCompile")
-    ET.SubElement(generate_reflection, "Exec").set(
-        "Command",
-        "&quot;$(MSBuildProjectDirectory)\\..\\Scripts\\python\\python.exe&quot; &quot;$(MSBuildProjectDirectory)\\..\\Scripts\\GenerateReflection.py&quot;",
+    rml = add_text(proj, "Target", Name="BuildRmlUiStaticLibrary", BeforeTargets="ClCompile")
+    add_text(
+        rml,
+        "Exec",
+        Command='powershell -NoProfile -ExecutionPolicy Bypass -File "$(MSBuildProjectDirectory)\\BuildTools\\Scripts\\BuildRmlUiLib.ps1" -ProjectDir "$(MSBuildProjectDirectory)" -Configuration "$(ThirdPartyBinaryConfiguration)" -Platform "$(Platform)"',
     )
 
-    # ClCompile items
-    ig = ET.SubElement(proj, "ItemGroup")
-    for f in files["ClCompile"]:
-        ET.SubElement(ig, "ClCompile", Include=f)
+    soloud = add_text(proj, "Target", Name="BuildSoLoudStaticLibrary", BeforeTargets="ClCompile")
+    add_text(
+        soloud,
+        "Exec",
+        Command='powershell -NoProfile -ExecutionPolicy Bypass -File "$(MSBuildProjectDirectory)\\BuildTools\\Scripts\\BuildSoLoudLib.ps1" -ProjectDir "$(MSBuildProjectDirectory)" -Configuration "$(ThirdPartyBinaryConfiguration)" -Platform "$(Platform)"',
+    )
 
-    # ClInclude items
-    ig = ET.SubElement(proj, "ItemGroup")
-    for f in files["ClInclude"]:
-        ET.SubElement(ig, "ClInclude", Include=f)
+    reflection = add_text(proj, "Target", Name="GenerateReflectionCode", BeforeTargets="ClCompile")
+    add_text(
+        reflection,
+        "Exec",
+        Command='"$(MSBuildProjectDirectory)\\..\\Scripts\\python\\python.exe" "$(MSBuildProjectDirectory)\\..\\Scripts\\GenerateReflection.py"',
+    )
 
-    # FxCompile items (shaders)
-    if files["FxCompile"]:
-        ig = ET.SubElement(proj, "ItemGroup")
-        for f in files["FxCompile"]:
-            elem = ET.SubElement(ig, "FxCompile", Include=f)
-            # Exclude shaders from build (compiled at runtime)
-            for cfg, plat in CONFIGURATIONS:
-                if plat == "x64":
-                    cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
-                    ET.SubElement(elem, "ExcludedFromBuild", Condition=cond).text = "true"
 
-    # Natvis items
-    if files["Natvis"]:
-        ig = ET.SubElement(proj, "ItemGroup")
-        for f in files["Natvis"]:
-            ET.SubElement(ig, "Natvis", Include=f)
+def add_item_groups(proj, files):
+    group = add_text(proj, "ItemGroup")
+    for rel_path in files["ClCompile"]:
+        item = add_text(group, "ClCompile", Include=rel_path)
+        add_game_client_exclusions(item, rel_path)
 
-    # None items
+    group = add_text(proj, "ItemGroup")
+    for rel_path in files["ClInclude"]:
+        add_text(group, "ClInclude", Include=rel_path)
+
     if files["None"]:
-        ig = ET.SubElement(proj, "ItemGroup")
-        for f in files["None"]:
-            ET.SubElement(ig, "None", Include=f)
+        group = add_text(proj, "ItemGroup")
+        for rel_path in files["None"]:
+            add_text(group, "None", Include=rel_path)
 
-    ET.SubElement(proj, "Import", Project="$(VCTargetsPath)\\Microsoft.Cpp.targets")
+    if files["ResourceCompile"]:
+        group = add_text(proj, "ItemGroup")
+        for rel_path in files["ResourceCompile"]:
+            item = add_text(group, "ResourceCompile", Include=rel_path)
+            add_resource_exclusions(item, rel_path)
 
-    # NuGet package imports
-    if NUGET_PACKAGES:
-        ext_targets = ET.SubElement(proj, "ImportGroup", Label="ExtensionTargets")
-        for pkg_id, pkg_ver in NUGET_PACKAGES:
-            targets_path = f"packages\\{pkg_id}.{pkg_ver}\\build\\native\\{pkg_id}.targets"
-            ET.SubElement(ext_targets, "Import",
-                          Project=targets_path,
-                          Condition=f"Exists('{targets_path}')")
+    if files["Natvis"]:
+        group = add_text(proj, "ItemGroup")
+        for rel_path in files["Natvis"]:
+            add_text(group, "Natvis", Include=rel_path)
 
-        # EnsureNuGetPackageBuildImports target
-        ensure = ET.SubElement(proj, "Target",
-                               Name="EnsureNuGetPackageBuildImports",
-                               BeforeTargets="PrepareForBuild")
-        pg = ET.SubElement(ensure, "PropertyGroup")
-        ET.SubElement(pg, "ErrorText").text = (
-            "This project references NuGet package(s) that are missing on this computer. "
-            "Use NuGet Package Restore to download them.  For more information, see "
-            "http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}."
+
+def add_post_targets_and_nuget_imports(proj):
+    copy_lua = add_text(
+        proj,
+        "Target",
+        Name="CopyLuaJitRuntimeDll",
+        AfterTargets="Build",
+        Condition="Exists('$(ProjectDir)ThirdParty\\luajit\\src\\lua51.dll')",
+    )
+    add_text(
+        copy_lua,
+        "Copy",
+        SourceFiles="$(ProjectDir)ThirdParty\\luajit\\src\\lua51.dll",
+        DestinationFolder="$(OutDir)",
+        SkipUnchangedFiles="true",
+    )
+
+    import_group = add_text(proj, "ImportGroup", Label="ExtensionTargets")
+    for package_id, version in NUGET_PACKAGES:
+        target_path = f"packages\\{package_id}.{version}\\build\\native\\{package_id}.targets"
+        add_text(import_group, "Import", Project=target_path, Condition=f"Exists('{target_path}')")
+
+    ensure = add_text(
+        proj,
+        "Target",
+        Name="EnsureNuGetPackageBuildImports",
+        BeforeTargets="PrepareForBuild",
+        DependsOnTargets="RestoreNuGetPackages",
+    )
+    pg = add_text(ensure, "PropertyGroup")
+    add_text(
+        pg,
+        "ErrorText",
+        "This project references NuGet package(s) that are missing and automatic restore failed. "
+        "Restore NuGet packages or build again with network access. Missing file: {0}.",
+    )
+    for package_id, version in NUGET_PACKAGES:
+        target_path = f"packages\\{package_id}.{version}\\build\\native\\{package_id}.targets"
+        add_text(
+            ensure,
+            "Error",
+            Condition=f"!Exists('{target_path}')",
+            Text=f"$([System.String]::Format('$(ErrorText)', '{target_path}'))",
         )
-        for pkg_id, pkg_ver in NUGET_PACKAGES:
-            targets_path = f"packages\\{pkg_id}.{pkg_ver}\\build\\native\\{pkg_id}.targets"
-            ET.SubElement(ensure, "Error",
-                          Condition=f"!Exists('{targets_path}')",
-                          Text=f"$([System.String]::Format('$(ErrorText)', '{targets_path}'))")
-    else:
-        ET.SubElement(proj, "ImportGroup", Label="ExtensionTargets")
+
+
+def generate_vcxproj(files):
+    proj = ET.Element("Project", DefaultTargets="Build", xmlns=NS)
+
+    add_project_configuration_group(proj)
+
+    globals_group = add_text(proj, "PropertyGroup", Label="Globals")
+    add_text(globals_group, "VCProjectVersion", "17.0")
+    add_text(globals_group, "Keyword", "Win32Proj")
+    add_text(globals_group, "ProjectGuid", PROJECT_GUID)
+    add_text(globals_group, "RootNamespace", ROOT_NAMESPACE)
+    add_text(globals_group, "WindowsTargetPlatformVersion", "10.0")
+
+    add_text(proj, "Import", Project="$(VCTargetsPath)\\Microsoft.Cpp.Default.props")
+    add_configuration_properties(proj)
+    add_text(proj, "Import", Project="$(VCTargetsPath)\\Microsoft.Cpp.props")
+    add_text(proj, "ImportGroup", Label="ExtensionSettings")
+    add_text(proj, "ImportGroup", Label="Shared")
+    add_property_sheets(proj)
+    add_text(proj, "PropertyGroup", Label="UserMacros")
+    add_config_property_groups(proj)
+    add_shared_build_properties(proj)
+    add_item_definition_groups(proj)
+    add_build_targets(proj)
+    add_item_groups(proj, files)
+    add_text(proj, "Import", Project="$(VCTargetsPath)\\Microsoft.Cpp.targets")
+    add_post_targets_and_nuget_imports(proj)
 
     write_xml(proj, PROJECT_DIR / f"{PROJECT_NAME}.vcxproj")
 
 
-# ──────────────────────────────────────────────
-# .vcxproj.filters
-# ──────────────────────────────────────────────
-def generate_filters(files: dict[str, list[str]]):
+def generate_filters(files):
     proj = ET.Element("Project", ToolsVersion="4.0", xmlns=NS)
 
-    # Collect all filter paths
     all_filters = collect_all_filters(files)
-
     if all_filters:
-        ig = ET.SubElement(proj, "ItemGroup")
+        group = add_text(proj, "ItemGroup")
         for filt in sorted(all_filters):
-            f_elem = ET.SubElement(ig, "Filter", Include=filt)
-            h = hashlib.md5(f"{PROJECT_NAME}:{filt}".encode()).hexdigest()
-            uid = f"{{{h[:8]}-{h[8:12]}-{h[12:16]}-{h[16:20]}-{h[20:32]}}}"
-            ET.SubElement(f_elem, "UniqueIdentifier").text = uid
+            elem = add_text(group, "Filter", Include=filt)
+            digest = hashlib.md5(f"{PROJECT_NAME}:{filt}".encode()).hexdigest()
+            uid = f"{{{digest[:8]}-{digest[8:12]}-{digest[12:16]}-{digest[16:20]}-{digest[20:32]}}}"
+            add_text(elem, "UniqueIdentifier", uid)
 
-    # FxCompile items with filters
-    if files["FxCompile"]:
-        ig = ET.SubElement(proj, "ItemGroup")
-        for f in files["FxCompile"]:
-            filt = get_filter(f)
-            elem = ET.SubElement(ig, "FxCompile", Include=f)
+    for kind in ["ClCompile", "ClInclude", "None", "ResourceCompile", "Natvis"]:
+        if not files[kind]:
+            continue
+        group = add_text(proj, "ItemGroup")
+        for rel_path in files[kind]:
+            elem = add_text(group, kind, Include=rel_path)
+            filt = get_filter(rel_path)
             if filt:
-                ET.SubElement(elem, "Filter").text = filt
-
-    # ClCompile items with filters
-    if files["ClCompile"]:
-        ig = ET.SubElement(proj, "ItemGroup")
-        for f in files["ClCompile"]:
-            filt = get_filter(f)
-            elem = ET.SubElement(ig, "ClCompile", Include=f)
-            if filt:
-                ET.SubElement(elem, "Filter").text = filt
-
-    # ClInclude items with filters
-    if files["ClInclude"]:
-        ig = ET.SubElement(proj, "ItemGroup")
-        for f in files["ClInclude"]:
-            filt = get_filter(f)
-            elem = ET.SubElement(ig, "ClInclude", Include=f)
-            if filt:
-                ET.SubElement(elem, "Filter").text = filt
-
-    # None items with filters
-    if files["None"]:
-        ig = ET.SubElement(proj, "ItemGroup")
-        for f in files["None"]:
-            filt = get_filter(f)
-            elem = ET.SubElement(ig, "None", Include=f)
-            if filt:
-                ET.SubElement(elem, "Filter").text = filt
-
-    # Natvis items with filters
-    if files["Natvis"]:
-        ig = ET.SubElement(proj, "ItemGroup")
-        for f in files["Natvis"]:
-            filt = get_filter(f)
-            elem = ET.SubElement(ig, "Natvis", Include=f)
-            if filt:
-                ET.SubElement(elem, "Filter").text = filt
+                add_text(elem, "Filter", filt)
 
     write_xml(proj, PROJECT_DIR / f"{PROJECT_NAME}.vcxproj.filters", bom=True)
 
 
-# ──────────────────────────────────────────────
-# .sln
-# ──────────────────────────────────────────────
 def generate_sln():
-    lines = []
-    lines.append("")
-    lines.append("Microsoft Visual Studio Solution File, Format Version 12.00")
-    lines.append("# Visual Studio Version 17")
-    lines.append("VisualStudioVersion = 17.14.37012.4 d17.14")
-    lines.append("MinimumVisualStudioVersion = 10.0.40219.1")
+    lines = [
+        "",
+        "Microsoft Visual Studio Solution File, Format Version 12.00",
+        "# Visual Studio Version 17",
+        "VisualStudioVersion = 17.14.37012.4",
+        "MinimumVisualStudioVersion = 10.0.40219.1",
+    ]
 
     guid_upper = PROJECT_GUID.upper()
     lines.append(
@@ -429,65 +637,53 @@ def generate_sln():
         f'"{PROJECT_DIR_NAME}\\{PROJECT_NAME}.vcxproj", "{guid_upper}"'
     )
     lines.append("EndProject")
-
     lines.append("Global")
 
-    # SolutionConfigurationPlatforms
     lines.append("\tGlobalSection(SolutionConfigurationPlatforms) = preSolution")
-    for cfg, plat in CONFIGURATIONS:
-        sln_plat = "x86" if plat == "Win32" else plat
-        lines.append(f"\t\t{cfg}|{sln_plat} = {cfg}|{sln_plat}")
+    for config, sln_platform, _, _ in SOLUTION_CONFIGURATIONS:
+        lines.append(f"\t\t{config}|{sln_platform} = {config}|{sln_platform}")
     lines.append("\tEndGlobalSection")
 
-    # ProjectConfigurationPlatforms
     lines.append("\tGlobalSection(ProjectConfigurationPlatforms) = postSolution")
-    for cfg, plat in CONFIGURATIONS:
-        sln_plat = "x86" if plat == "Win32" else plat
-        lines.append(f"\t\t{guid_upper}.{cfg}|{sln_plat}.ActiveCfg = {cfg}|{plat}")
-        lines.append(f"\t\t{guid_upper}.{cfg}|{sln_plat}.Build.0 = {cfg}|{plat}")
+    for config, sln_platform, project_config, project_platform in SOLUTION_CONFIGURATIONS:
+        lines.append(f"\t\t{guid_upper}.{config}|{sln_platform}.ActiveCfg = {project_config}|{project_platform}")
+        lines.append(f"\t\t{guid_upper}.{config}|{sln_platform}.Build.0 = {project_config}|{project_platform}")
     lines.append("\tEndGlobalSection")
 
-    lines.append("\tGlobalSection(SolutionProperties) = preSolution")
-    lines.append("\t\tHideSolutionNode = FALSE")
-    lines.append("\tEndGlobalSection")
+    lines += [
+        "\tGlobalSection(SolutionProperties) = preSolution",
+        "\t\tHideSolutionNode = FALSE",
+        "\tEndGlobalSection",
+        "\tGlobalSection(ExtensibilityGlobals) = postSolution",
+        f"\t\tSolutionGuid = {SOLUTION_GUID}",
+        "\tEndGlobalSection",
+        "EndGlobal",
+        "",
+    ]
 
-    lines.append("\tGlobalSection(ExtensibilityGlobals) = postSolution")
-    lines.append(f"\t\tSolutionGuid = {SOLUTION_GUID}")
-    lines.append("\tEndGlobalSection")
-
-    lines.append("EndGlobal")
-    lines.append("")
-
-    sln_path = ROOT / f"{SOLUTION_NAME}.sln"
-    with open(sln_path, "w", encoding="utf-8-sig", newline="\r\n") as f:
+    with open(ROOT / f"{SOLUTION_NAME}.sln", "w", encoding="utf-8", newline="\r\n") as f:
         f.write("\n".join(lines))
 
 
-# ──────────────────────────────────────────────
-# Main
-# ──────────────────────────────────────────────
 def main():
     print(f"Scanning project files in {PROJECT_DIR}...")
 
+    run_reflection_generation()
     files = scan_files(PROJECT_DIR)
 
-    print(f"  ClCompile:  {len(files['ClCompile'])} files")
-    print(f"  ClInclude:  {len(files['ClInclude'])} files")
-    print(f"  FxCompile:  {len(files['FxCompile'])} files")
-    print(f"  Natvis:     {len(files['Natvis'])} files")
-    print(f"  None:       {len(files['None'])} files")
+    print(f"  ClCompile:        {len(files['ClCompile'])} files")
+    print(f"  ClInclude:        {len(files['ClInclude'])} files")
+    print(f"  ResourceCompile:  {len(files['ResourceCompile'])} files")
+    print(f"  Natvis:           {len(files['Natvis'])} files")
+    print(f"  None:             {len(files['None'])} files")
 
     print("Generating project files...")
-
     generate_vcxproj(files)
     print(f"  {PROJECT_NAME}.vcxproj")
-
     generate_filters(files)
     print(f"  {PROJECT_NAME}.vcxproj.filters")
-
     generate_sln()
     print(f"  {SOLUTION_NAME}.sln")
-
     print("Done!")
 
 
