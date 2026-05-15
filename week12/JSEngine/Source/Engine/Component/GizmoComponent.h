@@ -84,8 +84,6 @@ public:
 	inline void SetPressedOnHandle(bool bPressed) { bPressedOnHandle = bPressed; }
 	inline bool IsPressedOnHandle() const { return bPressedOnHandle; }
 
-	inline bool IsFirstFrameOfDrag() const { return bIsFirstFrameOfDrag; }
-
 	void UpdateHoveredAxis(int Index);
 	void UpdateDrag(const FRay& Ray);
 	void DragEnd();
@@ -119,16 +117,17 @@ public:
 	UMaterialInterface* GetMaterial() { return Material; }
 
 	void SetVirtualMouseX(float InVirtualMouseX) { VirtualMouseX = InVirtualMouseX; }
-	void SetVirtualMouseY(float InVirtualMouseY) { VirtualMouseY = InVirtualMouseY; }
-	float GetVirtualMouseX() const { return VirtualMouseX; }
-	float GetVirtualMouseY() const { return VirtualMouseY; }
+    void SetVirtualMouseY(float InVirtualMouseY) { VirtualMouseY = InVirtualMouseY; }
+    float GetVirtualMouseX() const { return VirtualMouseX; }
+    float GetVirtualMouseY() const { return VirtualMouseY; }
 
 private:
 	const FMeshData* GizmoMeshData = nullptr;
 	UMaterialInterface* Material = nullptr;
-
+	
 	FVector LocalExtents = FVector(1.5f, 1.5f, 1.5f);
+
 	// Rotation, Scale 드래그 도중에 실제 마우스 좌표는 유지하고 가상으로 바꾸기 위한 좌표
 	float VirtualMouseX = 0.0f;
-	float VirtualMouseY = 0.0f;
+    float VirtualMouseY = 0.0f;
 };

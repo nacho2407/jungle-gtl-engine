@@ -40,18 +40,18 @@ void UGizmoComponent::SetHolding(bool bHold)
 		// 드래그 시작 시 마우스 고정 및 숨김
 		if (CurMode != EGizmoMode::Translate)
 		{
-			POINT MousePos = InputSystem::Get().GetMousePos();
-			InputSystem::Get().LockMouse(true, (float)MousePos.x, (float)MousePos.y, 0, 0);
-			InputSystem::Get().SetCursorVisibility(false);
+            POINT MousePos = InputSystem::Get().GetMousePos();
+            InputSystem::Get().LockMouse(true, (float)MousePos.x, (float)MousePos.y, 0, 0);
+            InputSystem::Get().SetCursorVisibility(false);
 		}
 	}
 	else
 	{
 		// 드래그 종료 시 마우스 고정 해제 및 표시
 		if (CurMode != EGizmoMode::Translate)
-		{
-			InputSystem::Get().LockMouse(false);
-			InputSystem::Get().SetCursorVisibility(true);
+        {
+            InputSystem::Get().LockMouse(false);
+            InputSystem::Get().SetCursorVisibility(true);
 		}
 	}
 
@@ -295,16 +295,6 @@ void UGizmoComponent::TranslateTarget(float DragAmount)
 	FMatrix M = Proxy->GetTransform();
 	M.SetOrigin(M.GetOrigin() + ConstrainedDelta);
 	Proxy->SetTransform(M);
-
-	if (AllSelectedActors)
-	{
-		AActor* PrimaryActor = AllSelectedActors->empty() ? nullptr : AllSelectedActors->back();
-		for (AActor* Actor : *AllSelectedActors)
-		{
-			if (Actor == PrimaryActor) continue;
-			if (Actor) Actor->AddActorWorldOffset(ConstrainedDelta);
-		}
-	}
 }
 
 void UGizmoComponent::RotateTarget(float DragAmount)
@@ -341,10 +331,8 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 
 	if (AllSelectedActors)
 	{
-		AActor* PrimaryActor = AllSelectedActors->empty() ? nullptr : AllSelectedActors->back();
 		for (AActor* Actor : *AllSelectedActors)
 		{
-			if (Actor == PrimaryActor) continue;
 			ApplyRotation(Actor);
 		}
 	}
@@ -406,10 +394,8 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 
 	if (AllSelectedActors)
 	{
-		AActor* PrimaryActor = AllSelectedActors->empty() ? nullptr : AllSelectedActors->back();
 		for (AActor* Actor : *AllSelectedActors)
 		{
-			if (Actor == PrimaryActor) continue;
 			ApplyScale(Actor);
 		}
 	}

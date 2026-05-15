@@ -1,46 +1,34 @@
 ﻿#include "Engine/Input/InputSystem.h"
 #include "Engine/Input/InputWindowFocus.h"
-#include "Engine/Core/Logging/Log.h"
 #include <cmath>
-
-namespace
-{
-int32 LogShowCursorCall(const char* Caller, BOOL bShow)
-{
-    const int32 Result = ShowCursor(bShow);
-    UE_LOG("[CursorDebug] ShowCursor Caller=%s Arg=%s Result=%d",
-        Caller,
-        bShow ? "TRUE" : "FALSE",
-        Result);
-    return Result;
-}
-}
 
 void InputSystem::Tick()
 {
-    // 메인 창 또는 ImGui platform window 등 현재 프로세스 창에 포커스가 없으면 입력 상태 해제.
+	// 메인 창 또는 ImGui platform window 등 현재 프로세스 창에 포커스가 없으면 입력 상태 해제.
     const bool bHasInputFocus = !OwnerHWnd || InputWindowFocus::IsForegroundWindowOwnedByCurrentProcess();
     if (!bHasInputFocus)
     {
-        if (bHadInputFocus)
-        {
+		if (bHadInputFocus)
+		{
             HandleOutOfFocusTick();
             bHadInputFocus = false;
-        }
+		}
         return;
     }
 
-    if (!bHadInputFocus)
-    {
+	// Input Focus 상태
+	if (!bHadInputFocus)
+	{
+		// Focus 얻은 후 초기화
         bHadInputFocus = true;
-		// 뷰포트를 눌렀을 때 카메라 델타가 튀지 않도록 하기 위한 방어 코드
+        // 뷰포트를 눌렀을 때 카메라 델타가 튀지 않도록 하기 위한 방어 코드
         GetCursorPos(&MousePos);
         PrevMousePos = MousePos;
         FrameMouseDeltaX = 0;
         FrameMouseDeltaY = 0;
         RawMouseDeltaAccumX = 0;
         RawMouseDeltaAccumY = 0;
-    }
+	}
 
     SampleKeyStates();
 
@@ -391,18 +379,18 @@ void InputSystem::SetCursorVisibility(bool bVisible)
 {
     if (bVisible)
     {
-        // while (LogShowCursorCall("InputSystem::SetCursorVisibility(true)", TRUE) < 0) {}
-        // while (LogShowCursorCall("InputSystem::SetCursorVisibility(true)", FALSE) >= 0) {}
-        // LogShowCursorCall("InputSystem::SetCursorVisibility(true)", TRUE);
+        while (ShowCursor(TRUE) < 0) {}
+        while (ShowCursor(FALSE) >= 0) {}
+        ShowCursor(TRUE);
         SetCursor(LoadCursorW(nullptr, IDC_ARROW));
         bIsCursorVisible = true;
     }
     else
     {
-        // while (LogShowCursorCall("InputSystem::SetCursorVisibility(false)", TRUE) < 0) {}
-        // while (LogShowCursorCall("InputSystem::SetCursorVisibility(false)", FALSE) >= 0) {}
-        // LogShowCursorCall("InputSystem::SetCursorVisibility(false)", TRUE);
-        // LogShowCursorCall("InputSystem::SetCursorVisibility(false)", FALSE);
+        while (ShowCursor(TRUE) < 0) {}
+        while (ShowCursor(FALSE) >= 0) {}
+        ShowCursor(TRUE);
+        ShowCursor(FALSE);
         bIsCursorVisible = false;
     }
 }
