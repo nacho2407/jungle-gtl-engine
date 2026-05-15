@@ -20,6 +20,7 @@ class UCameraComponent : public USceneComponent
 {
 public:
 	DECLARE_CLASS(UCameraComponent, USceneComponent)
+	DECLARE_REFLECTED_PROPERTIES(UCameraComponent)
 
 	UCameraComponent() = default;
 

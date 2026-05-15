@@ -3,8 +3,14 @@
 #include <GameFramework/World.h>
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(USceneComponent, UActorComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(USceneComponent, UActorComponent)
 HIDE_FROM_COMPONENT_LIST(USceneComponent)
+
+BEGIN_PROPERTY_REGISTRATION(USceneComponent)
+	EDIT_PROPERTY_RANGE(USceneComponent, RelativeTransform.Location, "Location", EPropertyType::Vec3, "Transform", 0.0f, 0.0f, 0.1f)
+	EDIT_PROPERTY_RANGE(USceneComponent, CachedEditRotator, "Rotation", EPropertyType::Rotator, "Transform", 0.0f, 0.0f, 0.1f)
+	EDIT_PROPERTY_RANGE(USceneComponent, RelativeTransform.Scale, "Scale", EPropertyType::Vec3, "Transform", 0.0f, 0.0f, 0.1f)
+END_PROPERTY_REGISTRATION()
 
 static void NotifyOctreeTransformChanged(USceneComponent* Comp)
 {
@@ -54,15 +60,12 @@ void USceneComponent::AttachToComponent(USceneComponent* InParent)
 
 void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	UActorComponent::GetEditableProperties(OutProps);
 	if (bCachedEulerDirty)
 	{
 		CachedEditRotator = RelativeTransform.GetRotator();
 		bCachedEulerDirty = false;
 	}
-	OutProps.push_back({ "Location", EPropertyType::Vec3, "Transform", &RelativeTransform.Location, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Rotation", EPropertyType::Rotator, "Transform", &CachedEditRotator, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Scale", EPropertyType::Vec3, "Transform", &RelativeTransform.Scale, 0.0f, 0.0f, 0.1f });
+	UActorComponent::GetEditableProperties(OutProps);
 }
 
 void USceneComponent::PostEditProperty(const char* PropertyName)

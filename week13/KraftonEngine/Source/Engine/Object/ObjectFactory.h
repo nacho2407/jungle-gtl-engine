@@ -22,6 +22,11 @@ TypeName##_RegisterFactory G##TypeName##_RegisterFactory;}
     DEFINE_CLASS(ClassName, ParentClass)                               \
     REGISTER_FACTORY(ClassName)
 
+#define IMPLEMENT_CLASS_WITH_PROPERTIES(ClassName, ParentClass)         \
+    DEFINE_CLASS(ClassName, ParentClass)                               \
+    REGISTER_FACTORY(ClassName)                                        \
+    REGISTER_CLASS_PROPERTIES(ClassName)
+
 // Add Component 목록에서만 숨길 때 사용한다. 클래스 RTTI/팩토리 등록은 IMPLEMENT_CLASS가 담당한다.
 #define HIDE_FROM_COMPONENT_LIST(ClassName)                            \
 namespace {                                                            \

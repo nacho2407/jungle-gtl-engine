@@ -10,8 +10,13 @@
 #include <sstream>
 
 // Base movement logic only; concrete movement types should be added instead.
-IMPLEMENT_CLASS(UMovementComponent, UActorComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(UMovementComponent, UActorComponent)
 HIDE_FROM_COMPONENT_LIST(UMovementComponent)
+
+BEGIN_PROPERTY_REGISTRATION(UMovementComponent)
+	EDIT_PROPERTY(UMovementComponent, bAutoRegisterUpdatedComponent, "Auto Register Updated", EPropertyType::Bool, "Movement")
+	EDIT_PROPERTY(UMovementComponent, UpdatedComponentPath, "Updated Component", EPropertyType::SceneComponentRef, "Movement")
+END_PROPERTY_REGISTRATION()
 
 namespace
 {
@@ -47,8 +52,6 @@ void UMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 void UMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UActorComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Auto Register Updated", EPropertyType::Bool, "Movement", &bAutoRegisterUpdatedComponent });
-	OutProps.push_back({ "Updated Component", EPropertyType::SceneComponentRef, "Movement", &UpdatedComponentPath });
 }
 
 void UMovementComponent::Serialize(FArchive& Ar)

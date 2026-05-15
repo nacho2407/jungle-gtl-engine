@@ -96,4 +96,21 @@ struct FProperty
 	uint32 EnumSize = sizeof(int32);
 
 	FStructPropertyFunc StructFunc = nullptr;
+
+	inline FPropertyDescriptor ToDescriptor(UObject* Object) const
+	{
+		FPropertyDescriptor Desc;
+		Desc.Name = this->Name ? this->Name : "";
+		Desc.Type = this->Type;
+		Desc.Category = this->Category ? this->Category : "";
+		Desc.ValuePtr = GetValuePtr ? GetValuePtr(Object) : nullptr;
+		Desc.Min = this->Min;
+		Desc.Max = this->Max;
+		Desc.Speed = this->Speed;
+		Desc.EnumNames = this->EnumNames;
+		Desc.EnumCount = this->EnumCount;
+		Desc.EnumSize = this->EnumSize;
+		Desc.StructFunc = this->StructFunc;
+		return Desc;
+	}
 };

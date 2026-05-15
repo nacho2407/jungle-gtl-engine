@@ -3,8 +3,13 @@
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
 
-IMPLEMENT_CLASS(UActorComponent, UObject)
+IMPLEMENT_CLASS_WITH_PROPERTIES(UActorComponent, UObject)
 HIDE_FROM_COMPONENT_LIST(UActorComponent)
+
+BEGIN_PROPERTY_REGISTRATION(UActorComponent)
+	EDIT_PROPERTY(UActorComponent, bTickEnable, "bTickEnable", EPropertyType::Bool, "Component")
+	EDIT_PROPERTY(UActorComponent, bEditorOnly, "bEditorOnly", EPropertyType::Bool, "Component")
+END_PROPERTY_REGISTRATION()
 
 void UActorComponent::BeginPlay()
 {
@@ -86,11 +91,7 @@ void UActorComponent::SetOwner(AActor* Actor)
 
 void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	//OutProps.push_back({ "Active", EPropertyType::Bool, "Component", &bIsActive });
-	//OutProps.push_back({ "Auto Activate", EPropertyType::Bool, "Component", &bAutoActivate });
-	//OutProps.push_back({ "Can Ever Tick", EPropertyType::Bool, "Component", &bCanEverTick });
-	OutProps.push_back({ "bTickEnable", EPropertyType::Bool, "Component", &bTickEnable });
-	OutProps.push_back({ "bEditorOnly", EPropertyType::Bool, "Component", &bEditorOnly });
+	UObject::GetEditableProperties(OutProps);
 }
 
 void UActorComponent::PostEditProperty(const char* PropertyName)

@@ -11,6 +11,7 @@ class USceneComponent : public UActorComponent
 {
 public:
 	DECLARE_CLASS(USceneComponent, UActorComponent)
+	DECLARE_REFLECTED_PROPERTIES(USceneComponent)
 
 	USceneComponent();
 	~USceneComponent();

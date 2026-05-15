@@ -31,6 +31,47 @@ class FArchive;
 #define DEFINE_CLASS(ClassName, ParentClass)                                \
     DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, CF_None)
 
+#define DECLARE_REFLECTED_PROPERTIES(ClassName)                             \
+    static void RegisterProperties(UClass* Class);
+
+#define REGISTER_CLASS_PROPERTIES(ClassName)                                \
+namespace {                                                                \
+    struct ClassName##_PropertyRegistrar {                                  \
+        ClassName##_PropertyRegistrar() {                                   \
+            ClassName::RegisterProperties(ClassName::StaticClass());        \
+        }                                                                  \
+    };                                                                     \
+    ClassName##_PropertyRegistrar G##ClassName##_PropertyRegistrar;         \
+}
+
+#define BEGIN_PROPERTY_REGISTRATION(ClassName)                              \
+    void ClassName::RegisterProperties(UClass* Class)                       \
+    {
+
+#define END_PROPERTY_REGISTRATION()                                         \
+    }
+
+#define EDIT_PROPERTY(ClassName, MemberName, DisplayName, PropertyType, PropertyCategory) \
+    Class->AddProperty({                                                    \
+        DisplayName,                                                        \
+        PropertyType,                                                       \
+        PropertyCategory,                                                   \
+        PF_Edit | PF_Save,                                                  \
+        [](UObject* Object)->void* { return &static_cast<ClassName*>(Object)->MemberName; } \
+    });
+
+#define EDIT_PROPERTY_RANGE(ClassName, MemberName, DisplayName, PropertyType, PropertyCategory, MinValue, MaxValue, SpeedValue) \
+    Class->AddProperty({                                                    \
+        DisplayName,                                                        \
+        PropertyType,                                                       \
+        PropertyCategory,                                                   \
+        PF_Edit | PF_Save,                                                  \
+        [](UObject* Object)->void* { return &static_cast<ClassName*>(Object)->MemberName; }, \
+        MinValue,                                                           \
+        MaxValue,                                                           \
+        SpeedValue                                                          \
+    });
+
 // ---------------------------------------------------------------------------
 
 // Forward — IsValid 의 실제 정의는 GUObjectSet 선언 뒤. UObject::GetTypedOuter 가
