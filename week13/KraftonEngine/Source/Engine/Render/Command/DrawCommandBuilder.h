@@ -70,6 +70,8 @@ private:
 	// Collect 페이즈 상태
 	const FPassRenderStateTable* PassRenderStateTable = nullptr;
 	EViewMode CollectViewMode = EViewMode::Lit_Phong;
+	ESkinningMode CollectSkinningMode = ESkinningMode::GPU;
+
 	bool bHasSelectionMaskCommands = false;
 
 	// 동적 지오메트리

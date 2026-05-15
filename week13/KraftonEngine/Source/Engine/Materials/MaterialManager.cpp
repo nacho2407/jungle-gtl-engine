@@ -302,6 +302,18 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 
 		bInjected = true;
 
+		if (ParamName == "SectionColor")
+		{
+			JsonData[MatKeys::Parameters][ParamName] = json::Array(1.0f, 1.0f, 1.0f, 1.0f);
+			continue;
+		}
+
+		if (ParamName == "HasNormalMap")
+		{
+			JsonData[MatKeys::Parameters][ParamName] = 0.0f;
+			continue;
+		}
+
 		switch (Info->Size)
 		{
 			case sizeof(float) : // 4바이트 - Scalar

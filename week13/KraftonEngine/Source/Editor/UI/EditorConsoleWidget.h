@@ -114,6 +114,7 @@ private:
 	void HandleCSMBlendRange(const TArray<FString>& Args);
 	void HandleShadowBias(const TArray<FString>& Args);
 	void HandleShadowFilter(const TArray<FString>& Args);
+	void HandleSkinningMode(const TArray<FString>& Args);
 	void PrintCSMCascadeRanges();
 
 	static int32 TextEditCallback(ImGuiInputTextCallbackData* Data);

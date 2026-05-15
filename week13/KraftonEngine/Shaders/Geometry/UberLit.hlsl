@@ -29,8 +29,22 @@
 Texture2D DiffuseTexture : register(t0);
 Texture2D NormalTexture : register(t1);
 
-StructuredBuffer<float4x4> SkinMatrices : register(t13);
 
+// StructedBuffer가 RowMajor로 해석해서 나중에 Transfopose하면 추후 헷갈리니까 Mul을 새로 정의했음
+struct FSkinMatrix
+{
+    float4 Row0;
+    float4 Row1;
+    float4 Row2;
+    float4 Row3;
+};
+
+StructuredBuffer<FSkinMatrix> SkinMatrices : register(t13);
+
+float4 MulSkinMatrix(float4 v, FSkinMatrix m)
+{
+    return v.x * m.Row0 + v.y * m.Row1 + v.z * m.Row2 + v.w * m.Row3;
+}
 
 // ── Per-Object Material (b2) — 기존 StaticMesh 와 레이아웃 동일 (호환성) ──
 cbuffer PerShader1 : register(b2)
@@ -109,16 +123,64 @@ UberVS_Output VS_SkeletalMesh(VS_Input_PNCTTBB input)
 {
     UberVS_Output output;
     
-    float3x3 M = (float3x3) Model;
+    float4 WeightedPosition = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    float3 WeightedNormal = float3(0.0f, 0.0f, 0.0f);
+    float3 WeightedTangent = float3(0.0f, 0.0f, 0.0f);
+    float AccumWeight = 0.0f;
+    
+    if (input.boneIndices.x >= 0 && input.boneWeights.x > 0.0f)
+    {
+        FSkinMatrix SkinMatrix = SkinMatrices[input.boneIndices.x];
+        WeightedPosition += input.boneWeights.x * MulSkinMatrix(float4(input.position, 1.0f), SkinMatrix);
+        WeightedNormal += input.boneWeights.x * MulSkinMatrix(float4(input.normal, 0.0f), SkinMatrix).xyz;
+        WeightedTangent += input.boneWeights.x * MulSkinMatrix(float4(input.tangent.xyz, 0.0f), SkinMatrix).xyz;
+        AccumWeight += input.boneWeights.x;
+    }
+    
+    if (input.boneIndices.y >= 0 && input.boneWeights.y > 0.0f)
+    {
+        FSkinMatrix SkinMatrix = SkinMatrices[input.boneIndices.y];
+        WeightedPosition += input.boneWeights.y * MulSkinMatrix(float4(input.position, 1.0f), SkinMatrix);
+        WeightedNormal += input.boneWeights.y * MulSkinMatrix(float4(input.normal, 0.0f), SkinMatrix).xyz;
+        WeightedTangent += input.boneWeights.y * MulSkinMatrix(float4(input.tangent.xyz, 0.0f), SkinMatrix).xyz;
+        AccumWeight += input.boneWeights.y;
+    }
+    
+    if (input.boneIndices.z >= 0 && input.boneWeights.z > 0.0f)
+    {
+        FSkinMatrix SkinMatrix = SkinMatrices[input.boneIndices.z];
+        WeightedPosition += input.boneWeights.z * MulSkinMatrix(float4(input.position, 1.0f), SkinMatrix);
+        WeightedNormal += input.boneWeights.z * MulSkinMatrix(float4(input.normal, 0.0f), SkinMatrix).xyz;
+        WeightedTangent += input.boneWeights.z * MulSkinMatrix(float4(input.tangent.xyz, 0.0f), SkinMatrix).xyz;
+        AccumWeight += input.boneWeights.z;
+    }
+    
+    if (input.boneIndices.w >= 0 && input.boneWeights.w > 0.0f)
+    {
+        FSkinMatrix SkinMatrix = SkinMatrices[input.boneIndices.w];
+        WeightedPosition += input.boneWeights.w * MulSkinMatrix(float4(input.position, 1.0f), SkinMatrix);
+        WeightedNormal += input.boneWeights.w * MulSkinMatrix(float4(input.normal, 0.0f), SkinMatrix).xyz;
+        WeightedTangent += input.boneWeights.w * MulSkinMatrix(float4(input.tangent.xyz, 0.0f), SkinMatrix).xyz;
+        AccumWeight += input.boneWeights.w;
+    }
 
-    float4 worldPos4 = mul(float4(input.position, 1.0f), Model);
+    if (AccumWeight <= 0.0f)
+    {
+        WeightedPosition = float4(input.position, 1.0f);
+        WeightedNormal = input.normal;
+        WeightedTangent = input.tangent.xyz;
+    }
+    
+    float3x3 M = (float3x3) Model;
+    
+    float4 worldPos4 = mul(WeightedPosition, Model);
     output.worldPos = worldPos4.xyz;
     output.position = mul(mul(worldPos4, View), Projection);
-    output.normal = normalize(mul(input.normal, (float3x3) NormalMatrix));
+    output.normal = normalize(mul(WeightedNormal, (float3x3) NormalMatrix));
     output.color = input.color * SectionColor;
     output.texcoord = input.texcoord;
 
-    float3 T = normalize(mul(input.tangent.xyz, M));
+    float3 T = normalize(mul(WeightedTangent, M));
     T = normalize(T - output.normal * dot(output.normal, T));
     output.tangent = float4(T, input.tangent.w);
 
@@ -127,7 +189,7 @@ UberVS_Output VS_SkeletalMesh(VS_Input_PNCTTBB input)
 
     if (HasNormalMap > 0.5f)
     {
-        float3 B = normalize(cross(N, T) * input.tangent.w);
+        float3 B = normalize(cross(N, T) * output.tangent.w);
         float3x3 TBN = float3x3(T, B, N);
 
         float3 tangentNormal = NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
