@@ -10,12 +10,8 @@ namespace
 	// 초기화용 fallback — 실제 애니메이션 결과는 항상 FTransform 형태로 들어온다.
 	FTransform DecomposeMatrix(const FMatrix& Mat)
 	{
-		// 단순 구현: Translation 만 추출 (row-major 의 마지막 행), 회전/스케일은 Identity.
-		// 정확한 분해가 필요해지면 Math/Transform 에 헬퍼 추가 후 교체.
-		FTransform T;
-		T.Location = FVector(Mat.M[3][0], Mat.M[3][1], Mat.M[3][2]);
-		T.Rotation = FQuat::Identity;
-		T.Scale    = FVector(1.0f, 1.0f, 1.0f);
+		FTransform T(Mat);
+		T.Rotation = T.Rotation.GetNormalized();
 		return T;
 	}
 }
