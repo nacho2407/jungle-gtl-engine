@@ -90,9 +90,6 @@ public:
 	void UpdateDrag(const FRay& Ray);
 	void DragEnd();
 
-	float VirtualMouseX = 0.0f;
-	float VirtualMouseY = 0.0f;
-
 	void SetTargetLocation(FVector NewLocation);
 	void SetTargetRotation(FVector NewRotation);
 	void SetTargetScale(FVector NewScale);
@@ -121,9 +118,17 @@ public:
 
 	UMaterialInterface* GetMaterial() { return Material; }
 
+	void SetVirtualMouseX(float InVirtualMouseX) { VirtualMouseX = InVirtualMouseX; }
+	void SetVirtualMouseY(float InVirtualMouseY) { VirtualMouseY = InVirtualMouseY; }
+	float GetVirtualMouseX() const { return VirtualMouseX; }
+	float GetVirtualMouseY() const { return VirtualMouseY; }
+
 private:
 	const FMeshData* GizmoMeshData = nullptr;
 	UMaterialInterface* Material = nullptr;
-	
+
 	FVector LocalExtents = FVector(1.5f, 1.5f, 1.5f);
+	// Rotation, Scale 드래그 도중에 실제 마우스 좌표는 유지하고 가상으로 바꾸기 위한 좌표
+	float VirtualMouseX = 0.0f;
+	float VirtualMouseY = 0.0f;
 };
