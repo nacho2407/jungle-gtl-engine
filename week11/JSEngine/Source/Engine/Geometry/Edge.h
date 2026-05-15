@@ -152,6 +152,14 @@ public:
     }
 };
 
+inline uint32 GetTypeHash(const FIndexEdge& Edge)
+{
+    const FIndexEdge C = Edge.Canonical();
+    uint32 H = GetTypeHash(C.A);
+    H ^= GetTypeHash(C.B) * 2654435761u + 0x9e3779b9u + (H << 6) + (H >> 2);
+    return H;
+}
+
 namespace std
 {
     template <>

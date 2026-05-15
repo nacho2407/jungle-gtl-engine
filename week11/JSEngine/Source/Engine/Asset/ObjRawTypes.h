@@ -55,6 +55,19 @@ struct FObjVertexKey
 	}
 };
 
+inline uint32 GetTypeHash(const FObjRawIndex& Key)
+{
+	const uint32 H1 = GetTypeHash(Key.PositionIndex);
+	const uint32 H2 = GetTypeHash(Key.UVIndex);
+	const uint32 H3 = GetTypeHash(Key.NormalIndex);
+	return H1 ^ (H2 << 1) ^ (H3 << 2);
+}
+
+inline uint32 GetTypeHash(const FObjVertexKey& Key)
+{
+	return GetTypeHash(Key.ObjRawIndex);
+}
+
 
 namespace std
 {

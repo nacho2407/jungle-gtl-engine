@@ -927,12 +927,12 @@ bool FBinarySerializer::ReadSkeletalSections(std::ifstream& In, FSkeletalMesh& O
 	return In.good();
 }
 
-void FBinarySerializer::WriteBones(std::ofstream& Out, const FSkeletalMesh& Data)
+void FBinarySerializer::WriteBones(std::ofstream& Out, const FReferenceSkeleton& ReferenceSkeleton)
 {
-	uint32 Count = static_cast<uint32>(Data.Bones.size());
+	uint32 Count = static_cast<uint32>(ReferenceSkeleton.RefBones.size());
 	WriteUInt32LE(Out, Count);
 
-	for (const FBoneInfo& Bone : Data.Bones)
+	for (const FBoneInfo& Bone : ReferenceSkeleton.RefBones)
 	{
 		WriteString(Out, Bone.Name);
 		WriteInt32LE(Out, Bone.ParentIndex);
@@ -942,7 +942,7 @@ void FBinarySerializer::WriteBones(std::ofstream& Out, const FSkeletalMesh& Data
 	}
 }
 
-bool FBinarySerializer::ReadBones(std::ifstream& In, FSkeletalMesh& OutData, uint32 BoneCount) const
+bool FBinarySerializer::ReadBones(std::ifstream& In, FReferenceSkeleton& OutReferenceSkeleton, uint32 BoneCount) const
 {
 	uint32 Count = 0;
 	if (!ReadUInt32LE(In, Count))
@@ -956,9 +956,9 @@ bool FBinarySerializer::ReadBones(std::ifstream& In, FSkeletalMesh& OutData, uin
 		return false;
 	}
 
-	OutData.Bones.resize(Count);
+	OutReferenceSkeleton.RefBones.resize(Count);
 
-	for (FBoneInfo& Bone : OutData.Bones)
+	for (FBoneInfo& Bone : OutReferenceSkeleton.RefBones)
 	{
 		if (!ReadString(In, Bone.Name))
 		{
@@ -977,6 +977,8 @@ bool FBinarySerializer::ReadBones(std::ifstream& In, FSkeletalMesh& OutData, uin
 			return false;
 		}
 	}
+
+	OutReferenceSkeleton.RebuildNameToIndex();
 
 	return In.good();
 }
@@ -1084,7 +1086,7 @@ bool FBinarySerializer::ReadSkeletalBounds(std::ifstream& In, FSkeletalMesh& Out
 		&& ReadFloatLE(In, OutData.LocalBounds.Max.Z);
 }
 
-bool FBinarySerializer::SaveSkeletalMesh(const FString& BinaryPath, const FString& SourcePath, const FSkeletalMesh& Data)
+bool FBinarySerializer::SaveSkeletalMesh(const FString& BinaryPath, const FString& SourcePath, const FSkeletalMesh& Data, const FReferenceSkeleton& ReferenceSkeleton)
 {
 	std::ofstream Out(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath))), std::ios::binary);
 	if (!Out.is_open())
@@ -1099,7 +1101,7 @@ bool FBinarySerializer::SaveSkeletalMesh(const FString& BinaryPath, const FStrin
 	Header.IndexCount   = static_cast<uint32>(Data.Indices.size());
 	Header.SectionCount = static_cast<uint32>(Data.Sections.size());
 	Header.SlotCount    = static_cast<uint32>(Data.MaterialSlots.size());
-	Header.BoneCount    = static_cast<uint32>(Data.Bones.size());
+	Header.BoneCount    = static_cast<uint32>(ReferenceSkeleton.RefBones.size());
 	Header.SocketCount  = static_cast<uint32>(Data.Sockets.size());
 	Header.SourceFileWriteTime = GetFileWriteTimeTicks(SourcePath);
 
@@ -1123,14 +1125,14 @@ bool FBinarySerializer::SaveSkeletalMesh(const FString& BinaryPath, const FStrin
 		WriteString(Out, Slot.SlotName);
 	}
 
-	WriteBones(Out, Data);
+	WriteBones(Out, ReferenceSkeleton);
 	WriteSockets(Out, Data);
 	WriteSkeletalBounds(Out, Data);
 
 	return Out.good();
 }
 
-bool FBinarySerializer::LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMesh& OutData)
+bool FBinarySerializer::LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMesh& OutData, FReferenceSkeleton& OutReferenceSkeleton)
 {
 	std::ifstream In(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath))), std::ios::binary);
 	if (!In.is_open())
@@ -1191,7 +1193,7 @@ bool FBinarySerializer::LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMes
 		OutData.MaterialSlots[i].Material = nullptr; // load 후 resolve
 	}
 
-	if (!ReadBones(In, OutData, Header.BoneCount))
+	if (!ReadBones(In, OutReferenceSkeleton, Header.BoneCount))
 	{
 		return false;
 	}
@@ -1224,7 +1226,7 @@ bool FBinarySerializer::LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMes
 	      OutData.Indices.size()       == Header.IndexCount   &&
 	      OutData.Sections.size()      == Header.SectionCount &&
 	      OutData.MaterialSlots.size() == Header.SlotCount    &&
-	      OutData.Bones.size()         == Header.BoneCount    &&
+	      OutReferenceSkeleton.RefBones.size() == Header.BoneCount &&
 	      OutData.Sockets.size()       == Header.SocketCount))
 	{
 		return false;

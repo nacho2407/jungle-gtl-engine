@@ -12,13 +12,13 @@
 // Core containers and string types.
 //=============================================================================
 #include "Containers/Array.h"
+#include "Containers/String.h"
 #include "Containers/LinkedList.h"
 #include "Containers/Map.h"
 #include "Containers/Pair.h"
 #include "Containers/Queue.h"
 #include "Containers/Set.h"
 #include "Containers/StaticArray.h"
-#include "Containers/String.h"
 #include "Core/Guid.h"
 #include "Core/Logging/Log.h"
 

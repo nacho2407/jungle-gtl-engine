@@ -6,6 +6,7 @@
 
 struct FStaticMesh;
 struct FSkeletalMesh;
+struct FReferenceSkeleton;
 struct FMatrix;
 
 /*
@@ -44,8 +45,8 @@ public:
 	bool SaveStaticMesh(const FString& BinaryPath, const FString& SourcePath, const FStaticMesh& Data);
 	bool LoadStaticMesh(const FString& BinaryPath, FStaticMesh& OutData);
 
-	bool SaveSkeletalMesh(const FString& BinaryPath, const FString& SourcePath, const FSkeletalMesh& Data);
-	bool LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMesh& OutData);
+	bool SaveSkeletalMesh(const FString& BinaryPath, const FString& SourcePath, const FSkeletalMesh& Data, const FReferenceSkeleton& ReferenceSkeleton);
+	bool LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMesh& OutData, FReferenceSkeleton& OutReferenceSkeleton);
 
 	//	Header Read + 검사 장치
 	bool ReadStaticMeshHeader(const FString& BinaryPath, FStaticMeshBinaryHeader& OutHeader) const;
@@ -94,8 +95,8 @@ private:
 	void WriteSkeletalSections(std::ofstream& Out, const FSkeletalMesh& Data);
 	bool ReadSkeletalSections(std::ifstream& In, FSkeletalMesh& OutData, uint32 SectionCount) const;
 
-	void WriteBones(std::ofstream& Out, const FSkeletalMesh& Data);
-	bool ReadBones(std::ifstream& In, FSkeletalMesh& OutData, uint32 BoneCount) const;
+	void WriteBones(std::ofstream& Out, const FReferenceSkeleton& ReferenceSkeleton);
+	bool ReadBones(std::ifstream& In, FReferenceSkeleton& OutReferenceSkeleton, uint32 BoneCount) const;
 
 	void WriteSockets(std::ofstream& Out, const FSkeletalMesh& Data);
 	bool ReadSockets(std::ifstream& In, FSkeletalMesh& OutData, uint32 SocketCount) const;

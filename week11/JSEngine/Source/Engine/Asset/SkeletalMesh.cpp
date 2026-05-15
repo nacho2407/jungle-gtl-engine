@@ -68,7 +68,7 @@ const TArray<FBoneInfo>& USkeletalMesh::GetBones() const
 
 	if (RefSkeleton)
         return RefSkeleton->RefBones;
-    return MeshData ? MeshData->Bones : Empty;
+    return Empty;
 }
 
 const FBoneInfo* USkeletalMesh::GetBoneInfo(int32 BoneIndex) const

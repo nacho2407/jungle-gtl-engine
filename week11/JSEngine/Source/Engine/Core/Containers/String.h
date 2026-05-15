@@ -11,3 +11,8 @@ inline uint32 GetTypeHash(const FString& String)
 {
     return static_cast<uint32>(std::hash<FString>{}(String));
 }
+
+inline uint32 GetTypeHash(const FWString& String)
+{
+    return static_cast<uint32>(std::hash<FWString>{}(String));
+}

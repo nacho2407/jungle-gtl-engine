@@ -70,11 +70,11 @@ public:
 
     FWString GetScriptPathByName(const FName& name);
     auto GetScriptInfo(const FName& name) -> FLuaScriptInfo*;
-    auto GetScriptArray() -> TMap<FName, FLuaScriptInfo, FName::Hash>& { return ScriptArray; }
+    auto GetScriptArray() -> TMap<FName, FLuaScriptInfo>& { return ScriptArray; }
 
 private:
     void ConfigureLuaPackagePath();
 
 	std::unique_ptr<sol::state> GLuaState;
-    TMap<FName, FLuaScriptInfo, FName::Hash> ScriptArray;
+    TMap<FName, FLuaScriptInfo> ScriptArray;
 };

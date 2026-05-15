@@ -828,8 +828,11 @@ bool FResourceManager::SaveSkeletalMesh(USkeletalMesh* Mesh)
     const FString FbxPath = Mesh->GetAssetPathFileName();
     if (FbxPath.empty()) return false;
 
+    const FReferenceSkeleton* ReferenceSkeleton = Mesh->GetReferenceSkeleton();
+    if (!ReferenceSkeleton) return false;
+
     const FString BinPath = FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(FbxPath);
-    return BinarySerializer.SaveSkeletalMesh(BinPath, FbxPath, *Data);
+    return BinarySerializer.SaveSkeletalMesh(BinPath, FbxPath, *Data, *ReferenceSkeleton);
 }
 
 UCurveFloatAsset* FResourceManager::LoadCurve(const FString& Path)

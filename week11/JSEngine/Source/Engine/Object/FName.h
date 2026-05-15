@@ -33,13 +33,7 @@ public:
 	// None 이름
 	static const FName None;
     uint32 GetComparisonIndex() const { return ComparisonIndex; }
-    struct Hash
-    {
-        size_t operator()(const FName& Name) const
-        {
-            return static_cast<size_t>(Name.GetComparisonIndex());
-        }
-    };
+
 
 private:
 	uint32 ComparisonIndex;	// 소문자 변환된 문자열의 풀 인덱스 (비교용)
@@ -50,17 +44,7 @@ inline uint32 GetTypeHash(const FName& Name)
     return Name.GetComparisonIndex();
 }
 
-namespace std
-{
-    template <>
-    struct hash<FName>
-    {
-        size_t operator()(const FName& Name) const
-        {
-            return static_cast<size_t>(Name.GetComparisonIndex());
-        }
-    };
-}
+
 // ============================================================
 // FNamePool — 전역 문자열 풀 (싱글턴)
 // ============================================================

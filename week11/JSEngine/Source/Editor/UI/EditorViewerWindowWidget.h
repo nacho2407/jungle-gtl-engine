@@ -60,8 +60,9 @@ private:
     void RenderContent(float DeltaTime);
 	void RenderDetachedDocumentChrome(bool& bDockRequested, bool& bCloseRequested);
 	void RenderDetachedDocumentToolbar(bool& bDockRequested);
-    void Shutdown();
+	void Shutdown();
 	FSkeletalMesh* ResolveCurrentMeshData() const;
+	const TArray<FBoneInfo>& ResolveCurrentBones() const;
 	uint64 ComputeEditableMeshSignature(const FSkeletalMesh* MeshData) const;
 	void ResetMeshDirtyBaseline();
 	bool HasMeshAssetEdits() const;

@@ -6,7 +6,7 @@
 
 struct FBoneInfo
 {
-    FString Name;
+    FName Name;
 
     int32 ParentIndex = -1;
 
@@ -36,25 +36,11 @@ struct FReferenceSkeleton
     int32 FindBoneIndex(const FName& BoneName) const;
 };
 
-class USkeleton : public UObject
-{
-public:
-    DECLARE_CLASS(USkeleton, UObject)
-
-    const FReferenceSkeleton& GetReferenceSkeleton() const { return ReferenceSkeleton; }
-    FReferenceSkeleton& GetReferenceSkeleton() { return ReferenceSkeleton; }
-
-private:
-    FReferenceSkeleton ReferenceSkeleton;
-};
-
 struct FSkeletalMesh
 {
     FString PathFileName;
     TArray<FSkeletalMeshVertex> Vertices;
     TArray<uint32> Indices;
-    TArray<FBoneInfo> Bones;
-
     // 본에 연결되는 명명된 attach point들. asset 영속 데이터.
     TArray<FSkeletalMeshSocket> Sockets;
 

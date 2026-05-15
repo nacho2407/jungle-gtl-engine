@@ -1786,7 +1786,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 
             FScriptManager::Get().RefreshLuaScriptFiles();
 
-            TMap<FName, FLuaScriptInfo, FName::Hash>& ScriptArray =
+            TMap<FName, FLuaScriptInfo>& ScriptArray =
                 FScriptManager::Get().GetScriptArray();
 
             ImGui::PushID(Val);

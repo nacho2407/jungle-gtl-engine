@@ -523,7 +523,6 @@ bool FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOp
     }
 
 	RefSkeleton.RebuildNameToIndex();
-    SkeletalMesh->Bones = RefSkeleton.RefBones;
 
     SkeletalMesh->LocalBounds = BuildLocalBounds(SkeletalMesh);
     ComputeTangents(SkeletalMesh);

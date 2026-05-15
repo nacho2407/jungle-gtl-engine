@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#include "Core/CoreTypes.h"
+#include "Core/Containers/String.h"
+
 #include <unordered_map>
 #include <functional>
 #include <utility>
@@ -9,7 +12,7 @@ struct TDefaultMapHash
 {
     size_t operator()(const KeyType& Key) const
     {
-        return std::hash<KeyType>{}(Key);
+        return static_cast<size_t>(GetTypeHash(Key));
     }
 };
 template <
