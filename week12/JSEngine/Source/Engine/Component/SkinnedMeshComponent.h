@@ -4,6 +4,12 @@
 #include "Component/MeshComponent.h"
 #include "Render/Resource/VertexTypes.h"
 
+enum class ESkinningMode : uint8
+{
+    CPU,
+    GPU
+};
+
 class USkinnedMeshComponent : public UMeshComponent
 {
 public:
@@ -19,6 +25,11 @@ public:
     void SetSkeletalMesh(USkeletalMesh* InSkeletalMesh);
     USkeletalMesh* GetSkeletalMesh() const { return SkeletalMesh; }
     bool HasValidMesh() const { return SkeletalMesh != nullptr && SkeletalMesh->HasValidMeshData(); }
+
+    void SetSkinningMode(ESkinningMode InMode);
+    ESkinningMode GetSkinningMode() const { return SkinningMode; }
+
+    bool SetCurrentLocalPose(const TArray<FMatrix>& InLocalPose);
 
     const TArray<FMatrix>& GetCurrentLocalPose() const { return CurrentLocalPose; }
     const TArray<FMatrix>& GetCurrentGlobalPose() const { return CurrentGlobalPose; }
@@ -68,7 +79,7 @@ protected:
 
     TArray<FSkeletalMeshVertex> SkinnedVertices;
 
-    bool bEnableCPUSkinning = true;
+    ESkinningMode SkinningMode = ESkinningMode::GPU;
     bool bSkinningDirty = true;
 
     mutable bool bBoundsDirty = true;

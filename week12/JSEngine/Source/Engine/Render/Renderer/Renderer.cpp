@@ -25,6 +25,29 @@
 
 #include <unordered_map>
 
+void BindVertexFactoryResources(
+	ID3D11DeviceContext* Context,
+	EVertexFactoryType Type,
+	const FBoneMatrixConstants* BoneMatrixConstants,
+	FRenderResources* RenderResources)
+{
+	if (!Context || !RenderResources)
+	{
+		return;
+	}
+
+	if (Type == EVertexFactoryType::SkeletalMesh && BoneMatrixConstants)
+	{
+		RenderResources->BoneMatrixConstantBuffer.Update(
+			Context,
+			BoneMatrixConstants,
+			sizeof(FBoneMatrixConstants));
+
+		ID3D11Buffer* BoneBuffer = RenderResources->BoneMatrixConstantBuffer.GetBuffer();
+		Context->VSSetConstantBuffers(5, 1, &BoneBuffer);
+	}
+}
+
 namespace
 {
 	FShaderProgram* GetProgramForMaterialCommand(const FRenderCommand& Cmd)
@@ -278,6 +301,7 @@ void FRenderer::CreateResources()
 
 	Resources.ShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowConstants));
 	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FUberConstants));
+	Resources.BoneMatrixConstantBuffer.Create(Device.GetDevice(), sizeof(FBoneMatrixConstants));
     Resources.LightShadowIndexBuffer.Create(Device.GetDevice(), sizeof(FLightShadowIndices), 1024);
     Resources.AtlasShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowAtlasConstants), 1024);
 
@@ -346,6 +370,7 @@ void FRenderer::Release()
 	Resources.PerObjectConstantBuffer.Release();
 	Resources.FrameBuffer.Release();
 	Resources.ShadowBuffer.Release();
+	Resources.BoneMatrixConstantBuffer.Release();
 	Resources.LightBuffer.Release();
 	Resources.LightShadowIndexBuffer.Release();
 	Resources.AtlasShadowBuffer.Release();
@@ -1490,7 +1515,11 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 			Program->Bind(InDeviceContext);
 			InCommand.Material->BindRenderStates(InDeviceContext);
 			InCommand.Material->BindParameters(InDeviceContext, Program->PS);
-			BindVertexFactoryResources(InDeviceContext, InCommand.VertexFactoryType, InCommand);
+			BindVertexFactoryResources(
+				InDeviceContext,
+				InCommand.VertexFactoryType,
+				nullptr,
+				&Resources);
 		}
 	}
 

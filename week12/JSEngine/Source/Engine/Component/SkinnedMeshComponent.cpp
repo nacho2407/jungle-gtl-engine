@@ -1,4 +1,4 @@
-#include "SkinnedMeshComponent.h"
+﻿#include "SkinnedMeshComponent.h"
 
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Material.h"
@@ -145,6 +145,37 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
     MarkSkinningDirty();
 }
 
+bool USkinnedMeshComponent::SetCurrentLocalPose(const TArray<FMatrix>& InLocalPose)
+{
+    if (!HasValidMesh())
+    {
+        return false;
+    }
+
+    const int32 BoneCount = static_cast<int32>(SkeletalMesh->GetBones().size());
+    if (static_cast<int32>(InLocalPose.size()) != BoneCount)
+    {
+        return false;
+    }
+
+    CurrentLocalPose = InLocalPose;
+    MarkSkinningDirty();
+    return true;
+}
+
+void USkinnedMeshComponent::SetSkinningMode(ESkinningMode InMode)
+{
+    if (SkinningMode == InMode)
+    {
+        return;
+    }
+
+    SkinningMode = InMode;
+    MarkSkinningDirty();
+    MarkBoundsDirty();
+    MarkRenderStateDirty();
+}
+
 void USkinnedMeshComponent::UpdateWorldAABB() const
 {
     WorldAABB.Reset();
@@ -155,14 +186,14 @@ void USkinnedMeshComponent::UpdateWorldAABB() const
         return;
     }
 
-    if (bEnableCPUSkinning)
+    if (SkinningMode == ESkinningMode::CPU)
     {
         const_cast<USkinnedMeshComponent*>(this)->EnsureSkinningUpdated();
     }
 
     const FMatrix& WorldMatrix = GetWorldMatrix();
 
-    if (bEnableCPUSkinning && !SkinnedVertices.empty())
+    if (SkinningMode == ESkinningMode::CPU && !SkinnedVertices.empty())
     {
         for (const FSkeletalMeshVertex& Vertex : SkinnedVertices)
         {
@@ -301,11 +332,6 @@ bool USkinnedMeshComponent::ConsumeRenderStateDirty()
 
 void USkinnedMeshComponent::EnsureSkinningUpdated()
 {
-    if (!bEnableCPUSkinning)
-    {
-        return;
-    }
-
     if (!bSkinningDirty)
     {
         return;
@@ -318,7 +344,11 @@ void USkinnedMeshComponent::EnsureSkinningUpdated()
 
     UpdateCurrentGlobalPose();
     UpdateSkinningMatrices();
-    SkinVerticesCPU();
+
+    if (SkinningMode == ESkinningMode::CPU)
+    {
+        SkinVerticesCPU();
+    }
 
     bSkinningDirty = false;
     MarkBoundsDirty();

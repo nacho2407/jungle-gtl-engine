@@ -1,13 +1,25 @@
 #include "../Common/Common.hlsli"
+#include "../Common/SkeletalSkinning.hlsli"
 
 struct VSInput
 {
     float3 Position : POSITION;
 };
 
-float4 ShadowVS(VSInput input) : SV_POSITION
+struct VSSkeletalInput
 {
-    float4 worldPos = mul(float4(input.Position, 1.0f), Model);
+    float3 Position : POSITION;
+    float3 Normal : NORMAL;
+    float2 UV : TEXCOORD;
+    float4 Tangent : TANGENT;
+    float4 Color : COLOR;
+    uint4 BoneIndices : BLENDINDICES;
+    float4 BoneWeights : BLENDWEIGHT;
+};
+
+float4 ProjectShadowPosition(float3 position)
+{
+    float4 worldPos = mul(float4(position, 1.0f), Model);
     float4 post = worldPos;
 
 #ifdef SHADOW_MAP_PSM
@@ -20,6 +32,23 @@ float4 ShadowVS(VSInput input) : SV_POSITION
 
     float4 shadowPos = mul(post, ShadowViewProj);
     return shadowPos;
+}
+
+float4 ShadowVS(VSInput input) : SV_POSITION
+{
+    return ProjectShadowPosition(input.Position);
+}
+
+float4 SkeletalShadowVS(VSSkeletalInput input) : SV_POSITION
+{
+    FSkinningResult Skinned = ApplyLinearBlendSkinning(
+        input.Position,
+        input.Normal,
+        input.Tangent.xyz,
+        input.BoneIndices,
+        input.BoneWeights);
+
+    return ProjectShadowPosition(Skinned.Position);
 }
 
 void ShadowPS()

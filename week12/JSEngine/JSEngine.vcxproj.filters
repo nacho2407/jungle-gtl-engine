@@ -85,6 +85,9 @@
     <Filter Include="Source\Engine\Asset">
       <UniqueIdentifier>{05f4523d-4089-c8bd-700a-a66d91a57883}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Asset\FBX">
+      <UniqueIdentifier>{20f621ef-dcf1-73d4-693c-c7a84b80962b}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Audio">
       <UniqueIdentifier>{4aa6bdfb-1434-38f4-6cfc-f29a48d99353}</UniqueIdentifier>
     </Filter>
@@ -456,6 +459,15 @@
     <ClCompile Include="Source\Engine\Animation\ActorSequence.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
@@ -474,8 +486,20 @@
     <ClCompile Include="Source\Engine\Asset\CurveFloatAsset.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Asset\FbxImporter.cpp">
-      <Filter>Source\Engine\Asset</Filter>
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporter.cpp">
+      <Filter>Source\Engine\Asset\FBX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterAnimation.cpp">
+      <Filter>Source\Engine\Asset\FBX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterInternal.cpp">
+      <Filter>Source\Engine\Asset\FBX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterSkeletalMesh.cpp">
+      <Filter>Source\Engine\Asset\FBX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterStaticMesh.cpp">
+      <Filter>Source\Engine\Asset\FBX</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\FileUtils.cpp">
       <Filter>Source\Engine\Asset</Filter>
@@ -1347,6 +1371,18 @@
     <ClInclude Include="Source\Engine\Animation\ActorSequence.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimInstance.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimSequence.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimTypes.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Animation\CurvePlayback.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
@@ -1365,8 +1401,11 @@
     <ClInclude Include="Source\Engine\Asset\CurveFloatAsset.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\FbxImporter.h">
-      <Filter>Source\Engine\Asset</Filter>
+    <ClInclude Include="Source\Engine\Asset\FBX\FbxImporter.h">
+      <Filter>Source\Engine\Asset\FBX</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\FBX\FbxImporterInternal.h">
+      <Filter>Source\Engine\Asset\FBX</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\FileUtils.h">
       <Filter>Source\Engine\Asset</Filter>
@@ -2202,6 +2241,9 @@
       <Filter>Shaders\Common</Filter>
     </None>
     <None Include="Shaders\Common\ShadowFunction.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </None>
+    <None Include="Shaders\Common\SkeletalSkinning.hlsli">
       <Filter>Shaders\Common</Filter>
     </None>
     <None Include="Shaders\Compute\HiZDownsample.hlsl">
