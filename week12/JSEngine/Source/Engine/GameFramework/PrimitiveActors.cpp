@@ -31,6 +31,8 @@
 #include <cmath>
 #include <random>
 
+#include "Animation/AnimSequence.h"
+
 namespace
 {
 constexpr const char* CubeMeshPath = "Asset/Mesh/Cube.obj";
@@ -423,7 +425,17 @@ void ASkeletalMeshActor::InitDefaultComponents()
     SkeletalMeshComp = AddComponent<USkeletalMeshComponent>();
     SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/SimpleCharacter.fbx"));
     SetRootComponent(SkeletalMeshComp);
+    // 디버그용. 추후 삭제.
+    /*UDebugAnimSequence* DebugAnim =
+        UObjectManager::Get().CreateObject<UDebugAnimSequence>();
 
+    DebugAnim->AddNotify(1.0f, FName("FootStep"));
+    DebugAnim->AddNotify(2.5f, FName("AttackHit"));
+    DebugAnim->AddNotify(4.0f, FName("EndCheck"));
+
+    SkeletalMeshComp->PlayAnimation(DebugAnim, true);*/
+
+    // 여기까지가 Animation Debug 코드.
     auto* Text = AddComponent<UTextRenderComponent>();
     Text->AttachToComponent(SkeletalMeshComp);
     Text->SetFont(FName("Default"));

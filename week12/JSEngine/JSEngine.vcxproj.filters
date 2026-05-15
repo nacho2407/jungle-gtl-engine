@@ -429,6 +429,18 @@
     <ClCompile Include="Source\Engine\Asset\FBX\FbxImporter.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterAnimation.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterInternal.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterSkeletalMesh.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterStaticMesh.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Asset\FontAtlasLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
@@ -446,9 +458,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\StaticMeshSimplifier.cpp">
       <Filter>Source\Engine\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp">
-      <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp">
       <Filter>Source\Engine\Animation</Filter>
@@ -1038,10 +1047,9 @@
     <ClCompile Include="Source\Engine\Component\SkinnedMeshComponent.cpp" />
     <ClCompile Include="Source\Editor\Viewer\EditorViewer.cpp" />
     <ClCompile Include="Source\Editor\Viewport\SkeletalMeshViewportClient.cpp" />
-    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterInternal.cpp" />
-    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterSkeletalMesh.cpp" />
-    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterStaticMesh.cpp" />
-    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterAnimation.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Audio\AudioSystem.h">
@@ -1227,7 +1235,7 @@
     <ClInclude Include="Source\Engine\Asset\FontAtlasLoader.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\FBX\FbxImporter.h">
+    <ClInclude Include="Source\Engine\Asset\FbxImporter.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\IAssetLoader.h">
@@ -1250,9 +1258,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\StaticMeshTypes.h">
       <Filter>Source\Engine\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Animation\AnimSequence.h">
-      <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\CurvePlayback.h">
       <Filter>Source\Engine\Animation</Filter>
@@ -2005,7 +2010,10 @@
     <ClInclude Include="Source\Engine\Component\SkinnedMeshComponent.h" />
     <ClInclude Include="Source\Editor\Viewer\EditorViewer.h" />
     <ClInclude Include="Source\Editor\Viewport\SkeletalMeshViewportClient.h" />
-    <ClInclude Include="Source\Engine\Asset\FBX\FbxImporterInternal.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimSequence.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Source\Engine\Runtime\AppIcon.rc" />
