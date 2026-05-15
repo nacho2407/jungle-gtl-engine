@@ -65,6 +65,14 @@ struct FSourceTransformCurveLayer
     int32   LayerIndex = 0;
     FString LayerName;
 
+    float LayerWeight = 1.0f;
+    bool  bMute       = false;
+    bool  bSolo       = false;
+
+    int32 BlendMode                = 0;
+    int32 RotationAccumulationMode = 0;
+    int32 ScaleAccumulationMode    = 0;
+
     FRawVectorCurve Translation;
     FRawVectorCurve Rotation;
     FRawVectorCurve Scale;
@@ -78,6 +86,14 @@ struct FSourceTransformCurveLayer
     {
         Ar << Layer.LayerIndex;
         Ar << Layer.LayerName;
+
+        Ar << Layer.LayerWeight;
+        Ar << Layer.bMute;
+        Ar << Layer.bSolo;
+        Ar << Layer.BlendMode;
+        Ar << Layer.RotationAccumulationMode;
+        Ar << Layer.ScaleAccumulationMode;
+        
         Ar << Layer.Translation;
         Ar << Layer.Rotation;
         Ar << Layer.Scale;

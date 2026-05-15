@@ -265,14 +265,14 @@ bool UAnimSequence::GetAnimationPose(float TimeSeconds, USkeletalMesh* InSkeleta
         return false;
     }
 
-    if (!IsCompatibleWith(InSkeletalMesh))
+    if (!DataModel || DataModel->BoneAnimationTracks.empty() || DataModel->NumFrames <= 0)
     {
-        UE_LOG("Animation pose failed: skeleton mismatch. Anim=%s SkeletonPath=%s", GetName().c_str(), SkeletonPath.c_str());
         return false;
     }
 
-    if (DataModel->BoneAnimationTracks.empty() || DataModel->NumFrames <= 0)
+    if (!IsCompatibleWith(InSkeletalMesh))
     {
+        UE_LOG("Animation pose failed: skeleton mismatch. Anim=%s SkeletonPath=%s", GetName().c_str(), SkeletonPath.c_str());
         return false;
     }
 
