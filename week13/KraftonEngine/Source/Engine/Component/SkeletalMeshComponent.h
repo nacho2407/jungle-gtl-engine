@@ -50,6 +50,14 @@ public:
 	void ClearAnimInstance();
 
 protected:
+	// 매 프레임 AnimInstance 평가 → 결과 포즈를 BoneEditLocalMatrices 로 푸시.
+	// Super::TickComponent 가 마지막에 UpdateCPUSkinning 을 1회 호출하므로
+	// 본 단위 setter 대신 직접 BoneEditLocalMatrices 에 쓴다 (N회 skinning 회피).
+	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
+
+	void EvaluateAnimInstance(float DeltaTime);
+
+protected:
 	// Animation 런타임 상태.
 	EAnimationMode           AnimationMode      = EAnimationMode::None;
 	FSingleAnimationPlayData AnimationData;

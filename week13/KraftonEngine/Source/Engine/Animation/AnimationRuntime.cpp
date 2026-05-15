@@ -3,19 +3,47 @@
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
 
+#include <cmath>
+
 namespace
 {
-	// 본 로컬 행렬에서 T/R/S 추출. SkeletalMeshAsset 의 FBone::LocalMatrix 는
-	// row-major 가정 (FMatrix 의 기존 표기와 일치). 정확도가 중요하지 않은 ref pose
-	// 초기화용 fallback — 실제 애니메이션 결과는 항상 FTransform 형태로 들어온다.
+	constexpr float MatrixDecomposeTolerance = 1.0e-6f;
+
+	// 본 로컬 행렬을 FTransform 으로 분해. SkinnedMeshComponent.cpp 의
+	// MatrixToEditorTransform 과 동일한 패턴 — scale 을 row 단위로 제거한 뒤 회전 추출.
+	// FBone::LocalMatrix 는 row-major 가정.
 	FTransform DecomposeMatrix(const FMatrix& Mat)
 	{
-		// 단순 구현: Translation 만 추출 (row-major 의 마지막 행), 회전/스케일은 Identity.
-		// 정확한 분해가 필요해지면 Math/Transform 에 헬퍼 추가 후 교체.
 		FTransform T;
-		T.Location = FVector(Mat.M[3][0], Mat.M[3][1], Mat.M[3][2]);
-		T.Rotation = FQuat::Identity;
-		T.Scale    = FVector(1.0f, 1.0f, 1.0f);
+		T.Location = Mat.GetLocation();
+		T.Scale    = Mat.GetScale();
+
+		FMatrix Rot = Mat;
+		Rot.M[3][0] = 0.0f;
+		Rot.M[3][1] = 0.0f;
+		Rot.M[3][2] = 0.0f;
+		Rot.M[3][3] = 1.0f;
+
+		if (std::fabs(T.Scale.X) > MatrixDecomposeTolerance)
+		{
+			Rot.M[0][0] /= T.Scale.X;
+			Rot.M[0][1] /= T.Scale.X;
+			Rot.M[0][2] /= T.Scale.X;
+		}
+		if (std::fabs(T.Scale.Y) > MatrixDecomposeTolerance)
+		{
+			Rot.M[1][0] /= T.Scale.Y;
+			Rot.M[1][1] /= T.Scale.Y;
+			Rot.M[1][2] /= T.Scale.Y;
+		}
+		if (std::fabs(T.Scale.Z) > MatrixDecomposeTolerance)
+		{
+			Rot.M[2][0] /= T.Scale.Z;
+			Rot.M[2][1] /= T.Scale.Z;
+			Rot.M[2][2] /= T.Scale.Z;
+		}
+
+		T.Rotation = Rot.ToQuat().GetNormalized();
 		return T;
 	}
 }
