@@ -262,7 +262,7 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 		// 뷰포트 조작 중 마우스가 UI로 넘어갔는데 커서가 꺼져있다면 강제로 복구합니다.
 		if (!bIsCursorVisible)
 		{
-			while (LogShowCursorCall("FObjViewerViewportClient::TickInteraction.GuiMouseCaptureRestore", TRUE) < 0);
+			while (ShowCursor(TRUE) < 0);
 			bIsCursorVisible = true;
 			
 			// 눌려있던 상태 변수들도 강제로 초기화
@@ -349,7 +349,7 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 
 		if (bIsCursorVisible)
 		{
-			while (LogShowCursorCall("FObjViewerViewportClient::TickInteraction.RightDownHide", FALSE) >= 0);
+			while (ShowCursor(FALSE) >= 0);
 			bIsCursorVisible = false;
 		}
 
@@ -377,7 +377,7 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 
 		if (!bIsCursorVisible)
 		{
-			while (LogShowCursorCall("FObjViewerViewportClient::TickInteraction.RightUpRestore", TRUE) < 0);
+			while (ShowCursor(TRUE) < 0);
 			bIsCursorVisible = true;
 		}
 
