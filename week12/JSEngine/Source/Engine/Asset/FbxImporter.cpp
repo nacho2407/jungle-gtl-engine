@@ -6,8 +6,10 @@
 #include <fbxsdk.h>
 
 #include <algorithm>
+#include <array>
 #include <cfloat>
 #include <cctype>
+#include <cstring>
 
 using namespace fbxsdk;
 
@@ -54,6 +56,234 @@ struct FTempInfluence
     int32 BoneIndex = -1;
     float Weight = 0.0f;
 };
+
+namespace FbxVertexDedupInternal
+{
+static uint32 FloatToStableBits(float Value)
+{
+    if (Value == 0.0f)
+    {
+        Value = 0.0f;
+    }
+
+    uint32 Bits = 0;
+    std::memcpy(&Bits, &Value, sizeof(float));
+    return Bits;
+}
+
+static size_t HashCombineUInt32(size_t Seed, uint32 Value)
+{
+    return Seed ^ (static_cast<size_t>(Value) + 0x9e3779b9u + (Seed << 6) + (Seed >> 2));
+}
+
+template <size_t Count>
+static size_t HashBits(const std::array<uint32, Count>& Bits)
+{
+    size_t Hash = 0;
+    for (uint32 Bit : Bits)
+    {
+        Hash = HashCombineUInt32(Hash, Bit);
+    }
+
+    return Hash;
+}
+}
+
+struct FFbxStaticVertexDedupKey
+{
+    std::array<uint32, 12> Bits = {};
+
+    bool operator==(const FFbxStaticVertexDedupKey& Other) const
+    {
+        return Bits == Other.Bits;
+    }
+};
+
+struct FFbxStaticVertexDedupKeyHasher
+{
+    size_t operator()(const FFbxStaticVertexDedupKey& Key) const
+    {
+        return FbxVertexDedupInternal::HashBits(Key.Bits);
+    }
+};
+
+struct FFbxSkeletalVertexDedupKey
+{
+    std::array<uint32, 20> Bits = {};
+
+    bool operator==(const FFbxSkeletalVertexDedupKey& Other) const
+    {
+        return Bits == Other.Bits;
+    }
+};
+
+struct FFbxSkeletalVertexDedupKeyHasher
+{
+    size_t operator()(const FFbxSkeletalVertexDedupKey& Key) const
+    {
+        return FbxVertexDedupInternal::HashBits(Key.Bits);
+    }
+};
+
+static FFbxStaticVertexDedupKey MakeStaticVertexDedupKey(const FNormalVertex& Vertex)
+{
+    using namespace FbxVertexDedupInternal;
+
+    FFbxStaticVertexDedupKey Key;
+    Key.Bits = {
+        FloatToStableBits(Vertex.Position.X),
+        FloatToStableBits(Vertex.Position.Y),
+        FloatToStableBits(Vertex.Position.Z),
+        FloatToStableBits(Vertex.Color.R),
+        FloatToStableBits(Vertex.Color.G),
+        FloatToStableBits(Vertex.Color.B),
+        FloatToStableBits(Vertex.Color.A),
+        FloatToStableBits(Vertex.Normal.X),
+        FloatToStableBits(Vertex.Normal.Y),
+        FloatToStableBits(Vertex.Normal.Z),
+        FloatToStableBits(Vertex.UVs.X),
+        FloatToStableBits(Vertex.UVs.Y),
+    };
+
+    return Key;
+}
+
+static FFbxSkeletalVertexDedupKey MakeSkeletalVertexDedupKey(const FSkeletalMeshVertex& Vertex)
+{
+    using namespace FbxVertexDedupInternal;
+
+    FFbxSkeletalVertexDedupKey Key;
+    Key.Bits = {
+        FloatToStableBits(Vertex.Position.X),
+        FloatToStableBits(Vertex.Position.Y),
+        FloatToStableBits(Vertex.Position.Z),
+        FloatToStableBits(Vertex.Color.R),
+        FloatToStableBits(Vertex.Color.G),
+        FloatToStableBits(Vertex.Color.B),
+        FloatToStableBits(Vertex.Color.A),
+        FloatToStableBits(Vertex.Normal.X),
+        FloatToStableBits(Vertex.Normal.Y),
+        FloatToStableBits(Vertex.Normal.Z),
+        FloatToStableBits(Vertex.UVs.X),
+        FloatToStableBits(Vertex.UVs.Y),
+        static_cast<uint32>(Vertex.BoneIndices[0]),
+        static_cast<uint32>(Vertex.BoneIndices[1]),
+        static_cast<uint32>(Vertex.BoneIndices[2]),
+        static_cast<uint32>(Vertex.BoneIndices[3]),
+        FloatToStableBits(Vertex.BoneWeights[0]),
+        FloatToStableBits(Vertex.BoneWeights[1]),
+        FloatToStableBits(Vertex.BoneWeights[2]),
+        FloatToStableBits(Vertex.BoneWeights[3]),
+    };
+
+    return Key;
+}
+
+static void DeduplicateStaticMeshVertices(FStaticMesh* Mesh)
+{
+    if (!Mesh || Mesh->Vertices.empty() || Mesh->Indices.empty())
+    {
+        return;
+    }
+
+    const uint64 OriginalVertexCount = Mesh->Vertices.size();
+
+    TArray<FNormalVertex> DedupedVertices;
+    DedupedVertices.reserve(Mesh->Vertices.size());
+
+    TArray<uint32> RemappedIndices;
+    RemappedIndices.reserve(Mesh->Indices.size());
+
+    TMap<FFbxStaticVertexDedupKey, uint32, FFbxStaticVertexDedupKeyHasher> VertexToIndex;
+    VertexToIndex.reserve(Mesh->Indices.size());
+
+    for (uint32 OldIndex : Mesh->Indices)
+    {
+        if (OldIndex >= Mesh->Vertices.size())
+        {
+            UE_LOG_WARNING("[FbxImporter] Skip invalid static mesh index during dedup: %u", OldIndex);
+            continue;
+        }
+
+        const FNormalVertex& Vertex = Mesh->Vertices[OldIndex];
+        const FFbxStaticVertexDedupKey Key = MakeStaticVertexDedupKey(Vertex);
+
+        auto Found = VertexToIndex.find(Key);
+        if (Found != VertexToIndex.end())
+        {
+            RemappedIndices.push_back(Found->second);
+            continue;
+        }
+
+        const uint32 NewIndex = static_cast<uint32>(DedupedVertices.size());
+        DedupedVertices.push_back(Vertex);
+        VertexToIndex.emplace(Key, NewIndex);
+        RemappedIndices.push_back(NewIndex);
+    }
+
+    Mesh->Vertices = std::move(DedupedVertices);
+    Mesh->Indices = std::move(RemappedIndices);
+
+    if (Mesh->Vertices.size() < OriginalVertexCount)
+    {
+        UE_LOG("[FbxImporter] Static vertex dedup: %zu -> %zu",
+               static_cast<size_t>(OriginalVertexCount),
+               Mesh->Vertices.size());
+    }
+}
+
+static void DeduplicateSkeletalMeshVertices(FSkeletalMesh* Mesh)
+{
+    if (!Mesh || Mesh->Vertices.empty() || Mesh->Indices.empty())
+    {
+        return;
+    }
+
+    const uint64 OriginalVertexCount = Mesh->Vertices.size();
+
+    TArray<FSkeletalMeshVertex> DedupedVertices;
+    DedupedVertices.reserve(Mesh->Vertices.size());
+
+    TArray<uint32> RemappedIndices;
+    RemappedIndices.reserve(Mesh->Indices.size());
+
+    TMap<FFbxSkeletalVertexDedupKey, uint32, FFbxSkeletalVertexDedupKeyHasher> VertexToIndex;
+    VertexToIndex.reserve(Mesh->Indices.size());
+
+    for (uint32 OldIndex : Mesh->Indices)
+    {
+        if (OldIndex >= Mesh->Vertices.size())
+        {
+            UE_LOG_WARNING("[FbxImporter] Skip invalid skeletal mesh index during dedup: %u", OldIndex);
+            continue;
+        }
+
+        const FSkeletalMeshVertex& Vertex = Mesh->Vertices[OldIndex];
+        const FFbxSkeletalVertexDedupKey Key = MakeSkeletalVertexDedupKey(Vertex);
+
+        auto Found = VertexToIndex.find(Key);
+        if (Found != VertexToIndex.end())
+        {
+            RemappedIndices.push_back(Found->second);
+            continue;
+        }
+
+        const uint32 NewIndex = static_cast<uint32>(DedupedVertices.size());
+        DedupedVertices.push_back(Vertex);
+        VertexToIndex.emplace(Key, NewIndex);
+        RemappedIndices.push_back(NewIndex);
+    }
+
+    Mesh->Vertices = std::move(DedupedVertices);
+    Mesh->Indices = std::move(RemappedIndices);
+
+    if (Mesh->Vertices.size() < OriginalVertexCount)
+    {
+        UE_LOG("[FbxImporter] Skeletal vertex dedup: %zu -> %zu",
+               static_cast<size_t>(OriginalVertexCount),
+               Mesh->Vertices.size());
+    }
+}
 
 /**
  * @brief 영향력 상위 4개의 bone을 FSkeletalMeshVertex에 할당
@@ -406,6 +636,8 @@ FStaticMesh* FFbxImporter::Load(const FString& Path, const FStaticMeshLoadOption
 		return nullptr;
 	}
 
+    DeduplicateStaticMeshVertices(StaticMesh);
+
 	if (LoadOptions.bNormalizeToUnitCube)
 	{
 		UE_LOG("[FbxImporter] NormalizeToUnitCube enabled: %s", Path.c_str());
@@ -514,6 +746,8 @@ FSkeletalMesh* FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStatic
         delete SkeletalMesh;
         return nullptr;
     }
+
+    DeduplicateSkeletalMeshVertices(SkeletalMesh);
 
     SkeletalMesh->LocalBounds = BuildLocalBounds(SkeletalMesh);
     ComputeTangents(SkeletalMesh);
