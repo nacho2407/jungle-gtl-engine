@@ -3,32 +3,50 @@
 #include "Object/Object.h"
 #include "SkeletalMeshAsset.h"
 
+class USkeleton;
+
 class USkeletalMesh : public UObject
 {
 public:
-	DECLARE_CLASS(USkeletalMesh, UObject)
+    DECLARE_CLASS(USkeletalMesh, UObject)
 
-	USkeletalMesh() = default;
-	~USkeletalMesh() override = default;
+    USkeletalMesh()           = default;
+    ~USkeletalMesh() override = default;
 
-	void Serialize(FArchive& Ar);
+    void Serialize(FArchive& Ar) override;
 
-	const FString& GetAssetPathFileName() const { return AssetPathFileName; }
-	void SetAssetPathFileName(const FString& InPathFileName) { AssetPathFileName = InPathFileName; }
+    const FString& GetAssetPathFileName() const
+    {
+        return AssetPathFileName;
+    }
 
-	void SetSkeletalMeshAsset(FSkeletalMesh* InMesh);
-	FSkeletalMesh* GetSkeletalMeshAsset() const;
-	void SetSkeletalMaterials(TArray<FSkeletalMaterial>&& InMaterials);
-	const TArray<FSkeletalMaterial>& GetSkeletalMaterials() const;
+    void SetAssetPathFileName(const FString& InPathFileName)
+    {
+        AssetPathFileName = InPathFileName;
+    }
 
-	void InitResources(ID3D11Device* InDevice);
+    void                             SetSkeletalMeshAsset(FSkeletalMesh* InMesh);
+    FSkeletalMesh*                   GetSkeletalMeshAsset() const;
+    void                             SetSkeletalMaterials(TArray<FSkeletalMaterial>&& InMaterials);
+    const TArray<FSkeletalMaterial>& GetSkeletalMaterials() const;
+
+    void InitResources(ID3D11Device* InDevice);
+
+    void       SetSkeleton(USkeleton* InSkeleton);
+    USkeleton* GetSkeleton() const;
+
+    void           SetSkeletonPath(const FString& InSkeletonPath);
+    const FString& GetSkeletonPath() const;
 
 private:
-	void CacheSectionMaterialIndices();
+    void CacheSectionMaterialIndices();
 
 private:
-	FString AssetPathFileName = "None";
+    FString AssetPathFileName = "None";
 
-	FSkeletalMesh* SkeletalMeshAsset = nullptr;
-	TArray<FSkeletalMaterial> SkeletalMaterials;
+    FSkeletalMesh*            SkeletalMeshAsset = nullptr;
+    TArray<FSkeletalMaterial> SkeletalMaterials;
+
+    FString    SkeletonPath = "None";
+    USkeleton* Skeleton     = nullptr;
 };

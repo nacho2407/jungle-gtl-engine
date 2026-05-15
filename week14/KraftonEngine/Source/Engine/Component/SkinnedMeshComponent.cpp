@@ -429,6 +429,25 @@ void USkinnedMeshComponent::SetBoneLocalTransformByIndex(int32 BoneIndex, const 
 	MarkWorldBoundsDirty();
 }
 
+void USkinnedMeshComponent::SetBoneLocalTransforms(const TArray<FTransform>& LocalPose)
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset) return;
+
+	EnsureBoneEditPose();
+
+	const int32 BoneCount = std::min(static_cast<int32>(Asset->Bones.size()), static_cast<int32>(LocalPose.size()));
+
+	for (int32 i = 0; i < BoneCount; ++i)
+	{
+		BoneEditLocalMatrices[i] = LocalPose[i].ToMatrix();
+	}
+
+	bUseBoneEditPose = true;
+	UpdateCPUSkinning();
+	MarkWorldBoundsDirty();
+}
+
 void USkinnedMeshComponent::GetCurrentBoneGlobalTransforms(TArray<FTransform>& OutGlobals) const
 {
 	BuildBoneEditGlobalTransforms(OutGlobals);
