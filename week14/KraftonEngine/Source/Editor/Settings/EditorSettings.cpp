@@ -51,6 +51,7 @@ namespace Key
 	constexpr const char* LightCullingMode = "LightCullingMode";
 	constexpr const char* HeatMapMax = "HeatMapMax";
 	constexpr const char* Enable25DCulling = "Enable25DCulling";
+	constexpr const char* SkinningMode = "SkinningMode";
 
 	// Paths
 	constexpr const char* EditorStartLevel = "EditorStartLevel";
@@ -156,6 +157,7 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::LightCullingMode] = static_cast<int32>(Opts.LightCullingMode);
 	Obj[Key::HeatMapMax] = Opts.HeatMapMax;
 	Obj[Key::Enable25DCulling] = Opts.Enable25DCulling;
+	Obj[Key::SkinningMode] = static_cast<int32>(Opts.SkinningMode);
 	return Obj;
 }
 
@@ -225,6 +227,11 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.HeatMapMax = static_cast<float>(Obj[Key::HeatMapMax].ToFloat());
 	if (Obj.hasKey(Key::Enable25DCulling))
 		Opts.Enable25DCulling = Obj[Key::Enable25DCulling].ToBool();
+	if (Obj.hasKey(Key::SkinningMode))
+	{
+		Opts.SkinningMode = static_cast<ESkinningMode>(Obj[Key::SkinningMode].ToInt());
+		SkinningModeRuntime::Set(Opts.SkinningMode);
+	}
 }
 
 json::JSON SaveGizmoSettings(const FGizmoToolSettings& Gizmo)

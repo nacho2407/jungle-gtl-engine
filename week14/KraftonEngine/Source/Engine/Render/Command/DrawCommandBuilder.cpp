@@ -9,6 +9,7 @@
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Render/Proxy/ShapeSceneProxy.h"
 #include "Render/Proxy/BoneDebugSceneProxy.h"
+#include "Render/Proxy/SkeletalMeshSceneProxy.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/RenderConstants.h"
 #include "Render/RenderPass/PassRenderStateTable.h"
@@ -80,6 +81,8 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 {
 	DrawCommandList.Reset();
 	CollectViewMode = Frame.RenderOptions.ViewMode;
+	CollectSkinningMode = Frame.RenderOptions.SkinningMode;
+
 	bHasSelectionMaskCommands = false;
 
 	// 동적 지오메트리 초기화
@@ -142,8 +145,21 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 	// if (!Proxy.GetMeshBuffer() || !Proxy.GetMeshBuffer()->IsValid()) return;
 	ID3D11DeviceContext* Ctx = CachedContext;
 
+	const bool bSkeletal = Proxy.HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh);
+	const bool bGPUSkinning = bSkeletal && CollectSkinningMode == ESkinningMode::GPU;
+	const FSkeletalMeshSceneProxy* SkeletalProxy = bSkeletal
+		? static_cast<const FSkeletalMeshSceneProxy*>(&Proxy)
+		: nullptr;
+
 	FDrawCommandBuffer ProxyBuffer;
-	if (!Proxy.PrepareDrawBuffer(CachedDevice, Ctx, ProxyBuffer)) return;
+	if (bGPUSkinning)
+	{
+		if (!SkeletalProxy || !SkeletalProxy->PrepareGpuSkinningDrawBuffer(CachedDevice, Ctx, ProxyBuffer)) return;
+	}
+	else if (!Proxy.PrepareDrawBuffer(CachedDevice, Ctx, ProxyBuffer))
+	{
+		return;
+	}
 	if (!ProxyBuffer.HasBuffers()) return;
 
 	// PassState → RenderState 변환 (Wireframe 오버라이드 포함)
@@ -173,8 +189,7 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 		FShader* SectionShader = (Section.Material && Section.Material->GetShader())
 			? Section.Material->GetShader()
 			: Proxy.GetShader();
-		const bool bUseSkeletalVertexFactory = Proxy.HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh);
-		FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, bUseSkeletalVertexFactory);
+		FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, bGPUSkinning);
 
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Pass = Pass;
@@ -184,7 +199,10 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 		Cmd.PerObjectCB = PerObjCB;
 		Cmd.Buffer.FirstIndex = Section.FirstIndex;
 		Cmd.Buffer.IndexCount = Section.IndexCount;
-
+		Cmd.Bindings.SkinMatrixSRV = bGPUSkinning && SkeletalProxy
+			? SkeletalProxy->GetSkinMatrixSRV(CachedDevice, Ctx)
+			: nullptr;
+	
 		if (!bDepthOnly && Section.Material)
 		{
 			UMaterial* Mat = Section.Material;

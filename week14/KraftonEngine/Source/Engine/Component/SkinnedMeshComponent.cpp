@@ -5,6 +5,7 @@
 #include "Mesh/MeshManager.h"
 #include "Collision/RayUtils.h"
 #include "Core/Log.h"
+#include "Render/Types/ViewTypes.h"
 
 IMPLEMENT_CLASS(USkinnedMeshComponent, UMeshComponent)
 HIDE_FROM_COMPONENT_LIST(USkinnedMeshComponent)
@@ -303,7 +304,7 @@ void USkinnedMeshComponent::SetBoneLocationByIndex(int32 BoneIndex, const FVecto
 	}
 
 	bUseBoneEditPose = true;
-	UpdateCPUSkinning();
+	RefreshSkinningAfterPoseChanged();
 	MarkWorldBoundsDirty();
 }
 
@@ -340,7 +341,7 @@ void USkinnedMeshComponent::SetBoneRotationByIndex(int32 BoneIndex, const FRotat
 	}
 
 	bUseBoneEditPose = true;
-	UpdateCPUSkinning();
+	RefreshSkinningAfterPoseChanged();
 	MarkWorldBoundsDirty();
 }
 
@@ -377,7 +378,7 @@ void USkinnedMeshComponent::SetBoneRotationByIndex(int32 BoneIndex, const FQuat&
 	}
 
 	bUseBoneEditPose = true;
-	UpdateCPUSkinning();
+	RefreshSkinningAfterPoseChanged();
 	MarkWorldBoundsDirty();
 }
 
@@ -411,7 +412,7 @@ void USkinnedMeshComponent::SetBoneScaleByIndex(int32 BoneIndex, const FVector& 
 	}
 
 	bUseBoneEditPose = true;
-	UpdateCPUSkinning();
+	RefreshSkinningAfterPoseChanged();
 	MarkWorldBoundsDirty();
 }
 
@@ -425,7 +426,7 @@ void USkinnedMeshComponent::SetBoneLocalTransformByIndex(int32 BoneIndex, const 
 	BoneEditLocalMatrices[BoneIndex] = NewLocalTransform.ToMatrix();
 
 	bUseBoneEditPose = true;
-	UpdateCPUSkinning();
+	RefreshSkinningAfterPoseChanged();
 	MarkWorldBoundsDirty();
 }
 
@@ -616,6 +617,18 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 	}
 
 	// SceneProxy는 revision 차이만 보고 dynamic vertex buffer upload 여부를 결정한다.
+	++SkinnedRevision;
+}
+
+void USkinnedMeshComponent::RefreshSkinningAfterPoseChanged()
+{
+	if (SkinningModeRuntime::Get() == ESkinningMode::CPU)
+	{
+		UpdateCPUSkinning();
+		return;
+	}
+
+	// GPU skinning은 같은 revision을 matrix SRV 갱신 신호로 사용한다.
 	++SkinnedRevision;
 }
 
@@ -823,8 +836,11 @@ bool USkinnedMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutH
 void USkinnedMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
 	UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	// animation system이 없는 현재 구조에서는 edit pose 변경분을 CPU skinned vertices로 계속 반영한다.
-	UpdateCPUSkinning();
+	if (SkinningModeRuntime::Get() == ESkinningMode::CPU)
+	{
+		// animation system이 없는 현재 구조에서는 edit pose 변경분을 CPU skinned vertices로 계속 반영한다.
+		UpdateCPUSkinning();
+	}
 }
 
 void USkinnedMeshComponent::GetCurrentBoneGlobalMatrices(TArray<FMatrix>& OutGlobals) const
