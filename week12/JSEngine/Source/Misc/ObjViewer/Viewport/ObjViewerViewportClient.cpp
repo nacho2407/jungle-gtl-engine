@@ -15,16 +15,6 @@
 
 namespace
 {
-	int32 LogShowCursorCall(const char* Caller, BOOL bShow)
-	{
-		const int32 Result = ShowCursor(bShow);
-		UE_LOG("[CursorDebug] ShowCursor Caller=%s Arg=%s Result=%d",
-			Caller,
-			bShow ? "TRUE" : "FALSE",
-			Result);
-		return Result;
-	}
-
 	void MoveCameraLocal(FViewportCamera& Camera, const FVector& LocalDelta)
 	{
 		const FVector WorldDelta =
@@ -331,7 +321,7 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 
 		if (bIsCursorVisible)
 		{
-			while (LogShowCursorCall("FObjViewerViewportClient::TickInteraction.LeftDownHide", FALSE) >= 0);
+			while (ShowCursor(FALSE) >= 0);
 			bIsCursorVisible = false;
 		}
 
@@ -345,7 +335,7 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 
 		if (!bIsCursorVisible)
 		{
-			while (LogShowCursorCall("FObjViewerViewportClient::TickInteraction.LeftUpRestore", TRUE) < 0);
+			while (ShowCursor(TRUE) < 0);
 			bIsCursorVisible = true;
 		}
 	}
