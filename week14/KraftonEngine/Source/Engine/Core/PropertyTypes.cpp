@@ -49,6 +49,8 @@ json::JSON FPropertyDescriptor::Serialize() const
 		return JSON(*static_cast<FString*>(ValuePtr));
 	case EPropertyType::SkeletalMeshRef:
 		return JSON(*static_cast<FString*>(ValuePtr));
+	case EPropertyType::ObjectRef:
+		return JSON(*static_cast<FString*>(ValuePtr));
 	case EPropertyType::MaterialSlot:
 	{
 		const FMaterialSlot* Slot = static_cast<const FMaterialSlot*>(ValuePtr);
@@ -154,6 +156,9 @@ void FPropertyDescriptor::Deserialize(json::JSON& Value)
 		*static_cast<FString*>(ValuePtr) = Value.ToString();
 		break;
 	case EPropertyType::SkeletalMeshRef:
+		*static_cast<FString*>(ValuePtr) = Value.ToString();
+		break;
+	case EPropertyType::ObjectRef:
 		*static_cast<FString*>(ValuePtr) = Value.ToString();
 		break;
 

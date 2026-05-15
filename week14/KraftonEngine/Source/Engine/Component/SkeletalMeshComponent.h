@@ -49,6 +49,11 @@ public:
 	void InitializeAnimation();
 	void ClearAnimInstance();
 
+	// Editor / 직렬화 통합.
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostEditProperty(const char* PropertyName) override;
+	void Serialize(FArchive& Ar) override;
+
 protected:
 	// 매 프레임 AnimInstance 평가 → 결과 포즈를 BoneEditLocalMatrices 로 푸시.
 	// Super::TickComponent 가 마지막에 UpdateCPUSkinning 을 1회 호출하므로

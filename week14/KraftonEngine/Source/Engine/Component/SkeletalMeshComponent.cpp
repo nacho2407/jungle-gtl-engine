@@ -7,6 +7,10 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/PoseContext.h"
+#include "Animation/AnimSequenceBase.h"
+#include "Serialization/Archive.h"
+
+#include <cstring>
 
 IMPLEMENT_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 
@@ -156,6 +160,105 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	EvaluateAnimInstance(DeltaTime);
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+}
+
+// ──────────────────────────────────────────────
+// Editor / 직렬화 통합
+// ──────────────────────────────────────────────
+void USkeletalMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	Super::GetEditableProperties(OutProps);
+
+	FPropertyDescriptor ModeProp;
+	ModeProp.Name       = "Animation Mode";
+	ModeProp.Type       = EPropertyType::Enum;
+	ModeProp.Category   = "Animation";
+	ModeProp.ValuePtr   = &AnimationMode;
+	ModeProp.EnumNames  = GAnimationModeNames;
+	ModeProp.EnumCount  = GAnimationModeCount;
+	ModeProp.EnumSize   = sizeof(EAnimationMode);
+	OutProps.push_back(ModeProp);
+
+	FPropertyDescriptor AnimProp;
+	AnimProp.Name          = "Anim To Play";
+	AnimProp.Type          = EPropertyType::ObjectRef;
+	AnimProp.Category      = "Animation";
+	AnimProp.ValuePtr      = &AnimationData.AnimToPlayPath;
+	AnimProp.AssetTypeName = "UAnimSequence";
+	OutProps.push_back(AnimProp);
+
+	FPropertyDescriptor PlayRateProp;
+	PlayRateProp.Name     = "Play Rate";
+	PlayRateProp.Type     = EPropertyType::Float;
+	PlayRateProp.Category = "Animation";
+	PlayRateProp.ValuePtr = &AnimationData.PlayRate;
+	PlayRateProp.Min      = -4.0f;
+	PlayRateProp.Max      = 4.0f;
+	PlayRateProp.Speed    = 0.05f;
+	OutProps.push_back(PlayRateProp);
+
+	FPropertyDescriptor LoopProp;
+	LoopProp.Name     = "Looping";
+	LoopProp.Type     = EPropertyType::Bool;
+	LoopProp.Category = "Animation";
+	LoopProp.ValuePtr = &AnimationData.bLooping;
+	OutProps.push_back(LoopProp);
+
+	FPropertyDescriptor PlayingProp;
+	PlayingProp.Name     = "Playing";
+	PlayingProp.Type     = EPropertyType::Bool;
+	PlayingProp.Category = "Animation";
+	PlayingProp.ValuePtr = &AnimationData.bPlaying;
+	OutProps.push_back(PlayingProp);
+}
+
+void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
+{
+	Super::PostEditProperty(PropertyName);
+	if (!PropertyName) return;
+
+	if (std::strcmp(PropertyName, "Animation Mode") == 0)
+	{
+		InitializeAnimation();
+	}
+	else if (std::strcmp(PropertyName, "Anim To Play") == 0)
+	{
+		// TODO: AnimToPlayPath → UAnimSequence* 로딩은 A 의 asset 임포트 통합 후 구현.
+		// 그 전까지는 path 만 기록하고 AnimToPlay 는 nullptr 유지 → ref pose 가 보임.
+		AnimationData.AnimToPlay = nullptr;
+		if (UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+		{
+			SingleNode->SetAnimationAsset(nullptr);
+		}
+	}
+	else if (std::strcmp(PropertyName, "Play Rate") == 0)
+	{
+		SetPlayRate(AnimationData.PlayRate);
+	}
+	else if (std::strcmp(PropertyName, "Looping") == 0)
+	{
+		SetLooping(AnimationData.bLooping);
+	}
+	else if (std::strcmp(PropertyName, "Playing") == 0)
+	{
+		SetPlaying(AnimationData.bPlaying);
+	}
+}
+
+void USkeletalMeshComponent::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+
+	uint8 ModeRaw = static_cast<uint8>(AnimationMode);
+	Ar << ModeRaw;
+	AnimationMode = static_cast<EAnimationMode>(ModeRaw);
+
+	// AnimToPlay 의 path 만 라운드트립. 포인터 복원은 A 의 asset 로더 통합 후 PostEditProperty 경로 재사용.
+	// (코드 경로로 SetAnimation 한 경우 path 가 "None" 으로 남을 수 있고, 그건 의도된 동작.)
+	Ar << AnimationData.AnimToPlayPath;
+	Ar << AnimationData.PlayRate;
+	Ar << AnimationData.bLooping;
+	Ar << AnimationData.bPlaying;
 }
 
 void USkeletalMeshComponent::EvaluateAnimInstance(float DeltaTime)

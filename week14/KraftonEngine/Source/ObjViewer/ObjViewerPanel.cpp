@@ -77,7 +77,7 @@ void FObjViewerPanel::RenderMeshList()
 	// OBJ/FBX source files 섹션
 	if (ImGui::CollapsingHeader("OBJ/FBX Files", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		const TArray<FMeshAssetListItem>& ObjFiles = FMeshManager::GetAvailableObjFiles();
+		const TArray<FAssetListItem>& ObjFiles = FMeshManager::GetAvailableObjFiles();
 
 		for (int32 i = 0; i < static_cast<int32>(ObjFiles.size()); ++i)
 		{
@@ -105,7 +105,7 @@ void FObjViewerPanel::RenderMeshList()
 	// Cached Static Meshes(.statbin) 섹션
 	if (ImGui::CollapsingHeader("Cached Static Meshes (.statbin)", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
+		const TArray<FAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
 
 		for (int32 i = 0; i < static_cast<int32>(MeshFiles.size()); ++i)
 		{
@@ -172,7 +172,7 @@ void FObjViewerPanel::RenderImportPopup()
 		// Import / Cancel 버튼
 		if (ImGui::Button("Import", ImVec2(120, 0)))
 		{
-			const TArray<FMeshAssetListItem>& ObjFiles = FMeshManager::GetAvailableObjFiles();
+			const TArray<FAssetListItem>& ObjFiles = FMeshManager::GetAvailableObjFiles();
 			if (Engine && SelectedObjIndex >= 0 && SelectedObjIndex < static_cast<int32>(ObjFiles.size()))
 			{
 				Engine->ImportObjWithOptions(ObjFiles[SelectedObjIndex].FullPath, PendingImportOptions);

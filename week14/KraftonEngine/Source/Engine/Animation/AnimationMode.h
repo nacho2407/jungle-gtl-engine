@@ -14,11 +14,22 @@ enum class EAnimationMode : uint8
 	AnimationCustom,       // AnimInstanceClass 로 지정한 UAnimInstance 자식 인스턴스화 (FSM 등).
 };
 
+// EditorPropertyWidget Enum 콤보용 표시 이름. EAnimationMode 와 1:1 순서.
+inline const char* GAnimationModeNames[] = {
+	"None",
+	"AnimationSingleNode",
+	"AnimationCustom",
+};
+inline constexpr uint32 GAnimationModeCount = sizeof(GAnimationModeNames) / sizeof(GAnimationModeNames[0]);
+
 // SingleNode 모드에서 직렬화/에디터 노출용으로 묶어 두는 재생 파라미터.
+// AnimToPlay 는 런타임 포인터, AnimToPlayPath 는 직렬화/에디터용 식별자 (= asset 경로).
+// SetAnimation 등 설정 경로는 두 멤버를 항상 동기화한다.
 struct FSingleAnimationPlayData
 {
-	UAnimSequenceBase* AnimToPlay = nullptr;
-	float PlayRate                = 1.0f;
-	bool  bLooping                = true;
-	bool  bPlaying                = true;
+	UAnimSequenceBase* AnimToPlay     = nullptr;
+	FString            AnimToPlayPath = "None";
+	float              PlayRate       = 1.0f;
+	bool               bLooping       = true;
+	bool               bPlaying       = true;
 };
