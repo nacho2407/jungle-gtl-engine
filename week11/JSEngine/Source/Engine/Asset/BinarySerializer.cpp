@@ -934,7 +934,7 @@ void FBinarySerializer::WriteBones(std::ofstream& Out, const FReferenceSkeleton&
 
 	for (const FBoneInfo& Bone : ReferenceSkeleton.RefBones)
 	{
-		WriteString(Out, Bone.Name);
+		WriteString(Out, Bone.Name.ToString());
 		WriteInt32LE(Out, Bone.ParentIndex);
 		WriteMatrix4x4(Out, Bone.LocalBindTransform);
 		WriteMatrix4x4(Out, Bone.GlobalBindTransform);
@@ -960,10 +960,12 @@ bool FBinarySerializer::ReadBones(std::ifstream& In, FReferenceSkeleton& OutRefe
 
 	for (FBoneInfo& Bone : OutReferenceSkeleton.RefBones)
 	{
-		if (!ReadString(In, Bone.Name))
+		FString BoneName;
+		if (!ReadString(In, BoneName))
 		{
 			return false;
 		}
+		Bone.Name = FName(BoneName);
 
 		if (!ReadInt32LE(In, Bone.ParentIndex))
 		{

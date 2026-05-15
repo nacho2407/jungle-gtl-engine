@@ -4,6 +4,7 @@
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
+#include "Asset/Skeleton.h"
 #include "Asset/SkeletalMeshTypes.h"
 
 #include <algorithm>
@@ -106,7 +107,7 @@ USkeletalMesh* FSkeletalMeshLoadService::FinalizeLoadedMesh(FSkeletalMesh* MeshD
 	USkeletalMesh* LoadedMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
 	ReferenceSkeleton.RebuildNameToIndex();
 	USkeleton* Skeleton = UObjectManager::Get().CreateObject<USkeleton>();
-	Skeleton->GetReferenceSkeleton() = ReferenceSkeleton;
+	Skeleton->SetReferenceSkeleton(ReferenceSkeleton);
 	LoadedMesh->SetSkeleton(Skeleton);
 	LoadedMesh->SetMeshData(MeshData);
 

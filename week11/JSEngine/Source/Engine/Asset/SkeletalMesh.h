@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Object/Object.h"
+#include "Skeleton.h"
 #include "SkeletalMeshTypes.h"
 
 class USkeletalMesh : public UObject

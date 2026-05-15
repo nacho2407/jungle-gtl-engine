@@ -1014,7 +1014,7 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
             BoneNodeToIndex[BoneNode] = NewBoneIndex;
 
             FBoneInfo Bone = {};
-            Bone.Name = FString(BoneNode->GetName());
+            Bone.Name = FName(BoneNode->GetName());
             Bone.ParentIndex = -1;
 
             Bone.GlobalBindTransform = ToFMatrix(LinkBindGlobal);

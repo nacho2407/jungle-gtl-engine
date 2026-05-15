@@ -2349,7 +2349,7 @@ void FEditorPropertyWidget::RenderSkeletalBonePoseDebug(USkeletalMeshComponent* 
 			return "None";
 		}
 
-		return std::to_string(BoneIndex) + ": " + Bones[BoneIndex].Name;
+		return std::to_string(BoneIndex) + ": " + Bones[BoneIndex].Name.ToString();
 	};
 
 	const FString CurrentLabel = MakeBoneLabel(SelectedBoneIndex);

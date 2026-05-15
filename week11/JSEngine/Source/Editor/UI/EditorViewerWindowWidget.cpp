@@ -310,7 +310,7 @@ uint64 FEditorViewerWindowWidget::ComputeEditableMeshSignature(const FSkeletalMe
 	Hash = HashValue(Hash, static_cast<uint64>(Bones.size()));
 	for (const FBoneInfo& Bone : Bones)
 	{
-		Hash = HashString(Hash, Bone.Name);
+		Hash = HashString(Hash, Bone.Name.ToString());
 		Hash = HashValue(Hash, Bone.ParentIndex);
 		Hash = HashMatrix(Hash, Bone.LocalBindTransform);
 		Hash = HashMatrix(Hash, Bone.GlobalBindTransform);
@@ -882,7 +882,7 @@ void FEditorViewerWindowWidget::RenderBoneDetails(USkeletalMeshComponent* SkelCo
     }
 
     const FBoneInfo& Bone = Bones[SelectedBoneIndex];
-    ImGui::Text("Bone: %s (Index: %d)", Bone.Name.c_str(), SelectedBoneIndex);
+    ImGui::Text("Bone: %s (Index: %d)", Bone.Name.ToString().c_str(), SelectedBoneIndex);
     ImGui::Spacing();
 
     FMatrix LocalTransform = SkelComp->GetBoneLocalTransform(SelectedBoneIndex);
@@ -958,7 +958,7 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
         (void*)(intptr_t)BoneIndex,
         Flags,
         "%s",
-        Bone.Name.c_str());
+        Bone.Name.ToString().c_str());
 
     // 클릭 → bone 선택. socket 선택은 해제 (상호 배타).
     if (ImGui::IsItemClicked())
@@ -1295,16 +1295,17 @@ void FEditorViewerWindowWidget::DrawSocketInspector()
 
     // Bone 콤보
     const TArray<FBoneInfo>& Bones = ResolveCurrentBones();
-    const char* CurrentBoneName = (Socket.BoneIndex >= 0 && Socket.BoneIndex < (int32)Bones.size())
-        ? Bones[Socket.BoneIndex].Name.c_str()
-        : "<invalid>";
+    const FString CurrentBoneName = (Socket.BoneIndex >= 0 && Socket.BoneIndex < (int32)Bones.size())
+        ? Bones[Socket.BoneIndex].Name.ToString()
+        : FString("<invalid>");
 
-    if (ImGui::BeginCombo("Bone", CurrentBoneName))
+    if (ImGui::BeginCombo("Bone", CurrentBoneName.c_str()))
     {
         for (int32 i = 0; i < static_cast<int32>(Bones.size()); ++i)
         {
             const bool bSelected = (Socket.BoneIndex == i);
-            if (ImGui::Selectable(Bones[i].Name.c_str(), bSelected))
+            const FString BoneName = Bones[i].Name.ToString();
+            if (ImGui::Selectable(BoneName.c_str(), bSelected))
             {
                 if (Socket.BoneIndex != i)
                 {
