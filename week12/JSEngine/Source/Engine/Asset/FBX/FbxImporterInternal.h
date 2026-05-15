@@ -47,6 +47,7 @@ int32 FindNearestImportedBoneIndex(
 bool ShouldSkipRigidMeshByName(fbxsdk::FbxNode* OwnerNode);
 bool HasValidSkinInfluence(fbxsdk::FbxMesh* Mesh);
 void InspectMeshContentRecursive(fbxsdk::FbxNode* Node, FFbxMeshContentInfo& OutInfo);
+bool HasAnyAnimation(fbxsdk::FbxScene* Scene);
 
 void ResetVertexInfluences(FSkeletalMeshVertex& Vertex);
 void AssignRigidInfluence(FSkeletalMeshVertex& Vertex, int32 BoneIndex);

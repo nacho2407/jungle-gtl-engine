@@ -219,6 +219,8 @@ FFbxMeshContentInfo FFbxImporter::InspectMeshContent(const FString& Path)
         {
             InspectMeshContentRecursive(RootNode, Result);
         }
+
+        Result.bHasAnimation = HasAnyAnimation(Scene);
     }
 
     Manager->Destroy();

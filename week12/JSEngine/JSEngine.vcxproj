@@ -328,6 +328,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterAnimation.cpp" />
     <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterInternal.cpp" />
     <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterSkeletalMesh.cpp" />
     <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterStaticMesh.cpp" />
