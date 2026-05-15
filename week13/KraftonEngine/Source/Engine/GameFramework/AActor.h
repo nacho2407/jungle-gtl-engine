@@ -14,12 +14,13 @@ class UWorld;
 class ULevel;
 class UPrimitiveComponent;
 
+UCLASS()
 class AActor : public UObject
 {
     friend struct FActorTickFunction;
 public:
 	DECLARE_CLASS(AActor, UObject)
-	DECLARE_REFLECTED_PROPERTIES(AActor)
+	GENERATED_BODY()
 	AActor();
 	~AActor() override;
 
