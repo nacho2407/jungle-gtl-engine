@@ -699,22 +699,29 @@ void UGizmoComponent::UpdateGizmoTransform()
 
 	SetWorldLocation(Proxy->GetTransform().GetOrigin());
 
-	FVector TargetRot = GetTargetRotation();
+	FMatrix M = Proxy->GetTransform();
+    FVector T, S;
+    FMatrix R;
+    M.Decompose(T, R, S);
+    FQuat TargetQuat = FQuat(R);
+    TargetQuat.Normalize();
+
+    SetWorldLocation(M.GetOrigin());
 
 	switch (CurMode)
 	{
 	case EGizmoMode::Scale:
-		SetRelativeRotation(TargetRot);
+        SetRelativeRotationQuat(TargetQuat);
 		GizmoMeshData = &FEditorMeshLibrary::Get().GetScaleGizmo();
 		break;
 
 	case EGizmoMode::Rotate:
-		SetRelativeRotation(bIsWorldSpace ? FVector() : TargetRot);
+		SetRelativeRotationQuat(bIsWorldSpace ? FQuat::Identity : TargetQuat);
 		GizmoMeshData = &FEditorMeshLibrary::Get().GetRotationGizmo();
 		break;
 
 	case EGizmoMode::Translate:
-		SetRelativeRotation(bIsWorldSpace ? FVector() : TargetRot);
+        SetRelativeRotationQuat(bIsWorldSpace ? FQuat::Identity : TargetQuat);
 		GizmoMeshData = &FEditorMeshLibrary::Get().GetTranslationGizmo();
 		break;
 	}

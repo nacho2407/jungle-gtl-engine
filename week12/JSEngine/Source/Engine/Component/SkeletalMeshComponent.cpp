@@ -1,12 +1,12 @@
-﻿#include "SkeletalMeshComponent.h"
+#include "SkeletalMeshComponent.h"
 
 #include "Animation/AnimInstance.h"
+#include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 REGISTER_FACTORY(USkeletalMeshComponent)
-
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
 {
     USkinnedMeshComponent::Serialize(Ar);
@@ -39,7 +39,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
         }
     }
 
-	// Pose가 바뀐 경우에만 실제 CPU skinning이 수행(dirty flag 이용)
+    // Pose가 바뀐 경우에만 실제 CPU skinning이 수행(dirty flag 이용)
     EnsureSkinningUpdated();
 }
 
@@ -74,7 +74,7 @@ void USkeletalMeshComponent::SetBoneLocalTransform(int32 BoneIndex, const FMatri
 
 const FMatrix& USkeletalMeshComponent::GetBoneLocalTransform(int32 BoneIndex) const
 {
-	// fallback은 identity
+    // fallback은 identity
     static const FMatrix Identity = FMatrix::Identity;
 
     if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(CurrentLocalPose.size()))
@@ -107,7 +107,6 @@ void USkeletalMeshComponent::SetBoneGlobalTransform(int32 BoneIndex, const FMatr
         return;
     }
 
-
     const TArray<FBoneInfo>& Bones = SkeletalMesh->GetBones();
     if (BoneIndex >= static_cast<int32>(Bones.size()))
     {
@@ -131,8 +130,11 @@ void USkeletalMeshComponent::SetBoneGlobalTransform(int32 BoneIndex, const FMatr
     SetBoneLocalTransform(BoneIndex, NewLocalTransform);
 }
 
-void USkeletalMeshComponent::PlayAnimation(UAnimSequenceBase* NewAnimToPlay, bool bLooping)
+void USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping)
 {
+    SetAnimationMode(EAnimationMode::AnimationSingleNode);
+    SetAnimation(NewAnimToPlay);
+
     UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance);
     if (!SingleNode)
     {
@@ -142,28 +144,38 @@ void USkeletalMeshComponent::PlayAnimation(UAnimSequenceBase* NewAnimToPlay, boo
         AnimInstance = SingleNode;
     }
 
-    SingleNode->SetAnimation(NewAnimToPlay);
-	SingleNode->Play(bLooping);
+    SingleNode->SetAnimation(Cast<UAnimSequenceBase>(NewAnimToPlay));
+    Play(bLooping);
 }
 
-void USkeletalMeshComponent::SetAnimation(UAnimSequenceBase* NewAnimToPlay)
+void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InAnimationMode)
 {
+    AnimationMode = InAnimationMode;
+}
+
+void USkeletalMeshComponent::SetAnimation(UAnimationAsset* NewAnimation)
+{
+    AnimationToPlay = NewAnimation;
     if (auto* SingleNode = dynamic_cast<UAnimSingleNodeInstance*>(AnimInstance))
     {
-        SingleNode->SetAnimation(NewAnimToPlay);
+        SingleNode->SetAnimation(Cast<UAnimSequenceBase>(NewAnimation));
     }
 }
 
-void USkeletalMeshComponent::Play(bool bLooping)
+void USkeletalMeshComponent::Play(bool bInLooping)
 {
+    bLooping = bInLooping;
+    bPlaying = AnimationToPlay != nullptr;
+
     if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
     {
-		SingleNode->Play(bLooping);
+        SingleNode->Play(bInLooping);
     }
 }
 
 void USkeletalMeshComponent::Stop()
 {
+    bPlaying = false;
     if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
     {
         SingleNode->Stop();
@@ -190,7 +202,7 @@ void USkeletalMeshComponent::SetAnimationPosition(float InTime)
 {
     if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
     {
-		SingleNode->SetPosition(InTime);
+        SingleNode->SetPosition(InTime);
     }
 }
 
