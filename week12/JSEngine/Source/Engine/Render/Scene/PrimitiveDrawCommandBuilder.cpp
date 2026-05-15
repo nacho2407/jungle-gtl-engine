@@ -17,12 +17,12 @@
 
 namespace
 {
-    FBoneMatrixConstants BuildBoneMatrixConstants(const USkeletalMeshComponent* SkeletalMeshComp)
+    void BuildBoneMatrixConstants(const USkeletalMeshComponent* SkeletalMeshComp, FBoneMatrixConstants& OutConstants)
     {
-        FBoneMatrixConstants Constants = {};
+        OutConstants = {};
         if (!SkeletalMeshComp)
         {
-            return Constants;
+            return;
         }
 
         const TArray<FMatrix>& SkinningMatrices = SkeletalMeshComp->GetSkinningMatrices();
@@ -30,13 +30,11 @@ namespace
             SkinningMatrices.size(),
             static_cast<size_t>(MaxGPUSkinBones)));
 
-        Constants.BoneCount = BoneCount;
+        OutConstants.BoneCount = BoneCount;
         for (uint32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
         {
-            Constants.BoneMatrices[BoneIndex] = SkinningMatrices[BoneIndex];
+            OutConstants.BoneMatrices[BoneIndex] = SkinningMatrices[BoneIndex];
         }
-
-        return Constants;
     }
 
     FMatrix MakeViewBillboardMatrix(const UPrimitiveComponent* Primitive, const FRenderBus& RenderBus)
@@ -157,9 +155,15 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
         const bool bUseCPUSkinning = SkeletalMeshComp->GetSkinningMode() == ESkinningMode::CPU;
         const bool bUseGPUSkinning = SkeletalMeshComp->GetSkinningMode() == ESkinningMode::GPU;
-        const FBoneMatrixConstants BoneMatrixConstants = bUseGPUSkinning
-            ? BuildBoneMatrixConstants(SkeletalMeshComp)
-            : FBoneMatrixConstants{};
+        uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
+        if (bUseGPUSkinning)
+        {
+            BoneMatrixConstantsIndex = RenderBus.AllocateBoneMatrixConstants();
+            if (FBoneMatrixConstants* Constants = RenderBus.GetMutableBoneMatrixConstants(BoneMatrixConstantsIndex))
+            {
+                BuildBoneMatrixConstants(SkeletalMeshComp, *Constants);
+            }
+        }
         const TArray<FSkeletalMeshVertex>& RenderVertices =
             bUseCPUSkinning ? SkeletalMeshComp->GetSkinnedVertices() : SkeletalMesh->GetVertices();
         const TArray<uint32>& Indices = SkeletalMesh->GetIndices(); // 이건 immutable이라 걍 asset에서 들고와도 댐
@@ -183,8 +187,8 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.Type = ERenderCommandType::SkeletalMesh;
             Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
             Cmd.MeshBuffer = MeshBuffer;
-            Cmd.bUseBoneMatrixConstants = true;
-            Cmd.BoneMatrixConstants = BoneMatrixConstants;
+            Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
+            Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
             Cmd.SectionIndexStart = 0;
             Cmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
             Cmd.Material = SkeletalMeshComp->GetMaterial(0);
@@ -210,8 +214,8 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.Type = ERenderCommandType::SkeletalMesh;
             Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
             Cmd.MeshBuffer = MeshBuffer;
-            Cmd.bUseBoneMatrixConstants = true;
-            Cmd.BoneMatrixConstants = BoneMatrixConstants;
+            Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
+            Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
 
             Cmd.SectionIndexStart = Section.StartIndex;
             Cmd.SectionIndexCount = Section.IndexCount;

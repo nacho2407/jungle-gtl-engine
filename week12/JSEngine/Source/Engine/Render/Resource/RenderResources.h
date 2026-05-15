@@ -6,16 +6,6 @@
 */
 
 #include "Render/Resource/Buffer.h"
-#include "Math/Matrix.h"
-
-constexpr uint32 MaxGPUSkinBones = 256;
-
-struct FBoneMatrixConstants
-{
-    FMatrix BoneMatrices[MaxGPUSkinBones];
-    uint32 BoneCount = 0;
-    float Padding[3] = { 0.0f, 0.0f, 0.0f };
-};
 
 struct FRenderResources
 {

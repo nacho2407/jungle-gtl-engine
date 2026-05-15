@@ -209,7 +209,7 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            BindVertexFactoryResources(
                Context->DeviceContext,
                Cmd.VertexFactoryType,
-               Cmd.bUseBoneMatrixConstants ? &Cmd.BoneMatrixConstants : nullptr,
+               Context->RenderBus->GetBoneMatrixConstants(Cmd),
                Context->RenderResources);
        }
 

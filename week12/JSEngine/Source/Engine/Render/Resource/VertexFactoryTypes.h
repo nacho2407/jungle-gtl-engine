@@ -6,6 +6,7 @@
 #include "Render/Resource/ShaderTypes.h"
 #include "Render/Resource/VertexTypes.h"
 #include "Render/Resource/RenderResources.h"
+#include "Render/Scene/RenderCommand.h"
 
 #include <cstddef>
 

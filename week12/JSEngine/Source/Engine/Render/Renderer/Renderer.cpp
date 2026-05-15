@@ -1495,7 +1495,7 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 			BindVertexFactoryResources(
 				InDeviceContext,
 				InCommand.VertexFactoryType,
-				InCommand.bUseBoneMatrixConstants ? &InCommand.BoneMatrixConstants : nullptr,
+				nullptr,
 				&Resources);
 		}
 	}
