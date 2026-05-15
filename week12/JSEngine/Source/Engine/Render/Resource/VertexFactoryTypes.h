@@ -9,6 +9,7 @@
 
 #include <cstddef>
 
+struct ID3D11Buffer;
 struct ID3D11DeviceContext;
 
 // Mesh Vertex 데이터를 어떤 방식으로 해석할지 나타내는 타입입니다.
@@ -121,11 +122,11 @@ public:
             FShaderPaths::Shadow,
             FShaderPaths::EditorSelectionMask,
             "SkeletalMeshVS",
-            "DepthPrepassVS",
-            "ShadowVS",
+            "SkeletalDepthPrepassVS",
+            "SkeletalShadowVS",
             "VSSkeletalMesh",
             SkeletalVertexLayout,
-            PositionOnlyLayout,
+            SkeletalVertexLayout,
             SkeletalVertexLayout
         };
         static const FVertexFactoryDesc DecalDesc = {

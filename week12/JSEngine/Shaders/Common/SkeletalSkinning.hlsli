@@ -1,7 +1,7 @@
 #ifndef SKELETAL_SKINNING_H
 #define SKELETAL_SKINNING_H
 
-#define MAX_GPU_SKIN_BONE_COUNT 128
+#define MAX_GPU_SKIN_BONE_COUNT 256
 
 cbuffer BoneMatrixBuffer : register(b5)
 {
