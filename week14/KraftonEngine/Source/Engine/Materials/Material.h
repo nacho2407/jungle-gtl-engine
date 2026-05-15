@@ -192,6 +192,15 @@ public:
 	// CachedSRV 슬롯 직접 설정 — UTexture2D 없이 raw SRV를 바인딩할 때 사용
 	void SetCachedSRV(EMaterialTextureSlot Slot, ID3D11ShaderResourceView* SRV) { CachedSRVs[(int)Slot] = SRV; }
 
+	// Device 해제 전 GPU 버퍼만 명시적으로 해제 (UObject 수명은 UObjectManager가 관리)
+	void ReleaseGPUBuffers()
+	{
+		for (auto& Pair : ConstantBufferMap)
+		{
+			if (Pair.second) Pair.second->Release();
+		}
+	}
+
 	// Template/CB 없는 경량 머티리얼 생성 — SRV만 래핑할 때 사용
 	// InShader를 지정하면 GetShader()가 해당 셰이더를 반환 (DrawCommandBuilder per-section 셰이더 지원)
 	static UMaterial* CreateTransient(ERenderPass InPass, EBlendState InBlend,

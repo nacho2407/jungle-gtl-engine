@@ -96,19 +96,30 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 // ============================================================
 // SelectEffectiveShader — ViewMode에 따른 UberLit 셰이더 변형 선택
 // ============================================================
-FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode)
+FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode, bool bUseSkeletalVertexFactory)
 {
 	if (ProxyShader != FShaderManager::Get().GetOrCreate(EShaderPath::UberLit))
 		return ProxyShader;
 
+	const EUberLitDefines::EVertexFactory VertexFactory = bUseSkeletalVertexFactory
+		? EUberLitDefines::EVertexFactory::SkeletalMesh
+		: EUberLitDefines::EVertexFactory::StaticMesh;
+
 	switch (ViewMode)
 	{
-	case EViewMode::Unlit:        return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Unlit));
-	case EViewMode::Lit_Gouraud:  return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Gouraud));
-	case EViewMode::Lit_Lambert:  return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Lambert));
-	case EViewMode::Lit_Phong:    return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong));
-	case EViewMode::LightCulling: return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong));
-	default:                      return ProxyShader;
+	case EViewMode::Unlit:
+		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Unlit, VertexFactory);
+	case EViewMode::Lit_Gouraud:
+		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Gouraud, VertexFactory);
+	case EViewMode::Lit_Lambert:
+		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Lambert, VertexFactory);
+	case EViewMode::Lit_Phong:
+	case EViewMode::LightCulling:
+		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Phong, VertexFactory);
+	default:
+		return bUseSkeletalVertexFactory
+			? FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Default, VertexFactory)
+			: ProxyShader;
 	}
 }
 
@@ -162,7 +173,8 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 		FShader* SectionShader = (Section.Material && Section.Material->GetShader())
 			? Section.Material->GetShader()
 			: Proxy.GetShader();
-		FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode);
+		const bool bUseSkeletalVertexFactory = Proxy.HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh);
+		FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, bUseSkeletalVertexFactory);
 
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Pass = Pass;
