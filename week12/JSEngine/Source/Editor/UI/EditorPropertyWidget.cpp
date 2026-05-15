@@ -138,42 +138,42 @@ namespace
 	}
 
 	static FString GetMovementComponentDisplayName(UMovementComponent* MoveComp)
-    {
-        if (!MoveComp) return "None";
+	{
+		if (!MoveComp) return "None";
 
-        USceneComponent* UpdatedComp = MoveComp->GetUpdatedComponent();
-        if (UpdatedComp)
-        {
-            FString TargetName = UpdatedComp->GetFName().ToString();
-            if (TargetName.empty())
-            {
-                TargetName = UpdatedComp->GetTypeInfo()->name;
-            }
-            return FString("MC_") + TargetName;
-        }
+		USceneComponent* UpdatedComp = MoveComp->GetUpdatedComponent();
+		if (UpdatedComp)
+		{
+			FString TargetName = UpdatedComp->GetFName().ToString();
+			if (TargetName.empty())
+			{
+				TargetName = UpdatedComp->GetTypeInfo()->name;
+			}
+			return FString("MC_") + TargetName;
+		}
 
-        // 대상이 없는 경우
-        FString DefaultName = MoveComp->GetFName().ToString();
-        if (DefaultName.empty())
-        {
-            DefaultName = MoveComp->GetTypeInfo()->name;
-        }
-        return DefaultName;
-    }
+		// 대상이 없는 경우
+		FString DefaultName = MoveComp->GetFName().ToString();
+		if (DefaultName.empty())
+		{
+			DefaultName = MoveComp->GetTypeInfo()->name;
+		}
+		return DefaultName;
+	}
 
 	static FString MakeDefaultScriptName(const FString& SceneName, AActor* Actor)
-    {
-        FString ActorName = "Actor";
-        FString ValidSceneName = SceneName.empty() ? "Default" : SceneName;
+	{
+		FString ActorName = "Actor";
+		FString ValidSceneName = SceneName.empty() ? "Default" : SceneName;
 
-        if (Actor)
-        {
-            const FTypeInfo* TypeInfo = Actor->GetTypeInfo();
-            ActorName = TypeInfo ? TypeInfo->name : "Actor";
-        }
+		if (Actor)
+		{
+			const FTypeInfo* TypeInfo = Actor->GetTypeInfo();
+			ActorName = TypeInfo ? TypeInfo->name : "Actor";
+		}
 
-        return ValidSceneName + "_" + ActorName;
-    }
+		return ValidSceneName + "_" + ActorName;
+	}
 
 	static bool IsBlankString(const FString& Value)
 	{
@@ -347,14 +347,14 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 			return Comp;
 		}
 	},
-    {
+	{
 		"InterpToMovement Component",
 		[](AActor* Actor) -> UActorComponent* {
-          UInterpToMovementComponent* Comp = Actor->AddComponent<UInterpToMovementComponent>();
-          return Comp;
+		  UInterpToMovementComponent* Comp = Actor->AddComponent<UInterpToMovementComponent>();
+		  return Comp;
 		}
 	},
-    {
+	{
 		"PursuitMovement Component",
 		[](AActor* Actor) -> UActorComponent* {
 			UPursuitMovementComponent* Comp = Actor->AddComponent<UPursuitMovementComponent>();
@@ -426,7 +426,7 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 		"Script Component",
 		[](AActor* Actor) -> UActorComponent*
 		{
-            UScriptComponent* Comp = Actor->AddComponent<UScriptComponent>();
+			UScriptComponent* Comp = Actor->AddComponent<UScriptComponent>();
 			return Comp;
 		} 
 	},
@@ -587,10 +587,10 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 
 void FEditorPropertyWidget::OnActorDestroyed(AActor* Actor)
 {
-    if (!Actor)
-    {
-        return;
-    }
+	if (!Actor)
+	{
+		return;
+	}
 
 	if (LockedDetailsActor == Actor)
 	{
@@ -598,15 +598,15 @@ void FEditorPropertyWidget::OnActorDestroyed(AActor* Actor)
 		bDetailsLocked = false;
 	}
 
-    if (LastSelectedActor == Actor)
-    {
-        ResetSelection();
-        return;
-    }
+	if (LastSelectedActor == Actor)
+	{
+		ResetSelection();
+		return;
+	}
 
-    if (SelectedComponent && SelectedComponent->GetOwner() == Actor)
-    {
-        ResetSelection();
+	if (SelectedComponent && SelectedComponent->GetOwner() == Actor)
+	{
+		ResetSelection();
 	}
 }
 
@@ -655,8 +655,8 @@ void FEditorPropertyWidget::RenderDetailsLockBar(AActor* CurrentSelection, AActo
 
 void FEditorPropertyWidget::UpdateSelectionState(AActor* PrimaryActor)
 {
-    UWorld* World = PrimaryActor->GetFocusedWorld();
-    const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
+	UWorld* World = PrimaryActor->GetFocusedWorld();
+	const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
 
 	if (PrimaryActor != LastSelectedActor)
 	{
@@ -684,7 +684,7 @@ void FEditorPropertyWidget::UpdateSelectionState(AActor* PrimaryActor)
 
 void FEditorPropertyWidget::SelectActorForDetails()
 {
-    const FWorldContext* Ctx = EditorEngine->GetFocusedWorldContext();
+	const FWorldContext* Ctx = EditorEngine->GetFocusedWorldContext();
 	bActorSelected = true;
 	SelectedComponent = nullptr;
 	if (Ctx->SelectionManager)
@@ -695,7 +695,7 @@ void FEditorPropertyWidget::SelectActorForDetails()
 
 void FEditorPropertyWidget::SelectComponentForDetails(UActorComponent* Component)
 {
-    const FWorldContext* Ctx = EditorEngine->GetFocusedWorldContext();
+	const FWorldContext* Ctx = EditorEngine->GetFocusedWorldContext();
 	SelectedComponent = Component;
 	bActorSelected = false;
 	if (Ctx->SelectionManager)
@@ -836,194 +836,194 @@ void FEditorPropertyWidget::RenderDetailsContextMenu(AActor* PrimaryActor, const
 
 void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 {
-    if (!IsLiveActor(Actor))
-    {
-        ImGui::TextDisabled("Selected actor is no longer available.");
-        return;
-    }
+	if (!IsLiveActor(Actor))
+	{
+		ImGui::TextDisabled("Selected actor is no longer available.");
+		return;
+	}
 
-    DrawDetailsSectionLabel("Components");
-    DrawDetailsSeparator();
+	DrawDetailsSectionLabel("Components");
+	DrawDetailsSeparator();
 
-    float TreeHeight = std::max(64.0f, ImGui::GetContentRegionAvail().y * 0.2f);
-    
-    // BeginChild를 호출하여 내부 스크롤이 가능한 Child Window를 생성합니다.
-    ImGui::BeginChild("##ComponentTreeChild", ImVec2(0, TreeHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+	float TreeHeight = std::max(64.0f, ImGui::GetContentRegionAvail().y * 0.2f);
+	
+	// BeginChild를 호출하여 내부 스크롤이 가능한 Child Window를 생성합니다.
+	ImGui::BeginChild("##ComponentTreeChild", ImVec2(0, TreeHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
-    USceneComponent* Root = Actor->GetRootComponent();
-    FString ActorName = Actor->GetFName().ToString();
-    if (ActorName.empty()) ActorName = Actor->GetTypeInfo()->name;
+	USceneComponent* Root = Actor->GetRootComponent();
+	FString ActorName = Actor->GetFName().ToString();
+	if (ActorName.empty()) ActorName = Actor->GetTypeInfo()->name;
 
-    ImGuiTreeNodeFlags ActorFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
-    if (bActorSelected) ActorFlags |= ImGuiTreeNodeFlags_Selected;
+	ImGuiTreeNodeFlags ActorFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
+	if (bActorSelected) ActorFlags |= ImGuiTreeNodeFlags_Selected;
 
-    const bool bActorNodeOpen = ImGui::TreeNodeEx(Actor, ActorFlags, "%s (Instance)", ActorName.c_str());
-    if (ImGui::IsItemClicked())
-    {
-        SelectActorForDetails();
-    }
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
-    {
-        SelectActorForDetails();
-        bOpenDetailsContextMenu = true;
-    }
+	const bool bActorNodeOpen = ImGui::TreeNodeEx(Actor, ActorFlags, "%s (Instance)", ActorName.c_str());
+	if (ImGui::IsItemClicked())
+	{
+		SelectActorForDetails();
+	}
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+	{
+		SelectActorForDetails();
+		bOpenDetailsContextMenu = true;
+	}
 
-    if (bActorNodeOpen)
-    {
-        if (Root)
-        {
-            RenderSceneComponentNode(Actor, Root);
-        }
+	if (bActorNodeOpen)
+	{
+		if (Root)
+		{
+			RenderSceneComponentNode(Actor, Root);
+		}
 
-        // Non-scene ActorComponents 및 MovementComponent들 하단 출력
-        for (UActorComponent* Comp : Actor->GetComponents())
-        {
-            // SceneComponent는 위의 트리 렌더링에서 처리되었으므로 패스
-            if (!IsLiveComponent(Comp) || Comp->IsA<USceneComponent>())
-                continue;
+		// Non-scene ActorComponents 및 MovementComponent들 하단 출력
+		for (UActorComponent* Comp : Actor->GetComponents())
+		{
+			// SceneComponent는 위의 트리 렌더링에서 처리되었으므로 패스
+			if (!IsLiveComponent(Comp) || Comp->IsA<USceneComponent>())
+				continue;
 
-            ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-            if (!bActorSelected && SelectedComponent == Comp)
-                Flags |= ImGuiTreeNodeFlags_Selected;
+			ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+			if (!bActorSelected && SelectedComponent == Comp)
+				Flags |= ImGuiTreeNodeFlags_Selected;
 
-            // MovementComponent 일 때와 일반 컴포넌트 일 때의 출력 형식 분리
-            if (UMovementComponent* MoveComp = Cast<UMovementComponent>(Comp))
-            {
-                FString MoveName = GetMovementComponentDisplayName(MoveComp);
-                ImGui::TreeNodeEx(Comp, Flags, "%s", MoveName.c_str());
+			// MovementComponent 일 때와 일반 컴포넌트 일 때의 출력 형식 분리
+			if (UMovementComponent* MoveComp = Cast<UMovementComponent>(Comp))
+			{
+				FString MoveName = GetMovementComponentDisplayName(MoveComp);
+				ImGui::TreeNodeEx(Comp, Flags, "%s", MoveName.c_str());
 
-                // --- DRAG SOURCE (MovementComponent) ---
-                if (ImGui::BeginDragDropSource())
-                {
-                    ImGui::SetDragDropPayload("DND_MOVE_COMP", &Comp, sizeof(UActorComponent*));
-                    ImGui::Text("Moving %s", MoveName.c_str());
-                    ImGui::EndDragDropSource();
-                }
-            }
-            else
-            {
-                FString Name = Comp->GetFName().ToString();
-                ImGui::TreeNodeEx(Comp, Flags, "%s", Name.c_str());
-            }
+				// --- DRAG SOURCE (MovementComponent) ---
+				if (ImGui::BeginDragDropSource())
+				{
+					ImGui::SetDragDropPayload("DND_MOVE_COMP", &Comp, sizeof(UActorComponent*));
+					ImGui::Text("Moving %s", MoveName.c_str());
+					ImGui::EndDragDropSource();
+				}
+			}
+			else
+			{
+				FString Name = Comp->GetFName().ToString();
+				ImGui::TreeNodeEx(Comp, Flags, "%s", Name.c_str());
+			}
 
-            if (ImGui::IsItemClicked())
-            {
-                SelectComponentForDetails(Comp);
-            }
-            if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
-            {
-                SelectComponentForDetails(Comp);
-                bOpenDetailsContextMenu = true;
-            }
+			if (ImGui::IsItemClicked())
+			{
+				SelectComponentForDetails(Comp);
+			}
+			if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+			{
+				SelectComponentForDetails(Comp);
+				bOpenDetailsContextMenu = true;
+			}
 
-        }
+		}
 
-        ImGui::TreePop();
-    }
+		ImGui::TreePop();
+	}
 
-    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)
-        && !ImGui::IsAnyItemHovered()
-        && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
-    {
-        SelectActorForDetails();
-        bOpenDetailsContextMenu = true;
-    }
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)
+		&& !ImGui::IsAnyItemHovered()
+		&& ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+	{
+		SelectActorForDetails();
+		bOpenDetailsContextMenu = true;
+	}
 
-    ImGui::EndChild();
+	ImGui::EndChild();
 }
 
 void FEditorPropertyWidget::RenderSceneComponentNode(AActor* Actor, USceneComponent* Comp)
 {
-    if (!IsLiveActor(Actor) || !IsLiveComponent(Comp)) return;
+	if (!IsLiveActor(Actor) || !IsLiveComponent(Comp)) return;
 
-    FString Name = Comp->GetFName().ToString();
-    if (Name.empty()) Name = Comp->GetTypeInfo()->name;
+	FString Name = Comp->GetFName().ToString();
+	if (Name.empty()) Name = Comp->GetTypeInfo()->name;
 
-    const auto& Children = Comp->GetChildren();
+	const auto& Children = Comp->GetChildren();
 
-    bool bHasChildren = !Children.empty(); // 자식 무브먼트 체크 제거
+	bool bHasChildren = !Children.empty(); // 자식 무브먼트 체크 제거
 
-    ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
-    if (!bHasChildren) Flags |= ImGuiTreeNodeFlags_Leaf;
-    if (!bActorSelected && SelectedComponent == Comp) Flags |= ImGuiTreeNodeFlags_Selected;
+	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
+	if (!bHasChildren) Flags |= ImGuiTreeNodeFlags_Leaf;
+	if (!bActorSelected && SelectedComponent == Comp) Flags |= ImGuiTreeNodeFlags_Selected;
 
-    bool bIsRoot = (Comp->GetParent() == nullptr);
+	bool bIsRoot = (Comp->GetParent() == nullptr);
 
-    bool bOpen = ImGui::TreeNodeEx(
-        Comp, Flags, "%s%s",
-        Name.c_str(),
-        bIsRoot ? " (Root)" : ""
-    );
+	bool bOpen = ImGui::TreeNodeEx(
+		Comp, Flags, "%s%s",
+		Name.c_str(),
+		bIsRoot ? " (Root)" : ""
+	);
 
-    // --- DRAG SOURCE (SceneComponent) ---
-    if (ImGui::BeginDragDropSource())
-    {
-        ImGui::SetDragDropPayload("DND_SCENE_COMP", &Comp, sizeof(USceneComponent*));
-        ImGui::Text("Dragging %s", Name.c_str());
-        ImGui::EndDragDropSource();
-    }
+	// --- DRAG SOURCE (SceneComponent) ---
+	if (ImGui::BeginDragDropSource())
+	{
+		ImGui::SetDragDropPayload("DND_SCENE_COMP", &Comp, sizeof(USceneComponent*));
+		ImGui::Text("Dragging %s", Name.c_str());
+		ImGui::EndDragDropSource();
+	}
 
-    // --- DROP TARGET ---
-    if (ImGui::BeginDragDropTarget())
-    {
-        // 1. SceneComponent를 SceneComponent에 드롭 (부착)
-        if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("DND_SCENE_COMP"))
-        {
-            USceneComponent* DraggedComp = *(USceneComponent**)Payload->Data;
-            // 자기 자신이나 자신의 조상에게 부착하는 것을 방지
-            bool bIsAncestor = false;
-            for (USceneComponent* P = Comp; P; P = P->GetParent())
-            {
-                if (P == DraggedComp) { bIsAncestor = true; break; }
-            }
+	// --- DROP TARGET ---
+	if (ImGui::BeginDragDropTarget())
+	{
+		// 1. SceneComponent를 SceneComponent에 드롭 (부착)
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("DND_SCENE_COMP"))
+		{
+			USceneComponent* DraggedComp = *(USceneComponent**)Payload->Data;
+			// 자기 자신이나 자신의 조상에게 부착하는 것을 방지
+			bool bIsAncestor = false;
+			for (USceneComponent* P = Comp; P; P = P->GetParent())
+			{
+				if (P == DraggedComp) { bIsAncestor = true; break; }
+			}
 
-            if (DraggedComp && DraggedComp != Comp && !bIsAncestor)
-            {
+			if (DraggedComp && DraggedComp != Comp && !bIsAncestor)
+			{
 				if (EditorEngine)
 				{
 					EditorEngine->GetUndoSystem().CaptureSnapshot("Attach Component");
 				}
-                DraggedComp->AttachToComponent(Comp);
-            }
-        }
-        // 2. MovementComponent를 SceneComponent에 드롭 (UpdatedComponent 설정)
-        if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("DND_MOVE_COMP"))
-        {
-            UMovementComponent* DraggedMoveComp = *(UMovementComponent**)Payload->Data;
-            if (DraggedMoveComp)
-            {
+				DraggedComp->AttachToComponent(Comp);
+			}
+		}
+		// 2. MovementComponent를 SceneComponent에 드롭 (UpdatedComponent 설정)
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("DND_MOVE_COMP"))
+		{
+			UMovementComponent* DraggedMoveComp = *(UMovementComponent**)Payload->Data;
+			if (DraggedMoveComp)
+			{
 				if (EditorEngine)
 				{
 					EditorEngine->GetUndoSystem().CaptureSnapshot("Set Updated Component");
 				}
-                DraggedMoveComp->SetUpdatedComponent(Comp);
-            }
-        }
-        ImGui::EndDragDropTarget();
-    }
+				DraggedMoveComp->SetUpdatedComponent(Comp);
+			}
+		}
+		ImGui::EndDragDropTarget();
+	}
 
-    if (ImGui::IsItemClicked())
-    {
-        SelectComponentForDetails(Comp);
-    }
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
-    {
-        SelectComponentForDetails(Comp);
-        bOpenDetailsContextMenu = true;
-    }
+	if (ImGui::IsItemClicked())
+	{
+		SelectComponentForDetails(Comp);
+	}
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+	{
+		SelectComponentForDetails(Comp);
+		bOpenDetailsContextMenu = true;
+	}
 
-    if (bOpen)
-    {
-        for (USceneComponent* Child : Children)
-        {
-            if (IsLiveComponent(Child))
-            {
-                RenderSceneComponentNode(Actor, Child);
-            }
-        }
+	if (bOpen)
+	{
+		for (USceneComponent* Child : Children)
+		{
+			if (IsLiveComponent(Child))
+			{
+				RenderSceneComponentNode(Actor, Child);
+			}
+		}
 
-        ImGui::TreePop();
-    }
+		ImGui::TreePop();
+	}
 }
 
 bool FEditorPropertyWidget::CanDeleteComponent(AActor* Owner, UActorComponent* Component) const
@@ -1063,7 +1063,7 @@ void FEditorPropertyWidget::DeleteSelectedComponent(AActor* Owner)
 	}
 
 	UWorld* World = Owner->GetFocusedWorld();
-    const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
+	const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
 
 	UActorComponent* ComponentToDelete = SelectedComponent;
 	if (EditorEngine)
@@ -1129,7 +1129,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 				}
 
 				UWorld* World = PrimaryActor->GetFocusedWorld();
-                const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
+				const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
 				Ctx->SelectionManager->GetGizmo()->UpdateGizmoTransform();
 			}
 		};
@@ -1141,15 +1141,23 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 	}
 
 	DrawDetailsSeparator();
-	bool bVisible = PrimaryActor->IsVisible();
-	const bool bVisibleEdited = ImGui::Checkbox("Visible", &bVisible);
-	if (ImGui::IsItemActivated() && EditorEngine)
+	TArray<FPropertyDescriptor> Props;
+	PrimaryActor->GetEditableProperties(Props);
+	for (FPropertyDescriptor& Prop : Props)
 	{
-		EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Actor");
-	}
-	if (bVisibleEdited)
-	{
-		PrimaryActor->SetVisible(bVisible);
+		if (!Prop.Name)
+		{
+			continue;
+		}
+
+		if (strcmp(Prop.Name, "Location") == 0
+			|| strcmp(Prop.Name, "Rotation") == 0
+			|| strcmp(Prop.Name, "Scale") == 0)
+		{
+			continue;
+		}
+
+		RenderPropertyWidget(Prop, PrimaryActor);
 	}
 
 	DrawDetailsSeparator();
@@ -1433,68 +1441,68 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	double PropertyWidgetMs = 0.0;
 
 	for (auto& Prop : Props)
-    {
-        if (!Prop.Name)
-        {
-            continue;
-        }
+	{
+		if (!Prop.Name)
+		{
+			continue;
+		}
 
 		if (strcmp(Prop.Name, "Tags") == 0)
 		{
 			continue;
 		}
 
-        const bool bIsScriptName =
-            strcmp(Prop.Name, "ScriptName") == 0;
+		const bool bIsScriptName =
+			strcmp(Prop.Name, "ScriptName") == 0;
 
-        FString OldScriptName;
+		FString OldScriptName;
 
-        if (bIsScriptName)
-        {
-            if (FString* ScriptNamePtr = static_cast<FString*>(Prop.ValuePtr))
-            {
-                OldScriptName = *ScriptNamePtr;
-            }
-        }
+		if (bIsScriptName)
+		{
+			if (FString* ScriptNamePtr = static_cast<FString*>(Prop.ValuePtr))
+			{
+				OldScriptName = *ScriptNamePtr;
+			}
+		}
 
-        if (Prop.Type == EPropertyType::SceneComponentRef)
-        {
-            const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
-            RenderSceneComponentRefWidget(Prop, Owner);
-            if (bDetailsPerfTraceFrame)
-            {
-                PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
-            }
-        }
-        else
-        {
-            const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
-            RenderPropertyWidget(Prop);
-            if (bDetailsPerfTraceFrame)
-            {
-                PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
-            }
-        }
+		if (Prop.Type == EPropertyType::SceneComponentRef)
+		{
+			const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
+			RenderSceneComponentRefWidget(Prop, Owner);
+			if (bDetailsPerfTraceFrame)
+			{
+				PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
+			}
+		}
+		else
+		{
+			const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
+			RenderPropertyWidget(Prop);
+			if (bDetailsPerfTraceFrame)
+			{
+				PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
+			}
+		}
 
-        if (bIsScriptName)
-        {
-            UScriptComponent* ScriptComp = Cast<UScriptComponent>(SelectedComponent);
-            if (!ScriptComp)
-            {
-                return;
-            }
+		if (bIsScriptName)
+		{
+			UScriptComponent* ScriptComp = Cast<UScriptComponent>(SelectedComponent);
+			if (!ScriptComp)
+			{
+				return;
+			}
 
-            const FString& NewScriptName = ScriptComp->GetScriptName();
+			const FString& NewScriptName = ScriptComp->GetScriptName();
 
-            if (OldScriptName != NewScriptName)
-            {
-                // ScriptName 변경으로 PostEditProperty -> ReloadLuaProperties가 실행됨.
-                // 기존 Props 안의 Lua property descriptor는 이제 무효이므로
-                // 이번 프레임 Details 렌더링을 중단한다.
-                return;
-            }
-        }
-    }
+			if (OldScriptName != NewScriptName)
+			{
+				// ScriptName 변경으로 PostEditProperty -> ReloadLuaProperties가 실행됨.
+				// 기존 Props 안의 Lua property descriptor는 이제 무효이므로
+				// 이번 프레임 Details 렌더링을 중단한다.
+				return;
+			}
+		}
+	}
 	// Special: InterpToMovementComponent control points + behaviour + actions
 	double SkeletalDebugMs = 0.0;
 	if (USkeletalMeshComponent* SkeletalComp = Cast<USkeletalMeshComponent>(SelectedComponent))
@@ -1529,68 +1537,68 @@ void FEditorPropertyWidget::RenderComponentProperties()
 				Camera->SetRotation(LightComp->GetRelativeQuat());
 			}
 		}
-    }
-    else if (UScriptComponent* ScriptComp = Cast<UScriptComponent>(SelectedComponent))
-    {
-        FScriptManager& ScriptMgr = FScriptManager::Get();
-        if (ImGui::Button("Create Script"))
+	}
+	else if (UScriptComponent* ScriptComp = Cast<UScriptComponent>(SelectedComponent))
+	{
+		FScriptManager& ScriptMgr = FScriptManager::Get();
+		if (ImGui::Button("Create Script"))
 		{
-            FString ScriptPath = ScriptComp->GetScriptName();
-            if (ScriptPath.empty() || IsBlankString(ScriptPath))
-            {
-                if (EditorEngine)
-                {
-                    EditorEngine->GetNotificationService().Warning("Script name is empty");
-                }
-            }
-            else
-            {
-                FString SelectedScriptPath;
-                if (!PromptCreateScriptAs(EditorEngine, ScriptPath, SelectedScriptPath))
-                {
-                    return;
-                }
+			FString ScriptPath = ScriptComp->GetScriptName();
+			if (ScriptPath.empty() || IsBlankString(ScriptPath))
+			{
+				if (EditorEngine)
+				{
+					EditorEngine->GetNotificationService().Warning("Script name is empty");
+				}
+			}
+			else
+			{
+				FString SelectedScriptPath;
+				if (!PromptCreateScriptAs(EditorEngine, ScriptPath, SelectedScriptPath))
+				{
+					return;
+				}
 
-                if (!ScriptMgr.CreateScript(SelectedScriptPath))
-                {
-                    if (EditorEngine)
-                    {
-                        EditorEngine->GetNotificationService().Error("Script create failed");
-                    }
-                    return;
-                }
+				if (!ScriptMgr.CreateScript(SelectedScriptPath))
+				{
+					if (EditorEngine)
+					{
+						EditorEngine->GetNotificationService().Error("Script create failed");
+					}
+					return;
+				}
 
-                ScriptComp->SetScriptName(MakeScriptReferenceFromPath(SelectedScriptPath));
-                ScriptComp->ReloadLuaProperties();
-                if (EditorEngine)
-                {
-                    EditorEngine->GetNotificationService().Info("Script created");
-                }
-            }
-        }
-        if (ImGui::Button("Edit Script"))
+				ScriptComp->SetScriptName(MakeScriptReferenceFromPath(SelectedScriptPath));
+				ScriptComp->ReloadLuaProperties();
+				if (EditorEngine)
+				{
+					EditorEngine->GetNotificationService().Info("Script created");
+				}
+			}
+		}
+		if (ImGui::Button("Edit Script"))
 		{
-            FString ScriptPath = ScriptComp->GetScriptName();
-            if (ScriptPath.empty() || IsBlankString(ScriptPath))
-            {
-                if (EditorEngine)
-                {
-                    EditorEngine->GetNotificationService().Warning("No script selected");
-                }
-            }
-            else if (!ScriptMgr.EditScript(ScriptPath) && EditorEngine)
-            {
-                EditorEngine->GetNotificationService().Warning("Script file not found");
-            }
-        }
+			FString ScriptPath = ScriptComp->GetScriptName();
+			if (ScriptPath.empty() || IsBlankString(ScriptPath))
+			{
+				if (EditorEngine)
+				{
+					EditorEngine->GetNotificationService().Warning("No script selected");
+				}
+			}
+			else if (!ScriptMgr.EditScript(ScriptPath) && EditorEngine)
+			{
+				EditorEngine->GetNotificationService().Warning("Script file not found");
+			}
+		}
 	}
 	ImGui::Separator();
 
 	// 프로퍼티 직접 편집 후 월드 행렬 갱신
 	if (SelectedComponent->IsA<USceneComponent>())
 	{
-        UWorld* World = Owner->GetFocusedWorld();
-        const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
+		UWorld* World = Owner->GetFocusedWorld();
+		const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
 		static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
 		Ctx->SelectionManager->GetGizmo()->UpdateGizmoTransform();
 	}
@@ -1664,9 +1672,10 @@ void FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& P
 	}
 }
 
-void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
+void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObject* TargetObject)
 {
 	bool bChanged = false;
+	UObject* NotifyTarget = TargetObject ? TargetObject : SelectedComponent;
 
 	switch (Prop.Type)
 	{
@@ -1777,145 +1786,145 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 				}
 			}
 		}
-        else if (strcmp(Prop.Name, "ScriptName") == 0)
-        {
-            if (!Val)
-            {
-                return;
-            }
+		else if (strcmp(Prop.Name, "ScriptName") == 0)
+		{
+			if (!Val)
+			{
+				return;
+			}
 
-            FScriptManager::Get().RefreshLuaScriptFiles();
+			FScriptManager::Get().RefreshLuaScriptFiles();
 
-            TMap<FName, FLuaScriptInfo, FName::Hash>& ScriptArray =
-                FScriptManager::Get().GetScriptArray();
+			TMap<FName, FLuaScriptInfo, FName::Hash>& ScriptArray =
+				FScriptManager::Get().GetScriptArray();
 
-            ImGui::PushID(Val);
+			ImGui::PushID(Val);
 
-            char Buffer[512] = {};
-            strncpy_s(Buffer, sizeof(Buffer), Val->c_str(), _TRUNCATE);
+			char Buffer[512] = {};
+			strncpy_s(Buffer, sizeof(Buffer), Val->c_str(), _TRUNCATE);
 
-            if (ImGui::InputText("##ScriptPathInput", Buffer, sizeof(Buffer)))
-            {
-                *Val = Buffer;
-                bChanged = true;
-            }
+			if (ImGui::InputText("##ScriptPathInput", Buffer, sizeof(Buffer)))
+			{
+				*Val = Buffer;
+				bChanged = true;
+			}
 
-            if (ImGui::BeginDragDropTarget())
-            {
-                if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("LuaScriptContentItem"))
-                {
-                    const char* PayloadPath = static_cast<const char*>(Payload->Data);
-                    if (PayloadPath && PayloadPath[0] != '\0')
-                    {
-                        // 중요:
-                        // MakeScriptReferenceFromPath()는 반드시 FScriptManager의 ScriptArray key와
-                        // 같은 형식의 문자열을 반환해야 한다.
-                        FString NewScriptRef = MakeScriptReferenceFromPath(PayloadPath);
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("LuaScriptContentItem"))
+				{
+					const char* PayloadPath = static_cast<const char*>(Payload->Data);
+					if (PayloadPath && PayloadPath[0] != '\0')
+					{
+						// 중요:
+						// MakeScriptReferenceFromPath()는 반드시 FScriptManager의 ScriptArray key와
+						// 같은 형식의 문자열을 반환해야 한다.
+						FString NewScriptRef = MakeScriptReferenceFromPath(PayloadPath);
 
-                        if (!NewScriptRef.empty())
-                        {
-                            *Val = NewScriptRef;
-                            bChanged = true;
-                        }
-                    }
-                }
+						if (!NewScriptRef.empty())
+						{
+							*Val = NewScriptRef;
+							bChanged = true;
+						}
+					}
+				}
 
-                ImGui::EndDragDropTarget();
-            }
+				ImGui::EndDragDropTarget();
+			}
 
-            ImGui::SameLine();
+			ImGui::SameLine();
 
-            const FString Current = *Val;
+			const FString Current = *Val;
 
-            FString Preview = "SelectScript";
+			FString Preview = "SelectScript";
 
-            for (const auto& [ScriptName, ScriptInfo] : ScriptArray)
-            {
-                const FString Key = ScriptName.ToString();
+			for (const auto& [ScriptName, ScriptInfo] : ScriptArray)
+			{
+				const FString Key = ScriptName.ToString();
 
-                if (Key == Current)
-                {
-                    if (!ScriptInfo.ScriptPath.empty())
-                    {
-                        Preview = FPaths::ToRelativeString(ScriptInfo.ScriptPath);
-                    }
+				if (Key == Current)
+				{
+					if (!ScriptInfo.ScriptPath.empty())
+					{
+						Preview = FPaths::ToRelativeString(ScriptInfo.ScriptPath);
+					}
 
-                    if (Preview.empty())
-                    {
-                        Preview = Key;
-                    }
+					if (Preview.empty())
+					{
+						Preview = Key;
+					}
 
-                    break;
-                }
-            }
+					break;
+				}
+			}
 
-            if (ImGui::BeginCombo("##ScriptPathCombo", Preview.c_str()))
-            {
-                for (const auto& [ScriptName, ScriptInfo] : ScriptArray)
-                {
-                    const FString Key = ScriptName.ToString();
+			if (ImGui::BeginCombo("##ScriptPathCombo", Preview.c_str()))
+			{
+				for (const auto& [ScriptName, ScriptInfo] : ScriptArray)
+				{
+					const FString Key = ScriptName.ToString();
 
-                    if (Key.empty())
-                    {
-                        continue;
-                    }
+					if (Key.empty())
+					{
+						continue;
+					}
 
-                    if (ScriptInfo.ScriptPath.empty())
-                    {
-                        continue;
-                    }
+					if (ScriptInfo.ScriptPath.empty())
+					{
+						continue;
+					}
 
-                    if (!std::filesystem::exists(ScriptInfo.ScriptPath))
-                    {
-                        continue;
-                    }
+					if (!std::filesystem::exists(ScriptInfo.ScriptPath))
+					{
+						continue;
+					}
 
-                    FString RelativePath = FPaths::ToRelativeString(ScriptInfo.ScriptPath);
+					FString RelativePath = FPaths::ToRelativeString(ScriptInfo.ScriptPath);
 
-                    // ImGui label은 절대 빈 문자열이면 안 됨
-                    FString DisplayName = RelativePath.empty() ? Key : RelativePath;
+					// ImGui label은 절대 빈 문자열이면 안 됨
+					FString DisplayName = RelativePath.empty() ? Key : RelativePath;
 
-                    const bool bSelected = (Current == Key);
+					const bool bSelected = (Current == Key);
 
-                    ImGui::PushID(Key.c_str());
+					ImGui::PushID(Key.c_str());
 
-                    if (ImGui::Selectable(DisplayName.c_str(), bSelected))
-                    {
-                        // 저장은 표시용 RelativePath가 아니라 ScriptManager key로 한다.
-                        *Val = Key;
-                        bChanged = true;
-                    }
+					if (ImGui::Selectable(DisplayName.c_str(), bSelected))
+					{
+						// 저장은 표시용 RelativePath가 아니라 ScriptManager key로 한다.
+						*Val = Key;
+						bChanged = true;
+					}
 
-                    ImGui::PopID();
+					ImGui::PopID();
 
-                    if (bSelected)
-                    {
-                        ImGui::SetItemDefaultFocus();
-                    }
-                }
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
 
-                ImGui::EndCombo();
-            }
+				ImGui::EndCombo();
+			}
 
-            const FString NewCurrent = *Val;
+			const FString NewCurrent = *Val;
 
-            if (!NewCurrent.empty() && !FScriptManager::Get().HasScript(FName(NewCurrent)))
-            {
-                ImGui::TextColored(
-                    ImVec4(1.0f, 0.42f, 0.35f, 1.0f),
-                    "Missing script file.");
+			if (!NewCurrent.empty() && !FScriptManager::Get().HasScript(FName(NewCurrent)))
+			{
+				ImGui::TextColored(
+					ImVec4(1.0f, 0.42f, 0.35f, 1.0f),
+					"Missing script file.");
 
-                ImGui::SameLine();
+				ImGui::SameLine();
 
-                if (ImGui::SmallButton("Clear##MissingScript"))
-                {
-                    Val->clear();
-                    bChanged = true;
-                }
-            }
+				if (ImGui::SmallButton("Clear##MissingScript"))
+				{
+					Val->clear();
+					bChanged = true;
+				}
+			}
 
-            ImGui::PopID();
-        }
+			ImGui::PopID();
+		}
 		else
 		{
 			char Buf[256];
@@ -2115,7 +2124,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		ImGui::PopID();
 		break;
 	}
-    case EPropertyType::Enum:
+	case EPropertyType::Enum:
 	{
 		int* Val = static_cast<int*>(Prop.ValuePtr);
 		if (Prop.EnumNames && Prop.EnumCount)
@@ -2198,28 +2207,28 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		}
 		break;
 	}
-    case EPropertyType::CubeSRV:
-    {
-        auto CubeSRV = static_cast<ID3D11ShaderResourceView**>(Prop.ValuePtr);
-        if (CubeSRV)
-        {
-            for (int i = 0; i < 6; i++)
-            {
-                if (!CubeSRV[i])
-                {
-                    continue;
-                }
+	case EPropertyType::CubeSRV:
+	{
+		auto CubeSRV = static_cast<ID3D11ShaderResourceView**>(Prop.ValuePtr);
+		if (CubeSRV)
+		{
+			for (int i = 0; i < 6; i++)
+			{
+				if (!CubeSRV[i])
+				{
+					continue;
+				}
 
-                ImGui::Image(CubeSRV[i], ImVec2(64, 64));
+				ImGui::Image(CubeSRV[i], ImVec2(64, 64));
 
-                if ((i % 3) != 2)
-                {
-                    ImGui::SameLine();
-                }
-            }
-        }
-        break;
-    }
+				if ((i % 3) != 2)
+				{
+					ImGui::SameLine();
+				}
+			}
+		}
+		break;
+	}
 	}
 
 	if (ImGui::IsItemActivated() && !bPropertyEditUndoCaptured && EditorEngine)
@@ -2228,14 +2237,14 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		bPropertyEditUndoCaptured = true;
 	}
 
-	if (bChanged && SelectedComponent)
+	if (bChanged && NotifyTarget)
 	{
 		if (!bPropertyEditUndoCaptured && EditorEngine)
 		{
 			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
 			bPropertyEditUndoCaptured = true;
 		}
-		SelectedComponent->PostEditChangeProperty({ Prop.Name, EPropertyChangeType::ValueSet });
+		NotifyTarget->PostEditChangeProperty({ Prop.Name, EPropertyChangeType::ValueSet });
 		if (EditorEngine)
 		{
 			EditorEngine->GetSceneService().MarkDirty();
@@ -2522,14 +2531,14 @@ void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UA
 
 	if (UScriptComponent* ScriptComp = Cast<UScriptComponent>(NewComp))
 	{
-        if (ScriptComp->GetScriptName().empty())
+		if (ScriptComp->GetScriptName().empty())
 		{
 			FString SceneName = "Default";
 			if (EditorEngine)
 			{
 				SceneName = EditorEngine->GetSceneService().GetSceneName();
 			}
-            ScriptComp->SetScriptName(MakeDefaultScriptName(SceneName, PrimaryActor));
+			ScriptComp->SetScriptName(MakeDefaultScriptName(SceneName, PrimaryActor));
 		}
 	}
 

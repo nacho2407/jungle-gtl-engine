@@ -465,6 +465,9 @@ Builds/
 JSEngine/Asset/Mesh/Bin/**
 JSEngine/Asset/Scene/**
 
+# Reflection
+*.gen.cpp
+
 # FBX SDK runtime libs - re-include (gitignore의 [Dd]ebug/, [Rr]elease/ 패턴으로 인해 무시되는 것을 복구)
 !JSEngine/ThirdParty/FBX/lib/**
 !JSEngine/ThirdParty/RmlUi/Lib/**/

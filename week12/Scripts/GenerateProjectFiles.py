@@ -276,6 +276,12 @@ def generate_vcxproj(files: dict[str, list[str]]):
         ET.SubElement(link, "SubSystem").text = "Windows" if is_x64 else "Console"
         ET.SubElement(link, "GenerateDebugInformation").text = "true"
 
+    generate_reflection = ET.SubElement(proj, "Target", Name="GenerateReflectionCode", BeforeTargets="ClCompile")
+    ET.SubElement(generate_reflection, "Exec").set(
+        "Command",
+        "&quot;$(MSBuildProjectDirectory)\\..\\Scripts\\python\\python.exe&quot; &quot;$(MSBuildProjectDirectory)\\..\\Scripts\\GenerateReflection.py&quot;",
+    )
+
     # ClCompile items
     ig = ET.SubElement(proj, "ItemGroup")
     for f in files["ClCompile"]:

@@ -5,12 +5,13 @@
 #include "Engine/GameFramework/WorldContext.h"
 #include "Component/ShapeComponent.h"
 #include "Component/Movement/ProjectileMovementComponent.h"
-#include "Core/Delegates/Delegate.h"
+#include "Engine/Core/Reflection/ReflectionMacros.h"
 #include <type_traits>
 
 class UWorld;
 class UPrimitiveComponent;
 
+UCLASS()
 class AActor : public UObject {
 public:
 	DECLARE_CLASS(AActor, UObject)
@@ -175,8 +176,13 @@ protected:
 	FVector PendingActorRotation = FVector(0, 0, 0);
 	FVector PendingActorScale = FVector(1, 1, 1);
 
+    UPROPERTY(EditAnywhere)
 	bool bVisible = true;
+    
+    UPROPERTY(EditAnywhere)
 	bool bIsActive = true;
+    
+    UPROPERTY(EditAnywhere)
     bool bTickInEditor = false;
 
 	TArray<UActorComponent*> OwnedComponents;

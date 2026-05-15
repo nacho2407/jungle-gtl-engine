@@ -315,6 +315,9 @@
   <Target Name="BuildSoLoudStaticLibrary" BeforeTargets="ClCompile">
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\BuildTools\Scripts\BuildSoLoudLib.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(ThirdPartyBinaryConfiguration)&quot; -Platform &quot;$(Platform)&quot;" />
   </Target>
+  <Target Name="GenerateReflectionCode" BeforeTargets="ClCompile">
+    <Exec Command="&quot;$(MSBuildProjectDirectory)\..\Scripts\python\python.exe&quot; &quot;$(MSBuildProjectDirectory)\..\Scripts\GenerateReflection.py&quot;" />
+  </Target>
   <ItemGroup>
     <ClCompile Include="Source\Editor\UI\EditorViewerWindowWidget.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
@@ -881,6 +884,9 @@
     <ClInclude Include="Source\Engine\Camera\PlayerCameraManager.h" />
     <ClInclude Include="Source\Engine\Component\SkeletalMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\SkinnedMeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\TransformProxy.h" />
+    <ClInclude Include="Source\Engine\Core\Reflection\ReflectionMacros.h" />
+    <ClInclude Include="Source\Engine\Core\Reflection\ReflectionRegistry.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\Coroutine.h" />

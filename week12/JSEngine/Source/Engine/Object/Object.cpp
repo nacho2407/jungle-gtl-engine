@@ -125,3 +125,29 @@ void UObject::Serialize(FArchive& Ar)
 	Ar << "Type" << GetTypeInfo()->name;
     Ar << "ObjectName" << ObjectName;
 }
+
+// 레지스트리에서 클래스의 메타데이터를 바탕으로 현재 인스턴스의 메모리 주소를 계산하여 자동으로 디스크립터를 생성합니다.
+void UObject::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+    const FTypeInfo* CurrentType = GetTypeInfo();
+    while (CurrentType != nullptr)
+    {
+        if (const FClassMetaData* Meta = FReflectionRegistry::Get().GetRegisteredClass(CurrentType->name))
+        {
+            for (const FPropertyMetaData& PropMeta : Meta->Properties)
+            {
+                FPropertyDescriptor Desc;
+                Desc.Name = PropMeta.Name;
+                Desc.Type = PropMeta.Type;
+                Desc.ValuePtr = reinterpret_cast<uint8*>(this) + PropMeta.Offset;
+                Desc.UsageFlags = PropMeta.UsageFlags;
+                Desc.Min = PropMeta.Min;
+                Desc.Max = PropMeta.Max;
+                OutProps.push_back(Desc);
+            }
+        }
+        CurrentType = CurrentType->Parent;
+    }
+    
+    // 하위 클래스에서 override한 기존의 수동 프로퍼티는 이어서 수집됩니다.
+}

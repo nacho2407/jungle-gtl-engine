@@ -6,13 +6,16 @@
 #include "Core/PropertyTypes.h"
 #include "Serialization/Archive.h"
 #include "Object/Object.h"
+#include "Core/Reflection/ReflectionRegistry.h"
 
-#define DECLARE_CLASS(ClassName, ParentClass)                          \
-	using ThisClass = ClassName;									   \
-    static const FTypeInfo s_TypeInfo;                                 \
-    const FTypeInfo* GetTypeInfo() const override {                    \
-        return &s_TypeInfo;                                            \
-    }                                                                  
+#define DECLARE_CLASS(ClassName, ParentClass)                          		\
+	using ThisClass = ClassName;									   		\
+    static const FTypeInfo s_TypeInfo;                                 		\
+    const FTypeInfo* GetTypeInfo() const override {                    		\
+        return &s_TypeInfo;                                            		\
+    }                                                                  		\
+    /* 리플렉션 생성기 구조체가 private/protected 멤버에 접근할 수 있도록 허용 */ \
+    friend struct Z_Construct_UClass_##ClassName;
 
 #define DEFINE_CLASS(ClassName, ParentClass)                           \
     const FTypeInfo ClassName::s_TypeInfo = {                          \
@@ -102,7 +105,7 @@ public:
 	// CopyPropertiesFrom    : GetEditableProperties 에 노출된 프로퍼티를
 	//                         이름 기반으로 매칭하여 Src → this 방향으로 복사.
 	// -----------------------------------------------------------------------
-	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) {}
+	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps);
 	virtual void PostEditChangeProperty(const FPropertyChangedEvent& Event) { PostEditProperty(Event.PropertyName); }
 	virtual void PostEditProperty(const char* PropertyName) {}
 	void CopyPropertiesFrom(UObject* Src);
