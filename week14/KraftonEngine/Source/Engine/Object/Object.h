@@ -7,6 +7,8 @@
 #include "Object/UClass.h"
 #include "Object/ObjectMacros.h"
 
+#include "Object.generated.h"
+
 class FArchive;
 
 // ---------------------------------------------------------------------------
@@ -84,6 +86,8 @@ UCLASS()
 class UObject
 {
 public:
+	GENERATED_BODY()
+
 	UObject();
 	virtual ~UObject();
 
