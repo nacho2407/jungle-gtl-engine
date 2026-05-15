@@ -1,10 +1,12 @@
 ﻿#include "SkeletalMeshComponent.h"
 #include "Render/Proxy/SkeletalMeshSceneProxy.h"
 #include "Mesh/SkeletalMesh.h"
+#include "Mesh/SkeletalMeshAsset.h"
 #include "Object/ObjectFactory.h"
 #include "Object/UClass.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/PoseContext.h"
 
 IMPLEMENT_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 
@@ -145,4 +147,41 @@ void USkeletalMeshComponent::ClearAnimInstance()
 		UObjectManager::Get().DestroyObject(AnimInstance);
 		AnimInstance = nullptr;
 	}
+}
+
+void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
+{
+	// Animation 평가는 Super 의 UpdateCPUSkinning 보다 먼저 — Super 가 끝에 1회만 스키닝하므로
+	// 우리가 미리 BoneEditLocalMatrices 를 채워두면 새 포즈로 1회 스키닝된다.
+	EvaluateAnimInstance(DeltaTime);
+
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+}
+
+void USkeletalMeshComponent::EvaluateAnimInstance(float DeltaTime)
+{
+	if (!AnimInstance) return;
+
+	USkeletalMesh* Mesh = GetSkeletalMesh();
+	if (!Mesh) return;
+	FSkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset();
+	if (!Asset || Asset->Bones.empty()) return;
+
+	AnimInstance->UpdateAnimation(DeltaTime);
+
+	FPoseContext Out;
+	Out.SkeletalMesh = Mesh;
+	Out.Pose.resize(Asset->Bones.size());
+	Out.ResetToRefPose();
+	AnimInstance->EvaluatePose(Out);
+
+	// 본 단위 setter 는 호출마다 UpdateCPUSkinning 을 돌리므로 직접 행렬 배열에 쓴다.
+	// EnsureBoneEditPose 는 size 보장 + 첫 진입 시 LocalMatrix 로 시드.
+	EnsureBoneEditPose();
+	const size_t N = std::min<size_t>(Out.Pose.size(), BoneEditLocalMatrices.size());
+	for (size_t i = 0; i < N; ++i)
+	{
+		BoneEditLocalMatrices[i] = Out.Pose[i].ToMatrix();
+	}
+	bUseBoneEditPose = true;
 }
