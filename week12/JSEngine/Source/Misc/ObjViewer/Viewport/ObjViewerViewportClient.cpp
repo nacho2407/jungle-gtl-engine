@@ -15,16 +15,6 @@
 
 namespace
 {
-	int32 LogShowCursorCall(const char* Caller, BOOL bShow)
-	{
-		const int32 Result = ShowCursor(bShow);
-		UE_LOG("[CursorDebug] ShowCursor Caller=%s Arg=%s Result=%d",
-			Caller,
-			bShow ? "TRUE" : "FALSE",
-			Result);
-		return Result;
-	}
-
 	void MoveCameraLocal(FViewportCamera& Camera, const FVector& LocalDelta)
 	{
 		const FVector WorldDelta =
