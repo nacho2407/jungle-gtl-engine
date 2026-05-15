@@ -64,10 +64,13 @@ struct FPropertyInfo
 struct FClassInfo
 {
     FName ClassName;
-    TArray<FPropertyInfo> Properties; // 에디터/직렬화용 전체 프로퍼티
+    FName ParentClassName;
+    FClassInfo* ParentClass = nullptr;
 
+    TArray<FPropertyInfo> Properties;
     TArray<size_t> GcPointerOffsets;
 };
+
 
 class UObject
 {

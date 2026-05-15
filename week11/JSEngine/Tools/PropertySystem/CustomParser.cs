@@ -8,12 +8,92 @@ class CustomParser
 {
     static string RemoveComments(string code)
     {
-        return Regex.Replace(
-            code,
-            @"//.*?$|/\*.*?\*/",
-            "",
-            RegexOptions.Multiline | RegexOptions.Singleline);
+        StringBuilder result = new StringBuilder(code.Length);
+
+        bool inLineComment = false;
+        bool inBlockComment = false;
+        bool inString = false;
+        bool inChar = false;
+        bool escape = false;
+
+        for (int i = 0; i < code.Length; i++)
+        {
+            char c = code[i];
+            char next = i + 1 < code.Length ? code[i + 1] : '\0';
+
+            if (inLineComment)
+            {
+                if (c == '\r' || c == '\n')
+                {
+                    inLineComment = false;
+                    result.Append(c);
+                }
+                continue;
+            }
+
+            if (inBlockComment)
+            {
+                if (c == '*' && next == '/')
+                {
+                    inBlockComment = false;
+                    i++;
+                }
+                else if (c == '\r' || c == '\n')
+                    result.Append(c);
+                continue;
+            }
+
+            if (inString)
+            {
+                result.Append(c);
+
+                if (escape)
+                    escape = false;
+                else if (c == '\\')
+                    escape = true;
+                else if (c == '"')
+                    inString = false;
+                continue;
+            }
+
+            if (inChar)
+            {
+                result.Append(c);
+
+                if (escape)
+                    escape = false;
+                else if (c == '\\')
+                    escape = true;
+                else if (c == '\'')
+                    inChar = false;
+                continue;
+            }
+
+            if (c == '/' && next == '/')
+            {
+                inLineComment = true;
+                i++;
+                continue;
+            }
+
+            if (c == '/' && next == '*')
+            {
+                inBlockComment = true;
+                i++;
+                continue;
+            }
+
+            if (c == '"')
+                inString = true;
+            else if (c == '\'')
+                inChar = true;
+
+            result.Append(c);
+        }
+
+        return result.ToString();
     }
+
 
     static void Main(string[] args)
     {
@@ -59,99 +139,106 @@ class CustomParser
         // =========================================================================
         // [루프 시작] 모든 헤더 파일을 하나씩 검사합니다.
         // =========================================================================
+
+        static readonly Regex ClassRegex = new Regex(
+            @"UCLASS\s*\([^)]*\)\s*class\s+(?:[A-Z0-9_]+_API\s+)?(?<name>\w+)\s*:\s*public\s+(?<parent>\w+)",
+            RegexOptions.Singleline);
+
+        static readonly Regex PropertyRegex = new Regex(
+            @"UPROPERTY\s*\((?<options>.*?)\)\s+(?<type>[A-Za-z_]\w*(?:::\w+)*(?:\s*<[^;{}()]+>)?\s*[*&]?)\s+(?<name>\w+)\s*(?:=.*?)?;",
+            RegexOptions.Singleline);
+
+
+
         foreach (var file in headerFiles)
         {
-            if (file.EndsWith(".generated.h")) continue;
+            MatchCollection classMatches = ClassRegex.Matches(parseCode);
+            if (classMatches.Count == 0)
+            {
+                continue;
+            }
 
-            string cppCode = File.ReadAllText(file);
-            string parseCode = RemoveComments(cppCode);
-
-            // UCLASS 매크로 찾기
-            Match classMatch = Regex.Match(parseCode, @"UCLASS\s*\([^)]*\)\s*class\s+(?:[A-Z0-9_]+_API\s+)?(\w+)");
-            if (!classMatch.Success) continue;
-
-            parsedCount++; // 클래스를 찾았으므로 카운트 증가!
-
-            string className = classMatch.Groups[1].Value; // 예: UStaticMeshComponent
-            string fileNameOnly = Path.GetFileNameWithoutExtension(file); // 예: StaticMeshComponent
-
-            Console.WriteLine($"\n🎯 [파싱 성공] 타겟 클래스 발견: {className} (파일: {fileNameOnly}.h)");
-
+            string fileNameOnly = Path.GetFileNameWithoutExtension(file);
             string generatedHeaderPath = Path.Combine(outputDir, $"{fileNameOnly}.generated.h");
             string generatedCppPath = Path.Combine(outputDir, $"{fileNameOnly}.gen.cpp");
 
-            string includePath = file.StartsWith(sourceDir + Path.DirectorySeparatorChar)
-                ? file.Substring(sourceDir.Length + 1).Replace('\\', '/')
-                : Path.GetFileName(file);
+            StringBuilder headerContent = new StringBuilder();
+            StringBuilder cppContent = new StringBuilder();
 
-            // [A] Header 내용 조립
-            string headerContent = $@"// [UHT 자동 생성 헤더 파일 - 절대 직접 수정하지 마세요!]
-#pragma once
+            headerContent.AppendLine("// [UHT 자동 생성 헤더 파일 - 직접 수정하지 마세요!]");
+            headerContent.AppendLine("#pragma once");
+            headerContent.AppendLine();
 
-extern void Register_{className}();
+            cppContent.AppendLine("// [UHT 자동 생성 소스 파일 - 직접 수정하지 마세요!]");
+            cppContent.AppendLine($"#include \"{includePath}\"");
+            cppContent.AppendLine("#include \"Core/ReflectionDatabase.h\"");
+            cppContent.AppendLine();
 
-#undef GENERATED_BODY
-#define GENERATED_BODY() \
-public: \
-    friend void Register_{className}(); \
-    inline static FClassInfo StaticClassInfo; \
-    virtual FClassInfo* GetStaticClass() override {{ return &StaticClassInfo; }}
-";
-
-            // [B] CPP 내용 조립
-            string cppContent = $@"// [UHT 자동 생성 소스 파일 - 절대 직접 수정하지 마세요!]
-#include ""{includePath}""
-#include ""Core/ReflectionDatabase.h"" 
-
-void Register_{className}() {{
-    FClassInfo& info = {className}::StaticClassInfo;
-    info.ClassName = ""{className}"";
-";
-
-            // 변수(UPROPERTY) 추출
-            string pattern = @"UPROPERTY\s*\((.*?)\)\s+([A-Za-z_]\w*(?:::\w+)*(?:\s*<[^;{}()]+>)?\s*[*&]?)\s+(\w+)\s*(?:=.*?)?;";
-            MatchCollection properties = Regex.Matches(parseCode, pattern, RegexOptions.Singleline);
-
-            foreach (Match prop in properties)
+            for (int i = 0; i < classMatches.Count; i++)
             {
-                string options = prop.Groups[1].Value;
-                string type = prop.Groups[2].Value.Trim();
-                string name = prop.Groups[3].Value;
+                Match classMatch = classMatches[i];
+                string className = classMatch.Groups["name"].Value;
+                string parentName = classMatch.Groups["parent"].Value;
 
-                Console.WriteLine($"   ㄴ 변수 수집: {type} {name} (옵션: {options})");
+                int classStart = classMatch.Index;
+                int classEnd = (i + 1 < classMatches.Count)
+                    ? classMatches[i + 1].Index
+                    : parseCode.Length;
 
-                bool bIsEditAnywhere = options.Contains("EditAnywhere");
-                string boolStr = bIsEditAnywhere ? "true" : "false";
+                string classBlock = parseCode.Substring(classStart, classEnd - classStart);
 
-                cppContent += $"    info.Properties.push_back({{ \"{name}\", \"{type}\", offsetof({className}, {name}), {boolStr} }});\n";
+                parsedCount++;
 
-                if (type.Contains("*"))
+                headerContent.AppendLine($"extern void Register_{className}();");
+                headerContent.AppendLine();
+                headerContent.AppendLine($"#define GENERATED_BODY_{className}() \\");
+                headerContent.AppendLine("public: \\");
+                headerContent.AppendLine($"    friend void Register_{className}(); \\");
+                headerContent.AppendLine("    inline static FClassInfo StaticClassInfo; \\");
+                headerContent.AppendLine("    virtual FClassInfo* GetStaticClass() override { return &StaticClassInfo; }");
+                headerContent.AppendLine();
+
+                cppContent.AppendLine($"void Register_{className}() {{");
+                cppContent.AppendLine($"    FClassInfo& info = {className}::StaticClassInfo;");
+                cppContent.AppendLine($"    info.ParentClassName = \"{parentName}\";");
+                cppContent.AppendLine($"    info.ParentClass = ReflectionDatabase::GetClass(\"{parentName}\");");
+                cppContent.AppendLine($"    info.ClassName = \"{className}\";");
+
+                MatchCollection properties = PropertyRegex.Matches(classBlock);
+                foreach (Match prop in properties)
                 {
-                    cppContent += $"    info.GcPointerOffsets.push_back(offsetof({className}, {name})); // GC 추적 대상\n";
+                    string options = prop.Groups["options"].Value;
+                    string type = prop.Groups["type"].Value.Trim();
+                    string name = prop.Groups["name"].Value;
+
+                    bool bIsEditAnywhere = options.Contains("EditAnywhere");
+                    string boolStr = bIsEditAnywhere ? "true" : "false";
+
+                    cppContent.AppendLine(
+                        $"    info.Properties.push_back({{ \"{name}\", \"{type}\", offsetof({className}, {name}), {boolStr} }});");
+
+                    if (type.Contains("*"))
+                    {
+                        cppContent.AppendLine(
+                            $"    info.GcPointerOffsets.push_back(offsetof({className}, {name}));");
+                    }
                 }
+
+                cppContent.AppendLine($"    ReflectionDatabase::AddClass(\"{className}\", &info);");
+                cppContent.AppendLine("}");
+                cppContent.AppendLine();
+
+                cppContent.AppendLine($"struct FAutoRegister_{className} {{");
+                cppContent.AppendLine($"    FAutoRegister_{className}() {{ Register_{className}(); }}");
+                cppContent.AppendLine("};");
+                cppContent.AppendLine($"static FAutoRegister_{className} AutoRegister_{className}_Instance;");
+                cppContent.AppendLine();
             }
 
-            cppContent += $@"
-    ReflectionDatabase::AddClass(""{className}"", &info);
-}}
-
-struct FAutoRegister_{className} {{
-    FAutoRegister_{className}() {{
-        Register_{className}();
-    }}
-}};
-static FAutoRegister_{className} AutoRegister_{className}_Instance;
-";
-
-            // [C] 개별 파일 저장
-            File.WriteAllText(generatedHeaderPath, headerContent);
-            File.WriteAllText(generatedCppPath, cppContent);
-
-            // ★ 핵심 수정: className이 아니라 실제 만들어진 파일 이름(fileNameOnly)을 리스트에 저장합니다.
+            File.WriteAllText(generatedHeaderPath, headerContent.ToString());
+            File.WriteAllText(generatedCppPath, cppContent.ToString());
             generatedCppFiles.Add($"{fileNameOnly}.gen.cpp");
 
-            Console.WriteLine($"   ✅ 생성 완료: {fileNameOnly}.generated.h");
-            Console.WriteLine($"   ✅ 생성 완료: {fileNameOnly}.gen.cpp");
         }
         // =========================================================================
         // [루프 종료]
