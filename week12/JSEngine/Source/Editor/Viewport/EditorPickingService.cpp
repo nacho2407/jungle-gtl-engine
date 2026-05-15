@@ -1,4 +1,4 @@
-#include "Editor/Viewport/EditorPickingService.h"
+﻿#include "Editor/Viewport/EditorPickingService.h"
 
 #include "Camera/ViewportCamera.h"
 #include "Component/PrimitiveComponent.h"
@@ -32,7 +32,8 @@ bool FEditorPickingService::ResolveActorForSelection(
 		return true;
 	}
 
-	return PickActorByRayAtViewportLocalPoint(World, Camera, Viewport, LocalX, LocalY, OutActor);
+	// return PickActorByRayAtViewportLocalPoint(World, Camera, Viewport, LocalX, LocalY, OutActor);
+	return false;
 }
 
 bool FEditorPickingService::PickActorByIdAtViewportLocalPoint(
