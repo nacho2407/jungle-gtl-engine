@@ -115,7 +115,7 @@ namespace
 FMatrix ULightComponent::GetLightViewProj(const FMatrix& CamView, const FMatrix& CamProj,
 	const TArray<FBoundingBox>* VisibleObjectsBounds) const
 {
-	switch (eShadowMapType)
+	switch (ShadowMapType)
 	{
 	case EShadowMap::CSM:
 		return ComputeCascadeShadowMatrix(CamView, CamProj, 0.0f, 0.001f);
@@ -129,7 +129,7 @@ FMatrix ULightComponent::GetLightViewProj(const FMatrix& CamView, const FMatrix&
 FMatrix ULightComponent::GetLightViewProj(const FMatrix& CamView, const FMatrix& CamProj,
 	float SplitNearT, float SplitFarT, const TArray<FBoundingBox>* VisibleObjectsBounds) const
 {
-	switch (eShadowMapType)
+	switch (ShadowMapType)
 	{
 	case EShadowMap::CSM:
 		return ComputeCascadeShadowMatrix(CamView, CamProj, SplitNearT, SplitFarT);
@@ -145,7 +145,7 @@ void ULightComponent::PostDuplicate(UObject* Original)
 	ULightComponentBase::PostDuplicate(Original);
 	ULightComponent* Orig = Cast<ULightComponent>(Original);
 
-	eShadowMapType = Orig->eShadowMapType;
+	ShadowMapType = Orig->ShadowMapType;
 }
 
 void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -166,7 +166,7 @@ void ULightComponent::Serialize(FArchive& Ar)
 {
 	ULightComponentBase::Serialize(Ar);
 	
-	uint32 ShadowMapTypeValue = static_cast<uint32>(eShadowMapType);
+	uint32 ShadowMapTypeValue = static_cast<uint32>(ShadowMapType);
 	Ar << "ShadowMapType" << ShadowMapTypeValue;
 	Ar << "ShadowResolutionScale" << ShadowResolutionScale;
 	Ar << "ConstantBias" << ConstantBias;
@@ -175,7 +175,7 @@ void ULightComponent::Serialize(FArchive& Ar)
 
 	if (Ar.IsLoading())
 	{
-		eShadowMapType = static_cast<EShadowMap>(ShadowMapTypeValue);
+		ShadowMapType = static_cast<EShadowMap>(ShadowMapTypeValue);
 	}
 }
 

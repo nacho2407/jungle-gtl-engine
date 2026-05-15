@@ -8,7 +8,7 @@ void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescripto
 {
 	ULightComponent::GetEditableProperties(OutProps);
 
-	if (eShadowMapType == EShadowMap::CSM)
+	if (ShadowMapType == EShadowMap::CSM)
 	{
 		OutProps.push_back({ "MaxDistance", EPropertyType::Float, &CSMMaxDistance, 0.f, 1000.f, 10.f });
 		OutProps.push_back({ "Lambda", EPropertyType::Float, &CSMPractialLambda, 0.0f, 1.0f, 0.01f });

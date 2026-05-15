@@ -24,8 +24,8 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 public:
-	EShadowMap GetShadowMapType() const { return eShadowMapType; }
-	void SetShadowMapType(EShadowMap InType) { eShadowMapType = InType; }
+	EShadowMap GetShadowMapType() const { return ShadowMapType; }
+	void SetShadowMapType(EShadowMap InType) { ShadowMapType = InType; }
 
 protected:
 	virtual FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
@@ -52,5 +52,5 @@ public:
 	bool bHasDebugShadowCubeTile = false;
 protected:
 	UPROPERTY(DisplayName = "ShadowMapType")
-	EShadowMap eShadowMapType = EShadowMap::CSM;
+	EShadowMap ShadowMapType = EShadowMap::CSM;
 };
