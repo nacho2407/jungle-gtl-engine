@@ -2,7 +2,7 @@
 
 #include "Asset/BinarySerializer.h"
 #include "Asset/CurveFloatAsset.h"
-#include "Asset/FbxImporter.h"
+#include "Asset/FBX/FbxImporter.h"
 #include "Asset/ObjLoader.h"
 #include "Asset/SkeletalMesh.h"
 #include "Asset/StaticMesh.h"

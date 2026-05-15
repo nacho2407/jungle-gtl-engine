@@ -426,7 +426,7 @@
     <ClCompile Include="Source\Engine\Asset\FileUtils.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Asset\FbxImporter.cpp">
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporter.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\FontAtlasLoader.cpp">
@@ -1038,9 +1038,9 @@
     <ClCompile Include="Source\Engine\Component\SkinnedMeshComponent.cpp" />
     <ClCompile Include="Source\Editor\Viewer\EditorViewer.cpp" />
     <ClCompile Include="Source\Editor\Viewport\SkeletalMeshViewportClient.cpp" />
-    <ClCompile Include="Source\Engine\Asset\FbxImporterInternal.cpp" />
-    <ClCompile Include="Source\Engine\Asset\FbxImporterSkeletalMesh.cpp" />
-    <ClCompile Include="Source\Engine\Asset\FbxImporterStaticMesh.cpp" />
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterInternal.cpp" />
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterSkeletalMesh.cpp" />
+    <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterStaticMesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Audio\AudioSystem.h">
@@ -1226,7 +1226,7 @@
     <ClInclude Include="Source\Engine\Asset\FontAtlasLoader.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\FbxImporter.h">
+    <ClInclude Include="Source\Engine\Asset\FBX\FbxImporter.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\IAssetLoader.h">
@@ -2004,7 +2004,7 @@
     <ClInclude Include="Source\Engine\Component\SkinnedMeshComponent.h" />
     <ClInclude Include="Source\Editor\Viewer\EditorViewer.h" />
     <ClInclude Include="Source\Editor\Viewport\SkeletalMeshViewportClient.h" />
-    <ClInclude Include="Source\Engine\Asset\FbxImporterInternal.h" />
+    <ClInclude Include="Source\Engine\Asset\FBX\FbxImporterInternal.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Source\Engine\Runtime\AppIcon.rc" />
