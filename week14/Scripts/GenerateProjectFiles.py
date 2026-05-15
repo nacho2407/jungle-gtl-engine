@@ -85,6 +85,7 @@ INCLUDE_PATHS = [
     "ThirdParty\\lua\\include",
     "ThirdParty\\sol2\\include",
     "ThirdParty\\fmod\\include",
+    "ThirdParty\\fbx\\include",
     ".",
 ]
 
@@ -113,6 +114,13 @@ LUA_LIB_DIR = "ThirdParty\\lua\\lib"
 LUA_BIN_DIR = "ThirdParty\\lua\\bin"
 LUA_LIB     = "lua51.lib"
 LUA_DLL     = "lua51.dll"
+
+# FBX SDK — 동적 링크. libfbxsdk.lib(import lib) + libfbxsdk.dll 를 사용하고,
+# Debug/Release 디렉터리가 분리되어 있어 구성별로 경로를 선택한다.
+FBX_DEBUG_LIB_DIR   = "ThirdParty\\fbx\\lib\\x64\\debug"
+FBX_RELEASE_LIB_DIR = "ThirdParty\\fbx\\lib\\x64\\release"
+FBX_LIB             = "libfbxsdk.lib"
+FBX_DLL             = "libfbxsdk.dll"
 
 # Additional linker settings
 ADDITIONAL_LIB_DIRS = [
@@ -300,6 +308,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
         library_paths = [rmlui_dir] if is_x64 else []
         if is_x64:
             library_paths.append(FMOD_LIB_DIR)
+            library_paths.append(FBX_DEBUG_LIB_DIR if cfg == "Debug" else FBX_RELEASE_LIB_DIR)
         library_path_value = ";".join(library_paths) + ";$(LibraryPath)" if library_paths else "$(LibraryPath)"
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond)
         ET.SubElement(pg, "OutDir").text = f"$(ProjectDir)Bin\\$(Configuration)\\"
@@ -331,6 +340,10 @@ def generate_vcxproj(files: dict[str, list[str]]):
             base_defs.append("WIN32")
         base_defs.append("NDEBUG" if is_release else "_DEBUG")
         base_defs.append("_CONSOLE")
+        # FBX SDK 동적 링크 — 정의되어야 헤더가 __declspec(dllimport)로 심볼을 선언한다.
+        # 미정의 시 static 멤버(FbxSurfaceMaterial::sDiffuse 등)가 LNK2001로 실패한다.
+        if is_x64:
+            base_defs.append("FBXSDK_SHARED")
         extra_defs = props.get("extra_defines", [])
         # WITH_EDITOR defaults to 1 unless explicitly overridden in extra_defines
         if not any(d.startswith("WITH_EDITOR=") for d in extra_defs):
@@ -362,6 +375,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
             all_deps.extend(RMLUI_DEPENDENCIES)
             # fmod: Debug면 logging 버전(fmodL_vc.lib), 그 외 release 버전(fmod_vc.lib)
             all_deps.append(FMOD_DEBUG_LIB if cfg == "Debug" else FMOD_RELEASE_LIB)
+            all_deps.append(FBX_LIB)
         if all_deps:
             ET.SubElement(link, "AdditionalDependencies").text = (
                 ";".join(all_deps) + ";%(AdditionalDependencies)"
@@ -371,12 +385,14 @@ def generate_vcxproj(files: dict[str, list[str]]):
             rmlui_dir = RMLUI_DEBUG_DIR if cfg == "Debug" else RMLUI_RELEASE_DIR
             fmod_dll = FMOD_DEBUG_DLL if cfg == "Debug" else FMOD_RELEASE_DLL
             physx_bin = PHYSX_DEBUG_BIN if cfg == "Debug" else PHYSX_RELEASE_BIN
+            fbx_lib_dir = FBX_DEBUG_LIB_DIR if cfg == "Debug" else FBX_RELEASE_LIB_DIR
             post_build = ET.SubElement(idg, "PostBuildEvent")
             ET.SubElement(post_build, "Command").text = (
                 f'xcopy /Y "$(ProjectDir){rmlui_dir}\\*.dll" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){FMOD_LIB_DIR}\\{fmod_dll}" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){physx_bin}\\*.dll" "$(OutDir)"\n'
-                f'xcopy /Y "$(ProjectDir){LUA_BIN_DIR}\\{LUA_DLL}" "$(OutDir)"'
+                f'xcopy /Y "$(ProjectDir){LUA_BIN_DIR}\\{LUA_DLL}" "$(OutDir)"\n'
+                f'xcopy /Y "$(ProjectDir){fbx_lib_dir}\\{FBX_DLL}" "$(OutDir)"'
             )
 
     # ClCompile items
