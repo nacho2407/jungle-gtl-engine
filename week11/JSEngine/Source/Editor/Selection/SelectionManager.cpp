@@ -101,8 +101,8 @@ void FSelectionManager::SelectRange(AActor* ClickedActor, const TArray<AActor*>&
 	}
 
 	// Replace selection with range [min, max]
-	int32 Lo = std::min(AnchorIdx, ClickedIdx);
-	int32 Hi = std::max(AnchorIdx, ClickedIdx);
+	int32 Lo = (std::min)(AnchorIdx, ClickedIdx);
+	int32 Hi = (std::max)(AnchorIdx, ClickedIdx);
 
 	SelectedActors.clear();
 	for (int32 i = Lo; i <= Hi; ++i)
@@ -289,7 +289,11 @@ void FSelectionManager::SyncGizmo()
 	}
 	else if (Primary)
 	{
-		Gizmo->SetProxy(std::make_shared<FActorTransformProxy>(Primary));
+		std::shared_ptr<FActorTransformProxy> ActorTransformProxy = std::make_shared<FActorTransformProxy>();
+        for (AActor* Actor : SelectedActors)
+	        ActorTransformProxy->AddTarget(Actor);
+
+		Gizmo->SetProxy(ActorTransformProxy);
 		Gizmo->SetSelectedActors(&SelectedActors);
 	}
 	else
