@@ -447,6 +447,9 @@
     <ClCompile Include="Source\Engine\Asset\StaticMeshSimplifier.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
@@ -1243,6 +1246,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\StaticMeshTypes.h">
       <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimSequence.h">
+      <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\CurvePlayback.h">
       <Filter>Source\Engine\Animation</Filter>

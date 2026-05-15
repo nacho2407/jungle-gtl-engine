@@ -643,6 +643,7 @@
     <ClCompile Include="Source\Engine\Asset\StaticMesh.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetQueryService.cpp" />
     <ClCompile Include="Source\Engine\Asset\StaticMeshSimplifier.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp" />
     <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp" />
     <ClCompile Include="Source\Engine\Animation\ActorSequence.cpp" />
     <ClCompile Include="Source\Engine\Animation\TimelinePlayer.cpp" />
@@ -959,6 +960,7 @@
     <ClInclude Include="Source\Engine\Asset\StaticMesh.h" />
     <ClInclude Include="Source\Engine\Asset\StaticMeshSimplifier.h" />
     <ClInclude Include="Source\Engine\Asset\StaticMeshTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimSequence.h" />
     <ClInclude Include="Source\Engine\Animation\CurvePlayback.h" />
     <ClInclude Include="Source\Engine\Animation\ActorSequence.h" />
     <ClInclude Include="Source\Engine\Animation\TimelinePlayer.h" />

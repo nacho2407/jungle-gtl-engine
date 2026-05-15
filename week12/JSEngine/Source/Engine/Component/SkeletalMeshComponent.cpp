@@ -1,5 +1,6 @@
 ﻿#include "SkeletalMeshComponent.h"
 
+#include "Animation/AnimSequence.h"
 #include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
@@ -87,4 +88,32 @@ void USkeletalMeshComponent::SetBoneGlobalTransform(int32 BoneIndex, const FMatr
     // Local = Global * ParentGlobal.Inverse
     FMatrix NewLocalTransform = NewGlobalTransform * ParentGlobalTransform.GetInverse();
     SetBoneLocalTransform(BoneIndex, NewLocalTransform);
+}
+
+void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InAnimationMode)
+{
+    AnimationMode = InAnimationMode;
+}
+
+void USkeletalMeshComponent::SetAnimation(UAnimationAsset* NewAnimation)
+{
+    AnimationToPlay = NewAnimation;
+}
+
+void USkeletalMeshComponent::Play(bool bInLooping)
+{
+    bLooping = bInLooping;
+    bPlaying = AnimationToPlay != nullptr;
+}
+
+void USkeletalMeshComponent::Stop()
+{
+    bPlaying = false;
+}
+
+void USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bInLooping)
+{
+    SetAnimationMode(EAnimationMode::AnimationSingleNode);
+    SetAnimation(NewAnimToPlay);
+    Play(bInLooping);
 }

@@ -2,6 +2,15 @@
 
 #include "Component/SkinnedMeshComponent.h"
 
+class UAnimationAsset;
+
+enum class EAnimationMode
+{
+    AnimationBlueprint,
+    AnimationSingleNode,
+    AnimationCustomMode
+};
+
 /**
  * @brief Unreal Engine 스타일에서는 skinned mesh가 skeleton을 이용하는 mesh를 표현하고,
  *        skeletal mesh는 실제로 actor에 붙어서 애니메이션을 붙일 수 있는 component로 사용되고 있으므로
@@ -27,4 +36,23 @@ public:
 
     FMatrix GetBoneGlobalTransform(int32 BoneIndex) const;
     void SetBoneGlobalTransform(int32 BoneIndex, const FMatrix& NewGlobalTransform);
+
+    void SetAnimationMode(EAnimationMode InAnimationMode);
+    EAnimationMode GetAnimationMode() const { return AnimationMode; }
+
+    void SetAnimation(UAnimationAsset* NewAnimation);
+    UAnimationAsset* GetAnimation() const { return AnimationToPlay; }
+
+    void Play(bool bLooping);
+    void Stop();
+    bool IsPlaying() const { return bPlaying; }
+    bool IsLooping() const { return bLooping; }
+
+    void PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping);
+
+private:
+    EAnimationMode AnimationMode = EAnimationMode::AnimationBlueprint;
+    UAnimationAsset* AnimationToPlay = nullptr;
+    bool bPlaying = false;
+    bool bLooping = false;
 };
