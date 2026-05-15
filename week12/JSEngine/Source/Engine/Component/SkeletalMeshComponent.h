@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Component/SkinnedMeshComponent.h"
+#include "Core/Delegates/Delegate.h"
 
 struct FPoseContext;
 class UAnimInstance;
@@ -15,6 +16,7 @@ struct FAnimNotifyEvent;
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
 public:
+    DECLARE_DELEGATE(FOnAnimNotify, USkeletalMeshComponent*, const FAnimNotifyEvent&)
     DECLARE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 
     USkeletalMeshComponent() = default;
@@ -49,9 +51,12 @@ public:
     void SetPlayRate(float InPlayRate);
     void SetAnimationPosition(float InTime);
 
-    // 노티파이 수신 (Actor나 Character로 전달)
+    // 노티파이 수신 - AnimInstance가 호출해줄 함수
     virtual void HandleAnimNotify(const FAnimNotifyEvent& Notify);
     void ApplyAnimationPose(const FPoseContext& PoseContext);
+
+public:
+    FOnAnimNotify OnAnimNotifyDelegate;
 
 private:
     UAnimInstance* AnimInstance = nullptr;
