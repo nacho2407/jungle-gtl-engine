@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GameFramework/AActor.h"
+#include "Math/Rotator.h"
 
 class APlayerController;
 class UInputComponent;
@@ -45,6 +46,16 @@ public:
 
 	UInputComponent* GetInputComponent() const { return InputComponent; }
 
+	// Control rotation — UE 패턴. capsule rotation 과 분리된 "사용자가 보고 있는 방향".
+	// SpringArm/Camera 가 bUsePawnControlRotation 통해 이걸 사용 → mouse look 이 카메라만 회전.
+	// capsule yaw 가 이걸 따라가게 하려면 자식이 bUseControllerRotationYaw 등 옵션으로 toggle.
+	virtual FRotator GetControlRotation() const { return ControlRotation; }
+	void             SetControlRotation(const FRotator& NewRot) { ControlRotation = NewRot; }
+
+	// 누적 헬퍼 — ACharacter::Tick 등에서 mouse delta * sensitivity 호출.
+	void             AddYawInput  (float Value) { ControlRotation.Yaw   += Value; }
+	void             AddPitchInput(float Value) { ControlRotation.Pitch += Value; }
+
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void Serialize(FArchive& Ar) override;
 
@@ -54,4 +65,7 @@ protected:
 
 	// BeginPlay 가 자동 추가 — 자식의 SetupInputComponent 가 mapping/binding 등록.
 	UInputComponent* InputComponent = nullptr;
+
+	// "사용자가 보는 방향" — capsule yaw 와 분리. SpringArm 이 inherit.
+	FRotator ControlRotation;
 };

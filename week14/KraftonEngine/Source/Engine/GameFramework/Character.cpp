@@ -4,7 +4,6 @@
 #include "Component/InputComponent.h"
 #include "Component/Movement/CharacterMovementComponent.h"
 #include "Component/SkeletalMeshComponent.h"
-#include "Component/SpringArmComponent.h"
 #include "Input/InputSystem.h"
 #include "Math/Rotator.h"
 #include "Mesh/MeshManager.h"
@@ -74,20 +73,19 @@ void ACharacter::SetupInputComponent()
 	InputComponent->AddAxisMapping("MoveRight",   'D',  1.0f);
 	InputComponent->AddAxisMapping("MoveRight",   'A', -1.0f);
 
+	// WASD 의 forward/right 는 ControlRotation.Yaw 기준 — capsule rotation 과 무관.
+	// "카메라가 보는 방향" (yaw 만, pitch 무시) 으로 이동.
 	InputComponent->BindAxis("MoveForward", [this](float Value)
 	{
-		if (Value == 0.0f || !CapsuleComponent) return;
-		// XY 평면만 — Z 성분 제거. (capsule 회전이 yaw 만이라 사실상 Z=0 이지만 안전.)
-		FVector Fwd = CapsuleComponent->GetForwardVector();
-		Fwd.Z = 0.0f;
-		AddMovementInput(Fwd, Value);
+		if (Value == 0.0f) return;
+		const FRotator YawOnly(0.0f, GetControlRotation().Yaw, 0.0f);
+		AddMovementInput(YawOnly.GetForwardVector(), Value);
 	});
 	InputComponent->BindAxis("MoveRight", [this](float Value)
 	{
-		if (Value == 0.0f || !CapsuleComponent) return;
-		FVector Right = CapsuleComponent->GetRightVector();
-		Right.Z = 0.0f;
-		AddMovementInput(Right, Value);
+		if (Value == 0.0f) return;
+		const FRotator YawOnly(0.0f, GetControlRotation().Yaw, 0.0f);
+		AddMovementInput(YawOnly.GetRightVector(), Value);
 	});
 
 	// Space = Jump (VK_SPACE = 0x20). Walking 중에만 effective (CharacterMovement::Jump 가 guard).
@@ -105,33 +103,15 @@ void ACharacter::Tick(float DeltaTime)
 	if (!bAutoInputMouseLook) return;
 
 	const InputSystem& In = InputSystem::Get();
+	const int DX = In.MouseDeltaX();
+	const int DY = In.MouseDeltaY();
+	if (DX == 0 && DY == 0) return;
 
-	// Yaw — capsule 자체 회전. Mesh / SpringArm / Camera 가 자동 follow.
-	if (CapsuleComponent)
-	{
-		const int DX = In.MouseDeltaX();
-		if (DX != 0)
-		{
-			const float DeltaYaw = static_cast<float>(DX) * MouseSensitivity;
-			CapsuleComponent->Rotate(DeltaYaw, 0.0f);
-		}
-	}
-
-	// Pitch — SpringArm 의 relative pitch 만. capsule 은 pitch 영향 없음 (캐릭터 안 누움).
-	// SpringArm 없는 ACharacter 자식 (예: 카메라 없는 베이스) 은 lazy 조회 결과 nullptr — no-op.
-	if (!CameraSpringArm)
-	{
-		CameraSpringArm = GetComponentByClass<USpringArmComponent>();
-	}
-	if (CameraSpringArm)
-	{
-		const int DY = In.MouseDeltaY();
-		if (DY != 0)
-		{
-			// 마우스 아래 → 카메라 위 (UE 기본 — invert 토글 추후).
-			CameraPitch += static_cast<float>(DY) * MouseSensitivity;
-			CameraPitch = std::clamp(CameraPitch, MinCameraPitch, MaxCameraPitch);
-			CameraSpringArm->SetRelativeRotation(FRotator(CameraPitch, 0.0f, 0.0f));
-		}
-	}
+	// APawn::ControlRotation 누적. SpringArm 이 bUsePawnControlRotation 통해 이걸 사용.
+	// capsule 회전은 안 건드림 — mesh facing 은 그대로, 카메라만 회전.
+	FRotator Rot = GetControlRotation();
+	Rot.Yaw   += static_cast<float>(DX) * MouseSensitivity;
+	Rot.Pitch += static_cast<float>(DY) * MouseSensitivity;   // mouse 아래 = 카메라 위 (UE 기본)
+	Rot.Pitch  = std::clamp(Rot.Pitch, MinCameraPitch, MaxCameraPitch);
+	SetControlRotation(Rot);
 }

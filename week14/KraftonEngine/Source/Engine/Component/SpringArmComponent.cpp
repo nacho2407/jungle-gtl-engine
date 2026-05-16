@@ -2,8 +2,10 @@
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/Pawn.h"
 #include "GameFramework/World.h"
 #include "Core/CollisionTypes.h"
+#include "Math/Rotator.h"
 #include <algorithm>
 #include <cmath>
 
@@ -26,10 +28,26 @@ void USpringArmComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 		return;
 	}
 
-	// (1) 부모 World transform 추출. Pawn 의 위치/회전이 desired attach point.
+	// (1) 부모 World transform 추출. Pawn 의 위치는 desired attach point.
 	const FMatrix& ParentWorld = ParentComponent->GetWorldMatrix();
 	const FVector ParentWorldLoc = ParentComponent->GetWorldLocation();
-	const FQuat ParentWorldRot = ParentWorld.ToQuat().GetNormalized();
+	FQuat ParentWorldRot = ParentWorld.ToQuat().GetNormalized();
+
+	// bUsePawnControlRotation — capsule rotation 대신 owner APawn 의 ControlRotation 을
+	// (선택된 axis 별로) 사용. mouse look 이 capsule 안 건드리고 카메라만 회전하는 패턴.
+	if (bUsePawnControlRotation)
+	{
+		if (APawn* OwnerPawn = Cast<APawn>(GetOwner()))
+		{
+			const FRotator ParentR = ParentWorldRot.ToRotator();
+			const FRotator Ctrl    = OwnerPawn->GetControlRotation();
+			FRotator Result = ParentR;
+			if (bInheritPitch) Result.Pitch = Ctrl.Pitch;
+			if (bInheritYaw)   Result.Yaw   = Ctrl.Yaw;
+			if (bInheritRoll)  Result.Roll  = Ctrl.Roll;
+			ParentWorldRot = Result.ToQuaternion();
+		}
+	}
 
 	// (2) Desired attach point — 부모 위치 + 부모 회전 기준 TargetOffset 적용.
 	const FVector DesiredAttachLoc = ParentWorldLoc + ParentWorldRot.RotateVector(TargetOffset);
@@ -142,6 +160,10 @@ void USpringArmComponent::Serialize(FArchive& Ar)
 	{
 		ProbeChannel = static_cast<ECollisionChannel>(ProbeChannelByte);
 	}
+	Ar << bUsePawnControlRotation;
+	Ar << bInheritPitch;
+	Ar << bInheritYaw;
+	Ar << bInheritRoll;
 }
 
 void USpringArmComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
