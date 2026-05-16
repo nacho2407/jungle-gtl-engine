@@ -15,6 +15,7 @@ class FRenderPassPipeline
 public:
 	// Registry로부터 패스 생성 + 상태 테이블 빌드
 	void Initialize();
+	void Release();
 
 	// 전체 패스 루프 실행
 	void Execute(const FPassContext& Ctx);

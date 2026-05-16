@@ -1,13 +1,15 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
 #include "Render/Types/VertexTypes.h"
 #include "SkeletalMeshAsset.h"
 #include "StaticMeshAsset.h"
+#include "Animation/SkeletonTypes.h"
 
 #include <fbxsdk.h>
 
+class UAnimSequence;
 struct FImportOptions;
 
 class FFbxImporter
@@ -44,17 +46,22 @@ private:
 	static void GenerateTangents(uint32 TriIndices[]);
 	static void BuildTangentsForVertexRange(const uint32 VertexStart);
 
+	static void FinalizeSkeletonFromBones();
+
+	static void ParseAnimation(FbxScene* Scene, const TMap<FbxNode*, int32>& NodeToIndex);
+
 public:
 	// Temporary data structures for parsing
-	static TArray<FVertexPNCTBW> Vertices;
-	static TArray<uint32> Indices;
-	static TArray<FBone> Bones;
-	static TArray<FSkeletalMeshSection> Sections;
-	static TArray<FSkeletalMeshRange> MeshRanges;
-	static TArray<FMaterialInfo> MtlInfos;
+	static TArray<FVertexPNCTBW>            Vertices;
+	static TArray<uint32>                   Indices;
+	static TArray<FBone>                    Bones;
+	static TArray<FSkeletalMeshSection>     Sections;
+	static TArray<FSkeletalMeshRange>       MeshRanges;
+	static TArray<FMaterialInfo>            MtlInfos;
 	static TMap<FbxSurfaceMaterial*, int32> MaterialToSlotIndex;
-	static TArray<FSkeletalMaterial> SkeletalMaterials;
-	static TArray<FVector> TangentSums;
-	static TArray<FVector> BitangentSums;
-
+	static TArray<FSkeletalMaterial>        SkeletalMaterials;
+	static TArray<FVector>                  TangentSums;
+	static TArray<FVector>                  BitangentSums;
+	static FReferenceSkeleton               ImportedSkeleton;
+	static TArray<UAnimSequence*>           ImportedAnimSequences;
 };

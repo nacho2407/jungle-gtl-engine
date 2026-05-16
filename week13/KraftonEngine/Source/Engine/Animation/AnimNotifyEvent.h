@@ -2,6 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Object/FName.h"
+#include "Serialization/Archive.h"
 
 class UAnimNotify;
 
@@ -18,5 +19,16 @@ struct FAnimNotifyEvent
 	float Duration    = 0.0f;   // 0 이면 instant
 
 	// 로직 객체 포인터. 소유는 UAnimDataModel (Outer 체인). 시퀀스 복사 시 포인터 공유.
+	// 직렬화는 raw 필드 (Name/Time/Duration) 만 — Notify 객체의 클래스명/payload 직렬화는
+	// UAnimNotify 의 클래스 메타 통합 후 별도 단계로.
 	UAnimNotify* Notify = nullptr;
+
+	friend FArchive& operator<<(FArchive& Ar, FAnimNotifyEvent& N)
+	{
+		Ar << N.NotifyName;
+		Ar << N.TriggerTime;
+		Ar << N.Duration;
+		// Notify 포인터는 미직렬화 — 추후 UAnimNotify 클래스 메타 통합 시 추가.
+		return Ar;
+	}
 };

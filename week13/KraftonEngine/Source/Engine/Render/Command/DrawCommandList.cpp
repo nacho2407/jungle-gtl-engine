@@ -38,6 +38,13 @@ void FStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 			Bindings.SRVs[i] = nullptr;
 		}
 	}
+
+	if (Bindings.SkinMatrixSRV)
+	{
+		ID3D11ShaderResourceView* nullSRV = nullptr;
+		Ctx->VSSetShaderResources(EVertexFactoryTexSlot::SkinMatrices, 1, &nullSRV);
+		Bindings.SkinMatrixSRV = nullptr;
+	}
 }
 
 // ============================================================
@@ -228,6 +235,13 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd,
 			Ctx->PSSetShaderResources(i, 1, &SRV);
 			Cache.Bindings.SRVs[i] = Cmd.Bindings.SRVs[i];
 		}
+	}
+
+	if (bForce || Cmd.Bindings.SkinMatrixSRV != Cache.Bindings.SkinMatrixSRV)
+	{
+		ID3D11ShaderResourceView* SRV = Cmd.Bindings.SkinMatrixSRV;
+		Ctx->VSSetShaderResources(EVertexFactoryTexSlot::SkinMatrices, 1, &SRV);
+		Cache.Bindings.SkinMatrixSRV = Cmd.Bindings.SkinMatrixSRV;
 	}
 
 	Cache.bForceAll = false;
