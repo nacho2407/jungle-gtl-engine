@@ -153,8 +153,9 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
         SkeletalMeshComp->EnsureSkinningUpdated();
         const bool bNeedsUpload = SkeletalMeshComp->ConsumeRenderStateDirty();
 
-        const bool bUseCPUSkinning = SkeletalMeshComp->GetSkinningMode() == ESkinningMode::CPU;
-        const bool bUseGPUSkinning = SkeletalMeshComp->GetSkinningMode() == ESkinningMode::GPU;
+        const ESkinningMode SkinningMode = SkeletalMeshComp->GetResolvedSkinningMode();
+        const bool bUseCPUSkinning = SkinningMode == ESkinningMode::CPU;
+        const bool bUseGPUSkinning = SkinningMode == ESkinningMode::GPU;
         uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
         if (bUseGPUSkinning)
         {
