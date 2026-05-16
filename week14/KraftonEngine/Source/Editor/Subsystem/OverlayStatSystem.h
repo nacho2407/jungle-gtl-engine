@@ -31,9 +31,11 @@ public:
 	void ShowPickingTime(bool bEnable = true) { bShowPickingTime = bEnable; }
 	void ShowMemory(bool bEnable = true) { bShowMemory = bEnable; }
 	void ShowShadow(bool bEnable = true) { bShowShadow = bEnable; }
+	void ShowSkinning(bool bEnable = true) { bShowSkinning = bEnable; }
 	bool ToggleFPS() { bShowFPS = !bShowFPS; return bShowFPS; }
 	bool ToggleMemory() { bShowMemory = !bShowMemory; return bShowMemory; }
 	bool ToggleShadow() { bShowShadow = !bShowShadow; return bShowShadow; }
+	bool ToggleSkinning() { bShowSkinning = !bShowSkinning; return bShowSkinning; }
 	void RecordPickingAttempt(double ElapsedMs);
 	void HideAll()
 	{
@@ -41,6 +43,7 @@ public:
 		bShowPickingTime = false;
 		bShowMemory = false;
 		bShowShadow = false;
+		bShowSkinning = false;
 	}
 
 	const FOverlayStatLayout& GetLayout() const { return Layout; }
@@ -55,11 +58,13 @@ private:
 	void BuildFPSLines(const UEditorEngine& Editor, TArray<FString>& OutLines) const;
 	void BuildMemoryLines(TArray<FString>& OutLines) const;
 	void BuildShadowLines(TArray<FString>& OutLines) const;
+	void BuildSkinningLines(TArray<FString>& OutLines) const;
 
 	bool bShowFPS = false;
 	bool bShowPickingTime = false; // WM_LBUTTONDOWN , VK_LBUTTON 입력 시점이 아닌 오브젝트 충돌 판정에 걸린 시간을 측정합니다.
 	bool bShowMemory = false;
 	bool bShowShadow = false;
+	bool bShowSkinning = false;
 	double LastPickingTimeMs = 0.0;
 	double AccumulatedPickingTimeMs = 0.0;
 	uint32 PickingAttemptCount = 0;
@@ -69,6 +74,20 @@ private:
 	mutable double FPSAccumulatedFrameTimeMs = 0.0;
 	mutable uint32 FPSAccumulatedFrameCount = 0;
 	mutable bool bFPSAverageInitialized = false;
+
+	struct FSkinningOverlaySample
+	{
+		bool bValid = false;
+		bool bLive = false;
+		double LastMs = 0.0;
+		double AvgMs = 0.0;
+		uint32 CallCount = 0;
+	};
+
+	mutable FSkinningOverlaySample CPUVertexSkinSample;
+	mutable FSkinningOverlaySample GPUMatrixUploadSample;
+	mutable FSkinningOverlaySample SkeletalPreDepthCPUPathSample;
+	mutable FSkinningOverlaySample SkeletalPreDepthGPUPathSample;
 
 	FOverlayStatLayout Layout;
 };

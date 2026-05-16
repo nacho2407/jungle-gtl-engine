@@ -65,7 +65,16 @@ public:
 	// fallback 후크 — Notify 객체가 없거나, 추가 처리 필요할 때 자식이 오버라이드.
 	virtual void HandleAnimNotify(const FAnimNotifyEvent& Notify) { (void)Notify; }
 
+	// Read-only inspection — Editor debug widget 용. dispatch 직후의 ring buffer (capacity RecentNotifyCapacity).
+	// 가장 오래된 것이 [0], 가장 최근이 [size-1].
+	const TArray<FQueuedAnimNotify>& GetRecentNotifies() const { return RecentNotifies; }
+
 protected:
 	USkeletalMeshComponent*       OwningComponent = nullptr;
 	TArray<FQueuedAnimNotify>     NotifyQueue;
+
+	// 디버그용 최근 발사 notify 이력. DispatchQueuedAnimEvents 에서 push.
+	// 비용: dispatch 당 push 1회 + cap 초과 시 erase front 1회 — 무시 가능.
+	static constexpr size_t       RecentNotifyCapacity = 10;
+	TArray<FQueuedAnimNotify>     RecentNotifies;
 };

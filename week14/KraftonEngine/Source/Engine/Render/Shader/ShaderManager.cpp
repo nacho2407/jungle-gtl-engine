@@ -45,7 +45,8 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	GetOrCreate(EShaderPath::Billboard, StartupError);
 	GetOrCreate(EShaderPath::HeightFog, StartupError);
 	GetOrCreate(EShaderPath::GammaCorrection, StartupError);
-	GetOrCreate(EShaderPath::ShadowDepth, StartupError);
+	GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory::StaticMesh, StartupError);
+	GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory::SkeletalMesh, StartupError);
 	GetOrCreate(EShaderPath::ShadowMapVis, StartupError);
 	GetOrCreate(EShaderPath::CameraFade, StartupError);
 	GetOrCreate(EShaderPath::CameraVignette, StartupError);
@@ -99,6 +100,11 @@ FShader* FShaderManager::GetOrCreate(const FShaderKey& Key, EShaderErrorMode Err
 	{
 		return GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Default,
 			EUberLitDefines::EVertexFactory::StaticMesh, ErrorMode);
+	}
+
+	if (Key.Path == EShaderPath::ShadowDepth && Key.VSEntryPoint == "VS")
+	{
+		return GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory::StaticMesh, ErrorMode);
 	}
 
 	auto It = ShaderCache.find(Key);
@@ -155,11 +161,20 @@ FShader* FShaderManager::PreCompile(const FShaderKey& Key, const D3D_SHADER_MACR
 	return RawPtr;
 }
 
-FShader* FShaderManager::GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel LightingModel,
-	EUberLitDefines::EVertexFactory VertexFactory, EShaderErrorMode ErrorMode)
+FShader* FShaderManager::GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory VF, EShaderErrorMode ErrorMode)
 {
-	const D3D_SHADER_MACRO* Defines = EUberLitDefines::GetDefines(LightingModel, VertexFactory);
-	return PreCompile(EUberLitDefines::MakePermutationKey(LightingModel, VertexFactory), Defines, ErrorMode);
+	const D3D_SHADER_MACRO* Defines =
+		(VF == EShadowDepthDefines::EVertexFactory::SkeletalMesh)
+		? EShadowDepthDefines::SkeletalMesh
+		: EShadowDepthDefines::StaticMesh;
+	return PreCompile(EShadowDepthDefines::MakePermutationKey(VF), Defines, ErrorMode);
+}
+
+FShader* FShaderManager::GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel LightingModel,
+	EUberLitDefines::EVertexFactory VertexFactory, EShaderErrorMode ErrorMode, bool bWeightBoneHeatMap)
+{
+	const D3D_SHADER_MACRO* Defines = EUberLitDefines::GetDefines(LightingModel, VertexFactory, bWeightBoneHeatMap);
+	return PreCompile(EUberLitDefines::MakePermutationKey(LightingModel, VertexFactory, bWeightBoneHeatMap), Defines, ErrorMode);
 }
 
 // ============================================================

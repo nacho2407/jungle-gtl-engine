@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <cstring>
 
 void FGPUProfiler::Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InContext)
 {
@@ -134,6 +135,9 @@ void FGPUProfiler::CollectPreviousFrame()
 
 	double InvFrequency = 1000.0 / static_cast<double>(disjointData.Frequency); // ms 단위
 
+	bool bCountedSkeletalPreDepthCPUPath = false;
+	bool bCountedSkeletalPreDepthGPUPath = false;
+
 	for (uint32 i = 0; i < Read.UsedCount; ++i)
 	{
 		UINT64 tsBegin = 0, tsEnd = 0;
@@ -151,7 +155,22 @@ void FGPUProfiler::CollectPreviousFrame()
 			Accum.Name = Name;
 			Accum.Category = Cat;
 		}
-		Accum.FrameCallCount++;
+		bool bCountCall = true;
+		if (Name && std::strcmp(Name, "SkeletalPreDepth_GPU_CPUPath") == 0)
+		{
+			bCountCall = !bCountedSkeletalPreDepthCPUPath;
+			bCountedSkeletalPreDepthCPUPath = true;
+		}
+		else if (Name && std::strcmp(Name, "SkeletalPreDepth_GPU_GPUPath") == 0)
+		{
+			bCountCall = !bCountedSkeletalPreDepthGPUPath;
+			bCountedSkeletalPreDepthGPUPath = true;
+		}
+
+		if (bCountCall)
+		{
+			Accum.FrameCallCount++;
+		}
 		Accum.FrameTotal += ElapsedSec;
 	}
 }
@@ -164,10 +183,13 @@ void FGPUProfiler::TakeSnapshot()
 	for (auto& [Key, Accum] : GPUStats)
 	{
 		double FrameTime = Accum.FrameTotal;
-		Accum.Window[Accum.WindowHead] = FrameTime;
-		Accum.WindowHead = (Accum.WindowHead + 1) % STAT_WINDOW_SIZE;
-		if (Accum.WindowCount < STAT_WINDOW_SIZE)
-			Accum.WindowCount++;
+		if (Accum.FrameCallCount > 0)
+		{
+			Accum.Window[Accum.WindowHead] = FrameTime;
+			Accum.WindowHead = (Accum.WindowHead + 1) % STAT_WINDOW_SIZE;
+			if (Accum.WindowCount < STAT_WINDOW_SIZE)
+				Accum.WindowCount++;
+		}
 
 		double Sum = 0.0;
 		double WMax = 0.0;

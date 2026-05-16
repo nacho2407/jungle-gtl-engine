@@ -1,0 +1,241 @@
+{
+  "Actors" : [{
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_0",
+      "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [0.000000, 0.000000, -3.039449],
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [30.000000, 30.000000, 1.000000],
+        "Tags" : "",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Content/Data/BasicShape/Cube_StaticMesh.uasset",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [0.000000, 0.000000, -3.039449],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [30.000000, 30.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "ALuaCharacter",
+      "Name" : "ALuaCharacter_0",
+      "NonSceneComponents" : [{
+          "ClassName" : "UCharacterMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : false,
+            "Braking Friction" : 8.000000,
+            "Floor Probe Distance" : 0.100000,
+            "Gravity" : 9.800000,
+            "Jump Z Velocity" : 6.000000,
+            "Max Acceleration" : 20.000000,
+            "Max Walk Speed" : 6.000000,
+            "Orient Rotation To Movement" : true,
+            "Rotation Yaw Rate" : 540.000000,
+            "Updated Component" : "Root",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "ULevel_2_ALuaCharacter_0.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "Properties" : {
+        "Auto Possess Player" : true,
+        "Location" : [-3.050979, 0.983401, 1.331516],
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
+        "Use Controller Rotation Pitch" : true,
+        "Use Controller Rotation Roll" : false,
+        "Use Controller Rotation Yaw" : true,
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "USkeletalMeshComponent",
+            "Properties" : {
+              "Anim Instance Class" : "ULuaAnimInstance",
+              "Anim To Play" : "None",
+              "Animation Mode" : 2,
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/KON001_Hirasawa_Yui.003.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/KON001_Hirasawa_Yui_eye.003.mat"
+              },
+              "Element 2" : {
+                "Path" : "Asset/Materials/Auto/KON001_Hirasawa_Yui_face.003.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Looping" : true,
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Play Rate" : 1.000000,
+              "Playing" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Script File" : "Anim/yui_character.lua",
+              "Simulate Physics" : false,
+              "Skeletal Mesh" : "Content/Data/hirasawa-yui/yui_SkeletalMesh.uasset",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [{
+                "Children" : [],
+                "ClassName" : "UCameraComponent",
+                "Properties" : {
+                  "FOV" : 1.047198,
+                  "Far Z" : 1000.000000,
+                  "Location" : [0.000000, 0.000000, 0.000000],
+                  "Near Z" : 0.100000,
+                  "Ortho Width" : 10.000000,
+                  "Orthographic" : false,
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }],
+            "ClassName" : "USpringArmComponent",
+            "Properties" : {
+              "Camera Lag Max Distance" : 0.000000,
+              "Camera Lag Speed" : 10.000000,
+              "Camera Rotation Lag Speed" : 10.000000,
+              "Do Collision Test" : false,
+              "Enable Camera Lag" : true,
+              "Enable Rotation Lag" : true,
+              "Inherit Pitch" : true,
+              "Inherit Roll" : false,
+              "Inherit Yaw" : true,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Probe Size" : 0.120000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Socket Offset" : [0.000000, 0.000000, 3.000000],
+              "Target Arm Length" : 10.000000,
+              "Target Offset" : [0.000000, 0.000000, 0.000000],
+              "Use Pawn Control Rotation" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UCapsuleComponent",
+        "Properties" : {
+          "Capsule Half Height" : 3.000000,
+          "Capsule Radius" : 1.800000,
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-3.050979, 0.983401, 1.331516],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "NewScene",
+  "ContextName" : "New Scene",
+  "Name" : "CharacterTest",
+  "PerspectiveCamera" : {
+    "FOV" : 1.047198,
+    "FarClip" : 1000.000000,
+    "Location" : [1.724849, -5.618938, 5.024476],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 14.265103, 117.600037]
+  },
+  "Version" : 2,
+  "WorldSettings" : {
+    "GameMode" : ""
+  },
+  "WorldType" : "Editor"
+}

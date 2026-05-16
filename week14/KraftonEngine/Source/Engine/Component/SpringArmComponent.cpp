@@ -1,9 +1,11 @@
-#include "Component/SpringArmComponent.h"
+﻿#include "Component/SpringArmComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/Pawn.h"
 #include "GameFramework/World.h"
 #include "Core/CollisionTypes.h"
+#include "Math/Rotator.h"
 #include <algorithm>
 #include <cmath>
 
@@ -26,14 +28,32 @@ void USpringArmComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 		return;
 	}
 
-	// (1) 부모 World transform 추출. Pawn 의 위치/회전이 desired attach point.
+	// (1) 부모 World transform 추출. 두 개 분리:
+	//   - ParentActualRot: capsule 의 실제 world rotation (RelativeRotation 환산용 — 불변).
+	//   - DesiredParentRot: SpringArm 이 사용할 desired rotation (control rotation 적용 후).
 	const FMatrix& ParentWorld = ParentComponent->GetWorldMatrix();
 	const FVector ParentWorldLoc = ParentComponent->GetWorldLocation();
-	const FQuat ParentWorldRot = ParentWorld.ToQuat().GetNormalized();
+	const FQuat   ParentActualRot  = ParentWorld.ToQuat().GetNormalized();
+	FQuat         DesiredParentRot = ParentActualRot;
 
-	// (2) Desired attach point — 부모 위치 + 부모 회전 기준 TargetOffset 적용.
-	const FVector DesiredAttachLoc = ParentWorldLoc + ParentWorldRot.RotateVector(TargetOffset);
-	const FQuat DesiredAttachRot = ParentWorldRot;
+	// bUsePawnControlRotation — capsule rotation 대신 owner APawn 의 ControlRotation 을
+	// (선택된 axis 별로) 사용. mouse look 이 capsule 안 건드리고 카메라만 회전하는 패턴.
+	if (bUsePawnControlRotation)
+	{
+		if (APawn* OwnerPawn = Cast<APawn>(GetOwner()))
+		{
+			FRotator Result = DesiredParentRot.ToRotator();
+			const FRotator Ctrl = OwnerPawn->GetControlRotation();
+			if (bInheritPitch) Result.Pitch = Ctrl.Pitch;
+			if (bInheritYaw)   Result.Yaw   = Ctrl.Yaw;
+			if (bInheritRoll)  Result.Roll  = Ctrl.Roll;
+			DesiredParentRot = Result.ToQuaternion();
+		}
+	}
+
+	// (2) Desired attach point — 부모 위치 + desired 회전 기준 TargetOffset 적용.
+	const FVector DesiredAttachLoc = ParentWorldLoc + DesiredParentRot.RotateVector(TargetOffset);
+	const FQuat DesiredAttachRot = DesiredParentRot;
 
 	// (3) Lag 적용 — 첫 Tick 은 desired 로 초기화 (아직 비교할 prev 없음).
 	if (!bHasPreviousState)
@@ -110,8 +130,11 @@ void USpringArmComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	}
 
 	// (5) World transform 을 *Relative* 로 환산해서 RelativeTransform 에 set —
-	//     SceneComponent 기본 합성 (Parent × Relative) 이 우리 의도한 World 를 자식에게 전달.
-	const FQuat ParentInvRot = ParentWorldRot.Inverse();
+	//     SceneComponent 기본 합성 (Parent 실제 × Relative) 이 우리 의도한 World 를 자식에게 전달.
+	//     ★ 반드시 ParentActualRot 의 inverse 사용 (DesiredParentRot 아님). 안 그러면
+	//       (Desired)^-1 × Lagged 가 Desired ≈ Lagged 일 때 identity 되어 카메라 가 capsule
+	//       회전만 따라감 — control rotation 이 무시되는 버그.
+	const FQuat ParentInvRot = ParentActualRot.Inverse();
 	const FVector RelLoc = ParentInvRot.RotateVector(ArmEndWorld - ParentWorldLoc);
 	const FQuat RelRot = (ParentInvRot * LaggedAttachRot).GetNormalized();
 
@@ -142,6 +165,10 @@ void USpringArmComponent::Serialize(FArchive& Ar)
 	{
 		ProbeChannel = static_cast<ECollisionChannel>(ProbeChannelByte);
 	}
+	Ar << bUsePawnControlRotation;
+	Ar << bInheritPitch;
+	Ar << bInheritYaw;
+	Ar << bInheritRoll;
 }
 
 void USpringArmComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -157,4 +184,8 @@ void USpringArmComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 	OutProps.push_back({ "Camera Lag Max Distance",  EPropertyType::Float, "SpringArm", &CameraLagMaxDistance,      0.0f, 100000.0f, 1.0f });
 	OutProps.push_back({ "Do Collision Test",        EPropertyType::Bool,  "SpringArm", &bDoCollisionTest                                });
 	OutProps.push_back({ "Probe Size",               EPropertyType::Float, "SpringArm", &ProbeSize,                 0.0f, 100.0f,    0.01f });
+	OutProps.push_back({ "Use Pawn Control Rotation",EPropertyType::Bool,  "SpringArm", &bUsePawnControlRotation                         });
+	OutProps.push_back({ "Inherit Pitch",            EPropertyType::Bool,  "SpringArm", &bInheritPitch                                   });
+	OutProps.push_back({ "Inherit Yaw",              EPropertyType::Bool,  "SpringArm", &bInheritYaw                                     });
+	OutProps.push_back({ "Inherit Roll",             EPropertyType::Bool,  "SpringArm", &bInheritRoll                                    });
 }

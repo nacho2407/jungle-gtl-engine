@@ -37,6 +37,9 @@ public:
 	// Editor 노출 — Speed 등 데모 파라미터. PostEdit 처리 불필요 (직접 멤버 mutation).
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
+	// PIE Duplicate / Scene save — Editor-set 데모 파라미터 라운드트립.
+	void Serialize(FArchive& Ar) override;
+
 	UAnimationStateMachine* GetFSM() const { return FSM; }
 
 private:

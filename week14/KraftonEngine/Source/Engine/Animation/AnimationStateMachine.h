@@ -57,6 +57,14 @@ public:
 	FName GetCurrentStateName() const { return CurrentStateName; }
 	bool  IsBlending() const          { return FromState != nullptr; }
 
+	// Read-only inspection — Editor debug widget 및 향후 도구 (Lua inspect 등) 용.
+	const TArray<UAnimState*>&      GetStates()        const { return States; }
+	const TArray<FStateTransition>& GetTransitions()   const { return Transitions; }
+	UAnimState* GetCurrentState()  const { return CurrentState; }
+	UAnimState* GetFromState()     const { return FromState; }
+	float       GetBlendAlpha()    const { return BlendAlpha; }
+	float       GetBlendDuration() const { return BlendDuration; }
+
 private:
 	UAnimState* FindState(FName Name) const;
 	void        EnterState(UAnimInstance* Owner, FName NewState);

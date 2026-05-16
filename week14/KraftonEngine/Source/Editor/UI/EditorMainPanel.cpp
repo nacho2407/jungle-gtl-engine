@@ -47,6 +47,8 @@ const FDebugPlaceActorOption GDebugPlaceActorOptions[] = {
 	{ "Directional Light", FLevelViewportLayout::EViewportPlaceActorType::DirectionalLight },
 	{ "Point Light", FLevelViewportLayout::EViewportPlaceActorType::PointLight },
 	{ "Spot Light", FLevelViewportLayout::EViewportPlaceActorType::SpotLight },
+	{ "Character",     FLevelViewportLayout::EViewportPlaceActorType::Character },
+	{ "Lua Character", FLevelViewportLayout::EViewportPlaceActorType::LuaCharacter },
 };
 
 }
@@ -86,6 +88,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	StatWidget.Initialize(InEditorEngine);
 	ContentBrowserWidget.Initialize(InEditorEngine, InRenderer.GetFD3DDevice().GetDevice());
 	ShadowMapDebugWidget.Initialize(InEditorEngine);
+	AnimationDebugWidget.Initialize(InEditorEngine);
 
 	AssetEditorManager.RegisterEditor<FFloatCurveEditorWidget>();
 	AssetEditorManager.RegisterEditor<FCameraShakeEditorWidget>();
@@ -176,6 +179,12 @@ void FEditorMainPanel::Render(float DeltaTime)
 		ShadowMapDebugWidget.Render(DeltaTime);
 	}
 
+	if (!bHideEditorWindows && Settings.UI.bAnimationDebug)
+	{
+		SCOPE_STAT_CAT("AnimationDebugWidget.Render", "5_UI");
+		AnimationDebugWidget.Render(DeltaTime);
+	}
+
 	ProjectSettingsWidget.Render();
 	WorldSettingsWidget.Render();
 
@@ -255,6 +264,7 @@ void FEditorMainPanel::RenderMainMenuBar()
 		ImGui::Checkbox("ContentBrowser", &Settings.UI.bContentBrowser);
 		ImGui::Checkbox("Editor Debug", &Settings.UI.bEditorDebug);
 		ImGui::Checkbox("Shadow Map Debug", &Settings.UI.bShadowMapDebug);
+		ImGui::Checkbox("Animation Debug", &Settings.UI.bAnimationDebug);
 		ImGui::Separator();
 		ImGui::Checkbox("IMGUI_Setting", &Settings.UI.bImGUISettings);
 		ImGui::EndPopup();

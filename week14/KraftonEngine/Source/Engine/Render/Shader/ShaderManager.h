@@ -116,6 +116,36 @@ namespace EShaderPath
 	inline constexpr const char* CameraLetterbox = "Shaders/PostProcess/CameraLetterbox.hlsl";
 }
 
+namespace EShadowDepthDefines
+{
+	namespace EntryPoint
+	{
+		inline constexpr const char* StaticMeshVS = "VS_StaticMesh";
+		inline constexpr const char* SkeletalMeshVS = "VS_SkeletalMesh";
+		inline constexpr const char* PS = "PS";
+	}
+
+	enum class EVertexFactory : uint8
+	{
+		StaticMesh,
+		SkeletalMesh,
+	};
+
+	// StaticMesh: 매크로 없음 (기본 경로)
+	inline const D3D_SHADER_MACRO StaticMesh[] = { {nullptr, nullptr} };
+	// SkeletalMesh: GPU skinning 활성화 매크로
+	inline const D3D_SHADER_MACRO SkeletalMesh[] = { {"USE_GPU_SKINNING", "1"}, {nullptr, nullptr} };
+
+	inline FShaderKey MakePermutationKey(EVertexFactory VF)
+	{
+		const D3D_SHADER_MACRO* Defines = 
+			(VF == EVertexFactory::SkeletalMesh) ? SkeletalMesh : StaticMesh;
+		const char* VSEntry =
+			(VF == EVertexFactory::SkeletalMesh) ? EntryPoint::SkeletalMeshVS : EntryPoint::StaticMeshVS;
+		return FShaderKey(EShaderPath::ShadowDepth, Defines, VSEntry, EntryPoint::PS);
+	}
+
+}
 namespace EUberLitDefines
 {
 	namespace EntryPoint
@@ -145,10 +175,28 @@ namespace EUberLitDefines
 	inline const D3D_SHADER_MACRO Gouraud[] = { {"LIGHTING_MODEL_GOURAUD", "1"}, {nullptr, nullptr} };
 	inline const D3D_SHADER_MACRO Lambert[] = { {"LIGHTING_MODEL_LAMBERT", "1"}, {nullptr, nullptr} };
 	inline const D3D_SHADER_MACRO Phong[] = { {"LIGHTING_MODEL_PHONG", "1"}, {nullptr, nullptr} };
+	inline const D3D_SHADER_MACRO DefaultWeightBoneHeatMap[] = { {"LIGHTING_MODEL_PHONG", "1"}, {"WEIGHT_BONE_HEATMAP", "1"}, {nullptr, nullptr} };
+	inline const D3D_SHADER_MACRO UnlitWeightBoneHeatMap[] = { {"LIGHTING_MODEL_UNLIT", "1"}, {"WEIGHT_BONE_HEATMAP", "1"}, {nullptr, nullptr} };
+	inline const D3D_SHADER_MACRO GouraudWeightBoneHeatMap[] = { {"LIGHTING_MODEL_GOURAUD", "1"}, {"WEIGHT_BONE_HEATMAP", "1"}, {nullptr, nullptr} };
+	inline const D3D_SHADER_MACRO LambertWeightBoneHeatMap[] = { {"LIGHTING_MODEL_LAMBERT", "1"}, {"WEIGHT_BONE_HEATMAP", "1"}, {nullptr, nullptr} };
+	inline const D3D_SHADER_MACRO PhongWeightBoneHeatMap[] = { {"LIGHTING_MODEL_PHONG", "1"}, {"WEIGHT_BONE_HEATMAP", "1"}, {nullptr, nullptr} };
 
-	inline const D3D_SHADER_MACRO* GetDefines(ELightingModel LightingModel, EVertexFactory VertexFactory)
+	inline const D3D_SHADER_MACRO* GetDefines(ELightingModel LightingModel, EVertexFactory VertexFactory, bool bWeightBoneHeatMap = false)
 	{
 		(void)VertexFactory;
+		if (bWeightBoneHeatMap)
+		{
+			switch (LightingModel)
+			{
+			case ELightingModel::Unlit:   return UnlitWeightBoneHeatMap;
+			case ELightingModel::Gouraud: return GouraudWeightBoneHeatMap;
+			case ELightingModel::Lambert: return LambertWeightBoneHeatMap;
+			case ELightingModel::Phong:   return PhongWeightBoneHeatMap;
+			case ELightingModel::Default:
+			default:                      return DefaultWeightBoneHeatMap;
+			}
+		}
+
 		switch (LightingModel)
 		{
 		case ELightingModel::Unlit:   return Unlit;
@@ -160,12 +208,12 @@ namespace EUberLitDefines
 		}
 	}
 
-	inline FShaderKey MakePermutationKey(ELightingModel LightingModel, EVertexFactory VertexFactory)
+	inline FShaderKey MakePermutationKey(ELightingModel LightingModel, EVertexFactory VertexFactory, bool bWeightBoneHeatMap = false)
 	{
 		const char* VSEntryPoint = VertexFactory == EVertexFactory::SkeletalMesh
 			? EntryPoint::SkeletalMeshVS
 			: EntryPoint::StaticMeshVS;
-		return FShaderKey(EShaderPath::UberLit, GetDefines(LightingModel, VertexFactory), VSEntryPoint, EntryPoint::PS);
+		return FShaderKey(EShaderPath::UberLit, GetDefines(LightingModel, VertexFactory, bWeightBoneHeatMap), VSEntryPoint, EntryPoint::PS);
 	}
 }
 
@@ -220,8 +268,9 @@ public:
 	FShader* GetOrCreate(const FShaderKey& Key, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
 	FShader* PreCompile(const FShaderKey& Key, const D3D_SHADER_MACRO* Defines, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
 	FShader* GetOrCreate(const FString& Path, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification) { return GetOrCreate(FShaderKey(Path), ErrorMode); }
+	FShader* GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory VF, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
 	FShader* GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel LightingModel, EUberLitDefines::EVertexFactory VertexFactory,
-		EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
+		EShaderErrorMode ErrorMode = EShaderErrorMode::Notification, bool bWeightBoneHeatMap = false);
 	FShader* FindOrCreate(const FString& Path);
 
 	// Compute Shader — 캐시 기반. 호출자는 포인터만 보관, FShaderManager가 소유 + 핫 리로드.
