@@ -6,6 +6,7 @@
 #include "Component/SkinnedMeshComponent.h"
 
 class UAnimInstance;
+struct FTransform;
 
 UCLASS()
 class USkeletalMeshComponent : public USkinnedMeshComponent
@@ -26,6 +27,7 @@ public:
     void SetAnimInstanceClass(const FString& InClassName);
     UAnimInstance* GetAnimInstance() const;
     void RecreateAnimInstance();
+    bool ApplyAnimationLocalPose(const TArray<FTransform>& LocalPose);
 
     void ResetToBindPose();
 

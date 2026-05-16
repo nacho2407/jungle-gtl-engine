@@ -1,7 +1,11 @@
 ﻿#include "SkeletalMeshComponent.h"
 
+// for move semantics
+#include <utility>
+
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/AnimationRuntime.h"
 #include "Core/Logging/Log.h"
 #include "Object/ObjectFactory.h"
 
@@ -20,7 +24,12 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
     if (AnimationMode != EAnimationMode::None && AnimInstance)
     {
         AnimInstance->NativeUpdateAnimation(DeltaTime);
-        // animation pose 평가와 적용은 이후 단계에서 추가
+
+        TArray<FTransform> LocalPose;
+        if (AnimInstance->EvaluateAnimation(LocalPose))
+        {
+            ApplyAnimationLocalPose(LocalPose);
+        }
     }
 
 	// Pose가 바뀐 경우에만 실제 CPU skinning이 수행(dirty flag 이용)
@@ -60,6 +69,35 @@ void USkeletalMeshComponent::SetAnimInstanceClass(const FString& InClassName)
 UAnimInstance* USkeletalMeshComponent::GetAnimInstance() const
 {
     return AnimInstance;
+}
+
+bool USkeletalMeshComponent::ApplyAnimationLocalPose(const TArray<FTransform>& LocalPose)
+{
+    if (!HasValidMesh())
+    {
+        return false;
+    }
+
+    if (!FAnimationRuntime::HasMatchingBoneCount(SkeletalMesh, LocalPose))
+    {
+        UE_LOG_WARNING(
+            "[SkeletalMeshComponent] Animation local pose bone count mismatch. MeshBones=%d, PoseBones=%d",
+            static_cast<int32>(SkeletalMesh->GetBones().size()),
+            static_cast<int32>(LocalPose.size()));
+        return false;
+    }
+
+    TArray<FMatrix> LocalMatrices;
+    if (!FAnimationRuntime::ConvertLocalPoseToMatrices(LocalPose, LocalMatrices))
+    {
+        return false;
+    }
+
+    // Global pose, skinning matrices를 포함한 실제 posing 결과 반영은 USkinnedMeshComponent::EnsureSkinningUpdated에서 진행
+	// 효율적인 복사를 위해 move semantics 사용
+    CurrentLocalPose = std::move(LocalMatrices);
+    MarkSkinningDirty();
+    return true;
 }
 
 void USkeletalMeshComponent::RecreateAnimInstance()
