@@ -6,6 +6,8 @@
 #include "CoreTypes.h"      // int32, uint8, …
 #include "Math/Vector.h"    // FVector  (for sizeof in GetPropertySize)
 #include "Math/Vector4.h"   // FVector4 (for sizeof in GetPropertySize)
+#include "Math/Quat.h"
+#include "Core/Guid.h"
 
 struct ID3D11ShaderResourceView;
 
@@ -16,14 +18,27 @@ enum class EPropertyType : uint8_t
 	Bool,
 	Int,
 	Float,
+	Color,
 	Vec3,
 	Vec4,
+	Guid,
+	Quat,
+
+	// String, Name
 	String,
-	Name,              // FName — 문자열 풀 기반 이름 (리소스 키 등)
-	SceneComponentRef, // USceneComponent* 변수의 주소 (MovementComponent를 위한 Enum값
+	Name,
+
+	// Pointer
+	SceneComponentRef,
+
+	// Array
 	Vec3Array,         // TArray<FVector>* - variable-length array of FVector
+	StringArray,       // TArray<FString>* - variable-length array of FString
+
+	// Enum MetaData
 	Enum,
-	Color,
+
+	// Asset
 	Material, // TArray<UMaterialInterface*>
 	SRV,      // FSRVPropertyData
 	CubeSRV,  // FCubeSRVPropertyData
@@ -174,6 +189,8 @@ inline size_t GetPropertySize(EPropertyType Type)
 	case EPropertyType::Vec3:   return sizeof(FVector);
 	case EPropertyType::Color:	return sizeof(FColor);
 	case EPropertyType::Vec4:   return sizeof(FVector4);
+	case EPropertyType::Guid:   return sizeof(FGuid);
+	case EPropertyType::Quat:   return sizeof(FQuat);
 	// String, Name 은 ValuePtr 기반 특수 처리
 	case EPropertyType::String: return 0;
 	case EPropertyType::Name:   return 0;

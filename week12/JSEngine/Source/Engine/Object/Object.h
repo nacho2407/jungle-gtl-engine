@@ -10,19 +10,19 @@
 
 #define DECLARE_CLASS(ClassName, ParentClass)                          		\
 	using ThisClass = ClassName;									   		\
-    static const FTypeInfo s_TypeInfo;                                 		\
-    const FTypeInfo* GetTypeInfo() const override {                    		\
-        return &s_TypeInfo;                                            		\
-    }                                                                  		\
-    /* 리플렉션 생성기 구조체가 private/protected 멤버에 접근할 수 있도록 허용 */ \
-    friend struct Z_Construct_UClass_##ClassName;
+	static const FTypeInfo s_TypeInfo;                                 		\
+	const FTypeInfo* GetTypeInfo() const override {                    		\
+		return &s_TypeInfo;                                            		\
+	}                                                                  		\
+	/* 리플렉션 생성기 구조체가 private/protected 멤버에 접근할 수 있도록 허용 */ \
+	friend struct Z_Construct_UClass_##ClassName;
 
 #define DEFINE_CLASS(ClassName, ParentClass)                           \
-    const FTypeInfo ClassName::s_TypeInfo = {                          \
-        #ClassName,                                                    \
-        &ParentClass::s_TypeInfo,                                      \
-        sizeof(ClassName)                                              \
-    };
+	const FTypeInfo ClassName::s_TypeInfo = {                          \
+		#ClassName,                                                    \
+		&ParentClass::s_TypeInfo,                                      \
+		sizeof(ClassName)                                              \
+	};
 
 enum EClassFlags : uint32_t
 {
@@ -68,7 +68,7 @@ public:
 	virtual UObject* Duplicate();
 	virtual void PostDuplicate(UObject* Original) 
 	{
-        ObjectName = Original->ObjectName;
+		ObjectName = Original->ObjectName;
 	}
 
 	uint32 GetUUID() const { return UUID; }
