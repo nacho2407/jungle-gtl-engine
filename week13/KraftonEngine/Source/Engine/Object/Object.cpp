@@ -72,38 +72,36 @@ void UObject::SerializeProperties(FArchive& Ar, uint32 RequiredFlags)
 			continue;
 		}
 
-		FPropertyDescriptor Desc = Property.ToDescriptor(this);
-		if (!Desc.ValuePtr)
+		if (!Property.GetValuePtrFor(this))
 		{
 			continue;
 		}
 
-		Desc.Serialize(Ar);
+		Property.Serialize(this, Ar);
 	}
 }
 
-void UObject::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+void UObject::GetEditableProperties(TArray<FEditableProperty>& OutProps)
 {
 	PreGetEditableProperties();
 
-	TArray<FProperty> Properties;
-	GetClass()->GetProperties(Properties);
+	TArray<const FProperty*> Properties;
+	GetClass()->GetPropertyRefs(Properties);
 
-	for (const FProperty& Property : Properties)
+	for (const FProperty* Property : Properties)
 	{
-		if ((Property.Flags & PF_Edit) == 0)
+		if (!Property || (Property->Flags & PF_Edit) == 0)
 		{
 			continue;
 		}
-		if (!ShouldExposeProperty(Property))
+		if (!ShouldExposeProperty(*Property))
 		{
 			continue;
 		}
 
-		FPropertyDescriptor Desc = Property.ToDescriptor(this);
-		if(Desc.ValuePtr)
+		if(Property->GetValuePtrFor(this))
 		{
-			OutProps.push_back(Desc);
+			OutProps.push_back({ this, Property });
 		}
 	}
 }

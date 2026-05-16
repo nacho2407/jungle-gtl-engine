@@ -111,12 +111,12 @@ struct FCollisionResponseContainer
 	}
 
 	// 에디터용 자기기술 함수 — Struct 프로퍼티 시스템에서 사용
-	static void DescribeProperties(void* Ptr, std::vector<FPropertyDescriptor>& OutProps)
+	static void DescribeProperties(void* Ptr, std::vector<FPropertyValue>& OutProps)
 	{
 		auto* Container = static_cast<FCollisionResponseContainer*>(Ptr);
 		for (int32 i = 0; i < static_cast<int32>(ECollisionChannel::ActiveCount); ++i)
 		{
-			FPropertyDescriptor Desc;
+			FPropertyValue Desc;
 			Desc.Name = GCollisionChannelNames[i];
 			Desc.Type = EPropertyType::Enum;
 			Desc.ValuePtr = &Container->Responses[i];

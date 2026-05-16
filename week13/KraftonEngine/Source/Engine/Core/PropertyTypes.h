@@ -38,14 +38,15 @@ struct FMaterialSlot
 	std::string Path;
 };
 
-struct FPropertyDescriptor;
+struct FPropertyValue;
+struct FProperty;
 class UObject;
 
 // 구조체 자기기술 함수: 구조체 포인터로부터 하위 프로퍼티를 생성
-using FStructPropertyFunc = void(*)(void* StructPtr, std::vector<FPropertyDescriptor>& OutProps);
+using FStructPropertyFunc = void(*)(void* StructPtr, std::vector<FPropertyValue>& OutProps);
 
-// 컴포넌트가 노출하는 편집 가능한 프로퍼티 디스크립터
-struct FPropertyDescriptor
+// 객체 인스턴스에 바인딩된 프로퍼티 값 뷰
+struct FPropertyValue
 {
 	std::string   Name;
 	EPropertyType Type = EPropertyType::Bool;
@@ -96,7 +97,8 @@ enum class EPropertyChangeType : uint8
 
 struct FPropertyChangedEvent
 {
-	const FPropertyDescriptor* Descriptor = nullptr;
+	UObject* Object = nullptr;
+	const FProperty* Property = nullptr;
 	const char* PropertyName = nullptr;
 	const char* DisplayName = nullptr;
 	EPropertyType Type = EPropertyType::Bool;
@@ -126,9 +128,14 @@ struct FProperty
 	TMap<FString, FString> Metadata;
 	const char* OwnerClassName = nullptr;
 
-	inline FPropertyDescriptor ToDescriptor(UObject* Object) const
+	inline void* GetValuePtrFor(UObject* Object) const
 	{
-		FPropertyDescriptor Desc;
+		return GetValuePtr ? GetValuePtr(Object) : nullptr;
+	}
+
+	inline FPropertyValue ToValue(UObject* Object) const
+	{
+		FPropertyValue Desc;
 		Desc.Name = this->Name ? this->Name : "";
 		Desc.Type = this->Type;
 		Desc.Category = this->Category ? this->Category : "";
@@ -143,5 +150,35 @@ struct FProperty
 		Desc.EnumSize = this->EnumSize;
 		Desc.StructFunc = this->StructFunc;
 		return Desc;
+	}
+
+	json::JSON Serialize(UObject* Object) const;
+	void	   Deserialize(UObject* Object, json::JSON& Value) const;
+	void	   Serialize(UObject* Object, FArchive& Ar) const;
+};
+
+struct FEditableProperty
+{
+	UObject* Object = nullptr;
+	const FProperty* Property = nullptr;
+
+	void* GetValuePtr() const
+	{
+		return Property ? Property->GetValuePtrFor(Object) : nullptr;
+	}
+
+	const char* GetName() const
+	{
+		return Property && Property->Name ? Property->Name : "";
+	}
+
+	const char* GetDisplayName() const
+	{
+		return Property && Property->DisplayName ? Property->DisplayName : GetName();
+	}
+
+	const char* GetCategory() const
+	{
+		return Property && Property->Category ? Property->Category : "";
 	}
 };

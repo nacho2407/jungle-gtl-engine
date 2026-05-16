@@ -62,6 +62,19 @@ public:
 		}
 	}
 
+	void GetPropertyRefs(TArray<const FProperty*>& OutProperties, bool bIncludeSuper = true) const
+	{
+		if (bIncludeSuper && SuperClass)
+		{
+			SuperClass->GetPropertyRefs(OutProperties, true);
+		}
+
+		for (const FProperty& Prop : Properties)
+		{
+			OutProperties.push_back(&Prop);
+		}
+	}
+
 	// --- Global class registry ---
 	static TArray<UClass*>& GetAllClasses()
 	{
