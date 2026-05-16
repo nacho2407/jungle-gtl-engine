@@ -108,6 +108,7 @@ struct FSkeletalMeshRange
 struct FSkeletalMesh
 {
 	FString PathFileName;
+	FString SkeletonPath = "None";
 
 	TArray<FVertexPNCTBW> Vertices;
 	TArray<uint32> Indices;
