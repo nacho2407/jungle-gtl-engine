@@ -48,7 +48,7 @@ protected:
 private:
 	void RebuildSubUVMaterial();
 
-	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Particle")
+	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Particle", AssetType="Particle")
 	FName ParticleName;
 	FParticleResource* CachedParticle = nullptr; // ResourceManager 소유, 여기선 참조만
 	UMaterial* SubUVMaterial = nullptr;           // Particle SRV를 래핑하는 경량 머티리얼

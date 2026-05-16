@@ -78,7 +78,7 @@ void UBoxComponent::PostEditProperty(const char* PropertyName)
 {
 	UShapeComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Box Extent") == 0)
+	if (strcmp(PropertyName, "BoxExtent") == 0 || strcmp(PropertyName, "Box Extent") == 0)
 	{
 		SetBoxExtent(BoxExtent);
 	}

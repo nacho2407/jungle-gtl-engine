@@ -28,7 +28,7 @@ void UTemporaryBoneAnimatorComponent::PostEditProperty(const char* PropertyName)
 {
 	UActorComponent::PostEditProperty(PropertyName);
 
-	if (std::strcmp(PropertyName, "Target Bone Name") == 0)
+	if (std::strcmp(PropertyName, "TargetBoneName") == 0 || std::strcmp(PropertyName, "Target Bone Name") == 0)
 	{
 		CachedBoneName.clear();
 		CachedBoneIndex = -1;

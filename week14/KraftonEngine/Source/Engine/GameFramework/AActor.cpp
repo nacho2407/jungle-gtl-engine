@@ -457,23 +457,23 @@ void AActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 void AActor::PostEditProperty(const char* PropertyName)
 {
 	UObject::PostEditProperty(PropertyName);
-	if (strcmp(PropertyName, "Location") == 0)
+	if (strcmp(PropertyName, "PendingActorLocation") == 0 || strcmp(PropertyName, "Location") == 0)
 	{
 		SetActorLocation(PendingActorLocation);
 	}
-	else if (strcmp(PropertyName, "Rotation") == 0)
+	else if (strcmp(PropertyName, "PendingActorRotation") == 0 || strcmp(PropertyName, "Rotation") == 0)
 	{
 		SetActorRotation(PendingActorRotation);
 	}
-	else if (strcmp(PropertyName, "Scale") == 0)
+	else if (strcmp(PropertyName, "PendingActorScale") == 0 || strcmp(PropertyName, "Scale") == 0)
 	{
 		SetActorScale(PendingActorScale);
 	}
-	else if (strcmp(PropertyName, "Visible") == 0)
+	else if (strcmp(PropertyName, "PendingActorVisible") == 0 || strcmp(PropertyName, "Visible") == 0)
 	{
 		SetVisible(PendingActorVisible);
 	}
-	else if (strcmp(PropertyName, "Tags") == 0)
+	else if (strcmp(PropertyName, "PendingTagsString") == 0 || strcmp(PropertyName, "Tags") == 0)
 	{
 		SetTags(SplitTagsCommaSep(PendingTagsString));
 	}

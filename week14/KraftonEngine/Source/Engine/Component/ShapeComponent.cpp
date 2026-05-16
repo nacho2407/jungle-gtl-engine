@@ -28,7 +28,8 @@ void UShapeComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Shape Color") == 0 || strcmp(PropertyName, "Draw Only If Selected") == 0)
+	if (strcmp(PropertyName, "ShapeColor") == 0 || strcmp(PropertyName, "bDrawOnlyIfSelected") == 0
+		|| strcmp(PropertyName, "Shape Color") == 0 || strcmp(PropertyName, "Draw Only If Selected") == 0)
 	{
 		MarkRenderStateDirty();
 	}

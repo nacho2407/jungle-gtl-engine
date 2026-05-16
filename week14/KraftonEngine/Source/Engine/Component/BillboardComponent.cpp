@@ -61,7 +61,7 @@ void UBillboardComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Material") == 0)
+	if (strcmp(PropertyName, "MaterialSlot") == 0 || strcmp(PropertyName, "Material") == 0)
 	{
 		if (MaterialSlot.Path == "None" || MaterialSlot.Path.empty())
 		{

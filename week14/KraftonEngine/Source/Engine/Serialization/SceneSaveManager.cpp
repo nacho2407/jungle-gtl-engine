@@ -474,7 +474,13 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 			continue;
 		}
 
-		if (!PropsJSON.hasKey(Property.Name))
+		const char* PropertyKey = Property.Name;
+		if (!PropsJSON.hasKey(PropertyKey) && Property.DisplayName && PropsJSON.hasKey(Property.DisplayName))
+		{
+			PropertyKey = Property.DisplayName;
+		}
+
+		if (!PropsJSON.hasKey(PropertyKey))
 		{
 			continue;
 		}
@@ -485,7 +491,7 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 			continue;
 		}
 
-		json::JSON& Value = PropsJSON[Property.Name];
+		json::JSON& Value = PropsJSON[PropertyKey];
 		Desc.Deserialize(Value);
 		Obj->PostEditProperty(Property.Name);
 	}

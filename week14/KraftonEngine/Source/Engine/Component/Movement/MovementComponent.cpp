@@ -59,7 +59,7 @@ void UMovementComponent::PostEditProperty(const char* PropertyName)
 {
 	UActorComponent::PostEditProperty(PropertyName);
 
-	if (std::strcmp(PropertyName, "Auto Register Updated") == 0)
+	if (std::strcmp(PropertyName, "bAutoRegisterUpdatedComponent") == 0 || std::strcmp(PropertyName, "Auto Register Updated") == 0)
 	{
 		if (bAutoRegisterUpdatedComponent && UpdatedComponentPath.empty())
 		{
@@ -68,7 +68,7 @@ void UMovementComponent::PostEditProperty(const char* PropertyName)
 		return;
 	}
 
-	if (std::strcmp(PropertyName, "Updated Component") == 0)
+	if (std::strcmp(PropertyName, "UpdatedComponentPath") == 0 || std::strcmp(PropertyName, "Updated Component") == 0)
 	{
 		ResolveUpdatedComponent();
 	}

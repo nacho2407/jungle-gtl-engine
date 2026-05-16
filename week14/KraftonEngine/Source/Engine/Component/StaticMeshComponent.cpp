@@ -261,7 +261,7 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Static Mesh") == 0)
+	if (strcmp(PropertyName, "StaticMeshPath") == 0 || strcmp(PropertyName, "Static Mesh") == 0)
 	{
 		if (StaticMeshPath.empty() || StaticMeshPath == "None")
 		{
@@ -302,7 +302,7 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 		}
 	}
 
-	if (strcmp(PropertyName, "Materials") == 0)
+	if (strcmp(PropertyName, "MaterialSlots") == 0 || strcmp(PropertyName, "Materials") == 0)
 	{
 		for (int32 Index = 0; Index < (int32)MaterialSlots.size(); ++Index)
 		{

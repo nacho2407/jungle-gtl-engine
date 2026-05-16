@@ -39,7 +39,7 @@ protected:
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Billboard")
 	bool bIsBillboard = true;
 
-	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material")
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material", AssetType="Material", AllowedClass="UMaterial")
 	FMaterialSlot MaterialSlot;
 	UMaterial* Material = nullptr;
 };

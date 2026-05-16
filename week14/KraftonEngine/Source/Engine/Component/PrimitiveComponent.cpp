@@ -190,20 +190,20 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	// 베이스 클래스의 transform 등 공통 프로퍼티 처리 보장
 	USceneComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Visible") == 0)
+	if (strcmp(PropertyName, "bIsVisible") == 0 || strcmp(PropertyName, "Visible") == 0)
 	{
 		// Property Editor가 bIsVisible을 직접 수정한 경우 dirty 시퀀스만 전파한다.
 		MarkRenderVisibilityDirty();
 	}
-	else if (strcmp(PropertyName, "Cast Shadow") == 0)
+	else if (strcmp(PropertyName, "bCastShadow") == 0 || strcmp(PropertyName, "Cast Shadow") == 0)
 	{
 		MarkRenderVisibilityDirty();
 	}
-	else if (strcmp(PropertyName, "Two Sided Shadow") == 0)
+	else if (strcmp(PropertyName, "bCastShadowAsTwoSided") == 0 || strcmp(PropertyName, "Two Sided Shadow") == 0)
 	{
 		MarkRenderVisibilityDirty();
 	}
-	else if (strcmp(PropertyName, "Collision Enabled") == 0)
+	else if (strcmp(PropertyName, "CollisionEnabled") == 0 || strcmp(PropertyName, "Collision Enabled") == 0)
 	{
 		// 에디터 property panel 이 enum 값을 직접 바꾼 경우 — 이미 CollisionEnabled 필드는
 		// 갱신된 상태고 setter 를 안 거쳤으니 여기서 Register/Unregister 처리.
@@ -233,12 +233,12 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 			}
 		}
 	}
-	else if (strcmp(PropertyName, "Mass (kg)") == 0)
+	else if (strcmp(PropertyName, "Mass") == 0 || strcmp(PropertyName, "Mass (kg)") == 0)
 	{
 		// 에디터 슬라이더로 값을 바꾼 경우 백엔드에 즉시 반영.
 		SetMass(Mass);
 	}
-	else if (strcmp(PropertyName, "Center Of Mass Offset") == 0)
+	else if (strcmp(PropertyName, "CenterOfMassOffset") == 0 || strcmp(PropertyName, "Center Of Mass Offset") == 0)
 	{
 		SetCenterOfMass(CenterOfMassOffset);
 	}

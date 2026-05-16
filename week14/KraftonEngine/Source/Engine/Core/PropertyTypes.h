@@ -50,6 +50,8 @@ struct FPropertyDescriptor
 	std::string   Name;
 	EPropertyType Type = EPropertyType::Bool;
 	std::string   Category;      // 에디터 카테고리 (같은 문자열끼리 그룹화)
+	std::string   DisplayName;   // 에디터 표시명. 비어 있으면 Name 사용.
+	TMap<FString, FString> Metadata;
 	void*         ValuePtr = nullptr;
 
 	// float 범위 힌트 (DragFloat 등에서 사용)
@@ -99,6 +101,8 @@ struct FProperty
 	uint32 EnumSize = sizeof(int32);
 
 	FStructPropertyFunc StructFunc = nullptr;
+	const char* DisplayName = nullptr;
+	TMap<FString, FString> Metadata;
 
 	inline FPropertyDescriptor ToDescriptor(UObject* Object) const
 	{
@@ -106,6 +110,8 @@ struct FProperty
 		Desc.Name = this->Name ? this->Name : "";
 		Desc.Type = this->Type;
 		Desc.Category = this->Category ? this->Category : "";
+		Desc.DisplayName = this->DisplayName ? this->DisplayName : Desc.Name;
+		Desc.Metadata = this->Metadata;
 		Desc.ValuePtr = GetValuePtr ? GetValuePtr(Object) : nullptr;
 		Desc.Min = this->Min;
 		Desc.Max = this->Max;

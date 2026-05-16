@@ -81,7 +81,7 @@ void USphereComponent::PostEditProperty(const char* PropertyName)
 {
 	UShapeComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Sphere Radius") == 0)
+	if (strcmp(PropertyName, "SphereRadius") == 0 || strcmp(PropertyName, "Sphere Radius") == 0)
 	{
 		SetSphereRadius(SphereRadius);
 	}

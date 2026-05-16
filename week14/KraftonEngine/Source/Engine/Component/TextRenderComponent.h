@@ -104,7 +104,7 @@ public:
 private:
 	UPROPERTY(Edit, Save, Category="Text", DisplayName="Text")
 	FString Text = FString("Empty");
-	UPROPERTY(Edit, Save, Category="Text", DisplayName="Font")
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Font", AssetType="Font")
 	FName FontName = FName("Default");
 	FFontResource* CachedFont = nullptr;	// ResourceManager 소유, 여기선 참조만
 
