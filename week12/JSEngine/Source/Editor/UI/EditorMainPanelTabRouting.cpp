@@ -87,7 +87,8 @@ bool FEditorMainPanel::IsLevelEditorViewportVisible() const
 FEditorViewerWindowWidget* FEditorMainPanel::FindViewerWidgetForTab(const FEditorTabId& TabId) const
 {
 	if (TabId.Kind != EEditorTabKind::SkeletalMeshViewer &&
-		TabId.Kind != EEditorTabKind::StaticMeshViewer)
+		TabId.Kind != EEditorTabKind::StaticMeshViewer &&
+		TabId.Kind != EEditorTabKind::AnimSequenceViewer)
 	{
 		return nullptr;
 	}

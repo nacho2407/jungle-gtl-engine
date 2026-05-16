@@ -3,7 +3,12 @@
 #include "Asset/SkeletalMeshTypes.h"
 
 class USkeletalMeshComponent;
+class FSceneViewport;
 class FEditorViewer;
+class UAnimSequence;
+class USkeletalMesh;
+struct ID3D11ShaderResourceView;
+struct ImVec2;
 
 class FEditorViewerWindowWidget : public FEditorWidget
 {
@@ -58,6 +63,12 @@ private:
 
 	void RenderBoneDetails(USkeletalMeshComponent* SkelComp);
     void RenderContent(float DeltaTime);
+    void RenderViewportPanel(FSceneViewport& SceneViewport, ID3D11ShaderResourceView* SRV, const ImVec2& Size);
+    void RenderSkeletonLeftPanel(USkeletalMeshComponent* SkelMeshComp, FSkeletalMesh* MeshData);
+    void RenderBoneRightPanel(USkeletalMeshComponent* SkelMeshComp);
+    void RenderAnimSequenceLeftPanel(UAnimSequence* Sequence, USkeletalMeshComponent* SkelMeshComp);
+    void RenderAnimSequenceRightPanel(UAnimSequence* Sequence, USkeletalMesh* PreviewMesh);
+    void SyncPreviewMeshPathBuffer();
 	void RenderDetachedDocumentChrome(bool& bDockRequested, bool& bCloseRequested);
 	void RenderDetachedDocumentToolbar(bool& bDockRequested);
     void Shutdown();
@@ -79,6 +90,9 @@ private:
     bool  bMeshDirty = false;         // socket 등 mesh asset 데이터 변경 후 Save 트리거용
 	uint64 CleanMeshEditSignature = 0;
 	bool bHasCleanMeshEditSignature = false;
+    FString PreviewMeshPathBufferSource;
+    char PreviewMeshPathBuffer[1024] = {};
+    int32 SelectedAnimTrackIndex = -1;
 
 	FEditorViewer* Viewer = nullptr;
     bool bOpen = false;

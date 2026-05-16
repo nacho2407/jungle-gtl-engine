@@ -1140,6 +1140,10 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		{
 			EditorEngine->GetNotificationService().Info("Prefab selected. Drag to viewport or right-click to spawn.");
 		}
+		else if (IsSequenceAsset(Item.Extension))
+		{
+			EditorEngine->CreateViewer(MakeRelativeProjectPath(Item.Path));
+		}
 		else if (Item.Extension == ".fbx")
 		{
             EditorEngine->CreateViewer(MakeRelativeProjectPath(Item.Path));
