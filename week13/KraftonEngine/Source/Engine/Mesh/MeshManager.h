@@ -3,6 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Object/ObjectIterator.h"
 #include "Render/Types/RenderTypes.h"
+#include "Asset/AssetRegistry.h"
 
 #include <map>
 #include <string>
@@ -12,15 +13,8 @@ struct FStaticMesh;
 struct FSkeletalMesh;
 struct FStaticMaterial;
 struct FImportOptions;
-struct FMeshAssetListItem;
 class UStaticMesh;
 class USkeletalMesh;
-
-struct FMeshAssetListItem
-{
-	FString DisplayName;
-	FString FullPath;
-};
 
 
 class FMeshManager
@@ -36,10 +30,10 @@ public:
 	static void ScanMeshSourceFiles();
 	static void ScanFbxSourceFiles();
 
-	static const TArray<FMeshAssetListItem>& GetAvailableStaticMeshFiles() { return AvailableStaticMeshFiles; };
-	static const TArray<FMeshAssetListItem>& GetAvailableSkeletalMeshFiles() { return AvailableSkeletalMeshFiles; };
-	static const TArray<FMeshAssetListItem>& GetAvailableObjFiles() { return AvailableStaticMeshSourceFiles; }
-	static const TArray<FMeshAssetListItem>& GetAvailableFbxFiles() { return AvailableFbxSourceFiles; }
+	static const TArray<FAssetListItem>& GetAvailableStaticMeshFiles() { return AvailableStaticMeshFiles; };
+	static const TArray<FAssetListItem>& GetAvailableSkeletalMeshFiles() { return AvailableSkeletalMeshFiles; };
+	static const TArray<FAssetListItem>& GetAvailableObjFiles() { return AvailableStaticMeshSourceFiles; }
+	static const TArray<FAssetListItem>& GetAvailableFbxFiles() { return AvailableFbxSourceFiles; }
 
 	// 캐시된 StaticMesh GPU 리소스 해제 (Shutdown 시 Device 해제 전 호출)
 	static void ReleaseAllGPU();
@@ -57,9 +51,9 @@ public:
 public:
 	static TMap<FString, UStaticMesh*> StaticMeshCache;
 	static TMap<FString, USkeletalMesh*> SkeletalMeshCache;
-	static TArray<FMeshAssetListItem> AvailableStaticMeshFiles;
-	static TArray<FMeshAssetListItem> AvailableStaticMeshSourceFiles;
-	static TArray<FMeshAssetListItem> AvailableSkeletalMeshFiles;
-	static TArray<FMeshAssetListItem> AvailableFbxSourceFiles;
+	static TArray<FAssetListItem> AvailableStaticMeshFiles;
+	static TArray<FAssetListItem> AvailableStaticMeshSourceFiles;
+	static TArray<FAssetListItem> AvailableSkeletalMeshFiles;
+	static TArray<FAssetListItem> AvailableFbxSourceFiles;
 };
 

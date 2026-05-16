@@ -8,6 +8,8 @@ IMPLEMENT_CLASS(ASkeletalMeshActor, AActor)
 void ASkeletalMeshActor::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//SkeletalMeshComponent = GetComponentByClass<USkeletalMeshComponent>();
 }
 
 void ASkeletalMeshActor::InitDefaultComponents(const FString& SkeletalMeshFileName)
