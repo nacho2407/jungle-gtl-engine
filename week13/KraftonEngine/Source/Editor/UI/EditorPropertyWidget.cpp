@@ -458,6 +458,15 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 				if (bChanged)
 				{
 					PrimaryActor->PostEditProperty(Props[i].Name.c_str());
+					// Component 영역 (line 867 부근) 과 동일 — destroy+재생성 트리거 type 은
+					// 같은 frame 안 후속 properties 가 dangling 되므로 break.
+					if (Props[i].Type == EPropertyType::StaticMeshRef
+					 || Props[i].Type == EPropertyType::SkeletalMeshRef
+					 || Props[i].Type == EPropertyType::ClassRef)
+					{
+						ImGui::PopID();
+						break;
+					}
 				}
 				ImGui::PopID();
 			}
@@ -864,7 +873,12 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 					bAnyChanged = true;
 					PropagatePropertyChange(Props[i].Name, SelectedActors);
 
-					if (Props[i].Type == EPropertyType::StaticMeshRef || Props[i].Type == EPropertyType::SkeletalMeshRef)
+					// PostEditProperty 가 객체 (예: AnimInstance) 를 destroy + 재생성하는 경우,
+					// 이 Props 배열의 다른 ValuePtr 들이 dangling 됨. 같은 frame 안에서 그리면 use-after-free.
+					// ClassRef 도 ClassRef 변경 → InitializeAnimation → 이전 AnimInstance destroy 트리거.
+					if (Props[i].Type == EPropertyType::StaticMeshRef
+					 || Props[i].Type == EPropertyType::SkeletalMeshRef
+					 || Props[i].Type == EPropertyType::ClassRef)
 					{
 						bPropsInvalidated = true;
 						ImGui::PopID();

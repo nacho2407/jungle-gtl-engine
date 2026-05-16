@@ -4,12 +4,13 @@
 --   2) Anim Instance Class = ULuaAnimInstance
 --   3) Script File = "Anim/yui_character.lua" (Editor 콤보)
 --
--- 시퀀스 .uasset 이 디스크에 있어야 정상 모션이 보입니다. 없으면 ref pose 가 보이고
--- Output 창에 "anim not found: ..." 경고. path 는 자기 환경에 맞게 수정하세요.
+-- 기본은 mock 시퀀스 (sway/wave) — .uasset 없이도 즉시 동작 확인 가능.
+-- 실제 import 한 시퀀스로 바꾸려면 USE_MOCK 을 false 로 두고 *_PATH 수정.
 --
 -- Hot-reload: 이 파일 저장만 해도 에디터에서 즉시 반영 (FLuaScriptManager 가 ReloadScript 호출).
 
-local IDLE_PATH = "Content/Data/hirasawa-yui/yui_Idle.uasset"
+local USE_MOCK  = true
+local IDLE_PATH = "Content/Data/hirasawa-yui/yui_Idle.uasset"   -- 임포트 후 자기 경로로 수정
 local WALK_PATH = "Content/Data/hirasawa-yui/yui_Walk.uasset"
 
 function init(self)
@@ -19,8 +20,14 @@ function init(self)
     self.AutoPeriodSec  = 6.0
     self.AutoSpeedAmp   = 15.0
 
-    Anim.register_state("Idle", IDLE_PATH, 1.0, true)
-    Anim.register_state("Walk", WALK_PATH, 1.0, true)
+    if USE_MOCK then
+        -- Phase 3 mock 팩토리 재활용. sway=루트 본만 Z 축 흔들, wave=전 본 sinusoidal.
+        Anim.register_mock_state("Idle", "sway", 1.5, 8.0,  1.0, true)
+        Anim.register_mock_state("Walk", "wave", 0.8, 15.0, 1.0, true)
+    else
+        Anim.register_state("Idle", IDLE_PATH, 1.0, true)
+        Anim.register_state("Walk", WALK_PATH, 1.0, true)
+    end
 
     -- Condition 람다는 self 캡처 — self.Speed 가 update() 에서 갱신됨.
     Anim.register_transition("Idle", "Walk",
