@@ -7,7 +7,7 @@ class AActor;
 class UWorld;
 class FScene;
 
-#include "ActorComponent.generated.h"
+#include "Source/Engine/Component/ActorComponent.generated.h"
 
 UCLASS()
 class UActorComponent : public UObject

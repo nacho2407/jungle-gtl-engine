@@ -384,7 +384,12 @@ def make_file_id(root: Path, header: Path) -> str:
     return file_id
 
 
-def find_reflected_headers(root: Path, source_dir: Path) -> tuple[list[ReflectedHeader], list[str]]:
+def make_generated_header_path(root: Path, generated_root: Path, header: Path) -> Path:
+    rel = header.relative_to(root)
+    return generated_root / rel.with_name(f"{header.stem}.generated.h")
+
+
+def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -> tuple[list[ReflectedHeader], list[str]]:
     reflected: list[ReflectedHeader] = []
     warnings: list[str] = []
 
@@ -409,7 +414,7 @@ def find_reflected_headers(root: Path, source_dir: Path) -> tuple[list[Reflected
                 reflected.append(
                     ReflectedHeader(
                         header=header,
-                        generated_header=header.with_name(f"{header.stem}.generated.h"),
+                        generated_header=make_generated_header_path(root, generated_root, header),
                         file_id=make_file_id(root, header),
                         class_names=tuple(),
                         types=property_types,
@@ -427,7 +432,7 @@ def find_reflected_headers(root: Path, source_dir: Path) -> tuple[list[Reflected
         reflected.append(
             ReflectedHeader(
                 header=header,
-                generated_header=header.with_name(f"{header.stem}.generated.h"),
+                generated_header=make_generated_header_path(root, generated_root, header),
                 file_id=make_file_id(root, header),
                 class_names=tuple(declarations),
                 types=tuple(
@@ -551,7 +556,13 @@ def parse_args() -> argparse.Namespace:
         "--generated-cpp",
         type=Path,
         default=None,
-        help="Aggregate generated cpp output. Defaults to <root>/Source/Generated/Reflection.generated.cpp.",
+        help="Aggregate generated cpp output. Defaults to <root>/Intermediate/Generated/Reflection.generated.cpp.",
+    )
+    parser.add_argument(
+        "--generated-root",
+        type=Path,
+        default=None,
+        help="Generated include root. Defaults to <root>/Intermediate/Generated.",
     )
     return parser.parse_args()
 
@@ -560,13 +571,14 @@ def main() -> int:
     args = parse_args()
     root = args.root.resolve()
     source_dir = (args.source_dir or root / "Source").resolve()
-    generated_cpp = (args.generated_cpp or root / "Source" / "Generated" / "Reflection.generated.cpp").resolve()
+    generated_root = (args.generated_root or root / "Intermediate" / "Generated").resolve()
+    generated_cpp = (args.generated_cpp or generated_root / "Reflection.generated.cpp").resolve()
 
     if not source_dir.exists():
         print(f"error: source directory does not exist: {source_dir}")
         return 1
 
-    reflected, warnings = find_reflected_headers(root, source_dir)
+    reflected, warnings = find_reflected_headers(root, source_dir, generated_root)
 
     changed = 0
     for item in reflected:
@@ -578,6 +590,7 @@ def main() -> int:
             print(f"would generate {rel_generated} for {', '.join(item.class_names)}")
             continue
 
+        item.generated_header.parent.mkdir(parents=True, exist_ok=True)
         if write_if_changed(item.generated_header, content):
             changed += 1
             print(f"generated {rel_generated}")
