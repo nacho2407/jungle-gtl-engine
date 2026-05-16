@@ -40,6 +40,19 @@ FTransform FAnimationRuntime::DecomposeMatrix(const FMatrix& Mat)
 		Rot.M[2][1] /= T.Scale.Z;
 		Rot.M[2][2] /= T.Scale.Z;
 	}
+	
+	const float Det =
+	Rot.M[0][0] * (Rot.M[1][1] * Rot.M[2][2] - Rot.M[1][2] * Rot.M[2][1]) -
+	Rot.M[0][1] * (Rot.M[1][0] * Rot.M[2][2] - Rot.M[1][2] * Rot.M[2][0]) +
+	Rot.M[0][2] * (Rot.M[1][0] * Rot.M[2][1] - Rot.M[1][1] * Rot.M[2][0]);
+
+	if (Det < 0.0f)
+	{
+		T.Scale.X   = -T.Scale.X;
+		Rot.M[0][0] = -Rot.M[0][0];
+		Rot.M[0][1] = -Rot.M[0][1];
+		Rot.M[0][2] = -Rot.M[0][2];
+	}
 
 	T.Rotation = Rot.ToQuat().GetNormalized();
 	return T;

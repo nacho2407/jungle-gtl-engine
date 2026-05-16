@@ -24,6 +24,7 @@
 #include "Resource/ResourceManager.h"
 #include "Object/FName.h"
 #include "Object/ObjectIterator.h"
+#include "Object/UClass.h"
 #include "Materials/Material.h"
 #include "Mesh/MeshImportOptions.h"
 #include "Mesh/MeshManager.h"
@@ -457,6 +458,15 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 				if (bChanged)
 				{
 					PrimaryActor->PostEditProperty(Props[i].Name.c_str());
+					// Component 영역 (line 867 부근) 과 동일 — destroy+재생성 트리거 type 은
+					// 같은 frame 안 후속 properties 가 dangling 되므로 break.
+					if (Props[i].Type == EPropertyType::StaticMeshRef
+					 || Props[i].Type == EPropertyType::SkeletalMeshRef
+					 || Props[i].Type == EPropertyType::ClassRef)
+					{
+						ImGui::PopID();
+						break;
+					}
 				}
 				ImGui::PopID();
 			}
@@ -863,7 +873,12 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 					bAnyChanged = true;
 					PropagatePropertyChange(Props[i].Name, SelectedActors);
 
-					if (Props[i].Type == EPropertyType::StaticMeshRef || Props[i].Type == EPropertyType::SkeletalMeshRef)
+					// PostEditProperty 가 객체 (예: AnimInstance) 를 destroy + 재생성하는 경우,
+					// 이 Props 배열의 다른 ValuePtr 들이 dangling 됨. 같은 frame 안에서 그리면 use-after-free.
+					// ClassRef 도 ClassRef 변경 → InitializeAnimation → 이전 AnimInstance destroy 트리거.
+					if (Props[i].Type == EPropertyType::StaticMeshRef
+					 || Props[i].Type == EPropertyType::SkeletalMeshRef
+					 || Props[i].Type == EPropertyType::ClassRef)
 					{
 						bPropsInvalidated = true;
 						ImGui::PopID();
@@ -934,6 +949,7 @@ void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, con
 				case EPropertyType::StaticMeshRef:  *static_cast<FString*>(DstProp.ValuePtr) = *static_cast<FString*>(SrcProp->ValuePtr); break;
 				case EPropertyType::SkeletalMeshRef: *static_cast<FString*>(DstProp.ValuePtr) = *static_cast<FString*>(SrcProp->ValuePtr); break;
 				case EPropertyType::ObjectRef:      *static_cast<FString*>(DstProp.ValuePtr) = *static_cast<FString*>(SrcProp->ValuePtr); break;
+				case EPropertyType::ClassRef:       *reinterpret_cast<UClass**>(DstProp.ValuePtr) = *reinterpret_cast<UClass**>(SrcProp->ValuePtr); break;
 				case EPropertyType::Name:           *static_cast<FName*>(DstProp.ValuePtr) = *static_cast<FName*>(SrcProp->ValuePtr); break;
 				case EPropertyType::MaterialSlot:   *static_cast<FMaterialSlot*>(DstProp.ValuePtr) = *static_cast<FMaterialSlot*>(SrcProp->ValuePtr); break;
 				case EPropertyType::Enum:           Size = SrcProp->EnumSize; break;
@@ -1362,6 +1378,42 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
 				{
 					*Val = Item.FullPath;
+					bChanged = true;
+				}
+				if (bSelected) ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		break;
+	}
+	case EPropertyType::ClassRef:
+	{
+		// TSubclassOf<T> 슬롯 — ClassBase 의 자식 UClass 들을 콤보로 노출.
+		// 베이스 자신은 제외 (factory 미등록 가능 + 추상 의미).
+		UClass** ClassPP = reinterpret_cast<UClass**>(Prop.ValuePtr);
+		UClass*  Current = *ClassPP;
+		UClass*  Base    = Prop.ClassBase;
+
+		const char* Preview = Current ? Current->GetName() : "None";
+		if (ImGui::BeginCombo(Prop.Name.c_str(), Preview))
+		{
+			bool bSelectedNone = (Current == nullptr);
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				*ClassPP = nullptr;
+				bChanged = true;
+			}
+			if (bSelectedNone) ImGui::SetItemDefaultFocus();
+
+			for (UClass* C : UClass::GetAllClasses())
+			{
+				if (!C || C == Base) continue;
+				if (Base && !C->IsA(Base)) continue;
+
+				bool bSelected = (Current == C);
+				if (ImGui::Selectable(C->GetName(), bSelected))
+				{
+					*ClassPP = C;
 					bChanged = true;
 				}
 				if (bSelected) ImGui::SetItemDefaultFocus();
