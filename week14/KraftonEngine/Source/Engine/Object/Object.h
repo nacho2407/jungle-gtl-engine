@@ -7,7 +7,7 @@
 #include "Object/UClass.h"
 #include "Object/ObjectMacros.h"
 
-#include "Object.generated.h"
+#include "Source/Engine/Object/Object.generated.h"
 
 class FArchive;
 

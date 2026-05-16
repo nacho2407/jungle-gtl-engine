@@ -14,7 +14,7 @@ class UWorld;
 class ULevel;
 class UPrimitiveComponent;
 
-#include "AActor.generated.h"
+#include "Source/Engine/GameFramework/AActor.generated.h"
 
 UCLASS()
 class AActor : public UObject

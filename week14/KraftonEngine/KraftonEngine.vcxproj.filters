@@ -88,7 +88,7 @@
     <Filter Include="Source\Engine\GameFramework\Light">
       <UniqueIdentifier>{b016779b-d84f-ba95-e8ed-4e352a91130a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Generated">
+    <Filter Include="Intermediate\Generated">
       <UniqueIdentifier>{7b545ef7-79f3-4c64-b0d2-f85ddf0e3c72}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Input">
@@ -749,8 +749,8 @@
     <ClCompile Include="Source\Engine\GameFramework\Light\SpotLightActor.cpp">
       <Filter>Source\Engine\GameFramework\Light</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Generated\Reflection.generated.cpp">
-      <Filter>Source\Generated</Filter>
+    <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp">
+      <Filter>Intermediate\Generated</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp">
       <Filter>Source\Engine\Input</Filter>

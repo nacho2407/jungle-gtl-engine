@@ -16,7 +16,7 @@ struct FCameraState
 	bool bIsOrthogonal = false;
 };
 
-#include "CameraComponent.generated.h"
+#include "Source/Engine/Component/CameraComponent.generated.h"
 
 UCLASS()
 class UCameraComponent : public USceneComponent
