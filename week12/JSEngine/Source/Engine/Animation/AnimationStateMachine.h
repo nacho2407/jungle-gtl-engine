@@ -7,20 +7,49 @@
 
 class USkeletalMeshComponent;
 
-enum class EAnimState
+// Pose 소스 인터페이스
+class IAnimPoseSource
 {
-    None,
-    Idle,
-    Walk,
-    Run,
-    Fly
+public:
+    virtual ~IAnimPoseSource() = default;
+    virtual void Update(float DeltaTime) = 0;
+    virtual bool EvaluatePose(FPoseContext& OutPose) const = 0;
+    virtual void ResetTime() = 0;
 };
 
+// 단일 시퀀스 재생용 포즈
+class FAnimSequencePoseSource : public IAnimPoseSource
+{
+private:
+    USkeletalMeshComponent* OwnerComponent = nullptr;
+    UAnimSequenceBase* Sequence = nullptr;
+    float CurrentTime = 0.0f;
+
+public:
+    FAnimSequencePoseSource(USkeletalMeshComponent* InOwnerComponent, UAnimSequenceBase* InSequence)
+        : OwnerComponent(InOwnerComponent), Sequence(InSequence), CurrentTime(0.0f) {}
+    
+    virtual void Update(float DeltaTime) override;
+    virtual bool EvaluatePose(FPoseContext& OutPose) const override;
+    virtual void ResetTime() override;
+};
+
+using FAnimTransitionCondition = std::function<bool()>;
+
+// Transitions에 해당하면(bool형) ToState로 전이.　
+struct FAnimTransition
+{
+    FName ToState;
+    float BlendTime = 0.2f;
+    FAnimTransitionCondition Condition;
+};
+
+// 특정 상태에 따른 name, PoseSource, 전이 목록 보유.
 struct FAnimStateNode
 {
-    EAnimState State;
-    UAnimSequenceBase* Sequence = nullptr;
-    float BlendTime = 0.2f;
+    FName Name;
+    std::shared_ptr<IAnimPoseSource> PoseSource;
+    TArray<FAnimTransition> Transitions;
 };
 
 class UAnimationStateMachine : public UObject
@@ -28,23 +57,20 @@ class UAnimationStateMachine : public UObject
 public:
     void Initialize(USkeletalMeshComponent* Owner);
 
-    void AddState(EAnimState State, UAnimSequenceBase* Sequence, float BlendTime = 0.2f);
-    void SetState(EAnimState NewState);
+    void AddState(FName StateName, UAnimSequenceBase* Sequence);
+    void AddTransition(FName FromState, FName ToState, float BlendTime, FAnimTransitionCondition Condition);
+    void SetEntryState(FName StateName);
+
+    void SetState(FName NewState, float BlendTime = 0.2f);
 
     void Update(float DeltaTime);
     bool EvaluatePose(FPoseContext& OutPose) const;
 
 private:
-    void ProcessState();
+    TMap<FName, FAnimStateNode, FName::Hash> States;
 
-private:
-    TMap<EAnimState, FAnimStateNode> States;
-
-    EAnimState CurrentState = EAnimState::None;
-    EAnimState PreviousState = EAnimState::None;
-
-    float CurrentTime = 0.0f;
-    float PreviousTime = 0.0f;
+    FName CurrentState;
+    FName NextState;
 
     bool bBlending = false;
     float BlendElapsed = 0.0f;

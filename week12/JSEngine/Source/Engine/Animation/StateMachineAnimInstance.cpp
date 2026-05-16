@@ -18,10 +18,5 @@ void UStateMachineAnimInstance::NativeUpdateAnimation(float DeltaTime)
 
 bool UStateMachineAnimInstance::EvaluatePose(FPoseContext& OutPoseContext)
 {
-    if (StateMachine)
-    {
-        StateMachine->EvaluatePose(OutPoseContext);
-    }
-
-    return false;
+	return StateMachine ? StateMachine->EvaluatePose(OutPoseContext) : false;
 }
