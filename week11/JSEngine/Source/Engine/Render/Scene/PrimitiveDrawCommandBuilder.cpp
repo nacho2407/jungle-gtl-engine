@@ -129,13 +129,12 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
         if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData()) return true;
 
-        SkeletalMeshComp->EnsureCPUSkinnedVerticesUpdated();
-        const bool bNeedsUpload = SkeletalMeshComp->ConsumeRenderStateDirty();
-
         FMeshBuffer* MeshBuffer = nullptr;
         if (RenderBus.GetSkinningMode() == ESkinningMode::CPU)
         {
-            MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
+            SkeletalMeshComp->EnsureCPUSkinnedVerticesUpdated();
+            const bool bNeedsUpload = SkeletalMeshComp->ConsumeRenderStateDirty();
+            MeshBuffer = MeshBufferManager.GetCPUSkinnedMeshBuffer(
                 SkeletalMeshComp->GetUUID(),
                 SkeletalMesh,
                 SkeletalMeshComp->GetSkinnedVertices(),
@@ -144,12 +143,8 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
         }
         else if (RenderBus.GetSkinningMode() == ESkinningMode::GPU)
         {
-            MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
-                SkeletalMeshComp->GetUUID(),
-                SkeletalMesh,
-                SkeletalMesh->GetVertices(),
-                SkeletalMesh->GetIndices(),
-                false);
+            SkeletalMeshComp->EnsurePoseUpdated();
+            MeshBuffer = MeshBufferManager.GetGPUSkinningSourceBuffer(SkeletalMesh);
         }
 
         const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();

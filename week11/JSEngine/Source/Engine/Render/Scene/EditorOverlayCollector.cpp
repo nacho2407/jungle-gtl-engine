@@ -307,16 +307,21 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
             USkeletalMesh* SkeletalMesh = SkeletalMeshComp->GetSkeletalMesh();
             if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData()) continue;
 
-            // 메인 render pass(CollectWorld)가 이 함수 *전*에 같은 프레임에 돌면서
-            // skinning + 버퍼 업로드를 이미 끝낸 상태. 여기서는 dirty flag를 소비하지 않고
-            // bNeedsUpload=false로 캐시된 버퍼만 가져온다.
-            SkeletalMeshComp->EnsureCPUSkinnedVerticesUpdated();
-            MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
-                SkeletalMeshComp->GetUUID(),
-                SkeletalMesh,
-                SkeletalMeshComp->GetSkinnedVertices(),
-                SkeletalMesh->GetIndices(),
-                /*bNeedsUpload=*/ false);
+            if (RenderBus.GetSkinningMode() == ESkinningMode::CPU)
+            {
+                SkeletalMeshComp->EnsureCPUSkinnedVerticesUpdated();
+                MeshBuffer = MeshBufferManager.GetCPUSkinnedMeshBuffer(
+                    SkeletalMeshComp->GetUUID(),
+                    SkeletalMesh,
+                    SkeletalMeshComp->GetSkinnedVertices(),
+                    SkeletalMesh->GetIndices(),
+                    false);
+            }
+            else if (RenderBus.GetSkinningMode() == ESkinningMode::GPU)
+            {
+                SkeletalMeshComp->EnsurePoseUpdated();
+                MeshBuffer = MeshBufferManager.GetGPUSkinningSourceBuffer(SkeletalMesh);
+            }
         }
         else
         {
@@ -476,8 +481,7 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
         }
         bHasSelectionMask = true;
 
-        UDecalComponent* DecalComp = Cast<UDecalComponent>(primitiveComponent);
-        if (DecalComp)
+        if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Decal)
         {
             CollectOBBCommand(primitiveComponent, ShowFlags, RenderBus);
         }

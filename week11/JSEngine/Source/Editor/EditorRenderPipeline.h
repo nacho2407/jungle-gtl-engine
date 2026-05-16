@@ -38,6 +38,7 @@ private:
 	UEditorEngine* Editor = nullptr;
 	FRenderCollector Collector;
 	FRenderBus Bus;
+	ESkinningMode LastSkinningMode = ESkinningMode::CPU;
 	TArray<FRenderCollector::FCullingStats> ViewportCullingStats;
 	TArray<FRenderCollector::FDecalStats> ViewportDecalStats;
 	TArray<FRenderCollector::FLightStats> ViewportLightStats;
