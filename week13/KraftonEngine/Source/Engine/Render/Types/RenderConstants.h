@@ -25,6 +25,7 @@ namespace ECBSlot
 	constexpr uint32 PerShader1 = 3; // b3: 셰이더별 여분 슬롯 #1 (PerShader2 예약)
 	constexpr uint32 Lighting = 4;   // b4: LightingBuffer (Ambient + Directional + 메타)
 	constexpr uint32 Shadow = 5;     // b5: ShadowBuffer (Shadow 행렬 + 파라미터)
+	constexpr uint32 BoneHeatMap = 6; // b6: SkeletalMesh bone weight heatmap
 }
 
 // HLSL 라이팅 SRV 슬롯 — 프레임에 1회 바인딩 (Forward Shading)
@@ -91,8 +92,6 @@ struct FPerObjectConstants
 	FMatrix Model;
 	FMatrix NormalMatrix;
 	FVector4 Color;
-	int32 SelectedBoneIndex = -1;
-	float PerObjectPad[3] = { 0.0f, 0.0f, 0.0f };
 
 	// 기본 PerObject: WorldMatrix + White
 	static FPerObjectConstants FromWorldMatrix(const FMatrix& WorldMatrix)
@@ -101,9 +100,14 @@ struct FPerObjectConstants
 		Result.Model = WorldMatrix;
 		Result.NormalMatrix = WorldMatrix.GetInverse().GetTransposed();
 		Result.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-		Result.SelectedBoneIndex = -1;
 		return Result;
 	}
+};
+
+struct FBoneHeatMapConstants
+{
+	int32 SelectedBoneIndex = -1;
+	float Pad[3] = { 0.0f, 0.0f, 0.0f };
 };
 
 // =============================================================================
