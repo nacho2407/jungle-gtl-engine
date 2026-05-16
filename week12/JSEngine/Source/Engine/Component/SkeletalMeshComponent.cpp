@@ -3,6 +3,7 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
+#include "Core/Logging/SkinningStats.h"
 #include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
 #include "Core/ResourceManager.h"
@@ -44,6 +45,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 
 	if (AnimInstance)
 	{
+		SKINNING_SCOPE_MS(&FSkinningStats::AddCPUAnimationUpdate);
 		AnimInstance->NativeUpdateAnimation(DeltaTime);
 
 		FPoseContext PoseContext;

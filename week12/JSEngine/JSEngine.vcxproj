@@ -783,6 +783,7 @@
     <ClCompile Include="Source\Engine\Core\ImportedMaterialPolicy.cpp" />
     <ClCompile Include="Source\Engine\Core\Logging\GPUProfiler.cpp" />
     <ClCompile Include="Source\Engine\Core\Logging\Log.cpp" />
+    <ClCompile Include="Source\Engine\Core\Logging\SkinningStats.cpp" />
     <ClCompile Include="Source\Engine\Core\Logging\Stats.cpp" />
     <ClCompile Include="Source\Engine\Core\Logging\Timer.cpp" />
     <ClCompile Include="Source\Engine\Core\MaterialLoadService.cpp" />
@@ -1134,6 +1135,7 @@
     <ClInclude Include="Source\Engine\Core\ImportedMaterialPolicy.h" />
     <ClInclude Include="Source\Engine\Core\Logging\GPUProfiler.h" />
     <ClInclude Include="Source\Engine\Core\Logging\Log.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\SkinningStats.h" />
     <ClInclude Include="Source\Engine\Core\Logging\Stats.h" />
     <ClInclude Include="Source\Engine\Core\Logging\Timer.h" />
     <ClInclude Include="Source\Engine\Core\MaterialLoadService.h" />

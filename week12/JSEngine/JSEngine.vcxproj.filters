@@ -924,6 +924,9 @@
     <ClCompile Include="Source\Engine\Core\Logging\Log.cpp">
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Logging\SkinningStats.cpp">
+      <Filter>Source\Engine\Core\Logging</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Core\Logging\Stats.cpp">
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClCompile>
@@ -1880,6 +1883,9 @@
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Logging\Log.h">
+      <Filter>Source\Engine\Core\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Logging\SkinningStats.h">
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Logging\Stats.h">

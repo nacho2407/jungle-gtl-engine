@@ -228,6 +228,7 @@ private:
     TArray<UTexture*> CachedDecalTextures;
     TComPtr<ID3D11Texture2D> DecalTextureArray;
     TComPtr<ID3D11ShaderResourceView> DecalTextureArraySRV;
+	bool bGPUProfilerFrameActive = false;
 
 	// FinalRTV 는 Render Pass 구성에 따라 달라지므로 Renderer 내에서 보관
 	TComPtr<ID3D11RenderTargetView> SceneFinalRTV = nullptr;
