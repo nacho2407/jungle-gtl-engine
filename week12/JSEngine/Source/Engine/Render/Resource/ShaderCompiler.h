@@ -2,6 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Core/Containers/String.h"
+#include "Core/Containers/Array.h"
 
 #include <d3d11.h>
 

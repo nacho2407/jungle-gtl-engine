@@ -17,6 +17,7 @@ enum class ESkinningModeOverride : uint8
     GPU
 };
 
+UCLASS()
 class USkinnedMeshComponent : public UMeshComponent
 {
 public:

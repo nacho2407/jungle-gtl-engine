@@ -66,6 +66,6 @@ public:
     }
 
 private:
-    std::vector<FDelegateInfo> DelegateInfos;
+    TArray<FDelegateInfo> DelegateInfos;
     uint64 Counter = 0;
 };

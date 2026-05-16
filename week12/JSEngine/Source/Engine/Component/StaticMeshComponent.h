@@ -3,6 +3,7 @@
 #include "Asset/StaticMesh.h"
 #include "Render/Resource/Material.h"
 
+UCLASS()
 class UStaticMeshComponent : public UMeshComponent
 {
 public:

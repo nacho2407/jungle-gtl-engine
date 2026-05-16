@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Component/SceneComponent.h"
 
+UCLASS()
 class ULightComponentBase : public USceneComponent {
 public:
 	DECLARE_CLASS(ULightComponentBase, USceneComponent)

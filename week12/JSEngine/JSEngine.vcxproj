@@ -178,6 +178,9 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WITH_EDITOR=1;FBXSDK_SHARED;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\include;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -198,6 +201,9 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WITH_EDITOR=1;FBXSDK_SHARED;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\include;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -216,6 +222,9 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;WITH_EDITOR=1;FBXSDK_SHARED;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -237,6 +246,9 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;FBXSDK_SHARED;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -258,6 +270,9 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;FBXSDK_SHARED;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;IS_OBJ_VIEWER=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -279,6 +294,9 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=0;IS_GAME_CLIENT=1;IS_OBJ_VIEWER=0;GAME_DEVELOPMENT=1;FBXSDK_SHARED;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -300,6 +318,9 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=0;IS_GAME_CLIENT=1;IS_OBJ_VIEWER=0;FBXSDK_SHARED;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -637,6 +658,7 @@
     <ClCompile Include="Source\Engine\Asset\StaticMesh.cpp" />
     <ClCompile Include="Source\Engine\Asset\StaticMeshSimplifier.cpp" />
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp" />
+    <ClCompile Include="Source\Engine\Camera\APlayerCameraManager.gen.cpp" />
     <ClCompile Include="Source\Engine\Camera\CameraModifier.cpp" />
     <ClCompile Include="Source\Engine\Camera\CameraModifier_CameraShake.cpp" />
     <ClCompile Include="Source\Engine\Camera\CameraShakeBase.cpp" />
@@ -656,7 +678,7 @@
     <ClCompile Include="Source\Engine\Component\FireballComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\LineBatchComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\MainSceneDestructibleComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\InterpToMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\MovementComponent.cpp" />
@@ -664,13 +686,22 @@
     <ClCompile Include="Source\Engine\Component\Movement\PursuitMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\UInterpToMovementComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\UMovementComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\UProjectileMovementComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\UPursuitMovementComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\URotatingMovementComponent.gen.cpp" />
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\AmbientLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\DirectionalLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\LightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.cpp" />
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\PointLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\UAmbientLightComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\UDirectionalLightComponent.gen.cpp" />
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\ULightComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\ULightComponentBase.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\UPointLightComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\USpotlightComponent.gen.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\ProceduralMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
@@ -684,6 +715,29 @@
     <ClCompile Include="Source\Engine\Component\SubUVComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\UActorComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UActorSequenceComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UBillboardComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UBoxComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UCameraComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UCapsuleComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UDecalComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UFireballComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UGizmoComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UHeightFogComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UMainSceneDestructibleComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UMeshComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UPrimitiveComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UProceduralMeshComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\USceneComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UShapeComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\USkeletalMeshComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\USkinnedMeshComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\USoundComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\USphereComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\USpringArmComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UStaticMeshComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\USubUVComponent.gen.cpp" />
+    <ClCompile Include="Source\Engine\Component\UTextRenderComponent.gen.cpp" />
     <ClCompile Include="Source\Engine\Core\AssetPathPolicy.cpp" />
     <ClCompile Include="Source\Engine\Core\AtlasResourceCache.cpp" />
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp" />
@@ -714,6 +768,35 @@
     <ClCompile Include="Source\Engine\Core\TextureResourceCache.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\AAmbientLightActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\AAttachTestActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ABillboardActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ABladeSlash.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ABoundsBoxActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ABullet.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ACubeActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ADecalActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ADecalSpotLightActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ADefaultPawn.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ADestructibleActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ADirectionalLightActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\AFireballActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\AFogActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\AGameModeBase.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ALightActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\AMainSceneDestructibleActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\APawn.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\APlaneActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\APlayerController.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\APlayerStart.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\APointLightActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ASceneActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ASkeletalMeshActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ASphereActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ASpotlightActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\AStaticMeshActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ASubUVActor.gen.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\ATextRenderActor.gen.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\DefaultPawn.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\GameModeBase.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
@@ -816,6 +899,7 @@
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerComponentBindings.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerEngineBindings.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerMathBindings.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\UScriptComponent.gen.cpp" />
     <ClCompile Include="Source\Engine\Runtime\ViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsFileWatcher.cpp" />
@@ -881,6 +965,9 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\Asset\EditorAssetService.h" />
@@ -988,7 +1075,7 @@
     <ClInclude Include="Source\Engine\Component\FireballComponent.h" />
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h" />
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
-    <ClInclude Include="Source\Engine\Component\LineBatchComponent.h" />
+    <ClInclude Include="Source\Engine\Component\MainSceneDestructibleComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\InterpToMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\MovementComponent.h" />
@@ -1231,6 +1318,7 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
     <ClInclude Include="ThirdParty\luajit\src\lua.h" />
+    <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Atmosphere\HeightFogPixelShader.hlsl" />

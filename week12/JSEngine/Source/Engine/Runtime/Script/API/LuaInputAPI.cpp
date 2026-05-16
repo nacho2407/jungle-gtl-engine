@@ -197,7 +197,7 @@ namespace
             return CanReadGameplayMouseAxis() && InputSystem::Get().IsAnyMouseButtonDown();
         }
 
-        std::vector<uint32_t> ConsumeTextInput() const
+        TArray<uint32_t> ConsumeTextInput() const
         {
             if (!CanReadGameplayTextInput())
             {

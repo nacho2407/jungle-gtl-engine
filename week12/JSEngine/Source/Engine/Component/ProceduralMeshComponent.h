@@ -7,6 +7,7 @@
 class UStaticMesh;
 class UStaticMeshComponent;
 
+UCLASS()
 class UProceduralMeshComponent : public UPrimitiveComponent
 {
 public:

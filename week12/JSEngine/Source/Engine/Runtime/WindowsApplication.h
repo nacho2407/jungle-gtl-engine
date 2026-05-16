@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -7,6 +7,7 @@
 #include <functional>
 
 #include "Engine/Runtime/WindowsWindow.h"
+#include "Core/Containers/Array.h"
 
 using FOnSizingCallback = std::function<void()>;
 using FOnResizedCallback = std::function<void(unsigned int, unsigned int)>;
@@ -28,7 +29,7 @@ public:
 	bool IsExitRequested() const { return bIsExitRequested; }
 	bool IsResizing() const { return bIsResizing; }
 
-	void SetCustomTitleBarMetrics(int32 Height, const std::vector<FWindowHitTestRect>& InteractiveRects);
+	void SetCustomTitleBarMetrics(int32 Height, const TArray<FWindowHitTestRect>& InteractiveRects);
 	void MinimizeWindow();
 	void ToggleMaximizeWindow();
 	void CloseWindow();

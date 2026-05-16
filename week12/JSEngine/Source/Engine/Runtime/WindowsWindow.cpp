@@ -1,4 +1,4 @@
-#include "Engine/Runtime/WindowsWindow.h"
+﻿#include "Engine/Runtime/WindowsWindow.h"
 
 void FWindowsWindow::Initialize(HWND InHWindow, const wchar_t* InTitle)
 {
@@ -23,7 +23,7 @@ POINT FWindowsWindow::ScreenToClientPoint(POINT ScreenPoint) const
 	return ScreenPoint;
 }
 
-void FWindowsWindow::SetCustomTitleBarMetrics(int32 Height, const std::vector<FWindowHitTestRect>& InteractiveRects)
+void FWindowsWindow::SetCustomTitleBarMetrics(int32 Height, const TArray<FWindowHitTestRect>& InteractiveRects)
 {
 	CustomTitleBarState.TitleBarHeight = Height;
 	CustomTitleBarState.InteractiveRects = InteractiveRects;

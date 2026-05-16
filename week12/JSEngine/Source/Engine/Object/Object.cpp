@@ -6,6 +6,8 @@
 
 #include <cstring>
 
+class UMaterialInterface;
+
 TArray<UObject*> GUObjectArray;
 
 UObject::UObject()
@@ -47,6 +49,8 @@ UObject* UObject::Duplicate()
 // ・ Bool / Int / Float / Vec3 / Vec4  → memcpy
 // ・ String                            → FString 대입
 // ・ Name                              → FName 대입 후 PostEditChangeProperty 호출
+// ・ Guid / Quat                       → memcpy
+// ・ Vec3Array / StringArray / Material→ container 대입
 // ・ SceneComponentRef                 → 포인터 복원은 호출 측(Duplicate) 에서 담당
 void UObject::CopyPropertiesFrom(UObject* Src)
 {
@@ -79,6 +83,8 @@ void UObject::CopyPropertiesFrom(UObject* Src)
 		case EPropertyType::Vec3:
 		case EPropertyType::Vec4:
 		case EPropertyType::Color:
+		case EPropertyType::Guid:
+		case EPropertyType::Quat:
 		{
 			const size_t Size = GetPropertySize(SrcProp.Type);
 			if (Size > 0)
@@ -118,8 +124,32 @@ void UObject::CopyPropertiesFrom(UObject* Src)
 			auto* Dst = static_cast<TArray<FVector>*>(DstProp->ValuePtr);
 			const auto* Src = static_cast<const TArray<FVector>*>(SrcProp.ValuePtr);
 			*Dst = *Src;
+			this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
 			break;
 		}
+		case EPropertyType::StringArray:
+		{
+			auto* Dst = static_cast<TArray<FString>*>(DstProp->ValuePtr);
+			const auto* Src = static_cast<const TArray<FString>*>(SrcProp.ValuePtr);
+			*Dst = *Src;
+			this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
+			break;
+		}
+		case EPropertyType::Material:
+		{
+			auto* Dst = static_cast<TArray<UMaterialInterface*>*>(DstProp->ValuePtr);
+			const auto* Src = static_cast<const TArray<UMaterialInterface*>*>(SrcProp.ValuePtr);
+			if (Dst && Src)
+			{
+				*Dst = *Src;
+				this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
+			}
+			break;
+		}
+		case EPropertyType::SRV:
+		case EPropertyType::CubeSRV:
+			// GPU debug preview용 read-only 데이터입니다. Duplicate/serialization 대상이 아니므로 복사하지 않습니다.
+			break;
 		}
 	}
 

@@ -101,7 +101,7 @@ LRESULT FWindowsApplication::WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam,
 			break;
 		}
 
-		std::vector<BYTE> RawData(DataSize);
+		TArray<BYTE> RawData(DataSize);
 		if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, RawData.data(), &DataSize, sizeof(RAWINPUTHEADER)) != DataSize)
 		{
 			break;
@@ -262,7 +262,7 @@ void FWindowsApplication::Destroy()
 	}
 }
 
-void FWindowsApplication::SetCustomTitleBarMetrics(int32 Height, const std::vector<FWindowHitTestRect>& InteractiveRects)
+void FWindowsApplication::SetCustomTitleBarMetrics(int32 Height, const TArray<FWindowHitTestRect>& InteractiveRects)
 {
 	Window.SetCustomTitleBarMetrics(Height, InteractiveRects);
 }

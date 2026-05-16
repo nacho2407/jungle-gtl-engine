@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "PrimitiveComponent.h"
 
+UCLASS()
 class UHeightFogComponent : public UPrimitiveComponent
 {
 public:

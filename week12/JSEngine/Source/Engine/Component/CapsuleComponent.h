@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "ShapeComponent.h"
 
+UCLASS()
 class UCapsuleComponent : public UShapeComponent
 {
 public:

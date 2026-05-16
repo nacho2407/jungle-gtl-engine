@@ -14,7 +14,7 @@ Engine/*.h 파일을 탐색
 → FAutoClassRegister로 리플렉션 등록
 
 주의:
-- 현재 Material, SRV, CubeSRV 프로퍼티는 수동으로 등록해야 합니다.
+- SRV, CubeSRV는 FSRVPropertyData / FCubeSRVPropertyData wrapper 타입으로 read-only debug preview만 지원합니다.
 """
 
 import os
@@ -22,7 +22,7 @@ import re
 import sys
 from pathlib import Path
 
-# Material, SRV, CubeSRV 프로퍼티는 수동으로 등록해야 합니다.
+# Material은 에셋 참조, SRV/CubeSRV는 wrapper 기반 read-only debug preview 프로퍼티로 등록합니다.
 TYPE_MAP = {
     'bool': 'EPropertyType::Bool',
     'int32': 'EPropertyType::Int',
@@ -33,8 +33,14 @@ TYPE_MAP = {
     'FString': 'EPropertyType::String',
     'FName': 'EPropertyType::Name',
     'FColor': 'EPropertyType::Color',
+    'FGuid': 'EPropertyType::Guid',
+    'FQuat': 'EPropertyType::Quat',
     'TArray<FVector>': 'EPropertyType::Vec3Array',
+    'TArray<FString>': 'EPropertyType::StringArray',
     'USceneComponent*': 'EPropertyType::SceneComponentRef',
+    'TArray<UMaterialInterface*>': 'EPropertyType::Material',
+    'FSRVPropertyData': 'EPropertyType::SRV',
+    'FCubeSRVPropertyData': 'EPropertyType::CubeSRV',
 }
 
 

@@ -8,7 +8,6 @@
 #include "Spatial/WorldSpatialIndex.h"
 
 class UCameraComponent;
-class ULineBatchComponent;
 class FViewportCamera;
 
 struct FWorldGameModeSettings

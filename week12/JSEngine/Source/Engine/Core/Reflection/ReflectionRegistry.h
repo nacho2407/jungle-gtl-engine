@@ -9,18 +9,18 @@
 
 struct FEnumValueMetaData
 {
-    const char* Name = nullptr;
-    const char* DisplayName = nullptr;
-    int64 Value = 0;
+	const char* Name = nullptr;
+	const char* DisplayName = nullptr;
+	int64 Value = 0;
 };
 
 // 파싱된 Enum 타입에 대한 메타데이터
 struct FEnumMetaData
 {
-    const char* Name = nullptr;
-    uint8 Size = 0;
-    const FEnumValueMetaData* Values = nullptr;
-    uint32 Count = 0;
+	const char* Name = nullptr;
+	uint8 Size = 0;
+	const FEnumValueMetaData* Values = nullptr;
+	uint32 Count = 0;
 };
 
 // 파싱된 프로퍼티의 영구 메타데이터
@@ -37,14 +37,14 @@ struct FPropertyMetaData
 
 	const char* DisplayName = nullptr;
 
-    const FEnumMetaData* EnumMeta = nullptr;
+	const FEnumMetaData* EnumMeta = nullptr;
 };
 
 // 파싱된 클래스의 영구 메타데이터
 struct FClassMetaData
 {
-	const char* ClassName;
-	const struct FTypeInfo* TypeInfo;
+	const char* ClassName = nullptr;
+	const struct FTypeInfo* TypeInfo = nullptr;
 	TArray<FPropertyMetaData> Properties;
 };
 

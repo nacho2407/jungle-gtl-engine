@@ -3,6 +3,7 @@
 #include "Audio/AudioSystem.h"
 #include "Component/SceneComponent.h"
 
+UCLASS()
 class USoundComponent : public USceneComponent
 {
 public:

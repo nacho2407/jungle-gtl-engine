@@ -9,6 +9,7 @@ class ITransformProxy;
 class USceneComponent;
 struct FMeshData;
 
+UCLASS()
 class UGizmoComponent : public UPrimitiveComponent
 {
 private:

@@ -2,6 +2,7 @@
 
 #include "Component/SceneComponent.h"
 
+UCLASS()
 class USpringArmComponent : public USceneComponent
 {
 public:

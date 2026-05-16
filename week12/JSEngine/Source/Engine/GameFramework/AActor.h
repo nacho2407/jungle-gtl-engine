@@ -184,13 +184,13 @@ protected:
 	FVector PendingActorRotation = FVector(0, 0, 0);
 	FVector PendingActorScale = FVector(1, 1, 1);
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(DisplayName = "Visible")
 	bool bVisible = true;
     
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(DisplayName = "Active")
 	bool bIsActive = true;
     
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(DisplayName = "Tick in Editor")
     bool bTickInEditor = false;
 
 	TArray<UActorComponent*> OwnedComponents;

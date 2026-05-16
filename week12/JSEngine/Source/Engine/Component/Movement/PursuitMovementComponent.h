@@ -4,6 +4,7 @@
 class FViewportCamera;
 
 // Not intended for complex, non-ghost actors
+UCLASS()
 class UPursuitMovementComponent : public UMovementComponent {
 public:
 	DECLARE_CLASS(UPursuitMovementComponent, UMovementComponent);

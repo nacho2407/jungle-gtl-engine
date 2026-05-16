@@ -219,9 +219,6 @@ void AActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 	OutProps.push_back({ "Location", EPropertyType::Vec3, &PendingActorLocation });
 	OutProps.push_back({ "Rotation", EPropertyType::Vec3, &PendingActorRotation });
 	OutProps.push_back({ "Scale", EPropertyType::Vec3, &PendingActorScale });
-	// OutProps.push_back({ "Visible", EPropertyType::Bool, &bVisible });
-	// OutProps.push_back({ "Active", EPropertyType::Bool, &bIsActive });
-	// OutProps.push_back({ "Tick In Editor", EPropertyType::Bool, &bTickInEditor });
 }
 
 void AActor::PostEditProperty(const char* PropertyName)

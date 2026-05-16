@@ -6,6 +6,7 @@ class APawn;
 class APlayerController;
 class FViewportCamera;
 
+UCLASS()
 class AGameModeBase : public AActor
 {
 public:

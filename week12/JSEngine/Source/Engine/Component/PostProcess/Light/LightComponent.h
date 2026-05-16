@@ -45,12 +45,13 @@ public:
 	float SlopeScaledBias = { 0.12f } ;
 	float ShadowSharpen = 0.5f;
 
-	// 디버그용으로 Shadow Atlas에서 해당 라이트의 타일 위치와 크기를 저장하는 변수, 현재 지워도됩니다
+	// 디버그용으로 Shadow Atlas에서 해당 라이트의 타일 위치와 크기를 저장하는 변수
 	FVector4 DebugShadowAtlasScaleOffset;
 	bool bHasDebugShadowAtlasTile = false;
-	float DebugShadowCubeIndex;
+	int32 DebugShadowCubeIndex;
 	bool bHasDebugShadowCubeTile = false;
+
 protected:
-	UPROPERTY(DisplayName = "ShadowMapType")
+	UPROPERTY(DisplayName = "Shadow Map Type")
 	EShadowMap ShadowMapType = EShadowMap::CSM;
 };

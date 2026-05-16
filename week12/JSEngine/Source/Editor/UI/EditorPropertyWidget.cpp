@@ -1758,6 +1758,44 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 		bChanged = ImGui::ColorEdit4(Label, &Val->R);
 		break;
 	}
+	case EPropertyType::Guid:
+	{
+		FGuid* Val = static_cast<FGuid*>(Prop.ValuePtr);
+		if (!Val)
+		{
+			break;
+		}
+
+		char Buf[64];
+		strncpy_s(Buf, sizeof(Buf), Val->ToString().c_str(), _TRUNCATE);
+		if (ImGui::InputText(Label, Buf, sizeof(Buf), ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			FGuid ParsedGuid;
+			if (FGuid::Parse(Buf, ParsedGuid))
+			{
+				*Val = ParsedGuid;
+				bChanged = true;
+			}
+		}
+		break;
+	}
+	case EPropertyType::Quat:
+	{
+		FQuat* Val = static_cast<FQuat*>(Prop.ValuePtr);
+		if (!Val)
+		{
+			break;
+		}
+
+		float Components[4] = { Val->X, Val->Y, Val->Z, Val->W };
+		if (ImGui::DragFloat4(Label, Components, Prop.Speed))
+		{
+			*Val = FQuat(Components[0], Components[1], Components[2], Components[3]);
+			Val->Normalize();
+			bChanged = true;
+		}
+		break;
+	}
 	case EPropertyType::SceneComponentRef:
 	{
 		AActor* Owner = nullptr;
@@ -2277,44 +2315,122 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 		}
 		break;
 	}
+	case EPropertyType::StringArray:
+	{
+		TArray<FString>* Arr = static_cast<TArray<FString>*>(Prop.ValuePtr);
+		if (!Arr)
+		{
+			break;
+		}
+
+		int32 ToRemove = -1;
+
+		ImGui::Text("%s", GetPropertyDisplayName(Prop));
+		ImGui::Spacing();
+
+		for (int32 i = 0; i < static_cast<int32>(Arr->size()); ++i)
+		{
+			ImGui::PushID(i);
+
+			char Buf[256];
+			strncpy_s(Buf, sizeof(Buf), (*Arr)[i].c_str(), _TRUNCATE);
+
+			char ItemLabel[32];
+			snprintf(ItemLabel, sizeof(ItemLabel), "[%d]", i);
+
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - UIConstants::XButtonSize - 8.0f);
+			if (ImGui::InputText(ItemLabel, Buf, sizeof(Buf)))
+			{
+				(*Arr)[i] = Buf;
+				bChanged = true;
+			}
+
+			ImGui::SameLine();
+			char XId[32];
+			snprintf(XId, sizeof(XId), "##rm_%d", i);
+			if (DrawXButton(XId))
+			{
+				ToRemove = i;
+			}
+
+			ImGui::PopID();
+		}
+
+		if (ToRemove >= 0)
+		{
+			if (EditorEngine)
+			{
+				EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
+				bPropertyEditUndoCaptured = true;
+			}
+			Arr->erase(Arr->begin() + ToRemove);
+			bChanged = true;
+		}
+
+		char AddLabel[64];
+		snprintf(AddLabel, sizeof(AddLabel), "+ Add##%s", Prop.Name);
+		if (ImGui::Button(AddLabel, ImVec2(-1, 0)))
+		{
+			if (EditorEngine)
+			{
+				EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
+				bPropertyEditUndoCaptured = true;
+			}
+			Arr->push_back("");
+			bChanged = true;
+		}
+		break;
+	}
 	case EPropertyType::SRV:
 	{
-		ID3D11ShaderResourceView* SRV = static_cast<ID3D11ShaderResourceView*>(Prop.ValuePtr);
-		if (SRV)
+		const FSRVPropertyData* Data = static_cast<const FSRVPropertyData*>(Prop.ValuePtr);
+		if (!Data || !Data->SRV)
 		{
-			const FSRVDisplayInfo* Info = static_cast<const FSRVDisplayInfo*>(Prop.ExtraData);
-			if (Info)
-			{
-				ImGui::Image(SRV,
-					ImVec2(Info->ImageWidth, Info->ImageHeight),
-					ImVec2(Info->UV0X, Info->UV0Y),
-					ImVec2(Info->UV1X, Info->UV1Y));
-			}
-			else
-			{
-				ImGui::Image(SRV, ImVec2(256, 256));
-			}
+			break;
 		}
+
+		const FSRVDisplayInfo& Info = Data->DisplayInfo;
+		ImGui::TextUnformatted(GetPropertyDisplayName(Prop));
+		ImGui::Image(Data->SRV,
+			ImVec2(Info.ImageWidth, Info.ImageHeight),
+			ImVec2(Info.UV0X, Info.UV0Y),
+			ImVec2(Info.UV1X, Info.UV1Y));
 		break;
 	}
 	case EPropertyType::CubeSRV:
 	{
-		auto CubeSRV = static_cast<ID3D11ShaderResourceView**>(Prop.ValuePtr);
-		if (CubeSRV)
+		const FCubeSRVPropertyData* Data = static_cast<const FCubeSRVPropertyData*>(Prop.ValuePtr);
+		if (!Data)
 		{
-			for (int i = 0; i < 6; i++)
+			break;
+		}
+
+		static const char* FaceLabels[6] =
+		{
+			"+X", "-X", "+Y", "-Y", "+Z", "-Z"
+		};
+
+		const FSRVDisplayInfo& Info = Data->DisplayInfo;
+		ImGui::TextUnformatted(GetPropertyDisplayName(Prop));
+		for (int32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+		{
+			ID3D11ShaderResourceView* FaceSRV = Data->FaceSRVs[FaceIndex];
+			if (!FaceSRV)
 			{
-				if (!CubeSRV[i])
-				{
-					continue;
-				}
+				continue;
+			}
 
-				ImGui::Image(CubeSRV[i], ImVec2(64, 64));
+			ImGui::BeginGroup();
+			ImGui::TextUnformatted(FaceLabels[FaceIndex]);
+			ImGui::Image(FaceSRV,
+				ImVec2(Info.ImageWidth, Info.ImageHeight),
+				ImVec2(Info.UV0X, Info.UV0Y),
+				ImVec2(Info.UV1X, Info.UV1Y));
+			ImGui::EndGroup();
 
-				if ((i % 3) != 2)
-				{
-					ImGui::SameLine();
-				}
+			if ((FaceIndex % 3) != 2)
+			{
+				ImGui::SameLine();
 			}
 		}
 		break;

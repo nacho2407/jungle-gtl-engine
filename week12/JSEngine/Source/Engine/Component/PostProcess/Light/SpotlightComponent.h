@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "PointLightComponent.h"
 
+UCLASS()
 class USpotlightComponent : public UPointLightComponent
 {
 public:

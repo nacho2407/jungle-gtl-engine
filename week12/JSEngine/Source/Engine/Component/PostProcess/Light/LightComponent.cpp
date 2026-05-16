@@ -233,8 +233,8 @@ FMatrix ULightComponent::ComputeCascadeShadowMatrix(const FMatrix& CamView, cons
 void ULightComponent::PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutProps) const
 {
 	FShadowAtlasManager& AtlasManager = FShadowAtlasManager::Get();
-	static const char* ShadowMapFaceNames[] = { "PositiveX", "NegativeX", "PositiveY", "NegativeY", "PositiveZ", "NegativeZ" };
-	static ID3D11ShaderResourceView* FaceSRV[6];
+	static FSRVPropertyData ShadowMapPreview;
+	static FCubeSRVPropertyData CubeMapPreview;
 
 	if (bHasDebugShadowAtlasTile)
 	{
@@ -242,9 +242,8 @@ void ULightComponent::PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutPr
 								 ? DebugShadowAtlasScaleOffset
 								 : FVector4(1, 1, 0, 0);
 
-
-		static FSRVDisplayInfo ShadowMapDisplay;
-		ShadowMapDisplay = {
+		ShadowMapPreview.SRV = AtlasManager.GetSRV();
+		ShadowMapPreview.DisplayInfo = {
 			256.f,
 			256.f,
 			SO.Z,
@@ -253,17 +252,20 @@ void ULightComponent::PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutPr
 			SO.W + SO.Y
 		};
 
-		OutProps.push_back({ "ShadowMap", EPropertyType::SRV, AtlasManager.GetSRV(), 0.f, 0.f, 0.f, &ShadowMapDisplay });
+		OutProps.push_back({ "ShadowMap", EPropertyType::SRV, &ShadowMapPreview });
 	}
 	else if (bHasDebugShadowCubeTile)
 	{
-		for (int i = 0; i < 6; i++)
+		for (int32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
 		{
-			FaceSRV[i] = AtlasManager.GetCubeDebugSRV(static_cast<int>(DebugShadowCubeIndex), i);
-			if (!FaceSRV[i])
+			CubeMapPreview.FaceSRVs[FaceIndex] = AtlasManager.GetCubeDebugSRV(static_cast<int>(DebugShadowCubeIndex), FaceIndex);
+			if (!CubeMapPreview.FaceSRVs[FaceIndex])
+			{
 				return;
+			}
 		}
+		CubeMapPreview.DisplayInfo = { 64.f, 64.f, 0.f, 0.f, 1.f, 1.f };
 
-		OutProps.push_back({ "CubeMap", EPropertyType::CubeSRV, FaceSRV, 0.f, 0.f, 0.f, nullptr });
+		OutProps.push_back({ "CubeMap", EPropertyType::CubeSRV, &CubeMapPreview });
 	}
 }

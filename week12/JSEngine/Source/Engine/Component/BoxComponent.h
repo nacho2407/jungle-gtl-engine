@@ -2,6 +2,7 @@
 #include "ShapeComponent.h"
 #include "Geometry/OBB.h"
 
+UCLASS()
 class UBoxComponent : public UShapeComponent
 {
 public:
