@@ -44,6 +44,7 @@ void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* In
 	CameraFadeCB.Create(InDevice, sizeof(FCameraFadeConstants), "CameraFadeCB");
 	CameraVignetteCB.Create(InDevice, sizeof(FCameraVignetteConstants), "CameraVignetteCB");
 	CameraLetterboxCB.Create(InDevice, sizeof(FCameraLetterboxConstants), "CameraLetterboxCB");
+	BoneHeatMapCB.Create(InDevice, sizeof(FBoneHeatMapConstants), "BoneHeatMapCB");
 }
 
 void FDrawCommandBuilder::Release()
@@ -72,6 +73,7 @@ void FDrawCommandBuilder::Release()
 	CameraFadeCB.Release();
 	CameraVignetteCB.Release();
 	CameraLetterboxCB.Release();
+	BoneHeatMapCB.Release();
 }
 
 // ============================================================
@@ -170,15 +172,17 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 
 	// PerObjectCB 업데이트
 	FConstantBuffer* PerObjCB = GetPerObjectCBForProxy(&Scene, Proxy);
-	if (PerObjCB && (Proxy.NeedsPerObjectCBUpload() || bSkeletal))
+	if (PerObjCB && Proxy.NeedsPerObjectCBUpload())
 	{
-		FPerObjectConstants PerObjectConstants = Proxy.GetPerObjectConstants();
-		PerObjectConstants.SelectedBoneIndex = bWeightBoneHeatMap ? CollectWeightBoneHeatMapBoneIndex : -1;
-		PerObjCB->Update(Ctx, &PerObjectConstants, sizeof(FPerObjectConstants));
-		if (Proxy.NeedsPerObjectCBUpload())
-		{
-			Proxy.ClearPerObjectCBDirty();
-		}
+		PerObjCB->Update(Ctx, &Proxy.GetPerObjectConstants(), sizeof(FPerObjectConstants));
+		Proxy.ClearPerObjectCBDirty();
+	}
+
+	if (bWeightBoneHeatMap)
+	{
+		FBoneHeatMapConstants BoneHeatMapConstants = {};
+		BoneHeatMapConstants.SelectedBoneIndex = CollectWeightBoneHeatMapBoneIndex;
+		BoneHeatMapCB.Update(Ctx, &BoneHeatMapConstants, sizeof(FBoneHeatMapConstants));
 	}
 
 	// SelectionMask 커맨드 존재 추적
@@ -212,6 +216,7 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 		Cmd.Bindings.SkinMatrixSRV = bGPUSkinning && SkeletalProxy
 			? SkeletalProxy->GetSkinMatrixSRV(CachedDevice, Ctx)
 			: nullptr;
+		Cmd.Bindings.BoneHeatMapCB = bWeightBoneHeatMap ? &BoneHeatMapCB : nullptr;
 	
 		if (!bDepthOnly && Section.Material)
 		{
