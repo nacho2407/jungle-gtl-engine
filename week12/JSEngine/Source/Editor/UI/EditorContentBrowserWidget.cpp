@@ -5,6 +5,7 @@
 #include "Editor/UI/EditorChromeConstants.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
+#include "Animation/AnimSequence.h"
 #include "Asset/CurveFloatAsset.h"
 #include "Asset/StaticMesh.h"
 #include "Core/ResourceManager.h"
@@ -1705,9 +1706,29 @@ void FEditorContentBrowserWidget::DrawAssetPreview()
 
 	if (IsSequenceAsset(Extension))
 	{
+		UAnimSequence* Sequence = FResourceManager::Get().LoadAnimSequence(RelativePath);
 		ImGui::Spacing();
-		ImGui::TextDisabled("Sequence Asset");
-		ImGui::TextWrapped(".sequence is reserved for future Level Sequence / Animation Sequence assets.");
+		ImGui::TextDisabled("Animation Sequence");
+		if (!Sequence || !Sequence->GetDataModel())
+		{
+			ImGui::TextWrapped("Not loaded in ResourceManager.");
+			return;
+		}
+
+		const UAnimDataModel* DataModel = Sequence->GetDataModel();
+		ImGui::Text("Length: %.3f sec", DataModel->GetPlayLength());
+		ImGui::Text("Sample Rate: %.3f", DataModel->GetFrameRate().AsDecimal());
+		ImGui::Text("Frames: %d", DataModel->GetNumberOfFrames());
+		ImGui::Text("Keys: %d", DataModel->GetNumberOfKeys());
+		ImGui::Text("Tracks: %d", static_cast<int32>(DataModel->GetBoneAnimationTracks().size()));
+		if (!Sequence->GetSourceFilePath().empty())
+		{
+			ImGui::TextWrapped("Source: %s", Sequence->GetSourceFilePath().c_str());
+		}
+		if (!Sequence->GetSourceStackName().empty())
+		{
+			ImGui::Text("Stack: %s", Sequence->GetSourceStackName().c_str());
+		}
 		return;
 	}
 
@@ -1954,6 +1975,10 @@ FString FEditorContentBrowserWidget::GetPayloadType(const FContentItem& Item) co
 	{
 		return "CurveContentItem";
 	}
+	if (IsSequenceAsset(Item.Extension))
+	{
+		return "AnimSequenceContentItem";
+	}
 	if (Item.Extension == ".prefab")
 	{
 		return "PrefabContentItem";
@@ -2063,7 +2088,7 @@ bool FEditorContentBrowserWidget::IsCurveAsset(const std::filesystem::path& Path
 
 bool FEditorContentBrowserWidget::IsSequenceAsset(const FString& Extension) const
 {
-	return Extension == ".sequence";
+	return Extension == ".sequence" || Extension == ".animseq";
 }
 
 bool FEditorContentBrowserWidget::IsPrefabAsset(const FString& Extension) const

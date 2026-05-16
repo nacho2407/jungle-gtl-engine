@@ -46,6 +46,38 @@ bool FAssetPathPolicy::IsSequenceAssetPath(const FString& Path)
 	return Extension == L".sequence";
 }
 
+bool FAssetPathPolicy::IsAnimSequenceAssetPath(const FString& Path)
+{
+	std::filesystem::path FsPath(FPaths::ToWide(FPaths::Normalize(Path)));
+	std::wstring Extension = FsPath.extension().wstring();
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
+	return Extension == L".animseq" || Extension == L".sequence";
+}
+
+FString FAssetPathPolicy::MakeImportedAnimSequenceAssetPath(const FString& SourcePath, const FString& StackName)
+{
+	std::filesystem::path SourceFsPath(FPaths::ToWide(FPaths::Normalize(SourcePath)));
+	std::wstring FileName = SourceFsPath.stem().wstring();
+
+	std::wstring SanitizedStackName = FPaths::ToWide(StackName);
+	for (wchar_t& Ch : SanitizedStackName)
+	{
+		if (Ch == L'/' || Ch == L'\\' || Ch == L':' || Ch == L'*' || Ch == L'?' || Ch == L'"' || Ch == L'<' || Ch == L'>' || Ch == L'|')
+		{
+			Ch = L'_';
+		}
+	}
+
+	if (!SanitizedStackName.empty())
+	{
+		FileName += L"_";
+		FileName += SanitizedStackName;
+	}
+
+	FileName += L".animseq";
+	return FPaths::ToUtf8((std::filesystem::path(L"Asset") / L"Animation" / FileName).generic_wstring());
+}
+
 bool FAssetPathPolicy::IsSerializedMaterialAssetPath(const FString& Path)
 {
 	std::filesystem::path FsPath(FPaths::ToWide(FPaths::Normalize(Path)));

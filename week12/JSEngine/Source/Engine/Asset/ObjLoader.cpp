@@ -94,11 +94,6 @@ bool FObjLoader::SupportsExtension(const FString& Extension) const
 	return Extension == FString("obj") || Extension == FString(".obj") || Extension == FString("OBJ") || Extension == FString(".OBJ");
 }
 
-FString FObjLoader::GetLoaderName() const
-{
-	return FString{ "FObjLoader" };
-}
-
 bool FObjLoader::ParseObj(const FString& Path, FObjRawData& InRawData)
 {
 	TArray<FString> Lines;

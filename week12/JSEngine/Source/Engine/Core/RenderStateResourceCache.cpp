@@ -28,10 +28,16 @@ ID3D11SamplerState* FRenderStateResourceCache::GetOrCreateSamplerState(ESamplerT
 		break;
 	case ESamplerType::EST_Linear:
 		Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		Desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		Desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		Desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 		break;
 	case ESamplerType::EST_Anisotropic:
 		Desc.Filter = D3D11_FILTER_ANISOTROPIC;
 		Desc.MaxAnisotropy = 16;
+		Desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		Desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		Desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 		break;
 	case ESamplerType::EST_Shadow:
 		Desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;

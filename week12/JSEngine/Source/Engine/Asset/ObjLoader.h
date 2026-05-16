@@ -14,7 +14,6 @@ public:
 	FStaticMesh* Load(const FString& Path, const FStaticMeshLoadOptions& LoadOptions);
 
 	bool SupportsExtension(const FString& Extension) const override;
-	FString GetLoaderName() const override;
 
 private:
 	//	OBJ -> Raw Data

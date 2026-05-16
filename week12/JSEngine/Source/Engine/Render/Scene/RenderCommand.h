@@ -61,6 +61,13 @@ struct FBoneMatrixConstants
 	float Padding[3] = { 0.0f, 0.0f, 0.0f };
 };
 
+struct FBoneWeightHeatmapConstants
+{
+	int32 SelectedBoneIndex = -1;
+	uint32 bEnabled = 0;
+	float Padding[2] = { 0.0f, 0.0f };
+};
+
 //PerObject
 struct FPerObjectConstants
 {
@@ -440,6 +447,9 @@ struct FRenderCommand
 
 	bool bUseBoneMatrixConstants = false;
 	uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
+
+	bool bUseBoneWeightHeatmap = false;
+	int32 BoneWeightHeatmapBoneIndex = -1;
 
 	FBoundingBox WorldAABB;
 

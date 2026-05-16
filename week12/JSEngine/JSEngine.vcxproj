@@ -643,6 +643,7 @@
     <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp" />
     <ClCompile Include="Source\Engine\Animation\StateMachineAnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\TimelinePlayer.cpp" />
+    <ClCompile Include="Source\Engine\Asset\AnimSequenceAssetLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetQueryService.cpp" />
     <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp" />
     <ClCompile Include="Source\Engine\Asset\CurveAssetLoader.cpp" />
@@ -1043,6 +1044,7 @@
     <ClInclude Include="Source\Engine\Animation\CurvePlayback.h" />
     <ClInclude Include="Source\Engine\Animation\StateMachineAnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\TimelinePlayer.h" />
+    <ClInclude Include="Source\Engine\Asset\AnimSequenceAssetLoader.h" />
     <ClInclude Include="Source\Engine\Asset\AssetQueryService.h" />
     <ClInclude Include="Source\Engine\Asset\BinarySerializer.h" />
     <ClInclude Include="Source\Engine\Asset\CurveAssetLoader.h" />

@@ -89,13 +89,18 @@ public:
 
     virtual float GetPlayLength() const { return PlayLength; }
     virtual const TArray<FAnimNotifyEvent>& GetNotifies() const { return Notifies; }
+    virtual const TArray<FBoneAnimationTrack>& GetBoneAnimationTracks() const;
     virtual bool GetAnimationPose(float Time, FPoseContext& OutPose) const { return false; }
     void AddNotify(float InTriggerTime, const FName& InNotifyName);
+
+    void SetPreviewMeshPath(const FString& InPreviewMeshPath) { PreviewMeshPath = InPreviewMeshPath; }
+    const FString& GetPreviewMeshPath() const { return PreviewMeshPath; }
 
 protected:
     float PlayLength = 5.0f;
     TArray<FAnimNotifyEvent> Notifies;
     UAnimDataModel* DataModel = nullptr;
+    FString PreviewMeshPath;
 };
 
 class UAnimSequence : public UAnimSequenceBase
@@ -105,7 +110,22 @@ public:
     UAnimSequence() = default;
     ~UAnimSequence() override = default;
 
+    float GetPlayLength() const override;
     bool GetAnimationPose(float Time, FPoseContext& OutPose) const override;
+
+    void SetAssetPath(const FString& InAssetPath) { AssetPath = InAssetPath; }
+    const FString& GetAssetPath() const { return AssetPath; }
+
+    void SetSourceFilePath(const FString& InSourceFilePath) { SourceFilePath = InSourceFilePath; }
+    const FString& GetSourceFilePath() const { return SourceFilePath; }
+
+    void SetSourceStackName(const FString& InSourceStackName) { SourceStackName = InSourceStackName; }
+    const FString& GetSourceStackName() const { return SourceStackName; }
+
+private:
+    FString AssetPath;
+    FString SourceFilePath;
+    FString SourceStackName;
 };
 
 // Debug용. 추후 삭제.

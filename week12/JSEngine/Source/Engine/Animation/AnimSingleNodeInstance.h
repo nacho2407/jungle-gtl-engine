@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "AnimInstance.h"
 
+class USkeletalMesh;
+
 class UAnimSingleNodeInstance : public UAnimInstance
 {
 public:
@@ -13,6 +15,8 @@ public:
 	void PostEditProperty(const char* PropertyName) override;
 
 	void SetAnimation(UAnimSequenceBase* InAnimation);
+    void Initialize(USkeletalMeshComponent* InOwnerComponent) override;
+    void BuildBoneMapping();
 
     void Play(bool bInLooping);
     void Stop();
@@ -32,7 +36,12 @@ public:
 	bool EvaluatePose(FPoseContext& OutPoseContext) override;
 
 private:
+    bool NeedsBoneMappingRebuild() const;
+
 	UAnimSequenceBase* CurrentAnimation = nullptr;
+    TArray<int32> TrackToBoneMap;
+    USkeletalMesh* CachedMappingMesh = nullptr;
+    UAnimSequenceBase* CachedMappingAnimation = nullptr;
 	float PlayRate = 1.0f;
 	bool bPlaying = false;
     bool bLooping = false;

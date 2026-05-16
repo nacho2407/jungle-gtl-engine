@@ -118,6 +118,9 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 	   case EViewMode::Heatmap:
 		   PermutationKey = (uint32)ELightingModel::Heatmap;
 		   break;
+	   case EViewMode::BoneWeightHeatmap:
+		   PermutationKey = (uint32)ELightingModel::BoneWeightHeatmap;
+		   break;
 	   }
 
        if (RenderBus->GetLightCullMode() == ELightCullMode::Clustered)
@@ -211,6 +214,18 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
                Cmd.VertexFactoryType,
                Context->RenderBus->GetBoneMatrixConstants(Cmd),
                Context->RenderResources);
+
+           FBoneWeightHeatmapConstants BoneWeightHeatmapConstants = {};
+           BoneWeightHeatmapConstants.SelectedBoneIndex = Cmd.BoneWeightHeatmapBoneIndex;
+           BoneWeightHeatmapConstants.bEnabled = Cmd.bUseBoneWeightHeatmap ? 1u : 0u;
+           Context->RenderResources->BoneWeightHeatmapConstantBuffer.Update(
+               Context->DeviceContext,
+               &BoneWeightHeatmapConstants,
+               sizeof(FBoneWeightHeatmapConstants));
+           ID3D11Buffer* BoneWeightHeatmapBuffer =
+               Context->RenderResources->BoneWeightHeatmapConstantBuffer.GetBuffer();
+           Context->DeviceContext->VSSetConstantBuffers(6, 1, &BoneWeightHeatmapBuffer);
+           Context->DeviceContext->PSSetConstantBuffers(6, 1, &BoneWeightHeatmapBuffer);
        }
 
        auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);

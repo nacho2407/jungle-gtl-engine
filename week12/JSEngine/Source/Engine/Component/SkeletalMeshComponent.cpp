@@ -32,8 +32,20 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
         AnimInstance->NativeUpdateAnimation(DeltaTime);
 
         FPoseContext PoseContext;
-        PoseContext.LocalPose.resize(CurrentLocalPose.size());
-        // PoseContext.LocalPose = CurrentLocalPose; // Instance 디버그용
+        const int32 BoneCount = static_cast<int32>(CurrentLocalPose.size());
+        PoseContext.LocalPose.resize(BoneCount, FMatrix::Identity);
+        PoseContext.BindPose.resize(BoneCount, FMatrix::Identity);
+
+        if (SkeletalMesh)
+        {
+            for (int32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
+            {
+                const FMatrix& LocalBindTransform = SkeletalMesh->GetLocalBindTransform(BoneIndex);
+                PoseContext.LocalPose[BoneIndex] = LocalBindTransform;
+                PoseContext.BindPose[BoneIndex] = LocalBindTransform;
+            }
+        }
+
         if (AnimInstance->EvaluatePose(PoseContext))
         {
             ApplyAnimationPose(PoseContext);

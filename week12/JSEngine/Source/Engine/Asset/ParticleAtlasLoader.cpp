@@ -59,8 +59,3 @@ bool FParticleAtlasLoader::SupportsExtension(const FString& Extension) const
 		|| Extension == ".jpg" || Extension == "jpg"
 		|| Extension == ".jpeg" || Extension == "jpeg";
 }
-
-FString FParticleAtlasLoader::GetLoaderName() const
-{
-	return "FParticleAtlasLoader";
-}
