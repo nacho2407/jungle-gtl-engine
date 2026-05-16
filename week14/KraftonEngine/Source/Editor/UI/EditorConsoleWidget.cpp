@@ -238,6 +238,8 @@ void FEditorConsoleWidget::RegisterDiagnosticsCommands()
 		"Diagnostics", "stat memory", "Shows the memory overlay stat.");
 	RegisterCommand("stat shadow", [this](const TArray<FString>& Args) { HandleStatShadow(Args); },
 		"Diagnostics", "stat shadow", "Shows the shadow overlay stat.");
+	RegisterCommand("stat skinning", [this](const TArray<FString>& Args) { HandleStatSkinning(Args); },
+		"Diagnostics", "stat skinning", "Shows the skinning CPU overlay stat.");
 	RegisterCommand("stat none", [this](const TArray<FString>& Args) { HandleStatNone(Args); },
 		"Diagnostics", "stat none", "Hides all overlay stats.");
 }
@@ -845,6 +847,18 @@ void FEditorConsoleWidget::HandleStatShadow(const TArray<FString>& Args)
 	}
 	const bool bEnabled = EditorEngine->GetOverlayStatSystem().ToggleShadow();
 	AddLog("Overlay stat %s: shadow\n", bEnabled ? "enabled" : "disabled");
+}
+
+void FEditorConsoleWidget::HandleStatSkinning(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+	const bool bEnabled = EditorEngine->GetOverlayStatSystem().ToggleSkinning();
+	AddLog("Overlay stat %s: skinning\n", bEnabled ? "enabled" : "disabled");
 }
 
 void FEditorConsoleWidget::HandleStatNone(const TArray<FString>& Args)

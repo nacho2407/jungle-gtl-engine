@@ -4,6 +4,7 @@
 #include "Render/Command/DrawCommand.h"
 #include "Runtime/Engine.h"
 #include "Profiling/Timer.h"
+#include "Profiling/Stats.h"
 
 #include <algorithm>
 #include <cstring>
@@ -197,14 +198,18 @@ bool FSkeletalMeshSceneProxy::UpdateSkinMatrixBuffer(ID3D11Device* Device, ID3D1
 		}
 	}
 
-	D3D11_MAPPED_SUBRESOURCE Mapped = {};
-	if (FAILED(Context->Map(SkinMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
 	{
-		return false;
-	}
+		SCOPE_STAT_CAT("GPUSkinning_MatrixUpload", "Skinning");
 
-	std::memcpy(Mapped.pData, SkinMatrices.data(), sizeof(FMatrix) * MatrixCount);
-	Context->Unmap(SkinMatrixBuffer, 0);
+		D3D11_MAPPED_SUBRESOURCE Mapped = {};
+		if (FAILED(Context->Map(SkinMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+		{
+			return false;
+		}
+
+		std::memcpy(Mapped.pData, SkinMatrices.data(), sizeof(FMatrix) * MatrixCount);
+		Context->Unmap(SkinMatrixBuffer, 0);
+	}
 
 	UploadedSkinMatrixRevision = CurrentRevision;
 	return true;
