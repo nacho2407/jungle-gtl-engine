@@ -91,6 +91,8 @@ struct FPerObjectConstants
 	FMatrix Model;
 	FMatrix NormalMatrix;
 	FVector4 Color;
+	int32 SelectedBoneIndex = -1;
+	float PerObjectPad[3] = { 0.0f, 0.0f, 0.0f };
 
 	// 기본 PerObject: WorldMatrix + White
 	static FPerObjectConstants FromWorldMatrix(const FMatrix& WorldMatrix)
@@ -99,6 +101,7 @@ struct FPerObjectConstants
 		Result.Model = WorldMatrix;
 		Result.NormalMatrix = WorldMatrix.GetInverse().GetTransposed();
 		Result.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		Result.SelectedBoneIndex = -1;
 		return Result;
 	}
 };

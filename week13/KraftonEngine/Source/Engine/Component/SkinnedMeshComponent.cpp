@@ -6,6 +6,7 @@
 #include "Collision/RayUtils.h"
 #include "Core/Log.h"
 #include "Render/Types/ViewTypes.h"
+#include "Engine/Profiling/Stats.h"
 
 IMPLEMENT_CLASS(USkinnedMeshComponent, UMeshComponent)
 HIDE_FROM_COMPONENT_LIST(USkinnedMeshComponent)
@@ -445,7 +446,7 @@ void USkinnedMeshComponent::SetBoneLocalTransforms(const TArray<FTransform>& Loc
 	}
 
 	bUseBoneEditPose = true;
-	UpdateCPUSkinning();
+	RefreshSkinningAfterPoseChanged();
 	MarkWorldBoundsDirty();
 }
 
@@ -622,17 +623,30 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 			}
 		};
 
-	if (!Asset->MeshRanges.empty())
-	{
-		for (const FSkeletalMeshRange& Range : Asset->MeshRanges)
+	auto RunVertexSkinning = [&]()
 		{
-			SkinVertexRange(Range.VertexStart, Range.VertexEnd, Range.MeshBindGlobal);
+		if (!Asset->MeshRanges.empty())
+		{
+			for (const FSkeletalMeshRange& Range : Asset->MeshRanges)
+			{
+				SkinVertexRange(Range.VertexStart, Range.VertexEnd, Range.MeshBindGlobal);
+			}
 		}
+		else
+		{
+			// range 정보가 없는 구형 asset은 identity bind로 전체 vertex를 처리한다.
+			SkinVertexRange(0, (uint32)Asset->Vertices.size(), FMatrix::Identity);
+		}
+		};
+
+	if (SkinningModeRuntime::Get() == ESkinningMode::CPU)
+	{
+		SCOPE_STAT_CAT("CPUSkinning_VertexSkin", "Skinning");
+		RunVertexSkinning();
 	}
 	else
 	{
-		// range 정보가 없는 구형 asset은 identity bind로 전체 vertex를 처리한다.
-		SkinVertexRange(0, (uint32)Asset->Vertices.size(), FMatrix::Identity);
+		RunVertexSkinning();
 	}
 
 	// SceneProxy는 revision 차이만 보고 dynamic vertex buffer upload 여부를 결정한다.

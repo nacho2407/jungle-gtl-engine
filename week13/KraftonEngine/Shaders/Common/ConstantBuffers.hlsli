@@ -22,6 +22,8 @@ cbuffer PerObjectBuffer : register(b1)
     float4x4 Model;
     float4x4 NormalMatrix;
     float4 PrimitiveColor;
+    int SelectedBoneIndex;
+    float3 PerObjectPad;
 };
 
 // 시스템 샘플러 (s0~s4)
