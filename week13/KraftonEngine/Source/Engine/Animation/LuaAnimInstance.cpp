@@ -5,9 +5,11 @@
 #include "Animation/AnimState.h"
 #include "Animation/AnimationStateMachine.h"
 #include "Animation/PoseContext.h"
+#include "Component/Movement/CharacterMovementComponent.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Core/Log.h"
 #include "Core/PropertyTypes.h"
+#include "GameFramework/AActor.h"
 #include "Lua/LuaScriptManager.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Object/Object.h"
@@ -187,6 +189,19 @@ void ULuaAnimInstance::InstallBindings()
 
 	Anim.set_function("get_current_state",
 		[this]() { return Lua_GetCurrentState(); });
+
+	// Owner actor 의 UCharacterMovementComponent::GetSpeed 노출 — FSM condition 안에서
+	// self.Speed = Anim.get_owner_speed() 식으로 movement 시뮬레이션 결과를 그대로 사용.
+	// movement 컴포넌트 없으면 0 (안전 fallback — lua 측 분기 불필요).
+	Anim.set_function("get_owner_speed",
+		[this]() -> float
+		{
+			if (!OwningComponent) return 0.0f;
+			AActor* Owner = OwningComponent->GetOwner();
+			if (!Owner) return 0.0f;
+			UCharacterMovementComponent* Move = Owner->GetComponentByClass<UCharacterMovementComponent>();
+			return Move ? Move->GetSpeed() : 0.0f;
+		});
 }
 
 // ──────────────────────────────────────────────

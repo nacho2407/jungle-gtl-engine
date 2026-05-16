@@ -3,8 +3,11 @@
 #include "Component/CapsuleComponent.h"
 #include "Component/Movement/CharacterMovementComponent.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Input/InputSystem.h"
 #include "Mesh/MeshManager.h"
 #include "Runtime/Engine.h"
+
+#include <windows.h>
 
 IMPLEMENT_CLASS(ACharacter, APawn)
 
@@ -37,4 +40,27 @@ void ACharacter::PostDuplicate()
 	CapsuleComponent  = Cast<UCapsuleComponent>(GetRootComponent());
 	Mesh              = GetComponentByClass<USkeletalMeshComponent>();
 	CharacterMovement = GetComponentByClass<UCharacterMovementComponent>();
+}
+
+void ACharacter::AddMovementInput(const FVector& WorldDirection, float ScaleValue)
+{
+	if (CharacterMovement)
+	{
+		CharacterMovement->AddInputVector(WorldDirection, ScaleValue);
+	}
+}
+
+void ACharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (!bAutoInputWASD || !CharacterMovement) return;
+
+	// minimal 자동 입력 — world axes 기준. W=+X(앞), S=-X, A=-Y, D=+Y.
+	// 카메라/yaw 기반 회전은 게임 시 자식이 override 해서 처리.
+	const InputSystem& In = InputSystem::Get();
+	if (In.GetKey('W')) AddMovementInput(FVector(1.0f, 0.0f, 0.0f),  1.0f);
+	if (In.GetKey('S')) AddMovementInput(FVector(1.0f, 0.0f, 0.0f), -1.0f);
+	if (In.GetKey('D')) AddMovementInput(FVector(0.0f, 1.0f, 0.0f),  1.0f);
+	if (In.GetKey('A')) AddMovementInput(FVector(0.0f, 1.0f, 0.0f), -1.0f);
 }
