@@ -105,10 +105,6 @@ bool UAnimSequence::GetAnimationPose(float Time, FPoseContext& OutPose) const
     {
         OutPose.LocalPose = OutPose.BindPose;
     }
-    else if (OutPose.LocalPose.size() == OutPose.BindPose.size())
-    {
-        OutPose.LocalPose = OutPose.BindPose;
-    }
 
     if (OutPose.LocalPose.empty())
     {
