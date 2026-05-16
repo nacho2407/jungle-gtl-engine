@@ -102,6 +102,23 @@ namespace
 		return {};
 	}
 
+	void DispatchPostEditChange(UObject* Object, const FPropertyDescriptor& Prop, EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet, int32 ArrayIndex = -1)
+	{
+		if (!Object)
+		{
+			return;
+		}
+
+		FPropertyChangedEvent Event;
+		Event.Descriptor = &Prop;
+		Event.PropertyName = Prop.Name.c_str();
+		Event.DisplayName = GetPropertyDisplayName(Prop);
+		Event.Type = Prop.Type;
+		Event.ChangeType = ChangeType;
+		Event.ArrayIndex = ArrayIndex;
+		Object->PostEditChangeProperty(Event);
+	}
+
 	UClass* FindComponentClassGroupAnchor(UClass* ComponentClass, const TArray<FComponentClassGroup>& Groups)
 	{
 		if (!ComponentClass)
@@ -479,7 +496,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 
 				if (bChanged)
 				{
-					PrimaryActor->PostEditProperty(Props[i].Name.c_str());
+					DispatchPostEditChange(PrimaryActor, Props[i]);
 				}
 				ImGui::PopID();
 			}
@@ -987,7 +1004,7 @@ void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, con
 				if (Size > 0)
 					memcpy(DstProp.ValuePtr, SrcProp->ValuePtr, Size);
 
-				Comp->PostEditProperty(PropName.c_str());
+				DispatchPostEditChange(Comp, DstProp);
 				break;
 			}
 			break; // 같은 타입의 첫 번째 컴포넌트에만 전파
@@ -1654,7 +1671,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 
 				FPropertyDescriptor& ChildProp = ChildProps[ci];
 				// Struct 자식 프로퍼티는 재귀적으로 같은 위젯 렌더링 함수를 사용
-				// 단, SelectedComponent의 PostEditProperty는 부모 Struct 이름으로 호출
+				// 단, SelectedComponent의 edit-change event는 부모 Struct 이름으로 호출
 				int32 ChildIdx = ci;
 
 				// Enum 위젯 인라인 렌더링 (가장 빈번한 자식 타입)
@@ -1722,7 +1739,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 
 	if (bChanged && SelectedComponent)
 	{
-		SelectedComponent->PostEditProperty(Prop.Name.c_str());
+		DispatchPostEditChange(SelectedComponent, Prop);
 	}
 
 	ImGui::PopID();

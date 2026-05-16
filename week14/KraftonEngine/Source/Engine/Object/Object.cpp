@@ -107,6 +107,11 @@ void UObject::PostEditProperty(const char* /*PropertyName*/)
 	// 기본 UObject는 편집 후 추가 작업 없음.
 }
 
+void UObject::PostEditChangeProperty(const FPropertyChangedEvent& Event)
+{
+	PostEditProperty(Event.PropertyName);
+}
+
 void UObject::RegisterProperties(UClass* Class)
 {
 	(void)Class;

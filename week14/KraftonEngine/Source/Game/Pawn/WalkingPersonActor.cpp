@@ -15,7 +15,7 @@
 #include "Core/PropertyTypes.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(AWalkingPersonActor, AActor)
+IMPLEMENT_CLASS_WITH_PROPERTIES(AWalkingPersonActor, AActor)
 
 void AWalkingPersonActor::InitDefaultComponents(const FString& StaticMeshFileName, const FString& LuaScriptFile)
 {
@@ -221,10 +221,4 @@ void AWalkingPersonActor::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
 	Ar << bQuestTarget;
-}
-
-void AWalkingPersonActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	Super::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Quest Target", EPropertyType::Bool, "Walking Person", &bQuestTarget });
 }
