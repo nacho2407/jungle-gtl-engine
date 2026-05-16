@@ -12,7 +12,7 @@ namespace fbxsdk
 
 namespace FFbxTransformUtils
 {
-	FVector ToFVector(const fbxsdk::FbxVector4& V);
-	FQuat ToFQuat(const fbxsdk::FbxQuaternion& Q);
-	FMatrix ToFMatrix(const fbxsdk::FbxAMatrix& M);
+	FVector ToFVector(const fbxsdk::FbxVector4& Vector);
+	FQuat ToFQuat(const fbxsdk::FbxQuaternion& Quat);
+	FMatrix ToFMatrix(const fbxsdk::FbxAMatrix& Matrix);
 } 
