@@ -7,16 +7,16 @@ public:
 	DECLARE_CLASS(ULightComponentBase, USceneComponent)
 	ULightComponentBase() = default;
 	virtual void PostDuplicate(UObject* Original) override;
-	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-
-	virtual void Serialize(FArchive& Ar) override;
-
 protected:
 	~ULightComponentBase() = default;
 
 public:
+	UPROPERTY(DisplayName = "Color")
 	FColor LightColor = FColor::White();
+
+	UPROPERTY(DisplayName = "Intensity", Speed = 0.1f)
 	float Intensity = 1.0f;
 
+	UPROPERTY(DisplayName = "Cast Shadows")
 	bool bCastShadows = true;
 };

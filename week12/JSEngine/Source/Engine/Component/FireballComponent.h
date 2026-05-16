@@ -13,19 +13,12 @@ public:
 	//virtual UFireballComponent* Duplicate() override;
 	//virtual UFireballComponent* DuplicateSubObjects() override { return this; }
 
-	void PostDuplicate(UObject* original) override; 
-
-	virtual void Serialize(FArchive& Ar) override;
-
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-    void PostEditProperty(const char* PropertyName) override;
-
 	EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_Fireball; }
 
-    bool SupportsOutline() const override { return true; }
+	bool SupportsOutline() const override { return true; }
 
 	void UpdateWorldAABB() const override;
-    bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
+	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
 
 
 	// Accessors (Probably redundant, remove later)
@@ -39,8 +32,15 @@ public:
 	void SetRadiusFallOff(float InFallOff) { if (InFallOff) RadiusFallOff = InFallOff; }
 
 private:
+	UPROPERTY(DisplayName = "Intensity")
 	float  Intensity		= 1.f;
+
+	UPROPERTY(DisplayName = "Radius")
 	float  Radius			= 15.f;
+
+	UPROPERTY(DisplayName = "Radius Falloff")
 	float  RadiusFallOff	= 1.f;
+
+	UPROPERTY(DisplayName = "Color")
 	FColor Color			= FColor(1.0f, 0.8f, 0.04f, 1.f);
 };

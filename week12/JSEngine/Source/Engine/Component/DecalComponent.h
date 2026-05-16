@@ -12,8 +12,6 @@ public:
 
 	UDecalComponent();
 
-	void PostDuplicate(UObject* Original) override;
-
 	virtual void Serialize(FArchive& Ar) override;
 
 	void BeginPlay() override;
@@ -22,7 +20,6 @@ public:
 	virtual UMaterialInterface* GetMaterial(int32 SlotIndex) const override { return (SlotIndex == 0) ? Materials[0] : nullptr; }
 	virtual int32 GetNumMaterials() const override { return 1; }
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	void UpdateWorldAABB() const override;
@@ -47,15 +44,30 @@ private:
 	void TickFadeOut();
 
 private:
+	UPROPERTY(DisplayName = "Materials")
 	TArray<UMaterialInterface*> Materials;
+
+	UPROPERTY(DisplayName = "Size")
 	FVector DecalSize = FVector(5.0f, 5.0f, 5.0f);
+
+	UPROPERTY(DisplayName = "Color")
 	FColor DecalColor = FColor::White();
+
 	bool bDebugLine = true;
 
+	UPROPERTY(DisplayName = "Fade Start Delay")
 	float FadeStartDelay = 0.0f;
+
+	UPROPERTY(DisplayName = "Fade Duration")
 	float FadeDuration = 0.0f;
+
+	UPROPERTY(DisplayName = "Fade In Duration")
 	float FadeInDuration = 0.0f;
+
+	UPROPERTY(DisplayName = "Fade In Start Delay")
 	float FadeInStartDelay = 0.0f;
+
+	UPROPERTY(DisplayName = "Destroy Owner After Fade")
 	bool bDestroyOwnerAfterFade = false;
 
 	float LifeTime = 0.0f;

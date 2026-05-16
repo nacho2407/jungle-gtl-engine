@@ -49,7 +49,6 @@ public:
 	float GetHeight() const { return Height; }
 
 	// --- Property / Serialization ---
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	// --- PrimitiveComponent 인터페이스 ---
@@ -63,7 +62,9 @@ protected:
 	void TickComponent(float DeltaTime) override;
 
 private:
+	UPROPERTY(DisplayName = "Particle")
 	FName ParticleName;
+
 	FParticleResource* CachedParticle = nullptr; // ResourceManager 소유, 여기선 참조만
 
 	bool bIsExecute = false;

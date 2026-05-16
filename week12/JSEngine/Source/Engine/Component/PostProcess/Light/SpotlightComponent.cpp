@@ -24,21 +24,6 @@ void USpotlightComponent::PostDuplicate(UObject* Original)
 	UPointLightComponent::PostDuplicate(Original);
 }
 
-void USpotlightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPointLightComponent::GetEditableProperties(OutProps);
-	constexpr EPropertyUsageFlags EditAndAnimate =
-		EPropertyUsageFlags::Editable | EPropertyUsageFlags::Animatable;
-	OutProps.push_back({ "Inner Cone Angle", EPropertyType::Float, &InnerConeAngle, 0.0f, 0.0f, 0.1f, nullptr, EditAndAnimate });
-	OutProps.push_back({ "Outer Cone Angle", EPropertyType::Float, &OuterConeAngle, 0.0f, 0.0f, 0.1f, nullptr, EditAndAnimate });
-}
-
-void USpotlightComponent::Serialize(FArchive& Ar)
-{
-	UPointLightComponent::Serialize(Ar);
-	Ar << "InnerConeAngle" << InnerConeAngle;
-	Ar << "OuterConeAngle" << OuterConeAngle;
-}
 
 FMatrix USpotlightComponent::ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 	float SplitNearT, float SplitFarT) const

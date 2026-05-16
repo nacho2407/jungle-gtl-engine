@@ -9,11 +9,7 @@ public:
 	DECLARE_CLASS(UAnimSingleNodeInstance, UAnimInstance)
 	UAnimSingleNodeInstance() = default;
 	~UAnimSingleNodeInstance() override = default;
-
-	void Serialize(FArchive& Ar) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void PostEditProperty(const char* PropertyName) override;
-
+    
 	void SetAnimation(UAnimSequenceBase* InAnimation);
     void Initialize(USkeletalMeshComponent* InOwnerComponent) override;
     void BuildBoneMapping();

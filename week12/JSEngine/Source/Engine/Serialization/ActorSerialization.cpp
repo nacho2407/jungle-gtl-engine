@@ -210,6 +210,11 @@ namespace
 
 		return Candidate;
 	}
+
+	bool ShouldSerializeComponent(const UActorComponent* Component)
+	{
+		return Component && Component->IsSerialized();
+	}
 }
 
 namespace FActorSerialization
@@ -227,8 +232,9 @@ namespace FActorSerialization
 		ActorJson[ActorJsonKeys::Name] = Actor->GetName();
 		ActorJson[ActorJsonKeys::Visible] = Actor->IsVisible();
 		ActorJson[ActorJsonKeys::EditorOnly] = Actor->ShouldTickInEditor();
-		ActorJson[ActorJsonKeys::RootComponent] = Actor->GetRootComponent()
-			? static_cast<int32>(Actor->GetRootComponent()->GetUUID())
+		USceneComponent* RootComponent = Actor->GetRootComponent();
+		ActorJson[ActorJsonKeys::RootComponent] = ShouldSerializeComponent(RootComponent)
+			? static_cast<int32>(RootComponent->GetUUID())
 			: 0;
 
 		FJsonWriter ActorWriter(ActorJson);
@@ -238,7 +244,7 @@ namespace FActorSerialization
 		ActorJson[ActorJsonKeys::Components] = json::Array();
 		for (UActorComponent* Component : Actor->GetComponents())
 		{
-			if (!Component || Component->IsTransient())
+			if (!ShouldSerializeComponent(Component))
 			{
 				continue;
 			}

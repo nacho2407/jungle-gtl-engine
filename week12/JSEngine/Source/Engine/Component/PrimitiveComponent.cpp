@@ -8,62 +8,40 @@ DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {
-    for (auto& [Other, _] : CurOverlaps)
-    {
-        if (Other)
-        {
-            Other->RemoveOverlap(this);
-        }
-    }
-    CurOverlaps.clear();
-    PrevOverlaps.clear();
+	for (auto& [Other, _] : CurOverlaps)
+	{
+		if (Other)
+		{
+			Other->RemoveOverlap(this);
+		}
+	}
+	CurOverlaps.clear();
+	PrevOverlaps.clear();
 }
 
 void UPrimitiveComponent::PostDuplicate(UObject* Original)
 {
-    USceneComponent::PostDuplicate(Original);
+	USceneComponent::PostDuplicate(Original);
 
-    UPrimitiveComponent* SourceComponent = Cast<UPrimitiveComponent>(Original);
-    if (!SourceComponent)
-    {
-        return;
-    }
+	UPrimitiveComponent* SourceComponent = Cast<UPrimitiveComponent>(Original);
+	if (!SourceComponent)
+	{
+		return;
+	}
 
-    bIsVisible = SourceComponent->bIsVisible;
-    bEnableCull = SourceComponent->bEnableCull;
-    bCastDecal = SourceComponent->bCastDecal;
-    bGenerateOverlapEvents = SourceComponent->bGenerateOverlapEvents;
-    bBlockComponent = SourceComponent->bBlockComponent;
-    CurOverlaps.clear();
-    PrevOverlaps.clear();
-}
-
-void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	USceneComponent::GetEditableProperties(OutProps);
-	
-	OutProps.push_back({"Visible", EPropertyType::Bool, &bIsVisible});
-	OutProps.push_back({"Enable Cull", EPropertyType::Bool, &bEnableCull});
-    OutProps.push_back({ "Cast Decal", EPropertyType::Bool, &bCastDecal });
-    OutProps.push_back({ "GenerateOverlapEvents", EPropertyType::Bool, &bGenerateOverlapEvents });
+	bIsVisible = SourceComponent->bIsVisible;
+	bEnableCull = SourceComponent->bEnableCull;
+	bCastDecal = SourceComponent->bCastDecal;
+	bGenerateOverlapEvents = SourceComponent->bGenerateOverlapEvents;
+	bBlockComponent = SourceComponent->bBlockComponent;
+	CurOverlaps.clear();
+	PrevOverlaps.clear();
 }
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 {
 	USceneComponent::PostEditProperty(PropertyName);
 	NotifySpatialIndexDirty();
-}
-
-void UPrimitiveComponent::Serialize(FArchive& Ar)
-{
-	USceneComponent::Serialize(Ar);
-	Ar << "Visible" << bIsVisible;
-	Ar << "Enable Cull" << bEnableCull;
-    if (Ar.IsSaving() || Ar.HasKey("Cast Decal"))
-    {
-        Ar << "Cast Decal" << bCastDecal;
-    }
-    Ar << "GenerateOverlapEvents" << bGenerateOverlapEvents;
 }
 
 void UPrimitiveComponent::SetVisibility(bool bVisible)
@@ -151,43 +129,43 @@ bool UPrimitiveComponent::IsOverlappingActor(const AActor* OtherActor) const
 {
 	for (const auto& It : CurOverlaps)
 	{
-        if (It.first->GetOwner() == OtherActor)
-            return true;
+		if (It.first->GetOwner() == OtherActor)
+			return true;
 	}
-    return false;
+	return false;
 }
 
 void UPrimitiveComponent::RemoveOverlap(UPrimitiveComponent* OtherComp)
 {
-    CurOverlaps.erase(OtherComp);
-    PrevOverlaps.erase(OtherComp);
+	CurOverlaps.erase(OtherComp);
+	PrevOverlaps.erase(OtherComp);
 }
 
 void UPrimitiveComponent::ResolveOverlaps()
 {
-    for (const auto& It : CurOverlaps) 
-    {
-        if (!PrevOverlaps.contains(It.first))
-        {
-            FHitResult HitResult;
-            HitResult.bHit = true;
-            HitResult.Location = It.second.HitPoint;
-            HitResult.Normal = It.second.HitNormal.GetSafeNormal();
-            OnComponentBeginOverlap.Broadcast(this, It.first->GetOwner(), It.first, 0, false, HitResult);
-        }
-    }
+	for (const auto& It : CurOverlaps) 
+	{
+		if (!PrevOverlaps.contains(It.first))
+		{
+			FHitResult HitResult;
+			HitResult.bHit = true;
+			HitResult.Location = It.second.HitPoint;
+			HitResult.Normal = It.second.HitNormal.GetSafeNormal();
+			OnComponentBeginOverlap.Broadcast(this, It.first->GetOwner(), It.first, 0, false, HitResult);
+		}
+	}
 
-    for (const auto& It : PrevOverlaps)
-    {
-        if (!CurOverlaps.contains(It.first))
-        {
-            FHitResult HitResult;
-            HitResult.bHit = true;
-            HitResult.Location = It.second.HitPoint;
-            HitResult.Normal = It.second.HitNormal.GetSafeNormal();
-            OnComponentEndOverlap.Broadcast(this, It.first->GetOwner(), It.first, 0, false, HitResult);
-        }
-    }
+	for (const auto& It : PrevOverlaps)
+	{
+		if (!CurOverlaps.contains(It.first))
+		{
+			FHitResult HitResult;
+			HitResult.bHit = true;
+			HitResult.Location = It.second.HitPoint;
+			HitResult.Normal = It.second.HitNormal.GetSafeNormal();
+			OnComponentEndOverlap.Broadcast(this, It.first->GetOwner(), It.first, 0, false, HitResult);
+		}
+	}
 }
 
 void UPrimitiveComponent::OnTransformDirty()

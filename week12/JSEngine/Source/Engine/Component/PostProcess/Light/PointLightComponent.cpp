@@ -10,21 +10,6 @@ void UPointLightComponent::PostDuplicate(UObject* Original)
 	ULightComponent::PostDuplicate(Original);
 }
 
-void UPointLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	ULightComponent::GetEditableProperties(OutProps);
-	constexpr EPropertyUsageFlags EditAndAnimate =
-		EPropertyUsageFlags::Editable | EPropertyUsageFlags::Animatable;
-	OutProps.push_back({ "Attenuation Radius", EPropertyType::Float, &AttenuationRadius, 0.0f, 0.0f, 0.1f, nullptr, EditAndAnimate });
-	OutProps.push_back({ "Light Falloff", EPropertyType::Float, &LightFalloffExponent, 0.0f, 0.0f, 0.1f, nullptr, EditAndAnimate });
-}
-
-void UPointLightComponent::Serialize(FArchive& Ar)
-{
-	ULightComponent::Serialize(Ar);
-	Ar << "AttenuationRadius" << AttenuationRadius;
-	Ar << "LightFalloffExponent" << LightFalloffExponent;
-}
 
 FMatrix UPointLightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 	const TArray<FBoundingBox>* VisibleObjectsBounds) const

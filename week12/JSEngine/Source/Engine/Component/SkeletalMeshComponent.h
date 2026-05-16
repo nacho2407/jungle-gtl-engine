@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/SkinnedMeshComponent.h"
 #include "Core/Delegates/Delegate.h"
@@ -9,11 +9,12 @@ class UAnimSequenceBase;
 class UAnimationAsset;
 struct FAnimNotifyEvent;
 
+UENUM()
 enum class EAnimationMode
 {
-    AnimationBlueprint,
-    AnimationSingleNode,
-    AnimationCustomMode
+	AnimationBlueprint UMETA(DisplayName = "Animation Blueprint"),
+	AnimationSingleNode UMETA(DisplayName = "Animation Single Node"),
+	AnimationCustomMode UMETA(DisplayName = "Animation Custom Mode")
 };
 
 /**
@@ -26,62 +27,67 @@ UCLASS()
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
 public:
-    DECLARE_DELEGATE(FOnAnimNotify, USkeletalMeshComponent*, const FAnimNotifyEvent&)
-    DECLARE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
+	DECLARE_DELEGATE(FOnAnimNotify, USkeletalMeshComponent*, const FAnimNotifyEvent&)
+	DECLARE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 
-    USkeletalMeshComponent() = default;
-    ~USkeletalMeshComponent() override = default;
+	USkeletalMeshComponent() = default;
+	~USkeletalMeshComponent() override = default;
 
-    virtual void Serialize(FArchive& Ar) override;
-    virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-    virtual void PostEditProperty(const char* PropertyName) override;
+	virtual void Serialize(FArchive& Ar) override;
+	virtual void PostEditProperty(const char* PropertyName) override;
 
-    void TickComponent(float DeltaTime) override;
+	void TickComponent(float DeltaTime) override;
 
-    EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_SkeletalMesh; }
+	EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_SkeletalMesh; }
 
-    void ResetToBindPose();
+	void ResetToBindPose();
 
-    void SetBoneLocalTransform(int32 BoneIndex, const FMatrix& NewLocalTransform);
-    const FMatrix& GetBoneLocalTransform(int32 BoneIndex) const;
+	void SetBoneLocalTransform(int32 BoneIndex, const FMatrix& NewLocalTransform);
+	const FMatrix& GetBoneLocalTransform(int32 BoneIndex) const;
 
-    FMatrix GetBoneGlobalTransform(int32 BoneIndex) const;
-    void SetBoneGlobalTransform(int32 BoneIndex, const FMatrix& NewGlobalTransform);
+	FMatrix GetBoneGlobalTransform(int32 BoneIndex) const;
+	void SetBoneGlobalTransform(int32 BoneIndex, const FMatrix& NewGlobalTransform);
 
-    void SetAnimInstance(UAnimInstance* InAnimInstance) { AnimInstance = InAnimInstance; }
-    UAnimInstance* GetAnimInstance() const { return AnimInstance; }
+	void SetAnimInstance(UAnimInstance* InAnimInstance) { AnimInstance = InAnimInstance; }
+	UAnimInstance* GetAnimInstance() const { return AnimInstance; }
 
-    void SetAnimationMode(EAnimationMode InAnimationMode);
-    EAnimationMode GetAnimationMode() const { return AnimationMode; }
+	void SetAnimationMode(EAnimationMode InAnimationMode);
+	EAnimationMode GetAnimationMode() const { return AnimationMode; }
 
-    // 애니메이션
-    void PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping);
+	// 애니메이션
+	void PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping);
 
-    void SetAnimation(UAnimationAsset* NewAnimToPlay);
-    UAnimationAsset* GetAnimation() const { return AnimationToPlay; }
+	void SetAnimation(UAnimationAsset* NewAnimToPlay);
+	UAnimationAsset* GetAnimation() const { return AnimationToPlay; }
 
-    void Play(bool bLooping);
-    void Stop();
-    void Pause();
-    void SetPlayRate(float InPlayRate);
-    void SetAnimationPosition(float InTime);
+	void Play(bool bLooping);
+	void Stop();
+	void Pause();
+	void SetPlayRate(float InPlayRate);
+	void SetAnimationPosition(float InTime);
 
-    bool IsPlaying() const { return bPlaying; }
-    bool IsLooping() const { return bLooping; }
+	bool IsPlaying() const { return bPlaying; }
+	bool IsLooping() const { return bLooping; }
 
-    // 노티파이 수신 - AnimInstance가 호출해줄 함수
-    virtual void HandleAnimNotify(const FAnimNotifyEvent& Notify);
-    void ApplyAnimationPose(const FPoseContext& PoseContext);
+	// 노티파이 수신 - AnimInstance가 호출해줄 함수
+	virtual void HandleAnimNotify(const FAnimNotifyEvent& Notify);
+	void ApplyAnimationPose(const FPoseContext& PoseContext);
 
 public:
-    FOnAnimNotify OnAnimNotifyDelegate;
+	FOnAnimNotify OnAnimNotifyDelegate;
 
 private:
-    UAnimInstance* AnimInstance = nullptr;
-    FString AnimationAssetPath;
+	UAnimInstance* AnimInstance = nullptr;
 
-    EAnimationMode AnimationMode = EAnimationMode::AnimationBlueprint;
-    UAnimationAsset* AnimationToPlay = nullptr;
-    bool bPlaying = false;
-    bool bLooping = false;
+	UPROPERTY(DisplayName = "Animation")
+	FString AnimationAssetPath;
+
+	UPROPERTY(DisplayName = "Animation Mode")
+	EAnimationMode AnimationMode = EAnimationMode::AnimationBlueprint;
+
+	UAnimationAsset* AnimationToPlay = nullptr;
+	bool bPlaying = false;
+
+	UPROPERTY(DisplayName = "Loop")
+	bool bLooping = false;
 };

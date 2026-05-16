@@ -12,6 +12,8 @@ class UBillboardComponent : public UPrimitiveComponent
 {
 protected:
 	bool bIsBillboard = true;
+
+	UPROPERTY(DisplayName = "Inherit Owner Scale")
 	bool bInheritOwnerScale = false;
 	bool TryGetActiveCamera(const FViewportCamera*& OutCamera) const;
 	
@@ -19,8 +21,6 @@ protected:
 
 public:
 	DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
-
-	virtual void Serialize(FArchive& Ar) override;
 
 	void TickComponent(float DeltaTime) override;
 
@@ -46,7 +46,6 @@ public:
 	//////////////////// override ////////////////////////////
 	void UpdateWorldAABB() const override;
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	float GetWidth()  const { return Width; }
 	float GetHeight() const { return Height; }
 	FColor GetColor() const { return Color; }
@@ -57,16 +56,27 @@ public:
 	///////////////////////////////////////////////////////////
 
 private:
+	UPROPERTY(DisplayName = "Particle")
 	FName TextureName;
+
 	UTexture* Texture = nullptr; // ResourceManager 소유, 여기선 참조만
 	FColor Color = FColor::White();
 
 protected:
 	uint32 FrameIndex = 0;
+
+	UPROPERTY(DisplayName = "Width", Min = 0.1f, Max = 100.0f, Speed = 0.1f)
 	float  Width = 1.0f;
+
+	UPROPERTY(DisplayName = "Height", Min = 0.1f, Max = 100.0f, Speed = 0.1f)
 	float  Height = 1.0f;
+
+	UPROPERTY(DisplayName = "Play Rate", Min = 1.0f, Max = 120.0f, Speed = 1.0f)
 	float  PlayRate = 30.0f; // 초당 프레임 수
+
 	float  TimeAccumulator = 0.0f;
+
+	UPROPERTY(DisplayName = "Loop")
 	bool   bLoop = true;
 };
 
