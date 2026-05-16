@@ -272,6 +272,12 @@ void FEditorContentBrowserWidget::RefreshContent()
 				case EAssetPackageType::CameraShake:
 					Element = std::make_shared<CameraShakeElement>();
 					break;
+				case EAssetPackageType::Skeleton:
+					Element = std::make_shared<ObjectElement>();
+					break;
+				case EAssetPackageType::AnimSequence:
+					Element = std::make_shared<ObjectElement>();
+					break;
 				default:
 					Element = std::make_shared<ContentBrowserElement>();
 					break;

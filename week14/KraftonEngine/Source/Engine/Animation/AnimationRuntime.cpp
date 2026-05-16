@@ -1,4 +1,4 @@
-﻿#include "AnimationRuntime.h"
+#include "AnimationRuntime.h"
 #include "PoseContext.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
