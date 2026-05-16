@@ -5,6 +5,7 @@
 
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/AnimationAsset.h"
 #include "Animation/AnimationRuntime.h"
 #include "Core/Logging/Log.h"
 #include "Object/ObjectFactory.h"
@@ -94,10 +95,121 @@ bool USkeletalMeshComponent::ApplyAnimationLocalPose(const TArray<FTransform>& L
     }
 
     // Global pose, skinning matrices를 포함한 실제 posing 결과 반영은 USkinnedMeshComponent::EnsureSkinningUpdated에서 진행
-	// 효율적인 복사를 위해 move semantics 사용
+	// 효율을 위해 move semantics 사용
     CurrentLocalPose = std::move(LocalMatrices);
     MarkSkinningDirty();
     return true;
+}
+
+void USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping)
+{
+    UAnimSingleNodeInstance* SingleNodeInstance = EnsureSingleNodeInstance();
+    if (!SingleNodeInstance)
+    {
+        UE_LOG_WARNING("[SkeletalMeshComponent] Failed to play animation because single node instance could not be created.");
+        return;
+    }
+
+    if (!NewAnimToPlay)
+    {
+        UE_LOG_WARNING("[SkeletalMeshComponent] PlayAnimation called with null animation asset.");
+    }
+
+    SingleNodeInstance->SetAnimationAsset(NewAnimToPlay);
+    SingleNodeInstance->SetLooping(bLooping);
+    SingleNodeInstance->Play();
+}
+
+void USkeletalMeshComponent::SetAnimation(UAnimationAsset* NewAnimToPlay)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetAnimationAsset(NewAnimToPlay);
+    }
+}
+
+UAnimationAsset* USkeletalMeshComponent::GetAnimation() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetAnimationAsset() : nullptr;
+}
+
+void USkeletalMeshComponent::Play()
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->Play();
+    }
+}
+
+void USkeletalMeshComponent::Pause()
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->Pause();
+    }
+}
+
+void USkeletalMeshComponent::Stop()
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->Stop();
+    }
+}
+
+void USkeletalMeshComponent::SetPosition(float TimeSeconds, bool bFireNotifies)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetPosition(TimeSeconds, bFireNotifies);
+    }
+}
+
+float USkeletalMeshComponent::GetPosition() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetPosition() : 0.0f;
+}
+
+void USkeletalMeshComponent::SetPlayRate(float InPlayRate)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetPlayRate(InPlayRate);
+    }
+}
+
+float USkeletalMeshComponent::GetPlayRate() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetPlayRate() : 1.0f;
+}
+
+void USkeletalMeshComponent::SetLooping(bool bInLooping)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetLooping(bInLooping);
+    }
+}
+
+bool USkeletalMeshComponent::IsLooping() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->IsLooping() : false;
+}
+
+bool USkeletalMeshComponent::IsPlaying() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->IsPlaying() : false;
+}
+
+float USkeletalMeshComponent::GetPlayLength() const
+{
+    const UAnimationAsset* Animation = GetAnimation();
+    return Animation ? Animation->GetPlayLength() : 0.0f;
 }
 
 void USkeletalMeshComponent::RecreateAnimInstance()
@@ -158,6 +270,26 @@ void USkeletalMeshComponent::DestroyAnimInstance()
         UObjectManager::Get().DestroyObject(AnimInstance);
     }
     AnimInstance = nullptr;
+}
+
+UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const
+{
+    return Cast<UAnimSingleNodeInstance>(AnimInstance);
+}
+
+UAnimSingleNodeInstance* USkeletalMeshComponent::EnsureSingleNodeInstance()
+{
+    if (AnimationMode != EAnimationMode::SingleNode)
+    {
+        // PlayAnimation은 단일 애니메이션 재생용 API라서 이 함수에서만 SingleNode 모드 전환을 허용
+        SetAnimationMode(EAnimationMode::SingleNode);
+    }
+    else if (!GetSingleNodeInstance())
+    {
+        RecreateAnimInstance();
+    }
+
+    return GetSingleNodeInstance();
 }
 
 void USkeletalMeshComponent::ResetToBindPose()

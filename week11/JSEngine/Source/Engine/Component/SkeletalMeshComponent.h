@@ -6,6 +6,8 @@
 #include "Component/SkinnedMeshComponent.h"
 
 class UAnimInstance;
+class UAnimSingleNodeInstance;
+class UAnimationAsset;
 struct FTransform;
 
 UCLASS()
@@ -29,6 +31,22 @@ public:
     void RecreateAnimInstance();
     bool ApplyAnimationLocalPose(const TArray<FTransform>& LocalPose);
 
+	// playback API
+    void PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping);
+    void SetAnimation(UAnimationAsset* NewAnimToPlay);
+    UAnimationAsset* GetAnimation() const;
+    void Play();
+    void Pause();
+    void Stop();
+    void SetPosition(float TimeSeconds, bool bFireNotifies = false);
+    float GetPosition() const;
+    void SetPlayRate(float InPlayRate);
+    float GetPlayRate() const;
+    void SetLooping(bool bInLooping);
+    bool IsLooping() const;
+    bool IsPlaying() const;
+    float GetPlayLength() const;
+
     void ResetToBindPose();
 
     void SetBoneLocalTransform(int32 BoneIndex, const FMatrix& NewLocalTransform);
@@ -39,6 +57,8 @@ public:
 
 private:
     void DestroyAnimInstance();
+    UAnimSingleNodeInstance* GetSingleNodeInstance() const;
+    UAnimSingleNodeInstance* EnsureSingleNodeInstance();
 
 private:
     EAnimationMode AnimationMode = EAnimationMode::None;
