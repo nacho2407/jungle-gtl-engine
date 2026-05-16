@@ -1,6 +1,7 @@
 #include "AnimSequence.h"
 
 #include "AnimDataModel.h"
+#include "AnimNotify_LogMessage.h"
 #include "PoseContext.h"
 #include "AnimExtractContext.h"
 #include "AnimationRuntime.h"
@@ -431,6 +432,18 @@ UAnimSequence* UAnimSequence::CreateMockWaveSequence(
         }
 
         Model->BoneAnimationTracks.push_back(Track);
+    }
+
+    // Phase 7 데모 — wave 시퀀스에 LogMessage notify 2개 박아 dispatch 경로 검증.
+    // 트리거는 Duration 의 25% / 75% 지점 — 길이가 짧아도 두 번 모두 발사되는 위치.
+    {
+        UAnimNotify_LogMessage* N1 = UObjectManager::Get().CreateObject<UAnimNotify_LogMessage>(Model);
+        N1->Message = "wave-step (early)";
+        Model->Notifies.push_back({ FName("WaveStep"), DurationSeconds * 0.25f, 0.0f, N1 });
+
+        UAnimNotify_LogMessage* N2 = UObjectManager::Get().CreateObject<UAnimNotify_LogMessage>(Model);
+        N2->Message = "wave-step (late)";
+        Model->Notifies.push_back({ FName("WaveStep"), DurationSeconds * 0.75f, 0.0f, N2 });
     }
 
     UAnimSequence* Seq = UObjectManager::Get().CreateObject<UAnimSequence>();

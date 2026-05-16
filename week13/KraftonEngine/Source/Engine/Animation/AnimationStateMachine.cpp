@@ -93,13 +93,16 @@ void UAnimationStateMachine::Evaluate(UAnimInstance* Owner, FPoseContext& Output
 	if (FromState)
 	{
 		// 두 상태 평가 후 BlendTwoPosesTogether.
+		// ★ ResetToRefPose 필수 — Sequence->GetBonePose 는 트랙 있는 본만 덮어씀.
+		//   ref pose 로 시작 안 하면 트랙 없는 본은 default FTransform(T=0,R=identity,S=1) 로 남고,
+		//   상대편 정상 pose 와 lerp 되어 본들이 부모 기준 (0,0,0) 으로 끌려감 ("바닥에 꼬꾸라짐").
 		FPoseContext FromPose;
 		FromPose.SkeletalMesh = Output.SkeletalMesh;
-		FromPose.Pose.resize(Output.Pose.size());
+		FromPose.ResetToRefPose();   // resize + bone[i].LocalMatrix 분해해서 채움
 
 		FPoseContext ToPose;
 		ToPose.SkeletalMesh = Output.SkeletalMesh;
-		ToPose.Pose.resize(Output.Pose.size());
+		ToPose.ResetToRefPose();
 
 		FromState->Evaluate(Owner, FromPose);
 		CurrentState->Evaluate(Owner, ToPose);
