@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/SceneComponent.h"
 #include "Core/CollisionTypes.h"
@@ -58,7 +58,7 @@ public:
 	// owner APawn 의 ControlRotation 을 desired rotation 으로 사용 — mouse look 이 capsule
 	// 회전 안 건드리고 카메라만 움직이는 ThirdPerson 패턴.
 	// bInheritPitch/Yaw/Roll 가 각 axis 별로 — false 면 그 axis 는 capsule rotation 사용.
-	bool bUsePawnControlRotation = false;
+	bool bUsePawnControlRotation = true;
 	bool bInheritPitch           = true;
 	bool bInheritYaw             = true;
 	bool bInheritRoll            = false;

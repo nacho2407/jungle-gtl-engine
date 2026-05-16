@@ -60,7 +60,7 @@ public:
 	// UE 패턴 — true 면 매 frame Updated 의 yaw 를 현재 Velocity.XY 방향으로 lerp 회전.
 	// 이동 중에만 회전 (정지 시 마지막 facing 유지). Pawn::bUseControllerRotationYaw 와 동시
 	// 켜면 이쪽이 마지막 우선 (Component Tick 이 Actor Tick 후 호출). 보통 둘 중 하나만.
-	bool  bOrientRotationToMovement = false;
+	bool  bOrientRotationToMovement = true;
 	float RotationYawRate           = 540.0f;   // deg/sec
 
 protected:
