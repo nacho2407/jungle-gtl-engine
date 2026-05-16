@@ -7,6 +7,7 @@
 class FViewportCamera;
 struct FTextureResource;
 
+UCLASS()
 class UBillboardComponent : public UPrimitiveComponent
 {
 protected:

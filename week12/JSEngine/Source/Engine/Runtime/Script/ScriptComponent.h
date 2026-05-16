@@ -69,6 +69,7 @@ private:
     FTimelinePlayer Player;
 };
 
+UCLASS()
 class UScriptComponent : public UActorComponent
 {
 public:

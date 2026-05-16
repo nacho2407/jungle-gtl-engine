@@ -7,6 +7,7 @@
 
 class AActor;
 
+UCLASS()
 class USceneComponent : public UActorComponent
 {
 public:

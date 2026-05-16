@@ -14,6 +14,7 @@ class UProceduralMeshComponent;
 class UStaticMesh;
 class USkeletalMeshComponent;
 
+UCLASS()
 class ACubeActor : public AActor
 {
 public:
@@ -23,6 +24,7 @@ public:
 	void InitDefaultComponents();
 };
 
+UCLASS()
 class ASphereActor : public AActor
 {
 public:
@@ -32,6 +34,7 @@ public:
 	void InitDefaultComponents();
 };
 
+UCLASS()
 class APlaneActor : public AActor
 {
 public:
@@ -41,6 +44,7 @@ public:
 	void InitDefaultComponents();
 };
 
+UCLASS()
 class AAttachTestActor : public AActor
 {
 public:
@@ -50,6 +54,7 @@ public:
 	void InitDefaultComponents();
 };
 
+UCLASS()
 class ASceneActor : public AActor
 {
 public:
@@ -63,6 +68,7 @@ public:
     void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 };
 
+UCLASS()
 class APlayerStart : public AActor
 {
 public:
@@ -72,6 +78,7 @@ public:
 	void InitDefaultComponents() override;
 };
 
+UCLASS()
 class AFogActor : public AActor
 {
 public:
@@ -87,6 +94,7 @@ private:
 	UBillboardComponent* BillboardComp = nullptr;
 };
 
+UCLASS()
 class AStaticMeshActor : public AActor
 {
 public:
@@ -96,6 +104,7 @@ public:
 	void InitDefaultComponents();
 };
 
+UCLASS()
 class ASkeletalMeshActor : public AActor
 {
 public:
@@ -110,6 +119,7 @@ private:
     USkeletalMeshComponent* SkeletalMeshComp = nullptr;
 };
 
+UCLASS()
 class ASubUVActor : public AActor
 {
 public:
@@ -119,6 +129,7 @@ public:
     void InitDefaultComponents();
 };
 
+UCLASS()
 class ATextRenderActor : public AActor
 {
 public:
@@ -128,6 +139,7 @@ public:
     void InitDefaultComponents();
 };
 
+UCLASS()
 class ABillboardActor : public AActor
 {
 public:
@@ -137,6 +149,7 @@ public:
     void InitDefaultComponents();
 };
 
+UCLASS()
 class ADecalActor : public AActor
 {
 public:
@@ -146,6 +159,7 @@ public:
 	void InitDefaultComponents();
 };
 
+UCLASS()
 class AFireballActor : public AActor {
 public:
     DECLARE_CLASS(AFireballActor, AActor)
@@ -154,6 +168,7 @@ public:
 	void InitDefaultComponents();
 };
 
+UCLASS()
 class ADecalSpotLightActor : public AActor {
 public:
 	DECLARE_CLASS(ADecalSpotLightActor, AActor)
@@ -176,6 +191,7 @@ private:
 	float Angle = 30.0f;
 };
 
+UCLASS()
 class ALightActor : public AActor
 {
 public:
@@ -193,6 +209,7 @@ protected:
 	UBillboardComponent* BillboardComp = nullptr;
 };
 
+UCLASS()
 class AAmbientLightActor : public ALightActor
 {
 public:
@@ -201,6 +218,7 @@ public:
     void Tick(float DeltaTime) override;
 };
 
+UCLASS()
 class ADirectionalLightActor : public ALightActor
 {
 public:
@@ -209,6 +227,7 @@ public:
     void Tick(float DeltaTime) override;
 };
 
+UCLASS()
 class APointLightActor : public ALightActor
 {
 public:
@@ -217,6 +236,7 @@ public:
     virtual void Tick(float DeltaTime) override;
 };
 
+UCLASS()
 class ASpotlightActor : public APointLightActor 
 {
 public:
@@ -225,6 +245,7 @@ public:
 	void Tick(float DeltaTime) override;
 };
 
+UCLASS()
 class ABullet : public AActor
 {
 public:
@@ -238,6 +259,7 @@ private:
     UProjectileMovementComponent* ProjectileComp = nullptr;
 };
 
+UCLASS()
 class ABladeSlash : public AActor
 {
 public:
@@ -246,6 +268,7 @@ public:
     void Tick(float DeltaTime) override;
 };
 
+UCLASS()
 class ADestructibleActor : public AActor
 {
 public:
@@ -277,6 +300,7 @@ private:
 	uint32 SliceCount = 0;
 };
 
+UCLASS()
 class ABoundsBoxActor : public AActor
 {
 public:
@@ -295,6 +319,7 @@ private:
 };
 class AMainSceneDestructibleActor;
 
+UCLASS()
 class UMainSceneDestructibleComponent : public UActorComponent
 {
 public:
@@ -329,6 +354,7 @@ private:
     TArray<FVector> FragmentTargetLocations;
 };
 
+UCLASS()
 class AMainSceneDestructibleActor : public AActor
 {
 public:

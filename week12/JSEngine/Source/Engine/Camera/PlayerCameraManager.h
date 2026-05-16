@@ -17,6 +17,7 @@ enum class ECameraBlendType
     SmoothStep
 };
 
+UCLASS()
 class APlayerCameraManager : public AActor
 {
 public:

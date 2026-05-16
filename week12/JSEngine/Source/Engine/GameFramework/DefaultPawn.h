@@ -4,6 +4,7 @@
 
 class UCameraComponent;
 
+UCLASS()
 class ADefaultPawn : public APawn
 {
 public:

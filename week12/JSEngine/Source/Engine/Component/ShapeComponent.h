@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "PrimitiveComponent.h"
 
+UCLASS()
 class UShapeComponent : public UPrimitiveComponent
 {
 public:
@@ -10,7 +11,10 @@ public:
     void Serialize(FArchive& Ar) override;
 
 private:
+    UPROPERTY(DisplayName = "Shape Color")
 	FColor ShapeColor;
+
+    UPROPERTY(DisplayName = "Draw Only If Selected")
     bool bDrawOnlyIfSelected;
 
     // UPrimitiveComponent을(를) 통해 상속됨

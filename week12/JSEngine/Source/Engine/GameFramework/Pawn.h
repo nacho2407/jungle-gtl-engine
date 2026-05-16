@@ -5,6 +5,7 @@
 class APlayerController;
 struct FInputActionState;
 
+UCLASS()
 class APawn : public AActor
 {
 public:

@@ -2,6 +2,7 @@
 #include "PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
 
+UCLASS()
 class UFireballComponent : public UPrimitiveComponent {
 public:
 	DECLARE_CLASS(UFireballComponent, UPrimitiveComponent)

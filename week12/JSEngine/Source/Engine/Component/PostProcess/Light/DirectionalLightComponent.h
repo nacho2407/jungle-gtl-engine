@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "LightComponent.h"
 
+UCLASS()
 class UDirectionalLightComponent : public ULightComponent
 {
 public:

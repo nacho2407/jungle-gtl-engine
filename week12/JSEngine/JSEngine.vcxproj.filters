@@ -525,6 +525,9 @@
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp">
       <Filter>Source\Engine\Audio</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Camera\APlayerCameraManager.gen.cpp">
+      <Filter>Source\Engine\Camera</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Camera\CameraModifier.cpp">
       <Filter>Source\Engine\Camera</Filter>
     </ClCompile>
@@ -582,9 +585,6 @@
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\LineBatchComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -606,6 +606,18 @@
     <ClCompile Include="Source\Engine\Component\Movement\UInterpToMovementComponent.gen.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\UMovementComponent.gen.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\UProjectileMovementComponent.gen.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\UPursuitMovementComponent.gen.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\URotatingMovementComponent.gen.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\AmbientLightComponent.cpp">
       <Filter>Source\Engine\Component\PostProcess\Light</Filter>
     </ClCompile>
@@ -624,7 +636,22 @@
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.cpp">
       <Filter>Source\Engine\Component\PostProcess\Light</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\UAmbientLightComponent.gen.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\UDirectionalLightComponent.gen.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\ULightComponent.gen.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\ULightComponentBase.gen.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\UPointLightComponent.gen.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\USpotlightComponent.gen.cpp">
       <Filter>Source\Engine\Component\PostProcess\Light</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
@@ -664,6 +691,72 @@
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\UActorComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UActorSequenceComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UBillboardComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UBoxComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UCameraComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UCapsuleComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UDecalComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UFireballComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UGizmoComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UHeightFogComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UMeshComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UPrimitiveComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UProceduralMeshComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\USceneComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UShapeComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\USkeletalMeshComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\USkinnedMeshComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\USoundComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\USphereComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\USpringArmComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UStaticMeshComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\USubUVComponent.gen.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UTextRenderComponent.gen.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\AssetPathPolicy.cpp">
@@ -756,6 +849,93 @@
     <ClCompile Include="Source\Engine\GameFramework\AActor.gen.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\AAmbientLightActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\AAttachTestActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ABillboardActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ABladeSlash.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ABoundsBoxActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ABullet.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ACubeActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ADecalActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ADecalSpotLightActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ADefaultPawn.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ADestructibleActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ADirectionalLightActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\AFireballActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\AFogActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\AGameModeBase.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ALightActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\AMainSceneDestructibleActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\APawn.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\APlaneActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\APlayerController.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\APlayerStart.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\APointLightActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ASceneActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ASkeletalMeshActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ASphereActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ASpotlightActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\AStaticMeshActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ASubUVActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ATextRenderActor.gen.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\DefaultPawn.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
@@ -772,6 +952,9 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\PrimitiveActors.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\UMainSceneDestructibleComponent.gen.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\World.cpp">
@@ -1060,6 +1243,9 @@
       <Filter>Source\Engine\Runtime\Script</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerMathBindings.cpp">
+      <Filter>Source\Engine\Runtime\Script</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Runtime\Script\UScriptComponent.gen.cpp">
       <Filter>Source\Engine\Runtime\Script</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\ViewportClient.cpp">
@@ -1498,9 +1684,6 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\LineBatchComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\MeshComponent.h">

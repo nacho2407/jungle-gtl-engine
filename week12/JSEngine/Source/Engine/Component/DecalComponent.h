@@ -4,6 +4,7 @@
 
 class UMaterialInterface;
 
+UCLASS()
 class UDecalComponent : public UPrimitiveComponent
 {
 public:

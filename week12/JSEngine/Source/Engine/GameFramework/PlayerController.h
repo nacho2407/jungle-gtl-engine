@@ -9,6 +9,7 @@ class UCameraComponent;
 class APlayerCameraManager;
 enum class ECameraBlendType;
 
+UCLASS()
 class APlayerController : public AActor
 {
 public:

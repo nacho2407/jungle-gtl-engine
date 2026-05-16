@@ -2,6 +2,7 @@
 
 #include "MovementComponent.h"
 
+UCLASS()
 class URotatingMovementComponent : public UMovementComponent
 {	
 public:

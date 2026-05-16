@@ -3,6 +3,7 @@
 #include "Animation/ActorSequence.h"
 #include "Component/ActorComponent.h"
 
+UCLASS()
 class UActorSequenceComponent : public UActorComponent
 {
 public:
@@ -56,8 +57,15 @@ private:
     UActorSequencePlayer* SequencePlayer = nullptr;
     UActorSequencePlayer* PreviewSequencePlayer = nullptr;
 
+    UPROPERTY(DisplayName = "Auto Play")
     bool bAutoPlay = true;
+
+    UPROPERTY(DisplayName = "Pause At End")
     bool bPauseAtEnd = false;
+
+    UPROPERTY(DisplayName = "Play Rate", ClampMin = 0.0, Speed = 0.05)
     float PlayRate = 1.0f;
+
+    UPROPERTY(DisplayName = "Start Offset Seconds", ClampMin = 0.0, Speed = 0.05)
     float StartOffsetSeconds = 0.0f;
 };

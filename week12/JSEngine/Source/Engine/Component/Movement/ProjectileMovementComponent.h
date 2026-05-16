@@ -2,6 +2,7 @@
 
 #include "MovementComponent.h"
 
+UCLASS()
 class UProjectileMovementComponent : public UMovementComponent
 {
 public:

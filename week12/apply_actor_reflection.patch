@@ -1,0 +1,264 @@
+diff --git a/JSEngine/Source/Engine/Camera/PlayerCameraManager.h b/JSEngine/Source/Engine/Camera/PlayerCameraManager.h
+index 208c9cc..f2cd797 100644
+--- a/JSEngine/Source/Engine/Camera/PlayerCameraManager.h
++++ b/JSEngine/Source/Engine/Camera/PlayerCameraManager.h
+@@ -17,6 +17,7 @@ enum class ECameraBlendType
+     SmoothStep
+ };
+ 
++UCLASS()
+ class APlayerCameraManager : public AActor
+ {
+ public:
+diff --git a/JSEngine/Source/Engine/GameFramework/DefaultPawn.h b/JSEngine/Source/Engine/GameFramework/DefaultPawn.h
+index e372a6b..b5b0a70 100644
+--- a/JSEngine/Source/Engine/GameFramework/DefaultPawn.h
++++ b/JSEngine/Source/Engine/GameFramework/DefaultPawn.h
+@@ -4,6 +4,7 @@
+ 
+ class UCameraComponent;
+ 
++UCLASS()
+ class ADefaultPawn : public APawn
+ {
+ public:
+diff --git a/JSEngine/Source/Engine/GameFramework/GameModeBase.h b/JSEngine/Source/Engine/GameFramework/GameModeBase.h
+index 0f1724e..6c702af 100644
+--- a/JSEngine/Source/Engine/GameFramework/GameModeBase.h
++++ b/JSEngine/Source/Engine/GameFramework/GameModeBase.h
+@@ -6,6 +6,7 @@ class APawn;
+ class APlayerController;
+ class FViewportCamera;
+ 
++UCLASS()
+ class AGameModeBase : public AActor
+ {
+ public:
+diff --git a/JSEngine/Source/Engine/GameFramework/Pawn.h b/JSEngine/Source/Engine/GameFramework/Pawn.h
+index b012a0d..add63ef 100644
+--- a/JSEngine/Source/Engine/GameFramework/Pawn.h
++++ b/JSEngine/Source/Engine/GameFramework/Pawn.h
+@@ -5,6 +5,7 @@
+ class APlayerController;
+ struct FInputActionState;
+ 
++UCLASS()
+ class APawn : public AActor
+ {
+ public:
+diff --git a/JSEngine/Source/Engine/GameFramework/PlayerController.h b/JSEngine/Source/Engine/GameFramework/PlayerController.h
+index 15f639d..999b2cb 100644
+--- a/JSEngine/Source/Engine/GameFramework/PlayerController.h
++++ b/JSEngine/Source/Engine/GameFramework/PlayerController.h
+@@ -9,6 +9,7 @@ class UCameraComponent;
+ class APlayerCameraManager;
+ enum class ECameraBlendType;
+ 
++UCLASS()
+ class APlayerController : public AActor
+ {
+ public:
+diff --git a/JSEngine/Source/Engine/GameFramework/PrimitiveActors.h b/JSEngine/Source/Engine/GameFramework/PrimitiveActors.h
+index 9cb80d9..8278615 100644
+--- a/JSEngine/Source/Engine/GameFramework/PrimitiveActors.h
++++ b/JSEngine/Source/Engine/GameFramework/PrimitiveActors.h
+@@ -14,6 +14,7 @@ class UProceduralMeshComponent;
+ class UStaticMesh;
+ class USkeletalMeshComponent;
+ 
++UCLASS()
+ class ACubeActor : public AActor
+ {
+ public:
+@@ -23,6 +24,7 @@ public:
+ 	void InitDefaultComponents();
+ };
+ 
++UCLASS()
+ class ASphereActor : public AActor
+ {
+ public:
+@@ -32,6 +34,7 @@ public:
+ 	void InitDefaultComponents();
+ };
+ 
++UCLASS()
+ class APlaneActor : public AActor
+ {
+ public:
+@@ -41,6 +44,7 @@ public:
+ 	void InitDefaultComponents();
+ };
+ 
++UCLASS()
+ class AAttachTestActor : public AActor
+ {
+ public:
+@@ -50,6 +54,7 @@ public:
+ 	void InitDefaultComponents();
+ };
+ 
++UCLASS()
+ class ASceneActor : public AActor
+ {
+ public:
+@@ -63,6 +68,7 @@ public:
+     void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
+ };
+ 
++UCLASS()
+ class APlayerStart : public AActor
+ {
+ public:
+@@ -72,6 +78,7 @@ public:
+ 	void InitDefaultComponents() override;
+ };
+ 
++UCLASS()
+ class AFogActor : public AActor
+ {
+ public:
+@@ -87,6 +94,7 @@ private:
+ 	UBillboardComponent* BillboardComp = nullptr;
+ };
+ 
++UCLASS()
+ class AStaticMeshActor : public AActor
+ {
+ public:
+@@ -96,6 +104,7 @@ public:
+ 	void InitDefaultComponents();
+ };
+ 
++UCLASS()
+ class ASkeletalMeshActor : public AActor
+ {
+ public:
+@@ -110,6 +119,7 @@ private:
+     USkeletalMeshComponent* SkeletalMeshComp = nullptr;
+ };
+ 
++UCLASS()
+ class ASubUVActor : public AActor
+ {
+ public:
+@@ -119,6 +129,7 @@ public:
+     void InitDefaultComponents();
+ };
+ 
++UCLASS()
+ class ATextRenderActor : public AActor
+ {
+ public:
+@@ -128,6 +139,7 @@ public:
+     void InitDefaultComponents();
+ };
+ 
++UCLASS()
+ class ABillboardActor : public AActor
+ {
+ public:
+@@ -137,6 +149,7 @@ public:
+     void InitDefaultComponents();
+ };
+ 
++UCLASS()
+ class ADecalActor : public AActor
+ {
+ public:
+@@ -146,6 +159,7 @@ public:
+ 	void InitDefaultComponents();
+ };
+ 
++UCLASS()
+ class AFireballActor : public AActor {
+ public:
+     DECLARE_CLASS(AFireballActor, AActor)
+@@ -154,6 +168,7 @@ public:
+ 	void InitDefaultComponents();
+ };
+ 
++UCLASS()
+ class ADecalSpotLightActor : public AActor {
+ public:
+ 	DECLARE_CLASS(ADecalSpotLightActor, AActor)
+@@ -176,6 +191,7 @@ private:
+ 	float Angle = 30.0f;
+ };
+ 
++UCLASS()
+ class ALightActor : public AActor
+ {
+ public:
+@@ -193,6 +209,7 @@ protected:
+ 	UBillboardComponent* BillboardComp = nullptr;
+ };
+ 
++UCLASS()
+ class AAmbientLightActor : public ALightActor
+ {
+ public:
+@@ -201,6 +218,7 @@ public:
+     void Tick(float DeltaTime) override;
+ };
+ 
++UCLASS()
+ class ADirectionalLightActor : public ALightActor
+ {
+ public:
+@@ -209,6 +227,7 @@ public:
+     void Tick(float DeltaTime) override;
+ };
+ 
++UCLASS()
+ class APointLightActor : public ALightActor
+ {
+ public:
+@@ -217,6 +236,7 @@ public:
+     virtual void Tick(float DeltaTime) override;
+ };
+ 
++UCLASS()
+ class ASpotlightActor : public APointLightActor 
+ {
+ public:
+@@ -225,6 +245,7 @@ public:
+ 	void Tick(float DeltaTime) override;
+ };
+ 
++UCLASS()
+ class ABullet : public AActor
+ {
+ public:
+@@ -238,6 +259,7 @@ private:
+     UProjectileMovementComponent* ProjectileComp = nullptr;
+ };
+ 
++UCLASS()
+ class ABladeSlash : public AActor
+ {
+ public:
+@@ -246,6 +268,7 @@ public:
+     void Tick(float DeltaTime) override;
+ };
+ 
++UCLASS()
+ class ADestructibleActor : public AActor
+ {
+ public:
+@@ -277,6 +300,7 @@ private:
+ 	uint32 SliceCount = 0;
+ };
+ 
++UCLASS()
+ class ABoundsBoxActor : public AActor
+ {
+ public:
+@@ -329,6 +353,7 @@ private:
+     TArray<FVector> FragmentTargetLocations;
+ };
+ 
++UCLASS()
+ class AMainSceneDestructibleActor : public AActor
+ {
+ public:
