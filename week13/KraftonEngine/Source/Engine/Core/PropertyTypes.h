@@ -50,8 +50,6 @@ struct FPropertyDescriptor
 	std::string   Name;
 	EPropertyType Type = EPropertyType::Bool;
 	std::string   Category;      // 에디터 카테고리 (같은 문자열끼리 그룹화)
-	std::string   DisplayName;   // 에디터 표시명. 비어 있으면 Name 사용.
-	TMap<FString, FString> Metadata;
 	void*         ValuePtr = nullptr;
 
 	// float 범위 힌트 (DragFloat 등에서 사용)
@@ -67,6 +65,9 @@ struct FPropertyDescriptor
 	// Struct Metadata
 	FStructPropertyFunc StructFunc = nullptr;
 
+	std::string   DisplayName;   // 에디터 표시명. 비어 있으면 Name 사용.
+	TMap<FString, FString> Metadata;
+
 	// JSON 직렬화 — FSceneSaveManager 등 외부 직렬자가 호출.
 	// 헤더에 SimpleJSON 의존을 들이지 않기 위해 본문은 PropertyTypes.cpp 에 둔다.
 	json::JSON Serialize() const;
@@ -81,6 +82,26 @@ enum EPropertyFlags : uint32
 	PF_Save = 1 << 1,
 	PF_ReadOnly = 1 << 2,
 	PF_Transient = 1 << 3, //저장, 로드에서 제외
+};
+
+enum class EPropertyChangeType : uint8
+{
+	ValueSet,
+	Interactive,
+	ArrayAdd,
+	ArrayRemove,
+	Duplicate,
+	Load,
+};
+
+struct FPropertyChangedEvent
+{
+	const FPropertyDescriptor* Descriptor = nullptr;
+	const char* PropertyName = nullptr;
+	const char* DisplayName = nullptr;
+	EPropertyType Type = EPropertyType::Bool;
+	EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet;
+	int32 ArrayIndex = -1;
 };
 
 struct FProperty

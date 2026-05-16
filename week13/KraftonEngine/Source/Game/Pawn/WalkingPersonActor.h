@@ -28,6 +28,7 @@ class AWalkingPersonActor : public AActor
 {
 public:
 	DECLARE_CLASS(AWalkingPersonActor, AActor)
+	static void RegisterProperties(UClass* Class);
 
 	AWalkingPersonActor() = default;
 	~AWalkingPersonActor() override = default;
@@ -41,7 +42,6 @@ public:
 	void PostDuplicate() override;
 	void Tick(float DeltaTime) override;
 	void Serialize(FArchive& Ar) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	bool IsQuestTarget() const { return bQuestTarget; }
 	void SetQuestTarget(bool bIn) { bQuestTarget = bIn; }
@@ -72,6 +72,7 @@ private:
 
 	// 씬에 사람 여러 명 깔되, 그중 단 한 명만 EscapePolice 퀘스트 트리거 역할.
 	// true 인 인스턴스의 트리거에만 "EscapePolice" 태그가 붙어 GameMode 라우팅을 받음.
+	UPROPERTY(Edit, Save, Category="Walking Person", DisplayName="Quest Target")
 	bool bQuestTarget = false;
 
 	// Phase 전환마다 돌아갈 시작 위치/회전. BeginPlay 첫 frame 에 캐시.
