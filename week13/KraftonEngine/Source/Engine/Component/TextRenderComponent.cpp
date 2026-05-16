@@ -1,4 +1,4 @@
-﻿#include "TextRenderComponent.h"
+#include "TextRenderComponent.h"
 
 #include <cstring>
 #include "GameFramework/AActor.h"
@@ -9,8 +9,6 @@
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS_WITH_PROPERTIES(UTextRenderComponent, UBillboardComponent)
 
 FPrimitiveSceneProxy* UTextRenderComponent::CreateSceneProxy()
 {

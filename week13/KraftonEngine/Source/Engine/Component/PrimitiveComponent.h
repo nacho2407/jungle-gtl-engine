@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/ObjectFactory.h"
 #include "SceneComponent.h"
@@ -10,6 +10,7 @@
 #include "Render/Types/VertexTypes.h"
 #include "Render/Proxy/DirtyFlag.h"
 
+#include "Source/Engine/Component/PrimitiveComponent.generated.h"
 class FPrimitiveSceneProxy;
 class FScene;
 class FMeshBuffer;
@@ -54,11 +55,11 @@ DECLARE_MULTICAST_DELEGATE_ThreeParams(
 	UPrimitiveComponent* /*OtherComp*/
 );
 
+UCLASS()
 class UPrimitiveComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
-	static void RegisterProperties(UClass* Class);
+	GENERATED_BODY()
 	~UPrimitiveComponent() override;
 
 	void BeginPlay() override;

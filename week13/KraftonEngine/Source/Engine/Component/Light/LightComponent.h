@@ -1,12 +1,14 @@
-﻿#pragma once
+#pragma once
 #include "Component/Light/LightComponentBase.h"
 
+
+#include "Source/Engine/Component/Light/LightComponent.generated.h"
+
+UCLASS()
 class ULightComponent : public ULightComponentBase
 {
 public:
-	DECLARE_CLASS(ULightComponent, ULightComponentBase)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	float GetShadowResolutionScale() const { return ShadowResolutionScale; }
 	float GetShadowBias() const { return ShadowBias; }
 	float GetShadowSlopeBias() const { return ShadowSlopeBias; }

@@ -1,4 +1,4 @@
-﻿#include "Mesh/StaticMesh.h"
+#include "Mesh/StaticMesh.h"
 #include "Object/ObjectFactory.h"
 #include "Mesh/MeshManager.h"
 #include "Serialization/WindowsArchive.h"
@@ -6,8 +6,6 @@
 #include "Texture/Texture2D.h"
 #include "Engine/Profiling/MemoryStats.h"
 #include "Mesh/MeshSimplifier.h"
-
-IMPLEMENT_CLASS(UStaticMesh, UObject)
 
 UStaticMesh::~UStaticMesh()
 {

@@ -1,4 +1,4 @@
-﻿#include "GameFramework/AActor.h"
+#include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
@@ -9,8 +9,6 @@
 #include "Serialization/Archive.h"
 
 #include <algorithm>
-
-IMPLEMENT_CLASS_WITH_PROPERTIES(AActor, UObject)
 
 AActor::AActor()
 {

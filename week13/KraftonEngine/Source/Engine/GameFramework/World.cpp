@@ -1,4 +1,4 @@
-﻿#include "GameFramework/World.h"
+#include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -16,9 +16,6 @@
 #include "Profiling/Timer.h"
 #include "Runtime/Engine.h"
 #include <algorithm>
-
-IMPLEMENT_CLASS(UWorld, UObject)
-
 
 UWorld::~UWorld()
 {

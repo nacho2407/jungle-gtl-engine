@@ -6,6 +6,7 @@
 #include "Render/Pipeline/Renderer.h"
 #include "Render/Pipeline/IRenderPipeline.h"
 
+#include "Source/Engine/Runtime/Engine.generated.h"
 #include <memory>
 
 class FWindowsWindow;
@@ -13,11 +14,11 @@ class FTimer;
 class UCameraComponent;
 class UGameViewportClient;
 
+UCLASS()
 class UEngine : public UObject
 {
 public:
-	DECLARE_CLASS(UEngine, UObject)
-
+	GENERATED_BODY()
 	UEngine() = default;
 	~UEngine() override = default;
 

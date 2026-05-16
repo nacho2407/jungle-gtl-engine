@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/ActorComponent.h"
 
@@ -17,7 +17,6 @@ UCLASS()
 class UMovementComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(UMovementComponent, UActorComponent)
 	GENERATED_BODY()
 
 	UMovementComponent() = default;

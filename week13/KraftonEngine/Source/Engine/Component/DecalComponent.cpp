@@ -1,4 +1,4 @@
-﻿#include "DecalComponent.h"
+#include "DecalComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Materials/MaterialManager.h"
 #include "Collision/OBB.h"
@@ -13,8 +13,6 @@
 #include "Texture/Texture2D.h"
 #include "Materials/Material.h"
 #include <algorithm>
-
-IMPLEMENT_CLASS_WITH_PROPERTIES(UDecalComponent, UPrimitiveComponent)
 
 void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {

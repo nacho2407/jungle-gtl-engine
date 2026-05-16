@@ -9,8 +9,6 @@
 #include <cmath>
 #include <algorithm>
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(USphereComponent, UShapeComponent)
-
 void USphereComponent::SetSphereRadius(float InRadius)
 {
 	SphereRadius = InRadius;

@@ -1,11 +1,14 @@
-﻿#pragma once
+#pragma once
 #include "Component/Light/LightComponent.h"
 
+
+#include "Source/Engine/Component/Light/PointLightComponent.generated.h"
+
+UCLASS()
 class UPointLightComponent : public ULightComponent
 {
 public:
-	DECLARE_CLASS(UPointLightComponent, ULightComponent)
-	static void RegisterProperties(UClass* Class);
+	GENERATED_BODY()
 	virtual ELightComponentType GetLightType() const override { return ELightComponentType::Point; }
 	virtual void ContributeSelectedVisuals(FScene& Scene) const override;
 	virtual void PushToScene() override;

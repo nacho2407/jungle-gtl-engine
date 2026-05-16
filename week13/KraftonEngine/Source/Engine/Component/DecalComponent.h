@@ -1,18 +1,18 @@
-﻿#pragma once
+#pragma once
 #include "PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
 #include "Collision/ConvexVolume.h"
 
+#include "Source/Engine/Component/DecalComponent.generated.h"
 class UStaticMeshComponent;
 
 // class DecalProxy;
 
+UCLASS()
 class UDecalComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UDecalComponent, UPrimitiveComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	UDecalComponent() = default;
 	~UDecalComponent() override = default;
 

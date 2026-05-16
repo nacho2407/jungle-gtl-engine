@@ -1,4 +1,4 @@
-﻿#include "SkinnedMeshComponent.h"
+#include "SkinnedMeshComponent.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Serialization/Archive.h"
 #include "Runtime/Engine.h"
@@ -6,7 +6,6 @@
 #include "Collision/RayUtils.h"
 #include "Core/Log.h"
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(USkinnedMeshComponent, UMeshComponent)
 HIDE_FROM_COMPONENT_LIST(USkinnedMeshComponent)
 
 namespace

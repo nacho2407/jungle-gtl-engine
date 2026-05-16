@@ -9,8 +9,6 @@
 #include <cmath>
 #include <algorithm>
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(UCapsuleComponent, UShapeComponent)
-
 void UCapsuleComponent::SetCapsuleSize(float InRadius, float InHalfHeight)
 {
 	CapsuleRadius = InRadius;

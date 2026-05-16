@@ -2,14 +2,15 @@
 
 #include "GameFramework/AActor.h"
 
+#include "Source/Engine/GameFramework/Light/PointLightActor.generated.h"
 class UBillboardComponent;
 class UPointLightComponent;
 
+UCLASS()
 class APointLightActor : public AActor
 {
 public:
-	DECLARE_CLASS(APointLightActor, AActor)
-
+	GENERATED_BODY()
 	void InitDefaultComponents();
 
 private:

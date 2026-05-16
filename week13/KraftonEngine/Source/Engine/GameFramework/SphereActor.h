@@ -1,14 +1,15 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/AActor.h"
 
+#include "Source/Engine/GameFramework/SphereActor.generated.h"
 class USphereComponent;
 
+UCLASS()
 class ASphereActor : public AActor
 {
 public:
-	DECLARE_CLASS(ASphereActor, AActor)
-
+	GENERATED_BODY()
 	ASphereActor() = default;
 
 	void InitDefaultComponents();

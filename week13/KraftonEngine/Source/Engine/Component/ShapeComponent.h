@@ -1,15 +1,17 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Epic Games, Inc. All Rights Reserved.
 #pragma once
 
 #include "PrimitiveComponent.h"
 #include "Core/EngineTypes.h"
 
+
+#include "Source/Engine/Component/ShapeComponent.generated.h"
+
+UCLASS()
 class UShapeComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UShapeComponent, UPrimitiveComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	UShapeComponent();
 
 	void PostEditProperty(const char* PropertyName) override;

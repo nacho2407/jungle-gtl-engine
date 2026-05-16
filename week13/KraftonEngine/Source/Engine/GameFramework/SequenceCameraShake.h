@@ -1,14 +1,15 @@
-﻿#pragma once
+#pragma once
 #include "CameraShakeBase.h"
 
+#include "Source/Engine/GameFramework/SequenceCameraShake.generated.h"
 class UFloatCurveAsset;
 class UCameraShakeAsset;
 
+UCLASS()
 class USequenceCameraShake : public UCameraShakeBase
 {
 public:
-	DECLARE_CLASS(USequenceCameraShake, UCameraShakeBase)
-
+	GENERATED_BODY()
 	USequenceCameraShake() = default;
 	~USequenceCameraShake() override = default;
 

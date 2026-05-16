@@ -1,8 +1,9 @@
-﻿#pragma once
+#pragma once
 #include "Object/Object.h"
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 
+#include "Source/Engine/CameraShake/CameraShakeAsset.generated.h"
 class FArchive;
 
 enum class ECameraShakeType : uint8
@@ -36,11 +37,11 @@ struct FWaveOscillatorCameraShakeAssetData
 	float FOVFrequency = 8.0f;
 };
 
+UCLASS()
 class UCameraShakeAsset : public UObject
 {
 public:
-	DECLARE_CLASS(UCameraShakeAsset, UObject)
-
+	GENERATED_BODY()
 	UCameraShakeAsset() = default;
 	~UCameraShakeAsset() override;
 

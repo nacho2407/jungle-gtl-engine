@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Math/Transform.h"
 #include "Math/Rotator.h"
@@ -13,7 +13,6 @@ UCLASS()
 class USceneComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(USceneComponent, UActorComponent)
 	GENERATED_BODY()
 
 	USceneComponent();

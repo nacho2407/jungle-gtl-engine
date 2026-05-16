@@ -7,8 +7,6 @@
 #include "Core/Log.h"
 #include "Core/ProjectSettings.h"
 
-IMPLEMENT_CLASS(AGameModeBase, AActor)
-
 AGameModeBase::AGameModeBase()
 {
 	// 기본값 — 서브클래스 생성자가 더 구체 클래스로 덮어쓸 수 있다.

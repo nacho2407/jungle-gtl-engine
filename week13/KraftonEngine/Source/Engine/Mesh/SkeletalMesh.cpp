@@ -1,8 +1,6 @@
-﻿#include "SkeletalMesh.h"
+#include "SkeletalMesh.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS(USkeletalMesh, UObject)
 
 static const FString EmptyPath;
 

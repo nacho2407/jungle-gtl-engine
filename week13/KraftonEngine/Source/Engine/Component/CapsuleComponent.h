@@ -1,14 +1,16 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Epic Games, Inc. All Rights Reserved.
 #pragma once
 
 #include "ShapeComponent.h"
 
+
+#include "Source/Engine/Component/CapsuleComponent.generated.h"
+
+UCLASS()
 class UCapsuleComponent : public UShapeComponent
 {
 public:
-	DECLARE_CLASS(UCapsuleComponent, UShapeComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	void SetCapsuleSize(float InRadius, float InHalfHeight);
 	float GetScaledCapsuleRadius() const;
 	float GetScaledCapsuleHalfHeight() const;

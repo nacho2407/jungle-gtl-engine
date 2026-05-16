@@ -1,9 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/GameStateBase.h"
 #include "Core/Delegate.h"
 #include "Core/CoreTypes.h"
 
+#include "Source/Game/GameState/GameStateCarGame.generated.h"
 // 자동차 게임의 페이즈 — 게임 진행 상태 (활성 페이즈 / 결과 표시 / 종료).
 // 페이즈 결과(성공/실패)는 EPhaseResult 로 분리해 LastPhaseResult 에 저장한다.
 enum class ECarGamePhase : uint8
@@ -67,12 +68,11 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FCarGameScoreChangedSignature,  int32 /*NewS
 // GameMode 가 SetPhase / 타이머 / Mask 를 갱신. UI/Lua 는 GetPhase /
 // GetRemainingMatchTime / GetRemainingPhaseTime 등으로 폴링.
 // ============================================================
+UCLASS()
 class AGameStateCarGame : public AGameStateBase
 {
 public:
-	DECLARE_CLASS(AGameStateCarGame, AGameStateBase)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	AGameStateCarGame() = default;
 	~AGameStateCarGame() override = default;
 

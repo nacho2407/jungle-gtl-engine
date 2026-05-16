@@ -1,4 +1,4 @@
-﻿#include "PrimitiveComponent.h"
+#include "PrimitiveComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Core/RayTypes.h"
@@ -34,7 +34,6 @@ namespace
 	}
 }
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(UPrimitiveComponent, USceneComponent)
 HIDE_FROM_COMPONENT_LIST(UPrimitiveComponent)
 
 UPrimitiveComponent::~UPrimitiveComponent()

@@ -1,10 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/ActorComponent.h"
 #include "Math/Rotator.h"
 #include "Math/Transform.h"
 #include "Math/Vector.h"
 
+#include "Source/Engine/Component/TemporaryBoneAnimatorComponent.generated.h"
 class USkeletalMesh;
 class USkeletalMeshComponent;
 
@@ -15,12 +16,11 @@ class USkeletalMeshComponent;
 
 #if JUNGLE_ENABLE_TEMP_BONE_ANIMATOR_COMPONENT
 
+UCLASS()
 class UTemporaryBoneAnimatorComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(UTemporaryBoneAnimatorComponent, UActorComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	UTemporaryBoneAnimatorComponent() = default;
 	~UTemporaryBoneAnimatorComponent() override = default;
 

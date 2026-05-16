@@ -15,8 +15,6 @@
 #include "Core/PropertyTypes.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(AWalkingPersonActor, AActor)
-
 void AWalkingPersonActor::InitDefaultComponents(const FString& StaticMeshFileName, const FString& LuaScriptFile)
 {
 	// Map.Scene 에 직접 셋업했던 ABoxActor + Mesh + LuaScript 패턴을 한 클래스로 묶음.

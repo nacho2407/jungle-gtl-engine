@@ -1,17 +1,17 @@
-﻿#pragma once
+#pragma once
 
 #include "BillboardComponent.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 
+#include "Source/Engine/Component/SubUVComponent.generated.h"
 class UMaterial;
 
+UCLASS()
 class USubUVComponent : public UBillboardComponent
 {
 public:
-	DECLARE_CLASS(USubUVComponent, UBillboardComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	USubUVComponent();
 	~USubUVComponent() override;
 

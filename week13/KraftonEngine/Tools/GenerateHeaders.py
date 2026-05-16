@@ -4,7 +4,7 @@ Generate lightweight reflection outputs for KraftonEngine reflected headers.
 
 The current ObjectMacros.h expects GENERATED_BODY() to expand through:
 
-    CURRENT_FILE_ID##_GENERATED_BODY
+    CURRENT_FILE_ID##_##__LINE__##_GENERATED_BODY
 
 This script scans headers under Source/, finds reflected declarations that use
 GENERATED_BODY(), and writes matching generated headers under Intermediate/Generated
@@ -27,22 +27,10 @@ REFLECTED_DECL_RE = re.compile(
     r"\bU(?P<kind>CLASS|STRUCT)\s*\([^)]*\)\s*"
     r"(?P<decl>class|struct)\s+"
     r"(?:(?:[A-Z_][A-Z0-9_]*|final|abstract)\s+)*"
-    r"(?P<name>[A-Za-z_][A-Za-z0-9_]*)",
+    r"(?P<name>[A-Za-z_][A-Za-z0-9_]*)"
+    r"(?:\s*:\s*(?:(?:public|protected|private)\s+)?(?P<super>[A-Za-z_][A-Za-z0-9_:]*))?",
     re.MULTILINE,
 )
-
-CLASS_DECL_RE = re.compile(
-    r"\b(?P<decl>class|struct)\s+"
-    r"(?:(?:[A-Z_][A-Z0-9_]*|final|abstract)\s+)*"
-    r"(?P<name>[A-Za-z_][A-Za-z0-9_]*)",
-    re.MULTILINE,
-)
-
-DECLARE_CLASS_RE = re.compile(
-    r"\bDECLARE_CLASS\s*\(\s*(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*,",
-    re.MULTILINE,
-)
-
 
 @dataclass(frozen=True)
 class ReflectedProperty:
@@ -66,6 +54,8 @@ class ReflectedProperty:
 @dataclass(frozen=True)
 class ReflectedType:
     name: str
+    super_name: str | None
+    generated_body_line: int | None
     properties: tuple[ReflectedProperty, ...]
 
 
@@ -247,7 +237,6 @@ def cpp_string_literal(value: str) -> str:
 
 def find_reflected_type_bodies(scan_text: str) -> list[tuple[str, int, int]]:
     bodies: list[tuple[str, int, int]] = []
-    seen: set[str] = set()
 
     for match in REFLECTED_DECL_RE.finditer(scan_text):
         class_name = match.group("name")
@@ -257,31 +246,6 @@ def find_reflected_type_bodies(scan_text: str) -> list[tuple[str, int, int]]:
         brace_end = find_matching(scan_text, brace_start, "{", "}")
         if brace_end < 0:
             continue
-        seen.add(class_name)
-        bodies.append((class_name, brace_start + 1, brace_end))
-
-    for match in CLASS_DECL_RE.finditer(scan_text):
-        class_name = match.group("name")
-        if class_name in seen:
-            continue
-
-        brace_start = scan_text.find("{", match.end())
-        if brace_start < 0:
-            continue
-        brace_end = find_matching(scan_text, brace_start, "{", "}")
-        if brace_end < 0:
-            continue
-
-        body = scan_text[brace_start + 1:brace_end]
-        declare_match = DECLARE_CLASS_RE.search(body)
-        if not declare_match:
-            continue
-
-        declared_name = declare_match.group("name")
-        if declared_name != class_name:
-            continue
-
-        seen.add(class_name)
         bodies.append((class_name, brace_start + 1, brace_end))
 
     return bodies
@@ -401,6 +365,17 @@ def make_generated_header_path(root: Path, generated_root: Path, header: Path) -
     return generated_root / rel.with_name(f"{header.stem}.generated.h")
 
 
+def get_line_number(text: str, index: int) -> int:
+    return text.count("\n", 0, index) + 1
+
+
+def find_generated_body_line(scan_text: str, body_start: int, body_end: int) -> int | None:
+    match = re.search(r"\bGENERATED_BODY\s*\(", scan_text[body_start:body_end])
+    if not match:
+        return None
+    return get_line_number(scan_text, body_start + match.start())
+
+
 def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -> tuple[list[ReflectedHeader], list[str]]:
     reflected: list[ReflectedHeader] = []
     warnings: list[str] = []
@@ -411,11 +386,27 @@ def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -
 
         text = header.read_text(encoding="utf-8-sig")
         scan_text = strip_comments(text)
-        declarations = [m.group("name") for m in REFLECTED_DECL_RE.finditer(scan_text)]
+        reflected_decls: list[tuple[str, str | None, int | None]] = []
+        for match in REFLECTED_DECL_RE.finditer(scan_text):
+            class_name = match.group("name")
+            brace_start = scan_text.find("{", match.end())
+            if brace_start < 0:
+                reflected_decls.append((class_name, match.group("super"), None))
+                continue
+            brace_end = find_matching(scan_text, brace_start, "{", "}")
+            line = find_generated_body_line(scan_text, brace_start + 1, brace_end) if brace_end >= 0 else None
+            reflected_decls.append((class_name, match.group("super"), line))
+
+        declarations = [name for name, _, _ in reflected_decls]
         properties_by_class, property_warnings = parse_uproperties(scan_text)
 
         property_types = tuple(
-            ReflectedType(name=class_name, properties=properties_by_class[class_name])
+            ReflectedType(
+                name=class_name,
+                super_name=None,
+                generated_body_line=None,
+                properties=properties_by_class[class_name],
+            )
             for class_name in sorted(properties_by_class)
         )
 
@@ -448,8 +439,13 @@ def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -
                 file_id=make_file_id(root, header),
                 class_names=tuple(declarations),
                 types=tuple(
-                    ReflectedType(name=class_name, properties=properties_by_class.get(class_name, tuple()))
-                    for class_name in declarations
+                    ReflectedType(
+                        name=class_name,
+                        super_name=super_name,
+                        generated_body_line=generated_body_line,
+                        properties=properties_by_class.get(class_name, tuple()),
+                    )
+                    for class_name, super_name, generated_body_line in reflected_decls
                 ) + tuple(
                     reflected_type
                     for reflected_type in property_types
@@ -465,18 +461,46 @@ def render_generated_header(item: ReflectedHeader, root: Path) -> str:
     source_rel = item.header.relative_to(root).as_posix()
     class_list = ", ".join(item.class_names)
 
-    return (
-        "// This file is generated by Tools/GenerateHeaders.py. Do not edit manually.\n"
-        f"// Source: {source_rel}\n"
-        f"// Reflected types: {class_list}\n"
-        "#pragma once\n"
-        "\n"
-        "#undef CURRENT_FILE_ID\n"
-        f"#define CURRENT_FILE_ID {item.file_id}\n"
-        "\n"
-        f"#define {item.file_id}_GENERATED_BODY \\\n"
-        "    static void RegisterProperties(UClass* Class);\n"
-    )
+    lines: list[str] = [
+        "// This file is generated by Tools/GenerateHeaders.py. Do not edit manually.",
+        f"// Source: {source_rel}",
+        f"// Reflected types: {class_list}",
+        "#pragma once",
+        "",
+        "#undef CURRENT_FILE_ID",
+        f"#define CURRENT_FILE_ID {item.file_id}",
+        "",
+    ]
+
+    for reflected_type in item.types:
+        if reflected_type.name not in item.class_names or reflected_type.generated_body_line is None:
+            continue
+
+        macro_name = f"{item.file_id}_{reflected_type.generated_body_line}_GENERATED_BODY"
+        if reflected_type.super_name:
+            lines.extend(
+                [
+                    f"#define {macro_name} \\",
+                    "public: \\",
+                    f"    using Super = {reflected_type.super_name}; \\",
+                    "    static UClass StaticClassInstance; \\",
+                    "    static FClassRegistrar s_Registrar; \\",
+                    "    static UClass* StaticClass() { return &StaticClassInstance; } \\",
+                    "    UClass* GetClass() const override { return StaticClass(); } \\",
+                    "    static void RegisterProperties(UClass* Class);",
+                    "",
+                ]
+            )
+        else:
+            lines.extend(
+                [
+                    f"#define {macro_name} \\",
+                    "    static void RegisterProperties(UClass* Class);",
+                    "",
+                ]
+            )
+
+    return "\n".join(lines)
 
 
 def render_property(prop: ReflectedProperty) -> str:
@@ -506,11 +530,49 @@ def render_property(prop: ReflectedProperty) -> str:
     )
 
 
+def render_class_registration(reflected_type: ReflectedType) -> str:
+    if not reflected_type.super_name:
+        return ""
+
+    class_name = reflected_type.name
+    super_name = reflected_type.super_name
+    return (
+        f"UClass {class_name}::StaticClassInstance(\n"
+        f"\t\"{class_name}\",\n"
+        f"\t&{super_name}::StaticClassInstance,\n"
+        f"\tsizeof({class_name}),\n"
+        "\tCF_None\n"
+        ");\n"
+        f"FClassRegistrar {class_name}::s_Registrar(&{class_name}::StaticClassInstance);\n"
+        "\n"
+        "namespace {\n"
+        f"\tstruct {class_name}_RegisterFactory {{\n"
+        f"\t\t{class_name}_RegisterFactory() {{\n"
+        "\t\t\tFObjectFactory::Get().Register(\n"
+        f"\t\t\t\t\"{class_name}\",\n"
+        f"\t\t\t\t[](UObject* InOuter)->UObject* {{ return UObjectManager::Get().CreateObject<{class_name}>(InOuter); }}\n"
+        "\t\t\t);\n"
+        "\t\t}\n"
+        "\t};\n"
+        f"\t{class_name}_RegisterFactory G{class_name}_RegisterFactory;\n"
+        "}\n"
+        "\n"
+        "namespace {\n"
+        f"\tstruct {class_name}_PropertyRegistrar {{\n"
+        f"\t\t{class_name}_PropertyRegistrar() {{\n"
+        f"\t\t\t{class_name}::RegisterProperties({class_name}::StaticClass());\n"
+        "\t\t}\n"
+        "\t};\n"
+        f"\t{class_name}_PropertyRegistrar G{class_name}_PropertyRegistrar;\n"
+        "}\n"
+    )
+
+
 def collect_generated_types(reflected: list[ReflectedHeader]) -> list[tuple[ReflectedHeader, ReflectedType]]:
     generated_types: list[tuple[ReflectedHeader, ReflectedType]] = []
     for item in reflected:
         for reflected_type in item.types:
-            if reflected_type.properties:
+            if reflected_type.name in item.class_names and reflected_type.super_name:
                 generated_types.append((item, reflected_type))
     return generated_types
 
@@ -527,12 +589,22 @@ def render_generated_type_cpp(item: ReflectedHeader, reflected_type: ReflectedTy
     lines: list[str] = [
         "// This file is generated by Tools/GenerateHeaders.py. Do not edit manually.",
         f"// Source: {source_rel}",
-        "#include \"Object/Object.h\"",
+        "#include \"Object/ObjectFactory.h\"",
         f"#include \"{include_path}\"",
         "",
-        f"void {reflected_type.name}::RegisterProperties(UClass* Class)",
-        "{",
     ]
+
+    class_registration = render_class_registration(reflected_type)
+    if class_registration:
+        lines.append(class_registration.rstrip())
+        lines.append("")
+
+    lines.extend(
+        [
+            f"void {reflected_type.name}::RegisterProperties(UClass* Class)",
+            "{",
+        ]
+    )
 
     for prop in reflected_type.properties:
         lines.append(render_property(prop).rstrip())

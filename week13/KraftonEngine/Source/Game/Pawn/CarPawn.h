@@ -1,7 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/Pawn.h"
 
+#include "Source/Game/Pawn/CarPawn.generated.h"
 class UBoxComponent;
 class UStaticMeshComponent;
 class USphereComponent;
@@ -36,11 +37,11 @@ class UCarDirtComponent;
 // Player 전용(Camera/SpringArm/Gas/visual extras) 을 갖지 않는다.
 // AGameModeCarGame 이 자동 Possess 할 첫 APawn 후보 (bAutoPossessPlayer = true).
 // ============================================================
+UCLASS()
 class ACarPawn : public APawn
 {
 public:
-	DECLARE_CLASS(ACarPawn, APawn)
-
+	GENERATED_BODY()
 	ACarPawn() = default;
 	~ACarPawn() override = default;
 

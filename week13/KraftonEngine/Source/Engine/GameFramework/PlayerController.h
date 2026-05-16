@@ -3,6 +3,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/CameraTypes.h"
 
+#include "Source/Engine/GameFramework/PlayerController.generated.h"
 class APawn;
 class APlayerCameraManager;
 
@@ -12,11 +13,11 @@ class APlayerCameraManager;
 // Pawn은 "조종 가능한 액터"이고, PlayerController는 "조종자".
 // World당 (지금은) 1개만 spawn되며 GameMode가 spawn/관리.
 // ============================================================
+UCLASS()
 class APlayerController : public AActor
 {
 public:
-	DECLARE_CLASS(APlayerController, AActor)
-
+	GENERATED_BODY()
 	APlayerController() = default;
 	~APlayerController() override = default;
 

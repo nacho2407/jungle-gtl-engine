@@ -1,4 +1,4 @@
-﻿#include "PlayerCameraManager.h"
+#include "PlayerCameraManager.h"
 #include "CameraShake/CameraShakeAsset.h"
 #include "CameraShake/CameraShakeManager.h"
 #include "Component/CameraComponent.h"
@@ -11,8 +11,6 @@
 #include "Object/ObjectFactory.h"
 #include "Object/UClass.h"
 #include <algorithm>
-
-IMPLEMENT_CLASS(APlayerCameraManager, AActor)
 
 void APlayerCameraManager::RegisterCamera(UCameraComponent* Camera)
 {

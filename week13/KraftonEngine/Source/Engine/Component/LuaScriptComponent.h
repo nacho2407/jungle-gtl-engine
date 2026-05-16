@@ -1,19 +1,19 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/ActorComponent.h"
 #include "Core/Delegate.h"
 #include "Math/Vector.h"
+#include "Source/Engine/Component/LuaScriptComponent.generated.h"
 #include <sol/sol.hpp>
 
 class UPrimitiveComponent;
 struct FHitResult;
 
+UCLASS()
 class ULuaScriptComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(ULuaScriptComponent, UActorComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	ULuaScriptComponent();
 	~ULuaScriptComponent();
 

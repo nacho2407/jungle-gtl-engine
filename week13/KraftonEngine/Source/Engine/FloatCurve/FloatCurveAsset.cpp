@@ -1,4 +1,4 @@
-﻿#include "FloatCurveAsset.h"
+#include "FloatCurveAsset.h"
 #include "Platform/Paths.h"
 #include "Object/ObjectFactory.h"
 
@@ -6,8 +6,6 @@
 
 #include <fstream>
 #include <sstream>
-
-IMPLEMENT_CLASS(UFloatCurveAsset, UObject)
 
 UFloatCurveAsset::~UFloatCurveAsset()
 {

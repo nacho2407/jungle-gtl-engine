@@ -1,12 +1,10 @@
-﻿#include "SequenceCameraShake.h"
+#include "SequenceCameraShake.h"
 
 #include "CameraShake/CameraShakeAsset.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/PlayerCameraManager.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
-
-IMPLEMENT_CLASS(USequenceCameraShake, UCameraShakeBase)
 
 namespace
 {

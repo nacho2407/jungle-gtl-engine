@@ -6,8 +6,6 @@
 #include "Math/Matrix.h"
 #include "Math/Quat.h"
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(URotatingMovementComponent, UMovementComponent)
-
 void URotatingMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
 	UMovementComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);

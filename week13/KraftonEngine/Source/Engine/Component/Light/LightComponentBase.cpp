@@ -1,11 +1,10 @@
-﻿#include "LightComponentBase.h"
+#include "LightComponentBase.h"
 #include "Serialization/Archive.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "Component/BillboardComponent.h"
 #include "Materials/MaterialManager.h"
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(ULightComponentBase, USceneComponent)
 HIDE_FROM_COMPONENT_LIST(ULightComponentBase)
 
 UBillboardComponent* ULightComponentBase::EnsureEditorBillboard()

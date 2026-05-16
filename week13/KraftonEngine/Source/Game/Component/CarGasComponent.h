@@ -2,12 +2,14 @@
 
 #include "Component/ActorComponent.h"
 
+
+#include "Source/Game/Component/CarGasComponent.generated.h"
+
+UCLASS()
 class UCarGasComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(UCarGasComponent, UActorComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	UCarGasComponent() = default;
 	~UCarGasComponent() override = default;
 

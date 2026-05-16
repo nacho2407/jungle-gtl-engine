@@ -7,8 +7,6 @@
 #include "Render/Types/MinimalViewInfo.h"
 #include <cmath>
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(UCameraComponent, USceneComponent)
-
 void UCameraComponent::BeginPlay()
 {
 	Super::BeginPlay();

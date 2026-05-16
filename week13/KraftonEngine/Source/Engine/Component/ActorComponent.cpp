@@ -1,9 +1,8 @@
-﻿#include "ActorComponent.h"
+#include "ActorComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(UActorComponent, UObject)
 HIDE_FROM_COMPONENT_LIST(UActorComponent)
 
 void UActorComponent::BeginPlay()

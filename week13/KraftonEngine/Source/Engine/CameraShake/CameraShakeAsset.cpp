@@ -1,4 +1,4 @@
-﻿#include "CameraShakeAsset.h"
+#include "CameraShakeAsset.h"
 #include "Object/ObjectFactory.h"
 #include "Platform/Paths.h"
 #include "Serialization/Archive.h"
@@ -7,8 +7,6 @@
 #include <sstream>
 
 #include <SimpleJSON/json.hpp>
-
-IMPLEMENT_CLASS(UCameraShakeAsset, UObject)
 
 static FVector ReadVector(json::JSON& Object, const FString& Key, const FVector& DefaultValue)
 {

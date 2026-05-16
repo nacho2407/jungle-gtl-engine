@@ -1,9 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "BillboardComponent.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 
+#include "Source/Engine/Component/TextRenderComponent.generated.h"
 // 텍스트 렌더링 공간 모드
 enum class ETextRenderSpace : int32
 {
@@ -34,12 +35,11 @@ inline const char* GTextVAlignNames[] = { "Top", "Center", "Bottom" };
 // 텍스트를 월드 공간에 빌보드로 렌더링하는 컴포넌트.
 // PrimitiveComponent를 상속받아 RenderCollector에 자동으로 감지됩니다.
 // MeshBuffer를 사용하지 않으며, FFontGeometry가 드로우콜을 처리합니다.
+UCLASS()
 class UTextRenderComponent : public UBillboardComponent
 {
 public:
-	DECLARE_CLASS(UTextRenderComponent, UPrimitiveComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	UTextRenderComponent();
 	~UTextRenderComponent() override = default;
 

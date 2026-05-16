@@ -1,10 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/SceneComponent.h"
 #include "Core/CollisionTypes.h"
 #include "Math/Vector.h"
 #include "Math/Quat.h"
 
+#include "Source/Engine/Component/SpringArmComponent.generated.h"
 // ============================================================
 // USpringArmComponent — 부착 액터 뒤를 부드럽게 따라가는 카메라 부착점.
 //
@@ -17,12 +18,11 @@
 // 충돌 인지(raycast) 는 별도 PR 에서 추가 — 현재는 lag 만 처리.
 // UE: USpringArmComponent (간소화)
 // ============================================================
+UCLASS()
 class USpringArmComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(USpringArmComponent, USceneComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	USpringArmComponent() = default;
 	~USpringArmComponent() override = default;
 

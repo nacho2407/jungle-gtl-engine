@@ -1,15 +1,18 @@
-﻿#pragma once
+#pragma once
 
 #include "Engine/Runtime/Engine.h"
 #include "Mesh/ObjImporter.h"
 #include "ObjViewer/ObjViewerPanel.h"
 #include "ObjViewer/ObjViewerViewportClient.h"
 
+
+#include "Source/ObjViewer/ObjViewerEngine.generated.h"
+
+UCLASS()
 class UObjViewerEngine : public UEngine
 {
 public:
-	DECLARE_CLASS(UObjViewerEngine, UEngine)
-
+	GENERATED_BODY()
 	UObjViewerEngine() = default;
 	~UObjViewerEngine() override = default;
 

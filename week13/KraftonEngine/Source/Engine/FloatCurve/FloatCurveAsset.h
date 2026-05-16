@@ -1,14 +1,15 @@
-﻿#pragma once
+#pragma once
 #include "Object/Object.h"
 #include "Math/FloatCurve.h"
 
+#include "Source/Engine/FloatCurve/FloatCurveAsset.generated.h"
 class FArchive;
 
+UCLASS()
 class UFloatCurveAsset : public UObject
 {
 public:
-	DECLARE_CLASS(UFloatCurveAsset, UObject)
-
+	GENERATED_BODY()
 	UFloatCurveAsset() = default;
 	~UFloatCurveAsset() override;
 

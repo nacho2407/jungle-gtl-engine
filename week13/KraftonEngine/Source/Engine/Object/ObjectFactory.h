@@ -4,30 +4,7 @@
 #include "Object/Object.h"
 #include "Core/Singleton.h"
 
-#define REGISTER_FACTORY(TypeName)															\
-namespace {																					\
-	 struct TypeName##_RegisterFactory {													\
-		TypeName##_RegisterFactory() {														\
-				FObjectFactory::Get().Register(												\
-					#TypeName,																\
-					[](UObject* InOuter)->UObject* {										\
-						return UObjectManager::Get().CreateObject<TypeName>(InOuter);		\
-					}																		\
-				);																			\
-		}																					\
-	};																						\
-TypeName##_RegisterFactory G##TypeName##_RegisterFactory;}
-
-#define IMPLEMENT_CLASS(ClassName, ParentClass)                        \
-    DEFINE_CLASS(ClassName, ParentClass)                               \
-    REGISTER_FACTORY(ClassName)
-
-#define IMPLEMENT_CLASS_WITH_PROPERTIES(ClassName, ParentClass)         \
-    DEFINE_CLASS(ClassName, ParentClass)                               \
-    REGISTER_FACTORY(ClassName)                                        \
-    REGISTER_CLASS_PROPERTIES(ClassName)
-
-// Add Component 목록에서만 숨길 때 사용한다. 클래스 RTTI/팩토리 등록은 IMPLEMENT_CLASS가 담당한다.
+// Add Component 목록에서만 숨길 때 사용한다.
 #define HIDE_FROM_COMPONENT_LIST(ClassName)                            \
 namespace {                                                            \
     struct ClassName##_HideFromComponentList {                         \

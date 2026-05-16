@@ -1,4 +1,4 @@
-﻿#include "Component/StaticMeshComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include <algorithm>
 #include <cmath>
 #include "Object/ObjectFactory.h"
@@ -12,8 +12,6 @@
 #include "Render/Proxy/StaticMeshSceneProxy.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS_WITH_PROPERTIES(UStaticMeshComponent, UMeshComponent)
 
 FPrimitiveSceneProxy* UStaticMeshComponent::CreateSceneProxy()
 {

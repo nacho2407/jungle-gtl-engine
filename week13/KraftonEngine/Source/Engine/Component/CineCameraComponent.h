@@ -1,8 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include "CameraComponent.h"
 #include "Core/EngineTypes.h"
 
+#include "Source/Engine/Component/CineCameraComponent.generated.h"
 struct FCineLetterboxSettings
 {
 	bool bEnabled = false;
@@ -11,12 +12,11 @@ struct FCineLetterboxSettings
 	FLinearColor Color = FLinearColor::Black();
 };
 
+UCLASS()
 class UCineCameraComponent : public UCameraComponent
 {
 public:
-	DECLARE_CLASS(UCineCameraComponent, UCameraComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	UCineCameraComponent() = default;
 
 	void SetLetterboxEnabled(bool bEnabled) { Letterbox.bEnabled = bEnabled; }

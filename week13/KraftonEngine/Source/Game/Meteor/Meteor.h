@@ -1,7 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/AActor.h"
 
+#include "Source/Game/Meteor/Meteor.generated.h"
 class USphereComponent;
 class UStaticMeshComponent;
 class UPrimitiveComponent;
@@ -21,11 +22,11 @@ struct FHitResult;
 //
 // MeteorSpawner.lua가 World.SpawnActor("AMeteor")로 생성.
 // ============================================================
+UCLASS()
 class AMeteor : public AActor
 {
 public:
-	DECLARE_CLASS(AMeteor, AActor)
-
+	GENERATED_BODY()
 	AMeteor() = default;
 	~AMeteor() override = default;
 

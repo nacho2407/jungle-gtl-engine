@@ -1,14 +1,16 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Epic Games, Inc. All Rights Reserved.
 #pragma once
 
 #include "ShapeComponent.h"
 
+
+#include "Source/Engine/Component/SphereComponent.generated.h"
+
+UCLASS()
 class USphereComponent : public UShapeComponent
 {
 public:
-	DECLARE_CLASS(USphereComponent, UShapeComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	void SetSphereRadius(float InRadius);
 	float GetScaledSphereRadius() const;
 	float GetUnscaledSphereRadius() const { return SphereRadius; }

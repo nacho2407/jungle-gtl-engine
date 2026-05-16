@@ -1,12 +1,15 @@
-﻿#pragma once
+#pragma once
 
 #include "Engine/Runtime/Engine.h"
 
+
+#include "Source/Game/GameEngine.generated.h"
+
+UCLASS()
 class UGameEngine : public UEngine
 {
 public:
-	DECLARE_CLASS(UGameEngine, UEngine)
-
+	GENERATED_BODY()
 	UGameEngine() = default;
 	~UGameEngine() override = default;
 

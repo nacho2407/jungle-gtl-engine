@@ -22,7 +22,6 @@ UCLASS()
 class UCameraComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(UCameraComponent, USceneComponent)
 	GENERATED_BODY()
 
 	UCameraComponent() = default;

@@ -6,8 +6,6 @@
 #include <algorithm>
 #include <cstring>
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(UCarGasComponent, UActorComponent)
-
 void UCarGasComponent::Serialize(FArchive& Ar)
 {
 	UActorComponent::Serialize(Ar);

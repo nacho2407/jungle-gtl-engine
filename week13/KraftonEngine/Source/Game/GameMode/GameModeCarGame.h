@@ -1,9 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/GameModeBase.h"
 #include "Game/GameState/GameStateCarGame.h"
 #include "Core/CoreTypes.h"
 
+#include "Source/Game/GameMode/GameModeCarGame.generated.h"
 class APawn;
 class ATriggerVolumeBase;
 class APoliceCar;
@@ -23,11 +24,11 @@ class FName;
 //
 // "최소 1회 클리어" 비트마스크는 ClearedPhasesMask 에 누적 — 모두 켜지면 Finished.
 // ============================================================
+UCLASS()
 class AGameModeCarGame : public AGameModeBase
 {
 public:
-	DECLARE_CLASS(AGameModeCarGame, AGameModeBase)
-
+	GENERATED_BODY()
 	AGameModeCarGame();
 	~AGameModeCarGame() override = default;
 

@@ -1,15 +1,17 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/AActor.h"
 
+#include "Source/Engine/GameFramework/StaticMeshActor.generated.h"
 class UStaticMeshComponent;
 class UTextRenderComponent;
 class USubUVComponent;
 
+UCLASS()
 class AStaticMeshActor : public AActor
 {
 public:
-	DECLARE_CLASS(AStaticMeshActor, AActor)
+	GENERATED_BODY()
 	AStaticMeshActor() {}
 
 	void BeginPlay() override;

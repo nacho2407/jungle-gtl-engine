@@ -1,10 +1,8 @@
-﻿#include "InterpToMovementComponent.h"
+#include "InterpToMovementComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Math/Quat.h"
 #include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS_WITH_PROPERTIES(UInterpToMovementComponent, UMovementComponent)
 
 namespace {
 	// Returns normalized direction from A to B

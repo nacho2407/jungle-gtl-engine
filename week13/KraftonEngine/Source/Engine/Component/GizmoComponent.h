@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "PrimitiveComponent.h"
 #include "Core/CoreTypes.h"
@@ -7,6 +7,7 @@
 #include "Gizmo/GizmoTransformTarget.h"
 #include "Gizmo/ComponentGizmoTarget.h"
 
+#include "Source/Engine/Component/GizmoComponent.generated.h"
 class AActor;
 class FPrimitiveSceneProxy;
 class FScene;
@@ -19,10 +20,11 @@ enum EGizmoMode
 	End
 };
 
+UCLASS()
 class UGizmoComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UGizmoComponent, UPrimitiveComponent)
+	GENERATED_BODY()
 	UGizmoComponent();
 
 	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
