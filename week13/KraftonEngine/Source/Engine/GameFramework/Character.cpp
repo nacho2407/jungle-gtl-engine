@@ -100,18 +100,24 @@ void ACharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!bAutoInputMouseLook) return;
+	if (bAutoInputMouseLook)
+	{
+		const InputSystem& In = InputSystem::Get();
+		const int DX = In.MouseDeltaX();
+		const int DY = In.MouseDeltaY();
+		if (DX != 0 || DY != 0)
+		{
+			// APawn::ControlRotation 누적. SpringArm 이 bUsePawnControlRotation 통해 이걸 사용.
+			// capsule 회전은 옵션 (bUseControllerRotationYaw 등) — 아래 ApplyControllerRotationToRoot 가 처리.
+			FRotator Rot = GetControlRotation();
+			Rot.Yaw   += static_cast<float>(DX) * MouseSensitivity;
+			Rot.Pitch += static_cast<float>(DY) * MouseSensitivity;
+			Rot.Pitch  = std::clamp(Rot.Pitch, MinCameraPitch, MaxCameraPitch);
+			SetControlRotation(Rot);
+		}
+	}
 
-	const InputSystem& In = InputSystem::Get();
-	const int DX = In.MouseDeltaX();
-	const int DY = In.MouseDeltaY();
-	if (DX == 0 && DY == 0) return;
-
-	// APawn::ControlRotation 누적. SpringArm 이 bUsePawnControlRotation 통해 이걸 사용.
-	// capsule 회전은 안 건드림 — mesh facing 은 그대로, 카메라만 회전.
-	FRotator Rot = GetControlRotation();
-	Rot.Yaw   += static_cast<float>(DX) * MouseSensitivity;
-	Rot.Pitch += static_cast<float>(DY) * MouseSensitivity;   // mouse 아래 = 카메라 위 (UE 기본)
-	Rot.Pitch  = std::clamp(Rot.Pitch, MinCameraPitch, MaxCameraPitch);
-	SetControlRotation(Rot);
+	// 같은 frame 안 ControlRotation 변경을 capsule (RootComponent) 에 즉시 반영 — 1 frame 지연 없음.
+	// flag 가 모두 false 면 no-op. true 면 mesh 가 마우스 따라 즉시 회전 (ThirdPerson 슈터 패턴).
+	ApplyControllerRotationToRoot();
 }

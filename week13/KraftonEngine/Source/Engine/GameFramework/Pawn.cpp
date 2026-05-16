@@ -3,6 +3,7 @@
 #include "GameFramework/PlayerCameraManager.h"
 #include "Component/CameraComponent.h"
 #include "Component/InputComponent.h"
+#include "Component/SceneComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Serialization/Archive.h"
 
@@ -54,17 +55,31 @@ void APawn::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	Super::GetEditableProperties(OutProps);
 
-	// Actor-level (컴포넌트 외) Pawn 멤버 — GameMode 의 AutoPossessFirstPawn 후보 여부.
-	FPropertyDescriptor P;
-	P.Name     = "Auto Possess Player";
-	P.Type     = EPropertyType::Bool;
-	P.Category = "Pawn";
-	P.ValuePtr = &bAutoPossessPlayer;
-	OutProps.push_back(P);
+	OutProps.push_back({ "Auto Possess Player",          EPropertyType::Bool, "Pawn", &bAutoPossessPlayer            });
+	OutProps.push_back({ "Use Controller Rotation Yaw",  EPropertyType::Bool, "Pawn", &bUseControllerRotationYaw     });
+	OutProps.push_back({ "Use Controller Rotation Pitch",EPropertyType::Bool, "Pawn", &bUseControllerRotationPitch   });
+	OutProps.push_back({ "Use Controller Rotation Roll", EPropertyType::Bool, "Pawn", &bUseControllerRotationRoll    });
 }
 
 void APawn::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
 	Ar << bAutoPossessPlayer;
+	Ar << bUseControllerRotationPitch;
+	Ar << bUseControllerRotationYaw;
+	Ar << bUseControllerRotationRoll;
+}
+
+void APawn::ApplyControllerRotationToRoot()
+{
+	if (!bUseControllerRotationPitch && !bUseControllerRotationYaw && !bUseControllerRotationRoll) return;
+
+	USceneComponent* Root = GetRootComponent();
+	if (!Root) return;
+
+	FRotator R = Root->GetRelativeRotation();
+	if (bUseControllerRotationYaw)   R.Yaw   = ControlRotation.Yaw;
+	if (bUseControllerRotationPitch) R.Pitch = ControlRotation.Pitch;
+	if (bUseControllerRotationRoll)  R.Roll  = ControlRotation.Roll;
+	Root->SetRelativeRotation(R);
 }

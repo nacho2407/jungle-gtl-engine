@@ -56,8 +56,20 @@ public:
 	void             AddYawInput  (float Value) { ControlRotation.Yaw   += Value; }
 	void             AddPitchInput(float Value) { ControlRotation.Pitch += Value; }
 
+	// RootComponent (Character 의 경우 Capsule) 의 rotation 을 ControlRotation 의 해당 axis 로
+	// 즉시 set. ACharacter::Tick 의 mouse handling 직후 호출 — 1 frame 지연 없이 반영.
+	void             ApplyControllerRotationToRoot();
+
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void Serialize(FArchive& Ar) override;
+
+	// UE 패턴 — RootComponent rotation 을 매 frame ControlRotation 의 해당 axis 로 즉시 동기화.
+	// true 면 마우스 따라 mesh 가 즉시 회전 (ThirdPerson 슈터 패턴).
+	// CharacterMovement 의 bOrientRotationToMovement 와 동시 true 면 Movement 가 마지막 우선 —
+	// 보통 둘 중 하나만 켜는 것이 일반적.
+	bool bUseControllerRotationPitch = false;
+	bool bUseControllerRotationYaw   = false;
+	bool bUseControllerRotationRoll  = false;
 
 protected:
 	APlayerController* Controller = nullptr;  // 직렬화 제외 — 런타임에 PC가 세팅
