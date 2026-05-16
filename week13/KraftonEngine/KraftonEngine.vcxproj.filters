@@ -560,6 +560,12 @@
     <ClCompile Include="Source\Editor\UI\NotificationToast.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\AnimationTimelinePanel.cpp">
+      <Filter>Source\Editor\UI\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\AnimationTransportBar.cpp">
+      <Filter>Source\Editor\UI\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClCompile>
@@ -1411,6 +1417,12 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\NotificationToast.h">
       <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\AnimationTimelinePanel.h">
+      <Filter>Source\Editor\UI\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\AnimationTransportBar.h">
+      <Filter>Source\Editor\UI\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h">
       <Filter>Source\Editor\UI\Asset</Filter>
