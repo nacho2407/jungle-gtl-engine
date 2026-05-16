@@ -8,6 +8,7 @@
 #include "Animation/AnimationAsset.h"
 #include "Animation/AnimationRuntime.h"
 #include "Core/Logging/Log.h"
+#include "Core/Logging/Stats.h"
 #include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
@@ -24,6 +25,8 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 
     if (AnimationMode != EAnimationMode::None && AnimInstance)
     {
+        SCOPE_STAT("Anim.ComponentTick");
+
         AnimInstance->NativeUpdateAnimation(DeltaTime);
 
         TArray<FTransform> LocalPose;
@@ -74,6 +77,8 @@ UAnimInstance* USkeletalMeshComponent::GetAnimInstance() const
 
 bool USkeletalMeshComponent::ApplyAnimationLocalPose(const TArray<FTransform>& LocalPose)
 {
+    SCOPE_STAT("Anim.ApplyPoseToComponent");
+
     if (!HasValidMesh())
     {
         return false;

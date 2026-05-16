@@ -1,8 +1,9 @@
-#include "Animation/AnimSingleNodeInstance.h"
+﻿#include "Animation/AnimSingleNodeInstance.h"
 
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimationRuntime.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Core/Logging/Stats.h"
 #include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(UAnimSingleNodeInstance, UAnimInstance)
@@ -104,6 +105,8 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 bool UAnimSingleNodeInstance::EvaluateAnimation(TArray<FTransform>& OutLocalPose)
 {
+    SCOPE_STAT("Anim.EvaluatePose");
+
     USkeletalMeshComponent* Component = GetSkelMeshComponent();
     const USkeletalMesh* Mesh = Component ? Component->GetSkeletalMesh() : nullptr;
 
@@ -116,6 +119,7 @@ bool UAnimSingleNodeInstance::EvaluateAnimation(TArray<FTransform>& OutLocalPose
         }
     }
 
+	// debug fallback
     if (FAnimationRuntime::BuildDebugOscillatingLocalPose(Mesh, CurrentTime, OutLocalPose))
     {
         return true;
