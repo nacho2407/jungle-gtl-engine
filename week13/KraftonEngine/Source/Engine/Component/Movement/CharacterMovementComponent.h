@@ -1,16 +1,25 @@
 ﻿#pragma once
 
 #include "MovementComponent.h"
+#include "Core/CollisionTypes.h"   // FHitResult
 #include "Math/Vector.h"
 
-// UE 의 UCharacterMovementComponent 를 minimal subset 으로 흉내 — 평면 위 walking 만.
-//   - Controller 가 매 frame AddInputVector 로 입력 누적.
-//   - TickComponent 가 입력 → acceleration → velocity (MaxWalkSpeed 클램프) → UpdatedComponent world offset.
-//   - 입력 없으면 BrakingFriction 으로 감속.
-//   - Z=0 평지 가정 — gravity/jump/floor sweep 은 후속 phase.
+// UE 의 EMovementMode minimal subset — 후속 단계에서 NavWalking/Swimming 등 확장.
+enum class EMovementMode : uint8
+{
+	Walking,    // floor 위 — 평면 이동 + floor stick, Velocity.Z = 0.
+	Falling,    // 공중 — gravity 적용, air control 만.
+};
+
+// UE 의 UCharacterMovementComponent minimal:
+//   - Walking: 입력 → velocity (XY clamp by MaxWalkSpeed) → floor stick (raycast 로 capsule Z = floor + HalfHeight).
+//     발 아래 floor 사라지면 자동 Falling.
+//   - Falling: gravity 적용 (Velocity.Z -= Gravity*dt), air control (입력은 그대로 적용),
+//     착지 시 자동 Walking + Velocity.Z = 0.
+//   - Jump: 후속 phase (F-5).
 //
-// Editor-set: MaxWalkSpeed / MaxAcceleration / BrakingFriction.
-// 런타임 read: GetVelocity / GetSpeed — AnimInstance 가 Speed 기반 FSM 전이.
+// Floor detection: IPhysicsScene::Raycast — capsule 중심에서 down 으로 (HalfHeight + Probe).
+// Owner 는 ignore 해서 자기 capsule 안 잡힘. Wall sweep 은 없으므로 벽 통과 가능 (minimal).
 class UCharacterMovementComponent : public UMovementComponent
 {
 public:
@@ -26,17 +35,37 @@ public:
 	const FVector& GetVelocity() const { return Velocity; }
 	float          GetSpeed()    const { return Velocity.Length(); }
 
+	EMovementMode  GetMovementMode() const { return MovementMode; }
+	void           SetMovementMode(EMovementMode NewMode);
+	bool           IsWalking() const { return MovementMode == EMovementMode::Walking; }
+	bool           IsFalling() const { return MovementMode == EMovementMode::Falling; }
+
 	// UMovementComponent:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void Serialize(FArchive& Ar) override;
 
 	// Editor-set 파라미터.
-	float MaxWalkSpeed    = 6.0f;     // m/s — Idle/Walk threshold 기준 정도
-	float MaxAcceleration = 20.0f;    // m/s^2
-	float BrakingFriction = 8.0f;     // 입력 없을 때 감속률 (m/s^2)
+	float MaxWalkSpeed       = 6.0f;     // m/s — Idle/Walk threshold 기준 정도
+	float MaxAcceleration    = 20.0f;    // m/s^2
+	float BrakingFriction    = 8.0f;     // 입력 없을 때 감속률 (m/s^2). Walking 만 적용.
+	float Gravity            = 9.8f;     // m/s^2 (positive — 적용 시 Velocity.Z -= Gravity*dt)
+	float FloorProbeDistance = 0.1f;     // capsule HalfHeight 아래 추가 probe 거리
 
 protected:
-	FVector AccumulatedInput = FVector(0.0f, 0.0f, 0.0f);
-	FVector Velocity         = FVector(0.0f, 0.0f, 0.0f);
+	// XY 입력을 velocity 에 반영 + Walking 시 braking. 양 mode 공통 호출.
+	void  ApplyInputToVelocity(const FVector& Input, float DeltaTime);
+
+	// Mode 별 Z 처리 + 위치 갱신.
+	void  TickWalking(float DeltaTime);
+	void  TickFalling(float DeltaTime);
+
+	// capsule 중심에서 down raycast — bHit + WorldHitLocation 사용.
+	bool  TraceFloor(FHitResult& OutHit) const;
+	float GetCapsuleHalfHeight() const;
+
+	FVector       AccumulatedInput = FVector(0.0f, 0.0f, 0.0f);
+	FVector       Velocity         = FVector(0.0f, 0.0f, 0.0f);
+	// 시작 시 floor 잡힐 때까지 Falling — 첫 frame TickFalling 이 raycast 후 자동 Walking 전환.
+	EMovementMode MovementMode     = EMovementMode::Falling;
 };
