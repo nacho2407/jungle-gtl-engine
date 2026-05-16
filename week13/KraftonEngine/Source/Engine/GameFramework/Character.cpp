@@ -48,6 +48,14 @@ void ACharacter::AddMovementInput(const FVector& WorldDirection, float ScaleValu
 	}
 }
 
+void ACharacter::Jump()
+{
+	if (CharacterMovement)
+	{
+		CharacterMovement->Jump();
+	}
+}
+
 void ACharacter::SetupInputComponent()
 {
 	Super::SetupInputComponent();
@@ -67,5 +75,12 @@ void ACharacter::SetupInputComponent()
 	InputComponent->BindAxis("MoveRight", [this](float Value)
 	{
 		if (Value != 0.0f) AddMovementInput(FVector(0.0f, 1.0f, 0.0f), Value);
+	});
+
+	// Space = Jump (VK_SPACE = 0x20). Walking 중에만 effective (CharacterMovement::Jump 가 guard).
+	InputComponent->AddActionMapping("Jump", 0x20);
+	InputComponent->BindAction("Jump", EInputEvent::Pressed, [this]()
+	{
+		Jump();
 	});
 }

@@ -40,6 +40,10 @@ public:
 	bool           IsWalking() const { return MovementMode == EMovementMode::Walking; }
 	bool           IsFalling() const { return MovementMode == EMovementMode::Falling; }
 
+	// Walking 중이면 다음 Tick 에 Velocity.Z = JumpZVelocity, Mode → Falling. 비-Walking 이면 무시.
+	// edge-triggered — input 측에서 Pressed 마다 호출.
+	void           Jump();
+
 	// UMovementComponent:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
@@ -51,6 +55,7 @@ public:
 	float BrakingFriction    = 8.0f;     // 입력 없을 때 감속률 (m/s^2). Walking 만 적용.
 	float Gravity            = 9.8f;     // m/s^2 (positive — 적용 시 Velocity.Z -= Gravity*dt)
 	float FloorProbeDistance = 0.1f;     // capsule HalfHeight 아래 추가 probe 거리
+	float JumpZVelocity      = 6.0f;     // m/s — Jump 시 Velocity.Z 에 박는 값
 
 protected:
 	// XY 입력을 velocity 에 반영 + Walking 시 braking. 양 mode 공통 호출.
@@ -68,4 +73,7 @@ protected:
 	FVector       Velocity         = FVector(0.0f, 0.0f, 0.0f);
 	// 시작 시 floor 잡힐 때까지 Falling — 첫 frame TickFalling 이 raycast 후 자동 Walking 전환.
 	EMovementMode MovementMode     = EMovementMode::Falling;
+
+	// Jump() 가 set, TickWalking 이 consume. edge-triggered 라 동일 프레임 다중 호출도 1회 점프.
+	bool          bWantsJump       = false;
 };

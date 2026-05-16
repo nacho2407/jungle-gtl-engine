@@ -31,6 +31,13 @@ void UCharacterMovementComponent::SetMovementMode(EMovementMode NewMode)
 	// 추후 OnMovementModeChanged delegate 위치.
 }
 
+void UCharacterMovementComponent::Jump()
+{
+	// Walking 중에만 점프 허용 — 공중 다단 점프 막음. (필요 시 자식 override.)
+	if (MovementMode != EMovementMode::Walking) return;
+	bWantsJump = true;
+}
+
 void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -95,6 +102,17 @@ void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, flo
 void UCharacterMovementComponent::TickWalking(float DeltaTime)
 {
 	USceneComponent* Updated = GetUpdatedComponent();
+
+	// Jump 의도가 있으면 — Velocity.Z 박고 즉시 Falling 으로 전환. 이 frame 의 XY 는 그대로 진행.
+	if (bWantsJump)
+	{
+		bWantsJump = false;
+		Velocity.Z = JumpZVelocity;
+		SetMovementMode(EMovementMode::Falling);
+		// XY 이동은 Falling 분기로 위임 — 한 frame 안 mode 전환이라 즉시 falling tick.
+		TickFalling(DeltaTime);
+		return;
+	}
 
 	// Walking 중 Z velocity 는 0 — floor stick 으로만 Z 결정.
 	Velocity.Z = 0.0f;
@@ -228,6 +246,16 @@ void UCharacterMovementComponent::GetEditableProperties(TArray<FPropertyDescript
 	ProbeProp.Max      = 5.0f;
 	ProbeProp.Speed    = 0.01f;
 	OutProps.push_back(ProbeProp);
+
+	FPropertyDescriptor JumpProp;
+	JumpProp.Name     = "Jump Z Velocity";
+	JumpProp.Type     = EPropertyType::Float;
+	JumpProp.Category = Category;
+	JumpProp.ValuePtr = &JumpZVelocity;
+	JumpProp.Min      = 0.0f;
+	JumpProp.Max      = 50.0f;
+	JumpProp.Speed    = 0.1f;
+	OutProps.push_back(JumpProp);
 }
 
 void UCharacterMovementComponent::Serialize(FArchive& Ar)
@@ -238,4 +266,5 @@ void UCharacterMovementComponent::Serialize(FArchive& Ar)
 	Ar << BrakingFriction;
 	Ar << Gravity;
 	Ar << FloorProbeDistance;
+	Ar << JumpZVelocity;
 }

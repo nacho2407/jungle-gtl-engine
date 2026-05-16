@@ -33,15 +33,26 @@ function init(self)
     if USE_MOCK then
         Anim.register_mock_state("Idle", "sway", 1.5, 8.0,  1.0, true)
         Anim.register_mock_state("Walk", "wave", 0.8, 15.0, 1.0, true)
+        -- Jump 상태 — 1회 재생 (Loop=false). Falling 상태와 함께 활성.
+        Anim.register_mock_state("Jump", "wave", 0.5, 30.0, 1.0, false)
     else
         Anim.register_state("Idle", IDLE_PATH, 1.0, true)
         Anim.register_state("Walk", WALK_PATH, 1.0, true)
+        -- 실제 jump anim 있으면 path 지정. 없으면 mock 으로 fallback.
+        Anim.register_state("Jump", WALK_PATH, 1.0, false)
     end
 
     Anim.register_transition("Idle", "Walk",
         function() return self.Speed >  self.SpeedThreshold end, 0.2)
     Anim.register_transition("Walk", "Idle",
         function() return self.Speed <= self.SpeedThreshold end, 0.2)
+
+    -- AnyState → Jump — Falling 시작하는 순간 (지상 이탈 + 점프 둘 다 포함). 빠른 blend.
+    Anim.register_transition("AnyState", "Jump",
+        function() return Anim.is_owner_falling() end, 0.1)
+    -- Jump → Idle — 착지 (Walking 복귀). 다음 frame 의 Idle↔Walk 전이가 자연스럽게 잡음.
+    Anim.register_transition("Jump", "Idle",
+        function() return not Anim.is_owner_falling() end, 0.2)
 
     Anim.set_initial_state("Idle")
 end
