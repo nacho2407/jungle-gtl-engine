@@ -40,10 +40,17 @@ enum class EVSMBlurPass : uint32
 	Horizontal,
 	Vertical,
 };
+
 enum class EShadowFilter : uint32
 {
     PCF = 0,
     VSM = 1,
+};
+
+enum class ESkinningMode : uint32
+{
+	CPU,
+	GPU,
 };
 
 class FShaderHelper

@@ -27,8 +27,7 @@ public:
                       FMeshBufferManager& MeshBufferManager, bool bIsActiveOperation) const;
     void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus, bool bOrthographic) const;
 
-    // 본 부모-자식 라인을 EditorLineBatcher용 DebugLine 커맨드로 발행. SkComp 본 자세가
-    // 최신화되어 있어야 함 — 호출 측이 EnsureSkinningUpdated 사전 보장.
+    // 본 부모-자식 라인을 EditorLineBatcher용 DebugLine 커맨드로 발행.
     void CollectSkeletonBones(USkeletalMeshComponent* SkComp, FRenderBus& RenderBus) const;
 
     // 선택된 본 1개만 발행. ParentIdx<0(루트)인 본은 시각화 컨벤션 상 그릴 수 없어 스킵.

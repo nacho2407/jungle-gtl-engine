@@ -1,4 +1,4 @@
-#include "EditorOverlayCollector.h"
+﻿#include "EditorOverlayCollector.h"
 
 #include "Component/BillboardComponent.h"
 #include "Component/DecalComponent.h"
@@ -179,6 +179,7 @@ namespace
 void FEditorOverlayCollector::CollectSkeletonBones(USkeletalMeshComponent* SkComp, FRenderBus& RenderBus) const
 {
     if (!SkComp || !SkComp->HasValidMesh()) return;
+    SkComp->EnsurePoseUpdated();
 
     const USkeletalMesh* Mesh = SkComp->GetSkeletalMesh();
     const TArray<FBoneInfo>& Bones = Mesh->GetBones();
@@ -194,6 +195,7 @@ void FEditorOverlayCollector::CollectSkeletonBones(USkeletalMeshComponent* SkCom
 void FEditorOverlayCollector::CollectSingleBone(USkeletalMeshComponent* SkComp, int32 BoneIndex, FRenderBus& RenderBus) const
 {
     if (!SkComp || !SkComp->HasValidMesh()) return;
+    SkComp->EnsurePoseUpdated();
 
     const USkeletalMesh* Mesh = SkComp->GetSkeletalMesh();
     const TArray<FBoneInfo>& Bones = Mesh->GetBones();
@@ -308,7 +310,7 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
             // 메인 render pass(CollectWorld)가 이 함수 *전*에 같은 프레임에 돌면서
             // skinning + 버퍼 업로드를 이미 끝낸 상태. 여기서는 dirty flag를 소비하지 않고
             // bNeedsUpload=false로 캐시된 버퍼만 가져온다.
-            SkeletalMeshComp->EnsureSkinningUpdated();
+            SkeletalMeshComp->EnsureCPUSkinnedVerticesUpdated();
             MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
                 SkeletalMeshComp->GetUUID(),
                 SkeletalMesh,

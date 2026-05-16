@@ -8,15 +8,12 @@ REGISTER_FACTORY(USkeletalMeshComponent)
 void USkeletalMeshComponent::TickComponent(float DeltaTime)
 {
     USkinnedMeshComponent::TickComponent(DeltaTime);
-
-	// Pose가 바뀐 경우에만 실제 CPU skinning이 수행(dirty flag 이용)
-    EnsureSkinningUpdated();
 }
 
 void USkeletalMeshComponent::ResetToBindPose()
 {
     InitializePoseFromBindPose();
-    MarkSkinningDirty();
+    MarkPoseDirty();
 }
 
 void USkeletalMeshComponent::SetBoneLocalTransform(int32 BoneIndex, const FMatrix& NewLocalTransform)
@@ -27,8 +24,7 @@ void USkeletalMeshComponent::SetBoneLocalTransform(int32 BoneIndex, const FMatri
     }
 
     CurrentLocalPose[BoneIndex] = NewLocalTransform;
-    UpdateCurrentGlobalPose();
-    MarkSkinningDirty();
+    MarkPoseDirty();
 }
 
 const FMatrix& USkeletalMeshComponent::GetBoneLocalTransform(int32 BoneIndex) const
@@ -46,6 +42,8 @@ const FMatrix& USkeletalMeshComponent::GetBoneLocalTransform(int32 BoneIndex) co
 
 FMatrix USkeletalMeshComponent::GetBoneGlobalTransform(int32 BoneIndex) const
 {
+    const_cast<USkeletalMeshComponent*>(this)->EnsurePoseUpdated();
+
     if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(CurrentGlobalPose.size()))
     {
         return FMatrix::Identity;
@@ -77,6 +75,7 @@ void USkeletalMeshComponent::SetBoneGlobalTransform(int32 BoneIndex, const FMatr
     FMatrix ParentGlobalTransform;
     if (ParentIndex >= 0)
     {
+        EnsurePoseUpdated();
         ParentGlobalTransform = CurrentGlobalPose[ParentIndex] * GetWorldMatrix();
     }
     else

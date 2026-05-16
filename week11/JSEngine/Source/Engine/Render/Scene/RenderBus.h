@@ -40,6 +40,8 @@ public:
 	void SetLightCullMode(ELightCullMode InMode) { LightCullMode = InMode; }
 	EShadowFilter GetShadowFilterMode() const { return ShadowFilterMode; }
 	void SetShadowFilterMode(EShadowFilter InMode) { ShadowFilterMode = InMode; }
+	ESkinningMode GetSkinningMode() const { return SkinningMode; }
+	void SetSkinningMode(ESkinningMode InMode) { SkinningMode = InMode; }
 	const FVector& GetWireframeColor() const { return WireframeColor; }
 	void SetWireframeColor(const FVector& InColor) { WireframeColor = InColor; }
 	bool GetFXAAEnabled() const { return bFXAAEnabled; }
@@ -119,6 +121,7 @@ private:
 	EViewMode		ViewMode		= EViewMode::Lit_BlinnPhong;
 	ELightCullMode	LightCullMode	= ELightCullMode::Clustered;
 	EShadowFilter	ShadowFilterMode = EShadowFilter::PCF;
+	ESkinningMode 	SkinningMode = ESkinningMode::CPU;
 	FShowFlags		ShowFlags;
 	FVector			WireframeColor	= FVector(1.0f, 1.0f, 1.0f);
 	bool			bFXAAEnabled	= true;

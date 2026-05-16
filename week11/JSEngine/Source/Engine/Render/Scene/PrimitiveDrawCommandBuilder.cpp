@@ -129,19 +129,28 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
         if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData()) return true;
 
-        SkeletalMeshComp->EnsureSkinningUpdated();
+        SkeletalMeshComp->EnsureCPUSkinnedVerticesUpdated();
         const bool bNeedsUpload = SkeletalMeshComp->ConsumeRenderStateDirty();
 
-        const TArray<FSkeletalMeshVertex>& SkinnedVertices = SkeletalMeshComp->GetSkinnedVertices();
-        const TArray<uint32>& Indices = SkeletalMesh->GetIndices(); // 이건 immutable이라 걍 asset에서 들고와도 댐
-
-        FMeshBuffer* MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
-            SkeletalMeshComp->GetUUID(),
-            SkeletalMesh,
-            SkinnedVertices,
-            Indices,
-            bNeedsUpload);
-        if (!MeshBuffer) return true;
+        FMeshBuffer* MeshBuffer = nullptr;
+        if (RenderBus.GetSkinningMode() == ESkinningMode::CPU)
+        {
+            MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
+                SkeletalMeshComp->GetUUID(),
+                SkeletalMesh,
+                SkeletalMeshComp->GetSkinnedVertices(),
+                SkeletalMesh->GetIndices(),
+                bNeedsUpload);
+        }
+        else if (RenderBus.GetSkinningMode() == ESkinningMode::GPU)
+        {
+            MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
+                SkeletalMeshComp->GetUUID(),
+                SkeletalMesh,
+                SkeletalMesh->GetVertices(),
+                SkeletalMesh->GetIndices(),
+                false);
+        }
 
         const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();
         if (Sections.empty()) // fallback

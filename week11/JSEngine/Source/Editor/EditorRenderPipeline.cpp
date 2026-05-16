@@ -272,6 +272,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     Bus.SetRenderSettings(ViewMode, ShowFlags);
     Bus.SetLightCullMode(SceneView.LightCullMode);
     Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
+    Bus.SetSkinningMode(Settings.SkinningMode);
 	Bus.SetViewportSize(FVector2(static_cast<float>(Rect.Width), static_cast<float>(Rect.Height)));
     Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
     Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
@@ -426,6 +427,7 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
         Bus.SetRenderSettings(ViewMode, ShowFlags);
         Bus.SetLightCullMode(ViewportState ? ViewportState->LightCullMode : ELightCullMode::None);
         Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
+        Bus.SetSkinningMode(Settings.SkinningMode);
         Bus.SetViewportSize(FVector2((float)Rect.Width, (float)Rect.Height));
         Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
         Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
@@ -499,7 +501,7 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
                 {
                     if (USkeletalMeshComponent* SkComp = ViewTarget->GetSkeletalMeshComponent())
                     {
-                        SkComp->EnsureSkinningUpdated();   // 본 자세 최신화 보장
+                        SkComp->EnsurePoseUpdated();
                         if (VFlags.bShowOnlySelectedBone)
                         {
                             const int32 BoneIdx = Viewers[i]->GetSelectedBoneIndex();
