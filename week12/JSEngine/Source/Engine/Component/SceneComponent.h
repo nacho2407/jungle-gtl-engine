@@ -34,7 +34,6 @@ public:
 	virtual bool       HasSocket(const FName& SocketName) const { (void)SocketName; return false; }
 	virtual FTransform GetSocketTransform(const FName& SocketName) const { (void)SocketName; return GetWorldTransform(); }
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	virtual void UpdateWorldMatrix() const;
@@ -76,8 +75,8 @@ public:
 	void SetRelativeRotationQuat(const FQuat& NewRotationQuat);
 
 protected:
-    /** @brief Hook fired when this component becomes transform-dirty. */
-    virtual void OnTransformDirty() {}
+	/** @brief Hook fired when this component becomes transform-dirty. */
+	virtual void OnTransformDirty() {}
 
 	FRotator GetRelativeRotator() const;
 	void SetRelativeRotationRotator(const FRotator& NewRotation);
@@ -91,14 +90,22 @@ protected:
 	TArray<USceneComponent*> ChildComponents;
 
 	// 부모의 socket 이름. FName::None이면 일반 parent-child attach.
+	UPROPERTY(DisplayName = "Attach Socket")
 	FName AttachSocketName;
 
 	mutable FMatrix CachedWorldMatrix{};
 	mutable FTransform CachedWorldTransform{};
 	mutable bool bTransformDirty = true;
 
-	FVector RelativeLocation{};		
-	FVector RelativeRotation{}; // 에디터 표시 및 직렬화용 오일러 캐시 (Roll, Pitch, Yaw 도 단위), 권위 있는 소스는 RelativeRotationQuat입니다.
-	FQuat RelativeRotationQuat = FQuat::Identity; // 권위 있는 회전 저장소 — 짐벌 락 없는 쿼터니언으로 유지합니다.
-	FVector RelativeScale3D{ 1.0f, 1.0f, 1.0f };
+	UPROPERTY(DisplayName = "Location", Speed = 0.1f, Animatable)
+	FVector RelativeLocation = FVector::ZeroVector;
+
+	// 에디터 표시 및 직렬화용 Euler 값입니다. 로드/수정 후 RelativeRotationQuat를 재계산합니다.
+	UPROPERTY(DisplayName = "Rotation", Speed = 0.1f, Animatable)
+	FVector RelativeRotation = FVector::ZeroVector;
+
+	FQuat RelativeRotationQuat = FQuat::Identity; // 런타임 쿼터니언 캐시입니다.
+
+	UPROPERTY(DisplayName = "Scale", Speed = 0.1f, Animatable)
+	FVector RelativeScale3D = FVector(1.0f, 1.0f, 1.0f);
 };

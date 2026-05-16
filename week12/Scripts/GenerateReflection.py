@@ -47,11 +47,17 @@ TYPE_MAP = {
 # 스크립트 위치를 기준으로 Root와 Source 경로를 계산합니다.
 ROOT = Path(__file__).resolve().parent.parent
 ENGINE_SOURCE_DIR = ROOT / 'JSEngine' / 'Source' / 'Engine'
+REFLECTION_OUTPUT_DIR = ROOT / 'JSEngine' / 'Intermediate' / 'Reflection'
 
 
 # 생성되는 gen.cpp에서 원본 헤더를 include할 때 사용할, Engine Source 기준 상대 경로를 만듭니다.
 def make_include_path(header_path):
     return header_path.relative_to(ENGINE_SOURCE_DIR).as_posix()
+
+
+def make_generated_file_path(header_path, class_name):
+    rel_header_path = header_path.relative_to(ENGINE_SOURCE_DIR)
+    return REFLECTION_OUTPUT_DIR / rel_header_path.with_name(f'{class_name}.gen.cpp')
 
 
 # C++ 타입 문자열의 공백, const, 포인터/참조 표기를 정규화해서 TYPE_MAP 또는 enum_map과 비교하기 쉽게 만듭니다.
@@ -360,6 +366,14 @@ def get_metadata_value(metadata, *keys):
         if key in metadata:
             return metadata[key]
     return None
+
+
+# UPROPERTY 메타데이터에서 프로퍼티 사용 플래그를 C++ 식으로 변환합니다.
+def make_property_usage_flags(metadata):
+    flags = ['EPropertyUsageFlags::Editable']
+    if get_metadata_value(metadata, 'Animatable') is not None:
+        flags.append('EPropertyUsageFlags::Animatable')
+    return ' | '.join(flags)
 
 
 # namespace 구분자 등 C++ 식별자에 사용할 수 없는 문자를 _로 바꿔 생성 코드의 심볼 이름으로 쓸 수 있게 합니다.
@@ -694,7 +708,7 @@ def generate_class_file(header_path, class_name, properties, used_enums):
 
     props_str = ',\n                '.join(
         f'{{ "{p["name"]}", {p["property_type"]}, offsetof({class_name}, {p["name"]}), '
-        f'EPropertyUsageFlags::Editable, {p["min"]}, {p["max"]}, {p["speed"]}, '
+        f'{p["usage_flags"]}, {p["min"]}, {p["max"]}, {p["speed"]}, '
         f'{cpp_string_literal(p["display_name"])}, '
         f'{("&" + make_enum_meta_name(p["enum_info"]["qualified_name"])) if p["enum_info"] else "nullptr"} }}'
         for p in properties
@@ -721,7 +735,8 @@ struct Z_Construct_UClass_{class_name} {{
 static FAutoClassRegister Z_Register_{class_name}_Var(Z_Construct_UClass_{class_name}::GetClassMetaData());
 """
 
-    gen_filepath = header_path.with_name(f'{class_name}.gen.cpp')
+    gen_filepath = make_generated_file_path(header_path, class_name)
+    gen_filepath.parent.mkdir(parents=True, exist_ok=True)
     with open(gen_filepath, 'w', encoding='utf-8', newline='\n') as f:
         f.write(gen_code)
     print(f'Generated: {gen_filepath.relative_to(ROOT)}')
@@ -769,6 +784,7 @@ def parse_header_and_generate(header_path, enum_map):
                 'name': var_name,
                 'display_name': get_metadata_value(metadata, 'DisplayName', 'Display'),
                 'property_type': property_type,
+                'usage_flags': make_property_usage_flags(metadata),
                 'min': cpp_float_literal(get_metadata_value(metadata, 'Min', 'ClampMin', 'UIMin'), '0.0f'),
                 'max': cpp_float_literal(get_metadata_value(metadata, 'Max', 'ClampMax', 'UIMax'), '0.0f'),
                 'speed': cpp_float_literal(get_metadata_value(metadata, 'Speed', 'Step'), '0.1f'),

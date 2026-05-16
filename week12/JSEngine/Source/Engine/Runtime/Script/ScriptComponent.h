@@ -21,52 +21,52 @@ struct FLuaScriptLoadResult;
 
 enum class ELuaScriptPropertyType
 {
-    Int,
-    Float,
-    Bool,
-    String,
+	Int,
+	Float,
+	Bool,
+	String,
 	Vector,
 };
 
 struct FLuaScriptProperty
 {
-    FString Name;
-    FString TypeName;
-    EPropertyType Type;
+	FString Name;
+	FString TypeName;
+	EPropertyType Type;
 
-    int IntValue = 0;
-    float FloatValue = 0.0f;
-    bool BoolValue = false;
-    FString StringValue;
-    FVector Vec3Value;
+	int IntValue = 0;
+	float FloatValue = 0.0f;
+	bool BoolValue = false;
+	FString StringValue;
+	FVector Vec3Value;
 
-    FString Category;
+	FString Category;
 
-    bool bHasMin = false;
-    bool bHasMax = false;
-    float Min = 0.0f;
-    float Max = 0.0f;
+	bool bHasMin = false;
+	bool bHasMax = false;
+	float Min = 0.0f;
+	float Max = 0.0f;
 };
 
 class FLuaTimeline
 {
 public:
-    void Play();
-    void Pause();
-    void Stop();
-    void Tick(float DeltaTime);
-    void SetPlayRate(float InPlayRate);
-    void SetLoop(bool bInLoop);
-    float GetCurrentTime() const;
-    void SetCurrentTime(float InCurrentTime);
-    void AddFloatTrack(const FString& TrackName, const sol::table& PlaybackDesc, sol::function OnUpdate);
-    void ClearTracks();
+	void Play();
+	void Pause();
+	void Stop();
+	void Tick(float DeltaTime);
+	void SetPlayRate(float InPlayRate);
+	void SetLoop(bool bInLoop);
+	float GetCurrentTime() const;
+	void SetCurrentTime(float InCurrentTime);
+	void AddFloatTrack(const FString& TrackName, const sol::table& PlaybackDesc, sol::function OnUpdate);
+	void ClearTracks();
 
 private:
-    FCurvePlaybackDesc MakePlaybackDesc(const sol::table& PlaybackDesc) const;
+	FCurvePlaybackDesc MakePlaybackDesc(const sol::table& PlaybackDesc) const;
 
 private:
-    FTimelinePlayer Player;
+	FTimelinePlayer Player;
 };
 
 UCLASS()
@@ -83,110 +83,113 @@ public:
 	void PostEditProperty(const char* PropertyName) override;
 
 	void SetScriptName(const FString& InScriptName);
-    bool RegisterScript();
-    void UnregisterScript();
+	bool RegisterScript();
+	void UnregisterScript();
 
-    bool LoadScript();
-    bool HotReloadScript();
-    void ClearScript();
-    void ReleaseLuaStateReferences();
-    USequenceCameraShakePattern* CreateSequenceCameraShakePattern();
-    USinusoidalCameraShakePattern* CreateSinusoidalCameraShakePattern();
-    UCameraShakeBase* StartCameraShakePattern(
-        UCameraShakePattern* Pattern,
-        float Scale,
-        float DurationOverride);
-    void StopCameraShake(UCameraShakeBase* Shake, bool bImmediately);
-    void StartCoroutine(sol::function Function);
-    FLuaTimeline* CreateTimeline();
-    void ClearLuaTimelines();
+	bool LoadScript();
+	bool HotReloadScript();
+	void ClearScript();
+	void ReleaseLuaStateReferences();
+	USequenceCameraShakePattern* CreateSequenceCameraShakePattern();
+	USinusoidalCameraShakePattern* CreateSinusoidalCameraShakePattern();
+	UCameraShakeBase* StartCameraShakePattern(
+		UCameraShakePattern* Pattern,
+		float Scale,
+		float DurationOverride);
+	void StopCameraShake(UCameraShakeBase* Shake, bool bImmediately);
+	void StartCoroutine(sol::function Function);
+	FLuaTimeline* CreateTimeline();
+	void ClearLuaTimelines();
 
 	virtual void OnUnregister() override;
 
 	virtual void BeginPlay() override;
-    virtual void TickComponent(float DeltaTime) override;
-    virtual void EndPlay() override;
+	virtual void TickComponent(float DeltaTime) override;
+	virtual void EndPlay() override;
 
 	const FString& GetScriptName() const { return ScriptName; }
 
-    //LuaScript Class의 인스턴스를 반환
-    sol::optional<sol::table> CreateScriptInstance(const FLuaScriptLoadResult& Loaded);
-    void ReloadLuaProperties();
+	//LuaScript Class의 인스턴스를 반환
+	sol::optional<sol::table> CreateScriptInstance(const FLuaScriptLoadResult& Loaded);
+	void ReloadLuaProperties();
 	sol::table MakeRuntimePropertyTable(sol::state& Lua);
 
 	template <typename... Args>
-    void CallScriptFunction(const FString& FunctionName, Args&&... args);
+	void CallScriptFunction(const FString& FunctionName, Args&&... args);
 
 	void OnHit(
-        UPrimitiveComponent* HitComponent,
-        AActor* OtherActor,
-        UPrimitiveComponent* OtherComp,
-        FVector NormalImpulse,
-        const FHitResult& Hit);
+		UPrimitiveComponent* HitComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		FVector NormalImpulse,
+		const FHitResult& Hit);
 
 	void OnBeginOverlap(
-        UPrimitiveComponent* OverlappedComponent,
-        AActor* OtherActor,
-        UPrimitiveComponent* OtherComp,
-        int32 OtherBodyIndex,
-        bool bFromSweep,
-        const FHitResult& SweepResult);
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
 
 	void OnEndOverlap(
-        UPrimitiveComponent* OverlappedComponent,
-        AActor* OtherActor,
-        UPrimitiveComponent* OtherComp,
-        int32 OtherBodyIndex,
-        bool bFromSweep,
-        const FHitResult& SweepResult);
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
 
 
 private:
-    TArray<FLuaScriptProperty> LuaProperties;
-    TArray<UCameraShakePattern*> CreatedCameraShakePatterns;
-    bool bLuaPropertiesScanned = false;
+	TArray<FLuaScriptProperty> LuaProperties;
+	TArray<UCameraShakePattern*> CreatedCameraShakePatterns;
+	bool bLuaPropertiesScanned = false;
 
 private:
-    void ClearLoadedState();
-    bool ApplyLuaPropertyToInstance(const char* PropertyName);
-    void DestroyCreatedCameraShakePatterns();
-    FString ScriptName;
-    FString RegisteredScriptName;
+	void ClearLoadedState();
+	bool ApplyLuaPropertyToInstance(const char* PropertyName);
+	void DestroyCreatedCameraShakePatterns();
 
-    sol::environment ScriptEnv;
+	UPROPERTY(DisplayName = "ScriptName")
+	FString ScriptName;
 
-    sol::table ScriptClass;
-    sol::table ScriptInstance;
-    FCoroutineScheduler CoroutineScheduler;
-    TArray<FLuaTimeline*> LuaTimelines;
+	FString RegisteredScriptName;
 
-    bool bScriptRegistered = false;
-    bool bScriptLoaded = false;
+	sol::environment ScriptEnv;
+
+	sol::table ScriptClass;
+	sol::table ScriptInstance;
+	FCoroutineScheduler CoroutineScheduler;
+	TArray<FLuaTimeline*> LuaTimelines;
+
+	bool bScriptRegistered = false;
+	bool bScriptLoaded = false;
 };
 
 template <typename... Args>
 void UScriptComponent::CallScriptFunction(const FString& FunctionName, Args&&... args)
 {
-    if (!ScriptInstance.valid())
-    {
-        return;
-    }
+	if (!ScriptInstance.valid())
+	{
+		return;
+	}
 
-    sol::object FuncObj = ScriptInstance[FunctionName];
+	sol::object FuncObj = ScriptInstance[FunctionName];
 
-    if (!FuncObj.valid() || FuncObj.get_type() != sol::type::function)
-    {
-        return;
-    }
+	if (!FuncObj.valid() || FuncObj.get_type() != sol::type::function)
+	{
+		return;
+	}
 
-    sol::protected_function Func = FuncObj.as<sol::protected_function>();
+	sol::protected_function Func = FuncObj.as<sol::protected_function>();
 
-    sol::protected_function_result Result =
-        Func(ScriptInstance, std::forward<Args>(args)...);
+	sol::protected_function_result Result =
+		Func(ScriptInstance, std::forward<Args>(args)...);
 
-    if (!Result.valid())
-    {
-        sol::error Err = Result;
-        UE_LOG_ERROR("[ScriptComponent] Lua Error in %s: %s", FunctionName.c_str(), Err.what());
-    }
+	if (!Result.valid())
+	{
+		sol::error Err = Result;
+		UE_LOG_ERROR("[ScriptComponent] Lua Error in %s: %s", FunctionName.c_str(), Err.what());
+	}
 }

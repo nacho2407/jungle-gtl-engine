@@ -5,12 +5,8 @@ UCLASS()
 class UPointLightComponent : public ULightComponent
 {
 public:
-    DECLARE_CLASS(UPointLightComponent, ULightComponent)
-    virtual void PostDuplicate(UObject* Original) override;
-    virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-
-	virtual void Serialize(FArchive& Ar) override;
-
+	DECLARE_CLASS(UPointLightComponent, ULightComponent)
+	virtual void PostDuplicate(UObject* Original) override;
 protected:
 	virtual FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 		const TArray<FBoundingBox>* VisibleObjectsBounds) const override;
@@ -18,6 +14,9 @@ protected:
 	//virtual void PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutProps) const override;
 
 public:
-    float AttenuationRadius		= 10.f;
-    float LightFalloffExponent	= 1.f;
+	UPROPERTY(DisplayName = "Attenuation Radius", Speed = 0.1f)
+	float AttenuationRadius		= 10.f;
+
+	UPROPERTY(DisplayName = "Light Falloff", Speed = 0.1f)
+	float LightFalloffExponent	= 1.f;
 };

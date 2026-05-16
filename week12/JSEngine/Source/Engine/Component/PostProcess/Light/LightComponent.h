@@ -21,8 +21,6 @@ public:
 	void PostDuplicate(UObject* Original) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	
-	void Serialize(FArchive& Ar) override;
-
 public:
 	EShadowMap GetShadowMapType() const { return ShadowMapType; }
 	void SetShadowMapType(EShadowMap InType) { ShadowMapType = InType; }
@@ -40,9 +38,16 @@ protected:
 	~ULightComponent() = default;
 
 public:
+	UPROPERTY(DisplayName = "Shadow Resolution Scale")
 	int32 ShadowResolutionScale = 2048;
+
+	UPROPERTY(DisplayName = "Constant Bias ( DepthBias ^ (1 / TextureBit))", Min = 0.0f, Max = 0.01f, Speed = 0.001f)
 	float ConstantBias = { 0.003f };
+
+	UPROPERTY(DisplayName = "Slope-Scaled Bias", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
 	float SlopeScaledBias = { 0.12f } ;
+
+	UPROPERTY(DisplayName = "Shadow Sharpen")
 	float ShadowSharpen = 0.5f;
 
 	// 디버그용으로 Shadow Atlas에서 해당 라이트의 타일 위치와 크기를 저장하는 변수

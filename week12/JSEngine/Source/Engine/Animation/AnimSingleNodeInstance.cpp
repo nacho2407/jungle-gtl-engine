@@ -5,21 +5,6 @@
 
 DEFINE_CLASS(UAnimSingleNodeInstance, UAnimInstance)
 
-void UAnimSingleNodeInstance::Serialize(FArchive& Ar)
-{
-    UAnimInstance::Serialize(Ar);
-}
-
-void UAnimSingleNodeInstance::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-    UAnimInstance::GetEditableProperties(OutProps);
-}
-
-void UAnimSingleNodeInstance::PostEditProperty(const char* PropertyName)
-{
-    UAnimInstance::PostEditProperty(PropertyName);
-}
-
 void UAnimSingleNodeInstance::SetAnimation(UAnimSequenceBase* InAnimation)
 {
     if (CurrentAnimation == InAnimation && !NeedsBoneMappingRebuild())

@@ -19,7 +19,6 @@ public:
 	// Overrides
 	void				BeginPlay() override;
 	void				TickComponent(float DeltaTime) override;
-	void				GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void				PostDuplicate(UObject* Original) override;
 	float				GetMaxSpeed() const override { return 0; };
 
@@ -74,17 +73,28 @@ private:
 private:
 	UPROPERTY(DisplayName = "Interp Mode")
 	EInterpBehaviour	InterpBehaviour		= EInterpBehaviour::OneShot;
+
+	UPROPERTY(DisplayName = "Control Points")
 	TArray<FVector>		ControlPoints;
+
 	uint32				CurrentPointID		= 0;
 	uint32				NextPointID			= 0;
+
+	UPROPERTY(DisplayName = "Interp Duration", Min = 0.1f, Max = 2048.0f, Speed = 0.1f)
 	float				Duration			= 5.0f;		// Does not store an "array" of duration
+
 	float				RotateDuration		= 0.f;
 	float				Elapsed				= 0.f;
 	float				TotalDistance		= 0;
 	float				NextDistRatio		= 0;
 	bool				bisLerping			= true;
+
+	UPROPERTY(DisplayName = "Auto Activate")
 	bool				bAutoActivate		= true;
+
 	bool				bPing				= true;
+
+	UPROPERTY(DisplayName = "Orient To Movement")
 	bool				bFaceTargetDir		= true;
 
 	float				TargetPitch			= 0.f;

@@ -54,8 +54,11 @@ public:
 	// 컴포넌트-컴포넌트 간 소유 관계(Owner, Parent 등)는 Duplicate() 호출 측에서 별도 처리해야 합니다.
 	void PostDuplicate(UObject* Original) override;
 
-	void SetTransient(bool bInTransient) { bTransient = bInTransient; }
-	bool IsTransient() const { return bTransient; }
+	void SetSerialized(bool bInSerialized) { bSerialized = bInSerialized; }
+	bool IsSerialized() const { return bSerialized; }
+
+	void SetTransient(bool bInTransient) { bSerialized = !bInTransient; }
+	bool IsTransient() const { return !bSerialized; }
 
 	void SetEditorOnly(bool bInEditorOnly) { bIsEditorOnly = bInEditorOnly; }
 	bool IsEditorOnly() const { return bIsEditorOnly; }
@@ -83,7 +86,7 @@ private:
 	bool bCanEverTick = true;
 
 	UPROPERTY(DisplayName = "Be Serialized")
-	bool bTransient = false; // 런타임에만 존재해야 하며, 저장되어서는 안 되는 객체에 붙입니다. (UUID 컴포넌트)
+	bool bSerialized = true;
 
 	UPROPERTY(DisplayName = "Editor Only")
 	bool bIsEditorOnly = false;

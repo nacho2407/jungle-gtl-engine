@@ -23,21 +23,21 @@ USubUVComponent::USubUVComponent()
 // PostEditProperty("Particle") → SetParticle() 를 통해 자동으로 갱신됩니다.
 void USubUVComponent::PostDuplicate(UObject* Original)
 {
-    UBillboardComponent::PostDuplicate(Original);
+	UBillboardComponent::PostDuplicate(Original);
 
-    const USubUVComponent* Orig = Cast<USubUVComponent>(Original);
-    // 현재 프레임/누적 시간을 유지해 PIE 진입 시 에디터에서 보던 파티클 상태를 이어 재생합니다.
-    bIsExecute = Orig->bIsExecute;
+	const USubUVComponent* Orig = Cast<USubUVComponent>(Original);
+	// 현재 프레임/누적 시간을 유지해 PIE 진입 시 에디터에서 보던 파티클 상태를 이어 재생합니다.
+	bIsExecute = Orig->bIsExecute;
 }
 
 void USubUVComponent::Serialize(FArchive& Ar)
 {
 	UBillboardComponent::Serialize(Ar);
-	Ar << "Particle" << ParticleName;
-	Ar << "Width" << Width;
-	Ar << "Height" << Height;
-	Ar << "PlayRate" << PlayRate;
-	Ar << "bLoop" << bLoop;
+
+	if (Ar.IsLoading())
+	{
+		SetParticle(ParticleName);
+	}
 }
 
 void USubUVComponent::SetParticle(const FName& InParticleName)
@@ -51,20 +51,11 @@ const FParticleResource* USubUVComponent::GetParticle() const
 	return FResourceManager::Get().FindParticle(ParticleName);
 }
 
-void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Particle", EPropertyType::Name, &ParticleName });
-	OutProps.push_back({ "Width", EPropertyType::Float, &Width, 0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Play Rate", EPropertyType::Float, &PlayRate, 1.0f, 120.0f, 1.0f });
-	OutProps.push_back({ "bLoop", EPropertyType::Bool, &bLoop });
-	OutProps.push_back({ "Inherit Owner Scale", EPropertyType::Bool, &bInheritOwnerScale });
-}
-
 void USubUVComponent::PostEditProperty(const char* PropertyName)
 {
-	if (strcmp(PropertyName, "Particle") == 0)
+	UBillboardComponent::PostEditProperty(PropertyName);
+
+	if (PropertyName && strcmp(PropertyName, "ParticleName") == 0)
 	{
 		SetParticle(ParticleName);
 	}

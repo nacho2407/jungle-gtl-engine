@@ -11,74 +11,75 @@ UCLASS()
 class UProceduralMeshComponent : public UPrimitiveComponent
 {
 public:
-    DECLARE_CLASS(UProceduralMeshComponent, UPrimitiveComponent)
+	DECLARE_CLASS(UProceduralMeshComponent, UPrimitiveComponent)
 
-    struct FMeshSection
-    {
-        TArray<FNormalVertex> Vertices;
-        TArray<uint32> Indices;
-    };
+	struct FMeshSection
+	{
+		TArray<FNormalVertex> Vertices;
+		TArray<uint32> Indices;
+	};
 
 public:
-    void CreateFrom(UStaticMesh* StaticMesh);
-    void CreateFrom(UProceduralMeshComponent* ProcMeshComp);
+	void CreateFrom(UStaticMesh* StaticMesh);
+	void CreateFrom(UProceduralMeshComponent* ProcMeshComp);
 
-    void CreateSection(int32 SectionIndex,
-                       const TArray<FNormalVertex>& InVertices,
-                       const TArray<uint32>& InIndices);
+	void CreateSection(int32 SectionIndex,
+					   const TArray<FNormalVertex>& InVertices,
+					   const TArray<uint32>& InIndices);
 
-    void ClearSection(int32 SectionIndex);
+	void ClearSection(int32 SectionIndex);
 
-    void ClearAllSections();
+	void ClearAllSections();
 
-    // Primitive override
-    void UpdateWorldAABB() const override;
-    bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
-    EPrimitiveType GetPrimitiveType() const override;
+	// Primitive override
+	void UpdateWorldAABB() const override;
+	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
+	EPrimitiveType GetPrimitiveType() const override;
 
-    // Getter
-    const TArray<FMeshSection>& GetSections() const { return Sections; }
+	// Getter
+	const TArray<FMeshSection>& GetSections() const { return Sections; }
 
-    /* For Material */
-    int32 GetNumMaterials() const override { return static_cast<int32>(Materials.size()); }
-    class UMaterialInterface* GetMaterial(int32 SlotIndex) const override;
-    void SetMaterial(int32 SlotIndex, class UMaterialInterface* InMaterial) override;
+	/* For Material */
+	int32 GetNumMaterials() const override { return static_cast<int32>(Materials.size()); }
+	class UMaterialInterface* GetMaterial(int32 SlotIndex) const override;
+	void SetMaterial(int32 SlotIndex, class UMaterialInterface* InMaterial) override;
 
-    void PostDuplicate(UObject* Original) override;
-    void Serialize(FArchive& Ar) override;
-    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostDuplicate(UObject* Original) override;
+	void Serialize(FArchive& Ar) override;
 
 private:
-    TArray<FMeshSection> Sections;
-    TArray<UMaterialInterface*> Materials;
+	TArray<FMeshSection> Sections;
+
+	UPROPERTY(DisplayName = "Materials")
+	TArray<UMaterialInterface*> Materials;
 };
 
 struct FSliceMeshData
 {
-    TArray<FNormalVertex> Vertices;
-    TArray<uint32> Indices;
+	TArray<FNormalVertex> Vertices;
+	TArray<uint32> Indices;
 };
 
 class FMeshSlicer
 {
 public:
-    static void Slice(
-        const FSliceMeshData& InMesh,
-        const FPlane& Plane,
-        FSliceMeshData& OutFront,
-        FSliceMeshData& OutBack);
+	static void Slice(
+		const FSliceMeshData& InMesh,
+		const FPlane& Plane,
+		FSliceMeshData& OutFront,
+		FSliceMeshData& OutBack);
 
 	static void SliceComponent(
-        UStaticMeshComponent* InComponent,
-        const FPlane& Plane,
-        UProceduralMeshComponent*& OutFront,
-        UProceduralMeshComponent*& OutBack);
+		UStaticMeshComponent* InComponent,
+		const FPlane& Plane,
+		UProceduralMeshComponent*& OutFront,
+		UProceduralMeshComponent*& OutBack);
 
 	static void SliceComponent(
-        UProceduralMeshComponent* InComponent,
-        const FPlane& Plane,
-        UProceduralMeshComponent*& OutFront,
-        UProceduralMeshComponent*& OutBack);
+		UProceduralMeshComponent* InComponent,
+		const FPlane& Plane,
+		UProceduralMeshComponent*& OutFront,
+		UProceduralMeshComponent*& OutBack);
 
 	static void AddTriangle(FSliceMeshData& Mesh, const FNormalVertex& A, const FNormalVertex& B, const FNormalVertex& C);
 
