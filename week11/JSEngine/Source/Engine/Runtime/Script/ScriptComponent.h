@@ -1,10 +1,12 @@
-﻿#pragma once
+#pragma once
 #include "Animation/TimelinePlayer.h"
 #include "Component/ActorComponent.h"
 #include "Core/Logging/Log.h"
 #include "Runtime/Script/CoroutineScheduler.h"
 #include "ThirdParty/sol/sol.hpp"
 #include <filesystem>
+
+#include "ScriptComponent.generated.h"
 
 #ifdef GetCurrentTime
 #undef GetCurrentTime
@@ -69,8 +71,10 @@ private:
     FTimelinePlayer Player;
 };
 
+UCLASS()
 class UScriptComponent : public UActorComponent
 {
+    GENERATED_BODY_UScriptComponent()
 public:
 	DECLARE_CLASS(UScriptComponent, UActorComponent)
 	UScriptComponent() = default;
@@ -149,6 +153,7 @@ private:
     void ClearLoadedState();
     bool ApplyLuaPropertyToInstance(const char* PropertyName);
     void DestroyCreatedCameraShakePatterns();
+    UPROPERTY(EditAnywhere)
     FString ScriptName;
     FString RegisteredScriptName;
 

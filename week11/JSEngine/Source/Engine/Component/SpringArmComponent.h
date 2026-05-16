@@ -1,9 +1,13 @@
 #pragma once
 
+#include "SpringArmComponent.generated.h"
+
 #include "Component/SceneComponent.h"
 
+UCLASS()
 class USpringArmComponent : public USceneComponent
 {
+    GENERATED_BODY_USpringArmComponent()
 public:
 	DECLARE_CLASS(USpringArmComponent, USceneComponent)
 
@@ -43,9 +47,13 @@ private:
 	void ResetCameraLag();
 
 private:
+	UPROPERTY(EditAnywhere)
 	float TargetArmLength = 5.0f;
+	UPROPERTY(EditAnywhere)
 	FVector SocketOffset = FVector(0.0f, 0.0f, 0.25f);
+	UPROPERTY(EditAnywhere)
 	bool bEnableCameraLag = false;
+	UPROPERTY(EditAnywhere)
 	float CameraLagSpeed = 10.0f;
 
 	mutable FVector LagLocation = FVector::ZeroVector;

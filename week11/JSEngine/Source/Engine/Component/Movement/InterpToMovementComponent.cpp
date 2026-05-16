@@ -2,6 +2,7 @@
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Math/Quat.h"
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(UInterpToMovementComponent, UMovementComponent)
 REGISTER_FACTORY(UInterpToMovementComponent)
@@ -63,11 +64,11 @@ void UInterpToMovementComponent::PostDuplicate(UObject* Original) {
 }
 
 void UInterpToMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) {
-    UMovementComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
-    OutProps.push_back({ "Auto Activate",		  EPropertyType::Bool,		 &bAutoActivate });
-    OutProps.push_back({ "Orient To Movement",	  EPropertyType::Bool,		 &bFaceTargetDir });
-	OutProps.push_back({ "Interp Duration",		  EPropertyType::Float,      &Duration,       0.1f, 2048.0f, 0.1f });
+    //OutProps.push_back({ "Auto Activate",		  EPropertyType::Bool,		 &bAutoActivate });
+    //OutProps.push_back({ "Orient To Movement",	  EPropertyType::Bool,		 &bFaceTargetDir });
+	//OutProps.push_back({ "Interp Duration",		  EPropertyType::Float,      &Duration,       0.1f, 2048.0f, 0.1f });
 	static const char* InterpBehaviourNames[] = { "One Shot", "One Shot Reverse", "Loop", "Ping-Pong" };
 	OutProps.push_back({ "Interp Mode",			  EPropertyType::Enum,		 &InterpBehaviour, 0,0,0, InterpBehaviourNames, 4});
     OutProps.push_back({ "Control Points",		  EPropertyType::Vec3Array,  &ControlPoints });

@@ -1,13 +1,17 @@
 #pragma once
 
+#include "GameEngine.generated.h"
+
 #include "Engine/Runtime/Engine.h"
 
 class APlayerController;
 class AGameModeBase;
 class InputSystem;
 
+UCLASS()
 class UGameEngine : public UEngine
 {
+    GENERATED_BODY_UGameEngine()
 public:
     DECLARE_CLASS(UGameEngine, UEngine)
 

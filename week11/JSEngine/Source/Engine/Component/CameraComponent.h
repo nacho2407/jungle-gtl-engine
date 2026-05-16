@@ -7,23 +7,42 @@
 #include "Math/Vector.h"
 #include "Math/Color.h"
 
+#include "CameraComponent.generated.h"
+
 // 렌더 전용 구조체
+USTRUCT()
 struct FCameraState
 {
+    GENERATED_BODY_FCameraState()
+
+    UPROPERTY(EditAnywhere)
 	float FOV = 3.14159265358979f / 3.0f;
-	float AspectRatio = 16.0f / 9.0f;
-	float NearZ = 0.1f;
-	float FarZ = 1000.0f;
-	float OrthoWidth = 10.0f;
-	bool bIsOrthogonal = false;
+    UPROPERTY(EditAnywhere)
+    float AspectRatio = 16.0f / 9.0f;
+    UPROPERTY(EditAnywhere)
+    float NearZ = 0.1f;
+    UPROPERTY(EditAnywhere)
+    float FarZ = 1000.0f;
+    UPROPERTY(EditAnywhere)
+    float OrthoWidth = 10.0f;
+    UPROPERTY(EditAnywhere)
+    bool bIsOrthogonal = false;
 };
 
+USTRUCT()
 struct FCameraPostProcessSettings
 {
+    GENERATED_BODY_FCameraPostProcessSettings()
+
+	    UPROPERTY(EditAnywhere)
 	bool bVignetteEnabled = false;
+    UPROPERTY(EditAnywhere)
 	float VignetteIntensity = 0.0f;
+    UPROPERTY(EditAnywhere)
 	float VignetteRadius = 0.75f;
+    UPROPERTY(EditAnywhere)
 	float VignetteSmoothness = 0.35f;
+    UPROPERTY(EditAnywhere)
 	FColor VignetteColor = FColor::Black();
 };
 
@@ -43,8 +62,10 @@ struct FMinimalViewInfo
     FQuat Rotation = FQuat::Identity;
 };
 
+UCLASS()
 class UCameraComponent : public USceneComponent
 {
+    GENERATED_BODY_UCameraComponent()
 public:
 	DECLARE_CLASS(UCameraComponent, USceneComponent)
 
@@ -101,6 +122,8 @@ private:
 	void SetViewRotationDegrees(float PitchDegrees, float YawDegrees);
 
 private:
-	FCameraState CameraState;
+    UPROPERTY(EditAnywhere)
+    FCameraState CameraState;
+    UPROPERTY(EditAnywhere)
 	FCameraPostProcessSettings PostProcessSettings;
 };

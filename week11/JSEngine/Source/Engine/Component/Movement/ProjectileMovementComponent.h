@@ -1,9 +1,13 @@
-﻿#pragma once
+#pragma once
+
+#include "ProjectileMovementComponent.generated.h"
 
 #include "MovementComponent.h"
 
+UCLASS()
 class UProjectileMovementComponent : public UMovementComponent
 {
+    GENERATED_BODY_UProjectileMovementComponent()
 public:
 	DECLARE_CLASS(UProjectileMovementComponent, UMovementComponent)
 
@@ -25,9 +29,13 @@ public:
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 private:
+	UPROPERTY(EditAnywhere)
 	float InitialSpeed = 5.0f;
+	UPROPERTY(EditAnywhere)
 	float MaxSpeed = 100.0f;
+	UPROPERTY(EditAnywhere)
 	float GravityScale = 0.0f;
 
+	UPROPERTY(EditAnywhere)
 	bool bRotationFollowsVelocity = true; // 켤 시 화살 및 로켓이 날아가는 궤적을 바라본다.
 };

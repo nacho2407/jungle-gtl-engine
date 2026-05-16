@@ -1,8 +1,9 @@
-﻿#include "PrimitiveComponent.h"
+#include "PrimitiveComponent.h"
 #include "Engine/Geometry/Ray.h"
 #include "Core/CollisionTypes.h"
 #include "GameFramework/World.h"
 #include "Math/Utils.h"
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
 
@@ -40,7 +41,7 @@ void UPrimitiveComponent::PostDuplicate(UObject* Original)
 
 void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	USceneComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 	
 	OutProps.push_back({"Visible", EPropertyType::Bool, &bIsVisible});
 	OutProps.push_back({"Enable Cull", EPropertyType::Bool, &bEnableCull});

@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+
+#include "GizmoComponent.generated.h"
 
 #include "PrimitiveComponent.h"
 #include "Core/CoreMinimal.h"
@@ -9,8 +11,10 @@ class ITransformProxy;
 class USceneComponent;
 struct FMeshData;
 
+UCLASS()
 class UGizmoComponent : public UPrimitiveComponent
 {
+    GENERATED_BODY_UGizmoComponent()
 private:
 	enum EGizmoMode
 	{

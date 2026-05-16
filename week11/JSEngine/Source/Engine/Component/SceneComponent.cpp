@@ -1,5 +1,6 @@
-﻿#include "SceneComponent.h"
+#include "SceneComponent.h"
 #include "Object/ObjectFactory.h"
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(USceneComponent, UActorComponent)
 REGISTER_FACTORY(USceneComponent)
@@ -145,7 +146,7 @@ bool USceneComponent::ContainsChild(const USceneComponent* Child) const
 
 void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	UActorComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 	constexpr EPropertyUsageFlags EditAndAnimate =
 		EPropertyUsageFlags::Editable | EPropertyUsageFlags::Animatable;
 	OutProps.push_back({ "Location", EPropertyType::Vec3, &RelativeLocation, 0.0f, 0.0f, 0.1f, nullptr, 0, nullptr, EditAndAnimate });

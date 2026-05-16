@@ -1,4 +1,5 @@
-﻿#include "SinusoidalCameraShakePattern.h"
+#include "SinusoidalCameraShakePattern.h"
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(USinusoidalCameraShakePattern, UCameraShakePattern)
 REGISTER_FACTORY(USinusoidalCameraShakePattern)
@@ -14,7 +15,7 @@ void USinusoidalCameraShakePattern::OnStartShakePattern(const FCameraShakeStartP
 
 void USinusoidalCameraShakePattern::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UCameraShakePattern::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
     OutProps.push_back({ "LocationAmplitude", EPropertyType::Vec3, &LocationAmplitude });
     OutProps.push_back({ "LocationFrequency", EPropertyType::Vec3, &LocationFrequency });

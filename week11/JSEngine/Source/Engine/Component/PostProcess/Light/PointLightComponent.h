@@ -1,8 +1,12 @@
-﻿#pragma once
+#pragma once
 #include "LightComponent.h"
 
+#include "PointLightComponent.generated.h"
+
+UCLASS()
 class UPointLightComponent : public ULightComponent
 {
+    GENERATED_BODY_UPointLightComponent()
 public:
     DECLARE_CLASS(UPointLightComponent, ULightComponent)
     virtual void PostDuplicate(UObject* Original) override;
@@ -17,6 +21,8 @@ protected:
 	//virtual void PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutProps) const override;
 
 public:
+    UPROPERTY(EditAnywhere)
     float AttenuationRadius		= 10.f;
+    UPROPERTY(EditAnywhere)
     float LightFalloffExponent	= 1.f;
 };

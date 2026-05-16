@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+
+#include "ActorComponent.generated.h"
 
 #include "Core/Guid.h"
 #include "Object/Object.h"
@@ -6,8 +8,10 @@
 
 class AActor;
 
+UCLASS()
 class UActorComponent : public UObject
 {
+    GENERATED_BODY_UActorComponent()
 public:
 	DECLARE_CLASS(UActorComponent, UObject)
 	
@@ -68,14 +72,20 @@ protected:
 protected:
 	AActor* Owner = nullptr;
 	TArray<FString> Tags;
+    UPROPERTY(EditAnywhere)
 	FString TagsText;
 	FGuid PersistentGuid;
 
 private:
+    UPROPERTY(EditAnywhere)
 	bool bIsActive = true;
+    UPROPERTY(EditAnywhere)
 	bool bAutoActivate = true;
+    UPROPERTY(EditAnywhere)
 	bool bCanEverTick = true;
+    UPROPERTY(EditAnywhere)
 	bool bTransient = false; // 런타임에만 존재해야 하며, 저장되어서는 안 되는 객체에 붙입니다. (UUID 컴포넌트)
+    UPROPERTY(EditAnywhere)
 	bool bIsEditorOnly = false;
 };
 

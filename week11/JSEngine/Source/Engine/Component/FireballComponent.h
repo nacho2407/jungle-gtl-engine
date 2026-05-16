@@ -1,8 +1,12 @@
-﻿#pragma once
+#pragma once
 #include "PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
 
+#include "FireballComponent.generated.h"
+
+UCLASS()
 class UFireballComponent : public UPrimitiveComponent {
+    GENERATED_BODY_UFireballComponent()
 public:
 	DECLARE_CLASS(UFireballComponent, UPrimitiveComponent)
 
@@ -38,8 +42,12 @@ public:
 	void SetRadiusFallOff(float InFallOff) { if (InFallOff) RadiusFallOff = InFallOff; }
 
 private:
+    UPROPERTY(EditAnywhere)
 	float  Intensity		= 1.f;
+    UPROPERTY(EditAnywhere)
 	float  Radius			= 15.f;
+    UPROPERTY(EditAnywhere)
 	float  RadiusFallOff	= 1.f;
+    UPROPERTY(EditAnywhere)
 	FColor Color			= FColor(1.0f, 0.8f, 0.04f, 1.f);
 };

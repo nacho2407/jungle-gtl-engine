@@ -1,12 +1,13 @@
-﻿#include "DirectionalLightComponent.h"
+#include "DirectionalLightComponent.h"
 #include "Object/ObjectFactory.h"
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(UDirectionalLightComponent, ULightComponent)
 REGISTER_FACTORY(UDirectionalLightComponent)
 
 void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	ULightComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
 	if (eShadowMapType == EShadowMap::CSM)
 	{

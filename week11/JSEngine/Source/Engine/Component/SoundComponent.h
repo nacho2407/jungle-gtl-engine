@@ -1,10 +1,14 @@
 #pragma once
 
+#include "SoundComponent.generated.h"
+
 #include "Audio/AudioSystem.h"
 #include "Component/SceneComponent.h"
 
+UCLASS()
 class USoundComponent : public USceneComponent
 {
+    GENERATED_BODY_USoundComponent()
 public:
     DECLARE_CLASS(USoundComponent, USceneComponent)
 
@@ -39,16 +43,27 @@ protected:
 
 private:
     // SoundRegistry 키 또는 Asset/Audio 기준 파일 경로를 넣습니다.
+    UPROPERTY(EditAnywhere)
     FString SoundKeyOrPath;
+    UPROPERTY(EditAnywhere)
     bool bPlayOnBeginPlay = false;
+    UPROPERTY(EditAnywhere)
     bool bLoop = false;
+    UPROPERTY(EditAnywhere)
     bool bSpatialized = true;
+    UPROPERTY(EditAnywhere)
     float VolumeScale = 1.0f;
+    UPROPERTY(EditAnywhere)
     float FadeInSeconds = 0.0f;
+    UPROPERTY(EditAnywhere)
     float FadeOutSeconds = 0.0f;
+    UPROPERTY(EditAnywhere)
     float MinDistance = 2.5f;
+    UPROPERTY(EditAnywhere)
     float MaxDistance = 22.0f;
+    UPROPERTY(EditAnywhere)
     int AttenuationModel = 2;
+    UPROPERTY(EditAnywhere)
     float RolloffFactor = 1.0f;
     FAudioHandle ActiveHandle = 0;
 };

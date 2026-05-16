@@ -1,4 +1,5 @@
 #include "SkinnedMeshComponent.h"
+#include "Core/ReflectionUtils.h"
 
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Material.h"
@@ -67,7 +68,7 @@ void USkinnedMeshComponent::Serialize(FArchive& Ar)
 
 void USkinnedMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UMeshComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     OutProps.push_back({ "SkeletalMesh", EPropertyType::String, &SkeletalMeshPath });
     OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 }

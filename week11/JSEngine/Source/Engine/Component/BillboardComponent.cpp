@@ -2,6 +2,7 @@
 #include <cmath>
 #include "GameFramework/World.h"
 #include "Camera/ViewportCamera.h"
+#include "Core/ReflectionUtils.h"
 
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
@@ -222,12 +223,12 @@ bool UBillboardComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 
 void UBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UPrimitiveComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     OutProps.push_back({ "Particle", EPropertyType::Name, &TextureName });
-    OutProps.push_back({ "Width", EPropertyType::Float, &Width, 0.1f, 100.0f, 0.1f });
-    OutProps.push_back({ "Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
+    //OutProps.push_back({ "Width", EPropertyType::Float, &Width, 0.1f, 100.0f, 0.1f });
+    //OutProps.push_back({ "Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
     OutProps.push_back({ "Play Rate", EPropertyType::Float, &PlayRate, 1.0f, 120.0f, 1.0f });
-    OutProps.push_back({ "bLoop", EPropertyType::Bool, &bLoop });
+    //OutProps.push_back({ "bLoop", EPropertyType::Bool, &bLoop });
     OutProps.push_back({ "Inherit Owner Scale", EPropertyType::Bool, &bInheritOwnerScale });
 }
 

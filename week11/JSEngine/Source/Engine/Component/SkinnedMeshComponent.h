@@ -1,11 +1,15 @@
-﻿#pragma once
+#pragma once
+
+#include "SkinnedMeshComponent.generated.h"
 
 #include "Asset/SkeletalMesh.h"
 #include "Component/MeshComponent.h"
 #include "Render/Resource/VertexTypes.h"
 
+UCLASS()
 class USkinnedMeshComponent : public UMeshComponent
 {
+    GENERATED_BODY_USkinnedMeshComponent()
 public:
     DECLARE_CLASS(USkinnedMeshComponent, UMeshComponent)
 
@@ -60,6 +64,7 @@ protected:
 
 protected:
     USkeletalMesh* SkeletalMesh = nullptr;
+    UPROPERTY(EditAnywhere)
     FString SkeletalMeshPath;
 
     TArray<FMatrix> CurrentLocalPose;

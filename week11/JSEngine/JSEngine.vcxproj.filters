@@ -1995,6 +1995,9 @@
     <ClInclude Include="Source\Engine\Component\SkinnedMeshComponent.h" />
     <ClInclude Include="Source\Editor\Viewer\EditorViewer.h" />
     <ClInclude Include="Source\Editor\Viewport\SkeletalMeshViewportClient.h" />
+    <ClInclude Include="Source\Engine\Core\ReflectionMacros.h" />
+    <ClInclude Include="Source\Engine\Component\TransformProxy.h" />
+    <ClInclude Include="Source\Engine\Core\ReflectionUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Source\Engine\Runtime\AppIcon.rc" />
@@ -2007,6 +2010,8 @@
     <None Include="Shaders\UI\ScreenOverlay.hlsl">
       <Filter>Shaders\UI</Filter>
     </None>
+    <None Include="PropertySystem\OptOutParser.cs" />
+    <None Include="Tools\PropertySystem\CustomParser.cs" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiSystem.cpp">

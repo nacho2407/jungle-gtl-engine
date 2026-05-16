@@ -1,13 +1,14 @@
-﻿#include "RotatingMovementComponent.h"
+#include "RotatingMovementComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Object/ObjectFactory.h"
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(URotatingMovementComponent, UMovementComponent)
 REGISTER_FACTORY(URotatingMovementComponent)
 
 void URotatingMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UMovementComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
     OutProps.push_back({"Rotation Rate", EPropertyType::Vec3, &RotationRate.X, -360.0f, 360.0f, 1.0f});
     OutProps.push_back({"Pivot Translation", EPropertyType::Vec3, &PivotTranslation.X, 0.0f, 0.0f, 0.1f});

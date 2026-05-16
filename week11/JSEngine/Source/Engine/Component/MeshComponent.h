@@ -1,10 +1,14 @@
-﻿#pragma once
+#pragma once
 #include "PrimitiveComponent.h"
+
+#include "MeshComponent.generated.h"
 
 class UMaterialInterface;
 
+UCLASS()
 class UMeshComponent : public UPrimitiveComponent
 {
+    GENERATED_BODY_UMeshComponent()
 public:
 	DECLARE_CLASS(UMeshComponent, UPrimitiveComponent)
 
@@ -23,6 +27,7 @@ public:
 	virtual void TickComponent(float DeltaTime) override;
 
 protected:
+    UPROPERTY(EditAnywhere)
 	TArray<UMaterialInterface*> Materials;
 	std::pair<float, float> ScrollUV = { };
 };

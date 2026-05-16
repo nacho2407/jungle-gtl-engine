@@ -1,4 +1,4 @@
-﻿#include "PursuitMovementComponent.h"
+#include "PursuitMovementComponent.h"
 #include "Math/Quat.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
@@ -6,6 +6,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Engine/Runtime/Engine.h"
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(UPursuitMovementComponent, UMovementComponent)
 REGISTER_FACTORY(UPursuitMovementComponent)
@@ -61,6 +62,7 @@ void UPursuitMovementComponent::TickComponent(float DeltaTime) {
 }
 
 void UPursuitMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) {
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 	OutProps.push_back({ "Detection Radius",	EPropertyType::Float, &DetectionRadius , 0.01f, 4096.f, 0.01f });
     OutProps.push_back({ "Pursuit Speed",		EPropertyType::Float, &PursuitSpeed, 0.01f, 100.f, 0.01f });
     OutProps.push_back({ "Pursuit Interval",	EPropertyType::Float, &UpdateLerpInterval, 0.01f, 5.f, 0.01f });

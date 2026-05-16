@@ -1,14 +1,18 @@
-﻿#pragma once
+#pragma once
 #include "PrimitiveComponent.h"
 #include "Render/Resource/VertexTypes.h"
 #include "Geometry/Plane.h"
 #include "Render/Common/RenderTypes.h"
 
+#include "ProceduralMeshComponent.generated.h"
+
 class UStaticMesh;
 class UStaticMeshComponent;
 
+UCLASS()
 class UProceduralMeshComponent : public UPrimitiveComponent
 {
+    GENERATED_BODY_UProceduralMeshComponent()
 public:
     DECLARE_CLASS(UProceduralMeshComponent, UPrimitiveComponent)
 

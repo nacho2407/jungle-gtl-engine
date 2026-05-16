@@ -1,5 +1,5 @@
 ﻿#include "StaticMeshComponent.h"
-
+#include "Core/ReflectionUtils.h"
 #include <cfloat>
 #include <cstring>
 
@@ -103,7 +103,7 @@ bool UStaticMeshComponent::HasValidMesh() const
 
 void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UMeshComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     OutProps.push_back({ "StaticMesh", EPropertyType::String, &StaticMeshAssetPath });
 	OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 }

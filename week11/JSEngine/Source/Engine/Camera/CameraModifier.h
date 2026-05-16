@@ -1,11 +1,15 @@
-﻿#pragma once
+#pragma once
 #include "Object/Object.h"
 #include "Component/CameraComponent.h"
 
+#include "CameraModifier.generated.h"
+
 class APlayerCameraManager;
 
+UCLASS()
 class UCameraModifier : public UObject
 {
+    GENERATED_BODY_UCameraModifier()
 public:
     virtual bool ModifyCamera(float DeltaTime, FMinimalViewInfo& InOutView);
 

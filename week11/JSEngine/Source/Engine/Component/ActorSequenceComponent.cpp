@@ -1,4 +1,5 @@
 #include "Component/ActorSequenceComponent.h"
+#include "Core/ReflectionUtils.h"
 
 #include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
@@ -279,7 +280,7 @@ void UActorSequenceComponent::TickComponent(float DeltaTime)
 
 void UActorSequenceComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UActorComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 }
 
 void UActorSequenceComponent::Serialize(FArchive& Ar)

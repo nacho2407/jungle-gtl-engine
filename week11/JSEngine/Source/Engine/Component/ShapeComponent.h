@@ -1,8 +1,12 @@
-﻿#pragma once
+#pragma once
 #include "PrimitiveComponent.h"
 
+#include "ShapeComponent.generated.h"
+
+UCLASS()
 class UShapeComponent : public UPrimitiveComponent
 {
+    GENERATED_BODY_UShapeComponent()
 public:
     DECLARE_CLASS(UShapeComponent, UPrimitiveComponent)
 

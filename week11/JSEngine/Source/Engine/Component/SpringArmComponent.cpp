@@ -1,4 +1,5 @@
 #include "Component/SpringArmComponent.h"
+#include "Core/ReflectionUtils.h"
 
 #include "Object/ObjectFactory.h"
 
@@ -24,7 +25,7 @@ void USpringArmComponent::Serialize(FArchive& Ar)
 
 void USpringArmComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	USceneComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 	OutProps.push_back({ "Target Arm Length", EPropertyType::Float, &TargetArmLength, 0.0f, 100.0f, 0.1f });
 	OutProps.push_back({ "Socket Offset", EPropertyType::Vec3, &SocketOffset, 0.0f, 0.0f, 0.1f });
 	OutProps.push_back({ "Enable Camera Lag", EPropertyType::Bool, &bEnableCameraLag });

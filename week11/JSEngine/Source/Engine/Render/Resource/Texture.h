@@ -1,6 +1,8 @@
-﻿#pragma once
+#pragma once
 #include "Object/Object.h"
 #include <d3d11.h>
+
+#include "Texture.generated.h"
 
 struct FTexture
 {
@@ -18,8 +20,10 @@ struct FTexture
 	ID3D11ShaderResourceView* SRV = nullptr;
 };
 
+UCLASS()
 class UTexture : public UObject
 {
+    GENERATED_BODY_UTexture()
 public:
 	DECLARE_CLASS(UTexture, UObject)
 	~UTexture() override
