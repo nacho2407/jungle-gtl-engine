@@ -1,13 +1,11 @@
 ﻿#include "GameFramework/Character.h"
 
 #include "Component/CapsuleComponent.h"
+#include "Component/InputComponent.h"
 #include "Component/Movement/CharacterMovementComponent.h"
 #include "Component/SkeletalMeshComponent.h"
-#include "Input/InputSystem.h"
 #include "Mesh/MeshManager.h"
 #include "Runtime/Engine.h"
-
-#include <windows.h>
 
 IMPLEMENT_CLASS(ACharacter, APawn)
 
@@ -50,17 +48,24 @@ void ACharacter::AddMovementInput(const FVector& WorldDirection, float ScaleValu
 	}
 }
 
-void ACharacter::Tick(float DeltaTime)
+void ACharacter::SetupInputComponent()
 {
-	Super::Tick(DeltaTime);
+	Super::SetupInputComponent();
 
-	if (!bAutoInputWASD || !CharacterMovement) return;
+	if (!bAutoInputWASD || !InputComponent) return;
 
-	// minimal 자동 입력 — world axes 기준. W=+X(앞), S=-X, A=-Y, D=+Y.
-	// 카메라/yaw 기반 회전은 게임 시 자식이 override 해서 처리.
-	const InputSystem& In = InputSystem::Get();
-	if (In.GetKey('W')) AddMovementInput(FVector(1.0f, 0.0f, 0.0f),  1.0f);
-	if (In.GetKey('S')) AddMovementInput(FVector(1.0f, 0.0f, 0.0f), -1.0f);
-	if (In.GetKey('D')) AddMovementInput(FVector(0.0f, 1.0f, 0.0f),  1.0f);
-	if (In.GetKey('A')) AddMovementInput(FVector(0.0f, 1.0f, 0.0f), -1.0f);
+	// World axes 기준 default 매핑. 카메라/yaw 기반 이동은 자식이 override 해서 재구성.
+	InputComponent->AddAxisMapping("MoveForward", 'W',  1.0f);
+	InputComponent->AddAxisMapping("MoveForward", 'S', -1.0f);
+	InputComponent->AddAxisMapping("MoveRight",   'D',  1.0f);
+	InputComponent->AddAxisMapping("MoveRight",   'A', -1.0f);
+
+	InputComponent->BindAxis("MoveForward", [this](float Value)
+	{
+		if (Value != 0.0f) AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
+	});
+	InputComponent->BindAxis("MoveRight", [this](float Value)
+	{
+		if (Value != 0.0f) AddMovementInput(FVector(0.0f, 1.0f, 0.0f), Value);
+	});
 }

@@ -35,12 +35,13 @@ public:
 	USkeletalMeshComponent*      GetMesh()              const { return Mesh; }
 	UCharacterMovementComponent* GetCharacterMovement() const { return CharacterMovement; }
 
-	// 자동 WASD 입력 처리. true 면 Tick 안에서 InputSystem 직접 읽어 +X/-X/-Y/+Y 로 AddMovementInput.
-	// 게임에선 보통 false 로 끄고 PlayerController/lua 가 명시 input 처리. 데모 편의용 기본 true.
+	// 자동 WASD 매핑/binding — SetupInputComponent 가 InputComponent 에 등록.
+	// 게임에선 보통 false 로 끄고 자식이 자기 매핑/binding 추가. 데모 편의용 기본 true.
 	bool bAutoInputWASD = true;
 
 protected:
-	void Tick(float DeltaTime) override;
+	// InputComponent 가 부착된 후 호출 — WASD axis mapping + AddMovementInput binding 등록.
+	void SetupInputComponent() override;
 
 	UCapsuleComponent*           CapsuleComponent  = nullptr;
 	USkeletalMeshComponent*      Mesh              = nullptr;

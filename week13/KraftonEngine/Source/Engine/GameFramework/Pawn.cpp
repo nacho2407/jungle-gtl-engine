@@ -2,9 +2,28 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerCameraManager.h"
 #include "Component/CameraComponent.h"
+#include "Component/InputComponent.h"
+#include "Core/PropertyTypes.h"
 #include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(APawn, AActor)
+
+void APawn::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Input 자동 부착 + 자식 setup. PostDuplicate 후에도 BeginPlay 가 다시 호출되므로
+	// 중복 add 방지 위해 GetComponentByClass 로 기존 인스턴스 우선 회수.
+	if (!InputComponent)
+	{
+		InputComponent = GetComponentByClass<UInputComponent>();
+		if (!InputComponent)
+		{
+			InputComponent = AddComponent<UInputComponent>();
+		}
+	}
+	SetupInputComponent();
+}
 
 void APawn::PossessedBy(APlayerController* PC)
 {
@@ -29,6 +48,19 @@ void APawn::PossessedBy(APlayerController* PC)
 void APawn::UnPossessed()
 {
 	Controller = nullptr;
+}
+
+void APawn::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	Super::GetEditableProperties(OutProps);
+
+	// Actor-level (컴포넌트 외) Pawn 멤버 — GameMode 의 AutoPossessFirstPawn 후보 여부.
+	FPropertyDescriptor P;
+	P.Name     = "Auto Possess Player";
+	P.Type     = EPropertyType::Bool;
+	P.Category = "Pawn";
+	P.ValuePtr = &bAutoPossessPlayer;
+	OutProps.push_back(P);
 }
 
 void APawn::Serialize(FArchive& Ar)
