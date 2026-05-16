@@ -9,6 +9,7 @@ enum class EViewMode : int32
 	Lit_BlinnPhong,
     Unlit,
 	Heatmap,
+	BoneWeightHeatmap,
     Wireframe,
     Depth,
 	Normal,

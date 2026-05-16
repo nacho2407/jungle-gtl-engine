@@ -156,6 +156,12 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
         const ESkinningMode SkinningMode = SkeletalMeshComp->GetResolvedSkinningMode();
         const bool bUseCPUSkinning = SkinningMode == ESkinningMode::CPU;
         const bool bUseGPUSkinning = SkinningMode == ESkinningMode::GPU;
+        const FBoneWeightHeatmapViewState& BoneWeightHeatmapState = RenderBus.GetBoneWeightHeatmapViewState();
+        const bool bUseBoneWeightHeatmap =
+            ViewMode == EViewMode::BoneWeightHeatmap &&
+            BoneWeightHeatmapState.bEnabled &&
+            BoneWeightHeatmapState.SelectedBoneIndex >= 0 &&
+            BoneWeightHeatmapState.SelectedBoneIndex < static_cast<int32>(SkeletalMesh->GetBones().size());
         uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
         if (bUseGPUSkinning)
         {
@@ -188,6 +194,10 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.MeshBuffer = MeshBuffer;
             Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
             Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
+            Cmd.bUseBoneWeightHeatmap = bUseBoneWeightHeatmap;
+            Cmd.BoneWeightHeatmapBoneIndex = bUseBoneWeightHeatmap
+                ? BoneWeightHeatmapState.SelectedBoneIndex
+                : -1;
             Cmd.SectionIndexStart = 0;
             Cmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
             Cmd.Material = SkeletalMeshComp->GetMaterial(0);
@@ -215,6 +225,10 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.MeshBuffer = MeshBuffer;
             Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
             Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
+            Cmd.bUseBoneWeightHeatmap = bUseBoneWeightHeatmap;
+            Cmd.BoneWeightHeatmapBoneIndex = bUseBoneWeightHeatmap
+                ? BoneWeightHeatmapState.SelectedBoneIndex
+                : -1;
 
             Cmd.SectionIndexStart = Section.StartIndex;
             Cmd.SectionIndexCount = Section.IndexCount;

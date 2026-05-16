@@ -431,6 +431,14 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
         Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
         Bus.SetCascadeVis(ViewportState ? ViewportState->bShowCascadeVis : false);
 
+        FBoneWeightHeatmapViewState BoneWeightHeatmapState = {};
+        if (ViewMode == EViewMode::BoneWeightHeatmap)
+        {
+            BoneWeightHeatmapState.bEnabled = true;
+            BoneWeightHeatmapState.SelectedBoneIndex = Viewers[i]->GetSelectedBoneIndex();
+        }
+        Bus.SetBoneWeightHeatmapViewState(BoneWeightHeatmapState);
+
         // Sandevistan 유지
         if (World->IsSandervistanActivated())
         {

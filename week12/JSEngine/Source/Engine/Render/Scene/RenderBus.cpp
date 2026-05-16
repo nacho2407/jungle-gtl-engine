@@ -12,6 +12,7 @@ void FRenderBus::Clear()
 	DirectionalLightInfo = {};
 	ShadowLightRequests.clear();
 	BoneMatrixConstantsPool.clear();
+	BoneWeightHeatmapViewState = {};
     VignetteIntensity = 0.0f;
     VignetteRadius = 0.75f;
     VignetteSmoothness = 0.35f;

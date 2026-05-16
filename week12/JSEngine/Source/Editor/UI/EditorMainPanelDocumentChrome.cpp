@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/UI/EditorChromeConstants.h"
 #include "Editor/UI/EditorMainPanelViewportToolbarHelpers.h"
@@ -198,6 +198,7 @@ void FEditorMainPanel::RenderViewerToolbarControls(FEditorViewer* Viewer)
 			EViewMode::Lit_BlinnPhong,
 			EViewMode::Unlit,
 			EViewMode::Heatmap,
+			EViewMode::BoneWeightHeatmap,
 			EViewMode::Wireframe,
 			EViewMode::Depth,
 			EViewMode::Normal,

@@ -36,11 +36,16 @@ void BindVertexFactoryResources(
 		return;
 	}
 
-	if (Type == EVertexFactoryType::SkeletalMesh && BoneMatrixConstants)
+	if (Type == EVertexFactoryType::SkeletalMesh)
 	{
+		static const FBoneMatrixConstants EmptyBoneMatrixConstants = {};
+		const FBoneMatrixConstants* ConstantsToBind = BoneMatrixConstants
+			? BoneMatrixConstants
+			: &EmptyBoneMatrixConstants;
+
 		RenderResources->BoneMatrixConstantBuffer.Update(
 			Context,
-			BoneMatrixConstants,
+			ConstantsToBind,
 			sizeof(FBoneMatrixConstants));
 
 		ID3D11Buffer* BoneBuffer = RenderResources->BoneMatrixConstantBuffer.GetBuffer();
@@ -302,6 +307,7 @@ void FRenderer::CreateResources()
 	Resources.ShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowConstants));
 	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FUberConstants));
 	Resources.BoneMatrixConstantBuffer.Create(Device.GetDevice(), sizeof(FBoneMatrixConstants));
+	Resources.BoneWeightHeatmapConstantBuffer.Create(Device.GetDevice(), sizeof(FBoneWeightHeatmapConstants));
     Resources.LightShadowIndexBuffer.Create(Device.GetDevice(), sizeof(FLightShadowIndices), 1024);
     Resources.AtlasShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowAtlasConstants), 1024);
 
@@ -371,6 +377,7 @@ void FRenderer::Release()
 	Resources.FrameBuffer.Release();
 	Resources.ShadowBuffer.Release();
 	Resources.BoneMatrixConstantBuffer.Release();
+	Resources.BoneWeightHeatmapConstantBuffer.Release();
 	Resources.LightBuffer.Release();
 	Resources.LightShadowIndexBuffer.Release();
 	Resources.AtlasShadowBuffer.Release();
