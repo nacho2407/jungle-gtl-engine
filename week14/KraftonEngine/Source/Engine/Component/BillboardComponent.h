@@ -10,6 +10,7 @@ class UBillboardComponent : public UPrimitiveComponent
 {
 public:
 	DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
+	static void RegisterProperties(UClass* Class);
 
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 	FPrimitiveSceneProxy* CreateSceneProxy() override;

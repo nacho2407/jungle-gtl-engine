@@ -4,7 +4,20 @@
 #include "Math/Quat.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(UInterpToMovementComponent, UMovementComponent)
+namespace
+{
+	const char* GInterpBehaviourNames[] = { "One Shot", "One Shot Reverse", "Loop", "Ping-Pong" };
+}
+
+IMPLEMENT_CLASS_WITH_PROPERTIES(UInterpToMovementComponent, UMovementComponent)
+
+BEGIN_PROPERTY_REGISTRATION(UInterpToMovementComponent)
+	EDIT_PROPERTY(UInterpToMovementComponent, bAutoActivate, "Auto Activate", EPropertyType::Bool, "Movement")
+	EDIT_PROPERTY(UInterpToMovementComponent, bFaceTargetDir, "Orient To Movement", EPropertyType::Bool, "Movement")
+	EDIT_PROPERTY_RANGE(UInterpToMovementComponent, Duration, "Interp Duration", EPropertyType::Float, "Movement", 0.1f, 2048.0f, 0.1f)
+	EDIT_PROPERTY_ENUM(UInterpToMovementComponent, InterpBehaviour, "Interp Mode", "Movement", GInterpBehaviourNames, 4, EInterpBehaviour)
+	EDIT_PROPERTY(UInterpToMovementComponent, ControlPoints, "Control Points", EPropertyType::Vec3Array, "Movement")
+END_PROPERTY_REGISTRATION()
 
 namespace {
 	// Returns normalized direction from A to B
@@ -50,12 +63,6 @@ void UInterpToMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 
 void UInterpToMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) {
 	UMovementComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Auto Activate",		  EPropertyType::Bool,		 "Movement", &bAutoActivate });
-	OutProps.push_back({ "Orient To Movement",	  EPropertyType::Bool,		 "Movement", &bFaceTargetDir });
-	OutProps.push_back({ "Interp Duration",		  EPropertyType::Float,      "Movement", &Duration,       0.1f, 2048.0f, 0.1f });
-	static const char* InterpBehaviourNames[] = { "One Shot", "One Shot Reverse", "Loop", "Ping-Pong" };
-	OutProps.push_back({ "Interp Mode",			  EPropertyType::Enum,		 "Movement", &InterpBehaviour, 0,0,0, InterpBehaviourNames, 4 });
-	OutProps.push_back({ "Control Points",		  EPropertyType::Vec3Array,  "Movement", &ControlPoints });
 }
 
 void UInterpToMovementComponent::Serialize(FArchive& Ar)

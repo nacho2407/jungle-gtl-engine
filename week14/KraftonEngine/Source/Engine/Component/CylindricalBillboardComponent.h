@@ -1,10 +1,11 @@
-#pragma once
+﻿#pragma once
 #include "BillboardComponent.h"
 
 class UCylindricalBillboardComponent : public UBillboardComponent
 {
 public:
 	DECLARE_CLASS(UCylindricalBillboardComponent, UBillboardComponent)
+	static void RegisterProperties(UClass* Class);
 
 	void Serialize(FArchive& Ar) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;

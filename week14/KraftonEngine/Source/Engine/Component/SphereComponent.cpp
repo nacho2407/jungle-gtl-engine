@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 #include "SphereComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -9,7 +9,11 @@
 #include <cmath>
 #include <algorithm>
 
-IMPLEMENT_CLASS(USphereComponent, UShapeComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(USphereComponent, UShapeComponent)
+
+BEGIN_PROPERTY_REGISTRATION(USphereComponent)
+	EDIT_PROPERTY_RANGE(USphereComponent, SphereRadius, "Sphere Radius", EPropertyType::Float, "Shape", 0.01f, 10000.0f, 1.0f)
+END_PROPERTY_REGISTRATION()
 
 void USphereComponent::SetSphereRadius(float InRadius)
 {
@@ -75,7 +79,6 @@ void USphereComponent::UpdateWorldAABB() const
 void USphereComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UShapeComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Sphere Radius", EPropertyType::Float, "Shape", &SphereRadius, 0.01f, 10000.0f, 1.0f });
 }
 
 void USphereComponent::PostEditProperty(const char* PropertyName)

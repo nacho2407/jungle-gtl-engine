@@ -7,6 +7,7 @@ class UCapsuleComponent : public UShapeComponent
 {
 public:
 	DECLARE_CLASS(UCapsuleComponent, UShapeComponent)
+	static void RegisterProperties(UClass* Class);
 
 	void SetCapsuleSize(float InRadius, float InHalfHeight);
 	float GetScaledCapsuleRadius() const;

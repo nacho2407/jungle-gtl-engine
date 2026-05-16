@@ -10,6 +10,7 @@ class UPendulumMovementComponent : public UMovementComponent
 {
 public:
 	DECLARE_CLASS(UPendulumMovementComponent, UMovementComponent)
+	static void RegisterProperties(UClass* Class);
 
 	UPendulumMovementComponent() = default;
 	~UPendulumMovementComponent() override = default;

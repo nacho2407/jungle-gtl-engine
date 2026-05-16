@@ -9,6 +9,8 @@ HIDE_FROM_COMPONENT_LIST(UActorComponent)
 BEGIN_PROPERTY_REGISTRATION(UActorComponent)
 	EDIT_PROPERTY(UActorComponent, bTickEnable, "bTickEnable", EPropertyType::Bool, "Component")
 	EDIT_PROPERTY(UActorComponent, bEditorOnly, "bEditorOnly", EPropertyType::Bool, "Component")
+	EDIT_PROPERTY(UActorComponent, bIsActive, "bIsActive", EPropertyType::Bool, "Component")
+	EDIT_PROPERTY(UActorComponent, bAutoActivate, "bAutoActivate", EPropertyType::Bool, "Component")
 END_PROPERTY_REGISTRATION()
 
 void UActorComponent::BeginPlay()
@@ -105,5 +107,16 @@ void UActorComponent::PostEditProperty(const char* PropertyName)
 		// SetEditorOnly의 early-return 가드를 우회하여 렌더 상태를 직접 재생성한다.
 		DestroyRenderState();
 		CreateRenderState();
+	}
+
+	if (strcmp(PropertyName, "bIsActive") == 0) {
+		if (bIsActive)
+		{
+			Activate();
+		}
+		else
+		{
+			Deactivate();
+		}
 	}
 }

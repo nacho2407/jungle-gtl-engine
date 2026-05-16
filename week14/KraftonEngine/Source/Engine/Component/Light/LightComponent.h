@@ -5,6 +5,7 @@ class ULightComponent : public ULightComponentBase
 {
 public:
 	DECLARE_CLASS(ULightComponent, ULightComponentBase)
+	static void RegisterProperties(UClass* Class);
 
 	virtual void Serialize(FArchive& Ar) override;
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;

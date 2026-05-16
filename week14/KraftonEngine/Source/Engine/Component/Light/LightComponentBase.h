@@ -24,6 +24,7 @@ class ULightComponentBase : public USceneComponent
 {
 public:
 	DECLARE_CLASS(ULightComponentBase, USceneComponent)
+	static void RegisterProperties(UClass* Class);
 
 	ULightComponentBase() { SetComponentTickEnabled(false); }
 

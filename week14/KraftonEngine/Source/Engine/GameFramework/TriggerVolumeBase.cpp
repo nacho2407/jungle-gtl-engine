@@ -6,7 +6,11 @@
 #include "Core/CollisionTypes.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(ATriggerVolumeBase, AActor)
+IMPLEMENT_CLASS_WITH_PROPERTIES(ATriggerVolumeBase, AActor)
+
+BEGIN_PROPERTY_REGISTRATION(ATriggerVolumeBase)
+	EDIT_PROPERTY(ATriggerVolumeBase, TriggerTag, "TriggerTag", EPropertyType::Name, "Trigger")
+END_PROPERTY_REGISTRATION()
 
 void ATriggerVolumeBase::InitDefaultComponents(const FVector& Extent)
 {
@@ -30,7 +34,6 @@ void ATriggerVolumeBase::PostDuplicate()
 void ATriggerVolumeBase::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	Super::GetEditableProperties(OutProps);
-	OutProps.push_back({ "TriggerTag", EPropertyType::Name, "Trigger", &TriggerTag });
 }
 
 void ATriggerVolumeBase::BeginPlay()

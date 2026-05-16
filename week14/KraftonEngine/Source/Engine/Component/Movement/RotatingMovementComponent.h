@@ -10,6 +10,7 @@ class URotatingMovementComponent : public UMovementComponent
 {
 public:
 	DECLARE_CLASS(URotatingMovementComponent, UMovementComponent)
+	static void RegisterProperties(UClass* Class);
 
 	URotatingMovementComponent() = default;
 	~URotatingMovementComponent() override = default;

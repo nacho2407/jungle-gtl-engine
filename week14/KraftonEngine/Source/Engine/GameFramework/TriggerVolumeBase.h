@@ -25,6 +25,7 @@ class ATriggerVolumeBase : public AActor
 {
 public:
 	DECLARE_CLASS(ATriggerVolumeBase, AActor)
+	static void RegisterProperties(UClass* Class);
 
 	ATriggerVolumeBase() = default;
 	~ATriggerVolumeBase() override = default;

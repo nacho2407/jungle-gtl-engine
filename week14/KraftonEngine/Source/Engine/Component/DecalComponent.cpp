@@ -14,7 +14,16 @@
 #include "Materials/Material.h"
 #include <algorithm>
 
-IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(UDecalComponent, UPrimitiveComponent)
+
+BEGIN_PROPERTY_REGISTRATION(UDecalComponent)
+	EDIT_PROPERTY(UDecalComponent, MaterialSlot, "Material", EPropertyType::MaterialSlot, "Rendering")
+	EDIT_PROPERTY(UDecalComponent, Color, "Color", EPropertyType::Vec4, "Rendering")
+	EDIT_PROPERTY(UDecalComponent, FadeInDelay, "FadeInDelay", EPropertyType::Float, "Rendering")
+	EDIT_PROPERTY(UDecalComponent, FadeInDuration, "FadeInDuration", EPropertyType::Float, "Rendering")
+	EDIT_PROPERTY(UDecalComponent, FadeOutDelay, "FadeOutDelay", EPropertyType::Float, "Rendering")
+	EDIT_PROPERTY(UDecalComponent, FadeOutDuration, "FadeOutDuration", EPropertyType::Float, "Rendering")
+END_PROPERTY_REGISTRATION()
 
 void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
@@ -34,12 +43,6 @@ FPrimitiveSceneProxy* UDecalComponent::CreateSceneProxy()
 void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Material", EPropertyType::MaterialSlot, "Rendering", &MaterialSlot });
-	OutProps.push_back({ "Color", EPropertyType::Vec4, "Rendering", &Color });
-	OutProps.push_back({ "FadeInDelay", EPropertyType::Float, "Rendering", &FadeInDelay });
-	OutProps.push_back({ "FadeInDuration", EPropertyType::Float, "Rendering", &FadeInDuration });
-	OutProps.push_back({ "FadeOutDelay", EPropertyType::Float, "Rendering", &FadeOutDelay });
-	OutProps.push_back({ "FadeOutDuration", EPropertyType::Float, "Rendering", &FadeOutDuration });
 }
 
 void UDecalComponent::PostEditProperty(const char* PropertyName)

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/SceneComponent.h"
 #include "Core/CollisionTypes.h"
@@ -21,6 +21,7 @@ class USpringArmComponent : public USceneComponent
 {
 public:
 	DECLARE_CLASS(USpringArmComponent, USceneComponent)
+	static void RegisterProperties(UClass* Class);
 
 	USpringArmComponent() = default;
 	~USpringArmComponent() override = default;

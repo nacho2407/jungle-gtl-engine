@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 #include "CapsuleComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -9,7 +9,12 @@
 #include <cmath>
 #include <algorithm>
 
-IMPLEMENT_CLASS(UCapsuleComponent, UShapeComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(UCapsuleComponent, UShapeComponent)
+
+BEGIN_PROPERTY_REGISTRATION(UCapsuleComponent)
+	EDIT_PROPERTY_RANGE(UCapsuleComponent, CapsuleRadius, "Capsule Radius", EPropertyType::Float, "Shape", 0.01f, 10000.0f, 1.0f)
+	EDIT_PROPERTY_RANGE(UCapsuleComponent, CapsuleHalfHeight, "Capsule Half Height", EPropertyType::Float, "Shape", 0.01f, 10000.0f, 1.0f)
+END_PROPERTY_REGISTRATION()
 
 void UCapsuleComponent::SetCapsuleSize(float InRadius, float InHalfHeight)
 {
@@ -124,8 +129,6 @@ void UCapsuleComponent::UpdateWorldAABB() const
 void UCapsuleComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UShapeComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Capsule Radius", EPropertyType::Float, "Shape", &CapsuleRadius, 0.01f, 10000.0f, 1.0f });
-	OutProps.push_back({ "Capsule Half Height", EPropertyType::Float, "Shape", &CapsuleHalfHeight, 0.01f, 10000.0f, 1.0f });
 }
 
 void UCapsuleComponent::PostEditProperty(const char* PropertyName)

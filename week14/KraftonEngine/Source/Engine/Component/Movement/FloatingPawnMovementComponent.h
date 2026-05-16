@@ -11,6 +11,7 @@ class UFloatingPawnMovementComponent : public UMovementComponent
 {
 public:
 	DECLARE_CLASS(UFloatingPawnMovementComponent, UMovementComponent)
+	static void RegisterProperties(UClass* Class);
 
 	UFloatingPawnMovementComponent() = default;
 	~UFloatingPawnMovementComponent() override = default;

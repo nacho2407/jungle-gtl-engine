@@ -8,7 +8,11 @@
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(ULuaScriptComponent, UActorComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(ULuaScriptComponent, UActorComponent)
+
+BEGIN_PROPERTY_REGISTRATION(ULuaScriptComponent)
+	EDIT_PROPERTY(ULuaScriptComponent, ScriptFile, "ScriptFile", EPropertyType::Script, "Script")
+END_PROPERTY_REGISTRATION()
 
 ULuaScriptComponent::ULuaScriptComponent()
 {
@@ -332,7 +336,6 @@ void ULuaScriptComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 {
 	EnsureDefaultScriptFile();
 	UActorComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "ScriptFile", EPropertyType::Script, "Script", &ScriptFile });
 }
 
 void ULuaScriptComponent::Serialize(FArchive& Ar)
