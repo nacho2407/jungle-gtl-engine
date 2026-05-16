@@ -248,18 +248,17 @@ json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj)
 			continue;
 		}
 
-		FPropertyDescriptor Desc = Prop.ToDescriptor(Obj);
-		if (!Desc.ValuePtr)
+		if (!Prop.GetValuePtrFor(Obj))
 		{
 			continue;
 		}
 
-		if (Desc.Name.empty())
+		if (!Prop.Name || Prop.Name[0] == '\0')
 		{
 			continue;
 		}
 
-		Props[Desc.Name] = Desc.Serialize();
+		Props[Prop.Name] = Prop.Serialize(Obj);
 	}
 	return Props;
 }
@@ -491,20 +490,20 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 			continue;
 		}
 
-		FPropertyDescriptor Desc = Property.ToDescriptor(Obj);
-		if(!Desc.ValuePtr)
+		if(!Property.GetValuePtrFor(Obj))
 		{
 			continue;
 		}
 
 		json::JSON& Value = PropsJSON[PropertyKey];
-		Desc.Deserialize(Value);
+		Property.Deserialize(Obj, Value);
 
 		FPropertyChangedEvent Event;
-		Event.Descriptor = &Desc;
-		Event.PropertyName = Desc.Name.c_str();
-		Event.DisplayName = Desc.DisplayName.empty() ? Desc.Name.c_str() : Desc.DisplayName.c_str();
-		Event.Type = Desc.Type;
+		Event.Object = Obj;
+		Event.Property = &Property;
+		Event.PropertyName = Property.Name;
+		Event.DisplayName = Property.DisplayName ? Property.DisplayName : Property.Name;
+		Event.Type = Property.Type;
 		Event.ChangeType = EPropertyChangeType::Load;
 		Obj->PostEditChangeProperty(Event);
 	}

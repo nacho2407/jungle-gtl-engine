@@ -78,18 +78,18 @@ namespace
 		Groups.push_back(Group);
 	}
 
-	const char* GetPropertyDisplayName(const FPropertyDescriptor& Prop)
+	const char* GetPropertyDisplayName(const FPropertyValue& Prop)
 	{
 		return Prop.DisplayName.empty() ? Prop.Name.c_str() : Prop.DisplayName.c_str();
 	}
 
-	const FString* FindPropertyMetadata(const FPropertyDescriptor& Prop, const FString& Key)
+	const FString* FindPropertyMetadata(const FPropertyValue& Prop, const FString& Key)
 	{
 		auto It = Prop.Metadata.find(Key);
 		return It != Prop.Metadata.end() ? &It->second : nullptr;
 	}
 
-	FString GetAssetTypeMetadata(const FPropertyDescriptor& Prop)
+	FString GetAssetTypeMetadata(const FPropertyValue& Prop)
 	{
 		if (const FString* AssetType = FindPropertyMetadata(Prop, "assettype"))
 		{
@@ -102,7 +102,35 @@ namespace
 		return {};
 	}
 
-	void DispatchPostEditChange(UObject* Object, const FPropertyDescriptor& Prop, EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet, int32 ArrayIndex = -1)
+	const char* GetPropertyDisplayName(const FEditableProperty& Prop)
+	{
+		return Prop.GetDisplayName();
+	}
+
+	const FString* FindPropertyMetadata(const FEditableProperty& Prop, const FString& Key)
+	{
+		if (!Prop.Property)
+		{
+			return nullptr;
+		}
+		auto It = Prop.Property->Metadata.find(Key);
+		return It != Prop.Property->Metadata.end() ? &It->second : nullptr;
+	}
+
+	FString GetAssetTypeMetadata(const FEditableProperty& Prop)
+	{
+		if (const FString* AssetType = FindPropertyMetadata(Prop, "assettype"))
+		{
+			return *AssetType;
+		}
+		if (const FString* AllowedClass = FindPropertyMetadata(Prop, "allowedclass"))
+		{
+			return *AllowedClass;
+		}
+		return {};
+	}
+
+	void DispatchPostEditChange(UObject* Object, const FPropertyValue& Prop, EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet, int32 ArrayIndex = -1)
 	{
 		if (!Object)
 		{
@@ -110,13 +138,108 @@ namespace
 		}
 
 		FPropertyChangedEvent Event;
-		Event.Descriptor = &Prop;
+		Event.Object = Object;
 		Event.PropertyName = Prop.Name.c_str();
 		Event.DisplayName = GetPropertyDisplayName(Prop);
 		Event.Type = Prop.Type;
 		Event.ChangeType = ChangeType;
 		Event.ArrayIndex = ArrayIndex;
 		Object->PostEditChangeProperty(Event);
+	}
+
+	void DispatchPostEditChange(UObject* Object, const FEditableProperty& Prop, EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet, int32 ArrayIndex = -1)
+	{
+		if (!Object || !Prop.Property)
+		{
+			return;
+		}
+
+		FPropertyChangedEvent Event;
+		Event.Object = Object;
+		Event.Property = Prop.Property;
+		Event.PropertyName = Prop.GetName();
+		Event.DisplayName = Prop.GetDisplayName();
+		Event.Type = Prop.Property->Type;
+		Event.ChangeType = ChangeType;
+		Event.ArrayIndex = ArrayIndex;
+		Object->PostEditChangeProperty(Event);
+	}
+
+	bool CopyPropertyValue(const FPropertyValue& SrcValue, FPropertyValue& DstValue)
+	{
+		if (!SrcValue.ValuePtr || !DstValue.ValuePtr || SrcValue.Type != DstValue.Type)
+		{
+			return false;
+		}
+
+		size_t Size = 0;
+		switch (SrcValue.Type)
+		{
+		case EPropertyType::Bool:          Size = sizeof(bool); break;
+		case EPropertyType::ByteBool:      Size = sizeof(uint8); break;
+		case EPropertyType::Int:           Size = sizeof(int32); break;
+		case EPropertyType::Float:         Size = sizeof(float); break;
+		case EPropertyType::Vec3:
+		case EPropertyType::Rotator:       Size = sizeof(float) * 3; break;
+		case EPropertyType::Vec4:
+		case EPropertyType::Color4:        Size = sizeof(float) * 4; break;
+		case EPropertyType::Enum:          Size = SrcValue.EnumSize; break;
+		case EPropertyType::String:
+		case EPropertyType::Script:
+		case EPropertyType::SceneComponentRef:
+		case EPropertyType::StaticMeshRef:
+		case EPropertyType::SkeletalMeshRef:
+			*static_cast<FString*>(DstValue.ValuePtr) = *static_cast<FString*>(SrcValue.ValuePtr);
+			return true;
+		case EPropertyType::Name:
+			*static_cast<FName*>(DstValue.ValuePtr) = *static_cast<FName*>(SrcValue.ValuePtr);
+			return true;
+		case EPropertyType::MaterialSlot:
+			*static_cast<FMaterialSlot*>(DstValue.ValuePtr) = *static_cast<FMaterialSlot*>(SrcValue.ValuePtr);
+			return true;
+		case EPropertyType::MaterialSlotArray:
+			*static_cast<TArray<FMaterialSlot>*>(DstValue.ValuePtr) = *static_cast<TArray<FMaterialSlot>*>(SrcValue.ValuePtr);
+			return true;
+		case EPropertyType::Vec3Array:
+			*static_cast<TArray<FVector>*>(DstValue.ValuePtr) = *static_cast<TArray<FVector>*>(SrcValue.ValuePtr);
+			return true;
+		case EPropertyType::Struct:
+		{
+			if (!SrcValue.StructFunc || !DstValue.StructFunc)
+			{
+				return false;
+			}
+
+			TArray<FPropertyValue> SrcChildren;
+			TArray<FPropertyValue> DstChildren;
+			SrcValue.StructFunc(SrcValue.ValuePtr, SrcChildren);
+			DstValue.StructFunc(DstValue.ValuePtr, DstChildren);
+
+			bool bCopiedAny = false;
+			for (const FPropertyValue& SrcChild : SrcChildren)
+			{
+				for (FPropertyValue& DstChild : DstChildren)
+				{
+					if (SrcChild.Name == DstChild.Name && CopyPropertyValue(SrcChild, DstChild))
+					{
+						bCopiedAny = true;
+						break;
+					}
+				}
+			}
+			return bCopiedAny;
+		}
+		default:
+			return false;
+		}
+
+		if (Size > 0)
+		{
+			memcpy(DstValue.ValuePtr, SrcValue.ValuePtr, Size);
+			return true;
+		}
+
+		return false;
 	}
 
 	UClass* FindComponentClassGroupAnchor(UClass* ComponentClass, const TArray<FComponentClassGroup>& Groups)
@@ -463,7 +586,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		ImGui::Text("Transform");
 		ImGui::Spacing();
 
-		TArray<FPropertyDescriptor> Props;
+		TArray<FEditableProperty> Props;
 		PrimaryActor->GetEditableProperties(Props);
 
 		if (ImGui::BeginTable("##ActorPropertyTable", 2,
@@ -812,8 +935,8 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 
 	ImGui::Separator();
 
-	// PropertyDescriptor 기반 자동 위젯 렌더링
-	TArray<FPropertyDescriptor> Props;
+	// FEditableProperty 기반 자동 위젯 렌더링
+	TArray<FEditableProperty> Props;
 	SelectedComponent->GetEditableProperties(Props);
 
 	bool bIsRoot = false;
@@ -827,12 +950,13 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 	TArray<std::string> CategoryOrder;
 	for (const auto& P : Props)
 	{
+		const char* PropertyCategory = P.GetCategory();
 		bool bFound = false;
 		for (const auto& C : CategoryOrder)
 		{
-			if (C == P.Category) { bFound = true; break; }
+			if (C == PropertyCategory) { bFound = true; break; }
 		}
-		if (!bFound) CategoryOrder.push_back(P.Category);
+		if (!bFound) CategoryOrder.push_back(PropertyCategory);
 	}
 
 	bool bAnyChanged = false;
@@ -878,7 +1002,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 
 			for (int32 i = 0; i < (int32)Props.size(); ++i)
 			{
-				if (Props[i].Category != Cat)
+				if (Cat != Props[i].GetCategory())
 					continue;
 
 				ImGui::TableNextRow();
@@ -901,9 +1025,9 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 				if (bChanged)
 				{
 					bAnyChanged = true;
-					PropagatePropertyChange(Props[i].Name, SelectedActors);
+					PropagatePropertyChange(Props[i].GetName(), SelectedActors);
 
-					if (Props[i].Type == EPropertyType::StaticMeshRef || Props[i].Type == EPropertyType::SkeletalMeshRef)
+					if (Props[i].Property && (Props[i].Property->Type == EPropertyType::StaticMeshRef || Props[i].Property->Type == EPropertyType::SkeletalMeshRef))
 					{
 						bPropsInvalidated = true;
 						ImGui::PopID();
@@ -933,15 +1057,16 @@ void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, con
 	AActor* PrimaryActor = SelectedActors[0];
 
 	// Primary 컴포넌트에서 변경된 프로퍼티의 값 포인터 찾기
-	TArray<FPropertyDescriptor> SrcProps;
+	TArray<FEditableProperty> SrcProps;
 	SelectedComponent->GetEditableProperties(SrcProps);
 
-	const FPropertyDescriptor* SrcProp = nullptr;
+	const FEditableProperty* SrcProp = nullptr;
 	for (const auto& P : SrcProps)
 	{
-		if (P.Name == PropName) { SrcProp = &P; break; }
+		if (P.GetName() == PropName) { SrcProp = &P; break; }
 	}
 	if (!SrcProp) return;
+	FPropertyValue SrcValue = SrcProp->Property->ToValue(SrcProp->Object);
 
 	for (AActor* Actor : SelectedActors)
 	{
@@ -951,60 +1076,19 @@ void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, con
 		{
 			if (!Comp || Comp->GetClass() != CompClass) continue;
 
-			TArray<FPropertyDescriptor> DstProps;
+			TArray<FEditableProperty> DstProps;
 			Comp->GetEditableProperties(DstProps);
 
 			for (const auto& DstProp : DstProps)
 			{
-				if (DstProp.Name != PropName || DstProp.Type != SrcProp->Type) continue;
+				if (!DstProp.Property || DstProp.GetName() != PropName || DstProp.Property->Type != SrcProp->Property->Type) continue;
+				FPropertyValue DstValue = DstProp.Property->ToValue(DstProp.Object);
+				if (!DstValue.ValuePtr || !SrcValue.ValuePtr) continue;
 
-				size_t Size = 0;
-				switch (DstProp.Type)
+				if (CopyPropertyValue(SrcValue, DstValue))
 				{
-				case EPropertyType::Bool:          Size = sizeof(bool); break;
-				case EPropertyType::ByteBool:       Size = sizeof(uint8); break;
-				case EPropertyType::Int:            Size = sizeof(int32); break;
-				case EPropertyType::Float:          Size = sizeof(float); break;
-				case EPropertyType::Vec3:
-				case EPropertyType::Rotator:        Size = sizeof(float) * 3; break;
-				case EPropertyType::Vec4:
-				case EPropertyType::Color4:         Size = sizeof(float) * 4; break;
-				case EPropertyType::String:
-				case EPropertyType::SceneComponentRef:
-				case EPropertyType::StaticMeshRef:  *static_cast<FString*>(DstProp.ValuePtr) = *static_cast<FString*>(SrcProp->ValuePtr); break;
-				case EPropertyType::SkeletalMeshRef: *static_cast<FString*>(DstProp.ValuePtr) = *static_cast<FString*>(SrcProp->ValuePtr); break;
-				case EPropertyType::Name:           *static_cast<FName*>(DstProp.ValuePtr) = *static_cast<FName*>(SrcProp->ValuePtr); break;
-				case EPropertyType::MaterialSlot:   *static_cast<FMaterialSlot*>(DstProp.ValuePtr) = *static_cast<FMaterialSlot*>(SrcProp->ValuePtr); break;
-				case EPropertyType::MaterialSlotArray: *static_cast<TArray<FMaterialSlot>*>(DstProp.ValuePtr) = *static_cast<TArray<FMaterialSlot>*>(SrcProp->ValuePtr); break;
-				case EPropertyType::Enum:           Size = SrcProp->EnumSize; break;
-				case EPropertyType::Vec3Array:      *static_cast<TArray<FVector>*>(DstProp.ValuePtr) = *static_cast<TArray<FVector>*>(SrcProp->ValuePtr); break;
-				case EPropertyType::Struct:
-				{
-					// Struct 자식 프로퍼티를 개별적으로 복사
-					if (SrcProp->StructFunc && DstProp.StructFunc)
-					{
-						TArray<FPropertyDescriptor> SrcChildren, DstChildren;
-						SrcProp->StructFunc(SrcProp->ValuePtr, SrcChildren);
-						DstProp.StructFunc(DstProp.ValuePtr, DstChildren);
-						for (size_t si = 0; si < SrcChildren.size() && si < DstChildren.size(); ++si)
-						{
-							if (SrcChildren[si].Type == DstChildren[si].Type)
-							{
-								size_t ChildSize = 0;
-								if (SrcChildren[si].Type == EPropertyType::Enum)
-									ChildSize = SrcChildren[si].EnumSize;
-								if (ChildSize > 0)
-									memcpy(DstChildren[si].ValuePtr, SrcChildren[si].ValuePtr, ChildSize);
-							}
-						}
-					}
-					break;
+					DispatchPostEditChange(Comp, DstProp);
 				}
-				}
-				if (Size > 0)
-					memcpy(DstProp.ValuePtr, SrcProp->ValuePtr, Size);
-
-				DispatchPostEditChange(Comp, DstProp);
 				break;
 			}
 			break; // 같은 타입의 첫 번째 컴포넌트에만 전파
@@ -1051,10 +1135,35 @@ void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* Component
 	bActorSelected = false;
 }
 
-bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Props, int32& Index)
+bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FEditableProperty>& Props, int32& Index)
+{
+	if (Index < 0 || Index >= static_cast<int32>(Props.size()))
+	{
+		return false;
+	}
+
+	FEditableProperty& Prop = Props[Index];
+	if (!Prop.Property)
+	{
+		return false;
+	}
+
+	FPropertyValue Value = Prop.Property->ToValue(Prop.Object);
+	if (!Value.ValuePtr)
+	{
+		return false;
+	}
+
+	TArray<FPropertyValue> Values;
+	Values.push_back(Value);
+	int32 ValueIndex = 0;
+	return RenderPropertyWidget(Values, ValueIndex);
+}
+
+bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, int32& Index, bool bDispatchChange)
 {
 	ImGui::PushID(Index);
-	FPropertyDescriptor& Prop = Props[Index];
+	FPropertyValue& Prop = Props[Index];
 	bool bChanged = false;
 
 	switch (Prop.Type)
@@ -1660,7 +1769,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 
 		if (bOpen)
 		{
-			TArray<FPropertyDescriptor> ChildProps;
+			TArray<FPropertyValue> ChildProps;
 			Prop.StructFunc(Prop.ValuePtr, ChildProps);
 
 			ImGui::Indent(8.0f);
@@ -1669,42 +1778,16 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			{
 				ImGui::PushID(ci);
 
-				FPropertyDescriptor& ChildProp = ChildProps[ci];
-				// Struct 자식 프로퍼티는 재귀적으로 같은 위젯 렌더링 함수를 사용
-				// 단, SelectedComponent의 edit-change event는 부모 Struct 이름으로 호출
+				FPropertyValue& ChildProp = ChildProps[ci];
+				ImGui::AlignTextToFramePadding();
+				ImGui::TextUnformatted(GetPropertyDisplayName(ChildProp));
+				ImGui::SameLine(120.0f);
+				ImGui::SetNextItemWidth(-1);
+
 				int32 ChildIdx = ci;
-
-				// Enum 위젯 인라인 렌더링 (가장 빈번한 자식 타입)
-				if (ChildProp.Type == EPropertyType::Enum && ChildProp.EnumNames && ChildProp.EnumCount > 0)
+				if (RenderPropertyWidget(ChildProps, ChildIdx, false))
 				{
-					int32 Val = 0;
-					memcpy(&Val, ChildProp.ValuePtr, ChildProp.EnumSize);
-
-					const char* Preview = ((uint32)Val < ChildProp.EnumCount) ? ChildProp.EnumNames[Val] : "Unknown";
-
-					ImGui::AlignTextToFramePadding();
-					ImGui::TextUnformatted(GetPropertyDisplayName(ChildProp));
-
-					ImGui::SameLine(120.0f);
-					ImGui::SetNextItemWidth(-1);
-
-					if (ImGui::BeginCombo("##Value", Preview))
-					{
-						for (uint32 ei = 0; ei < ChildProp.EnumCount; ++ei)
-						{
-							bool bSel = (Val == (int32)ei);
-
-							if (ImGui::Selectable(ChildProp.EnumNames[ei], bSel))
-							{
-								int32 NewVal = (int32)ei;
-								memcpy(ChildProp.ValuePtr, &NewVal, ChildProp.EnumSize);
-								bChanged = true;
-							}
-
-							if (bSel) ImGui::SetItemDefaultFocus();
-						}
-						ImGui::EndCombo();
-					}
+					bChanged = true;
 				}
 				ImGui::PopID();
 			}
@@ -1737,7 +1820,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 	}
 	}
 
-	if (bChanged && SelectedComponent)
+	if (bDispatchChange && bChanged && SelectedComponent)
 	{
 		DispatchPostEditChange(SelectedComponent, Prop);
 	}

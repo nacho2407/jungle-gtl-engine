@@ -154,7 +154,7 @@ public:
 	void SerializeProperties(FArchive& Ar, uint32 RequiredFlags);
 	virtual void PostDuplicate() {}
 
-	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps);
+	virtual void GetEditableProperties(TArray<FEditableProperty>& OutProps);
 	virtual void PreGetEditableProperties() {}
 	virtual bool ShouldExposeProperty(const FProperty& Property) const;
 	virtual void PostEditChangeProperty(const FPropertyChangedEvent& Event);
