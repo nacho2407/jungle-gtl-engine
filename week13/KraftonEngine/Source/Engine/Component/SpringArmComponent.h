@@ -54,6 +54,15 @@ public:
 	ECollisionChannel ProbeChannel = ECollisionChannel::WorldStatic;
 	float ProbeSize = 0.12f;               // hit 지점에서 ProbeSize 만큼 안쪽에 정지
 
+	// Control rotation 사용 옵션 (UE 패턴). true 면 부모 (capsule) 의 world rotation 대신
+	// owner APawn 의 ControlRotation 을 desired rotation 으로 사용 — mouse look 이 capsule
+	// 회전 안 건드리고 카메라만 움직이는 ThirdPerson 패턴.
+	// bInheritPitch/Yaw/Roll 가 각 axis 별로 — false 면 그 axis 는 capsule rotation 사용.
+	bool bUsePawnControlRotation = false;
+	bool bInheritPitch           = true;
+	bool bInheritYaw             = true;
+	bool bInheritRoll            = false;
+
 private:
 	// 매 Tick 에 갱신되는 보간 상태 — 부착점 (parent + TargetOffset) 위치/회전.
 	FVector LaggedAttachLoc = FVector(0.0f, 0.0f, 0.0f);
