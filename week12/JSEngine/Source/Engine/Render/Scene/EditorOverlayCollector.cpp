@@ -124,6 +124,11 @@ namespace
             const USubUVComponent* SubUVComp = static_cast<const USubUVComponent*>(PrimitiveComponent);
             return BuildQuadAABB(MakeViewSubUVSelectionMatrix(SubUVComp, RenderBus));
         }
+        case EPrimitiveType::EPT_SkeletalMesh:
+        {
+            const USkeletalMeshComponent* SkeletalMeshComp = static_cast<const USkeletalMeshComponent*>(PrimitiveComponent);
+            return SkeletalMeshComp->CalculateCurrentPoseWorldAABB();
+        }
 
         default:
             return PrimitiveComponent->GetWorldAABB();
