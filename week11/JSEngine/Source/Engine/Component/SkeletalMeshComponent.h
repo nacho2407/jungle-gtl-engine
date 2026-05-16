@@ -1,15 +1,15 @@
-#pragma once
+﻿#pragma once
 
 #include "SkeletalMeshComponent.generated.h"
 
+#include "Animation/AnimationTypes.h"
 #include "Component/SkinnedMeshComponent.h"
 
-/**
- * @brief Unreal Engine 스타일에서는 skinned mesh가 skeleton을 이용하는 mesh를 표현하고,
- *        skeletal mesh는 실제로 actor에 붙어서 애니메이션을 붙일 수 있는 component로 사용되고 있으므로
- *        USkeletalMeshComponent 또한 해당 방식대로 우선은 얇게 유지.
- *        핵심 로직들은 대부분 USkinnedMeshComponent로 옮겼습니다.
- */
+class UAnimInstance;
+class UAnimSingleNodeInstance;
+class UAnimationAsset;
+struct FTransform;
+
 UCLASS()
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
@@ -18,11 +18,44 @@ public:
     DECLARE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 
     USkeletalMeshComponent() = default;
-    ~USkeletalMeshComponent() override = default;
+    ~USkeletalMeshComponent() override;
 
     void TickComponent(float DeltaTime) override;
 
     EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_SkeletalMesh; }
+
+    void SetAnimationMode(EAnimationMode InMode);
+    EAnimationMode GetAnimationMode() const;
+    void SetAnimInstanceClass(const FString& InClassName);
+    UAnimInstance* GetAnimInstance() const;
+    void RecreateAnimInstance();
+    bool ApplyAnimationLocalPose(const TArray<FTransform>& LocalPose);
+
+	/**
+	 * @brief 명시적으로 animation pose를 업데이트하는 함수
+	 *
+	 * @note SetPosition은 다음 프레임 TickComponent에서 실제 pose 적용이 일어남
+	 *        
+	 * @example animation sequence viewer에서 timeline scrubber를 사용할 때 슬라이더를 움직인 즉시 화면을 갱신
+	 *        
+	 */
+    bool RefreshAnimationPose();
+
+	// playback API
+    void PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping);
+    void SetAnimation(UAnimationAsset* NewAnimToPlay);
+    UAnimationAsset* GetAnimation() const;
+    void Play();
+    void Pause();
+    void Stop();
+    void SetPosition(float TimeSeconds, bool bFireNotifies = false);
+    float GetPosition() const;
+    void SetPlayRate(float InPlayRate);
+    float GetPlayRate() const;
+    void SetLooping(bool bInLooping);
+    bool IsLooping() const;
+    bool IsPlaying() const;
+    float GetPlayLength() const;
 
     void ResetToBindPose();
 
@@ -31,4 +64,14 @@ public:
 
     FMatrix GetBoneGlobalTransform(int32 BoneIndex) const;
     void SetBoneGlobalTransform(int32 BoneIndex, const FMatrix& NewGlobalTransform);
+
+private:
+    void DestroyAnimInstance();
+    UAnimSingleNodeInstance* GetSingleNodeInstance() const;
+    UAnimSingleNodeInstance* EnsureSingleNodeInstance();
+
+private:
+    EAnimationMode AnimationMode = EAnimationMode::None;
+    FString AnimInstanceClassName;
+    UAnimInstance* AnimInstance = nullptr;
 };
