@@ -268,13 +268,13 @@ void ACubeActor::InitDefaultComponents()
     SetRootComponent(Cube);
 
     // Text
-    UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
-    Text->SetFont(FName("Default"));
-    Text->AttachToComponent(Cube);
-    Text->SetText("UUID: " + std::to_string(GetUUID()));
-    Text->SetTransient(true);
-    Text->SetEditorOnly(true);
-    Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+    //UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+    //Text->SetFont(FName("Default"));
+    //Text->AttachToComponent(Cube);
+    //Text->SetText("UUID: " + std::to_string(GetUUID()));
+    //Text->SetTransient(true);
+    //Text->SetEditorOnly(true);
+    //Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 }
 
 void ASphereActor::InitDefaultComponents()
@@ -283,13 +283,13 @@ void ASphereActor::InitDefaultComponents()
     //Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
     SetRootComponent(Sphere);
 
-    UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
-    Text->SetFont(FName("Default"));
-    Text->AttachToComponent(Sphere);
-    Text->SetText("UUID: " + std::to_string(GetUUID()));
-    Text->SetTransient(true);
-    Text->SetEditorOnly(true);
-    Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+    //UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+    //Text->SetFont(FName("Default"));
+    //Text->AttachToComponent(Sphere);
+    //Text->SetText("UUID: " + std::to_string(GetUUID()));
+    //Text->SetTransient(true);
+    //Text->SetEditorOnly(true);
+    //Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 }
 
 void APlaneActor::InitDefaultComponents()
@@ -298,13 +298,13 @@ void APlaneActor::InitDefaultComponents()
     Plane->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(PlaneMeshPath));
     SetRootComponent(Plane);
 
-    UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
-    Text->SetFont(FName("Default"));
-    Text->SetText(std::format("UUID: {}", GetUUID()));
-    Text->SetTransient(true);
-    Text->SetEditorOnly(true);
-    Text->AttachToComponent(Plane);
-    Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+    //UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+    //Text->SetFont(FName("Default"));
+    //Text->SetText(std::format("UUID: {}", GetUUID()));
+    //Text->SetTransient(true);
+    //Text->SetEditorOnly(true);
+    //Text->AttachToComponent(Plane);
+    //Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 }
 
 void AAttachTestActor::InitDefaultComponents()
@@ -335,12 +335,12 @@ void AAttachTestActor::InitDefaultComponents()
     }
 
     // Text attached directly to Root
-    auto* Text = AddComponent<UTextRenderComponent>();
-    Text->AttachToComponent(Cube);
-    Text->SetText("UUID: " + std::to_string(GetUUID()));
-    Text->SetTransient(true);
-    Text->SetEditorOnly(true);
-    Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.5f));
+    //auto* Text = AddComponent<UTextRenderComponent>();
+    //Text->AttachToComponent(Cube);
+    //Text->SetText("UUID: " + std::to_string(GetUUID()));
+    //Text->SetTransient(true);
+    //Text->SetEditorOnly(true);
+    //Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.5f));
 }
 
 void ASceneActor::InitDefaultComponents()
@@ -410,15 +410,15 @@ void AStaticMeshActor::InitDefaultComponents()
     SetRootComponent(StaticMesh);
 
     // Text attached directly to Root
-    auto* Text = AddComponent<UTextRenderComponent>();
-    Text->AttachToComponent(StaticMesh);
-    Text->SetFont(FName("Default"));
-    Text->SetText("UUID: " + std::to_string(GetUUID()));
-    Text->SetTransient(true);
-    Text->SetEditorOnly(true);
+    //auto* Text = AddComponent<UTextRenderComponent>();
+    //Text->AttachToComponent(StaticMesh);
+    //Text->SetFont(FName("Default"));
+    //Text->SetText("UUID: " + std::to_string(GetUUID()));
+    //Text->SetTransient(true);
+    //Text->SetEditorOnly(true);
 
-    FVector Extent = StaticMesh->GetWorldAABB().GetExtent();
-    Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
+    //FVector Extent = StaticMesh->GetWorldAABB().GetExtent();
+    //Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
 }
 
 void ASkeletalMeshActor::InitDefaultComponents()
@@ -437,15 +437,15 @@ void ASkeletalMeshActor::InitDefaultComponents()
     SkeletalMeshComp->PlayAnimation(DebugAnim, true);*/
 
     // 여기까지가 Animation Debug 코드.
-    auto* Text = AddComponent<UTextRenderComponent>();
-    Text->AttachToComponent(SkeletalMeshComp);
-    Text->SetFont(FName("Default"));
-    Text->SetText("UUID: " + std::to_string(GetUUID()));
-    Text->SetTransient(true);
-    Text->SetEditorOnly(true);
+    //auto* Text = AddComponent<UTextRenderComponent>();
+    //Text->AttachToComponent(SkeletalMeshComp);
+    //Text->SetFont(FName("Default"));
+    //Text->SetText("UUID: " + std::to_string(GetUUID()));
+    //Text->SetTransient(true);
+    //Text->SetEditorOnly(true);
 
-    FVector Extent = SkeletalMeshComp->GetWorldAABB().GetExtent();
-    Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
+    //FVector Extent = SkeletalMeshComp->GetWorldAABB().GetExtent();
+    //Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
 
     // ─────────────────────────────────────────────────────────────────────
     // Socket Save/Load 검증용 테스트 — 에디터에서 "HandSocket"을 정의·저장 후
@@ -483,15 +483,15 @@ void ASubUVActor::InitDefaultComponents()
     SubUV->SetSpriteSize(2.0f, 2.0f);
     SubUV->SetFrameRate(30.f);
 
-    auto* Text = AddComponent<UTextRenderComponent>();
-    Text->AttachToComponent(SubUV);
-    Text->SetFont(FName("Default"));
-    Text->SetText("UUID: " + std::to_string(GetUUID()));
-    Text->SetTransient(true);
-    Text->SetEditorOnly(true);
+    //auto* Text = AddComponent<UTextRenderComponent>();
+    //Text->AttachToComponent(SubUV);
+    //Text->SetFont(FName("Default"));
+    //Text->SetText("UUID: " + std::to_string(GetUUID()));
+    //Text->SetTransient(true);
+    //Text->SetEditorOnly(true);
 
-    FVector Extent = SubUV->GetWorldAABB().GetExtent();
-    Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 1.4f));
+    //FVector Extent = SubUV->GetWorldAABB().GetExtent();
+    //Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 1.4f));
 }
 
 void ATextRenderActor::InitDefaultComponents()
@@ -501,15 +501,15 @@ void ATextRenderActor::InitDefaultComponents()
     Text->SetFont(FName("Default"));
     Text->SetText("TextRender");
 
-    auto* TextUUID = AddComponent<UTextRenderComponent>();
-    TextUUID->AttachToComponent(Text);
-    TextUUID->SetFont(FName("Default"));
-    TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
-    TextUUID->SetTransient(true);
-    TextUUID->SetEditorOnly(true);
+    //auto* TextUUID = AddComponent<UTextRenderComponent>();
+    //TextUUID->AttachToComponent(Text);
+    //TextUUID->SetFont(FName("Default"));
+    //TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+    //TextUUID->SetTransient(true);
+    //TextUUID->SetEditorOnly(true);
 
-    FVector Extent = TextUUID->GetWorldAABB().GetExtent();
-    TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
+    //FVector Extent = TextUUID->GetWorldAABB().GetExtent();
+    //TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
 
 void ABillboardActor::InitDefaultComponents()
@@ -519,15 +519,15 @@ void ABillboardActor::InitDefaultComponents()
     Billboard->SetTextureName(FEditorResourcePaths::Icon("Pawn_64x.png"));
     //Billboard->SetTextureName();
 
-    auto* TextUUID = AddComponent<UTextRenderComponent>();
-    TextUUID->AttachToComponent(Billboard);
-    TextUUID->SetFont(FName("Default"));
-    TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
-    TextUUID->SetTransient(true);
-    TextUUID->SetEditorOnly(true);
+    //auto* TextUUID = AddComponent<UTextRenderComponent>();
+    //TextUUID->AttachToComponent(Billboard);
+    //TextUUID->SetFont(FName("Default"));
+    //TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+    //TextUUID->SetTransient(true);
+    //TextUUID->SetEditorOnly(true);
 
-    FVector Extent = TextUUID->GetWorldAABB().GetExtent();
-    TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
+    //FVector Extent = TextUUID->GetWorldAABB().GetExtent();
+    //TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
 
 void ADecalActor::InitDefaultComponents()
@@ -540,14 +540,14 @@ void ADecalActor::InitDefaultComponents()
     Billboard->SetEditorOnly(true);
     Billboard->SetTextureName(FEditorResourcePaths::Icon("DecalActor_64.png"));
 
-    auto* TextUUID = AddComponent<UTextRenderComponent>();
-    TextUUID->AttachToComponent(Decal);
-    TextUUID->SetFont(FName("Default"));
-    TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
-    TextUUID->SetTransient(true);
-    TextUUID->SetEditorOnly(true);
-    FVector Extent = TextUUID->GetWorldAABB().GetExtent();
-    TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
+    //auto* TextUUID = AddComponent<UTextRenderComponent>();
+    //TextUUID->AttachToComponent(Decal);
+    //TextUUID->SetFont(FName("Default"));
+    //TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+    //TextUUID->SetTransient(true);
+    //TextUUID->SetEditorOnly(true);
+    //FVector Extent = TextUUID->GetWorldAABB().GetExtent();
+    //TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
 
 void AFireballActor::InitDefaultComponents()
@@ -559,13 +559,13 @@ void AFireballActor::InitDefaultComponents()
     SetRootComponent(Sphere);
 
     // Nametag
-    UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
-    Text->SetFont(FName("Default"));
-    Text->AttachToComponent(Sphere);
-    Text->SetText("UUID: " + std::to_string(GetUUID()));
-    Text->SetTransient(true);
-    Text->SetEditorOnly(true);
-    Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+    //UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+    //Text->SetFont(FName("Default"));
+    //Text->AttachToComponent(Sphere);
+    //Text->SetText("UUID: " + std::to_string(GetUUID()));
+    //Text->SetTransient(true);
+    //Text->SetEditorOnly(true);
+    //Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 
     // Flare
     UFireballComponent* Fireball = AddComponent<UFireballComponent>();
