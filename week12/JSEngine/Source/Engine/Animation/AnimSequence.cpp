@@ -27,6 +27,12 @@ TArray<FBoneAnimationTrack>& UAnimDataModel::GetMutableBoneAnimationTracks()
     return BoneAnimationTracks;
 }
 
+const TArray<FBoneAnimationTrack>& UAnimSequenceBase::GetBoneAnimationTracks() const
+{
+    static const TArray<FBoneAnimationTrack> EmptyTracks = {};
+    return DataModel ? DataModel->GetBoneAnimationTracks() : EmptyTracks;
+}
+
 void UAnimSequenceBase::AddNotify(float InTriggerTime, const FName& InNotifyName)
 {
     FAnimNotifyEvent NewNotify;
@@ -63,11 +69,11 @@ namespace
         return Start + (End - Start) * Alpha;
     }
 
-    FQuat4f SampleQuatKey(const TArray<FQuat4f>& Keys, int32 KeyIndex, int32 NextKeyIndex, float Alpha)
+    FQuat4f SampleQuatKey(const TArray<FQuat4f>& Keys, int32 KeyIndex, int32 NextKeyIndex, float Alpha, const FQuat4f& DefaultValue)
     {
         if (Keys.empty())
         {
-            return FQuat4f::Identity;
+            return DefaultValue;
         }
 
         const int32 LastIndex = static_cast<int32>(Keys.size()) - 1;
@@ -95,9 +101,18 @@ bool UAnimSequence::GetAnimationPose(float Time, FPoseContext& OutPose) const
         return false;
     }
 
-    for (int32 PoseIndex = 0; PoseIndex < static_cast<int32>(OutPose.LocalPose.size()); ++PoseIndex)
+    if (OutPose.LocalPose.empty() && !OutPose.BindPose.empty())
     {
-        OutPose.LocalPose[PoseIndex] = FMatrix::Identity;
+        OutPose.LocalPose = OutPose.BindPose;
+    }
+    else if (OutPose.LocalPose.size() == OutPose.BindPose.size())
+    {
+        OutPose.LocalPose = OutPose.BindPose;
+    }
+
+    if (OutPose.LocalPose.empty())
+    {
+        return false;
     }
 
     int32 KeyCount = DataModel->GetNumberOfKeys();
@@ -126,15 +141,32 @@ bool UAnimSequence::GetAnimationPose(float Time, FPoseContext& OutPose) const
 
     const int32 PoseCount = static_cast<int32>(OutPose.LocalPose.size());
     const int32 TrackCount = static_cast<int32>(Tracks.size());
-    const int32 ApplyCount = std::min(PoseCount, TrackCount);
-    for (int32 TrackIndex = 0; TrackIndex < ApplyCount; ++TrackIndex)
+    for (int32 TrackIndex = 0; TrackIndex < TrackCount; ++TrackIndex)
     {
-        const FRawAnimSequenceTrack& RawTrack = Tracks[TrackIndex].InternalTrack;
-        const FVector3f Translation = SampleVectorKey(RawTrack.PosKeys, KeyIndex, NextKeyIndex, Alpha, FVector3f::ZeroVector);
-        const FQuat4f Rotation = SampleQuatKey(RawTrack.RotKeys, KeyIndex, NextKeyIndex, Alpha);
-        const FVector3f Scale = SampleVectorKey(RawTrack.ScaleKeys, KeyIndex, NextKeyIndex, Alpha, FVector3f::OneVector);
+        int32 BoneIndex = TrackIndex;
+        if (TrackIndex < static_cast<int32>(OutPose.TrackToBoneMap.size()))
+        {
+            BoneIndex = OutPose.TrackToBoneMap[TrackIndex];
+        }
 
-        OutPose.LocalPose[TrackIndex] = FTransform(Rotation, Translation, Scale).ToMatrixWithScale();
+        if (BoneIndex < 0 || BoneIndex >= PoseCount)
+        {
+            continue;
+        }
+
+        const FRawAnimSequenceTrack& RawTrack = Tracks[TrackIndex].InternalTrack;
+
+        FTransform BindTransform;
+        if (OutPose.BindPose.size() == OutPose.LocalPose.size())
+        {
+            BindTransform = FTransform(OutPose.BindPose[BoneIndex]);
+        }
+
+        const FVector3f Translation = SampleVectorKey(RawTrack.PosKeys, KeyIndex, NextKeyIndex, Alpha, BindTransform.GetTranslation());
+        const FQuat4f Rotation = SampleQuatKey(RawTrack.RotKeys, KeyIndex, NextKeyIndex, Alpha, BindTransform.GetRotation());
+        const FVector3f Scale = SampleVectorKey(RawTrack.ScaleKeys, KeyIndex, NextKeyIndex, Alpha, BindTransform.GetScale3D());
+
+        OutPose.LocalPose[BoneIndex] = FTransform(Rotation, Translation, Scale).ToMatrixWithScale();
     }
 
     return true;
