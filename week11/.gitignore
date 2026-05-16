@@ -455,6 +455,7 @@ CMakeLists.txt
 # ignore Build Files
 JSEngine/Build/
 JSEngine/DerivedData/
+JSEngine/Intermediate/Generated/
 JSEngine/Saves/**
 Builds/
 

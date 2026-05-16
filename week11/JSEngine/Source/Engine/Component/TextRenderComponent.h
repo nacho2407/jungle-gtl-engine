@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+
+#include "TextRenderComponent.generated.h"
 
 #include "PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
@@ -30,8 +32,10 @@ enum class ETextVAlign : int32
 // 텍스트를 월드 공간에 빌보드로 렌더링하는 컴포넌트.
 // PrimitiveComponent를 상속받아 RenderCollector에 자동으로 감지됩니다.
 // MeshBuffer를 사용하지 않으며, FontBatcher가 드로우콜을 처리합니다.
+UCLASS()
 class UTextRenderComponent : public UPrimitiveComponent
 {
+    GENERATED_BODY_UTextRenderComponent()
 public:
 	DECLARE_CLASS(UTextRenderComponent, UPrimitiveComponent)
 
@@ -97,11 +101,15 @@ public:
 	int32 GetUTF8Length(const FString& str) const;
 
 private:
+	UPROPERTY(EditAnywhere)
 	FString Text;
+	UPROPERTY(EditAnywhere)
 	FName FontName = FName("Default");
 	FFontResource* CachedFont = nullptr;	// ResourceManager 소유, 여기선 참조만
 
+	UPROPERTY(EditAnywhere)
 	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	UPROPERTY(EditAnywhere)
 	float FontSize = 1.0f;
 	float Spacing = 0.1f;
 	float CharWidth = 0.5f;

@@ -1,5 +1,6 @@
-﻿#include "ActorComponent.h"
+#include "ActorComponent.h"
 #include "Object/ObjectFactory.h"
+#include "Core/ReflectionUtils.h"
 
 #include <algorithm>
 #include <cctype>
@@ -167,6 +168,7 @@ void UActorComponent::PostDuplicate(UObject* Original)
 
 void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     TagsText = GetTagsText();
     // OutProps.push_back({"Active", EPropertyType::Bool, &bIsActive});
     // OutProps.push_back({"Auto Activate", EPropertyType::Bool, &bAutoActivate});

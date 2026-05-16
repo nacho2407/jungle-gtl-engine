@@ -39,12 +39,12 @@ void TestReflectionDatabase()
         if (!Info)
             continue;
 
-        DebugLog("📁 [Class] %s", Info->ClassName.ToString().c_str());
+        DebugLog(" [Class] %s", Info->ClassName.ToString().c_str());
 
         // 1. Property Information
         for (const auto& Prop : Info->Properties)
         {
-            DebugLog("   ├── [Property] %-25s %-15s (Offset: %4zu, Edit: %s)",
+            DebugLog("   |-- [Property] %-25s %-15s (Offset: %4zu, Edit: %s)",
                      Prop.Type.c_str(),
                      Prop.Name.ToString().c_str(),
                      Prop.Offset,
@@ -54,7 +54,7 @@ void TestReflectionDatabase()
         // 2. GC Tracking Information
         if (!Info->GcPointerOffsets.empty())
         {
-            std::string offsetsStr = "   └── [GC Pointers] Offsets: ";
+            std::string offsetsStr = "   |-- [GC Pointers] Offsets: ";
             for (size_t i = 0; i < Info->GcPointerOffsets.size(); ++i)
             {
                 offsetsStr += std::to_string(Info->GcPointerOffsets[i]);
@@ -65,7 +65,7 @@ void TestReflectionDatabase()
         }
         else
         {
-            DebugLog("   └── [GC Pointers] None");
+            DebugLog("   |-- [GC Pointers] None");
         }
         DebugLog("------------------------------------------------------");
     }

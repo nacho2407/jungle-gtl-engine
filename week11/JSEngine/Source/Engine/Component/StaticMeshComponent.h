@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "MeshComponent.h"
 #include "Asset/StaticMesh.h"
 #include "Render/Resource/Material.h"
@@ -8,7 +8,7 @@
 UCLASS()
 class UStaticMeshComponent : public UMeshComponent
 {
-    GENERATED_BODY()
+    GENERATED_BODY_UStaticMeshComponent()
 
 public:
     DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)

@@ -1,10 +1,11 @@
-﻿#include "GameFramework/AActor.h"
+#include "GameFramework/AActor.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
 #include "Component/Movement/MovementComponent.h"
 #include "GameFramework/World.h"
 #include "Core/Delegates/Delegate.h"
 #include <Runtime/Script/ScriptComponent.h>
+#include "Core/ReflectionUtils.h"
 
 #include <algorithm>
 #include <cctype>
@@ -209,6 +210,7 @@ static USceneComponent* DuplicateSubTree(
 
 void AActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     PendingActorLocation = GetActorLocation();
     PendingActorRotation = GetActorRotation();
     PendingActorScale = GetActorScale();

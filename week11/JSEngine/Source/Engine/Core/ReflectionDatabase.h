@@ -11,11 +11,32 @@ private:
     // "클래스 이름" -> "클래스 정보 포인터"를 매핑해두는 거대한 사전
     inline static TMap<FString, FClassInfo*> ClassMap;
 
+    inline static TMap<std::string, FStructInfo*> StructMap;
+
 public:
     // 1. 파서가 생성한 코드가 이 함수를 통해 정보를 제출합니다.
     static void AddClass(const FString& ClassName, FClassInfo* ClassInfo)
     {
         ClassMap[ClassName] = ClassInfo;
+
+        if (ClassInfo && ClassInfo->ParentClassName.IsValid())
+        {
+            ClassInfo->ParentClass = GetClass(ClassInfo->ParentClassName.ToString());
+        }
+
+        for (auto& Pair : ClassMap)
+        {
+            FClassInfo* OtherClass = Pair.second;
+            if (!OtherClass || OtherClass->ParentClass)
+            {
+                continue;
+            }
+
+            if (OtherClass->ParentClassName == FName(ClassName))
+            {
+                OtherClass->ParentClass = ClassInfo;
+            }
+        }
     }
 
     // 2. 나중에 에디터나 GC가 클래스 이름으로 정보를 찾을 때 사용합니다.
@@ -33,5 +54,25 @@ public:
     static const TMap<FString, FClassInfo*>& GetAllClasses()
     {
         return ClassMap;
+    }
+
+    static void AddStruct(const std::string& StructName, FStructInfo* StructInfo)
+    {
+        StructMap[StructName] = StructInfo;
+    }
+
+    static FStructInfo* GetStruct(const std::string& StructName)
+    {
+        auto it = StructMap.find(StructName);
+        if (it != StructMap.end())
+        {
+            return it->second;
+        }
+        return nullptr; // 못 찾음
+    }
+
+    static const TMap<std::string, FStructInfo*>& GetAllStructs()
+    {
+        return StructMap;
     }
 };

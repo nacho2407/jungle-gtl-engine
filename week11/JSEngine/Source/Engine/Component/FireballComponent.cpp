@@ -1,4 +1,5 @@
 ﻿#include "FireballComponent.h"
+#include "Core/ReflectionUtils.h"
 DEFINE_CLASS(UFireballComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UFireballComponent)
 
@@ -27,12 +28,12 @@ void UFireballComponent::Serialize(FArchive& Ar)
 
 void UFireballComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UPrimitiveComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
-    OutProps.push_back({ "Radius",		   EPropertyType::Float, &Radius });
-    OutProps.push_back({ "Radius Falloff", EPropertyType::Float, &RadiusFallOff });
-    OutProps.push_back({ "Intensity",	   EPropertyType::Float, &Intensity });
-    OutProps.push_back({ "Color",		   EPropertyType::Color, &Color });
+    //OutProps.push_back({ "Radius",		   EPropertyType::Float, &Radius });
+    //OutProps.push_back({ "Radius Falloff", EPropertyType::Float, &RadiusFallOff });
+    //OutProps.push_back({ "Intensity",	   EPropertyType::Float, &Intensity });
+    //OutProps.push_back({ "Color",		   EPropertyType::Color, &Color });
 }
 
 void UFireballComponent::PostEditProperty(const char* PropertyName)

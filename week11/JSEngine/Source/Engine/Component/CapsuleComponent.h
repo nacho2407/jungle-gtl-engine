@@ -1,8 +1,12 @@
-﻿#pragma once
+#pragma once
 #include "ShapeComponent.h"
 
+#include "CapsuleComponent.generated.h"
+
+UCLASS()
 class UCapsuleComponent : public UShapeComponent
 {
+    GENERATED_BODY_UCapsuleComponent()
 public:
     DECLARE_CLASS(UCapsuleComponent, UShapeComponent)
     float GetCapsuleHalfHeight() const { return CapsuleHalfHeight; }
@@ -27,7 +31,9 @@ public:
     void Serialize(FArchive& Ar) override;
 
 private:
+    UPROPERTY(EditAnywhere)
     float CapsuleHalfHeight = 0.5f;
+    UPROPERTY(EditAnywhere)
     float CapsuleRadius = 0.5f;
 
     bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;

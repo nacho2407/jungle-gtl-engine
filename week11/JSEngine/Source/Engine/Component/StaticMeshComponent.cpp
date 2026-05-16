@@ -103,10 +103,7 @@ bool UStaticMeshComponent::HasValidMesh() const
 
 void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    //UMeshComponent::GetEditableProperties(OutProps);
-
-	//ReflectionUtils::AppendGeneratedProperties(this, StaticClassInfo, OutProps);
-    ReflectionUtils::AppendGeneratedPropertiesRecursive( this, GetStaticClass(), OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     OutProps.push_back({ "StaticMesh", EPropertyType::String, &StaticMeshAssetPath });
 	OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 }

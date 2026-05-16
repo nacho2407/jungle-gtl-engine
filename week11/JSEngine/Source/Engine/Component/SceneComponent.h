@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+
+#include "SceneComponent.generated.h"
 
 #include "Engine/Geometry/Transform.h"
 #include "Component/ActorComponent.h"
@@ -7,8 +9,10 @@
 
 class AActor;
 
+UCLASS()
 class USceneComponent : public UActorComponent
 {
+    GENERATED_BODY_USceneComponent()
 public:
 	DECLARE_CLASS(USceneComponent, UActorComponent)
 
@@ -96,11 +100,14 @@ protected:
 	mutable FTransform CachedWorldTransform{};
 	mutable bool bTransformDirty = true;
 
+    UPROPERTY(EditAnywhere)
 	FVector RelativeLocation{};
 	// 에디터 표시 및 직렬화용 오일러 캐시 (Roll, Pitch, Yaw 도 단위)
 	// 회전 연산의 권위 있는 소스는 RelativeRotationQuat 입니다.
+    UPROPERTY(EditAnywhere)
 	FVector RelativeRotation{};
 	// 권위 있는 회전 저장소 — 짐벌 락 없는 쿼터니언으로 유지합니다.
 	FQuat RelativeRotationQuat = FQuat::Identity;
+    UPROPERTY(EditAnywhere)
 	FVector RelativeScale3D{ 1.0f, 1.0f, 1.0f };
 };

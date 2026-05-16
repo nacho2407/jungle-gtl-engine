@@ -1,12 +1,13 @@
-﻿#include "SphereComponent.h"
+#include "SphereComponent.h"
 #include "Object/Object.h"
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(USphereComponent, UShapeComponent)
 REGISTER_FACTORY(USphereComponent)
 
 void USphereComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UShapeComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     OutProps.push_back({ "Sphere Radius", EPropertyType::Float, &SphereRadius });
 }
 

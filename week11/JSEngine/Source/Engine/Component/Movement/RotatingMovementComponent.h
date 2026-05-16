@@ -1,9 +1,13 @@
-﻿#pragma once
+#pragma once
+
+#include "RotatingMovementComponent.generated.h"
 
 #include "MovementComponent.h"
 
+UCLASS()
 class URotatingMovementComponent : public UMovementComponent
 {	
+    GENERATED_BODY_URotatingMovementComponent()
 public:
 	DECLARE_CLASS(URotatingMovementComponent, UMovementComponent)
 
@@ -25,9 +29,12 @@ public:
 
 private:
 	// X=X축(Roll), Y=Y축(Pitch), Z=Z축(Yaw) 각속도 (deg/s)
+	UPROPERTY(EditAnywhere)
 	FVector RotationRate = FVector(90.0f, 0.f, 0.f);
 	// 오브젝트 로컬 공간 기준 피벗 오프셋 (오브젝트 → 피벗 방향)
+	UPROPERTY(EditAnywhere)
 	FVector PivotTranslation = FVector::ZeroVector;
 	
+	UPROPERTY(EditAnywhere)
 	bool bRotationInLocalSpace = true;
 };

@@ -1,12 +1,16 @@
 #pragma once
 
+#include "Pawn.generated.h"
+
 #include "GameFramework/AActor.h"
 
 class APlayerController;
 struct FInputActionState;
 
+UCLASS()
 class APawn : public AActor
 {
+    GENERATED_BODY_APawn()
 public:
 	DECLARE_CLASS(APawn, AActor)
 

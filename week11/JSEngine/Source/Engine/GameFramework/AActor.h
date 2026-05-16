@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
@@ -17,7 +17,7 @@ class UPrimitiveComponent;
 UCLASS() // 
 class AActor : public UObject
 {
-    GENERATED_BODY() //  UHT가 자동 생성한 뼈대 코드가 주입될 공간
+    GENERATED_BODY_AActor() //  UHT가 자동 생성한 뼈대 코드가 주입될 공간
 
 public:
     // 참고: 나중에 GENERATED_BODY 내부로 이 기능(DECLARE_CLASS)을 통합할 수 있습니다.
@@ -191,8 +191,11 @@ protected:
     UWorld* OwningWorld = nullptr;
 
     // Transform 값들은 보통 RootComponent를 통해 조작하므로 매크로 생략
+    UPROPERTY(EditAnywhere)
     FVector PendingActorLocation = FVector(0, 0, 0);
+    UPROPERTY(EditAnywhere)
     FVector PendingActorRotation = FVector(0, 0, 0);
+    UPROPERTY(EditAnywhere)
     FVector PendingActorScale = FVector(1, 1, 1);
 
     UPROPERTY(EditAnywhere)

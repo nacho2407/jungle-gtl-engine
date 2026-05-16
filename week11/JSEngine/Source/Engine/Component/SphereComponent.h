@@ -1,8 +1,12 @@
-﻿#pragma once
+#pragma once
 #include "ShapeComponent.h"
 
+#include "SphereComponent.generated.h"
+
+UCLASS()
 class USphereComponent : public UShapeComponent
 {
+    GENERATED_BODY_USphereComponent()
 public:
     DECLARE_CLASS(USphereComponent, UShapeComponent)
     float GetSphereRadius() const { return SphereRadius; }
@@ -16,6 +20,7 @@ public:
     void Serialize(FArchive& Ar) override;
 
 private:
+    UPROPERTY(EditAnywhere)
     float SphereRadius = 0.5f;
 
     // UShapeComponent을(를) 통해 상속됨

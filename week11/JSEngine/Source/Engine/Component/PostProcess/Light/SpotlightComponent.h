@@ -1,8 +1,12 @@
-﻿#pragma once
+#pragma once
 #include "PointLightComponent.h"
 
+#include "SpotlightComponent.generated.h"
+
+UCLASS()
 class USpotlightComponent : public UPointLightComponent
 {
+    GENERATED_BODY_USpotlightComponent()
 public:
     DECLARE_CLASS(USpotlightComponent, UPointLightComponent)
 
@@ -18,6 +22,8 @@ protected:
 		const TArray<FBoundingBox>* VisibleObjectsBounds) const override;
 
 public:
+    UPROPERTY(EditAnywhere)
     float InnerConeAngle = 10.f;
+    UPROPERTY(EditAnywhere)
     float OuterConeAngle = 15.f;
 };

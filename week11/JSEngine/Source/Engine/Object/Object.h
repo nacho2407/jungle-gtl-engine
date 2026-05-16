@@ -25,6 +25,7 @@
 #define UCLASS()
 #define UPROPERTY(...)
 #define GENERATED_BODY()
+#define USTRUCT(...)
 
 enum EClassFlags : uint32_t
 {
@@ -71,6 +72,13 @@ struct FClassInfo
     TArray<size_t> GcPointerOffsets;
 };
 
+struct FStructInfo
+{
+    FName StructName;
+    size_t Size; // 구조체의 크기 (UI에서 복사/할당할 때 유용함)
+    TArray<FPropertyInfo> Properties;
+    TArray<size_t> GcPointerOffsets;
+};
 
 class UObject
 {

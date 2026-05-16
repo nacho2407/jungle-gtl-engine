@@ -16,6 +16,7 @@
 #include "Core/ResourceManager.h"
 #include <algorithm>
 #include <filesystem>
+#include "Core/ReflectionUtils.h"
 
 #ifdef GetCurrentTime
 #undef GetCurrentTime
@@ -593,7 +594,7 @@ void UScriptComponent::Serialize(FArchive& Ar)
 }
 void UScriptComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UActorComponent::GetEditableProperties(OutProps);
+    //ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
     OutProps.push_back({ "ScriptName", EPropertyType::String, &ScriptName });
 

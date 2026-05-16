@@ -1,7 +1,9 @@
-﻿#pragma once
+#pragma once
 #include "Engine/Object/Object.h"
 #include "Engine/Component/CameraComponent.h"
 #include <algorithm>
+
+#include "CameraShakeBase.generated.h"
 
 class APlayerCameraManager;
 class UCameraShakePattern;
@@ -64,8 +66,10 @@ struct FCameraShakeState
     float GetBlendWeight() const {return CurrentBlendWeight;}
 };
 
+UCLASS()
 class UCameraShakePattern : public UObject
 {
+    GENERATED_BODY_UCameraShakePattern()
 public:
     DECLARE_CLASS(UCameraShakePattern, UObject)
 
@@ -95,8 +99,11 @@ private:
         FCameraShakeUpdateResult& OutResult) {}
 
 public:
+    UPROPERTY(EditAnywhere)
     float Duration = 1.0f;
+    UPROPERTY(EditAnywhere)
     float BlendInTime = 0.2f;
+    UPROPERTY(EditAnywhere)
     float BlendOutTime = 0.2f;
 
 protected:
@@ -104,13 +111,18 @@ protected:
 };
 
 // 나중에 다른곳으로 뺄것
+UCLASS()
 class UPerlinCameraShakePattern : public UCameraShakePattern
 {
+    GENERATED_BODY_UPerlinCameraShakePattern()
 public:
     DECLARE_CLASS(UPerlinCameraShakePattern, UCameraShakePattern)
 
+    UPROPERTY(EditAnywhere)
 	float LocationAmplitude = 20.0f;
+    UPROPERTY(EditAnywhere)
     float RotationAmplitude = 5.0f;
+    UPROPERTY(EditAnywhere)
     float FOVAmplitude = 3.0f;
 
     float Frequency = 10.0f;
@@ -121,8 +133,10 @@ private:
         FCameraShakeUpdateResult& OutResult);
 };
 
+UCLASS()
 class UCameraShakeBase : public UObject
 {
+    GENERATED_BODY_UCameraShakeBase()
 public:
     DECLARE_CLASS(UCameraShakeBase, UObject)
 
