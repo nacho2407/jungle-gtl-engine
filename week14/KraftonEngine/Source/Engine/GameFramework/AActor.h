@@ -112,6 +112,7 @@ public:
 	void SetTags(TArray<FName> InTags) { Tags = std::move(InTags); }
 
 	// Tick 필요 여부 — false면 Tick 호출 자체를 건너뜀 (StaticMesh 등)
+	UPROPERTY(Edit, Save, Category="Actor", DisplayName="Needs Tick")
 	bool bNeedsTick = true;
 	bool bTickInEditor = false;
 

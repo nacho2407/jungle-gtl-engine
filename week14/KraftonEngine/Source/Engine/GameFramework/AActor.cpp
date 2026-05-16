@@ -283,13 +283,35 @@ FVector AActor::GetActorRight() const
 	return FVector(0, 1, 0);
 }
 
+namespace
+{
+	FString JoinTagsCommaSep(const TArray<FName>& Tags);
+	TArray<FName> SplitTagsCommaSep(const FString& In);
+}
+
 void AActor::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
 	// 소유 포인터(OwnedComponents/RootComponent/Outer)는 직렬화 제외 — 복제 단계에서 재구성.
-	Ar << bVisible;
-	Ar << bNeedsTick;
-	Ar << Tags;
+	if (Ar.IsSaving())
+	{
+		PendingActorLocation = GetActorLocation();
+		PendingActorRotation = GetActorRotation();
+		PendingActorScale = GetActorScale();
+		PendingActorVisible = bVisible;
+		PendingTagsString = JoinTagsCommaSep(Tags);
+	}
+
+	SerializeProperties(Ar, PF_Save);
+
+	if (Ar.IsLoading())
+	{
+		SetActorLocation(PendingActorLocation);
+		SetActorRotation(PendingActorRotation);
+		SetActorScale(PendingActorScale);
+		SetVisible(PendingActorVisible);
+		SetTags(SplitTagsCommaSep(PendingTagsString));
+	}
 }
 
 bool AActor::HasTag(const FName& Tag) const
