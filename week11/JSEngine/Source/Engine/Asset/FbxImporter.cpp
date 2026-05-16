@@ -2,6 +2,8 @@
 #include "Asset/StaticMeshTypes.h"
 #include "Core/Logging/Log.h"
 #include "Core/PlatformTime.h"
+#include "Asset/FbxAnimSequenceImporter.h"
+#include "Core/ResourceManager.h"
 
 #include <fbxsdk.h>
 
@@ -543,30 +545,26 @@ bool FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOp
     return true;
 }
 
+UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path, const FString& TargetSkeletalMeshPath)
+{
+    USkeletalMesh* TargetMesh = FResourceManager::Get().LoadSkeletalMesh(TargetSkeletalMeshPath);
+
+    if (!TargetMesh)
+    {
+        UE_LOG_ERROR("[FbxImporter] Failed to load target skeletal mesh for animation. Anim=%s Target=%s", Path.c_str(), TargetSkeletalMeshPath.c_str());
+        return nullptr;
+    }
+
+    FFbxAnimSequenceImporter Importer;
+    return Importer.LoadAnimSequence(Path, TargetSkeletalMeshPath, TargetMesh);
+}
+
 
 
 TArray<FString> FFbxImporter::ListAnimStacks(const FString& Path)
 {
-    TArray<FString> Result;
-
-    FFbxSceneImportContext Context;
-    if (!Context.Import(Path))
-    {
-        return Result;
-    }
-
-    const int32 StackCount = Context.Scene->GetSrcObjectCount<FbxAnimStack>();
-    for (int32 i = 0; i < StackCount; ++i)
-    {
-        FbxAnimStack* Stack = Context.Scene->GetSrcObject<FbxAnimStack>(i);
-        if (Stack)
-        {
-            Result.push_back(FString(Stack->GetName()));
-        }
-    }
-
-    Context.Destroy();
-    return Result;
+    FFbxAnimSequenceImporter Importer;
+    return Importer.ListAnimStacks(Path);
 }
 
 FFbxMeshContentInfo FFbxImporter::InspectMeshContent(const FString& Path)
