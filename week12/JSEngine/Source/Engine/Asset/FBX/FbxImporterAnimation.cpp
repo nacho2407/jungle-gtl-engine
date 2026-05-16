@@ -431,6 +431,9 @@ UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path, const FFbxAni
     UAnimSequence* AnimSequence = UObjectManager::Get().CreateObject<UAnimSequence>();
     UAnimDataModel* DataModel = UObjectManager::Get().CreateObject<UAnimDataModel>();
     AnimSequence->SetDataModel(DataModel);
+    AnimSequence->SetSourceFilePath(Path);
+    AnimSequence->SetSourceStackName(FString(AnimStack->GetName()));
+    AnimSequence->SetPreviewMeshPath(Path);
 
     DataModel->SetFrameRate(MakeFrameRate(SampleRate));
     DataModel->SetPlayLength(static_cast<float>(DurationSeconds));

@@ -12,5 +12,4 @@ public:
 		ID3D11Device* Device, FFontResource& OutResource) const;
 
 	bool SupportsExtension(const FString& Extension) const override;
-	FString GetLoaderName() const override;
 };

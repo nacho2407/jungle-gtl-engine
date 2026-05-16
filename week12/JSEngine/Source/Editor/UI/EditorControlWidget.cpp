@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorControlWidget.h"
+﻿#include "Editor/UI/EditorControlWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Camera/ViewportCamera.h"
@@ -75,12 +75,12 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
 	DrawSpawnItem(4, "Billboard");
 	DrawSpawnItem(5, "Decal");
 	DrawSpawnItem(12, "Fog");
-	DrawSpawnItem(6, "Fireball");
+	//DrawSpawnItem(6, "Fireball");
     DrawSpawnItem(7, "Decal Spotlight");
-    DrawSpawnItem(14, "Cube");
-    DrawSpawnItem(15, "Destructible");
-    DrawSpawnItem(16, "BondingBox");
-	DrawSpawnItem(17, "Main Scene Destructible");
+    //DrawSpawnItem(14, "Cube");
+    //DrawSpawnItem(15, "Destructible");
+    //DrawSpawnItem(16, "BoundingBox");
+	//DrawSpawnItem(17, "Main Scene Destructible");
 	ImGui::Separator();
 	DrawSpawnItem(8, "Ambient Light");
 	DrawSpawnItem(9, "Directional Light");

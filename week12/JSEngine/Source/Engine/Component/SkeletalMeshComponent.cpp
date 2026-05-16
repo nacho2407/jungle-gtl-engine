@@ -44,8 +44,18 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 		AnimInstance->NativeUpdateAnimation(DeltaTime);
 
 		FPoseContext PoseContext;
-		PoseContext.LocalPose.resize(CurrentLocalPose.size());
-		// PoseContext.LocalPose = CurrentLocalPose; // Instance 디버그용
+		const int32 BoneCount = static_cast<int32>(CurrentLocalPose.size());
+		PoseContext.LocalPose = CurrentLocalPose;
+		PoseContext.BindPose.resize(BoneCount, FMatrix::Identity);
+
+		if (SkeletalMesh)
+		{
+			for (int32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
+			{
+				PoseContext.BindPose[BoneIndex] = SkeletalMesh->GetLocalBindTransform(BoneIndex);
+			}
+		}
+
 		if (AnimInstance->EvaluatePose(PoseContext))
 		{
 			ApplyAnimationPose(PoseContext);
@@ -58,13 +68,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 
 void USkeletalMeshComponent::ApplyAnimationPose(const FPoseContext& PoseContext)
 {
-	if (PoseContext.LocalPose.size() != CurrentLocalPose.size())
-	{
-		return;
-	}
-
-	CurrentLocalPose = PoseContext.LocalPose;
-	MarkSkinningDirty();
+	SetCurrentLocalPose(PoseContext.LocalPose);
 }
 
 void USkeletalMeshComponent::ResetToBindPose()

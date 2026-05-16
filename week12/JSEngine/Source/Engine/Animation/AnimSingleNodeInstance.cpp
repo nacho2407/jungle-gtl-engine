@@ -1,5 +1,8 @@
 ﻿#include "AnimSingleNodeInstance.h"
 
+#include "Asset/SkeletalMesh.h"
+#include "Component/SkeletalMeshComponent.h"
+
 DEFINE_CLASS(UAnimSingleNodeInstance, UAnimInstance)
 
 void UAnimSingleNodeInstance::Serialize(FArchive& Ar)
@@ -19,9 +22,64 @@ void UAnimSingleNodeInstance::PostEditProperty(const char* PropertyName)
 
 void UAnimSingleNodeInstance::SetAnimation(UAnimSequenceBase* InAnimation)
 {
+    if (CurrentAnimation == InAnimation && !NeedsBoneMappingRebuild())
+    {
+        CurrentTime = 0.0f;
+        PreviousTime = 0.0f;
+        return;
+    }
+
     CurrentAnimation = InAnimation;
     CurrentTime = 0.0f;
     PreviousTime = 0.0f;
+    BuildBoneMapping();
+}
+
+void UAnimSingleNodeInstance::Initialize(USkeletalMeshComponent* InOwnerComponent)
+{
+    UAnimInstance::Initialize(InOwnerComponent);
+    BuildBoneMapping();
+}
+
+bool UAnimSingleNodeInstance::NeedsBoneMappingRebuild() const
+{
+    USkeletalMesh* CurrentMesh = OwnerComponent ? OwnerComponent->GetSkeletalMesh() : nullptr;
+    return CachedMappingMesh != CurrentMesh || CachedMappingAnimation != CurrentAnimation;
+}
+
+void UAnimSingleNodeInstance::BuildBoneMapping()
+{
+    TrackToBoneMap.clear();
+
+    USkeletalMesh* Mesh = OwnerComponent ? OwnerComponent->GetSkeletalMesh() : nullptr;
+    CachedMappingMesh = Mesh;
+    CachedMappingAnimation = CurrentAnimation;
+
+    if (!Mesh || !CurrentAnimation)
+    {
+        return;
+    }
+
+    const TArray<FBoneAnimationTrack>& Tracks = CurrentAnimation->GetBoneAnimationTracks();
+    TrackToBoneMap.resize(Tracks.size(), -1);
+
+    const TArray<FBoneInfo>& Bones = Mesh->GetBones();
+    TMap<FName, int32, FName::Hash> BoneNameToIndex;
+    BoneNameToIndex.reserve(Bones.size());
+
+    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
+    {
+        BoneNameToIndex[FName(Bones[BoneIndex].Name)] = BoneIndex;
+    }
+
+    for (int32 TrackIndex = 0; TrackIndex < static_cast<int32>(Tracks.size()); ++TrackIndex)
+    {
+        auto It = BoneNameToIndex.find(Tracks[TrackIndex].Name);
+        if (It != BoneNameToIndex.end())
+        {
+            TrackToBoneMap[TrackIndex] = It->second;
+        }
+    }
 }
 
 void UAnimSingleNodeInstance::Play(bool bInLooping)
@@ -104,5 +162,12 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaTime)
 bool UAnimSingleNodeInstance::EvaluatePose(FPoseContext& OutPoseContext)
 {
     if (!CurrentAnimation) return false;
+
+    if (NeedsBoneMappingRebuild())
+    {
+        BuildBoneMapping();
+    }
+
+    OutPoseContext.TrackToBoneMap = TrackToBoneMap;
     return CurrentAnimation->GetAnimationPose(CurrentTime, OutPoseContext);
 }

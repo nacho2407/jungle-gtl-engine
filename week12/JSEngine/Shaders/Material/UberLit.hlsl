@@ -21,6 +21,13 @@ cbuffer StaticMeshBuffer : register(b2)
     float padding3;
 };
 
+cbuffer BoneWeightHeatmapBuffer : register(b6)
+{
+    int SelectedBoneIndex;
+    uint bBoneWeightHeatmapEnabled;
+    float2 BoneWeightHeatmapPadding;
+};
+
 struct FDecalInfo
 {
     row_major matrix InvDecalWorld;
@@ -78,6 +85,9 @@ struct PSInput
     float3 WorldPos : TEXCOORD0;
     float3 WorldNormal : TEXCOORD1;
     float2 UV : TEXCOORD2;
+#if BONE_WEIGHT_HEATMAP
+    float BoneWeightHeat : TEXCOORD6;
+#endif
 #if LIGHTING_MODEL_GOURAUD
     float3 LitColor     : TEXCOORD3;
 #elif HAS_NORMAL_MAP
@@ -100,6 +110,9 @@ PSInput mainVS(VSInput input)
     output.ClipPos = ApplyMVP(input.Position);
     output.UV = input.UV + ScrollUV;
     output.WorldNormal = normalize(mul(input.Normal, (float3x3) WorldInvTrans));
+#if BONE_WEIGHT_HEATMAP
+    output.BoneWeightHeat = 0.0f;
+#endif
     
 #if HAS_NORMAL_MAP && !LIGHTING_MODEL_GOURAUD
     output.WorldTangent = float4(normalize(mul(input.Tangent.xyz, (float3x3)WorldInvTrans)), input.Tangent.w);
@@ -130,6 +143,28 @@ PSInput mainVS(VSInput input)
     return output;
 }
 
+#if BONE_WEIGHT_HEATMAP
+float GetSelectedBoneWeight(uint4 BoneIndices, float4 BoneWeights)
+{
+    if (bBoneWeightHeatmapEnabled == 0 || SelectedBoneIndex < 0)
+    {
+        return 0.0f;
+    }
+
+    float SelectedWeight = 0.0f;
+    [unroll]
+    for (int i = 0; i < 4; ++i)
+    {
+        if ((int)BoneIndices[i] == SelectedBoneIndex)
+        {
+            SelectedWeight += BoneWeights[i];
+        }
+    }
+
+    return saturate(SelectedWeight);
+}
+#endif
+
 PSInput SkeletalMeshVS(SkeletalVSInput input)
 {
     FSkinningResult Skinned = ApplyLinearBlendSkinning(
@@ -145,7 +180,12 @@ PSInput SkeletalMeshVS(SkeletalVSInput input)
     passThrough.Normal = Skinned.Normal;
     passThrough.UV = input.UV;
     passThrough.Tangent = float4(Skinned.Tangent, input.Tangent.w);
-    return mainVS(passThrough);
+
+    PSInput output = mainVS(passThrough);
+#if BONE_WEIGHT_HEATMAP
+    output.BoneWeightHeat = GetSelectedBoneWeight(input.BoneIndices, input.BoneWeights);
+#endif
+    return output;
 }
 
 #if HAS_NORMAL_MAP
@@ -168,6 +208,33 @@ float3 GetHeatmapColor(float weight)
     color.g = smoothstep(0.0f, 0.4f, weight) - smoothstep(0.7f, 1.0f, weight);
     color.b = 1.0f - smoothstep(0.0f, 0.4f, weight);
     return color;
+}
+#endif
+
+#if BONE_WEIGHT_HEATMAP
+float3 GetBoneWeightHeatmapColor(float weight)
+{
+    weight = saturate(weight);
+
+    const float3 noneColor = float3(1.0f, 0.0f, 1.0f);
+    const float3 lowColor = float3(0.0f, 0.25f, 1.0f);
+    const float3 midColor = float3(0.0f, 0.9f, 0.35f);
+    const float3 highColor = float3(1.0f, 0.85f, 0.0f);
+    const float3 maxColor = float3(1.0f, 0.05f, 0.0f);
+
+    if (weight < 0.25f)
+    {
+        return lerp(noneColor, lowColor, weight / 0.25f);
+    }
+    if (weight < 0.5f)
+    {
+        return lerp(lowColor, midColor, (weight - 0.25f) / 0.25f);
+    }
+    if (weight < 0.75f)
+    {
+        return lerp(midColor, highColor, (weight - 0.5f) / 0.25f);
+    }
+    return lerp(highColor, maxColor, (weight - 0.75f) / 0.25f);
 }
 #endif
 
@@ -341,6 +408,15 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 #if HAS_DIFFUSE_MAP
         DiffuseTex = DiffuseMap.Sample(SampleState, input.UV);
         clip(DiffuseTex.a - 0.001f);
+#endif
+
+#if BONE_WEIGHT_HEATMAP
+    float Weight = bBoneWeightHeatmapEnabled != 0 ? input.BoneWeightHeat : 0.0f;
+    float3 HeatColor = GetBoneWeightHeatmapColor(Weight);
+    output.Color = float4(HeatColor, 1.0f);
+    output.Normal = float4(normalize(input.WorldNormal) * 0.5f + 0.5f, 1.f);
+    output.WorldPos = float4(input.WorldPos, 1.f);
+    return output;
 #endif
     
     float4 FinalColor = float4(DiffuseColor * DiffuseTex.rgb, 1);

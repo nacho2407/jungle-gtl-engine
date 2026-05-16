@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Asset/AnimSequenceAssetLoader.h"
 #include "Asset/BinarySerializer.h"
 #include "Asset/CurveFloatAsset.h"
 #include "Asset/FBX/FbxImporter.h"
@@ -128,6 +129,7 @@ public:
 	TArray<FString> GetCurvePaths() const;
 
     UAnimSequence* LoadAnimSequence(const FString& Path);
+    bool SaveAnimSequence(const FString& Path, const UAnimSequence* Sequence);
     UAnimSequence* FindAnimSequence(const FString& Path) const;
     TArray<FString> GetAnimSequencePaths() const;
 
@@ -167,6 +169,7 @@ private:
 
 	FObjLoader ObjLoader;
 	FFbxImporter FbxImporter;
+	FAnimSequenceAssetLoader AnimSequenceAssetLoader;
 	FBinarySerializer BinarySerializer;
 
 	TComPtr<ID3D11Texture2D>          DefaultWhiteTexture;

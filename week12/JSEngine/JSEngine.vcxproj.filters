@@ -705,6 +705,9 @@
     <ClCompile Include="Source\Engine\Animation\TimelinePlayer.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\AnimSequenceAssetLoader.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Asset\AssetQueryService.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
@@ -1608,6 +1611,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\TimelinePlayer.h">
       <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\AnimSequenceAssetLoader.h">
+      <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\AssetQueryService.h">
       <Filter>Source\Engine\Asset</Filter>

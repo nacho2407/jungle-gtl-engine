@@ -8,6 +8,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
+#include "Core/ResourceManager.h"
 #include "Engine/Asset/StaticMesh.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Scene/RenderBus.h"
@@ -79,6 +80,11 @@ namespace
 
         return MaxLOD;
     }
+
+    UMaterialInterface* ResolveDrawMaterial(UMaterialInterface* Material)
+    {
+        return Material ? Material : FResourceManager::Get().GetMaterial("DefaultWhite");
+    }
 }
 
 bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags,
@@ -120,7 +126,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
         for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
         {
             const FStaticMeshSection& Section = Sections[SectionIdx];
-            UMaterialInterface* Material = Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(SectionIdx));
+            UMaterialInterface* Material = ResolveDrawMaterial(Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(SectionIdx)));
 
             FRenderCommand Cmd = {};
             Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
@@ -156,6 +162,12 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
         const ESkinningMode SkinningMode = SkeletalMeshComp->GetResolvedSkinningMode();
         const bool bUseCPUSkinning = SkinningMode == ESkinningMode::CPU;
         const bool bUseGPUSkinning = SkinningMode == ESkinningMode::GPU;
+        const FBoneWeightHeatmapViewState& BoneWeightHeatmapState = RenderBus.GetBoneWeightHeatmapViewState();
+        const bool bUseBoneWeightHeatmap =
+            ViewMode == EViewMode::BoneWeightHeatmap &&
+            BoneWeightHeatmapState.bEnabled &&
+            BoneWeightHeatmapState.SelectedBoneIndex >= 0 &&
+            BoneWeightHeatmapState.SelectedBoneIndex < static_cast<int32>(SkeletalMesh->GetBones().size());
         uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
         if (bUseGPUSkinning)
         {
@@ -188,9 +200,13 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.MeshBuffer = MeshBuffer;
             Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
             Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
+            Cmd.bUseBoneWeightHeatmap = bUseBoneWeightHeatmap;
+            Cmd.BoneWeightHeatmapBoneIndex = bUseBoneWeightHeatmap
+                ? BoneWeightHeatmapState.SelectedBoneIndex
+                : -1;
             Cmd.SectionIndexStart = 0;
             Cmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
-            Cmd.Material = SkeletalMeshComp->GetMaterial(0);
+            Cmd.Material = ResolveDrawMaterial(Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(0)));
             Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
 
             RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
@@ -205,7 +221,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
                 continue;
             }
 
-            UMaterialInterface* Material = Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(SectionIdx));
+            UMaterialInterface* Material = ResolveDrawMaterial(Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(SectionIdx)));
 
             FRenderCommand Cmd = {};
             Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
@@ -215,6 +231,10 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.MeshBuffer = MeshBuffer;
             Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
             Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
+            Cmd.bUseBoneWeightHeatmap = bUseBoneWeightHeatmap;
+            Cmd.BoneWeightHeatmapBoneIndex = bUseBoneWeightHeatmap
+                ? BoneWeightHeatmapState.SelectedBoneIndex
+                : -1;
 
             Cmd.SectionIndexStart = Section.StartIndex;
             Cmd.SectionIndexCount = Section.IndexCount;

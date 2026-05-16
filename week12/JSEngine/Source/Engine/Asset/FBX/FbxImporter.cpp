@@ -93,11 +93,6 @@ bool FFbxImporter::SupportsExtension(const FString& Extension) const
 		   Extension == FString("FBX") || Extension == FString(".FBX");
 }
 
-FString FFbxImporter::GetLoaderName() const
-{
-	return FString{ "FFbxImporter" };
-}
-
 FSkeletalMesh* FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOptions& LoadOptions)
 {
     (void)LoadOptions;

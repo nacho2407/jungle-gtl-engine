@@ -33,6 +33,7 @@ enum class ELightingModel : uint32
 	Lambert		= 2 << 8,
 	BlinnPhong	= 3 << 8,
 	Heatmap		= 4 << 8,
+	BoneWeightHeatmap = 5 << 8,
 };
 
 enum class EVSMBlurPass : uint32

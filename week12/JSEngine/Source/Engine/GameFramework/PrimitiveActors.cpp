@@ -390,17 +390,14 @@ void AStaticMeshActor::InitDefaultComponents()
 void ASkeletalMeshActor::InitDefaultComponents()
 {
 	SkeletalMeshComp = AddComponent<USkeletalMeshComponent>();
-	SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/SimpleCharacter.fbx"));
+	SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/Hip_Hop_Dancing/Hip_Hop_Dancing.fbx"));
 	SetRootComponent(SkeletalMeshComp);
-	// 디버그용. 추후 삭제.
-	/*UDebugAnimSequence* DebugAnim =
-		UObjectManager::Get().CreateObject<UDebugAnimSequence>();
 
-	DebugAnim->AddNotify(1.0f, FName("FootStep"));
-	DebugAnim->AddNotify(2.5f, FName("AttackHit"));
-	DebugAnim->AddNotify(4.0f, FName("EndCheck"));
-
-	SkeletalMeshComp->PlayAnimation(DebugAnim, true);*/
+    if (UAnimSequence* AnimSequence = FResourceManager::Get().LoadAnimSequence("Asset/SkeletalMesh/Hip_Hop_Dancing/Hip_Hop_Dancing.fbx"))
+    {
+        AnimSequence->SetPreviewMeshPath("Asset/SkeletalMesh/Hip_Hop_Dancing/Hip_Hop_Dancing.fbx");
+        SkeletalMeshComp->PlayAnimation(AnimSequence, true);
+    }
 
     // 여기까지가 Animation Debug 코드.
     //auto* Text = AddComponent<UTextRenderComponent>();
