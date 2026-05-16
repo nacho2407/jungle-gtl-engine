@@ -10,7 +10,29 @@
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(UTextRenderComponent, UBillboardComponent)
+namespace
+{
+	const char* GTextRenderSpaceNames[] = { "World", "Screen" };
+	const char* GTextHAlignNames[] = { "Left", "Center", "Right" };
+	const char* GTextVAlignNames[] = { "Top", "Center", "Bottom" };
+}
+
+IMPLEMENT_CLASS_WITH_PROPERTIES(UTextRenderComponent, UBillboardComponent)
+
+BEGIN_PROPERTY_REGISTRATION(UTextRenderComponent)
+	EDIT_PROPERTY(UTextRenderComponent, Text, "Text", EPropertyType::String, "Text")
+	EDIT_PROPERTY(UTextRenderComponent, FontName, "Font", EPropertyType::Name, "Text")
+	EDIT_PROPERTY_RANGE(UTextRenderComponent, FontSize, "Font Size", EPropertyType::Float, "Text", 0.1f, 100.0f, 0.1f)
+	EDIT_PROPERTY(UTextRenderComponent, Color, "Color", EPropertyType::Color4, "Text")
+	EDIT_PROPERTY_RANGE(UTextRenderComponent, Spacing, "Spacing", EPropertyType::Float, "Text", 0.0f, 100.0f, 0.01f)
+	EDIT_PROPERTY_RANGE(UTextRenderComponent, CharWidth, "Char Width", EPropertyType::Float, "Text", 0.0f, 100.0f, 0.01f)
+	EDIT_PROPERTY_RANGE(UTextRenderComponent, CharHeight, "Char Height", EPropertyType::Float, "Text", 0.0f, 100.0f, 0.01f)
+	EDIT_PROPERTY_ENUM(UTextRenderComponent, RenderSpace, "Render Space", "Text", GTextRenderSpaceNames, 2, ETextRenderSpace)
+	EDIT_PROPERTY_ENUM(UTextRenderComponent, HAlign, "Horizontal Align", "Text", GTextHAlignNames, 3, ETextHAlign)
+	EDIT_PROPERTY_ENUM(UTextRenderComponent, VAlign, "Vertical Align", "Text", GTextVAlignNames, 3, ETextVAlign)
+	EDIT_PROPERTY_RANGE(UTextRenderComponent, ScreenX, "Screen X", EPropertyType::Float, "Text", 0.0f, 100000.0f, 1.0f)
+	EDIT_PROPERTY_RANGE(UTextRenderComponent, ScreenY, "Screen Y", EPropertyType::Float, "Text", 0.0f, 100000.0f, 1.0f)
+END_PROPERTY_REGISTRATION()
 
 FPrimitiveSceneProxy* UTextRenderComponent::CreateSceneProxy()
 {
@@ -129,11 +151,6 @@ UTextRenderComponent::UTextRenderComponent()
 void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	USceneComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Text", EPropertyType::String, "Text", &Text });
-	OutProps.push_back({ "Font", EPropertyType::Name, "Text", &FontName });
-	//OutProps.push_back({ "Color", EPropertyType::Vec4, "Text", &Color });
-	OutProps.push_back({ "Font Size", EPropertyType::Float, "Text", &FontSize, 0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Visible", EPropertyType::Bool, "Text", &bIsVisible });
 }
 
 void UTextRenderComponent::PostEditProperty(const char* PropertyName)
@@ -157,6 +174,10 @@ void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 	{
 		MarkProxyDirty(EDirtyFlag::Mesh);
 		MarkProxyDirty(EDirtyFlag::Transform);
+	}
+	else if (strcmp(PropertyName, "Color") == 0)
+	{
+		MarkProxyDirty(EDirtyFlag::Material);
 	}
 	else if (strcmp(PropertyName, "Visible") == 0)
 	{

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "SceneComponent.h"
 #include "Render/Types/FogParams.h"
@@ -7,6 +7,7 @@ class UHeightFogComponent : public USceneComponent
 {
 public:
 	DECLARE_CLASS(UHeightFogComponent, USceneComponent)
+	static void RegisterProperties(UClass* Class);
 
 	UHeightFogComponent();
 

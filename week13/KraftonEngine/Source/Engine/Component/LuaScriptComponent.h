@@ -12,6 +12,7 @@ class ULuaScriptComponent : public UActorComponent
 {
 public:
 	DECLARE_CLASS(ULuaScriptComponent, UActorComponent)
+	static void RegisterProperties(UClass* Class);
 
 	ULuaScriptComponent();
 	~ULuaScriptComponent();

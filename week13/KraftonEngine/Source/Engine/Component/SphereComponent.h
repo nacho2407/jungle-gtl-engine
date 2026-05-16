@@ -7,6 +7,7 @@ class USphereComponent : public UShapeComponent
 {
 public:
 	DECLARE_CLASS(USphereComponent, UShapeComponent)
+	static void RegisterProperties(UClass* Class);
 
 	void SetSphereRadius(float InRadius);
 	float GetScaledSphereRadius() const;

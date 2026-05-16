@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 #include "ShapeComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -6,8 +6,13 @@
 
 #include <cstring>
 
-IMPLEMENT_CLASS(UShapeComponent, UPrimitiveComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(UShapeComponent, UPrimitiveComponent)
 HIDE_FROM_COMPONENT_LIST(UShapeComponent)
+
+BEGIN_PROPERTY_REGISTRATION(UShapeComponent)
+	EDIT_PROPERTY(UShapeComponent, ShapeColor, "Shape Color", EPropertyType::Color4, "Shape")
+	EDIT_PROPERTY(UShapeComponent, bDrawOnlyIfSelected, "Draw Only If Selected", EPropertyType::Bool, "Shape")
+END_PROPERTY_REGISTRATION()
 
 UShapeComponent::UShapeComponent()
 {
@@ -22,8 +27,6 @@ FPrimitiveSceneProxy* UShapeComponent::CreateSceneProxy()
 void UShapeComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Shape Color", EPropertyType::Color4, "Shape", &ShapeColor });
-	OutProps.push_back({ "Draw Only If Selected", EPropertyType::Bool, "Shape", &bDrawOnlyIfSelected });
 }
 
 void UShapeComponent::PostEditProperty(const char* PropertyName)

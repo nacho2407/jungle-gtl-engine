@@ -10,7 +10,12 @@
 
 #include <cstring>
 
-IMPLEMENT_CLASS(UBillboardComponent, UPrimitiveComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(UBillboardComponent, UPrimitiveComponent)
+
+BEGIN_PROPERTY_REGISTRATION(UBillboardComponent)
+	EDIT_PROPERTY(UBillboardComponent, bIsBillboard, "Billboard", EPropertyType::Bool, "Rendering")
+	EDIT_PROPERTY(UBillboardComponent, MaterialSlot, "Material", EPropertyType::MaterialSlot, "Rendering")
+END_PROPERTY_REGISTRATION()
 
 FPrimitiveSceneProxy* UBillboardComponent::CreateSceneProxy()
 {
@@ -57,7 +62,6 @@ void UBillboardComponent::SetMaterial(UMaterial* InMaterial)
 void UBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Material", EPropertyType::MaterialSlot, "Rendering", &MaterialSlot });
 }
 
 void UBillboardComponent::PostEditProperty(const char* PropertyName)

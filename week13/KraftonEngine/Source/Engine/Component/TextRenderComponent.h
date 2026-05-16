@@ -34,6 +34,7 @@ class UTextRenderComponent : public UBillboardComponent
 {
 public:
 	DECLARE_CLASS(UTextRenderComponent, UPrimitiveComponent)
+	static void RegisterProperties(UClass* Class);
 
 	UTextRenderComponent();
 	~UTextRenderComponent() override = default;

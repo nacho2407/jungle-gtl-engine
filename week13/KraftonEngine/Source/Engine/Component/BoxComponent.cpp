@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 #include "BoxComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -8,7 +8,11 @@
 #include <cstring>
 #include <cmath>
 
-IMPLEMENT_CLASS(UBoxComponent, UShapeComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(UBoxComponent, UShapeComponent)
+
+BEGIN_PROPERTY_REGISTRATION(UBoxComponent)
+	EDIT_PROPERTY_RANGE(UBoxComponent, BoxExtent, "Box Extent", EPropertyType::Vec3, "Shape", 0.01f, 0.0f, 0.1f)
+END_PROPERTY_REGISTRATION()
 
 void UBoxComponent::SetBoxExtent(const FVector& InExtent)
 {
@@ -72,7 +76,6 @@ void UBoxComponent::ContributeSelectedVisuals(FScene& Scene) const
 void UBoxComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UShapeComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Box Extent", EPropertyType::Vec3, "Shape", &BoxExtent, 0.01f, 0.0f, 0.1f });
 }
 
 void UBoxComponent::PostEditProperty(const char* PropertyName)

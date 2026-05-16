@@ -11,6 +11,7 @@ class UDecalComponent : public UPrimitiveComponent
 {
 public:
 	DECLARE_CLASS(UDecalComponent, UPrimitiveComponent)
+	static void RegisterProperties(UClass* Class);
 
 	UDecalComponent() = default;
 	~UDecalComponent() override = default;

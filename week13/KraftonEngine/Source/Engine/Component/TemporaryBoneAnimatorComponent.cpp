@@ -12,7 +12,16 @@
 #include <cmath>
 #include <cstring>
 
-IMPLEMENT_CLASS(UTemporaryBoneAnimatorComponent, UActorComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(UTemporaryBoneAnimatorComponent, UActorComponent)
+
+BEGIN_PROPERTY_REGISTRATION(UTemporaryBoneAnimatorComponent)
+	EDIT_PROPERTY(UTemporaryBoneAnimatorComponent, TargetBoneName, "Target Bone Name", EPropertyType::String, "Temp Bone Animator")
+	EDIT_PROPERTY(UTemporaryBoneAnimatorComponent, bEnabled, "Enabled", EPropertyType::Bool, "Temp Bone Animator")
+	EDIT_PROPERTY_RANGE(UTemporaryBoneAnimatorComponent, RotationAmplitude, "Rotation Amplitude", EPropertyType::Rotator, "Temp Bone Animator", 0.0f, 0.0f, 0.1f)
+	EDIT_PROPERTY_RANGE(UTemporaryBoneAnimatorComponent, RotationFrequency, "Rotation Frequency", EPropertyType::Rotator, "Temp Bone Animator", 0.0f, 0.0f, 0.01f)
+	EDIT_PROPERTY_RANGE(UTemporaryBoneAnimatorComponent, RotationPhase, "Rotation Phase", EPropertyType::Rotator, "Temp Bone Animator", 0.0f, 0.0f, 0.1f)
+	EDIT_PROPERTY_RANGE(UTemporaryBoneAnimatorComponent, RotationOffset, "Rotation Offset", EPropertyType::Rotator, "Temp Bone Animator", 0.0f, 0.0f, 0.1f)
+END_PROPERTY_REGISTRATION()
 
 void UTemporaryBoneAnimatorComponent::Serialize(FArchive& Ar)
 {
@@ -35,12 +44,7 @@ void UTemporaryBoneAnimatorComponent::Serialize(FArchive& Ar)
 
 void UTemporaryBoneAnimatorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	OutProps.push_back({ "Target Bone Name", EPropertyType::String, "Temp Bone Animator", &TargetBoneName });
-	OutProps.push_back({ "Enabled", EPropertyType::Bool, "Temp Bone Animator", &bEnabled });
-	OutProps.push_back({ "Rotation Amplitude", EPropertyType::Rotator, "Temp Bone Animator", &RotationAmplitude, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Rotation Frequency", EPropertyType::Rotator, "Temp Bone Animator", &RotationFrequency, 0.0f, 0.0f, 0.01f });
-	OutProps.push_back({ "Rotation Phase", EPropertyType::Rotator, "Temp Bone Animator", &RotationPhase, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Rotation Offset", EPropertyType::Rotator, "Temp Bone Animator", &RotationOffset, 0.0f, 0.0f, 0.1f });
+	UActorComponent::GetEditableProperties(OutProps);
 }
 
 void UTemporaryBoneAnimatorComponent::PostEditProperty(const char* PropertyName)

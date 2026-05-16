@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 #pragma once
 
 #include "PrimitiveComponent.h"
@@ -8,6 +8,7 @@ class UShapeComponent : public UPrimitiveComponent
 {
 public:
 	DECLARE_CLASS(UShapeComponent, UPrimitiveComponent)
+	static void RegisterProperties(UClass* Class);
 
 	UShapeComponent();
 

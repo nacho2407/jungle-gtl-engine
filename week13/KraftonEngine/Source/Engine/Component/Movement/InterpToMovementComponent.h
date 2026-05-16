@@ -12,6 +12,7 @@ enum class EInterpBehaviour {
 class UInterpToMovementComponent : public UMovementComponent {
 public:
 	DECLARE_CLASS(UInterpToMovementComponent, UMovementComponent)
+	static void RegisterProperties(UClass* Class);
 
 	UInterpToMovementComponent() = default;
 

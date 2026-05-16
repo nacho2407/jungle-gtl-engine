@@ -15,6 +15,7 @@ class UCineCameraComponent : public UCameraComponent
 {
 public:
 	DECLARE_CLASS(UCineCameraComponent, UCameraComponent)
+	static void RegisterProperties(UClass* Class);
 
 	UCineCameraComponent() = default;
 

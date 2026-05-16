@@ -10,6 +10,7 @@ class USubUVComponent : public UBillboardComponent
 {
 public:
 	DECLARE_CLASS(USubUVComponent, UBillboardComponent)
+	static void RegisterProperties(UClass* Class);
 
 	USubUVComponent();
 	~USubUVComponent() override;

@@ -16,6 +16,7 @@ class UProjectileMovementComponent : public UMovementComponent
 {
 public:
 	DECLARE_CLASS(UProjectileMovementComponent, UMovementComponent)
+	static void RegisterProperties(UClass* Class);
 
 	UProjectileMovementComponent() = default;
 	~UProjectileMovementComponent() override = default;

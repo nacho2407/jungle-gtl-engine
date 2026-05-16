@@ -7,6 +7,7 @@ class UBoxComponent : public UShapeComponent
 {
 public:
 	DECLARE_CLASS(UBoxComponent, UShapeComponent)
+	static void RegisterProperties(UClass* Class);
 
 	void SetBoxExtent(const FVector& InExtent);
 	FVector GetScaledBoxExtent() const;

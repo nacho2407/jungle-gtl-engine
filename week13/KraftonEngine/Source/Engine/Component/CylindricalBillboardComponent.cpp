@@ -7,7 +7,11 @@
 
 #include <cmath>
 
-IMPLEMENT_CLASS(UCylindricalBillboardComponent, UBillboardComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(UCylindricalBillboardComponent, UBillboardComponent)
+
+BEGIN_PROPERTY_REGISTRATION(UCylindricalBillboardComponent)
+	EDIT_PROPERTY(UCylindricalBillboardComponent, BillboardAxis, "BillboardAxis", EPropertyType::Vec3, "Rendering")
+END_PROPERTY_REGISTRATION()
 
 FPrimitiveSceneProxy* UCylindricalBillboardComponent::CreateSceneProxy()
 {
@@ -23,7 +27,6 @@ void UCylindricalBillboardComponent::Serialize(FArchive& Ar)
 void UCylindricalBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UBillboardComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "BillboardAxis", EPropertyType::Vec3, "Rendering", &BillboardAxis });
 }
 
 void UCylindricalBillboardComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)

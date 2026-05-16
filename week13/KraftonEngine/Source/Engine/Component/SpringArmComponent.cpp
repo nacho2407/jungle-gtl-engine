@@ -1,4 +1,4 @@
-#include "Component/SpringArmComponent.h"
+﻿#include "Component/SpringArmComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
@@ -7,7 +7,21 @@
 #include <algorithm>
 #include <cmath>
 
-IMPLEMENT_CLASS(USpringArmComponent, USceneComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(USpringArmComponent, USceneComponent)
+
+BEGIN_PROPERTY_REGISTRATION(USpringArmComponent)
+	EDIT_PROPERTY_RANGE(USpringArmComponent, TargetArmLength, "Target Arm Length", EPropertyType::Float, "SpringArm", 0.0f, 100000.0f, 1.0f)
+	EDIT_PROPERTY_RANGE(USpringArmComponent, SocketOffset, "Socket Offset", EPropertyType::Vec3, "SpringArm", 0.0f, 0.0f, 0.1f)
+	EDIT_PROPERTY_RANGE(USpringArmComponent, TargetOffset, "Target Offset", EPropertyType::Vec3, "SpringArm", 0.0f, 0.0f, 0.1f)
+	EDIT_PROPERTY(USpringArmComponent, bEnableCameraLag, "Enable Camera Lag", EPropertyType::Bool, "SpringArm")
+	EDIT_PROPERTY(USpringArmComponent, bEnableCameraRotationLag, "Enable Rotation Lag", EPropertyType::Bool, "SpringArm")
+	EDIT_PROPERTY_RANGE(USpringArmComponent, CameraLagSpeed, "Camera Lag Speed", EPropertyType::Float, "SpringArm", 0.0f, 1000.0f, 0.1f)
+	EDIT_PROPERTY_RANGE(USpringArmComponent, CameraRotationLagSpeed, "Camera Rotation Lag Speed", EPropertyType::Float, "SpringArm", 0.0f, 1000.0f, 0.1f)
+	EDIT_PROPERTY_RANGE(USpringArmComponent, CameraLagMaxDistance, "Camera Lag Max Distance", EPropertyType::Float, "SpringArm", 0.0f, 100000.0f, 1.0f)
+	EDIT_PROPERTY(USpringArmComponent, bDoCollisionTest, "Do Collision Test", EPropertyType::Bool, "SpringArm")
+	EDIT_PROPERTY_RANGE(USpringArmComponent, ProbeSize, "Probe Size", EPropertyType::Float, "SpringArm", 0.0f, 100.0f, 0.01f)
+	EDIT_PROPERTY_ENUM(USpringArmComponent, ProbeChannel, "Probe Channel", "SpringArm", GCollisionChannelNames, static_cast<uint32>(ECollisionChannel::ActiveCount), ECollisionChannel)
+END_PROPERTY_REGISTRATION()
 
 void USpringArmComponent::BeginPlay()
 {
@@ -147,14 +161,4 @@ void USpringArmComponent::Serialize(FArchive& Ar)
 void USpringArmComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	USceneComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Target Arm Length",        EPropertyType::Float, "SpringArm", &TargetArmLength,           0.0f, 100000.0f, 1.0f });
-	OutProps.push_back({ "Socket Offset",            EPropertyType::Vec3,  "SpringArm", &SocketOffset,              0.0f, 0.0f,      0.1f });
-	OutProps.push_back({ "Target Offset",            EPropertyType::Vec3,  "SpringArm", &TargetOffset,              0.0f, 0.0f,      0.1f });
-	OutProps.push_back({ "Enable Camera Lag",        EPropertyType::Bool,  "SpringArm", &bEnableCameraLag                                });
-	OutProps.push_back({ "Enable Rotation Lag",      EPropertyType::Bool,  "SpringArm", &bEnableCameraRotationLag                        });
-	OutProps.push_back({ "Camera Lag Speed",         EPropertyType::Float, "SpringArm", &CameraLagSpeed,            0.0f, 1000.0f,   0.1f });
-	OutProps.push_back({ "Camera Rotation Lag Speed",EPropertyType::Float, "SpringArm", &CameraRotationLagSpeed,    0.0f, 1000.0f,   0.1f });
-	OutProps.push_back({ "Camera Lag Max Distance",  EPropertyType::Float, "SpringArm", &CameraLagMaxDistance,      0.0f, 100000.0f, 1.0f });
-	OutProps.push_back({ "Do Collision Test",        EPropertyType::Bool,  "SpringArm", &bDoCollisionTest                                });
-	OutProps.push_back({ "Probe Size",               EPropertyType::Float, "SpringArm", &ProbeSize,                 0.0f, 100.0f,    0.01f });
 }

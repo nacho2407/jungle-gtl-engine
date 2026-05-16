@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/ActorComponent.h"
 #include "Math/Rotator.h"
@@ -19,6 +19,7 @@ class UTemporaryBoneAnimatorComponent : public UActorComponent
 {
 public:
 	DECLARE_CLASS(UTemporaryBoneAnimatorComponent, UActorComponent)
+	static void RegisterProperties(UClass* Class);
 
 	UTemporaryBoneAnimatorComponent() = default;
 	~UTemporaryBoneAnimatorComponent() override = default;

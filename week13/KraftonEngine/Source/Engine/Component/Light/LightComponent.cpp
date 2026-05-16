@@ -2,8 +2,16 @@
 #include "Serialization/Archive.h"
 #include "Object/ObjectFactory.h"
 
-IMPLEMENT_CLASS(ULightComponent, ULightComponentBase)
+IMPLEMENT_CLASS_WITH_PROPERTIES(ULightComponent, ULightComponentBase)
 HIDE_FROM_COMPONENT_LIST(ULightComponent)
+
+BEGIN_PROPERTY_REGISTRATION(ULightComponent)
+	EDIT_PROPERTY_RANGE(ULightComponent, ShadowResolutionScale, "Shadow Resolution Scale", EPropertyType::Float, "Shadow", 0.1f, 4.0f, 0.1f)
+	EDIT_PROPERTY_RANGE(ULightComponent, ShadowBias, "Shadow Bias", EPropertyType::Float, "Shadow", -0.2f, 0.2f, 0.0001f)
+	EDIT_PROPERTY_RANGE(ULightComponent, ShadowSlopeBias, "Shadow Slope Bias", EPropertyType::Float, "Shadow", -0.2f, 0.2f, 0.0001f)
+	EDIT_PROPERTY_RANGE(ULightComponent, ShadowNormalBias, "Shadow Normal Bias", EPropertyType::Float, "Shadow", -0.2f, 0.2f, 0.0001f)
+	EDIT_PROPERTY_RANGE(ULightComponent, ShadowSharpen, "Shadow Sharpen", EPropertyType::Float, "Shadow", 0.0f, 1.0f, 0.05f)
+END_PROPERTY_REGISTRATION()
 
 void ULightComponent::Serialize(FArchive& Ar)
 {
@@ -18,9 +26,4 @@ void ULightComponent::Serialize(FArchive& Ar)
 void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	ULightComponentBase::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Shadow Resolution Scale", EPropertyType::Float, "Shadow", &ShadowResolutionScale, 0.1f, 4.0f, 0.1f });
-	OutProps.push_back({ "Shadow Bias",             EPropertyType::Float, "Shadow", &ShadowBias,            -0.2f, 0.2f, 0.0001f });
-	OutProps.push_back({ "Shadow Slope Bias",       EPropertyType::Float, "Shadow", &ShadowSlopeBias,       -0.2f, 0.2f, 0.0001f });
-	OutProps.push_back({ "Shadow Normal Bias",      EPropertyType::Float, "Shadow", &ShadowNormalBias,      -0.2f, 0.2f, 0.0001f });
-	OutProps.push_back({ "Shadow Sharpen",          EPropertyType::Float, "Shadow", &ShadowSharpen,         0.0f, 1.0f, 0.05f });
 }
