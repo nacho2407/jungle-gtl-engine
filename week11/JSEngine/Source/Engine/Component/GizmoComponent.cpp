@@ -277,7 +277,6 @@ void UGizmoComponent::TranslateTarget(float DragAmount)
 	FMatrix M = Proxy->GetTransform();
 	M.SetOrigin(M.GetOrigin() + ConstrainedDelta);
 	Proxy->SetTransform(M);
-
 }
 
 void UGizmoComponent::RotateTarget(float DragAmount)
@@ -329,7 +328,7 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 	const FVector Pivot = GetTargetLocation();
 	FVector ScaleAxis = GetVectorForAxis(SelectedAxis);
 	ScaleAxis.NormalizeSafe();
-	const float PivotScaleFactor = std::max(0.001f, 1.0f + ScaleDelta);
+	const float PivotScaleFactor = (std::max)(0.001f, 1.0f + ScaleDelta);
 
 	FMatrix M = Proxy->GetTransform();
 	FVector NewScale = M.GetScaleVector();
@@ -340,9 +339,9 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 	case 2: NewScale.Z += ScaleDelta; break;
 	default: break;
 	}
-	NewScale.X = std::max(0.001f, NewScale.X);
-	NewScale.Y = std::max(0.001f, NewScale.Y);
-	NewScale.Z = std::max(0.001f, NewScale.Z);
+	NewScale.X = (std::max)(0.001f, NewScale.X);
+	NewScale.Y = (std::max)(0.001f, NewScale.Y);
+	NewScale.Z = (std::max)(0.001f, NewScale.Z);
 	
 	FVector Translation, dummyScale;
 	FMatrix Rotation;
@@ -369,9 +368,9 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 			case 1: ActorNewScale.Y += ScaleDelta; break;
 			case 2: ActorNewScale.Z += ScaleDelta; break;
 			}
-			ActorNewScale.X = std::max(0.001f, ActorNewScale.X);
-			ActorNewScale.Y = std::max(0.001f, ActorNewScale.Y);
-			ActorNewScale.Z = std::max(0.001f, ActorNewScale.Z);
+			ActorNewScale.X = (std::max)(0.001f, ActorNewScale.X);
+			ActorNewScale.Y = (std::max)(0.001f, ActorNewScale.Y);
+			ActorNewScale.Z = (std::max)(0.001f, ActorNewScale.Z);
 			Actor->SetActorScale(ActorNewScale);
 		};
 
@@ -680,27 +679,30 @@ void UGizmoComponent::UpdateGizmoTransform()
 		return;
 	}
 
-	SetWorldLocation(Proxy->GetTransform().GetOrigin());
+    FMatrix M = Proxy->GetTransform();
+    FVector T, S;
+    FMatrix R;
+    M.Decompose(T, R, S);
+    FQuat TargetQuat = FQuat(R);
+    TargetQuat.Normalize();
 
-	FVector TargetRot = GetTargetRotation();
+    SetWorldLocation(M.GetOrigin());
 
-	switch (CurMode)
-	{
-	case EGizmoMode::Scale:
-		SetRelativeRotation(TargetRot);
-		GizmoMeshData = &FEditorMeshLibrary::Get().GetScaleGizmo();
-		break;
-
-	case EGizmoMode::Rotate:
-		SetRelativeRotation(bIsWorldSpace ? FVector() : TargetRot);
-		GizmoMeshData = &FEditorMeshLibrary::Get().GetRotationGizmo();
-		break;
-
-	case EGizmoMode::Translate:
-		SetRelativeRotation(bIsWorldSpace ? FVector() : TargetRot);
-		GizmoMeshData = &FEditorMeshLibrary::Get().GetTranslationGizmo();
-		break;
-	}
+    switch (CurMode)
+    {
+    case EGizmoMode::Scale:
+        SetRelativeRotationQuat(TargetQuat);
+        GizmoMeshData = &FEditorMeshLibrary::Get().GetScaleGizmo();
+        break;
+    case EGizmoMode::Rotate:
+        SetRelativeRotationQuat(bIsWorldSpace ? FQuat::Identity : TargetQuat);
+        GizmoMeshData = &FEditorMeshLibrary::Get().GetRotationGizmo();
+        break;
+    case EGizmoMode::Translate:
+        SetRelativeRotationQuat(bIsWorldSpace ? FQuat::Identity : TargetQuat);
+        GizmoMeshData = &FEditorMeshLibrary::Get().GetTranslationGizmo();
+        break;
+    }
 }
 
 void UGizmoComponent::ApplyScreenSpaceScaling(const FVector& CameraLocation)

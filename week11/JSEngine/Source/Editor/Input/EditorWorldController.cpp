@@ -42,6 +42,13 @@ void FEditorWorldController::ResetTargetFromCamera()
     SeedYawPitchFromCamera();
 }
 
+bool FEditorWorldController::HasPendingCameraTransition(float LocationTolerance, float RotationTolerance) const
+{
+    return Camera &&
+        ((!bTargetLocationInitialized || !TargetLocation.Equals(Camera->GetLocation(), LocationTolerance)) ||
+         (!bTargetRotationInitialized || !TargetRotation.Equals(Camera->GetRotation(), RotationTolerance)));
+}
+
 void FEditorWorldController::Tick(float InDeltaTime)
 {
     DeltaTime = InDeltaTime;

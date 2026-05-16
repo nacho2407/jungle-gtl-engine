@@ -461,6 +461,12 @@ void FResourceManager::ReleaseGPUResources()
 
 	RenderStateCache.Release();
 
+	for (auto& [Path, Mesh] : SkeletalMeshMap)
+	{
+		UObjectManager::Get().DestroyObject(Mesh);
+	}
+	SkeletalMeshMap.clear();
+
 	DefaultWhiteTexture.Reset();
 	CachedDevice.Reset();
 }

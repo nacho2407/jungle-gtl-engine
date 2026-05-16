@@ -25,6 +25,7 @@ public:
         // 현재는 첫 번째 Actor 를 기준으로 Transform 을 반환하지만 다수 Actor 들의 Center Pivot 등을 지원할 수 있음
         return Actors[0]->GetRootComponent()->GetWorldMatrix();
     }
+
     virtual void SetTransform(const FMatrix& M) override
     {
         if (Actors.empty())
@@ -167,9 +168,9 @@ public:
             Socket.RelativeRotation = FRotator(SafeQuat);
 
             FVector SafeScale = Rel.GetScale3D();
-            SafeScale.X = std::max(0.001f, SafeScale.X);
-            SafeScale.Y = std::max(0.001f, SafeScale.Y);
-            SafeScale.Z = std::max(0.001f, SafeScale.Z);
+            SafeScale.X = (std::max)(0.001f, SafeScale.X);
+            SafeScale.Y = (std::max)(0.001f, SafeScale.Y);
+            SafeScale.Z = (std::max)(0.001f, SafeScale.Z);
 
             Socket.RelativeScale = SafeScale;
 

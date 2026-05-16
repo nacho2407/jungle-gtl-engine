@@ -100,16 +100,19 @@ public:
             RootComponent->AddWorldOffset(Delta);
     }
 
-    // Transform — Rotation
-    FVector GetActorRotation() const
-    {
-        return RootComponent ? RootComponent->GetRelativeRotation() : FVector(0, 0, 0);
-    }
-    void SetActorRotation(const FVector& NewRotation)
-    {
-        if (RootComponent)
-            RootComponent->SetRelativeRotation(NewRotation);
-    }
+	// Transform — Rotation
+	FVector GetActorRotation() const
+	{
+		return RootComponent ? RootComponent->GetRelativeRotation() : FVector(0, 0, 0);
+	}
+	void SetActorRotation(const FVector& NewRotation)
+	{
+		if (RootComponent) RootComponent->SetRelativeRotation(NewRotation);
+	}
+	void SetActorRotationQuat(const FQuat& Q)
+	{
+		if (RootComponent) RootComponent->SetRelativeRotationQuat(Q);
+	}
 
     // Transform — Scale
     FVector GetActorScale() const

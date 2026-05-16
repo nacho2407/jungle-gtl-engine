@@ -43,6 +43,11 @@ void UEngine::Init(FWindowsWindow* InWindow)
 
 void UEngine::Shutdown()
 {
+	while (!WorldList.empty())
+	{
+		DestroyWorldContext(WorldList.back().ContextHandle);
+	}
+
 	RmlUiSystem.Shutdown();
 	AudioSystem.Shutdown();
 	RenderPipeline.reset();
