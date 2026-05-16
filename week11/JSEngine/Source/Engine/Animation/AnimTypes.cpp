@@ -28,6 +28,24 @@ bool UAnimSequence::GetBonePose(float Time, const USkeletalMesh* Mesh, TArray<FM
     if (DataModel->SequenceLength > 0.f)
         EvalTime = std::clamp(EvalTime, 0.0f, DataModel->SequenceLength);
     OutLocalPose.resize(BoneCount);
+    for (int32 BoneIndex = 0; BoneIndex < BoneCount; BoneIndex++)
+    {
+        OutLocalPose[BoneIndex] = Bones[BoneIndex].LocalBindTransform;
+    }
+    for (const FAnimationTrack& Track : DataModel->BoneAnimationTracks)
+    {
+        if (Track.BoneIndex < 0 || Track.BoneIndex >= BoneCount)
+            continue;
+        const FRawAnimSequenceTrack& Raw = Track.InternalTrackData;
+
+        const FVector Pos = EvalVectorKeys(Raw.PosKeys, Raw.PosKeyTimes, EvalTime,FVector::ZeroVector);
+
+        const FQuat Rot = EvalQuatKeys(Raw.RotKeys, Raw.RotKeyTimes,EvalTime,FQuat::Identity);
+
+        const FVector Scale = EvalVectorKeys(Raw.ScaleKeys, Raw.ScaleKeyTimes, EvalTime, FVector::OneVector);
+
+        OutLocalPose[Track.BoneIndex] = FTransform(Rot, Pos, Scale).ToMatrixWithScale();
+    }
     return true;
 }
 
