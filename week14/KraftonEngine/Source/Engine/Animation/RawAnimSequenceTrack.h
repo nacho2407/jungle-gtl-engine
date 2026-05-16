@@ -11,8 +11,14 @@ struct FRawFloatCurveKey
     float Value       = 0.0f;
 
     int32 Interpolation = 0;
+    int32 TangentMode   = 0;
 
-    int32 TangentMode = 0;
+    float ArriveTangent       = 0.0f;
+    float LeaveTangent        = 0.0f;
+    float ArriveTangentWeight = 0.333333f;
+    float LeaveTangentWeight  = 0.333333f;
+    bool  bArriveTangentWeighted = false;
+    bool  bLeaveTangentWeighted  = false;
 
     friend FArchive& operator<<(FArchive& Ar, FRawFloatCurveKey& Key)
     {
@@ -20,6 +26,12 @@ struct FRawFloatCurveKey
         Ar << Key.Value;
         Ar << Key.Interpolation;
         Ar << Key.TangentMode;
+        Ar << Key.ArriveTangent;
+        Ar << Key.LeaveTangent;
+        Ar << Key.ArriveTangentWeight;
+        Ar << Key.LeaveTangentWeight;
+        Ar << Key.bArriveTangentWeighted;
+        Ar << Key.bLeaveTangentWeighted;
         return Ar;
     }
 };
@@ -35,7 +47,10 @@ struct FRawFloatCurve
 
     friend FArchive& operator<<(FArchive& Ar, FRawFloatCurve& Curve)
     {
-        Ar << Curve.Keys;
+        uint32 Count = static_cast<uint32>(Curve.Keys.size());
+        Ar << Count;
+        if (Ar.IsLoading()) Curve.Keys.resize(Count);
+        for (FRawFloatCurveKey& Key : Curve.Keys) { Ar << Key; }
         return Ar;
     }
 };

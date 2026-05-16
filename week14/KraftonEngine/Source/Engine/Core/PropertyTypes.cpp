@@ -5,6 +5,7 @@
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
 #include "Object/FName.h"
+#include "Object/UClass.h"
 
 json::JSON FPropertyDescriptor::Serialize() const
 {
@@ -51,6 +52,12 @@ json::JSON FPropertyDescriptor::Serialize() const
 		return JSON(*static_cast<FString*>(ValuePtr));
 	case EPropertyType::ObjectRef:
 		return JSON(*static_cast<FString*>(ValuePtr));
+	case EPropertyType::ClassRef:
+	{
+		// TSubclassOf<T> 의 단일 멤버 UClass* 를 직접 접근. 표준 레이아웃 보장.
+		UClass* C = *reinterpret_cast<UClass**>(ValuePtr);
+		return JSON(FString(C ? C->GetName() : "None"));
+	}
 	case EPropertyType::MaterialSlot:
 	{
 		const FMaterialSlot* Slot = static_cast<const FMaterialSlot*>(ValuePtr);
@@ -161,6 +168,16 @@ void FPropertyDescriptor::Deserialize(json::JSON& Value)
 	case EPropertyType::ObjectRef:
 		*static_cast<FString*>(ValuePtr) = Value.ToString();
 		break;
+	case EPropertyType::ClassRef:
+	{
+		UClass** ClassPP = reinterpret_cast<UClass**>(ValuePtr);
+		FString Name = Value.ToString();
+		UClass* Found = (Name == "None" || Name.empty()) ? nullptr : UClass::FindByName(Name.c_str());
+		// 베이스 검증 — 잘못된 클래스면 nullptr (TSubclassOf 가드와 동일 정책).
+		if (Found && ClassBase && !Found->IsA(ClassBase)) Found = nullptr;
+		*ClassPP = Found;
+		break;
+	}
 
 	case EPropertyType::MaterialSlot:
 	{
