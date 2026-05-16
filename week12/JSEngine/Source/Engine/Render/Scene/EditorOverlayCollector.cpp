@@ -21,8 +21,30 @@
 #include "Render/Scene/RenderBus.h"
 #include "Spatial/WorldSpatialIndex.h"
 
+#include <algorithm>
+
 namespace
 {
+    void BuildBoneMatrixConstants(const USkeletalMeshComponent* SkeletalMeshComp, FBoneMatrixConstants& OutConstants)
+    {
+        OutConstants = {};
+        if (!SkeletalMeshComp)
+        {
+            return;
+        }
+
+        const TArray<FMatrix>& SkinningMatrices = SkeletalMeshComp->GetSkinningMatrices();
+        const uint32 BoneCount = static_cast<uint32>((std::min)(
+            SkinningMatrices.size(),
+            static_cast<size_t>(MaxGPUSkinBones)));
+
+        OutConstants.BoneCount = BoneCount;
+        for (uint32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
+        {
+            OutConstants.BoneMatrices[BoneIndex] = SkinningMatrices[BoneIndex];
+        }
+    }
+
     FColor MakeBVHInternalNodeColor(int32 PathIndexFromLeaf, int32 PathLength)
     {
         if (PathLength <= 1)
@@ -294,6 +316,8 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
         }
 
         FMeshBuffer* MeshBuffer = nullptr;
+        bool bUseGPUSkinning = false;
+        uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
         if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh)
         {
             auto* StaticMeshComp = static_cast<UStaticMeshComponent*>(primitiveComponent);
@@ -309,7 +333,17 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
             // skinning + 버퍼 업로드를 이미 끝낸 상태. 여기서는 dirty flag를 소비하지 않고
             // bNeedsUpload=false로 캐시된 버퍼만 가져온다.
             SkeletalMeshComp->EnsureSkinningUpdated();
-            MeshBuffer = SkeletalMeshComp->GetResolvedSkinningMode() == ESkinningMode::GPU
+            bUseGPUSkinning = SkeletalMeshComp->GetResolvedSkinningMode() == ESkinningMode::GPU;
+            if (bUseGPUSkinning)
+            {
+                BoneMatrixConstantsIndex = RenderBus.AllocateBoneMatrixConstants();
+                if (FBoneMatrixConstants* Constants = RenderBus.GetMutableBoneMatrixConstants(BoneMatrixConstantsIndex))
+                {
+                    BuildBoneMatrixConstants(SkeletalMeshComp, *Constants);
+                }
+            }
+
+            MeshBuffer = bUseGPUSkinning
                 ? MeshBufferManager.GetGPUSkeletalMeshBuffer(SkeletalMesh)
                 : MeshBufferManager.GetCPUSkeletalMeshBuffer(
                     SkeletalMeshComp->GetUUID(),
@@ -343,6 +377,8 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
         else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SkeletalMesh)
         {
             BaseCmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
+            BaseCmd.bUseBoneMatrixConstants = bUseGPUSkinning;
+            BaseCmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
         }
         else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Text)
         {
