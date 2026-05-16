@@ -1,4 +1,4 @@
-#include "Editor/Packaging/GamePackager.h"
+﻿#include "Editor/Packaging/GamePackager.h"
 
 #include "Asset/BinarySerializer.h"
 #include "Asset/ObjLoader.h"
@@ -84,7 +84,7 @@ namespace
 
     std::filesystem::path FindSolutionRoot()
     {
-        std::vector<std::filesystem::path> SearchRoots;
+        TArray<std::filesystem::path> SearchRoots;
         SearchRoots.emplace_back(std::filesystem::path(FPaths::RootDir()));
         SearchRoots.emplace_back(std::filesystem::current_path());
 
@@ -166,7 +166,7 @@ namespace
             return true;
         }
 
-        std::vector<char> Buffer(std::min<DWORD>(AvailableBytes, 4096));
+        TArray<char> Buffer(std::min<DWORD>(AvailableBytes, 4096));
         DWORD BytesRead = 0;
         if (!ReadFile(ReadPipe, Buffer.data(), static_cast<DWORD>(Buffer.size()), &BytesRead, nullptr) || BytesRead == 0)
         {
@@ -338,7 +338,7 @@ namespace
 
     std::filesystem::path SearchMSBuildOnPath()
     {
-        std::vector<wchar_t> Buffer(32768);
+        TArray<wchar_t> Buffer(32768);
         const DWORD Length = SearchPathW(nullptr, L"MSBuild.exe", nullptr, static_cast<DWORD>(Buffer.size()), Buffer.data(), nullptr);
         if (Length > 0 && Length < Buffer.size())
         {
@@ -351,7 +351,7 @@ namespace
         return {};
     }
 
-    void AddMSBuildCandidatesForVSInstall(const std::filesystem::path& InstallRoot, std::vector<std::filesystem::path>& OutCandidates)
+    void AddMSBuildCandidatesForVSInstall(const std::filesystem::path& InstallRoot, TArray<std::filesystem::path>& OutCandidates)
     {
         OutCandidates.push_back(InstallRoot / L"MSBuild" / L"Current" / L"Bin" / L"amd64" / L"MSBuild.exe");
         OutCandidates.push_back(InstallRoot / L"MSBuild" / L"Current" / L"Bin" / L"MSBuild.exe");
@@ -359,9 +359,9 @@ namespace
         OutCandidates.push_back(InstallRoot / L"MSBuild" / L"15.0" / L"Bin" / L"MSBuild.exe");
     }
 
-    void AddInstalledVisualStudioMSBuildCandidates(std::vector<std::filesystem::path>& OutCandidates)
+    void AddInstalledVisualStudioMSBuildCandidates(TArray<std::filesystem::path>& OutCandidates)
     {
-        std::vector<std::filesystem::path> VisualStudioRoots;
+        TArray<std::filesystem::path> VisualStudioRoots;
         const std::filesystem::path ProgramFiles = GetEnvironmentPath(L"ProgramFiles");
         const std::filesystem::path ProgramFilesX86 = GetEnvironmentPath(L"ProgramFiles(x86)");
         if (!ProgramFiles.empty())
@@ -431,7 +431,7 @@ namespace
             return VSWhereMSBuildPath;
         }
 
-        std::vector<std::filesystem::path> Candidates;
+        TArray<std::filesystem::path> Candidates;
         AddInstalledVisualStudioMSBuildCandidates(Candidates);
         std::sort(Candidates.begin(), Candidates.end(), [](const std::filesystem::path& A, const std::filesystem::path& B)
         {
@@ -1751,7 +1751,7 @@ namespace
             return true;
         }
 
-        std::vector<char> Buffer(std::min<DWORD>(AvailableBytes, 4096));
+        TArray<char> Buffer(std::min<DWORD>(AvailableBytes, 4096));
         DWORD BytesRead = 0;
         if (!ReadFile(ReadPipe, Buffer.data(), static_cast<DWORD>(Buffer.size()), &BytesRead, nullptr) || BytesRead == 0)
         {

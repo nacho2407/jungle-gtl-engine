@@ -1,4 +1,4 @@
-#include "Audio/AudioSystem.h"
+﻿#include "Audio/AudioSystem.h"
 
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
@@ -60,7 +60,7 @@ namespace
             static_cast<int>(SoLoud::AudioSource::EXPONENTIAL_DISTANCE));
     }
 
-    bool LoadBinaryFileWide(const FString& Path, std::vector<unsigned char>& OutBytes)
+    bool LoadBinaryFileWide(const FString& Path, TArray<unsigned char>& OutBytes)
     {
         OutBytes.clear();
 
@@ -152,7 +152,7 @@ struct FAudioSystem::FImpl
             return nullptr;
         }
 
-        std::vector<unsigned char> Bytes;
+        TArray<unsigned char> Bytes;
         if (!LoadBinaryFileWide(NormalizedPath, Bytes))
         {
             UE_LOG_WARNING("[AudioSystem] Failed to read SFX: %s", NormalizedPath.c_str());
@@ -192,7 +192,7 @@ struct FAudioSystem::FImpl
             return nullptr;
         }
 
-        std::vector<unsigned char> Bytes;
+        TArray<unsigned char> Bytes;
         if (!LoadBinaryFileWide(NormalizedPath, Bytes))
         {
             UE_LOG_WARNING("[AudioSystem] Failed to read stream: %s", NormalizedPath.c_str());

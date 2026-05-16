@@ -253,16 +253,16 @@ void InputSystem::AddTextInput(uint32_t Codepoint)
     ScriptTextInputQueue.push_back(Codepoint);
 }
 
-std::vector<uint32_t> InputSystem::ConsumeTextInput()
+TArray<uint32_t> InputSystem::ConsumeTextInput()
 {
-    std::vector<uint32_t> Result;
+    TArray<uint32_t> Result;
     Result.swap(TextInputQueue);
     return Result;
 }
 
-std::vector<uint32_t> InputSystem::ConsumeScriptTextInput()
+TArray<uint32_t> InputSystem::ConsumeScriptTextInput()
 {
-    std::vector<uint32_t> Result;
+    TArray<uint32_t> Result;
     Result.swap(ScriptTextInputQueue);
     return Result;
 }

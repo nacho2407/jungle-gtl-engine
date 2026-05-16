@@ -97,11 +97,8 @@ protected:
 	mutable FTransform CachedWorldTransform{};
 	mutable bool bTransformDirty = true;
 
-	FVector RelativeLocation{};
-	// 에디터 표시 및 직렬화용 오일러 캐시 (Roll, Pitch, Yaw 도 단위)
-	// 회전 연산의 권위 있는 소스는 RelativeRotationQuat 입니다.
-	FVector RelativeRotation{};
-	// 권위 있는 회전 저장소 — 짐벌 락 없는 쿼터니언으로 유지합니다.
-	FQuat RelativeRotationQuat = FQuat::Identity;
+	FVector RelativeLocation{};		
+	FVector RelativeRotation{}; // 에디터 표시 및 직렬화용 오일러 캐시 (Roll, Pitch, Yaw 도 단위), 권위 있는 소스는 RelativeRotationQuat입니다.
+	FQuat RelativeRotationQuat = FQuat::Identity; // 권위 있는 회전 저장소 — 짐벌 락 없는 쿼터니언으로 유지합니다.
 	FVector RelativeScale3D{ 1.0f, 1.0f, 1.0f };
 };

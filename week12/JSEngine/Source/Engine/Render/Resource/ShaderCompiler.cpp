@@ -1,4 +1,4 @@
-#include "ShaderCompiler.h"
+﻿#include "ShaderCompiler.h"
 #include "Core/Paths.h"
 
 #include <d3dcompiler.h>
@@ -68,8 +68,8 @@ static bool TryExtractIncludePath(const FString& Line, FString& OutInclude)
 
 static void CollectShaderDependenciesRecursive(
 	const std::filesystem::path& SourcePath,
-	std::vector<std::filesystem::path>& OutDependencies,
-	std::vector<std::filesystem::path>& VisitedFiles)
+	TArray<std::filesystem::path>& OutDependencies,
+	TArray<std::filesystem::path>& VisitedFiles)
 {
 	const std::filesystem::path NormalizedPath = SourcePath.lexically_normal();
 	for (const std::filesystem::path& VisitedFile : VisitedFiles)
@@ -122,8 +122,8 @@ static bool IsShaderCacheUpToDate(const std::filesystem::path& CachePath, const 
 		return false;
 	}
 
-	std::vector<std::filesystem::path> Dependencies;
-	std::vector<std::filesystem::path> VisitedFiles;
+	TArray<std::filesystem::path> Dependencies;
+	TArray<std::filesystem::path> VisitedFiles;
 	CollectShaderDependenciesRecursive(SourcePath, Dependencies, VisitedFiles);
 
 	for (const std::filesystem::path& Dependency : Dependencies)

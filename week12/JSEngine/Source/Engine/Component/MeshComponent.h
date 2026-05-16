@@ -15,7 +15,7 @@ public:
 	virtual UMaterialInterface* GetMaterial(int32 SlotIndex) const override;
 
 	const TArray<UMaterialInterface*>& GetOverrideMaterial() const;
-	const std::pair<float, float> GetScroll() const { return ScrollUV; };
+	const TPair<float, float> GetScroll() const { return ScrollUV; };
 
 	virtual int32 GetNumMaterials() const override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
@@ -25,5 +25,5 @@ public:
 
 protected:
 	TArray<UMaterialInterface*> Materials;
-	std::pair<float, float> ScrollUV = { };
+	TPair<float, float> ScrollUV = { };
 };

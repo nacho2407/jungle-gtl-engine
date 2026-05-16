@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "Core/Containers/Array.h"
 #include "Engine/Core/CoreTypes.h"
 
 struct FWindowHitTestRect
@@ -26,7 +27,7 @@ struct FWindowHitTestRect
 struct FCustomTitleBarState
 {
 	int32 TitleBarHeight = 0;
-	std::vector<FWindowHitTestRect> InteractiveRects;
+	TArray<FWindowHitTestRect> InteractiveRects;
 };
 
 class FWindowsWindow
@@ -47,7 +48,7 @@ public:
 
 	POINT ScreenToClientPoint(POINT ScreenPoint) const;
 
-	void SetCustomTitleBarMetrics(int32 Height, const std::vector<FWindowHitTestRect>& InteractiveRects);
+	void SetCustomTitleBarMetrics(int32 Height, const TArray<FWindowHitTestRect>& InteractiveRects);
 	const FCustomTitleBarState& GetCustomTitleBarState() const { return CustomTitleBarState; }
 
 	void Minimize();

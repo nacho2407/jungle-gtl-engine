@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include "Core/Singleton.h"
+#include "Core/Containers/Array.h"
 #include "Runtime/ViewportRect.h"
 
 struct FGuiInputState
@@ -69,8 +70,8 @@ class InputSystem : public TSingleton<InputSystem>
     bool IsUsingRawMouse() const { return bUseRawMouse; }
     void AddRawMouseDelta(int DeltaX, int DeltaY);
     void AddTextInput(uint32_t Codepoint);
-    std::vector<uint32_t> ConsumeTextInput();
-    std::vector<uint32_t> ConsumeScriptTextInput();
+    TArray<uint32_t> ConsumeTextInput();
+    TArray<uint32_t> ConsumeScriptTextInput();
 
     // Keyboard
     bool GetKeyDown(int VK) const { return CurrentStates[VK] && !PrevStates[VK]; }
@@ -189,8 +190,8 @@ class InputSystem : public TSingleton<InputSystem>
     // Scrolling
     int ScrollDelta = 0;
     int PrevScrollDelta = 0;
-    std::vector<uint32_t> TextInputQueue;
-    std::vector<uint32_t> ScriptTextInputQueue;
+    TArray<uint32_t> TextInputQueue;
+    TArray<uint32_t> ScriptTextInputQueue;
 
     // Window handle for focus check
     HWND OwnerHWnd = nullptr;

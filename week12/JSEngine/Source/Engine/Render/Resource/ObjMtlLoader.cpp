@@ -69,7 +69,7 @@ static FString ResolveMtlTexturePath(const std::filesystem::path& MtlDir, const 
 	return {};
 }
 
-static FString JoinTokens(const std::vector<FString>& Tokens, size_t StartIndex)
+static FString JoinTokens(const TArray<FString>& Tokens, size_t StartIndex)
 {
 	FString Result;
 	for (size_t Index = StartIndex; Index < Tokens.size(); ++Index)
@@ -99,7 +99,7 @@ static FString ResolveMtlTextureExpression(const std::filesystem::path& MtlDir, 
 	}
 
 	std::istringstream TokenStream(TrimmedExpression);
-	std::vector<FString> Tokens;
+	TArray<FString> Tokens;
 	FString Token;
 	while (TokenStream >> Token)
 	{

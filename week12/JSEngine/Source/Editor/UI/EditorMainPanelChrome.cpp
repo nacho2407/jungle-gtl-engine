@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/UI/EditorChromeConstants.h"
 #include "Engine/Runtime/WindowsWindow.h"
@@ -51,7 +51,7 @@ FWindowHitTestRect MakeHitTestRect(const ImVec2& Min, const ImVec2& Max, const I
 	return Rect;
 }
 
-void AddItemHitRect(std::vector<FWindowHitTestRect>& Rects, const ImVec2& ViewportPos)
+void AddItemHitRect(TArray<FWindowHitTestRect>& Rects, const ImVec2& ViewportPos)
 {
 	Rects.push_back(MakeHitTestRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ViewportPos));
 }
@@ -103,7 +103,7 @@ void FEditorMainPanel::RenderApplicationChrome(float DeltaTime)
 		return;
 	}
 
-	std::vector<FWindowHitTestRect> InteractiveRects;
+	TArray<FWindowHitTestRect> InteractiveRects;
 	InteractiveRects.reserve(6);
 
 	constexpr float TitleBarHeight = FEditorChromeMetrics::ApplicationTitleBarHeight;
