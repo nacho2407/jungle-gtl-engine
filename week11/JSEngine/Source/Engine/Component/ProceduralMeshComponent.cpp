@@ -1,4 +1,4 @@
-﻿#include "ProceduralMeshComponent.h"
+#include "ProceduralMeshComponent.h"
 #include "StaticMeshComponent.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
@@ -7,6 +7,7 @@
 #include "Core/ResourceManager.h"
 #include "Core/Paths.h"
 #include <filesystem>
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(UProceduralMeshComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UProceduralMeshComponent)
@@ -198,7 +199,7 @@ void UProceduralMeshComponent::Serialize(FArchive& Ar)
 
 void UProceduralMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UPrimitiveComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
     OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 }

@@ -1,9 +1,14 @@
-﻿#pragma once
+#pragma once
 #include "Object/Object.h"
+#include "Core/ReflectionUtils.h"
 #include "GameFramework/AActor.h"
 
+#include "Level.generated.h"
+
+UCLASS()
 class ULevel : public UObject
 {
+    GENERATED_BODY_ULevel()
 public:
 	DECLARE_CLASS(ULevel, UObject)
 
@@ -13,7 +18,10 @@ public:
 	virtual void PostDuplicate(UObject* Original) override;
 
 	// 프로퍼티 시스템 — UObject 에서 상속
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override {}
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override
+	{
+		ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
+	}
 	void PostEditProperty(const char* PropertyName) override {}
 
 	void AddActor(AActor* Actor);

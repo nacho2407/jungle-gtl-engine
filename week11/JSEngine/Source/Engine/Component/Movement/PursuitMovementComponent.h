@@ -1,10 +1,14 @@
-﻿#pragma once
+#pragma once
 #include "MovementComponent.h"
+
+#include "PursuitMovementComponent.generated.h"
 
 class FViewportCamera;
 
 // Not intended for complex, non-ghost actors
+UCLASS()
 class UPursuitMovementComponent : public UMovementComponent {
+    GENERATED_BODY_UPursuitMovementComponent()
 public:
 	DECLARE_CLASS(UPursuitMovementComponent, UMovementComponent);
 
@@ -40,13 +44,17 @@ private:
 	FVector TargetPoint;
 
 	float Elapsed					= 0.f;
+	UPROPERTY(EditAnywhere)
 	float UpdateLerpInterval		= 2.0f;
+	UPROPERTY(EditAnywhere)
 	float DetectionRadius			= 20.f;
+	UPROPERTY(EditAnywhere)
 	float PursuitSpeed				= 1.f;
     float TargetPitch				= 0.f;
     float TargetYaw					= 0.f;
 
 	bool bIsActive					= true;
+	UPROPERTY(EditAnywhere)
 	bool bFaceTargetDir				= true;
 	bool bAutoTargetPerspCamera		= true;		// If no target is set, default to the primary perspective camera on BeginPlay
 };

@@ -1,9 +1,13 @@
-﻿#pragma once
+#pragma once
 #include "Object/Object.h"
 #include "SkeletalMeshTypes.h"
 
+#include "SkeletalMesh.generated.h"
+
+UCLASS()
 class USkeletalMesh : public UObject
 {
+    GENERATED_BODY_USkeletalMesh()
 public:
     DECLARE_CLASS(USkeletalMesh, UObject)
 

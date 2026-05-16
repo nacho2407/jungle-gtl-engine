@@ -1,7 +1,8 @@
-﻿#include "LightComponent.h"
+#include "LightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
 #include "Render/Resource/ShadowAtlasManager.h"
+#include "Core/ReflectionUtils.h"
 
 #include <cmath>
 
@@ -150,7 +151,7 @@ void ULightComponent::PostDuplicate(UObject* Original)
 
 void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	ULightComponentBase::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
 	static const char* ShadowMapTypeNames[] = { "CSM" ,"PSM" };
 	OutProps.push_back({ "ShadowMapType", EPropertyType::Enum, &eShadowMapType, 0.f, 0.f, 0.f, ShadowMapTypeNames, 2 });

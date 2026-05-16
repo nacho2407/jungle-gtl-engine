@@ -1,9 +1,13 @@
-﻿#pragma once
+#pragma once
 #include "ShapeComponent.h"
 #include "Geometry/OBB.h"
 
+#include "BoxComponent.generated.h"
+
+UCLASS()
 class UBoxComponent : public UShapeComponent
 {
+    GENERATED_BODY_UBoxComponent()
 public:
     DECLARE_CLASS(UBoxComponent, UShapeComponent)
     void UpdateWorldAABB() const override

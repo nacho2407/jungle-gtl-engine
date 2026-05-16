@@ -1,5 +1,6 @@
-﻿#include "LightComponentBase.h"
+#include "LightComponentBase.h"
 #include "Object/ObjectFactory.h"
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(ULightComponentBase, USceneComponent)
 REGISTER_FACTORY(ULightComponentBase)
@@ -14,7 +15,7 @@ void ULightComponentBase::PostDuplicate(UObject* Original)
 
 void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    USceneComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 	constexpr EPropertyUsageFlags EditAndAnimate =
 		EPropertyUsageFlags::Editable | EPropertyUsageFlags::Animatable;
     OutProps.push_back({ "Color", EPropertyType::Color, &LightColor, 0.0f, 0.0f, 0.1f, nullptr, 0, nullptr, EditAndAnimate });

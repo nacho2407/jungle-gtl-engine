@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+
+#include "Material.generated.h"
 
 #include "Object/Object.h"
 #include "Texture.h"
@@ -72,8 +74,10 @@ struct FMaterialParamValue
 	std::variant<bool, int32, uint32, float, FVector2, FVector, FVector4, FMatrix, UTexture*> Value;
 };
 
+UCLASS()
 class UMaterialInterface : public UObject
 {
+    GENERATED_BODY_UMaterialInterface()
 public:
 	DECLARE_CLASS(UMaterialInterface, UObject)
 
@@ -114,8 +118,10 @@ public:
 	virtual void GatherAllParams(TMap<FString, FMaterialParamValue>& OutParams) const = 0;
 };
 
+UCLASS()
 class UMaterial : public UMaterialInterface
 {
+    GENERATED_BODY_UMaterial()
 public:
 	DECLARE_CLASS(UMaterial, UMaterialInterface)
 
@@ -244,8 +250,10 @@ private:
 	mutable uint32 MaterialConstantBufferSize = 0;
 };
 
+UCLASS()
 class UMaterialInstance : public UMaterialInterface
 {
+    GENERATED_BODY_UMaterialInstance()
 public:
 	DECLARE_CLASS(UMaterialInstance, UMaterialInterface)
 

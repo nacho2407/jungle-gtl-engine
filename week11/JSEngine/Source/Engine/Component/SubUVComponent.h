@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+
+#include "SubUVComponent.generated.h"
 
 #include "BillboardComponent.h"
 #include "Core/ResourceTypes.h"
@@ -13,8 +15,10 @@
 //   Comp->SetParticle(FName("Explosion"));
 //   Comp->SetFrameIndex(CurrentFrame);
 //   Comp->SetSpriteSize(2.0f, 2.0f);
+UCLASS()
 class USubUVComponent : public UBillboardComponent
 {
+    GENERATED_BODY_USubUVComponent()
 public:
 	DECLARE_CLASS(USubUVComponent, UBillboardComponent)
 
@@ -62,6 +66,7 @@ protected:
 	void TickComponent(float DeltaTime) override;
 
 private:
+	UPROPERTY(EditAnywhere)
 	FName ParticleName;
 	FParticleResource* CachedParticle = nullptr; // ResourceManager 소유, 여기선 참조만
 

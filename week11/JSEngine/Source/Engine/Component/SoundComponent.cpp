@@ -1,4 +1,5 @@
 #include "Component/SoundComponent.h"
+#include "Core/ReflectionUtils.h"
 
 #include "Engine/Runtime/Engine.h"
 #include "Serialization/Archive.h"
@@ -42,7 +43,7 @@ void USoundComponent::Serialize(FArchive& Ar)
 
 void USoundComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    USceneComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     OutProps.push_back({ "Sound", EPropertyType::String, &SoundKeyOrPath });
     OutProps.push_back({ "Play On BeginPlay", EPropertyType::Bool, &bPlayOnBeginPlay });
     OutProps.push_back({ "Loop", EPropertyType::Bool, &bLoop });

@@ -1,13 +1,14 @@
-﻿#include "ProjectileMovementComponent.h"
+#include "ProjectileMovementComponent.h"
 #include "Component/SceneComponent.h"
 #include "Object/ObjectFactory.h"
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(UProjectileMovementComponent, UMovementComponent)
 REGISTER_FACTORY(UProjectileMovementComponent)
 
 void UProjectileMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UMovementComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     // "Velocity" 는 UMovementComponent::GetEditableProperties 에서 이미 추가됩니다.
     OutProps.push_back({ "Initial Speed",             EPropertyType::Float, &InitialSpeed, 0.0f, 0.0f, 1.0f });
     OutProps.push_back({ "Max Speed",                 EPropertyType::Float, &MaxSpeed,     0.0f, 0.0f, 1.0f });

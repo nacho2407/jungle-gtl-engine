@@ -1,44 +1,52 @@
-﻿#pragma once
+#pragma once
 #include "MeshComponent.h"
 #include "Asset/StaticMesh.h"
 #include "Render/Resource/Material.h"
 
+#include "StaticMeshComponent.generated.h"
+
+UCLASS()
 class UStaticMeshComponent : public UMeshComponent
 {
+    GENERATED_BODY_UStaticMeshComponent()
+
 public:
-	DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
-	UStaticMeshComponent();
-	
-	virtual void PostDuplicate(UObject* Original) override;
+    DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
+    UStaticMeshComponent();
 
-	virtual void Serialize(FArchive& Ar) override;
+    virtual void PostDuplicate(UObject* Original) override;
 
-	void SetStaticMesh(UStaticMesh* InStaticMesh);
-	UStaticMesh* GetStaticMesh() const;
-	bool HasValidMesh() const;
+    virtual void Serialize(FArchive& Ar) override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void PostEditProperty(const char * PropertyName) override;
+    void SetStaticMesh(UStaticMesh* InStaticMesh);
+    UStaticMesh* GetStaticMesh() const;
+    bool HasValidMesh() const;
 
-	void UpdateWorldAABB() const override;
-	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
-	EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_StaticMesh; }
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    void PostEditProperty(const char* PropertyName) override;
 
-	const FAABB& GetWorldAABB() const override;
+    void UpdateWorldAABB() const override;
+    bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
+    EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_StaticMesh; }
 
-	bool ConsumeRenderStateDirty();
+    const FAABB& GetWorldAABB() const override;
 
-	void GetMeshData(TArray<FNormalVertex>& OutVertices, TArray<uint32>& OutIndices) const;
+    bool ConsumeRenderStateDirty();
 
-private:
-	void MarkBoundsDirty();
-	void MarkRenderStateDirty();
-	void EnsureBoundsUpdated() const;
+    void GetMeshData(TArray<FNormalVertex>& OutVertices, TArray<uint32>& OutIndices) const;
 
 private:
-	UStaticMesh* StaticMeshAsset = nullptr;
-	FString StaticMeshAssetPath;
+    void MarkBoundsDirty();
+    void MarkRenderStateDirty();
+    void EnsureBoundsUpdated() const;
 
-	mutable bool bBoundsDirty = true;
-	bool bRenderStateDirty = true;
+private:
+    UPROPERTY(EditAnywhere)
+    UStaticMesh* StaticMeshAsset = nullptr;
+
+    UPROPERTY(EditAnywhere)
+    FString StaticMeshAssetPath;
+
+    mutable bool bBoundsDirty = true;
+    bool bRenderStateDirty = true;
 };

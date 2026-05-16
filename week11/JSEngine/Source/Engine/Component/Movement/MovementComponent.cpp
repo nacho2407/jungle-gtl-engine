@@ -1,4 +1,5 @@
-﻿#include "MovementComponent.h"
+#include "MovementComponent.h"
+#include "Core/ReflectionUtils.h"
 
 #include "Component/SceneComponent.h"
 #include "Object/ObjectFactory.h"
@@ -20,7 +21,7 @@ void UMovementComponent::SetUpdatedComponent(USceneComponent* InComponent)
 
 void UMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UActorComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
     // UpdatedComponent 는 SceneComponentRef 타입으로 노출됩니다.
     // CopyPropertiesFrom 은 포인터 복원을 건너뛰며, Actor::Duplicate() 에서 재매핑합니다.

@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+
+#include "SkeletalMeshComponent.generated.h"
 
 #include "Component/SkinnedMeshComponent.h"
 
@@ -8,8 +10,10 @@
  *        USkeletalMeshComponent 또한 해당 방식대로 우선은 얇게 유지.
  *        핵심 로직들은 대부분 USkinnedMeshComponent로 옮겼습니다.
  */
+UCLASS()
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
+    GENERATED_BODY_USkeletalMeshComponent()
 public:
     DECLARE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 

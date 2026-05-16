@@ -1,4 +1,5 @@
-﻿#include "DecalComponent.h"
+#include "DecalComponent.h"
+#include "Core/ReflectionUtils.h"
 
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -92,7 +93,7 @@ void UDecalComponent::BeginPlay()
 
 void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	UPrimitiveComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 	OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 	OutProps.push_back({ "Size", EPropertyType::Vec3, &DecalSize });
 	OutProps.push_back({ "Color", EPropertyType::Vec4, &DecalColor });

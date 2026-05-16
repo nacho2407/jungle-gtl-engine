@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+
+#include "PrimitiveComponent.generated.h"
 
 #include "Object/ObjectFactory.h"
 #include "SceneComponent.h"
@@ -25,8 +27,10 @@ DECLARE_DELEGATE(FOnComponentHit, UPrimitiveComponent*, AActor*, UPrimitiveCompo
 DECLARE_DELEGATE(FOnComponentBeginOverlap, UPrimitiveComponent*, AActor*, UPrimitiveComponent*, int32, bool, const FHitResult&)
 DECLARE_DELEGATE(FOnComponentEndOverlap, UPrimitiveComponent*, AActor*, UPrimitiveComponent*, int32, bool, const FHitResult&)
 
+UCLASS()
 class UPrimitiveComponent : public USceneComponent
 {
+    GENERATED_BODY_UPrimitiveComponent()
 public:
     DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
     ~UPrimitiveComponent() override;
@@ -95,10 +99,14 @@ protected:
 
 protected:
 	mutable FAABB WorldAABB;
+    UPROPERTY(EditAnywhere)
 	bool bIsVisible = true;
+    UPROPERTY(EditAnywhere)
 	bool bEnableCull = true; // frustum, occlusion culling으로 컬링될지 여부 판정
+    UPROPERTY(EditAnywhere)
     bool bCastDecal = true;
 
+    UPROPERTY(EditAnywhere)
     bool bGenerateOverlapEvents = false;
     bool bBlockComponent = false; // ComponentHit
     TMap<UPrimitiveComponent*, FCollisionResult> CurOverlaps;

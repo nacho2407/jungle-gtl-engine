@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+
+#include "Engine.generated.h"
 
 #include "Object/Object.h"
 #include "Audio/AudioSystem.h"
@@ -32,8 +34,10 @@ struct FRuntimeInputPermissions
 	bool bAllowLuaMouseInput = true;
 };
 
+UCLASS()
 class UEngine : public UObject
 {
+    GENERATED_BODY_UEngine()
 public:
 	DECLARE_CLASS(UEngine, UObject)
 

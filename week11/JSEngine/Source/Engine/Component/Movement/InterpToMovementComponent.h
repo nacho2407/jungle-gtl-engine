@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "MovementComponent.h"
 
+#include "InterpToMovementComponent.generated.h"
+
 enum class EInterpBehaviour {
 	OneShot,
 	OneShotReverse,
@@ -8,7 +10,9 @@ enum class EInterpBehaviour {
 	PingPong,
 };
 
+UCLASS()
 class UInterpToMovementComponent : public UMovementComponent {
+    GENERATED_BODY_UInterpToMovementComponent()
 public:
 	DECLARE_CLASS(UInterpToMovementComponent, UMovementComponent)
 
@@ -70,18 +74,23 @@ private:
 	void				FaceTargetDir(float DeltaTime);
 
 private:
+	UPROPERTY(EditAnywhere)
 	EInterpBehaviour	InterpBehaviour		= EInterpBehaviour::OneShot;
+	UPROPERTY(EditAnywhere)
 	TArray<FVector>		ControlPoints;
 	uint32				CurrentPointID		= 0;
 	uint32				NextPointID			= 0;
+	UPROPERTY(EditAnywhere)
 	float				Duration			= 5.0f;		// Does not store an "array" of duration
 	float				RotateDuration		= 0.f;
 	float				Elapsed				= 0.f;
 	float				TotalDistance		= 0;
 	float				NextDistRatio		= 0;
 	bool				bisLerping			= true;
+	UPROPERTY(EditAnywhere)
 	bool				bAutoActivate		= true;
 	bool				bPing				= true;
+	UPROPERTY(EditAnywhere)
 	bool				bFaceTargetDir		= true;
 
 	float				TargetPitch			= 0.f;

@@ -1,20 +1,24 @@
-﻿#pragma once
+#pragma once
 #include "Component/PrimitiveComponent.h"
 
-struct FLineVertex
+#include "LineBatchComponent.generated.h"
+
+struct FComponentLineVertex
 {
 	FVector Position;
 	FColor Color;
 
-	FLineVertex(const FVector& InPos, const FColor& InColor) : Position(InPos), Color(InColor) {}
+	FComponentLineVertex(const FVector& InPos, const FColor& InColor) : Position(InPos), Color(InColor) {}
 };
 
 class UMaterialInterface;
 
 // 사용하지 않는 컴포넌트입니다.
 // RenderProxy가 도입되면 사용될 예정입니다.
+UCLASS()
 class ULineBatchComponent : public UPrimitiveComponent
 {
+    GENERATED_BODY_ULineBatchComponent()
 public:
 	ULineBatchComponent();
 	virtual ~ULineBatchComponent() override = default;
@@ -30,6 +34,6 @@ public:
 private:
 	UMaterialInterface* Material = nullptr;
 
-	TArray<FLineVertex> LineVertices;
+	TArray<FComponentLineVertex> LineVertices;
 	TArray<uint32> Indices;
 };

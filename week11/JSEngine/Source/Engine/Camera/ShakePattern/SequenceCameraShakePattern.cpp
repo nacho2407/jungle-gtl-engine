@@ -1,4 +1,5 @@
 #include "SequenceCameraShakePattern.h"
+#include "Core/ReflectionUtils.h"
 
 #include "Animation/CurvePlayback.h"
 #include "Core/Logging/Log.h"
@@ -57,7 +58,7 @@ namespace
 
 void USequenceCameraShakePattern::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UCameraShakePattern::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
     OutProps.push_back({ "CurveAssetPath", EPropertyType::String, &CurveAssetPath });
     OutProps.push_back({ "PlayRate", EPropertyType::Float, &PlayRate });
