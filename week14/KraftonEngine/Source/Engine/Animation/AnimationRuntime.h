@@ -1,6 +1,9 @@
 ﻿#pragma once
 
+#include "Math/Transform.h"
+
 struct FPoseContext;
+struct FMatrix;
 
 // 포즈 연산 정적 라이브러리. UObject 가 아니다.
 namespace FAnimationRuntime
@@ -16,4 +19,8 @@ namespace FAnimationRuntime
 		const FPoseContext& B,
 		float Alpha,
 		FPoseContext& Out);
+
+	// 본 로컬 행렬 → FTransform 분해. row-major 가정. row 별 scale 을 제거한 뒤 회전을 추출.
+	// FBone::LocalMatrix 같은 bind-pose 행렬을 Animation 자료구조 (FTransform) 로 옮길 때 사용.
+	FTransform DecomposeMatrix(const FMatrix& Mat);
 }

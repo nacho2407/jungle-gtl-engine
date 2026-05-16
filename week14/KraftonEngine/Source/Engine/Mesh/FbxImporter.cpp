@@ -672,9 +672,6 @@ namespace
 		}
 
 		double RawWeight = Layer->Weight.Get();
-
-		// FBX SDK의 layer weight는 animatable property다.
-		// SDK 버전에서 이 GetCurve overload가 지원되지 않으면 static Weight만 사용하도록 이 분기만 제거하면 된다.
 		if (FbxAnimCurve* WeightCurve = Layer->Weight.GetCurve(Layer))
 		{
 			RawWeight = WeightCurve->Evaluate(Time);

@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Asset/AssetRegistry.h"
 
 class UAnimSequence;
 
@@ -13,6 +14,11 @@ public:
 
     bool SaveAnimation(UAnimSequence* Sequence, const FString& PackagePath, const FString& SourcePath);
 
+    const TArray<FAssetListItem>& GetAvailableAnimationFiles() const
+    {
+        return AvailableAnimationFiles;
+    }
+
     static FString GetAnimationPackagePath(const FString& SourcePath, const FString& AnimationName);
 
 private:
@@ -20,4 +26,5 @@ private:
 
 private:
     TMap<FString, UAnimSequence*> AnimationCaches;
+    TArray<FAssetListItem> AvailableAnimationFiles;
 };

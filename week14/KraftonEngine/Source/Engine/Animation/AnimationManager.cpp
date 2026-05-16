@@ -1,4 +1,4 @@
-﻿#include "AnimationManager.h"
+#include "AnimationManager.h"
 
 #include "Animation/AnimSequence.h"
 #include "Asset/AssetPackage.h"
@@ -131,6 +131,25 @@ UAnimSequence* FAnimationManager::LoadAnimation(const FString& PackagePath)
         return nullptr;
     }
 
+
+
+    auto ListIt = std::find_if(
+        AvailableAnimationFiles.begin(),
+        AvailableAnimationFiles.end(),
+        [&](const FAssetListItem& Item)
+        {
+            return Item.FullPath == NormalizedPath;
+        }
+    );
+
+    if (ListIt == AvailableAnimationFiles.end())
+    {
+        FAssetListItem Item;
+        Item.DisplayName = Sequence->GetName();
+        Item.FullPath = NormalizedPath;
+        AvailableAnimationFiles.push_back(Item);
+    }
+
     AnimationCaches[NormalizedPath] = Sequence;
     return Sequence;
 }
@@ -165,6 +184,25 @@ bool FAnimationManager::SaveAnimation(UAnimSequence* Sequence, const FString& Pa
     {
         UE_LOG("Animation save failed: write failed. Path=%s", NormalizedPath.c_str());
         return false;
+    }
+
+
+
+    auto ListIt = std::find_if(
+        AvailableAnimationFiles.begin(),
+        AvailableAnimationFiles.end(),
+        [&](const FAssetListItem& Item)
+        {
+            return Item.FullPath == NormalizedPath;
+        }
+    );
+
+    if (ListIt == AvailableAnimationFiles.end())
+    {
+        FAssetListItem Item;
+        Item.DisplayName = Sequence->GetName();
+        Item.FullPath = NormalizedPath;
+        AvailableAnimationFiles.push_back(Item);
     }
 
     AnimationCaches[NormalizedPath] = Sequence;

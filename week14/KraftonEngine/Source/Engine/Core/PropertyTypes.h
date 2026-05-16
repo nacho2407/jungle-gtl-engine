@@ -24,6 +24,7 @@ enum class EPropertyType : uint8_t
 	StaticMeshRef, // UStaticMesh* 에셋 레퍼런스 (드롭다운 선택)
 	SkeletalMeshRef, // USkeletalMesh* 에셋 레퍼런스 (드롭다운 선택)
 	MaterialSlot,  // FMaterialSlot — 머티리얼 경로
+	ObjectRef,	 // 일반 UObject 자식 에셋 레퍼런스. AssetTypeName 으로 FAssetRegistry 조회.
 	Enum,
 	Vec3Array,
 	Struct,    // 자기기술 구조체 — StructFunc로 Children 생성
@@ -61,6 +62,10 @@ struct FPropertyDescriptor
 
 	// Struct Metadata
 	FStructPropertyFunc StructFunc = nullptr;
+
+	// ObjectRef Metadata — 드롭다운에 표시할 자산 종류 (FAssetRegistry::ListByTypeName 의 키).
+	// 예: "USkeletalMesh", "UStaticMesh", "UAnimSequence".
+	const char* AssetTypeName = nullptr;
 
 	// JSON 직렬화 — FSceneSaveManager 등 외부 직렬자가 호출.
 	// 헤더에 SimpleJSON 의존을 들이지 않기 위해 본문은 PropertyTypes.cpp 에 둔다.
