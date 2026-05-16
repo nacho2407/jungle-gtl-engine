@@ -146,7 +146,12 @@ void UCharacterMovementComponent::TickFalling(float DeltaTime)
 	const FVector Offset = Velocity * DeltaTime;
 	Updated->SetWorldLocation(Updated->GetWorldLocation() + Offset);
 
-	// 새 위치에서 floor 체크.
+	// 올라가는 중 (점프 arc 상승) 엔 floor 체크 skip — 안 그러면 점프 직후 1 frame 의
+	// 작은 상승 (≈ JumpZVelocity * dt) 이 raycast probe 거리 안에 있어 즉시 착지로 잡힘.
+	// UE 도 동일 — Velocity.Z > 0 이면 ground 안 잡음.
+	if (Velocity.Z > 0.0f) return;
+
+	// 떨어지는 중에만 floor 체크.
 	FHitResult Floor;
 	if (!TraceFloor(Floor)) return;
 
