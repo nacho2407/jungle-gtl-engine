@@ -35,10 +35,13 @@ void FStatManager::TakeSnapshot()
 	{
 		// 현재 프레임 결과를 윈도우에 기록
 		double FrameTime = Accum.FrameTotal;
-		Accum.Window[Accum.WindowHead] = FrameTime;
-		Accum.WindowHead = (Accum.WindowHead + 1) % STAT_WINDOW_SIZE;
-		if (Accum.WindowCount < STAT_WINDOW_SIZE)
-			Accum.WindowCount++;
+		if (Accum.FrameCallCount > 0)
+		{
+			Accum.Window[Accum.WindowHead] = FrameTime;
+			Accum.WindowHead = (Accum.WindowHead + 1) % STAT_WINDOW_SIZE;
+			if (Accum.WindowCount < STAT_WINDOW_SIZE)
+				Accum.WindowCount++;
+		}
 
 		// 윈도우에서 Avg/Max/Min 계산
 		double Sum = 0.0;

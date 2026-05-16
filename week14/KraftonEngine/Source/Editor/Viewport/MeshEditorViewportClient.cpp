@@ -170,6 +170,7 @@ void FMeshEditorViewportClient::SetSelectedBone(USkeletalMesh* Mesh, int32 BoneI
 {
 	SelectedMesh = Mesh;
 	SelectedBoneIndex = BoneIndex;
+	RenderOptions.WeightBoneHeatMapBoneIndex = BoneIndex;
 
 	if (Gizmo && PreviewMeshComponent && BoneIndex >= 0)
 	{

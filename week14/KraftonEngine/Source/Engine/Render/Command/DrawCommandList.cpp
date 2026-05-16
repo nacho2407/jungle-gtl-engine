@@ -7,6 +7,7 @@
 #include "Render/Device/D3DDevice.h"
 #include "Render/Types/RenderConstants.h"
 #include "Profiling/Stats.h"
+#include "Profiling/GPUProfiler.h"
 
 // ============================================================
 // FStateCache
@@ -112,9 +113,32 @@ void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx,
 	if (EndIdx > Commands.size()) EndIdx = static_cast<uint32>(Commands.size());
 
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
-	for (uint32 i = StartIdx; i < EndIdx; ++i)
+	uint32 i = StartIdx;
+	while (i < EndIdx)
 	{
-		SubmitCommand(Commands[i], Device, Resources, Ctx, Cache);
+		const FDrawCommand& Cmd = Commands[i];
+		if (!Cmd.bIsSkeletal || Cmd.Pass != ERenderPass::PreDepth)
+		{
+			SubmitCommand(Cmd, Device, Resources, Ctx, Cache);
+			++i;
+			continue;
+		}
+
+		const bool bGpuSkinned = Cmd.bIsGpuSkinned;
+		const char* ScopeName = bGpuSkinned
+			? "SkeletalPreDepth_GPU_GPUPath"
+			: "SkeletalPreDepth_GPU_CPUPath";
+		GPU_SCOPE_STAT_CAT(ScopeName, "Skinning");
+
+		do
+		{
+			SubmitCommand(Commands[i], Device, Resources, Ctx, Cache);
+			++i;
+		}
+		while (i < EndIdx
+			&& Commands[i].bIsSkeletal
+			&& Commands[i].Pass == ERenderPass::PreDepth
+			&& Commands[i].bIsGpuSkinned == bGpuSkinned);
 	}
 }
 
@@ -223,6 +247,14 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd,
 			Ctx->PSSetConstantBuffers(Slot, 1, &RawCB);
 			Cache.Bindings.PerShaderCB[i] = Cmd.Bindings.PerShaderCB[i];
 		}
+	}
+
+	if (bForce || Cmd.Bindings.BoneHeatMapCB != Cache.Bindings.BoneHeatMapCB)
+	{
+		ID3D11Buffer* RawCB = Cmd.Bindings.BoneHeatMapCB ? Cmd.Bindings.BoneHeatMapCB->GetBuffer() : nullptr;
+		Ctx->VSSetConstantBuffers(ECBSlot::BoneHeatMap, 1, &RawCB);
+		Ctx->PSSetConstantBuffers(ECBSlot::BoneHeatMap, 1, &RawCB);
+		Cache.Bindings.BoneHeatMapCB = Cmd.Bindings.BoneHeatMapCB;
 	}
 
 	// --- SRV (t0 ~ t7) 바인딩 ---
