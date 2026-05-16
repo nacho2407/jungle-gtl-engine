@@ -7,6 +7,7 @@
 
 namespace json { class JSON; }
 class FArchive;
+class UStruct;
 
 // 에디터에서 자동 위젯 매핑에 사용되는 프로퍼티 타입
 enum class EPropertyType : uint8_t
@@ -65,6 +66,7 @@ struct FPropertyValue
 
 	// Struct Metadata
 	FStructPropertyFunc StructFunc = nullptr;
+	UStruct* StructType = nullptr;
 
 	std::string   DisplayName;   // 에디터 표시명. 비어 있으면 Name 사용.
 	TMap<FString, FString> Metadata;
@@ -113,7 +115,7 @@ struct FProperty
 	const char* Category = nullptr;
 	uint32 Flags = PF_None;
 
-	void* (*GetValuePtr)(UObject* Object) = nullptr;	//객체 안에 있는 실제 프로퍼티 값의 주소를 반환
+	void* (*GetValuePtr)(void* Container) = nullptr;	//컨테이너 안에 있는 실제 프로퍼티 값의 주소를 반환
 
 	float Min = 0.0f;	
 	float Max = 0.0f;
@@ -124,6 +126,7 @@ struct FProperty
 	uint32 EnumSize = sizeof(int32);
 
 	FStructPropertyFunc StructFunc = nullptr;
+	UStruct* StructType = nullptr;
 	const char* DisplayName = nullptr;
 	TMap<FString, FString> Metadata;
 	const char* OwnerClassName = nullptr;
@@ -149,6 +152,7 @@ struct FProperty
 		Desc.EnumCount = this->EnumCount;
 		Desc.EnumSize = this->EnumSize;
 		Desc.StructFunc = this->StructFunc;
+		Desc.StructType = this->StructType;
 		return Desc;
 	}
 

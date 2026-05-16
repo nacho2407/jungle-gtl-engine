@@ -121,7 +121,7 @@ void UObject::PostEditChangeProperty(const FPropertyChangedEvent& Event)
 	PostEditProperty(Event.PropertyName);
 }
 
-void UObject::RegisterProperties(UClass* Class)
+void UObject::RegisterProperties(UStruct* Class)
 {
 	(void)Class;
 }

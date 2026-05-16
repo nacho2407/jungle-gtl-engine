@@ -53,6 +53,7 @@ class ReflectedProperty:
 
 @dataclass(frozen=True)
 class ReflectedType:
+    kind: str
     name: str
     super_name: str | None
     generated_body_line: int | None
@@ -386,22 +387,23 @@ def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -
 
         text = header.read_text(encoding="utf-8-sig")
         scan_text = strip_comments(text)
-        reflected_decls: list[tuple[str, str | None, int | None]] = []
+        reflected_decls: list[tuple[str, str, str | None, int | None]] = []
         for match in REFLECTED_DECL_RE.finditer(scan_text):
             class_name = match.group("name")
             brace_start = scan_text.find("{", match.end())
             if brace_start < 0:
-                reflected_decls.append((class_name, match.group("super"), None))
+                reflected_decls.append((match.group("kind"), class_name, match.group("super"), None))
                 continue
             brace_end = find_matching(scan_text, brace_start, "{", "}")
             line = find_generated_body_line(scan_text, brace_start + 1, brace_end) if brace_end >= 0 else None
-            reflected_decls.append((class_name, match.group("super"), line))
+            reflected_decls.append((match.group("kind"), class_name, match.group("super"), line))
 
-        declarations = [name for name, _, _ in reflected_decls]
+        declarations = [name for _, name, _, _ in reflected_decls]
         properties_by_class, property_warnings = parse_uproperties(scan_text)
 
         property_types = tuple(
             ReflectedType(
+                kind="CLASS",
                 name=class_name,
                 super_name=None,
                 generated_body_line=None,
@@ -440,12 +442,13 @@ def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -
                 class_names=tuple(declarations),
                 types=tuple(
                     ReflectedType(
+                        kind=kind,
                         name=class_name,
                         super_name=super_name,
                         generated_body_line=generated_body_line,
                         properties=properties_by_class.get(class_name, tuple()),
                     )
-                    for class_name, super_name, generated_body_line in reflected_decls
+                    for kind, class_name, super_name, generated_body_line in reflected_decls
                 ) + tuple(
                     reflected_type
                     for reflected_type in property_types
@@ -477,7 +480,7 @@ def render_generated_header(item: ReflectedHeader, root: Path) -> str:
             continue
 
         macro_name = f"{item.file_id}_{reflected_type.generated_body_line}_GENERATED_BODY"
-        if reflected_type.super_name:
+        if reflected_type.kind == "CLASS" and reflected_type.super_name:
             lines.extend(
                 [
                     f"#define {macro_name} \\",
@@ -487,7 +490,18 @@ def render_generated_header(item: ReflectedHeader, root: Path) -> str:
                     "    static FClassRegistrar s_Registrar; \\",
                     "    static UClass* StaticClass() { return &StaticClassInstance; } \\",
                     "    UClass* GetClass() const override { return StaticClass(); } \\",
-                    "    static void RegisterProperties(UClass* Class);",
+                    "    static void RegisterProperties(UStruct* Struct);",
+                    "",
+                ]
+            )
+        elif reflected_type.kind == "STRUCT":
+            lines.extend(
+                [
+                    f"#define {macro_name} \\",
+                    "    static UStruct StaticStructInstance; \\",
+                    "    static FStructRegistrar s_StructRegistrar; \\",
+                    "    static UStruct* StaticStruct() { return &StaticStructInstance; } \\",
+                    "    static void RegisterProperties(UStruct* Struct);",
                     "",
                 ]
             )
@@ -495,7 +509,7 @@ def render_generated_header(item: ReflectedHeader, root: Path) -> str:
             lines.extend(
                 [
                     f"#define {macro_name} \\",
-                    "    static void RegisterProperties(UClass* Class);",
+                    "    static void RegisterProperties(UStruct* Struct);",
                     "",
                 ]
             )
@@ -510,12 +524,12 @@ def render_property(prop: ReflectedProperty) -> str:
     )
 
     return (
-        "\tClass->AddProperty({\n"
+        "\tStruct->AddProperty({\n"
         f"\t\t{cpp_string_literal(prop.member_name)},\n"
         f"\t\tEPropertyType::{prop.property_type},\n"
         f"\t\t{cpp_string_literal(prop.category)},\n"
         f"\t\t{prop.flags},\n"
-        f"\t\t[](UObject* Object)->void* {{ return &static_cast<{prop.owner}*>(Object)->{prop.member_name}; }},\n"
+        f"\t\t[](void* Container)->void* {{ return &static_cast<{prop.owner}*>(Container)->{prop.member_name}; }},\n"
         f"\t\t{prop.min_value},\n"
         f"\t\t{prop.max_value},\n"
         f"\t\t{prop.speed_value},\n"
@@ -523,6 +537,7 @@ def render_property(prop: ReflectedProperty) -> str:
         f"\t\t{prop.enum_count},\n"
         f"\t\t{prop.enum_size},\n"
         f"\t\t{prop.struct_func},\n"
+        "\t\tnullptr,\n"
         f"\t\t{cpp_string_literal(prop.display_name)},\n"
         f"\t\t{{{metadata_entries}}},\n"
         f"\t\t{cpp_string_literal(prop.owner)}\n"
@@ -530,7 +545,27 @@ def render_property(prop: ReflectedProperty) -> str:
     )
 
 
-def render_class_registration(reflected_type: ReflectedType) -> str:
+def render_type_registration(reflected_type: ReflectedType) -> str:
+    if reflected_type.kind == "STRUCT":
+        struct_name = reflected_type.name
+        return (
+            f"UStruct {struct_name}::StaticStructInstance(\n"
+            f"\t\"{struct_name}\",\n"
+            "\tnullptr,\n"
+            f"\tsizeof({struct_name})\n"
+            ");\n"
+            f"FStructRegistrar {struct_name}::s_StructRegistrar(&{struct_name}::StaticStructInstance);\n"
+            "\n"
+            "namespace {\n"
+            f"\tstruct {struct_name}_PropertyRegistrar {{\n"
+            f"\t\t{struct_name}_PropertyRegistrar() {{\n"
+            f"\t\t\t{struct_name}::RegisterProperties({struct_name}::StaticStruct());\n"
+            "\t\t}\n"
+            "\t};\n"
+            f"\t{struct_name}_PropertyRegistrar G{struct_name}_PropertyRegistrar;\n"
+            "}\n"
+        )
+
     if not reflected_type.super_name:
         return ""
 
@@ -572,7 +607,7 @@ def collect_generated_types(reflected: list[ReflectedHeader]) -> list[tuple[Refl
     generated_types: list[tuple[ReflectedHeader, ReflectedType]] = []
     for item in reflected:
         for reflected_type in item.types:
-            if reflected_type.name in item.class_names and reflected_type.super_name:
+            if reflected_type.name in item.class_names and (reflected_type.kind == "STRUCT" or reflected_type.super_name):
                 generated_types.append((item, reflected_type))
     return generated_types
 
@@ -594,14 +629,14 @@ def render_generated_type_cpp(item: ReflectedHeader, reflected_type: ReflectedTy
         "",
     ]
 
-    class_registration = render_class_registration(reflected_type)
-    if class_registration:
-        lines.append(class_registration.rstrip())
+    type_registration = render_type_registration(reflected_type)
+    if type_registration:
+        lines.append(type_registration.rstrip())
         lines.append("")
 
     lines.extend(
         [
-            f"void {reflected_type.name}::RegisterProperties(UClass* Class)",
+            f"void {reflected_type.name}::RegisterProperties(UStruct* Struct)",
             "{",
         ]
     )
