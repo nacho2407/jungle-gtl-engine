@@ -629,6 +629,9 @@
     <ClCompile Include="Source\Engine\Animation\AnimationStateMachine.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\CharacterAnimInstance.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Asset\AssetPackage.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
@@ -1488,6 +1491,9 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\BoneAnimationTrack.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\CharacterAnimInstance.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\PoseContext.h">
