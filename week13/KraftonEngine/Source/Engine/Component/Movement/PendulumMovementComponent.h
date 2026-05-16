@@ -17,9 +17,6 @@ public:
 
 	void BeginPlay() override;
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void Serialize(FArchive& Ar) override;
-
 private:
 	// 회전 축 (로컬 기준, 정규화됨). 기본값 Y축 = 좌우 흔들림
 	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Swing Axis")

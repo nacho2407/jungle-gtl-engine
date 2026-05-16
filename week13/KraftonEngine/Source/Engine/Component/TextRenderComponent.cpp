@@ -70,11 +70,6 @@ bool UTextRenderComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHi
 	return false;
 }
 
-void UTextRenderComponent::Serialize(FArchive& Ar)
-{
-	UBillboardComponent::Serialize(Ar);
-}
-
 void UTextRenderComponent::PostDuplicate()
 {
 	UBillboardComponent::PostDuplicate();
@@ -113,14 +108,18 @@ UTextRenderComponent::UTextRenderComponent()
 	SetFont(FontName);
 }
 
-void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+bool UTextRenderComponent::ShouldExposeProperty(const FProperty& Property) const
 {
-	USceneComponent::GetEditableProperties(OutProps);
+	if (Property.OwnerClassName && strcmp(Property.OwnerClassName, "UBillboardComponent") == 0)
+	{
+		return false;
+	}
+	return USceneComponent::ShouldExposeProperty(Property);
 }
 
 void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 {
-	// TextRender의 GetEditableProperties는 USceneComponent 베이스를 직접 사용한다.
+	// TextRender는 Billboard의 property를 숨기므로 post-edit도 SceneComponent로 직접 올린다.
 	USceneComponent::PostEditProperty(PropertyName);
 
 	if (strcmp(PropertyName, "FontName") == 0 || strcmp(PropertyName, "Font") == 0)

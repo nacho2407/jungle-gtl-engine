@@ -14,16 +14,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UTemporaryBoneAnimatorComponent, UActorComponent)
 
-void UTemporaryBoneAnimatorComponent::Serialize(FArchive& Ar)
-{
-	UActorComponent::Serialize(Ar);
-}
-
-void UTemporaryBoneAnimatorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UActorComponent::GetEditableProperties(OutProps);
-}
-
 void UTemporaryBoneAnimatorComponent::PostEditProperty(const char* PropertyName)
 {
 	UActorComponent::PostEditProperty(PropertyName);

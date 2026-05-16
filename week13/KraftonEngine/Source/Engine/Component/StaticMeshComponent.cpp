@@ -209,11 +209,6 @@ primitive AABB 기준으로 후보만 추립니다.
 	return false; // bHit;
 }
 
-void UStaticMeshComponent::Serialize(FArchive& Ar)
-{
-	UMeshComponent::Serialize(Ar);
-}
-
 void UStaticMeshComponent::PostDuplicate()
 {
 	UMeshComponent::PostDuplicate();
@@ -250,11 +245,6 @@ void UStaticMeshComponent::PostDuplicate()
 	CacheLocalBounds();
 	MarkRenderStateDirty();
 	MarkWorldBoundsDirty();
-}
-
-void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPrimitiveComponent::GetEditableProperties(OutProps);
 }
 
 void UStaticMeshComponent::PostEditProperty(const char* PropertyName)

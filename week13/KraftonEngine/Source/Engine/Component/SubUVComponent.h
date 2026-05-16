@@ -23,8 +23,8 @@ public:
 	UMaterial* GetSubUVMaterial() const { return SubUVMaterial; }
 
 	// --- SubUV Frame ---
-	void SetFrameIndex(uint32 InIndex) { FrameIndex = InIndex; }
-	uint32 GetFrameIndex() const { return FrameIndex; }
+	void SetFrameIndex(uint32 InIndex) { FrameIndex = static_cast<int32>(InIndex); }
+	uint32 GetFrameIndex() const { return static_cast<uint32>(FrameIndex); }
 
 	// --- Playback ---
 	void SetFrameRate(float InFPS) { PlayRate = InFPS; }
@@ -34,10 +34,9 @@ public:
 	void Play() { FrameIndex = 0; TimeAccumulator = 0.0f; bIsExecute = false; } // 처음부터 다시 재생
 
 	// --- Property / Serialization ---
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	bool ShouldExposeProperty(const FProperty& Property) const override;
 	void PostEditProperty(const char* PropertyName) override;
 
-	void Serialize(FArchive& Ar) override;
 	void PostDuplicate() override;
 
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
@@ -53,7 +52,8 @@ private:
 	FParticleResource* CachedParticle = nullptr; // ResourceManager 소유, 여기선 참조만
 	UMaterial* SubUVMaterial = nullptr;           // Particle SRV를 래핑하는 경량 머티리얼
 
-	uint32 FrameIndex = 0;
+	UPROPERTY(Save, Category="Particle", DisplayName="Frame Index", Min=0.0f, Max=100000.0f, Speed=1.0f)
+	int32 FrameIndex = 0;
 	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Play Rate", Min=1.0f, Max=120.0f, Speed=1.0f)
 	float  PlayRate = 30.0f; // 초당 프레임 수
 	float  TimeAccumulator = 0.0f;

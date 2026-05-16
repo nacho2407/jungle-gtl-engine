@@ -1,4 +1,4 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Epic Games, Inc. All Rights Reserved.
 #include "CapsuleComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -121,11 +121,6 @@ void UCapsuleComponent::UpdateWorldAABB() const
 	bHasValidWorldAABB = true;
 }
 
-void UCapsuleComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UShapeComponent::GetEditableProperties(OutProps);
-}
-
 void UCapsuleComponent::PostEditProperty(const char* PropertyName)
 {
 	UShapeComponent::PostEditProperty(PropertyName);
@@ -135,9 +130,4 @@ void UCapsuleComponent::PostEditProperty(const char* PropertyName)
 	{
 		SetCapsuleSize(CapsuleRadius, CapsuleHalfHeight);
 	}
-}
-
-void UCapsuleComponent::Serialize(FArchive& Ar)
-{
-	UShapeComponent::Serialize(Ar);
 }

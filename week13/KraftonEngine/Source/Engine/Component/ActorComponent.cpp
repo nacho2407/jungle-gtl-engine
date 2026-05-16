@@ -59,7 +59,6 @@ void UActorComponent::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
 	SerializeProperties(Ar, PF_Save);
-	Ar << bHiddenInComponentTree;
 }
 
 void UActorComponent::SetEditorOnly(bool bInEditorOnly)
@@ -79,11 +78,6 @@ void UActorComponent::SetOwner(AActor* Actor)
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bTickEnabled = bTickEnable;
 	PrimaryComponentTick.bStartWithTickEnabled = true;
-}
-
-void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UObject::GetEditableProperties(OutProps);
 }
 
 void UActorComponent::PostEditProperty(const char* PropertyName)

@@ -1,4 +1,4 @@
-﻿#include "Game/Pawn/WalkingPersonActor.h"
+#include "Game/Pawn/WalkingPersonActor.h"
 
 #include "Component/BoxComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -215,10 +215,4 @@ void AWalkingPersonActor::ResetToInitialTransform()
 	{
 		LuaScript->CallFunction("ResetWalkingState");
 	}
-}
-
-void AWalkingPersonActor::Serialize(FArchive& Ar)
-{
-	Super::Serialize(Ar);
-	Ar << bQuestTarget;
 }

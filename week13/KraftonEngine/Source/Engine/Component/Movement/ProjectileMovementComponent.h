@@ -23,8 +23,6 @@ public:
 
 	void BeginPlay() override;
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void Serialize(FArchive& Ar) override;
 	void ContributeSelectedVisuals(FScene& Scene) const override;
 
 	void SetVelocity(const FVector& InVelocity) { Velocity = InVelocity; }

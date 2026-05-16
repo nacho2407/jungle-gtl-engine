@@ -4,7 +4,7 @@
 #include "Component/CameraComponent.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(APawn, AActor)
+IMPLEMENT_CLASS_WITH_PROPERTIES(APawn, AActor)
 
 void APawn::PossessedBy(APlayerController* PC)
 {
@@ -29,10 +29,4 @@ void APawn::PossessedBy(APlayerController* PC)
 void APawn::UnPossessed()
 {
 	Controller = nullptr;
-}
-
-void APawn::Serialize(FArchive& Ar)
-{
-	Super::Serialize(Ar);
-	Ar << bAutoPossessPlayer;
 }

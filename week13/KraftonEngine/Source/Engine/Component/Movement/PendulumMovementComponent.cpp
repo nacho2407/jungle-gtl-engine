@@ -1,4 +1,4 @@
-﻿#include "PendulumMovementComponent.h"
+#include "PendulumMovementComponent.h"
 
 #include "Component/SceneComponent.h"
 #include "Math/MathUtils.h"
@@ -50,14 +50,4 @@ void UPendulumMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 	FQuat FinalQuat = InitialRelativeRotation * SwingQuat;
 
 	Target->SetRelativeRotation(FinalQuat);
-}
-
-void UPendulumMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UMovementComponent::GetEditableProperties(OutProps);
-}
-
-void UPendulumMovementComponent::Serialize(FArchive& Ar)
-{
-	UMovementComponent::Serialize(Ar);
 }

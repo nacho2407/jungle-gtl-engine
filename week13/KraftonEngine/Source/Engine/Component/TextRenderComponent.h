@@ -43,10 +43,9 @@ public:
 	UTextRenderComponent();
 	~UTextRenderComponent() override = default;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	bool ShouldExposeProperty(const FProperty& Property) const override;
 	void PostEditProperty(const char* PropertyName) override;
 
-	void Serialize(FArchive& Ar) override;
 	void PostDuplicate() override;
 
 	// --- Text ---

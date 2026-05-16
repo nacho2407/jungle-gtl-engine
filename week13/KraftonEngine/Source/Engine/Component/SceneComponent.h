@@ -28,7 +28,7 @@ public:
 	bool ContainsChild(const USceneComponent* Child) const;
 	const TArray<USceneComponent*>& GetChildren() const { return ChildComponents; }
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PreGetEditableProperties() override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	void Serialize(FArchive& Ar) override;

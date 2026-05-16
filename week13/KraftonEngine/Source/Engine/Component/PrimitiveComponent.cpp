@@ -128,12 +128,6 @@ void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
 	Owner->GetWorld()->GetScene().MarkProxyDirty(SceneProxy, Flag);
 }
 
-void UPrimitiveComponent::Serialize(FArchive& Ar)
-{
-	USceneComponent::Serialize(Ar);
-	// LocalExtents는 메시 등에서 재계산되므로 직렬화 제외.
-}
-
 void UPrimitiveComponent::SetVisibility(bool bNewVisible)
 {
 	if (bIsVisible == bNewVisible) return;
@@ -178,11 +172,6 @@ void UPrimitiveComponent::MarkRenderVisibilityDirty()
 	// 가시성 변화는 Octree 포함 여부도 좌우하므로 액터 dirty로 반영한다.
 	World->UpdateActorInOctree(OwnerActor);
 	World->MarkWorldPrimitivePickingBVHDirty();
-}
-
-void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	USceneComponent::GetEditableProperties(OutProps);
 }
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)

@@ -500,7 +500,8 @@ def render_property(prop: ReflectedProperty) -> str:
         f"\t\t{prop.enum_size},\n"
         f"\t\t{prop.struct_func},\n"
         f"\t\t{cpp_string_literal(prop.display_name)},\n"
-        f"\t\t{{{metadata_entries}}}\n"
+        f"\t\t{{{metadata_entries}}},\n"
+        f"\t\t{cpp_string_literal(prop.owner)}\n"
         "\t});\n"
     )
 

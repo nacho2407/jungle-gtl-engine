@@ -17,11 +17,6 @@ FPrimitiveSceneProxy* UBillboardComponent::CreateSceneProxy()
 	return new FBillboardSceneProxy(this);
 }
 
-void UBillboardComponent::Serialize(FArchive& Ar)
-{
-	UPrimitiveComponent::Serialize(Ar);
-}
-
 void UBillboardComponent::PostDuplicate()
 {
 	UPrimitiveComponent::PostDuplicate();
@@ -50,11 +45,6 @@ void UBillboardComponent::SetMaterial(UMaterial* InMaterial)
 	// 머티리얼 변경 시 렌더 스테이트와 프록시 갱신
 	MarkProxyDirty(EDirtyFlag::Material);
 	MarkProxyDirty(EDirtyFlag::Mesh);
-}
-
-void UBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPrimitiveComponent::GetEditableProperties(OutProps);
 }
 
 void UBillboardComponent::PostEditProperty(const char* PropertyName)

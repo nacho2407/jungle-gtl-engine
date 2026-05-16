@@ -1,4 +1,4 @@
-﻿#include "SpotLightComponent.h"
+#include "SpotLightComponent.h"
 #include "Engine/Serialization/Archive.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -87,11 +87,6 @@ void USpotLightComponent::DestroyFromScene()
 	World->GetScene().GetEnvironment().RemoveSpotLight(this);
 }
 
-void USpotLightComponent::Serialize(FArchive& Ar)
-{
-	UPointLightComponent::Serialize(Ar);
-}
-
 bool USpotLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, const FMinimalViewInfo* /*POV*/, int32 /*FaceIndex*/) const
 {
 	FSpotLightParams Params;
@@ -106,9 +101,4 @@ bool USpotLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, cons
 	OutResult.Proj = VP.Proj;
 	OutResult.bIsOrtho = false;
 	return true;
-}
-
-void USpotLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPointLightComponent::GetEditableProperties(OutProps);
 }

@@ -19,9 +19,6 @@ public:
 
 	UCineCameraComponent() = default;
 
-	void Serialize(FArchive& Ar) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-
 	void SetLetterboxEnabled(bool bEnabled) { Letterbox.bEnabled = bEnabled; }
 	void SetLetterboxAmount(float Amount) { Letterbox.Amount = Amount; }
 	void SetLetterboxThickness(float Thickness) { Letterbox.Thickness = Thickness; }

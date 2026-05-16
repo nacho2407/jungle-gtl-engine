@@ -36,7 +36,6 @@ public:
 	void InitDefaultComponents(const FVector& Extent = FVector(1.0f, 1.0f, 1.0f));
 	void PostDuplicate() override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	// 서브클래스 override hook — 베이스의 GameMode 통지 외 추가 동작이 필요할 때.
 	virtual void OnPossessedPawnEntered(APawn* Pawn) {}
@@ -47,8 +46,6 @@ public:
 	// 게임모드가 트리거 종류를 구분할 때 사용 (씬에 직렬화).
 	FName GetTriggerTag() const { return TriggerTag; }
 	void SetTriggerTag(const FName& InTag) { TriggerTag = InTag; }
-
-	void Serialize(FArchive& Ar) override;
 
 protected:
 	// 델리게이트 시그니처 — UPrimitiveComponent의 Begin/End Overlap에 매칭.

@@ -1,4 +1,4 @@
-﻿#include "Component/SpringArmComponent.h"
+#include "Component/SpringArmComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
@@ -117,14 +117,4 @@ void USpringArmComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 	SetRelativeLocation(RelLoc);
 	SetRelativeRotation(RelRot);
-}
-
-void USpringArmComponent::Serialize(FArchive& Ar)
-{
-	USceneComponent::Serialize(Ar);
-}
-
-void USpringArmComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	USceneComponent::GetEditableProperties(OutProps);
 }
