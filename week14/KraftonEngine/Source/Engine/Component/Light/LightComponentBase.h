@@ -54,8 +54,12 @@ public:
 	class UBillboardComponent* EnsureEditorBillboard();
 
 protected:
+	UPROPERTY(Edit, Save, Category="Lighting", DisplayName="Intensity", Min=0.0f, Max=50.0f, Speed=0.05f)
 	float Intensity = 1.f;
+	UPROPERTY(Edit, Save, Category="Lighting", DisplayName="Color", Type=Color4)
 	FVector4 LightColor = { 1.0f,1.0f,1.0f,1.0f };
+	UPROPERTY(Edit, Save, Category="Lighting", DisplayName="Visible")
 	bool bVisible = true;
+	UPROPERTY(Edit, Save, Category="Lighting", DisplayName="Cast Shadows")
 	bool bCastShadows = true;
 };

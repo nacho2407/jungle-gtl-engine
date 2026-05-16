@@ -12,11 +12,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UFloatingPawnMovementComponent, UMovementComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UFloatingPawnMovementComponent)
-	EDIT_PROPERTY_RANGE(UFloatingPawnMovementComponent, Speed, "Speed", EPropertyType::Float, "Movement", 0.0f, 100.0f, 0.1f)
-	EDIT_PROPERTY_RANGE(UFloatingPawnMovementComponent, MouseSensitivity, "MouseSensitivity", EPropertyType::Float, "Movement", 0.0f, 10.0f, 0.01f)
-END_PROPERTY_REGISTRATION()
-
 namespace
 {
 	void AddWorldRotation(USceneComponent* Component, const FQuat& DeltaWorldQuat)

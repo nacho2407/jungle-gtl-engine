@@ -17,5 +17,6 @@ public:
 	FVector GetBillboardAxis() const { return BillboardAxis; }
 
 protected:
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="BillboardAxis")
 	FVector BillboardAxis = FVector(0, 0, 1);
 };

@@ -10,10 +10,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UBoxComponent, UShapeComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UBoxComponent)
-	EDIT_PROPERTY_RANGE(UBoxComponent, BoxExtent, "Box Extent", EPropertyType::Vec3, "Shape", 0.01f, 0.0f, 0.1f)
-END_PROPERTY_REGISTRATION()
-
 void UBoxComponent::SetBoxExtent(const FVector& InExtent)
 {
 	BoxExtent = InExtent;

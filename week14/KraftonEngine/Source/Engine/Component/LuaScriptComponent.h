@@ -65,6 +65,7 @@ private:
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp);
 
+	UPROPERTY(Edit, Save, Category="Script", DisplayName="ScriptFile", Type=Script)
 	FString ScriptFile;
 	
 	sol::environment Env;

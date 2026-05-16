@@ -8,11 +8,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(USpotLightComponent, UPointLightComponent)
 
-BEGIN_PROPERTY_REGISTRATION(USpotLightComponent)
-	EDIT_PROPERTY_RANGE(USpotLightComponent, InnerConeAngle, "InnerConeAngle", EPropertyType::Float, "Lighting", 0.0f, 89.0f, 0.1f)
-	EDIT_PROPERTY_RANGE(USpotLightComponent, OuterConeAngle, "OuterConeAngle", EPropertyType::Float, "Lighting", 0.0f, 89.0f, 0.1f)
-END_PROPERTY_REGISTRATION()
-
 void USpotLightComponent::ContributeSelectedVisuals(FScene& Scene) const
 {
 	const FVector Apex = GetWorldLocation();

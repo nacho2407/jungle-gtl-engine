@@ -9,10 +9,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UCylindricalBillboardComponent, UBillboardComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UCylindricalBillboardComponent)
-	EDIT_PROPERTY(UCylindricalBillboardComponent, BillboardAxis, "BillboardAxis", EPropertyType::Vec3, "Rendering")
-END_PROPERTY_REGISTRATION()
-
 FPrimitiveSceneProxy* UCylindricalBillboardComponent::CreateSceneProxy()
 {
 	return new FCylindricalBillboardSceneProxy(this);

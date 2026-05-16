@@ -16,15 +16,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UDecalComponent, UPrimitiveComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UDecalComponent)
-	EDIT_PROPERTY(UDecalComponent, MaterialSlot, "Material", EPropertyType::MaterialSlot, "Rendering")
-	EDIT_PROPERTY(UDecalComponent, Color, "Color", EPropertyType::Vec4, "Rendering")
-	EDIT_PROPERTY(UDecalComponent, FadeInDelay, "FadeInDelay", EPropertyType::Float, "Rendering")
-	EDIT_PROPERTY(UDecalComponent, FadeInDuration, "FadeInDuration", EPropertyType::Float, "Rendering")
-	EDIT_PROPERTY(UDecalComponent, FadeOutDelay, "FadeOutDelay", EPropertyType::Float, "Rendering")
-	EDIT_PROPERTY(UDecalComponent, FadeOutDuration, "FadeOutDuration", EPropertyType::Float, "Rendering")
-END_PROPERTY_REGISTRATION()
-
 void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
 	if (TickType == ELevelTick::LEVELTICK_All)

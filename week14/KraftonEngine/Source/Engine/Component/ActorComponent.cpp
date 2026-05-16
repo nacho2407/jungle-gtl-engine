@@ -6,13 +6,6 @@
 IMPLEMENT_CLASS_WITH_PROPERTIES(UActorComponent, UObject)
 HIDE_FROM_COMPONENT_LIST(UActorComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UActorComponent)
-	EDIT_PROPERTY(UActorComponent, bTickEnable, "bTickEnable", EPropertyType::Bool, "Component")
-	EDIT_PROPERTY(UActorComponent, bEditorOnly, "bEditorOnly", EPropertyType::Bool, "Component")
-	EDIT_PROPERTY(UActorComponent, bIsActive, "bIsActive", EPropertyType::Bool, "Component")
-	EDIT_PROPERTY(UActorComponent, bAutoActivate, "bAutoActivate", EPropertyType::Bool, "Component")
-END_PROPERTY_REGISTRATION()
-
 void UActorComponent::BeginPlay()
 {
 	if (bAutoActivate)

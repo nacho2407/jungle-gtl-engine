@@ -29,8 +29,11 @@ public:
 	FVector GetPivotTranslation() const { return PivotTranslation; }
 
 private:
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Rotation Rate", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FRotator RotationRate = FRotator(0.0f, 90.0f, 0.0f);
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Rotation In Local Space")
 	bool bRotationInLocalSpace = false;
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Pivot Translation", Type=Vec3, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FVector PivotTranslation = FVector(0.0f, 0.0f, 0.0f);
 
 	// World-space 공전 모드에서 고정 pivot을 유지하기 위한 런타임 캐시

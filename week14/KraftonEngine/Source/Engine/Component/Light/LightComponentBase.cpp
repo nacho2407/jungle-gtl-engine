@@ -8,13 +8,6 @@
 IMPLEMENT_CLASS_WITH_PROPERTIES(ULightComponentBase, USceneComponent)
 HIDE_FROM_COMPONENT_LIST(ULightComponentBase)
 
-BEGIN_PROPERTY_REGISTRATION(ULightComponentBase)
-	EDIT_PROPERTY_RANGE(ULightComponentBase, Intensity, "Intensity", EPropertyType::Float, "Lighting", 0.0f, 50.0f, 0.05f)
-	EDIT_PROPERTY(ULightComponentBase, LightColor, "Color", EPropertyType::Color4, "Lighting")
-	EDIT_PROPERTY(ULightComponentBase, bVisible, "Visible", EPropertyType::Bool, "Lighting")
-	EDIT_PROPERTY(ULightComponentBase, bCastShadows, "Cast Shadows", EPropertyType::Bool, "Lighting")
-END_PROPERTY_REGISTRATION()
-
 void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	USceneComponent::GetEditableProperties(OutProps);

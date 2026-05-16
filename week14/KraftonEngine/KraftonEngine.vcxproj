@@ -499,6 +499,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\GameFramework\Light\DirectionalLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\PointLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\SpotLightActor.cpp" />
+    <ClCompile Include="Source\Generated\Reflection.generated.cpp" />
     <ClCompile Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.cpp" />
     <ClCompile Include="Source\Engine\Gizmo\ComponentGizmoTarget.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />

@@ -40,7 +40,10 @@ protected:
 	virtual EProjectileHitBehavior GetHitBehavior() const;
 	virtual bool HandleBlockingHit(USceneComponent* UpdatedSceneComponent, const FVector& CurrentLocation, const FVector& MoveDelta, const FHitResult& HitResult);
 
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Velocity", Type=Vec3, Min=0.0f, Max=0.0f, Speed=1.0f)
 	FVector Velocity = FVector(0.0f, 0.0f, 0.0f);
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Initial Speed", Min=0.0f, Max=0.0f, Speed=10.0f)
 	float InitialSpeed = 10.0f;
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Max Speed", Min=0.0f, Max=0.0f, Speed=10.0f)
 	float MaxSpeed = 100.0f;
 };

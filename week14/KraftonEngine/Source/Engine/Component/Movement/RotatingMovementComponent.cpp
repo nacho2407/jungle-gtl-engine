@@ -8,12 +8,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(URotatingMovementComponent, UMovementComponent)
 
-BEGIN_PROPERTY_REGISTRATION(URotatingMovementComponent)
-	EDIT_PROPERTY_RANGE(URotatingMovementComponent, RotationRate, "Rotation Rate", EPropertyType::Rotator, "Movement", 0.0f, 0.0f, 0.1f)
-	EDIT_PROPERTY(URotatingMovementComponent, bRotationInLocalSpace, "Rotation In Local Space", EPropertyType::Bool, "Movement")
-	EDIT_PROPERTY_RANGE(URotatingMovementComponent, PivotTranslation, "Pivot Translation", EPropertyType::Vec3, "Movement", 0.0f, 0.0f, 0.1f)
-END_PROPERTY_REGISTRATION()
-
 void URotatingMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
 	UMovementComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);

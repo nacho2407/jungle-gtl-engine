@@ -10,14 +10,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UPendulumMovementComponent, UMovementComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UPendulumMovementComponent)
-	EDIT_PROPERTY(UPendulumMovementComponent, Axis, "Swing Axis", EPropertyType::Vec3, "Movement")
-	EDIT_PROPERTY_RANGE(UPendulumMovementComponent, Amplitude, "Amplitude (deg)", EPropertyType::Float, "Movement", 0.0f, 180.0f, 0.5f)
-	EDIT_PROPERTY_RANGE(UPendulumMovementComponent, Frequency, "Frequency (Hz)", EPropertyType::Float, "Movement", 0.01f, 10.0f, 0.01f)
-	EDIT_PROPERTY_RANGE(UPendulumMovementComponent, Phase, "Phase (deg)", EPropertyType::Float, "Movement", 0.0f, 360.0f, 1.0f)
-	EDIT_PROPERTY_RANGE(UPendulumMovementComponent, AngleOffset, "Angle Offset (deg)", EPropertyType::Float, "Movement", -180.0f, 180.0f, 0.5f)
-END_PROPERTY_REGISTRATION()
-
 void UPendulumMovementComponent::BeginPlay()
 {
 	UMovementComponent::BeginPlay();

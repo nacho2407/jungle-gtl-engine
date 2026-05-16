@@ -9,14 +9,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UCameraComponent, USceneComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UCameraComponent)
-	EDIT_PROPERTY_RANGE(UCameraComponent, CameraState.FOV, "FOV", EPropertyType::Float, "Camera", 0.1f, 3.14f, 0.01f)
-	EDIT_PROPERTY_RANGE(UCameraComponent, CameraState.NearZ, "Near Z", EPropertyType::Float, "Camera", 0.01f, 100.0f, 0.01f)
-	EDIT_PROPERTY_RANGE(UCameraComponent, CameraState.FarZ, "Far Z", EPropertyType::Float, "Camera", 1.0f, 100000.0f, 10.0f)
-	EDIT_PROPERTY(UCameraComponent, CameraState.bIsOrthogonal, "Orthographic", EPropertyType::Bool, "Camera")
-	EDIT_PROPERTY_RANGE(UCameraComponent, CameraState.OrthoWidth, "Ortho Width", EPropertyType::Float, "Camera", 0.1f, 1000.0f, 0.5f)
-END_PROPERTY_REGISTRATION()
-
 void UCameraComponent::BeginPlay()
 {
 	Super::BeginPlay();

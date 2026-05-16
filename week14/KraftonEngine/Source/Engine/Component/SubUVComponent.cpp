@@ -14,12 +14,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(USubUVComponent, UBillboardComponent)
 
-BEGIN_PROPERTY_REGISTRATION(USubUVComponent)
-	EDIT_PROPERTY(USubUVComponent, ParticleName, "Particle", EPropertyType::Name, "Particle")
-	EDIT_PROPERTY_RANGE(USubUVComponent, PlayRate, "Play Rate", EPropertyType::Float, "Particle", 1.0f, 120.0f, 1.0f)
-	EDIT_PROPERTY(USubUVComponent, bLoop, "bLoop", EPropertyType::Bool, "Particle")
-END_PROPERTY_REGISTRATION()
-
 FPrimitiveSceneProxy* USubUVComponent::CreateSceneProxy()
 {
 	return new FSubUVSceneProxy(this);

@@ -9,20 +9,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(USpringArmComponent, USceneComponent)
 
-BEGIN_PROPERTY_REGISTRATION(USpringArmComponent)
-	EDIT_PROPERTY_RANGE(USpringArmComponent, TargetArmLength, "Target Arm Length", EPropertyType::Float, "SpringArm", 0.0f, 100000.0f, 1.0f)
-	EDIT_PROPERTY_RANGE(USpringArmComponent, SocketOffset, "Socket Offset", EPropertyType::Vec3, "SpringArm", 0.0f, 0.0f, 0.1f)
-	EDIT_PROPERTY_RANGE(USpringArmComponent, TargetOffset, "Target Offset", EPropertyType::Vec3, "SpringArm", 0.0f, 0.0f, 0.1f)
-	EDIT_PROPERTY(USpringArmComponent, bEnableCameraLag, "Enable Camera Lag", EPropertyType::Bool, "SpringArm")
-	EDIT_PROPERTY(USpringArmComponent, bEnableCameraRotationLag, "Enable Rotation Lag", EPropertyType::Bool, "SpringArm")
-	EDIT_PROPERTY_RANGE(USpringArmComponent, CameraLagSpeed, "Camera Lag Speed", EPropertyType::Float, "SpringArm", 0.0f, 1000.0f, 0.1f)
-	EDIT_PROPERTY_RANGE(USpringArmComponent, CameraRotationLagSpeed, "Camera Rotation Lag Speed", EPropertyType::Float, "SpringArm", 0.0f, 1000.0f, 0.1f)
-	EDIT_PROPERTY_RANGE(USpringArmComponent, CameraLagMaxDistance, "Camera Lag Max Distance", EPropertyType::Float, "SpringArm", 0.0f, 100000.0f, 1.0f)
-	EDIT_PROPERTY(USpringArmComponent, bDoCollisionTest, "Do Collision Test", EPropertyType::Bool, "SpringArm")
-	EDIT_PROPERTY_RANGE(USpringArmComponent, ProbeSize, "Probe Size", EPropertyType::Float, "SpringArm", 0.0f, 100.0f, 0.01f)
-	EDIT_PROPERTY_ENUM(USpringArmComponent, ProbeChannel, "Probe Channel", "SpringArm", GCollisionChannelNames, static_cast<uint32>(ECollisionChannel::ActiveCount), ECollisionChannel)
-END_PROPERTY_REGISTRATION()
-
 void USpringArmComponent::BeginPlay()
 {
 	Super::BeginPlay();

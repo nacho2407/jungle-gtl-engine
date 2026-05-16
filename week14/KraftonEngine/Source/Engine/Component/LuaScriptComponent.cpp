@@ -10,10 +10,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(ULuaScriptComponent, UActorComponent)
 
-BEGIN_PROPERTY_REGISTRATION(ULuaScriptComponent)
-	EDIT_PROPERTY(ULuaScriptComponent, ScriptFile, "ScriptFile", EPropertyType::Script, "Script")
-END_PROPERTY_REGISTRATION()
-
 ULuaScriptComponent::ULuaScriptComponent()
 {
 }

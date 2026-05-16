@@ -18,6 +18,8 @@ public:
 	void  SetAttenuationRadius(float V) { AttenuationRadius = V; PushToScene(); }
 
 protected:
+	UPROPERTY(Edit, Save, Category="Lighting", DisplayName="AttenuationRadius", Min=0.05f, Max=1000.0f, Speed=0.01f)
 	float AttenuationRadius = 1.f;
+	UPROPERTY(Edit, Save, Category="Lighting", DisplayName="LightFalloffExponent", Min=0.05f, Max=10.0f, Speed=0.01f)
 	float LightFalloffExponent = 1.f;
 };

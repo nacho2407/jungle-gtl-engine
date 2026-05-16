@@ -36,8 +36,10 @@ public:
 	FMeshDataView GetMeshDataView() const override { return FMeshDataView::FromMeshData(FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad)); }
 
 protected:
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Billboard")
 	bool bIsBillboard = true;
 
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material")
 	FMaterialSlot MaterialSlot;
 	UMaterial* Material = nullptr;
 };

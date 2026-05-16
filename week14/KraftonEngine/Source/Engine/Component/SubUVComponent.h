@@ -48,14 +48,17 @@ protected:
 private:
 	void RebuildSubUVMaterial();
 
+	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Particle")
 	FName ParticleName;
 	FParticleResource* CachedParticle = nullptr; // ResourceManager 소유, 여기선 참조만
 	UMaterial* SubUVMaterial = nullptr;           // Particle SRV를 래핑하는 경량 머티리얼
 
 	uint32 FrameIndex = 0;
+	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Play Rate", Min=1.0f, Max=120.0f, Speed=1.0f)
 	float  PlayRate = 30.0f; // 초당 프레임 수
 	float  TimeAccumulator = 0.0f;
 
+	UPROPERTY(Edit, Save, Category="Particle", DisplayName="bLoop")
 	bool bLoop = true;
 	bool bIsExecute = false;
 };

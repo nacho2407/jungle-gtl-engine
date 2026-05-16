@@ -12,14 +12,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(AActor, UObject)
 
-BEGIN_PROPERTY_REGISTRATION(AActor)
-	EDIT_PROPERTY(AActor, PendingActorLocation, "Location", EPropertyType::Vec3, "Transform")
-	EDIT_PROPERTY(AActor, PendingActorRotation, "Rotation", EPropertyType::Rotator, "Transform")
-	EDIT_PROPERTY(AActor, PendingActorScale, "Scale", EPropertyType::Vec3, "Transform")
-	EDIT_PROPERTY(AActor, PendingActorVisible, "Visible", EPropertyType::Bool, "Actor")
-	EDIT_PROPERTY(AActor, PendingTagsString, "Tags", EPropertyType::String, "Actor")
-END_PROPERTY_REGISTRATION()
-
 AActor::AActor()
 {
 	PrimaryActorTick.SetTarget(this);
