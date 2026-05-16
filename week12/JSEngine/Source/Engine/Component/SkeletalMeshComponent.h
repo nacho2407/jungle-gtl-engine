@@ -35,6 +35,7 @@ public:
 	~USkeletalMeshComponent() override = default;
 
 	virtual void Serialize(FArchive& Ar) override;
+	virtual void PostDuplicate(UObject* Original) override;
 	virtual void PostEditProperty(const char* PropertyName) override;
 
 	void TickComponent(float DeltaTime) override;

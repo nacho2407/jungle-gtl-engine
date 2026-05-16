@@ -25,6 +25,37 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
 	}
 }
 
+void USkeletalMeshComponent::PostDuplicate(UObject* Original)
+{
+	USkinnedMeshComponent::PostDuplicate(Original);
+
+	USkeletalMeshComponent* SourceComponent = Cast<USkeletalMeshComponent>(Original);
+	if (!SourceComponent)
+	{
+		return;
+	}
+
+	AnimInstance = nullptr;
+	AnimationStateMachine = nullptr;
+	AnimationToPlay = SourceComponent->AnimationToPlay;
+	bPlaying = SourceComponent->bPlaying;
+	bLooping = SourceComponent->bLooping;
+	AnimationMode = SourceComponent->AnimationMode;
+
+	if (AnimationMode == EAnimationMode::AnimationSingleNode && AnimationToPlay)
+	{
+		UAnimSingleNodeInstance* SingleNode = new UAnimSingleNodeInstance();
+		SingleNode->Initialize(this);
+		SingleNode->SetAnimation(Cast<UAnimSequenceBase>(AnimationToPlay));
+		AnimInstance = SingleNode;
+
+		if (bPlaying)
+		{
+			SingleNode->Play(bLooping);
+		}
+	}
+}
+
 void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
 {
 	USkinnedMeshComponent::PostEditProperty(PropertyName);
