@@ -898,10 +898,12 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
     UAnimSequence* LoadedSequence = nullptr;
     if (FAssetPathPolicy::IsAnimSequenceAssetPath(NormalizedPath))
     {
+		//경로가 이미 애셋 경로이므로 AnimSequenceAssetLoader.Load() 호출
         LoadedSequence = AnimSequenceAssetLoader.Load(NormalizedPath);
     }
     else
     {
+		//FBX 경로면 FbxImporter.LoadAnimSequence()로 import
         LoadedSequence = FbxImporter.LoadAnimSequence(NormalizedPath);
         if (LoadedSequence)
         {
@@ -910,6 +912,7 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
                 LoadedSequence->GetSourceStackName());
             LoadedSequence->SetAssetPath(ImportedAssetPath);
 
+			//import 성공 시 AnimSequenceAssetLoader.Save()로 디스크에 저장
             if (AnimSequenceAssetLoader.Save(ImportedAssetPath, LoadedSequence))
             {
                 AnimSequenceMap[ImportedAssetPath] = LoadedSequence;

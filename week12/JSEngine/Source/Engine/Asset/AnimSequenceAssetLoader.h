@@ -1,9 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "Asset/IAssetLoader.h"
 
 class UAnimSequence;
 
+/* 이미 저장된 UAnimSequence 에셋을 로드 / 세이브하는 로더입니다. */
 class FAnimSequenceAssetLoader : public IAssetLoader
 {
 public:
