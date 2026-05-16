@@ -393,12 +393,7 @@ void USceneComponent::AddRelativePitch(float DeltaPitchDegrees)
 	FQuat ResultQuat = DeltaQuat * CurrentQuat;
 	ResultQuat.Normalize();
 
-	FRotator ResultRot = ResultQuat.Rotator();
-	ResultRot.Pitch = MathUtil::Clamp(ResultRot.Pitch, -89.9f, 89.9f);
-	ResultRot.Roll = 0.0f;
-	ResultRot.Normalize();
-
-	SetRelativeRotationRotator(ResultRot);
+	SetRelativeRotationQuat(ResultQuat);
 }
 
 void USceneComponent::Rotate(float DeltaYaw, float DeltaPitch)
