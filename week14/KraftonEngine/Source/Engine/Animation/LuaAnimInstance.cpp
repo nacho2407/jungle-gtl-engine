@@ -202,6 +202,29 @@ void ULuaAnimInstance::InstallBindings()
 			UCharacterMovementComponent* Move = Owner->GetComponentByClass<UCharacterMovementComponent>();
 			return Move ? Move->GetSpeed() : 0.0f;
 		});
+
+	// Owner 의 movement mode — "Walking" / "Falling" / "" (movement 없음).
+	Anim.set_function("get_owner_movement_mode",
+		[this]() -> std::string
+		{
+			if (!OwningComponent) return "";
+			AActor* Owner = OwningComponent->GetOwner();
+			if (!Owner) return "";
+			UCharacterMovementComponent* Move = Owner->GetComponentByClass<UCharacterMovementComponent>();
+			if (!Move) return "";
+			return Move->IsFalling() ? "Falling" : "Walking";
+		});
+
+	// is_owner_falling — 편의 bool. Jump/Fall 전이 condition 에 자연.
+	Anim.set_function("is_owner_falling",
+		[this]() -> bool
+		{
+			if (!OwningComponent) return false;
+			AActor* Owner = OwningComponent->GetOwner();
+			if (!Owner) return false;
+			UCharacterMovementComponent* Move = Owner->GetComponentByClass<UCharacterMovementComponent>();
+			return Move ? Move->IsFalling() : false;
+		});
 }
 
 // ──────────────────────────────────────────────

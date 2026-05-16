@@ -31,6 +31,9 @@ public:
 	// CharacterMovement->AddInputVector 의 액터 레벨 wrapper. UE 의 APawn::AddMovementInput 대응.
 	void AddMovementInput(const FVector& WorldDirection, float ScaleValue = 1.0f);
 
+	// CharacterMovement->Jump 의 액터 레벨 wrapper. Walking 중에만 effective.
+	void Jump();
+
 	UCapsuleComponent*           GetCapsuleComponent()  const { return CapsuleComponent; }
 	USkeletalMeshComponent*      GetMesh()              const { return Mesh; }
 	UCharacterMovementComponent* GetCharacterMovement() const { return CharacterMovement; }
