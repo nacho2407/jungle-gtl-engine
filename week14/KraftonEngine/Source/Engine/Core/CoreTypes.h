@@ -9,6 +9,7 @@
 #include <array>
 #include <string>
 #include <utility>
+#include <functional>
 
 using int8 = __int8;
 using int16 = __int16;
@@ -47,6 +48,9 @@ using TPair = std::pair<T1, T2>;
 
 template <typename T>
 using TQueue = std::queue<T>;
+
+template <typename Signature>
+using TFunction = std::function<Signature>;
 
 // ===== Assert =====
 //#ifdef _DEBUG
