@@ -67,6 +67,262 @@ namespace
 
         return &Keys[ClampedIndex];
     }
+
+    // FBX SDK의 EInterpolationType 값은 bit flag 형태(상수=1, 선형=2, 큐빅=4)로 저장되어 있다.
+    // AnimSequence 런타임에서는 FBX SDK 헤더에 의존하지 않도록 숫자만 해석한다.
+    static constexpr int32 RawCurveInterpConstant = 1;
+    static constexpr int32 RawCurveInterpLinear   = 2;
+    static constexpr int32 RawCurveInterpCubic    = 4;
+
+    static int32 GetRawCurveInterpolationType(int32 RawInterpolation)
+    {
+        if ((RawInterpolation & RawCurveInterpCubic) == RawCurveInterpCubic)
+        {
+            return RawCurveInterpCubic;
+        }
+
+        if ((RawInterpolation & RawCurveInterpLinear) == RawCurveInterpLinear)
+        {
+            return RawCurveInterpLinear;
+        }
+
+        if ((RawInterpolation & RawCurveInterpConstant) == RawCurveInterpConstant)
+        {
+            return RawCurveInterpConstant;
+        }
+
+        return RawCurveInterpLinear;
+    }
+
+    static bool HasRawCurveKeys(const FRawFloatCurve& Curve)
+    {
+        return !Curve.Keys.empty();
+    }
+
+    static bool HasSourceCurveKeys(const FRawAnimSequenceTrack& Raw)
+    {
+        for (const FSourceTransformCurveLayer& Layer : Raw.SourceCurveLayers)
+        {
+            if (Layer.HasAnyKeys())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    static bool HasAnySourceCurveKeys(const TArray<FBoneAnimationTrack>& Tracks)
+    {
+        for (const FBoneAnimationTrack& Track : Tracks)
+        {
+            if (HasSourceCurveKeys(Track.InternalTrackData))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static float EstimateRawCurveTangent(const FRawFloatCurve& Curve, int32 KeyIndex)
+    {
+        const int32 NumKeys = static_cast<int32>(Curve.Keys.size());
+        if (NumKeys <= 1 || KeyIndex < 0 || KeyIndex >= NumKeys)
+        {
+            return 0.0f;
+        }
+
+        const int32 PrevIndex = std::max(0, KeyIndex - 1);
+        const int32 NextIndex = std::min(NumKeys - 1, KeyIndex + 1);
+
+        const FRawFloatCurveKey& Prev = Curve.Keys[PrevIndex];
+        const FRawFloatCurveKey& Next = Curve.Keys[NextIndex];
+
+        const float DeltaTime = Next.TimeSeconds - Prev.TimeSeconds;
+        if (std::abs(DeltaTime) < 1.0e-6f)
+        {
+            return 0.0f;
+        }
+
+        return (Next.Value - Prev.Value) / DeltaTime;
+    }
+
+    static float EvaluateRawCurveSegment(const FRawFloatCurve& Curve, int32 KeyIndex, float TimeSeconds)
+    {
+        const FRawFloatCurveKey& A = Curve.Keys[KeyIndex];
+        const FRawFloatCurveKey& B = Curve.Keys[KeyIndex + 1];
+
+        const float DeltaTime = B.TimeSeconds - A.TimeSeconds;
+        if (std::abs(DeltaTime) < 1.0e-6f)
+        {
+            return B.Value;
+        }
+
+        const float Alpha = std::clamp((TimeSeconds - A.TimeSeconds) / DeltaTime, 0.0f, 1.0f);
+
+        switch (GetRawCurveInterpolationType(A.Interpolation))
+        {
+        case RawCurveInterpConstant:
+            return A.Value;
+
+        case RawCurveInterpCubic:
+        {
+            // 현재 저장 포맷은 FBX tangent 값을 아직 보존하지 않으므로, 키 주변 기울기로 Hermite tangent를 복원한다.
+            const float M0 = EstimateRawCurveTangent(Curve, KeyIndex);
+            const float M1 = EstimateRawCurveTangent(Curve, KeyIndex + 1);
+
+            const float T  = Alpha;
+            const float T2 = T * T;
+            const float T3 = T2 * T;
+
+            const float H00 =  2.0f * T3 - 3.0f * T2 + 1.0f;
+            const float H10 =         T3 - 2.0f * T2 + T;
+            const float H01 = -2.0f * T3 + 3.0f * T2;
+            const float H11 =         T3 -        T2;
+
+            return H00 * A.Value + H10 * DeltaTime * M0 + H01 * B.Value + H11 * DeltaTime * M1;
+        }
+
+        case RawCurveInterpLinear:
+        default:
+            return A.Value + (B.Value - A.Value) * Alpha;
+        }
+    }
+
+    static float EvaluateRawFloatCurve(const FRawFloatCurve& Curve, float TimeSeconds, float DefaultValue)
+    {
+        const int32 NumKeys = static_cast<int32>(Curve.Keys.size());
+        if (NumKeys <= 0)
+        {
+            return DefaultValue;
+        }
+
+        if (NumKeys == 1)
+        {
+            return Curve.Keys[0].Value;
+        }
+
+        if (TimeSeconds <= Curve.Keys.front().TimeSeconds)
+        {
+            return Curve.Keys.front().Value;
+        }
+
+        if (TimeSeconds >= Curve.Keys.back().TimeSeconds)
+        {
+            return Curve.Keys.back().Value;
+        }
+
+        for (int32 KeyIndex = 0; KeyIndex + 1 < NumKeys; ++KeyIndex)
+        {
+            const FRawFloatCurveKey& A = Curve.Keys[KeyIndex];
+            const FRawFloatCurveKey& B = Curve.Keys[KeyIndex + 1];
+
+            if (TimeSeconds >= A.TimeSeconds && TimeSeconds <= B.TimeSeconds)
+            {
+                return EvaluateRawCurveSegment(Curve, KeyIndex, TimeSeconds);
+            }
+        }
+
+        return Curve.Keys.back().Value;
+    }
+
+    static bool EvaluateRawVectorCurve(const FRawVectorCurve& Curve, float TimeSeconds, const FVector& DefaultValue, FVector& OutValue)
+    {
+        const bool bHasX = HasRawCurveKeys(Curve.X);
+        const bool bHasY = HasRawCurveKeys(Curve.Y);
+        const bool bHasZ = HasRawCurveKeys(Curve.Z);
+
+        if (!bHasX && !bHasY && !bHasZ)
+        {
+            OutValue = DefaultValue;
+            return false;
+        }
+
+        OutValue.X = bHasX ? EvaluateRawFloatCurve(Curve.X, TimeSeconds, DefaultValue.X) : DefaultValue.X;
+        OutValue.Y = bHasY ? EvaluateRawFloatCurve(Curve.Y, TimeSeconds, DefaultValue.Y) : DefaultValue.Y;
+        OutValue.Z = bHasZ ? EvaluateRawFloatCurve(Curve.Z, TimeSeconds, DefaultValue.Z) : DefaultValue.Z;
+        return true;
+    }
+
+    static bool HasSoloSourceLayer(const FRawAnimSequenceTrack& Raw)
+    {
+        for (const FSourceTransformCurveLayer& Layer : Raw.SourceCurveLayers)
+        {
+            if (Layer.bSolo && Layer.HasAnyKeys())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static bool ShouldUseSourceLayer(const FSourceTransformCurveLayer& Layer, bool bHasSoloLayer)
+    {
+        if (!Layer.HasAnyKeys())
+        {
+            return false;
+        }
+
+        if (bHasSoloLayer)
+        {
+            return Layer.bSolo;
+        }
+
+        return !Layer.bMute;
+    }
+
+    static float GetClampedSourceLayerWeight(const FSourceTransformCurveLayer& Layer)
+    {
+        return std::clamp(Layer.LayerWeight, 0.0f, 1.0f);
+    }
+
+    static FTransform EvaluateSourceCurveTrack(const FRawAnimSequenceTrack& Raw, float TimeSeconds, const FTransform& FallbackTransform)
+    {
+        FTransform Result = FallbackTransform;
+
+        if (Raw.SourceCurveLayers.empty())
+        {
+            return Result;
+        }
+
+        const bool bHasSoloLayer = HasSoloSourceLayer(Raw);
+
+        for (const FSourceTransformCurveLayer& Layer : Raw.SourceCurveLayers)
+        {
+            if (!ShouldUseSourceLayer(Layer, bHasSoloLayer))
+            {
+                continue;
+            }
+
+            const float Weight = GetClampedSourceLayerWeight(Layer);
+            if (Weight <= 0.0f)
+            {
+                continue;
+            }
+
+            FVector CurveLocation;
+            if (EvaluateRawVectorCurve(Layer.Translation, TimeSeconds, Result.Location, CurveLocation))
+            {
+                Result.Location = FVector::Lerp(Result.Location, CurveLocation, Weight);
+            }
+
+            FVector CurveRotationEuler;
+            const FVector CurrentEuler = Result.Rotation.ToRotator().ToVector();
+            if (EvaluateRawVectorCurve(Layer.Rotation, TimeSeconds, CurrentEuler, CurveRotationEuler))
+            {
+                const FQuat CurveRotation = FRotator(CurveRotationEuler).ToQuaternion().GetNormalized();
+                Result.Rotation = FQuat::Slerp(Result.Rotation.GetNormalized(), CurveRotation, Weight).GetNormalized();
+            }
+
+            FVector CurveScale;
+            if (EvaluateRawVectorCurve(Layer.Scale, TimeSeconds, Result.Scale, CurveScale))
+            {
+                Result.Scale = FVector::Lerp(Result.Scale, CurveScale, Weight);
+            }
+        }
+
+        return Result;
+    }
 }
 
 void UAnimSequence::Serialize(FArchive& Ar)
@@ -187,23 +443,34 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
     }
 
     const int32 NumFrames = DataModel->NumFrames;
-    if (NumFrames <= 0)
+    const bool  bCanEvaluateSourceCurves = HasAnySourceCurveKeys(Tracks);
+
+    if (NumFrames <= 0 && !bCanEvaluateSourceCurves)
     {
         return;
     }
 
-    const float FrameFloat = TimeToFrameFloat(Ctx.CurrentTime, DataModel->PlayLength, NumFrames, Ctx.bLooping);
+    const float EvalTime = NormalizeTime(Ctx.CurrentTime, DataModel->PlayLength, Ctx.bLooping);
 
-    const int32 Frame0 = std::clamp(
-        static_cast<int32>(std::floor(FrameFloat)),
-        0,
-        NumFrames - 1);
+    int32 Frame0 = 0;
+    int32 Frame1 = 0;
+    float Alpha  = 0.0f;
 
-    const int32 Frame1 = std::clamp(Frame0 + 1, 0, NumFrames - 1);
+    if (NumFrames > 0)
+    {
+        const float FrameFloat = TimeToFrameFloat(Ctx.CurrentTime, DataModel->PlayLength, NumFrames, Ctx.bLooping);
 
-    const float Alpha = Frame1 == Frame0
-        ? 0.0f
-        : std::clamp(FrameFloat - static_cast<float>(Frame0), 0.0f, 1.0f);
+        Frame0 = std::clamp(
+            static_cast<int32>(std::floor(FrameFloat)),
+            0,
+            NumFrames - 1);
+
+        Frame1 = std::clamp(Frame0 + 1, 0, NumFrames - 1);
+
+        Alpha = Frame1 == Frame0
+            ? 0.0f
+            : std::clamp(FrameFloat - static_cast<float>(Frame0), 0.0f, 1.0f);
+    }
 
     for (const FBoneAnimationTrack& Track : Tracks)
     {
@@ -254,6 +521,11 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
             }
         }
 
+        // SourceCurveLayers 는 FBX LclRotation 등 raw 채널값(노드 회전순서/pre·post-rotation/
+        // pivot/offset, RH→LH DeepConvertScene 축변환 적용 *이전*)이라 런타임 포즈를 구동하면
+        // 안 된다. 권위 데이터는 SDK EvaluateLocalTransform→DecomposeMatrix 로 구운
+        // PosKeys/RotKeys/ScaleKeys 다. 이전의 EvaluateSourceCurveTrack override 는
+        // 회전순서/축변환을 무시해 기본 자세부터 회전을 깨뜨렸다.
         Output.Pose[BoneIndex] = Result;
     }
 }
@@ -267,7 +539,12 @@ bool UAnimSequence::GetAnimationPose(float TimeSeconds, USkeletalMesh* InSkeleta
         return false;
     }
 
-    if (!DataModel || DataModel->BoneAnimationTracks.empty() || DataModel->NumFrames <= 0)
+    if (!DataModel || DataModel->BoneAnimationTracks.empty())
+    {
+        return false;
+    }
+
+    if (DataModel->NumFrames <= 0 && !HasAnySourceCurveKeys(DataModel->BoneAnimationTracks))
     {
         return false;
     }
