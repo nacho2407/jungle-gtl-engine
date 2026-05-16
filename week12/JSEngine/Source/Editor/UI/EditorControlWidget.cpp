@@ -196,13 +196,6 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 			Actor->SetActorLocation(SpawnPoint);
 			break;
 		}
-		case 11:
-		{
-			ASpotlightActor* Actor = World->SpawnActor<ASpotlightActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
 		case 12:
 		{
 			AFogActor* Actor = World->SpawnActor<AFogActor>();

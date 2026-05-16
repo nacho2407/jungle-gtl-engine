@@ -12,8 +12,7 @@ public:
 	// Overrides
 	void				BeginPlay() override;
 	void				TickComponent(float DeltaTime) override;
-    void				GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-    void				PostDuplicate(UObject* Original) override;
+	void				PostDuplicate(UObject* Original) override;
 	float				GetMaxSpeed() const override { return 0; };
 
 
@@ -41,13 +40,23 @@ private:
 	FVector TargetPoint;
 
 	float Elapsed					= 0.f;
+
+	UPROPERTY(DisplayName = "Pursuit Interval", Min = 0.01f, Max = 5.0f, Speed = 0.01f)
 	float UpdateLerpInterval		= 2.0f;
+
+	UPROPERTY(DisplayName = "Detection Radius", Min = 0.01f, Max = 4096.0f, Speed = 0.01f)
 	float DetectionRadius			= 20.f;
+
+	UPROPERTY(DisplayName = "Pursuit Speed", Min = 0.01f, Max = 100.0f, Speed = 0.01f)
 	float PursuitSpeed				= 1.f;
-    float TargetPitch				= 0.f;
-    float TargetYaw					= 0.f;
+
+	float TargetPitch				= 0.f;
+	float TargetYaw					= 0.f;
 
 	bool bIsActive					= true;
+
+	UPROPERTY(DisplayName = "Orient To Target")
 	bool bFaceTargetDir				= true;
+
 	bool bAutoTargetPerspCamera		= true;		// If no target is set, default to the primary perspective camera on BeginPlay
 };

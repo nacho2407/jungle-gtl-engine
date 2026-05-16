@@ -62,15 +62,6 @@ void UInterpToMovementComponent::PostDuplicate(UObject* Original) {
 	NextDistRatio		= 0.f;
 }
 
-void UInterpToMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) {
-	UMovementComponent::GetEditableProperties(OutProps);
-
-	OutProps.push_back({ "Auto Activate",		  EPropertyType::Bool,		 &bAutoActivate });
-	OutProps.push_back({ "Orient To Movement",	  EPropertyType::Bool,		 &bFaceTargetDir });
-	OutProps.push_back({ "Interp Duration",		  EPropertyType::Float,      &Duration,       0.1f, 2048.0f, 0.1f });
-	OutProps.push_back({ "Control Points",		  EPropertyType::Vec3Array,  &ControlPoints });
-}
-
 // --- Control Point Management--------------------------------------------
 void UInterpToMovementComponent::AddControlPoint(FVector InControlPoint) {
 	ControlPoints.push_back(InControlPoint);

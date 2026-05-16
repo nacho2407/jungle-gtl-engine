@@ -5,26 +5,29 @@
 #include "Object/FName.h"
 
 // 텍스트 렌더링 공간 모드
+UENUM()
 enum class ETextRenderSpace : int32
 {
-	World,		// 3D 공간에 빌보드로 렌더링
-	Screen		// 2D 스크린 좌표에 고정 렌더링
+	World UMETA(DisplayName = "World"),		// 3D 공간에 빌보드로 렌더링
+	Screen UMETA(DisplayName = "Screen")		// 2D 스크린 좌표에 고정 렌더링
 };
 
 // 텍스트 수평 정렬
+UENUM()
 enum class ETextHAlign : int32
 {
-	Left,
-	Center,
-	Right
+	Left UMETA(DisplayName = "Left"),
+	Center UMETA(DisplayName = "Center"),
+	Right UMETA(DisplayName = "Right")
 };
 
 // 텍스트 수직 정렬
+UENUM()
 enum class ETextVAlign : int32
 {
-	Top,
-	Center,
-	Bottom
+	Top UMETA(DisplayName = "Top"),
+	Center UMETA(DisplayName = "Center"),
+	Bottom UMETA(DisplayName = "Bottom")
 };
 
 // 텍스트를 월드 공간에 빌보드로 렌더링하는 컴포넌트.
@@ -42,8 +45,6 @@ public:
     virtual void PostDuplicate(UObject* Original) override;
 
 	virtual void Serialize(FArchive& Ar) override;
-
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	// --- Text ---
@@ -98,21 +99,42 @@ public:
 	int32 GetUTF8Length(const FString& str) const;
 
 private:
+	UPROPERTY(DisplayName = "Text")
 	FString Text;
+
+	UPROPERTY(DisplayName = "Font")
 	FName FontName = FName("Default");
+
 	FFontResource* CachedFont = nullptr;	// ResourceManager 소유, 여기선 참조만
 
+	UPROPERTY(DisplayName = "Color")
 	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	UPROPERTY(DisplayName = "Font Size", Min = 0.1f, Max = 100.0f, Speed = 0.1f)
 	float FontSize = 1.0f;
+
+	UPROPERTY(DisplayName = "Spacing", Min = 0.0f, Max = 10.0f, Speed = 0.01f)
 	float Spacing = 0.1f;
+
+	UPROPERTY(DisplayName = "Char Width", Min = 0.01f, Max = 10.0f, Speed = 0.01f)
 	float CharWidth = 0.5f;
+
+	UPROPERTY(DisplayName = "Char Height", Min = 0.01f, Max = 10.0f, Speed = 0.01f)
 	float CharHeight = 0.5f;
 
+	UPROPERTY(DisplayName = "Render Space")
 	ETextRenderSpace RenderSpace = ETextRenderSpace::World;
+
+	UPROPERTY(DisplayName = "Horizontal Alignment")
 	ETextHAlign HAlign = ETextHAlign::Center;
+
+	UPROPERTY(DisplayName = "Vertical Alignment")
 	ETextVAlign VAlign = ETextVAlign::Center;
 
 	// Screen 모드 전용
+	UPROPERTY(DisplayName = "Screen X")
 	float ScreenX = 0.0f;
+
+	UPROPERTY(DisplayName = "Screen Y")
 	float ScreenY = 0.0f;
 };

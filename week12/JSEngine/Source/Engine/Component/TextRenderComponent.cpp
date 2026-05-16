@@ -13,27 +13,28 @@ REGISTER_FACTORY(UTextRenderComponent)
 // GetEditableProperties 에 노출되지 않은 private 필드를 직접 복사합니다.
 void UTextRenderComponent::PostDuplicate(UObject* Original)
 {
-    UPrimitiveComponent::PostDuplicate(Original);
+	UPrimitiveComponent::PostDuplicate(Original);
 
-    const UTextRenderComponent* Orig = Cast<UTextRenderComponent>(Original);
-    Color       = Orig->Color;
-    Spacing     = Orig->Spacing;
-    CharWidth   = Orig->CharWidth;
-    CharHeight  = Orig->CharHeight;
-    RenderSpace = Orig->RenderSpace;
-    HAlign      = Orig->HAlign;
-    VAlign      = Orig->VAlign;
-    ScreenX     = Orig->ScreenX;
-    ScreenY     = Orig->ScreenY;
+	const UTextRenderComponent* Orig = Cast<UTextRenderComponent>(Original);
+	Color       = Orig->Color;
+	Spacing     = Orig->Spacing;
+	CharWidth   = Orig->CharWidth;
+	CharHeight  = Orig->CharHeight;
+	RenderSpace = Orig->RenderSpace;
+	HAlign      = Orig->HAlign;
+	VAlign      = Orig->VAlign;
+	ScreenX     = Orig->ScreenX;
+	ScreenY     = Orig->ScreenY;
 }
 
 void UTextRenderComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
 
-	Ar << "Text" << Text;
-	Ar << "Font" << FontName;
-	Ar << "Font Size" << FontSize;
+	if (Ar.IsLoading())
+	{
+		SetFont(FontName);
+	}
 }
 
 void UTextRenderComponent::SetFont(const FName& InFontName)
@@ -140,21 +141,11 @@ UTextRenderComponent::UTextRenderComponent()
 {
 }
 
-void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPrimitiveComponent::GetEditableProperties(OutProps);
-
-	OutProps.push_back({ "Text", EPropertyType::String, &Text });
-	OutProps.push_back({ "Font", EPropertyType::Name, &FontName });
-	// OutProps.push_back({ "Color", EPropertyType::Vec4, &Color });
-	OutProps.push_back({ "Font Size", EPropertyType::Float, &FontSize, 0.1f, 100.0f, 0.1f });
-}
-
 void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Font") == 0)
+	if (PropertyName && strcmp(PropertyName, "FontName") == 0)
 	{
 		SetFont(FontName);
 	}

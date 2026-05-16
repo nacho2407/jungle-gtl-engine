@@ -18,7 +18,6 @@ public:
 	UStaticMesh* GetStaticMesh() const;
 	bool HasValidMesh() const;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char * PropertyName) override;
 
 	void UpdateWorldAABB() const override;
@@ -38,6 +37,8 @@ private:
 
 private:
 	UStaticMesh* StaticMeshAsset = nullptr;
+
+	UPROPERTY(DisplayName = "StaticMesh")
 	FString StaticMeshAssetPath;
 
 	mutable bool bBoundsDirty = true;
