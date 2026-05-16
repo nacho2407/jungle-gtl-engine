@@ -116,5 +116,10 @@ bool UAnimSingleNodeInstance::EvaluateAnimation(TArray<FTransform>& OutLocalPose
         }
     }
 
+    if (FAnimationRuntime::BuildDebugOscillatingLocalPose(Mesh, CurrentTime, OutLocalPose))
+    {
+        return true;
+    }
+
     return FAnimationRuntime::BuildBindLocalPoseFromMesh(Mesh, OutLocalPose);
 }

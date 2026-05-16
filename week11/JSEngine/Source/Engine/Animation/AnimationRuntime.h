@@ -24,6 +24,11 @@ public:
     static bool BuildBindLocalPoseFromMesh(const USkeletalMesh* Mesh, TArray<FTransform>& OutLocalPose);
 
 	/**
+	 * TODO: Milestone 1 검증용 debug pose. 실제 sequence evaluation이 연결되면 제거
+	 */
+    static bool BuildDebugOscillatingLocalPose(const USkeletalMesh* Mesh, float TimeSeconds, TArray<FTransform>& OutLocalPose);
+
+	/**
 	 * @brief BuildBindLocalPoseFromMesh와는 반대로, animation runtime의 FTransform local pose를
 	 *        기존 component가 사용하는 FMatrix local pose로 변환하는 bridge.
 	 * 
