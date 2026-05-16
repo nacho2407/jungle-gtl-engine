@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <cctype>
+#include "FbxSceneImportContext.h"
 
 using namespace fbxsdk;
 
@@ -543,6 +544,30 @@ bool FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOp
 }
 
 
+
+TArray<FString> FFbxImporter::ListAnimStacks(const FString& Path)
+{
+    TArray<FString> Result;
+
+    FFbxSceneImportContext Context;
+    if (!Context.Import(Path))
+    {
+        return Result;
+    }
+
+    const int32 StackCount = Context.Scene->GetSrcObjectCount<FbxAnimStack>();
+    for (int32 i = 0; i < StackCount; ++i)
+    {
+        FbxAnimStack* Stack = Context.Scene->GetSrcObject<FbxAnimStack>(i);
+        if (Stack)
+        {
+            Result.push_back(FString(Stack->GetName()));
+        }
+    }
+
+    Context.Destroy();
+    return Result;
+}
 
 FFbxMeshContentInfo FFbxImporter::InspectMeshContent(const FString& Path)
 {

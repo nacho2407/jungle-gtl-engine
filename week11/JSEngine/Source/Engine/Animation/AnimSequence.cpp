@@ -38,9 +38,9 @@ bool UAnimSequence::GetBonePose(float Time, const USkeletalMesh* Mesh, TArray<FM
             continue;
         const FRawAnimSequenceTrack& Raw = Track.InternalTrackData;
 
-        const FVector Pos = EvalVectorKeys(Raw.PosKeys, Raw.PosKeyTimes, EvalTime,FVector::ZeroVector);
+        const FVector Pos = EvalVectorKeys(Raw.PosKeys, Raw.PosKeyTimes, EvalTime, FVector::ZeroVector);
 
-        const FQuat Rot = EvalQuatKeys(Raw.RotKeys, Raw.RotKeyTimes,EvalTime,FQuat::Identity);
+        const FQuat Rot = EvalQuatKeys(Raw.RotKeys, Raw.RotKeyTimes, EvalTime, FQuat::Identity);
 
         const FVector Scale = EvalVectorKeys(Raw.ScaleKeys, Raw.ScaleKeyTimes, EvalTime, FVector::OneVector);
 
@@ -67,7 +67,7 @@ FVector UAnimSequence::EvalVectorKeys(const TArray<FVector>& Keys, const TArray<
     {
         return Keys.back();
     }
-    for (int32 i = 0 ; i+1 < static_cast<int32>(Times.size());i++)
+    for (int32 i = 0; i + 1 < static_cast<int32>(Times.size()); i++)
     {
         if (Time >= Times[i] && Time <= Times[i + 1])
         {
@@ -106,7 +106,7 @@ FQuat UAnimSequence::EvalQuatKeys(const TArray<FQuat>& Keys, const TArray<float>
         return quat;
     }
 
-	for (int32 i = 0; i + 1 < static_cast<int32>(Times.size()); i++)
+    for (int32 i = 0; i + 1 < static_cast<int32>(Times.size()); i++)
     {
         if (Time >= Times[i] && Time <= Times[i + 1])
         {
@@ -123,7 +123,6 @@ FQuat UAnimSequence::EvalQuatKeys(const TArray<FQuat>& Keys, const TArray<float>
             quat.Normalize();
             return quat;
         }
-
     }
     FQuat quat = Keys.back();
     quat.Normalize();
