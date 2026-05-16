@@ -1,4 +1,4 @@
-#include "ShadowPass.h"
+﻿#include "ShadowPass.h"
 
 #include "Core/ResourceManager.h"
 #include "Render/Resource/ShaderHelper.h"
@@ -166,7 +166,7 @@ bool FShadowPass::Begin(const FRenderPassContext* Context)
 		return true;
 	}
 
-    ID3D11DepthStencilView* DSV = FShadowAtlasManager::Get().GetDSV();
+	ID3D11DepthStencilView* DSV = FShadowAtlasManager::Get().GetDSV();
 	Context->DeviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	return true;
@@ -174,8 +174,8 @@ bool FShadowPass::Begin(const FRenderPassContext* Context)
 
 bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 {
-    if (!Context->RenderBus->GetShowFlags().bShadow)
-        return true;
+	if (!Context->RenderBus->GetShowFlags().bShadow)
+		return true;
 
 	ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
 	const FRenderBus* RenderBus = Context->RenderBus;
@@ -216,16 +216,16 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	TArray<FShadowLightRequest> SortedRequests = RenderBus->ShadowLightRequests;
 
 	for (auto& Request : SortedRequests)
-    {
-            Request.PriorityScore = CalculatePriority(Request, Context);
-    }
+	{
+			Request.PriorityScore = CalculatePriority(Request, Context);
+	}
 
-    std::sort(SortedRequests.begin(), SortedRequests.end(), [](const FShadowLightRequest& A, const FShadowLightRequest& B)
-              { return A.PriorityScore > B.PriorityScore; });
+	std::sort(SortedRequests.begin(), SortedRequests.end(), [](const FShadowLightRequest& A, const FShadowLightRequest& B)
+			  { return A.PriorityScore > B.PriorityScore; });
 
 	for (const FShadowLightRequest& Request : SortedRequests)
 	{
-        ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
+		ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
 
 		if (LightComp == nullptr)
 		{
@@ -242,7 +242,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			LightComp->GetShadowMapType() == EShadowMap::CSM)
 		{
 			DirectionalShadowData.VirtualViewProj = CamView * CamProj;
-            DirectionalShadowData.DirectionalShadowStartIndex = InvalidShadowIndex;
+			DirectionalShadowData.DirectionalShadowStartIndex = InvalidShadowIndex;
 			DirectionalShadowData.DirectionalCascadeCount = 0;
 
 			FCascadeSplit CascadeSplits[4] = {};
@@ -259,7 +259,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			
 			
 			const uint32 FirstShadowIndex = static_cast<uint32>(ShadowAtlasConstants.size());
-            uint32 WrittenCascadeCount = 0;
+			uint32 WrittenCascadeCount = 0;
 
 			for (uint32 CascadeIndex = 0; CascadeIndex < 4; ++CascadeIndex)
 			{
@@ -295,12 +295,12 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 					ShadowDSV,
 					ShadowViewport,
 					ShadowKey,
-                    ShadowData);
+					ShadowData);
 
-                ::SetCascadeSplitFar(
-                    DirectionalShadowData.CascadeSplitFar,
-                    CascadeIndex,
-                    CascadeSplits[CascadeIndex].FarDistance);
+				::SetCascadeSplitFar(
+					DirectionalShadowData.CascadeSplitFar,
+					CascadeIndex,
+					CascadeSplits[CascadeIndex].FarDistance);
 
 				if (!bHasDirectionalShadow)
 				{
@@ -308,29 +308,29 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 					bHasDirectionalShadow = true;
 				}
 
-                FShadowAtlasConstants atlasConstants = {};
-                atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
-                atlasConstants.VirtualViewProjMatrix = ShadowData.VirtualViewProj;
-                atlasConstants.ScaleOffset = ShadowTile.ScaleOffset;
-                atlasConstants.ConstantBias = Request.ConstantBias;
+				FShadowAtlasConstants atlasConstants = {};
+				atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
+				atlasConstants.VirtualViewProjMatrix = ShadowData.VirtualViewProj;
+				atlasConstants.ScaleOffset = ShadowTile.ScaleOffset;
+				atlasConstants.ConstantBias = Request.ConstantBias;
 				atlasConstants.SlopedBias = Request.SlopeScaledBias;
-                atlasConstants.ShadowStrength = 1.0f;
-                atlasConstants.ShadowSoftness = Request.ShadowSharpen;
-                atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
-                atlasConstants.ShadowMapType = static_cast<uint32>(LightComp->GetShadowMapType());
-                ShadowAtlasConstants.push_back(atlasConstants);
+				atlasConstants.ShadowStrength = 1.0f;
+				atlasConstants.ShadowSoftness = Request.ShadowSharpen;
+				atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
+				atlasConstants.ShadowMapType = static_cast<uint32>(LightComp->GetShadowMapType());
+				ShadowAtlasConstants.push_back(atlasConstants);
 
-                ++WrittenCascadeCount;
-                DirectionalShadowData.DirectionalCascadeCount = WrittenCascadeCount;
+				++WrittenCascadeCount;
+				DirectionalShadowData.DirectionalCascadeCount = WrittenCascadeCount;
 			}
 
-            if (WrittenCascadeCount > 0)
-            {
-                DirectionalShadowData.DirectionalShadowStartIndex = FirstShadowIndex;
-            }
-            bHasDirectionalShadow = true;
+			if (WrittenCascadeCount > 0)
+			{
+				DirectionalShadowData.DirectionalShadowStartIndex = FirstShadowIndex;
+			}
+			bHasDirectionalShadow = true;
 
-            continue;
+			continue;
 		}
 
 		if (Request.Type == EShadowLightType::SLT_Point)
@@ -341,19 +341,19 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			const FVector LightPos = PointLight->GetWorldLocation();
 			const float Near = 0.1f;
 			const float Far = PointLight->AttenuationRadius;
-            const uint32 FirstShadowIndex = static_cast<uint32>(ShadowAtlasConstants.size());
-            uint32 WrittenFaceCount = 0;
-            int32 CubeIndex = -1;
+			const uint32 FirstShadowIndex = static_cast<uint32>(ShadowAtlasConstants.size());
+			uint32 WrittenFaceCount = 0;
+			int32 CubeIndex = -1;
 
-            if (!FShadowAtlasManager::Get().AllocateTileCube(CubeIndex))
-            {
-                continue;
-            }
+			if (!FShadowAtlasManager::Get().AllocateTileCube(CubeIndex))
+			{
+				continue;
+			}
 
-            if (Request.LightIndex < RenderBus->LightInfos.size())
-            {
-                const_cast<FLightInfo&>(RenderBus->LightInfos[Request.LightIndex]).ShadowTextureIndex = static_cast<uint32>(CubeIndex);
-            }
+			if (Request.LightIndex < RenderBus->LightInfos.size())
+			{
+				const_cast<FLightInfo&>(RenderBus->LightInfos[Request.LightIndex]).ShadowTextureIndex = static_cast<uint32>(CubeIndex);
+			}
 
 			static const FVector FaceDirs[6] =
 			{
@@ -378,29 +378,29 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
 			DeviceContext->OMSetDepthStencilState(DepthState, 0);
 			
-            {
-                ULightComponent* MutableLight = const_cast<ULightComponent*>(LightComp);
-                MutableLight->DebugShadowCubeIndex = static_cast<float>(CubeIndex);
-                MutableLight->bHasDebugShadowCubeTile = true;
-            }
+			{
+				ULightComponent* MutableLight = const_cast<ULightComponent*>(LightComp);
+				MutableLight->DebugShadowCubeIndex = static_cast<int32>(CubeIndex);
+				MutableLight->bHasDebugShadowCubeTile = true;
+			}
 
 			for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
 			{
-                ID3D11DepthStencilView* DSV = FShadowAtlasManager::Get().GetCubeDSV(CubeIndex, FaceIndex);
+				ID3D11DepthStencilView* DSV = FShadowAtlasManager::Get().GetCubeDSV(CubeIndex, FaceIndex);
 				if (DSV == nullptr)
 				{
 					continue;
 				}
 
-                DeviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+				DeviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 				D3D11_VIEWPORT ShadowViewport = {};
-                ShadowViewport.TopLeftX = 0.0f;
-                ShadowViewport.TopLeftY = 0.0f;
-                ShadowViewport.Width = static_cast<float>(SHADOW_CUBE_SIZE);
-                ShadowViewport.Height = static_cast<float>(SHADOW_CUBE_SIZE);
-                ShadowViewport.MinDepth = 0.0f;
-                ShadowViewport.MaxDepth = 1.0f;
+				ShadowViewport.TopLeftX = 0.0f;
+				ShadowViewport.TopLeftY = 0.0f;
+				ShadowViewport.Width = static_cast<float>(SHADOW_CUBE_SIZE);
+				ShadowViewport.Height = static_cast<float>(SHADOW_CUBE_SIZE);
+				ShadowViewport.MinDepth = 0.0f;
+				ShadowViewport.MaxDepth = 1.0f;
 
 				const FVector Target = LightPos + FaceDirs[FaceIndex];
 				const FVector Up = FaceUps[FaceIndex];
@@ -422,32 +422,32 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 					ShadowData);
 
 				DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
-                FShadowAtlasManager::Get().UpdateCubeDebugFace(DeviceContext, CubeIndex, FaceIndex);
+				FShadowAtlasManager::Get().UpdateCubeDebugFace(DeviceContext, CubeIndex, FaceIndex);
 
 				FShadowAtlasConstants atlasConstants = {};
-                atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
-                atlasConstants.VirtualViewProjMatrix = ShadowData.VirtualViewProj;
-                atlasConstants.ScaleOffset = FVector4(1.0f, 1.0f, 0.0f, 0.0f);
-                atlasConstants.ConstantBias = Request.ConstantBias;
+				atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
+				atlasConstants.VirtualViewProjMatrix = ShadowData.VirtualViewProj;
+				atlasConstants.ScaleOffset = FVector4(1.0f, 1.0f, 0.0f, 0.0f);
+				atlasConstants.ConstantBias = Request.ConstantBias;
 				atlasConstants.SlopedBias = Request.SlopeScaledBias;
 
-                atlasConstants.ShadowStrength = 1.0f;
-                atlasConstants.ShadowSoftness = Request.ShadowSharpen;
-                atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
-                atlasConstants.ShadowMapType = static_cast<uint32>(LightComp->GetShadowMapType());
-                ShadowAtlasConstants.push_back(atlasConstants);
-                ++WrittenFaceCount;
+				atlasConstants.ShadowStrength = 1.0f;
+				atlasConstants.ShadowSoftness = Request.ShadowSharpen;
+				atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
+				atlasConstants.ShadowMapType = static_cast<uint32>(LightComp->GetShadowMapType());
+				ShadowAtlasConstants.push_back(atlasConstants);
+				++WrittenFaceCount;
 			}
 
-            if (WrittenFaceCount > 0 && Request.LightIndex < LightShadowIndices.size())
-            {
-			    LightShadowIndices[Request.LightIndex].StartIndex = FirstShadowIndex;
-			    LightShadowIndices[Request.LightIndex].IndexCount = WrittenFaceCount;
-            }
-            else if (Request.LightIndex < RenderBus->LightInfos.size())
-            {
-                const_cast<FLightInfo&>(RenderBus->LightInfos[Request.LightIndex]).ShadowTextureIndex = InvalidShadowIndex;
-            }
+			if (WrittenFaceCount > 0 && Request.LightIndex < LightShadowIndices.size())
+			{
+				LightShadowIndices[Request.LightIndex].StartIndex = FirstShadowIndex;
+				LightShadowIndices[Request.LightIndex].IndexCount = WrittenFaceCount;
+			}
+			else if (Request.LightIndex < RenderBus->LightInfos.size())
+			{
+				const_cast<FLightInfo&>(RenderBus->LightInfos[Request.LightIndex]).ShadowTextureIndex = InvalidShadowIndex;
+			}
 				
 			continue;
 		}
@@ -475,17 +475,17 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			CamView,
 			CamProj,
 			&VisibleBounds);
-        DeviceContext->RSSetViewports(1, &ShadowViewport);
+		DeviceContext->RSSetViewports(1, &ShadowViewport);
 
 		// Debug용으로 라이트 컴포넌트에 타일 오프셋 정보 전달 (실제 렌더링에는 사용되지 않음)
-        {
-            ULightComponent* MutableLight = const_cast<ULightComponent*>(LightComp);
-            MutableLight->DebugShadowAtlasScaleOffset = ShadowTile.ScaleOffset;
-            MutableLight->bHasDebugShadowAtlasTile = true;
-        }
+		{
+			ULightComponent* MutableLight = const_cast<ULightComponent*>(LightComp);
+			MutableLight->DebugShadowAtlasScaleOffset = ShadowTile.ScaleOffset;
+			MutableLight->bHasDebugShadowAtlasTile = true;
+		}
 
-        ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
-        DeviceContext->OMSetDepthStencilState(DepthState, 0);
+		ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+		DeviceContext->OMSetDepthStencilState(DepthState, 0);
 
 		FBoundingBox VisibleBoundingBox;
 
@@ -555,23 +555,23 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		}
 
 		FShadowAtlasConstants atlasConstants = {};
-        atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
-        atlasConstants.VirtualViewProjMatrix = ShadowData.VirtualViewProj;
+		atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
+		atlasConstants.VirtualViewProjMatrix = ShadowData.VirtualViewProj;
 		atlasConstants.ScaleOffset = ShadowTile.ScaleOffset;
 		atlasConstants.ConstantBias = Request.ConstantBias;
 		atlasConstants.SlopedBias = Request.SlopeScaledBias;
 		atlasConstants.ShadowStrength = 1.0f;
 		atlasConstants.ShadowSoftness = Request.ShadowSharpen;
-        atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
-        atlasConstants.ShadowMapType = static_cast<uint32>(LightComp->GetShadowMapType());
+		atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
+		atlasConstants.ShadowMapType = static_cast<uint32>(LightComp->GetShadowMapType());
 		ShadowAtlasConstants.push_back(atlasConstants);
 
 		if (Request.Type == EShadowLightType::SLT_Directional)
 		{
 			DirectionalShadowData.DirLightViewProj = ShadowData.DirLightViewProj;
-            DirectionalShadowData.VirtualViewProj = ShadowData.VirtualViewProj;
-            DirectionalShadowData.DirectionalShadowStartIndex = ShadowIndex;
-            DirectionalShadowData.DirectionalCascadeCount = 1;
+			DirectionalShadowData.VirtualViewProj = ShadowData.VirtualViewProj;
+			DirectionalShadowData.DirectionalShadowStartIndex = ShadowIndex;
+			DirectionalShadowData.DirectionalCascadeCount = 1;
 			bHasDirectionalShadow = true;
 		}
 	}
@@ -584,13 +584,13 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			static_cast<uint32>(LightShadowIndices.size()));
 	}
 
-    if (!RenderBus->LightInfos.empty())
-    {
-        Context->RenderResources->LightStructuredBuffer.Update(
-            DeviceContext,
-            RenderBus->LightInfos.data(),
-            static_cast<uint32>(RenderBus->LightInfos.size()));
-    }
+	if (!RenderBus->LightInfos.empty())
+	{
+		Context->RenderResources->LightStructuredBuffer.Update(
+			DeviceContext,
+			RenderBus->LightInfos.data(),
+			static_cast<uint32>(RenderBus->LightInfos.size()));
+	}
 
 	if (!ShadowAtlasConstants.empty())
 	{
@@ -630,49 +630,49 @@ bool FShadowPass::End(const FRenderPassContext* Context)
 
 float FShadowPass::CalculatePriority(FShadowLightRequest& Request, const FRenderPassContext* Context)
 {
-    FFrustum Frustum = {};
-    Frustum.UpdateFromCamera(
-        Context->RenderBus->GetView(),
-        Context->RenderBus->GetProj());
+	FFrustum Frustum = {};
+	Frustum.UpdateFromCamera(
+		Context->RenderBus->GetView(),
+		Context->RenderBus->GetProj());
 
-    float Priority = 0.0f;
+	float Priority = 0.0f;
 
-    // 1. Directional Light는 최우선
-    if (Request.Type == EShadowLightType::SLT_Directional)
-    {
-        Priority += 10000.0f;
-    }
+	// 1. Directional Light는 최우선
+	if (Request.Type == EShadowLightType::SLT_Directional)
+	{
+		Priority += 10000.0f;
+	}
 
-    // 2. 카메라 프러스텀 안에 있으면 우선순위 증가
-    Priority += Frustum.Contains(Request.WorldLocation) ? 1000.0f : 0.0f;
+	// 2. 카메라 프러스텀 안에 있으면 우선순위 증가
+	Priority += Frustum.Contains(Request.WorldLocation) ? 1000.0f : 0.0f;
 
-    // 3. 거리 기반 우선순위
-    const float DistanceToCamera = FVector::Distance(
-        Request.WorldLocation,
-        Context->RenderBus->GetCameraPosition());
+	// 3. 거리 기반 우선순위
+	const float DistanceToCamera = FVector::Distance(
+		Request.WorldLocation,
+		Context->RenderBus->GetCameraPosition());
 
-    constexpr float MaxShadowDistance = 5000.0f;
+	constexpr float MaxShadowDistance = 5000.0f;
 
-    // raw 1 / Distance 말고, 정규화된 inverse 사용
-    const float DistancePriority =
-        1.0f / (1.0f + DistanceToCamera / MaxShadowDistance);
+	// raw 1 / Distance 말고, 정규화된 inverse 사용
+	const float DistancePriority =
+		1.0f / (1.0f + DistanceToCamera / MaxShadowDistance);
 
-    Priority += DistancePriority * 500.0f;
+	Priority += DistancePriority * 500.0f;
 
-    // 4. 해상도 기반 우선순위
-    constexpr float MaxShadowResolution = 2048.0f;
+	// 4. 해상도 기반 우선순위
+	constexpr float MaxShadowResolution = 2048.0f;
 
-    float ResolutionPriority =
-        static_cast<float>(Request.ShadowResolution) / MaxShadowResolution;
+	float ResolutionPriority =
+		static_cast<float>(Request.ShadowResolution) / MaxShadowResolution;
 
-    if (ResolutionPriority > 1.0f)
-    {
-        ResolutionPriority = 1.0f;
-    }
+	if (ResolutionPriority > 1.0f)
+	{
+		ResolutionPriority = 1.0f;
+	}
 
-    Priority += ResolutionPriority * 100.0f;
+	Priority += ResolutionPriority * 100.0f;
 
-    return Priority;
+	return Priority;
 }
 
 void FShadowPass::BuildPracticalCascadeSplit(float CamNear, float CamFar, float MaxShadowDistance, float Lambda, FCascadeSplit OutSplit[4])
