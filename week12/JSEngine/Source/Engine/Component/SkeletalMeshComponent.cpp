@@ -9,6 +9,9 @@
 
 #include <cstring>
 
+#include "Animation/AnimationStateMachine.h"
+#include "Animation/StateMachineAnimInstance.h"
+
 DEFINE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 REGISTER_FACTORY(USkeletalMeshComponent)
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
@@ -69,6 +72,45 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 void USkeletalMeshComponent::ApplyAnimationPose(const FPoseContext& PoseContext)
 {
 	SetCurrentLocalPose(PoseContext.LocalPose);
+}
+
+UAnimationStateMachine* USkeletalMeshComponent::CreateAnimationStateMachine()
+{
+	if (!AnimationStateMachine)
+	{
+		AnimationStateMachine = UObjectManager::Get().CreateObject<UAnimationStateMachine>();
+		AnimationStateMachine->Initialize(this);
+		SetAnimationStateMachine(AnimationStateMachine);
+	}
+	return AnimationStateMachine;
+}
+
+void USkeletalMeshComponent::SetAnimationStateMachine(UAnimationStateMachine* InStateMachine)
+{
+	AnimationStateMachine = InStateMachine;
+
+	if (!AnimationStateMachine)
+	{
+		return;
+	}
+
+	AnimationStateMachine->Initialize(this);
+
+	UStateMachineAnimInstance* Instance = UObjectManager::Get().CreateObject<UStateMachineAnimInstance>();
+
+	Instance->Initialize(this);
+	Instance->SetStateMachine(AnimationStateMachine);
+
+	AnimInstance = Instance;
+	AnimationMode = EAnimationMode::AnimationCustomMode;
+}
+
+void USkeletalMeshComponent::SetAnimStateByName(const FString& StateName, float BlendTime)
+{
+	if (AnimationStateMachine)
+	{
+		AnimationStateMachine->SetStateByName(StateName, BlendTime);
+	}
 }
 
 void USkeletalMeshComponent::ResetToBindPose()

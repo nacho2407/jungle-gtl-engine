@@ -1,4 +1,4 @@
-#include "ScriptManager.h"
+﻿#include "ScriptManager.h"
 
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
@@ -326,6 +326,8 @@ void FScriptManager::BindLuaState()
     BindComponentTypes();
     BindActorTypes();
     BindStaticMeshTypes();
+    BindSkinnedMeshTypes();
+    BindSkeletalMeshTypes();
     BindAnimationTypes();
     BindBillboardTypes();
     BindCameraTypes();

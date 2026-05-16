@@ -1,6 +1,10 @@
-#include "Runtime/Script/ScriptManager.h"
+﻿#include "Runtime/Script/ScriptManager.h"
 
 #include "Animation/ActorSequence.h"
+#include "Animation/AnimationStateMachine.h"
+#include "Animation/AnimInstance.h"
+#include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/StateMachineAnimInstance.h"
 #include "Asset/CurveFloatAsset.h"
 #include "Runtime/Script/ScriptComponent.h"
 #include "Runtime/Script/ScriptUtils.h"
@@ -38,5 +42,36 @@ void FScriptManager::BindAnimationTypes()
     LUA_METHOD(GetCurrentTime, GetCurrentTime);
     LUA_METHOD(AddFloatTrack, AddFloatTrack);
     LUA_METHOD(ClearTracks, ClearTracks);
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UAnimInstance, "AnimInstance", UObject)
+    LUA_METHOD(GetCurrentTime, GetCurrentTime);
+    LUA_METHOD(GetPreviousTime, GetPreviousTime);
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UAnimSingleNodeInstance, "AnimSingleNodeInstance", UAnimInstance, UObject)
+    LUA_METHOD(Play, Play);
+    LUA_METHOD(Stop, Stop);
+    LUA_METHOD(Pause, Pause);
+    LUA_METHOD(SetPlayRate, SetPlayRate);
+    LUA_METHOD(SetLooping, SetLooping);
+    LUA_METHOD(SetPosition, SetPosition);
+    LUA_METHOD(IsPlaying, IsPlaying);
+    LUA_METHOD(IsLooping, IsLooping);
+    LUA_METHOD(GetPlayRate, GetPlayRate);
+    LUA_METHOD(GetLength, GetLength);
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UAnimationStateMachine, "AnimationStateMachine", UObject)
+    LUA_METHOD(AddStateFromPath, AddStateFromPath);
+    LUA_METHOD(SetEntryStateByName, SetEntryStateByName);
+    LUA_METHOD(SetStateByName, SetStateByName);
+    LUA_METHOD(GetCurrentStateName, GetCurrentStateName);
+    LUA_METHOD(GetNextStateName, GetNextStateName);
+    LUA_METHOD(IsBlending, IsBlending);
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UStateMachineAnimInstance, "StateMachineAnimInstance", UAnimInstance, UObject)
+    LUA_METHOD(SetStateMachine, SetStateMachine);
     LUA_END_TYPE();
 }
