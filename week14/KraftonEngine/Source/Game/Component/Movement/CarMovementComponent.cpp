@@ -48,11 +48,6 @@ void UCarMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	}
 }
 
-void UCarMovementComponent::Serialize(FArchive& Ar)
-{
-	UMovementComponent::Serialize(Ar);
-}
-
 float UCarMovementComponent::GetForwardSpeed() const
 {
 	if (!UpdatedPrimitive) return 0.0f;

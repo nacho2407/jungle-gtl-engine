@@ -1,4 +1,4 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Epic Games, Inc. All Rights Reserved.
 #include "BoxComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -69,11 +69,6 @@ void UBoxComponent::ContributeSelectedVisuals(FScene& Scene) const
 	Scene.AddDebugLine(Corners[3], Corners[7], Color);
 }
 
-void UBoxComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UShapeComponent::GetEditableProperties(OutProps);
-}
-
 void UBoxComponent::PostEditProperty(const char* PropertyName)
 {
 	UShapeComponent::PostEditProperty(PropertyName);
@@ -82,9 +77,4 @@ void UBoxComponent::PostEditProperty(const char* PropertyName)
 	{
 		SetBoxExtent(BoxExtent);
 	}
-}
-
-void UBoxComponent::Serialize(FArchive& Ar)
-{
-	UShapeComponent::Serialize(Ar);
 }

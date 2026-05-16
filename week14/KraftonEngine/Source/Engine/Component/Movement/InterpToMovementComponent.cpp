@@ -48,15 +48,6 @@ void UInterpToMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 	UpdateLerp(DeltaTime);
 }
 
-void UInterpToMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) {
-	UMovementComponent::GetEditableProperties(OutProps);
-}
-
-void UInterpToMovementComponent::Serialize(FArchive& Ar)
-{
-	UMovementComponent::Serialize(Ar);
-}
-
 // --- Control Point Management--------------------------------------------
 void UInterpToMovementComponent::AddControlPoint(FVector InControlPoint) {
 	ControlPoints.push_back(InControlPoint);

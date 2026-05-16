@@ -64,10 +64,7 @@ public:
 	void BeginPlay() override;
 	void EndPlay() override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
-
-	void Serialize(FArchive& Ar) override;
 
 	virtual FMeshBuffer* GetMeshBuffer() const { return nullptr; }
 	virtual FMeshDataView GetMeshDataView() const { return {}; }

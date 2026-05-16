@@ -23,10 +23,8 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay() override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
-	void Serialize(FArchive& Ar) override;
-
+	void PreGetEditableProperties() override;
 	const FString& GetScriptFile() const { return ScriptFile; }
 	void SetScriptFile(const FString& InScriptFile) { ScriptFile = InScriptFile; }
 	void DispatchOverlap(class AActor* OtherActor);

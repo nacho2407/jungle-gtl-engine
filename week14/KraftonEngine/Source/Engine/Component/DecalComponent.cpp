@@ -31,11 +31,6 @@ FPrimitiveSceneProxy* UDecalComponent::CreateSceneProxy()
 	return new FDecalSceneProxy(this);
 }
 
-void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPrimitiveComponent::GetEditableProperties(OutProps);
-}
-
 void UDecalComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
@@ -60,11 +55,6 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 	{
 		MarkProxyDirty(EDirtyFlag::Material);
 	}
-}
-
-void UDecalComponent::Serialize(FArchive& Ar)
-{
-	UPrimitiveComponent::Serialize(Ar);
 }
 
 void UDecalComponent::PostDuplicate()

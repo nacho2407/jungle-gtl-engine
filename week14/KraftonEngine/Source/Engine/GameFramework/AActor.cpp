@@ -463,7 +463,7 @@ UObject* AActor::Duplicate(UObject* NewOuter) const
 	return Dup;
 }
 
-void AActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+void AActor::PreGetEditableProperties()
 {
 	PendingActorLocation = GetActorLocation();
 	PendingActorRotation = GetActorRotation();
@@ -472,8 +472,6 @@ void AActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 
 	// Tags — 콤마 구분 단일 문자열로 편집. PostEditProperty 가 다시 split 해서 Tags 갱신.
 	PendingTagsString = JoinTagsCommaSep(Tags);
-
-	UObject::GetEditableProperties(OutProps);
 }
 
 void AActor::PostEditProperty(const char* PropertyName)

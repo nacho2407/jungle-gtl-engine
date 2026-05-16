@@ -8,16 +8,6 @@
 IMPLEMENT_CLASS_WITH_PROPERTIES(ULightComponentBase, USceneComponent)
 HIDE_FROM_COMPONENT_LIST(ULightComponentBase)
 
-void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	USceneComponent::GetEditableProperties(OutProps);
-}
-
-void ULightComponentBase::Serialize(FArchive& Ar)
-{
-	USceneComponent::Serialize(Ar);
-}
-
 UBillboardComponent* ULightComponentBase::EnsureEditorBillboard()
 {
 	if (!Owner)

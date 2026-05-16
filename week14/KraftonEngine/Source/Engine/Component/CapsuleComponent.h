@@ -17,9 +17,7 @@ public:
 
 	void ContributeSelectedVisuals(FScene& Scene) const override;
 	void UpdateWorldAABB() const override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
-	void Serialize(FArchive& Ar) override;
 
 protected:
 	UPROPERTY(Edit, Save, Category="Shape", DisplayName="Capsule Radius", Min=0.01f, Max=10000.0f, Speed=1.0f)

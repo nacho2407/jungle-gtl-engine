@@ -155,6 +155,8 @@ public:
 	virtual void PostDuplicate() {}
 
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps);
+	virtual void PreGetEditableProperties() {}
+	virtual bool ShouldExposeProperty(const FProperty& Property) const;
 	virtual void PostEditChangeProperty(const FPropertyChangedEvent& Event);
 	virtual void PostEditProperty(const char* PropertyName);
 

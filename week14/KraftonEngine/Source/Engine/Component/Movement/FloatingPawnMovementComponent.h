@@ -18,9 +18,6 @@ public:
 
 	void BeginPlay() override;
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void Serialize(FArchive& Ar) override;
-
 	void SetMoveInput(float ForwardValue, float RightValue)
 	{
 		MoveInput = std::max<float>(-1.0f, std::min<float>(1.0f, ForwardValue));

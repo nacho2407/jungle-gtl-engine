@@ -662,11 +662,6 @@ UMaterial* USkinnedMeshComponent::GetMaterial(int32 ElementIndex) const
 	return nullptr;
 }
 
-void USkinnedMeshComponent::Serialize(FArchive& Ar)
-{
-	UMeshComponent::Serialize(Ar);
-}
-
 // Duplicate/load 섹션: 저장된 path를 실제 asset pointer로 복원하되 dirty 처리는 SetSkeletalMesh에 위임한다.
 void USkinnedMeshComponent::PostDuplicate()
 {
@@ -704,11 +699,6 @@ void USkinnedMeshComponent::PostDuplicate()
 	{
 		SetSkeletalMesh(nullptr);
 	}
-}
-
-void USkinnedMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UMeshComponent::GetEditableProperties(OutProps);
 }
 
 void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)

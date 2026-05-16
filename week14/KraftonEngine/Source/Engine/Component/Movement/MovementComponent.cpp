@@ -44,17 +44,6 @@ void UMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	UActorComponent::TickComponent(DeltaTime,TickType, ThisTickFunction);
 }
 
-void UMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UActorComponent::GetEditableProperties(OutProps);
-}
-
-void UMovementComponent::Serialize(FArchive& Ar)
-{
-	UActorComponent::Serialize(Ar);
-	// UpdatedComponent 포인터는 BeginPlay에서 재해결되므로 직렬화 제외.
-}
-
 void UMovementComponent::PostEditProperty(const char* PropertyName)
 {
 	UActorComponent::PostEditProperty(PropertyName);

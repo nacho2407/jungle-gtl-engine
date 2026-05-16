@@ -1,4 +1,4 @@
-﻿#include "FloatingPawnMovementComponent.h"
+#include "FloatingPawnMovementComponent.h"
 
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
@@ -89,14 +89,4 @@ void UFloatingPawnMovementComponent::TickComponent(float DeltaTime, ELevelTick T
 
 	LookInputX = 0.0f;
 	LookInputY = 0.0f;
-}
-
-void UFloatingPawnMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UMovementComponent::GetEditableProperties(OutProps);
-}
-
-void UFloatingPawnMovementComponent::Serialize(FArchive& Ar)
-{
-	UMovementComponent::Serialize(Ar);
 }

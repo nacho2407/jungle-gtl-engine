@@ -71,6 +71,7 @@ class AGameStateCarGame : public AGameStateBase
 {
 public:
 	DECLARE_CLASS(AGameStateCarGame, AGameStateBase)
+	static void RegisterProperties(UClass* Class);
 
 	AGameStateCarGame() = default;
 	~AGameStateCarGame() override = default;
@@ -122,9 +123,8 @@ public:
 	FCarGameHealthChangedSignature OnHealthChanged;
 	FCarGameScoreChangedSignature  OnScoreChanged;
 
-	void Serialize(FArchive& Ar) override;
-
 private:
+	UPROPERTY(Save, Category="Game State", DisplayName="Current Phase", Enum=ECarGamePhase)
 	ECarGamePhase CurrentPhase = ECarGamePhase::None;
 	ECarGamePhase CurrentQuestPhase = ECarGamePhase::None;
 

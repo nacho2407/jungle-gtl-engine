@@ -14,10 +14,7 @@ public:
 	void CreateRenderState() override;
 	void DestroyRenderState() override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
-
-	void Serialize(FArchive& Ar) override;
 
 	// Transform 변경 시 FogBaseHeight 갱신
 	void OnTransformDirty() override;

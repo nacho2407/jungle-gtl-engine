@@ -124,6 +124,7 @@ struct FProperty
 	FStructPropertyFunc StructFunc = nullptr;
 	const char* DisplayName = nullptr;
 	TMap<FString, FString> Metadata;
+	const char* OwnerClassName = nullptr;
 
 	inline FPropertyDescriptor ToDescriptor(UObject* Object) const
 	{

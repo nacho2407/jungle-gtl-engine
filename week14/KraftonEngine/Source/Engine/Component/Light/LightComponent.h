@@ -7,9 +7,6 @@ public:
 	DECLARE_CLASS(ULightComponent, ULightComponentBase)
 	static void RegisterProperties(UClass* Class);
 
-	virtual void Serialize(FArchive& Ar) override;
-	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-
 	float GetShadowResolutionScale() const { return ShadowResolutionScale; }
 	float GetShadowBias() const { return ShadowBias; }
 	float GetShadowSlopeBias() const { return ShadowSlopeBias; }

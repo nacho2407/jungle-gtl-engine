@@ -52,14 +52,14 @@ void USceneComponent::AttachToComponent(USceneComponent* InParent)
 	SetParent(InParent);
 }
 
-void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+void USceneComponent::PreGetEditableProperties()
 {
+	UActorComponent::PreGetEditableProperties();
 	if (bCachedEulerDirty)
 	{
 		CachedEditRotator = RelativeTransform.GetRotator();
 		bCachedEulerDirty = false;
 	}
-	UActorComponent::GetEditableProperties(OutProps);
 }
 
 void USceneComponent::PostEditProperty(const char* PropertyName)

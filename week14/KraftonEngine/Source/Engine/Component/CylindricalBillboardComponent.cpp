@@ -14,16 +14,6 @@ FPrimitiveSceneProxy* UCylindricalBillboardComponent::CreateSceneProxy()
 	return new FCylindricalBillboardSceneProxy(this);
 }
 
-void UCylindricalBillboardComponent::Serialize(FArchive& Ar)
-{
-	UBillboardComponent::Serialize(Ar);
-}
-
-void UCylindricalBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UBillboardComponent::GetEditableProperties(OutProps);
-}
-
 void UCylindricalBillboardComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
 	if (!GetOwner() || !GetOwner()->GetWorld()) return;

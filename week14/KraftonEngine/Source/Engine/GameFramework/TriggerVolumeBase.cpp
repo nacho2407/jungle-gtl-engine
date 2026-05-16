@@ -27,11 +27,6 @@ void ATriggerVolumeBase::PostDuplicate()
 	TriggerBox = Cast<UBoxComponent>(GetRootComponent());
 }
 
-void ATriggerVolumeBase::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	Super::GetEditableProperties(OutProps);
-}
-
 void ATriggerVolumeBase::BeginPlay()
 {
 	// 신규 spawn (World->SpawnActor<ATriggerVolumeBase>()) 경로 — 호출자가 컴포넌트를 채울
@@ -68,12 +63,6 @@ void ATriggerVolumeBase::BeginPlay()
 		TriggerBox->OnComponentBeginOverlap.AddRaw(this, &ATriggerVolumeBase::HandleBeginOverlap);
 		TriggerBox->OnComponentEndOverlap.AddRaw(this, &ATriggerVolumeBase::HandleEndOverlap);
 	}
-}
-
-void ATriggerVolumeBase::Serialize(FArchive& Ar)
-{
-	Super::Serialize(Ar);
-	Ar << TriggerTag;
 }
 
 void ATriggerVolumeBase::HandleBeginOverlap(

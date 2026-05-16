@@ -41,8 +41,6 @@ public:
 	void EndPlay() override;
 	void PostDuplicate() override;
 	void Tick(float DeltaTime) override;
-	void Serialize(FArchive& Ar) override;
-
 	bool IsQuestTarget() const { return bQuestTarget; }
 	void SetQuestTarget(bool bIn) { bQuestTarget = bIn; }
 

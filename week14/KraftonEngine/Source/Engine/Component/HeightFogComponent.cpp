@@ -52,20 +52,10 @@ void UHeightFogComponent::PushToScene()
 	World->GetScene().GetEnvironment().AddFog(this, Params);
 }
 
-void UHeightFogComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	USceneComponent::GetEditableProperties(OutProps);
-}
-
 void UHeightFogComponent::PostEditProperty(const char* PropertyName)
 {
 	USceneComponent::PostEditProperty(PropertyName);
 	PushToScene();
-}
-
-void UHeightFogComponent::Serialize(FArchive& Ar)
-{
-	USceneComponent::Serialize(Ar);
 }
 
 UBillboardComponent* UHeightFogComponent::EnsureEditorBillboard()

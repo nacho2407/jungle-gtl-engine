@@ -1,4 +1,4 @@
-﻿#include "RotatingMovementComponent.h"
+#include "RotatingMovementComponent.h"
 
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
@@ -69,14 +69,4 @@ void URotatingMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 		const FVector NewOrbitOffsetWorld = DeltaQuat.RotateVector(OldOrbitOffsetWorld);
 		UpdatedSceneComponent->SetWorldLocation(CachedWorldPivotLocation + NewOrbitOffsetWorld);
 	}
-}
-
-void URotatingMovementComponent::Serialize(FArchive& Ar)
-{
-	UMovementComponent::Serialize(Ar);
-}
-
-void URotatingMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UMovementComponent::GetEditableProperties(OutProps);
 }

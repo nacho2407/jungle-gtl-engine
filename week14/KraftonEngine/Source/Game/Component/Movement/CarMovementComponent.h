@@ -17,8 +17,6 @@ public:
 
 	void BeginPlay() override;
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
-	void Serialize(FArchive& Ar) override;
-
 	void SetThrottleInput(float Value) { ThrottleInput = std::max<float>(-1.0f, std::min<float>(1.0f, Value)); }
 	void SetSteeringInput(float Value) { SteeringInput = std::max<float>(-1.0f, std::min<float>(1.0f, Value)); }
 

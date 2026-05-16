@@ -25,8 +25,6 @@ public:
 
 	void BeginPlay() override;
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void Serialize(FArchive& Ar) override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	void SetUpdatedComponent(USceneComponent* NewUpdatedComponent);

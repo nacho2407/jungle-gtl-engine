@@ -1,4 +1,4 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Epic Games, Inc. All Rights Reserved.
 #include "SphereComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -72,11 +72,6 @@ void USphereComponent::UpdateWorldAABB() const
 	bHasValidWorldAABB = true;
 }
 
-void USphereComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UShapeComponent::GetEditableProperties(OutProps);
-}
-
 void USphereComponent::PostEditProperty(const char* PropertyName)
 {
 	UShapeComponent::PostEditProperty(PropertyName);
@@ -85,9 +80,4 @@ void USphereComponent::PostEditProperty(const char* PropertyName)
 	{
 		SetSphereRadius(SphereRadius);
 	}
-}
-
-void USphereComponent::Serialize(FArchive& Ar)
-{
-	UShapeComponent::Serialize(Ar);
 }

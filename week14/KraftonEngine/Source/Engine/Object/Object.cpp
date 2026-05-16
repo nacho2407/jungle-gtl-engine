@@ -84,12 +84,18 @@ void UObject::SerializeProperties(FArchive& Ar, uint32 RequiredFlags)
 
 void UObject::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
+	PreGetEditableProperties();
+
 	TArray<FProperty> Properties;
 	GetClass()->GetProperties(Properties);
 
 	for (const FProperty& Property : Properties)
 	{
 		if ((Property.Flags & PF_Edit) == 0)
+		{
+			continue;
+		}
+		if (!ShouldExposeProperty(Property))
 		{
 			continue;
 		}
@@ -100,6 +106,11 @@ void UObject::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 			OutProps.push_back(Desc);
 		}
 	}
+}
+
+bool UObject::ShouldExposeProperty(const FProperty& /*Property*/) const
+{
+	return true;
 }
 
 void UObject::PostEditProperty(const char* /*PropertyName*/)

@@ -1,4 +1,4 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Epic Games, Inc. All Rights Reserved.
 #include "ShapeComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -19,11 +19,6 @@ FPrimitiveSceneProxy* UShapeComponent::CreateSceneProxy()
 	return new FShapeSceneProxy(this);
 }
 
-void UShapeComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPrimitiveComponent::GetEditableProperties(OutProps);
-}
-
 void UShapeComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
@@ -33,9 +28,4 @@ void UShapeComponent::PostEditProperty(const char* PropertyName)
 	{
 		MarkRenderStateDirty();
 	}
-}
-
-void UShapeComponent::Serialize(FArchive& Ar)
-{
-	UPrimitiveComponent::Serialize(Ar);
 }

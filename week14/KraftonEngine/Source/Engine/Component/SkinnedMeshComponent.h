@@ -34,10 +34,8 @@ public:
 	const TArray<UMaterial*>& GetOverrideMaterials() const { return OverrideMaterials; }
 
 	// Serialization/editor 섹션: asset pointer는 저장하지 않고 path를 저장한 뒤 로드 후 SetSkeletalMesh 흐름으로 복원한다.
-	void Serialize(FArchive& Ar) override;
 	void PostDuplicate() override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
