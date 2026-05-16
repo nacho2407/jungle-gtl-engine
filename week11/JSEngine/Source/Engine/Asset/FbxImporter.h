@@ -25,6 +25,7 @@ struct FFbxMeshContentInfo
     bool bHasStaticMesh = false;
     bool bHasSkeletalMesh = false;
 };
+class UAnimSequence;
 
 class FFbxImporter : public IAssetLoader
 {
@@ -38,7 +39,8 @@ public:
 	FString GetLoaderName() const override;
 
 	bool LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOptions& LoadOptions, FSkeletalMeshImportData& OutData);
-
+    UAnimSequence* LoadAnimSequence(const FString& Path, const FString& TargetSkeletalMeshPath);
+    TArray<FString> ListAnimStacks(const FString& Path);
 	FFbxMeshContentInfo InspectMeshContent(const FString& Path);
 
 private:
