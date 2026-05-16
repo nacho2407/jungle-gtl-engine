@@ -4,6 +4,7 @@
 #include "Component/InputComponent.h"
 #include "Component/Movement/CharacterMovementComponent.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Input/InputSystem.h"
 #include "Mesh/MeshManager.h"
 #include "Runtime/Engine.h"
 
@@ -62,7 +63,8 @@ void ACharacter::SetupInputComponent()
 
 	if (!bAutoInputWASD || !InputComponent) return;
 
-	// World axes 기준 default 매핑. 카메라/yaw 기반 이동은 자식이 override 해서 재구성.
+	// Capsule (RootComponent) 기준 — yaw 회전이 곧 캐릭터 facing. mouse look 이 yaw 만
+	// 변경 → forward/right vector 가 자동 회전 → WASD 가 "카메라 보는 방향" 으로 이동.
 	InputComponent->AddAxisMapping("MoveForward", 'W',  1.0f);
 	InputComponent->AddAxisMapping("MoveForward", 'S', -1.0f);
 	InputComponent->AddAxisMapping("MoveRight",   'D',  1.0f);
@@ -70,11 +72,18 @@ void ACharacter::SetupInputComponent()
 
 	InputComponent->BindAxis("MoveForward", [this](float Value)
 	{
-		if (Value != 0.0f) AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
+		if (Value == 0.0f || !CapsuleComponent) return;
+		// XY 평면만 — Z 성분 제거. (capsule 회전이 yaw 만이라 사실상 Z=0 이지만 안전.)
+		FVector Fwd = CapsuleComponent->GetForwardVector();
+		Fwd.Z = 0.0f;
+		AddMovementInput(Fwd, Value);
 	});
 	InputComponent->BindAxis("MoveRight", [this](float Value)
 	{
-		if (Value != 0.0f) AddMovementInput(FVector(0.0f, 1.0f, 0.0f), Value);
+		if (Value == 0.0f || !CapsuleComponent) return;
+		FVector Right = CapsuleComponent->GetRightVector();
+		Right.Z = 0.0f;
+		AddMovementInput(Right, Value);
 	});
 
 	// Space = Jump (VK_SPACE = 0x20). Walking 중에만 effective (CharacterMovement::Jump 가 guard).
@@ -83,4 +92,20 @@ void ACharacter::SetupInputComponent()
 	{
 		Jump();
 	});
+}
+
+void ACharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	// Mouse look — delta X 만 yaw 에 반영. Pitch (위/아래) 는 minimal 단계에서 생략.
+	if (bAutoInputMouseLook && CapsuleComponent)
+	{
+		const int DX = InputSystem::Get().MouseDeltaX();
+		if (DX != 0)
+		{
+			const float DeltaYaw = static_cast<float>(DX) * MouseSensitivity;
+			CapsuleComponent->Rotate(DeltaYaw, 0.0f);
+		}
+	}
 }
