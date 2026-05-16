@@ -1,4 +1,4 @@
-#include "Component/SpringArmComponent.h"
+﻿#include "Component/SpringArmComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
@@ -184,4 +184,8 @@ void USpringArmComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 	OutProps.push_back({ "Camera Lag Max Distance",  EPropertyType::Float, "SpringArm", &CameraLagMaxDistance,      0.0f, 100000.0f, 1.0f });
 	OutProps.push_back({ "Do Collision Test",        EPropertyType::Bool,  "SpringArm", &bDoCollisionTest                                });
 	OutProps.push_back({ "Probe Size",               EPropertyType::Float, "SpringArm", &ProbeSize,                 0.0f, 100.0f,    0.01f });
+	OutProps.push_back({ "Use Pawn Control Rotation",EPropertyType::Bool,  "SpringArm", &bUsePawnControlRotation                         });
+	OutProps.push_back({ "Inherit Pitch",            EPropertyType::Bool,  "SpringArm", &bInheritPitch                                   });
+	OutProps.push_back({ "Inherit Yaw",              EPropertyType::Bool,  "SpringArm", &bInheritYaw                                     });
+	OutProps.push_back({ "Inherit Roll",             EPropertyType::Bool,  "SpringArm", &bInheritRoll                                    });
 }
