@@ -5,6 +5,7 @@
 #include "Audio/AudioManager.h"
 #include "Component/ActionComponent.h"
 #include "Component/LuaScriptComponent.h"
+#include "Animation/LuaAnimInstance.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
@@ -38,6 +39,7 @@ std::unique_ptr<sol::state> FLuaScriptManager::Lua;
 sol::protected_function FLuaScriptManager::OnEscapePressedCallback;
 std::mutex FLuaScriptManager::ComponentMutex;
 TArray<ULuaScriptComponent*> FLuaScriptManager::RegisteredComponents;
+TArray<ULuaAnimInstance*>    FLuaScriptManager::RegisteredAnimInstances;
 FSubscriptionID FLuaScriptManager::WatchSub = 0;
 
 void FLuaScriptManager::SetOnEscapePressed(sol::protected_function Callback)
@@ -120,6 +122,28 @@ void FLuaScriptManager::UnregisterComponent(ULuaScriptComponent* Component)
 	}
 }
 
+void FLuaScriptManager::RegisterAnimInstance(ULuaAnimInstance* Instance)
+{
+	if (!Instance) return;
+	std::lock_guard<std::mutex> Lock(ComponentMutex);
+	auto It = std::find(RegisteredAnimInstances.begin(), RegisteredAnimInstances.end(), Instance);
+	if (It == RegisteredAnimInstances.end())
+	{
+		RegisteredAnimInstances.push_back(Instance);
+	}
+}
+
+void FLuaScriptManager::UnregisterAnimInstance(ULuaAnimInstance* Instance)
+{
+	if (!Instance) return;
+	std::lock_guard<std::mutex> Lock(ComponentMutex);
+	auto It = std::find(RegisteredAnimInstances.begin(), RegisteredAnimInstances.end(), Instance);
+	if (It != RegisteredAnimInstances.end())
+	{
+		RegisteredAnimInstances.erase(It);
+	}
+}
+
 void FLuaScriptManager::OnScriptsChanged(const TSet<FString>& ChangedFiles)
 {
 	TSet<ULuaScriptComponent*> Targets;
@@ -153,6 +177,33 @@ void FLuaScriptManager::OnScriptsChanged(const TSet<FString>& ChangedFiles)
 		UE_LOG("[LuaHotReload] Reloading: %s", Component->GetScriptFile().c_str());
 		FNotificationManager::Get().AddNotification("Lua Reloaded: " + Component->GetScriptFile(), ENotificationType::Success, 3.0f);
 		Component->ReloadScript();
+	}
+
+	// AnimInstance 측도 같은 패턴 — 매칭되는 ScriptFile 의 인스턴스 reload.
+	TSet<ULuaAnimInstance*> AnimTargets;
+	{
+		std::lock_guard<std::mutex> Lock(ComponentMutex);
+		for (ULuaAnimInstance* Inst : RegisteredAnimInstances)
+		{
+			if (!Inst) continue;
+			const FString& AnimScript = Inst->ScriptFile;
+			if (AnimScript.empty()) continue;
+			for (const FString& File : ChangedFiles)
+			{
+				if (File == AnimScript)
+				{
+					AnimTargets.insert(Inst);
+					break;
+				}
+			}
+		}
+	}
+	for (ULuaAnimInstance* Inst : AnimTargets)
+	{
+		if (!Inst) continue;
+		UE_LOG("[LuaHotReload] Reloading Anim: %s", Inst->ScriptFile.c_str());
+		FNotificationManager::Get().AddNotification("Anim Reloaded: " + Inst->ScriptFile, ENotificationType::Success, 3.0f);
+		Inst->ReloadScript();
 	}
 }
 

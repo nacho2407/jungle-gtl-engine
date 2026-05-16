@@ -644,6 +644,9 @@
     <ClCompile Include="Source\Engine\Animation\CharacterAnimInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\LuaAnimInstance.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Skeleton.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
@@ -1524,6 +1527,9 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\CharacterAnimInstance.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\LuaAnimInstance.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\PoseContext.h">

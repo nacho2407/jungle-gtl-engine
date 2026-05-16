@@ -424,6 +424,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Animation\AnimationRuntime.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimationStateMachine.cpp" />
     <ClCompile Include="Source\Engine\Animation\CharacterAnimInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\LuaAnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\Skeleton.cpp" />
     <ClCompile Include="Source\Engine\Animation\SkeletonManager.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetPackage.cpp" />
@@ -720,6 +721,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Animation\AnimationStateMachine.h" />
     <ClInclude Include="Source\Engine\Animation\BoneAnimationTrack.h" />
     <ClInclude Include="Source\Engine\Animation\CharacterAnimInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\LuaAnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\PoseContext.h" />
     <ClInclude Include="Source\Engine\Animation\RawAnimSequenceTrack.h" />
     <ClInclude Include="Source\Engine\Animation\Skeleton.h" />
