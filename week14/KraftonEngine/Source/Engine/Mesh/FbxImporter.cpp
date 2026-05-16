@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "Animation/AnimationRuntime.h"
 #include "Animation/AnimDataModel.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/SkeletonTypes.h"
@@ -84,7 +85,7 @@ namespace
 		SdkEvaluatorOnly
 	};
 
-	static constexpr EFbxAnimationBakePolicy GAnimationBakePolicy      = EFbxAnimationBakePolicy::DirectLayeredWithSdkFallback;
+	static constexpr EFbxAnimationBakePolicy GAnimationBakePolicy      = EFbxAnimationBakePolicy::DirectLayeredOnly;
 	static constexpr double                  GDirectBakeErrorTolerance = 0.001;
 	
 	static float GetSceneSampleRate(FbxScene* Scene)
@@ -267,22 +268,24 @@ namespace
 		const FbxAMatrix RY = MakeFbxAxisRotationMatrix(1, EulerDegree[1]);
 		const FbxAMatrix RZ = MakeFbxAxisRotationMatrix(2, EulerDegree[2]);
 
+		// FBX SDK 규약: 회전 순서 A-B-C(A 먼저 적용)는 행렬 합성에서 RC * RB * RA 로 역순.
+		// (fbxaffinematrix.h 문서 예제: XYZ → lRotateZM * lRotateYM * lRotateXM)
 		switch (RotationOrder)
 		{
 		case eEulerXYZ:
-			return RX * RY * RZ;
-		case eEulerXZY:
-			return RX * RZ * RY;
-		case eEulerYZX:
-			return RY * RZ * RX;
-		case eEulerYXZ:
-			return RY * RX * RZ;
-		case eEulerZXY:
-			return RZ * RX * RY;
-		case eEulerZYX:
 			return RZ * RY * RX;
-		case eSphericXYZ: default:
+		case eEulerXZY:
+			return RY * RZ * RX;
+		case eEulerYZX:
+			return RX * RZ * RY;
+		case eEulerYXZ:
+			return RZ * RX * RY;
+		case eEulerZXY:
+			return RY * RX * RZ;
+		case eEulerZYX:
 			return RX * RY * RZ;
+		case eSphericXYZ: default:
+			return RZ * RY * RX;
 		}
 	}
 
@@ -432,6 +435,21 @@ namespace
 			NewKey.Value         = static_cast<float>(SourceCurve->KeyGetValue(KeyIndex));
 			NewKey.Interpolation = static_cast<int32>(SourceCurve->KeyGetInterpolation(KeyIndex));
 			NewKey.TangentMode   = static_cast<int32>(SourceCurve->KeyGetTangentMode(KeyIndex));
+
+			NewKey.ArriveTangent = SourceCurve->KeyGetLeftDerivative(KeyIndex);
+			NewKey.LeaveTangent  = SourceCurve->KeyGetRightDerivative(KeyIndex);
+
+			NewKey.bArriveTangentWeighted = SourceCurve->KeyIsLeftTangentWeighted(KeyIndex);
+			NewKey.bLeaveTangentWeighted  = SourceCurve->KeyIsRightTangentWeighted(KeyIndex);
+
+			if (NewKey.bArriveTangentWeighted)
+			{
+				NewKey.ArriveTangentWeight = SourceCurve->KeyGetLeftTangentWeight(KeyIndex);
+			}
+			if (NewKey.bLeaveTangentWeighted)
+			{
+				NewKey.LeaveTangentWeight = SourceCurve->KeyGetRightTangentWeight(KeyIndex);
+			}
 
 			OutCurve.Keys.push_back(NewKey);
 		}
@@ -956,7 +974,10 @@ namespace
 			{
 				if (Sample.RotationAccumulationMode == FbxAnimLayer::eRotationByChannel)
 				{
-					Result.Rotation         = Result.RotationQuat.ToRotator().ToVector();
+					if (Result.bUseQuatRotation)
+					{
+						Result.Rotation = Result.RotationQuat.ToRotator().ToVector();
+					}
 					Result.Rotation         = BlendRotationByChannel(Result.Rotation, DefaultRotation, Sample.Rotation, Sample.Weight, Sample.BlendMode);
 					Result.RotationQuat     = MakeQuatFromFbxEulerDegree(Result.Rotation, RotationOrder);
 					Result.bUseQuatRotation = false;
@@ -2246,7 +2267,9 @@ void FFbxImporter::ParseAnimation(FbxScene* Scene, const TMap<FbxNode*, int32>& 
 
 		for (int32 FrameIndex = 0; FrameIndex < NumFrames; ++FrameIndex)
 		{
-			const double LocalSeconds = std::min(static_cast<double>(FrameIndex) / static_cast<double>(SampleRate), DurationSeconds);
+			const double LocalSeconds = (NumFrames > 1)
+				? (static_cast<double>(FrameIndex) / static_cast<double>(NumFrames - 1)) * DurationSeconds
+				: 0.0;
 
 			FbxTime Time;
 			Time.SetSecondDouble(StartSeconds + LocalSeconds);
@@ -2257,7 +2280,7 @@ void FFbxImporter::ParseAnimation(FbxScene* Scene, const TMap<FbxNode*, int32>& 
 
 			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
 			{
-				BoneLocalTransforms[BoneIndex] = FTransform(Bones[BoneIndex].LocalMatrix);
+				BoneLocalTransforms[BoneIndex] = FAnimationRuntime::DecomposeMatrix(Bones[BoneIndex].LocalMatrix);
 			}
 
 			for (const auto& Pair : NodeToIndex)
@@ -2301,7 +2324,7 @@ void FFbxImporter::ParseAnimation(FbxScene* Scene, const TMap<FbxNode*, int32>& 
 					}
 				}
 
-				BoneLocalTransforms[BoneIndex] = FTransform(ConvertFbxMatrix(BakeResult.FinalMatrix));
+				BoneLocalTransforms[BoneIndex] = FAnimationRuntime::DecomposeMatrix(ConvertFbxMatrix(BakeResult.FinalMatrix));
 			}
 
 			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
