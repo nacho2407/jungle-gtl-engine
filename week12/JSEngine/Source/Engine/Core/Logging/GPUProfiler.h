@@ -67,7 +67,7 @@ private:
 	bool bInitialized = false;
 	bool bSkipFrame = false;
 
-	void CollectPreviousFrame();
+	bool CollectFrame(uint32 FrameIndex);
 
 	TMap<const char*, FStatEntry> GPUStats;
 	TArray<FStatEntry> Snapshot;

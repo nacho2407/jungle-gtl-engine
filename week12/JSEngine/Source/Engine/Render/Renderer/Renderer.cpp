@@ -3,6 +3,7 @@
 #include <array>
 #include <iostream>
 #include <algorithm>
+#include <chrono>
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Render/Common/RenderTypes.h"
@@ -10,6 +11,7 @@
 #include "Render/Mesh/MeshManager.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
+#include "Core/Logging/SkinningStats.h"
 #include "Component/BillboardComponent.h"
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
 #include "Component/PrimitiveComponent.h"
@@ -24,6 +26,14 @@
 #include "Core/Logging/Log.h"
 
 #include <unordered_map>
+
+namespace
+{
+	bool ShouldRunGPUProfiler()
+	{
+		return FSkinningStats::Get().ShouldCollectGPUStats();
+	}
+}
 
 void BindVertexFactoryResources(
 	ID3D11DeviceContext* Context,
@@ -43,10 +53,25 @@ void BindVertexFactoryResources(
 			? BoneMatrixConstants
 			: &EmptyBoneMatrixConstants;
 
+		const bool bRecordBoneMatrixUpload = BoneMatrixConstants != nullptr;
+		std::chrono::steady_clock::time_point UploadStart;
+		if (bRecordBoneMatrixUpload)
+		{
+			UploadStart = std::chrono::steady_clock::now();
+		}
+
 		RenderResources->BoneMatrixConstantBuffer.Update(
 			Context,
 			ConstantsToBind,
 			sizeof(FBoneMatrixConstants));
+
+		if (bRecordBoneMatrixUpload)
+		{
+			const auto UploadEnd = std::chrono::steady_clock::now();
+			FSkinningStats::Get().AddGPUBoneMatrixUpload(
+				std::chrono::duration<double, std::milli>(UploadEnd - UploadStart).count(),
+				sizeof(FBoneMatrixConstants));
+		}
 
 		ID3D11Buffer* BoneBuffer = RenderResources->BoneMatrixConstantBuffer.GetBuffer();
 		Context->VSSetConstantBuffers(5, 1, &BoneBuffer);
@@ -463,9 +488,11 @@ void FRenderer::BeginFrame()
 	Device.BeginFrame();
 	UseBackBufferRenderTargets();
 
-#if STATS
-	FGPUProfiler::Get().BeginFrame();
-#endif
+	bGPUProfilerFrameActive = ShouldRunGPUProfiler();
+	if (bGPUProfilerFrameActive)
+	{
+		FGPUProfiler::Get().BeginFrame();
+	}
 }
 
 void FRenderer::BeginViewportFrame(FRenderTargetSet InRenderTargetSet)
@@ -1572,9 +1599,11 @@ void FRenderer::DrawPostProcessOutline(ID3D11DeviceContext* InDeviceContext)
 //	Present the rendered frame to the screen. 반드시 Render 이후에 호출되어야 함.
 void FRenderer::EndFrame()
 {
-#if STATS
-	FGPUProfiler::Get().EndFrame();
-#endif
+	if (bGPUProfilerFrameActive)
+	{
+		FGPUProfiler::Get().EndFrame();
+		bGPUProfilerFrameActive = false;
+	}
 	Device.EndFrame();
 }
 

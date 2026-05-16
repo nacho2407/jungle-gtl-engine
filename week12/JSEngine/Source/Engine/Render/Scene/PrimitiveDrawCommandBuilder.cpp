@@ -8,6 +8,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
+#include "Core/Logging/SkinningStats.h"
 #include "Core/ResourceManager.h"
 #include "Engine/Asset/StaticMesh.h"
 #include "Render/Resource/MeshBufferManager.h"
@@ -15,6 +16,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace
 {
@@ -84,6 +87,107 @@ namespace
     UMaterialInterface* ResolveDrawMaterial(UMaterialInterface* Material)
     {
         return Material ? Material : FResourceManager::Get().GetMaterial("DefaultWhite");
+    }
+
+    double CalculateAverageBoneInfluence(const TArray<FSkeletalMeshVertex>& Vertices)
+    {
+        if (Vertices.empty())
+        {
+            return 0.0;
+        }
+
+        uint64 InfluenceCount = 0;
+        for (const FSkeletalMeshVertex& Vertex : Vertices)
+        {
+            for (int32 InfluenceIndex = 0; InfluenceIndex < 4; ++InfluenceIndex)
+            {
+                if (Vertex.BoneWeights[InfluenceIndex] > 0.0f)
+                {
+                    ++InfluenceCount;
+                }
+            }
+        }
+
+        return static_cast<double>(InfluenceCount) / static_cast<double>(Vertices.size());
+    }
+
+    uint64 CalculateUniqueSectionVertexCount(
+        const TArray<uint32>& Indices,
+        uint32 StartIndex,
+        uint32 IndexCount)
+    {
+        if (IndexCount == 0 || StartIndex >= Indices.size())
+        {
+            return 0;
+        }
+
+        const uint64 EndIndex = (std::min<uint64>)(
+            static_cast<uint64>(StartIndex) + static_cast<uint64>(IndexCount),
+            static_cast<uint64>(Indices.size()));
+
+        std::unordered_set<uint32> UniqueVertexIndices;
+        UniqueVertexIndices.reserve(static_cast<size_t>(EndIndex - StartIndex));
+
+        for (uint64 IndexOffset = StartIndex; IndexOffset < EndIndex; ++IndexOffset)
+        {
+            UniqueVertexIndices.insert(Indices[static_cast<size_t>(IndexOffset)]);
+        }
+
+        return static_cast<uint64>(UniqueVertexIndices.size());
+    }
+
+    struct FSkeletalMeshSkinningStatCache
+    {
+        uint64 VertexCount = 0;
+        uint64 IndexCount = 0;
+        uint64 SectionCount = 0;
+        uint64 BoneCount = 0;
+        double AvgBoneInfluence = 0.0;
+        TArray<uint64> SectionVertexCounts;
+    };
+
+    const FSkeletalMeshSkinningStatCache& GetSkeletalMeshSkinningStatCache(const USkeletalMesh* Mesh)
+    {
+        static std::unordered_map<const FSkeletalMesh*, FSkeletalMeshSkinningStatCache> Cache;
+
+        const FSkeletalMesh* MeshData = Mesh->GetMeshData();
+        const TArray<FSkeletalMeshVertex>& Vertices = Mesh->GetVertices();
+        const TArray<uint32>& Indices = Mesh->GetIndices();
+        const TArray<FStaticMeshSection>& Sections = Mesh->GetSections();
+        const TArray<FBoneInfo>& Bones = Mesh->GetBones();
+
+        const uint64 VertexCount = static_cast<uint64>(Vertices.size());
+        const uint64 IndexCount = static_cast<uint64>(Indices.size());
+        const uint64 SectionCount = static_cast<uint64>(Sections.size());
+        const uint64 BoneCount = static_cast<uint64>(Bones.size());
+
+        auto It = Cache.find(MeshData);
+        if (It != Cache.end()
+            && It->second.VertexCount == VertexCount
+            && It->second.IndexCount == IndexCount
+            && It->second.SectionCount == SectionCount
+            && It->second.BoneCount == BoneCount)
+        {
+            return It->second;
+        }
+
+        FSkeletalMeshSkinningStatCache Entry;
+        Entry.VertexCount = VertexCount;
+        Entry.IndexCount = IndexCount;
+        Entry.SectionCount = SectionCount;
+        Entry.BoneCount = BoneCount;
+        Entry.AvgBoneInfluence = CalculateAverageBoneInfluence(Vertices);
+        Entry.SectionVertexCounts.resize(Sections.size());
+
+        for (uint64 SectionIndex = 0; SectionIndex < SectionCount; ++SectionIndex)
+        {
+            const FStaticMeshSection& Section = Sections[static_cast<size_t>(SectionIndex)];
+            Entry.SectionVertexCounts[static_cast<size_t>(SectionIndex)] =
+                CalculateUniqueSectionVertexCount(Indices, Section.StartIndex, Section.IndexCount);
+        }
+
+        auto Result = Cache.insert_or_assign(MeshData, Entry);
+        return Result.first->second;
     }
 }
 
@@ -178,6 +282,11 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             }
         }
         const TArray<uint32>& Indices = SkeletalMesh->GetIndices(); // 이건 immutable이라 걍 asset에서 들고와도 댐
+        const FSkeletalMeshSkinningStatCache& SkinningStatCache = GetSkeletalMeshSkinningStatCache(SkeletalMesh);
+        FSkinningStats::Get().AddVisibleSkinnedMesh(
+            SkinningStatCache.VertexCount,
+            static_cast<uint32>(SkinningStatCache.BoneCount),
+            SkinningStatCache.AvgBoneInfluence);
 
         FMeshBuffer* MeshBuffer = bUseGPUSkinning
             ? MeshBufferManager.GetGPUSkeletalMeshBuffer(SkeletalMesh)
@@ -204,6 +313,8 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.BoneWeightHeatmapBoneIndex = bUseBoneWeightHeatmap
                 ? BoneWeightHeatmapState.SelectedBoneIndex
                 : -1;
+            Cmd.AvgBoneInfluencePerVertex = static_cast<float>(SkinningStatCache.AvgBoneInfluence);
+            Cmd.SkinningWorkVertexCount = SkinningStatCache.VertexCount;
             Cmd.SectionIndexStart = 0;
             Cmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
             Cmd.Material = ResolveDrawMaterial(Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(0)));
@@ -235,6 +346,11 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.BoneWeightHeatmapBoneIndex = bUseBoneWeightHeatmap
                 ? BoneWeightHeatmapState.SelectedBoneIndex
                 : -1;
+            Cmd.AvgBoneInfluencePerVertex = static_cast<float>(SkinningStatCache.AvgBoneInfluence);
+            Cmd.SkinningWorkVertexCount =
+                SectionIdx < static_cast<int32>(SkinningStatCache.SectionVertexCounts.size())
+                    ? SkinningStatCache.SectionVertexCounts[SectionIdx]
+                    : 0;
 
             Cmd.SectionIndexStart = Section.StartIndex;
             Cmd.SectionIndexCount = Section.IndexCount;

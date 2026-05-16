@@ -450,6 +450,8 @@ struct FRenderCommand
 
 	bool bUseBoneWeightHeatmap = false;
 	int32 BoneWeightHeatmapBoneIndex = -1;
+	float AvgBoneInfluencePerVertex = 0.0f;
+	uint64 SkinningWorkVertexCount = 0;
 
 	FBoundingBox WorldAABB;
 

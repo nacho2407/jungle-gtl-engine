@@ -1,6 +1,7 @@
 ﻿#include "SkinnedMeshComponent.h"
 
 #include "Core/ResourceManager.h"
+#include "Core/Logging/SkinningStats.h"
 #include "Render/Resource/Material.h"
 
 #include <algorithm>
@@ -477,8 +478,11 @@ void USkinnedMeshComponent::EnsureSkinningUpdated()
 		return;
 	}
 
-	UpdateCurrentGlobalPose();
-	UpdateSkinningMatrices();
+	{
+		SKINNING_SCOPE_MS(&FSkinningStats::AddCPUPoseBuild);
+		UpdateCurrentGlobalPose();
+		UpdateSkinningMatrices();
+	}
 
 	if (ResolvedSkinningMode == ESkinningMode::CPU)
 	{
@@ -624,6 +628,8 @@ void USkinnedMeshComponent::UpdateSkinningMatrices()
 
 void USkinnedMeshComponent::SkinVerticesCPU()
 {
+	SKINNING_SCOPE_MS(&FSkinningStats::AddCPUSkinning);
+
 	if (!HasValidMesh())
 	{
 		SkinnedVertices.clear();

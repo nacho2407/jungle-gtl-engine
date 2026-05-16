@@ -67,13 +67,27 @@ void FGPUProfiler::BeginFrame()
 {
 	if (!bInitialized) return;
 
-	// 이전 프레임 결과 수집
-	CollectPreviousFrame();
+	for (uint32 FrameIndex = 0; FrameIndex < FRAME_COUNT; ++FrameIndex)
+	{
+		CollectFrame(FrameIndex);
+	}
 
 	if (Frames[WriteIndex].bSubmitted)
 	{
-		bSkipFrame = true;
-		return;
+		for (uint32 FrameIndex = 0; FrameIndex < FRAME_COUNT; ++FrameIndex)
+		{
+			if (!Frames[FrameIndex].bSubmitted)
+			{
+				WriteIndex = FrameIndex;
+				break;
+			}
+		}
+
+		if (Frames[WriteIndex].bSubmitted)
+		{
+			bSkipFrame = true;
+			return;
+		}
 	}
 
 	bSkipFrame = false;
@@ -122,13 +136,17 @@ void FGPUProfiler::EndTimestamp(uint32 Index)
 	Context->End(Write.Timestamps[Index].EndQuery.Get());
 }
 
-void FGPUProfiler::CollectPreviousFrame()
+bool FGPUProfiler::CollectFrame(uint32 FrameIndex)
 {
-	uint32 ReadIndex = 1 - WriteIndex;
-	FFrameData& Read = Frames[ReadIndex];
+	if (FrameIndex >= FRAME_COUNT)
+	{
+		return false;
+	}
+
+	FFrameData& Read = Frames[FrameIndex];
 	if (!Read.bSubmitted)
 	{
-		return;
+		return false;
 	}
 
 	// Disjoint 결과 확인 (UsedCount와 무관하게 항상 읽어서 Query 상태를 소비)
@@ -136,14 +154,14 @@ void FGPUProfiler::CollectPreviousFrame()
 	HRESULT hr = Context->GetData(Read.DisjointQuery.Get(), &disjointData, sizeof(disjointData), D3D11_ASYNC_GETDATA_DONOTFLUSH);
 	if (hr != S_OK)
 	{
-		return;
+		return false;
 	}
 
 	if (disjointData.Disjoint || Read.UsedCount == 0)
 	{
 		Read.bSubmitted = false;
 		Read.UsedCount = 0;
-		return;
+		return true;
 	}
 
 	double InvFrequency = 1000.0 / static_cast<double>(disjointData.Frequency); // ms 단위
@@ -152,8 +170,8 @@ void FGPUProfiler::CollectPreviousFrame()
 
 	for (uint32 i = 0; i < Read.UsedCount; ++i)
 	{
-		if (Context->GetData(Read.Timestamps[i].BeginQuery.Get(), &TimestampBegins[i], sizeof(UINT64), D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK) return;
-		if (Context->GetData(Read.Timestamps[i].EndQuery.Get(), &TimestampEnds[i], sizeof(UINT64), D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK) return;
+		if (Context->GetData(Read.Timestamps[i].BeginQuery.Get(), &TimestampBegins[i], sizeof(UINT64), D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK) return false;
+		if (Context->GetData(Read.Timestamps[i].EndQuery.Get(), &TimestampEnds[i], sizeof(UINT64), D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK) return false;
 	}
 
 	for (uint32 i = 0; i < Read.UsedCount; ++i)
@@ -189,6 +207,7 @@ void FGPUProfiler::CollectPreviousFrame()
 
 	Read.bSubmitted = false;
 	Read.UsedCount = 0;
+	return true;
 }
 
 void FGPUProfiler::TakeSnapshot()

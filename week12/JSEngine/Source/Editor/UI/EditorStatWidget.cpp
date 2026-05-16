@@ -5,7 +5,38 @@
 #include "ImGui/imgui.h"
 
 #include <algorithm>
+#include <cstring>
 #include <sstream>
+
+namespace
+{
+	bool IsSkinningGPUProfilerEntry(const char* Name)
+	{
+		if (Name == nullptr)
+		{
+			return false;
+		}
+
+		return std::strcmp(Name, "EditorFrameGPU") == 0
+			|| std::strncmp(Name, "GPUSkinned", 10) == 0;
+	}
+
+	TArray<FStatEntry> MakeVisibleGPUProfilerEntries(const TArray<FStatEntry>& Source)
+	{
+		TArray<FStatEntry> Entries;
+		Entries.reserve(Source.size());
+
+		for (const FStatEntry& Entry : Source)
+		{
+			if (!IsSkinningGPUProfilerEntry(Entry.Name))
+			{
+				Entries.push_back(Entry);
+			}
+		}
+
+		return Entries;
+	}
+}
 
 void FEditorStatWidget::Render(float DeltaTime)
 {
@@ -46,7 +77,7 @@ void FEditorStatWidget::Render(float DeltaTime)
 				oss << "\n";
 			};
 			FormatTable("CPU Stats", FrozenCPUEntries);
-			FormatTable("GPU Stats", FrozenGPUEntries);
+			FormatTable("GPU Stats", MakeVisibleGPUProfilerEntries(FrozenGPUEntries));
 			ImGui::SetClipboardText(oss.str().c_str());
 		}
 		ImGui::SameLine();
@@ -73,7 +104,8 @@ void FEditorStatWidget::Render(float DeltaTime)
 	const TArray<FStatEntry>& GPUSource = bPaused ? FrozenGPUEntries : FGPUProfiler::Get().GetGPUSnapshot();
 	if (ImGui::CollapsingHeader("GPU Stats", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		RenderStatTable("GPUStatTable", GPUSource, GPUSortColumn, bGPUSortDescending);
+		const TArray<FStatEntry> VisibleGPUEntries = MakeVisibleGPUProfilerEntries(GPUSource);
+		RenderStatTable("GPUStatTable", VisibleGPUEntries, GPUSortColumn, bGPUSortDescending);
 	}
 
 	ImGui::End();

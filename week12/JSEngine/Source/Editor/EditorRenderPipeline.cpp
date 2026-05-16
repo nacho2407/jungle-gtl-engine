@@ -8,6 +8,7 @@
 #include "GameFramework/World.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
+#include "Core/Logging/SkinningStats.h"
 #include "Core/Logging/Log.h"
 #include "Runtime/SceneView.h"
 #include "Engine/Component/GizmoComponent.h"
@@ -69,9 +70,27 @@ FEditorRenderPipeline::~FEditorRenderPipeline() { Collector.Release(); }
 void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 {
     const auto PipelineStart = std::chrono::steady_clock::now();
+    const bool bCollectSkinningGPUStats = FSkinningStats::Get().ShouldCollectGPUStats();
+    if (bCollectSkinningGPUStats)
+    {
+        FGPUProfiler::Get().TakeSnapshot();
+
+        {
+            const TArray<FStatEntry>& GpuSnapshot = FGPUProfiler::Get().GetGPUSnapshot();
+            for (const FStatEntry& Entry : GpuSnapshot)
+            {
+                const double EntryMs = Entry.TotalTime * 1000.0;
+                const char* EntryName = Entry.Name ? Entry.Name : "";
+                if (std::strcmp(EntryName, "EditorFrameGPU") == 0)
+                {
+                    FSkinningStats::Get().RecordGPUFrameTime(EntryMs);
+                }
+            }
+        }
+    }
+
 #if STATS
     FStatManager::Get().TakeSnapshot();
-    FGPUProfiler::Get().TakeSnapshot();
 
     {
         const TArray<FStatEntry>& GpuSnapshot = FGPUProfiler::Get().GetGPUSnapshot();
@@ -84,13 +103,13 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
         {
             const double EntryMs = Entry.TotalTime * 1000.0;
             GpuTotalMs += EntryMs;
+            const char* EntryName = Entry.Name ? Entry.Name : "";
             if (EntryMs > GpuTopMs)
             {
                 GpuTopMs = EntryMs;
                 GpuTopName = Entry.Name ? Entry.Name : "";
             }
 
-            const char* EntryName = Entry.Name ? Entry.Name : "";
             const bool bIsFrameWrapper = std::strcmp(EntryName, "EditorFrameGPU") == 0;
             if (!bIsFrameWrapper && EntryMs > 0.0)
             {
@@ -145,7 +164,13 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
     const auto ResetStatsEnd = std::chrono::steady_clock::now();
 
     if (!Editor->GetFocusedWorld())
+    {
+        const auto EarlyFrameEnd = std::chrono::steady_clock::now();
+        FSkinningStats::Get().RecordCPUFrameTime(
+            std::chrono::duration<double, std::milli>(EarlyFrameEnd - PipelineStart).count());
+        FSkinningStats::Get().TakeSnapshot();
         return;
+    }
 
     // 1회: 전체 백버퍼 클리어 (색상 + 깊이/스텐실)
     const auto BeginFrameStart = std::chrono::steady_clock::now();
@@ -159,7 +184,9 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
     std::chrono::steady_clock::time_point UIStart;
     std::chrono::steady_clock::time_point UIEnd;
     {
-        GPU_SCOPE_STAT("EditorFrameGPU");
+        const uint32 EditorFrameGPUStatIndex = bCollectSkinningGPUStats
+            ? FGPUProfiler::Get().BeginTimestamp("EditorFrameGPU")
+            : UINT32_MAX;
 
         // 4개 뷰포트를 순서대로 렌더링
         ViewportsStart = std::chrono::steady_clock::now();
@@ -179,15 +206,23 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
         UIStart = std::chrono::steady_clock::now();
         Editor->RenderUI(DeltaTime);
         UIEnd = std::chrono::steady_clock::now();
+
+        if (bCollectSkinningGPUStats)
+        {
+            FGPUProfiler::Get().EndTimestamp(EditorFrameGPUStatIndex);
+        }
     }
 
     const auto EndFrameStart = std::chrono::steady_clock::now();
     Renderer.EndFrame();
     const auto EndFrameEnd = std::chrono::steady_clock::now();
+    const double SkinningCPUFrameMs = std::chrono::duration<double, std::milli>(EndFrameEnd - PipelineStart).count();
+    FSkinningStats::Get().RecordCPUFrameTime(SkinningCPUFrameMs);
+    FSkinningStats::Get().TakeSnapshot();
 
 #if STATS
     static std::chrono::steady_clock::time_point LastPipelinePerfLogTime = {};
-    const double TotalMs = std::chrono::duration<double, std::milli>(EndFrameEnd - PipelineStart).count();
+    const double TotalMs = SkinningCPUFrameMs;
     const auto Now = EndFrameEnd;
     const bool bCanLog =
         LastPipelinePerfLogTime.time_since_epoch().count() == 0 ||
