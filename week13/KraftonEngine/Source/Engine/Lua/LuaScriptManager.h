@@ -7,6 +7,7 @@
 #include <mutex>
 
 class ULuaScriptComponent;
+class ULuaAnimInstance;
 
 class FLuaScriptManager
 {
@@ -39,6 +40,10 @@ public:
 	static void RegisterComponent(ULuaScriptComponent* Component);
 	static void UnregisterComponent(ULuaScriptComponent* Component);
 
+	// Lua 로 구동되는 AnimInstance — .lua 변경 시 ReloadScript 받음.
+	static void RegisterAnimInstance(ULuaAnimInstance* Instance);
+	static void UnregisterAnimInstance(ULuaAnimInstance* Instance);
+
 private:
 	static void RegisterLuaHelpers(sol::state& Lua);
 	static void RegisterCoreBindings(sol::state& Lua);
@@ -55,5 +60,6 @@ private:
 	static sol::protected_function OnEscapePressedCallback;
 	static std::mutex ComponentMutex;
 	static TArray<ULuaScriptComponent*> RegisteredComponents;
+	static TArray<ULuaAnimInstance*>    RegisteredAnimInstances;
 	static FSubscriptionID WatchSub;
 };
