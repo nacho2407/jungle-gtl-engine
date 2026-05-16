@@ -42,9 +42,18 @@ public:
 	// 게임에선 보통 false 로 끄고 자식이 자기 매핑/binding 추가. 데모 편의용 기본 true.
 	bool bAutoInputWASD = true;
 
+	// 자동 mouse look — Tick 안에서 mouse delta X * MouseSensitivity 로 capsule yaw 회전.
+	// SpringArm → Camera 가 capsule 회전을 자동 따라옴. WASD 도 capsule forward 기준이라
+	// "카메라가 보는 방향" 으로 움직임. minimal 3인칭 게임 인풋.
+	bool  bAutoInputMouseLook = true;
+	float MouseSensitivity    = 0.2f;   // deg / pixel
+
 protected:
 	// InputComponent 가 부착된 후 호출 — WASD axis mapping + AddMovementInput binding 등록.
 	void SetupInputComponent() override;
+
+	// 자동 mouse look + 향후 다른 per-frame 입력 처리.
+	void Tick(float DeltaTime) override;
 
 	UCapsuleComponent*           CapsuleComponent  = nullptr;
 	USkeletalMeshComponent*      Mesh              = nullptr;
