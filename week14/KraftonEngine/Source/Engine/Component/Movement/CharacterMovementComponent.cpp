@@ -5,11 +5,13 @@
 #include "Core/PropertyTypes.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "Math/Rotator.h"
 #include "Object/ObjectFactory.h"
 #include "Physics/IPhysicsScene.h"
 #include "Serialization/Archive.h"
 
 #include <algorithm>
+#include <cmath>
 
 IMPLEMENT_CLASS(UCharacterMovementComponent, UMovementComponent)
 
@@ -62,6 +64,46 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	{
 		TickFalling(DeltaTime);
 	}
+
+	// 3) Orient yaw to movement direction — 양 mode 공통. Falling 중에도 air control 로
+	//    방향이 바뀌면 자연스럽게 회전. Velocity.XY ≈ 0 이면 no-op (마지막 facing 유지).
+	if (bOrientRotationToMovement)
+	{
+		PhysOrientToMovement(DeltaTime);
+	}
+}
+
+void UCharacterMovementComponent::PhysOrientToMovement(float DeltaTime)
+{
+	USceneComponent* Updated = GetUpdatedComponent();
+	if (!Updated) return;
+
+	// 평면 속도 작으면 회전 skip — 마지막 facing 유지.
+	const float SpeedSq2D = Velocity.X * Velocity.X + Velocity.Y * Velocity.Y;
+	constexpr float MinSpeedSq = 1e-4f;
+	if (SpeedSq2D < MinSpeedSq) return;
+
+	// Target yaw — Velocity 방향. UE 의 atan2(Y, X) 는 +X 가 0°, +Y 가 90° (좌표계 가정).
+	const float TargetYaw = std::atan2(Velocity.Y, Velocity.X) * (180.0f / 3.14159265f);
+
+	FRotator R = Updated->GetRelativeRotation();
+	const float CurrentYaw = R.Yaw;
+
+	// 최단 회전 방향 (delta ∈ [-180, 180])
+	float Delta = TargetYaw - CurrentYaw;
+	while (Delta >  180.0f) Delta -= 360.0f;
+	while (Delta < -180.0f) Delta += 360.0f;
+
+	const float Step = RotationYawRate * DeltaTime;
+	if (std::fabs(Delta) <= Step)
+	{
+		R.Yaw = TargetYaw;
+	}
+	else
+	{
+		R.Yaw = CurrentYaw + (Delta > 0.0f ? Step : -Step);
+	}
+	Updated->SetRelativeRotation(R);
 }
 
 void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, float DeltaTime)
@@ -261,6 +303,17 @@ void UCharacterMovementComponent::GetEditableProperties(TArray<FPropertyDescript
 	JumpProp.Max      = 50.0f;
 	JumpProp.Speed    = 0.1f;
 	OutProps.push_back(JumpProp);
+
+	OutProps.push_back({ "Orient Rotation To Movement", EPropertyType::Bool,  Category, &bOrientRotationToMovement                      });
+	FPropertyDescriptor RateProp;
+	RateProp.Name     = "Rotation Yaw Rate";
+	RateProp.Type     = EPropertyType::Float;
+	RateProp.Category = Category;
+	RateProp.ValuePtr = &RotationYawRate;
+	RateProp.Min      = 0.0f;
+	RateProp.Max      = 3600.0f;
+	RateProp.Speed    = 5.0f;
+	OutProps.push_back(RateProp);
 }
 
 void UCharacterMovementComponent::Serialize(FArchive& Ar)
@@ -272,4 +325,6 @@ void UCharacterMovementComponent::Serialize(FArchive& Ar)
 	Ar << Gravity;
 	Ar << FloorProbeDistance;
 	Ar << JumpZVelocity;
+	Ar << bOrientRotationToMovement;
+	Ar << RotationYawRate;
 }
