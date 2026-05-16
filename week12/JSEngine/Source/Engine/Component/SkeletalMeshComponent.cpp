@@ -47,6 +47,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 
         if (AnimInstance->EvaluatePose(PoseContext))
         {
+            //4.Skinning Phase
             ApplyAnimationPose(PoseContext);
         }
     }
@@ -55,6 +56,8 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
     EnsureSkinningUpdated();
 }
 
+//4.Skinning Phase
+//Local Pose를 컴포넌트에 적용, skinning update
 void USkeletalMeshComponent::ApplyAnimationPose(const FPoseContext& PoseContext)
 {
     SetCurrentLocalPose(PoseContext.LocalPose);

@@ -1,4 +1,4 @@
-#include "FbxImporter.h"
+﻿#include "FbxImporter.h"
 #include "FbxImporterInternal.h"
 
 #include "Animation/AnimSequence.h"
@@ -296,29 +296,31 @@ namespace
         return SampleTime;
     }
 
+    //1. Animation Import and Sampling Phase(UAnimSingleNodeInstance::BuildBoneMapping()으로 이어짐)
     void AppendSampledLocalTransform(FbxNode* Node, const FbxTime& SampleTime, FRawAnimSequenceTrack& OutTrack)
     {
-        // 실제 animation key 생성 지점이다.
-        // FBX의 LclTranslation/LclRotation/LclScaling curve를 component별로 직접 평가해서
-        // Pos/Rot/Scale을 조립하지 않고, FBX SDK의 EvaluateLocalTransform()에 맡긴다.
-        // 이 호출은 현재 scene에 설정된 FbxAnimStack과 그 안의 FbxAnimLayer/curve,
-        // rotation order, pivot, pre/post rotation 같은 FBX transform 규칙을 반영한 local transform을 돌려준다.
+        //실제 animation key 생성 지점입니다.
+        //FBX 파일 내부에 있는 LclTranslation/LclRotation/LclScaling curve를 component별로 직접 평가하는데 이건
+        //Pos/Rot/Scale을 조립하지 않고, FBX SDK의 EvaluateLocalTransform()에 맡깁니다
+        //다시 말해서 curve의 keyframe 사이를 보간해서 SampleTime에 해당하는 위치의 local transform 값을 구합니다.
+		//그 다음 우리 엔진에서 쓰는 FTransform으로 변환합니다.
         const FbxAMatrix LocalTransform = Node->EvaluateLocalTransform(SampleTime);
         const FTransform EngineTransform(ToFMatrix(LocalTransform));
 
-        // UAnimDataModel에 들어갈 bone track의 원시 키 배열이다.
-        // Unreal의 FRawAnimSequenceTrack과 같은 형태로 위치, 회전, 스케일 키를 각각 따로 저장한다.
+		//엔진에서 쓰이는 FRawAnimSequenceTrack 만들 시간입니다.
+		//PosKey
         OutTrack.PosKeys.push_back(EngineTransform.GetTranslation());
 
+		//RotKey
         FQuat Rotation = EngineTransform.GetRotation().GetNormalized();
         if (!OutTrack.RotKeys.empty())
         {
-            // Quaternion은 q와 -q가 같은 회전을 뜻하므로, 연속된 key 사이에서 갑자기 부호가 뒤집히면
-            // 보간 경로가 길어질 수 있다. 이전 key와 같은 반구에 놓이도록 보정해 짧은 회전 경로를 유지한다.
+			//쿼터니언은 솔직히 잘 모르겠습니다.
             Rotation.EnforceShortestArcWith(OutTrack.RotKeys.back());
         }
         OutTrack.RotKeys.push_back(Rotation);
-
+        
+		//ScaleKey
         OutTrack.ScaleKeys.push_back(EngineTransform.GetScale3D());
     }
 }
@@ -411,7 +413,8 @@ UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path, const FFbxAni
 
     Scene->SetCurrentAnimationStack(AnimStack);
 
-    // 여기부터는 "선택된 FbxAnimStack 하나 -> UAnimSequence 하나"로 변환하는 단계다.
+    // 여기가 제일 중요한 파트입니다.
+	// FbxAnimStack 하나를 UAnimSequence 하나로 변환하는 단계입니다.
     // CurrentAnimationStack을 바꿔 두어야 이후 EvaluateLocalTransform()이 이 stack의 animation curve를 기준으로 평가된다.
     const TArray<FbxNode*> TrackNodes = CollectAnimationTrackNodes(Scene, AnimStack);
     if (TrackNodes.empty())
@@ -423,7 +426,9 @@ UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path, const FFbxAni
 
     const int32 SampleRate = ResolveSampleRate(ImportOptions);
     const FbxTimeSpan TimeSpan = ResolveAnimationTimeSpan(Scene, AnimStack);
-    const int32 KeyCount = ComputeSampleKeyCount(TimeSpan, SampleRate);
+    
+	//TimeSpan과 SampleRate을 통해 샘플링할 key 개수를 결정합니다.
+	const int32 KeyCount = ComputeSampleKeyCount(TimeSpan, SampleRate);
     const double DurationSeconds = std::max(0.0, TimeSpan.GetDuration().GetSecondDouble());
 
     // 최종 산출물은 UAnimSequence이고, 실제 editable animation data는 UAnimDataModel에 저장된다.
@@ -462,23 +467,25 @@ UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path, const FFbxAni
         for (int32 KeyIndex = 0; KeyIndex < KeyCount; ++KeyIndex)
         {
             const FbxTime SampleTime = MakeSampleTime(TimeSpan, KeyIndex, KeyCount);
+
+			//1.Animation Import and Sampling Phase
             AppendSampledLocalTransform(Node, SampleTime, Track.InternalTrack);
         }
 
-        // 여러 bone track이 UAnimDataModel의 BoneAnimationTracks 배열에 들어가고,
-        // 그 DataModel을 가진 UAnimSequence가 LoadAnimSequence()의 최종 결과가 된다.
+        //여러 bone track이 UAnimDataModel의 BoneAnimationTracks 배열에 들어가고,
+        //그 DataModel을 가진 UAnimSequence가 LoadAnimSequence()의 최종 결과가 된다.
         Tracks.push_back(std::move(Track));
     }
 
-    const double EndTime = FPlatformTime::Seconds();
-    UE_LOG("[FbxAnimationImporter] Animation FBX Loaded: %s (Stack=%s, Tracks=%zu, Keys=%d, Length=%.3f, SampleRate=%d, %.3f sec)",
-        Path.c_str(),
-        AnimStack->GetName(),
-        Tracks.size(),
-        KeyCount,
-        DurationSeconds,
-        SampleRate,
-        EndTime - StartTime);
+    //const double EndTime = FPlatformTime::Seconds();
+    //UE_LOG("[FbxAnimationImporter] Animation FBX Loaded: %s (Stack=%s, Tracks=%zu, Keys=%d, Length=%.3f, SampleRate=%d, %.3f sec)",
+    //    Path.c_str(),
+    //    AnimStack->GetName(),
+    //    Tracks.size(),
+    //    KeyCount,
+    //    DurationSeconds,
+    //    SampleRate,
+    //    EndTime - StartTime);
 
     Manager->Destroy();
     return AnimSequence;

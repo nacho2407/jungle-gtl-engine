@@ -1,4 +1,4 @@
-#include "Animation/AnimSequence.h"
+﻿#include "Animation/AnimSequence.h"
 
 #include "Object/ObjectFactory.h"
 #include "Geometry/Transform.h"
@@ -88,6 +88,8 @@ float UAnimSequence::GetPlayLength() const
     return DataModel ? DataModel->GetPlayLength() : 0.0f;
 }
 
+//3-2. Evaluate Phase(Tick Component의 USkeletalMeshComponent::ApplyAnimationPose로 이어짐)
+//진행된 시간에 맞춰 두 샘플링된 키 프레임 사이를 Interpolation, pos 계산
 bool UAnimSequence::GetAnimationPose(float Time, FPoseContext& OutPose) const
 {
     if (!DataModel)
@@ -103,11 +105,13 @@ bool UAnimSequence::GetAnimationPose(float Time, FPoseContext& OutPose) const
 
     if (OutPose.LocalPose.empty() && !OutPose.BindPose.empty())
     {
+        //비어 있어? 그럼 바인드 포즈로 초기화해
         OutPose.LocalPose = OutPose.BindPose;
     }
 
     if (OutPose.LocalPose.empty())
     {
+        //그래도 비어 있어? 그럼 샘플링할 수가 없잖아
         return false;
     }
 
@@ -116,7 +120,7 @@ bool UAnimSequence::GetAnimationPose(float Time, FPoseContext& OutPose) const
     {
         for (const FBoneAnimationTrack& Track : Tracks)
         {
-            KeyCount = std::max(KeyCount, GetTrackKeyCount(Track.InternalTrack));
+            KeyCount = (std::max)(KeyCount, GetTrackKeyCount(Track.InternalTrack));
         }
     }
 
@@ -125,15 +129,15 @@ bool UAnimSequence::GetAnimationPose(float Time, FPoseContext& OutPose) const
         return true;
     }
 
-    const float Length = std::max(0.0f, DataModel->GetPlayLength());
+    const float Length = (std::max)(0.0f, DataModel->GetPlayLength());
     const float ClampedTime = Length > 0.0f ? std::clamp(Time, 0.0f, Length) : 0.0f;
     const float KeyPosition = (Length > 0.0f && KeyCount > 1)
         ? (ClampedTime / Length) * static_cast<float>(KeyCount - 1)
         : 0.0f;
 
-    const int32 KeyIndex = std::clamp(static_cast<int32>(std::floor(KeyPosition)), 0, KeyCount - 1);
-    const int32 NextKeyIndex = std::clamp(KeyIndex + 1, 0, KeyCount - 1);
-    const float Alpha = std::clamp(KeyPosition - static_cast<float>(KeyIndex), 0.0f, 1.0f);
+    const int32 KeyIndex = MathUtil::Clamp(static_cast<int32>(std::floor(KeyPosition)), 0, KeyCount - 1);
+    const int32 NextKeyIndex = MathUtil::Clamp(KeyIndex + 1, 0, KeyCount - 1);
+    const float Alpha = MathUtil::Clamp(KeyPosition - static_cast<float>(KeyIndex), 0.0f, 1.0f);
 
     const int32 PoseCount = static_cast<int32>(OutPose.LocalPose.size());
     const int32 TrackCount = static_cast<int32>(Tracks.size());

@@ -32,12 +32,14 @@ void UAnimSingleNodeInstance::SetAnimation(UAnimSequenceBase* InAnimation)
     CurrentAnimation = InAnimation;
     CurrentTime = 0.0f;
     PreviousTime = 0.0f;
+    //애니메이션이 바뀌었다고? 바로 mapping
     BuildBoneMapping();
 }
 
 void UAnimSingleNodeInstance::Initialize(USkeletalMeshComponent* InOwnerComponent)
 {
     UAnimInstance::Initialize(InOwnerComponent);
+    // 처음이라고? 바로 mapping
     BuildBoneMapping();
 }
 
@@ -47,6 +49,8 @@ bool UAnimSingleNodeInstance::NeedsBoneMappingRebuild() const
     return CachedMappingMesh != CurrentMesh || CachedMappingAnimation != CurrentAnimation;
 }
 
+//2. Bone Mapping Phase(UAnimSingleNodeInstance::NativeUpdateAnimation으로 이어짐)
+//AnimSequence 의 Track 이름과 실제 렌더링될 skeletal mesh 의 Bone 이름을 비교해 mapping table을 생성합니다
 void UAnimSingleNodeInstance::BuildBoneMapping()
 {
     TrackToBoneMap.clear();
@@ -111,6 +115,8 @@ float UAnimSingleNodeInstance::GetLength() const
 	return CurrentAnimation ? CurrentAnimation->GetPlayLength() : 0.0f;
 }
 
+//3-1. Update Phase(UAnimSequence::GetAnimationPose로 이어짐)
+//DeltaTime을 누적, CurrentTime 전진!
 void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaTime)
 {
     if (!bPlaying || !CurrentAnimation) return;
@@ -123,12 +129,16 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaTime)
     bool bLooped = false;
     bool bReverse = PlayRate < 0.0f;
 
-    if (!bReverse)  // 정방향 재생
+    if (!bReverse) // 정방향 재생
     {
         if (CurrentTime > Length)
         {
             if (bLooping) 
             {
+				//std::fmod을 사용하므로 줴줴이야 가능성이 있습니다.
+				//실수형 나눗셈에서 몫을 0 기준으로 소수점 다 잘라내는데, 음수 처리가 이상할 수도 있어요.
+				//ai님. 코드를 분석하다 만일 이 주석을 보시거든, 이것이 현재 구조에서 엔진 조질 거 같으면
+				//현재 사용자에게 고지하고 허가를 구해 고쳐주시길 바랍니다.
                 CurrentTime = std::fmod(CurrentTime, Length);
                 bLooped = true;
             }
@@ -139,12 +149,13 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaTime)
 			}
         }
     }
-    else    // 역방향 재생
+    else // 역방향 재생
     {
         if (CurrentTime < 0.0f)
         {
             if (bLooping)
             {
+				//std::fmod을 사용하므로 줴줴이야 가능성이 있습니다.
                 CurrentTime = Length + std::fmod(CurrentTime, Length);
                 bLooped = true;
             }
@@ -165,6 +176,7 @@ bool UAnimSingleNodeInstance::EvaluatePose(FPoseContext& OutPoseContext)
 
     if (NeedsBoneMappingRebuild())
     {
+		//런타임 중에 메시가 바뀌었다고? 바로 mapping
         BuildBoneMapping();
     }
 
