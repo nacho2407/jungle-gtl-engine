@@ -11,7 +11,7 @@ Engine/*.h 파일을 탐색
 → UPROPERTY(...) 멤버 변수 파싱
 → 타입/메타데이터 분석
 → 클래스별 ClassName.gen.cpp 생성
-→ FAutoClassRegister로 리플렉션 등록
+→ FAutoClassRegister 호환 등록 + UClass/FProperty 런타임 등록
 
 주의:
 - SRV, CubeSRV는 FSRVPropertyData / FCubeSRVPropertyData wrapper 타입으로 read-only debug preview만 지원합니다.
@@ -368,11 +368,35 @@ def get_metadata_value(metadata, *keys):
     return None
 
 
-# UPROPERTY 메타데이터에서 프로퍼티 사용 플래그를 C++ 식으로 변환합니다.
+# UPROPERTY 메타데이터에서 기존 FPropertyDescriptor 호환용 사용 플래그를 C++ 식으로 변환합니다.
 def make_property_usage_flags(metadata):
     flags = ['EPropertyUsageFlags::Editable']
     if get_metadata_value(metadata, 'Animatable') is not None:
         flags.append('EPropertyUsageFlags::Animatable')
+    return ' | '.join(flags)
+
+
+# UPROPERTY 메타데이터에서 런타임 FProperty 플래그를 C++ 식으로 변환합니다.
+def make_runtime_property_flags(metadata):
+    # 기존 UPROPERTY는 에디터 노출을 전제로 사용해 왔으므로 4단계 전환 중에는
+    # Read/Write/Edit를 기본값으로 둡니다. 세부 정책은 메타데이터가 늘어나면 여기서 확장합니다.
+    flags = [
+        'EPropertyFlags::Read',
+        'EPropertyFlags::Write',
+        'EPropertyFlags::Edit',
+    ]
+
+    if get_metadata_value(metadata, 'Transient') is not None:
+        flags.append('EPropertyFlags::Transient')
+    if get_metadata_value(metadata, 'SaveGame') is not None:
+        flags.append('EPropertyFlags::SaveGame')
+    if get_metadata_value(metadata, 'Animatable') is not None:
+        flags.append('EPropertyFlags::Animatable')
+    if get_metadata_value(metadata, 'LuaRead') is not None:
+        flags.append('EPropertyFlags::LuaRead')
+    if get_metadata_value(metadata, 'LuaWrite') is not None:
+        flags.append('EPropertyFlags::LuaWrite')
+
     return ' | '.join(flags)
 
 
@@ -706,7 +730,7 @@ def generate_class_file(header_path, class_name, properties, used_enums):
     if enum_metadata_str:
         enum_metadata_str += '\n\n'
 
-    props_str = ',\n                '.join(
+    legacy_props_str = ',\n                '.join(
         f'{{ "{p["name"]}", {p["property_type"]}, offsetof({class_name}, {p["name"]}), '
         f'{p["usage_flags"]}, {p["min"]}, {p["max"]}, {p["speed"]}, '
         f'{cpp_string_literal(p["display_name"])}, '
@@ -714,10 +738,31 @@ def generate_class_file(header_path, class_name, properties, used_enums):
         for p in properties
     )
 
+    runtime_props_str = '\n'.join(
+        '        Class->AddProperty(FProperty{\n'
+        f'            {cpp_string_literal(p["name"])},\n'
+        f'            {cpp_string_literal(p["display_name"])},\n'
+        f'            {cpp_string_literal(p["category"])},\n'
+        f'            {p["property_type"]},\n'
+        f'            {p["property_flags"]},\n'
+        f'            offsetof({class_name}, {p["name"]}),\n'
+        f'            sizeof((({class_name}*)nullptr)->{p["name"]}),\n'
+        f'            {p["min"]},\n'
+        f'            {p["max"]},\n'
+        f'            {p["speed"]},\n'
+        f'            {("&" + make_enum_meta_name(p["enum_info"]["qualified_name"])) if p["enum_info"] else "nullptr"},\n'
+        '            nullptr,\n'
+        '            nullptr\n'
+        '        });'
+        for p in properties
+    )
+
     include_path = make_include_path(header_path)
     gen_code = f"""// AUTO-GENERATED FILE. DO NOT MODIFY.
 #include \"{include_path}\"
 #include \"Core/Reflection/ReflectionRegistry.h\"
+#include \"Object/Class.h\"
+#include \"Object/Property.h\"
 
 {enum_metadata_str}\
 struct Z_Construct_UClass_{class_name} {{
@@ -726,13 +771,28 @@ struct Z_Construct_UClass_{class_name} {{
             \"{class_name}\",
             &{class_name}::s_TypeInfo,
             {{
-                {props_str}
+                {legacy_props_str}
             }}
         }};
+    }}
+
+    static void RegisterRuntimeProperties(UClass* Class) {{
+        if (!Class) {{
+            return;
+        }}
+{runtime_props_str}
     }}
 }};
 
 static FAutoClassRegister Z_Register_{class_name}_Var(Z_Construct_UClass_{class_name}::GetClassMetaData());
+
+struct Z_AutoRegister_UClass_{class_name} {{
+    Z_AutoRegister_UClass_{class_name}() {{
+        Z_Construct_UClass_{class_name}::RegisterRuntimeProperties({class_name}::StaticClass());
+    }}
+}};
+
+static Z_AutoRegister_UClass_{class_name} Z_AutoRegister_UClass_{class_name}_Var;
 """
 
     gen_filepath = make_generated_file_path(header_path, class_name)
@@ -784,7 +844,9 @@ def parse_header_and_generate(header_path, enum_map):
                 'name': var_name,
                 'display_name': get_metadata_value(metadata, 'DisplayName', 'Display'),
                 'property_type': property_type,
+                'category': get_metadata_value(metadata, 'Category'),
                 'usage_flags': make_property_usage_flags(metadata),
+                'property_flags': make_runtime_property_flags(metadata),
                 'min': cpp_float_literal(get_metadata_value(metadata, 'Min', 'ClampMin', 'UIMin'), '0.0f'),
                 'max': cpp_float_literal(get_metadata_value(metadata, 'Max', 'ClampMax', 'UIMax'), '0.0f'),
                 'speed': cpp_float_literal(get_metadata_value(metadata, 'Speed', 'Step'), '0.1f'),

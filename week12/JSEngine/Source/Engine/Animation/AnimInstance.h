@@ -4,6 +4,7 @@
 
 class USkeletalMeshComponent;
 
+UCLASS()
 class UAnimInstance : public UObject
 {
 public:

@@ -32,6 +32,7 @@ struct FRuntimeInputPermissions
 	bool bAllowLuaMouseInput = true;
 };
 
+UCLASS()
 class UEngine : public UObject
 {
 public:

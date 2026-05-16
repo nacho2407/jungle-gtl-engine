@@ -2,6 +2,7 @@
 #include "Object/Object.h"
 #include "SkeletalMeshTypes.h"
 
+UCLASS()
 class USkeletalMesh : public UObject
 {
 public:

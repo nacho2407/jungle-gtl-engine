@@ -18,6 +18,7 @@ struct FTexture
 	ID3D11ShaderResourceView* SRV = nullptr;
 };
 
+UCLASS()
 class UTexture : public UObject
 {
 public:

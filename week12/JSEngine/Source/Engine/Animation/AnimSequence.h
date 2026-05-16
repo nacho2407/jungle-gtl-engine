@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "AnimTypes.h"
 #include "Core/CoreMinimal.h"
 #include "Object/Object.h"
@@ -34,6 +34,7 @@ struct FAnimationCurveData
 {
 };
 
+UCLASS()
 class UAnimationAsset : public UObject
 {
 public:
@@ -43,6 +44,7 @@ public:
     ~UAnimationAsset() override = default;
 };
 
+UCLASS()
 class UAnimDataModel : public UObject
 {
 public:
@@ -78,6 +80,7 @@ private:
     FAnimationCurveData CurveData;
 };
 
+UCLASS()
 class UAnimSequenceBase : public UAnimationAsset
 {
 public:
@@ -103,6 +106,7 @@ protected:
     FString PreviewMeshPath;
 };
 
+UCLASS()
 class UAnimSequence : public UAnimSequenceBase
 {
 public:
@@ -129,6 +133,7 @@ private:
 };
 
 // Debug용. 추후 삭제.
+UCLASS()
 class UDebugAnimSequence : public UAnimSequenceBase
 {
 public:

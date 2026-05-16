@@ -8,21 +8,40 @@
 #include "Object/Object.h"
 #include "Core/Reflection/ReflectionRegistry.h"
 
-#define DECLARE_CLASS(ClassName, ParentClass)                          		\
-	using ThisClass = ClassName;									   		\
-	static const FTypeInfo s_TypeInfo;                                 		\
-	const FTypeInfo* GetTypeInfo() const override {                    		\
-		return &s_TypeInfo;                                            		\
-	}                                                                  		\
+class UClass;
+
+#define DECLARE_CLASS(ClassName, ParentClass)                                \
+	using ThisClass = ClassName;                                               \
+	using Super = ParentClass;                                                 \
+	static UClass* StaticClass();                                              \
+	UClass* GetClass() const override { return StaticClass(); }                \
+	static const FTypeInfo s_TypeInfo;                                         \
+	const FTypeInfo* GetTypeInfo() const override { return &s_TypeInfo; }      \
 	/* 리플렉션 생성기 구조체가 private/protected 멤버에 접근할 수 있도록 허용 */ \
 	friend struct Z_Construct_UClass_##ClassName;
 
-#define DEFINE_CLASS(ClassName, ParentClass)                           \
-	const FTypeInfo ClassName::s_TypeInfo = {                          \
-		#ClassName,                                                    \
-		&ParentClass::s_TypeInfo,                                      \
-		sizeof(ClassName)                                              \
-	};
+#define DEFINE_CLASS(ClassName, ParentClass)                                 \
+	const FTypeInfo ClassName::s_TypeInfo = {                                  \
+		#ClassName,                                                             \
+		&ParentClass::s_TypeInfo,                                               \
+		sizeof(ClassName)                                                       \
+	};                                                                         \
+	UClass* ClassName::StaticClass()                                           \
+	{                                                                          \
+		static UClass Class(                                                     \
+			#ClassName,                                                           \
+			ParentClass::StaticClass(),                                           \
+			sizeof(ClassName),                                                    \
+			ClassName::s_TypeInfo.ClassFlags,                                     \
+			nullptr);                                                             \
+		static bool bRegistered = false;                                         \
+		if (!bRegistered)                                                        \
+		{                                                                        \
+			bRegistered = true;                                                   \
+			FReflectionRegistry::Get().RegisterUClass(&Class);                    \
+		}                                                                        \
+		return &Class;                                                           \
+	}
 
 enum EClassFlags : uint32_t
 {
@@ -90,6 +109,8 @@ public:
 	FObjectNameProxy GetName() const { return FObjectNameProxy(ObjectName.ToString()); }
 
 	// RTTI stuffs
+	static UClass* StaticClass();
+	virtual UClass* GetClass() const { return StaticClass(); }
 	virtual const FTypeInfo* GetTypeInfo() const { return &s_TypeInfo; }
 
 	template<typename T>

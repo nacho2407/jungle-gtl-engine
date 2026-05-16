@@ -25,6 +25,7 @@ class AActor;
 class APlayerController;
 class FViewport;
 
+UCLASS()
 class UEditorEngine : public UEngine
 {
 public:

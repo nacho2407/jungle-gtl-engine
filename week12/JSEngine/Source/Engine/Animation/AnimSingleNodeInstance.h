@@ -3,6 +3,7 @@
 
 class USkeletalMesh;
 
+UCLASS()
 class UAnimSingleNodeInstance : public UAnimInstance
 {
 public:

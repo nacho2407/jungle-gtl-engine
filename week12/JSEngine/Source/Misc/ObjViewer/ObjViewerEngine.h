@@ -7,6 +7,7 @@
 #include "Core/ResourceManager.h"
 #include "Component/StaticMeshComponent.h"
 
+UCLASS()
 class UObjViewerEngine : public UEngine
 {
 public:

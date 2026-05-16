@@ -2,6 +2,7 @@
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
 
+UCLASS()
 class ULevel : public UObject
 {
 public:
@@ -30,7 +31,7 @@ private:
 	bool ContainsActor(const TArray<AActor*>& ActorList, AActor* Actor) const;
 
 	TArray<AActor*> Actors;
-    TArray<AActor*> PendingAddActors;
+	TArray<AActor*> PendingAddActors;
 	TArray<AActor*> PendingRemoveActors;
 	bool bIteratingActors = false;
 };

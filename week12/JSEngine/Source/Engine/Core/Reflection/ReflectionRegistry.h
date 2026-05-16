@@ -6,6 +6,7 @@
 #include "Core/Singleton.h"
 #include "Core/Containers/String.h"
 #include "Core/Reflection/ReflectionMacros.h"
+#include "Object/Class.h"
 
 struct FEnumValueMetaData
 {
@@ -63,9 +64,37 @@ public:
 			return &It->second;
 		return nullptr;
 	}
+
+	void RegisterUClass(UClass* Class)
+	{
+		if (!Class || !Class->GetName())
+		{
+			return;
+		}
+
+		const FString ClassName = Class->GetName();
+		auto It = RuntimeClasses.find(ClassName);
+		if (It != RuntimeClasses.end())
+		{
+			return;
+		}
+		RuntimeClasses[ClassName] = Class;
+	}
+
+	UClass* FindUClass(const FString& ClassName) const
+	{
+		auto It = RuntimeClasses.find(ClassName);
+		return It != RuntimeClasses.end() ? It->second : nullptr;
+	}
+
+	const TMap<FString, UClass*>& GetRuntimeClasses() const
+	{
+		return RuntimeClasses;
+	}
 	
 private:
 	TMap<FString, FClassMetaData> RegisteredClass;
+	TMap<FString, UClass*> RuntimeClasses;
 };
 
 // 전역 변수 초기화를 이용한 자동 등록 헬퍼

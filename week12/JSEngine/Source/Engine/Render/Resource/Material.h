@@ -14,25 +14,25 @@
 
 struct FMaterial
 {
-    FString Name;
+	FString Name;
 
-    FVector AmbientColor   = { 0.2f, 0.2f, 0.2f }; // Ka
-    FVector DiffuseColor   = { 0.8f, 0.8f, 0.8f }; // Kd
-    FVector SpecularColor  = { 0.0f, 0.0f, 0.0f }; // Ks
-    FVector EmissiveColor  = { 0.0f, 0.0f, 0.0f }; // Ke
+	FVector AmbientColor   = { 0.2f, 0.2f, 0.2f }; // Ka
+	FVector DiffuseColor   = { 0.8f, 0.8f, 0.8f }; // Kd
+	FVector SpecularColor  = { 0.0f, 0.0f, 0.0f }; // Ks
+	FVector EmissiveColor  = { 0.0f, 0.0f, 0.0f }; // Ke
 
-    float Shininess  = 0.0f; 
-    float Opacity    = 1.0f; 
-    int   IllumModel = 2;    
+	float Shininess  = 0.0f; 
+	float Opacity    = 1.0f; 
+	int   IllumModel = 2;    
 
 	// Texture 정보
-    FString DiffuseTexPath;   // map_Kd
+	FString DiffuseTexPath;   // map_Kd
 	bool	bHasDiffuseTexture = { false };
 		 
-    FString AmbientTexPath;   // map_Ka
+	FString AmbientTexPath;   // map_Ka
 	bool	bHasAmbientTexture = { false };
 
-    FString SpecularTexPath;  // map_Ks
+	FString SpecularTexPath;  // map_Ks
 	bool	bHasSpecularTexture = { false };
 
 	FString EmissiveTexPath;  // map_Ke
@@ -72,6 +72,7 @@ struct FMaterialParamValue
 	std::variant<bool, int32, uint32, float, FVector2, FVector, FVector4, FMatrix, UTexture*> Value;
 };
 
+UCLASS()
 class UMaterialInterface : public UObject
 {
 public:
@@ -114,6 +115,7 @@ public:
 	virtual void GatherAllParams(TMap<FString, FMaterialParamValue>& OutParams) const = 0;
 };
 
+UCLASS()
 class UMaterial : public UMaterialInterface
 {
 public:
@@ -244,6 +246,7 @@ private:
 	mutable uint32 MaterialConstantBufferSize = 0;
 };
 
+UCLASS()
 class UMaterialInstance : public UMaterialInterface
 {
 public:

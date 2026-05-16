@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Animation/CurvePlayback.h"
 #include "Core/CoreMinimal.h"
@@ -96,6 +96,7 @@ struct FResolvedActorSequenceTrack
     bool bValid = false;
 };
 
+UCLASS()
 class UActorSequence : public UObject
 {
 public:
@@ -109,6 +110,7 @@ public:
     void Serialize(FArchive& Ar) override;
 };
 
+UCLASS()
 class UActorSequencePlayer : public UObject
 {
 public:
