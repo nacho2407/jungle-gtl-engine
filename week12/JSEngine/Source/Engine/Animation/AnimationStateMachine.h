@@ -55,6 +55,8 @@ struct FAnimStateNode
 class UAnimationStateMachine : public UObject
 {
 public:
+    DECLARE_CLASS(UAnimationStateMachine, UObject)
+
     void Initialize(USkeletalMeshComponent* Owner);
 
     void AddState(FName StateName, UAnimSequenceBase* Sequence);
@@ -65,6 +67,18 @@ public:
 
     void Update(float DeltaTime);
     bool EvaluatePose(FPoseContext& OutPose) const;
+
+
+    // Lua Binding용
+    void AddStateByName(const FString& StateName, UAnimSequenceBase* Sequence);
+    void AddStateFromPath(const FString& StateName, const FString& AnimPath);
+
+    void SetEntryStateByName(const FString& StateName);
+    void SetStateByName(const FString& StateName, float BlendTime = 0.2f);
+
+    FString GetCurrentStateName() const;
+    FString GetNextStateName() const;
+    bool IsBlending() const { return bBlending; }
 
 private:
     TMap<FName, FAnimStateNode, FName::Hash> States;

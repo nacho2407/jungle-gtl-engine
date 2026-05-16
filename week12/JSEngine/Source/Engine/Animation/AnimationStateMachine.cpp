@@ -6,6 +6,10 @@
 
 #include <cmath>
 
+#include "Core/ResourceManager.h"
+
+DEFINE_CLASS(UAnimationStateMachine, UObject)
+
 void FAnimSequencePoseSource::Update(float DeltaTime)
 {
     if (!Sequence)
@@ -216,4 +220,40 @@ bool UAnimationStateMachine::EvaluatePose(FPoseContext& OutPose) const
     }
 
     return false;
+}
+
+void UAnimationStateMachine::AddStateByName(const FString& StateName, UAnimSequenceBase* Sequence)
+{
+    AddState(FName(StateName.c_str()), Sequence);
+}
+
+void UAnimationStateMachine::AddStateFromPath(const FString& StateName, const FString& AnimPath)
+{
+    UAnimSequenceBase* Sequence = Cast<UAnimSequenceBase>(
+        FResourceManager::Get().LoadAnimSequence(AnimPath));
+
+    if (Sequence)
+    {
+        AddState(FName(StateName.c_str()), Sequence);
+    }
+}
+
+void UAnimationStateMachine::SetEntryStateByName(const FString& StateName)
+{
+    SetEntryState(FName(StateName.c_str()));
+}
+
+void UAnimationStateMachine::SetStateByName(const FString& StateName, float BlendTime)
+{
+    SetState(FName(StateName.c_str()), BlendTime);
+}
+
+FString UAnimationStateMachine::GetCurrentStateName() const
+{
+    return CurrentState.ToString();
+}
+
+FString UAnimationStateMachine::GetNextStateName() const
+{
+    return NextState.ToString();
 }
