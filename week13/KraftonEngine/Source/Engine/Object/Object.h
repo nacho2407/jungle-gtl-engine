@@ -75,6 +75,37 @@ namespace {                                                                \
         SpeedValue                                                          \
     });
 
+#define EDIT_PROPERTY_ENUM(ClassName, MemberName, DisplayName, PropertyCategory, Names, Count, EnumType) \
+    Class->AddProperty({                                                    \
+        DisplayName,                                                        \
+        EPropertyType::Enum,                                                \
+        PropertyCategory,                                                   \
+        PF_Edit | PF_Save,                                                  \
+        [](UObject* Object)->void* { return &static_cast<ClassName*>(Object)->MemberName; }, \
+        0.0f,                                                               \
+        0.0f,                                                               \
+        0.1f,                                                               \
+        Names,                                                              \
+        Count,                                                              \
+        sizeof(EnumType)                                                    \
+    });
+
+#define EDIT_PROPERTY_STRUCT(ClassName, MemberName, DisplayName, PropertyCategory, StructDescribeFunc) \
+    Class->AddProperty({                                                    \
+        DisplayName,                                                        \
+        EPropertyType::Struct,                                              \
+        PropertyCategory,                                                   \
+        PF_Edit | PF_Save,                                                  \
+        [](UObject* Object)->void* { return &static_cast<ClassName*>(Object)->MemberName; }, \
+        0.0f,                                                               \
+        0.0f,                                                               \
+        0.1f,                                                               \
+        nullptr,                                                            \
+        0,                                                                  \
+        sizeof(int32),                                                      \
+        StructDescribeFunc                                                  \
+    });
+
 // ---------------------------------------------------------------------------
 
 // Forward — IsValid 의 실제 정의는 GUObjectSet 선언 뒤. UObject::GetTypedOuter 가

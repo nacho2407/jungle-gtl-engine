@@ -15,6 +15,7 @@ class UStaticMeshComponent : public UMeshComponent
 {
 public:
 	DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
+	static void RegisterProperties(UClass* Class);
 
 	UStaticMeshComponent() = default;
 	~UStaticMeshComponent() override = default;

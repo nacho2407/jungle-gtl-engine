@@ -16,6 +16,7 @@ class USkinnedMeshComponent : public UMeshComponent
 {
 public:
 	DECLARE_CLASS(USkinnedMeshComponent, UMeshComponent)
+	static void RegisterProperties(UClass* Class);
 
 	USkinnedMeshComponent() = default;
 	~USkinnedMeshComponent() override = default;

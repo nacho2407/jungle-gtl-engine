@@ -13,7 +13,12 @@
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(UStaticMeshComponent, UMeshComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(UStaticMeshComponent, UMeshComponent)
+
+BEGIN_PROPERTY_REGISTRATION(UStaticMeshComponent)
+	EDIT_PROPERTY(UStaticMeshComponent, StaticMeshPath, "Static Mesh", EPropertyType::StaticMeshRef, "Mesh")
+	EDIT_PROPERTY(UStaticMeshComponent, MaterialSlots, "Materials", EPropertyType::MaterialSlotArray, "Materials")
+END_PROPERTY_REGISTRATION()
 
 FPrimitiveSceneProxy* UStaticMeshComponent::CreateSceneProxy()
 {
@@ -264,17 +269,6 @@ void UStaticMeshComponent::PostDuplicate()
 void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Static Mesh", EPropertyType::StaticMeshRef, "Mesh", &StaticMeshPath });
-
-	for (int32 i = 0; i < (int32)MaterialSlots.size(); ++i)
-	{
-		FPropertyDescriptor Desc;
-		Desc.Name = "Element " + std::to_string(i);
-		Desc.Type = EPropertyType::MaterialSlot;
-		Desc.Category = "Materials";
-		Desc.ValuePtr = &MaterialSlots[i];
-		OutProps.push_back(Desc);
-	}
 }
 
 void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
@@ -307,6 +301,26 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 		{
 			FString NewMatPath = MaterialSlots[Index].Path;
 
+			if (NewMatPath == "None" || NewMatPath.empty())
+			{
+				SetMaterial(Index, nullptr);
+			}
+			else
+			{
+				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(NewMatPath);
+				if (LoadedMat)
+				{
+					SetMaterial(Index, LoadedMat);
+				}
+			}
+		}
+	}
+
+	if (strcmp(PropertyName, "Materials") == 0)
+	{
+		for (int32 Index = 0; Index < (int32)MaterialSlots.size(); ++Index)
+		{
+			const FString& NewMatPath = MaterialSlots[Index].Path;
 			if (NewMatPath == "None" || NewMatPath.empty())
 			{
 				SetMaterial(Index, nullptr);

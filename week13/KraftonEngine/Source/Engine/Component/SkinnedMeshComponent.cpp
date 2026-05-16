@@ -6,8 +6,13 @@
 #include "Collision/RayUtils.h"
 #include "Core/Log.h"
 
-IMPLEMENT_CLASS(USkinnedMeshComponent, UMeshComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(USkinnedMeshComponent, UMeshComponent)
 HIDE_FROM_COMPONENT_LIST(USkinnedMeshComponent)
+
+BEGIN_PROPERTY_REGISTRATION(USkinnedMeshComponent)
+	EDIT_PROPERTY(USkinnedMeshComponent, SkeletalMeshPath, "Skeletal Mesh", EPropertyType::SkeletalMeshRef, "Mesh")
+	EDIT_PROPERTY(USkinnedMeshComponent, MaterialSlots, "Materials", EPropertyType::MaterialSlotArray, "Materials")
+END_PROPERTY_REGISTRATION()
 
 namespace
 {
@@ -719,17 +724,6 @@ void USkinnedMeshComponent::PostDuplicate()
 void USkinnedMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UMeshComponent::GetEditableProperties(OutProps);
-	// editor는 pointer 대신 path 문자열을 편집하고, PostEditProperty에서 load 흐름으로 진입한다.
-	OutProps.push_back({ "Skeletal Mesh", EPropertyType::SkeletalMeshRef, "Mesh", &SkeletalMeshPath });
-	for (int32 i = 0; i < static_cast<int32>(MaterialSlots.size()); ++i)
-	{
-		FPropertyDescriptor Desc;
-		Desc.Name = "Element " + std::to_string(i);
-		Desc.Type = EPropertyType::MaterialSlot;
-		Desc.Category = "Materials";
-		Desc.ValuePtr = &MaterialSlots[i];
-		OutProps.push_back(Desc);
-	}
 }
 
 void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
@@ -762,6 +756,27 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 		if (Index >= 0 && Index < (int32)MaterialSlots.size())
 		{
 			FString NewMatPath = MaterialSlots[Index].Path;
+
+			if (NewMatPath == "None" || NewMatPath.empty())
+			{
+				SetMaterial(Index, nullptr);
+			}
+			else
+			{
+				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(NewMatPath);
+				if (LoadedMat)
+				{
+					SetMaterial(Index, LoadedMat);
+				}
+			}
+		}
+	}
+
+	if (strcmp(PropertyName, "Materials") == 0)
+	{
+		for (int32 Index = 0; Index < (int32)MaterialSlots.size(); ++Index)
+		{
+			const FString& NewMatPath = MaterialSlots[Index].Path;
 
 			if (NewMatPath == "None" || NewMatPath.empty())
 			{

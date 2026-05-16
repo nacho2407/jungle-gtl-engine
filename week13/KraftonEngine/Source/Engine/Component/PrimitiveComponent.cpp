@@ -34,8 +34,24 @@ namespace
 	}
 }
 
-IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent)
+IMPLEMENT_CLASS_WITH_PROPERTIES(UPrimitiveComponent, USceneComponent)
 HIDE_FROM_COMPONENT_LIST(UPrimitiveComponent)
+
+BEGIN_PROPERTY_REGISTRATION(UPrimitiveComponent)
+	EDIT_PROPERTY(UPrimitiveComponent, bIsVisible, "Visible", EPropertyType::Bool, "Rendering")
+	EDIT_PROPERTY(UPrimitiveComponent, bCastShadow, "Cast Shadow", EPropertyType::Bool, "Rendering")
+	EDIT_PROPERTY(UPrimitiveComponent, bCastShadowAsTwoSided, "Two Sided Shadow", EPropertyType::Bool, "Rendering")
+	EDIT_PROPERTY(UPrimitiveComponent, bSimulatePhysics, "Simulate Physics", EPropertyType::Bool, "Collision")
+	EDIT_PROPERTY(UPrimitiveComponent, bGenerateOverlapEvents, "Generate Overlap Events", EPropertyType::Bool, "Collision")
+	EDIT_PROPERTY_ENUM(UPrimitiveComponent, CollisionEnabled, "Collision Enabled", "Collision",
+		GCollisionEnabledNames, static_cast<uint32>(ECollisionEnabled::COUNT), ECollisionEnabled)
+	EDIT_PROPERTY_ENUM(UPrimitiveComponent, ObjectType, "Object Type", "Collision",
+		GCollisionChannelNames, static_cast<uint32>(ECollisionChannel::ActiveCount), ECollisionChannel)
+	EDIT_PROPERTY_STRUCT(UPrimitiveComponent, ResponseContainer, "Collision Responses", "Collision",
+		&FCollisionResponseContainer::DescribeProperties)
+	EDIT_PROPERTY(UPrimitiveComponent, Mass, "Mass (kg)", EPropertyType::Float, "Physics")
+	EDIT_PROPERTY(UPrimitiveComponent, CenterOfMassOffset, "Center Of Mass Offset", EPropertyType::Vec3, "Physics")
+END_PROPERTY_REGISTRATION()
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {
@@ -193,51 +209,6 @@ void UPrimitiveComponent::MarkRenderVisibilityDirty()
 void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	USceneComponent::GetEditableProperties(OutProps);
-
-	OutProps.push_back({ "Visible", EPropertyType::Bool, "Rendering", &bIsVisible });
-	OutProps.push_back({ "Cast Shadow", EPropertyType::Bool, "Rendering", &bCastShadow });
-	OutProps.push_back({ "Two Sided Shadow", EPropertyType::Bool, "Rendering", &bCastShadowAsTwoSided });
-
-	OutProps.push_back({ "Simulate Physics", EPropertyType::Bool, "Collision", &bSimulatePhysics });
-	OutProps.push_back({ "Generate Overlap Events", EPropertyType::Bool, "Collision", &bGenerateOverlapEvents });
-
-	{
-		FPropertyDescriptor Desc;
-		Desc.Name = "Collision Enabled";
-		Desc.Type = EPropertyType::Enum;
-		Desc.Category = "Collision";
-		Desc.ValuePtr = &CollisionEnabled;
-		Desc.EnumNames = GCollisionEnabledNames;
-		Desc.EnumCount = static_cast<uint32>(ECollisionEnabled::COUNT);
-		Desc.EnumSize = sizeof(ECollisionEnabled);
-		OutProps.push_back(Desc);
-	}
-
-	{
-		FPropertyDescriptor Desc;
-		Desc.Name = "Object Type";
-		Desc.Type = EPropertyType::Enum;
-		Desc.Category = "Collision";
-		Desc.ValuePtr = &ObjectType;
-		Desc.EnumNames = GCollisionChannelNames;
-		Desc.EnumCount = static_cast<uint32>(ECollisionChannel::ActiveCount);
-		Desc.EnumSize = sizeof(ECollisionChannel);
-		OutProps.push_back(Desc);
-	}
-
-	{
-		FPropertyDescriptor Desc;
-		Desc.Name = "Collision Responses";
-		Desc.Type = EPropertyType::Struct;
-		Desc.Category = "Collision";
-		Desc.ValuePtr = &ResponseContainer;
-		Desc.StructFunc = &FCollisionResponseContainer::DescribeProperties;
-		OutProps.push_back(Desc);
-	}
-
-	// 물리 파라미터 — RootComponent에 한해 백엔드에 적용된다 (compound shape).
-	OutProps.push_back({ "Mass (kg)", EPropertyType::Float, "Physics", &Mass });
-	OutProps.push_back({ "Center Of Mass Offset", EPropertyType::Vec3, "Physics", &CenterOfMassOffset });
 }
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)

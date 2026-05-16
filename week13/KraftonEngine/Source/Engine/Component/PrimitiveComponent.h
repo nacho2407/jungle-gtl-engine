@@ -58,6 +58,7 @@ class UPrimitiveComponent : public USceneComponent
 {
 public:
 	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
+	static void RegisterProperties(UClass* Class);
 	~UPrimitiveComponent() override;
 
 	void BeginPlay() override;
