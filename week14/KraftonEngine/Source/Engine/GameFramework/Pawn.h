@@ -3,6 +3,7 @@
 #include "GameFramework/AActor.h"
 
 class APlayerController;
+class UInputComponent;
 
 // ============================================================
 // APawn — PlayerController가 Possess할 수 있는 액터의 베이스
@@ -11,6 +12,11 @@ class APlayerController;
 // 컴포넌트와 제어 로직을 갖춘다 (예: APawnStaticMesh).
 //
 // "Possessed Pawn" 식별은 TriggerVolume 등에서 IsPossessed()로 한다.
+//
+// Input 통합:
+//   - BeginPlay 가 자동으로 UInputComponent 부착 + SetupInputComponent() 호출.
+//   - 자식이 SetupInputComponent override 안에서 BindAxis/BindAction 호출.
+//   - Lua: obj:AsPawn():GetInputComponent():BindAction(...) 패턴.
 // ============================================================
 class APawn : public AActor
 {
@@ -25,15 +31,27 @@ public:
 	virtual void PossessedBy(APlayerController* PC);
 	virtual void UnPossessed();
 
+	// Input 활성화 — BeginPlay 가 UInputComponent 부착 후 호출. 자식이 override.
+	// 기본은 no-op — 자식이 mapping/binding 설정.
+	virtual void SetupInputComponent() {}
+
+	void BeginPlay() override;
+
 	APlayerController* GetController() const { return Controller; }
 	bool IsPossessed() const { return Controller != nullptr; }
 
 	void SetAutoPossessPlayer(bool bIn) { bAutoPossessPlayer = bIn; }
 	bool GetAutoPossessPlayer() const { return bAutoPossessPlayer; }
 
+	UInputComponent* GetInputComponent() const { return InputComponent; }
+
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void Serialize(FArchive& Ar) override;
 
 protected:
 	APlayerController* Controller = nullptr;  // 직렬화 제외 — 런타임에 PC가 세팅
 	bool bAutoPossessPlayer = true;            // 직렬화 — GameMode가 시작 시 자동 Possess할 후보로 사용
+
+	// BeginPlay 가 자동 추가 — 자식의 SetupInputComponent 가 mapping/binding 등록.
+	UInputComponent* InputComponent = nullptr;
 };

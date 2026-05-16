@@ -452,6 +452,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Component\DecalComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\InputComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\LuaScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
@@ -756,6 +757,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Component\DecalComponent.h" />
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h" />
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
+    <ClInclude Include="Source\Engine\Component\InputComponent.h" />
     <ClInclude Include="Source\Engine\Component\LuaScriptComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />

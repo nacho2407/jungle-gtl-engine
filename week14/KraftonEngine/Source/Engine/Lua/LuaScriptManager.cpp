@@ -5,6 +5,7 @@
 #include "Audio/AudioManager.h"
 #include "Component/ActionComponent.h"
 #include "Component/LuaScriptComponent.h"
+#include "Component/InputComponent.h"
 #include "Animation/LuaAnimInstance.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/CameraComponent.h"
@@ -1103,7 +1104,35 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		sol::base_classes, sol::bases<AActor>(),
 		"IsPossessed", &APawn::IsPossessed,
 		"SetAutoPossessPlayer", &APawn::SetAutoPossessPlayer,
-		"GetAutoPossessPlayer", &APawn::GetAutoPossessPlayer);
+		"GetAutoPossessPlayer", &APawn::GetAutoPossessPlayer,
+		"GetInputComponent", &APawn::GetInputComponent);
+
+	// UInputComponent — Pawn::GetInputComponent 로 얻어 lua 에서 직접 매핑/binding 추가 가능.
+	// 예 (BeginPlay 안):
+	//   local input = obj:AsPawn():GetInputComponent()
+	//   input:AddActionMapping("Jump", 0x20)   -- VK_SPACE = 0x20
+	//   input:BindAction("Jump", "Pressed", function() print("jump!") end)
+	Lua.new_usertype<UInputComponent>("InputComponent",
+		"AddAxisMapping",   &UInputComponent::AddAxisMapping,
+		"AddActionMapping", &UInputComponent::AddActionMapping,
+		"BindAxis", [](UInputComponent& Self, const FString& Name, sol::protected_function Cb)
+		{
+			Self.BindAxis(Name, [Cb](float V)
+			{
+				auto R = Cb(V);
+				if (!R.valid()) { sol::error e = R; UE_LOG("[Lua] BindAxis cb error: %s", e.what()); }
+			});
+		},
+		"BindAction", [](UInputComponent& Self, const FString& Name, const FString& EventStr, sol::protected_function Cb)
+		{
+			const EInputEvent Ev = (EventStr == "Released") ? EInputEvent::Released : EInputEvent::Pressed;
+			Self.BindAction(Name, Ev, [Cb]()
+			{
+				auto R = Cb();
+				if (!R.valid()) { sol::error e = R; UE_LOG("[Lua] BindAction cb error: %s", e.what()); }
+			});
+		},
+		"ClearBindings", &UInputComponent::ClearBindings);
 
 	// --- World binding — 런타임 액터 spawn 용 (Engine 일반 기능) ---
 	sol::table World = Lua.create_named_table("World");
