@@ -1,4 +1,4 @@
-﻿#include "LuaScriptComponent.h"
+#include "LuaScriptComponent.h"
 
 #include "Component/PrimitiveComponent.h"
 #include "Core/Log.h"
@@ -7,8 +7,6 @@
 #include "Lua/LuaScriptManager.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS_WITH_PROPERTIES(ULuaScriptComponent, UActorComponent)
 
 ULuaScriptComponent::ULuaScriptComponent()
 {

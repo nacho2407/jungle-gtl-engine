@@ -1,9 +1,8 @@
-﻿#include "SceneComponent.h"
+#include "SceneComponent.h"
 #include "Object/ObjectFactory.h"
 #include <GameFramework/World.h>
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(USceneComponent, UActorComponent)
 HIDE_FROM_COMPONENT_LIST(USceneComponent)
 
 static void NotifyOctreeTransformChanged(USceneComponent* Comp)

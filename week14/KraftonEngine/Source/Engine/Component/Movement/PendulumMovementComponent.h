@@ -1,17 +1,17 @@
-﻿#pragma once
+#pragma once
 
 #include "MovementComponent.h"
 #include "Math/Vector.h"
 #include "Math/Quat.h"
 
+#include "Source/Engine/Component/Movement/PendulumMovementComponent.generated.h"
 // 그네(진자)처럼 지정 축을 중심으로 왕복 회전하는 이동 컴포넌트
 // angle(t) = Amplitude * sin(2π * Frequency * t + Phase)
+UCLASS()
 class UPendulumMovementComponent : public UMovementComponent
 {
 public:
-	DECLARE_CLASS(UPendulumMovementComponent, UMovementComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	UPendulumMovementComponent() = default;
 	~UPendulumMovementComponent() override = default;
 

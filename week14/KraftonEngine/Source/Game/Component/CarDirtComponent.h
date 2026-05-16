@@ -1,14 +1,15 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/SceneComponent.h"
 
+#include "Source/Game/Component/CarDirtComponent.generated.h"
 class UDirtComponent;
 
+UCLASS()
 class UCarDirtComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(UCarDirtComponent, USceneComponent)
-
+	GENERATED_BODY()
 	UCarDirtComponent() = default;
 	~UCarDirtComponent() override = default;
 

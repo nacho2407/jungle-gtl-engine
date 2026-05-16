@@ -1,4 +1,4 @@
-﻿#include "ProjectileMovementComponent.h"
+#include "ProjectileMovementComponent.h"
 
 #include "Component/SceneComponent.h"
 #include "GameFramework/AActor.h"
@@ -42,8 +42,6 @@ namespace
 		Scene.AddDebugLine(End, End - Back - SideOffset, ArrowColor);
 	}
 }
-
-IMPLEMENT_CLASS_WITH_PROPERTIES(UProjectileMovementComponent, UMovementComponent)
 
 void UProjectileMovementComponent::BeginPlay()
 {

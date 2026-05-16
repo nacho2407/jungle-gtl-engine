@@ -1,7 +1,5 @@
-﻿#include "GameFramework/CapsuleActor.h"
+#include "GameFramework/CapsuleActor.h"
 #include "Component/CapsuleComponent.h"
-
-IMPLEMENT_CLASS(ACapsuleActor, AActor)
 
 void ACapsuleActor::InitDefaultComponents()
 {

@@ -1,13 +1,13 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "Core/TickFunction.h"
 
+#include "Source/Engine/Component/ActorComponent.generated.h"
+
 class AActor;
 class UWorld;
 class FScene;
-
-#include "Source/Engine/Component/ActorComponent.generated.h"
 
 UCLASS()
 class UActorComponent : public UObject
@@ -16,7 +16,6 @@ class UActorComponent : public UObject
 	friend class AActor;
 
 public:
-	DECLARE_CLASS(UActorComponent, UObject)
 	GENERATED_BODY()
 
 	virtual void BeginPlay();

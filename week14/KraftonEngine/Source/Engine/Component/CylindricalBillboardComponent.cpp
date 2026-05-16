@@ -7,8 +7,6 @@
 
 #include <cmath>
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(UCylindricalBillboardComponent, UBillboardComponent)
-
 FPrimitiveSceneProxy* UCylindricalBillboardComponent::CreateSceneProxy()
 {
 	return new FCylindricalBillboardSceneProxy(this);

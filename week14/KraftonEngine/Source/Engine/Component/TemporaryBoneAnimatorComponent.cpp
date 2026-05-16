@@ -1,4 +1,4 @@
-﻿#include "TemporaryBoneAnimatorComponent.h"
+#include "TemporaryBoneAnimatorComponent.h"
 
 #if JUNGLE_ENABLE_TEMP_BONE_ANIMATOR_COMPONENT
 
@@ -11,8 +11,6 @@
 
 #include <cmath>
 #include <cstring>
-
-IMPLEMENT_CLASS_WITH_PROPERTIES(UTemporaryBoneAnimatorComponent, UActorComponent)
 
 void UTemporaryBoneAnimatorComponent::PostEditProperty(const char* PropertyName)
 {

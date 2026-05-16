@@ -1,4 +1,4 @@
-﻿#include "Component/Movement/MovementComponent.h"
+#include "Component/Movement/MovementComponent.h"
 
 #include "Component/SceneComponent.h"
 #include "GameFramework/AActor.h"
@@ -10,7 +10,6 @@
 #include <sstream>
 
 // Base movement logic only; concrete movement types should be added instead.
-IMPLEMENT_CLASS_WITH_PROPERTIES(UMovementComponent, UActorComponent)
 HIDE_FROM_COMPONENT_LIST(UMovementComponent)
 
 namespace

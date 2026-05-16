@@ -10,8 +10,6 @@
 #include <algorithm>
 #include <cstring>
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(UFloatingPawnMovementComponent, UMovementComponent)
-
 namespace
 {
 	void AddWorldRotation(USceneComponent* Component, const FQuat& DeltaWorldQuat)

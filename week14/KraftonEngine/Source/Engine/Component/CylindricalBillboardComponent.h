@@ -1,12 +1,14 @@
-﻿#pragma once
+#pragma once
 #include "BillboardComponent.h"
 
+
+#include "Source/Engine/Component/CylindricalBillboardComponent.generated.h"
+
+UCLASS()
 class UCylindricalBillboardComponent : public UBillboardComponent
 {
 public:
-	DECLARE_CLASS(UCylindricalBillboardComponent, UBillboardComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction);
 	FMatrix ComputeBillboardMatrix(const FVector& CameraForward) const;
 	FPrimitiveSceneProxy* CreateSceneProxy() override;

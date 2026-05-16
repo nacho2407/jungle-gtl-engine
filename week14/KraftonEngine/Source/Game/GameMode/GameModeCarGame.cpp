@@ -1,4 +1,4 @@
-﻿#include "Game/GameMode/GameModeCarGame.h"
+#include "Game/GameMode/GameModeCarGame.h"
 #include "Game/GameState/GameStateCarGame.h"
 #include "Game/PlayerController/PlayerControllerCarGame.h"
 #include "Game/Pawn/PoliceCar.h"
@@ -17,8 +17,6 @@
 
 #include <cmath>
 #include <cstdlib>
-
-IMPLEMENT_CLASS(AGameModeCarGame, AGameModeBase)
 
 namespace
 {

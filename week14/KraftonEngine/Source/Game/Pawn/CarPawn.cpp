@@ -1,4 +1,4 @@
-﻿#include "Game/Pawn/CarPawn.h"
+#include "Game/Pawn/CarPawn.h"
 #include "Component/BoxComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SphereComponent.h"
@@ -16,8 +16,6 @@
 #include "Math/Rotator.h"
 #include "GameFramework/PlayerCameraManager.h"
 #include "GameFramework/PlayerController.h"
-
-IMPLEMENT_CLASS(ACarPawn, APawn)
 
 void ACarPawn::InitDefaultComponents(const FString& StaticMeshFileName, const FString& LuaScriptFile, const FString& LuaCameraScriptFile, const FString& LuaGasScriptFile)
 {

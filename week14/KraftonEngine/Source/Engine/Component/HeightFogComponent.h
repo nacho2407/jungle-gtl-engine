@@ -1,14 +1,16 @@
-﻿#pragma once
+#pragma once
 
 #include "SceneComponent.h"
 #include "Render/Types/FogParams.h"
 
+
+#include "Source/Engine/Component/HeightFogComponent.generated.h"
+
+UCLASS()
 class UHeightFogComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(UHeightFogComponent, USceneComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	UHeightFogComponent();
 
 	void CreateRenderState() override;

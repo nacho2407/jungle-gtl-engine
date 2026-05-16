@@ -1,22 +1,22 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/MeshComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/StaticMesh.h"
 
+#include "Source/Engine/Component/StaticMeshComponent.generated.h"
 class UMaterial;
 class FPrimitiveSceneProxy;
 
 namespace json { class JSON; }
 
 // UStaticMeshComponent — 월드 배치 컴포넌트
+UCLASS()
 class UStaticMeshComponent : public UMeshComponent
 {
 public:
-	DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	UStaticMeshComponent() = default;
 	~UStaticMeshComponent() override = default;
 

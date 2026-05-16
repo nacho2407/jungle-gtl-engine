@@ -1,4 +1,4 @@
-﻿#include "HeightFogComponent.h"
+#include "HeightFogComponent.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -6,8 +6,6 @@
 #include "Materials/MaterialManager.h"
 #include "Render/Scene/FScene.h"
 #include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS_WITH_PROPERTIES(UHeightFogComponent, USceneComponent)
 
 UHeightFogComponent::UHeightFogComponent()
 {

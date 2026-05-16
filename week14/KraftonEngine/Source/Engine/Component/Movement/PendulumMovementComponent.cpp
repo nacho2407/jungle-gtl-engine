@@ -8,8 +8,6 @@
 
 #include <cmath>
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(UPendulumMovementComponent, UMovementComponent)
-
 void UPendulumMovementComponent::BeginPlay()
 {
 	UMovementComponent::BeginPlay();

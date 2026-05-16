@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
@@ -21,7 +21,6 @@ class AActor : public UObject
 {
     friend struct FActorTickFunction;
 public:
-	DECLARE_CLASS(AActor, UObject)
 	GENERATED_BODY()
 	AActor();
 	~AActor() override;

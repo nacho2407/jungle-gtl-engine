@@ -4,6 +4,7 @@
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 
+#include "Source/Engine/GameFramework/WaveOscillatorCameraShake.generated.h"
 class UCameraShakeAsset;
 
 // ============================================================
@@ -18,11 +19,11 @@ class UCameraShakeAsset;
 //   PC->GetPlayerCameraManager()->StartCameraShake<UWaveOscillatorCameraShake>(1.0f);
 // 서브클래스를 만들어 amplitude/frequency 기본값을 바꾸면 다양한 프리셋을 손쉽게 정의 가능.
 // ============================================================
+UCLASS()
 class UWaveOscillatorCameraShake : public UCameraShakeBase
 {
 public:
-	DECLARE_CLASS(UWaveOscillatorCameraShake, UCameraShakeBase)
-
+	GENERATED_BODY()
 	UWaveOscillatorCameraShake() = default;
 	~UWaveOscillatorCameraShake() override = default;
 

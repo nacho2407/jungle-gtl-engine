@@ -1,9 +1,10 @@
-﻿#pragma once
+#pragma once
 #include "MeshComponent.h"
 
 #include "Math/Rotator.h"
 #include "Math/Transform.h"
 
+#include "Source/Engine/Component/SkinnedMeshComponent.generated.h"
 class USkeletalMesh;
 class UMaterial;
 
@@ -12,12 +13,11 @@ class UMaterial;
 // Mesh/Material 경로 관리, CPU skinning 결과, bone edit pose, bounds dirty 처리를
 // 한 곳에 모아 USkeletalMeshComponent가 렌더 proxy용 얇은 wrapper로 남을 수 있게 한다.
 // ==================================================================================
+UCLASS()
 class USkinnedMeshComponent : public UMeshComponent
 {
 public:
-	DECLARE_CLASS(USkinnedMeshComponent, UMeshComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	USkinnedMeshComponent() = default;
 	~USkinnedMeshComponent() override = default;
 

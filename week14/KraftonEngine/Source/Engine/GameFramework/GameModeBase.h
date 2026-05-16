@@ -2,6 +2,7 @@
 
 #include "GameFramework/AActor.h"
 
+#include "Source/Engine/GameFramework/GameModeBase.generated.h"
 class AGameStateBase;
 class ATriggerVolumeBase;
 class APawn;
@@ -15,11 +16,11 @@ class UClass;
 // GameState를 보유/생성하며, TriggerVolume으로부터 받은 이벤트를
 // 페이즈 전이 로직으로 변환한다.
 // ============================================================
+UCLASS()
 class AGameModeBase : public AActor
 {
 public:
-	DECLARE_CLASS(AGameModeBase, AActor)
-
+	GENERATED_BODY()
 	AGameModeBase();
 	~AGameModeBase() override = default;
 

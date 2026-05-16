@@ -7,8 +7,6 @@
 #include <algorithm>
 #include <cmath>
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(USpringArmComponent, USceneComponent)
-
 void USpringArmComponent::BeginPlay()
 {
 	Super::BeginPlay();

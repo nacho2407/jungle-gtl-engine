@@ -1,17 +1,17 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/Movement/MovementComponent.h"
 #include "Math/Vector.h"
 
+#include "Source/Game/Component/Movement/CarMovementComponent.generated.h"
 class UPrimitiveComponent;
 class USphereComponent;
 
+UCLASS()
 class UCarMovementComponent : public UMovementComponent
 {
 public:
-	DECLARE_CLASS(UCarMovementComponent, UMovementComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	UCarMovementComponent() = default;
 	~UCarMovementComponent() override = default;
 

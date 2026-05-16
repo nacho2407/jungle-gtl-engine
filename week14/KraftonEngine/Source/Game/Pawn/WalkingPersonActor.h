@@ -4,6 +4,7 @@
 #include "Math/Rotator.h"
 #include "Core/Delegate.h"
 
+#include "Source/Game/Pawn/WalkingPersonActor.generated.h"
 class UBoxComponent;
 class UStaticMeshComponent;
 class ULuaScriptComponent;
@@ -24,12 +25,11 @@ enum class ECarGamePhase : uint8;
 // 사람이 걸어 움직이면 트리거 박스도 함께 따라간다. TriggerTag 는 "EscapePolice" 고정.
 // 서브-트리거는 EndPlay 에서 destroy.
 // ============================================================
+UCLASS()
 class AWalkingPersonActor : public AActor
 {
 public:
-	DECLARE_CLASS(AWalkingPersonActor, AActor)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	AWalkingPersonActor() = default;
 	~AWalkingPersonActor() override = default;
 

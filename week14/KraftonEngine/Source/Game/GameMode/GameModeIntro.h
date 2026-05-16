@@ -2,6 +2,7 @@
 
 #include "GameFramework/GameModeBase.h"
 
+#include "Source/Game/GameMode/GameModeIntro.generated.h"
 // ============================================================
 // AGameModeIntro — 인트로 씬 전용 GameMode.
 //
@@ -11,11 +12,11 @@
 // 까지 처리하므로 본 클래스에 추가 로직은 없다 (필요 시 인트로 카메라 연출 등을
 // 여기에 얹는다).
 // ============================================================
+UCLASS()
 class AGameModeIntro : public AGameModeBase
 {
 public:
-	DECLARE_CLASS(AGameModeIntro, AGameModeBase)
-
+	GENERATED_BODY()
 	AGameModeIntro() = default;
 	~AGameModeIntro() override = default;
 };

@@ -4,8 +4,6 @@
 #include <cmath>
 #include <cstdlib>
 
-IMPLEMENT_CLASS(UWaveOscillatorCameraShake, UCameraShakeBase)
-
 namespace
 {
 	constexpr float kTwoPi = 6.28318530717958f;

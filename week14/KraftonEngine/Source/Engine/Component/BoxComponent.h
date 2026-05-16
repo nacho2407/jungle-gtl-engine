@@ -1,14 +1,16 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Epic Games, Inc. All Rights Reserved.
 #pragma once
 
 #include "ShapeComponent.h"
 
+
+#include "Source/Engine/Component/BoxComponent.generated.h"
+
+UCLASS()
 class UBoxComponent : public UShapeComponent
 {
 public:
-	DECLARE_CLASS(UBoxComponent, UShapeComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	void SetBoxExtent(const FVector& InExtent);
 	FVector GetScaledBoxExtent() const;
 	FVector GetUnscaledBoxExtent() const { return BoxExtent; }

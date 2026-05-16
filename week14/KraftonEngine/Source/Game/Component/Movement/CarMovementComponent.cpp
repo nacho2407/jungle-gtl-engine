@@ -1,4 +1,4 @@
-﻿#include "Game/Component/Movement/CarMovementComponent.h"
+#include "Game/Component/Movement/CarMovementComponent.h"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
@@ -10,8 +10,6 @@
 #include "Core/Log.h"
 
 #include <algorithm>
-
-IMPLEMENT_CLASS_WITH_PROPERTIES(UCarMovementComponent, UMovementComponent)
 
 namespace
 {

@@ -1,14 +1,15 @@
-﻿#pragma once
+#pragma once
 #include "GameFramework/AActor.h"
 
+#include "Source/Engine/GameFramework/Light/DirectionalLightActor.generated.h"
 class UBillboardComponent;
 class UDirectionalLightComponent;
 
+UCLASS()
 class ADirectionalLightActor : public AActor
 {
 public:
-	DECLARE_CLASS(ADirectionalLightActor, AActor)
-
+	GENERATED_BODY()
 	void InitDefaultComponents();
 
 private:

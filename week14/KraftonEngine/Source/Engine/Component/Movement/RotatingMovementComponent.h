@@ -1,17 +1,17 @@
-﻿#pragma once
+#pragma once
 
 #include "MovementComponent.h"
 #include "Math/Quat.h"
 #include "Math/Rotator.h"
 #include "Math/Vector.h"
 
+#include "Source/Engine/Component/Movement/RotatingMovementComponent.generated.h"
 // 런타임 동안 UpdatedComponent를 일정 각속도로 회전시키는 이동 컴포넌트
+UCLASS()
 class URotatingMovementComponent : public UMovementComponent
 {
 public:
-	DECLARE_CLASS(URotatingMovementComponent, UMovementComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	URotatingMovementComponent() = default;
 	~URotatingMovementComponent() override = default;
 

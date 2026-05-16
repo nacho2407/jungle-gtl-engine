@@ -27,8 +27,6 @@ namespace
 	}
 }
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(UPointLightComponent, ULightComponent)
-
 void UPointLightComponent::ContributeSelectedVisuals(FScene& Scene) const
 {
 	const FVector Center = GetWorldLocation();

@@ -1,18 +1,18 @@
-﻿#pragma once
+#pragma once
 
 #include "MovementComponent.h"
 
+#include "Source/Engine/Component/Movement/FloatingPawnMovementComponent.generated.h"
 #include <algorithm>
 
 class UPrimitiveComponent;
 class USceneComponent;
 
+UCLASS()
 class UFloatingPawnMovementComponent : public UMovementComponent
 {
 public:
-	DECLARE_CLASS(UFloatingPawnMovementComponent, UMovementComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	UFloatingPawnMovementComponent() = default;
 	~UFloatingPawnMovementComponent() override = default;
 

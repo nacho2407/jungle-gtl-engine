@@ -1,4 +1,4 @@
-﻿#include "BillboardComponent.h"
+#include "BillboardComponent.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 #include "Render/Proxy/BillboardSceneProxy.h"
@@ -9,8 +9,6 @@
 #include "Materials/MaterialManager.h"
 
 #include <cstring>
-
-IMPLEMENT_CLASS_WITH_PROPERTIES(UBillboardComponent, UPrimitiveComponent)
 
 FPrimitiveSceneProxy* UBillboardComponent::CreateSceneProxy()
 {

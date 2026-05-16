@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Profiling/MemoryStats.h"
 #include "Object/FName.h"
@@ -10,103 +10,6 @@
 #include "Source/Engine/Object/Object.generated.h"
 
 class FArchive;
-
-// ---------------------------------------------------------------------------
-// RTTI Macros
-// ---------------------------------------------------------------------------
-
-#define DECLARE_CLASS(ClassName, ParentClass)                               \
-    using Super = ParentClass;                                             \
-    static UClass StaticClassInstance;                                      \
-    static FClassRegistrar s_Registrar;                                    \
-    static UClass* StaticClass() { return &StaticClassInstance; }           \
-    UClass* GetClass() const override { return StaticClass(); }
-
-#define DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, FlagsValue)         \
-    UClass ClassName::StaticClassInstance(                                  \
-        #ClassName,                                                        \
-        &ParentClass::StaticClassInstance,                                  \
-        sizeof(ClassName),                                                 \
-        FlagsValue                                                         \
-    );                                                                     \
-    FClassRegistrar ClassName::s_Registrar(&ClassName::StaticClassInstance);
-
-#define DEFINE_CLASS(ClassName, ParentClass)                                \
-    DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, CF_None)
-
-#define DECLARE_REFLECTED_PROPERTIES(ClassName)                             \
-    static void RegisterProperties(UClass* Class);
-
-#define REGISTER_CLASS_PROPERTIES(ClassName)                                \
-namespace {                                                                \
-    struct ClassName##_PropertyRegistrar {                                  \
-        ClassName##_PropertyRegistrar() {                                   \
-            ClassName::RegisterProperties(ClassName::StaticClass());        \
-        }                                                                  \
-    };                                                                     \
-    ClassName##_PropertyRegistrar G##ClassName##_PropertyRegistrar;         \
-}
-
-#define BEGIN_PROPERTY_REGISTRATION(ClassName)                              \
-    void ClassName::RegisterProperties(UClass* Class)                       \
-    {
-
-#define END_PROPERTY_REGISTRATION()                                         \
-    }
-
-#define EDIT_PROPERTY(ClassName, MemberName, DisplayName, PropertyType, PropertyCategory) \
-    Class->AddProperty({                                                    \
-        DisplayName,                                                        \
-        PropertyType,                                                       \
-        PropertyCategory,                                                   \
-        PF_Edit | PF_Save,                                                  \
-        [](UObject* Object)->void* { return &static_cast<ClassName*>(Object)->MemberName; } \
-    });
-
-#define EDIT_PROPERTY_RANGE(ClassName, MemberName, DisplayName, PropertyType, PropertyCategory, MinValue, MaxValue, SpeedValue) \
-    Class->AddProperty({                                                    \
-        DisplayName,                                                        \
-        PropertyType,                                                       \
-        PropertyCategory,                                                   \
-        PF_Edit | PF_Save,                                                  \
-        [](UObject* Object)->void* { return &static_cast<ClassName*>(Object)->MemberName; }, \
-        MinValue,                                                           \
-        MaxValue,                                                           \
-        SpeedValue                                                          \
-    });
-
-#define EDIT_PROPERTY_ENUM(ClassName, MemberName, DisplayName, PropertyCategory, Names, Count, EnumType) \
-    Class->AddProperty({                                                    \
-        DisplayName,                                                        \
-        EPropertyType::Enum,                                                \
-        PropertyCategory,                                                   \
-        PF_Edit | PF_Save,                                                  \
-        [](UObject* Object)->void* { return &static_cast<ClassName*>(Object)->MemberName; }, \
-        0.0f,                                                               \
-        0.0f,                                                               \
-        0.1f,                                                               \
-        Names,                                                              \
-        Count,                                                              \
-        sizeof(EnumType)                                                    \
-    });
-
-#define EDIT_PROPERTY_STRUCT(ClassName, MemberName, DisplayName, PropertyCategory, StructDescribeFunc) \
-    Class->AddProperty({                                                    \
-        DisplayName,                                                        \
-        EPropertyType::Struct,                                              \
-        PropertyCategory,                                                   \
-        PF_Edit | PF_Save,                                                  \
-        [](UObject* Object)->void* { return &static_cast<ClassName*>(Object)->MemberName; }, \
-        0.0f,                                                               \
-        0.0f,                                                               \
-        0.1f,                                                               \
-        nullptr,                                                            \
-        0,                                                                  \
-        sizeof(int32),                                                      \
-        StructDescribeFunc                                                  \
-    });
-
-// ---------------------------------------------------------------------------
 
 // Forward — IsValid 의 실제 정의는 GUObjectSet 선언 뒤. UObject::GetTypedOuter 가
 // non-dependent name lookup 으로 IsValid 를 찾을 수 있게 미리 알려둠.

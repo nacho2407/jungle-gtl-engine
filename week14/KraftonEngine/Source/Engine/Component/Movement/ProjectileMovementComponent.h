@@ -1,10 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/Movement/MovementComponent.h"
 #include "Core/CollisionTypes.h"
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
 
+#include "Source/Engine/Component/Movement/ProjectileMovementComponent.generated.h"
 enum class EProjectileHitBehavior : int32
 {
 	Stop = 0,
@@ -12,12 +13,11 @@ enum class EProjectileHitBehavior : int32
 	Destroy = 2,
 };
 
+UCLASS()
 class UProjectileMovementComponent : public UMovementComponent
 {
 public:
-	DECLARE_CLASS(UProjectileMovementComponent, UMovementComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	UProjectileMovementComponent() = default;
 	~UProjectileMovementComponent() override = default;
 

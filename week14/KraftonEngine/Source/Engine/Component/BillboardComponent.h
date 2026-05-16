@@ -1,16 +1,18 @@
-﻿#pragma once
+#pragma once
 #include "PrimitiveComponent.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 
+#include "Source/Engine/Component/BillboardComponent.generated.h"
+
 class FPrimitiveSceneProxy;
 
+UCLASS()
 class UBillboardComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
-	static void RegisterProperties(UClass* Class);
+	GENERATED_BODY()
 
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 	FPrimitiveSceneProxy* CreateSceneProxy() override;

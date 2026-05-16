@@ -1,7 +1,5 @@
 #include "Game/GameState/GameStateCarGame.h"
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(AGameStateCarGame, AGameStateBase)
-
 void AGameStateCarGame::SetPhase(ECarGamePhase InPhase)
 {
 	if (CurrentPhase == InPhase) return;

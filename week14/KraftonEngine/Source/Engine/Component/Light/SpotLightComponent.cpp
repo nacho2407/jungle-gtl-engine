@@ -6,8 +6,6 @@
 #include "Render/Types/LightFrustumUtils.h"
 #include <cmath>
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(USpotLightComponent, UPointLightComponent)
-
 void USpotLightComponent::ContributeSelectedVisuals(FScene& Scene) const
 {
 	const FVector Apex = GetWorldLocation();

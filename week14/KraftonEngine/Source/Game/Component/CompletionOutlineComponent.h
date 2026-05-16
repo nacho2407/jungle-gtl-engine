@@ -1,14 +1,15 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/PrimitiveComponent.h"
 
+#include "Source/Game/Component/CompletionOutlineComponent.generated.h"
 class FMeshBuffer;
 
+UCLASS()
 class UCompletionOutlineComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UCompletionOutlineComponent, UPrimitiveComponent)
-
+	GENERATED_BODY()
 	UCompletionOutlineComponent() = default;
 	~UCompletionOutlineComponent() override = default;
 

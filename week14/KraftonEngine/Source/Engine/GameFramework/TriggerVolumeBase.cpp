@@ -1,12 +1,10 @@
-﻿#include "GameFramework/TriggerVolumeBase.h"
+#include "GameFramework/TriggerVolumeBase.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/World.h"
 #include "Component/BoxComponent.h"
 #include "Core/CollisionTypes.h"
 #include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS_WITH_PROPERTIES(ATriggerVolumeBase, AActor)
 
 void ATriggerVolumeBase::InitDefaultComponents(const FVector& Extent)
 {

@@ -1,7 +1,8 @@
-﻿#pragma once
+#pragma once
 #include "Component/SceneComponent.h"
 #include "Math/Matrix.h"
 
+#include "Source/Engine/Component/Light/LightComponentBase.generated.h"
 enum class ELightComponentType : uint8
 {
 	Ambient,
@@ -20,12 +21,11 @@ struct FLightViewProjResult
 
 struct FMinimalViewInfo;
 
+UCLASS()
 class ULightComponentBase : public USceneComponent
 {
 public:
-	DECLARE_CLASS(ULightComponentBase, USceneComponent)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	ULightComponentBase() { SetComponentTickEnabled(false); }
 
 	virtual void PushToScene() {};

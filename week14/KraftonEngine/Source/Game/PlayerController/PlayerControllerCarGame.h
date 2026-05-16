@@ -2,6 +2,7 @@
 
 #include "GameFramework/PlayerController.h"
 
+#include "Source/Game/PlayerController/PlayerControllerCarGame.generated.h"
 // ============================================================
 // APlayerControllerCarGame — 자동차 게임 전용 PlayerController
 //
@@ -9,11 +10,11 @@
 // HUD 표시, 카메라 전환 등 게임 고유 로직이 들어갈 자리.
 // AGameModeCarGame이 PlayerControllerClass로 지정.
 // ============================================================
+UCLASS()
 class APlayerControllerCarGame : public APlayerController
 {
 public:
-	DECLARE_CLASS(APlayerControllerCarGame, APlayerController)
-
+	GENERATED_BODY()
 	APlayerControllerCarGame() = default;
 	~APlayerControllerCarGame() override = default;
 };

@@ -1,4 +1,4 @@
-﻿#include "Texture/Texture2D.h"
+#include "Texture/Texture2D.h"
 #include "Object/ObjectFactory.h"
 #include "Core/Log.h"
 #include "Platform/Paths.h"
@@ -6,8 +6,6 @@
 
 #include <d3d11.h>
 #include <filesystem>
-
-IMPLEMENT_CLASS(UTexture2D, UObject)
 
 std::map<FString, UTexture2D*> UTexture2D::TextureCache;
 

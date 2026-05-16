@@ -6,7 +6,6 @@
 
 #include <cstring>
 
-IMPLEMENT_CLASS_WITH_PROPERTIES(UShapeComponent, UPrimitiveComponent)
 HIDE_FROM_COMPONENT_LIST(UShapeComponent)
 
 UShapeComponent::UShapeComponent()

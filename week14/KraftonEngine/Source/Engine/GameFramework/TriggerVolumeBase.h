@@ -1,9 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/AActor.h"
 #include "Object/FName.h"
 #include "Math/Vector.h"
 
+#include "Source/Engine/GameFramework/TriggerVolumeBase.generated.h"
 class UBoxComponent;
 class UPrimitiveComponent;
 class APawn;
@@ -21,12 +22,11 @@ struct FHitResult;
 // 게임모드에서 트리거 종류를 구분할 때는 TriggerTag(FName)로 식별하거나
 // 본 클래스를 상속받은 서브클래스로 분기.
 // ============================================================
+UCLASS()
 class ATriggerVolumeBase : public AActor
 {
 public:
-	DECLARE_CLASS(ATriggerVolumeBase, AActor)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	ATriggerVolumeBase() = default;
 	~ATriggerVolumeBase() override = default;
 

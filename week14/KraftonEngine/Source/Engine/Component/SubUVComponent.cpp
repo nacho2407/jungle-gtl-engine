@@ -1,4 +1,4 @@
-﻿#include "SubUVComponent.h"
+#include "SubUVComponent.h"
 #include "Object/ObjectFactory.h"
 
 #include <cstring>
@@ -11,8 +11,6 @@
 #include "Render/Proxy/SubUVSceneProxy.h"
 #include "Serialization/Archive.h"
 #include "Materials/Material.h"
-
-IMPLEMENT_CLASS_WITH_PROPERTIES(USubUVComponent, UBillboardComponent)
 
 FPrimitiveSceneProxy* USubUVComponent::CreateSceneProxy()
 {

@@ -2,6 +2,7 @@
 
 #include "GameFramework/AActor.h"
 
+#include "Source/Engine/GameFramework/Pawn.generated.h"
 class APlayerController;
 
 // ============================================================
@@ -12,12 +13,11 @@ class APlayerController;
 //
 // "Possessed Pawn" 식별은 TriggerVolume 등에서 IsPossessed()로 한다.
 // ============================================================
+UCLASS()
 class APawn : public AActor
 {
 public:
-	DECLARE_CLASS(APawn, AActor)
-	static void RegisterProperties(UClass* Class);
-
+	GENERATED_BODY()
 	APawn() = default;
 	~APawn() override = default;
 
