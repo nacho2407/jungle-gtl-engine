@@ -1,11 +1,6 @@
 ﻿#pragma once
+#include "UStruct.h"
 
-#include "Core/CoreTypes.h"
-#include "Core/PropertyTypes.h"
-
-#include <cstring>
-
-class UObject;
 
 enum EClassFlags : uint32
 {
@@ -16,22 +11,23 @@ enum EClassFlags : uint32
 	CF_HiddenInComponentList = 1 << 3,
 };
 
-class UClass
+class UClass : public UStruct
 {
 public:
 	UClass(const char* InName, UClass* InSuperClass, size_t InSize, uint32 InFlags = CF_None)
-		: Name(InName), SuperClass(InSuperClass), Size(InSize), ClassFlags(InFlags)
+		: UStruct(InName, InSuperClass, InSize), ClassFlags(InFlags)
 	{}
 
-	const char*  GetName()       const { return Name; }
-	UClass*      GetSuperClass() const { return SuperClass; }
-	size_t       GetSize()       const { return Size; }
+	UClass*      GetSuperClass() const 
+	{
+		return static_cast<UClass*> (GetSuperStruct()); 
+	}
 	uint32       GetClassFlags() const { return ClassFlags; }
 	void        AddClassFlags(uint32 Flags) { ClassFlags |= Flags; }
 
 	bool IsA(const UClass* Other) const
 	{
-		for (const UClass* C = this; C; C = C->SuperClass)
+		for (const UClass* C = this; C; C = C->GetSuperClass())
 		{
 			if (C == Other)
 				return true;
@@ -42,37 +38,6 @@ public:
 	bool HasAnyClassFlags(uint32 Flags) const
 	{
 		return (ClassFlags & Flags) != 0;
-	}
-
-	void AddProperty(const FProperty& Property)
-	{
-		Properties.push_back(Property);
-	}
-
-	void GetProperties(TArray<FProperty>& OutProperties, bool bIncludeSuper = true) const
-	{
-		if (bIncludeSuper && SuperClass)
-		{
-			SuperClass->GetProperties(OutProperties, true);
-		}
-
-		for (const FProperty& Prop : Properties)
-		{
-			OutProperties.push_back(Prop);
-		}
-	}
-
-	void GetPropertyRefs(TArray<const FProperty*>& OutProperties, bool bIncludeSuper = true) const
-	{
-		if (bIncludeSuper && SuperClass)
-		{
-			SuperClass->GetPropertyRefs(OutProperties, true);
-		}
-
-		for (const FProperty& Prop : Properties)
-		{
-			OutProperties.push_back(&Prop);
-		}
 	}
 
 	// --- Global class registry ---
@@ -96,19 +61,16 @@ public:
 	}
 
 private:
-	const char* Name        = nullptr;
-	UClass*     SuperClass  = nullptr;
-	size_t      Size        = 0;
 	uint32      ClassFlags  = CF_None;
-
-	TArray<FProperty> Properties;
 };
+
 
 // static initializer 에서 UClass를 전역 레지스트리에 등록
 struct FClassRegistrar
 {
 	FClassRegistrar(UClass* InClass)
 	{
+		UStruct::GetAllStructs().push_back(InClass);
 		UClass::GetAllClasses().push_back(InClass);
 	}
 };
