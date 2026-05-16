@@ -1,5 +1,6 @@
-﻿#include "AssetRegistry.h"
+#include "AssetRegistry.h"
 #include "Mesh/MeshManager.h"
+#include "Animation/AnimationManager.h"
 
 #include <cstring>
 
@@ -18,8 +19,11 @@ namespace FAssetRegistry
 		{
 			return FMeshManager::GetAvailableSkeletalMeshFiles();
 		}
-		// UAnimSequence: A 의 AnimSequence asset 임포트/스캔 통합 후 매핑 추가.
-		// 그 전까지는 빈 배열 (드롭다운엔 "None" 만 보임).
+		if (std::strcmp(AssetTypeName, "UAnimSequence") == 0)
+		{
+			return FAnimationManager::Get().GetAvailableAnimationFiles();
+		}
+
 		return Empty;
 	}
 }

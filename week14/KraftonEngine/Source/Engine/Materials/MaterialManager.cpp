@@ -7,6 +7,7 @@
 #include "Render/Resource/Buffer.h"
 #include "Texture/Texture2D.h"
 #include "Render/Pipeline/Renderer.h"
+#include "Materials/Material.h"
 
 void FMaterialManager::ScanMaterialAssets()
 {
@@ -301,6 +302,18 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 
 		bInjected = true;
 
+		if (ParamName == "SectionColor")
+		{
+			JsonData[MatKeys::Parameters][ParamName] = json::Array(1.0f, 1.0f, 1.0f, 1.0f);
+			continue;
+		}
+
+		if (ParamName == "HasNormalMap")
+		{
+			JsonData[MatKeys::Parameters][ParamName] = 0.0f;
+			continue;
+		}
+
 		switch (Info->Size)
 		{
 			case sizeof(float) : // 4바이트 - Scalar
@@ -415,9 +428,14 @@ void FMaterialManager::Release()
 			Pair.second = nullptr;
 		}
 	}
+
 	TemplateCache.clear();
 
-	// 2. MaterialCache — UMaterial은 UObjectManager가 수명을 관리하므로 캐시 맵만 비움
+	// 2. GPU 버퍼를 Device 해제 전에 명시 해제, UObject 수명은 UObjectManager가 관리
+	for (auto& [Key, Mat] : MaterialCache)
+	{
+		if (Mat) Mat->ReleaseGPUBuffers();
+	}
 	MaterialCache.clear();
 
 	// 3. Device 참조 해제

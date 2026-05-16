@@ -1,4 +1,4 @@
-﻿#include "MeshManager.h"
+#include "MeshManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/ObjImporter.h"
@@ -16,6 +16,12 @@
 #include <exception>
 #include <filesystem>
 #include <memory>
+
+#include "Animation/AnimationManager.h"
+#include "Animation/AnimSequence.h"
+#include "Animation/Skeleton.h"
+#include "Animation/SkeletonManager.h"
+#include "Animation/SkeletonTypes.h"
 
 TMap<FString, UStaticMesh*> FMeshManager::StaticMeshCache;
 TMap<FString, USkeletalMesh*> FMeshManager::SkeletalMeshCache;
@@ -123,6 +129,21 @@ static FAssetImportMetadata MakeImportMetadata(const FString& SourcePath)
 	TryGetSourceFileState(SourcePath, Metadata.SourceTimestamp, Metadata.SourceFileSize);
 
 	return Metadata;
+}
+
+static FString MakeSkeletonGuid(const FReferenceSkeleton& RefSkeleton)
+{
+	FString Accum;
+
+	for (const FReferenceBone& Bone : RefSkeleton.Bones)
+	{
+		Accum += Bone.Name;
+		Accum += ".";
+		Accum += std::to_string(Bone.ParentIndex);
+		Accum += ".";
+	}
+
+	return std::to_string(std::hash<std::string> {}(Accum));
 }
 
 static bool IsPackageSourceStale(const FString& BinaryPath, EAssetPackageType ExpectedType, bool& bOutMissingSource)
@@ -397,6 +418,11 @@ bool FMeshManager::ReimportSkeletalMesh(const FString& BinaryPath, ID3D11Device*
 	USkeletalMesh* SkeletalMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
 	SkeletalMesh->SetSkeletalMaterials(std::move(FFbxImporter::SkeletalMaterials));
 	SkeletalMesh->SetSkeletalMeshAsset(ImportedMesh);
+	if (!ImportedMesh->SkeletonPath.empty() && ImportedMesh->SkeletonPath != "None")
+	{
+		USkeleton* Skeleton = FSkeletonManager::Get().LoadSkeleton(ImportedMesh->SkeletonPath);
+		SkeletalMesh->SetSkeleton(Skeleton);
+	}
 	if (!SaveSkeletalMeshBinary(SkeletalMesh, PackagePath, Metadata.SourcePath)) return false;
 
 	SkeletalMesh->InitResources(Device);
@@ -728,6 +754,12 @@ USkeletalMesh* FMeshManager::LoadSkeletalMesh(const FString& PathFileName, ID3D1
 				UE_LOG("SkeletalMesh package is stale. Package=%s MissingSource=%s", CacheKey.c_str(), bMissingSource ? "true" : "false");
 			}
 
+			if (!SkeletalMesh->GetSkeletonPath().empty() && SkeletalMesh->GetSkeletonPath() != "None")
+			{
+				USkeleton* Skeleton = FSkeletonManager::Get().LoadSkeleton(SkeletalMesh->GetSkeletonPath());
+				SkeletalMesh->SetSkeleton(Skeleton);
+			}
+
 			SkeletalMesh->InitResources(InDevice);
 			SkeletalMesh->SetAssetPathFileName(CacheKey);
 			SkeletalMeshCache[CacheKey] = SkeletalMesh;
@@ -758,6 +790,12 @@ USkeletalMesh* FMeshManager::LoadSkeletalMesh(const FString& PathFileName, ID3D1
 	SkeletalMesh->SetSkeletalMaterials(std::move(FFbxImporter::SkeletalMaterials));
 	SkeletalMesh->SetSkeletalMeshAsset(ImportedMesh);
 
+	if (!ImportedMesh->SkeletonPath.empty() && ImportedMesh->SkeletonPath != "None")
+	{
+		USkeleton* Skeleton = FSkeletonManager::Get().LoadSkeleton(ImportedMesh->SkeletonPath);
+		SkeletalMesh->SetSkeleton(Skeleton);
+	}
+
 	// SkeletalMesh는 Bone, Section, Vertex/Index까지 함께 저장한다.
 	// StaticMesh와 섞이지 않도록 .sketbin으로 따로 캐시한다.
 	SaveSkeletalMeshBinary(SkeletalMesh, CacheKey, PathFileName);
@@ -787,13 +825,45 @@ bool FMeshManager::LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Devi
 		return false;
 	}
 
+	const FString SkeletonPath = FSkeletonManager::GetSkeletonPackagePath(PathFileName);
+
+	USkeleton* Skeleton = UObjectManager::Get().CreateObject<USkeleton>();
+	Skeleton->SetAssetPathFileName(SkeletonPath);
+	Skeleton->GetMutableReferenceSkeleton() = FFbxImporter::ImportedSkeleton;
+	Skeleton->SetSkeletonGuid(MakeSkeletonGuid(Skeleton->GetReferenceSkeleton()));
+
+	if (!FSkeletonManager::Get().SaveSkeleton(Skeleton, SkeletonPath, PathFileName))
+	{
+		UE_LOG("SkeletalMesh import failed: skeleton save failed. Path=%s", PathFileName.c_str());
+		return false;
+	}
+
+	for (UAnimSequence* Sequence : FFbxImporter::ImportedAnimSequences)
+	{
+		if (!Sequence)
+		{
+			continue;
+		}
+
+		Sequence->SetSkeletonPath(SkeletonPath);
+		Sequence->SetSkeletonGuid(Skeleton->GetSkeletonGuid());
+
+		const FString AnimPath = FAnimationManager::GetAnimationPackagePath(PathFileName, Sequence->GetName());
+		if (!FAnimationManager::Get().SaveAnimation(Sequence, AnimPath, PathFileName))
+		{
+			UE_LOG("SkeletalMesh import failed: animation save failed. Source=%s Anim=%s", PathFileName.c_str(), Sequence->GetName().c_str());
+		}
+	}
+
+
 	std::unique_ptr<FSkeletalMesh> NewMesh = std::make_unique<FSkeletalMesh>();
-	NewMesh->PathFileName = NormalizeProjectPath(PathFileName);
-	NewMesh->Vertices = std::move(FFbxImporter::Vertices);
-	NewMesh->Indices = std::move(FFbxImporter::Indices);
-	NewMesh->Sections = std::move(FFbxImporter::Sections);
-	NewMesh->MeshRanges = std::move(FFbxImporter::MeshRanges);
-	NewMesh->Bones = std::move(FFbxImporter::Bones);
+	NewMesh->PathFileName                  = NormalizeProjectPath(PathFileName);
+	NewMesh->SkeletonPath                  = SkeletonPath;
+	NewMesh->Vertices                      = std::move(FFbxImporter::Vertices);
+	NewMesh->Indices                       = std::move(FFbxImporter::Indices);
+	NewMesh->Sections                      = std::move(FFbxImporter::Sections);
+	NewMesh->MeshRanges                    = std::move(FFbxImporter::MeshRanges);
+	NewMesh->Bones                         = std::move(FFbxImporter::Bones);
 
 	OutMesh = NewMesh.release();
 	return true;

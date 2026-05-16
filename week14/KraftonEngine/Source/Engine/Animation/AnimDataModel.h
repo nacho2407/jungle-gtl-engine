@@ -9,15 +9,39 @@
 class UAnimDataModel : public UObject
 {
 public:
-	DECLARE_CLASS(UAnimDataModel, UObject)
+    DECLARE_CLASS(UAnimDataModel, UObject)
 
-	UAnimDataModel() = default;
-	~UAnimDataModel() override = default;
+    UAnimDataModel()           = default;
+    ~UAnimDataModel() override = default;
 
-	float PlayLength = 0.0f;     // sec
-	float FrameRate  = 30.0f;    // fps
-	int32 NumFrames  = 0;
+    void Serialize(FArchive& Ar) override;
 
-	TArray<FBoneAnimationTrack> BoneAnimationTracks;
-	TArray<FAnimNotifyEvent>    Notifies;
+    float PlayLength = 0.0f;  // sec
+    float FrameRate  = 30.0f; // fps
+    int32 NumFrames  = 0;
+
+    TArray<FBoneAnimationTrack> BoneAnimationTracks;
+    TArray<FAnimNotifyEvent>    Notifies;
+
+    const TArray<FBoneAnimationTrack>& GetBoneAnimationTracks() const
+    {
+        return BoneAnimationTracks;
+    }
+
+    TArray<FBoneAnimationTrack>& GetMutableBoneAnimationTracks()
+    {
+        return BoneAnimationTracks;
+    }
+
+    int32 GetNumberOfFrames() const
+    {
+        return NumFrames;
+    }
+
+    void SetTiming(float InPlayLength, float InFrameRate, int32 InNumFrames)
+    {
+        PlayLength = InPlayLength;
+        FrameRate  = InFrameRate;
+        NumFrames  = InNumFrames;
+    }
 };

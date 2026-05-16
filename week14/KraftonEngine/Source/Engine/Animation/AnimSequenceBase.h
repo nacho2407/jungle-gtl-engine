@@ -11,25 +11,46 @@ struct FAnimExtractContext;
 class UAnimSequenceBase : public UObject
 {
 public:
-	DECLARE_CLASS(UAnimSequenceBase, UObject)
+    DECLARE_CLASS(UAnimSequenceBase, UObject)
 
-	UAnimSequenceBase() = default;
-	~UAnimSequenceBase() override = default;
+    UAnimSequenceBase()           = default;
+    ~UAnimSequenceBase() override = default;
 
-	// ── 시간/길이 ──
-	virtual float GetPlayLength() const { return PlayLength; }
-	virtual float GetFrameRate()  const { return FrameRate; }
+    void Serialize(FArchive& Ar) override;
 
-	// ── 포즈 추출 ──
-	// Output.SkeletalMesh, Output.Pose.size() 는 호출자가 이미 세팅했다고 가정.
-	// 자식 구현은 본별 키프레임을 Ctx.CurrentTime 으로 샘플링해서 Output.Pose 를 채운다.
-	virtual void GetBonePose(FPoseContext& Output, const FAnimExtractContext& Ctx) const {}
+    // ── 시간/길이 ──
+    virtual float GetPlayLength() const
+    {
+        return PlayLength;
+    }
 
-	// ── Notify ──
-	const TArray<FAnimNotifyEvent>& GetNotifies() const { return Notifies; }
+    virtual float GetFrameRate() const
+    {
+        return FrameRate;
+    }
+
+    // ── 포즈 추출 ──
+    // Output.SkeletalMesh, Output.Pose.size() 는 호출자가 이미 세팅했다고 가정.
+    // 자식 구현은 본별 키프레임을 Ctx.CurrentTime 으로 샘플링해서 Output.Pose 를 채운다.
+    virtual void GetBonePose(FPoseContext& Output, const FAnimExtractContext& Ctx) const
+    {
+        (void)Output;
+        (void)Ctx;
+    }
+
+    // ── Notify ──
+    const TArray<FAnimNotifyEvent>& GetNotifies() const
+    {
+        return Notifies;
+    }
+
+    TArray<FAnimNotifyEvent>& GetMutableNotifies()
+    {
+        return Notifies;
+    }
 
 protected:
-	float PlayLength = 0.0f;   // sec
-	float FrameRate  = 30.0f;  // fps
-	TArray<FAnimNotifyEvent> Notifies;
+    float                    PlayLength = 0.0f;  // sec
+    float                    FrameRate  = 30.0f; // fps
+    TArray<FAnimNotifyEvent> Notifies; 
 };
