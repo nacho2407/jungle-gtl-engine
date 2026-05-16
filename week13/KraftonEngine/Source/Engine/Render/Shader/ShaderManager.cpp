@@ -45,7 +45,8 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	GetOrCreate(EShaderPath::Billboard, StartupError);
 	GetOrCreate(EShaderPath::HeightFog, StartupError);
 	GetOrCreate(EShaderPath::GammaCorrection, StartupError);
-	GetOrCreate(EShaderPath::ShadowDepth, StartupError);
+	GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory::StaticMesh, StartupError);
+	GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory::SkeletalMesh, StartupError);
 	GetOrCreate(EShaderPath::ShadowMapVis, StartupError);
 	GetOrCreate(EShaderPath::CameraFade, StartupError);
 	GetOrCreate(EShaderPath::CameraVignette, StartupError);
@@ -101,6 +102,11 @@ FShader* FShaderManager::GetOrCreate(const FShaderKey& Key, EShaderErrorMode Err
 			EUberLitDefines::EVertexFactory::StaticMesh, ErrorMode);
 	}
 
+	if (Key.Path == EShaderPath::ShadowDepth && Key.VSEntryPoint == "VS")
+	{
+		return GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory::StaticMesh, ErrorMode);
+	}
+
 	auto It = ShaderCache.find(Key);
 	if (It != ShaderCache.end())
 	{
@@ -153,6 +159,15 @@ FShader* FShaderManager::PreCompile(const FShaderKey& Key, const D3D_SHADER_MACR
 	auto* RawPtr = CacheEntry.Shader.get();
 	ShaderCache.emplace(Key, std::move(CacheEntry));
 	return RawPtr;
+}
+
+FShader* FShaderManager::GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory VF, EShaderErrorMode ErrorMode)
+{
+	const D3D_SHADER_MACRO* Defines =
+		(VF == EShadowDepthDefines::EVertexFactory::SkeletalMesh)
+		? EShadowDepthDefines::SkeletalMesh
+		: EShadowDepthDefines::StaticMesh;
+	return PreCompile(EShadowDepthDefines::MakePermutationKey(VF), Defines, ErrorMode);
 }
 
 FShader* FShaderManager::GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel LightingModel,
