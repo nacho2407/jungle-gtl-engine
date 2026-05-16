@@ -11,6 +11,8 @@ DEFINE_CLASS(USkinnedMeshComponent, UMeshComponent)
 
 namespace
 {
+ESkinningModeOverride GSkinningModeOverride = ESkinningModeOverride::Component;
+
 static void ComputeGlobalPoseRecursive(
     int32 BoneIndex,
     const TArray<FBoneInfo>& Bones,
@@ -176,6 +178,37 @@ void USkinnedMeshComponent::SetSkinningMode(ESkinningMode InMode)
     MarkRenderStateDirty();
 }
 
+ESkinningMode USkinnedMeshComponent::GetResolvedSkinningMode() const
+{
+    switch (GSkinningModeOverride)
+    {
+    case ESkinningModeOverride::CPU:
+        return ESkinningMode::CPU;
+    case ESkinningModeOverride::GPU:
+        return ESkinningMode::GPU;
+    case ESkinningModeOverride::Component:
+    default:
+        return SkinningMode;
+    }
+}
+
+void USkinnedMeshComponent::SetGlobalSkinningModeOverride(ESkinningMode InMode)
+{
+    GSkinningModeOverride = InMode == ESkinningMode::CPU
+        ? ESkinningModeOverride::CPU
+        : ESkinningModeOverride::GPU;
+}
+
+void USkinnedMeshComponent::ClearGlobalSkinningModeOverride()
+{
+    GSkinningModeOverride = ESkinningModeOverride::Component;
+}
+
+ESkinningModeOverride USkinnedMeshComponent::GetGlobalSkinningModeOverride()
+{
+    return GSkinningModeOverride;
+}
+
 void USkinnedMeshComponent::UpdateWorldAABB() const
 {
     WorldAABB.Reset();
@@ -186,14 +219,15 @@ void USkinnedMeshComponent::UpdateWorldAABB() const
         return;
     }
 
-    if (SkinningMode == ESkinningMode::CPU)
+    const ESkinningMode ResolvedSkinningMode = GetResolvedSkinningMode();
+    if (ResolvedSkinningMode == ESkinningMode::CPU)
     {
         const_cast<USkinnedMeshComponent*>(this)->EnsureSkinningUpdated();
     }
 
     const FMatrix& WorldMatrix = GetWorldMatrix();
 
-    if (SkinningMode == ESkinningMode::CPU && !SkinnedVertices.empty())
+    if (ResolvedSkinningMode == ESkinningMode::CPU && !SkinnedVertices.empty())
     {
         for (const FSkeletalMeshVertex& Vertex : SkinnedVertices)
         {
@@ -332,6 +366,15 @@ bool USkinnedMeshComponent::ConsumeRenderStateDirty()
 
 void USkinnedMeshComponent::EnsureSkinningUpdated()
 {
+    const ESkinningMode ResolvedSkinningMode = GetResolvedSkinningMode();
+    if (ResolvedSkinningMode != LastResolvedSkinningMode)
+    {
+        LastResolvedSkinningMode = ResolvedSkinningMode;
+        bSkinningDirty = true;
+        MarkBoundsDirty();
+        MarkRenderStateDirty();
+    }
+
     if (!bSkinningDirty)
     {
         return;
@@ -345,7 +388,7 @@ void USkinnedMeshComponent::EnsureSkinningUpdated()
     UpdateCurrentGlobalPose();
     UpdateSkinningMatrices();
 
-    if (SkinningMode == ESkinningMode::CPU)
+    if (ResolvedSkinningMode == ESkinningMode::CPU)
     {
         SkinVerticesCPU();
     }

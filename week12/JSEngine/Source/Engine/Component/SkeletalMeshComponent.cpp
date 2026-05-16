@@ -1,8 +1,9 @@
-#include "SkeletalMeshComponent.h"
+﻿#include "SkeletalMeshComponent.h"
 
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
+#include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
@@ -213,6 +214,6 @@ void USkeletalMeshComponent::HandleAnimNotify(const FAnimNotifyEvent& Notify)
 
     if (AActor* OwnerActor = GetOwner())
     {
-        // OwnerActor->HandleAnimNotify(Notify);
+        OwnerActor->OnAnimNotify(this, Notify);
     }
 }
