@@ -60,6 +60,28 @@ void UObject::Serialize(FArchive& Ar)
 	Ar << ObjectName;
 }
 
+void UObject::SerializeProperties(FArchive& Ar, uint32 RequiredFlags)
+{
+	TArray<FProperty> Properties;
+	GetClass()->GetProperties(Properties);
+
+	for (const FProperty& Property : Properties)
+	{
+		if ((Property.Flags & RequiredFlags) != RequiredFlags)
+		{
+			continue;
+		}
+
+		FPropertyDescriptor Desc = Property.ToDescriptor(this);
+		if (!Desc.ValuePtr)
+		{
+			continue;
+		}
+
+		Desc.Serialize(Ar);
+	}
+}
+
 void UObject::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	TArray<FProperty> Properties;

@@ -4,7 +4,9 @@
 #include "SimpleJSON/json.hpp"
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
+#include "Math/Rotator.h"
 #include "Object/FName.h"
+#include "Serialization/Archive.h"
 
 json::JSON FPropertyDescriptor::Serialize() const
 {
@@ -234,6 +236,82 @@ void FPropertyDescriptor::Deserialize(json::JSON& Value)
 		break;
 	}
 
+	default:
+		break;
+	}
+}
+
+void FPropertyDescriptor::Serialize(FArchive& Ar) const
+{
+	switch (Type)
+	{
+	case EPropertyType::Bool:
+		Ar << *static_cast<bool*>(ValuePtr);
+		break;
+	case EPropertyType::ByteBool:
+		Ar << *static_cast<uint8*>(ValuePtr);
+		break;
+	case EPropertyType::Int:
+		Ar << *static_cast<int32*>(ValuePtr);
+		break;
+	case EPropertyType::Float:
+		Ar << *static_cast<float*>(ValuePtr);
+		break;
+	case EPropertyType::Vec3:
+		Ar << *static_cast<FVector*>(ValuePtr);
+		break;
+	case EPropertyType::Rotator:
+		Ar << *static_cast<FRotator*>(ValuePtr);
+		break;
+	case EPropertyType::Vec4:
+	case EPropertyType::Color4:
+		Ar << *static_cast<FVector4*>(ValuePtr);
+		break;
+	case EPropertyType::String:
+	case EPropertyType::Script:
+	case EPropertyType::SceneComponentRef:
+	case EPropertyType::StaticMeshRef:
+	case EPropertyType::SkeletalMeshRef:
+		Ar << *static_cast<FString*>(ValuePtr);
+		break;
+	case EPropertyType::MaterialSlot:
+		Ar << static_cast<FMaterialSlot*>(ValuePtr)->Path;
+		break;
+	case EPropertyType::MaterialSlotArray:
+	{
+		TArray<FMaterialSlot>* Slots = static_cast<TArray<FMaterialSlot>*>(ValuePtr);
+		uint32 SlotCount = static_cast<uint32>(Slots->size());
+		Ar << SlotCount;
+		if (Ar.IsLoading())
+		{
+			Slots->resize(SlotCount);
+		}
+		for (FMaterialSlot& Slot : *Slots)
+		{
+			Ar << Slot.Path;
+		}
+		break;
+	}
+	case EPropertyType::Name:
+		Ar << *static_cast<FName*>(ValuePtr);
+		break;
+	case EPropertyType::Enum:
+		Ar.Serialize(ValuePtr, EnumSize);
+		break;
+	case EPropertyType::Vec3Array:
+		Ar << *static_cast<TArray<FVector>*>(ValuePtr);
+		break;
+	case EPropertyType::Struct:
+	{
+		if (!StructFunc || !ValuePtr) break;
+		TArray<FPropertyDescriptor> Children;
+		StructFunc(ValuePtr, Children);
+		for (const FPropertyDescriptor& Child : Children)
+		{
+			Child.Serialize(Ar);
+		}
+		break;
+	}
 	default:
 		break;
 	}

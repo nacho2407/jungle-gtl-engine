@@ -21,7 +21,6 @@ FPrimitiveSceneProxy* UCylindricalBillboardComponent::CreateSceneProxy()
 void UCylindricalBillboardComponent::Serialize(FArchive& Ar)
 {
 	UBillboardComponent::Serialize(Ar);
-	Ar << BillboardAxis;
 }
 
 void UCylindricalBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

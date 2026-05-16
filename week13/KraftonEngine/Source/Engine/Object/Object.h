@@ -151,6 +151,7 @@ public:
 
 	virtual UObject* Duplicate(UObject* NewOuter = nullptr) const;
 	virtual void Serialize(FArchive& Ar);
+	void SerializeProperties(FArchive& Ar, uint32 RequiredFlags);
 	virtual void PostDuplicate() {}
 
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps);

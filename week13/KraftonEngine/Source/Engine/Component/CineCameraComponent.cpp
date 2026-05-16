@@ -15,10 +15,6 @@ END_PROPERTY_REGISTRATION()
 void UCineCameraComponent::Serialize(FArchive& Ar)
 {
 	UCameraComponent::Serialize(Ar);
-	Ar << Letterbox.bEnabled;
-	Ar << Letterbox.Amount;
-	Ar << Letterbox.Thickness;
-	Ar << Letterbox.Color;
 }
 
 void UCineCameraComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

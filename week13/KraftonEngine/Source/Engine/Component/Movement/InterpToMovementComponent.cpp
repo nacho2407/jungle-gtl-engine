@@ -68,11 +68,6 @@ void UInterpToMovementComponent::GetEditableProperties(TArray<FPropertyDescripto
 void UInterpToMovementComponent::Serialize(FArchive& Ar)
 {
 	UMovementComponent::Serialize(Ar);
-	Ar << InterpBehaviour;
-	Ar << Duration;
-	Ar << bAutoActivate;
-	Ar << bFaceTargetDir;
-	Ar << ControlPoints;
 }
 
 // --- Control Point Management--------------------------------------------

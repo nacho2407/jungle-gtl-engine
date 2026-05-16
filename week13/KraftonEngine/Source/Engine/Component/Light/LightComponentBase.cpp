@@ -23,10 +23,6 @@ void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 void ULightComponentBase::Serialize(FArchive& Ar)
 {
 	USceneComponent::Serialize(Ar);
-	Ar << Intensity;
-	Ar << LightColor;
-	Ar << bVisible;
-	Ar << bCastShadows;
 }
 
 UBillboardComponent* ULightComponentBase::EnsureEditorBillboard()

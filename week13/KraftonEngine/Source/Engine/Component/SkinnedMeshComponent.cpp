@@ -667,19 +667,9 @@ UMaterial* USkinnedMeshComponent::GetMaterial(int32 ElementIndex) const
 	return nullptr;
 }
 
-// FArchive 기반 직렬화 — 복제 왕복용. 자산은 경로로만 들고, 실제 로드는 PostDuplicate에서.
-static FArchive& operator<<(FArchive& Ar, FMaterialSlot& Slot)
-{
-	Ar << Slot.Path;
-	return Ar;
-}
-
 void USkinnedMeshComponent::Serialize(FArchive& Ar)
 {
 	UMeshComponent::Serialize(Ar);
-	// asset pointer는 session마다 달라질 수 있어 path와 slot path만 직렬화한다.
-	Ar << SkeletalMeshPath;
-	Ar << MaterialSlots;
 }
 
 // Duplicate/load 섹션: 저장된 path를 실제 asset pointer로 복원하되 dirty 처리는 SetSkeletalMesh에 위임한다.

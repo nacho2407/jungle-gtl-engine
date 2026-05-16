@@ -90,9 +90,6 @@ void UProjectileMovementComponent::GetEditableProperties(TArray<FPropertyDescrip
 void UProjectileMovementComponent::Serialize(FArchive& Ar)
 {
 	UMovementComponent::Serialize(Ar);
-	Ar << Velocity;
-	Ar << InitialSpeed;
-	Ar << MaxSpeed;
 }
 
 void UProjectileMovementComponent::ContributeSelectedVisuals(FScene& Scene) const

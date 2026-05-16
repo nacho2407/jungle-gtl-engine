@@ -94,5 +94,4 @@ void USphereComponent::PostEditProperty(const char* PropertyName)
 void USphereComponent::Serialize(FArchive& Ar)
 {
 	UShapeComponent::Serialize(Ar);
-	Ar << SphereRadius;
 }

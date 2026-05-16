@@ -79,8 +79,6 @@ void UPointLightComponent::DestroyFromScene()
 void UPointLightComponent::Serialize(FArchive& Ar)
 {
 	ULightComponent::Serialize(Ar);
-	Ar << AttenuationRadius;
-	Ar << LightFalloffExponent;
 }
 
 // POV 매개변수는 base 시그니처 일관성 위해 받지만 큐브맵 face 별 매트릭스에는 사용 안 함.
