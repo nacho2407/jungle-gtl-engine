@@ -128,7 +128,12 @@ void FGPUOcclusionCulling::CreateHiZResources(uint32 Width, uint32 Height)
 	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 
 	if (FAILED(Device->CreateTexture2D(&desc, nullptr, &HiZTextureA))) return;
-	if (FAILED(Device->CreateTexture2D(&desc, nullptr, &HiZTextureB))) return;
+	
+	if (FAILED(Device->CreateTexture2D(&desc, nullptr, &HiZTextureB)))
+	{
+		ReleaseHiZResources();
+		return;
+	};
 
 	// Full-chain SRVs (OcclusionTest에서 사용)
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvAll = {};

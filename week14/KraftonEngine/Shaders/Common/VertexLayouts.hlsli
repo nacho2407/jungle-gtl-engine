@@ -32,6 +32,18 @@ struct VS_Input_PNCTT
     float4 tangent : TANGENT;
 };
 
+// 나도 이러고 싶지 않았다.
+struct VS_Input_PNCTTBB
+{
+    float3 position : POSITION;
+    float3 normal : NORMAL;
+    float4 color : COLOR;
+    float2 texcoord : TEXTCOORD;
+    float4 tangent : TANGENT;
+    int4   boneIndices : BONEINDEX;
+    float4 boneWeights : BONEWEIGHT;
+};
+
 // FTextureVertex (Position + TexCoord)
 // 사용: Font, SubUV, OverlayFont
 struct VS_Input_PT

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Device/D3DDevice.h"
@@ -37,6 +37,11 @@ namespace ELightTexSlot
 	constexpr uint32 ClusterLightGrid = 12; // t12 : StructuredBuffer<uint2>
 }
 
+namespace EVertexFactoryTexSlot
+{
+	constexpr uint32 SkinMatrices = 13; // t13: StructuredBuffer<float4x4>
+}
+
 namespace ELightCullingUAVSlot
 {
 	constexpr uint32 ClusterAABB = 0;
@@ -44,6 +49,7 @@ namespace ELightCullingUAVSlot
 	constexpr uint32 LightGrid = 2;
 	constexpr uint32 GlobalCount = 3;
 }
+
 namespace ELightCullingSRVSlot
 {
 	constexpr uint32 ClusterAABB = 0;

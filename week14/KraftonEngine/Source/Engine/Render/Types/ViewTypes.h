@@ -22,6 +22,27 @@ enum class ELightCullingMode : uint32
 	Cluster = 2
 };
 
+enum class ESkinningMode : uint32
+{
+	CPU = 0,
+	GPU = 1,
+};
+
+namespace SkinningModeRuntime
+{
+	inline ESkinningMode Current = ESkinningMode::GPU;
+
+	inline ESkinningMode Get()
+	{
+		return Current;
+	}
+
+	inline void Set(ESkinningMode InMode)
+	{
+		Current = InMode;
+	}
+}
+
 struct FShowFlags
 {
 	bool bStaticMesh = true;
@@ -85,4 +106,7 @@ struct FViewportRenderOptions
 	ELightCullingMode LightCullingMode = ELightCullingMode::Cluster;
 	float HeatMapMax = 20.0f;
 	bool Enable25DCulling = true;
+
+	// Animaton Skinning 모드 설정
+	ESkinningMode SkinningMode = ESkinningMode::GPU;
 };

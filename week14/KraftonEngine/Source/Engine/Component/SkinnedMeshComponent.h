@@ -73,6 +73,7 @@ protected:
 
 	void InitSkinningCache();
 	void UpdateCPUSkinning();
+	void RefreshSkinningAfterPoseChanged();
 	void BuildBoneEditGlobalTransforms(TArray<FTransform>& OutGlobals) const;
 	void BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlobals) const;
 
