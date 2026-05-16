@@ -506,6 +506,9 @@
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp">
       <Filter>Source\Editor\Subsystem</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorAnimationDebugWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -1357,6 +1360,9 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h">
       <Filter>Source\Editor\Subsystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorAnimationDebugWidget.h">
+      <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h">
       <Filter>Source\Editor\UI</Filter>

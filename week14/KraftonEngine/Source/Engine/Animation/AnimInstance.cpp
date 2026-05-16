@@ -64,6 +64,13 @@ void UAnimInstance::DispatchQueuedAnimEvents()
 
 		// 2) AnimInstance 자식이 NotifyName 매칭으로 추가 처리할 수 있도록 fallback 후크.
 		HandleAnimNotify(Q.Event);
+
+		// 3) 디버그 ring buffer — Editor widget 가 최근 N 개 표시.
+		RecentNotifies.push_back(Q);
+		if (RecentNotifies.size() > RecentNotifyCapacity)
+		{
+			RecentNotifies.erase(RecentNotifies.begin());
+		}
 	}
 	NotifyQueue.clear();
 }
