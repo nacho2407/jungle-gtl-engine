@@ -253,6 +253,12 @@ json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj)
 		{
 			continue;
 		}
+
+		if (Desc.Name.empty())
+		{
+			continue;
+		}
+
 		Props[Desc.Name] = Desc.Serialize();
 	}
 	return Props;
@@ -493,7 +499,14 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 
 		json::JSON& Value = PropsJSON[PropertyKey];
 		Desc.Deserialize(Value);
-		Obj->PostEditProperty(Property.Name);
+
+		FPropertyChangedEvent Event;
+		Event.Descriptor = &Desc;
+		Event.PropertyName = Desc.Name.c_str();
+		Event.DisplayName = Desc.DisplayName.empty() ? Desc.Name.c_str() : Desc.DisplayName.c_str();
+		Event.Type = Desc.Type;
+		Event.ChangeType = EPropertyChangeType::Load;
+		Obj->PostEditChangeProperty(Event);
 	}
 
 }
