@@ -17,8 +17,8 @@ void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 	USceneComponent::GetEditableProperties(OutProps);
 	constexpr EPropertyUsageFlags EditAndAnimate =
 		EPropertyUsageFlags::Editable | EPropertyUsageFlags::Animatable;
-	OutProps.push_back({ "Color", EPropertyType::Color, &LightColor, 0.0f, 0.0f, 0.1f, nullptr, 0, nullptr, EditAndAnimate });
-	OutProps.push_back({ "Intensity", EPropertyType::Float, &Intensity, 0.0f, 0.0f, 0.1f, nullptr, 0, nullptr, EditAndAnimate });
+	OutProps.push_back({ "Color", EPropertyType::Color, &LightColor, 0.0f, 0.0f, 0.1f, nullptr, EditAndAnimate });
+	OutProps.push_back({ "Intensity", EPropertyType::Float, &Intensity, 0.0f, 0.0f, 0.1f, nullptr, EditAndAnimate });
 	OutProps.push_back({ "Cast Shadows", EPropertyType::Bool, &bCastShadows });
 }
 

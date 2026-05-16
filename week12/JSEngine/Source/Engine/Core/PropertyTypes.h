@@ -141,37 +141,6 @@ struct FPropertyDescriptor
 	{
 	}
 
-	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr,
-		float InMin, float InMax, float InSpeed,
-		const char** /*LegacyEnumNames*/,
-		uint32 /*LegacyEnumCount*/,
-		void* InExtraData,
-		EPropertyUsageFlags InUsageFlags = EPropertyUsageFlags::Editable,
-		const char* InDisplayName = nullptr)
-		: Name(InName)
-		, Type(InType)
-		, ValuePtr(InValuePtr)
-		, UsageFlags(InUsageFlags)
-		, Min(InMin)
-		, Max(InMax)
-		, Speed(InSpeed)
-		, DisplayName(InDisplayName)
-		, ExtraData(InExtraData)
-	{
-	}
-
-	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr,
-		float InMin, float InMax, float InSpeed,
-		const char** /*LegacyEnumNames*/,
-		uint32 /*LegacyEnumCount*/)
-		: Name(InName)
-		, Type(InType)
-		, ValuePtr(InValuePtr)
-		, Min(InMin)
-		, Max(InMax)
-		, Speed(InSpeed)
-	{
-	}
 };
 
 /** 각 프로퍼티의 Size 값을 반환합니다. 0을 반환하는 경우 특수 케이스입니다.

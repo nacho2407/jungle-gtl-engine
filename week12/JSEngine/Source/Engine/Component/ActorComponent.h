@@ -61,7 +61,7 @@ public:
 	bool IsEditorOnly() const { return bIsEditorOnly; }
 
 	virtual void OnRegister() {}
-    virtual void OnUnregister() {}
+	virtual void OnUnregister() {}
 
 protected:
 	virtual void TickComponent(float DeltaTime) {}
@@ -73,19 +73,19 @@ protected:
 	FGuid PersistentGuid;
 
 private:
-	UPROPERTY()
+	UPROPERTY(DisplayName = "Active")
 	bool bIsActive = true;
 
-	UPROPERTY()
+	UPROPERTY(DisplayName = "Auto Activate")
 	bool bAutoActivate = true;
 
-	UPROPERTY()
+	UPROPERTY(DisplayName = "Enable Tick")
 	bool bCanEverTick = true;
 
-	UPROPERTY()
+	UPROPERTY(DisplayName = "Be Serialized")
 	bool bTransient = false; // 런타임에만 존재해야 하며, 저장되어서는 안 되는 객체에 붙입니다. (UUID 컴포넌트)
 
-	UPROPERTY()
+	UPROPERTY(DisplayName = "Editor Only")
 	bool bIsEditorOnly = false;
 };
 

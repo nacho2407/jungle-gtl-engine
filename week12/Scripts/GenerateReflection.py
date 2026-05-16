@@ -37,35 +37,6 @@ TYPE_MAP = {
     'USceneComponent*': 'EPropertyType::SceneComponentRef',
 }
 
-# Enum의 underlying type 크기를 구하기 위한 테이블입니다.
-ENUM_SIZE_MAP = {
-    'bool': 1,
-    'char': 1,
-    'signed char': 1,
-    'unsigned char': 1,
-    'int8': 1,
-    'uint8': 1,
-    'int8_t': 1,
-    'uint8_t': 1,
-    'short': 2,
-    'unsigned short': 2,
-    'int16': 2,
-    'uint16': 2,
-    'int16_t': 2,
-    'uint16_t': 2,
-    'int': 4,
-    'unsigned int': 4,
-    'int32': 4,
-    'uint32': 4,
-    'int32_t': 4,
-    'uint32_t': 4,
-    'long long': 8,
-    'unsigned long long': 8,
-    'int64': 8,
-    'uint64': 8,
-    'int64_t': 8,
-    'uint64_t': 8,
-}
 
 # 스크립트 위치를 기준으로 Root와 Source 경로를 계산합니다.
 ROOT = Path(__file__).resolve().parent.parent
@@ -86,14 +57,6 @@ def normalize_cpp_type(cpp_type):
     normalized = re.sub(r'\s*,\s*', ', ', normalized)
     normalized = re.sub(r'\s*\*\s*', '*', normalized)
     normalized = re.sub(r'\s*&\s*', '&', normalized)
-    return normalized
-
-
-# enum의 underlying type을 정규화합니다. namespace가 붙은 정수 타입은 마지막 이름만 사용합니다.
-def normalize_enum_underlying_type(cpp_type):
-    normalized = normalize_cpp_type(cpp_type or 'int32')
-    if '::' in normalized and ' ' not in normalized:
-        normalized = normalized.split('::')[-1]
     return normalized
 
 
@@ -152,6 +115,7 @@ def skip_ws(content, index):
     while index < len(content) and content[index].isspace():
         index += 1
     return index
+    
 
 # 여는 괄호/중괄호 위치에서 시작해 대응되는 닫는 문자의 위치를 찾습니다.
 def find_matching_delimiter(content, open_index, open_ch='(', close_ch=')'):
@@ -226,6 +190,7 @@ def iter_macro_invocations(content, keyword, start=0, end=None):
             break
         yield macro
         index = macro['end']
+
 
 # UPROPERTY 매크로 뒤의 멤버 변수 선언문을 세미콜론까지 읽습니다. 템플릿, 괄호, 배열, 중괄호 내부 세미콜론은 무시합니다.
 def read_statement_until_semicolon(content, start, end):
@@ -477,18 +442,16 @@ def parse_enum_members(enum_body):
         if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', name):
             continue
 
+        if get_metadata_value(umeta_metadata, 'Hidden') is None:
+            display_name = get_metadata_value(umeta_metadata, 'DisplayName', 'Display') or name
+            values.append({
+                'name': name,
+                'display_name': display_name,
+                'value': value,
+            })
+
         known_values[name] = value
         next_value = value + 1
-
-        if umeta_metadata.get('Hidden') is True:
-            continue
-
-        display_name = get_metadata_value(umeta_metadata, 'DisplayName', 'Display') or name
-        values.append({
-            'name': name,
-            'display_name': display_name,
-            'value': value,
-        })
 
     return values
 
@@ -557,14 +520,11 @@ def collect_enums():
             if semi >= len(content) or content[semi] != ';':
                 continue
 
-            # enum 크기는 생성된 C++ 코드에서 sizeof(EnumType)으로 계산합니다.
-            # 따라서 파서가 C++ typedef/using/플랫폼별 정수 타입 크기를 모두 알 필요가 없습니다.
             namespace_parts = find_enclosing_namespaces(content, enum_start)
             qualified_name = qualify_name(namespace_parts, enum_name)
             enum_infos.append({
                 'name': enum_name,
                 'qualified_name': qualified_name,
-                'size_expr': f'sizeof({qualified_name})',
                 'values': parse_enum_members(content[open_brace + 1:close_brace]),
             })
 
@@ -637,7 +597,7 @@ def generate_enum_metadata(enum_infos):
         blocks.append(
             f'static const FEnumValueMetaData {values_array_name}[] = {{\n{values_body}}};\n'
             f'static const FEnumMetaData {enum_meta_name} = {{ '
-            f'{cpp_string_literal(enum_name)}, static_cast<uint8>({enum_info["size_expr"]}), {values_array_name}, {len(values)} }};'
+            f'{cpp_string_literal(enum_name)}, static_cast<uint8>(sizeof({enum_name})), {values_array_name}, {len(values)} }};'
         )
     return '\n\n'.join(blocks)
 

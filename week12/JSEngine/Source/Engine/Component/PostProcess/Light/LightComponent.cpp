@@ -253,7 +253,7 @@ void ULightComponent::PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutPr
 			SO.W + SO.Y
 		};
 
-		OutProps.push_back({ "ShadowMap", EPropertyType::SRV, AtlasManager.GetSRV(), 0.f, 0.f, 0.f, nullptr, 0, &ShadowMapDisplay });
+		OutProps.push_back({ "ShadowMap", EPropertyType::SRV, AtlasManager.GetSRV(), 0.f, 0.f, 0.f, &ShadowMapDisplay });
 	}
 	else if (bHasDebugShadowCubeTile)
 	{
@@ -264,8 +264,6 @@ void ULightComponent::PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutPr
 				return;
 		}
 
-		OutProps.push_back({ "CubeMap",
-							 EPropertyType::CubeSRV,
-							 FaceSRV, 0.f, 0.f, 0.f, nullptr, 0 });
+		OutProps.push_back({ "CubeMap", EPropertyType::CubeSRV, FaceSRV, 0.f, 0.f, 0.f, nullptr });
 	}
 }
