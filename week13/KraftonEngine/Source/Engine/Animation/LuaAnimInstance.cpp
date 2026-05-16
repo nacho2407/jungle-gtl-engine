@@ -12,6 +12,7 @@
 #include "Mesh/SkeletalMesh.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
+#include "Serialization/Archive.h"
 
 #include <cstring>
 
@@ -327,4 +328,12 @@ void ULuaAnimInstance::PostEditProperty(const char* PropertyName)
 	{
 		ReloadScript();
 	}
+}
+
+void ULuaAnimInstance::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+	// PIE Duplicate / Scene save 시 Component 가 이 함수를 호출해 buffer 라운드트립.
+	// 새 인스턴스의 NativeInitializeAnimation 보다 먼저 호출되므로 init 안에서 ScriptFile 살아있음.
+	Ar << ScriptFile;
 }
