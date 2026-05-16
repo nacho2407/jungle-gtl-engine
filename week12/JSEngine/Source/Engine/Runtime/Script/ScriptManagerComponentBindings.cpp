@@ -1,5 +1,6 @@
 ﻿#include "Runtime/Script/ScriptManager.h"
 
+#include "Animation/AnimationStateMachine.h"
 #include "Asset/CurveFloatAsset.h"
 #include "Asset/StaticMesh.h"
 #include "Camera/CameraShakeBase.h"
@@ -32,6 +33,7 @@
 #include "Component/SoundComponent.h"
 #include "Component/SphereComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "GameFramework/AActor.h"
@@ -406,6 +408,33 @@ void FScriptManager::BindStaticMeshTypes()
     LUA_METHOD(SetStaticMesh, SetStaticMesh);
     LUA_METHOD(HasValidMesh, HasValidMesh);
     LUA_METHOD(GetPrimitiveType, GetPrimitiveType);
+    LUA_END_TYPE();
+}
+
+void FScriptManager::BindSkinnedMeshTypes()
+{
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USkinnedMeshComponent, "SkinnedMeshComponent",
+        UMeshComponent, UPrimitiveComponent, USceneComponent, UActorComponent, UObject)
+    LUA_METHOD(GetSkeletalMesh, GetSkeletalMesh);
+    LUA_METHOD(HasValidMesh, HasValidMesh);
+    LUA_END_TYPE();
+}
+
+void FScriptManager::BindSkeletalMeshTypes()
+{
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USkeletalMeshComponent, "SkeletalMeshComponent",
+        USkinnedMeshComponent, UMeshComponent, UPrimitiveComponent, USceneComponent, UActorComponent, UObject)
+    LUA_METHOD(Play, Play);
+    LUA_METHOD(Stop, Stop);
+    LUA_METHOD(Pause, Pause);
+    LUA_METHOD(SetPlayRate, SetPlayRate);
+    LUA_METHOD(SetAnimationPosition, SetAnimationPosition);
+    LUA_METHOD(IsPlaying, IsPlaying);
+    LUA_METHOD(IsLooping, IsLooping);
+    LUA_METHOD(CreateAnimationStateMachine, CreateAnimationStateMachine);
+    LUA_METHOD(GetAnimationStateMachine, GetAnimationStateMachine);
+    LUA_METHOD(SetAnimationStateMachine, SetAnimationStateMachine);
+    LUA_METHOD(SetAnimStateByName, SetAnimStateByName);
     LUA_END_TYPE();
 }
 

@@ -25,20 +25,20 @@ void USceneComponent::Serialize(FArchive& Ar)
 {
 	UActorComponent::Serialize(Ar);
 
-	if (Ar.IsSaving())
+	if (Ar.IsSaving() && GetParent() != nullptr)
 	{
-		if (GetParent() != nullptr)
-		{
-			uint32 ParentUUID = GetParent()->GetUUID();
-			Ar << "ParentUUID" << ParentUUID;
-		}
+		uint32 ParentUUID = GetParent()->GetUUID();
+		Ar << "ParentUUID" << ParentUUID;
 	}
 
-	Ar << "Location" << RelativeLocation;
-	Ar << "Rotation" << RelativeRotation;
-	Ar << "Scale" << RelativeScale3D;
-	Ar << "AttachSocket" << AttachSocketName;
+	if (Ar.IsLoading())
+	{
+		RelativeRotationQuat = FQuat::MakeFromEuler(RelativeRotation);
+		RelativeRotationQuat.Normalize();
+		MarkTransformDirty();
+	}
 }
+
 USceneComponent::USceneComponent()
 {
 	CachedWorldMatrix = FMatrix::Identity;
@@ -141,16 +141,6 @@ bool USceneComponent::ContainsChild(const USceneComponent* Child) const
 	}
 
 	return std::find(ChildComponents.begin(), ChildComponents.end(), Child) != ChildComponents.end();
-}
-
-void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UActorComponent::GetEditableProperties(OutProps);
-	constexpr EPropertyUsageFlags EditAndAnimate =
-		EPropertyUsageFlags::Editable | EPropertyUsageFlags::Animatable;
-	OutProps.push_back({ "Location", EPropertyType::Vec3, &RelativeLocation, 0.0f, 0.0f, 0.1f, nullptr, EditAndAnimate });
-	OutProps.push_back({ "Rotation", EPropertyType::Vec3, &RelativeRotation, 0.0f, 0.0f, 0.1f, nullptr, EditAndAnimate });
-	OutProps.push_back({ "Scale", EPropertyType::Vec3, &RelativeScale3D, 0.0f, 0.0f, 0.1f, nullptr, EditAndAnimate });
 }
 
 void USceneComponent::PostEditProperty(const char* PropertyName)

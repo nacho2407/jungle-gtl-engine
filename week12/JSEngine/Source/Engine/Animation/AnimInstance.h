@@ -10,11 +10,7 @@ public:
 	DECLARE_CLASS(UAnimInstance, UObject)
 	UAnimInstance() = default;
 	~UAnimInstance() override = default;
-
-	void Serialize(FArchive& Ar) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void PostEditProperty(const char* PropertyName) override;
-
+    
 	virtual void Initialize(USkeletalMeshComponent* InOwnerComponent);
 	virtual void NativeUpdateAnimation(float DeltaTime) {};
 	virtual bool EvaluatePose(FPoseContext& OutPoseContext) { return false; }

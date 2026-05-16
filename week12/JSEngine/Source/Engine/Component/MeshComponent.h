@@ -15,15 +15,23 @@ public:
 	virtual UMaterialInterface* GetMaterial(int32 SlotIndex) const override;
 
 	const TArray<UMaterialInterface*>& GetOverrideMaterial() const;
-	const TPair<float, float> GetScroll() const { return ScrollUV; };
+	const TPair<float, float> GetScroll() const { return { ScrollU, ScrollV }; };
 
 	virtual int32 GetNumMaterials() const override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char * PropertyName) override;
 	
 	virtual void TickComponent(float DeltaTime) override;
 
 protected:
+	void SerializeMaterialOverrides(FArchive& Ar);
+
+protected:
+	UPROPERTY(DisplayName = "Materials")
 	TArray<UMaterialInterface*> Materials;
-	TPair<float, float> ScrollUV = { };
+
+	UPROPERTY(DisplayName = "Scroll U", Min = -1.0f, Max = 1.0f, Speed = 0.01f)
+	float ScrollU = 0.0f;
+
+	UPROPERTY(DisplayName = "Scroll V", Min = -1.0f, Max = 1.0f, Speed = 0.01f)
+	float ScrollV = 0.0f;
 };

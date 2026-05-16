@@ -50,6 +50,7 @@ SOLUTION_CONFIGURATIONS = [
 ]
 
 SOURCE_SCAN_DIRS = ["Source"]
+REFLECTION_SCAN_DIRS = ["Intermediate\\Reflection"]
 THIRD_PARTY_SCAN_DIRS = [
 	"ThirdParty\\ImGui",
 	"ThirdParty\\SimpleJSON",
@@ -130,7 +131,11 @@ def add_file(files, kind, rel_path):
 def classify_file(files, full_path, project_dir):
 	rel = full_path.relative_to(project_dir)
 	rel_str = str(rel).replace("/", "\\")
+	rel_lower = rel_str.lower()
 	ext = full_path.suffix.lower()
+
+	if rel_lower.endswith(".gen.cpp") and not rel_lower.startswith("intermediate\\reflection\\"):
+		return
 
 	if ext in SOURCE_EXTS:
 		add_file(files, "ClCompile", rel_str)
@@ -176,6 +181,9 @@ def scan_files(project_dir):
 	}
 
 	for scan_dir in SOURCE_SCAN_DIRS:
+		scan_tree(files, project_dir, scan_dir)
+
+	for scan_dir in REFLECTION_SCAN_DIRS:
 		scan_tree(files, project_dir, scan_dir)
 
 	for scan_dir in THIRD_PARTY_SCAN_DIRS:

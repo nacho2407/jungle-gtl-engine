@@ -1,6 +1,36 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Intermediate">
+      <UniqueIdentifier>{e57122d5-5d67-e7b4-134c-b1858e9ab061}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection">
+      <UniqueIdentifier>{24172a1f-e493-4e88-4556-fcd36f85d9ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Camera">
+      <UniqueIdentifier>{779b4823-16de-c2fa-2807-63a4fbec7cf0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Component">
+      <UniqueIdentifier>{0edb51db-fb3f-de24-88b7-12459aa0eb5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Component\Movement">
+      <UniqueIdentifier>{9c54f65f-32fa-69cf-58b6-274fcea1d7cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Component\PostProcess">
+      <UniqueIdentifier>{f32bcebf-4ba6-e376-d602-6e078402add6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Component\PostProcess\Light">
+      <UniqueIdentifier>{9b80487f-620f-32ca-6e5c-680e4f80cfc1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\GameFramework">
+      <UniqueIdentifier>{36dc06eb-7c47-78be-cde8-06b5b11c1094}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Runtime">
+      <UniqueIdentifier>{f4083137-9d7d-2436-1a79-fd2ff5d5a53a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Runtime\Script">
+      <UniqueIdentifier>{1c532b7c-1439-80c7-28d2-7f915754b40d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{141aeab4-cb26-e346-6b8c-1b010c4dc39b}</UniqueIdentifier>
     </Filter>
@@ -237,6 +267,207 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Intermediate\Reflection\Camera\APlayerCameraManager.gen.cpp">
+      <Filter>Intermediate\Reflection\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\Movement\UInterpToMovementComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\Movement\UMovementComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\Movement\UProjectileMovementComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\Movement\UPursuitMovementComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\Movement\URotatingMovementComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\PostProcess\Light\UAmbientLightComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\PostProcess\Light\UDirectionalLightComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\PostProcess\Light\ULightComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\PostProcess\Light\ULightComponentBase.gen.cpp">
+      <Filter>Intermediate\Reflection\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\PostProcess\Light\UPointLightComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\PostProcess\Light\USpotlightComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UActorComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UActorSequenceComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UBillboardComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UBoxComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UCameraComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UCapsuleComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UDecalComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UFireballComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UGizmoComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UHeightFogComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UMainSceneDestructibleComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UMeshComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UPrimitiveComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UProceduralMeshComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\USceneComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UShapeComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\USkeletalMeshComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\USkinnedMeshComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\USoundComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\USphereComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\USpringArmComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UStaticMeshComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\USubUVComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Component\UTextRenderComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\AActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\AAmbientLightActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\AAttachTestActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ABillboardActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ABladeSlash.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ABoundsBoxActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ABullet.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ACubeActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ADecalActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ADecalSpotLightActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ADefaultPawn.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ADestructibleActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ADirectionalLightActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\AFireballActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\AFogActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\AGameModeBase.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ALightActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\AMainSceneDestructibleActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\APawn.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\APlaneActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\APlayerController.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\APlayerStart.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\APointLightActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ASceneActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ASkeletalMeshActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ASphereActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ASpotlightActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\AStaticMeshActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ASubUVActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ATextRenderActor.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Runtime\Script\UScriptComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Runtime\Script</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Asset\EditorAssetService.cpp">
       <Filter>Source\Editor\Asset</Filter>
     </ClCompile>
@@ -528,9 +759,6 @@
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp">
       <Filter>Source\Engine\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Camera\APlayerCameraManager.gen.cpp">
-      <Filter>Source\Engine\Camera</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Camera\CameraModifier.cpp">
       <Filter>Source\Engine\Camera</Filter>
     </ClCompile>
@@ -609,21 +837,6 @@
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Movement\UInterpToMovementComponent.gen.cpp">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Movement\UMovementComponent.gen.cpp">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Movement\UProjectileMovementComponent.gen.cpp">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Movement\UPursuitMovementComponent.gen.cpp">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Movement\URotatingMovementComponent.gen.cpp">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\AmbientLightComponent.cpp">
       <Filter>Source\Engine\Component\PostProcess\Light</Filter>
     </ClCompile>
@@ -640,24 +853,6 @@
       <Filter>Source\Engine\Component\PostProcess\Light</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.cpp">
-      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\PostProcess\Light\UAmbientLightComponent.gen.cpp">
-      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\PostProcess\Light\UDirectionalLightComponent.gen.cpp">
-      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\PostProcess\Light\ULightComponent.gen.cpp">
-      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\PostProcess\Light\ULightComponentBase.gen.cpp">
-      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\PostProcess\Light\UPointLightComponent.gen.cpp">
-      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\PostProcess\Light\USpotlightComponent.gen.cpp">
       <Filter>Source\Engine\Component\PostProcess\Light</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
@@ -694,78 +889,6 @@
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UActorComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UActorSequenceComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UBillboardComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UBoxComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UCameraComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UCapsuleComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UDecalComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UFireballComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UGizmoComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UHeightFogComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UMainSceneDestructibleComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UMeshComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UPrimitiveComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UProceduralMeshComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\USceneComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UShapeComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\USkeletalMeshComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\USkinnedMeshComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\USoundComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\USphereComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\USpringArmComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UStaticMeshComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\USubUVComponent.gen.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\UTextRenderComponent.gen.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\AssetPathPolicy.cpp">
@@ -853,96 +976,6 @@
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\AActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\AAmbientLightActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\AAttachTestActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ABillboardActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ABladeSlash.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ABoundsBoxActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ABullet.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ACubeActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ADecalActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ADecalSpotLightActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ADefaultPawn.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ADestructibleActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ADirectionalLightActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\AFireballActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\AFogActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\AGameModeBase.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ALightActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\AMainSceneDestructibleActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\APawn.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\APlaneActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\APlayerController.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\APlayerStart.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\APointLightActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ASceneActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ASkeletalMeshActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ASphereActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ASpotlightActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\AStaticMeshActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ASubUVActor.gen.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\ATextRenderActor.gen.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\DefaultPawn.cpp">
@@ -1249,9 +1282,6 @@
       <Filter>Source\Engine\Runtime\Script</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerMathBindings.cpp">
-      <Filter>Source\Engine\Runtime\Script</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Runtime\Script\UScriptComponent.gen.cpp">
       <Filter>Source\Engine\Runtime\Script</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\ViewportClient.cpp">
@@ -2036,6 +2066,9 @@
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\ObjectSerialize.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Common\ComPtr.h">

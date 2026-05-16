@@ -31,17 +31,7 @@ UDecalComponent::UDecalComponent()
 		Mat->SamplerType = ESamplerType::EST_Linear;
 	}
 
-    bEnableCull = false;
-}
-
-// Material 포인터는 프로퍼티 시스템에 노출되지 않으므로 직접 복사합니다.
-// LifeTime 은 런타임 상태이므로 복사하지 않습니다 (BeginPlay 에서 0 으로 초기화).
-void UDecalComponent::PostDuplicate(UObject* Original)
-{
-    UPrimitiveComponent::PostDuplicate(Original);
-
-    const UDecalComponent* Orig = Cast<UDecalComponent>(Original);
-	SetMaterial(0, Orig->GetMaterial(0)); // 얕은 복사 — ResourceManager 가 소유
+	bEnableCull = false;
 }
 
 void UDecalComponent::Serialize(FArchive& Ar)
@@ -66,14 +56,6 @@ void UDecalComponent::Serialize(FArchive& Ar)
 	}
 
 	Ar << "Material" << MaterialIdentifier;
-	Ar << "Size" << DecalSize;
-	Ar << "Color" << DecalColor;
-	Ar << "Fade Start Delay" << FadeStartDelay;
-	Ar << "Fade Duration" << FadeDuration;
-	Ar << "Fade In Start Delay" << FadeInStartDelay;
-	Ar << "Fade In Duration" << FadeInDuration;
-	Ar << "Destroy Owner After Fade" << bDestroyOwnerAfterFade;
-
 	if (Ar.IsLoading())
 	{
 		if (!MaterialIdentifier.empty())
@@ -88,19 +70,6 @@ void UDecalComponent::BeginPlay()
 	UPrimitiveComponent::BeginPlay();
 
 	LifeTime = 0.0f;
-}
-
-void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
-	OutProps.push_back({ "Size", EPropertyType::Vec3, &DecalSize });
-	OutProps.push_back({ "Color", EPropertyType::Vec4, &DecalColor });
-	OutProps.push_back({ "Fade Start Delay", EPropertyType::Float, &FadeStartDelay });
-	OutProps.push_back({ "Fade Duration", EPropertyType::Float, &FadeDuration });
-	OutProps.push_back({ "Fade In Start Delay", EPropertyType::Float, &FadeInStartDelay });
-	OutProps.push_back({ "Fade In Duration", EPropertyType::Float, &FadeInDuration });
-	OutProps.push_back({ "Destroy Owner After Fade", EPropertyType::Bool, &bDestroyOwnerAfterFade });
 }
 
 void UDecalComponent::PostEditProperty(const char* PropertyName)
