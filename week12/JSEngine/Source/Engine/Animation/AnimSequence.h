@@ -105,7 +105,22 @@ public:
     UAnimSequence() = default;
     ~UAnimSequence() override = default;
 
+    float GetPlayLength() const override;
     bool GetAnimationPose(float Time, FPoseContext& OutPose) const override;
+
+    void SetAssetPath(const FString& InAssetPath) { AssetPath = InAssetPath; }
+    const FString& GetAssetPath() const { return AssetPath; }
+
+    void SetSourceFilePath(const FString& InSourceFilePath) { SourceFilePath = InSourceFilePath; }
+    const FString& GetSourceFilePath() const { return SourceFilePath; }
+
+    void SetSourceStackName(const FString& InSourceStackName) { SourceStackName = InSourceStackName; }
+    const FString& GetSourceStackName() const { return SourceStackName; }
+
+private:
+    FString AssetPath;
+    FString SourceFilePath;
+    FString SourceStackName;
 };
 
 // Debug용. 추후 삭제.
