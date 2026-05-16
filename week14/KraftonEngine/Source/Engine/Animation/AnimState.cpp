@@ -27,9 +27,9 @@ void UAnimState::Tick(UAnimInstance* Instance, float DeltaSeconds)
 		if (LocalTime > Length) LocalTime = Length;
 	}
 
-	// FSM 모드에서도 notify dispatch — SingleNode 경로와 일관성. Instance 가 시퀀스 컨텍스트로 dispatch.
-	// (UAnimSingleNodeInstance 는 자기 NativeUpdateAnimation 에서 직접 호출. 여기는 FSM 측 채널.)
-	if (Instance) Instance->TriggerAnimNotifies(PreviousTime, LocalTime, Sequence);
+	// 큐에 적재만 — 실제 dispatch 는 베이스 UAnimInstance::UpdateAnimation 끝에서 1회.
+	// (SingleNode 든 FSM 든 자식은 AddAnimNotifies 만 호출, dispatch 책임은 베이스에 통합.)
+	if (Instance) Instance->AddAnimNotifies(PreviousTime, LocalTime, Sequence);
 }
 
 void UAnimState::Evaluate(UAnimInstance* /*Instance*/, FPoseContext& Output)

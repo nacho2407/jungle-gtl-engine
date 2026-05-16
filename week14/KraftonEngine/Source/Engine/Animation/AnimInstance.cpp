@@ -8,7 +8,9 @@ DEFINE_CLASS(UAnimInstance, UObject)
 
 void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 {
+	// 자식이 시간 진행 + AddAnimNotifies 로 큐에 적재 → 베이스가 일괄 dispatch.
 	NativeUpdateAnimation(DeltaSeconds);
+	DispatchQueuedAnimEvents();
 }
 
 void UAnimInstance::EvaluatePose(FPoseContext& Output)
@@ -21,7 +23,7 @@ USkeletalMesh* UAnimInstance::GetSkeletalMesh() const
 	return OwningComponent ? OwningComponent->GetSkeletalMesh() : nullptr;
 }
 
-void UAnimInstance::TriggerAnimNotifies(float PreviousTime, float CurrentTime, const UAnimSequenceBase* Sequence)
+void UAnimInstance::AddAnimNotifies(float PreviousTime, float CurrentTime, const UAnimSequenceBase* Sequence)
 {
 	if (!Sequence) return;
 
@@ -42,16 +44,26 @@ void UAnimInstance::TriggerAnimNotifies(float PreviousTime, float CurrentTime, c
 
 	for (const FAnimNotifyEvent& Notify : Notifies)
 	{
-		if (!InRange(Notify.TriggerTime)) continue;
-
-		// UE 패턴 — 로직 객체가 박혀 있으면 자기 Notify() 실행. 시퀀스가 자기 로직 소유.
-		if (Notify.Notify)
+		if (InRange(Notify.TriggerTime))
 		{
-			// UAnimNotify::Notify 시그니처가 비-const 라 const_cast (TriggerAnimNotifies 측은 const Sequence).
-			Notify.Notify->Notify(OwningComponent, const_cast<UAnimSequenceBase*>(Sequence));
+			NotifyQueue.push_back({ Notify, Sequence });
+		}
+	}
+}
+
+void UAnimInstance::DispatchQueuedAnimEvents()
+{
+	for (const FQueuedAnimNotify& Q : NotifyQueue)
+	{
+		// 1) UE 패턴 — 로직 객체가 박혀 있으면 자기 Notify() 실행. 시퀀스가 자기 로직 소유.
+		if (Q.Event.Notify)
+		{
+			// UAnimNotify::Notify 시그니처가 비-const 라 const_cast.
+			Q.Event.Notify->Notify(OwningComponent, const_cast<UAnimSequenceBase*>(Q.Sequence));
 		}
 
-		// AnimInstance 자식이 NotifyName 매칭으로 추가 처리할 수 있도록 fallback 후크 유지.
-		HandleAnimNotify(Notify);
+		// 2) AnimInstance 자식이 NotifyName 매칭으로 추가 처리할 수 있도록 fallback 후크.
+		HandleAnimNotify(Q.Event);
 	}
+	NotifyQueue.clear();
 }
