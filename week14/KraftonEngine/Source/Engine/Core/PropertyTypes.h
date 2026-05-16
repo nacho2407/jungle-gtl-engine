@@ -24,6 +24,7 @@ enum class EPropertyType : uint8_t
 	StaticMeshRef, // UStaticMesh* 에셋 레퍼런스 (드롭다운 선택)
 	SkeletalMeshRef, // USkeletalMesh* 에셋 레퍼런스 (드롭다운 선택)
 	MaterialSlot,  // FMaterialSlot — 머티리얼 경로
+	MaterialSlotArray, // TArray<FMaterialSlot> — 메시 섹션별 머티리얼 경로
 	Enum,
 	Vec3Array,
 	Struct,    // 자기기술 구조체 — StructFunc로 Children 생성

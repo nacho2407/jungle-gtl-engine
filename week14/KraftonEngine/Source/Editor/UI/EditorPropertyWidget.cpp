@@ -934,6 +934,7 @@ void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, con
 				case EPropertyType::SkeletalMeshRef: *static_cast<FString*>(DstProp.ValuePtr) = *static_cast<FString*>(SrcProp->ValuePtr); break;
 				case EPropertyType::Name:           *static_cast<FName*>(DstProp.ValuePtr) = *static_cast<FName*>(SrcProp->ValuePtr); break;
 				case EPropertyType::MaterialSlot:   *static_cast<FMaterialSlot*>(DstProp.ValuePtr) = *static_cast<FMaterialSlot*>(SrcProp->ValuePtr); break;
+				case EPropertyType::MaterialSlotArray: *static_cast<TArray<FMaterialSlot>*>(DstProp.ValuePtr) = *static_cast<TArray<FMaterialSlot>*>(SrcProp->ValuePtr); break;
 				case EPropertyType::Enum:           Size = SrcProp->EnumSize; break;
 				case EPropertyType::Vec3Array:      *static_cast<TArray<FVector>*>(DstProp.ValuePtr) = *static_cast<TArray<FVector>*>(SrcProp->ValuePtr); break;
 				case EPropertyType::Struct:
@@ -1416,6 +1417,89 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		}
 
 		ImGui::EndGroup();
+		break;
+	}
+	case EPropertyType::MaterialSlotArray:
+	{
+		TArray<FMaterialSlot>* Slots = static_cast<TArray<FMaterialSlot>*>(Prop.ValuePtr);
+		if (!Slots)
+		{
+			break;
+		}
+
+		for (int32 ElemIdx = 0; ElemIdx < (int32)Slots->size(); ++ElemIdx)
+		{
+			FMaterialSlot& Slot = (*Slots)[ElemIdx];
+			ImGui::PushID(ElemIdx);
+
+			FString SlotName = "Element " + std::to_string(ElemIdx);
+			if (SelectedComponent)
+			{
+				if (SelectedComponent->IsA<UStaticMeshComponent>())
+				{
+					UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(SelectedComponent);
+					if (SMC->GetStaticMesh() && ElemIdx < (int32)SMC->GetStaticMesh()->GetStaticMaterials().size())
+					{
+						SlotName = "Element " + std::to_string(ElemIdx) + " - "
+							+ SMC->GetStaticMesh()->GetStaticMaterials()[ElemIdx].MaterialSlotName;
+					}
+				}
+				else if (SelectedComponent->IsA<USkeletalMeshComponent>())
+				{
+					USkeletalMeshComponent* SMC = static_cast<USkeletalMeshComponent*>(SelectedComponent);
+					if (SMC->GetSkeletalMesh() && ElemIdx < (int32)SMC->GetSkeletalMesh()->GetSkeletalMaterials().size())
+					{
+						SlotName = "Element " + std::to_string(ElemIdx) + " - "
+							+ SMC->GetSkeletalMesh()->GetSkeletalMaterials()[ElemIdx].MaterialSlotName;
+					}
+				}
+			}
+
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextUnformatted(SlotName.c_str());
+			ImGui::SameLine(120.0f);
+			ImGui::SetNextItemWidth(-1);
+
+			FString Preview = (Slot.Path.empty() || Slot.Path == "None") ? "None" : Slot.Path;
+			if (ImGui::BeginCombo("##Mat", Preview.c_str()))
+			{
+				bool bSelectedNone = (Slot.Path == "None" || Slot.Path.empty());
+				if (ImGui::Selectable("None", bSelectedNone))
+				{
+					Slot.Path = "None";
+					bChanged = true;
+				}
+				if (bSelectedNone) ImGui::SetItemDefaultFocus();
+
+				const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
+				for (const FMaterialAssetListItem& Item : MatFiles)
+				{
+					bool bSelected = (Slot.Path == Item.FullPath);
+					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+					{
+						Slot.Path = Item.FullPath;
+						bChanged = true;
+					}
+					if (bSelected) ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MaterialContentItem"))
+				{
+					FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
+					Slot.Path = FPaths::ToUtf8(
+						ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
+					);
+					bChanged = true;
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			ImGui::PopID();
+		}
 		break;
 	}
 	case EPropertyType::Name:

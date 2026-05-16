@@ -56,6 +56,18 @@ json::JSON FPropertyDescriptor::Serialize() const
 		obj["Path"] = JSON(Slot->Path);
 		return obj;
 	}
+	case EPropertyType::MaterialSlotArray:
+	{
+		const TArray<FMaterialSlot>* Slots = static_cast<const TArray<FMaterialSlot>*>(ValuePtr);
+		JSON arr = json::Array();
+		for (const FMaterialSlot& Slot : *Slots)
+		{
+			JSON obj = json::Object();
+			obj["Path"] = JSON(Slot.Path);
+			arr.append(obj);
+		}
+		return arr;
+	}
 
 	case EPropertyType::ByteBool:
 		return JSON(static_cast<bool>(*static_cast<uint8_t*>(ValuePtr) != 0));
@@ -161,6 +173,19 @@ void FPropertyDescriptor::Deserialize(json::JSON& Value)
 	{
 		FMaterialSlot* Slot = static_cast<FMaterialSlot*>(ValuePtr);
 		if (Value.hasKey("Path")) Slot->Path = Value["Path"].ToString();
+		break;
+	}
+	case EPropertyType::MaterialSlotArray:
+	{
+		TArray<FMaterialSlot>* Slots = static_cast<TArray<FMaterialSlot>*>(ValuePtr);
+		TArray<FMaterialSlot> LoadedSlots;
+		for (auto& elem : Value.ArrayRange())
+		{
+			FMaterialSlot Slot;
+			if (elem.hasKey("Path")) Slot.Path = elem["Path"].ToString();
+			LoadedSlots.push_back(Slot);
+		}
+		*Slots = LoadedSlots;
 		break;
 	}
 
