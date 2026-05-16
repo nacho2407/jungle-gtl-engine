@@ -2279,42 +2279,54 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 	}
 	case EPropertyType::SRV:
 	{
-		ID3D11ShaderResourceView* SRV = static_cast<ID3D11ShaderResourceView*>(Prop.ValuePtr);
-		if (SRV)
+		const FSRVPropertyData* Data = static_cast<const FSRVPropertyData*>(Prop.ValuePtr);
+		if (!Data || !Data->SRV)
 		{
-			const FSRVDisplayInfo* Info = static_cast<const FSRVDisplayInfo*>(Prop.ExtraData);
-			if (Info)
-			{
-				ImGui::Image(SRV,
-					ImVec2(Info->ImageWidth, Info->ImageHeight),
-					ImVec2(Info->UV0X, Info->UV0Y),
-					ImVec2(Info->UV1X, Info->UV1Y));
-			}
-			else
-			{
-				ImGui::Image(SRV, ImVec2(256, 256));
-			}
+			break;
 		}
+
+		const FSRVDisplayInfo& Info = Data->DisplayInfo;
+		ImGui::TextUnformatted(GetPropertyDisplayName(Prop));
+		ImGui::Image(Data->SRV,
+			ImVec2(Info.ImageWidth, Info.ImageHeight),
+			ImVec2(Info.UV0X, Info.UV0Y),
+			ImVec2(Info.UV1X, Info.UV1Y));
 		break;
 	}
 	case EPropertyType::CubeSRV:
 	{
-		auto CubeSRV = static_cast<ID3D11ShaderResourceView**>(Prop.ValuePtr);
-		if (CubeSRV)
+		const FCubeSRVPropertyData* Data = static_cast<const FCubeSRVPropertyData*>(Prop.ValuePtr);
+		if (!Data)
 		{
-			for (int i = 0; i < 6; i++)
+			break;
+		}
+
+		static const char* FaceLabels[6] =
+		{
+			"+X", "-X", "+Y", "-Y", "+Z", "-Z"
+		};
+
+		const FSRVDisplayInfo& Info = Data->DisplayInfo;
+		ImGui::TextUnformatted(GetPropertyDisplayName(Prop));
+		for (int32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+		{
+			ID3D11ShaderResourceView* FaceSRV = Data->FaceSRVs[FaceIndex];
+			if (!FaceSRV)
 			{
-				if (!CubeSRV[i])
-				{
-					continue;
-				}
+				continue;
+			}
 
-				ImGui::Image(CubeSRV[i], ImVec2(64, 64));
+			ImGui::BeginGroup();
+			ImGui::TextUnformatted(FaceLabels[FaceIndex]);
+			ImGui::Image(FaceSRV,
+				ImVec2(Info.ImageWidth, Info.ImageHeight),
+				ImVec2(Info.UV0X, Info.UV0Y),
+				ImVec2(Info.UV1X, Info.UV1Y));
+			ImGui::EndGroup();
 
-				if ((i % 3) != 2)
-				{
-					ImGui::SameLine();
-				}
+			if ((FaceIndex % 3) != 2)
+			{
+				ImGui::SameLine();
 			}
 		}
 		break;

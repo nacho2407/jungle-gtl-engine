@@ -6,6 +6,8 @@
 
 #include <cstring>
 
+class UMaterialInterface;
+
 TArray<UObject*> GUObjectArray;
 
 UObject::UObject()
@@ -120,6 +122,21 @@ void UObject::CopyPropertiesFrom(UObject* Src)
 			*Dst = *Src;
 			break;
 		}
+		case EPropertyType::Material:
+		{
+			auto* Dst = static_cast<TArray<UMaterialInterface*>*>(DstProp->ValuePtr);
+			const auto* Src = static_cast<const TArray<UMaterialInterface*>*>(SrcProp.ValuePtr);
+			if (Dst && Src)
+			{
+				*Dst = *Src;
+				this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
+			}
+			break;
+		}
+		case EPropertyType::SRV:
+		case EPropertyType::CubeSRV:
+			// GPU debug preview용 read-only 데이터입니다. Duplicate/serialization 대상이 아니므로 복사하지 않습니다.
+			break;
 		}
 	}
 

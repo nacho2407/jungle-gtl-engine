@@ -7,6 +7,8 @@
 #include "Math/Vector.h"    // FVector  (for sizeof in GetPropertySize)
 #include "Math/Vector4.h"   // FVector4 (for sizeof in GetPropertySize)
 
+struct ID3D11ShaderResourceView;
+
 // 에디터에서 자동 위젯 매핑에 사용되는 프로퍼티 타입
 enum class EPropertyType : uint8_t
 {
@@ -22,9 +24,9 @@ enum class EPropertyType : uint8_t
 	Vec3Array,         // TArray<FVector>* - variable-length array of FVector
 	Enum,
 	Color,
-	Material, // TO-DO: 수정필요
-	SRV,
-	CubeSRV, // Shadow Cube Map Face SRV
+	Material, // TArray<UMaterialInterface*>
+	SRV,      // FSRVPropertyData
+	CubeSRV,  // FCubeSRVPropertyData
 };
 
 enum class EPropertyUsageFlags : uint8_t
@@ -68,6 +70,22 @@ struct FSRVDisplayInfo
 	float UV0Y = 0.f;
 	float UV1X = 1.f;
 	float UV1Y = 1.f;
+};
+
+// 단일 Shader Resource View를 Details 패널에서 read-only preview로 표시하기 위한 wrapper입니다.
+// ValuePtr는 항상 FSRVPropertyData 멤버/임시 데이터의 주소를 가리킵니다.
+struct FSRVPropertyData
+{
+	ID3D11ShaderResourceView* SRV = nullptr;
+	FSRVDisplayInfo DisplayInfo;
+};
+
+// Cube shadow map처럼 6개 face SRV를 Details 패널에서 read-only preview로 표시하기 위한 wrapper입니다.
+// FaceSRVs 배열 자체가 wrapper 안에 있으므로 generated reflection과 수동 descriptor 모두 같은 포인터 규칙을 사용합니다.
+struct FCubeSRVPropertyData
+{
+	ID3D11ShaderResourceView* FaceSRVs[6] = {};
+	FSRVDisplayInfo DisplayInfo = { 64.f, 64.f, 0.f, 0.f, 1.f, 1.f };
 };
 
 struct FEnumMetaData;
