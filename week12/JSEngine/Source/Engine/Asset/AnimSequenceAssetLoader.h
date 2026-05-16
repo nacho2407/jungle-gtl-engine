@@ -12,5 +12,4 @@ public:
     bool Save(const FString& Path, const UAnimSequence* Sequence) const;
 
     bool SupportsExtension(const FString& Extension) const override;
-    FString GetLoaderName() const override;
 };

@@ -18,5 +18,12 @@ struct FAnimNotifyStateEvent
 
 struct FPoseContext
 {
+    // Mesh bone index -> local transform. Animation evaluation writes into this array.
     TArray<FMatrix> LocalPose;
+
+    // Animation track index -> mesh bone index. -1 means the track could not be mapped.
+    TArray<int32> TrackToBoneMap;
+
+    // Mesh local bind pose used as the fallback for bones that have no animation track.
+    TArray<FMatrix> BindPose;
 };

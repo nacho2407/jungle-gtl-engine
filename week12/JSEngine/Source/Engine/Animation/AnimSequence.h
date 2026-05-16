@@ -89,13 +89,18 @@ public:
 
     virtual float GetPlayLength() const { return PlayLength; }
     virtual const TArray<FAnimNotifyEvent>& GetNotifies() const { return Notifies; }
+    virtual const TArray<FBoneAnimationTrack>& GetBoneAnimationTracks() const;
     virtual bool GetAnimationPose(float Time, FPoseContext& OutPose) const { return false; }
     void AddNotify(float InTriggerTime, const FName& InNotifyName);
+
+    void SetPreviewMeshPath(const FString& InPreviewMeshPath) { PreviewMeshPath = InPreviewMeshPath; }
+    const FString& GetPreviewMeshPath() const { return PreviewMeshPath; }
 
 protected:
     float PlayLength = 5.0f;
     TArray<FAnimNotifyEvent> Notifies;
     UAnimDataModel* DataModel = nullptr;
+    FString PreviewMeshPath;
 };
 
 class UAnimSequence : public UAnimSequenceBase

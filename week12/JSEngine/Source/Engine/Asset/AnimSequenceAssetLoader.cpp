@@ -1,4 +1,4 @@
-#include "Asset/AnimSequenceAssetLoader.h"
+﻿#include "Asset/AnimSequenceAssetLoader.h"
 
 #include "Animation/AnimSequence.h"
 #include "Core/Logging/Log.h"
@@ -223,6 +223,7 @@ UAnimSequence* FAnimSequenceAssetLoader::Load(const FString& Path) const
     Sequence->SetAssetPath(NormalizedPath);
     Sequence->SetSourceFilePath(GetStringOrDefault(Root, "SourceFilePath"));
     Sequence->SetSourceStackName(GetStringOrDefault(Root, "SourceStackName"));
+    Sequence->SetPreviewMeshPath(GetStringOrDefault(Root, "PreviewMeshPath"));
 
     FFrameRate FrameRate;
     FrameRate.Numerator = GetIntOrDefault(Root, "FrameRateNumerator", 30);
@@ -275,6 +276,7 @@ bool FAnimSequenceAssetLoader::Save(const FString& Path, const UAnimSequence* Se
     Root["AssetPath"] = NormalizedPath;
     Root["SourceFilePath"] = Sequence->GetSourceFilePath();
     Root["SourceStackName"] = Sequence->GetSourceStackName();
+    Root["PreviewMeshPath"] = Sequence->GetPreviewMeshPath();
     Root["PlayLength"] = DataModel->GetPlayLength();
     Root["FrameRateNumerator"] = DataModel->GetFrameRate().Numerator;
     Root["FrameRateDenominator"] = DataModel->GetFrameRate().Denominator;
@@ -308,9 +310,4 @@ bool FAnimSequenceAssetLoader::SupportsExtension(const FString& Extension) const
     const FString LowerExtension = ToLowerCopy(Extension);
     return LowerExtension == ".animseq" || LowerExtension == "animseq" ||
            LowerExtension == ".sequence" || LowerExtension == "sequence";
-}
-
-FString FAnimSequenceAssetLoader::GetLoaderName() const
-{
-    return "FAnimSequenceAssetLoader";
 }
