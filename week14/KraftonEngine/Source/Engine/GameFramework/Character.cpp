@@ -4,9 +4,13 @@
 #include "Component/InputComponent.h"
 #include "Component/Movement/CharacterMovementComponent.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Component/SpringArmComponent.h"
 #include "Input/InputSystem.h"
+#include "Math/Rotator.h"
 #include "Mesh/MeshManager.h"
 #include "Runtime/Engine.h"
+
+#include <algorithm>
 
 IMPLEMENT_CLASS(ACharacter, APawn)
 
@@ -98,14 +102,36 @@ void ACharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Mouse look — delta X 만 yaw 에 반영. Pitch (위/아래) 는 minimal 단계에서 생략.
-	if (bAutoInputMouseLook && CapsuleComponent)
+	if (!bAutoInputMouseLook) return;
+
+	const InputSystem& In = InputSystem::Get();
+
+	// Yaw — capsule 자체 회전. Mesh / SpringArm / Camera 가 자동 follow.
+	if (CapsuleComponent)
 	{
-		const int DX = InputSystem::Get().MouseDeltaX();
+		const int DX = In.MouseDeltaX();
 		if (DX != 0)
 		{
 			const float DeltaYaw = static_cast<float>(DX) * MouseSensitivity;
 			CapsuleComponent->Rotate(DeltaYaw, 0.0f);
+		}
+	}
+
+	// Pitch — SpringArm 의 relative pitch 만. capsule 은 pitch 영향 없음 (캐릭터 안 누움).
+	// SpringArm 없는 ACharacter 자식 (예: 카메라 없는 베이스) 은 lazy 조회 결과 nullptr — no-op.
+	if (!CameraSpringArm)
+	{
+		CameraSpringArm = GetComponentByClass<USpringArmComponent>();
+	}
+	if (CameraSpringArm)
+	{
+		const int DY = In.MouseDeltaY();
+		if (DY != 0)
+		{
+			// 마우스 아래 → 카메라 위 (UE 기본 — invert 토글 추후).
+			CameraPitch += static_cast<float>(DY) * MouseSensitivity;
+			CameraPitch = std::clamp(CameraPitch, MinCameraPitch, MaxCameraPitch);
+			CameraSpringArm->SetRelativeRotation(FRotator(CameraPitch, 0.0f, 0.0f));
 		}
 	}
 }
