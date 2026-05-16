@@ -1,15 +1,12 @@
-#pragma once
+﻿#pragma once
 
 #include "SkeletalMeshComponent.generated.h"
 
+#include "Animation/AnimationTypes.h"
 #include "Component/SkinnedMeshComponent.h"
 
-/**
- * @brief Unreal Engine 스타일에서는 skinned mesh가 skeleton을 이용하는 mesh를 표현하고,
- *        skeletal mesh는 실제로 actor에 붙어서 애니메이션을 붙일 수 있는 component로 사용되고 있으므로
- *        USkeletalMeshComponent 또한 해당 방식대로 우선은 얇게 유지.
- *        핵심 로직들은 대부분 USkinnedMeshComponent로 옮겼습니다.
- */
+class UAnimInstance;
+
 UCLASS()
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
@@ -18,11 +15,17 @@ public:
     DECLARE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 
     USkeletalMeshComponent() = default;
-    ~USkeletalMeshComponent() override = default;
+    ~USkeletalMeshComponent() override;
 
     void TickComponent(float DeltaTime) override;
 
     EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_SkeletalMesh; }
+
+    void SetAnimationMode(EAnimationMode InMode);
+    EAnimationMode GetAnimationMode() const;
+    void SetAnimInstanceClass(const FString& InClassName);
+    UAnimInstance* GetAnimInstance() const;
+    void RecreateAnimInstance();
 
     void ResetToBindPose();
 
@@ -31,4 +34,12 @@ public:
 
     FMatrix GetBoneGlobalTransform(int32 BoneIndex) const;
     void SetBoneGlobalTransform(int32 BoneIndex, const FMatrix& NewGlobalTransform);
+
+private:
+    void DestroyAnimInstance();
+
+private:
+    EAnimationMode AnimationMode = EAnimationMode::None;
+    FString AnimInstanceClassName;
+    UAnimInstance* AnimInstance = nullptr;
 };
