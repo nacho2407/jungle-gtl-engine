@@ -53,8 +53,18 @@ public:
         return *TargetPtr;
     }
 
+	static FString NormalizeTypeName(FString TypeName)
+    {
+        TypeName.erase(
+            std::remove_if(TypeName.begin(), TypeName.end(), ::isspace),
+            TypeName.end());
+        return TypeName;
+    }
+
 	static bool TryConvertType(const FString& TypeName, EPropertyType& OutType)
     {
+        FString NormalizedType = NormalizeTypeName(TypeName);
+
         if (TypeName == "bool")
         {
             OutType = EPropertyType::Bool;
@@ -95,6 +105,11 @@ public:
             OutType = EPropertyType::Name;
             return true;
         }
+        if (NormalizedType == "TArray<FVector>")
+        {
+            OutType = EPropertyType::Vec3Array;
+            return true;
+        }
 
         return false;
     }
@@ -109,12 +124,19 @@ public:
         if (!StructBasePtr || !StructInfo)
             return;
 
+		if (StructInfo->ParentStruct)
+        {
+            AppendStructProperties(StructBasePtr, StructInfo->ParentStruct, OutProps, Prefix);
+        }
+
         for (auto& Prop : StructInfo->Properties)
         {
             if (!Prop.bIsEditAnywhere)
                 continue;
 
             EPropertyType UiType;
+            FString DisplayName = Prefix + "." + Prop.Name.ToString();
+
             // 1. 구조체 안의 변수가 int, float 같은 기본 타입이라면?
             if (TryConvertType(Prop.Type.c_str(), UiType))
             {
@@ -124,7 +146,23 @@ public:
                                      UiType,
                                      StructBasePtr + Prop.Offset });
             }
-            // 2. 구조체 안의 변수가 또 다른 구조체라면? (중첩 구조체)
+            // ★ 2. 열거형(Enum)인지 검사
+            else if (FEnumInfo* EnumInfo = ReflectionDatabase::GetEnum(Prop.Type))
+            {
+                FPropertyDescriptor Desc;
+                Desc.Name = GetStablePropertyName(FName(DisplayName));
+                Desc.Type = EPropertyType::Enum;
+                Desc.ValuePtr = StructBasePtr + Prop.Offset;
+
+                if (!EnumInfo->CachedNames.empty())
+                {
+                    Desc.EnumNames = EnumInfo->CachedNames.data();
+                    Desc.EnumCount = static_cast<uint32>(EnumInfo->CachedNames.size());
+                }
+
+                OutProps.push_back(Desc);
+            }
+            // 3. 구조체 안의 변수가 또 다른 구조체라면? (중첩 구조체)
             else
             {
                 FStructInfo* NestedStruct = ReflectionDatabase::GetStruct(Prop.Type);
@@ -186,7 +224,24 @@ public:
                                      UiType,
                                      Base + Prop.Offset });
             }
-            // 2. 기본 타입이 아니라면 구조체(FStructInfo)인지 확인!
+            // 2. 열거형(Enum)인지 검사
+            else if (FEnumInfo* EnumInfo = ReflectionDatabase::GetEnum(Prop.Type))
+            {
+                // 구조체나 클래스 모두 동일하게 적용
+                FPropertyDescriptor Desc;
+                Desc.Name = GetStablePropertyName(Prop.Name);
+                Desc.Type = EPropertyType::Enum;
+                Desc.ValuePtr = Base + Prop.Offset;
+
+                if (!EnumInfo->CachedNames.empty())
+                {
+                    Desc.EnumNames = EnumInfo->CachedNames.data();
+                    Desc.EnumCount = static_cast<uint32>(EnumInfo->CachedNames.size());
+                }
+
+                OutProps.push_back(Desc);
+            }
+            // 3. 기본 타입이 아니라면 구조체(FStructInfo)인지 확인!
             else
             {
                 FStructInfo* StructInfo = ReflectionDatabase::GetStruct(Prop.Type);

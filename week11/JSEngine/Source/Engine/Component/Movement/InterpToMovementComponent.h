@@ -1,8 +1,10 @@
 ﻿#pragma once
 #include "MovementComponent.h"
+#include "Core/RefelctionTypeInfo.h"
 
 #include "InterpToMovementComponent.generated.h"
 
+UENUM()
 enum class EInterpBehaviour {
 	OneShot,
 	OneShotReverse,

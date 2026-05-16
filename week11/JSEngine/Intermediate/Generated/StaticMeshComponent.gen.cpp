@@ -9,7 +9,6 @@ void Register_UStaticMeshComponent()
     info.GcPointerOffsets.clear();
     info.ClassName = "UStaticMeshComponent";
     info.ParentClassName = "UMeshComponent";
-    info.ParentClass = ReflectionDatabase::GetClass("UMeshComponent");
     info.Properties.push_back({ "StaticMeshAsset", "UStaticMesh*", offsetof(UStaticMeshComponent, StaticMeshAsset), true });
     info.GcPointerOffsets.push_back(offsetof(UStaticMeshComponent, StaticMeshAsset));
     info.Properties.push_back({ "StaticMeshAssetPath", "FString", offsetof(UStaticMeshComponent, StaticMeshAssetPath), true });

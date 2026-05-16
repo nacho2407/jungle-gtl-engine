@@ -16,7 +16,60 @@ class CustomParser
         @"UPROPERTY\s*\((?<options>[^)]*)\)\s+(?<type>[A-Za-z_]\w*(?:::\w+)*(?:\s*<[^;{}()]+>)?\s*[*&]?)\s+(?<name>\w+)\s*(?:=\s*[^;]*|\{[^;]*\})?\s*;",
         RegexOptions.Singleline);
 
+    static readonly Regex StructRegex = new Regex(
+        @"USTRUCT\s*\([^)]*\)\s*struct\s+(?:[A-Z0-9_]+_API\s+)?(?<name>\w+)(?:\s*:\s*(?:public|protected|private)?\s+(?<parent>\w+))?",
+        RegexOptions.Singleline);
+
+    static readonly Regex EnumRegex = new Regex(
+        @"UENUM\s*\([^)]*\)\s*enum\s+class\s+(?:[A-Z0-9_]+_API\s+)?(?<name>\w+)",
+        RegexOptions.Singleline);
+
     #region Helper Methods
+
+    static List<string> ParseEnumValueNames(string enumBody)
+    {
+        List<string> values = new List<string>();
+
+        int start = 0;
+        int angleDepth = 0;
+        int parenDepth = 0;
+        int braceDepth = 0;
+
+        for (int i = 0; i <= enumBody.Length; i++)
+        {
+            bool atEnd = i == enumBody.Length;
+            char c = atEnd ? ',' : enumBody[i];
+
+            if (!atEnd)
+            {
+                if (c == '<') angleDepth++;
+                else if (c == '>') angleDepth--;
+                else if (c == '(') parenDepth++;
+                else if (c == ')') parenDepth--;
+                else if (c == '{') braceDepth++;
+                else if (c == '}') braceDepth--;
+            }
+
+            if ((atEnd || c == ',') && angleDepth == 0 && parenDepth == 0 && braceDepth == 0)
+            {
+                string item = enumBody.Substring(start, i - start).Trim();
+                start = i + 1;
+
+                if (item.Length == 0)
+                    continue;
+
+                int eq = item.IndexOf('=');
+                if (eq >= 0)
+                    item = item.Substring(0, eq).Trim();
+
+                Match nameMatch = Regex.Match(item, @"^(?<name>[A-Za-z_]\w*)$");
+                if (nameMatch.Success)
+                    values.Add(nameMatch.Groups["name"].Value);
+            }
+        }
+
+        return values;
+    }
 
     static string RemoveComments(string code)
     {
@@ -241,9 +294,10 @@ class CustomParser
             string parseCode = RemoveComments(cppCode);
 
             MatchCollection classMatches = ClassRegex.Matches(parseCode);
-            MatchCollection structMatches = Regex.Matches(parseCode, @"USTRUCT\s*\([^)]*\)\s*struct\s+(?:[A-Z0-9_]+_API\s+)?(\w+)");
+            MatchCollection structMatches = StructRegex.Matches(parseCode);
+            MatchCollection enumMatches = EnumRegex.Matches(parseCode);
 
-            if (classMatches.Count == 0 && structMatches.Count == 0)
+            if (classMatches.Count == 0 && structMatches.Count == 0 && enumMatches.Count == 0)
                 continue;
 
             string fileNameOnly = Path.GetFileNameWithoutExtension(file);
@@ -268,7 +322,11 @@ class CustomParser
             foreach (Match match in structMatches)
             {
                 bHasReflectionData = true;
-                string structName = match.Groups[1].Value;
+
+                // 이름과 부모 추출 (부모가 없으면 빈 문자열)
+                string structName = match.Groups["name"].Value;
+                string parentName = match.Groups["parent"].Success ? match.Groups["parent"].Value : "";
+
                 Console.WriteLine($"\n [Parsing Success] Find Structure: {structName} (FineName: {fileNameOnly}.h)");
 
                 // 구조체용 GENERATED_BODY_ClassName (구조체는 virtual 함수가 필요 없음)
@@ -287,6 +345,13 @@ public: \
     info.Size = sizeof({structName});");
                 cppContent.AppendLine("    info.Properties.clear();");
                 cppContent.AppendLine("    info.GcPointerOffsets.clear();");
+
+                cppContent.AppendLine($"    info.ParentStructName = \"{EscapeForCppString(parentName)}\";");
+                //if (!string.IsNullOrEmpty(parentName))
+                //{
+                //    cppContent.AppendLine($"    info.ParentStruct = ReflectionDatabase::GetStruct(\"{EscapeForCppString(parentName)}\");");
+                //}
+
                 // 구조체 내부 변수들(UPROPERTY) 찾기
                 // (완벽한 파서를 원하신다면 괄호 { } 짝맞추기 로직이 추가되어야 합니다.)
 
@@ -324,7 +389,47 @@ static FAutoRegister_{structName} AutoRegister_{structName}_Instance;
             }
 
             // ---------------------------------------------------------
-            // 2. UCLASS 파싱 로직 (기존과 거의 동일, 단일 매치 -> 다중 매치로 변경)
+            // 2. UENUM 파싱 로직 
+            // ---------------------------------------------------------
+
+            foreach (Match match in enumMatches)
+            {
+                bHasReflectionData = true;
+
+                string enumName = match.Groups["name"].Value;
+
+                cppContent.AppendLine($"static FEnumInfo StaticEnumInfo_{enumName};");
+
+                cppContent.AppendLine($@"void Register_{enumName}() {{
+    FEnumInfo& info = StaticEnumInfo_{enumName};
+    info.EnumName = ""{EscapeForCppString(enumName)}"";
+    info.Values.clear();
+");
+
+                if (TryExtractBraceBlock(parseCode, match.Index, out _, out _, out string enumBody))
+                {
+                    foreach (string valueName in ParseEnumValueNames(enumBody))
+                    {
+                        cppContent.AppendLine(
+                            $"    info.Values.push_back({{ \"{EscapeForCppString(valueName)}\", static_cast<int64>({enumName}::{valueName}) }});");
+                        cppContent.AppendLine(
+    $"    info.CachedNames.push_back(ReflectionUtils::GetStablePropertyName(FName(\"{EscapeForCppString(valueName)}\")));");
+                    }
+                }
+
+                cppContent.AppendLine($@"    ReflectionDatabase::AddEnum(""{EscapeForCppString(enumName)}"", &info);
+}}
+
+struct FAutoRegister_{enumName}
+{{
+    FAutoRegister_{enumName}() {{ Register_{enumName}(); }}
+}};
+static FAutoRegister_{enumName} AutoRegister_{enumName}_Instance;
+");
+            }
+
+            // ---------------------------------------------------------
+            // 3. UCLASS 파싱 로직 (기존과 거의 동일, 단일 매치 -> 다중 매치로 변경)
             // ---------------------------------------------------------
             for (int i = 0; i < classMatches.Count; i++)
             {
@@ -363,7 +468,7 @@ static FAutoRegister_{structName} AutoRegister_{structName}_Instance;
                 cppContent.AppendLine("    info.GcPointerOffsets.clear();");
                 cppContent.AppendLine($"    info.ClassName = \"{EscapeForCppString(className)}\";");
                 cppContent.AppendLine($"    info.ParentClassName = \"{EscapeForCppString(parentName)}\";");
-                cppContent.AppendLine($"    info.ParentClass = ReflectionDatabase::GetClass(\"{EscapeForCppString(parentName)}\");");
+                //cppContent.AppendLine($"    info.ParentClass = ReflectionDatabase::GetClass(\"{EscapeForCppString(parentName)}\");");
 
                 MatchCollection properties = PropertyRegex.Matches(classBlock);
                 foreach (Match prop in properties)

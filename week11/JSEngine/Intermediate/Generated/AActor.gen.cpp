@@ -9,7 +9,6 @@ void Register_AActor()
     info.GcPointerOffsets.clear();
     info.ClassName = "AActor";
     info.ParentClassName = "UObject";
-    info.ParentClass = ReflectionDatabase::GetClass("UObject");
     info.Properties.push_back({ "RootComponent", "USceneComponent*", offsetof(AActor, RootComponent), true });
     info.GcPointerOffsets.push_back(offsetof(AActor, RootComponent));
     info.Properties.push_back({ "OwningWorld", "UWorld*", offsetof(AActor, OwningWorld), false });

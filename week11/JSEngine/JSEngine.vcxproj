@@ -315,13 +315,13 @@
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration)\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(ProjectDir)Tools\PropertySystem\Bin\CustomParser.exe" "$(ProjectDir)\"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(ProjectDir)Tools\PropertySystem\CustomParser.exe" "$(ProjectDir)\"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(ProjectDir)Tools\PropertySystem\Bin\CustomParser.exe" "$(ProjectDir)\"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(ProjectDir)Tools\PropertySystem\CustomParser.exe" "$(ProjectDir)\"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(ProjectDir)Tools\PropertySystem\Bin\CustomParser.exe" "$(ProjectDir)\"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(ProjectDir)Tools\PropertySystem\CustomParser.exe" "$(ProjectDir)\"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(ProjectDir)Tools\PropertySystem\CustomParser.exe" "$(ProjectDir)\"</Command>
@@ -927,6 +927,7 @@
     <ClInclude Include="Source\Engine\Component\SkeletalMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\SkinnedMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\TransformProxy.h" />
+    <ClInclude Include="Source\Engine\Core\RefelctionTypeInfo.h" />
     <ClInclude Include="Source\Engine\Core\ReflectionDatabase.h" />
     <ClInclude Include="Source\Engine\Core\ReflectionMacros.h" />
     <ClInclude Include="Source\Engine\Core\ReflectionUtils.h" />
