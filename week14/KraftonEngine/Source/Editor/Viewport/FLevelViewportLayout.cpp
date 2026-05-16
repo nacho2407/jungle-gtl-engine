@@ -16,6 +16,8 @@
 #include "GameFramework/Light/PointLightActor.h"
 #include "GameFramework/Light/SpotLightActor.h"
 #include "GameFramework/SkeletalMeshActor.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/LuaCharacter.h"
 #include "GameFramework/World.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Viewport/Viewport.h"
@@ -1702,6 +1704,8 @@ void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 		PlaceActorMenuItem("Capsule Collider", EViewportPlaceActorType::CapsuleCollider);
 		PlaceActorMenuItem("Trigger Volume", EViewportPlaceActorType::TriggerVolume);
 		PlaceActorMenuItem("Skeletal Mesh Actor", EViewportPlaceActorType::SkeletalMesh);
+		PlaceActorMenuItem("Character",           EViewportPlaceActorType::Character);
+		PlaceActorMenuItem("Lua Character",       EViewportPlaceActorType::LuaCharacter);
 
 		// Game 모듈이 등록한 액터들 (예: ACarPawn). 등록 순서대로 표시.
 		const auto& RegistryEntries = FActorPlacementRegistry::Get().GetEntries();
@@ -1961,6 +1965,29 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		if (Actor)
 		{
 			Actor->InitDefaultComponents("Data/Samba Dancing (10).fbx");
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::Character:
+	{
+		ACharacter* Actor = World->SpawnActor<ACharacter>();
+		if (Actor)
+		{
+			// SkeletalMeshActor 와 동일 default mesh — 검증된 fbx.
+			Actor->InitDefaultComponents("Data/Samba Dancing (10).fbx");
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::LuaCharacter:
+	{
+		ALuaCharacter* Actor = World->SpawnActor<ALuaCharacter>();
+		if (Actor)
+		{
+			// Mesh 는 default. ULuaScriptComponent 의 ScriptFile 은 사용자가
+			// PropertyWidget 에서 콤보로 지정 (Asset/Script/*.lua).
+			Actor->InitDefaultComponents("Data/Samba Dancing (10).fbx", FString());
 			SpawnedActor = Actor;
 		}
 		break;
