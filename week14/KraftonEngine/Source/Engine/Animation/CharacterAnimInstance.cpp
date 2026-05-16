@@ -8,6 +8,7 @@
 #include "Math/MathUtils.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
+#include "Serialization/Archive.h"
 
 #include <cmath>
 
@@ -136,4 +137,14 @@ void UCharacterAnimInstance::GetEditableProperties(TArray<FPropertyDescriptor>& 
 	AmpProp.Max      = 100.0f;
 	AmpProp.Speed    = 0.5f;
 	OutProps.push_back(AmpProp);
+}
+
+void UCharacterAnimInstance::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+	// Editor-set 데모 파라미터만 — Speed/ElapsedTime 같은 runtime 변수는 매 frame 덮어쓰므로 제외.
+	Ar << bAutoDriveSpeed;
+	Ar << SpeedThreshold;
+	Ar << AutoPeriodSec;
+	Ar << AutoSpeedAmp;
 }

@@ -43,6 +43,7 @@ public:
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
+	void Serialize(FArchive& Ar) override;
 
 	// FLuaScriptManager 가 .lua 변경 감지 시 호출.
 	void ReloadScript();
