@@ -51,12 +51,9 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	GetOrCreate(EShaderPath::CameraVignette, StartupError);
 	GetOrCreate(EShaderPath::CameraLetterbox, StartupError);
 
-	// UberLit 기본은 Phong + Cluster Culling으로 컴파일한다.
+	// UberLit 기본은 StaticMesh VS + Phong으로 컴파일한다. 나머지 ViewMode/VertexFactory 조합은 lazy compile.
 	GetOrCreate(EShaderPath::UberLit, StartupError);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Unlit),   EUberLitDefines::Unlit,   StartupError);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Gouraud), EUberLitDefines::Gouraud, StartupError);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Lambert), EUberLitDefines::Lambert, StartupError);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong),   EUberLitDefines::Phong,   StartupError);
+	GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Default, EUberLitDefines::EVertexFactory::SkeletalMesh, StartupError);
 
 	// include 역매핑 구축
 	RebuildIncludeDependents();
@@ -98,6 +95,12 @@ void FShaderManager::Release()
 // ============================================================
 FShader* FShaderManager::GetOrCreate(const FShaderKey& Key, EShaderErrorMode ErrorMode)
 {
+	if (Key.Path == EShaderPath::UberLit && Key.DefinesHash == 0)
+	{
+		return GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Default,
+			EUberLitDefines::EVertexFactory::StaticMesh, ErrorMode);
+	}
+
 	auto It = ShaderCache.find(Key);
 	if (It != ShaderCache.end())
 	{
@@ -110,12 +113,11 @@ FShader* FShaderManager::GetOrCreate(const FShaderKey& Key, EShaderErrorMode Err
 	CacheEntry.Shader = std::make_unique<FShader>();
 	std::wstring WidePath = FPaths::ToWide(Key.Path);
 
-	// DefinesHash가 0이면 매크로 없음. UberLit만 기본 Cluster Culling define을 적용한다.
+	// DefinesHash가 0이면 매크로 없음.
 	if (Key.DefinesHash == 0)
 	{
-		const bool bIsUberLit = (Key.Path == EShaderPath::UberLit);
-		const D3D_SHADER_MACRO* Defines = bIsUberLit ? EUberLitDefines::Default : nullptr;
-		CacheEntry.Shader->Create(CachedDevice, WidePath.c_str(), "VS", "PS", Defines, &CacheEntry.Includes, ErrorMode);
+		const D3D_SHADER_MACRO* Defines = nullptr;
+		CacheEntry.Shader->Create(CachedDevice, WidePath.c_str(), Key.VSEntryPoint.c_str(), Key.PSEntryPoint.c_str(), Defines, &CacheEntry.Includes, ErrorMode);
 		CacheEntry.StoredDefines = CopyDefines(Defines);
 	}
 	else
@@ -145,12 +147,19 @@ FShader* FShaderManager::PreCompile(const FShaderKey& Key, const D3D_SHADER_MACR
 	FShaderCacheEntry CacheEntry;
 	CacheEntry.Shader = std::make_unique<FShader>();
 	std::wstring WidePath = FPaths::ToWide(Key.Path);
-	CacheEntry.Shader->Create(CachedDevice, WidePath.c_str(), "VS", "PS", Defines, &CacheEntry.Includes, ErrorMode);
+	CacheEntry.Shader->Create(CachedDevice, WidePath.c_str(), Key.VSEntryPoint.c_str(), Key.PSEntryPoint.c_str(), Defines, &CacheEntry.Includes, ErrorMode);
 	CacheEntry.StoredDefines = CopyDefines(Defines);
 
 	auto* RawPtr = CacheEntry.Shader.get();
 	ShaderCache.emplace(Key, std::move(CacheEntry));
 	return RawPtr;
+}
+
+FShader* FShaderManager::GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel LightingModel,
+	EUberLitDefines::EVertexFactory VertexFactory, EShaderErrorMode ErrorMode)
+{
+	const D3D_SHADER_MACRO* Defines = EUberLitDefines::GetDefines(LightingModel, VertexFactory);
+	return PreCompile(EUberLitDefines::MakePermutationKey(LightingModel, VertexFactory), Defines, ErrorMode);
 }
 
 // ============================================================
@@ -284,7 +293,7 @@ void FShaderManager::OnShadersChanged(const TSet<FString>& ChangedFiles)
 		auto NewShader = std::make_unique<FShader>();
 		TArray<FString> NewIncludes;
 		const D3D_SHADER_MACRO* Defines = Entry.StoredDefines.empty() ? nullptr : Entry.StoredDefines.data();
-		NewShader->Create(CachedDevice, WidePath.c_str(), "VS", "PS", Defines, &NewIncludes);
+		NewShader->Create(CachedDevice, WidePath.c_str(), Key.VSEntryPoint.c_str(), Key.PSEntryPoint.c_str(), Defines, &NewIncludes);
 
 		if (NewShader->IsValid())
 		{

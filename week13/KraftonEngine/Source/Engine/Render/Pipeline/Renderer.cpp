@@ -62,6 +62,7 @@ void FRenderer::Release()
 	FGPUProfiler::Get().Shutdown();
 
 	Builder.Release();
+	Pipeline.Release();
 
 	Resources.TileBasedCulling.Release();
 	Resources.ClusteredLightCuller.Release();

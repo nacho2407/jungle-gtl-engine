@@ -16,6 +16,11 @@ void FRenderPassPipeline::Initialize()
 	}
 }
 
+void FRenderPassPipeline::Release()
+{
+	Passes.clear();
+}
+
 void FRenderPassPipeline::Execute(const FPassContext& Ctx)
 {
 	for (const auto& Pass : Passes)

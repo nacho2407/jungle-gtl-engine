@@ -1,6 +1,7 @@
 ﻿#include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
+#include "Editor/Viewport/EditorPreviewViewportClient.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Object/Object.h"
 #include "Render/Types/ShadowSettings.h"
@@ -259,6 +260,8 @@ void FEditorConsoleWidget::RegisterRenderCommands()
 		"Render", "shadow bias <bias> [<slope_bias>]|reset", "Overrides global shadow bias values.");
 	RegisterCommand("shadow filter", [this](const TArray<FString>& Args) { HandleShadowFilter(Args); },
 		"Render", "shadow filter hard|pcf|vsm|reset", "Overrides shadow filter mode.");
+	RegisterCommand("skinning", [this](const TArray<FString>& Args) { HandleSkinningMode(Args); },
+		"Render", "skinning cpu|gpu", "Sets skeletal mesh skinning mode.");
 }
 
 void FEditorConsoleWidget::Shutdown()
@@ -1196,6 +1199,54 @@ void FEditorConsoleWidget::HandleShadowFilter(const TArray<FString>& Args)
 		AddLog("[ERROR] Unknown filter mode: '%s'\n", Args[0].c_str());
 		AddLog("Usage: shadow filter hard|pcf|vsm|reset\n");
 	}
+}
+
+void FEditorConsoleWidget::HandleSkinningMode(const TArray<FString>& Args)
+{
+	if (Args.empty())
+	{
+		AddLog("skinning: %s\n", SkinningModeRuntime::Get() == ESkinningMode::GPU ? "GPU" : "CPU");
+		AddLog("Usage: skinning cpu|gpu\n");
+		return;
+	}
+
+	const FString Arg = ToLower(Args[0]);
+	ESkinningMode NewMode;
+	if (Arg == "cpu")
+	{
+		NewMode = ESkinningMode::CPU;
+	}
+	else if (Arg == "gpu")
+	{
+		NewMode = ESkinningMode::GPU;
+	}
+	else
+	{
+		AddLog("[ERROR] Unknown skinning mode: '%s'\n", Args[0].c_str());
+		AddLog("Usage: skinning cpu|gpu\n");
+		return;
+	}
+
+	SkinningModeRuntime::Set(NewMode);
+
+	if (EditorEngine)
+	{
+		for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
+		{
+			if (!VC) continue;
+			VC->GetRenderOptions().SkinningMode = NewMode;
+		}
+
+		TArray<IEditorPreviewViewportClient*> PreviewClients;
+		EditorEngine->CollectAssetEditorPreviewViewportClients(PreviewClients);
+		for (IEditorPreviewViewportClient* VC : PreviewClients)
+		{
+			if (!VC) continue;
+			VC->GetRenderOptions().SkinningMode = NewMode;
+		}
+	}
+
+	AddLog("Skinning mode set to %s.\n", NewMode == ESkinningMode::GPU ? "GPU" : "CPU");
 }
 
 // History & Tab-Completion Callback____________________________________________________________

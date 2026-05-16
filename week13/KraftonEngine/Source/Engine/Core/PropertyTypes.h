@@ -6,6 +6,7 @@
 #include "Core/CoreTypes.h"
 
 namespace json { class JSON; }
+class UClass;
 
 // 에디터에서 자동 위젯 매핑에 사용되는 프로퍼티 타입
 enum class EPropertyType : uint8_t
@@ -25,6 +26,7 @@ enum class EPropertyType : uint8_t
 	SkeletalMeshRef, // USkeletalMesh* 에셋 레퍼런스 (드롭다운 선택)
 	MaterialSlot,  // FMaterialSlot — 머티리얼 경로
 	ObjectRef,	 // 일반 UObject 자식 에셋 레퍼런스. AssetTypeName 으로 FAssetRegistry 조회.
+	ClassRef,	  // TSubclassOf<T> 의 UClass* 슬롯. ClassBase 의 자식 콤보로 노출/직렬화.
 	Enum,
 	Vec3Array,
 	Struct,    // 자기기술 구조체 — StructFunc로 Children 생성
@@ -66,6 +68,10 @@ struct FPropertyDescriptor
 	// ObjectRef Metadata — 드롭다운에 표시할 자산 종류 (FAssetRegistry::ListByTypeName 의 키).
 	// 예: "USkeletalMesh", "UStaticMesh", "UAnimSequence".
 	const char* AssetTypeName = nullptr;
+
+	// ClassRef Metadata — 자식 enumerate 의 베이스. 보통 TSubclassOf<T>::StaticClass() 로 채움.
+	// 베이스 자신은 콤보에서 제외 (factory 미등록 가능 + 추상 의미).
+	UClass* ClassBase = nullptr;
 
 	// JSON 직렬화 — FSceneSaveManager 등 외부 직렬자가 호출.
 	// 헤더에 SimpleJSON 의존을 들이지 않기 위해 본문은 PropertyTypes.cpp 에 둔다.

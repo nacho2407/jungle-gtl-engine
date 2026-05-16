@@ -8,15 +8,26 @@ class USkeletalMeshComponent;
 class USkeletalMesh;
 class UAnimSequenceBase;
 
+// 큐에 적재된 한 프레임 분의 notify — dispatch 시 Sequence 컨텍스트 보존 위해 같이 들고 다님.
+// (UE 의 FAnimNotifyEventReference 와 의미 대응 — 우리는 value-copy 가 더 안전.)
+struct FQueuedAnimNotify
+{
+	FAnimNotifyEvent         Event;
+	const UAnimSequenceBase* Sequence = nullptr;
+};
+
 // 모든 애니메이션 인스턴스의 베이스. SkeletalMeshComponent 1개에 1개 인스턴스.
 //
 // 라이프사이클:
 //   1) UObjectManager 로 생성 후 SetOwningComponent 로 소속 컴포넌트 지정
 //   2) NativeInitializeAnimation() — 1회 초기화 후크
 //   3) 매 프레임 UpdateAnimation(dt) 호출
-//        → NativeUpdateAnimation(dt)  // 변수 갱신 (Pawn 속도/MovementMode 읽기 등)
-//        → EvaluateAnimation(Output)  // 실제 포즈 계산
-//        → 결과를 OwningComponent 의 본 edit pose 로 푸시 (호출 측 책임)
+//        → NativeUpdateAnimation(dt)        — 자식이 시간 진행 + AddAnimNotifies(prev, cur, seq) 호출
+//        → DispatchQueuedAnimEvents()       — 베이스가 큐 비우면서 일괄 dispatch (Notify→Notify + HandleAnimNotify)
+//      그 후 호출자가 EvaluatePose(Output) — 결과를 OwningComponent 의 본 edit pose 로 푸시.
+//
+// Notify dispatch 통합: SingleNode 든 Custom+FSM 이든 자식은 AddAnimNotifies 만 호출 (큐에 push).
+// 실제 dispatch 는 UpdateAnimation 끝에서 베이스가 한 번 수행 — UE 의 DispatchQueuedAnimEvents 패턴.
 class UAnimInstance : public UObject
 {
 public:
@@ -31,7 +42,7 @@ public:
 	virtual void EvaluateAnimation(FPoseContext& Output) { (void)Output; }
 
 	// ── 외부 진입점 ──
-	// 매 프레임 호출. NativeUpdate → Evaluate → (호출자가) 결과를 컴포넌트에 푸시.
+	// 매 프레임 호출. NativeUpdate → DispatchQueuedAnimEvents → (호출자가) EvaluatePose.
 	void UpdateAnimation(float DeltaSeconds);
 	void EvaluatePose(FPoseContext& Output);
 
@@ -41,11 +52,20 @@ public:
 	USkeletalMesh*          GetSkeletalMesh()    const;
 
 	// ── Notify ──
-	// [PreviousTime, CurrentTime) 구간을 가로지른 Notify 들을 모아 HandleAnimNotify 호출.
-	// 루프 경계는 [Prev, Length) ∪ [0, Current) 로 처리.
-	void TriggerAnimNotifies(float PreviousTime, float CurrentTime, const UAnimSequenceBase* Sequence);
+	// 자식(SingleNode, FSM 노드) 이 시퀀스 [PreviousTime, CurrentTime) 구간을 재생한 직후 호출.
+	// 시간 범위 내 notify 들을 큐에 적재만 함 — 즉시 dispatch 하지 않음.
+	// 루프 경계는 [Prev, Length) ∪ [0, Cur) 로 처리.
+	void AddAnimNotifies(float PreviousTime, float CurrentTime, const UAnimSequenceBase* Sequence);
+
+	// UpdateAnimation 끝에서 자동 호출 — 큐 비우면서 각 notify dispatch.
+	//   1) Q.Event.Notify->Notify(comp, seq)  — UE 패턴 (시퀀스가 소유한 로직 객체)
+	//   2) HandleAnimNotify(Q.Event)          — fallback 후크 (Owner-상태 의존 로직)
+	void DispatchQueuedAnimEvents();
+
+	// fallback 후크 — Notify 객체가 없거나, 추가 처리 필요할 때 자식이 오버라이드.
 	virtual void HandleAnimNotify(const FAnimNotifyEvent& Notify) { (void)Notify; }
 
 protected:
-	USkeletalMeshComponent* OwningComponent = nullptr;
+	USkeletalMeshComponent*       OwningComponent = nullptr;
+	TArray<FQueuedAnimNotify>     NotifyQueue;
 };
