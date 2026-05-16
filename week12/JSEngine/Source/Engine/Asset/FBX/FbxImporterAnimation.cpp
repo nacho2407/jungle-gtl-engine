@@ -225,6 +225,23 @@ namespace
         return Nodes;
     }
 
+    bool StackHasTransformAnimation(FbxScene* Scene, FbxAnimStack* Stack)
+    {
+        if (!Scene || !Scene->GetRootNode() || !Stack)
+        {
+            return false;
+        }
+
+        TArray<FbxNode*> AnimatedNodes;
+        FbxNode* RootNode = Scene->GetRootNode();
+        for (int32 ChildIndex = 0; ChildIndex < RootNode->GetChildCount(); ++ChildIndex)
+        {
+            CollectAnimatedTransformNodesRecursive(RootNode->GetChild(ChildIndex), Stack, AnimatedNodes);
+        }
+
+        return !AnimatedNodes.empty();
+    }
+
     bool IsUsableTimeSpan(const FbxTimeSpan& TimeSpan)
     {
         return TimeSpan.GetStop() >= TimeSpan.GetStart();
@@ -323,6 +340,82 @@ namespace
 		//ScaleKey
         OutTrack.ScaleKeys.push_back(EngineTransform.GetScale3D());
     }
+
+    UAnimSequence* BuildAnimSequenceFromStack(
+        FbxScene* Scene,
+        FbxAnimStack* AnimStack,
+        const FString& SourcePath,
+        const FFbxAnimImportOptions& ImportOptions)
+    {
+        if (!Scene || !AnimStack)
+        {
+            return nullptr;
+        }
+
+        Scene->SetCurrentAnimationStack(AnimStack);
+
+        //FbxAnimStack 하나를 UAnimSequence 하나로 변환합니다.
+        const TArray<FbxNode*> TrackNodes = CollectAnimationTrackNodes(Scene, AnimStack);
+        if (TrackNodes.empty())
+        {
+            UE_LOG_ERROR("[FbxAnimationImporter] No skeleton or animated transform node found: %s | Stack=%s",
+                SourcePath.c_str(),
+                AnimStack->GetName());
+            return nullptr;
+        }
+
+        const int32 SampleRate = ResolveSampleRate(ImportOptions);
+        const FbxTimeSpan TimeSpan = ResolveAnimationTimeSpan(Scene, AnimStack);
+        const int32 KeyCount = ComputeSampleKeyCount(TimeSpan, SampleRate);
+        const double DurationSeconds = std::max(0.0, TimeSpan.GetDuration().GetSecondDouble());
+
+        UAnimSequence* AnimSequence = UObjectManager::Get().CreateObject<UAnimSequence>();
+        UAnimDataModel* DataModel = UObjectManager::Get().CreateObject<UAnimDataModel>();
+        AnimSequence->SetDataModel(DataModel);
+        AnimSequence->SetSourceFilePath(SourcePath);
+        AnimSequence->SetSourceStackName(FString(AnimStack->GetName()));
+        AnimSequence->SetPreviewMeshPath(ImportOptions.PreviewMeshPath.empty() ? SourcePath : ImportOptions.PreviewMeshPath);
+
+        DataModel->SetFrameRate(MakeFrameRate(SampleRate));
+        DataModel->SetPlayLength(static_cast<float>(DurationSeconds));
+        DataModel->SetNumberOfFrames(std::max(0, KeyCount - 1));
+        DataModel->SetNumberOfKeys(KeyCount);
+
+        TArray<FBoneAnimationTrack>& Tracks = DataModel->GetMutableBoneAnimationTracks();
+        Tracks.reserve(TrackNodes.size());
+
+        for (FbxNode* Node : TrackNodes)
+        {
+            if (!Node)
+            {
+                continue;
+            }
+
+            FBoneAnimationTrack Track;
+            Track.Name = FName(FString(Node->GetName()));
+            Track.InternalTrack.PosKeys.reserve(KeyCount);
+            Track.InternalTrack.RotKeys.reserve(KeyCount);
+            Track.InternalTrack.ScaleKeys.reserve(KeyCount);
+
+            for (int32 KeyIndex = 0; KeyIndex < KeyCount; ++KeyIndex)
+            {
+                const FbxTime SampleTime = MakeSampleTime(TimeSpan, KeyIndex, KeyCount);
+                AppendSampledLocalTransform(Node, SampleTime, Track.InternalTrack);
+            }
+
+            Tracks.push_back(std::move(Track));
+        }
+
+        UE_LOG("[FbxAnimationImporter] Stack imported: %s | Stack=%s | Tracks=%zu | Keys=%d | Length=%.3f | SampleRate=%d",
+            SourcePath.c_str(),
+            AnimStack->GetName(),
+            Tracks.size(),
+            KeyCount,
+            DurationSeconds,
+            SampleRate);
+
+        return AnimSequence;
+    }
 }
 
 namespace FFbxImporterInternal
@@ -343,13 +436,7 @@ bool HasAnyAnimation(FbxScene* Scene)
             continue;
         }
 
-        TArray<FbxNode*> AnimatedNodes;
-        for (int32 ChildIndex = 0; ChildIndex < Scene->GetRootNode()->GetChildCount(); ++ChildIndex)
-        {
-            CollectAnimatedTransformNodesRecursive(Scene->GetRootNode()->GetChild(ChildIndex), Stack, AnimatedNodes);
-        }
-
-        if (!AnimatedNodes.empty())
+        if (StackHasTransformAnimation(Scene, Stack))
         {
             return true;
         }
@@ -363,6 +450,49 @@ UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path)
 {
     FFbxAnimImportOptions ImportOptions;
     return LoadAnimSequence(Path, ImportOptions);
+}
+
+TArray<FString> FFbxImporter::GetAnimationStackNames(const FString& Path)
+{
+    TArray<FString> StackNames;
+
+    FbxManager* Manager = FbxManager::Create();
+    if (!Manager)
+    {
+        UE_LOG_ERROR("[FbxAnimationImporter] Failed to create FbxManager for stack scan");
+        return StackNames;
+    }
+
+    FbxIOSettings* IOSettings = FbxIOSettings::Create(Manager, IOSROOT);
+    Manager->SetIOSettings(IOSettings);
+
+    FbxScene* Scene = FbxScene::Create(Manager, "ScanAnimationStacksScene");
+    if (!Scene)
+    {
+        UE_LOG_ERROR("[FbxAnimationImporter] Failed to create FbxScene for stack scan");
+        Manager->Destroy();
+        return StackNames;
+    }
+
+    if (!ImportScene(Path, Manager, Scene))
+    {
+        Manager->Destroy();
+        return StackNames;
+    }
+
+    const int32 StackCount = Scene->GetSrcObjectCount<FbxAnimStack>();
+    StackNames.reserve(StackCount);
+    for (int32 StackIndex = 0; StackIndex < StackCount; ++StackIndex)
+    {
+        FbxAnimStack* Stack = Scene->GetSrcObject<FbxAnimStack>(StackIndex);
+        if (Stack && StackHasTransformAnimation(Scene, Stack))
+        {
+            StackNames.push_back(FString(Stack->GetName()));
+        }
+    }
+
+    Manager->Destroy();
+    return StackNames;
 }
 
 UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path, const FFbxAnimImportOptions& ImportOptions)
@@ -411,82 +541,96 @@ UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path, const FFbxAni
         return nullptr;
     }
 
-    Scene->SetCurrentAnimationStack(AnimStack);
+    UAnimSequence* AnimSequence = BuildAnimSequenceFromStack(Scene, AnimStack, Path, ImportOptions);
 
-    // 여기가 제일 중요한 파트입니다.
-	// FbxAnimStack 하나를 UAnimSequence 하나로 변환하는 단계입니다.
-    // CurrentAnimationStack을 바꿔 두어야 이후 EvaluateLocalTransform()이 이 stack의 animation curve를 기준으로 평가된다.
-    const TArray<FbxNode*> TrackNodes = CollectAnimationTrackNodes(Scene, AnimStack);
-    if (TrackNodes.empty())
+    const double EndTime = FPlatformTime::Seconds();
+    if (AnimSequence)
     {
-        UE_LOG_ERROR("[FbxAnimationImporter] No skeleton or animated transform node found: %s", Path.c_str());
-        Manager->Destroy();
-        return nullptr;
+        UE_LOG("[FbxAnimationImporter] Animation FBX loaded: %s | Stack=%s | %.3f sec",
+            Path.c_str(),
+            AnimStack->GetName(),
+            EndTime - StartTime);
     }
-
-    const int32 SampleRate = ResolveSampleRate(ImportOptions);
-    const FbxTimeSpan TimeSpan = ResolveAnimationTimeSpan(Scene, AnimStack);
-    
-	//TimeSpan과 SampleRate을 통해 샘플링할 key 개수를 결정합니다.
-	const int32 KeyCount = ComputeSampleKeyCount(TimeSpan, SampleRate);
-    const double DurationSeconds = std::max(0.0, TimeSpan.GetDuration().GetSecondDouble());
-
-    // 최종 산출물은 UAnimSequence이고, 실제 editable animation data는 UAnimDataModel에 저장된다.
-    // DataModel에는 frame rate, 재생 길이, frame/key 개수와 함께 여러 FBoneAnimationTrack이 들어간다.
-    UAnimSequence* AnimSequence = UObjectManager::Get().CreateObject<UAnimSequence>();
-    UAnimDataModel* DataModel = UObjectManager::Get().CreateObject<UAnimDataModel>();
-    AnimSequence->SetDataModel(DataModel);
-    AnimSequence->SetSourceFilePath(Path);
-    AnimSequence->SetSourceStackName(FString(AnimStack->GetName()));
-    AnimSequence->SetPreviewMeshPath(Path);
-
-    DataModel->SetFrameRate(MakeFrameRate(SampleRate));
-    DataModel->SetPlayLength(static_cast<float>(DurationSeconds));
-    DataModel->SetNumberOfFrames(std::max(0, KeyCount - 1));
-    DataModel->SetNumberOfKeys(KeyCount);
-
-    TArray<FBoneAnimationTrack>& Tracks = DataModel->GetMutableBoneAnimationTracks();
-    Tracks.reserve(TrackNodes.size());
-
-    for (FbxNode* Node : TrackNodes)
-    {
-        if (!Node)
-        {
-            continue;
-        }
-
-        FBoneAnimationTrack Track;
-        Track.Name = FName(FString(Node->GetName()));
-        Track.InternalTrack.PosKeys.reserve(KeyCount);
-        Track.InternalTrack.RotKeys.reserve(KeyCount);
-        Track.InternalTrack.ScaleKeys.reserve(KeyCount);
-
-        // 하나의 FbxNode가 하나의 FBoneAnimationTrack이 된다.
-        // Track.Name에는 bone/node 이름을 넣고, InternalTrack(FRawAnimSequenceTrack)에
-        // sample time마다 평가한 PosKeys/RotKeys/ScaleKeys를 순서대로 쌓는다.
-        for (int32 KeyIndex = 0; KeyIndex < KeyCount; ++KeyIndex)
-        {
-            const FbxTime SampleTime = MakeSampleTime(TimeSpan, KeyIndex, KeyCount);
-
-			//1.Animation Import and Sampling Phase
-            AppendSampledLocalTransform(Node, SampleTime, Track.InternalTrack);
-        }
-
-        //여러 bone track이 UAnimDataModel의 BoneAnimationTracks 배열에 들어가고,
-        //그 DataModel을 가진 UAnimSequence가 LoadAnimSequence()의 최종 결과가 된다.
-        Tracks.push_back(std::move(Track));
-    }
-
-    //const double EndTime = FPlatformTime::Seconds();
-    //UE_LOG("[FbxAnimationImporter] Animation FBX Loaded: %s (Stack=%s, Tracks=%zu, Keys=%d, Length=%.3f, SampleRate=%d, %.3f sec)",
-    //    Path.c_str(),
-    //    AnimStack->GetName(),
-    //    Tracks.size(),
-    //    KeyCount,
-    //    DurationSeconds,
-    //    SampleRate,
-    //    EndTime - StartTime);
 
     Manager->Destroy();
     return AnimSequence;
 }
+
+TArray<FFbxAnimStackImportResult> FFbxImporter::LoadAnimSequences(const FString& Path, const FFbxAnimImportOptions& ImportOptions)
+{
+    TArray<FFbxAnimStackImportResult> Results;
+
+    const double StartTime = FPlatformTime::Seconds();
+    UE_LOG("[FbxAnimationImporter] Start loading all animation stacks: %s", Path.c_str());
+
+    FbxManager* Manager = FbxManager::Create();
+    if (!Manager)
+    {
+        UE_LOG_ERROR("[FbxAnimationImporter] Failed to create FbxManager");
+        return Results;
+    }
+
+    FbxIOSettings* IOSettings = FbxIOSettings::Create(Manager, IOSROOT);
+    Manager->SetIOSettings(IOSettings);
+
+    FbxScene* Scene = FbxScene::Create(Manager, "ImportAllAnimationStacksScene");
+    if (!Scene)
+    {
+        UE_LOG_ERROR("[FbxAnimationImporter] Failed to create FbxScene");
+        Manager->Destroy();
+        return Results;
+    }
+
+    if (!ImportScene(Path, Manager, Scene))
+    {
+        Manager->Destroy();
+        return Results;
+    }
+
+    const int32 StackCount = Scene->GetSrcObjectCount<FbxAnimStack>();
+    if (StackCount <= 0)
+    {
+        UE_LOG_WARNING("[FbxAnimationImporter] No animation stack found: %s", Path.c_str());
+        Manager->Destroy();
+        return Results;
+    }
+
+    Results.reserve(StackCount);
+    for (int32 StackIndex = 0; StackIndex < StackCount; ++StackIndex)
+    {
+        FbxAnimStack* AnimStack = Scene->GetSrcObject<FbxAnimStack>(StackIndex);
+        if (!AnimStack)
+        {
+            continue;
+        }
+
+        if (!StackHasTransformAnimation(Scene, AnimStack))
+        {
+            UE_LOG("[FbxAnimationImporter] Skip stack with no transform animation: %s | Stack=%s",
+                Path.c_str(),
+                AnimStack->GetName());
+            continue;
+        }
+
+        UAnimSequence* Sequence = BuildAnimSequenceFromStack(Scene, AnimStack, Path, ImportOptions);
+        if (!Sequence)
+        {
+            continue;
+        }
+
+        FFbxAnimStackImportResult Result;
+        Result.StackName = FString(AnimStack->GetName());
+        Result.Sequence = Sequence;
+        Results.push_back(Result);
+    }
+
+    const double EndTime = FPlatformTime::Seconds();
+    UE_LOG("[FbxAnimationImporter] Imported animation stacks: %s | Count=%zu | %.3f sec",
+        Path.c_str(),
+        Results.size(),
+        EndTime - StartTime);
+
+    Manager->Destroy();
+    return Results;
+}
+

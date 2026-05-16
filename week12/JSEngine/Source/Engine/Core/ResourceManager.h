@@ -129,6 +129,7 @@ public:
 	TArray<FString> GetCurvePaths() const;
 
     UAnimSequence* LoadAnimSequence(const FString& Path);
+    TArray<FString> ImportAnimationStacksFromFbx(const FString& Path);
     bool SaveAnimSequence(const FString& Path, const UAnimSequence* Sequence);
     UAnimSequence* FindAnimSequence(const FString& Path) const;
     TArray<FString> GetAnimSequencePaths() const;
