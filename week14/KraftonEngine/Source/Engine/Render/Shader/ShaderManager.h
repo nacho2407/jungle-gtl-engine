@@ -116,6 +116,36 @@ namespace EShaderPath
 	inline constexpr const char* CameraLetterbox = "Shaders/PostProcess/CameraLetterbox.hlsl";
 }
 
+namespace EShadowDepthDefines
+{
+	namespace EntryPoint
+	{
+		inline constexpr const char* StaticMeshVS = "VS_StaticMesh";
+		inline constexpr const char* SkeletalMeshVS = "VS_SkeletalMesh";
+		inline constexpr const char* PS = "PS";
+	}
+
+	enum class EVertexFactory : uint8
+	{
+		StaticMesh,
+		SkeletalMesh,
+	};
+
+	// StaticMesh: 매크로 없음 (기본 경로)
+	inline const D3D_SHADER_MACRO StaticMesh[] = { {nullptr, nullptr} };
+	// SkeletalMesh: GPU skinning 활성화 매크로
+	inline const D3D_SHADER_MACRO SkeletalMesh[] = { {"USE_GPU_SKINNING", "1"}, {nullptr, nullptr} };
+
+	inline FShaderKey MakePermutationKey(EVertexFactory VF)
+	{
+		const D3D_SHADER_MACRO* Defines = 
+			(VF == EVertexFactory::SkeletalMesh) ? SkeletalMesh : StaticMesh;
+		const char* VSEntry =
+			(VF == EVertexFactory::SkeletalMesh) ? EntryPoint::SkeletalMeshVS : EntryPoint::StaticMeshVS;
+		return FShaderKey(EShaderPath::ShadowDepth, Defines, VSEntry, EntryPoint::PS);
+	}
+
+}
 namespace EUberLitDefines
 {
 	namespace EntryPoint
@@ -238,6 +268,7 @@ public:
 	FShader* GetOrCreate(const FShaderKey& Key, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
 	FShader* PreCompile(const FShaderKey& Key, const D3D_SHADER_MACRO* Defines, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
 	FShader* GetOrCreate(const FString& Path, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification) { return GetOrCreate(FShaderKey(Path), ErrorMode); }
+	FShader* GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory VF, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
 	FShader* GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel LightingModel, EUberLitDefines::EVertexFactory VertexFactory,
 		EShaderErrorMode ErrorMode = EShaderErrorMode::Notification, bool bWeightBoneHeatMap = false);
 	FShader* FindOrCreate(const FString& Path);

@@ -9,6 +9,7 @@
 #include "Render/Command/DrawCommandList.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Proxy/SkeletalMeshSceneProxy.h"
 #include "Render/Shader/Shader.h"
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Resource/Buffer.h"
@@ -650,18 +651,22 @@ void FShadowMapPass::UpdateShadowCB(const FPassContext& Ctx)
 // DrawShadowCasters — 공용 프록시 순회 + depth-only 렌더링
 // ============================================================
 
-void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, FSystemResources& Resources, const FConvexVolume& LightFrustum, FSpatialPartition* Partition)
+void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, FSystemResources& Resources, const FConvexVolume& LightFrustum, bool bUseGpuSkinning, FSpatialPartition* Partition)
 {
-	FShader* ShadowShader = FShaderManager::Get().GetOrCreate(EShaderPath::ShadowDepth);
-	if (!ShadowShader || !ShadowShader->IsValid()) return;
+	FShader* StaticShadowShader = FShaderManager::Get().GetOrCreateShadowDepthPermutation(
+		EShadowDepthDefines::EVertexFactory::StaticMesh);
+	FShader* SkeletalShadowShader = bUseGpuSkinning
+		? FShaderManager::Get().GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory::SkeletalMesh)
+		: StaticShadowShader;
+
+	if (!StaticShadowShader || !StaticShadowShader->IsValid()) return;
+	const bool bCanDrawGpuSkinnedCasters = SkeletalShadowShader && SkeletalShadowShader->IsValid();
 
 	ID3D11Device* Device = nullptr;
 	DC->GetDevice(&Device);
 
-	ShadowShader->Bind(DC);
-
-	if (CurrentFilterMode != EShadowFilterMode::VSM)
-		DC->PSSetShader(nullptr, nullptr, 0);
+	FShader* BoundShader = nullptr;
+	ID3D11ShaderResourceView* BoundSkinMatrixSRV = nullptr;
 
 	TArray<FPrimitiveSceneProxy*> BroadPhaseProxies;
 	const TArray<FPrimitiveSceneProxy*>* ProxyList = nullptr;
@@ -687,9 +692,45 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, F
 
 		if (!Partition && !LightFrustum.IntersectAABB(Proxy->GetCachedBounds())) continue;
 
+		const bool bSkeletal = Proxy->HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh);
+		const bool bGpuSkinned = bSkeletal && bUseGpuSkinning;
+
 		FDrawCommandBuffer ProxyBuffer;
-		if (!Proxy->PrepareDrawBuffer(Device, DC, ProxyBuffer)) continue;
+		ID3D11ShaderResourceView* SkinMatrixSRV = nullptr;
+
+		if (bGpuSkinned)
+		{
+			if (!bCanDrawGpuSkinnedCasters) continue;
+
+			FSkeletalMeshSceneProxy* SkeletalProxy = static_cast<FSkeletalMeshSceneProxy*>(Proxy);
+			if (!SkeletalProxy->PrepareGpuSkinningDrawBuffer(Device, DC, ProxyBuffer)) continue;
+
+			SkinMatrixSRV = SkeletalProxy->GetSkinMatrixSRV(Device, DC);
+			if (!SkinMatrixSRV) continue;
+		}
+		else
+		{
+			if (!Proxy->PrepareDrawBuffer(Device, DC, ProxyBuffer)) continue;
+		}
 		if (!ProxyBuffer.VB || !ProxyBuffer.IB) continue;
+
+		FShader* DesiredShader = bGpuSkinned ? SkeletalShadowShader : StaticShadowShader;
+		if (DesiredShader != BoundShader)
+		{
+			DesiredShader->Bind(DC);
+			BoundShader = DesiredShader;
+
+			if (CurrentFilterMode != EShadowFilterMode::VSM)
+			{
+				DC->PSSetShader(nullptr, nullptr, 0);
+			}
+		}
+
+		if (SkinMatrixSRV != BoundSkinMatrixSRV)
+		{
+			DC->VSSetShaderResources(EVertexFactoryTexSlot::SkinMatrices, 1, &SkinMatrixSRV);
+			BoundSkinMatrixSRV = SkinMatrixSRV;
+		}
 
 		// Two-sided shadow: front-cull ↔ no-cull 전환
 		bool bTwoSided = Proxy->CastsShadowAsTwoSided();
@@ -723,6 +764,9 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, F
 	if (bCurrentTwoSided)
 		Resources.RasterizerStateManager.Set(DC, ERasterizerState::SolidFrontCull);
 
+	ID3D11ShaderResourceView* NullSRV = nullptr;
+	DC->VSSetShaderResources(EVertexFactoryTexSlot::SkinMatrices, 1, &NullSRV);
+
 	if (Device)
 	{
 		Device->Release();
@@ -733,7 +777,8 @@ void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVol
 {
 	UWorld* World = Ctx.World;
 	FSpatialPartition* Partition = World ? &World->GetPartition() : nullptr;
-	DrawShadowCasters(Ctx.Device.GetDeviceContext(), *Ctx.Scene, Ctx.Resources, LightFrustum, Partition);
+	const bool bUseGpuSkinning = Ctx.Frame.RenderOptions.SkinningMode == ESkinningMode::GPU;
+	DrawShadowCasters(Ctx.Device.GetDeviceContext(), *Ctx.Scene, Ctx.Resources, LightFrustum, bUseGpuSkinning, Partition);
 }
 
 // ============================================================

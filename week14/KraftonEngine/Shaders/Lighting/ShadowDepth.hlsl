@@ -10,6 +10,7 @@
 
 #include "Common/ConstantBuffers.hlsli"
 #include "Common/VertexLayouts.hlsli"
+#include "Common/Skinning.hlsli"
 
 // b2: Light ViewProj — Shadow depth pass 전용
 cbuffer ShadowLightBuffer : register(b2)
@@ -22,18 +23,38 @@ cbuffer ShadowLightBuffer : register(b2)
 // =============================================================================
 // InputLayout은 VS_Input_PNCTT(StaticMesh)와 호환.
 // Normal/Color/TexCoord/Tangent는 무시하고 Position만 사용.
-PS_Input_Shadow VS(VS_Input_PNCTT input)
+PS_Input_Shadow VS_StaticMesh(VS_Input_PNCTT input)
+{
+    PS_Input_Shadow output;
+    float4 worldPos = mul(float4(input.position, 1.0f), Model);
+    float4 clipPos = mul(worldPos, LightViewProj);
+    output.position = clipPos;
+    output.depth = clipPos.z / clipPos.w;
+    return output;
+}
+
+PS_Input_Shadow VS_SkeletalMesh(VS_Input_PNCTTBB input)
 {
     PS_Input_Shadow output;
 
+#ifdef USE_GPU_SKINNING
+    FSkinningResult skinned = ApplyLinearBlendSkinning(
+        input.position,
+        input.normal,
+        input.tangent.xyz,
+        input.boneIndices,
+        input.boneWeights);
+    float4 worldPos = mul(skinned.position, Model);
+#else
     float4 worldPos = mul(float4(input.position, 1.0f), Model);
-    float4 clipPos  = mul(worldPos, LightViewProj);
+#endif
 
+    float4 clipPos = mul(worldPos, LightViewProj);
     output.position = clipPos;
-    output.depth    = clipPos.z / clipPos.w; // Reversed-Z: near=1, far=0
-
+    output.depth = clipPos.z / clipPos.w;
     return output;
 }
+
 
 // =============================================================================
 // Pixel Shader — EVSM moment 출력 (Hard/PCF 모드에서는 바인딩하지 않음)

@@ -183,11 +183,11 @@ UberPS_Output PS(UberVS_Output input)
 #if defined(WEIGHT_BONE_HEATMAP) && WEIGHT_BONE_HEATMAP
 float Heat = saturate(input.selectedBoneWeight);
 
-float t0 = smoothstep(0.0f,   0.05f,  Heat);   // 마젠타 ->  파랑
-float t1 = smoothstep(0.05f,  0.2f, Heat);     // 파랑   ->  시안
-float t2 = smoothstep(0.2f,   0.35f,  Heat);   // 시안   ->  초록
-float t3 = smoothstep(0.35f,  0.5f, Heat);    // 초록   ->  노랑
-float t4 = smoothstep(0.5f,  1.0f,  Heat);    // 노랑   ->  빨강
+float t0 = smoothstep(0.0f, 0.05f, Heat);   // 마젠타 ->  파랑
+float t1 = smoothstep(0.05f, 0.2f, Heat);   // 파랑   ->  시안
+float t2 = smoothstep(0.2f, 0.35f, Heat);   // 시안   ->  초록
+float t3 = smoothstep(0.35f, 0.5f, Heat);   // 초록   ->  노랑
+float t4 = smoothstep(0.5f, 1.0f, Heat);    // 노랑   ->  빨강
 
 float3 HeatColor = lerp(float3(1.0f, 0.0f, 1.0f),  float3(0.0f, 0.0f, 1.0f),  t0);
 HeatColor = lerp(HeatColor, float3(0.0f, 1.0f, 1.0f),  t1);
