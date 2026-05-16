@@ -37,6 +37,7 @@ TArray<D3D_SHADER_MACRO> FShaderHelper::BuildUberLitMacros(uint32 PermutationKey
 	case ELightingModel::Gouraud:    AddMacro("LIGHTING_MODEL_GOURAUD", "1"); break;
 	case ELightingModel::Lambert:    AddMacro("LIGHTING_MODEL_LAMBERT", "1"); break;
 	case ELightingModel::Heatmap:	 AddMacro("LIGHT_HEATMAP", "1"); break;
+	case ELightingModel::BoneWeightHeatmap: AddMacro("BONE_WEIGHT_HEATMAP", "1"); break;
 	case ELightingModel::BlinnPhong:
 	default:                         AddMacro("LIGHTING_MODEL_PHONG", "1"); break;
 	}

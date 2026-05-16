@@ -16,6 +16,12 @@
 
 class UDirectionalLightComponent;
 
+struct FBoneWeightHeatmapViewState
+{
+	bool bEnabled = false;
+	int32 SelectedBoneIndex = -1;
+};
+
 class FRenderBus
 {
 public:
@@ -31,6 +37,7 @@ public:
 	// Getter,Setter
 	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj, float InNearPlane, float InFarPlane);
 	void SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags);
+	void SetBoneWeightHeatmapViewState(const FBoneWeightHeatmapViewState& InState) { BoneWeightHeatmapViewState = InState; }
 
 	const FMatrix& GetView() const { return View; }
 	const FMatrix& GetProj() const { return Proj; }
@@ -80,8 +87,9 @@ public:
         LetterboxTargetAspect = InTargetAspect;
         LetterboxAmount = InAmount;
     }
-    float GetLetterboxTargetAspect() const { return LetterboxTargetAspect; }
-    float GetLetterboxAmount() const { return LetterboxAmount; }
+	float GetLetterboxTargetAspect() const { return LetterboxTargetAspect; }
+	float GetLetterboxAmount() const { return LetterboxAmount; }
+	const FBoneWeightHeatmapViewState& GetBoneWeightHeatmapViewState() const { return BoneWeightHeatmapViewState; }
 
     bool bSandevistanEnabled = false;
     float SandevistanIntensity = 0.0f;
@@ -128,4 +136,5 @@ private:
 	FVector			WireframeColor	= FVector(1.0f, 1.0f, 1.0f);
 	bool			bFXAAEnabled	= true;
 	bool			bCascadeVis		= false;
+	FBoneWeightHeatmapViewState BoneWeightHeatmapViewState;
 };

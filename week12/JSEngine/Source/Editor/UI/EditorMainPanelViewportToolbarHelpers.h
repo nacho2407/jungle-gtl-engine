@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/EditorUtils.h"
 #include "Editor/Settings/EditorSettings.h"
@@ -38,6 +38,7 @@ public:
 		case EViewMode::Lit_BlinnPhong: return "Lit (Blinn-Phong)";
 		case EViewMode::Unlit: return "Unlit";
 		case EViewMode::Heatmap: return "Heatmap";
+        case EViewMode::BoneWeightHeatmap: return "Bone Weight";
 		case EViewMode::Wireframe: return "Wireframe";
 		case EViewMode::Depth: return "Depth";
 		case EViewMode::Normal: return "Normal";
