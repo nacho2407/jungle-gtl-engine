@@ -2,9 +2,29 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerCameraManager.h"
 #include "Component/CameraComponent.h"
+#include "Component/InputComponent.h"
+#include "Component/SceneComponent.h"
+#include "Core/PropertyTypes.h"
 #include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(APawn, AActor)
+
+void APawn::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Input 자동 부착 + 자식 setup. PostDuplicate 후에도 BeginPlay 가 다시 호출되므로
+	// 중복 add 방지 위해 GetComponentByClass 로 기존 인스턴스 우선 회수.
+	if (!InputComponent)
+	{
+		InputComponent = GetComponentByClass<UInputComponent>();
+		if (!InputComponent)
+		{
+			InputComponent = AddComponent<UInputComponent>();
+		}
+	}
+	SetupInputComponent();
+}
 
 void APawn::PossessedBy(APlayerController* PC)
 {
@@ -31,8 +51,35 @@ void APawn::UnPossessed()
 	Controller = nullptr;
 }
 
+void APawn::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	Super::GetEditableProperties(OutProps);
+
+	OutProps.push_back({ "Auto Possess Player",          EPropertyType::Bool, "Pawn", &bAutoPossessPlayer            });
+	OutProps.push_back({ "Use Controller Rotation Yaw",  EPropertyType::Bool, "Pawn", &bUseControllerRotationYaw     });
+	OutProps.push_back({ "Use Controller Rotation Pitch",EPropertyType::Bool, "Pawn", &bUseControllerRotationPitch   });
+	OutProps.push_back({ "Use Controller Rotation Roll", EPropertyType::Bool, "Pawn", &bUseControllerRotationRoll    });
+}
+
 void APawn::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
 	Ar << bAutoPossessPlayer;
+	Ar << bUseControllerRotationPitch;
+	Ar << bUseControllerRotationYaw;
+	Ar << bUseControllerRotationRoll;
+}
+
+void APawn::ApplyControllerRotationToRoot()
+{
+	if (!bUseControllerRotationPitch && !bUseControllerRotationYaw && !bUseControllerRotationRoll) return;
+
+	USceneComponent* Root = GetRootComponent();
+	if (!Root) return;
+
+	FRotator R = Root->GetRelativeRotation();
+	if (bUseControllerRotationYaw)   R.Yaw   = ControlRotation.Yaw;
+	if (bUseControllerRotationPitch) R.Pitch = ControlRotation.Pitch;
+	if (bUseControllerRotationRoll)  R.Roll  = ControlRotation.Roll;
+	Root->SetRelativeRotation(R);
 }

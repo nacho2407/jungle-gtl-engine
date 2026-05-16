@@ -375,6 +375,9 @@
     <FxCompile Include="Shaders\Common\ShadowSampling.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Common\Skinning.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\SystemResources.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
@@ -505,6 +508,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp">
       <Filter>Source\Editor\Subsystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorAnimationDebugWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
@@ -647,6 +653,9 @@
     <ClCompile Include="Source\Engine\Animation\CharacterAnimInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\LuaAnimInstance.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Skeleton.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
@@ -728,6 +737,9 @@
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\InputComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\LuaScriptComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -784,6 +796,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Light\SpotLightComponent.cpp">
       <Filter>Source\Engine\Component\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\CharacterMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Movement\FloatingPawnMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
@@ -851,6 +866,9 @@
     <ClCompile Include="Source\Engine\GameFramework\CapsuleActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Character.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
@@ -867,6 +885,9 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\LuaCharacter.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Pawn.cpp">
@@ -1364,6 +1385,9 @@
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h">
       <Filter>Source\Editor\Subsystem</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorAnimationDebugWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
@@ -1532,6 +1556,9 @@
     <ClInclude Include="Source\Engine\Animation\CharacterAnimInstance.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\LuaAnimInstance.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Animation\PoseContext.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
@@ -1625,6 +1652,9 @@
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\InputComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\LuaScriptComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
@@ -1681,6 +1711,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Light\SpotLightComponent.h">
       <Filter>Source\Engine\Component\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\CharacterMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Movement\FloatingPawnMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
@@ -1775,6 +1808,9 @@
     <ClInclude Include="Source\Engine\GameFramework\CapsuleActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Character.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\DecalActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
@@ -1791,6 +1827,9 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Level.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\LuaCharacter.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Pawn.h">

@@ -13,6 +13,7 @@
 #include "Common/Functions.hlsli"
 #include "Common/VertexLayouts.hlsli"
 #include "Common/SystemSamplers.hlsli"
+#include "Common/Skinning.hlsli"
 
 #if !defined(LIGHTING_MODEL_UNLIT)
 #include "Common/ForwardLighting.hlsli"
@@ -28,23 +29,6 @@
 // =============================================================================
 Texture2D DiffuseTexture : register(t0);
 Texture2D NormalTexture : register(t1);
-
-
-// StructedBuffer가 RowMajor로 해석해서 나중에 Transfopose하면 추후 헷갈리니까 Mul을 새로 정의했음
-struct FSkinMatrix
-{
-    float4 Row0;
-    float4 Row1;
-    float4 Row2;
-    float4 Row3;
-};
-
-StructuredBuffer<FSkinMatrix> SkinMatrices : register(t13);
-
-float4 MulSkinMatrix(float4 v, FSkinMatrix m)
-{
-    return v.x * m.Row0 + v.y * m.Row1 + v.z * m.Row2 + v.w * m.Row3;
-}
 
 // ── Per-Object Material (b2) — 기존 StaticMesh 와 레이아웃 동일 (호환성) ──
 cbuffer PerShader1 : register(b2)
@@ -70,6 +54,7 @@ struct UberVS_Output
     float2 texcoord : TEXCOORD0;
     float3 worldPos : TEXCOORD1;
     float4 tangent : TANGENT;
+    float selectedBoneWeight : TEXCOORD4;
 #if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
     float3 litDiffuse  : TEXCOORD2;
     float3 litSpecular : TEXCOORD3;
@@ -91,6 +76,7 @@ UberVS_Output VS_StaticMesh(VS_Input_PNCTT input)
     output.normal = normalize(mul(input.normal, (float3x3) NormalMatrix));
     output.color = input.color * SectionColor;
     output.texcoord = input.texcoord;
+    output.selectedBoneWeight = 0.0f;
 
     float3 T = normalize(mul(input.tangent.xyz, M));
     T = normalize(T - output.normal * dot(output.normal, T));
@@ -123,53 +109,17 @@ UberVS_Output VS_SkeletalMesh(VS_Input_PNCTTBB input)
 {
     UberVS_Output output;
     
-    float4 WeightedPosition = float4(0.0f, 0.0f, 0.0f, 0.0f);
-    float3 WeightedNormal = float3(0.0f, 0.0f, 0.0f);
-    float3 WeightedTangent = float3(0.0f, 0.0f, 0.0f);
-    float AccumWeight = 0.0f;
-    
-    if (input.boneIndices.x >= 0 && input.boneWeights.x > 0.0f)
-    {
-        FSkinMatrix SkinMatrix = SkinMatrices[input.boneIndices.x];
-        WeightedPosition += input.boneWeights.x * MulSkinMatrix(float4(input.position, 1.0f), SkinMatrix);
-        WeightedNormal += input.boneWeights.x * MulSkinMatrix(float4(input.normal, 0.0f), SkinMatrix).xyz;
-        WeightedTangent += input.boneWeights.x * MulSkinMatrix(float4(input.tangent.xyz, 0.0f), SkinMatrix).xyz;
-        AccumWeight += input.boneWeights.x;
-    }
-    
-    if (input.boneIndices.y >= 0 && input.boneWeights.y > 0.0f)
-    {
-        FSkinMatrix SkinMatrix = SkinMatrices[input.boneIndices.y];
-        WeightedPosition += input.boneWeights.y * MulSkinMatrix(float4(input.position, 1.0f), SkinMatrix);
-        WeightedNormal += input.boneWeights.y * MulSkinMatrix(float4(input.normal, 0.0f), SkinMatrix).xyz;
-        WeightedTangent += input.boneWeights.y * MulSkinMatrix(float4(input.tangent.xyz, 0.0f), SkinMatrix).xyz;
-        AccumWeight += input.boneWeights.y;
-    }
-    
-    if (input.boneIndices.z >= 0 && input.boneWeights.z > 0.0f)
-    {
-        FSkinMatrix SkinMatrix = SkinMatrices[input.boneIndices.z];
-        WeightedPosition += input.boneWeights.z * MulSkinMatrix(float4(input.position, 1.0f), SkinMatrix);
-        WeightedNormal += input.boneWeights.z * MulSkinMatrix(float4(input.normal, 0.0f), SkinMatrix).xyz;
-        WeightedTangent += input.boneWeights.z * MulSkinMatrix(float4(input.tangent.xyz, 0.0f), SkinMatrix).xyz;
-        AccumWeight += input.boneWeights.z;
-    }
-    
-    if (input.boneIndices.w >= 0 && input.boneWeights.w > 0.0f)
-    {
-        FSkinMatrix SkinMatrix = SkinMatrices[input.boneIndices.w];
-        WeightedPosition += input.boneWeights.w * MulSkinMatrix(float4(input.position, 1.0f), SkinMatrix);
-        WeightedNormal += input.boneWeights.w * MulSkinMatrix(float4(input.normal, 0.0f), SkinMatrix).xyz;
-        WeightedTangent += input.boneWeights.w * MulSkinMatrix(float4(input.tangent.xyz, 0.0f), SkinMatrix).xyz;
-        AccumWeight += input.boneWeights.w;
-    }
+    FSkinningResult skinned = ApplyLinearBlendSkinning(
+    input.position,
+    input.normal,
+    input.tangent.xyz,
+    input.boneIndices,
+    input.boneWeights);
 
-    if (AccumWeight <= 0.0f)
-    {
-        WeightedPosition = float4(input.position, 1.0f);
-        WeightedNormal = input.normal;
-        WeightedTangent = input.tangent.xyz;
-    }
+    float4 WeightedPosition = skinned.position;
+    float3 WeightedNormal = skinned.normal;
+    float3 WeightedTangent = skinned.tangent;
+    float SelectedWeight = GetBoneInfluenceWeight(input.boneIndices, input.boneWeights, SelectedBoneIndex);
     
     float3x3 M = (float3x3) Model;
     
@@ -179,6 +129,7 @@ UberVS_Output VS_SkeletalMesh(VS_Input_PNCTTBB input)
     output.normal = normalize(mul(WeightedNormal, (float3x3) NormalMatrix));
     output.color = input.color * SectionColor;
     output.texcoord = input.texcoord;
+    output.selectedBoneWeight = SelectedWeight;
 
     float3 T = normalize(mul(WeightedTangent, M));
     T = normalize(T - output.normal * dot(output.normal, T));
@@ -228,6 +179,27 @@ UberPS_Output PS(UberVS_Output input)
         texColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
 
     float4 baseColor = texColor * input.color;
+
+#if defined(WEIGHT_BONE_HEATMAP) && WEIGHT_BONE_HEATMAP
+float Heat = saturate(input.selectedBoneWeight);
+
+float t0 = smoothstep(0.0f, 0.05f, Heat);   // 마젠타 ->  파랑
+float t1 = smoothstep(0.05f, 0.2f, Heat);   // 파랑   ->  시안
+float t2 = smoothstep(0.2f, 0.35f, Heat);   // 시안   ->  초록
+float t3 = smoothstep(0.35f, 0.5f, Heat);   // 초록   ->  노랑
+float t4 = smoothstep(0.5f, 1.0f, Heat);    // 노랑   ->  빨강
+
+float3 HeatColor = lerp(float3(1.0f, 0.0f, 1.0f),  float3(0.0f, 0.0f, 1.0f),  t0);
+HeatColor = lerp(HeatColor, float3(0.0f, 1.0f, 1.0f),  t1);
+HeatColor = lerp(HeatColor, float3(0.0f, 0.9f, 0.15f), t2);
+HeatColor = lerp(HeatColor, float3(1.0f, 1.0f, 0.0f),  t3);
+HeatColor = lerp(HeatColor, float3(1.0f, 0.05f, 0.0f), t4);
+
+output.Color = float4(HeatColor, 1.f);
+output.Normal = float4(normalize(input.normal), 1.0f);
+output.Culling = float4(0, 0, 0, 0);
+return output;
+#endif
 
     float3 N = normalize(input.normal);
 

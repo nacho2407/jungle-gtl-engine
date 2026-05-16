@@ -59,7 +59,7 @@ private:
 	// 공통 헬퍼
 	void EmitLineCommand(FLineGeometry& Lines, FShader* Shader, const FDrawCommandRenderState& RS);
 	void ApplyMaterialRenderState(FDrawCommandRenderState& OutState, const UMaterial* Mat, const FDrawCommandRenderState& BaseState);
-	FShader* SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode, bool bUseSkeletalVertexFactory);
+	FShader* SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode, bool bUseSkeletalVertexFactory, bool bWeightBoneHeatMap);
 
 	FConstantBuffer* GetPerObjectCBForProxy(FScene* Scene, const FPrimitiveSceneProxy& Proxy);
 	void EnsurePerObjectCBPoolCapacity(FScene* Scene, uint32 RequiredCount);
@@ -71,6 +71,8 @@ private:
 	const FPassRenderStateTable* PassRenderStateTable = nullptr;
 	EViewMode CollectViewMode = EViewMode::Lit_Phong;
 	ESkinningMode CollectSkinningMode = ESkinningMode::GPU;
+	bool bCollectWeightBoneHeatMap = false;
+	int32 CollectWeightBoneHeatMapBoneIndex = -1;
 
 	bool bHasSelectionMaskCommands = false;
 
@@ -92,6 +94,7 @@ private:
 	FConstantBuffer CameraFadeCB;
 	FConstantBuffer CameraVignetteCB;
 	FConstantBuffer CameraLetterboxCB;
+	FConstantBuffer BoneHeatMapCB;
 
 	// D3D 디바이스 캐시 (Create 시 설정, 변하지 않음)
 	ID3D11Device*        CachedDevice  = nullptr;
