@@ -180,6 +180,10 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 	{
 		CurveFilePaths.push_back(RelativePath);
 	}
+	else if (FAssetPathPolicy::IsAnimSequenceAssetPath(FPaths::ToUtf8(FilePath.generic_wstring())))
+	{
+		AnimSequenceFilePaths.push_back(RelativePath);
+	}
 	else if (Extension == L".obj" || Extension == L".fbx")
 	{
 		ObjFilePaths.push_back(RelativePath);
@@ -891,7 +895,37 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
         return FoundSequence;
     }
 
-    UAnimSequence* LoadedSequence = FbxImporter.LoadAnimSequence(NormalizedPath);
+    UAnimSequence* LoadedSequence = nullptr;
+    if (FAssetPathPolicy::IsAnimSequenceAssetPath(NormalizedPath))
+    {
+        LoadedSequence = AnimSequenceAssetLoader.Load(NormalizedPath);
+    }
+    else
+    {
+        LoadedSequence = FbxImporter.LoadAnimSequence(NormalizedPath);
+        if (LoadedSequence)
+        {
+            const FString ImportedAssetPath = FAssetPathPolicy::MakeImportedAnimSequenceAssetPath(
+                NormalizedPath,
+                LoadedSequence->GetSourceStackName());
+            LoadedSequence->SetAssetPath(ImportedAssetPath);
+
+            if (AnimSequenceAssetLoader.Save(ImportedAssetPath, LoadedSequence))
+            {
+                AnimSequenceMap[ImportedAssetPath] = LoadedSequence;
+                if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), ImportedAssetPath) == AnimSequenceFilePaths.end())
+                {
+                    AnimSequenceFilePaths.push_back(ImportedAssetPath);
+                }
+                UE_LOG("[AnimSequenceLoad] Imported FBX animation saved: %s -> %s", NormalizedPath.c_str(), ImportedAssetPath.c_str());
+            }
+            else
+            {
+                UE_LOG_WARNING("[AnimSequenceLoad] Imported FBX animation could not be saved as .animseq: %s", NormalizedPath.c_str());
+            }
+        }
+    }
+
     if (!LoadedSequence)
     {
         UE_LOG_ERROR("[AnimSequenceLoad] Failed | Path=%s", NormalizedPath.c_str());
@@ -905,6 +939,27 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
     }
 
     return LoadedSequence;
+}
+
+bool FResourceManager::SaveAnimSequence(const FString& Path, const UAnimSequence* Sequence)
+{
+    const FString NormalizedPath = FPaths::Normalize(Path);
+    if (!AnimSequenceAssetLoader.Save(NormalizedPath, Sequence))
+    {
+        return false;
+    }
+
+    if (Sequence)
+    {
+        AnimSequenceMap[NormalizedPath] = const_cast<UAnimSequence*>(Sequence);
+    }
+
+    if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), NormalizedPath) == AnimSequenceFilePaths.end())
+    {
+        AnimSequenceFilePaths.push_back(NormalizedPath);
+    }
+
+    return true;
 }
 
 UAnimSequence* FResourceManager::FindAnimSequence(const FString& Path) const
