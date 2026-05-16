@@ -7,9 +7,10 @@ The current ObjectMacros.h expects GENERATED_BODY() to expand through:
     CURRENT_FILE_ID##_GENERATED_BODY
 
 This script scans headers under Source/, finds reflected declarations that use
-GENERATED_BODY(), and writes a matching generated header next to each source
-header. It also parses simple UPROPERTY(...) member declarations and writes one
-aggregate Source/Generated/Reflection.generated.cpp file that defines generated
+GENERATED_BODY(), and writes matching generated headers under Intermediate/Generated
+while preserving the source-relative directory layout. It also parses simple
+UPROPERTY(...) member declarations and writes one aggregate
+Intermediate/Generated/Reflection.generated.cpp file that defines generated
 RegisterProperties functions.
 """
 
