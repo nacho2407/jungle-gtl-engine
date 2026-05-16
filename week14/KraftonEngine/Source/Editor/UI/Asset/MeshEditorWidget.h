@@ -56,7 +56,6 @@ private:
 	void RenderMeshStatsOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos) const;
 
 	// Animation tab helpers
-	void RenderAnimationTimeline(UAnimSingleNodeInstance* NodeInst, float TotalLength, int32 TotalFrames);
 	void ApplyAnimationToComponent();
 
 private:
