@@ -11,6 +11,7 @@
 #include "Settings/EditorSettings.h"
 #include "UI/Toolbar/ViewportToolbar.h"
 #include "Slate/SlateApplication.h"
+#include "Render/Shader/ShaderManager.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimationManager.h"
@@ -30,6 +31,19 @@ namespace
 			Result.insert(static_cast<size_t>(InsertPos), ",");
 		}
 		return Result;
+	}
+
+	EUberLitDefines::ELightingModel GetLightingModelForViewMode(EViewMode ViewMode)
+	{
+		switch (ViewMode)
+		{
+		case EViewMode::Unlit:       return EUberLitDefines::ELightingModel::Unlit;
+		case EViewMode::Lit_Gouraud: return EUberLitDefines::ELightingModel::Gouraud;
+		case EViewMode::Lit_Lambert: return EUberLitDefines::ELightingModel::Lambert;
+		case EViewMode::Lit_Phong:
+		case EViewMode::LightCulling:
+		default:                     return EUberLitDefines::ELightingModel::Phong;
+		}
 	}
 }
 
@@ -370,6 +384,22 @@ void FMeshEditorWidget::RenderViewportPanel(ImVec2 Size)
 		if (BoneDrawMode != static_cast<int32>(CurrentBoneDrawMode))
 		{
 			ViewportClient.SetBoneDebugDrawMode(static_cast<EBoneDebugDrawMode>(BoneDrawMode));
+		}
+
+		FViewportRenderOptions& RenderOptions = ViewportClient.GetRenderOptions();
+		bool bWeightBoneHeatMap = RenderOptions.bWeightBoneHeatMap;
+		if (ImGui::Checkbox("Weight Bone HeatMap", &bWeightBoneHeatMap))
+		{
+			RenderOptions.bWeightBoneHeatMap = bWeightBoneHeatMap;
+			RenderOptions.WeightBoneHeatMapBoneIndex = SelectedBoneIndex;
+			if (bWeightBoneHeatMap)
+			{
+				FShaderManager::Get().GetOrCreateUberLitPermutation(
+					GetLightingModelForViewMode(RenderOptions.ViewMode),
+					EUberLitDefines::EVertexFactory::SkeletalMesh,
+					EShaderErrorMode::Notification,
+					true);
+			}
 		}
 	};
 
