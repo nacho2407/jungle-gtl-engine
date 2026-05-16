@@ -14,6 +14,14 @@ class FWindowsWindow;
 struct ID3D11ShaderResourceView;
 class ASkeletalMeshActor;
 class UStaticMeshComponent;
+class UAnimSequence;
+class UAnimSingleNodeInstance;
+
+enum class EEditorViewerAssetType : uint8
+{
+    SkeletalMesh,
+    AnimSequence
+};
 
 class FEditorViewer
 {
@@ -56,6 +64,22 @@ public:
 
 	void ChangeTarget(const FString& InFileName);
 
+    EEditorViewerAssetType GetAssetType() const { return AssetType; }
+    bool IsAnimationSequenceViewer() const { return AssetType == EEditorViewerAssetType::AnimSequence; }
+    UAnimSequence* GetAnimSequence() const { return AnimSequence; }
+    const FString& GetPreviewMeshPath() const { return PreviewMeshPath; }
+    bool SetAnimationSequencePreviewMesh(const FString& InPreviewMeshPath);
+    void RestartAnimation();
+    void SetAnimationPlaying(bool bInPlaying);
+    void SetAnimationLooping(bool bInLooping);
+    void SetAnimationPlayRate(float InPlayRate);
+    void SetAnimationTime(float InTime);
+    float GetAnimationCurrentTime() const;
+    float GetAnimationLength() const;
+    float GetAnimationPlayRate() const;
+    bool IsAnimationPlaying() const;
+    bool IsAnimationLooping() const;
+
     const FString& GetFileName() const { return FileName; }
     void SelectBone(int32 BoneIndex);
     void SelectSocket(int32 SocketIndex);
@@ -74,7 +98,13 @@ private:
     FSkeletalMeshViewportClient Client;
 	ASkeletalMeshActor* ViewTarget = nullptr;
 
+    UAnimSingleNodeInstance* GetSingleNodeInstance() const;
+    bool ApplyAnimationSequenceToComponent(bool bAutoPlay);
+
     FString FileName;
+    EEditorViewerAssetType AssetType = EEditorViewerAssetType::SkeletalMesh;
+    UAnimSequence* AnimSequence = nullptr;
+    FString PreviewMeshPath;
 
     TMap<FName, UStaticMeshComponent*, FName::Hash> SocketPreviewMeshes;
 
