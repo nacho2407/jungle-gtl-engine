@@ -33,7 +33,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 
         FPoseContext PoseContext;
         const int32 BoneCount = static_cast<int32>(CurrentLocalPose.size());
-        PoseContext.LocalPose.resize(BoneCount, FMatrix::Identity);
+        PoseContext.LocalPose = CurrentLocalPose;
         PoseContext.BindPose.resize(BoneCount, FMatrix::Identity);
 
         if (SkeletalMesh)
@@ -41,7 +41,6 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
             for (int32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
             {
                 const FMatrix& LocalBindTransform = SkeletalMesh->GetLocalBindTransform(BoneIndex);
-                PoseContext.LocalPose[BoneIndex] = LocalBindTransform;
                 PoseContext.BindPose[BoneIndex] = LocalBindTransform;
             }
         }
@@ -58,13 +57,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 
 void USkeletalMeshComponent::ApplyAnimationPose(const FPoseContext& PoseContext)
 {
-    if (PoseContext.LocalPose.size() != CurrentLocalPose.size())
-    {
-        return;
-    }
-
-    CurrentLocalPose = PoseContext.LocalPose;
-    MarkSkinningDirty();
+    SetCurrentLocalPose(PoseContext.LocalPose);
 }
 
 void USkeletalMeshComponent::ResetToBindPose()

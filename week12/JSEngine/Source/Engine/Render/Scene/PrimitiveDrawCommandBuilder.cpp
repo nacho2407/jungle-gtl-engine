@@ -8,6 +8,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
+#include "Core/ResourceManager.h"
 #include "Engine/Asset/StaticMesh.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Scene/RenderBus.h"
@@ -79,6 +80,11 @@ namespace
 
         return MaxLOD;
     }
+
+    UMaterialInterface* ResolveDrawMaterial(UMaterialInterface* Material)
+    {
+        return Material ? Material : FResourceManager::Get().GetMaterial("DefaultWhite");
+    }
 }
 
 bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags,
@@ -120,7 +126,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
         for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
         {
             const FStaticMeshSection& Section = Sections[SectionIdx];
-            UMaterialInterface* Material = Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(SectionIdx));
+            UMaterialInterface* Material = ResolveDrawMaterial(Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(SectionIdx)));
 
             FRenderCommand Cmd = {};
             Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
@@ -200,7 +206,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
                 : -1;
             Cmd.SectionIndexStart = 0;
             Cmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
-            Cmd.Material = SkeletalMeshComp->GetMaterial(0);
+            Cmd.Material = ResolveDrawMaterial(Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(0)));
             Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
 
             RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
@@ -215,7 +221,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
                 continue;
             }
 
-            UMaterialInterface* Material = Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(SectionIdx));
+            UMaterialInterface* Material = ResolveDrawMaterial(Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(SectionIdx)));
 
             FRenderCommand Cmd = {};
             Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };

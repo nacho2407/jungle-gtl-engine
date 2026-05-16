@@ -6,6 +6,11 @@
 #include <fstream>
 #include <vector>
 
+static void CollectShaderDependenciesRecursive(
+	const std::filesystem::path& SourcePath,
+	TArray<std::filesystem::path>& OutDependencies,
+	TArray<std::filesystem::path>& VisitedFiles);
+
 static FString GetShaderDefineFingerprint(const D3D_SHADER_MACRO* Defines)
 {
 	FString Result;
@@ -40,6 +45,45 @@ static FString ToHexString(uint64 Value)
 		Value >>= 4;
 	}
 	return Result;
+}
+
+static void AppendHashString(uint64& Hash, const FString& Value)
+{
+	for (char Ch : Value)
+	{
+		Hash ^= static_cast<unsigned char>(Ch);
+		Hash *= 1099511628211ull;
+	}
+}
+
+static FString GetShaderDependencyFingerprint(const std::filesystem::path& SourcePath)
+{
+	TArray<std::filesystem::path> Dependencies;
+	TArray<std::filesystem::path> VisitedFiles;
+	CollectShaderDependenciesRecursive(SourcePath, Dependencies, VisitedFiles);
+
+	uint64 Hash = 1469598103934665603ull;
+	for (const std::filesystem::path& Dependency : Dependencies)
+	{
+		std::error_code Ec;
+		const auto FileSize = std::filesystem::file_size(Dependency, Ec);
+		if (Ec)
+		{
+			continue;
+		}
+
+		const auto WriteTime = std::filesystem::last_write_time(Dependency, Ec);
+		if (Ec)
+		{
+			continue;
+		}
+
+		AppendHashString(Hash, Dependency.lexically_normal().string());
+		AppendHashString(Hash, std::to_string(FileSize));
+		AppendHashString(Hash, std::to_string(WriteTime.time_since_epoch().count()));
+	}
+
+	return ToHexString(Hash);
 }
 
 static bool TryExtractIncludePath(const FString& Line, FString& OutInclude)
@@ -143,7 +187,8 @@ static std::filesystem::path MakeShaderCachePath(
 	const FString& EntryPoint,
 	const FString& Target,
 	const D3D_SHADER_MACRO* Defines,
-	uint32 PermutationKey)
+	uint32 PermutationKey,
+	const std::filesystem::path& SourcePath)
 {
 	const FString NormalizedPath = FPaths::Normalize(FilePath);
 	const FString Fingerprint = NormalizedPath
@@ -151,6 +196,7 @@ static std::filesystem::path MakeShaderCachePath(
 		+ "|" + Target
 		+ "|" + std::to_string(PermutationKey)
 		+ "|" + GetShaderDefineFingerprint(Defines)
+		+ "|Deps=" + GetShaderDependencyFingerprint(SourcePath)
 		+ "|Flags=0";
 
 	std::filesystem::path CacheDir = std::filesystem::path(FPaths::RootDir()) / L"DerivedData" / L"ShaderCache" / FPaths::ToWide(Target);
@@ -166,7 +212,7 @@ FShaderCompileResult FShaderCompiler::CompileFromFile(const FString& FilePath, c
 	FShaderCompileResult Result;
 	const FString NormalizedFilePath = FPaths::Normalize(FilePath);
 	const std::filesystem::path SourcePath(FPaths::ToAbsolute(FPaths::ToWide(NormalizedFilePath)));
-	const std::filesystem::path CachePath = MakeShaderCachePath(NormalizedFilePath, EntryPoint, Target, Defines, PermutationKey);
+	const std::filesystem::path CachePath = MakeShaderCachePath(NormalizedFilePath, EntryPoint, Target, Defines, PermutationKey, SourcePath);
 
 	if (IsShaderCacheUpToDate(CachePath, SourcePath))
 	{
