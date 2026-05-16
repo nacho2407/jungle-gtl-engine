@@ -34,6 +34,9 @@ public:
 	void NativeUpdateAnimation(float DeltaSeconds) override;
 	void EvaluateAnimation(FPoseContext& Output) override;
 
+	// Editor 노출 — Speed 등 데모 파라미터. PostEdit 처리 불필요 (직접 멤버 mutation).
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+
 	UAnimationStateMachine* GetFSM() const { return FSM; }
 
 private:

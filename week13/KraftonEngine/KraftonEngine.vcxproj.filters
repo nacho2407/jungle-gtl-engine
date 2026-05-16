@@ -1883,6 +1883,9 @@
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Object\SubclassOf.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Object\UClass.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>

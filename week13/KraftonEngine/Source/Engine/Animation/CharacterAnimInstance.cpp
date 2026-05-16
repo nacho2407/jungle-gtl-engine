@@ -4,6 +4,7 @@
 #include "Animation/AnimState.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/PoseContext.h"
+#include "Core/PropertyTypes.h"
 #include "Math/MathUtils.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
@@ -80,4 +81,59 @@ void UCharacterAnimInstance::EvaluateAnimation(FPoseContext& Output)
 {
 	if (FSM) FSM->Evaluate(this, Output);
 	else     Super::EvaluateAnimation(Output);
+}
+
+void UCharacterAnimInstance::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	Super::GetEditableProperties(OutProps);
+
+	// 카테고리는 "Animation|Character" — 컴포넌트의 "Animation" 카테고리와 같은 그룹 안에 옆에 표시.
+	const char* Category = "Animation|Character";
+
+	FPropertyDescriptor AutoProp;
+	AutoProp.Name     = "Auto Drive Speed";
+	AutoProp.Type     = EPropertyType::Bool;
+	AutoProp.Category = Category;
+	AutoProp.ValuePtr = &bAutoDriveSpeed;
+	OutProps.push_back(AutoProp);
+
+	FPropertyDescriptor SpeedProp;
+	SpeedProp.Name     = "Speed";
+	SpeedProp.Type     = EPropertyType::Float;
+	SpeedProp.Category = Category;
+	SpeedProp.ValuePtr = &Speed;
+	SpeedProp.Min      = 0.0f;
+	SpeedProp.Max      = 100.0f;
+	SpeedProp.Speed    = 0.5f;
+	OutProps.push_back(SpeedProp);
+
+	FPropertyDescriptor ThreshProp;
+	ThreshProp.Name     = "Speed Threshold";
+	ThreshProp.Type     = EPropertyType::Float;
+	ThreshProp.Category = Category;
+	ThreshProp.ValuePtr = &SpeedThreshold;
+	ThreshProp.Min      = 0.0f;
+	ThreshProp.Max      = 50.0f;
+	ThreshProp.Speed    = 0.1f;
+	OutProps.push_back(ThreshProp);
+
+	FPropertyDescriptor PeriodProp;
+	PeriodProp.Name     = "Auto Period (s)";
+	PeriodProp.Type     = EPropertyType::Float;
+	PeriodProp.Category = Category;
+	PeriodProp.ValuePtr = &AutoPeriodSec;
+	PeriodProp.Min      = 0.1f;
+	PeriodProp.Max      = 30.0f;
+	PeriodProp.Speed    = 0.1f;
+	OutProps.push_back(PeriodProp);
+
+	FPropertyDescriptor AmpProp;
+	AmpProp.Name     = "Auto Speed Amp";
+	AmpProp.Type     = EPropertyType::Float;
+	AmpProp.Category = Category;
+	AmpProp.ValuePtr = &AutoSpeedAmp;
+	AmpProp.Min      = 0.0f;
+	AmpProp.Max      = 100.0f;
+	AmpProp.Speed    = 0.5f;
+	OutProps.push_back(AmpProp);
 }
