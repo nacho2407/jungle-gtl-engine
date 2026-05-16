@@ -1,4 +1,4 @@
-#include "Asset/CurveAssetLoader.h"
+﻿#include "Asset/CurveAssetLoader.h"
 
 #include "Asset/CurveFloatAsset.h"
 #include "Core/Logging/Log.h"
@@ -102,9 +102,4 @@ bool FCurveAssetLoader::Save(const FString& Path, const UCurveFloatAsset* Curve)
 bool FCurveAssetLoader::SupportsExtension(const FString& Extension) const
 {
     return Extension == ".curve" || Extension == "curve";
-}
-
-FString FCurveAssetLoader::GetLoaderName() const
-{
-    return "FCurveAssetLoader";
 }
