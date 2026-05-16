@@ -22,17 +22,21 @@
 #include "Core/PropertyTypes.h"
 #include "Core/Reflection/ReflectionRegistry.h"
 #include "Core/Paths.h"
+#include "Core/Containers/Set.h"
 #include "Core/Logging/Log.h"
 #include "Math/Color.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Material.h"
 #include "Asset/StaticMesh.h"
 #include "Object/FName.h"
+#include "Object/Class.h"
+#include "Object/Property.h"
 #include <algorithm>
 #include <chrono>
 #include <cctype>
 #include <filesystem>
 #include <functional>
+#include <cstring>
 #include "Component/HeightFogComponent.h"
 #include "Selection/SelectionManager.h"
 #include "Component/BoxComponent.h"
@@ -125,6 +129,11 @@ namespace
 		return (Prop.DisplayName && Prop.DisplayName[0] != '\0') ? Prop.DisplayName : Prop.Name;
 	}
 
+	static const char* GetPropertyDisplayName(const FProperty& Prop)
+	{
+		return (Prop.DisplayName && Prop.DisplayName[0] != '\0') ? Prop.DisplayName : Prop.Name;
+	}
+
 	static FString MakePropertyWidgetLabel(const FPropertyDescriptor& Prop)
 	{
 		const char* DisplayName = GetPropertyDisplayName(Prop);
@@ -139,9 +148,60 @@ namespace
 		return FString(DisplayName) + "##" + Prop.Name;
 	}
 
+	static FString MakePropertyWidgetLabel(const FProperty& Prop)
+	{
+		const char* DisplayName = GetPropertyDisplayName(Prop);
+		if (!DisplayName)
+		{
+			return "";
+		}
+		if (!Prop.Name || strcmp(DisplayName, Prop.Name) == 0)
+		{
+			return DisplayName;
+		}
+		return FString(DisplayName) + "##" + Prop.Name;
+	}
+
+	static void CollectEditableReflectedProperties(UObject* Object, TArray<const FProperty*>& OutProperties)
+	{
+		if (!Object || !Object->GetClass())
+		{
+			return;
+		}
+
+		TArray<const FProperty*> AllProperties;
+		Object->GetClass()->GetAllProperties(AllProperties);
+		for (const FProperty* Property : AllProperties)
+		{
+			if (!Property || !Property->Name || !Property->IsEditable())
+			{
+				continue;
+			}
+			OutProperties.push_back(Property);
+		}
+	}
+
+	static TSet<FString> MakeReflectedPropertyNameSet(const TArray<const FProperty*>& Properties)
+	{
+		TSet<FString> Names;
+		for (const FProperty* Property : Properties)
+		{
+			if (Property && Property->Name)
+			{
+				Names.insert(Property->Name);
+			}
+		}
+		return Names;
+	}
+
+	static bool ContainsPropertyName(const TSet<FString>& Names, const char* Name)
+	{
+		return Name && Names.find(Name) != Names.end();
+	}
+
 	static int64 ReadEnumPropertyValue(const FPropertyDescriptor& Prop)
 	{
-		if (!Prop.ValuePtr || !Prop.EnumMeta) 
+		if (!Prop.ValuePtr || !Prop.EnumMeta)
 			return 0;
 
 		switch (Prop.EnumMeta->Size)
@@ -164,6 +224,42 @@ namespace
 		case 2: *static_cast<uint16*>(Prop.ValuePtr) = static_cast<uint16>(Value); break;
 		case 4: *static_cast<int32*>(Prop.ValuePtr) = static_cast<int32>(Value); break;
 		case 8: *static_cast<int64*>(Prop.ValuePtr) = static_cast<int64>(Value); break;
+		default: break;
+		}
+	}
+
+	static int64 ReadEnumPropertyValue(const FProperty& Prop, const UObject* Object)
+	{
+		const void* ValuePtr = Prop.GetValuePtr(Object);
+		if (!ValuePtr || !Prop.EnumMeta)
+		{
+			return 0;
+		}
+
+		switch (Prop.EnumMeta->Size)
+		{
+		case 1: return static_cast<int64>(*static_cast<const uint8*>(ValuePtr));
+		case 2: return static_cast<int64>(*static_cast<const uint16*>(ValuePtr));
+		case 4: return static_cast<int64>(*static_cast<const int32*>(ValuePtr));
+		case 8: return static_cast<int64>(*static_cast<const int64*>(ValuePtr));
+		default: return 0;
+		}
+	}
+
+	static void WriteEnumPropertyValue(const FProperty& Prop, UObject* Object, int64 Value)
+	{
+		void* ValuePtr = Prop.GetValuePtr(Object);
+		if (!ValuePtr || !Prop.EnumMeta)
+		{
+			return;
+		}
+
+		switch (Prop.EnumMeta->Size)
+		{
+		case 1: *static_cast<uint8*>(ValuePtr) = static_cast<uint8>(Value); break;
+		case 2: *static_cast<uint16*>(ValuePtr) = static_cast<uint16>(Value); break;
+		case 4: *static_cast<int32*>(ValuePtr) = static_cast<int32>(Value); break;
+		case 8: *static_cast<int64*>(ValuePtr) = static_cast<int64>(Value); break;
 		default: break;
 		}
 	}
@@ -428,7 +524,7 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 			return Comp;
 		}
 	},
-	
+
 	{
 		"Fireball Component",
 		[](AActor* Actor) -> UActorComponent* {
@@ -445,31 +541,31 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 		}
 	},
 
-	{ 
+	{
 		"Box Component",
 		[](AActor* Actor) -> UActorComponent*
 		{
 			UBoxComponent* Comp = Actor->AddComponent<UBoxComponent>();
 			return Comp;
-		} 
+		}
 	},
 
-	{ 
+	{
 		"Sphere Component",
 		[](AActor* Actor) -> UActorComponent*
 		{
 			USphereComponent* Comp = Actor->AddComponent<USphereComponent>();
 			return Comp;
-		} 
+		}
 	},
 
-	{ 
+	{
 		"Capsule Component",
 		[](AActor* Actor) -> UActorComponent*
 		{
 			UCapsuleComponent* Comp = Actor->AddComponent<UCapsuleComponent>();
 			return Comp;
-		} 
+		}
 	},
 	{
 		"Script Component",
@@ -477,7 +573,7 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 		{
 			UScriptComponent* Comp = Actor->AddComponent<UScriptComponent>();
 			return Comp;
-		} 
+		}
 	},
 	{
 		"ActorSequence Component",
@@ -895,7 +991,7 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 	DrawDetailsSeparator();
 
 	float TreeHeight = std::max(64.0f, ImGui::GetContentRegionAvail().y * 0.2f);
-	
+
 	// BeginChild를 호출하여 내부 스크롤이 가능한 Child Window를 생성합니다.
 	ImGui::BeginChild("##ComponentTreeChild", ImVec2(0, TreeHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
@@ -1190,11 +1286,28 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 	}
 
 	DrawDetailsSeparator();
+
+	TArray<const FProperty*> ReflectedProperties;
+	CollectEditableReflectedProperties(PrimaryActor, ReflectedProperties);
+	const TSet<FString> ReflectedPropertyNames = MakeReflectedPropertyNameSet(ReflectedProperties);
+
+	if (!ReflectedProperties.empty())
+	{
+		DrawDetailsSectionLabel("Properties");
+		ImGui::Spacing();
+		RenderReflectionProperties(PrimaryActor);
+	}
+
 	TArray<FPropertyDescriptor> Props;
 	PrimaryActor->GetEditableProperties(Props);
 	for (FPropertyDescriptor& Prop : Props)
 	{
 		if (!Prop.Name)
+		{
+			continue;
+		}
+
+		if (ContainsPropertyName(ReflectedPropertyNames, Prop.Name))
 		{
 			continue;
 		}
@@ -1206,7 +1319,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 			continue;
 		}
 
-		RenderPropertyWidget(Prop, PrimaryActor);
+		RenderLegacyPropertyWidget(Prop, PrimaryActor);
 	}
 
 	DrawDetailsSeparator();
@@ -1480,18 +1593,50 @@ void FEditorPropertyWidget::RenderComponentProperties()
 
 	DrawDetailsSeparator();
 
-	// PropertyDescriptor 기반 자동 위젯 렌더링
+	// FProperty 기반 자동 위젯을 먼저 렌더링하고, 아직 이관되지 않은
+	// legacy FPropertyDescriptor 항목은 이름 중복을 제거한 뒤 fallback으로 렌더링합니다.
+	TArray<const FProperty*> ReflectedProperties;
 	TArray<FPropertyDescriptor> Props;
 	const FDetailsPerfClock::time_point PropertiesStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
+	CollectEditableReflectedProperties(SelectedComponent, ReflectedProperties);
+	const TSet<FString> ReflectedPropertyNames = MakeReflectedPropertyNameSet(ReflectedProperties);
 	SelectedComponent->GetEditableProperties(Props);
 	const FDetailsPerfClock::time_point PropertiesEnd = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
 
 	AActor* Owner = SelectedComponent->GetOwner();
 	double PropertyWidgetMs = 0.0;
+	int32 RenderedPropertyCount = 0;
+
+	if (!ReflectedProperties.empty())
+	{
+		DrawDetailsSectionLabel("Properties");
+		ImGui::Spacing();
+	}
+
+	for (const FProperty* Property : ReflectedProperties)
+	{
+		if (!Property || !Property->Name || strcmp(Property->Name, "Tags") == 0)
+		{
+			continue;
+		}
+
+		const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
+		RenderReflectionProperty(SelectedComponent, *Property);
+		++RenderedPropertyCount;
+		if (bDetailsPerfTraceFrame)
+		{
+			PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
+		}
+	}
 
 	for (auto& Prop : Props)
 	{
 		if (!Prop.Name)
+		{
+			continue;
+		}
+
+		if (ContainsPropertyName(ReflectedPropertyNames, Prop.Name))
 		{
 			continue;
 		}
@@ -1515,7 +1660,8 @@ void FEditorPropertyWidget::RenderComponentProperties()
 		}
 
 		const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
-		RenderPropertyWidget(Prop);
+		RenderLegacyPropertyWidget(Prop);
+		++RenderedPropertyCount;
 		if (bDetailsPerfTraceFrame)
 		{
 			PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
@@ -1645,21 +1791,45 @@ void FEditorPropertyWidget::RenderComponentProperties()
 		const double GetEditablePropertiesMs = DetailsPerfMs(PropertiesStart, PropertiesEnd);
 		const double TotalMs = DetailsPerfMs(TotalStart, FDetailsPerfClock::now());
 		UE_LOG(
-			"[DetailsPerf] Component=%s Type=%s Total=%.2fms GetEditableProperties=%.2fms PropertyWidgets=%.2fms SkeletalDebug=%.2fms Props=%zu",
+			"[DetailsPerf] Component=%s Type=%s Total=%.2fms GetEditableProperties=%.2fms PropertyWidgets=%.2fms SkeletalDebug=%.2fms Props=%d",
 			SelectedComponent ? SelectedComponent->GetFName().ToString().c_str() : "<None>",
 			SelectedComponent ? SelectedComponent->GetTypeInfo()->name : "<None>",
 			TotalMs,
 			GetEditablePropertiesMs,
 			PropertyWidgetMs,
 			SkeletalDebugMs,
-			Props.size());
+			RenderedPropertyCount);
 	}
 }
 
-bool FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& Prop, AActor* Owner)
+void FEditorPropertyWidget::RenderReflectionProperties(UObject* Object)
+{
+	TArray<const FProperty*> Properties;
+	CollectEditableReflectedProperties(Object, Properties);
+	for (const FProperty* Property : Properties)
+	{
+		if (!Property)
+		{
+			continue;
+		}
+		RenderReflectionProperty(Object, *Property);
+	}
+}
+
+void FEditorPropertyWidget::RenderReflectionProperty(UObject* Object, const FProperty& Property)
+{
+	if (!Object || !Property.IsEditable())
+	{
+		return;
+	}
+
+	RenderPropertyWidget(Object, Property);
+}
+
+bool FEditorPropertyWidget::RenderLegacySceneComponentRefWidget(FPropertyDescriptor& Prop, AActor* Owner)
 {
 	bool bChanged = false;
-	
+
 	// ValuePtr은 USceneComponent* 변수의 주소 (USceneComponent**)
 	USceneComponent** ValuePtr = reinterpret_cast<USceneComponent**>(Prop.ValuePtr);
 	USceneComponent* CurrentComp = *ValuePtr;
@@ -1706,11 +1876,836 @@ bool FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& P
 		}
 		ImGui::EndCombo();
 	}
-	
+
 	return bChanged;
 }
 
-void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObject* TargetObject)
+bool FEditorPropertyWidget::RenderSceneComponentRefWidget(UObject* Object, const FProperty& Property, AActor* Owner)
+{
+	bool bChanged = false;
+	void* RawValuePtr = Property.GetValuePtr(Object);
+	if (!RawValuePtr)
+	{
+		return false;
+	}
+
+	// RawValuePtr은 USceneComponent* 변수의 주소 (USceneComponent**)
+	USceneComponent** ValuePtr = reinterpret_cast<USceneComponent**>(RawValuePtr);
+	USceneComponent* CurrentComp = *ValuePtr;
+
+	// 액터 소유 SceneComponent 목록 수집
+	TArray<USceneComponent*> SceneComps;
+	SceneComps.push_back(nullptr); // "None" 선택지
+	if (Owner)
+	{
+		for (UActorComponent* Comp : Owner->GetComponents())
+		{
+			if (USceneComponent* SceneComp = Cast<USceneComponent>(Comp))
+				SceneComps.push_back(SceneComp);
+		}
+	}
+
+	// 드롭다운 레이블 생성: "[Root] ClassName" 또는 "ClassName [FName]"
+	auto GetLabel = [&](USceneComponent* Comp) -> FString {
+		if (!Comp) return "None";
+		FString Name = Comp->GetFName().ToString();
+		if (Name.empty()) Name = Comp->GetTypeInfo()->name;
+		bool bIsRoot = Owner && (Comp == Owner->GetRootComponent());
+		return bIsRoot ? ("[Root] " + Name) : Name;
+	};
+
+	FString CurrentLabel = GetLabel(CurrentComp);
+	const FString WidgetLabel = MakePropertyWidgetLabel(Property);
+	if (ImGui::BeginCombo(WidgetLabel.c_str(), CurrentLabel.c_str()))
+	{
+		for (USceneComponent* SceneComp : SceneComps)
+		{
+			bool bSelected = (SceneComp == CurrentComp);
+			// ##ptr 으로 포인터를 ID로 사용하여 동일 이름 컴포넌트를 구별
+			char SelectableId[128];
+			snprintf(SelectableId, sizeof(SelectableId), "%s##%p",
+				GetLabel(SceneComp).c_str(), static_cast<void*>(SceneComp));
+			if (ImGui::Selectable(SelectableId, bSelected))
+			{
+				*ValuePtr = SceneComp;
+				bChanged = true;
+			}
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	return bChanged;
+}
+
+
+void FEditorPropertyWidget::RenderPropertyWidget(UObject* Object, const FProperty& Property)
+{
+	if (!Object || !Property.Name)
+	{
+		return;
+	}
+
+	void* ValuePtr = Property.GetValuePtr(Object);
+	if (!ValuePtr)
+	{
+		return;
+	}
+
+	bool bChanged = false;
+	UObject* NotifyTarget = Object;
+	const FString WidgetLabel = MakePropertyWidgetLabel(Property);
+	const char* Label = WidgetLabel.c_str();
+
+	switch (Property.Type)
+	{
+	case EPropertyType::Bool:
+	{
+		bool* Val = static_cast<bool*>(ValuePtr);
+		bChanged = ImGui::Checkbox(Label, Val);
+		break;
+	}
+	case EPropertyType::Int:
+	{
+		int32* Val = static_cast<int32*>(ValuePtr);
+		bChanged = ImGui::DragInt(Label, Val);
+		break;
+	}
+	case EPropertyType::Float:
+	{
+		float* Val = static_cast<float*>(ValuePtr);
+		if (Property.Min != 0.0f || Property.Max != 0.0f)
+			bChanged = ImGui::DragFloat(Label, Val, Property.Speed, Property.Min, Property.Max);
+		else
+			bChanged = ImGui::DragFloat(Label, Val, Property.Speed);
+		break;
+	}
+	case EPropertyType::Vec3:
+	{
+		float* Val = static_cast<float*>(ValuePtr);
+		bChanged = ImGui::DragFloat3(Label, Val, Property.Speed);
+		break;
+	}
+	case EPropertyType::Vec4:
+	{
+		float* Val = static_cast<float*>(ValuePtr);
+		bChanged = ImGui::ColorEdit4(Label, Val);
+		break;
+	}
+	case EPropertyType::Color:
+	{
+		FColor* Val = static_cast<FColor*>(ValuePtr);
+		bChanged = ImGui::ColorEdit4(Label, &Val->R);
+		break;
+	}
+	case EPropertyType::Guid:
+	{
+		FGuid* Val = static_cast<FGuid*>(ValuePtr);
+		if (!Val)
+		{
+			break;
+		}
+
+		char Buf[64];
+		strncpy_s(Buf, sizeof(Buf), Val->ToString().c_str(), _TRUNCATE);
+		if (ImGui::InputText(Label, Buf, sizeof(Buf), ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			FGuid ParsedGuid;
+			if (FGuid::Parse(Buf, ParsedGuid))
+			{
+				*Val = ParsedGuid;
+				bChanged = true;
+			}
+		}
+		break;
+	}
+	case EPropertyType::Quat:
+	{
+		FQuat* Val = static_cast<FQuat*>(ValuePtr);
+		if (!Val)
+		{
+			break;
+		}
+
+		float Components[4] = { Val->X, Val->Y, Val->Z, Val->W };
+		if (ImGui::DragFloat4(Label, Components, Property.Speed))
+		{
+			*Val = FQuat(Components[0], Components[1], Components[2], Components[3]);
+			Val->Normalize();
+			bChanged = true;
+		}
+		break;
+	}
+	case EPropertyType::SceneComponentRef:
+	{
+		AActor* Owner = nullptr;
+
+		if (AActor* Actor = Cast<AActor>(NotifyTarget))
+		{
+			Owner = Actor;
+		}
+		else if (UActorComponent* Comp = Cast<UActorComponent>(NotifyTarget))
+		{
+			Owner = Comp->GetOwner();
+		}
+		else if (SelectedComponent)
+		{
+			Owner = SelectedComponent->GetOwner();
+		}
+
+		bChanged = RenderSceneComponentRefWidget(Object, Property, Owner);
+		break;
+	}
+	case EPropertyType::String:
+	{
+		FString* Val = static_cast<FString*>(ValuePtr);
+
+		if (strcmp(Property.Name, "StaticMesh") == 0)
+		{
+			const TArray<FString>& MeshPaths = EditorEngine
+				? EditorEngine->GetAssetService().GetStaticMeshAssetPaths()
+				: EmptyAssetNames();
+			if (!MeshPaths.empty())
+			{
+				const FString Current = *Val;
+				if (ImGui::BeginCombo(Label, Current.empty() ? "<None>" : Current.c_str()))
+				{
+					for (const FString& Path : MeshPaths)
+					{
+						const bool bSelected = (Current == Path);
+						if (ImGui::Selectable(Path.c_str(), bSelected))
+						{
+							*Val = Path;
+							bChanged = true;
+						}
+						if (bSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+			}
+		}
+		else if (strcmp(Property.Name, "SkeletalMesh") == 0)
+		{
+			const TArray<FString>& MeshPaths = EditorEngine
+				? EditorEngine->GetAssetService().GetSkeletalMeshAssetPaths()
+				: EmptyAssetNames();
+			if (!MeshPaths.empty())
+			{
+				const FString Current = *Val;
+				if (ImGui::BeginCombo(Label, Current.empty() ? "<None>" : Current.c_str()))
+				{
+					for (const FString& Path : MeshPaths)
+					{
+						const bool bSelected = (Current == Path);
+						if (ImGui::Selectable(Path.c_str(), bSelected))
+						{
+							*Val = Path;
+							bChanged = true;
+						}
+						if (bSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+			}
+			else
+			{
+				char Buf[256];
+				strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
+				if (ImGui::InputText(Label, Buf, sizeof(Buf)))
+				{
+					*Val = Buf;
+					bChanged = true;
+				}
+			}
+		}
+		else if (strcmp(Property.Name, "ScriptName") == 0)
+		{
+			if (!Val)
+			{
+				return;
+			}
+
+			FScriptManager::Get().RefreshLuaScriptFiles();
+
+			TMap<FName, FLuaScriptInfo, FName::Hash>& ScriptArray =
+				FScriptManager::Get().GetScriptArray();
+
+			ImGui::PushID(Val);
+
+			char Buffer[512] = {};
+			strncpy_s(Buffer, sizeof(Buffer), Val->c_str(), _TRUNCATE);
+
+			if (ImGui::InputText("##ScriptPathInput", Buffer, sizeof(Buffer)))
+			{
+				*Val = Buffer;
+				bChanged = true;
+			}
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("LuaScriptContentItem"))
+				{
+					const char* PayloadPath = static_cast<const char*>(Payload->Data);
+					if (PayloadPath && PayloadPath[0] != '\0')
+					{
+						// 중요:
+						// MakeScriptReferenceFromPath()는 반드시 FScriptManager의 ScriptArray key와
+						// 같은 형식의 문자열을 반환해야 한다.
+						FString NewScriptRef = MakeScriptReferenceFromPath(PayloadPath);
+
+						if (!NewScriptRef.empty())
+						{
+							*Val = NewScriptRef;
+							bChanged = true;
+						}
+					}
+				}
+
+				ImGui::EndDragDropTarget();
+			}
+
+			ImGui::SameLine();
+
+			const FString Current = *Val;
+
+			FString Preview = "SelectScript";
+
+			for (const auto& [ScriptName, ScriptInfo] : ScriptArray)
+			{
+				const FString Key = ScriptName.ToString();
+
+				if (Key == Current)
+				{
+					if (!ScriptInfo.ScriptPath.empty())
+					{
+						Preview = FPaths::ToRelativeString(ScriptInfo.ScriptPath);
+					}
+
+					if (Preview.empty())
+					{
+						Preview = Key;
+					}
+
+					break;
+				}
+			}
+
+			if (ImGui::BeginCombo("##ScriptPathCombo", Preview.c_str()))
+			{
+				for (const auto& [ScriptName, ScriptInfo] : ScriptArray)
+				{
+					const FString Key = ScriptName.ToString();
+
+					if (Key.empty())
+					{
+						continue;
+					}
+
+					if (ScriptInfo.ScriptPath.empty())
+					{
+						continue;
+					}
+
+					if (!std::filesystem::exists(ScriptInfo.ScriptPath))
+					{
+						continue;
+					}
+
+					FString RelativePath = FPaths::ToRelativeString(ScriptInfo.ScriptPath);
+
+					// ImGui label은 절대 빈 문자열이면 안 됨
+					FString DisplayName = RelativePath.empty() ? Key : RelativePath;
+
+					const bool bSelected = (Current == Key);
+
+					ImGui::PushID(Key.c_str());
+
+					if (ImGui::Selectable(DisplayName.c_str(), bSelected))
+					{
+						// 저장은 표시용 RelativePath가 아니라 ScriptManager key로 한다.
+						*Val = Key;
+						bChanged = true;
+					}
+
+					ImGui::PopID();
+
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+
+				ImGui::EndCombo();
+			}
+
+			const FString NewCurrent = *Val;
+
+			if (!NewCurrent.empty() && !FScriptManager::Get().HasScript(FName(NewCurrent)))
+			{
+				ImGui::TextColored(
+					ImVec4(1.0f, 0.42f, 0.35f, 1.0f),
+					"Missing script file.");
+
+				ImGui::SameLine();
+
+				if (ImGui::SmallButton("Clear##MissingScript"))
+				{
+					Val->clear();
+					bChanged = true;
+				}
+			}
+
+			ImGui::PopID();
+		}
+		else
+		{
+			char Buf[256];
+			strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
+			if (ImGui::InputText(Label, Buf, sizeof(Buf)))
+			{
+				*Val = Buf;
+				bChanged = true;
+			}
+		}
+		break;
+	}
+	case EPropertyType::Name:
+	{
+		FName* Val = static_cast<FName*>(ValuePtr);
+		FString Current = Val->ToString();
+
+		if (strcmp(Property.Name, "Particle") == 0)
+		{
+			if (UBillboardComponent* BillboardComp = Cast<UBillboardComponent>(SelectedComponent))
+			{
+				if (!Cast<USubUVComponent>(SelectedComponent))
+				{
+					const TArray<FString>& TexturePaths = EditorEngine
+						? EditorEngine->GetAssetService().GetTextureAssetPaths()
+						: EmptyAssetNames();
+					if (ImGui::BeginCombo("Sprite Texture", Current.empty() ? "<None>" : Current.c_str()))
+					{
+						for (const FString& TexturePath : TexturePaths)
+						{
+							const bool bSelected = (Current == TexturePath);
+							if (ImGui::Selectable(TexturePath.c_str(), bSelected))
+							{
+								BillboardComp->SetTextureName(TexturePath);
+								bChanged = true;
+							}
+							if (bSelected)
+							{
+								ImGui::SetItemDefaultFocus();
+							}
+						}
+						ImGui::EndCombo();
+					}
+					break;
+				}
+			}
+		}
+
+		// 리소스 키와 매칭되는 프로퍼티면 콤보 박스로 렌더링
+		TArray<FString> Names;
+		if (strcmp(Property.Name, "Font") == 0)
+			Names = EditorEngine ? EditorEngine->GetAssetService().GetFontNames() : EmptyAssetNames();
+		else if (strcmp(Property.Name, "Particle") == 0)
+			Names = EditorEngine ? EditorEngine->GetAssetService().GetParticleNames() : EmptyAssetNames();
+
+		if (!Names.empty())
+		{
+			if (ImGui::BeginCombo(Label, Current.c_str()))
+			{
+				for (const auto& Name : Names)
+				{
+					bool bSelected = (Current == Name);
+					if (ImGui::Selectable(Name.c_str(), bSelected))
+					{
+						*Val = FName(Name);
+						bChanged = true;
+					}
+					if (bSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+		}
+		else
+		{
+			char Buf[256];
+			strncpy_s(Buf, sizeof(Buf), Current.c_str(), _TRUNCATE);
+			if (ImGui::InputText(Label, Buf, sizeof(Buf)))
+			{
+				*Val = FName(Buf);
+				bChanged = true;
+			}
+		}
+		break;
+	}
+	case EPropertyType::Material:
+	{
+		TArray<UMaterialInterface*>* Slots = static_cast<TArray<UMaterialInterface*>*>(ValuePtr);
+		if (!Slots || !EditorEngine)
+		{
+			break;
+		}
+		FEditorAssetService& AssetService = EditorEngine->GetAssetService();
+		const TArray<FString>& MaterialNames = AssetService.GetMaterialInterfaceNames();
+
+		DrawDetailsSeparator();
+		DrawDetailsSectionLabel(GetPropertyDisplayName(Property));
+		ImGui::PushID(Property.Name);
+		for (int32 SlotIndex = 0; SlotIndex < static_cast<int32>(Slots->size()); ++SlotIndex)
+		{
+			ImGui::PushID(SlotIndex);
+			UMaterialInterface* CurrentMaterial = (*Slots)[SlotIndex];
+			const FString CurrentMaterialIdentifier = CurrentMaterial
+				? (CurrentMaterial->GetFilePath().empty() ? CurrentMaterial->GetName() : FPaths::Normalize(CurrentMaterial->GetFilePath()))
+				: FString();
+			const FString CurrentLabel = CurrentMaterial
+				? (CurrentMaterial->GetFilePath().empty() ? CurrentMaterial->GetName() : FPaths::Normalize(CurrentMaterial->GetFilePath()))
+				: FString("None");
+
+			ImGui::Text("Slot %d", SlotIndex);
+			ImGui::SameLine();
+
+			const float EditButtonWidth = 48.0f;
+			ImGui::SetNextItemWidth(std::max(120.0f, ImGui::GetContentRegionAvail().x - EditButtonWidth - ImGui::GetStyle().ItemSpacing.x));
+			if (ImGui::BeginCombo("##MaterialSlot", CurrentLabel.c_str()))
+			{
+				const bool bNoneSelected = CurrentMaterial == nullptr;
+				if (ImGui::Selectable("None", bNoneSelected))
+				{
+					if (EditorEngine)
+					{
+						EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Material Slot");
+						bPropertyEditUndoCaptured = true;
+					}
+					(*Slots)[SlotIndex] = nullptr;
+					bChanged = true;
+				}
+				if (bNoneSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+
+				for (int32 MaterialIndex = 0; MaterialIndex < static_cast<int32>(MaterialNames.size()); ++MaterialIndex)
+				{
+					ImGui::PushID(MaterialIndex);
+					const FString& MaterialLabel = MaterialNames[MaterialIndex].empty()
+						? FString("<Unnamed Material>")
+						: MaterialNames[MaterialIndex];
+					const bool bSelected = (CurrentMaterialIdentifier == MaterialLabel);
+					if (ImGui::Selectable(MaterialLabel.c_str(), bSelected))
+					{
+						UMaterialInterface* Candidate = AssetService.ResolveMaterialInterfaceByIndex(MaterialIndex);
+						if (!Candidate)
+						{
+							ImGui::PopID();
+							continue;
+						}
+						if (EditorEngine)
+						{
+							EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Material Slot");
+							bPropertyEditUndoCaptured = true;
+						}
+						(*Slots)[SlotIndex] = Candidate;
+						bChanged = true;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+					if (ImGui::IsItemHovered())
+					{
+						if (UMaterialInterface* Candidate = AssetService.ResolveMaterialInterfaceByIndex(MaterialIndex))
+						{
+							RenderMaterialPreviewTooltip(Candidate);
+						}
+					}
+					ImGui::PopID();
+				}
+				ImGui::EndCombo();
+			}
+			if (ImGui::IsItemHovered() && CurrentMaterial)
+			{
+				RenderMaterialPreviewTooltip(CurrentMaterial);
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Edit"))
+			{
+				if (UPrimitiveComponent* PrimitiveComp = Cast<UPrimitiveComponent>(SelectedComponent))
+				{
+					EditorEngine->GetMainPanel().OpenMaterialSlot(PrimitiveComp, SlotIndex);
+				}
+			}
+			if (ImGui::IsItemHovered())
+			{
+				if (CurrentMaterial)
+				{
+					RenderMaterialPreviewTooltip(CurrentMaterial);
+				}
+				else
+				{
+					ImGui::SetTooltip("Open this material slot in Material Editor");
+				}
+			}
+			ImGui::PopID();
+		}
+		ImGui::PopID();
+		break;
+	}
+	case EPropertyType::Enum:
+	{
+		if (Property.EnumMeta && Property.EnumMeta->Values && Property.EnumMeta->Count > 0)
+		{
+			const int64 CurrentValue = ReadEnumPropertyValue(Property, Object);
+			int32 CurrentIndex = 0;
+			for (uint32 Index = 0; Index < Property.EnumMeta->Count; ++Index)
+			{
+				if (Property.EnumMeta->Values[Index].Value == CurrentValue)
+				{
+					CurrentIndex = static_cast<int32>(Index);
+					break;
+				}
+			}
+
+			const auto ComboGetter = [](void* Data, int Index) -> const char*
+			{
+				const FEnumMetaData* EnumMeta = static_cast<const FEnumMetaData*>(Data);
+				if (!EnumMeta || Index < 0 || static_cast<uint32>(Index) >= EnumMeta->Count)
+				{
+					return "";
+				}
+
+				const FEnumValueMetaData& ValueMeta = EnumMeta->Values[Index];
+				return (ValueMeta.DisplayName && ValueMeta.DisplayName[0] != '\0')
+					? ValueMeta.DisplayName
+					: ValueMeta.Name;
+			};
+
+			if (ImGui::Combo(Label, &CurrentIndex, ComboGetter, const_cast<FEnumMetaData*>(Property.EnumMeta), static_cast<int>(Property.EnumMeta->Count)))
+			{
+				WriteEnumPropertyValue(Property, Object, Property.EnumMeta->Values[CurrentIndex].Value);
+				bChanged = true;
+			}
+		}
+		break;
+	}
+	case EPropertyType::Vec3Array:
+	{
+		TArray<FVector>* Arr = static_cast<TArray<FVector>*>(ValuePtr);
+		int32 ToRemove = -1;
+
+		ImGui::Text("%s", GetPropertyDisplayName(Property));
+		ImGui::Spacing();
+
+		for (int32 i = 0; i < static_cast<int32>(Arr->size()); i++)
+		{
+			ImGui::PushID(i);
+
+			float Val[3] = { (*Arr)[i].X, (*Arr)[i].Y, (*Arr)[i].Z };
+			char Label[32];
+			snprintf(Label, sizeof(Label), "[%d]", i);
+
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - UIConstants::XButtonSize - 8.0f);
+			if (ImGui::DragFloat3(Label, Val, 1.0f))
+			{
+				(*Arr)[i] = FVector(Val[0], Val[1], Val[2]);
+				bChanged = true;
+			}
+
+			ImGui::SameLine();
+			char XId[32];
+			snprintf(XId, sizeof(XId), "##rm_%d", i);
+			if (DrawXButton(XId)) ToRemove = i;
+
+			ImGui::PopID();
+		}
+
+		if (ToRemove >= 0)
+		{
+			if (EditorEngine)
+			{
+				EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
+				bPropertyEditUndoCaptured = true;
+			}
+			Arr->erase(Arr->begin() + ToRemove);
+			bChanged = true;
+		}
+
+		char AddLabel[64];
+		snprintf(AddLabel, sizeof(AddLabel), "+ Add##%s", Property.Name);
+		if (ImGui::Button(AddLabel, ImVec2(-1, 0)))
+		{
+			if (EditorEngine)
+			{
+				EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
+				bPropertyEditUndoCaptured = true;
+			}
+			Arr->push_back(Arr->empty() ? FVector(0.f, 0.f, 0.f) : Arr->back());
+			bChanged = true;
+		}
+		break;
+	}
+	case EPropertyType::StringArray:
+	{
+		TArray<FString>* Arr = static_cast<TArray<FString>*>(ValuePtr);
+		if (!Arr)
+		{
+			break;
+		}
+
+		int32 ToRemove = -1;
+
+		ImGui::Text("%s", GetPropertyDisplayName(Property));
+		ImGui::Spacing();
+
+		for (int32 i = 0; i < static_cast<int32>(Arr->size()); ++i)
+		{
+			ImGui::PushID(i);
+
+			char Buf[256];
+			strncpy_s(Buf, sizeof(Buf), (*Arr)[i].c_str(), _TRUNCATE);
+
+			char ItemLabel[32];
+			snprintf(ItemLabel, sizeof(ItemLabel), "[%d]", i);
+
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - UIConstants::XButtonSize - 8.0f);
+			if (ImGui::InputText(ItemLabel, Buf, sizeof(Buf)))
+			{
+				(*Arr)[i] = Buf;
+				bChanged = true;
+			}
+
+			ImGui::SameLine();
+			char XId[32];
+			snprintf(XId, sizeof(XId), "##rm_%d", i);
+			if (DrawXButton(XId))
+			{
+				ToRemove = i;
+			}
+
+			ImGui::PopID();
+		}
+
+		if (ToRemove >= 0)
+		{
+			if (EditorEngine)
+			{
+				EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
+				bPropertyEditUndoCaptured = true;
+			}
+			Arr->erase(Arr->begin() + ToRemove);
+			bChanged = true;
+		}
+
+		char AddLabel[64];
+		snprintf(AddLabel, sizeof(AddLabel), "+ Add##%s", Property.Name);
+		if (ImGui::Button(AddLabel, ImVec2(-1, 0)))
+		{
+			if (EditorEngine)
+			{
+				EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
+				bPropertyEditUndoCaptured = true;
+			}
+			Arr->push_back("");
+			bChanged = true;
+		}
+		break;
+	}
+	case EPropertyType::SRV:
+	{
+		const FSRVPropertyData* Data = static_cast<const FSRVPropertyData*>(ValuePtr);
+		if (!Data || !Data->SRV)
+		{
+			break;
+		}
+
+		const FSRVDisplayInfo& Info = Data->DisplayInfo;
+		ImGui::TextUnformatted(GetPropertyDisplayName(Property));
+		ImGui::Image(Data->SRV,
+			ImVec2(Info.ImageWidth, Info.ImageHeight),
+			ImVec2(Info.UV0X, Info.UV0Y),
+			ImVec2(Info.UV1X, Info.UV1Y));
+		break;
+	}
+	case EPropertyType::CubeSRV:
+	{
+		const FCubeSRVPropertyData* Data = static_cast<const FCubeSRVPropertyData*>(ValuePtr);
+		if (!Data)
+		{
+			break;
+		}
+
+		static const char* FaceLabels[6] =
+		{
+			"+X", "-X", "+Y", "-Y", "+Z", "-Z"
+		};
+
+		const FSRVDisplayInfo& Info = Data->DisplayInfo;
+		ImGui::TextUnformatted(GetPropertyDisplayName(Property));
+		for (int32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+		{
+			ID3D11ShaderResourceView* FaceSRV = Data->FaceSRVs[FaceIndex];
+			if (!FaceSRV)
+			{
+				continue;
+			}
+
+			ImGui::BeginGroup();
+			ImGui::TextUnformatted(FaceLabels[FaceIndex]);
+			ImGui::Image(FaceSRV,
+				ImVec2(Info.ImageWidth, Info.ImageHeight),
+				ImVec2(Info.UV0X, Info.UV0Y),
+				ImVec2(Info.UV1X, Info.UV1Y));
+			ImGui::EndGroup();
+
+			if ((FaceIndex % 3) != 2)
+			{
+				ImGui::SameLine();
+			}
+		}
+		break;
+	}
+	}
+
+	if (ImGui::IsItemActivated() && !bPropertyEditUndoCaptured && EditorEngine)
+	{
+		EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
+		bPropertyEditUndoCaptured = true;
+	}
+
+	if (bChanged && NotifyTarget)
+	{
+		if (!bPropertyEditUndoCaptured && EditorEngine)
+		{
+			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
+			bPropertyEditUndoCaptured = true;
+		}
+		NotifyTarget->PostEditChangeProperty({ Property.Name, EPropertyChangeType::ValueSet });
+		if (EditorEngine)
+		{
+			EditorEngine->GetSceneService().MarkDirty();
+		}
+	}
+
+	if (ImGui::IsItemDeactivatedAfterEdit() || !ImGui::IsAnyItemActive())
+	{
+		bPropertyEditUndoCaptured = false;
+	}
+}
+
+
+void FEditorPropertyWidget::RenderLegacyPropertyWidget(FPropertyDescriptor& Prop, UObject* TargetObject)
 {
 	bool bChanged = false;
 	UObject* NotifyTarget = TargetObject ? TargetObject : SelectedComponent;
@@ -1799,7 +2794,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 	case EPropertyType::SceneComponentRef:
 	{
 		AActor* Owner = nullptr;
-		
+
 		if (AActor* Actor = Cast<AActor>(NotifyTarget))
 		{
 			Owner = Actor;
@@ -1812,8 +2807,8 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 		{
 			Owner = SelectedComponent->GetOwner();
 		}
-		
-		bChanged = RenderSceneComponentRefWidget(Prop, Owner);
+
+		bChanged = RenderLegacySceneComponentRefWidget(Prop, Owner);
 		break;
 	}
 	case EPropertyType::String:

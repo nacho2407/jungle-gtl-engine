@@ -1,4 +1,4 @@
-#include "Serialization/ActorSerialization.h"
+﻿#include "Serialization/ActorSerialization.h"
 
 #include "Component/ActorComponent.h"
 #include "Component/SceneComponent.h"
@@ -23,10 +23,12 @@ namespace ActorJsonKeys
 	static constexpr const char* UUID = "UUID";
 	static constexpr const char* Components = "Components";
 	static constexpr const char* Visible = "Visible";
+	static constexpr const char* Active = "Active";
 	static constexpr const char* RootComponent = "RootComponent";
 	static constexpr const char* Type = "Type";
 	static constexpr const char* ParentUUID = "ParentUUID";
 	static constexpr const char* EditorOnly = "EditorOnly";
+	static constexpr const char* LegacyActive = "bIsActive";
 }
 
 namespace
@@ -231,6 +233,7 @@ namespace FActorSerialization
 		ActorJson[ActorJsonKeys::ClassName] = Actor->GetTypeInfo()->name;
 		ActorJson[ActorJsonKeys::Name] = Actor->GetName();
 		ActorJson[ActorJsonKeys::Visible] = Actor->IsVisible();
+		ActorJson[ActorJsonKeys::Active] = Actor->IsActive();
 		ActorJson[ActorJsonKeys::EditorOnly] = Actor->ShouldTickInEditor();
 		USceneComponent* RootComponent = Actor->GetRootComponent();
 		ActorJson[ActorJsonKeys::RootComponent] = ShouldSerializeComponent(RootComponent)
@@ -291,6 +294,14 @@ namespace FActorSerialization
 		if (ActorData.hasKey(ActorJsonKeys::Visible))
 		{
 			NewActor->SetVisible(ActorData[ActorJsonKeys::Visible].ToBool());
+		}
+		if (ActorData.hasKey(ActorJsonKeys::Active))
+		{
+			NewActor->SetActive(ActorData[ActorJsonKeys::Active].ToBool());
+		}
+		else if (ActorData.hasKey(ActorJsonKeys::LegacyActive))
+		{
+			NewActor->SetActive(ActorData[ActorJsonKeys::LegacyActive].ToBool());
 		}
 		if (ActorData.hasKey(ActorJsonKeys::EditorOnly))
 		{

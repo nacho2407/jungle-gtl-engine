@@ -3,6 +3,8 @@
 #include "Object/ObjectSerialize.h"
 #include "Object/FName.h"
 #include "Object/ObjectFactory.h"
+#include "Object/Class.h"
+#include "Object/Property.h"
 #include "Math/Vector.h"
 
 #include <cstring>
@@ -72,6 +74,44 @@ UObject* UObject::Duplicate()
 // ・ SceneComponentRef                 → 포인터 복원은 호출 측(Duplicate) 에서 담당
 void UObject::CopyPropertiesFrom(UObject* Src)
 {
+	if (!Src)
+	{
+		return;
+	}
+
+	if (UClass* SrcClass = Src->GetClass())
+	{
+		if (UClass* DstClass = GetClass())
+		{
+			TArray<const FProperty*> SrcProperties;
+			SrcClass->GetAllProperties(SrcProperties);
+
+			if (!SrcProperties.empty())
+			{
+				for (const FProperty* SrcProperty : SrcProperties)
+				{
+					if (!SrcProperty || !SrcProperty->Name)
+					{
+						continue;
+					}
+
+					const FProperty* DstProperty = DstClass->FindProperty(SrcProperty->Name);
+					if (!DstProperty || DstProperty->Type != SrcProperty->Type)
+					{
+						continue;
+					}
+
+					if (CopyPropertyValue(this, Src, *DstProperty))
+					{
+						PostEditChangeProperty({ DstProperty->Name, EPropertyChangeType::ValueSet });
+					}
+				}
+				return;
+			}
+		}
+	}
+
+	// 과도기 fallback: 아직 UClass/FProperty 등록으로 넘어오지 않은 수동/legacy descriptor만 복사합니다.
 	TArray<FPropertyDescriptor> SrcProps;
 	Src->GetEditableProperties(SrcProps);
 
@@ -83,11 +123,16 @@ void UObject::CopyPropertiesFrom(UObject* Src)
 		FPropertyDescriptor* DstProp = nullptr;
 		for (FPropertyDescriptor& D : DstProps)
 		{
-			if (strcmp(D.Name, SrcProp.Name) == 0)
+			if (D.Name && SrcProp.Name && strcmp(D.Name, SrcProp.Name) == 0)
 			{
 				DstProp = &D;
 				break;
 			}
+		}
+
+		if (!DstProp || !DstProp->ValuePtr || !SrcProp.ValuePtr)
+		{
+			continue;
 		}
 
 		switch (SrcProp.Type)
@@ -125,64 +170,93 @@ void UObject::CopyPropertiesFrom(UObject* Src)
 
 		case EPropertyType::Name:
 			*static_cast<FName*>(DstProp->ValuePtr) = *static_cast<const FName*>(SrcProp.ValuePtr);
-			// FName 은 리소스 키이므로 캐시 갱신을 위해 PostEditChangeProperty 를 호출합니다.
 			this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
 			break;
 
 		case EPropertyType::SceneComponentRef:
-			// Duplicate에서 포인터 복사는 건너뜁니다. 이 부분은 Actor의 Duplicate()가 알아서 잘 복사해줘야 합니다.
-			// 이유: 컴포넌트 입장에선 자기 부모 컴포넌트나 자식 컴포넌트들이 어느 주소로 복사될지 알 수가 없습니다.
 			break;
 
 		case EPropertyType::Vec3Array:
 		{
 			auto* Dst = static_cast<TArray<FVector>*>(DstProp->ValuePtr);
-			const auto* Src = static_cast<const TArray<FVector>*>(SrcProp.ValuePtr);
-			*Dst = *Src;
+			const auto* SrcArray = static_cast<const TArray<FVector>*>(SrcProp.ValuePtr);
+			*Dst = *SrcArray;
 			this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
 			break;
 		}
 		case EPropertyType::StringArray:
 		{
 			auto* Dst = static_cast<TArray<FString>*>(DstProp->ValuePtr);
-			const auto* Src = static_cast<const TArray<FString>*>(SrcProp.ValuePtr);
-			*Dst = *Src;
+			const auto* SrcArray = static_cast<const TArray<FString>*>(SrcProp.ValuePtr);
+			*Dst = *SrcArray;
 			this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
 			break;
 		}
 		case EPropertyType::Material:
 		{
 			auto* Dst = static_cast<TArray<UMaterialInterface*>*>(DstProp->ValuePtr);
-			const auto* Src = static_cast<const TArray<UMaterialInterface*>*>(SrcProp.ValuePtr);
-			if (Dst && Src)
+			const auto* SrcArray = static_cast<const TArray<UMaterialInterface*>*>(SrcProp.ValuePtr);
+			if (Dst && SrcArray)
 			{
-				*Dst = *Src;
+				*Dst = *SrcArray;
 				this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
 			}
 			break;
 		}
 		case EPropertyType::SRV:
 		case EPropertyType::CubeSRV:
-			// GPU debug preview용 read-only 데이터입니다. Duplicate/serialization 대상이 아니므로 복사하지 않습니다.
+			break;
+		default:
 			break;
 		}
 	}
-
-	/** 위 함수는 성능상 프로퍼티 개수 N에 대해 O(N²)이므로 개선의 여지가 있습니다.
-	 *  추후 N이 많아질 경우 FPropertyDescriptor에 해시 및 인덱스를 추가하여 O(N·logN)으로 개선할 수 있지만,
-	 *  캐시 비용이 증가할 수 있으므로 보수적으로 접근하는 편이 좋을 것 같습니다. **/
 }
 
 void UObject::Serialize(FArchive& Ar)
 {
-	Ar << "Type" << GetTypeInfo()->name;
+	FString ClassName = GetClass() ? GetClass()->GetName() : GetTypeInfo()->name;
+	Ar << "Type" << ClassName;
 	Ar << "ObjectName" << ObjectName;
-	ObjectSerialize::SerializeProperties(Ar, this);
+	SerializeReflectedProperties(Ar);
 }
 
-// 레지스트리에서 클래스의 메타데이터를 바탕으로 현재 인스턴스의 메모리 주소를 계산하여 자동으로 디스크립터를 생성합니다.
+void UObject::SerializeReflectedProperties(FArchive& Ar)
+{
+	UClass* Class = GetClass();
+	if (!Class)
+	{
+		ObjectSerialize::SerializeProperties(Ar, this);
+		return;
+	}
+
+	TArray<const FProperty*> Properties;
+	Class->GetAllProperties(Properties);
+
+	// 과도기 호환: 아직 GenerateReflection.py를 다시 돌리지 않았거나,
+	// UClass/FProperty 등록 대상이 아닌 객체는 기존 FClassMetaData 직렬화를 사용합니다.
+	if (Properties.empty())
+	{
+		ObjectSerialize::SerializeProperties(Ar, this);
+		return;
+	}
+
+	for (const FProperty* Property : Properties)
+	{
+		if (!Property)
+		{
+			continue;
+		}
+		SerializeProperty(Ar, this, *Property);
+	}
+}
+
+// 런타임 UClass/FProperty를 우선 사용하고, 아직 런타임 등록이 없는 경우만
+// 기존 FClassMetaData 경로로 디스크립터를 생성합니다.
 void UObject::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
+	// 과도기 fallback 전용: FPropertyDescriptor는 수동/legacy 프로퍼티만 담습니다.
+	// 런타임 리플렉션 프로퍼티는 GetClass()->GetAllProperties()를 직접 사용합니다.
+
 	const FTypeInfo* CurrentType = GetTypeInfo();
 	while (CurrentType != nullptr)
 	{

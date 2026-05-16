@@ -5,6 +5,8 @@
 
 class UObject;
 class UClass;
+class UMaterialInterface;
+struct FArchive;
 
 // 런타임 리플렉션에서 프로퍼티 접근 권한과 용도를 표현합니다.
 // 기존 EPropertyUsageFlags는 에디터 노출 힌트로 유지하고,
@@ -21,6 +23,7 @@ enum class EPropertyFlags : uint32
 	LuaRead    = 1 << 6,
 	LuaWrite   = 1 << 7,
 };
+
 
 constexpr EPropertyFlags operator|(EPropertyFlags Lhs, EPropertyFlags Rhs)
 {
@@ -44,21 +47,21 @@ constexpr bool HasPropertyFlag(EPropertyFlags Value, EPropertyFlags Flag)
 }
 
 template<typename T>
-struct TReflectedPropertyType;
+struct TPropertyType;
 
-template<> struct TReflectedPropertyType<bool>    { static constexpr EPropertyType Value = EPropertyType::Bool; };
-template<> struct TReflectedPropertyType<int32>   { static constexpr EPropertyType Value = EPropertyType::Int; };
-template<> struct TReflectedPropertyType<float>   { static constexpr EPropertyType Value = EPropertyType::Float; };
-template<> struct TReflectedPropertyType<FString> { static constexpr EPropertyType Value = EPropertyType::String; };
-template<> struct TReflectedPropertyType<FName>   { static constexpr EPropertyType Value = EPropertyType::Name; };
-template<> struct TReflectedPropertyType<FVector> { static constexpr EPropertyType Value = EPropertyType::Vec3; };
-template<> struct TReflectedPropertyType<FVector4>{ static constexpr EPropertyType Value = EPropertyType::Vec4; };
-template<> struct TReflectedPropertyType<FColor>  { static constexpr EPropertyType Value = EPropertyType::Color; };
-template<> struct TReflectedPropertyType<FGuid>   { static constexpr EPropertyType Value = EPropertyType::Guid; };
-template<> struct TReflectedPropertyType<FQuat>   { static constexpr EPropertyType Value = EPropertyType::Quat; };
+template<> struct TPropertyType<bool>    { static constexpr EPropertyType Value = EPropertyType::Bool; };
+template<> struct TPropertyType<int32>   { static constexpr EPropertyType Value = EPropertyType::Int; };
+template<> struct TPropertyType<float>   { static constexpr EPropertyType Value = EPropertyType::Float; };
+template<> struct TPropertyType<FString> { static constexpr EPropertyType Value = EPropertyType::String; };
+template<> struct TPropertyType<FName>   { static constexpr EPropertyType Value = EPropertyType::Name; };
+template<> struct TPropertyType<FVector> { static constexpr EPropertyType Value = EPropertyType::Vec3; };
+template<> struct TPropertyType<FVector4>{ static constexpr EPropertyType Value = EPropertyType::Vec4; };
+template<> struct TPropertyType<FColor>  { static constexpr EPropertyType Value = EPropertyType::Color; };
+template<> struct TPropertyType<FGuid>   { static constexpr EPropertyType Value = EPropertyType::Guid; };
+template<> struct TPropertyType<FQuat>   { static constexpr EPropertyType Value = EPropertyType::Quat; };
 
 template<typename T>
-struct TReflectedPropertyType<T*>
+struct TPropertyType<T*>
 {
 	static constexpr EPropertyType Value = EPropertyType::SceneComponentRef;
 };
@@ -83,6 +86,15 @@ struct FProperty
 	UClass* ObjectClass = nullptr;
 	const FProperty* InnerProperty = nullptr;
 
+	void* GetValuePtr(UObject* Container) const;
+	const void* GetValuePtr(const UObject* Container) const;
+
+	void SerializeItem(FArchive& Ar, UObject* Container) const;
+	bool CopyValue(UObject* DstContainer, const UObject* SrcContainer) const;
+	bool IsSequencerScalar() const;
+	bool ReadScalarChannelValue(const UObject* Container, const FString& ChannelName, float& OutValue) const;
+	bool WriteScalarChannelValue(UObject* Container, const FString& ChannelName, float NewValue) const;
+
 	bool IsEditable() const { return HasPropertyFlag(Flags, EPropertyFlags::Edit); }
 	bool IsTransient() const { return HasPropertyFlag(Flags, EPropertyFlags::Transient); }
 
@@ -98,21 +110,6 @@ struct FProperty
 			Usage = Usage | EPropertyUsageFlags::Animatable;
 		}
 		return Usage;
-	}
-
-	FPropertyDescriptor ToDescriptor(UObject* Container) const
-	{
-		FPropertyDescriptor Desc;
-		Desc.Name = Name;
-		Desc.Type = Type;
-		Desc.ValuePtr = Container ? reinterpret_cast<uint8*>(Container) + Offset : nullptr;
-		Desc.UsageFlags = ToUsageFlags();
-		Desc.Min = Min;
-		Desc.Max = Max;
-		Desc.Speed = Speed;
-		Desc.DisplayName = DisplayName;
-		Desc.EnumMeta = EnumMeta;
-		return Desc;
 	}
 
 	template <typename ValueType>
@@ -138,7 +135,7 @@ struct FProperty
 	template <typename ValueType>
 	bool GetPropertyValueInContainer(const UObject* Container, ValueType& OutValue) const
 	{
-		if (!Container || Type != TReflectedPropertyType<ValueType>::Value)
+		if (!Container || Type != TPropertyType<ValueType>::Value)
 		{
 			return false;
 		}
@@ -158,7 +155,7 @@ struct FProperty
 	template <typename ValueType>
 	bool SetPropertyValueInContainer(UObject* Container, const ValueType& InValue) const
 	{
-		if (!Container || Type != TReflectedPropertyType<ValueType>::Value)
+		if (!Container || Type != TPropertyType<ValueType>::Value)
 		{
 			return false;
 		}
@@ -175,3 +172,12 @@ struct FProperty
 		return true;
 	}
 };
+inline void SerializeProperty(FArchive& Ar, UObject* Object, const FProperty& Property)
+{
+	Property.SerializeItem(Ar, Object);
+}
+
+inline bool CopyPropertyValue(UObject* Dst, const UObject* Src, const FProperty& Property)
+{
+	return Property.CopyValue(Dst, Src);
+}

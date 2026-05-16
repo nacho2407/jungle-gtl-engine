@@ -54,11 +54,11 @@ public:
 	// 컴포넌트-컴포넌트 간 소유 관계(Owner, Parent 등)는 Duplicate() 호출 측에서 별도 처리해야 합니다.
 	void PostDuplicate(UObject* Original) override;
 
-	void SetSerialized(bool bInSerialized) { bSerialized = bInSerialized; }
-	bool IsSerialized() const { return bSerialized; }
+	void SetSerialized(bool bInSerialized) { bTransient = !bInSerialized; }
+	bool IsSerialized() const { return !bTransient; }
 
-	void SetTransient(bool bInTransient) { bSerialized = !bInTransient; }
-	bool IsTransient() const { return !bSerialized; }
+	void SetTransient(bool bInTransient) { bTransient = bInTransient; }
+	bool IsTransient() const { return bTransient; }
 
 	void SetEditorOnly(bool bInEditorOnly) { bIsEditorOnly = bInEditorOnly; }
 	bool IsEditorOnly() const { return bIsEditorOnly; }
@@ -85,8 +85,8 @@ private:
 	UPROPERTY(DisplayName = "Enable Tick")
 	bool bCanEverTick = true;
 
-	UPROPERTY(DisplayName = "Be Serialized")
-	bool bSerialized = true;
+	UPROPERTY(DisplayName = "Transient")
+	bool bTransient = false;
 
 	UPROPERTY(DisplayName = "Editor Only")
 	bool bIsEditorOnly = false;
