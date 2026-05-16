@@ -9,6 +9,7 @@
 #include "Core/Log.h"
 #include "Core/PropertyTypes.h"
 #include "Lua/LuaScriptManager.h"
+#include "Mesh/SkeletalMesh.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 
@@ -157,6 +158,14 @@ void ULuaAnimInstance::InstallBindings()
 			Lua_RegisterState(Name, Path, Rate, Loop);
 		});
 
+	// .uasset 없이 즉시 데모 가능하도록 mock 시퀀스 (Phase 3 의 UAnimSequence::CreateMock* 재활용).
+	// MockType = "sway" | "wave".
+	Anim.set_function("register_mock_state",
+		[this](std::string Name, std::string MockType, float Duration, float AmpDeg, float Rate, bool Loop)
+		{
+			Lua_RegisterMockState(Name, MockType, Duration, AmpDeg, Rate, Loop);
+		});
+
 	Anim.set_function("register_transition",
 		[this](std::string From, std::string To, sol::protected_function Cond, float BlendTime)
 		{
@@ -204,6 +213,41 @@ void ULuaAnimInstance::Lua_RegisterState(const std::string& Name, const std::str
 	UAnimState* S = UObjectManager::Get().CreateObject<UAnimState>(this);
 	S->StateName = FName(Name.c_str());
 	S->Sequence  = Sequence;
+	S->PlayRate  = Rate;
+	S->bLooping  = Loop;
+	FSM->RegisterState(S);
+}
+
+void ULuaAnimInstance::Lua_RegisterMockState(const std::string& Name, const std::string& MockType,
+                                             float Duration, float AmplitudeDeg, float Rate, bool Loop)
+{
+	if (!FSM) return;
+	USkeletalMesh* Mesh = GetSkeletalMesh();
+	if (!Mesh)
+	{
+		UE_LOG("[LuaAnimInstance] register_mock_state '%s' — no SkeletalMesh", Name.c_str());
+		return;
+	}
+
+	UAnimSequence* Seq = nullptr;
+	if (MockType == "sway")
+	{
+		Seq = UAnimSequence::CreateMockSwaySequence(Mesh, /*BoneIdx*/0, Duration, AmplitudeDeg);
+	}
+	else if (MockType == "wave")
+	{
+		Seq = UAnimSequence::CreateMockWaveSequence(Mesh, Duration, AmplitudeDeg);
+	}
+	else
+	{
+		UE_LOG("[LuaAnimInstance] register_mock_state '%s' — unknown MockType '%s' (use \"sway\" or \"wave\")",
+			Name.c_str(), MockType.c_str());
+		return;
+	}
+
+	UAnimState* S = UObjectManager::Get().CreateObject<UAnimState>(this);
+	S->StateName = FName(Name.c_str());
+	S->Sequence  = Seq;
 	S->PlayRate  = Rate;
 	S->bLooping  = Loop;
 	FSM->RegisterState(S);

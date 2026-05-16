@@ -51,6 +51,8 @@ public:
 
 	// ── Lua → C++ 진입점 (Anim 모듈에서 노출) ──
 	void Lua_RegisterState(const std::string& Name, const std::string& AnimPath, float Rate, bool Loop);
+	void Lua_RegisterMockState(const std::string& Name, const std::string& MockType,
+	                           float Duration, float AmplitudeDeg, float Rate, bool Loop);
 	void Lua_RegisterTransition(const std::string& From, const std::string& To,
 	                            sol::protected_function Cond, float BlendTime);
 	void Lua_SetInitialState(const std::string& Name);
