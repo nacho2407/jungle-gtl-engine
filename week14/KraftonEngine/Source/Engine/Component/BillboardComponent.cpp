@@ -25,8 +25,6 @@ FPrimitiveSceneProxy* UBillboardComponent::CreateSceneProxy()
 void UBillboardComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
-	Ar << bIsBillboard;
-	Ar << MaterialSlot.Path;
 }
 
 void UBillboardComponent::PostDuplicate()

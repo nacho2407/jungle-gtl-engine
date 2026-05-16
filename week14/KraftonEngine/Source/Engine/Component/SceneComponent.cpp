@@ -91,17 +91,20 @@ void USceneComponent::PostEditProperty(const char* PropertyName)
 
 void USceneComponent::Serialize(FArchive& Ar)
 {
+	if (Ar.IsSaving())
+	{
+		CachedEditRotator = RelativeTransform.GetRotator();
+		bCachedEulerDirty = false;
+	}
+
 	UActorComponent::Serialize(Ar);
 	// ParentComponent / ChildComponents 는 직렬화 제외 — 복제 단계에서 명시적으로 재구성.
-	// FTransform은 trivially copyable이 아닐 수 있으므로 멤버 단위로 직렬화한다.
-	Ar << RelativeTransform.Location;
-	Ar << RelativeTransform.Rotation;
-	Ar << RelativeTransform.Scale;
 
 	if (Ar.IsLoading())
 	{
+		RelativeTransform.SetRotation(CachedEditRotator);
 		bTransformDirty = true;
-		bCachedEulerDirty = true;
+		bCachedEulerDirty = false;
 		bInverseWorldDirty = true;
 	}
 }

@@ -57,8 +57,6 @@ void UMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutP
 void UMovementComponent::Serialize(FArchive& Ar)
 {
 	UActorComponent::Serialize(Ar);
-	Ar << bAutoRegisterUpdatedComponent;
-	Ar << UpdatedComponentPath;
 	// UpdatedComponent 포인터는 BeginPlay에서 재해결되므로 직렬화 제외.
 }
 

@@ -28,11 +28,7 @@ FPrimitiveSceneProxy* USubUVComponent::CreateSceneProxy()
 void USubUVComponent::Serialize(FArchive& Ar)
 {
 	UBillboardComponent::Serialize(Ar);
-
-	Ar << ParticleName;
 	Ar << FrameIndex;
-	Ar << PlayRate;
-	Ar << bLoop;
 }
 
 void USubUVComponent::PostDuplicate()

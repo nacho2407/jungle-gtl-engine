@@ -16,11 +16,6 @@ END_PROPERTY_REGISTRATION()
 void ULightComponent::Serialize(FArchive& Ar)
 {
 	ULightComponentBase::Serialize(Ar);
-	Ar << ShadowResolutionScale;
-	Ar << ShadowBias;
-	Ar << ShadowSlopeBias;
-	Ar << ShadowNormalBias;
-	Ar << ShadowSharpen;
 }
 
 void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

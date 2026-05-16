@@ -214,18 +214,9 @@ primitive AABB 기준으로 후보만 추립니다.
 	return false; // bHit;
 }
 
-// FArchive 기반 직렬화 — 복제 왕복용. 자산은 경로로만 들고, 실제 로드는 PostDuplicate에서.
-static FArchive& operator<<(FArchive& Ar, FMaterialSlot& Slot)
-{
-	Ar << Slot.Path;
-	return Ar;
-}
-
 void UStaticMeshComponent::Serialize(FArchive& Ar)
 {
 	UMeshComponent::Serialize(Ar);
-	Ar << StaticMeshPath;
-	Ar << MaterialSlots;
 }
 
 void UStaticMeshComponent::PostDuplicate()

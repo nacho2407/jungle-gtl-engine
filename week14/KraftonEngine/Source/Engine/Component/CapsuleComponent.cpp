@@ -144,6 +144,4 @@ void UCapsuleComponent::PostEditProperty(const char* PropertyName)
 void UCapsuleComponent::Serialize(FArchive& Ar)
 {
 	UShapeComponent::Serialize(Ar);
-	Ar << CapsuleRadius;
-	Ar << CapsuleHalfHeight;
 }

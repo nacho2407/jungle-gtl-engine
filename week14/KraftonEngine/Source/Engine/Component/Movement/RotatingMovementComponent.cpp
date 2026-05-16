@@ -80,11 +80,6 @@ void URotatingMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 void URotatingMovementComponent::Serialize(FArchive& Ar)
 {
 	UMovementComponent::Serialize(Ar);
-	Ar << RotationRate.Pitch;
-	Ar << RotationRate.Yaw;
-	Ar << RotationRate.Roll;
-	Ar << bRotationInLocalSpace;
-	Ar << PivotTranslation;
 }
 
 void URotatingMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

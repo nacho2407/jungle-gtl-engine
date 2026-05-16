@@ -75,13 +75,6 @@ void UHeightFogComponent::PostEditProperty(const char* PropertyName)
 void UHeightFogComponent::Serialize(FArchive& Ar)
 {
 	USceneComponent::Serialize(Ar);
-
-	Ar << FogDensity;
-	Ar << FogHeightFalloff;
-	Ar << StartDistance;
-	Ar << FogCutoffDistance;
-	Ar << FogMaxOpacity;
-	Ar << FogInscatteringColor;
 }
 
 UBillboardComponent* UHeightFogComponent::EnsureEditorBillboard()

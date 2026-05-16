@@ -91,5 +91,4 @@ void UBoxComponent::PostEditProperty(const char* PropertyName)
 void UBoxComponent::Serialize(FArchive& Ar)
 {
 	UShapeComponent::Serialize(Ar);
-	Ar << BoxExtent;
 }

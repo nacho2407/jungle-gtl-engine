@@ -341,7 +341,6 @@ void ULuaScriptComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 void ULuaScriptComponent::Serialize(FArchive& Ar)
 {
 	UActorComponent::Serialize(Ar);
-	Ar << ScriptFile;
 }
 
 void ULuaScriptComponent::EnsureDefaultScriptFile()

@@ -65,10 +65,7 @@ void UActorComponent::SetActive(bool bNewActive)
 void UActorComponent::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
-	Ar << bTickEnable;
-	Ar << bEditorOnly;
-	Ar << bIsActive;
-	Ar << bAutoActivate;
+	SerializeProperties(Ar, PF_Save);
 	Ar << bHiddenInComponentTree;
 }
 

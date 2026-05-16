@@ -26,20 +26,6 @@ END_PROPERTY_REGISTRATION()
 void UTemporaryBoneAnimatorComponent::Serialize(FArchive& Ar)
 {
 	UActorComponent::Serialize(Ar);
-	Ar << TargetBoneName;
-	Ar << RotationAmplitude.Pitch;
-	Ar << RotationAmplitude.Yaw;
-	Ar << RotationAmplitude.Roll;
-	Ar << RotationFrequency.Pitch;
-	Ar << RotationFrequency.Yaw;
-	Ar << RotationFrequency.Roll;
-	Ar << RotationPhase.Pitch;
-	Ar << RotationPhase.Yaw;
-	Ar << RotationPhase.Roll;
-	Ar << RotationOffset.Pitch;
-	Ar << RotationOffset.Yaw;
-	Ar << RotationOffset.Roll;
-	Ar << bEnabled;
 }
 
 void UTemporaryBoneAnimatorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

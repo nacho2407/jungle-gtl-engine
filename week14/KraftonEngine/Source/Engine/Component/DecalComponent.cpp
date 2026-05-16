@@ -74,12 +74,6 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 void UDecalComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
-	Ar << MaterialSlot.Path;
-	Ar << Color;
-	Ar << FadeInDelay;
-	Ar << FadeInDuration;
-	Ar << FadeOutDelay;
-	Ar << FadeOutDuration;
 }
 
 void UDecalComponent::PostDuplicate()

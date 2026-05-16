@@ -147,16 +147,6 @@ void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
 void UPrimitiveComponent::Serialize(FArchive& Ar)
 {
 	USceneComponent::Serialize(Ar);
-	Ar << bIsVisible;
-	Ar << bCastShadow;
-	Ar << bCastShadowAsTwoSided;
-	Ar << bSimulatePhysics;
-	Ar << bGenerateOverlapEvents;
-	Ar << CollisionEnabled;
-	Ar << ObjectType;
-	Ar << ResponseContainer;
-	Ar << Mass;
-	Ar << CenterOfMassOffset;
 	// LocalExtents는 메시 등에서 재계산되므로 직렬화 제외.
 }
 

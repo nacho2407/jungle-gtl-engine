@@ -42,6 +42,4 @@ void UShapeComponent::PostEditProperty(const char* PropertyName)
 void UShapeComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
-	Ar << ShapeColor;
-	Ar << bDrawOnlyIfSelected;
 }

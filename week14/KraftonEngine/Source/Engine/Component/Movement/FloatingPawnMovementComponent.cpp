@@ -104,6 +104,4 @@ void UFloatingPawnMovementComponent::GetEditableProperties(TArray<FPropertyDescr
 void UFloatingPawnMovementComponent::Serialize(FArchive& Ar)
 {
 	UMovementComponent::Serialize(Ar);
-	Ar << Speed;
-	Ar << MouseSensitivity;
 }
