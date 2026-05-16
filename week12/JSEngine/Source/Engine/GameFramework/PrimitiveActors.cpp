@@ -1085,8 +1085,6 @@ void UMainSceneDestructibleComponent::GetEditableProperties(TArray<FPropertyDesc
         1.0f,
         0.01f,
         nullptr,
-        0,
-        nullptr,
         EPropertyUsageFlags::Editable | EPropertyUsageFlags::Animatable });
 }
 
