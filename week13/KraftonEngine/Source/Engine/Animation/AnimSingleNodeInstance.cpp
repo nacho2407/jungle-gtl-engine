@@ -18,7 +18,8 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	const float PreviousTime = CurrentTime;
 	AdvanceTime(DeltaSeconds);
-	TriggerAnimNotifies(PreviousTime, CurrentTime, CurrentAsset);
+	// 큐에 적재만 — 실제 dispatch 는 베이스 UAnimInstance::UpdateAnimation 끝에서 1회.
+	AddAnimNotifies(PreviousTime, CurrentTime, CurrentAsset);
 }
 
 void UAnimSingleNodeInstance::EvaluateAnimation(FPoseContext& Output)
