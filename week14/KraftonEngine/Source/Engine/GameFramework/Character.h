@@ -28,11 +28,20 @@ public:
 
 	void PostDuplicate() override;
 
+	// CharacterMovement->AddInputVector 의 액터 레벨 wrapper. UE 의 APawn::AddMovementInput 대응.
+	void AddMovementInput(const FVector& WorldDirection, float ScaleValue = 1.0f);
+
 	UCapsuleComponent*           GetCapsuleComponent()  const { return CapsuleComponent; }
 	USkeletalMeshComponent*      GetMesh()              const { return Mesh; }
 	UCharacterMovementComponent* GetCharacterMovement() const { return CharacterMovement; }
 
+	// 자동 WASD 입력 처리. true 면 Tick 안에서 InputSystem 직접 읽어 +X/-X/-Y/+Y 로 AddMovementInput.
+	// 게임에선 보통 false 로 끄고 PlayerController/lua 가 명시 input 처리. 데모 편의용 기본 true.
+	bool bAutoInputWASD = true;
+
 protected:
+	void Tick(float DeltaTime) override;
+
 	UCapsuleComponent*           CapsuleComponent  = nullptr;
 	USkeletalMeshComponent*      Mesh              = nullptr;
 	UCharacterMovementComponent* CharacterMovement = nullptr;
