@@ -78,10 +78,10 @@ protected:
 protected:
 	// Mesh/material state는 SetSkeletalMesh와 PostEditProperty가 같은 경로를 쓰도록 여기서 소유한다.
 	USkeletalMesh* SkeletalMesh = nullptr;
-	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Skeletal Mesh", Type=SkeletalMeshRef)
+	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Skeletal Mesh", Type=SkeletalMeshRef, AssetType="SkeletalMesh", AllowedClass="USkeletalMesh")
 	FString SkeletalMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
-	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", Type=MaterialSlotArray)
+	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", Type=MaterialSlotArray, AssetType="Material", AllowedClass="UMaterial")
 	TArray<FMaterialSlot> MaterialSlots;
 
 	// Bone edit pose는 asset 원본 bone을 직접 바꾸지 않고 component-local override로만 유지한다.

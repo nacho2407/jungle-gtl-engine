@@ -57,7 +57,7 @@ private:
 private:
 	FConvexVolume ConvexVolume;
 	TArray<UStaticMeshComponent*> Receivers;
-	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material")
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material", AssetType="Material", AllowedClass="UMaterial")
 	FMaterialSlot MaterialSlot;
 	UMaterial* Material = nullptr;
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Color", Type=Vec4)

@@ -130,7 +130,8 @@ void UCapsuleComponent::PostEditProperty(const char* PropertyName)
 {
 	UShapeComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Capsule Radius") == 0 || strcmp(PropertyName, "Capsule Half Height") == 0)
+	if (strcmp(PropertyName, "CapsuleRadius") == 0 || strcmp(PropertyName, "CapsuleHalfHeight") == 0
+		|| strcmp(PropertyName, "Capsule Radius") == 0 || strcmp(PropertyName, "Capsule Half Height") == 0)
 	{
 		SetCapsuleSize(CapsuleRadius, CapsuleHalfHeight);
 	}

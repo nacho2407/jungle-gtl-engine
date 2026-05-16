@@ -83,7 +83,7 @@ void USubUVComponent::PostEditProperty(const char* PropertyName)
 	// PostEditProperty도 Billboard를 거치지 않고 Primitive로 직접 올라간다.
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Particle") == 0)
+	if (strcmp(PropertyName, "ParticleName") == 0 || strcmp(PropertyName, "Particle") == 0)
 	{
 		SetParticle(ParticleName);
 		// 파티클 교체 시 UV 그리드/텍스처가 바뀌므로 Mesh 단계까지 dirty.

@@ -49,10 +49,10 @@ private:
 	void CacheLocalBounds();
 
 	UStaticMesh* StaticMesh = nullptr;
-	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Static Mesh", Type=StaticMeshRef)
+	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Static Mesh", Type=StaticMeshRef, AssetType="StaticMesh", AllowedClass="UStaticMesh")
 	FString StaticMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
-	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", Type=MaterialSlotArray)
+	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", Type=MaterialSlotArray, AssetType="Material", AllowedClass="UMaterial")
 	TArray<FMaterialSlot> MaterialSlots; // 경로 + UVScroll 묶음
 
 	FVector CachedLocalCenter = { 0, 0, 0 };

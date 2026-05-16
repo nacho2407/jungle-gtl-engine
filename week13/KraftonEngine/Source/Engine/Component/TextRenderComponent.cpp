@@ -123,7 +123,7 @@ void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 	// TextRender의 GetEditableProperties는 USceneComponent 베이스를 직접 사용한다.
 	USceneComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Font") == 0)
+	if (strcmp(PropertyName, "FontName") == 0 || strcmp(PropertyName, "Font") == 0)
 	{
 		SetFont(FontName);
 		MarkProxyDirty(EDirtyFlag::Mesh);
@@ -135,7 +135,7 @@ void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 		MarkProxyDirty(EDirtyFlag::Transform);
 		MarkWorldBoundsDirty();
 	}
-	else if (strcmp(PropertyName, "Font Size") == 0)
+	else if (strcmp(PropertyName, "FontSize") == 0 || strcmp(PropertyName, "Font Size") == 0)
 	{
 		MarkProxyDirty(EDirtyFlag::Mesh);
 		MarkProxyDirty(EDirtyFlag::Transform);

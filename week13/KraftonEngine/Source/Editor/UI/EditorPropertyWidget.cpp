@@ -78,6 +78,30 @@ namespace
 		Groups.push_back(Group);
 	}
 
+	const char* GetPropertyDisplayName(const FPropertyDescriptor& Prop)
+	{
+		return Prop.DisplayName.empty() ? Prop.Name.c_str() : Prop.DisplayName.c_str();
+	}
+
+	const FString* FindPropertyMetadata(const FPropertyDescriptor& Prop, const FString& Key)
+	{
+		auto It = Prop.Metadata.find(Key);
+		return It != Prop.Metadata.end() ? &It->second : nullptr;
+	}
+
+	FString GetAssetTypeMetadata(const FPropertyDescriptor& Prop)
+	{
+		if (const FString* AssetType = FindPropertyMetadata(Prop, "assettype"))
+		{
+			return *AssetType;
+		}
+		if (const FString* AllowedClass = FindPropertyMetadata(Prop, "allowedclass"))
+		{
+			return *AllowedClass;
+		}
+		return {};
+	}
+
 	UClass* FindComponentClassGroupAnchor(UClass* ComponentClass, const TArray<FComponentClassGroup>& Groups)
 	{
 		if (!ComponentClass)
@@ -444,7 +468,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 				ImGui::SetWindowFontScale(0.92f);
 
 				ImGui::AlignTextToFramePadding();
-				ImGui::TextUnformatted(Props[i].Name.c_str());
+				ImGui::TextUnformatted(GetPropertyDisplayName(Props[i]));
 
 				ImGui::SetWindowFontScale(1.0f);
 
@@ -848,7 +872,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 				ImGui::SetWindowFontScale(0.92f);
 
 				ImGui::AlignTextToFramePadding();
-				ImGui::TextUnformatted(Props[i].Name.c_str());
+				ImGui::TextUnformatted(GetPropertyDisplayName(Props[i]));
 
 				ImGui::SetWindowFontScale(1.0f);
 
@@ -1341,7 +1365,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 	case EPropertyType::MaterialSlot:
 	{
 		FMaterialSlot* Slot = static_cast<FMaterialSlot*>(Prop.ValuePtr);
-		int32          ElemIdx = (strncmp(Prop.Name.c_str(), "Element ", 8) == 0) ? atoi(&Prop.Name[8]) : -1;
+		const char* PropertyLabel = GetPropertyDisplayName(Prop);
+		int32          ElemIdx = (strncmp(PropertyLabel, "Element ", 8) == 0) ? atoi(&PropertyLabel[8]) : -1;
 
 		FString SlotName = "None";
 		// Selected Component 의 Slot 띄워주기 (Static, Skeletal 둘다)
@@ -1509,16 +1534,22 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 
 		// 리소스 키와 매칭되는 프로퍼티면 콤보 박스로 렌더링
 		TArray<FString> Names;
-		if (strcmp(Prop.Name.c_str(), "Font") == 0)
+		FString AssetType = GetAssetTypeMetadata(Prop);
+		if (AssetType.empty())
+		{
+			AssetType = Prop.Name;
+		}
+
+		if (AssetType == "Font")
 			Names = FResourceManager::Get().GetFontNames();
-		else if (strcmp(Prop.Name.c_str(), "Particle") == 0)
+		else if (AssetType == "Particle")
 			Names = FResourceManager::Get().GetParticleNames();
-		else if (strcmp(Prop.Name.c_str(), "Texture") == 0)
+		else if (AssetType == "Texture")
 			Names = FResourceManager::Get().GetTextureNames();
 
 		if (!Names.empty())
 		{
-			if (ImGui::BeginCombo(Prop.Name.c_str(), Current.c_str()))
+			if (ImGui::BeginCombo("##Value", Current.c_str()))
 			{
 				for (const auto& Name : Names)
 				{
@@ -1538,7 +1569,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		{
 			char Buf[256];
 			strncpy_s(Buf, sizeof(Buf), Current.c_str(), _TRUNCATE);
-			if (ImGui::InputText(Prop.Name.c_str(), Buf, sizeof(Buf)))
+			if (ImGui::InputText("##Value", Buf, sizeof(Buf)))
 			{
 				*Val = FName(Buf);
 				bChanged = true;
@@ -1552,7 +1583,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		int32 Val = 0;
 		memcpy(&Val, Prop.ValuePtr, Prop.EnumSize);
 		const char* Preview = ((uint32)Val < Prop.EnumCount) ? Prop.EnumNames[Val] : "Unknown";
-		if (ImGui::BeginCombo(Prop.Name.c_str(), Preview))
+		if (ImGui::BeginCombo("##Value", Preview))
 		{
 			for (uint32 i = 0; i < Prop.EnumCount; ++i)
 			{
@@ -1573,7 +1604,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 	{
 		TArray<FVector>* Arr = static_cast<TArray<FVector>*>(Prop.ValuePtr);
 
-		ImGui::TextUnformatted(Prop.Name.c_str());
+		ImGui::TextUnformatted(GetPropertyDisplayName(Prop));
 
 		int32 RemoveIdx = -1;
 		for (int32 i = 0; i < (int32)Arr->size(); ++i)
@@ -1635,7 +1666,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 					const char* Preview = ((uint32)Val < ChildProp.EnumCount) ? ChildProp.EnumNames[Val] : "Unknown";
 
 					ImGui::AlignTextToFramePadding();
-					ImGui::TextUnformatted(ChildProp.Name.c_str());
+					ImGui::TextUnformatted(GetPropertyDisplayName(ChildProp));
 
 					ImGui::SameLine(120.0f);
 					ImGui::SetNextItemWidth(-1);
@@ -1671,7 +1702,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		FString* Val = static_cast<FString*>(Prop.ValuePtr);
 		char Buf[256];
 		strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
-		if (ImGui::InputText(Prop.Name.c_str(), Buf, sizeof(Buf)))
+		if (ImGui::InputText("##Value", Buf, sizeof(Buf)))
 		{
 			*Val = Buf;
 			bChanged = true;

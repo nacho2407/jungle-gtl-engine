@@ -53,6 +53,7 @@ class ReflectedProperty:
     category: str
     property_type: str
     flags: str
+    metadata: tuple[tuple[str, str], ...]
     min_value: str
     max_value: str
     speed_value: str
@@ -188,6 +189,15 @@ def parse_metadata(args: str) -> tuple[dict[str, str], set[str]]:
             flags.add(part.strip().lower())
 
     return values, flags
+
+
+def make_property_metadata(metadata: dict[str, str], flags: set[str], member_name: str, display_name: str) -> tuple[tuple[str, str], ...]:
+    values = dict(metadata)
+    values.setdefault("member", member_name)
+    values.setdefault("displayname", display_name)
+    for flag in sorted(flags):
+        values.setdefault(flag, "true")
+    return tuple(sorted(values.items()))
 
 
 def normalize_cpp_type(cpp_type: str) -> str:
@@ -342,8 +352,8 @@ def parse_uproperties(scan_text: str) -> tuple[dict[str, tuple[ReflectedProperty
 
             display_name = metadata.get("displayname") or metadata.get("display") or member_name
             category = metadata.get("category") or "Default"
-            min_value = metadata.get("min", "0.0f")
-            max_value = metadata.get("max", "0.0f")
+            min_value = metadata.get("min") or metadata.get("clampmin") or metadata.get("uimin") or "0.0f"
+            max_value = metadata.get("max") or metadata.get("clampmax") or metadata.get("uimax") or "0.0f"
             speed_value = metadata.get("speed", "0.1f")
             enum_names = metadata.get("enumnames") or metadata.get("names") or "nullptr"
             enum_count = metadata.get("enumcount") or metadata.get("count") or "0"
@@ -360,6 +370,7 @@ def parse_uproperties(scan_text: str) -> tuple[dict[str, tuple[ReflectedProperty
                     category=category,
                     property_type=property_type,
                     flags=make_flags_expr(flag_tokens),
+                    metadata=make_property_metadata(metadata, flag_tokens, member_name, display_name),
                     min_value=min_value,
                     max_value=max_value,
                     speed_value=speed_value,
@@ -469,9 +480,14 @@ def render_generated_header(item: ReflectedHeader, root: Path) -> str:
 
 
 def render_property(prop: ReflectedProperty) -> str:
+    metadata_entries = ", ".join(
+        f"{{{cpp_string_literal(key)}, {cpp_string_literal(value)}}}"
+        for key, value in prop.metadata
+    )
+
     return (
         "\tClass->AddProperty({\n"
-        f"\t\t{cpp_string_literal(prop.display_name)},\n"
+        f"\t\t{cpp_string_literal(prop.member_name)},\n"
         f"\t\tEPropertyType::{prop.property_type},\n"
         f"\t\t{cpp_string_literal(prop.category)},\n"
         f"\t\t{prop.flags},\n"
@@ -482,7 +498,9 @@ def render_property(prop: ReflectedProperty) -> str:
         f"\t\t{prop.enum_names},\n"
         f"\t\t{prop.enum_count},\n"
         f"\t\t{prop.enum_size},\n"
-        f"\t\t{prop.struct_func}\n"
+        f"\t\t{prop.struct_func},\n"
+        f"\t\t{cpp_string_literal(prop.display_name)},\n"
+        f"\t\t{{{metadata_entries}}}\n"
         "\t});\n"
     )
 
