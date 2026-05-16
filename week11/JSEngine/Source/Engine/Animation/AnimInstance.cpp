@@ -1,4 +1,4 @@
-#include "Animation/AnimInstance.h"
+﻿#include "Animation/AnimInstance.h"
 
 DEFINE_CLASS(UAnimInstance, UObject)
 
@@ -8,7 +8,22 @@ void UAnimInstance::Initialize(USkeletalMeshComponent* InOwningComponent)
     NativeInitializeAnimation();
 }
 
+void UAnimInstance::Uninitialize()
+{
+    if (!OwningComponent)
+    {
+        return;
+    }
+
+    NativeUninitializeAnimation();
+    OwningComponent = nullptr;
+}
+
 void UAnimInstance::NativeInitializeAnimation()
+{
+}
+
+void UAnimInstance::NativeUninitializeAnimation()
 {
 }
 

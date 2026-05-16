@@ -31,6 +31,16 @@ public:
     void RecreateAnimInstance();
     bool ApplyAnimationLocalPose(const TArray<FTransform>& LocalPose);
 
+	/**
+	 * @brief 명시적으로 animation pose를 업데이트하는 함수
+	 *
+	 * @note SetPosition은 다음 프레임 TickComponent에서 실제 pose 적용이 일어남
+	 *        
+	 * @example animation sequence viewer에서 timeline scrubber를 사용할 때 슬라이더를 움직인 즉시 화면을 갱신
+	 *        
+	 */
+    bool RefreshAnimationPose();
+
 	// playback API
     void PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping);
     void SetAnimation(UAnimationAsset* NewAnimToPlay);

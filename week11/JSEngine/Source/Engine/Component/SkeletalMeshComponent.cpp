@@ -106,6 +106,29 @@ bool USkeletalMeshComponent::ApplyAnimationLocalPose(const TArray<FTransform>& L
     return true;
 }
 
+bool USkeletalMeshComponent::RefreshAnimationPose()
+{
+    if (AnimationMode == EAnimationMode::None || !AnimInstance)
+    {
+        return false;
+    }
+
+    // Scrubber처럼 시간을 직접 바꾼 뒤 tick을 기다리지 않고 현재 시간의 pose를 즉시 반영할 때 사용
+    TArray<FTransform> LocalPose;
+    if (!AnimInstance->EvaluateAnimation(LocalPose))
+    {
+        return false;
+    }
+
+    if (!ApplyAnimationLocalPose(LocalPose))
+    {
+        return false;
+    }
+
+    EnsureSkinningUpdated();
+    return true;
+}
+
 void USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping)
 {
     UAnimSingleNodeInstance* SingleNodeInstance = EnsureSingleNodeInstance();
@@ -120,6 +143,8 @@ void USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool 
         UE_LOG_WARNING("[SkeletalMeshComponent] PlayAnimation called with null animation asset.");
     }
 
+	// milestone 1에서는 asset이 null이면 mock pose 검증용으로 play까지 허용
+	// milestone 2에서는 mock pose 경로를 제거할 예정이므로, 일반 runtime에서는 null asset이면 bind pose fallback
     SingleNodeInstance->SetAnimationAsset(NewAnimToPlay);
     SingleNodeInstance->SetLooping(bLooping);
     SingleNodeInstance->Play();
@@ -272,6 +297,7 @@ void USkeletalMeshComponent::DestroyAnimInstance()
 
     if (UObjectManager::Get().ContainsObject(AnimInstance))
     {
+        AnimInstance->Uninitialize();
         UObjectManager::Get().DestroyObject(AnimInstance);
     }
     AnimInstance = nullptr;

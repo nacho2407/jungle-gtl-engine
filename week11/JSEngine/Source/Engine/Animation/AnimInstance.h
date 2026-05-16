@@ -15,8 +15,10 @@ public:
     ~UAnimInstance() override = default;
 
     void Initialize(USkeletalMeshComponent* InOwningComponent);
+    void Uninitialize();
 
     virtual void NativeInitializeAnimation();
+    virtual void NativeUninitializeAnimation();
     virtual void NativeUpdateAnimation(float DeltaSeconds);
     virtual bool EvaluateAnimation(TArray<FTransform>& OutLocalPose);
 

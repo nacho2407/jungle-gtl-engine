@@ -10,7 +10,7 @@ enum class EAnimationMode : uint8
 };
 
 /**
- * @brief animation asset에서 특정 시점의 pose를 뽑아낸 구조체
+ * @brief animation asset에서 특정 시점의 pose를 뽑아낼 때 필요한 문맥
  */
 struct FAnimExtractContext
 {
