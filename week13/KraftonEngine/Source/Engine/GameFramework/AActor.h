@@ -127,14 +127,19 @@ protected:
 
 	USceneComponent* RootComponent = nullptr;
 
+	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Location")
 	FVector PendingActorLocation = FVector(0, 0, 0);
+	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Rotation")
 	FRotator PendingActorRotation = FRotator(0, 0, 0);
+	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Scale")
 	FVector PendingActorScale = FVector(1, 1, 1);
+	UPROPERTY(Edit, Save, Category="Actor", DisplayName="Visible")
 	bool PendingActorVisible = true;
 
 	bool bVisible = true;
 
 	TArray<FName> Tags;
+	UPROPERTY(Edit, Save, Category="Actor", DisplayName="Tags")
 	FString PendingTagsString;  // 에디터용 — 콤마 구분 직렬화 캐시
 
 	TArray<UActorComponent*> OwnedComponents;

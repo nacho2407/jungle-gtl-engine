@@ -20,5 +20,6 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 protected:
+	UPROPERTY(Edit, Save, Category="Shape", DisplayName="Sphere Radius", Min=0.01f, Max=10000.0f, Speed=1.0f)
 	float SphereRadius = 2.0f;
 };

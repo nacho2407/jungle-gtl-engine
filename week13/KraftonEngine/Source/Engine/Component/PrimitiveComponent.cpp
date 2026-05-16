@@ -37,22 +37,6 @@ namespace
 IMPLEMENT_CLASS_WITH_PROPERTIES(UPrimitiveComponent, USceneComponent)
 HIDE_FROM_COMPONENT_LIST(UPrimitiveComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UPrimitiveComponent)
-	EDIT_PROPERTY(UPrimitiveComponent, bIsVisible, "Visible", EPropertyType::Bool, "Rendering")
-	EDIT_PROPERTY(UPrimitiveComponent, bCastShadow, "Cast Shadow", EPropertyType::Bool, "Rendering")
-	EDIT_PROPERTY(UPrimitiveComponent, bCastShadowAsTwoSided, "Two Sided Shadow", EPropertyType::Bool, "Rendering")
-	EDIT_PROPERTY(UPrimitiveComponent, bSimulatePhysics, "Simulate Physics", EPropertyType::Bool, "Collision")
-	EDIT_PROPERTY(UPrimitiveComponent, bGenerateOverlapEvents, "Generate Overlap Events", EPropertyType::Bool, "Collision")
-	EDIT_PROPERTY_ENUM(UPrimitiveComponent, CollisionEnabled, "Collision Enabled", "Collision",
-		GCollisionEnabledNames, static_cast<uint32>(ECollisionEnabled::COUNT), ECollisionEnabled)
-	EDIT_PROPERTY_ENUM(UPrimitiveComponent, ObjectType, "Object Type", "Collision",
-		GCollisionChannelNames, static_cast<uint32>(ECollisionChannel::ActiveCount), ECollisionChannel)
-	EDIT_PROPERTY_STRUCT(UPrimitiveComponent, ResponseContainer, "Collision Responses", "Collision",
-		&FCollisionResponseContainer::DescribeProperties)
-	EDIT_PROPERTY(UPrimitiveComponent, Mass, "Mass (kg)", EPropertyType::Float, "Physics")
-	EDIT_PROPERTY(UPrimitiveComponent, CenterOfMassOffset, "Center Of Mass Offset", EPropertyType::Vec3, "Physics")
-END_PROPERTY_REGISTRATION()
-
 UPrimitiveComponent::~UPrimitiveComponent()
 {
 	if (Owner)

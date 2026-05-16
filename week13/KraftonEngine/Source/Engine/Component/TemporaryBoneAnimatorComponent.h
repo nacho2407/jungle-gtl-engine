@@ -39,11 +39,17 @@ private:
 	void ApplyAnimatedBonePose(float DeltaTime);
 
 private:
+	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Target Bone Name")
 	FString TargetBoneName;
+	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Rotation Amplitude", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FRotator RotationAmplitude = FRotator(0.0f, 20.0f, 0.0f);
+	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Rotation Frequency", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.01f)
 	FRotator RotationFrequency = FRotator(1.0f, 1.0f, 1.0f);
+	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Rotation Phase", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FRotator RotationPhase = FRotator(0.0f, 0.0f, 0.0f);
+	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Rotation Offset", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FRotator RotationOffset = FRotator(0.0f, 0.0f, 0.0f);
+	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Enabled")
 	bool bEnabled = true;
 
 	USkeletalMeshComponent* TargetMeshComponent = nullptr;

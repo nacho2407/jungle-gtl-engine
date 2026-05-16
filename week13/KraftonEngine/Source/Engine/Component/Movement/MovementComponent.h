@@ -44,6 +44,8 @@ protected:
 	USceneComponent* FindUpdatedComponentByPath(const FString& InPath) const;
 
 	USceneComponent* UpdatedComponent = nullptr; // 움직일 대상
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Auto Register Updated")
 	bool bAutoRegisterUpdatedComponent = true;
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Updated Component", Type=SceneComponentRef)
 	FString UpdatedComponentPath;
 };

@@ -67,5 +67,6 @@ protected:
 		int32 OtherBodyIndex);
 
 	UBoxComponent* TriggerBox = nullptr;
+	UPROPERTY(Edit, Save, Category="Trigger", DisplayName="TriggerTag")
 	FName TriggerTag;  // 직렬화 — 디자이너가 씬에서 식별자를 지정
 };

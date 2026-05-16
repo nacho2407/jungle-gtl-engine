@@ -10,29 +10,7 @@
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Serialization/Archive.h"
 
-namespace
-{
-	const char* GTextRenderSpaceNames[] = { "World", "Screen" };
-	const char* GTextHAlignNames[] = { "Left", "Center", "Right" };
-	const char* GTextVAlignNames[] = { "Top", "Center", "Bottom" };
-}
-
 IMPLEMENT_CLASS_WITH_PROPERTIES(UTextRenderComponent, UBillboardComponent)
-
-BEGIN_PROPERTY_REGISTRATION(UTextRenderComponent)
-	EDIT_PROPERTY(UTextRenderComponent, Text, "Text", EPropertyType::String, "Text")
-	EDIT_PROPERTY(UTextRenderComponent, FontName, "Font", EPropertyType::Name, "Text")
-	EDIT_PROPERTY_RANGE(UTextRenderComponent, FontSize, "Font Size", EPropertyType::Float, "Text", 0.1f, 100.0f, 0.1f)
-	EDIT_PROPERTY(UTextRenderComponent, Color, "Color", EPropertyType::Color4, "Text")
-	EDIT_PROPERTY_RANGE(UTextRenderComponent, Spacing, "Spacing", EPropertyType::Float, "Text", 0.0f, 100.0f, 0.01f)
-	EDIT_PROPERTY_RANGE(UTextRenderComponent, CharWidth, "Char Width", EPropertyType::Float, "Text", 0.0f, 100.0f, 0.01f)
-	EDIT_PROPERTY_RANGE(UTextRenderComponent, CharHeight, "Char Height", EPropertyType::Float, "Text", 0.0f, 100.0f, 0.01f)
-	EDIT_PROPERTY_ENUM(UTextRenderComponent, RenderSpace, "Render Space", "Text", GTextRenderSpaceNames, 2, ETextRenderSpace)
-	EDIT_PROPERTY_ENUM(UTextRenderComponent, HAlign, "Horizontal Align", "Text", GTextHAlignNames, 3, ETextHAlign)
-	EDIT_PROPERTY_ENUM(UTextRenderComponent, VAlign, "Vertical Align", "Text", GTextVAlignNames, 3, ETextVAlign)
-	EDIT_PROPERTY_RANGE(UTextRenderComponent, ScreenX, "Screen X", EPropertyType::Float, "Text", 0.0f, 100000.0f, 1.0f)
-	EDIT_PROPERTY_RANGE(UTextRenderComponent, ScreenY, "Screen Y", EPropertyType::Float, "Text", 0.0f, 100000.0f, 1.0f)
-END_PROPERTY_REGISTRATION()
 
 FPrimitiveSceneProxy* UTextRenderComponent::CreateSceneProxy()
 {

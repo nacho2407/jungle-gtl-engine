@@ -13,11 +13,6 @@
 IMPLEMENT_CLASS_WITH_PROPERTIES(UMovementComponent, UActorComponent)
 HIDE_FROM_COMPONENT_LIST(UMovementComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UMovementComponent)
-	EDIT_PROPERTY(UMovementComponent, bAutoRegisterUpdatedComponent, "Auto Register Updated", EPropertyType::Bool, "Movement")
-	EDIT_PROPERTY(UMovementComponent, UpdatedComponentPath, "Updated Component", EPropertyType::SceneComponentRef, "Movement")
-END_PROPERTY_REGISTRATION()
-
 namespace
 {
 	constexpr const char* RootComponentPathToken = "Root";

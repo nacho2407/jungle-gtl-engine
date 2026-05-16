@@ -69,11 +69,15 @@ protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction);
 	
 	AActor* Owner = nullptr;
+	UPROPERTY(Edit, Save, Category="Component", DisplayName="bTickEnable")
 	bool bTickEnable = true;
 
 private:
+	UPROPERTY(Edit, Save, Category="Component", DisplayName="bEditorOnly")
 	bool bEditorOnly = false;
+	UPROPERTY(Edit, Save, Category="Component", DisplayName="bIsActive")
 	bool bIsActive = true;
+	UPROPERTY(Edit, Save, Category="Component", DisplayName="bAutoActivate")
 	bool bAutoActivate = true;
 	bool bHiddenInComponentTree = false;
 };

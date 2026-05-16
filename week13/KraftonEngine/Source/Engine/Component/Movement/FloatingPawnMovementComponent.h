@@ -40,6 +40,8 @@ private:
 	float LookInputX = 0.0f;
 	float LookInputY = 0.0f;
 
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Speed", Min=0.0f, Max=100.0f, Speed=0.1f)
 	float Speed = 10.0f;
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="MouseSensitivity", Min=0.0f, Max=10.0f, Speed=0.01f)
 	float MouseSensitivity = 0.1f;
 };

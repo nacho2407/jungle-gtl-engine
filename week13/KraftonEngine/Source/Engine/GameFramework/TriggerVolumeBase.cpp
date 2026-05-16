@@ -8,10 +8,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(ATriggerVolumeBase, AActor)
 
-BEGIN_PROPERTY_REGISTRATION(ATriggerVolumeBase)
-	EDIT_PROPERTY(ATriggerVolumeBase, TriggerTag, "TriggerTag", EPropertyType::Name, "Trigger")
-END_PROPERTY_REGISTRATION()
-
 void ATriggerVolumeBase::InitDefaultComponents(const FVector& Extent)
 {
 	TriggerBox = AddComponent<UBoxComponent>();

@@ -12,11 +12,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UBillboardComponent, UPrimitiveComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UBillboardComponent)
-	EDIT_PROPERTY(UBillboardComponent, bIsBillboard, "Billboard", EPropertyType::Bool, "Rendering")
-	EDIT_PROPERTY(UBillboardComponent, MaterialSlot, "Material", EPropertyType::MaterialSlot, "Rendering")
-END_PROPERTY_REGISTRATION()
-
 FPrimitiveSceneProxy* UBillboardComponent::CreateSceneProxy()
 {
 	return new FBillboardSceneProxy(this);

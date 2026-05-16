@@ -9,11 +9,6 @@
 IMPLEMENT_CLASS_WITH_PROPERTIES(USkinnedMeshComponent, UMeshComponent)
 HIDE_FROM_COMPONENT_LIST(USkinnedMeshComponent)
 
-BEGIN_PROPERTY_REGISTRATION(USkinnedMeshComponent)
-	EDIT_PROPERTY(USkinnedMeshComponent, SkeletalMeshPath, "Skeletal Mesh", EPropertyType::SkeletalMeshRef, "Mesh")
-	EDIT_PROPERTY(USkinnedMeshComponent, MaterialSlots, "Materials", EPropertyType::MaterialSlotArray, "Materials")
-END_PROPERTY_REGISTRATION()
-
 namespace
 {
 	constexpr float MatrixDecomposeTolerance = 1.0e-6f;

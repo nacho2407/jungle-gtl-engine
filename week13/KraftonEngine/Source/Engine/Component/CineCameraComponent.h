@@ -30,5 +30,9 @@ public:
 	const FCineLetterboxSettings& GetLetterboxSettings() const { return Letterbox; }
 
 private:
+	UPROPERTY(Edit, Save, Category="Cinematic", DisplayName="Enable Letterbox", Member=Letterbox.bEnabled, Type=Bool);
+	UPROPERTY(Edit, Save, Category="Cinematic", DisplayName="Letterbox Amount", Member=Letterbox.Amount, Type=Float, Min=0.0f, Max=1.0f, Speed=0.01f);
+	UPROPERTY(Edit, Save, Category="Cinematic", DisplayName="Letterbox Thickness", Member=Letterbox.Thickness, Type=Float, Min=0.0f, Max=0.5f, Speed=0.01f);
+	UPROPERTY(Edit, Save, Category="Cinematic", DisplayName="Letterbox Color", Member=Letterbox.Color, Type=Color4);
 	FCineLetterboxSettings Letterbox;
 };

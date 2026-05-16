@@ -21,5 +21,6 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 protected:
+	UPROPERTY(Edit, Save, Category="Shape", DisplayName="Box Extent", Type=Vec3, Min=0.01f, Max=0.0f, Speed=0.1f)
 	FVector BoxExtent = { 1.0f, 1.0f, 1.0f };
 };

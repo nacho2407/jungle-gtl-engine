@@ -9,6 +9,8 @@ enum class EInterpBehaviour {
 	PingPong,
 };
 
+inline const char* GInterpBehaviourNames[] = { "One Shot", "One Shot Reverse", "Loop", "Ping-Pong" };
+
 class UInterpToMovementComponent : public UMovementComponent {
 public:
 	DECLARE_CLASS(UInterpToMovementComponent, UMovementComponent)
@@ -71,18 +73,23 @@ private:
 	void				FaceTargetDir(float DeltaTime);
 
 private:
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Interp Mode", Type=Enum, EnumNames=GInterpBehaviourNames, EnumCount=4, EnumType=EInterpBehaviour)
 	EInterpBehaviour	InterpBehaviour = EInterpBehaviour::OneShot;
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Control Points", Type=Vec3Array)
 	TArray<FVector>		ControlPoints;
 	uint32				CurrentPointID = 0;
 	uint32				NextPointID = 0;
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Interp Duration", Min=0.1f, Max=2048.0f, Speed=0.1f)
 	float				Duration = 5.0f;		// Does not store an "array" of duration
 	float				RotateDuration = 0.f;
 	float				Elapsed = 0.f;
 	float				TotalDistance = 0;
 	float				NextDistRatio = 0;
 	bool				bisLerping = false;
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Auto Activate")
 	bool				bAutoActivate = true;
 	bool				bPing = true;
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Orient To Movement")
 	bool				bFaceTargetDir = true;
 
 	float				TargetPitch = 0.f;

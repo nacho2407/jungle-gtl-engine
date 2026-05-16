@@ -57,12 +57,18 @@ private:
 private:
 	FConvexVolume ConvexVolume;
 	TArray<UStaticMeshComponent*> Receivers;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material")
 	FMaterialSlot MaterialSlot;
 	UMaterial* Material = nullptr;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Color", Type=Vec4)
 	FVector4 Color = {1,1,1,1};
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="FadeInDelay")
 	float FadeInDelay = 0;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="FadeInDuration")
 	float FadeInDuration = 0;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="FadeOutDelay")
 	float FadeOutDelay = 0;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="FadeOutDuration")
 	float FadeOutDuration = 0;
 	float FadeTimer = 0;
 	float FadeOpacity = 1.0f;		// 페이드 효과 사용 시 Color.A에 곱함

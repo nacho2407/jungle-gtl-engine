@@ -17,6 +17,8 @@ public:
 	float GetOuterConeAngle() const { return OuterConeAngle; }
 
 protected:
+	UPROPERTY(Edit, Save, Category="Lighting", DisplayName="InnerConeAngle", Min=0.0f, Max=89.0f, Speed=0.1f)
 	float InnerConeAngle = 20.0f;	// Inner Cone Angle in degrees
+	UPROPERTY(Edit, Save, Category="Lighting", DisplayName="OuterConeAngle", Min=0.0f, Max=89.0f, Speed=0.1f)
 	float OuterConeAngle = 40.0f;	// Outer Cone Angle in degrees
 };

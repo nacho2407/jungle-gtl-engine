@@ -83,7 +83,10 @@ protected:
 
 	mutable bool bTransformDirty = true;
 
+	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Location", Member=RelativeTransform.Location, Type=Vec3, Min=0.0f, Max=0.0f, Speed=0.1f);
+	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Scale", Member=RelativeTransform.Scale, Type=Vec3, Min=0.0f, Max=0.0f, Speed=0.1f);
 	FTransform RelativeTransform;
+	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Rotation", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
 	mutable FRotator CachedEditRotator;	// 에디터 프로퍼티 바인딩용 (Euler 캐시)
 	mutable bool bCachedEulerDirty = true;	// Quat가 외부에서 변경됐을 때만 Euler 재계산
 

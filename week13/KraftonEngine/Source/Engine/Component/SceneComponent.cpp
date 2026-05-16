@@ -6,12 +6,6 @@
 IMPLEMENT_CLASS_WITH_PROPERTIES(USceneComponent, UActorComponent)
 HIDE_FROM_COMPONENT_LIST(USceneComponent)
 
-BEGIN_PROPERTY_REGISTRATION(USceneComponent)
-	EDIT_PROPERTY_RANGE(USceneComponent, RelativeTransform.Location, "Location", EPropertyType::Vec3, "Transform", 0.0f, 0.0f, 0.1f)
-	EDIT_PROPERTY_RANGE(USceneComponent, CachedEditRotator, "Rotation", EPropertyType::Rotator, "Transform", 0.0f, 0.0f, 0.1f)
-	EDIT_PROPERTY_RANGE(USceneComponent, RelativeTransform.Scale, "Scale", EPropertyType::Vec3, "Transform", 0.0f, 0.0f, 0.1f)
-END_PROPERTY_REGISTRATION()
-
 static void NotifyOctreeTransformChanged(USceneComponent* Comp)
 {
     if (!Comp) return;

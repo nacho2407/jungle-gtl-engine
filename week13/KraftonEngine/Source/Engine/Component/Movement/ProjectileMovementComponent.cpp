@@ -45,12 +45,6 @@ namespace
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UProjectileMovementComponent, UMovementComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UProjectileMovementComponent)
-	EDIT_PROPERTY_RANGE(UProjectileMovementComponent, Velocity, "Velocity", EPropertyType::Vec3, "Movement", 0.0f, 0.0f, 1.0f)
-	EDIT_PROPERTY_RANGE(UProjectileMovementComponent, InitialSpeed, "Initial Speed", EPropertyType::Float, "Movement", 0.0f, 0.0f, 10.0f)
-	EDIT_PROPERTY_RANGE(UProjectileMovementComponent, MaxSpeed, "Max Speed", EPropertyType::Float, "Movement", 0.0f, 0.0f, 10.0f)
-END_PROPERTY_REGISTRATION()
-
 void UProjectileMovementComponent::BeginPlay()
 {
 	UMovementComponent::BeginPlay();

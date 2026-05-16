@@ -15,11 +15,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UStaticMeshComponent, UMeshComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UStaticMeshComponent)
-	EDIT_PROPERTY(UStaticMeshComponent, StaticMeshPath, "Static Mesh", EPropertyType::StaticMeshRef, "Mesh")
-	EDIT_PROPERTY(UStaticMeshComponent, MaterialSlots, "Materials", EPropertyType::MaterialSlotArray, "Materials")
-END_PROPERTY_REGISTRATION()
-
 FPrimitiveSceneProxy* UStaticMeshComponent::CreateSceneProxy()
 {
 	return new FStaticMeshSceneProxy(this);

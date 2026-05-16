@@ -11,11 +11,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UCapsuleComponent, UShapeComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UCapsuleComponent)
-	EDIT_PROPERTY_RANGE(UCapsuleComponent, CapsuleRadius, "Capsule Radius", EPropertyType::Float, "Shape", 0.01f, 10000.0f, 1.0f)
-	EDIT_PROPERTY_RANGE(UCapsuleComponent, CapsuleHalfHeight, "Capsule Half Height", EPropertyType::Float, "Shape", 0.01f, 10000.0f, 1.0f)
-END_PROPERTY_REGISTRATION()
-
 void UCapsuleComponent::SetCapsuleSize(float InRadius, float InHalfHeight)
 {
 	CapsuleRadius = InRadius;

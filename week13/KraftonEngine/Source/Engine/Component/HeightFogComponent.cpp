@@ -9,15 +9,6 @@
 
 IMPLEMENT_CLASS_WITH_PROPERTIES(UHeightFogComponent, USceneComponent)
 
-BEGIN_PROPERTY_REGISTRATION(UHeightFogComponent)
-	EDIT_PROPERTY_RANGE(UHeightFogComponent, FogDensity, "Fog Density", EPropertyType::Float, "Fog", 0.0f, 0.05f, 0.001f)
-	EDIT_PROPERTY_RANGE(UHeightFogComponent, FogHeightFalloff, "Height Falloff", EPropertyType::Float, "Fog", 0.001f, 5.0f, 0.01f)
-	EDIT_PROPERTY_RANGE(UHeightFogComponent, StartDistance, "Start Distance", EPropertyType::Float, "Fog", 0.0f, 100000.0f, 1.0f)
-	EDIT_PROPERTY_RANGE(UHeightFogComponent, FogCutoffDistance, "Cutoff Distance", EPropertyType::Float, "Fog", 0.0f, 100000.0f, 1.0f)
-	EDIT_PROPERTY_RANGE(UHeightFogComponent, FogMaxOpacity, "Max Opacity", EPropertyType::Float, "Fog", 0.0f, 1.0f, 0.01f)
-	EDIT_PROPERTY(UHeightFogComponent, FogInscatteringColor, "Inscattering Color", EPropertyType::Color4, "Fog")
-END_PROPERTY_REGISTRATION()
-
 UHeightFogComponent::UHeightFogComponent()
 {
 	SetComponentTickEnabled(false);

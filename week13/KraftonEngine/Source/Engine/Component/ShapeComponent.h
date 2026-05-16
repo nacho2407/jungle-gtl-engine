@@ -33,6 +33,8 @@ protected:
 		);
 	}
 
+	UPROPERTY(Edit, Save, Category="Shape", DisplayName="Shape Color", Type=Color4)
 	FVector4 ShapeColor = { 0.0f, 1.0f, 0.0f, 1.0f }; // Green
+	UPROPERTY(Edit, Save, Category="Shape", DisplayName="Draw Only If Selected")
 	bool bDrawOnlyIfSelected = false;
 };
