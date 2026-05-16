@@ -3,15 +3,16 @@
 #include "AnimDataModel.h"
 #include "PoseContext.h"
 #include "AnimExtractContext.h"
+#include "AnimationRuntime.h"
 #include "Skeleton.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
 #include "Object/Object.h"
+#include "Math/MathUtils.h"
+#include "Core/Log.h"
 
 #include <algorithm>
 #include <cmath>
-
-#include "Core/Log.h"
 
 DEFINE_CLASS(UAnimSequence, UAnimSequenceBase)
 
@@ -86,8 +87,8 @@ void UAnimSequence::Serialize(FArchive& Ar)
     DataModel->Serialize(Ar);
 
     PlayLength = DataModel->PlayLength;
-    FrameRate = DataModel->FrameRate;
-    Notifies = DataModel->Notifies;
+    FrameRate  = DataModel->FrameRate;
+    Notifies   = DataModel->Notifies;
 }
 
 void UAnimSequence::SetDataModel(UAnimDataModel* InModel)
@@ -97,8 +98,8 @@ void UAnimSequence::SetDataModel(UAnimDataModel* InModel)
     if (DataModel)
     {
         PlayLength = DataModel->PlayLength;
-        FrameRate = DataModel->FrameRate;
-        Notifies = DataModel->Notifies;
+        FrameRate  = DataModel->FrameRate;
+        Notifies   = DataModel->Notifies;
     }
 }
 
@@ -116,8 +117,8 @@ TArray<FBoneAnimationTrack>& UAnimSequence::GetMutableBoneTracks()
     {
         DataModel = UObjectManager::Get().CreateObject<UAnimDataModel>(this);
         PlayLength = DataModel->PlayLength;
-        FrameRate = DataModel->FrameRate;
-        Notifies = DataModel->Notifies;
+        FrameRate  = DataModel->FrameRate;
+        Notifies   = DataModel->Notifies;
     }
 
     return DataModel ? DataModel->BoneAnimationTracks : EmptyTracks;
@@ -191,7 +192,7 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
     }
 
     const float FrameFloat = TimeToFrameFloat(Ctx.CurrentTime, DataModel->PlayLength, NumFrames, Ctx.bLooping);
-    
+
     const int32 Frame0 = std::clamp(
         static_cast<int32>(std::floor(FrameFloat)),
         0,
@@ -348,4 +349,91 @@ const FRawAnimSequenceTrack* UAnimSequence::FindTrackByBoneIndex(int32 TrackInde
 {
     const FBoneAnimationTrack* Track = FindBoneTrackByIndex(TrackIndex);
     return Track ? &Track->InternalTrackData : nullptr;
+}
+
+// ──────────────────────────────────────────────
+// Mock factories
+// ──────────────────────────────────────────────
+UAnimSequence* UAnimSequence::CreateMockSwaySequence(
+    USkeletalMesh* InMesh, int32 BoneIdx, float DurationSeconds, float AmplitudeDeg)
+{
+    if (!InMesh) return nullptr;
+    FSkeletalMesh* Asset = InMesh->GetSkeletalMeshAsset();
+    if (!Asset) return nullptr;
+    if (BoneIdx < 0 || BoneIdx >= static_cast<int32>(Asset->Bones.size())) return nullptr;
+
+    const FTransform Base = FAnimationRuntime::DecomposeMatrix(Asset->Bones[BoneIdx].LocalMatrix);
+
+    const float Rad   = AmplitudeDeg * FMath::DegToRad;
+    const FQuat RotP  = FQuat::FromAxisAngle(FVector(0.0f, 0.0f, 1.0f),  Rad);
+    const FQuat RotN  = FQuat::FromAxisAngle(FVector(0.0f, 0.0f, 1.0f), -Rad);
+
+    UAnimDataModel* Model = UObjectManager::Get().CreateObject<UAnimDataModel>();
+    Model->PlayLength = DurationSeconds;
+    Model->FrameRate  = 30.0f;
+    Model->NumFrames  = 5;
+
+    FBoneAnimationTrack Track;
+    Track.BoneTreeIndex = BoneIdx;
+    Track.InternalTrackData.PosKeys   = TArray<FVector>(5, Base.Location);
+    Track.InternalTrackData.ScaleKeys = TArray<FVector>(5, Base.Scale);
+    Track.InternalTrackData.RotKeys   = {
+        Base.Rotation,
+        RotP * Base.Rotation,
+        Base.Rotation,
+        RotN * Base.Rotation,
+        Base.Rotation,
+    };
+    Model->BoneAnimationTracks.push_back(Track);
+
+    UAnimSequence* Seq = UObjectManager::Get().CreateObject<UAnimSequence>();
+    Seq->SetDataModel(Model);
+    return Seq;
+}
+
+UAnimSequence* UAnimSequence::CreateMockWaveSequence(
+    USkeletalMesh* InMesh, float DurationSeconds, float AmplitudeDeg)
+{
+    if (!InMesh) return nullptr;
+    FSkeletalMesh* Asset = InMesh->GetSkeletalMeshAsset();
+    if (!Asset || Asset->Bones.empty()) return nullptr;
+
+    const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
+    const int32 KeyCount  = 9;   // 8 segments, last == first 위상으로 loop-safe
+    const float Rad       = AmplitudeDeg * FMath::DegToRad;
+
+    UAnimDataModel* Model = UObjectManager::Get().CreateObject<UAnimDataModel>();
+    Model->PlayLength = DurationSeconds;
+    Model->FrameRate  = 30.0f;
+    Model->NumFrames  = KeyCount;
+
+    for (int32 b = 0; b < BoneCount; ++b)
+    {
+        const FTransform Base = FAnimationRuntime::DecomposeMatrix(Asset->Bones[b].LocalMatrix);
+
+        // 본 인덱스 별로 위상 차를 줘서 chain 처럼 진행. 한 사이클이 전체 본을 한 바퀴.
+        const float PhaseOffset = (static_cast<float>(b) * 2.0f * FMath::Pi)
+                                / static_cast<float>(BoneCount);
+
+        FBoneAnimationTrack Track;
+        Track.BoneTreeIndex = b;
+        Track.InternalTrackData.PosKeys   = TArray<FVector>(KeyCount, Base.Location);
+        Track.InternalTrackData.ScaleKeys = TArray<FVector>(KeyCount, Base.Scale);
+        Track.InternalTrackData.RotKeys.reserve(KeyCount);
+
+        for (int32 k = 0; k < KeyCount; ++k)
+        {
+            const float Phase = (static_cast<float>(k) * 2.0f * FMath::Pi)
+                              / static_cast<float>(KeyCount - 1) + PhaseOffset;
+            const float Angle = Rad * std::sin(Phase);
+            const FQuat Rot   = FQuat::FromAxisAngle(FVector(0.0f, 0.0f, 1.0f), Angle);
+            Track.InternalTrackData.RotKeys.push_back(Rot * Base.Rotation);
+        }
+
+        Model->BoneAnimationTracks.push_back(Track);
+    }
+
+    UAnimSequence* Seq = UObjectManager::Get().CreateObject<UAnimSequence>();
+    Seq->SetDataModel(Model);
+    return Seq;
 }
