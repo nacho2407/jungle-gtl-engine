@@ -10,15 +10,16 @@ class UDirectionalLightComponent : public ULightComponent
 public:
     DECLARE_CLASS(UDirectionalLightComponent, ULightComponent)
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	virtual void Serialize(FArchive& Ar) override;
 
 protected:
 	FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 		const TArray<FBoundingBox>* VisibleObjectsBounds) const override;
 
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Shadow", DisplayName="CSM Max Distance")
 	float CSMMaxDistance = { 300.f };
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Shadow", DisplayName="CSM Practical Lambda")
 	float CSMPractialLambda = { 0.25f };
 
 };

@@ -21,8 +21,8 @@ protected:
 	//virtual void PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutProps) const override;
 
 public:
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Light", DisplayName="Attenuation Radius")
     float AttenuationRadius		= 10.f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Light", DisplayName="Falloff Exponent")
     float LightFalloffExponent	= 1.f;
 };

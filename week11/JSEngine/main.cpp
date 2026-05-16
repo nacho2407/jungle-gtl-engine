@@ -44,11 +44,13 @@ void TestReflectionDatabase()
         // 1. Property Information
         for (const auto& Prop : Info->Properties)
         {
-            DebugLog("   |-- [Property] %-25s %-15s (Offset: %4zu, Edit: %s)",
+            DebugLog("   |-- [Property] %-25s %-15s (Offset: %4zu, Visible: %s, Editable: %s, Category: %s)",
                      Prop.Type.c_str(),
                      Prop.Name.ToString().c_str(),
                      Prop.Offset,
-                     Prop.bIsEditAnywhere ? "Yes" : "No");
+                     Prop.IsEditorVisible() ? "Yes" : "No",
+                     Prop.IsEditorEditable() ? "Yes" : "No",
+                     Prop.Category.c_str());
         }
 
         // 2. GC Tracking Information

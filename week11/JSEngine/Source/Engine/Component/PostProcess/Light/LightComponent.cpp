@@ -169,18 +169,7 @@ void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 void ULightComponent::Serialize(FArchive& Ar)
 {
 	ULightComponentBase::Serialize(Ar);
-	
-	uint32 ShadowMapTypeValue = static_cast<uint32>(eShadowMapType);
-	Ar << "ShadowMapType" << ShadowMapTypeValue;
-	Ar << "ShadowResolutionScale" << ShadowResolutionScale;
-	Ar << "ConstantBias" << ConstantBias;
-	Ar << "SlopeScaledBias" << SlopeScaledBias;
-	Ar << "ShadowSharpen" << ShadowSharpen;
-
-	if (Ar.IsLoading())
-	{
-		eShadowMapType = static_cast<EShadowMap>(ShadowMapTypeValue);
-	}
+	ReflectionUtils::SerializeGeneratedPropertiesLocal(this, &ULightComponent::StaticClassInfo, Ar);
 }
 
 FMatrix ULightComponent::ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,

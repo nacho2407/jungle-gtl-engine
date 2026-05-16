@@ -19,6 +19,12 @@ void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescripto
 	//}
 }
 
+void UDirectionalLightComponent::Serialize(FArchive& Ar)
+{
+	ULightComponent::Serialize(Ar);
+	ReflectionUtils::SerializeGeneratedPropertiesLocal(this, &UDirectionalLightComponent::StaticClassInfo, Ar);
+}
+
 FMatrix UDirectionalLightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 	const TArray<FBoundingBox>* VisibleObjectsBounds) const
 {

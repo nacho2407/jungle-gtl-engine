@@ -29,13 +29,13 @@ public:
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 private:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Movement", DisplayName="Initial Speed")
 	float InitialSpeed = 5.0f;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Movement", DisplayName="Max Speed")
 	float MaxSpeed = 100.0f;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Movement", DisplayName="Gravity Scale")
 	float GravityScale = 0.0f;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Rotation", DisplayName="Rotation Follows Velocity")
 	bool bRotationFollowsVelocity = true; // 켤 시 화살 및 로켓이 날아가는 궤적을 바라본다.
 };

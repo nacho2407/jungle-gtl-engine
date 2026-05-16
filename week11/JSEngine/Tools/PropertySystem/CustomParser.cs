@@ -26,6 +26,116 @@ class CustomParser
 
     #region Helper Methods
 
+    struct ParsedPropertyOptions
+    {
+        public string FlagsExpression;
+        public string Category;
+        public string DisplayName;
+    }
+
+    static List<string> SplitPropertyOptions(string options)
+    {
+        List<string> result = new List<string>();
+        int start = 0;
+        int parenDepth = 0;
+        bool inString = false;
+        bool escape = false;
+
+        for (int i = 0; i <= options.Length; i++)
+        {
+            bool atEnd = i == options.Length;
+            char c = atEnd ? ',' : options[i];
+
+            if (!atEnd)
+            {
+                if (inString)
+                {
+                    if (escape)
+                        escape = false;
+                    else if (c == '\\')
+                        escape = true;
+                    else if (c == '"')
+                        inString = false;
+                }
+                else
+                {
+                    if (c == '"')
+                        inString = true;
+                    else if (c == '(')
+                        parenDepth++;
+                    else if (c == ')')
+                        parenDepth--;
+                }
+            }
+
+            if ((atEnd || c == ',') && !inString && parenDepth == 0)
+            {
+                string item = options.Substring(start, i - start).Trim();
+                start = i + 1;
+
+                if (item.Length > 0)
+                    result.Add(item);
+            }
+        }
+
+        return result;
+    }
+
+    static ParsedPropertyOptions ParsePropertyOptions(string options)
+    {
+        List<string> flags = new List<string>();
+        string category = "Default";
+        string displayName = "";
+
+        foreach (string rawOption in SplitPropertyOptions(options))
+        {
+            string option = rawOption.Trim();
+
+            if (option.Equals("EditAnywhere", StringComparison.Ordinal))
+            {
+                flags.Add("PF_EditAnywhere");
+            }
+            else if (option.Equals("VisibleAnywhere", StringComparison.Ordinal))
+            {
+                flags.Add("PF_VisibleAnywhere");
+            }
+            else if (option.Equals("HideInEditor", StringComparison.Ordinal))
+            {
+                flags.Add("PF_HideInEditor");
+            }
+            else if (option.Equals("Transient", StringComparison.Ordinal))
+            {
+                flags.Add("PF_Transient");
+            }
+            else if (option.Equals("SaveGame", StringComparison.Ordinal))
+            {
+                flags.Add("PF_SaveGame");
+            }
+            else
+            {
+                Match categoryMatch = Regex.Match(option, @"^Category\s*=\s*""(?<category>[^""]*)""$");
+                if (categoryMatch.Success)
+                {
+                    category = categoryMatch.Groups["category"].Value;
+                    continue;
+                }
+
+                Match displayNameMatch = Regex.Match(option, @"^(?:DisplayName|Display)\s*=\s*""(?<displayName>[^""]*)""$");
+                if (displayNameMatch.Success)
+                    displayName = displayNameMatch.Groups["displayName"].Value;
+            }
+        }
+
+        string flagsExpression = flags.Count > 0 ? string.Join(" | ", flags) : "PF_None";
+
+        return new ParsedPropertyOptions
+        {
+            FlagsExpression = flagsExpression,
+            Category = category,
+            DisplayName = displayName
+        };
+    }
+
     static List<string> ParseEnumValueNames(string enumBody)
     {
         List<string> values = new List<string>();
@@ -314,6 +424,7 @@ class CustomParser
             cppContent.AppendLine("// [UHT generated source - do not edit]");
             cppContent.AppendLine($"#include \"{includePath}\"");
             cppContent.AppendLine("#include \"Core/ReflectionDatabase.h\"");
+            cppContent.AppendLine("#include \"Core/ReflectionUtils.h\"");
             cppContent.AppendLine();
 
             // ---------------------------------------------------------
@@ -365,12 +476,11 @@ public: \
                         string options = prop.Groups["options"].Value;
                         string type = prop.Groups["type"].Value.Trim();
                         string name = prop.Groups["name"].Value;
-
-                        bool bIsEditAnywhere = options.Contains("EditAnywhere");
-                        string boolStr = bIsEditAnywhere ? "true" : "false";
+                        ParsedPropertyOptions parsedOptions = ParsePropertyOptions(options);
+                        string displayName = string.IsNullOrEmpty(parsedOptions.DisplayName) ? name : parsedOptions.DisplayName;
 
                         cppContent.AppendLine(
-                            $"    info.Properties.push_back({{ \"{EscapeForCppString(name)}\", \"{EscapeForCppString(type)}\", offsetof({structName}, {name}), {boolStr} }});");
+                            $"    info.Properties.push_back({{ \"{EscapeForCppString(name)}\", \"{EscapeForCppString(type)}\", offsetof({structName}, {name}), {parsedOptions.FlagsExpression}, \"{EscapeForCppString(parsedOptions.Category)}\", \"{EscapeForCppString(displayName)}\" }});");
 
                         if (type.Contains("*"))
                         {
@@ -476,11 +586,11 @@ static FAutoRegister_{enumName} AutoRegister_{enumName}_Instance;
                     string options = prop.Groups["options"].Value;
                     string type = prop.Groups["type"].Value.Trim();
                     string name = prop.Groups["name"].Value;
-                    bool bIsEditAnywhere = options.Contains("EditAnywhere");
-                    string boolStr = bIsEditAnywhere ? "true" : "false";
+                    ParsedPropertyOptions parsedOptions = ParsePropertyOptions(options);
+                    string displayName = string.IsNullOrEmpty(parsedOptions.DisplayName) ? name : parsedOptions.DisplayName;
 
                     Console.WriteLine($"   property: {type} {name} ({options})");
-                    cppContent.AppendLine($"    info.Properties.push_back({{ \"{EscapeForCppString(name)}\", \"{EscapeForCppString(type)}\", offsetof({className}, {name}), {boolStr} }});");
+                    cppContent.AppendLine($"    info.Properties.push_back({{ \"{EscapeForCppString(name)}\", \"{EscapeForCppString(type)}\", offsetof({className}, {name}), {parsedOptions.FlagsExpression}, \"{EscapeForCppString(parsedOptions.Category)}\", \"{EscapeForCppString(displayName)}\" }});");
 
                     if (type.Contains("*"))
                         cppContent.AppendLine($"    info.GcPointerOffsets.push_back(offsetof({className}, {name}));");

@@ -76,23 +76,23 @@ private:
 	void				FaceTargetDir(float DeltaTime);
 
 private:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Interpolation", DisplayName="Mode")
 	EInterpBehaviour	InterpBehaviour		= EInterpBehaviour::OneShot;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Interpolation", DisplayName="Control Points")
 	TArray<FVector>		ControlPoints;
 	uint32				CurrentPointID		= 0;
 	uint32				NextPointID			= 0;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Interpolation", DisplayName="Duration")
 	float				Duration			= 5.0f;		// Does not store an "array" of duration
 	float				RotateDuration		= 0.f;
 	float				Elapsed				= 0.f;
 	float				TotalDistance		= 0;
 	float				NextDistRatio		= 0;
 	bool				bisLerping			= true;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Activation", DisplayName="Auto Activate")
 	bool				bAutoActivate		= true;
 	bool				bPing				= true;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Rotation", DisplayName="Face Target Direction")
 	bool				bFaceTargetDir		= true;
 
 	float				TargetPitch			= 0.f;

@@ -41,10 +41,10 @@ private:
     void EnsureBoundsUpdated() const;
 
 private:
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Asset", DisplayName="Static Mesh")
     UStaticMesh* StaticMeshAsset = nullptr;
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Asset", DisplayName="Static Mesh Path")
     FString StaticMeshAssetPath;
 
     mutable bool bBoundsDirty = true;

@@ -22,8 +22,8 @@ protected:
 		const TArray<FBoundingBox>* VisibleObjectsBounds) const override;
 
 public:
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Light", DisplayName="Inner Cone Angle")
     float InnerConeAngle = 10.f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Light", DisplayName="Outer Cone Angle")
     float OuterConeAngle = 15.f;
 };

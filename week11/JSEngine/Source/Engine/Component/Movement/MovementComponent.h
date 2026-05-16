@@ -64,16 +64,16 @@ protected:
     void MoveUpdatedComponent(const FVector& Delta);
 
 protected:
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Movement", DisplayName="Updated Component")
     USceneComponent* UpdatedComponent = nullptr;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Movement", DisplayName="Velocity")
 	FVector Velocity = FVector(-1.0f, 0.0f, 1.0f);
     FVector PendingInputVector = FVector::ZeroVector;          // 추후 플레이어 입력을 처리할 때 사용되는 벡터
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Plane Constraint", DisplayName="Plane Normal")
     FVector PlaneConstraintNormal = FVector(0.0f, 0.0f, 1.0f); // 이동을 특정 평면으로 제한하는 법선 벡터
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Movement", DisplayName="Update Only If Rendered")
     bool bUpdateOnlyIfRendered = false; // 화면에 보일 때만 이동 계산을 수행할지 결정
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Plane Constraint", DisplayName="Constrain To Plane")
     bool bConstrainToPlane = false;     // 이동을 지정된 평면 내로 제한할 지 결정
 };

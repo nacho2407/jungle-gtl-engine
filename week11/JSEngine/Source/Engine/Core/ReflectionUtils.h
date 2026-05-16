@@ -23,6 +23,21 @@ public:
         return It->second.c_str();
     }
 
+    static const char* GetStablePropertyLabel(const FPropertyInfo& Prop)
+    {
+        return GetStablePropertyName(FName(Prop.DisplayName.empty() ? Prop.Name.ToString() : Prop.DisplayName));
+    }
+
+    static const char* GetStableInternalPropertyName(const FPropertyInfo& Prop)
+    {
+        return GetStablePropertyName(Prop.Name);
+    }
+
+    static const char* GetStablePropertyCategory(const FPropertyInfo& Prop)
+    {
+        return GetStablePropertyName(FName(Prop.Category.empty() ? "Default" : Prop.Category));
+    }
+
     // 1. 값 쓰기 (Set)
     template <typename T>
     static void SetValue(UObject* TargetObject, size_t Offset, T NewValue)
@@ -114,6 +129,102 @@ public:
         return false;
     }
 
+    static void SerializeGeneratedPropertiesLocal(
+        UObject* Object,
+        FClassInfo* ClassInfo,
+        FArchive& Ar)
+    {
+        if (!Object || !ClassInfo)
+            return;
+
+        uint8* Base = reinterpret_cast<uint8*>(Object);
+
+        for (const FPropertyInfo& Prop : ClassInfo->Properties)
+        {
+            if (!Prop.ShouldSerialize())
+                continue;
+
+            SerializePropertyValue(Ar, Base + Prop.Offset, Prop.Name.ToString(), Prop.Type);
+        }
+    }
+
+    static void SerializeGeneratedPropertiesRecursive(
+        UObject* Object,
+        FClassInfo* ClassInfo,
+        FArchive& Ar)
+    {
+        if (!Object || !ClassInfo)
+            return;
+
+        SerializeGeneratedPropertiesRecursive(Object, ClassInfo->ParentClass, Ar);
+        SerializeGeneratedPropertiesLocal(Object, ClassInfo, Ar);
+    }
+
+    static void SerializePropertyValue(
+        FArchive& Ar,
+        void* ValuePtr,
+        const FString& Key,
+        const FString& TypeName)
+    {
+        if (!ValuePtr)
+            return;
+
+        if (Ar.IsLoading() && !Ar.HasKey(Key))
+            return;
+
+        FString NormalizedType = NormalizeTypeName(TypeName);
+
+        if (TypeName == "bool")
+        {
+            Ar << Key.c_str() << *reinterpret_cast<bool*>(ValuePtr);
+        }
+        else if (TypeName == "int" || TypeName == "int32")
+        {
+            Ar << Key.c_str() << *reinterpret_cast<int32*>(ValuePtr);
+        }
+        else if (TypeName == "uint32")
+        {
+            Ar << Key.c_str() << *reinterpret_cast<uint32*>(ValuePtr);
+        }
+        else if (TypeName == "float")
+        {
+            Ar << Key.c_str() << *reinterpret_cast<float*>(ValuePtr);
+        }
+        else if (TypeName == "FVector")
+        {
+            Ar << Key.c_str() << *reinterpret_cast<FVector*>(ValuePtr);
+        }
+        else if (TypeName == "FVector4")
+        {
+            Ar << Key.c_str() << *reinterpret_cast<FVector4*>(ValuePtr);
+        }
+        else if (TypeName == "FColor")
+        {
+            Ar << Key.c_str() << *reinterpret_cast<FColor*>(ValuePtr);
+        }
+        else if (TypeName == "FString")
+        {
+            Ar << Key.c_str() << *reinterpret_cast<FString*>(ValuePtr);
+        }
+        else if (TypeName == "FName")
+        {
+            Ar << Key.c_str() << *reinterpret_cast<FName*>(ValuePtr);
+        }
+        else if (NormalizedType == "TArray<FVector>")
+        {
+            Ar << Key.c_str() << *reinterpret_cast<TArray<FVector>*>(ValuePtr);
+        }
+        else if (ReflectionDatabase::GetEnum(TypeName))
+        {
+            uint32 EnumValue = *reinterpret_cast<uint32*>(ValuePtr);
+            Ar << Key.c_str() << EnumValue;
+            if (Ar.IsLoading())
+            {
+                *reinterpret_cast<uint32*>(ValuePtr) = EnumValue;
+            }
+        }
+    }
+
 	// 구조체 내부를 까서 프로퍼티 배열에 평탄화(Flatten)하여 집어넣는 도우미 함수
     static void AppendStructProperties(
         uint8* StructBasePtr,
@@ -131,20 +242,23 @@ public:
 
         for (auto& Prop : StructInfo->Properties)
         {
-            if (!Prop.bIsEditAnywhere)
+            if (!Prop.IsEditorVisible())
                 continue;
 
             EPropertyType UiType;
-            FString DisplayName = Prefix + "." + Prop.Name.ToString();
+            FString PropertyLabel = Prop.DisplayName.empty() ? Prop.Name.ToString() : Prop.DisplayName;
+            FString DisplayName = Prefix + "." + PropertyLabel;
 
             // 1. 구조체 안의 변수가 int, float 같은 기본 타입이라면?
             if (TryConvertType(Prop.Type.c_str(), UiType))
             {
-                // UI에서 보기 좋게 "구조체변수명.내부변수명" (예: MyData.Health) 형태로 이름을 지어줍니다.
-                FString DisplayName = Prefix + "." + Prop.Name.ToString();
-                OutProps.push_back({ GetStablePropertyName(FName(DisplayName)),
-                                     UiType,
-                                     StructBasePtr + Prop.Offset });
+                FPropertyDescriptor Desc;
+                Desc.Name = GetStablePropertyName(FName(DisplayName));
+                Desc.Type = UiType;
+                Desc.ValuePtr = StructBasePtr + Prop.Offset;
+                Desc.InternalName = GetStablePropertyName(Prop.Name);
+                Desc.Category = GetStablePropertyCategory(Prop);
+                OutProps.push_back(Desc);
             }
             // ★ 2. 열거형(Enum)인지 검사
             else if (FEnumInfo* EnumInfo = ReflectionDatabase::GetEnum(Prop.Type))
@@ -153,6 +267,8 @@ public:
                 Desc.Name = GetStablePropertyName(FName(DisplayName));
                 Desc.Type = EPropertyType::Enum;
                 Desc.ValuePtr = StructBasePtr + Prop.Offset;
+                Desc.InternalName = GetStablePropertyName(Prop.Name);
+                Desc.Category = GetStablePropertyCategory(Prop);
 
                 if (!EnumInfo->CachedNames.empty())
                 {
@@ -168,7 +284,7 @@ public:
                 FStructInfo* NestedStruct = ReflectionDatabase::GetStruct(Prop.Type);
                 if (NestedStruct)
                 {
-                    FString NextPrefix = Prefix + "." + Prop.Name.ToString();
+                    FString NextPrefix = Prefix + "." + PropertyLabel;
                     // 재귀적으로 한 번 더 파고듭니다!
                     AppendStructProperties(StructBasePtr + Prop.Offset, NestedStruct, OutProps, NextPrefix);
                 }
@@ -198,7 +314,7 @@ public:
 
         /*for (FPropertyInfo& Prop : ClassInfo->Properties)
         {
-            if (!Prop.bIsEditAnywhere)
+            if (!Prop.IsEditorVisible())
                 continue;
 
             EPropertyType UiType;
@@ -212,7 +328,7 @@ public:
 
 		for (auto& Prop : ClassInfo->Properties)
         {
-            if (!Prop.bIsEditAnywhere)
+            if (!Prop.IsEditorVisible())
                 continue;
 
             EPropertyType UiType;
@@ -220,18 +336,24 @@ public:
             // 1. 기본 타입(int, float 등)인 경우 기존처럼 바로 추가
             if (TryConvertType(Prop.Type, UiType))
             {
-                OutProps.push_back({ GetStablePropertyName(Prop.Name),
-                                     UiType,
-                                     Base + Prop.Offset });
+                FPropertyDescriptor Desc;
+                Desc.Name = GetStablePropertyLabel(Prop);
+                Desc.Type = UiType;
+                Desc.ValuePtr = Base + Prop.Offset;
+                Desc.InternalName = GetStableInternalPropertyName(Prop);
+                Desc.Category = GetStablePropertyCategory(Prop);
+                OutProps.push_back(Desc);
             }
             // 2. 열거형(Enum)인지 검사
             else if (FEnumInfo* EnumInfo = ReflectionDatabase::GetEnum(Prop.Type))
             {
                 // 구조체나 클래스 모두 동일하게 적용
                 FPropertyDescriptor Desc;
-                Desc.Name = GetStablePropertyName(Prop.Name);
+                Desc.Name = GetStablePropertyLabel(Prop);
                 Desc.Type = EPropertyType::Enum;
                 Desc.ValuePtr = Base + Prop.Offset;
+                Desc.InternalName = GetStableInternalPropertyName(Prop);
+                Desc.Category = GetStablePropertyCategory(Prop);
 
                 if (!EnumInfo->CachedNames.empty())
                 {
@@ -251,7 +373,7 @@ public:
                     uint8* StructBasePtr = Base + Prop.Offset;
 
                     // 구조체 내부 변수들을 긁어와서 OutProps에 평탄화해서 담아줍니다.
-                    AppendStructProperties(StructBasePtr, StructInfo, OutProps, GetStablePropertyName(Prop.Name));
+                    AppendStructProperties(StructBasePtr, StructInfo, OutProps, GetStablePropertyLabel(Prop));
                 }
             }
         }
