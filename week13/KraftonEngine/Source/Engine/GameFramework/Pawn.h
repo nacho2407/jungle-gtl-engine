@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/AActor.h"
 #include "Math/Rotator.h"
@@ -67,8 +67,8 @@ public:
 	// true 면 마우스 따라 mesh 가 즉시 회전 (ThirdPerson 슈터 패턴).
 	// CharacterMovement 의 bOrientRotationToMovement 와 동시 true 면 Movement 가 마지막 우선 —
 	// 보통 둘 중 하나만 켜는 것이 일반적.
-	bool bUseControllerRotationPitch = false;
-	bool bUseControllerRotationYaw   = false;
+	bool bUseControllerRotationPitch = true;
+	bool bUseControllerRotationYaw   = true;
 	bool bUseControllerRotationRoll  = false;
 
 protected:

@@ -375,6 +375,9 @@
     <FxCompile Include="Shaders\Common\ShadowSampling.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Common\Skinning.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\SystemResources.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
