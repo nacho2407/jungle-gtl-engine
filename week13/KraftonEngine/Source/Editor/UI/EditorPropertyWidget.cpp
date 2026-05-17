@@ -205,15 +205,15 @@ namespace
 			return true;
 		case EPropertyType::Struct:
 		{
-			if (!SrcValue.StructFunc || !DstValue.StructFunc)
+			if (!SrcValue.StructType || !DstValue.StructType)
 			{
 				return false;
 			}
 
 			TArray<FPropertyValue> SrcChildren;
 			TArray<FPropertyValue> DstChildren;
-			SrcValue.StructFunc(SrcValue.ValuePtr, SrcChildren);
-			DstValue.StructFunc(DstValue.ValuePtr, DstChildren);
+			SrcValue.GetStructChildren(SrcChildren);
+			DstValue.GetStructChildren(DstChildren);
 
 			bool bCopiedAny = false;
 			for (const FPropertyValue& SrcChild : SrcChildren)
@@ -1760,7 +1760,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	}
 	case EPropertyType::Struct:
 	{
-		if (!Prop.StructFunc || !Prop.ValuePtr) break;
+		if (!Prop.StructType || !Prop.ValuePtr) break;
 
 		ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_DefaultOpen |
 			ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
@@ -1770,7 +1770,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 		if (bOpen)
 		{
 			TArray<FPropertyValue> ChildProps;
-			Prop.StructFunc(Prop.ValuePtr, ChildProps);
+			Prop.GetStructChildren(ChildProps);
 
 			ImGui::Indent(8.0f);
 

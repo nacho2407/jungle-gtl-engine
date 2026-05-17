@@ -48,7 +48,7 @@ class ReflectedProperty:
     enum_names: str
     enum_count: str
     enum_size: str
-    struct_func: str
+    struct_type: str
 
 
 @dataclass(frozen=True)
@@ -209,8 +209,8 @@ def infer_property_type(cpp_type: str, metadata: dict[str, str]) -> str:
     if enum_type:
         return "Enum"
 
-    struct_func = metadata.get("structfunc") or metadata.get("struct")
-    if struct_func:
+    struct_type = metadata.get("structtype") or metadata.get("struct")
+    if struct_type:
         return "Struct"
 
     normalized = normalize_cpp_type(cpp_type)
@@ -324,7 +324,10 @@ def parse_uproperties(scan_text: str) -> tuple[dict[str, tuple[ReflectedProperty
             enum_count = metadata.get("enumcount") or metadata.get("count") or "0"
             enum_type = metadata.get("enumtype") or metadata.get("enum")
             enum_size = f"sizeof({enum_type})" if enum_type else metadata.get("enumsize", "sizeof(int32)")
-            struct_func = metadata.get("structfunc") or metadata.get("struct") or "nullptr"
+            struct_type = metadata.get("structtype") or metadata.get("struct")
+            if property_type == "Struct" and not struct_type:
+                struct_type = cpp_type
+            struct_type_expr = f"{struct_type}::StaticStruct()" if struct_type and struct_type != "Struct" else "nullptr"
 
             found.append(
                 ReflectedProperty(
@@ -342,7 +345,7 @@ def parse_uproperties(scan_text: str) -> tuple[dict[str, tuple[ReflectedProperty
                     enum_names=enum_names,
                     enum_count=enum_count,
                     enum_size=enum_size,
-                    struct_func=struct_func,
+                    struct_type=struct_type_expr,
                 )
             )
             cursor = semicolon + 1
@@ -537,8 +540,7 @@ def render_property(prop: ReflectedProperty) -> str:
         f"\t\t{prop.enum_names},\n"
         f"\t\t{prop.enum_count},\n"
         f"\t\t{prop.enum_size},\n"
-        f"\t\t{prop.struct_func},\n"
-        "\t\tnullptr,\n"
+        f"\t\t{prop.struct_type},\n"
         f"\t\t{cpp_string_literal(prop.display_name)},\n"
         f"\t\t{{{metadata_entries}}},\n"
         f"\t\t{cpp_string_literal(prop.owner)}\n"

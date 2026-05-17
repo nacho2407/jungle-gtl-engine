@@ -6,7 +6,29 @@
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 #include "Object/FName.h"
+#include "Object/UStruct.h"
 #include "Serialization/Archive.h"
+
+void FPropertyValue::GetStructChildren(TArray<FPropertyValue>& OutProps) const
+{
+	OutProps.clear();
+	if (!StructType || !ValuePtr)
+	{
+		return;
+	}
+
+	TArray<const FProperty*> ChildProperties;
+	StructType->GetPropertyRefs(ChildProperties);
+	for (const FProperty* ChildProperty : ChildProperties)
+	{
+		if (!ChildProperty || !ChildProperty->GetValuePtrFor(ValuePtr))
+		{
+			continue;
+		}
+
+		OutProps.push_back(ChildProperty->ToValue(ValuePtr));
+	}
+}
 
 json::JSON FPropertyValue::Serialize() const
 {
@@ -101,9 +123,8 @@ json::JSON FPropertyValue::Serialize() const
 
 	case EPropertyType::Struct:
 	{
-		if (!StructFunc || !ValuePtr) return JSON();
 		TArray<FPropertyValue> Children;
-		StructFunc(ValuePtr, Children);
+		GetStructChildren(Children);
 		JSON obj = json::Object();
 		for (const auto& Child : Children)
 		{
@@ -224,9 +245,8 @@ void FPropertyValue::Deserialize(json::JSON& Value)
 
 	case EPropertyType::Struct:
 	{
-		if (!StructFunc || !ValuePtr) break;
 		TArray<FPropertyValue> Children;
-		StructFunc(ValuePtr, Children);
+		GetStructChildren(Children);
 		for (auto& Child : Children)
 		{
 			if (!Value.hasKey(Child.Name.c_str())) continue;
@@ -303,9 +323,8 @@ void FPropertyValue::Serialize(FArchive& Ar) const
 		break;
 	case EPropertyType::Struct:
 	{
-		if (!StructFunc || !ValuePtr) break;
 		TArray<FPropertyValue> Children;
-		StructFunc(ValuePtr, Children);
+		GetStructChildren(Children);
 		for (const FPropertyValue& Child : Children)
 		{
 			Child.Serialize(Ar);
@@ -407,9 +426,10 @@ json::JSON FProperty::Serialize(UObject* Object) const
 	}
 	case EPropertyType::Struct:
 	{
-		if (!StructFunc) return JSON();
+		if (!StructType) return JSON();
 		TArray<FPropertyValue> Children;
-		StructFunc(ValuePtr, Children);
+		FPropertyValue StructValue = ToValue(Object);
+		StructValue.GetStructChildren(Children);
 		JSON obj = json::Object();
 		for (const auto& Child : Children)
 		{
@@ -524,9 +544,10 @@ void FProperty::Deserialize(UObject* Object, json::JSON& JsonValue) const
 	}
 	case EPropertyType::Struct:
 	{
-		if (!StructFunc) break;
+		if (!StructType) break;
 		TArray<FPropertyValue> Children;
-		StructFunc(ValuePtr, Children);
+		FPropertyValue StructValue = ToValue(Object);
+		StructValue.GetStructChildren(Children);
 		for (auto& Child : Children)
 		{
 			if (!JsonValue.hasKey(Child.Name.c_str())) continue;
@@ -608,9 +629,10 @@ void FProperty::Serialize(UObject* Object, FArchive& Ar) const
 		break;
 	case EPropertyType::Struct:
 	{
-		if (!StructFunc) break;
+		if (!StructType) break;
 		TArray<FPropertyValue> Children;
-		StructFunc(ValuePtr, Children);
+		FPropertyValue StructValue = ToValue(Object);
+		StructValue.GetStructChildren(Children);
 		for (const FPropertyValue& Child : Children)
 		{
 			Child.Serialize(Ar);
