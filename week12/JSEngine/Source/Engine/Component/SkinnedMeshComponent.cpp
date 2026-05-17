@@ -90,23 +90,74 @@ static FVector SkinPositionForBounds(
 
 void USkinnedMeshComponent::Serialize(FArchive& Ar)
 {
+	UMeshComponent::Serialize(Ar);
+
 	if (Ar.IsLoading())
 	{
-		UPrimitiveComponent::Serialize(Ar);
-		if (!SkeletalMeshPath.empty())
+		const bool bHasMaterialOverrides = Ar.HasKey("Materials");
+		TArray<UMaterialInterface*> LoadedMaterials = Materials;
+		const FString RequestedPath = SkeletalMeshPath.GetPath();
+
+		if (!RequestedPath.empty())
 		{
-			SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh(SkeletalMeshPath));
+			SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh(RequestedPath));
 		}
 		else
 		{
 			SetSkeletalMesh(nullptr);
 		}
-		SerializeMaterialOverrides(Ar);
+
+		if (bHasMaterialOverrides)
+		{
+			Materials.clear();
+			for (int32 i = 0; i < static_cast<int32>(LoadedMaterials.size()); ++i)
+			{
+				SetMaterial(i, LoadedMaterials[i]);
+			}
+			MarkRenderStateDirty();
+		}
+
 		SetSkinningMode(SkinningMode);
+	}
+}
+
+void USkinnedMeshComponent::PostDuplicate(UObject* Original)
+{
+	UMeshComponent::PostDuplicate(Original);
+
+	const USkinnedMeshComponent* SourceComponent = Cast<USkinnedMeshComponent>(Original);
+	if (!SourceComponent)
+	{
 		return;
 	}
 
-	UMeshComponent::Serialize(Ar);
+	SkeletalMesh = SourceComponent->SkeletalMesh;
+	SkeletalMeshPath.SetPath(SourceComponent->SkeletalMeshPath.GetPath());
+	CurrentLocalPose = SourceComponent->CurrentLocalPose;
+	CurrentGlobalPose = SourceComponent->CurrentGlobalPose;
+	SkinningMatrices = SourceComponent->SkinningMatrices;
+	SkinnedVertices = SourceComponent->SkinnedVertices;
+	SkinningMode = SourceComponent->SkinningMode;
+	LastResolvedSkinningMode = SourceComponent->LastResolvedSkinningMode;
+
+	Materials = TArray<UMaterialInterface*>(SourceComponent->Materials.size());
+	for (int32 i = 0; i < static_cast<int32>(SourceComponent->Materials.size()); ++i)
+	{
+		if (UMaterialInstance* SourceMatInst = Cast<UMaterialInstance>(SourceComponent->Materials[i]))
+		{
+			UMaterialInstance* MatInst = UMaterialInstance::Create(SourceMatInst->Parent);
+			MatInst->OverridedParams = SourceMatInst->OverridedParams;
+			Materials[i] = MatInst;
+		}
+		else
+		{
+			Materials[i] = SourceComponent->Materials[i];
+		}
+	}
+
+	bSkinningDirty = true;
+	bBoundsDirty = true;
+	bRenderStateDirty = true;
 }
 
 void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
@@ -115,13 +166,14 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 
 	if (std::strcmp(PropertyName, "SkeletalMeshPath") == 0)
 	{
-		if (SkeletalMeshPath.empty())
+		const FString RequestedPath = SkeletalMeshPath.GetPath();
+		if (RequestedPath.empty())
 		{
 			SetSkeletalMesh(nullptr);
 			return;
 		}
 
-		SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh(SkeletalMeshPath));
+		SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh(RequestedPath));
 	}
 	else if (std::strcmp(PropertyName, "Materials") == 0)
 	{
@@ -156,7 +208,7 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
 
 	if (SkeletalMesh)
 	{
-		SkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
+		SkeletalMeshPath.SetPath(SkeletalMesh->GetAssetPathFileName());
 
 		const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();
 		const TArray<FStaticMeshMaterialSlot>& Slots = SkeletalMesh->GetMaterialSlots();
@@ -180,7 +232,7 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
 	}
 	else
 	{
-		SkeletalMeshPath.clear();
+		SkeletalMeshPath.SetPath("");
 	}
 
 	MarkBoundsDirty();

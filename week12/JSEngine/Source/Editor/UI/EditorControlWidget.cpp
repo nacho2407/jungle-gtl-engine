@@ -2,18 +2,215 @@
 
 #include "Editor/EditorEngine.h"
 #include "Camera/ViewportCamera.h"
-#include "Core/Logging/Timer.h"
-
-#include "ImGui/imgui.h"
-#include "Component/GizmoComponent.h"
-#include "Component/SubUVComponent.h"
-#include "Component/TextRenderComponent.h"
-#include "Component/StaticMeshComponent.h"
-#include "Core/ResourceManager.h"
-
+#include "Core/Reflection/ReflectionRegistry.h"
 #include "GameFramework/PrimitiveActors.h"
+#include "GameFramework/World.h"
+#include "ImGui/imgui.h"
+#include "Object/Class.h"
+
+#include <algorithm>
+#include <cstring>
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
+
+namespace
+{
+	bool HasPlayerStart(UWorld* World);
+	bool IsPlaceableActorClass(const UClass* Class);
+	bool SortActorClassForPlacement(const UClass* Lhs, const UClass* Rhs);
+}
+
+void FEditorControlWidget::Initialize(UEditorEngine* InEditorEngine)
+{
+	FEditorWidget::Initialize(InEditorEngine);
+	SelectedPrimitiveType = 0;
+	bPlaceableActorCacheDirty = true;
+}
+
+const char* FEditorControlWidget::GetPrimitiveTypeLabel(int32 PrimitiveType) const
+{
+	UClass* Class = GetPrimitiveTypeClass(PrimitiveType);
+	if (!Class)
+	{
+		return "";
+	}
+	return Class->GetDisplayName();
+}
+
+int32 FEditorControlWidget::GetPrimitiveTypeCount() const
+{
+	RefreshPlaceableActorCache();
+	return static_cast<int32>(PlaceableActorClasses.size());
+}
+
+void FEditorControlWidget::RefreshPlaceableActorCache() const
+{
+	if (!bPlaceableActorCacheDirty)
+	{
+		return;
+	}
+
+	PlaceableActorClasses.clear();
+	FReflectionRegistry::Get().GetClassesDerivedFrom(AActor::StaticClass(), PlaceableActorClasses);
+	PlaceableActorClasses.erase(
+		std::remove_if(
+			PlaceableActorClasses.begin(),
+			PlaceableActorClasses.end(),
+			[](const UClass* Class)
+			{
+				return !IsPlaceableActorClass(Class);
+			}),
+		PlaceableActorClasses.end());
+
+	std::stable_sort(
+		PlaceableActorClasses.begin(),
+		PlaceableActorClasses.end(),
+		SortActorClassForPlacement);
+
+	bPlaceableActorCacheDirty = false;
+}
+
+UClass* FEditorControlWidget::GetPrimitiveTypeClass(int32 PrimitiveType) const
+{
+	RefreshPlaceableActorCache();
+	if (PrimitiveType < 0 || PrimitiveType >= static_cast<int32>(PlaceableActorClasses.size()))
+	{
+		return nullptr;
+	}
+	return PlaceableActorClasses[PrimitiveType];
+}
+
+bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bClosePopupOnSpawn)
+{
+	bool bSpawned = false;
+	RefreshPlaceableActorCache();
+
+	const char* LastCategory = nullptr;
+	for (int32 PrimitiveType = 0; PrimitiveType < static_cast<int32>(PlaceableActorClasses.size()); ++PrimitiveType)
+	{
+		UClass* Class = PlaceableActorClasses[PrimitiveType];
+		if (!Class)
+		{
+			continue;
+		}
+
+		const char* Category = Class->GetCategory();
+		if (PrimitiveType > 0 && std::strcmp(Category ? Category : "", LastCategory ? LastCategory : "") != 0)
+		{
+			ImGui::Separator();
+		}
+		LastCategory = Category;
+
+		if (ImGui::MenuItem(Class->GetDisplayName()))
+		{
+			bSpawned = SpawnPrimitive(PrimitiveType, SpawnPoint, 1) || bSpawned;
+			if (bSpawned && bClosePopupOnSpawn)
+			{
+				ImGui::CloseCurrentPopup();
+			}
+		}
+	}
+
+	return bSpawned;
+}
+
+bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& SpawnPoint, int32 Count)
+{
+	if (!EditorEngine)
+	{
+		return false;
+	}
+
+	UClass* ActorClass = GetPrimitiveTypeClass(PrimitiveType);
+	if (!ActorClass)
+	{
+		return false;
+	}
+
+	UWorld* World = EditorEngine->GetFocusedWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	Count = MathUtil::Clamp(Count, 1, 100);
+	const bool bSpawningPlayerStart = ActorClass->IsChildOf(APlayerStart::StaticClass());
+	if (bSpawningPlayerStart)
+	{
+		Count = 1;
+		if (HasPlayerStart(World))
+		{
+			EditorEngine->GetNotificationService().Info("Player Start already exists");
+			return false;
+		}
+	}
+
+	EditorEngine->GetUndoSystem().CaptureSnapshot("Place Actor");
+	bool bSpawnedAny = false;
+	for (int32 i = 0; i < Count; i++)
+	{
+		AActor* Actor = World->SpawnActorByTypeName(ActorClass->GetName());
+		if (!Actor)
+		{
+			continue;
+		}
+
+		if (bSpawningPlayerStart)
+		{
+			Actor->SetFName(FName("Player Start"));
+		}
+		Actor->SetActorLocation(SpawnPoint);
+		bSpawnedAny = true;
+	}
+
+	return bSpawnedAny;
+}
+
+void FEditorControlWidget::Render(float DeltaTime)
+{
+	(void)DeltaTime;
+	if (!EditorEngine)
+	{
+		return;
+	}
+
+	ImGui::SetNextWindowCollapsed(false, ImGuiCond_Once);
+	ImGui::SetNextWindowSize(ImVec2(360.0f, 180.0f), ImGuiCond_Once);
+
+	ImGui::Begin("Jungle Control Panel");
+
+	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+
+	FViewportCamera* Camera = EditorEngine->GetCamera();
+	if (Camera == nullptr)
+	{
+		ImGui::End();
+		return;
+	}
+
+	FVector CamPos = Camera->GetLocation();
+	float CameraLocation[3] = { CamPos.X, CamPos.Y, CamPos.Z };
+	if (ImGui::DragFloat3("Camera Location", CameraLocation, 0.1f, 0.0f, 0.0f, "%.1f"))
+	{
+		Camera->SetLocation(FVector(CameraLocation[0], CameraLocation[1], CameraLocation[2]));
+	}
+
+	FVector CamRot = Camera->GetRotation().Rotator().Euler();
+	float CameraRotation[3] = { CamRot.X, CamRot.Y, CamRot.Z };
+	if (ImGui::DragFloat3("Camera Rotation", CameraRotation, 0.1f, 0.0f, 0.0f, "%.1f"))
+	{
+		FRotator NewRotation = FRotator::MakeFromEuler(FVector(CameraRotation[0], CameraRotation[1], CameraRotation[2]));
+
+		NewRotation.Normalize();
+		Camera->SetRotation(NewRotation);
+	}
+
+	ImGui::PopItemWidth();
+
+	SEPARATOR();
+
+	ImGui::End();
+}
 
 namespace
 {
@@ -33,277 +230,27 @@ namespace
 		}
 		return false;
 	}
-}
 
-void FEditorControlWidget::Initialize(UEditorEngine* InEditorEngine)
-{
-	FEditorWidget::Initialize(InEditorEngine);
-	SelectedPrimitiveType = 0;
-}
-
-const char* FEditorControlWidget::GetPrimitiveTypeLabel(int32 PrimitiveType) const
-{
-	if (PrimitiveType < 0 || PrimitiveType >= GetPrimitiveTypeCount())
+	bool IsPlaceableActorClass(const UClass* Class)
 	{
-		return "";
-	}
-	return PrimitiveTypes[PrimitiveType];
-}
-
-bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bClosePopupOnSpawn)
-{
-	bool bSpawned = false;
-	auto DrawSpawnItem = [&](int32 PrimitiveType, const char* Label)
-	{
-		if (ImGui::MenuItem(Label))
-		{
-			bSpawned = SpawnPrimitive(PrimitiveType, SpawnPoint, 1) || bSpawned;
-			if (bSpawned && bClosePopupOnSpawn)
-			{
-				ImGui::CloseCurrentPopup();
-			}
-		}
-	};
-
-	DrawSpawnItem(0, "Empty Actor");
-	ImGui::Separator();
-	DrawSpawnItem(1, "Static Mesh");
-	DrawSpawnItem(18, "Skeletal Mesh");
-	DrawSpawnItem(2, "Text Render");
-	DrawSpawnItem(3, "SubUV");
-	DrawSpawnItem(4, "Billboard");
-	DrawSpawnItem(5, "Decal");
-	DrawSpawnItem(12, "Fog");
-	//DrawSpawnItem(6, "Fireball");
-    DrawSpawnItem(7, "Decal Spotlight");
-    //DrawSpawnItem(14, "Cube");
-    //DrawSpawnItem(15, "Destructible");
-    //DrawSpawnItem(16, "BoundingBox");
-	//DrawSpawnItem(17, "Main Scene Destructible");
-	ImGui::Separator();
-	DrawSpawnItem(8, "Ambient Light");
-	DrawSpawnItem(9, "Directional Light");
-	DrawSpawnItem(10, "Point Light");
-	DrawSpawnItem(11, "Spot Light");
-	ImGui::Separator();
-	DrawSpawnItem(13, "Player Start");
-	return bSpawned;
-}
-
-bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& SpawnPoint, int32 Count)
-{
-	if (!EditorEngine)
-	{
-		return false;
+		return Class
+			&& Class->IsChildOf(AActor::StaticClass())
+			&& Class->HasAnyClassFlags(CF_Placeable)
+			&& !Class->HasAnyClassFlags(CF_Abstract);
 	}
 
-	UWorld* World = EditorEngine->GetFocusedWorld();
-	if (!World)
+	bool SortActorClassForPlacement(const UClass* Lhs, const UClass* Rhs)
 	{
-		return false;
+		const char* LhsCategory = Lhs && Lhs->GetCategory() ? Lhs->GetCategory() : "";
+		const char* RhsCategory = Rhs && Rhs->GetCategory() ? Rhs->GetCategory() : "";
+		const int32 CategoryOrder = std::strcmp(LhsCategory, RhsCategory);
+		if (CategoryOrder != 0)
+		{
+			return CategoryOrder < 0;
+		}
+
+		const char* LhsLabel = Lhs ? Lhs->GetDisplayName() : "";
+		const char* RhsLabel = Rhs ? Rhs->GetDisplayName() : "";
+		return std::strcmp(LhsLabel, RhsLabel) < 0;
 	}
-
-	Count = MathUtil::Clamp(Count, 1, 100);
-	if (PrimitiveType == 13)
-	{
-		Count = 1;
-		if (HasPlayerStart(World))
-		{
-			EditorEngine->GetNotificationService().Info("Player Start already exists");
-			return false;
-		}
-	}
-	EditorEngine->GetUndoSystem().CaptureSnapshot("Place Actor");
-	for (int32 i = 0; i < Count; i++)
-	{
-		switch (PrimitiveType)
-		{
-		case 0:
-		{
-			ASceneActor* Actor = World->SpawnActor<ASceneActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 1:
-		{
-			AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 2:
-		{
-			ATextRenderActor* Actor = World->SpawnActor<ATextRenderActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 3:
-		{
-			ASubUVActor* Actor = World->SpawnActor<ASubUVActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 4:
-		{
-			ABillboardActor* Actor = World->SpawnActor<ABillboardActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 5:
-		{
-			ADecalActor* Actor = World->SpawnActor<ADecalActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 6:
-		{
-			AFireballActor* Actor = World->SpawnActor<AFireballActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 7:
-		{
-			ADecalSpotLightActor* Actor = World->SpawnActor<ADecalSpotLightActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 8:
-		{
-			AAmbientLightActor* Actor = World->SpawnActor<AAmbientLightActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 9:
-		{
-			ADirectionalLightActor* Actor = World->SpawnActor<ADirectionalLightActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 10:
-		{
-			APointLightActor* Actor = World->SpawnActor<APointLightActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 11:
-		{
-			ASpotlightActor* Actor = World->SpawnActor<ASpotlightActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 12:
-		{
-			AFogActor* Actor = World->SpawnActor<AFogActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 13:
-		{
-			APlayerStart* Actor = World->SpawnActor<APlayerStart>();
-			Actor->InitDefaultComponents();
-			Actor->SetFName(FName("Player Start"));
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 14:
-		{
-			ACubeActor* Actor = World->SpawnActor<ACubeActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-		case 15:
-        {
-            ADestructibleActor* Actor = World->SpawnActor<ADestructibleActor>();
-            Actor->InitDefaultComponents();
-            Actor->SetActorLocation(SpawnPoint);
-            break;
-		}
-		case 16:
-        {
-            ABoundsBoxActor* Actor = World->SpawnActor<ABoundsBoxActor>();
-            Actor->InitDefaultComponents();
-            Actor->SetActorLocation(SpawnPoint);
-            break;
-		}
-		case 17:
-		{
-		    AMainSceneDestructibleActor* Actor = World->SpawnActor<AMainSceneDestructibleActor>();
-		    Actor->InitDefaultComponents();
-		    Actor->SetActorLocation(SpawnPoint);
-		    break;
-		}
-		case 18:
-		{
-			ASkeletalMeshActor* Actor = World->SpawnActor<ASkeletalMeshActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
-
-		default:
-			return false;
-		}
-	}
-
-	return true;
-}
-
-void FEditorControlWidget::Render(float DeltaTime)
-{
-	(void)DeltaTime;
-	if (!EditorEngine)
-	{
-		return;
-	}
-
-	ImGui::SetNextWindowCollapsed(false, ImGuiCond_Once);
-	ImGui::SetNextWindowSize(ImVec2(360.0f, 180.0f), ImGuiCond_Once);
-
-	ImGui::Begin("Jungle Control Panel");
-	
-	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-
-	// Camera
-	FViewportCamera* Camera = EditorEngine->GetCamera();
-	if (Camera == nullptr)
-	{
-		ImGui::End();
-		return;
-	}
-
-	FVector CamPos = Camera->GetLocation();
-	float CameraLocation[3] = { CamPos.X, CamPos.Y, CamPos.Z };
-	if (ImGui::DragFloat3("Camera Location", CameraLocation, 0.1f, 0.0f, 0.0f, "%.1f"))
-	{
-		Camera->SetLocation(FVector(CameraLocation[0], CameraLocation[1], CameraLocation[2]));
-	}
-
-	FVector CamRot = Camera->GetRotation().Rotator().Euler();
-	float CameraRotation[3] = { CamRot.X, CamRot.Y, CamRot.Z };
-	if (ImGui::DragFloat3("Camera Rotation", CameraRotation, 0.1f, 0.0f, 0.0f, "%.1f"))
-	{
-        FRotator NewRotation = FRotator::MakeFromEuler(FVector(CameraRotation[0], CameraRotation[1], CameraRotation[2]));
-
-		NewRotation.Normalize();
-		Camera->SetRotation(NewRotation);
-	}
-
-	ImGui::PopItemWidth();
-
-	SEPARATOR();
-
-	ImGui::End();
 }

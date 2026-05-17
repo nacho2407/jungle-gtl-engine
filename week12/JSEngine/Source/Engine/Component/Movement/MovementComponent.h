@@ -1,9 +1,9 @@
 ﻿#pragma once
 
 #include "Component/ActorComponent.h"
+#include "Component/SceneComponent.h"
 #include "Core/CollisionTypes.h"
-
-class USceneComponent;
+#include "Object/ObjectPtr.h"
 
 /**
  * @brief 이동 컴포넌트의 기반이 되는 추상 클래스
@@ -60,7 +60,7 @@ protected:
 
 protected:
 	UPROPERTY(DisplayName = "Updated Component")
-	USceneComponent* UpdatedComponent = nullptr;
+	TObjectPtr<USceneComponent> UpdatedComponent;
 
 	UPROPERTY(DisplayName = "Velocity")
 	FVector Velocity = FVector(-1.0f, 0.0f, 1.0f);

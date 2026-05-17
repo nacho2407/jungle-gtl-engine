@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "LightComponent.h"
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "PointLight Component", Category = "Light")
 class UPointLightComponent : public ULightComponent
 {
 public:

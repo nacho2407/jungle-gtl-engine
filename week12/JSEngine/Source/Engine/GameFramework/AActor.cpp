@@ -250,6 +250,13 @@ void AActor::PostDuplicate(UObject* Original)
 	}
 
 	// 2. SceneComponent가 아닌 일반 컴포넌트들을 복제하기 위해 배열을 순회합니다.
+	FDuplicateContext DuplicateContext;
+	DuplicateContext.Add(OrigActor, this);
+	for (const auto& Pair : ComponentMap)
+	{
+		DuplicateContext.Add(Pair.first, Pair.second);
+	}
+
 	for (UActorComponent* OriginalComp : OrigActor->OwnedComponents)
 	{
 		if (!OriginalComp)
@@ -259,7 +266,7 @@ void AActor::PostDuplicate(UObject* Original)
 		if (OriginalComp->IsA<USceneComponent>())
 			continue;
 
-		UActorComponent* DuplicatedComp = Cast<UActorComponent>(OriginalComp->Duplicate());
+		UActorComponent* DuplicatedComp = Cast<UActorComponent>(OriginalComp->Duplicate(&DuplicateContext));
 		if (!DuplicatedComp)
 			continue;
 

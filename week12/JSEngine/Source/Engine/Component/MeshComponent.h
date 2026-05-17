@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "PrimitiveComponent.h"
-
-class UMaterialInterface;
+#include "Render/Resource/Material.h"
 
 UCLASS(Abstract)
 class UMeshComponent : public UPrimitiveComponent
@@ -21,9 +20,6 @@ public:
 	void PostEditProperty(const char * PropertyName) override;
 	
 	virtual void TickComponent(float DeltaTime) override;
-
-protected:
-	void SerializeMaterialOverrides(FArchive& Ar);
 
 protected:
 	UPROPERTY(DisplayName = "Materials")

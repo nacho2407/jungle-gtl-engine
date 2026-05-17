@@ -42,7 +42,7 @@ struct FMinimalViewInfo
 	FQuat Rotation = FQuat::Identity;
 };
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "Camera Component", Category = "Camera")
 class UCameraComponent : public USceneComponent
 {
 public:

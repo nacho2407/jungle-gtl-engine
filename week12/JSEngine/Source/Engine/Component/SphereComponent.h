@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "ShapeComponent.h"
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "Sphere Component", Category = "Collision")
 class USphereComponent : public UShapeComponent
 {
 public:

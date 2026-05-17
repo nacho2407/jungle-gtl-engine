@@ -9,7 +9,7 @@ enum class EInterpBehaviour {
 	PingPong UMETA(DisplayName = "Ping Pong"),
 };
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "InterpToMovement Component", Category = "Movement")
 class UInterpToMovementComponent : public UMovementComponent {
 public:
 	GENERATED_BODY(UInterpToMovementComponent, UMovementComponent)

@@ -13,7 +13,7 @@
 //   Comp->SetParticle(FName("Explosion"));
 //   Comp->SetFrameIndex(CurrentFrame);
 //   Comp->SetSpriteSize(2.0f, 2.0f);
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "SubUV Component", Category = "Rendering")
 class USubUVComponent : public UBillboardComponent
 {
 public:

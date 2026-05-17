@@ -2,7 +2,7 @@
 
 #include "MovementComponent.h"
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "RotatingMovement Component", Category = "Movement")
 class URotatingMovementComponent : public UMovementComponent
 {	
 public:
