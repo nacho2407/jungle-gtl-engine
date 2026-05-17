@@ -46,6 +46,7 @@ ENUM_SENTINELS = {"COUNT", "MAX", "ActiveCount", "Num", "NUM", "Count"}
 @dataclass(frozen=True)
 class ReflectedEnum:
     name: str
+    header: Path
     underlying_type: str
     entries: tuple[str, ...]
 
@@ -63,11 +64,7 @@ class ReflectedProperty:
     min_value: str
     max_value: str
     speed_value: str
-    enum_names: str
-    enum_count: str
-    enum_size: str
-    enum_generated_name: str | None
-    enum_entries: tuple[str, ...]
+    enum_type_name: str | None
     struct_type: str
 
 
@@ -211,7 +208,7 @@ def strip_enum_value(entry: str) -> str:
     return entry
 
 
-def parse_uenums(scan_text: str) -> dict[str, ReflectedEnum]:
+def parse_uenums(header: Path, scan_text: str) -> dict[str, ReflectedEnum]:
     enums: dict[str, ReflectedEnum] = {}
 
     for match in UENUM_RE.finditer(scan_text):
@@ -236,6 +233,7 @@ def parse_uenums(scan_text: str) -> dict[str, ReflectedEnum]:
         short_name = enum_name.rsplit("::", 1)[-1]
         info = ReflectedEnum(
             name=enum_name,
+            header=header,
             underlying_type=match.group("underlying") or "int32",
             entries=tuple(entries),
         )
@@ -300,10 +298,6 @@ def make_cpp_identifier(value: str) -> str:
     if not value or value[0].isdigit():
         value = f"KR_{value}"
     return value
-
-
-def make_enum_names_symbol(owner: str, enum_type: str) -> str:
-    return f"G{make_cpp_identifier(owner)}_{make_cpp_identifier(enum_type)}_Names"
 
 
 def cpp_string_literal(value: str) -> str:
@@ -394,19 +388,11 @@ def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum]) -> tuple[
             min_value = metadata.get("min") or metadata.get("clampmin") or metadata.get("uimin") or "0.0f"
             max_value = metadata.get("max") or metadata.get("clampmax") or metadata.get("uimax") or "0.0f"
             speed_value = metadata.get("speed", "0.1f")
-            enum_names = metadata.get("enumnames") or metadata.get("names") or "nullptr"
-            enum_count = metadata.get("enumcount") or metadata.get("count") or "0"
             enum_type = metadata.get("enumtype") or metadata.get("enum")
-            enum_generated_name: str | None = None
-            enum_entries: tuple[str, ...] = tuple()
-            if property_type == "Enum" and enum_type and enum_type in enums and "enumnames" not in metadata and "names" not in metadata:
+            enum_type_name: str | None = None
+            if property_type == "Enum" and enum_type and enum_type in enums:
                 enum_info = enums[enum_type]
-                enum_generated_name = make_enum_names_symbol(class_name, enum_type)
-                enum_entries = enum_info.entries
-                enum_names = enum_generated_name
-                if "enumcount" not in metadata and "count" not in metadata:
-                    enum_count = f"static_cast<uint32>(sizeof({enum_generated_name}) / sizeof({enum_generated_name}[0]))"
-            enum_size = f"sizeof({enum_type})" if enum_type else metadata.get("enumsize", "sizeof(int32)")
+                enum_type_name = enum_info.name
             struct_type = metadata.get("structtype") or metadata.get("struct")
             if property_type == "Struct" and not struct_type:
                 struct_type = cpp_type
@@ -425,11 +411,7 @@ def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum]) -> tuple[
                     min_value=min_value,
                     max_value=max_value,
                     speed_value=speed_value,
-                    enum_names=enum_names,
-                    enum_count=enum_count,
-                    enum_size=enum_size,
-                    enum_generated_name=enum_generated_name,
-                    enum_entries=enum_entries,
+                    enum_type_name=enum_type_name,
                     struct_type=struct_type_expr,
                 )
             )
@@ -465,7 +447,7 @@ def find_generated_body_line(scan_text: str, body_start: int, body_end: int) -> 
     return get_line_number(scan_text, body_start + match.start())
 
 
-def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -> tuple[list[ReflectedHeader], list[str]]:
+def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -> tuple[list[ReflectedHeader], dict[str, ReflectedEnum], list[str]]:
     reflected: list[ReflectedHeader] = []
     warnings: list[str] = []
     header_texts: list[tuple[Path, str, str]] = []
@@ -478,7 +460,7 @@ def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -
         text = header.read_text(encoding="utf-8-sig")
         scan_text = strip_comments(text)
         header_texts.append((header, text, scan_text))
-        enums.update(parse_uenums(scan_text))
+        enums.update(parse_uenums(header, scan_text))
 
     for header, text, scan_text in header_texts:
         reflected_decls: list[tuple[str, str, str | None, int | None]] = []
@@ -551,7 +533,8 @@ def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -
             )
         )
 
-    return reflected, warnings
+    unique_enums = {enum.name: enum for enum in enums.values()}
+    return reflected, unique_enums, warnings
 
 
 def render_generated_header(item: ReflectedHeader, root: Path) -> str:
@@ -616,6 +599,7 @@ def render_property(prop: ReflectedProperty) -> str:
         f"{{{cpp_string_literal(key)}, {cpp_string_literal(value)}}}"
         for key, value in prop.metadata
     )
+    enum_type_expr = f"FEnum::FindEnumByName({cpp_string_literal(prop.enum_type_name)})" if prop.enum_type_name else "nullptr"
 
     return (
         "\tStruct->AddProperty({\n"
@@ -628,29 +612,13 @@ def render_property(prop: ReflectedProperty) -> str:
         f"\t\t{prop.min_value},\n"
         f"\t\t{prop.max_value},\n"
         f"\t\t{prop.speed_value},\n"
-        f"\t\t{prop.enum_names},\n"
-        f"\t\t{prop.enum_count},\n"
-        f"\t\t{prop.enum_size},\n"
+        f"\t\t{enum_type_expr},\n"
         f"\t\t{prop.struct_type},\n"
         f"\t\t{cpp_string_literal(prop.display_name)},\n"
         f"\t\t{{{metadata_entries}}},\n"
         f"\t\t{cpp_string_literal(prop.owner)}\n"
         "\t});\n"
     )
-
-
-def render_enum_name_arrays(reflected_type: ReflectedType) -> str:
-    definitions: list[str] = []
-    emitted: set[str] = set()
-
-    for prop in reflected_type.properties:
-        if not prop.enum_generated_name or prop.enum_generated_name in emitted:
-            continue
-        emitted.add(prop.enum_generated_name)
-        entries = ", ".join(cpp_string_literal(entry) for entry in prop.enum_entries)
-        definitions.append(f"static const char* {prop.enum_generated_name}[] = {{{entries}}};")
-
-    return "\n".join(definitions)
 
 
 def render_type_registration(reflected_type: ReflectedType) -> str:
@@ -724,6 +692,53 @@ def get_generated_type_cpp_path(item: ReflectedHeader, reflected_type: Reflected
     return item.generated_header.with_name(f"{reflected_type.name}.generated.cpp")
 
 
+def get_generated_enum_cpp_path(generated_root: Path) -> Path:
+    return generated_root / "EnumRegistry.generated.cpp"
+
+
+def get_enum_symbol(enum_name: str) -> str:
+    return f"G{make_cpp_identifier(enum_name)}"
+
+
+def render_enum_registry_cpp(enums: dict[str, ReflectedEnum], root: Path, enum_cpp: Path) -> str:
+    lines: list[str] = [
+        "// This file is generated by Tools/GenerateHeaders.py. Do not edit manually.",
+        "// UENUM metadata registration.",
+        "#include \"Core/PropertyTypes.h\"",
+        "",
+    ]
+
+    headers = sorted({enum.header for enum in enums.values()})
+    for header in headers:
+        include_path = Path(os.path.relpath(header, enum_cpp.parent)).as_posix()
+        lines.append(f"#include \"{include_path}\"")
+
+    lines.extend(["", "namespace {"])
+
+    for enum in sorted(enums.values(), key=lambda item: item.name):
+        symbol = get_enum_symbol(enum.name)
+        if enum.entries:
+            entries = ", ".join(cpp_string_literal(entry) for entry in enum.entries)
+            lines.append(f"static const char* {symbol}_Names[] = {{{entries}}};")
+            lines.append(
+                f"static const FEnum {symbol}_Enum = "
+                f"{{{cpp_string_literal(enum.name)}, {symbol}_Names, "
+                f"static_cast<uint32>(sizeof({symbol}_Names) / sizeof({symbol}_Names[0])), "
+                f"sizeof({enum.name})}};"
+            )
+        else:
+            lines.append(
+                f"static const FEnum {symbol}_Enum = "
+                f"{{{cpp_string_literal(enum.name)}, nullptr, 0, sizeof({enum.name})}};"
+            )
+        lines.append(f"static FEnumRegistrar {symbol}_Registrar(&{symbol}_Enum);")
+        lines.append("")
+
+    lines.append("}")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def render_generated_type_cpp(item: ReflectedHeader, reflected_type: ReflectedType, root: Path) -> str:
     generated_cpp = get_generated_type_cpp_path(item, reflected_type)
     source_rel = item.header.relative_to(root).as_posix()
@@ -743,11 +758,6 @@ def render_generated_type_cpp(item: ReflectedHeader, reflected_type: ReflectedTy
         lines.append(type_registration.rstrip())
         lines.append("")
 
-    enum_name_arrays = render_enum_name_arrays(reflected_type)
-    if enum_name_arrays:
-        lines.append(enum_name_arrays)
-        lines.append("")
-
     lines.extend(
         [
             f"void {reflected_type.name}::RegisterProperties(UStruct* Struct)",
@@ -763,13 +773,17 @@ def render_generated_type_cpp(item: ReflectedHeader, reflected_type: ReflectedTy
     return "\n".join(lines)
 
 
-def render_generated_cpp(reflected: list[ReflectedHeader], root: Path, generated_cpp: Path) -> str:
+def render_generated_cpp(reflected: list[ReflectedHeader], enums: dict[str, ReflectedEnum], root: Path, generated_cpp: Path, enum_cpp: Path) -> str:
     generated_types = collect_generated_types(reflected)
 
     lines: list[str] = [
         "// This file is generated by Tools/GenerateHeaders.py. Do not edit manually.",
         "// Per-type registration definitions live next to their generated headers.",
     ]
+
+    if enums:
+        include_path = Path(os.path.relpath(enum_cpp, generated_cpp.parent)).as_posix()
+        lines.append(f"#include \"{include_path}\"")
 
     for item, reflected_type in generated_types:
         type_cpp = get_generated_type_cpp_path(item, reflected_type)
@@ -841,7 +855,7 @@ def main() -> int:
         print(f"error: source directory does not exist: {source_dir}")
         return 1
 
-    reflected, warnings = find_reflected_headers(root, source_dir, generated_root)
+    reflected, enums, warnings = find_reflected_headers(root, source_dir, generated_root)
 
     changed = 0
     for item in reflected:
@@ -875,7 +889,20 @@ def main() -> int:
         else:
             print(f"unchanged {rel_type_cpp}")
 
-    generated_cpp_content = render_generated_cpp(reflected, root, generated_cpp)
+    enum_cpp = get_generated_enum_cpp_path(generated_root)
+    enum_cpp_content = render_enum_registry_cpp(enums, root, enum_cpp)
+    rel_enum_cpp = enum_cpp.relative_to(root)
+    if args.dry_run:
+        print(f"would generate {rel_enum_cpp}")
+    else:
+        enum_cpp.parent.mkdir(parents=True, exist_ok=True)
+        if write_if_changed(enum_cpp, enum_cpp_content):
+            changed += 1
+            print(f"generated {rel_enum_cpp}")
+        else:
+            print(f"unchanged {rel_enum_cpp}")
+
+    generated_cpp_content = render_generated_cpp(reflected, enums, root, generated_cpp, enum_cpp)
     rel_generated_cpp = generated_cpp.relative_to(root)
     if args.dry_run:
         print(f"would generate {rel_generated_cpp}")
