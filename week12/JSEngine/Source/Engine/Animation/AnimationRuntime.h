@@ -29,9 +29,8 @@ public:
 			FMatrix RotationMatrixA;
 			FMatrix RotationMatrixB;
 
-			// Bone의 Parent기준 Transform, rotaiton, scale로 분해
-			const bool bDecomposedA = PoseA.LocalPose[BoneIndex].Decompose(TranslationA, RotationMatrixA, ScaleA);
-			const bool bDecomposedB = PoseB.LocalPose[BoneIndex].Decompose(TranslationB, RotationMatrixB, ScaleB);
+			const bool bDecomposedA = DecomposeForAnimationBlend(PoseA.LocalPose[BoneIndex], TranslationA, RotationMatrixA, ScaleA);
+			const bool bDecomposedB = DecomposeForAnimationBlend(PoseB.LocalPose[BoneIndex], TranslationB, RotationMatrixB, ScaleB);
 
 			// 분해 실패
 			if (!bDecomposedA || !bDecomposedB)
@@ -50,6 +49,51 @@ public:
 
 			OutPose.LocalPose[BoneIndex] = FMatrix::MakeTRS(BlendedTranslation, BlendedRotation.ToMatrix(), BlendScale);
 		}
+
+		return true;
+	}
+
+private:
+	static float GetUpper3x3Determinant(const FMatrix& Matrix)
+	{
+		const FVector XAxis = Matrix.GetScaledAxis(EAxis::X);
+		const FVector YAxis = Matrix.GetScaledAxis(EAxis::Y);
+		const FVector ZAxis = Matrix.GetScaledAxis(EAxis::Z);
+		return FVector::DotProduct(FVector::CrossProduct(XAxis, YAxis), ZAxis);
+	}
+
+	static bool DecomposeForAnimationBlend(
+		const FMatrix& Matrix,
+		FVector& OutTranslation,
+		FMatrix& OutRotation,
+		FVector& OutScale)
+	{
+		constexpr float ScaleTolerance = 1.e-8f;
+
+		OutTranslation = Matrix.GetOrigin();
+
+		const FVector XAxis = Matrix.GetScaledAxis(EAxis::X);
+		const FVector YAxis = Matrix.GetScaledAxis(EAxis::Y);
+		const FVector ZAxis = Matrix.GetScaledAxis(EAxis::Z);
+
+		OutScale = FVector(XAxis.Size(), YAxis.Size(), ZAxis.Size());
+		if (OutScale.X <= ScaleTolerance || OutScale.Y <= ScaleTolerance || OutScale.Z <= ScaleTolerance)
+		{
+			OutRotation = FMatrix::Identity;
+			return false;
+		}
+
+		if (GetUpper3x3Determinant(Matrix) < 0.0f)
+		{
+			OutScale.X *= -1.0f;
+		}
+
+		OutRotation = FMatrix::Identity;
+		OutRotation.SetAxes(
+			XAxis / OutScale.X,
+			YAxis / OutScale.Y,
+			ZAxis / OutScale.Z,
+			FVector::ZeroVector);
 
 		return true;
 	}
