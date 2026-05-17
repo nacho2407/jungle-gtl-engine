@@ -58,7 +58,7 @@ public:
 	// (본 엔진은 sphere sweep 미지원이라 단일 ray + ProbeSize 안전 거리로 근사한다.)
 	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Do Collision Test")
 	bool bDoCollisionTest = false;
-	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Probe Channel", Type=Enum, EnumNames=GCollisionChannelNames, EnumCount=static_cast<uint32>(ECollisionChannel::ActiveCount), EnumType=ECollisionChannel)
+	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Probe Channel", Enum=ECollisionChannel)
 	ECollisionChannel ProbeChannel = ECollisionChannel::WorldStatic;
 	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Probe Size", Min=0.0f, Max=100.0f, Speed=0.01f)
 	float ProbeSize = 0.12f;               // hit 지점에서 ProbeSize 만큼 안쪽에 정지

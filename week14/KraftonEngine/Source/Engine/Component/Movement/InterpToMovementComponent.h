@@ -1,16 +1,15 @@
-#pragma once
+﻿#pragma once
 #include "MovementComponent.h"
 #include "Math/Vector.h"
 
 #include "Source/Engine/Component/Movement/InterpToMovementComponent.generated.h"
+UENUM()
 enum class EInterpBehaviour {
 	OneShot,
 	OneShotReverse,
 	Loop,
 	PingPong,
 };
-
-inline const char* GInterpBehaviourNames[] = { "One Shot", "One Shot Reverse", "Loop", "Ping-Pong" };
 
 UCLASS()
 class UInterpToMovementComponent : public UMovementComponent {
@@ -70,7 +69,7 @@ private:
 	void				FaceTargetDir(float DeltaTime);
 
 private:
-	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Interp Mode", Type=Enum, EnumNames=GInterpBehaviourNames, EnumCount=4, EnumType=EInterpBehaviour)
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Interp Mode", Enum=EInterpBehaviour)
 	EInterpBehaviour	InterpBehaviour = EInterpBehaviour::OneShot;
 	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Control Points", Type=Vec3Array)
 	TArray<FVector>		ControlPoints;
