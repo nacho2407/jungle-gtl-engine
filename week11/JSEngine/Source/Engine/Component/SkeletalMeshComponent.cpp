@@ -96,7 +96,7 @@ bool USkeletalMeshComponent::ApplyAnimationLocalPose(const TArray<FTransform>& L
         return false;
     }
 
-    // Global pose, skinning matrices를 포함한 실제 posing 결과 반영은 USkinnedMeshComponent::EnsureSkinningUpdated에서 진행
+    // global pose, skinning matrices를 포함한 실제 posing 결과 반영은 USkinnedMeshComponent::EnsureSkinningUpdated에서 진행
 	// 효율을 위해 move semantics 사용
     CurrentLocalPose = std::move(LocalMatrices);
     MarkPoseDirty();
@@ -110,7 +110,7 @@ bool USkeletalMeshComponent::RefreshAnimationPose()
         return false;
     }
 
-    // Scrubber처럼 시간을 직접 바꾼 뒤 tick을 기다리지 않고 현재 시간의 pose를 즉시 반영할 때 사용
+    // scrubber처럼 시간을 직접 바꾼 뒤 tick을 기다리지 않고 현재 시간의 pose를 즉시 반영할 때 사용
     TArray<FTransform> LocalPose;
     if (!AnimInstance->EvaluateAnimation(LocalPose))
     {
@@ -135,15 +135,15 @@ void USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool 
         return;
     }
 
+    SingleNodeInstance->SetAnimationAsset(NewAnimToPlay);
+    SingleNodeInstance->SetLooping(bLooping);
+
     if (!NewAnimToPlay)
     {
         UE_LOG_WARNING("[SkeletalMeshComponent] PlayAnimation called with null animation asset.");
+        return;
     }
 
-	// milestone 1에서는 asset이 null이면 mock pose 검증용으로 play까지 허용
-	// milestone 2에서는 mock pose 경로를 제거할 예정이므로, 일반 runtime에서는 null asset이면 bind pose fallback
-    SingleNodeInstance->SetAnimationAsset(NewAnimToPlay);
-    SingleNodeInstance->SetLooping(bLooping);
     SingleNodeInstance->Play();
 }
 

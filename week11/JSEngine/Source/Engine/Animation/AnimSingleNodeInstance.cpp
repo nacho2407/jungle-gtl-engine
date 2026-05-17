@@ -1,8 +1,8 @@
 ﻿#include "Animation/AnimSingleNodeInstance.h"
 
 #include "Animation/AnimSequence.h"
-#include "Animation/AnimationRuntime.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Core/Logging/Log.h"
 #include "Core/Logging/Stats.h"
 #include "Object/ObjectFactory.h"
 
@@ -18,6 +18,12 @@ void UAnimSingleNodeInstance::SetAnimationAsset(UAnimationAsset* NewAsset)
 
     CurrentAsset = NewAsset;
     CurrentTime = 0.0f;
+
+    if (!CurrentAsset)
+    {
+        bPlaying = false;
+        bPaused = false;
+    }
 }
 
 UAnimationAsset* UAnimSingleNodeInstance::GetAnimationAsset() const
@@ -27,6 +33,14 @@ UAnimationAsset* UAnimSingleNodeInstance::GetAnimationAsset() const
 
 void UAnimSingleNodeInstance::Play()
 {
+    if (!CurrentAsset)
+    {
+        UE_LOG_WARNING("[AnimSingleNodeInstance] Play called without animation asset.");
+        bPlaying = false;
+        bPaused = false;
+        return;
+    }
+
     bPlaying = true;
     bPaused = false;
 }
@@ -115,15 +129,9 @@ bool UAnimSingleNodeInstance::EvaluateAnimation(TArray<FTransform>& OutLocalPose
         return false;
     }
 
-    // animation asset이 아예 없는 경우에만 milestone 1 mock pose를 허용
     if (!CurrentAsset)
     {
-        if (FAnimationRuntime::BuildDebugOscillatingLocalPose(Mesh, CurrentTime, OutLocalPose))
-        {
-            return true;
-        }
-
-        return FAnimationRuntime::BuildBindLocalPoseFromMesh(Mesh, OutLocalPose);
+        return false;
     }
 
     // asset이 있으면 실제 sequence 평가를 시도
@@ -136,11 +144,10 @@ bool UAnimSingleNodeInstance::EvaluateAnimation(TArray<FTransform>& OutLocalPose
         }
 
         UE_LOG_WARNING("[AnimSingleNodeInstance] Failed to evaluate animation sequence.");
-        return FAnimationRuntime::BuildBindLocalPoseFromMesh(Mesh, OutLocalPose);
+        return false;
     }
 
-    // asset은 있는데 single node가 지원하지 않는 타입이면 bind pose fallback
     UE_LOG_WARNING("[AnimSingleNodeInstance] CurrentAsset is not a supported sequence asset.");
 
-    return FAnimationRuntime::BuildBindLocalPoseFromMesh(Mesh, OutLocalPose);
+    return false;
 }
