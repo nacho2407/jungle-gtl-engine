@@ -72,6 +72,11 @@ void UObject::CopyPropertiesFrom(UObject* Src)
 			}
 		}
 
+		if (!DstProp)
+		{
+			continue;
+		}
+
 		switch (SrcProp.Type)
 		{
 		case EPropertyType::Bool:
