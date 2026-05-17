@@ -20,6 +20,6 @@ class FFbxSceneLoader
 {
 public:
 	static bool Load(const FString& SourcePath, FFbxSceneHandle& OutScene, FString* OutMessage = nullptr);
-	static void NormalizeLikeCurrentImporter(FbxScene* Scene);
+	static void NormalizeScene(FbxScene* Scene);
 	static void Triangulate(FbxManager* Manager, FbxScene* Scene);
 };

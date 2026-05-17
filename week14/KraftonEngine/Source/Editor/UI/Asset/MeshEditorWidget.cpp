@@ -1,4 +1,4 @@
-#include "MeshEditorWidget.h"
+﻿#include "MeshEditorWidget.h"
 
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
@@ -15,6 +15,7 @@
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimationManager.h"
+#include "Asset/AssetRegistry.h"
 #include "UI/Asset/AnimationTransportBar.h"
 #include "UI/Asset/AnimationTimelinePanel.h"
 #include "UI/EditorFileUtils.h"
@@ -701,7 +702,7 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 
 	ImGui::Separator();
 
-	const TArray<FAssetListItem>& AnimFiles = FAnimationManager::Get().GetAvailableAnimationFiles();
+	const TArray<FAssetListItem> AnimFiles = FAssetRegistry::ListAnimationsForSkeleton(SkeletalMesh->GetSkeletonBinding(), true);
 	for (int32 i = 0; i < static_cast<int32>(AnimFiles.size()); ++i)
 	{
 		const FAssetListItem& Item      = AnimFiles[i];

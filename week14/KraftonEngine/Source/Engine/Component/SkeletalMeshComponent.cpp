@@ -1,4 +1,4 @@
-#include "SkeletalMeshComponent.h"
+﻿#include "SkeletalMeshComponent.h"
 
 #include "Animation/AnimationManager.h"
 #include "Animation/AnimInstance.h"
@@ -6,6 +6,8 @@
 #include "Animation/AnimSequenceBase.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/PoseContext.h"
+#include "Asset/AssetRegistry.h"
+#include "Core/Log.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
 #include "Object/Object.h"
@@ -67,8 +69,43 @@ void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InMode)
     InitializeAnimation();
 }
 
+bool USkeletalMeshComponent::CanUseAnimation(UAnimSequenceBase* InAsset) const
+{
+    if (!InAsset)
+    {
+        return true;
+    }
+
+    const USkeletalMesh* Mesh = GetSkeletalMesh();
+    if (!Mesh)
+    {
+        return false;
+    }
+
+    if (const UAnimSequence* Sequence = Cast<UAnimSequence>(InAsset))
+    {
+        FSkeletonCompatibilityReport Report;
+        const bool bCompatible = FAssetRegistry::CheckAnimationForMesh(Sequence, Mesh, &Report);
+        if (!bCompatible)
+        {
+            UE_LOG("SetAnimation rejected: skeleton mismatch. Anim=%s Mesh=%s Reason=%s",
+                Sequence->GetName().c_str(),
+                Mesh->GetName().c_str(),
+                Report.Reason.c_str());
+        }
+        return bCompatible;
+    }
+
+    return true;
+}
+
 void USkeletalMeshComponent::SetAnimation(UAnimSequenceBase* InAsset)
 {
+    if (!CanUseAnimation(InAsset))
+    {
+        return;
+    }
+
     AnimationData.AnimToPlay = InAsset;
 
     if (UAnimSequence* Sequence = Cast<UAnimSequence>(InAsset))
@@ -152,7 +189,14 @@ void USkeletalMeshComponent::LoadAnimationFromPath()
     }
 
     UAnimSequence* LoadedAnimation = FAnimationManager::Get().LoadAnimation(AnimationData.AnimToPlayPath);
-    AnimationData.AnimToPlay = LoadedAnimation;
+    if (LoadedAnimation && CanUseAnimation(LoadedAnimation))
+    {
+        AnimationData.AnimToPlay = LoadedAnimation;
+    }
+    else
+    {
+        AnimationData.AnimToPlay = nullptr;
+    }
 }
 
 void USkeletalMeshComponent::InitializeAnimation()
@@ -169,6 +213,12 @@ void USkeletalMeshComponent::InitializeAnimation()
         AnimationData.AnimToPlayPath != "None")
     {
         LoadAnimationFromPath();
+    }
+
+    if (AnimationMode == EAnimationMode::AnimationSingleNode && !CanUseAnimation(AnimationData.AnimToPlay))
+    {
+        AnimationData.AnimToPlay = nullptr;
+        AnimationData.AnimToPlayPath = "None";
     }
 
     switch (AnimationMode)
@@ -328,6 +378,11 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
         }
         else if (UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
         {
+            if (!CanUseAnimation(AnimationData.AnimToPlay))
+            {
+                AnimationData.AnimToPlay = nullptr;
+                AnimationData.AnimToPlayPath = "None";
+            }
             SingleNode->SetAnimationAsset(AnimationData.AnimToPlay);
             SingleNode->SetPlayRate(AnimationData.PlayRate);
             SingleNode->SetLooping(AnimationData.bLooping);
@@ -401,6 +456,15 @@ bool USkeletalMeshComponent::EvaluateAnimInstance(float DeltaTime)
     if (!Mesh) return false;
     FSkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset();
     if (!Asset || Asset->Bones.empty()) return false;
+
+    if (UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+    {
+        if (!CanUseAnimation(SingleNode->GetAnimationAsset()))
+        {
+            SingleNode->SetAnimationAsset(nullptr);
+            return false;
+        }
+    }
 
     AnimInstance->UpdateAnimation(DeltaTime);
 

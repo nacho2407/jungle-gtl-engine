@@ -1,6 +1,9 @@
 ﻿#include "AnimSingleNodeInstance.h"
 #include "AnimSequenceBase.h"
+#include "AnimSequence.h"
 #include "AnimExtractContext.h"
+#include "Component/SkeletalMeshComponent.h"
+#include "Core/Log.h"
 
 #include <cmath>
 
@@ -8,6 +11,20 @@ DEFINE_CLASS(UAnimSingleNodeInstance, UAnimInstance)
 
 void UAnimSingleNodeInstance::SetAnimationAsset(UAnimSequenceBase* InAsset)
 {
+    if (UAnimSequence* Sequence = Cast<UAnimSequence>(InAsset))
+    {
+        if (USkeletalMeshComponent* Component = GetOwningComponent())
+        {
+            if (!Component->CanUseAnimation(Sequence))
+            {
+                UE_LOG("SingleNode animation rejected: skeleton mismatch. Anim=%s", Sequence->GetName().c_str());
+                CurrentAsset = nullptr;
+                CurrentTime = 0.0f;
+                return;
+            }
+        }
+    }
+
 	CurrentAsset = InAsset;
 	CurrentTime = 0.0f;
 }

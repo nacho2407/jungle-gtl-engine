@@ -37,6 +37,7 @@ public:
 
     // SingleNode 모드용 헬퍼. Custom 모드에선 무시 (자체 인스턴스가 자체 시퀀스를 관리).
     void SetAnimation(UAnimSequenceBase* InAsset);
+    bool CanUseAnimation(UAnimSequenceBase* InAsset) const;
     UAnimSequenceBase* GetAnimation() const { return AnimationData.AnimToPlay; }
     void SetPlayRate(float InRate);
     void SetLooping(bool bInLoop);

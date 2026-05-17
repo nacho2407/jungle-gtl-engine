@@ -1,6 +1,10 @@
 #include "AssetRegistry.h"
 #include "Mesh/MeshManager.h"
+#include "Mesh/SkeletalMesh.h"
 #include "Animation/AnimationManager.h"
+#include "Animation/AnimSequence.h"
+#include "Animation/Skeleton.h"
+#include "Animation/SkeletonManager.h"
 #include "Platform/Paths.h"
 
 #include <cstring>
@@ -21,6 +25,10 @@ namespace FAssetRegistry
 		{
 			return FMeshManager::GetAvailableSkeletalMeshFiles();
 		}
+        if (std::strcmp(AssetTypeName, "USkeleton") == 0)
+        {
+            return FSkeletonManager::Get().GetAvailableSkeletonFiles();
+        }
 		if (std::strcmp(AssetTypeName, "UAnimSequence") == 0)
 		{
 			return FAnimationManager::Get().GetAvailableAnimationFiles();
@@ -54,4 +62,104 @@ namespace FAssetRegistry
 
 		return Empty;
 	}
+
+    TArray<FAssetListItem> ListSkeletons()
+    {
+        return FSkeletonManager::Get().GetAvailableSkeletonFiles();
+    }
+
+    bool ValidateAssetBinding(
+        const FSkeletonBinding& A,
+        const FSkeletonBinding& B,
+        bool bAllowSameStructure,
+        FSkeletonCompatibilityReport* OutReport)
+    {
+        const FSkeletonCompatibilityReport Report = FSkeletonManager::CheckCompatibility(A, B);
+        if (OutReport)
+        {
+            *OutReport = Report;
+        }
+
+        if (Report.Result == ESkeletonCompatibilityResult::ExactSkeleton)
+        {
+            return true;
+        }
+
+        return bAllowSameStructure && Report.Result == ESkeletonCompatibilityResult::SameStructure;
+    }
+
+    TArray<FAssetListItem> ListAnimationsForSkeleton(const FSkeletonBinding& Skeleton, bool bAllowSameStructure)
+    {
+        TArray<FAssetListItem> Result;
+
+        const TArray<FAssetListItem>& AnimFiles = FAnimationManager::Get().GetAvailableAnimationFiles();
+        for (const FAssetListItem& Item : AnimFiles)
+        {
+            UAnimSequence* Sequence = FAnimationManager::Get().LoadAnimation(Item.FullPath);
+            if (!Sequence)
+            {
+                continue;
+            }
+
+            if (ValidateAssetBinding(Sequence->GetSkeletonBinding(), Skeleton, bAllowSameStructure))
+            {
+                Result.push_back(Item);
+            }
+        }
+
+        return Result;
+    }
+
+    TArray<FAssetListItem> ListMeshesForSkeleton(const FSkeletonBinding& Skeleton, bool bAllowSameStructure)
+    {
+        TArray<FAssetListItem> Result;
+
+        const TArray<FAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
+        for (const FAssetListItem& Item : MeshFiles)
+        {
+            FSkeletonBinding MeshBinding;
+            if (!FMeshManager::ReadSkeletalMeshBinding(Item.FullPath, MeshBinding))
+            {
+                continue;
+            }
+
+            if (ValidateAssetBinding(MeshBinding, Skeleton, bAllowSameStructure))
+            {
+                Result.push_back(Item);
+            }
+        }
+
+        return Result;
+    }
+
+    USkeleton* FindSkeletonByGuid(const FString& SkeletonAssetGuid)
+    {
+        return FSkeletonManager::Get().FindSkeletonByAssetGuid(SkeletonAssetGuid);
+    }
+
+    bool CheckAnimationForMesh(const UAnimSequence* Sequence, const USkeletalMesh* Mesh, FSkeletonCompatibilityReport* OutReport)
+    {
+        if (!Sequence || !Mesh)
+        {
+            if (OutReport)
+            {
+                OutReport->Result = ESkeletonCompatibilityResult::Incompatible;
+                OutReport->Reason = "null animation or mesh";
+            }
+            return false;
+        }
+
+        const FSkeletonCompatibilityReport Report = FSkeletonManager::CheckCompatibility(
+            Sequence->GetSkeletonBinding(),
+            Mesh->GetSkeletonBinding(),
+            nullptr,
+            Mesh->GetSkeleton());
+
+        if (OutReport)
+        {
+            *OutReport = Report;
+        }
+
+        return Report.IsCompatible();
+    }
 }

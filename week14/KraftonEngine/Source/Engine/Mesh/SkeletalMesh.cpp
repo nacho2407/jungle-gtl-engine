@@ -1,12 +1,10 @@
-﻿#include "SkeletalMesh.h"
+#include "SkeletalMesh.h"
 
 #include "Animation/Skeleton.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(USkeletalMesh, UObject)
-
-static const FString EmptyPath;
 
 void USkeletalMesh::Serialize(FArchive& Ar)
 {
@@ -15,8 +13,15 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 		SkeletalMeshAsset = new FSkeletalMesh();
 	}
 
+    if (Ar.IsSaving())
+    {
+        SyncSkeletonBindingToAsset();
+    }
+
 	Ar << SkeletalMeshAsset->PathFileName;
 	Ar << SkeletalMeshAsset->SkeletonPath;
+    Ar << SkeletalMeshAsset->SkeletonAssetGuid;
+    Ar << SkeletalMeshAsset->SkeletonCompatibilitySignature;
 	Ar << SkeletalMeshAsset->Vertices;
 	Ar << SkeletalMeshAsset->Indices;
 	Ar << SkeletalMeshAsset->Sections;
@@ -26,7 +31,7 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 
 	if (Ar.IsLoading())
 	{
-		SkeletonPath = SkeletalMeshAsset->SkeletonPath;
+        SyncSkeletonBindingFromAsset();
 		CacheSectionMaterialIndices();
 		SkeletalMeshAsset->bBoundsValid = false;
 	}
@@ -35,6 +40,7 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 void USkeletalMesh::SetSkeletalMeshAsset(FSkeletalMesh* InMesh)
 {
 	SkeletalMeshAsset = InMesh;
+    SyncSkeletonBindingFromAsset();
 	CacheSectionMaterialIndices();
 }
 
@@ -90,16 +96,12 @@ void USkeletalMesh::SetSkeleton(USkeleton* InSkeleton)
 
 	if (Skeleton)
 	{
-		SkeletonPath = Skeleton->GetAssetPathFileName();
+        SetSkeletonBinding(Skeleton->GetSkeletonBinding());
 	}
 	else
 	{
-		SkeletonPath = "None";
-	}
-
-	if (SkeletalMeshAsset)
-	{
-		SkeletalMeshAsset->SkeletonPath = SkeletonPath;
+        FSkeletonBinding EmptyBinding;
+        SetSkeletonBinding(EmptyBinding);
 	}
 }
 
@@ -108,23 +110,38 @@ USkeleton* USkeletalMesh::GetSkeleton() const
 	return Skeleton;
 }
 
-void USkeletalMesh::SetSkeletonPath(const FString& InSkeletonPath)
+void USkeletalMesh::SetSkeletonBinding(const FSkeletonBinding& InBinding)
 {
-	SkeletonPath = InSkeletonPath;
-
-	if (SkeletalMeshAsset)
-	{
-		SkeletalMeshAsset->SkeletonPath = SkeletonPath;
-	}
+    SkeletonBinding = InBinding;
+    if (SkeletonBinding.SkeletonPath.empty())
+    {
+        SkeletonBinding.SkeletonPath = "None";
+    }
+    SyncSkeletonBindingToAsset();
 }
 
-const FString& USkeletalMesh::GetSkeletonPath() const
+void USkeletalMesh::SyncSkeletonBindingToAsset()
 {
-	if (SkeletalMeshAsset && !SkeletalMeshAsset->SkeletonPath.empty())
-	{
-		return SkeletalMeshAsset->SkeletonPath;
-	}
-	return SkeletonPath;
+    if (!SkeletalMeshAsset)
+    {
+        return;
+    }
+
+    SkeletalMeshAsset->SkeletonPath = SkeletonBinding.SkeletonPath.empty() ? FString("None") : SkeletonBinding.SkeletonPath;
+    SkeletalMeshAsset->SkeletonAssetGuid = SkeletonBinding.SkeletonAssetGuid;
+    SkeletalMeshAsset->SkeletonCompatibilitySignature = SkeletonBinding.CompatibilitySignature;
+}
+
+void USkeletalMesh::SyncSkeletonBindingFromAsset()
+{
+    if (!SkeletalMeshAsset)
+    {
+        return;
+    }
+
+    SkeletonBinding.SkeletonPath = SkeletalMeshAsset->SkeletonPath.empty() ? FString("None") : SkeletalMeshAsset->SkeletonPath;
+    SkeletonBinding.SkeletonAssetGuid = SkeletalMeshAsset->SkeletonAssetGuid;
+    SkeletonBinding.CompatibilitySignature = SkeletalMeshAsset->SkeletonCompatibilitySignature;
 }
 
 void USkeletalMesh::CacheSectionMaterialIndices()

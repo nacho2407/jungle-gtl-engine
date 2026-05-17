@@ -1,4 +1,4 @@
-#include "Mesh/Fbx/FbxAnimationImporter.h"
+﻿#include "Mesh/Fbx/FbxAnimationImporter.h"
 #include "Mesh/Fbx/FbxTransformUtils.h"
 #include "Animation/AnimationRuntime.h"
 #include "Animation/AnimDataModel.h"
@@ -1126,6 +1126,7 @@ bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext&
 			FBoneAnimationTrack& Track = DataModel->BoneAnimationTracks[BoneIndex];
 
 			Track.BoneTreeIndex = BoneIndex;
+			Track.BoneName = Context.Bones[BoneIndex].Name;
 			Track.InternalTrackData.PosKeys.reserve(NumFrames);
 			Track.InternalTrackData.RotKeys.reserve(NumFrames);
 			Track.InternalTrackData.ScaleKeys.reserve(NumFrames);

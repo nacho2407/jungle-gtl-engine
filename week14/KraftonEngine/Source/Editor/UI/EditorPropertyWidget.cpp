@@ -19,6 +19,7 @@
 #include "Core/PropertyTypes.h"
 #include "Core/ClassTypes.h"
 #include "Asset/AssetRegistry.h"
+#include "Animation/SkeletonTypes.h"
 #include "Math/FloatCurve.h"
 #include "Lua/LuaScriptManager.h"
 #include "Resource/ResourceManager.h"
@@ -1371,8 +1372,31 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			}
 			if (bSelectedNone) ImGui::SetItemDefaultFocus();
 
-			const TArray<FAssetListItem>& Items = FAssetRegistry::ListByTypeName(Prop.AssetTypeName);
-			for (const FAssetListItem& Item : Items)
+            TArray<FAssetListItem> FilteredItems;
+            const TArray<FAssetListItem>* ItemsPtr = nullptr;
+
+            const bool bAnimSequenceRef = Prop.AssetTypeName &&
+                std::strcmp(Prop.AssetTypeName, "UAnimSequence") == 0;
+
+            if (bAnimSequenceRef && SelectedComponent && SelectedComponent->IsA<USkeletalMeshComponent>())
+            {
+                USkeletalMeshComponent* SkelComp = static_cast<USkeletalMeshComponent*>(SelectedComponent);
+                if (const USkeletalMesh* Mesh = SkelComp->GetSkeletalMesh())
+                {
+                    FilteredItems = FAssetRegistry::ListAnimationsForSkeleton(
+                        Mesh->GetSkeletonBinding(),
+                        true
+                    );
+                    ItemsPtr = &FilteredItems;
+                }
+            }
+
+            if (!ItemsPtr)
+            {
+                ItemsPtr = &FAssetRegistry::ListByTypeName(Prop.AssetTypeName);
+            }
+
+			for (const FAssetListItem& Item : *ItemsPtr)
 			{
 				bool bSelected = (*Val == Item.FullPath);
 				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))

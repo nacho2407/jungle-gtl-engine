@@ -15,7 +15,7 @@ bool FFbxImporter::ImportStaticMesh(const FString& FilePath, const FImportOption
 		return false;
 	}
 
-	FFbxSceneLoader::NormalizeLikeCurrentImporter(SceneHandle.Scene);
+	FFbxSceneLoader::NormalizeScene(SceneHandle.Scene);
 	FFbxSceneLoader::Triangulate(SceneHandle.Manager, SceneHandle.Scene);
 
 	FFbxImportContext Context;
@@ -33,7 +33,7 @@ bool FFbxImporter::ImportSkeletalMesh(const FString& FilePath, FFbxSkeletalMeshI
 		return false;
 	}
 
-	FFbxSceneLoader::NormalizeLikeCurrentImporter(SceneHandle.Scene);
+	FFbxSceneLoader::NormalizeScene(SceneHandle.Scene);
 	FFbxSceneLoader::Triangulate(SceneHandle.Manager, SceneHandle.Scene);
 
 	FFbxImportContext Context;
