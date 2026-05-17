@@ -88,9 +88,6 @@
     <Filter Include="Source\Engine\GameFramework\Light">
       <UniqueIdentifier>{b016779b-d84f-ba95-e8ed-4e352a91130a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Intermediate\Generated">
-      <UniqueIdentifier>{7b545ef7-79f3-4c64-b0d2-f85ddf0e3c72}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Input">
       <UniqueIdentifier>{c563256b-2b89-b89b-5f9e-409fc19b723f}</UniqueIdentifier>
     </Filter>
@@ -749,9 +746,6 @@
     <ClCompile Include="Source\Engine\GameFramework\Light\SpotLightActor.cpp">
       <Filter>Source\Engine\GameFramework\Light</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp">
-      <Filter>Intermediate\Generated</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp">
       <Filter>Source\Engine\Input</Filter>
     </ClCompile>
@@ -1161,6 +1155,13 @@
     <ClCompile Include="Source\Engine\Component\BoneDebugComponent.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\BoneDebugSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetPackage.cpp" />
+    <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\BoolProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\EnumProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\GenericProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\NumericProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\StringProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\StructProperty.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -2855,6 +2856,14 @@
     <ClInclude Include="Source\Engine\Render\Proxy\BoneDebugSceneProxy.h" />
     <ClInclude Include="Source\Engine\Asset\AssetPackage.h" />
     <ClInclude Include="Source\Engine\Object\ObjectMacros.h" />
+    <ClInclude Include="Source\Engine\Object\UStruct.h" />
+    <ClInclude Include="Source\Engine\Core\Property\BoolProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\EnumProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\GenericProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\NumericProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\SoftObjectProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\StringProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\StructProperty.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

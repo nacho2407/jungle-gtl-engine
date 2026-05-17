@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorPropertyWidget.h"
+﻿#include "Editor/UI/EditorPropertyWidget.h"
 
 #include "Editor/EditorEngine.h"
 
@@ -16,7 +16,7 @@
 #include "Component/Light/LightComponentBase.h"
 #include "Component/DecalComponent.h"
 #include "Component/HeightFogComponent.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Property/NumericProperty.h"
 #include "Core/ClassTypes.h"
 #include "Math/FloatCurve.h"
 #include "Lua/LuaScriptManager.h"
@@ -1306,7 +1306,11 @@ bool FEditorPropertyWidget::RenderEnumPropertyWidget(FPropertyValue& Prop)
 
 bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop)
 {
-	if (!Prop.GetStructType() || !Prop.GetValuePtr()) return false;
+	const FStructProperty* StructProperty = Prop.Property ? Prop.Property->AsStructProperty() : nullptr;
+	if (!StructProperty || !StructProperty->GetStructType() || !Prop.GetValuePtr())
+	{
+		return false;
+	}
 
 	bool bChanged = false;
 	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_DefaultOpen |
@@ -1355,6 +1359,11 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	{
 	case EPropertyType::Bool:
 	{
+		if (!Prop.Property || !Prop.Property->AsBoolProperty())
+		{
+			break;
+		}
+
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.0f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.07f, 0.07f, 0.07f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.18f, 0.18f, 0.18f, 1.0f));
@@ -1388,20 +1397,28 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	}
 	case EPropertyType::Int:
 	{
+		const FNumericProperty* NumericProperty = Prop.Property ? Prop.Property->AsNumericProperty() : nullptr;
 		int32* Val = static_cast<int32*>(Prop.GetValuePtr());
-		if (Prop.GetMin() != 0.0f || Prop.GetMax() != 0.0f)
-			bChanged = ImGui::DragInt("##Value", Val, Prop.GetSpeed(), (int32)Prop.GetMin(), (int32)Prop.GetMax());
+		const float Min = NumericProperty ? NumericProperty->GetMin() : Prop.GetMin();
+		const float Max = NumericProperty ? NumericProperty->GetMax() : Prop.GetMax();
+		const float Speed = NumericProperty ? NumericProperty->GetSpeed() : Prop.GetSpeed();
+		if (Min != 0.0f || Max != 0.0f)
+			bChanged = ImGui::DragInt("##Value", Val, Speed, (int32)Min, (int32)Max);
 		else
-			bChanged = ImGui::DragInt("##Value", Val, Prop.GetSpeed());
+			bChanged = ImGui::DragInt("##Value", Val, Speed);
 		break;
 	}
 	case EPropertyType::Float:
 	{
+		const FNumericProperty* NumericProperty = Prop.Property ? Prop.Property->AsNumericProperty() : nullptr;
 		float* Val = static_cast<float*>(Prop.GetValuePtr());
-		if (Prop.GetMin() != 0.0f || Prop.GetMax() != 0.0f)
-			bChanged = ImGui::DragFloat("##Value", Val, Prop.GetSpeed(), Prop.GetMin(), Prop.GetMax(), "%.4f");
+		const float Min = NumericProperty ? NumericProperty->GetMin() : Prop.GetMin();
+		const float Max = NumericProperty ? NumericProperty->GetMax() : Prop.GetMax();
+		const float Speed = NumericProperty ? NumericProperty->GetSpeed() : Prop.GetSpeed();
+		if (Min != 0.0f || Max != 0.0f)
+			bChanged = ImGui::DragFloat("##Value", Val, Speed, Min, Max, "%.4f");
 		else
-			bChanged = ImGui::DragFloat("##Value", Val, Prop.GetSpeed());
+			bChanged = ImGui::DragFloat("##Value", Val, Speed);
 		break;
 	}
 	case EPropertyType::Vec3:
@@ -1442,6 +1459,11 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	}
 	case EPropertyType::String:
 	{
+		if (!Prop.Property || !Prop.Property->AsStringProperty())
+		{
+			break;
+		}
+
 		FString* Val = static_cast<FString*>(Prop.GetValuePtr());
 		char Buf[256];
 		strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
