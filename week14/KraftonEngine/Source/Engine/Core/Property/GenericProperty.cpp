@@ -41,41 +41,8 @@ json::JSON FGenericProperty::Serialize(void* Container) const
 	case EPropertyType::SceneComponentRef:
 	case EPropertyType::SoftObjectRef:
 		return JSON(*static_cast<FString*>(ValuePtr));
-	case EPropertyType::MaterialSlot:
-	{
-		const FMaterialSlot* Slot = static_cast<const FMaterialSlot*>(ValuePtr);
-		JSON obj = json::Object();
-		obj["Path"] = JSON(Slot->Path);
-		return obj;
-	}
-	case EPropertyType::MaterialSlotArray:
-	{
-		const TArray<FMaterialSlot>* Slots = static_cast<const TArray<FMaterialSlot>*>(ValuePtr);
-		JSON arr = json::Array();
-		for (const FMaterialSlot& Slot : *Slots)
-		{
-			JSON obj = json::Object();
-			obj["Path"] = JSON(Slot.Path);
-			arr.append(obj);
-		}
-		return arr;
-	}
 	case EPropertyType::ByteBool:
 		return JSON(static_cast<bool>(*static_cast<uint8*>(ValuePtr) != 0));
-	case EPropertyType::Vec3Array:
-	{
-		const TArray<FVector>* Arr = static_cast<const TArray<FVector>*>(ValuePtr);
-		JSON outer = json::Array();
-		for (const FVector& v : *Arr)
-		{
-			JSON inner = json::Array();
-			inner.append(static_cast<double>(v.X));
-			inner.append(static_cast<double>(v.Y));
-			inner.append(static_cast<double>(v.Z));
-			outer.append(inner);
-		}
-		return outer;
-	}
 	default:
 		return JSON();
 	}
@@ -122,44 +89,6 @@ void FGenericProperty::Deserialize(void* Container, json::JSON& Value) const
 	case EPropertyType::SoftObjectRef:
 		*static_cast<FString*>(ValuePtr) = Value.ToString();
 		break;
-	case EPropertyType::MaterialSlot:
-	{
-		FMaterialSlot* Slot = static_cast<FMaterialSlot*>(ValuePtr);
-		if (Value.hasKey("Path")) Slot->Path = Value["Path"].ToString();
-		break;
-	}
-	case EPropertyType::MaterialSlotArray:
-	{
-		TArray<FMaterialSlot>* Slots = static_cast<TArray<FMaterialSlot>*>(ValuePtr);
-		TArray<FMaterialSlot> LoadedSlots;
-		for (auto& elem : Value.ArrayRange())
-		{
-			FMaterialSlot Slot;
-			if (elem.hasKey("Path")) Slot.Path = elem["Path"].ToString();
-			LoadedSlots.push_back(Slot);
-		}
-		*Slots = LoadedSlots;
-		break;
-	}
-	case EPropertyType::Vec3Array:
-	{
-		TArray<FVector>* Arr = static_cast<TArray<FVector>*>(ValuePtr);
-		Arr->clear();
-		for (auto& elem : Value.ArrayRange())
-		{
-			FVector v(0, 0, 0);
-			int i = 0;
-			for (auto& c : elem.ArrayRange())
-			{
-				if (i == 0) v.X = static_cast<float>(c.ToFloat());
-				else if (i == 1) v.Y = static_cast<float>(c.ToFloat());
-				else if (i == 2) v.Z = static_cast<float>(c.ToFloat());
-				++i;
-			}
-			Arr->push_back(v);
-		}
-		break;
-	}
 	default:
 		break;
 	}
@@ -191,27 +120,6 @@ void FGenericProperty::Serialize(void* Container, FArchive& Ar) const
 	case EPropertyType::SceneComponentRef:
 	case EPropertyType::SoftObjectRef:
 		Ar << *static_cast<FString*>(ValuePtr);
-		break;
-	case EPropertyType::MaterialSlot:
-		Ar << static_cast<FMaterialSlot*>(ValuePtr)->Path;
-		break;
-	case EPropertyType::MaterialSlotArray:
-	{
-		TArray<FMaterialSlot>* Slots = static_cast<TArray<FMaterialSlot>*>(ValuePtr);
-		uint32 SlotCount = static_cast<uint32>(Slots->size());
-		Ar << SlotCount;
-		if (Ar.IsLoading())
-		{
-			Slots->resize(SlotCount);
-		}
-		for (FMaterialSlot& Slot : *Slots)
-		{
-			Ar << Slot.Path;
-		}
-		break;
-	}
-	case EPropertyType::Vec3Array:
-		Ar << *static_cast<TArray<FVector>*>(ValuePtr);
 		break;
 	default:
 		break;

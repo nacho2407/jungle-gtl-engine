@@ -79,8 +79,8 @@ protected:
 	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Skeletal Mesh", Type=SkeletalMeshRef, AssetType="SkeletalMesh", AllowedClass="USkeletalMesh")
 	FString SkeletalMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
-	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", Type=MaterialSlotArray, AssetType="Material", AllowedClass="UMaterial")
-	TArray<FMaterialSlot> MaterialSlots;
+	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", Type=SoftObjectRefArray, AssetType="Material", AllowedClass="UMaterial")
+	TArray<FString> MaterialSlots;
 
 	// Bone edit pose는 asset 원본 bone을 직접 바꾸지 않고 component-local override로만 유지한다.
 	TArray<FMatrix> BoneEditLocalMatrices;

@@ -50,8 +50,8 @@ private:
 	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Static Mesh", Type=StaticMeshRef, AssetType="StaticMesh", AllowedClass="UStaticMesh")
 	FString StaticMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
-	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", Type=MaterialSlotArray, AssetType="Material", AllowedClass="UMaterial")
-	TArray<FMaterialSlot> MaterialSlots; // 경로 + UVScroll 묶음
+	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", Type=SoftObjectRefArray, AssetType="Material", AllowedClass="UMaterial")
+	TArray<FString> MaterialSlots;
 
 	FVector CachedLocalCenter = { 0, 0, 0 };
 	FVector CachedLocalExtent = { 0.5f, 0.5f, 0.5f };
