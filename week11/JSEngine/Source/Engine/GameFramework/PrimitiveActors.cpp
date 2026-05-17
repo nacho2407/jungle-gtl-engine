@@ -26,14 +26,9 @@
 #include "GameFramework/World.h"
 #include "Runtime/Script/ScriptManager.h"
 
-// Test code include will be delete // TODO
-#include "Asset/FbxImporter.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimDataModel.h"
 #include "Core/Logging/Log.h"
-
-#include "Asset/BinarySerializer.h"
-#include "Object/Object.h"
 
 #include <algorithm>
 #include <cfloat>
@@ -439,22 +434,11 @@ void ASkeletalMeshActor::InitDefaultComponents()
 
     if (LoadedSkeletalMesh)
     {
-        FFbxImporter FbxImporter;
-
         const FString AnimFbxPath = SkeletalMeshPath;
+        const FString TestStackName = "Run_New";
 
-        TArray<FString> AnimStacks = FbxImporter.ListAnimStacks(AnimFbxPath);
-
-        UE_LOG("[AnimImportTest] StackCount=%zu", AnimStacks.size());
-
-        for (const FString& StackName : AnimStacks)
-        {
-            UE_LOG("[AnimImportTest] Stack=%s", StackName.c_str());
-        }
-
-		const FString TestStackName = "Run_New";
-
-        UAnimSequence* AnimSequence = FbxImporter.LoadAnimSequence(AnimFbxPath, SkeletalMeshPath, TestStackName);
+        UAnimSequence* AnimSequence =
+            FResourceManager::Get().LoadAnimSequence(AnimFbxPath, SkeletalMeshPath, TestStackName);
 	    UE_LOG("[AnimImportTest] RequestedStack=%s", TestStackName.c_str());
 
         if (!AnimSequence)
@@ -524,35 +508,6 @@ void ASkeletalMeshActor::InitDefaultComponents()
             {
                 UE_LOG_ERROR("[AnimImportTest] PoseEnd size mismatch.");
             }
-        }
-        FBinarySerializer Serializer;
-
-        const FString AnimBinaryPath = "Asset/Animation/Bin/Test_Run_New.anim.bin";
-
-        const bool bSaved = Serializer.SaveAnimSequence(AnimBinaryPath, AnimFbxPath, *AnimSequence);
-
-        UE_LOG("[AnimBinaryTest] Save=%d Path=%s", bSaved ? 1 : 0, AnimBinaryPath.c_str());
-
-		UAnimSequence* LoadedAnim = UObjectManager::Get().CreateObject<UAnimSequence>();
-        const bool bLoaded = Serializer.LoadAnimSequence(AnimBinaryPath, *LoadedAnim);
-        LoadedAnim->Skeleton = LoadedSkeletalMesh->GetSkeleton();
-        UE_LOG("[AnimBinaryTest] Load=%d", bLoaded ? 1 : 0);
-        if (bLoaded && LoadedAnim->DataModel)
-        {
-            UE_LOG("[AnimBinaryTest] Loaded Length=%.3f FrameRate=%.3f Frames=%d Tracks=%zu Stack=%s",
-                   LoadedAnim->DataModel->SequenceLength,
-                   LoadedAnim->DataModel->FrameRate,
-                   LoadedAnim->DataModel->NumberOfFrames,
-                   LoadedAnim->DataModel->BoneAnimationTracks.size(),
-                   LoadedAnim->AnimStackName.c_str());
-
-            TArray<FMatrix> Pose;
-            const bool bPose =
-                LoadedAnim->GetBonePose(0.0f, LoadedSkeletalMesh, Pose);
-
-            UE_LOG("[AnimBinaryTest] Pose=%d Size=%zu",
-                   bPose ? 1 : 0,
-                   Pose.size());
         }
     }
 

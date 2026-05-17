@@ -18,6 +18,7 @@
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
 #include "Core/Logging/Log.h"
+#include "Engine/Animation/AnimSequence.h"
 
 #if WITH_EDITOR
 #include "Settings/EditorSettings.h"
@@ -153,6 +154,7 @@ void FResourceManager::ClearDiscoveredResourceLists(bool bClearAtlasCache)
 	ParticleFilePaths.clear();
 	CurveFilePaths.clear();
 	SkeletalMeshFilePaths.clear();
+	AnimSequenceFilePaths.clear();
 	StaticMeshCache.ClearRegistry();
 
 	if (bClearAtlasCache)
@@ -389,41 +391,47 @@ void FResourceManager::DeleteAllCacheFiles()
 {
 	namespace fs = std::filesystem;
 
-	const fs::path BinRootPath = fs::path(FPaths::RootDir()) / "Asset" / "Mesh" / "Bin";
+	const TArray<fs::path> BinRootPaths = {
+		fs::path(FPaths::RootDir()) / "Asset" / "Mesh" / "Bin",
+		fs::path(FPaths::RootDir()) / "Asset" / "SkeletalMesh" / "Bin",
+		fs::path(FPaths::RootDir()) / "Asset" / "AnimSequence" / "Bin"
+	};
 
-	if (!fs::exists(BinRootPath) || !fs::is_directory(BinRootPath))
+	for (const fs::path& BinRootPath : BinRootPaths)
 	{
-		return;
-	}
-
-	for (const auto& Entry : fs::recursive_directory_iterator(BinRootPath))
-	{
-		if (!Entry.is_regular_file())
+		if (!fs::exists(BinRootPath) || !fs::is_directory(BinRootPath))
 		{
 			continue;
 		}
 
-		const fs::path& FilePath = Entry.path();
-		if (FilePath.extension() == L".bin")
+		for (const auto& Entry : fs::recursive_directory_iterator(BinRootPath))
+		{
+			if (!Entry.is_regular_file())
+			{
+				continue;
+			}
+
+			const fs::path& FilePath = Entry.path();
+			if (FilePath.extension() == L".bin")
+			{
+				std::error_code Ec;
+				fs::remove(FilePath, Ec);
+			}
+		}
+
+		for (auto It = fs::recursive_directory_iterator(BinRootPath);
+			 It != fs::recursive_directory_iterator();
+			 ++It)
 		{
 			std::error_code Ec;
-			fs::remove(FilePath, Ec);
+			if (It->is_directory(Ec) && fs::is_empty(It->path(), Ec))
+			{
+				fs::remove(It->path(), Ec);
+			}
 		}
 	}
 
-	// ????븐뼚???ル벣遊??筌먲퐘遊?
-	for (auto It = fs::recursive_directory_iterator(BinRootPath);
-		 It != fs::recursive_directory_iterator();
-		 ++It)
-	{
-		std::error_code Ec;
-		if (It->is_directory(Ec) && fs::is_empty(It->path(), Ec))
-		{
-			fs::remove(It->path(), Ec);
-		}
-	}
-
-	UE_LOG("[ResourceManager] All mesh cache files removed");
+	UE_LOG("[ResourceManager] All mesh and animation cache files removed");
 }
 
 FTextureAssetMeta FResourceManager::LoadOrCreateTextureMeta(const std::filesystem::path& FilePath) const
@@ -466,6 +474,13 @@ void FResourceManager::ReleaseGPUResources()
 		UObjectManager::Get().DestroyObject(Mesh);
 	}
 	SkeletalMeshMap.clear();
+
+	for (auto& [Path, Anim] : AnimSequenceMap)
+	{
+		UObjectManager::Get().DestroyObject(Anim);
+	}
+	AnimSequenceMap.clear();
+	AnimSequenceFilePaths.clear();
 
 	DefaultWhiteTexture.Reset();
 	CachedDevice.Reset();
@@ -816,7 +831,102 @@ TArray<FString> FResourceManager::GetSkeletalMeshPaths() const
 
 FFbxMeshContentInfo FResourceManager::InspectFbxMeshContent(const FString& Path)
 {
-    return FbxImporter.InspectMeshContent(Path);
+	return FbxImporter.InspectMeshContent(Path);
+}
+
+static FString MakeAnimSequenceCacheKey(const FString& SourceFbxPath, const FString& TargetSkeletalMeshPath, const FString& AnimStackName)
+{
+	return FPaths::Normalize(SourceFbxPath) + "|" + FPaths::Normalize(TargetSkeletalMeshPath) + "|" + AnimStackName;
+}
+
+UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, const FString& TargetSkeletalMeshPath, const FString& AnimStackName)
+{
+	const FString NormalizedSource = FPaths::Normalize(SourceFbxPath);
+	const FString NormalizedTarget = FPaths::Normalize(TargetSkeletalMeshPath);
+	const FString Key = MakeAnimSequenceCacheKey(NormalizedSource, NormalizedTarget, AnimStackName);
+
+	if (UAnimSequence* Found = FindAnimSequence(Key))
+	{
+		return Found;
+	}
+
+	USkeletalMesh* TargetMesh = LoadSkeletalMesh(NormalizedTarget);
+	if (!TargetMesh)
+	{
+		return nullptr;
+	}
+
+	const FString BinaryPath = FAssetPathPolicy::MakeWritableAnimSequenceCacheBinaryPath(NormalizedSource, NormalizedTarget, AnimStackName);
+	UAnimSequence* Anim = UObjectManager::Get().CreateObject<UAnimSequence>();
+
+	if (IsAnimSequenceBinaryValid(NormalizedSource, BinaryPath) && BinarySerializer.LoadAnimSequence(BinaryPath, *Anim))
+	{
+		Anim->Skeleton = TargetMesh->GetSkeleton();
+
+		AnimSequenceMap[Key] = Anim;
+		if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), Key) == AnimSequenceFilePaths.end())
+		{
+			AnimSequenceFilePaths.push_back(Key);
+		}
+
+		UE_LOG("[AnimSequenceLoad] Source=Binary | Path=%s | Stack=%s | BinaryPath=%s",
+		       NormalizedSource.c_str(),
+		       AnimStackName.c_str(),
+		       BinaryPath.c_str());
+
+		return Anim;
+	}
+	UObjectManager::Get().DestroyObject(Anim);
+
+	Anim = FbxImporter.LoadAnimSequence(NormalizedSource, NormalizedTarget, AnimStackName);
+	if (!Anim)
+	{
+		return nullptr;
+	}
+	Anim->Skeleton = TargetMesh->GetSkeleton();
+
+	const bool bSaved = BinarySerializer.SaveAnimSequence(BinaryPath, NormalizedSource, *Anim);
+
+	UE_LOG("[AnimSequenceLoad] Source=FBX | Path=%s | Stack=%s | BinarySave=%s | BinaryPath=%s",
+	       NormalizedSource.c_str(), AnimStackName.c_str(), bSaved ? "OK" : "FAIL", BinaryPath.c_str());
+
+	AnimSequenceMap[Key] = Anim;
+	if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), Key) == AnimSequenceFilePaths.end())
+	{
+		AnimSequenceFilePaths.push_back(Key);
+	}
+
+	return Anim;
+}
+
+UAnimSequence* FResourceManager::FindAnimSequence(const FString& Key) const
+{
+	auto It = AnimSequenceMap.find(Key);
+	return It != AnimSequenceMap.end() ? It->second : nullptr;
+}
+
+TArray<FString> FResourceManager::GetAnimSequencePaths() const
+{
+	return AnimSequenceFilePaths;
+}
+
+bool FResourceManager::IsAnimSequenceBinaryValid(const FString& SourcePath, const FString& BinaryPath) const
+{
+	FAnimSequenceBinaryHeader Header;
+	const FString NormalizedBinaryPath = FPaths::Normalize(BinaryPath);
+
+	if (!BinarySerializer.ReadAnimSequenceHeader(NormalizedBinaryPath, Header))
+	{
+		return false;
+	}
+
+	const uint64 SourceWriteTime = GetFileWriteTimeTicks(FPaths::Normalize(SourcePath));
+	if (SourceWriteTime == 0)
+	{
+		return false;
+	}
+
+	return Header.SourceFileWriteTime == SourceWriteTime;
 }
 
 bool FResourceManager::SaveSkeletalMesh(USkeletalMesh* Mesh)

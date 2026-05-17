@@ -1,5 +1,6 @@
 ﻿#include "Runtime/Script/ScriptManager.h"
 
+#include "Animation/AnimSequence.h"
 #include "Asset/CurveFloatAsset.h"
 #include "Asset/StaticMesh.h"
 #include "Camera/CameraShakeBase.h"
@@ -29,6 +30,8 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/ShapeComponent.h"
 #include "Component/SceneComponent.h"
+#include "Component/SkeletalMeshComponent.h"
+#include "Component/SkinnedMeshComponent.h"
 #include "Component/SoundComponent.h"
 #include "Component/SphereComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -186,6 +189,8 @@ void FScriptManager::BindComponentTypes()
             { return Cast<UBoxComponent>(&Self); });
     LUA_SET(AsActorSequenceComponent, [](UActorComponent& Self) -> UActorSequenceComponent*
             { return Cast<UActorSequenceComponent>(&Self); });
+    LUA_SET(AsSkeletalMeshComponent, [](UActorComponent& Self) -> USkeletalMeshComponent*
+            { return Cast<USkeletalMeshComponent>(&Self); });
     LUA_METHOD(IsActive, IsActive);
     LUA_METHOD(SetActive, SetActive);
     LUA_METHOD(IsAutoActivate, IsAutoActivate);
@@ -406,6 +411,27 @@ void FScriptManager::BindStaticMeshTypes()
     LUA_METHOD(SetStaticMesh, SetStaticMesh);
     LUA_METHOD(HasValidMesh, HasValidMesh);
     LUA_METHOD(GetPrimitiveType, GetPrimitiveType);
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USkinnedMeshComponent, "SkinnedMeshComponent", UMeshComponent, UPrimitiveComponent, USceneComponent, UActorComponent, UObject)
+    LUA_METHOD(GetSkeletalMesh, GetSkeletalMesh);
+    LUA_METHOD(SetSkeletalMesh, SetSkeletalMesh);
+    LUA_METHOD(HasValidMesh, HasValidMesh);
+    LUA_METHOD(GetBoneWorldMatrix, GetBoneWorldMatrix);
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USkeletalMeshComponent, "SkeletalMeshComponent", USkinnedMeshComponent, UMeshComponent, UPrimitiveComponent, USceneComponent, UActorComponent, UObject)
+    LUA_METHOD(SetAnimation, SetAnimation);
+    LUA_SET(SetAnimSequence, [](USkeletalMeshComponent& Self, const FString& Path, sol::optional<FString> StackName)
+            { return Self.SetAnimSequence(Path, StackName.value_or(FString())); });
+    LUA_METHOD(PlayAnim, PlayAnim);
+    LUA_METHOD(StopAnim, StopAnim);
+    LUA_METHOD(SetAnimTime, SetAnimationTime);
+    LUA_METHOD(SetAnimationTime, SetAnimationTime);
+    LUA_METHOD(TickAnimation, TickAnimation);
+    LUA_METHOD(GetAnimation, GetAnimation);
+    LUA_METHOD(GetAnimationTime, GetAnimationTime);
+    LUA_METHOD(IsAnimPlaying, IsAnimPlaying);
     LUA_END_TYPE();
 }
 

@@ -14,6 +14,31 @@ namespace
 		return Value.size() >= Suffix.size() &&
 			Value.compare(Value.size() - Suffix.size(), Suffix.size(), Suffix) == 0;
 	}
+
+	FString SanitizeFileNameToken(FString Token)
+	{
+		if (Token.empty())
+		{
+			return "Default";
+		}
+
+		for (char& Ch : Token)
+		{
+			const bool bValid =
+				(Ch >= 'a' && Ch <= 'z') ||
+				(Ch >= 'A' && Ch <= 'Z') ||
+				(Ch >= '0' && Ch <= '9') ||
+				Ch == '_' ||
+				Ch == '-';
+
+			if (!bValid)
+			{
+				Ch = '_';
+			}
+		}
+
+		return Token;
+	}
 }
 
 bool FAssetPathPolicy::FileExists(const FString& Path)
@@ -128,6 +153,32 @@ FString FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(const FString&
 
 	std::filesystem::path BinaryFileName = SourceFsPath.stem();
 	BinaryFileName += ".bin";
+
+	std::filesystem::path BinaryPath = BinDir / BinaryFileName;
+	return FPaths::ToString(BinaryPath.wstring());
+}
+
+FString FAssetPathPolicy::MakeWritableAnimSequenceCacheBinaryPath(const FString& SourceFbxPath, const FString& TargetSkeletalMeshPath, const FString& AnimStackName)
+{
+	const FString NormalizedSourcePath = FPaths::Normalize(SourceFbxPath);
+	std::filesystem::path SourceFsPath(FPaths::ToWide(NormalizedSourcePath));
+	const FString NormalizedTargetPath = FPaths::Normalize(TargetSkeletalMeshPath);
+	std::filesystem::path TargetFsPath(FPaths::ToWide(NormalizedTargetPath));
+
+	std::filesystem::path BinDir = std::filesystem::path(FPaths::RootDir()) / "Asset" / "AnimSequence" / "Bin";
+
+	if (!std::filesystem::exists(BinDir))
+	{
+		std::filesystem::create_directories(BinDir);
+	}
+
+	const std::wstring BinaryFileName =
+		SourceFsPath.stem().wstring() +
+		L"_" +
+		FPaths::ToWide(SanitizeFileNameToken(AnimStackName)) +
+		L"_" +
+		FPaths::ToWide(SanitizeFileNameToken(FPaths::ToString(TargetFsPath.stem().wstring()))) +
+		L".anim.bin";
 
 	std::filesystem::path BinaryPath = BinDir / BinaryFileName;
 	return FPaths::ToString(BinaryPath.wstring());

@@ -1,5 +1,6 @@
 #include "Runtime/Script/API/LuaEngineAPIBindings.h"
 
+#include "Animation/AnimSequence.h"
 #include "Asset/AssetQueryService.h"
 #include "Asset/CurveFloatAsset.h"
 #include "Core/ResourceManager.h"
@@ -65,6 +66,19 @@ namespace FLuaEngineAPI
         Asset["LoadCurve"] = [](const FString& Path) -> UCurveFloatAsset*
         {
             return FResourceManager::Get().LoadCurve(Path);
+        };
+
+        Asset["LoadAnimSequence"] = [](const FString& SourceFbxPath, const FString& TargetSkeletalMeshPath, sol::optional<FString> AnimStackName) -> UAnimSequence*
+        {
+            return FResourceManager::Get().LoadAnimSequence(
+                SourceFbxPath,
+                TargetSkeletalMeshPath,
+                AnimStackName.value_or(FString()));
+        };
+
+        Asset["GetAnimSequencePaths"] = [](sol::this_state State)
+        {
+            return StringsToLuaTable(State, FResourceManager::Get().GetAnimSequencePaths());
         };
 
         Asset["GetScenePaths"] = [](sol::this_state State)

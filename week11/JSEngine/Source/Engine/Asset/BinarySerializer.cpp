@@ -1579,6 +1579,18 @@ bool FBinarySerializer::LoadAnimSequence(const FString& BinaryPath, UAnimSequenc
     return true;
 }
 
+bool FBinarySerializer::ReadAnimSequenceHeader(const FString& BinaryPath, FAnimSequenceBinaryHeader& OutHeader) const
+{
+    std::ifstream In(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath))), std::ios::binary);
+    if (!In.is_open())
+        return false;
+
+    if (!ReadAnimSequenceHeader(In, OutHeader))
+        return false;
+
+    return IsValidAnimSequenceHeader(OutHeader);
+}
+
 bool FBinarySerializer::ReadSkeletalMeshHeader(const FString& BinaryPath, FSkeletalMeshBinaryHeader& OutHeader) const
 {
 	std::ifstream In(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath))), std::ios::binary);

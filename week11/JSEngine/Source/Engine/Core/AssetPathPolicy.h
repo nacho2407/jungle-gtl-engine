@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Containers/String.h"
 #include "Core/CoreTypes.h"
@@ -14,6 +14,6 @@ public:
 	static FString MakeSiblingStaticMeshBinaryPath(const FString& SourcePath);
 	static FString MakeStaticMeshCacheBinaryPath(const FString& SourcePath);
 	static FString MakeWritableStaticMeshCacheBinaryPath(const FString& SourcePath);
-
 	static FString MakeWritableSkeletalMeshCacheBinaryPath(const FString& SourcePath);
+	static FString MakeWritableAnimSequenceCacheBinaryPath(	const FString& SourceFbxPath,const FString& TargetSkeletalMeshPath,	const FString& AnimStackName);
 };
