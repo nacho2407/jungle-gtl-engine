@@ -36,6 +36,11 @@ public:
     const TArray<FBoneAnimationTrack>& GetBoneTracks() const;
     TArray<FBoneAnimationTrack>& GetMutableBoneTracks();
 
+    // 에디터 편집용: 직렬화 소스(DataModel->Notifies)에 직접 접근.
+    // 편집 후 RefreshRuntimeNotifies() 로 dispatch 캐시(base Notifies)를 동기화한다.
+    TArray<FAnimNotifyEvent>& GetMutableModelNotifies();
+    void RefreshRuntimeNotifies();
+
     int32 TimeToFrame(float TimeSeconds) const;
     float FrameToTime(int32 FrameIndex) const;
     int32 GetNumberOfFrames() const;
