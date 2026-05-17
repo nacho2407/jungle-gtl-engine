@@ -271,6 +271,8 @@ void FMeshEditorWidget::Render(float DeltaTime)
 
 	if (!ImGui::Begin(WindowTitle.c_str(), &bWindowOpen, WindowFlags))
 	{
+		// 창이 접혔으면 stale hover 로 입력을 계속 소유하지 않도록 해제.
+		FSlateApplication::Get().SetViewportImGuiHovered(&ViewportClient, false);
 		ImGui::End();
 		if (!bWindowOpen)
 		{
@@ -403,6 +405,9 @@ void FMeshEditorWidget::RenderViewportPanel(ImVec2 Size)
 	{
 		ImGui::Dummy(Size);
 	}
+
+	// ImGui가 계산한 hover(다른 창에 가려지면 false)를 입력 소유권 중재에 보고.
+	FSlateApplication::Get().SetViewportImGuiHovered(&ViewportClient, ImGui::IsItemHovered());
 
 	constexpr float ToolbarHeight = 28.0f;
 	ImDrawList*     DrawList      = ImGui::GetWindowDrawList();

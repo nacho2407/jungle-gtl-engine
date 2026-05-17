@@ -10,6 +10,8 @@ struct FViewportInfo
 {
 	SWindow* Window = nullptr;
 	FViewportClient* Client;
+	// 이미지 렌더 시 위젯이 보고하는 ImGui 인지 hover (z-order/팝업/캡처 반영).
+	bool bImGuiHovered = false;
 };
 
 /**
@@ -25,6 +27,9 @@ public:
 
 	void UpdateInputOwner();
 	void BringViewportToFront(FViewportClient* Client);
+
+	// 뷰포트 이미지를 그린 위젯이 매 프레임 자신의 ImGui hover 여부를 보고한다.
+	void SetViewportImGuiHovered(FViewportClient* Client, bool bHovered);
 
 	FViewportClient* GetHoveredViewportClient() const { return HoveredClient; }
 	FViewportClient* GetFocusedViewportClient() const { return FocusedClient; }

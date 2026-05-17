@@ -261,7 +261,8 @@ void FMeshEditorViewportClient::TickInput(float DeltaTime)
 {
 	if (!FSlateApplication::Get().DoesClientOwnMouseInput(this)) return;
 
-	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard) return;
+	// 텍스트 입력 중에는 카메라 키/마우스 조작을 가로채지 않는다.
+	if (ImGui::GetIO().WantTextInput) return;
 
 	FViewportCameraControlSettings& ControlSettings = FEditorSettings::Get().MeshEditorViewportSettings.CameraControls;
 
@@ -319,8 +320,6 @@ void FMeshEditorViewportClient::TickInteraction(float DeltaTime)
 
 	Gizmo->ApplyScreenSpaceScaling(ViewTransform.ViewLocation, ViewTransform.bIsOrtho, ViewTransform.OrthoZoom);
 	Gizmo->SetAxisMask(UGizmoComponent::ComputeAxisMask(RenderOptions.ViewportType, Gizmo->GetMode()));
-
-	if (InputSystem::Get().GetGuiInputState().bUsingMouse && !Gizmo->IsHolding()) return;
 
 	const float ZoomSpeed = ControlSettings.ZoomSpeed;
 

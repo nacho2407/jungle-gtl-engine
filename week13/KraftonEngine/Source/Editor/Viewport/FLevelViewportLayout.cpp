@@ -945,6 +945,16 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			}
 		}
 
+		// 입력 소유권 중재용 ImGui 인지 hover: 기본 전부 해제.
+		// (떠 있는 다른 ImGui 창에 가려지면 아래 IsWindowHovered 가 false 라 그대로 유지)
+		for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+		{
+			if (LevelViewportClients[i])
+			{
+				FSlateApplication::Get().SetViewportImGuiHovered(LevelViewportClients[i], false);
+			}
+		}
+
 		// 분할 바 렌더 (재귀 수집)
 		if (RootSplitter)
 		{
@@ -976,6 +986,11 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 				if (IsSlotVisibleEnough(i) && ViewportWindows[i]->IsHover(MP))
 				{
 					bMouseOverViewport = true;
+					if (i < static_cast<int32>(LevelViewportClients.size()) && LevelViewportClients[i])
+					{
+						// IsWindowHovered() 이미 z-order 반영 → 슬롯 rect 와 결합한 최종 hover.
+						FSlateApplication::Get().SetViewportImGuiHovered(LevelViewportClients[i], true);
+					}
 					break;
 				}
 			}

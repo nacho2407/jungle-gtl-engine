@@ -3,6 +3,8 @@
 #include "SWindow.h"
 #include "Input/InputSystem.h"
 
+#include <imgui.h>
+
 void FSlateApplication::RegisterViewport(SWindow* Window, FViewportClient* Client)
 {
 	if (!Window || !Client) return;
@@ -42,6 +44,20 @@ void FSlateApplication::UnregisterViewport(FViewportClient* Client)
 	}
 }
 
+void FSlateApplication::SetViewportImGuiHovered(FViewportClient* Client, bool bHovered)
+{
+	if (!Client) return;
+
+	for (FViewportInfo& Info : RegisteredViewports)
+	{
+		if (Info.Client == Client)
+		{
+			Info.bImGuiHovered = bHovered;
+			return;
+		}
+	}
+}
+
 void FSlateApplication::UpdateInputOwner()
 {
 	InputSystem& Input = InputSystem::Get();
@@ -55,16 +71,13 @@ void FSlateApplication::UpdateInputOwner()
 		return;
 	}
 
-	FPoint MousePoint;
-	POINT ClientMouse = Input.GetMouseClientPos();
-	MousePoint.X = static_cast<float>(ClientMouse.x);
-	MousePoint.Y = static_cast<float>(ClientMouse.y);
-
+	// 소유권은 기하 hit-test가 아니라, 각 뷰포트 위젯이 이미지 렌더 시 보고한
+	// ImGui 인지 hover를 신뢰한다. ImGui hover는 창 z-order/팝업/캡처를 이미
+	// 반영하므로, 떠 있는 패널이 뷰포트를 가리면 자동으로 false가 된다.
 	HoveredClient = nullptr;
-
 	for (auto It = RegisteredViewports.rbegin(); It != RegisteredViewports.rend(); ++It)
 	{
-		if (It->Window && It->Client && It->Window->IsHover(MousePoint))
+		if (It->Client && It->bImGuiHovered)
 		{
 			HoveredClient = It->Client;
 			break;
@@ -76,10 +89,19 @@ void FSlateApplication::UpdateInputOwner()
 		Snapshot.bRightMousePressed ||
 		Snapshot.bMiddleMousePressed;
 
-	if (bMousePressed && HoveredClient)
+	if (bMousePressed)
 	{
-		FocusedClient = HoveredClient;
-		CapturedClient = HoveredClient;
+		if (HoveredClient)
+		{
+			FocusedClient = HoveredClient;
+			CapturedClient = HoveredClient;
+		}
+		else
+		{
+			// 뷰포트 밖(ImGui 패널/다른 창)을 클릭 → 키보드 소유권 해제.
+			// 클릭이 키보드 포커스를 옮긴다는 모델을 ImGui와 일치시킨다.
+			FocusedClient = nullptr;
+		}
 	}
 
 	const bool bAnyMouseDown =
@@ -90,6 +112,12 @@ void FSlateApplication::UpdateInputOwner()
 	if (!bAnyMouseDown)
 	{
 		CapturedClient = nullptr;
+	}
+
+	// 텍스트 입력 중에는 어떤 뷰포트도 키보드를 소유하지 않는다.
+	if (ImGui::GetIO().WantTextInput)
+	{
+		FocusedClient = nullptr;
 	}
 
 	if (FocusedClient && !IsViewportRegistered(FocusedClient))

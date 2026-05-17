@@ -209,6 +209,12 @@ void FStaticMeshEditorWidget::Render(float DeltaTime)
 			if (VP->GetSRV())
 			{
 				ImGui::Image((ImTextureID)VP->GetSRV(), Size);
+				// ImGui 인지 hover(가려지면 false)를 입력 소유권 중재에 보고.
+				FSlateApplication::Get().SetViewportImGuiHovered(&ViewportClient, ImGui::IsItemHovered());
+			}
+			else
+			{
+				FSlateApplication::Get().SetViewportImGuiHovered(&ViewportClient, false);
 			}
 
 			constexpr float ToolbarHeight = 28.0f;

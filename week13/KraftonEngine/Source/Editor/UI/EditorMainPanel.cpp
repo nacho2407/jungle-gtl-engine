@@ -726,23 +726,11 @@ void FEditorMainPanel::Update()
 
 	ImGuiIO& IO = ImGui::GetIO();
 
-	// 뷰포트 슬롯 위에서는 bUsingMouse를 해제해야 TickInteraction이 동작
-	bool bWantMouse = IO.WantCaptureMouse;
-	bool bWantKeyboard = IO.WantCaptureKeyboard || bShowShortcutOverlay;
-
-	const bool bMouseOverViewport = EditorEngine && EditorEngine->IsMouseOverViewport();
-	const bool bMouseOverAssetPreviewViewport = IsMouseOverAssetEditorPreviewViewport();
-
-	if (bMouseOverViewport || bMouseOverAssetPreviewViewport)
-	{
-		bWantMouse = false;
-		if (!IO.WantTextInput && !bShowShortcutOverlay)
-		{
-			bWantKeyboard = false;
-		}
-	}
-	InputSystem::Get().GetGuiInputState().bUsingMouse = bWantMouse;
-	InputSystem::Get().GetGuiInputState().bUsingKeyboard = bWantKeyboard;
+	// GuiState 는 ImGui IO 의 충실한 미러 한 곳뿐.
+	// "뷰포트 위면 해제" 핵은 제거 — 입력 소유권은 이제 FSlateApplication 의
+	// ImGui 인지 hover 가 단독으로 결정한다.
+	InputSystem::Get().GetGuiInputState().bUsingMouse     = IO.WantCaptureMouse;
+	InputSystem::Get().GetGuiInputState().bUsingKeyboard  = IO.WantCaptureKeyboard || bShowShortcutOverlay;
 	InputSystem::Get().GetGuiInputState().bUsingTextInput = IO.WantTextInput;
 
 	// IME는 ImGui가 텍스트 입력을 원할 때만 활성화.
