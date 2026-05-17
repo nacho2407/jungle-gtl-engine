@@ -3,9 +3,12 @@
 
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/AnimDataModel.h"
+#include "Animation/AnimNotify_LogMessage.h"
 #include "Animation/BoneAnimationTrack.h"
 #include "Animation/RawAnimSequenceTrack.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Object/Object.h"
 
 #include <imgui.h>
 #include <algorithm>
@@ -38,6 +41,22 @@ namespace
 	constexpr ImU32 ColPlayhead  = IM_COL32(255, 170, 40, 255);
 	constexpr ImU32 ColNotify    = IM_COL32(74, 145, 226, 255);
 	constexpr ImU32 ColNotifyDur = IM_COL32(74, 145, 226, 110);
+
+	// 노티파이 + 데모용 로직 객체(UAnimNotify_LogMessage)를 함께 생성.
+	// 트리거 시 콘솔에 메시지를 찍어 dispatch 경로가 실제 연결됐음을 확인할 수 있다.
+	FAnimNotifyEvent MakeNotify(UAnimSequence* Seq, const FString& Name, float Time)
+	{
+		FAnimNotifyEvent Event;
+		Event.NotifyName  = FName(Name);
+		Event.TriggerTime = Time;
+		Event.Duration    = 0.0f;
+
+		UAnimNotify_LogMessage* Logic =
+			UObjectManager::Get().CreateObject<UAnimNotify_LogMessage>(Seq->GetDataModel());
+		Logic->Message = Name;
+		Event.Notify   = Logic;
+		return Event;
+	}
 
 	int NiceFrameStep(int Raw)
 	{
@@ -169,12 +188,10 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 		if (ImGui::MenuItem("Add Notify"))
 		{
 			static int sNotifyCounter = 0;
-			FAnimNotifyEvent NewNotify;
-			NewNotify.NotifyName  = FName(FString("Notify_") + std::to_string(++sNotifyCounter));
-			NewNotify.TriggerTime = sPendingNotifyTime;
-			NewNotify.Duration    = 0.0f;
-			// TODO: 트리거 로직/직렬화 연결 (현재는 표시·배치 전용)
-			Seq->GetMutableNotifies().push_back(NewNotify);
+			const FString Name = FString("Notify_") + std::to_string(++sNotifyCounter);
+			Seq->GetMutableModelNotifies().push_back(
+				MakeNotify(Seq, Name, sPendingNotifyTime));
+			Seq->RefreshRuntimeNotifies();
 		}
 		ImGui::EndPopup();
 	}
@@ -256,14 +273,19 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 		            ColLabel, "1");
 		if (DrawAddButton("##addNotify", LaneY, NotifyLaneH))
 		{
-			// TODO: 이 트랙에 노티파이 추가 — 엔진에 노티파이 생성/이동/삭제 API가
-			// 생기면 클릭 위치 시간으로 Seq->GetMutableNotifies() 에 추가하도록 연결.
+			// 현재 재생 위치에 노티파이 추가 (로직 객체 포함).
+			static int sLaneNotifyCounter = 0;
+			const FString Name = FString("Notify_L") + std::to_string(++sLaneNotifyCounter);
+			Seq->GetMutableModelNotifies().push_back(
+				MakeNotify(Seq, Name, CurrentTime));
+			Seq->RefreshRuntimeNotifies();
 		}
 		DL->AddRectFilled(ImVec2(CanvasX, LaneY),
 		                  ImVec2(CanvasX + CanvasW, LaneY + NotifyLaneH), IM_COL32(24, 24, 24, 255));
 
 		// 드래그로 시간 이동 / 우클릭으로 삭제(루프 후 지연 적용).
-		TArray<FAnimNotifyEvent>& Notifies = Seq->GetMutableNotifies();
+		// 직렬화 소스(DataModel)를 직접 편집 → 아래에서 dispatch 캐시 동기화.
+		TArray<FAnimNotifyEvent>& Notifies = Seq->GetMutableModelNotifies();
 		int PendingDelete = -1;
 		static char  sRenameBuf[64]   = {};
 		static float sGrabOffsetTime  = 0.0f; // 잡은 지점과 앵커의 시간 차(점프 방지)
@@ -354,6 +376,12 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 				if ((bCommit || ImGui::Button("OK")) && sRenameBuf[0] != '\0')
 				{
 					N.NotifyName = FName(FString(sRenameBuf));
+					if (UAnimNotify_LogMessage* Log =
+						Cast<UAnimNotify_LogMessage>(N.Notify))
+					{
+						Log->Message = sRenameBuf;
+					}
+					Seq->RefreshRuntimeNotifies();
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::EndPopup();
@@ -389,6 +417,8 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 		{
 			Notifies.erase(Notifies.begin() + PendingDelete);
 		}
+		// 추가/삭제/드래그(시간 변경)를 dispatch 캐시에 반영 → 프리뷰에서 실제 발사.
+		Seq->RefreshRuntimeNotifies();
 		DL->AddLine(ImVec2(CanvasX, LaneY + NotifyLaneH - 1.0f),
 		            ImVec2(CanvasX + CanvasW, LaneY + NotifyLaneH - 1.0f), ColSeparator);
 		RowY += NotifyLaneH;

@@ -381,6 +381,27 @@ TArray<FBoneAnimationTrack>& UAnimSequence::GetMutableBoneTracks()
     return DataModel ? DataModel->BoneAnimationTracks : EmptyTracks;
 }
 
+TArray<FAnimNotifyEvent>& UAnimSequence::GetMutableModelNotifies()
+{
+    if (!DataModel)
+    {
+        DataModel = UObjectManager::Get().CreateObject<UAnimDataModel>(this);
+        PlayLength = DataModel->PlayLength;
+        FrameRate  = DataModel->FrameRate;
+        Notifies   = DataModel->Notifies;
+    }
+    return DataModel->Notifies;
+}
+
+void UAnimSequence::RefreshRuntimeNotifies()
+{
+    if (DataModel)
+    {
+        // 베이스 캐시 = UAnimInstance::AddAnimNotifies 가 읽는 dispatch 소스.
+        Notifies = DataModel->Notifies;
+    }
+}
+
 int32 UAnimSequence::GetNumberOfFrames() const
 {
     return DataModel ? DataModel->NumFrames : 0;
