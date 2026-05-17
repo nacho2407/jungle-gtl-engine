@@ -263,6 +263,8 @@ def infer_property_type(cpp_type: str, metadata: dict[str, str]) -> str:
     if explicit_type:
         if explicit_type.startswith("EPropertyType::"):
             return explicit_type.split("::", 1)[1]
+        if explicit_type == "Object":
+            return "ObjectRef"
         return explicit_type
 
     enum_type = metadata.get("enumtype") or metadata.get("enum")
@@ -276,6 +278,10 @@ def infer_property_type(cpp_type: str, metadata: dict[str, str]) -> str:
     normalized = normalize_cpp_type(cpp_type)
     if normalized == "TArray<FString>" and bool(metadata.get("assettype") or metadata.get("allowedclass")):
         return "SoftObjectRefArray"
+    if get_tobjectptr_inner_type(normalized):
+        return "ObjectRef"
+    if normalized.endswith("*") and not normalized.endswith("char*"):
+        return "ObjectRef"
     return TYPE_MAP.get(normalized, "String")
 
 
@@ -313,6 +319,37 @@ def is_soft_object_property(prop: ReflectedProperty) -> bool:
     if prop.property_type in {"StaticMeshRef", "SkeletalMeshRef", "Script"}:
         return True
     return normalize_cpp_type(prop.cpp_type) == "FString" and bool(prop.asset_type or prop.allowed_class)
+
+
+def is_object_property(prop: ReflectedProperty) -> bool:
+    return prop.property_type == "ObjectRef"
+
+
+def get_tobjectptr_inner_type(cpp_type: str) -> str | None:
+    normalized = normalize_cpp_type(cpp_type)
+    match = re.match(r"TObjectPtr\s*<\s*(?P<inner>.+)\s*>$", normalized)
+    return normalize_cpp_type(match.group("inner")) if match else None
+
+
+def get_object_property_class(prop: ReflectedProperty) -> str | None:
+    if prop.allowed_class:
+        return prop.allowed_class
+
+    normalized = normalize_cpp_type(prop.cpp_type)
+    object_ptr_inner = get_tobjectptr_inner_type(normalized)
+    if object_ptr_inner:
+        return object_ptr_inner
+
+    if normalized.endswith("*"):
+        return normalized[:-1].strip()
+    return None
+
+
+def get_object_property_ops(prop: ReflectedProperty) -> str:
+    object_class = get_object_property_class(prop) or "UObject"
+    if get_tobjectptr_inner_type(prop.cpp_type):
+        return f"FObjectProperty::GetObjectPtrOps<{object_class}>()"
+    return f"FObjectProperty::GetRawPointerOps<{object_class}>()"
 
 
 def get_array_element_cpp_type(cpp_type: str) -> str | None:
@@ -653,6 +690,8 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
         property_class = "FEnumProperty"
     elif prop.property_type == "Struct":
         property_class = "FStructProperty"
+    elif is_object_property(prop):
+        property_class = "FObjectProperty"
     elif is_soft_object_property(prop):
         property_class = "FSoftObjectProperty"
     elif prop.property_type == "SoftObjectRefArray":
@@ -672,6 +711,23 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
+            "\t);\n"
+            f"\tStruct->AddProperty(&{property_symbol});\n"
+        )
+
+    if property_class == "FObjectProperty":
+        return (
+            f"\tstatic const FObjectProperty {property_symbol}(\n"
+            f"\t\t{cpp_string_literal(prop.member_name)},\n"
+            f"\t\t{cpp_string_literal(prop.category)},\n"
+            f"\t\t{prop.flags},\n"
+            f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
+            f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+            f"\t\t{get_object_property_ops(prop)},\n"
+            f"\t\t{cpp_string_literal(prop.display_name)},\n"
+            f"\t\t{{{metadata_entries}}},\n"
+            f"\t\t{cpp_string_literal(prop.owner)},\n"
+            f"\t\t{cpp_optional_string_literal(get_object_property_class(prop))}\n"
             "\t);\n"
             f"\tStruct->AddProperty(&{property_symbol});\n"
         )

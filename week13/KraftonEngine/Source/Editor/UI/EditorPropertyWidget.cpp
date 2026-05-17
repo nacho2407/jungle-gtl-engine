@@ -147,6 +147,9 @@ namespace
 		case EPropertyType::SoftObjectRef:
 			*static_cast<FString*>(DstPtr) = *static_cast<FString*>(SrcPtr);
 			return true;
+		case EPropertyType::ObjectRef:
+			*static_cast<UObject**>(DstPtr) = *static_cast<UObject**>(SrcPtr);
+			return true;
 		case EPropertyType::Name:
 			*static_cast<FName*>(DstPtr) = *static_cast<FName*>(SrcPtr);
 			return true;
@@ -1559,6 +1562,207 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 					{
 						ImGui::SetItemDefaultFocus();
 					}
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+		break;
+	}
+	case EPropertyType::ObjectRef:
+	{
+		const FObjectProperty* ObjectValueProperty = Prop.Property ? Prop.Property->AsObjectProperty() : nullptr;
+		if (!ObjectValueProperty)
+		{
+			break;
+		}
+
+		auto SetObjectValue = [&](UObject* Object)
+				{
+				ObjectValueProperty->SetObjectValue(Prop.ContainerPtr, Object);
+				bChanged = true;
+			};
+
+		UObject* Current = ObjectValueProperty->GetObjectValue(Prop.ContainerPtr);
+		FString Preview = Current ? Current->GetName() : FString("None");
+
+		const FObjectPropertyBase* ObjectProperty = Prop.Property ? Prop.Property->AsObjectPropertyBase() : nullptr;
+		UClass* AllowedClass = ObjectProperty ? ObjectProperty->GetAllowedClassType() : nullptr;
+
+		if (AllowedClass == UStaticMesh::StaticClass())
+		{
+			UStaticMesh* CurrentMesh = Cast<UStaticMesh>(Current);
+			Preview = CurrentMesh && CurrentMesh->GetAssetPathFileName() != "None"
+				? GetStemFromPath(CurrentMesh->GetAssetPathFileName())
+				: FString("None");
+
+			float ButtonWidth = ImGui::CalcTextSize("Import").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+			float Spacing = ImGui::GetStyle().ItemSpacing.x;
+			ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
+
+			if (ImGui::BeginCombo("##StaticMeshObject", Preview.c_str()))
+			{
+				const bool bSelectedNone = CurrentMesh == nullptr;
+				if (ImGui::Selectable("None", bSelectedNone))
+				{
+					SetObjectValue(nullptr);
+				}
+				if (bSelectedNone)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+
+				const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
+				for (const FMeshAssetListItem& Item : MeshFiles)
+				{
+					const bool bSelected = CurrentMesh && CurrentMesh->GetAssetPathFileName() == Item.FullPath;
+					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+					{
+						ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+						UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(Item.FullPath, Device);
+						if (Loaded)
+						{
+							SetObjectValue(Loaded);
+						}
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ButtonWidth);
+			if (ImGui::Button("Import"))
+			{
+				FString MeshPath = OpenStaticMeshFileDialog();
+				if (!MeshPath.empty())
+				{
+					if (IsFbxFilePath(MeshPath))
+					{
+						ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+						UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(MeshPath, FImportOptions::Default(), Device);
+						if (Loaded)
+						{
+							SetObjectValue(Loaded);
+						}
+					}
+					else
+					{
+						ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+						UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(MeshPath, Device);
+						if (Loaded)
+						{
+							SetObjectValue(Loaded);
+						}
+					}
+				}
+			}
+			break;
+		}
+
+		if (AllowedClass == USkeletalMesh::StaticClass())
+		{
+			USkeletalMesh* CurrentMesh = Cast<USkeletalMesh>(Current);
+			Preview = CurrentMesh && CurrentMesh->GetAssetPathFileName() != "None"
+				? GetStemFromPath(CurrentMesh->GetAssetPathFileName())
+				: FString("None");
+
+			float ButtonWidth = ImGui::CalcTextSize("Import FBX").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+			float Spacing = ImGui::GetStyle().ItemSpacing.x;
+			ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
+
+			if (ImGui::BeginCombo("##SkeletalMeshObject", Preview.c_str()))
+			{
+				const bool bSelectedNone = CurrentMesh == nullptr;
+				if (ImGui::Selectable("None", bSelectedNone))
+				{
+					SetObjectValue(nullptr);
+				}
+				if (bSelectedNone)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+
+				const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
+				for (const FMeshAssetListItem& Item : MeshFiles)
+				{
+					const bool bSelected = CurrentMesh && CurrentMesh->GetAssetPathFileName() == Item.FullPath;
+					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+					{
+						ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+						USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(Item.FullPath, Device);
+						if (Loaded)
+						{
+							SetObjectValue(Loaded);
+						}
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ButtonWidth);
+			if (ImGui::Button("Import FBX"))
+			{
+				FString FbxPath = OpenFbxFileDialog();
+				if (!FbxPath.empty())
+				{
+					ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+					USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(FbxPath, Device);
+					if (Loaded)
+					{
+						SetObjectValue(Loaded);
+					}
+				}
+			}
+			break;
+		}
+
+		if (ImGui::BeginCombo("##Value", Preview.c_str()))
+		{
+			const bool bSelectedNone = Current == nullptr;
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				SetObjectValue(nullptr);
+			}
+			if (bSelectedNone)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
+			for (UObject* Candidate : GUObjectArray)
+			{
+				if (!IsValid(Candidate))
+				{
+					continue;
+				}
+
+				if (AllowedClass && !Candidate->GetClass()->IsA(AllowedClass))
+				{
+					continue;
+				}
+
+				FString CandidateName = Candidate->GetName();
+				if (CandidateName.empty())
+				{
+					CandidateName = Candidate->GetClass()->GetName();
+				}
+
+				const bool bSelected = Current == Candidate;
+				if (ImGui::Selectable(CandidateName.c_str(), bSelected))
+				{
+					SetObjectValue(Candidate);
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
 				}
 			}
 

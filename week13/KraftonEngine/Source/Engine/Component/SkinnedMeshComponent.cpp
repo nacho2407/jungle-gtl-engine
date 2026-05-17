@@ -704,7 +704,13 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 {
 	UMeshComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "SkeletalMeshPath") == 0 || strcmp(PropertyName, "Skeletal Mesh") == 0)
+	if (strcmp(PropertyName, "SkeletalMesh") == 0 || strcmp(PropertyName, "Skeletal Mesh") == 0)
+	{
+		SetSkeletalMesh(SkeletalMesh);
+		return;
+	}
+
+	if (strcmp(PropertyName, "SkeletalMeshPath") == 0)
 	{
 		// mesh path 변경도 코드 경로와 같은 SetSkeletalMesh를 통과시켜 skinning과 dirty 처리를 통일한다.
 		if (!SkeletalMeshPath.empty() && SkeletalMeshPath != "None")

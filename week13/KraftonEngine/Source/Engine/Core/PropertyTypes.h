@@ -9,6 +9,7 @@
 namespace json { class JSON; }
 class FArchive;
 class UStruct;
+class UClass;
 struct FPropertyValue;
 struct FProperty;
 struct FNumericProperty;
@@ -16,6 +17,8 @@ struct FBoolProperty;
 struct FStringProperty;
 struct FNameProperty;
 struct FEnumProperty;
+struct FObjectPropertyBase;
+struct FObjectProperty;
 struct FSoftObjectProperty;
 struct FStructProperty;
 struct FArrayProperty;
@@ -34,6 +37,7 @@ enum class EPropertyType : uint8_t
 	String,
 	Name,		  // FName — 문자열 풀 기반 이름 (리소스 키 등)
 	SceneComponentRef, // Owner actor 내부 USceneComponent 참조
+	ObjectRef,
 	Color4,	   // FVector4 RGBA — ImGui::ColorEdit4 위젯
 	Enum,
 	Struct,    // 자기기술 구조체 — StructType의 property metadata로 Children 생성
@@ -194,6 +198,8 @@ struct FProperty
 	virtual const FStringProperty* AsStringProperty() const { return nullptr; }
 	virtual const FNameProperty* AsNameProperty() const { return nullptr; }
 	virtual const FEnumProperty* AsEnumProperty() const { return nullptr; }
+	virtual const FObjectPropertyBase* AsObjectPropertyBase() const { return nullptr; }
+	virtual const FObjectProperty* AsObjectProperty() const { return nullptr; }
 	virtual const FSoftObjectProperty* AsSoftObjectProperty() const { return nullptr; }
 	virtual const FStructProperty* AsStructProperty() const { return nullptr; }
 	virtual const FArrayProperty* AsArrayProperty() const { return nullptr; }
@@ -246,12 +252,38 @@ struct FGenericProperty : FProperty
 	void	   Serialize(void* Container, FArchive& Ar) const override;
 };
 
+struct FObjectPropertyBase : FProperty
+{
+	const char* AllowedClass = nullptr;
+
+	FObjectPropertyBase() = default;
+	FObjectPropertyBase(
+		const char* InName,
+		const char* InCategory,
+		uint32 InFlags,
+		size_t InOffset,
+		size_t InSize,
+		const char* InDisplayName,
+		const TMap<FString, FString>& InMetadata,
+		const char* InOwnerClassName,
+		const char* InAllowedClass)
+		: FProperty(InName, InCategory, InFlags, InOffset, InSize, InDisplayName, InMetadata, InOwnerClassName)
+		, AllowedClass(InAllowedClass)
+	{
+	}
+
+	const char* GetAllowedClass() const { return AllowedClass ? AllowedClass : ""; }
+	UClass* GetAllowedClassType() const;
+	const FObjectPropertyBase* AsObjectPropertyBase() const override { return this; }
+};
+
 #include "Core/Property/GenericProperty.h"
 #include "Core/Property/BoolProperty.h"
 #include "Core/Property/StringProperty.h"
 #include "Core/Property/NameProperty.h"
 #include "Core/Property/NumericProperty.h"
 #include "Core/Property/EnumProperty.h"
+#include "Core/Property/ObjectProperty.h"
 #include "Core/Property/SoftObjectProperty.h"
 #include "Core/Property/StructProperty.h"
 #include "Core/Property/ArrayProperty.h"

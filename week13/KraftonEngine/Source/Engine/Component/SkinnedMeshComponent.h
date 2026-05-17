@@ -3,6 +3,7 @@
 
 #include "Math/Rotator.h"
 #include "Math/Transform.h"
+#include "Object/ObjectPtr.h"
 
 #include "Source/Engine/Component/SkinnedMeshComponent.generated.h"
 class USkeletalMesh;
@@ -75,8 +76,9 @@ protected:
 
 protected:
 	// Mesh/material state는 SetSkeletalMesh와 PostEditProperty가 같은 경로를 쓰도록 여기서 소유한다.
-	USkeletalMesh* SkeletalMesh = nullptr;
-	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Skeletal Mesh", Type=SkeletalMeshRef, AssetType="SkeletalMesh", AllowedClass="USkeletalMesh")
+	UPROPERTY(Edit, Category="Mesh", DisplayName="Skeletal Mesh", Type=ObjectRef, AllowedClass="USkeletalMesh")
+	TObjectPtr<USkeletalMesh> SkeletalMesh;
+	UPROPERTY(Save, Category="Mesh", DisplayName="Skeletal Mesh Path", Type=SkeletalMeshRef, AssetType="SkeletalMesh", AllowedClass="USkeletalMesh")
 	FString SkeletalMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
 	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", Type=SoftObjectRefArray, AssetType="Material", AllowedClass="UMaterial")

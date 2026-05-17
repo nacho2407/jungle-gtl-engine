@@ -4,6 +4,7 @@
 #include "Core/PropertyTypes.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/StaticMesh.h"
+#include "Object/ObjectPtr.h"
 
 #include "Source/Engine/Component/StaticMeshComponent.generated.h"
 class UMaterial;
@@ -46,8 +47,9 @@ public:
 private:
 	void CacheLocalBounds();
 
-	UStaticMesh* StaticMesh = nullptr;
-	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Static Mesh", Type=StaticMeshRef, AssetType="StaticMesh", AllowedClass="UStaticMesh")
+	UPROPERTY(Edit, Category="Mesh", DisplayName="Static Mesh", Type=ObjectRef, AllowedClass="UStaticMesh")
+	TObjectPtr<UStaticMesh> StaticMesh;
+	UPROPERTY(Save, Category="Mesh", DisplayName="Static Mesh Path", Type=StaticMeshRef, AssetType="StaticMesh", AllowedClass="UStaticMesh")
 	FString StaticMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
 	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", Type=SoftObjectRefArray, AssetType="Material", AllowedClass="UMaterial")
