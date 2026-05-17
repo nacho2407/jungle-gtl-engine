@@ -265,7 +265,8 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 		// 드래그로 시간 이동 / 우클릭으로 삭제(루프 후 지연 적용).
 		TArray<FAnimNotifyEvent>& Notifies = Seq->GetMutableNotifies();
 		int PendingDelete = -1;
-		static char sRenameBuf[64] = {};
+		static char  sRenameBuf[64]   = {};
+		static float sGrabOffsetTime  = 0.0f; // 잡은 지점과 앵커의 시간 차(점프 방지)
 		const float BadgeTop  = LaneY + 5.0f;
 		const float BadgeBot  = LaneY + NotifyLaneH - 5.0f;
 		const float BadgeMidY = (BadgeTop + BadgeBot) * 0.5f;
@@ -288,15 +289,25 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			const bool bHovered = ImGui::IsItemHovered();
 			const bool bActive  = ImGui::IsItemActive();
 
-			if (bActive && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f))
+			auto MouseTime = [&]() {
+				return std::clamp((ImGui::GetIO().MousePos.x - CanvasX) / CanvasW,
+				                  0.0f, 1.0f) * PlayLength;
+			};
+
+			// 누른 순간 잡은 지점-앵커 시간차를 기록 (드래그 시 점프 방지)
+			if (ImGui::IsItemActivated())
 			{
-				const float Frac = std::clamp(
-					(ImGui::GetIO().MousePos.x - CanvasX) / CanvasW, 0.0f, 1.0f);
-				N.TriggerTime = Frac * PlayLength;
+				sGrabOffsetTime = MouseTime() - N.TriggerTime;
+			}
+			// 임계값(io.MouseDragThreshold) 이상 움직였을 때만 이동 → 더블클릭은 제외
+			if (bActive && ImGui::IsMouseDragging(ImGuiMouseButton_Left, -1.0f))
+			{
+				N.TriggerTime = std::clamp(MouseTime() - sGrabOffsetTime,
+				                           0.0f, PlayLength);
 			}
 			if (bHovered || bActive)
 			{
-				ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+				ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 			}
 			if (bHovered && !bActive)
 			{
