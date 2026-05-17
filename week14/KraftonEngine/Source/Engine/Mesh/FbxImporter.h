@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Mesh/Fbx/FbxImportTypes.h"
@@ -20,6 +20,10 @@ public:
 		FFbxSkeletalMeshImportResult& OutResult,
 		FString* OutMessage = nullptr
 	);
+
+	static bool ImportSkeletalMeshOnly(const FString& FilePath, FFbxSkeletalMeshOnlyImportResult& OutResult, FString* OutMessage = nullptr);
+
+	static bool ImportAnimationOnly(const FString& FilePath, FFbxAnimationImportResult& OutResult, FString* OutMessage = nullptr);
 
 	static bool HasSkinDeformer(
 		const FString& FilePath,

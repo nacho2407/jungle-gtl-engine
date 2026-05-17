@@ -20,6 +20,8 @@
 #include "Core/ClassTypes.h"
 #include "Asset/AssetRegistry.h"
 #include "Animation/SkeletonTypes.h"
+#include "Animation/AnimationManager.h"
+#include "Animation/AnimSequence.h"
 #include "Math/FloatCurve.h"
 #include "Lua/LuaScriptManager.h"
 #include "Resource/ResourceManager.h"
@@ -1343,14 +1345,42 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			FString FbxPath = OpenFbxFileDialog();
 			if (!FbxPath.empty())
 			{
-				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-				USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(FbxPath, Device);
+				ID3D11Device*  Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+				USkeletalMesh* Loaded = nullptr;
+				FMeshManager::ImportSkeletalMeshAsNew(FbxPath, Device, Loaded);
 				if (Loaded)
 				{
 					// Component에는 바로 로드할 .sketbin 경로를 저장한다.
 					// 원본 FBX 경로는 Binary 안의 PathFileName에만 남긴다.
-					*Val = FMeshManager::GetSkeletalMeshBinaryFilePath(FbxPath);
+					*Val     = Loaded->GetAssetPathFileName();
 					bChanged = true;
+				}
+			}
+		}
+
+		if (SelectedComponent && SelectedComponent->IsA<USkeletalMeshComponent>())
+		{
+			USkeletalMeshComponent* SkelComp    = static_cast<USkeletalMeshComponent*>(SelectedComponent);
+			USkeletalMesh*          CurrentMesh = SkelComp->GetSkeletalMesh();
+			if (CurrentMesh && CurrentMesh->GetSkeletonBinding().HasSkeletonPath())
+			{
+				if (ImGui::Button("Import FBX Using Current Skeleton"))
+				{
+					FString FbxPath = OpenFbxFileDialog();
+					if (!FbxPath.empty())
+					{
+						ID3D11Device*              Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+						FSkeletalMeshImportRequest Request;
+						Request.SourceFbxPath      = FbxPath;
+						Request.TargetSkeletonPath = CurrentMesh->GetSkeletonBinding().SkeletonPath;
+
+						USkeletalMesh* Loaded = nullptr;
+						if (FMeshManager::ImportSkeletalMesh(Request, Device, Loaded) && Loaded)
+						{
+							*Val     = Loaded->GetAssetPathFileName();
+							bChanged = true;
+						}
+					}
 				}
 			}
 		}
@@ -1360,8 +1390,10 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 	{
 		// 일반 자산 레퍼런스 콤보 — type-name 으로 FAssetRegistry 에 질의.
 		// Import 같은 타입 특이 액션은 없음. 필요 시 type-name 별 분기로 확장.
-		FString* Val = static_cast<FString*>(Prop.ValuePtr);
-		FString Preview = (Val->empty() || *Val == "None") ? "None" : GetStemFromPath(*Val);
+		FString*   Val              = static_cast<FString*>(Prop.ValuePtr);
+		FString    Preview          = (Val->empty() || *Val == "None") ? "None" : GetStemFromPath(*Val);
+		const bool bAnimSequenceRef = Prop.AssetTypeName && std::strcmp(Prop.AssetTypeName, "UAnimSequence") == 0;
+
 		if (ImGui::BeginCombo(Prop.Name.c_str(), Preview.c_str()))
 		{
 			bool bSelectedNone = (Val->empty() || *Val == "None");
@@ -1375,9 +1407,6 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
             TArray<FAssetListItem> FilteredItems;
             const TArray<FAssetListItem>* ItemsPtr = nullptr;
 
-            const bool bAnimSequenceRef = Prop.AssetTypeName &&
-                std::strcmp(Prop.AssetTypeName, "UAnimSequence") == 0;
-
             if (bAnimSequenceRef && SelectedComponent && SelectedComponent->IsA<USkeletalMeshComponent>())
             {
                 USkeletalMeshComponent* SkelComp = static_cast<USkeletalMeshComponent*>(SelectedComponent);
@@ -1385,7 +1414,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
                 {
                     FilteredItems = FAssetRegistry::ListAnimationsForSkeleton(
                         Mesh->GetSkeletonBinding(),
-                        true
+                        false
                     );
                     ItemsPtr = &FilteredItems;
                 }
@@ -1407,6 +1436,32 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 				if (bSelected) ImGui::SetItemDefaultFocus();
 			}
 			ImGui::EndCombo();
+		}
+
+		if (bAnimSequenceRef && SelectedComponent && SelectedComponent->IsA<USkeletalMeshComponent>())
+		{
+			USkeletalMeshComponent* SkelComp = static_cast<USkeletalMeshComponent*>(SelectedComponent);
+			USkeletalMesh*          Mesh     = SkelComp->GetSkeletalMesh();
+			if (Mesh && Mesh->GetSkeletonBinding().HasSkeletonPath())
+			{
+				if (ImGui::Button("Import Animation FBX"))
+				{
+					FString FbxPath = OpenFbxFileDialog();
+					if (!FbxPath.empty())
+					{
+						FAnimationImportRequest Request;
+						Request.SourceFbxPath      = FbxPath;
+						Request.TargetSkeletonPath = Mesh->GetSkeletonBinding().SkeletonPath;
+
+						TArray<UAnimSequence*> ImportedSequences;
+						if (FAnimationManager::Get().ImportAnimationForSkeleton(Request, &ImportedSequences) && !ImportedSequences.empty())
+						{
+							*Val     = ImportedSequences[0]->GetAssetPathFileName();
+							bChanged = true;
+						}
+					}
+				}
+			}
 		}
 		break;
 	}

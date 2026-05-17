@@ -16,7 +16,7 @@ public:
     bool SaveSkeleton(USkeleton* Skeleton, const FString& PackagePath, const FString& SourcePath);
 
     const TArray<FAssetListItem>& GetAvailableSkeletonFiles();
-    void ScanSkeletonAssets();
+    void                          ScanSkeletonAssets();
 
     USkeleton* FindSkeletonByAssetGuid(const FString& SkeletonAssetGuid);
 
@@ -27,18 +27,24 @@ public:
     static FSkeletonCompatibilityReport CheckCompatibility(
         const FSkeletonBinding& A,
         const FSkeletonBinding& B,
-        const USkeleton* LoadedA = nullptr,
-        const USkeleton* LoadedB = nullptr);
+        const USkeleton*        LoadedA = nullptr,
+        const USkeleton*        LoadedB = nullptr
+        );
 
-    static bool AreReferenceSkeletonsSameStructure(
-        const FReferenceSkeleton& A,
-        const FReferenceSkeleton& B,
-        FSkeletonCompatibilityReport* OutReport = nullptr);
+    static bool AreSkeletonsSameStructure(const FReferenceSkeleton& A, const FReferenceSkeleton& B, FSkeletonCompatibilityReport* OutReport = nullptr);
+
+    static bool BuildBoneRemapByName(
+        const FReferenceSkeleton&     SourceSkeleton,
+        const FReferenceSkeleton&     TargetSkeleton,
+        FSkeletonBoneRemap&           OutRemap,
+        FSkeletonCompatibilityReport* OutReport            = nullptr,
+        bool                          bRequireExactBoneSet = true
+        );
 
 private:
     FSkeletonManager() = default;
 
 private:
     TMap<FString, USkeleton*> SkeletonCaches;
-    TArray<FAssetListItem> AvailableSkeletonFiles;
+    TArray<FAssetListItem>    AvailableSkeletonFiles;
 };

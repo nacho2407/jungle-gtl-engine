@@ -51,8 +51,8 @@ namespace
     static void HashByte(uint64& Hash, uint8 Value)
     {
         static constexpr uint64 Prime = 1099511628211ull;
-        Hash ^= static_cast<uint64>(Value);
-        Hash *= Prime;
+        Hash                          ^= static_cast<uint64>(Value);
+        Hash                          *= Prime;
     }
 
     static void HashString(uint64& Hash, const FString& Value)
@@ -128,14 +128,11 @@ FString FSkeletonManager::MakeSkeletonAssetGuid(const FString& PackagePath, cons
     return FString("SKEL-") + Hex64(Hash);
 }
 
-bool FSkeletonManager::AreReferenceSkeletonsSameStructure(
-    const FReferenceSkeleton& A,
-    const FReferenceSkeleton& B,
-    FSkeletonCompatibilityReport* OutReport)
+bool FSkeletonManager::AreSkeletonsSameStructure(const FReferenceSkeleton& A, const FReferenceSkeleton& B, FSkeletonCompatibilityReport* OutReport)
 {
-    bool bCompatible = true;
-    const int32 NumBonesA = A.GetNumBones();
-    const int32 NumBonesB = B.GetNumBones();
+    bool        bCompatible = true;
+    const int32 NumBonesA   = A.GetNumBones();
+    const int32 NumBonesB   = B.GetNumBones();
 
     if (NumBonesA != NumBonesB)
     {
@@ -205,11 +202,118 @@ bool FSkeletonManager::AreReferenceSkeletonsSameStructure(
     return bCompatible;
 }
 
+bool FSkeletonManager::BuildBoneRemapByName(
+    const FReferenceSkeleton&     Source,
+    const FReferenceSkeleton&     Target,
+    FSkeletonBoneRemap&           OutRemap,
+    FSkeletonCompatibilityReport* OutReport,
+    bool                          bRequireExactBoneSet
+    )
+{
+    OutRemap.Reset();
+
+    const int32 SourceBoneCount = Source.GetNumBones();
+    const int32 TargetBoneCount = Target.GetNumBones();
+
+    OutRemap.SourceToTargetBone.resize(SourceBoneCount, -1);
+    OutRemap.TargetToSourceBone.resize(TargetBoneCount, -1);
+
+    TMap<FString, int32> TargetNameToIndex;
+    for (int32 TargetIndex = 0; TargetIndex < TargetBoneCount; ++TargetIndex)
+    {
+        const FString& TargetName = Target.Bones[TargetIndex].Name;
+        if (TargetNameToIndex.find(TargetName) != TargetNameToIndex.end())
+        {
+            if (OutReport)
+            {
+                OutReport->Result = ESkeletonCompatibilityResult::Incompatible;
+                OutReport->Reason = "duplicate bone name in target skeleton";
+                OutReport->ExtraBones.push_back(TargetName);
+            }
+            return false;
+        }
+        TargetNameToIndex[TargetName] = TargetIndex;
+    }
+
+    for (int32 SourceIndex = 0; SourceIndex < SourceBoneCount; ++SourceIndex)
+    {
+        const FReferenceBone& SourceBone = Source.Bones[SourceIndex];
+
+        auto TargetIt = TargetNameToIndex.find(SourceBone.Name);
+        if (TargetIt == TargetNameToIndex.end())
+        {
+            if (OutReport)
+            {
+                OutReport->Result = ESkeletonCompatibilityResult::Incompatible;
+                OutReport->Reason = "target skeleton is missing source bone";
+                OutReport->MissingBones.push_back(SourceBone.Name);
+            }
+            return false;
+        }
+
+        const int32           TargetIndex = TargetIt->second;
+        const FReferenceBone& TargetBone  = Target.Bones[TargetIndex];
+
+        const FString SourceParentName = SourceBone.ParentIndex >= 0 ? Source.Bones[SourceBone.ParentIndex].Name : FString();
+
+        const FString TargetParentName = TargetBone.ParentIndex >= 0 ? Target.Bones[TargetBone.ParentIndex].Name : FString();
+
+        if (SourceParentName != TargetParentName)
+        {
+            if (OutReport)
+            {
+                OutReport->Result = ESkeletonCompatibilityResult::Incompatible;
+                OutReport->Reason = "bone parent mismatch";
+                OutReport->ParentMismatchBones.push_back(SourceBone.Name);
+            }
+            return false;
+        }
+
+        OutRemap.SourceToTargetBone[SourceIndex] = TargetIndex;
+        OutRemap.TargetToSourceBone[TargetIndex] = SourceIndex;
+    }
+
+    if (bRequireExactBoneSet)
+    {
+        if (SourceBoneCount != TargetBoneCount)
+        {
+            if (OutReport)
+            {
+                OutReport->Result = ESkeletonCompatibilityResult::Incompatible;
+                OutReport->Reason = "bone count mismatch";
+            }
+            return false;
+        }
+
+        for (int32 TargetIndex = 0; TargetIndex < TargetBoneCount; ++TargetIndex)
+        {
+            if (OutRemap.TargetToSourceBone[TargetIndex] < 0)
+            {
+                if (OutReport)
+                {
+                    OutReport->Result = ESkeletonCompatibilityResult::Incompatible;
+                    OutReport->Reason = "source skeleton is missing target bone";
+                    OutReport->ExtraBones.push_back(Target.Bones[TargetIndex].Name);
+                }
+                return false;
+            }
+        }
+    }
+
+    if (OutReport)
+    {
+        OutReport->Result = ESkeletonCompatibilityResult::SameStructure;
+        OutReport->Reason = "bone remap built by name";
+    }
+    return true;
+}
+
 FSkeletonCompatibilityReport FSkeletonManager::CheckCompatibility(
     const FSkeletonBinding& A,
     const FSkeletonBinding& B,
-    const USkeleton* LoadedA,
-    const USkeleton* LoadedB)
+    const USkeleton*        LoadedA,
+    const USkeleton*        LoadedB
+    )
 {
     FSkeletonCompatibilityReport Report;
 
@@ -220,28 +324,17 @@ FSkeletonCompatibilityReport FSkeletonManager::CheckCompatibility(
         return Report;
     }
 
-    if (A.HasCompatibilitySignature() && B.HasCompatibilitySignature() &&
-        A.CompatibilitySignature == B.CompatibilitySignature)
+    if (A.HasCompatibilitySignature() && B.HasCompatibilitySignature() && A.CompatibilitySignature == B.CompatibilitySignature)
     {
         Report.Result = ESkeletonCompatibilityResult::SameStructure;
         Report.Reason = "same compatibility signature";
         return Report;
     }
 
-    if (LoadedA && LoadedB &&
-        AreReferenceSkeletonsSameStructure(LoadedA->GetReferenceSkeleton(), LoadedB->GetReferenceSkeleton(), &Report))
+    if (LoadedA && LoadedB && AreSkeletonsSameStructure(LoadedA->GetReferenceSkeleton(), LoadedB->GetReferenceSkeleton(), &Report))
     {
         Report.Result = ESkeletonCompatibilityResult::SameStructure;
         Report.Reason = "same reference skeleton structure";
-        return Report;
-    }
-
-    const bool bAHasModernId = A.HasAssetGuid() || A.HasCompatibilitySignature();
-    const bool bBHasModernId = B.HasAssetGuid() || B.HasCompatibilitySignature();
-    if (!bAHasModernId && !bBHasModernId && A.HasSkeletonPath() && B.HasSkeletonPath() && A.SkeletonPath == B.SkeletonPath)
-    {
-        Report.Result = ESkeletonCompatibilityResult::ExactSkeleton;
-        Report.Reason = "same legacy skeleton asset path";
         return Report;
     }
 
@@ -286,7 +379,7 @@ void FSkeletonManager::ScanSkeletonAssets()
 
         FAssetListItem Item;
         Item.DisplayName = GetDisplayNameFromPath(Entry.path());
-        Item.FullPath = RelPath;
+        Item.FullPath    = RelPath;
         AvailableSkeletonFiles.push_back(Item);
     }
 }
@@ -423,7 +516,8 @@ bool FSkeletonManager::SaveSkeleton(USkeleton* Skeleton, const FString& PackageP
         [&](const FAssetListItem& Item)
         {
             return Item.FullPath == NormalizedPath;
-        });
+        }
+    );
 
     if (ListIt == AvailableSkeletonFiles.end())
     {

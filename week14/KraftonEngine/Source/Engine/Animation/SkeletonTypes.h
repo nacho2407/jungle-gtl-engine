@@ -97,6 +97,30 @@ struct FSkeletonBinding
     }
 };
 
+// FBX source skeleton의 bone index를 target USkeleton의 bone index로 변환하는 import-time remap 표.
+// 저장 포맷에는 남기지 않는다. Mesh/Animation을 기존 Skeleton에 붙이는 동안만 사용한다.
+struct FSkeletonBoneRemap
+{
+    TArray<int32> SourceToTargetBone;
+    TArray<int32> TargetToSourceBone;
+
+    void Reset()
+    {
+        SourceToTargetBone.clear();
+        TargetToSourceBone.clear();
+    }
+
+    bool IsValidSourceBone(int32 SourceBoneIndex) const
+    {
+        return SourceBoneIndex >= 0 && SourceBoneIndex < static_cast<int32>(SourceToTargetBone.size()) && SourceToTargetBone[SourceBoneIndex] >= 0;
+    }
+
+    int32 GetTargetBoneIndex(int32 SourceBoneIndex) const
+    {
+        return IsValidSourceBone(SourceBoneIndex) ? SourceToTargetBone[SourceBoneIndex] : -1;
+    }
+};
+
 enum class ESkeletonCompatibilityResult : uint8
 {
     Incompatible = 0,
@@ -108,15 +132,28 @@ enum class ESkeletonCompatibilityResult : uint8
 struct FSkeletonCompatibilityReport
 {
     ESkeletonCompatibilityResult Result = ESkeletonCompatibilityResult::Incompatible;
-    FString Reason;
-    TArray<FString> MissingBones;
-    TArray<FString> ExtraBones;
-    TArray<FString> ParentMismatchBones;
+    FString                      Reason;
+    TArray<FString>              MissingBones;
+    TArray<FString>              ExtraBones;
+    TArray<FString>              ParentMismatchBones;
 
-    bool IsCompatible() const
+    bool IsExactCompatible() const
     {
-        return Result == ESkeletonCompatibilityResult::ExactSkeleton
-            || Result == ESkeletonCompatibilityResult::SameStructure
-            || Result == ESkeletonCompatibilityResult::Retargetable;
+        return Result == ESkeletonCompatibilityResult::ExactSkeleton;
+    }
+
+    bool IsCompatible(bool bAllowSameStructure = false) const
+    {
+        if (Result == ESkeletonCompatibilityResult::ExactSkeleton)
+        {
+            return true;
+        }
+
+        if (bAllowSameStructure && Result == ESkeletonCompatibilityResult::SameStructure)
+        {
+            return true;
+        }
+
+        return Result == ESkeletonCompatibilityResult::Retargetable;
     }
 };

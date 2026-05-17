@@ -18,6 +18,15 @@ struct FImportOptions;
 class UStaticMesh;
 class USkeletalMesh;
 
+struct FSkeletalMeshImportRequest
+{
+	FString SourceFbxPath;
+	FString TargetSkeletonPath = "None";
+	FString DestinationPackagePath;
+	bool    bAllowTargetExtraBones   = false;
+	bool    bOverwriteExistingAssets = true;
+};
+
 
 class FMeshManager
 {
@@ -27,8 +36,9 @@ public:
 	static UStaticMesh* LoadStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice);
 
 	static USkeletalMesh* LoadSkeletalMesh(const FString& PathFileName , ID3D11Device* InDevice);
-	static bool LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Device* InDevice, FSkeletalMesh*& OutMesh, TArray<FSkeletalMaterial>* OutMaterials = nullptr);
-	static bool ReadSkeletalMeshBinding(const FString& PackagePath, FSkeletonBinding& OutBinding);
+	static bool           ImportSkeletalMeshAsNew(const FString& SourceFbxPath, ID3D11Device* Device, USkeletalMesh*& OutSkeletalMesh);
+	static bool           ImportSkeletalMesh(const FSkeletalMeshImportRequest& Request, ID3D11Device* Device, USkeletalMesh*& OutSkeletalMesh);
+	static bool           ReadSkeletalMeshBinding(const FString& PackagePath, FSkeletonBinding& OutBinding);
 
 	static void ScanMeshSourceFiles();
 	static void ScanFbxSourceFiles();

@@ -700,9 +700,32 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 		}
 	}
 
+	if (ImGui::Button("Import Animation FBX", ImVec2(-1.0f, 0.0f)))
+	{
+		FEditorFileDialogOptions Opts;
+		Opts.Filter                       = L"FBX Files (*.fbx)\0*.fbx\0All Files (*.*)\0*.*\0";
+		Opts.Title                        = L"Import Animation FBX";
+		Opts.bReturnRelativeToProjectRoot = true;
+		FString Path                      = FEditorFileUtils::OpenFileDialog(Opts);
+		if (!Path.empty())
+		{
+			FAnimationImportRequest Request;
+			Request.SourceFbxPath      = Path;
+			Request.TargetSkeletonPath = SkeletalMesh->GetSkeletonBinding().SkeletonPath;
+
+			TArray<UAnimSequence*> ImportedSequences;
+			if (FAnimationManager::Get().ImportAnimationForSkeleton(Request, &ImportedSequences) && !ImportedSequences.empty())
+			{
+				AnimTabState.CurrentSequence   = ImportedSequences[0];
+				AnimTabState.SelectedAnimIndex = -1;
+				ApplyAnimationToComponent();
+			}
+		}
+	}
+
 	ImGui::Separator();
 
-	const TArray<FAssetListItem> AnimFiles = FAssetRegistry::ListAnimationsForSkeleton(SkeletalMesh->GetSkeletonBinding(), true);
+	const TArray<FAssetListItem> AnimFiles = FAssetRegistry::ListAnimationsForSkeleton(SkeletalMesh->GetSkeletonBinding(), false);
 	for (int32 i = 0; i < static_cast<int32>(AnimFiles.size()); ++i)
 	{
 		const FAssetListItem& Item      = AnimFiles[i];
