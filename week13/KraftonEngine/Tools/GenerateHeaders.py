@@ -375,14 +375,112 @@ def get_array_element_property_type(prop: ReflectedProperty) -> str | None:
     return None
 
 
-def get_array_element_path_ops(prop: ReflectedProperty) -> str:
-    if prop.property_type != "SoftObjectRefArray":
-        return "nullptr"
+def build_array_inner_property(
+    prop: ReflectedProperty,
+    inner_symbol: str,
+    element_cpp_type: str,
+    element_property_type: str,
+    metadata_entries: str,
+) -> str:
+    inner_name = f"{prop.member_name}_Inner"
+    if element_property_type == "SoftObjectRef":
+        soft_ops = (
+            "FSoftObjectProperty::GetSoftObjectPtrOps()"
+            if element_cpp_type == "FSoftObjectPtr"
+            else "FSoftObjectProperty::GetStringOps()"
+        )
+        return (
+            f"\tstatic const FSoftObjectProperty {inner_symbol}(\n"
+            f"\t\t{cpp_string_literal(inner_name)},\n"
+            f"\t\t{cpp_string_literal(prop.category)},\n"
+            f"\t\tPF_None,\n"
+            f"\t\t0,\n"
+            f"\t\tsizeof({element_cpp_type}),\n"
+            f"\t\t{soft_ops},\n"
+            f"\t\t{cpp_string_literal(prop.display_name)},\n"
+            f"\t\t{{{metadata_entries}}},\n"
+            f"\t\t{cpp_string_literal(prop.owner)},\n"
+            f"\t\t{cpp_optional_string_literal(prop.asset_type)},\n"
+            f"\t\t{cpp_optional_string_literal(prop.allowed_class)}\n"
+            "\t);\n"
+        )
 
-    element_cpp_type = get_array_element_cpp_type(prop.cpp_type)
-    if element_cpp_type == "FSoftObjectPtr":
-        return "FArrayProperty::GetSoftObjectPtrPathOps()"
-    return "FArrayProperty::GetStringPathOps()"
+    if element_property_type == "String":
+        return (
+            f"\tstatic const FStringProperty {inner_symbol}(\n"
+            f"\t\t{cpp_string_literal(inner_name)},\n"
+            f"\t\t{cpp_string_literal(prop.category)},\n"
+            f"\t\tPF_None,\n"
+            f"\t\t0,\n"
+            f"\t\tsizeof({element_cpp_type}),\n"
+            f"\t\t{cpp_string_literal(prop.display_name)},\n"
+            f"\t\t{{{metadata_entries}}},\n"
+            f"\t\t{cpp_string_literal(prop.owner)}\n"
+            "\t);\n"
+        )
+
+    if element_property_type == "Name":
+        return (
+            f"\tstatic const FNameProperty {inner_symbol}(\n"
+            f"\t\t{cpp_string_literal(inner_name)},\n"
+            f"\t\t{cpp_string_literal(prop.category)},\n"
+            f"\t\tPF_None,\n"
+            f"\t\t0,\n"
+            f"\t\tsizeof({element_cpp_type}),\n"
+            f"\t\t{cpp_string_literal(prop.display_name)},\n"
+            f"\t\t{{{metadata_entries}}},\n"
+            f"\t\t{cpp_string_literal(prop.owner)}\n"
+            "\t);\n"
+        )
+
+    if element_property_type == "Bool":
+        return (
+            f"\tstatic const FBoolProperty {inner_symbol}(\n"
+            f"\t\t{cpp_string_literal(inner_name)},\n"
+            f"\t\t{cpp_string_literal(prop.category)},\n"
+            f"\t\tPF_None,\n"
+            f"\t\t0,\n"
+            f"\t\tsizeof({element_cpp_type}),\n"
+            f"\t\t{cpp_string_literal(prop.display_name)},\n"
+            f"\t\t{{{metadata_entries}}},\n"
+            f"\t\t{cpp_string_literal(prop.owner)}\n"
+            "\t);\n"
+        )
+
+    if element_property_type in {"Int", "Float"}:
+        property_class = "FIntProperty" if element_property_type == "Int" else "FFloatProperty"
+        return (
+            f"\tstatic const {property_class} {inner_symbol}(\n"
+            f"\t\t{cpp_string_literal(inner_name)},\n"
+            f"\t\t{cpp_string_literal(prop.category)},\n"
+            f"\t\tPF_None,\n"
+            f"\t\t0,\n"
+            f"\t\tsizeof({element_cpp_type}),\n"
+            f"\t\t{prop.min_value},\n"
+            f"\t\t{prop.max_value},\n"
+            f"\t\t{prop.speed_value},\n"
+            f"\t\t{cpp_string_literal(prop.display_name)},\n"
+            f"\t\t{{{metadata_entries}}},\n"
+            f"\t\t{cpp_string_literal(prop.owner)}\n"
+            "\t);\n"
+        )
+
+    return (
+        f"\tstatic const FGenericProperty {inner_symbol}(\n"
+        f"\t\t{cpp_string_literal(inner_name)},\n"
+        f"\t\tEPropertyType::{element_property_type},\n"
+        f"\t\t{cpp_string_literal(prop.category)},\n"
+        f"\t\tPF_None,\n"
+        f"\t\t0,\n"
+        f"\t\tsizeof({element_cpp_type}),\n"
+        f"\t\t{prop.min_value},\n"
+        f"\t\t{prop.max_value},\n"
+        f"\t\t{prop.speed_value},\n"
+        f"\t\t{cpp_string_literal(prop.display_name)},\n"
+        f"\t\t{{{metadata_entries}}},\n"
+        f"\t\t{cpp_string_literal(prop.owner)}\n"
+        "\t);\n"
+    )
 
 
 def find_reflected_type_bodies(scan_text: str) -> list[tuple[str, int, int]]:
@@ -819,24 +917,32 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
     if property_class == "FArrayProperty":
         element_cpp_type = get_array_element_cpp_type(prop.cpp_type)
         element_property_type = get_array_element_property_type(prop)
-        element_path_ops = get_array_element_path_ops(prop)
         if not element_cpp_type or not element_property_type:
             element_cpp_type = "FVector"
             element_property_type = "Vec3"
+        inner_property_symbol = f"{property_symbol}_Inner"
+        inner_property_source = build_array_inner_property(
+            prop,
+            inner_property_symbol,
+            element_cpp_type,
+            element_property_type,
+            metadata_entries,
+        )
         return (
+            inner_property_source +
             f"\tstatic const FArrayProperty {property_symbol}(\n"
             f"\t\t{cpp_string_literal(prop.member_name)},\n"
             f"\t\tEPropertyType::{prop.property_type},\n"
             f"\t\tEPropertyType::{element_property_type},\n"
-            f"\t\tFArrayProperty::GetOps<{element_cpp_type}>(),\n"
+            f"\t\tFArrayProperty::GetArrayOps<{element_cpp_type}>(),\n"
+            f"\t\t&{inner_property_symbol},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
             f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
             f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
-            f"\t\t{cpp_string_literal(prop.owner)},\n"
-            f"\t\t{element_path_ops}\n"
+            f"\t\t{cpp_string_literal(prop.owner)}\n"
             "\t);\n"
             f"\tStruct->AddProperty(&{property_symbol});\n"
         )

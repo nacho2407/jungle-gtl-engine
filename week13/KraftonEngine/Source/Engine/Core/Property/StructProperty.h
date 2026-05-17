@@ -25,7 +25,7 @@ struct FStructProperty : FProperty
 	UStruct* GetStructType() const override { return StructType; }
 	const FStructProperty* AsStructProperty() const override { return this; }
 
-	json::JSON Serialize(void* Container) const override;
-	void	   Deserialize(void* Container, json::JSON& Value) const override;
-	void	   Serialize(void* Container, FArchive& Ar) const override;
+	json::JSON SerializeValue(void* ValuePtr) const override;
+	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
+	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 };

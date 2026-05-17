@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "ObjectPropertyBase.h"
 #include "Object/SoftObjectPtr.h"
@@ -89,25 +89,31 @@ struct FSoftObjectProperty : FObjectPropertyBase
 
 	EPropertyType GetType() const override { return EPropertyType::SoftObjectRef; }
 	const char* GetAssetType() const { return AssetType ? AssetType : ""; }
-	const FString& GetPath(void* Container) const
+	const FString& GetPathFromValuePtr(void* ValuePtr) const
 	{
 		static const FString EmptyPath = "None";
-		void* ValuePtr = GetValuePtrFor(Container);
 		return ValuePtr && Ops && Ops->GetPath ? Ops->GetPath(ValuePtr) : EmptyPath;
 	}
-	void SetPath(void* Container, const FString& Path) const
+	void SetPathFromValuePtr(void* ValuePtr, const FString& Path) const
 	{
-		void* ValuePtr = GetValuePtrFor(Container);
 		if (ValuePtr && Ops && Ops->SetPath)
 		{
 			Ops->SetPath(ValuePtr, Path);
 		}
 	}
+	const FString& GetPath(void* Container) const
+	{
+		return GetPathFromValuePtr(GetValuePtrFor(Container));
+	}
+	void SetPath(void* Container, const FString& Path) const
+	{
+		SetPathFromValuePtr(GetValuePtrFor(Container), Path);
+	}
 	const FSoftObjectProperty* AsSoftObjectProperty() const override { return this; }
 
-	json::JSON Serialize(void* Container) const override;
-	void	   Deserialize(void* Container, json::JSON& Value) const override;
-	void	   Serialize(void* Container, FArchive& Ar) const override;
+	json::JSON SerializeValue(void* ValuePtr) const override;
+	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
+	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 
 private:
 	const FOps* Ops = nullptr;

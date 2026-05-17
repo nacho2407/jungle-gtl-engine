@@ -1,15 +1,14 @@
-#include "GenericProperty.h"
+﻿#include "GenericProperty.h"
 
 #include "SimpleJSON/json.hpp"
 #include "Math/Rotator.h"
 #include "Math/Vector.h"
 #include "Serialization/Archive.h"
 
-json::JSON FGenericProperty::Serialize(void* Container) const
+json::JSON FGenericProperty::SerializeValue(void* ValuePtr) const
 {
 	using namespace json;
 
-	void* ValuePtr = GetValuePtrFor(Container);
 	if (!ValuePtr)
 	{
 		return JSON();
@@ -48,9 +47,8 @@ json::JSON FGenericProperty::Serialize(void* Container) const
 	}
 }
 
-void FGenericProperty::Deserialize(void* Container, json::JSON& Value) const
+void FGenericProperty::DeserializeValue(void* ValuePtr, json::JSON& Value) const
 {
-	void* ValuePtr = GetValuePtrFor(Container);
 	if (!ValuePtr)
 	{
 		return;
@@ -94,9 +92,8 @@ void FGenericProperty::Deserialize(void* Container, json::JSON& Value) const
 	}
 }
 
-void FGenericProperty::Serialize(void* Container, FArchive& Ar) const
+void FGenericProperty::SerializeValue(void* ValuePtr, FArchive& Ar) const
 {
-	void* ValuePtr = GetValuePtrFor(Container);
 	if (!ValuePtr)
 	{
 		return;

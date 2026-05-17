@@ -1,4 +1,4 @@
-#include "ObjectProperty.h"
+﻿#include "ObjectProperty.h"
 
 #include "Object/Object.h"
 #include "Serialization/Archive.h"
@@ -6,39 +6,47 @@
 
 UObject* FObjectProperty::GetObjectValue(void* Container) const
 {
-	void* ValuePtr = GetValuePtrFor(Container);
-	return ValuePtr && Ops && Ops->GetObject ? Ops->GetObject(ValuePtr) : nullptr;
+	return GetObjectValueFromValuePtr(GetValuePtrFor(Container));
 }
 
 void FObjectProperty::SetObjectValue(void* Container, UObject* Object) const
 {
-	void* ValuePtr = GetValuePtrFor(Container);
+	SetObjectValueFromValuePtr(GetValuePtrFor(Container), Object);
+}
+
+UObject* FObjectProperty::GetObjectValueFromValuePtr(void* ValuePtr) const
+{
+	return ValuePtr && Ops && Ops->GetObject ? Ops->GetObject(ValuePtr) : nullptr;
+}
+
+void FObjectProperty::SetObjectValueFromValuePtr(void* ValuePtr, UObject* Object) const
+{
 	if (ValuePtr && Ops && Ops->SetObject)
 	{
 		Ops->SetObject(ValuePtr, Object);
 	}
 }
 
-json::JSON FObjectProperty::Serialize(void* Container) const
+json::JSON FObjectProperty::SerializeValue(void* ValuePtr) const
 {
 	using namespace json;
 
-	UObject* Object = GetObjectValue(Container);
+	UObject* Object = GetObjectValueFromValuePtr(ValuePtr);
 	return Object ? JSON(static_cast<int>(Object->GetUUID())) : JSON();
 }
 
-void FObjectProperty::Deserialize(void* Container, json::JSON& Value) const
+void FObjectProperty::DeserializeValue(void* ValuePtr, json::JSON& Value) const
 {
 	const uint32 UUID = static_cast<uint32>(Value.ToInt());
-	SetObjectValue(Container, UUID != 0 ? UObjectManager::Get().FindByUUID(UUID) : nullptr);
+	SetObjectValueFromValuePtr(ValuePtr, UUID != 0 ? UObjectManager::Get().FindByUUID(UUID) : nullptr);
 }
 
-void FObjectProperty::Serialize(void* Container, FArchive& Ar) const
+void FObjectProperty::SerializeValue(void* ValuePtr, FArchive& Ar) const
 {
 	uint32 UUID = 0;
 	if (Ar.IsSaving())
 	{
-		UObject* Object = GetObjectValue(Container);
+		UObject* Object = GetObjectValueFromValuePtr(ValuePtr);
 		UUID = Object ? Object->GetUUID() : 0;
 	}
 
@@ -46,6 +54,6 @@ void FObjectProperty::Serialize(void* Container, FArchive& Ar) const
 
 	if (Ar.IsLoading())
 	{
-		SetObjectValue(Container, UUID != 0 ? UObjectManager::Get().FindByUUID(UUID) : nullptr);
+		SetObjectValueFromValuePtr(ValuePtr, UUID != 0 ? UObjectManager::Get().FindByUUID(UUID) : nullptr);
 	}
 }

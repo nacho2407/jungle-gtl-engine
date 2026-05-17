@@ -7,11 +7,10 @@
 #include "Object/UStruct.h"
 
 
-json::JSON FStructProperty::Serialize(void* Container) const
+json::JSON FStructProperty::SerializeValue(void* ValuePtr) const
 {
 	using namespace json;
 
-	void* ValuePtr = GetValuePtrFor(Container);
 	JSON obj = json::Object();
 	if (!ValuePtr || !StructType)
 	{
@@ -31,9 +30,8 @@ json::JSON FStructProperty::Serialize(void* Container) const
 	return obj;
 }
 
-void FStructProperty::Deserialize(void* Container, json::JSON& Value) const
+void FStructProperty::DeserializeValue(void* ValuePtr, json::JSON& Value) const
 {
-	void* ValuePtr = GetValuePtrFor(Container);
 	if (!ValuePtr || !StructType)
 	{
 		return;
@@ -53,9 +51,8 @@ void FStructProperty::Deserialize(void* Container, json::JSON& Value) const
 	}
 }
 
-void FStructProperty::Serialize(void* Container, FArchive& Ar) const
+void FStructProperty::SerializeValue(void* ValuePtr, FArchive& Ar) const
 {
-	void* ValuePtr = GetValuePtrFor(Container);
 	if (!ValuePtr || !StructType)
 	{
 		return;

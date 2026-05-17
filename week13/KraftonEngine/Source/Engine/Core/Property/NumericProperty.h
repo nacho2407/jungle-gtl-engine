@@ -41,9 +41,9 @@ struct FIntProperty : FNumericProperty
 
 	EPropertyType GetType() const override { return EPropertyType::Int; }
 
-	json::JSON Serialize(void* Container) const override;
-	void	   Deserialize(void* Container, json::JSON& Value) const override;
-	void	   Serialize(void* Container, FArchive& Ar) const override;
+	json::JSON SerializeValue(void* ValuePtr) const override;
+	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
+	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 };
 
 struct FFloatProperty : FNumericProperty
@@ -52,8 +52,8 @@ struct FFloatProperty : FNumericProperty
 
 	EPropertyType GetType() const override { return EPropertyType::Float; }
 
-	json::JSON Serialize(void* Container) const override;
-	void	   Deserialize(void* Container, json::JSON& Value) const override;
-	void	   Serialize(void* Container, FArchive& Ar) const override;
+	json::JSON SerializeValue(void* ValuePtr) const override;
+	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
+	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 };
 

@@ -1,4 +1,4 @@
-#include "Core/PropertyTypes.h"
+﻿#include "Core/PropertyTypes.h"
 
 #include "SimpleJSON/json.hpp"
 #include "Object/UStruct.h"
@@ -95,4 +95,19 @@ void FProperty::Deserialize(UObject* Object, json::JSON& JsonValue) const
 void FProperty::Serialize(UObject* Object, FArchive& Ar) const
 {
 	Serialize(static_cast<void*>(Object), Ar);
+}
+
+json::JSON FProperty::Serialize(void* Container) const
+{
+	return SerializeValue(GetValuePtrFor(Container));
+}
+
+void FProperty::Deserialize(void* Container, json::JSON& JsonValue) const
+{
+	DeserializeValue(GetValuePtrFor(Container), JsonValue);
+}
+
+void FProperty::Serialize(void* Container, FArchive& Ar) const
+{
+	SerializeValue(GetValuePtrFor(Container), Ar);
 }

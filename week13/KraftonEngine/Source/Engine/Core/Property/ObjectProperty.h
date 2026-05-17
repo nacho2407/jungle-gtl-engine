@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "ObjectPropertyBase.h"
 #include "Object/ObjectPtr.h"
@@ -73,10 +73,12 @@ struct FObjectProperty : FObjectPropertyBase
 	const FObjectProperty* AsObjectProperty() const override { return this; }
 	UObject* GetObjectValue(void* Container) const;
 	void SetObjectValue(void* Container, UObject* Object) const;
+	UObject* GetObjectValueFromValuePtr(void* ValuePtr) const;
+	void SetObjectValueFromValuePtr(void* ValuePtr, UObject* Object) const;
 
-	json::JSON Serialize(void* Container) const override;
-	void	   Deserialize(void* Container, json::JSON& Value) const override;
-	void	   Serialize(void* Container, FArchive& Ar) const override;
+	json::JSON SerializeValue(void* ValuePtr) const override;
+	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
+	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 
 private:
 	const FOps* Ops = nullptr;
