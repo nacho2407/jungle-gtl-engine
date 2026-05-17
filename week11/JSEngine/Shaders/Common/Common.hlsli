@@ -9,6 +9,8 @@
 #define MAX_DIRECTIONAL_CASCADE_COUNT 4
 #define INVALID_SHADOW_INDEX 0xFFFFFFFFu
 
+#define MAX_BONES 256
+
 cbuffer FrameBuffer : register(b0)
 {
     row_major float4x4 View;
@@ -39,6 +41,11 @@ cbuffer ShadowBuffer : register(b4)
     uint DirectionalShadowStartIndex;
     float2 ShadowBufferPadding;
 };
+
+cbuffer SkinningBuffer : register(b5)
+{
+    row_major matrix BoneMatrices[MAX_BONES];
+}
 
 struct FLightShadowIndices
 {
