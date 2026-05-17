@@ -167,6 +167,29 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 			}
 		}
 
+		for (TArray<WeightData>& Weights : TempWeights)
+		{
+			if (Weights.empty() && RigidBoneIndex >= 0)
+			{
+				Weights.push_back({ RigidBoneIndex, 1.0f });
+			}
+
+			if (Weights.empty())
+			{
+				continue;
+			}
+
+			std::sort(Weights.begin(), Weights.end(), [](const WeightData& A, const WeightData& B)
+			{
+				return A.Weight > B.Weight;
+			});
+
+			if (Weights.size() > 4)
+			{
+				Weights.resize(4);
+			}
+		}
+
 		FbxStringList UVSetNames;
 		Mesh->GetUVSetNames(UVSetNames);
 		const char* UVName = (UVSetNames.GetCount() > 0) ? UVSetNames.GetStringAt(0) : nullptr;
@@ -216,16 +239,7 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 				FbxVector4 CP = Mesh->GetControlPointAt(CPIndex);
 				Vertex.Position = FVector(static_cast<float>(CP[0]), static_cast<float>(CP[1]), static_cast<float>(CP[2]));
 
-				auto& Weights = TempWeights[CPIndex];
-				std::sort(Weights.begin(), Weights.end(), [](const WeightData& A, const WeightData& B)
-				{
-					return A.Weight > B.Weight;
-				});
-
-				if (Weights.empty() && RigidBoneIndex >= 0)
-				{
-					Weights.push_back({ RigidBoneIndex, 1.0f });
-				}
+				const TArray<WeightData>& Weights = TempWeights[CPIndex];
 
 				for (int32 WeightIndex = 0; WeightIndex < static_cast<int32>(Weights.size()) && WeightIndex < 4; ++WeightIndex)
 				{
