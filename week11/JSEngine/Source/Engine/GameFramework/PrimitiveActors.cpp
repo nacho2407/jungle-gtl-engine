@@ -32,7 +32,8 @@
 #include "Animation/AnimDataModel.h"
 #include "Core/Logging/Log.h"
 
-
+#include "Asset/BinarySerializer.h"
+#include "Object/Object.h"
 
 #include <algorithm>
 #include <cfloat>
@@ -524,7 +525,38 @@ void ASkeletalMeshActor::InitDefaultComponents()
                 UE_LOG_ERROR("[AnimImportTest] PoseEnd size mismatch.");
             }
         }
+        FBinarySerializer Serializer;
+
+        const FString AnimBinaryPath = "Asset/Animation/Bin/Test_Run_New.anim.bin";
+
+        const bool bSaved = Serializer.SaveAnimSequence(AnimBinaryPath, AnimFbxPath, *AnimSequence);
+
+        UE_LOG("[AnimBinaryTest] Save=%d Path=%s", bSaved ? 1 : 0, AnimBinaryPath.c_str());
+
+		UAnimSequence* LoadedAnim = UObjectManager::Get().CreateObject<UAnimSequence>();
+        const bool bLoaded = Serializer.LoadAnimSequence(AnimBinaryPath, *LoadedAnim);
+        LoadedAnim->Skeleton = LoadedSkeletalMesh->GetSkeleton();
+        UE_LOG("[AnimBinaryTest] Load=%d", bLoaded ? 1 : 0);
+        if (bLoaded && LoadedAnim->DataModel)
+        {
+            UE_LOG("[AnimBinaryTest] Loaded Length=%.3f FrameRate=%.3f Frames=%d Tracks=%zu Stack=%s",
+                   LoadedAnim->DataModel->SequenceLength,
+                   LoadedAnim->DataModel->FrameRate,
+                   LoadedAnim->DataModel->NumberOfFrames,
+                   LoadedAnim->DataModel->BoneAnimationTracks.size(),
+                   LoadedAnim->AnimStackName.c_str());
+
+            TArray<FMatrix> Pose;
+            const bool bPose =
+                LoadedAnim->GetBonePose(0.0f, LoadedSkeletalMesh, Pose);
+
+            UE_LOG("[AnimBinaryTest] Pose=%d Size=%zu",
+                   bPose ? 1 : 0,
+                   Pose.size());
+        }
     }
+
+
 	/// Test code
     SetRootComponent(SkeletalMeshComp);
 

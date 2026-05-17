@@ -1432,10 +1432,22 @@ bool FBinarySerializer::SaveAnimSequence(const FString& BinaryPath, const FStrin
 {
     if (!AnimSequence.DataModel)
         return false;
-    std::ofstream Out(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath))), std::ios::binary);
+    const std::filesystem::path AbsoluteBinaryPath = std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath)));
 
-	if (!Out.is_open())
+    std::error_code Ec;
+    std::filesystem::create_directories(AbsoluteBinaryPath.parent_path(), Ec);
+
+    if (Ec)
+    {
         return false;
+    }
+
+    std::ofstream Out(AbsoluteBinaryPath, std::ios::binary);
+
+    if (!Out.is_open())
+    {
+        return false;
+    }
     const UAnimDataModel* DataModel = AnimSequence.DataModel;
 
 	FAnimSequenceBinaryHeader Header;

@@ -57,7 +57,7 @@ public:
 	bool LoadStaticMesh(const FString& BinaryPath, FStaticMesh& OutData);
 
 	bool SaveSkeletalMesh(const FString& BinaryPath, const FString& SourcePath, const FSkeletalMesh& Data, const FReferenceSkeleton& ReferenceSkeleton);
-	bool LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMesh& OutData, FReferenceSkeleton& OutAnimSequence);
+	bool LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMesh& OutData, FReferenceSkeleton& OutReferenceSkeleton);
 
 	bool SaveAnimSequence(const FString& BinaryPath,const FString& SourcePath,const UAnimSequence& AnimSequence);
     bool LoadAnimSequence(const FString& BinaryPath, UAnimSequence& OutAnimSequence);
