@@ -115,10 +115,7 @@ FQuat UAnimSequence::EvalQuatKeys(const TArray<FQuat>& Keys, const TArray<float>
             FQuat x = Keys[i];
             FQuat y = Keys[i + 1];
 
-            if (FQuat::DotProduct(x, y) < 0.0f)
-            {
-                y = y * -1.0f;
-            }
+        
             FQuat quat = FQuat::Slerp(x, y, Alpha);
             quat.Normalize();
             return quat;

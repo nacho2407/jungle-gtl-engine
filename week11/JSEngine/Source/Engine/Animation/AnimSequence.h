@@ -13,6 +13,7 @@ public:
 
     ~UAnimSequence() override;
 
+    FString AnimStackName;
     FString AssetPath;
     FString SourceFbxPath;
     FString TargetSkeletonPath;

@@ -547,19 +547,26 @@ bool FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOp
 
 UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path, const FString& TargetSkeletalMeshPath)
 {
-    USkeletalMesh* TargetMesh = FResourceManager::Get().LoadSkeletalMesh(TargetSkeletalMeshPath);
+    return LoadAnimSequence(Path, TargetSkeletalMeshPath, FString());
+}
+
+UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path, const FString& TargetSkeletalMeshPath, const FString& AnimStackName)
+{
+    USkeletalMesh* TargetMesh =
+        FResourceManager::Get().LoadSkeletalMesh(TargetSkeletalMeshPath);
 
     if (!TargetMesh)
     {
-        UE_LOG_ERROR("[FbxImporter] Failed to load target skeletal mesh for animation. Anim=%s Target=%s", Path.c_str(), TargetSkeletalMeshPath.c_str());
+        UE_LOG_ERROR("[FbxImporter] Failed to load target skeletal mesh for animation. Anim=%s Target=%s Stack=%s",
+                     Path.c_str(),
+                     TargetSkeletalMeshPath.c_str(),
+                     AnimStackName.c_str());
         return nullptr;
     }
 
     FFbxAnimSequenceImporter Importer;
-    return Importer.LoadAnimSequence(Path, TargetSkeletalMeshPath, TargetMesh);
+    return Importer.LoadAnimSequence(Path, TargetSkeletalMeshPath, AnimStackName, TargetMesh);
 }
-
-
 
 TArray<FString> FFbxImporter::ListAnimStacks(const FString& Path)
 {

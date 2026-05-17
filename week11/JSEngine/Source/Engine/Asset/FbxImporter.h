@@ -40,6 +40,8 @@ public:
 
 	bool LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOptions& LoadOptions, FSkeletalMeshImportData& OutData);
     UAnimSequence* LoadAnimSequence(const FString& Path, const FString& TargetSkeletalMeshPath);
+    UAnimSequence* LoadAnimSequence(const FString& Path, const FString& TargetSkeletalMeshPath, const FString& AnimStackName);
+
     TArray<FString> ListAnimStacks(const FString& Path);
 	FFbxMeshContentInfo InspectMeshContent(const FString& Path);
 

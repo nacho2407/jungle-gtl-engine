@@ -38,7 +38,18 @@ struct FSkeletalMeshBinaryHeader
 
 	uint64 SourceFileWriteTime = 0;
 };
+struct FAnimSequenceBinaryHeader
+{
+    uint32 Magic = 0x4D494E41; //'ANIM'
+    uint32 Version = 1;
+    uint64 SourceFileWriteTime = 0;
 
+    float SequenceLength = 0.0f;
+    float FrameRate = 30.0f;
+    int32 NumberOfFrames = 0;
+    int32 TrackCount = 0;
+};
+class UAnimSequence;
 class FBinarySerializer
 {
 public:
@@ -48,6 +59,8 @@ public:
 	bool SaveSkeletalMesh(const FString& BinaryPath, const FString& SourcePath, const FSkeletalMesh& Data, const FReferenceSkeleton& ReferenceSkeleton);
 	bool LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMesh& OutData, FReferenceSkeleton& OutReferenceSkeleton);
 
+	bool SaveAnimSequence(const FString& BinaryPath,const FString& SourcePath,const UAnimSequence& AnimSequence);
+    bool LoadAnimSequence(const FString& BinaryPath, const FString& SourcePath, const UAnimSequence& AnimSequence);
 	//	Header Read + 검사 장치
 	bool ReadStaticMeshHeader(const FString& BinaryPath, FStaticMeshBinaryHeader& OutHeader) const;
 	bool ReadSkeletalMeshHeader(const FString& BinaryPath, FSkeletalMeshBinaryHeader& OutHeader) const;
@@ -103,4 +116,23 @@ private:
 
 	void WriteSkeletalBounds(std::ofstream& Out, const FSkeletalMesh& Data);
 	bool ReadSkeletalBounds(std::ifstream& In, FSkeletalMesh& OutData) const;
+
+	/* Anim Sequence */
+    void WriteAnimSequenceHeader(std::ofstream& Out, const FAnimSequenceBinaryHeader& Header);
+    bool ReadAnimSequenceHeader(std::ifstream& In, FAnimSequenceBinaryHeader& OutHeader) const;
+
+    void WriteVector3(std::ofstream& Out, const FVector& V);
+    bool ReadVector3(std::ifstream& In, FVector& OutV) const;
+
+    void WriteQuat(std::ofstream& Out, const FQuat& Q);
+    bool ReadQuat(std::ifstream& In, FQuat& OutQ) const;
+
+    void WriteFloatArray(std::ofstream& Out, const TArray<float>& Array);
+    bool ReadFloatArray(std::ifstream& In, TArray<float>& OutArray, uint32 MaxCount) const;
+
+    void WriteVectorArray(std::ofstream& Out, const TArray<FVector>& Array);
+    bool ReadVectorArray(std::ifstream& In, TArray<FVector>& OutArray, uint32 MaxCount) const;
+
+    void WriteQuatArray(std::ofstream& Out, const TArray<FQuat>& Array);
+    bool ReadQuatArray(std::ifstream& In, TArray<FQuat>& OutArray, uint32 MaxCount) const;
 };
