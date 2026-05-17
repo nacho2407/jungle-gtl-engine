@@ -2,12 +2,16 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <string>
 #include "Core/CoreTypes.h"
 
 namespace json { class JSON; }
 class FArchive;
 class UStruct;
+struct FPropertyValue;
+struct FProperty;
+class UObject;
 
 // 에디터에서 자동 위젯 매핑에 사용되는 프로퍼티 타입
 enum class EPropertyType : uint8_t
@@ -39,9 +43,45 @@ struct FMaterialSlot
 	std::string Path;
 };
 
-struct FPropertyValue;
-struct FProperty;
-class UObject;
+struct FEnum
+{
+	const char* Name = nullptr;
+	const char** Names = nullptr;
+	uint32 Count = 0;
+	uint32 Size = sizeof(int32);
+
+	const char* GetName() const { return Name ? Name : ""; }
+	const char** GetNames() const { return Names; }
+	uint32 GetCount() const { return Count; }
+	uint32 GetSize() const { return Size; }
+
+	static TArray<const FEnum*>& GetAllEnums()
+	{
+		static TArray<const FEnum*> Registry;
+		return Registry;
+	}
+
+	static const FEnum* FindEnumByName(const char* InName)
+	{
+		if (!InName) return nullptr;
+		for (const FEnum* Enum : GetAllEnums())
+		{
+			if (Enum && Enum->Name && std::strcmp(Enum->Name, InName) == 0)
+			{
+				return Enum;
+			}
+		}
+		return nullptr;
+	}
+};
+
+struct FEnumRegistrar
+{
+	FEnumRegistrar(const FEnum* InEnum)
+	{
+		FEnum::GetAllEnums().push_back(InEnum);
+	}
+};
 
 // 객체 인스턴스에 바인딩된 프로퍼티 값 뷰
 struct FPropertyValue
@@ -60,9 +100,7 @@ struct FPropertyValue
 	float GetMin() const;
 	float GetMax() const;
 	float GetSpeed() const;
-	const char** GetEnumNames() const;
-	uint32 GetEnumCount() const;
-	uint32 GetEnumSize() const;
+	const FEnum* GetEnumType() const;
 	UStruct* GetStructType() const;
 	const TMap<FString, FString>& GetMetadata() const;
 };
@@ -111,9 +149,7 @@ struct FProperty
 	float Max = 0.0f;
 	float Speed = 0.1f;	//에디터 드래그 입력 시 값 변화량
 
-	const char** EnumNames = nullptr;	//콤보박스/드롭다운용 이름 배열
-	uint32 EnumCount = 0;
-	uint32 EnumSize = sizeof(int32);
+	const FEnum* EnumType = nullptr;
 
 	UStruct* StructType = nullptr;
 	const char* DisplayName = nullptr;

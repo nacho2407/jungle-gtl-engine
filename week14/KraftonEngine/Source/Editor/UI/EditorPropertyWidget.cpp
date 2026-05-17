@@ -141,7 +141,7 @@ namespace
 		case EPropertyType::Rotator:       Size = sizeof(float) * 3; break;
 		case EPropertyType::Vec4:
 		case EPropertyType::Color4:        Size = sizeof(float) * 4; break;
-		case EPropertyType::Enum:          Size = SrcValue.GetEnumSize(); break;
+		case EPropertyType::Enum:          Size = SrcValue.GetEnumType() ? SrcValue.GetEnumType()->GetSize() : sizeof(int32); break;
 		case EPropertyType::String:
 		case EPropertyType::Script:
 		case EPropertyType::SceneComponentRef:
@@ -1632,10 +1632,11 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	}
 	case EPropertyType::Enum:
 	{
-		const char** EnumNames = Prop.GetEnumNames();
-		const uint32 EnumCount = Prop.GetEnumCount();
-		const uint32 EnumSize = Prop.GetEnumSize();
-		if (!EnumNames || EnumCount == 0) break;
+		const FEnum* EnumType = Prop.GetEnumType();
+		if (!EnumType || !EnumType->GetNames() || EnumType->GetCount() == 0) break;
+		const char** EnumNames = EnumType->GetNames();
+		const uint32 EnumCount = EnumType->GetCount();
+		const uint32 EnumSize = EnumType->GetSize();
 		int32 Val = 0;
 		memcpy(&Val, Prop.GetValuePtr(), EnumSize);
 		const char* Preview = ((uint32)Val < EnumCount) ? EnumNames[Val] : "Unknown";

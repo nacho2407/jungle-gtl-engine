@@ -1,4 +1,4 @@
-#include "Core/PropertyTypes.h"
+﻿#include "Core/PropertyTypes.h"
 
 #include <cstring>
 #include "SimpleJSON/json.hpp"
@@ -44,24 +44,14 @@ float FPropertyValue::GetSpeed() const
 	return Property ? Property->Speed : 0.1f;
 }
 
-const char** FPropertyValue::GetEnumNames() const
-{
-	return Property ? Property->EnumNames : nullptr;
-}
-
-uint32 FPropertyValue::GetEnumCount() const
-{
-	return Property ? Property->EnumCount : 0;
-}
-
-uint32 FPropertyValue::GetEnumSize() const
-{
-	return Property ? Property->EnumSize : sizeof(int32);
-}
-
 UStruct* FPropertyValue::GetStructType() const
 {
 	return Property ? Property->StructType : nullptr;
+}
+
+const FEnum* FPropertyValue::GetEnumType() const
+{
+	return Property ? Property->EnumType : nullptr;
 }
 
 const TMap<FString, FString>& FPropertyValue::GetMetadata() const
@@ -175,8 +165,9 @@ json::JSON FProperty::Serialize(void* Container) const
 
 	case EPropertyType::Enum:
 	{
+		const uint32 ResolvedEnumSize = EnumType ? EnumType->GetSize() : sizeof(int32);
 		int32 Val = 0;
-		std::memcpy(&Val, ValuePtr, EnumSize);
+		std::memcpy(&Val, ValuePtr, ResolvedEnumSize);
 		return JSON(Val);
 	}
 
@@ -307,8 +298,9 @@ void FProperty::Deserialize(void* Container, json::JSON& Value) const
 
 	case EPropertyType::Enum:
 	{
+		const uint32 ResolvedEnumSize = EnumType ? EnumType->GetSize() : sizeof(int32);
 		int32 Val = Value.ToInt();
-		std::memcpy(ValuePtr, &Val, EnumSize);
+		std::memcpy(ValuePtr, &Val, ResolvedEnumSize);
 		break;
 	}
 
@@ -416,7 +408,7 @@ void FProperty::Serialize(void* Container, FArchive& Ar) const
 		Ar << *static_cast<FName*>(ValuePtr);
 		break;
 	case EPropertyType::Enum:
-		Ar.Serialize(ValuePtr, EnumSize);
+		Ar.Serialize(ValuePtr, EnumType ? EnumType->GetSize() : sizeof(int32));
 		break;
 	case EPropertyType::Vec3Array:
 		Ar << *static_cast<TArray<FVector>*>(ValuePtr);
