@@ -14,7 +14,7 @@ class FDebugDetailsBuilder;
 
 enum EClassFlags : uint32_t
 {
-	CF_None = 0,g
+	CF_None = 0,
 	CF_Actor = 1 << 0,
 	CF_Component = 1 << 1,
 	CF_Camera = 1 << 2,
