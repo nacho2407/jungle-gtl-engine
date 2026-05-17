@@ -401,6 +401,29 @@ function ActorSequencePlayer:GetCurrentTime() end
 ---@return boolean
 function ActorSequencePlayer:IsPlaying() end
 
+---@class AnimationStateMachine: Object
+local AnimationStateMachine = {}
+---@param stateName string
+---@param animPath string
+function AnimationStateMachine:AddStateFromPath(stateName, animPath) end
+---@param fromState string
+---@param toState string
+---@param blendTime number
+---@param condition fun(): boolean
+function AnimationStateMachine:AddTransitionByName(fromState, toState, blendTime, condition) end
+function AnimationStateMachine:ClearTransitions() end
+---@param stateName string
+function AnimationStateMachine:SetEntryStateByName(stateName) end
+---@param stateName string
+---@param blendTime? number
+function AnimationStateMachine:SetStateByName(stateName, blendTime) end
+---@return string
+function AnimationStateMachine:GetCurrentStateName() end
+---@return string
+function AnimationStateMachine:GetNextStateName() end
+---@return boolean
+function AnimationStateMachine:IsBlending() end
+
 ---@class MainSceneDestructibleComponent: ActorComponent
 ---@field PresentationTrigger number
 local MainSceneDestructibleComponent = {}
@@ -431,6 +454,28 @@ function StaticMeshComponent:HasValidMesh() end
 
 ---@return integer
 function StaticMeshComponent:GetPrimitiveType() end
+
+---@class SkeletalMeshComponent: ActorComponent
+local SkeletalMeshComponent = {}
+---@return AnimationStateMachine|nil
+function SkeletalMeshComponent:CreateAnimationStateMachine() end
+---@return AnimationStateMachine|nil
+function SkeletalMeshComponent:GetAnimationStateMachine() end
+---@param stateName string
+---@param blendTime? number
+function SkeletalMeshComponent:SetAnimStateByName(stateName, blendTime) end
+---@param looping boolean
+function SkeletalMeshComponent:Play(looping) end
+function SkeletalMeshComponent:Stop() end
+function SkeletalMeshComponent:Pause() end
+---@param playRate number
+function SkeletalMeshComponent:SetPlayRate(playRate) end
+---@param time number
+function SkeletalMeshComponent:SetAnimationPosition(time) end
+---@return boolean
+function SkeletalMeshComponent:IsPlaying() end
+---@return boolean
+function SkeletalMeshComponent:IsLooping() end
 
 ---@class BillboardComponent: SceneComponent
 local BillboardComponent = {}
@@ -697,6 +742,10 @@ function AActor:GetComponentsByTags(tags) end
 
 ---@return StaticMeshComponent|nil
 function AActor:Get_Static_Mesh_Component() end
+---@return SkeletalMeshComponent|nil
+function AActor:GetSkeletalMeshComponent() end
+---@return SkeletalMeshComponent|nil
+function AActor:Get_Skeletal_Mesh_Component() end
 
 ---@class PlayerController: AActor
 ---@field PossessedActor AActor|nil
