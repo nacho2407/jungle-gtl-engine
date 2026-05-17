@@ -733,6 +733,16 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 	{
 		NodeInst = Comp->GetAnimNodeInstance(FName::None);
 	}
+
+	// 스페이스바: 재생/정지 토글 (메시 에디터 창 포커스 + 텍스트 입력 중 아닐 때)
+	if (Comp && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+	    !ImGui::GetIO().WantTextInput &&
+	    ImGui::IsKeyPressed(ImGuiKey_Space, false))
+	{
+		const bool bPlaying = NodeInst && NodeInst->IsPlaying();
+		Comp->SetPlaying(!bPlaying);
+	}
+
 	FAnimationTimelinePanel::Render(NodeInst, Comp, AnimTabState.CurrentSequence, TimelineHeight);
 }
 
