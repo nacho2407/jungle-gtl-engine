@@ -64,6 +64,41 @@ void FScriptManager::BindAnimationTypes()
 
     LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UAnimationStateMachine, "AnimationStateMachine", UObject)
     LUA_METHOD(AddStateFromPath, AddStateFromPath);
+    LUA_SET(AddTransitionByName, [](UAnimationStateMachine& Self, const FString& FromState, const FString& ToState, float BlendTime, sol::function Condition)
+    {
+        if (!Condition.valid())
+        {
+            UE_LOG_WARNING("[AnimationStateMachine] Ignored invalid Lua transition condition: %s -> %s",
+                FromState.c_str(),
+                ToState.c_str());
+            return;
+        }
+
+        sol::protected_function ProtectedCondition = Condition;
+        Self.AddTransition(
+            FName(FromState.c_str()),
+            FName(ToState.c_str()),
+            BlendTime,
+            [ProtectedCondition]() mutable -> bool
+            {
+                sol::protected_function_result Result = ProtectedCondition();
+                if (!Result.valid())
+                {
+                    sol::error Error = Result;
+                    UE_LOG_ERROR("[AnimationStateMachine] Lua transition condition failed: %s", Error.what());
+                    return false;
+                }
+
+                sol::object ResultObject = Result;
+                if (!ResultObject.is<bool>())
+                {
+                    return false;
+                }
+
+                return ResultObject.as<bool>();
+            });
+    });
+    LUA_METHOD(ClearTransitions, ClearTransitions);
     LUA_METHOD(SetEntryStateByName, SetEntryStateByName);
     LUA_METHOD(SetStateByName, SetStateByName);
     LUA_METHOD(GetCurrentStateName, GetCurrentStateName);

@@ -35,7 +35,6 @@ function StateMachineTest.new(scriptComponent, properties)
     self.Mesh = nil
     self.StateMachine = nil
     self.Elapsed = 0.0
-    self.CurrentIndex = 1
     self.bInitialized = false
 
     return self
@@ -79,16 +78,33 @@ function StateMachineTest:InitializeStateMachine()
         stateMachine:AddStateFromPath(stateName, path)
     end
 
+    stateMachine:ClearTransitions()
+    self:RegisterTransitions(stateMachine)
+
     local entryState = self.Properties.EntryState or "Idle"
     stateMachine:SetEntryStateByName(entryState)
 
     self.Mesh = mesh
     self.StateMachine = stateMachine
-    self.CurrentIndex = self:FindStateIndex(entryState)
     self.bInitialized = true
 
     log("[StateMachineTest] StateMachine ready. CurrentState=" .. stateMachine:GetCurrentStateName())
     return true
+end
+
+function StateMachineTest:RegisterTransitions(stateMachine)
+    local blendTime = self.Properties.BlendTime or 0.2
+
+    for index, fromState in ipairs(CycleStates) do
+        local toState = CycleStates[index + 1]
+        if not toState then
+            toState = CycleStates[1]
+        end
+
+        stateMachine:AddTransitionByName(fromState, toState, blendTime, function()
+            return self:ShouldAutoTransition()
+        end)
+    end
 end
 
 function StateMachineTest:Tick(deltaTime)
@@ -101,39 +117,20 @@ function StateMachineTest:Tick(deltaTime)
     end
 
     self.Elapsed = self.Elapsed + deltaTime
+end
+
+function StateMachineTest:ShouldAutoTransition()
+    if self.Properties.AutoCycle == false then
+        return false
+    end
+
     local interval = self.Properties.CycleInterval or 2.0
     if self.Elapsed >= interval then
         self.Elapsed = 0.0
-        self:CycleNextState()
-    end
-end
-
-function StateMachineTest:CycleNextState()
-    self.CurrentIndex = self.CurrentIndex + 1
-    if self.CurrentIndex > #CycleStates then
-        self.CurrentIndex = 1
+        return true
     end
 
-    self:SetState(CycleStates[self.CurrentIndex])
-end
-
-function StateMachineTest:SetState(stateName)
-    if not self.StateMachine then
-        return
-    end
-
-    self.CurrentIndex = self:FindStateIndex(stateName)
-    self.StateMachine:SetStateByName(stateName, self.Properties.BlendTime or 0.2)
-    log("[StateMachineTest] SetState=" .. stateName)
-end
-
-function StateMachineTest:FindStateIndex(stateName)
-    for index, value in ipairs(CycleStates) do
-        if value == stateName then
-            return index
-        end
-    end
-    return 1
+    return false
 end
 
 return StateMachineTest

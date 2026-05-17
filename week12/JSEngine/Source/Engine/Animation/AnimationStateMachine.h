@@ -62,6 +62,7 @@ public:
 
     void AddState(FName StateName, UAnimSequenceBase* Sequence);
     void AddTransition(FName FromState, FName ToState, float BlendTime, FAnimTransitionCondition Condition);
+    void ClearTransitions();
     void SetEntryState(FName StateName);
 
     void SetState(FName NewState, float BlendTime = 0.2f);
