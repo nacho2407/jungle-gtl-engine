@@ -11,6 +11,14 @@
 
 #include "Editor/UI/EditorWidget.h"
 
+enum class ECrashCommandTarget
+{
+	None,
+	AccessViolation,
+	StructuredException,
+	DanglingObject,
+};
+
 class FEditorConsoleWidget : public FEditorWidget
 {
 public:
@@ -50,6 +58,8 @@ private:
 	static bool AutoScroll;
 	static bool ScrollToBottom;
 	EPresentationMode PresentationMode = EPresentationMode::Drawer;
+	bool bPendingCrashCommand = false;
+	ECrashCommandTarget PendingCrashTarget = ECrashCommandTarget::None;
 
 	// 백틱(`) 키로 포커스 요청 시 true — 다음 InputText 렌더링 직전에 SetKeyboardFocusHere 호출
 	bool bRequestFocusInput = false;
@@ -72,9 +82,12 @@ private:
 	void CmdSkinning(const TArray<FString>& Args);
 	void CmdSkinningGPUStats(const TArray<FString>& Args);
     void CmdShadow(const TArray<FString>& Args);
+	void CmdCrash(const TArray<FString>& Args);
 	void PrintHistoryStats();
 	void PrintCommandList(const FString& Prefix = "");
 	FString FindClosestCommand(const FString& Query) const;
 	TArray<FString> BuildCommandSuggestions(const FString& Query) const;
 	void RenderCommandSuggestions(const char* Id, const ImVec2& InputMin, const ImVec2& InputSize);
+	void ExecutePendingCrashCommand();
+	void ClearPendingCrashCommand();
 };

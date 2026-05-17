@@ -6,6 +6,7 @@
 #include "Core/Reflection/ReflectionMacros.h"
 #include "Serialization/Archive.h"
 #include "Object/Class.h"
+#include <cstdlib>
 #include <type_traits>
 
 class UClass;
@@ -182,6 +183,18 @@ public:
 	UObject* FindByIndex(uint32 Index)
 	{
 		if (Index >= GUObjectArray.size()) return nullptr;
+		return GUObjectArray[Index];
+	}
+
+	UObject* GetRandomObject()
+	{
+		if (GUObjectArray.empty())
+		{
+			return nullptr;
+		}
+
+		// CrashTest의 fault injection 전용입니다. 일반 게임 로직에서는 객체 생명주기 API를 사용해야 합니다.
+		const int32 Index = rand() % static_cast<int32>(GUObjectArray.size());
 		return GUObjectArray[Index];
 	}
 };

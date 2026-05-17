@@ -2,6 +2,7 @@
 
 #include "Core/Paths.h"
 #include "Launch/LaunchModeFactory.h"
+#include "Engine/Core/CrashTest.h"
 
 #include <objbase.h>
 
@@ -81,6 +82,7 @@ int FEngineLoop::Run()
 
 		Timer.Tick();
 		GEngine->Tick(Timer.GetDeltaTime());
+		FCrashTest::TickRandomObjectDeletion();
 
 #if WITH_EDITOR || IS_OBJ_VIEWER
 		ShaderDirectoryWatcher.Tick();
