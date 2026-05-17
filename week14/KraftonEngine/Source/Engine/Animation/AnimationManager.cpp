@@ -392,3 +392,39 @@ bool FAnimationManager::SaveAnimation(UAnimSequence* Sequence, const FString& Pa
     AnimationCaches[NormalizedPath] = Sequence;
     return true;
 }
+
+void FAnimationManager::RefreshAvailableAnimations()
+{
+    const std::filesystem::path ContentRoot = std::filesystem::path(FPaths::RootDir()) / L"Content";
+    if (!std::filesystem::exists(ContentRoot))
+    {
+        return;
+    }
+
+    const std::filesystem::path ProjectRoot(FPaths::RootDir());
+
+    AvailableAnimationFiles.clear();
+
+    for (const auto& Entry : std::filesystem::recursive_directory_iterator(ContentRoot))
+    {
+        if (!Entry.is_regular_file()) continue;
+
+        std::wstring Ext = Entry.path().extension().wstring();
+        std::transform(Ext.begin(), Ext.end(), Ext.begin(), ::towlower);
+        if (Ext != L".uasset") continue;
+
+        const FString RelPath =
+            FPaths::ToUtf8(Entry.path().lexically_relative(ProjectRoot).generic_wstring());
+
+        FAssetImportMetadata Metadata;
+        if (!FAssetPackage::ReadMetadata(RelPath, EAssetPackageType::AnimSequence, Metadata))
+        {
+            continue;
+        }
+
+        FAssetListItem Item;
+        Item.DisplayName = FPaths::ToUtf8(Entry.path().stem().wstring());
+        Item.FullPath    = RelPath;
+        AvailableAnimationFiles.push_back(std::move(Item));
+    }
+}
