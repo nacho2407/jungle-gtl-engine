@@ -12,8 +12,6 @@
 class UClass;
 class FDebugDetailsBuilder;
 
-
-
 enum EClassFlags : uint32_t
 {
 	CF_None = 0,
@@ -90,7 +88,7 @@ public:
 	void CopyPropertiesFrom(UObject* Src);
 
 	virtual void Serialize(FArchive& Ar);
-	void SerializeReflectedProperties(FArchive& Ar);
+	void SerializeProperties(FArchive& Ar);
 
 protected:
 	FName ObjectName;
