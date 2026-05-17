@@ -1,4 +1,4 @@
-#include "Serialization/PrefabManager.h"
+﻿#include "Serialization/PrefabManager.h"
 
 #include "Core/Logging/Log.h"
 #include "GameFramework/AActor.h"
@@ -89,7 +89,7 @@ FString FPrefabManager::MakeRelativePrefabPath(const std::filesystem::path& Abso
 
 bool FPrefabManager::SaveActorPrefab(AActor* Actor, const FString& FilePath)
 {
-	if (!Actor)
+	if (!FActorSerialization::ShouldSerializeActor(Actor))
 	{
 		return false;
 	}

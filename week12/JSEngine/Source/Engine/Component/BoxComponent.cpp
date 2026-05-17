@@ -2,8 +2,6 @@
 #include "Object/Object.h"
 
 
-DEFINE_CLASS(UBoxComponent, UShapeComponent)
-REGISTER_FACTORY(UBoxComponent)
 
 bool UBoxComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 {

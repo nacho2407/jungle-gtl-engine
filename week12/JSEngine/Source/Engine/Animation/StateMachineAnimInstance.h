@@ -4,10 +4,11 @@
 
 class UAnimationStateMachine;
 
+UCLASS()
 class UStateMachineAnimInstance : public UAnimInstance
 {
 public:
-	DECLARE_CLASS(UStateMachineAnimInstance, UAnimInstance)
+	GENERATED_BODY(UStateMachineAnimInstance, UAnimInstance)
 
 	void SetStateMachine(UAnimationStateMachine* InStateMachine);
 

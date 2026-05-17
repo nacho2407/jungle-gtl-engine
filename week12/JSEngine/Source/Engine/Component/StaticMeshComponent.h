@@ -7,7 +7,7 @@ UCLASS()
 class UStaticMeshComponent : public UMeshComponent
 {
 public:
-	DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
+	GENERATED_BODY(UStaticMeshComponent, UMeshComponent)
 	UStaticMeshComponent();
 	
 	virtual void PostDuplicate(UObject* Original) override;

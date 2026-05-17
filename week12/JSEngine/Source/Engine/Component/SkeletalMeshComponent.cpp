@@ -3,25 +3,49 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/AnimationStateMachine.h"
+#include "Animation/StateMachineAnimInstance.h"
 #include "Core/Logging/SkinningStats.h"
 #include "GameFramework/AActor.h"
-#include "Object/ObjectFactory.h"
+#include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 
 #include <cstring>
 
-#include "Animation/AnimationStateMachine.h"
-#include "Animation/StateMachineAnimInstance.h"
+namespace
+{
+	FString GetPersistentAnimationAssetPath(UAnimationAsset* Animation)
+	{
+		UAnimSequence* Sequence = Cast<UAnimSequence>(Animation);
+		if (!Sequence)
+		{
+			return "";
+		}
 
-DEFINE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
-REGISTER_FACTORY(USkeletalMeshComponent)
+		if (!Sequence->GetAssetPath().empty())
+		{
+			return FPaths::Normalize(Sequence->GetAssetPath());
+		}
+
+		// Fallback only. Imported .animseq asset paths are preferred because an FBX can
+		// contain multiple animation stacks; the source FBX path alone cannot identify
+		// which stack was selected.
+		if (!Sequence->GetSourceFilePath().empty())
+		{
+			return FPaths::Normalize(Sequence->GetSourceFilePath());
+		}
+
+		return "";
+	}
+}
+
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
 {
 	USkinnedMeshComponent::Serialize(Ar);
 
-	if (Ar.IsLoading() && !AnimationAssetPath.empty())
+	if (Ar.IsLoading())
 	{
-		SetAnimation(FResourceManager::Get().LoadAnimSequence(AnimationAssetPath));
+		ApplyAnimationFromAssetPath();
 	}
 }
 
@@ -37,6 +61,7 @@ void USkeletalMeshComponent::PostDuplicate(UObject* Original)
 
 	AnimInstance = nullptr;
 	AnimationStateMachine = nullptr;
+	AnimationAssetPath = SourceComponent->AnimationAssetPath;
 	AnimationToPlay = SourceComponent->AnimationToPlay;
 	bPlaying = SourceComponent->bPlaying;
 	bLooping = SourceComponent->bLooping;
@@ -44,10 +69,8 @@ void USkeletalMeshComponent::PostDuplicate(UObject* Original)
 
 	if (AnimationMode == EAnimationMode::AnimationSingleNode && AnimationToPlay)
 	{
-		UAnimSingleNodeInstance* SingleNode = new UAnimSingleNodeInstance();
-		SingleNode->Initialize(this);
+		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
 		SingleNode->SetAnimation(Cast<UAnimSequenceBase>(AnimationToPlay));
-		AnimInstance = SingleNode;
 
 		if (bPlaying)
 		{
@@ -62,7 +85,7 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
 
 	if (PropertyName && std::strcmp(PropertyName, "AnimationAssetPath") == 0)
 	{
-		SetAnimation(AnimationAssetPath.empty() ? nullptr : FResourceManager::Get().LoadAnimSequence(AnimationAssetPath));
+		ApplyAnimationFromAssetPath();
 	}
 	else if (PropertyName && std::strcmp(PropertyName, "AnimationMode") == 0)
 	{
@@ -230,15 +253,7 @@ void USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool 
 	SetAnimationMode(EAnimationMode::AnimationSingleNode);
 	SetAnimation(NewAnimToPlay);
 
-	UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance);
-	if (!SingleNode)
-	{
-		SingleNode = new UAnimSingleNodeInstance();
-		SingleNode->Initialize(this);
-
-		AnimInstance = SingleNode;
-	}
-
+	UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
 	SingleNode->SetAnimation(Cast<UAnimSequenceBase>(NewAnimToPlay));
 	Play(bLooping);
 }
@@ -251,9 +266,78 @@ void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InAnimationMode)
 void USkeletalMeshComponent::SetAnimation(UAnimationAsset* NewAnimation)
 {
 	AnimationToPlay = NewAnimation;
-	if (auto* SingleNode = dynamic_cast<UAnimSingleNodeInstance*>(AnimInstance))
+	SyncAnimationAssetPathFromAnimation(NewAnimation);
+
+	if (!AnimationToPlay)
+	{
+		bPlaying = false;
+		ResetToBindPose();
+	}
+
+	if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
 	{
 		SingleNode->SetAnimation(Cast<UAnimSequenceBase>(NewAnimation));
+	}
+}
+
+UAnimSingleNodeInstance* USkeletalMeshComponent::EnsureSingleNodeInstance()
+{
+	UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance);
+	if (!SingleNode)
+	{
+		SingleNode = new UAnimSingleNodeInstance();
+		SingleNode->Initialize(this);
+		AnimInstance = SingleNode;
+	}
+	return SingleNode;
+}
+
+void USkeletalMeshComponent::ApplyAnimationFromAssetPath()
+{
+	const FString RequestedPath = AnimationAssetPath;
+	if (RequestedPath.empty())
+	{
+		SetAnimation(nullptr);
+		return;
+	}
+
+	UAnimationAsset* LoadedAnimation = FResourceManager::Get().LoadAnimSequence(RequestedPath);
+	if (!LoadedAnimation)
+	{
+		AnimationToPlay = nullptr;
+		bPlaying = false;
+		AnimationAssetPath = RequestedPath;
+		ResetToBindPose();
+		if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+		{
+			SingleNode->SetAnimation(nullptr);
+		}
+		UE_LOG_WARNING("[SkeletalMeshComponent] Failed to load animation asset: %s", RequestedPath.c_str());
+		return;
+	}
+
+	SetAnimation(LoadedAnimation);
+
+	if (AnimationMode == EAnimationMode::AnimationSingleNode)
+	{
+		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
+		SingleNode->SetAnimation(Cast<UAnimSequenceBase>(AnimationToPlay));
+		Play(bLooping);
+	}
+}
+
+void USkeletalMeshComponent::SyncAnimationAssetPathFromAnimation(UAnimationAsset* Animation)
+{
+	if (!Animation)
+	{
+		AnimationAssetPath.clear();
+		return;
+	}
+
+	const FString PersistentPath = GetPersistentAnimationAssetPath(Animation);
+	if (!PersistentPath.empty())
+	{
+		AnimationAssetPath = PersistentPath;
 	}
 }
 

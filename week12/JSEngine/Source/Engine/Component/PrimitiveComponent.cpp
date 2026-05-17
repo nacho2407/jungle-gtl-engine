@@ -4,7 +4,6 @@
 #include "GameFramework/World.h"
 #include "Math/Utils.h"
 
-DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {
@@ -190,20 +189,6 @@ void UPrimitiveComponent::NotifySpatialIndexDirty() const
 	World->GetSpatialIndex().MarkPrimitiveDirty(const_cast<UPrimitiveComponent*>(this));
 }
 
-
-// DEFINE_CLASS(UCubeComponent, UPrimitiveComponent)
-// DEFINE_CLASS(USphereComponent, UPrimitiveComponent)
-// DEFINE_CLASS(UPlaneComponent, UPrimitiveComponent)
-// REGISTER_FACTORY(UCubeComponent)
-// REGISTER_FACTORY(USphereComponent)
-// REGISTER_FACTORY(UPlaneComponent)
-//
-// void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-// {
-// 	USceneComponent::GetEditableProperties(OutProps);
-// 	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
-// }
-//
 // void UPrimitiveComponent::UpdateWorldAABB() const
 // {
 // 	FVector LExt = LocalExtents;

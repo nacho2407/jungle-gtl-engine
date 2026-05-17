@@ -3,26 +3,15 @@
 #include "EngineStatics.h"
 #include "Object/FName.h"
 #include "Core/Singleton.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Reflection/ReflectionMacros.h"
 #include "Serialization/Archive.h"
-#include "Object/Object.h"
-#include "Core/Reflection/ReflectionRegistry.h"
+#include "Object/Class.h"
+#include <type_traits>
 
-#define DECLARE_CLASS(ClassName, ParentClass)                          		\
-	using ThisClass = ClassName;									   		\
-	static const FTypeInfo s_TypeInfo;                                 		\
-	const FTypeInfo* GetTypeInfo() const override {                    		\
-		return &s_TypeInfo;                                            		\
-	}                                                                  		\
-	/* 리플렉션 생성기 구조체가 private/protected 멤버에 접근할 수 있도록 허용 */ \
-	friend struct Z_Construct_UClass_##ClassName;
+class UClass;
+class FDebugDetailsBuilder;
 
-#define DEFINE_CLASS(ClassName, ParentClass)                           \
-	const FTypeInfo ClassName::s_TypeInfo = {                          \
-		#ClassName,                                                    \
-		&ParentClass::s_TypeInfo,                                      \
-		sizeof(ClassName)                                              \
-	};
+
 
 enum EClassFlags : uint32_t
 {
@@ -30,23 +19,7 @@ enum EClassFlags : uint32_t
 	CF_Actor = 1 << 0,
 	CF_Component = 1 << 1,
 	CF_Camera = 1 << 2,
-};
-
-struct FTypeInfo
-{
-	const char* name;
-	const FTypeInfo* Parent;
-	size_t size;
-	uint32_t ClassFlags = CF_None;
-
-	bool IsA(const FTypeInfo* Other) const {
-		for (const FTypeInfo* T = this; T; T = T->Parent) {
-			if (T == Other) {
-				return true;
-			}
-		}
-		return false;
-	}
+	CF_Abstract = 1 << 3,
 };
 
 class UObject
@@ -57,7 +30,7 @@ public:
 
 	// -----------------------------------------------------------------------
 	// 복제 시스템
-	// Duplicate()     : FObjectFactory 로 같은 타입의 인스턴스를 생성한 뒤
+	// Duplicate()     : UClass/CreateFunc로 같은 타입의 인스턴스를 생성한 뒤
 	//                   CopyPropertiesFrom → PostDuplicate 순으로 호출합니다.
 	//                   개별 클래스에서 오버라이드할 필요 없습니다.
 	// PostDuplicate() : Duplicate() 내부에서 CopyPropertiesFrom 직후 호출되는 가상 훅.
@@ -90,29 +63,33 @@ public:
 	FObjectNameProxy GetName() const { return FObjectNameProxy(ObjectName.ToString()); }
 
 	// RTTI stuffs
-	virtual const FTypeInfo* GetTypeInfo() const { return &s_TypeInfo; }
+	static UClass* StaticClass();
+	virtual UClass* GetClass() const { return StaticClass(); }
+	const char* GetClassName() const
+	{
+		UClass* Class = GetClass();
+		return Class ? Class->GetName() : "UObject";
+	}
+
+	bool IsA(const UClass* Class) const;
 
 	template<typename T>
-	bool IsA() const { return GetTypeInfo()->IsA(&T::s_TypeInfo); }
+	bool IsA() const { return IsA(T::StaticClass()); }
 
 	bool IsValidLowLevel() const { return this != nullptr; }
 
 	// -----------------------------------------------------------------------
-	// 프로퍼티 시스템 — 모든 UObject 파생 클래스가 공유합니다.
-	// GetEditableProperties : 에디터에 노출할 프로퍼티 목록 반환.
-	//                         하위 클래스에서 override 하여 속성 추가.
+	// 프로퍼티 시스템 — 런타임 UClass/FProperty 메타데이터를 공유합니다.
 	// PostEditChangeProperty: 프로퍼티 값 변경 후 리소스 재로딩 등 처리.
-	// CopyPropertiesFrom    : GetEditableProperties 에 노출된 프로퍼티를
-	//                         이름 기반으로 매칭하여 Src → this 방향으로 복사.
+	// CopyPropertiesFrom    : FProperty에 노출된 프로퍼티를 이름 기반으로 복사.
 	// -----------------------------------------------------------------------
-	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps);
 	virtual void PostEditChangeProperty(const FPropertyChangedEvent& Event) { PostEditProperty(Event.PropertyName); }
 	virtual void PostEditProperty(const char* PropertyName) {}
+	virtual void BuildDebugDetails(FDebugDetailsBuilder& Builder) {}
 	void CopyPropertiesFrom(UObject* Src);
 
 	virtual void Serialize(FArchive& Ar);
-
-	static const FTypeInfo s_TypeInfo;
+	void SerializeReflectedProperties(FArchive& Ar);
 
 protected:
 	FName ObjectName;
@@ -124,24 +101,24 @@ private:
 
 extern TArray<UObject*> GUObjectArray;
 
+UObject* NewObject(UClass* Class);
+
 template <typename T>
 inline T* Cast(UObject* Src)
 {
-	if (Src && Src->IsA<T>())
-	{
-		return static_cast<T*>(Src);
-	}
-	return nullptr;
+	return Src && Src->IsA(T::StaticClass()) ? static_cast<T*>(Src) : nullptr;
 }
 
 template <typename T>
 inline const T* Cast(const UObject* Src)
 {
-	if (Src && Src->IsA<T>())
-	{
-		return static_cast<const T*>(Src);
-	}
-	return nullptr;
+	return Src && Src->IsA(T::StaticClass()) ? static_cast<const T*>(Src) : nullptr;
+}
+
+template <typename T>
+inline T* NewObject()
+{
+	return Cast<T>(NewObject(T::StaticClass()));
 }
 
 class UObjectManager : public TSingleton<UObjectManager>
@@ -155,7 +132,8 @@ public:
 		static_assert(std::is_base_of<UObject, T>::value, "T must derive from UObject");
 		T* Obj = new T();
 
-		const char* ClassName = T::s_TypeInfo.name;
+		const UClass* Class = T::StaticClass();
+		const char* ClassName = Class ? Class->GetName() : "UObject";
 		uint32& Counter = NameCounters[ClassName];
 		FString Name = FString(ClassName) + "_" + std::to_string(Counter++);
 		Obj->SetFName(FName(Name));
@@ -207,3 +185,17 @@ public:
 		return GUObjectArray[Index];
 	}
 };
+
+template<typename T>
+inline UObject* CreateReflectedObject()
+{
+	static_assert(std::is_base_of_v<UObject, T>, "T must derive from UObject");
+	if constexpr (std::is_abstract_v<T>)
+	{
+		return nullptr;
+	}
+	else
+	{
+		return UObjectManager::Get().CreateObject<T>();
+	}
+}

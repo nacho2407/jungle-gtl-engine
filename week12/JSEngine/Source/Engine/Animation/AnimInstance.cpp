@@ -1,7 +1,6 @@
 ﻿#include "AnimInstance.h"
 #include "Component/SkeletalMeshComponent.h"
 
-DEFINE_CLASS(UAnimInstance, UObject)
 
 void UAnimInstance::Initialize(USkeletalMeshComponent* InOwnerComponent)
 {

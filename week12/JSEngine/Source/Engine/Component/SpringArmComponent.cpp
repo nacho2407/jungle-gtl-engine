@@ -1,12 +1,7 @@
 ﻿#include "Component/SpringArmComponent.h"
 
-#include "Object/ObjectFactory.h"
-
 #include <cmath>
 #include <cstring>
-
-DEFINE_CLASS(USpringArmComponent, USceneComponent)
-REGISTER_FACTORY(USpringArmComponent)
 
 USpringArmComponent::USpringArmComponent()
 {

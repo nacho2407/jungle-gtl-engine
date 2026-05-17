@@ -5,7 +5,7 @@ UCLASS()
 class UCapsuleComponent : public UShapeComponent
 {
 public:
-	DECLARE_CLASS(UCapsuleComponent, UShapeComponent)
+	GENERATED_BODY(UCapsuleComponent, UShapeComponent)
 	float GetCapsuleHalfHeight() const { return CapsuleHalfHeight; }
 	float GetCapsuleRadius() const { return CapsuleRadius; }
 

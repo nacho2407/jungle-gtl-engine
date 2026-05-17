@@ -19,20 +19,25 @@
 #include "Component/ActorSequenceComponent.h"
 #include "Component/PostProcess/Light/PointLightComponent.h"
 #include "Core/EditorResourcePaths.h"
+#include "Core/DebugDetails.h"
 #include "Core/PropertyTypes.h"
 #include "Core/Reflection/ReflectionRegistry.h"
 #include "Core/Paths.h"
+#include "Core/Containers/Set.h"
 #include "Core/Logging/Log.h"
 #include "Math/Color.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Material.h"
 #include "Asset/StaticMesh.h"
 #include "Object/FName.h"
+#include "Object/Class.h"
+#include "Object/Property.h"
 #include <algorithm>
 #include <chrono>
 #include <cctype>
 #include <filesystem>
 #include <functional>
+#include <cstring>
 #include "Component/HeightFogComponent.h"
 #include "Selection/SelectionManager.h"
 #include "Component/BoxComponent.h"
@@ -120,12 +125,12 @@ namespace
 		ImGui::TextUnformatted(Label);
 	}
 
-	static const char* GetPropertyDisplayName(const FPropertyDescriptor& Prop)
+	static const char* GetPropertyDisplayName(const FProperty& Prop)
 	{
 		return (Prop.DisplayName && Prop.DisplayName[0] != '\0') ? Prop.DisplayName : Prop.Name;
 	}
 
-	static FString MakePropertyWidgetLabel(const FPropertyDescriptor& Prop)
+	static FString MakePropertyWidgetLabel(const FProperty& Prop)
 	{
 		const char* DisplayName = GetPropertyDisplayName(Prop);
 		if (!DisplayName)
@@ -139,31 +144,57 @@ namespace
 		return FString(DisplayName) + "##" + Prop.Name;
 	}
 
-	static int64 ReadEnumPropertyValue(const FPropertyDescriptor& Prop)
+	static void CollectEditableReflectedProperties(UObject* Object, TArray<const FProperty*>& OutProperties)
 	{
-		if (!Prop.ValuePtr || !Prop.EnumMeta) 
+		if (!Object || !Object->GetClass())
+		{
+			return;
+		}
+
+		TArray<const FProperty*> AllProperties;
+		Object->GetClass()->GetAllProperties(AllProperties);
+		for (const FProperty* Property : AllProperties)
+		{
+			if (!Property || !Property->Name || !Property->IsEditable())
+			{
+				continue;
+			}
+			OutProperties.push_back(Property);
+		}
+	}
+
+	static int64 ReadEnumPropertyValue(const FProperty& Prop, const UObject* Object)
+	{
+		const void* ValuePtr = Prop.GetValuePtr(Object);
+		if (!ValuePtr || !Prop.EnumMeta)
+		{
 			return 0;
+		}
 
 		switch (Prop.EnumMeta->Size)
 		{
-		case 1: return static_cast<int64>(*static_cast<uint8*>(Prop.ValuePtr));
-		case 2: return static_cast<int64>(*static_cast<uint16*>(Prop.ValuePtr));
-		case 4: return static_cast<int64>(*static_cast<int32*>(Prop.ValuePtr));
-		case 8: return static_cast<int64>(*static_cast<int64*>(Prop.ValuePtr));
+		case 1: return static_cast<int64>(*static_cast<const uint8*>(ValuePtr));
+		case 2: return static_cast<int64>(*static_cast<const uint16*>(ValuePtr));
+		case 4: return static_cast<int64>(*static_cast<const int32*>(ValuePtr));
+		case 8: return static_cast<int64>(*static_cast<const int64*>(ValuePtr));
 		default: return 0;
 		}
 	}
 
-	static void WriteEnumPropertyValue(const FPropertyDescriptor& Prop, int64 Value)
+	static void WriteEnumPropertyValue(const FProperty& Prop, UObject* Object, int64 Value)
 	{
-		if (!Prop.ValuePtr || !Prop.EnumMeta) return;
+		void* ValuePtr = Prop.GetValuePtr(Object);
+		if (!ValuePtr || !Prop.EnumMeta)
+		{
+			return;
+		}
 
 		switch (Prop.EnumMeta->Size)
 		{
-		case 1: *static_cast<uint8*>(Prop.ValuePtr) = static_cast<uint8>(Value); break;
-		case 2: *static_cast<uint16*>(Prop.ValuePtr) = static_cast<uint16>(Value); break;
-		case 4: *static_cast<int32*>(Prop.ValuePtr) = static_cast<int32>(Value); break;
-		case 8: *static_cast<int64*>(Prop.ValuePtr) = static_cast<int64>(Value); break;
+		case 1: *static_cast<uint8*>(ValuePtr) = static_cast<uint8>(Value); break;
+		case 2: *static_cast<uint16*>(ValuePtr) = static_cast<uint16>(Value); break;
+		case 4: *static_cast<int32*>(ValuePtr) = static_cast<int32>(Value); break;
+		case 8: *static_cast<int64*>(ValuePtr) = static_cast<int64>(Value); break;
 		default: break;
 		}
 	}
@@ -196,7 +227,7 @@ namespace
 			FString TargetName = UpdatedComp->GetFName().ToString();
 			if (TargetName.empty())
 			{
-				TargetName = UpdatedComp->GetTypeInfo()->name;
+				TargetName = UpdatedComp->GetClassName();
 			}
 			return FString("MC_") + TargetName;
 		}
@@ -205,7 +236,7 @@ namespace
 		FString DefaultName = MoveComp->GetFName().ToString();
 		if (DefaultName.empty())
 		{
-			DefaultName = MoveComp->GetTypeInfo()->name;
+			DefaultName = MoveComp->GetClassName();
 		}
 		return DefaultName;
 	}
@@ -217,8 +248,7 @@ namespace
 
 		if (Actor)
 		{
-			const FTypeInfo* TypeInfo = Actor->GetTypeInfo();
-			ActorName = TypeInfo ? TypeInfo->name : "Actor";
+			ActorName = Actor->GetClassName();
 		}
 
 		return ValidSceneName + "_" + ActorName;
@@ -428,7 +458,7 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 			return Comp;
 		}
 	},
-	
+
 	{
 		"Fireball Component",
 		[](AActor* Actor) -> UActorComponent* {
@@ -445,31 +475,31 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 		}
 	},
 
-	{ 
+	{
 		"Box Component",
 		[](AActor* Actor) -> UActorComponent*
 		{
 			UBoxComponent* Comp = Actor->AddComponent<UBoxComponent>();
 			return Comp;
-		} 
+		}
 	},
 
-	{ 
+	{
 		"Sphere Component",
 		[](AActor* Actor) -> UActorComponent*
 		{
 			USphereComponent* Comp = Actor->AddComponent<USphereComponent>();
 			return Comp;
-		} 
+		}
 	},
 
-	{ 
+	{
 		"Capsule Component",
 		[](AActor* Actor) -> UActorComponent*
 		{
 			UCapsuleComponent* Comp = Actor->AddComponent<UCapsuleComponent>();
 			return Comp;
-		} 
+		}
 	},
 	{
 		"Script Component",
@@ -477,7 +507,7 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 		{
 			UScriptComponent* Comp = Actor->AddComponent<UScriptComponent>();
 			return Comp;
-		} 
+		}
 	},
 	{
 		"ActorSequence Component",
@@ -691,7 +721,7 @@ void FEditorPropertyWidget::RenderDetailsLockBar(AActor* CurrentSelection, AActo
 	if (bDetailsLocked && DisplayActor)
 	{
 		FString LockedName = DisplayActor->GetFName().ToString();
-		if (LockedName.empty()) LockedName = DisplayActor->GetTypeInfo()->name;
+		if (LockedName.empty()) LockedName = DisplayActor->GetClassName();
 		ImGui::TextDisabled("Locked: %s", LockedName.c_str());
 	}
 	else
@@ -769,10 +799,10 @@ void FEditorPropertyWidget::RenderActorHeaderRegion(AActor* PrimaryActor, const 
 
 void FEditorPropertyWidget::RenderMultiSelectionHeader(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors, int32 SelectionCount)
 {
-	ImGui::Text("Class: %s", PrimaryActor->GetTypeInfo()->name);
+	ImGui::Text("Class: %s", PrimaryActor->GetClassName());
 
 	FString PrimaryName = PrimaryActor->GetFName().ToString();
-	if (PrimaryName.empty()) PrimaryName = PrimaryActor->GetTypeInfo()->name;
+	if (PrimaryName.empty()) PrimaryName = PrimaryActor->GetClassName();
 
 	const bool bWasActorSelected = bActorSelected;
 	if (bWasActorSelected) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
@@ -895,13 +925,13 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 	DrawDetailsSeparator();
 
 	float TreeHeight = std::max(64.0f, ImGui::GetContentRegionAvail().y * 0.2f);
-	
+
 	// BeginChild를 호출하여 내부 스크롤이 가능한 Child Window를 생성합니다.
 	ImGui::BeginChild("##ComponentTreeChild", ImVec2(0, TreeHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
 	USceneComponent* Root = Actor->GetRootComponent();
 	FString ActorName = Actor->GetFName().ToString();
-	if (ActorName.empty()) ActorName = Actor->GetTypeInfo()->name;
+	if (ActorName.empty()) ActorName = Actor->GetClassName();
 
 	ImGuiTreeNodeFlags ActorFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
 	if (bActorSelected) ActorFlags |= ImGuiTreeNodeFlags_Selected;
@@ -986,7 +1016,7 @@ void FEditorPropertyWidget::RenderSceneComponentNode(AActor* Actor, USceneCompon
 	if (!IsLiveActor(Actor) || !IsLiveComponent(Comp)) return;
 
 	FString Name = Comp->GetFName().ToString();
-	if (Name.empty()) Name = Comp->GetTypeInfo()->name;
+	if (Name.empty()) Name = Comp->GetClassName();
 
 	const auto& Children = Comp->GetChildren();
 
@@ -1150,9 +1180,8 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 
 void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
-	ImGui::Text("Actor: %s", PrimaryActor->GetTypeInfo()->name);
+	ImGui::Text("Actor: %s", PrimaryActor->GetClassName());
 	RenderEditableName("Name##Actor", PrimaryActor, &bFocusActorNameNextFrame); // 편집 가능한 UI
-	RenderActorTags(PrimaryActor, SelectedActors);
 
 	if (PrimaryActor->GetRootComponent())
 	{
@@ -1190,108 +1219,17 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 	}
 
 	DrawDetailsSeparator();
-	TArray<FPropertyDescriptor> Props;
-	PrimaryActor->GetEditableProperties(Props);
-	for (FPropertyDescriptor& Prop : Props)
+
+	TArray<const FProperty*> ReflectedProperties;
+	CollectEditableReflectedProperties(PrimaryActor, ReflectedProperties);
+	if (!ReflectedProperties.empty())
 	{
-		if (!Prop.Name)
-		{
-			continue;
-		}
-
-		if (strcmp(Prop.Name, "Location") == 0
-			|| strcmp(Prop.Name, "Rotation") == 0
-			|| strcmp(Prop.Name, "Scale") == 0)
-		{
-			continue;
-		}
-
-		RenderPropertyWidget(Prop, PrimaryActor);
+		DrawDetailsSectionLabel("Properties");
+		ImGui::Spacing();
+		RenderReflectionProperties(PrimaryActor);
 	}
 
-	DrawDetailsSeparator();
-	// Billboard 타입 체크
-	if (UBillboardComponent* BillboardComp = dynamic_cast<UBillboardComponent*>(PrimaryActor->GetRootComponent()))
-	{
-		if (dynamic_cast<USubUVComponent*>(PrimaryActor->GetRootComponent()))
-		{
-			return;
-		}
-		DrawDetailsSeparator();
-		DrawDetailsSectionLabel("Sprite Texture");
-
-		const TArray<FString>& TextureList = EditorEngine
-			? EditorEngine->GetAssetService().GetTextureAssetPaths()
-			: EmptyAssetNames();
-		const FString CurrentName = BillboardComp->GetTextureName();
-
-		if (ImGui::BeginCombo("##SpriteTexture", CurrentName.empty() ? "None" : CurrentName.c_str()))
-		{
-			for (const FString& TexPath : TextureList)
-			{
-				// 경로 전체 대신 파일명만 표시
-				FString DisplayName = TexPath;
-				bool bSelected = (TexPath == CurrentName);
-
-				if (ImGui::Selectable(DisplayName.c_str(), bSelected))
-				{
-					if (EditorEngine)
-					{
-						EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Billboard");
-					}
-					for (AActor* Actor : SelectedActors)
-					{
-						if (UBillboardComponent* Comp =
-							dynamic_cast<UBillboardComponent*>(Actor->GetRootComponent()))
-						{
-							Comp->SetTextureName(TexPath);
-						}
-					}
-				}
-				if (bSelected) ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
-		}
-	}
-
-	if (PrimaryActor->IsA<ADecalSpotLightActor>())
-	{
-		ADecalSpotLightActor* SpotActor = static_cast<ADecalSpotLightActor*>(PrimaryActor);
-		DrawDetailsSeparator();
-		DrawDetailsSectionLabel("Spot Light Properties");
-		float Range = SpotActor->GetRange();
-		const bool bRangeEdited = ImGui::DragFloat("Range", &Range, 0.1f, 0.0f, 1000.0f);
-		if (ImGui::IsItemActivated() && EditorEngine)
-		{
-			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Light");
-		}
-		if (bRangeEdited)
-		{
-			for (AActor* Actor : SelectedActors)
-			{
-				if (ADecalSpotLightActor* SA = dynamic_cast<ADecalSpotLightActor*>(Actor))
-				{
-					SA->SetRange(Range);
-				}
-			}
-		}
-		float Angle = SpotActor->GetAngle();
-		const bool bAngleEdited = ImGui::DragFloat("Angle", &Angle, 0.1f, 0.0f, 180.0f);
-		if (ImGui::IsItemActivated() && EditorEngine)
-		{
-			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Light");
-		}
-		if (bAngleEdited)
-		{
-			for (AActor* Actor : SelectedActors)
-			{
-				if (ADecalSpotLightActor* SA = dynamic_cast<ADecalSpotLightActor*>(Actor))
-				{
-					SA->SetAngle(Angle);
-				}
-			}
-		}
-	}
+	RenderDebugDetails(PrimaryActor, PrimaryActor, SelectedActors);
 }
 
 void FEditorPropertyWidget::RenderActorTags(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
@@ -1474,162 +1412,44 @@ void FEditorPropertyWidget::RenderComponentProperties()
 
 	const FDetailsPerfClock::time_point TotalStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
 
-	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
+	ImGui::Text("Component: %s", SelectedComponent->GetClassName());
 	RenderEditableName("Name##Component", SelectedComponent, &bFocusComponentNameNextFrame); // 편집 가능한 UI
-	RenderComponentTags(SelectedComponent);
 
 	DrawDetailsSeparator();
 
-	// PropertyDescriptor 기반 자동 위젯 렌더링
-	TArray<FPropertyDescriptor> Props;
+	TArray<const FProperty*> ReflectedProperties;
 	const FDetailsPerfClock::time_point PropertiesStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
-	SelectedComponent->GetEditableProperties(Props);
+	CollectEditableReflectedProperties(SelectedComponent, ReflectedProperties);
 	const FDetailsPerfClock::time_point PropertiesEnd = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
 
 	AActor* Owner = SelectedComponent->GetOwner();
 	double PropertyWidgetMs = 0.0;
+	int32 RenderedPropertyCount = 0;
 
-	for (auto& Prop : Props)
+	if (!ReflectedProperties.empty())
 	{
-		if (!Prop.Name)
+		DrawDetailsSectionLabel("Properties");
+		ImGui::Spacing();
+	}
+
+	for (const FProperty* Property : ReflectedProperties)
+	{
+		if (!Property || !Property->Name || strcmp(Property->Name, "Tags") == 0)
 		{
 			continue;
-		}
-
-		if (strcmp(Prop.Name, "Tags") == 0)
-		{
-			continue;
-		}
-
-		const bool bIsScriptName =
-			strcmp(Prop.Name, "ScriptName") == 0;
-
-		FString OldScriptName;
-
-		if (bIsScriptName)
-		{
-			if (FString* ScriptNamePtr = static_cast<FString*>(Prop.ValuePtr))
-			{
-				OldScriptName = *ScriptNamePtr;
-			}
 		}
 
 		const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
-		RenderPropertyWidget(Prop);
+		RenderReflectionProperty(FPropertyHandle{ SelectedComponent, Property });
+		++RenderedPropertyCount;
 		if (bDetailsPerfTraceFrame)
 		{
 			PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
 		}
-
-		if (bIsScriptName)
-		{
-			UScriptComponent* ScriptComp = Cast<UScriptComponent>(SelectedComponent);
-			if (!ScriptComp)
-			{
-				return;
-			}
-
-			const FString& NewScriptName = ScriptComp->GetScriptName();
-
-			if (OldScriptName != NewScriptName)
-			{
-				// ScriptName 변경으로 PostEditProperty -> ReloadLuaProperties가 실행됨.
-				// 기존 Props 안의 Lua property descriptor는 이제 무효이므로
-				// 이번 프레임 Details 렌더링을 중단한다.
-				return;
-			}
-		}
 	}
-	// Special: InterpToMovementComponent control points + behaviour + actions
+
 	double SkeletalDebugMs = 0.0;
-	if (USkeletalMeshComponent* SkeletalComp = Cast<USkeletalMeshComponent>(SelectedComponent))
-	{
-		const FDetailsPerfClock::time_point SkeletalStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
-		RenderSkeletalBonePoseDebug(SkeletalComp);
-		if (bDetailsPerfTraceFrame)
-		{
-			SkeletalDebugMs = DetailsPerfMs(SkeletalStart, FDetailsPerfClock::now());
-		}
-	}
-
-	if (UInterpToMovementComponent* InterpComp = Cast<UInterpToMovementComponent>(SelectedComponent))
-	{
-		RenderInterpControlPoints(InterpComp);
-	}
-
-	if (UActorSequenceComponent* SequenceComp = Cast<UActorSequenceComponent>(SelectedComponent))
-	{
-		ActorSequenceDetails.Render(SequenceComp, LastDeltaTime);
-	}
-
-	if (ULightComponent* LightComp = Cast<ULightComponent>(SelectedComponent))
-	{
-		if (ImGui::Button("Override camera with light's perspective"))
-		{
-			UWorld* World = GEngine ? GEngine->GetWorld() : nullptr;
-			FViewportCamera* Camera = World ? World->GetActiveCamera() : nullptr;
-			if (Camera)
-			{
-				Camera->SetLocation(LightComp->GetWorldLocation());
-				Camera->SetRotation(LightComp->GetRelativeQuat());
-			}
-		}
-	}
-	else if (UScriptComponent* ScriptComp = Cast<UScriptComponent>(SelectedComponent))
-	{
-		FScriptManager& ScriptMgr = FScriptManager::Get();
-		if (ImGui::Button("Create Script"))
-		{
-			FString ScriptPath = ScriptComp->GetScriptName();
-			if (ScriptPath.empty() || IsBlankString(ScriptPath))
-			{
-				if (EditorEngine)
-				{
-					EditorEngine->GetNotificationService().Warning("Script name is empty");
-				}
-			}
-			else
-			{
-				FString SelectedScriptPath;
-				if (!PromptCreateScriptAs(EditorEngine, ScriptPath, SelectedScriptPath))
-				{
-					return;
-				}
-
-				if (!ScriptMgr.CreateScript(SelectedScriptPath))
-				{
-					if (EditorEngine)
-					{
-						EditorEngine->GetNotificationService().Error("Script create failed");
-					}
-					return;
-				}
-
-				ScriptComp->SetScriptName(MakeScriptReferenceFromPath(SelectedScriptPath));
-				ScriptComp->ReloadLuaProperties();
-				if (EditorEngine)
-				{
-					EditorEngine->GetNotificationService().Info("Script created");
-				}
-			}
-		}
-		if (ImGui::Button("Edit Script"))
-		{
-			FString ScriptPath = ScriptComp->GetScriptName();
-			if (ScriptPath.empty() || IsBlankString(ScriptPath))
-			{
-				if (EditorEngine)
-				{
-					EditorEngine->GetNotificationService().Warning("No script selected");
-				}
-			}
-			else if (!ScriptMgr.EditScript(ScriptPath) && EditorEngine)
-			{
-				EditorEngine->GetNotificationService().Warning("Script file not found");
-			}
-		}
-	}
-	ImGui::Separator();
+	RenderDebugDetails(SelectedComponent, Owner, TArray<AActor*>{ Owner });
 
 	// 프로퍼티 직접 편집 후 월드 행렬 갱신
 	if (SelectedComponent->IsA<USceneComponent>())
@@ -1642,26 +1462,367 @@ void FEditorPropertyWidget::RenderComponentProperties()
 
 	if (bDetailsPerfTraceFrame)
 	{
-		const double GetEditablePropertiesMs = DetailsPerfMs(PropertiesStart, PropertiesEnd);
+		const double CollectPropertiesMs = DetailsPerfMs(PropertiesStart, PropertiesEnd);
 		const double TotalMs = DetailsPerfMs(TotalStart, FDetailsPerfClock::now());
 		UE_LOG(
-			"[DetailsPerf] Component=%s Type=%s Total=%.2fms GetEditableProperties=%.2fms PropertyWidgets=%.2fms SkeletalDebug=%.2fms Props=%zu",
+			"[DetailsPerf] Component=%s Type=%s Total=%.2fms CollectProperties=%.2fms PropertyWidgets=%.2fms SkeletalDebug=%.2fms Props=%d",
 			SelectedComponent ? SelectedComponent->GetFName().ToString().c_str() : "<None>",
-			SelectedComponent ? SelectedComponent->GetTypeInfo()->name : "<None>",
+			SelectedComponent ? SelectedComponent->GetClassName() : "<None>",
 			TotalMs,
-			GetEditablePropertiesMs,
+			CollectPropertiesMs,
 			PropertyWidgetMs,
 			SkeletalDebugMs,
-			Props.size());
+			RenderedPropertyCount);
 	}
 }
 
-bool FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& Prop, AActor* Owner)
+void FEditorPropertyWidget::RenderReflectionProperties(UObject* Object)
 {
+	TArray<const FProperty*> Properties;
+	CollectEditableReflectedProperties(Object, Properties);
+	for (const FProperty* Property : Properties)
+	{
+		if (!Property)
+		{
+			continue;
+		}
+		RenderReflectionProperty(FPropertyHandle{ Object, Property });
+	}
+}
+
+void FEditorPropertyWidget::RenderReflectionProperty(const FPropertyHandle& Handle)
+{
+	if (!Handle.IsValid() || !Handle.IsEditable())
+	{
+		return;
+	}
+
+	RenderPropertyWidget(Handle);
+}
+
+void FEditorPropertyWidget::RenderDebugDetails(UObject* Object, AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
+{
+	(void)PrimaryActor;
+	if (!Object)
+	{
+		return;
+	}
+
+	FDebugDetailsBuilder Builder;
+	Object->BuildDebugDetails(Builder);
+
+	if (AActor* Actor = Cast<AActor>(Object))
+	{
+		Builder.AddTagEditor("Actor Tags", [this, Actor, &SelectedActors]()
+		{
+			RenderActorTags(Actor, SelectedActors);
+		});
+
+		if (UBillboardComponent* BillboardComp = Cast<UBillboardComponent>(Actor->GetRootComponent()))
+		{
+			if (!Cast<USubUVComponent>(Actor->GetRootComponent()))
+			{
+				Builder.AddCustom([this, BillboardComp, &SelectedActors]()
+				{
+					DrawDetailsSeparator();
+					DrawDetailsSectionLabel("Sprite Texture");
+
+					const TArray<FString>& TextureList = EditorEngine
+						? EditorEngine->GetAssetService().GetTextureAssetPaths()
+						: EmptyAssetNames();
+					const FString CurrentName = BillboardComp->GetTextureName();
+
+					if (ImGui::BeginCombo("##SpriteTexture", CurrentName.empty() ? "None" : CurrentName.c_str()))
+					{
+						for (const FString& TexPath : TextureList)
+						{
+							const bool bSelected = TexPath == CurrentName;
+							if (ImGui::Selectable(TexPath.c_str(), bSelected))
+							{
+								if (EditorEngine)
+								{
+									EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Billboard");
+								}
+								for (AActor* SelectedActor : SelectedActors)
+								{
+									if (UBillboardComponent* Comp = SelectedActor
+										? Cast<UBillboardComponent>(SelectedActor->GetRootComponent())
+										: nullptr)
+									{
+										Comp->SetTextureName(TexPath);
+									}
+								}
+							}
+							if (bSelected)
+							{
+								ImGui::SetItemDefaultFocus();
+							}
+						}
+						ImGui::EndCombo();
+					}
+				});
+			}
+		}
+
+		if (ADecalSpotLightActor* SpotActor = Cast<ADecalSpotLightActor>(Actor))
+		{
+			Builder.AddCustom([this, SpotActor, &SelectedActors]()
+			{
+				DrawDetailsSeparator();
+				DrawDetailsSectionLabel("Spot Light Properties");
+
+				float Range = SpotActor->GetRange();
+				const bool bRangeEdited = ImGui::DragFloat("Range", &Range, 0.1f, 0.0f, 1000.0f);
+				if (ImGui::IsItemActivated() && EditorEngine)
+				{
+					EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Light");
+				}
+				if (bRangeEdited)
+				{
+					for (AActor* SelectedActor : SelectedActors)
+					{
+						if (ADecalSpotLightActor* LightActor = Cast<ADecalSpotLightActor>(SelectedActor))
+						{
+							LightActor->SetRange(Range);
+						}
+					}
+				}
+
+				float Angle = SpotActor->GetAngle();
+				const bool bAngleEdited = ImGui::DragFloat("Angle", &Angle, 0.1f, 0.0f, 180.0f);
+				if (ImGui::IsItemActivated() && EditorEngine)
+				{
+					EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Light");
+				}
+				if (bAngleEdited)
+				{
+					for (AActor* SelectedActor : SelectedActors)
+					{
+						if (ADecalSpotLightActor* LightActor = Cast<ADecalSpotLightActor>(SelectedActor))
+						{
+							LightActor->SetAngle(Angle);
+						}
+					}
+				}
+			});
+		}
+	}
+	else if (UActorComponent* Component = Cast<UActorComponent>(Object))
+	{
+		Builder.AddTagEditor("Component Tags", [this, Component]()
+		{
+			RenderComponentTags(Component);
+		});
+
+		if (USkeletalMeshComponent* SkeletalComp = Cast<USkeletalMeshComponent>(Component))
+		{
+			Builder.AddCustom([this, SkeletalComp]()
+			{
+				RenderSkeletalBonePoseDebug(SkeletalComp);
+			});
+		}
+
+		if (UInterpToMovementComponent* InterpComp = Cast<UInterpToMovementComponent>(Component))
+		{
+			Builder.AddCustom([this, InterpComp]()
+			{
+				RenderInterpControlPoints(InterpComp);
+			});
+		}
+
+		if (UActorSequenceComponent* SequenceComp = Cast<UActorSequenceComponent>(Component))
+		{
+			Builder.AddCustom([this, SequenceComp]()
+			{
+				ActorSequenceDetails.Render(SequenceComp, LastDeltaTime);
+			});
+		}
+
+		if (ULightComponent* LightComp = Cast<ULightComponent>(Component))
+		{
+			Builder.AddButton("Override camera with light's perspective", [LightComp]()
+			{
+				UWorld* World = GEngine ? GEngine->GetWorld() : nullptr;
+				FViewportCamera* Camera = World ? World->GetActiveCamera() : nullptr;
+				if (Camera)
+				{
+					Camera->SetLocation(LightComp->GetWorldLocation());
+					Camera->SetRotation(LightComp->GetRelativeQuat());
+				}
+			});
+		}
+		else if (UScriptComponent* ScriptComp = Cast<UScriptComponent>(Component))
+		{
+			Builder.AddCustom([this, ScriptComp]()
+			{
+				FScriptManager& ScriptMgr = FScriptManager::Get();
+				DrawDetailsSeparator();
+				DrawDetailsSectionLabel("Script Actions");
+
+				if (ImGui::Button("Create Script"))
+				{
+					FString ScriptPath = ScriptComp->GetScriptName();
+					if (ScriptPath.empty() || IsBlankString(ScriptPath))
+					{
+						if (EditorEngine)
+						{
+							EditorEngine->GetNotificationService().Warning("Script name is empty");
+						}
+					}
+					else
+					{
+						FString SelectedScriptPath;
+						if (!PromptCreateScriptAs(EditorEngine, ScriptPath, SelectedScriptPath))
+						{
+							return;
+						}
+
+						if (!ScriptMgr.CreateScript(SelectedScriptPath))
+						{
+							if (EditorEngine)
+							{
+								EditorEngine->GetNotificationService().Error("Script create failed");
+							}
+							return;
+						}
+
+						ScriptComp->SetScriptName(MakeScriptReferenceFromPath(SelectedScriptPath));
+						ScriptComp->ReloadLuaProperties();
+						if (EditorEngine)
+						{
+							EditorEngine->GetNotificationService().Info("Script created");
+						}
+					}
+				}
+
+				if (ImGui::Button("Edit Script"))
+				{
+					FString ScriptPath = ScriptComp->GetScriptName();
+					if (ScriptPath.empty() || IsBlankString(ScriptPath))
+					{
+						if (EditorEngine)
+						{
+							EditorEngine->GetNotificationService().Warning("No script selected");
+						}
+					}
+					else if (!ScriptMgr.EditScript(ScriptPath) && EditorEngine)
+					{
+						EditorEngine->GetNotificationService().Warning("Script file not found");
+					}
+				}
+			});
+		}
+	}
+
+	if (Builder.IsEmpty())
+	{
+		return;
+	}
+
+	for (const FDebugDetailsItem& Item : Builder.GetItems())
+	{
+		RenderDebugDetailsItem(Item);
+	}
+}
+
+void FEditorPropertyWidget::RenderDebugDetailsItem(const FDebugDetailsItem& Item)
+{
+	switch (Item.Type)
+	{
+	case EDebugDetailsItemType::Text:
+		DrawDetailsSeparator();
+		DrawDetailsSectionLabel(Item.Label.c_str());
+		ImGui::TextUnformatted(Item.Value.c_str());
+		break;
+	case EDebugDetailsItemType::Button:
+		DrawDetailsSeparator();
+		if (ImGui::Button(Item.Label.c_str()) && Item.Callback)
+		{
+			Item.Callback();
+		}
+		break;
+	case EDebugDetailsItemType::SRVPreview:
+		if (Item.SRVPreview.SRV)
+		{
+			const FSRVDisplayInfo& Info = Item.SRVPreview.DisplayInfo;
+			DrawDetailsSeparator();
+			DrawDetailsSectionLabel(Item.Label.c_str());
+			ImGui::Image(
+				Item.SRVPreview.SRV,
+				ImVec2(Info.ImageWidth, Info.ImageHeight),
+				ImVec2(Info.UV0X, Info.UV0Y),
+				ImVec2(Info.UV1X, Info.UV1Y));
+		}
+		break;
+	case EDebugDetailsItemType::CubeSRVPreview:
+	{
+		static const char* FaceLabels[6] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
+		const FSRVDisplayInfo& Info = Item.CubeSRVPreview.DisplayInfo;
+		bool bHasAnyFace = false;
+		for (ID3D11ShaderResourceView* FaceSRV : Item.CubeSRVPreview.FaceSRVs)
+		{
+			bHasAnyFace = bHasAnyFace || FaceSRV != nullptr;
+		}
+		if (!bHasAnyFace)
+		{
+			break;
+		}
+
+		DrawDetailsSeparator();
+		DrawDetailsSectionLabel(Item.Label.c_str());
+		for (int32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+		{
+			ID3D11ShaderResourceView* FaceSRV = Item.CubeSRVPreview.FaceSRVs[FaceIndex];
+			if (!FaceSRV)
+			{
+				continue;
+			}
+
+			ImGui::BeginGroup();
+			ImGui::TextUnformatted(FaceLabels[FaceIndex]);
+			ImGui::Image(
+				FaceSRV,
+				ImVec2(Info.ImageWidth, Info.ImageHeight),
+				ImVec2(Info.UV0X, Info.UV0Y),
+				ImVec2(Info.UV1X, Info.UV1Y));
+			ImGui::EndGroup();
+
+			if ((FaceIndex % 3) != 2)
+			{
+				ImGui::SameLine();
+			}
+		}
+		break;
+	}
+	case EDebugDetailsItemType::TagEditor:
+	case EDebugDetailsItemType::Custom:
+		if (Item.Callback)
+		{
+			Item.Callback();
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+bool FEditorPropertyWidget::RenderSceneComponentRefWidget(const FPropertyHandle& Handle, AActor* Owner)
+{
+	if (!Handle.IsValid())
+	{
+		return false;
+	}
+
+	const FProperty& Property = *Handle.Property;
 	bool bChanged = false;
-	
-	// ValuePtr은 USceneComponent* 변수의 주소 (USceneComponent**)
-	USceneComponent** ValuePtr = reinterpret_cast<USceneComponent**>(Prop.ValuePtr);
+	void* RawValuePtr = Handle.GetValuePtr();
+	if (!RawValuePtr)
+	{
+		return false;
+	}
+
+	// RawValuePtr은 USceneComponent* 변수의 주소 (USceneComponent**)
+	USceneComponent** ValuePtr = reinterpret_cast<USceneComponent**>(RawValuePtr);
 	USceneComponent* CurrentComp = *ValuePtr;
 
 	// 액터 소유 SceneComponent 목록 수집
@@ -1680,13 +1841,13 @@ bool FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& P
 	auto GetLabel = [&](USceneComponent* Comp) -> FString {
 		if (!Comp) return "None";
 		FString Name = Comp->GetFName().ToString();
-		if (Name.empty()) Name = Comp->GetTypeInfo()->name;
+		if (Name.empty()) Name = Comp->GetClassName();
 		bool bIsRoot = Owner && (Comp == Owner->GetRootComponent());
 		return bIsRoot ? ("[Root] " + Name) : Name;
 	};
 
 	FString CurrentLabel = GetLabel(CurrentComp);
-	const FString WidgetLabel = MakePropertyWidgetLabel(Prop);
+	const FString WidgetLabel = MakePropertyWidgetLabel(Property);
 	if (ImGui::BeginCombo(WidgetLabel.c_str(), CurrentLabel.c_str()))
 	{
 		for (USceneComponent* SceneComp : SceneComps)
@@ -1706,61 +1867,75 @@ bool FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& P
 		}
 		ImGui::EndCombo();
 	}
-	
+
 	return bChanged;
 }
 
-void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObject* TargetObject)
+
+void FEditorPropertyWidget::RenderPropertyWidget(const FPropertyHandle& Handle)
 {
+	if (!Handle.IsValid() || !Handle.Property->Name)
+	{
+		return;
+	}
+
+	UObject* Object = Handle.Owner;
+	const FProperty& Property = *Handle.Property;
+	void* ValuePtr = Handle.GetValuePtr();
+	if (!ValuePtr)
+	{
+		return;
+	}
+
 	bool bChanged = false;
-	UObject* NotifyTarget = TargetObject ? TargetObject : SelectedComponent;
-	const FString WidgetLabel = MakePropertyWidgetLabel(Prop);
+	UObject* NotifyTarget = Object;
+	const FString WidgetLabel = MakePropertyWidgetLabel(Property);
 	const char* Label = WidgetLabel.c_str();
 
-	switch (Prop.Type)
+	switch (Property.Type)
 	{
 	case EPropertyType::Bool:
 	{
-		bool* Val = static_cast<bool*>(Prop.ValuePtr);
+		bool* Val = static_cast<bool*>(ValuePtr);
 		bChanged = ImGui::Checkbox(Label, Val);
 		break;
 	}
 	case EPropertyType::Int:
 	{
-		int32* Val = static_cast<int32*>(Prop.ValuePtr);
+		int32* Val = static_cast<int32*>(ValuePtr);
 		bChanged = ImGui::DragInt(Label, Val);
 		break;
 	}
 	case EPropertyType::Float:
 	{
-		float* Val = static_cast<float*>(Prop.ValuePtr);
-		if (Prop.Min != 0.0f || Prop.Max != 0.0f)
-			bChanged = ImGui::DragFloat(Label, Val, Prop.Speed, Prop.Min, Prop.Max);
+		float* Val = static_cast<float*>(ValuePtr);
+		if (Property.Min != 0.0f || Property.Max != 0.0f)
+			bChanged = ImGui::DragFloat(Label, Val, Property.Speed, Property.Min, Property.Max);
 		else
-			bChanged = ImGui::DragFloat(Label, Val, Prop.Speed);
+			bChanged = ImGui::DragFloat(Label, Val, Property.Speed);
 		break;
 	}
 	case EPropertyType::Vec3:
 	{
-		float* Val = static_cast<float*>(Prop.ValuePtr);
-		bChanged = ImGui::DragFloat3(Label, Val, Prop.Speed);
+		float* Val = static_cast<float*>(ValuePtr);
+		bChanged = ImGui::DragFloat3(Label, Val, Property.Speed);
 		break;
 	}
 	case EPropertyType::Vec4:
 	{
-		float* Val = static_cast<float*>(Prop.ValuePtr);
+		float* Val = static_cast<float*>(ValuePtr);
 		bChanged = ImGui::ColorEdit4(Label, Val);
 		break;
 	}
 	case EPropertyType::Color:
 	{
-		FColor* Val = static_cast<FColor*>(Prop.ValuePtr);
+		FColor* Val = static_cast<FColor*>(ValuePtr);
 		bChanged = ImGui::ColorEdit4(Label, &Val->R);
 		break;
 	}
 	case EPropertyType::Guid:
 	{
-		FGuid* Val = static_cast<FGuid*>(Prop.ValuePtr);
+		FGuid* Val = static_cast<FGuid*>(ValuePtr);
 		if (!Val)
 		{
 			break;
@@ -1781,14 +1956,14 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 	}
 	case EPropertyType::Quat:
 	{
-		FQuat* Val = static_cast<FQuat*>(Prop.ValuePtr);
+		FQuat* Val = static_cast<FQuat*>(ValuePtr);
 		if (!Val)
 		{
 			break;
 		}
 
 		float Components[4] = { Val->X, Val->Y, Val->Z, Val->W };
-		if (ImGui::DragFloat4(Label, Components, Prop.Speed))
+		if (ImGui::DragFloat4(Label, Components, Property.Speed))
 		{
 			*Val = FQuat(Components[0], Components[1], Components[2], Components[3]);
 			Val->Normalize();
@@ -1799,7 +1974,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 	case EPropertyType::SceneComponentRef:
 	{
 		AActor* Owner = nullptr;
-		
+
 		if (AActor* Actor = Cast<AActor>(NotifyTarget))
 		{
 			Owner = Actor;
@@ -1812,15 +1987,15 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 		{
 			Owner = SelectedComponent->GetOwner();
 		}
-		
-		bChanged = RenderSceneComponentRefWidget(Prop, Owner);
+
+		bChanged = RenderSceneComponentRefWidget(Handle, Owner);
 		break;
 	}
 	case EPropertyType::String:
 	{
-		FString* Val = static_cast<FString*>(Prop.ValuePtr);
+		FString* Val = static_cast<FString*>(ValuePtr);
 
-		if (strcmp(Prop.Name, "StaticMesh") == 0)
+		if (strcmp(Property.Name, "StaticMesh") == 0)
 		{
 			const TArray<FString>& MeshPaths = EditorEngine
 				? EditorEngine->GetAssetService().GetStaticMeshAssetPaths()
@@ -1847,7 +2022,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 				}
 			}
 		}
-		else if (strcmp(Prop.Name, "SkeletalMesh") == 0)
+		else if (strcmp(Property.Name, "SkeletalMesh") == 0)
 		{
 			const TArray<FString>& MeshPaths = EditorEngine
 				? EditorEngine->GetAssetService().GetSkeletalMeshAssetPaths()
@@ -1884,7 +2059,49 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 				}
 			}
 		}
-		else if (strcmp(Prop.Name, "ScriptName") == 0)
+		else if (strcmp(Property.Name, "AnimationAssetPath") == 0)
+		{
+			TArray<FString> AnimPaths = FResourceManager::Get().GetAnimSequencePaths();
+			const FString Current = *Val;
+
+			if (ImGui::BeginCombo(Label, Current.empty() ? "<None>" : Current.c_str()))
+			{
+				if (ImGui::Selectable("<None>", Current.empty()))
+				{
+					Val->clear();
+					bChanged = true;
+				}
+
+				for (const FString& Path : AnimPaths)
+				{
+					if (Path.empty())
+					{
+						continue;
+					}
+
+					const bool bSelected = (Current == Path);
+					if (ImGui::Selectable(Path.c_str(), bSelected))
+					{
+						*Val = Path;
+						bChanged = true;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			char Buf[512];
+			strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
+			if (ImGui::InputText("##AnimationAssetPathInput", Buf, sizeof(Buf)))
+			{
+				*Val = Buf;
+				bChanged = true;
+			}
+		}
+		else if (strcmp(Property.Name, "ScriptName") == 0)
 		{
 			if (!Val)
 			{
@@ -2037,10 +2254,10 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 	}
 	case EPropertyType::Name:
 	{
-		FName* Val = static_cast<FName*>(Prop.ValuePtr);
+		FName* Val = static_cast<FName*>(ValuePtr);
 		FString Current = Val->ToString();
 
-		if (strcmp(Prop.Name, "Particle") == 0)
+		if (strcmp(Property.Name, "Particle") == 0)
 		{
 			if (UBillboardComponent* BillboardComp = Cast<UBillboardComponent>(SelectedComponent))
 			{
@@ -2073,9 +2290,9 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 
 		// 리소스 키와 매칭되는 프로퍼티면 콤보 박스로 렌더링
 		TArray<FString> Names;
-		if (strcmp(Prop.Name, "Font") == 0)
+		if (strcmp(Property.Name, "Font") == 0)
 			Names = EditorEngine ? EditorEngine->GetAssetService().GetFontNames() : EmptyAssetNames();
-		else if (strcmp(Prop.Name, "Particle") == 0)
+		else if (strcmp(Property.Name, "Particle") == 0)
 			Names = EditorEngine ? EditorEngine->GetAssetService().GetParticleNames() : EmptyAssetNames();
 
 		if (!Names.empty())
@@ -2110,7 +2327,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 	}
 	case EPropertyType::Material:
 	{
-		TArray<UMaterialInterface*>* Slots = static_cast<TArray<UMaterialInterface*>*>(Prop.ValuePtr);
+		TArray<UMaterialInterface*>* Slots = static_cast<TArray<UMaterialInterface*>*>(ValuePtr);
 		if (!Slots || !EditorEngine)
 		{
 			break;
@@ -2119,8 +2336,8 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 		const TArray<FString>& MaterialNames = AssetService.GetMaterialInterfaceNames();
 
 		DrawDetailsSeparator();
-		DrawDetailsSectionLabel(GetPropertyDisplayName(Prop));
-		ImGui::PushID(Prop.Name);
+		DrawDetailsSectionLabel(GetPropertyDisplayName(Property));
+		ImGui::PushID(Property.Name);
 		for (int32 SlotIndex = 0; SlotIndex < static_cast<int32>(Slots->size()); ++SlotIndex)
 		{
 			ImGui::PushID(SlotIndex);
@@ -2224,13 +2441,13 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 	}
 	case EPropertyType::Enum:
 	{
-		if (Prop.EnumMeta && Prop.EnumMeta->Values && Prop.EnumMeta->Count > 0)
+		if (Property.EnumMeta && Property.EnumMeta->Values && Property.EnumMeta->Count > 0)
 		{
-			const int64 CurrentValue = ReadEnumPropertyValue(Prop);
+			const int64 CurrentValue = ReadEnumPropertyValue(Property, Object);
 			int32 CurrentIndex = 0;
-			for (uint32 Index = 0; Index < Prop.EnumMeta->Count; ++Index)
+			for (uint32 Index = 0; Index < Property.EnumMeta->Count; ++Index)
 			{
-				if (Prop.EnumMeta->Values[Index].Value == CurrentValue)
+				if (Property.EnumMeta->Values[Index].Value == CurrentValue)
 				{
 					CurrentIndex = static_cast<int32>(Index);
 					break;
@@ -2245,15 +2462,15 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 					return "";
 				}
 
-				const FEnumValueMetaData& ValueMeta = EnumMeta->Values[Index];
+				const FEnumValue& ValueMeta = EnumMeta->Values[Index];
 				return (ValueMeta.DisplayName && ValueMeta.DisplayName[0] != '\0')
 					? ValueMeta.DisplayName
 					: ValueMeta.Name;
 			};
 
-			if (ImGui::Combo(Label, &CurrentIndex, ComboGetter, const_cast<FEnumMetaData*>(Prop.EnumMeta), static_cast<int>(Prop.EnumMeta->Count)))
+			if (ImGui::Combo(Label, &CurrentIndex, ComboGetter, const_cast<FEnumMetaData*>(Property.EnumMeta), static_cast<int>(Property.EnumMeta->Count)))
 			{
-				WriteEnumPropertyValue(Prop, Prop.EnumMeta->Values[CurrentIndex].Value);
+				WriteEnumPropertyValue(Property, Object, Property.EnumMeta->Values[CurrentIndex].Value);
 				bChanged = true;
 			}
 		}
@@ -2261,10 +2478,10 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 	}
 	case EPropertyType::Vec3Array:
 	{
-		TArray<FVector>* Arr = static_cast<TArray<FVector>*>(Prop.ValuePtr);
+		TArray<FVector>* Arr = static_cast<TArray<FVector>*>(ValuePtr);
 		int32 ToRemove = -1;
 
-		ImGui::Text("%s", GetPropertyDisplayName(Prop));
+		ImGui::Text("%s", GetPropertyDisplayName(Property));
 		ImGui::Spacing();
 
 		for (int32 i = 0; i < static_cast<int32>(Arr->size()); i++)
@@ -2302,7 +2519,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 		}
 
 		char AddLabel[64];
-		snprintf(AddLabel, sizeof(AddLabel), "+ Add##%s", Prop.Name);
+		snprintf(AddLabel, sizeof(AddLabel), "+ Add##%s", Property.Name);
 		if (ImGui::Button(AddLabel, ImVec2(-1, 0)))
 		{
 			if (EditorEngine)
@@ -2317,7 +2534,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 	}
 	case EPropertyType::StringArray:
 	{
-		TArray<FString>* Arr = static_cast<TArray<FString>*>(Prop.ValuePtr);
+		TArray<FString>* Arr = static_cast<TArray<FString>*>(ValuePtr);
 		if (!Arr)
 		{
 			break;
@@ -2325,7 +2542,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 
 		int32 ToRemove = -1;
 
-		ImGui::Text("%s", GetPropertyDisplayName(Prop));
+		ImGui::Text("%s", GetPropertyDisplayName(Property));
 		ImGui::Spacing();
 
 		for (int32 i = 0; i < static_cast<int32>(Arr->size()); ++i)
@@ -2368,7 +2585,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 		}
 
 		char AddLabel[64];
-		snprintf(AddLabel, sizeof(AddLabel), "+ Add##%s", Prop.Name);
+		snprintf(AddLabel, sizeof(AddLabel), "+ Add##%s", Property.Name);
 		if (ImGui::Button(AddLabel, ImVec2(-1, 0)))
 		{
 			if (EditorEngine)
@@ -2378,60 +2595,6 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 			}
 			Arr->push_back("");
 			bChanged = true;
-		}
-		break;
-	}
-	case EPropertyType::SRV:
-	{
-		const FSRVPropertyData* Data = static_cast<const FSRVPropertyData*>(Prop.ValuePtr);
-		if (!Data || !Data->SRV)
-		{
-			break;
-		}
-
-		const FSRVDisplayInfo& Info = Data->DisplayInfo;
-		ImGui::TextUnformatted(GetPropertyDisplayName(Prop));
-		ImGui::Image(Data->SRV,
-			ImVec2(Info.ImageWidth, Info.ImageHeight),
-			ImVec2(Info.UV0X, Info.UV0Y),
-			ImVec2(Info.UV1X, Info.UV1Y));
-		break;
-	}
-	case EPropertyType::CubeSRV:
-	{
-		const FCubeSRVPropertyData* Data = static_cast<const FCubeSRVPropertyData*>(Prop.ValuePtr);
-		if (!Data)
-		{
-			break;
-		}
-
-		static const char* FaceLabels[6] =
-		{
-			"+X", "-X", "+Y", "-Y", "+Z", "-Z"
-		};
-
-		const FSRVDisplayInfo& Info = Data->DisplayInfo;
-		ImGui::TextUnformatted(GetPropertyDisplayName(Prop));
-		for (int32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
-		{
-			ID3D11ShaderResourceView* FaceSRV = Data->FaceSRVs[FaceIndex];
-			if (!FaceSRV)
-			{
-				continue;
-			}
-
-			ImGui::BeginGroup();
-			ImGui::TextUnformatted(FaceLabels[FaceIndex]);
-			ImGui::Image(FaceSRV,
-				ImVec2(Info.ImageWidth, Info.ImageHeight),
-				ImVec2(Info.UV0X, Info.UV0Y),
-				ImVec2(Info.UV1X, Info.UV1Y));
-			ImGui::EndGroup();
-
-			if ((FaceIndex % 3) != 2)
-			{
-				ImGui::SameLine();
-			}
 		}
 		break;
 	}
@@ -2450,7 +2613,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
 			bPropertyEditUndoCaptured = true;
 		}
-		NotifyTarget->PostEditChangeProperty({ Prop.Name, EPropertyChangeType::ValueSet });
+		NotifyTarget->PostEditChangeProperty({ Property.Name, EPropertyChangeType::ValueSet });
 		if (EditorEngine)
 		{
 			EditorEngine->GetSceneService().MarkDirty();
@@ -2462,6 +2625,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop, UObj
 		bPropertyEditUndoCaptured = false;
 	}
 }
+
 
 void FEditorPropertyWidget::RenderMaterialPreviewTooltip(UMaterialInterface* Material)
 {

@@ -33,7 +33,6 @@ namespace
 		}
 		return false;
 	}
-
 }
 
 void FEditorControlWidget::Initialize(UEditorEngine* InEditorEngine)
@@ -192,6 +191,13 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 		case 10:
 		{
 			APointLightActor* Actor = World->SpawnActor<APointLightActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 11:
+		{
+			ASpotlightActor* Actor = World->SpawnActor<ASpotlightActor>();
 			Actor->InitDefaultComponents();
 			Actor->SetActorLocation(SpawnPoint);
 			break;

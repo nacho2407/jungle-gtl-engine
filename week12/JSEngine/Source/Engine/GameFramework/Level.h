@@ -2,18 +2,17 @@
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
 
+UCLASS()
 class ULevel : public UObject
 {
 public:
-	DECLARE_CLASS(ULevel, UObject)
+	GENERATED_BODY(ULevel, UObject)
 
 	ULevel() = default;
 	virtual ~ULevel() override;
 
 	virtual void PostDuplicate(UObject* Original) override;
 
-	// 프로퍼티 시스템 — UObject 에서 상속
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override {}
 	void PostEditProperty(const char* PropertyName) override {}
 
 	void AddActor(AActor* Actor);
@@ -30,7 +29,7 @@ private:
 	bool ContainsActor(const TArray<AActor*>& ActorList, AActor* Actor) const;
 
 	TArray<AActor*> Actors;
-    TArray<AActor*> PendingAddActors;
+	TArray<AActor*> PendingAddActors;
 	TArray<AActor*> PendingRemoveActors;
 	bool bIteratingActors = false;
 };

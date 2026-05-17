@@ -1,20 +1,21 @@
 """
 [ALERT] DO NOT DELETE OR EDIT COMMENT IN THIS FILE ARBITRARILY! 
 위 문구는 AI가 임의로 주석을 삭제하지 않도록 하기 위해 작성했고, 얼마든지 수정하셔도 됩니다. 
- 
+
 C++ 헤더 파일을 스캔해서 UE5 스타일의 UCLASS, UPROPERTY, UENUM, UMETA 정보를 읽고, 
 각 클래스별로 .gen.cpp 리플렉션 등록 코드를 자동 생성하는 파서 스크립트입니다.
 
 이 스크립트는 다음과 같은 흐름으로 리플렉션 데이터 등록을 수행합니다.
-Engine/*.h 파일을 탐색
-→ UENUM(...) enum clas ... { ... } 파싱
+Source/**/*.h 파일 탐색 (Intermediate 폴더 제외)
+→ UENUM(...) enum 파싱 및 캐싱
+→ UCLASS(...) 및 GENERATED_BODY(...) 클래스 본문 파싱
 → UPROPERTY(...) 멤버 변수 파싱
 → 타입/메타데이터 분석
 → 클래스별 ClassName.gen.cpp 생성
-→ FAutoClassRegister로 리플렉션 등록
+→ StaticClass() 및 FPropertyParams 방식을 통한 리플렉션 등록
 
 주의:
-- SRV, CubeSRV는 FSRVPropertyData / FCubeSRVPropertyData wrapper 타입으로 read-only debug preview만 지원합니다.
+- SRV, CubeSRV, buttons, tag editors, and one-off previews belong to FDebugDetails, not FProperty.
 """
 
 import os
@@ -22,7 +23,7 @@ import re
 import sys
 from pathlib import Path
 
-# Material은 에셋 참조, SRV/CubeSRV는 wrapper 기반 read-only debug preview 프로퍼티로 등록합니다.
+# Material은 현재 TArray<UMaterialInterface*> 에셋 참조로 등록합니다.
 TYPE_MAP = {
     'bool': 'EPropertyType::Bool',
     'int32': 'EPropertyType::Int',
@@ -39,28 +40,32 @@ TYPE_MAP = {
     'TArray<FString>': 'EPropertyType::StringArray',
     'USceneComponent*': 'EPropertyType::SceneComponentRef',
     'TArray<UMaterialInterface*>': 'EPropertyType::Material',
-    'FSRVPropertyData': 'EPropertyType::SRV',
-    'FCubeSRVPropertyData': 'EPropertyType::CubeSRV',
 }
-
 
 # 스크립트 위치를 기준으로 Root와 Source 경로를 계산합니다.
 ROOT = Path(__file__).resolve().parent.parent
-ENGINE_SOURCE_DIR = ROOT / 'JSEngine' / 'Source' / 'Engine'
+SOURCE_DIR = ROOT / 'JSEngine' / 'Source'
+ENGINE_SOURCE_DIR = SOURCE_DIR / 'Engine'
 REFLECTION_OUTPUT_DIR = ROOT / 'JSEngine' / 'Intermediate' / 'Reflection'
 
 
-# 생성되는 gen.cpp에서 원본 헤더를 include할 때 사용할, Engine Source 기준 상대 경로를 만듭니다.
+# 생성되는 gen.cpp에서 원본 헤더를 include할 때 사용할 상대 경로를 만듭니다.
 def make_include_path(header_path):
-    return header_path.relative_to(ENGINE_SOURCE_DIR).as_posix()
+    if header_path.is_relative_to(ENGINE_SOURCE_DIR):
+        return header_path.relative_to(ENGINE_SOURCE_DIR).as_posix()
+    return header_path.relative_to(SOURCE_DIR).as_posix()
 
 
+# 헤더 파일 경로와 클래스 이름을 기반으로 .gen.cpp 출력 경로를 계산합니다.
 def make_generated_file_path(header_path, class_name):
-    rel_header_path = header_path.relative_to(ENGINE_SOURCE_DIR)
+    if header_path.is_relative_to(ENGINE_SOURCE_DIR):
+        rel_header_path = header_path.relative_to(ENGINE_SOURCE_DIR)
+    else:
+        rel_header_path = header_path.relative_to(SOURCE_DIR)
     return REFLECTION_OUTPUT_DIR / rel_header_path.with_name(f'{class_name}.gen.cpp')
 
 
-# C++ 타입 문자열의 공백, const, 포인터/참조 표기를 정규화해서 TYPE_MAP 또는 enum_map과 비교하기 쉽게 만듭니다.
+# C++ 타입 문자열의 공백, const, 포인터/참조 표기를 정규화하여 타입 맵과 비교하기 쉽게 만듭니다.
 def normalize_cpp_type(cpp_type):
     normalized = re.sub(r'\bconst\b', '', cpp_type or '')
     normalized = re.sub(r'\s+', ' ', normalized).strip()
@@ -72,7 +77,7 @@ def normalize_cpp_type(cpp_type):
     return normalized
 
 
-# 문자열 리터럴 안의 //, /* */는 보존하면서 주석만 제거합니다.
+# 문자열 리터럴 안의 내용은 보존하면서 // 및 /* */ 주석을 제거합니다.
 def strip_comments(content):
     result = []
     i = 0
@@ -109,7 +114,6 @@ def strip_comments(content):
         if ch == '/' and nxt == '*':
             i += 2
             while i + 1 < len(content) and not (content[i] == '*' and content[i + 1] == '/'):
-                # block comment 안의 개행은 보존합니다.
                 if content[i] in '\r\n':
                     result.append(content[i])
                 i += 1
@@ -122,14 +126,14 @@ def strip_comments(content):
     return ''.join(result)
 
 
-# 현재 index부터 공백 문자를 건너뛰고, 다음 의미 있는 문자 위치를 반환합니다.
+# 현재 위치부터 공백 문자를 건너뛰고 다음 의미 있는 문자 위치를 반환합니다.
 def skip_ws(content, index):
     while index < len(content) and content[index].isspace():
         index += 1
     return index
-    
 
-# 여는 괄호/중괄호 위치에서 시작해 대응되는 닫는 문자의 위치를 찾습니다.
+
+# 여는 괄호/중괄호 위치에서 시작해 대응되는 닫히는 위치를 찾습니다.
 def find_matching_delimiter(content, open_index, open_ch='(', close_ch=')'):
     if open_index < 0 or open_index >= len(content) or content[open_index] != open_ch:
         return -1
@@ -169,7 +173,7 @@ def find_matching_delimiter(content, open_index, open_ch='(', close_ch=')'):
     return -1
 
 
-# UCLASS(...), UPROPERTY(...), UENUM(...)처럼 괄호를 가진 매크로 호출 하나를 균형 잡힌 괄호 기준으로 읽습니다.
+# UCLASS(...), UPROPERTY(...) 등 매크로 호출 하나를 괄호 짝에 맞춰 읽어냅니다.
 def read_balanced_macro(content, keyword, start_index):
     match = re.search(rf'\b{re.escape(keyword)}\s*\(', content[start_index:])
     if not match:
@@ -190,7 +194,7 @@ def read_balanced_macro(content, keyword, start_index):
     }
 
 
-# 지정한 범위 안에서 특정 매크로 호출을 순서대로 찾습니다.
+# 지정한 범위 내에서 특정 매크로 호출을 순차적으로 찾아 반환하는 제너레이터입니다.
 def iter_macro_invocations(content, keyword, start=0, end=None):
     if end is None:
         end = len(content)
@@ -204,7 +208,7 @@ def iter_macro_invocations(content, keyword, start=0, end=None):
         index = macro['end']
 
 
-# UPROPERTY 매크로 뒤의 멤버 변수 선언문을 세미콜론까지 읽습니다. 템플릿, 괄호, 배열, 중괄호 내부 세미콜론은 무시합니다.
+# 매크로 뒤에 오는 변수나 함수 선언문을 세미콜론(;)까지 읽어냅니다.
 def read_statement_until_semicolon(content, start, end):
     quote = None
     escape = False
@@ -256,7 +260,7 @@ def read_statement_until_semicolon(content, start, end):
     return None, start
 
 
-# UPROPERTY/UMETA 내부 인자를 쉼표 기준으로 나눕니다. 문자열, 괄호, 템플릿 내부 쉼표는 분리하지 않습니다.
+# 메타데이터(UMETA 등) 내부 인자를 쉼표(,) 기준으로 분리합니다. (문자열/괄호 내부 쉼표 무시)
 def split_metadata_args(metadata):
     args = []
     current = []
@@ -316,7 +320,7 @@ def split_metadata_args(metadata):
     return args
 
 
-# 메타데이터 값이 따옴표로 감싸져 있으면 따옴표만 제거합니다.
+# 메타데이터 값의 양끝 따옴표를 제거합니다.
 def unquote_metadata_value(value):
     value = value.strip()
     if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
@@ -324,7 +328,7 @@ def unquote_metadata_value(value):
     return value
 
 
-# UPROPERTY 또는 UMETA 인자 문자열을 key-value 딕셔너리로 변환합니다. 값이 없는 플래그는 True로 저장합니다.
+# 메타데이터 인자 문자열을 파싱하여 key-value 딕셔너리로 변환합니다.
 def parse_metadata(metadata):
     result = {}
     for arg in split_metadata_args(metadata or ''):
@@ -337,7 +341,7 @@ def parse_metadata(metadata):
     return result
 
 
-# Python 문자열을 C++ 코드에 안전하게 넣을 수 있는 문자열 리터럴로 변환합니다. None은 nullptr로 출력합니다.
+# Python 문자열을 C++ 코드에 안전하게 넣을 수 있는 문자열 리터럴로 변환합니다.
 def cpp_string_literal(value):
     if value is None:
         return 'nullptr'
@@ -345,7 +349,7 @@ def cpp_string_literal(value):
     return f'"{escaped}"'
 
 
-# 메타데이터에서 읽은 숫자 문자열을 C++ float 리터럴로 변환합니다. 숫자가 아니면 기본값을 반환합니다.
+# 메타데이터의 숫자 문자열을 C++ float 리터럴 형태로 변환합니다.
 def cpp_float_literal(value, default_value):
     if value is None:
         return default_value
@@ -360,7 +364,7 @@ def cpp_float_literal(value, default_value):
     return f'{numeric_value}f'
 
 
-# 여러 후보 키 중 메타데이터에 존재하는 첫 번째 값을 반환합니다.
+# 여러 후보 키 중에서 메타데이터에 존재하는 첫 번째 값을 반환합니다.
 def get_metadata_value(metadata, *keys):
     for key in keys:
         if key in metadata:
@@ -368,15 +372,44 @@ def get_metadata_value(metadata, *keys):
     return None
 
 
-# UPROPERTY 메타데이터에서 프로퍼티 사용 플래그를 C++ 식으로 변환합니다.
-def make_property_usage_flags(metadata):
-    flags = ['EPropertyUsageFlags::Editable']
+# UPROPERTY 메타데이터를 기반으로 런타임 프로퍼티 플래그(EPropertyFlags)를 C++ 코드로 생성합니다.
+def make_runtime_property_flags(metadata):
+    flags = [
+        'EPropertyFlags::Read',
+        'EPropertyFlags::Write',
+        'EPropertyFlags::Edit',
+    ]
+
+    if get_metadata_value(metadata, 'Transient') is not None:
+        flags.append('EPropertyFlags::Transient')
+    if get_metadata_value(metadata, 'SaveGame') is not None:
+        flags.append('EPropertyFlags::SaveGame')
     if get_metadata_value(metadata, 'Animatable') is not None:
-        flags.append('EPropertyUsageFlags::Animatable')
+        flags.append('EPropertyFlags::Animatable')
+    if get_metadata_value(metadata, 'LuaRead') is not None:
+        flags.append('EPropertyFlags::LuaRead')
+    if get_metadata_value(metadata, 'LuaWrite') is not None:
+        flags.append('EPropertyFlags::LuaWrite')
+
     return ' | '.join(flags)
 
 
-# namespace 구분자 등 C++ 식별자에 사용할 수 없는 문자를 _로 바꿔 생성 코드의 심볼 이름으로 쓸 수 있게 합니다.
+# UCLASS 메타데이터와 이름 규칙을 기반으로 클래스 플래그(ClassFlags)를 생성합니다.
+def make_class_flags(metadata, class_name, parent_name, is_abstract=False):
+    flags = []
+    if is_abstract or get_metadata_value(metadata, 'Abstract') is not None:
+        flags.append('CF_Abstract')
+    if class_name.startswith('A') or parent_name.startswith('A') or get_metadata_value(metadata, 'Actor') is not None:
+        flags.append('CF_Actor')
+    if 'Component' in class_name or 'Component' in parent_name or get_metadata_value(metadata, 'Component') is not None:
+        flags.append('CF_Component')
+    if 'Camera' in class_name or 'Camera' in parent_name or get_metadata_value(metadata, 'Camera') is not None:
+        flags.append('CF_Camera')
+
+    return ' | '.join(flags) if flags else 'CF_None'
+
+
+# C++ 식별자로 사용할 수 없는 문자를 '_'로 치환합니다.
 def sanitize_cpp_identifier(name):
     sanitized = re.sub(r'[^A-Za-z0-9_]', '_', name)
     if sanitized and sanitized[0].isdigit():
@@ -384,14 +417,12 @@ def sanitize_cpp_identifier(name):
     return sanitized
 
 
-# C++ 정수 리터럴의 u, U, l, L 접미사를 제거해 Python eval이 계산할 수 있게 합니다.
+# C++ 정수 리터럴의 접미사(u, l 등)를 제거하여 Python eval()이 처리할 수 있게 합니다.
 def strip_numeric_suffixes(expr):
-    def repl(match):
-        return match.group(1)
-    return re.sub(r'\b(0[xX][0-9A-Fa-f]+|\d+)(?:[uUlL]+)\b', repl, expr)
+    return re.sub(r'\b(0[xX][0-9A-Fa-f]+|\d+)(?:[uUlL]+)\b', lambda match: match.group(1), expr)
 
 
-# enum 값에 붙은 상수 표현식을 계산합니다. 이전 enum 멤버 이름 참조와 비트 연산을 제한적으로 지원합니다.
+# enum 값에 할당된 상수 표현식을 파싱 및 계산합니다.
 def try_eval_enum_expr(expr, known_values):
     expr = strip_numeric_suffixes(expr.strip())
     if not expr:
@@ -417,7 +448,7 @@ def try_eval_enum_expr(expr, known_values):
         return None
 
 
-# enum 멤버 뒤에 붙은 UMETA(...)를 분리하고, enum 값 본문과 UMETA 메타데이터를 반환합니다.
+# enum 멤버 뒤에 붙은 UMETA(...) 구문을 분리하여 반환합니다.
 def parse_trailing_umeta(item):
     match = re.search(r'\bUMETA\s*\(', item)
     if not match:
@@ -428,7 +459,6 @@ def parse_trailing_umeta(item):
     if close_paren == -1:
         return item.strip(), {}
 
-    # Enum value 뒤에 붙은 UMETA만 제거합니다.
     tail = item[close_paren + 1:].strip()
     if tail:
         return item.strip(), {}
@@ -437,7 +467,7 @@ def parse_trailing_umeta(item):
     return item[:match.start()].strip(), metadata
 
 
-# enum body 내부의 각 멤버를 파싱해서 이름, 표시 이름, 정수 값을 추출합니다.
+# enum 본문 내의 각 멤버를 파싱하여 이름, 표시 이름, 정수값을 추출합니다.
 def parse_enum_members(enum_body):
     values = []
     known_values = {}
@@ -449,7 +479,6 @@ def parse_enum_members(enum_body):
             continue
 
         item, umeta_metadata = parse_trailing_umeta(item)
-
         if '=' in item:
             name_part, value_expr = item.split('=', 1)
             name = name_part.strip().split('::')[-1].strip()
@@ -476,7 +505,7 @@ def parse_enum_members(enum_body):
     return values
 
 
-# 특정 위치를 감싸고 있는 namespace들을 찾아 namespace 경로 목록으로 반환합니다.
+# 특정 위치를 감싸고 있는 C++ namespace들을 찾아 목록으로 반환합니다.
 def find_enclosing_namespaces(content, position):
     namespaces = []
     ns_pattern = re.compile(r'\bnamespace\s+([A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_][A-Za-z0-9_]*)*)\s*\{')
@@ -496,16 +525,24 @@ def find_enclosing_namespaces(content, position):
     return result
 
 
-# namespace 목록과 타입 이름을 합쳐 Render::EViewMode 규칙에 따라 네임스페이스-변수명을 만듭니다.
+# namespace 목록과 식별자 이름을 조합하여 완전한 이름(Qualified Name)을 만듭니다.
 def qualify_name(namespace_parts, name):
     return '::'.join(namespace_parts + [name]) if namespace_parts else name
 
 
-# Engine Source 아래 모든 헤더에서 UENUM을 먼저 수집합니다. namespace가 있으면 네임스페이스-변수명과 단순 변수명을 함께 관리합니다.
+# 소스 디렉토리 내에서 Intermediate 폴더를 제외한 모든 헤더 파일 경로를 순회합니다.
+def iter_header_paths():
+    for header_path in SOURCE_DIR.rglob('*.h'):
+        if 'Intermediate' in header_path.parts:
+            continue
+        yield header_path
+
+
+# 전체 헤더 파일을 스캔하여 UENUM 정보를 수집하고 맵 형태로 반환합니다.
 def collect_enums():
     enum_infos = []
 
-    for header_path in ENGINE_SOURCE_DIR.rglob('*.h'):
+    for header_path in iter_header_paths():
         try:
             content = strip_comments(header_path.read_text(encoding='utf-8'))
         except UnicodeDecodeError:
@@ -566,9 +603,10 @@ def collect_enums():
     return enum_map
 
 
-# UPROPERTY 뒤의 C++ 멤버 선언에서 C++ 타입과 변수명을 분리합니다.
+# C++ 멤버 변수 선언문에서 타입과 변수명을 분리하여 추출합니다.
 def parse_property_declaration(declaration):
     declaration = declaration.split('=', 1)[0].strip()
+    declaration = re.sub(r'\s*\{.*\}\s*$', '', declaration, flags=re.DOTALL).strip()
     declaration = re.sub(r'\bUPROPERTY\s*\(.*\)', '', declaration).strip()
 
     name_match = re.search(r'([A-Za-z_][A-Za-z0-9_]*)\s*(?:\[[^\]]*\])?\s*$', declaration)
@@ -580,7 +618,7 @@ def parse_property_declaration(declaration):
     return normalize_cpp_type(cpp_type), var_name
 
 
-# 지원하지 않는 UPROPERTY 타입을 만났을 때 stderr로 경고를 출력합니다.
+# 지원하지 않는 UPROPERTY 타입을 발견했을 때 경고를 출력합니다.
 def warn_unknown_type(header_path, cpp_type, var_name):
     print(
         f"Reflection warning: unknown UPROPERTY type '{cpp_type}' for '{var_name}' in {header_path.relative_to(ROOT)}; skipped.",
@@ -588,20 +626,19 @@ def warn_unknown_type(header_path, cpp_type, var_name):
     )
 
 
-# FEnumValueMetaData 배열에 사용할 C++ 정적 변수 이름을 만듭니다.
+# FEnumValue 배열에 사용할 정적 변수 이름을 생성합니다.
 def make_enum_values_array_name(enum_name):
     return f'Z_Enum_{sanitize_cpp_identifier(enum_name)}_Values'
 
 
-# FEnumMetaData 정적 변수에 사용할 C++ 정적 변수 이름을 만듭니다.
+# UEnum(또는 FEnumMetaData)에 사용할 정적 변수 이름을 생성합니다.
 def make_enum_meta_name(enum_name):
     return f'Z_Enum_{sanitize_cpp_identifier(enum_name)}_Meta'
 
 
-# 수집된 enum 정보를 .gen.cpp에 들어갈 FEnumValueMetaData/FEnumMetaData C++ 코드 문자열로 변환합니다.
+# 수집된 enum 정보를 기반으로 .gen.cpp에 들어갈 메타데이터 등록 코드를 생성합니다.
 def generate_enum_metadata(enum_infos):
     blocks = []
-    # enum_infos는 네임스페이스-변수명을 key로 받습니다.
     for enum_key in sorted(enum_infos):
         enum_info = enum_infos[enum_key]
         enum_name = enum_info['qualified_name']
@@ -615,14 +652,46 @@ def generate_enum_metadata(enum_infos):
         if values_body:
             values_body = '    ' + values_body + '\n'
         blocks.append(
-            f'static const FEnumValueMetaData {values_array_name}[] = {{\n{values_body}}};\n'
-            f'static const FEnumMetaData {enum_meta_name} = {{ '
+            f'static const FEnumValue {values_array_name}[] = {{\n{values_body}}};\n'
+            f'static const UEnum {enum_meta_name} = {{ '
             f'{cpp_string_literal(enum_name)}, static_cast<uint8>(sizeof({enum_name})), {values_array_name}, {len(values)} }};'
         )
     return '\n\n'.join(blocks)
 
 
-# 파일 전체에서 UCLASS(...) 바로 뒤의 class 선언을 찾아 class body 범위까지 계산합니다.
+# 클래스 선언부에서 부모 클래스 이름을 추출합니다.
+def parse_parent_from_class_header(class_header):
+    if ':' not in class_header:
+        return None
+
+    inheritance = class_header.split(':', 1)[1]
+    parent_match = re.search(r'\bpublic\s+([A-Za-z_][A-Za-z0-9_:]*)\b', inheritance)
+    if parent_match:
+        return parent_match.group(1).split('::')[-1]
+    return None
+
+
+# 클래스 본문에 직접 선언된 pure virtual 함수가 있는지 확인합니다.
+# 일반 멤버 초기화자 `= 0`과 구분하기 위해 virtual이 포함된 선언만 대상으로 삼습니다.
+def class_has_direct_pure_virtual(class_body):
+    return re.search(
+        r'\bvirtual\b[^;{}]*=\s*0\s*;',
+        class_body or '',
+        re.DOTALL,
+    ) is not None
+
+
+# GENERATED_BODY 매크로 내부의 인자(클래스 이름, 부모 클래스 이름)를 파싱합니다.
+def parse_generated_body(content, class_info):
+    for macro in iter_macro_invocations(content, 'GENERATED_BODY', class_info['body_start'], class_info['body_end']):
+        args = split_metadata_args(macro['metadata'])
+        if len(args) >= 2:
+            return args[0].strip(), args[1].strip()
+        return None, None
+    return None, None
+
+
+# 파일 내에서 UCLASS 매크로와 클래스 본문을 찾아 정보를 수집합니다.
 def find_uclass_declarations(content):
     classes = []
 
@@ -637,7 +706,6 @@ def find_uclass_declarations(content):
             continue
 
         class_header = content[class_keyword:open_brace]
-        # class ENGINE_API UMyObject : public UObject 형태를 지원하기 위해 ':' 앞의 마지막 identifier를 클래스 이름으로 봅니다.
         before_inheritance = class_header.split(':', 1)[0]
         identifiers = re.findall(r'\b[A-Za-z_][A-Za-z0-9_]*\b', before_inheritance)
         if len(identifiers) < 2 or identifiers[0] != 'class':
@@ -651,19 +719,33 @@ def find_uclass_declarations(content):
         if close_brace == -1:
             continue
 
-        classes.append({
+        parsed_parent_name = parse_parent_from_class_header(class_header) or 'UObject'
+        class_body = content[open_brace + 1:close_brace]
+        class_info = {
             'name': class_name,
+            'parent_name': parsed_parent_name,
             'metadata': parse_metadata(macro['metadata']),
             'class_start': class_keyword,
             'body_start': open_brace + 1,
             'body_end': close_brace,
             'class_end': close_brace + 1,
-        })
+            'is_abstract': class_has_direct_pure_virtual(class_body) or get_metadata_value(parse_metadata(macro['metadata']), 'Abstract') is not None,
+        }
+
+        generated_class_name, generated_parent_name = parse_generated_body(content, class_info)
+        if generated_class_name and generated_class_name != class_name:
+            raise RuntimeError(
+                f"GENERATED_BODY class mismatch: parsed '{class_name}', macro '{generated_class_name}'")
+        if generated_parent_name and generated_parent_name != parsed_parent_name:
+            raise RuntimeError(
+                f"GENERATED_BODY parent mismatch for '{class_name}': parsed '{parsed_parent_name}', macro '{generated_parent_name}'")
+
+        classes.append(class_info)
 
     return classes
 
 
-# 특정 class body 내부에서만 UPROPERTY(...)를 찾아 멤버 선언과 메타데이터를 수집합니다.
+# 특정 클래스 본문 내부에 선언된 UPROPERTY와 변수 선언을 수집합니다.
 def find_uproperties_in_class(content, class_info):
     properties = []
     body_start = class_info['body_start']
@@ -684,7 +766,7 @@ def find_uproperties_in_class(content, class_info):
     return properties
 
 
-# C++ 타입이 enum인지 기본 지원 타입인지 판정하고, EPropertyType과 enum metadata를 반환합니다.
+# C++ 타입을 분석하여 EPropertyType과 연관된 enum 정보를 반환합니다.
 def resolve_property_type(cpp_type, enum_map):
     enum_info = enum_map.get(cpp_type)
     if not enum_info and '::' in cpp_type:
@@ -700,39 +782,93 @@ def resolve_property_type(cpp_type, enum_map):
     return None, None
 
 
-# 클래스 하나의 리플렉션 정보를 ClassName.gen.cpp 파일로 생성합니다.
-def generate_class_file(header_path, class_name, properties, used_enums):
+# 파싱된 클래스 정보를 바탕으로 ClassName.gen.cpp 파일을 생성합니다.
+def generate_class_file(header_path, class_info, properties, used_enums):
+    class_name = class_info['name']
+    parent_name = class_info['parent_name']
     enum_metadata_str = generate_enum_metadata(used_enums)
     if enum_metadata_str:
         enum_metadata_str += '\n\n'
 
-    props_str = ',\n                '.join(
-        f'{{ "{p["name"]}", {p["property_type"]}, offsetof({class_name}, {p["name"]}), '
-        f'{p["usage_flags"]}, {p["min"]}, {p["max"]}, {p["speed"]}, '
-        f'{cpp_string_literal(p["display_name"])}, '
-        f'{("&" + make_enum_meta_name(p["enum_info"]["qualified_name"])) if p["enum_info"] else "nullptr"} }}'
+    enum_registration = '\n'.join(
+        f'        FReflectionRegistry::Get().RegisterEnum(&{make_enum_meta_name(enum_info["qualified_name"])});'
+        for enum_name, enum_info in sorted(used_enums.items())
+    )
+    if enum_registration:
+        enum_registration += '\n'
+
+    runtime_props_str = '\n'.join(
+        '        Class->AddProperty(FProperty(FPropertyParams{\n'
+        f'            {cpp_string_literal(p["name"])},\n'
+        f'            {cpp_string_literal(p["display_name"])},\n'
+        f'            {cpp_string_literal(p["category"])},\n'
+        f'            {p["property_type"]},\n'
+        f'            {p["property_flags"]},\n'
+        f'            offsetof({class_name}, {p["name"]}),\n'
+        f'            sizeof((({class_name}*)nullptr)->{p["name"]}),\n'
+        f'            {p["min"]},\n'
+        f'            {p["max"]},\n'
+        f'            {p["speed"]},\n'
+        f'            {("&" + make_enum_meta_name(p["enum_info"]["qualified_name"])) if p["enum_info"] else "nullptr"},\n'
+        '            nullptr,\n'
+        '            nullptr\n'
+        '        }));'
         for p in properties
     )
 
+    create_func = 'nullptr'
+    if not class_info.get('is_abstract', False):
+        create_func = f'[]() -> UObject* {{ return CreateReflectedObject<{class_name}>(); }}'
+
     include_path = make_include_path(header_path)
+    class_flags = make_class_flags(class_info['metadata'], class_name, parent_name, class_info.get('is_abstract', False))
     gen_code = f"""// AUTO-GENERATED FILE. DO NOT MODIFY.
 #include \"{include_path}\"
 #include \"Core/Reflection/ReflectionRegistry.h\"
+#include \"Object/Class.h\"
+#include \"Object/Object.h\"
+#include \"Object/Property.h\"
 
 {enum_metadata_str}\
 struct Z_Construct_UClass_{class_name} {{
-    static FClassMetaData GetClassMetaData() {{
-        return FClassMetaData {{
-            \"{class_name}\",
-            &{class_name}::s_TypeInfo,
-            {{
-                {props_str}
-            }}
-        }};
+    static void RegisterRuntimeEnums() {{
+{enum_registration}    }}
+
+    static void RegisterRuntimeProperties(UClass* Class) {{
+        if (!Class) {{
+            return;
+        }}
+{runtime_props_str}
     }}
 }};
 
-static FAutoClassRegister Z_Register_{class_name}_Var(Z_Construct_UClass_{class_name}::GetClassMetaData());
+UClass* {class_name}::StaticClass()
+{{
+    static UClass Class(
+        \"{class_name}\",
+        {parent_name}::StaticClass(),
+        sizeof({class_name}),
+        {class_flags},
+        {create_func});
+
+    static bool bRegistered = false;
+    if (!bRegistered)
+    {{
+        bRegistered = true;
+        Z_Construct_UClass_{class_name}::RegisterRuntimeEnums();
+        FReflectionRegistry::Get().RegisterUClass(&Class);
+        Z_Construct_UClass_{class_name}::RegisterRuntimeProperties(&Class);
+    }}
+    return &Class;
+}}
+
+struct Z_AutoRegister_UClass_{class_name} {{
+    Z_AutoRegister_UClass_{class_name}() {{
+        {class_name}::StaticClass();
+    }}
+}};
+
+static Z_AutoRegister_UClass_{class_name} Z_AutoRegister_UClass_{class_name}_Var;
 """
 
     gen_filepath = make_generated_file_path(header_path, class_name)
@@ -742,7 +878,7 @@ static FAutoClassRegister Z_Register_{class_name}_Var(Z_Construct_UClass_{class_
     print(f'Generated: {gen_filepath.relative_to(ROOT)}')
 
 
-# 헤더 하나를 읽어 주석 제거, UCLASS 탐색, UPROPERTY 수집, .gen.cpp 생성을 수행합니다.
+# 헤더 파일 하나를 분석하여 UCLASS, UPROPERTY 등을 추출하고 .gen.cpp 코드를 생성합니다.
 def parse_header_and_generate(header_path, enum_map):
     try:
         raw_content = header_path.read_text(encoding='utf-8')
@@ -784,20 +920,18 @@ def parse_header_and_generate(header_path, enum_map):
                 'name': var_name,
                 'display_name': get_metadata_value(metadata, 'DisplayName', 'Display'),
                 'property_type': property_type,
-                'usage_flags': make_property_usage_flags(metadata),
+                'category': get_metadata_value(metadata, 'Category'),
+                'property_flags': make_runtime_property_flags(metadata),
                 'min': cpp_float_literal(get_metadata_value(metadata, 'Min', 'ClampMin', 'UIMin'), '0.0f'),
                 'max': cpp_float_literal(get_metadata_value(metadata, 'Max', 'ClampMax', 'UIMax'), '0.0f'),
                 'speed': cpp_float_literal(get_metadata_value(metadata, 'Speed', 'Step'), '0.1f'),
                 'enum_info': enum_info,
             })
 
-        generate_class_file(header_path, class_name, properties, used_enums)
+        generate_class_file(header_path, class_info, properties, used_enums)
 
 
-# 스크립트 EntryPoint, 먼저 ENUM을 수집한 뒤 파일을 전부 돌며 .gen.cpp 파일을 생성합니다.
 if __name__ == '__main__':
     enums = collect_enums()
-    for root, _, files in os.walk(ENGINE_SOURCE_DIR):
-        for file in files:
-            if file.endswith('.h'):
-                parse_header_and_generate(Path(root) / file, enums)
+    for header in iter_header_paths():
+        parse_header_and_generate(header, enums)

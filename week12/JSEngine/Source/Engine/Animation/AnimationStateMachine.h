@@ -52,10 +52,11 @@ struct FAnimStateNode
     TArray<FAnimTransition> Transitions;
 };
 
+UCLASS()
 class UAnimationStateMachine : public UObject
 {
 public:
-    DECLARE_CLASS(UAnimationStateMachine, UObject)
+    GENERATED_BODY(UAnimationStateMachine, UObject)
 
     void Initialize(USkeletalMeshComponent* Owner);
 

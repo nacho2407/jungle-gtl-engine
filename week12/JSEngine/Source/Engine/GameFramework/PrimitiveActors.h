@@ -19,7 +19,7 @@ UCLASS()
 class ACubeActor : public AActor
 {
 public:
-	DECLARE_CLASS(ACubeActor, AActor)
+	GENERATED_BODY(ACubeActor, AActor)
 	ACubeActor() = default;
 
 	void InitDefaultComponents();
@@ -29,7 +29,7 @@ UCLASS()
 class ASphereActor : public AActor
 {
 public:
-	DECLARE_CLASS(ASphereActor, AActor)
+	GENERATED_BODY(ASphereActor, AActor)
 	ASphereActor() = default;
 
 	void InitDefaultComponents();
@@ -39,7 +39,7 @@ UCLASS()
 class APlaneActor : public AActor
 {
 public:
-	DECLARE_CLASS(APlaneActor, AActor)
+	GENERATED_BODY(APlaneActor, AActor)
 	APlaneActor() = default;
 
 	void InitDefaultComponents();
@@ -49,7 +49,7 @@ UCLASS()
 class AAttachTestActor : public AActor
 {
 public:
-	DECLARE_CLASS(AAttachTestActor, AActor)
+	GENERATED_BODY(AAttachTestActor, AActor)
 	AAttachTestActor() = default;
 
 	void InitDefaultComponents();
@@ -59,7 +59,7 @@ UCLASS()
 class ASceneActor : public AActor
 {
 public:
-	DECLARE_CLASS(ASceneActor, AActor)
+	GENERATED_BODY(ASceneActor, AActor)
 	ASceneActor() = default;
 
 	void InitDefaultComponents();
@@ -73,7 +73,7 @@ UCLASS()
 class APlayerStart : public AActor
 {
 public:
-	DECLARE_CLASS(APlayerStart, AActor)
+	GENERATED_BODY(APlayerStart, AActor)
 	APlayerStart() = default;
 
 	void InitDefaultComponents() override;
@@ -83,7 +83,7 @@ UCLASS()
 class AFogActor : public AActor
 {
 public:
-	DECLARE_CLASS(AFogActor, AActor)
+	GENERATED_BODY(AFogActor, AActor)
 	AFogActor() = default;
 
 	void InitDefaultComponents();
@@ -99,7 +99,7 @@ UCLASS()
 class AStaticMeshActor : public AActor
 {
 public:
-	DECLARE_CLASS(AStaticMeshActor, AActor)
+	GENERATED_BODY(AStaticMeshActor, AActor)
 	AStaticMeshActor() = default;
 
 	void InitDefaultComponents();
@@ -109,7 +109,7 @@ UCLASS()
 class ASkeletalMeshActor : public AActor
 {
 public:
-	DECLARE_CLASS(ASkeletalMeshActor, AActor)
+	GENERATED_BODY(ASkeletalMeshActor, AActor)
 	ASkeletalMeshActor() = default;
 
 	void InitDefaultComponents();
@@ -124,7 +124,7 @@ UCLASS()
 class ASubUVActor : public AActor
 {
 public:
-	DECLARE_CLASS(ASubUVActor, AActor)
+	GENERATED_BODY(ASubUVActor, AActor)
 	ASubUVActor() = default;
 
 	void InitDefaultComponents();
@@ -134,7 +134,7 @@ UCLASS()
 class ATextRenderActor : public AActor
 {
 public:
-	DECLARE_CLASS(ATextRenderActor, AActor)
+	GENERATED_BODY(ATextRenderActor, AActor)
 	ATextRenderActor() = default;
 
 	void InitDefaultComponents();
@@ -144,7 +144,7 @@ UCLASS()
 class ABillboardActor : public AActor
 {
 public:
-	DECLARE_CLASS(ABillboardActor, AActor)
+	GENERATED_BODY(ABillboardActor, AActor)
 	ABillboardActor() = default;
 
 	void InitDefaultComponents();
@@ -154,7 +154,7 @@ UCLASS()
 class ADecalActor : public AActor
 {
 public:
-	DECLARE_CLASS(ADecalActor, AActor)
+	GENERATED_BODY(ADecalActor, AActor)
 	ADecalActor() = default;
 
 	void InitDefaultComponents();
@@ -163,7 +163,7 @@ public:
 UCLASS()
 class AFireballActor : public AActor {
 public:
-	DECLARE_CLASS(AFireballActor, AActor)
+	GENERATED_BODY(AFireballActor, AActor)
 	AFireballActor() = default;
 	
 	void InitDefaultComponents();
@@ -172,7 +172,7 @@ public:
 UCLASS()
 class ADecalSpotLightActor : public AActor {
 public:
-	DECLARE_CLASS(ADecalSpotLightActor, AActor)
+	GENERATED_BODY(ADecalSpotLightActor, AActor)
 	ADecalSpotLightActor() = default;
 
 	void InitDefaultComponents();
@@ -196,7 +196,7 @@ UCLASS()
 class ALightActor : public AActor
 {
 public:
-	DECLARE_CLASS(ALightActor, AActor)
+	GENERATED_BODY(ALightActor, AActor)
 	ALightActor() = default;
 
 	ULightComponent* GetLight() const;
@@ -214,7 +214,7 @@ UCLASS()
 class AAmbientLightActor : public ALightActor
 {
 public:
-	DECLARE_CLASS(AAmbientLightActor, ALightActor)
+	GENERATED_BODY(AAmbientLightActor, ALightActor)
 	void InitDefaultComponents() override;
 	void Tick(float DeltaTime) override;
 };
@@ -223,7 +223,7 @@ UCLASS()
 class ADirectionalLightActor : public ALightActor
 {
 public:
-	DECLARE_CLASS(ADirectionalLightActor, ALightActor)
+	GENERATED_BODY(ADirectionalLightActor, ALightActor)
 	void InitDefaultComponents() override;
 	void Tick(float DeltaTime) override;
 };
@@ -232,7 +232,7 @@ UCLASS()
 class APointLightActor : public ALightActor
 {
 public:
-	DECLARE_CLASS(APointLightActor, ALightActor)
+	GENERATED_BODY(APointLightActor, ALightActor)
 	virtual void InitDefaultComponents() override;
 	virtual void Tick(float DeltaTime) override;
 };
@@ -241,7 +241,7 @@ UCLASS()
 class ASpotlightActor : public APointLightActor 
 {
 public:
-	DECLARE_CLASS(ASpotlightActor, APointLightActor)
+	GENERATED_BODY(ASpotlightActor, APointLightActor)
 	void InitDefaultComponents() override;
 	void Tick(float DeltaTime) override;
 };
@@ -250,7 +250,7 @@ UCLASS()
 class ABullet : public AActor
 {
 public:
-	DECLARE_CLASS(ABullet, AActor)
+	GENERATED_BODY(ABullet, AActor)
 	void InitDefaultComponents() override;
 	void Tick(float DeltaTime) override;
 
@@ -264,7 +264,7 @@ UCLASS()
 class ABladeSlash : public AActor
 {
 public:
-	DECLARE_CLASS(ABladeSlash, AActor)
+	GENERATED_BODY(ABladeSlash, AActor)
 	void InitDefaultComponents() override;
 	void Tick(float DeltaTime) override;
 };
@@ -273,7 +273,7 @@ UCLASS()
 class ADestructibleActor : public AActor
 {
 public:
-	DECLARE_CLASS(ADestructibleActor, AActor)
+	GENERATED_BODY(ADestructibleActor, AActor)
 
 	// 데이터를 입력으로 받아 초기화
 	void InitDestructibleActor(UStaticMesh* StaticMesh);
@@ -305,7 +305,7 @@ UCLASS()
 class ABoundsBoxActor : public AActor
 {
 public:
-	DECLARE_CLASS(ABoundsBoxActor, AActor)
+	GENERATED_BODY(ABoundsBoxActor, AActor)
 	void InitDefaultComponents() override;
 
 	void Tick(float DeltaTime) override;
@@ -323,7 +323,7 @@ UCLASS()
 class AMainSceneDestructibleActor : public AActor
 {
 public:
-	DECLARE_CLASS(AMainSceneDestructibleActor, AActor)
+	GENERATED_BODY(AMainSceneDestructibleActor, AActor)
 
 	void InitDefaultComponents() override;
 	void PostComponentRegistered(UActorComponent* Comp) override;

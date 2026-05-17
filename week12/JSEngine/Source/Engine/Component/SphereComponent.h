@@ -5,7 +5,7 @@ UCLASS()
 class USphereComponent : public UShapeComponent
 {
 public:
-	DECLARE_CLASS(USphereComponent, UShapeComponent)
+	GENERATED_BODY(USphereComponent, UShapeComponent)
 	float GetSphereRadius() const { return SphereRadius; }
 	float GetScaledSphereRadius() const
 	{

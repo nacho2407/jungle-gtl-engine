@@ -8,46 +8,61 @@ class UCurveFloatAsset;
 
 enum class ECameraShakeCurveChannel
 {
-    LocationX = 0,
-    LocationY,
-    LocationZ,
-    Pitch,
-    Yaw,
-    Roll,
-    FOV,
-    Count
+	LocationX = 0,
+	LocationY,
+	LocationZ,
+	Pitch,
+	Yaw,
+	Roll,
+	FOV,
+	Count
 };
 
+UCLASS()
 class USequenceCameraShakePattern : public UCameraShakePattern
 {
 public:
-    DECLARE_CLASS(USequenceCameraShakePattern, UCameraShakePattern)
+	GENERATED_BODY(USequenceCameraShakePattern, UCameraShakePattern)
 
 	UCameraAnimationSequence* Sequence = nullptr;
 	UCurveFloatAsset* Curve = nullptr;
 
+	UPROPERTY()
 	float PlayRate = 1.0f;
+
+	UPROPERTY()
 	float Scale = 1.0f;
-    float RandomSegmentDuration = 0.0f;
-    bool bRandomSegment = false;
-    bool bLoop = false;
-    FString CurveAssetPath;
 
-    FVector LocationAmplitude = FVector::ZeroVector;
-    FVector RotationAmplitudeDeg = FVector::ZeroVector;
-    float FOVAmplitude = 0.0f;
+	UPROPERTY()
+	float RandomSegmentDuration = 0.0f;
 
-    void GetCameraShakeInfo(FCameraShakeInfo& OutCameraInfo) const override;
-    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	UPROPERTY()
+	bool bRandomSegment = false;
 
+	UPROPERTY()
+	bool bLoop = false;
+
+	UPROPERTY()
+	FString CurveAssetPath;
+
+	UPROPERTY()
+	FVector LocationAmplitude = FVector::ZeroVector;
+
+	UPROPERTY()
+	FVector RotationAmplitudeDeg = FVector::ZeroVector;
+
+	UPROPERTY()
+	float FOVAmplitude = 0.0f;
+
+	void GetCameraShakeInfo(FCameraShakeInfo& OutCameraInfo) const override;
 private:	
-    virtual void OnStartShakePattern(const FCameraShakeStartParams& Params) override;
-    virtual void OnStopShakePattern(bool bImmediately) override;
-    virtual void OnUpdateShakePattern(
-        const FCameraShakeUpdateParams& Params,
-        FCameraShakeUpdateResult& OutResult) override;
+	virtual void OnStartShakePattern(const FCameraShakeStartParams& Params) override;
+	virtual void OnStopShakePattern(bool bImmediately) override;
+	virtual void OnUpdateShakePattern(
+		const FCameraShakeUpdateParams& Params,
+		FCameraShakeUpdateResult& OutResult) override;
 
 private:
-    FTimelinePlayer CameraShakeTimeline;
-    float CurrentCurveValues[(int)ECameraShakeCurveChannel::Count] = {};
+	FTimelinePlayer CameraShakeTimeline;
+	float CurrentCurveValues[(int)ECameraShakeCurveChannel::Count] = {};
 };

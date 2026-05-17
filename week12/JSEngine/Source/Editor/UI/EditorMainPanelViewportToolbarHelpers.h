@@ -38,12 +38,35 @@ public:
 		case EViewMode::Lit_BlinnPhong: return "Lit (Blinn-Phong)";
 		case EViewMode::Unlit: return "Unlit";
 		case EViewMode::Heatmap: return "Heatmap";
-        case EViewMode::BoneWeightHeatmap: return "Bone Weight";
+		case EViewMode::BoneWeightHeatmap: return "Bone Weight";
 		case EViewMode::Wireframe: return "Wireframe";
 		case EViewMode::Depth: return "Depth";
 		case EViewMode::Normal: return "Normal";
 		case EViewMode::IdBuffer: return "ID Buffer";
 		default: return "Lit";
+		}
+	}
+
+	template <typename TCallback>
+	static void ForEachViewMode(TCallback Callback)
+	{
+		static constexpr EViewMode Modes[] =
+		{
+			EViewMode::Lit_Gouraud,
+			EViewMode::Lit_Lambert,
+			EViewMode::Lit_BlinnPhong,
+			EViewMode::Unlit,
+			EViewMode::Heatmap,
+			EViewMode::BoneWeightHeatmap,
+			EViewMode::Wireframe,
+			EViewMode::Depth,
+			EViewMode::Normal,
+			EViewMode::IdBuffer,
+		};
+
+		for (EViewMode Mode : Modes)
+		{
+			Callback(Mode);
 		}
 	}
 

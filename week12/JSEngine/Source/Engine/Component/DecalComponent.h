@@ -8,7 +8,7 @@ UCLASS()
 class UDecalComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UDecalComponent, UPrimitiveComponent)
+	GENERATED_BODY(UDecalComponent, UPrimitiveComponent)
 
 	UDecalComponent();
 

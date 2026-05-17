@@ -346,7 +346,28 @@
     <Exec Command="&quot;$(MSBuildProjectDirectory)\..\Scripts\python\python.exe&quot; &quot;$(MSBuildProjectDirectory)\..\Scripts\GenerateReflection.py&quot;" />
   </Target>
   <ItemGroup>
+    <ClCompile Include="Intermediate\Reflection\Animation\UActorSequence.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UActorSequencePlayer.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimDataModel.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimInstance.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequence.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequenceBase.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimSingleNodeInstance.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimationAsset.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimationStateMachine.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UDebugAnimSequence.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UStateMachineAnimInstance.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Asset\UCurveFloatAsset.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Asset\USkeletalMesh.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Asset\UStaticMesh.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Camera\APlayerCameraManager.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Camera\ShakePattern\USequenceCameraShakePattern.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Camera\ShakePattern\USinusoidalCameraShakePattern.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Camera\UCameraModifier.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Camera\UCameraModifier_CameraShake.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Camera\UCameraShakeBase.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Camera\UCameraShakePattern.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Camera\UPerlinCameraShakePattern.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Component\Movement\UInterpToMovementComponent.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Component\Movement\UMovementComponent.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Component\Movement\UProjectileMovementComponent.gen.cpp" />
@@ -382,6 +403,7 @@
     <ClCompile Include="Intermediate\Reflection\Component\UStaticMeshComponent.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Component\USubUVComponent.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Component\UTextRenderComponent.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Editor\UEditorEngine.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\AActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\AAmbientLightActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\AAttachTestActor.gen.cpp" />
@@ -412,7 +434,16 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\AStaticMeshActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ASubUVActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ATextRenderActor.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ULevel.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\GameFramework\UWorld.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Misc\ObjViewer\UObjViewerEngine.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Render\Resource\UMaterial.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Render\Resource\UMaterialInstance.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Render\Resource\UMaterialInterface.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Render\Resource\UTexture.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Runtime\Script\UScriptComponent.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Runtime\UEngine.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Runtime\UGameEngine.gen.cpp" />
     <ClCompile Include="Source\Editor\Asset\EditorAssetService.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
@@ -703,10 +734,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\ActorSequence.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimationStateMachine.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimationStateMachine.cpp" />
     <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp" />
     <ClCompile Include="Source\Engine\Animation\StateMachineAnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\TimelinePlayer.cpp" />
@@ -824,9 +855,11 @@
     <ClCompile Include="Source\Engine\Math\Vector.cpp" />
     <ClCompile Include="Source\Engine\Math\Vector2.cpp" />
     <ClCompile Include="Source\Engine\Math\Vector4.cpp" />
+    <ClCompile Include="Source\Engine\Object\Class.cpp" />
     <ClCompile Include="Source\Engine\Object\EngineStatics.cpp" />
     <ClCompile Include="Source\Engine\Object\FName.cpp" />
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
+    <ClCompile Include="Source\Engine\Object\Property.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
     <ClCompile Include="Source\Engine\Render\FontBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\LineBatcher.cpp" />
@@ -1036,12 +1069,12 @@
     <ClInclude Include="Source\Editor\Viewport\SkeletalMeshViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h" />
     <ClInclude Include="Source\Engine\Animation\ActorSequence.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimationRuntime.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimationStateMachine.h" />
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSequence.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h" />
     <ClInclude Include="Source\Engine\Animation\AnimTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimationRuntime.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimationStateMachine.h" />
     <ClInclude Include="Source\Engine\Animation\CurvePlayback.h" />
     <ClInclude Include="Source\Engine\Animation\StateMachineAnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\TimelinePlayer.h" />
@@ -1127,6 +1160,7 @@
     <ClInclude Include="Source\Engine\Core\CrashDump.h" />
     <ClInclude Include="Source\Engine\Core\CurveResourceCache.h" />
     <ClInclude Include="Source\Engine\Core\Debug.h" />
+    <ClInclude Include="Source\Engine\Core\DebugDetails.h" />
     <ClInclude Include="Source\Engine\Core\Delegates\Delegate.h" />
     <ClInclude Include="Source\Engine\Core\EditorResourcePaths.h" />
     <ClInclude Include="Source\Engine\Core\EngineTypes.h" />
@@ -1193,12 +1227,12 @@
     <ClInclude Include="Source\Engine\Math\Vector2.h" />
     <ClInclude Include="Source\Engine\Math\Vector4.h" />
     <ClInclude Include="Source\Engine\Object\ActorIterator.h" />
+    <ClInclude Include="Source\Engine\Object\Class.h" />
     <ClInclude Include="Source\Engine\Object\EngineStatics.h" />
     <ClInclude Include="Source\Engine\Object\FName.h" />
     <ClInclude Include="Source\Engine\Object\Object.h" />
-    <ClInclude Include="Source\Engine\Object\ObjectFactory.h" />
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
-    <ClInclude Include="Source\Engine\Object\ObjectSerialize.h" />
+    <ClInclude Include="Source\Engine\Object\Property.h" />
     <ClInclude Include="Source\Engine\Render\Common\ComPtr.h" />
     <ClInclude Include="Source\Engine\Render\Common\RenderTypes.h" />
     <ClInclude Include="Source\Engine\Render\Common\ShadowTypes.h" />

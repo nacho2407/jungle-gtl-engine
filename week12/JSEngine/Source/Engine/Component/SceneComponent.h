@@ -11,7 +11,7 @@ UCLASS()
 class USceneComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(USceneComponent, UActorComponent)
+	GENERATED_BODY(USceneComponent, UActorComponent)
 
 	USceneComponent();
 	~USceneComponent() override;

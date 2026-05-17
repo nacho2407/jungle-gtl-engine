@@ -1,261 +1,281 @@
 ﻿#include "Camera/CameraShakeBase.h"
 
-DEFINE_CLASS(UCameraShakePattern, UObject)
-DEFINE_CLASS(UCameraShakeBase, UObject)
 
-REGISTER_FACTORY(UCameraShakePattern)
+
+#include <cmath>
+
+namespace
+{
+	float Oscillate(float Time, float Frequency, float Phase)
+	{
+		return std::sin(MathUtil::TwoPi * std::max(Frequency, 0.0f) * Time + Phase);
+	}
+}
 
 void FCameraShakeState::Start(const UCameraShakePattern* Pattern, const FCameraShakeStartParams& Params)
 {
-    ElapsedTime = 0.0f;
-    CurrentBlendInTime = 0.0f;
-    CurrentBlendOutTime = 0.0f;
+	ElapsedTime = 0.0f;
+	CurrentBlendInTime = 0.0f;
+	CurrentBlendOutTime = 0.0f;
 
-    bIsActive = true;
-    bIsFinished = false;
+	bIsActive = true;
+	bIsFinished = false;
 
-    bIsBlendingIn = false;
-    bIsBlendingOut = false;
-    CurrentBlendWeight = 1.0f;
+	bIsBlendingIn = false;
+	bIsBlendingOut = false;
+	CurrentBlendWeight = 1.0f;
 
-    if (Pattern)
-    {
-        Pattern->GetCameraShakeInfo(ShakeInfo);
-    }
+	if (Pattern)
+	{
+		Pattern->GetCameraShakeInfo(ShakeInfo);
+	}
 
-    if (Params.bOverrideDuration)
-    {
-        ShakeInfo.Duration = Params.DurationOverride;
-    }
+	if (Params.bOverrideDuration)
+	{
+		ShakeInfo.Duration = Params.DurationOverride;
+	}
 
-    if (ShakeInfo.BlendInTime > 0.0f)
-    {
-        bIsBlendingIn = true;
-        CurrentBlendWeight = 0.0f;
-    }
+	if (ShakeInfo.BlendInTime > 0.0f)
+	{
+		bIsBlendingIn = true;
+		CurrentBlendWeight = 0.0f;
+	}
 }
 
 void FCameraShakeState::Stop(bool bImmediately)
 {
-    if (bImmediately)
-    {
-        bIsActive = false;
-        bIsFinished = true;
-        bIsBlendingIn = false;
-        bIsBlendingOut = false;
-    }
-    else if (ShakeInfo.BlendOutTime <= 0.0f)
-    {
-        bIsActive = false;
-        bIsFinished = true;
-        bIsBlendingIn = false;
-        bIsBlendingOut = false;
-        CurrentBlendWeight = 0.0f;
-    }
-    else if (!bIsBlendingOut)
-    {
-        bIsBlendingIn = false;
-        bIsBlendingOut = true;
-        CurrentBlendOutTime = 0.f;
-    }
+	if (bImmediately)
+	{
+		bIsActive = false;
+		bIsFinished = true;
+		bIsBlendingIn = false;
+		bIsBlendingOut = false;
+	}
+	else if (ShakeInfo.BlendOutTime <= 0.0f)
+	{
+		bIsActive = false;
+		bIsFinished = true;
+		bIsBlendingIn = false;
+		bIsBlendingOut = false;
+		CurrentBlendWeight = 0.0f;
+	}
+	else if (!bIsBlendingOut)
+	{
+		bIsBlendingIn = false;
+		bIsBlendingOut = true;
+		CurrentBlendOutTime = 0.f;
+	}
 }
 
 void FCameraShakeState::Update(float DeltaTime)
 
 {
-    if (!bIsActive || bIsFinished)
-        return;
+	if (!bIsActive || bIsFinished)
+		return;
 
-    CurrentBlendWeight = 1.0f;
+	CurrentBlendWeight = 1.0f;
 
-    ElapsedTime += DeltaTime;
+	ElapsedTime += DeltaTime;
 
-    if (ShakeInfo.Duration > 0.0f && ElapsedTime >= ShakeInfo.Duration)
-    {
-        Stop(false);
-    }
+	if (ShakeInfo.Duration > 0.0f && ElapsedTime >= ShakeInfo.Duration)
+	{
+		Stop(false);
+	}
 
-    if (bIsBlendingIn)
-    {
-        CurrentBlendInTime += DeltaTime;
-    }
-    if (bIsBlendingOut)
-    {
-        CurrentBlendOutTime += DeltaTime;
-    }
+	if (bIsBlendingIn)
+	{
+		CurrentBlendInTime += DeltaTime;
+	}
+	if (bIsBlendingOut)
+	{
+		CurrentBlendOutTime += DeltaTime;
+	}
 
-    if (bIsBlendingIn)
-    {
-        if (CurrentBlendInTime < ShakeInfo.BlendInTime)
-        {
-            CurrentBlendWeight *= (CurrentBlendInTime / ShakeInfo.BlendInTime);
-        }
-        else
-        {
-            // Finished blending in!
-            bIsBlendingIn = false;
-            CurrentBlendInTime = ShakeInfo.BlendInTime;
-        }
-    }
-    if (bIsBlendingOut)
-    {
-        if (CurrentBlendOutTime < ShakeInfo.BlendOutTime)
-        {
-            CurrentBlendWeight *= (1.f - CurrentBlendOutTime / ShakeInfo.BlendOutTime);
-        }
-        else
-        {
-            // Finished blending out!
-            bIsBlendingOut = false;
-            CurrentBlendOutTime = ShakeInfo.BlendOutTime;
-            // We also end the shake itself. In most cases we would have hit the similar case
-            // above already, but if we have an infinite shake we have no duration to reach the end
-            // of so we only finish here.
-            bIsActive = false;
-            bIsFinished = true;
-            CurrentBlendWeight = 0.0f;
-            return;
-        }
-    }
+	if (bIsBlendingIn)
+	{
+		if (CurrentBlendInTime < ShakeInfo.BlendInTime)
+		{
+			CurrentBlendWeight *= (CurrentBlendInTime / ShakeInfo.BlendInTime);
+		}
+		else
+		{
+			// Finished blending in!
+			bIsBlendingIn = false;
+			CurrentBlendInTime = ShakeInfo.BlendInTime;
+		}
+	}
+	if (bIsBlendingOut)
+	{
+		if (CurrentBlendOutTime < ShakeInfo.BlendOutTime)
+		{
+			CurrentBlendWeight *= (1.f - CurrentBlendOutTime / ShakeInfo.BlendOutTime);
+		}
+		else
+		{
+			// Finished blending out!
+			bIsBlendingOut = false;
+			CurrentBlendOutTime = ShakeInfo.BlendOutTime;
+			// We also end the shake itself. In most cases we would have hit the similar case
+			// above already, but if we have an infinite shake we have no duration to reach the end
+			// of so we only finish here.
+			bIsActive = false;
+			bIsFinished = true;
+			CurrentBlendWeight = 0.0f;
+			return;
+		}
+	}
 }
 
 
 
 void UCameraShakePattern::StartShakePattern(const FCameraShakeStartParams& Params)
 {
-    state.Start(this, Params);
-    OnStartShakePattern(Params);
+	state.Start(this, Params);
+	OnStartShakePattern(Params);
 }
 
 void UCameraShakePattern::UpdateShakePattern(
-    const FCameraShakeUpdateParams& Params,
-    FCameraShakeUpdateResult& OutResult)
+	const FCameraShakeUpdateParams& Params,
+	FCameraShakeUpdateResult& OutResult)
 {
-    state.Update(Params.DeltaTime);
+	state.Update(Params.DeltaTime);
 
-    if (state.IsFinished())
-        return;
+	if (state.IsFinished())
+		return;
 
-    FCameraShakeUpdateResult RawResult;
-    OnUpdateShakePattern(Params, RawResult);
+	FCameraShakeUpdateResult RawResult;
+	OnUpdateShakePattern(Params, RawResult);
 
-    const float Weight =
-        state.GetBlendWeight() *
-        Params.ShakeScale *
-        Params.DynamicScale;
+	const float Weight =
+		state.GetBlendWeight() *
+		Params.ShakeScale *
+		Params.DynamicScale;
 
-    OutResult.LocationOffset += RawResult.LocationOffset * Weight;
-    OutResult.RotationOffset += RawResult.RotationOffset * Weight;
-    OutResult.FOVOffset += RawResult.FOVOffset * Weight;
+	OutResult.LocationOffset += RawResult.LocationOffset * Weight;
+	OutResult.RotationOffset += RawResult.RotationOffset * Weight;
+	OutResult.FOVOffset += RawResult.FOVOffset * Weight;
 }
 
 void UCameraShakePattern::StopShakePattern()
 {
-    StopShakePattern(false);
+	StopShakePattern(false);
 }
 
 void UCameraShakePattern::StopShakePattern(const bool bImmediately)
 {
-    state.Stop(bImmediately);
-    OnStopShakePattern(bImmediately);
+	state.Stop(bImmediately);
+	OnStopShakePattern(bImmediately);
 }
 
 void UCameraShakePattern::GetCameraShakeInfo(FCameraShakeInfo& OutCameraInfo) const
 {
-    OutCameraInfo.Duration = Duration;
-    OutCameraInfo.BlendInTime = BlendInTime;
-    OutCameraInfo.BlendOutTime = BlendOutTime;
-}
-
-void UCameraShakePattern::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-    UObject::GetEditableProperties(OutProps);
-
-    OutProps.push_back({ "Duration", EPropertyType::Float, &Duration });
-    OutProps.push_back({ "BlendInTime", EPropertyType::Float, &BlendInTime });
-    OutProps.push_back({ "BlendOutTime", EPropertyType::Float, &BlendOutTime });
+	OutCameraInfo.Duration = Duration;
+	OutCameraInfo.BlendInTime = BlendInTime;
+	OutCameraInfo.BlendOutTime = BlendOutTime;
 }
 
 //---------UPerlinCameraShakePattern---------
 
+void UPerlinCameraShakePattern::OnUpdateShakePattern(
+	const FCameraShakeUpdateParams& Params,
+	FCameraShakeUpdateResult& OutResult)
+{
+	(void)Params;
+
+	const float Time = state.ElapsedTime;
+
+	OutResult.LocationOffset = FVector(
+		LocationAmplitude * Oscillate(Time, Frequency, 0.0f),
+		LocationAmplitude * Oscillate(Time, Frequency * 1.13f, 2.0943951f),
+		LocationAmplitude * Oscillate(Time, Frequency * 0.87f, 4.1887902f));
+
+	OutResult.RotationOffset = FRotator(
+		RotationAmplitude * Oscillate(Time, Frequency * 0.73f, 1.0471976f),
+		RotationAmplitude * Oscillate(Time, Frequency * 0.91f, 3.1415926f),
+		RotationAmplitude * Oscillate(Time, Frequency * 1.29f, 5.2359877f));
+
+	OutResult.FOVOffset =
+		FOVAmplitude * Oscillate(Time, Frequency * 0.67f, 1.5707963f);
+}
+
 UCameraShakeBase::UCameraShakeBase()
-    : PlayerCameraManager(nullptr)
-    , RootShakePattern(nullptr)
-    , bIsActive(false)
-    , ShakeScale(1.0f)
+	: PlayerCameraManager(nullptr)
+	, RootShakePattern(nullptr)
+	, bIsActive(false)
+	, ShakeScale(1.0f)
 {
 }
 
 void UCameraShakeBase::StartShake(APlayerCameraManager* Camera, float Scale, float DurationOverride)
 {
-    if (!RootShakePattern)
-    {
-        bIsActive = false;
-        return;
-    }
+	if (!RootShakePattern)
+	{
+		bIsActive = false;
+		return;
+	}
 
-    const bool bIsRestarting = bIsActive;
-    PlayerCameraManager = Camera;
-    bIsActive = true;
-    ShakeScale = Scale;
+	const bool bIsRestarting = bIsActive;
+	PlayerCameraManager = Camera;
+	bIsActive = true;
+	ShakeScale = Scale;
 
-    FCameraShakeStartParams StartParams;
-    StartParams.bIsRestarting = bIsRestarting;
-    StartParams.DurationOverride = DurationOverride;
-    StartParams.bOverrideDuration = DurationOverride > 0.0f;
-    RootShakePattern->StartShakePattern(StartParams);
+	FCameraShakeStartParams StartParams;
+	StartParams.bIsRestarting = bIsRestarting;
+	StartParams.DurationOverride = DurationOverride;
+	StartParams.bOverrideDuration = DurationOverride > 0.0f;
+	RootShakePattern->StartShakePattern(StartParams);
 }
 
 void UCameraShakeBase::UpdateAndApplyCameraShake(float DeltaTime, float Alpha, FMinimalViewInfo& InOutPOV)
 {
-    if (bIsActive && RootShakePattern)
-    {
+	if (bIsActive && RootShakePattern)
+	{
 		FCameraShakeUpdateParams Params;
-        Params.POV = InOutPOV;
+		Params.POV = InOutPOV;
 		Params.DeltaTime = DeltaTime;
-        Params.ShakeScale = ShakeScale;
+		Params.ShakeScale = ShakeScale;
 		Params.DynamicScale = Alpha;
 
 		FCameraShakeUpdateResult Result;
-        RootShakePattern->UpdateShakePattern(Params, Result);
+		RootShakePattern->UpdateShakePattern(Params, Result);
 
 		if (RootShakePattern->IsFinished())
-        {
-            bIsActive = false;
-            return;
-        }
+		{
+			bIsActive = false;
+			return;
+		}
 
-        ApplyResult(Result, InOutPOV);
-    }
+		ApplyResult(Result, InOutPOV);
+	}
 }
 
 void UCameraShakeBase::StopShake(bool bImmediately)
 {
-    if (!RootShakePattern)
-    {
-        bIsActive = false;
-        return;
-    }
+	if (!RootShakePattern)
+	{
+		bIsActive = false;
+		return;
+	}
 
-    RootShakePattern->StopShakePattern(bImmediately);
+	RootShakePattern->StopShakePattern(bImmediately);
 	bIsActive = !RootShakePattern->IsFinished();
 }
 
 
 void UCameraShakeBase::ApplyResult(
-    const FCameraShakeUpdateResult& InResult,
-    FMinimalViewInfo& InOutPOV)
+	const FCameraShakeUpdateResult& InResult,
+	FMinimalViewInfo& InOutPOV)
 {
-    const FVector WorldOffset =
-        InOutPOV.Rotation.RotateVector(InResult.LocationOffset);
+	const FVector WorldOffset =
+		InOutPOV.Rotation.RotateVector(InResult.LocationOffset);
 
-    InOutPOV.Location += WorldOffset;
+	InOutPOV.Location += WorldOffset;
 
-    const FQuat DeltaRot =
-        InResult.RotationOffset.Quaternion();
+	const FQuat DeltaRot =
+		InResult.RotationOffset.Quaternion();
 
-    InOutPOV.Rotation =
-        (InOutPOV.Rotation * DeltaRot).GetNormalized();
+	InOutPOV.Rotation =
+		(InOutPOV.Rotation * DeltaRot).GetNormalized();
 
-    InOutPOV.FOV += InResult.FOVOffset;
+	InOutPOV.FOV += InResult.FOVOffset;
 }

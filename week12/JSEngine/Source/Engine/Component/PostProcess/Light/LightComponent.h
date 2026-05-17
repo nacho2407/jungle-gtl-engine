@@ -8,7 +8,7 @@ class UMaterialInterface;
 UCLASS()
 class ULightComponent : public ULightComponentBase {
 public:
-	DECLARE_CLASS(ULightComponent, ULightComponentBase)
+	GENERATED_BODY(ULightComponent, ULightComponentBase)
 	ULightComponent() = default;
 
 	FMatrix GetLightViewProj(const FMatrix& CamView, const FMatrix& CamProj,
@@ -19,7 +19,7 @@ public:
 		float SplitNearT, float SplitFarT, const TArray<FBoundingBox>* VisibleObjectsBounds = nullptr) const;
 
 	void PostDuplicate(UObject* Original) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void BuildDebugDetails(FDebugDetailsBuilder& Builder) override;
 	
 public:
 	EShadowMap GetShadowMapType() const { return ShadowMapType; }
@@ -32,8 +32,6 @@ protected:
 	virtual FMatrix ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 		float SplitNearT, float SplitFarT) const;
 
-	virtual void PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutProps) const;
-
 protected:
 	~ULightComponent() = default;
 
@@ -41,7 +39,7 @@ public:
 	UPROPERTY(DisplayName = "Shadow Resolution Scale")
 	int32 ShadowResolutionScale = 2048;
 
-	UPROPERTY(DisplayName = "Constant Bias ( DepthBias ^ (1 / TextureBit))", Min = 0.0f, Max = 0.01f, Speed = 0.001f)
+	UPROPERTY(DisplayName = "Constant Bias", Min = 0.0f, Max = 0.01f, Speed = 0.001f)
 	float ConstantBias = { 0.003f };
 
 	UPROPERTY(DisplayName = "Slope-Scaled Bias", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
@@ -52,6 +50,8 @@ public:
 
 	// 디버그용으로 Shadow Atlas에서 해당 라이트의 타일 위치와 크기를 저장하는 변수
 	FVector4 DebugShadowAtlasScaleOffset;
+	FVector4 DebugShadowCascadeScaleOffsets[4];
+	int32 DebugShadowCascadeCount = 0;
 	bool bHasDebugShadowAtlasTile = false;
 	int32 DebugShadowCubeIndex;
 	bool bHasDebugShadowCubeTile = false;

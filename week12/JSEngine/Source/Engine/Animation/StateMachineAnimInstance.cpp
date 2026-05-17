@@ -1,8 +1,6 @@
 ﻿#include "StateMachineAnimInstance.h"
 #include "AnimationStateMachine.h"
 
-DEFINE_CLASS(UStateMachineAnimInstance, UAnimInstance)
-
 void UStateMachineAnimInstance::SetStateMachine(UAnimationStateMachine* InStateMachine)
 {
     StateMachine = InStateMachine;

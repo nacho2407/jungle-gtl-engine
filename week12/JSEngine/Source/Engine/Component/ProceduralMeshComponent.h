@@ -11,7 +11,7 @@ UCLASS()
 class UProceduralMeshComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UProceduralMeshComponent, UPrimitiveComponent)
+	GENERATED_BODY(UProceduralMeshComponent, UPrimitiveComponent)
 
 	struct FMeshSection
 	{

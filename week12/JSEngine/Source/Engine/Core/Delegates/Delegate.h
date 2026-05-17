@@ -5,8 +5,6 @@
 #define DECLARE_DELEGATE(Name, ...) \
 	using Name = TDelegate<__VA_ARGS__>;
 
-
-
 template <typename... Args>
 class TDelegate
 {

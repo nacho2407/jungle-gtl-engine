@@ -17,7 +17,7 @@ UCLASS()
 class USubUVComponent : public UBillboardComponent
 {
 public:
-	DECLARE_CLASS(USubUVComponent, UBillboardComponent)
+	GENERATED_BODY(USubUVComponent, UBillboardComponent)
 
 	USubUVComponent();
 	~USubUVComponent() override = default;

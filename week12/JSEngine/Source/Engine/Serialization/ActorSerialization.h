@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreMinimal.h"
 #include "SimpleJSON/json.hpp"
@@ -16,6 +16,7 @@ struct FActorLoadOptions
 
 namespace FActorSerialization
 {
+	bool ShouldSerializeActor(AActor* Actor);
 	json::JSON BuildActorJson(AActor* Actor);
 	AActor* SpawnActorFromJson(UWorld* World, json::JSON& ActorData, const FActorLoadOptions& Options = FActorLoadOptions());
 }

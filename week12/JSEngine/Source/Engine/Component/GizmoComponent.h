@@ -62,7 +62,7 @@ private:
 	bool IsTargetComponentAlive() const;
 
 public:
-	DECLARE_CLASS(UGizmoComponent, UPrimitiveComponent)
+	GENERATED_BODY(UGizmoComponent, UPrimitiveComponent)
 	UGizmoComponent();
 
 	// 기즈모 컴포넌트는 복제를 지원하지 않습니다.
@@ -119,9 +119,9 @@ public:
 	UMaterialInterface* GetMaterial() { return Material; }
 
 	void SetVirtualMouseX(float InVirtualMouseX) { VirtualMouseX = InVirtualMouseX; }
-    void SetVirtualMouseY(float InVirtualMouseY) { VirtualMouseY = InVirtualMouseY; }
-    float GetVirtualMouseX() const { return VirtualMouseX; }
-    float GetVirtualMouseY() const { return VirtualMouseY; }
+	void SetVirtualMouseY(float InVirtualMouseY) { VirtualMouseY = InVirtualMouseY; }
+	float GetVirtualMouseX() const { return VirtualMouseX; }
+	float GetVirtualMouseY() const { return VirtualMouseY; }
 
 private:
 	const FMeshData* GizmoMeshData = nullptr;
@@ -131,5 +131,5 @@ private:
 
 	// Rotation, Scale 드래그 도중에 실제 마우스 좌표는 유지하고 가상으로 바꾸기 위한 좌표
 	float VirtualMouseX = 0.0f;
-    float VirtualMouseY = 0.0f;
+	float VirtualMouseY = 0.0f;
 };

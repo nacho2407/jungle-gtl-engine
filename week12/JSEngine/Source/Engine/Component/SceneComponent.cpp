@@ -1,8 +1,5 @@
 ﻿#include "SceneComponent.h"
-#include "Object/ObjectFactory.h"
 
-DEFINE_CLASS(USceneComponent, UActorComponent)
-REGISTER_FACTORY(USceneComponent)
 
 // 소유자와 부모-자식 관계를 초기 상태로 명시적으로 리셋합니다.
 // Actor::Duplicate() 에서 DuplicateSubTree 를 통해 올바른 관계가 복원됩니다.

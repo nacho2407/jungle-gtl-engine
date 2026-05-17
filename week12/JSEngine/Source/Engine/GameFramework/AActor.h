@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "Object/Object.h"
-#include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Engine/GameFramework/WorldContext.h"
 #include "Component/ShapeComponent.h"
@@ -16,7 +15,7 @@ class UPrimitiveComponent;
 UCLASS()
 class AActor : public UObject {
 public:
-	DECLARE_CLASS(AActor, UObject)
+	GENERATED_BODY(AActor, UObject)
 	AActor() = default;
 	~AActor() override;
 
@@ -24,7 +23,7 @@ public:
 
 	virtual void Serialize(FArchive& Ar) override;
 
-    virtual void InitDefaultComponents() {}
+	virtual void InitDefaultComponents() {}
 
 	FString MakeUniqueComponentName(const UActorComponent* TargetComponent, const FString& RequestedName, bool bAlwaysAppendNumber) const;
 
@@ -39,7 +38,7 @@ public:
 		bPrimitiveCacheDirty = true;
 
 		Comp->SetOwner(this);
-		Comp->SetFName(FName(MakeUniqueComponentName(Comp, T::s_TypeInfo.name, true)));
+		Comp->SetFName(FName(MakeUniqueComponentName(Comp, T::StaticClass()->GetName(), true)));
 		OwnedComponents.push_back(Comp);
 		bPrimitiveCacheDirty = true;
 		NotifyComponentRegistered(Comp);
@@ -57,8 +56,8 @@ public:
 	bool ShouldTickInEditor() const { return bTickInEditor; }
 	void SetTickInEditor(bool bEnabled)  { bTickInEditor = bEnabled; }
 
-	// FTypeInfo 기반 런타임 컴포넌트 생성
-	UActorComponent* AddComponentByClass(const FTypeInfo* Class);
+	// UClass 기반 런타임 컴포넌트 생성
+	UActorComponent* AddComponentByClass(UClass* Class);
 	void RemoveComponent(UActorComponent* Component);
 	void RegisterComponent(UActorComponent* Comp);
 
@@ -73,8 +72,8 @@ public:
 	{
 		for (UActorComponent* Component : OwnedComponents)
 		{
-            if (Component->IsA<T>())
-                return Cast<T>(Component);
+			if (Component->IsA<T>())
+				return Cast<T>(Component);
 		}
 
 		return nullptr;
@@ -152,8 +151,6 @@ public:
 	FString GetTagsText() const;
 	void SetTagsFromText(const FString& InTagsText);
 
-	// 프로퍼티 시스템 — UObject 에서 상속
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
@@ -161,16 +158,16 @@ public:
 	bool IsOverlappingActor(const AActor* Other) const;
 
 	virtual void PostComponentRegistered(UActorComponent* Comp);
-    virtual void PostComponentUnregistered(UActorComponent* Comp);
+	virtual void PostComponentUnregistered(UActorComponent* Comp);
 
 	virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-    virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-    virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	virtual void OnAnimNotify(USkeletalMeshComponent*, const FAnimNotifyEvent& Notify) {}
 
 	void MarkPendingKill() { bPendingKill = true; }
-    bool IsPendingKill() const { return bPendingKill; }
+	bool IsPendingKill() const { return bPendingKill; }
 
 protected:
 	void NotifyComponentRegistered(UActorComponent* Component);
@@ -184,14 +181,14 @@ protected:
 	FVector PendingActorRotation = FVector(0, 0, 0);
 	FVector PendingActorScale = FVector(1, 1, 1);
 
-    UPROPERTY(DisplayName = "Visible")
+	UPROPERTY(DisplayName = "Visible")
 	bool bVisible = true;
-    
-    UPROPERTY(DisplayName = "Active")
+	
+	UPROPERTY(DisplayName = "Active")
 	bool bIsActive = true;
-    
-    UPROPERTY(DisplayName = "Tick in Editor")
-    bool bTickInEditor = false;
+	
+	UPROPERTY(DisplayName = "Tick in Editor")
+	bool bTickInEditor = false;
 
 	TArray<UActorComponent*> OwnedComponents;
 	TArray<FString> Tags;
@@ -201,8 +198,8 @@ protected:
 	mutable bool bPrimitiveCacheDirty = true;
 
 	uint64 OnComponentBeginOverlapHandleId = 0;
-    uint64 OnComponentEndOverlapHandleId = 0;
-    uint64 OnComponentHitHandleId = 0;
+	uint64 OnComponentEndOverlapHandleId = 0;
+	uint64 OnComponentHitHandleId = 0;
 
 	bool bPendingKill = false;
 };

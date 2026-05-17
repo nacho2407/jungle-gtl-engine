@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "Engine/Geometry/Ray.h"
-#include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Math/Matrix.h"
 #include "Math/Utils.h"
@@ -47,7 +46,7 @@ UCLASS()
 class UCameraComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(UCameraComponent, USceneComponent)
+	GENERATED_BODY(UCameraComponent, USceneComponent)
 
 	UCameraComponent() = default;
 

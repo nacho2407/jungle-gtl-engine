@@ -9,8 +9,6 @@
 #include "Math/Quat.h"
 #include "Core/Guid.h"
 
-struct ID3D11ShaderResourceView;
-
 // 에디터에서 자동 위젯 매핑에 사용되는 프로퍼티 타입
 enum class EPropertyType : uint8_t
 {
@@ -40,8 +38,6 @@ enum class EPropertyType : uint8_t
 
 	// Asset
 	Material, // TArray<UMaterialInterface*>
-	SRV,      // FSRVPropertyData
-	CubeSRV,  // FCubeSRVPropertyData
 };
 
 enum class EPropertyUsageFlags : uint8_t
@@ -76,105 +72,8 @@ struct FPropertyChangedEvent
 	EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet;
 };
 
-// SRV 정보
-struct FSRVDisplayInfo
-{
-	float ImageWidth  = 256.f;
-	float ImageHeight = 256.f;
-	float UV0X = 0.f;
-	float UV0Y = 0.f;
-	float UV1X = 1.f;
-	float UV1Y = 1.f;
-};
-
-// 단일 Shader Resource View를 Details 패널에서 read-only preview로 표시하기 위한 wrapper입니다.
-// ValuePtr는 항상 FSRVPropertyData 멤버/임시 데이터의 주소를 가리킵니다.
-struct FSRVPropertyData
-{
-	ID3D11ShaderResourceView* SRV = nullptr;
-	FSRVDisplayInfo DisplayInfo;
-};
-
-// Cube shadow map처럼 6개 face SRV를 Details 패널에서 read-only preview로 표시하기 위한 wrapper입니다.
-// FaceSRVs 배열 자체가 wrapper 안에 있으므로 generated reflection과 수동 descriptor 모두 같은 포인터 규칙을 사용합니다.
-struct FCubeSRVPropertyData
-{
-	ID3D11ShaderResourceView* FaceSRVs[6] = {};
-	FSRVDisplayInfo DisplayInfo = { 64.f, 64.f, 0.f, 0.f, 1.f, 1.f };
-};
-
-struct FEnumMetaData;
-
-// UObject가 노출하는 공통 프로퍼티 디스크립터
-struct FPropertyDescriptor
-{
-	const char*   Name = nullptr;
-	EPropertyType Type = EPropertyType::Unknown;
-	void*         ValuePtr = nullptr;
-
-	EPropertyUsageFlags UsageFlags = EPropertyUsageFlags::Editable;
-
-	// float 범위 힌트 (DragFloat 등에서 사용)
-	float Min   = 0.0f;
-	float Max   = 0.0f;
-	float Speed = 0.1f;
-
-	const char* DisplayName = nullptr;
-
-	// Enum 프로퍼티는 EnumMeta만 참조합니다.
-	const FEnumMetaData* EnumMeta = nullptr;
-
-	// 타입별 추가 메타데이터, 일단 SRV 정보를 저장하기 위해서 사용
-	void* ExtraData = nullptr;
-
-	FPropertyDescriptor() = default;
-
-	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr)
-		: Name(InName)
-		, Type(InType)
-		, ValuePtr(InValuePtr)
-	{
-	}
-
-	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr, float InMin)
-		: Name(InName)
-		, Type(InType)
-		, ValuePtr(InValuePtr)
-		, Min(InMin)
-	{
-	}
-
-	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr,
-		float InMin, float InMax, float InSpeed)
-		: Name(InName)
-		, Type(InType)
-		, ValuePtr(InValuePtr)
-		, Min(InMin)
-		, Max(InMax)
-		, Speed(InSpeed)
-	{
-	}
-
-	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr,
-		float InMin, float InMax, float InSpeed,
-		void* InExtraData,
-		EPropertyUsageFlags InUsageFlags = EPropertyUsageFlags::Editable,
-		const char* InDisplayName = nullptr,
-		const FEnumMetaData* InEnumMeta = nullptr)
-		: Name(InName)
-		, Type(InType)
-		, ValuePtr(InValuePtr)
-		, UsageFlags(InUsageFlags)
-		, Min(InMin)
-		, Max(InMax)
-		, Speed(InSpeed)
-		, DisplayName(InDisplayName)
-		, EnumMeta(InEnumMeta)
-		, ExtraData(InExtraData)
-	{
-	}
-
-};
+struct UEnum;
+using FEnumMetaData = UEnum;
 
 /** 각 프로퍼티의 Size 값을 반환합니다. 0을 반환하는 경우 특수 케이스입니다.
  * 이런 경우에는 CopyPropertiesFrom 함수 내에서 알아서 잘 처리해줄 수 있어야 합니다. 

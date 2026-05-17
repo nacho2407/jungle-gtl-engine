@@ -3,10 +3,6 @@
 
 #include <cstring>
 
-DEFINE_CLASS(UMaterialInterface, UObject)
-DEFINE_CLASS(UMaterial, UMaterialInterface)
-DEFINE_CLASS(UMaterialInstance, UMaterialInterface)
-
 namespace
 {
 	uint32 AlignConstantBufferSize(uint32 Size)
@@ -14,9 +10,9 @@ namespace
 		return (Size + 15u) & ~15u;
 	}
 
-    uint32 GetMaterialConstantBufferSlot(const FShaderReflectionInfo& Reflection)
+	uint32 GetMaterialConstantBufferSlot(const FShaderReflectionInfo& Reflection)
 	{
-	    return 2;
+		return 2;
 	}
 
 	void CopyMaterialParamToBuffer(TArray<uint8>& CBufferData, const FShaderVariableReflection& VarInfo, const FMaterialParamValue& ParamValue)

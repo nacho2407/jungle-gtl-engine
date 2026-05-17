@@ -23,7 +23,7 @@ UCLASS()
 class USkinnedMeshComponent : public UMeshComponent
 {
 public:
-	DECLARE_CLASS(USkinnedMeshComponent, UMeshComponent)
+	GENERATED_BODY(USkinnedMeshComponent, UMeshComponent)
 
 	USkinnedMeshComponent() = default;
 	~USkinnedMeshComponent() override = default;

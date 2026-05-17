@@ -20,7 +20,7 @@ protected:
 	virtual void PostDuplicate(UObject* Original) override;
 
 public:
-	DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
+	GENERATED_BODY(UBillboardComponent, UPrimitiveComponent)
 
 	void TickComponent(float DeltaTime) override;
 

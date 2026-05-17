@@ -12,9 +12,6 @@
 
 #include <algorithm>
 
-DEFINE_CLASS(APlayerController, AActor)
-REGISTER_FACTORY(APlayerController)
-
 namespace
 {
 	FQuat MakeViewQuatFromCamera(UCameraComponent* Camera)
@@ -266,7 +263,7 @@ void APlayerController::ResetCameraFOV(float Duration)
 	CameraFOV.StartFOV = RuntimeCamera.GetFOV();
 
 	UCameraComponent* Camera = GetViewTargetCamera();
-    CameraFOV.TargetFOV = Camera ? Camera->GetFOV() : RuntimeCamera.GetFOV();
+	CameraFOV.TargetFOV = Camera ? Camera->GetFOV() : RuntimeCamera.GetFOV();
 }
 
 void APlayerController::StopCameraEffects()
@@ -314,12 +311,12 @@ void APlayerController::DispatchInputActionsToPawn()
 
 AActor* APlayerController::GetViewTargetActor() const
 {
-    return PlayerCameraManager ? PlayerCameraManager->GetViewTargetActor() : nullptr;
+	return PlayerCameraManager ? PlayerCameraManager->GetViewTargetActor() : nullptr;
 }
 
 UCameraComponent* APlayerController::GetViewTargetCamera() const
 {
-    return PlayerCameraManager ? PlayerCameraManager->GetViewTargetCamera() : nullptr;
+	return PlayerCameraManager ? PlayerCameraManager->GetViewTargetCamera() : nullptr;
 }
 
 void APlayerController::SpawnPlayerCameraManager()
@@ -546,11 +543,11 @@ void APlayerController::UpdateRuntimeCameraFromViewTarget(float DeltaTime)
 		? EViewportProjectionType::Orthographic
 		: EViewportProjectionType::Perspective);
 	RuntimeCamera.SetLocation(ViewInfo.Location);
-    RuntimeCamera.SetRotation(ViewInfo.Rotation);
-    UpdateCameraFOVEffect(DeltaTime, ViewInfo.FOV);
+	RuntimeCamera.SetRotation(ViewInfo.Rotation);
+	UpdateCameraFOVEffect(DeltaTime, ViewInfo.FOV);
 	RuntimeCamera.SetNearPlane(ViewInfo.NearZ);
 	RuntimeCamera.SetFarPlane(ViewInfo.FarZ);
-    RuntimeCamera.SetOrthoHeight(ViewInfo.OrthoWidth);
+	RuntimeCamera.SetOrthoHeight(ViewInfo.OrthoWidth);
 }
 
 void APlayerController::OnPossess(APawn* InPawn)

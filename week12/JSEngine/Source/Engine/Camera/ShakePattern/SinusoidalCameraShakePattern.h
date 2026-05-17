@@ -1,31 +1,45 @@
 ﻿#pragma once
 #include "Camera/CameraShakeBase.h"
 
+UCLASS()
 class USinusoidalCameraShakePattern : public UCameraShakePattern
 {
 public:
-    DECLARE_CLASS(USinusoidalCameraShakePattern, UCameraShakePattern)
+	GENERATED_BODY(USinusoidalCameraShakePattern, UCameraShakePattern)
 
-        // Location parameters
-    FVector LocationAmplitude{ 0, 0, 0 }; // units
-    FVector LocationFrequency{ 0, 0, 0 }; // Hz per axis
-    FVector LocationPhase{ 0, 0, 0 };     // radians per axis
+		// Location parameters
+	UPROPERTY()
+	FVector LocationAmplitude{ 0, 0, 0 }; // units
 
-    // Rotation parameters (degrees)
-    FVector RotationAmplitudeDeg{ 0, 0, 0 }; // degrees
-    FVector RotationFrequency{ 0, 0, 0 };    // Hz per axis
-    FVector RotationPhase{ 0, 0, 0 };        // radians per axis
+	UPROPERTY()
+	FVector LocationFrequency{ 0, 0, 0 }; // Hz per axis
 
-    // FOV parameters (degrees)
-    float FOVAmplitude = 0.0f; // degrees
-    float FOVFrequency = 0.0f; // Hz
-    float FOVPhase = 0.0f;     // radians
+	UPROPERTY()
+	FVector LocationPhase{ 0, 0, 0 };     // radians per axis
 
-    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	// Rotation parameters (degrees)
+	UPROPERTY()
+	FVector RotationAmplitudeDeg{ 0, 0, 0 }; // degrees
+
+	UPROPERTY()
+	FVector RotationFrequency{ 0, 0, 0 };    // Hz per axis
+
+	UPROPERTY()
+	FVector RotationPhase{ 0, 0, 0 };        // radians per axis
+
+	// FOV parameters (degrees)
+	UPROPERTY()
+	float FOVAmplitude = 0.0f; // degrees
+
+	UPROPERTY()
+	float FOVFrequency = 0.0f; // Hz
+
+	UPROPERTY()
+	float FOVPhase = 0.0f;     // radians
 
 private:
-    virtual void OnStartShakePattern(const FCameraShakeStartParams& Params) override; 
-    virtual void OnUpdateShakePattern(
-        const FCameraShakeUpdateParams& Params,
-        FCameraShakeUpdateResult& OutResult) override;
+	virtual void OnStartShakePattern(const FCameraShakeStartParams& Params) override; 
+	virtual void OnUpdateShakePattern(
+		const FCameraShakeUpdateParams& Params,
+		FCameraShakeUpdateResult& OutResult) override;
 };

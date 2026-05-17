@@ -25,10 +25,11 @@ class AActor;
 class APlayerController;
 class FViewport;
 
+UCLASS()
 class UEditorEngine : public UEngine
 {
 public:
-	DECLARE_CLASS(UEditorEngine, UEngine)
+	GENERATED_BODY(UEditorEngine, UEngine)
 
 	UEditorEngine() = default;
 	~UEditorEngine() override = default;
@@ -40,15 +41,15 @@ public:
 	bool CanCloseApplication() override;
 	void WorldTick(float DeltaTime) override;
 
-    FEditorViewer* CreateViewer(FString InFileName);
-    void RemoveViewer(FEditorViewer* InViewer);
+	FEditorViewer* CreateViewer(FString InFileName);
+	void RemoveViewer(FEditorViewer* InViewer);
 
 	// 퍼스펙티브 카메라(인덱스 0)를 반환합니다.
 	FViewportCamera* GetCamera();
 	const FViewportCamera* GetCamera() const;
 
 	UWorld* GetFocusedWorld() const;
-    FWorldContext* GetFocusedWorldContext();
+	FWorldContext* GetFocusedWorldContext();
 	EViewportPlayState GetEditorState() const;
 	void SetEditorState(EViewportPlayState InState);
 
@@ -104,7 +105,7 @@ public:
 	FName GetEditorWorldHandle() const;
 
 	const TArray<std::unique_ptr<FEditorViewer>>& GetViewers() const { return Viewers; }
-    TArray<std::unique_ptr<FEditorViewer>>& GetViewers() { return Viewers; }
+	TArray<std::unique_ptr<FEditorViewer>>& GetViewers() { return Viewers; }
 
 private:
 	friend class FEditorUndoSystem;
@@ -126,7 +127,7 @@ private:
 
 	FEditorMainPanel MainPanel;
 	FEditorViewportLayout ViewportLayout;
-    TArray<std::unique_ptr<FEditorViewer>> Viewers;	
+	TArray<std::unique_ptr<FEditorViewer>> Viewers;	
 
 	FInputPolicyRouter EditorInputRouter;
 	FPIESession PIESession;
@@ -135,7 +136,7 @@ private:
 	FEditorNotificationService NotificationService;
 	FEditorSceneService SceneService;
 
-    FEditorUndoSystem UndoSystem;
+	FEditorUndoSystem UndoSystem;
 
 	bool bStartPlaySessionQueued = false;
 	bool bStopPlaySessionQueued = false;

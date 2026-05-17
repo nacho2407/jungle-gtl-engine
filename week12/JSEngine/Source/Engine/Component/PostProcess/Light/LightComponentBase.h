@@ -4,7 +4,7 @@
 UCLASS()
 class ULightComponentBase : public USceneComponent {
 public:
-	DECLARE_CLASS(ULightComponentBase, USceneComponent)
+	GENERATED_BODY(ULightComponentBase, USceneComponent)
 	ULightComponentBase() = default;
 	virtual void PostDuplicate(UObject* Original) override;
 protected:

@@ -13,7 +13,7 @@ UCLASS()
 class APlayerController : public AActor
 {
 public:
-	DECLARE_CLASS(APlayerController, AActor)
+	GENERATED_BODY(APlayerController, AActor)
 
 	void BeginPlay() override;
 	void Tick(float DeltaTime) override;
@@ -57,11 +57,11 @@ public:
 
 	FViewportCamera* GetRuntimeCamera() { return &RuntimeCamera; }
 	const FViewportCamera* GetRuntimeCamera() const { return &RuntimeCamera; }
-    APlayerCameraManager* GetPlayerCameraManager() const { return PlayerCameraManager; }
+	APlayerCameraManager* GetPlayerCameraManager() const { return PlayerCameraManager; }
 	APawn* GetPawn() const { return PossessedPawn; }
 	AActor* GetPossessedActor() const { return PossessedPawn; }
-    AActor* GetViewTargetActor() const;
-    UCameraComponent* GetViewTargetCamera() const;
+	AActor* GetViewTargetActor() const;
+	UCameraComponent* GetViewTargetCamera() const;
 
 	void SpawnPlayerCameraManager();
 
@@ -81,19 +81,19 @@ protected:
 
 protected:
 	APawn* PossessedPawn = nullptr;
-    APlayerCameraManager* PlayerCameraManager = nullptr;
+	APlayerCameraManager* PlayerCameraManager = nullptr;
 	FGameplayInputSnapshot CurrentInputSnapshot;
 
-    struct FPendingCameraFade
-    {
-        float FromAlpha = 0.0f;
-        float ToAlpha = 0.0f;
-        float Duration = 0.0f;
-        FColor Color = FColor::Black();
-        bool bPending = false;
-    };
+	struct FPendingCameraFade
+	{
+		float FromAlpha = 0.0f;
+		float ToAlpha = 0.0f;
+		float Duration = 0.0f;
+		FColor Color = FColor::Black();
+		bool bPending = false;
+	};
 
-    FPendingCameraFade PendingCameraFade;
+	FPendingCameraFade PendingCameraFade;
 
 	FViewportCamera RuntimeCamera;
 

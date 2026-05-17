@@ -1,7 +1,6 @@
-#include "Core/CurveResourceCache.h"
+﻿#include "Core/CurveResourceCache.h"
 
 #include "Core/Paths.h"
-#include "Object/ObjectFactory.h"
 
 #include <unordered_set>
 

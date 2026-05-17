@@ -1,13 +1,12 @@
 ﻿#include "Component/ActorSequenceComponent.h"
+#include "Object/Class.h"
+#include "Object/Property.h"
 
 #include "GameFramework/AActor.h"
-#include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 
 #include <algorithm>
 
-DEFINE_CLASS(UActorSequenceComponent, UActorComponent)
-REGISTER_FACTORY(UActorSequenceComponent)
 
 void UActorSequenceComponent::BeginPlay()
 {
@@ -124,23 +123,9 @@ bool UActorSequenceComponent::AddFloatTrack(const FActorSequenceFloatTrackDesc& 
 		return false;
 	}
 
-	TArray<FPropertyDescriptor> Properties;
-	TargetComponent->GetEditableProperties(Properties);
-
-	FPropertyDescriptor* TargetProperty = nullptr;
-	for (FPropertyDescriptor& Property : Properties)
-	{
-		if (Property.Name
-			&& Desc.TargetPropertyPath == Property.Name
-			&& Property.Type == EPropertyType::Float
-			&& HasPropertyUsage(Property.UsageFlags, EPropertyUsageFlags::Animatable))
-		{
-			TargetProperty = &Property;
-			break;
-		}
-	}
-
-	if (!TargetProperty)
+	UClass* TargetClass = TargetComponent->GetClass();
+	const FProperty* TargetProperty = TargetClass ? TargetClass->FindProperty(Desc.TargetPropertyPath.c_str()) : nullptr;
+	if (!TargetProperty || TargetProperty->Type != EPropertyType::Float || !TargetProperty->IsSequencerScalar())
 	{
 		return false;
 	}
@@ -173,9 +158,8 @@ bool UActorSequenceComponent::AddFloatTrack(const FActorSequenceFloatTrackDesc& 
 		UCurveFloatAsset* InlineCurve = UObjectManager::Get().CreateObject<UCurveFloatAsset>();
 		if (InlineCurve)
 		{
-			const float InitialValue = TargetProperty->ValuePtr
-				? *static_cast<float*>(TargetProperty->ValuePtr)
-				: 0.0f;
+			float InitialValue = 0.0f;
+			TargetProperty->ReadScalarChannelValue(TargetComponent, "Value", InitialValue);
 			FFloatCurve& FloatCurve = InlineCurve->GetMutableCurve();
 			FloatCurve.Keys.clear();
 

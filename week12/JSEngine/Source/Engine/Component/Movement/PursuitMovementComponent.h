@@ -7,7 +7,7 @@ class FViewportCamera;
 UCLASS()
 class UPursuitMovementComponent : public UMovementComponent {
 public:
-	DECLARE_CLASS(UPursuitMovementComponent, UMovementComponent);
+	GENERATED_BODY(UPursuitMovementComponent, UMovementComponent);
 
 	// Overrides
 	void				BeginPlay() override;

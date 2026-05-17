@@ -9,8 +9,6 @@
 #include <algorithm>
 #include <cctype>
 
-DEFINE_CLASS(AActor, UObject)
-REGISTER_FACTORY(AActor)
 
 static FString TrimObjectNameText(const FString& Name)
 {
@@ -120,7 +118,7 @@ FString AActor::MakeUniqueComponentName(const UActorComponent* TargetComponent, 
 	FString BaseName = StripGeneratedObjectNameSuffixes(RequestedName);
 	if (BaseName.empty())
 	{
-		BaseName = TargetComponent && TargetComponent->GetTypeInfo() ? TargetComponent->GetTypeInfo()->name : "UActorComponent";
+		BaseName = TargetComponent && TargetComponent->GetClass() ? TargetComponent->GetClass()->GetName() : "UActorComponent";
 	}
 
 	bool bRequestedNameTaken = false;
@@ -205,20 +203,6 @@ static USceneComponent* DuplicateSubTree(
 	}
 
 	return DuplicatedComp;
-}
-
-void AActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UObject::GetEditableProperties(OutProps);
-	
-	PendingActorLocation = GetActorLocation();
-	PendingActorRotation = GetActorRotation();
-	PendingActorScale = GetActorScale();
-
-	// TODO: Property System 확인용 주석 처리, Reflection 구현 완료 시 수동 프로퍼티 추가는 삭제할 것
-	OutProps.push_back({ "Location", EPropertyType::Vec3, &PendingActorLocation });
-	OutProps.push_back({ "Rotation", EPropertyType::Vec3, &PendingActorRotation });
-	OutProps.push_back({ "Scale", EPropertyType::Vec3, &PendingActorScale });
 }
 
 void AActor::PostEditProperty(const char* PropertyName)
@@ -325,14 +309,18 @@ void AActor::Serialize(FArchive& Ar)
 	}
 }
 
-UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class)
+UActorComponent* AActor::AddComponentByClass(UClass* Class)
 {
-	if (!Class)
+	if (!Class || !Class->IsChildOf(UActorComponent::StaticClass()) || Class->HasAnyClassFlags(CF_Abstract))
+	{
 		return nullptr;
+	}
 
-	UObject* Obj = FObjectFactory::Get().Create(Class->name);
+	UObject* Obj = NewObject(Class);
 	if (!Obj)
+	{
 		return nullptr;
+	}
 
 	UActorComponent* Comp = Cast<UActorComponent>(Obj);
 	if (!Comp)
@@ -342,7 +330,7 @@ UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class)
 	}
 
 	Comp->SetOwner(this);
-	Comp->SetFName(FName(MakeUniqueComponentName(Comp, Class->name, true)));
+	Comp->SetFName(FName(MakeUniqueComponentName(Comp, Class->GetName(), true)));
 	OwnedComponents.push_back(Comp);
 	bPrimitiveCacheDirty = true;
 	NotifyComponentRegistered(Comp);

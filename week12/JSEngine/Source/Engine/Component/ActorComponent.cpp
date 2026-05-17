@@ -1,12 +1,9 @@
 ﻿#include "ActorComponent.h"
-#include "Object/ObjectFactory.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cstring>
 
-DEFINE_CLASS(UActorComponent, UObject)
-REGISTER_FACTORY(UActorComponent)
 
 namespace
 {
@@ -165,14 +162,6 @@ void UActorComponent::PostDuplicate(UObject* Original)
 	RegeneratePersistentGuid();
 }
 
-void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UObject::GetEditableProperties(OutProps);
-	
-	TagsText = GetTagsText();
-	OutProps.push_back({"Tags", EPropertyType::String, &TagsText});
-}
-
 void UActorComponent::PostEditProperty(const char* PropertyName)
 {
 	if (PropertyName && std::strcmp(PropertyName, "Tags") == 0)
@@ -184,13 +173,13 @@ void UActorComponent::PostEditProperty(const char* PropertyName)
 void UActorComponent::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
-	if (Ar.IsLoading() && Ar.HasKey("bTransient") && !Ar.HasKey("bSerialized"))
+	if (Ar.IsLoading() && Ar.HasKey("bSerialized") && !Ar.HasKey("bTransient"))
 	{
-		bool bLegacyTransient = false;
-		Ar << "bTransient" << bLegacyTransient;
-		SetTransient(bLegacyTransient);
+		bool bLegacySerialized = true;
+		Ar << "bSerialized" << bLegacySerialized;
+		SetSerialized(bLegacySerialized);
 	}
-    
+	
 	EnsurePersistentGuid();
 	FString PersistentGuidText = PersistentGuid.ToString();
 	Ar << "PersistentGuid" << PersistentGuidText;
@@ -199,6 +188,6 @@ void UActorComponent::Serialize(FArchive& Ar)
 		PersistentGuid = FGuid::FromString(PersistentGuidText);
 		EnsurePersistentGuid();
 	}
-    
+	
 	Ar << "Tags" << Tags;
 }

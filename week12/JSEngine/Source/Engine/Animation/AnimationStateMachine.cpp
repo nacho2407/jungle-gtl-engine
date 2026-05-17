@@ -8,8 +8,6 @@
 
 #include "Core/ResourceManager.h"
 
-DEFINE_CLASS(UAnimationStateMachine, UObject)
-
 void FAnimSequencePoseSource::Update(float DeltaTime)
 {
     if (!Sequence)

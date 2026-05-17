@@ -2,24 +2,23 @@
 
 #include "Core/Logging/Log.h"
 
-DEFINE_CLASS(UStaticMesh, UObject)
 
 UStaticMesh::~UStaticMesh()
 {
-    for (int32 i = 0; i < MAX_LOD; ++i)
-    {
-        if (LODMeshData[i] != nullptr && LODMeshData[i] != MeshData)
-        {
-            delete LODMeshData[i];
-            LODMeshData[i] = nullptr;
-        }
-    }
+	for (int32 i = 0; i < MAX_LOD; ++i)
+	{
+		if (LODMeshData[i] != nullptr && LODMeshData[i] != MeshData)
+		{
+			delete LODMeshData[i];
+			LODMeshData[i] = nullptr;
+		}
+	}
 
-    if (MeshData != nullptr)
-    {
-        delete MeshData;
-        MeshData = nullptr;
-    }
+	if (MeshData != nullptr)
+	{
+		delete MeshData;
+		MeshData = nullptr;
+	}
 }
 
 void UStaticMesh::SetMeshData(FStaticMesh* InMeshData)
@@ -37,28 +36,28 @@ void UStaticMesh::SetMeshData(FStaticMesh* InMeshData)
 FStaticMesh* UStaticMesh::GetMeshData(int32 LOD)
 {
 	if (LOD <= 0)
-        return MeshData;
+		return MeshData;
 
-    if (LOD >= ValidLODCount)
-        LOD = ValidLODCount - 1;
+	if (LOD >= ValidLODCount)
+		LOD = ValidLODCount - 1;
 
-    if (LOD <= 0)
-        return MeshData;
+	if (LOD <= 0)
+		return MeshData;
 
-    return LODMeshData[LOD];
+	return LODMeshData[LOD];
 }
 
 const FStaticMesh* UStaticMesh::GetMeshData(int32 LOD) const
 {	if (LOD <= 0)
-        return MeshData;
+		return MeshData;
 
-    if (LOD >= ValidLODCount)
-        LOD = ValidLODCount - 1;
+	if (LOD >= ValidLODCount)
+		LOD = ValidLODCount - 1;
 
-    if (LOD <= 0)
-        return MeshData;
+	if (LOD <= 0)
+		return MeshData;
 
-    return LODMeshData[LOD];
+	return LODMeshData[LOD];
 }
 
 const FString& UStaticMesh::GetAssetPathFileName() const

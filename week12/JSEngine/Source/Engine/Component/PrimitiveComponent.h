@@ -1,6 +1,4 @@
 ﻿#pragma once
-
-#include "Object/ObjectFactory.h"
 #include "SceneComponent.h"
 #include "Render/Common/RenderTypes.h"
 #include "Engine/Geometry/Ray.h"
@@ -26,11 +24,11 @@ DECLARE_DELEGATE(FOnComponentHit, UPrimitiveComponent*, AActor*, UPrimitiveCompo
 DECLARE_DELEGATE(FOnComponentBeginOverlap, UPrimitiveComponent*, AActor*, UPrimitiveComponent*, int32, bool, const FHitResult&)
 DECLARE_DELEGATE(FOnComponentEndOverlap, UPrimitiveComponent*, AActor*, UPrimitiveComponent*, int32, bool, const FHitResult&)
 
-UCLASS()
+UCLASS(Abstract)
 class UPrimitiveComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
+	GENERATED_BODY(UPrimitiveComponent, USceneComponent)
 	~UPrimitiveComponent() override;
 
 	FOnComponentBeginOverlap OnComponentBeginOverlap;

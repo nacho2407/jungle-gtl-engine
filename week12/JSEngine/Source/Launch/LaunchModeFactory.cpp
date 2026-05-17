@@ -1,6 +1,4 @@
-#include "Launch/LaunchModeFactory.h"
-
-#include "Object/ObjectFactory.h"
+﻿#include "Launch/LaunchModeFactory.h"
 
 #if WITH_EDITOR
 #include "Editor/EditorEngine.h"

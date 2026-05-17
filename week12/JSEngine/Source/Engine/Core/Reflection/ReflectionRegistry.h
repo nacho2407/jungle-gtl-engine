@@ -6,73 +6,94 @@
 #include "Core/Singleton.h"
 #include "Core/Containers/String.h"
 #include "Core/Reflection/ReflectionMacros.h"
+#include "Object/Class.h"
 
-struct FEnumValueMetaData
+struct FEnumValue
 {
 	const char* Name = nullptr;
 	const char* DisplayName = nullptr;
 	int64 Value = 0;
 };
 
-// 파싱된 Enum 타입에 대한 메타데이터
-struct FEnumMetaData
+// 파싱된 Enum 타입에 대한 런타임 메타데이터입니다.
+// 추후 UObject - UField - UEnum 구조로 확장될 수 있습니다.
+struct UEnum
 {
 	const char* Name = nullptr;
 	uint8 Size = 0;
-	const FEnumValueMetaData* Values = nullptr;
+	const FEnumValue* Values = nullptr;
 	uint32 Count = 0;
-};
-
-// 파싱된 프로퍼티의 영구 메타데이터
-struct FPropertyMetaData
-{
-	const char* Name = nullptr;
-	EPropertyType Type = EPropertyType::Unknown;
-	size_t Offset = 0;
-	EPropertyUsageFlags UsageFlags = EPropertyUsageFlags::Editable;
-	
-	float Min = 0.0f;
-	float Max = 0.0f;
-	float Speed = 0.1f;
-
-	const char* DisplayName = nullptr;
-
-	const FEnumMetaData* EnumMeta = nullptr;
-};
-
-// 파싱된 클래스의 영구 메타데이터
-struct FClassMetaData
-{
-	const char* ClassName = nullptr;
-	const struct FTypeInfo* TypeInfo = nullptr;
-	TArray<FPropertyMetaData> Properties;
 };
 
 class FReflectionRegistry : public TSingleton<FReflectionRegistry>
 {
 public:
-	void RegisterClass(const FClassMetaData& MetaData)
+	void RegisterUClass(UClass* Class)
 	{
-		RegisteredClass[MetaData.ClassName] = MetaData;
+		if (!Class || !Class->GetName())
+		{
+			return;
+		}
+
+		const FString ClassName = Class->GetName();
+		auto It = RuntimeClasses.find(ClassName);
+		if (It != RuntimeClasses.end())
+		{
+			return;
+		}
+		RuntimeClasses[ClassName] = Class;
 	}
-	
-	const FClassMetaData* GetRegisteredClass(const char* ClassName)
+
+	UClass* FindUClass(const FString& ClassName) const
 	{
-		auto It = RegisteredClass.find(ClassName);
-		if (It != RegisteredClass.end())
-			return &It->second;
-		return nullptr;
+		auto It = RuntimeClasses.find(ClassName);
+		return It != RuntimeClasses.end() ? It->second : nullptr;
+	}
+
+	UClass* FindClass(const FString& ClassName) const
+	{
+		return FindUClass(ClassName);
+	}
+
+	void GetClassesDerivedFrom(const UClass* BaseClass, TArray<UClass*>& OutClasses) const
+	{
+		if (!BaseClass)
+		{
+			return;
+		}
+
+		for (const auto& Pair : RuntimeClasses)
+		{
+			UClass* Class = Pair.second;
+			if (Class && Class->IsChildOf(BaseClass))
+			{
+				OutClasses.push_back(Class);
+			}
+		}
+	}
+
+	const TMap<FString, UClass*>& GetRuntimeClasses() const
+	{
+		return RuntimeClasses;
+	}
+
+	void RegisterEnum(const UEnum* Enum)
+	{
+		if (!Enum || !Enum->Name)
+		{
+			return;
+		}
+
+		RuntimeEnums[Enum->Name] = Enum;
+	}
+
+	const UEnum* FindEnum(const FString& EnumName) const
+	{
+		auto It = RuntimeEnums.find(EnumName);
+		return It != RuntimeEnums.end() ? It->second : nullptr;
 	}
 	
 private:
-	TMap<FString, FClassMetaData> RegisteredClass;
-};
-
-// 전역 변수 초기화를 이용한 자동 등록 헬퍼
-struct FAutoClassRegister
-{
-	FAutoClassRegister(const FClassMetaData& MetaData)
-	{
-		FReflectionRegistry::Get().RegisterClass(MetaData);
-	}
+	TMap<FString, UClass*> RuntimeClasses;
+	TMap<FString, const UEnum*> RuntimeEnums;
 };

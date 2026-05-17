@@ -8,11 +8,11 @@ class USceneComponent;
 /**
  * @brief 이동 컴포넌트의 기반이 되는 추상 클래스
  */
-UCLASS()
+UCLASS(Abstract)
 class UMovementComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(UMovementComponent, UActorComponent)
+	GENERATED_BODY(UMovementComponent, UActorComponent)
 
 	virtual void TickComponent(float DeltaTime) override = 0;
 

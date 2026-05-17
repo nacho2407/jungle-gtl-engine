@@ -3,11 +3,11 @@
 
 class UMaterialInterface;
 
-UCLASS()
+UCLASS(Abstract)
 class UMeshComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UMeshComponent, UPrimitiveComponent)
+	GENERATED_BODY(UMeshComponent, UPrimitiveComponent)
 
 	virtual void Serialize(FArchive& Ar) override;
 

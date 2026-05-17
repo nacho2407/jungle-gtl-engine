@@ -13,8 +13,6 @@
 #include "ImGui/imgui.h"
 #include "Camera/ViewportCamera.h"
 
-DEFINE_CLASS(UObjViewerEngine, UEngine)
-REGISTER_FACTORY(UObjViewerEngine)
 
 void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 {
@@ -104,11 +102,11 @@ void UObjViewerEngine::BeginPlay()
 	if (!World)
 		return;
 
-    // 카메라 세팅은 ViewportClient에게 온전히 위임
-    if (FViewportCamera* MainCamera = ViewportClient.GetCamera())
-    {
-        World->SetActiveCamera(MainCamera);
-    }
+	// 카메라 세팅은 ViewportClient에게 온전히 위임
+	if (FViewportCamera* MainCamera = ViewportClient.GetCamera())
+	{
+		World->SetActiveCamera(MainCamera);
+	}
 
 	ViewportClient.ResetCamera();
 
@@ -136,5 +134,5 @@ void UObjViewerEngine::OnWindowResized(uint32 Width, uint32 Height)
 {
 	// TODO-VIEWER: Slate 구조 개편 후 다시 작성하기
 	UEngine::OnWindowResized(Width, Height);
-    ViewportClient.SetViewportRect(0, 0, Window->GetWidth(), Window->GetHeight());
+	ViewportClient.SetViewportRect(0, 0, Window->GetWidth(), Window->GetHeight());
 }

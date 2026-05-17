@@ -40,8 +40,6 @@ FVector RandomUnitVector()
 }
 }
 
-DEFINE_CLASS(UMainSceneDestructibleComponent, UActorComponent)
-REGISTER_FACTORY(UMainSceneDestructibleComponent)
 
 void UMainSceneDestructibleComponent::BeginPlay()
 {

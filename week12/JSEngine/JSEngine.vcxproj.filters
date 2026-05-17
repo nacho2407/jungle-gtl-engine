@@ -7,8 +7,17 @@
     <Filter Include="Intermediate\Reflection">
       <UniqueIdentifier>{24172a1f-e493-4e88-4556-fcd36f85d9ef}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Intermediate\Reflection\Animation">
+      <UniqueIdentifier>{58f2e73e-8b89-e555-ebee-05bc2e3d3239}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Asset">
+      <UniqueIdentifier>{6cadddc1-65cd-a8c8-3866-af0722baa1fe}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Intermediate\Reflection\Camera">
       <UniqueIdentifier>{779b4823-16de-c2fa-2807-63a4fbec7cf0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Camera\ShakePattern">
+      <UniqueIdentifier>{c00b798c-3f5b-f69e-c5b9-24dfd51e0d10}</UniqueIdentifier>
     </Filter>
     <Filter Include="Intermediate\Reflection\Component">
       <UniqueIdentifier>{0edb51db-fb3f-de24-88b7-12459aa0eb5e}</UniqueIdentifier>
@@ -22,8 +31,23 @@
     <Filter Include="Intermediate\Reflection\Component\PostProcess\Light">
       <UniqueIdentifier>{9b80487f-620f-32ca-6e5c-680e4f80cfc1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Intermediate\Reflection\Editor">
+      <UniqueIdentifier>{3d7aad18-b8cd-8c00-11f7-ca1b895f2553}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Intermediate\Reflection\GameFramework">
       <UniqueIdentifier>{36dc06eb-7c47-78be-cde8-06b5b11c1094}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Misc">
+      <UniqueIdentifier>{4107d985-cb50-b94d-2e85-f301c024482c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Misc\ObjViewer">
+      <UniqueIdentifier>{a496c0a5-d894-7d75-556a-b8081c497abf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Render">
+      <UniqueIdentifier>{c04b0367-0590-f8c6-ed00-22a8f6ad163f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Render\Resource">
+      <UniqueIdentifier>{49813d80-5037-50a6-d5ee-05c2bdc623b4}</UniqueIdentifier>
     </Filter>
     <Filter Include="Intermediate\Reflection\Runtime">
       <UniqueIdentifier>{f4083137-9d7d-2436-1a79-fd2ff5d5a53a}</UniqueIdentifier>
@@ -267,7 +291,70 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Intermediate\Reflection\Animation\UActorSequence.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UActorSequencePlayer.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimDataModel.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimInstance.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequence.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequenceBase.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimSingleNodeInstance.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimationAsset.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimationStateMachine.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UDebugAnimSequence.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UStateMachineAnimInstance.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Asset\UCurveFloatAsset.gen.cpp">
+      <Filter>Intermediate\Reflection\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Asset\USkeletalMesh.gen.cpp">
+      <Filter>Intermediate\Reflection\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Asset\UStaticMesh.gen.cpp">
+      <Filter>Intermediate\Reflection\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Camera\APlayerCameraManager.gen.cpp">
+      <Filter>Intermediate\Reflection\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Camera\ShakePattern\USequenceCameraShakePattern.gen.cpp">
+      <Filter>Intermediate\Reflection\Camera\ShakePattern</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Camera\ShakePattern\USinusoidalCameraShakePattern.gen.cpp">
+      <Filter>Intermediate\Reflection\Camera\ShakePattern</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Camera\UCameraModifier.gen.cpp">
+      <Filter>Intermediate\Reflection\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Camera\UCameraModifier_CameraShake.gen.cpp">
+      <Filter>Intermediate\Reflection\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Camera\UCameraShakeBase.gen.cpp">
+      <Filter>Intermediate\Reflection\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Camera\UCameraShakePattern.gen.cpp">
+      <Filter>Intermediate\Reflection\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Camera\UPerlinCameraShakePattern.gen.cpp">
       <Filter>Intermediate\Reflection\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Component\Movement\UInterpToMovementComponent.gen.cpp">
@@ -375,6 +462,9 @@
     <ClCompile Include="Intermediate\Reflection\Component\UTextRenderComponent.gen.cpp">
       <Filter>Intermediate\Reflection\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Editor\UEditorEngine.gen.cpp">
+      <Filter>Intermediate\Reflection\Editor</Filter>
+    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\AActor.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
@@ -465,8 +555,35 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\ATextRenderActor.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\ULevel.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GameFramework\UWorld.gen.cpp">
+      <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Misc\ObjViewer\UObjViewerEngine.gen.cpp">
+      <Filter>Intermediate\Reflection\Misc\ObjViewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Render\Resource\UMaterial.gen.cpp">
+      <Filter>Intermediate\Reflection\Render\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Render\Resource\UMaterialInstance.gen.cpp">
+      <Filter>Intermediate\Reflection\Render\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Render\Resource\UMaterialInterface.gen.cpp">
+      <Filter>Intermediate\Reflection\Render\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Render\Resource\UTexture.gen.cpp">
+      <Filter>Intermediate\Reflection\Render\Resource</Filter>
+    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Runtime\Script\UScriptComponent.gen.cpp">
       <Filter>Intermediate\Reflection\Runtime\Script</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Runtime\UEngine.gen.cpp">
+      <Filter>Intermediate\Reflection\Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Runtime\UGameEngine.gen.cpp">
+      <Filter>Intermediate\Reflection\Runtime</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Asset\EditorAssetService.cpp">
       <Filter>Source\Editor\Asset</Filter>
@@ -699,7 +816,13 @@
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimationStateMachine.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\StateMachineAnimInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\TimelinePlayer.cpp">
@@ -1047,6 +1170,9 @@
     <ClCompile Include="Source\Engine\Math\Vector4.cpp">
       <Filter>Source\Engine\Math</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Object\Class.cpp">
+      <Filter>Source\Engine\Object</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Object\EngineStatics.cpp">
       <Filter>Source\Engine\Object</Filter>
     </ClCompile>
@@ -1054,6 +1180,9 @@
       <Filter>Source\Engine\Object</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Object\Object.cpp">
+      <Filter>Source\Engine\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Object\Property.cpp">
       <Filter>Source\Engine\Object</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp">
@@ -1609,7 +1738,16 @@
     <ClInclude Include="Source\Engine\Animation\AnimTypes.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimationRuntime.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimationStateMachine.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Animation\CurvePlayback.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\StateMachineAnimInstance.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\TimelinePlayer.h">
@@ -1861,6 +1999,9 @@
     <ClInclude Include="Source\Engine\Core\Debug.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\DebugDetails.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Delegates\Delegate.h">
       <Filter>Source\Engine\Core\Delegates</Filter>
     </ClInclude>
@@ -2059,6 +2200,9 @@
     <ClInclude Include="Source\Engine\Object\ActorIterator.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Object\Class.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Object\EngineStatics.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
@@ -2068,13 +2212,10 @@
     <ClInclude Include="Source\Engine\Object\Object.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Object\ObjectFactory.h">
-      <Filter>Source\Engine\Object</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Object\ObjectSerialize.h">
+    <ClInclude Include="Source\Engine\Object\Property.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Common\ComPtr.h">

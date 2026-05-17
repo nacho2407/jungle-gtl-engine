@@ -21,9 +21,6 @@
 #undef GetCurrentTime
 #endif
 
-DEFINE_CLASS(UScriptComponent, UActorComponent)
-REGISTER_FACTORY(UScriptComponent)
-
 namespace
 {
 	UScriptComponent* ResolveLiveScriptComponent(uint32 ScriptComponentUUID)
@@ -179,30 +176,6 @@ namespace
 		return nullptr;
 	}
 
-	void* GetLuaPropertyValuePtr(FLuaScriptProperty& Prop)
-	{
-		switch (Prop.Type)
-		{
-		case EPropertyType::Int:
-			return &Prop.IntValue;
-
-		case EPropertyType::Float:
-			return &Prop.FloatValue;
-
-		case EPropertyType::Bool:
-			return &Prop.BoolValue;
-
-		case EPropertyType::String:
-			return &Prop.StringValue;
-
-		case EPropertyType::Vec3:
-			return &Prop.Vec3Value;
-
-		default:
-			return nullptr;
-		}
-	}
-
 	float GetLuaNumberField(const sol::table& Table, const char* UpperName, const char* LowerName, int Index)
 	{
 		sol::object Value = Table[UpperName];
@@ -266,30 +239,6 @@ namespace
 		}
 
 		return std::filesystem::last_write_time(Path);
-	}
-
-	static bool MakeLuaPropertyDescriptor(
-		FLuaScriptProperty& LuaProp,
-		FPropertyDescriptor& OutDesc)
-	{
-		void* ValuePtr = GetLuaPropertyValuePtr(LuaProp);
-		if (!ValuePtr)
-		{
-			return false;
-		}
-
-		OutDesc.Name = LuaProp.Name.c_str();
-		OutDesc.Type = LuaProp.Type;
-		OutDesc.ValuePtr = ValuePtr;
-
-		OutDesc.Min = LuaProp.bHasMin ? LuaProp.Min : 0.0f;
-		OutDesc.Max = LuaProp.bHasMax ? LuaProp.Max : 1.0f;
-		OutDesc.Speed = 0.1f;
-
-		OutDesc.EnumMeta = nullptr;
-		OutDesc.ExtraData = nullptr;
-
-		return true;
 	}
 
 	void CopyCameraShakePatternBase(
@@ -589,26 +538,6 @@ void UScriptComponent::Serialize(FArchive& Ar)
 		bLuaPropertiesScanned = false;
 	}
 }
-void UScriptComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UActorComponent::GetEditableProperties(OutProps);
-
-	// ScriptName이 바뀐 뒤 아직 Property를 안 읽었다면 여기서 갱신
-	if (!ScriptName.empty() && !bLuaPropertiesScanned)
-	{
-		ReloadLuaProperties();
-	}
-
-	for (FLuaScriptProperty& LuaProp : LuaProperties)
-	{
-		FPropertyDescriptor Desc{};
-		if (MakeLuaPropertyDescriptor(LuaProp, Desc))
-		{
-			OutProps.push_back(Desc);
-		}
-	}
-}
-
 void UScriptComponent::SetScriptName(const FString& InScriptName)
 {
 	if (ScriptName == InScriptName)

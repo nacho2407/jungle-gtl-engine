@@ -6,6 +6,7 @@
 struct FPoseContext;
 class UAnimInstance;
 class UAnimSequenceBase;
+class UAnimSingleNodeInstance;
 class UAnimationAsset;
 class UAnimationStateMachine;
 struct FAnimNotifyEvent;
@@ -29,7 +30,7 @@ class USkeletalMeshComponent : public USkinnedMeshComponent
 {
 public:
 	DECLARE_DELEGATE(FOnAnimNotify, USkeletalMeshComponent*, const FAnimNotifyEvent&)
-	DECLARE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
+	GENERATED_BODY(USkeletalMeshComponent, USkinnedMeshComponent)
 
 	USkeletalMeshComponent() = default;
 	~USkeletalMeshComponent() override = default;
@@ -63,6 +64,8 @@ public:
 	UAnimationAsset* GetAnimation() const { return AnimationToPlay; }
 
 	void Play(bool bLooping);
+
+	const FString& GetAnimationAssetPath() const { return AnimationAssetPath; }
 	void Stop();
 	void Pause();
 	void SetPlayRate(float InPlayRate);
@@ -87,6 +90,10 @@ public:
 	FOnAnimNotify OnAnimNotifyDelegate;
 
 private:
+	UAnimSingleNodeInstance* EnsureSingleNodeInstance();
+	void ApplyAnimationFromAssetPath();
+	void SyncAnimationAssetPathFromAnimation(UAnimationAsset* Animation);
+
 	UAnimInstance* AnimInstance = nullptr;
 	UAnimationStateMachine* AnimationStateMachine = nullptr;
 

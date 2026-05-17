@@ -195,7 +195,7 @@ static FString MakeUniqueEditorDuplicateActorName(UWorld* World, AActor* TargetA
 	FString BaseName = StripEditorGeneratedNameSuffixes(RequestedName);
 	if (BaseName.empty())
 	{
-		BaseName = TargetActor && TargetActor->GetTypeInfo() ? TargetActor->GetTypeInfo()->name : "Actor";
+		BaseName = TargetActor ? TargetActor->GetClassName() : "Actor";
 	}
 
 	int32 HighestSuffix = 0;
