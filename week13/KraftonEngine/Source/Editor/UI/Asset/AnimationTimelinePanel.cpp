@@ -5,17 +5,13 @@
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimDataModel.h"
 #include "Animation/AnimNotify_LogMessage.h"
-#include "Animation/BoneAnimationTrack.h"
-#include "Animation/RawAnimSequenceTrack.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Object/Object.h"
 
 #include <imgui.h>
 #include <algorithm>
 #include <cmath>
-#include <set>
 #include <string>
-#include <vector>
 
 // 일부 헤더가 Windows.h 를 끌어오면 GetCurrentTime 매크로가 호출을 가로챈다.
 #ifdef GetCurrentTime
@@ -127,7 +123,6 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 	}
 
 	static bool bNotifiesExpanded = true;
-	static bool bAdditiveExpanded = false;
 
 	const float PlayLength = Seq->GetPlayLength();
 	const float FrameRate  = Seq->GetFrameRate() > 0.0f ? Seq->GetFrameRate() : 30.0f;
@@ -164,8 +159,8 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 	}
 
 	// ── 노티파이 레인 우클릭 → "Add Notify" 팝업 ──
-	// 클릭 지점 시간에 인메모리로 노티파이를 추가해 타임라인에 즉시 표시한다.
-	// (트리거 로직/직렬화는 아직 미연결 — 표시·배치까지만)
+	// 클릭 지점 시간에 노티파이(+LogMessage 로직)를 추가 → DataModel 에 기록되어
+	// 직렬화되고, RefreshRuntimeNotifies 로 dispatch 캐시에 반영돼 프리뷰에서 실제 발사.
 	static float sPendingNotifyTime = 0.0f;
 	if (bNotifiesExpanded && ImGui::IsItemHovered() &&
 	    ImGui::IsMouseClicked(ImGuiMouseButton_Right))
@@ -437,55 +432,10 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 	DrawSimpleHeaderRow("Curves (0)", false, false);
 	RowY += RowH;
 
-	// Additive Layer Tracks: FBX 임포트 시 파싱된 SourceCurveLayers(본 트랙별 레이어)를
-	// 에셋 내장 데이터로 읽어서 표시 (읽기 전용)
-	struct FLayerInfo { std::string Name; float Weight; bool bSolo; };
-	std::vector<FLayerInfo> Layers;
-	{
-		std::set<std::string> Seen;
-		for (const FBoneAnimationTrack& BT : Seq->GetBoneTracks())
-		{
-			for (const FSourceTransformCurveLayer& L : BT.InternalTrackData.SourceCurveLayers)
-			{
-				const std::string Key = L.LayerName.empty() ? std::string("Layer") : L.LayerName;
-				if (Seen.insert(Key).second)
-				{
-					Layers.push_back({ Key, L.LayerWeight, L.bSolo });
-				}
-			}
-		}
-	}
-	const bool bHasLayers = !Layers.empty();
-	char AddLabel[48];
-	snprintf(AddLabel, sizeof(AddLabel), "Additive Layer Tracks (%d)", static_cast<int>(Layers.size()));
-
-	ImGui::SetCursorScreenPos(ImVec2(Origin.x, RowY));
-	ImGui::InvisibleButton("##additiveToggle", ImVec2(HeaderW, RowH));
-	if (ImGui::IsItemClicked() && bHasLayers)
-	{
-		bAdditiveExpanded = !bAdditiveExpanded;
-	}
-	DrawSimpleHeaderRow(AddLabel, bHasLayers, bAdditiveExpanded && bHasLayers);
+	// Additive Layer Tracks: 언리얼에서는 에디터 내 비파괴 보정(저작) 기능이며,
+	// 이 엔진에는 해당 저작 데이터 모델이 없으므로 빈 헤더만 표시 (읽기 전용).
+	DrawSimpleHeaderRow("Additive Layer Tracks", false, false);
 	RowY += RowH;
-
-	if (bAdditiveExpanded && bHasLayers)
-	{
-		for (const FLayerInfo& LI : Layers)
-		{
-			if (RowY + RowH > Origin.y + TrackAreaH) break;
-			DL->AddRectFilled(ImVec2(Origin.x, RowY),
-			                  ImVec2(Origin.x + HeaderW, RowY + RowH), ColHeaderBg);
-			char Buf[96];
-			snprintf(Buf, sizeof(Buf), "%s   w=%.2f%s",
-			         LI.Name.c_str(), LI.Weight, LI.bSolo ? "  [solo]" : "");
-			DL->AddText(ImVec2(Origin.x + 28.0f, RowY + RowH * 0.5f - 7.0f), ColRowText, Buf);
-			DL->AddRectFilled(ImVec2(CanvasX, RowY),
-			                  ImVec2(CanvasX + CanvasW, RowY + RowH), IM_COL32(24, 24, 24, 255));
-			DL->AddLine(ImVec2(CanvasX, RowY + RowH - 1.0f),
-			            ImVec2(CanvasX + CanvasW, RowY + RowH - 1.0f), ColSeparator);
-			RowY += RowH;
-		}
-	}
 
 	// Attributes: 엔진에 커스텀 본 어트리뷰트 데이터가 없어 비어있음 (읽기 전용)
 	DrawSimpleHeaderRow("Attributes", false, false);
