@@ -50,19 +50,6 @@ public:
 		Properties.push_back(Property);
 	}
 
-	virtual void GetProperties(TArray<FProperty>& OutProperties, bool bIncludeSuper = true) const
-	{
-		if (bIncludeSuper && SuperStruct)
-		{
-			SuperStruct->GetProperties(OutProperties, true);
-		}
-
-		for (const FProperty& Prop : Properties)
-		{
-			OutProperties.push_back(Prop);
-		}
-	}
-
 	virtual void GetPropertyRefs(TArray<const FProperty*>& OutProperties, bool bIncludeSuper = true) const
 	{
 		if (bIncludeSuper && SuperStruct)

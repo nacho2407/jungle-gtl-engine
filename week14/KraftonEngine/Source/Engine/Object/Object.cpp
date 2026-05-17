@@ -62,22 +62,22 @@ void UObject::Serialize(FArchive& Ar)
 
 void UObject::SerializeProperties(FArchive& Ar, uint32 RequiredFlags)
 {
-	TArray<FProperty> Properties;
-	GetClass()->GetProperties(Properties);
+	TArray<const FProperty*> Properties;
+	GetClass()->GetPropertyRefs(Properties);
 
-	for (const FProperty& Property : Properties)
+	for (const FProperty* Property : Properties)
 	{
-		if ((Property.Flags & RequiredFlags) != RequiredFlags)
+		if (!Property || (Property->Flags & RequiredFlags) != RequiredFlags)
 		{
 			continue;
 		}
 
-		if (!Property.GetValuePtrFor(this))
+		if (!Property->GetValuePtrFor(this))
 		{
 			continue;
 		}
 
-		Property.Serialize(this, Ar);
+		Property->Serialize(this, Ar);
 	}
 }
 
