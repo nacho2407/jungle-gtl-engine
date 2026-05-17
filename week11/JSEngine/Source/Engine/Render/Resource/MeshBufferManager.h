@@ -27,12 +27,9 @@ private:
 	TMap<EPrimitiveType, FMeshBuffer> MeshBufferMap;
 	TMap<const UStaticMesh*, FMeshBuffer> StaticMeshBufferMap[MAX_LOD];
     TMap<uint32, FMeshBuffer> ProcMeshBufferMap;
-	TMap<uint32, FMeshBuffer> SkeletalMeshBufferMap;
-	TMap<uint32, const USkeletalMesh*> SkeletalMeshSourceMap;
-
-public:
-
-private:
+	TMap<uint32, FMeshBuffer> CPUSkeletalMeshBufferMap;
+	TMap<uint32, const USkeletalMesh*> CPUSkeletalMeshSourceMap;
+	TMap<const USkeletalMesh*, FMeshBuffer> GPUSkeletalMeshBufferMap;
 
 public:
 	void Create(ID3D11Device* InDevice);
@@ -41,6 +38,9 @@ public:
 	FMeshBuffer& GetMeshBuffer(EPrimitiveType InPrimitiveType);
     FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0);
     // Key by component UUID and accept raw section data to avoid header coupling with ProceduralMeshComponent.
-    FMeshBuffer* GetProcMeshBuffer(uint32 ProcMeshCompUUID, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices);
-	FMeshBuffer* GetSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FSkeletalMeshVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload);
+	FMeshBuffer* GetProcMeshBuffer(uint32 ProcMeshCompUUID, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices);
+	FMeshBuffer* GetCPUSkinnedMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FSkeletalMeshVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload);
+	FMeshBuffer* GetGPUSkinningSourceBuffer(const USkeletalMesh* SkeletalMeshAsset);
+	void ReleaseCPUSkeletalMeshBuffers();
+	void ReleaseGPUSkeletalMeshBuffers();
 };

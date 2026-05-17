@@ -35,9 +35,6 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
             ApplyAnimationLocalPose(LocalPose);
         }
     }
-
-	// Pose가 바뀐 경우에만 실제 CPU skinning이 수행(dirty flag 이용)
-    EnsureSkinningUpdated();
 }
 
 void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InMode)
@@ -102,7 +99,7 @@ bool USkeletalMeshComponent::ApplyAnimationLocalPose(const TArray<FTransform>& L
     // Global pose, skinning matrices를 포함한 실제 posing 결과 반영은 USkinnedMeshComponent::EnsureSkinningUpdated에서 진행
 	// 효율을 위해 move semantics 사용
     CurrentLocalPose = std::move(LocalMatrices);
-    MarkSkinningDirty();
+    MarkPoseDirty();
     return true;
 }
 
@@ -125,7 +122,7 @@ bool USkeletalMeshComponent::RefreshAnimationPose()
         return false;
     }
 
-    EnsureSkinningUpdated();
+    EnsurePoseUpdated();
     return true;
 }
 
@@ -326,7 +323,7 @@ UAnimSingleNodeInstance* USkeletalMeshComponent::EnsureSingleNodeInstance()
 void USkeletalMeshComponent::ResetToBindPose()
 {
     InitializePoseFromBindPose();
-    MarkSkinningDirty();
+    MarkPoseDirty();
 }
 
 void USkeletalMeshComponent::SetBoneLocalTransform(int32 BoneIndex, const FMatrix& NewLocalTransform)
@@ -337,8 +334,7 @@ void USkeletalMeshComponent::SetBoneLocalTransform(int32 BoneIndex, const FMatri
     }
 
     CurrentLocalPose[BoneIndex] = NewLocalTransform;
-    UpdateCurrentGlobalPose();
-    MarkSkinningDirty();
+    MarkPoseDirty();
 }
 
 const FMatrix& USkeletalMeshComponent::GetBoneLocalTransform(int32 BoneIndex) const
@@ -356,6 +352,8 @@ const FMatrix& USkeletalMeshComponent::GetBoneLocalTransform(int32 BoneIndex) co
 
 FMatrix USkeletalMeshComponent::GetBoneGlobalTransform(int32 BoneIndex) const
 {
+    const_cast<USkeletalMeshComponent*>(this)->EnsurePoseUpdated();
+
     if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(CurrentGlobalPose.size()))
     {
         return FMatrix::Identity;
@@ -387,6 +385,7 @@ void USkeletalMeshComponent::SetBoneGlobalTransform(int32 BoneIndex, const FMatr
     FMatrix ParentGlobalTransform;
     if (ParentIndex >= 0)
     {
+        EnsurePoseUpdated();
         ParentGlobalTransform = CurrentGlobalPose[ParentIndex] * GetWorldMatrix();
     }
     else

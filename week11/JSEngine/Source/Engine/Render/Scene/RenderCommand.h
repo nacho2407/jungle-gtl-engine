@@ -281,7 +281,7 @@ struct FLineConstants
 
 // Blender/UE 본 와이어 — Start(부모) → End(자식) 옥타헤드론.
 // 양 끝점 sphere는 dispatch 측이 자동으로 함께 그린다.
-struct FBoneConstants
+struct FDebugBoneConstants
 {
 	FVector Start;
 	float   Padding0;
@@ -441,7 +441,7 @@ struct FRenderCommand
 		FPointLightConstants PointLight;
 		FSpotLightConstants SpotLight;
 		FLineConstants Line;
-		FBoneConstants Bone;
+		FDebugBoneConstants DebugBone;
 		FGridConstants Grid;
 		FFontConstants Font;
 		FSubUVConstants SubUV;
