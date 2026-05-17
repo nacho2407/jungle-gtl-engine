@@ -81,7 +81,7 @@ void UObject::SerializeProperties(FArchive& Ar, uint32 RequiredFlags)
 	}
 }
 
-void UObject::GetEditableProperties(TArray<FEditableProperty>& OutProps)
+void UObject::GetEditableProperties(TArray<FPropertyValue>& OutProps)
 {
 	PreGetEditableProperties();
 
@@ -101,7 +101,7 @@ void UObject::GetEditableProperties(TArray<FEditableProperty>& OutProps)
 
 		if(Property->GetValuePtrFor(this))
 		{
-			OutProps.push_back({ this, Property });
+			OutProps.push_back(Property->ToValue(this, this));
 		}
 	}
 }
