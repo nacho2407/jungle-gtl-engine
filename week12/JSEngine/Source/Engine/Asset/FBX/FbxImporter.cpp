@@ -130,34 +130,7 @@ FSkeletalMesh* FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStatic
     FSkeletalMesh* SkeletalMesh = new FSkeletalMesh();
     SkeletalMesh->PathFileName = Path;
 
-    TMap<FbxNode*, int32> BoneNodeToIndex;
-
-    bool bHasImportedSkinnedMesh = false;
-
-    if (FbxNode* RootNode = Scene->GetRootNode())
-    {
-        // 1-pass: skin deformer가 있는 mesh만 먼저 처리
-        for (int32 i = 0; i < RootNode->GetChildCount(); ++i)
-        {
-            CollectSkeletalMeshes(
-                RootNode->GetChild(i),
-                SkeletalMesh,
-                ESkeletalMeshImportPass::SkinnedMeshes,
-                BoneNodeToIndex,
-                bHasImportedSkinnedMesh);
-        }
-
-        // 2-pass: skin deformer가 없는 mesh 중 bone 아래에 붙은 mesh를 rigid mesh로 처리
-        for (int32 i = 0; i < RootNode->GetChildCount(); ++i)
-        {
-            CollectSkeletalMeshes(
-                RootNode->GetChild(i),
-                SkeletalMesh,
-                ESkeletalMeshImportPass::RigidAttachedMeshes,
-                BoneNodeToIndex,
-                bHasImportedSkinnedMesh);
-        }
-    }
+    ImportSkeletalSceneMeshes(Scene, SkeletalMesh);
 
     Manager->Destroy();
 

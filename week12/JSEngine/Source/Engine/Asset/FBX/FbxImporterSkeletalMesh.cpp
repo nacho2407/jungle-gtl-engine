@@ -3,10 +3,314 @@
 
 #include "Core/Logging/Log.h"
 
+#include <algorithm>
 #include <fbxsdk.h>
 
 using namespace fbxsdk;
 using namespace FFbxImporterInternal;
+
+namespace
+{
+    using FNodeSet = TMap<FbxNode*, bool>;
+    using FNodeBindPoseMap = TMap<FbxNode*, FbxAMatrix>;
+
+    bool IsFbxSkeletonNode(FbxNode* Node)
+    {
+        if (!Node)
+        {
+            return false;
+        }
+
+        FbxNodeAttribute* Attribute = Node->GetNodeAttribute();
+        return Attribute && Attribute->GetAttributeType() == FbxNodeAttribute::eSkeleton;
+    }
+
+    bool ContainsNode(const FNodeSet& Nodes, FbxNode* Node)
+    {
+        return Node && Nodes.find(Node) != Nodes.end();
+    }
+
+    bool HasPositiveClusterWeights(FbxCluster* Cluster)
+    {
+        if (!Cluster)
+        {
+            return false;
+        }
+
+        const int32 IndexCount = Cluster->GetControlPointIndicesCount();
+        double* Weights = Cluster->GetControlPointWeights();
+        if (IndexCount <= 0 || !Weights)
+        {
+            return false;
+        }
+
+        for (int32 Index = 0; Index < IndexCount; ++Index)
+        {
+            if (Weights[Index] > 0.0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void CollectSkinnedMeshBoneLinks(
+        FbxMesh* Mesh,
+        FNodeSet& OutWeightedBoneLinks,
+        FNodeBindPoseMap& OutExactBindPoseByNode,
+        int32& OutSkinnedMeshNodeCount)
+    {
+        if (!Mesh || Mesh->GetPolygonCount() <= 0)
+        {
+            return;
+        }
+
+        bool bMeshContributesSkin = false;
+        const int32 SkinCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
+        for (int32 SkinIndex = 0; SkinIndex < SkinCount; ++SkinIndex)
+        {
+            FbxSkin* Skin = static_cast<FbxSkin*>(Mesh->GetDeformer(SkinIndex, FbxDeformer::eSkin));
+            if (!Skin)
+            {
+                continue;
+            }
+
+            const int32 ClusterCount = Skin->GetClusterCount();
+            for (int32 ClusterIndex = 0; ClusterIndex < ClusterCount; ++ClusterIndex)
+            {
+                FbxCluster* Cluster = Skin->GetCluster(ClusterIndex);
+                if (!Cluster || !Cluster->GetLink() || !HasPositiveClusterWeights(Cluster))
+                {
+                    continue;
+                }
+
+                FbxNode* LinkNode = Cluster->GetLink();
+                OutWeightedBoneLinks[LinkNode] = true;
+
+                if (OutExactBindPoseByNode.find(LinkNode) == OutExactBindPoseByNode.end())
+                {
+                    FbxAMatrix LinkBindGlobal;
+                    Cluster->GetTransformLinkMatrix(LinkBindGlobal);
+                    OutExactBindPoseByNode[LinkNode] = LinkBindGlobal;
+                }
+
+                bMeshContributesSkin = true;
+            }
+        }
+
+        if (bMeshContributesSkin)
+        {
+            ++OutSkinnedMeshNodeCount;
+        }
+    }
+
+    void CollectSkinnedMeshBoneLinksRecursive(
+        FbxNode* Node,
+        FNodeSet& OutWeightedBoneLinks,
+        FNodeBindPoseMap& OutExactBindPoseByNode,
+        int32& OutSkinnedMeshNodeCount)
+    {
+        if (!Node)
+        {
+            return;
+        }
+
+        if (FbxMesh* Mesh = Node->GetMesh())
+        {
+            CollectSkinnedMeshBoneLinks(
+                Mesh,
+                OutWeightedBoneLinks,
+                OutExactBindPoseByNode,
+                OutSkinnedMeshNodeCount);
+        }
+
+        for (int32 ChildIndex = 0; ChildIndex < Node->GetChildCount(); ++ChildIndex)
+        {
+            CollectSkinnedMeshBoneLinksRecursive(
+                Node->GetChild(ChildIndex),
+                OutWeightedBoneLinks,
+                OutExactBindPoseByNode,
+                OutSkinnedMeshNodeCount);
+        }
+    }
+
+    FbxAMatrix ResolveBoneBindGlobal(
+        FbxNode* BoneNode,
+        const FNodeBindPoseMap& ExactBindPoseByNode)
+    {
+        auto ExactIt = ExactBindPoseByNode.find(BoneNode);
+        if (ExactIt != ExactBindPoseByNode.end())
+        {
+            return ExactIt->second;
+        }
+
+        if (BoneNode)
+        {
+            return BoneNode->EvaluateGlobalTransform();
+        }
+
+        FbxAMatrix Identity;
+        Identity.SetIdentity();
+        return Identity;
+    }
+
+    int32 RegisterBoneNodeIfMissing(
+        FbxNode* BoneNode,
+        FSkeletalMesh* InSkeletalMesh,
+        TMap<FbxNode*, int32>& BoneNodeToIndex,
+        const FNodeBindPoseMap& ExactBindPoseByNode)
+    {
+        if (!BoneNode || !InSkeletalMesh)
+        {
+            return -1;
+        }
+
+        auto ExistingIt = BoneNodeToIndex.find(BoneNode);
+        if (ExistingIt != BoneNodeToIndex.end())
+        {
+            return ExistingIt->second;
+        }
+
+        const int32 NewBoneIndex = static_cast<int32>(InSkeletalMesh->Bones.size());
+        BoneNodeToIndex[BoneNode] = NewBoneIndex;
+
+        const FbxAMatrix BindGlobal = ResolveBoneBindGlobal(BoneNode, ExactBindPoseByNode);
+
+        FBoneInfo Bone = {};
+        Bone.Name = FString(BoneNode->GetName());
+        Bone.ParentIndex = -1;
+        Bone.GlobalBindTransform = ToFMatrix(BindGlobal);
+        Bone.InverseBindPose = Bone.GlobalBindTransform.GetInverse();
+        Bone.LocalBindTransform = Bone.GlobalBindTransform;
+
+        InSkeletalMesh->Bones.push_back(Bone);
+        return NewBoneIndex;
+    }
+
+    void RegisterBoneChainForWeightedLink(
+        FbxNode* LinkNode,
+        FSkeletalMesh* InSkeletalMesh,
+        TMap<FbxNode*, int32>& BoneNodeToIndex,
+        const FNodeSet& WeightedBoneLinks,
+        const FNodeBindPoseMap& ExactBindPoseByNode)
+    {
+        if (!LinkNode || !InSkeletalMesh)
+        {
+            return;
+        }
+
+        TArray<FbxNode*> Chain;
+        FbxNode* Current = LinkNode;
+        while (Current && Current->GetParent())
+        {
+            if (Current == LinkNode || IsFbxSkeletonNode(Current) || ContainsNode(WeightedBoneLinks, Current))
+            {
+                Chain.push_back(Current);
+            }
+
+            Current = Current->GetParent();
+        }
+
+        std::reverse(Chain.begin(), Chain.end());
+        for (FbxNode* BoneNode : Chain)
+        {
+            RegisterBoneNodeIfMissing(
+                BoneNode,
+                InSkeletalMesh,
+                BoneNodeToIndex,
+                ExactBindPoseByNode);
+        }
+    }
+
+    void RegisterSkeletalBoneSet(
+        FSkeletalMesh* InSkeletalMesh,
+        TMap<FbxNode*, int32>& BoneNodeToIndex,
+        const FNodeSet& WeightedBoneLinks,
+        const FNodeBindPoseMap& ExactBindPoseByNode)
+    {
+        for (const auto& Pair : WeightedBoneLinks)
+        {
+            RegisterBoneChainForWeightedLink(
+                Pair.first,
+                InSkeletalMesh,
+                BoneNodeToIndex,
+                WeightedBoneLinks,
+                ExactBindPoseByNode);
+        }
+    }
+}
+
+bool FFbxImporter::ImportSkeletalSceneMeshes(FbxScene* Scene, FSkeletalMesh* InSkeletalMesh)
+{
+    if (!Scene || !InSkeletalMesh)
+    {
+        return false;
+    }
+
+    FbxNode* RootNode = Scene->GetRootNode();
+    if (!RootNode)
+    {
+        return false;
+    }
+
+    TMap<FbxNode*, int32> BoneNodeToIndex;
+    FNodeSet WeightedBoneLinks;
+    FNodeBindPoseMap ExactBindPoseByNode;
+    int32 SkinnedMeshNodeCount = 0;
+
+    // Pre-pass: FBX 안의 모든 skinned mesh를 먼저 훑어 전체 skeleton bone set을 만든다.
+    // 이렇게 해야 여러 mesh node가 같은 skeleton을 공유하거나, 어떤 parent bone이 직접 weight를
+    // 받지 않는 경우에도 animation track 이름과 skeletal mesh bone 이름이 안정적으로 맞는다.
+    for (int32 ChildIndex = 0; ChildIndex < RootNode->GetChildCount(); ++ChildIndex)
+    {
+        CollectSkinnedMeshBoneLinksRecursive(
+            RootNode->GetChild(ChildIndex),
+            WeightedBoneLinks,
+            ExactBindPoseByNode,
+            SkinnedMeshNodeCount);
+    }
+
+    RegisterSkeletalBoneSet(
+        InSkeletalMesh,
+        BoneNodeToIndex,
+        WeightedBoneLinks,
+        ExactBindPoseByNode);
+
+    bool bHasImportedSkinnedMesh = false;
+
+    // 1-pass: skin deformer가 있는 mesh들을 모두 같은 FSkeletalMesh vertex/index buffer로 합친다.
+    for (int32 ChildIndex = 0; ChildIndex < RootNode->GetChildCount(); ++ChildIndex)
+    {
+        CollectSkeletalMeshes(
+            RootNode->GetChild(ChildIndex),
+            InSkeletalMesh,
+            ESkeletalMeshImportPass::SkinnedMeshes,
+            BoneNodeToIndex,
+            bHasImportedSkinnedMesh);
+    }
+
+    // 2-pass: skin deformer가 없는 mesh 중 bone 아래에 붙은 mesh를 rigid part로 합친다.
+    for (int32 ChildIndex = 0; ChildIndex < RootNode->GetChildCount(); ++ChildIndex)
+    {
+        CollectSkeletalMeshes(
+            RootNode->GetChild(ChildIndex),
+            InSkeletalMesh,
+            ESkeletalMeshImportPass::RigidAttachedMeshes,
+            BoneNodeToIndex,
+            bHasImportedSkinnedMesh);
+    }
+
+    UE_LOG("[FbxImporter] Skeletal scene merged | SkinnedMeshNodes=%d | WeightedLinks=%zu | Bones=%zu | Vertices=%zu | Indices=%zu | Sections=%zu",
+           SkinnedMeshNodeCount,
+           WeightedBoneLinks.size(),
+           InSkeletalMesh->Bones.size(),
+           InSkeletalMesh->Vertices.size(),
+           InSkeletalMesh->Indices.size(),
+           InSkeletalMesh->Sections.size());
+
+    return bHasImportedSkinnedMesh;
+}
 
 void FFbxImporter::CollectSkeletalMeshes(
     FbxNode* Node,

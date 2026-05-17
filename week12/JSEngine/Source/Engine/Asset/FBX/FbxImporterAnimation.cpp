@@ -179,6 +179,79 @@ namespace
         }
     }
 
+    bool ClusterHasPositiveWeight(FbxCluster* Cluster)
+    {
+        if (!Cluster)
+        {
+            return false;
+        }
+
+        const int32 IndexCount = Cluster->GetControlPointIndicesCount();
+        double* Weights = Cluster->GetControlPointWeights();
+        if (IndexCount <= 0 || !Weights)
+        {
+            return false;
+        }
+
+        for (int32 Index = 0; Index < IndexCount; ++Index)
+        {
+            if (Weights[Index] > 0.0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void CollectSkinClusterLinkNodes(FbxMesh* Mesh, TArray<FbxNode*>& OutNodes)
+    {
+        if (!Mesh)
+        {
+            return;
+        }
+
+        const int32 SkinCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
+        for (int32 SkinIndex = 0; SkinIndex < SkinCount; ++SkinIndex)
+        {
+            FbxSkin* Skin = static_cast<FbxSkin*>(Mesh->GetDeformer(SkinIndex, FbxDeformer::eSkin));
+            if (!Skin)
+            {
+                continue;
+            }
+
+            const int32 ClusterCount = Skin->GetClusterCount();
+            for (int32 ClusterIndex = 0; ClusterIndex < ClusterCount; ++ClusterIndex)
+            {
+                FbxCluster* Cluster = Skin->GetCluster(ClusterIndex);
+                if (!Cluster || !Cluster->GetLink() || !ClusterHasPositiveWeight(Cluster))
+                {
+                    continue;
+                }
+
+                AddUniqueNode(OutNodes, Cluster->GetLink());
+            }
+        }
+    }
+
+    void CollectSkinClusterLinkNodesRecursive(FbxNode* Node, TArray<FbxNode*>& OutNodes)
+    {
+        if (!Node)
+        {
+            return;
+        }
+
+        if (FbxMesh* Mesh = Node->GetMesh())
+        {
+            CollectSkinClusterLinkNodes(Mesh, OutNodes);
+        }
+
+        for (int32 ChildIndex = 0; ChildIndex < Node->GetChildCount(); ++ChildIndex)
+        {
+            CollectSkinClusterLinkNodesRecursive(Node->GetChild(ChildIndex), OutNodes);
+        }
+    }
+
     void CollectAnimatedTransformNodesRecursive(FbxNode* Node, FbxAnimStack* Stack, TArray<FbxNode*>& OutNodes)
     {
         if (!Node)
@@ -213,7 +286,14 @@ namespace
             CollectSkeletonNodesRecursive(RootNode->GetChild(ChildIndex), Nodes);
         }
 
-        // skeleton attribute가 없는 FBX도 있으므로, 그 경우에는 transform curve가 있는 node를 fallback으로 사용한다.
+        for (int32 ChildIndex = 0; ChildIndex < RootNode->GetChildCount(); ++ChildIndex)
+        {
+            // 일부 FBX는 cluster link node가 eSkeleton attribute를 갖지 않는다.
+            // Skeletal mesh import는 cluster link를 bone으로 쓰므로 animation track 후보에도 추가한다.
+            CollectSkinClusterLinkNodesRecursive(RootNode->GetChild(ChildIndex), Nodes);
+        }
+
+        // skeleton attribute가 없고 skin cluster도 없는 FBX도 있으므로, 그 경우에는 transform curve가 있는 node를 fallback으로 사용한다.
         if (Nodes.empty())
         {
             for (int32 ChildIndex = 0; ChildIndex < RootNode->GetChildCount(); ++ChildIndex)
