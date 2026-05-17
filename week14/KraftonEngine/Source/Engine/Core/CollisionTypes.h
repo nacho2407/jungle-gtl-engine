@@ -1,7 +1,11 @@
-#pragma once
+﻿#pragma once
 #include "Math/Vector.h"
 #include "Core/CoreTypes.h"
 #include "Core/PropertyTypes.h"
+#include "Object/ObjectMacros.h"
+#include "Object/UStruct.h"
+
+#include "Source/Engine/Core/CollisionTypes.generated.h"
 
 class AActor;
 class UPrimitiveComponent;
@@ -78,8 +82,17 @@ inline const char* GCollisionEnabledNames[] =
 // ============================================================
 // FCollisionResponseContainer — 채널별 응답 테이블
 // ============================================================
+USTRUCT()
 struct FCollisionResponseContainer
 {
+	GENERATED_BODY()
+
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="WorldStatic", Member=Responses[0], Type=Enum, EnumNames=GCollisionResponseNames, EnumCount=static_cast<uint32>(ECollisionResponse::COUNT), EnumType=ECollisionResponse);
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="WorldDynamic", Member=Responses[1], Type=Enum, EnumNames=GCollisionResponseNames, EnumCount=static_cast<uint32>(ECollisionResponse::COUNT), EnumType=ECollisionResponse);
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Pawn", Member=Responses[2], Type=Enum, EnumNames=GCollisionResponseNames, EnumCount=static_cast<uint32>(ECollisionResponse::COUNT), EnumType=ECollisionResponse);
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Projectile", Member=Responses[3], Type=Enum, EnumNames=GCollisionResponseNames, EnumCount=static_cast<uint32>(ECollisionResponse::COUNT), EnumType=ECollisionResponse);
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Trigger", Member=Responses[4], Type=Enum, EnumNames=GCollisionResponseNames, EnumCount=static_cast<uint32>(ECollisionResponse::COUNT), EnumType=ECollisionResponse);
+
 	ECollisionResponse Responses[static_cast<int32>(ECollisionChannel::MAX)];
 
 	FCollisionResponseContainer()
@@ -110,22 +123,6 @@ struct FCollisionResponseContainer
 		return Responses[static_cast<int32>(Channel)];
 	}
 
-	// 에디터용 자기기술 함수 — Struct 프로퍼티 시스템에서 사용
-	static void DescribeProperties(void* Ptr, std::vector<FPropertyValue>& OutProps)
-	{
-		auto* Container = static_cast<FCollisionResponseContainer*>(Ptr);
-		for (int32 i = 0; i < static_cast<int32>(ECollisionChannel::ActiveCount); ++i)
-		{
-			FPropertyValue Desc;
-			Desc.Name = GCollisionChannelNames[i];
-			Desc.Type = EPropertyType::Enum;
-			Desc.ValuePtr = &Container->Responses[i];
-			Desc.EnumNames = GCollisionResponseNames;
-			Desc.EnumCount = static_cast<uint32>(ECollisionResponse::COUNT);
-			Desc.EnumSize = sizeof(ECollisionResponse);
-			OutProps.push_back(Desc);
-		}
-	}
 };
 
 // ============================================================

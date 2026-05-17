@@ -238,7 +238,7 @@ protected:
 	ECollisionEnabled CollisionEnabled = ECollisionEnabled::NoCollision;
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Object Type", Type=Enum, EnumNames=GCollisionChannelNames, EnumCount=static_cast<uint32>(ECollisionChannel::ActiveCount), EnumType=ECollisionChannel)
 	ECollisionChannel ObjectType = ECollisionChannel::WorldStatic;
-	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Responses", Type=Struct, StructFunc=&FCollisionResponseContainer::DescribeProperties)
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Responses", Type=Struct)
 	FCollisionResponseContainer ResponseContainer; // 기본: 전 채널 Block
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
 

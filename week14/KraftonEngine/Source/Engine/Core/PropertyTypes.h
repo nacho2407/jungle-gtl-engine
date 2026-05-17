@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <vector>
 #include <string>
 #include "Core/CoreTypes.h"
 
@@ -30,7 +29,7 @@ enum class EPropertyType : uint8_t
 	MaterialSlotArray, // TArray<FMaterialSlot> — 메시 섹션별 머티리얼 경로
 	Enum,
 	Vec3Array,
-	Struct,    // 자기기술 구조체 — StructFunc로 Children 생성
+	Struct,    // 자기기술 구조체 — StructType의 property metadata로 Children 생성
 	Script,
 };
 
@@ -43,9 +42,6 @@ struct FMaterialSlot
 struct FPropertyValue;
 struct FProperty;
 class UObject;
-
-// 구조체 자기기술 함수: 구조체 포인터로부터 하위 프로퍼티를 생성
-using FStructPropertyFunc = void(*)(void* StructPtr, std::vector<FPropertyValue>& OutProps);
 
 // 객체 인스턴스에 바인딩된 프로퍼티 값 뷰
 struct FPropertyValue
@@ -66,7 +62,6 @@ struct FPropertyValue
 	uint32		 EnumSize  = sizeof(int32); // underlying type 크기 (uint8 enum은 1)
 
 	// Struct Metadata
-	FStructPropertyFunc StructFunc = nullptr;
 	UStruct* StructType = nullptr;
 
 	std::string   DisplayName;   // 에디터 표시명. 비어 있으면 Name 사용.
@@ -77,6 +72,7 @@ struct FPropertyValue
 	json::JSON Serialize() const;
 	void	   Deserialize(json::JSON& Value);
 	void	   Serialize(FArchive& Ar) const;
+	void	   GetStructChildren(TArray<FPropertyValue>& OutProps) const;
 };
 
 enum EPropertyFlags : uint32
@@ -127,7 +123,6 @@ struct FProperty
 	uint32 EnumCount = 0;
 	uint32 EnumSize = sizeof(int32);
 
-	FStructPropertyFunc StructFunc = nullptr;
 	UStruct* StructType = nullptr;
 	const char* DisplayName = nullptr;
 	TMap<FString, FString> Metadata;
@@ -138,7 +133,7 @@ struct FProperty
 		return Container ? reinterpret_cast<uint8*>(Container) + Offset : nullptr;
 	}
 
-	inline FPropertyValue ToValue(UObject* Object) const
+	inline FPropertyValue ToValue(void* Container) const
 	{
 		FPropertyValue Desc;
 		Desc.Name = this->Name ? this->Name : "";
@@ -146,14 +141,13 @@ struct FProperty
 		Desc.Category = this->Category ? this->Category : "";
 		Desc.DisplayName = this->DisplayName ? this->DisplayName : Desc.Name;
 		Desc.Metadata = this->Metadata;
-		Desc.ValuePtr = GetValuePtrFor(Object);
+		Desc.ValuePtr = GetValuePtrFor(Container);
 		Desc.Min = this->Min;
 		Desc.Max = this->Max;
 		Desc.Speed = this->Speed;
 		Desc.EnumNames = this->EnumNames;
 		Desc.EnumCount = this->EnumCount;
 		Desc.EnumSize = this->EnumSize;
-		Desc.StructFunc = this->StructFunc;
 		Desc.StructType = this->StructType;
 		return Desc;
 	}
