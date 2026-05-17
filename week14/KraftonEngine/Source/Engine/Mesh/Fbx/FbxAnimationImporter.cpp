@@ -1156,6 +1156,16 @@ bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext&
 
 		FFbxLayeredBakeStats BakeStats;
 
+		TArray<FTransform> BindLocalTransforms;
+		BindLocalTransforms.resize(Context.Bones.size());
+		for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Context.Bones.size()); ++BoneIndex)
+		{
+			BindLocalTransforms[BoneIndex] = FAnimationRuntime::DecomposeMatrix(Context.Bones[BoneIndex].LocalMatrix);
+		}
+
+		TArray<FTransform> BoneLocalTransforms;
+		BoneLocalTransforms.reserve(Context.Bones.size());
+
 		for (int32 FrameIndex = 0; FrameIndex < NumFrames; ++FrameIndex)
 		{
 			const double LocalSeconds = (NumFrames > 1)
@@ -1165,14 +1175,8 @@ bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext&
 			FbxTime Time;
 			Time.SetSecondDouble(StartSeconds + LocalSeconds);
 
-			// 기본값은 bind/local pose다. FBX node가 있는 bone은 아래에서 curve 평가값으로 덮어쓴다.
-			TArray<FTransform> BoneLocalTransforms;
-			BoneLocalTransforms.resize(Context.Bones.size());
-
-			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Context.Bones.size()); ++BoneIndex)
-			{
-				BoneLocalTransforms[BoneIndex] = FAnimationRuntime::DecomposeMatrix(Context.Bones[BoneIndex].LocalMatrix);
-			}
+			// 기본값은 미리 계산한 bind/local pose다. FBX node가 있는 bone은 아래에서 curve 평가값으로 덮어쓴다.
+			BoneLocalTransforms = BindLocalTransforms;
 
 			for (const auto& Pair : Context.BoneNodeToIndex)
 			{
