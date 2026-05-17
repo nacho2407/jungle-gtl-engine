@@ -162,11 +162,11 @@ namespace
 
         FRenderCommand Cmd = {};
         Cmd.Type = ERenderCommandType::DebugBone;
-        Cmd.Constants.Bone.Start               = ParentWorld.GetTranslation();
-        Cmd.Constants.Bone.End                 = ChildWorld.GetTranslation();
-        Cmd.Constants.Bone.Color               = Color;
-        Cmd.Constants.Bone.WidthRatio          = WidthRatio;
-        Cmd.Constants.Bone.EndpointRadiusRatio = EndpointRatio;
+        Cmd.Constants.DebugBone.Start               = ParentWorld.GetTranslation();
+        Cmd.Constants.DebugBone.End                 = ChildWorld.GetTranslation();
+        Cmd.Constants.DebugBone.Color               = Color;
+        Cmd.Constants.DebugBone.WidthRatio          = WidthRatio;
+        Cmd.Constants.DebugBone.EndpointRadiusRatio = EndpointRatio;
         RenderBus.AddCommand(ERenderPass::EditorOverlay, Cmd);
         return true;
     }
