@@ -219,6 +219,7 @@ void FEditorViewerWindowWidget::Shutdown()
     PreviewMeshPathBufferSource.clear();
     PreviewMeshPathBuffer[0] = '\0';
     SelectedAnimTrackIndex = -1;
+    CachedAnimSequence = nullptr;
 
     Viewer = nullptr;
     bOpen = false;
@@ -689,35 +690,37 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 	if (Viewer->IsAnimationSequenceViewer())
 	{
 		CachedMesh = MeshData;
+		UAnimSequence* Sequence = Viewer->GetAnimSequence();
+		if (CachedAnimSequence != Sequence)
+		{
+			CachedAnimSequence = Sequence;
+			SelectedAnimTrackIndex = -1;
+		}
 
-		ImGui::BeginChild("AnimSequencePanel", ImVec2(LeftPanelWidth, 0), true);
-		RenderAnimSequenceLeftPanel(Viewer->GetAnimSequence(), SkelMeshComp);
+		RenderAnimSequenceToolbar(Sequence);
+
+		const float TimelineHeight = 170.0f;
+		ImVec2 WorkSize = ImGui::GetContentRegionAvail();
+		const float ViewAreaHeight = std::max(180.0f, WorkSize.y - TimelineHeight - ImGui::GetStyle().ItemSpacing.y);
+		const float DetailsWidth = std::clamp(RightPanelWidth, 220.0f, std::max(220.0f, WorkSize.x * 0.4f));
+		const float ViewWidth = std::max(220.0f, WorkSize.x - DetailsWidth - ImGui::GetStyle().ItemSpacing.x);
+
+		RenderViewportPanel(SceneViewport, SRV, ImVec2(ViewWidth, ViewAreaHeight));
+
+		ImGui::SameLine();
+		ImGui::BeginChild("AnimSequenceDetailsPanel", ImVec2(DetailsWidth, ViewAreaHeight), true);
+		RenderAnimSequenceDetails(Sequence, SkeletalMesh);
 		ImGui::EndChild();
 
-		ImGui::SameLine();
-		ImGui::Button("##left_splitter", ImVec2(2.0f, -1.0f));
-		if (ImGui::IsItemActive())
-		{
-			LeftPanelWidth += ImGui::GetIO().MouseDelta.x;
-			LeftPanelWidth = std::clamp(LeftPanelWidth, 140.0f, FullSize.x * 0.45f);
-		}
-		ImGui::SameLine();
-
-		RenderViewportPanel(SceneViewport, SRV, ImVec2(CenterWidth, 0.0f));
-
-		ImGui::SameLine();
-		ImGui::Button("##right_splitter", ImVec2(2.0f, -1.0f));
-		if (ImGui::IsItemActive())
-		{
-			RightPanelWidth -= ImGui::GetIO().MouseDelta.x;
-			RightPanelWidth = std::clamp(RightPanelWidth, 140.0f, FullSize.x * 0.45f);
-		}
-		ImGui::SameLine();
-
-		ImGui::BeginChild("AnimSequenceDetailsPanel", ImVec2(RightPanelWidth, 0), true);
-		RenderAnimSequenceRightPanel(Viewer->GetAnimSequence(), SkeletalMesh);
+		ImGui::BeginChild("AnimSequenceTimelinePanel", ImVec2(0.0f, 0.0f), true);
+		RenderAnimSequenceTimeline(Sequence);
 		ImGui::EndChild();
 		return;
+	}
+
+	if (CachedAnimSequence)
+	{
+		CachedAnimSequence = nullptr;
 	}
 
 	RenderSkeletonLeftPanel(SkelMeshComp, MeshData);
@@ -891,6 +894,231 @@ void FEditorViewerWindowWidget::SyncPreviewMeshPathBuffer()
 
 	PreviewMeshPathBufferSource = Path;
 	snprintf(PreviewMeshPathBuffer, sizeof(PreviewMeshPathBuffer), "%s", Path.c_str());
+}
+
+void FEditorViewerWindowWidget::RenderAnimSequenceToolbar(UAnimSequence* Sequence)
+{
+	constexpr ImGuiWindowFlags ToolbarFlags =
+		ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoScrollWithMouse;
+	ImGui::BeginChild("AnimSequenceToolbar", ImVec2(0.0f, 44.0f), false, ToolbarFlags);
+	ImGui::SetCursorPos(ImVec2(8.0f, 7.0f));
+
+	if (!Sequence || !Viewer)
+	{
+		ImGui::TextDisabled("Animation sequence is not loaded.");
+		ImGui::EndChild();
+		return;
+	}
+
+	const bool bPlaying = Viewer->IsAnimationPlaying();
+	if (ImGui::Button(bPlaying ? "Pause" : "Play", ImVec2(72.0f, 0.0f)))
+	{
+		Viewer->SetAnimationPlaying(!bPlaying);
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Stop", ImVec2(64.0f, 0.0f)))
+	{
+		Viewer->SetAnimationPlaying(false);
+		Viewer->SetAnimationTime(0.0f);
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Restart", ImVec2(78.0f, 0.0f)))
+	{
+		Viewer->RestartAnimation();
+	}
+
+	ImGui::SameLine(0.0f, 14.0f);
+	bool bLooping = Viewer->IsAnimationLooping();
+	if (ImGui::Checkbox("Loop", &bLooping))
+	{
+		Viewer->SetAnimationLooping(bLooping);
+	}
+
+	ImGui::SameLine(0.0f, 14.0f);
+	float PlayRate = Viewer->GetAnimationPlayRate();
+	ImGui::SetNextItemWidth(96.0f);
+	if (ImGui::DragFloat("Rate", &PlayRate, 0.01f, -4.0f, 4.0f, "%.2f"))
+	{
+		Viewer->SetAnimationPlayRate(PlayRate);
+	}
+
+	ImGui::SameLine(0.0f, 18.0f);
+	const float CurrentTime = Viewer->GetAnimationCurrentTime();
+	const float Length = std::max(0.0f, Viewer->GetAnimationLength());
+	ImGui::Text("%.3f / %.3f sec", CurrentTime, Length);
+
+	ImGui::EndChild();
+}
+
+void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequence)
+{
+	ImGui::TextDisabled("Timeline");
+	if (!Sequence)
+	{
+		ImGui::SameLine();
+		ImGui::TextDisabled("No sequence");
+		return;
+	}
+
+	const float Length = std::max(0.0f, Sequence->GetPlayLength());
+	const UAnimDataModel* DataModel = Sequence->GetDataModel();
+	const float FrameRate = DataModel ? DataModel->GetFrameRate().AsDecimal() : 0.0f;
+	const int32 FrameCount = DataModel ? DataModel->GetNumberOfFrames() : 0;
+
+	ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
+	CanvasSize.y = std::max(CanvasSize.y, 108.0f);
+	CanvasSize.x = std::max(CanvasSize.x, 1.0f);
+	ImGui::InvisibleButton("##AnimTimelineCanvas", CanvasSize);
+
+	const ImVec2 Min = ImGui::GetItemRectMin();
+	const ImVec2 Max = ImGui::GetItemRectMax();
+	const bool bHovered = ImGui::IsItemHovered();
+	const bool bActive = ImGui::IsItemActive();
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	const ImU32 BgColor = ImGui::GetColorU32(ImVec4(0.075f, 0.082f, 0.100f, 1.0f));
+	const ImU32 TrackColor = ImGui::GetColorU32(ImVec4(0.105f, 0.116f, 0.140f, 1.0f));
+	const ImU32 LineColor = ImGui::GetColorU32(ImVec4(0.32f, 0.35f, 0.42f, 1.0f));
+	const ImU32 MajorLineColor = ImGui::GetColorU32(ImVec4(0.46f, 0.50f, 0.58f, 1.0f));
+	const ImU32 TextColor = ImGui::GetColorU32(ImVec4(0.72f, 0.76f, 0.84f, 1.0f));
+	const ImU32 PlayheadColor = ImGui::GetColorU32(ImVec4(0.95f, 0.28f, 0.24f, 1.0f));
+
+	DrawList->AddRectFilled(Min, Max, BgColor, 4.0f);
+	const float RulerY = Min.y + 28.0f;
+	const float TrackTop = Min.y + 54.0f;
+	const float TrackBottom = Max.y - 18.0f;
+	DrawList->AddRectFilled(ImVec2(Min.x + 8.0f, TrackTop), ImVec2(Max.x - 8.0f, TrackBottom), TrackColor, 4.0f);
+
+	const float TrackMinX = Min.x + 12.0f;
+	const float TrackMaxX = Max.x - 12.0f;
+	const float TrackWidth = std::max(1.0f, TrackMaxX - TrackMinX);
+	auto TimeToX = [&](float Time)
+	{
+		return TrackMinX + (Length > 0.0f ? std::clamp(Time / Length, 0.0f, 1.0f) : 0.0f) * TrackWidth;
+	};
+	auto XToTime = [&](float X)
+	{
+		return Length > 0.0f ? std::clamp((X - TrackMinX) / TrackWidth, 0.0f, 1.0f) * Length : 0.0f;
+	};
+
+	const int32 DesiredTicks = std::max(2, static_cast<int32>(TrackWidth / 90.0f));
+	for (int32 Tick = 0; Tick <= DesiredTicks; ++Tick)
+	{
+		const float Alpha = static_cast<float>(Tick) / static_cast<float>(DesiredTicks);
+		const float X = TrackMinX + Alpha * TrackWidth;
+		const float Time = Alpha * Length;
+		const bool bMajor = (Tick % 2) == 0;
+		DrawList->AddLine(ImVec2(X, RulerY), ImVec2(X, TrackBottom), bMajor ? MajorLineColor : LineColor, bMajor ? 1.2f : 1.0f);
+		char Label[32];
+		snprintf(Label, sizeof(Label), "%.2f", Time);
+		DrawList->AddText(ImVec2(X + 3.0f, Min.y + 8.0f), TextColor, Label);
+	}
+
+	if (FrameRate > 0.0f && FrameCount > 0)
+	{
+		const int32 FrameStep = std::max(1, static_cast<int32>(FrameCount / std::max(1.0f, TrackWidth / 18.0f)));
+		for (int32 Frame = 0; Frame <= FrameCount; Frame += FrameStep)
+		{
+			const float Time = static_cast<float>(Frame) / FrameRate;
+			const float X = TimeToX(Time);
+			DrawList->AddLine(ImVec2(X, RulerY + 14.0f), ImVec2(X, RulerY + 20.0f), LineColor, 1.0f);
+		}
+	}
+
+	const ImVec2 MousePos = ImGui::GetIO().MousePos;
+	if (bHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+	{
+		if (Viewer)
+		{
+			Viewer->SetAnimationTime(XToTime(MousePos.x));
+		}
+	}
+	if (bActive && ImGui::IsMouseDragging(ImGuiMouseButton_Left) && Viewer)
+	{
+		Viewer->SetAnimationTime(XToTime(MousePos.x));
+	}
+
+	const float CurrentTime = Viewer ? Viewer->GetAnimationCurrentTime() : 0.0f;
+	const float PlayheadX = TimeToX(CurrentTime);
+	DrawList->AddLine(ImVec2(PlayheadX, Min.y + 4.0f), ImVec2(PlayheadX, Max.y - 4.0f), PlayheadColor, 2.0f);
+	DrawList->AddTriangleFilled(
+		ImVec2(PlayheadX, Min.y + 4.0f),
+		ImVec2(PlayheadX - 6.0f, Min.y + 16.0f),
+		ImVec2(PlayheadX + 6.0f, Min.y + 16.0f),
+		PlayheadColor);
+}
+
+void FEditorViewerWindowWidget::RenderAnimSequenceDetails(UAnimSequence* Sequence, USkeletalMesh* PreviewMesh)
+{
+	ImGui::Text("Animation");
+	ImGui::Separator();
+
+	if (!Sequence)
+	{
+		ImGui::TextDisabled("No animation sequence.");
+		return;
+	}
+
+	const UAnimDataModel* DataModel = Sequence->GetDataModel();
+	ImGui::TextWrapped("%s", GetViewerAssetLabel(Viewer).c_str());
+	ImGui::Text("Length: %.3f sec", Sequence->GetPlayLength());
+	if (DataModel)
+	{
+		ImGui::Text("Sample Rate: %.3f", DataModel->GetFrameRate().AsDecimal());
+		ImGui::Text("Frames: %d", DataModel->GetNumberOfFrames());
+		ImGui::Text("Tracks: %d", static_cast<int32>(DataModel->GetBoneAnimationTracks().size()));
+	}
+
+	ImGui::Spacing();
+	ImGui::TextDisabled("Preview Mesh");
+	SyncPreviewMeshPathBuffer();
+	if (PreviewMesh)
+	{
+		ImGui::TextWrapped("Loaded: %s", PreviewMesh->GetAssetPathFileName().c_str());
+	}
+	else
+	{
+		ImGui::TextWrapped("No compatible skeletal mesh is currently previewing it.");
+	}
+	ImGui::SetNextItemWidth(-1.0f);
+	ImGui::InputText("##PreviewMeshPath", PreviewMeshPathBuffer, sizeof(PreviewMeshPathBuffer));
+	if (ImGui::Button("Load Preview Mesh"))
+	{
+		PreviewMeshPathBufferSource = PreviewMeshPathBuffer;
+		Viewer->SetAnimationSequencePreviewMesh(PreviewMeshPathBufferSource);
+	}
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	if (ImGui::CollapsingHeader("Source", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		if (!Sequence->GetSourceFilePath().empty())
+		{
+			ImGui::TextWrapped("File: %s", Sequence->GetSourceFilePath().c_str());
+		}
+		if (!Sequence->GetSourceStackName().empty())
+		{
+			ImGui::TextWrapped("Stack: %s", Sequence->GetSourceStackName().c_str());
+		}
+		if (!Sequence->GetAssetPath().empty())
+		{
+			ImGui::TextWrapped("Asset: %s", Sequence->GetAssetPath().c_str());
+		}
+	}
+
+	if (DataModel && ImGui::CollapsingHeader("Tracks"))
+	{
+		const TArray<FBoneAnimationTrack>& Tracks = DataModel->GetBoneAnimationTracks();
+		for (int32 TrackIndex = 0; TrackIndex < static_cast<int32>(Tracks.size()); ++TrackIndex)
+		{
+			const FBoneAnimationTrack& Track = Tracks[TrackIndex];
+			if (ImGui::Selectable(Track.Name.ToString().c_str(), SelectedAnimTrackIndex == TrackIndex))
+			{
+				SelectedAnimTrackIndex = TrackIndex;
+			}
+		}
+	}
 }
 
 void FEditorViewerWindowWidget::RenderAnimSequenceLeftPanel(UAnimSequence* Sequence, USkeletalMeshComponent* SkelMeshComp)
