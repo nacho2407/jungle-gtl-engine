@@ -16,6 +16,7 @@
 #include <exception>
 #include <filesystem>
 #include <memory>
+#include <utility>
 
 #include "Animation/AnimationManager.h"
 #include "Animation/AnimSequence.h"
@@ -188,7 +189,15 @@ static bool ImportStaticMeshByExtension(const FString& PathFileName, const FImpo
 
 	if (Ext == L".fbx")
 	{
-		return FFbxImporter::ImportStatic(PathFileName, Options, OutMesh, OutMaterials);
+		FFbxStaticMeshImportResult ImportResult;
+		if (!FFbxImporter::ImportStaticMesh(PathFileName, Options, ImportResult))
+		{
+			return false;
+		}
+
+		OutMesh = std::move(ImportResult.Mesh);
+		OutMaterials = std::move(ImportResult.Materials);
+		return true;
 	}
 
 	UE_LOG("StaticMesh import failed: unsupported source extension. Path=%s", PathFileName.c_str());
@@ -407,7 +416,8 @@ bool FMeshManager::ReimportSkeletalMesh(const FString& BinaryPath, ID3D11Device*
 	}
 
 	FSkeletalMesh* ImportedMesh = nullptr;
-	if (!LoadSkeletalMeshAsset(Metadata.SourcePath, Device, ImportedMesh))
+	TArray<FSkeletalMaterial> ImportedMaterials;
+	if (!LoadSkeletalMeshAsset(Metadata.SourcePath, Device, ImportedMesh, &ImportedMaterials))
 	{
 		return false;
 	}
@@ -416,7 +426,7 @@ bool FMeshManager::ReimportSkeletalMesh(const FString& BinaryPath, ID3D11Device*
 	SkeletalMeshCache.erase(PackagePath);
 
 	USkeletalMesh* SkeletalMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
-	SkeletalMesh->SetSkeletalMaterials(std::move(FFbxImporter::SkeletalMaterials));
+	SkeletalMesh->SetSkeletalMaterials(std::move(ImportedMaterials));
 	SkeletalMesh->SetSkeletalMeshAsset(ImportedMesh);
 	if (!ImportedMesh->SkeletonPath.empty() && ImportedMesh->SkeletonPath != "None")
 	{
@@ -780,14 +790,15 @@ USkeletalMesh* FMeshManager::LoadSkeletalMesh(const FString& PathFileName, ID3D1
 	}
 
 	FSkeletalMesh* ImportedMesh = nullptr;
-	if (!LoadSkeletalMeshAsset(PathFileName, InDevice, ImportedMesh))
+	TArray<FSkeletalMaterial> ImportedMaterials;
+	if (!LoadSkeletalMeshAsset(PathFileName, InDevice, ImportedMesh, &ImportedMaterials))
 	{
 		UE_LOG("SkeletalMesh import failed: empty mesh will not be added to cache. Path=%s", PathFileName.c_str());
 		return nullptr;
 	}
 
 	USkeletalMesh* SkeletalMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
-	SkeletalMesh->SetSkeletalMaterials(std::move(FFbxImporter::SkeletalMaterials));
+	SkeletalMesh->SetSkeletalMaterials(std::move(ImportedMaterials));
 	SkeletalMesh->SetSkeletalMeshAsset(ImportedMesh);
 
 	if (!ImportedMesh->SkeletonPath.empty() && ImportedMesh->SkeletonPath != "None")
@@ -810,7 +821,7 @@ USkeletalMesh* FMeshManager::LoadSkeletalMesh(const FString& PathFileName, ID3D1
 	return SkeletalMesh;
 }
 
-bool FMeshManager::LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Device* InDevice, FSkeletalMesh*& OutMesh)
+bool FMeshManager::LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Device* InDevice, FSkeletalMesh*& OutMesh, TArray<FSkeletalMaterial>* OutMaterials)
 {
 	(void)InDevice;
 
@@ -820,7 +831,8 @@ bool FMeshManager::LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Devi
 		return false;
 	}
 
-	if (!FFbxImporter::Import(PathFileName))
+	FFbxSkeletalMeshImportResult ImportResult;
+	if (!FFbxImporter::ImportSkeletalMesh(PathFileName, ImportResult))
 	{
 		return false;
 	}
@@ -829,7 +841,7 @@ bool FMeshManager::LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Devi
 
 	USkeleton* Skeleton = UObjectManager::Get().CreateObject<USkeleton>();
 	Skeleton->SetAssetPathFileName(SkeletonPath);
-	Skeleton->GetMutableReferenceSkeleton() = FFbxImporter::ImportedSkeleton;
+	Skeleton->GetMutableReferenceSkeleton() = std::move(ImportResult.Skeleton);
 	Skeleton->SetSkeletonGuid(MakeSkeletonGuid(Skeleton->GetReferenceSkeleton()));
 
 	if (!FSkeletonManager::Get().SaveSkeleton(Skeleton, SkeletonPath, PathFileName))
@@ -838,7 +850,7 @@ bool FMeshManager::LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Devi
 		return false;
 	}
 
-	for (UAnimSequence* Sequence : FFbxImporter::ImportedAnimSequences)
+	for (UAnimSequence* Sequence : ImportResult.AnimSequences)
 	{
 		if (!Sequence)
 		{
@@ -859,11 +871,16 @@ bool FMeshManager::LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Devi
 	std::unique_ptr<FSkeletalMesh> NewMesh = std::make_unique<FSkeletalMesh>();
 	NewMesh->PathFileName                  = NormalizeProjectPath(PathFileName);
 	NewMesh->SkeletonPath                  = SkeletonPath;
-	NewMesh->Vertices                      = std::move(FFbxImporter::Vertices);
-	NewMesh->Indices                       = std::move(FFbxImporter::Indices);
-	NewMesh->Sections                      = std::move(FFbxImporter::Sections);
-	NewMesh->MeshRanges                    = std::move(FFbxImporter::MeshRanges);
-	NewMesh->Bones                         = std::move(FFbxImporter::Bones);
+	NewMesh->Vertices                      = std::move(ImportResult.Mesh.Vertices);
+	NewMesh->Indices                       = std::move(ImportResult.Mesh.Indices);
+	NewMesh->Sections                      = std::move(ImportResult.Mesh.Sections);
+	NewMesh->MeshRanges                    = std::move(ImportResult.Mesh.MeshRanges);
+	NewMesh->Bones                         = std::move(ImportResult.Mesh.Bones);
+
+	if (OutMaterials)
+	{
+		*OutMaterials = std::move(ImportResult.Materials);
+	}
 
 	OutMesh = NewMesh.release();
 	return true;
