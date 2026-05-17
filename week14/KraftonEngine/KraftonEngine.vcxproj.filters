@@ -1607,6 +1607,9 @@
     <ClInclude Include="Source\Engine\Object\ObjectPtr.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Object\SoftObjectPtr.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Object\ObjectFactory.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>

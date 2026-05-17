@@ -672,7 +672,7 @@ void USkinnedMeshComponent::PostDuplicate()
 		USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(SkeletalMeshPath, Device);
 		if (Loaded)
 		{
-			TArray<FString> SavedSlots = MaterialSlots;
+			TArray<FSoftObjectPtr> SavedSlots = MaterialSlots;
 			SetSkeletalMesh(Loaded);
 
 			// SetSkeletalMesh가 default slot을 채운 뒤 저장된 override slot을 다시 덮어쓴다.

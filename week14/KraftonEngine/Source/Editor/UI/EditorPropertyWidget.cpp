@@ -23,6 +23,7 @@
 #include "Resource/ResourceManager.h"
 #include "Object/FName.h"
 #include "Object/ObjectIterator.h"
+#include "Object/SoftObjectPtr.h"
 #include "Materials/Material.h"
 #include "Mesh/MeshImportOptions.h"
 #include "Mesh/MeshManager.h"
@@ -144,9 +145,23 @@ namespace
 		case EPropertyType::Enum:          Size = SrcValue.GetEnumType() ? SrcValue.GetEnumType()->GetSize() : sizeof(int32); break;
 		case EPropertyType::String:
 		case EPropertyType::SceneComponentRef:
-		case EPropertyType::SoftObjectRef:
 			*static_cast<FString*>(DstPtr) = *static_cast<FString*>(SrcPtr);
 			return true;
+		case EPropertyType::SoftObjectRef:
+		{
+			const FSoftObjectProperty* SrcSoftProperty = SrcValue.Property ? SrcValue.Property->AsSoftObjectProperty() : nullptr;
+			const FSoftObjectProperty* DstSoftProperty = DstValue.Property ? DstValue.Property->AsSoftObjectProperty() : nullptr;
+			const FString Path = SrcSoftProperty ? SrcSoftProperty->GetPath(SrcValue.ContainerPtr) : *static_cast<FString*>(SrcPtr);
+			if (DstSoftProperty)
+			{
+				DstSoftProperty->SetPath(DstValue.ContainerPtr, Path);
+			}
+			else
+			{
+				*static_cast<FString*>(DstPtr) = Path;
+			}
+			return true;
+		}
 		case EPropertyType::ObjectRef:
 			*static_cast<UObject**>(DstPtr) = *static_cast<UObject**>(SrcPtr);
 			return true;
@@ -154,7 +169,7 @@ namespace
 			*static_cast<FName*>(DstPtr) = *static_cast<FName*>(SrcPtr);
 			return true;
 		case EPropertyType::SoftObjectRefArray:
-			*static_cast<TArray<FString>*>(DstPtr) = *static_cast<TArray<FString>*>(SrcPtr);
+			*static_cast<TArray<FSoftObjectPtr>*>(DstPtr) = *static_cast<TArray<FSoftObjectPtr>*>(SrcPtr);
 			return true;
 		case EPropertyType::Struct:
 		{
@@ -1085,24 +1100,38 @@ void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* Component
 bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 {
 	bool bChanged = false;
-	FString* Val = static_cast<FString*>(Prop.GetValuePtr());
-	if (!Val)
+	void* ValuePtr = Prop.GetValuePtr();
+	if (!ValuePtr)
 	{
 		return false;
 	}
 
 	const FSoftObjectProperty* SoftProperty = Prop.Property ? Prop.Property->AsSoftObjectProperty() : nullptr;
 	FString AssetType = SoftProperty ? SoftProperty->GetAssetType() : GetAssetTypeMetadata(Prop);
+	FString* Val = SoftProperty ? nullptr : static_cast<FString*>(ValuePtr);
+	FString CurrentPath = SoftProperty ? SoftProperty->GetPath(Prop.ContainerPtr) : *Val;
+	auto SetPath = [&](const FString& NewPath)
+	{
+		if (SoftProperty)
+		{
+			SoftProperty->SetPath(Prop.ContainerPtr, NewPath);
+		}
+		else
+		{
+			*Val = NewPath;
+		}
+		CurrentPath = NewPath;
+	};
 
 	if (AssetType == "Material")
 	{
-		FString Preview = (Val->empty() || *Val == "None") ? "None" : *Val;
+		FString Preview = (CurrentPath.empty() || CurrentPath == "None") ? "None" : CurrentPath;
 		if (ImGui::BeginCombo("##Material", Preview.c_str()))
 		{
-			bool bSelectedNone = (*Val == "None" || Val->empty());
+			bool bSelectedNone = (CurrentPath == "None" || CurrentPath.empty());
 			if (ImGui::Selectable("None", bSelectedNone))
 			{
-				*Val = "None";
+				SetPath("None");
 				bChanged = true;
 			}
 			if (bSelectedNone) ImGui::SetItemDefaultFocus();
@@ -1110,10 +1139,10 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 			const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
 			for (const FMaterialAssetListItem& Item : MatFiles)
 			{
-				bool bSelected = (*Val == Item.FullPath);
+				bool bSelected = (CurrentPath == Item.FullPath);
 				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
 				{
-					*Val = Item.FullPath;
+					SetPath(Item.FullPath);
 					bChanged = true;
 				}
 				if (bSelected) ImGui::SetItemDefaultFocus();
@@ -1126,9 +1155,9 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MaterialContentItem"))
 			{
 				FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
-				*Val = FPaths::ToUtf8(
+				SetPath(FPaths::ToUtf8(
 					ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
-				);
+				));
 				bChanged = true;
 			}
 			ImGui::EndDragDropTarget();
@@ -1139,18 +1168,18 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 	if (AssetType == "Script")
 	{
 		char Buf[256];
-		strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
+		strncpy_s(Buf, sizeof(Buf), CurrentPath.c_str(), _TRUNCATE);
 		if (ImGui::InputText("##Value", Buf, sizeof(Buf)))
 		{
-			*Val = Buf;
+			SetPath(Buf);
 			bChanged = true;
 		}
 
 		if (ImGui::Button("Edit Script"))
 		{
-			if (!FLuaScriptManager::OpenOrCreateScript(*Val))
+			if (!FLuaScriptManager::OpenOrCreateScript(CurrentPath))
 			{
-				UE_LOG("Failed to open script file: %s", Val->c_str());
+				UE_LOG("Failed to open script file: %s", CurrentPath.c_str());
 			}
 		}
 		return bChanged;
@@ -1158,18 +1187,18 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 
 	if (AssetType == "SkeletalMesh")
 	{
-		FString Preview = Val->empty() ? "None" : GetStemFromPath(*Val);
-		if (*Val == "None") Preview = "None";
+		FString Preview = CurrentPath.empty() ? "None" : GetStemFromPath(CurrentPath);
+		if (CurrentPath == "None") Preview = "None";
 
 		float ButtonWidth = ImGui::CalcTextSize("Import FBX").x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		float Spacing = ImGui::GetStyle().ItemSpacing.x;
 		ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
 		if (ImGui::BeginCombo("##SkeletalMesh", Preview.c_str()))
 		{
-			bool bSelectedNone = (*Val == "None");
+			bool bSelectedNone = (CurrentPath == "None");
 			if (ImGui::Selectable("None", bSelectedNone))
 			{
-				*Val = "None";
+				SetPath("None");
 				bChanged = true;
 			}
 			if (bSelectedNone)
@@ -1177,10 +1206,10 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 			const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
 			for (const FMeshAssetListItem& Item : MeshFiles)
 			{
-				bool bSelected = (*Val == Item.FullPath);
+				bool bSelected = (CurrentPath == Item.FullPath);
 				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
 				{
-					*Val = Item.FullPath;
+					SetPath(Item.FullPath);
 					bChanged = true;
 				}
 				if (bSelected)
@@ -1201,7 +1230,7 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 				USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(FbxPath, Device);
 				if (Loaded)
 				{
-					*Val = FMeshManager::GetSkeletalMeshBinaryFilePath(FbxPath);
+					SetPath(FMeshManager::GetSkeletalMeshBinaryFilePath(FbxPath));
 					bChanged = true;
 				}
 			}
@@ -1209,8 +1238,8 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 		return bChanged;
 	}
 
-	FString Preview = Val->empty() ? "None" : GetStemFromPath(*Val);
-	if (*Val == "None") Preview = "None";
+	FString Preview = CurrentPath.empty() ? "None" : GetStemFromPath(CurrentPath);
+	if (CurrentPath == "None") Preview = "None";
 
 	float ButtonWidth = ImGui::CalcTextSize("Import").x + ImGui::GetStyle().FramePadding.x * 2.0f;
 	float Spacing = ImGui::GetStyle().ItemSpacing.x;
@@ -1218,10 +1247,10 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 
 	if (ImGui::BeginCombo("##Mesh", Preview.c_str()))
 	{
-		bool bSelectedNone = (*Val == "None");
+		bool bSelectedNone = (CurrentPath == "None");
 		if (ImGui::Selectable("None", bSelectedNone))
 		{
-			*Val = "None";
+			SetPath("None");
 			bChanged = true;
 		}
 		if (bSelectedNone)
@@ -1230,10 +1259,10 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 		const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
 		for (const FMeshAssetListItem& Item : MeshFiles)
 		{
-			bool bSelected = (*Val == Item.FullPath);
+			bool bSelected = (CurrentPath == Item.FullPath);
 			if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
 			{
-				*Val = Item.FullPath;
+				SetPath(Item.FullPath);
 				bChanged = true;
 			}
 			if (bSelected)
@@ -1264,7 +1293,7 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 				UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(MeshPath, Device);
 				if (Loaded)
 				{
-					*Val = FMeshManager::GetStaticMeshBinaryFilePath(MeshPath);
+					SetPath(FMeshManager::GetStaticMeshBinaryFilePath(MeshPath));
 					bChanged = true;
 				}
 			}
@@ -1777,7 +1806,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	}
 	case EPropertyType::SoftObjectRefArray:
 	{
-		TArray<FString>* Slots = static_cast<TArray<FString>*>(Prop.GetValuePtr());
+		TArray<FSoftObjectPtr>* Slots = static_cast<TArray<FSoftObjectPtr>*>(Prop.GetValuePtr());
 		if (!Slots)
 		{
 			break;
@@ -1785,7 +1814,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 
 		for (int32 ElemIdx = 0; ElemIdx < (int32)Slots->size(); ++ElemIdx)
 		{
-			FString& Slot = (*Slots)[ElemIdx];
+			FSoftObjectPtr& Slot = (*Slots)[ElemIdx];
+			FString SlotPath = Slot.ToString();
 			ImGui::PushID(ElemIdx);
 
 			FString SlotName = "Element " + std::to_string(ElemIdx);
@@ -1816,13 +1846,14 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 			ImGui::SameLine(120.0f);
 			ImGui::SetNextItemWidth(-1);
 
-			FString Preview = (Slot.empty() || Slot == "None") ? "None" : Slot;
+			FString Preview = (SlotPath.empty() || SlotPath == "None") ? "None" : SlotPath;
 			if (ImGui::BeginCombo("##Mat", Preview.c_str()))
 			{
-				bool bSelectedNone = (Slot == "None" || Slot.empty());
+				bool bSelectedNone = (SlotPath == "None" || SlotPath.empty());
 				if (ImGui::Selectable("None", bSelectedNone))
 				{
-					Slot = "None";
+					Slot.SetPath("None");
+					SlotPath = "None";
 					bChanged = true;
 				}
 				if (bSelectedNone) ImGui::SetItemDefaultFocus();
@@ -1830,10 +1861,11 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 				const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
 				for (const FMaterialAssetListItem& Item : MatFiles)
 				{
-					bool bSelected = (Slot == Item.FullPath);
+					bool bSelected = (SlotPath == Item.FullPath);
 					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
 					{
-						Slot = Item.FullPath;
+						Slot.SetPath(Item.FullPath);
+						SlotPath = Item.FullPath;
 						bChanged = true;
 					}
 					if (bSelected) ImGui::SetItemDefaultFocus();
@@ -1846,9 +1878,9 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MaterialContentItem"))
 				{
 					FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
-					Slot = FPaths::ToUtf8(
+					Slot.SetPath(FPaths::ToUtf8(
 						ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
-					);
+					));
 					bChanged = true;
 				}
 				ImGui::EndDragDropTarget();

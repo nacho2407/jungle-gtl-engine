@@ -4,6 +4,7 @@
 #include "Math/Rotator.h"
 #include "Math/Transform.h"
 #include "Object/ObjectPtr.h"
+#include "Object/SoftObjectPtr.h"
 
 #include "Source/Engine/Component/SkinnedMeshComponent.generated.h"
 class USkeletalMesh;
@@ -40,7 +41,7 @@ public:
 	void PostEditProperty(const char* PropertyName) override;
 	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
-	const FString& GetSkeletalMeshPath() const { return SkeletalMeshPath; }
+	const FString& GetSkeletalMeshPath() const { return SkeletalMeshPath.ToString(); }
 
 	// Bone edit 섹션: bone getter/setter는 edit pose를 만들고 CPU skinning/cache revision까지 갱신해야 한다.
 	void EnsureBoneEditPose();
@@ -79,10 +80,10 @@ protected:
 	UPROPERTY(Edit, Category="Mesh", DisplayName="Skeletal Mesh", Type=ObjectRef, AllowedClass="USkeletalMesh")
 	TObjectPtr<USkeletalMesh> SkeletalMesh;
 	UPROPERTY(Save, Category="Mesh", DisplayName="Skeletal Mesh Path", Type=SkeletalMeshRef, AssetType="SkeletalMesh", AllowedClass="USkeletalMesh")
-	FString SkeletalMeshPath = "None";
+	FSoftObjectPtr SkeletalMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
 	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", Type=SoftObjectRefArray, AssetType="Material", AllowedClass="UMaterial")
-	TArray<FString> MaterialSlots;
+	TArray<FSoftObjectPtr> MaterialSlots;
 
 	// Bone edit pose는 asset 원본 bone을 직접 바꾸지 않고 component-local override로만 유지한다.
 	TArray<FMatrix> BoneEditLocalMatrices;

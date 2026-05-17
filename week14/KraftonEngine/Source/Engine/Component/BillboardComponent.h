@@ -3,6 +3,7 @@
 #include "Render/Resource/MeshBufferManager.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
+#include "Object/SoftObjectPtr.h"
 
 #include "Source/Engine/Component/BillboardComponent.generated.h"
 
@@ -40,7 +41,7 @@ protected:
 	bool bIsBillboard = true;
 
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material", AssetType="Material", AllowedClass="UMaterial")
-	FString MaterialSlot = "None";
+	FSoftObjectPtr MaterialSlot = "None";
 	UMaterial* Material = nullptr;
 };
 

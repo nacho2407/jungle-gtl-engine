@@ -219,7 +219,7 @@ void UStaticMeshComponent::PostDuplicate()
 		if (Loaded)
 		{
 			// SetStaticMesh는 MaterialSlots를 덮어쓰므로, 직렬화된 슬롯 정보를 백업·복원한다.
-			TArray<FString> SavedSlots = MaterialSlots;
+			TArray<FSoftObjectPtr> SavedSlots = MaterialSlots;
 			SetStaticMesh(Loaded);
 
 			// Override material 재로딩

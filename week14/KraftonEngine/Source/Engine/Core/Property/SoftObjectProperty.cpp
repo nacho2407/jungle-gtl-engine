@@ -8,23 +8,23 @@ json::JSON FSoftObjectProperty::Serialize(void* Container) const
 	using namespace json;
 
 	void* ValuePtr = GetValuePtrFor(Container);
-	return ValuePtr ? JSON(*static_cast<FString*>(ValuePtr)) : JSON();
+	return ValuePtr && Ops && Ops->GetPath ? JSON(Ops->GetPath(ValuePtr)) : JSON();
 }
 
 void FSoftObjectProperty::Deserialize(void* Container, json::JSON& Value) const
 {
 	void* ValuePtr = GetValuePtrFor(Container);
-	if (ValuePtr)
+	if (ValuePtr && Ops && Ops->SetPath)
 	{
-		*static_cast<FString*>(ValuePtr) = Value.ToString();
+		Ops->SetPath(ValuePtr, Value.ToString());
 	}
 }
 
 void FSoftObjectProperty::Serialize(void* Container, FArchive& Ar) const
 {
 	void* ValuePtr = GetValuePtrFor(Container);
-	if (ValuePtr)
+	if (ValuePtr && Ops && Ops->SerializeArchive)
 	{
-		Ar << *static_cast<FString*>(ValuePtr);
+		Ops->SerializeArchive(ValuePtr, Ar);
 	}
 }

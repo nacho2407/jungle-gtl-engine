@@ -2,6 +2,7 @@
 #include "PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
 #include "Collision/ConvexVolume.h"
+#include "Object/SoftObjectPtr.h"
 
 #include "Source/Engine/Component/DecalComponent.generated.h"
 class UStaticMeshComponent;
@@ -56,7 +57,7 @@ private:
 	FConvexVolume ConvexVolume;
 	TArray<UStaticMeshComponent*> Receivers;
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material", AssetType="Material", AllowedClass="UMaterial")
-	FString MaterialSlot = "None";
+	FSoftObjectPtr MaterialSlot = "None";
 	UMaterial* Material = nullptr;
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Color", Type=Vec4)
 	FVector4 Color = {1,1,1,1};
