@@ -1,11 +1,10 @@
 #pragma once
 
-#include "Core/PropertyTypes.h"
+#include "ObjectPropertyBase.h"
 
-struct FSoftObjectProperty : FProperty
+struct FSoftObjectProperty : FObjectPropertyBase
 {
 	const char* AssetType = nullptr;
-	const char* AllowedClass = nullptr;
 
 	FSoftObjectProperty() = default;
 	FSoftObjectProperty(
@@ -19,15 +18,22 @@ struct FSoftObjectProperty : FProperty
 		const char* InOwnerClassName,
 		const char* InAssetType,
 		const char* InAllowedClass)
-		: FProperty(InName, InCategory, InFlags, InOffset, InSize, InDisplayName, InMetadata, InOwnerClassName)
+		: FObjectPropertyBase(
+			InName,
+			InCategory,
+			InFlags,
+			InOffset,
+			InSize,
+			InDisplayName,
+			InMetadata,
+			InOwnerClassName,
+			InAllowedClass)
 		, AssetType(InAssetType)
-		, AllowedClass(InAllowedClass)
 	{
 	}
 
 	EPropertyType GetType() const override { return EPropertyType::SoftObjectRef; }
 	const char* GetAssetType() const { return AssetType ? AssetType : ""; }
-	const char* GetAllowedClass() const { return AllowedClass ? AllowedClass : ""; }
 	const FSoftObjectProperty* AsSoftObjectProperty() const override { return this; }
 
 	json::JSON Serialize(void* Container) const override;
