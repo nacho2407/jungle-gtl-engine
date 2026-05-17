@@ -143,10 +143,8 @@ namespace
 		case EPropertyType::Color4:        Size = sizeof(float) * 4; break;
 		case EPropertyType::Enum:          Size = SrcValue.GetEnumType() ? SrcValue.GetEnumType()->GetSize() : sizeof(int32); break;
 		case EPropertyType::String:
-		case EPropertyType::Script:
 		case EPropertyType::SceneComponentRef:
-		case EPropertyType::StaticMeshRef:
-		case EPropertyType::SkeletalMeshRef:
+		case EPropertyType::SoftObjectRef:
 			*static_cast<FString*>(DstPtr) = *static_cast<FString*>(SrcPtr);
 			return true;
 		case EPropertyType::Name:
@@ -980,7 +978,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 					bAnyChanged = true;
 					PropagatePropertyChange(Props[i].GetName(), SelectedActors);
 
-					if (Props[i].Property && (Props[i].Property->Type == EPropertyType::StaticMeshRef || Props[i].Property->Type == EPropertyType::SkeletalMeshRef))
+					if (Props[i].Property && Props[i].GetType() == EPropertyType::SoftObjectRef)
 					{
 						bPropsInvalidated = true;
 						ImGui::PopID();
@@ -1250,9 +1248,84 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 		}
 		break;
 	}
-	case EPropertyType::StaticMeshRef:
+	case EPropertyType::SoftObjectRef:
 	{
 		FString* Val = static_cast<FString*>(Prop.GetValuePtr());
+		const FSoftObjectProperty* SoftProperty = Prop.Property ? Prop.Property->AsSoftObjectProperty() : nullptr;
+		FString AssetType = SoftProperty ? SoftProperty->GetAssetType() : GetAssetTypeMetadata(Prop);
+
+		if (AssetType == "Script")
+		{
+			char Buf[256];
+			strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
+			if (ImGui::InputText("##Value", Buf, sizeof(Buf)))
+			{
+				*Val = Buf;
+				bChanged = true;
+			}
+
+			if (ImGui::Button("Edit Script"))
+			{
+				if (!FLuaScriptManager::OpenOrCreateScript(*Val))
+				{
+					UE_LOG("Failed to open script file: %s", Val->c_str());
+				}
+			}
+			break;
+		}
+
+		if (AssetType == "SkeletalMesh")
+		{
+			FString Preview = Val->empty() ? "None" : GetStemFromPath(*Val);
+			if (*Val == "None") Preview = "None";
+
+			float ButtonWidth = ImGui::CalcTextSize("Import FBX").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+			float Spacing = ImGui::GetStyle().ItemSpacing.x;
+			ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
+			if (ImGui::BeginCombo("##SkeletalMesh", Preview.c_str()))
+			{
+				bool bSelectedNone = (*Val == "None");
+				if (ImGui::Selectable("None", bSelectedNone))
+				{
+					*Val = "None";
+					bChanged = true;
+				}
+				if (bSelectedNone)
+					ImGui::SetItemDefaultFocus();
+				const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
+				for (const FMeshAssetListItem& Item : MeshFiles)
+				{
+					bool bSelected = (*Val == Item.FullPath);
+					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+					{
+						*Val = Item.FullPath;
+						bChanged = true;
+					}
+					if (bSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::SameLine();
+
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ButtonWidth);
+			if (ImGui::Button("Import FBX"))
+			{
+				FString FbxPath = OpenFbxFileDialog();
+				if (!FbxPath.empty())
+				{
+					ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+					USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(FbxPath, Device);
+					if (Loaded)
+					{
+						*Val = FMeshManager::GetSkeletalMeshBinaryFilePath(FbxPath);
+						bChanged = true;
+					}
+				}
+			}
+			break;
+		}
 
 		FString Preview = Val->empty() ? "None" : GetStemFromPath(*Val);
 		if (*Val == "None") Preview = "None";
@@ -1354,64 +1427,6 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
-		}
-		break;
-	}
-	// TODO: implement
-	case EPropertyType::SkeletalMeshRef:
-	{
-		FString* Val = static_cast<FString*>(Prop.GetValuePtr());
-
-		FString Preview = Val->empty() ? "None" : GetStemFromPath(*Val);
-		if (*Val == "None") Preview = "None";
-
-		float ButtonWidth = ImGui::CalcTextSize("Import FBX").x + ImGui::GetStyle().FramePadding.x * 2.0f;
-		float Spacing = ImGui::GetStyle().ItemSpacing.x;
-		ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
-		if (ImGui::BeginCombo("##SkeletalMesh", Preview.c_str()))
-		{
-			bool bSelectedNone = (*Val == "None");
-			if (ImGui::Selectable("None", bSelectedNone))
-			{
-				*Val = "None";
-				bChanged = true;
-			}
-			if (bSelectedNone)
-				ImGui::SetItemDefaultFocus();
-			const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
-			for (const FMeshAssetListItem& Item : MeshFiles)
-			{
-				bool bSelected = (*Val == Item.FullPath);
-				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
-				{
-					*Val = Item.FullPath;
-					bChanged = true;
-				}
-				if (bSelected)
-					ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
-		}
-
-		// .fbx 임포트 버튼
-		ImGui::SameLine();
-
-		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ButtonWidth);
-		if (ImGui::Button("Import FBX"))
-		{
-			FString FbxPath = OpenFbxFileDialog();
-			if (!FbxPath.empty())
-			{
-				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-				USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(FbxPath, Device);
-				if (Loaded)
-				{
-					// Component에는 바로 로드할 .sketbin 경로를 저장한다.
-					// 원본 FBX 경로는 Binary 안의 PathFileName에만 남긴다.
-					*Val = FMeshManager::GetSkeletalMeshBinaryFilePath(FbxPath);
-					bChanged = true;
-				}
-			}
 		}
 		break;
 	}
@@ -1726,27 +1741,6 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 			ImGui::Unindent(8.0f);
 			ImGui::TreePop();
 		}
-		break;
-	}
-	case EPropertyType::Script:
-	{
-		FString* Val = static_cast<FString*>(Prop.GetValuePtr());
-		char Buf[256];
-		strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
-		if (ImGui::InputText("##Value", Buf, sizeof(Buf)))
-		{
-			*Val = Buf;
-			bChanged = true;
-		}
-
-		if (ImGui::Button("Edit Script"))
-		{
-			if (!FLuaScriptManager::OpenOrCreateScript(*Val))
-			{
-				UE_LOG("Failed to open script file: %s", Val->c_str());
-			}
-		}
-
 		break;
 	}
 	}

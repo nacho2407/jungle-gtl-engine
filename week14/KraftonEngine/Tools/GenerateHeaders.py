@@ -66,6 +66,8 @@ class ReflectedProperty:
     speed_value: str
     enum_type_name: str | None
     struct_type: str
+    asset_type: str | None
+    allowed_class: str | None
 
 
 @dataclass(frozen=True)
@@ -304,6 +306,16 @@ def cpp_string_literal(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
+def cpp_optional_string_literal(value: str | None) -> str:
+    return cpp_string_literal(value) if value else "nullptr"
+
+
+def is_soft_object_property(prop: ReflectedProperty) -> bool:
+    if prop.property_type in {"StaticMeshRef", "SkeletalMeshRef", "Script"}:
+        return True
+    return normalize_cpp_type(prop.cpp_type) == "FString" and bool(prop.asset_type or prop.allowed_class)
+
+
 def find_reflected_type_bodies(scan_text: str) -> list[tuple[str, int, int]]:
     bodies: list[tuple[str, int, int]] = []
 
@@ -397,6 +409,15 @@ def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum]) -> tuple[
             if property_type == "Struct" and not struct_type:
                 struct_type = cpp_type
             struct_type_expr = f"{struct_type}::StaticStruct()" if struct_type and struct_type != "Struct" else "nullptr"
+            asset_type = metadata.get("assettype")
+            if not asset_type:
+                if property_type == "StaticMeshRef":
+                    asset_type = "StaticMesh"
+                elif property_type == "SkeletalMeshRef":
+                    asset_type = "SkeletalMesh"
+                elif property_type == "Script":
+                    asset_type = "Script"
+            allowed_class = metadata.get("allowedclass")
 
             found.append(
                 ReflectedProperty(
@@ -413,6 +434,8 @@ def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum]) -> tuple[
                     speed_value=speed_value,
                     enum_type_name=enum_type_name,
                     struct_type=struct_type_expr,
+                    asset_type=asset_type,
+                    allowed_class=allowed_class,
                 )
             )
             cursor = semicolon + 1
@@ -594,15 +617,37 @@ def render_generated_header(item: ReflectedHeader, root: Path) -> str:
     return "\n".join(lines)
 
 
-def render_property(prop: ReflectedProperty) -> str:
+def render_property(prop: ReflectedProperty, index: int) -> str:
     metadata_entries = ", ".join(
         f"{{{cpp_string_literal(key)}, {cpp_string_literal(value)}}}"
         for key, value in prop.metadata
     )
     enum_type_expr = f"FEnum::FindEnumByName({cpp_string_literal(prop.enum_type_name)})" if prop.enum_type_name else "nullptr"
+    property_symbol = f"G{make_cpp_identifier(prop.owner)}_{make_cpp_identifier(prop.member_name)}_{index}_Property"
+    property_class = "FSoftObjectProperty" if is_soft_object_property(prop) else "FGenericProperty"
+
+    if property_class == "FSoftObjectProperty":
+        return (
+            f"\tstatic const FSoftObjectProperty {property_symbol}(\n"
+            f"\t\t{cpp_string_literal(prop.member_name)},\n"
+            f"\t\t{cpp_string_literal(prop.category)},\n"
+            f"\t\t{prop.flags},\n"
+            f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
+            f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+            f"\t\t{prop.min_value},\n"
+            f"\t\t{prop.max_value},\n"
+            f"\t\t{prop.speed_value},\n"
+            f"\t\t{cpp_string_literal(prop.display_name)},\n"
+            f"\t\t{{{metadata_entries}}},\n"
+            f"\t\t{cpp_string_literal(prop.owner)},\n"
+            f"\t\t{cpp_optional_string_literal(prop.asset_type)},\n"
+            f"\t\t{cpp_optional_string_literal(prop.allowed_class)}\n"
+            "\t);\n"
+            f"\tStruct->AddProperty(&{property_symbol});\n"
+        )
 
     return (
-        "\tStruct->AddProperty({\n"
+        f"\tstatic const FGenericProperty {property_symbol}(\n"
         f"\t\t{cpp_string_literal(prop.member_name)},\n"
         f"\t\tEPropertyType::{prop.property_type},\n"
         f"\t\t{cpp_string_literal(prop.category)},\n"
@@ -617,7 +662,8 @@ def render_property(prop: ReflectedProperty) -> str:
         f"\t\t{cpp_string_literal(prop.display_name)},\n"
         f"\t\t{{{metadata_entries}}},\n"
         f"\t\t{cpp_string_literal(prop.owner)}\n"
-        "\t});\n"
+        "\t);\n"
+        f"\tStruct->AddProperty(&{property_symbol});\n"
     )
 
 
@@ -765,8 +811,8 @@ def render_generated_type_cpp(item: ReflectedHeader, reflected_type: ReflectedTy
         ]
     )
 
-    for prop in reflected_type.properties:
-        lines.append(render_property(prop).rstrip())
+    for index, prop in enumerate(reflected_type.properties):
+        lines.append(render_property(prop, index).rstrip())
 
     lines.append("}")
     lines.append("")

@@ -26,32 +26,32 @@ const char* FPropertyValue::GetCategory() const
 
 EPropertyType FPropertyValue::GetType() const
 {
-	return Property ? Property->Type : EPropertyType::Bool;
+	return Property ? Property->GetType() : EPropertyType::Bool;
 }
 
 float FPropertyValue::GetMin() const
 {
-	return Property ? Property->Min : 0.0f;
+	return Property ? Property->GetMin() : 0.0f;
 }
 
 float FPropertyValue::GetMax() const
 {
-	return Property ? Property->Max : 0.0f;
+	return Property ? Property->GetMax() : 0.0f;
 }
 
 float FPropertyValue::GetSpeed() const
 {
-	return Property ? Property->Speed : 0.1f;
+	return Property ? Property->GetSpeed() : 0.1f;
 }
 
 UStruct* FPropertyValue::GetStructType() const
 {
-	return Property ? Property->StructType : nullptr;
+	return Property ? Property->GetStructType() : nullptr;
 }
 
 const FEnum* FPropertyValue::GetEnumType() const
 {
-	return Property ? Property->EnumType : nullptr;
+	return Property ? Property->GetEnumType() : nullptr;
 }
 
 const TMap<FString, FString>& FPropertyValue::GetMetadata() const
@@ -88,7 +88,7 @@ void FPropertyValue::GetStructChildren(TArray<FPropertyValue>& OutProps) const
 	}
 }
 
-json::JSON FProperty::Serialize(void* Container) const
+json::JSON FGenericProperty::Serialize(void* Container) const
 {
 	using namespace json;
 
@@ -131,11 +131,8 @@ json::JSON FProperty::Serialize(void* Container) const
 		return arr;
 	}
 	case EPropertyType::String:
-	case EPropertyType::Script:
 	case EPropertyType::SceneComponentRef:
-	case EPropertyType::StaticMeshRef:
-		return JSON(*static_cast<FString*>(ValuePtr));
-	case EPropertyType::SkeletalMeshRef:
+	case EPropertyType::SoftObjectRef:
 		return JSON(*static_cast<FString*>(ValuePtr));
 	case EPropertyType::MaterialSlot:
 	{
@@ -212,7 +209,7 @@ json::JSON FProperty::Serialize(void* Container) const
 	}
 }
 
-void FProperty::Deserialize(void* Container, json::JSON& Value) const
+void FGenericProperty::Deserialize(void* Container, json::JSON& Value) const
 {
 	void* ValuePtr = GetValuePtrFor(Container);
 	if (!ValuePtr)
@@ -263,12 +260,8 @@ void FProperty::Deserialize(void* Container, json::JSON& Value) const
 		break;
 	}
 	case EPropertyType::String:
-	case EPropertyType::Script:
 	case EPropertyType::SceneComponentRef:
-	case EPropertyType::StaticMeshRef:
-		*static_cast<FString*>(ValuePtr) = Value.ToString();
-		break;
-	case EPropertyType::SkeletalMeshRef:
+	case EPropertyType::SoftObjectRef:
 		*static_cast<FString*>(ValuePtr) = Value.ToString();
 		break;
 
@@ -347,7 +340,7 @@ void FProperty::Deserialize(void* Container, json::JSON& Value) const
 	}
 }
 
-void FProperty::Serialize(void* Container, FArchive& Ar) const
+void FGenericProperty::Serialize(void* Container, FArchive& Ar) const
 {
 	void* ValuePtr = GetValuePtrFor(Container);
 	if (!ValuePtr)
@@ -380,10 +373,8 @@ void FProperty::Serialize(void* Container, FArchive& Ar) const
 		Ar << *static_cast<FVector4*>(ValuePtr);
 		break;
 	case EPropertyType::String:
-	case EPropertyType::Script:
 	case EPropertyType::SceneComponentRef:
-	case EPropertyType::StaticMeshRef:
-	case EPropertyType::SkeletalMeshRef:
+	case EPropertyType::SoftObjectRef:
 		Ar << *static_cast<FString*>(ValuePtr);
 		break;
 	case EPropertyType::MaterialSlot:
