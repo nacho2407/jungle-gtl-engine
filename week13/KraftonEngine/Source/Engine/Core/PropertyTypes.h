@@ -18,6 +18,7 @@ struct FNameProperty;
 struct FEnumProperty;
 struct FSoftObjectProperty;
 struct FStructProperty;
+struct FArrayProperty;
 class UObject;
 
 // 에디터에서 자동 위젯 매핑에 사용되는 프로퍼티 타입
@@ -34,18 +35,10 @@ enum class EPropertyType : uint8_t
 	Name,		  // FName — 문자열 풀 기반 이름 (리소스 키 등)
 	SceneComponentRef, // Owner actor 내부 USceneComponent 참조
 	Color4,	   // FVector4 RGBA — ImGui::ColorEdit4 위젯
-	MaterialSlot,  // FMaterialSlot — 머티리얼 경로
-	MaterialSlotArray, // TArray<FMaterialSlot> — 메시 섹션별 머티리얼 경로
 	Enum,
-	Vec3Array,
 	Struct,    // 자기기술 구조체 — StructType의 property metadata로 Children 생성
 	SoftObjectRef,
-};
-
-// 머티리얼 슬롯: 경로를 하나의 단위로 관리
-struct FMaterialSlot
-{
-	std::string Path;
+	SoftObjectRefArray,
 };
 
 struct FEnum
@@ -203,6 +196,7 @@ struct FProperty
 	virtual const FEnumProperty* AsEnumProperty() const { return nullptr; }
 	virtual const FSoftObjectProperty* AsSoftObjectProperty() const { return nullptr; }
 	virtual const FStructProperty* AsStructProperty() const { return nullptr; }
+	virtual const FArrayProperty* AsArrayProperty() const { return nullptr; }
 
 	virtual json::JSON Serialize(void* Container) const = 0;
 	virtual void	   Deserialize(void* Container, json::JSON& Value) const = 0;
@@ -260,3 +254,4 @@ struct FGenericProperty : FProperty
 #include "Core/Property/EnumProperty.h"
 #include "Core/Property/SoftObjectProperty.h"
 #include "Core/Property/StructProperty.h"
+#include "Core/Property/ArrayProperty.h"

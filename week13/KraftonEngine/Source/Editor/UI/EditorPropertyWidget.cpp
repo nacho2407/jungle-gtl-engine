@@ -150,14 +150,8 @@ namespace
 		case EPropertyType::Name:
 			*static_cast<FName*>(DstPtr) = *static_cast<FName*>(SrcPtr);
 			return true;
-		case EPropertyType::MaterialSlot:
-			*static_cast<FMaterialSlot*>(DstPtr) = *static_cast<FMaterialSlot*>(SrcPtr);
-			return true;
-		case EPropertyType::MaterialSlotArray:
-			*static_cast<TArray<FMaterialSlot>*>(DstPtr) = *static_cast<TArray<FMaterialSlot>*>(SrcPtr);
-			return true;
-		case EPropertyType::Vec3Array:
-			*static_cast<TArray<FVector>*>(DstPtr) = *static_cast<TArray<FVector>*>(SrcPtr);
+		case EPropertyType::SoftObjectRefArray:
+			*static_cast<TArray<FString>*>(DstPtr) = *static_cast<TArray<FString>*>(SrcPtr);
 			return true;
 		case EPropertyType::Struct:
 		{
@@ -1097,6 +1091,48 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 	const FSoftObjectProperty* SoftProperty = Prop.Property ? Prop.Property->AsSoftObjectProperty() : nullptr;
 	FString AssetType = SoftProperty ? SoftProperty->GetAssetType() : GetAssetTypeMetadata(Prop);
 
+	if (AssetType == "Material")
+	{
+		FString Preview = (Val->empty() || *Val == "None") ? "None" : *Val;
+		if (ImGui::BeginCombo("##Material", Preview.c_str()))
+		{
+			bool bSelectedNone = (*Val == "None" || Val->empty());
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				*Val = "None";
+				bChanged = true;
+			}
+			if (bSelectedNone) ImGui::SetItemDefaultFocus();
+
+			const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
+			for (const FMaterialAssetListItem& Item : MatFiles)
+			{
+				bool bSelected = (*Val == Item.FullPath);
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				{
+					*Val = Item.FullPath;
+					bChanged = true;
+				}
+				if (bSelected) ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MaterialContentItem"))
+			{
+				FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
+				*Val = FPaths::ToUtf8(
+					ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
+				);
+				bChanged = true;
+			}
+			ImGui::EndDragDropTarget();
+		}
+		return bChanged;
+	}
+
 	if (AssetType == "Script")
 	{
 		char Buf[256];
@@ -1535,91 +1571,9 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 		bChanged = RenderSoftObjectPropertyWidget(Prop);
 		break;
 	}
-	case EPropertyType::MaterialSlot:
+	case EPropertyType::SoftObjectRefArray:
 	{
-		FMaterialSlot* Slot = static_cast<FMaterialSlot*>(Prop.GetValuePtr());
-		const char* PropertyLabel = GetPropertyDisplayName(Prop);
-		int32          ElemIdx = (strncmp(PropertyLabel, "Element ", 8) == 0) ? atoi(&PropertyLabel[8]) : -1;
-
-		FString SlotName = "None";
-		// Selected Component 의 Slot 띄워주기 (Static, Skeletal 둘다)
-		if (ElemIdx != -1 && SelectedComponent)
-		{
-			if (SelectedComponent->IsA<UStaticMeshComponent>())
-			{
-				UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(SelectedComponent);
-				if (SMC->GetStaticMesh() && ElemIdx < (int32)SMC->GetStaticMesh()->GetStaticMaterials().size())
-				{
-					SlotName = SMC->GetStaticMesh()->GetStaticMaterials()[ElemIdx].MaterialSlotName;
-				}
-			}
-			else if(SelectedComponent->IsA<USkeletalMeshComponent>())
-			{
-				USkeletalMeshComponent* SMC = static_cast<USkeletalMeshComponent*>(SelectedComponent);
-				if (SMC->GetSkeletalMesh() && ElemIdx < (int32)SMC->GetSkeletalMesh()->GetSkeletalMaterials().size())
-				{
-					SlotName = SMC->GetSkeletalMesh()->GetSkeletalMaterials()[ElemIdx].MaterialSlotName;
-				}
-			}
-		}
-
-		// 좌측: Element 인덱스 + 슬롯 이름
-		//ImGui::BeginGroup();
-		//if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", SlotName.c_str());
-		//ImGui::EndGroup();
-
-		//ImGui::SameLine(120);
-
-		// 우측: Material 콤보
-		ImGui::BeginGroup();
-		ImGui::SetNextItemWidth(-1);
-
-		FString Preview = (Slot->Path.empty() || Slot->Path == "None") ? "None" : Slot->Path;
-		if (ImGui::BeginCombo("##Mat", Preview.c_str()))
-		{
-			// "None" 선택지 기본 제공
-			bool bSelectedNone = (Slot->Path == "None" || Slot->Path.empty());
-			if (ImGui::Selectable("None", bSelectedNone))
-			{
-				Slot->Path = "None";
-				bChanged = true;
-			}
-			if (bSelectedNone) ImGui::SetItemDefaultFocus();
-
-			// TObjectIterator 대신 FMaterialManager 파일 목록 스캔 데이터 사용
-			const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
-			for (const FMaterialAssetListItem& Item : MatFiles)
-			{
-				bool bSelected = (Slot->Path == Item.FullPath);
-				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
-				{
-					Slot->Path = Item.FullPath; // 데이터는 전체 경로로 저장
-					bChanged = true;
-				}
-				if (bSelected) ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
-		}
-
-		if (ImGui::BeginDragDropTarget())
-		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MaterialContentItem"))
-			{
-				FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
-				Slot->Path = FPaths::ToUtf8(
-					ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
-				);
-				bChanged = true;
-			}
-			ImGui::EndDragDropTarget();
-		}
-
-		ImGui::EndGroup();
-		break;
-	}
-	case EPropertyType::MaterialSlotArray:
-	{
-		TArray<FMaterialSlot>* Slots = static_cast<TArray<FMaterialSlot>*>(Prop.GetValuePtr());
+		TArray<FString>* Slots = static_cast<TArray<FString>*>(Prop.GetValuePtr());
 		if (!Slots)
 		{
 			break;
@@ -1627,7 +1581,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 
 		for (int32 ElemIdx = 0; ElemIdx < (int32)Slots->size(); ++ElemIdx)
 		{
-			FMaterialSlot& Slot = (*Slots)[ElemIdx];
+			FString& Slot = (*Slots)[ElemIdx];
 			ImGui::PushID(ElemIdx);
 
 			FString SlotName = "Element " + std::to_string(ElemIdx);
@@ -1658,13 +1612,13 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 			ImGui::SameLine(120.0f);
 			ImGui::SetNextItemWidth(-1);
 
-			FString Preview = (Slot.Path.empty() || Slot.Path == "None") ? "None" : Slot.Path;
+			FString Preview = (Slot.empty() || Slot == "None") ? "None" : Slot;
 			if (ImGui::BeginCombo("##Mat", Preview.c_str()))
 			{
-				bool bSelectedNone = (Slot.Path == "None" || Slot.Path.empty());
+				bool bSelectedNone = (Slot == "None" || Slot.empty());
 				if (ImGui::Selectable("None", bSelectedNone))
 				{
-					Slot.Path = "None";
+					Slot = "None";
 					bChanged = true;
 				}
 				if (bSelectedNone) ImGui::SetItemDefaultFocus();
@@ -1672,10 +1626,10 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 				const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
 				for (const FMaterialAssetListItem& Item : MatFiles)
 				{
-					bool bSelected = (Slot.Path == Item.FullPath);
+					bool bSelected = (Slot == Item.FullPath);
 					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
 					{
-						Slot.Path = Item.FullPath;
+						Slot = Item.FullPath;
 						bChanged = true;
 					}
 					if (bSelected) ImGui::SetItemDefaultFocus();
@@ -1688,7 +1642,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MaterialContentItem"))
 				{
 					FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
-					Slot.Path = FPaths::ToUtf8(
+					Slot = FPaths::ToUtf8(
 						ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
 					);
 					bChanged = true;
@@ -1753,38 +1707,6 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	case EPropertyType::Enum:
 	{
 		bChanged = RenderEnumPropertyWidget(Prop);
-		break;
-	}
-	case EPropertyType::Vec3Array:
-	{
-		TArray<FVector>* Arr = static_cast<TArray<FVector>*>(Prop.GetValuePtr());
-
-		ImGui::TextUnformatted(GetPropertyDisplayName(Prop));
-
-		int32 RemoveIdx = -1;
-		for (int32 i = 0; i < (int32)Arr->size(); ++i)
-		{
-			ImGui::PushID(i);
-			char Label[16];
-			snprintf(Label, sizeof(Label), "[%d]", i);
-			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 30.0f);
-			if (ImGui::DragFloat3(Label, &(*Arr)[i].X, 1.0f))
-				bChanged = true;
-			ImGui::SameLine();
-			if (ImGui::SmallButton("x"))
-				RemoveIdx = i;
-			ImGui::PopID();
-		}
-		if (RemoveIdx >= 0)
-		{
-			Arr->erase(Arr->begin() + RemoveIdx);
-			bChanged = true;
-		}
-		if (ImGui::Button("+ Add Point"))
-		{
-			Arr->push_back(FVector(0.0f, 0.0f, 0.0f));
-			bChanged = true;
-		}
 		break;
 	}
 	case EPropertyType::Struct:

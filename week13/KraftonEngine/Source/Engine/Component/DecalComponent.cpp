@@ -35,13 +35,13 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 
 	if (strcmp(PropertyName, "MaterialSlot") == 0 || strcmp(PropertyName, "Material") == 0)
 	{
-		if (MaterialSlot.Path == "None" || MaterialSlot.Path.empty())
+		if (MaterialSlot == "None" || MaterialSlot.empty())
 		{
 			SetMaterial(nullptr);
 		}
 		else
 		{
-			UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot.Path);
+			UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot);
 			if (LoadedMat)
 			{
 				SetMaterial(LoadedMat);
@@ -59,9 +59,9 @@ void UDecalComponent::PostDuplicate()
 {
 	UPrimitiveComponent::PostDuplicate();
 
-	if (!MaterialSlot.Path.empty() && MaterialSlot.Path != "None")
+	if (!MaterialSlot.empty() && MaterialSlot != "None")
 	{
-		UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot.Path);
+		UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot);
 		if (LoadedMat)
 		{
 			SetMaterial(LoadedMat);
@@ -82,11 +82,11 @@ void UDecalComponent::SetMaterial(UMaterial* InMaterial)
 	Material = InMaterial;
 	if (Material)
 	{
-		MaterialSlot.Path = Material->GetAssetPathFileName();
+		MaterialSlot = Material->GetAssetPathFileName();
 	}
 	else
 	{
-		MaterialSlot.Path = "None";
+		MaterialSlot = "None";
 	}
 	MarkProxyDirty(EDirtyFlag::Material);
 }

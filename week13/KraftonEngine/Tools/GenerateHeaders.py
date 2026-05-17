@@ -101,9 +101,6 @@ TYPE_MAP = {
     "FString": "String",
     "std::string": "String",
     "FName": "Name",
-    "FMaterialSlot": "MaterialSlot",
-    "TArray<FVector>": "Vec3Array",
-    "TArray<FMaterialSlot>": "MaterialSlotArray",
 }
 
 
@@ -277,6 +274,8 @@ def infer_property_type(cpp_type: str, metadata: dict[str, str]) -> str:
         return "Struct"
 
     normalized = normalize_cpp_type(cpp_type)
+    if normalized == "TArray<FString>" and bool(metadata.get("assettype") or metadata.get("allowedclass")):
+        return "SoftObjectRefArray"
     return TYPE_MAP.get(normalized, "String")
 
 
@@ -314,6 +313,22 @@ def is_soft_object_property(prop: ReflectedProperty) -> bool:
     if prop.property_type in {"StaticMeshRef", "SkeletalMeshRef", "Script"}:
         return True
     return normalize_cpp_type(prop.cpp_type) == "FString" and bool(prop.asset_type or prop.allowed_class)
+
+
+def get_array_element_cpp_type(cpp_type: str) -> str | None:
+    normalized = normalize_cpp_type(cpp_type)
+    match = re.match(r"TArray\s*<\s*(?P<inner>.+)\s*>$", normalized)
+    return normalize_cpp_type(match.group("inner")) if match else None
+
+
+def get_array_element_property_type(prop: ReflectedProperty) -> str | None:
+    if prop.property_type == "SoftObjectRefArray":
+        return "SoftObjectRef"
+
+    element_cpp_type = get_array_element_cpp_type(prop.cpp_type)
+    if element_cpp_type:
+        return TYPE_MAP.get(element_cpp_type)
+    return None
 
 
 def find_reflected_type_bodies(scan_text: str) -> list[tuple[str, int, int]]:
@@ -640,6 +655,8 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
         property_class = "FStructProperty"
     elif is_soft_object_property(prop):
         property_class = "FSoftObjectProperty"
+    elif prop.property_type == "SoftObjectRefArray":
+        property_class = "FArrayProperty"
     else:
         property_class = "FGenericProperty"
 
@@ -714,6 +731,29 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
         return (
             f"\tstatic const {property_class} {property_symbol}(\n"
             f"\t\t{cpp_string_literal(prop.member_name)},\n"
+            f"\t\t{cpp_string_literal(prop.category)},\n"
+            f"\t\t{prop.flags},\n"
+            f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
+            f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+            f"\t\t{cpp_string_literal(prop.display_name)},\n"
+            f"\t\t{{{metadata_entries}}},\n"
+            f"\t\t{cpp_string_literal(prop.owner)}\n"
+            "\t);\n"
+            f"\tStruct->AddProperty(&{property_symbol});\n"
+        )
+
+    if property_class == "FArrayProperty":
+        element_cpp_type = get_array_element_cpp_type(prop.cpp_type)
+        element_property_type = get_array_element_property_type(prop)
+        if not element_cpp_type or not element_property_type:
+            element_cpp_type = "FVector"
+            element_property_type = "Vec3"
+        return (
+            f"\tstatic const FArrayProperty {property_symbol}(\n"
+            f"\t\t{cpp_string_literal(prop.member_name)},\n"
+            f"\t\tEPropertyType::{prop.property_type},\n"
+            f"\t\tEPropertyType::{element_property_type},\n"
+            f"\t\tFArrayProperty::GetOps<{element_cpp_type}>(),\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
             f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"

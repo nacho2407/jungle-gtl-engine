@@ -83,9 +83,9 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 			OverrideMaterials[i] = DefaultMaterials[i].MaterialInterface;
 
 			if (OverrideMaterials[i])
-				MaterialSlots[i].Path = OverrideMaterials[i]->GetAssetPathFileName();
+				MaterialSlots[i] = OverrideMaterials[i]->GetAssetPathFileName();
 			else
-				MaterialSlots[i].Path = "None";
+				MaterialSlots[i] = "None";
 		}
 	}
 	else
@@ -643,7 +643,7 @@ void USkinnedMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMateria
 
 	if (ElementIndex < static_cast<int32>(MaterialSlots.size()))
 	{
-		MaterialSlots[ElementIndex].Path = InMaterial
+		MaterialSlots[ElementIndex] = InMaterial
 			? InMaterial->GetAssetPathFileName()
 			: "None";
 	}
@@ -672,7 +672,7 @@ void USkinnedMeshComponent::PostDuplicate()
 		USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(SkeletalMeshPath, Device);
 		if (Loaded)
 		{
-			TArray<FMaterialSlot> SavedSlots = MaterialSlots;
+			TArray<FString> SavedSlots = MaterialSlots;
 			SetSkeletalMesh(Loaded);
 
 			// SetSkeletalMesh가 default slot을 채운 뒤 저장된 override slot을 다시 덮어쓴다.
@@ -680,7 +680,7 @@ void USkinnedMeshComponent::PostDuplicate()
 			{
 				MaterialSlots[i] = SavedSlots[i];
 
-				const FString& MatPath = MaterialSlots[i].Path;
+				const FString& MatPath = MaterialSlots[i];
 				if (MatPath.empty() || MatPath == "None")
 				{
 					SetMaterial(i, nullptr);
@@ -729,7 +729,7 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 		// editor slot path 변경은 geometry와 무관하므로 SetMaterial의 material dirty만 사용한다.
 		if (Index >= 0 && Index < (int32)MaterialSlots.size())
 		{
-			FString NewMatPath = MaterialSlots[Index].Path;
+			FString NewMatPath = MaterialSlots[Index];
 
 			if (NewMatPath == "None" || NewMatPath.empty())
 			{
@@ -750,7 +750,7 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 	{
 		for (int32 Index = 0; Index < (int32)MaterialSlots.size(); ++Index)
 		{
-			const FString& NewMatPath = MaterialSlots[Index].Path;
+			const FString& NewMatPath = MaterialSlots[Index];
 
 			if (NewMatPath == "None" || NewMatPath.empty())
 			{
