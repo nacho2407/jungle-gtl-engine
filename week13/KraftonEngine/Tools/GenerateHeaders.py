@@ -276,7 +276,7 @@ def infer_property_type(cpp_type: str, metadata: dict[str, str]) -> str:
         return "Struct"
 
     normalized = normalize_cpp_type(cpp_type)
-    if normalized == "TArray<FString>" and bool(metadata.get("assettype") or metadata.get("allowedclass")):
+    if normalized in {"TArray<FString>", "TArray<FSoftObjectPtr>"} and bool(metadata.get("assettype") or metadata.get("allowedclass")):
         return "SoftObjectRefArray"
     if get_tobjectptr_inner_type(normalized):
         return "ObjectRef"
@@ -318,7 +318,14 @@ def cpp_optional_string_literal(value: str | None) -> str:
 def is_soft_object_property(prop: ReflectedProperty) -> bool:
     if prop.property_type in {"StaticMeshRef", "SkeletalMeshRef", "Script"}:
         return True
-    return normalize_cpp_type(prop.cpp_type) == "FString" and bool(prop.asset_type or prop.allowed_class)
+    normalized = normalize_cpp_type(prop.cpp_type)
+    return normalized in {"FString", "FSoftObjectPtr"} and bool(prop.asset_type or prop.allowed_class)
+
+
+def get_soft_object_property_ops(prop: ReflectedProperty) -> str:
+    if normalize_cpp_type(prop.cpp_type) == "FSoftObjectPtr":
+        return "FSoftObjectProperty::GetSoftObjectPtrOps()"
+    return "FSoftObjectProperty::GetStringOps()"
 
 
 def is_object_property(prop: ReflectedProperty) -> bool:
@@ -366,6 +373,16 @@ def get_array_element_property_type(prop: ReflectedProperty) -> str | None:
     if element_cpp_type:
         return TYPE_MAP.get(element_cpp_type)
     return None
+
+
+def get_array_element_path_ops(prop: ReflectedProperty) -> str:
+    if prop.property_type != "SoftObjectRefArray":
+        return "nullptr"
+
+    element_cpp_type = get_array_element_cpp_type(prop.cpp_type)
+    if element_cpp_type == "FSoftObjectPtr":
+        return "FArrayProperty::GetSoftObjectPtrPathOps()"
+    return "FArrayProperty::GetStringPathOps()"
 
 
 def find_reflected_type_bodies(scan_text: str) -> list[tuple[str, int, int]]:
@@ -740,6 +757,7 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\t\t{prop.flags},\n"
             f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
             f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+            f"\t\t{get_soft_object_property_ops(prop)},\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)},\n"
@@ -801,6 +819,7 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
     if property_class == "FArrayProperty":
         element_cpp_type = get_array_element_cpp_type(prop.cpp_type)
         element_property_type = get_array_element_property_type(prop)
+        element_path_ops = get_array_element_path_ops(prop)
         if not element_cpp_type or not element_property_type:
             element_cpp_type = "FVector"
             element_property_type = "Vec3"
@@ -816,7 +835,8 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
-            f"\t\t{cpp_string_literal(prop.owner)}\n"
+            f"\t\t{cpp_string_literal(prop.owner)},\n"
+            f"\t\t{element_path_ops}\n"
             "\t);\n"
             f"\tStruct->AddProperty(&{property_symbol});\n"
         )

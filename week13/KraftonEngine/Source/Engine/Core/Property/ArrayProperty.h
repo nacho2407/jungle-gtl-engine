@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Core/PropertyTypes.h"
+#include "Object/SoftObjectPtr.h"
+#include "Serialization/Archive.h"
 
 struct FArrayProperty : FProperty
 {
@@ -13,6 +15,13 @@ struct FArrayProperty : FProperty
 		void (*Resize)(void* ArrayPtr, size_t Num) = nullptr;
 		void* (*GetElementPtr)(void* ArrayPtr, size_t Index) = nullptr;
 		const void* (*GetConstElementPtr)(const void* ArrayPtr, size_t Index) = nullptr;
+	};
+
+	struct FElementPathOps
+	{
+		const FString& (*GetPath)(const void* ElementPtr) = nullptr;
+		void (*SetPath)(void* ElementPtr, const FString& Path) = nullptr;
+		void (*SerializeArchive)(void* ElementPtr, FArchive& Ar) = nullptr;
 	};
 
 	template<typename ElementT>
@@ -39,6 +48,50 @@ struct FArrayProperty : FProperty
 		return &Ops;
 	}
 
+	static const FElementPathOps* GetStringPathOps()
+	{
+		static const FElementPathOps Ops = {
+			[](const void* ElementPtr) -> const FString&
+			{
+				return *static_cast<const FString*>(ElementPtr);
+			},
+			[](void* ElementPtr, const FString& Path)
+			{
+				*static_cast<FString*>(ElementPtr) = Path;
+			},
+			[](void* ElementPtr, FArchive& Ar)
+			{
+				Ar << *static_cast<FString*>(ElementPtr);
+			},
+		};
+		return &Ops;
+	}
+
+	static const FElementPathOps* GetSoftObjectPtrPathOps()
+	{
+		static const FElementPathOps Ops = {
+			[](const void* ElementPtr) -> const FString&
+			{
+				return static_cast<const FSoftObjectPtr*>(ElementPtr)->ToString();
+			},
+			[](void* ElementPtr, const FString& Path)
+			{
+				static_cast<FSoftObjectPtr*>(ElementPtr)->SetPath(Path);
+			},
+			[](void* ElementPtr, FArchive& Ar)
+			{
+				FSoftObjectPtr* Value = static_cast<FSoftObjectPtr*>(ElementPtr);
+				FString Path = Value->ToString();
+				Ar << Path;
+				if (Ar.IsLoading())
+				{
+					Value->SetPath(Path);
+				}
+			},
+		};
+		return &Ops;
+	}
+
 	FArrayProperty() = default;
 	FArrayProperty(
 		const char* InName,
@@ -51,11 +104,13 @@ struct FArrayProperty : FProperty
 		size_t InSize,
 		const char* InDisplayName,
 		const TMap<FString, FString>& InMetadata,
-		const char* InOwnerClassName)
+		const char* InOwnerClassName,
+		const FElementPathOps* InElementPathOps = nullptr)
 		: FProperty(InName, InCategory, InFlags, InOffset, InSize, InDisplayName, InMetadata, InOwnerClassName)
 		, Type(InType)
 		, ElementType(InElementType)
 		, Ops(InOps)
+		, ElementPathOps(InElementPathOps)
 	{
 	}
 
@@ -69,4 +124,5 @@ struct FArrayProperty : FProperty
 
 private:
 	const FOps* Ops = nullptr;
+	const FElementPathOps* ElementPathOps = nullptr;
 };

@@ -8,7 +8,7 @@
 
 namespace
 {
-	json::JSON SerializeElement(EPropertyType ElementType, const void* ElementPtr)
+	json::JSON SerializeElement(EPropertyType ElementType, const FArrayProperty::FElementPathOps* PathOps, const void* ElementPtr)
 	{
 		using namespace json;
 
@@ -29,8 +29,11 @@ namespace
 			return JSON(static_cast<double>(*static_cast<const float*>(ElementPtr)));
 		case EPropertyType::String:
 		case EPropertyType::SceneComponentRef:
-		case EPropertyType::SoftObjectRef:
 			return JSON(*static_cast<const FString*>(ElementPtr));
+		case EPropertyType::SoftObjectRef:
+			return JSON(PathOps && PathOps->GetPath
+				? PathOps->GetPath(ElementPtr)
+				: *static_cast<const FString*>(ElementPtr));
 		case EPropertyType::Name:
 			return JSON(static_cast<const FName*>(ElementPtr)->ToString());
 		case EPropertyType::Vec3:
@@ -59,7 +62,7 @@ namespace
 		}
 	}
 
-	void DeserializeElement(EPropertyType ElementType, void* ElementPtr, json::JSON& Value)
+	void DeserializeElement(EPropertyType ElementType, const FArrayProperty::FElementPathOps* PathOps, void* ElementPtr, json::JSON& Value)
 	{
 		if (!ElementPtr)
 		{
@@ -82,8 +85,17 @@ namespace
 			break;
 		case EPropertyType::String:
 		case EPropertyType::SceneComponentRef:
-		case EPropertyType::SoftObjectRef:
 			*static_cast<FString*>(ElementPtr) = Value.ToString();
+			break;
+		case EPropertyType::SoftObjectRef:
+			if (PathOps && PathOps->SetPath)
+			{
+				PathOps->SetPath(ElementPtr, Value.ToString());
+			}
+			else
+			{
+				*static_cast<FString*>(ElementPtr) = Value.ToString();
+			}
 			break;
 		case EPropertyType::Name:
 			*static_cast<FName*>(ElementPtr) = FName(Value.ToString());
@@ -117,7 +129,7 @@ namespace
 		}
 	}
 
-	void SerializeElement(FArchive& Ar, EPropertyType ElementType, void* ElementPtr)
+	void SerializeElement(FArchive& Ar, EPropertyType ElementType, const FArrayProperty::FElementPathOps* PathOps, void* ElementPtr)
 	{
 		if (!ElementPtr)
 		{
@@ -140,8 +152,17 @@ namespace
 			break;
 		case EPropertyType::String:
 		case EPropertyType::SceneComponentRef:
-		case EPropertyType::SoftObjectRef:
 			Ar << *static_cast<FString*>(ElementPtr);
+			break;
+		case EPropertyType::SoftObjectRef:
+			if (PathOps && PathOps->SerializeArchive)
+			{
+				PathOps->SerializeArchive(ElementPtr, Ar);
+			}
+			else
+			{
+				Ar << *static_cast<FString*>(ElementPtr);
+			}
 			break;
 		case EPropertyType::Name:
 			Ar << *static_cast<FName*>(ElementPtr);
@@ -176,7 +197,7 @@ json::JSON FArrayProperty::Serialize(void* Container) const
 	const size_t Num = Ops->GetNum(ValuePtr);
 	for (size_t Index = 0; Index < Num; ++Index)
 	{
-		arr.append(SerializeElement(ElementType, Ops->GetConstElementPtr(ValuePtr, Index)));
+		arr.append(SerializeElement(ElementType, ElementPathOps, Ops->GetConstElementPtr(ValuePtr, Index)));
 	}
 	return arr;
 }
@@ -201,7 +222,7 @@ void FArrayProperty::Deserialize(void* Container, json::JSON& Value) const
 	size_t Index = 0;
 	for (auto& elem : Value.ArrayRange())
 	{
-		DeserializeElement(ElementType, Ops->GetElementPtr(ValuePtr, Index), elem);
+		DeserializeElement(ElementType, ElementPathOps, Ops->GetElementPtr(ValuePtr, Index), elem);
 		++Index;
 	}
 }
@@ -223,6 +244,6 @@ void FArrayProperty::Serialize(void* Container, FArchive& Ar) const
 
 	for (uint32 Index = 0; Index < Num; ++Index)
 	{
-		SerializeElement(Ar, ElementType, Ops->GetElementPtr(ValuePtr, Index));
+		SerializeElement(Ar, ElementType, ElementPathOps, Ops->GetElementPtr(ValuePtr, Index));
 	}
 }
