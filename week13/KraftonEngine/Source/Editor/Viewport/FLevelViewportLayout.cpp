@@ -151,7 +151,7 @@ void FLevelViewportLayout::Initialize(UEditorEngine* InEditor, FWindowsWindow* I
 	ActiveSlotCount = 1;
 	CurrentLayout = EViewportLayout::OnePane;
 
-	FSlateApplication::Get().RegisterViewport(ViewportWindows[0], LevelVC);
+	FSlateApplication::Get().RegisterViewport(LevelVC);
 }
 
 void FLevelViewportLayout::Release()
@@ -321,7 +321,7 @@ void FLevelViewportLayout::EnsureViewportSlots(int32 RequiredCount)
 		ViewportWindows[Idx] = new SWindow();
 		LevelVC->SetLayoutWindow(ViewportWindows[Idx]);
 
-		FSlateApplication::Get().RegisterViewport(ViewportWindows[Idx], LevelVC);
+		FSlateApplication::Get().RegisterViewport(LevelVC);
 	}
 }
 
@@ -942,16 +942,6 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 				FLevelEditorViewportClient* VC = LevelViewportClients[i];
 				VC->UpdateLayoutRect();
 				VC->RenderViewportImage(VC == ActiveViewportClient);
-			}
-		}
-
-		// 입력 소유권 중재용 ImGui 인지 hover: 기본 전부 해제.
-		// (떠 있는 다른 ImGui 창에 가려지면 아래 IsWindowHovered 가 false 라 그대로 유지)
-		for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
-		{
-			if (LevelViewportClients[i])
-			{
-				FSlateApplication::Get().SetViewportImGuiHovered(LevelViewportClients[i], false);
 			}
 		}
 

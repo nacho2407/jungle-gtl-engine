@@ -1,7 +1,6 @@
 #pragma once
 #include "AssetEditorWidget.h"
 #include "Editor/Viewport/MeshEditorViewportClient.h"
-#include "Slate/SWindow.h"
 
 struct FSkeletalMesh;
 struct ImDrawList;
@@ -59,7 +58,6 @@ private:
 	void ApplyAnimationToComponent();
 
 private:
-	SWindow MeshViewportWindow;
 	FMeshEditorViewportClient ViewportClient;
 
 	// Tab state

@@ -1,24 +1,23 @@
 ﻿#include "SlateApplication.h"
 
-#include "SWindow.h"
 #include "Input/InputSystem.h"
 
-#include <imgui.h>
+// 의도적으로 ImGui 를 의존하지 않는다. 입력 소유권 정책은 ImGui 비의존이며,
+// ImGui 사실(hover, 텍스트 입력)은 UI 계층이 setter 로 주입한다.
 
-void FSlateApplication::RegisterViewport(SWindow* Window, FViewportClient* Client)
+void FSlateApplication::RegisterViewport(FViewportClient* Client)
 {
-	if (!Window || !Client) return;
+	if (!Client) return;
 
 	for (FViewportInfo& Info : RegisteredViewports)
 	{
 		if (Info.Client == Client)
 		{
-			Info.Window = Window;
 			return;
 		}
 	}
 
-	RegisteredViewports.push_back({ Window, Client });
+	RegisteredViewports.push_back({ Client });
 }
 
 void FSlateApplication::UnregisterViewport(FViewportClient* Client)
@@ -115,7 +114,7 @@ void FSlateApplication::UpdateInputOwner()
 	}
 
 	// 텍스트 입력 중에는 어떤 뷰포트도 키보드를 소유하지 않는다.
-	if (ImGui::GetIO().WantTextInput)
+	if (bTextInputActive)
 	{
 		FocusedClient = nullptr;
 	}
@@ -128,6 +127,11 @@ void FSlateApplication::UpdateInputOwner()
 	if (CapturedClient && !IsViewportRegistered(CapturedClient))
 	{
 		CapturedClient = nullptr;
+	}
+
+	for (FViewportInfo& Info : RegisteredViewports)
+	{
+		Info.bImGuiHovered = false;
 	}
 }
 
