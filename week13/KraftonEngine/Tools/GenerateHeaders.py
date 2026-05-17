@@ -628,6 +628,8 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
         property_class = "FBoolProperty"
     elif prop.property_type == "String" and not is_soft_object_property(prop):
         property_class = "FStringProperty"
+    elif prop.property_type == "Name":
+        property_class = "FNameProperty"
     elif prop.property_type == "Int":
         property_class = "FIntProperty"
     elif prop.property_type == "Float":
@@ -649,9 +651,6 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\t\t{prop.flags},\n"
             f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
             f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
-            f"\t\t{prop.min_value},\n"
-            f"\t\t{prop.max_value},\n"
-            f"\t\t{prop.speed_value},\n"
             f"\t\t{enum_type_expr},\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
@@ -668,9 +667,6 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\t\t{prop.flags},\n"
             f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
             f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
-            f"\t\t{prop.min_value},\n"
-            f"\t\t{prop.max_value},\n"
-            f"\t\t{prop.speed_value},\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)},\n"
@@ -714,7 +710,7 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\tStruct->AddProperty(&{property_symbol});\n"
         )
 
-    if property_class in {"FBoolProperty", "FStringProperty"}:
+    if property_class in {"FBoolProperty", "FStringProperty", "FNameProperty"}:
         return (
             f"\tstatic const {property_class} {property_symbol}(\n"
             f"\t\t{cpp_string_literal(prop.member_name)},\n"

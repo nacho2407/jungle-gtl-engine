@@ -1159,7 +1159,9 @@
     <ClCompile Include="Source\Engine\Core\Property\BoolProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\EnumProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\GenericProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\NameProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\NumericProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\SoftObjectProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\StringProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\StructProperty.cpp" />
   </ItemGroup>
@@ -2860,6 +2862,7 @@
     <ClInclude Include="Source\Engine\Core\Property\BoolProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\EnumProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\GenericProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\NameProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\NumericProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\SoftObjectProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\StringProperty.h" />

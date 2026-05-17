@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Core/Property/GenericProperty.h"
+#include "Core/PropertyTypes.h"
 
-struct FEnumProperty : FGenericProperty
+struct FEnumProperty : FProperty
 {
 	const FEnum* EnumType = nullptr;
 
@@ -13,30 +13,16 @@ struct FEnumProperty : FGenericProperty
 		uint32 InFlags,
 		size_t InOffset,
 		size_t InSize,
-		float InMin,
-		float InMax,
-		float InSpeed,
 		const FEnum* InEnumType,
 		const char* InDisplayName,
 		const TMap<FString, FString>& InMetadata,
 		const char* InOwnerClassName)
-		: FGenericProperty(
-			InName,
-			EPropertyType::Enum,
-			InCategory,
-			InFlags,
-			InOffset,
-			InSize,
-			InMin,
-			InMax,
-			InSpeed,
-			InDisplayName,
-			InMetadata,
-			InOwnerClassName)
+		: FProperty(InName, InCategory, InFlags, InOffset, InSize, InDisplayName, InMetadata, InOwnerClassName)
 		, EnumType(InEnumType)
 	{
 	}
 
+	EPropertyType GetType() const override { return EPropertyType::Enum; }
 	const FEnum* GetEnumType() const override { return EnumType; }
 	const FEnumProperty* AsEnumProperty() const override { return this; }
 
