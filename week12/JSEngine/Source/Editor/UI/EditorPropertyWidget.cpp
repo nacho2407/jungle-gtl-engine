@@ -2059,6 +2059,48 @@ void FEditorPropertyWidget::RenderPropertyWidget(const FPropertyHandle& Handle)
 				}
 			}
 		}
+		else if (strcmp(Property.Name, "AnimationAssetPath") == 0)
+		{
+			TArray<FString> AnimPaths = FResourceManager::Get().GetAnimSequencePaths();
+			const FString Current = *Val;
+
+			if (ImGui::BeginCombo(Label, Current.empty() ? "<None>" : Current.c_str()))
+			{
+				if (ImGui::Selectable("<None>", Current.empty()))
+				{
+					Val->clear();
+					bChanged = true;
+				}
+
+				for (const FString& Path : AnimPaths)
+				{
+					if (Path.empty())
+					{
+						continue;
+					}
+
+					const bool bSelected = (Current == Path);
+					if (ImGui::Selectable(Path.c_str(), bSelected))
+					{
+						*Val = Path;
+						bChanged = true;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			char Buf[512];
+			strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
+			if (ImGui::InputText("##AnimationAssetPathInput", Buf, sizeof(Buf)))
+			{
+				*Val = Buf;
+				bChanged = true;
+			}
+		}
 		else if (strcmp(Property.Name, "ScriptName") == 0)
 		{
 			if (!Val)

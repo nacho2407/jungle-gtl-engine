@@ -4,8 +4,6 @@
 #include <algorithm>
 #include <cmath>
 
-
-
 const TArray<FBoneAnimationTrack>& UAnimDataModel::GetBoneAnimationTracks() const
 {
 	return BoneAnimationTracks;
