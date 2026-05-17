@@ -106,10 +106,10 @@ void UObject::Serialize(FArchive& Ar)
 	FString ClassName = GetClass() ? GetClass()->GetName() : "UObject";
 	Ar << "Type" << ClassName;
 	Ar << "ObjectName" << ObjectName;
-	SerializeReflectedProperties(Ar);
+	SerializeProperties(Ar);
 }
 
-void UObject::SerializeReflectedProperties(FArchive& Ar)
+void UObject::SerializeProperties(FArchive& Ar)
 {
 	UClass* Class = GetClass();
 	if (!Class) 
