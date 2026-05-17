@@ -399,6 +399,41 @@ FbxAMatrix GetNormalTransformFromPositionTransform(FbxAMatrix Matrix)
     return Matrix;
 }
 
+double GetUpper3x3Determinant(const FbxAMatrix& Matrix)
+{
+    return
+        Matrix.Get(0, 0) * (Matrix.Get(1, 1) * Matrix.Get(2, 2) - Matrix.Get(1, 2) * Matrix.Get(2, 1)) -
+        Matrix.Get(0, 1) * (Matrix.Get(1, 0) * Matrix.Get(2, 2) - Matrix.Get(1, 2) * Matrix.Get(2, 0)) +
+        Matrix.Get(0, 2) * (Matrix.Get(1, 0) * Matrix.Get(2, 1) - Matrix.Get(1, 1) * Matrix.Get(2, 0));
+}
+
+bool HasMirroredHandedness(const FbxAMatrix& Matrix)
+{
+    constexpr double DeterminantEpsilon = 1.e-8;
+    return GetUpper3x3Determinant(Matrix) < -DeterminantEpsilon;
+}
+
+void AppendTriangleIndices(
+    TArray<uint32>& OutIndices,
+    uint32 I0,
+    uint32 I1,
+    uint32 I2,
+    bool bFlipWinding)
+{
+    OutIndices.push_back(I0);
+
+    if (bFlipWinding)
+    {
+        OutIndices.push_back(I2);
+        OutIndices.push_back(I1);
+    }
+    else
+    {
+        OutIndices.push_back(I1);
+        OutIndices.push_back(I2);
+    }
+}
+
 int32 FindNearestImportedBoneIndex(
     FbxNode* StartNode,
     const TMap<FbxNode*, int32>& BoneNodeToIndex)

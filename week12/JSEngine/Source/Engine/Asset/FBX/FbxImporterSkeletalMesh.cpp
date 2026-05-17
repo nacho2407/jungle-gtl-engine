@@ -165,6 +165,13 @@ void FFbxImporter::ProcessSkeletalMesh(
     const FbxAMatrix NormalBindGlobalWithGeometry =
         GetNormalTransformFromPositionTransform(MeshBindGlobalWithGeometry);
 
+    const bool bFlipWinding = HasMirroredHandedness(MeshBindGlobalWithGeometry);
+    if (bFlipWinding)
+    {
+        UE_LOG("[FbxImporter] Mirrored skeletal mesh transform detected; flipping winding. Node=%s",
+               OwnerNode ? OwnerNode->GetName() : "<null>");
+    }
+
     // parentIndex와 LocalBindTransform을 계산
     for (auto& Pair : BoneNodeToIndex)
     {
@@ -306,6 +313,9 @@ void FFbxImporter::ProcessSkeletalMesh(
             SlotIndices.resize(SlotIdx + 1);
         }
 
+        uint32 TriangleIndices[3] = {};
+        int32 ValidCornerCount = 0;
+
         for (int32 Corner = 0; Corner < 3; Corner++)
         {
             const int32 CtrlPointIdx = Mesh->GetPolygonVertex(PolyIdx, Corner);
@@ -359,7 +369,17 @@ void FFbxImporter::ProcessSkeletalMesh(
 
             const uint32 NewIndex = static_cast<uint32>(InSkeletalMesh->Vertices.size());
             InSkeletalMesh->Vertices.push_back(Vertex);
-            SlotIndices[SlotIdx].push_back(NewIndex);
+            TriangleIndices[ValidCornerCount++] = NewIndex;
+        }
+
+        if (ValidCornerCount == 3)
+        {
+            AppendTriangleIndices(
+                SlotIndices[SlotIdx],
+                TriangleIndices[0],
+                TriangleIndices[1],
+                TriangleIndices[2],
+                bFlipWinding);
         }
     }
 
@@ -440,6 +460,13 @@ void FFbxImporter::ProcessRigidAttachedMesh(
     const FbxAMatrix OwnerNormalGlobalWithGeometry =
         GetNormalTransformFromPositionTransform(OwnerGlobalWithGeometry);
 
+    const bool bFlipWinding = HasMirroredHandedness(OwnerGlobalWithGeometry);
+    if (bFlipWinding)
+    {
+        UE_LOG("[FbxImporter] Mirrored rigid skeletal mesh transform detected; flipping winding. Node=%s",
+               OwnerNode ? OwnerNode->GetName() : "<null>");
+    }
+
     FbxLayerElementArrayTemplate<int32>* MaterialIndices = nullptr;
     FbxGeometryElement::EMappingMode MaterialMappingMode = FbxGeometryElement::eByPolygon;
 
@@ -492,6 +519,9 @@ void FFbxImporter::ProcessRigidAttachedMesh(
         {
             SlotIndices.resize(SlotIdx + 1);
         }
+
+        uint32 TriangleIndices[3] = {};
+        int32 ValidCornerCount = 0;
 
         for (int32 Corner = 0; Corner < 3; Corner++)
         {
@@ -547,7 +577,17 @@ void FFbxImporter::ProcessRigidAttachedMesh(
 
             const uint32 NewIndex = static_cast<uint32>(InSkeletalMesh->Vertices.size());
             InSkeletalMesh->Vertices.push_back(Vertex);
-            SlotIndices[SlotIdx].push_back(NewIndex);
+            TriangleIndices[ValidCornerCount++] = NewIndex;
+        }
+
+        if (ValidCornerCount == 3)
+        {
+            AppendTriangleIndices(
+                SlotIndices[SlotIdx],
+                TriangleIndices[0],
+                TriangleIndices[1],
+                TriangleIndices[2],
+                bFlipWinding);
         }
     }
 
