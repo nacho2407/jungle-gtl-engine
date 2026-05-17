@@ -760,12 +760,6 @@ bool FAnimSequenceAssetLoader::Save(const FString& Path, const UAnimSequence* Se
 	Root["FrameRateDenominator"] = DataModel->GetFrameRate().Denominator;
 	Root["NumberOfFrames"] = DataModel->GetNumberOfFrames();
 	Root["NumberOfKeys"] = DataModel->GetNumberOfKeys();
-	JSON TracksJson = JSON::Make(JSON::Class::Array);
-	for (const FBoneAnimationTrack& Track : DataModel->GetBoneAnimationTracks())
-	{
-		TracksJson.append(SerializeTrackJson(Track));
-	}
-	Root["Tracks"] = TracksJson;
 
 	std::error_code ErrorCode;
 	const std::filesystem::path FilePath(FPaths::ToWide(NormalizedPath));
