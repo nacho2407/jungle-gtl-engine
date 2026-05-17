@@ -624,7 +624,31 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
     )
     enum_type_expr = f"FEnum::FindEnumByName({cpp_string_literal(prop.enum_type_name)})" if prop.enum_type_name else "nullptr"
     property_symbol = f"G{make_cpp_identifier(prop.owner)}_{make_cpp_identifier(prop.member_name)}_{index}_Property"
-    property_class = "FSoftObjectProperty" if is_soft_object_property(prop) else "FGenericProperty"
+    if prop.property_type == "Enum":
+        property_class = "FEnumProperty"
+    elif is_soft_object_property(prop):
+        property_class = "FSoftObjectProperty"
+    else:
+        property_class = "FGenericProperty"
+
+    if property_class == "FEnumProperty":
+        return (
+            f"\tstatic const FEnumProperty {property_symbol}(\n"
+            f"\t\t{cpp_string_literal(prop.member_name)},\n"
+            f"\t\t{cpp_string_literal(prop.category)},\n"
+            f"\t\t{prop.flags},\n"
+            f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
+            f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+            f"\t\t{prop.min_value},\n"
+            f"\t\t{prop.max_value},\n"
+            f"\t\t{prop.speed_value},\n"
+            f"\t\t{enum_type_expr},\n"
+            f"\t\t{cpp_string_literal(prop.display_name)},\n"
+            f"\t\t{{{metadata_entries}}},\n"
+            f"\t\t{cpp_string_literal(prop.owner)}\n"
+            "\t);\n"
+            f"\tStruct->AddProperty(&{property_symbol});\n"
+        )
 
     if property_class == "FSoftObjectProperty":
         return (
@@ -657,7 +681,6 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
         f"\t\t{prop.min_value},\n"
         f"\t\t{prop.max_value},\n"
         f"\t\t{prop.speed_value},\n"
-        f"\t\t{enum_type_expr},\n"
         f"\t\t{prop.struct_type},\n"
         f"\t\t{cpp_string_literal(prop.display_name)},\n"
         f"\t\t{{{metadata_entries}}},\n"

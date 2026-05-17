@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorPropertyWidget.h"
+#include "Editor/UI/EditorPropertyWidget.h"
 
 #include "Editor/EditorEngine.h"
 
@@ -1085,6 +1085,266 @@ void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* Component
 	bActorSelected = false;
 }
 
+bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
+{
+	bool bChanged = false;
+	FString* Val = static_cast<FString*>(Prop.GetValuePtr());
+	if (!Val)
+	{
+		return false;
+	}
+
+	const FSoftObjectProperty* SoftProperty = Prop.Property ? Prop.Property->AsSoftObjectProperty() : nullptr;
+	FString AssetType = SoftProperty ? SoftProperty->GetAssetType() : GetAssetTypeMetadata(Prop);
+
+	if (AssetType == "Script")
+	{
+		char Buf[256];
+		strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
+		if (ImGui::InputText("##Value", Buf, sizeof(Buf)))
+		{
+			*Val = Buf;
+			bChanged = true;
+		}
+
+		if (ImGui::Button("Edit Script"))
+		{
+			if (!FLuaScriptManager::OpenOrCreateScript(*Val))
+			{
+				UE_LOG("Failed to open script file: %s", Val->c_str());
+			}
+		}
+		return bChanged;
+	}
+
+	if (AssetType == "SkeletalMesh")
+	{
+		FString Preview = Val->empty() ? "None" : GetStemFromPath(*Val);
+		if (*Val == "None") Preview = "None";
+
+		float ButtonWidth = ImGui::CalcTextSize("Import FBX").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+		float Spacing = ImGui::GetStyle().ItemSpacing.x;
+		ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
+		if (ImGui::BeginCombo("##SkeletalMesh", Preview.c_str()))
+		{
+			bool bSelectedNone = (*Val == "None");
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				*Val = "None";
+				bChanged = true;
+			}
+			if (bSelectedNone)
+				ImGui::SetItemDefaultFocus();
+			const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
+			for (const FMeshAssetListItem& Item : MeshFiles)
+			{
+				bool bSelected = (*Val == Item.FullPath);
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				{
+					*Val = Item.FullPath;
+					bChanged = true;
+				}
+				if (bSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::SameLine();
+
+		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ButtonWidth);
+		if (ImGui::Button("Import FBX"))
+		{
+			FString FbxPath = OpenFbxFileDialog();
+			if (!FbxPath.empty())
+			{
+				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+				USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(FbxPath, Device);
+				if (Loaded)
+				{
+					*Val = FMeshManager::GetSkeletalMeshBinaryFilePath(FbxPath);
+					bChanged = true;
+				}
+			}
+		}
+		return bChanged;
+	}
+
+	FString Preview = Val->empty() ? "None" : GetStemFromPath(*Val);
+	if (*Val == "None") Preview = "None";
+
+	float ButtonWidth = ImGui::CalcTextSize("Import").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+	float Spacing = ImGui::GetStyle().ItemSpacing.x;
+	ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
+
+	if (ImGui::BeginCombo("##Mesh", Preview.c_str()))
+	{
+		bool bSelectedNone = (*Val == "None");
+		if (ImGui::Selectable("None", bSelectedNone))
+		{
+			*Val = "None";
+			bChanged = true;
+		}
+		if (bSelectedNone)
+			ImGui::SetItemDefaultFocus();
+
+		const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
+		for (const FMeshAssetListItem& Item : MeshFiles)
+		{
+			bool bSelected = (*Val == Item.FullPath);
+			if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+			{
+				*Val = Item.FullPath;
+				bChanged = true;
+			}
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	ImGui::SameLine();
+
+	ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ButtonWidth);
+	if (ImGui::Button("Import"))
+	{
+		FString MeshPath = OpenStaticMeshFileDialog();
+		if (!MeshPath.empty())
+		{
+			if (IsFbxFilePath(MeshPath))
+			{
+				PendingStaticMeshImportPath = MeshPath;
+				PendingStaticMeshImportTarget = Val;
+				PendingStaticFbxSkinnedMeshPolicy =
+					FImportOptions::Default().StaticFbxSkinnedMeshPolicy == EStaticFbxSkinnedMeshPolicy::ImportBindPoseAsStatic ? 1 : 0;
+				ImGui::OpenPopup("Static FBX Import Options");
+			}
+			else
+			{
+				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+				UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(MeshPath, Device);
+				if (Loaded)
+				{
+					*Val = FMeshManager::GetStaticMeshBinaryFilePath(MeshPath);
+					bChanged = true;
+				}
+			}
+		}
+	}
+
+	if (ImGui::BeginPopupModal("Static FBX Import Options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::TextUnformatted("Skinned mesh handling");
+		ImGui::RadioButton("Skip skinned meshes", &PendingStaticFbxSkinnedMeshPolicy, 0);
+		ImGui::RadioButton("Import bind pose as static mesh", &PendingStaticFbxSkinnedMeshPolicy, 1);
+
+		if (ImGui::Button("Import"))
+		{
+			FImportOptions Options = FImportOptions::Default();
+			Options.StaticFbxSkinnedMeshPolicy = PendingStaticFbxSkinnedMeshPolicy == 1
+				? EStaticFbxSkinnedMeshPolicy::ImportBindPoseAsStatic
+				: EStaticFbxSkinnedMeshPolicy::Skip;
+
+			ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+			UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(PendingStaticMeshImportPath, Options, Device);
+			if (Loaded && PendingStaticMeshImportTarget)
+			{
+				*PendingStaticMeshImportTarget = FMeshManager::GetStaticMeshBinaryFilePath(PendingStaticMeshImportPath);
+				bChanged = true;
+			}
+
+			PendingStaticMeshImportPath.clear();
+			PendingStaticMeshImportTarget = nullptr;
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel"))
+		{
+			PendingStaticMeshImportPath.clear();
+			PendingStaticMeshImportTarget = nullptr;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+
+	return bChanged;
+}
+
+bool FEditorPropertyWidget::RenderEnumPropertyWidget(FPropertyValue& Prop)
+{
+	const FEnum* EnumType = Prop.GetEnumType();
+	if (!EnumType || !EnumType->GetNames() || EnumType->GetCount() == 0 || !Prop.GetValuePtr())
+	{
+		return false;
+	}
+
+	bool bChanged = false;
+	const char** EnumNames = EnumType->GetNames();
+	const uint32 EnumCount = EnumType->GetCount();
+	const uint32 EnumSize = EnumType->GetSize();
+	int32 Val = 0;
+	memcpy(&Val, Prop.GetValuePtr(), EnumSize);
+	const char* Preview = ((uint32)Val < EnumCount) ? EnumNames[Val] : "Unknown";
+	if (ImGui::BeginCombo("##Value", Preview))
+	{
+		for (uint32 i = 0; i < EnumCount; ++i)
+		{
+			bool bSelected = (Val == (int32)i);
+			if (ImGui::Selectable(EnumNames[i], bSelected))
+			{
+				int32 NewVal = (int32)i;
+				memcpy(Prop.GetValuePtr(), &NewVal, EnumSize);
+				bChanged = true;
+			}
+			if (bSelected) ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+	return bChanged;
+}
+
+bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop)
+{
+	if (!Prop.GetStructType() || !Prop.GetValuePtr()) return false;
+
+	bool bChanged = false;
+	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_DefaultOpen |
+		ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
+
+	bool bOpen = ImGui::TreeNodeEx("##StructValue", Flags, "");
+	if (bOpen)
+	{
+		TArray<FPropertyValue> ChildProps;
+		Prop.GetStructChildren(ChildProps);
+
+		ImGui::Indent(8.0f);
+
+		for (int32 ci = 0; ci < (int32)ChildProps.size(); ++ci)
+		{
+			ImGui::PushID(ci);
+
+			FPropertyValue& ChildProp = ChildProps[ci];
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextUnformatted(GetPropertyDisplayName(ChildProp));
+			ImGui::SameLine(120.0f);
+			ImGui::SetNextItemWidth(-1);
+
+			int32 ChildIdx = ci;
+			if (RenderPropertyWidget(ChildProps, ChildIdx, false))
+			{
+				bChanged = true;
+			}
+			ImGui::PopID();
+		}
+
+		ImGui::Unindent(8.0f);
+		ImGui::TreePop();
+	}
+
+	return bChanged;
+}
+
 bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, int32& Index, bool bDispatchChange)
 {
 	ImGui::PushID(Index);
@@ -1130,9 +1390,9 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	{
 		int32* Val = static_cast<int32*>(Prop.GetValuePtr());
 		if (Prop.GetMin() != 0.0f || Prop.GetMax() != 0.0f)
-			bChanged = ImGui::DragInt("##Value", Val, (int32)Prop.GetSpeed(), (int32)Prop.GetMin(), (int32)Prop.GetMax());
+			bChanged = ImGui::DragInt("##Value", Val, Prop.GetSpeed(), (int32)Prop.GetMin(), (int32)Prop.GetMax());
 		else
-			bChanged = ImGui::DragInt("##Value", Val, (int32)Prop.GetSpeed());
+			bChanged = ImGui::DragInt("##Value", Val, Prop.GetSpeed());
 		break;
 	}
 	case EPropertyType::Float:
@@ -1250,184 +1510,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	}
 	case EPropertyType::SoftObjectRef:
 	{
-		FString* Val = static_cast<FString*>(Prop.GetValuePtr());
-		const FSoftObjectProperty* SoftProperty = Prop.Property ? Prop.Property->AsSoftObjectProperty() : nullptr;
-		FString AssetType = SoftProperty ? SoftProperty->GetAssetType() : GetAssetTypeMetadata(Prop);
-
-		if (AssetType == "Script")
-		{
-			char Buf[256];
-			strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
-			if (ImGui::InputText("##Value", Buf, sizeof(Buf)))
-			{
-				*Val = Buf;
-				bChanged = true;
-			}
-
-			if (ImGui::Button("Edit Script"))
-			{
-				if (!FLuaScriptManager::OpenOrCreateScript(*Val))
-				{
-					UE_LOG("Failed to open script file: %s", Val->c_str());
-				}
-			}
-			break;
-		}
-
-		if (AssetType == "SkeletalMesh")
-		{
-			FString Preview = Val->empty() ? "None" : GetStemFromPath(*Val);
-			if (*Val == "None") Preview = "None";
-
-			float ButtonWidth = ImGui::CalcTextSize("Import FBX").x + ImGui::GetStyle().FramePadding.x * 2.0f;
-			float Spacing = ImGui::GetStyle().ItemSpacing.x;
-			ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
-			if (ImGui::BeginCombo("##SkeletalMesh", Preview.c_str()))
-			{
-				bool bSelectedNone = (*Val == "None");
-				if (ImGui::Selectable("None", bSelectedNone))
-				{
-					*Val = "None";
-					bChanged = true;
-				}
-				if (bSelectedNone)
-					ImGui::SetItemDefaultFocus();
-				const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
-				for (const FMeshAssetListItem& Item : MeshFiles)
-				{
-					bool bSelected = (*Val == Item.FullPath);
-					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
-					{
-						*Val = Item.FullPath;
-						bChanged = true;
-					}
-					if (bSelected)
-						ImGui::SetItemDefaultFocus();
-				}
-				ImGui::EndCombo();
-			}
-
-			ImGui::SameLine();
-
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ButtonWidth);
-			if (ImGui::Button("Import FBX"))
-			{
-				FString FbxPath = OpenFbxFileDialog();
-				if (!FbxPath.empty())
-				{
-					ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-					USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(FbxPath, Device);
-					if (Loaded)
-					{
-						*Val = FMeshManager::GetSkeletalMeshBinaryFilePath(FbxPath);
-						bChanged = true;
-					}
-				}
-			}
-			break;
-		}
-
-		FString Preview = Val->empty() ? "None" : GetStemFromPath(*Val);
-		if (*Val == "None") Preview = "None";
-
-		float ButtonWidth = ImGui::CalcTextSize("Import").x + ImGui::GetStyle().FramePadding.x * 2.0f;
-		float Spacing = ImGui::GetStyle().ItemSpacing.x;
-		ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
-
-		if (ImGui::BeginCombo("##Mesh", Preview.c_str()))
-		{
-			bool bSelectedNone = (*Val == "None");
-			if (ImGui::Selectable("None", bSelectedNone))
-			{
-				*Val = "None";
-				bChanged = true;
-			}
-			if (bSelectedNone)
-				ImGui::SetItemDefaultFocus();
-
-			const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
-			for (const FMeshAssetListItem& Item : MeshFiles)
-			{
-				bool bSelected = (*Val == Item.FullPath);
-				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
-				{
-					*Val = Item.FullPath;
-					bChanged = true;
-				}
-				if (bSelected)
-					ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
-		}
-
-		// .obj/.fbx static mesh 임포트 버튼
-		ImGui::SameLine();
-
-		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ButtonWidth);
-		if (ImGui::Button("Import"))
-		{
-			FString MeshPath = OpenStaticMeshFileDialog();
-			if (!MeshPath.empty())
-			{
-				if (IsFbxFilePath(MeshPath))
-				{
-					PendingStaticMeshImportPath = MeshPath;
-					PendingStaticMeshImportTarget = Val;
-					PendingStaticFbxSkinnedMeshPolicy =
-						FImportOptions::Default().StaticFbxSkinnedMeshPolicy == EStaticFbxSkinnedMeshPolicy::ImportBindPoseAsStatic ? 1 : 0;
-					ImGui::OpenPopup("Static FBX Import Options");
-				}
-				else
-				{
-					ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-					UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(MeshPath, Device);
-					if (Loaded)
-					{
-						// Component에는 바로 로드할 .statbin 경로를 저장한다.
-						// Scene을 다시 열 때 원본 import를 반복하지 않기 위해서다.
-						*Val = FMeshManager::GetStaticMeshBinaryFilePath(MeshPath);
-						bChanged = true;
-					}
-				}
-			}
-		}
-
-		if (ImGui::BeginPopupModal("Static FBX Import Options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			ImGui::TextUnformatted("Skinned mesh handling");
-			ImGui::RadioButton("Skip skinned meshes", &PendingStaticFbxSkinnedMeshPolicy, 0);
-			ImGui::RadioButton("Import bind pose as static mesh", &PendingStaticFbxSkinnedMeshPolicy, 1);
-
-			if (ImGui::Button("Import"))
-			{
-				FImportOptions Options = FImportOptions::Default();
-				Options.StaticFbxSkinnedMeshPolicy = PendingStaticFbxSkinnedMeshPolicy == 1
-					? EStaticFbxSkinnedMeshPolicy::ImportBindPoseAsStatic
-					: EStaticFbxSkinnedMeshPolicy::Skip;
-
-				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-				UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(PendingStaticMeshImportPath, Options, Device);
-				if (Loaded && PendingStaticMeshImportTarget)
-				{
-					// 옵션을 적용해 만든 결과도 .statbin 경로로 남긴다.
-					*PendingStaticMeshImportTarget = FMeshManager::GetStaticMeshBinaryFilePath(PendingStaticMeshImportPath);
-					bChanged = true;
-				}
-
-				PendingStaticMeshImportPath.clear();
-				PendingStaticMeshImportTarget = nullptr;
-				ImGui::CloseCurrentPopup();
-			}
-
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel"))
-			{
-				PendingStaticMeshImportPath.clear();
-				PendingStaticMeshImportTarget = nullptr;
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
-		}
+		bChanged = RenderSoftObjectPropertyWidget(Prop);
 		break;
 	}
 	case EPropertyType::MaterialSlot:
@@ -1647,29 +1730,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	}
 	case EPropertyType::Enum:
 	{
-		const FEnum* EnumType = Prop.GetEnumType();
-		if (!EnumType || !EnumType->GetNames() || EnumType->GetCount() == 0) break;
-		const char** EnumNames = EnumType->GetNames();
-		const uint32 EnumCount = EnumType->GetCount();
-		const uint32 EnumSize = EnumType->GetSize();
-		int32 Val = 0;
-		memcpy(&Val, Prop.GetValuePtr(), EnumSize);
-		const char* Preview = ((uint32)Val < EnumCount) ? EnumNames[Val] : "Unknown";
-		if (ImGui::BeginCombo("##Value", Preview))
-		{
-			for (uint32 i = 0; i < EnumCount; ++i)
-			{
-				bool bSelected = (Val == (int32)i);
-				if (ImGui::Selectable(EnumNames[i], bSelected))
-				{
-					int32 NewVal = (int32)i;
-					memcpy(Prop.GetValuePtr(), &NewVal, EnumSize);
-					bChanged = true;
-				}
-				if (bSelected) ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
-		}
+		bChanged = RenderEnumPropertyWidget(Prop);
 		break;
 	}
 	case EPropertyType::Vec3Array:
@@ -1706,41 +1767,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	}
 	case EPropertyType::Struct:
 	{
-		if (!Prop.GetStructType() || !Prop.GetValuePtr()) break;
-
-		ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_DefaultOpen |
-			ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
-
-		bool bOpen = ImGui::TreeNodeEx("##StructValue", Flags, "");
-
-		if (bOpen)
-		{
-			TArray<FPropertyValue> ChildProps;
-			Prop.GetStructChildren(ChildProps);
-
-			ImGui::Indent(8.0f);
-
-			for (int32 ci = 0; ci < (int32)ChildProps.size(); ++ci)
-			{
-				ImGui::PushID(ci);
-
-				FPropertyValue& ChildProp = ChildProps[ci];
-				ImGui::AlignTextToFramePadding();
-				ImGui::TextUnformatted(GetPropertyDisplayName(ChildProp));
-				ImGui::SameLine(120.0f);
-				ImGui::SetNextItemWidth(-1);
-
-				int32 ChildIdx = ci;
-				if (RenderPropertyWidget(ChildProps, ChildIdx, false))
-				{
-					bChanged = true;
-				}
-				ImGui::PopID();
-			}
-
-			ImGui::Unindent(8.0f);
-			ImGui::TreePop();
-		}
+		bChanged = RenderStructPropertyWidget(Prop);
 		break;
 	}
 	}

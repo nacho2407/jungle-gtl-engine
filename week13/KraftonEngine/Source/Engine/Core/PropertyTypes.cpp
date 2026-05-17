@@ -160,14 +160,6 @@ json::JSON FGenericProperty::Serialize(void* Container) const
 	case EPropertyType::Name:
 		return JSON(static_cast<FName*>(ValuePtr)->ToString());
 
-	case EPropertyType::Enum:
-	{
-		const uint32 ResolvedEnumSize = EnumType ? EnumType->GetSize() : sizeof(int32);
-		int32 Val = 0;
-		std::memcpy(&Val, ValuePtr, ResolvedEnumSize);
-		return JSON(Val);
-	}
-
 	case EPropertyType::Vec3Array:
 	{
 		const TArray<FVector>* Arr = static_cast<const TArray<FVector>*>(ValuePtr);
@@ -289,14 +281,6 @@ void FGenericProperty::Deserialize(void* Container, json::JSON& Value) const
 		*static_cast<FName*>(ValuePtr) = FName(Value.ToString());
 		break;
 
-	case EPropertyType::Enum:
-	{
-		const uint32 ResolvedEnumSize = EnumType ? EnumType->GetSize() : sizeof(int32);
-		int32 Val = Value.ToInt();
-		std::memcpy(ValuePtr, &Val, ResolvedEnumSize);
-		break;
-	}
-
 	case EPropertyType::Vec3Array:
 	{
 		TArray<FVector>* Arr = static_cast<TArray<FVector>*>(ValuePtr);
@@ -398,9 +382,6 @@ void FGenericProperty::Serialize(void* Container, FArchive& Ar) const
 	case EPropertyType::Name:
 		Ar << *static_cast<FName*>(ValuePtr);
 		break;
-	case EPropertyType::Enum:
-		Ar.Serialize(ValuePtr, EnumType ? EnumType->GetSize() : sizeof(int32));
-		break;
 	case EPropertyType::Vec3Array:
 		Ar << *static_cast<TArray<FVector>*>(ValuePtr);
 		break;
@@ -426,6 +407,46 @@ void FGenericProperty::Serialize(void* Container, FArchive& Ar) const
 	default:
 		break;
 	}
+}
+
+json::JSON FEnumProperty::Serialize(void* Container) const
+{
+	using namespace json;
+
+	void* ValuePtr = GetValuePtrFor(Container);
+	if (!ValuePtr)
+	{
+		return JSON();
+	}
+
+	const uint32 ResolvedEnumSize = EnumType ? EnumType->GetSize() : sizeof(int32);
+	int32 Val = 0;
+	std::memcpy(&Val, ValuePtr, ResolvedEnumSize);
+	return JSON(Val);
+}
+
+void FEnumProperty::Deserialize(void* Container, json::JSON& Value) const
+{
+	void* ValuePtr = GetValuePtrFor(Container);
+	if (!ValuePtr)
+	{
+		return;
+	}
+
+	const uint32 ResolvedEnumSize = EnumType ? EnumType->GetSize() : sizeof(int32);
+	int32 Val = Value.ToInt();
+	std::memcpy(ValuePtr, &Val, ResolvedEnumSize);
+}
+
+void FEnumProperty::Serialize(void* Container, FArchive& Ar) const
+{
+	void* ValuePtr = GetValuePtrFor(Container);
+	if (!ValuePtr)
+	{
+		return;
+	}
+
+	Ar.Serialize(ValuePtr, EnumType ? EnumType->GetSize() : sizeof(int32));
 }
 
 json::JSON FProperty::Serialize(UObject* Object) const
