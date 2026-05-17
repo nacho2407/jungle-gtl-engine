@@ -119,7 +119,6 @@ void FShadowPass::RenderShadowDepth(
 		}
 
 		Program->Bind(DeviceContext);
-		BindVertexFactoryResources(DeviceContext, Cmd.VertexFactoryType, Cmd);
 		CheckOverrideViewMode(Context);
 
 		ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();

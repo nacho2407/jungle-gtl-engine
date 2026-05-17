@@ -1492,7 +1492,6 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 			Program->Bind(InDeviceContext);
 			InCommand.Material->BindRenderStates(InDeviceContext);
 			InCommand.Material->BindParameters(InDeviceContext, Program->PS);
-			BindVertexFactoryResources(InDeviceContext, InCommand.VertexFactoryType, InCommand);
 		}
 	}
 
