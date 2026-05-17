@@ -239,26 +239,26 @@ json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj)
 	JSON Props = json::Object();
 	if (!Obj) return Props;
 
-	TArray<FProperty> Properties;
-	Obj->GetClass()->GetProperties(Properties);
-	for (const FProperty& Prop : Properties)
+	TArray<const FProperty*> Properties;
+	Obj->GetClass()->GetPropertyRefs(Properties);
+	for (const FProperty* Prop : Properties)
 	{
-		if ((Prop.Flags & PF_Save) == 0)
+		if (!Prop || (Prop->Flags & PF_Save) == 0)
 		{
 			continue;
 		}
 
-		if (!Prop.GetValuePtrFor(Obj))
+		if (!Prop->GetValuePtrFor(Obj))
 		{
 			continue;
 		}
 
-		if (!Prop.Name || Prop.Name[0] == '\0')
+		if (!Prop->Name || Prop->Name[0] == '\0')
 		{
 			continue;
 		}
 
-		Props[Prop.Name] = Prop.Serialize(Obj);
+		Props[Prop->Name] = Prop->Serialize(Obj);
 	}
 	return Props;
 }
@@ -470,19 +470,19 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 {
 	if (!Obj) return;
 
-	TArray<FProperty> Properties;
-	Obj->GetClass()->GetProperties(Properties);
-	for (const FProperty& Property : Properties)
+	TArray<const FProperty*> Properties;
+	Obj->GetClass()->GetPropertyRefs(Properties);
+	for (const FProperty* Property : Properties)
 	{
-		if((Property.Flags & PF_Save) == 0)
+		if(!Property || (Property->Flags & PF_Save) == 0)
 		{
 			continue;
 		}
 
-		const char* PropertyKey = Property.Name;
-		if (!PropsJSON.hasKey(PropertyKey) && Property.DisplayName && PropsJSON.hasKey(Property.DisplayName))
+		const char* PropertyKey = Property->Name;
+		if (!PropsJSON.hasKey(PropertyKey) && Property->DisplayName && PropsJSON.hasKey(Property->DisplayName))
 		{
-			PropertyKey = Property.DisplayName;
+			PropertyKey = Property->DisplayName;
 		}
 
 		if (!PropsJSON.hasKey(PropertyKey))
@@ -490,20 +490,20 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 			continue;
 		}
 
-		if(!Property.GetValuePtrFor(Obj))
+		if(!Property->GetValuePtrFor(Obj))
 		{
 			continue;
 		}
 
 		json::JSON& Value = PropsJSON[PropertyKey];
-		Property.Deserialize(Obj, Value);
+		Property->Deserialize(Obj, Value);
 
 		FPropertyChangedEvent Event;
 		Event.Object = Obj;
-		Event.Property = &Property;
-		Event.PropertyName = Property.Name;
-		Event.DisplayName = Property.DisplayName ? Property.DisplayName : Property.Name;
-		Event.Type = Property.Type;
+		Event.Property = Property;
+		Event.PropertyName = Property->Name;
+		Event.DisplayName = Property->DisplayName ? Property->DisplayName : Property->Name;
+		Event.Type = Property->Type;
 		Event.ChangeType = EPropertyChangeType::Load;
 		Obj->PostEditChangeProperty(Event);
 	}
