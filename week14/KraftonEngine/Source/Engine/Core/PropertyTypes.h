@@ -14,6 +14,7 @@ struct FProperty;
 struct FNumericProperty;
 struct FBoolProperty;
 struct FStringProperty;
+struct FNameProperty;
 struct FEnumProperty;
 struct FSoftObjectProperty;
 struct FStructProperty;
@@ -198,6 +199,7 @@ struct FProperty
 	virtual const FNumericProperty* AsNumericProperty() const { return nullptr; }
 	virtual const FBoolProperty* AsBoolProperty() const { return nullptr; }
 	virtual const FStringProperty* AsStringProperty() const { return nullptr; }
+	virtual const FNameProperty* AsNameProperty() const { return nullptr; }
 	virtual const FEnumProperty* AsEnumProperty() const { return nullptr; }
 	virtual const FSoftObjectProperty* AsSoftObjectProperty() const { return nullptr; }
 	virtual const FStructProperty* AsStructProperty() const { return nullptr; }
@@ -253,6 +255,7 @@ struct FGenericProperty : FProperty
 #include "Core/Property/GenericProperty.h"
 #include "Core/Property/BoolProperty.h"
 #include "Core/Property/StringProperty.h"
+#include "Core/Property/NameProperty.h"
 #include "Core/Property/NumericProperty.h"
 #include "Core/Property/EnumProperty.h"
 #include "Core/Property/SoftObjectProperty.h"

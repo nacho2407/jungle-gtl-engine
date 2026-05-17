@@ -3,7 +3,6 @@
 #include "SimpleJSON/json.hpp"
 #include "Math/Rotator.h"
 #include "Math/Vector.h"
-#include "Object/FName.h"
 #include "Serialization/Archive.h"
 
 json::JSON FGenericProperty::Serialize(void* Container) const
@@ -63,8 +62,6 @@ json::JSON FGenericProperty::Serialize(void* Container) const
 	}
 	case EPropertyType::ByteBool:
 		return JSON(static_cast<bool>(*static_cast<uint8*>(ValuePtr) != 0));
-	case EPropertyType::Name:
-		return JSON(static_cast<FName*>(ValuePtr)->ToString());
 	case EPropertyType::Vec3Array:
 	{
 		const TArray<FVector>* Arr = static_cast<const TArray<FVector>*>(ValuePtr);
@@ -144,9 +141,6 @@ void FGenericProperty::Deserialize(void* Container, json::JSON& Value) const
 		*Slots = LoadedSlots;
 		break;
 	}
-	case EPropertyType::Name:
-		*static_cast<FName*>(ValuePtr) = FName(Value.ToString());
-		break;
 	case EPropertyType::Vec3Array:
 	{
 		TArray<FVector>* Arr = static_cast<TArray<FVector>*>(ValuePtr);
@@ -216,9 +210,6 @@ void FGenericProperty::Serialize(void* Container, FArchive& Ar) const
 		}
 		break;
 	}
-	case EPropertyType::Name:
-		Ar << *static_cast<FName*>(ValuePtr);
-		break;
 	case EPropertyType::Vec3Array:
 		Ar << *static_cast<TArray<FVector>*>(ValuePtr);
 		break;
