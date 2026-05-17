@@ -297,6 +297,19 @@ bool FWindowsApplication::HandleCustomChromeMessage(HWND hWnd, unsigned int Msg,
 	switch (Msg)
 	{
 	case WM_NCCALCSIZE:
+		if (wParam == TRUE && Window.IsWindowMaximized())
+		{
+			NCCALCSIZE_PARAMS* Params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+			if (Params)
+			{
+				const int32 BorderX = GetResizeBorderThicknessX();
+				const int32 BorderY = GetResizeBorderThicknessY();
+				Params->rgrc[0].left += BorderX;
+				Params->rgrc[0].top += BorderY;
+				Params->rgrc[0].right -= BorderX;
+				Params->rgrc[0].bottom -= BorderY;
+			}
+		}
 		OutResult = 0;
 		return true;
 	case WM_NCACTIVATE:
@@ -386,10 +399,12 @@ void FWindowsApplication::UpdateMaximizedBounds(HWND hWnd, MINMAXINFO* InOutMinM
 
 	const RECT& MonitorRect = MonitorInfo.rcMonitor;
 	const RECT& WorkRect = MonitorInfo.rcWork;
+	const int32 BorderX = GetResizeBorderThicknessX();
+	const int32 BorderY = GetResizeBorderThicknessY();
 
-	InOutMinMaxInfo->ptMaxPosition.x = WorkRect.left - MonitorRect.left;
-	InOutMinMaxInfo->ptMaxPosition.y = WorkRect.top - MonitorRect.top;
-	InOutMinMaxInfo->ptMaxSize.x = WorkRect.right - WorkRect.left;
-	InOutMinMaxInfo->ptMaxSize.y = WorkRect.bottom - WorkRect.top;
+	InOutMinMaxInfo->ptMaxPosition.x = WorkRect.left - MonitorRect.left - BorderX;
+	InOutMinMaxInfo->ptMaxPosition.y = WorkRect.top - MonitorRect.top - BorderY;
+	InOutMinMaxInfo->ptMaxSize.x = WorkRect.right - WorkRect.left + BorderX * 2;
+	InOutMinMaxInfo->ptMaxSize.y = WorkRect.bottom - WorkRect.top + BorderY * 2;
 	InOutMinMaxInfo->ptMaxTrackSize = InOutMinMaxInfo->ptMaxSize;
 }
