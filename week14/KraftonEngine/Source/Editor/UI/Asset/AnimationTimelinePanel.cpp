@@ -262,18 +262,29 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 		DL->AddRectFilled(ImVec2(CanvasX, LaneY),
 		                  ImVec2(CanvasX + CanvasW, LaneY + NotifyLaneH), IM_COL32(24, 24, 24, 255));
 
-		// 마커 드래그(시간 이동) / 우클릭 삭제. 삭제는 루프 후 지연 적용.
+		// 드래그로 시간 이동 / 우클릭으로 삭제(루프 후 지연 적용).
 		TArray<FAnimNotifyEvent>& Notifies = Seq->GetMutableNotifies();
 		int PendingDelete = -1;
+		static char sRenameBuf[64] = {};
+		const float BadgeTop  = LaneY + 5.0f;
+		const float BadgeBot  = LaneY + NotifyLaneH - 5.0f;
+		const float BadgeMidY = (BadgeTop + BadgeBot) * 0.5f;
 		for (int i = 0; i < static_cast<int>(Notifies.size()); ++i)
 		{
-			FAnimNotifyEvent& N  = Notifies[i];
-			const float       NX = TimeToX(N.TriggerTime);
+			FAnimNotifyEvent& N   = Notifies[i];
+			const float       NX  = TimeToX(N.TriggerTime);
+			const std::string Nm  = N.NotifyName.ToString();
+			const ImVec2      TSz = ImGui::CalcTextSize(Nm.c_str());
+
+			float BadgeW = TSz.x + 16.0f;
+			if (N.Duration > 0.0f)
+			{
+				BadgeW = std::max(BadgeW, TimeToX(N.TriggerTime + N.Duration) - NX);
+			}
 
 			ImGui::PushID(i);
-			const ImVec2 HitMin(NX - 7.0f, LaneY);
-			ImGui::SetCursorScreenPos(HitMin);
-			ImGui::InvisibleButton("##notify", ImVec2(14.0f, NotifyLaneH));
+			ImGui::SetCursorScreenPos(ImVec2(NX - 6.0f, BadgeTop));
+			ImGui::InvisibleButton("##notify", ImVec2(BadgeW + 12.0f, BadgeBot - BadgeTop));
 			const bool bHovered = ImGui::IsItemHovered();
 			const bool bActive  = ImGui::IsItemActive();
 
@@ -289,41 +300,78 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			}
 			if (bHovered && !bActive)
 			{
-				ImGui::SetTooltip("%s\n%.3f s",
-				                  N.NotifyName.ToString().c_str(), N.TriggerTime);
+				ImGui::SetTooltip("%s\n%.3f s\n(double-click: rename)",
+				                  Nm.c_str(), N.TriggerTime);
+			}
+
+			// 더블클릭 또는 컨텍스트 메뉴 → 이름 변경 팝업
+			bool bOpenRename = false;
+			if (bHovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			{
+				bOpenRename = true;
 			}
 			if (ImGui::BeginPopupContextItem("##notifyCtx"))
 			{
-				ImGui::TextDisabled("%s", N.NotifyName.ToString().c_str());
+				ImGui::TextDisabled("%s", Nm.c_str());
 				ImGui::Separator();
+				if (ImGui::MenuItem("Rename"))
+				{
+					bOpenRename = true;
+				}
 				if (ImGui::MenuItem("Delete"))
 				{
 					PendingDelete = i;
 				}
 				ImGui::EndPopup();
 			}
+			if (bOpenRename)
+			{
+				snprintf(sRenameBuf, sizeof(sRenameBuf), "%s", Nm.c_str());
+				ImGui::OpenPopup("##notifyRename");
+			}
+			if (ImGui::BeginPopup("##notifyRename"))
+			{
+				ImGui::TextDisabled("Rename Notify");
+				if (ImGui::IsWindowAppearing())
+				{
+					ImGui::SetKeyboardFocusHere();
+				}
+				ImGui::SetNextItemWidth(180.0f);
+				const bool bCommit = ImGui::InputText("##rn", sRenameBuf, sizeof(sRenameBuf),
+					ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+				ImGui::SameLine();
+				if ((bCommit || ImGui::Button("OK")) && sRenameBuf[0] != '\0')
+				{
+					N.NotifyName = FName(FString(sRenameBuf));
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
 			ImGui::PopID();
 
-			const ImU32 MarkCol = (bHovered || bActive)
-				? IM_COL32(120, 185, 255, 255) : ColNotify;
 			const float MarkNX = TimeToX(N.TriggerTime);
-			if (N.Duration > 0.0f)
+			const ImU32 Fill   = (bHovered || bActive)
+				? IM_COL32(120, 205, 125, 255) : IM_COL32(76, 175, 80, 255);
+			const ImU32 Border = IM_COL32(40, 95, 45, 255);
+
+			const ImVec2 BMin(MarkNX, BadgeTop);
+			const ImVec2 BMax(MarkNX + BadgeW, BadgeBot);
+			DL->AddRectFilled(BMin, BMax, Fill, 3.0f);
+			DL->AddRect(BMin, BMax, Border, 3.0f);
+
+			const float  DiaR = 4.5f;
+			const ImVec2 DC(MarkNX, BadgeMidY);
+			DL->AddQuadFilled(ImVec2(DC.x - DiaR, DC.y), ImVec2(DC.x, DC.y - DiaR),
+			                  ImVec2(DC.x + DiaR, DC.y), ImVec2(DC.x, DC.y + DiaR), Fill);
+			DL->AddQuad(ImVec2(DC.x - DiaR, DC.y), ImVec2(DC.x, DC.y - DiaR),
+			            ImVec2(DC.x + DiaR, DC.y), ImVec2(DC.x, DC.y + DiaR), Border);
+
+			if (!Nm.empty())
 			{
-				const float NX2 = TimeToX(N.TriggerTime + N.Duration);
-				DL->AddRectFilled(ImVec2(MarkNX, LaneY + 4.0f),
-				                  ImVec2(NX2, LaneY + NotifyLaneH - 4.0f), ColNotifyDur, 2.0f);
-				DL->AddRect(ImVec2(MarkNX, LaneY + 4.0f),
-				            ImVec2(NX2, LaneY + NotifyLaneH - 4.0f), MarkCol, 2.0f);
-			}
-			DL->AddTriangleFilled(ImVec2(MarkNX - 5.0f, LaneY + 3.0f),
-			                      ImVec2(MarkNX + 5.0f, LaneY + 3.0f),
-			                      ImVec2(MarkNX, LaneY + 12.0f), MarkCol);
-			DL->AddLine(ImVec2(MarkNX, LaneY + 3.0f),
-			            ImVec2(MarkNX, LaneY + NotifyLaneH - 3.0f), MarkCol, 1.5f);
-			if (!N.NotifyName.ToString().empty())
-			{
-				DL->AddText(ImVec2(MarkNX + 7.0f, LaneY + 4.0f), ColRowText,
-				            N.NotifyName.ToString().c_str());
+				DL->PushClipRect(BMin, BMax, true);
+				DL->AddText(ImVec2(MarkNX + 8.0f, BadgeMidY - TSz.y * 0.5f),
+				            IM_COL32(20, 35, 22, 255), Nm.c_str());
+				DL->PopClipRect();
 			}
 		}
 		if (PendingDelete >= 0 && PendingDelete < static_cast<int>(Notifies.size()))
