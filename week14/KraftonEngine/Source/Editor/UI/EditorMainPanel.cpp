@@ -16,6 +16,7 @@
 #include "Render/Pipeline/Renderer.h"
 #include "Engine/Input/InputSystem.h"
 
+#include "Editor/Slate/SlateApplication.h"
 #include "Editor/UI/ImGuiSetting.h"
 #include "Editor/UI/NotificationToast.h"
 
@@ -732,6 +733,9 @@ void FEditorMainPanel::Update()
 	InputSystem::Get().GetGuiInputState().bUsingMouse     = IO.WantCaptureMouse;
 	InputSystem::Get().GetGuiInputState().bUsingKeyboard  = IO.WantCaptureKeyboard || bShowShortcutOverlay;
 	InputSystem::Get().GetGuiInputState().bUsingTextInput = IO.WantTextInput;
+
+	// ImGui 사실을 입력 소유권 중재자에 주입
+	FSlateApplication::Get().SetTextInputActive(IO.WantTextInput);
 
 	// IME는 ImGui가 텍스트 입력을 원할 때만 활성화.
 	if (Window)
