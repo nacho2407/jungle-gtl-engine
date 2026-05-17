@@ -2,6 +2,7 @@
 #include "FbxImporterInternal.h"
 
 #include "Asset/StaticMeshTypes.h"
+#include "Core/Logging/Log.h"
 
 #include <fbxsdk.h>
 
@@ -41,7 +42,11 @@ void FFbxImporter::ProcessMesh(FbxMesh* Mesh, FStaticMesh* InStaticMesh)
 	// FbxAxisSystem/FbxSystemUnit::ConvertScene은 노드 transform에 변환을 baked함.
 	// → control point에 GlobalTransform * GeometricTransform을 적용해야 단위/축이 반영됨.
 	FbxAMatrix VertexTransform;
+	VertexTransform.SetIdentity();
+
 	FbxAMatrix NormalTransform;
+	NormalTransform.SetIdentity();
+
 	if (OwnerNode)
 	{
 		const FbxVector4 T = OwnerNode->GetGeometricTranslation(FbxNode::eSourcePivot);
@@ -60,6 +65,13 @@ void FFbxImporter::ProcessMesh(FbxMesh* Mesh, FStaticMesh* InStaticMesh)
 
 	const FbxVector4* ControlPoints = Mesh->GetControlPoints();
 	if (!ControlPoints) return;
+
+	const bool bFlipWinding = HasMirroredHandedness(VertexTransform);
+	if (bFlipWinding)
+	{
+		UE_LOG("[FbxImporter] Mirrored static mesh transform detected; flipping winding. Node=%s",
+			OwnerNode ? OwnerNode->GetName() : "<null>");
+	}
 
 	// 머티리얼 매핑 모드 확인 (per-polygon으로 가정, 그 외엔 단일 슬롯으로 처리)
 	FbxLayerElementArrayTemplate<int32>* MaterialIndices = nullptr;
@@ -111,6 +123,9 @@ void FFbxImporter::ProcessMesh(FbxMesh* Mesh, FStaticMesh* InStaticMesh)
 			SlotIndices.resize(SlotIdx + 1);
 		}
 
+		uint32 TriangleIndices[3] = {};
+		int32 ValidCornerCount = 0;
+
 		for (int32 Corner = 0; Corner < 3; ++Corner)
 		{
 			const int32 CtrlPointIdx = Mesh->GetPolygonVertex(PolyIdx, Corner);
@@ -158,7 +173,17 @@ void FFbxImporter::ProcessMesh(FbxMesh* Mesh, FStaticMesh* InStaticMesh)
 
 			const uint32 NewIndex = static_cast<uint32>(InStaticMesh->Vertices.size());
 			InStaticMesh->Vertices.push_back(Vertex);
-			SlotIndices[SlotIdx].push_back(NewIndex);
+			TriangleIndices[ValidCornerCount++] = NewIndex;
+		}
+
+		if (ValidCornerCount == 3)
+		{
+			AppendTriangleIndices(
+				SlotIndices[SlotIdx],
+				TriangleIndices[0],
+				TriangleIndices[1],
+				TriangleIndices[2],
+				bFlipWinding);
 		}
 	}
 

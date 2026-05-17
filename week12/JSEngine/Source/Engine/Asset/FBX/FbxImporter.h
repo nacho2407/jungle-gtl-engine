@@ -75,6 +75,10 @@ private:
 	void NormalizePositionsToUnitCube(FStaticMesh* InStaticMesh);
 	void ComputeTangents(FStaticMesh* InStaticMesh);
 
+    bool ImportSkeletalSceneMeshes(
+        fbxsdk::FbxScene* Scene,
+        FSkeletalMesh* InSkeletalMesh);
+
     void CollectSkeletalMeshes(
         fbxsdk::FbxNode* Node,
         FSkeletalMesh* InSkeletalMesh,
