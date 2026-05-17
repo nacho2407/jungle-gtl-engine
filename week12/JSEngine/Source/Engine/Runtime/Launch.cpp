@@ -21,11 +21,13 @@ namespace
 
 int Launch(HINSTANCE hInstance, int nShowCmd)
 {
+	FCrashHandler::Initialize();
+
 	__try
 	{
 		return GuardedMain(hInstance, nShowCmd);
 	}
-	__except (ReportCrash(GetExceptionInformation()))
+	__except (FCrashHandler::HandleException(GetExceptionInformation()))
 	{
 		return static_cast<int>(GetExceptionCode());
 	}

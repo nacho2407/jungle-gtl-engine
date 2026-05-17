@@ -343,13 +343,6 @@ void ASkeletalMeshActor::InitDefaultComponents()
 	SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/Ahri/Ahri.fbx"));
 	SetRootComponent(SkeletalMeshComp);
 
-	if (UAnimSequence* AnimSequence = FResourceManager::Get().LoadAnimSequence("Asset/SkeletalMesh/Ahri/Ahri.fbx"))
-	{
-		AnimSequence->SetPreviewMeshPath("Asset/SkeletalMesh/Ahri/Ahri.fbx");
-		SkeletalMeshComp->PlayAnimation(AnimSequence, true);
-	}
-
-	// 여기까지가 Animation Debug 코드.
 	//auto* Text = AddComponent<UTextRenderComponent>();
 	//Text->AttachToComponent(SkeletalMeshComp);
 	//Text->SetFont(FName("Default"));

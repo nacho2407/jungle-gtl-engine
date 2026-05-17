@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "Component/SkinnedMeshComponent.h"
+#include "Engine/Core/CrashTest.h"
 #include "Core/Logging/SkinningStats.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/ViewportLayout.h"
@@ -163,6 +164,8 @@ FEditorConsoleWidget::FEditorConsoleWidget()
 	RegisterCommand("skinninggpustats", "Toggle skinning GPU frame timestamp stats. Usage: skinninggpustats <on|off|toggle|status>", [this](const TArray<FString>& Args) { CmdSkinningGPUStats(Args); });
 
 	RegisterCommand("shadow", "Set shadow options. Usage: shadow filter <pcf|vsm>", [this](const TArray<FString>& Args){ CmdShadow(Args); });
+	RegisterCommand("crash", "[Warning] Intentionally crash the engine. Usage: crash <dav|seh|dangle|confirm|cancel>", [this](const TArray<FString>& Args) { CmdCrash(Args); });
+	RegisterCommand("causecrash", "Alias for crash.", [this](const TArray<FString>& Args) { CmdCrash(Args); });
 }
 
 FEditorConsoleWidget::~FEditorConsoleWidget() 
@@ -578,6 +581,15 @@ void FEditorConsoleWidget::CmdSuggest(const TArray<FString>& Args)
 		AddLog("  skinninggpustats off  Disable Skinning GPU Frame stat when STATS=0\n");
 		bPrinted = true;
 	}
+	if (Prefix.empty() || FString("crash").find(Prefix) == 0 || FString("causecrash").find(Prefix) == 0)
+	{
+		AddLog("  crash dav             Queue an access violation crash\n");
+		AddLog("  crash seh             Queue a structured exception crash\n");
+		AddLog("  crash dangle          Enable random UObject deletion fault injection\n");
+		AddLog("  crash confirm         Execute the queued crash command\n");
+		AddLog("  crash cancel          Cancel the queued crash command\n");
+		bPrinted = true;
+	}
 	if (Prefix.empty() || FString("help").find(Prefix) == 0 || FString("commands").find(Prefix) == 0)
 	{
 		AddLog("  commands              List every command\n");
@@ -654,6 +666,12 @@ TArray<FString> FEditorConsoleWidget::BuildCommandSuggestions(const FString& Que
 		"stat none",
 		"shadow filter pcf",
 		"shadow filter vsm",
+		"crash dav",
+		"crash seh",
+		"crash dangle",
+		"crash confirm",
+		"crash cancel",
+		"causecrash dav",
 	};
 
 	if (Normalized == "help" || Normalized == "?")
@@ -964,6 +982,102 @@ void FEditorConsoleWidget::CmdShadow(const TArray<FString>& Args)
     {
         AddLog("[ERROR] Unknown shadow command target: %s\n", CommandTarget.c_str());
     }
+}
+
+void FEditorConsoleWidget::CmdCrash(const TArray<FString>& Args)
+{
+	if (Args.size() < 2)
+	{
+		AddLog("[WARN] Usage: crash <dav|seh|dangle|confirm|cancel>\n");
+		return;
+	}
+
+	// 실수로 즉시 크래시가 나지 않도록 위험 명령은 confirm/cancel 단계를 거칩니다.
+	const FString CommandTarget = ToLowerCopy(Args[1]);
+	if (CommandTarget == "confirm")
+	{
+		if (!bPendingCrashCommand)
+		{
+			AddLog("[WARN] No pending crash command.\n");
+			return;
+		}
+
+		ExecutePendingCrashCommand();
+		return;
+	}
+
+	if (CommandTarget == "cancel")
+	{
+		if (!bPendingCrashCommand)
+		{
+			AddLog("[WARN] No pending crash command to cancel.\n");
+			return;
+		}
+
+		ClearPendingCrashCommand();
+		AddLog("[INFO] Pending crash command canceled.\n");
+		return;
+	}
+
+	if (CommandTarget == "dav")
+	{
+		bPendingCrashCommand = true;
+		PendingCrashTarget = ECrashCommandTarget::AccessViolation;
+		AddLog("[WARN] This will intentionally cause Access Violation.\n");
+		AddLog("[WARN] Type 'crash confirm' to execute, or 'crash cancel' to cancel.\n");
+	}
+	else if (CommandTarget == "seh")
+	{
+		bPendingCrashCommand = true;
+		PendingCrashTarget = ECrashCommandTarget::StructuredException;
+		AddLog("[WARN] This will intentionally raise a SEH exception.\n");
+		AddLog("[WARN] Type 'crash confirm' to execute, or 'crash cancel' to cancel.\n");
+	}
+	else if (CommandTarget == "dangle")
+	{
+		bPendingCrashCommand = true;
+		PendingCrashTarget = ECrashCommandTarget::DanglingObject;
+		AddLog("[WARN] This will enable random UObject deletion fault injection.\n");
+		AddLog("[WARN] Type 'crash confirm' to execute, or 'crash cancel' to cancel.\n");
+	}
+	else
+	{
+		AddLog("[WARN] Unknown crash command.\n");
+		AddLog("[WARN] Usage: crash <dav|seh|dangle|confirm|cancel>\n");
+	}
+}
+
+void FEditorConsoleWidget::ExecutePendingCrashCommand()
+{
+	// 실행 전에 pending 상태를 지워 재진입이나 중복 실행을 막습니다.
+	const ECrashCommandTarget Target = PendingCrashTarget;
+	ClearPendingCrashCommand();
+
+	switch (Target)
+	{
+	case ECrashCommandTarget::AccessViolation:
+		AddLog("[CRASH] Causing Access Violation...\n");
+		FCrashTest::CauseCrash();
+		break;
+	case ECrashCommandTarget::StructuredException:
+		AddLog("[CRASH] Raising SEH exception...\n");
+		FCrashTest::RaiseTestException();
+		break;
+	case ECrashCommandTarget::DanglingObject:
+		AddLog("[CRASH] Enabling random UObject deletion fault injection...\n");
+		FCrashTest::EnableRandomObjectDeletion(true, 1);
+		break;
+	case ECrashCommandTarget::None:
+	default:
+		AddLog("[WARN] Invalid pending crash command.\n");
+		break;
+	}
+}
+
+void FEditorConsoleWidget::ClearPendingCrashCommand()
+{
+	bPendingCrashCommand = false;
+	PendingCrashTarget = ECrashCommandTarget::None;
 }
 
 ImVector<char*> FEditorConsoleWidget::Messages;
