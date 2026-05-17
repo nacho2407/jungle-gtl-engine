@@ -1,4 +1,7 @@
 ﻿#include "LightComponent.h"
+#include "Core/DebugDetails.h"
+#include "Render/Resource/ShadowAtlasManager.h"
+
 #include <cmath>
 
 
@@ -140,6 +143,49 @@ void ULightComponent::PostDuplicate(UObject* Original)
 	ULightComponent* Orig = Cast<ULightComponent>(Original);
 
 	ShadowMapType = Orig->ShadowMapType;
+}
+
+void ULightComponent::BuildDebugDetails(FDebugDetailsBuilder& Builder)
+{
+	ULightComponentBase::BuildDebugDetails(Builder);
+
+	if (bHasDebugShadowAtlasTile)
+	{
+		const int32 PreviewCount = std::max(DebugShadowCascadeCount, 1);
+		for (int32 CascadeIndex = 0; CascadeIndex < PreviewCount && CascadeIndex < 4; ++CascadeIndex)
+		{
+			const FVector4 ScaleOffset = DebugShadowCascadeCount > 0
+				? DebugShadowCascadeScaleOffsets[CascadeIndex]
+				: DebugShadowAtlasScaleOffset;
+
+			FDebugSRVPreviewData Preview;
+			Preview.SRV = FShadowAtlasManager::Get().GetSRV();
+			Preview.DisplayInfo.ImageWidth = 160.0f;
+			Preview.DisplayInfo.ImageHeight = 160.0f;
+			Preview.DisplayInfo.UV0X = ScaleOffset.Z;
+			Preview.DisplayInfo.UV0Y = ScaleOffset.W;
+			Preview.DisplayInfo.UV1X = ScaleOffset.Z + ScaleOffset.X;
+			Preview.DisplayInfo.UV1Y = ScaleOffset.W + ScaleOffset.Y;
+
+			FString Label = PreviewCount > 1
+				? FString("CSM Cascade ") + std::to_string(CascadeIndex)
+				: "Shadow Atlas Tile";
+			Builder.AddSRVPreview(Label.c_str(), Preview);
+		}
+	}
+
+	if (bHasDebugShadowCubeTile)
+	{
+		FDebugCubeSRVPreviewData Preview;
+		Preview.DisplayInfo.ImageWidth = 72.0f;
+		Preview.DisplayInfo.ImageHeight = 72.0f;
+		for (int32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+		{
+			Preview.FaceSRVs[FaceIndex] =
+				FShadowAtlasManager::Get().GetCubeDebugSRV(DebugShadowCubeIndex, FaceIndex);
+		}
+		Builder.AddCubeSRVPreview("Shadow Cube Faces", Preview);
+	}
 }
 
 FMatrix ULightComponent::ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,

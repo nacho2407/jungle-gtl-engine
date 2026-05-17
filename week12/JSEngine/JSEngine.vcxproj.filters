@@ -1975,6 +1975,9 @@
     <ClInclude Include="Source\Engine\Core\Debug.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\DebugDetails.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Delegates\Delegate.h">
       <Filter>Source\Engine\Core\Delegates</Filter>
     </ClInclude>

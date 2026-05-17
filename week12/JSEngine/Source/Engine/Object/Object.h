@@ -9,6 +9,7 @@
 #include <type_traits>
 
 class UClass;
+class FDebugDetailsBuilder;
 
 
 
@@ -84,6 +85,7 @@ public:
 	// -----------------------------------------------------------------------
 	virtual void PostEditChangeProperty(const FPropertyChangedEvent& Event) { PostEditProperty(Event.PropertyName); }
 	virtual void PostEditProperty(const char* PropertyName) {}
+	virtual void BuildDebugDetails(FDebugDetailsBuilder& Builder) {}
 	void CopyPropertiesFrom(UObject* Src);
 
 	virtual void Serialize(FArchive& Ar);

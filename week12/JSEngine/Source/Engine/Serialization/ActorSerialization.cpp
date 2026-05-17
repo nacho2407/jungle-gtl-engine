@@ -221,10 +221,21 @@ namespace
 
 namespace FActorSerialization
 {
+	bool ShouldSerializeActor(AActor* Actor)
+	{
+		if (!Actor)
+		{
+			return false;
+		}
+
+		USceneComponent* RootComponent = Actor->GetRootComponent();
+		return !RootComponent || RootComponent->IsSerialized();
+	}
+
 	json::JSON BuildActorJson(AActor* Actor)
 	{
 		json::JSON ActorJson = json::Object();
-		if (!Actor)
+		if (!ShouldSerializeActor(Actor))
 		{
 			return ActorJson;
 		}

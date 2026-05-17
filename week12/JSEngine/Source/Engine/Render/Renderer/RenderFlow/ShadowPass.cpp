@@ -260,11 +260,22 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			
 			const uint32 FirstShadowIndex = static_cast<uint32>(ShadowAtlasConstants.size());
 			uint32 WrittenCascadeCount = 0;
+			const int32 CascadeShadowResolution = std::max<int32>(
+				1,
+				std::min<int32>(
+					static_cast<int32>(Request.ShadowResolution),
+					static_cast<int32>(ShadowAtlasManager.GetAtlasResolution() / 2)));
+
+			{
+				ULightComponent* MutableLight = const_cast<ULightComponent*>(LightComp);
+				MutableLight->bHasDebugShadowAtlasTile = false;
+				MutableLight->DebugShadowCascadeCount = 0;
+			}
 
 			for (uint32 CascadeIndex = 0; CascadeIndex < 4; ++CascadeIndex)
 			{
 				FShadowAtlasTile ShadowTile;
-				if (!ShadowAtlasManager.AllocateTile(Request.ShadowResolution, ShadowTile))
+				if (!ShadowAtlasManager.AllocateTile(CascadeShadowResolution, ShadowTile))
 				{
 					break;
 				}
@@ -319,6 +330,14 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 				atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
 				atlasConstants.ShadowMapType = static_cast<uint32>(LightComp->GetShadowMapType());
 				ShadowAtlasConstants.push_back(atlasConstants);
+
+				{
+					ULightComponent* MutableLight = const_cast<ULightComponent*>(LightComp);
+					MutableLight->DebugShadowAtlasScaleOffset = ShadowTile.ScaleOffset;
+					MutableLight->DebugShadowCascadeScaleOffsets[WrittenCascadeCount] = ShadowTile.ScaleOffset;
+					MutableLight->DebugShadowCascadeCount = static_cast<int32>(WrittenCascadeCount + 1);
+					MutableLight->bHasDebugShadowAtlasTile = true;
+				}
 
 				++WrittenCascadeCount;
 				DirectionalShadowData.DirectionalCascadeCount = WrittenCascadeCount;
@@ -380,6 +399,8 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			
 			{
 				ULightComponent* MutableLight = const_cast<ULightComponent*>(LightComp);
+				MutableLight->bHasDebugShadowAtlasTile = false;
+				MutableLight->DebugShadowCascadeCount = 0;
 				MutableLight->DebugShadowCubeIndex = static_cast<int32>(CubeIndex);
 				MutableLight->bHasDebugShadowCubeTile = true;
 			}
@@ -481,6 +502,8 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		{
 			ULightComponent* MutableLight = const_cast<ULightComponent*>(LightComp);
 			MutableLight->DebugShadowAtlasScaleOffset = ShadowTile.ScaleOffset;
+			MutableLight->DebugShadowCascadeScaleOffsets[0] = ShadowTile.ScaleOffset;
+			MutableLight->DebugShadowCascadeCount = 1;
 			MutableLight->bHasDebugShadowAtlasTile = true;
 		}
 

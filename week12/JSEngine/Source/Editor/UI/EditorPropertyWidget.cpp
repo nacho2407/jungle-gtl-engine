@@ -19,6 +19,7 @@
 #include "Component/ActorSequenceComponent.h"
 #include "Component/PostProcess/Light/PointLightComponent.h"
 #include "Core/EditorResourcePaths.h"
+#include "Core/DebugDetails.h"
 #include "Core/PropertyTypes.h"
 #include "Core/Reflection/ReflectionRegistry.h"
 #include "Core/Paths.h"
@@ -1181,7 +1182,6 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 {
 	ImGui::Text("Actor: %s", PrimaryActor->GetClassName());
 	RenderEditableName("Name##Actor", PrimaryActor, &bFocusActorNameNextFrame); // 편집 가능한 UI
-	RenderActorTags(PrimaryActor, SelectedActors);
 
 	if (PrimaryActor->GetRootComponent())
 	{
@@ -1229,89 +1229,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		RenderReflectionProperties(PrimaryActor);
 	}
 
-	DrawDetailsSeparator();
-	// Billboard 타입 체크
-	if (UBillboardComponent* BillboardComp = dynamic_cast<UBillboardComponent*>(PrimaryActor->GetRootComponent()))
-	{
-		if (dynamic_cast<USubUVComponent*>(PrimaryActor->GetRootComponent()))
-		{
-			return;
-		}
-		DrawDetailsSeparator();
-		DrawDetailsSectionLabel("Sprite Texture");
-
-		const TArray<FString>& TextureList = EditorEngine
-			? EditorEngine->GetAssetService().GetTextureAssetPaths()
-			: EmptyAssetNames();
-		const FString CurrentName = BillboardComp->GetTextureName();
-
-		if (ImGui::BeginCombo("##SpriteTexture", CurrentName.empty() ? "None" : CurrentName.c_str()))
-		{
-			for (const FString& TexPath : TextureList)
-			{
-				// 경로 전체 대신 파일명만 표시
-				FString DisplayName = TexPath;
-				bool bSelected = (TexPath == CurrentName);
-
-				if (ImGui::Selectable(DisplayName.c_str(), bSelected))
-				{
-					if (EditorEngine)
-					{
-						EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Billboard");
-					}
-					for (AActor* Actor : SelectedActors)
-					{
-						if (UBillboardComponent* Comp =
-							dynamic_cast<UBillboardComponent*>(Actor->GetRootComponent()))
-						{
-							Comp->SetTextureName(TexPath);
-						}
-					}
-				}
-				if (bSelected) ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
-		}
-	}
-
-	if (PrimaryActor->IsA<ADecalSpotLightActor>())
-	{
-		ADecalSpotLightActor* SpotActor = static_cast<ADecalSpotLightActor*>(PrimaryActor);
-		DrawDetailsSeparator();
-		DrawDetailsSectionLabel("Spot Light Properties");
-		float Range = SpotActor->GetRange();
-		const bool bRangeEdited = ImGui::DragFloat("Range", &Range, 0.1f, 0.0f, 1000.0f);
-		if (ImGui::IsItemActivated() && EditorEngine)
-		{
-			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Light");
-		}
-		if (bRangeEdited)
-		{
-			for (AActor* Actor : SelectedActors)
-			{
-				if (ADecalSpotLightActor* SA = dynamic_cast<ADecalSpotLightActor*>(Actor))
-				{
-					SA->SetRange(Range);
-				}
-			}
-		}
-		float Angle = SpotActor->GetAngle();
-		const bool bAngleEdited = ImGui::DragFloat("Angle", &Angle, 0.1f, 0.0f, 180.0f);
-		if (ImGui::IsItemActivated() && EditorEngine)
-		{
-			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Light");
-		}
-		if (bAngleEdited)
-		{
-			for (AActor* Actor : SelectedActors)
-			{
-				if (ADecalSpotLightActor* SA = dynamic_cast<ADecalSpotLightActor*>(Actor))
-				{
-					SA->SetAngle(Angle);
-				}
-			}
-		}
-	}
+	RenderDebugDetails(PrimaryActor, PrimaryActor, SelectedActors);
 }
 
 void FEditorPropertyWidget::RenderActorTags(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
@@ -1496,7 +1414,6 @@ void FEditorPropertyWidget::RenderComponentProperties()
 
 	ImGui::Text("Component: %s", SelectedComponent->GetClassName());
 	RenderEditableName("Name##Component", SelectedComponent, &bFocusComponentNameNextFrame); // 편집 가능한 UI
-	RenderComponentTags(SelectedComponent);
 
 	DrawDetailsSeparator();
 
@@ -1531,96 +1448,8 @@ void FEditorPropertyWidget::RenderComponentProperties()
 		}
 	}
 
-	// Special: InterpToMovementComponent control points + behaviour + actions
 	double SkeletalDebugMs = 0.0;
-	if (USkeletalMeshComponent* SkeletalComp = Cast<USkeletalMeshComponent>(SelectedComponent))
-	{
-		const FDetailsPerfClock::time_point SkeletalStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
-		RenderSkeletalBonePoseDebug(SkeletalComp);
-		if (bDetailsPerfTraceFrame)
-		{
-			SkeletalDebugMs = DetailsPerfMs(SkeletalStart, FDetailsPerfClock::now());
-		}
-	}
-
-	if (UInterpToMovementComponent* InterpComp = Cast<UInterpToMovementComponent>(SelectedComponent))
-	{
-		RenderInterpControlPoints(InterpComp);
-	}
-
-	if (UActorSequenceComponent* SequenceComp = Cast<UActorSequenceComponent>(SelectedComponent))
-	{
-		ActorSequenceDetails.Render(SequenceComp, LastDeltaTime);
-	}
-
-	if (ULightComponent* LightComp = Cast<ULightComponent>(SelectedComponent))
-	{
-		if (ImGui::Button("Override camera with light's perspective"))
-		{
-			UWorld* World = GEngine ? GEngine->GetWorld() : nullptr;
-			FViewportCamera* Camera = World ? World->GetActiveCamera() : nullptr;
-			if (Camera)
-			{
-				Camera->SetLocation(LightComp->GetWorldLocation());
-				Camera->SetRotation(LightComp->GetRelativeQuat());
-			}
-		}
-	}
-	else if (UScriptComponent* ScriptComp = Cast<UScriptComponent>(SelectedComponent))
-	{
-		FScriptManager& ScriptMgr = FScriptManager::Get();
-		if (ImGui::Button("Create Script"))
-		{
-			FString ScriptPath = ScriptComp->GetScriptName();
-			if (ScriptPath.empty() || IsBlankString(ScriptPath))
-			{
-				if (EditorEngine)
-				{
-					EditorEngine->GetNotificationService().Warning("Script name is empty");
-				}
-			}
-			else
-			{
-				FString SelectedScriptPath;
-				if (!PromptCreateScriptAs(EditorEngine, ScriptPath, SelectedScriptPath))
-				{
-					return;
-				}
-
-				if (!ScriptMgr.CreateScript(SelectedScriptPath))
-				{
-					if (EditorEngine)
-					{
-						EditorEngine->GetNotificationService().Error("Script create failed");
-					}
-					return;
-				}
-
-				ScriptComp->SetScriptName(MakeScriptReferenceFromPath(SelectedScriptPath));
-				ScriptComp->ReloadLuaProperties();
-				if (EditorEngine)
-				{
-					EditorEngine->GetNotificationService().Info("Script created");
-				}
-			}
-		}
-		if (ImGui::Button("Edit Script"))
-		{
-			FString ScriptPath = ScriptComp->GetScriptName();
-			if (ScriptPath.empty() || IsBlankString(ScriptPath))
-			{
-				if (EditorEngine)
-				{
-					EditorEngine->GetNotificationService().Warning("No script selected");
-				}
-			}
-			else if (!ScriptMgr.EditScript(ScriptPath) && EditorEngine)
-			{
-				EditorEngine->GetNotificationService().Warning("Script file not found");
-			}
-		}
-	}
-	ImGui::Separator();
+	RenderDebugDetails(SelectedComponent, Owner, TArray<AActor*>{ Owner });
 
 	// 프로퍼티 직접 편집 후 월드 행렬 갱신
 	if (SelectedComponent->IsA<USceneComponent>())
@@ -1669,6 +1498,312 @@ void FEditorPropertyWidget::RenderReflectionProperty(const FPropertyHandle& Hand
 	}
 
 	RenderPropertyWidget(Handle);
+}
+
+void FEditorPropertyWidget::RenderDebugDetails(UObject* Object, AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
+{
+	(void)PrimaryActor;
+	if (!Object)
+	{
+		return;
+	}
+
+	FDebugDetailsBuilder Builder;
+	Object->BuildDebugDetails(Builder);
+
+	if (AActor* Actor = Cast<AActor>(Object))
+	{
+		Builder.AddTagEditor("Actor Tags", [this, Actor, &SelectedActors]()
+		{
+			RenderActorTags(Actor, SelectedActors);
+		});
+
+		if (UBillboardComponent* BillboardComp = Cast<UBillboardComponent>(Actor->GetRootComponent()))
+		{
+			if (!Cast<USubUVComponent>(Actor->GetRootComponent()))
+			{
+				Builder.AddCustom([this, BillboardComp, &SelectedActors]()
+				{
+					DrawDetailsSeparator();
+					DrawDetailsSectionLabel("Sprite Texture");
+
+					const TArray<FString>& TextureList = EditorEngine
+						? EditorEngine->GetAssetService().GetTextureAssetPaths()
+						: EmptyAssetNames();
+					const FString CurrentName = BillboardComp->GetTextureName();
+
+					if (ImGui::BeginCombo("##SpriteTexture", CurrentName.empty() ? "None" : CurrentName.c_str()))
+					{
+						for (const FString& TexPath : TextureList)
+						{
+							const bool bSelected = TexPath == CurrentName;
+							if (ImGui::Selectable(TexPath.c_str(), bSelected))
+							{
+								if (EditorEngine)
+								{
+									EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Billboard");
+								}
+								for (AActor* SelectedActor : SelectedActors)
+								{
+									if (UBillboardComponent* Comp = SelectedActor
+										? Cast<UBillboardComponent>(SelectedActor->GetRootComponent())
+										: nullptr)
+									{
+										Comp->SetTextureName(TexPath);
+									}
+								}
+							}
+							if (bSelected)
+							{
+								ImGui::SetItemDefaultFocus();
+							}
+						}
+						ImGui::EndCombo();
+					}
+				});
+			}
+		}
+
+		if (ADecalSpotLightActor* SpotActor = Cast<ADecalSpotLightActor>(Actor))
+		{
+			Builder.AddCustom([this, SpotActor, &SelectedActors]()
+			{
+				DrawDetailsSeparator();
+				DrawDetailsSectionLabel("Spot Light Properties");
+
+				float Range = SpotActor->GetRange();
+				const bool bRangeEdited = ImGui::DragFloat("Range", &Range, 0.1f, 0.0f, 1000.0f);
+				if (ImGui::IsItemActivated() && EditorEngine)
+				{
+					EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Light");
+				}
+				if (bRangeEdited)
+				{
+					for (AActor* SelectedActor : SelectedActors)
+					{
+						if (ADecalSpotLightActor* LightActor = Cast<ADecalSpotLightActor>(SelectedActor))
+						{
+							LightActor->SetRange(Range);
+						}
+					}
+				}
+
+				float Angle = SpotActor->GetAngle();
+				const bool bAngleEdited = ImGui::DragFloat("Angle", &Angle, 0.1f, 0.0f, 180.0f);
+				if (ImGui::IsItemActivated() && EditorEngine)
+				{
+					EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Light");
+				}
+				if (bAngleEdited)
+				{
+					for (AActor* SelectedActor : SelectedActors)
+					{
+						if (ADecalSpotLightActor* LightActor = Cast<ADecalSpotLightActor>(SelectedActor))
+						{
+							LightActor->SetAngle(Angle);
+						}
+					}
+				}
+			});
+		}
+	}
+	else if (UActorComponent* Component = Cast<UActorComponent>(Object))
+	{
+		Builder.AddTagEditor("Component Tags", [this, Component]()
+		{
+			RenderComponentTags(Component);
+		});
+
+		if (USkeletalMeshComponent* SkeletalComp = Cast<USkeletalMeshComponent>(Component))
+		{
+			Builder.AddCustom([this, SkeletalComp]()
+			{
+				RenderSkeletalBonePoseDebug(SkeletalComp);
+			});
+		}
+
+		if (UInterpToMovementComponent* InterpComp = Cast<UInterpToMovementComponent>(Component))
+		{
+			Builder.AddCustom([this, InterpComp]()
+			{
+				RenderInterpControlPoints(InterpComp);
+			});
+		}
+
+		if (UActorSequenceComponent* SequenceComp = Cast<UActorSequenceComponent>(Component))
+		{
+			Builder.AddCustom([this, SequenceComp]()
+			{
+				ActorSequenceDetails.Render(SequenceComp, LastDeltaTime);
+			});
+		}
+
+		if (ULightComponent* LightComp = Cast<ULightComponent>(Component))
+		{
+			Builder.AddButton("Override camera with light's perspective", [LightComp]()
+			{
+				UWorld* World = GEngine ? GEngine->GetWorld() : nullptr;
+				FViewportCamera* Camera = World ? World->GetActiveCamera() : nullptr;
+				if (Camera)
+				{
+					Camera->SetLocation(LightComp->GetWorldLocation());
+					Camera->SetRotation(LightComp->GetRelativeQuat());
+				}
+			});
+		}
+		else if (UScriptComponent* ScriptComp = Cast<UScriptComponent>(Component))
+		{
+			Builder.AddCustom([this, ScriptComp]()
+			{
+				FScriptManager& ScriptMgr = FScriptManager::Get();
+				DrawDetailsSeparator();
+				DrawDetailsSectionLabel("Script Actions");
+
+				if (ImGui::Button("Create Script"))
+				{
+					FString ScriptPath = ScriptComp->GetScriptName();
+					if (ScriptPath.empty() || IsBlankString(ScriptPath))
+					{
+						if (EditorEngine)
+						{
+							EditorEngine->GetNotificationService().Warning("Script name is empty");
+						}
+					}
+					else
+					{
+						FString SelectedScriptPath;
+						if (!PromptCreateScriptAs(EditorEngine, ScriptPath, SelectedScriptPath))
+						{
+							return;
+						}
+
+						if (!ScriptMgr.CreateScript(SelectedScriptPath))
+						{
+							if (EditorEngine)
+							{
+								EditorEngine->GetNotificationService().Error("Script create failed");
+							}
+							return;
+						}
+
+						ScriptComp->SetScriptName(MakeScriptReferenceFromPath(SelectedScriptPath));
+						ScriptComp->ReloadLuaProperties();
+						if (EditorEngine)
+						{
+							EditorEngine->GetNotificationService().Info("Script created");
+						}
+					}
+				}
+
+				if (ImGui::Button("Edit Script"))
+				{
+					FString ScriptPath = ScriptComp->GetScriptName();
+					if (ScriptPath.empty() || IsBlankString(ScriptPath))
+					{
+						if (EditorEngine)
+						{
+							EditorEngine->GetNotificationService().Warning("No script selected");
+						}
+					}
+					else if (!ScriptMgr.EditScript(ScriptPath) && EditorEngine)
+					{
+						EditorEngine->GetNotificationService().Warning("Script file not found");
+					}
+				}
+			});
+		}
+	}
+
+	if (Builder.IsEmpty())
+	{
+		return;
+	}
+
+	for (const FDebugDetailsItem& Item : Builder.GetItems())
+	{
+		RenderDebugDetailsItem(Item);
+	}
+}
+
+void FEditorPropertyWidget::RenderDebugDetailsItem(const FDebugDetailsItem& Item)
+{
+	switch (Item.Type)
+	{
+	case EDebugDetailsItemType::Text:
+		DrawDetailsSeparator();
+		DrawDetailsSectionLabel(Item.Label.c_str());
+		ImGui::TextUnformatted(Item.Value.c_str());
+		break;
+	case EDebugDetailsItemType::Button:
+		DrawDetailsSeparator();
+		if (ImGui::Button(Item.Label.c_str()) && Item.Callback)
+		{
+			Item.Callback();
+		}
+		break;
+	case EDebugDetailsItemType::SRVPreview:
+		if (Item.SRVPreview.SRV)
+		{
+			const FSRVDisplayInfo& Info = Item.SRVPreview.DisplayInfo;
+			DrawDetailsSeparator();
+			DrawDetailsSectionLabel(Item.Label.c_str());
+			ImGui::Image(
+				Item.SRVPreview.SRV,
+				ImVec2(Info.ImageWidth, Info.ImageHeight),
+				ImVec2(Info.UV0X, Info.UV0Y),
+				ImVec2(Info.UV1X, Info.UV1Y));
+		}
+		break;
+	case EDebugDetailsItemType::CubeSRVPreview:
+	{
+		static const char* FaceLabels[6] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
+		const FSRVDisplayInfo& Info = Item.CubeSRVPreview.DisplayInfo;
+		bool bHasAnyFace = false;
+		for (ID3D11ShaderResourceView* FaceSRV : Item.CubeSRVPreview.FaceSRVs)
+		{
+			bHasAnyFace = bHasAnyFace || FaceSRV != nullptr;
+		}
+		if (!bHasAnyFace)
+		{
+			break;
+		}
+
+		DrawDetailsSeparator();
+		DrawDetailsSectionLabel(Item.Label.c_str());
+		for (int32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+		{
+			ID3D11ShaderResourceView* FaceSRV = Item.CubeSRVPreview.FaceSRVs[FaceIndex];
+			if (!FaceSRV)
+			{
+				continue;
+			}
+
+			ImGui::BeginGroup();
+			ImGui::TextUnformatted(FaceLabels[FaceIndex]);
+			ImGui::Image(
+				FaceSRV,
+				ImVec2(Info.ImageWidth, Info.ImageHeight),
+				ImVec2(Info.UV0X, Info.UV0Y),
+				ImVec2(Info.UV1X, Info.UV1Y));
+			ImGui::EndGroup();
+
+			if ((FaceIndex % 3) != 2)
+			{
+				ImGui::SameLine();
+			}
+		}
+		break;
+	}
+	case EDebugDetailsItemType::TagEditor:
+	case EDebugDetailsItemType::Custom:
+		if (Item.Callback)
+		{
+			Item.Callback();
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 bool FEditorPropertyWidget::RenderSceneComponentRefWidget(const FPropertyHandle& Handle, AActor* Owner)
@@ -2418,60 +2553,6 @@ void FEditorPropertyWidget::RenderPropertyWidget(const FPropertyHandle& Handle)
 			}
 			Arr->push_back("");
 			bChanged = true;
-		}
-		break;
-	}
-	case EPropertyType::SRV:
-	{
-		const FSRVPropertyData* Data = static_cast<const FSRVPropertyData*>(ValuePtr);
-		if (!Data || !Data->SRV)
-		{
-			break;
-		}
-
-		const FSRVDisplayInfo& Info = Data->DisplayInfo;
-		ImGui::TextUnformatted(GetPropertyDisplayName(Property));
-		ImGui::Image(Data->SRV,
-			ImVec2(Info.ImageWidth, Info.ImageHeight),
-			ImVec2(Info.UV0X, Info.UV0Y),
-			ImVec2(Info.UV1X, Info.UV1Y));
-		break;
-	}
-	case EPropertyType::CubeSRV:
-	{
-		const FCubeSRVPropertyData* Data = static_cast<const FCubeSRVPropertyData*>(ValuePtr);
-		if (!Data)
-		{
-			break;
-		}
-
-		static const char* FaceLabels[6] =
-		{
-			"+X", "-X", "+Y", "-Y", "+Z", "-Z"
-		};
-
-		const FSRVDisplayInfo& Info = Data->DisplayInfo;
-		ImGui::TextUnformatted(GetPropertyDisplayName(Property));
-		for (int32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
-		{
-			ID3D11ShaderResourceView* FaceSRV = Data->FaceSRVs[FaceIndex];
-			if (!FaceSRV)
-			{
-				continue;
-			}
-
-			ImGui::BeginGroup();
-			ImGui::TextUnformatted(FaceLabels[FaceIndex]);
-			ImGui::Image(FaceSRV,
-				ImVec2(Info.ImageWidth, Info.ImageHeight),
-				ImVec2(Info.UV0X, Info.UV0Y),
-				ImVec2(Info.UV1X, Info.UV1Y));
-			ImGui::EndGroup();
-
-			if ((FaceIndex % 3) != 2)
-			{
-				ImGui::SameLine();
-			}
 		}
 		break;
 	}

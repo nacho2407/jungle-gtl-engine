@@ -11,6 +11,8 @@ class UMaterialInterface;
 class UStaticMesh;
 struct FProperty;
 struct FPropertyHandle;
+class FDebugDetailsBuilder;
+struct FDebugDetailsItem;
 
 class FEditorPropertyWidget : public FEditorWidget
 {
@@ -50,6 +52,8 @@ private:
 	void RenderComponentProperties();
 	void RenderReflectionProperties(UObject* Object);
 	void RenderReflectionProperty(const FPropertyHandle& Handle);
+	void RenderDebugDetails(UObject* Object, AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
+	void RenderDebugDetailsItem(const FDebugDetailsItem& Item);
 	void RenderPropertyWidget(const FPropertyHandle& Handle);
 	bool RenderSceneComponentRefWidget(const FPropertyHandle& Handle, AActor* Owner);
 	void RenderSkeletalBonePoseDebug(class USkeletalMeshComponent* Comp);

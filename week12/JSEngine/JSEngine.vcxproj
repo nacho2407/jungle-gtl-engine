@@ -1152,6 +1152,7 @@
     <ClInclude Include="Source\Engine\Core\CrashDump.h" />
     <ClInclude Include="Source\Engine\Core\CurveResourceCache.h" />
     <ClInclude Include="Source\Engine\Core\Debug.h" />
+    <ClInclude Include="Source\Engine\Core\DebugDetails.h" />
     <ClInclude Include="Source\Engine\Core\Delegates\Delegate.h" />
     <ClInclude Include="Source\Engine\Core\EditorResourcePaths.h" />
     <ClInclude Include="Source\Engine\Core\EngineTypes.h" />

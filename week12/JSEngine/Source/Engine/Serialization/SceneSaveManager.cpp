@@ -269,7 +269,10 @@ static json::JSON BuildSceneSnapshotJson(const FString& SceneName, FWorldContext
 	Root[SceneKeys::Actors] = json::Array();
 	for (AActor* Actor : WorldContext.World->GetPersistentLevel()->GetActors())
 	{
-		if (!Actor) continue;
+		if (!FActorSerialization::ShouldSerializeActor(Actor))
+		{
+			continue;
+		}
 
 		Root[SceneKeys::Actors].append(FActorSerialization::BuildActorJson(Actor));
 	}

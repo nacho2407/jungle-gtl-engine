@@ -15,7 +15,7 @@ Source/**/*.h 파일 탐색 (Intermediate 폴더 제외)
 → StaticClass() 및 FPropertyParams 방식을 통한 리플렉션 등록
 
 주의:
-- SRV, CubeSRV는 FSRVPropertyData / FCubeSRVPropertyData wrapper 타입으로 read-only debug preview만 지원합니다.
+- SRV, CubeSRV, buttons, tag editors, and one-off previews belong to FDebugDetails, not FProperty.
 """
 
 import os
@@ -23,7 +23,7 @@ import re
 import sys
 from pathlib import Path
 
-# Material은 에셋 참조, SRV/CubeSRV는 wrapper 기반 read-only debug preview 프로퍼티로 등록합니다.
+# Material은 현재 TArray<UMaterialInterface*> 에셋 참조로 등록합니다.
 TYPE_MAP = {
     'bool': 'EPropertyType::Bool',
     'int32': 'EPropertyType::Int',
@@ -40,8 +40,6 @@ TYPE_MAP = {
     'TArray<FString>': 'EPropertyType::StringArray',
     'USceneComponent*': 'EPropertyType::SceneComponentRef',
     'TArray<UMaterialInterface*>': 'EPropertyType::Material',
-    'FSRVPropertyData': 'EPropertyType::SRV',
-    'FCubeSRVPropertyData': 'EPropertyType::CubeSRV',
 }
 
 # 스크립트 위치를 기준으로 Root와 Source 경로를 계산합니다.

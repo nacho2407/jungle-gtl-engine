@@ -92,8 +92,6 @@ void FProperty::SerializeItem(FArchive& Ar, UObject* Container) const
 	case EPropertyType::Quat:
 	case EPropertyType::SceneComponentRef:
 	case EPropertyType::Material:
-	case EPropertyType::SRV:
-	case EPropertyType::CubeSRV:
 	case EPropertyType::Unknown:
 	default:
 		break;
@@ -143,8 +141,6 @@ bool FProperty::CopyValue(UObject* DstContainer, const UObject* SrcContainer) co
 		}
 		return false;
 	case EPropertyType::SceneComponentRef:
-	case EPropertyType::SRV:
-	case EPropertyType::CubeSRV:
 	case EPropertyType::Unknown:
 	default:
 		return false;
