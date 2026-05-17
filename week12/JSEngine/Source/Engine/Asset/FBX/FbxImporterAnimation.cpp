@@ -393,16 +393,110 @@ namespace
         return SampleTime;
     }
 
-    //1. Animation Import and Sampling Phase(UAnimSingleNodeInstance::BuildBoneMapping()으로 이어짐)
-    void AppendSampledLocalTransform(FbxNode* Node, const FbxTime& SampleTime, FRawAnimSequenceTrack& OutTrack)
+    bool ContainsTrackNode(const TArray<FbxNode*>& TrackNodes, FbxNode* Node)
     {
-        //실제 animation key 생성 지점입니다.
-        //FBX 파일 내부에 있는 LclTranslation/LclRotation/LclScaling curve를 component별로 직접 평가하는데 이건
-        //Pos/Rot/Scale을 조립하지 않고, FBX SDK의 EvaluateLocalTransform()에 맡깁니다
-        //다시 말해서 curve의 keyframe 사이를 보간해서 SampleTime에 해당하는 위치의 local transform 값을 구합니다.
-		//그 다음 우리 엔진에서 쓰는 FTransform으로 변환합니다.
-        const FbxAMatrix LocalTransform = Node->EvaluateLocalTransform(SampleTime);
-        const FTransform EngineTransform(ToFMatrix(LocalTransform));
+        return std::find(TrackNodes.begin(), TrackNodes.end(), Node) != TrackNodes.end();
+    }
+
+    FbxNode* FindRuntimeTrackParent(FbxNode* Node, const TArray<FbxNode*>& TrackNodes, int32& OutSkippedParentCount)
+    {
+        OutSkippedParentCount = 0;
+        if (!Node)
+        {
+            return nullptr;
+        }
+
+        FbxNode* Parent = Node->GetParent();
+        while (Parent)
+        {
+            if (ContainsTrackNode(TrackNodes, Parent))
+            {
+                return Parent;
+            }
+
+            ++OutSkippedParentCount;
+            Parent = Parent->GetParent();
+        }
+
+        return nullptr;
+    }
+
+    TMap<FbxNode*, FbxNode*> BuildRuntimeTrackParentMap(
+        const TArray<FbxNode*>& TrackNodes,
+        int32& OutNodeCountWithSkippedParents)
+    {
+        TMap<FbxNode*, FbxNode*> ParentByNode;
+        OutNodeCountWithSkippedParents = 0;
+
+        for (FbxNode* Node : TrackNodes)
+        {
+            int32 SkippedParentCount = 0;
+            FbxNode* ParentNode = FindRuntimeTrackParent(Node, TrackNodes, SkippedParentCount);
+            ParentByNode[Node] = ParentNode;
+
+            if (SkippedParentCount > 0)
+            {
+                ++OutNodeCountWithSkippedParents;
+            }
+        }
+
+        return ParentByNode;
+    }
+
+    bool HasSuspiciousScale(const FVector& Scale)
+    {
+        constexpr float MinExpectedScale = 0.01f;
+        constexpr float MaxExpectedScale = 100.0f;
+
+        return std::abs(Scale.X) < MinExpectedScale ||
+               std::abs(Scale.Y) < MinExpectedScale ||
+               std::abs(Scale.Z) < MinExpectedScale ||
+               std::abs(Scale.X) > MaxExpectedScale ||
+               std::abs(Scale.Y) > MaxExpectedScale ||
+               std::abs(Scale.Z) > MaxExpectedScale;
+    }
+
+    //1. Animation Import and Sampling Phase(UAnimSingleNodeInstance::BuildBoneMapping()으로 이어짐)
+    void AppendSampledRuntimeLocalTransform(
+        FbxNode* Node,
+        FbxNode* RuntimeParentNode,
+        const FbxTime& SampleTime,
+        FRawAnimSequenceTrack& OutTrack,
+        bool& bOutLoggedSuspiciousScale)
+    {
+        FMatrix RuntimeLocalTransform = FMatrix::Identity;
+        // 실제 animation key를 생성하는 지점입니다.
+        // FBX의 LclTranslation/LclRotation/LclScaling을 직접 조립하지 않고,
+        // 샘플 시점의 global transform을 평가한 뒤 런타임에서 사용하는 parent 기준 local transform으로 재계산합니다.
+        // 즉, FBX 원본 local 값을 그대로 저장하지 않고, 엔진 런타임 bone 계층에 맞는 local key를 저장합니다.
+
+        if (Node)
+        {
+            const FbxAMatrix GlobalTransform = Node->EvaluateGlobalTransform(SampleTime);
+            const FMatrix EngineGlobalTransform = ToFMatrix(GlobalTransform);
+            if (RuntimeParentNode)
+            {
+                const FbxAMatrix ParentGlobalTransform = RuntimeParentNode->EvaluateGlobalTransform(SampleTime);
+                const FMatrix EngineParentGlobalTransform = ToFMatrix(ParentGlobalTransform);
+                RuntimeLocalTransform = EngineGlobalTransform * EngineParentGlobalTransform.GetInverse();
+            }
+            else
+            {
+                RuntimeLocalTransform = EngineGlobalTransform;
+            }
+        }
+
+        const FTransform EngineTransform(RuntimeLocalTransform);
+
+        if (!bOutLoggedSuspiciousScale && HasSuspiciousScale(EngineTransform.GetScale3D()))
+        {
+            bOutLoggedSuspiciousScale = true;
+            UE_LOG_WARNING("[FbxAnimationImporter] Suspicious sampled local scale | Node=%s | Scale=(%.3f, %.3f, %.3f)",
+                Node ? Node->GetName() : "<null>",
+                EngineTransform.GetScale3D().X,
+                EngineTransform.GetScale3D().Y,
+                EngineTransform.GetScale3D().Z);
+        }
 
 		//엔진에서 쓰이는 FRawAnimSequenceTrack 만들 시간입니다.
 		//PosKey
@@ -448,6 +542,18 @@ namespace
         const FbxTimeSpan TimeSpan = ResolveAnimationTimeSpan(Scene, AnimStack);
         const int32 KeyCount = ComputeSampleKeyCount(TimeSpan, SampleRate);
         const double DurationSeconds = std::max(0.0, TimeSpan.GetDuration().GetSecondDouble());
+        int32 NodeCountWithSkippedParents = 0;
+        const TMap<FbxNode*, FbxNode*> RuntimeParentByNode =
+            BuildRuntimeTrackParentMap(TrackNodes, NodeCountWithSkippedParents);
+
+        if (NodeCountWithSkippedParents > 0)
+        {
+            UE_LOG("[FbxAnimationImporter] Runtime local sampling will bake skipped FBX parent transforms: %d/%zu nodes | Source=%s | Stack=%s",
+                NodeCountWithSkippedParents,
+                TrackNodes.size(),
+                SourcePath.c_str(),
+                AnimStack->GetName());
+        }
 
         UAnimSequence* AnimSequence = UObjectManager::Get().CreateObject<UAnimSequence>();
         UAnimDataModel* DataModel = UObjectManager::Get().CreateObject<UAnimDataModel>();
@@ -477,10 +583,23 @@ namespace
             Track.InternalTrack.RotKeys.reserve(KeyCount);
             Track.InternalTrack.ScaleKeys.reserve(KeyCount);
 
+            FbxNode* RuntimeParentNode = nullptr;
+            auto ParentIt = RuntimeParentByNode.find(Node);
+            if (ParentIt != RuntimeParentByNode.end())
+            {
+                RuntimeParentNode = ParentIt->second;
+            }
+
+            bool bLoggedSuspiciousScale = false;
             for (int32 KeyIndex = 0; KeyIndex < KeyCount; ++KeyIndex)
             {
                 const FbxTime SampleTime = MakeSampleTime(TimeSpan, KeyIndex, KeyCount);
-                AppendSampledLocalTransform(Node, SampleTime, Track.InternalTrack);
+                AppendSampledRuntimeLocalTransform(
+                    Node,
+                    RuntimeParentNode,
+                    SampleTime,
+                    Track.InternalTrack,
+                    bLoggedSuspiciousScale);
             }
 
             Tracks.push_back(std::move(Track));
