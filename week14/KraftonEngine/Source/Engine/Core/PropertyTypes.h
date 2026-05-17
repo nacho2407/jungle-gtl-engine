@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -115,7 +116,8 @@ struct FProperty
 	const char* Category = nullptr;
 	uint32 Flags = PF_None;
 
-	void* (*GetValuePtr)(void* Container) = nullptr;	//컨테이너 안에 있는 실제 프로퍼티 값의 주소를 반환
+	size_t Offset = 0;
+	size_t Size = 0;
 
 	float Min = 0.0f;	
 	float Max = 0.0f;
@@ -131,9 +133,9 @@ struct FProperty
 	TMap<FString, FString> Metadata;
 	const char* OwnerClassName = nullptr;
 
-	inline void* GetValuePtrFor(UObject* Object) const
+	inline void* GetValuePtrFor(void* Container) const
 	{
-		return GetValuePtr ? GetValuePtr(Object) : nullptr;
+		return Container ? reinterpret_cast<uint8*>(Container) + Offset : nullptr;
 	}
 
 	inline FPropertyValue ToValue(UObject* Object) const
@@ -144,7 +146,7 @@ struct FProperty
 		Desc.Category = this->Category ? this->Category : "";
 		Desc.DisplayName = this->DisplayName ? this->DisplayName : Desc.Name;
 		Desc.Metadata = this->Metadata;
-		Desc.ValuePtr = GetValuePtr ? GetValuePtr(Object) : nullptr;
+		Desc.ValuePtr = GetValuePtrFor(Object);
 		Desc.Min = this->Min;
 		Desc.Max = this->Max;
 		Desc.Speed = this->Speed;
