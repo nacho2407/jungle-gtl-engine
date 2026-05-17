@@ -207,7 +207,6 @@ struct FGenericProperty : FProperty
 	float Min = 0.0f;
 	float Max = 0.0f;
 	float Speed = 0.1f;	//에디터 드래그 입력 시 값 변화량
-	const FEnum* EnumType = nullptr;
 	UStruct* StructType = nullptr;
 
 	FGenericProperty() = default;
@@ -221,7 +220,6 @@ struct FGenericProperty : FProperty
 		float InMin,
 		float InMax,
 		float InSpeed,
-		const FEnum* InEnumType,
 		UStruct* InStructType,
 		const char* InDisplayName,
 		const TMap<FString, FString>& InMetadata,
@@ -231,7 +229,6 @@ struct FGenericProperty : FProperty
 		, Min(InMin)
 		, Max(InMax)
 		, Speed(InSpeed)
-		, EnumType(InEnumType)
 		, StructType(InStructType)
 	{
 	}
@@ -240,8 +237,50 @@ struct FGenericProperty : FProperty
 	float GetMin() const override { return Min; }
 	float GetMax() const override { return Max; }
 	float GetSpeed() const override { return Speed; }
-	const FEnum* GetEnumType() const override { return EnumType; }
 	UStruct* GetStructType() const override { return StructType; }
+
+	json::JSON Serialize(void* Container) const override;
+	void	   Deserialize(void* Container, json::JSON& Value) const override;
+	void	   Serialize(void* Container, FArchive& Ar) const override;
+};
+
+struct FEnumProperty : FGenericProperty
+{
+	const FEnum* EnumType = nullptr;
+
+	FEnumProperty() = default;
+	FEnumProperty(
+		const char* InName,
+		const char* InCategory,
+		uint32 InFlags,
+		size_t InOffset,
+		size_t InSize,
+		float InMin,
+		float InMax,
+		float InSpeed,
+		const FEnum* InEnumType,
+		const char* InDisplayName,
+		const TMap<FString, FString>& InMetadata,
+		const char* InOwnerClassName)
+		: FGenericProperty(
+			InName,
+			EPropertyType::Enum,
+			InCategory,
+			InFlags,
+			InOffset,
+			InSize,
+			InMin,
+			InMax,
+			InSpeed,
+			nullptr,
+			InDisplayName,
+			InMetadata,
+			InOwnerClassName)
+		, EnumType(InEnumType)
+	{
+	}
+
+	const FEnum* GetEnumType() const override { return EnumType; }
 
 	json::JSON Serialize(void* Container) const override;
 	void	   Deserialize(void* Container, json::JSON& Value) const override;
@@ -278,7 +317,6 @@ struct FSoftObjectProperty : FGenericProperty
 			InMin,
 			InMax,
 			InSpeed,
-			nullptr,
 			nullptr,
 			InDisplayName,
 			InMetadata,
