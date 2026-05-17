@@ -1,4 +1,4 @@
-#include "AnimSequence.h"
+﻿#include "AnimSequence.h"
 
 #include "AnimDataModel.h"
 #include "AnimNotify_LogMessage.h"
@@ -6,6 +6,7 @@
 #include "AnimExtractContext.h"
 #include "AnimationRuntime.h"
 #include "Skeleton.h"
+#include "SkeletonManager.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
 #include "Object/Object.h"
@@ -333,8 +334,7 @@ void UAnimSequence::Serialize(FArchive& Ar)
     UObject::Serialize(Ar);
 
     Ar << AssetPathFileName;
-    Ar << SkeletonPath;
-    Ar << SkeletonGuid;
+    Ar << TargetSkeleton;
 
     if (!DataModel)
     {
@@ -446,6 +446,13 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
         return;
     }
 
+    if (!IsCompatibleWith(Output.SkeletalMesh))
+    {
+        UE_LOG("Animation pose rejected: skeleton mismatch. Anim=%s SkeletonPath=%s", GetName().c_str(), TargetSkeleton.SkeletonPath.c_str());
+        Output.ResetToRefPose();
+        return;
+    }
+
     FSkeletalMesh* Asset = Output.SkeletalMesh->GetSkeletalMeshAsset();
     if (!Asset)
     {
@@ -495,7 +502,32 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
 
     for (const FBoneAnimationTrack& Track : Tracks)
     {
-        const int32 BoneIndex = Track.BoneTreeIndex;
+        int32 BoneIndex = Track.BoneTreeIndex;
+
+        if (!Track.BoneName.empty())
+        {
+            const bool bIndexInvalid = BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size());
+            const bool bIndexNameMismatch = !bIndexInvalid && Asset->Bones[BoneIndex].Name != Track.BoneName;
+            if (bIndexInvalid || bIndexNameMismatch)
+            {
+                if (const USkeleton* MeshSkeleton = Output.SkeletalMesh->GetSkeleton())
+                {
+                    BoneIndex = MeshSkeleton->FindBoneIndex(Track.BoneName);
+                }
+                else
+                {
+                    BoneIndex = -1;
+                    for (int32 CandidateIndex = 0; CandidateIndex < static_cast<int32>(Asset->Bones.size()); ++CandidateIndex)
+                    {
+                        if (Asset->Bones[CandidateIndex].Name == Track.BoneName)
+                        {
+                            BoneIndex = CandidateIndex;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
 
         if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(Output.Pose.size()))
         {
@@ -572,7 +604,7 @@ bool UAnimSequence::GetAnimationPose(float TimeSeconds, USkeletalMesh* InSkeleta
 
     if (!IsCompatibleWith(InSkeletalMesh))
     {
-        UE_LOG("Animation pose failed: skeleton mismatch. Anim=%s SkeletonPath=%s", GetName().c_str(), SkeletonPath.c_str());
+        UE_LOG("Animation pose failed: skeleton mismatch. Anim=%s SkeletonPath=%s", GetName().c_str(), TargetSkeleton.SkeletonPath.c_str());
         return false;
     }
 
@@ -604,12 +636,13 @@ bool UAnimSequence::IsCompatibleWith(const USkeleton* InSkeleton) const
         return false;
     }
 
-    if (!SkeletonGuid.empty() && !InSkeleton->GetSkeletonGuid().empty())
-    {
-        return SkeletonGuid == InSkeleton->GetSkeletonGuid();
-    }
+    const FSkeletonCompatibilityReport Report = FSkeletonManager::CheckCompatibility(
+        TargetSkeleton,
+        InSkeleton->GetSkeletonBinding(),
+        nullptr,
+        InSkeleton);
 
-    return SkeletonPath == InSkeleton->GetAssetPathFileName();
+    return Report.IsCompatible();
 }
 
 bool UAnimSequence::IsCompatibleWith(const USkeletalMesh* InSkeletalMesh) const
@@ -619,12 +652,14 @@ bool UAnimSequence::IsCompatibleWith(const USkeletalMesh* InSkeletalMesh) const
         return false;
     }
 
-    if (const USkeleton* MeshSkeleton = InSkeletalMesh->GetSkeleton())
-    {
-        return IsCompatibleWith(MeshSkeleton);
-    }
+    const USkeleton* MeshSkeleton = InSkeletalMesh->GetSkeleton();
+    const FSkeletonCompatibilityReport Report = FSkeletonManager::CheckCompatibility(
+        TargetSkeleton,
+        InSkeletalMesh->GetSkeletonBinding(),
+        nullptr,
+        MeshSkeleton);
 
-    return SkeletonPath == InSkeletalMesh->GetSkeletonPath();
+    return Report.IsCompatible();
 }
 
 const FBoneAnimationTrack* UAnimSequence::FindBoneTrackByIndex(int32 BoneIndex) const
@@ -674,6 +709,7 @@ UAnimSequence* UAnimSequence::CreateMockSwaySequence(
 
     FBoneAnimationTrack Track;
     Track.BoneTreeIndex = BoneIdx;
+    Track.BoneName = Asset->Bones[BoneIdx].Name;
     Track.InternalTrackData.PosKeys   = TArray<FVector>(5, Base.Location);
     Track.InternalTrackData.ScaleKeys = TArray<FVector>(5, Base.Scale);
     Track.InternalTrackData.RotKeys   = {
@@ -687,6 +723,7 @@ UAnimSequence* UAnimSequence::CreateMockSwaySequence(
 
     UAnimSequence* Seq = UObjectManager::Get().CreateObject<UAnimSequence>();
     Seq->SetDataModel(Model);
+    Seq->SetSkeletonBinding(InMesh->GetSkeletonBinding());
     return Seq;
 }
 
@@ -716,6 +753,7 @@ UAnimSequence* UAnimSequence::CreateMockWaveSequence(
 
         FBoneAnimationTrack Track;
         Track.BoneTreeIndex = b;
+        Track.BoneName = Asset->Bones[b].Name;
         Track.InternalTrackData.PosKeys   = TArray<FVector>(KeyCount, Base.Location);
         Track.InternalTrackData.ScaleKeys = TArray<FVector>(KeyCount, Base.Scale);
         Track.InternalTrackData.RotKeys.reserve(KeyCount);
@@ -746,5 +784,6 @@ UAnimSequence* UAnimSequence::CreateMockWaveSequence(
 
     UAnimSequence* Seq = UObjectManager::Get().CreateObject<UAnimSequence>();
     Seq->SetDataModel(Model);
+    Seq->SetSkeletonBinding(InMesh->GetSkeletonBinding());
     return Seq;
 }

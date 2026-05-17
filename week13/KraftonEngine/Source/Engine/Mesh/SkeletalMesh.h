@@ -1,7 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "SkeletalMeshAsset.h"
+#include "Animation/SkeletonTypes.h"
 
 class USkeleton;
 
@@ -35,11 +36,13 @@ public:
     void       SetSkeleton(USkeleton* InSkeleton);
     USkeleton* GetSkeleton() const;
 
-    void           SetSkeletonPath(const FString& InSkeletonPath);
-    const FString& GetSkeletonPath() const;
+    void SetSkeletonBinding(const FSkeletonBinding& InBinding);
+    const FSkeletonBinding& GetSkeletonBinding() const { return SkeletonBinding; }
 
 private:
     void CacheSectionMaterialIndices();
+    void SyncSkeletonBindingToAsset();
+    void SyncSkeletonBindingFromAsset();
 
 private:
     FString AssetPathFileName = "None";
@@ -47,6 +50,6 @@ private:
     FSkeletalMesh*            SkeletalMeshAsset = nullptr;
     TArray<FSkeletalMaterial> SkeletalMaterials;
 
-    FString    SkeletonPath = "None";
-    USkeleton* Skeleton     = nullptr;
+    FSkeletonBinding SkeletonBinding;
+    USkeleton*       Skeleton = nullptr;
 };

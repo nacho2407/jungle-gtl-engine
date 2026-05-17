@@ -2,6 +2,7 @@
 
 #include "AnimSequenceBase.h"
 #include "BoneAnimationTrack.h"
+#include "SkeletonTypes.h"
 
 struct FTransform;
 class USkeletalMesh;
@@ -48,24 +49,18 @@ public:
     bool GetAnimationPose(float TimeSeconds, USkeletalMesh* InSkeletalMesh, TArray<FTransform>& OutLocalPose, bool bLooping = false) const;
     bool GetAnimationPoseAtFrame(int32 FrameIndex, USkeletalMesh* InSkeletalMesh, TArray<FTransform>& OutLocalPose) const;
 
-    const FString& GetSkeletonPath() const
+    const FSkeletonBinding& GetSkeletonBinding() const
     {
-        return SkeletonPath;
+        return TargetSkeleton;
     }
 
-    void SetSkeletonPath(const FString& InSkeletonPath)
+    void SetSkeletonBinding(const FSkeletonBinding& InBinding)
     {
-        SkeletonPath = InSkeletonPath;
-    }
-
-    const FString& GetSkeletonGuid() const
-    {
-        return SkeletonGuid;
-    }
-
-    void SetSkeletonGuid(const FString& InSkeletonGuid)
-    {
-        SkeletonGuid = InSkeletonGuid;
+        TargetSkeleton = InBinding;
+        if (TargetSkeleton.SkeletonPath.empty())
+        {
+            TargetSkeleton.SkeletonPath = "None";
+        }
     }
 
     bool IsCompatibleWith(const USkeleton* InSkeleton) const;
@@ -108,6 +103,5 @@ private:
     UAnimDataModel* DataModel = nullptr;
 
     FString AssetPathFileName = "None";
-    FString SkeletonPath = "None";
-    FString SkeletonGuid;
+    FSkeletonBinding TargetSkeleton;
 };

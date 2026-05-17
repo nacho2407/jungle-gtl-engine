@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "Animation/SkeletonTypes.h"
@@ -23,14 +23,33 @@ public:
         AssetPathFileName = InPath;
     }
 
-    const FString& GetSkeletonGuid() const
+    const FString& GetSkeletonAssetGuid() const
     {
-        return SkeletonGuid;
+        return SkeletonAssetGuid;
     }
 
-    void SetSkeletonGuid(const FString& InGuid)
+    void SetSkeletonAssetGuid(const FString& InGuid)
     {
-        SkeletonGuid = InGuid;
+        SkeletonAssetGuid = InGuid;
+    }
+
+    const FString& GetCompatibilitySignature() const
+    {
+        return CompatibilitySignature;
+    }
+
+    void SetCompatibilitySignature(const FString& InSignature)
+    {
+        CompatibilitySignature = InSignature;
+    }
+
+    FSkeletonBinding GetSkeletonBinding() const
+    {
+        FSkeletonBinding Binding;
+        Binding.SkeletonPath = AssetPathFileName;
+        Binding.SkeletonAssetGuid = SkeletonAssetGuid;
+        Binding.CompatibilitySignature = CompatibilitySignature;
+        return Binding;
     }
 
     const FReferenceSkeleton& GetReferenceSkeleton() const
@@ -43,13 +62,14 @@ public:
         return ReferenceSkeleton;
     }
 
-    int32 FindBoneIndex(const FString& BoneName) const
-    {
-        return ReferenceSkeleton.FindBoneIndex(BoneName);
-    }
+    void RebuildBoneNameCache();
+
+    int32 FindBoneIndex(const FString& BoneName) const;
 
 private:
     FString            AssetPathFileName = "None";
-    FString            SkeletonGuid;
+    FString            SkeletonAssetGuid;
+    FString            CompatibilitySignature;
     FReferenceSkeleton ReferenceSkeleton;
+    TMap<FString, int32> BoneNameToIndex;
 };

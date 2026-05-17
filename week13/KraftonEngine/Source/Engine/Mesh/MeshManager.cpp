@@ -132,21 +132,6 @@ static FAssetImportMetadata MakeImportMetadata(const FString& SourcePath)
 	return Metadata;
 }
 
-static FString MakeSkeletonGuid(const FReferenceSkeleton& RefSkeleton)
-{
-	FString Accum;
-
-	for (const FReferenceBone& Bone : RefSkeleton.Bones)
-	{
-		Accum += Bone.Name;
-		Accum += ".";
-		Accum += std::to_string(Bone.ParentIndex);
-		Accum += ".";
-	}
-
-	return std::to_string(std::hash<std::string> {}(Accum));
-}
-
 static bool IsPackageSourceStale(const FString& BinaryPath, EAssetPackageType ExpectedType, bool& bOutMissingSource)
 {
 	bOutMissingSource = false;
@@ -311,6 +296,21 @@ static bool LoadSkeletalMeshBinary(USkeletalMesh* SkeletalMesh, const FString& B
 	}
 
 	return true;
+}
+
+
+bool FMeshManager::ReadSkeletalMeshBinding(const FString& PackagePath, FSkeletonBinding& OutBinding)
+{
+	OutBinding.Reset();
+
+	USkeletalMesh* TempMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
+	const bool bLoaded = LoadSkeletalMeshBinary(TempMesh, FPaths::MakeProjectRelative(PackagePath));
+	if (bLoaded)
+	{
+		OutBinding = TempMesh->GetSkeletonBinding();
+	}
+	UObjectManager::Get().DestroyObject(TempMesh);
+	return bLoaded;
 }
 
 static bool SaveSkeletalMeshBinary(USkeletalMesh* SkeletalMesh, const FString& BinaryPath, const FString& SourcePath)
@@ -764,9 +764,10 @@ USkeletalMesh* FMeshManager::LoadSkeletalMesh(const FString& PathFileName, ID3D1
 				UE_LOG("SkeletalMesh package is stale. Package=%s MissingSource=%s", CacheKey.c_str(), bMissingSource ? "true" : "false");
 			}
 
-			if (!SkeletalMesh->GetSkeletonPath().empty() && SkeletalMesh->GetSkeletonPath() != "None")
+			const FSkeletonBinding& Binding = SkeletalMesh->GetSkeletonBinding();
+			if (!Binding.SkeletonPath.empty() && Binding.SkeletonPath != "None")
 			{
-				USkeleton* Skeleton = FSkeletonManager::Get().LoadSkeleton(SkeletalMesh->GetSkeletonPath());
+				USkeleton* Skeleton = FSkeletonManager::Get().LoadSkeleton(Binding.SkeletonPath);
 				SkeletalMesh->SetSkeleton(Skeleton);
 			}
 
@@ -838,17 +839,50 @@ bool FMeshManager::LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Devi
 	}
 
 	const FString SkeletonPath = FSkeletonManager::GetSkeletonPackagePath(PathFileName);
+	const FString CompatibilitySignature = FSkeletonManager::BuildCompatibilitySignature(ImportResult.Skeleton);
+
+	USkeleton* ExistingSkeleton = nullptr;
+	if (std::filesystem::exists(ResolveProjectPath(SkeletonPath)))
+	{
+		ExistingSkeleton = FSkeletonManager::Get().LoadSkeleton(SkeletonPath);
+	}
 
 	USkeleton* Skeleton = UObjectManager::Get().CreateObject<USkeleton>();
 	Skeleton->SetAssetPathFileName(SkeletonPath);
 	Skeleton->GetMutableReferenceSkeleton() = std::move(ImportResult.Skeleton);
-	Skeleton->SetSkeletonGuid(MakeSkeletonGuid(Skeleton->GetReferenceSkeleton()));
+	Skeleton->SetCompatibilitySignature(CompatibilitySignature);
+
+	if (ExistingSkeleton)
+	{
+		FSkeletonCompatibilityReport ExistingReport;
+		const bool bSameStructure = FSkeletonManager::AreReferenceSkeletonsSameStructure(
+			ExistingSkeleton->GetReferenceSkeleton(),
+			Skeleton->GetReferenceSkeleton(),
+			&ExistingReport);
+
+		if (bSameStructure)
+		{
+			Skeleton->SetSkeletonAssetGuid(ExistingSkeleton->GetSkeletonAssetGuid());
+		}
+		else
+		{
+			UE_LOG("SkeletalMesh import: skeleton structure changed, issuing new SkeletonAssetGuid. Path=%s Reason=%s", SkeletonPath.c_str(), ExistingReport.Reason.c_str());
+			Skeleton->SetSkeletonAssetGuid(FSkeletonManager::MakeSkeletonAssetGuid(SkeletonPath + "#changed", CompatibilitySignature));
+		}
+	}
+	else
+	{
+		Skeleton->SetSkeletonAssetGuid(FSkeletonManager::MakeSkeletonAssetGuid(SkeletonPath, CompatibilitySignature));
+	}
+	Skeleton->RebuildBoneNameCache();
 
 	if (!FSkeletonManager::Get().SaveSkeleton(Skeleton, SkeletonPath, PathFileName))
 	{
 		UE_LOG("SkeletalMesh import failed: skeleton save failed. Path=%s", PathFileName.c_str());
 		return false;
 	}
+
+	const FSkeletonBinding SkeletonBinding = Skeleton->GetSkeletonBinding();
 
 	for (UAnimSequence* Sequence : ImportResult.AnimSequences)
 	{
@@ -857,8 +891,7 @@ bool FMeshManager::LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Devi
 			continue;
 		}
 
-		Sequence->SetSkeletonPath(SkeletonPath);
-		Sequence->SetSkeletonGuid(Skeleton->GetSkeletonGuid());
+		Sequence->SetSkeletonBinding(SkeletonBinding);
 
 		const FString AnimPath = FAnimationManager::GetAnimationPackagePath(PathFileName, Sequence->GetName());
 		if (!FAnimationManager::Get().SaveAnimation(Sequence, AnimPath, PathFileName))
@@ -870,7 +903,9 @@ bool FMeshManager::LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Devi
 
 	std::unique_ptr<FSkeletalMesh> NewMesh = std::make_unique<FSkeletalMesh>();
 	NewMesh->PathFileName                  = NormalizeProjectPath(PathFileName);
-	NewMesh->SkeletonPath                  = SkeletonPath;
+	NewMesh->SkeletonPath                  = SkeletonBinding.SkeletonPath;
+	NewMesh->SkeletonAssetGuid             = SkeletonBinding.SkeletonAssetGuid;
+	NewMesh->SkeletonCompatibilitySignature = SkeletonBinding.CompatibilitySignature;
 	NewMesh->Vertices                      = std::move(ImportResult.Mesh.Vertices);
 	NewMesh->Indices                       = std::move(ImportResult.Mesh.Indices);
 	NewMesh->Sections                      = std::move(ImportResult.Mesh.Sections);

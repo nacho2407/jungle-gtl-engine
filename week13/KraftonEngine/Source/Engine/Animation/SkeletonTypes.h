@@ -57,3 +57,66 @@ struct FReferenceSkeleton
         return Ar;
     }
 };
+
+// Skeleton을 참조하는 모든 에셋이 공통으로 저장하는 연결 정보.
+// Path는 로딩용, AssetGuid는 같은 Skeleton 에셋 판별용, CompatibilitySignature는 구조 호환성 판별용이다.
+struct FSkeletonBinding
+{
+    FString SkeletonPath = "None";
+    FString SkeletonAssetGuid;
+    FString CompatibilitySignature;
+
+    bool HasSkeletonPath() const
+    {
+        return !SkeletonPath.empty() && SkeletonPath != "None";
+    }
+
+    bool HasAssetGuid() const
+    {
+        return !SkeletonAssetGuid.empty();
+    }
+
+    bool HasCompatibilitySignature() const
+    {
+        return !CompatibilitySignature.empty();
+    }
+
+    void Reset()
+    {
+        SkeletonPath = "None";
+        SkeletonAssetGuid.clear();
+        CompatibilitySignature.clear();
+    }
+
+    friend FArchive& operator<<(FArchive& Ar, FSkeletonBinding& Binding)
+    {
+        Ar << Binding.SkeletonPath;
+        Ar << Binding.SkeletonAssetGuid;
+        Ar << Binding.CompatibilitySignature;
+        return Ar;
+    }
+};
+
+enum class ESkeletonCompatibilityResult : uint8
+{
+    Incompatible = 0,
+    ExactSkeleton,
+    SameStructure,
+    Retargetable
+};
+
+struct FSkeletonCompatibilityReport
+{
+    ESkeletonCompatibilityResult Result = ESkeletonCompatibilityResult::Incompatible;
+    FString Reason;
+    TArray<FString> MissingBones;
+    TArray<FString> ExtraBones;
+    TArray<FString> ParentMismatchBones;
+
+    bool IsCompatible() const
+    {
+        return Result == ESkeletonCompatibilityResult::ExactSkeleton
+            || Result == ESkeletonCompatibilityResult::SameStructure
+            || Result == ESkeletonCompatibilityResult::Retargetable;
+    }
+};

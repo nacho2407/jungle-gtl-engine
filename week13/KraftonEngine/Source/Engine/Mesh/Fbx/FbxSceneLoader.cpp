@@ -70,7 +70,7 @@ bool FFbxSceneLoader::Load(const FString& SourcePath, FFbxSceneHandle& OutScene,
 	return true;
 }
 
-void FFbxSceneLoader::NormalizeLikeCurrentImporter(FbxScene* Scene)
+void FFbxSceneLoader::NormalizeScene(FbxScene* Scene)
 {
 	if (!Scene)
 	{

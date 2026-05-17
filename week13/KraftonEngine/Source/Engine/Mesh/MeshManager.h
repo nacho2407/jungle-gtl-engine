@@ -4,6 +4,7 @@
 #include "Object/ObjectIterator.h"
 #include "Render/Types/RenderTypes.h"
 #include "Asset/AssetRegistry.h"
+#include "Animation/SkeletonTypes.h"
 
 #include <map>
 #include <string>
@@ -27,6 +28,7 @@ public:
 
 	static USkeletalMesh* LoadSkeletalMesh(const FString& PathFileName , ID3D11Device* InDevice);
 	static bool LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Device* InDevice, FSkeletalMesh*& OutMesh, TArray<FSkeletalMaterial>* OutMaterials = nullptr);
+	static bool ReadSkeletalMeshBinding(const FString& PackagePath, FSkeletonBinding& OutBinding);
 
 	static void ScanMeshSourceFiles();
 	static void ScanFbxSourceFiles();
