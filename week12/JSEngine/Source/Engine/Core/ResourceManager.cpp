@@ -213,8 +213,11 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 			}
             if (ContentInfo.bHasAnimation)
             {
-                const TArray<FString> ImportedAnimPaths = ImportAnimationStacksFromFbx(RelativePath);
-                if (ImportedAnimPaths.empty() && std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), RelativePath) == AnimSequenceFilePaths.end())
+                // Discovery must stay metadata-only. Importing here forces every FBX animation stack
+                // to be enumerated and every existing .animseq to be checked during editor refresh/startup.
+                // Existing .animseq files are discovered as normal files, and FBX animation import is
+                // performed lazily only when an FBX path is explicitly loaded as an animation source.
+                if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), RelativePath) == AnimSequenceFilePaths.end())
                 {
                     AnimSequenceFilePaths.push_back(RelativePath);
                 }
@@ -819,13 +822,8 @@ USkeletalMesh* FResourceManager::LoadSkeletalMesh(const FString& Path)
     const FString NormalizedPath = FPaths::Normalize(Path);
     USkeletalMesh* Mesh = FSkeletalMeshLoadService(*this).Load(NormalizedPath);
 
-    //Unreal처럼, FBX에 들어 있는 animation sequence를 자동 추출하는데,
-	//이미 기존 .animseq가 있으면 덮어쓰지 않습니다.
-    if (Mesh && IsFbxSourcePath(NormalizedPath))
-    {
-        ImportAnimationStacksFromFbx(NormalizedPath);
-    }
-
+	//일단 최적화를 위해 anime stack 훑어보는 과정은 LoadAnimSequence(FBX 경로) 에서만...
+	//단순히 fbx 내부를 보는 것만으로도 오래 걸림.
     return Mesh;
 }
 
@@ -934,66 +932,52 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 
         const FString ImportedAssetPath = FAssetPathPolicy::MakeImportedAnimSequenceAssetPath(NormalizedPath, StackName);
 
-        UAnimSequence* SequenceToRegister = nullptr;
         if (FAssetPathPolicy::FileExists(ImportedAssetPath))
         {
-            SequenceToRegister = FindAnimSequence(ImportedAssetPath);
-            if (!SequenceToRegister)
+            //.animseq 파일이 이미 존재하므로 로드하지 않습니다.
+            if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), ImportedAssetPath) == AnimSequenceFilePaths.end())
             {
-                SequenceToRegister = AnimSequenceAssetLoader.Load(ImportedAssetPath);
+                AnimSequenceFilePaths.push_back(ImportedAssetPath);
             }
-
-            if (SequenceToRegister)
-            {
-                UE_LOG("[AnimSequenceImport] Reuse existing anim sequence asset: %s", ImportedAssetPath.c_str());
-            }
-            else
-            {
-                UE_LOG_WARNING("[AnimSequenceImport] Existing anim sequence could not be loaded. It will be regenerated: %s",
-                    ImportedAssetPath.c_str());
-            }
+            ImportedAssetPaths.push_back(ImportedAssetPath);
+            continue;
         }
 
-        if (!SequenceToRegister)
+        FFbxAnimImportOptions ImportOptions;
+        ImportOptions.StackName = StackName;
+        ImportOptions.PreviewMeshPath = NormalizedPath;
+
+        UAnimSequence* ImportedSequence = FbxImporter.LoadAnimSequence(NormalizedPath, ImportOptions);
+        if (!ImportedSequence)
         {
-            FFbxAnimImportOptions ImportOptions;
-            ImportOptions.StackName = StackName;
-            ImportOptions.PreviewMeshPath = NormalizedPath;
-
-            UAnimSequence* ImportedSequence = FbxImporter.LoadAnimSequence(NormalizedPath, ImportOptions);
-            if (!ImportedSequence)
-            {
-                UE_LOG_WARNING("[AnimSequenceImport] Failed to import FBX animation stack: %s | Stack=%s",
-                    NormalizedPath.c_str(),
-                    StackName.c_str());
-                continue;
-            }
-
-            ImportedSequence->SetAssetPath(ImportedAssetPath);
-            ImportedSequence->SetPreviewMeshPath(NormalizedPath);
-
-            if (!AnimSequenceAssetLoader.Save(ImportedAssetPath, ImportedSequence))
-            {
-                UE_LOG_WARNING("[AnimSequenceImport] Failed to save imported animation stack: %s -> %s",
-                    NormalizedPath.c_str(),
-                    ImportedAssetPath.c_str());
-                continue;
-            }
-
-            SequenceToRegister = ImportedSequence;
-            UE_LOG("[AnimSequenceImport] Imported FBX animation stack: %s | Stack=%s | Asset=%s",
+            UE_LOG_WARNING("[AnimSequenceImport] Failed to import FBX animation stack: %s | Stack=%s",
                 NormalizedPath.c_str(),
-                StackName.c_str(),
-                ImportedAssetPath.c_str());
+                StackName.c_str());
+            continue;
         }
 
-        AnimSequenceMap[ImportedAssetPath] = SequenceToRegister;
+        ImportedSequence->SetAssetPath(ImportedAssetPath);
+        ImportedSequence->SetPreviewMeshPath(NormalizedPath);
+
+        if (!AnimSequenceAssetLoader.Save(ImportedAssetPath, ImportedSequence))
+        {
+            UE_LOG_WARNING("[AnimSequenceImport] Failed to save imported animation stack: %s -> %s",
+                NormalizedPath.c_str(),
+                ImportedAssetPath.c_str());
+            continue;
+        }
+
+        AnimSequenceMap[ImportedAssetPath] = ImportedSequence;
         if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), ImportedAssetPath) == AnimSequenceFilePaths.end())
         {
             AnimSequenceFilePaths.push_back(ImportedAssetPath);
         }
 
         ImportedAssetPaths.push_back(ImportedAssetPath);
+        UE_LOG("[AnimSequenceImport] Imported FBX animation stack: %s | Stack=%s | Asset=%s",
+            NormalizedPath.c_str(),
+            StackName.c_str(),
+            ImportedAssetPath.c_str());
     }
 
     if (!ImportedAssetPaths.empty())
