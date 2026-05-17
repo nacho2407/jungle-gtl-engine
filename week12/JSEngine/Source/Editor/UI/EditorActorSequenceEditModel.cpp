@@ -8,7 +8,6 @@
 #include "Editor/UI/EditorActorSequenceTimeUtils.h"
 #include "GameFramework/AActor.h"
 #include "Object/Object.h"
-#include "Object/ObjectFactory.h"
 #include "Object/Class.h"
 #include "Object/Property.h"
 
@@ -239,7 +238,7 @@ FString FEditorActorSequenceEditModel::MakeComponentLabel(AActor* Owner, UActorC
 	FString Label = Component->GetFName().ToString();
 	if (Label.empty())
 	{
-		Label = Component->GetTypeInfo() ? Component->GetTypeInfo()->name : "Component";
+		Label = Component ? Component->GetClassName() : "Component";
 	}
 
 	if (Owner && Component == Owner->GetRootComponent())

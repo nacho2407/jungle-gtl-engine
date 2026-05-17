@@ -1,10 +1,16 @@
 ﻿#include "Camera/CameraShakeBase.h"
 
-DEFINE_CLASS(UCameraShakePattern, UObject)
-DEFINE_CLASS(UPerlinCameraShakePattern, UCameraShakePattern)
-DEFINE_CLASS(UCameraShakeBase, UObject)
 
-REGISTER_FACTORY(UCameraShakePattern)
+
+#include <cmath>
+
+namespace
+{
+	float Oscillate(float Time, float Frequency, float Phase)
+	{
+		return std::sin(MathUtil::TwoPi * std::max(Frequency, 0.0f) * Time + Phase);
+	}
+}
 
 void FCameraShakeState::Start(const UCameraShakePattern* Pattern, const FCameraShakeStartParams& Params)
 {
@@ -168,16 +174,29 @@ void UCameraShakePattern::GetCameraShakeInfo(FCameraShakeInfo& OutCameraInfo) co
 	OutCameraInfo.BlendOutTime = BlendOutTime;
 }
 
-void UCameraShakePattern::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UObject::GetEditableProperties(OutProps);
-
-	OutProps.push_back({ "Duration", EPropertyType::Float, &Duration });
-	OutProps.push_back({ "BlendInTime", EPropertyType::Float, &BlendInTime });
-	OutProps.push_back({ "BlendOutTime", EPropertyType::Float, &BlendOutTime });
-}
-
 //---------UPerlinCameraShakePattern---------
+
+void UPerlinCameraShakePattern::OnUpdateShakePattern(
+	const FCameraShakeUpdateParams& Params,
+	FCameraShakeUpdateResult& OutResult)
+{
+	(void)Params;
+
+	const float Time = state.ElapsedTime;
+
+	OutResult.LocationOffset = FVector(
+		LocationAmplitude * Oscillate(Time, Frequency, 0.0f),
+		LocationAmplitude * Oscillate(Time, Frequency * 1.13f, 2.0943951f),
+		LocationAmplitude * Oscillate(Time, Frequency * 0.87f, 4.1887902f));
+
+	OutResult.RotationOffset = FRotator(
+		RotationAmplitude * Oscillate(Time, Frequency * 0.73f, 1.0471976f),
+		RotationAmplitude * Oscillate(Time, Frequency * 0.91f, 3.1415926f),
+		RotationAmplitude * Oscillate(Time, Frequency * 1.29f, 5.2359877f));
+
+	OutResult.FOVOffset =
+		FOVAmplitude * Oscillate(Time, Frequency * 0.67f, 1.5707963f);
+}
 
 UCameraShakeBase::UCameraShakeBase()
 	: PlayerCameraManager(nullptr)

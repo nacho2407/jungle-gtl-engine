@@ -22,25 +22,39 @@ UCLASS()
 class USequenceCameraShakePattern : public UCameraShakePattern
 {
 public:
-	DECLARE_CLASS(USequenceCameraShakePattern, UCameraShakePattern)
+	GENERATED_BODY(USequenceCameraShakePattern, UCameraShakePattern)
 
 	UCameraAnimationSequence* Sequence = nullptr;
 	UCurveFloatAsset* Curve = nullptr;
 
+	UPROPERTY()
 	float PlayRate = 1.0f;
+
+	UPROPERTY()
 	float Scale = 1.0f;
+
+	UPROPERTY()
 	float RandomSegmentDuration = 0.0f;
+
+	UPROPERTY()
 	bool bRandomSegment = false;
+
+	UPROPERTY()
 	bool bLoop = false;
+
+	UPROPERTY()
 	FString CurveAssetPath;
 
+	UPROPERTY()
 	FVector LocationAmplitude = FVector::ZeroVector;
+
+	UPROPERTY()
 	FVector RotationAmplitudeDeg = FVector::ZeroVector;
+
+	UPROPERTY()
 	float FOVAmplitude = 0.0f;
 
 	void GetCameraShakeInfo(FCameraShakeInfo& OutCameraInfo) const override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-
 private:	
 	virtual void OnStartShakePattern(const FCameraShakeStartParams& Params) override;
 	virtual void OnStopShakePattern(bool bImmediately) override;

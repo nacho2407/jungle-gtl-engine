@@ -8,6 +8,7 @@ UCLASS()
 class UCameraModifier : public UObject
 {
 public:
+	GENERATED_BODY(UCameraModifier, UObject)
 	virtual bool ModifyCamera(float DeltaTime, FMinimalViewInfo& InOutView);
 
 	void Enable()

@@ -49,7 +49,7 @@ UCLASS()
 class UCurveFloatAsset : public UObject
 {
 public:
-	DECLARE_CLASS(UCurveFloatAsset, UObject)
+	GENERATED_BODY(UCurveFloatAsset, UObject)
 
 	float Evaluate(float Time) const;
 

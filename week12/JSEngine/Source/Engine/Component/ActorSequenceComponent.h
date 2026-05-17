@@ -7,7 +7,7 @@ UCLASS()
 class UActorSequenceComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(UActorSequenceComponent, UActorComponent)
+	GENERATED_BODY(UActorSequenceComponent, UActorComponent)
 
 	void BeginPlay() override;
 	void EndPlay() override;

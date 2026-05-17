@@ -1,8 +1,7 @@
-#include "Core/AtlasResourceCache.h"
+﻿#include "Core/AtlasResourceCache.h"
 
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
-#include "Object/ObjectFactory.h"
 
 #include <unordered_set>
 

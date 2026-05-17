@@ -1,9 +1,6 @@
 ﻿#include "ProjectileMovementComponent.h"
 #include "Component/SceneComponent.h"
-#include "Object/ObjectFactory.h"
 
-DEFINE_CLASS(UProjectileMovementComponent, UMovementComponent)
-REGISTER_FACTORY(UProjectileMovementComponent)
 
 void UProjectileMovementComponent::BeginPlay()
 {

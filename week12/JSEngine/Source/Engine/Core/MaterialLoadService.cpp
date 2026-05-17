@@ -1,11 +1,10 @@
-#include "Core/MaterialLoadService.h"
+﻿#include "Core/MaterialLoadService.h"
 
 #include "Core/FbxMaterialLoadService.h"
 #include "Core/ImportedMaterialPolicy.h"
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
-#include "Object/ObjectFactory.h"
 #include "Render/Resource/ObjMtlLoader.h"
 
 #include <algorithm>

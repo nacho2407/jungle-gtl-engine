@@ -4,6 +4,6 @@
 UCLASS()
 class UAmbientLightComponent : public ULightComponent {
 public:
-	DECLARE_CLASS(UAmbientLightComponent, ULightComponent)
+	GENERATED_BODY(UAmbientLightComponent, ULightComponent)
 	UAmbientLightComponent() = default;
 };

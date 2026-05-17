@@ -5,7 +5,7 @@ UCLASS()
 class UShapeComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UShapeComponent, UPrimitiveComponent)
+	GENERATED_BODY(UShapeComponent, UPrimitiveComponent)
 
 	void PostDuplicate(UObject* Original) override;
 

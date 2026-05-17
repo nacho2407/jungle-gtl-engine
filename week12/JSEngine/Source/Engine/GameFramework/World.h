@@ -21,19 +21,16 @@ struct FWorldGameModeSettings
 
 UCLASS()
 class UWorld : public UObject {
+	GENERATED_BODY(UWorld, UObject)
+
 public:
 	using FActorDestroyedListener = std::function<void(AActor*)>;
 
-	DECLARE_CLASS(UWorld, UObject)
 	UWorld();
 	~UWorld() override;
 
 	virtual void PostDuplicate(UObject* Original) override;
 
-	// 프로퍼티 시스템 — UObject 에서 상속
-	// UWorld 는 현재 에디터에 노출할 스칼라 프로퍼티가 없습니다.
-	// (PersistentLevel 은 PostDuplicate 에서 별도 처리)
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override {}
 	void PostEditProperty(const char* PropertyName) override {}
 
 	// Actor lifecycle

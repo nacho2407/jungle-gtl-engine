@@ -76,7 +76,7 @@ UCLASS()
 class UMaterialInterface : public UObject
 {
 public:
-	DECLARE_CLASS(UMaterialInterface, UObject)
+	GENERATED_BODY(UMaterialInterface, UObject)
 
 	virtual const FString& GetName() const = 0;
 	virtual FString& GetNameRef() = 0;
@@ -119,7 +119,7 @@ UCLASS()
 class UMaterial : public UMaterialInterface
 {
 public:
-	DECLARE_CLASS(UMaterial, UMaterialInterface)
+	GENERATED_BODY(UMaterial, UMaterialInterface)
 
 	FString Name;
 	FString FilePath;
@@ -250,7 +250,7 @@ UCLASS()
 class UMaterialInstance : public UMaterialInterface
 {
 public:
-	DECLARE_CLASS(UMaterialInstance, UMaterialInterface)
+	GENERATED_BODY(UMaterialInstance, UMaterialInterface)
 
 	FString Name;
 	FString FilePath;

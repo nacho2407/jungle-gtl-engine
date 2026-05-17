@@ -73,13 +73,12 @@ UCLASS()
 class UScriptComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(UScriptComponent, UActorComponent)
+	GENERATED_BODY(UScriptComponent, UActorComponent)
 	UScriptComponent() = default;
 	~UScriptComponent() override;
 
 	void PostDuplicate(UObject* Original) override;
 	void Serialize(FArchive& Ar) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	void SetScriptName(const FString& InScriptName);

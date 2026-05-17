@@ -17,7 +17,6 @@
 #include <fstream>
 #include <windows.h>
 
-DEFINE_CLASS(UGameEngine, UEngine)
 
 namespace
 {

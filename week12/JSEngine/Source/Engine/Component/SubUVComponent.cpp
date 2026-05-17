@@ -9,16 +9,13 @@
 #include "Component/CameraComponent.h"
 #include "Math/Utils.h"
 
-DEFINE_CLASS(USubUVComponent, UBillboardComponent)
-REGISTER_FACTORY(USubUVComponent)
-
 USubUVComponent::USubUVComponent()
 {
 	SetVisibility(true);
 	SetInheritOwnerScale(true);
 }
 
-// 재생 상태 등 GetEditableProperties 에 노출되지 않은 필드를 직접 복사합니다.
+// 재생 상태 등 reflection에 노출되지 않은 필드를 직접 복사합니다.
 // CachedParticle 은 CopyPropertiesFrom 내부에서 Particle(Name) 처리 시
 // PostEditProperty("Particle") → SetParticle() 를 통해 자동으로 갱신됩니다.
 void USubUVComponent::PostDuplicate(UObject* Original)

@@ -8,7 +8,7 @@ class UMaterialInterface;
 UCLASS()
 class ULightComponent : public ULightComponentBase {
 public:
-	DECLARE_CLASS(ULightComponent, ULightComponentBase)
+	GENERATED_BODY(ULightComponent, ULightComponentBase)
 	ULightComponent() = default;
 
 	FMatrix GetLightViewProj(const FMatrix& CamView, const FMatrix& CamProj,
@@ -19,7 +19,6 @@ public:
 		float SplitNearT, float SplitFarT, const TArray<FBoundingBox>* VisibleObjectsBounds = nullptr) const;
 
 	void PostDuplicate(UObject* Original) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	
 public:
 	EShadowMap GetShadowMapType() const { return ShadowMapType; }
@@ -31,8 +30,6 @@ protected:
 
 	virtual FMatrix ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 		float SplitNearT, float SplitFarT) const;
-
-	virtual void PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutProps) const;
 
 protected:
 	~ULightComponent() = default;

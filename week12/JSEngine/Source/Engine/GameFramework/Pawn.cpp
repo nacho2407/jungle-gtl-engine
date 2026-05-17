@@ -1,9 +1,5 @@
-#include "GameFramework/Pawn.h"
-
+﻿#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
-
-DEFINE_CLASS(APawn, AActor)
-REGISTER_FACTORY(APawn)
 
 void APawn::PossessedBy(APlayerController* NewController)
 {

@@ -28,7 +28,7 @@ class USkeletalMeshComponent : public USkinnedMeshComponent
 {
 public:
 	DECLARE_DELEGATE(FOnAnimNotify, USkeletalMeshComponent*, const FAnimNotifyEvent&)
-	DECLARE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
+	GENERATED_BODY(USkeletalMeshComponent, USkinnedMeshComponent)
 
 	USkeletalMeshComponent() = default;
 	~USkeletalMeshComponent() override = default;

@@ -86,6 +86,10 @@ struct FProperty
 	UClass* ObjectClass = nullptr;
 	const FProperty* InnerProperty = nullptr;
 
+	FProperty() = default;
+
+	explicit FProperty(const struct FPropertyParams& Params);
+
 	void* GetValuePtr(UObject* Container) const;
 	const void* GetValuePtr(const UObject* Container) const;
 
@@ -172,6 +176,65 @@ struct FProperty
 		return true;
 	}
 };
+
+struct FPropertyParams
+{
+	const char* Name = nullptr;
+	const char* DisplayName = nullptr;
+	const char* Category = nullptr;
+
+	EPropertyType Type = EPropertyType::Unknown;
+	EPropertyFlags Flags = EPropertyFlags::None;
+
+	size_t Offset = 0;
+	size_t Size = 0;
+
+	float Min = 0.0f;
+	float Max = 0.0f;
+	float Speed = 0.1f;
+
+	const FEnumMetaData* EnumMeta = nullptr;
+	UClass* ObjectClass = nullptr;
+	const FProperty* InnerProperty = nullptr;
+};
+
+inline FProperty::FProperty(const FPropertyParams& Params)
+	: Name(Params.Name)
+	, DisplayName(Params.DisplayName)
+	, Category(Params.Category)
+	, Type(Params.Type)
+	, Flags(Params.Flags)
+	, Offset(Params.Offset)
+	, Size(Params.Size)
+	, Min(Params.Min)
+	, Max(Params.Max)
+	, Speed(Params.Speed)
+	, EnumMeta(Params.EnumMeta)
+	, ObjectClass(Params.ObjectClass)
+	, InnerProperty(Params.InnerProperty)
+{
+}
+
+struct FPropertyHandle
+{
+	UObject* Owner = nullptr;
+	const FProperty* Property = nullptr;
+
+	bool IsValid() const { return Owner && Property; }
+	const char* GetName() const { return Property ? Property->Name : nullptr; }
+
+	void* GetValuePtr() const
+	{
+		return IsValid() ? Property->GetValuePtr(Owner) : nullptr;
+	}
+
+	template <typename ValueType>
+	ValueType* GetValuePtr() const
+	{
+		return IsValid() ? Property->ContainerPtrToValuePtr<ValueType>(Owner) : nullptr;
+	}
+};
+
 inline void SerializeProperty(FArchive& Ar, UObject* Object, const FProperty& Property)
 {
 	Property.SerializeItem(Ar, Object);

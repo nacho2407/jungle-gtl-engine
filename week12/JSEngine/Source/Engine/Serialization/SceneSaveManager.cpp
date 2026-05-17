@@ -1,4 +1,4 @@
-#include "SceneSaveManager.h"
+﻿#include "SceneSaveManager.h"
 
 #include <iostream>
 #include <fstream>
@@ -14,8 +14,8 @@
 #include "Component/TextRenderComponent.h"
 #include "Object/Object.h"
 #include "Object/ActorIterator.h"
-#include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
+#include "Core/Reflection/ReflectionRegistry.h"
 #include "Object/FName.h"
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
@@ -47,7 +47,7 @@ namespace SceneKeys
 	static constexpr const char* Visible            = "Visible";
 	static constexpr const char* RootComponent      = "RootComponent";
 
-	// PerspectiveCamera 섹션
+	// PerspectiveCamera ?뱀뀡
 	static constexpr const char* PerspectiveCamera  = "PerspectiveCamera";
 	static constexpr const char* Primitives         = "Primitives";
 	static constexpr const char* Scale              = "Scale";
@@ -238,7 +238,7 @@ static json::JSON BuildSceneSnapshotJson(const FString& SceneName, FWorldContext
 	int32 Version = 6;
 	uint32 NextUUID = EngineStatics::GetNextUUID();
 
-	Writer << SceneKeys::ClassName << WorldContext.World->GetTypeInfo()->name;
+	Writer << SceneKeys::ClassName << WorldContext.World->GetClassName();
 	Writer << SceneKeys::Name << FinalName;
 	Writer << SceneKeys::WorldType << WorldTypeToString(WorldContext.WorldType);
 	Writer << SceneKeys::Version << Version;
@@ -383,7 +383,7 @@ void FSceneSaveManager::Load(const FString& FilePath, FWorldContext& OutWorldCon
 	FJsonReader Reader(Root);
 
 	FString ClassName = Root.hasKey(SceneKeys::ClassName) ? Root[SceneKeys::ClassName].ToString() : "UWorld";
-	UObject* WorldObj = FObjectFactory::Get().Create(ClassName);
+	UObject* WorldObj = NewObject(FReflectionRegistry::Get().FindClass(ClassName));
 	if (!WorldObj || !WorldObj->IsA<UWorld>()) return;
 
 	UWorld* World = static_cast<UWorld*>(WorldObj);
@@ -414,11 +414,11 @@ void FSceneSaveManager::Load(const FString& FilePath, FWorldContext& OutWorldCon
 		World->SetGameModeSettings(GameModeSettings);
 	}
 
-	// UUID 카운터 복원
+	// UUID 移댁슫??蹂듭썝
 	if (Root.hasKey(SceneKeys::NextUUID))
 		EngineStatics::ResetUUIDGeneration(Root[SceneKeys::NextUUID].ToInt());
 
-	// Perspective 카메라 상태 복원
+	// Perspective 移대찓???곹깭 蹂듭썝
 	if (OutCameraState)
 	{
 		OutCameraState->bValid = false;
@@ -467,8 +467,8 @@ void FSceneSaveManager::Load(const FString& FilePath, FWorldContext& OutWorldCon
 
 	OutWorldContext.WorldType = WorldType;
 	OutWorldContext.World = World;
-    OutWorldContext.SelectionManager = new FSelectionManager;
-    OutWorldContext.SelectionManager->Init();
+	OutWorldContext.SelectionManager = new FSelectionManager;
+	OutWorldContext.SelectionManager->Init();
 }
 
 FString FSceneSaveManager::GetCurrentTimeStamp()

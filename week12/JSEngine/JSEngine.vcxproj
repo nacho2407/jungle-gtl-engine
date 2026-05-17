@@ -401,6 +401,7 @@
     <ClCompile Include="Intermediate\Reflection\Component\UStaticMeshComponent.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Component\USubUVComponent.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Component\UTextRenderComponent.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Editor\UEditorEngine.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\AActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\AAmbientLightActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\AAttachTestActor.gen.cpp" />
@@ -433,6 +434,7 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\ATextRenderActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ULevel.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\UWorld.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Misc\ObjViewer\UObjViewerEngine.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Render\Resource\UMaterial.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Render\Resource\UMaterialInstance.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Render\Resource\UMaterialInterface.gen.cpp" />
@@ -1219,9 +1221,7 @@
     <ClInclude Include="Source\Engine\Object\EngineStatics.h" />
     <ClInclude Include="Source\Engine\Object\FName.h" />
     <ClInclude Include="Source\Engine\Object\Object.h" />
-    <ClInclude Include="Source\Engine\Object\ObjectFactory.h" />
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
-    <ClInclude Include="Source\Engine\Object\ObjectSerialize.h" />
     <ClInclude Include="Source\Engine\Object\Property.h" />
     <ClInclude Include="Source\Engine\Render\Common\ComPtr.h" />
     <ClInclude Include="Source\Engine\Render\Common\RenderTypes.h" />

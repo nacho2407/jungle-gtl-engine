@@ -37,12 +37,12 @@ UCLASS()
 class UTextRenderComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UTextRenderComponent, UPrimitiveComponent)
+	GENERATED_BODY(UTextRenderComponent, UPrimitiveComponent)
 
 	UTextRenderComponent();
 	~UTextRenderComponent() override = default;
 
-    virtual void PostDuplicate(UObject* Original) override;
+	virtual void PostDuplicate(UObject* Original) override;
 
 	virtual void Serialize(FArchive& Ar) override;
 	void PostEditProperty(const char* PropertyName) override;

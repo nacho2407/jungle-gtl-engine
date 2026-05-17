@@ -6,7 +6,7 @@ UCLASS()
 class URotatingMovementComponent : public UMovementComponent
 {	
 public:
-	DECLARE_CLASS(URotatingMovementComponent, UMovementComponent)
+	GENERATED_BODY(URotatingMovementComponent, UMovementComponent)
 
 	virtual void TickComponent(float DeltaTime) override;
 

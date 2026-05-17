@@ -1,6 +1,4 @@
 ﻿#pragma once
-
-#include "Object/ObjectFactory.h"
 #include "SceneComponent.h"
 #include "Render/Common/RenderTypes.h"
 #include "Engine/Geometry/Ray.h"
@@ -30,7 +28,7 @@ UCLASS()
 class UPrimitiveComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
+	GENERATED_BODY(UPrimitiveComponent, USceneComponent)
 	~UPrimitiveComponent() override;
 
 	FOnComponentBeginOverlap OnComponentBeginOverlap;

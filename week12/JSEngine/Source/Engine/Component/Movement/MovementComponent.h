@@ -12,7 +12,7 @@ UCLASS()
 class UMovementComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(UMovementComponent, UActorComponent)
+	GENERATED_BODY(UMovementComponent, UActorComponent)
 
 	virtual void TickComponent(float DeltaTime) override = 0;
 

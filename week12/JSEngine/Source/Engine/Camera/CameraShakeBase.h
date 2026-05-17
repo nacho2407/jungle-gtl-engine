@@ -68,7 +68,7 @@ UCLASS()
 class UCameraShakePattern : public UObject
 {
 public:
-	DECLARE_CLASS(UCameraShakePattern, UObject)
+	GENERATED_BODY(UCameraShakePattern, UObject)
 
 	void StartShakePattern(const FCameraShakeStartParams& Params);
 	void UpdateShakePattern(
@@ -80,8 +80,6 @@ public:
 	bool IsFinished() const { return state.IsFinished(); }
 
 	virtual void GetCameraShakeInfo(FCameraShakeInfo& OutCameraInfo) const;
-	
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	/** Gets the shake pattern's parent shake */
 	template <typename InstanceType>
@@ -96,8 +94,13 @@ private:
 		FCameraShakeUpdateResult& OutResult) {}
 
 public:
+	UPROPERTY()
 	float Duration = 1.0f;
+
+	UPROPERTY()
 	float BlendInTime = 0.2f;
+
+	UPROPERTY()
 	float BlendOutTime = 0.2f;
 
 protected:
@@ -109,12 +112,18 @@ UCLASS()
 class UPerlinCameraShakePattern : public UCameraShakePattern
 {
 public:
-	DECLARE_CLASS(UPerlinCameraShakePattern, UCameraShakePattern)
+	GENERATED_BODY(UPerlinCameraShakePattern, UCameraShakePattern)
 
+	UPROPERTY()
 	float LocationAmplitude = 20.0f;
+
+	UPROPERTY()
 	float RotationAmplitude = 5.0f;
+
+	UPROPERTY()
 	float FOVAmplitude = 3.0f;
 
+	UPROPERTY()
 	float Frequency = 10.0f;
 
 private:
@@ -127,7 +136,7 @@ UCLASS()
 class UCameraShakeBase : public UObject
 {
 public:
-	DECLARE_CLASS(UCameraShakeBase, UObject)
+	GENERATED_BODY(UCameraShakeBase, UObject)
 
 	UCameraShakeBase();
 

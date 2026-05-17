@@ -36,7 +36,7 @@ UCLASS()
 class UEngine : public UObject
 {
 public:
-	DECLARE_CLASS(UEngine, UObject)
+	GENERATED_BODY(UEngine, UObject)
 
 	UEngine() = default;
 	~UEngine() override = default;

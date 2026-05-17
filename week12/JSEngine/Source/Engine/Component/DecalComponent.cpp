@@ -5,10 +5,7 @@
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Core/Logging/Log.h"
-#include "Object/ObjectFactory.h"
 
-DEFINE_CLASS(UDecalComponent, UPrimitiveComponent)
-REGISTER_FACTORY(UDecalComponent)
 
 // Decal Box가 화면 밖으로 나가도 컬링되지 않도록 합니다.
 UDecalComponent::UDecalComponent()

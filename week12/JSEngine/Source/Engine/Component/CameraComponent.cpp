@@ -2,8 +2,6 @@
 #include <algorithm>
 #include <cmath>
 
-DEFINE_CLASS(UCameraComponent, USceneComponent)
-REGISTER_FACTORY(UCameraComponent)
 
 FMatrix UCameraComponent::GetViewMatrix() const
 {

@@ -31,8 +31,17 @@
     <Filter Include="Intermediate\Reflection\Component\PostProcess\Light">
       <UniqueIdentifier>{9b80487f-620f-32ca-6e5c-680e4f80cfc1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Intermediate\Reflection\Editor">
+      <UniqueIdentifier>{3d7aad18-b8cd-8c00-11f7-ca1b895f2553}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Intermediate\Reflection\GameFramework">
       <UniqueIdentifier>{36dc06eb-7c47-78be-cde8-06b5b11c1094}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Misc">
+      <UniqueIdentifier>{4107d985-cb50-b94d-2e85-f301c024482c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Misc\ObjViewer">
+      <UniqueIdentifier>{a496c0a5-d894-7d75-556a-b8081c497abf}</UniqueIdentifier>
     </Filter>
     <Filter Include="Intermediate\Reflection\Render">
       <UniqueIdentifier>{c04b0367-0590-f8c6-ed00-22a8f6ad163f}</UniqueIdentifier>
@@ -447,6 +456,9 @@
     <ClCompile Include="Intermediate\Reflection\Component\UTextRenderComponent.gen.cpp">
       <Filter>Intermediate\Reflection\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Editor\UEditorEngine.gen.cpp">
+      <Filter>Intermediate\Reflection\Editor</Filter>
+    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\AActor.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
@@ -542,6 +554,9 @@
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\UWorld.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Misc\ObjViewer\UObjViewerEngine.gen.cpp">
+      <Filter>Intermediate\Reflection\Misc\ObjViewer</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Render\Resource\UMaterial.gen.cpp">
       <Filter>Intermediate\Reflection\Render\Resource</Filter>
@@ -2167,13 +2182,7 @@
     <ClInclude Include="Source\Engine\Object\Object.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Object\ObjectFactory.h">
-      <Filter>Source\Engine\Object</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h">
-      <Filter>Source\Engine\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Object\ObjectSerialize.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\Property.h">

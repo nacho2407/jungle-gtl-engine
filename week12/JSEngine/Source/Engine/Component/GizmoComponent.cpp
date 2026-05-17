@@ -7,8 +7,6 @@
 #include "TransformProxy.h"
 #include "Engine/Input/InputSystem.h"
 
-DEFINE_CLASS(UGizmoComponent, UPrimitiveComponent)
-REGISTER_FACTORY(UGizmoComponent)
 
 #include <cfloat>
 #include <cmath>
@@ -40,18 +38,18 @@ void UGizmoComponent::SetHolding(bool bHold)
 		// 드래그 시작 시 마우스 고정 및 숨김
 		if (CurMode != EGizmoMode::Translate)
 		{
-            POINT MousePos = InputSystem::Get().GetMousePos();
-            InputSystem::Get().LockMouse(true, (float)MousePos.x, (float)MousePos.y, 0, 0);
-            InputSystem::Get().SetCursorVisibility(false);
+			POINT MousePos = InputSystem::Get().GetMousePos();
+			InputSystem::Get().LockMouse(true, (float)MousePos.x, (float)MousePos.y, 0, 0);
+			InputSystem::Get().SetCursorVisibility(false);
 		}
 	}
 	else
 	{
 		// 드래그 종료 시 마우스 고정 해제 및 표시
 		if (CurMode != EGizmoMode::Translate)
-        {
-            InputSystem::Get().LockMouse(false);
-            InputSystem::Get().SetCursorVisibility(true);
+		{
+			InputSystem::Get().LockMouse(false);
+			InputSystem::Get().SetCursorVisibility(true);
 		}
 	}
 
@@ -656,18 +654,18 @@ void UGizmoComponent::UpdateGizmoTransform()
 	SetWorldLocation(Proxy->GetTransform().GetOrigin());
 
 	FMatrix M = Proxy->GetTransform();
-    FVector T, S;
-    FMatrix R;
-    M.Decompose(T, R, S);
-    FQuat TargetQuat = FQuat(R);
-    TargetQuat.Normalize();
+	FVector T, S;
+	FMatrix R;
+	M.Decompose(T, R, S);
+	FQuat TargetQuat = FQuat(R);
+	TargetQuat.Normalize();
 
-    SetWorldLocation(M.GetOrigin());
+	SetWorldLocation(M.GetOrigin());
 
 	switch (CurMode)
 	{
 	case EGizmoMode::Scale:
-        SetRelativeRotationQuat(TargetQuat);
+		SetRelativeRotationQuat(TargetQuat);
 		GizmoMeshData = &FEditorMeshLibrary::Get().GetScaleGizmo();
 		break;
 
@@ -677,7 +675,7 @@ void UGizmoComponent::UpdateGizmoTransform()
 		break;
 
 	case EGizmoMode::Translate:
-        SetRelativeRotationQuat(bIsWorldSpace ? FQuat::Identity : TargetQuat);
+		SetRelativeRotationQuat(bIsWorldSpace ? FQuat::Identity : TargetQuat);
 		GizmoMeshData = &FEditorMeshLibrary::Get().GetTranslationGizmo();
 		break;
 	}

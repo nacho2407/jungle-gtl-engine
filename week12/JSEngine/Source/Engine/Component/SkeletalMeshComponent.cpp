@@ -4,13 +4,10 @@
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "GameFramework/AActor.h"
-#include "Object/ObjectFactory.h"
 #include "Core/ResourceManager.h"
 
 #include <cstring>
 
-DEFINE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
-REGISTER_FACTORY(USkeletalMeshComponent)
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
 {
 	USkinnedMeshComponent::Serialize(Ar);

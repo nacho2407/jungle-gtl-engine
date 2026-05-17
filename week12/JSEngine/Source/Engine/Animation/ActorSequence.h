@@ -101,7 +101,7 @@ UCLASS()
 class UActorSequence : public UObject
 {
 public:
-	DECLARE_CLASS(UActorSequence, UObject)
+	GENERATED_BODY(UActorSequence, UObject)
 
 	float StartTime = 0.0f;
 	float Duration = 1.0f;
@@ -115,7 +115,7 @@ UCLASS()
 class UActorSequencePlayer : public UObject
 {
 public:
-	DECLARE_CLASS(UActorSequencePlayer, UObject)
+	GENERATED_BODY(UActorSequencePlayer, UObject)
 
 	void Initialize(
 		UActorSequenceComponent* InOwner,

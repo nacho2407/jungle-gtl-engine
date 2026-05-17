@@ -1,6 +1,4 @@
 ﻿#include "FireballComponent.h"
-DEFINE_CLASS(UFireballComponent, UPrimitiveComponent)
-REGISTER_FACTORY(UFireballComponent)
 
 // 화면에서 컬링되지 않도록 수정한다.
 UFireballComponent::UFireballComponent()

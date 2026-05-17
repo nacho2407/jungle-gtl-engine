@@ -2,8 +2,6 @@
 #include "Object/Object.h"
 
 
-DEFINE_CLASS(UHeightFogComponent, UPrimitiveComponent)
-REGISTER_FACTORY(UHeightFogComponent)
 
 UHeightFogComponent::UHeightFogComponent() 
 {

@@ -18,6 +18,7 @@ public:
 	uint32 GetClassFlags() const { return ClassFlags; }
 
 	bool IsChildOf(const UClass* Other) const;
+	bool HasAnyClassFlags(uint32 Flags) const { return (ClassFlags & Flags) != 0; }
 	UObject* CreateObject() const;
 
 	void AddProperty(const FProperty& Property);

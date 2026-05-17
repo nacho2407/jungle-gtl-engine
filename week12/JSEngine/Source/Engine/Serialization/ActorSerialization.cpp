@@ -8,7 +8,7 @@
 #include "GameFramework/World.h"
 #include "Object/FName.h"
 #include "Object/Object.h"
-#include "Object/ObjectFactory.h"
+#include "Core/Reflection/ReflectionRegistry.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonWriter.h"
 
@@ -59,7 +59,7 @@ namespace
 		Component->Serialize(ComponentWriter);
 
 		ComponentJson[ActorJsonKeys::UUID] = static_cast<int32>(Component->GetUUID());
-		ComponentJson[ActorJsonKeys::ClassName] = Component->GetTypeInfo()->name;
+		ComponentJson[ActorJsonKeys::ClassName] = Component->GetClassName();
 		return ComponentJson;
 	}
 
@@ -174,7 +174,7 @@ namespace
 		FString BaseName = StripGeneratedNameSuffixes(RequestedName);
 		if (BaseName.empty())
 		{
-			BaseName = TargetActor && TargetActor->GetTypeInfo() ? TargetActor->GetTypeInfo()->name : "Actor";
+			BaseName = TargetActor ? TargetActor->GetClassName() : "Actor";
 		}
 
 		if (!RequestedCleanName.empty() && !IsActorNameTaken(World, TargetActor, RequestedCleanName))
@@ -230,7 +230,7 @@ namespace FActorSerialization
 		}
 
 		ActorJson[ActorJsonKeys::UUID] = static_cast<int32>(Actor->GetUUID());
-		ActorJson[ActorJsonKeys::ClassName] = Actor->GetTypeInfo()->name;
+		ActorJson[ActorJsonKeys::ClassName] = Actor->GetClassName();
 		ActorJson[ActorJsonKeys::Name] = Actor->GetName();
 		ActorJson[ActorJsonKeys::Visible] = Actor->IsVisible();
 		ActorJson[ActorJsonKeys::Active] = Actor->IsActive();
@@ -266,7 +266,7 @@ namespace FActorSerialization
 		}
 
 		const FString ActorClass = GetJsonString(ActorData, ActorJsonKeys::ClassName, "AActor");
-		UObject* CreatedObject = FObjectFactory::Get().Create(ActorClass);
+		UObject* CreatedObject = NewObject(FReflectionRegistry::Get().FindClass(ActorClass));
 		AActor* NewActor = Cast<AActor>(CreatedObject);
 		if (!NewActor)
 		{
@@ -345,7 +345,7 @@ namespace FActorSerialization
 			for (auto It = UnusedDefaultComponents.begin(); It != UnusedDefaultComponents.end(); ++It)
 			{
 				UActorComponent* Candidate = *It;
-				if (Candidate && GetNormalizedType(Candidate->GetTypeInfo()->name) == TypeName)
+				if (Candidate && GetNormalizedType(Candidate->GetClassName()) == TypeName)
 				{
 					UnusedDefaultComponents.erase(It);
 					return Candidate;
@@ -375,7 +375,7 @@ namespace FActorSerialization
 
 			UActorComponent* Component = nullptr;
 			if (SavedCompUUID == RootUUID && NewActor->GetRootComponent()
-				&& GetNormalizedType(NewActor->GetRootComponent()->GetTypeInfo()->name) == Type)
+				&& GetNormalizedType(NewActor->GetRootComponent()->GetClassName()) == Type)
 			{
 				Component = NewActor->GetRootComponent();
 				MarkDefaultComponentUsed(Component);
@@ -386,7 +386,7 @@ namespace FActorSerialization
 			}
 			if (!Component)
 			{
-				UObject* NewObj = FObjectFactory::Get().Create(Type);
+				UObject* NewObj = NewObject(FReflectionRegistry::Get().FindClass(Type));
 				Component = Cast<UActorComponent>(NewObj);
 				if (!Component)
 				{

@@ -8,10 +8,10 @@ UCLASS()
 class UAnimInstance : public UObject
 {
 public:
-	DECLARE_CLASS(UAnimInstance, UObject)
+	GENERATED_BODY(UAnimInstance, UObject)
 	UAnimInstance() = default;
 	~UAnimInstance() override = default;
-    
+	
 	virtual void Initialize(USkeletalMeshComponent* InOwnerComponent);
 	virtual void NativeUpdateAnimation(float DeltaTime) {};
 	virtual bool EvaluatePose(FPoseContext& OutPoseContext) { return false; }

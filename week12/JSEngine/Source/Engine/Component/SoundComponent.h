@@ -7,7 +7,7 @@ UCLASS()
 class USoundComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(USoundComponent, USceneComponent)
+	GENERATED_BODY(USoundComponent, USceneComponent)
 
 	void BeginPlay() override;
 	void EndPlay() override;

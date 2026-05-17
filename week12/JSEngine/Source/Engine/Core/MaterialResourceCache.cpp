@@ -1,7 +1,6 @@
-#include "Core/MaterialResourceCache.h"
+﻿#include "Core/MaterialResourceCache.h"
 
 #include "Core/Paths.h"
-#include "Object/ObjectFactory.h"
 
 #include <algorithm>
 #include <cwctype>

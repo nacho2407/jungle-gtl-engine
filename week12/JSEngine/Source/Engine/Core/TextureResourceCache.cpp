@@ -1,7 +1,6 @@
-#include "Core/TextureResourceCache.h"
+﻿#include "Core/TextureResourceCache.h"
 
 #include "Core/Paths.h"
-#include "Object/ObjectFactory.h"
 
 #include <chrono>
 #include <filesystem>

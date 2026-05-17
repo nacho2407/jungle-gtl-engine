@@ -6,44 +6,44 @@ UCLASS()
 class USkeletalMesh : public UObject
 {
 public:
-    DECLARE_CLASS(USkeletalMesh, UObject)
+	GENERATED_BODY(USkeletalMesh, UObject)
 
-    USkeletalMesh() = default;
-    ~USkeletalMesh() override;
+	USkeletalMesh() = default;
+	~USkeletalMesh() override;
 
-    void SetMeshData(FSkeletalMesh* InMeshData);
+	void SetMeshData(FSkeletalMesh* InMeshData);
 
-    FSkeletalMesh* GetMeshData();
-    const FSkeletalMesh* GetMeshData() const;
+	FSkeletalMesh* GetMeshData();
+	const FSkeletalMesh* GetMeshData() const;
 
-    const FString& GetAssetPathFileName() const;
+	const FString& GetAssetPathFileName() const;
 
-    const TArray<FSkeletalMeshVertex>& GetVertices() const;
-    const TArray<uint32>& GetIndices() const;
+	const TArray<FSkeletalMeshVertex>& GetVertices() const;
+	const TArray<uint32>& GetIndices() const;
 
-    const TArray<FBoneInfo>& GetBones() const;
+	const TArray<FBoneInfo>& GetBones() const;
 
 	const FBoneInfo* GetBoneInfo(int32 BoneIndex) const;
 
-    const FMatrix& GetLocalBindTransform(int32 BoneIndex) const;
-    const FMatrix& GetGlobalBindTransform(int32 BoneIndex) const;
-    const FMatrix& GetInverseBindPose(int32 BoneIndex) const;
+	const FMatrix& GetLocalBindTransform(int32 BoneIndex) const;
+	const FMatrix& GetGlobalBindTransform(int32 BoneIndex) const;
+	const FMatrix& GetInverseBindPose(int32 BoneIndex) const;
 
-    const TArray<FStaticMeshSection>& GetSections() const;
-    const TArray<FStaticMeshMaterialSlot>& GetMaterialSlots() const;
+	const TArray<FStaticMeshSection>& GetSections() const;
+	const TArray<FStaticMeshMaterialSlot>& GetMaterialSlots() const;
 
-    // Sockets
-    const TArray<FSkeletalMeshSocket>& GetSockets() const;
-    const FSkeletalMeshSocket*         FindSocket(const FName& Name) const;
-    bool                               HasSocket(const FName& Name) const;
+	// Sockets
+	const TArray<FSkeletalMeshSocket>& GetSockets() const;
+	const FSkeletalMeshSocket*         FindSocket(const FName& Name) const;
+	bool                               HasSocket(const FName& Name) const;
 
-    const FAABB& GetLocalBounds() const;
+	const FAABB& GetLocalBounds() const;
 
-    bool HasValidMeshData() const;
-
-private:
-    void RebuildLocalBoundsFromMeshData();
+	bool HasValidMeshData() const;
 
 private:
-    FSkeletalMesh* MeshData = nullptr;
+	void RebuildLocalBoundsFromMeshData();
+
+private:
+	FSkeletalMesh* MeshData = nullptr;
 };

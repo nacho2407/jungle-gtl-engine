@@ -5,8 +5,6 @@
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
 
-DEFINE_CLASS(UTexture, UObject)
-
 bool UTexture::LoadFromFile(const FString& InFilePath, ID3D11Device* InDevice)
 {
 	FilePath = InFilePath;

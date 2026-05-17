@@ -1,15 +1,12 @@
 ﻿#include "ProceduralMeshComponent.h"
 #include "StaticMeshComponent.h"
 #include "Object/Object.h"
-#include "Object/ObjectFactory.h"
 #include <algorithm>
 #include "GameFramework/AActor.h"
 #include "Core/ResourceManager.h"
 #include "Core/Paths.h"
 #include <filesystem>
 
-DEFINE_CLASS(UProceduralMeshComponent, UPrimitiveComponent)
-REGISTER_FACTORY(UProceduralMeshComponent)
 
 void UProceduralMeshComponent::CreateFrom(UStaticMesh* StaticMesh)
 {

@@ -1,12 +1,9 @@
 ﻿#include "ActorComponent.h"
-#include "Object/ObjectFactory.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cstring>
 
-DEFINE_CLASS(UActorComponent, UObject)
-REGISTER_FACTORY(UActorComponent)
 
 namespace
 {
@@ -163,14 +160,6 @@ void UActorComponent::PostDuplicate(UObject* Original)
 	Tags = SourceComponent->Tags;
 	TagsText = GetTagsText();
 	RegeneratePersistentGuid();
-}
-
-void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UObject::GetEditableProperties(OutProps);
-	
-	TagsText = GetTagsText();
-	OutProps.push_back({"Tags", EPropertyType::String, &TagsText});
 }
 
 void UActorComponent::PostEditProperty(const char* PropertyName)

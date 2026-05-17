@@ -1,5 +1,6 @@
 ﻿#include "Object/Property.h"
 
+#include "Core/Reflection/ReflectionRegistry.h"
 #include "Object/Object.h"
 #include "Serialization/Archive.h"
 

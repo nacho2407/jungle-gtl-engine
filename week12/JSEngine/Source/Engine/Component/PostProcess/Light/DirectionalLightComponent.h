@@ -5,7 +5,7 @@ UCLASS()
 class UDirectionalLightComponent : public ULightComponent
 {
 public:
-	DECLARE_CLASS(UDirectionalLightComponent, ULightComponent)
+	GENERATED_BODY(UDirectionalLightComponent, ULightComponent)
 protected:
 	FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 		const TArray<FBoundingBox>* VisibleObjectsBounds) const override;

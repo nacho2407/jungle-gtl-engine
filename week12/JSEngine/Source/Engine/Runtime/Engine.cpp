@@ -18,7 +18,6 @@
 
 #include <filesystem>
 
-DEFINE_CLASS(UEngine, UObject)
 
 UEngine* GEngine = nullptr;
 
@@ -28,7 +27,6 @@ void UEngine::Init(FWindowsWindow* InWindow)
 
 	// 싱글턴 초기화 순서 보장
 	FNamePool::Get();
-	FObjectFactory::Get();
 
 	InputSystem::Get().SetOwnerWindow(Window->GetHWND());
 	Renderer.Create(Window->GetHWND());
@@ -284,8 +282,8 @@ FWorldContext& UEngine::CreateWorldContext(EWorldType Type, const FName& Handle,
 	Context.ContextHandle = Handle;
 	Context.ContextName = Name.empty() ? Handle.ToString() : Name;
 	Context.World = UObjectManager::Get().CreateObject<UWorld>();
-    Context.SelectionManager = new FSelectionManager;
-    Context.SelectionManager->Init();
+	Context.SelectionManager = new FSelectionManager;
+	Context.SelectionManager->Init();
 	if (Context.World)
 	{
 		Context.World->SetWorldType(Type);
@@ -299,10 +297,10 @@ void UEngine::DestroyWorldContext(const FName& Handle)
 	for (auto it = WorldList.begin(); it != WorldList.end(); ++it)
 	{
 		if (it->ContextHandle == Handle)
-        {
-            it->SelectionManager->Shutdown();
-            delete it->SelectionManager;
-            it->SelectionManager = nullptr;
+		{
+			it->SelectionManager->Shutdown();
+			delete it->SelectionManager;
+			it->SelectionManager = nullptr;
 			it->World->EndPlay(EEndPlayReason::Type::Destroyed);
 			UObjectManager::Get().DestroyObject(it->World);
 			WorldList.erase(it);

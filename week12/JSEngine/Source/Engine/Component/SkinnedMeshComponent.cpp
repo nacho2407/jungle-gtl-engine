@@ -7,7 +7,6 @@
 #include <cfloat>
 #include <cstring>
 
-DEFINE_CLASS(USkinnedMeshComponent, UMeshComponent)
 
 namespace
 {

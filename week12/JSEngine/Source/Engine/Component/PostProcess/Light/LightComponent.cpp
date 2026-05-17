@@ -1,12 +1,6 @@
 ﻿#include "LightComponent.h"
-#include "Object/ObjectFactory.h"
-#include "Core/PropertyTypes.h"
-#include "Render/Resource/ShadowAtlasManager.h"
-
 #include <cmath>
 
-DEFINE_CLASS(ULightComponent, ULightComponentBase)
-REGISTER_FACTORY(ULightComponent)
 
 namespace
 {
@@ -148,13 +142,6 @@ void ULightComponent::PostDuplicate(UObject* Original)
 	ShadowMapType = Orig->ShadowMapType;
 }
 
-void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	ULightComponentBase::GetEditableProperties(OutProps);
-	PrintShadowMapDebugInfo(OutProps);
-}
-
-
 FMatrix ULightComponent::ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 	float SplitNearT, float SplitFarT) const
 {
@@ -206,42 +193,3 @@ FMatrix ULightComponent::ComputeCascadeShadowMatrix(const FMatrix& CamView, cons
 	return LightView * LightProj;
 }
 
-void ULightComponent::PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutProps) const
-{
-	FShadowAtlasManager& AtlasManager = FShadowAtlasManager::Get();
-	static FSRVPropertyData ShadowMapPreview;
-	static FCubeSRVPropertyData CubeMapPreview;
-
-	if (bHasDebugShadowAtlasTile)
-	{
-		const FVector4& SO = bHasDebugShadowAtlasTile
-								 ? DebugShadowAtlasScaleOffset
-								 : FVector4(1, 1, 0, 0);
-
-		ShadowMapPreview.SRV = AtlasManager.GetSRV();
-		ShadowMapPreview.DisplayInfo = {
-			256.f,
-			256.f,
-			SO.Z,
-			SO.W,
-			SO.Z + SO.X,
-			SO.W + SO.Y
-		};
-
-		OutProps.push_back({ "ShadowMap", EPropertyType::SRV, &ShadowMapPreview });
-	}
-	else if (bHasDebugShadowCubeTile)
-	{
-		for (int32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
-		{
-			CubeMapPreview.FaceSRVs[FaceIndex] = AtlasManager.GetCubeDebugSRV(static_cast<int>(DebugShadowCubeIndex), FaceIndex);
-			if (!CubeMapPreview.FaceSRVs[FaceIndex])
-			{
-				return;
-			}
-		}
-		CubeMapPreview.DisplayInfo = { 64.f, 64.f, 0.f, 0.f, 1.f, 1.f };
-
-		OutProps.push_back({ "CubeMap", EPropertyType::CubeSRV, &CubeMapPreview });
-	}
-}

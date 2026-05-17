@@ -5,7 +5,6 @@
 
 #include <filesystem>
 
-DEFINE_CLASS(UMeshComponent, UPrimitiveComponent)
 
 void UMeshComponent::Serialize(FArchive& Ar)
 {

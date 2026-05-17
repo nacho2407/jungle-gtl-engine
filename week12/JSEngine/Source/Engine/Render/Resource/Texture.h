@@ -22,7 +22,7 @@ UCLASS()
 class UTexture : public UObject
 {
 public:
-	DECLARE_CLASS(UTexture, UObject)
+	GENERATED_BODY(UTexture, UObject)
 	~UTexture() override
 	{
 		TextureData.Release();

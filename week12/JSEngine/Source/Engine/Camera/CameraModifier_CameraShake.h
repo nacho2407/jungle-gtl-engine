@@ -8,6 +8,7 @@ UCLASS()
 class UCameraModifier_CameraShake : public UCameraModifier
 {
 public:
+	GENERATED_BODY(UCameraModifier_CameraShake, UCameraModifier)
 	UCameraModifier_CameraShake();
 	virtual ~UCameraModifier_CameraShake() override;
 	

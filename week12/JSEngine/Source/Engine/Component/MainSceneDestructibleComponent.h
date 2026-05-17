@@ -8,7 +8,7 @@ UCLASS()
 class UMainSceneDestructibleComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(UMainSceneDestructibleComponent, UActorComponent)
+	GENERATED_BODY(UMainSceneDestructibleComponent, UActorComponent)
 
 	void BeginPlay() override;
 	void Serialize(FArchive& Ar) override;

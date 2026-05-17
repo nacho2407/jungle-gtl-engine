@@ -11,7 +11,7 @@ UCLASS()
 class UObjViewerEngine : public UEngine
 {
 public:
-	DECLARE_CLASS(UObjViewerEngine, UEngine)
+	GENERATED_BODY(UObjViewerEngine, UEngine)
 
 	void Init(FWindowsWindow* InWindow) override;
 	void BeginPlay() override;

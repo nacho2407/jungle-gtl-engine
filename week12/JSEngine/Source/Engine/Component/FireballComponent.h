@@ -5,7 +5,7 @@
 UCLASS()
 class UFireballComponent : public UPrimitiveComponent {
 public:
-	DECLARE_CLASS(UFireballComponent, UPrimitiveComponent)
+	GENERATED_BODY(UFireballComponent, UPrimitiveComponent)
 
 	UFireballComponent();
 	~UFireballComponent() override = default;

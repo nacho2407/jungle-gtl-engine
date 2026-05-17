@@ -5,8 +5,6 @@
 
 #include <algorithm>
 
-DEFINE_CLASS(USoundComponent, USceneComponent)
-REGISTER_FACTORY(USoundComponent)
 
 void USoundComponent::BeginPlay()
 {

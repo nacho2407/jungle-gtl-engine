@@ -1,8 +1,6 @@
 ﻿#include "SphereComponent.h"
 #include "Object/Object.h"
 
-DEFINE_CLASS(USphereComponent, UShapeComponent)
-REGISTER_FACTORY(USphereComponent)
 
 
 void USphereComponent::PostDuplicate(UObject* Original)

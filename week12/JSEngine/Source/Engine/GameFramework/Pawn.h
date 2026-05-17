@@ -9,7 +9,7 @@ UCLASS()
 class APawn : public AActor
 {
 public:
-	DECLARE_CLASS(APawn, AActor)
+	GENERATED_BODY(APawn, AActor)
 
 	APlayerController* GetController() const { return Controller; }
 	void PossessedBy(APlayerController* NewController);

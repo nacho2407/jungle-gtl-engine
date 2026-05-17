@@ -14,8 +14,6 @@ class AActor;
 class UActorComponent;
 class USceneComponent;
 
-struct FPropertyDescriptor;
-
 // Perspective 카메라 상태 — 씬 파일에 저장/복원되는 에디터 전용 데이터
 struct FEditorCameraState
 {

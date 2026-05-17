@@ -103,78 +103,8 @@ struct FCubeSRVPropertyData
 	FSRVDisplayInfo DisplayInfo = { 64.f, 64.f, 0.f, 0.f, 1.f, 1.f };
 };
 
-struct FEnumMetaData;
-
-// UObject가 노출하는 공통 프로퍼티 디스크립터
-struct FPropertyDescriptor
-{
-	const char*   Name = nullptr;
-	EPropertyType Type = EPropertyType::Unknown;
-	void*         ValuePtr = nullptr;
-
-	EPropertyUsageFlags UsageFlags = EPropertyUsageFlags::Editable;
-
-	// float 범위 힌트 (DragFloat 등에서 사용)
-	float Min   = 0.0f;
-	float Max   = 0.0f;
-	float Speed = 0.1f;
-
-	const char* DisplayName = nullptr;
-
-	// Enum 프로퍼티는 EnumMeta만 참조합니다.
-	const FEnumMetaData* EnumMeta = nullptr;
-
-	// 타입별 추가 메타데이터, 일단 SRV 정보를 저장하기 위해서 사용
-	void* ExtraData = nullptr;
-
-	FPropertyDescriptor() = default;
-
-	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr)
-		: Name(InName)
-		, Type(InType)
-		, ValuePtr(InValuePtr)
-	{
-	}
-
-	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr, float InMin)
-		: Name(InName)
-		, Type(InType)
-		, ValuePtr(InValuePtr)
-		, Min(InMin)
-	{
-	}
-
-	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr,
-		float InMin, float InMax, float InSpeed)
-		: Name(InName)
-		, Type(InType)
-		, ValuePtr(InValuePtr)
-		, Min(InMin)
-		, Max(InMax)
-		, Speed(InSpeed)
-	{
-	}
-
-	FPropertyDescriptor(const char* InName, EPropertyType InType, void* InValuePtr,
-		float InMin, float InMax, float InSpeed,
-		void* InExtraData,
-		EPropertyUsageFlags InUsageFlags = EPropertyUsageFlags::Editable,
-		const char* InDisplayName = nullptr,
-		const FEnumMetaData* InEnumMeta = nullptr)
-		: Name(InName)
-		, Type(InType)
-		, ValuePtr(InValuePtr)
-		, UsageFlags(InUsageFlags)
-		, Min(InMin)
-		, Max(InMax)
-		, Speed(InSpeed)
-		, DisplayName(InDisplayName)
-		, EnumMeta(InEnumMeta)
-		, ExtraData(InExtraData)
-	{
-	}
-
-};
+struct UEnum;
+using FEnumMetaData = UEnum;
 
 /** 각 프로퍼티의 Size 값을 반환합니다. 0을 반환하는 경우 특수 케이스입니다.
  * 이런 경우에는 CopyPropertiesFrom 함수 내에서 알아서 잘 처리해줄 수 있어야 합니다. 

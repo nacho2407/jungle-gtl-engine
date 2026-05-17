@@ -10,7 +10,6 @@ class AActor;
 class UMaterialInterface;
 class UStaticMesh;
 struct FProperty;
-struct FPropertyDescriptor;
 
 class FEditorPropertyWidget : public FEditorWidget
 {
@@ -51,9 +50,7 @@ private:
 	void RenderReflectionProperties(UObject* Object);
 	void RenderReflectionProperty(UObject* Object, const FProperty& Property);
 	void RenderPropertyWidget(UObject* Object, const FProperty& Property);
-	void RenderLegacyPropertyWidget(struct FPropertyDescriptor& Prop, UObject* TargetObject = nullptr);
 	bool RenderSceneComponentRefWidget(UObject* Object, const FProperty& Property, AActor* Owner);
-	bool RenderLegacySceneComponentRefWidget(struct FPropertyDescriptor& Prop, AActor* Owner);
 	void RenderSkeletalBonePoseDebug(class USkeletalMeshComponent* Comp);
 	void RenderInterpControlPoints(class UInterpToMovementComponent* Comp);
 	void RenderMaterialPreviewTooltip(UMaterialInterface* Material);

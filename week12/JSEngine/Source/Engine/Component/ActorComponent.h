@@ -10,7 +10,7 @@ UCLASS()
 class UActorComponent : public UObject
 {
 public:
-	DECLARE_CLASS(UActorComponent, UObject)
+	GENERATED_BODY(UActorComponent, UObject)
 	
 	virtual void BeginPlay();
 	virtual void EndPlay() {};
@@ -41,9 +41,6 @@ public:
 	const TArray<FString>& GetTags() const { return Tags; }
 	FString GetTagsText() const;
 	void SetTagsFromText(const FString& InTagsText);
-
-	// 에디터에 노출할 프로퍼티 목록 반환. 하위 클래스에서 override하여 속성 추가.
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	// 프로퍼티 값 변경 후 호출. 하위 클래스에서 override하여 부수효과(리소스 재로딩 등) 처리.
 	void PostEditProperty(const char* PropertyName) override;

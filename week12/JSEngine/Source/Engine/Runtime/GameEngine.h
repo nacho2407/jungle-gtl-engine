@@ -10,7 +10,7 @@ UCLASS()
 class UGameEngine : public UEngine
 {
 public:
-	DECLARE_CLASS(UGameEngine, UEngine)
+	GENERATED_BODY(UGameEngine, UEngine)
 
 	void Init(FWindowsWindow* InWindow) override;
 	void Shutdown() override;
