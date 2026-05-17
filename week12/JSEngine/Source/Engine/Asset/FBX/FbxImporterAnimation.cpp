@@ -456,13 +456,92 @@ namespace
                std::abs(Scale.Z) > MaxExpectedScale;
     }
 
+    float GetUpper3x3Determinant(const FMatrix& Matrix)
+    {
+        const FVector XAxis = Matrix.GetScaledAxis(EAxis::X);
+        const FVector YAxis = Matrix.GetScaledAxis(EAxis::Y);
+        const FVector ZAxis = Matrix.GetScaledAxis(EAxis::Z);
+        return FVector::DotProduct(FVector::CrossProduct(XAxis, YAxis), ZAxis);
+    }
+
+    float GetSign(float Value)
+    {
+        return Value < 0.0f ? -1.0f : 1.0f;
+    }
+
+    FVector MakeScaleSignConvention(const FMatrix& Matrix)
+    {
+        FVector ScaleSigns = FVector::OneVector;
+        if (GetUpper3x3Determinant(Matrix) < 0.0f)
+        {
+            // A reflected matrix cannot be represented by a pure quaternion rotation.
+            // Keep the reflection in one deterministic scale axis so decomposition does not
+            // move it between rotation and scale from frame to frame.
+            ScaleSigns.X = -1.0f;
+        }
+
+        return ScaleSigns;
+    }
+
+    struct FAnimationTrackSamplingState
+    {
+        bool bInitializedScaleSigns = false;
+        bool bLoggedSuspiciousScale = false;
+        bool bLoggedDeterminantSignChange = false;
+        bool bDetectedDeterminantSignChangeThisSample = false;
+        float InitialDeterminantSign = 1.0f;
+        FVector ScaleSigns = FVector::OneVector;
+    };
+
+    FTransform DecomposeRuntimeLocalForAnimation(
+        const FMatrix& Matrix,
+        FAnimationTrackSamplingState& SamplingState)
+    {
+        constexpr float ScaleTolerance = 1.e-8f;
+
+        const FVector Translation = Matrix.GetOrigin();
+        const FVector XAxis = Matrix.GetScaledAxis(EAxis::X);
+        const FVector YAxis = Matrix.GetScaledAxis(EAxis::Y);
+        const FVector ZAxis = Matrix.GetScaledAxis(EAxis::Z);
+
+        SamplingState.bDetectedDeterminantSignChangeThisSample = false;
+
+        FVector Scale(XAxis.Size(), YAxis.Size(), ZAxis.Size());
+        if (Scale.X <= ScaleTolerance || Scale.Y <= ScaleTolerance || Scale.Z <= ScaleTolerance)
+        {
+            return FTransform(Matrix);
+        }
+
+        const float DeterminantSign = GetSign(GetUpper3x3Determinant(Matrix));
+        if (!SamplingState.bInitializedScaleSigns)
+        {
+            SamplingState.bInitializedScaleSigns = true;
+            SamplingState.InitialDeterminantSign = DeterminantSign;
+            SamplingState.ScaleSigns = MakeScaleSignConvention(Matrix);
+        }
+        else if (!SamplingState.bLoggedDeterminantSignChange &&
+            DeterminantSign != SamplingState.InitialDeterminantSign)
+        {
+            SamplingState.bDetectedDeterminantSignChangeThisSample = true;
+        }
+
+        Scale.X *= SamplingState.ScaleSigns.X;
+        Scale.Y *= SamplingState.ScaleSigns.Y;
+        Scale.Z *= SamplingState.ScaleSigns.Z;
+
+        FMatrix RotationMatrix = FMatrix::Identity;
+        RotationMatrix.SetAxes(XAxis / Scale.X, YAxis / Scale.Y, ZAxis / Scale.Z);
+
+        return FTransform(FQuat(RotationMatrix).GetNormalized(), Translation, Scale);
+    }
+
     //1. Animation Import and Sampling Phase(UAnimSingleNodeInstance::BuildBoneMapping()으로 이어짐)
     void AppendSampledRuntimeLocalTransform(
         FbxNode* Node,
         FbxNode* RuntimeParentNode,
         const FbxTime& SampleTime,
         FRawAnimSequenceTrack& OutTrack,
-        bool& bOutLoggedSuspiciousScale)
+        FAnimationTrackSamplingState& SamplingState)
     {
         FMatrix RuntimeLocalTransform = FMatrix::Identity;
         // 실제 animation key를 생성하는 지점입니다.
@@ -486,11 +565,20 @@ namespace
             }
         }
 
-        const FTransform EngineTransform(RuntimeLocalTransform);
+        const FTransform EngineTransform = DecomposeRuntimeLocalForAnimation(
+            RuntimeLocalTransform,
+            SamplingState);
 
-        if (!bOutLoggedSuspiciousScale && HasSuspiciousScale(EngineTransform.GetScale3D()))
+        if (SamplingState.bDetectedDeterminantSignChangeThisSample)
         {
-            bOutLoggedSuspiciousScale = true;
+            SamplingState.bLoggedDeterminantSignChange = true;
+            UE_LOG_WARNING("[FbxAnimationImporter] Runtime local determinant sign changed while sampling | Node=%s",
+                Node ? Node->GetName() : "<null>");
+        }
+
+        if (!SamplingState.bLoggedSuspiciousScale && HasSuspiciousScale(EngineTransform.GetScale3D()))
+        {
+            SamplingState.bLoggedSuspiciousScale = true;
             UE_LOG_WARNING("[FbxAnimationImporter] Suspicious sampled local scale | Node=%s | Scale=(%.3f, %.3f, %.3f)",
                 Node ? Node->GetName() : "<null>",
                 EngineTransform.GetScale3D().X,
@@ -590,7 +678,7 @@ namespace
                 RuntimeParentNode = ParentIt->second;
             }
 
-            bool bLoggedSuspiciousScale = false;
+            FAnimationTrackSamplingState SamplingState;
             for (int32 KeyIndex = 0; KeyIndex < KeyCount; ++KeyIndex)
             {
                 const FbxTime SampleTime = MakeSampleTime(TimeSpan, KeyIndex, KeyCount);
@@ -599,7 +687,7 @@ namespace
                     RuntimeParentNode,
                     SampleTime,
                     Track.InternalTrack,
-                    bLoggedSuspiciousScale);
+                    SamplingState);
             }
 
             Tracks.push_back(std::move(Track));
