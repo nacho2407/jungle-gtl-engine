@@ -7,6 +7,7 @@
 #include "Source/Game/GameState/GameStateCarGame.generated.h"
 // 자동차 게임의 페이즈 — 게임 진행 상태 (활성 페이즈 / 결과 표시 / 종료).
 // 페이즈 결과(성공/실패)는 EPhaseResult 로 분리해 LastPhaseResult 에 저장한다.
+UENUM()
 enum class ECarGamePhase : uint8
 {
 	None = 0,
@@ -20,6 +21,7 @@ enum class ECarGamePhase : uint8
 };
 
 // 페이즈 종료 결과 — Result 페이즈 동안 LastPhaseResult 에 저장돼 UI/Lua 가 폴링.
+UENUM()
 enum class EPhaseResult : uint8
 {
 	None = 0,
@@ -30,6 +32,7 @@ enum class EPhaseResult : uint8
 // 매치 종료(Phase=Finished) 시점의 최종 결과 — Win / Lose 분기.
 //   Win  : 모든 페이즈 1회 클리어 후 도달 (또는 매치 시간 만료 시 모두 클리어 상태)
 //   Lose : HP 0 도달 또는 매치 시간 만료 시 미클리어 페이즈 잔존
+UENUM()
 enum class EFinishOutcome : uint8
 {
 	None = 0,
@@ -37,6 +40,7 @@ enum class EFinishOutcome : uint8
 	Lose,
 };
 
+UENUM()
 enum class EScoreCategory : uint8
 {
 	None = 0,

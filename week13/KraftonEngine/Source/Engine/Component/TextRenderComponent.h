@@ -6,6 +6,7 @@
 
 #include "Source/Engine/Component/TextRenderComponent.generated.h"
 // 텍스트 렌더링 공간 모드
+UENUM()
 enum class ETextRenderSpace : int32
 {
 	World,		// 3D 공간에 빌보드로 렌더링
@@ -13,6 +14,7 @@ enum class ETextRenderSpace : int32
 };
 
 // 텍스트 수평 정렬
+UENUM()
 enum class ETextHAlign : int32
 {
 	Left,
@@ -21,16 +23,13 @@ enum class ETextHAlign : int32
 };
 
 // 텍스트 수직 정렬
+UENUM()
 enum class ETextVAlign : int32
 {
 	Top,
 	Center,
 	Bottom
 };
-
-inline const char* GTextRenderSpaceNames[] = { "World", "Screen" };
-inline const char* GTextHAlignNames[] = { "Left", "Center", "Right" };
-inline const char* GTextVAlignNames[] = { "Top", "Center", "Bottom" };
 
 // 텍스트를 월드 공간에 빌보드로 렌더링하는 컴포넌트.
 // PrimitiveComponent를 상속받아 RenderCollector에 자동으로 감지됩니다.
@@ -118,11 +117,11 @@ private:
 	UPROPERTY(Edit, Save, Category="Text", DisplayName="Char Height", Min=0.0f, Max=100.0f, Speed=0.01f)
 	float CharHeight = 0.5f;
 
-	UPROPERTY(Edit, Save, Category="Text", DisplayName="Render Space", Type=Enum, EnumNames=GTextRenderSpaceNames, EnumCount=2, EnumType=ETextRenderSpace)
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Render Space", Enum=ETextRenderSpace)
 	ETextRenderSpace RenderSpace = ETextRenderSpace::World;
-	UPROPERTY(Edit, Save, Category="Text", DisplayName="Horizontal Align", Type=Enum, EnumNames=GTextHAlignNames, EnumCount=3, EnumType=ETextHAlign)
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Horizontal Align", Enum=ETextHAlign)
 	ETextHAlign HAlign = ETextHAlign::Center;
-	UPROPERTY(Edit, Save, Category="Text", DisplayName="Vertical Align", Type=Enum, EnumNames=GTextVAlignNames, EnumCount=3, EnumType=ETextVAlign)
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Vertical Align", Enum=ETextVAlign)
 	ETextVAlign VAlign = ETextVAlign::Center;
 
 	// Screen 모드 전용

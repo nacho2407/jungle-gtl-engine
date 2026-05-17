@@ -32,6 +32,24 @@ REFLECTED_DECL_RE = re.compile(
     re.MULTILINE,
 )
 
+UENUM_RE = re.compile(
+    r"\bUENUM\s*\([^)]*\)\s*"
+    r"enum\s+(?:class\s+)?"
+    r"(?P<name>[A-Za-z_][A-Za-z0-9_:]*)"
+    r"(?:\s*:\s*(?P<underlying>[A-Za-z_][A-Za-z0-9_:]*))?\s*{",
+    re.MULTILINE,
+)
+
+ENUM_SENTINELS = {"COUNT", "MAX", "ActiveCount", "Num", "NUM", "Count"}
+
+
+@dataclass(frozen=True)
+class ReflectedEnum:
+    name: str
+    underlying_type: str
+    entries: tuple[str, ...]
+
+
 @dataclass(frozen=True)
 class ReflectedProperty:
     owner: str
@@ -48,6 +66,8 @@ class ReflectedProperty:
     enum_names: str
     enum_count: str
     enum_size: str
+    enum_generated_name: str | None
+    enum_entries: tuple[str, ...]
     struct_type: str
 
 
@@ -182,6 +202,49 @@ def parse_metadata(args: str) -> tuple[dict[str, str], set[str]]:
     return values, flags
 
 
+def strip_enum_value(entry: str) -> str:
+    entry = entry.strip()
+    if not entry:
+        return ""
+    entry = entry.split("=", 1)[0].strip()
+    entry = re.sub(r"\s+UMETA\s*\([^)]*\)\s*$", "", entry).strip()
+    return entry
+
+
+def parse_uenums(scan_text: str) -> dict[str, ReflectedEnum]:
+    enums: dict[str, ReflectedEnum] = {}
+
+    for match in UENUM_RE.finditer(scan_text):
+        enum_name = match.group("name")
+        brace_start = scan_text.find("{", match.end() - 1)
+        if brace_start < 0:
+            continue
+        brace_end = find_matching(scan_text, brace_start, "{", "}")
+        if brace_end < 0:
+            continue
+
+        raw_entries = split_metadata_args(scan_text[brace_start + 1:brace_end])
+        entries: list[str] = []
+        for raw_entry in raw_entries:
+            entry_name = strip_enum_value(raw_entry)
+            if not entry_name:
+                continue
+            if entry_name in ENUM_SENTINELS:
+                break
+            entries.append(entry_name)
+
+        short_name = enum_name.rsplit("::", 1)[-1]
+        info = ReflectedEnum(
+            name=enum_name,
+            underlying_type=match.group("underlying") or "int32",
+            entries=tuple(entries),
+        )
+        enums[enum_name] = info
+        enums[short_name] = info
+
+    return enums
+
+
 def make_property_metadata(metadata: dict[str, str], flags: set[str], member_name: str, display_name: str) -> tuple[tuple[str, str], ...]:
     values = dict(metadata)
     values.setdefault("member", member_name)
@@ -232,6 +295,17 @@ def make_flags_expr(flags: set[str]) -> str:
     return " | ".join(values) if values else "PF_None"
 
 
+def make_cpp_identifier(value: str) -> str:
+    value = re.sub(r"[^A-Za-z0-9_]", "_", value)
+    if not value or value[0].isdigit():
+        value = f"KR_{value}"
+    return value
+
+
+def make_enum_names_symbol(owner: str, enum_type: str) -> str:
+    return f"G{make_cpp_identifier(owner)}_{make_cpp_identifier(enum_type)}_Names"
+
+
 def cpp_string_literal(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
@@ -270,7 +344,7 @@ def parse_member_declaration(declaration: str) -> tuple[str, str] | None:
     return normalize_cpp_type(match.group("type")), match.group("name")
 
 
-def parse_uproperties(scan_text: str) -> tuple[dict[str, tuple[ReflectedProperty, ...]], list[str]]:
+def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum]) -> tuple[dict[str, tuple[ReflectedProperty, ...]], list[str]]:
     properties_by_class: dict[str, tuple[ReflectedProperty, ...]] = {}
     warnings: list[str] = []
 
@@ -323,6 +397,15 @@ def parse_uproperties(scan_text: str) -> tuple[dict[str, tuple[ReflectedProperty
             enum_names = metadata.get("enumnames") or metadata.get("names") or "nullptr"
             enum_count = metadata.get("enumcount") or metadata.get("count") or "0"
             enum_type = metadata.get("enumtype") or metadata.get("enum")
+            enum_generated_name: str | None = None
+            enum_entries: tuple[str, ...] = tuple()
+            if property_type == "Enum" and enum_type and enum_type in enums and "enumnames" not in metadata and "names" not in metadata:
+                enum_info = enums[enum_type]
+                enum_generated_name = make_enum_names_symbol(class_name, enum_type)
+                enum_entries = enum_info.entries
+                enum_names = enum_generated_name
+                if "enumcount" not in metadata and "count" not in metadata:
+                    enum_count = f"static_cast<uint32>(sizeof({enum_generated_name}) / sizeof({enum_generated_name}[0]))"
             enum_size = f"sizeof({enum_type})" if enum_type else metadata.get("enumsize", "sizeof(int32)")
             struct_type = metadata.get("structtype") or metadata.get("struct")
             if property_type == "Struct" and not struct_type:
@@ -345,6 +428,8 @@ def parse_uproperties(scan_text: str) -> tuple[dict[str, tuple[ReflectedProperty
                     enum_names=enum_names,
                     enum_count=enum_count,
                     enum_size=enum_size,
+                    enum_generated_name=enum_generated_name,
+                    enum_entries=enum_entries,
                     struct_type=struct_type_expr,
                 )
             )
@@ -383,6 +468,8 @@ def find_generated_body_line(scan_text: str, body_start: int, body_end: int) -> 
 def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -> tuple[list[ReflectedHeader], list[str]]:
     reflected: list[ReflectedHeader] = []
     warnings: list[str] = []
+    header_texts: list[tuple[Path, str, str]] = []
+    enums: dict[str, ReflectedEnum] = {}
 
     for header in sorted(source_dir.rglob("*.h")):
         if header.name.endswith(".generated.h"):
@@ -390,6 +477,10 @@ def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -
 
         text = header.read_text(encoding="utf-8-sig")
         scan_text = strip_comments(text)
+        header_texts.append((header, text, scan_text))
+        enums.update(parse_uenums(scan_text))
+
+    for header, text, scan_text in header_texts:
         reflected_decls: list[tuple[str, str, str | None, int | None]] = []
         for match in REFLECTED_DECL_RE.finditer(scan_text):
             class_name = match.group("name")
@@ -402,7 +493,7 @@ def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -
             reflected_decls.append((match.group("kind"), class_name, match.group("super"), line))
 
         declarations = [name for _, name, _, _ in reflected_decls]
-        properties_by_class, property_warnings = parse_uproperties(scan_text)
+        properties_by_class, property_warnings = parse_uproperties(scan_text, enums)
 
         property_types = tuple(
             ReflectedType(
@@ -548,6 +639,20 @@ def render_property(prop: ReflectedProperty) -> str:
     )
 
 
+def render_enum_name_arrays(reflected_type: ReflectedType) -> str:
+    definitions: list[str] = []
+    emitted: set[str] = set()
+
+    for prop in reflected_type.properties:
+        if not prop.enum_generated_name or prop.enum_generated_name in emitted:
+            continue
+        emitted.add(prop.enum_generated_name)
+        entries = ", ".join(cpp_string_literal(entry) for entry in prop.enum_entries)
+        definitions.append(f"static const char* {prop.enum_generated_name}[] = {{{entries}}};")
+
+    return "\n".join(definitions)
+
+
 def render_type_registration(reflected_type: ReflectedType) -> str:
     if reflected_type.kind == "STRUCT":
         struct_name = reflected_type.name
@@ -636,6 +741,11 @@ def render_generated_type_cpp(item: ReflectedHeader, reflected_type: ReflectedTy
     type_registration = render_type_registration(reflected_type)
     if type_registration:
         lines.append(type_registration.rstrip())
+        lines.append("")
+
+    enum_name_arrays = render_enum_name_arrays(reflected_type)
+    if enum_name_arrays:
+        lines.append(enum_name_arrays)
         lines.append("")
 
     lines.extend(

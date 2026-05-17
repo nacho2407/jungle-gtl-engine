@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/ObjectFactory.h"
 #include "SceneComponent.h"
@@ -234,9 +234,9 @@ protected:
 	float Mass = 1.0f;                          // kg
 	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Center Of Mass Offset")
 	FVector CenterOfMassOffset = { 0, 0, 0 };   // RootComponent local 좌표계 offset
-	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Enabled", Type=Enum, EnumNames=GCollisionEnabledNames, EnumCount=static_cast<uint32>(ECollisionEnabled::COUNT), EnumType=ECollisionEnabled)
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Enabled", Enum=ECollisionEnabled)
 	ECollisionEnabled CollisionEnabled = ECollisionEnabled::NoCollision;
-	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Object Type", Type=Enum, EnumNames=GCollisionChannelNames, EnumCount=static_cast<uint32>(ECollisionChannel::ActiveCount), EnumType=ECollisionChannel)
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Object Type", Enum=ECollisionChannel)
 	ECollisionChannel ObjectType = ECollisionChannel::WorldStatic;
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Responses", Type=Struct)
 	FCollisionResponseContainer ResponseContainer; // 기본: 전 채널 Block
