@@ -46,33 +46,25 @@ class UObject;
 // 객체 인스턴스에 바인딩된 프로퍼티 값 뷰
 struct FPropertyValue
 {
-	std::string   Name;
-	EPropertyType Type = EPropertyType::Bool;
-	std::string   Category;      // 에디터 카테고리 (같은 문자열끼리 그룹화)
-	void*         ValuePtr = nullptr;
+	UObject* Object = nullptr;
+	const FProperty* Property = nullptr;
+	void* ContainerPtr = nullptr;
 
-	// float 범위 힌트 (DragFloat 등에서 사용)
-	float Min   = 0.0f;
-	float Max   = 0.0f;
-	float Speed = 0.1f;
-
-	// Enum Metadata
-	const char** EnumNames = nullptr;
-	uint32		 EnumCount = 0;
-	uint32		 EnumSize  = sizeof(int32); // underlying type 크기 (uint8 enum은 1)
-
-	// Struct Metadata
-	UStruct* StructType = nullptr;
-
-	std::string   DisplayName;   // 에디터 표시명. 비어 있으면 Name 사용.
-	TMap<FString, FString> Metadata;
-
-	// JSON 직렬화 — FSceneSaveManager 등 외부 직렬자가 호출.
-	// 헤더에 SimpleJSON 의존을 들이지 않기 위해 본문은 PropertyTypes.cpp 에 둔다.
-	json::JSON Serialize() const;
-	void	   Deserialize(json::JSON& Value);
-	void	   Serialize(FArchive& Ar) const;
+	void*	   GetValuePtr() const;
 	void	   GetStructChildren(TArray<FPropertyValue>& OutProps) const;
+
+	const char* GetName() const;
+	const char* GetDisplayName() const;
+	const char* GetCategory() const;
+	EPropertyType GetType() const;
+	float GetMin() const;
+	float GetMax() const;
+	float GetSpeed() const;
+	const char** GetEnumNames() const;
+	uint32 GetEnumCount() const;
+	uint32 GetEnumSize() const;
+	UStruct* GetStructType() const;
+	const TMap<FString, FString>& GetMetadata() const;
 };
 
 enum EPropertyFlags : uint32
@@ -133,52 +125,20 @@ struct FProperty
 		return Container ? reinterpret_cast<uint8*>(Container) + Offset : nullptr;
 	}
 
-	inline FPropertyValue ToValue(void* Container) const
+	inline FPropertyValue ToValue(void* Container, UObject* Object = nullptr) const
 	{
 		FPropertyValue Desc;
-		Desc.Name = this->Name ? this->Name : "";
-		Desc.Type = this->Type;
-		Desc.Category = this->Category ? this->Category : "";
-		Desc.DisplayName = this->DisplayName ? this->DisplayName : Desc.Name;
-		Desc.Metadata = this->Metadata;
-		Desc.ValuePtr = GetValuePtrFor(Container);
-		Desc.Min = this->Min;
-		Desc.Max = this->Max;
-		Desc.Speed = this->Speed;
-		Desc.EnumNames = this->EnumNames;
-		Desc.EnumCount = this->EnumCount;
-		Desc.EnumSize = this->EnumSize;
-		Desc.StructType = this->StructType;
+		Desc.Object = Object;
+		Desc.Property = this;
+		Desc.ContainerPtr = Container;
 		return Desc;
 	}
+
+	json::JSON Serialize(void* Container) const;
+	void	   Deserialize(void* Container, json::JSON& Value) const;
+	void	   Serialize(void* Container, FArchive& Ar) const;
 
 	json::JSON Serialize(UObject* Object) const;
 	void	   Deserialize(UObject* Object, json::JSON& Value) const;
 	void	   Serialize(UObject* Object, FArchive& Ar) const;
-};
-
-struct FEditableProperty
-{
-	UObject* Object = nullptr;
-	const FProperty* Property = nullptr;
-
-	void* GetValuePtr() const
-	{
-		return Property ? Property->GetValuePtrFor(Object) : nullptr;
-	}
-
-	const char* GetName() const
-	{
-		return Property && Property->Name ? Property->Name : "";
-	}
-
-	const char* GetDisplayName() const
-	{
-		return Property && Property->DisplayName ? Property->DisplayName : GetName();
-	}
-
-	const char* GetCategory() const
-	{
-		return Property && Property->Category ? Property->Category : "";
-	}
 };
