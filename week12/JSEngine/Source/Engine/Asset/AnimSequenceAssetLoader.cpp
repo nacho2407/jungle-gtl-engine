@@ -513,25 +513,6 @@ namespace
         return Sequence;
     }
 
-    JSON MakeVector3Json(const FVector3f& Value)
-    {
-        JSON Result = JSON::Make(JSON::Class::Array);
-        Result.append(Value.X);
-        Result.append(Value.Y);
-        Result.append(Value.Z);
-        return Result;
-    }
-
-    JSON MakeQuatJson(const FQuat4f& Value)
-    {
-        JSON Result = JSON::Make(JSON::Class::Array);
-        Result.append(Value.X);
-        Result.append(Value.Y);
-        Result.append(Value.Z);
-        Result.append(Value.W);
-        return Result;
-    }
-
     FVector3f ReadVector3Json(JSON& Value, const FVector3f& Fallback = FVector3f::ZeroVector)
     {
         if (Value.JSONType() != JSON::Class::Array || Value.length() < 3)
@@ -558,26 +539,6 @@ namespace
             static_cast<float>(Value[2].ToFloat()),
             static_cast<float>(Value[3].ToFloat()));
         return Quat.GetNormalized();
-    }
-
-    JSON MakeVectorKeyArrayJson(const TArray<FVector3f>& Keys)
-    {
-        JSON Result = JSON::Make(JSON::Class::Array);
-        for (const FVector3f& Key : Keys)
-        {
-            Result.append(MakeVector3Json(Key));
-        }
-        return Result;
-    }
-
-    JSON MakeQuatKeyArrayJson(const TArray<FQuat4f>& Keys)
-    {
-        JSON Result = JSON::Make(JSON::Class::Array);
-        for (const FQuat4f& Key : Keys)
-        {
-            Result.append(MakeQuatJson(Key));
-        }
-        return Result;
     }
 
     void ReadVectorKeyArrayJson(JSON& Value, TArray<FVector3f>& OutKeys, const FVector3f& Fallback = FVector3f::ZeroVector)
@@ -623,16 +584,6 @@ namespace
     FString GetStringOrDefault(JSON& Root, const char* Key, const FString& DefaultValue = "")
     {
         return Root.hasKey(Key) ? Root[Key].ToString() : DefaultValue;
-    }
-
-    JSON SerializeTrack(const FBoneAnimationTrack& Track)
-    {
-        JSON TrackJson = JSON::Make(JSON::Class::Object);
-        TrackJson["BoneName"] = Track.Name.ToString();
-        TrackJson["PosKeys"] = MakeVectorKeyArrayJson(Track.InternalTrack.PosKeys);
-        TrackJson["RotKeys"] = MakeQuatKeyArrayJson(Track.InternalTrack.RotKeys);
-        TrackJson["ScaleKeys"] = MakeVectorKeyArrayJson(Track.InternalTrack.ScaleKeys);
-        return TrackJson;
     }
 
     void DeserializeTrack(JSON& TrackJson, FBoneAnimationTrack& OutTrack)
@@ -760,13 +711,6 @@ bool FAnimSequenceAssetLoader::Save(const FString& Path, const UAnimSequence* Se
     Root["FrameRateDenominator"] = DataModel->GetFrameRate().Denominator;
     Root["NumberOfFrames"] = DataModel->GetNumberOfFrames();
     Root["NumberOfKeys"] = DataModel->GetNumberOfKeys();
-
-    JSON TracksJson = JSON::Make(JSON::Class::Array);
-    for (const FBoneAnimationTrack& Track : DataModel->GetBoneAnimationTracks())
-    {
-        TracksJson.append(SerializeTrack(Track));
-    }
-    Root["Tracks"] = TracksJson;
 
     std::error_code ErrorCode;
     const std::filesystem::path FilePath(FPaths::ToWide(NormalizedPath));
