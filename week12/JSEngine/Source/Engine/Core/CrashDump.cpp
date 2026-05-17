@@ -2,6 +2,8 @@
 #include "Engine/Core/Paths.h"
 
 #include <DbgHelp.h>
+#include <atomic>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -9,6 +11,42 @@
 #include <cstdio>
 
 #pragma comment(lib, "DbgHelp.lib")
+
+namespace
+{
+std::atomic_bool GCrashHandlerInitialized = false;
+}
+
+// GuardedMain 진입 전에 등록해야 크래시 핸들러가 예외를 받을 수 있습니다.
+void FCrashHandler::Initialize()
+{
+	bool bExpected = false;
+	if (!GCrashHandlerInitialized.compare_exchange_strong(bExpected, true))
+	{
+		return;
+	}
+
+	// Windows 기본 오류 팝업을 줄이고 엔진 크래시 핸들러가 먼저 예외를 받게 합니다.
+	SetErrorMode(SEM_NOGPFAULTERRORBOX | SEM_FAILCRITICALERRORS);
+	SetUnhandledExceptionFilter(FCrashHandler::HandleException);
+}
+
+LONG WINAPI FCrashHandler::HandleException(EXCEPTION_POINTERS* ExceptionInfo)
+{
+	FCrashHandler::WriteCrashDump(ExceptionInfo);
+	FCrashHandler::WriteCrashLog(ExceptionInfo);
+	return EXCEPTION_EXECUTE_HANDLER;
+}
+
+void FCrashHandler::WriteCrashDump(EXCEPTION_POINTERS* ExceptionInfo)
+{
+	::WriteCrashDump(ExceptionInfo);
+}
+
+void FCrashHandler::WriteCrashLog(EXCEPTION_POINTERS* ExceptionInfo)
+{
+	::WriteCrashLog(ExceptionInfo);
+}
 
 LONG WINAPI WriteCrashDump(EXCEPTION_POINTERS* ExceptionInfo)
 {
@@ -35,14 +73,8 @@ LONG WINAPI WriteCrashDump(EXCEPTION_POINTERS* ExceptionInfo)
 		DumpInfo.ExceptionPointers = ExceptionInfo;
 		DumpInfo.ClientPointers = FALSE;
 
-		MiniDumpWriteDump(
-			GetCurrentProcess(),
-			GetCurrentProcessId(),
-			File,
-			MiniDumpWithDataSegs,
-			&DumpInfo,
-			nullptr,
-			nullptr);
+		// Visual Studio/WinDbg에서 열 수 있는 최소 덤프를 현재 예외 컨텍스트와 함께 기록합니다.
+		MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), File, MiniDumpWithDataSegs, &DumpInfo, nullptr, nullptr);
 
 		CloseHandle(File);
 
@@ -75,12 +107,14 @@ void WriteCrashLog(EXCEPTION_POINTERS* ExceptionInfo)
 
 	HANDLE Process = GetCurrentProcess();
 	SymSetOptions(SYMOPT_LOAD_LINES | SYMOPT_UNDNAME);
+	const DWORD ExceptionCode = ExceptionInfo->ExceptionRecord->ExceptionCode;
+	const void* ExceptionAddress = ExceptionInfo->ExceptionRecord->ExceptionAddress;
 	if (!SymInitialize(Process, nullptr, TRUE))
 	{
 		LogFile << "========================================\n";
 		LogFile << "[Engine Crash Report]\n";
-		LogFile << "Exception Code: 0x" << std::hex
-			<< ExceptionInfo->ExceptionRecord->ExceptionCode << std::dec << "\n";
+		LogFile << "Exception Code: 0x" << std::hex << ExceptionCode << std::dec << "\n";
+		LogFile << "Exception Address: 0x" << std::hex << reinterpret_cast<uintptr_t>(ExceptionAddress) << std::dec << "\n";
 		LogFile << "Call Stack: (symbol init failed)\n";
 		LogFile << "========================================\n\n";
 		LogFile.close();
@@ -89,14 +123,15 @@ void WriteCrashLog(EXCEPTION_POINTERS* ExceptionInfo)
 
 	LogFile << "========================================\n";
 	LogFile << "[Engine Crash Report]\n";
-	LogFile << "Exception Code: 0x" << std::hex
-		<< ExceptionInfo->ExceptionRecord->ExceptionCode << std::dec << "\n";
+	LogFile << "Exception Code: 0x" << std::hex << ExceptionCode << std::dec << "\n";
+	LogFile << "Exception Address: 0x" << std::hex << reinterpret_cast<uintptr_t>(ExceptionAddress) << std::dec << "\n";
 	LogFile << "Call Stack:\n";
 
 	const int MaxFrames = 62;
 	void* Stack[MaxFrames];
 	WORD Frames = CaptureStackBackTrace(0, MaxFrames, Stack, nullptr);
 
+	// PDB가 있으면 함수명과 파일/라인을, 없으면 주소만 기록합니다.
 	char SymbolBuffer[sizeof(SYMBOL_INFO) + 256];
 	SYMBOL_INFO* Symbol = reinterpret_cast<SYMBOL_INFO*>(SymbolBuffer);
 	Symbol->MaxNameLen = 255;
@@ -137,7 +172,5 @@ void WriteCrashLog(EXCEPTION_POINTERS* ExceptionInfo)
 
 int ReportCrash(EXCEPTION_POINTERS* ExceptionInfo)
 {
-	WriteCrashDump(ExceptionInfo);
-	WriteCrashLog(ExceptionInfo);
-	return EXCEPTION_EXECUTE_HANDLER;
+	return FCrashHandler::HandleException(ExceptionInfo);
 }

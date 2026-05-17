@@ -806,6 +806,7 @@
     <ClCompile Include="Source\Engine\Core\AssetPathPolicy.cpp" />
     <ClCompile Include="Source\Engine\Core\AtlasResourceCache.cpp" />
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp" />
+    <ClCompile Include="Source\Engine\Core\CrashTest.cpp" />
     <ClCompile Include="Source\Engine\Core\CurveResourceCache.cpp" />
     <ClCompile Include="Source\Engine\Core\Delegates\Delegate.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
@@ -1158,6 +1159,7 @@
     <ClInclude Include="Source\Engine\Core\CoreMinimal.h" />
     <ClInclude Include="Source\Engine\Core\CoreTypes.h" />
     <ClInclude Include="Source\Engine\Core\CrashDump.h" />
+    <ClInclude Include="Source\Engine\Core\CrashTest.h" />
     <ClInclude Include="Source\Engine\Core\CurveResourceCache.h" />
     <ClInclude Include="Source\Engine\Core\Debug.h" />
     <ClInclude Include="Source\Engine\Core\DebugDetails.h" />
