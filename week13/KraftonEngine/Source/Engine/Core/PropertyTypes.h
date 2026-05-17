@@ -11,7 +11,12 @@ class FArchive;
 class UStruct;
 struct FPropertyValue;
 struct FProperty;
+struct FNumericProperty;
+struct FBoolProperty;
+struct FStringProperty;
+struct FEnumProperty;
 struct FSoftObjectProperty;
+struct FStructProperty;
 class UObject;
 
 // 에디터에서 자동 위젯 매핑에 사용되는 프로퍼티 타입
@@ -190,7 +195,12 @@ struct FProperty
 	virtual float GetSpeed() const { return 0.1f; }
 	virtual const FEnum* GetEnumType() const { return nullptr; }
 	virtual UStruct* GetStructType() const { return nullptr; }
+	virtual const FNumericProperty* AsNumericProperty() const { return nullptr; }
+	virtual const FBoolProperty* AsBoolProperty() const { return nullptr; }
+	virtual const FStringProperty* AsStringProperty() const { return nullptr; }
+	virtual const FEnumProperty* AsEnumProperty() const { return nullptr; }
 	virtual const FSoftObjectProperty* AsSoftObjectProperty() const { return nullptr; }
+	virtual const FStructProperty* AsStructProperty() const { return nullptr; }
 
 	virtual json::JSON Serialize(void* Container) const = 0;
 	virtual void	   Deserialize(void* Container, json::JSON& Value) const = 0;
@@ -206,8 +216,7 @@ struct FGenericProperty : FProperty
 	EPropertyType Type = EPropertyType::Bool;
 	float Min = 0.0f;
 	float Max = 0.0f;
-	float Speed = 0.1f;	//에디터 드래그 입력 시 값 변화량
-	UStruct* StructType = nullptr;
+	float Speed = 0.1f;
 
 	FGenericProperty() = default;
 	FGenericProperty(
@@ -220,7 +229,6 @@ struct FGenericProperty : FProperty
 		float InMin,
 		float InMax,
 		float InSpeed,
-		UStruct* InStructType,
 		const char* InDisplayName,
 		const TMap<FString, FString>& InMetadata,
 		const char* InOwnerClassName)
@@ -229,7 +237,6 @@ struct FGenericProperty : FProperty
 		, Min(InMin)
 		, Max(InMax)
 		, Speed(InSpeed)
-		, StructType(InStructType)
 	{
 	}
 
@@ -237,96 +244,16 @@ struct FGenericProperty : FProperty
 	float GetMin() const override { return Min; }
 	float GetMax() const override { return Max; }
 	float GetSpeed() const override { return Speed; }
-	UStruct* GetStructType() const override { return StructType; }
 
 	json::JSON Serialize(void* Container) const override;
 	void	   Deserialize(void* Container, json::JSON& Value) const override;
 	void	   Serialize(void* Container, FArchive& Ar) const override;
 };
 
-struct FEnumProperty : FGenericProperty
-{
-	const FEnum* EnumType = nullptr;
-
-	FEnumProperty() = default;
-	FEnumProperty(
-		const char* InName,
-		const char* InCategory,
-		uint32 InFlags,
-		size_t InOffset,
-		size_t InSize,
-		float InMin,
-		float InMax,
-		float InSpeed,
-		const FEnum* InEnumType,
-		const char* InDisplayName,
-		const TMap<FString, FString>& InMetadata,
-		const char* InOwnerClassName)
-		: FGenericProperty(
-			InName,
-			EPropertyType::Enum,
-			InCategory,
-			InFlags,
-			InOffset,
-			InSize,
-			InMin,
-			InMax,
-			InSpeed,
-			nullptr,
-			InDisplayName,
-			InMetadata,
-			InOwnerClassName)
-		, EnumType(InEnumType)
-	{
-	}
-
-	const FEnum* GetEnumType() const override { return EnumType; }
-
-	json::JSON Serialize(void* Container) const override;
-	void	   Deserialize(void* Container, json::JSON& Value) const override;
-	void	   Serialize(void* Container, FArchive& Ar) const override;
-};
-
-struct FSoftObjectProperty : FGenericProperty
-{
-	const char* AssetType = nullptr;
-	const char* AllowedClass = nullptr;
-
-	FSoftObjectProperty() = default;
-	FSoftObjectProperty(
-		const char* InName,
-		const char* InCategory,
-		uint32 InFlags,
-		size_t InOffset,
-		size_t InSize,
-		float InMin,
-		float InMax,
-		float InSpeed,
-		const char* InDisplayName,
-		const TMap<FString, FString>& InMetadata,
-		const char* InOwnerClassName,
-		const char* InAssetType,
-		const char* InAllowedClass)
-		: FGenericProperty(
-			InName,
-			EPropertyType::SoftObjectRef,
-			InCategory,
-			InFlags,
-			InOffset,
-			InSize,
-			InMin,
-			InMax,
-			InSpeed,
-			nullptr,
-			InDisplayName,
-			InMetadata,
-			InOwnerClassName)
-		, AssetType(InAssetType)
-		, AllowedClass(InAllowedClass)
-	{
-	}
-
-	const char* GetAssetType() const { return AssetType ? AssetType : ""; }
-	const char* GetAllowedClass() const { return AllowedClass ? AllowedClass : ""; }
-	const FSoftObjectProperty* AsSoftObjectProperty() const override { return this; }
-};
+#include "Core/Property/GenericProperty.h"
+#include "Core/Property/BoolProperty.h"
+#include "Core/Property/StringProperty.h"
+#include "Core/Property/NumericProperty.h"
+#include "Core/Property/EnumProperty.h"
+#include "Core/Property/SoftObjectProperty.h"
+#include "Core/Property/StructProperty.h"

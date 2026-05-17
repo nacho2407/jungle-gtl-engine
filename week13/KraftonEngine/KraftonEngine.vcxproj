@@ -393,6 +393,12 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Engine\Core\Property\BoolProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\EnumProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\GenericProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\NumericProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\StringProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\StructProperty.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorTextureManager.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorPreviewViewportClient.h" />
@@ -662,6 +668,13 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\Core\Property\BoolProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\EnumProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\GenericProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\NumericProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\SoftObjectProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\StringProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\StructProperty.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h" />
     <ClInclude Include="Source\Editor\UI\EditorTextureManager.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h" />
