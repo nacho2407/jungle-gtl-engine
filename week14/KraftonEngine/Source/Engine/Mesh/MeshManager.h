@@ -12,6 +12,7 @@
 struct FStaticMesh;
 struct FSkeletalMesh;
 struct FStaticMaterial;
+struct FSkeletalMaterial;
 struct FImportOptions;
 class UStaticMesh;
 class USkeletalMesh;
@@ -25,7 +26,7 @@ public:
 	static UStaticMesh* LoadStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice);
 
 	static USkeletalMesh* LoadSkeletalMesh(const FString& PathFileName , ID3D11Device* InDevice);
-	static bool LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Device* InDevice, FSkeletalMesh*& OutMesh);
+	static bool LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Device* InDevice, FSkeletalMesh*& OutMesh, TArray<FSkeletalMaterial>* OutMaterials = nullptr);
 
 	static void ScanMeshSourceFiles();
 	static void ScanFbxSourceFiles();
