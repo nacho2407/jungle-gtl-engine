@@ -663,7 +663,15 @@ void FEditorViewportClient::TickInput(const FViewportInputContext& Context)
 	if (InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController &&
 		IsPassiveEditorViewportHover(Context))
 	{
-		InputRouter.GetEditorWorldController().ResetTargetFromCamera();
+		FEditorWorldController& WorldController = InputRouter.GetEditorWorldController();
+		if (FEditorSettings::Get().bEnableCameraSmoothing && WorldController.HasPendingCameraTransition())
+		{
+			WorldController.Tick(Context.DeltaSeconds);
+		}
+		else
+		{
+			WorldController.ResetTargetFromCamera();
+		}
 		return;
 	}
 	InputRouter.Tick(Context.DeltaSeconds);

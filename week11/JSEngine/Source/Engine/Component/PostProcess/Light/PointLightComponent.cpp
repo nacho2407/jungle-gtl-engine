@@ -1,6 +1,7 @@
-﻿#include "PointLightComponent.h"
+#include "PointLightComponent.h"
 #include "Object/ObjectFactory.h"
 #include <Render/Resource/ShadowAtlasManager.h>
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(UPointLightComponent, ULightComponent)
 REGISTER_FACTORY(UPointLightComponent)
@@ -12,7 +13,7 @@ void UPointLightComponent::PostDuplicate(UObject* Original)
 
 void UPointLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    ULightComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 	constexpr EPropertyUsageFlags EditAndAnimate =
 		EPropertyUsageFlags::Editable | EPropertyUsageFlags::Animatable;
     OutProps.push_back({ "Attenuation Radius", EPropertyType::Float, &AttenuationRadius, 0.0f, 0.0f, 0.1f, nullptr, 0, nullptr, EditAndAnimate });

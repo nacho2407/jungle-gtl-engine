@@ -1,6 +1,7 @@
 ﻿#include "Component/CameraComponent.h"
 #include <algorithm>
 #include <cmath>
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(UCameraComponent, USceneComponent)
 REGISTER_FACTORY(UCameraComponent)
@@ -117,19 +118,19 @@ FRay UCameraComponent::DeprojectScreenToWorld(float MouseX, float MouseY, float 
 
 void UCameraComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	USceneComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedProperties(this, GetStaticClass(), OutProps);
 	constexpr EPropertyUsageFlags EditAndAnimate =
 		EPropertyUsageFlags::Editable | EPropertyUsageFlags::Animatable;
-	OutProps.push_back({ "FOV", EPropertyType::Float, &CameraState.FOV, 0.1f, 3.14f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
-	OutProps.push_back({ "Near Z", EPropertyType::Float, &CameraState.NearZ, 0.01f, 100.0f, 0.01f });
-	OutProps.push_back({ "Far Z", EPropertyType::Float, &CameraState.FarZ, 1.0f, 100000.0f, 10.0f });
-	OutProps.push_back({ "Orthographic", EPropertyType::Bool, &CameraState.bIsOrthogonal });
-	OutProps.push_back({ "Ortho Width", EPropertyType::Float, &CameraState.OrthoWidth, 0.1f, 1000.0f, 0.5f, nullptr, 0, nullptr, EditAndAnimate });
-	OutProps.push_back({ "Vignette Enabled", EPropertyType::Bool, &PostProcessSettings.bVignetteEnabled });
-	OutProps.push_back({ "Vignette Intensity", EPropertyType::Float, &PostProcessSettings.VignetteIntensity, 0.0f, 1.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
-	OutProps.push_back({ "Vignette Radius", EPropertyType::Float, &PostProcessSettings.VignetteRadius, 0.0f, 2.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
-	OutProps.push_back({ "Vignette Smoothness", EPropertyType::Float, &PostProcessSettings.VignetteSmoothness, 0.001f, 2.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
-	OutProps.push_back({ "Vignette Color", EPropertyType::Color, &PostProcessSettings.VignetteColor, 0.0f, 0.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
+	//OutProps.push_back({ "FOV", EPropertyType::Float, &CameraState.FOV, 0.1f, 3.14f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
+	//OutProps.push_back({ "Near Z", EPropertyType::Float, &CameraState.NearZ, 0.01f, 100.0f, 0.01f });
+	//OutProps.push_back({ "Far Z", EPropertyType::Float, &CameraState.FarZ, 1.0f, 100000.0f, 10.0f });
+	//OutProps.push_back({ "Orthographic", EPropertyType::Bool, &CameraState.bIsOrthogonal });
+	//OutProps.push_back({ "Ortho Width", EPropertyType::Float, &CameraState.OrthoWidth, 0.1f, 1000.0f, 0.5f, nullptr, 0, nullptr, EditAndAnimate });
+	//OutProps.push_back({ "Vignette Enabled", EPropertyType::Bool, &PostProcessSettings.bVignetteEnabled });
+	//OutProps.push_back({ "Vignette Intensity", EPropertyType::Float, &PostProcessSettings.VignetteIntensity, 0.0f, 1.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
+	//OutProps.push_back({ "Vignette Radius", EPropertyType::Float, &PostProcessSettings.VignetteRadius, 0.0f, 2.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
+	//OutProps.push_back({ "Vignette Smoothness", EPropertyType::Float, &PostProcessSettings.VignetteSmoothness, 0.001f, 2.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
+	//OutProps.push_back({ "Vignette Color", EPropertyType::Color, &PostProcessSettings.VignetteColor, 0.0f, 0.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
 }
 
 void UCameraComponent::Serialize(FArchive& Ar)

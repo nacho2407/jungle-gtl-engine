@@ -1,11 +1,15 @@
-﻿#pragma once
+#pragma once
+
+#include "StaticMesh.generated.h"
 #pragma once
 
 #include "StaticMeshTypes.h"
 #include "Object/Object.h"
 
+UCLASS()
 class UStaticMesh : public UObject
 {
+    GENERATED_BODY_UStaticMesh()
 public:
 	DECLARE_CLASS(UStaticMesh, UObject)
 

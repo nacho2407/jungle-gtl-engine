@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+
+#include "PlayerController.generated.h"
 
 #include "GameFramework/AActor.h"
 #include "GameFramework/Pawn.h"
@@ -9,8 +11,10 @@ class UCameraComponent;
 class APlayerCameraManager;
 enum class ECameraBlendType;
 
+UCLASS()
 class APlayerController : public AActor
 {
+    GENERATED_BODY_APlayerController()
 public:
 	DECLARE_CLASS(APlayerController, AActor)
 

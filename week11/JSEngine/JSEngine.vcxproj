@@ -115,6 +115,7 @@
     <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
@@ -122,6 +123,7 @@
     <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
@@ -129,6 +131,7 @@
     <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
@@ -136,6 +139,7 @@
     <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
@@ -143,6 +147,7 @@
     <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
@@ -151,6 +156,7 @@
     <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
@@ -159,6 +165,7 @@
     <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -202,7 +209,7 @@
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories);$(ProjectDir)Intermediate\Generated\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -223,12 +230,12 @@
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories);$(ProjectDir)Intermediate\Generated\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\luajit\src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories);$(ProjectDir)ThirdParty\luajit\src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>gdiplus.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -244,7 +251,7 @@
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories);$(ProjectDir)Intermediate\Generated\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -261,7 +268,7 @@
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Source\Editor;$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source\Editor;$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories);$(ProjectDir)Intermediate\Generated\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -282,7 +289,7 @@
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Source\Editor;$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source\Editor;$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories);$(ProjectDir)Intermediate\Generated\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -294,6 +301,11 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>FBXSDK_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)Intermediate\Generated\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)Intermediate\Generated\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)Intermediate\Generated\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)Intermediate\Generated\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)Intermediate\Generated\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -302,6 +314,36 @@
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration)\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(ProjectDir)Tools\PropertySystem\Bin\CustomParser.exe" "$(ProjectDir)\"</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(ProjectDir)Tools\PropertySystem\Bin\CustomParser.exe" "$(ProjectDir)\"</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(ProjectDir)Tools\PropertySystem\Bin\CustomParser.exe" "$(ProjectDir)\"</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(ProjectDir)Tools\PropertySystem\CustomParser.exe" "$(ProjectDir)\"</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(ProjectDir)Tools\PropertySystem\CustomParser.exe" "$(ProjectDir)\"</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(ProjectDir)Tools\PropertySystem\CustomParser.exe" "$(ProjectDir)\"</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">"$(ProjectDir)Tools\PropertySystem\CustomParser.exe" "$(ProjectDir)\"</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">"$(ProjectDir)Tools\PropertySystem\CustomParser.exe" "$(ProjectDir)\"</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">"$(ProjectDir)Tools\PropertySystem\CustomParser.exe" "$(ProjectDir)\"</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(ProjectDir)Tools\PropertySystem\CustomParser.exe" "$(ProjectDir)\"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <PropertyGroup>
     <ThirdPartyBinaryConfiguration>Release</ThirdPartyBinaryConfiguration>
@@ -316,6 +358,7 @@
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\BuildTools\Scripts\BuildSoLoudLib.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(ThirdPartyBinaryConfiguration)&quot; -Platform &quot;$(Platform)&quot;" />
   </Target>
   <ItemGroup>
+    <ClCompile Include="Intermediate\Generated\JSEngine.Reflection.gen.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorViewerWindowWidget.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
@@ -341,6 +384,7 @@
     <ClCompile Include="Source\Engine\Asset\Skeleton.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SinusoidalCameraShakePattern.cpp" />
+    <None Include="PropertySystem\OptOutParser.cs" />
     <None Include="Shaders\PostProcess\PostProcess.hlsl" />
     <None Include="Shaders\UI\ScreenOverlay.hlsl" />
     <ClCompile Include="Source\Engine\Camera\CameraShakeBase.cpp" />
@@ -653,6 +697,10 @@
     <ClCompile Include="Source\Engine\Asset\StaticMesh.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetQueryService.cpp" />
     <ClCompile Include="Source\Engine\Asset\StaticMeshSimplifier.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimationAsset.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimationRuntime.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp" />
     <ClCompile Include="Source\Engine\Collision\Collision.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayCollision\RayCollision.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
@@ -873,6 +921,7 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+    <None Include="Tools\PropertySystem\CustomParser.cs" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\UI\EditorViewerWindowWidget.h" />
@@ -898,6 +947,10 @@
     <ClInclude Include="Source\Engine\Camera\PlayerCameraManager.h" />
     <ClInclude Include="Source\Engine\Component\SkeletalMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\SkinnedMeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\TransformProxy.h" />
+    <ClInclude Include="Source\Engine\Core\ReflectionDatabase.h" />
+    <ClInclude Include="Source\Engine\Core\ReflectionMacros.h" />
+    <ClInclude Include="Source\Engine\Core\ReflectionUtils.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\Coroutine.h" />
@@ -976,6 +1029,11 @@
     <ClInclude Include="Source\Engine\Asset\StaticMesh.h" />
     <ClInclude Include="Source\Engine\Asset\StaticMeshSimplifier.h" />
     <ClInclude Include="Source\Engine\Asset\StaticMeshTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimationAsset.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimationRuntime.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimationTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h" />
     <ClInclude Include="Source\Engine\Collision\Collision.h" />
     <ClInclude Include="Source\Engine\Collision\RayCollision\RayCollision.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ActorSequence.generated.h"
+
 #include "Animation/CurvePlayback.h"
 #include "Core/CoreMinimal.h"
 #include "Core/Guid.h"
@@ -96,8 +98,10 @@ struct FResolvedActorSequenceTrack
     bool bValid = false;
 };
 
+UCLASS()
 class UActorSequence : public UObject
 {
+    GENERATED_BODY_UActorSequence()
 public:
     DECLARE_CLASS(UActorSequence, UObject)
 
@@ -109,8 +113,10 @@ public:
     void Serialize(FArchive& Ar) override;
 };
 
+UCLASS()
 class UActorSequencePlayer : public UObject
 {
+    GENERATED_BODY_UActorSequencePlayer()
 public:
     DECLARE_CLASS(UActorSequencePlayer, UObject)
 

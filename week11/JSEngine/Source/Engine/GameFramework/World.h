@@ -1,8 +1,11 @@
-﻿#pragma once
+#pragma once
+
+#include "World.generated.h"
 
 #include <functional>
 
 #include "Object/Object.h"
+#include "Core/ReflectionUtils.h"
 #include "GameFramework/AActor.h"
 #include "Level.h"
 #include "Spatial/WorldSpatialIndex.h"
@@ -20,7 +23,9 @@ struct FWorldGameModeSettings
 	FString DefaultPawnPrefabPath;
 };
 
+UCLASS()
 class UWorld : public UObject {
+    GENERATED_BODY_UWorld()
 public:
     using FActorDestroyedListener = std::function<void(AActor*)>;
 
@@ -33,7 +38,10 @@ public:
 	// 프로퍼티 시스템 — UObject 에서 상속
 	// UWorld 는 현재 에디터에 노출할 스칼라 프로퍼티가 없습니다.
 	// (PersistentLevel 은 PostDuplicate 에서 별도 처리)
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override {}
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override
+	{
+		ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
+	}
 	void PostEditProperty(const char* PropertyName) override {}
 
     // Actor lifecycle

@@ -16,26 +16,53 @@ public:
 
 class FActorTransformProxy : public ITransformProxy
 {
-    AActor* Actor;
 public:
-    FActorTransformProxy(AActor* InActor) : Actor(InActor) {}
     virtual FMatrix GetTransform() const override
     {
-        if (!Actor || !Actor->GetRootComponent()) return FMatrix::Identity;
-        return Actor->GetRootComponent()->GetWorldMatrix();
+        if (Actors.empty() || !Actors[0])
+            return FMatrix::Identity;
+
+        // 현재는 첫 번째 Actor 를 기준으로 Transform 을 반환하지만 다수 Actor 들의 Center Pivot 등을 지원할 수 있음
+        return Actors[0]->GetRootComponent()->GetWorldMatrix();
     }
+
     virtual void SetTransform(const FMatrix& M) override
     {
-        if (!Actor) return;
-        FVector Translation, Scale;
-        FMatrix Rotation;
-        if (M.Decompose(Translation, Rotation, Scale))
+        if (Actors.empty())
+            return;
+
+        // 기준 (첫 Actor)
+        FMatrix OldM = GetTransform();
+
+        FVector OldT, NewT, OldS, NewS;
+        FMatrix OldR, NewR;
+
+        OldM.Decompose(OldT, OldR, OldS);
+        M.Decompose(NewT, NewR, NewS);
+
+        FVector Delta = NewT - OldT;
+		
+		FVector DeltaS = FVector(NewS.X / OldS.X, NewS.Y / OldS.Y, NewS.Z / OldS.Z); // Scale 비율 계산
+        for (AActor* Actor : Actors)
         {
-            Actor->SetActorLocation(Translation);
-            Actor->SetActorRotationQuat(FQuat(Rotation));
-            Actor->SetActorScale(Scale);
+            if (!Actor)
+                continue;
+            Actor->AddActorWorldOffset(Delta);
+
+			Actor->SetActorScale(Actor->GetActorScale() * DeltaS);
+			FQuat ActorCurQuat = FQuat::MakeFromEuler(Actor->GetActorRotation());
+			FQuat DeltaQuat = FQuat(NewR) * FQuat(OldR).Inverse();
+			FQuat ActorNewQuat = DeltaQuat * ActorCurQuat;
+			Actor->SetActorRotation(ActorNewQuat.Euler());
         }
     }
+    void AddTarget(AActor* InActor)
+    {
+        Actors.push_back(InActor);
+    }
+
+private:
+    TArray<AActor*> Actors;
 };
 
 class FComponentTransformProxy : public ITransformProxy
@@ -51,18 +78,26 @@ public:
     virtual void SetTransform(const FMatrix& M) override
     {
         if (!Component) return;
-        FVector Translation, Scale;
-        FMatrix Rotation;
-        if (M.Decompose(Translation, Rotation, Scale))
-        {
-            Component->SetWorldLocation(Translation);
-            // Assuming SetRelativeRotation and SetRelativeScale are appropriate here, 
-            // but for WorldMatrix we might need SetWorldRotation/Scale if they exist.
-            // SceneComponent usually has SetWorldLocation but might not have SetWorldRotation for all.
-            // Let's use Relative for now or check SceneComponent.h
-            Component->SetRelativeRotationQuat(FQuat(Rotation));
-            Component->SetRelativeScale(Scale);
-        }
+        // 기준 (첫 Actor)
+        FMatrix OldM = GetTransform();
+
+        FVector OldT, NewT, OldS, NewS;
+        FMatrix OldR, NewR;
+
+        OldM.Decompose(OldT, OldR, OldS);
+        M.Decompose(NewT, NewR, NewS);
+
+        FVector Delta = NewT - OldT;
+
+        FVector DeltaS = FVector(NewS.X / OldS.X, NewS.Y / OldS.Y, NewS.Z / OldS.Z); // Scale 비율 계산
+
+        Component->AddWorldOffset(Delta);
+
+        Component->SetRelativeScale(Component->GetRelativeScale() * DeltaS);
+        FQuat ComponentCurQuat = FQuat::MakeFromEuler(Component->GetRelativeRotation());
+        FQuat DeltaQuat = FQuat(NewR) * FQuat(OldR).Inverse();
+        FQuat ComponentNewQuat = DeltaQuat * ComponentCurQuat;
+        Component->SetRelativeRotation(ComponentNewQuat.Euler());
     }
 };
 
@@ -78,6 +113,7 @@ public:
     virtual FMatrix GetTransform() const override
     {
         if (!SkelComp) return FMatrix::Identity;
+        SkelComp->EnsurePoseUpdated();
         return SkelComp->GetBoneGlobalTransform(BoneIndex);
     }
 
@@ -101,6 +137,7 @@ public:
     {
         if (!SkelComp)
             return FMatrix::Identity;
+        SkelComp->EnsurePoseUpdated();
         return SkelComp->GetSocketTransform(SocketName).ToMatrixWithScale();
     }
 
@@ -118,6 +155,8 @@ public:
             if (Socket.Name != SocketName)
                 continue;
 
+            SkelComp->EnsurePoseUpdated();
+
             FTransform TargetWorld(M);
             TargetWorld.NormalizeRotation();
 
@@ -133,13 +172,13 @@ public:
             Socket.RelativeRotation = FRotator(SafeQuat);
 
             FVector SafeScale = Rel.GetScale3D();
-            SafeScale.X = std::max(0.001f, SafeScale.X);
-            SafeScale.Y = std::max(0.001f, SafeScale.Y);
-            SafeScale.Z = std::max(0.001f, SafeScale.Z);
+            SafeScale.X = (std::max)(0.001f, SafeScale.X);
+            SafeScale.Y = (std::max)(0.001f, SafeScale.Y);
+            SafeScale.Z = (std::max)(0.001f, SafeScale.Z);
 
             Socket.RelativeScale = SafeScale;
 
-            SkelComp->MarkSkinningDirty();
+            SkelComp->MarkPoseDirty();
             break;
         }
     }

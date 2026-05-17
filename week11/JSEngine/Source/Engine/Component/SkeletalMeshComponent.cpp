@@ -1,48 +1,231 @@
-﻿#include "SkeletalMeshComponent.h"
+#include "SkeletalMeshComponent.h"
 
-#include "Animation/AnimDataModel.h"
+#include <utility>
+
+#include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
+#include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/AnimationAsset.h"
+#include "Animation/AnimationRuntime.h"
+#include "Core/Logging/Log.h"
+#include "Core/Logging/Stats.h"
 #include "Core/ResourceManager.h"
 #include "Object/ObjectFactory.h"
-
-#include <algorithm>
-#include <cmath>
 
 DEFINE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 REGISTER_FACTORY(USkeletalMeshComponent)
 
+USkeletalMeshComponent::~USkeletalMeshComponent()
+{
+    DestroyAnimInstance();
+}
+
 void USkeletalMeshComponent::TickComponent(float DeltaTime)
 {
     USkinnedMeshComponent::TickComponent(DeltaTime);
-
     TickAnimation(DeltaTime);
-
-	// Pose가 바뀐 경우에만 실제 CPU skinning이 수행(dirty flag 이용)
-    EnsureSkinningUpdated();
 }
 
-void USkeletalMeshComponent::ResetToBindPose()
+void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InMode)
 {
-    AnimationSequence = nullptr;
-    AnimationTime = 0.0f;
-    bAnimationPlaying = false;
-    bAnimationLooping = false;
-
-    InitializePoseFromBindPose();
-    MarkSkinningDirty();
-    MarkBoundsDirty();
-}
-
-void USkeletalMeshComponent::SetAnimation(UAnimSequence* InSequence)
-{
-    AnimationSequence = InSequence;
-    AnimationTime = 0.0f;
-    bAnimationPlaying = false;
-
-    if (!ApplyAnimationPose())
+    if (AnimationMode == InMode)
     {
-        ResetToBindPose();
+        return;
     }
+
+    AnimationMode = InMode;
+    RecreateAnimInstance();
+}
+
+EAnimationMode USkeletalMeshComponent::GetAnimationMode() const
+{
+    return AnimationMode;
+}
+
+void USkeletalMeshComponent::SetAnimInstanceClass(const FString& InClassName)
+{
+    if (AnimInstanceClassName == InClassName)
+    {
+        return;
+    }
+
+    AnimInstanceClassName = InClassName;
+    if (AnimationMode == EAnimationMode::AnimInstance)
+    {
+        RecreateAnimInstance();
+    }
+}
+
+UAnimInstance* USkeletalMeshComponent::GetAnimInstance() const
+{
+    return AnimInstance;
+}
+
+bool USkeletalMeshComponent::ApplyAnimationLocalPose(const TArray<FTransform>& LocalPose)
+{
+    SCOPE_STAT("Anim.ApplyPoseToComponent");
+
+    if (!HasValidMesh())
+    {
+        return false;
+    }
+
+    if (!FAnimationRuntime::HasMatchingBoneCount(SkeletalMesh, LocalPose))
+    {
+        UE_LOG_WARNING(
+            "[SkeletalMeshComponent] Animation local pose bone count mismatch. MeshBones=%d, PoseBones=%d",
+            static_cast<int32>(SkeletalMesh->GetBones().size()),
+            static_cast<int32>(LocalPose.size()));
+        return false;
+    }
+
+    TArray<FMatrix> LocalMatrices;
+    if (!FAnimationRuntime::ConvertLocalPoseToMatrices(LocalPose, LocalMatrices))
+    {
+        return false;
+    }
+
+    CurrentLocalPose = std::move(LocalMatrices);
+    MarkPoseDirty();
+    return true;
+}
+
+bool USkeletalMeshComponent::RefreshAnimationPose()
+{
+    if (AnimationMode == EAnimationMode::None || !AnimInstance)
+    {
+        return false;
+    }
+
+    TArray<FTransform> LocalPose;
+    if (!AnimInstance->EvaluateAnimation(LocalPose))
+    {
+        return false;
+    }
+
+    if (!ApplyAnimationLocalPose(LocalPose))
+    {
+        return false;
+    }
+
+    EnsurePoseUpdated();
+    return true;
+}
+
+void USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping)
+{
+    UAnimSingleNodeInstance* SingleNodeInstance = EnsureSingleNodeInstance();
+    if (!SingleNodeInstance)
+    {
+        UE_LOG_WARNING("[SkeletalMeshComponent] Failed to play animation because single node instance could not be created.");
+        return;
+    }
+
+    if (!NewAnimToPlay)
+    {
+        UE_LOG_WARNING("[SkeletalMeshComponent] PlayAnimation called with null animation asset.");
+    }
+
+    SingleNodeInstance->SetAnimationAsset(NewAnimToPlay);
+    SingleNodeInstance->SetLooping(bLooping);
+    SingleNodeInstance->Play();
+}
+
+void USkeletalMeshComponent::SetAnimation(UAnimationAsset* NewAnimToPlay)
+{
+    UAnimSingleNodeInstance* SingleNodeInstance = EnsureSingleNodeInstance();
+    if (!SingleNodeInstance)
+    {
+        return;
+    }
+
+    SingleNodeInstance->SetAnimationAsset(NewAnimToPlay);
+    SingleNodeInstance->SetPosition(0.0f, false);
+    RefreshAnimationPose();
+}
+
+UAnimationAsset* USkeletalMeshComponent::GetAnimation() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetAnimationAsset() : nullptr;
+}
+
+void USkeletalMeshComponent::Play()
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->Play();
+    }
+}
+
+void USkeletalMeshComponent::Pause()
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->Pause();
+    }
+}
+
+void USkeletalMeshComponent::Stop()
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->Stop();
+    }
+}
+
+void USkeletalMeshComponent::SetPosition(float TimeSeconds, bool bFireNotifies)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetPosition(TimeSeconds, bFireNotifies);
+    }
+}
+
+float USkeletalMeshComponent::GetPosition() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetPosition() : 0.0f;
+}
+
+void USkeletalMeshComponent::SetPlayRate(float InPlayRate)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetPlayRate(InPlayRate);
+    }
+}
+
+float USkeletalMeshComponent::GetPlayRate() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetPlayRate() : 1.0f;
+}
+
+void USkeletalMeshComponent::SetLooping(bool bInLooping)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetLooping(bInLooping);
+    }
+}
+
+bool USkeletalMeshComponent::IsLooping() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->IsLooping() : false;
+}
+
+bool USkeletalMeshComponent::IsPlaying() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->IsPlaying() : false;
+}
+
+float USkeletalMeshComponent::GetPlayLength() const
+{
+    const UAnimationAsset* Animation = GetAnimation();
+    return Animation ? Animation->GetPlayLength() : 0.0f;
 }
 
 bool USkeletalMeshComponent::SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName)
@@ -68,69 +251,123 @@ bool USkeletalMeshComponent::SetAnimSequence(const FString& SourceFbxPath, const
 
 void USkeletalMeshComponent::SetAnimationTime(float Time)
 {
-    AnimationTime = std::max(0.0f, Time);
-    ApplyAnimationPose();
+    SetPosition(Time, false);
+    RefreshAnimationPose();
 }
 
 void USkeletalMeshComponent::TickAnimation(float DeltaTime)
 {
-    if (!bAnimationPlaying || !AnimationSequence || !AnimationSequence->DataModel)
+    if (AnimationMode == EAnimationMode::None || !AnimInstance)
     {
         return;
     }
 
-    const float SequenceLength = AnimationSequence->DataModel->SequenceLength;
-    AnimationTime += DeltaTime * AnimationPlayRate;
+    SCOPE_STAT("Anim.ComponentTick");
 
-    if (SequenceLength > 0.0f)
+    AnimInstance->NativeUpdateAnimation(DeltaTime);
+
+    TArray<FTransform> LocalPose;
+    if (AnimInstance->EvaluateAnimation(LocalPose))
     {
-        if (bAnimationLooping)
-        {
-            AnimationTime = std::fmod(AnimationTime, SequenceLength);
-            if (AnimationTime < 0.0f)
-            {
-                AnimationTime += SequenceLength;
-            }
-        }
-        else if (AnimationTime >= SequenceLength)
-        {
-            AnimationTime = SequenceLength;
-            bAnimationPlaying = false;
-        }
+        ApplyAnimationLocalPose(LocalPose);
     }
-
-    ApplyAnimationPose();
 }
 
 void USkeletalMeshComponent::PlayAnim(bool bLoop)
 {
-    bAnimationLooping = bLoop;
-    bAnimationPlaying = AnimationSequence != nullptr;
+    SetLooping(bLoop);
+    Play();
 }
 
 void USkeletalMeshComponent::StopAnim()
 {
-    bAnimationPlaying = false;
+    Stop();
 }
 
-bool USkeletalMeshComponent::ApplyAnimationPose()
+void USkeletalMeshComponent::RecreateAnimInstance()
 {
-    if (!AnimationSequence || !SkeletalMesh)
+    DestroyAnimInstance();
+
+    UObject* NewObject = nullptr;
+    if (AnimationMode == EAnimationMode::SingleNode)
     {
-        return false;
+        NewObject = FObjectFactory::Get().Create("UAnimSingleNodeInstance");
+    }
+    else if (AnimationMode == EAnimationMode::AnimInstance)
+    {
+        if (AnimInstanceClassName.empty())
+        {
+            UE_LOG_WARNING("[SkeletalMeshComponent] AnimInstanceClassName is empty.");
+            return;
+        }
+
+        NewObject = FObjectFactory::Get().Create(AnimInstanceClassName);
+        if (!NewObject)
+        {
+            UE_LOG_WARNING("[SkeletalMeshComponent] Failed to create AnimInstance class: %s", AnimInstanceClassName.c_str());
+            return;
+        }
+    }
+    else
+    {
+        return;
     }
 
-    TArray<FMatrix> EvaluatedLocalPose;
-    if (!AnimationSequence->GetBonePose(AnimationTime, SkeletalMesh, EvaluatedLocalPose))
+    if (!NewObject)
     {
-        return false;
+        UE_LOG_WARNING("[SkeletalMeshComponent] Failed to create anim instance for mode: %d", static_cast<int32>(AnimationMode));
+        return;
     }
 
-    CurrentLocalPose = EvaluatedLocalPose;
-    UpdateCurrentGlobalPose();
-    MarkSkinningDirty();
-    MarkBoundsDirty();
-    return true;
+    AnimInstance = Cast<UAnimInstance>(NewObject);
+    if (!AnimInstance)
+    {
+        UE_LOG_WARNING("[SkeletalMeshComponent] Created object is not UAnimInstance: %s", NewObject->GetTypeInfo()->name);
+        UObjectManager::Get().DestroyObject(NewObject);
+        return;
+    }
+
+    AnimInstance->Initialize(this);
+}
+
+void USkeletalMeshComponent::DestroyAnimInstance()
+{
+    if (!AnimInstance)
+    {
+        return;
+    }
+
+    if (UObjectManager::Get().ContainsObject(AnimInstance))
+    {
+        AnimInstance->Uninitialize();
+        UObjectManager::Get().DestroyObject(AnimInstance);
+    }
+    AnimInstance = nullptr;
+}
+
+UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const
+{
+    return Cast<UAnimSingleNodeInstance>(AnimInstance);
+}
+
+UAnimSingleNodeInstance* USkeletalMeshComponent::EnsureSingleNodeInstance()
+{
+    if (AnimationMode != EAnimationMode::SingleNode)
+    {
+        SetAnimationMode(EAnimationMode::SingleNode);
+    }
+    else if (!GetSingleNodeInstance())
+    {
+        RecreateAnimInstance();
+    }
+
+    return GetSingleNodeInstance();
+}
+
+void USkeletalMeshComponent::ResetToBindPose()
+{
+    InitializePoseFromBindPose();
+    MarkPoseDirty();
 }
 
 void USkeletalMeshComponent::SetBoneLocalTransform(int32 BoneIndex, const FMatrix& NewLocalTransform)
@@ -141,13 +378,11 @@ void USkeletalMeshComponent::SetBoneLocalTransform(int32 BoneIndex, const FMatri
     }
 
     CurrentLocalPose[BoneIndex] = NewLocalTransform;
-    UpdateCurrentGlobalPose();
-    MarkSkinningDirty();
+    MarkPoseDirty();
 }
 
 const FMatrix& USkeletalMeshComponent::GetBoneLocalTransform(int32 BoneIndex) const
 {
-	// fallback은 identity
     static const FMatrix Identity = FMatrix::Identity;
 
     if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(CurrentLocalPose.size()))
@@ -160,6 +395,8 @@ const FMatrix& USkeletalMeshComponent::GetBoneLocalTransform(int32 BoneIndex) co
 
 FMatrix USkeletalMeshComponent::GetBoneGlobalTransform(int32 BoneIndex) const
 {
+    const_cast<USkeletalMeshComponent*>(this)->EnsurePoseUpdated();
+
     if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(CurrentGlobalPose.size()))
     {
         return FMatrix::Identity;
@@ -186,11 +423,12 @@ void USkeletalMeshComponent::SetBoneGlobalTransform(int32 BoneIndex, const FMatr
         return;
     }
 
-    int32 ParentIndex = Bones[BoneIndex].ParentIndex;
+    const int32 ParentIndex = Bones[BoneIndex].ParentIndex;
 
     FMatrix ParentGlobalTransform;
     if (ParentIndex >= 0)
     {
+        EnsurePoseUpdated();
         ParentGlobalTransform = CurrentGlobalPose[ParentIndex] * GetWorldMatrix();
     }
     else
@@ -198,7 +436,6 @@ void USkeletalMeshComponent::SetBoneGlobalTransform(int32 BoneIndex, const FMatr
         ParentGlobalTransform = GetWorldMatrix();
     }
 
-    // Local = Global * ParentGlobal.Inverse
-    FMatrix NewLocalTransform = NewGlobalTransform * ParentGlobalTransform.GetInverse();
+    const FMatrix NewLocalTransform = NewGlobalTransform * ParentGlobalTransform.GetInverse();
     SetBoneLocalTransform(BoneIndex, NewLocalTransform);
 }

@@ -1,7 +1,11 @@
-﻿#pragma once
+#pragma once
 #include "Component/SceneComponent.h"
 
+#include "LightComponentBase.generated.h"
+
+UCLASS()
 class ULightComponentBase : public USceneComponent {
+    GENERATED_BODY_ULightComponentBase()
 public:
 	DECLARE_CLASS(ULightComponentBase, USceneComponent)
 	ULightComponentBase() = default;
@@ -14,8 +18,11 @@ protected:
 	~ULightComponentBase() = default;
 
 public:
-    FColor LightColor = FColor::White();
+    UPROPERTY(EditAnywhere)
+	FColor LightColor = FColor::White();
+	UPROPERTY(EditAnywhere)
 	float Intensity = 1.0f;
 
+	UPROPERTY(EditAnywhere)
 	bool bCastShadows = true;
 };

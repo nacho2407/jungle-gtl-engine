@@ -1205,7 +1205,7 @@ void FRenderer::InitializePassBatchers()
 			}
 			else if (Cmd.Type == ERenderCommandType::DebugBone)
 			{
-				const auto& B = Cmd.Constants.Bone;
+				const auto& B = Cmd.Constants.DebugBone;
 				EditorOverlayLineBatcher.AddBoneOctahedron(B.Start, B.End, B.Color, B.WidthRatio);
 
 				// 양 끝점 sphere — 본 길이에 비례한 작은 와이어 구.

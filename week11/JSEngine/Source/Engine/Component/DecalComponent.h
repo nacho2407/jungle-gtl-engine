@@ -1,11 +1,15 @@
-﻿#pragma once
+#pragma once
+
+#include "DecalComponent.generated.h"
 
 #include "Component/PrimitiveComponent.h"
 
 class UMaterialInterface;
 
+UCLASS()
 class UDecalComponent : public UPrimitiveComponent
 {
+    GENERATED_BODY_UDecalComponent()
 public:
 	DECLARE_CLASS(UDecalComponent, UPrimitiveComponent)
 
@@ -46,15 +50,23 @@ private:
 	void TickFadeOut();
 
 private:
+    UPROPERTY(EditAnywhere)
 	TArray<UMaterialInterface*> Materials;
+    UPROPERTY(EditAnywhere)
 	FVector DecalSize = FVector(5.0f, 5.0f, 5.0f);
+    UPROPERTY(EditAnywhere)
 	FColor DecalColor = FColor::White();
 	bool bDebugLine = true;
 
+    UPROPERTY(EditAnywhere)
 	float FadeStartDelay = 0.0f;
+    UPROPERTY(EditAnywhere)
 	float FadeDuration = 0.0f;
+    UPROPERTY(EditAnywhere)
 	float FadeInDuration = 0.0f;
+    UPROPERTY(EditAnywhere)
 	float FadeInStartDelay = 0.0f;
+    UPROPERTY(EditAnywhere)
 	bool bDestroyOwnerAfterFade = false;
 
 	float LifeTime = 0.0f;

@@ -1,7 +1,9 @@
-﻿#pragma once
+#pragma once
 #include "GameFramework/AActor.h"
 #include "Component/CameraComponent.h"
 #include "Camera/CameraModifier_CameraShake.h"
+
+#include "PlayerCameraManager.generated.h"
 
 
 class UCameraComponent;
@@ -17,8 +19,10 @@ enum class ECameraBlendType
     SmoothStep
 };
 
+UCLASS()
 class APlayerCameraManager : public AActor
 {
+    GENERATED_BODY_APlayerCameraManager()
 public:
     ~APlayerCameraManager() override;
 

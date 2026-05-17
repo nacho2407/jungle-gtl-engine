@@ -1,4 +1,5 @@
-﻿#include "Camera/CameraShakeBase.h"
+#include "Camera/CameraShakeBase.h"
+#include "Core/ReflectionUtils.h"
 
 DEFINE_CLASS(UCameraShakePattern, UObject)
 DEFINE_CLASS(UCameraShakeBase, UObject)
@@ -169,7 +170,7 @@ void UCameraShakePattern::GetCameraShakeInfo(FCameraShakeInfo& OutCameraInfo) co
 
 void UCameraShakePattern::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UObject::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
     OutProps.push_back({ "Duration", EPropertyType::Float, &Duration });
     OutProps.push_back({ "BlendInTime", EPropertyType::Float, &BlendInTime });

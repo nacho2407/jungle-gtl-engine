@@ -1,5 +1,5 @@
 ﻿#include "StaticMeshComponent.h"
-
+#include "Core/ReflectionUtils.h"
 #include <cfloat>
 #include <cstring>
 
@@ -103,7 +103,7 @@ bool UStaticMeshComponent::HasValidMesh() const
 
 void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UMeshComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     OutProps.push_back({ "StaticMesh", EPropertyType::String, &StaticMeshAssetPath });
 	OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 }
@@ -137,6 +137,11 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 
 void UStaticMeshComponent::UpdateWorldAABB() const
 {
+    if (!bBoundsDirty && !bTransformDirty)
+    {
+        return;
+    }
+
     WorldAABB.Reset();
 
     if (!HasValidMesh())
@@ -183,7 +188,7 @@ bool UStaticMeshComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult
         return false;
     }
 
-    EnsureBoundsUpdated();
+    UpdateWorldAABB();
 
     float BoxT = 0.0f;
     if (!WorldAABB.IntersectRay(Ray, BoxT))
@@ -264,7 +269,7 @@ bool UStaticMeshComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult
 
 const FAABB& UStaticMeshComponent::GetWorldAABB() const
 {
-    EnsureBoundsUpdated();
+    UpdateWorldAABB();
     return WorldAABB;
 }
 
@@ -296,20 +301,4 @@ void UStaticMeshComponent::MarkBoundsDirty()
 void UStaticMeshComponent::MarkRenderStateDirty()
 {
     bRenderStateDirty = true;
-}
-
-void UStaticMeshComponent::EnsureBoundsUpdated() const
-{
-    if (!bBoundsDirty && !bTransformDirty)
-    {
-        return;
-    }
-
-    if (bTransformDirty)
-    {
-        (void)GetWorldMatrix();
-        return;
-    }
-
-    const_cast<UStaticMeshComponent*>(this)->UpdateWorldAABB();
 }

@@ -334,7 +334,7 @@ bool FEditorViewer::TryPickBone(float LocalX, float LocalY, int32& OutBoneIndex)
         return false;
     }
 
-    SkelComp->EnsureSkinningUpdated();
+    SkelComp->EnsurePoseUpdated();
 
     const FViewportCamera& Camera = *Client.GetCamera();
     const float ViewportWidth = static_cast<float>(Rect.Width);

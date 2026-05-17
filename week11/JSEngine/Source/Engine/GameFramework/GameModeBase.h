@@ -1,13 +1,17 @@
 #pragma once
 
+#include "GameModeBase.generated.h"
+
 #include "GameFramework/AActor.h"
 
 class APawn;
 class APlayerController;
 class FViewportCamera;
 
+UCLASS()
 class AGameModeBase : public AActor
 {
+    GENERATED_BODY_AGameModeBase()
 public:
     DECLARE_CLASS(AGameModeBase, AActor)
 

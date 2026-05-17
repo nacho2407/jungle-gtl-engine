@@ -1,4 +1,5 @@
-#include "SkinnedMeshComponent.h"
+﻿#include "SkinnedMeshComponent.h"
+#include "Core/ReflectionUtils.h"
 
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Material.h"
@@ -67,7 +68,7 @@ void USkinnedMeshComponent::Serialize(FArchive& Ar)
 
 void USkinnedMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UMeshComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     OutProps.push_back({ "SkeletalMesh", EPropertyType::String, &SkeletalMeshPath });
     OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 }
@@ -142,11 +143,16 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
 
     MarkBoundsDirty();
     MarkRenderStateDirty();
-    MarkSkinningDirty();
+    MarkPoseDirty();
 }
 
 void USkinnedMeshComponent::UpdateWorldAABB() const
 {
+    if (!bBoundsDirty && !bTransformDirty)
+    {
+        return;
+    }
+
     WorldAABB.Reset();
 
     if (!HasValidMesh())
@@ -155,27 +161,10 @@ void USkinnedMeshComponent::UpdateWorldAABB() const
         return;
     }
 
-    if (bEnableCPUSkinning)
-    {
-        const_cast<USkinnedMeshComponent*>(this)->EnsureSkinningUpdated();
-    }
-
-    const FMatrix& WorldMatrix = GetWorldMatrix();
-
-    if (bEnableCPUSkinning && !SkinnedVertices.empty())
-    {
-        for (const FSkeletalMeshVertex& Vertex : SkinnedVertices)
-        {
-            WorldAABB.Expand(WorldMatrix.TransformPosition(Vertex.Position));
-        }
-
-        bBoundsDirty = false;
-        return;
-    }
-
     const FAABB& LocalBounds = SkeletalMesh->GetLocalBounds();
     if (LocalBounds.IsValid())
     {
+        const FMatrix& WorldMatrix = GetWorldMatrix();
         const FVector LocalCorners[8] = {
             FVector(LocalBounds.Min.X, LocalBounds.Min.Y, LocalBounds.Min.Z),
             FVector(LocalBounds.Max.X, LocalBounds.Min.Y, LocalBounds.Min.Z),
@@ -204,9 +193,9 @@ bool USkinnedMeshComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResul
     }
 
     // 현재 pose 기준 SkinnedVertices가 필요
-    EnsureSkinningUpdated();
+    EnsureCPUSkinnedVerticesUpdated();
 
-    EnsureBoundsUpdated();
+    UpdateWorldAABB();
 
     float BoxT = 0.0f;
     if (!WorldAABB.IntersectRay(Ray, BoxT))
@@ -288,7 +277,7 @@ bool USkinnedMeshComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResul
 
 const FAABB& USkinnedMeshComponent::GetWorldAABB() const
 {
-    EnsureBoundsUpdated();
+    UpdateWorldAABB();
     return WorldAABB;
 }
 
@@ -299,28 +288,17 @@ bool USkinnedMeshComponent::ConsumeRenderStateDirty()
     return bWasDirty;
 }
 
-void USkinnedMeshComponent::EnsureSkinningUpdated()
+void USkinnedMeshComponent::EnsurePoseUpdated()
 {
-    if (!bEnableCPUSkinning)
-    {
-        return;
-    }
-
-    if (!bSkinningDirty)
-    {
-        return;
-    }
-
-    if (!HasValidMesh())
+    if (!bPoseDirty)
     {
         return;
     }
 
     UpdateCurrentGlobalPose();
     UpdateSkinningMatrices();
-    SkinVerticesCPU();
 
-    bSkinningDirty = false;
+    bPoseDirty = false;
     MarkBoundsDirty();
     MarkRenderStateDirty();
 
@@ -332,9 +310,21 @@ void USkinnedMeshComponent::EnsureSkinningUpdated()
         const FName& SocketName = Child->GetAttachSocketName();
         if (SocketName != FName::None && HasSocket(SocketName))
         {
-            Child->MarkTransformDirty();   // 자식 손주까지 재귀 dirty 전파됨
+            Child->MarkTransformDirty(); // 자식 손주까지 재귀 dirty 전파됨
         }
     }
+}
+
+void USkinnedMeshComponent::EnsureCPUSkinnedVerticesUpdated()
+{
+    if (!bCPUSkinnedVerticesDirty)
+    {
+        return;
+    }
+
+    EnsurePoseUpdated();
+    SkinVerticesCPU();
+    bCPUSkinnedVerticesDirty = false;
 }
 
 bool USkinnedMeshComponent::HasSocket(const FName& SocketName) const
@@ -344,6 +334,8 @@ bool USkinnedMeshComponent::HasSocket(const FName& SocketName) const
 
 FMatrix USkinnedMeshComponent::GetBoneWorldMatrix(int32 BoneIndex) const
 {
+    const_cast<USkinnedMeshComponent*>(this)->EnsurePoseUpdated();
+
     if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(CurrentGlobalPose.size()))
     {
         return GetWorldMatrix();
@@ -354,6 +346,8 @@ FMatrix USkinnedMeshComponent::GetBoneWorldMatrix(int32 BoneIndex) const
 
 FTransform USkinnedMeshComponent::GetSocketTransform(const FName& SocketName) const
 {
+    const_cast<USkinnedMeshComponent*>(this)->EnsurePoseUpdated();
+
     if (!SkeletalMesh)
     {
         return GetWorldTransform();
@@ -385,7 +379,6 @@ void USkinnedMeshComponent::InitializePoseFromBindPose()
 {
     CurrentLocalPose.clear();
     CurrentGlobalPose.clear();
-    SkinningMatrices.clear();
 
     if (!HasValidMesh())
     {
@@ -397,13 +390,11 @@ void USkinnedMeshComponent::InitializePoseFromBindPose()
 
     CurrentLocalPose.resize(BoneCount);
     CurrentGlobalPose.resize(BoneCount);
-    SkinningMatrices.resize(BoneCount);
 
     for (int32 BoneIndex = 0; BoneIndex < BoneCount; BoneIndex++)
     {
         CurrentLocalPose[BoneIndex] = Bones[BoneIndex].LocalBindTransform;
         CurrentGlobalPose[BoneIndex] = Bones[BoneIndex].GlobalBindTransform;
-        SkinningMatrices[BoneIndex] = FMatrix::Identity; // 계산은 초기화 함수에서 하지 않고 별도의 업데이트 함수에서 진행
     }
 }
 
@@ -546,12 +537,4 @@ void USkinnedMeshComponent::SkinVerticesCPU()
     }
 }
 
-void USkinnedMeshComponent::EnsureBoundsUpdated() const
-{
-    if (!bBoundsDirty && !bTransformDirty)
-    {
-        return;
-    }
 
-    const_cast<USkinnedMeshComponent*>(this)->UpdateWorldAABB();
-}

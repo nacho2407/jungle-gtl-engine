@@ -1,7 +1,8 @@
-﻿#include "MeshComponent.h"
+#include "MeshComponent.h"
 #include "Render/Resource/Material.h"
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
+#include "Core/ReflectionUtils.h"
 
 #include <filesystem>
 
@@ -116,7 +117,7 @@ int32 UMeshComponent::GetNumMaterials() const
 
 void UMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	UPrimitiveComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
 	OutProps.push_back({ "Scroll U", EPropertyType::Float, &ScrollUV.first,  -1.0f, 1.0f, 0.01f });
 	OutProps.push_back({ "Scroll V", EPropertyType::Float, &ScrollUV.second, -1.0f, 1.0f, 0.01f });

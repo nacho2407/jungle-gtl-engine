@@ -1,6 +1,7 @@
-﻿#include "SpotlightComponent.h"
+#include "SpotlightComponent.h"
 #include "Object/ObjectFactory.h"
 #include <algorithm>
+#include "Core/ReflectionUtils.h"
 
 namespace
 {
@@ -26,7 +27,7 @@ void USpotlightComponent::PostDuplicate(UObject* Original)
 
 void USpotlightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	UPointLightComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 	constexpr EPropertyUsageFlags EditAndAnimate =
 		EPropertyUsageFlags::Editable | EPropertyUsageFlags::Animatable;
 	OutProps.push_back({ "Inner Cone Angle", EPropertyType::Float, &InnerConeAngle, 0.0f, 0.0f, 0.1f, nullptr, 0, nullptr, EditAndAnimate });

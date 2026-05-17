@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CurveFloatAsset.generated.h"
+
 #include "Core/Containers/Array.h"
 #include "Core/Containers/String.h"
 #include "Object/Object.h"
@@ -45,8 +47,10 @@ private:
     float ResolveTangent(int32 KeyIndex, bool bLeaveTangent) const;
 };
 
+UCLASS()
 class UCurveFloatAsset : public UObject
 {
+    GENERATED_BODY_UCurveFloatAsset()
 public:
     DECLARE_CLASS(UCurveFloatAsset, UObject)
 

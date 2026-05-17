@@ -1,11 +1,15 @@
-﻿#pragma once
+#pragma once
+
+#include "SkinnedMeshComponent.generated.h"
 
 #include "Asset/SkeletalMesh.h"
 #include "Component/MeshComponent.h"
 #include "Render/Resource/VertexTypes.h"
 
+UCLASS()
 class USkinnedMeshComponent : public UMeshComponent
 {
+    GENERATED_BODY_USkinnedMeshComponent()
 public:
     DECLARE_CLASS(USkinnedMeshComponent, UMeshComponent)
 
@@ -15,6 +19,10 @@ public:
     void Serialize(FArchive& Ar) override;
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
+
+    void UpdateWorldAABB() const override;
+    bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
+    virtual const FAABB& GetWorldAABB() const;
 
     void SetSkeletalMesh(USkeletalMesh* InSkeletalMesh);
     USkeletalMesh* GetSkeletalMesh() const { return SkeletalMesh; }
@@ -26,19 +34,18 @@ public:
     const TArray<FSkeletalMeshVertex>& GetSkinnedVertices() const { return SkinnedVertices; }
 
     // 본 i의 월드 변환 (component-space pose × actor world). 인덱스가 범위 밖이면 컴포넌트 월드 행렬을 반환.
-    // 본 자세 최신화는 GetSocketTransform과 동일 컨벤션 — 호출 측이 사전에 EnsureSkinningUpdated를 보장.
+    // 호출 측이 사전에 EnsurePoseUpdated를 보장
     FMatrix GetBoneWorldMatrix(int32 BoneIndex) const;
 
-    void MarkSkinningDirty() { bSkinningDirty = true; }
-
-    void UpdateWorldAABB() const override;
-    bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
-
-	virtual const FAABB& GetWorldAABB() const;
-
     bool ConsumeRenderStateDirty();
+    void MarkPoseDirty()
+    {
+        bPoseDirty = true;
+        bCPUSkinnedVerticesDirty = true;
+    }
 
-    void EnsureSkinningUpdated();
+    void EnsurePoseUpdated();
+    void EnsureCPUSkinnedVerticesUpdated();
 
     // Socket API override — mesh asset의 Sockets 정의를 사용.
     bool       HasSocket(const FName& SocketName) const override;
@@ -48,18 +55,14 @@ protected:
     void InitializePoseFromBindPose();
     void UpdateCurrentGlobalPose();
     void UpdateSkinningMatrices();
-
-	/**
-	 * @brief CPU skinning 핵심 함수
-	 */
     void SkinVerticesCPU();
-
     void MarkBoundsDirty() { bBoundsDirty = true; }
+
     void MarkRenderStateDirty() { bRenderStateDirty = true; }
-    void EnsureBoundsUpdated() const;
 
 protected:
     USkeletalMesh* SkeletalMesh = nullptr;
+    UPROPERTY(EditAnywhere)
     FString SkeletalMeshPath;
 
     TArray<FMatrix> CurrentLocalPose;
@@ -68,8 +71,8 @@ protected:
 
     TArray<FSkeletalMeshVertex> SkinnedVertices;
 
-    bool bEnableCPUSkinning = true;
-    bool bSkinningDirty = true;
+    bool bPoseDirty = true;
+    bool bCPUSkinnedVerticesDirty = true;
 
     mutable bool bBoundsDirty = true;
     bool bRenderStateDirty = true;

@@ -1,4 +1,5 @@
-﻿#include "GameFramework/PrimitiveActors.h"
+#include "GameFramework/PrimitiveActors.h"
+#include "Core/ReflectionUtils.h"
 
 #include "Component/FireballComponent.h"
 #include "Component/DecalComponent.h"
@@ -1147,7 +1148,7 @@ void UMainSceneDestructibleComponent::Serialize(FArchive& Ar)
 
 void UMainSceneDestructibleComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UActorComponent::GetEditableProperties(OutProps);
+    ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
     OutProps.push_back({ "Auto Start", EPropertyType::Bool, &bAutoStart });
     OutProps.push_back({ "Slice Duration", EPropertyType::Float, &SliceDuration, 0.05f, 10.0f, 0.05f });

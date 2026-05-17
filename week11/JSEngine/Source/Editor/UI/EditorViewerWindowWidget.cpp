@@ -1200,7 +1200,7 @@ void FEditorViewerWindowWidget::AddSocketOnBone(int32 BoneIdx)
     // socket-attached children의 transform이 새로 계산되도록 본 자세 dirty 전파 트리거.
     if (CachedSkComp)
     {
-        CachedSkComp->MarkSkinningDirty();
+        CachedSkComp->MarkPoseDirty();
     }
 }
 
@@ -1256,7 +1256,7 @@ void FEditorViewerWindowWidget::DeleteSocket(int32 SocketIdx)
 
     if (CachedSkComp)
     {
-        CachedSkComp->MarkSkinningDirty();
+        CachedSkComp->MarkPoseDirty();
     }
 }
 
@@ -1312,7 +1312,7 @@ void FEditorViewerWindowWidget::DrawSocketInspector()
                     Socket.BoneIndex = i;
                     RebuildBoneToSocketIndices(CachedMesh);   // 트리에서 새 본 밑으로 이동
                     bMeshDirty = true;
-                    if (CachedSkComp) CachedSkComp->MarkSkinningDirty();
+                    if (CachedSkComp) CachedSkComp->MarkPoseDirty();
                 }
             }
             if (bSelected) ImGui::SetItemDefaultFocus();
@@ -1330,7 +1330,7 @@ void FEditorViewerWindowWidget::DrawSocketInspector()
     if (bChanged)
     {
         bMeshDirty = true;
-        if (CachedSkComp) CachedSkComp->MarkSkinningDirty();
+        if (CachedSkComp) CachedSkComp->MarkPoseDirty();
     }
 
     ImGui::Separator();
@@ -1420,7 +1420,7 @@ void FEditorViewerWindowWidget::DrawRenameModal()
         }
 
         bMeshDirty = true;
-        if (CachedSkComp) CachedSkComp->MarkSkinningDirty();
+        if (CachedSkComp) CachedSkComp->MarkPoseDirty();
         RenameSocketIdx = -1;
         ImGui::CloseCurrentPopup();
     }

@@ -1,38 +1,61 @@
-﻿#pragma once
+#pragma once
 
+#include "SkeletalMeshComponent.generated.h"
+
+#include "Animation/AnimationTypes.h"
 #include "Component/SkinnedMeshComponent.h"
 
-class UAnimSequence;
+class UAnimInstance;
+class UAnimSingleNodeInstance;
+class UAnimationAsset;
+struct FTransform;
 
-/**
- * @brief Unreal Engine 스타일에서는 skinned mesh가 skeleton을 이용하는 mesh를 표현하고,
- *        skeletal mesh는 실제로 actor에 붙어서 애니메이션을 붙일 수 있는 component로 사용되고 있으므로
- *        USkeletalMeshComponent 또한 해당 방식대로 우선은 얇게 유지.
- *        핵심 로직들은 대부분 USkinnedMeshComponent로 옮겼습니다.
- */
+UCLASS()
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
+    GENERATED_BODY_USkeletalMeshComponent()
 public:
     DECLARE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 
     USkeletalMeshComponent() = default;
-    ~USkeletalMeshComponent() override = default;
+    ~USkeletalMeshComponent() override;
 
     void TickComponent(float DeltaTime) override;
 
     EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_SkeletalMesh; }
 
-    void ResetToBindPose();
+    void SetAnimationMode(EAnimationMode InMode);
+    EAnimationMode GetAnimationMode() const;
+    void SetAnimInstanceClass(const FString& InClassName);
+    UAnimInstance* GetAnimInstance() const;
+    void RecreateAnimInstance();
+    bool ApplyAnimationLocalPose(const TArray<FTransform>& LocalPose);
+    bool RefreshAnimationPose();
 
-    void SetAnimation(UAnimSequence* InSequence);
+    void PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping);
+    void SetAnimation(UAnimationAsset* NewAnimToPlay);
+    UAnimationAsset* GetAnimation() const;
+    void Play();
+    void Pause();
+    void Stop();
+    void SetPosition(float TimeSeconds, bool bFireNotifies = false);
+    float GetPosition() const;
+    void SetPlayRate(float InPlayRate);
+    float GetPlayRate() const;
+    void SetLooping(bool bInLooping);
+    bool IsLooping() const;
+    bool IsPlaying() const;
+    float GetPlayLength() const;
+
     bool SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName = FString());
     void SetAnimationTime(float Time);
     void TickAnimation(float DeltaTime);
     void PlayAnim(bool bLoop);
     void StopAnim();
-    UAnimSequence* GetAnimation() const { return AnimationSequence; }
-    float GetAnimationTime() const { return AnimationTime; }
-    bool IsAnimPlaying() const { return bAnimationPlaying; }
+    float GetAnimationTime() const { return GetPosition(); }
+    bool IsAnimPlaying() const { return IsPlaying(); }
+
+    void ResetToBindPose();
 
     void SetBoneLocalTransform(int32 BoneIndex, const FMatrix& NewLocalTransform);
     const FMatrix& GetBoneLocalTransform(int32 BoneIndex) const;
@@ -41,12 +64,12 @@ public:
     void SetBoneGlobalTransform(int32 BoneIndex, const FMatrix& NewGlobalTransform);
 
 private:
-    bool ApplyAnimationPose();
+    void DestroyAnimInstance();
+    UAnimSingleNodeInstance* GetSingleNodeInstance() const;
+    UAnimSingleNodeInstance* EnsureSingleNodeInstance();
 
 private:
-    UAnimSequence* AnimationSequence = nullptr;
-    float AnimationTime = 0.0f;
-    float AnimationPlayRate = 1.0f;
-    bool bAnimationPlaying = false;
-    bool bAnimationLooping = false;
+    EAnimationMode AnimationMode = EAnimationMode::None;
+    FString AnimInstanceClassName;
+    UAnimInstance* AnimInstance = nullptr;
 };

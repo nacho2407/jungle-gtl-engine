@@ -1,4 +1,4 @@
-#include "EditorOverlayCollector.h"
+﻿#include "EditorOverlayCollector.h"
 
 #include "Component/BillboardComponent.h"
 #include "Component/DecalComponent.h"
@@ -162,11 +162,11 @@ namespace
 
         FRenderCommand Cmd = {};
         Cmd.Type = ERenderCommandType::DebugBone;
-        Cmd.Constants.Bone.Start               = ParentWorld.GetTranslation();
-        Cmd.Constants.Bone.End                 = ChildWorld.GetTranslation();
-        Cmd.Constants.Bone.Color               = Color;
-        Cmd.Constants.Bone.WidthRatio          = WidthRatio;
-        Cmd.Constants.Bone.EndpointRadiusRatio = EndpointRatio;
+        Cmd.Constants.DebugBone.Start               = ParentWorld.GetTranslation();
+        Cmd.Constants.DebugBone.End                 = ChildWorld.GetTranslation();
+        Cmd.Constants.DebugBone.Color               = Color;
+        Cmd.Constants.DebugBone.WidthRatio          = WidthRatio;
+        Cmd.Constants.DebugBone.EndpointRadiusRatio = EndpointRatio;
         RenderBus.AddCommand(ERenderPass::EditorOverlay, Cmd);
         return true;
     }
@@ -179,6 +179,7 @@ namespace
 void FEditorOverlayCollector::CollectSkeletonBones(USkeletalMeshComponent* SkComp, FRenderBus& RenderBus) const
 {
     if (!SkComp || !SkComp->HasValidMesh()) return;
+    SkComp->EnsurePoseUpdated();
 
     const USkeletalMesh* Mesh = SkComp->GetSkeletalMesh();
     const TArray<FBoneInfo>& Bones = Mesh->GetBones();
@@ -194,6 +195,7 @@ void FEditorOverlayCollector::CollectSkeletonBones(USkeletalMeshComponent* SkCom
 void FEditorOverlayCollector::CollectSingleBone(USkeletalMeshComponent* SkComp, int32 BoneIndex, FRenderBus& RenderBus) const
 {
     if (!SkComp || !SkComp->HasValidMesh()) return;
+    SkComp->EnsurePoseUpdated();
 
     const USkeletalMesh* Mesh = SkComp->GetSkeletalMesh();
     const TArray<FBoneInfo>& Bones = Mesh->GetBones();
@@ -305,16 +307,21 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
             USkeletalMesh* SkeletalMesh = SkeletalMeshComp->GetSkeletalMesh();
             if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData()) continue;
 
-            // 메인 render pass(CollectWorld)가 이 함수 *전*에 같은 프레임에 돌면서
-            // skinning + 버퍼 업로드를 이미 끝낸 상태. 여기서는 dirty flag를 소비하지 않고
-            // bNeedsUpload=false로 캐시된 버퍼만 가져온다.
-            SkeletalMeshComp->EnsureSkinningUpdated();
-            MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
-                SkeletalMeshComp->GetUUID(),
-                SkeletalMesh,
-                SkeletalMeshComp->GetSkinnedVertices(),
-                SkeletalMesh->GetIndices(),
-                /*bNeedsUpload=*/ false);
+            if (RenderBus.GetSkinningMode() == ESkinningMode::CPU)
+            {
+                SkeletalMeshComp->EnsureCPUSkinnedVerticesUpdated();
+                MeshBuffer = MeshBufferManager.GetCPUSkinnedMeshBuffer(
+                    SkeletalMeshComp->GetUUID(),
+                    SkeletalMesh,
+                    SkeletalMeshComp->GetSkinnedVertices(),
+                    SkeletalMesh->GetIndices(),
+                    false);
+            }
+            else if (RenderBus.GetSkinningMode() == ESkinningMode::GPU)
+            {
+                SkeletalMeshComp->EnsurePoseUpdated();
+                MeshBuffer = MeshBufferManager.GetGPUSkinningSourceBuffer(SkeletalMesh);
+            }
         }
         else
         {
@@ -474,8 +481,7 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
         }
         bHasSelectionMask = true;
 
-        UDecalComponent* DecalComp = Cast<UDecalComponent>(primitiveComponent);
-        if (DecalComp)
+        if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Decal)
         {
             CollectOBBCommand(primitiveComponent, ShowFlags, RenderBus);
         }

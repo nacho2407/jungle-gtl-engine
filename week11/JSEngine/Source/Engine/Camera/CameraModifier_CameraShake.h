@@ -1,11 +1,15 @@
-﻿#pragma once
+#pragma once
 #include "CameraModifier.h"
 #include "CameraShakeBase.h"
 
+#include "CameraModifier_CameraShake.generated.h"
+
 #include <type_traits>
 
+UCLASS()
 class UCameraModifier_CameraShake : public UCameraModifier
 {
+    GENERATED_BODY_UCameraModifier_CameraShake()
 public:
     UCameraModifier_CameraShake();
     virtual ~UCameraModifier_CameraShake() override;
