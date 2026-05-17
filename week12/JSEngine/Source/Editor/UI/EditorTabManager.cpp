@@ -1,8 +1,32 @@
 #include "Editor/UI/EditorTabManager.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <utility>
+
+namespace
+{
+    FString GetLowerExtension(const FString& Path)
+    {
+        const size_t DotIndex = Path.find_last_of('.');
+        if (DotIndex == FString::npos)
+        {
+            return FString();
+        }
+
+        FString Extension = Path.substr(DotIndex);
+        std::transform(Extension.begin(), Extension.end(), Extension.begin(),
+            [](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
+        return Extension;
+    }
+
+    bool IsAnimSequenceViewerPath(const FString& Path)
+    {
+        const FString Extension = GetLowerExtension(Path);
+        return Extension == ".animseq" || Extension == ".sequence";
+    }
+}
 
 bool FEditorTabId::Matches(const FEditorTabId& Other) const
 {
@@ -12,7 +36,9 @@ bool FEditorTabId::Matches(const FEditorTabId& Other) const
 FEditorTabId MakeEditorViewerTabId(const FString& ViewerFileName, const void* FallbackAddress)
 {
 	FEditorTabId TabId;
-	TabId.Kind = EEditorTabKind::SkeletalMeshViewer;
+	TabId.Kind = IsAnimSequenceViewerPath(ViewerFileName)
+		? EEditorTabKind::AnimSequenceViewer
+		: EEditorTabKind::SkeletalMeshViewer;
 	TabId.PayloadId = ViewerFileName;
 	if (TabId.PayloadId.empty() && FallbackAddress)
 	{
@@ -30,8 +56,11 @@ FString MakeEditorViewerTabLabel(const FString& ViewerFileName)
 		return "Skeletal Mesh Viewer";
 	}
 
+	const bool bAnimSequence = IsAnimSequenceViewerPath(ViewerFileName);
+
 	const size_t SlashIndex = ViewerFileName.find_last_of("/\\");
-	return SlashIndex == FString::npos ? ViewerFileName : ViewerFileName.substr(SlashIndex + 1);
+	FString FileName = SlashIndex == FString::npos ? ViewerFileName : ViewerFileName.substr(SlashIndex + 1);
+	return bAnimSequence ? FString("Anim: ") + FileName : FileName;
 }
 
 FEditorTabId MakeRuntimeUIPreviewTabId()

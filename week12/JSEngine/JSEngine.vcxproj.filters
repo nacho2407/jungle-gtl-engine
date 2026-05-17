@@ -315,7 +315,13 @@
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimationAsset.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimationStateMachine.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Animation\UDebugAnimSequence.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UStateMachineAnimInstance.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Asset\UCurveFloatAsset.gen.cpp">
@@ -810,7 +816,13 @@
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimationStateMachine.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\StateMachineAnimInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\TimelinePlayer.cpp">
@@ -1033,6 +1045,9 @@
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Logging\Log.cpp">
+      <Filter>Source\Engine\Core\Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Logging\SkinningStats.cpp">
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Logging\Stats.cpp">
@@ -1723,7 +1738,16 @@
     <ClInclude Include="Source\Engine\Animation\AnimTypes.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimationRuntime.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimationStateMachine.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Animation\CurvePlayback.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\StateMachineAnimInstance.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\TimelinePlayer.h">
@@ -2000,6 +2024,9 @@
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Logging\Log.h">
+      <Filter>Source\Engine\Core\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Logging\SkinningStats.h">
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Logging\Stats.h">

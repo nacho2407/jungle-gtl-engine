@@ -1,6 +1,7 @@
 ﻿#include "Editor/UI/EditorViewportOverlayWidget.h"
 
 #include "Core/ResourceManager.h"
+#include "Core/Logging/SkinningStats.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/Settings/EditorSettings.h"
@@ -820,6 +821,36 @@ void FEditorViewportOverlayWidget::RenderGroupedStatOverlay(float DeltaTime)
             ImGui::Text("Point             : %d", LightStats->PointLightCount);
             ImGui::Text("Spot              : %d", LightStats->SpotlightCount);
             ImGui::Text("Shadow Cast       : %d", LightStats->ShadowCastingLightCount);
+        }
+
+        {
+            const FSkinningStatsFrame& SkinStats = FSkinningStats::Get().GetSnapshot();
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::TextUnformatted("[ Skinning ]");
+            ImGui::Text("CPU Frame       : %.3f ms", SkinStats.CPUFrameTimeMs);
+            if (FSkinningStats::Get().ShouldCollectGPUStats())
+            {
+                ImGui::Text("GPU Frame       : %.3f ms", SkinStats.GPUFrameTimeMs);
+            }
+            else
+            {
+                ImGui::TextUnformatted("GPU Frame       : Disabled");
+            }
+            ImGui::Text("CPU Anim/Pose   : %.3f / %.3f ms", SkinStats.CPUAnimationUpdateMs, SkinStats.CPUPoseBuildMs);
+            ImGui::Text("CPU Skin/Upload : %.3f / %.3f ms", SkinStats.CPUSkinningMs, SkinStats.CPUSkinnedVertexBufferUploadMs);
+            ImGui::Text("Upload Bytes    : CPU %.2f KB / Bone %.2f KB",
+                SkinStats.CPUSkinnedVertexBufferUploadBytes / 1024.0f,
+                SkinStats.GPUBoneMatrixUploadBytes / 1024.0f);
+            ImGui::Text("Meshes/Verts    : %u / %llu",
+                SkinStats.VisibleSkinnedMeshCount,
+                static_cast<unsigned long long>(SkinStats.VisibleSkinnedVertexCount));
+            ImGui::Text("Bones/Influence : %llu / %.2f",
+                static_cast<unsigned long long>(SkinStats.TotalBoneCount),
+                SkinStats.GetAvgBoneInfluencePerVertex());
+            ImGui::Text("Pass/Work       : %u / %.0f",
+                SkinStats.SkinnedPassCount,
+                SkinStats.EstimatedGPUVertexSkinningWork);
         }
 
         FShadowAtlasManager& ShadowAtlasManager = FShadowAtlasManager::Get();

@@ -340,12 +340,12 @@ void AStaticMeshActor::InitDefaultComponents()
 void ASkeletalMeshActor::InitDefaultComponents()
 {
 	SkeletalMeshComp = AddComponent<USkeletalMeshComponent>();
-	SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/Hip_Hop_Dancing/Hip_Hop_Dancing.fbx"));
+	SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/Ahri/Ahri.fbx"));
 	SetRootComponent(SkeletalMeshComp);
 
-	if (UAnimSequence* AnimSequence = FResourceManager::Get().LoadAnimSequence("Asset/SkeletalMesh/Hip_Hop_Dancing/Hip_Hop_Dancing.fbx"))
+	if (UAnimSequence* AnimSequence = FResourceManager::Get().LoadAnimSequence("Asset/SkeletalMesh/Ahri/Ahri.fbx"))
 	{
-		AnimSequence->SetPreviewMeshPath("Asset/SkeletalMesh/Hip_Hop_Dancing/Hip_Hop_Dancing.fbx");
+		AnimSequence->SetPreviewMeshPath("Asset/SkeletalMesh/Ahri/Ahri.fbx");
 		SkeletalMeshComp->PlayAnimation(AnimSequence, true);
 	}
 

@@ -2,11 +2,15 @@
 #include "EditorEngine.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/Selection/SelectionManager.h"
+#include "Animation/AnimSequence.h"
+#include "Animation/AnimSingleNodeInstance.h"
 #include "Component/GizmoComponent.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/TransformProxy.h"
 #include "Core/ResourceManager.h"
+#include "Core/AssetPathPolicy.h"
+#include "Core/Paths.h"
 #include "Engine/Geometry/Ray.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "Math/Vector4.h"
@@ -500,10 +504,213 @@ UStaticMeshComponent* FEditorViewer::FindPreviewMesh(const FName& SocketName) co
     return It != SocketPreviewMeshes.end() ? It->second : nullptr;
 }
 
+UAnimSingleNodeInstance* FEditorViewer::GetSingleNodeInstance() const
+{
+    if (!ViewTarget)
+    {
+        return nullptr;
+    }
+
+    USkeletalMeshComponent* SkelComp = ViewTarget->GetSkeletalMeshComponent();
+    return SkelComp ? Cast<UAnimSingleNodeInstance>(SkelComp->GetAnimInstance()) : nullptr;
+}
+
+bool FEditorViewer::ApplyAnimationSequenceToComponent(bool bAutoPlay)
+{
+    if (!ViewTarget || !AnimSequence)
+    {
+        return false;
+    }
+
+    USkeletalMeshComponent* SkelComp = ViewTarget->GetSkeletalMeshComponent();
+    if (!SkelComp)
+    {
+        return false;
+    }
+
+    if (PreviewMeshPath.empty())
+    {
+        PreviewMeshPath = AnimSequence->GetPreviewMeshPath();
+    }
+    if (PreviewMeshPath.empty())
+    {
+        PreviewMeshPath = AnimSequence->GetSourceFilePath();
+    }
+
+    USkeletalMesh* PreviewMesh = PreviewMeshPath.empty()
+        ? nullptr
+        : FResourceManager::Get().LoadSkeletalMesh(PreviewMeshPath);
+
+    if (!PreviewMesh)
+    {
+        SkelComp->Stop();
+        SkelComp->SetAnimation(nullptr);
+        SkelComp->SetSkeletalMesh(nullptr);
+        return false;
+    }
+
+    SkelComp->SetSkeletalMesh(PreviewMesh);
+    SkelComp->PlayAnimation(AnimSequence, true);
+    SkelComp->SetAnimationPosition(0.0f);
+    if (!bAutoPlay)
+    {
+        SkelComp->Pause();
+    }
+
+    return true;
+}
+
+bool FEditorViewer::SetAnimationSequencePreviewMesh(const FString& InPreviewMeshPath)
+{
+    if (!AnimSequence)
+    {
+        return false;
+    }
+
+    PreviewMeshPath = InPreviewMeshPath;
+    return ApplyAnimationSequenceToComponent(IsAnimationPlaying());
+}
+
+void FEditorViewer::RestartAnimation()
+{
+    SetAnimationTime(0.0f);
+    SetAnimationPlaying(true);
+}
+
+void FEditorViewer::SetAnimationPlaying(bool bInPlaying)
+{
+    if (!ViewTarget)
+    {
+        return;
+    }
+
+    USkeletalMeshComponent* SkelComp = ViewTarget->GetSkeletalMeshComponent();
+    if (!SkelComp || !AnimSequence)
+    {
+        return;
+    }
+
+    if (!GetSingleNodeInstance())
+    {
+        ApplyAnimationSequenceToComponent(false);
+    }
+
+    if (bInPlaying)
+    {
+        SkelComp->Play(IsAnimationLooping());
+    }
+    else
+    {
+        SkelComp->Pause();
+    }
+}
+
+void FEditorViewer::SetAnimationLooping(bool bInLooping)
+{
+    if (UAnimSingleNodeInstance* SingleNode = GetSingleNodeInstance())
+    {
+        SingleNode->SetLooping(bInLooping);
+    }
+}
+
+void FEditorViewer::SetAnimationPlayRate(float InPlayRate)
+{
+    if (UAnimSingleNodeInstance* SingleNode = GetSingleNodeInstance())
+    {
+        SingleNode->SetPlayRate(InPlayRate);
+    }
+}
+
+void FEditorViewer::SetAnimationTime(float InTime)
+{
+    if (!GetSingleNodeInstance())
+    {
+        ApplyAnimationSequenceToComponent(false);
+    }
+
+    if (UAnimSingleNodeInstance* SingleNode = GetSingleNodeInstance())
+    {
+        const float Length = SingleNode->GetLength();
+        SingleNode->SetPosition(Length > 0.0f ? std::clamp(InTime, 0.0f, Length) : 0.0f);
+    }
+}
+
+float FEditorViewer::GetAnimationCurrentTime() const
+{
+    if (UAnimSingleNodeInstance* SingleNode = GetSingleNodeInstance())
+    {
+        return SingleNode->GetCurrentTime();
+    }
+    return 0.0f;
+}
+
+float FEditorViewer::GetAnimationLength() const
+{
+    return AnimSequence ? AnimSequence->GetPlayLength() : 0.0f;
+}
+
+float FEditorViewer::GetAnimationPlayRate() const
+{
+    if (UAnimSingleNodeInstance* SingleNode = GetSingleNodeInstance())
+    {
+        return SingleNode->GetPlayRate();
+    }
+    return 1.0f;
+}
+
+bool FEditorViewer::IsAnimationPlaying() const
+{
+    if (UAnimSingleNodeInstance* SingleNode = GetSingleNodeInstance())
+    {
+        return SingleNode->IsPlaying();
+    }
+    return false;
+}
+
+bool FEditorViewer::IsAnimationLooping() const
+{
+    if (UAnimSingleNodeInstance* SingleNode = GetSingleNodeInstance())
+    {
+        return SingleNode->IsLooping();
+    }
+    return false;
+}
+
 void FEditorViewer::ChangeTarget(const FString& InFileName)
 {
     FileName = InFileName;
-    USkeletalMesh* SkelMesh = FResourceManager::Get().LoadSkeletalMesh(InFileName.c_str());
-    if (SkelMesh)
-	    ViewTarget->GetSkeletalMeshComponent()->SetSkeletalMesh(SkelMesh);
+    const FString NormalizedFileName = FPaths::Normalize(InFileName);
+    ClearSelection();
+    ClearAllSocketPreviews();
+    AnimSequence = nullptr;
+    PreviewMeshPath.clear();
+
+    USkeletalMeshComponent* SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+    if (!SkelComp)
+    {
+        return;
+    }
+
+    if (FAssetPathPolicy::IsAnimSequenceAssetPath(NormalizedFileName))
+    {
+        AssetType = EEditorViewerAssetType::AnimSequence;
+        AnimSequence = FResourceManager::Get().LoadAnimSequence(NormalizedFileName);
+        if (AnimSequence)
+        {
+            PreviewMeshPath = AnimSequence->GetPreviewMeshPath();
+            if (PreviewMeshPath.empty())
+            {
+                PreviewMeshPath = AnimSequence->GetSourceFilePath();
+            }
+            ApplyAnimationSequenceToComponent(true);
+        }
+        return;
+    }
+
+    AssetType = EEditorViewerAssetType::SkeletalMesh;
+    SkelComp->Stop();
+    SkelComp->SetAnimation(nullptr);
+
+    USkeletalMesh* SkelMesh = FResourceManager::Get().LoadSkeletalMesh(NormalizedFileName);
+    SkelComp->SetSkeletalMesh(SkelMesh);
 }

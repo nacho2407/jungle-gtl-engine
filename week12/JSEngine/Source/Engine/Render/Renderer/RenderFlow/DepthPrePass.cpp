@@ -4,6 +4,7 @@
 #include "Render/Resource/Material.h"
 #include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/VertexFactoryTypes.h"
+#include "Core/Logging/SkinningStats.h"
 #include "Core/ResourceManager.h"
 
 namespace
@@ -102,6 +103,14 @@ bool FDepthPrePass::DrawCommand(const FRenderPassContext* Context)
         CheckOverrideViewMode(Context);  
 
 		ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
+		const bool bGPUSkinnedDraw =
+			Cmd.Type == ERenderCommandType::SkeletalMesh && Cmd.bUseBoneMatrixConstants;
+		if (bGPUSkinnedDraw)
+		{
+			FSkinningStats::Get().AddSkinnedDraw(
+				Cmd.SkinningWorkVertexCount,
+				Cmd.AvgBoneInfluencePerVertex);
+		}
 		if (IndexBuffer != nullptr)
 		{
 			Context->DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);

@@ -34,6 +34,13 @@ struct FFbxAnimImportOptions
 {
     FString StackName;
     int32 SampleRate = 30;
+    FString PreviewMeshPath;
+};
+
+struct FFbxAnimStackImportResult
+{
+    FString StackName;
+    UAnimSequence* Sequence = nullptr;
 };
 
 class FFbxImporter : public IAssetLoader
@@ -50,6 +57,8 @@ public:
 
     UAnimSequence* LoadAnimSequence(const FString& Path);
     UAnimSequence* LoadAnimSequence(const FString& Path, const FFbxAnimImportOptions& ImportOptions);
+    TArray<FFbxAnimStackImportResult> LoadAnimSequences(const FString& Path, const FFbxAnimImportOptions& ImportOptions = FFbxAnimImportOptions());
+    TArray<FString> GetAnimationStackNames(const FString& Path);
 
 	FFbxMeshContentInfo InspectMeshContent(const FString& Path);
 
@@ -65,6 +74,10 @@ private:
 
 	void NormalizePositionsToUnitCube(FStaticMesh* InStaticMesh);
 	void ComputeTangents(FStaticMesh* InStaticMesh);
+
+    bool ImportSkeletalSceneMeshes(
+        fbxsdk::FbxScene* Scene,
+        FSkeletalMesh* InSkeletalMesh);
 
     void CollectSkeletalMeshes(
         fbxsdk::FbxNode* Node,

@@ -40,6 +40,15 @@ fbxsdk::FbxAMatrix MakeIdentityFbxMatrix();
 fbxsdk::FbxAMatrix GetGlobalTransformWithGeometry(fbxsdk::FbxNode* Node);
 fbxsdk::FbxAMatrix GetNormalTransformFromPositionTransform(fbxsdk::FbxAMatrix Matrix);
 
+double GetUpper3x3Determinant(const fbxsdk::FbxAMatrix& Matrix);
+bool HasMirroredHandedness(const fbxsdk::FbxAMatrix& Matrix);
+void AppendTriangleIndices(
+    TArray<uint32>& OutIndices,
+    uint32 I0,
+    uint32 I1,
+    uint32 I2,
+    bool bFlipWinding);
+
 int32 FindNearestImportedBoneIndex(
     fbxsdk::FbxNode* StartNode,
     const TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex);

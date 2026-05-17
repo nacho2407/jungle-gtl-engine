@@ -8,6 +8,7 @@
 #include "Component/PostProcess/Light/LightComponent.h"
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
 #include "Component/PostProcess/Light/PointLightComponent.h"
+#include "Core/Logging/SkinningStats.h"
 
 #include <algorithm>
 #include <cmath>
@@ -127,6 +128,14 @@ void FShadowPass::RenderShadowDepth(
 		CheckOverrideViewMode(Context);
 
 		ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
+		const bool bGPUSkinnedDraw =
+			Cmd.Type == ERenderCommandType::SkeletalMesh && Cmd.bUseBoneMatrixConstants;
+		if (bGPUSkinnedDraw)
+		{
+			FSkinningStats::Get().AddSkinnedDraw(
+				Cmd.SkinningWorkVertexCount,
+				Cmd.AvgBoneInfluencePerVertex);
+		}
 		if (IndexBuffer != nullptr)
 		{
 			DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);

@@ -7,6 +7,7 @@ struct FPoseContext;
 class UAnimInstance;
 class UAnimSequenceBase;
 class UAnimationAsset;
+class UAnimationStateMachine;
 struct FAnimNotifyEvent;
 
 UENUM()
@@ -34,6 +35,7 @@ public:
 	~USkeletalMeshComponent() override = default;
 
 	virtual void Serialize(FArchive& Ar) override;
+	virtual void PostDuplicate(UObject* Original) override;
 	virtual void PostEditProperty(const char* PropertyName) override;
 
 	void TickComponent(float DeltaTime) override;
@@ -73,11 +75,20 @@ public:
 	virtual void HandleAnimNotify(const FAnimNotifyEvent& Notify);
 	void ApplyAnimationPose(const FPoseContext& PoseContext);
 
+	// StateMachine
+	UAnimationStateMachine* CreateAnimationStateMachine();
+	void SetAnimationStateMachine(UAnimationStateMachine* InStateMachine);
+	UAnimationStateMachine* GetAnimationStateMachine() const { return AnimationStateMachine; }
+
+	// StateMachine Lua Binding용
+	void SetAnimStateByName(const FString& StateName, float BlendTime = 0.2f);
+
 public:
 	FOnAnimNotify OnAnimNotifyDelegate;
 
 private:
 	UAnimInstance* AnimInstance = nullptr;
+	UAnimationStateMachine* AnimationStateMachine = nullptr;
 
 	UPROPERTY(DisplayName = "Animation")
 	FString AnimationAssetPath;

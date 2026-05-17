@@ -3,6 +3,9 @@
 #include "Asset/SkeletalMesh.h"
 #include "Asset/StaticMesh.h"
 #include "Component/ProceduralMeshComponent.h"
+#include "Core/Logging/SkinningStats.h"
+
+#include <chrono>
 
 namespace
 {
@@ -34,7 +37,12 @@ namespace
 			return false;
 		}
 
+		const auto UploadStart = std::chrono::steady_clock::now();
 		Buffer.UpdateDynamicVertices(DeviceContext, Vertices);
+		const auto UploadEnd = std::chrono::steady_clock::now();
+		FSkinningStats::Get().AddCPUSkinnedVertexBufferUpload(
+			std::chrono::duration<double, std::milli>(UploadEnd - UploadStart).count(),
+			static_cast<uint64>(Vertices.size()) * sizeof(FSkeletalMeshVertex));
 		DeviceContext->Release();
 
 		return true;

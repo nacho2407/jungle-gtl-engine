@@ -280,7 +280,8 @@ bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 	};
 
 	if (ActiveTab->Id.Kind == EEditorTabKind::SkeletalMeshViewer ||
-		ActiveTab->Id.Kind == EEditorTabKind::StaticMeshViewer)
+		ActiveTab->Id.Kind == EEditorTabKind::StaticMeshViewer ||
+		ActiveTab->Id.Kind == EEditorTabKind::AnimSequenceViewer)
 	{
 		FEditorViewerWindowWidget* ViewerWidget = FindViewerWidgetForTab(ActiveTab->Id);
 		FEditorViewer* Viewer = ViewerWidget ? ViewerWidget->GetViewer() : nullptr;

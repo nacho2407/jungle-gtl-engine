@@ -1,6 +1,7 @@
 ﻿#include "SkinnedMeshComponent.h"
 
 #include "Core/ResourceManager.h"
+#include "Core/Logging/SkinningStats.h"
 #include "Render/Resource/Material.h"
 
 #include <algorithm>
@@ -46,6 +47,44 @@ static void ComputeGlobalPoseRecursive(
 	}
 
 	Visited[BoneIndex] = true;
+}
+
+static FVector SkinPositionForBounds(
+	const FSkeletalMeshVertex& Vertex,
+	const TArray<FMatrix>& SkinningMatrices,
+	int32 BoneCount)
+{
+	float ValidWeightSum = 0.0f;
+	for (int32 InfluenceIndex = 0; InfluenceIndex < 4; ++InfluenceIndex)
+	{
+		const int32 BoneIndex = Vertex.BoneIndices[InfluenceIndex];
+		const float Weight = Vertex.BoneWeights[InfluenceIndex];
+		if (BoneIndex < BoneCount && Weight > 0.0f)
+		{
+			ValidWeightSum += Weight;
+		}
+	}
+
+	if (ValidWeightSum <= 1e-6f)
+	{
+		return Vertex.Position;
+	}
+
+	FVector SkinnedPosition = FVector::ZeroVector;
+	for (int32 InfluenceIndex = 0; InfluenceIndex < 4; ++InfluenceIndex)
+	{
+		const int32 BoneIndex = Vertex.BoneIndices[InfluenceIndex];
+		const float RawWeight = Vertex.BoneWeights[InfluenceIndex];
+		if (BoneIndex >= BoneCount || RawWeight <= 0.0f)
+		{
+			continue;
+		}
+
+		const float Weight = RawWeight / ValidWeightSum;
+		SkinnedPosition += SkinningMatrices[BoneIndex].TransformPosition(Vertex.Position) * Weight;
+	}
+
+	return SkinnedPosition;
 }
 } // namespace
 
@@ -359,6 +398,57 @@ const FAABB& USkinnedMeshComponent::GetWorldAABB() const
 	return WorldAABB;
 }
 
+FAABB USkinnedMeshComponent::CalculateCurrentPoseWorldAABB() const
+{
+	FAABB Result;
+	Result.Reset();
+
+	if (!HasValidMesh())
+	{
+		return Result;
+	}
+
+	const_cast<USkinnedMeshComponent*>(this)->EnsureSkinningUpdated();
+
+	const TArray<FSkeletalMeshVertex>& SourceVertices = SkeletalMesh->GetVertices();
+	const int32 BoneCount = static_cast<int32>((std::min)(SkinningMatrices.size(), SkeletalMesh->GetBones().size()));
+	const FMatrix& WorldMatrix = GetWorldMatrix();
+
+	if (BoneCount > 0)
+	{
+		for (const FSkeletalMeshVertex& Vertex : SourceVertices)
+		{
+			const FVector LocalPosition = SkinPositionForBounds(Vertex, SkinningMatrices, BoneCount);
+			Result.Expand(WorldMatrix.TransformPosition(LocalPosition));
+		}
+	}
+
+	if (!Result.IsValid())
+	{
+		const FAABB& LocalBounds = SkeletalMesh->GetLocalBounds();
+		if (LocalBounds.IsValid())
+		{
+			const FVector LocalCorners[8] = {
+				FVector(LocalBounds.Min.X, LocalBounds.Min.Y, LocalBounds.Min.Z),
+				FVector(LocalBounds.Max.X, LocalBounds.Min.Y, LocalBounds.Min.Z),
+				FVector(LocalBounds.Min.X, LocalBounds.Max.Y, LocalBounds.Min.Z),
+				FVector(LocalBounds.Max.X, LocalBounds.Max.Y, LocalBounds.Min.Z),
+				FVector(LocalBounds.Min.X, LocalBounds.Min.Y, LocalBounds.Max.Z),
+				FVector(LocalBounds.Max.X, LocalBounds.Min.Y, LocalBounds.Max.Z),
+				FVector(LocalBounds.Min.X, LocalBounds.Max.Y, LocalBounds.Max.Z),
+				FVector(LocalBounds.Max.X, LocalBounds.Max.Y, LocalBounds.Max.Z)
+			};
+
+			for (const FVector& Corner : LocalCorners)
+			{
+				Result.Expand(WorldMatrix.TransformPosition(Corner));
+			}
+		}
+	}
+
+	return Result;
+}
+
 bool USkinnedMeshComponent::ConsumeRenderStateDirty()
 {
 	const bool bWasDirty = bRenderStateDirty;
@@ -387,8 +477,11 @@ void USkinnedMeshComponent::EnsureSkinningUpdated()
 		return;
 	}
 
-	UpdateCurrentGlobalPose();
-	UpdateSkinningMatrices();
+	{
+		SKINNING_SCOPE_MS(&FSkinningStats::AddCPUPoseBuild);
+		UpdateCurrentGlobalPose();
+		UpdateSkinningMatrices();
+	}
 
 	if (ResolvedSkinningMode == ESkinningMode::CPU)
 	{
@@ -534,6 +627,8 @@ void USkinnedMeshComponent::UpdateSkinningMatrices()
 
 void USkinnedMeshComponent::SkinVerticesCPU()
 {
+	SKINNING_SCOPE_MS(&FSkinningStats::AddCPUSkinning);
+
 	if (!HasValidMesh())
 	{
 		SkinnedVertices.clear();

@@ -3,6 +3,7 @@
 #include "Asset/SkeletalMesh.h"
 #include "Component/SkeletalMeshComponent.h"
 
+#include <cmath>
 
 void UAnimSingleNodeInstance::SetAnimation(UAnimSequenceBase* InAnimation)
 {
@@ -31,6 +32,8 @@ bool UAnimSingleNodeInstance::NeedsBoneMappingRebuild() const
 	return CachedMappingMesh != CurrentMesh || CachedMappingAnimation != CurrentAnimation;
 }
 
+//2. Bone Mapping Phase(UAnimSingleNodeInstance::NativeUpdateAnimation으로 이어짐)
+//AnimSequence 의 Track 이름과 실제 렌더링될 skeletal mesh 의 Bone 이름을 비교해 mapping table을 생성합니다
 void UAnimSingleNodeInstance::BuildBoneMapping()
 {
 	TrackToBoneMap.clear();
@@ -95,6 +98,8 @@ float UAnimSingleNodeInstance::GetLength() const
 	return CurrentAnimation ? CurrentAnimation->GetPlayLength() : 0.0f;
 }
 
+//3-1. Update Phase(UAnimSequence::GetAnimationPose로 이어짐)
+//DeltaTime을 누적, CurrentTime 전진!
 void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaTime)
 {
 	if (!bPlaying || !CurrentAnimation) return;
@@ -102,16 +107,24 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaTime)
 	PreviousTime = CurrentTime;
 	CurrentTime += DeltaTime * PlayRate;
 
-	float Length = CurrentAnimation->GetPlayLength();
+	const float Length = CurrentAnimation->GetPlayLength();
 
 	bool bLooped = false;
-	bool bReverse = PlayRate < 0.0f;
+	const bool bReverse = PlayRate < 0.0f;
+
+	if (Length <= 0.0f)
+	{
+		CurrentTime = 0.0f;
+		bPlaying = false;
+		TriggerAnimNotifies(CurrentAnimation, PreviousTime, CurrentTime, bLooped, bReverse);
+		return;
+	}
 
 	if (!bReverse)  // 정방향 재생
 	{
 		if (CurrentTime > Length)
 		{
-			if (bLooping) 
+			if (bLooping)
 			{
 				CurrentTime = std::fmod(CurrentTime, Length);
 				bLooped = true;
@@ -129,12 +142,16 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaTime)
 		{
 			if (bLooping)
 			{
-				CurrentTime = Length + std::fmod(CurrentTime, Length);
+				CurrentTime = std::fmod(CurrentTime, Length);
+				if (CurrentTime < 0.0f)
+				{
+					CurrentTime += Length;
+				}
 				bLooped = true;
 			}
 			else
 			{
-				CurrentTime = 0.0f; 
+				CurrentTime = 0.0f;
 				bPlaying = false;
 			}
 		}

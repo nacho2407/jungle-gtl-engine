@@ -289,7 +289,6 @@ void FEditorControlWidget::Render(float DeltaTime)
 	float CameraRotation[3] = { CamRot.X, CamRot.Y, CamRot.Z };
 	if (ImGui::DragFloat3("Camera Rotation", CameraRotation, 0.1f, 0.0f, 0.0f, "%.1f"))
 	{
-		CameraRotation[1] = MathUtil::Clamp(CameraRotation[1], -89.9f, 89.9f);
         FRotator NewRotation = FRotator::MakeFromEuler(FVector(CameraRotation[0], CameraRotation[1], CameraRotation[2]));
 
 		NewRotation.Normalize();

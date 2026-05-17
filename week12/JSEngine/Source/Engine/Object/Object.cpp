@@ -74,7 +74,7 @@ UObject* UObject::Duplicate()
 
 void UObject::CopyPropertiesFrom(UObject* Src)
 {
-	if (!Src) 
+	if (!Src)
 		return;
 
 	UClass* SrcClass = Src->GetClass();

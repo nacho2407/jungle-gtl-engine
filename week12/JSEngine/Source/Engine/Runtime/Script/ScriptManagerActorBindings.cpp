@@ -30,6 +30,7 @@
 #include "Component/SphereComponent.h"
 #include "Component/SpringArmComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Camera/PlayerCameraManager.h"
@@ -55,6 +56,7 @@ namespace
 		if (MatchLuaTypeName(TypeName, "UShapeComponent", "ShapeComponent")) return UShapeComponent::StaticClass();
 		if (MatchLuaTypeName(TypeName, "UMeshComponent", "MeshComponent")) return UMeshComponent::StaticClass();
 		if (MatchLuaTypeName(TypeName, "UStaticMeshComponent", "StaticMeshComponent")) return UStaticMeshComponent::StaticClass();
+		if (MatchLuaTypeName(TypeName, "USkeletalMeshComponent", "SkeletalMeshComponent")) return USkeletalMeshComponent::StaticClass();
 		if (MatchLuaTypeName(TypeName, "UActorSequenceComponent", "ActorSequenceComponent")) return UActorSequenceComponent::StaticClass();
 		if (MatchLuaTypeName(TypeName, "UProceduralMeshComponent", "ProceduralMeshComponent")) return UProceduralMeshComponent::StaticClass();
 		if (MatchLuaTypeName(TypeName, "UBillboardComponent", "BillboardComponent")) return UBillboardComponent::StaticClass();
@@ -350,6 +352,10 @@ void FScriptManager::BindActorTypes()
 	LUA_SET(GetTags, &ActorTagsToLuaTable);
 	LUA_SET(Get_Static_Mesh_Component, [](AActor& Actor)
 			{ return Cast<UStaticMeshComponent>(GetComponentByType(Actor, "StaticMeshComponent")); });
+	LUA_SET(GetSkeletalMeshComponent, [](AActor& Actor)
+			{ return Cast<USkeletalMeshComponent>(GetComponentByType(Actor, "SkeletalMeshComponent")); });
+	LUA_SET(Get_Skeletal_Mesh_Component, [](AActor& Actor)
+			{ return Cast<USkeletalMeshComponent>(GetComponentByType(Actor, "SkeletalMeshComponent")); });
 	LUA_SET(GetActorSequenceComponent, [](AActor& Actor)
 			{ return Cast<UActorSequenceComponent>(GetComponentByType(Actor, "ActorSequenceComponent")); });
 	LUA_END_TYPE();

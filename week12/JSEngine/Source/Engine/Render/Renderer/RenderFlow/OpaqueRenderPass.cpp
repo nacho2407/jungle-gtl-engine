@@ -6,6 +6,7 @@
 #include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/ShadowAtlasManager.h"
 #include "Render/Resource/VertexFactoryTypes.h"
+#include "Core/Logging/SkinningStats.h"
 #include "Core/ResourceManager.h"
 #include "Component/PostProcess/Light/LightComponent.h"
 
@@ -236,16 +237,24 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
        Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);  
 
        ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();  
+       const bool bGPUSkinnedDraw =
+           Cmd.Type == ERenderCommandType::SkeletalMesh && Cmd.bUseBoneMatrixConstants;
+       if (bGPUSkinnedDraw)
+       {
+           FSkinningStats::Get().AddSkinnedDraw(
+               Cmd.SkinningWorkVertexCount,
+               Cmd.AvgBoneInfluencePerVertex);
+       }
        if (indexBuffer != nullptr)  
        {  
            uint32 indexStart = Cmd.SectionIndexStart;  
            uint32 indexCount = Cmd.SectionIndexCount;  
            Context->DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);  
-           Context->DeviceContext->DrawIndexed(indexCount, indexStart, 0);  
+           Context->DeviceContext->DrawIndexed(indexCount, indexStart, 0);
        }  
        else  
        {  
-           Context->DeviceContext->Draw(vertexCount, 0);  
+           Context->DeviceContext->Draw(vertexCount, 0);
        }  
    }  
 

@@ -5,6 +5,8 @@
 #include "Viewport/ViewportLayout.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Animation/AnimSequence.h"
+#include "Animation/AnimSingleNodeInstance.h"
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
 #include "Component/GizmoComponent.h"
@@ -214,6 +216,9 @@ void FEditorViewerWindowWidget::Shutdown()
     bMeshDirty = false; 
     CleanMeshEditSignature = 0;
     bHasCleanMeshEditSignature = false;
+    PreviewMeshPathBufferSource.clear();
+    PreviewMeshPathBuffer[0] = '\0';
+    SelectedAnimTrackIndex = -1;
 
     Viewer = nullptr;
     bOpen = false;
@@ -228,7 +233,7 @@ FString FEditorViewerWindowWidget::GetWindowName() const
 
 bool FEditorViewerWindowWidget::CanSaveMesh() const
 {
-	if (!Viewer)
+	if (!Viewer || Viewer->IsAnimationSequenceViewer())
 	{
 		return false;
 	}
@@ -240,12 +245,12 @@ bool FEditorViewerWindowWidget::CanSaveMesh() const
 
 bool FEditorViewerWindowWidget::IsMeshDirty() const
 {
-	return HasMeshAssetEdits();
+	return Viewer && !Viewer->IsAnimationSequenceViewer() && HasMeshAssetEdits();
 }
 
 void FEditorViewerWindowWidget::RequestSaveMesh()
 {
-	if (!Viewer)
+	if (!Viewer || Viewer->IsAnimationSequenceViewer())
 	{
 		return;
 	}
@@ -519,7 +524,7 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentChrome(bool& bDockRequeste
     }
     if (ImGui::BeginMenu("Help"))
     {
-        ImGui::TextDisabled("Skeletal Mesh Previewer");
+        ImGui::TextDisabled(Viewer->IsAnimationSequenceViewer() ? "Animation Sequence Viewer" : "Skeletal Mesh Previewer");
         ImGui::EndMenu();
     }
 
@@ -664,7 +669,6 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 	(void)DeltaTime;
 
 	FSceneViewport& SceneViewport = Viewer->GetViewport();
-
 	ID3D11ShaderResourceView* SRV = SceneViewport.GetOutSRV();
 
     if (!SRV)
@@ -674,177 +678,408 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 	}
 
 	ImVec2 FullSize = ImGui::GetContentRegionAvail();
+	const float CenterWidth = std::max(160.0f, FullSize.x - LeftPanelWidth - RightPanelWidth - (ImGui::GetStyle().ItemSpacing.x * 2.0f));
 
-		float CenterWidth = std::max(160.0f, FullSize.x - LeftPanelWidth - RightPanelWidth - (ImGui::GetStyle().ItemSpacing.x * 2.0f));
+	ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+	USkeletalMeshComponent* SkelMeshComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+	USkeletalMesh* SkeletalMesh = SkelMeshComp ? SkelMeshComp->GetSkeletalMesh() : nullptr;
+	FSkeletalMesh* MeshData = SkeletalMesh ? SkeletalMesh->GetMeshData() : nullptr;
+	CachedSkComp = SkelMeshComp;
 
-		// =====================================================
-		// LEFT: Skeleton Tree
-		// =====================================================
-		ImGui::BeginChild("SkeletonPanel", ImVec2(LeftPanelWidth, 0), true);
+	if (Viewer->IsAnimationSequenceViewer())
+	{
+		CachedMesh = MeshData;
 
-		ImGui::Text("Skeleton");
-
-		ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
-		USkeletalMeshComponent* SkelMeshComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
-		USkeletalMesh* SkeletalMesh = SkelMeshComp ? SkelMeshComp->GetSkeletalMesh() : nullptr;
-		FSkeletalMesh* MeshData = SkeletalMesh ? SkeletalMesh->GetMeshData() : nullptr;
-
-		// 헬퍼들이 참조할 transient 캐시 (Render 호출 범위에서만 유효)
-		CachedSkComp = SkelMeshComp;
-
-		if (!MeshData)
-		{
-			CachedMesh = nullptr;
-			Children.clear();
-			BoneToSocketIndices.clear();
-			if (Viewer)
-			{
-				Viewer->ClearSelection();
-			}
-			ResetMeshDirtyBaseline();
-			ImGui::TextDisabled("No skeletal mesh");
-		}
-		else if (CachedMesh != MeshData)
-		{
-			CachedMesh = MeshData;
-			if (Viewer)
-			{
-				Viewer->ClearSelection();
-			}
-
-			RebuildBoneTreeCaches(MeshData);
-			ResetMeshDirtyBaseline();
-		}
-
-		if (MeshData)
-		{
-            ApplyPendingBoneTreeOpenState(MeshData);
-			for (int32 j = 0; j < MeshData->Bones.size(); ++j)
-			{
-				if (MeshData->Bones[j].ParentIndex == -1)
-				{
-					DrawBoneNode(j, MeshData->Bones, Children);
-				}
-			}
-		}
-
-		// 컨텍스트 메뉴에서 PendingPreviewPickerSocketIdx가 셋되면 모달 오픈.
-		// (BeginPopupContextItem 안에서 OpenPopup하지 않고 *바깥*에서 하는 것이 안전 — popup 스택 충돌 방지)
-		if (PendingPreviewPickerSocketIdx >= 0 && !ImGui::IsPopupOpen("PickStaticMesh"))
-		{
-			ImGui::OpenPopup("PickStaticMesh");
-		}
-		DrawPreviewPickerModal();
-
-		if (RenameSocketIdx >= 0 && !ImGui::IsPopupOpen("RenameSocket"))
-		{
-			ImGui::OpenPopup("RenameSocket");
-		}
-		DrawRenameModal();
-
-		// 선택된 socket의 properties 편집기 + Save 버튼 (좌측 패널 하단)
-		ImGui::Separator();
-		DrawSocketInspector();
-
+		ImGui::BeginChild("AnimSequencePanel", ImVec2(LeftPanelWidth, 0), true);
+		RenderAnimSequenceLeftPanel(Viewer->GetAnimSequence(), SkelMeshComp);
 		ImGui::EndChild();
 
-        // Left Splitter
-        ImGui::SameLine();
-        ImGui::Button("##left_splitter", ImVec2(2.0f, -1.0f));
-        if (ImGui::IsItemActive())
-        {
-            LeftPanelWidth += ImGui::GetIO().MouseDelta.x;
-            LeftPanelWidth = std::clamp(LeftPanelWidth, 100.0f, FullSize.x * 0.4f);
-        }
-        ImGui::SameLine();
-
-		// =====================================================
-		// CENTER: Viewport
-		// =====================================================
-		ImGui::BeginChild("ViewportPanel", ImVec2(CenterWidth, 0), false);
-
-		ImVec2 Size = ImGui::GetContentRegionAvail();
-
-		Size.x = std::max(Size.x, 1.0f);
-		Size.y = std::max(Size.y, 1.0f);
-
-		ImGui::Dummy(Size);
-        ImVec2 Min = ImGui::GetItemRectMin();
-        ImVec2 Max = ImGui::GetItemRectMax();
-		const POINT ClientMin = ImGuiScreenToClientPoint(EditorEngine ? EditorEngine->GetWindow() : nullptr, Min);
-		const bool bViewportHovered = ImGui::IsItemHovered();
-		const bool bViewportClicked =
-			bViewportHovered &&
-			(ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
-			 ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
-			 ImGui::IsMouseClicked(ImGuiMouseButton_Middle));
-
-		FViewportRect NewRect;
-        NewRect.X = (int32)ClientMin.x;
-        NewRect.Y = (int32)ClientMin.y;
-        NewRect.Width = (int32)(Max.x - Min.x);
-        NewRect.Height = (int32)(Max.y - Min.y);
-
-		SceneViewport.SetRect(NewRect);
-
-		if (auto* Client = SceneViewport.GetClient())
+		ImGui::SameLine();
+		ImGui::Button("##left_splitter", ImVec2(2.0f, -1.0f));
+		if (ImGui::IsItemActive())
 		{
-			Client->SetViewportSize((float)NewRect.Width, (float)NewRect.Height);
+			LeftPanelWidth += ImGui::GetIO().MouseDelta.x;
+			LeftPanelWidth = std::clamp(LeftPanelWidth, 140.0f, FullSize.x * 0.45f);
 		}
-		if (bViewportClicked)
+		ImGui::SameLine();
+
+		RenderViewportPanel(SceneViewport, SRV, ImVec2(CenterWidth, 0.0f));
+
+		ImGui::SameLine();
+		ImGui::Button("##right_splitter", ImVec2(2.0f, -1.0f));
+		if (ImGui::IsItemActive())
 		{
-			EditorEngine->FocusViewportInput(&SceneViewport);
+			RightPanelWidth -= ImGui::GetIO().MouseDelta.x;
+			RightPanelWidth = std::clamp(RightPanelWidth, 140.0f, FullSize.x * 0.45f);
 		}
+		ImGui::SameLine();
 
-		ImDrawList* DrawList = ImGui::GetWindowDrawList();
-
-		ID3D11DeviceContext* DC =
-			EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
-
-		DrawList->AddCallback(SetOpaqueBlendStateCallback, DC);
-
-		// Render viewport
-        DrawList->AddImage((ImTextureID)SRV, Min, Max);
-
-		DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
-
+		ImGui::BeginChild("AnimSequenceDetailsPanel", ImVec2(RightPanelWidth, 0), true);
+		RenderAnimSequenceRightPanel(Viewer->GetAnimSequence(), SkeletalMesh);
 		ImGui::EndChild();
+		return;
+	}
 
-        // Right Splitter
-        ImGui::SameLine();
-        ImGui::Button("##right_splitter", ImVec2(2.0f, -1.0f));
-        if (ImGui::IsItemActive())
-        {
-            RightPanelWidth -= ImGui::GetIO().MouseDelta.x;
-            RightPanelWidth = std::clamp(RightPanelWidth, 100.0f, FullSize.x * 0.4f);
-        }
-        ImGui::SameLine();
+	RenderSkeletonLeftPanel(SkelMeshComp, MeshData);
 
-		// =====================================================
-		// RIGHT: Bone Details
-		// =====================================================
-		ImGui::BeginChild("BoneDetailsPanel", ImVec2(RightPanelWidth, 0), true);
-		ImGui::Text("Details");
-		ImGui::Separator();
-		if (Viewer->GetSelectedBoneIndex() != -1 && SkelMeshComp)
-		{
-			RenderBoneDetails(SkelMeshComp);
-		}
-        else if (Viewer->GetSelectedSocketIndex() != -1 && SkelMeshComp)
-        {
-            // Socket details (Location, Rotation, Scale already in Left Panel, but showing something here is good)
-            if (CachedMesh && Viewer->GetSelectedSocketIndex() < (int32)CachedMesh->Sockets.size())
-            {
-                ImGui::Text("Socket: %s", CachedMesh->Sockets[Viewer->GetSelectedSocketIndex()].Name.ToString().c_str());
-                ImGui::Separator();
-                ImGui::Text("Selected Socket for transformation.");
-            }
-        }
-		else
-		{
-			ImGui::TextDisabled("No bone or socket selected.");
-		}
+	ImGui::SameLine();
+	ImGui::Button("##left_splitter", ImVec2(2.0f, -1.0f));
+	if (ImGui::IsItemActive())
+	{
+		LeftPanelWidth += ImGui::GetIO().MouseDelta.x;
+		LeftPanelWidth = std::clamp(LeftPanelWidth, 100.0f, FullSize.x * 0.4f);
+	}
+	ImGui::SameLine();
+
+	RenderViewportPanel(SceneViewport, SRV, ImVec2(CenterWidth, 0.0f));
+
+	ImGui::SameLine();
+	ImGui::Button("##right_splitter", ImVec2(2.0f, -1.0f));
+	if (ImGui::IsItemActive())
+	{
+		RightPanelWidth -= ImGui::GetIO().MouseDelta.x;
+		RightPanelWidth = std::clamp(RightPanelWidth, 100.0f, FullSize.x * 0.4f);
+	}
+	ImGui::SameLine();
+
+	RenderBoneRightPanel(SkelMeshComp);
+}
+
+void FEditorViewerWindowWidget::RenderViewportPanel(FSceneViewport& SceneViewport, ID3D11ShaderResourceView* SRV, const ImVec2& Size)
+{
+	ImGui::BeginChild("ViewportPanel", Size, false);
+
+	ImVec2 ViewSize = ImGui::GetContentRegionAvail();
+	ViewSize.x = std::max(ViewSize.x, 1.0f);
+	ViewSize.y = std::max(ViewSize.y, 1.0f);
+
+	ImGui::Dummy(ViewSize);
+	ImVec2 Min = ImGui::GetItemRectMin();
+	ImVec2 Max = ImGui::GetItemRectMax();
+	const POINT ClientMin = ImGuiScreenToClientPoint(EditorEngine ? EditorEngine->GetWindow() : nullptr, Min);
+	const bool bViewportHovered = ImGui::IsItemHovered();
+	const bool bViewportClicked =
+		bViewportHovered &&
+		(ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
+		 ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
+		 ImGui::IsMouseClicked(ImGuiMouseButton_Middle));
+
+	FViewportRect NewRect;
+	NewRect.X = (int32)ClientMin.x;
+	NewRect.Y = (int32)ClientMin.y;
+	NewRect.Width = (int32)(Max.x - Min.x);
+	NewRect.Height = (int32)(Max.y - Min.y);
+
+	SceneViewport.SetRect(NewRect);
+
+	if (auto* Client = SceneViewport.GetClient())
+	{
+		Client->SetViewportSize((float)NewRect.Width, (float)NewRect.Height);
+	}
+	if (bViewportClicked)
+	{
+		EditorEngine->FocusViewportInput(&SceneViewport);
+	}
+
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	ID3D11DeviceContext* DC = EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
+	DrawList->AddCallback(SetOpaqueBlendStateCallback, DC);
+	DrawList->AddImage((ImTextureID)SRV, Min, Max);
+	DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+
 	ImGui::EndChild();
+}
+
+void FEditorViewerWindowWidget::RenderSkeletonLeftPanel(USkeletalMeshComponent* SkelMeshComp, FSkeletalMesh* MeshData)
+{
+	ImGui::BeginChild("SkeletonPanel", ImVec2(LeftPanelWidth, 0), true);
+	ImGui::Text("Skeleton");
+
+	if (!MeshData)
+	{
+		CachedMesh = nullptr;
+		Children.clear();
+		BoneToSocketIndices.clear();
+		if (Viewer)
+		{
+			Viewer->ClearSelection();
+		}
+		ResetMeshDirtyBaseline();
+		ImGui::TextDisabled("No skeletal mesh");
+	}
+	else if (CachedMesh != MeshData)
+	{
+		CachedMesh = MeshData;
+		if (Viewer)
+		{
+			Viewer->ClearSelection();
+		}
+
+		RebuildBoneTreeCaches(MeshData);
+		ResetMeshDirtyBaseline();
+	}
+
+	if (MeshData)
+	{
+		ApplyPendingBoneTreeOpenState(MeshData);
+		for (int32 j = 0; j < MeshData->Bones.size(); ++j)
+		{
+			if (MeshData->Bones[j].ParentIndex == -1)
+			{
+				DrawBoneNode(j, MeshData->Bones, Children);
+			}
+		}
+	}
+
+	if (PendingPreviewPickerSocketIdx >= 0 && !ImGui::IsPopupOpen("PickStaticMesh"))
+	{
+		ImGui::OpenPopup("PickStaticMesh");
+	}
+	DrawPreviewPickerModal();
+
+	if (RenameSocketIdx >= 0 && !ImGui::IsPopupOpen("RenameSocket"))
+	{
+		ImGui::OpenPopup("RenameSocket");
+	}
+	DrawRenameModal();
+
+	ImGui::Separator();
+	DrawSocketInspector();
+
+	ImGui::EndChild();
+}
+
+void FEditorViewerWindowWidget::RenderBoneRightPanel(USkeletalMeshComponent* SkelMeshComp)
+{
+	ImGui::BeginChild("BoneDetailsPanel", ImVec2(RightPanelWidth, 0), true);
+	ImGui::Text("Details");
+	ImGui::Separator();
+	if (Viewer->GetSelectedBoneIndex() != -1 && SkelMeshComp)
+	{
+		RenderBoneDetails(SkelMeshComp);
+	}
+	else if (Viewer->GetSelectedSocketIndex() != -1 && SkelMeshComp)
+	{
+		if (CachedMesh && Viewer->GetSelectedSocketIndex() < (int32)CachedMesh->Sockets.size())
+		{
+			ImGui::Text("Socket: %s", CachedMesh->Sockets[Viewer->GetSelectedSocketIndex()].Name.ToString().c_str());
+			ImGui::Separator();
+			ImGui::Text("Selected Socket for transformation.");
+		}
+	}
+	else
+	{
+		ImGui::TextDisabled("No bone or socket selected.");
+	}
+	ImGui::EndChild();
+}
+
+void FEditorViewerWindowWidget::SyncPreviewMeshPathBuffer()
+{
+	if (!Viewer)
+	{
+		PreviewMeshPathBufferSource.clear();
+		PreviewMeshPathBuffer[0] = '\0';
+		return;
+	}
+
+	const FString& Path = Viewer->GetPreviewMeshPath();
+	if (PreviewMeshPathBufferSource == Path)
+	{
+		return;
+	}
+
+	PreviewMeshPathBufferSource = Path;
+	snprintf(PreviewMeshPathBuffer, sizeof(PreviewMeshPathBuffer), "%s", Path.c_str());
+}
+
+void FEditorViewerWindowWidget::RenderAnimSequenceLeftPanel(UAnimSequence* Sequence, USkeletalMeshComponent* SkelMeshComp)
+{
+	ImGui::Text("Animation Sequence");
+	ImGui::Separator();
+
+	if (!Sequence)
+	{
+		ImGui::TextWrapped("Could not load this animation sequence.");
+		return;
+	}
+
+	const UAnimDataModel* DataModel = Sequence->GetDataModel();
+	ImGui::TextWrapped("%s", GetViewerAssetLabel(Viewer).c_str());
+	ImGui::Spacing();
+	ImGui::Text("Length: %.3f sec", Sequence->GetPlayLength());
+	if (DataModel)
+	{
+		ImGui::Text("Sample Rate: %.3f", DataModel->GetFrameRate().AsDecimal());
+		ImGui::Text("Frames: %d", DataModel->GetNumberOfFrames());
+		ImGui::Text("Tracks: %d", static_cast<int32>(DataModel->GetBoneAnimationTracks().size()));
+	}
+
+	ImGui::Spacing();
+	ImGui::TextDisabled("Preview Mesh");
+	SyncPreviewMeshPathBuffer();
+	if (SkelMeshComp && SkelMeshComp->GetSkeletalMesh())
+	{
+		ImGui::TextWrapped("Loaded: %s", SkelMeshComp->GetSkeletalMesh()->GetAssetPathFileName().c_str());
+	}
+	else
+	{
+		ImGui::TextWrapped("No preview mesh. Set a skeletal FBX path, or reimport the animseq with PreviewMeshPath.");
+	}
+	ImGui::SetNextItemWidth(-1.0f);
+	ImGui::InputText("##PreviewMeshPath", PreviewMeshPathBuffer, sizeof(PreviewMeshPathBuffer));
+	if (ImGui::Button("Load Preview Mesh"))
+	{
+		PreviewMeshPathBufferSource = PreviewMeshPathBuffer;
+		Viewer->SetAnimationSequencePreviewMesh(PreviewMeshPathBufferSource);
+	}
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::TextDisabled("Playback");
+
+	const bool bPlaying = Viewer->IsAnimationPlaying();
+	if (ImGui::Button(bPlaying ? "Pause" : "Play"))
+	{
+		Viewer->SetAnimationPlaying(!bPlaying);
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Restart"))
+	{
+		Viewer->RestartAnimation();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Stop"))
+	{
+		Viewer->SetAnimationPlaying(false);
+		Viewer->SetAnimationTime(0.0f);
+	}
+
+	bool bLooping = Viewer->IsAnimationLooping();
+	if (ImGui::Checkbox("Loop", &bLooping))
+	{
+		Viewer->SetAnimationLooping(bLooping);
+	}
+
+	float PlayRate = Viewer->GetAnimationPlayRate();
+	ImGui::SetNextItemWidth(-1.0f);
+	if (ImGui::DragFloat("Play Rate", &PlayRate, 0.01f, -4.0f, 4.0f, "%.2f"))
+	{
+		Viewer->SetAnimationPlayRate(PlayRate);
+	}
+
+	float CurrentTime = Viewer->GetAnimationCurrentTime();
+	const float Length = std::max(0.0f, Viewer->GetAnimationLength());
+	ImGui::SetNextItemWidth(-1.0f);
+	if (ImGui::SliderFloat("Time", &CurrentTime, 0.0f, std::max(Length, 0.001f), "%.3f"))
+	{
+		Viewer->SetAnimationTime(CurrentTime);
+	}
+
+	if (DataModel && DataModel->GetFrameRate().AsDecimal() > 0.0f)
+	{
+		const float Frame = CurrentTime * DataModel->GetFrameRate().AsDecimal();
+		ImGui::Text("Frame: %.1f / %d", Frame, DataModel->GetNumberOfFrames());
+	}
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::TextDisabled("Tracks");
+	if (!DataModel || DataModel->GetBoneAnimationTracks().empty())
+	{
+		ImGui::TextDisabled("No bone tracks.");
+		return;
+	}
+
+	const TArray<FBoneAnimationTrack>& Tracks = DataModel->GetBoneAnimationTracks();
+	if (SelectedAnimTrackIndex >= static_cast<int32>(Tracks.size()))
+	{
+		SelectedAnimTrackIndex = -1;
+	}
+	for (int32 TrackIndex = 0; TrackIndex < static_cast<int32>(Tracks.size()); ++TrackIndex)
+	{
+		ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_SpanAvailWidth;
+		if (SelectedAnimTrackIndex == TrackIndex)
+		{
+			Flags |= ImGuiTreeNodeFlags_Selected;
+		}
+		const bool bTrackOpen = ImGui::TreeNodeEx((void*)(intptr_t)TrackIndex, Flags, "%s", Tracks[TrackIndex].Name.ToString().c_str());
+		if (ImGui::IsItemClicked())
+		{
+			SelectedAnimTrackIndex = TrackIndex;
+		}
+		if (bTrackOpen)
+		{
+			ImGui::TreePop();
+		}
+	}
+}
+
+void FEditorViewerWindowWidget::RenderAnimSequenceRightPanel(UAnimSequence* Sequence, USkeletalMesh* PreviewMesh)
+{
+	ImGui::Text("Details");
+	ImGui::Separator();
+
+	if (!Sequence)
+	{
+		ImGui::TextDisabled("No animation sequence.");
+		return;
+	}
+
+	const UAnimDataModel* DataModel = Sequence->GetDataModel();
+	ImGui::TextDisabled("Source");
+	if (!Sequence->GetSourceFilePath().empty())
+	{
+		ImGui::TextWrapped("File: %s", Sequence->GetSourceFilePath().c_str());
+	}
+	if (!Sequence->GetSourceStackName().empty())
+	{
+		ImGui::TextWrapped("Stack: %s", Sequence->GetSourceStackName().c_str());
+	}
+	if (!Sequence->GetAssetPath().empty())
+	{
+		ImGui::TextWrapped("Asset: %s", Sequence->GetAssetPath().c_str());
+	}
+
+	ImGui::Spacing();
+	ImGui::TextDisabled("Preview Skeleton");
+	if (PreviewMesh && PreviewMesh->HasValidMeshData())
+	{
+		ImGui::Text("Bones: %d", static_cast<int32>(PreviewMesh->GetBones().size()));
+		ImGui::Text("Sections: %d", static_cast<int32>(PreviewMesh->GetSections().size()));
+		ImGui::Text("Vertices: %d", static_cast<int32>(PreviewMesh->GetVertices().size()));
+	}
+	else
+	{
+		ImGui::TextWrapped("The sequence is loaded, but no compatible skeletal mesh is currently previewing it.");
+	}
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::TextDisabled("Selected Track");
+	if (!DataModel || SelectedAnimTrackIndex < 0 || SelectedAnimTrackIndex >= static_cast<int32>(DataModel->GetBoneAnimationTracks().size()))
+	{
+		ImGui::TextDisabled("Select a track on the left.");
+		return;
+	}
+
+	const FBoneAnimationTrack& Track = DataModel->GetBoneAnimationTracks()[SelectedAnimTrackIndex];
+	const FRawAnimSequenceTrack& RawTrack = Track.InternalTrack;
+	ImGui::TextWrapped("Bone: %s", Track.Name.ToString().c_str());
+	ImGui::Text("Position Keys: %d", static_cast<int32>(RawTrack.PosKeys.size()));
+	ImGui::Text("Rotation Keys: %d", static_cast<int32>(RawTrack.RotKeys.size()));
+	ImGui::Text("Scale Keys: %d", static_cast<int32>(RawTrack.ScaleKeys.size()));
+
+	if (!RawTrack.PosKeys.empty())
+	{
+		const FVector3f& Key = RawTrack.PosKeys.front();
+		ImGui::Text("First Pos: %.3f, %.3f, %.3f", Key.X, Key.Y, Key.Z);
+	}
+	if (!RawTrack.ScaleKeys.empty())
+	{
+		const FVector3f& Key = RawTrack.ScaleKeys.front();
+		ImGui::Text("First Scale: %.3f, %.3f, %.3f", Key.X, Key.Y, Key.Z);
+	}
 }
 
 void FEditorViewerWindowWidget::RenderBoneDetails(USkeletalMeshComponent* SkelComp)

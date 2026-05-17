@@ -56,7 +56,8 @@ void FEditorMainPanel::BuildActiveEditorCommandList(FEditorCommandList& OutComma
 
 	const FEditorTabId RoutingTabId = GetInputRoutingTabId();
 	if (RoutingTabId.Kind == EEditorTabKind::SkeletalMeshViewer ||
-		RoutingTabId.Kind == EEditorTabKind::StaticMeshViewer)
+		RoutingTabId.Kind == EEditorTabKind::StaticMeshViewer ||
+		RoutingTabId.Kind == EEditorTabKind::AnimSequenceViewer)
 	{
 		FEditorViewerWindowWidget* ViewerWidget = FindViewerWidgetForTab(RoutingTabId);
 		if (!ViewerWidget)

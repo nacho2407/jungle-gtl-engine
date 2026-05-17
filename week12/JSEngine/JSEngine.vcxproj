@@ -354,7 +354,9 @@
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequenceBase.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSingleNodeInstance.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimationAsset.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimationStateMachine.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UDebugAnimSequence.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UStateMachineAnimInstance.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Asset\UCurveFloatAsset.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Asset\USkeletalMesh.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Asset\UStaticMesh.gen.cpp" />
@@ -735,7 +737,9 @@
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimationStateMachine.cpp" />
     <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp" />
+    <ClCompile Include="Source\Engine\Animation\StateMachineAnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\TimelinePlayer.cpp" />
     <ClCompile Include="Source\Engine\Asset\AnimSequenceAssetLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetQueryService.cpp" />
@@ -810,6 +814,7 @@
     <ClCompile Include="Source\Engine\Core\ImportedMaterialPolicy.cpp" />
     <ClCompile Include="Source\Engine\Core\Logging\GPUProfiler.cpp" />
     <ClCompile Include="Source\Engine\Core\Logging\Log.cpp" />
+    <ClCompile Include="Source\Engine\Core\Logging\SkinningStats.cpp" />
     <ClCompile Include="Source\Engine\Core\Logging\Stats.cpp" />
     <ClCompile Include="Source\Engine\Core\Logging\Timer.cpp" />
     <ClCompile Include="Source\Engine\Core\MaterialLoadService.cpp" />
@@ -1068,7 +1073,10 @@
     <ClInclude Include="Source\Engine\Animation\AnimSequence.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h" />
     <ClInclude Include="Source\Engine\Animation\AnimTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimationRuntime.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimationStateMachine.h" />
     <ClInclude Include="Source\Engine\Animation\CurvePlayback.h" />
+    <ClInclude Include="Source\Engine\Animation\StateMachineAnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\TimelinePlayer.h" />
     <ClInclude Include="Source\Engine\Asset\AnimSequenceAssetLoader.h" />
     <ClInclude Include="Source\Engine\Asset\AssetQueryService.h" />
@@ -1161,6 +1169,7 @@
     <ClInclude Include="Source\Engine\Core\ImportedMaterialPolicy.h" />
     <ClInclude Include="Source\Engine\Core\Logging\GPUProfiler.h" />
     <ClInclude Include="Source\Engine\Core\Logging\Log.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\SkinningStats.h" />
     <ClInclude Include="Source\Engine\Core\Logging\Stats.h" />
     <ClInclude Include="Source\Engine\Core\Logging\Timer.h" />
     <ClInclude Include="Source\Engine\Core\MaterialLoadService.h" />

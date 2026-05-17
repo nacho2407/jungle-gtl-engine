@@ -77,6 +77,8 @@ float UAnimSequence::GetPlayLength() const
 	return DataModel ? DataModel->GetPlayLength() : 0.0f;
 }
 
+//3-2. Evaluate Phase(Tick Component의 USkeletalMeshComponent::ApplyAnimationPose로 이어짐)
+//진행된 시간에 맞춰 두 샘플링된 키 프레임 사이를 Interpolation, pos 계산
 bool UAnimSequence::GetAnimationPose(float Time, FPoseContext& OutPose) const
 {
 	if (!DataModel)

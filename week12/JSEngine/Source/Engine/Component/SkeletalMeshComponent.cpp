@@ -3,6 +3,9 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/AnimationStateMachine.h"
+#include "Animation/StateMachineAnimInstance.h"
+#include "Core/Logging/SkinningStats.h"
 #include "GameFramework/AActor.h"
 #include "Core/ResourceManager.h"
 
@@ -15,6 +18,37 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
 	if (Ar.IsLoading() && !AnimationAssetPath.empty())
 	{
 		SetAnimation(FResourceManager::Get().LoadAnimSequence(AnimationAssetPath));
+	}
+}
+
+void USkeletalMeshComponent::PostDuplicate(UObject* Original)
+{
+	USkinnedMeshComponent::PostDuplicate(Original);
+
+	USkeletalMeshComponent* SourceComponent = Cast<USkeletalMeshComponent>(Original);
+	if (!SourceComponent)
+	{
+		return;
+	}
+
+	AnimInstance = nullptr;
+	AnimationStateMachine = nullptr;
+	AnimationToPlay = SourceComponent->AnimationToPlay;
+	bPlaying = SourceComponent->bPlaying;
+	bLooping = SourceComponent->bLooping;
+	AnimationMode = SourceComponent->AnimationMode;
+
+	if (AnimationMode == EAnimationMode::AnimationSingleNode && AnimationToPlay)
+	{
+		UAnimSingleNodeInstance* SingleNode = new UAnimSingleNodeInstance();
+		SingleNode->Initialize(this);
+		SingleNode->SetAnimation(Cast<UAnimSequenceBase>(AnimationToPlay));
+		AnimInstance = SingleNode;
+
+		if (bPlaying)
+		{
+			SingleNode->Play(bLooping);
+		}
 	}
 }
 
@@ -38,6 +72,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 
 	if (AnimInstance)
 	{
+		SKINNING_SCOPE_MS(&FSkinningStats::AddCPUAnimationUpdate);
 		AnimInstance->NativeUpdateAnimation(DeltaTime);
 
 		FPoseContext PoseContext;
@@ -53,19 +88,61 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 			}
 		}
 
-		if (AnimInstance->EvaluatePose(PoseContext))
-		{
-			ApplyAnimationPose(PoseContext);
-		}
-	}
+        if (AnimInstance->EvaluatePose(PoseContext))
+        {
+            //4.Skinning Phase
+            ApplyAnimationPose(PoseContext);
+        }
+    }
 
 	// Pose가 바뀐 경우에만 실제 CPU skinning이 수행(dirty flag 이용)
 	EnsureSkinningUpdated();
 }
 
+//4.Skinning Phase
+//Local Pose를 컴포넌트에 적용, skinning update
 void USkeletalMeshComponent::ApplyAnimationPose(const FPoseContext& PoseContext)
 {
 	SetCurrentLocalPose(PoseContext.LocalPose);
+}
+
+UAnimationStateMachine* USkeletalMeshComponent::CreateAnimationStateMachine()
+{
+	if (!AnimationStateMachine)
+	{
+		AnimationStateMachine = UObjectManager::Get().CreateObject<UAnimationStateMachine>();
+		AnimationStateMachine->Initialize(this);
+		SetAnimationStateMachine(AnimationStateMachine);
+	}
+	return AnimationStateMachine;
+}
+
+void USkeletalMeshComponent::SetAnimationStateMachine(UAnimationStateMachine* InStateMachine)
+{
+	AnimationStateMachine = InStateMachine;
+
+	if (!AnimationStateMachine)
+	{
+		return;
+	}
+
+	AnimationStateMachine->Initialize(this);
+
+	UStateMachineAnimInstance* Instance = UObjectManager::Get().CreateObject<UStateMachineAnimInstance>();
+
+	Instance->Initialize(this);
+	Instance->SetStateMachine(AnimationStateMachine);
+
+	AnimInstance = Instance;
+	AnimationMode = EAnimationMode::AnimationCustomMode;
+}
+
+void USkeletalMeshComponent::SetAnimStateByName(const FString& StateName, float BlendTime)
+{
+	if (AnimationStateMachine)
+	{
+		AnimationStateMachine->SetStateByName(StateName, BlendTime);
+	}
 }
 
 void USkeletalMeshComponent::ResetToBindPose()
