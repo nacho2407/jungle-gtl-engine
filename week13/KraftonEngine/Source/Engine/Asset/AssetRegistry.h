@@ -23,11 +23,16 @@ namespace FAssetRegistry
 
     // Skeleton 관계 기반 조회. UI는 가능한 한 이 경로를 통해 Mesh/Anim 목록을 받아야 한다.
     TArray<FAssetListItem> ListSkeletons();
-    TArray<FAssetListItem> ListAnimationsForSkeleton(const FSkeletonBinding& Skeleton, bool bAllowSameStructure = true);
-    TArray<FAssetListItem> ListMeshesForSkeleton(const FSkeletonBinding& Skeleton, bool bAllowSameStructure = true);
+    TArray<FAssetListItem> ListAnimationsForSkeleton(const FSkeletonBinding& Skeleton, bool bAllowSameStructure = false);
+    TArray<FAssetListItem> ListMeshesForSkeleton(const FSkeletonBinding& Skeleton, bool bAllowSameStructure = false);
 
     USkeleton* FindSkeletonByGuid(const FString& SkeletonAssetGuid);
 
     bool CheckAnimationForMesh(const UAnimSequence* Sequence, const USkeletalMesh* Mesh, FSkeletonCompatibilityReport* OutReport = nullptr);
-    bool ValidateAssetBinding(const FSkeletonBinding& A, const FSkeletonBinding& B, bool bAllowSameStructure = true, FSkeletonCompatibilityReport* OutReport = nullptr);
+    bool ValidateAssetBinding(
+	    const FSkeletonBinding&       A,
+	    const FSkeletonBinding&       B,
+	    bool                          bAllowSameStructure = false,
+	    FSkeletonCompatibilityReport* OutReport           = nullptr
+	    );
 }

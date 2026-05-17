@@ -1,4 +1,4 @@
-#include "AssetRegistry.h"
+﻿#include "AssetRegistry.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Animation/AnimationManager.h"
@@ -160,6 +160,6 @@ namespace FAssetRegistry
             *OutReport = Report;
         }
 
-        return Report.IsCompatible();
+        return Report.IsCompatible(false);
     }
 }

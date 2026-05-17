@@ -574,11 +574,6 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
             }
         }
 
-        // SourceCurveLayers 는 FBX LclRotation 등 raw 채널값(노드 회전순서/pre·post-rotation/
-        // pivot/offset, RH→LH DeepConvertScene 축변환 적용 *이전*)이라 런타임 포즈를 구동하면
-        // 안 된다. 권위 데이터는 SDK EvaluateLocalTransform→DecomposeMatrix 로 구운
-        // PosKeys/RotKeys/ScaleKeys 다. 이전의 EvaluateSourceCurveTrack override 는
-        // 회전순서/축변환을 무시해 기본 자세부터 회전을 깨뜨렸다.
         Output.Pose[BoneIndex] = Result;
     }
 }
@@ -642,7 +637,7 @@ bool UAnimSequence::IsCompatibleWith(const USkeleton* InSkeleton) const
         nullptr,
         InSkeleton);
 
-    return Report.IsCompatible();
+    return Report.IsCompatible(false);
 }
 
 bool UAnimSequence::IsCompatibleWith(const USkeletalMesh* InSkeletalMesh) const
@@ -659,7 +654,7 @@ bool UAnimSequence::IsCompatibleWith(const USkeletalMesh* InSkeletalMesh) const
         nullptr,
         MeshSkeleton);
 
-    return Report.IsCompatible();
+    return Report.IsCompatible(false);
 }
 
 const FBoneAnimationTrack* UAnimSequence::FindBoneTrackByIndex(int32 BoneIndex) const

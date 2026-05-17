@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Mesh/StaticMeshAsset.h"
@@ -29,4 +29,18 @@ struct FFbxSkeletalMeshImportResult
 	FReferenceSkeleton Skeleton;
 	TArray<UAnimSequence*> AnimSequences;
 	TArray<FFbxImportedMaterialInfo> SourceMaterials;
+};
+
+struct FFbxSkeletalMeshOnlyImportResult
+{
+	FSkeletalMesh                    Mesh;
+	TArray<FSkeletalMaterial>        Materials;
+	FReferenceSkeleton               SourceSkeleton;
+	TArray<FFbxImportedMaterialInfo> SourceMaterials;
+};
+
+struct FFbxAnimationImportResult
+{
+	FReferenceSkeleton     SourceSkeleton;
+	TArray<UAnimSequence*> AnimSequences;
 };

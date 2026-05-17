@@ -1,9 +1,18 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Asset/AssetRegistry.h"
 
 class UAnimSequence;
+
+struct FAnimationImportRequest
+{
+    FString SourceFbxPath;
+    FString TargetSkeletonPath = "None";
+    FString DestinationDirectory;
+    bool    bAllowTargetExtraBones   = false;
+    bool    bOverwriteExistingAssets = false;
+};
 
 class FAnimationManager
 {
@@ -14,12 +23,15 @@ public:
 
     bool SaveAnimation(UAnimSequence* Sequence, const FString& PackagePath, const FString& SourcePath);
 
+    bool ImportAnimationForSkeleton(const FAnimationImportRequest& Request, TArray<UAnimSequence*>* OutSequences = nullptr);
+
     const TArray<FAssetListItem>& GetAvailableAnimationFiles() const
     {
         return AvailableAnimationFiles;
     }
 
-    static FString GetAnimationPackagePath(const FString& SourcePath, const FString& AnimationName);
+    static FString GetAnimationPath(const FString& SourcePath, const FString& AnimationName);
+    static FString GetAnimationPathForSkeleton(const FString& SourcePath, const FString& AnimationName, const FString& TargetSkeletonPath);
 
 private:
     FAnimationManager() = default;

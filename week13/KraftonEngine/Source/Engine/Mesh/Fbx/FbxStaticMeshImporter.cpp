@@ -89,12 +89,11 @@ bool FFbxStaticMeshImporter::Import(FbxScene* Scene, const FString& SourcePath, 
 			continue;
 		}
 
-		const int32 SkinCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
-		FbxSkin* Skin = SkinCount > 0 ? static_cast<FbxSkin*>(Mesh->GetDeformer(0, FbxDeformer::eSkin)) : nullptr;
-		const bool bHasSkin = Skin && Skin->GetClusterCount() > 0;
-		const EStaticFbxSkinnedMeshPolicy SkinnedMeshPolicy = Options
-			? Options->StaticFbxSkinnedMeshPolicy
-			: EStaticFbxSkinnedMeshPolicy::Skip;
+		const int32                       SkinCount         = Mesh->GetDeformerCount(FbxDeformer::eSkin);
+		FbxSkin*                          Skin              = SkinCount > 0 ? static_cast<FbxSkin*>(Mesh->GetDeformer(0, FbxDeformer::eSkin)) : nullptr;
+		const bool                        bHasSkin          = Skin && Skin->GetClusterCount() > 0;
+		const FImportOptions              EffectiveOptions  = Options ? *Options : FImportOptions::Default();
+		const EStaticFbxSkinnedMeshPolicy SkinnedMeshPolicy = EffectiveOptions.StaticFbxSkinnedMeshPolicy;
 
 		FbxAMatrix NodeGeometryTransform = FFbxTransformUtils::GetGeometryTransform(Node);
 		FMatrix MeshToWorld = FFbxTransformUtils::ToEngineMatrix(Node->EvaluateGlobalTransform() * NodeGeometryTransform);
