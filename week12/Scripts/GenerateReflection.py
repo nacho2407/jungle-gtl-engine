@@ -397,9 +397,9 @@ def make_runtime_property_flags(metadata):
 
 
 # UCLASS 메타데이터와 이름 규칙을 기반으로 클래스 플래그(ClassFlags)를 생성합니다.
-def make_class_flags(metadata, class_name, parent_name):
+def make_class_flags(metadata, class_name, parent_name, is_abstract=False):
     flags = []
-    if get_metadata_value(metadata, 'Abstract') is not None:
+    if is_abstract or get_metadata_value(metadata, 'Abstract') is not None:
         flags.append('CF_Abstract')
     if class_name.startswith('A') or parent_name.startswith('A') or get_metadata_value(metadata, 'Actor') is not None:
         flags.append('CF_Actor')
@@ -673,6 +673,16 @@ def parse_parent_from_class_header(class_header):
     return None
 
 
+# 클래스 본문에 직접 선언된 pure virtual 함수가 있는지 확인합니다.
+# 일반 멤버 초기화자 `= 0`과 구분하기 위해 virtual이 포함된 선언만 대상으로 삼습니다.
+def class_has_direct_pure_virtual(class_body):
+    return re.search(
+        r'\bvirtual\b[^;{}]*=\s*0\s*;',
+        class_body or '',
+        re.DOTALL,
+    ) is not None
+
+
 # GENERATED_BODY 매크로 내부의 인자(클래스 이름, 부모 클래스 이름)를 파싱합니다.
 def parse_generated_body(content, class_info):
     for macro in iter_macro_invocations(content, 'GENERATED_BODY', class_info['body_start'], class_info['body_end']):
@@ -711,21 +721,26 @@ def find_uclass_declarations(content):
         if close_brace == -1:
             continue
 
+        parsed_parent_name = parse_parent_from_class_header(class_header) or 'UObject'
+        class_body = content[open_brace + 1:close_brace]
         class_info = {
             'name': class_name,
-            'parent_name': parse_parent_from_class_header(class_header) or 'UObject',
+            'parent_name': parsed_parent_name,
             'metadata': parse_metadata(macro['metadata']),
             'class_start': class_keyword,
             'body_start': open_brace + 1,
             'body_end': close_brace,
             'class_end': close_brace + 1,
+            'is_abstract': class_has_direct_pure_virtual(class_body) or get_metadata_value(parse_metadata(macro['metadata']), 'Abstract') is not None,
         }
 
         generated_class_name, generated_parent_name = parse_generated_body(content, class_info)
-        if generated_class_name:
-            class_info['name'] = generated_class_name
-        if generated_parent_name:
-            class_info['parent_name'] = generated_parent_name
+        if generated_class_name and generated_class_name != class_name:
+            raise RuntimeError(
+                f"GENERATED_BODY class mismatch: parsed '{class_name}', macro '{generated_class_name}'")
+        if generated_parent_name and generated_parent_name != parsed_parent_name:
+            raise RuntimeError(
+                f"GENERATED_BODY parent mismatch for '{class_name}': parsed '{parsed_parent_name}', macro '{generated_parent_name}'")
 
         classes.append(class_info)
 
@@ -804,11 +819,11 @@ def generate_class_file(header_path, class_info, properties, used_enums):
     )
 
     create_func = 'nullptr'
-    if get_metadata_value(class_info['metadata'], 'Abstract') is None:
+    if not class_info.get('is_abstract', False):
         create_func = f'[]() -> UObject* {{ return CreateReflectedObject<{class_name}>(); }}'
 
     include_path = make_include_path(header_path)
-    class_flags = make_class_flags(class_info['metadata'], class_name, parent_name)
+    class_flags = make_class_flags(class_info['metadata'], class_name, parent_name, class_info.get('is_abstract', False))
     gen_code = f"""// AUTO-GENERATED FILE. DO NOT MODIFY.
 #include \"{include_path}\"
 #include \"Core/Reflection/ReflectionRegistry.h\"

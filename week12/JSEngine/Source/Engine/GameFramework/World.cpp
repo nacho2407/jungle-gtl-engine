@@ -64,7 +64,14 @@ void UWorld::BeginPlay()
 
 AActor* UWorld::SpawnActorByTypeName(const FString& TypeName)
 {
-	UObject* Object = NewObject(FReflectionRegistry::Get().FindClass(TypeName));
+	UClass* Class = FReflectionRegistry::Get().FindClass(TypeName);
+	if (!Class || Class->HasAnyClassFlags(CF_Abstract))
+	{
+		UE_LOG_ERROR("[World] Failed to spawn actor by type name: %s", TypeName.c_str());
+		return nullptr;
+	}
+
+	UObject* Object = NewObject(Class);
 	AActor* Actor = Cast<AActor>(Object);
 	if (!Actor)
 	{

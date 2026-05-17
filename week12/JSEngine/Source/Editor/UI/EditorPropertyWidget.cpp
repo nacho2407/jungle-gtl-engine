@@ -1523,7 +1523,7 @@ void FEditorPropertyWidget::RenderComponentProperties()
 		}
 
 		const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
-		RenderReflectionProperty(SelectedComponent, *Property);
+		RenderReflectionProperty(FPropertyHandle{ SelectedComponent, Property });
 		++RenderedPropertyCount;
 		if (bDetailsPerfTraceFrame)
 		{
@@ -1657,24 +1657,30 @@ void FEditorPropertyWidget::RenderReflectionProperties(UObject* Object)
 		{
 			continue;
 		}
-		RenderReflectionProperty(Object, *Property);
+		RenderReflectionProperty(FPropertyHandle{ Object, Property });
 	}
 }
 
-void FEditorPropertyWidget::RenderReflectionProperty(UObject* Object, const FProperty& Property)
+void FEditorPropertyWidget::RenderReflectionProperty(const FPropertyHandle& Handle)
 {
-	if (!Object || !Property.IsEditable())
+	if (!Handle.IsValid() || !Handle.IsEditable())
 	{
 		return;
 	}
 
-	RenderPropertyWidget(Object, Property);
+	RenderPropertyWidget(Handle);
 }
 
-bool FEditorPropertyWidget::RenderSceneComponentRefWidget(UObject* Object, const FProperty& Property, AActor* Owner)
+bool FEditorPropertyWidget::RenderSceneComponentRefWidget(const FPropertyHandle& Handle, AActor* Owner)
 {
+	if (!Handle.IsValid())
+	{
+		return false;
+	}
+
+	const FProperty& Property = *Handle.Property;
 	bool bChanged = false;
-	void* RawValuePtr = Property.GetValuePtr(Object);
+	void* RawValuePtr = Handle.GetValuePtr();
 	if (!RawValuePtr)
 	{
 		return false;
@@ -1731,14 +1737,16 @@ bool FEditorPropertyWidget::RenderSceneComponentRefWidget(UObject* Object, const
 }
 
 
-void FEditorPropertyWidget::RenderPropertyWidget(UObject* Object, const FProperty& Property)
+void FEditorPropertyWidget::RenderPropertyWidget(const FPropertyHandle& Handle)
 {
-	if (!Object || !Property.Name)
+	if (!Handle.IsValid() || !Handle.Property->Name)
 	{
 		return;
 	}
 
-	void* ValuePtr = Property.GetValuePtr(Object);
+	UObject* Object = Handle.Owner;
+	const FProperty& Property = *Handle.Property;
+	void* ValuePtr = Handle.GetValuePtr();
 	if (!ValuePtr)
 	{
 		return;
@@ -1845,7 +1853,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(UObject* Object, const FPropert
 			Owner = SelectedComponent->GetOwner();
 		}
 
-		bChanged = RenderSceneComponentRefWidget(Object, Property, Owner);
+		bChanged = RenderSceneComponentRefWidget(Handle, Owner);
 		break;
 	}
 	case EPropertyType::String:

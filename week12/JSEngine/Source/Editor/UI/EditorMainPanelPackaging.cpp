@@ -10,6 +10,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Math/Utils.h"
 #include "Core/Reflection/ReflectionRegistry.h"
+#include "Object/Object.h"
 
 #include "ImGui/imgui.h"
 
@@ -31,6 +32,15 @@ TArray<UClass*> GetPackagingTypesAssignableTo(UClass* BaseType)
 	}
 
 	FReflectionRegistry::Get().GetClassesDerivedFrom(BaseType, Types);
+	Types.erase(
+		std::remove_if(
+			Types.begin(),
+			Types.end(),
+			[](const UClass* Type)
+			{
+				return !Type || Type->HasAnyClassFlags(CF_Abstract);
+			}),
+		Types.end());
 
 	std::sort(
 		Types.begin(),

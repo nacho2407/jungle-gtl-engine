@@ -72,7 +72,7 @@ struct FMaterialParamValue
 	std::variant<bool, int32, uint32, float, FVector2, FVector, FVector4, FMatrix, UTexture*> Value;
 };
 
-UCLASS()
+UCLASS(Abstract)
 class UMaterialInterface : public UObject
 {
 public:

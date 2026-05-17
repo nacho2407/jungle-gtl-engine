@@ -192,28 +192,17 @@ void FEditorMainPanel::RenderViewerToolbarControls(FEditorViewer* Viewer)
 	}
 	if (ViewportState && ImGui::BeginPopup("##ViewerViewModePopupShared"))
 	{
-		static constexpr EViewMode Modes[] = {
-			EViewMode::Lit_Gouraud,
-			EViewMode::Lit_Lambert,
-			EViewMode::Lit_BlinnPhong,
-			EViewMode::Unlit,
-			EViewMode::Heatmap,
-			EViewMode::BoneWeightHeatmap,
-			EViewMode::Wireframe,
-			EViewMode::Depth,
-			EViewMode::Normal,
-			EViewMode::IdBuffer,
-		};
-		for (EViewMode Mode : Modes)
-		{
-			if (ImGui::MenuItem(
-				FEditorMainPanelViewportToolbarHelpers::GetViewModeName(Mode),
-				nullptr,
-				ViewportState->ViewMode == Mode))
+		FEditorMainPanelViewportToolbarHelpers::ForEachViewMode(
+			[ViewportState](EViewMode Mode)
 			{
-				ViewportState->ViewMode = Mode;
-			}
-		}
+				if (ImGui::MenuItem(
+					FEditorMainPanelViewportToolbarHelpers::GetViewModeName(Mode),
+					nullptr,
+					ViewportState->ViewMode == Mode))
+				{
+					ViewportState->ViewMode = Mode;
+				}
+			});
 		ImGui::Separator();
 		if (ImGui::BeginMenu("Light Culling"))
 		{

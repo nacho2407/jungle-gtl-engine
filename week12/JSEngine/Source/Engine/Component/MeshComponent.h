@@ -3,7 +3,7 @@
 
 class UMaterialInterface;
 
-UCLASS()
+UCLASS(Abstract)
 class UMeshComponent : public UPrimitiveComponent
 {
 public:

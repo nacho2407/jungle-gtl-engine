@@ -3,6 +3,8 @@
 #include "Core/PropertyTypes.h"
 #include "Object/FName.h"
 
+#include <cstring>
+
 class UObject;
 class UClass;
 class UMaterialInterface;
@@ -222,8 +224,15 @@ struct FPropertyHandle
 
 	bool IsValid() const { return Owner && Property; }
 	const char* GetName() const { return Property ? Property->Name : nullptr; }
+	EPropertyType GetType() const { return Property ? Property->Type : EPropertyType::Unknown; }
+	bool IsEditable() const { return Property && Property->IsEditable(); }
 
 	void* GetValuePtr() const
+	{
+		return IsValid() ? Property->GetValuePtr(Owner) : nullptr;
+	}
+
+	const void* GetValuePtrConst() const
 	{
 		return IsValid() ? Property->GetValuePtr(Owner) : nullptr;
 	}
@@ -232,6 +241,60 @@ struct FPropertyHandle
 	ValueType* GetValuePtr() const
 	{
 		return IsValid() ? Property->ContainerPtrToValuePtr<ValueType>(Owner) : nullptr;
+	}
+
+	template <typename ValueType>
+	bool GetValue(ValueType& OutValue) const
+	{
+		if (!IsValid())
+		{
+			return false;
+		}
+		return Property->GetPropertyValueInContainer<ValueType>(Owner, OutValue);
+	}
+
+	template <typename ValueType>
+	bool SetValue(const ValueType& InValue) const
+	{
+		if (!IsValid())
+		{
+			return false;
+		}
+		return Property->SetPropertyValueInContainer<ValueType>(Owner, InValue);
+	}
+
+	bool GetValue(void* OutValue) const
+	{
+		if (!IsValid() || !OutValue || !HasPropertyFlag(Property->Flags, EPropertyFlags::Read))
+		{
+			return false;
+		}
+
+		const void* ValuePtr = GetValuePtrConst();
+		if (!ValuePtr || Property->Size == 0)
+		{
+			return false;
+		}
+
+		std::memcpy(OutValue, ValuePtr, Property->Size);
+		return true;
+	}
+
+	bool SetValue(const void* InValue) const
+	{
+		if (!IsValid() || !InValue || !HasPropertyFlag(Property->Flags, EPropertyFlags::Write))
+		{
+			return false;
+		}
+
+		void* ValuePtr = GetValuePtr();
+		if (!ValuePtr || Property->Size == 0)
+		{
+			return false;
+		}
+
+		std::memcpy(ValuePtr, InValue, Property->Size);
+		return true;
 	}
 };
 

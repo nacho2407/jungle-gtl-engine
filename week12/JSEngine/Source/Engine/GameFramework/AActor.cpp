@@ -311,7 +311,7 @@ void AActor::Serialize(FArchive& Ar)
 
 UActorComponent* AActor::AddComponentByClass(UClass* Class)
 {
-	if (!Class || !Class->IsChildOf(UActorComponent::StaticClass()))
+	if (!Class || !Class->IsChildOf(UActorComponent::StaticClass()) || Class->HasAnyClassFlags(CF_Abstract))
 	{
 		return nullptr;
 	}

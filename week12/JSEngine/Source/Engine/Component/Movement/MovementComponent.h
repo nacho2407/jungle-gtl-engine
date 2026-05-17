@@ -8,7 +8,7 @@ class USceneComponent;
 /**
  * @brief 이동 컴포넌트의 기반이 되는 추상 클래스
  */
-UCLASS()
+UCLASS(Abstract)
 class UMovementComponent : public UActorComponent
 {
 public:
