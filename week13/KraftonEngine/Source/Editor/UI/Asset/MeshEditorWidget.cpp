@@ -145,6 +145,9 @@ void FMeshEditorWidget::Open(UObject* Object)
 
 	FSlateApplication::Get().RegisterViewport(&MeshViewportWindow, &ViewportClient);
 
+	// 디스크의 기존 AnimSequence .uasset 들을 목록에 채워 둔다(런타임 Load/Save 만으론 안 잡힘).
+	FAnimationManager::Get().RefreshAvailableAnimations();
+
 	ActiveTab         = EMeshEditorTab::Skeleton;
 	AnimTabState      = FAnimationTabState {};
 	SelectedBoneIndex = -1;
@@ -714,7 +717,10 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 			Request.TargetSkeletonPath = SkeletalMesh->GetSkeletonBinding().SkeletonPath;
 
 			TArray<UAnimSequence*> ImportedSequences;
-			if (FAnimationManager::Get().ImportAnimationForSkeleton(Request, &ImportedSequences) && !ImportedSequences.empty())
+			FAnimationManager::Get().ImportAnimationForSkeleton(Request, &ImportedSequences);
+			// 임포트 성공/스킵(이미 존재) 무관하게 디스크를 다시 스캔해 목록 갱신.
+			FAnimationManager::Get().RefreshAvailableAnimations();
+			if (!ImportedSequences.empty())
 			{
 				AnimTabState.CurrentSequence   = ImportedSequences[0];
 				AnimTabState.SelectedAnimIndex = -1;
