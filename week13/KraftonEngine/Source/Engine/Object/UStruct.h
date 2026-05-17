@@ -30,15 +30,20 @@ public:
 		return false;
 	}
 
-	void AddProperty(const FProperty& Property)
+	void AddProperty(const FProperty* Property)
 	{
-		for (FProperty& Existing : Properties)
+		if (!Property)
+		{
+			return;
+		}
+
+		for (const FProperty*& Existing : Properties)
 		{
 			const bool bSameName =
-				Existing.Name && Property.Name && std::strcmp(Existing.Name, Property.Name) == 0;
+				Existing && Existing->Name && Property->Name && std::strcmp(Existing->Name, Property->Name) == 0;
 			const bool bSameOwner =
-				(!Existing.OwnerClassName && !Property.OwnerClassName)
-				|| (Existing.OwnerClassName && Property.OwnerClassName && std::strcmp(Existing.OwnerClassName, Property.OwnerClassName) == 0);
+				(Existing && !Existing->OwnerClassName && !Property->OwnerClassName)
+				|| (Existing && Existing->OwnerClassName && Property->OwnerClassName && std::strcmp(Existing->OwnerClassName, Property->OwnerClassName) == 0);
 
 			if (bSameName && bSameOwner)
 			{
@@ -57,9 +62,12 @@ public:
 			SuperStruct->GetPropertyRefs(OutProperties, true);
 		}
 
-		for (const FProperty& Prop : Properties)
+		for (const FProperty* Prop : Properties)
 		{
-			OutProperties.push_back(&Prop);
+			if (Prop)
+			{
+				OutProperties.push_back(Prop);
+			}
 		}
 	}
 
@@ -86,7 +94,7 @@ private:
 	const char* Name = nullptr;
 	UStruct* SuperStruct = nullptr;
 	size_t Size = 0;
-	TArray<FProperty> Properties;
+	TArray<const FProperty*> Properties;
 };
 
 // static initializer 에서 UStruct를 전역 레지스트리에 등록
