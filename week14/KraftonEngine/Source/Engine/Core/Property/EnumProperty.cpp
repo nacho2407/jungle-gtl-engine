@@ -1,14 +1,13 @@
-#include "EnumProperty.h"
+﻿#include "EnumProperty.h"
 
 #include <cstring>
 #include "SimpleJSON/json.hpp"
 #include "Serialization/Archive.h"
 
-json::JSON FEnumProperty::Serialize(void* Container) const
+json::JSON FEnumProperty::SerializeValue(void* ValuePtr) const
 {
 	using namespace json;
 
-	void* ValuePtr = GetValuePtrFor(Container);
 	if (!ValuePtr)
 	{
 		return JSON();
@@ -20,9 +19,8 @@ json::JSON FEnumProperty::Serialize(void* Container) const
 	return JSON(Val);
 }
 
-void FEnumProperty::Deserialize(void* Container, json::JSON& Value) const
+void FEnumProperty::DeserializeValue(void* ValuePtr, json::JSON& Value) const
 {
-	void* ValuePtr = GetValuePtrFor(Container);
 	if (!ValuePtr)
 	{
 		return;
@@ -33,9 +31,8 @@ void FEnumProperty::Deserialize(void* Container, json::JSON& Value) const
 	std::memcpy(ValuePtr, &Val, ResolvedEnumSize);
 }
 
-void FEnumProperty::Serialize(void* Container, FArchive& Ar) const
+void FEnumProperty::SerializeValue(void* ValuePtr, FArchive& Ar) const
 {
-	void* ValuePtr = GetValuePtrFor(Container);
 	if (!ValuePtr)
 	{
 		return;

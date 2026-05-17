@@ -5,52 +5,46 @@
 #include "Core/CoreTypes.h"
 #include "Serialization/Archive.h"
 
-json::JSON FIntProperty::Serialize(void* Container) const
+json::JSON FIntProperty::SerializeValue(void* ValuePtr) const
 {
 	using namespace json;
 
-	void* ValuePtr = GetValuePtrFor(Container);
 	return ValuePtr ? JSON(*static_cast<int32*>(ValuePtr)) : JSON();
 }
 
-void FIntProperty::Deserialize(void* Container, json::JSON& Value) const
+void FIntProperty::DeserializeValue(void* ValuePtr, json::JSON& Value) const
 {
-	void* ValuePtr = GetValuePtrFor(Container);
 	if (ValuePtr)
 	{
 		*static_cast<int32*>(ValuePtr) = Value.ToInt();
 	}
 }
 
-void FIntProperty::Serialize(void* Container, FArchive& Ar) const
+void FIntProperty::SerializeValue(void* ValuePtr, FArchive& Ar) const
 {
-	void* ValuePtr = GetValuePtrFor(Container);
 	if (ValuePtr)
 	{
 		Ar << *static_cast<int32*>(ValuePtr);
 	}
 }
 
-json::JSON FFloatProperty::Serialize(void* Container) const
+json::JSON FFloatProperty::SerializeValue(void* ValuePtr) const
 {
 	using namespace json;
 
-	void* ValuePtr = GetValuePtrFor(Container);
 	return ValuePtr ? JSON(static_cast<double>(*static_cast<float*>(ValuePtr))) : JSON();
 }
 
-void FFloatProperty::Deserialize(void* Container, json::JSON& Value) const
+void FFloatProperty::DeserializeValue(void* ValuePtr, json::JSON& Value) const
 {
-	void* ValuePtr = GetValuePtrFor(Container);
 	if (ValuePtr)
 	{
 		*static_cast<float*>(ValuePtr) = static_cast<float>(Value.ToFloat());
 	}
 }
 
-void FFloatProperty::Serialize(void* Container, FArchive& Ar) const
+void FFloatProperty::SerializeValue(void* ValuePtr, FArchive& Ar) const
 {
-	void* ValuePtr = GetValuePtrFor(Container);
 	if (ValuePtr)
 	{
 		Ar << *static_cast<float*>(ValuePtr);

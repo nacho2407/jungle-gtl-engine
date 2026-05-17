@@ -1,15 +1,13 @@
 #pragma once
 
 #include "Core/PropertyTypes.h"
-#include "Object/SoftObjectPtr.h"
-#include "Serialization/Archive.h"
 
 struct FArrayProperty : FProperty
 {
 	EPropertyType Type = EPropertyType::SoftObjectRefArray;
 	EPropertyType ElementType = EPropertyType::SoftObjectRef;
 
-	struct FOps
+	struct FArrayOps
 	{
 		size_t (*GetNum)(const void* ArrayPtr) = nullptr;
 		void (*Resize)(void* ArrayPtr, size_t Num) = nullptr;
@@ -17,17 +15,10 @@ struct FArrayProperty : FProperty
 		const void* (*GetConstElementPtr)(const void* ArrayPtr, size_t Index) = nullptr;
 	};
 
-	struct FElementPathOps
-	{
-		const FString& (*GetPath)(const void* ElementPtr) = nullptr;
-		void (*SetPath)(void* ElementPtr, const FString& Path) = nullptr;
-		void (*SerializeArchive)(void* ElementPtr, FArchive& Ar) = nullptr;
-	};
-
 	template<typename ElementT>
-	static const FOps* GetOps()
+	static const FArrayOps* GetArrayOps()
 	{
-		static const FOps Ops = {
+		static const FArrayOps Ops = {
 			[](const void* ArrayPtr) -> size_t
 			{
 				return static_cast<const TArray<ElementT>*>(ArrayPtr)->size();
@@ -48,81 +39,38 @@ struct FArrayProperty : FProperty
 		return &Ops;
 	}
 
-	static const FElementPathOps* GetStringPathOps()
-	{
-		static const FElementPathOps Ops = {
-			[](const void* ElementPtr) -> const FString&
-			{
-				return *static_cast<const FString*>(ElementPtr);
-			},
-			[](void* ElementPtr, const FString& Path)
-			{
-				*static_cast<FString*>(ElementPtr) = Path;
-			},
-			[](void* ElementPtr, FArchive& Ar)
-			{
-				Ar << *static_cast<FString*>(ElementPtr);
-			},
-		};
-		return &Ops;
-	}
-
-	static const FElementPathOps* GetSoftObjectPtrPathOps()
-	{
-		static const FElementPathOps Ops = {
-			[](const void* ElementPtr) -> const FString&
-			{
-				return static_cast<const FSoftObjectPtr*>(ElementPtr)->ToString();
-			},
-			[](void* ElementPtr, const FString& Path)
-			{
-				static_cast<FSoftObjectPtr*>(ElementPtr)->SetPath(Path);
-			},
-			[](void* ElementPtr, FArchive& Ar)
-			{
-				FSoftObjectPtr* Value = static_cast<FSoftObjectPtr*>(ElementPtr);
-				FString Path = Value->ToString();
-				Ar << Path;
-				if (Ar.IsLoading())
-				{
-					Value->SetPath(Path);
-				}
-			},
-		};
-		return &Ops;
-	}
-
 	FArrayProperty() = default;
 	FArrayProperty(
 		const char* InName,
 		EPropertyType InType,
 		EPropertyType InElementType,
-		const FOps* InOps,
+		const FArrayOps* InArrayOps,
+		const FProperty* InInnerProperty,
 		const char* InCategory,
 		uint32 InFlags,
 		size_t InOffset,
 		size_t InSize,
 		const char* InDisplayName,
 		const TMap<FString, FString>& InMetadata,
-		const char* InOwnerClassName,
-		const FElementPathOps* InElementPathOps = nullptr)
+		const char* InOwnerClassName)
 		: FProperty(InName, InCategory, InFlags, InOffset, InSize, InDisplayName, InMetadata, InOwnerClassName)
 		, Type(InType)
 		, ElementType(InElementType)
-		, Ops(InOps)
-		, ElementPathOps(InElementPathOps)
+		, ArrayOps(InArrayOps)
+		, InnerProperty(InInnerProperty)
 	{
 	}
 
 	EPropertyType GetType() const override { return Type; }
 	EPropertyType GetElementType() const { return ElementType; }
+	const FProperty* GetInnerProperty() const { return InnerProperty; }
 	const FArrayProperty* AsArrayProperty() const override { return this; }
 
-	json::JSON Serialize(void* Container) const override;
-	void	   Deserialize(void* Container, json::JSON& Value) const override;
-	void	   Serialize(void* Container, FArchive& Ar) const override;
+	json::JSON SerializeValue(void* ValuePtr) const override;
+	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
+	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 
 private:
-	const FOps* Ops = nullptr;
-	const FElementPathOps* ElementPathOps = nullptr;
+	const FArrayOps* ArrayOps = nullptr;
+	const FProperty* InnerProperty = nullptr;
 };

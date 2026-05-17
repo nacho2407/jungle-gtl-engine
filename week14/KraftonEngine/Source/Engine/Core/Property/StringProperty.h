@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/PropertyTypes.h"
 
@@ -21,7 +21,7 @@ struct FStringProperty : FProperty
 	EPropertyType GetType() const override { return EPropertyType::String; }
 	const FStringProperty* AsStringProperty() const override { return this; }
 
-	json::JSON Serialize(void* Container) const override;
-	void	   Deserialize(void* Container, json::JSON& Value) const override;
-	void	   Serialize(void* Container, FArchive& Ar) const override;
+	json::JSON SerializeValue(void* ValuePtr) const override;
+	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
+	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 };
