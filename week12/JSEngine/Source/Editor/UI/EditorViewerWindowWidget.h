@@ -68,6 +68,9 @@ private:
     void RenderBoneRightPanel(USkeletalMeshComponent* SkelMeshComp);
     void RenderAnimSequenceLeftPanel(UAnimSequence* Sequence, USkeletalMeshComponent* SkelMeshComp);
     void RenderAnimSequenceRightPanel(UAnimSequence* Sequence, USkeletalMesh* PreviewMesh);
+    void RenderAnimSequenceToolbar(UAnimSequence* Sequence);
+    void RenderAnimSequenceTimeline(UAnimSequence* Sequence);
+    void RenderAnimSequenceDetails(UAnimSequence* Sequence, USkeletalMesh* PreviewMesh);
     void SyncPreviewMeshPathBuffer();
 	void RenderDetachedDocumentChrome(bool& bDockRequested, bool& bCloseRequested);
 	void RenderDetachedDocumentToolbar(bool& bDockRequested);
@@ -76,7 +79,6 @@ private:
 	uint64 ComputeEditableMeshSignature(const FSkeletalMesh* MeshData) const;
 	void ResetMeshDirtyBaseline();
 	bool HasMeshAssetEdits() const;
-
     TArray<TArray<int32>> Children;             // bone idx → child bone indices
     TArray<TArray<int32>> BoneToSocketIndices;  // bone idx → socket array indices
     FSkeletalMesh* CachedMesh = nullptr;
@@ -93,6 +95,7 @@ private:
     FString PreviewMeshPathBufferSource;
     char PreviewMeshPathBuffer[1024] = {};
     int32 SelectedAnimTrackIndex = -1;
+    UAnimSequence* CachedAnimSequence = nullptr;
 
 	FEditorViewer* Viewer = nullptr;
     bool bOpen = false;

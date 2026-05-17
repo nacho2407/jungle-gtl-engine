@@ -7,7 +7,7 @@
 class FViewportCamera;
 struct FTextureResource;
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "Billboard Component", Category = "Rendering")
 class UBillboardComponent : public UPrimitiveComponent
 {
 protected:

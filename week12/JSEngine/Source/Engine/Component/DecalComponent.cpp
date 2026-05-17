@@ -38,28 +38,6 @@ void UDecalComponent::Serialize(FArchive& Ar)
 	{
 		Materials.resize(1);
 	}
-
-	FString MaterialIdentifier;
-	if (Ar.IsSaving())
-	{
-		if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(Materials[0]))
-		{
-			MaterialIdentifier = FPaths::Normalize(MatInst->GetFilePath());
-		}
-		else if (Materials[0] != nullptr)
-		{
-			MaterialIdentifier = Materials[0]->GetName();
-		}
-	}
-
-	Ar << "Material" << MaterialIdentifier;
-	if (Ar.IsLoading())
-	{
-		if (!MaterialIdentifier.empty())
-		{
-			SetMaterial(0, FResourceManager::Get().GetMaterialInterface(MaterialIdentifier));
-		}
-	}
 }
 
 void UDecalComponent::BeginPlay()

@@ -1,24 +1,42 @@
 ﻿#include "Object/Property.h"
 
+#include "Animation/AnimSequence.h"
+#include "Asset/SkeletalMesh.h"
+#include "Asset/StaticMesh.h"
+#include "Core/Paths.h"
 #include "Core/Reflection/ReflectionRegistry.h"
+#include "Core/ResourceManager.h"
+#include "Object/Class.h"
 #include "Object/Object.h"
+#include "Render/Resource/Material.h"
 #include "Serialization/Archive.h"
 
 #include <cmath>
 #include <cstring>
+#include <filesystem>
 
 namespace
 {
 	bool IsValueChannel(const FString& ChannelName);
-	
-	// Serialize
-	template <typename T> 
-	void SerializePropertyValue(FArchive& Ar, const FProperty& Property, UObject* Container);
-	void SerializeEnumValue(FArchive& Ar, void* ValuePtr, uint8 Size);
+	bool IsObjectAssignableTo(UObject* Object, UClass* ExpectedClass);
+	bool IsClassChildOf(UClass* Class, UClass* ExpectedClass);
+	FString GetAssetObjectPath(UObject* Object);
+	UObject* ResolveAssetObject(const FString& Path, UClass* ExpectedClass);
 
-	// Copy
 	template <typename T>
-	bool CopyTypedValue(UObject* DstContainer, const UObject* SrcContainer, const FProperty& Property);
+	bool CopyTypedValue(void* DstValuePtr, const void* SrcValuePtr);
+
+	void SerializeEnumValue(FArchive& Ar, void* ValuePtr, uint8 Size);
+	void SerializeGuidValue(FArchive& Ar, void* ValuePtr);
+	void SerializeQuatValue(FArchive& Ar, void* ValuePtr);
+	void SerializeObjectPtrValue(FArchive& Ar, const FProperty& Property, void* ValuePtr);
+	void SerializeSoftObjectPtrValue(FArchive& Ar, const FProperty& Property, void* ValuePtr);
+	void SerializeArrayValue(FArchive& Ar, const FProperty& Property, void* ValuePtr);
+
+	bool CopyEnumValue(const FProperty& Property, void* DstValuePtr, const void* SrcValuePtr);
+	bool CopyObjectPtrValue(const FProperty& Property, void* DstValuePtr, const void* SrcValuePtr, const FDuplicateContext* Context);
+	bool CopySoftObjectPtrValue(const FProperty& Property, void* DstValuePtr, const void* SrcValuePtr);
+	bool CopyArrayValue(const FProperty& Property, void* DstValuePtr, const void* SrcValuePtr, const FDuplicateContext* Context);
 }
 
 void* FProperty::GetValuePtr(UObject* Container) const
@@ -38,69 +56,85 @@ void FProperty::SerializeItem(FArchive& Ar, UObject* Container) const
 		return;
 	}
 
+	if (Ar.IsLoading() && !Ar.HasKey(Name))
+	{
+		return;
+	}
+
+	void* ValuePtr = GetValuePtr(Container);
+	if (!ValuePtr)
+	{
+		return;
+	}
+
+	Ar << Name;
+	SerializeValue(Ar, ValuePtr);
+}
+
+void FProperty::SerializeValue(FArchive& Ar, void* ValuePtr) const
+{
+	if (!ValuePtr)
+	{
+		return;
+	}
+
 	switch (Type)
 	{
 	case EPropertyType::Bool:
-		Ar << Name;
-		SerializePropertyValue<bool>(Ar, *this, Container);
+		Ar << *static_cast<bool*>(ValuePtr);
 		break;
 	case EPropertyType::Int:
-		Ar << Name;
-		SerializePropertyValue<int32>(Ar, *this, Container);
+		Ar << *static_cast<int32*>(ValuePtr);
 		break;
 	case EPropertyType::Float:
-		Ar << Name;
-		SerializePropertyValue<float>(Ar, *this, Container);
+		Ar << *static_cast<float*>(ValuePtr);
 		break;
 	case EPropertyType::Vec3:
-		Ar << Name;
-		SerializePropertyValue<FVector>(Ar, *this, Container);
+		Ar << *static_cast<FVector*>(ValuePtr);
 		break;
 	case EPropertyType::Vec4:
-		Ar << Name;
-		SerializePropertyValue<FVector4>(Ar, *this, Container);
+		Ar << *static_cast<FVector4*>(ValuePtr);
 		break;
 	case EPropertyType::String:
-		Ar << Name;
-		SerializePropertyValue<FString>(Ar, *this, Container);
+		Ar << *static_cast<FString*>(ValuePtr);
 		break;
 	case EPropertyType::Name:
-		Ar << Name;
-		SerializePropertyValue<FName>(Ar, *this, Container);
+		Ar << *static_cast<FName*>(ValuePtr);
 		break;
 	case EPropertyType::Color:
-		Ar << Name;
-		SerializePropertyValue<FColor>(Ar, *this, Container);
+		Ar << *static_cast<FColor*>(ValuePtr);
 		break;
-	case EPropertyType::Vec3Array:
-		Ar << Name;
-		SerializePropertyValue<TArray<FVector>>(Ar, *this, Container);
+	case EPropertyType::Guid:
+		SerializeGuidValue(Ar, ValuePtr);
 		break;
-	case EPropertyType::StringArray:
-		Ar << Name;
-		SerializePropertyValue<TArray<FString>>(Ar, *this, Container);
+	case EPropertyType::Quat:
+		SerializeQuatValue(Ar, ValuePtr);
 		break;
 	case EPropertyType::Enum:
 		if (EnumMeta)
 		{
-			Ar << Name;
-			SerializeEnumValue(Ar, GetValuePtr(Container), EnumMeta->Size);
+			SerializeEnumValue(Ar, ValuePtr, EnumMeta->Size);
 		}
 		break;
-
-	case EPropertyType::Guid:
-	case EPropertyType::Quat:
-	case EPropertyType::SceneComponentRef:
-	case EPropertyType::Material:
+	case EPropertyType::ObjectPtr:
+		SerializeObjectPtrValue(Ar, *this, ValuePtr);
+		break;
+	case EPropertyType::SoftObjectPtr:
+		SerializeSoftObjectPtrValue(Ar, *this, ValuePtr);
+		break;
+	case EPropertyType::Array:
+		SerializeArrayValue(Ar, *this, ValuePtr);
+		break;
+	case EPropertyType::Struct:
 	case EPropertyType::Unknown:
 	default:
 		break;
 	}
 }
 
-bool FProperty::CopyValue(UObject* DstContainer, const UObject* SrcContainer) const
+bool FProperty::CopyValue(void* DstValuePtr, const void* SrcValuePtr, const FDuplicateContext* Context) const
 {
-	if (!DstContainer || !SrcContainer || !Name || IsTransient())
+	if (!DstValuePtr || !SrcValuePtr)
 	{
 		return false;
 	}
@@ -108,42 +142,119 @@ bool FProperty::CopyValue(UObject* DstContainer, const UObject* SrcContainer) co
 	switch (Type)
 	{
 	case EPropertyType::Bool:
-		return CopyTypedValue<bool>(DstContainer, SrcContainer, *this);
+		return CopyTypedValue<bool>(DstValuePtr, SrcValuePtr);
 	case EPropertyType::Int:
-		return CopyTypedValue<int32>(DstContainer, SrcContainer, *this);
+		return CopyTypedValue<int32>(DstValuePtr, SrcValuePtr);
 	case EPropertyType::Float:
-		return CopyTypedValue<float>(DstContainer, SrcContainer, *this);
+		return CopyTypedValue<float>(DstValuePtr, SrcValuePtr);
 	case EPropertyType::Vec3:
-		return CopyTypedValue<FVector>(DstContainer, SrcContainer, *this);
+		return CopyTypedValue<FVector>(DstValuePtr, SrcValuePtr);
 	case EPropertyType::Vec4:
-		return CopyTypedValue<FVector4>(DstContainer, SrcContainer, *this);
+		return CopyTypedValue<FVector4>(DstValuePtr, SrcValuePtr);
 	case EPropertyType::Color:
-		return CopyTypedValue<FColor>(DstContainer, SrcContainer, *this);
+		return CopyTypedValue<FColor>(DstValuePtr, SrcValuePtr);
 	case EPropertyType::Guid:
-		return CopyTypedValue<FGuid>(DstContainer, SrcContainer, *this);
+		return CopyTypedValue<FGuid>(DstValuePtr, SrcValuePtr);
 	case EPropertyType::Quat:
-		return CopyTypedValue<FQuat>(DstContainer, SrcContainer, *this);
+		return CopyTypedValue<FQuat>(DstValuePtr, SrcValuePtr);
 	case EPropertyType::String:
-		return CopyTypedValue<FString>(DstContainer, SrcContainer, *this);
+		return CopyTypedValue<FString>(DstValuePtr, SrcValuePtr);
 	case EPropertyType::Name:
-		return CopyTypedValue<FName>(DstContainer, SrcContainer, *this);
-	case EPropertyType::Vec3Array:
-		return CopyTypedValue<TArray<FVector>>(DstContainer, SrcContainer, *this);
-	case EPropertyType::StringArray:
-		return CopyTypedValue<TArray<FString>>(DstContainer, SrcContainer, *this);
-	case EPropertyType::Material:
-		return CopyTypedValue<TArray<UMaterialInterface*>>(DstContainer, SrcContainer, *this);
+		return CopyTypedValue<FName>(DstValuePtr, SrcValuePtr);
 	case EPropertyType::Enum:
-		if (EnumMeta && GetValuePtr(DstContainer) && GetValuePtr(SrcContainer))
+		return CopyEnumValue(*this, DstValuePtr, SrcValuePtr);
+	case EPropertyType::ObjectPtr:
+		return CopyObjectPtrValue(*this, DstValuePtr, SrcValuePtr, Context);
+	case EPropertyType::SoftObjectPtr:
+		return CopySoftObjectPtrValue(*this, DstValuePtr, SrcValuePtr);
+	case EPropertyType::Array:
+		return CopyArrayValue(*this, DstValuePtr, SrcValuePtr, Context);
+	case EPropertyType::Struct:
+		if (Size > 0)
 		{
-			std::memcpy(GetValuePtr(DstContainer), GetValuePtr(SrcContainer), EnumMeta->Size);
+			std::memcpy(DstValuePtr, SrcValuePtr, Size);
 			return true;
 		}
 		return false;
-	case EPropertyType::SceneComponentRef:
 	case EPropertyType::Unknown:
 	default:
 		return false;
+	}
+}
+
+bool FProperty::CopyValue(UObject* DstContainer, const UObject* SrcContainer, const FDuplicateContext* Context) const
+{
+	if (!DstContainer || !SrcContainer || !Name || IsTransient())
+	{
+		return false;
+	}
+
+	return CopyValue(GetValuePtr(DstContainer), GetValuePtr(SrcContainer), Context);
+}
+
+void FProperty::VisitReferences(FReferenceCollector& Collector, void* ValuePtr) const
+{
+	if (!ValuePtr)
+	{
+		return;
+	}
+
+	switch (Type)
+	{
+	case EPropertyType::ObjectPtr:
+		if (ReferenceKind != EObjectReferenceKind::Asset && ObjectPtrOps)
+		{
+			ObjectPtrOps->VisitReference(Collector, ValuePtr);
+		}
+		break;
+	case EPropertyType::Array:
+		if (ArrayOps && InnerProperty)
+		{
+			const int32 Count = ArrayOps->Num(ValuePtr);
+			for (int32 Index = 0; Index < Count; ++Index)
+			{
+				InnerProperty->VisitReferences(Collector, ArrayOps->GetElementPtr(ValuePtr, Index));
+			}
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+void FProperty::VisitSoftReferences(FSoftReferenceCollector& Collector, void* ValuePtr) const
+{
+	if (!ValuePtr)
+	{
+		return;
+	}
+
+	switch (Type)
+	{
+	case EPropertyType::SoftObjectPtr:
+		if (SoftObjectOps)
+		{
+			SoftObjectOps->VisitSoftReference(Collector, ValuePtr, ObjectClass);
+		}
+		break;
+	case EPropertyType::ObjectPtr:
+		if (ReferenceKind == EObjectReferenceKind::Asset && ObjectPtrOps)
+		{
+			Collector.AddSoftObjectPath(GetAssetObjectPath(ObjectPtrOps->GetObject(ValuePtr)), ObjectClass);
+		}
+		break;
+	case EPropertyType::Array:
+		if (ArrayOps && InnerProperty)
+		{
+			const int32 Count = ArrayOps->Num(ValuePtr);
+			for (int32 Index = 0; Index < Count; ++Index)
+			{
+				InnerProperty->VisitSoftReferences(Collector, ArrayOps->GetElementPtr(ValuePtr, Index));
+			}
+		}
+		break;
+	default:
+		break;
 	}
 }
 
@@ -295,13 +406,88 @@ namespace
 		return ChannelName.empty() || ChannelName == "Value";
 	}
 
-	template <typename T>
-	void SerializePropertyValue(FArchive& Ar, const FProperty& Property, UObject* Container)
+	bool IsObjectAssignableTo(UObject* Object, UClass* ExpectedClass)
 	{
-		if (T* Value = Property.ContainerPtrToValuePtr<T>(Container))
+		return !Object || !ExpectedClass || Object->IsA(ExpectedClass);
+	}
+
+	bool IsClassChildOf(UClass* Class, UClass* ExpectedClass)
+	{
+		return Class && ExpectedClass && Class->IsChildOf(ExpectedClass);
+	}
+
+	FString GetAssetObjectPath(UObject* Object)
+	{
+		if (!Object)
 		{
-			Ar << *Value;
+			return {};
 		}
+
+		if (UMaterialInterface* Material = Cast<UMaterialInterface>(Object))
+		{
+			const FString FilePath = FPaths::Normalize(Material->GetFilePath());
+			return FilePath.empty() ? Material->GetName() : FilePath;
+		}
+
+		if (UStaticMesh* StaticMesh = Cast<UStaticMesh>(Object))
+		{
+			return FPaths::Normalize(StaticMesh->GetAssetPathFileName());
+		}
+
+		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(Object))
+		{
+			return FPaths::Normalize(SkeletalMesh->GetAssetPathFileName());
+		}
+
+		if (UAnimSequence* AnimSequence = Cast<UAnimSequence>(Object))
+		{
+			return FPaths::Normalize(AnimSequence->GetAssetPath());
+		}
+
+		return Object->GetName();
+	}
+
+	UObject* ResolveAssetObject(const FString& Path, UClass* ExpectedClass)
+	{
+		if (Path.empty() || !ExpectedClass)
+		{
+			return nullptr;
+		}
+
+		if (IsClassChildOf(ExpectedClass, UMaterialInterface::StaticClass()))
+		{
+			return FResourceManager::Get().GetMaterialInterface(Path);
+		}
+
+		if (IsClassChildOf(ExpectedClass, UStaticMesh::StaticClass()))
+		{
+			return FResourceManager::Get().LoadStaticMesh(Path);
+		}
+
+		if (IsClassChildOf(ExpectedClass, USkeletalMesh::StaticClass()))
+		{
+			return FResourceManager::Get().LoadSkeletalMesh(Path);
+		}
+
+		if (IsClassChildOf(ExpectedClass, UAnimationAsset::StaticClass()))
+		{
+			return FResourceManager::Get().LoadAnimSequence(Path);
+		}
+
+		return nullptr;
+	}
+
+	template <typename T>
+	bool CopyTypedValue(void* DstValuePtr, const void* SrcValuePtr)
+	{
+		T* Dst = static_cast<T*>(DstValuePtr);
+		const T* Src = static_cast<const T*>(SrcValuePtr);
+		if (!Dst || !Src)
+		{
+			return false;
+		}
+		*Dst = *Src;
+		return true;
 	}
 
 	void SerializeEnumValue(FArchive& Ar, void* ValuePtr, uint8 Size)
@@ -339,16 +525,189 @@ namespace
 		}
 	}
 
-	template <typename T>
-	bool CopyTypedValue(UObject* DstContainer, const UObject* SrcContainer, const FProperty& Property)
+	void SerializeGuidValue(FArchive& Ar, void* ValuePtr)
 	{
-		T* Dst = Property.ContainerPtrToValuePtr<T>(DstContainer);
-		const T* Src = Property.ContainerPtrToValuePtr<T>(SrcContainer);
-		if (!Dst || !Src)
+		FGuid* Guid = static_cast<FGuid*>(ValuePtr);
+		FString Text = Guid ? Guid->ToString() : FString();
+		Ar << Text;
+		if (Ar.IsLoading() && Guid)
+		{
+			*Guid = FGuid::FromString(Text);
+		}
+	}
+
+	void SerializeQuatValue(FArchive& Ar, void* ValuePtr)
+	{
+		FQuat* Quat = static_cast<FQuat*>(ValuePtr);
+		if (!Quat)
+		{
+			return;
+		}
+
+		FVector4 Components(Quat->X, Quat->Y, Quat->Z, Quat->W);
+		Ar << Components;
+		if (Ar.IsLoading())
+		{
+			*Quat = FQuat(Components.X, Components.Y, Components.Z, Components.W);
+			Quat->Normalize();
+		}
+	}
+
+	void SerializeObjectPtrValue(FArchive& Ar, const FProperty& Property, void* ValuePtr)
+	{
+		if (!Property.ObjectPtrOps)
+		{
+			return;
+		}
+
+		if (Property.ReferenceKind == EObjectReferenceKind::Asset)
+		{
+			FString Path;
+			if (Ar.IsSaving())
+			{
+				Path = GetAssetObjectPath(Property.ObjectPtrOps->GetObject(ValuePtr));
+			}
+			Ar << Path;
+			if (Ar.IsLoading())
+			{
+				Property.ObjectPtrOps->SetObject(ValuePtr, ResolveAssetObject(Path, Property.ObjectClass));
+			}
+			return;
+		}
+
+		uint32 ObjectId = 0;
+		if (Ar.IsSaving())
+		{
+			UObject* Object = Property.ObjectPtrOps->GetObject(ValuePtr);
+			if (IObjectReferenceResolver* Resolver = Ar.GetObjectResolver())
+			{
+				ObjectId = Resolver->GetObjectId(Object);
+			}
+			else
+			{
+				ObjectId = Object ? Object->GetUUID() : 0;
+			}
+		}
+
+		Ar << ObjectId;
+
+		if (Ar.IsLoading())
+		{
+			UObject* Object = nullptr;
+			if (ObjectId != 0)
+			{
+				if (IObjectReferenceResolver* Resolver = Ar.GetObjectResolver())
+				{
+					Object = Resolver->ResolveObjectId(ObjectId, Property.ObjectClass);
+				}
+				else
+				{
+					Object = UObjectManager::Get().FindByUUID(ObjectId);
+				}
+			}
+			Property.ObjectPtrOps->SetObject(ValuePtr, IsObjectAssignableTo(Object, Property.ObjectClass) ? Object : nullptr);
+		}
+	}
+
+	void SerializeSoftObjectPtrValue(FArchive& Ar, const FProperty& Property, void* ValuePtr)
+	{
+		if (!Property.SoftObjectOps)
+		{
+			return;
+		}
+
+		FString Path;
+		if (Ar.IsSaving())
+		{
+			Path = Property.SoftObjectOps->GetPath(ValuePtr);
+		}
+		Ar << Path;
+		if (Ar.IsLoading())
+		{
+			Property.SoftObjectOps->SetPath(ValuePtr, Path);
+		}
+	}
+
+	void SerializeArrayValue(FArchive& Ar, const FProperty& Property, void* ValuePtr)
+	{
+		if (!Property.ArrayOps || !Property.InnerProperty)
+		{
+			return;
+		}
+
+		int32 Count = Property.ArrayOps->Num(ValuePtr);
+		const FString Key = Ar.GetCurrentKey();
+		Ar.BeginArray(Key, Count);
+		if (Ar.IsLoading())
+		{
+			Property.ArrayOps->Resize(ValuePtr, Count);
+		}
+
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			void* ElementPtr = Property.ArrayOps->GetElementPtr(ValuePtr, Index);
+			Property.InnerProperty->SerializeValue(Ar, ElementPtr);
+		}
+
+		Ar.EndArray();
+	}
+
+	bool CopyEnumValue(const FProperty& Property, void* DstValuePtr, const void* SrcValuePtr)
+	{
+		if (!Property.EnumMeta || !DstValuePtr || !SrcValuePtr)
 		{
 			return false;
 		}
-		*Dst = *Src;
+		std::memcpy(DstValuePtr, SrcValuePtr, Property.EnumMeta->Size);
+		return true;
+	}
+
+	bool CopyObjectPtrValue(const FProperty& Property, void* DstValuePtr, const void* SrcValuePtr, const FDuplicateContext* Context)
+	{
+		if (!Property.ObjectPtrOps)
+		{
+			return false;
+		}
+
+		UObject* Object = Property.ObjectPtrOps->GetObject(SrcValuePtr);
+		if (Context)
+		{
+			if (UObject* RemappedObject = Context->ResolveDuplicatedObject(Object))
+			{
+				Object = RemappedObject;
+			}
+		}
+
+		Property.ObjectPtrOps->SetObject(DstValuePtr, IsObjectAssignableTo(Object, Property.ObjectClass) ? Object : nullptr);
+		return true;
+	}
+
+	bool CopySoftObjectPtrValue(const FProperty& Property, void* DstValuePtr, const void* SrcValuePtr)
+	{
+		if (!Property.SoftObjectOps)
+		{
+			return false;
+		}
+
+		Property.SoftObjectOps->SetPath(DstValuePtr, Property.SoftObjectOps->GetPath(SrcValuePtr));
+		return true;
+	}
+
+	bool CopyArrayValue(const FProperty& Property, void* DstValuePtr, const void* SrcValuePtr, const FDuplicateContext* Context)
+	{
+		if (!Property.ArrayOps || !Property.InnerProperty)
+		{
+			return false;
+		}
+
+		const int32 Count = Property.ArrayOps->Num(SrcValuePtr);
+		Property.ArrayOps->Resize(DstValuePtr, Count);
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			void* DstElement = Property.ArrayOps->GetElementPtr(DstValuePtr, Index);
+			const void* SrcElement = Property.ArrayOps->GetElementPtr(SrcValuePtr, Index);
+			Property.InnerProperty->CopyValue(DstElement, SrcElement, Context);
+		}
 		return true;
 	}
 }

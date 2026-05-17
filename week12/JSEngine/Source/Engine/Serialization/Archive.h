@@ -5,6 +5,17 @@
 #include "Core/Containers/Array.h"
 #include "Object/FName.h"
 
+class UObject;
+class UClass;
+
+struct IObjectReferenceResolver
+{
+	virtual ~IObjectReferenceResolver() = default;
+
+	virtual uint32 GetObjectId(UObject* Object) const = 0;
+	virtual UObject* ResolveObjectId(uint32 Id, UClass* ExpectedClass) const = 0;
+};
+
 struct FArchive
 {
 	virtual ~FArchive() = default;
@@ -25,6 +36,7 @@ struct FArchive
 	virtual bool IsLoading() const { return false; }
 	virtual bool IsSaving() const { return false; }
 	virtual bool HasKey(const FString& Key) { (void)Key; return false; }
+	virtual IObjectReferenceResolver* GetObjectResolver() { return nullptr; }
 
 	virtual FArchive& operator<<(bool& Value) = 0;
 	virtual FArchive& operator<<(int32& Value) = 0;

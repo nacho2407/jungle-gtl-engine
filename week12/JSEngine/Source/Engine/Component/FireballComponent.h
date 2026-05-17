@@ -2,7 +2,7 @@
 #include "PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "Fireball Component", Category = "Gameplay")
 class UFireballComponent : public UPrimitiveComponent {
 public:
 	GENERATED_BODY(UFireballComponent, UPrimitiveComponent)

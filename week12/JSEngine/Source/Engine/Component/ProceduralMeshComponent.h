@@ -3,6 +3,7 @@
 #include "Render/Resource/VertexTypes.h"
 #include "Geometry/Plane.h"
 #include "Render/Common/RenderTypes.h"
+#include "Render/Resource/Material.h"
 
 class UStaticMesh;
 class UStaticMeshComponent;

@@ -23,7 +23,6 @@ import re
 import sys
 from pathlib import Path
 
-# Material은 현재 TArray<UMaterialInterface*> 에셋 참조로 등록합니다.
 TYPE_MAP = {
     'bool': 'EPropertyType::Bool',
     'int32': 'EPropertyType::Int',
@@ -36,10 +35,6 @@ TYPE_MAP = {
     'FColor': 'EPropertyType::Color',
     'FGuid': 'EPropertyType::Guid',
     'FQuat': 'EPropertyType::Quat',
-    'TArray<FVector>': 'EPropertyType::Vec3Array',
-    'TArray<FString>': 'EPropertyType::StringArray',
-    'USceneComponent*': 'EPropertyType::SceneComponentRef',
-    'TArray<UMaterialInterface*>': 'EPropertyType::Material',
 }
 
 # 스크립트 위치를 기준으로 Root와 Source 경로를 계산합니다.
@@ -399,12 +394,16 @@ def make_class_flags(metadata, class_name, parent_name, is_abstract=False):
     flags = []
     if is_abstract or get_metadata_value(metadata, 'Abstract') is not None:
         flags.append('CF_Abstract')
-    if class_name.startswith('A') or parent_name.startswith('A') or get_metadata_value(metadata, 'Actor') is not None:
+    if class_name.startswith('A') or parent_name.startswith('A'):
         flags.append('CF_Actor')
-    if 'Component' in class_name or 'Component' in parent_name or get_metadata_value(metadata, 'Component') is not None:
+    if 'Component' in class_name or 'Component' in parent_name:
         flags.append('CF_Component')
-    if 'Camera' in class_name or 'Camera' in parent_name or get_metadata_value(metadata, 'Camera') is not None:
+    if 'Camera' in class_name or 'Camera' in parent_name:
         flags.append('CF_Camera')
+    if get_metadata_value(metadata, 'Placeable') is not None:
+        flags.append('CF_Placeable')
+    if get_metadata_value(metadata, 'SpawnableComponent') is not None:
+        flags.append('CF_SpawnableComponent')
 
     return ' | '.join(flags) if flags else 'CF_None'
 
@@ -626,6 +625,215 @@ def warn_unknown_type(header_path, cpp_type, var_name):
     )
 
 
+ASSET_OBJECT_TYPES = {
+    'UMaterialInterface',
+    'UMaterial',
+    'UMaterialInstance',
+    'UStaticMesh',
+    'USkeletalMesh',
+    'UAnimationAsset',
+    'UAnimSequence',
+    'UAnimSequenceBase',
+    'UTexture',
+}
+
+
+def parse_single_template_arg(cpp_type, template_name):
+    prefix = f'{template_name}<'
+    if not cpp_type.startswith(prefix) or not cpp_type.endswith('>'):
+        return None
+    inner = cpp_type[len(prefix):-1].strip()
+    if not inner:
+        return None
+    return inner
+
+
+def is_uobject_type_name(type_name):
+    short_name = type_name.split('::')[-1]
+    return len(short_name) > 1 and short_name[0] in ('U', 'A')
+
+
+def object_class_expr(type_name):
+    return f'{type_name}::StaticClass()' if is_uobject_type_name(type_name) else 'nullptr'
+
+
+def reference_kind_for_object_type(type_name, metadata=None, b_soft=False):
+    metadata = metadata or {}
+    explicit = get_metadata_value(metadata, 'ReferenceKind')
+    if explicit:
+        value = str(explicit).strip()
+        if value.startswith('EObjectReferenceKind::'):
+            return value
+        if value in ('RuntimeObject', 'ActorComponent', 'Asset', 'None'):
+            return f'EObjectReferenceKind::{value}'
+
+    if b_soft:
+        return 'EObjectReferenceKind::Asset'
+
+    short_name = type_name.split('::')[-1]
+    if short_name in ASSET_OBJECT_TYPES:
+        return 'EObjectReferenceKind::Asset'
+    if short_name.endswith('Component'):
+        return 'EObjectReferenceKind::ActorComponent'
+    return 'EObjectReferenceKind::RuntimeObject'
+
+
+def make_object_ops_expr(value_cpp_type):
+    if value_cpp_type.endswith('*'):
+        pointed_type = value_cpp_type[:-1]
+        return f'GetRawObjectPtrOps<{pointed_type}>()'
+
+    inner = parse_single_template_arg(value_cpp_type, 'TObjectPtr')
+    if inner:
+        return f'GetTObjectPtrOps<{inner}>()'
+
+    return 'nullptr'
+
+
+def make_soft_ops_expr(value_cpp_type):
+    inner = parse_single_template_arg(value_cpp_type, 'TSoftObjectPtr')
+    if inner:
+        return f'GetSoftObjectPtrOps<{inner}>()'
+    return 'nullptr'
+
+
+def make_array_ops_expr(value_cpp_type):
+    inner = parse_single_template_arg(value_cpp_type, 'TArray')
+    if inner:
+        return f'GetArrayPropertyOps<{inner}>()'
+    return 'nullptr'
+
+
+def make_property_type_info(cpp_type, enum_map, metadata=None):
+    enum_info = enum_map.get(cpp_type)
+    if not enum_info and '::' in cpp_type:
+        enum_info = enum_map.get(cpp_type.split('::')[-1])
+
+    if enum_info:
+        return {
+            'cpp_type': cpp_type,
+            'property_type': 'EPropertyType::Enum',
+            'enum_info': enum_info,
+            'object_class': 'nullptr',
+            'reference_kind': 'EObjectReferenceKind::None',
+            'inner': None,
+            'array_ops': 'nullptr',
+            'soft_ops': 'nullptr',
+            'object_ops': 'nullptr',
+        }
+
+    inner_array_type = parse_single_template_arg(cpp_type, 'TArray')
+    if inner_array_type:
+        inner_info = make_property_type_info(inner_array_type, enum_map, metadata=None)
+        if not inner_info:
+            return None
+        return {
+            'cpp_type': cpp_type,
+            'property_type': 'EPropertyType::Array',
+            'enum_info': None,
+            'object_class': 'nullptr',
+            'reference_kind': 'EObjectReferenceKind::None',
+            'inner': inner_info,
+            'array_ops': make_array_ops_expr(cpp_type),
+            'soft_ops': 'nullptr',
+            'object_ops': 'nullptr',
+        }
+
+    soft_type = parse_single_template_arg(cpp_type, 'TSoftObjectPtr')
+    if soft_type:
+        return {
+            'cpp_type': cpp_type,
+            'property_type': 'EPropertyType::SoftObjectPtr',
+            'enum_info': None,
+            'object_class': object_class_expr(soft_type),
+            'reference_kind': reference_kind_for_object_type(soft_type, metadata, b_soft=True),
+            'inner': None,
+            'array_ops': 'nullptr',
+            'soft_ops': make_soft_ops_expr(cpp_type),
+            'object_ops': 'nullptr',
+        }
+
+    object_ptr_type = parse_single_template_arg(cpp_type, 'TObjectPtr')
+    if object_ptr_type:
+        return {
+            'cpp_type': cpp_type,
+            'property_type': 'EPropertyType::ObjectPtr',
+            'enum_info': None,
+            'object_class': object_class_expr(object_ptr_type),
+            'reference_kind': reference_kind_for_object_type(object_ptr_type, metadata),
+            'inner': None,
+            'array_ops': 'nullptr',
+            'soft_ops': 'nullptr',
+            'object_ops': make_object_ops_expr(cpp_type),
+        }
+
+    if cpp_type.endswith('*'):
+        pointed_type = cpp_type[:-1]
+        if is_uobject_type_name(pointed_type):
+            return {
+                'cpp_type': cpp_type,
+                'property_type': 'EPropertyType::ObjectPtr',
+                'enum_info': None,
+                'object_class': object_class_expr(pointed_type),
+                'reference_kind': reference_kind_for_object_type(pointed_type, metadata),
+                'inner': None,
+                'array_ops': 'nullptr',
+                'soft_ops': 'nullptr',
+                'object_ops': make_object_ops_expr(cpp_type),
+            }
+
+    property_type = TYPE_MAP.get(cpp_type)
+    if property_type:
+        return {
+            'cpp_type': cpp_type,
+            'property_type': property_type,
+            'enum_info': None,
+            'object_class': 'nullptr',
+            'reference_kind': 'EObjectReferenceKind::None',
+            'inner': None,
+            'array_ops': 'nullptr',
+            'soft_ops': 'nullptr',
+            'object_ops': 'nullptr',
+        }
+
+    return None
+
+
+def iter_type_infos(type_info):
+    if not type_info:
+        return
+    yield type_info
+    if type_info.get('inner'):
+        yield from iter_type_infos(type_info['inner'])
+
+
+def make_property_params_block(prop, name_expr, offset_expr, size_expr, inner_expr='nullptr'):
+    type_info = prop['type_info']
+    enum_info = type_info['enum_info']
+    enum_expr = ("&" + make_enum_meta_name(enum_info["qualified_name"])) if enum_info else "nullptr"
+    return (
+        'FPropertyParams{\n'
+        f'            {name_expr},\n'
+        f'            {cpp_string_literal(prop["display_name"])},\n'
+        f'            {cpp_string_literal(prop["category"])},\n'
+        f'            {type_info["property_type"]},\n'
+        f'            {prop["property_flags"]},\n'
+        f'            {offset_expr},\n'
+        f'            {size_expr},\n'
+        f'            {prop["min"]},\n'
+        f'            {prop["max"]},\n'
+        f'            {prop["speed"]},\n'
+        f'            {enum_expr},\n'
+        f'            {type_info["object_class"]},\n'
+        f'            {type_info["reference_kind"]},\n'
+        f'            {inner_expr},\n'
+        f'            {type_info["array_ops"]},\n'
+        f'            {type_info["soft_ops"]},\n'
+        f'            {type_info["object_ops"]}\n'
+        '        }'
+    )
+
+
 # FEnumValue 배열에 사용할 정적 변수 이름을 생성합니다.
 def make_enum_values_array_name(enum_name):
     return f'Z_Enum_{sanitize_cpp_identifier(enum_name)}_Values'
@@ -767,19 +975,11 @@ def find_uproperties_in_class(content, class_info):
 
 
 # C++ 타입을 분석하여 EPropertyType과 연관된 enum 정보를 반환합니다.
-def resolve_property_type(cpp_type, enum_map):
-    enum_info = enum_map.get(cpp_type)
-    if not enum_info and '::' in cpp_type:
-        enum_info = enum_map.get(cpp_type.split('::')[-1])
-
-    if enum_info:
-        return 'EPropertyType::Enum', enum_info
-
-    property_type = TYPE_MAP.get(cpp_type)
-    if property_type:
-        return property_type, None
-
-    return None, None
+def resolve_property_type(cpp_type, enum_map, metadata=None):
+    type_info = make_property_type_info(cpp_type, enum_map, metadata)
+    if not type_info:
+        return None
+    return type_info
 
 
 # 파싱된 클래스 정보를 바탕으로 ClassName.gen.cpp 파일을 생성합니다.
@@ -797,24 +997,49 @@ def generate_class_file(header_path, class_info, properties, used_enums):
     if enum_registration:
         enum_registration += '\n'
 
-    runtime_props_str = '\n'.join(
-        '        Class->AddProperty(FProperty(FPropertyParams{\n'
-        f'            {cpp_string_literal(p["name"])},\n'
-        f'            {cpp_string_literal(p["display_name"])},\n'
-        f'            {cpp_string_literal(p["category"])},\n'
-        f'            {p["property_type"]},\n'
-        f'            {p["property_flags"]},\n'
-        f'            offsetof({class_name}, {p["name"]}),\n'
-        f'            sizeof((({class_name}*)nullptr)->{p["name"]}),\n'
-        f'            {p["min"]},\n'
-        f'            {p["max"]},\n'
-        f'            {p["speed"]},\n'
-        f'            {("&" + make_enum_meta_name(p["enum_info"]["qualified_name"])) if p["enum_info"] else "nullptr"},\n'
-        '            nullptr,\n'
-        '            nullptr\n'
-        '        }));'
-        for p in properties
-    )
+    static_property_defs = []
+    static_name_counter = 0
+
+    def make_inner_property(type_info, owner_prop_name):
+        nonlocal static_name_counter
+        inner_expr = 'nullptr'
+        if type_info.get('inner'):
+            inner_expr = make_inner_property(type_info['inner'], owner_prop_name)
+
+        static_name_counter += 1
+        static_name = f'Z_Property_{class_name}_{sanitize_cpp_identifier(owner_prop_name)}_Inner_{static_name_counter}'
+        fake_prop = {
+            'display_name': None,
+            'category': None,
+            'property_flags': 'EPropertyFlags::Read | EPropertyFlags::Write | EPropertyFlags::Edit',
+            'min': '0.0f',
+            'max': '0.0f',
+            'speed': '0.1f',
+            'type_info': type_info,
+        }
+        size_expr = f'sizeof({type_info["cpp_type"]})'
+        params = make_property_params_block(fake_prop, "nullptr", "0", size_expr, inner_expr)
+        static_property_defs.append(f'static const FProperty {static_name}({params});')
+        return f'&{static_name}'
+
+    runtime_prop_lines = []
+    for p in properties:
+        inner_expr = 'nullptr'
+        if p['type_info'].get('inner'):
+            inner_expr = make_inner_property(p['type_info']['inner'], p['name'])
+        params = make_property_params_block(
+            p,
+            cpp_string_literal(p["name"]),
+            f'offsetof({class_name}, {p["name"]})',
+            f'sizeof((({class_name}*)nullptr)->{p["name"]})',
+            inner_expr)
+        runtime_prop_lines.append(f'        Class->AddProperty(FProperty({params}));')
+
+    static_property_defs_str = '\n'.join(static_property_defs)
+    if static_property_defs_str:
+        static_property_defs_str += '\n\n'
+
+    runtime_props_str = '\n'.join(runtime_prop_lines)
 
     create_func = 'nullptr'
     if not class_info.get('is_abstract', False):
@@ -822,6 +1047,8 @@ def generate_class_file(header_path, class_info, properties, used_enums):
 
     include_path = make_include_path(header_path)
     class_flags = make_class_flags(class_info['metadata'], class_name, parent_name, class_info.get('is_abstract', False))
+    class_display_name = get_metadata_value(class_info['metadata'], 'DisplayName', 'Display')
+    class_category = get_metadata_value(class_info['metadata'], 'Category')
     gen_code = f"""// AUTO-GENERATED FILE. DO NOT MODIFY.
 #include \"{include_path}\"
 #include \"Core/Reflection/ReflectionRegistry.h\"
@@ -829,7 +1056,7 @@ def generate_class_file(header_path, class_info, properties, used_enums):
 #include \"Object/Object.h\"
 #include \"Object/Property.h\"
 
-{enum_metadata_str}\
+{enum_metadata_str}{static_property_defs_str}\
 struct Z_Construct_UClass_{class_name} {{
     static void RegisterRuntimeEnums() {{
 {enum_registration}    }}
@@ -849,7 +1076,9 @@ UClass* {class_name}::StaticClass()
         {parent_name}::StaticClass(),
         sizeof({class_name}),
         {class_flags},
-        {create_func});
+        {create_func},
+        {cpp_string_literal(class_display_name)},
+        {cpp_string_literal(class_category)});
 
     static bool bRegistered = false;
     if (!bRegistered)
@@ -907,25 +1136,26 @@ def parse_header_and_generate(header_path, enum_map):
                 )
                 continue
 
-            property_type, enum_info = resolve_property_type(cpp_type, enum_map)
-            if not property_type:
+            metadata = prop['metadata']
+            type_info = resolve_property_type(cpp_type, enum_map, metadata)
+            if not type_info:
                 warn_unknown_type(header_path, cpp_type, var_name)
                 continue
 
-            if enum_info:
-                used_enums[enum_info['qualified_name']] = enum_info
+            for nested_type_info in iter_type_infos(type_info):
+                enum_info = nested_type_info.get('enum_info')
+                if enum_info:
+                    used_enums[enum_info['qualified_name']] = enum_info
 
-            metadata = prop['metadata']
             properties.append({
                 'name': var_name,
                 'display_name': get_metadata_value(metadata, 'DisplayName', 'Display'),
-                'property_type': property_type,
                 'category': get_metadata_value(metadata, 'Category'),
                 'property_flags': make_runtime_property_flags(metadata),
                 'min': cpp_float_literal(get_metadata_value(metadata, 'Min', 'ClampMin', 'UIMin'), '0.0f'),
                 'max': cpp_float_literal(get_metadata_value(metadata, 'Max', 'ClampMax', 'UIMax'), '0.0f'),
                 'speed': cpp_float_literal(get_metadata_value(metadata, 'Speed', 'Step'), '0.1f'),
-                'enum_info': enum_info,
+                'type_info': type_info,
             })
 
         generate_class_file(header_path, class_info, properties, used_enums)

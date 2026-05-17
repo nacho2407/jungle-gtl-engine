@@ -69,7 +69,7 @@ private:
 	FTimelinePlayer Player;
 };
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "Script Component", Category = "Scripting")
 class UScriptComponent : public UActorComponent
 {
 public:

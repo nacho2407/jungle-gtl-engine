@@ -61,7 +61,7 @@ void USkeletalMeshComponent::PostDuplicate(UObject* Original)
 
 	AnimInstance = nullptr;
 	AnimationStateMachine = nullptr;
-	AnimationAssetPath = SourceComponent->AnimationAssetPath;
+	AnimationAssetPath.SetPath(SourceComponent->AnimationAssetPath.GetPath());
 	AnimationToPlay = SourceComponent->AnimationToPlay;
 	bPlaying = SourceComponent->bPlaying;
 	bLooping = SourceComponent->bLooping;
@@ -115,12 +115,12 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 			}
 		}
 
-        if (AnimInstance->EvaluatePose(PoseContext))
-        {
-            //4.Skinning Phase
-            ApplyAnimationPose(PoseContext);
-        }
-    }
+		if (AnimInstance->EvaluatePose(PoseContext))
+		{
+			//4.Skinning Phase
+			ApplyAnimationPose(PoseContext);
+		}
+	}
 
 	// Pose가 바뀐 경우에만 실제 CPU skinning이 수행(dirty flag 이용)
 	EnsureSkinningUpdated();
@@ -294,7 +294,7 @@ UAnimSingleNodeInstance* USkeletalMeshComponent::EnsureSingleNodeInstance()
 
 void USkeletalMeshComponent::ApplyAnimationFromAssetPath()
 {
-	const FString RequestedPath = AnimationAssetPath;
+	const FString RequestedPath = AnimationAssetPath.GetPath();
 	if (RequestedPath.empty())
 	{
 		SetAnimation(nullptr);
@@ -306,7 +306,7 @@ void USkeletalMeshComponent::ApplyAnimationFromAssetPath()
 	{
 		AnimationToPlay = nullptr;
 		bPlaying = false;
-		AnimationAssetPath = RequestedPath;
+		AnimationAssetPath.SetPath(RequestedPath);
 		ResetToBindPose();
 		if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
 		{
@@ -330,14 +330,14 @@ void USkeletalMeshComponent::SyncAnimationAssetPathFromAnimation(UAnimationAsset
 {
 	if (!Animation)
 	{
-		AnimationAssetPath.clear();
+		AnimationAssetPath.SetPath("");
 		return;
 	}
 
 	const FString PersistentPath = GetPersistentAnimationAssetPath(Animation);
 	if (!PersistentPath.empty())
 	{
-		AnimationAssetPath = PersistentPath;
+		AnimationAssetPath.SetPath(PersistentPath);
 	}
 }
 

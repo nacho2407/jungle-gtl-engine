@@ -26,18 +26,21 @@ enum class EPropertyType : uint8_t
 	String,
 	Name,
 
-	// Pointer
-	SceneComponentRef,
-
-	// Array
-	Vec3Array,         // TArray<FVector>* - variable-length array of FVector
-	StringArray,       // TArray<FString>* - variable-length array of FString
-
 	// Enum MetaData
 	Enum,
 
-	// Asset
-	Material, // TArray<UMaterialInterface*>
+	ObjectPtr,
+	SoftObjectPtr,
+	Array,
+	Struct,
+};
+
+enum class EObjectReferenceKind : uint8_t
+{
+	None,
+	RuntimeObject,
+	ActorComponent,
+	Asset,
 };
 
 enum class EPropertyUsageFlags : uint8_t
@@ -93,8 +96,9 @@ inline size_t GetPropertySize(EPropertyType Type)
 	// String, Name 은 ValuePtr 기반 특수 처리
 	case EPropertyType::String: return 0;
 	case EPropertyType::Name:   return 0;
-	// 포인터 — Duplicate 호출 측에서 직접 처리
-	case EPropertyType::SceneComponentRef: return 0;
+	case EPropertyType::ObjectPtr: return 0;
+	case EPropertyType::SoftObjectPtr: return 0;
+	case EPropertyType::Array: return 0;
 	default: return 0;
 	}
 }

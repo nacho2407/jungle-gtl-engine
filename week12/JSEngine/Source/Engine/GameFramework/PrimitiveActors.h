@@ -15,7 +15,7 @@ class UProceduralMeshComponent;
 class UStaticMesh;
 class USkeletalMeshComponent;
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Cube", Category = "Geometry")
 class ACubeActor : public AActor
 {
 public:
@@ -25,7 +25,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Sphere", Category = "Geometry")
 class ASphereActor : public AActor
 {
 public:
@@ -35,7 +35,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Plane", Category = "Geometry")
 class APlaneActor : public AActor
 {
 public:
@@ -55,7 +55,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Empty Actor", Category = "Basic")
 class ASceneActor : public AActor
 {
 public:
@@ -69,7 +69,7 @@ public:
 	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Player Start", Category = "Gameplay")
 class APlayerStart : public AActor
 {
 public:
@@ -79,7 +79,7 @@ public:
 	void InitDefaultComponents() override;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Fog", Category = "Environment")
 class AFogActor : public AActor
 {
 public:
@@ -95,7 +95,7 @@ private:
 	UBillboardComponent* BillboardComp = nullptr;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Static Mesh", Category = "Basic")
 class AStaticMeshActor : public AActor
 {
 public:
@@ -105,7 +105,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Skeletal Mesh", Category = "Basic")
 class ASkeletalMeshActor : public AActor
 {
 public:
@@ -120,7 +120,7 @@ private:
 	USkeletalMeshComponent* SkeletalMeshComp = nullptr;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "SubUV", Category = "Basic")
 class ASubUVActor : public AActor
 {
 public:
@@ -130,7 +130,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Text Render", Category = "Basic")
 class ATextRenderActor : public AActor
 {
 public:
@@ -140,7 +140,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Billboard", Category = "Basic")
 class ABillboardActor : public AActor
 {
 public:
@@ -150,7 +150,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Decal", Category = "Environment")
 class ADecalActor : public AActor
 {
 public:
@@ -160,7 +160,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Fireball", Category = "Gameplay")
 class AFireballActor : public AActor {
 public:
 	GENERATED_BODY(AFireballActor, AActor)
@@ -169,7 +169,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Decal Spotlight", Category = "Light")
 class ADecalSpotLightActor : public AActor {
 public:
 	GENERATED_BODY(ADecalSpotLightActor, AActor)
@@ -210,7 +210,7 @@ protected:
 	UBillboardComponent* BillboardComp = nullptr;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Ambient Light", Category = "Light")
 class AAmbientLightActor : public ALightActor
 {
 public:
@@ -219,7 +219,7 @@ public:
 	void Tick(float DeltaTime) override;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Directional Light", Category = "Light")
 class ADirectionalLightActor : public ALightActor
 {
 public:
@@ -228,7 +228,7 @@ public:
 	void Tick(float DeltaTime) override;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Point Light", Category = "Light")
 class APointLightActor : public ALightActor
 {
 public:
@@ -237,7 +237,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Spot Light", Category = "Light")
 class ASpotlightActor : public APointLightActor 
 {
 public:
@@ -269,7 +269,7 @@ public:
 	void Tick(float DeltaTime) override;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Destructible", Category = "Gameplay")
 class ADestructibleActor : public AActor
 {
 public:
@@ -301,7 +301,7 @@ private:
 	uint32 SliceCount = 0;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Bounding Box", Category = "Debug")
 class ABoundsBoxActor : public AActor
 {
 public:
@@ -319,7 +319,7 @@ private:
 	UBoxComponent* BoxComponent = nullptr;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Main Scene Destructible", Category = "Gameplay")
 class AMainSceneDestructibleActor : public AActor
 {
 public:
