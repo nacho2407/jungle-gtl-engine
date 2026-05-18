@@ -163,6 +163,10 @@ void UAnimSingleNodeInstance::SetAnimationAsset(UAnimationAsset* NewAsset)
         {
             ClearActiveNotifyStates(true);
             ClearRootMotionState();
+            bPlaying = false;
+            bPaused = false;
+            bReachedEndThisFrame = false;
+            bLoopedThisFrame = false;
             if (USkeletalMeshComponent* Component = GetSkelMeshComponent())
             {
                 Component->ClearLastAnimNotifyEvent();
