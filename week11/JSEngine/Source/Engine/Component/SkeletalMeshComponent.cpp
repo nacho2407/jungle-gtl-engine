@@ -10,6 +10,7 @@
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Stats.h"
 #include "Core/ResourceManager.h"
+#include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
@@ -301,6 +302,16 @@ void USkeletalMeshComponent::PlayAnim(bool bLoop)
 void USkeletalMeshComponent::StopAnim()
 {
     Stop();
+}
+
+void USkeletalMeshComponent::HandleAnimNotify(const FAnimNotifyDispatchEvent& NotifyEvent)
+{
+    OnAnimNotify.Broadcast(this, NotifyEvent);
+
+    if (AActor* Owner = GetOwner())
+    {
+        Owner->HandleAnimNotify(this, NotifyEvent);
+    }
 }
 
 void USkeletalMeshComponent::RecreateAnimInstance()

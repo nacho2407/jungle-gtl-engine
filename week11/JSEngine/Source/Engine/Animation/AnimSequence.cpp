@@ -1,4 +1,4 @@
-#include "Animation/AnimSequence.h"
+﻿#include "Animation/AnimSequence.h"
 
 #include "Asset/SkeletalMesh.h"
 #include "Object/ObjectFactory.h"
@@ -42,6 +42,40 @@ float UAnimSequenceBase::GetPlayLength() const
 void UAnimSequenceBase::SetPlayLength(float InPlayLength)
 {
     PlayLength = InPlayLength > 0.0f ? InPlayLength : 0.0f;
+}
+
+const TArray<FAnimNotifyEvent>& UAnimSequenceBase::GetNotifies() const
+{
+    return Notifies;
+}
+
+void UAnimSequenceBase::AddNotify(const FAnimNotifyEvent& Notify)
+{
+    FAnimNotifyEvent SanitizedNotify = Notify;
+    if (SanitizedNotify.TriggerTime < 0.0f)
+    {
+        SanitizedNotify.TriggerTime = 0.0f;
+    }
+    if (SanitizedNotify.Duration < 0.0f)
+    {
+        SanitizedNotify.Duration = 0.0f;
+    }
+
+    Notifies.push_back(SanitizedNotify);
+
+	// 재생 중 검사 용이, 최적화 가능성을 위한 notify 시간 순 정렬
+	// TriggerTime이 동일하면 Duration이 짧은 순으로 정렬(instant notify가 먼저 오도록하는 정책)
+    std::sort(
+        Notifies.begin(),
+        Notifies.end(),
+        [](const FAnimNotifyEvent& A, const FAnimNotifyEvent& B)
+        {
+            if (A.TriggerTime == B.TriggerTime)
+            {
+                return A.Duration < B.Duration;
+            }
+            return A.TriggerTime < B.TriggerTime;
+        });
 }
 
 bool UAnimSequenceBase::GetAnimationPose(

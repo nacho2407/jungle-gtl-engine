@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Animation/AnimDataModel.h"
 #include "Animation/AnimationAsset.h"
@@ -20,6 +20,9 @@ public:
     float GetPlayLength() const override;
     void SetPlayLength(float InPlayLength);
 
+    const TArray<FAnimNotifyEvent>& GetNotifies() const;
+    void AddNotify(const FAnimNotifyEvent& Notify);
+
     virtual bool GetAnimationPose(
         TArray<FTransform>& OutLocalPose,
         const USkeletalMesh* TargetMesh,
@@ -27,6 +30,7 @@ public:
 
 protected:
     float PlayLength = 0.0f;
+    TArray<FAnimNotifyEvent> Notifies;
 };
 
 class UAnimSequence : public UAnimSequenceBase

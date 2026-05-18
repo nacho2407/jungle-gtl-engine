@@ -3,12 +3,16 @@
 #include "SkeletalMeshComponent.generated.h"
 
 #include "Animation/AnimationTypes.h"
+#include "Core/Delegates/Delegate.h"
 #include "Component/SkinnedMeshComponent.h"
 
 class UAnimInstance;
 class UAnimSingleNodeInstance;
 class UAnimationAsset;
+class USkeletalMeshComponent;
 struct FTransform;
+
+DECLARE_DELEGATE(FOnAnimNotify, USkeletalMeshComponent*, const FAnimNotifyDispatchEvent&)
 
 UCLASS()
 class USkeletalMeshComponent : public USkinnedMeshComponent
@@ -19,6 +23,8 @@ public:
 
     USkeletalMeshComponent() = default;
     ~USkeletalMeshComponent() override;
+
+    FOnAnimNotify OnAnimNotify;
 
     void TickComponent(float DeltaTime) override;
 
@@ -64,6 +70,7 @@ public:
     void StopAnim();
     float GetAnimationTime() const { return GetPosition(); }
     bool IsAnimPlaying() const { return IsPlaying(); }
+    void HandleAnimNotify(const FAnimNotifyDispatchEvent& NotifyEvent);
 
     void ResetToBindPose();
 
