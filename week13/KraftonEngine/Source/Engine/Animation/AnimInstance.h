@@ -4,10 +4,13 @@
 #include "PoseContext.h"
 #include "AnimNotifyEvent.h"
 #include "Math/Transform.h"
+#include "Object/FName.h"
 
 class USkeletalMeshComponent;
 class USkeletalMesh;
 class UAnimSequenceBase;
+class UAnimMontage;
+class UAnimMontageInstance;
 
 // 큐에 적재된 한 프레임 분의 notify — dispatch 시 Sequence 컨텍스트 보존 위해 같이 들고 다님.
 // (UE 의 FAnimNotifyEventReference 와 의미 대응 — 우리는 value-copy 가 더 안전.)
@@ -78,6 +81,19 @@ public:
 	void AccumulateRootMotion(const FTransform& Delta);
 	FTransform ConsumeRootMotion();
 
+	// ── Montage ──
+	// AnimInstance 한 개 당 활성 montage 1개 (default slot, whole-body).
+	// PlayMontage: 새 montage 재생 시작. 이미 다른 montage 가 활성이면 즉시 교체 (BlendIn).
+	// StopMontage: 현재 montage BlendOut 시작.
+	// Montage_JumpToSection / SetNextSection: 재생 중 section 흐름 제어.
+	void  PlayMontage(UAnimMontage* Montage, FName StartSection = FName::None,
+	                  float PlayRate = 1.0f, float BlendInTime = -1.0f);
+	void  StopMontage(float BlendOutTime = -1.0f);
+	void  Montage_JumpToSection(FName SectionName);
+	void  Montage_SetNextSection(FName From, FName To);
+	bool  IsMontagePlaying(UAnimMontage* Montage = nullptr) const;
+	UAnimMontageInstance* GetMontageInstance() const { return MontageInstance; }
+
 protected:
 	USkeletalMeshComponent*       OwningComponent = nullptr;
 	TArray<FQueuedAnimNotify>     NotifyQueue;
@@ -89,4 +105,7 @@ protected:
 
 	// Root motion 누적 (UpdateAnimation 한 프레임 분, Consume 시 reset).
 	FTransform                    PendingRootMotion;
+
+	// Montage 인스턴스 — lazily 생성 (PlayMontage 첫 호출 시).
+	UAnimMontageInstance*         MontageInstance = nullptr;
 };

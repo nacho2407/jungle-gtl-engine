@@ -2,6 +2,7 @@
 
 #include "Animation/AnimationManager.h"
 #include "Animation/AnimSequence.h"
+#include "Animation/AnimMontage.h"
 #include "Animation/AnimState.h"
 #include "Animation/AnimationStateMachine.h"
 #include "Animation/PoseContext.h"
@@ -10,11 +11,14 @@
 #include "Core/Log.h"
 #include "Core/PropertyTypes.h"
 #include "GameFramework/AActor.h"
+#include "Input/InputSystem.h"
 #include "Lua/LuaScriptManager.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
+
+#include <Windows.h>
 
 #include <cstring>
 
@@ -225,6 +229,57 @@ void ULuaAnimInstance::InstallBindings()
 			UCharacterMovementComponent* Move = Owner->GetComponentByClass<UCharacterMovementComponent>();
 			return Move ? Move->IsFalling() : false;
 		});
+
+	// ── Montage 트리거 (lua → AnimInstance) ──
+	//   Anim.play_montage(path)                       — section/rate/blend default.
+	//   Anim.play_montage(path, "SectionName")        — section 지정.
+	//   Anim.play_montage(path, "SectionName", 1.5)   — section + rate.
+	//   PlayMontage 는 새 montage 들어오면 즉시 교체 (BlendIn 으로 자연 전환).
+	Anim.set_function("play_montage",
+		[this](std::string Path, sol::object Section, sol::object Rate, sol::object BlendIn)
+		{
+			if (Path.empty()) return;
+			UAnimMontage* M = FAnimationManager::Get().LoadMontage(Path);
+			if (!M)
+			{
+				UE_LOG("[LuaAnimInstance] play_montage: failed to load '%s'", Path.c_str());
+				return;
+			}
+			FName SectionName = FName::None;
+			if (Section.is<std::string>())
+			{
+				const std::string SecStr = Section.as<std::string>();
+				if (!SecStr.empty()) SectionName = FName(SecStr);
+			}
+			const float PlayRate    = Rate.is<float>()    ? Rate.as<float>()    : 1.0f;
+			const float BlendInTime = BlendIn.is<float>() ? BlendIn.as<float>() : -1.0f;
+			PlayMontage(M, SectionName, PlayRate, BlendInTime);
+		});
+
+	Anim.set_function("stop_montage",
+		[this](sol::object BlendOut)
+		{
+			const float BlendOutTime = BlendOut.is<float>() ? BlendOut.as<float>() : -1.0f;
+			StopMontage(BlendOutTime);
+		});
+
+	Anim.set_function("is_montage_playing",
+		[this]() -> bool { return IsMontagePlaying(); });
+
+	Anim.set_function("jump_to_section",
+		[this](std::string Name)
+		{
+			if (!Name.empty()) Montage_JumpToSection(FName(Name));
+		});
+
+	// ── Input edge detection — lua FSM/montage trigger 용 ──
+	//   GetKeyDown == "이번 frame 에서 새로 눌림". 매 frame 호출 안전.
+	Anim.set_function("is_left_mouse_pressed",
+		[]() -> bool { return InputSystem::Get().GetKeyDown(VK_LBUTTON); });
+	Anim.set_function("is_right_mouse_pressed",
+		[]() -> bool { return InputSystem::Get().GetKeyDown(VK_RBUTTON); });
+	Anim.set_function("is_key_pressed",
+		[](int VK) -> bool { return InputSystem::Get().GetKeyDown(VK); });
 }
 
 // ──────────────────────────────────────────────

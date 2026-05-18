@@ -1,10 +1,11 @@
 ﻿#include "AnimationManager.h"
 
 #include "Animation/AnimSequence.h"
+#include "Animation/AnimMontage.h"
 #include "Mesh/FbxImporter.h"
 #include "Animation/SkeletonManager.h"
 #include "Animation/Skeleton.h"
-#include "Animation/AnimDataModel.h" 
+#include "Animation/AnimDataModel.h"
 #include "Asset/AssetPackage.h"
 #include "Core/Log.h"
 #include "Object/Object.h"
@@ -447,5 +448,189 @@ void FAnimationManager::RefreshAvailableAnimations()
         Item.DisplayName = FPaths::ToUtf8(Entry.path().stem().wstring());
         Item.FullPath    = RelPath;
         AvailableAnimationFiles.push_back(std::move(Item));
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Montage
+// ─────────────────────────────────────────────────────────────
+
+UAnimMontage* FAnimationManager::LoadMontage(const FString& PackagePath)
+{
+    const FString NormalizedPath = FPaths::MakeProjectRelative(PackagePath);
+
+    auto It = MontageCaches.find(NormalizedPath);
+    if (It != MontageCaches.end())
+    {
+        return It->second;
+    }
+
+    FWindowsBinReader Reader(NormalizedPath);
+    if (!Reader.IsValid())
+    {
+        UE_LOG("Montage load failed: could not open file. Path=%s", NormalizedPath.c_str());
+        return nullptr;
+    }
+
+    FAssetPackageHeader Header;
+    Reader << Header;
+    if (!Header.IsValid(EAssetPackageType::AnimMontage))
+    {
+        UE_LOG("Montage load failed: invalid package header. Path=%s", NormalizedPath.c_str());
+        return nullptr;
+    }
+
+    FAssetImportMetadata Metadata;
+    Reader << Metadata;
+
+    UAnimMontage* Montage = UObjectManager::Get().CreateObject<UAnimMontage>();
+    Montage->Serialize(Reader);
+    Montage->SetAssetPathFileName(NormalizedPath);
+
+    if (!Reader.IsValid())
+    {
+        UE_LOG("Montage load failed: corrupted package. Path=%s", NormalizedPath.c_str());
+        UObjectManager::Get().DestroyObject(Montage);
+        return nullptr;
+    }
+
+    // SourceSequence wire — path 가 None 이 아니면 LoadAnimation 으로 resolve.
+    {
+        const FString& SrcPath = Montage->GetSourceSequencePath();
+        if (!SrcPath.empty() && SrcPath != "None")
+        {
+            if (UAnimSequence* SrcSeq = LoadAnimation(SrcPath))
+            {
+                // SetSourceSequence 는 PlayLength/FrameRate 동기화 + EnsureDefaultSection.
+                // 단, EnsureDefaultSection 은 Sections 이미 있으면 no-op 이라 기존 정보 보존됨.
+                Montage->SetSourceSequence(SrcSeq);
+            }
+            else
+            {
+                UE_LOG("Montage load: source sequence resolve failed. Path=%s", SrcPath.c_str());
+            }
+        }
+    }
+
+    auto ListIt = std::find_if(
+        AvailableMontageFiles.begin(),
+        AvailableMontageFiles.end(),
+        [&](const FAssetListItem& Item) { return Item.FullPath == NormalizedPath; });
+    if (ListIt == AvailableMontageFiles.end())
+    {
+        FAssetListItem Item;
+        Item.DisplayName = Montage->GetName();
+        Item.FullPath    = NormalizedPath;
+        AvailableMontageFiles.push_back(std::move(Item));
+    }
+
+    MontageCaches[NormalizedPath] = Montage;
+    return Montage;
+}
+
+bool FAnimationManager::SaveMontage(UAnimMontage* Montage, const FString& PackagePath)
+{
+    if (!Montage)
+    {
+        return false;
+    }
+
+    const FString NormalizedPath = FPaths::MakeProjectRelative(PackagePath);
+    Montage->SetAssetPathFileName(NormalizedPath);
+
+    // 대상 디렉토리 자동 생성 — AnimSequence save 와 동일 패턴.
+    {
+        std::filesystem::path FullAssetPath = ResolveProjectPath(NormalizedPath);
+        FPaths::CreateDir(FullAssetPath.parent_path().wstring());
+    }
+
+    FWindowsBinWriter Writer(NormalizedPath);
+    if (!Writer.IsValid())
+    {
+        UE_LOG("Montage save failed: could not open file. Path=%s", NormalizedPath.c_str());
+        return false;
+    }
+
+    FAssetPackageHeader Header;
+    Header.Type = static_cast<uint32>(EAssetPackageType::AnimMontage);
+
+    FAssetImportMetadata Metadata;
+    // Montage 는 FBX 같은 source 가 없음 — SourcePath 비워둠.
+
+    Writer << Header;
+    Writer << Metadata;
+    Montage->Serialize(Writer);
+
+    if (!Writer.IsValid())
+    {
+        UE_LOG("Montage save failed: write failed. Path=%s", NormalizedPath.c_str());
+        return false;
+    }
+
+    auto ListIt = std::find_if(
+        AvailableMontageFiles.begin(),
+        AvailableMontageFiles.end(),
+        [&](const FAssetListItem& Item) { return Item.FullPath == NormalizedPath; });
+    if (ListIt == AvailableMontageFiles.end())
+    {
+        FAssetListItem Item;
+        Item.DisplayName = Montage->GetName();
+        Item.FullPath    = NormalizedPath;
+        AvailableMontageFiles.push_back(std::move(Item));
+    }
+
+    MontageCaches[NormalizedPath] = Montage;
+    return true;
+}
+
+bool FAnimationManager::SaveMontagePreservingMetadata(UAnimMontage* Montage)
+{
+    if (!Montage) return false;
+    const FString& AssetPath = Montage->GetAssetPathFileName();
+    if (AssetPath.empty() || AssetPath == "None")
+    {
+        UE_LOG("Montage save failed: asset path is unknown. Montage=%s", Montage->GetName().c_str());
+        return false;
+    }
+    return SaveMontage(Montage, AssetPath);
+}
+
+UAnimMontage* FAnimationManager::CreateMontage(UAnimSequence* SourceSequence, const FString& MontageName)
+{
+    UAnimMontage* Montage = UObjectManager::Get().CreateObject<UAnimMontage>();
+    Montage->SetFName(FName(MontageName));
+    Montage->SetSourceSequence(SourceSequence);
+    return Montage;
+}
+
+void FAnimationManager::RefreshAvailableMontages()
+{
+    const std::filesystem::path ContentRoot = std::filesystem::path(FPaths::RootDir()) / L"Content";
+    if (!std::filesystem::exists(ContentRoot)) return;
+    const std::filesystem::path ProjectRoot(FPaths::RootDir());
+
+    AvailableMontageFiles.clear();
+
+    for (const auto& Entry : std::filesystem::recursive_directory_iterator(ContentRoot))
+    {
+        if (!Entry.is_regular_file()) continue;
+
+        std::wstring Ext = Entry.path().extension().wstring();
+        std::transform(Ext.begin(), Ext.end(), Ext.begin(), ::towlower);
+        if (Ext != L".uasset") continue;
+
+        const FString RelPath =
+            FPaths::ToUtf8(Entry.path().lexically_relative(ProjectRoot).generic_wstring());
+
+        FAssetImportMetadata Metadata;
+        if (!FAssetPackage::ReadMetadata(RelPath, EAssetPackageType::AnimMontage, Metadata))
+        {
+            continue;
+        }
+
+        FAssetListItem Item;
+        Item.DisplayName = FPaths::ToUtf8(Entry.path().stem().wstring());
+        Item.FullPath    = RelPath;
+        AvailableMontageFiles.push_back(std::move(Item));
     }
 }

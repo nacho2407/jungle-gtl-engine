@@ -1,8 +1,12 @@
 ﻿#include "AnimInstance.h"
+#include "AnimMontage.h"
+#include "AnimMontageInstance.h"
 #include "AnimNotify.h"
 #include "AnimSequenceBase.h"
+#include "AnimationRuntime.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Mesh/SkeletalMesh.h"
+#include "Object/Object.h"
 
 DEFINE_CLASS(UAnimInstance, UObject)
 
@@ -10,12 +14,48 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 {
 	// 자식이 시간 진행 + AddAnimNotifies 로 큐에 적재 → 베이스가 일괄 dispatch.
 	NativeUpdateAnimation(DeltaSeconds);
+
+	// Montage 도 Tick — section 진행, blend alpha, notify push.
+	if (MontageInstance && MontageInstance->IsActive())
+	{
+		MontageInstance->Tick(DeltaSeconds, this);
+	}
+
 	DispatchQueuedAnimEvents();
 }
 
 void UAnimInstance::EvaluatePose(FPoseContext& Output)
 {
+	// 1) 자식이 base pose (FSM / SingleNode) 생성.
 	EvaluateAnimation(Output);
+
+	// 2) Montage 활성이면 montage pose 평가 후 base 와 BlendWeight 로 lerp.
+	if (MontageInstance && MontageInstance->IsActive())
+	{
+		const float Weight = MontageInstance->GetBlendWeight();
+		if (Weight > 0.0f)
+		{
+			FPoseContext MontagePose;
+			MontagePose.SkeletalMesh = Output.SkeletalMesh;
+			MontagePose.ResetToRefPose();
+			MontageInstance->EvaluateMontagePose(MontagePose);
+
+			if (Weight >= 1.0f)
+			{
+				// 완전 montage — base 무시.
+				Output = MontagePose;
+			}
+			else
+			{
+				// base × montage blend.
+				FPoseContext Blended;
+				Blended.SkeletalMesh = Output.SkeletalMesh;
+				Blended.ResetToRefPose();
+				FAnimationRuntime::BlendTwoPosesTogether(Output, MontagePose, Weight, Blended);
+				Output = Blended;
+			}
+		}
+	}
 }
 
 USkeletalMesh* UAnimInstance::GetSkeletalMesh() const
@@ -49,6 +89,38 @@ void UAnimInstance::AddAnimNotifies(float PreviousTime, float CurrentTime, const
 			NotifyQueue.push_back({ Notify, Sequence });
 		}
 	}
+}
+
+void UAnimInstance::PlayMontage(UAnimMontage* Montage, FName StartSection, float PlayRate, float BlendInTime)
+{
+	if (!Montage) return;
+	if (!MontageInstance)
+	{
+		MontageInstance = UObjectManager::Get().CreateObject<UAnimMontageInstance>(this);
+	}
+	MontageInstance->Play(Montage, StartSection, PlayRate, BlendInTime);
+}
+
+void UAnimInstance::StopMontage(float BlendOutTime)
+{
+	if (MontageInstance) MontageInstance->Stop(BlendOutTime);
+}
+
+void UAnimInstance::Montage_JumpToSection(FName SectionName)
+{
+	if (MontageInstance) MontageInstance->JumpToSection(SectionName);
+}
+
+void UAnimInstance::Montage_SetNextSection(FName From, FName To)
+{
+	if (MontageInstance) MontageInstance->SetNextSection(From, To);
+}
+
+bool UAnimInstance::IsMontagePlaying(UAnimMontage* Montage) const
+{
+	if (!MontageInstance || !MontageInstance->IsActive()) return false;
+	if (!Montage) return true;
+	return MontageInstance->GetCurrentMontage() == Montage;
 }
 
 void UAnimInstance::AccumulateRootMotion(const FTransform& Delta)

@@ -24,6 +24,11 @@ local IDLE_PATH = "Content/Data/hirasawa-yui/IdleWithSkin_mixamo_com.uasset"
 local WALK_PATH = "Content/Data/hirasawa-yui/Walking_mixamo_com.uasset"
 local JUMP_PATH = "Content/Data/hirasawa-yui/Jump_mixamo_com.uasset"
 
+-- 좌클릭 → montage 재생. 경로는 + New Montage 로 만든 .uasset 의 project-relative 경로.
+-- + New Montage 가 자동 명명하는 규칙: <SequenceName>_Montage.uasset.
+-- local ATTACK_MONTAGE_PATH = "Content/Montages/Standing 1H Magic Attack 03_mixamo_com_Montage.uasset"
+local ATTACK_MONTAGE_PATH = "Content/Montages/mixamo_com_Montage.uasset"
+
 function init(self)
     self.Speed          = 0
     self.t              = 0
@@ -66,6 +71,11 @@ function update(self, dt)
         self.t = self.t + dt
         local omega = 2.0 * math.pi / self.AutoPeriodSec
         self.Speed = self.AutoSpeedAmp + self.AutoSpeedAmp * math.sin(self.t * omega)
+    end
+
+    -- 좌클릭 → attack montage 재생. 이미 재생 중이어도 PlayMontage 가 자연스럽게 재시작 (BlendIn).
+    if Anim.is_left_mouse_pressed() then
+        Anim.play_montage(ATTACK_MONTAGE_PATH)
     end
 end
 
