@@ -76,10 +76,17 @@ void UAnimationStateMachine::Initialize(USkeletalMeshComponent* Owner)
 
 void UAnimationStateMachine::AddState(FName StateName, UAnimSequenceBase* Sequence)
 {
+    const bool bIsNewState = !States.contains(StateName);
+
 	FAnimStateNode NewState;
 	NewState.Name = StateName;
     NewState.PoseSource = std::make_shared<FAnimSequencePoseSource>(OwnerComponent, Sequence);
 	States[StateName] = NewState;
+
+    if (bIsNewState)
+    {
+        StateOrder.push_back(StateName);
+    }
 }
 
 void UAnimationStateMachine::AddTransition(FName FromState, FName ToState, float BlendTime, FAnimTransitionCondition Condition)
@@ -268,11 +275,14 @@ FString UAnimationStateMachine::GetNextStateName() const
 TArray<FString> UAnimationStateMachine::GetStateNames() const
 {
     TArray<FString> Result;
-    Result.reserve(States.size());
+    Result.reserve(StateOrder.size());
 
-    for (const auto& Pair : States)
+    for (const FName& StateName : StateOrder)
     {
-        Result.push_back(Pair.first.ToString());
+        if (States.contains(StateName))
+        {
+            Result.push_back(StateName.ToString());
+        }
     }
 
     return Result;
@@ -282,10 +292,16 @@ TArray<FAnimTransitionDebugInfo> UAnimationStateMachine::GetTransitionDebugInfos
 {
     TArray<FAnimTransitionDebugInfo> Result;
 
-    for (const auto& Pair : States)
+    for (const FName& FromStateName : StateOrder)
     {
-        const FString FromState = Pair.first.ToString();
-        const FAnimStateNode& State = Pair.second;
+        auto It = States.find(FromStateName);
+        if (It == States.end())
+        {
+            continue;
+        }
+
+        const FString FromState = FromStateName.ToString();
+        const FAnimStateNode& State = It->second;
 
         for (const FAnimTransition& Transition : State.Transitions)
         {

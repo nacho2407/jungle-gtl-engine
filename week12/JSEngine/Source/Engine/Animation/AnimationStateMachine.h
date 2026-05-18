@@ -105,6 +105,8 @@ private:
     float BlendElapsed = 0.0f;
     float BlendDuration = 0.0f;
 
+    TArray<FName> StateOrder;
+
     USkeletalMeshComponent* OwnerComponent = nullptr;
     APawn* OwnerPawn = nullptr;
 };

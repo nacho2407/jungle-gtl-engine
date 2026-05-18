@@ -2697,14 +2697,16 @@ void FEditorPropertyWidget::RenderSkeletalStateMachinePreview(USkeletalMeshCompo
 		return;
 	}
 
+	DrawDetailsSeparator();
+	DrawDetailsSectionLabel("Animation StateMachine");
+
 	UAnimationStateMachine* StateMachine = Comp->GetAnimationStateMachine();
 	if (!StateMachine)
 	{
+		ImGui::TextDisabled("No active StateMachine.");
+		ImGui::TextDisabled("Run the script to preview states.");
 		return;
 	}
-
-	DrawDetailsSeparator();
-	DrawDetailsSectionLabel("Animation StateMachine");
 
 	const FString CurrentState = StateMachine->GetCurrentStateName();
 	const FString NextState = StateMachine->GetNextStateName();
@@ -2733,6 +2735,14 @@ void FEditorPropertyWidget::RenderSkeletalStateMachinePreview(USkeletalMeshCompo
 		ImGui::Spacing();
 		ImGui::TextUnformatted("States");
 
+		if (!StateMachinePreviewBlendTimeByComponent.contains(Comp->GetUUID()))
+		{
+			StateMachinePreviewBlendTimeByComponent[Comp->GetUUID()] = 0.2f;
+		}
+		float& PreviewBlendTime = StateMachinePreviewBlendTimeByComponent[Comp->GetUUID()];
+
+		ImGui::DragFloat("Preview Blend Time", &PreviewBlendTime, 0.01f, 0.0f, 10.0f, "%.2f");
+
 		const float ButtonWidth = 88.0f;
 		const float Spacing = ImGui::GetStyle().ItemSpacing.x;
 		const float Available = ImGui::GetContentRegionAvail().x;
@@ -2751,9 +2761,22 @@ void FEditorPropertyWidget::RenderSkeletalStateMachinePreview(USkeletalMeshCompo
 				ButtonsInRow = 0;
 			}
 
+			const bool bIsCurrentState = (StateName == CurrentState);
+			if (bIsCurrentState)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.45f, 0.25f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f, 0.55f, 0.30f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.18f, 0.40f, 0.22f, 1.0f));
+			}
+
 			if (ImGui::Button(StateName.c_str(), ImVec2(ButtonWidth, 0.0f)))
 			{
-				StateMachine->SetStateByName(StateName, 0.2f);
+				StateMachine->SetStateByName(StateName, PreviewBlendTime);
+			}
+
+			if (bIsCurrentState)
+			{
+				ImGui::PopStyleColor(3);
 			}
 
 			++ButtonsInRow;
