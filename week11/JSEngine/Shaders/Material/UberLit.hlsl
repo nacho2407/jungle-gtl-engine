@@ -58,7 +58,7 @@ struct VSInput
     float3 Normal : NORMAL;
     float2 UV : TEXCOORD;
     float4 Tangent : TANGENT;
-#ifdef IS_SKELETAL
+#ifdef USE_SKELETAL_VERTEX
     uint4 BoneIndices : BLENDINDICES;
     float4 BoneWeights : BLENDWEIGHT;
 #endif
@@ -84,7 +84,7 @@ struct PSOutput
     float4 WorldPos : SV_TARGET2;
 };
 
-#if IS_SKELETAL && IS_GPU_SKINNING
+#if USE_SKELETAL_VERTEX && GPU_SKINNING
 VSInput Skinning(VSInput input)
 {
     VSInput output;
@@ -112,7 +112,7 @@ PSInput mainVS(VSInput input)
 {
     PSInput output;
 
-#if IS_SKELETAL && IS_GPU_SKINNING
+#if USE_SKELETAL_VERTEX && GPU_SKINNING
     input = Skinning(input);
 #endif
 

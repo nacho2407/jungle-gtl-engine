@@ -132,12 +132,14 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
        else if (RenderBus->GetLightCullMode() == ELightCullMode::Tiled)
            PermutationKey |= (uint32)EShaderFeature::TileCull;
 
-       if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh &&
-           RenderBus->GetSkinningMode() == ESkinningMode::GPU)
-       {
-           PermutationKey |= (uint32)EShaderFeature::Skeletal;
-           PermutationKey |= (uint32)EShaderFeature::GpuSkinning;
-       }
+        if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh)
+        {
+            PermutationKey |= (uint32)EShaderFeature::Skeletal;
+            if (RenderBus->GetSkinningMode() == ESkinningMode::GPU)
+            {
+                PermutationKey |= (uint32)EShaderFeature::GpuSkinning;
+            }
+        }
 
        bool bShadowApplied = false; // 추가
 
