@@ -1364,11 +1364,12 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
     if (ImportedVertexCount > 0 && ImportedIndexCount > 0)
     {
         ++ImportedSkinnedMeshCount;
-        UE_LOG("[FbxImporter] Imported skinned mesh: Node=%s Vertices=%zu Indices=%zu Sections=%zu TotalSkinnedMeshes=%d",
+        UE_LOG("[FbxImporter] Imported skinned mesh: Node=%s Vertices=%zu Indices=%zu Sections=%zu Bones=%zu TotalSkinnedMeshes=%d",
                OwnerNode ? OwnerNode->GetName() : "<null>",
                ImportedVertexCount,
                ImportedIndexCount,
                ImportedSectionCount,
+               InOutReferenceSkeleton.RefBones.size(),
                ImportedSkinnedMeshCount);
     }
 }
