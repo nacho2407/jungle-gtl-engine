@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Animation/AnimSequence.h"
 #include "Component/SkinnedMeshComponent.h"
 #include "Core/Delegates/Delegate.h"
 #include "Object/ObjectPtr.h"
@@ -8,7 +9,6 @@ struct FPoseContext;
 class UAnimInstance;
 class UAnimSequenceBase;
 class UAnimSingleNodeInstance;
-class UAnimationAsset;
 class UAnimationStateMachine;
 struct FAnimNotifyEvent;
 

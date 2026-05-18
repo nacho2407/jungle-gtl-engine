@@ -93,8 +93,8 @@ struct FFrameConstants
 	float bIsWireframe = 0.0f;
 
 	FVector2 ViewportSize;
-    float NearPlane;
-    float FarPlane;
+	float NearPlane;
+	float FarPlane;
 };
 
 struct FAmbientLightInfo
@@ -123,28 +123,28 @@ struct FLightInfo
 	float Falloff;
 
 	FVector Position;
-    uint32 ShadowTextureIndex = InvalidShadowIndex;
+	uint32 ShadowTextureIndex = InvalidShadowIndex;
 };
 
 struct FLightShadowIndices
 {
-    uint32 StartIndex;
-    uint32 IndexCount;
+	uint32 StartIndex;
+	uint32 IndexCount;
 };
 
 struct FShadowLightRequest
 {
 	uint32 LightIndex = InvalidShadowIndex;
-    ULightComponent* LightComponent = nullptr;
-    EShadowLightType Type;
-    FVector WorldLocation;
-    bool bCastShadows = true;
-    uint32 ShadowResolution;
-    float ConstantBias = 0.0f;
-    float SlopeScaledBias = 0.0f;
-    float ShadowSharpen = 1.0f;
-    FVector4 CascadeSplitFar = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
-    float PriorityScore;
+	ULightComponent* LightComponent = nullptr;
+	EShadowLightType Type;
+	FVector WorldLocation;
+	bool bCastShadows = true;
+	uint32 ShadowResolution;
+	float ConstantBias = 0.0f;
+	float SlopeScaledBias = 0.0f;
+	float ShadowSharpen = 1.0f;
+	FVector4 CascadeSplitFar = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
+	float PriorityScore;
 };
 
 constexpr uint32 MaxDirectionalCascadeCount = 4;
@@ -158,16 +158,16 @@ struct FShadowConstants
 
 	FVector4 CascadeSplitFar; // x,y,z,w 에 각각 비율이 아닌 카메라와의 거리를 넣어뒀음
 	uint32   DirectionalCascadeCount = 0;
-    uint32   DirectionalShadowStartIndex = 0;
+	uint32   DirectionalShadowStartIndex = 0;
 	float    Padding[2] = { 0.0f, 0.0f };
 };
 
 struct FVSMBlurConstants
 {
-    uint32 AtlasOffsetX; // 4바이트
-    uint32 AtlasOffsetY; // 4바이트
-    uint32 TileWidth;    // 4바이트
-    uint32 TileHeight;   // 4바이트
+	uint32 AtlasOffsetX; // 4바이트
+	uint32 AtlasOffsetY; // 4바이트
+	uint32 TileWidth;    // 4바이트
+	uint32 TileHeight;   // 4바이트
 };						// 총 16바이트
 
 inline void SetCascadeSplitFar(FVector4& OutValue, uint32 CascadeIndex, float SplitFar)
@@ -184,19 +184,19 @@ inline void SetCascadeSplitFar(FVector4& OutValue, uint32 CascadeIndex, float Sp
 
 struct FShadowAtlasConstants
 {
-    FMatrix ShadowViewProjMatrix;	// 64
-    FMatrix VirtualViewProjMatrix;
+	FMatrix ShadowViewProjMatrix;	// 64
+	FMatrix VirtualViewProjMatrix;
 
-    FVector4 ScaleOffset;			// 16, xy: Scale, zw: Offset
+	FVector4 ScaleOffset;			// 16, xy: Scale, zw: Offset
 
-    float ConstantBias;				// 4
-    float ShadowStrength;			// 4
-    float ShadowSoftness;			// 4
-    uint32 ShadowType;				// 4
+	float ConstantBias;				// 4
+	float ShadowStrength;			// 4
+	float ShadowSoftness;			// 4
+	uint32 ShadowType;				// 4
 
-    uint32 ShadowMapType;
-    float SlopedBias;
-    float Padding[2];
+	uint32 ShadowMapType;
+	float SlopedBias;
+	float Padding[2];
 };
 
 struct FUberConstants
@@ -210,10 +210,10 @@ struct FUberConstants
 
 struct FDecalInfo
 {
-    FMatrix InvDecalWorld;
-    FVector4 ColorTint;
-    uint32 TextureIndex;
-    float Padding[3];
+	FMatrix InvDecalWorld;
+	FVector4 ColorTint;
+	uint32 TextureIndex;
+	float Padding[3];
 };
 
 struct FGizmoConstants
@@ -342,63 +342,63 @@ constexpr uint32 MaxFogLayerCount = 32;
 struct FFogConstants
 {
 	FVector4 FogColor;
-    float    FogDensity;
-    float    HeightFalloff;
-    float        FogHeight;
-    float        FogStartDistance;
-    float        FogCutoffDistance;
-    float        FogMaxOpacity;
-    float        Padding[2];
+	float    FogDensity;
+	float    HeightFalloff;
+	float        FogHeight;
+	float        FogStartDistance;
+	float        FogCutoffDistance;
+	float        FogMaxOpacity;
+	float        Padding[2];
 };
 
 struct FFogPassConstants
 {
-    uint32 FogCount = 0;
-    float  Padding0[3] = {0.0f, 0.0f, 0.0f};
-    FFogConstants Layers[MaxFogLayerCount] = {};
+	uint32 FogCount = 0;
+	float  Padding0[3] = {0.0f, 0.0f, 0.0f};
+	FFogConstants Layers[MaxFogLayerCount] = {};
 };
 
 struct FFXAAConstants
 {
-    float InvResolution[2]; // (1/Width, 1/Height)
-    uint32 bEnabled;       // 0: off, 1: on
-    float  Padding;
+	float InvResolution[2]; // (1/Width, 1/Height)
+	uint32 bEnabled;       // 0: off, 1: on
+	float  Padding;
 };
 
 struct FSandevistanConstants
 {
-    float Time;
-    float Intensity;
-    float Padding0;
-    float Padding1;
+	float Time;
+	float Intensity;
+	float Padding0;
+	float Padding1;
 
-    float Center[2];
-    float InvResolution[2];
+	float Center[2];
+	float InvResolution[2];
 };
 
 struct FPostProcessConstants
 {
-    float InvResolution[2];
-    float VignetteIntensity;
-    float VignetteRadius;
-    float VignetteSmoothness;
-    uint32 GammaCorrectionEnabled;
-    float GammaValue;
-    float Pad;
-    float VignetteColor[4];
+	float InvResolution[2];
+	float VignetteIntensity;
+	float VignetteRadius;
+	float VignetteSmoothness;
+	uint32 GammaCorrectionEnabled;
+	float GammaValue;
+	float Pad;
+	float VignetteColor[4];
 };
 
 struct FScreenOverlayConstants
 {
-    float Color[4];
+	float Color[4];
 };
 
 struct FLightData
 {
-    FVector WorldPos;
-    float	Radius;
-    FVector Color;
-    float	Intensity;
+	FVector WorldPos;
+	float	Radius;
+	FVector Color;
+	float	Intensity;
 	float	RadiusFalloff;
 	float	Padding[3];
 };
@@ -468,8 +468,8 @@ struct FRenderCommand
 		FFontConstants Font;
 		FSubUVConstants SubUV;
 		FBillboardConstants Billboard;  // ← 추가
-        FFogConstants Fog;
-        FFXAAConstants FXAA;
+		FFogConstants Fog;
+		FFXAAConstants FXAA;
 		FLightPassConstants Light;
 		FDecalInfo Decal;
 	} Constants;
