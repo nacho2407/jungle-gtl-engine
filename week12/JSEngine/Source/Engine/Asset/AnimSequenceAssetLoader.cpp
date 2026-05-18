@@ -10,6 +10,7 @@
 #include <chrono>
 #include <cctype>
 #include <cstring>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -21,7 +22,7 @@ namespace
 	using json::JSON;
 
 	constexpr const char* AnimSequenceFormatName = "JSE.AnimSequence";
-	constexpr int32 AnimSequenceFormatVersion = 1;
+	constexpr int32 AnimSequenceFormatVersion = 2;
 
 	// Companion cache format for .animseq. The JSON file remains the editable source,
 	// and this cache is rebuilt whenever the source JSON timestamp changes.
@@ -99,6 +100,63 @@ namespace
 		std::error_code ErrorCode;
 		const uint64 Size = static_cast<uint64>(fs::file_size(FilePath, ErrorCode));
 		return ErrorCode ? 0 : Size;
+	}
+
+	FString UInt64ToString(uint64 Value)
+	{
+		return std::to_string(Value);
+	}
+
+	uint64 ParseUInt64String(const FString& Value, uint64 DefaultValue = 0)
+	{
+		if (Value.empty())
+		{
+			return DefaultValue;
+		}
+
+		try
+		{
+			return static_cast<uint64>(std::stoull(Value));
+		}
+		catch (...)
+		{
+			return DefaultValue;
+		}
+	}
+
+	FString ComputeFileContentHashString(const FString& Path)
+	{
+		const FString NormalizedPath = FPaths::Normalize(Path);
+		if (NormalizedPath.empty())
+		{
+			return "";
+		}
+
+		std::ifstream In(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)), std::ios::binary);
+		if (!In.is_open())
+		{
+			return "";
+		}
+
+		constexpr uint64 FnvOffsetBasis = 14695981039346656037ull;
+		constexpr uint64 FnvPrime = 1099511628211ull;
+		uint64 Hash = FnvOffsetBasis;
+
+		char Buffer[64 * 1024];
+		while (In.good())
+		{
+			In.read(Buffer, sizeof(Buffer));
+			const std::streamsize BytesRead = In.gcount();
+			for (std::streamsize Index = 0; Index < BytesRead; ++Index)
+			{
+				Hash ^= static_cast<unsigned char>(Buffer[Index]);
+				Hash *= FnvPrime;
+			}
+		}
+
+		char HashText[32] = {};
+		std::snprintf(HashText, sizeof(HashText), "fnv1a64:%016llx", static_cast<unsigned long long>(Hash));
+		return FString(HashText);
 	}
 
 	void WriteUInt32LE(std::ofstream& Out, uint32 Value)
@@ -502,6 +560,9 @@ namespace
 		Sequence->SetSourceFilePath(SourceFilePath);
 		Sequence->SetSourceStackName(SourceStackName);
 		Sequence->SetPreviewMeshPath(PreviewMeshPath);
+		Sequence->SetDerivedDataCachePath(BinaryPath);
+		Sequence->SetDerivedDataCacheVersion(static_cast<int32>(AnimSequenceBinaryVersion));
+		Sequence->SetJsonTracksEmbedded(false);
 
 		DataModel->SetPlayLength(PlayLength);
 		DataModel->SetFrameRate(FrameRate);
@@ -586,6 +647,135 @@ namespace
 		return Root.hasKey(Key) ? Root[Key].ToString() : DefaultValue;
 	}
 
+	uint64 GetUInt64StringOrDefault(JSON& Root, const char* Key, uint64 DefaultValue = 0)
+	{
+		return Root.hasKey(Key) ? ParseUInt64String(Root[Key].ToString(), DefaultValue) : DefaultValue;
+	}
+
+	bool GetBoolOrDefault(JSON& Root, const char* Key, bool bDefaultValue = false)
+	{
+		return Root.hasKey(Key) ? Root[Key].ToBool() : bDefaultValue;
+	}
+
+	JSON* GetObjectOrNull(JSON& Root, const char* Key)
+	{
+		if (!Root.hasKey(Key) || Root[Key].JSONType() != JSON::Class::Object)
+		{
+			return nullptr;
+		}
+
+		return &Root[Key];
+	}
+
+	void ApplyAnimSequenceDescriptorMetadata(JSON& Root, const FString& NormalizedPath, UAnimSequence* Sequence)
+	{
+		if (!Sequence)
+		{
+			return;
+		}
+
+		Sequence->SetAssetPath(NormalizedPath);
+
+		FString SourceFilePath = GetStringOrDefault(Root, "SourceFilePath");
+		FString SourceStackName = GetStringOrDefault(Root, "SourceStackName");
+		FString PreviewMeshPath = GetStringOrDefault(Root, "PreviewMeshPath");
+		uint64 SourceFileWriteTimeTicks = 0;
+		uint64 SourceFileSizeBytes = 0;
+		FString SourceFileContentHash;
+
+		if (JSON* Source = GetObjectOrNull(Root, "Source"))
+		{
+			SourceFilePath = GetStringOrDefault(*Source, "FilePath", SourceFilePath);
+			SourceStackName = GetStringOrDefault(*Source, "ImportedStackName", SourceStackName);
+			SourceFileWriteTimeTicks = GetUInt64StringOrDefault(*Source, "FileWriteTimeTicks", SourceFileWriteTimeTicks);
+			SourceFileSizeBytes = GetUInt64StringOrDefault(*Source, "FileSizeBytes", SourceFileSizeBytes);
+			SourceFileContentHash = GetStringOrDefault(*Source, "ContentHash", SourceFileContentHash);
+		}
+
+		if (JSON* ImportSettings = GetObjectOrNull(Root, "ImportSettings"))
+		{
+			PreviewMeshPath = GetStringOrDefault(*ImportSettings, "PreviewMeshPath", PreviewMeshPath);
+		}
+
+		if (JSON* DerivedData = GetObjectOrNull(Root, "DerivedData"))
+		{
+			Sequence->SetDerivedDataCachePath(GetStringOrDefault(
+				*DerivedData,
+				"CachePath",
+				MakeAnimSequenceBinaryCachePath(NormalizedPath)));
+			Sequence->SetDerivedDataCacheVersion(GetIntOrDefault(
+				*DerivedData,
+				"CacheVersion",
+				static_cast<int32>(AnimSequenceBinaryVersion)));
+			Sequence->SetJsonTracksEmbedded(GetBoolOrDefault(*DerivedData, "bJsonEmbedsRawTracks", Root.hasKey("Tracks")));
+		}
+		else
+		{
+			Sequence->SetDerivedDataCachePath(MakeAnimSequenceBinaryCachePath(NormalizedPath));
+			Sequence->SetDerivedDataCacheVersion(static_cast<int32>(AnimSequenceBinaryVersion));
+			Sequence->SetJsonTracksEmbedded(Root.hasKey("Tracks"));
+		}
+
+		if (!SourceFilePath.empty())
+		{
+			const FString NormalizedSourceFilePath = FPaths::Normalize(SourceFilePath);
+			Sequence->SetSourceFilePath(NormalizedSourceFilePath);
+			if (SourceFileWriteTimeTicks == 0)
+			{
+				SourceFileWriteTimeTicks = GetFileWriteTimeTicks(NormalizedSourceFilePath);
+			}
+			if (SourceFileSizeBytes == 0)
+			{
+				SourceFileSizeBytes = GetFileSizeBytes(NormalizedSourceFilePath);
+			}
+		}
+		else
+		{
+			Sequence->SetSourceFilePath("");
+		}
+
+		Sequence->SetSourceStackName(SourceStackName);
+		Sequence->SetPreviewMeshPath(PreviewMeshPath);
+		Sequence->SetSourceFileWriteTimeTicks(SourceFileWriteTimeTicks);
+		Sequence->SetSourceFileSizeBytes(SourceFileSizeBytes);
+		Sequence->SetSourceFileContentHash(SourceFileContentHash);
+	}
+
+	void ApplyAnimSequenceDescriptorDataModel(JSON& Root, UAnimDataModel* DataModel)
+	{
+		if (!DataModel)
+		{
+			return;
+		}
+
+		FFrameRate FrameRate;
+		FrameRate.Numerator = GetIntOrDefault(Root, "FrameRateNumerator", 30);
+		FrameRate.Denominator = GetIntOrDefault(Root, "FrameRateDenominator", 1);
+
+		float PlayLength = GetFloatOrDefault(Root, "PlayLength", 0.0f);
+		int32 NumberOfFrames = GetIntOrDefault(Root, "NumberOfFrames", 0);
+		int32 NumberOfKeys = GetIntOrDefault(Root, "NumberOfKeys", 0);
+
+		if (JSON* ImportSettings = GetObjectOrNull(Root, "ImportSettings"))
+		{
+			FrameRate.Numerator = GetIntOrDefault(*ImportSettings, "FrameRateNumerator", FrameRate.Numerator);
+			FrameRate.Denominator = GetIntOrDefault(*ImportSettings, "FrameRateDenominator", FrameRate.Denominator);
+			FrameRate.Numerator = GetIntOrDefault(*ImportSettings, "SampleRate", FrameRate.Numerator);
+		}
+
+		if (JSON* Sequence = GetObjectOrNull(Root, "Sequence"))
+		{
+			PlayLength = GetFloatOrDefault(*Sequence, "PlayLength", PlayLength);
+			NumberOfFrames = GetIntOrDefault(*Sequence, "NumberOfFrames", NumberOfFrames);
+			NumberOfKeys = GetIntOrDefault(*Sequence, "NumberOfKeys", NumberOfKeys);
+		}
+
+		DataModel->SetFrameRate(FrameRate);
+		DataModel->SetPlayLength(PlayLength);
+		DataModel->SetNumberOfFrames(NumberOfFrames);
+		DataModel->SetNumberOfKeys(NumberOfKeys);
+	}
+
 	void DeserializeTrack(JSON& TrackJson, FBoneAnimationTrack& OutTrack)
 	{
 		OutTrack = FBoneAnimationTrack();
@@ -663,11 +853,6 @@ UAnimSequence* FAnimSequenceAssetLoader::Load(const FString& Path) const
 		return nullptr;
 	}
 
-	if (UAnimSequence* BinarySequence = LoadAnimSequenceBinaryCache(NormalizedPath))
-	{
-		return BinarySequence;
-	}
-
 	std::ifstream AnimFile(FPaths::ToWide(NormalizedPath));
 	if (!AnimFile.is_open())
 	{
@@ -689,21 +874,18 @@ UAnimSequence* FAnimSequenceAssetLoader::Load(const FString& Path) const
 		UE_LOG_WARNING("[AnimSequenceAssetLoader] Unexpected anim sequence format: %s | Path=%s", Format.c_str(), NormalizedPath.c_str());
 	}
 
+	if (UAnimSequence* BinarySequence = LoadAnimSequenceBinaryCache(NormalizedPath))
+	{
+		ApplyAnimSequenceDescriptorMetadata(Root, NormalizedPath, BinarySequence);
+		ApplyAnimSequenceDescriptorDataModel(Root, BinarySequence->GetDataModel());
+		return BinarySequence;
+	}
+
 	UAnimSequence* Sequence = UObjectManager::Get().CreateObject<UAnimSequence>();
 	UAnimDataModel* DataModel = UObjectManager::Get().CreateObject<UAnimDataModel>();
 	Sequence->SetDataModel(DataModel);
-	Sequence->SetAssetPath(NormalizedPath);
-	Sequence->SetSourceFilePath(GetStringOrDefault(Root, "SourceFilePath"));
-	Sequence->SetSourceStackName(GetStringOrDefault(Root, "SourceStackName"));
-	Sequence->SetPreviewMeshPath(GetStringOrDefault(Root, "PreviewMeshPath"));
-
-	FFrameRate FrameRate;
-	FrameRate.Numerator = GetIntOrDefault(Root, "FrameRateNumerator", 30);
-	FrameRate.Denominator = GetIntOrDefault(Root, "FrameRateDenominator", 1);
-	DataModel->SetFrameRate(FrameRate);
-	DataModel->SetPlayLength(GetFloatOrDefault(Root, "PlayLength", 0.0f));
-	DataModel->SetNumberOfFrames(GetIntOrDefault(Root, "NumberOfFrames", 0));
-	DataModel->SetNumberOfKeys(GetIntOrDefault(Root, "NumberOfKeys", 0));
+	ApplyAnimSequenceDescriptorMetadata(Root, NormalizedPath, Sequence);
+	ApplyAnimSequenceDescriptorDataModel(Root, DataModel);
 
 	TArray<FBoneAnimationTrack>& Tracks = DataModel->GetMutableBoneAnimationTracks();
 	Tracks.clear();
@@ -724,9 +906,9 @@ UAnimSequence* FAnimSequenceAssetLoader::Load(const FString& Path) const
 		}
 	}
 
-	if (!SaveAnimSequenceBinaryCache(NormalizedPath, Sequence))
+	if (!Tracks.empty() && !SaveAnimSequenceBinaryCache(NormalizedPath, Sequence))
 	{
-		UE_LOG_WARNING("[AnimSequenceAssetLoader] Failed to build binary cache. JSON load will still be used next time: %s",
+		UE_LOG_WARNING("[AnimSequenceAssetLoader] Failed to build binary cache from embedded JSON tracks: %s",
 			NormalizedPath.c_str());
 	}
 
@@ -748,11 +930,19 @@ bool FAnimSequenceAssetLoader::Save(const FString& Path, const UAnimSequence* Se
 
 	const UAnimDataModel* DataModel = Sequence->GetDataModel();
 
+	const FString SourceFilePath = FPaths::Normalize(Sequence->GetSourceFilePath());
+	const uint64 SourceFileWriteTimeTicks = GetFileWriteTimeTicks(SourceFilePath);
+	const uint64 SourceFileSizeBytes = GetFileSizeBytes(SourceFilePath);
+	const FString SourceFileContentHash = ComputeFileContentHashString(SourceFilePath);
+	const FString DerivedDataCachePath = MakeAnimSequenceBinaryCachePath(NormalizedPath);
+
 	JSON Root = JSON::Make(JSON::Class::Object);
 	Root["Format"] = AnimSequenceFormatName;
 	Root["Version"] = AnimSequenceFormatVersion;
 	Root["AssetPath"] = NormalizedPath;
-	Root["SourceFilePath"] = Sequence->GetSourceFilePath();
+
+	// Backward-compatible flat fields. New code should prefer the grouped descriptor blocks below.
+	Root["SourceFilePath"] = SourceFilePath;
 	Root["SourceStackName"] = Sequence->GetSourceStackName();
 	Root["PreviewMeshPath"] = Sequence->GetPreviewMeshPath();
 	Root["PlayLength"] = DataModel->GetPlayLength();
@@ -760,6 +950,37 @@ bool FAnimSequenceAssetLoader::Save(const FString& Path, const UAnimSequence* Se
 	Root["FrameRateDenominator"] = DataModel->GetFrameRate().Denominator;
 	Root["NumberOfFrames"] = DataModel->GetNumberOfFrames();
 	Root["NumberOfKeys"] = DataModel->GetNumberOfKeys();
+
+	JSON Source = JSON::Make(JSON::Class::Object);
+	Source["FilePath"] = SourceFilePath;
+	Source["FileWriteTimeTicks"] = UInt64ToString(SourceFileWriteTimeTicks);
+	Source["FileSizeBytes"] = UInt64ToString(SourceFileSizeBytes);
+	Source["ContentHash"] = SourceFileContentHash;
+	Source["ImportedStackName"] = Sequence->GetSourceStackName();
+	Root["Source"] = Source;
+
+	JSON ImportSettings = JSON::Make(JSON::Class::Object);
+	ImportSettings["SampleRate"] = DataModel->GetFrameRate().Numerator;
+	ImportSettings["FrameRateNumerator"] = DataModel->GetFrameRate().Numerator;
+	ImportSettings["FrameRateDenominator"] = DataModel->GetFrameRate().Denominator;
+	ImportSettings["PreviewMeshPath"] = Sequence->GetPreviewMeshPath();
+	Root["ImportSettings"] = ImportSettings;
+
+	JSON SequenceJson = JSON::Make(JSON::Class::Object);
+	SequenceJson["PlayLength"] = DataModel->GetPlayLength();
+	SequenceJson["NumberOfFrames"] = DataModel->GetNumberOfFrames();
+	SequenceJson["NumberOfKeys"] = DataModel->GetNumberOfKeys();
+	SequenceJson["TrackCount"] = static_cast<int32>(DataModel->GetBoneAnimationTracks().size());
+	Root["Sequence"] = SequenceJson;
+
+	JSON DerivedData = JSON::Make(JSON::Class::Object);
+	DerivedData["Type"] = "SampledTrackBinaryCache";
+	DerivedData["CachePath"] = DerivedDataCachePath;
+	DerivedData["CacheFormat"] = "ASEQ";
+	DerivedData["CacheVersion"] = static_cast<int32>(AnimSequenceBinaryVersion);
+	DerivedData["bJsonEmbedsRawTracks"] = false;
+	DerivedData["bCacheStoresRawTracks"] = true;
+	Root["DerivedData"] = DerivedData;
 
 	std::error_code ErrorCode;
 	const std::filesystem::path FilePath(FPaths::ToWide(NormalizedPath));
