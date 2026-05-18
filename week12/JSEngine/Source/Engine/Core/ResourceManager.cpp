@@ -1152,6 +1152,8 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 	}
 
 	ImportedAssetPaths.reserve(StackNames.size());
+	TArray<FString> StaleStackNames;
+	StaleStackNames.reserve(StackNames.size());
 	for (const FString& StackName : StackNames)
 	{
 		if (StackName.empty())
@@ -1196,11 +1198,6 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 				ImportedAssetPath.c_str());
 		}
 
-		{
-			// If a stale sequence was cached under this path, replace it with the fresh import below.
-			AnimSequenceMap.erase(ImportedAssetPath);
-		}
-
 		if (FAssetPathPolicy::FileExists(ImportedAssetPath))
 		{
 			if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), ImportedAssetPath) == AnimSequenceFilePaths.end())
@@ -1209,41 +1206,75 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 			}
 		}
 
+		AnimSequenceMap.erase(ImportedAssetPath);
+		StaleStackNames.push_back(StackName);
+	}
+
+	if (!StaleStackNames.empty())
+	{
 		FFbxAnimImportOptions ImportOptions;
-		ImportOptions.StackName = StackName;
 		ImportOptions.PreviewMeshPath = NormalizedPath;
 
-		UAnimSequence* ImportedSequence = FbxImporter.LoadAnimSequence(NormalizedPath, ImportOptions);
-		if (!ImportedSequence)
+		TArray<FFbxAnimStackImportResult> ImportResults = FbxImporter.LoadAnimSequences(NormalizedPath, ImportOptions);
+		if (ImportResults.empty())
 		{
-			UE_LOG_WARNING("[AnimSequenceImport] Failed to import FBX animation stack: %s | Stack=%s",
-				NormalizedPath.c_str(),
-				StackName.c_str());
-			continue;
+			UE_LOG_WARNING("[AnimSequenceImport] Bulk FBX animation import returned no stacks, falling back to per-stack import: %s",
+				NormalizedPath.c_str());
 		}
 
-		ImportedSequence->SetAssetPath(ImportedAssetPath);
-		ImportedSequence->SetPreviewMeshPath(NormalizedPath);
-
-		if (!AnimSequenceAssetLoader.Save(ImportedAssetPath, ImportedSequence))
+		for (const FString& StackName : StaleStackNames)
 		{
-			UE_LOG_WARNING("[AnimSequenceImport] Failed to save imported animation stack: %s -> %s",
+			const FString ImportedAssetPath = FAssetPathPolicy::MakeImportedAnimSequenceAssetPath(NormalizedPath, StackName);
+			UAnimSequence* ImportedSequence = nullptr;
+
+			for (const FFbxAnimStackImportResult& Result : ImportResults)
+			{
+				if (Result.StackName == StackName)
+				{
+					ImportedSequence = Result.Sequence;
+					break;
+				}
+			}
+
+			if (!ImportedSequence)
+			{
+				FFbxAnimImportOptions FallbackImportOptions;
+				FallbackImportOptions.StackName = StackName;
+				FallbackImportOptions.PreviewMeshPath = NormalizedPath;
+				ImportedSequence = FbxImporter.LoadAnimSequence(NormalizedPath, FallbackImportOptions);
+			}
+
+			if (!ImportedSequence)
+			{
+				UE_LOG_WARNING("[AnimSequenceImport] Failed to import FBX animation stack: %s | Stack=%s",
+					NormalizedPath.c_str(),
+					StackName.c_str());
+				continue;
+			}
+
+			ImportedSequence->SetAssetPath(ImportedAssetPath);
+			ImportedSequence->SetPreviewMeshPath(NormalizedPath);
+
+			if (!AnimSequenceAssetLoader.Save(ImportedAssetPath, ImportedSequence))
+			{
+				UE_LOG_WARNING("[AnimSequenceImport] Failed to save imported animation stack: %s -> %s",
+					NormalizedPath.c_str(),
+					ImportedAssetPath.c_str());
+				continue;
+			}
+
+			AnimSequenceMap[ImportedAssetPath] = ImportedSequence;
+			if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), ImportedAssetPath) == AnimSequenceFilePaths.end())
+			{
+				AnimSequenceFilePaths.push_back(ImportedAssetPath);
+			}
+
+			ImportedAssetPaths.push_back(ImportedAssetPath);
+			UE_LOG("[AnimSequenceImport] Imported FBX animation stack: %s | Stack=%s | Asset=%s",
 				NormalizedPath.c_str(),
+				StackName.c_str(),
 				ImportedAssetPath.c_str());
-			continue;
 		}
-
-		AnimSequenceMap[ImportedAssetPath] = ImportedSequence;
-		if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), ImportedAssetPath) == AnimSequenceFilePaths.end())
-		{
-			AnimSequenceFilePaths.push_back(ImportedAssetPath);
-		}
-
-		ImportedAssetPaths.push_back(ImportedAssetPath);
-		UE_LOG("[AnimSequenceImport] Imported FBX animation stack: %s | Stack=%s | Asset=%s",
-			NormalizedPath.c_str(),
-			StackName.c_str(),
-			ImportedAssetPath.c_str());
 	}
 
 	if (!ImportedAssetPaths.empty())
