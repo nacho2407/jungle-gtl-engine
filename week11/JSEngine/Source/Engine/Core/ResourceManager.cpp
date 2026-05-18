@@ -126,6 +126,15 @@ namespace
 
 		return Hash == 0 ? 1u : Hash;
 	}
+
+	bool SetAnimSequenceCacheInvalidReason(FString* OutInvalidReason, const FString& Reason)
+	{
+		if (OutInvalidReason)
+		{
+			*OutInvalidReason = Reason;
+		}
+		return false;
+	}
 }
 
 #pragma region __BINARY__
@@ -963,7 +972,15 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, 
 	UAnimSequence* Anim = UObjectManager::Get().CreateObject<UAnimSequence>();
 
 	const FReferenceSkeleton* TargetReferenceSkeleton = TargetMesh->GetReferenceSkeleton();
-	if (IsAnimSequenceBinaryValid(NormalizedSource, BinaryPath, AnimStackName, TargetReferenceSkeleton) && BinarySerializer.LoadAnimSequence(BinaryPath, *Anim))
+	FString CacheInvalidReason;
+	const bool bAnimBinaryValid = IsAnimSequenceBinaryValid(
+		NormalizedSource,
+		BinaryPath,
+		AnimStackName,
+		TargetReferenceSkeleton,
+		&CacheInvalidReason);
+
+	if (bAnimBinaryValid && BinarySerializer.LoadAnimSequence(BinaryPath, *Anim))
 	{
 		Anim->Skeleton = TargetMesh->GetSkeleton();
 
@@ -980,6 +997,19 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, 
 
 		return Anim;
 	}
+
+	if (bAnimBinaryValid)
+	{
+		CacheInvalidReason = "BinaryBodyLoadFailed";
+	}
+
+	UE_LOG("[AnimSequenceLoad] CacheInvalid | Reason=%s | Path=%s | Stack=%s | Target=%s | BinaryPath=%s",
+	       CacheInvalidReason.c_str(),
+	       NormalizedSource.c_str(),
+	       AnimStackName.c_str(),
+	       NormalizedTarget.c_str(),
+	       BinaryPath.c_str());
+
 	UObjectManager::Get().DestroyObject(Anim);
 
 	Anim = FbxImporter.LoadAnimSequence(NormalizedSource, NormalizedTarget, AnimStackName);
@@ -1014,49 +1044,62 @@ TArray<FString> FResourceManager::GetAnimSequencePaths() const
 	return AnimSequenceFilePaths;
 }
 
-bool FResourceManager::IsAnimSequenceBinaryValid(const FString& SourcePath, const FString& BinaryPath, const FString& AnimStackName, const FReferenceSkeleton* TargetReferenceSkeleton) const
+bool FResourceManager::IsAnimSequenceBinaryValid(
+	const FString& SourcePath,
+	const FString& BinaryPath,
+	const FString& AnimStackName,
+	const FReferenceSkeleton* TargetReferenceSkeleton,
+	FString* OutInvalidReason) const
 {
 	FAnimSequenceBinaryHeader Header;
 	const FString NormalizedBinaryPath = FPaths::Normalize(BinaryPath);
 
 	if (!BinarySerializer.ReadAnimSequenceHeader(NormalizedBinaryPath, Header))
 	{
-		return false;
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "HeaderMissingOrInvalid");
 	}
 
 	const uint64 SourceWriteTime = GetFileWriteTimeTicks(FPaths::Normalize(SourcePath));
 	if (SourceWriteTime == 0)
 	{
-		return false;
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "SourceTimestampMissing");
 	}
 
 	const uint64 SourceFileSize = GetFileSizeBytes(SourcePath);
 	if (SourceFileSize == 0)
 	{
-		return false;
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "SourceFileSizeMissing");
 	}
 
-	if (Header.SourceFileWriteTime != SourceWriteTime ||
-		Header.SourceFileSize != SourceFileSize)
+	if (Header.SourceFileWriteTime != SourceWriteTime)
 	{
-		return false;
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "SourceTimestampMismatch");
+	}
+
+	if (Header.SourceFileSize != SourceFileSize)
+	{
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "SourceFileSizeMismatch");
 	}
 
 	if (!AnimStackName.empty() &&
 		Header.AnimStackNameHash != GetStableStringHash(AnimStackName))
 	{
-		return false;
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "AnimStackMismatch");
 	}
 
 	if (!TargetReferenceSkeleton || TargetReferenceSkeleton->RefBones.empty())
 	{
-		return false;
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "TargetSkeletonMissing");
 	}
 
-	if (Header.TargetSkeletonBoneCount != static_cast<uint32>(TargetReferenceSkeleton->RefBones.size()) ||
-		Header.TargetSkeletonHash != GetReferenceSkeletonStableHash(TargetReferenceSkeleton))
+	if (Header.TargetSkeletonBoneCount != static_cast<uint32>(TargetReferenceSkeleton->RefBones.size()))
 	{
-		return false;
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "TargetSkeletonBoneCountMismatch");
+	}
+
+	if (Header.TargetSkeletonHash != GetReferenceSkeletonStableHash(TargetReferenceSkeleton))
+	{
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "TargetSkeletonHashMismatch");
 	}
 
 	return true;
