@@ -536,10 +536,50 @@ namespace
     }
 
     //1. Animation Import and Sampling Phase(UAnimSingleNodeInstance::BuildBoneMapping()으로 이어짐)
+    TMap<FbxNode*, FMatrix> BuildSampleGlobalTransformCache(
+        const TArray<FbxNode*>& TrackNodes,
+        const FbxTime& SampleTime)
+    {
+        TMap<FbxNode*, FMatrix> GlobalTransformByNode;
+        GlobalTransformByNode.reserve(TrackNodes.size());
+
+        for (FbxNode* Node : TrackNodes)
+        {
+            if (!Node)
+            {
+                continue;
+            }
+
+            GlobalTransformByNode[Node] = ToFMatrix(Node->EvaluateGlobalTransform(SampleTime));
+        }
+
+        return GlobalTransformByNode;
+    }
+
+    FMatrix GetSampledGlobalTransform(
+        FbxNode* Node,
+        const FbxTime& SampleTime,
+        const TMap<FbxNode*, FMatrix>& GlobalTransformByNode)
+    {
+        if (!Node)
+        {
+            return FMatrix::Identity;
+        }
+
+        auto It = GlobalTransformByNode.find(Node);
+        if (It != GlobalTransformByNode.end())
+        {
+            return It->second;
+        }
+
+        return ToFMatrix(Node->EvaluateGlobalTransform(SampleTime));
+    }
+
     void AppendSampledRuntimeLocalTransform(
         FbxNode* Node,
         FbxNode* RuntimeParentNode,
         const FbxTime& SampleTime,
+        const TMap<FbxNode*, FMatrix>& GlobalTransformByNode,
         FRawAnimSequenceTrack& OutTrack,
         FAnimationTrackSamplingState& SamplingState)
     {
@@ -551,12 +591,13 @@ namespace
 
         if (Node)
         {
-            const FbxAMatrix GlobalTransform = Node->EvaluateGlobalTransform(SampleTime);
-            const FMatrix EngineGlobalTransform = ToFMatrix(GlobalTransform);
+            const FMatrix EngineGlobalTransform = GetSampledGlobalTransform(Node, SampleTime, GlobalTransformByNode);
             if (RuntimeParentNode)
             {
-                const FbxAMatrix ParentGlobalTransform = RuntimeParentNode->EvaluateGlobalTransform(SampleTime);
-                const FMatrix EngineParentGlobalTransform = ToFMatrix(ParentGlobalTransform);
+                const FMatrix EngineParentGlobalTransform = GetSampledGlobalTransform(
+                    RuntimeParentNode,
+                    SampleTime,
+                    GlobalTransformByNode);
                 RuntimeLocalTransform = EngineGlobalTransform * EngineParentGlobalTransform.GetInverse();
             }
             else
@@ -658,6 +699,13 @@ namespace
         TArray<FBoneAnimationTrack>& Tracks = DataModel->GetMutableBoneAnimationTracks();
         Tracks.reserve(TrackNodes.size());
 
+        TArray<FbxNode*> ImportedTrackNodes;
+        ImportedTrackNodes.reserve(TrackNodes.size());
+        TArray<FAnimationTrackSamplingState> SamplingStates;
+        SamplingStates.reserve(TrackNodes.size());
+        TArray<FbxNode*> RuntimeParentNodes;
+        RuntimeParentNodes.reserve(TrackNodes.size());
+
         for (FbxNode* Node : TrackNodes)
         {
             if (!Node)
@@ -678,19 +726,29 @@ namespace
                 RuntimeParentNode = ParentIt->second;
             }
 
-            FAnimationTrackSamplingState SamplingState;
-            for (int32 KeyIndex = 0; KeyIndex < KeyCount; ++KeyIndex)
+            RuntimeParentNodes.push_back(RuntimeParentNode);
+            SamplingStates.push_back(FAnimationTrackSamplingState());
+            ImportedTrackNodes.push_back(Node);
+            Tracks.push_back(std::move(Track));
+        }
+
+        for (int32 KeyIndex = 0; KeyIndex < KeyCount; ++KeyIndex)
+        {
+            const FbxTime SampleTime = MakeSampleTime(TimeSpan, KeyIndex, KeyCount);
+            const TMap<FbxNode*, FMatrix> GlobalTransformByNode =
+                BuildSampleGlobalTransformCache(ImportedTrackNodes, SampleTime);
+
+            for (int32 TrackIndex = 0; TrackIndex < static_cast<int32>(Tracks.size()); ++TrackIndex)
             {
-                const FbxTime SampleTime = MakeSampleTime(TimeSpan, KeyIndex, KeyCount);
+                FbxNode* Node = ImportedTrackNodes[TrackIndex];
                 AppendSampledRuntimeLocalTransform(
                     Node,
-                    RuntimeParentNode,
+                    RuntimeParentNodes[TrackIndex],
                     SampleTime,
-                    Track.InternalTrack,
-                    SamplingState);
+                    GlobalTransformByNode,
+                    Tracks[TrackIndex].InternalTrack,
+                    SamplingStates[TrackIndex]);
             }
-
-            Tracks.push_back(std::move(Track));
         }
 
         UE_LOG("[FbxAnimationImporter] Stack imported: %s | Stack=%s | Tracks=%zu | Keys=%d | Length=%.3f | SampleRate=%d",
@@ -899,7 +957,10 @@ TArray<FFbxAnimStackImportResult> FFbxImporter::LoadAnimSequences(const FString&
             continue;
         }
 
-        UAnimSequence* Sequence = BuildAnimSequenceFromStack(Scene, AnimStack, Path, ImportOptions);
+        FFbxAnimImportOptions StackImportOptions = ImportOptions;
+        StackImportOptions.StackName = FString(AnimStack->GetName());
+
+        UAnimSequence* Sequence = BuildAnimSequenceFromStack(Scene, AnimStack, Path, StackImportOptions);
         if (!Sequence)
         {
             continue;

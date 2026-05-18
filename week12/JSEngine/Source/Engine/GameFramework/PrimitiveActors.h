@@ -79,7 +79,7 @@ public:
 	void InitDefaultComponents() override;
 };
 
-UCLASS(Placeable, DisplayName = "Fog", Category = "Environment")
+UCLASS(Placeable, DisplayName = "Fog", Category = "Basic")
 class AFogActor : public AActor
 {
 public:
@@ -150,7 +150,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS(Placeable, DisplayName = "Decal", Category = "Environment")
+UCLASS(Placeable, DisplayName = "Decal", Category = "Basic")
 class ADecalActor : public AActor
 {
 public:

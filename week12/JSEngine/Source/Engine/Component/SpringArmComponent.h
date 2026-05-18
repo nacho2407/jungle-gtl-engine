@@ -2,7 +2,7 @@
 
 #include "Component/SceneComponent.h"
 
-UCLASS(SpawnableComponent, DisplayName = "SpringArm Component", Category = "Camera")
+UCLASS(SpawnableComponent, DisplayName = "SpringArm Component", Category = "System")
 class USpringArmComponent : public USceneComponent
 {
 public:

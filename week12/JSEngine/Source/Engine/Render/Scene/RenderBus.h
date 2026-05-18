@@ -90,6 +90,20 @@ public:
 	float GetLetterboxTargetAspect() const { return LetterboxTargetAspect; }
 	float GetLetterboxAmount() const { return LetterboxAmount; }
 	const FBoneWeightHeatmapViewState& GetBoneWeightHeatmapViewState() const { return BoneWeightHeatmapViewState; }
+	FFrameConstants BuildFrameConstants(bool bIsWireframe) const
+	{
+		FFrameConstants Constants;
+		Constants.View = View;
+		Constants.Projection = Proj;
+		Constants.CameraPosition = CameraPosition;
+		Constants.bIsOrthographic = IsOrthographic();
+		Constants.WireframeColor = WireframeColor;
+		Constants.bIsWireframe = bIsWireframe ? 1.0f : 0.0f;
+		Constants.ViewportSize = ViewportSize;
+		Constants.NearPlane = NearPlane;
+		Constants.FarPlane = FarPlane;
+		return Constants;
+	}
 
     bool bSandevistanEnabled = false;
     float SandevistanIntensity = 0.0f;

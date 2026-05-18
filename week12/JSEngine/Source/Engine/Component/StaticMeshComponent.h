@@ -4,7 +4,7 @@
 #include "Object/ObjectPtr.h"
 #include "Render/Resource/Material.h"
 
-UCLASS(SpawnableComponent, DisplayName = "StaticMesh Component", Category = "Rendering")
+UCLASS(SpawnableComponent, DisplayName = "StaticMesh Component", Category = "Basic")
 class UStaticMeshComponent : public UMeshComponent
 {
 public:

@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "Animation/AnimSequence.h"
 #include "Component/SkinnedMeshComponent.h"
 #include "Core/Delegates/Delegate.h"
 #include "Object/ObjectPtr.h"
@@ -27,7 +26,7 @@ enum class EAnimationMode
  *        USkeletalMeshComponent 또한 해당 방식대로 우선은 얇게 유지.
  *        핵심 로직들은 대부분 USkinnedMeshComponent로 옮겼습니다.
  */
-UCLASS(SpawnableComponent, DisplayName = "SkeletalMesh Component", Category = "Rendering")
+UCLASS(SpawnableComponent, DisplayName = "SkeletalMesh Component", Category = "Basic")
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
 public:
@@ -67,14 +66,18 @@ public:
 
 	void Play(bool bLooping);
 
-	const FString& GetAnimationAssetPath() const { return AnimationAssetPath.GetPath(); }
+	FString GetAnimationAssetPath() const;
 	void Stop();
 	void Pause();
+	float GetPlayRate() const;
 	void SetPlayRate(float InPlayRate);
+	float GetAnimationPosition() const;
+	float GetAnimationLength() const;
 	void SetAnimationPosition(float InTime);
 
-	bool IsPlaying() const { return bPlaying; }
-	bool IsLooping() const { return bLooping; }
+	bool IsPlaying() const;
+	bool IsLooping() const;
+	void SetLooping(bool bInLooping);
 
 	// 노티파이 수신 - AnimInstance가 호출해줄 함수
 	virtual void HandleAnimNotify(const FAnimNotifyEvent& Notify);
@@ -83,7 +86,7 @@ public:
 	// StateMachine
 	UAnimationStateMachine* CreateAnimationStateMachine();
 	void SetAnimationStateMachine(UAnimationStateMachine* InStateMachine);
-	UAnimationStateMachine* GetAnimationStateMachine() const { return AnimationStateMachine; }
+	UAnimationStateMachine* GetAnimationStateMachine() const;
 
 	// StateMachine Lua Binding용
 	void SetAnimStateByName(const FString& StateName, float BlendTime = 0.2f);
@@ -97,7 +100,6 @@ private:
 	void SyncAnimationAssetPathFromAnimation(UAnimationAsset* Animation);
 
 	UAnimInstance* AnimInstance = nullptr;
-	UAnimationStateMachine* AnimationStateMachine = nullptr;
 
 	UPROPERTY(DisplayName = "Animation")
 	TSoftObjectPtr<UAnimationAsset> AnimationAssetPath;
@@ -106,8 +108,4 @@ private:
 	EAnimationMode AnimationMode = EAnimationMode::AnimationBlueprint;
 
 	UAnimationAsset* AnimationToPlay = nullptr;
-	bool bPlaying = false;
-
-	UPROPERTY(DisplayName = "Loop")
-	bool bLooping = false;
 };

@@ -6,37 +6,14 @@
 #include "Animation/AnimationStateMachine.h"
 #include "Animation/StateMachineAnimInstance.h"
 #include "Core/Logging/SkinningStats.h"
-#include "GameFramework/AActor.h"
 #include "Core/Paths.h"
-#include "Core/ResourceManager.h"
+#include "GameFramework/AActor.h"
 
 #include <cstring>
 
 namespace
 {
-	FString GetPersistentAnimationAssetPath(UAnimationAsset* Animation)
-	{
-		UAnimSequence* Sequence = Cast<UAnimSequence>(Animation);
-		if (!Sequence)
-		{
-			return "";
-		}
-
-		if (!Sequence->GetAssetPath().empty())
-		{
-			return FPaths::Normalize(Sequence->GetAssetPath());
-		}
-
-		// Fallback only. Imported .animseq asset paths are preferred because an FBX can
-		// contain multiple animation stacks; the source FBX path alone cannot identify
-		// which stack was selected.
-		if (!Sequence->GetSourceFilePath().empty())
-		{
-			return FPaths::Normalize(Sequence->GetSourceFilePath());
-		}
-
-		return "";
-	}
+	FString GetPersistentAnimationAssetPath(UAnimationAsset* Animation);
 }
 
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
@@ -45,7 +22,37 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
 
 	if (Ar.IsLoading())
 	{
-		ApplyAnimationFromAssetPath();
+		SetAnimationMode(AnimationMode);
+		bool bLoadedAnimInstance = false;
+		if (AnimInstance && Ar.HasKey("AnimInstance"))
+		{
+			Ar.BeginObject("AnimInstance");
+			AnimInstance->Serialize(Ar);
+			Ar.EndObject();
+			AnimationToPlay = Cast<UAnimSingleNodeInstance>(AnimInstance)
+				? Cast<UAnimSingleNodeInstance>(AnimInstance)->GetAnimation()
+				: nullptr;
+			SyncAnimationAssetPathFromAnimation(AnimationToPlay);
+			bLoadedAnimInstance = true;
+		}
+		if (!bLoadedAnimInstance && (!AnimationAssetPath.GetPath().empty() || AnimationMode == EAnimationMode::AnimationSingleNode))
+		{
+			ApplyAnimationFromAssetPath();
+		}
+	}
+	else if (Ar.IsSaving())
+	{
+		if (AnimationMode == EAnimationMode::AnimationSingleNode)
+		{
+			EnsureSingleNodeInstance();
+		}
+
+		if (AnimInstance)
+		{
+			Ar.BeginObject("AnimInstance");
+			AnimInstance->Serialize(Ar);
+			Ar.EndObject();
+		}
 	}
 }
 
@@ -60,21 +67,17 @@ void USkeletalMeshComponent::PostDuplicate(UObject* Original)
 	}
 
 	AnimInstance = nullptr;
-	AnimationStateMachine = nullptr;
 	AnimationAssetPath.SetPath(SourceComponent->AnimationAssetPath.GetPath());
 	AnimationToPlay = SourceComponent->AnimationToPlay;
-	bPlaying = SourceComponent->bPlaying;
-	bLooping = SourceComponent->bLooping;
 	AnimationMode = SourceComponent->AnimationMode;
 
-	if (AnimationMode == EAnimationMode::AnimationSingleNode && AnimationToPlay)
+	if (AnimationMode == EAnimationMode::AnimationSingleNode)
 	{
 		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
-		SingleNode->SetAnimation(Cast<UAnimSequenceBase>(AnimationToPlay));
-
-		if (bPlaying)
+		if (UAnimSingleNodeInstance* SourceSingleNode = Cast<UAnimSingleNodeInstance>(SourceComponent->GetAnimInstance()))
 		{
-			SingleNode->Play(bLooping);
+			SingleNode->CopyPropertiesFrom(SourceSingleNode);
+			SingleNode->PostEditChangeProperty({ "AnimationAssetPath", EPropertyChangeType::ValueSet });
 		}
 	}
 }
@@ -83,13 +86,17 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
 {
 	USkinnedMeshComponent::PostEditProperty(PropertyName);
 
-	if (PropertyName && std::strcmp(PropertyName, "AnimationAssetPath") == 0)
-	{
-		ApplyAnimationFromAssetPath();
-	}
-	else if (PropertyName && std::strcmp(PropertyName, "AnimationMode") == 0)
+	if (PropertyName && std::strcmp(PropertyName, "AnimationMode") == 0)
 	{
 		SetAnimationMode(AnimationMode);
+		if (AnimationMode == EAnimationMode::AnimationSingleNode && !AnimationAssetPath.GetPath().empty())
+		{
+			ApplyAnimationFromAssetPath();
+		}
+	}
+	else if (PropertyName && std::strcmp(PropertyName, "AnimationAssetPath") == 0)
+	{
+		ApplyAnimationFromAssetPath();
 	}
 }
 
@@ -135,40 +142,50 @@ void USkeletalMeshComponent::ApplyAnimationPose(const FPoseContext& PoseContext)
 
 UAnimationStateMachine* USkeletalMeshComponent::CreateAnimationStateMachine()
 {
-	if (!AnimationStateMachine)
+	if (UAnimationStateMachine* ExistingStateMachine = GetAnimationStateMachine())
 	{
-		AnimationStateMachine = UObjectManager::Get().CreateObject<UAnimationStateMachine>();
-		AnimationStateMachine->Initialize(this);
-		SetAnimationStateMachine(AnimationStateMachine);
+		return ExistingStateMachine;
 	}
-	return AnimationStateMachine;
+
+	UAnimationStateMachine* NewStateMachine = UObjectManager::Get().CreateObject<UAnimationStateMachine>();
+	NewStateMachine->Initialize(this);
+	SetAnimationStateMachine(NewStateMachine);
+	return NewStateMachine;
 }
 
 void USkeletalMeshComponent::SetAnimationStateMachine(UAnimationStateMachine* InStateMachine)
 {
-	AnimationStateMachine = InStateMachine;
-
-	if (!AnimationStateMachine)
+	if (!InStateMachine)
 	{
 		return;
 	}
 
-	AnimationStateMachine->Initialize(this);
+	InStateMachine->Initialize(this);
 
 	UStateMachineAnimInstance* Instance = UObjectManager::Get().CreateObject<UStateMachineAnimInstance>();
 
 	Instance->Initialize(this);
-	Instance->SetStateMachine(AnimationStateMachine);
+	Instance->SetStateMachine(InStateMachine);
 
 	AnimInstance = Instance;
 	AnimationMode = EAnimationMode::AnimationCustomMode;
 }
 
+UAnimationStateMachine* USkeletalMeshComponent::GetAnimationStateMachine() const
+{
+	if (auto* StateMachineInstance = Cast<UStateMachineAnimInstance>(AnimInstance))
+	{
+		return StateMachineInstance->GetStateMachine();
+	}
+
+	return nullptr;
+}
+
 void USkeletalMeshComponent::SetAnimStateByName(const FString& StateName, float BlendTime)
 {
-	if (AnimationStateMachine)
+	if (UAnimationStateMachine* StateMachine = GetAnimationStateMachine())
 	{
-		AnimationStateMachine->SetStateByName(StateName, BlendTime);
+		StateMachine->SetStateByName(StateName, BlendTime);
 	}
 }
 
@@ -261,6 +278,21 @@ void USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool 
 void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InAnimationMode)
 {
 	AnimationMode = InAnimationMode;
+
+	if (AnimationMode == EAnimationMode::AnimationSingleNode)
+	{
+		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
+		if (AnimationToPlay)
+		{
+			SingleNode->SetAnimation(Cast<UAnimSequenceBase>(AnimationToPlay));
+			SyncAnimationAssetPathFromAnimation(AnimationToPlay);
+		}
+		else if (!AnimationAssetPath.GetPath().empty())
+		{
+			SingleNode->SetAnimationAssetPath(AnimationAssetPath.GetPath());
+			AnimationToPlay = SingleNode->GetAnimation();
+		}
+	}
 }
 
 void USkeletalMeshComponent::SetAnimation(UAnimationAsset* NewAnimation)
@@ -270,12 +302,12 @@ void USkeletalMeshComponent::SetAnimation(UAnimationAsset* NewAnimation)
 
 	if (!AnimationToPlay)
 	{
-		bPlaying = false;
 		ResetToBindPose();
 	}
 
-	if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+	if (AnimationMode == EAnimationMode::AnimationSingleNode)
 	{
+		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
 		SingleNode->SetAnimation(Cast<UAnimSequenceBase>(NewAnimation));
 	}
 }
@@ -285,7 +317,7 @@ UAnimSingleNodeInstance* USkeletalMeshComponent::EnsureSingleNodeInstance()
 	UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance);
 	if (!SingleNode)
 	{
-		SingleNode = new UAnimSingleNodeInstance();
+		SingleNode = UObjectManager::Get().CreateObject<UAnimSingleNodeInstance>();
 		SingleNode->Initialize(this);
 		AnimInstance = SingleNode;
 	}
@@ -301,28 +333,14 @@ void USkeletalMeshComponent::ApplyAnimationFromAssetPath()
 		return;
 	}
 
-	UAnimationAsset* LoadedAnimation = FResourceManager::Get().LoadAnimSequence(RequestedPath);
-	if (!LoadedAnimation)
+	SetAnimationMode(EAnimationMode::AnimationSingleNode);
+	UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
+	SingleNode->SetAnimationAssetPath(RequestedPath);
+	AnimationToPlay = SingleNode->GetAnimation();
+	if (!AnimationToPlay)
 	{
-		AnimationToPlay = nullptr;
-		bPlaying = false;
 		AnimationAssetPath.SetPath(RequestedPath);
 		ResetToBindPose();
-		if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
-		{
-			SingleNode->SetAnimation(nullptr);
-		}
-		UE_LOG_WARNING("[SkeletalMeshComponent] Failed to load animation asset: %s", RequestedPath.c_str());
-		return;
-	}
-
-	SetAnimation(LoadedAnimation);
-
-	if (AnimationMode == EAnimationMode::AnimationSingleNode)
-	{
-		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
-		SingleNode->SetAnimation(Cast<UAnimSequenceBase>(AnimationToPlay));
-		Play(bLooping);
 	}
 }
 
@@ -343,18 +361,20 @@ void USkeletalMeshComponent::SyncAnimationAssetPathFromAnimation(UAnimationAsset
 
 void USkeletalMeshComponent::Play(bool bInLooping)
 {
-	bLooping = bInLooping;
-	bPlaying = AnimationToPlay != nullptr;
-
-	if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+	if (AnimationMode == EAnimationMode::AnimationSingleNode)
 	{
+		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
+		if (!SingleNode->GetAnimation() && !AnimationAssetPath.GetPath().empty())
+		{
+			SingleNode->SetAnimationAssetPath(AnimationAssetPath.GetPath());
+			AnimationToPlay = SingleNode->GetAnimation();
+		}
 		SingleNode->Play(bInLooping);
 	}
 }
 
 void USkeletalMeshComponent::Stop()
 {
-	bPlaying = false;
 	if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
 	{
 		SingleNode->Stop();
@@ -375,6 +395,97 @@ void USkeletalMeshComponent::SetPlayRate(float InPlayRate)
 	{
 		SingleNode->SetPlayRate(InPlayRate);
 	}
+}
+
+float USkeletalMeshComponent::GetPlayRate() const
+{
+	if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+	{
+		return SingleNode->GetPlayRate();
+	}
+
+	return 1.0f;
+}
+
+FString USkeletalMeshComponent::GetAnimationAssetPath() const
+{
+	if (!AnimationAssetPath.GetPath().empty())
+	{
+		return AnimationAssetPath.GetPath();
+	}
+	if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+	{
+		return SingleNode->GetAnimationAssetPath();
+	}
+
+	return "";
+}
+
+bool USkeletalMeshComponent::IsPlaying() const
+{
+	if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+	{
+		return SingleNode->IsPlaying();
+	}
+
+	return false;
+}
+
+bool USkeletalMeshComponent::IsLooping() const
+{
+	if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+	{
+		return SingleNode->IsLooping();
+	}
+
+	return false;
+}
+
+void USkeletalMeshComponent::SetLooping(bool bInLooping)
+{
+	if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+	{
+		SingleNode->SetLooping(bInLooping);
+	}
+}
+
+namespace
+{
+	FString GetPersistentAnimationAssetPath(UAnimationAsset* Animation)
+	{
+		UAnimSequence* Sequence = Cast<UAnimSequence>(Animation);
+		if (!Sequence)
+		{
+			return "";
+		}
+
+		if (!Sequence->GetAssetPath().empty())
+		{
+			return FPaths::Normalize(Sequence->GetAssetPath());
+		}
+
+		if (!Sequence->GetSourceFilePath().empty())
+		{
+			return FPaths::Normalize(Sequence->GetSourceFilePath());
+		}
+
+		return "";
+	}
+}
+
+float USkeletalMeshComponent::GetAnimationPosition() const
+{
+	return AnimInstance ? AnimInstance->GetCurrentTime() : 0.0f;
+}
+
+float USkeletalMeshComponent::GetAnimationLength() const
+{
+	if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+	{
+		return SingleNode->GetLength();
+	}
+
+	return 0.0f;
 }
 
 void USkeletalMeshComponent::SetAnimationPosition(float InTime)

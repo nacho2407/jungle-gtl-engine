@@ -3,7 +3,7 @@
 #include "Audio/AudioSystem.h"
 #include "Component/SceneComponent.h"
 
-UCLASS(SpawnableComponent, DisplayName = "Sound Component", Category = "Audio")
+UCLASS(SpawnableComponent, DisplayName = "Sound Component", Category = "System")
 class USoundComponent : public USceneComponent
 {
 public:

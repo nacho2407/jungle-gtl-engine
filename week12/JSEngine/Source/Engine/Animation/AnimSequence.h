@@ -126,10 +126,34 @@ public:
 	void SetSourceStackName(const FString& InSourceStackName) { SourceStackName = InSourceStackName; }
 	const FString& GetSourceStackName() const { return SourceStackName; }
 
+	void SetSourceFileWriteTimeTicks(uint64 InSourceFileWriteTimeTicks) { SourceFileWriteTimeTicks = InSourceFileWriteTimeTicks; }
+	uint64 GetSourceFileWriteTimeTicks() const { return SourceFileWriteTimeTicks; }
+
+	void SetSourceFileSizeBytes(uint64 InSourceFileSizeBytes) { SourceFileSizeBytes = InSourceFileSizeBytes; }
+	uint64 GetSourceFileSizeBytes() const { return SourceFileSizeBytes; }
+
+	void SetSourceFileContentHash(const FString& InSourceFileContentHash) { SourceFileContentHash = InSourceFileContentHash; }
+	const FString& GetSourceFileContentHash() const { return SourceFileContentHash; }
+
+	void SetDerivedDataCachePath(const FString& InDerivedDataCachePath) { DerivedDataCachePath = InDerivedDataCachePath; }
+	const FString& GetDerivedDataCachePath() const { return DerivedDataCachePath; }
+
+	void SetDerivedDataCacheVersion(int32 InDerivedDataCacheVersion) { DerivedDataCacheVersion = InDerivedDataCacheVersion; }
+	int32 GetDerivedDataCacheVersion() const { return DerivedDataCacheVersion; }
+
+	void SetJsonTracksEmbedded(bool bInJsonTracksEmbedded) { bJsonTracksEmbedded = bInJsonTracksEmbedded; }
+	bool AreJsonTracksEmbedded() const { return bJsonTracksEmbedded; }
+
 private:
 	FString AssetPath;
 	FString SourceFilePath;
 	FString SourceStackName;
+	uint64 SourceFileWriteTimeTicks = 0;
+	uint64 SourceFileSizeBytes = 0;
+	FString SourceFileContentHash;
+	FString DerivedDataCachePath;
+	int32 DerivedDataCacheVersion = 0;
+	bool bJsonTracksEmbedded = false;
 };
 
 // Debug용. 추후 삭제.

@@ -1,9 +1,0 @@
-{
-        "Name" : "Asset/Mesh/Slide/source/slide_lp_Inst_0.matinst",
-        "OverridedParams" : [{
-            "Name" : "DiffuseMap",
-            "Type" : "Texture",
-            "Value" : "Asset/Mesh/Map/T_WallWindow01_BC.png"
-          }],
-        "Parent" : "Asset/Mesh/Slide/source/slide_lp.fbx"
-      }

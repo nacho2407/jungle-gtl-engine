@@ -50,6 +50,8 @@
 #include "Runtime/Script/ScriptManager.h"
 #include <Runtime/Script/ScriptComponent.h>
 #include <commdlg.h>
+#include "Animation/AnimInstance.h"
+#include "Animation/AnimationStateMachine.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -129,6 +131,15 @@ namespace
 	static const char* GetPropertyDisplayName(const FProperty& Prop)
 	{
 		return (Prop.DisplayName && Prop.DisplayName[0] != '\0') ? Prop.DisplayName : Prop.Name;
+	}
+
+	static bool IsSkeletalMeshSectionProperty(const FProperty* Property)
+	{
+		return Property
+			&& Property->Name
+			&& (std::strcmp(Property->Name, "SkeletalMeshPath") == 0
+				|| std::strcmp(Property->Name, "SkinningMode") == 0
+				|| std::strcmp(Property->Name, "AnimationMode") == 0);
 	}
 
 	static FString MakePropertyWidgetLabel(const FProperty& Prop)
@@ -1184,9 +1195,6 @@ void FEditorPropertyWidget::RenderComponentTags(UActorComponent* Component)
 		return;
 	}
 
-	DrawDetailsSeparator();
-	DrawDetailsSectionLabel("Component Tags");
-
 	const TArray<FString> Tags = Component->GetTags();
 	if (Tags.empty())
 	{
@@ -1279,17 +1287,61 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	double PropertyWidgetMs = 0.0;
 	int32 RenderedPropertyCount = 0;
 
-	if (!ReflectedProperties.empty())
+	const bool bUseSkeletalMeshSection = Cast<USkeletalMeshComponent>(SelectedComponent) != nullptr;
+	bool bRenderedSkeletalMeshSection = false;
+	if (bUseSkeletalMeshSection)
 	{
-		DrawDetailsSectionLabel("Properties");
-		ImGui::Spacing();
+		for (const FProperty* Property : ReflectedProperties)
+		{
+			if (!Property || !Property->Name || std::strcmp(Property->Name, "Tags") == 0 || !IsSkeletalMeshSectionProperty(Property))
+			{
+				continue;
+			}
+
+			if (!bRenderedSkeletalMeshSection)
+			{
+				DrawDetailsSectionLabel("Skeletal Mesh");
+				ImGui::Spacing();
+				bRenderedSkeletalMeshSection = true;
+			}
+
+			const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
+			RenderReflectionProperty(FPropertyHandle{ SelectedComponent, Property });
+			++RenderedPropertyCount;
+			if (bDetailsPerfTraceFrame)
+			{
+				PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
+			}
+		}
 	}
 
+	if (bRenderedSkeletalMeshSection)
+	{
+		DrawDetailsSeparator();
+	}
+	DrawDetailsSectionLabel("Component Tags");
+	ImGui::Spacing();
+	RenderComponentTags(SelectedComponent);
+
+	bool bRenderedPropertiesSection = false;
 	for (const FProperty* Property : ReflectedProperties)
 	{
 		if (!Property || !Property->Name || strcmp(Property->Name, "Tags") == 0)
 		{
 			continue;
+		}
+
+		if (bUseSkeletalMeshSection && IsSkeletalMeshSectionProperty(Property))
+		{
+			continue;
+		}
+
+		if (!bRenderedPropertiesSection)
+		{
+			DrawDetailsSeparator();
+			DrawDetailsSectionLabel("Properties");
+			ImGui::Spacing();
+			bRenderedPropertiesSection = true;
 		}
 
 		const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
@@ -1420,15 +1472,25 @@ void FEditorPropertyWidget::RenderDebugDetails(UObject* Object, AActor* PrimaryA
 	}
 	else if (UActorComponent* Component = Cast<UActorComponent>(Object))
 	{
-		Builder.AddTagEditor("Component Tags", [this, Component]()
-		{
-			RenderComponentTags(Component);
-		});
-
 		if (USkeletalMeshComponent* SkeletalComp = Cast<USkeletalMeshComponent>(Component))
 		{
 			Builder.AddCustom([this, SkeletalComp]()
 			{
+				if (UAnimInstance* AnimInstance = SkeletalComp->GetAnimInstance())
+				{
+					TArray<const FProperty*> AnimProperties;
+					CollectEditableReflectedProperties(AnimInstance, AnimProperties);
+					if (!AnimProperties.empty())
+					{
+						DrawDetailsSeparator();
+						DrawDetailsSectionLabel("Anim Instance");
+						for (const FProperty* Property : AnimProperties)
+						{
+							RenderReflectionProperty(FPropertyHandle{ AnimInstance, Property });
+						}
+					}
+				}
+				RenderSkeletalStateMachinePreview(SkeletalComp);
 				RenderSkeletalBonePoseDebug(SkeletalComp);
 			});
 		}
@@ -2178,6 +2240,132 @@ void FEditorPropertyWidget::RenderMaterialPreviewTooltip(UMaterialInterface* Mat
 		DrawColorParam("Emissive", ImVec4(Color.X, Color.Y, Color.Z, 1.0f));
 	}
 	ImGui::EndTooltip();
+}
+
+void FEditorPropertyWidget::RenderSkeletalStateMachinePreview(USkeletalMeshComponent* Comp)
+{
+	if (!Comp)
+	{
+		return;
+	}
+
+	DrawDetailsSeparator();
+	DrawDetailsSectionLabel("Animation StateMachine");
+
+	UAnimationStateMachine* StateMachine = Comp->GetAnimationStateMachine();
+	if (!StateMachine)
+	{
+		ImGui::TextDisabled("No active StateMachine.");
+		ImGui::TextDisabled("Run the script to preview states.");
+		return;
+	}
+
+	const FString CurrentState = StateMachine->GetCurrentStateName();
+	const FString NextState = StateMachine->GetNextStateName();
+	const bool bBlending = StateMachine->IsBlending();
+	const float BlendAlpha = StateMachine->GetBlendAlpha();
+	const float BlendElapsed = StateMachine->GetBlendElapsed();
+	const float BlendDuration = StateMachine->GetBlendDuration();
+
+	ImGui::Text("Current State: %s", CurrentState.empty() ? "None" : CurrentState.c_str());
+	ImGui::Text("Next State: %s", NextState.empty() ? "None" : NextState.c_str());
+	
+	if (bBlending)
+	{
+		ImGui::Text("Blending: True (%.2f / %.2fs)", BlendElapsed, BlendDuration);
+	}
+	else
+	{
+		ImGui::Text("Blending: False");
+	}
+
+	ImGui::ProgressBar(BlendAlpha, ImVec2(-1.0f, 0.0f));
+
+	const TArray<FString> StateNames = StateMachine->GetStateNames();
+	if (!StateNames.empty())
+	{
+		ImGui::Spacing();
+		ImGui::TextUnformatted("States");
+
+		if (!StateMachinePreviewBlendTimeByComponent.contains(Comp->GetUUID()))
+		{
+			StateMachinePreviewBlendTimeByComponent[Comp->GetUUID()] = 0.2f;
+		}
+		float& PreviewBlendTime = StateMachinePreviewBlendTimeByComponent[Comp->GetUUID()];
+
+		ImGui::DragFloat("Preview Blend Time", &PreviewBlendTime, 0.01f, 0.0f, 10.0f, "%.2f");
+
+		const float ButtonWidth = 88.0f;
+		const float Spacing = ImGui::GetStyle().ItemSpacing.x;
+		const float Available = ImGui::GetContentRegionAvail().x;
+		int32 ButtonsInRow = 0;
+
+		for (const FString& StateName : StateNames)
+		{
+			ImGui::PushID(StateName.c_str());
+
+			if (ButtonsInRow > 0 && ButtonsInRow * (ButtonWidth + Spacing) + ButtonWidth <= Available)
+			{
+				ImGui::SameLine();
+			}
+			else
+			{
+				ButtonsInRow = 0;
+			}
+
+			const bool bIsCurrentState = (StateName == CurrentState);
+			if (bIsCurrentState)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.45f, 0.25f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f, 0.55f, 0.30f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.18f, 0.40f, 0.22f, 1.0f));
+			}
+
+			if (ImGui::Button(StateName.c_str(), ImVec2(ButtonWidth, 0.0f)))
+			{
+				StateMachine->SetStateByName(StateName, PreviewBlendTime);
+			}
+
+			if (bIsCurrentState)
+			{
+				ImGui::PopStyleColor(3);
+			}
+
+			++ButtonsInRow;
+			ImGui::PopID();
+		}
+	}
+
+	const TArray<FAnimTransitionDebugInfo> Transitions = StateMachine->GetTransitionDebugInfos();
+	if (!Transitions.empty())
+	{
+		ImGui::Spacing();
+		ImGui::TextUnformatted("Transitions");
+
+		if (ImGui::BeginTable("##StateMachineTransitions", 3, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg))
+		{
+			ImGui::TableSetupColumn("From");
+			ImGui::TableSetupColumn("To");
+			ImGui::TableSetupColumn("Blend");
+			ImGui::TableHeadersRow();
+
+			for (const FAnimTransitionDebugInfo& Transition : Transitions)
+			{
+				ImGui::TableNextRow();
+
+				ImGui::TableSetColumnIndex(0);
+				ImGui::TextUnformatted(Transition.FromState.c_str());
+
+				ImGui::TableSetColumnIndex(1);
+				ImGui::TextUnformatted(Transition.ToState.c_str());
+
+				ImGui::TableSetColumnIndex(2);
+				ImGui::Text("%.2fs", Transition.BlendTime);
+			}
+
+			ImGui::EndTable();
+		}
+	}
 }
 
 void FEditorPropertyWidget::RenderSkeletalBonePoseDebug(USkeletalMeshComponent* Comp)
