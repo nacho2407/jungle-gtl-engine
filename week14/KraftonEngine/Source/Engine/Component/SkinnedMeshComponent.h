@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "MeshComponent.h"
 
 #include "Math/Rotator.h"
@@ -77,12 +77,12 @@ protected:
 
 protected:
 	// Mesh/material state는 SetSkeletalMesh와 PostEditProperty가 같은 경로를 쓰도록 여기서 소유한다.
-	UPROPERTY(Edit, Category="Mesh", DisplayName="Skeletal Mesh", Type=ObjectRef, AllowedClass="USkeletalMesh")
+	UPROPERTY(Edit, Category="Mesh", DisplayName="Skeletal Mesh")
 	TObjectPtr<USkeletalMesh> SkeletalMesh;
-	UPROPERTY(Save, Category="Mesh", DisplayName="Skeletal Mesh Path", Type=SkeletalMeshRef, AssetType="SkeletalMesh", AllowedClass="USkeletalMesh")
+	UPROPERTY(Save, Category="Mesh", DisplayName="Skeletal Mesh Path", AssetType="SkeletalMesh")
 	FSoftObjectPtr SkeletalMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
-	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", Type=SoftObjectRefArray, AssetType="Material", AllowedClass="UMaterial")
+	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", AssetType="Material")
 	TArray<FSoftObjectPtr> MaterialSlots;
 
 	// Bone edit pose는 asset 원본 bone을 직접 바꾸지 않고 component-local override로만 유지한다.

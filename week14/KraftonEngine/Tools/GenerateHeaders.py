@@ -103,6 +103,13 @@ TYPE_MAP = {
     "FName": "Name",
 }
 
+ASSET_ALLOWED_CLASS_MAP = {
+    "StaticMesh": "UStaticMesh",
+    "SkeletalMesh": "USkeletalMesh",
+    "Material": "UMaterial",
+    "Texture": "UTexture2D",
+}
+
 
 def strip_comments(text: str) -> str:
     """Remove C/C++ comments while preserving line structure for simple scans."""
@@ -315,8 +322,16 @@ def cpp_optional_string_literal(value: str | None) -> str:
     return cpp_string_literal(value) if value else "nullptr"
 
 
+def infer_allowed_class(asset_type: str | None, explicit_allowed_class: str | None) -> str | None:
+    if explicit_allowed_class:
+        return explicit_allowed_class
+    if asset_type:
+        return ASSET_ALLOWED_CLASS_MAP.get(asset_type)
+    return None
+
+
 def is_soft_object_property(prop: ReflectedProperty) -> bool:
-    if prop.property_type in {"SoftObjectRef", "StaticMeshRef", "SkeletalMeshRef", "Script"}:
+    if prop.property_type == "SoftObjectRef":
         return True
     normalized = normalize_cpp_type(prop.cpp_type)
     return normalized in {"FString", "FSoftObjectPtr"} and bool(prop.asset_type or prop.allowed_class)
@@ -577,14 +592,7 @@ def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum]) -> tuple[
                 struct_type = cpp_type
             struct_type_expr = f"{struct_type}::StaticStruct()" if struct_type and struct_type != "Struct" else "nullptr"
             asset_type = metadata.get("assettype")
-            if not asset_type:
-                if property_type == "StaticMeshRef":
-                    asset_type = "StaticMesh"
-                elif property_type == "SkeletalMeshRef":
-                    asset_type = "SkeletalMesh"
-                elif property_type == "Script":
-                    asset_type = "Script"
-            allowed_class = metadata.get("allowedclass")
+            allowed_class = infer_allowed_class(asset_type, metadata.get("allowedclass"))
 
             found.append(
                 ReflectedProperty(
@@ -626,6 +634,73 @@ def make_generated_header_path(root: Path, generated_root: Path, header: Path) -
     return generated_root / rel.with_name(f"{header.stem}.generated.h")
 
 
+def make_generated_header_include(root: Path, header: Path) -> str:
+    rel = header.relative_to(root).with_name(f"{header.stem}.generated.h").as_posix()
+    return f'#include "{rel}"'
+
+
+GENERATED_INCLUDE_RE = re.compile(
+    r'^[ \t]*#include[ \t]+"(?P<path>[^"]+\.generated\.h)"[ \t]*(?://.*)?$',
+    re.MULTILINE,
+)
+
+
+def get_line_start_index(text: str, line_number: int) -> int:
+    if line_number <= 1:
+        return 0
+    index = 0
+    for _ in range(line_number - 1):
+        next_index = text.find("\n", index)
+        if next_index < 0:
+            return len(text)
+        index = next_index + 1
+    return index
+
+
+def first_reflected_decl_line(scan_text: str) -> int | None:
+    first_line: int | None = None
+    for match in REFLECTED_DECL_RE.finditer(scan_text):
+        line = get_line_number(scan_text, match.start())
+        first_line = line if first_line is None else min(first_line, line)
+    return first_line
+
+
+def ensure_generated_header_include(root: Path, header: Path, text: str, scan_text: str) -> tuple[str, bool]:
+    if not REFLECTED_DECL_RE.search(scan_text):
+        return text, False
+
+    expected_include = make_generated_header_include(root, header)
+    matches = list(GENERATED_INCLUDE_RE.finditer(text))
+    if matches:
+        kept_expected = False
+        pieces: list[str] = []
+        cursor = 0
+        changed = False
+        for match in matches:
+            pieces.append(text[cursor:match.start()])
+            current_line = match.group(0)
+            current_include = f'#include "{match.group("path")}"'
+            if not kept_expected:
+                pieces.append(expected_include)
+                kept_expected = True
+                changed = changed or current_include != expected_include
+            else:
+                changed = True
+            cursor = match.end()
+        pieces.append(text[cursor:])
+        return "".join(pieces), changed
+
+    reflected_line = first_reflected_decl_line(scan_text)
+    if reflected_line is None:
+        return text, False
+
+    insert_at = get_line_start_index(text, reflected_line)
+    prefix = text[:insert_at].rstrip()
+    suffix = text[insert_at:].lstrip("\r\n")
+    separator = "\n\n" if prefix else ""
+    return f"{prefix}{separator}{expected_include}\n\n{suffix}", True
+
+
 def get_line_number(text: str, index: int) -> int:
     return text.count("\n", 0, index) + 1
 
@@ -637,7 +712,13 @@ def find_generated_body_line(scan_text: str, body_start: int, body_end: int) -> 
     return get_line_number(scan_text, body_start + match.start())
 
 
-def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -> tuple[list[ReflectedHeader], dict[str, ReflectedEnum], list[str]]:
+def find_reflected_headers(
+    root: Path,
+    source_dir: Path,
+    generated_root: Path,
+    fix_generated_includes: bool,
+    dry_run: bool,
+) -> tuple[list[ReflectedHeader], dict[str, ReflectedEnum], list[str]]:
     reflected: list[ReflectedHeader] = []
     warnings: list[str] = []
     header_texts: list[tuple[Path, str, str]] = []
@@ -649,6 +730,17 @@ def find_reflected_headers(root: Path, source_dir: Path, generated_root: Path) -
 
         text = header.read_text(encoding="utf-8-sig")
         scan_text = strip_comments(text)
+        if fix_generated_includes:
+            fixed_text, include_changed = ensure_generated_header_include(root, header, text, scan_text)
+            if include_changed:
+                rel_header = header.relative_to(root)
+                if dry_run:
+                    print(f"would update generated include in {rel_header}")
+                else:
+                    header.write_text(fixed_text, encoding="utf-8", newline="\n")
+                    print(f"updated generated include in {rel_header}")
+                text = fixed_text
+                scan_text = strip_comments(text)
         header_texts.append((header, text, scan_text))
         enums.update(parse_uenums(header, scan_text))
 
@@ -1175,6 +1267,11 @@ def parse_args() -> argparse.Namespace:
         help="Print what would be generated without writing files.",
     )
     parser.add_argument(
+        "--no-fix-generated-includes",
+        action="store_true",
+        help="Do not insert or repair source generated-header includes before generation.",
+    )
+    parser.add_argument(
         "--generated-cpp",
         type=Path,
         default=None,
@@ -1200,7 +1297,13 @@ def main() -> int:
         print(f"error: source directory does not exist: {source_dir}")
         return 1
 
-    reflected, enums, warnings = find_reflected_headers(root, source_dir, generated_root)
+    reflected, enums, warnings = find_reflected_headers(
+        root,
+        source_dir,
+        generated_root,
+        fix_generated_includes=not args.no_fix_generated_includes,
+        dry_run=args.dry_run,
+    )
 
     changed = 0
     for item in reflected:

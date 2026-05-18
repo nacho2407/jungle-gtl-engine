@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/ActorComponent.h"
 #include "Core/Delegate.h"
@@ -63,7 +63,7 @@ private:
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp);
 
-	UPROPERTY(Edit, Save, Category="Script", DisplayName="ScriptFile", Type=Script, AssetType="Script")
+	UPROPERTY(Edit, Save, Category="Script", DisplayName="ScriptFile", AssetType="Script")
 	FString ScriptFile;
 	
 	sol::environment Env;
