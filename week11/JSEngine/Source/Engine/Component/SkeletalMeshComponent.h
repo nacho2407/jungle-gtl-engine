@@ -65,6 +65,10 @@ public:
     void SetRootMotionMode(ERootMotionMode InMode);
     ERootMotionMode GetRootMotionMode() const;
     FRootMotionDelta GetLastExtractedRootMotion() const;
+    void SetRootMotionBoneIndex(int32 InBoneIndex);
+    int32 GetRootMotionBoneIndex() const;
+    void SetRootMotionBoneName(const FName& InBoneName);
+    FName GetRootMotionBoneName() const;
 
     bool SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName = FString());
     void SetAnimationTime(float Time);

@@ -268,6 +268,34 @@ FRootMotionDelta USkeletalMeshComponent::GetLastExtractedRootMotion() const
     return SingleNodeInstance ? SingleNodeInstance->GetLastExtractedRootMotion() : FRootMotionDelta();
 }
 
+void USkeletalMeshComponent::SetRootMotionBoneIndex(int32 InBoneIndex)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetRootMotionBoneIndex(InBoneIndex);
+    }
+}
+
+int32 USkeletalMeshComponent::GetRootMotionBoneIndex() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetRootMotionBoneIndex() : -1;
+}
+
+void USkeletalMeshComponent::SetRootMotionBoneName(const FName& InBoneName)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetRootMotionBoneName(InBoneName);
+    }
+}
+
+FName USkeletalMeshComponent::GetRootMotionBoneName() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetRootMotionBoneName() : FName();
+}
+
 bool USkeletalMeshComponent::SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName)
 {
     if (!SkeletalMesh)

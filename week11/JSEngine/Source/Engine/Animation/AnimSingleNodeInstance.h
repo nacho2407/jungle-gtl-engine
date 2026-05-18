@@ -36,6 +36,10 @@ public:
     void SetRootMotionMode(ERootMotionMode InMode);
     ERootMotionMode GetRootMotionMode() const;
     const FRootMotionDelta& GetLastExtractedRootMotion() const;
+    void SetRootMotionBoneIndex(int32 InBoneIndex);
+    int32 GetRootMotionBoneIndex() const;
+    void SetRootMotionBoneName(const FName& InBoneName);
+    FName GetRootMotionBoneName() const;
 
     void NativeUpdateAnimation(float DeltaSeconds) override;
     bool EvaluateAnimation(TArray<FTransform>& OutLocalPose) override;
@@ -78,6 +82,8 @@ private:
     TArray<FActiveAnimNotifyState> ActiveNotifyStates;
     ERootMotionMode RootMotionMode = ERootMotionMode::Ignore;
     FRootMotionDelta LastExtractedRootMotion;
+    int32 RootMotionBoneIndex = -1;
+    FName RootMotionBoneName;
 
 	// 다음 프레임 delta 계산을 위한 previous 값
     FTransform PreviousRootTransform = FTransform::Identity;

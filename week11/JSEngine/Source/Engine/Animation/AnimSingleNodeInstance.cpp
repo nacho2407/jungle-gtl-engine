@@ -92,6 +92,51 @@ int32 FindRootMotionBoneIndex(const USkeletalMesh* Mesh, int32 PoseBoneCount)
     return -1;
 }
 
+bool IsExplicitRootMotionBoneName(const FName& BoneName)
+{
+    return BoneName.IsValid() && BoneName != FName::None;
+}
+
+int32 ResolveRootMotionBoneIndex(
+    const USkeletalMesh* Mesh,
+    int32 PoseBoneCount,
+    int32 RequestedBoneIndex,
+    const FName& RequestedBoneName)
+{
+    if (!Mesh || PoseBoneCount <= 0)
+    {
+        return -1;
+    }
+
+    const TArray<FBoneInfo>& Bones = Mesh->GetBones();
+    const int32 BoneCount = static_cast<int32>(Bones.size());
+    const int32 SearchCount = std::min(BoneCount, PoseBoneCount);
+    if (SearchCount <= 0)
+    {
+        return -1;
+    }
+
+    if (RequestedBoneIndex >= 0)
+    {
+        return RequestedBoneIndex < SearchCount ? RequestedBoneIndex : -1;
+    }
+
+    if (IsExplicitRootMotionBoneName(RequestedBoneName))
+    {
+        for (int32 BoneIndex = 0; BoneIndex < SearchCount; ++BoneIndex)
+        {
+            if (Bones[BoneIndex].Name == RequestedBoneName)
+            {
+                return BoneIndex;
+            }
+        }
+
+        return -1;
+    }
+
+    return FindRootMotionBoneIndex(Mesh, PoseBoneCount);
+}
+
 void ResetRootTranslationToBindPose(TArray<FTransform>& InOutLocalPose, const USkeletalMesh* Mesh, int32 RootBoneIndex)
 {
     if (!Mesh || RootBoneIndex < 0 || RootBoneIndex >= static_cast<int32>(InOutLocalPose.size()))
@@ -273,6 +318,44 @@ const FRootMotionDelta& UAnimSingleNodeInstance::GetLastExtractedRootMotion() co
     return LastExtractedRootMotion;
 }
 
+void UAnimSingleNodeInstance::SetRootMotionBoneIndex(int32 InBoneIndex)
+{
+    if (RootMotionBoneIndex == InBoneIndex && !IsExplicitRootMotionBoneName(RootMotionBoneName))
+    {
+        return;
+    }
+
+    RootMotionBoneIndex = InBoneIndex;
+    RootMotionBoneName = FName();
+
+    // 기준 bone이 바뀌면 이전 root pose와 현재 root pose의 delta를 이어서 계산할 수 없으므로 상태를 비움
+    ClearRootMotionState();
+}
+
+int32 UAnimSingleNodeInstance::GetRootMotionBoneIndex() const
+{
+    return RootMotionBoneIndex;
+}
+
+void UAnimSingleNodeInstance::SetRootMotionBoneName(const FName& InBoneName)
+{
+    const FName NewBoneName = IsExplicitRootMotionBoneName(InBoneName) ? InBoneName : FName();
+    if (RootMotionBoneName == NewBoneName && RootMotionBoneIndex < 0)
+    {
+        return;
+    }
+
+    RootMotionBoneName = NewBoneName;
+    RootMotionBoneIndex = -1;
+
+    ClearRootMotionState();
+}
+
+FName UAnimSingleNodeInstance::GetRootMotionBoneName() const
+{
+    return RootMotionBoneName;
+}
+
 void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
     SCOPE_STAT("Anim.Update");
@@ -365,7 +448,13 @@ void UAnimSingleNodeInstance::ProcessRootMotion(TArray<FTransform>& InOutLocalPo
 
     USkeletalMeshComponent* Component = GetSkelMeshComponent();
     const USkeletalMesh* Mesh = Component ? Component->GetSkeletalMesh() : nullptr;
-    const int32 RootBoneIndex = FindRootMotionBoneIndex(Mesh, static_cast<int32>(InOutLocalPose.size()));
+    // root motion의 기준 bone을 직접 지정할 수 있음
+    // 지정하지 않은 경우에는 ParentIndex < 0인 첫 skeleton root bone을 root motion 기준으로 사용
+    const int32 RootBoneIndex = ResolveRootMotionBoneIndex(
+        Mesh,
+        static_cast<int32>(InOutLocalPose.size()),
+        RootMotionBoneIndex,
+        RootMotionBoneName);
     if (RootBoneIndex < 0)
     {
         bHasPreviousRootTransform = false;
@@ -413,10 +502,7 @@ void UAnimSingleNodeInstance::ProcessRootMotion(TArray<FTransform>& InOutLocalPo
 	// 누적 방식이 아님에 유의!
     ResetRootTranslationToBindPose(InOutLocalPose, Mesh, RootBoneIndex);
 
-	/**
-	 * @TODO Milestone 2에서는 rotation root motion은 추출만 하고 owner 적용/pose 제거는 후속 정책으로 남김.
-	 *       Milestone 3+에서 owner rotation 적용 기준과 root rotation 제거 방식을 함께 결정
-	 */
+	// rotation root motion은 추출만 하고 owner 적용 / pose 제거는 후속 정책으로 남김
 }
 
 void UAnimSingleNodeInstance::ClearRootMotionState()
