@@ -203,7 +203,7 @@ bool USkinnedMeshComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResul
         return false;
     }
 
-    const TArray<FSkeletalMeshVertex>& Vertices = SkinnedVertices;
+    const TArray<FNormalVertex>& Vertices = SkinnedVertices;
     const TArray<uint32>& Indices = SkeletalMesh->GetIndices();
 
     if (Vertices.empty() || Indices.empty())
@@ -485,7 +485,12 @@ void USkinnedMeshComponent::SkinVerticesCPU()
 		// weight가 하나도 없으면 원본 그대로 복사(아주 작은 오차값 허용)
         if (ValidWeightSum <= 1e-6f)
         {
-            SkinnedVertices[VertexIndex] = Src;
+            FNormalVertex& Dst = SkinnedVertices[VertexIndex];
+            Dst.Position = Src.Position;
+            Dst.Color = Src.Color;
+            Dst.Normal = Src.Normal;
+            Dst.UVs = Src.UVs;
+            Dst.Tangent = Src.Tangent;
             continue;
         }
 
@@ -529,10 +534,11 @@ void USkinnedMeshComponent::SkinVerticesCPU()
             SkinnedTangent.NormalizeSafe();
         }
 
-        FSkeletalMeshVertex& Dst = SkinnedVertices[VertexIndex];
-        Dst = Src;
+        FNormalVertex& Dst = SkinnedVertices[VertexIndex];
         Dst.Position = SkinnedPosition;
+        Dst.Color = Src.Color;
         Dst.Normal = SkinnedNormal;
+        Dst.UVs = Src.UVs;
         Dst.Tangent = FVector4(SkinnedTangent.X, SkinnedTangent.Y, SkinnedTangent.Z, Src.Tangent.W);
     }
 }

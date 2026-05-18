@@ -15,8 +15,7 @@ enum class EShaderFeature : uint32
 	HasEmissiveMap	= 1 << 3,
 	HasAlphaMask	= 1 << 4,
     CascadeVis		= 1 << 5,
-	Skeletal		= 1 << 6,
-	GpuSkinning		= 1 << 7,
+	GpuSkinning		= 1 << 6,
 
 	ClusterCull		= 1 << 11,
 	TileCull		= 1 << 12,
