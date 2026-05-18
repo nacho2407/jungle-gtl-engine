@@ -1425,6 +1425,11 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	ImGui::PushID(Index);
 	FPropertyValue& Prop = Props[Index];
 	bool bChanged = false;
+	const bool bReadOnly = Prop.Property && (Prop.Property->Flags & PF_ReadOnly) != 0;
+	if (bReadOnly)
+	{
+		ImGui::BeginDisabled();
+	}
 
 	switch (Prop.GetType())
 	{
@@ -1953,6 +1958,12 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 		bChanged = RenderStructPropertyWidget(Prop);
 		break;
 	}
+	}
+
+	if (bReadOnly)
+	{
+		ImGui::EndDisabled();
+		bChanged = false;
 	}
 
 	if (bDispatchChange && bChanged)
