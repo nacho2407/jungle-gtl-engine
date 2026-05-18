@@ -102,6 +102,14 @@ struct PSOutput
     float4 WorldPos : SV_TARGET2;
 };
 
+void ApplyWireframeColor(inout PSOutput output)
+{
+    if (bIsWireframe > 0.5f)
+    {
+        output.Color = float4(WireframeRGB, 1.0f);
+    }
+}
+
 PSInput mainVS(VSInput input)
 {
     PSInput output;
@@ -416,6 +424,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     output.Color = float4(HeatColor, 1.0f);
     output.Normal = float4(normalize(input.WorldNormal) * 0.5f + 0.5f, 1.f);
     output.WorldPos = float4(input.WorldPos, 1.f);
+    ApplyWireframeColor(output);
     return output;
 #endif
     
@@ -562,10 +571,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     output.WorldPos = float4(input.WorldPos, 1.f);
     output.Normal = float4(N * 0.5f + 0.5f, 1.f);
 
-    if (bIsWireframe > 0.5f)
-    {
-        output.Color = float4(WireframeRGB, 1.f);
-    }
+    ApplyWireframeColor(output);
 
 #ifdef CASCADE_VIS
     if (DirectionalCascadeCount > 0)
