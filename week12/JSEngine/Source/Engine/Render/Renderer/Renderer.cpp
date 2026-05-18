@@ -750,6 +750,11 @@ void FRenderer::RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewpor
 				continue;
 			}
 			PickProgram->Bind(Context);
+			BindVertexFactoryResources(
+				Context,
+				Command.VertexFactoryType,
+				InRenderBus.GetBoneMatrixConstants(Command),
+				&Resources);
 			DrawIdPickCommand(Context, Command);
 		}
 	}

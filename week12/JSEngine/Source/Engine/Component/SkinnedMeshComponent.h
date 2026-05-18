@@ -62,7 +62,6 @@ public:
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
 
 	virtual const FAABB& GetWorldAABB() const;
-	FAABB CalculateCurrentPoseWorldAABB() const;
 
 	bool ConsumeRenderStateDirty();
 
