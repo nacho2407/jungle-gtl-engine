@@ -37,6 +37,16 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaSeconds)
 	AdvanceTime(DeltaSeconds);
 	// 큐에 적재만 — 실제 dispatch 는 베이스 UAnimInstance::UpdateAnimation 끝에서 1회.
 	AddAnimNotifies(PreviousTime, CurrentTime, CurrentAsset);
+
+	// Root motion 누적 — bEnableRootMotion 켜진 anim 만 효과 있음.
+	if (UAnimSequence* Seq = Cast<UAnimSequence>(CurrentAsset))
+	{
+		if (Seq->GetEnableRootMotion())
+		{
+			const FTransform Delta = Seq->ExtractRootMotion(PreviousTime, CurrentTime, bLooping);
+			AccumulateRootMotion(Delta);
+		}
+	}
 }
 
 void UAnimSingleNodeInstance::EvaluateAnimation(FPoseContext& Output)

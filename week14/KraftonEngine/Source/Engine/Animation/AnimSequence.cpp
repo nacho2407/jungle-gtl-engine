@@ -336,6 +336,7 @@ void UAnimSequence::Serialize(FArchive& Ar)
     Ar << AssetPathFileName;
     Ar << TargetSkeleton;
     Ar << bForceRootLock;
+    Ar << bEnableRootMotion;
     Ar << RootMotionBoneName;
 
     if (!DataModel)
@@ -540,12 +541,16 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
         FTransform Result = Output.Pose[BoneIndex];
         const FVector BindLocation = Result.Location;   // pre-anim local (ResetToRefPose 결과)
 
-        // Force Root Lock — 이 본의 horizontal (X/Y) translation 을 bind 로 고정.
-        const bool bSuppressHorizontalTranslation =
-            bForceRootLock &&
+        // Root 본 motion 의 본 pose 적용 제어:
+        //   - Force Root Lock: horizontal (X/Y) translation 만 bind 로 고정 (Z 는 anim 유지).
+        //   - Enable Root Motion: 전체 translation (X/Y/Z) 을 bind 로 고정 → actor 가 delta 받아 이동.
+        //   둘 다 켜진 경우는 SetEnableRootMotion 에서 Force Root Lock 자동 해제됨.
+        const bool bIsRootMotionBone =
             !RootMotionBoneName.empty() &&
             !Track.BoneName.empty() &&
             Track.BoneName == RootMotionBoneName;
+        const bool bSuppressHorizontalTranslation = bIsRootMotionBone && bForceRootLock;
+        const bool bSuppressAllTranslation        = bIsRootMotionBone && bEnableRootMotion;
 
         if (!Raw.PosKeys.empty())
         {
@@ -555,10 +560,14 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
             if (P0 && P1)
             {
                 Result.Location = *P0 + (*P1 - *P0) * Alpha;
-                if (bSuppressHorizontalTranslation)
+                if (bSuppressAllTranslation)
                 {
-                    // X/Y 는 bind 유지 → 캐릭터가 horizontal 로 안 움직임.
-                    // Z 는 anim 결과 그대로 → 발걸음 bobbing 살림.
+                    // Root Motion: 전체 translation 을 bind 로 → 본은 정지, actor 가 delta 로 이동.
+                    Result.Location = BindLocation;
+                }
+                else if (bSuppressHorizontalTranslation)
+                {
+                    // Force Root Lock: X/Y bind, Z anim → in-place 걷기 + bobbing.
                     Result.Location.X = BindLocation.X;
                     Result.Location.Y = BindLocation.Y;
                 }
@@ -695,6 +704,94 @@ const FRawAnimSequenceTrack* UAnimSequence::FindTrackByBoneIndex(int32 TrackInde
 {
     const FBoneAnimationTrack* Track = FindBoneTrackByIndex(TrackIndex);
     return Track ? &Track->InternalTrackData : nullptr;
+}
+
+namespace
+{
+    // Track 에서 시간 T 의 (Pos, Rot) 보간값을 추출. PosKeys/RotKeys 없으면 (0, Identity).
+    static void SampleTrackPosRot(
+        const FRawAnimSequenceTrack& Raw,
+        float TimeSeconds, float PlayLength, int32 NumFrames,
+        FVector& OutPos, FQuat& OutRot)
+    {
+        OutPos = FVector::ZeroVector;
+        OutRot = FQuat::Identity;
+        if (NumFrames <= 0 || PlayLength <= 0.0f) return;
+
+        const float FrameFloat = std::clamp(TimeSeconds / PlayLength, 0.0f, 1.0f) * static_cast<float>(NumFrames - 1);
+        const int32 F0 = std::clamp(static_cast<int32>(std::floor(FrameFloat)), 0, NumFrames - 1);
+        const int32 F1 = std::clamp(F0 + 1, 0, NumFrames - 1);
+        const float Alpha = (F1 == F0) ? 0.0f : std::clamp(FrameFloat - static_cast<float>(F0), 0.0f, 1.0f);
+
+        if (!Raw.PosKeys.empty())
+        {
+            const FVector& P0 = Raw.PosKeys[std::clamp(F0, 0, (int32)Raw.PosKeys.size() - 1)];
+            const FVector& P1 = Raw.PosKeys[std::clamp(F1, 0, (int32)Raw.PosKeys.size() - 1)];
+            OutPos = P0 + (P1 - P0) * Alpha;
+        }
+        if (!Raw.RotKeys.empty())
+        {
+            const FQuat& R0 = Raw.RotKeys[std::clamp(F0, 0, (int32)Raw.RotKeys.size() - 1)];
+            const FQuat& R1 = Raw.RotKeys[std::clamp(F1, 0, (int32)Raw.RotKeys.size() - 1)];
+            OutRot = FQuat::Slerp(R0.GetNormalized(), R1.GetNormalized(), Alpha).GetNormalized();
+        }
+    }
+}
+
+FTransform UAnimSequence::ExtractRootMotion(float PrevTime, float CurTime, bool bLoop) const
+{
+    FTransform Delta;  // Identity 기본
+
+    if (!DataModel || RootMotionBoneName.empty()) return Delta;
+    const float Length = DataModel->PlayLength;
+    const int32 NumFrames = DataModel->NumFrames;
+    if (Length <= 0.0f || NumFrames <= 0) return Delta;
+
+    // RootMotionBoneName 본의 track 찾기.
+    const FRawAnimSequenceTrack* Raw = nullptr;
+    for (const FBoneAnimationTrack& Track : DataModel->BoneAnimationTracks)
+    {
+        if (Track.BoneName == RootMotionBoneName)
+        {
+            Raw = &Track.InternalTrackData;
+            break;
+        }
+    }
+    if (!Raw) return Delta;
+
+    auto SampleAt = [&](float T, FVector& OutP, FQuat& OutR) {
+        SampleTrackPosRot(*Raw, std::clamp(T, 0.0f, Length), Length, NumFrames, OutP, OutR);
+    };
+
+    auto ComputeDelta = [](const FVector& P0, const FQuat& R0, const FVector& P1, const FQuat& R1) -> FTransform {
+        FTransform D;
+        D.Location = P1 - P0;
+        D.Rotation = (R1 * R0.Inverse()).GetNormalized();
+        return D;
+    };
+
+    // Loop wrap 처리 — 시간이 [Length-x, ε] 처럼 끝에서 0 으로 감기면 두 구간 합산.
+    if (bLoop && CurTime < PrevTime)
+    {
+        FVector PA, PB; FQuat RA, RB;
+        // [PrevTime, Length]
+        SampleAt(PrevTime, PA, RA);
+        SampleAt(Length,   PB, RB);
+        const FTransform D1 = ComputeDelta(PA, RA, PB, RB);
+        // [0, CurTime]
+        SampleAt(0.0f,   PA, RA);
+        SampleAt(CurTime, PB, RB);
+        const FTransform D2 = ComputeDelta(PA, RA, PB, RB);
+        // 합산: D2 ∘ D1 — Position 단순 합, Rotation 곱.
+        Delta.Location = D1.Location + D2.Location;
+        Delta.Rotation = (D2.Rotation * D1.Rotation).GetNormalized();
+        return Delta;
+    }
+
+    FVector P0, P1; FQuat R0, R1;
+    SampleAt(PrevTime, P0, R0);
+    SampleAt(CurTime,  P1, R1);
+    return ComputeDelta(P0, R0, P1, R1);
 }
 
 // ──────────────────────────────────────────────

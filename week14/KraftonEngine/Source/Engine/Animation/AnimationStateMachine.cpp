@@ -80,6 +80,27 @@ void UAnimationStateMachine::Tick(UAnimInstance* Owner, float DeltaSeconds)
 			FinishBlend(Owner);
 		}
 	}
+
+	// 4) Root motion delta 누적 — blend 중이면 weight lerp.
+	//    From: weight (1 - BlendAlpha), Current: weight BlendAlpha. 합한 delta 를 instance 에 push.
+	if (Owner)
+	{
+		const FTransform& CurDelta = CurrentState->GetLastRootMotionDelta();
+		if (FromState)
+		{
+			const FTransform& FromDelta = FromState->GetLastRootMotionDelta();
+			const float wTo   = BlendAlpha;
+			const float wFrom = 1.0f - BlendAlpha;
+			FTransform Blended;
+			Blended.Location = FromDelta.Location * wFrom + CurDelta.Location * wTo;
+			Blended.Rotation = FQuat::Slerp(FromDelta.Rotation.GetNormalized(), CurDelta.Rotation.GetNormalized(), BlendAlpha).GetNormalized();
+			Owner->AccumulateRootMotion(Blended);
+		}
+		else
+		{
+			Owner->AccumulateRootMotion(CurDelta);
+		}
+	}
 }
 
 void UAnimationStateMachine::Evaluate(UAnimInstance* Owner, FPoseContext& Output)
