@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "SkeletalMeshComponent.generated.h"
 
@@ -40,7 +40,6 @@ public:
 	 */
     bool RefreshAnimationPose();
 
-	// playback API
     void PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping);
     void SetAnimation(UAnimationAsset* NewAnimToPlay);
     UAnimationAsset* GetAnimation() const;
@@ -55,6 +54,14 @@ public:
     bool IsLooping() const;
     bool IsPlaying() const;
     float GetPlayLength() const;
+
+    bool SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName = FString());
+    void SetAnimationTime(float Time);
+    void TickAnimation(float DeltaTime);
+    void PlayAnim(bool bLoop);
+    void StopAnim();
+    float GetAnimationTime() const { return GetPosition(); }
+    bool IsAnimPlaying() const { return IsPlaying(); }
 
     void ResetToBindPose();
 

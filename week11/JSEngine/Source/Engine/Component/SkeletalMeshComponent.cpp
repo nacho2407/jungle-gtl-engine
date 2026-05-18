@@ -1,14 +1,15 @@
-﻿#include "SkeletalMeshComponent.h"
+#include "SkeletalMeshComponent.h"
 
-// for move semantics
 #include <utility>
 
 #include "Animation/AnimInstance.h"
+#include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimationAsset.h"
 #include "Animation/AnimationRuntime.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Stats.h"
+#include "Core/ResourceManager.h"
 #include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
@@ -22,19 +23,7 @@ USkeletalMeshComponent::~USkeletalMeshComponent()
 void USkeletalMeshComponent::TickComponent(float DeltaTime)
 {
     USkinnedMeshComponent::TickComponent(DeltaTime);
-
-    if (AnimationMode != EAnimationMode::None && AnimInstance)
-    {
-        SCOPE_STAT("Anim.ComponentTick");
-
-        AnimInstance->NativeUpdateAnimation(DeltaTime);
-
-        TArray<FTransform> LocalPose;
-        if (AnimInstance->EvaluateAnimation(LocalPose))
-        {
-            ApplyAnimationLocalPose(LocalPose);
-        }
-    }
+    TickAnimation(DeltaTime);
 }
 
 void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InMode)
@@ -149,10 +138,15 @@ void USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool 
 
 void USkeletalMeshComponent::SetAnimation(UAnimationAsset* NewAnimToPlay)
 {
-    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    UAnimSingleNodeInstance* SingleNodeInstance = EnsureSingleNodeInstance();
+    if (!SingleNodeInstance)
     {
-        SingleNodeInstance->SetAnimationAsset(NewAnimToPlay);
+        return;
     }
+
+    SingleNodeInstance->SetAnimationAsset(NewAnimToPlay);
+    SingleNodeInstance->SetPosition(0.0f, false);
+    RefreshAnimationPose();
 }
 
 UAnimationAsset* USkeletalMeshComponent::GetAnimation() const
@@ -239,6 +233,62 @@ float USkeletalMeshComponent::GetPlayLength() const
     return Animation ? Animation->GetPlayLength() : 0.0f;
 }
 
+bool USkeletalMeshComponent::SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName)
+{
+    if (!SkeletalMesh)
+    {
+        return false;
+    }
+
+    UAnimSequence* LoadedSequence = FResourceManager::Get().LoadAnimSequence(
+        SourceFbxPath,
+        SkeletalMesh->GetAssetPathFileName(),
+        AnimStackName);
+
+    if (!LoadedSequence)
+    {
+        return false;
+    }
+
+    SetAnimation(LoadedSequence);
+    return true;
+}
+
+void USkeletalMeshComponent::SetAnimationTime(float Time)
+{
+    SetPosition(Time, false);
+    RefreshAnimationPose();
+}
+
+void USkeletalMeshComponent::TickAnimation(float DeltaTime)
+{
+    if (AnimationMode == EAnimationMode::None || !AnimInstance)
+    {
+        return;
+    }
+
+    SCOPE_STAT("Anim.ComponentTick");
+
+    AnimInstance->NativeUpdateAnimation(DeltaTime);
+
+    TArray<FTransform> LocalPose;
+    if (AnimInstance->EvaluateAnimation(LocalPose))
+    {
+        ApplyAnimationLocalPose(LocalPose);
+    }
+}
+
+void USkeletalMeshComponent::PlayAnim(bool bLoop)
+{
+    SetLooping(bLoop);
+    Play();
+}
+
+void USkeletalMeshComponent::StopAnim()
+{
+    Stop();
+}
+
 void USkeletalMeshComponent::RecreateAnimInstance()
 {
     DestroyAnimInstance();
@@ -309,7 +359,6 @@ UAnimSingleNodeInstance* USkeletalMeshComponent::EnsureSingleNodeInstance()
 {
     if (AnimationMode != EAnimationMode::SingleNode)
     {
-        // PlayAnimation은 단일 애니메이션 재생용 API라서 이 함수에서만 SingleNode 모드 전환을 허용
         SetAnimationMode(EAnimationMode::SingleNode);
     }
     else if (!GetSingleNodeInstance())
@@ -339,7 +388,6 @@ void USkeletalMeshComponent::SetBoneLocalTransform(int32 BoneIndex, const FMatri
 
 const FMatrix& USkeletalMeshComponent::GetBoneLocalTransform(int32 BoneIndex) const
 {
-	// fallback은 identity
     static const FMatrix Identity = FMatrix::Identity;
 
     if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(CurrentLocalPose.size()))
@@ -380,7 +428,7 @@ void USkeletalMeshComponent::SetBoneGlobalTransform(int32 BoneIndex, const FMatr
         return;
     }
 
-    int32 ParentIndex = Bones[BoneIndex].ParentIndex;
+    const int32 ParentIndex = Bones[BoneIndex].ParentIndex;
 
     FMatrix ParentGlobalTransform;
     if (ParentIndex >= 0)
@@ -393,7 +441,6 @@ void USkeletalMeshComponent::SetBoneGlobalTransform(int32 BoneIndex, const FMatr
         ParentGlobalTransform = GetWorldMatrix();
     }
 
-    // Local = Global * ParentGlobal.Inverse
-    FMatrix NewLocalTransform = NewGlobalTransform * ParentGlobalTransform.GetInverse();
+    const FMatrix NewLocalTransform = NewGlobalTransform * ParentGlobalTransform.GetInverse();
     SetBoneLocalTransform(BoneIndex, NewLocalTransform);
 }

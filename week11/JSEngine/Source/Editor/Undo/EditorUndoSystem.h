@@ -68,7 +68,7 @@ private:
 
 private:
 	UEditorEngine* Owner = nullptr;
-	TMap<FName, FWorldUndoHistory, FName::Hash> HistoriesByWorld;
+	TMap<FName, FWorldUndoHistory> HistoriesByWorld;
 	mutable TArray<FUndoSnapshotEntry> EmptyHistory;
 	bool bRestoring = false;
 

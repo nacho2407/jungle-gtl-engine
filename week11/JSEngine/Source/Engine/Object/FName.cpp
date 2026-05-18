@@ -88,10 +88,7 @@ bool FName::operator!=(const FName& Other) const
 	return ComparisonIndex != Other.ComparisonIndex;
 }
 
-size_t FName::Hash::operator()(const FName& Name) const
-{
-	return std::hash<uint32>()(Name.ComparisonIndex);
-}
+
 
 FString FName::ToString() const
 {

@@ -453,22 +453,10 @@
     <ClCompile Include="Source\Engine\Animation\AnimationRuntime.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Animation\ActorSequence.cpp">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Animation\TimelinePlayer.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\RayCollision\RayCollision.cpp">
@@ -1050,6 +1038,26 @@
     <ClCompile Include="Source\Engine\Component\SkinnedMeshComponent.cpp" />
     <ClCompile Include="Source\Editor\Viewer\EditorViewer.cpp" />
     <ClCompile Include="Source\Editor\Viewport\SkeletalMeshViewportClient.cpp" />
+    <ClCompile Include="Source\Engine\Animation\ActorSequence.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimDataModel.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp" />
+    <ClCompile Include="Source\Engine\Animation\TimelinePlayer.cpp" />
+    <ClCompile Include="Source\Engine\Asset\FbxAnimSequenceImporter.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\FbxSceneImportContext.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\FbxTransformUtils.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\SkeletalMeshTypes.cpp" />
+    <ClCompile Include="Source\Engine\Asset\Skeleton.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Audio\AudioSystem.h">
@@ -1268,22 +1276,10 @@
     <ClInclude Include="Source\Engine\Animation\AnimationTypes.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Animation\AnimSequence.h">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Animation\CurvePlayback.h">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Animation\ActorSequence.h">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Animation\TimelinePlayer.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\RayCollision\RayCollision.h">
@@ -2024,10 +2020,30 @@
     <ClInclude Include="Source\Editor\UI\EditorViewerWindowWidget.h" />
     <ClInclude Include="Source\Engine\Asset\SkeletalMesh.h" />
     <ClInclude Include="Source\Engine\Asset\SkeletalMeshTypes.h" />
+    <ClInclude Include="Source\Engine\Asset\Skeleton.h" />
     <ClInclude Include="Source\Engine\Component\SkeletalMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\SkinnedMeshComponent.h" />
     <ClInclude Include="Source\Editor\Viewer\EditorViewer.h" />
     <ClInclude Include="Source\Editor\Viewport\SkeletalMeshViewportClient.h" />
+    <ClInclude Include="Source\Engine\Animation\ActorSequence.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimDataModel.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimSequence.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\CurvePlayback.h" />
+    <ClInclude Include="Source\Engine\Animation\TimelinePlayer.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimTypes.h" />
+    <ClInclude Include="Source\Engine\Asset\FbxAnimSequenceImporter.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\FbxSceneImportContext.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\FbxTransformUtils.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\ReflectionMacros.h" />
     <ClInclude Include="Source\Engine\Component\TransformProxy.h" />
     <ClInclude Include="Source\Engine\Core\ReflectionUtils.h" />

@@ -182,6 +182,17 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
             Cmd.MeshBuffer = MeshBuffer;
 
+            if (RenderBus.GetSkinningMode() == ESkinningMode::CPU)
+            {
+                // TODO: Bone weight visualization에서 필요
+            }
+            else
+            {
+                std::memcpy(Cmd.Constants.Skinning.BoneMatrices,
+                    SkeletalMeshComp->GetSkinningMatrices().data(),
+                    SkeletalMeshComp->GetSkinningMatrices().size() * sizeof(FMatrix));
+            }
+
             Cmd.SectionIndexStart = Section.StartIndex;
             Cmd.SectionIndexCount = Section.IndexCount;
             Cmd.Material = Material;

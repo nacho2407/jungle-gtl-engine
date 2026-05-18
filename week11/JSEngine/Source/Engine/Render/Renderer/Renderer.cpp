@@ -1,4 +1,4 @@
-﻿#include "Renderer.h"
+#include "Renderer.h"
 
 #include <array>
 #include <iostream>
@@ -278,6 +278,7 @@ void FRenderer::CreateResources()
 
 	Resources.ShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowConstants));
 	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FUberConstants));
+    Resources.SkinningBuffer.Create(Device.GetDevice(), sizeof(FSkinningConstants));
     Resources.LightShadowIndexBuffer.Create(Device.GetDevice(), sizeof(FLightShadowIndices), 1024);
     Resources.AtlasShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowAtlasConstants), 1024);
 
@@ -347,6 +348,7 @@ void FRenderer::Release()
 	Resources.FrameBuffer.Release();
 	Resources.ShadowBuffer.Release();
 	Resources.LightBuffer.Release();
+    Resources.SkinningBuffer.Release();
 	Resources.LightShadowIndexBuffer.Release();
 	Resources.AtlasShadowBuffer.Release();
 	Resources.LightStructuredBuffer.Release();
@@ -1490,7 +1492,6 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 			Program->Bind(InDeviceContext);
 			InCommand.Material->BindRenderStates(InDeviceContext);
 			InCommand.Material->BindParameters(InDeviceContext, Program->PS);
-			BindVertexFactoryResources(InDeviceContext, InCommand.VertexFactoryType, InCommand);
 		}
 	}
 

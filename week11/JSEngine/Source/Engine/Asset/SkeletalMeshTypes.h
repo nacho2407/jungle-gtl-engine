@@ -6,7 +6,7 @@
 
 struct FBoneInfo
 {
-    FString Name;
+    FName Name;
 
     int32 ParentIndex = -1;
 
@@ -28,17 +28,19 @@ struct FSkeletalMeshSocket
     // T·R·S → 4x4 (row-vector 규약: v · S · R · T)
     FMatrix GetRelativeTransform() const;
 };
+struct FReferenceSkeleton
+{
+    TArray<FBoneInfo> RefBones;
+    TMap<FName, int32> BoneNameToIndex;
+    void RebuildNameToIndex();
+    int32 FindBoneIndex(const FName& BoneName) const;
+};
 
 struct FSkeletalMesh
 {
     FString PathFileName;
     TArray<FSkeletalMeshVertex> Vertices;
     TArray<uint32> Indices;
-
-    TArray<FBoneInfo> Bones;
-
-    // 변환 행렬의 경우 FBoneInfo에만 두도록 처리
-
     // 본에 연결되는 명명된 attach point들. asset 영속 데이터.
     TArray<FSkeletalMeshSocket> Sockets;
 
@@ -49,4 +51,9 @@ struct FSkeletalMesh
 
     // Bounds
     FAABB LocalBounds;
+};
+struct FSkeletalMeshImportData
+{
+    FSkeletalMesh* MeshData = nullptr;
+    FReferenceSkeleton ReferenceSkeleton;
 };

@@ -371,7 +371,17 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\ActorSequence.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimDataModel.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp" />
+    <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp" />
+    <ClCompile Include="Source\Engine\Animation\TimelinePlayer.cpp" />
+    <ClCompile Include="Source\Engine\Asset\FbxAnimSequenceImporter.cpp" />
+    <ClCompile Include="Source\Engine\Asset\FbxSceneImportContext.cpp" />
+    <ClCompile Include="Source\Engine\Asset\FbxTransformUtils.cpp" />
     <ClCompile Include="Source\Engine\Asset\SkeletalMesh.cpp" />
+    <ClCompile Include="Source\Engine\Asset\SkeletalMeshTypes.cpp" />
+    <ClCompile Include="Source\Engine\Asset\Skeleton.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SinusoidalCameraShakePattern.cpp" />
     <None Include="PropertySystem\OptOutParser.cs" />
@@ -689,12 +699,8 @@
     <ClCompile Include="Source\Engine\Asset\StaticMeshSimplifier.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimationAsset.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimationRuntime.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp" />
-    <ClCompile Include="Source\Engine\Animation\ActorSequence.cpp" />
-    <ClCompile Include="Source\Engine\Animation\TimelinePlayer.cpp" />
     <ClCompile Include="Source\Engine\Collision\Collision.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayCollision\RayCollision.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
@@ -921,8 +927,18 @@
     <ClInclude Include="Source\Editor\UI\EditorViewerWindowWidget.h" />
     <ClInclude Include="Source\Editor\Viewer\EditorViewer.h" />
     <ClInclude Include="Source\Editor\Viewport\SkeletalMeshViewportClient.h" />
+    <ClInclude Include="Source\Engine\Animation\ActorSequence.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimDataModel.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimSequence.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\CurvePlayback.h" />
+    <ClInclude Include="Source\Engine\Animation\TimelinePlayer.h" />
+    <ClInclude Include="Source\Engine\Asset\FbxAnimSequenceImporter.h" />
+    <ClInclude Include="Source\Engine\Asset\FbxSceneImportContext.h" />
+    <ClInclude Include="Source\Engine\Asset\FbxTransformUtils.h" />
     <ClInclude Include="Source\Engine\Asset\SkeletalMesh.h" />
     <ClInclude Include="Source\Engine\Asset\SkeletalMeshTypes.h" />
+    <ClInclude Include="Source\Engine\Asset\Skeleton.h" />
     <ClInclude Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.h" />
     <ClInclude Include="Source\Engine\Camera\ShakePattern\SinusoidalCameraShakePattern.h" />
     <ClInclude Include="Source\Engine\Camera\CameraShakeBase.h" />
@@ -1016,12 +1032,8 @@
     <ClInclude Include="Source\Engine\Animation\AnimationAsset.h" />
     <ClInclude Include="Source\Engine\Animation\AnimationRuntime.h" />
     <ClInclude Include="Source\Engine\Animation\AnimationTypes.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimSequence.h" />
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h" />
-    <ClInclude Include="Source\Engine\Animation\CurvePlayback.h" />
-    <ClInclude Include="Source\Engine\Animation\ActorSequence.h" />
-    <ClInclude Include="Source\Engine\Animation\TimelinePlayer.h" />
     <ClInclude Include="Source\Engine\Collision\Collision.h" />
     <ClInclude Include="Source\Engine\Collision\RayCollision\RayCollision.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />

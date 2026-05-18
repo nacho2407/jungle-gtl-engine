@@ -1786,7 +1786,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 
             FScriptManager::Get().RefreshLuaScriptFiles();
 
-            TMap<FName, FLuaScriptInfo, FName::Hash>& ScriptArray =
+            TMap<FName, FLuaScriptInfo>& ScriptArray =
                 FScriptManager::Get().GetScriptArray();
 
             ImGui::PushID(Val);
@@ -2349,7 +2349,7 @@ void FEditorPropertyWidget::RenderSkeletalBonePoseDebug(USkeletalMeshComponent* 
 			return "None";
 		}
 
-		return std::to_string(BoneIndex) + ": " + Bones[BoneIndex].Name;
+		return std::to_string(BoneIndex) + ": " + Bones[BoneIndex].Name.ToString();
 	};
 
 	const FString CurrentLabel = MakeBoneLabel(SelectedBoneIndex);

@@ -58,17 +58,10 @@ struct VSInput
     float3 Normal : NORMAL;
     float2 UV : TEXCOORD;
     float4 Tangent : TANGENT;
-};
-
-struct SkeletalVSInput
-{
-    float3 Position : POSITION;
-    float3 Normal : NORMAL;
-    float2 UV : TEXCOORD;
-    float4 Tangent : TANGENT;
-    float4 Color : COLOR;
+#ifdef IS_SKELETAL
     uint4 BoneIndices : BLENDINDICES;
     float4 BoneWeights : BLENDWEIGHT;
+#endif
 };
 
 struct PSInput
@@ -91,9 +84,37 @@ struct PSOutput
     float4 WorldPos : SV_TARGET2;
 };
 
+#if IS_SKELETAL && IS_GPU_SKINNING
+VSInput Skinning(VSInput input)
+{
+    VSInput output;
+
+    output.Color = input.Color;
+    output.UV = input.UV;
+    output.Position = float3(0.0f, 0.0f, 0.0f);
+    output.Normal = float3(0.0f, 0.0f, 0.0f);
+    output.Tangent = float4(0.0f, 0.0f, 0.0f, input.Tangent.w);
+
+    for (uint i = 0; i < 4; i++)
+    {
+        row_major matrix BoneMatrix = BoneMatrices[input.BoneIndices[i]];
+        float BoneWeight = input.BoneWeights[i];
+        output.Position += BoneWeight * mul(float4(input.Position, 1.0), BoneMatrix).xyz;
+        output.Normal += BoneWeight * mul(float4(input.Normal, 0.0), BoneMatrix).xyz;
+        output.Tangent.xyz += BoneWeight * mul(float4(input.Tangent.xyz, 0.0), BoneMatrix).xyz;
+    }
+
+    return output;
+}
+#endif
+
 PSInput mainVS(VSInput input)
 {
     PSInput output;
+
+#if IS_SKELETAL && IS_GPU_SKINNING
+    input = Skinning(input);
+#endif
 
     output.WorldPos = mul(float4(input.Position, 1.0f), Model).xyz;
     output.ClipPos = ApplyMVP(input.Position);
@@ -127,17 +148,6 @@ PSInput mainVS(VSInput input)
 #endif
 
     return output;
-}
-
-PSInput SkeletalMeshVS(SkeletalVSInput input)
-{
-    VSInput passThrough;
-    passThrough.Position = input.Position;
-    passThrough.Color = input.Color;
-    passThrough.Normal = input.Normal;
-    passThrough.UV = input.UV;
-    passThrough.Tangent = input.Tangent;
-    return mainVS(passThrough);
 }
 
 #if HAS_NORMAL_MAP

@@ -185,6 +185,11 @@ struct FShadowAtlasConstants
     float Padding[2];
 };
 
+struct FSkinningConstants
+{
+	FMatrix BoneMatrices[256]; // MAX_BONES in .hlsl
+};
+
 struct FUberConstants
 {
 	FAmbientLightInfo AmbientLight;
@@ -450,6 +455,7 @@ struct FRenderCommand
         FFXAAConstants FXAA;
 		FLightPassConstants Light;
 		FDecalInfo Decal;
+        FSkinningConstants Skinning;
 	} Constants;
 
 	ERenderCommandType Type = ERenderCommandType::Primitive;

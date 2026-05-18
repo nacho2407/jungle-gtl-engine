@@ -64,10 +64,10 @@ public:
         static const FVertexLayoutDesc SkeletalVertexLayout = {
             {
                 { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, Position)) },
+                { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, Color)) },
                 { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, Normal)) },
                 { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, UVs)) },
                 { "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, Tangent)) },
-                { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, Color)) },
                 { "BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, BoneIndices)) },
                 { "BLENDWEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FSkeletalMeshVertex, BoneWeights)) },
             },
@@ -120,7 +120,7 @@ public:
             FShaderPaths::DepthPrepass,
             FShaderPaths::Shadow,
             FShaderPaths::EditorSelectionMask,
-            "SkeletalMeshVS",
+            "mainVS",
             "DepthPrepassVS",
             "ShadowVS",
             "VSSkeletalMesh",
@@ -217,15 +217,3 @@ public:
         }
     }
 };
-
-inline void BindVertexFactoryResources(
-    ID3D11DeviceContext* Context,
-    EVertexFactoryType Type,
-    const FRenderCommand& Cmd)
-{
-    // 현재 CPU Skinning은 이미 갱신된 VertexBuffer를 넘기므로 추가 리소스가 없습니다.
-    // 이후 GPU Skinning을 넣으면 여기서 BoneMatrixBuffer 같은 VF 전용 리소스를 바인딩합니다.
-    (void)Context;
-    (void)Type;
-    (void)Cmd;
-}
