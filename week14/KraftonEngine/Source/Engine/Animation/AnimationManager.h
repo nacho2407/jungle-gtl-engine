@@ -4,6 +4,7 @@
 #include "Asset/AssetRegistry.h"
 
 class UAnimSequence;
+class UAnimMontage;
 
 struct FAnimationImportRequest
 {
@@ -41,10 +42,24 @@ public:
     static FString GetAnimationPath(const FString& SourcePath, const FString& AnimationName);
     static FString GetAnimationPathForSkeleton(const FString& SourcePath, const FString& AnimationName, const FString& TargetSkeletonPath);
 
+    // ── Montage ──
+    UAnimMontage* LoadMontage(const FString& PackagePath);
+    bool          SaveMontage(UAnimMontage* Montage, const FString& PackagePath);
+    bool          SaveMontagePreservingMetadata(UAnimMontage* Montage);
+
+    // 새 비어있는 montage 를 메모리에 생성 (캐시 등록 X — caller 가 SaveMontage 호출 후 등록).
+    UAnimMontage* CreateMontage(UAnimSequence* SourceSequence, const FString& MontageName);
+
+    void RefreshAvailableMontages();
+    const TArray<FAssetListItem>& GetAvailableMontageFiles() const { return AvailableMontageFiles; }
+
 private:
     FAnimationManager() = default;
 
 private:
     TMap<FString, UAnimSequence*> AnimationCaches;
     TArray<FAssetListItem> AvailableAnimationFiles;
+
+    TMap<FString, UAnimMontage*>  MontageCaches;
+    TArray<FAssetListItem>        AvailableMontageFiles;
 };

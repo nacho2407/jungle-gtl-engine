@@ -13,12 +13,15 @@
 #include "Slate/SlateApplication.h"
 #include "Render/Shader/ShaderManager.h"
 #include "Animation/AnimSequence.h"
+#include "Animation/AnimMontage.h"
+#include "Animation/AnimInstance.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimationManager.h"
 #include "Asset/AssetRegistry.h"
 #include "UI/Asset/AnimationTransportBar.h"
 #include "UI/Asset/AnimationTimelinePanel.h"
 #include "UI/Asset/AnimSequencePropertyPanel.h"
+#include "UI/Asset/AnimMontagePropertyPanel.h"
 #include "UI/EditorFileUtils.h"
 #include "Editor/UI/EditorTextureManager.h"
 #include "Platform/Paths.h"
@@ -646,13 +649,19 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 
 	// ─── Top: Asset Details | Viewport | Asset Browser (Persona 배치) ───
 
-	// Left: 시퀀스 디테일 + Root Motion 패널
+	// Left: 시퀀스 / 몽타주 디테일 패널 (선택 종류에 따라 분기)
 	ImGui::BeginChild("AssetDetails", ImVec2(AnimTabState.AnimDetailsWidth, ContentHeight), true);
-	ImGui::TextUnformatted("Asset Details");
-	ImGui::Separator();
-	if (AnimTabState.CurrentSequence)
+	if (AnimTabState.bMontageSelected && AnimTabState.CurrentMontage)
+	{
+		USkeletalMeshComponent* Comp = ViewportClient.GetPreviewMeshComponent();
+		UAnimInstance* AnimInst = Comp ? Comp->GetAnimInstance() : nullptr;
+		FAnimMontagePropertyPanel::Render(AnimTabState.CurrentMontage, Comp, AnimInst);
+	}
+	else if (AnimTabState.CurrentSequence)
 	{
 		UAnimSequence* Seq = AnimTabState.CurrentSequence;
+		ImGui::TextUnformatted("Asset Details");
+		ImGui::Separator();
 		ImGui::Text("Name:   %s", Seq->GetName().c_str());
 		ImGui::Text("Length: %.3f s", Seq->GetPlayLength());
 		ImGui::Text("FPS:    %.1f", Seq->GetFrameRate());
@@ -670,6 +679,8 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 	}
 	else
 	{
+		ImGui::TextUnformatted("Asset Details");
+		ImGui::Separator();
 		ImGui::TextDisabled("No animation selected.");
 	}
 	ImGui::EndChild();
@@ -739,22 +750,76 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 
 	ImGui::Separator();
 
+	ImGui::TextUnformatted("Animations");
 	const TArray<FAssetListItem> AnimFiles = FAssetRegistry::ListAnimationsForSkeleton(SkeletalMesh->GetSkeletonBinding(), false);
 	for (int32 i = 0; i < static_cast<int32>(AnimFiles.size()); ++i)
 	{
 		const FAssetListItem& Item      = AnimFiles[i];
-		const bool            bSelected = (AnimTabState.SelectedAnimIndex == i);
+		const bool            bSelected = (AnimTabState.SelectedAnimIndex == i && !AnimTabState.bMontageSelected);
 		if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
 		{
-			if (AnimTabState.SelectedAnimIndex != i)
+			AnimTabState.SelectedAnimIndex   = i;
+			AnimTabState.bMontageSelected    = false;
+			UAnimSequence* Seq               = FAnimationManager::Get().LoadAnimation(Item.FullPath);
+			if (Seq && Seq->IsCompatibleWith(SkeletalMesh))
 			{
-				AnimTabState.SelectedAnimIndex = i;
-				UAnimSequence* Seq             = FAnimationManager::Get().LoadAnimation(Item.FullPath);
-				if (Seq && Seq->IsCompatibleWith(SkeletalMesh))
-				{
-					AnimTabState.CurrentSequence = Seq;
-					ApplyAnimationToComponent();
-				}
+				AnimTabState.CurrentSequence = Seq;
+				ApplyAnimationToComponent();
+			}
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("%s", Item.FullPath.c_str());
+		}
+	}
+
+	// ── Montages ──
+	ImGui::Dummy(ImVec2(0, 10));
+	ImGui::Separator();
+	ImGui::TextUnformatted("Montages");
+
+	// 디스크 스캔 — montage 목록 초기화 (최초 1회 + Refresh 시).
+	static bool sMontagesScanned = false;
+	if (!sMontagesScanned)
+	{
+		FAnimationManager::Get().RefreshAvailableMontages();
+		sMontagesScanned = true;
+	}
+
+	// + New Montage — 현재 선택된 sequence 가 있으면 source 로 새 montage 생성.
+	if (ImGui::Button("+ New Montage", ImVec2(-1.0f, 0.0f)))
+	{
+		if (AnimTabState.CurrentSequence)
+		{
+			// 이름/경로 자동 — Content/Montages/<SequenceName>_Montage.uasset
+			const FString MontageName = AnimTabState.CurrentSequence->GetName() + "_Montage";
+			const FString PackagePath = FString("Content/Montages/") + MontageName + ".uasset";
+			UAnimMontage* Montage = FAnimationManager::Get().CreateMontage(AnimTabState.CurrentSequence, MontageName);
+			if (Montage)
+			{
+				FAnimationManager::Get().SaveMontage(Montage, PackagePath);
+				FAnimationManager::Get().RefreshAvailableMontages();
+				AnimTabState.CurrentMontage    = Montage;
+				AnimTabState.bMontageSelected  = true;
+				AnimTabState.SelectedMontageIndex = -1;   // 인덱스는 새 스캔 후 재 매핑
+			}
+		}
+		// else: 선택된 sequence 없으면 무시 (조용히 — UI 에서 버튼 클릭만 무시)
+	}
+
+	const TArray<FAssetListItem>& MontageFiles = FAnimationManager::Get().GetAvailableMontageFiles();
+	for (int32 i = 0; i < static_cast<int32>(MontageFiles.size()); ++i)
+	{
+		const FAssetListItem& Item = MontageFiles[i];
+		const bool bSelected = (AnimTabState.bMontageSelected && AnimTabState.SelectedMontageIndex == i);
+		if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+		{
+			AnimTabState.SelectedMontageIndex = i;
+			AnimTabState.bMontageSelected     = true;
+			UAnimMontage* M = FAnimationManager::Get().LoadMontage(Item.FullPath);
+			if (M)
+			{
+				AnimTabState.CurrentMontage = M;
 			}
 		}
 		if (ImGui::IsItemHovered())

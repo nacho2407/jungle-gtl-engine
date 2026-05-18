@@ -6,16 +6,20 @@ struct FSkeletalMesh;
 struct ImDrawList;
 struct ImVec2;
 class UAnimSequence;
+class UAnimMontage;
 class UAnimSingleNodeInstance;
 
 enum class EMeshEditorTab : uint8 { Skeleton, Mesh, Animation };
 
 struct FAnimationTabState
 {
-	UAnimSequence* CurrentSequence   = nullptr;
-	int32          SelectedAnimIndex = -1;
-	float          AnimListWidth     = 200.0f;
-	float          AnimDetailsWidth  = 250.0f;
+	UAnimSequence* CurrentSequence    = nullptr;
+	UAnimMontage*  CurrentMontage     = nullptr;
+	int32          SelectedAnimIndex     = -1;
+	int32          SelectedMontageIndex  = -1;
+	bool           bMontageSelected      = false;     // true 면 좌측 패널이 montage 표시
+	float          AnimListWidth         = 200.0f;
+	float          AnimDetailsWidth      = 280.0f;
 };
 
 class FMeshEditorWidget : public FAssetEditorWidget
