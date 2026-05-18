@@ -15,17 +15,17 @@ struct FCameraState
 {
     GENERATED_BODY_FCameraState()
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Projection", DisplayName="Field Of View")
 	float FOV = 3.14159265358979f / 3.0f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Projection", DisplayName="Aspect Ratio")
     float AspectRatio = 16.0f / 9.0f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Projection", DisplayName="Near Clip")
     float NearZ = 0.1f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Projection", DisplayName="Far Clip")
     float FarZ = 1000.0f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Projection", DisplayName="Ortho Width")
     float OrthoWidth = 10.0f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Projection", DisplayName="Orthographic")
     bool bIsOrthogonal = false;
 };
 
@@ -34,15 +34,15 @@ struct FCameraPostProcessSettings
 {
     GENERATED_BODY_FCameraPostProcessSettings()
 
-	    UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Vignette", DisplayName="Enable Vignette")
 	bool bVignetteEnabled = false;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Vignette", DisplayName="Intensity")
 	float VignetteIntensity = 0.0f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Vignette", DisplayName="Radius")
 	float VignetteRadius = 0.75f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Vignette", DisplayName="Smoothness")
 	float VignetteSmoothness = 0.35f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Vignette", DisplayName="Color")
 	FColor VignetteColor = FColor::Black();
 };
 
@@ -122,8 +122,8 @@ private:
 	void SetViewRotationDegrees(float PitchDegrees, float YawDegrees);
 
 private:
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Camera", DisplayName="Camera State")
     FCameraState CameraState;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Post Process", DisplayName="Post Process")
 	FCameraPostProcessSettings PostProcessSettings;
 };

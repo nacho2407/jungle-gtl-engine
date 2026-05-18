@@ -155,6 +155,7 @@ void FResourceManager::ClearDiscoveredResourceLists(bool bClearAtlasCache)
 	CurveFilePaths.clear();
 	SkeletalMeshFilePaths.clear();
 	AnimSequenceFilePaths.clear();
+	AnimStackNamesMap.clear();
 	StaticMeshCache.ClearRegistry();
 
 	if (bClearAtlasCache)
@@ -481,6 +482,7 @@ void FResourceManager::ReleaseGPUResources()
 	}
 	AnimSequenceMap.clear();
 	AnimSequenceFilePaths.clear();
+	AnimStackNamesMap.clear();
 
 	DefaultWhiteTexture.Reset();
 	CachedDevice.Reset();
@@ -832,6 +834,20 @@ TArray<FString> FResourceManager::GetSkeletalMeshPaths() const
 FFbxMeshContentInfo FResourceManager::InspectFbxMeshContent(const FString& Path)
 {
 	return FbxImporter.InspectMeshContent(Path);
+}
+
+TArray<FString> FResourceManager::ListAnimStacks(const FString& SourceFbxPath)
+{
+	const FString NormalizedSource = FPaths::Normalize(SourceFbxPath);
+	auto It = AnimStackNamesMap.find(NormalizedSource);
+	if (It != AnimStackNamesMap.end())
+	{
+		return It->second;
+	}
+
+	TArray<FString> StackNames = FbxImporter.ListAnimStacks(NormalizedSource);
+	AnimStackNamesMap[NormalizedSource] = StackNames;
+	return StackNames;
 }
 
 static FString MakeAnimSequenceCacheKey(const FString& SourceFbxPath, const FString& TargetSkeletalMeshPath, const FString& AnimStackName)

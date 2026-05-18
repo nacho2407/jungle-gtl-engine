@@ -40,10 +40,10 @@ private:
     void MarkRenderStateDirty();
 
 private:
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Asset", DisplayName="Static Mesh")
     UStaticMesh* StaticMeshAsset = nullptr;
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Asset", DisplayName="Static Mesh Path")
     FString StaticMeshAssetPath;
 
     mutable bool bBoundsDirty = true;

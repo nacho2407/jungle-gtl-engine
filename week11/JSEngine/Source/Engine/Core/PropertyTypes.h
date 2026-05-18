@@ -91,6 +91,8 @@ struct FPropertyDescriptor
     void* ExtraData = nullptr;
 
     EPropertyUsageFlags UsageFlags = EPropertyUsageFlags::Editable;
+    const char* InternalName = nullptr;
+    const char* Category = nullptr;
 };
 
 /** 각 프로퍼티의 Size 값을 반환합니다. 0을 반환하는 경우 특수 케이스입니다.

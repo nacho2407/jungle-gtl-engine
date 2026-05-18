@@ -101,15 +101,15 @@ public:
 	int32 GetUTF8Length(const FString& str) const;
 
 private:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Text", DisplayName="Text")
 	FString Text;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Text", DisplayName="Font")
 	FName FontName = FName("Default");
 	FFontResource* CachedFont = nullptr;	// ResourceManager 소유, 여기선 참조만
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Rendering", DisplayName="Color")
 	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Text", DisplayName="Font Size")
 	float FontSize = 1.0f;
 	float Spacing = 0.1f;
 	float CharWidth = 0.5f;

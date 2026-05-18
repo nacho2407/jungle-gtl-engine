@@ -54,6 +54,7 @@
 #include "PlayerController.gen.cpp"
 #include "PrimitiveActors.gen.cpp"
 #include "World.gen.cpp"
+#include "ShadowTypes.gen.cpp"
 #include "Material.gen.cpp"
 #include "Texture.gen.cpp"
 #include "Engine.gen.cpp"

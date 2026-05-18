@@ -99,14 +99,14 @@ protected:
 
 protected:
 	mutable FAABB WorldAABB;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Rendering", DisplayName="Visible")
 	bool bIsVisible = true;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Rendering", DisplayName="Enable Culling")
 	bool bEnableCull = true; // frustum, occlusion culling으로 컬링될지 여부 판정
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Rendering", DisplayName="Cast Decal")
     bool bCastDecal = true;
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Collision", DisplayName="Generate Overlap Events")
     bool bGenerateOverlapEvents = false;
     bool bBlockComponent = false; // ComponentHit
     TMap<UPrimitiveComponent*, FCollisionResult> CurOverlaps;

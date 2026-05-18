@@ -43,27 +43,27 @@ protected:
 
 private:
     // SoundRegistry 키 또는 Asset/Audio 기준 파일 경로를 넣습니다.
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Audio", DisplayName="Sound")
     FString SoundKeyOrPath;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Playback", DisplayName="Play On Begin Play")
     bool bPlayOnBeginPlay = false;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Playback", DisplayName="Loop")
     bool bLoop = false;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Attenuation", DisplayName="Spatialized")
     bool bSpatialized = true;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Audio", DisplayName="Volume Scale")
     float VolumeScale = 1.0f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Playback", DisplayName="Fade In")
     float FadeInSeconds = 0.0f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Playback", DisplayName="Fade Out")
     float FadeOutSeconds = 0.0f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Attenuation", DisplayName="Min Distance")
     float MinDistance = 2.5f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Attenuation", DisplayName="Max Distance")
     float MaxDistance = 22.0f;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Attenuation", DisplayName="Attenuation Model")
     int AttenuationModel = 2;
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Attenuation", DisplayName="Rolloff Factor")
     float RolloffFactor = 1.0f;
     FAudioHandle ActiveHandle = 0;
 };

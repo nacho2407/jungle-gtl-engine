@@ -1,4 +1,4 @@
-#include "PointLightComponent.h"
+﻿#include "PointLightComponent.h"
 #include "Object/ObjectFactory.h"
 #include <Render/Resource/ShadowAtlasManager.h>
 #include "Core/ReflectionUtils.h"
@@ -16,8 +16,13 @@ void UPointLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Ou
     ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 	constexpr EPropertyUsageFlags EditAndAnimate =
 		EPropertyUsageFlags::Editable | EPropertyUsageFlags::Animatable;
-    OutProps.push_back({ "Attenuation Radius", EPropertyType::Float, &AttenuationRadius, 0.0f, 0.0f, 0.1f, nullptr, 0, nullptr, EditAndAnimate });
-    OutProps.push_back({ "Light Falloff", EPropertyType::Float, &LightFalloffExponent, 0.0f, 0.0f, 0.1f, nullptr, 0, nullptr, EditAndAnimate });
+    //static const char* ShadowMapTypeNames[] = { "CSM", "PSM" };
+    //OutProps.push_back({ "ShadowMapType", EPropertyType::Enum, &eShadowMapType, 0.f, 0.f, 0.f, ShadowMapTypeNames, 2 });
+
+    //ULightComponent::GetEditableProperties(OutProps);
+
+    //OutProps.push_back({ "Attenuation Radius", EPropertyType::Float, &AttenuationRadius, 0.0f, 0.0f, 0.1f, nullptr, 0, nullptr, EditAndAnimate });
+    //OutProps.push_back({ "Light Falloff", EPropertyType::Float, &LightFalloffExponent, 0.0f, 0.0f, 0.1f, nullptr, 0, nullptr, EditAndAnimate });
 }
 
 void UPointLightComponent::Serialize(FArchive& Ar)

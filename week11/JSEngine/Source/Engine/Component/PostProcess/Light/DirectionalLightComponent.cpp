@@ -1,4 +1,4 @@
-#include "DirectionalLightComponent.h"
+﻿#include "DirectionalLightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Core/ReflectionUtils.h"
 
@@ -8,12 +8,21 @@ REGISTER_FACTORY(UDirectionalLightComponent)
 void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
+    //static const char* ShadowMapTypeNames[] = { "CSM", "PSM" };
+    //OutProps.push_back({ "ShadowMapType", EPropertyType::Enum, &eShadowMapType, 0.f, 0.f, 0.f, ShadowMapTypeNames, 2 });
 
-	if (eShadowMapType == EShadowMap::CSM)
-	{
-		OutProps.push_back({ "MaxDistance", EPropertyType::Float, &CSMMaxDistance, 0.f, 1000.f, 10.f });
-		OutProps.push_back({ "Lambda", EPropertyType::Float, &CSMPractialLambda, 0.0f, 1.0f, 0.01f });
-	}
+	//ULightComponent::GetEditableProperties(OutProps);
+	//if (eShadowMapType == EShadowMap::CSM)
+	//{
+	//	OutProps.push_back({ "MaxDistance", EPropertyType::Float, &CSMMaxDistance, 0.f, 1000.f, 10.f });
+	//	OutProps.push_back({ "Lambda", EPropertyType::Float, &CSMPractialLambda, 0.0f, 1.0f, 0.01f });
+	//}
+}
+
+void UDirectionalLightComponent::Serialize(FArchive& Ar)
+{
+	ULightComponent::Serialize(Ar);
+	ReflectionUtils::SerializeGeneratedPropertiesLocal(this, &UDirectionalLightComponent::StaticClassInfo, Ar);
 }
 
 FMatrix UDirectionalLightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
