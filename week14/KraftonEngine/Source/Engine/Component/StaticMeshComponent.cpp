@@ -249,13 +249,7 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "StaticMesh") == 0 || strcmp(PropertyName, "Static Mesh") == 0)
-	{
-		SetStaticMesh(StaticMesh);
-		return;
-	}
-
-	if (strcmp(PropertyName, "StaticMeshPath") == 0)
+	if (strcmp(PropertyName, "StaticMeshPath") == 0 || strcmp(PropertyName, "Static Mesh") == 0)
 	{
 		if (StaticMeshPath.empty() || StaticMeshPath == "None")
 		{
