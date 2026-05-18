@@ -41,22 +41,33 @@ void UStaticMeshComponent::PostDuplicate(UObject* Original)
 
 void UStaticMeshComponent::Serialize(FArchive& Ar)
 {
+	UMeshComponent::Serialize(Ar);
+
 	if (Ar.IsLoading())
 	{
-		UPrimitiveComponent::Serialize(Ar);
-		if (!StaticMeshAssetPath.empty())
+		const bool bHasMaterialOverrides = Ar.HasKey("Materials");
+		TArray<UMaterialInterface*> LoadedMaterials = Materials;
+		const FString RequestedPath = StaticMeshAssetPath.GetPath();
+
+		if (!RequestedPath.empty())
 		{
-			SetStaticMesh(FResourceManager::Get().LoadStaticMesh(StaticMeshAssetPath));
+			SetStaticMesh(FResourceManager::Get().LoadStaticMesh(RequestedPath));
 		}
 		else
 		{
 			SetStaticMesh(nullptr);
 		}
-		SerializeMaterialOverrides(Ar);
-		return;
-	}
 
-	UMeshComponent::Serialize(Ar);
+		if (bHasMaterialOverrides)
+		{
+			Materials.clear();
+			for (int32 i = 0; i < static_cast<int32>(LoadedMaterials.size()); ++i)
+			{
+				SetMaterial(i, LoadedMaterials[i]);
+			}
+			MarkRenderStateDirty();
+		}
+	}
 }
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
@@ -71,7 +82,7 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 
 	if (StaticMeshAsset != nullptr)
 	{
-		StaticMeshAssetPath = StaticMeshAsset->GetAssetPathFileName();
+		StaticMeshAssetPath.SetPath(StaticMeshAsset->GetAssetPathFileName());
 
 		const auto& Slots = StaticMeshAsset->GetMaterialSlots();
 		const auto& Sections = StaticMeshAsset->GetSections();
@@ -84,7 +95,7 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 	}
 	else
 	{
-		StaticMeshAssetPath.clear();
+		StaticMeshAssetPath.SetPath("");
 	}
 
 	MarkBoundsDirty();
@@ -108,13 +119,14 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 
 	if (std::strcmp(PropertyName, "StaticMeshAssetPath") == 0)
 	{
-		if (StaticMeshAssetPath.empty())
+		const FString RequestedPath = StaticMeshAssetPath.GetPath();
+		if (RequestedPath.empty())
 		{
 			SetStaticMesh(nullptr);
 			return;
 		}
 
-		UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh(StaticMeshAssetPath);
+		UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh(RequestedPath);
 
 		SetStaticMesh(Mesh);
 	}

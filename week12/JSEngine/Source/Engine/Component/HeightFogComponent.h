@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "PrimitiveComponent.h"
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "HeightFog Component", Category = "Basic")
 class UHeightFogComponent : public UPrimitiveComponent
 {
 public:

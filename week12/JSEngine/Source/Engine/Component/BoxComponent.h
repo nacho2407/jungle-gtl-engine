@@ -2,7 +2,7 @@
 #include "ShapeComponent.h"
 #include "Geometry/OBB.h"
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "Box Component", Category = "Collision")
 class UBoxComponent : public UShapeComponent
 {
 public:

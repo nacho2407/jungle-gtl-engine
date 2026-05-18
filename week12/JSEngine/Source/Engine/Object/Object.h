@@ -11,6 +11,7 @@
 
 class UClass;
 class FDebugDetailsBuilder;
+struct FDuplicateContext;
 
 enum EClassFlags : uint32_t
 {
@@ -19,6 +20,8 @@ enum EClassFlags : uint32_t
 	CF_Component = 1 << 1,
 	CF_Camera = 1 << 2,
 	CF_Abstract = 1 << 3,
+	CF_Placeable = 1 << 4,
+	CF_SpawnableComponent = 1 << 5,
 };
 
 class UObject
@@ -37,7 +40,7 @@ public:
 	//                   클래스별 후처리를 이곳에 구현합니다.
 	//                   하위 클래스 구현 시 부모의 PostDuplicate 를 먼저 호출해야 합니다.
 	// -----------------------------------------------------------------------
-	virtual UObject* Duplicate();
+	virtual UObject* Duplicate(const FDuplicateContext* Context = nullptr);
 	virtual void PostDuplicate(UObject* Original) 
 	{
 		ObjectName = Original->ObjectName;
@@ -85,7 +88,7 @@ public:
 	virtual void PostEditChangeProperty(const FPropertyChangedEvent& Event) { PostEditProperty(Event.PropertyName); }
 	virtual void PostEditProperty(const char* PropertyName) {}
 	virtual void BuildDebugDetails(FDebugDetailsBuilder& Builder) {}
-	void CopyPropertiesFrom(UObject* Src);
+	void CopyPropertiesFrom(UObject* Src, const FDuplicateContext* Context = nullptr);
 
 	virtual void Serialize(FArchive& Ar);
 	void SerializeProperties(FArchive& Ar);

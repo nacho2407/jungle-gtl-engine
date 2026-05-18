@@ -2,6 +2,7 @@
 
 #include "Asset/SkeletalMesh.h"
 #include "Component/MeshComponent.h"
+#include "Object/ObjectPtr.h"
 #include "Render/Resource/VertexTypes.h"
 
 UENUM()
@@ -29,6 +30,7 @@ public:
 	~USkinnedMeshComponent() override = default;
 
 	void Serialize(FArchive& Ar) override;
+	void PostDuplicate(UObject* Original) override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	void SetSkeletalMesh(USkeletalMesh* InSkeletalMesh);
@@ -88,7 +90,7 @@ protected:
 	USkeletalMesh* SkeletalMesh = nullptr;
 
 	UPROPERTY(DisplayName = "SkeletalMesh")
-	FString SkeletalMeshPath;
+	TSoftObjectPtr<USkeletalMesh> SkeletalMeshPath;
 
 	TArray<FMatrix> CurrentLocalPose;
 	TArray<FMatrix> CurrentGlobalPose;

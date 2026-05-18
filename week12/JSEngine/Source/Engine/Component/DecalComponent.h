@@ -1,8 +1,7 @@
 ﻿#pragma once
 
 #include "Component/PrimitiveComponent.h"
-
-class UMaterialInterface;
+#include "Render/Resource/Material.h"
 
 UCLASS()
 class UDecalComponent : public UPrimitiveComponent

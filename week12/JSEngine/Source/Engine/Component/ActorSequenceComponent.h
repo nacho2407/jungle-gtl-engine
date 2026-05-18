@@ -3,7 +3,7 @@
 #include "Animation/ActorSequence.h"
 #include "Component/ActorComponent.h"
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "ActorSequence Component", Category = "System")
 class UActorSequenceComponent : public UActorComponent
 {
 public:

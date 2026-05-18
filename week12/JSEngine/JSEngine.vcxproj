@@ -409,11 +409,8 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\AAttachTestActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ABillboardActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ABladeSlash.gen.cpp" />
-    <ClCompile Include="Intermediate\Reflection\GameFramework\ABoundsBoxActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ABullet.gen.cpp" />
-    <ClCompile Include="Intermediate\Reflection\GameFramework\ACubeActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ADecalActor.gen.cpp" />
-    <ClCompile Include="Intermediate\Reflection\GameFramework\ADecalSpotLightActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ADefaultPawn.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ADestructibleActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ADirectionalLightActor.gen.cpp" />
@@ -423,13 +420,11 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\ALightActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\AMainSceneDestructibleActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\APawn.gen.cpp" />
-    <ClCompile Include="Intermediate\Reflection\GameFramework\APlaneActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\APlayerController.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\APlayerStart.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\APointLightActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ASceneActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ASkeletalMeshActor.gen.cpp" />
-    <ClCompile Include="Intermediate\Reflection\GameFramework\ASphereActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ASpotlightActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\AStaticMeshActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ASubUVActor.gen.cpp" />
@@ -502,6 +497,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Settings\ProjectSettings.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\ComponentMenuRegistry.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -1028,6 +1027,7 @@
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
     <ClInclude Include="Source\Editor\Settings\ProjectSettings.h" />
+    <ClInclude Include="Source\Editor\UI\ComponentMenuRegistry.h" />
     <ClInclude Include="Source\Editor\UI\EditorActorSequenceDetails.h" />
     <ClInclude Include="Source\Editor\UI\EditorActorSequenceEditModel.h" />
     <ClInclude Include="Source\Editor\UI\EditorActorSequenceTimeUtils.h" />
@@ -1234,6 +1234,7 @@
     <ClInclude Include="Source\Engine\Object\FName.h" />
     <ClInclude Include="Source\Engine\Object\Object.h" />
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
+    <ClInclude Include="Source\Engine\Object\ObjectPtr.h" />
     <ClInclude Include="Source\Engine\Object\Property.h" />
     <ClInclude Include="Source\Engine\Render\Common\ComPtr.h" />
     <ClInclude Include="Source\Engine\Render\Common\RenderTypes.h" />

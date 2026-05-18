@@ -1,9 +1,10 @@
 ﻿#pragma once
 #include "MeshComponent.h"
 #include "Asset/StaticMesh.h"
+#include "Object/ObjectPtr.h"
 #include "Render/Resource/Material.h"
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "StaticMesh Component", Category = "Basic")
 class UStaticMeshComponent : public UMeshComponent
 {
 public:
@@ -39,7 +40,7 @@ private:
 	UStaticMesh* StaticMeshAsset = nullptr;
 
 	UPROPERTY(DisplayName = "StaticMesh")
-	FString StaticMeshAssetPath;
+	TSoftObjectPtr<UStaticMesh> StaticMeshAssetPath;
 
 	mutable bool bBoundsDirty = true;
 	bool bRenderStateDirty = true;
