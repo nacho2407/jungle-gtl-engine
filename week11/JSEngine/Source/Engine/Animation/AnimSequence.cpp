@@ -61,6 +61,19 @@ void UAnimSequenceBase::AddNotify(const FAnimNotifyEvent& Notify)
         SanitizedNotify.Duration = 0.0f;
     }
 
+    const float SequenceLength = GetPlayLength();
+    if (SequenceLength > 0.0f)
+    {
+        SanitizedNotify.TriggerTime = std::clamp(SanitizedNotify.TriggerTime, 0.0f, SequenceLength);
+
+        // duration notify가 sequence 끝 밖으로 이어지면 등록 시점에 잘라냄
+        const float MaxDuration = SequenceLength - SanitizedNotify.TriggerTime;
+        if (SanitizedNotify.Duration > MaxDuration)
+        {
+            SanitizedNotify.Duration = MaxDuration;
+        }
+    }
+
     Notifies.push_back(SanitizedNotify);
 
 	// 재생 중 검사 용이, 최적화 가능성을 위한 notify 시간 순 정렬

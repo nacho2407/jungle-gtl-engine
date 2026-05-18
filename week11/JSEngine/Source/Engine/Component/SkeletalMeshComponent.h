@@ -54,6 +54,7 @@ public:
     void Stop();
     void SetPosition(float TimeSeconds, bool bFireNotifies = false);
     float GetPosition() const;
+    float GetPreviousTime() const;
     void SetPlayRate(float InPlayRate);
     float GetPlayRate() const;
     void SetReversePlay(bool bInReversePlay);
@@ -61,6 +62,7 @@ public:
     void SetLooping(bool bInLooping);
     bool IsLooping() const;
     bool IsPlaying() const;
+    bool IsPaused() const;
     float GetPlayLength() const;
     void SetRootMotionMode(ERootMotionMode InMode);
     ERootMotionMode GetRootMotionMode() const;
@@ -78,6 +80,9 @@ public:
     float GetAnimationTime() const { return GetPosition(); }
     bool IsAnimPlaying() const { return IsPlaying(); }
     void HandleAnimNotify(const FAnimNotifyDispatchEvent& NotifyEvent);
+    bool HasLastAnimNotifyEvent() const;
+    const FAnimNotifyDispatchEvent& GetLastAnimNotifyEvent() const;
+    void ClearLastAnimNotifyEvent();
 
     void ResetToBindPose();
 
@@ -96,4 +101,8 @@ private:
     EAnimationMode AnimationMode = EAnimationMode::None;
     FString AnimInstanceClassName;
     UAnimInstance* AnimInstance = nullptr;
+
+	// for stat / debug
+    FAnimNotifyDispatchEvent LastAnimNotifyEvent;
+    bool bHasLastAnimNotifyEvent = false;
 };

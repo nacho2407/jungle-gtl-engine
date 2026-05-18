@@ -22,6 +22,7 @@ public:
 
     void SetPosition(float InTimeSeconds, bool bFireNotifies = false);
     float GetPosition() const;
+    float GetPreviousTime() const;
     float GetPlayLength() const;
 
     void SetPlayRate(float InPlayRate);

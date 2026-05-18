@@ -194,6 +194,12 @@ float USkeletalMeshComponent::GetPosition() const
     return SingleNodeInstance ? SingleNodeInstance->GetPosition() : 0.0f;
 }
 
+float USkeletalMeshComponent::GetPreviousTime() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetPreviousTime() : 0.0f;
+}
+
 void USkeletalMeshComponent::SetPlayRate(float InPlayRate)
 {
     if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
@@ -240,6 +246,12 @@ bool USkeletalMeshComponent::IsPlaying() const
 {
     const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
     return SingleNodeInstance ? SingleNodeInstance->IsPlaying() : false;
+}
+
+bool USkeletalMeshComponent::IsPaused() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->IsPaused() : false;
 }
 
 float USkeletalMeshComponent::GetPlayLength() const
@@ -354,12 +366,31 @@ void USkeletalMeshComponent::StopAnim()
 
 void USkeletalMeshComponent::HandleAnimNotify(const FAnimNotifyDispatchEvent& NotifyEvent)
 {
+    LastAnimNotifyEvent = NotifyEvent;
+    bHasLastAnimNotifyEvent = true;
+
     OnAnimNotify.Broadcast(this, NotifyEvent);
 
     if (AActor* Owner = GetOwner())
     {
         Owner->HandleAnimNotify(this, NotifyEvent);
     }
+}
+
+bool USkeletalMeshComponent::HasLastAnimNotifyEvent() const
+{
+    return bHasLastAnimNotifyEvent;
+}
+
+const FAnimNotifyDispatchEvent& USkeletalMeshComponent::GetLastAnimNotifyEvent() const
+{
+    return LastAnimNotifyEvent;
+}
+
+void USkeletalMeshComponent::ClearLastAnimNotifyEvent()
+{
+    LastAnimNotifyEvent = FAnimNotifyDispatchEvent();
+    bHasLastAnimNotifyEvent = false;
 }
 
 void USkeletalMeshComponent::RecreateAnimInstance()
@@ -421,6 +452,7 @@ void USkeletalMeshComponent::DestroyAnimInstance()
         UObjectManager::Get().DestroyObject(AnimInstance);
     }
     AnimInstance = nullptr;
+    ClearLastAnimNotifyEvent();
 }
 
 UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const

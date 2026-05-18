@@ -163,12 +163,20 @@ void UAnimSingleNodeInstance::SetAnimationAsset(UAnimationAsset* NewAsset)
         {
             ClearActiveNotifyStates(true);
             ClearRootMotionState();
+            if (USkeletalMeshComponent* Component = GetSkelMeshComponent())
+            {
+                Component->ClearLastAnimNotifyEvent();
+            }
         }
         return;
     }
 
     ClearActiveNotifyStates(true);
     ClearRootMotionState();
+    if (USkeletalMeshComponent* Component = GetSkelMeshComponent())
+    {
+        Component->ClearLastAnimNotifyEvent();
+    }
 
     CurrentAsset = NewAsset;
     PreviousTime = 0.0f;
@@ -242,6 +250,11 @@ void UAnimSingleNodeInstance::SetPosition(float InTimeSeconds, bool bFireNotifie
 float UAnimSingleNodeInstance::GetPosition() const
 {
     return CurrentTime;
+}
+
+float UAnimSingleNodeInstance::GetPreviousTime() const
+{
+    return PreviousTime;
 }
 
 float UAnimSingleNodeInstance::GetPlayLength() const
