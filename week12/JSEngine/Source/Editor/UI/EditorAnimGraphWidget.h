@@ -14,6 +14,8 @@ public:
 	void Open(const FString& InPath);
 	void Close();
 	void Save();
+	void Reload();
+	void SaveAndReload();
 
 	const FString& GetEditingPath() const { return EditingPath; }
 	bool IsDirty() const { return bDirty; }
@@ -34,6 +36,15 @@ private:
 	const FAnimGraphNodeDesc* FindSelectedNode() const;
 	FAnimGraphNodeDesc* FindFirstOutputPoseNode();
 	const FAnimGraphNodeDesc* FindFirstOutputPoseNode() const;
+	FAnimGraphNodeDesc* FindRootOutputPoseNode();
+	const FAnimGraphNodeDesc* FindRootOutputPoseNode() const;
+	FString GetNodeDisplayName(const FAnimGraphNodeDesc& Node) const;
+	FString GetNodeComboLabel(const FAnimGraphNodeDesc& Node) const;
+	bool SetOutputPoseInput(FAnimGraphNodeDesc& OutputNode, int32 InputNodeId);
+	bool ConnectRootOutputToNode(int32 SourceNodeId);
+	bool AutoConnectRootOutputIfEmpty(int32 SourceNodeId);
+	int32 CountStateMachineStates() const;
+	int32 CountStateMachineTransitions() const;
 	int32 GenerateNodeId() const;
 	int32 GenerateStateId(const FAnimStateMachineDesc& StateMachine) const;
 	FString GetStateDisplayName(const FAnimStateMachineDesc& StateMachine, int32 StateId) const;
