@@ -80,6 +80,22 @@ public:
     const FRawAnimSequenceTrack* FindTrackByBoneIndex(int32 TrackIndex) const;
 
     // ─────────────────────────────────────────────────────────────
+    // Force Root Lock 옵션 (UE 의 bForceRootLock 와 동등, per-asset, .uasset 에 저장).
+    //   bForceRootLock = true 면 GetBonePose 시 RootMotionBoneName 본의
+    //   local translation 의 horizontal (X/Y) 성분을 bind 값으로 고정 (vertical Z 는 anim 유지).
+    //   → walk/run 류 anim 의 forward 이동을 pose 평가 단계에서 잠가 in-place 로 재생.
+    // 참고: UE 에서 "Root Motion" 은 anim 의 root 데이터를 character actor transform 에 반영하는
+    //       별개 옵션 (bEnableRootMotion). 본 기능은 그것과 다르고, root 본 motion 을 잠그는 것.
+    // RootMotionBoneName 은 import 시 자동 감지 (translation 변화가 큰 상위 본 = 보통 hip/Bip001).
+    // 사용자는 AnimViewer 에서 수동 override 가능.
+    // ─────────────────────────────────────────────────────────────
+    bool GetForceRootLock() const { return bForceRootLock; }
+    void SetForceRootLock(bool b) { bForceRootLock = b; }
+
+    const FString& GetRootMotionBoneName() const { return RootMotionBoneName; }
+    void SetRootMotionBoneName(const FString& Name) { RootMotionBoneName = Name; }
+
+    // ─────────────────────────────────────────────────────────────
     // Mock factories (A 의 FBX 임포트 전 시각 검증용 — 임시 데이터).
     // 두 팩토리 모두 UAnimDataModel 을 새로 만들고 SetDataModel 로 묶어 반환.
     // 반환된 UAnimSequence/UAnimDataModel 은 UObjectManager 가 소유 (수명 명시 관리 필요).
@@ -104,4 +120,7 @@ private:
 
     FString AssetPathFileName = "None";
     FSkeletonBinding TargetSkeleton;
+
+    bool    bForceRootLock = false;
+    FString RootMotionBoneName;
 };

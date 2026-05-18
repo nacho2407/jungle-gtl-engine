@@ -1256,6 +1256,34 @@ bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext&
 		Sequence->SetFName(FName(AnimName));
 		Sequence->SetDataModel(DataModel);
 
+		// Root motion 본 자동 감지 — translation 의 horizontal 변화가 가장 큰 상위 본 선정.
+		// Threshold 1cm = 0.01m (DeepConvertScene 후 단위 m). Mixamo 의 hip/Bip001 처럼
+		// 걷기 중 forward 이동하는 본을 잡음. PosKeys 변화 미미한 본은 통과 → 다리/팔 본 제외.
+		{
+			constexpr float HorizontalThreshold = 0.01f;
+			FString DetectedRootBone;
+			for (const FBoneAnimationTrack& Track : DataModel->BoneAnimationTracks)
+			{
+				const TArray<FVector>& Pos = Track.InternalTrackData.PosKeys;
+				if (Pos.size() < 2) continue;
+				const FVector& First = Pos[0];
+				for (const FVector& P : Pos)
+				{
+					if (std::fabs(P.X - First.X) > HorizontalThreshold ||
+					    std::fabs(P.Y - First.Y) > HorizontalThreshold)
+					{
+						DetectedRootBone = Track.BoneName;
+						break;
+					}
+				}
+				if (!DetectedRootBone.empty()) break;
+			}
+			Sequence->SetRootMotionBoneName(DetectedRootBone);
+			UE_LOG("Anim root motion bone auto-detected: %s (Stack=%s)",
+				DetectedRootBone.empty() ? "(none)" : DetectedRootBone.c_str(),
+				AnimStack->GetName());
+		}
+
 		Context.AnimSequences.push_back(Sequence);
 	}
 	return true;

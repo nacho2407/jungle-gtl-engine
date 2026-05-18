@@ -17,11 +17,12 @@
 --
 -- Hot-reload: 이 파일 저장만 해도 에디터에서 즉시 반영.
 
-local USE_MOCK   = true
+local USE_MOCK   = false
 local DRIVE_MODE = "movement"   -- "movement" 또는 "auto"
 
-local IDLE_PATH = "Content/Data/hirasawa-yui/yui_Idle.uasset"
-local WALK_PATH = "Content/Data/hirasawa-yui/yui_Walk.uasset"
+local IDLE_PATH = "Content/Data/hirasawa-yui/IdleWithSkin_mixamo_com.uasset"
+local WALK_PATH = "Content/Data/hirasawa-yui/Walking_mixamo_com.uasset"
+local JUMP_PATH = "Content/Data/hirasawa-yui/Jump_mixamo_com.uasset"
 
 function init(self)
     self.Speed          = 0
@@ -38,8 +39,7 @@ function init(self)
     else
         Anim.register_state("Idle", IDLE_PATH, 1.0, true)
         Anim.register_state("Walk", WALK_PATH, 1.0, true)
-        -- 실제 jump anim 있으면 path 지정. 없으면 mock 으로 fallback.
-        Anim.register_state("Jump", WALK_PATH, 1.0, false)
+        Anim.register_state("Jump", JUMP_PATH, 1.0, false)
     end
 
     Anim.register_transition("Idle", "Walk",
@@ -52,7 +52,7 @@ function init(self)
         function() return Anim.is_owner_falling() end, 0.1)
     -- Jump → Idle — 착지 (Walking 복귀). 다음 frame 의 Idle↔Walk 전이가 자연스럽게 잡음.
     Anim.register_transition("Jump", "Idle",
-        function() return not Anim.is_owner_falling() end, 0.2)
+        function() return not Anim.is_owner_falling() end, 0.5)
 
     Anim.set_initial_state("Idle")
 end

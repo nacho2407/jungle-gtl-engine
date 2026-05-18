@@ -393,6 +393,27 @@ bool FAnimationManager::SaveAnimation(UAnimSequence* Sequence, const FString& Pa
     return true;
 }
 
+bool FAnimationManager::SaveAnimationPreservingMetadata(UAnimSequence* Sequence)
+{
+    if (!Sequence)
+    {
+        return false;
+    }
+
+    const FString& AssetPath = Sequence->GetAssetPathFileName();
+    if (AssetPath.empty() || AssetPath == "None")
+    {
+        UE_LOG("Animation save failed: asset path is unknown. Anim=%s", Sequence->GetName().c_str());
+        return false;
+    }
+
+    // 기존 메타데이터에서 SourcePath 추출 — 옵션 변경만으로 원본 reference 잃지 않도록.
+    FAssetImportMetadata ExistingMeta;
+    FAssetPackage::ReadMetadata(AssetPath, EAssetPackageType::AnimSequence, ExistingMeta);
+
+    return SaveAnimation(Sequence, AssetPath, ExistingMeta.SourcePath);
+}
+
 void FAnimationManager::RefreshAvailableAnimations()
 {
     const std::filesystem::path ContentRoot = std::filesystem::path(FPaths::RootDir()) / L"Content";

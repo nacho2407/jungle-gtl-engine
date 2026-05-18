@@ -23,6 +23,10 @@ public:
 
     bool SaveAnimation(UAnimSequence* Sequence, const FString& PackagePath, const FString& SourcePath);
 
+    // UI 편집 후 재 저장 — 기존 .uasset 의 SourcePath/Timestamp 메타데이터 보존.
+    // Sequence 의 AssetPathFileName 을 그대로 PackagePath 로 사용.
+    bool SaveAnimationPreservingMetadata(UAnimSequence* Sequence);
+
     bool ImportAnimationForSkeleton(const FAnimationImportRequest& Request, TArray<UAnimSequence*>* OutSequences = nullptr);
 
     // Content/ 하위를 스캔해 디스크의 AnimSequence .uasset 들을 목록에 채운다.
