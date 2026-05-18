@@ -92,6 +92,7 @@ private:
 	FString GetPayloadType(const FContentItem& Item) const;
 	ImU32 GetItemColor(const FContentItem& Item) const;
 	ID3D11ShaderResourceView* GetImagePreviewSRV(const FContentItem& Item);
+	ID3D11ShaderResourceView* GetAnimSequenceIconSRV();
 	ID3D11ShaderResourceView* GetMaterialPreviewSRV(const FContentItem& Item, uint32 Width, uint32 Height, bool bHighPriority = false);
 	bool CapturePreviewSnapshot(ID3D11ShaderResourceView* SourceSRV, FMaterialPreviewSnapshot& OutSnapshot, uint32 Width, uint32 Height);
 	UMaterialInterface* ResolveMaterialAsset(const std::filesystem::path& Path);
@@ -115,6 +116,7 @@ private:
 	std::filesystem::path SelectedPath;
 	TArray<std::filesystem::path> BackHistory;
 	TMap<FString, FMaterialPreviewSnapshot> MaterialPreviewCache;
+	TComPtr<ID3D11ShaderResourceView> AnimSequenceIconSRV;
 	FString SearchFilter;
 	char RenameBuffer[260] = {};
 	float TileSize = 72.0f;
@@ -123,6 +125,7 @@ private:
 	bool bVisible = false;
 	bool bNeedsRefresh = true;
 	bool bPendingMaterialPreviewCacheClear = false;
+	bool bAnimSequenceIconLoadAttempted = false;
 	bool bRenamePopupRequested = false;
 	bool bMouseOverBrowser = false;
 	bool bHasBrowserScreenRect = false;

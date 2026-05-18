@@ -8,12 +8,14 @@
 #include "Animation/AnimSequence.h"
 #include "Asset/CurveFloatAsset.h"
 #include "Asset/StaticMesh.h"
+#include "Engine/Core/EditorResourcePaths.h"
 #include "Core/ResourceManager.h"
 #include "Runtime/Script/ScriptManager.h"
 #include "Render/Resource/Material.h"
 #include "Render/Renderer/Renderer.h"
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
+#include "WICTextureLoader.h"
 
 #include <algorithm>
 #include <cctype>
@@ -1029,6 +1031,10 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		{
 			PreviewSRV = GetImagePreviewSRV(Item);
 		}
+		else if (IsSequenceAsset(Item.Extension))
+		{
+			PreviewSRV = GetAnimSequenceIconSRV();
+		}
 	}
 
 	if (Item.bIsDirectory)
@@ -1758,6 +1764,31 @@ ID3D11ShaderResourceView* FEditorContentBrowserWidget::GetImagePreviewSRV(const 
 
 	UTexture* Texture = FResourceManager::Get().GetTexture(MakeRelativeProjectPath(Item.Path));
 	return Texture ? Texture->GetSRV() : nullptr;
+}
+
+ID3D11ShaderResourceView* FEditorContentBrowserWidget::GetAnimSequenceIconSRV()
+{
+	if (AnimSequenceIconSRV || bAnimSequenceIconLoadAttempted)
+	{
+		return AnimSequenceIconSRV.Get();
+	}
+
+	bAnimSequenceIconLoadAttempted = true;
+	if (!EditorEngine)
+	{
+		return nullptr;
+	}
+
+	ID3D11Device* Device = EditorEngine->GetRenderer().GetFD3DDevice().GetDevice();
+	if (!Device)
+	{
+		return nullptr;
+	}
+
+	const std::wstring IconPath =
+		FEditorResourcePaths::IconsAbsoluteDir() + L"AnimSequence_64x.png";
+	DirectX::CreateWICTextureFromFile(Device, IconPath.c_str(), nullptr, AnimSequenceIconSRV.GetAddressOf());
+	return AnimSequenceIconSRV.Get();
 }
 
 ID3D11ShaderResourceView* FEditorContentBrowserWidget::GetMaterialPreviewSRV(const FContentItem& Item, uint32 Width, uint32 Height, bool bHighPriority)
