@@ -134,7 +134,6 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 
         if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh)
         {
-            PermutationKey |= (uint32)EShaderFeature::Skeletal;
             if (RenderBus->GetSkinningMode() == ESkinningMode::GPU)
             {
                 PermutationKey |= (uint32)EShaderFeature::GpuSkinning;
