@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorPropertyWidget.h"
+#include "Editor/UI/EditorPropertyWidget.h"
 
 #include "Editor/UI/ComponentMenuRegistry.h"
 #include "Editor/EditorEngine.h"
@@ -26,10 +26,13 @@
 #include "Core/Containers/Set.h"
 #include "Core/Logging/Log.h"
 #include "Math/Color.h"
+#include "Math/Quat.h"
+#include "Core/Guid.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Material.h"
 #include "Asset/StaticMesh.h"
 #include "Asset/SkeletalMesh.h"
+#include "Animation/AnimGraphAsset.h"
 #include "Animation/AnimSequence.h"
 #include "Object/FName.h"
 #include "Object/Class.h"
@@ -1948,6 +1951,11 @@ bool FEditorPropertyWidget::RenderSoftObjectPtrWidget(const FProperty& Property,
 			LocalOptions = FResourceManager::Get().GetAnimSequencePaths();
 			Options = &LocalOptions;
 		}
+		else if (Property.ObjectClass->IsChildOf(UAnimGraphAsset::StaticClass()))
+		{
+			LocalOptions = CollectAnimGraphAssetPaths();
+			Options = &LocalOptions;
+		}
 	}
 
 	if (Options && !Options->empty())
@@ -1984,6 +1992,27 @@ bool FEditorPropertyWidget::RenderSoftObjectPtrWidget(const FProperty& Property,
 			Property.SoftObjectOps->SetPath(ValuePtr, Buf);
 			bChanged = true;
 		}
+	}
+
+	if (Property.ObjectClass
+		&& Property.ObjectClass->IsChildOf(UAnimGraphAsset::StaticClass())
+		&& ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("AnimGraphContentItem"))
+		{
+			if (Payload->Data && Payload->DataSize > 0)
+			{
+				const FString PayloadPath = static_cast<const char*>(Payload->Data);
+				const std::filesystem::path DroppedPath = FPaths::ToWide(PayloadPath);
+				Property.SoftObjectOps->SetPath(
+					ValuePtr,
+					DroppedPath.is_absolute()
+						? FPaths::Normalize(FPaths::ToRelativeString(DroppedPath.wstring()))
+						: FPaths::Normalize(PayloadPath));
+				bChanged = true;
+			}
+		}
+		ImGui::EndDragDropTarget();
 	}
 
 	return bChanged;
@@ -2044,6 +2073,90 @@ bool FEditorPropertyWidget::RenderArrayPropertyWidget(const FProperty& Property,
 	return bChanged;
 }
 
+bool FEditorPropertyWidget::RenderStructPropertyWidget(const FProperty& Property, void* ValuePtr, UObject* NotifyTarget, const char* Label)
+{
+	if (!ValuePtr || Property.Type != EPropertyType::Struct)
+	{
+		return false;
+	}
+
+	const char* Hint = Property.EditorHint;
+	if ((!Hint || Hint[0] == '\0') && Property.ScriptStruct)
+	{
+		Hint = Property.ScriptStruct->GetName();
+	}
+
+	if (Hint && std::strcmp(Hint, "FVector") == 0)
+	{
+		return ImGui::DragFloat3(Label, static_cast<float*>(ValuePtr), Property.Speed);
+	}
+	if (Hint && std::strcmp(Hint, "FVector4") == 0)
+	{
+		return ImGui::DragFloat4(Label, static_cast<float*>(ValuePtr), Property.Speed);
+	}
+	if (Hint && std::strcmp(Hint, "FColor") == 0)
+	{
+		return ImGui::ColorEdit4(Label, &static_cast<FColor*>(ValuePtr)->R);
+	}
+	if (Hint && std::strcmp(Hint, "FGuid") == 0)
+	{
+		FGuid* Val = static_cast<FGuid*>(ValuePtr);
+		char Buf[64];
+		strncpy_s(Buf, sizeof(Buf), Val->ToString().c_str(), _TRUNCATE);
+		if (ImGui::InputText(Label, Buf, sizeof(Buf), ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			FGuid ParsedGuid;
+			if (FGuid::Parse(Buf, ParsedGuid))
+			{
+				*Val = ParsedGuid;
+				return true;
+			}
+		}
+		return false;
+	}
+	if (Hint && std::strcmp(Hint, "FQuat") == 0)
+	{
+		FQuat* Val = static_cast<FQuat*>(ValuePtr);
+		float Components[4] = { Val->X, Val->Y, Val->Z, Val->W };
+		if (ImGui::DragFloat4(Label, Components, Property.Speed))
+		{
+			*Val = FQuat(Components[0], Components[1], Components[2], Components[3]);
+			Val->Normalize();
+			return true;
+		}
+		return false;
+	}
+
+	if (!Property.ScriptStruct)
+	{
+		ImGui::TextDisabled("%s <unregistered struct>", Label);
+		return false;
+	}
+
+	bool bChanged = false;
+	if (ImGui::TreeNodeEx(Label, ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		TArray<const FProperty*> ChildProperties;
+		Property.ScriptStruct->GetAllProperties(ChildProperties);
+		for (const FProperty* Child : ChildProperties)
+		{
+			if (!Child || !Child->Name)
+			{
+				continue;
+			}
+
+			void* ChildPtr = reinterpret_cast<uint8*>(ValuePtr) + Child->Offset;
+			const FString ChildLabel = MakePropertyWidgetLabel(*Child);
+			if (RenderPropertyValueWidget(*Child, ChildPtr, NotifyTarget, ChildLabel.c_str()))
+			{
+				bChanged = true;
+			}
+		}
+		ImGui::TreePop();
+	}
+	return bChanged;
+}
+
 bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property, void* ValuePtr, UObject* NotifyTarget, const char* Label, int32 ArrayIndex)
 {
 	if (!ValuePtr)
@@ -2063,40 +2176,8 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 			return ImGui::DragFloat(Label, static_cast<float*>(ValuePtr), Property.Speed, Property.Min, Property.Max);
 		}
 		return ImGui::DragFloat(Label, static_cast<float*>(ValuePtr), Property.Speed);
-	case EPropertyType::Vec3:
-		return ImGui::DragFloat3(Label, static_cast<float*>(ValuePtr), Property.Speed);
-	case EPropertyType::Vec4:
-		return ImGui::ColorEdit4(Label, static_cast<float*>(ValuePtr));
-	case EPropertyType::Color:
-		return ImGui::ColorEdit4(Label, &static_cast<FColor*>(ValuePtr)->R);
-	case EPropertyType::Guid:
-	{
-		FGuid* Val = static_cast<FGuid*>(ValuePtr);
-		char Buf[64];
-		strncpy_s(Buf, sizeof(Buf), Val->ToString().c_str(), _TRUNCATE);
-		if (ImGui::InputText(Label, Buf, sizeof(Buf), ImGuiInputTextFlags_EnterReturnsTrue))
-		{
-			FGuid ParsedGuid;
-			if (FGuid::Parse(Buf, ParsedGuid))
-			{
-				*Val = ParsedGuid;
-				return true;
-			}
-		}
-		return false;
-	}
-	case EPropertyType::Quat:
-	{
-		FQuat* Val = static_cast<FQuat*>(ValuePtr);
-		float Components[4] = { Val->X, Val->Y, Val->Z, Val->W };
-		if (ImGui::DragFloat4(Label, Components, Property.Speed))
-		{
-			*Val = FQuat(Components[0], Components[1], Components[2], Components[3]);
-			Val->Normalize();
-			return true;
-		}
-		return false;
-	}
+	case EPropertyType::Struct:
+		return RenderStructPropertyWidget(Property, ValuePtr, NotifyTarget, Label);
 	case EPropertyType::ObjectPtr:
 		return RenderObjectPtrWidget(Property, ValuePtr, NotifyTarget, Label, ArrayIndex);
 	case EPropertyType::SoftObjectPtr:
@@ -2359,7 +2440,7 @@ void FEditorPropertyWidget::RenderSkeletalStateMachinePreview(USkeletalMeshCompo
 
 	ImGui::Text("Current State: %s", CurrentState.empty() ? "None" : CurrentState.c_str());
 	ImGui::Text("Next State: %s", NextState.empty() ? "None" : NextState.c_str());
-	
+
 	if (bBlending)
 	{
 		ImGui::Text("Blending: True (%.2f / %.2fs)", BlendElapsed, BlendDuration);

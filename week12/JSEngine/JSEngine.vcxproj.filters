@@ -31,11 +31,17 @@
     <Filter Include="Intermediate\Reflection\Component\PostProcess\Light">
       <UniqueIdentifier>{9b80487f-620f-32ca-6e5c-680e4f80cfc1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Intermediate\Reflection\Core">
+      <UniqueIdentifier>{96fcd7cc-aa39-1119-68f5-801fa6892f7d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Intermediate\Reflection\Editor">
       <UniqueIdentifier>{3d7aad18-b8cd-8c00-11f7-ca1b895f2553}</UniqueIdentifier>
     </Filter>
     <Filter Include="Intermediate\Reflection\GameFramework">
       <UniqueIdentifier>{36dc06eb-7c47-78be-cde8-06b5b11c1094}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Reflection\Math">
+      <UniqueIdentifier>{752bb93e-e9af-cb56-bda8-ea73fd33bda5}</UniqueIdentifier>
     </Filter>
     <Filter Include="Intermediate\Reflection\Misc">
       <UniqueIdentifier>{4107d985-cb50-b94d-2e85-f301c024482c}</UniqueIdentifier>
@@ -291,6 +297,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Intermediate\Reflection\Animation\FAnimGraphNodeDesc.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\FAnimStateDesc.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\FAnimStateMachineDesc.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\FAnimStateTransitionDesc.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\FAnimTransitionConditionDesc.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Animation\UActorSequence.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
@@ -468,6 +489,9 @@
     <ClCompile Include="Intermediate\Reflection\Component\UTextRenderComponent.gen.cpp">
       <Filter>Intermediate\Reflection\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Core\FGuid.gen.cpp">
+      <Filter>Intermediate\Reflection\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Editor\UEditorEngine.gen.cpp">
       <Filter>Intermediate\Reflection\Editor</Filter>
     </ClCompile>
@@ -551,6 +575,21 @@
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\UWorld.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Math\FColor.gen.cpp">
+      <Filter>Intermediate\Reflection\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Math\FQuat.gen.cpp">
+      <Filter>Intermediate\Reflection\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Math\FVector.gen.cpp">
+      <Filter>Intermediate\Reflection\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Math\FVector2.gen.cpp">
+      <Filter>Intermediate\Reflection\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Math\FVector4.gen.cpp">
+      <Filter>Intermediate\Reflection\Math</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Misc\ObjViewer\UObjViewerEngine.gen.cpp">
       <Filter>Intermediate\Reflection\Misc\ObjViewer</Filter>
@@ -636,13 +675,13 @@
     <ClCompile Include="Source\Editor\UI\EditorActorSequencerWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorAnimGraphWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorCommandContext.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorAnimGraphWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorContentBrowserWidget.cpp">
@@ -802,6 +841,15 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\ActorSequence.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimGraphAsset.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimGraphInstance.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimGraphNode.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp">
@@ -1538,9 +1586,6 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimGraphNode.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimGraphAsset.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimGraphInstance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\Asset\EditorAssetService.h">
@@ -1618,6 +1663,9 @@
     <ClInclude Include="Source\Editor\UI\EditorActorSequencerWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorAnimGraphWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorChromeConstants.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
@@ -1625,9 +1673,6 @@
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorAnimGraphWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorContentBrowserWidget.h">
@@ -1733,6 +1778,15 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\ActorSequence.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimGraphAsset.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimGraphInstance.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimGraphNode.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h">
@@ -2621,9 +2675,6 @@
       <Filter>ThirdParty\luajit\src</Filter>
     </ClInclude>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimGraphNode.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimGraphAsset.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimGraphInstance.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Atmosphere\HeightFogPixelShader.hlsl">

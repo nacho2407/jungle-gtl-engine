@@ -1,4 +1,4 @@
-﻿#include "Object.h"
+#include "Object.h"
 #include "EngineStatics.h"
 #include "Object/FName.h"
 #include "Object/Class.h"
@@ -8,14 +8,28 @@
 TArray<UObject*> GUObjectArray;
 
 UObject::UObject()
+	: UObject(true)
+{
+}
+
+UObject::UObject(bool bRegisterObject)
 {
 	UUID = EngineStatics::GenUUID();
-	InternalIndex = static_cast<uint32>(GUObjectArray.size());
-	GUObjectArray.push_back(this);
+	bRegisteredWithObjectArray = bRegisterObject;
+	if (bRegisteredWithObjectArray)
+	{
+		InternalIndex = static_cast<uint32>(GUObjectArray.size());
+		GUObjectArray.push_back(this);
+	}
 }
 
 UObject::~UObject()
 {
+	if (!bRegisteredWithObjectArray || GUObjectArray.empty())
+	{
+		return;
+	}
+
 	uint32 LastIndex = static_cast<uint32>(GUObjectArray.size() - 1);
 
 	if (InternalIndex != LastIndex)
@@ -46,6 +60,25 @@ UClass* UObject::StaticClass()
 	return &Class;
 }
 
+const char* UObject::GetClassName() const
+{
+	UClass* Class = GetClass();
+	return Class ? Class->GetName() : "UObject";
+}
+
+void UObjectManager::AssignObjectName(UObject* Obj, const UClass* Class)
+{
+	if (!Obj)
+	{
+		return;
+	}
+
+	const char* ClassName = Class ? Class->GetName() : "UObject";
+	uint32& Counter = NameCounters[ClassName];
+	FString Name = FString(ClassName) + "_" + std::to_string(Counter++);
+	Obj->SetFName(FName(Name));
+}
+
 bool UObject::IsA(const UClass* Class) const
 {
 	UClass* ThisClass = GetClass();
@@ -54,7 +87,7 @@ bool UObject::IsA(const UClass* Class) const
 
 UObject* NewObject(UClass* Class)
 {
-	if (!Class || Class->HasAnyClassFlags(CF_Abstract)) 
+	if (!Class || Class->HasAnyClassFlags(CF_Abstract))
 		return nullptr;
 
 	return Class->CreateObject();
@@ -64,7 +97,7 @@ UObject* UObject::Duplicate(const FDuplicateContext* Context)
 {
 	UObject* Dup = NewObject(GetClass());
 
-	if (!Dup) 
+	if (!Dup)
 		return nullptr;
 
 	Dup->CopyPropertiesFrom(this, Context);
@@ -94,6 +127,9 @@ void UObject::CopyPropertiesFrom(UObject* Src, const FDuplicateContext* Context)
 		if (!DstProperty || DstProperty->Type != SrcProperty->Type)
 			continue;
 
+		if (DstProperty->Type == EPropertyType::Struct && DstProperty->ScriptStruct != SrcProperty->ScriptStruct)
+			continue;
+
 		if (DstProperty->CopyValue(this, Src, Context))
 		{
 			PostEditChangeProperty({ DstProperty->Name, EPropertyChangeType::ValueSet });
@@ -112,7 +148,7 @@ void UObject::Serialize(FArchive& Ar)
 void UObject::SerializeProperties(FArchive& Ar)
 {
 	UClass* Class = GetClass();
-	if (!Class) 
+	if (!Class)
 		return;
 
 	TArray<const FProperty*> Properties;

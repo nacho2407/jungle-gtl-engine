@@ -253,7 +253,7 @@ FAnimTransitionCondition UAnimGraphInstance::BuildConditionFunction(const FAnimT
 {
     switch (Desc.Type)
     {
-    case EAnimTransitionConditionType::Always:
+    case EAnimTransitionConditionType::AlwaysTrue:
         return []() { return true; };
 
     case EAnimTransitionConditionType::BoolParameter:
@@ -301,7 +301,7 @@ FString UAnimGraphInstance::BuildStateMachineSignature(const FAnimStateMachineDe
         Signature += ",";
         Signature += std::to_string(Transition.BlendTime);
         Signature += ",";
-        Signature += TransitionConditionTypeToString(Transition.Condition.Type);
+        Signature += std::to_string(static_cast<int32>(Transition.Condition.Type));
         Signature += ",";
         Signature += Transition.Condition.ParameterName;
         Signature += ",";

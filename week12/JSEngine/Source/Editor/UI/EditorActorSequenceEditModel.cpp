@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorActorSequenceEditModel.h"
+#include "Editor/UI/EditorActorSequenceEditModel.h"
 
 #include "Asset/CurveFloatAsset.h"
 #include "Component/ActorComponent.h"
@@ -12,6 +12,7 @@
 #include "Object/Property.h"
 
 #include <algorithm>
+#include <cstring>
 #include <cmath>
 #include <limits>
 
@@ -162,6 +163,25 @@ namespace
 
 }
 
+
+namespace
+{
+	bool IsStructEditorHint(const FProperty& Property, const char* Hint)
+	{
+		if (Property.Type != EPropertyType::Struct || !Hint)
+		{
+			return false;
+		}
+		if (Property.EditorHint && std::strcmp(Property.EditorHint, Hint) == 0)
+		{
+			return true;
+		}
+		return Property.ScriptStruct
+			&& Property.ScriptStruct->GetName()
+			&& std::strcmp(Property.ScriptStruct->GetName(), Hint) == 0;
+	}
+}
+
 bool FEditorActorSequenceEditModel::IsSequenceComponentLive(UActorSequenceComponent* SequenceComp)
 {
 	if (!SequenceComp || !UObjectManager::Get().ContainsObject(SequenceComp))
@@ -248,37 +268,40 @@ FString FEditorActorSequenceEditModel::MakeComponentLabel(AActor* Owner, UActorC
 	return Label;
 }
 
-const char* FEditorActorSequenceEditModel::GetDefaultChannelName(EPropertyType Type)
+const char* FEditorActorSequenceEditModel::GetDefaultChannelName(const FProperty& Property)
 {
-	switch (Type)
+	if (IsStructEditorHint(Property, "FVector") || IsStructEditorHint(Property, "FVector4"))
 	{
-	case EPropertyType::Vec3:
-	case EPropertyType::Vec4:
 		return "X";
-	case EPropertyType::Color:
-		return "R";
-	case EPropertyType::Bool:
-	case EPropertyType::Int:
-	case EPropertyType::Float:
-	default:
-		return "Value";
 	}
+	if (IsStructEditorHint(Property, "FColor"))
+	{
+		return "R";
+	}
+	return "Value";
 }
 
-EActorSequenceTrackType FEditorActorSequenceEditModel::GetTrackType(EPropertyType Type)
+EActorSequenceTrackType FEditorActorSequenceEditModel::GetTrackType(const FProperty& Property)
 {
-	switch (Type)
+	if (IsStructEditorHint(Property, "FVector"))
+	{
+		return EActorSequenceTrackType::Vec3;
+	}
+	if (IsStructEditorHint(Property, "FVector4"))
+	{
+		return EActorSequenceTrackType::Vec4;
+	}
+	if (IsStructEditorHint(Property, "FColor"))
+	{
+		return EActorSequenceTrackType::Color;
+	}
+
+	switch (Property.Type)
 	{
 	case EPropertyType::Bool:
 		return EActorSequenceTrackType::Bool;
 	case EPropertyType::Int:
 		return EActorSequenceTrackType::Int;
-	case EPropertyType::Vec3:
-		return EActorSequenceTrackType::Vec3;
-	case EPropertyType::Vec4:
-		return EActorSequenceTrackType::Vec4;
-	case EPropertyType::Color:
-		return EActorSequenceTrackType::Color;
 	case EPropertyType::Float:
 	default:
 		return EActorSequenceTrackType::Float;
@@ -337,8 +360,8 @@ bool FEditorActorSequenceEditModel::AddTrackForProperty(
 	const FGuid TargetGuid = TargetComponent ? TargetComponent->GetPersistentGuid() : FGuid();
 	const FString TargetName = TargetObject->GetName();
 	const FString PropertyPath = Property.Name;
-	const EActorSequenceTrackType TrackType = GetTrackType(Property.Type);
-	const char* SafeChannelName = ChannelName ? ChannelName : GetDefaultChannelName(Property.Type);
+	const EActorSequenceTrackType TrackType = GetTrackType(Property);
+	const char* SafeChannelName = ChannelName ? ChannelName : GetDefaultChannelName(Property);
 
 	FActorSequenceBinding* Binding = nullptr;
 	for (FActorSequenceBinding& Existing : Sequence->Bindings)

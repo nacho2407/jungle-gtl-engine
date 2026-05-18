@@ -4,6 +4,7 @@
 #include "Core/CollisionTypes.h"
 #include "Geometry/Transform.h"
 #include "Math/Vector.h"
+#include "Object/Class.h"
 #include "Object/Object.h"
 #include "Runtime/Script/ScriptUtils.h"
 #include "ThirdParty/sol/sol.hpp"

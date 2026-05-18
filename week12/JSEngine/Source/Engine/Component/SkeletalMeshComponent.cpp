@@ -112,7 +112,7 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
 	}
 	else if (PropertyName && std::strcmp(PropertyName, "AnimGraphAssetPath") == 0)
 	{
-		if (!AnimGraphAssetPath.empty() && AnimationMode != EAnimationMode::AnimationGraph)
+		if (!AnimGraphAssetPath.IsNull() && AnimationMode != EAnimationMode::AnimationGraph)
 		{
 			SetAnimationMode(EAnimationMode::AnimationGraph);
 		}
@@ -229,13 +229,13 @@ void USkeletalMeshComponent::SetAnimGraph(UAnimGraphAsset* Graph)
 
 void USkeletalMeshComponent::SetAnimGraphAssetPath(const FString& Path)
 {
-	AnimGraphAssetPath = FPaths::Normalize(Path);
+	AnimGraphAssetPath.SetPath(FPaths::Normalize(Path));
 	SetAnimationMode(EAnimationMode::AnimationGraph);
 }
 
 void USkeletalMeshComponent::ApplyAnimGraphFromAssetPath()
 {
-	if (AnimGraphAssetPath.empty())
+	if (AnimGraphAssetPath.IsNull())
 	{
 		if (AnimationMode == EAnimationMode::AnimationGraph)
 		{
@@ -245,10 +245,11 @@ void USkeletalMeshComponent::ApplyAnimGraphFromAssetPath()
 		return;
 	}
 
-	UAnimGraphAsset* Graph = FResourceManager::Get().LoadAnimGraph(AnimGraphAssetPath);
+	const FString& GraphPath = AnimGraphAssetPath.GetPath();
+	UAnimGraphAsset* Graph = FResourceManager::Get().LoadAnimGraph(GraphPath);
 	if (!Graph)
 	{
-		UE_LOG_WARNING("[SkeletalMeshComponent] Failed to load anim graph: %s", AnimGraphAssetPath.c_str());
+		UE_LOG_WARNING("[SkeletalMeshComponent] Failed to load anim graph: %s", GraphPath.c_str());
 		return;
 	}
 

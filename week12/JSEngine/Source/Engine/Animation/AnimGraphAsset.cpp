@@ -1,10 +1,7 @@
 ﻿#include "AnimGraphAsset.h"
 void UAnimGraphAsset::Serialize(FArchive& Ar)
 {
-    UObject::Serialize(Ar);
-
-	Ar << "RootNodeId" << RootNodeId;
-	Ar << "Nodes" << Nodes;
+	UObject::Serialize(Ar);
 }
 
 const FAnimGraphNodeDesc* UAnimGraphAsset::FindNode(int32 NodeId) const

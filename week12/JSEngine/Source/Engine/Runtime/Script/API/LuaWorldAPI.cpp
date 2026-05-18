@@ -5,6 +5,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/World.h"
+#include "Object/Class.h"
 #include "Serialization/PrefabManager.h"
 
 namespace

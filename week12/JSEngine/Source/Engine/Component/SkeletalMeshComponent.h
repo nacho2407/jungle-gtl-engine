@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Animation/AnimGraphAsset.h"
 #include "Animation/AnimSequence.h"
 #include "Component/SkinnedMeshComponent.h"
 #include "Core/Delegates/Delegate.h"
@@ -9,7 +10,6 @@ struct FPoseContext;
 class UAnimInstance;
 class UAnimSequenceBase;
 class UAnimSingleNodeInstance;
-class UAnimGraphAsset;
 class UAnimationAsset;
 class UAnimationStateMachine;
 struct FAnimNotifyEvent;
@@ -64,7 +64,7 @@ public:
 	void SetAnimGraph(UAnimGraphAsset* Graph);
 	void SetAnimGraphAssetPath(const FString& Path);
 	void ApplyAnimGraphFromAssetPath();
-	const FString& GetAnimGraphAssetPath() const { return AnimGraphAssetPath; }
+	const FString& GetAnimGraphAssetPath() const { return AnimGraphAssetPath.GetPath(); }
 	void SetAnimGraphFloatParameter(const FString& Name, float Value);
 	void SetAnimGraphBoolParameter(const FString& Name, bool Value);
 	float GetAnimGraphFloatParameter(const FString& Name) const;
@@ -119,7 +119,7 @@ private:
 	EAnimationMode AnimationMode = EAnimationMode::AnimationBlueprint;
 
 	UPROPERTY(DisplayName = "Anim Graph")
-	FString AnimGraphAssetPath;
+	TSoftObjectPtr<UAnimGraphAsset> AnimGraphAssetPath;
 
 	UAnimationAsset* AnimationToPlay = nullptr;
 };
