@@ -22,10 +22,10 @@ private:
 	void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderComponentProperties(AActor* Actor, const TArray<AActor*>& SelectedActors);
 	void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
-	bool RenderPropertyWidget(TArray<struct FPropertyValue>& Props, int32& Index, bool bDispatchChange = true);
+	bool RenderPropertyWidget(TArray<struct FPropertyValue>& Props, int32& Index, bool bDispatchChange = true, const FString& PropertyPath = {});
 	bool RenderSoftObjectPropertyWidget(struct FPropertyValue& Prop);
 	bool RenderEnumPropertyWidget(struct FPropertyValue& Prop);
-	bool RenderStructPropertyWidget(struct FPropertyValue& Prop, bool bDispatchChange);
+	bool RenderStructPropertyWidget(struct FPropertyValue& Prop, bool bDispatchChange, const FString& PropertyPath);
 
 	void PropagatePropertyChange(const FString& PropName, const TArray<AActor*>& SelectedActors);
 
