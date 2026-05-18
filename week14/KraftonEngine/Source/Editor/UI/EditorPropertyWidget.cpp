@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorPropertyWidget.h"
+﻿#include "Editor/UI/EditorPropertyWidget.h"
 
 #include "Editor/EditorEngine.h"
 
@@ -16,6 +16,7 @@
 #include "Component/Light/LightComponentBase.h"
 #include "Component/DecalComponent.h"
 #include "Component/HeightFogComponent.h"
+#include "Asset/AssetRegistry.h"
 #include "Core/Property/NumericProperty.h"
 #include "Core/ClassTypes.h"
 #include "Math/FloatCurve.h"
@@ -104,6 +105,15 @@ namespace
 		return {};
 	}
 
+	UClass* GetAllowedClassMetadata(const FPropertyValue& Prop)
+	{
+		if (const FString* AllowedClass = FindPropertyMetadata(Prop, "allowedclass"))
+		{
+			return UClass::FindByName(AllowedClass->c_str());
+		}
+		return nullptr;
+	}
+
 	void DispatchPostEditChange(const FPropertyValue& Prop, EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet, int32 ArrayIndex = -1)
 	{
 		if (!Prop.Object)
@@ -167,6 +177,9 @@ namespace
 			return true;
 		case EPropertyType::ObjectRef:
 			*static_cast<UObject**>(DstPtr) = *static_cast<UObject**>(SrcPtr);
+			return true;
+		case EPropertyType::ClassRef:
+			*static_cast<UClass**>(DstPtr) = *static_cast<UClass**>(SrcPtr);
 			return true;
 		case EPropertyType::Name:
 			*static_cast<FName*>(DstPtr) = *static_cast<FName*>(SrcPtr);
@@ -235,6 +248,62 @@ namespace
 		}
 
 		return nullptr;
+	}
+
+	bool RenderClassPropertyWidget(FPropertyValue& Prop)
+	{
+		UClass** Value = static_cast<UClass**>(Prop.GetValuePtr());
+		if (!Value)
+		{
+			return false;
+		}
+
+		UClass* AllowedClass = GetAllowedClassMetadata(Prop);
+		UClass* CurrentClass = *Value;
+		FString Preview = CurrentClass ? CurrentClass->GetName() : FString("None");
+		bool bChanged = false;
+
+		if (ImGui::BeginCombo("##Value", Preview.c_str()))
+		{
+			const bool bSelectedNone = CurrentClass == nullptr;
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				*Value = nullptr;
+				bChanged = true;
+			}
+			if (bSelectedNone)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
+			TArray<UClass*>& Classes = UClass::GetAllClasses();
+			for (UClass* Candidate : Classes)
+			{
+				if (!Candidate)
+				{
+					continue;
+				}
+				if (AllowedClass && !Candidate->IsA(AllowedClass))
+				{
+					continue;
+				}
+
+				const bool bSelected = Candidate == CurrentClass;
+				if (ImGui::Selectable(Candidate->GetName(), bSelected))
+				{
+					*Value = Candidate;
+					bChanged = true;
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+
+		return bChanged;
 	}
 }
 
@@ -1241,6 +1310,43 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 		return bChanged;
 	}
 
+	if (AssetType == "UAnimSequence")
+	{
+		FString Preview = CurrentPath.empty() ? "None" : GetStemFromPath(CurrentPath);
+		if (CurrentPath == "None") Preview = "None";
+
+		if (ImGui::BeginCombo("##AnimSequence", Preview.c_str()))
+		{
+			bool bSelectedNone = (CurrentPath == "None" || CurrentPath.empty());
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				SetPath("None");
+				bChanged = true;
+			}
+			if (bSelectedNone)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
+			const TArray<FAssetListItem>& AnimFiles = FAssetRegistry::ListByTypeName("UAnimSequence");
+			for (const FAssetListItem& Item : AnimFiles)
+			{
+				bool bSelected = (CurrentPath == Item.FullPath);
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				{
+					SetPath(Item.FullPath);
+					bChanged = true;
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+		return bChanged;
+	}
+
 	FString Preview = CurrentPath.empty() ? "None" : GetStemFromPath(CurrentPath);
 	if (CurrentPath == "None") Preview = "None";
 
@@ -1375,7 +1481,7 @@ bool FEditorPropertyWidget::RenderEnumPropertyWidget(FPropertyValue& Prop)
 	return bChanged;
 }
 
-bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop)
+bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop, bool bDispatchChange)
 {
 	const FStructProperty* StructProperty = Prop.Property ? Prop.Property->AsStructProperty() : nullptr;
 	if (!StructProperty || !StructProperty->GetStructType() || !Prop.GetValuePtr())
@@ -1409,6 +1515,10 @@ bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop)
 			if (RenderPropertyWidget(ChildProps, ChildIdx, false))
 			{
 				bChanged = true;
+				if (bDispatchChange)
+				{
+					DispatchPostEditChange(ChildProp);
+				}
 			}
 			ImGui::PopID();
 		}
@@ -1435,7 +1545,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	{
 	case EPropertyType::Bool:
 	{
-		if (!Prop.Property || !Prop.Property->AsBoolProperty())
+		bool* Val = static_cast<bool*>(Prop.GetValuePtr());
+		if (!Val)
 		{
 			break;
 		}
@@ -1445,7 +1556,6 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.18f, 0.18f, 0.18f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.055f, 0.525f, 1.0f, 1.0f));
 
-		bool* Val = static_cast<bool*>(Prop.GetValuePtr());
 		bChanged = ImGui::Checkbox("##Value", Val);
 
 		ImGui::PopStyleColor(3);
@@ -1535,12 +1645,12 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	}
 	case EPropertyType::String:
 	{
-		if (!Prop.Property || !Prop.Property->AsStringProperty())
+		FString* Val = static_cast<FString*>(Prop.GetValuePtr());
+		if (!Val)
 		{
 			break;
 		}
 
-		FString* Val = static_cast<FString*>(Prop.GetValuePtr());
 		char Buf[256];
 		strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
 		if (ImGui::InputText("##Value", Buf, sizeof(Buf)))
@@ -1548,6 +1658,11 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 			*Val = Buf;
 			bChanged = true;
 		}
+		break;
+	}
+	case EPropertyType::ClassRef:
+	{
+		bChanged = RenderClassPropertyWidget(Prop);
 		break;
 	}
 	case EPropertyType::SceneComponentRef:
@@ -1955,7 +2070,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	}
 	case EPropertyType::Struct:
 	{
-		bChanged = RenderStructPropertyWidget(Prop);
+		bChanged = RenderStructPropertyWidget(Prop, bDispatchChange);
+		bDispatchChange = false;
 		break;
 	}
 	}

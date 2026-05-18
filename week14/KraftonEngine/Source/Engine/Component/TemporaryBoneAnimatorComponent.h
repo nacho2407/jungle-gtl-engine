@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/ActorComponent.h"
 #include "Math/Rotator.h"
@@ -45,7 +45,7 @@ private:
 	FRotator RotationFrequency = FRotator(1.0f, 1.0f, 1.0f);
 	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Rotation Phase", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FRotator RotationPhase = FRotator(0.0f, 0.0f, 0.0f);
-	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Rotation Offset", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
+	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Rotation Offstet", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FRotator RotationOffset = FRotator(0.0f, 0.0f, 0.0f);
 	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Enabled")
 	bool bEnabled = true;

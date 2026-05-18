@@ -36,6 +36,7 @@ public:
 	~ULuaAnimInstance() override;
 
 	// Editor 노출 — Asset/Script/Anim 하위 .lua 파일 (FAssetRegistry "LuaAnimScript" 콤보).
+	UPROPERTY(Edit, Save, Category="Animation|Lua", DisplayName="Script File", AssetType="LuaAnimScript")
 	FString ScriptFile;
 
 	// UAnimInstance:
@@ -44,7 +45,6 @@ public:
 	void EvaluateAnimation(FPoseContext& Output) override;
 	void HandleAnimNotify(const FAnimNotifyEvent& Notify) override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 	void Serialize(FArchive& Ar) override;
 
