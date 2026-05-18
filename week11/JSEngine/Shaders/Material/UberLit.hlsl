@@ -108,7 +108,7 @@ VSInput Skinning(VSInput input)
 }
 #endif
 
-PSInput mainVS(VSInput input)
+PSInput VS(VSInput input)
 {
     PSInput output;
 

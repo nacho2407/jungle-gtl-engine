@@ -49,8 +49,8 @@ namespace
         const FVertexFactoryDesc& VertexFactoryDesc = FVertexFactoryRegistry::Get(Cmd.VertexFactoryType);
 
         FShaderStageKey VSKey;
-        VSKey.FilePath = VertexFactoryDesc.VertexShaderPath;
-        VSKey.EntryPoint = VertexFactoryDesc.BasePassVSEntry;
+        VSKey.FilePath = Cmd.Material->GetPixelShaderPath();
+        VSKey.EntryPoint = "VS";
         VSKey.Target = "vs_5_0";
         VSKey.PermutationKey = PermutationKey;
 

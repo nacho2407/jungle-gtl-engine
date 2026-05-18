@@ -1,4 +1,4 @@
-#include "OpaqueRenderPass.h"
+﻿#include "OpaqueRenderPass.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
@@ -74,7 +74,8 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
        Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);  
        Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
 
-        if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh && RenderBus->GetSkinningMode() == ESkinningMode::GPU)
+        if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh &&
+            RenderBus->GetSkinningMode() == ESkinningMode::GPU)
         {
             Context->RenderResources->SkinningBuffer.Update(Context->DeviceContext, &Cmd.Constants.Skinning, sizeof(FSkinningConstants));
             ID3D11Buffer* cb5 = Context->RenderResources->SkinningBuffer.GetBuffer();
@@ -185,15 +186,13 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 		   if (Cmd.Material->HasEmissiveMap()) PermutationKey |= (uint32)EShaderFeature::HasEmissiveMap;
 		   if (Cmd.Material->HasAlphaMask()) PermutationKey |= (uint32)EShaderFeature::HasAlphaMask;
 
-           // VertexFactory는 Mesh 타입에 맞는 VS를 고르고, Material은 표면용 PS만 제공합니다.
-           // 여기서 두 정보를 합쳐 실제 Draw에 사용할 FShaderProgram을 만듭니다.
            const FVertexFactoryDesc& VertexFactoryDesc = FVertexFactoryRegistry::Get(Cmd.VertexFactoryType);
            const FString& PixelShaderPath = Cmd.Material->GetPixelShaderPath();
            const FString& PixelEntryPoint = Cmd.Material->GetPixelShaderEntryPoint();
 
            FShaderStageKey VSKey;
-           VSKey.FilePath = VertexFactoryDesc.VertexShaderPath;
-           VSKey.EntryPoint = VertexFactoryDesc.BasePassVSEntry;
+           VSKey.FilePath = PixelShaderPath;
+           VSKey.EntryPoint = "VS";
            VSKey.Target = "vs_5_0";
            VSKey.PermutationKey = PermutationKey;
 

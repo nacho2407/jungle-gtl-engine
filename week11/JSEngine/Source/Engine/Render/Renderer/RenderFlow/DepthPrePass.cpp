@@ -1,31 +1,36 @@
-#include "DepthPrePass.h"
+﻿#include "DepthPrePass.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
+#include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/VertexFactoryTypes.h"
 #include "Core/ResourceManager.h"
 
 namespace
 {
-	FShaderProgram* GetDepthPrepassProgram(EVertexFactoryType VertexFactoryType)
+	FShaderProgram* GetDepthPrepassProgram(EVertexFactoryType VertexFactoryType, uint32 PermutationKey)
 	{
 		const FVertexFactoryDesc& VertexFactory = FVertexFactoryRegistry::Get(VertexFactoryType);
+		const FVertexLayoutDesc& VertexLayout =
+			VertexFactoryType == EVertexFactoryType::SkeletalMesh
+				? VertexFactory.VertexLayout
+				: VertexFactory.PositionOnlyLayout;
 
 		FShaderStageKey VSKey;
-		VSKey.FilePath = VertexFactory.DepthPassVSPath.empty() ? FShaderPaths::DepthPrepass : VertexFactory.DepthPassVSPath;
-		VSKey.EntryPoint = VertexFactory.DepthPassVSEntry;
+		VSKey.FilePath = FShaderPaths::DepthPrepass;
+		VSKey.EntryPoint = "VS";
+		VSKey.Target = "vs_5_0";
+		VSKey.PermutationKey = PermutationKey;
 
 		FShaderStageKey PSKey;
 		PSKey.FilePath = FShaderPaths::DepthPrepass;
-		PSKey.EntryPoint = "DepthPrepassPS";
+		PSKey.EntryPoint = "PS";
+		PSKey.Target = "ps_5_0";
+		PSKey.PermutationKey = PermutationKey;
 
-		return FResourceManager::Get().GetOrCreateShaderProgram(
-			VSKey,
-			PSKey,
-			nullptr,
-			nullptr,
-			&VertexFactory.PositionOnlyLayout);
+		TArray<D3D_SHADER_MACRO> Macros = FShaderHelper::BuildUberLitMacros(PermutationKey);
+        return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey, Macros.data(), Macros.data(), &VertexLayout);
 	}
 }
 
@@ -87,7 +92,21 @@ bool FDepthPrePass::DrawCommand(const FRenderPassContext* Context)
 		uint32 Offset = 0;
 		Context->DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
 
-		FShaderProgram* Program = GetDepthPrepassProgram(Cmd.VertexFactoryType);
+		if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh &&
+			RenderBus->GetSkinningMode() == ESkinningMode::GPU)
+		{
+			Context->RenderResources->SkinningBuffer.Update(Context->DeviceContext, &Cmd.Constants.Skinning, sizeof(FSkinningConstants));
+			ID3D11Buffer* cb5 = Context->RenderResources->SkinningBuffer.GetBuffer();
+			Context->DeviceContext->VSSetConstantBuffers(5, 1, &cb5);
+		}
+
+		uint32 PermutationKey = 0;
+		if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh)
+		{
+			PermutationKey |= (uint32)EShaderFeature::GpuSkinning;
+		}
+
+		FShaderProgram* Program = GetDepthPrepassProgram(Cmd.VertexFactoryType, PermutationKey);
 		if (!Program)
 		{
 			continue;
