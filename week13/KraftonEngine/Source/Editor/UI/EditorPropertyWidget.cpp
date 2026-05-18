@@ -118,7 +118,31 @@ namespace
 		return nullptr;
 	}
 
-	void DispatchPostEditChange(const FPropertyValue& Prop, EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet, int32 ArrayIndex = -1)
+	FString MakePropertyPath(const FString& ParentPath, const char* PropertyName)
+	{
+		if (!PropertyName || PropertyName[0] == '\0')
+		{
+			return ParentPath;
+		}
+		if (ParentPath.empty())
+		{
+			return PropertyName;
+		}
+		return ParentPath + "." + PropertyName;
+	}
+
+	FString MakeArrayElementPath(const FString& ArrayPath, int32 ArrayIndex)
+	{
+		return ArrayPath + "[" + std::to_string(ArrayIndex) + "]";
+	}
+
+	void DispatchPostEditChange(
+		const FPropertyValue& Prop,
+		EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet,
+		int32 ArrayIndex = -1,
+		const FString& PropertyPath = {},
+		const char* OverridePropertyName = nullptr,
+		const char* OverrideDisplayName = nullptr)
 	{
 		if (!Prop.Object)
 		{
@@ -128,8 +152,9 @@ namespace
 		FPropertyChangedEvent Event;
 		Event.Object = Prop.Object;
 		Event.Property = Prop.Property;
-		Event.PropertyName = Prop.GetName();
-		Event.DisplayName = GetPropertyDisplayName(Prop);
+		Event.PropertyName = OverridePropertyName ? OverridePropertyName : Prop.GetName();
+		Event.DisplayName = OverrideDisplayName ? OverrideDisplayName : GetPropertyDisplayName(Prop);
+		Event.PropertyPath = PropertyPath.empty() ? Prop.GetName() : PropertyPath;
 		Event.Type = Prop.GetType();
 		Event.ChangeType = ChangeType;
 		Event.ArrayIndex = ArrayIndex;
@@ -1552,7 +1577,7 @@ bool FEditorPropertyWidget::RenderEnumPropertyWidget(FPropertyValue& Prop)
 	return bChanged;
 }
 
-bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop, bool bDispatchChange)
+bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop, bool bDispatchChange, const FString& PropertyPath)
 {
 	const FStructProperty* StructProperty = Prop.Property ? Prop.Property->AsStructProperty() : nullptr;
 	if (!StructProperty || !StructProperty->GetStructType() || !Prop.GetValuePtr())
@@ -1582,14 +1607,11 @@ bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop, boo
 			ImGui::SameLine(120.0f);
 			ImGui::SetNextItemWidth(-1);
 
+			const FString ChildPath = MakePropertyPath(PropertyPath, ChildProp.GetName());
 			int32 ChildIdx = ci;
-			if (RenderPropertyWidget(ChildProps, ChildIdx, false))
+			if (RenderPropertyWidget(ChildProps, ChildIdx, bDispatchChange, ChildPath))
 			{
 				bChanged = true;
-				if (bDispatchChange)
-				{
-					DispatchPostEditChange(ChildProp);
-				}
 			}
 			ImGui::PopID();
 		}
@@ -1601,11 +1623,12 @@ bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop, boo
 	return bChanged;
 }
 
-bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, int32& Index, bool bDispatchChange)
+bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, int32& Index, bool bDispatchChange, const FString& PropertyPath)
 {
 	ImGui::PushID(Index);
 	FPropertyValue& Prop = Props[Index];
 	bool bChanged = false;
+	const FString EffectivePropertyPath = PropertyPath.empty() ? FString(Prop.GetName()) : PropertyPath;
 	const bool bReadOnly = Prop.Property && (Prop.Property->Flags & PF_ReadOnly) != 0;
 	if (bReadOnly)
 	{
@@ -2069,6 +2092,11 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 					Slot.SetPath("None");
 					SlotPath = "None";
 					bChanged = true;
+					if (bDispatchChange)
+					{
+						const FString ElementName = "Element " + std::to_string(ElemIdx);
+						DispatchPostEditChange(Prop, EPropertyChangeType::ValueSet, ElemIdx, MakeArrayElementPath(EffectivePropertyPath, ElemIdx), ElementName.c_str(), ElementName.c_str());
+					}
 				}
 				if (bSelectedNone) ImGui::SetItemDefaultFocus();
 
@@ -2081,6 +2109,11 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 						Slot.SetPath(Item.FullPath);
 						SlotPath = Item.FullPath;
 						bChanged = true;
+						if (bDispatchChange)
+						{
+							const FString ElementName = "Element " + std::to_string(ElemIdx);
+							DispatchPostEditChange(Prop, EPropertyChangeType::ValueSet, ElemIdx, MakeArrayElementPath(EffectivePropertyPath, ElemIdx), ElementName.c_str(), ElementName.c_str());
+						}
 					}
 					if (bSelected) ImGui::SetItemDefaultFocus();
 				}
@@ -2096,12 +2129,18 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 						ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
 					));
 					bChanged = true;
+					if (bDispatchChange)
+					{
+						const FString ElementName = "Element " + std::to_string(ElemIdx);
+						DispatchPostEditChange(Prop, EPropertyChangeType::ValueSet, ElemIdx, MakeArrayElementPath(EffectivePropertyPath, ElemIdx), ElementName.c_str(), ElementName.c_str());
+					}
 				}
 				ImGui::EndDragDropTarget();
 			}
 
 			ImGui::PopID();
 		}
+		bDispatchChange = false;
 		break;
 	}
 	case EPropertyType::Name:
@@ -2161,7 +2200,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	}
 	case EPropertyType::Struct:
 	{
-		bChanged = RenderStructPropertyWidget(Prop, bDispatchChange);
+		bChanged = RenderStructPropertyWidget(Prop, bDispatchChange, EffectivePropertyPath);
 		bDispatchChange = false;
 		break;
 	}
@@ -2175,7 +2214,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 
 	if (bDispatchChange && bChanged)
 	{
-		DispatchPostEditChange(Prop);
+		DispatchPostEditChange(Prop, EPropertyChangeType::ValueSet, -1, EffectivePropertyPath);
 	}
 
 	ImGui::PopID();

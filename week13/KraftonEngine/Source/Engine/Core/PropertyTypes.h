@@ -135,6 +135,7 @@ struct FPropertyChangedEvent
 	const FProperty* Property = nullptr;
 	const char* PropertyName = nullptr;
 	const char* DisplayName = nullptr;
+	FString PropertyPath;
 	EPropertyType Type = EPropertyType::Bool;
 	EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet;
 	int32 ArrayIndex = -1;

@@ -694,6 +694,7 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 		Event.Property = Property;
 		Event.PropertyName = Property->Name;
 		Event.DisplayName = Property->DisplayName ? Property->DisplayName : Property->Name;
+		Event.PropertyPath = Property->Name;
 		Event.Type = Property->GetType();
 		Event.ChangeType = EPropertyChangeType::Load;
 		Obj->PostEditChangeProperty(Event);
