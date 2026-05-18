@@ -72,6 +72,8 @@ private:
     void RenderAnimSequenceToolbar(UAnimSequence* Sequence);
     void RenderAnimSequenceTimeline(UAnimSequence* Sequence);
     void RenderAnimSequenceDetails(UAnimSequence* Sequence, USkeletalMesh* PreviewMesh);
+    void DrawAddAnimNotifyPopup(UAnimSequence* Sequence);
+    bool SaveAnimSequenceAsset(UAnimSequence* Sequence);
     void RenderAnimSequenceList(UAnimSequence* Sequence);
     void SyncPreviewMeshPathBuffer();
     void LoadAnimSequenceToolbarIcons();
@@ -103,7 +105,9 @@ private:
     FString PreviewMeshPathBufferSource;
     char PreviewMeshPathBuffer[1024] = {};
     int32 SelectedAnimTrackIndex = -1;
+    int32 SelectedAnimNotifyIndex = -1;
     UAnimSequence* CachedAnimSequence = nullptr;
+    char AnimNotifyNameBuffer[128] = "AnimNotify";
 
     bool bAnimSequenceToolbarIconsLoadAttempted = false;
     TComPtr<ID3D11ShaderResourceView> AnimSequencePlayIcon;

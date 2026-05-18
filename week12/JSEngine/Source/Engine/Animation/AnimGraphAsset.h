@@ -19,4 +19,5 @@ public:
 
 	const FAnimGraphNodeDesc* FindNode(int32 NodeId) const;
 	FAnimGraphNodeDesc* FindNode(int32 NodeId);
+	bool ValidateAndRepairGraph();
 };

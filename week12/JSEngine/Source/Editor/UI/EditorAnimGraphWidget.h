@@ -27,16 +27,21 @@ private:
 	void RenderDetails();
 	void RenderOutputPoseDetails(FAnimGraphNodeDesc& Node);
 	void RenderSequencePlayerDetails(FAnimGraphNodeDesc& Node);
+	void RenderStateMachineDetails(FAnimGraphNodeDesc& Node);
+	bool RenderAnimationPathCombo(const char* Label, FString& Path);
 
 	FAnimGraphNodeDesc* FindSelectedNode();
 	const FAnimGraphNodeDesc* FindSelectedNode() const;
 	FAnimGraphNodeDesc* FindFirstOutputPoseNode();
 	const FAnimGraphNodeDesc* FindFirstOutputPoseNode() const;
 	int32 GenerateNodeId() const;
+	int32 GenerateStateId(const FAnimStateMachineDesc& StateMachine) const;
+	FString GetStateDisplayName(const FAnimStateMachineDesc& StateMachine, int32 StateId) const;
 	bool NormalizeGraphNodeIds();
 	void NormalizeRootNode();
 	void AddSequencePlayerNode();
 	void AddOutputPoseNode();
+	void AddStateMachineNode();
 	void DeleteSelectedNode();
 private:
 	FString EditingPath;

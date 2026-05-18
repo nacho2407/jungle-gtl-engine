@@ -435,6 +435,12 @@ void FScriptManager::BindSkeletalMeshTypes()
     LUA_METHOD(GetAnimationStateMachine, GetAnimationStateMachine);
     LUA_METHOD(SetAnimationStateMachine, SetAnimationStateMachine);
     LUA_METHOD(SetAnimStateByName, SetAnimStateByName);
+    LUA_METHOD(SetAnimGraphAssetPath, SetAnimGraphAssetPath);
+    LUA_METHOD(GetAnimGraphAssetPath, GetAnimGraphAssetPath);
+    LUA_METHOD(SetAnimGraphFloat, SetAnimGraphFloatParameter);
+    LUA_METHOD(SetAnimGraphBool, SetAnimGraphBoolParameter);
+    LUA_METHOD(GetAnimGraphFloat, GetAnimGraphFloatParameter);
+    LUA_METHOD(GetAnimGraphBool, GetAnimGraphBoolParameter);
     LUA_END_TYPE();
 }
 

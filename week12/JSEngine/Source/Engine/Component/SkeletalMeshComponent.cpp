@@ -216,6 +216,11 @@ void USkeletalMeshComponent::SetAnimGraph(UAnimGraphAsset* Graph)
 {
 	if (!Graph)
 	{
+		if (AnimationMode == EAnimationMode::AnimationGraph)
+		{
+			AnimInstance = nullptr;
+			ResetToBindPose();
+		}
 		return;
 	}
 
@@ -227,10 +232,32 @@ void USkeletalMeshComponent::SetAnimGraph(UAnimGraphAsset* Graph)
 	AnimationMode = EAnimationMode::AnimationGraph;
 }
 
+void USkeletalMeshComponent::SetAnimGraphAssetPath(const FString& Path)
+{
+	AnimGraphAssetPath.SetPath(FPaths::Normalize(Path));
+	SetAnimationMode(EAnimationMode::AnimationGraph);
+}
+
 void USkeletalMeshComponent::ApplyAnimGraphFromAssetPath()
 {
 	if (AnimGraphAssetPath.IsNull())
 	{
+		if (AnimationMode == EAnimationMode::AnimationGraph)
+		{
+			UE_LOG_WARNING("[SkeletalMeshComponent] AnimationGraph mode selected, but AnimGraphAssetPath is empty.");
+			AnimInstance = nullptr;
+			ResetToBindPose();
+		}
+		return;
+	}
+
+	const FString GraphPath = FPaths::Normalize(AnimGraphAssetPath.GetPath());
+	AnimGraphAssetPath.SetPath(GraphPath);
+
+	UAnimGraphAsset* Graph = FResourceManager::Get().LoadAnimGraph(GraphPath);
+	if (!Graph)
+	{
+		UE_LOG_WARNING("[SkeletalMeshComponent] Failed to load anim graph: %s", GraphPath.c_str());
 		if (AnimationMode == EAnimationMode::AnimationGraph)
 		{
 			AnimInstance = nullptr;
@@ -239,15 +266,43 @@ void USkeletalMeshComponent::ApplyAnimGraphFromAssetPath()
 		return;
 	}
 
-	const FString& GraphPath = AnimGraphAssetPath.GetPath();
-	UAnimGraphAsset* Graph = FResourceManager::Get().LoadAnimGraph(GraphPath);
-	if (!Graph)
+	SetAnimGraph(Graph);
+}
+
+void USkeletalMeshComponent::SetAnimGraphFloatParameter(const FString& Name, float Value)
+{
+	if (UAnimGraphInstance* GraphInstance = Cast<UAnimGraphInstance>(AnimInstance))
 	{
-		UE_LOG_WARNING("[SkeletalMeshComponent] Failed to load anim graph: %s", GraphPath.c_str());
-		return;
+		GraphInstance->SetFloatParameter(Name, Value);
+	}
+}
+
+void USkeletalMeshComponent::SetAnimGraphBoolParameter(const FString& Name, bool Value)
+{
+	if (UAnimGraphInstance* GraphInstance = Cast<UAnimGraphInstance>(AnimInstance))
+	{
+		GraphInstance->SetBoolParameter(Name, Value);
+	}
+}
+
+float USkeletalMeshComponent::GetAnimGraphFloatParameter(const FString& Name) const
+{
+	if (const UAnimGraphInstance* GraphInstance = Cast<UAnimGraphInstance>(AnimInstance))
+	{
+		return GraphInstance->GetFloatParameter(Name);
 	}
 
-	SetAnimGraph(Graph);
+	return 0.0f;
+}
+
+bool USkeletalMeshComponent::GetAnimGraphBoolParameter(const FString& Name) const
+{
+	if (const UAnimGraphInstance* GraphInstance = Cast<UAnimGraphInstance>(AnimInstance))
+	{
+		return GraphInstance->GetBoolParameter(Name);
+	}
+
+	return false;
 }
 
 void USkeletalMeshComponent::ResetToBindPose()

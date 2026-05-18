@@ -1,10 +1,20 @@
 ﻿#pragma once
+#include "AnimationStateMachine.h"
 #include "Core/CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimGraphAsset.h"
+#include "Animation/AnimationStateMachine.h"
+
+#include <unordered_set>
 
 class UAnimSequence;
 class USkeletalMesh;
+
+struct FAnimGraphStateMachineCache
+{
+	UAnimationStateMachine* RuntimeMachine = nullptr;
+	FString Signature;
+};
 
 struct FAnimGraphSequenceCache
 {
@@ -33,18 +43,27 @@ public:
 private:
 	bool EvaluateNode(int32 NodeId, FPoseContext& OutPoseContext);
 	bool EvaluateSequencePlayer(const FAnimGraphNodeDesc& Node, FPoseContext& OutPoseContext);
+	bool LogNodeWarningOnce(int32 NodeId, const FString& Message);
 
 	FAnimGraphSequenceCache& GetOrCreateSequenceCache(int32 NodeId, const FString& AnimationPath);
 	void BuildBoneMapping(FAnimGraphSequenceCache& Cache);
+    
+    bool EvaluateStateMachine(const FAnimGraphNodeDesc& Node, FPoseContext& OutPoseContext);
 
-	// MVP 이후 확장될 StateMachine 평가용
-	// bool EvaluateStateMachine(const FAnimGraphNodeDesc& Node, FPoseContext& OutPoseContext);
+	FAnimGraphStateMachineCache& GetOrCreateStateMachineCache(const FAnimGraphNodeDesc& Node);
+	UAnimationStateMachine* BuildStateMachineRuntime(const FAnimStateMachineDesc& Desc);
+	FAnimTransitionCondition BuildConditionFunction(const FAnimTransitionConditionDesc& Desc);
+	FString BuildStateMachineSignature(const FAnimStateMachineDesc& Desc) const;
 
 private:
 	UAnimGraphAsset* GraphAsset = nullptr;
 
 	TMap<int32, FAnimGraphSequenceCache> SequenceCacheMap;
-
+	TMap<int32, FAnimGraphStateMachineCache> StateMachineCacheMap;
+	
 	TMap<FString, float> FloatParameters;
 	TMap<FString, bool> BoolParameters;
+
+	bool bLoggedMissingGraph = false;
+	std::unordered_set<int32> LoggedNodeWarnings;
 };

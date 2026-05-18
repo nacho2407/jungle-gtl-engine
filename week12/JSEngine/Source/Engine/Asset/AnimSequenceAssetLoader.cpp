@@ -837,6 +837,48 @@ namespace
 		}
 	}
 
+	void ApplyAnimSequenceDescriptorNotifies(JSON& Root, UAnimSequenceBase* Sequence)
+	{
+		if (!Sequence)
+		{
+			return;
+		}
+
+		Sequence->ClearNotifies();
+		if (!Root.hasKey("Notifies") || Root["Notifies"].JSONType() != JSON::Class::Array)
+		{
+			return;
+		}
+
+		JSON& NotifiesJson = Root["Notifies"];
+		for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(NotifiesJson.length()); ++NotifyIndex)
+		{
+			if (NotifiesJson[NotifyIndex].JSONType() != JSON::Class::Object)
+			{
+				continue;
+			}
+
+			JSON& NotifyJson = NotifiesJson[NotifyIndex];
+			FString NotifyName = GetStringOrDefault(NotifyJson, "NotifyName");
+			if (NotifyName.empty())
+			{
+				NotifyName = GetStringOrDefault(NotifyJson, "Name");
+			}
+			if (NotifyName.empty())
+			{
+				NotifyName = "AnimNotify";
+			}
+
+			float TriggerTime = GetFloatOrDefault(NotifyJson, "TriggerTime", 0.0f);
+			if (NotifyJson.hasKey("Time"))
+			{
+				TriggerTime = GetFloatOrDefault(NotifyJson, "Time", TriggerTime);
+			}
+
+			Sequence->AddNotify(TriggerTime, FName(NotifyName));
+		}
+	}
+
 	JSON MakeVector3Json(const FVector3f& Value)
 	{
 		JSON Result = JSON::Make(JSON::Class::Array);
@@ -920,6 +962,7 @@ UAnimSequence* FAnimSequenceAssetLoader::Load(const FString& Path) const
 	{
 		ApplyAnimSequenceDescriptorMetadata(Root, NormalizedPath, BinarySequence);
 		ApplyAnimSequenceDescriptorDataModel(Root, BinarySequence->GetDataModel());
+		ApplyAnimSequenceDescriptorNotifies(Root, BinarySequence);
 		return BinarySequence;
 	}
 
@@ -928,6 +971,7 @@ UAnimSequence* FAnimSequenceAssetLoader::Load(const FString& Path) const
 	Sequence->SetDataModel(DataModel);
 	ApplyAnimSequenceDescriptorMetadata(Root, NormalizedPath, Sequence);
 	ApplyAnimSequenceDescriptorDataModel(Root, DataModel);
+	ApplyAnimSequenceDescriptorNotifies(Root, Sequence);
 
 	TArray<FBoneAnimationTrack>& Tracks = DataModel->GetMutableBoneAnimationTracks();
 	Tracks.clear();
@@ -1076,7 +1120,18 @@ bool FAnimSequenceAssetLoader::Save(const FString& Path, const UAnimSequence* Se
 	SequenceJson["NumberOfFrames"] = DataModel->GetNumberOfFrames();
 	SequenceJson["NumberOfKeys"] = DataModel->GetNumberOfKeys();
 	SequenceJson["TrackCount"] = static_cast<int32>(DataModel->GetBoneAnimationTracks().size());
+	SequenceJson["NotifyCount"] = static_cast<int32>(Sequence->GetNotifies().size());
 	Root["Sequence"] = SequenceJson;
+
+	JSON NotifiesJson = JSON::Make(JSON::Class::Array);
+	for (const FAnimNotifyEvent& Notify : Sequence->GetNotifies())
+	{
+		JSON NotifyJson = JSON::Make(JSON::Class::Object);
+		NotifyJson["NotifyName"] = Notify.NotifyName.ToString();
+		NotifyJson["TriggerTime"] = Notify.TriggerTime;
+		NotifiesJson.append(NotifyJson);
+	}
+	Root["Notifies"] = NotifiesJson;
 
 	JSON DerivedData = JSON::Make(JSON::Class::Object);
 	DerivedData["Type"] = "SampledTrackBinaryCache";
