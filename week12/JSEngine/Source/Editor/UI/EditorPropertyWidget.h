@@ -56,6 +56,7 @@ private:
 	void RenderDebugDetailsItem(const FDebugDetailsItem& Item);
 	void RenderPropertyWidget(const FPropertyHandle& Handle);
 	bool RenderSceneComponentRefWidget(const FPropertyHandle& Handle, AActor* Owner);
+	void RenderSkeletalStateMachinePreview(class USkeletalMeshComponent* Comp);
 	void RenderSkeletalBonePoseDebug(class USkeletalMeshComponent* Comp);
 	void RenderInterpControlPoints(class UInterpToMovementComponent* Comp);
 	void RenderMaterialPreviewTooltip(UMaterialInterface* Material);
@@ -105,4 +106,6 @@ private:
 	 * @brief 같은 USkeletalMeshComponent 안에서도 bone마다 UI 편집 상태를 따로 기억하기 위한 캐시
 	 */
 	TMap<uint32, TMap<int32, FSkeletalBonePoseEditState>> SkeletalBonePoseEditStatesByComponent;
+
+	TMap<uint32, float> StateMachinePreviewBlendTimeByComponent;
 };

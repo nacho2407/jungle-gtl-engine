@@ -44,6 +44,13 @@ struct FAnimTransition
     FAnimTransitionCondition Condition;
 };
 
+struct FAnimTransitionDebugInfo
+{
+    FString FromState;
+    FString ToState;
+    float BlendTime = 0.0f;
+};
+
 // 특정 상태에 따른 name, PoseSource, 전이 목록 보유.
 struct FAnimStateNode
 {
@@ -82,6 +89,12 @@ public:
     FString GetNextStateName() const;
     bool IsBlending() const { return bBlending; }
 
+    TArray<FString> GetStateNames() const;
+    TArray<FAnimTransitionDebugInfo> GetTransitionDebugInfos() const;
+    float GetBlendAlpha() const;
+    float GetBlendDuration() const { return BlendDuration; }
+    float GetBlendElapsed() const { return BlendElapsed; }
+
 private:
     TMap<FName, FAnimStateNode, FName::Hash> States;
 
@@ -91,6 +104,8 @@ private:
     bool bBlending = false;
     float BlendElapsed = 0.0f;
     float BlendDuration = 0.0f;
+
+    TArray<FName> StateOrder;
 
     USkeletalMeshComponent* OwnerComponent = nullptr;
     APawn* OwnerPawn = nullptr;

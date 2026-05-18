@@ -5,6 +5,7 @@
 #include "Component/SkeletalMeshComponent.h"
 
 #include <cmath>
+#include <algorithm>
 
 #include "Core/ResourceManager.h"
 
@@ -75,10 +76,17 @@ void UAnimationStateMachine::Initialize(USkeletalMeshComponent* Owner)
 
 void UAnimationStateMachine::AddState(FName StateName, UAnimSequenceBase* Sequence)
 {
+    const bool bIsNewState = !States.contains(StateName);
+
 	FAnimStateNode NewState;
 	NewState.Name = StateName;
     NewState.PoseSource = std::make_shared<FAnimSequencePoseSource>(OwnerComponent, Sequence);
 	States[StateName] = NewState;
+
+    if (bIsNewState)
+    {
+        StateOrder.push_back(StateName);
+    }
 }
 
 void UAnimationStateMachine::AddTransition(FName FromState, FName ToState, float BlendTime, FAnimTransitionCondition Condition)
@@ -262,4 +270,63 @@ FString UAnimationStateMachine::GetCurrentStateName() const
 FString UAnimationStateMachine::GetNextStateName() const
 {
     return NextState.ToString();
+}
+
+TArray<FString> UAnimationStateMachine::GetStateNames() const
+{
+    TArray<FString> Result;
+    Result.reserve(StateOrder.size());
+
+    for (const FName& StateName : StateOrder)
+    {
+        if (States.contains(StateName))
+        {
+            Result.push_back(StateName.ToString());
+        }
+    }
+
+    return Result;
+}
+
+TArray<FAnimTransitionDebugInfo> UAnimationStateMachine::GetTransitionDebugInfos() const
+{
+    TArray<FAnimTransitionDebugInfo> Result;
+
+    for (const FName& FromStateName : StateOrder)
+    {
+        auto It = States.find(FromStateName);
+        if (It == States.end())
+        {
+            continue;
+        }
+
+        const FString FromState = FromStateName.ToString();
+        const FAnimStateNode& State = It->second;
+
+        for (const FAnimTransition& Transition : State.Transitions)
+        {
+            FAnimTransitionDebugInfo Info;
+            Info.FromState = FromState;
+            Info.ToState = Transition.ToState.ToString();
+            Info.BlendTime = Transition.BlendTime;
+            Result.push_back(Info);
+        }
+    }
+
+    return Result;
+}
+
+float UAnimationStateMachine::GetBlendAlpha() const
+{
+    if (!bBlending)
+    {
+        return 0.0f;
+    }
+
+    if (BlendDuration <= 0.0f)
+    {
+        return 1.0f;
+    }
+
+    return std::clamp(BlendElapsed / BlendDuration, 0.0f, 1.0f);
 }
