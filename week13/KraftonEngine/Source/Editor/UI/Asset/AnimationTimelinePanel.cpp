@@ -5,8 +5,6 @@
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimDataModel.h"
 #include "Animation/AnimNotify_LogMessage.h"
-#include "Animation/AnimationManager.h"
-#include "Animation/BoneAnimationTrack.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Object/Object.h"
 
@@ -484,52 +482,6 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 	ImGui::SameLine(0.0f, 6.0f);
 	ImGui::AlignTextToFramePadding();
 	ImGui::Text("/ %d", EndFrame);
-
-	// ── Force Root Lock 옵션 (transport 우측) ──
-	// 체크박스 + 본 선택 콤보. 변경 즉시 .uasset 에 재 저장 (기존 SourcePath 보존).
-	{
-		ImGui::SameLine(0.0f, 24.0f);
-		ImGui::AlignTextToFramePadding();
-		bool bLock = Seq->GetForceRootLock();
-		if (ImGui::Checkbox("Force Root Lock", &bLock))
-		{
-			Seq->SetForceRootLock(bLock);
-			FAnimationManager::Get().SaveAnimationPreservingMetadata(Seq);
-		}
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip("Root motion 본의 horizontal (X/Y) translation 을 잠가\nin-place 재생. Z (vertical bobbing) 는 유지.");
-		}
-
-		if (bLock)
-		{
-			ImGui::SameLine(0.0f, 8.0f);
-			ImGui::SetNextItemWidth(180.0f);
-			const FString& Current = Seq->GetRootMotionBoneName();
-			const char* CurrentLabel = Current.empty() ? "(none)" : Current.c_str();
-			if (ImGui::BeginCombo("##rootMotionBone", CurrentLabel))
-			{
-				// "(none)" 도 선택 가능 — 잠금 본 비우면 효과 없음.
-				if (ImGui::Selectable("(none)", Current.empty()))
-				{
-					Seq->SetRootMotionBoneName(FString());
-					FAnimationManager::Get().SaveAnimationPreservingMetadata(Seq);
-				}
-				for (const FBoneAnimationTrack& Track : Seq->GetBoneTracks())
-				{
-					if (Track.BoneName.empty()) continue;
-					const bool bSelected = (Track.BoneName == Current);
-					if (ImGui::Selectable(Track.BoneName.c_str(), bSelected))
-					{
-						Seq->SetRootMotionBoneName(Track.BoneName);
-						FAnimationManager::Get().SaveAnimationPreservingMetadata(Seq);
-					}
-					if (bSelected) ImGui::SetItemDefaultFocus();
-				}
-				ImGui::EndCombo();
-			}
-		}
-	}
 
 	// 레이아웃 영역 확정
 	ImGui::SetCursorScreenPos(Origin);

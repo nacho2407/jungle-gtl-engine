@@ -399,6 +399,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\UI\NotificationToast.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AnimationTimelinePanel.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AnimationTransportBar.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\AnimSequencePropertyPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.cpp" />
@@ -703,6 +704,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\UI\NotificationToast.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AnimationTimelinePanel.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AnimationTransportBar.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\AnimSequencePropertyPanel.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.h" />

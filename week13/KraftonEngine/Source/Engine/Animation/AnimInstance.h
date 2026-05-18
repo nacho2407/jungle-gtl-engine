@@ -3,6 +3,7 @@
 #include "Object/Object.h"
 #include "PoseContext.h"
 #include "AnimNotifyEvent.h"
+#include "Math/Transform.h"
 
 class USkeletalMeshComponent;
 class USkeletalMesh;
@@ -69,6 +70,14 @@ public:
 	// 가장 오래된 것이 [0], 가장 최근이 [size-1].
 	const TArray<FQueuedAnimNotify>& GetRecentNotifies() const { return RecentNotifies; }
 
+	// ── Root Motion ──
+	// 자식 (SingleNode/FSM) 이 UpdateAnimation 안에서 AccumulateRootMotion 으로 누적.
+	// SkeletalMeshComponent 가 매 프레임 Tick 끝에서 ConsumeRootMotion 로 소비 후
+	// owning actor 의 transform 에 적용. 소비 시 누적 buffer 0 으로 초기화.
+	// Delta 는 root 본 local 좌표계 — 호출자가 actor world frame 으로 변환해야 함.
+	void AccumulateRootMotion(const FTransform& Delta);
+	FTransform ConsumeRootMotion();
+
 protected:
 	USkeletalMeshComponent*       OwningComponent = nullptr;
 	TArray<FQueuedAnimNotify>     NotifyQueue;
@@ -77,4 +86,7 @@ protected:
 	// 비용: dispatch 당 push 1회 + cap 초과 시 erase front 1회 — 무시 가능.
 	static constexpr size_t       RecentNotifyCapacity = 10;
 	TArray<FQueuedAnimNotify>     RecentNotifies;
+
+	// Root motion 누적 (UpdateAnimation 한 프레임 분, Consume 시 reset).
+	FTransform                    PendingRootMotion;
 };

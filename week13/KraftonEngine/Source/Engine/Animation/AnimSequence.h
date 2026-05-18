@@ -3,8 +3,8 @@
 #include "AnimSequenceBase.h"
 #include "BoneAnimationTrack.h"
 #include "SkeletonTypes.h"
+#include "Math/Transform.h"
 
-struct FTransform;
 class USkeletalMesh;
 class USkeleton;
 class UAnimDataModel;
@@ -96,6 +96,23 @@ public:
     void SetRootMotionBoneName(const FString& Name) { RootMotionBoneName = Name; }
 
     // ─────────────────────────────────────────────────────────────
+    // Root Motion (UE 의 bEnableRootMotion 과 동등).
+    //   true 면 GetBonePose 에서 RootMotionBoneName 본의 translation 을 bind 로 고정
+    //   (= Force Root Lock 의 strict 버전) 하고, 대신 ExtractRootMotion 으로 delta 를
+    //   추출해 AnimInstance 가 owning actor 의 transform 에 반영한다.
+    //   → 캐릭터가 anim 의 motion 으로 실제로 world 에서 움직임.
+    // Force Root Lock 과 상호 배제 (둘 다 root translation 을 다루므로 동시 활성 안 됨).
+    // ─────────────────────────────────────────────────────────────
+    bool GetEnableRootMotion() const { return bEnableRootMotion; }
+    void SetEnableRootMotion(bool b) { bEnableRootMotion = b; if (b) bForceRootLock = false; }
+
+    // [PrevTime, CurTime) 구간에서 root motion 본의 local translation/rotation delta 를 추출.
+    //   bLoop 면 시간이 끝에서 0 으로 wrap 되는 경계도 정확하게 누적 (두 구간 합산).
+    //   RootMotionBoneName 비어있거나 본 track 못 찾으면 Identity 반환.
+    //   delta 는 anim 의 본 local 좌표계 → 호출자가 actor world 로 변환해야 함.
+    FTransform ExtractRootMotion(float PrevTime, float CurTime, bool bLoop) const;
+
+    // ─────────────────────────────────────────────────────────────
     // Mock factories (A 의 FBX 임포트 전 시각 검증용 — 임시 데이터).
     // 두 팩토리 모두 UAnimDataModel 을 새로 만들고 SetDataModel 로 묶어 반환.
     // 반환된 UAnimSequence/UAnimDataModel 은 UObjectManager 가 소유 (수명 명시 관리 필요).
@@ -121,6 +138,7 @@ private:
     FString AssetPathFileName = "None";
     FSkeletonBinding TargetSkeleton;
 
-    bool    bForceRootLock = false;
+    bool    bForceRootLock    = false;
+    bool    bEnableRootMotion = false;
     FString RootMotionBoneName;
 };

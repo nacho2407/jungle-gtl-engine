@@ -18,6 +18,7 @@
 #include "Asset/AssetRegistry.h"
 #include "UI/Asset/AnimationTransportBar.h"
 #include "UI/Asset/AnimationTimelinePanel.h"
+#include "UI/Asset/AnimSequencePropertyPanel.h"
 #include "UI/EditorFileUtils.h"
 #include "Editor/UI/EditorTextureManager.h"
 #include "Platform/Paths.h"
@@ -645,7 +646,7 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 
 	// ─── Top: Asset Details | Viewport | Asset Browser (Persona 배치) ───
 
-	// Left: 시퀀스 디테일
+	// Left: 시퀀스 디테일 + Root Motion 패널
 	ImGui::BeginChild("AssetDetails", ImVec2(AnimTabState.AnimDetailsWidth, ContentHeight), true);
 	ImGui::TextUnformatted("Asset Details");
 	ImGui::Separator();
@@ -662,6 +663,10 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 		{
 			ImGui::TextWrapped("Path:\n%s", Path.c_str());
 		}
+
+		// AnimSequence property 패널 — root motion 등 편집 가능한 항목.
+		ImGui::Dummy(ImVec2(0, 12));
+		FAnimSequencePropertyPanel::Render(Seq);
 	}
 	else
 	{

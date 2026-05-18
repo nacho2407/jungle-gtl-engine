@@ -1,6 +1,7 @@
 ﻿#include "AnimState.h"
 #include "AnimInstance.h"
 #include "AnimSequenceBase.h"
+#include "AnimSequence.h"
 #include "AnimExtractContext.h"
 #include "PoseContext.h"
 
@@ -30,6 +31,16 @@ void UAnimState::Tick(UAnimInstance* Instance, float DeltaSeconds)
 	// 큐에 적재만 — 실제 dispatch 는 베이스 UAnimInstance::UpdateAnimation 끝에서 1회.
 	// (SingleNode 든 FSM 든 자식은 AddAnimNotifies 만 호출, dispatch 책임은 베이스에 통합.)
 	if (Instance) Instance->AddAnimNotifies(PreviousTime, LocalTime, Sequence);
+
+	// Root motion delta 계산 — FSM 이 blend lerp 후 instance 에 누적.
+	LastRootMotionDelta = FTransform();
+	if (UAnimSequence* Seq = Cast<UAnimSequence>(Sequence))
+	{
+		if (Seq->GetEnableRootMotion())
+		{
+			LastRootMotionDelta = Seq->ExtractRootMotion(PreviousTime, LocalTime, bLooping);
+		}
+	}
 }
 
 void UAnimState::Evaluate(UAnimInstance* /*Instance*/, FPoseContext& Output)

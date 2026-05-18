@@ -2,6 +2,7 @@
 
 #include "Object/Object.h"
 #include "Object/FName.h"
+#include "Math/Transform.h"
 
 class UAnimSequenceBase;
 class UAnimInstance;
@@ -35,6 +36,11 @@ public:
 	float GetLocalTime() const { return LocalTime; }
 	void  SetLocalTime(float T) { LocalTime = T; }
 
+	// Tick 동안 계산된 root motion delta (Sequence 가 bEnableRootMotion 일 때만 의미).
+	// FSM 이 blend 중 두 상태의 delta 를 weight lerp 후 AnimInstance 에 누적.
+	const FTransform& GetLastRootMotionDelta() const { return LastRootMotionDelta; }
+
 protected:
-	float LocalTime = 0.0f;
+	float      LocalTime = 0.0f;
+	FTransform LastRootMotionDelta;   // 매 Tick 후 갱신; FSM 이 Evaluate 후 읽음
 };

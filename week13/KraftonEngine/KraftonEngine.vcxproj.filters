@@ -575,6 +575,9 @@
     <ClCompile Include="Source\Editor\UI\Asset\AnimationTransportBar.cpp">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\AnimSequencePropertyPanel.cpp">
+      <Filter>Source\Editor\UI\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClCompile>
@@ -1479,6 +1482,9 @@
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\AnimationTransportBar.h">
+      <Filter>Source\Editor\UI\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\AnimSequencePropertyPanel.h">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h">

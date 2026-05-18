@@ -8,6 +8,9 @@
 #include "Animation/PoseContext.h"
 #include "Asset/AssetRegistry.h"
 #include "Core/Log.h"
+#include "GameFramework/AActor.h"
+#include "Math/Quat.h"
+#include "Math/Vector.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
 #include "Object/Object.h"
@@ -467,6 +470,35 @@ bool USkeletalMeshComponent::EvaluateAnimInstance(float DeltaTime)
     }
 
     AnimInstance->UpdateAnimation(DeltaTime);
+
+    // Root Motion 적용 — UpdateAnimation 동안 누적된 delta 를 owning actor 의 world transform 에 반영.
+    // Delta 는 root 본의 local 좌표계 기준 → actor 의 현재 rotation 을 곱해 world delta 로 변환.
+    // Horizontal (X/Y) 만 actor 에 적용, vertical Z 는 CharacterMovement (gravity / jump) 에 위임.
+    if (AnimInstance)
+    {
+        const FTransform RootDelta = AnimInstance->ConsumeRootMotion();
+        if (AActor* OwnerActor = GetOwner())
+        {
+            // Translation: actor 의 yaw 로 회전시켜 character forward 방향 기준으로 적용.
+            const FRotator ActorRot = OwnerActor->GetActorRotation();
+            const FQuat    YawOnly  = FRotator(0.0f, 0.0f, ActorRot.Yaw).ToQuaternion();
+            FVector WorldDelta      = YawOnly.RotateVector(RootDelta.Location);
+            WorldDelta.Z            = 0.0f;   // CharacterMovement 가 Z 관리
+            if (WorldDelta.Length() > 1e-4f)
+            {
+                OwnerActor->AddActorWorldOffset(WorldDelta);
+            }
+
+            // Rotation: root motion 의 yaw 만 actor 에 적용 (pitch/roll 은 본 pose 가 처리).
+            const FRotator DeltaRot = RootDelta.Rotation.ToRotator();
+            if (std::fabs(DeltaRot.Yaw) > 1e-4f)
+            {
+                FRotator NewRot = ActorRot;
+                NewRot.Yaw += DeltaRot.Yaw;
+                OwnerActor->SetActorRotation(NewRot);
+            }
+        }
+    }
 
     FPoseContext Out;
     Out.SkeletalMesh = Mesh;
