@@ -180,6 +180,26 @@ FString FResourceManager::ComputeFileContentHashString(const FString& Path) cons
 	return FString(HashText);
 }
 
+FString FResourceManager::GetCachedFileContentHashString(const FString& Path, uint64 WriteTimeTicks, uint64 FileSizeBytes)
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	const FString CacheKey =
+		NormalizedPath + "#" + std::to_string(WriteTimeTicks) + ":" + std::to_string(FileSizeBytes);
+
+	auto Found = FileContentHashCache.find(CacheKey);
+	if (Found != FileContentHashCache.end())
+	{
+		return Found->second;
+	}
+
+	const FString Hash = ComputeFileContentHashString(NormalizedPath);
+	if (!Hash.empty())
+	{
+		FileContentHashCache[CacheKey] = Hash;
+	}
+	return Hash;
+}
+
 bool FResourceManager::IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const
 {
 	FStaticMeshBinaryHeader Header;
@@ -275,6 +295,7 @@ void FResourceManager::ClearDiscoveredResourceLists(bool bClearAtlasCache)
 	SkeletalMeshFilePaths.clear();
 	AnimSequenceFilePaths.clear();
 	AnimationFbxSourceFilePaths.clear();
+	FileContentHashCache.clear();
 	StaticMeshCache.ClearRegistry();
 
 	if (bClearAtlasCache)
@@ -1064,25 +1085,16 @@ void FResourceManager::WarmUpAnimationPreviewMeshCaches(const TArray<FString>& A
 
 	for (const FString& AnimSequenceAssetPath : AnimSequenceAssetPaths)
 	{
-		UAnimSequence* Sequence = FindAnimSequence(AnimSequenceAssetPath);
-		if (!Sequence)
-		{
-			Sequence = AnimSequenceAssetLoader.Load(AnimSequenceAssetPath);
-			if (Sequence)
-			{
-				AnimSequenceMap[AnimSequenceAssetPath] = Sequence;
-			}
-		}
-
-		if (!Sequence)
+		FAnimSequenceAssetMetadata Metadata;
+		if (!AnimSequenceAssetLoader.LoadMetadata(AnimSequenceAssetPath, Metadata))
 		{
 			continue;
 		}
 
-		FString PreviewMeshPath = FPaths::Normalize(Sequence->GetPreviewMeshPath());
+		FString PreviewMeshPath = FPaths::Normalize(Metadata.PreviewMeshPath);
 		if (PreviewMeshPath.empty())
 		{
-			PreviewMeshPath = FPaths::Normalize(Sequence->GetSourceFilePath());
+			PreviewMeshPath = FPaths::Normalize(Metadata.SourceFilePath);
 		}
 		if (PreviewMeshPath.empty())
 		{
@@ -1150,16 +1162,18 @@ bool FResourceManager::IsImportedAnimSequenceFresh(
 {
 	bOutNeedsMetadataRefresh = false;
 
-	UAnimSequence* ExistingSequence = AnimSequenceAssetLoader.Load(AnimSequenceAssetPath);
-	if (!ExistingSequence || !HasAnimSequenceTrackKeys(ExistingSequence))
+	FAnimSequenceAssetMetadata ExistingMetadata;
+	if (!AnimSequenceAssetLoader.LoadMetadata(AnimSequenceAssetPath, ExistingMetadata) ||
+		ExistingMetadata.TrackCount <= 0 ||
+		!AnimSequenceAssetLoader.HasValidBinaryCache(AnimSequenceAssetPath))
 	{
 		return false;
 	}
 
 	const FString NormalizedSourcePath = FPaths::Normalize(SourcePath);
-	const FString ExistingSourcePath = FPaths::Normalize(ExistingSequence->GetSourceFilePath());
+	const FString ExistingSourcePath = FPaths::Normalize(ExistingMetadata.SourceFilePath);
 	if (ExistingSourcePath != NormalizedSourcePath ||
-		ExistingSequence->GetSourceStackName() != StackName)
+		ExistingMetadata.SourceStackName != StackName)
 	{
 		return false;
 	}
@@ -1172,30 +1186,26 @@ bool FResourceManager::IsImportedAnimSequenceFresh(
 	}
 
 	const bool bFastMetadataMatches =
-		ExistingSequence->GetSourceFileWriteTimeTicks() == SourceWriteTimeTicks &&
-		ExistingSequence->GetSourceFileSizeBytes() == SourceFileSizeBytes;
+		ExistingMetadata.SourceFileWriteTimeTicks == SourceWriteTimeTicks &&
+		ExistingMetadata.SourceFileSizeBytes == SourceFileSizeBytes;
 
-	if (bFastMetadataMatches && !ExistingSequence->GetSourceFileContentHash().empty())
+	if (bFastMetadataMatches && !ExistingMetadata.SourceFileContentHash.empty())
 	{
-		AnimSequenceMap[AnimSequenceAssetPath] = ExistingSequence;
 		return true;
 	}
 
-	const FString SourceContentHash = ComputeFileContentHashString(NormalizedSourcePath);
+	const FString SourceContentHash =
+		GetCachedFileContentHashString(NormalizedSourcePath, SourceWriteTimeTicks, SourceFileSizeBytes);
 	if (SourceContentHash.empty())
 	{
 		return false;
 	}
 
 	if (bFastMetadataMatches ||
-		(!ExistingSequence->GetSourceFileContentHash().empty() &&
-		 ExistingSequence->GetSourceFileContentHash() == SourceContentHash))
+		(!ExistingMetadata.SourceFileContentHash.empty() &&
+		 ExistingMetadata.SourceFileContentHash == SourceContentHash))
 	{
-		ExistingSequence->SetSourceFileWriteTimeTicks(SourceWriteTimeTicks);
-		ExistingSequence->SetSourceFileSizeBytes(SourceFileSizeBytes);
-		ExistingSequence->SetSourceFileContentHash(SourceContentHash);
-		AnimSequenceMap[AnimSequenceAssetPath] = ExistingSequence;
-		bOutNeedsMetadataRefresh = true;
+		bOutNeedsMetadataRefresh = false;
 		return true;
 	}
 

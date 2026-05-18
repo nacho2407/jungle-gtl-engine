@@ -158,6 +158,7 @@ private:
 	uint64 GetFileWriteTimeTicks(const FString& Path) const;
 	uint64 GetFileSizeBytes(const FString& Path) const;
 	FString ComputeFileContentHashString(const FString& Path) const;
+	FString GetCachedFileContentHashString(const FString& Path, uint64 WriteTimeTicks, uint64 FileSizeBytes);
 	bool IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	bool IsSkeletalMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	void PreloadStaticMeshes();
@@ -192,6 +193,7 @@ private:
 
 	TMap<FString, USkeletalMesh*> SkeletalMeshMap;
     TMap<FString, UAnimSequence*> AnimSequenceMap;
+	TMap<FString, FString> FileContentHashCache;
 
 	/* Paths */
 	TArray<FString> ObjFilePaths;
