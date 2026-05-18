@@ -52,7 +52,7 @@ enum EShadowLightType : int32
 
 constexpr uint32 InvalidShadowIndex = static_cast<uint32>(-1);
 constexpr uint32 InvalidBoneMatrixConstantsIndex = static_cast<uint32>(-1);
-constexpr uint32 MaxGPUSkinBones = 256;
+constexpr uint32 MaxGPUSkinBones = 512;
 
 struct FBoneMatrixConstants
 {

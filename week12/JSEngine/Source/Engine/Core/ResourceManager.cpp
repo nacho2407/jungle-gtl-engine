@@ -14,6 +14,8 @@
 #include <filesystem>
 #include <chrono>
 #include <cwctype>
+#include <cstdio>
+#include <fstream>
 #include "Asset/FileUtils.h"
 #include "Animation/AnimSequence.h"
 
@@ -115,16 +117,67 @@ uint64 FResourceManager::GetFileWriteTimeTicks(const FString& Path) const
 {
 	const FString NormalizedPath = FPaths::Normalize(Path);
 	fs::path FilePath(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)));
-	if (!fs::exists(FilePath))
+	std::error_code ErrorCode;
+	if (!fs::exists(FilePath, ErrorCode) || ErrorCode)
 	{
 		return 0;
 	}
 
-	auto WriteTime = fs::last_write_time(FilePath);
+	auto WriteTime = fs::last_write_time(FilePath, ErrorCode);
+	if (ErrorCode)
+	{
+		return 0;
+	}
+
 	auto Duration = WriteTime.time_since_epoch();
 
 	return static_cast<uint64>(
 		std::chrono::duration_cast<std::chrono::seconds>(Duration).count());
+}
+
+uint64 FResourceManager::GetFileSizeBytes(const FString& Path) const
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	fs::path FilePath(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)));
+
+	std::error_code ErrorCode;
+	const uintmax_t FileSize = fs::file_size(FilePath, ErrorCode);
+	if (ErrorCode)
+	{
+		return 0;
+	}
+
+	return static_cast<uint64>(FileSize);
+}
+
+FString FResourceManager::ComputeFileContentHashString(const FString& Path) const
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	std::ifstream In(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)), std::ios::binary);
+	if (!In.is_open())
+	{
+		return "";
+	}
+
+	constexpr uint64 FnvOffsetBasis = 14695981039346656037ull;
+	constexpr uint64 FnvPrime = 1099511628211ull;
+
+	uint64 Hash = FnvOffsetBasis;
+	char Buffer[64 * 1024];
+	while (In.good())
+	{
+		In.read(Buffer, sizeof(Buffer));
+		const std::streamsize BytesRead = In.gcount();
+		for (std::streamsize Index = 0; Index < BytesRead; ++Index)
+		{
+			Hash ^= static_cast<unsigned char>(Buffer[Index]);
+			Hash *= FnvPrime;
+		}
+	}
+
+	char HashText[32] = {};
+	std::snprintf(HashText, sizeof(HashText), "fnv1a64:%016llx", static_cast<unsigned long long>(Hash));
+	return FString(HashText);
 }
 
 bool FResourceManager::IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const
@@ -221,6 +274,7 @@ void FResourceManager::ClearDiscoveredResourceLists(bool bClearAtlasCache)
 	CurveFilePaths.clear();
 	SkeletalMeshFilePaths.clear();
 	AnimSequenceFilePaths.clear();
+	AnimationFbxSourceFilePaths.clear();
 	StaticMeshCache.ClearRegistry();
 
 	if (bClearAtlasCache)
@@ -270,10 +324,11 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 			}
 			if (ContentInfo.bHasAnimation)
 			{
-				// Discovery must stay metadata-only. Importing here forces every FBX animation stack
-				// to be enumerated and every existing .animseq to be checked during editor refresh/startup.
-				// Existing .animseq files are discovered as normal files, and FBX animation import is
-				// performed lazily only when an FBX path is explicitly loaded as an animation source.
+				if (std::find(AnimationFbxSourceFilePaths.begin(), AnimationFbxSourceFilePaths.end(), RelativePath)
+					== AnimationFbxSourceFilePaths.end())
+				{
+					AnimationFbxSourceFilePaths.push_back(RelativePath);
+				}
 				if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), RelativePath) == AnimSequenceFilePaths.end())
 				{
 					AnimSequenceFilePaths.push_back(RelativePath);
@@ -415,6 +470,8 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 
 		RegisterDiscoveredAssetFile(Entry.path(), ProjectRootPath);
 	}
+
+	SyncDiscoveredFbxAnimationAssets();
 
 	PreloadStaticMeshes();
 
@@ -963,6 +1020,215 @@ TArray<FString> FResourceManager::GetCurvePaths() const
 	return CurveFilePaths;
 }
 
+void FResourceManager::SyncDiscoveredFbxAnimationAssets()
+{
+	if (AnimationFbxSourceFilePaths.empty())
+	{
+		return;
+	}
+
+	int32 ImportedCount = 0;
+	int32 AssetCount = 0;
+	TArray<FString> ImportedAnimSequenceAssetPaths;
+	for (const FString& FbxPath : AnimationFbxSourceFilePaths)
+	{
+		const TArray<FString> ImportedPaths = ImportAnimationStacksFromFbx(FbxPath);
+		AssetCount += static_cast<int32>(ImportedPaths.size());
+		for (const FString& ImportedPath : ImportedPaths)
+		{
+			if (std::find(ImportedAnimSequenceAssetPaths.begin(), ImportedAnimSequenceAssetPaths.end(), ImportedPath)
+				== ImportedAnimSequenceAssetPaths.end())
+			{
+				ImportedAnimSequenceAssetPaths.push_back(ImportedPath);
+			}
+
+			if (FindAnimSequence(ImportedPath))
+			{
+				++ImportedCount;
+			}
+		}
+	}
+
+	WarmUpAnimationPreviewMeshCaches(ImportedAnimSequenceAssetPaths);
+
+	UE_LOG("[AnimSequenceStartupImport] Synced FBX animation sources: Sources=%d Assets=%d Loaded=%d",
+		static_cast<int32>(AnimationFbxSourceFilePaths.size()),
+		AssetCount,
+		ImportedCount);
+}
+
+void FResourceManager::WarmUpAnimationPreviewMeshCaches(const TArray<FString>& AnimSequenceAssetPaths)
+{
+	TArray<FString> PreviewMeshPaths;
+	PreviewMeshPaths.reserve(AnimSequenceAssetPaths.size());
+
+	for (const FString& AnimSequenceAssetPath : AnimSequenceAssetPaths)
+	{
+		UAnimSequence* Sequence = FindAnimSequence(AnimSequenceAssetPath);
+		if (!Sequence)
+		{
+			Sequence = AnimSequenceAssetLoader.Load(AnimSequenceAssetPath);
+			if (Sequence)
+			{
+				AnimSequenceMap[AnimSequenceAssetPath] = Sequence;
+			}
+		}
+
+		if (!Sequence)
+		{
+			continue;
+		}
+
+		FString PreviewMeshPath = FPaths::Normalize(Sequence->GetPreviewMeshPath());
+		if (PreviewMeshPath.empty())
+		{
+			PreviewMeshPath = FPaths::Normalize(Sequence->GetSourceFilePath());
+		}
+		if (PreviewMeshPath.empty())
+		{
+			continue;
+		}
+
+		if (std::find(PreviewMeshPaths.begin(), PreviewMeshPaths.end(), PreviewMeshPath) == PreviewMeshPaths.end())
+		{
+			PreviewMeshPaths.push_back(PreviewMeshPath);
+		}
+	}
+
+	int32 WarmedCount = 0;
+	for (const FString& PreviewMeshPath : PreviewMeshPaths)
+	{
+		if (EnsureSkeletalMeshCacheForAnimationPreview(PreviewMeshPath))
+		{
+			++WarmedCount;
+		}
+	}
+
+	if (!PreviewMeshPaths.empty())
+	{
+		UE_LOG("[AnimSequenceStartupImport] Warmed animation preview mesh caches: Requested=%d Ready=%d",
+			static_cast<int32>(PreviewMeshPaths.size()),
+			WarmedCount);
+	}
+}
+
+bool FResourceManager::EnsureSkeletalMeshCacheForAnimationPreview(const FString& PreviewMeshPath)
+{
+	const FString NormalizedPreviewMeshPath = FPaths::Normalize(PreviewMeshPath);
+	if (NormalizedPreviewMeshPath.empty() || !IsFbxSourcePath(NormalizedPreviewMeshPath))
+	{
+		return false;
+	}
+
+	if (FindSkeletalMesh(NormalizedPreviewMeshPath))
+	{
+		return true;
+	}
+
+	const FString BinaryPath = FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(NormalizedPreviewMeshPath);
+	if (IsSkeletalMeshBinaryValid(NormalizedPreviewMeshPath, BinaryPath))
+	{
+		return true;
+	}
+
+	const FFbxMeshContentInfo ContentInfo = InspectFbxMeshContent(NormalizedPreviewMeshPath);
+	if (!ContentInfo.bHasSkeletalMesh)
+	{
+		UE_LOG_WARNING("[AnimSequenceStartupImport] Preview mesh is not a skeletal FBX: %s",
+			NormalizedPreviewMeshPath.c_str());
+		return false;
+	}
+
+	return LoadSkeletalMesh(NormalizedPreviewMeshPath) != nullptr;
+}
+
+bool FResourceManager::IsImportedAnimSequenceFresh(
+	const FString& SourcePath,
+	const FString& StackName,
+	const FString& AnimSequenceAssetPath,
+	bool& bOutNeedsMetadataRefresh)
+{
+	bOutNeedsMetadataRefresh = false;
+
+	UAnimSequence* ExistingSequence = AnimSequenceAssetLoader.Load(AnimSequenceAssetPath);
+	if (!ExistingSequence || !HasAnimSequenceTrackKeys(ExistingSequence))
+	{
+		return false;
+	}
+
+	const FString NormalizedSourcePath = FPaths::Normalize(SourcePath);
+	const FString ExistingSourcePath = FPaths::Normalize(ExistingSequence->GetSourceFilePath());
+	if (ExistingSourcePath != NormalizedSourcePath ||
+		ExistingSequence->GetSourceStackName() != StackName)
+	{
+		return false;
+	}
+
+	const uint64 SourceWriteTimeTicks = GetFileWriteTimeTicks(NormalizedSourcePath);
+	const uint64 SourceFileSizeBytes = GetFileSizeBytes(NormalizedSourcePath);
+	if (SourceWriteTimeTicks == 0 || SourceFileSizeBytes == 0)
+	{
+		return false;
+	}
+
+	const bool bFastMetadataMatches =
+		ExistingSequence->GetSourceFileWriteTimeTicks() == SourceWriteTimeTicks &&
+		ExistingSequence->GetSourceFileSizeBytes() == SourceFileSizeBytes;
+
+	if (bFastMetadataMatches && !ExistingSequence->GetSourceFileContentHash().empty())
+	{
+		AnimSequenceMap[AnimSequenceAssetPath] = ExistingSequence;
+		return true;
+	}
+
+	const FString SourceContentHash = ComputeFileContentHashString(NormalizedSourcePath);
+	if (SourceContentHash.empty())
+	{
+		return false;
+	}
+
+	if (bFastMetadataMatches ||
+		(!ExistingSequence->GetSourceFileContentHash().empty() &&
+		 ExistingSequence->GetSourceFileContentHash() == SourceContentHash))
+	{
+		ExistingSequence->SetSourceFileWriteTimeTicks(SourceWriteTimeTicks);
+		ExistingSequence->SetSourceFileSizeBytes(SourceFileSizeBytes);
+		ExistingSequence->SetSourceFileContentHash(SourceContentHash);
+		AnimSequenceMap[AnimSequenceAssetPath] = ExistingSequence;
+		bOutNeedsMetadataRefresh = true;
+		return true;
+	}
+
+	return false;
+}
+
+void FResourceManager::RefreshImportedAnimSequenceMetadata(
+	UAnimSequence* Sequence,
+	const FString& AnimSequenceAssetPath,
+	const FString& SourcePath,
+	const FString& StackName)
+{
+	if (!Sequence)
+	{
+		return;
+	}
+
+	const FString NormalizedSourcePath = FPaths::Normalize(SourcePath);
+	Sequence->SetAssetPath(FPaths::Normalize(AnimSequenceAssetPath));
+	Sequence->SetSourceFilePath(NormalizedSourcePath);
+	Sequence->SetSourceStackName(StackName);
+	if (Sequence->GetPreviewMeshPath().empty())
+	{
+		Sequence->SetPreviewMeshPath(NormalizedSourcePath);
+	}
+
+	if (!AnimSequenceAssetLoader.Save(AnimSequenceAssetPath, Sequence))
+	{
+		UE_LOG_WARNING("[AnimSequenceStartupImport] Failed to refresh anim sequence metadata: %s",
+			AnimSequenceAssetPath.c_str());
+	}
+}
+
 TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Path)
 {
 	TArray<FString> ImportedAssetPaths;
@@ -980,6 +1246,8 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 	}
 
 	ImportedAssetPaths.reserve(StackNames.size());
+	TArray<FString> StaleStackNames;
+	StaleStackNames.reserve(StackNames.size());
 	for (const FString& StackName : StackNames)
 	{
 		if (StackName.empty())
@@ -991,50 +1259,116 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 
 		if (FAssetPathPolicy::FileExists(ImportedAssetPath))
 		{
-			//.animseq 파일이 이미 존재하므로 로드하지 않습니다.
+			bool bNeedsMetadataRefresh = false;
+			if (IsImportedAnimSequenceFresh(NormalizedPath, StackName, ImportedAssetPath, bNeedsMetadataRefresh))
+			{
+				if (bNeedsMetadataRefresh)
+				{
+					RefreshImportedAnimSequenceMetadata(
+						FindAnimSequence(ImportedAssetPath),
+						ImportedAssetPath,
+						NormalizedPath,
+						StackName);
+				}
+
+				if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), ImportedAssetPath) == AnimSequenceFilePaths.end())
+				{
+					AnimSequenceFilePaths.push_back(ImportedAssetPath);
+				}
+				ImportedAssetPaths.push_back(ImportedAssetPath);
+				continue;
+			}
+
+			UE_LOG("[AnimSequenceImport] Reimport stale FBX animation stack: %s | Stack=%s | Asset=%s",
+				NormalizedPath.c_str(),
+				StackName.c_str(),
+				ImportedAssetPath.c_str());
+		}
+		else
+		{
+			UE_LOG("[AnimSequenceImport] Import missing FBX animation stack: %s | Stack=%s | Asset=%s",
+				NormalizedPath.c_str(),
+				StackName.c_str(),
+				ImportedAssetPath.c_str());
+		}
+
+		if (FAssetPathPolicy::FileExists(ImportedAssetPath))
+		{
 			if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), ImportedAssetPath) == AnimSequenceFilePaths.end())
 			{
 				AnimSequenceFilePaths.push_back(ImportedAssetPath);
 			}
-			ImportedAssetPaths.push_back(ImportedAssetPath);
-			continue;
 		}
 
+		AnimSequenceMap.erase(ImportedAssetPath);
+		StaleStackNames.push_back(StackName);
+	}
+
+	if (!StaleStackNames.empty())
+	{
 		FFbxAnimImportOptions ImportOptions;
-		ImportOptions.StackName = StackName;
 		ImportOptions.PreviewMeshPath = NormalizedPath;
 
-		UAnimSequence* ImportedSequence = FbxImporter.LoadAnimSequence(NormalizedPath, ImportOptions);
-		if (!ImportedSequence)
+		TArray<FFbxAnimStackImportResult> ImportResults = FbxImporter.LoadAnimSequences(NormalizedPath, ImportOptions);
+		if (ImportResults.empty())
 		{
-			UE_LOG_WARNING("[AnimSequenceImport] Failed to import FBX animation stack: %s | Stack=%s",
-				NormalizedPath.c_str(),
-				StackName.c_str());
-			continue;
+			UE_LOG_WARNING("[AnimSequenceImport] Bulk FBX animation import returned no stacks, falling back to per-stack import: %s",
+				NormalizedPath.c_str());
 		}
 
-		ImportedSequence->SetAssetPath(ImportedAssetPath);
-		ImportedSequence->SetPreviewMeshPath(NormalizedPath);
-
-		if (!AnimSequenceAssetLoader.Save(ImportedAssetPath, ImportedSequence))
+		for (const FString& StackName : StaleStackNames)
 		{
-			UE_LOG_WARNING("[AnimSequenceImport] Failed to save imported animation stack: %s -> %s",
+			const FString ImportedAssetPath = FAssetPathPolicy::MakeImportedAnimSequenceAssetPath(NormalizedPath, StackName);
+			UAnimSequence* ImportedSequence = nullptr;
+
+			for (const FFbxAnimStackImportResult& Result : ImportResults)
+			{
+				if (Result.StackName == StackName)
+				{
+					ImportedSequence = Result.Sequence;
+					break;
+				}
+			}
+
+			if (!ImportedSequence)
+			{
+				FFbxAnimImportOptions FallbackImportOptions;
+				FallbackImportOptions.StackName = StackName;
+				FallbackImportOptions.PreviewMeshPath = NormalizedPath;
+				ImportedSequence = FbxImporter.LoadAnimSequence(NormalizedPath, FallbackImportOptions);
+			}
+
+			if (!ImportedSequence)
+			{
+				UE_LOG_WARNING("[AnimSequenceImport] Failed to import FBX animation stack: %s | Stack=%s",
+					NormalizedPath.c_str(),
+					StackName.c_str());
+				continue;
+			}
+
+			ImportedSequence->SetAssetPath(ImportedAssetPath);
+			ImportedSequence->SetPreviewMeshPath(NormalizedPath);
+
+			if (!AnimSequenceAssetLoader.Save(ImportedAssetPath, ImportedSequence))
+			{
+				UE_LOG_WARNING("[AnimSequenceImport] Failed to save imported animation stack: %s -> %s",
+					NormalizedPath.c_str(),
+					ImportedAssetPath.c_str());
+				continue;
+			}
+
+			AnimSequenceMap[ImportedAssetPath] = ImportedSequence;
+			if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), ImportedAssetPath) == AnimSequenceFilePaths.end())
+			{
+				AnimSequenceFilePaths.push_back(ImportedAssetPath);
+			}
+
+			ImportedAssetPaths.push_back(ImportedAssetPath);
+			UE_LOG("[AnimSequenceImport] Imported FBX animation stack: %s | Stack=%s | Asset=%s",
 				NormalizedPath.c_str(),
+				StackName.c_str(),
 				ImportedAssetPath.c_str());
-			continue;
 		}
-
-		AnimSequenceMap[ImportedAssetPath] = ImportedSequence;
-		if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), ImportedAssetPath) == AnimSequenceFilePaths.end())
-		{
-			AnimSequenceFilePaths.push_back(ImportedAssetPath);
-		}
-
-		ImportedAssetPaths.push_back(ImportedAssetPath);
-		UE_LOG("[AnimSequenceImport] Imported FBX animation stack: %s | Stack=%s | Asset=%s",
-			NormalizedPath.c_str(),
-			StackName.c_str(),
-			ImportedAssetPath.c_str());
 	}
 
 	if (!ImportedAssetPaths.empty())
