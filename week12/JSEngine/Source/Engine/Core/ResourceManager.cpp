@@ -1524,6 +1524,171 @@ TArray<FString> FResourceManager::GetAnimSequencePaths() const
 	return AnimSequenceFilePaths;
 }
 
+namespace
+{
+	int32 GetJsonInt(json::JSON& Object, const char* Key, int32 DefaultValue = 0)
+	{
+		return Object.hasKey(Key) ? static_cast<int32>(Object[Key].ToInt()) : DefaultValue;
+	}
+
+	float GetJsonFloat(json::JSON& Object, const char* Key, float DefaultValue = 0.0f)
+	{
+		return Object.hasKey(Key) ? static_cast<float>(Object[Key].ToFloat()) : DefaultValue;
+	}
+
+	bool GetJsonBool(json::JSON& Object, const char* Key, bool DefaultValue = false)
+	{
+		return Object.hasKey(Key) ? Object[Key].ToBool() : DefaultValue;
+	}
+
+	FString GetJsonString(json::JSON& Object, const char* Key, const FString& DefaultValue = "")
+	{
+		return Object.hasKey(Key) ? Object[Key].ToString() : DefaultValue;
+	}
+
+	FVector2 GetJsonVector2(json::JSON& Object, const char* Key, const FVector2& DefaultValue = FVector2(0.0f, 0.0f))
+	{
+		if (!Object.hasKey(Key))
+		{
+			return DefaultValue;
+		}
+
+		json::JSON& Value = Object[Key];
+		if (Value.JSONType() == json::JSON::Class::Array && Value.length() >= 2)
+		{
+			return FVector2(
+				static_cast<float>(Value[0].ToFloat()),
+				static_cast<float>(Value[1].ToFloat()));
+		}
+
+		if (Value.JSONType() == json::JSON::Class::Object)
+		{
+			return FVector2(
+				Value.hasKey("X") ? static_cast<float>(Value["X"].ToFloat()) : DefaultValue.X,
+				Value.hasKey("Y") ? static_cast<float>(Value["Y"].ToFloat()) : DefaultValue.Y);
+		}
+
+		return DefaultValue;
+	}
+
+	FAnimTransitionConditionDesc ParseAnimTransitionCondition(json::JSON& Object)
+	{
+		FAnimTransitionConditionDesc Condition;
+		Condition.Type = static_cast<EAnimTransitionConditionType>(
+			GetJsonInt(Object, "Type", static_cast<int32>(EAnimTransitionConditionType::AlwaysTrue)));
+		Condition.ParameterName = GetJsonString(Object, "ParameterName");
+		Condition.BoolValue = GetJsonBool(Object, "BoolValue", true);
+		Condition.Threshold = GetJsonFloat(Object, "Threshold", 0.0f);
+		Condition.LuaFunctionName = GetJsonString(Object, "LuaFunctionName");
+		return Condition;
+	}
+
+	FAnimStateTransitionDesc ParseAnimStateTransition(json::JSON& Object)
+	{
+		FAnimStateTransitionDesc Transition;
+		Transition.FromStateId = GetJsonInt(Object, "FromStateId", -1);
+		Transition.ToStateId = GetJsonInt(Object, "ToStateId", -1);
+		Transition.BlendTime = GetJsonFloat(Object, "BlendTime", 0.2f);
+		Transition.Priority = GetJsonInt(Object, "Priority", 0);
+		if (Object.hasKey("Condition") && Object["Condition"].JSONType() == json::JSON::Class::Object)
+		{
+			Transition.Condition = ParseAnimTransitionCondition(Object["Condition"]);
+		}
+		return Transition;
+	}
+
+	FAnimStateDesc ParseAnimState(json::JSON& Object)
+	{
+		FAnimStateDesc State;
+		State.StateId = GetJsonInt(Object, "StateId", -1);
+		State.Name = GetJsonString(Object, "Name");
+		State.AnimationPath = GetJsonString(Object, "AnimationPath");
+		State.Position = GetJsonVector2(Object, "Position");
+		return State;
+	}
+
+	FAnimStateMachineDesc ParseAnimStateMachine(json::JSON& Object)
+	{
+		FAnimStateMachineDesc Machine;
+		Machine.EntryStateId = GetJsonInt(Object, "EntryStateId", -1);
+
+		if (Object.hasKey("States") && Object["States"].JSONType() == json::JSON::Class::Array)
+		{
+			json::JSON& States = Object["States"];
+			for (int32 Index = 0; Index < static_cast<int32>(States.length()); ++Index)
+			{
+				if (States[Index].JSONType() == json::JSON::Class::Object)
+				{
+					Machine.States.push_back(ParseAnimState(States[Index]));
+				}
+			}
+		}
+
+		if (Object.hasKey("Transitions") && Object["Transitions"].JSONType() == json::JSON::Class::Array)
+		{
+			json::JSON& Transitions = Object["Transitions"];
+			for (int32 Index = 0; Index < static_cast<int32>(Transitions.length()); ++Index)
+			{
+				if (Transitions[Index].JSONType() == json::JSON::Class::Object)
+				{
+					Machine.Transitions.push_back(ParseAnimStateTransition(Transitions[Index]));
+				}
+			}
+		}
+
+		return Machine;
+	}
+
+	FAnimGraphNodeDesc ParseAnimGraphNode(json::JSON& Object)
+	{
+		FAnimGraphNodeDesc Node;
+		Node.NodeId = GetJsonInt(Object, "NodeId", -1);
+		Node.Type = static_cast<EAnimGraphNodeType>(
+			GetJsonInt(Object, "Type", static_cast<int32>(EAnimGraphNodeType::SequencePlayer)));
+		Node.Name = GetJsonString(Object, "Name");
+		Node.Position = GetJsonVector2(Object, "Position");
+		Node.AnimationPath = GetJsonString(Object, "AnimationPath");
+		Node.PlayRate = GetJsonFloat(Object, "PlayRate", 1.0f);
+		Node.bLoop = GetJsonBool(Object, "bLoop", true);
+		Node.InputPoseNodeId = GetJsonInt(Object, "InputPoseNodeId", -1);
+		if (Object.hasKey("StateMachine") && Object["StateMachine"].JSONType() == json::JSON::Class::Object)
+		{
+			Node.StateMachine = ParseAnimStateMachine(Object["StateMachine"]);
+		}
+		return Node;
+	}
+
+	void LoadAnimGraphNodesFromJson(UAnimGraphAsset* Asset, json::JSON& JsonData)
+	{
+		if (!Asset)
+		{
+			return;
+		}
+
+		if (JsonData.hasKey("RootNodeId"))
+		{
+			Asset->RootNodeId = GetJsonInt(JsonData, "RootNodeId", -1);
+		}
+
+		if (!JsonData.hasKey("Nodes") || JsonData["Nodes"].JSONType() != json::JSON::Class::Array)
+		{
+			return;
+		}
+
+		Asset->Nodes.clear();
+		json::JSON& Nodes = JsonData["Nodes"];
+		for (int32 Index = 0; Index < static_cast<int32>(Nodes.length()); ++Index)
+		{
+			if (Nodes[Index].JSONType() == json::JSON::Class::Object)
+			{
+				Asset->Nodes.push_back(ParseAnimGraphNode(Nodes[Index]));
+			}
+		}
+
+		Asset->ValidateAndRepairGraph();
+	}
+}
+
 UAnimGraphAsset* FResourceManager::LoadAnimGraph(const FString& Path)
 {
 	const FString NormalizedPath = FPaths::Normalize(Path);
@@ -1558,6 +1723,7 @@ UAnimGraphAsset* FResourceManager::LoadAnimGraph(const FString& Path)
 
 	FJsonReader Reader(JsonData);
 	Asset->Serialize(Reader);
+	LoadAnimGraphNodesFromJson(Asset, JsonData);
 
 	return Asset;
 }

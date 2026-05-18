@@ -62,8 +62,13 @@ public:
 	EAnimationMode GetAnimationMode() const { return AnimationMode; }
 
 	void SetAnimGraph(UAnimGraphAsset* Graph);
+	void SetAnimGraphAssetPath(const FString& Path);
 	void ApplyAnimGraphFromAssetPath();
 	const FString& GetAnimGraphAssetPath() const { return AnimGraphAssetPath.GetPath(); }
+	void SetAnimGraphFloatParameter(const FString& Name, float Value);
+	void SetAnimGraphBoolParameter(const FString& Name, bool Value);
+	float GetAnimGraphFloatParameter(const FString& Name) const;
+	bool GetAnimGraphBoolParameter(const FString& Name) const;
 
 	// 애니메이션
 	void PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping);
