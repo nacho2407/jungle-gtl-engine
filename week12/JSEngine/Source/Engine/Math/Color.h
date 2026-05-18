@@ -1,10 +1,14 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector4.h"
+#include "Core/Reflection/ReflectionMacros.h"
 
+USTRUCT(EditorHint = "FColor")
 struct FColor
 {
+	GENERATED_STRUCT_BODY(FColor)
+
 public:
 	union
 	{
@@ -14,7 +18,14 @@ public:
 		};
 		struct
 		{
-			float R, G, B, A;
+			UPROPERTY()
+			float R;
+			UPROPERTY()
+			float G;
+			UPROPERTY()
+			float B;
+			UPROPERTY()
+			float A;
 		};
 	};
 

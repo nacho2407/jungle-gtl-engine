@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/PropertyTypes.h"
 #include "Object/FName.h"
@@ -9,7 +9,13 @@
 class UObject;
 class UClass;
 class UMaterialInterface;
+class UScriptStruct;
 struct FArchive;
+struct FVector;
+struct FVector4;
+struct FColor;
+struct FGuid;
+struct FQuat;
 
 // 런타임 리플렉션에서 프로퍼티 접근 권한과 용도를 표현합니다.
 // 기존 EPropertyUsageFlags는 에디터 노출 힌트로 유지하고,
@@ -57,11 +63,11 @@ template<> struct TPropertyType<int32>   { static constexpr EPropertyType Value 
 template<> struct TPropertyType<float>   { static constexpr EPropertyType Value = EPropertyType::Float; };
 template<> struct TPropertyType<FString> { static constexpr EPropertyType Value = EPropertyType::String; };
 template<> struct TPropertyType<FName>   { static constexpr EPropertyType Value = EPropertyType::Name; };
-template<> struct TPropertyType<FVector> { static constexpr EPropertyType Value = EPropertyType::Vec3; };
-template<> struct TPropertyType<FVector4>{ static constexpr EPropertyType Value = EPropertyType::Vec4; };
-template<> struct TPropertyType<FColor>  { static constexpr EPropertyType Value = EPropertyType::Color; };
-template<> struct TPropertyType<FGuid>   { static constexpr EPropertyType Value = EPropertyType::Guid; };
-template<> struct TPropertyType<FQuat>   { static constexpr EPropertyType Value = EPropertyType::Quat; };
+template<> struct TPropertyType<FVector> { static constexpr EPropertyType Value = EPropertyType::Struct; };
+template<> struct TPropertyType<FVector4>{ static constexpr EPropertyType Value = EPropertyType::Struct; };
+template<> struct TPropertyType<FColor>  { static constexpr EPropertyType Value = EPropertyType::Struct; };
+template<> struct TPropertyType<FGuid>   { static constexpr EPropertyType Value = EPropertyType::Struct; };
+template<> struct TPropertyType<FQuat>   { static constexpr EPropertyType Value = EPropertyType::Struct; };
 
 template<typename T>
 struct TPropertyType<T*>
@@ -104,6 +110,8 @@ struct FProperty
 	const IArrayPropertyOps* ArrayOps = nullptr;
 	const ISoftObjectPtrOps* SoftObjectOps = nullptr;
 	const IObjectPtrOps* ObjectPtrOps = nullptr;
+	const UScriptStruct* ScriptStruct = nullptr;
+	const char* EditorHint = nullptr;
 
 	FProperty() = default;
 
@@ -223,6 +231,8 @@ struct FPropertyParams
 	const IArrayPropertyOps* ArrayOps = nullptr;
 	const ISoftObjectPtrOps* SoftObjectOps = nullptr;
 	const IObjectPtrOps* ObjectPtrOps = nullptr;
+	const UScriptStruct* ScriptStruct = nullptr;
+	const char* EditorHint = nullptr;
 };
 
 inline FProperty::FProperty(const FPropertyParams& Params)
@@ -243,6 +253,8 @@ inline FProperty::FProperty(const FPropertyParams& Params)
 	, ArrayOps(Params.ArrayOps)
 	, SoftObjectOps(Params.SoftObjectOps)
 	, ObjectPtrOps(Params.ObjectPtrOps)
+	, ScriptStruct(Params.ScriptStruct)
+	, EditorHint(Params.EditorHint)
 {
 }
 
@@ -322,8 +334,7 @@ struct FPropertyHandle
 			return false;
 		}
 
-		std::memcpy(ValuePtr, InValue, Property->Size);
-		return true;
+		return Property->CopyValue(ValuePtr, InValue);
 	}
 };
 

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Archive.h"
 #include "Core/Containers/String.h"
@@ -60,24 +60,38 @@ struct FJsonReader : public FArchive
 	virtual void BeginObject(const FString& Key) override
 	{
 		json::JSON& Current = *ScopeStack.back();
-		if (Current.hasKey(Key.c_str()))
+		if (Current.JSONType() == json::JSON::Class::Array)
+		{
+			int32& CurrentIdx = ArrayIndexStack.back();
+			if (CurrentIdx < static_cast<int32>(Current.length()) && Current[CurrentIdx].JSONType() == json::JSON::Class::Object)
+			{
+				ScopeStack.push_back(&Current[CurrentIdx++]);
+				ArrayIndexStack.push_back(0);
+			}
+		}
+		else if (Current.hasKey(Key.c_str()))
 		{
 			ScopeStack.push_back(&Current[Key.c_str()]);
+			ArrayIndexStack.push_back(0);
 		}
+		CurrentKey.clear();
 	}
 
 	virtual void BeginObject(int32 Index) override
 	{
 		json::JSON& Current = *ScopeStack.back();
-		if (Current.at(Index).JSONType() == json::JSON::Class::Object)
+		if (Index >= 0 && Index < static_cast<int32>(Current.length()) && Current.at(Index).JSONType() == json::JSON::Class::Object)
 		{
 			ScopeStack.push_back(&Current.at(Index));
+			ArrayIndexStack.push_back(0);
 		}
-	}	
+	}
 
 	virtual void EndObject() override
 	{
 		if (ScopeStack.size() > 1) ScopeStack.pop_back();
+		if (ArrayIndexStack.size() > 1) ArrayIndexStack.pop_back();
+		CurrentKey.clear();
 	}
 
 	FArchive& operator<<(bool& Value) override;

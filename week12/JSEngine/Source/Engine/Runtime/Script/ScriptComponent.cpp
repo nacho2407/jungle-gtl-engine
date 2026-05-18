@@ -1,4 +1,4 @@
-﻿#include "ScriptComponent.h"
+#include "ScriptComponent.h"
 #include "ScriptManager.h"
 #include "Camera/CameraModifier_CameraShake.h"
 #include "Camera/PlayerCameraManager.h"
@@ -159,7 +159,7 @@ namespace
 		if (TypeName == "String")
 			return EPropertyType::String;
 		if (TypeName == "Vector")
-			return EPropertyType::Vec3;
+			return EPropertyType::Struct;
 
 		return EPropertyType::String;
 	}
@@ -281,7 +281,7 @@ bool SetLuaTableProperty(sol::table& Table, const FLuaScriptProperty& Prop)
 			Table[Name] = std::string(Prop.StringValue.c_str());
 			return true;
 
-		case EPropertyType::Vec3:
+		case EPropertyType::Struct:
 			Table[Name] = Prop.Vec3Value;
 			return true;
 
@@ -519,7 +519,7 @@ void UScriptComponent::Serialize(FArchive& Ar)
 			Ar << (Prefix + "StringValue").c_str() << Prop.StringValue;
 			break;
 
-		case EPropertyType::Vec3:
+		case EPropertyType::Struct:
 			Ar << (Prefix + "Vec3Value").c_str() << Prop.Vec3Value;
 			break;
 
@@ -864,7 +864,7 @@ void UScriptComponent::StopCameraShake(UCameraShakeBase* Shake, bool bImmediatel
 }
 
 void UScriptComponent::OnUnregister()
-{ 
+{
 	// 부모 훅 호출
 	UActorComponent::OnUnregister();
 
@@ -1077,7 +1077,7 @@ void UScriptComponent::ReloadLuaProperties()
 				NewProp.StringValue = PropTable.get_or("Default", std::string(""));
 				break;
 
-			case EPropertyType::Vec3:
+			case EPropertyType::Struct:
 				NewProp.Vec3Value = GetLuaVectorDefault(PropTable);
 				break;
 			}

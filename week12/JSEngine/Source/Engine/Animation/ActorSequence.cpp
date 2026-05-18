@@ -1,4 +1,4 @@
-﻿#include "Animation/ActorSequence.h"
+#include "Animation/ActorSequence.h"
 
 #include "Component/ActorComponent.h"
 #include "Component/ActorSequenceComponent.h"
@@ -49,12 +49,6 @@ namespace
 			return EActorSequenceTrackType::Bool;
 		case EPropertyType::Int:
 			return EActorSequenceTrackType::Int;
-		case EPropertyType::Vec3:
-			return EActorSequenceTrackType::Vec3;
-		case EPropertyType::Vec4:
-			return EActorSequenceTrackType::Vec4;
-		case EPropertyType::Color:
-			return EActorSequenceTrackType::Color;
 		case EPropertyType::Float:
 		default:
 			return EActorSequenceTrackType::Float;

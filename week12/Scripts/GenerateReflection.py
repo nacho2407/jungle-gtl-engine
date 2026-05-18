@@ -1,8 +1,8 @@
 """
-[ALERT] DO NOT DELETE OR EDIT COMMENT IN THIS FILE ARBITRARILY! 
-위 문구는 AI가 임의로 주석을 삭제하지 않도록 하기 위해 작성했고, 얼마든지 수정하셔도 됩니다. 
+[ALERT] DO NOT DELETE OR EDIT COMMENT IN THIS FILE ARBITRARILY!
+위 문구는 AI가 임의로 주석을 삭제하지 않도록 하기 위해 작성했고, 얼마든지 수정하셔도 됩니다.
 
-C++ 헤더 파일을 스캔해서 UE5 스타일의 UCLASS, UPROPERTY, UENUM, UMETA 정보를 읽고, 
+C++ 헤더 파일을 스캔해서 UE5 스타일의 UCLASS, UPROPERTY, UENUM, UMETA 정보를 읽고,
 각 클래스별로 .gen.cpp 리플렉션 등록 코드를 자동 생성하는 파서 스크립트입니다.
 
 이 스크립트는 다음과 같은 흐름으로 리플렉션 데이터 등록을 수행합니다.
@@ -28,13 +28,8 @@ TYPE_MAP = {
     'int32': 'EPropertyType::Int',
     'int': 'EPropertyType::Int',
     'float': 'EPropertyType::Float',
-    'FVector': 'EPropertyType::Vec3',
-    'FVector4': 'EPropertyType::Vec4',
     'FString': 'EPropertyType::String',
     'FName': 'EPropertyType::Name',
-    'FColor': 'EPropertyType::Color',
-    'FGuid': 'EPropertyType::Guid',
-    'FQuat': 'EPropertyType::Quat',
 }
 
 # 스크립트 위치를 기준으로 Root와 Source 경로를 계산합니다.
@@ -678,6 +673,59 @@ def reference_kind_for_object_type(type_name, metadata=None, b_soft=False):
     return 'EObjectReferenceKind::RuntimeObject'
 
 
+
+
+def make_type_info(
+    cpp_type,
+    property_type,
+    enum_info=None,
+    object_class='nullptr',
+    reference_kind='EObjectReferenceKind::None',
+    inner=None,
+    array_ops='nullptr',
+    soft_ops='nullptr',
+    object_ops='nullptr',
+    script_struct='nullptr',
+    editor_hint='nullptr',
+    struct_info=None,
+):
+    return {
+        'cpp_type': cpp_type,
+        'property_type': property_type,
+        'enum_info': enum_info,
+        'object_class': object_class,
+        'reference_kind': reference_kind,
+        'inner': inner,
+        'array_ops': array_ops,
+        'soft_ops': soft_ops,
+        'object_ops': object_ops,
+        'script_struct': script_struct,
+        'editor_hint': editor_hint,
+        'struct_info': struct_info,
+    }
+
+
+def find_struct_info(struct_map, cpp_type):
+    struct_info = struct_map.get(cpp_type) if struct_map else None
+    if not struct_info and '::' in cpp_type:
+        struct_info = struct_map.get(cpp_type.split('::')[-1])
+    return struct_info
+
+
+def struct_static_expr(struct_info):
+    return f'{struct_info["qualified_name"]}::StaticStruct()'
+
+
+def default_editor_hint_for_struct(struct_info, metadata=None):
+    metadata = metadata or {}
+    explicit = get_metadata_value(metadata, 'EditorHint')
+    if explicit:
+        return explicit
+    explicit = get_metadata_value(struct_info.get('metadata', {}), 'EditorHint')
+    if explicit:
+        return explicit
+    return struct_info['name']
+
 def make_object_ops_expr(value_cpp_type):
     if value_cpp_type.endswith('*'):
         pointed_type = value_cpp_type[:-1]
@@ -704,100 +752,77 @@ def make_array_ops_expr(value_cpp_type):
     return 'nullptr'
 
 
-def make_property_type_info(cpp_type, enum_map, metadata=None):
+def make_property_type_info(cpp_type, enum_map, struct_map=None, metadata=None):
     enum_info = enum_map.get(cpp_type)
     if not enum_info and '::' in cpp_type:
         enum_info = enum_map.get(cpp_type.split('::')[-1])
 
     if enum_info:
-        return {
-            'cpp_type': cpp_type,
-            'property_type': 'EPropertyType::Enum',
-            'enum_info': enum_info,
-            'object_class': 'nullptr',
-            'reference_kind': 'EObjectReferenceKind::None',
-            'inner': None,
-            'array_ops': 'nullptr',
-            'soft_ops': 'nullptr',
-            'object_ops': 'nullptr',
-        }
+        return make_type_info(
+            cpp_type=cpp_type,
+            property_type='EPropertyType::Enum',
+            enum_info=enum_info,
+        )
+
+    struct_info = find_struct_info(struct_map or {}, cpp_type)
+    if struct_info:
+        editor_hint = default_editor_hint_for_struct(struct_info, metadata)
+        return make_type_info(
+            cpp_type=cpp_type,
+            property_type='EPropertyType::Struct',
+            script_struct=struct_static_expr(struct_info),
+            editor_hint=cpp_string_literal(editor_hint),
+            struct_info=struct_info,
+        )
 
     inner_array_type = parse_single_template_arg(cpp_type, 'TArray')
     if inner_array_type:
-        inner_info = make_property_type_info(inner_array_type, enum_map, metadata=None)
+        inner_info = make_property_type_info(inner_array_type, enum_map, struct_map, metadata=None)
         if not inner_info:
             return None
-        return {
-            'cpp_type': cpp_type,
-            'property_type': 'EPropertyType::Array',
-            'enum_info': None,
-            'object_class': 'nullptr',
-            'reference_kind': 'EObjectReferenceKind::None',
-            'inner': inner_info,
-            'array_ops': make_array_ops_expr(cpp_type),
-            'soft_ops': 'nullptr',
-            'object_ops': 'nullptr',
-        }
+        return make_type_info(
+            cpp_type=cpp_type,
+            property_type='EPropertyType::Array',
+            inner=inner_info,
+            array_ops=make_array_ops_expr(cpp_type),
+        )
 
     soft_type = parse_single_template_arg(cpp_type, 'TSoftObjectPtr')
     if soft_type:
-        return {
-            'cpp_type': cpp_type,
-            'property_type': 'EPropertyType::SoftObjectPtr',
-            'enum_info': None,
-            'object_class': object_class_expr(soft_type),
-            'reference_kind': reference_kind_for_object_type(soft_type, metadata, b_soft=True),
-            'inner': None,
-            'array_ops': 'nullptr',
-            'soft_ops': make_soft_ops_expr(cpp_type),
-            'object_ops': 'nullptr',
-        }
+        return make_type_info(
+            cpp_type=cpp_type,
+            property_type='EPropertyType::SoftObjectPtr',
+            object_class=object_class_expr(soft_type),
+            reference_kind=reference_kind_for_object_type(soft_type, metadata, b_soft=True),
+            soft_ops=make_soft_ops_expr(cpp_type),
+        )
 
     object_ptr_type = parse_single_template_arg(cpp_type, 'TObjectPtr')
     if object_ptr_type:
-        return {
-            'cpp_type': cpp_type,
-            'property_type': 'EPropertyType::ObjectPtr',
-            'enum_info': None,
-            'object_class': object_class_expr(object_ptr_type),
-            'reference_kind': reference_kind_for_object_type(object_ptr_type, metadata),
-            'inner': None,
-            'array_ops': 'nullptr',
-            'soft_ops': 'nullptr',
-            'object_ops': make_object_ops_expr(cpp_type),
-        }
+        return make_type_info(
+            cpp_type=cpp_type,
+            property_type='EPropertyType::ObjectPtr',
+            object_class=object_class_expr(object_ptr_type),
+            reference_kind=reference_kind_for_object_type(object_ptr_type, metadata),
+            object_ops=make_object_ops_expr(cpp_type),
+        )
 
     if cpp_type.endswith('*'):
         pointed_type = cpp_type[:-1]
         if is_uobject_type_name(pointed_type):
-            return {
-                'cpp_type': cpp_type,
-                'property_type': 'EPropertyType::ObjectPtr',
-                'enum_info': None,
-                'object_class': object_class_expr(pointed_type),
-                'reference_kind': reference_kind_for_object_type(pointed_type, metadata),
-                'inner': None,
-                'array_ops': 'nullptr',
-                'soft_ops': 'nullptr',
-                'object_ops': make_object_ops_expr(cpp_type),
-            }
+            return make_type_info(
+                cpp_type=cpp_type,
+                property_type='EPropertyType::ObjectPtr',
+                object_class=object_class_expr(pointed_type),
+                reference_kind=reference_kind_for_object_type(pointed_type, metadata),
+                object_ops=make_object_ops_expr(cpp_type),
+            )
 
     property_type = TYPE_MAP.get(cpp_type)
     if property_type:
-        return {
-            'cpp_type': cpp_type,
-            'property_type': property_type,
-            'enum_info': None,
-            'object_class': 'nullptr',
-            'reference_kind': 'EObjectReferenceKind::None',
-            'inner': None,
-            'array_ops': 'nullptr',
-            'soft_ops': 'nullptr',
-            'object_ops': 'nullptr',
-        }
+        return make_type_info(cpp_type=cpp_type, property_type=property_type)
 
     return None
-
 
 def iter_type_infos(type_info):
     if not type_info:
@@ -829,7 +854,9 @@ def make_property_params_block(prop, name_expr, offset_expr, size_expr, inner_ex
         f'            {inner_expr},\n'
         f'            {type_info["array_ops"]},\n'
         f'            {type_info["soft_ops"]},\n'
-        f'            {type_info["object_ops"]}\n'
+        f'            {type_info["object_ops"]},\n'
+        f'            {type_info["script_struct"]},\n'
+        f'            {type_info["editor_hint"]}\n'
         '        }'
     )
 
@@ -861,8 +888,8 @@ def generate_enum_metadata(enum_infos):
             values_body = '    ' + values_body + '\n'
         blocks.append(
             f'static const FEnumValue {values_array_name}[] = {{\n{values_body}}};\n'
-            f'static const UEnum {enum_meta_name} = {{ '
-            f'{cpp_string_literal(enum_name)}, static_cast<uint8>(sizeof({enum_name})), {values_array_name}, {len(values)} }};'
+            f'static const UEnum {enum_meta_name}(\n'
+            f'    {cpp_string_literal(enum_name)}, static_cast<uint8>(sizeof({enum_name})), {values_array_name}, {len(values)});'
         )
     return '\n\n'.join(blocks)
 
@@ -897,6 +924,98 @@ def parse_generated_body(content, class_info):
             return args[0].strip(), args[1].strip()
         return None, None
     return None, None
+
+
+
+def parse_generated_struct_body(content, struct_info):
+    for macro in iter_macro_invocations(content, 'GENERATED_STRUCT_BODY', struct_info['body_start'], struct_info['body_end']):
+        args = split_metadata_args(macro['metadata'])
+        if len(args) >= 1:
+            return args[0].strip()
+        return None
+    return None
+
+
+# 파일 내에서 USTRUCT 매크로와 구조체 본문을 찾아 정보를 수집합니다.
+def find_ustruct_declarations(content):
+    structs = []
+
+    for macro in iter_macro_invocations(content, 'USTRUCT'):
+        struct_match = re.search(r'\bstruct\b', content[macro['end']:])
+        if not struct_match:
+            continue
+
+        struct_keyword = macro['end'] + struct_match.start()
+        open_brace = content.find('{', struct_keyword)
+        if open_brace == -1:
+            continue
+
+        struct_header = content[struct_keyword:open_brace]
+        before_inheritance = struct_header.split(':', 1)[0]
+        identifiers = re.findall(r'\b[A-Za-z_][A-Za-z0-9_]*\b', before_inheritance)
+        if len(identifiers) < 2 or identifiers[0] != 'struct':
+            continue
+
+        struct_name = identifiers[-1]
+        close_brace = find_matching_delimiter(content, open_brace, '{', '}')
+        if close_brace == -1:
+            continue
+
+        namespace_parts = find_enclosing_namespaces(content, struct_keyword)
+        struct_info = {
+            'name': struct_name,
+            'qualified_name': qualify_name(namespace_parts, struct_name),
+            'metadata': parse_metadata(macro['metadata']),
+            'struct_start': struct_keyword,
+            'body_start': open_brace + 1,
+            'body_end': close_brace,
+            'struct_end': close_brace + 1,
+        }
+
+        generated_struct_name = parse_generated_struct_body(content, struct_info)
+        if generated_struct_name and generated_struct_name != struct_name:
+            raise RuntimeError(
+                f"GENERATED_STRUCT_BODY struct mismatch: parsed '{struct_name}', macro '{generated_struct_name}'")
+        if not generated_struct_name:
+            raise RuntimeError(
+                f"USTRUCT '{struct_name}' is missing GENERATED_STRUCT_BODY({struct_name})")
+
+        structs.append(struct_info)
+
+    return structs
+
+
+# 전체 헤더 파일을 스캔하여 USTRUCT 정보를 수집하고 맵 형태로 반환합니다.
+def collect_structs():
+    struct_infos = []
+
+    for header_path in iter_header_paths():
+        try:
+            content = strip_comments(header_path.read_text(encoding='utf-8'))
+        except UnicodeDecodeError:
+            continue
+        if 'USTRUCT' not in content:
+            continue
+        for struct_info in find_ustruct_declarations(content):
+            struct_info['header_path'] = header_path
+            struct_infos.append(struct_info)
+
+    struct_map = {}
+    short_name_counts = {}
+    for struct_info in struct_infos:
+        short_name_counts[struct_info['name']] = short_name_counts.get(struct_info['name'], 0) + 1
+        struct_map[struct_info['qualified_name']] = struct_info
+
+    for struct_info in struct_infos:
+        if short_name_counts[struct_info['name']] == 1:
+            struct_map[struct_info['name']] = struct_info
+        else:
+            print(
+                f"Reflection warning: USTRUCT short name '{struct_info['name']}' is ambiguous; use qualified name.",
+                file=sys.stderr,
+            )
+
+    return struct_map
 
 
 # 파일 내에서 UCLASS 매크로와 클래스 본문을 찾아 정보를 수집합니다.
@@ -953,12 +1072,9 @@ def find_uclass_declarations(content):
     return classes
 
 
-# 특정 클래스 본문 내부에 선언된 UPROPERTY와 변수 선언을 수집합니다.
-def find_uproperties_in_class(content, class_info):
+# 특정 본문 범위 내부에 선언된 UPROPERTY와 변수 선언을 수집합니다.
+def find_uproperties_in_range(content, body_start, body_end):
     properties = []
-    body_start = class_info['body_start']
-    body_end = class_info['body_end']
-
     for macro in iter_macro_invocations(content, 'UPROPERTY', body_start, body_end):
         metadata = parse_metadata(macro['metadata'])
         decl_start = skip_ws(content, macro['end'])
@@ -970,13 +1086,22 @@ def find_uproperties_in_class(content, class_info):
             'declaration': declaration,
             'macro_start': macro['start'],
         })
-
     return properties
 
 
-# C++ 타입을 분석하여 EPropertyType과 연관된 enum 정보를 반환합니다.
-def resolve_property_type(cpp_type, enum_map, metadata=None):
-    type_info = make_property_type_info(cpp_type, enum_map, metadata)
+# 특정 클래스 본문 내부에 선언된 UPROPERTY와 변수 선언을 수집합니다.
+def find_uproperties_in_class(content, class_info):
+    return find_uproperties_in_range(content, class_info['body_start'], class_info['body_end'])
+
+
+# 특정 구조체 본문 내부에 선언된 UPROPERTY와 변수 선언을 수집합니다.
+def find_uproperties_in_struct(content, struct_info):
+    return find_uproperties_in_range(content, struct_info['body_start'], struct_info['body_end'])
+
+
+# C++ 타입을 분석하여 EPropertyType과 연관된 enum/struct 정보를 반환합니다.
+def resolve_property_type(cpp_type, enum_map, struct_map=None, metadata=None):
+    type_info = make_property_type_info(cpp_type, enum_map, struct_map, metadata)
     if not type_info:
         return None
     return type_info
@@ -1107,23 +1232,176 @@ static Z_AutoRegister_UClass_{class_name} Z_AutoRegister_UClass_{class_name}_Var
     print(f'Generated: {gen_filepath.relative_to(ROOT)}')
 
 
+
+
+def generate_struct_file(header_path, struct_info, properties, used_enums):
+    struct_name = struct_info['name']
+    qualified_name = struct_info['qualified_name']
+    enum_metadata_str = generate_enum_metadata(used_enums)
+    if enum_metadata_str:
+        enum_metadata_str += '\n\n'
+
+    enum_registration = '\n'.join(
+        f'        FReflectionRegistry::Get().RegisterEnum(&{make_enum_meta_name(enum_info["qualified_name"])});'
+        for enum_name, enum_info in sorted(used_enums.items())
+    )
+    if enum_registration:
+        enum_registration += '\n'
+
+    static_property_defs = []
+    static_name_counter = 0
+
+    def make_inner_property(type_info, owner_prop_name):
+        nonlocal static_name_counter
+        inner_expr = 'nullptr'
+        if type_info.get('inner'):
+            inner_expr = make_inner_property(type_info['inner'], owner_prop_name)
+
+        static_name_counter += 1
+        static_name = f'Z_Property_{struct_name}_{sanitize_cpp_identifier(owner_prop_name)}_Inner_{static_name_counter}'
+        fake_prop = {
+            'display_name': None,
+            'category': None,
+            'property_flags': 'EPropertyFlags::Read | EPropertyFlags::Write | EPropertyFlags::Edit',
+            'min': '0.0f',
+            'max': '0.0f',
+            'speed': '0.1f',
+            'type_info': type_info,
+        }
+        size_expr = f'sizeof({type_info["cpp_type"]})'
+        params = make_property_params_block(fake_prop, "nullptr", "0", size_expr, inner_expr)
+        static_property_defs.append(f'static const FProperty {static_name}({params});')
+        return f'&{static_name}'
+
+    runtime_prop_lines = []
+    for prop in properties:
+        inner_expr = 'nullptr'
+        if prop['type_info'].get('inner'):
+            inner_expr = make_inner_property(prop['type_info']['inner'], prop['name'])
+        params = make_property_params_block(
+            prop,
+            cpp_string_literal(prop['name']),
+            f'offsetof({qualified_name}, {prop["name"]})',
+            f'sizeof((({qualified_name}*)nullptr)->{prop["name"]})',
+            inner_expr)
+        runtime_prop_lines.append(f'        Struct->AddProperty(FProperty({params}));')
+
+    static_property_defs_str = '\n'.join(static_property_defs)
+    if static_property_defs_str:
+        static_property_defs_str += '\n\n'
+
+    runtime_props_str = '\n'.join(runtime_prop_lines)
+    include_path = make_include_path(header_path)
+    struct_display_name = get_metadata_value(struct_info['metadata'], 'DisplayName', 'Display') or struct_name
+    struct_category = get_metadata_value(struct_info['metadata'], 'Category')
+
+    gen_code = f"""// AUTO-GENERATED FILE. DO NOT MODIFY.
+#include \"{include_path}\"
+#include \"Core/Reflection/ReflectionRegistry.h\"
+#include \"Object/Class.h\"
+#include \"Object/Property.h\"
+
+{enum_metadata_str}{static_property_defs_str}\
+struct Z_Construct_UScriptStruct_{struct_name} {{
+    static void RegisterRuntimeEnums() {{
+{enum_registration}    }}
+
+    static void RegisterRuntimeProperties(UScriptStruct* Struct) {{
+        if (!Struct) {{
+            return;
+        }}
+{runtime_props_str}
+    }}
+}};
+
+const UScriptStruct* {qualified_name}::StaticStruct()
+{{
+    static UScriptStruct Struct(
+        \"{struct_name}\",
+        sizeof({qualified_name}),
+        alignof({qualified_name}),
+        GetStructOps<{qualified_name}>(),
+        {cpp_string_literal(struct_display_name)},
+        {cpp_string_literal(struct_category)});
+
+    static bool bRegistered = false;
+    if (!bRegistered)
+    {{
+        bRegistered = true;
+        Z_Construct_UScriptStruct_{struct_name}::RegisterRuntimeEnums();
+        FReflectionRegistry::Get().RegisterStruct(&Struct);
+        Z_Construct_UScriptStruct_{struct_name}::RegisterRuntimeProperties(&Struct);
+    }}
+    return &Struct;
+}}
+
+struct Z_AutoRegister_UScriptStruct_{struct_name} {{
+    Z_AutoRegister_UScriptStruct_{struct_name}() {{
+        {qualified_name}::StaticStruct();
+    }}
+}};
+
+static Z_AutoRegister_UScriptStruct_{struct_name} Z_AutoRegister_UScriptStruct_{struct_name}_Var;
+"""
+
+    gen_filepath = make_generated_file_path(header_path, struct_name)
+    gen_filepath.parent.mkdir(parents=True, exist_ok=True)
+    with open(gen_filepath, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(gen_code)
+    print(f'Generated: {gen_filepath.relative_to(ROOT)}')
+
+
 # 헤더 파일 하나를 분석하여 UCLASS, UPROPERTY 등을 추출하고 .gen.cpp 코드를 생성합니다.
-def parse_header_and_generate(header_path, enum_map):
+def parse_header_and_generate(header_path, enum_map, struct_map):
     try:
         raw_content = header_path.read_text(encoding='utf-8')
     except UnicodeDecodeError:
         return
 
     content = strip_comments(raw_content)
-    if 'UCLASS' not in content:
+    if 'UCLASS' not in content and 'USTRUCT' not in content:
         return
 
-    class_infos = find_uclass_declarations(content)
-    if not class_infos:
-        return
+    struct_infos = find_ustruct_declarations(content) if 'USTRUCT' in content else []
+    for struct_info in struct_infos:
+        properties = []
+        used_enums = {}
 
+        for prop in find_uproperties_in_struct(content, struct_info):
+            cpp_type, var_name = parse_property_declaration(prop['declaration'])
+            if not cpp_type or not var_name:
+                print(
+                    f"Reflection warning: failed to parse UPROPERTY declaration in {header_path.relative_to(ROOT)}; skipped.",
+                    file=sys.stderr,
+                )
+                continue
+
+            metadata = prop['metadata']
+            type_info = resolve_property_type(cpp_type, enum_map, struct_map, metadata)
+            if not type_info:
+                warn_unknown_type(header_path, cpp_type, var_name)
+                continue
+
+            for nested_type_info in iter_type_infos(type_info):
+                enum_info = nested_type_info.get('enum_info')
+                if enum_info:
+                    used_enums[enum_info['qualified_name']] = enum_info
+
+            properties.append({
+                'name': var_name,
+                'display_name': get_metadata_value(metadata, 'DisplayName', 'Display'),
+                'category': get_metadata_value(metadata, 'Category'),
+                'property_flags': make_runtime_property_flags(metadata),
+                'min': cpp_float_literal(get_metadata_value(metadata, 'Min', 'ClampMin', 'UIMin'), '0.0f'),
+                'max': cpp_float_literal(get_metadata_value(metadata, 'Max', 'ClampMax', 'UIMax'), '0.0f'),
+                'speed': cpp_float_literal(get_metadata_value(metadata, 'Speed', 'Step'), '0.1f'),
+                'type_info': type_info,
+            })
+
+        generate_struct_file(header_path, struct_info, properties, used_enums)
+
+    class_infos = find_uclass_declarations(content) if 'UCLASS' in content else []
     for class_info in class_infos:
-        class_name = class_info['name']
         properties = []
         used_enums = {}
 
@@ -1137,7 +1415,7 @@ def parse_header_and_generate(header_path, enum_map):
                 continue
 
             metadata = prop['metadata']
-            type_info = resolve_property_type(cpp_type, enum_map, metadata)
+            type_info = resolve_property_type(cpp_type, enum_map, struct_map, metadata)
             if not type_info:
                 warn_unknown_type(header_path, cpp_type, var_name)
                 continue
@@ -1163,5 +1441,6 @@ def parse_header_and_generate(header_path, enum_map):
 
 if __name__ == '__main__':
     enums = collect_enums()
+    structs = collect_structs()
     for header in iter_header_paths():
-        parse_header_and_generate(header, enums)
+        parse_header_and_generate(header, enums, structs)

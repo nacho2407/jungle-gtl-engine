@@ -1,43 +1,24 @@
-﻿#include "Object/Class.h"
-
-#include "Object/Object.h"
+#include "Object/Class.h"
 
 #include <cstring>
 
-UClass::UClass(const char* InName, UClass* InSuperClass, size_t InClassSize, uint32 InClassFlags, FCreateObjectFunc InCreateFunc, const char* InDisplayName, const char* InCategory)
-	: Name(InName)
-	, SuperClass(InSuperClass)
-	, ClassSize(InClassSize)
-	, ClassFlags(InClassFlags)
-	, CreateFunc(InCreateFunc)
+UField::UField(const char* InName, const char* InDisplayName, const char* InCategory)
+	: UObject(false)
+	, Name(InName)
 	, DisplayName(InDisplayName)
 	, Category(InCategory)
 {
 }
 
-bool UClass::IsChildOf(const UClass* Other) const
+UStruct::UStruct(const char* InName, UStruct* InSuperStruct, size_t InSize, size_t InAlignment, const char* InDisplayName, const char* InCategory)
+	: UField(InName, InDisplayName, InCategory)
+	, SuperStruct(InSuperStruct)
+	, StructureSize(InSize)
+	, MinAlignment(InAlignment)
 {
-	if (!Other)
-	{
-		return false;
-	}
-
-	for (const UClass* Current = this; Current; Current = Current->SuperClass)
-	{
-		if (Current == Other)
-		{
-			return true;
-		}
-	}
-	return false;
 }
 
-UObject* UClass::CreateObject() const
-{
-	return CreateFunc ? CreateFunc() : nullptr;
-}
-
-void UClass::AddProperty(const FProperty& Property)
+void UStruct::AddProperty(const FProperty& Property)
 {
 	if (!Property.Name || FindProperty(Property.Name))
 	{
@@ -46,7 +27,7 @@ void UClass::AddProperty(const FProperty& Property)
 	Properties.push_back(Property);
 }
 
-const FProperty* UClass::FindProperty(const char* PropertyName) const
+const FProperty* UStruct::FindProperty(const char* PropertyName) const
 {
 	if (!PropertyName)
 	{
@@ -61,18 +42,85 @@ const FProperty* UClass::FindProperty(const char* PropertyName) const
 		}
 	}
 
-	return SuperClass ? SuperClass->FindProperty(PropertyName) : nullptr;
+	return SuperStruct ? SuperStruct->FindProperty(PropertyName) : nullptr;
 }
 
-void UClass::GetAllProperties(TArray<const FProperty*>& OutProperties) const
+void UStruct::GetAllProperties(TArray<const FProperty*>& OutProperties) const
 {
-	if (SuperClass)
+	if (SuperStruct)
 	{
-		SuperClass->GetAllProperties(OutProperties);
+		SuperStruct->GetAllProperties(OutProperties);
 	}
 
 	for (const FProperty& Property : Properties)
 	{
 		OutProperties.push_back(&Property);
 	}
+}
+
+UClass::UClass(const char* InName, UClass* InSuperClass, size_t InClassSize, uint32 InClassFlags, FCreateObjectFunc InCreateFunc, const char* InDisplayName, const char* InCategory)
+	: UStruct(InName, InSuperClass, InClassSize, alignof(UObject), InDisplayName, InCategory)
+	, ClassFlags(InClassFlags)
+	, CreateFunc(InCreateFunc)
+{
+}
+
+bool UClass::IsChildOf(const UClass* Other) const
+{
+	if (!Other)
+	{
+		return false;
+	}
+
+	for (const UClass* Current = this; Current; Current = Current->GetSuperClass())
+	{
+		if (Current == Other)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+UObject* UClass::CreateObject() const
+{
+	return CreateFunc ? CreateFunc() : nullptr;
+}
+
+UScriptStruct::UScriptStruct(const char* InName, size_t InSize, size_t InAlignment, const IStructOps* InStructOps, const char* InDisplayName, const char* InCategory)
+	: UStruct(InName, nullptr, InSize, InAlignment, InDisplayName, InCategory)
+	, StructOps(InStructOps)
+{
+}
+
+void UScriptStruct::Construct(void* Ptr) const
+{
+	if (StructOps && Ptr)
+	{
+		StructOps->Construct(Ptr);
+	}
+}
+
+void UScriptStruct::Destruct(void* Ptr) const
+{
+	if (StructOps && Ptr)
+	{
+		StructOps->Destruct(Ptr);
+	}
+}
+
+void UScriptStruct::Copy(void* Dst, const void* Src) const
+{
+	if (StructOps && Dst && Src)
+	{
+		StructOps->Copy(Dst, Src);
+	}
+}
+
+UEnum::UEnum(const char* InName, uint8 InSize, const FEnumValue* InValues, uint32 InCount, const char* InDisplayName, const char* InCategory)
+	: UField(InName, InDisplayName, InCategory)
+	, Size(InSize)
+	, Values(InValues)
+	, Count(InCount)
+{
 }

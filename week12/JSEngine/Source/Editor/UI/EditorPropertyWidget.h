@@ -1,4 +1,4 @@
-﻿
+
 #pragma once
 #include "Editor/UI/EditorWidget.h"
 #include "Editor/UI/EditorActorSequenceDetails.h"
@@ -59,6 +59,7 @@ private:
 	bool RenderObjectPtrWidget(const FProperty& Property, void* ValuePtr, UObject* NotifyTarget, const char* Label, int32 ArrayIndex = -1);
 	bool RenderSoftObjectPtrWidget(const FProperty& Property, void* ValuePtr, const char* Label);
 	bool RenderArrayPropertyWidget(const FProperty& Property, void* ValuePtr, UObject* NotifyTarget);
+	bool RenderStructPropertyWidget(const FProperty& Property, void* ValuePtr, UObject* NotifyTarget, const char* Label);
 	void RenderSkeletalStateMachinePreview(class USkeletalMeshComponent* Comp);
 	void RenderSkeletalBonePoseDebug(class USkeletalMeshComponent* Comp);
 	void RenderInterpControlPoints(class UInterpToMovementComponent* Comp);

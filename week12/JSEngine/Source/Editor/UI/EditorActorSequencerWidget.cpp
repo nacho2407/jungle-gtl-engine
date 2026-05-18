@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorActorSequencerWidget.h"
+#include "Editor/UI/EditorActorSequencerWidget.h"
 #include "Object/Property.h"
 
 #include "Animation/ActorSequence.h"
@@ -428,7 +428,7 @@ void FEditorActorSequencerWidget::DrawAddPropertyPopup(UActorSequenceComponent* 
 
 			TArray<const char*> ChannelNames;
 			FEditorActorSequenceEditModel::GetChannelNames(
-				FEditorActorSequenceEditModel::GetTrackType(Property->Type),
+				FEditorActorSequenceEditModel::GetTrackType(*Property),
 				ChannelNames);
 
 			if (ChannelNames.size() <= 1)
@@ -440,7 +440,7 @@ void FEditorActorSequencerWidget::DrawAddPropertyPopup(UActorSequenceComponent* 
 						SequenceComp,
 						Object,
 						*Property,
-						FEditorActorSequenceEditModel::GetDefaultChannelName(Property->Type)))
+						FEditorActorSequenceEditModel::GetDefaultChannelName(*Property)))
 					{
 						FEditorActorSequenceEditModel::NotifySequenceEdited(
 							EditorEngine,

@@ -1,11 +1,14 @@
-﻿#pragma once
+#pragma once
 
 #include "EngineStatics.h"
+#include "Core/Containers/Array.h"
+#include "Core/Containers/Map.h"
+#include "Core/Containers/String.h"
+#include "Core/PropertyTypes.h"
 #include "Object/FName.h"
 #include "Core/Singleton.h"
 #include "Core/Reflection/ReflectionMacros.h"
 #include "Serialization/Archive.h"
-#include "Object/Class.h"
 #include <cstdlib>
 #include <type_traits>
 
@@ -41,7 +44,7 @@ public:
 	//                   하위 클래스 구현 시 부모의 PostDuplicate 를 먼저 호출해야 합니다.
 	// -----------------------------------------------------------------------
 	virtual UObject* Duplicate(const FDuplicateContext* Context = nullptr);
-	virtual void PostDuplicate(UObject* Original) 
+	virtual void PostDuplicate(UObject* Original)
 	{
 		ObjectName = Original->ObjectName;
 	}
@@ -67,11 +70,7 @@ public:
 	// RTTI stuffs
 	static UClass* StaticClass();
 	virtual UClass* GetClass() const { return StaticClass(); }
-	const char* GetClassName() const
-	{
-		UClass* Class = GetClass();
-		return Class ? Class->GetName() : "UObject";
-	}
+	const char* GetClassName() const;
 
 	bool IsA(const UClass* Class) const;
 
@@ -94,11 +93,14 @@ public:
 	void SerializeProperties(FArchive& Ar);
 
 protected:
+	explicit UObject(bool bRegisterObject);
+
 	FName ObjectName;
 
 private:
-	uint32 UUID;
-	uint32 InternalIndex;
+	uint32 UUID = 0;
+	uint32 InternalIndex = 0;
+	bool bRegisteredWithObjectArray = false;
 };
 
 extern TArray<UObject*> GUObjectArray;
@@ -133,15 +135,11 @@ public:
 	{
 		static_assert(std::is_base_of<UObject, T>::value, "T must derive from UObject");
 		T* Obj = new T();
-
-		const UClass* Class = T::StaticClass();
-		const char* ClassName = Class ? Class->GetName() : "UObject";
-		uint32& Counter = NameCounters[ClassName];
-		FString Name = FString(ClassName) + "_" + std::to_string(Counter++);
-		Obj->SetFName(FName(Name));
-
+		AssignObjectName(Obj, T::StaticClass());
 		return Obj;
 	}
+
+	void AssignObjectName(UObject* Obj, const UClass* Class);
 
 	void DestroyObject(UObject* Obj)
 	{
@@ -199,6 +197,7 @@ public:
 		return GUObjectArray[Index];
 	}
 };
+
 
 template<typename T>
 inline UObject* CreateReflectedObject()
