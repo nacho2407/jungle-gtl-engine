@@ -6,8 +6,47 @@
 #include "Core/Logging/Stats.h"
 #include "Object/ObjectFactory.h"
 
+#include <algorithm>
+#include <cmath>
+
 DEFINE_CLASS(UAnimSingleNodeInstance, UAnimInstance)
 REGISTER_FACTORY(UAnimSingleNodeInstance)
+
+namespace
+{
+constexpr float AnimationTimeEpsilon = 1.0e-6f;
+
+float ClampAnimationTime(float Time, float PlayLength)
+{
+    if (PlayLength <= 0.0f)
+    {
+        return 0.0f;
+    }
+
+    return std::clamp(Time, 0.0f, PlayLength);
+}
+
+float WrapAnimationTime(float Time, float PlayLength)
+{
+    if (PlayLength <= 0.0f)
+    {
+        return 0.0f;
+    }
+
+    float WrappedTime = std::fmod(Time, PlayLength);
+    if (WrappedTime < 0.0f)
+    {
+        WrappedTime += PlayLength;
+    }
+
+    return WrappedTime;
+}
+
+float NormalizeAnimationTime(float Time, float PlayLength, bool bLooping)
+{
+    return bLooping ? WrapAnimationTime(Time, PlayLength) : ClampAnimationTime(Time, PlayLength);
+}
+} // namespace
 
 void UAnimSingleNodeInstance::SetAnimationAsset(UAnimationAsset* NewAsset)
 {
@@ -17,7 +56,10 @@ void UAnimSingleNodeInstance::SetAnimationAsset(UAnimationAsset* NewAsset)
     }
 
     CurrentAsset = NewAsset;
+    PreviousTime = 0.0f;
     CurrentTime = 0.0f;
+    bReachedEndThisFrame = false;
+    bLoopedThisFrame = false;
 
     if (!CurrentAsset)
     {
@@ -57,13 +99,19 @@ void UAnimSingleNodeInstance::Stop()
 {
     bPlaying = false;
     bPaused = false;
+    PreviousTime = 0.0f;
     CurrentTime = 0.0f;
+    bReachedEndThisFrame = false;
+    bLoopedThisFrame = false;
 }
 
 void UAnimSingleNodeInstance::SetPosition(float InTimeSeconds, bool bFireNotifies)
 {
     (void)bFireNotifies;
-    CurrentTime = InTimeSeconds >= 0.0f ? InTimeSeconds : 0.0f;
+    PreviousTime = CurrentTime;
+    CurrentTime = NormalizeAnimationTime(InTimeSeconds, GetPlayLength(), bLooping);
+    bReachedEndThisFrame = false;
+    bLoopedThisFrame = false;
 }
 
 float UAnimSingleNodeInstance::GetPosition() const
@@ -71,14 +119,37 @@ float UAnimSingleNodeInstance::GetPosition() const
     return CurrentTime;
 }
 
+float UAnimSingleNodeInstance::GetPlayLength() const
+{
+    return CurrentAsset ? CurrentAsset->GetPlayLength() : 0.0f;
+}
+
 void UAnimSingleNodeInstance::SetPlayRate(float InPlayRate)
 {
     PlayRate = InPlayRate;
+    bReversePlay = PlayRate < 0.0f;
 }
 
 float UAnimSingleNodeInstance::GetPlayRate() const
 {
     return PlayRate;
+}
+
+void UAnimSingleNodeInstance::SetReversePlay(bool bInReversePlay)
+{
+    float PlayRateMagnitude = std::fabs(PlayRate);
+    if (PlayRateMagnitude <= AnimationTimeEpsilon)
+    {
+        PlayRateMagnitude = 1.0f;
+    }
+
+    PlayRate = bInReversePlay ? -PlayRateMagnitude : PlayRateMagnitude;
+    bReversePlay = bInReversePlay;
+}
+
+bool UAnimSingleNodeInstance::IsReversePlay() const
+{
+    return bReversePlay;
 }
 
 void UAnimSingleNodeInstance::SetLooping(bool bInLooping)
@@ -103,18 +174,68 @@ bool UAnimSingleNodeInstance::IsPaused() const
 
 void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
+    SCOPE_STAT("Anim.Update");
+
     if (!bPlaying || bPaused)
     {
+        bReachedEndThisFrame = false;
+        bLoopedThisFrame = false;
         return;
     }
 
-    CurrentTime += DeltaSeconds * PlayRate;
-    if (CurrentTime < 0.0f)
+    AdvanceTime(DeltaSeconds);
+}
+
+void UAnimSingleNodeInstance::AdvanceTime(float DeltaSeconds)
+{
+    SCOPE_STAT("Anim.AdvanceTime");
+
+    bReachedEndThisFrame = false;
+    bLoopedThisFrame = false;
+    PreviousTime = CurrentTime;
+
+    const float PlayLength = GetPlayLength();
+    if (PlayLength <= AnimationTimeEpsilon)
     {
         CurrentTime = 0.0f;
         bPlaying = false;
         bPaused = false;
+        return;
     }
+
+    if (std::fabs(PlayRate) <= AnimationTimeEpsilon)
+    {
+        return;
+    }
+
+    const float NewTime = CurrentTime + DeltaSeconds * PlayRate;
+
+    if (bLooping)
+    {
+        bLoopedThisFrame = NewTime < 0.0f || NewTime >= PlayLength;
+        CurrentTime = WrapAnimationTime(NewTime, PlayLength);
+        return;
+    }
+
+    if (NewTime >= PlayLength)
+    {
+        CurrentTime = PlayLength;
+        bReachedEndThisFrame = true;
+        bPlaying = false;
+        bPaused = false;
+        return;
+    }
+
+    if (NewTime <= 0.0f && PlayRate < 0.0f)
+    {
+        CurrentTime = 0.0f;
+        bReachedEndThisFrame = true;
+        bPlaying = false;
+        bPaused = false;
+        return;
+    }
+
+    CurrentTime = ClampAnimationTime(NewTime, PlayLength);
 }
 
 bool UAnimSingleNodeInstance::EvaluateAnimation(TArray<FTransform>& OutLocalPose)

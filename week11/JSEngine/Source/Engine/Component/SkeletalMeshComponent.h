@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "SkeletalMeshComponent.generated.h"
 
@@ -50,6 +50,8 @@ public:
     float GetPosition() const;
     void SetPlayRate(float InPlayRate);
     float GetPlayRate() const;
+    void SetReversePlay(bool bInReversePlay);
+    bool IsReversePlay() const;
     void SetLooping(bool bInLooping);
     bool IsLooping() const;
     bool IsPlaying() const;

@@ -1,4 +1,4 @@
-#include "SkeletalMeshComponent.h"
+﻿#include "SkeletalMeshComponent.h"
 
 #include <utility>
 
@@ -207,6 +207,20 @@ float USkeletalMeshComponent::GetPlayRate() const
     return SingleNodeInstance ? SingleNodeInstance->GetPlayRate() : 1.0f;
 }
 
+void USkeletalMeshComponent::SetReversePlay(bool bInReversePlay)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetReversePlay(bInReversePlay);
+    }
+}
+
+bool USkeletalMeshComponent::IsReversePlay() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->IsReversePlay() : false;
+}
+
 void USkeletalMeshComponent::SetLooping(bool bInLooping)
 {
     if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
@@ -229,8 +243,8 @@ bool USkeletalMeshComponent::IsPlaying() const
 
 float USkeletalMeshComponent::GetPlayLength() const
 {
-    const UAnimationAsset* Animation = GetAnimation();
-    return Animation ? Animation->GetPlayLength() : 0.0f;
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetPlayLength() : 0.0f;
 }
 
 bool USkeletalMeshComponent::SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName)
