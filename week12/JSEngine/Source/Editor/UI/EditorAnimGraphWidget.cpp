@@ -1,6 +1,7 @@
 #include "Editor/UI/EditorAnimGraphWidget.h"
 
 #include "Core/ResourceManager.h"
+#include "Core/Paths.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Notification/EditorNotificationService.h"
 #include "ImGui/imgui.h"
@@ -8,6 +9,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 
 namespace
 {
@@ -45,6 +47,12 @@ void FEditorAnimGraphWidget::Open(const FString& InPath)
 	SelectedNodeId = -1;
 	bDirty = false;
 	bOpen = EditingAsset != nullptr;
+	if (EditingAsset)
+	{
+		const int32 PreviousRootNodeId = EditingAsset->RootNodeId;
+		NormalizeRootNode();
+		bDirty = bDirty || PreviousRootNodeId != EditingAsset->RootNodeId;
+	}
 
 	if (!EditingAsset && EditorEngine)
 	{
@@ -143,6 +151,8 @@ void FEditorAnimGraphWidget::RenderToolbar()
 
 	ImGui::SameLine();
 	ImGui::TextDisabled("%s%s", EditingPath.c_str(), bDirty ? " *" : "");
+	ImGui::SameLine();
+	ImGui::TextDisabled("Root: %d", EditingAsset ? EditingAsset->RootNodeId : -1);
 }
 
 void FEditorAnimGraphWidget::RenderCanvas()
@@ -157,6 +167,7 @@ void FEditorAnimGraphWidget::RenderCanvas()
 		ImGui::GetColorU32(ImVec4(0.10f, 0.11f, 0.13f, 1.0f)),
 		4.0f);
 
+	ImGui::SetNextItemAllowOverlap();
 	ImGui::InvisibleButton(
 		"##AnimGraphCanvas",
 		CanvasSize,
@@ -309,6 +320,20 @@ void FEditorAnimGraphWidget::RenderDetails()
 
 void FEditorAnimGraphWidget::RenderOutputPoseDetails(FAnimGraphNodeDesc& Node)
 {
+	if (EditingAsset && EditingAsset->RootNodeId != Node.NodeId)
+	{
+		ImGui::TextDisabled("This Output Pose is not the root.");
+		if (ImGui::Button("Set As Root"))
+		{
+			EditingAsset->RootNodeId = Node.NodeId;
+			bDirty = true;
+		}
+	}
+	else
+	{
+		ImGui::TextDisabled("Root Output Pose");
+	}
+
 	ImGui::Spacing();
 	ImGui::TextUnformatted("Input Pose");
 
@@ -358,9 +383,51 @@ void FEditorAnimGraphWidget::RenderSequencePlayerDetails(FAnimGraphNodeDesc& Nod
 	ImGui::Spacing();
 	ImGui::TextUnformatted("Sequence Player");
 
+	TArray<FString> AnimPaths = FResourceManager::Get().GetAnimSequencePaths();
+	const char* Preview = Node.AnimationPath.empty() ? "<None>" : Node.AnimationPath.c_str();
+	if (ImGui::BeginCombo("Animation", Preview))
+	{
+		if (ImGui::Selectable("<None>", Node.AnimationPath.empty()))
+		{
+			Node.AnimationPath.clear();
+			bDirty = true;
+		}
+		for (const FString& Path : AnimPaths)
+		{
+			const bool bSelected = Node.AnimationPath == Path;
+			if (ImGui::Selectable(Path.c_str(), bSelected))
+			{
+				Node.AnimationPath = Path;
+				bDirty = true;
+			}
+			if (bSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("AnimSequenceContentItem"))
+		{
+			if (Payload->Data && Payload->DataSize > 0)
+			{
+				const FString PayloadPath = static_cast<const char*>(Payload->Data);
+				const std::filesystem::path DroppedPath = FPaths::ToWide(PayloadPath);
+				Node.AnimationPath = DroppedPath.is_absolute()
+					? FPaths::Normalize(FPaths::ToRelativeString(DroppedPath.wstring()))
+					: FPaths::Normalize(PayloadPath);
+				bDirty = true;
+			}
+		}
+		ImGui::EndDragDropTarget();
+	}
+
 	char PathBuffer[512] = {};
 	std::strncpy(PathBuffer, Node.AnimationPath.c_str(), sizeof(PathBuffer) - 1);
-	if (ImGui::InputText("Animation", PathBuffer, sizeof(PathBuffer)))
+	if (ImGui::InputText("Path", PathBuffer, sizeof(PathBuffer)))
 	{
 		Node.AnimationPath = PathBuffer;
 		bDirty = true;
@@ -387,6 +454,40 @@ const FAnimGraphNodeDesc* FEditorAnimGraphWidget::FindSelectedNode() const
 	return EditingAsset ? EditingAsset->FindNode(SelectedNodeId) : nullptr;
 }
 
+FAnimGraphNodeDesc* FEditorAnimGraphWidget::FindFirstOutputPoseNode()
+{
+	if (!EditingAsset)
+	{
+		return nullptr;
+	}
+
+	for (FAnimGraphNodeDesc& Node : EditingAsset->Nodes)
+	{
+		if (Node.Type == EAnimGraphNodeType::OutputPose)
+		{
+			return &Node;
+		}
+	}
+	return nullptr;
+}
+
+const FAnimGraphNodeDesc* FEditorAnimGraphWidget::FindFirstOutputPoseNode() const
+{
+	if (!EditingAsset)
+	{
+		return nullptr;
+	}
+
+	for (const FAnimGraphNodeDesc& Node : EditingAsset->Nodes)
+	{
+		if (Node.Type == EAnimGraphNodeType::OutputPose)
+		{
+			return &Node;
+		}
+	}
+	return nullptr;
+}
+
 int32 FEditorAnimGraphWidget::GenerateNodeId() const
 {
 	int32 MaxId = 0;
@@ -398,6 +499,33 @@ int32 FEditorAnimGraphWidget::GenerateNodeId() const
 		}
 	}
 	return MaxId + 1;
+}
+
+void FEditorAnimGraphWidget::NormalizeRootNode()
+{
+	if (!EditingAsset)
+	{
+		return;
+	}
+
+	const FAnimGraphNodeDesc* CurrentRoot = EditingAsset->FindNode(EditingAsset->RootNodeId);
+	if (CurrentRoot && CurrentRoot->Type == EAnimGraphNodeType::OutputPose)
+	{
+		return;
+	}
+
+	if (const FAnimGraphNodeDesc* OutputNode = FindFirstOutputPoseNode())
+	{
+		EditingAsset->RootNodeId = OutputNode->NodeId;
+	}
+	else if (!EditingAsset->Nodes.empty())
+	{
+		EditingAsset->RootNodeId = EditingAsset->Nodes.front().NodeId;
+	}
+	else
+	{
+		EditingAsset->RootNodeId = -1;
+	}
 }
 
 void FEditorAnimGraphWidget::AddSequencePlayerNode()
@@ -463,7 +591,7 @@ void FEditorAnimGraphWidget::DeleteSelectedNode()
 
 	if (EditingAsset->RootNodeId == DeletedNodeId)
 	{
-		EditingAsset->RootNodeId = EditingAsset->Nodes.empty() ? -1 : EditingAsset->Nodes.front().NodeId;
+		NormalizeRootNode();
 	}
 
 	SelectedNodeId = -1;
@@ -477,6 +605,7 @@ void FEditorAnimGraphWidget::Save()
 		return;
 	}
 
+	NormalizeRootNode();
 	if (FResourceManager::Get().SaveAnimGraph(EditingAsset, EditingPath))
 	{
 		bDirty = false;

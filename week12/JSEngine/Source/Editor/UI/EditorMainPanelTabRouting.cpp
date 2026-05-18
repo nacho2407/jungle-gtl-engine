@@ -175,6 +175,7 @@ void FEditorMainPanel::RenderAnimGraphEditorDocument(float DeltaTime)
 		return;
 	}
 
+	EditorTabs.SetTabDirty(ActiveTab->Id, Widgets.AnimGraphWidget.IsDirty());
 	Widgets.AnimGraphWidget.RenderEmbedded(DeltaTime);
 	ImGui::End();
 }

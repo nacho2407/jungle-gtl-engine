@@ -186,6 +186,18 @@ bool FEditorTabManager::SetTabLabel(const FEditorTabId& Id, const FString& Label
 	return true;
 }
 
+bool FEditorTabManager::SetTabDirty(const FEditorTabId& Id, bool bDirty)
+{
+	const int32 Index = FindTabIndex(Id);
+	if (Index < 0)
+	{
+		return false;
+	}
+
+	Tabs[Index].bDirty = bDirty;
+	return true;
+}
+
 const FEditorTabEntry* FEditorTabManager::GetActiveTab() const
 {
 	if (ActiveTabIndex < 0 || ActiveTabIndex >= static_cast<int32>(Tabs.size()))

@@ -13,6 +13,7 @@ public:
 
 	void Open(const FString& InPath);
 	void Close();
+	void Save();
 
 	const FString& GetEditingPath() const { return EditingPath; }
 	bool IsDirty() const { return bDirty; }
@@ -29,12 +30,13 @@ private:
 
 	FAnimGraphNodeDesc* FindSelectedNode();
 	const FAnimGraphNodeDesc* FindSelectedNode() const;
+	FAnimGraphNodeDesc* FindFirstOutputPoseNode();
+	const FAnimGraphNodeDesc* FindFirstOutputPoseNode() const;
 	int32 GenerateNodeId() const;
+	void NormalizeRootNode();
 	void AddSequencePlayerNode();
 	void AddOutputPoseNode();
 	void DeleteSelectedNode();
-	void Save();
-
 private:
 	FString EditingPath;
 	UAnimGraphAsset* EditingAsset = nullptr;

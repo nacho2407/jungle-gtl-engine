@@ -48,6 +48,7 @@ public:
 	bool CloseTab(const FEditorTabId& Id);
 	bool SetActiveTab(const FEditorTabId& Id);
 	bool SetTabLabel(const FEditorTabId& Id, const FString& Label);
+	bool SetTabDirty(const FEditorTabId& Id, bool bDirty);
 
 	const FEditorTabEntry* GetActiveTab() const;
 	EEditorTabKind GetActiveTabKind() const;
