@@ -4,10 +4,11 @@
 #include "Collision/ConvexVolume.h"
 #include "Object/SoftObjectPtr.h"
 
-#include "Source/Engine/Component/DecalComponent.generated.h"
 class UStaticMeshComponent;
 
 // class DecalProxy;
+
+#include "Source/Engine/Component/DecalComponent.generated.h"
 
 UCLASS()
 class UDecalComponent : public UPrimitiveComponent
@@ -56,7 +57,7 @@ private:
 private:
 	FConvexVolume ConvexVolume;
 	TArray<UStaticMeshComponent*> Receivers;
-	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material", AssetType="Material", AllowedClass="UMaterial")
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material", AssetType="Material")
 	FSoftObjectPtr MaterialSlot = "None";
 	UMaterial* Material = nullptr;
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Color", Type=Vec4)

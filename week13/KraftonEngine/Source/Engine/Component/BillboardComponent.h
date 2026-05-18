@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "PrimitiveComponent.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Core/ResourceTypes.h"
@@ -40,7 +40,7 @@ protected:
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Billboard")
 	bool bIsBillboard = true;
 
-	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material", AssetType="Material", AllowedClass="UMaterial")
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material", AssetType="Material")
 	FSoftObjectPtr MaterialSlot = "None";
 	UMaterial* Material = nullptr;
 };

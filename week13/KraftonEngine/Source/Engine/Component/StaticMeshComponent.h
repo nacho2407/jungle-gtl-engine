@@ -7,13 +7,15 @@
 #include "Object/ObjectPtr.h"
 #include "Object/SoftObjectPtr.h"
 
-#include "Source/Engine/Component/StaticMeshComponent.generated.h"
 class UMaterial;
 class FPrimitiveSceneProxy;
 
 namespace json { class JSON; }
 
 // UStaticMeshComponent — 월드 배치 컴포넌트
+
+#include "Source/Engine/Component/StaticMeshComponent.generated.h"
+
 UCLASS()
 class UStaticMeshComponent : public UMeshComponent
 {
@@ -48,12 +50,12 @@ public:
 private:
 	void CacheLocalBounds();
 
-	UPROPERTY(Edit, Category="Mesh", DisplayName="Static Mesh", Type=ObjectRef, AllowedClass="UStaticMesh")
+	UPROPERTY(Edit, Category="Mesh", DisplayName="Static Mesh")
 	TObjectPtr<UStaticMesh> StaticMesh;
-	UPROPERTY(Save, Category="Mesh", DisplayName="Static Mesh Path", Type=StaticMeshRef, AssetType="StaticMesh", AllowedClass="UStaticMesh")
+	UPROPERTY(Save, Category="Mesh", DisplayName="Static Mesh Path", AssetType="StaticMesh")
 	FSoftObjectPtr StaticMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
-	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", Type=SoftObjectRefArray, AssetType="Material", AllowedClass="UMaterial")
+	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", AssetType="Material")
 	TArray<FSoftObjectPtr> MaterialSlots;
 
 	FVector CachedLocalCenter = { 0, 0, 0 };
