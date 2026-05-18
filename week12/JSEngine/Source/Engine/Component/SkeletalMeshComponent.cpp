@@ -6,9 +6,15 @@
 #include "Animation/AnimationStateMachine.h"
 #include "Animation/StateMachineAnimInstance.h"
 #include "Core/Logging/SkinningStats.h"
+#include "Core/Paths.h"
 #include "GameFramework/AActor.h"
 
 #include <cstring>
+
+namespace
+{
+	FString GetPersistentAnimationAssetPath(UAnimationAsset* Animation);
+}
 
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
 {
@@ -17,6 +23,7 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
 	if (Ar.IsLoading())
 	{
 		SetAnimationMode(AnimationMode);
+		bool bLoadedAnimInstance = false;
 		if (AnimInstance && Ar.HasKey("AnimInstance"))
 		{
 			Ar.BeginObject("AnimInstance");
@@ -25,6 +32,12 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
 			AnimationToPlay = Cast<UAnimSingleNodeInstance>(AnimInstance)
 				? Cast<UAnimSingleNodeInstance>(AnimInstance)->GetAnimation()
 				: nullptr;
+			SyncAnimationAssetPathFromAnimation(AnimationToPlay);
+			bLoadedAnimInstance = true;
+		}
+		if (!bLoadedAnimInstance && (!AnimationAssetPath.GetPath().empty() || AnimationMode == EAnimationMode::AnimationSingleNode))
+		{
+			ApplyAnimationFromAssetPath();
 		}
 	}
 	else if (Ar.IsSaving())
@@ -54,6 +67,7 @@ void USkeletalMeshComponent::PostDuplicate(UObject* Original)
 	}
 
 	AnimInstance = nullptr;
+	AnimationAssetPath.SetPath(SourceComponent->AnimationAssetPath.GetPath());
 	AnimationToPlay = SourceComponent->AnimationToPlay;
 	AnimationMode = SourceComponent->AnimationMode;
 
@@ -75,6 +89,14 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
 	if (PropertyName && std::strcmp(PropertyName, "AnimationMode") == 0)
 	{
 		SetAnimationMode(AnimationMode);
+		if (AnimationMode == EAnimationMode::AnimationSingleNode && !AnimationAssetPath.GetPath().empty())
+		{
+			ApplyAnimationFromAssetPath();
+		}
+	}
+	else if (PropertyName && std::strcmp(PropertyName, "AnimationAssetPath") == 0)
+	{
+		ApplyAnimationFromAssetPath();
 	}
 }
 
@@ -100,12 +122,12 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 			}
 		}
 
-        if (AnimInstance->EvaluatePose(PoseContext))
-        {
-            //4.Skinning Phase
-            ApplyAnimationPose(PoseContext);
-        }
-    }
+		if (AnimInstance->EvaluatePose(PoseContext))
+		{
+			//4.Skinning Phase
+			ApplyAnimationPose(PoseContext);
+		}
+	}
 
 	// Pose가 바뀐 경우에만 실제 CPU skinning이 수행(dirty flag 이용)
 	EnsureSkinningUpdated();
@@ -260,13 +282,23 @@ void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InAnimationMode)
 	if (AnimationMode == EAnimationMode::AnimationSingleNode)
 	{
 		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
-		SingleNode->SetAnimation(Cast<UAnimSequenceBase>(AnimationToPlay));
+		if (AnimationToPlay)
+		{
+			SingleNode->SetAnimation(Cast<UAnimSequenceBase>(AnimationToPlay));
+			SyncAnimationAssetPathFromAnimation(AnimationToPlay);
+		}
+		else if (!AnimationAssetPath.GetPath().empty())
+		{
+			SingleNode->SetAnimationAssetPath(AnimationAssetPath.GetPath());
+			AnimationToPlay = SingleNode->GetAnimation();
+		}
 	}
 }
 
 void USkeletalMeshComponent::SetAnimation(UAnimationAsset* NewAnimation)
 {
 	AnimationToPlay = NewAnimation;
+	SyncAnimationAssetPathFromAnimation(NewAnimation);
 
 	if (!AnimationToPlay)
 	{
@@ -292,11 +324,51 @@ UAnimSingleNodeInstance* USkeletalMeshComponent::EnsureSingleNodeInstance()
 	return SingleNode;
 }
 
+void USkeletalMeshComponent::ApplyAnimationFromAssetPath()
+{
+	const FString RequestedPath = AnimationAssetPath.GetPath();
+	if (RequestedPath.empty())
+	{
+		SetAnimation(nullptr);
+		return;
+	}
+
+	SetAnimationMode(EAnimationMode::AnimationSingleNode);
+	UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
+	SingleNode->SetAnimationAssetPath(RequestedPath);
+	AnimationToPlay = SingleNode->GetAnimation();
+	if (!AnimationToPlay)
+	{
+		AnimationAssetPath.SetPath(RequestedPath);
+		ResetToBindPose();
+	}
+}
+
+void USkeletalMeshComponent::SyncAnimationAssetPathFromAnimation(UAnimationAsset* Animation)
+{
+	if (!Animation)
+	{
+		AnimationAssetPath.SetPath("");
+		return;
+	}
+
+	const FString PersistentPath = GetPersistentAnimationAssetPath(Animation);
+	if (!PersistentPath.empty())
+	{
+		AnimationAssetPath.SetPath(PersistentPath);
+	}
+}
+
 void USkeletalMeshComponent::Play(bool bInLooping)
 {
 	if (AnimationMode == EAnimationMode::AnimationSingleNode)
 	{
 		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
+		if (!SingleNode->GetAnimation() && !AnimationAssetPath.GetPath().empty())
+		{
+			SingleNode->SetAnimationAssetPath(AnimationAssetPath.GetPath());
+			AnimationToPlay = SingleNode->GetAnimation();
+		}
 		SingleNode->Play(bInLooping);
 	}
 }
@@ -337,6 +409,10 @@ float USkeletalMeshComponent::GetPlayRate() const
 
 FString USkeletalMeshComponent::GetAnimationAssetPath() const
 {
+	if (!AnimationAssetPath.GetPath().empty())
+	{
+		return AnimationAssetPath.GetPath();
+	}
 	if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
 	{
 		return SingleNode->GetAnimationAssetPath();
@@ -370,6 +446,30 @@ void USkeletalMeshComponent::SetLooping(bool bInLooping)
 	if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
 	{
 		SingleNode->SetLooping(bInLooping);
+	}
+}
+
+namespace
+{
+	FString GetPersistentAnimationAssetPath(UAnimationAsset* Animation)
+	{
+		UAnimSequence* Sequence = Cast<UAnimSequence>(Animation);
+		if (!Sequence)
+		{
+			return "";
+		}
+
+		if (!Sequence->GetAssetPath().empty())
+		{
+			return FPaths::Normalize(Sequence->GetAssetPath());
+		}
+
+		if (!Sequence->GetSourceFilePath().empty())
+		{
+			return FPaths::Normalize(Sequence->GetSourceFilePath());
+		}
+
+		return "";
 	}
 }
 

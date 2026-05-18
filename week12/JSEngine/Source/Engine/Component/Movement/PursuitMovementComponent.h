@@ -4,7 +4,7 @@
 class FViewportCamera;
 
 // Not intended for complex, non-ghost actors
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "PursuitMovement Component", Category = "Movement")
 class UPursuitMovementComponent : public UMovementComponent {
 public:
 	GENERATED_BODY(UPursuitMovementComponent, UMovementComponent);

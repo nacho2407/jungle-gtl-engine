@@ -3,9 +3,6 @@
 #include "Object/Object.h"
 #include <algorithm>
 #include "GameFramework/AActor.h"
-#include "Core/ResourceManager.h"
-#include "Core/Paths.h"
-#include <filesystem>
 
 
 void UProceduralMeshComponent::CreateFrom(UStaticMesh* StaticMesh)
@@ -150,47 +147,6 @@ void UProceduralMeshComponent::PostDuplicate(UObject* Original)
 void UProceduralMeshComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
-
-	TArray<FString> MaterialPaths;
-
-	if (Ar.IsLoading())
-	{
-		Ar << "Materials" << MaterialPaths;
-
-		Materials.resize(MaterialPaths.size());
-		for (int32 i = 0; i < static_cast<int32>(MaterialPaths.size()); ++i)
-		{
-			if (!MaterialPaths[i].empty())
-			{
-				SetMaterial(i, FResourceManager::Get().GetMaterialInterface(MaterialPaths[i]));
-			}
-			else
-			{
-				Materials[i] = nullptr;
-			}
-		}
-	}
-	else if (Ar.IsSaving())
-	{
-		for (auto& Mat : Materials)
-		{
-			if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(Mat))
-			{
-				MaterialPaths.push_back(FPaths::Normalize(MatInst->GetFilePath()));
-			}
-			else if (UMaterial* BaseMat = Cast<UMaterial>(Mat))
-			{
-				const std::filesystem::path FilePath(FPaths::ToWide(BaseMat->GetFilePath()));
-				const bool bFileBackedMaterial = FilePath.extension() == L".mat";
-				MaterialPaths.push_back(bFileBackedMaterial ? FPaths::Normalize(BaseMat->GetFilePath()) : BaseMat->GetName());
-			}
-			else
-			{
-				MaterialPaths.push_back(Mat ? Mat->GetName() : "");
-			}
-		}
-		Ar << "Materials" << MaterialPaths;
-	}
 }
 
 void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSliceMeshData& OutFront, FSliceMeshData& OutBack)

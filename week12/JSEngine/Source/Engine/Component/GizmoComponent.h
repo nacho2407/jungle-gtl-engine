@@ -66,7 +66,7 @@ public:
 	UGizmoComponent();
 
 	// 기즈모 컴포넌트는 복제를 지원하지 않습니다.
-	virtual UGizmoComponent* Duplicate() override { return nullptr; }
+	UObject* Duplicate(const FDuplicateContext* Context = nullptr) override { (void)Context; return nullptr; }
 
 	void UpdateWorldAABB() const override;
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;

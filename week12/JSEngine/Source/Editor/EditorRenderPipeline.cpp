@@ -567,7 +567,7 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
                 if (USkeletalMeshComponent* SkComp = ViewTarget->GetSkeletalMeshComponent())
                 {
                     FRenderCommand BoundsCmd = {};
-                    const FAABB Bounds = SkComp->CalculateCurrentPoseWorldAABB();
+                    const FAABB& Bounds = SkComp->GetWorldAABB();
                     BoundsCmd.Type = ERenderCommandType::DebugBox;
                     BoundsCmd.Constants.AABB.Min = Bounds.Min;
                     BoundsCmd.Constants.AABB.Max = Bounds.Max;

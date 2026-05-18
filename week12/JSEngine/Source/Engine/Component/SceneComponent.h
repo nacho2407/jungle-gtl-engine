@@ -7,7 +7,7 @@
 
 class AActor;
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "Scene Component", Category = "Basic")
 class USceneComponent : public UActorComponent
 {
 public:

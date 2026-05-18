@@ -480,19 +480,10 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\ABladeSlash.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\GameFramework\ABoundsBoxActor.gen.cpp">
-      <Filter>Intermediate\Reflection\GameFramework</Filter>
-    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\ABullet.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\GameFramework\ACubeActor.gen.cpp">
-      <Filter>Intermediate\Reflection\GameFramework</Filter>
-    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\ADecalActor.gen.cpp">
-      <Filter>Intermediate\Reflection\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\GameFramework\ADecalSpotLightActor.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\ADefaultPawn.gen.cpp">
@@ -522,9 +513,6 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\APawn.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\GameFramework\APlaneActor.gen.cpp">
-      <Filter>Intermediate\Reflection\GameFramework</Filter>
-    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\APlayerController.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
@@ -538,9 +526,6 @@
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\ASkeletalMeshActor.gen.cpp">
-      <Filter>Intermediate\Reflection\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\GameFramework\ASphereActor.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\ASpotlightActor.gen.cpp">
@@ -632,6 +617,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Settings\ProjectSettings.cpp">
       <Filter>Source\Editor\Settings</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\ComponentMenuRegistry.cpp">
+      <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorActorSequenceDetails.cpp">
       <Filter>Source\Editor\UI</Filter>
@@ -1603,6 +1591,9 @@
     <ClInclude Include="Source\Editor\Settings\ProjectSettings.h">
       <Filter>Source\Editor\Settings</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\ComponentMenuRegistry.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorActorSequenceDetails.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
@@ -2219,6 +2210,9 @@
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\ObjectPtr.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\Property.h">

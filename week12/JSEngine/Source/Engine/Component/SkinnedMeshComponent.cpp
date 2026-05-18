@@ -4,7 +4,6 @@
 #include "Core/Logging/SkinningStats.h"
 #include "Render/Resource/Material.h"
 
-#include <algorithm>
 #include <cfloat>
 #include <cstring>
 
@@ -49,64 +48,78 @@ static void ComputeGlobalPoseRecursive(
 	Visited[BoneIndex] = true;
 }
 
-static FVector SkinPositionForBounds(
-	const FSkeletalMeshVertex& Vertex,
-	const TArray<FMatrix>& SkinningMatrices,
-	int32 BoneCount)
-{
-	float ValidWeightSum = 0.0f;
-	for (int32 InfluenceIndex = 0; InfluenceIndex < 4; ++InfluenceIndex)
-	{
-		const int32 BoneIndex = Vertex.BoneIndices[InfluenceIndex];
-		const float Weight = Vertex.BoneWeights[InfluenceIndex];
-		if (BoneIndex < BoneCount && Weight > 0.0f)
-		{
-			ValidWeightSum += Weight;
-		}
-	}
-
-	if (ValidWeightSum <= 1e-6f)
-	{
-		return Vertex.Position;
-	}
-
-	FVector SkinnedPosition = FVector::ZeroVector;
-	for (int32 InfluenceIndex = 0; InfluenceIndex < 4; ++InfluenceIndex)
-	{
-		const int32 BoneIndex = Vertex.BoneIndices[InfluenceIndex];
-		const float RawWeight = Vertex.BoneWeights[InfluenceIndex];
-		if (BoneIndex >= BoneCount || RawWeight <= 0.0f)
-		{
-			continue;
-		}
-
-		const float Weight = RawWeight / ValidWeightSum;
-		SkinnedPosition += SkinningMatrices[BoneIndex].TransformPosition(Vertex.Position) * Weight;
-	}
-
-	return SkinnedPosition;
-}
 } // namespace
 
 void USkinnedMeshComponent::Serialize(FArchive& Ar)
 {
+	UMeshComponent::Serialize(Ar);
+
 	if (Ar.IsLoading())
 	{
-		UPrimitiveComponent::Serialize(Ar);
-		if (!SkeletalMeshPath.empty())
+		const bool bHasMaterialOverrides = Ar.HasKey("Materials");
+		TArray<UMaterialInterface*> LoadedMaterials = Materials;
+		const FString RequestedPath = SkeletalMeshPath.GetPath();
+
+		if (!RequestedPath.empty())
 		{
-			SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh(SkeletalMeshPath));
+			SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh(RequestedPath));
 		}
 		else
 		{
 			SetSkeletalMesh(nullptr);
 		}
-		SerializeMaterialOverrides(Ar);
+
+		if (bHasMaterialOverrides)
+		{
+			Materials.clear();
+			for (int32 i = 0; i < static_cast<int32>(LoadedMaterials.size()); ++i)
+			{
+				SetMaterial(i, LoadedMaterials[i]);
+			}
+			MarkRenderStateDirty();
+		}
+
 		SetSkinningMode(SkinningMode);
+	}
+}
+
+void USkinnedMeshComponent::PostDuplicate(UObject* Original)
+{
+	UMeshComponent::PostDuplicate(Original);
+
+	const USkinnedMeshComponent* SourceComponent = Cast<USkinnedMeshComponent>(Original);
+	if (!SourceComponent)
+	{
 		return;
 	}
 
-	UMeshComponent::Serialize(Ar);
+	SkeletalMesh = SourceComponent->SkeletalMesh;
+	SkeletalMeshPath.SetPath(SourceComponent->SkeletalMeshPath.GetPath());
+	CurrentLocalPose = SourceComponent->CurrentLocalPose;
+	CurrentGlobalPose = SourceComponent->CurrentGlobalPose;
+	SkinningMatrices = SourceComponent->SkinningMatrices;
+	SkinnedVertices = SourceComponent->SkinnedVertices;
+	SkinningMode = SourceComponent->SkinningMode;
+	LastResolvedSkinningMode = SourceComponent->LastResolvedSkinningMode;
+
+	Materials = TArray<UMaterialInterface*>(SourceComponent->Materials.size());
+	for (int32 i = 0; i < static_cast<int32>(SourceComponent->Materials.size()); ++i)
+	{
+		if (UMaterialInstance* SourceMatInst = Cast<UMaterialInstance>(SourceComponent->Materials[i]))
+		{
+			UMaterialInstance* MatInst = UMaterialInstance::Create(SourceMatInst->Parent);
+			MatInst->OverridedParams = SourceMatInst->OverridedParams;
+			Materials[i] = MatInst;
+		}
+		else
+		{
+			Materials[i] = SourceComponent->Materials[i];
+		}
+	}
+
+	bSkinningDirty = true;
+	bBoundsDirty = true;
+	bRenderStateDirty = true;
 }
 
 void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
@@ -115,13 +128,14 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 
 	if (std::strcmp(PropertyName, "SkeletalMeshPath") == 0)
 	{
-		if (SkeletalMeshPath.empty())
+		const FString RequestedPath = SkeletalMeshPath.GetPath();
+		if (RequestedPath.empty())
 		{
 			SetSkeletalMesh(nullptr);
 			return;
 		}
 
-		SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh(SkeletalMeshPath));
+		SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh(RequestedPath));
 	}
 	else if (std::strcmp(PropertyName, "Materials") == 0)
 	{
@@ -156,7 +170,7 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
 
 	if (SkeletalMesh)
 	{
-		SkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
+		SkeletalMeshPath.SetPath(SkeletalMesh->GetAssetPathFileName());
 
 		const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();
 		const TArray<FStaticMeshMaterialSlot>& Slots = SkeletalMesh->GetMaterialSlots();
@@ -180,7 +194,7 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
 	}
 	else
 	{
-		SkeletalMeshPath.clear();
+		SkeletalMeshPath.SetPath("");
 	}
 
 	MarkBoundsDirty();
@@ -396,57 +410,6 @@ const FAABB& USkinnedMeshComponent::GetWorldAABB() const
 {
 	EnsureBoundsUpdated();
 	return WorldAABB;
-}
-
-FAABB USkinnedMeshComponent::CalculateCurrentPoseWorldAABB() const
-{
-	FAABB Result;
-	Result.Reset();
-
-	if (!HasValidMesh())
-	{
-		return Result;
-	}
-
-	const_cast<USkinnedMeshComponent*>(this)->EnsureSkinningUpdated();
-
-	const TArray<FSkeletalMeshVertex>& SourceVertices = SkeletalMesh->GetVertices();
-	const int32 BoneCount = static_cast<int32>((std::min)(SkinningMatrices.size(), SkeletalMesh->GetBones().size()));
-	const FMatrix& WorldMatrix = GetWorldMatrix();
-
-	if (BoneCount > 0)
-	{
-		for (const FSkeletalMeshVertex& Vertex : SourceVertices)
-		{
-			const FVector LocalPosition = SkinPositionForBounds(Vertex, SkinningMatrices, BoneCount);
-			Result.Expand(WorldMatrix.TransformPosition(LocalPosition));
-		}
-	}
-
-	if (!Result.IsValid())
-	{
-		const FAABB& LocalBounds = SkeletalMesh->GetLocalBounds();
-		if (LocalBounds.IsValid())
-		{
-			const FVector LocalCorners[8] = {
-				FVector(LocalBounds.Min.X, LocalBounds.Min.Y, LocalBounds.Min.Z),
-				FVector(LocalBounds.Max.X, LocalBounds.Min.Y, LocalBounds.Min.Z),
-				FVector(LocalBounds.Min.X, LocalBounds.Max.Y, LocalBounds.Min.Z),
-				FVector(LocalBounds.Max.X, LocalBounds.Max.Y, LocalBounds.Min.Z),
-				FVector(LocalBounds.Min.X, LocalBounds.Min.Y, LocalBounds.Max.Z),
-				FVector(LocalBounds.Max.X, LocalBounds.Min.Y, LocalBounds.Max.Z),
-				FVector(LocalBounds.Min.X, LocalBounds.Max.Y, LocalBounds.Max.Z),
-				FVector(LocalBounds.Max.X, LocalBounds.Max.Y, LocalBounds.Max.Z)
-			};
-
-			for (const FVector& Corner : LocalCorners)
-			{
-				Result.Expand(WorldMatrix.TransformPosition(Corner));
-			}
-		}
-	}
-
-	return Result;
 }
 
 bool USkinnedMeshComponent::ConsumeRenderStateDirty()

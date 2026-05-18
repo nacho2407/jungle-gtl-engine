@@ -10,9 +10,11 @@ class UClass
 public:
 	using FCreateObjectFunc = UObject*(*)();
 
-	UClass(const char* InName, UClass* InSuperClass, size_t InClassSize, uint32 InClassFlags, FCreateObjectFunc InCreateFunc = nullptr);
+	UClass(const char* InName, UClass* InSuperClass, size_t InClassSize, uint32 InClassFlags, FCreateObjectFunc InCreateFunc = nullptr, const char* InDisplayName = nullptr, const char* InCategory = nullptr);
 
 	const char* GetName() const { return Name; }
+	const char* GetDisplayName() const { return DisplayName ? DisplayName : Name; }
+	const char* GetCategory() const { return Category; }
 	UClass* GetSuperClass() const { return SuperClass; }
 	size_t GetClassSize() const { return ClassSize; }
 	uint32 GetClassFlags() const { return ClassFlags; }
@@ -33,6 +35,8 @@ private:
 	size_t ClassSize = 0;
 	uint32 ClassFlags = 0;
 	FCreateObjectFunc CreateFunc = nullptr;
+	const char* DisplayName = nullptr;
+	const char* Category = nullptr;
 
 	TArray<FProperty> Properties;
 };

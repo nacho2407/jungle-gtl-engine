@@ -2,6 +2,7 @@
 
 #include "Asset/SkeletalMesh.h"
 #include "Component/MeshComponent.h"
+#include "Object/ObjectPtr.h"
 #include "Render/Resource/VertexTypes.h"
 
 UENUM()
@@ -29,6 +30,7 @@ public:
 	~USkinnedMeshComponent() override = default;
 
 	void Serialize(FArchive& Ar) override;
+	void PostDuplicate(UObject* Original) override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	void SetSkeletalMesh(USkeletalMesh* InSkeletalMesh);
@@ -60,7 +62,6 @@ public:
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
 
 	virtual const FAABB& GetWorldAABB() const;
-	FAABB CalculateCurrentPoseWorldAABB() const;
 
 	bool ConsumeRenderStateDirty();
 
@@ -87,8 +88,8 @@ protected:
 protected:
 	USkeletalMesh* SkeletalMesh = nullptr;
 
-	UPROPERTY(DisplayName = "SkeletalMesh")
-	FString SkeletalMeshPath;
+	UPROPERTY(DisplayName = "Skeletal Mesh")
+	TSoftObjectPtr<USkeletalMesh> SkeletalMeshPath;
 
 	TArray<FMatrix> CurrentLocalPose;
 	TArray<FMatrix> CurrentGlobalPose;

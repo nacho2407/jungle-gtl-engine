@@ -4,8 +4,14 @@
 
 #include <cstring>
 
-UClass::UClass(const char* InName, UClass* InSuperClass, size_t InClassSize, uint32 InClassFlags,FCreateObjectFunc InCreateFunc)
-	: Name(InName), SuperClass(InSuperClass), ClassSize(InClassSize), ClassFlags(InClassFlags), CreateFunc(InCreateFunc)
+UClass::UClass(const char* InName, UClass* InSuperClass, size_t InClassSize, uint32 InClassFlags, FCreateObjectFunc InCreateFunc, const char* InDisplayName, const char* InCategory)
+	: Name(InName)
+	, SuperClass(InSuperClass)
+	, ClassSize(InClassSize)
+	, ClassFlags(InClassFlags)
+	, CreateFunc(InCreateFunc)
+	, DisplayName(InDisplayName)
+	, Category(InCategory)
 {
 }
 
