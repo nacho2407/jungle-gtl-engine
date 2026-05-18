@@ -1,4 +1,4 @@
-﻿#include "AnimSingleNodeInstance.h"
+#include "AnimSingleNodeInstance.h"
 #include "AnimSequenceBase.h"
 #include "AnimSequence.h"
 #include "AnimExtractContext.h"
@@ -6,9 +6,6 @@
 #include "Core/Log.h"
 
 #include <cmath>
-
-DEFINE_CLASS(UAnimSingleNodeInstance, UAnimInstance)
-
 void UAnimSingleNodeInstance::SetAnimationAsset(UAnimSequenceBase* InAsset)
 {
     if (UAnimSequence* Sequence = Cast<UAnimSequence>(InAsset))

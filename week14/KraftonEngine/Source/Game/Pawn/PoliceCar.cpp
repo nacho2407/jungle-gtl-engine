@@ -1,4 +1,4 @@
-﻿#include "Game/Pawn/PoliceCar.h"
+#include "Game/Pawn/PoliceCar.h"
 #include "Game/GameMode/GameModeCarGame.h"
 
 #include "Component/BoxComponent.h"
@@ -10,8 +10,6 @@
 #include "Core/Log.h"
 
 #include <cmath>
-
-IMPLEMENT_CLASS(APoliceCar, ACarPawn)
 
 void APoliceCar::InitDefaultPoliceComponents()
 {

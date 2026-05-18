@@ -1,7 +1,4 @@
-﻿#include "AnimSequenceBase.h"
-
-DEFINE_CLASS(UAnimSequenceBase, UObject)
-
+#include "AnimSequenceBase.h"
 void UAnimSequenceBase::Serialize(FArchive& Ar)
 {
     UObject::Serialize(Ar);

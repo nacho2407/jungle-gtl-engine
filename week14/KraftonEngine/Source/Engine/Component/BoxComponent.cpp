@@ -8,8 +8,6 @@
 #include <cstring>
 #include <cmath>
 
-IMPLEMENT_CLASS(UBoxComponent, UShapeComponent)
-
 void UBoxComponent::SetBoxExtent(const FVector& InExtent)
 {
 	BoxExtent = InExtent;
@@ -69,24 +67,12 @@ void UBoxComponent::ContributeSelectedVisuals(FScene& Scene) const
 	Scene.AddDebugLine(Corners[3], Corners[7], Color);
 }
 
-void UBoxComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UShapeComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Box Extent", EPropertyType::Vec3, "Shape", &BoxExtent, 0.01f, 0.0f, 0.1f });
-}
-
 void UBoxComponent::PostEditProperty(const char* PropertyName)
 {
 	UShapeComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Box Extent") == 0)
+	if (strcmp(PropertyName, "BoxExtent") == 0 || strcmp(PropertyName, "Box Extent") == 0)
 	{
 		SetBoxExtent(BoxExtent);
 	}
-}
-
-void UBoxComponent::Serialize(FArchive& Ar)
-{
-	UShapeComponent::Serialize(Ar);
-	Ar << BoxExtent;
 }

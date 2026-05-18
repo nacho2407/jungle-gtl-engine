@@ -6,6 +6,7 @@
 #include "Platform/Paths.h"
 #include "GameFramework/WorldContext.h"
 #include "Math/Vector.h"
+#include "Core/PropertyTypes.h"
 
 // Forward declarations
 class UObject;
@@ -20,7 +21,6 @@ namespace json
 	class JSON;
 }
 
-#include "Core/PropertyTypes.h"
 
 using std::string;
 

@@ -1,4 +1,4 @@
-﻿#include "GameFramework/StaticMeshActor.h"
+#include "GameFramework/StaticMeshActor.h"
 #include "Object/ObjectFactory.h"
 #include "Engine/Runtime/Engine.h"
 #include "Component/StaticMeshComponent.h"
@@ -7,8 +7,6 @@
 #include "Component/SphereComponent.h"
 #include "Core/Log.h"
 #include "Core/CollisionTypes.h"
-
-IMPLEMENT_CLASS(AStaticMeshActor, AActor)
 
 void AStaticMeshActor::BeginPlay()
 {

@@ -1,9 +1,7 @@
-﻿#include "GameFramework/PawnStaticMesh.h"
+#include "GameFramework/PawnStaticMesh.h"
 #include "Component/StaticMeshComponent.h"
 #include "Engine/Runtime/Engine.h"
 #include "Mesh/MeshManager.h"
-
-IMPLEMENT_CLASS(APawnStaticMesh, APawn)
 
 void APawnStaticMesh::InitDefaultComponents(const FString& StaticMeshFileName)
 {

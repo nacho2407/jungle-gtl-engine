@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Object/Object.h"
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
@@ -16,6 +16,7 @@
 #include <Collision/SpatialPartition.h>
 #include "GameFramework/WorldSettings.h"
 #include "Physics/IPhysicsScene.h"
+#include "Source/Engine/GameFramework/World.generated.h"
 #include <memory>
 
 class UCameraComponent;
@@ -25,9 +26,10 @@ class AGameStateBase;
 class APlayerController;
 class UClass;
 
+UCLASS()
 class UWorld : public UObject {
 public:
-	DECLARE_CLASS(UWorld, UObject)
+	GENERATED_BODY()
 	UWorld() = default;
 	~UWorld() override;
 

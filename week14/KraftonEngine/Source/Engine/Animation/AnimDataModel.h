@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "BoneAnimationTrack.h"
@@ -6,11 +6,14 @@
 
 // AnimSequence 의 직렬화 가능한 "원본" 데이터 모델.
 // 압축/디시메이션은 추후 옵션. 현재는 raw 키프레임 + notify 만 보관.
+
+#include "Source/Engine/Animation/AnimDataModel.generated.h"
+
+UCLASS()
 class UAnimDataModel : public UObject
 {
 public:
-    DECLARE_CLASS(UAnimDataModel, UObject)
-
+	GENERATED_BODY()
     UAnimDataModel()           = default;
     ~UAnimDataModel() override = default;
 

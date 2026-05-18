@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "MovementComponent.h"
 #include "Core/CollisionTypes.h"   // FHitResult
@@ -20,11 +20,14 @@ enum class EMovementMode : uint8
 //
 // Floor detection: IPhysicsScene::Raycast — capsule 중심에서 down 으로 (HalfHeight + Probe).
 // Owner 는 ignore 해서 자기 capsule 안 잡힘. Wall sweep 은 없으므로 벽 통과 가능 (minimal).
+
+#include "Source/Engine/Component/Movement/CharacterMovementComponent.generated.h"
+
+UCLASS()
 class UCharacterMovementComponent : public UMovementComponent
 {
 public:
-	DECLARE_CLASS(UCharacterMovementComponent, UMovementComponent)
-
+	GENERATED_BODY()
 	UCharacterMovementComponent() = default;
 	~UCharacterMovementComponent() override = default;
 
@@ -46,21 +49,28 @@ public:
 
 	// UMovementComponent:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void Serialize(FArchive& Ar) override;
 
 	// Editor-set 파라미터.
+	UPROPERTY(Edit, Save, Category="CharacterMovement", DisplayName="Max Walk Speed", Min=0.0f, Max=100.0f, Speed=0.1f)
 	float MaxWalkSpeed       = 6.0f;     // m/s — Idle/Walk threshold 기준 정도
+	UPROPERTY(Edit, Save, Category="CharacterMovement", DisplayName="Max Acceleration", Min=0.0f, Max=200.0f, Speed=0.5f)
 	float MaxAcceleration    = 20.0f;    // m/s^2
+	UPROPERTY(Edit, Save, Category="CharacterMovement", DisplayName="Braking Friction", Min=0.0f, Max=100.0f, Speed=0.1f)
 	float BrakingFriction    = 8.0f;     // 입력 없을 때 감속률 (m/s^2). Walking 만 적용.
+	UPROPERTY(Edit, Save, Category="CharacterMovement", DisplayName="Gravity", Min=0.0f, Max=100.0f, Speed=0.1f)
 	float Gravity            = 9.8f;     // m/s^2 (positive — 적용 시 Velocity.Z -= Gravity*dt)
+	UPROPERTY(Edit, Save, Category="CharacterMovement", DisplayName="Floor Probe Distance", Min=0.0f, Max=5.0f, Speed=0.01f)
 	float FloorProbeDistance = 0.1f;     // capsule HalfHeight 아래 추가 probe 거리
+	UPROPERTY(Edit, Save, Category="CharacterMovement", DisplayName="Jump Z Velocity", Min=0.0f, Max=50.0f, Speed=0.1f)
 	float JumpZVelocity      = 6.0f;     // m/s — Jump 시 Velocity.Z 에 박는 값
 
 	// UE 패턴 — true 면 매 frame Updated 의 yaw 를 현재 Velocity.XY 방향으로 lerp 회전.
 	// 이동 중에만 회전 (정지 시 마지막 facing 유지). Pawn::bUseControllerRotationYaw 와 동시
 	// 켜면 이쪽이 마지막 우선 (Component Tick 이 Actor Tick 후 호출). 보통 둘 중 하나만.
+	UPROPERTY(Edit, Save, Category="CharacterMovement", DisplayName="Orient Rotation To Movement")
 	bool  bOrientRotationToMovement = true;
+	UPROPERTY(Edit, Save, Category="CharacterMovement", DisplayName="Rotation Yaw Rate", Min=0.0f, Max=3600.0f, Speed=5.0f)
 	float RotationYawRate           = 540.0f;   // deg/sec
 
 protected:

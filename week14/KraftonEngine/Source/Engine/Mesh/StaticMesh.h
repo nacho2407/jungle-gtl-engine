@@ -1,10 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "Collision/MeshTriangleBVH.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Serialization/Archive.h"
 
+#include "Source/Engine/Mesh/StaticMesh.generated.h"
 #include <memory>
 
 struct ID3D11Device;
@@ -17,11 +18,11 @@ struct FLODMeshData
 };
 
 // UStaticMesh — FStaticMesh를 소유하는 UObject 에셋
+UCLASS()
 class UStaticMesh : public UObject
 {
 public:
-	DECLARE_CLASS(UStaticMesh, UObject)
-
+	GENERATED_BODY()
 	static constexpr uint32 MAX_LOD_COUNT = 4;
 
 	UStaticMesh() = default;

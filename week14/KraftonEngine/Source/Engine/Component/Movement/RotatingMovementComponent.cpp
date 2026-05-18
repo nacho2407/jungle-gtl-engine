@@ -1,12 +1,10 @@
-﻿#include "RotatingMovementComponent.h"
+#include "RotatingMovementComponent.h"
 
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Serialization/Archive.h"
 #include "Math/Matrix.h"
 #include "Math/Quat.h"
-
-IMPLEMENT_CLASS(URotatingMovementComponent, UMovementComponent)
 
 void URotatingMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
@@ -69,22 +67,4 @@ void URotatingMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 		const FVector NewOrbitOffsetWorld = DeltaQuat.RotateVector(OldOrbitOffsetWorld);
 		UpdatedSceneComponent->SetWorldLocation(CachedWorldPivotLocation + NewOrbitOffsetWorld);
 	}
-}
-
-void URotatingMovementComponent::Serialize(FArchive& Ar)
-{
-	UMovementComponent::Serialize(Ar);
-	Ar << RotationRate.Pitch;
-	Ar << RotationRate.Yaw;
-	Ar << RotationRate.Roll;
-	Ar << bRotationInLocalSpace;
-	Ar << PivotTranslation;
-}
-
-void URotatingMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UMovementComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Rotation Rate", EPropertyType::Rotator, "Movement", &RotationRate, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Rotation In Local Space", EPropertyType::Bool, "Movement", &bRotationInLocalSpace, 0.0f, 0.0f, 0.0f });
-	OutProps.push_back({ "Pivot Translation", EPropertyType::Vec3, "Movement", &PivotTranslation, 0.0f, 0.0f, 0.1f });
 }

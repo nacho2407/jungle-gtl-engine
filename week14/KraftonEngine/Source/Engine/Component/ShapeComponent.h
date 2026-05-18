@@ -4,17 +4,17 @@
 #include "PrimitiveComponent.h"
 #include "Core/EngineTypes.h"
 
+
+#include "Source/Engine/Component/ShapeComponent.generated.h"
+
+UCLASS()
 class UShapeComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UShapeComponent, UPrimitiveComponent)
-
+	GENERATED_BODY()
 	UShapeComponent();
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
-	void Serialize(FArchive& Ar) override;
-
 	bool SupportsOutline() const override { return false; }
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
 
@@ -32,6 +32,8 @@ protected:
 		);
 	}
 
+	UPROPERTY(Edit, Save, Category="Shape", DisplayName="Shape Color", Type=Color4)
 	FVector4 ShapeColor = { 0.0f, 1.0f, 0.0f, 1.0f }; // Green
+	UPROPERTY(Edit, Save, Category="Shape", DisplayName="Draw Only If Selected")
 	bool bDrawOnlyIfSelected = false;
 };

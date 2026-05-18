@@ -7,23 +7,9 @@
 
 #include <cmath>
 
-IMPLEMENT_CLASS(UCylindricalBillboardComponent, UBillboardComponent)
-
 FPrimitiveSceneProxy* UCylindricalBillboardComponent::CreateSceneProxy()
 {
 	return new FCylindricalBillboardSceneProxy(this);
-}
-
-void UCylindricalBillboardComponent::Serialize(FArchive& Ar)
-{
-	UBillboardComponent::Serialize(Ar);
-	Ar << BillboardAxis;
-}
-
-void UCylindricalBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UBillboardComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "BillboardAxis", EPropertyType::Vec3, "Rendering", &BillboardAxis });
 }
 
 void UCylindricalBillboardComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)

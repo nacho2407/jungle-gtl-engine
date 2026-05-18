@@ -1,4 +1,4 @@
-﻿#include "Game/Component/Movement/CarMovementComponent.h"
+#include "Game/Component/Movement/CarMovementComponent.h"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
@@ -10,8 +10,6 @@
 #include "Core/Log.h"
 
 #include <algorithm>
-
-IMPLEMENT_CLASS(UCarMovementComponent, UMovementComponent)
 
 namespace
 {
@@ -46,56 +44,6 @@ void UCarMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	{
 		ApplyAirSteering(DeltaTime);
 	}
-}
-
-void UCarMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UMovementComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "MaxSpeed", EPropertyType::Float, "Movement", &MaxSpeed, 0.0f, 200.0f, 0.5f });
-	OutProps.push_back({ "ReverseMaxSpeed", EPropertyType::Float, "Movement", &ReverseMaxSpeed, -200.0f, 0.0f, 0.5f });
-	OutProps.push_back({ "AccelForce", EPropertyType::Float, "Movement", &AccelForce, 0.0f, 5000.0f, 10.0f });
-	OutProps.push_back({ "ReverseAccelForce", EPropertyType::Float, "Movement", &ReverseAccelForce, 0.0f, 5000.0f, 10.0f });
-	OutProps.push_back({ "BrakeForce", EPropertyType::Float, "Movement", &BrakeForce, 0.0f, 10000.0f, 10.0f });
-	OutProps.push_back({ "SteeringPower", EPropertyType::Float, "Movement", &SteeringPower, 0.0f, 1000.0f, 1.0f });
-	OutProps.push_back({ "LateralGrip", EPropertyType::Float, "Movement", &LateralGrip, 0.0f, 500.0f, 0.5f });
-	OutProps.push_back({ "RollingDrag", EPropertyType::Float, "Movement", &RollingDrag, 0.0f, 500.0f, 0.5f });
-	OutProps.push_back({ "Use Raycast Suspension", EPropertyType::Bool, "Suspension", &bUseRaycastSuspension });
-	OutProps.push_back({ "Disable Wheel Collision", EPropertyType::Bool, "Suspension", &bDisableWheelCollision });
-	OutProps.push_back({ "Suspension Rest Length", EPropertyType::Float, "Suspension", &SuspensionRestLength, 0.05f, 5.0f, 0.01f });
-	OutProps.push_back({ "Suspension Spring Strength", EPropertyType::Float, "Suspension", &SuspensionSpringStrength, 0.0f, 10000.0f, 10.0f });
-	OutProps.push_back({ "Suspension Damping", EPropertyType::Float, "Suspension", &SuspensionDamping, 0.0f, 5000.0f, 5.0f });
-	OutProps.push_back({ "Max Suspension Force", EPropertyType::Float, "Suspension", &MaxSuspensionForce, 0.0f, 20000.0f, 10.0f });
-	OutProps.push_back({ "Ground Angular Damping", EPropertyType::Float, "Suspension", &GroundAngularDamping, 0.0f, 5000.0f, 5.0f });
-	OutProps.push_back({ "Wheel Radius", EPropertyType::Float, "Suspension", &WheelRadius, 0.01f, 5.0f, 0.01f });
-	OutProps.push_back({ "Wheel Forward Offset", EPropertyType::Float, "Suspension", &WheelForwardOffset, 0.0f, 10.0f, 0.05f });
-	OutProps.push_back({ "Wheel Half Track", EPropertyType::Float, "Suspension", &WheelHalfTrack, 0.0f, 10.0f, 0.05f });
-	OutProps.push_back({ "Wheel Root Z", EPropertyType::Float, "Suspension", &WheelRootZ, -5.0f, 5.0f, 0.05f });
-	OutProps.push_back({ "Air Steering Scale", EPropertyType::Float, "Suspension", &AirSteeringScale, 0.0f, 1.0f, 0.01f });
-}
-
-void UCarMovementComponent::Serialize(FArchive& Ar)
-{
-	UMovementComponent::Serialize(Ar);
-	Ar << MaxSpeed;
-	Ar << ReverseMaxSpeed;
-	Ar << AccelForce;
-	Ar << ReverseAccelForce;
-	Ar << BrakeForce;
-	Ar << SteeringPower;
-	Ar << LateralGrip;
-	Ar << RollingDrag;
-	Ar << bUseRaycastSuspension;
-	Ar << bDisableWheelCollision;
-	Ar << SuspensionRestLength;
-	Ar << SuspensionSpringStrength;
-	Ar << SuspensionDamping;
-	Ar << MaxSuspensionForce;
-	Ar << GroundAngularDamping;
-	Ar << WheelRadius;
-	Ar << WheelForwardOffset;
-	Ar << WheelHalfTrack;
-	Ar << WheelRootZ;
-	Ar << AirSteeringScale;
 }
 
 float UCarMovementComponent::GetForwardSpeed() const

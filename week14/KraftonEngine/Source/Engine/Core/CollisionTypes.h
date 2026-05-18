@@ -1,7 +1,11 @@
-#pragma once
+﻿#pragma once
 #include "Math/Vector.h"
 #include "Core/CoreTypes.h"
 #include "Core/PropertyTypes.h"
+#include "Object/ObjectMacros.h"
+#include "Object/UStruct.h"
+
+#include "Source/Engine/Core/CollisionTypes.generated.h"
 
 class AActor;
 class UPrimitiveComponent;
@@ -9,6 +13,7 @@ class UPrimitiveComponent;
 // ============================================================
 // ECollisionChannel — 충돌 채널 (오브젝트 분류용)
 // ============================================================
+UENUM()
 enum class ECollisionChannel : uint8
 {
 	WorldStatic = 0,
@@ -22,22 +27,10 @@ enum class ECollisionChannel : uint8
 	MAX = 16         // 응답 테이블 최대 슬롯 수
 };
 
-// 채널 이름 문자열 (에디터 Enum 드롭다운용)
-inline const char* GCollisionChannelNames[] =
-{
-	"WorldStatic",
-	"WorldDynamic",
-	"Pawn",
-	"Projectile",
-	"Trigger",
-	"Channel5", "Channel6", "Channel7",
-	"Channel8", "Channel9", "Channel10", "Channel11",
-	"Channel12", "Channel13", "Channel14", "Channel15"
-};
-
 // ============================================================
 // ECollisionResponse — 채널 간 응답 방식
 // ============================================================
+UENUM()
 enum class ECollisionResponse : uint8
 {
 	Ignore = 0,
@@ -47,16 +40,10 @@ enum class ECollisionResponse : uint8
 	COUNT
 };
 
-inline const char* GCollisionResponseNames[] =
-{
-	"Ignore",
-	"Overlap",
-	"Block"
-};
-
 // ============================================================
 // ECollisionEnabled — 충돌 활성화 모드
 // ============================================================
+UENUM()
 enum class ECollisionEnabled : uint8
 {
 	NoCollision = 0,
@@ -67,19 +54,20 @@ enum class ECollisionEnabled : uint8
 	COUNT
 };
 
-inline const char* GCollisionEnabledNames[] =
-{
-	"NoCollision",
-	"QueryOnly",
-	"PhysicsOnly",
-	"QueryAndPhysics"
-};
-
 // ============================================================
 // FCollisionResponseContainer — 채널별 응답 테이블
 // ============================================================
+USTRUCT()
 struct FCollisionResponseContainer
 {
+	GENERATED_BODY()
+
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="WorldStatic", Member=Responses[0], Enum=ECollisionResponse);
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="WorldDynamic", Member=Responses[1], Enum=ECollisionResponse);
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Pawn", Member=Responses[2], Enum=ECollisionResponse);
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Projectile", Member=Responses[3], Enum=ECollisionResponse);
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Trigger", Member=Responses[4], Enum=ECollisionResponse);
+
 	ECollisionResponse Responses[static_cast<int32>(ECollisionChannel::MAX)];
 
 	FCollisionResponseContainer()
@@ -110,22 +98,6 @@ struct FCollisionResponseContainer
 		return Responses[static_cast<int32>(Channel)];
 	}
 
-	// 에디터용 자기기술 함수 — Struct 프로퍼티 시스템에서 사용
-	static void DescribeProperties(void* Ptr, std::vector<FPropertyDescriptor>& OutProps)
-	{
-		auto* Container = static_cast<FCollisionResponseContainer*>(Ptr);
-		for (int32 i = 0; i < static_cast<int32>(ECollisionChannel::ActiveCount); ++i)
-		{
-			FPropertyDescriptor Desc;
-			Desc.Name = GCollisionChannelNames[i];
-			Desc.Type = EPropertyType::Enum;
-			Desc.ValuePtr = &Container->Responses[i];
-			Desc.EnumNames = GCollisionResponseNames;
-			Desc.EnumCount = static_cast<uint32>(ECollisionResponse::COUNT);
-			Desc.EnumSize = sizeof(ECollisionResponse);
-			OutProps.push_back(Desc);
-		}
-	}
 };
 
 // ============================================================

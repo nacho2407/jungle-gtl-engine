@@ -1,4 +1,4 @@
-﻿#include "Game/Component/CompletionOutlineComponent.h"
+#include "Game/Component/CompletionOutlineComponent.h"
 
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -8,7 +8,6 @@
 #include "Render/Scene/FScene.h"
 #include "Render/Shader/ShaderManager.h"
 
-IMPLEMENT_CLASS(UCompletionOutlineComponent, UPrimitiveComponent)
 HIDE_FROM_COMPONENT_LIST(UCompletionOutlineComponent)
 
 class FCompletionOutlineSceneProxy : public FPrimitiveSceneProxy

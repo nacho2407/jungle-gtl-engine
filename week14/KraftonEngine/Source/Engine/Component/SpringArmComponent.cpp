@@ -9,8 +9,6 @@
 #include <algorithm>
 #include <cmath>
 
-IMPLEMENT_CLASS(USpringArmComponent, USceneComponent)
-
 void USpringArmComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -140,52 +138,4 @@ void USpringArmComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 	SetRelativeLocation(RelLoc);
 	SetRelativeRotation(RelRot);
-}
-
-void USpringArmComponent::Serialize(FArchive& Ar)
-{
-	USceneComponent::Serialize(Ar);
-
-	// 튜닝 파라미터만 직렬화. LaggedAttachLoc / LaggedAttachRot / bHasPreviousState 는
-	// 매 BeginPlay 시 첫 Tick 에서 부모 World 로 다시 초기화되는 런타임 상태라 제외.
-	Ar << TargetArmLength;
-	Ar << SocketOffset;
-	Ar << TargetOffset;
-	Ar << bEnableCameraLag;
-	Ar << bEnableCameraRotationLag;
-	Ar << CameraLagSpeed;
-	Ar << CameraRotationLagSpeed;
-	Ar << CameraLagMaxDistance;
-	Ar << bDoCollisionTest;
-	Ar << ProbeSize;
-	// ProbeChannel 은 enum class — Archive operator 가 enum 도 받지만, 안전하게 underlying 으로 직렬화.
-	uint8 ProbeChannelByte = static_cast<uint8>(ProbeChannel);
-	Ar << ProbeChannelByte;
-	if (Ar.IsLoading())
-	{
-		ProbeChannel = static_cast<ECollisionChannel>(ProbeChannelByte);
-	}
-	Ar << bUsePawnControlRotation;
-	Ar << bInheritPitch;
-	Ar << bInheritYaw;
-	Ar << bInheritRoll;
-}
-
-void USpringArmComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	USceneComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Target Arm Length",        EPropertyType::Float, "SpringArm", &TargetArmLength,           0.0f, 100000.0f, 1.0f });
-	OutProps.push_back({ "Socket Offset",            EPropertyType::Vec3,  "SpringArm", &SocketOffset,              0.0f, 0.0f,      0.1f });
-	OutProps.push_back({ "Target Offset",            EPropertyType::Vec3,  "SpringArm", &TargetOffset,              0.0f, 0.0f,      0.1f });
-	OutProps.push_back({ "Enable Camera Lag",        EPropertyType::Bool,  "SpringArm", &bEnableCameraLag                                });
-	OutProps.push_back({ "Enable Rotation Lag",      EPropertyType::Bool,  "SpringArm", &bEnableCameraRotationLag                        });
-	OutProps.push_back({ "Camera Lag Speed",         EPropertyType::Float, "SpringArm", &CameraLagSpeed,            0.0f, 1000.0f,   0.1f });
-	OutProps.push_back({ "Camera Rotation Lag Speed",EPropertyType::Float, "SpringArm", &CameraRotationLagSpeed,    0.0f, 1000.0f,   0.1f });
-	OutProps.push_back({ "Camera Lag Max Distance",  EPropertyType::Float, "SpringArm", &CameraLagMaxDistance,      0.0f, 100000.0f, 1.0f });
-	OutProps.push_back({ "Do Collision Test",        EPropertyType::Bool,  "SpringArm", &bDoCollisionTest                                });
-	OutProps.push_back({ "Probe Size",               EPropertyType::Float, "SpringArm", &ProbeSize,                 0.0f, 100.0f,    0.01f });
-	OutProps.push_back({ "Use Pawn Control Rotation",EPropertyType::Bool,  "SpringArm", &bUsePawnControlRotation                         });
-	OutProps.push_back({ "Inherit Pitch",            EPropertyType::Bool,  "SpringArm", &bInheritPitch                                   });
-	OutProps.push_back({ "Inherit Yaw",              EPropertyType::Bool,  "SpringArm", &bInheritYaw                                     });
-	OutProps.push_back({ "Inherit Roll",             EPropertyType::Bool,  "SpringArm", &bInheritRoll                                    });
 }

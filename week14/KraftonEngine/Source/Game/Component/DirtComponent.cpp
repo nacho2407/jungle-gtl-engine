@@ -1,4 +1,4 @@
-﻿#include "Game/Component/DirtComponent.h"
+#include "Game/Component/DirtComponent.h"
 
 #include "Collision/RayUtils.h"
 #include "Component/StaticMeshComponent.h"
@@ -10,8 +10,6 @@
 #include "Object/ObjectFactory.h"
 
 #include <limits>
-
-IMPLEMENT_CLASS(UDirtComponent, UDecalComponent)
 
 UDirtComponent::UDirtComponent()
 {

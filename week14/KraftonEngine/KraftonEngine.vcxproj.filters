@@ -88,6 +88,9 @@
     <Filter Include="Source\Engine\Core">
       <UniqueIdentifier>{aaeb2f3f-eff4-9d0e-a471-82c1372b9aed}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Core\Property">
+      <UniqueIdentifier>{25647ff2-6251-d6c8-4f33-105c96cacd0f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Debug">
       <UniqueIdentifier>{94a820a1-1cf9-b142-f9b6-735eff25a3ee}</UniqueIdentifier>
     </Filter>
@@ -818,9 +821,6 @@
     <ClCompile Include="Source\Engine\Component\Movement\FloatingPawnMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Movement\InterpToMovementComponent.cpp">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Movement\MovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
@@ -850,6 +850,39 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp">
       <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Property\ArrayProperty.cpp">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Property\BoolProperty.cpp">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Property\EnumProperty.cpp">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Property\GenericProperty.cpp">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Property\NameProperty.cpp">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Property\NumericProperty.cpp">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Property\ObjectProperty.cpp">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Property\ObjectPropertyBase.cpp">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Property\SoftObjectProperty.cpp">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Property\StringProperty.cpp">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Property\StructProperty.cpp">
+      <Filter>Source\Engine\Core\Property</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Debug\DebugDrawQueue.cpp">
       <Filter>Source\Engine\Debug</Filter>
@@ -1386,6 +1419,7 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1775,9 +1809,6 @@
     <ClInclude Include="Source\Engine\Component\Movement\FloatingPawnMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Movement\InterpToMovementComponent.h">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Movement\MovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
@@ -1831,6 +1862,39 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\TickFunction.h">
       <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Property\ArrayProperty.h">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Property\BoolProperty.h">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Property\EnumProperty.h">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Property\GenericProperty.h">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Property\NameProperty.h">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Property\NumericProperty.h">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Property\ObjectProperty.h">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Property\ObjectPropertyBase.h">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Property\SoftObjectProperty.h">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Property\StringProperty.h">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Property\StructProperty.h">
+      <Filter>Source\Engine\Core\Property</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Debug\DebugDrawQueue.h">
       <Filter>Source\Engine\Debug</Filter>
@@ -2060,10 +2124,22 @@
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Object\ObjectMacros.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\ObjectPtr.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\SoftObjectPtr.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Object\SubclassOf.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\UClass.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\UStruct.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\UUIDGenerator.h">

@@ -2,8 +2,6 @@
 #include "Object/ObjectFactory.h"
 #include <algorithm>
 
-IMPLEMENT_CLASS(UCameraModifier, UObject)
-
 void UCameraModifier::AddedToCamera(APlayerCameraManager* InCameraOwner)
 {
 	CameraOwner = InCameraOwner;

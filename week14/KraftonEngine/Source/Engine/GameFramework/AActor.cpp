@@ -1,4 +1,4 @@
-﻿#include "GameFramework/AActor.h"
+#include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
@@ -9,8 +9,6 @@
 #include "Serialization/Archive.h"
 
 #include <algorithm>
-
-IMPLEMENT_CLASS(AActor, UObject)
 
 AActor::AActor()
 {
@@ -283,13 +281,35 @@ FVector AActor::GetActorRight() const
 	return FVector(0, 1, 0);
 }
 
+namespace
+{
+	FString JoinTagsCommaSep(const TArray<FName>& Tags);
+	TArray<FName> SplitTagsCommaSep(const FString& In);
+}
+
 void AActor::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
 	// 소유 포인터(OwnedComponents/RootComponent/Outer)는 직렬화 제외 — 복제 단계에서 재구성.
-	Ar << bVisible;
-	Ar << bNeedsTick;
-	Ar << Tags;
+	if (Ar.IsSaving())
+	{
+		PendingActorLocation = GetActorLocation();
+		PendingActorRotation = GetActorRotation();
+		PendingActorScale = GetActorScale();
+		PendingActorVisible = bVisible;
+		PendingTagsString = JoinTagsCommaSep(Tags);
+	}
+
+	SerializeProperties(Ar, PF_Save);
+
+	if (Ar.IsLoading())
+	{
+		SetActorLocation(PendingActorLocation);
+		SetActorRotation(PendingActorRotation);
+		SetActorScale(PendingActorScale);
+		SetVisible(PendingActorVisible);
+		SetTags(SplitTagsCommaSep(PendingTagsString));
+	}
 }
 
 bool AActor::HasTag(const FName& Tag) const
@@ -441,45 +461,37 @@ UObject* AActor::Duplicate(UObject* NewOuter) const
 	return Dup;
 }
 
-void AActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+void AActor::PreGetEditableProperties()
 {
-	UObject::GetEditableProperties(OutProps);
-
 	PendingActorLocation = GetActorLocation();
 	PendingActorRotation = GetActorRotation();
 	PendingActorScale = GetActorScale();
 	PendingActorVisible = bVisible;
 
-	OutProps.push_back({ "Location", EPropertyType::Vec3, "Transform", &PendingActorLocation });
-	OutProps.push_back({ "Rotation", EPropertyType::Rotator, "Transform", &PendingActorRotation });
-	OutProps.push_back({ "Scale", EPropertyType::Vec3, "Transform", &PendingActorScale });
-	OutProps.push_back({ "Visible", EPropertyType::Bool, "Actor", &PendingActorVisible });
-
 	// Tags — 콤마 구분 단일 문자열로 편집. PostEditProperty 가 다시 split 해서 Tags 갱신.
 	PendingTagsString = JoinTagsCommaSep(Tags);
-	OutProps.push_back({ "Tags", EPropertyType::String, "Actor", &PendingTagsString });
 }
 
 void AActor::PostEditProperty(const char* PropertyName)
 {
 	UObject::PostEditProperty(PropertyName);
-	if (strcmp(PropertyName, "Location") == 0)
+	if (strcmp(PropertyName, "PendingActorLocation") == 0 || strcmp(PropertyName, "Location") == 0)
 	{
 		SetActorLocation(PendingActorLocation);
 	}
-	else if (strcmp(PropertyName, "Rotation") == 0)
+	else if (strcmp(PropertyName, "PendingActorRotation") == 0 || strcmp(PropertyName, "Rotation") == 0)
 	{
 		SetActorRotation(PendingActorRotation);
 	}
-	else if (strcmp(PropertyName, "Scale") == 0)
+	else if (strcmp(PropertyName, "PendingActorScale") == 0 || strcmp(PropertyName, "Scale") == 0)
 	{
 		SetActorScale(PendingActorScale);
 	}
-	else if (strcmp(PropertyName, "Visible") == 0)
+	else if (strcmp(PropertyName, "PendingActorVisible") == 0 || strcmp(PropertyName, "Visible") == 0)
 	{
 		SetVisible(PendingActorVisible);
 	}
-	else if (strcmp(PropertyName, "Tags") == 0)
+	else if (strcmp(PropertyName, "PendingTagsString") == 0 || strcmp(PropertyName, "Tags") == 0)
 	{
 		SetTags(SplitTagsCommaSep(PendingTagsString));
 	}

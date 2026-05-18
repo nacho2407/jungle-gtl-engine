@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "SkeletalMeshAsset.h"
@@ -6,13 +6,16 @@
 
 class USkeleton;
 
+
+#include "Source/Engine/Mesh/SkeletalMesh.generated.h"
+
+UCLASS()
 class USkeletalMesh : public UObject
 {
 public:
-    DECLARE_CLASS(USkeletalMesh, UObject)
-
-    USkeletalMesh()           = default;
-    ~USkeletalMesh() override = default;
+	GENERATED_BODY()
+	USkeletalMesh() = default;
+	~USkeletalMesh() override = default;
 
     void Serialize(FArchive& Ar) override;
 

@@ -1,11 +1,8 @@
-﻿#include "AnimationStateMachine.h"
+#include "AnimationStateMachine.h"
 #include "AnimState.h"
 #include "AnimInstance.h"
 #include "AnimationRuntime.h"
 #include "PoseContext.h"
-
-DEFINE_CLASS(UAnimationStateMachine, UObject)
-
 void UAnimationStateMachine::RegisterState(UAnimState* State)
 {
 	if (!State) return;

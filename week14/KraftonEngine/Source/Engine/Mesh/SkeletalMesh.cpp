@@ -1,10 +1,7 @@
-#include "SkeletalMesh.h"
-
-#include "Animation/Skeleton.h"
+﻿#include "SkeletalMesh.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS(USkeletalMesh, UObject)
+#include "Animation/Skeleton.h"
 
 void USkeletalMesh::Serialize(FArchive& Ar)
 {

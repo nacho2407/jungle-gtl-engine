@@ -3,21 +3,23 @@
 #include "Render/Resource/MeshBufferManager.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
+#include "Object/SoftObjectPtr.h"
+
+#include "Source/Engine/Component/BillboardComponent.generated.h"
 
 class FPrimitiveSceneProxy;
 
+UCLASS()
 class UBillboardComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
+	GENERATED_BODY()
 
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
 
-	void Serialize(FArchive& Ar) override;
 	void PostDuplicate() override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
@@ -35,9 +37,11 @@ public:
 	FMeshDataView GetMeshDataView() const override { return FMeshDataView::FromMeshData(FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad)); }
 
 protected:
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Billboard")
 	bool bIsBillboard = true;
 
-	FMaterialSlot MaterialSlot;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material", AssetType="Material")
+	FSoftObjectPtr MaterialSlot = "None";
 	UMaterial* Material = nullptr;
 };
 

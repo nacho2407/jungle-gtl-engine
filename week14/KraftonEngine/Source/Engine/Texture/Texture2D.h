@@ -1,8 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "Core/CoreTypes.h"
 
+#include "Source/Engine/Texture/Texture2D.generated.h"
 #include <map>
 #include <string>
 
@@ -17,11 +18,11 @@ enum class ETextureColorSpace : uint8
 
 // UTexture2D — 텍스처 에셋 (SRV를 소유하는 UObject)
 // 같은 경로의 텍스처는 캐시를 통해 하나의 UTexture2D를 공유합니다.
+UCLASS()
 class UTexture2D : public UObject
 {
 public:
-	DECLARE_CLASS(UTexture2D, UObject)
-
+	GENERATED_BODY()
 	UTexture2D() = default;
 	~UTexture2D() override;
 

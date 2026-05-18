@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "PoseContext.h"
@@ -32,11 +32,14 @@ struct FQueuedAnimNotify
 //
 // Notify dispatch 통합: SingleNode 든 Custom+FSM 이든 자식은 AddAnimNotifies 만 호출 (큐에 push).
 // 실제 dispatch 는 UpdateAnimation 끝에서 베이스가 한 번 수행 — UE 의 DispatchQueuedAnimEvents 패턴.
+
+#include "Source/Engine/Animation/AnimInstance.generated.h"
+
+UCLASS()
 class UAnimInstance : public UObject
 {
 public:
-	DECLARE_CLASS(UAnimInstance, UObject)
-
+	GENERATED_BODY()
 	UAnimInstance() = default;
 	~UAnimInstance() override = default;
 

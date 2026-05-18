@@ -1,11 +1,8 @@
-﻿#include "UI/UserWidget.h"
+#include "UI/UserWidget.h"
 
 #include "Object/ObjectFactory.h"
 #include "UI/UIManager.h"
 
-
-
-IMPLEMENT_CLASS(UUserWidget, UObject)
 
 
 void UUserWidget::Initialize(APlayerController* InOwningPlayer, const FString& InDocumentPath)

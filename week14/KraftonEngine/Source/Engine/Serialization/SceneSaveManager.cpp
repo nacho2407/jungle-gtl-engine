@@ -236,16 +236,31 @@ json::JSON FSceneSaveManager::SerializeSceneComponentTree(USceneComponent* Comp)
 json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj)
 {
 	using namespace json;
-	JSON props = json::Object();
-	if (!Obj) return props;
+	JSON Props = json::Object();
+	if (!Obj) return Props;
 
-	TArray<FPropertyDescriptor> Descriptors;
-	Obj->GetEditableProperties(Descriptors);
+	TArray<const FProperty*> Properties;
+	Obj->GetClass()->GetPropertyRefs(Properties);
+	for (const FProperty* Prop : Properties)
+	{
+		if (!Prop || (Prop->Flags & PF_Save) == 0)
+		{
+			continue;
+		}
 
-	for (const auto& Prop : Descriptors) {
-		props[Prop.Name] = Prop.Serialize();
+		if (!Prop->GetValuePtrFor(Obj))
+		{
+			continue;
+		}
+
+		if (!Prop->Name || Prop->Name[0] == '\0')
+		{
+			continue;
+		}
+
+		Props[Prop->Name] = Prop->Serialize(Obj);
 	}
-	return props;
+	return Props;
 }
 
 // ---- Camera helpers ----
@@ -455,28 +470,44 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 {
 	if (!Obj) return;
 
-	TArray<FPropertyDescriptor> Descriptors;
-	Obj->GetEditableProperties(Descriptors);
+	TArray<const FProperty*> Properties;
+	Obj->GetClass()->GetPropertyRefs(Properties);
+	for (const FProperty* Property : Properties)
+	{
+		if(!Property || (Property->Flags & PF_Save) == 0)
+		{
+			continue;
+		}
 
-	for (auto& Prop : Descriptors) {
-		if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
-		json::JSON& Value = PropsJSON[Prop.Name.c_str()];
-		Prop.Deserialize(Value);
-		Obj->PostEditProperty(Prop.Name.c_str());
+		const char* PropertyKey = Property->Name;
+		if (!PropsJSON.hasKey(PropertyKey) && Property->DisplayName && PropsJSON.hasKey(Property->DisplayName))
+		{
+			PropertyKey = Property->DisplayName;
+		}
+
+		if (!PropsJSON.hasKey(PropertyKey))
+		{
+			continue;
+		}
+
+		if(!Property->GetValuePtrFor(Obj))
+		{
+			continue;
+		}
+
+		json::JSON& Value = PropsJSON[PropertyKey];
+		Property->Deserialize(Obj, Value);
+
+		FPropertyChangedEvent Event;
+		Event.Object = Obj;
+		Event.Property = Property;
+		Event.PropertyName = Property->Name;
+		Event.DisplayName = Property->DisplayName ? Property->DisplayName : Property->Name;
+		Event.Type = Property->GetType();
+		Event.ChangeType = EPropertyChangeType::Load;
+		Obj->PostEditChangeProperty(Event);
 	}
 
-	// 2nd pass: PostEditProperty가 새 프로퍼티를 추가할 수 있음
-	// (예: SetStaticMesh → MaterialSlots 생성 → "Element N" 디스크립터 추가)
-	TArray<FPropertyDescriptor> Descriptors2;
-	Obj->GetEditableProperties(Descriptors2);
-
-	for (size_t i = Descriptors.size(); i < Descriptors2.size(); ++i) {
-		auto& Prop = Descriptors2[i];
-		if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
-		json::JSON& Value = PropsJSON[Prop.Name.c_str()];
-		Prop.Deserialize(Value);
-		Obj->PostEditProperty(Prop.Name.c_str());
-	}
 }
 
 // ============================================================

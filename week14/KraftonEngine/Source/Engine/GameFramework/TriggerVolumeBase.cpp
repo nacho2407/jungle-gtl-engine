@@ -1,12 +1,10 @@
-﻿#include "GameFramework/TriggerVolumeBase.h"
+#include "GameFramework/TriggerVolumeBase.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/World.h"
 #include "Component/BoxComponent.h"
 #include "Core/CollisionTypes.h"
 #include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS(ATriggerVolumeBase, AActor)
 
 void ATriggerVolumeBase::InitDefaultComponents(const FVector& Extent)
 {
@@ -25,12 +23,6 @@ void ATriggerVolumeBase::PostDuplicate()
 {
 	Super::PostDuplicate();
 	TriggerBox = Cast<UBoxComponent>(GetRootComponent());
-}
-
-void ATriggerVolumeBase::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	Super::GetEditableProperties(OutProps);
-	OutProps.push_back({ "TriggerTag", EPropertyType::Name, "Trigger", &TriggerTag });
 }
 
 void ATriggerVolumeBase::BeginPlay()
@@ -69,12 +61,6 @@ void ATriggerVolumeBase::BeginPlay()
 		TriggerBox->OnComponentBeginOverlap.AddRaw(this, &ATriggerVolumeBase::HandleBeginOverlap);
 		TriggerBox->OnComponentEndOverlap.AddRaw(this, &ATriggerVolumeBase::HandleEndOverlap);
 	}
-}
-
-void ATriggerVolumeBase::Serialize(FArchive& Ar)
-{
-	Super::Serialize(Ar);
-	Ar << TriggerTag;
 }
 
 void ATriggerVolumeBase::HandleBeginOverlap(

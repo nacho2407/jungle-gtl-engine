@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
@@ -14,11 +14,14 @@ class UWorld;
 class ULevel;
 class UPrimitiveComponent;
 
+#include "Source/Engine/GameFramework/AActor.generated.h"
+
+UCLASS()
 class AActor : public UObject
 {
     friend struct FActorTickFunction;
 public:
-	DECLARE_CLASS(AActor, UObject)
+	GENERATED_BODY()
 	AActor();
 	~AActor() override;
 
@@ -31,7 +34,7 @@ public:
 	void Serialize(FArchive& Ar) override;
 	UObject* Duplicate(UObject* NewOuter = nullptr) const override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PreGetEditableProperties() override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	// 컴포넌트 생성 + Owner 설정 + 등록 + 렌더 상태 생성
@@ -108,6 +111,7 @@ public:
 	void SetTags(TArray<FName> InTags) { Tags = std::move(InTags); }
 
 	// Tick 필요 여부 — false면 Tick 호출 자체를 건너뜀 (StaticMesh 등)
+	UPROPERTY(Edit, Save, Category="Actor", DisplayName="Needs Tick")
 	bool bNeedsTick = true;
 	bool bTickInEditor = false;
 
@@ -123,14 +127,19 @@ protected:
 
 	USceneComponent* RootComponent = nullptr;
 
+	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Location")
 	FVector PendingActorLocation = FVector(0, 0, 0);
+	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Rotation")
 	FRotator PendingActorRotation = FRotator(0, 0, 0);
+	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Scale")
 	FVector PendingActorScale = FVector(1, 1, 1);
+	UPROPERTY(Edit, Save, Category="Actor", DisplayName="Visible")
 	bool PendingActorVisible = true;
 
 	bool bVisible = true;
 
 	TArray<FName> Tags;
+	UPROPERTY(Edit, Save, Category="Actor", DisplayName="Tags")
 	FString PendingTagsString;  // 에디터용 — 콤마 구분 직렬화 캐시
 
 	TArray<UActorComponent*> OwnedComponents;

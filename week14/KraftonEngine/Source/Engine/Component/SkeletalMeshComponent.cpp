@@ -1,4 +1,5 @@
 ﻿#include "SkeletalMeshComponent.h"
+#include "Render/Proxy/SkeletalMeshSceneProxy.h"
 
 #include "Animation/AnimationManager.h"
 #include "Animation/AnimInstance.h"
@@ -22,8 +23,6 @@
 
 #include <algorithm>
 #include <cstring>
-
-IMPLEMENT_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 
 USkeletalMeshComponent::~USkeletalMeshComponent()
 {
@@ -191,7 +190,7 @@ void USkeletalMeshComponent::LoadAnimationFromPath()
         return;
     }
 
-    UAnimSequence* LoadedAnimation = FAnimationManager::Get().LoadAnimation(AnimationData.AnimToPlayPath);
+    UAnimSequence* LoadedAnimation = FAnimationManager::Get().LoadAnimation(AnimationData.AnimToPlayPath.ToString());
     if (LoadedAnimation && CanUseAnimation(LoadedAnimation))
     {
         AnimationData.AnimToPlay = LoadedAnimation;
@@ -291,59 +290,9 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 // ──────────────────────────────────────────────
 // Editor / 직렬화 통합
 // ──────────────────────────────────────────────
-void USkeletalMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+void USkeletalMeshComponent::GetEditableProperties(TArray<FPropertyValue>& OutProps)
 {
     Super::GetEditableProperties(OutProps);
-
-    FPropertyDescriptor ModeProp;
-    ModeProp.Name       = "Animation Mode";
-    ModeProp.Type       = EPropertyType::Enum;
-    ModeProp.Category   = "Animation";
-    ModeProp.ValuePtr   = &AnimationMode;
-    ModeProp.EnumNames  = GAnimationModeNames;
-    ModeProp.EnumCount  = GAnimationModeCount;
-    ModeProp.EnumSize   = sizeof(EAnimationMode);
-    OutProps.push_back(ModeProp);
-
-    FPropertyDescriptor ClassProp;
-    ClassProp.Name      = "Anim Instance Class";
-    ClassProp.Type      = EPropertyType::ClassRef;
-    ClassProp.Category  = "Animation";
-    ClassProp.ValuePtr  = &AnimInstanceClass;                          // TSubclassOf 의 UClass* 멤버 위치
-    ClassProp.ClassBase = TSubclassOf<UAnimInstance>::StaticClass();   // 자식 enumerate 베이스
-    OutProps.push_back(ClassProp);
-
-    FPropertyDescriptor AnimProp;
-    AnimProp.Name          = "Anim To Play";
-    AnimProp.Type          = EPropertyType::ObjectRef;
-    AnimProp.Category      = "Animation";
-    AnimProp.ValuePtr      = &AnimationData.AnimToPlayPath;
-    AnimProp.AssetTypeName = "UAnimSequence";
-    OutProps.push_back(AnimProp);
-
-    FPropertyDescriptor PlayRateProp;
-    PlayRateProp.Name     = "Play Rate";
-    PlayRateProp.Type     = EPropertyType::Float;
-    PlayRateProp.Category = "Animation";
-    PlayRateProp.ValuePtr = &AnimationData.PlayRate;
-    PlayRateProp.Min      = -4.0f;
-    PlayRateProp.Max      = 4.0f;
-    PlayRateProp.Speed    = 0.05f;
-    OutProps.push_back(PlayRateProp);
-
-    FPropertyDescriptor LoopProp;
-    LoopProp.Name     = "Looping";
-    LoopProp.Type     = EPropertyType::Bool;
-    LoopProp.Category = "Animation";
-    LoopProp.ValuePtr = &AnimationData.bLooping;
-    OutProps.push_back(LoopProp);
-
-    FPropertyDescriptor PlayingProp;
-    PlayingProp.Name     = "Playing";
-    PlayingProp.Type     = EPropertyType::Bool;
-    PlayingProp.Category = "Animation";
-    PlayingProp.ValuePtr = &AnimationData.bPlaying;
-    OutProps.push_back(PlayingProp);
 
     // AnimInstance 자체 properties (Speed 등) 도 패널에 같이 노출 — 컴포넌트가 forward.
     // 자식이 자기 카테고리(예: "Animation|Character") 로 그룹화.
@@ -355,16 +304,25 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
     Super::PostEditProperty(PropertyName);
     if (!PropertyName) return;
 
-    if (std::strcmp(PropertyName, "Animation Mode") == 0)
+    if (std::strcmp(PropertyName, "AnimationMode") == 0)
     {
         InitializeAnimation();
     }
-    else if (std::strcmp(PropertyName, "Anim Instance Class") == 0)
+    else if (std::strcmp(PropertyName, "AnimInstanceClass") == 0)
     {
         // 클래스 슬롯이 바뀌면 Custom 모드에서 인스턴스 재생성 필요. (ours — Phase 6)
         if (AnimationMode == EAnimationMode::AnimationCustom) InitializeAnimation();
     }
-    else if (std::strcmp(PropertyName, "Anim To Play") == 0)
+    else if (std::strcmp(PropertyName, "AnimationData") == 0)
+    {
+        LoadAnimationFromPath();
+
+        if (AnimInstance)
+        {
+            InitializeAnimation();
+        }
+    }
+    else if (std::strcmp(PropertyName, "AnimToPlayPath") == 0)
     {
         // theirs (main): FAnimationManager 가 path 로 실제 UAnimSequence 로딩 — Phase 4 의 TODO 해소.
         // Mode 가 None 이면 SingleNode 로 자동 전환, AnimInstance 없으면 Initialize, 있으면 SingleNode setter 들 갱신.
@@ -392,15 +350,15 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
             SingleNode->SetPlaying(AnimationData.bPlaying && AnimationData.AnimToPlay != nullptr);
         }
     }
-    else if (std::strcmp(PropertyName, "Play Rate") == 0)
+    else if (std::strcmp(PropertyName, "PlayRate") == 0)
     {
         SetPlayRate(AnimationData.PlayRate);
     }
-    else if (std::strcmp(PropertyName, "Looping") == 0)
+    else if (std::strcmp(PropertyName, "bLooping") == 0)
     {
         SetLooping(AnimationData.bLooping);
     }
-    else if (std::strcmp(PropertyName, "Playing") == 0)
+    else if (std::strcmp(PropertyName, "bPlaying") == 0)
     {
         SetPlaying(AnimationData.bPlaying);
     }
@@ -419,7 +377,12 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
     AnimationMode = static_cast<EAnimationMode>(ModeRaw);
 
     // AnimToPlay 의 path 만 라운드트립. 실제 포인터 복원은 InitializeAnimation() → LoadAnimationFromPath() 가 처리.
-    Ar << AnimationData.AnimToPlayPath;
+    FString AnimToPlayPath = Ar.IsSaving() ? AnimationData.AnimToPlayPath.ToString() : FString();
+    Ar << AnimToPlayPath;
+    if (Ar.IsLoading())
+    {
+        AnimationData.AnimToPlayPath.SetPath(AnimToPlayPath);
+    }
     Ar << AnimationData.PlayRate;
     Ar << AnimationData.bLooping;
     Ar << AnimationData.bPlaying;

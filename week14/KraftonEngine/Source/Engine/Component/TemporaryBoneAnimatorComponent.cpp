@@ -12,42 +12,11 @@
 #include <cmath>
 #include <cstring>
 
-IMPLEMENT_CLASS(UTemporaryBoneAnimatorComponent, UActorComponent)
-
-void UTemporaryBoneAnimatorComponent::Serialize(FArchive& Ar)
-{
-	UActorComponent::Serialize(Ar);
-	Ar << TargetBoneName;
-	Ar << RotationAmplitude.Pitch;
-	Ar << RotationAmplitude.Yaw;
-	Ar << RotationAmplitude.Roll;
-	Ar << RotationFrequency.Pitch;
-	Ar << RotationFrequency.Yaw;
-	Ar << RotationFrequency.Roll;
-	Ar << RotationPhase.Pitch;
-	Ar << RotationPhase.Yaw;
-	Ar << RotationPhase.Roll;
-	Ar << RotationOffset.Pitch;
-	Ar << RotationOffset.Yaw;
-	Ar << RotationOffset.Roll;
-	Ar << bEnabled;
-}
-
-void UTemporaryBoneAnimatorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	OutProps.push_back({ "Target Bone Name", EPropertyType::String, "Temp Bone Animator", &TargetBoneName });
-	OutProps.push_back({ "Enabled", EPropertyType::Bool, "Temp Bone Animator", &bEnabled });
-	OutProps.push_back({ "Rotation Amplitude", EPropertyType::Rotator, "Temp Bone Animator", &RotationAmplitude, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Rotation Frequency", EPropertyType::Rotator, "Temp Bone Animator", &RotationFrequency, 0.0f, 0.0f, 0.01f });
-	OutProps.push_back({ "Rotation Phase", EPropertyType::Rotator, "Temp Bone Animator", &RotationPhase, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Rotation Offset", EPropertyType::Rotator, "Temp Bone Animator", &RotationOffset, 0.0f, 0.0f, 0.1f });
-}
-
 void UTemporaryBoneAnimatorComponent::PostEditProperty(const char* PropertyName)
 {
 	UActorComponent::PostEditProperty(PropertyName);
 
-	if (std::strcmp(PropertyName, "Target Bone Name") == 0)
+	if (std::strcmp(PropertyName, "TargetBoneName") == 0 || std::strcmp(PropertyName, "Target Bone Name") == 0)
 	{
 		CachedBoneName.clear();
 		CachedBoneIndex = -1;

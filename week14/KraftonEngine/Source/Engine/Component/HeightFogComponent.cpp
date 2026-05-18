@@ -1,4 +1,4 @@
-﻿#include "HeightFogComponent.h"
+#include "HeightFogComponent.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -6,8 +6,6 @@
 #include "Materials/MaterialManager.h"
 #include "Render/Scene/FScene.h"
 #include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS(UHeightFogComponent, USceneComponent)
 
 UHeightFogComponent::UHeightFogComponent()
 {
@@ -52,33 +50,10 @@ void UHeightFogComponent::PushToScene()
 	World->GetScene().GetEnvironment().AddFog(this, Params);
 }
 
-void UHeightFogComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	USceneComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Fog Density",       EPropertyType::Float,  "Fog", &FogDensity,        0.0f, 0.05f,     0.001f });
-	OutProps.push_back({ "Height Falloff",    EPropertyType::Float,  "Fog", &FogHeightFalloff,  0.001f, 5.0f,    0.01f });
-	OutProps.push_back({ "Start Distance",    EPropertyType::Float,  "Fog", &StartDistance,     0.0f, 100000.0f, 1.0f });
-	OutProps.push_back({ "Cutoff Distance",   EPropertyType::Float,  "Fog", &FogCutoffDistance, 0.0f, 100000.0f, 1.0f });
-	OutProps.push_back({ "Max Opacity",       EPropertyType::Float,  "Fog", &FogMaxOpacity,     0.0f, 1.0f,      0.01f });
-	OutProps.push_back({ "Inscattering Color", EPropertyType::Color4, "Fog", &FogInscatteringColor });
-}
-
 void UHeightFogComponent::PostEditProperty(const char* PropertyName)
 {
 	USceneComponent::PostEditProperty(PropertyName);
 	PushToScene();
-}
-
-void UHeightFogComponent::Serialize(FArchive& Ar)
-{
-	USceneComponent::Serialize(Ar);
-
-	Ar << FogDensity;
-	Ar << FogHeightFalloff;
-	Ar << StartDistance;
-	Ar << FogCutoffDistance;
-	Ar << FogMaxOpacity;
-	Ar << FogInscatteringColor;
 }
 
 UBillboardComponent* UHeightFogComponent::EnsureEditorBillboard()

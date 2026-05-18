@@ -60,14 +60,70 @@ void UObject::Serialize(FArchive& Ar)
 	Ar << ObjectName;
 }
 
-void UObject::GetEditableProperties(TArray<FPropertyDescriptor>& /*OutProps*/)
+void UObject::SerializeProperties(FArchive& Ar, uint32 RequiredFlags)
 {
-	// 기본 UObject는 에디터에 노출할 프로퍼티 없음.
+	TArray<const FProperty*> Properties;
+	GetClass()->GetPropertyRefs(Properties);
+
+	for (const FProperty* Property : Properties)
+	{
+		if (!Property || (Property->Flags & RequiredFlags) != RequiredFlags)
+		{
+			continue;
+		}
+
+		if (!Property->GetValuePtrFor(this))
+		{
+			continue;
+		}
+
+		Property->Serialize(this, Ar);
+	}
+}
+
+void UObject::GetEditableProperties(TArray<FPropertyValue>& OutProps)
+{
+	PreGetEditableProperties();
+
+	TArray<const FProperty*> Properties;
+	GetClass()->GetPropertyRefs(Properties);
+
+	for (const FProperty* Property : Properties)
+	{
+		if (!Property || (Property->Flags & PF_Edit) == 0)
+		{
+			continue;
+		}
+		if (!ShouldExposeProperty(*Property))
+		{
+			continue;
+		}
+
+		if(Property->GetValuePtrFor(this))
+		{
+			OutProps.push_back(Property->ToValue(this, this));
+		}
+	}
+}
+
+bool UObject::ShouldExposeProperty(const FProperty& /*Property*/) const
+{
+	return true;
 }
 
 void UObject::PostEditProperty(const char* /*PropertyName*/)
 {
 	// 기본 UObject는 편집 후 추가 작업 없음.
+}
+
+void UObject::PostEditChangeProperty(const FPropertyChangedEvent& Event)
+{
+	PostEditProperty(Event.PropertyName);
+}
+
+void UObject::RegisterProperties(UStruct* Class)
+{
+	(void)Class;
 }
 
 UClass UObject::StaticClassInstance("UObject", nullptr, sizeof(UObject), CF_None);

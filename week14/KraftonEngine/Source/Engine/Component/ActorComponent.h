@@ -1,19 +1,22 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "Core/TickFunction.h"
+
+#include "Source/Engine/Component/ActorComponent.generated.h"
 
 class AActor;
 class UWorld;
 class FScene;
 
+UCLASS()
 class UActorComponent : public UObject
 {
     friend struct FActorComponentTickFunction;
 	friend class AActor;
 
 public:
-	DECLARE_CLASS(UActorComponent, UObject)
+	GENERATED_BODY()
 
 	virtual void BeginPlay();
 	virtual void EndPlay() {};
@@ -50,8 +53,6 @@ public:
 	AActor* GetOwner() const { return Owner; }
 	UWorld* GetWorld() const;
 
-	// 에디터에 노출할 프로퍼티 목록 반환. 하위 클래스에서 override하여 속성 추가.
-	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	// 프로퍼티 값 변경 후 호출. 하위 클래스에서 override하여 부수효과(리소스 재로딩 등) 처리.
 	virtual void PostEditProperty(const char* PropertyName) override;
 	// 선택된 프록시의 소유 액터 컴포넌트가 디버그 시각화를 FScene에 기여
@@ -65,11 +66,16 @@ protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction);
 	
 	AActor* Owner = nullptr;
+	UPROPERTY(Edit, Save, Category="Component", DisplayName="bTickEnable")
 	bool bTickEnable = true;
 
 private:
+	UPROPERTY(Edit, Save, Category="Component", DisplayName="bEditorOnly")
 	bool bEditorOnly = false;
+	UPROPERTY(Edit, Save, Category="Component", DisplayName="bIsActive")
 	bool bIsActive = true;
+	UPROPERTY(Edit, Save, Category="Component", DisplayName="bAutoActivate")
 	bool bAutoActivate = true;
+	UPROPERTY(Save, Category="Component", DisplayName="Hidden In Component Tree")
 	bool bHiddenInComponentTree = false;
 };

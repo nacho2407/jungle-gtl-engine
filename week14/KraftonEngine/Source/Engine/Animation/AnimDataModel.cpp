@@ -1,7 +1,4 @@
-﻿#include "AnimDataModel.h"
-
-DEFINE_CLASS(UAnimDataModel, UObject)
-
+#include "AnimDataModel.h"
 void UAnimDataModel::Serialize(FArchive& Ar)
 {
     UObject::Serialize(Ar);

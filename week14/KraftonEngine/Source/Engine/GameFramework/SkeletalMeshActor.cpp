@@ -1,11 +1,9 @@
-﻿#include "SkeletalMeshActor.h"
+#include "SkeletalMeshActor.h"
 #include "Runtime/Engine.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Mesh/MeshManager.h"
 #include "Animation/AnimationMode.h"
 #include "Animation/CharacterAnimInstance.h"
-
-IMPLEMENT_CLASS(ASkeletalMeshActor, AActor)
 
 void ASkeletalMeshActor::BeginPlay()
 {

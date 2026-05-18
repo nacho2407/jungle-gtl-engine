@@ -1,10 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include "BillboardComponent.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 
+#include "Source/Engine/Component/TextRenderComponent.generated.h"
 // 텍스트 렌더링 공간 모드
+UENUM()
 enum class ETextRenderSpace : int32
 {
 	World,		// 3D 공간에 빌보드로 렌더링
@@ -12,6 +14,7 @@ enum class ETextRenderSpace : int32
 };
 
 // 텍스트 수평 정렬
+UENUM()
 enum class ETextHAlign : int32
 {
 	Left,
@@ -20,6 +23,7 @@ enum class ETextHAlign : int32
 };
 
 // 텍스트 수직 정렬
+UENUM()
 enum class ETextVAlign : int32
 {
 	Top,
@@ -30,18 +34,17 @@ enum class ETextVAlign : int32
 // 텍스트를 월드 공간에 빌보드로 렌더링하는 컴포넌트.
 // PrimitiveComponent를 상속받아 RenderCollector에 자동으로 감지됩니다.
 // MeshBuffer를 사용하지 않으며, FFontGeometry가 드로우콜을 처리합니다.
+UCLASS()
 class UTextRenderComponent : public UBillboardComponent
 {
 public:
-	DECLARE_CLASS(UTextRenderComponent, UPrimitiveComponent)
-
+	GENERATED_BODY()
 	UTextRenderComponent();
 	~UTextRenderComponent() override = default;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	bool ShouldExposeProperty(const FProperty& Property) const override;
 	void PostEditProperty(const char* PropertyName) override;
 
-	void Serialize(FArchive& Ar) override;
 	void PostDuplicate() override;
 
 	// --- Text ---
@@ -97,21 +100,33 @@ public:
 	float GetCharHeight() const { return CharHeight; }
 
 private:
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Text")
 	FString Text = FString("Empty");
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Font", AssetType="Font")
 	FName FontName = FName("Default");
 	FFontResource* CachedFont = nullptr;	// ResourceManager 소유, 여기선 참조만
 
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Color", Type=Color4)
 	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Font Size", Min=0.1f, Max=100.0f, Speed=0.1f)
 	float FontSize = 1.0f;
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Spacing", Min=0.0f, Max=100.0f, Speed=0.01f)
 	float Spacing = 0.1f;
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Char Width", Min=0.0f, Max=100.0f, Speed=0.01f)
 	float CharWidth = 0.5f;
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Char Height", Min=0.0f, Max=100.0f, Speed=0.01f)
 	float CharHeight = 0.5f;
 
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Render Space", Enum=ETextRenderSpace)
 	ETextRenderSpace RenderSpace = ETextRenderSpace::World;
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Horizontal Align", Enum=ETextHAlign)
 	ETextHAlign HAlign = ETextHAlign::Center;
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Vertical Align", Enum=ETextVAlign)
 	ETextVAlign VAlign = ETextVAlign::Center;
 
 	// Screen 모드 전용
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Screen X", Min=0.0f, Max=100000.0f, Speed=1.0f)
 	float ScreenX = 0.0f;
+	UPROPERTY(Edit, Save, Category="Text", DisplayName="Screen Y", Min=0.0f, Max=100000.0f, Speed=1.0f)
 	float ScreenY = 0.0f;
 };

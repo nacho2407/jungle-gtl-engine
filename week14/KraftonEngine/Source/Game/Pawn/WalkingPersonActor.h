@@ -4,6 +4,7 @@
 #include "Math/Rotator.h"
 #include "Core/Delegate.h"
 
+#include "Source/Game/Pawn/WalkingPersonActor.generated.h"
 class UBoxComponent;
 class UStaticMeshComponent;
 class ULuaScriptComponent;
@@ -24,11 +25,11 @@ enum class ECarGamePhase : uint8;
 // 사람이 걸어 움직이면 트리거 박스도 함께 따라간다. TriggerTag 는 "EscapePolice" 고정.
 // 서브-트리거는 EndPlay 에서 destroy.
 // ============================================================
+UCLASS()
 class AWalkingPersonActor : public AActor
 {
 public:
-	DECLARE_CLASS(AWalkingPersonActor, AActor)
-
+	GENERATED_BODY()
 	AWalkingPersonActor() = default;
 	~AWalkingPersonActor() override = default;
 
@@ -40,9 +41,6 @@ public:
 	void EndPlay() override;
 	void PostDuplicate() override;
 	void Tick(float DeltaTime) override;
-	void Serialize(FArchive& Ar) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-
 	bool IsQuestTarget() const { return bQuestTarget; }
 	void SetQuestTarget(bool bIn) { bQuestTarget = bIn; }
 
@@ -72,6 +70,7 @@ private:
 
 	// 씬에 사람 여러 명 깔되, 그중 단 한 명만 EscapePolice 퀘스트 트리거 역할.
 	// true 인 인스턴스의 트리거에만 "EscapePolice" 태그가 붙어 GameMode 라우팅을 받음.
+	UPROPERTY(Edit, Save, Category="Walking Person", DisplayName="Quest Target")
 	bool bQuestTarget = false;
 
 	// Phase 전환마다 돌아갈 시작 위치/회전. BeginPlay 첫 frame 에 캐시.

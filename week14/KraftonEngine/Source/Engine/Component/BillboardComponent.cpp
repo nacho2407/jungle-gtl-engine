@@ -1,4 +1,4 @@
-﻿#include "BillboardComponent.h"
+#include "BillboardComponent.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 #include "Render/Proxy/BillboardSceneProxy.h"
@@ -10,27 +10,18 @@
 
 #include <cstring>
 
-IMPLEMENT_CLASS(UBillboardComponent, UPrimitiveComponent)
-
 FPrimitiveSceneProxy* UBillboardComponent::CreateSceneProxy()
 {
 	return new FBillboardSceneProxy(this);
-}
-
-void UBillboardComponent::Serialize(FArchive& Ar)
-{
-	UPrimitiveComponent::Serialize(Ar);
-	Ar << bIsBillboard;
-	Ar << MaterialSlot.Path;
 }
 
 void UBillboardComponent::PostDuplicate()
 {
 	UPrimitiveComponent::PostDuplicate();
 
-	if (!MaterialSlot.Path.empty() && MaterialSlot.Path != "None")
+	if (!MaterialSlot.empty() && MaterialSlot != "None")
 	{
-		UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot.Path);
+		UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot);
 		if (LoadedMat)
 		{
 			SetMaterial(LoadedMat);
@@ -43,36 +34,30 @@ void UBillboardComponent::SetMaterial(UMaterial* InMaterial)
 	Material = InMaterial;
 	if (Material)
 	{
-		MaterialSlot.Path = Material->GetAssetPathFileName();
+		MaterialSlot = Material->GetAssetPathFileName();
 	}
 	else
 	{
-		MaterialSlot.Path = "None";
+		MaterialSlot = "None";
 	}
 	// 머티리얼 변경 시 렌더 스테이트와 프록시 갱신
 	MarkProxyDirty(EDirtyFlag::Material);
 	MarkProxyDirty(EDirtyFlag::Mesh);
 }
 
-void UBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Material", EPropertyType::MaterialSlot, "Rendering", &MaterialSlot });
-}
-
 void UBillboardComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Material") == 0)
+	if (strcmp(PropertyName, "MaterialSlot") == 0 || strcmp(PropertyName, "Material") == 0)
 	{
-		if (MaterialSlot.Path == "None" || MaterialSlot.Path.empty())
+		if (MaterialSlot == "None" || MaterialSlot.empty())
 		{
 			SetMaterial(nullptr);
 		}
 		else
 		{
-			UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot.Path);
+			UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot);
 			if (LoadedMat)
 			{
 				SetMaterial(LoadedMat);

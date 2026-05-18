@@ -74,6 +74,7 @@ ROOT_FILES = ["main.cpp"]
 
 # Include paths (relative to project dir)
 INCLUDE_PATHS = [
+    "Intermediate\\Generated",
     "Source\\Engine",
     "Source",
     "ThirdParty",
@@ -355,6 +356,9 @@ def generate_vcxproj(files: dict[str, list[str]]):
         base_defs.extend(extra_defs)
         base_defs.append("%(PreprocessorDefinitions)")
         ET.SubElement(cl, "PreprocessorDefinitions").text = ";".join(base_defs)
+        ET.SubElement(cl, "AdditionalIncludeDirectories").text = (
+            ";".join(INCLUDE_PATHS) + ";%(AdditionalIncludeDirectories)"
+        )
 
         ET.SubElement(cl, "ConformanceMode").text = "true"
         # /bigobj — sol2 binding이 누적되며 LuaScriptManager.cpp가 섹션 한도를 넘어 필수화됨.

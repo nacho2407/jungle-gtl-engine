@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "AnimInstance.h"
 
@@ -6,11 +6,14 @@ class UAnimSequenceBase;
 
 // 시퀀스 1개를 재생하는 가장 단순한 인스턴스.
 // PlayRate 음수 → Reverse Play (Notion 데모용 옵션).
+
+#include "Source/Engine/Animation/AnimSingleNodeInstance.generated.h"
+
+UCLASS()
 class UAnimSingleNodeInstance : public UAnimInstance
 {
 public:
-	DECLARE_CLASS(UAnimSingleNodeInstance, UAnimInstance)
-
+	GENERATED_BODY()
 	UAnimSingleNodeInstance() = default;
 	~UAnimSingleNodeInstance() override = default;
 

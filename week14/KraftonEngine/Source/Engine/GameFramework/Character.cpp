@@ -1,4 +1,4 @@
-﻿#include "GameFramework/Character.h"
+#include "GameFramework/Character.h"
 
 #include "Component/CapsuleComponent.h"
 #include "Component/InputComponent.h"
@@ -10,9 +10,6 @@
 #include "Runtime/Engine.h"
 
 #include <algorithm>
-
-IMPLEMENT_CLASS(ACharacter, APawn)
-
 void ACharacter::InitDefaultComponents(const FString& SkeletalMeshFileName)
 {
 	// 1) Capsule — Root. CharacterMovement 의 UpdatedComponent 가 이걸 가리킴.

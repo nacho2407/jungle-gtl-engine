@@ -1,4 +1,4 @@
-﻿#include "CharacterMovementComponent.h"
+#include "CharacterMovementComponent.h"
 
 #include "Component/CapsuleComponent.h"
 #include "Component/SceneComponent.h"
@@ -12,9 +12,6 @@
 
 #include <algorithm>
 #include <cmath>
-
-IMPLEMENT_CLASS(UCharacterMovementComponent, UMovementComponent)
-
 void UCharacterMovementComponent::AddInputVector(const FVector& WorldDirection, float ScaleValue)
 {
 	AccumulatedInput = AccumulatedInput + WorldDirection * ScaleValue;
@@ -236,84 +233,6 @@ float UCharacterMovementComponent::GetCapsuleHalfHeight() const
 		return Cap->GetScaledCapsuleHalfHeight();
 	}
 	return 0.0f;
-}
-
-void UCharacterMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	Super::GetEditableProperties(OutProps);
-
-	const char* Category = "CharacterMovement";
-
-	FPropertyDescriptor SpeedProp;
-	SpeedProp.Name     = "Max Walk Speed";
-	SpeedProp.Type     = EPropertyType::Float;
-	SpeedProp.Category = Category;
-	SpeedProp.ValuePtr = &MaxWalkSpeed;
-	SpeedProp.Min      = 0.0f;
-	SpeedProp.Max      = 100.0f;
-	SpeedProp.Speed    = 0.1f;
-	OutProps.push_back(SpeedProp);
-
-	FPropertyDescriptor AccelProp;
-	AccelProp.Name     = "Max Acceleration";
-	AccelProp.Type     = EPropertyType::Float;
-	AccelProp.Category = Category;
-	AccelProp.ValuePtr = &MaxAcceleration;
-	AccelProp.Min      = 0.0f;
-	AccelProp.Max      = 200.0f;
-	AccelProp.Speed    = 0.5f;
-	OutProps.push_back(AccelProp);
-
-	FPropertyDescriptor BrakeProp;
-	BrakeProp.Name     = "Braking Friction";
-	BrakeProp.Type     = EPropertyType::Float;
-	BrakeProp.Category = Category;
-	BrakeProp.ValuePtr = &BrakingFriction;
-	BrakeProp.Min      = 0.0f;
-	BrakeProp.Max      = 100.0f;
-	BrakeProp.Speed    = 0.1f;
-	OutProps.push_back(BrakeProp);
-
-	FPropertyDescriptor GravityProp;
-	GravityProp.Name     = "Gravity";
-	GravityProp.Type     = EPropertyType::Float;
-	GravityProp.Category = Category;
-	GravityProp.ValuePtr = &Gravity;
-	GravityProp.Min      = 0.0f;
-	GravityProp.Max      = 100.0f;
-	GravityProp.Speed    = 0.1f;
-	OutProps.push_back(GravityProp);
-
-	FPropertyDescriptor ProbeProp;
-	ProbeProp.Name     = "Floor Probe Distance";
-	ProbeProp.Type     = EPropertyType::Float;
-	ProbeProp.Category = Category;
-	ProbeProp.ValuePtr = &FloorProbeDistance;
-	ProbeProp.Min      = 0.0f;
-	ProbeProp.Max      = 5.0f;
-	ProbeProp.Speed    = 0.01f;
-	OutProps.push_back(ProbeProp);
-
-	FPropertyDescriptor JumpProp;
-	JumpProp.Name     = "Jump Z Velocity";
-	JumpProp.Type     = EPropertyType::Float;
-	JumpProp.Category = Category;
-	JumpProp.ValuePtr = &JumpZVelocity;
-	JumpProp.Min      = 0.0f;
-	JumpProp.Max      = 50.0f;
-	JumpProp.Speed    = 0.1f;
-	OutProps.push_back(JumpProp);
-
-	OutProps.push_back({ "Orient Rotation To Movement", EPropertyType::Bool,  Category, &bOrientRotationToMovement                      });
-	FPropertyDescriptor RateProp;
-	RateProp.Name     = "Rotation Yaw Rate";
-	RateProp.Type     = EPropertyType::Float;
-	RateProp.Category = Category;
-	RateProp.ValuePtr = &RotationYawRate;
-	RateProp.Min      = 0.0f;
-	RateProp.Max      = 3600.0f;
-	RateProp.Speed    = 5.0f;
-	OutProps.push_back(RateProp);
 }
 
 void UCharacterMovementComponent::Serialize(FArchive& Ar)

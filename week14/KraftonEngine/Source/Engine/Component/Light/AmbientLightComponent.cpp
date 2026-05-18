@@ -1,9 +1,7 @@
-﻿#include "AmbientLightComponent.h"
+#include "AmbientLightComponent.h"
 #include "Render/Types/GlobalLightParams.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-
-IMPLEMENT_CLASS(UAmbientLightComponent, ULightComponentBase)
 
 UAmbientLightComponent::UAmbientLightComponent()
 {

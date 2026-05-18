@@ -172,7 +172,7 @@ void FEditorAnimationDebugWidget::RenderVariablesSection(UAnimInstance* AnimInst
 {
 	ImGui::Text("Variables");
 
-	TArray<FPropertyDescriptor> Props;
+	TArray<FPropertyValue> Props;
 	AnimInst->GetEditableProperties(Props);
 
 	if (Props.empty())
@@ -181,52 +181,53 @@ void FEditorAnimationDebugWidget::RenderVariablesSection(UAnimInstance* AnimInst
 		return;
 	}
 
-	for (const FPropertyDescriptor& P : Props)
+	for (const FPropertyValue& P : Props)
 	{
 		RenderPropertyReadOnly(P);
 	}
 }
 
-void FEditorAnimationDebugWidget::RenderPropertyReadOnly(const FPropertyDescriptor& P)
+void FEditorAnimationDebugWidget::RenderPropertyReadOnly(const FPropertyValue& P)
 {
-	if (!P.ValuePtr) return;
+	void* ValuePtr = P.GetValuePtr();
+	if (!ValuePtr) return;
 
-	switch (P.Type)
+	switch (P.GetType())
 	{
 	case EPropertyType::Bool:
-		ImGui::Text("  %s: %s", P.Name.c_str(),
-			*static_cast<bool*>(P.ValuePtr) ? "true" : "false");
+		ImGui::Text("  %s: %s", P.GetDisplayName(),
+			*static_cast<bool*>(ValuePtr) ? "true" : "false");
 		break;
 
 	case EPropertyType::ByteBool:
-		ImGui::Text("  %s: %s", P.Name.c_str(),
-			*static_cast<uint8_t*>(P.ValuePtr) ? "true" : "false");
+		ImGui::Text("  %s: %s", P.GetDisplayName(),
+			*static_cast<uint8_t*>(ValuePtr) ? "true" : "false");
 		break;
 
 	case EPropertyType::Int:
-		ImGui::Text("  %s: %d", P.Name.c_str(),
-			*static_cast<int32*>(P.ValuePtr));
+		ImGui::Text("  %s: %d", P.GetDisplayName(),
+			*static_cast<int32*>(ValuePtr));
 		break;
 
 	case EPropertyType::Float:
-		ImGui::Text("  %s: %.3f", P.Name.c_str(),
-			*static_cast<float*>(P.ValuePtr));
+		ImGui::Text("  %s: %.3f", P.GetDisplayName(),
+			*static_cast<float*>(ValuePtr));
 		break;
 
 	case EPropertyType::Enum:
-		if (P.EnumNames && P.EnumCount > 0)
+		if (const FEnum* EnumType = P.GetEnumType())
 		{
 			int32 Val = 0;
-			std::memcpy(&Val, P.ValuePtr, P.EnumSize);
-			const char* Name = (Val >= 0 && static_cast<uint32>(Val) < P.EnumCount)
-				? P.EnumNames[Val] : "(out of range)";
-			ImGui::Text("  %s: %s", P.Name.c_str(), Name);
+			std::memcpy(&Val, ValuePtr, EnumType->GetSize());
+			const char* Name = (Val >= 0 && static_cast<uint32>(Val) < EnumType->GetCount())
+				? EnumType->GetNames()[Val] : "(out of range)";
+			ImGui::Text("  %s: %s", P.GetDisplayName(), Name);
 		}
 		break;
 
 	default:
 		// 다른 타입 (Vec3/String/ObjectRef/ClassRef 등) 은 이번 패널 범위에선 생략.
-		ImGui::Text("  %s: (type not displayed)", P.Name.c_str());
+		ImGui::Text("  %s: (type not displayed)", P.GetDisplayName());
 		break;
 	}
 }

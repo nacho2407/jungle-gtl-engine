@@ -1,4 +1,4 @@
-﻿#include "Component/Movement/MovementComponent.h"
+#include "Component/Movement/MovementComponent.h"
 
 #include "Component/SceneComponent.h"
 #include "GameFramework/AActor.h"
@@ -10,7 +10,6 @@
 #include <sstream>
 
 // Base movement logic only; concrete movement types should be added instead.
-IMPLEMENT_CLASS(UMovementComponent, UActorComponent)
 HIDE_FROM_COMPONENT_LIST(UMovementComponent)
 
 namespace
@@ -44,26 +43,11 @@ void UMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	UActorComponent::TickComponent(DeltaTime,TickType, ThisTickFunction);
 }
 
-void UMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UActorComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Auto Register Updated", EPropertyType::Bool, "Movement", &bAutoRegisterUpdatedComponent });
-	OutProps.push_back({ "Updated Component", EPropertyType::SceneComponentRef, "Movement", &UpdatedComponentPath });
-}
-
-void UMovementComponent::Serialize(FArchive& Ar)
-{
-	UActorComponent::Serialize(Ar);
-	Ar << bAutoRegisterUpdatedComponent;
-	Ar << UpdatedComponentPath;
-	// UpdatedComponent 포인터는 BeginPlay에서 재해결되므로 직렬화 제외.
-}
-
 void UMovementComponent::PostEditProperty(const char* PropertyName)
 {
 	UActorComponent::PostEditProperty(PropertyName);
 
-	if (std::strcmp(PropertyName, "Auto Register Updated") == 0)
+	if (std::strcmp(PropertyName, "bAutoRegisterUpdatedComponent") == 0 || std::strcmp(PropertyName, "Auto Register Updated") == 0)
 	{
 		if (bAutoRegisterUpdatedComponent && UpdatedComponentPath.empty())
 		{
@@ -72,7 +56,7 @@ void UMovementComponent::PostEditProperty(const char* PropertyName)
 		return;
 	}
 
-	if (std::strcmp(PropertyName, "Updated Component") == 0)
+	if (std::strcmp(PropertyName, "UpdatedComponentPath") == 0 || std::strcmp(PropertyName, "Updated Component") == 0)
 	{
 		ResolveUpdatedComponent();
 	}

@@ -1,4 +1,4 @@
-﻿#include "Game/GameEngine.h"
+#include "Game/GameEngine.h"
 
 #include "Game/GameRenderPipeline.h"
 #include "Game/GameMode/GameModeCarGame.h"
@@ -19,8 +19,6 @@
 #include "Lua/GameLuaBindings.h"
 
 #include <chrono>
-
-IMPLEMENT_CLASS(UGameEngine, UEngine)
 
 namespace
 {

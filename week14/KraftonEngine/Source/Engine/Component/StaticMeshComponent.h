@@ -1,9 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/MeshComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/StaticMesh.h"
+#include "Object/ObjectPtr.h"
+#include "Object/SoftObjectPtr.h"
 
 class UMaterial;
 class FPrimitiveSceneProxy;
@@ -11,11 +13,14 @@ class FPrimitiveSceneProxy;
 namespace json { class JSON; }
 
 // UStaticMeshComponent — 월드 배치 컴포넌트
+
+#include "Source/Engine/Component/StaticMeshComponent.generated.h"
+
+UCLASS()
 class UStaticMeshComponent : public UMeshComponent
 {
 public:
-	DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
-
+	GENERATED_BODY()
 	UStaticMeshComponent() = default;
 	~UStaticMeshComponent() override = default;
 
@@ -35,22 +40,23 @@ public:
 	UMaterial* GetMaterial(int32 ElementIndex) const;
 	const TArray<UMaterial*>& GetOverrideMaterials() const { return OverrideMaterials; }
 
-	void Serialize(FArchive& Ar) override;
 	void PostDuplicate() override;
 
 	// Property Editor 지원
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
-	const FString& GetStaticMeshPath() const { return StaticMeshPath; }
+	const FString& GetStaticMeshPath() const { return StaticMeshPath.ToString(); }
 
 private:
 	void CacheLocalBounds();
 
-	UStaticMesh* StaticMesh = nullptr;
-	FString StaticMeshPath = "None";
+	UPROPERTY(Edit, Category="Mesh", DisplayName="Static Mesh")
+	TObjectPtr<UStaticMesh> StaticMesh;
+	UPROPERTY(Save, Category="Mesh", DisplayName="Static Mesh Path", AssetType="StaticMesh")
+	FSoftObjectPtr StaticMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
-	TArray<FMaterialSlot> MaterialSlots; // 경로 + UVScroll 묶음
+	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", AssetType="Material")
+	TArray<FSoftObjectPtr> MaterialSlots;
 
 	FVector CachedLocalCenter = { 0, 0, 0 };
 	FVector CachedLocalExtent = { 0.5f, 0.5f, 0.5f };

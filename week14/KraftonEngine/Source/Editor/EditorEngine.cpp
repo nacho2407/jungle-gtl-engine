@@ -1,4 +1,4 @@
-﻿#include "Editor/EditorEngine.h"
+#include "Editor/EditorEngine.h"
 
 #include "Profiling/StartupProfiler.h"
 #include "Core/Notification.h"
@@ -30,8 +30,6 @@
 #include <filesystem>
 
 #include "Mesh/SkeletalMesh.h"
-
-IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
 namespace
 {

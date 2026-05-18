@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "AnimNotifyEvent.h"
@@ -8,11 +8,14 @@ struct FAnimExtractContext;
 
 // 시퀀스류 애셋의 공통 베이스. PlayLength/Notify 등 시간축이 있는 모든 자식의 공통 인터페이스.
 // 실제 본 키프레임 샘플링은 UAnimSequence 가 구현한다.
+
+#include "Source/Engine/Animation/AnimSequenceBase.generated.h"
+
+UCLASS()
 class UAnimSequenceBase : public UObject
 {
 public:
-    DECLARE_CLASS(UAnimSequenceBase, UObject)
-
+	GENERATED_BODY()
     UAnimSequenceBase()           = default;
     ~UAnimSequenceBase() override = default;
 

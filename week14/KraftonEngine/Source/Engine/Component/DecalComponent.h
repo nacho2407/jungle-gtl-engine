@@ -1,17 +1,20 @@
-﻿#pragma once
+#pragma once
 #include "PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
 #include "Collision/ConvexVolume.h"
+#include "Object/SoftObjectPtr.h"
 
 class UStaticMeshComponent;
 
 // class DecalProxy;
 
+#include "Source/Engine/Component/DecalComponent.generated.h"
+
+UCLASS()
 class UDecalComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UDecalComponent, UPrimitiveComponent)
-
+	GENERATED_BODY()
 	UDecalComponent() = default;
 	~UDecalComponent() override = default;
 
@@ -20,10 +23,8 @@ public:
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
 
 	// Property Editor 지원
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 	
-	void Serialize(FArchive& Ar) override;
 	void PostDuplicate() override;
 
 	// Color (with Color)
@@ -56,12 +57,18 @@ private:
 private:
 	FConvexVolume ConvexVolume;
 	TArray<UStaticMeshComponent*> Receivers;
-	FMaterialSlot MaterialSlot;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material", AssetType="Material")
+	FSoftObjectPtr MaterialSlot = "None";
 	UMaterial* Material = nullptr;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Color", Type=Vec4)
 	FVector4 Color = {1,1,1,1};
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="FadeInDelay")
 	float FadeInDelay = 0;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="FadeInDuration")
 	float FadeInDuration = 0;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="FadeOutDelay")
 	float FadeOutDelay = 0;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="FadeOutDuration")
 	float FadeOutDuration = 0;
 	float FadeTimer = 0;
 	float FadeOpacity = 1.0f;		// 페이드 효과 사용 시 Color.A에 곱함

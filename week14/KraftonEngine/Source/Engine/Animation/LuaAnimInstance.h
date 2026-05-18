@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Animation/AnimInstance.h"
 
@@ -24,15 +24,19 @@ class UAnimSequenceBase;
 //
 // 변수 모델: lua self table 단독 — self.Speed = 10 등 모두 lua 안에서. C++ 는 binding 만.
 // Hot-reload: FLuaScriptManager 에 등록되어 .lua 변경 시 ReloadScript 호출됨.
+
+#include "Source/Engine/Animation/LuaAnimInstance.generated.h"
+
+UCLASS()
 class ULuaAnimInstance : public UAnimInstance
 {
 public:
-	DECLARE_CLASS(ULuaAnimInstance, UAnimInstance)
-
+	GENERATED_BODY()
 	ULuaAnimInstance() = default;
 	~ULuaAnimInstance() override;
 
 	// Editor 노출 — Asset/Script/Anim 하위 .lua 파일 (FAssetRegistry "LuaAnimScript" 콤보).
+	UPROPERTY(Edit, Save, Category="Animation|Lua", DisplayName="Script File", AssetType="LuaAnimScript")
 	FString ScriptFile;
 
 	// UAnimInstance:
@@ -41,7 +45,6 @@ public:
 	void EvaluateAnimation(FPoseContext& Output) override;
 	void HandleAnimNotify(const FAnimNotifyEvent& Notify) override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 	void Serialize(FArchive& Ar) override;
 

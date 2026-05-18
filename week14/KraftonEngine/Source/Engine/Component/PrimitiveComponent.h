@@ -10,6 +10,7 @@
 #include "Render/Types/VertexTypes.h"
 #include "Render/Proxy/DirtyFlag.h"
 
+#include "Source/Engine/Component/PrimitiveComponent.generated.h"
 class FPrimitiveSceneProxy;
 class FScene;
 class FMeshBuffer;
@@ -54,19 +55,17 @@ DECLARE_MULTICAST_DELEGATE_ThreeParams(
 	UPrimitiveComponent* /*OtherComp*/
 );
 
+UCLASS()
 class UPrimitiveComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
+	GENERATED_BODY()
 	~UPrimitiveComponent() override;
 
 	void BeginPlay() override;
 	void EndPlay() override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
-
-	void Serialize(FArchive& Ar) override;
 
 	virtual FMeshBuffer* GetMeshBuffer() const { return nullptr; }
 	virtual FMeshDataView GetMeshDataView() const { return {}; }
@@ -219,17 +218,27 @@ protected:
 	// (BeginPlay 전 InitDefaultComponents 단계에서 setter가 호출돼도 PhysicsScene 호출은 skip되어
 	//  멤버만 변경 → BeginPlay에서 한 번 정확한 값으로 등록됨.)
 	bool bComponentHasBegunPlay = false;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Visible")
 	bool bIsVisible = true;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Cast Shadow")
 	bool bCastShadow = true;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Two Sided Shadow")
 	bool bCastShadowAsTwoSided = false;
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Simulate Physics")
 	bool bSimulatePhysics = false;
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Generate Overlap Events")
 	bool bGenerateOverlapEvents = false;
 
 	// 물리 파라미터 — RootComponent의 값만 백엔드에 적용 (compound shape 정책).
+	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Mass (kg)")
 	float Mass = 1.0f;                          // kg
+	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Center Of Mass Offset")
 	FVector CenterOfMassOffset = { 0, 0, 0 };   // RootComponent local 좌표계 offset
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Enabled", Enum=ECollisionEnabled)
 	ECollisionEnabled CollisionEnabled = ECollisionEnabled::NoCollision;
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Object Type", Enum=ECollisionChannel)
 	ECollisionChannel ObjectType = ECollisionChannel::WorldStatic;
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Responses", Type=Struct)
 	FCollisionResponseContainer ResponseContainer; // 기본: 전 채널 Block
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
 

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Engine/Runtime/Engine.h"
 
@@ -11,6 +11,7 @@
 #include <optional>
 #if STATS
 #include "Editor/EditorRenderPipeline.h"
+#include "Source/Editor/EditorEngine.generated.h"
 #endif
 
 class UGizmoComponent;
@@ -22,11 +23,11 @@ class UGameViewportClient;
 class IEditorPreviewViewportClient;
 struct FPerspectiveCameraData;
 
+UCLASS()
 class UEditorEngine : public UEngine
 {
 public:
-	DECLARE_CLASS(UEditorEngine, UEngine)
-
+	GENERATED_BODY()
 	UEditorEngine() = default;
 	~UEditorEngine() override = default;
 

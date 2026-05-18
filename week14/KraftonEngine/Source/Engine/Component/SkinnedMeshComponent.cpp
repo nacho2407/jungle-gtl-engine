@@ -8,7 +8,6 @@
 #include "Render/Types/ViewTypes.h"
 #include "Engine/Profiling/Stats.h"
 
-IMPLEMENT_CLASS(USkinnedMeshComponent, UMeshComponent)
 HIDE_FROM_COMPONENT_LIST(USkinnedMeshComponent)
 
 namespace
@@ -86,9 +85,9 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 			OverrideMaterials[i] = DefaultMaterials[i].MaterialInterface;
 
 			if (OverrideMaterials[i])
-				MaterialSlots[i].Path = OverrideMaterials[i]->GetAssetPathFileName();
+				MaterialSlots[i] = OverrideMaterials[i]->GetAssetPathFileName();
 			else
-				MaterialSlots[i].Path = "None";
+				MaterialSlots[i] = "None";
 		}
 	}
 	else
@@ -690,7 +689,7 @@ void USkinnedMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMateria
 
 	if (ElementIndex < static_cast<int32>(MaterialSlots.size()))
 	{
-		MaterialSlots[ElementIndex].Path = InMaterial
+		MaterialSlots[ElementIndex] = InMaterial
 			? InMaterial->GetAssetPathFileName()
 			: "None";
 	}
@@ -708,21 +707,6 @@ UMaterial* USkinnedMeshComponent::GetMaterial(int32 ElementIndex) const
 	return nullptr;
 }
 
-// FArchive 기반 직렬화 — 복제 왕복용. 자산은 경로로만 들고, 실제 로드는 PostDuplicate에서.
-static FArchive& operator<<(FArchive& Ar, FMaterialSlot& Slot)
-{
-	Ar << Slot.Path;
-	return Ar;
-}
-
-void USkinnedMeshComponent::Serialize(FArchive& Ar)
-{
-	UMeshComponent::Serialize(Ar);
-	// asset pointer는 session마다 달라질 수 있어 path와 slot path만 직렬화한다.
-	Ar << SkeletalMeshPath;
-	Ar << MaterialSlots;
-}
-
 // Duplicate/load 섹션: 저장된 path를 실제 asset pointer로 복원하되 dirty 처리는 SetSkeletalMesh에 위임한다.
 void USkinnedMeshComponent::PostDuplicate()
 {
@@ -734,7 +718,7 @@ void USkinnedMeshComponent::PostDuplicate()
 		USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(SkeletalMeshPath, Device);
 		if (Loaded)
 		{
-			TArray<FMaterialSlot> SavedSlots = MaterialSlots;
+			TArray<FSoftObjectPtr> SavedSlots = MaterialSlots;
 			SetSkeletalMesh(Loaded);
 
 			// SetSkeletalMesh가 default slot을 채운 뒤 저장된 override slot을 다시 덮어쓴다.
@@ -742,7 +726,7 @@ void USkinnedMeshComponent::PostDuplicate()
 			{
 				MaterialSlots[i] = SavedSlots[i];
 
-				const FString& MatPath = MaterialSlots[i].Path;
+				const FString& MatPath = MaterialSlots[i];
 				if (MatPath.empty() || MatPath == "None")
 				{
 					SetMaterial(i, nullptr);
@@ -762,27 +746,17 @@ void USkinnedMeshComponent::PostDuplicate()
 	}
 }
 
-void USkinnedMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UMeshComponent::GetEditableProperties(OutProps);
-	// editor는 pointer 대신 path 문자열을 편집하고, PostEditProperty에서 load 흐름으로 진입한다.
-	OutProps.push_back({ "Skeletal Mesh", EPropertyType::SkeletalMeshRef, "Mesh", &SkeletalMeshPath });
-	for (int32 i = 0; i < static_cast<int32>(MaterialSlots.size()); ++i)
-	{
-		FPropertyDescriptor Desc;
-		Desc.Name = "Element " + std::to_string(i);
-		Desc.Type = EPropertyType::MaterialSlot;
-		Desc.Category = "Materials";
-		Desc.ValuePtr = &MaterialSlots[i];
-		OutProps.push_back(Desc);
-	}
-}
-
 void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 {
 	UMeshComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Skeletal Mesh") == 0)
+	if (strcmp(PropertyName, "SkeletalMesh") == 0 || strcmp(PropertyName, "Skeletal Mesh") == 0)
+	{
+		SetSkeletalMesh(SkeletalMesh);
+		return;
+	}
+
+	if (strcmp(PropertyName, "SkeletalMeshPath") == 0)
 	{
 		// mesh path 변경도 코드 경로와 같은 SetSkeletalMesh를 통과시켜 skinning과 dirty 처리를 통일한다.
 		if (!SkeletalMeshPath.empty() && SkeletalMeshPath != "None")
@@ -807,7 +781,28 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 		// editor slot path 변경은 geometry와 무관하므로 SetMaterial의 material dirty만 사용한다.
 		if (Index >= 0 && Index < (int32)MaterialSlots.size())
 		{
-			FString NewMatPath = MaterialSlots[Index].Path;
+			FString NewMatPath = MaterialSlots[Index];
+
+			if (NewMatPath == "None" || NewMatPath.empty())
+			{
+				SetMaterial(Index, nullptr);
+			}
+			else
+			{
+				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(NewMatPath);
+				if (LoadedMat)
+				{
+					SetMaterial(Index, LoadedMat);
+				}
+			}
+		}
+	}
+
+	if (strcmp(PropertyName, "MaterialSlots") == 0 || strcmp(PropertyName, "Materials") == 0)
+	{
+		for (int32 Index = 0; Index < (int32)MaterialSlots.size(); ++Index)
+		{
+			const FString& NewMatPath = MaterialSlots[Index];
 
 			if (NewMatPath == "None" || NewMatPath.empty())
 			{

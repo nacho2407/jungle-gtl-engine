@@ -1,7 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "Core/Log.h"
+#include "Source/Engine/UI/UserWidget.generated.h"
 #include <sol/sol.hpp>
 #include <utility>
 
@@ -48,11 +49,11 @@ private:
 	sol::protected_function Callback;
 };
 
+UCLASS()
 class UUserWidget : public UObject
 {
 public:
-	DECLARE_CLASS(UUserWidget, UObject)
-
+	GENERATED_BODY()
 	UUserWidget() = default;
 	~UUserWidget() override = default;
 

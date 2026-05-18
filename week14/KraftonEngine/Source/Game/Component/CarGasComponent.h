@@ -2,15 +2,17 @@
 
 #include "Component/ActorComponent.h"
 
+
+#include "Source/Game/Component/CarGasComponent.generated.h"
+
+UCLASS()
 class UCarGasComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(UCarGasComponent, UActorComponent)
-
+	GENERATED_BODY()
 	UCarGasComponent() = default;
 	~UCarGasComponent() override = default;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void Serialize(FArchive& Ar) override;
 	void PostEditProperty(const char* PropertyName) override;
 
@@ -27,6 +29,9 @@ private:
 	void ClampGas();
 
 private:
+	UPROPERTY(Edit, Save, Category="Car Gas", DisplayName="Gas", Min=0.0f, Max=1000.0f, Speed=0.5f)
 	float Gas = 100.0f;
+
+	UPROPERTY(Edit, Save, Category="Car Gas", DisplayName="MaxGas", Min=0.0f, Max=1000.0f, Speed=0.5f)
 	float MaxGas = 100.0f;
 };

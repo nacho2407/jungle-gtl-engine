@@ -11,11 +11,14 @@ class UAnimDataModel;
 
 // 본별 키프레임을 가진 표준 시퀀스.
 // 실제 애니메이션 데이터는 UAnimDataModel 하나만 소유하고, 이 클래스는 평가/호환성/에셋 메타데이터를 담당한다.
+
+#include "Source/Engine/Animation/AnimSequence.generated.h"
+
+UCLASS()
 class UAnimSequence : public UAnimSequenceBase
 {
 public:
-    DECLARE_CLASS(UAnimSequence, UAnimSequenceBase)
-
+	GENERATED_BODY()
     UAnimSequence() = default;
     ~UAnimSequence() override = default;
 

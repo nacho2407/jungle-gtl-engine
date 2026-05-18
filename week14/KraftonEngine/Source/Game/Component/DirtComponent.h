@@ -1,16 +1,17 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/DecalComponent.h"
 
+#include "Source/Game/Component/DirtComponent.generated.h"
 class AActor;
 class UStaticMeshComponent;
 class UWorld;
 
+UCLASS()
 class UDirtComponent : public UDecalComponent
 {
 public:
-	DECLARE_CLASS(UDirtComponent, UDecalComponent)
-
+	GENERATED_BODY()
 	UDirtComponent();
 	~UDirtComponent() override = default;
 

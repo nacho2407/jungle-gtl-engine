@@ -1,4 +1,4 @@
-﻿#include "LuaScriptComponent.h"
+#include "LuaScriptComponent.h"
 
 #include "Component/PrimitiveComponent.h"
 #include "Core/Log.h"
@@ -7,8 +7,6 @@
 #include "Lua/LuaScriptManager.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS(ULuaScriptComponent, UActorComponent)
 
 ULuaScriptComponent::ULuaScriptComponent()
 {
@@ -328,17 +326,10 @@ void ULuaScriptComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	}
 }
 
-void ULuaScriptComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+void ULuaScriptComponent::PreGetEditableProperties()
 {
+	UActorComponent::PreGetEditableProperties();
 	EnsureDefaultScriptFile();
-	UActorComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "ScriptFile", EPropertyType::Script, "Script", &ScriptFile });
-}
-
-void ULuaScriptComponent::Serialize(FArchive& Ar)
-{
-	UActorComponent::Serialize(Ar);
-	Ar << ScriptFile;
 }
 
 void ULuaScriptComponent::EnsureDefaultScriptFile()

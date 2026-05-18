@@ -6,8 +6,6 @@
 #include "Render/Pipeline/Renderer.h"
 #include "Render/Types/MaterialTextureSlot.h"
 
-IMPLEMENT_CLASS(UMaterial, UObject)
-
 // ─── FMaterialTemplate ───
 
 void FMaterialTemplate::Create(FShader* InShader)

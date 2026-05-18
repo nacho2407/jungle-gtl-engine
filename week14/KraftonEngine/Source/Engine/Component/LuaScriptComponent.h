@@ -3,16 +3,17 @@
 #include "Component/ActorComponent.h"
 #include "Core/Delegate.h"
 #include "Math/Vector.h"
+#include "Source/Engine/Component/LuaScriptComponent.generated.h"
 #include <sol/sol.hpp>
 
 class UPrimitiveComponent;
 struct FHitResult;
 
+UCLASS()
 class ULuaScriptComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(ULuaScriptComponent, UActorComponent)
-
+	GENERATED_BODY()
 	ULuaScriptComponent();
 	~ULuaScriptComponent();
 
@@ -22,10 +23,8 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay() override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
-	void Serialize(FArchive& Ar) override;
-
+	void PreGetEditableProperties() override;
 	const FString& GetScriptFile() const { return ScriptFile; }
 	void SetScriptFile(const FString& InScriptFile) { ScriptFile = InScriptFile; }
 	void DispatchOverlap(class AActor* OtherActor);
@@ -64,6 +63,7 @@ private:
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp);
 
+	UPROPERTY(Edit, Save, Category="Script", DisplayName="ScriptFile", AssetType="Script")
 	FString ScriptFile;
 	
 	sol::environment Env;
