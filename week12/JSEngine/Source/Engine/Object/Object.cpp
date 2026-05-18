@@ -60,19 +60,19 @@ UObject* NewObject(UClass* Class)
 	return Class->CreateObject();
 }
 
-UObject* UObject::Duplicate()
+UObject* UObject::Duplicate(const FDuplicateContext* Context)
 {
 	UObject* Dup = NewObject(GetClass());
 
 	if (!Dup) 
 		return nullptr;
 
-	Dup->CopyPropertiesFrom(this);
+	Dup->CopyPropertiesFrom(this, Context);
 	Dup->PostDuplicate(this);
 	return Dup;
 }
 
-void UObject::CopyPropertiesFrom(UObject* Src)
+void UObject::CopyPropertiesFrom(UObject* Src, const FDuplicateContext* Context)
 {
 	if (!Src)
 		return;
@@ -94,7 +94,7 @@ void UObject::CopyPropertiesFrom(UObject* Src)
 		if (!DstProperty || DstProperty->Type != SrcProperty->Type)
 			continue;
 
-		if (CopyPropertyValue(this, Src, *DstProperty))
+		if (DstProperty->CopyValue(this, Src, Context))
 		{
 			PostEditChangeProperty({ DstProperty->Name, EPropertyChangeType::ValueSet });
 		}

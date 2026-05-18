@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "PrimitiveComponent.h"
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "HeightFog Component", Category = "Basic")
 class UHeightFogComponent : public UPrimitiveComponent
 {
 public:
@@ -34,25 +34,25 @@ public:
 	float GetFogMaxOpacity() const { return FogMaxOpacity; }
 
 private:
-	UPROPERTY(DisplayName = "FogInscatteringColor")
+	UPROPERTY(DisplayName = "Fog Inscattering Color")
 	FColor FogInscatteringColor;
 
-	UPROPERTY(DisplayName = "FogDensity", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
+	UPROPERTY(DisplayName = "Fog Density", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
 	float FogDensity = 0;
 
-	UPROPERTY(DisplayName = "HeightFalloff", Min = 0.0f, Max = 10.0f, Speed = 0.01f)
+	UPROPERTY(DisplayName = "Height Falloff", Min = 0.0f, Max = 10.0f, Speed = 0.01f)
 	float HeightFalloff = 0;
 
-	UPROPERTY(DisplayName = "FogHeight")
+	UPROPERTY(DisplayName = "Fog Height")
 	float FogHeight = 0;
 
-	UPROPERTY(DisplayName = "FogStartDistance", Min = 0.0f)
+	UPROPERTY(DisplayName = "Fog Start Distance", Min = 0.0f)
 	float FogStartDistance = 0;
 
-	UPROPERTY(DisplayName = "FogCutoffDistance")
+	UPROPERTY(DisplayName = "Fog Cutoff Distance")
 	float FogCutoffDistance = 1000;
 
-	UPROPERTY(DisplayName = "FogMaxOpacity", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
+	UPROPERTY(DisplayName = "Fog Max Opacity", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
 	float FogMaxOpacity = 1.f;
 
 	// UPrimitiveComponent을(를) 통해 상속됨

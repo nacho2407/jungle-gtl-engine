@@ -10,6 +10,7 @@ struct FJsonReader : public FArchive
 	json::JSON& Data;
 	TArray<json::JSON*> ScopeStack;
 	TArray<int32> ArrayIndexStack;
+	IObjectReferenceResolver* ObjectResolver = nullptr;
 
 	FJsonReader(json::JSON& InData)
 		: CurrentKey(), Data(InData)
@@ -26,6 +27,8 @@ struct FJsonReader : public FArchive
 
 	virtual const FString& GetCurrentKey() override { return CurrentKey; }
 	virtual void SetCurrentKey(const FString& Key) override { CurrentKey = Key; }
+	void SetObjectResolver(IObjectReferenceResolver* InResolver) { ObjectResolver = InResolver; }
+	IObjectReferenceResolver* GetObjectResolver() override { return ObjectResolver; }
 
 	virtual void Serialize(void* Value, uint32 Size) override
 	{

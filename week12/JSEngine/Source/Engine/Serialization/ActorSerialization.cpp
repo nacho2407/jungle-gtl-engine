@@ -52,10 +52,53 @@ namespace
 		return Object.hasKey(Key) ? static_cast<uint32>(Object[Key].ToInt()) : DefaultValue;
 	}
 
-	json::JSON BuildComponentJson(UActorComponent* Component)
+	class FActorObjectReferenceResolver : public IObjectReferenceResolver
+	{
+	public:
+		FActorObjectReferenceResolver(AActor* InActor, const TMap<uint32, UActorComponent*>* InComponentsById)
+			: Actor(InActor)
+			, ComponentsById(InComponentsById)
+		{
+		}
+
+		uint32 GetObjectId(UObject* Object) const override
+		{
+			return Object ? Object->GetUUID() : 0;
+		}
+
+		UObject* ResolveObjectId(uint32 Id, UClass* ExpectedClass) const override
+		{
+			UObject* Object = nullptr;
+			if (Actor && Actor->GetUUID() == Id)
+			{
+				Object = Actor;
+			}
+			else if (ComponentsById)
+			{
+				auto It = ComponentsById->find(Id);
+				if (It != ComponentsById->end())
+				{
+					Object = It->second;
+				}
+			}
+
+			if (Object && ExpectedClass && !Object->IsA(ExpectedClass))
+			{
+				return nullptr;
+			}
+			return Object;
+		}
+
+	private:
+		AActor* Actor = nullptr;
+		const TMap<uint32, UActorComponent*>* ComponentsById = nullptr;
+	};
+
+	json::JSON BuildComponentJson(UActorComponent* Component, IObjectReferenceResolver* Resolver)
 	{
 		json::JSON ComponentJson = json::Object();
 		FJsonWriter ComponentWriter(ComponentJson);
+		ComponentWriter.SetObjectResolver(Resolver);
 		Component->Serialize(ComponentWriter);
 
 		ComponentJson[ActorJsonKeys::UUID] = static_cast<int32>(Component->GetUUID());
@@ -255,6 +298,7 @@ namespace FActorSerialization
 		TArray<FString> ActorTags = Actor->GetTags();
 		ActorWriter << ActorJsonKeys::Tags << ActorTags;
 
+		TMap<uint32, UActorComponent*> UUIDToComponent;
 		ActorJson[ActorJsonKeys::Components] = json::Array();
 		for (UActorComponent* Component : Actor->GetComponents())
 		{
@@ -262,8 +306,18 @@ namespace FActorSerialization
 			{
 				continue;
 			}
+			UUIDToComponent[Component->GetUUID()] = Component;
+		}
 
-			ActorJson[ActorJsonKeys::Components].append(BuildComponentJson(Component));
+		FActorObjectReferenceResolver Resolver(Actor, &UUIDToComponent);
+		for (UActorComponent* Component : Actor->GetComponents())
+		{
+			if (!ShouldSerializeComponent(Component))
+			{
+				continue;
+			}
+
+			ActorJson[ActorJsonKeys::Components].append(BuildComponentJson(Component, &Resolver));
 		}
 
 		return ActorJson;
@@ -449,7 +503,9 @@ namespace FActorSerialization
 				continue;
 			}
 
+			FActorObjectReferenceResolver Resolver(NewActor, &UUIDToComp);
 			FJsonReader ComponentReader(CompData);
+			ComponentReader.SetObjectResolver(&Resolver);
 			Component->Serialize(ComponentReader);
 			Component->PostEditChangeProperty({ "Rotation", EPropertyChangeType::ValueSet });
 			if (USceneComponent* SceneComponent = Cast<USceneComponent>(Component))

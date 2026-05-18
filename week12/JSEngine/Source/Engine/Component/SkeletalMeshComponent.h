@@ -1,7 +1,9 @@
 ﻿#pragma once
 
+#include "Animation/AnimSequence.h"
 #include "Component/SkinnedMeshComponent.h"
 #include "Core/Delegates/Delegate.h"
+#include "Object/ObjectPtr.h"
 
 struct FPoseContext;
 class UAnimInstance;
@@ -27,7 +29,7 @@ enum class EAnimationMode
  *        USkeletalMeshComponent 또한 해당 방식대로 우선은 얇게 유지.
  *        핵심 로직들은 대부분 USkinnedMeshComponent로 옮겼습니다.
  */
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "SkeletalMesh Component", Category = "Basic")
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
 public:
@@ -101,8 +103,12 @@ public:
 
 private:
 	UAnimSingleNodeInstance* EnsureSingleNodeInstance();
+	void ApplyAnimationFromAssetPath();
+	void SyncAnimationAssetPathFromAnimation(UAnimationAsset* Animation);
 
 	UAnimInstance* AnimInstance = nullptr;
+
+	TSoftObjectPtr<UAnimationAsset> AnimationAssetPath;
 
 	UPROPERTY(DisplayName = "Animation Mode")
 	EAnimationMode AnimationMode = EAnimationMode::AnimationBlueprint;

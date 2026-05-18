@@ -2,7 +2,7 @@
 
 #include "MovementComponent.h"
 
-UCLASS()
+UCLASS(SpawnableComponent, DisplayName = "ProjectileMovement Component", Category = "Movement")
 class UProjectileMovementComponent : public UMovementComponent
 {
 public:

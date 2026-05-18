@@ -574,6 +574,48 @@ namespace
 		return Sequence;
 	}
 
+	bool HasFreshAnimSequenceBinaryCache(const FString& SourcePath)
+	{
+		const FString NormalizedSourcePath = NormalizeAnimSequencePath(SourcePath);
+		const FString BinaryPath = MakeAnimSequenceBinaryCachePath(NormalizedSourcePath);
+		const std::filesystem::path AbsoluteBinaryPath(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath)));
+
+		std::ifstream In(AbsoluteBinaryPath, std::ios::binary);
+		if (!In.is_open())
+		{
+			return false;
+		}
+
+		uint32 Magic = 0;
+		uint32 Version = 0;
+		uint64 CachedSourceWriteTime = 0;
+		uint64 CachedSourceFileSize = 0;
+		uint32 TrackCount = 0;
+		if (!ReadUInt32LE(In, Magic) ||
+			!ReadUInt32LE(In, Version) ||
+			!ReadUInt64LE(In, CachedSourceWriteTime) ||
+			!ReadUInt64LE(In, CachedSourceFileSize) ||
+			!ReadUInt32LE(In, TrackCount))
+		{
+			return false;
+		}
+
+		if (Magic != AnimSequenceBinaryMagic ||
+			Version != AnimSequenceBinaryVersion ||
+			TrackCount == 0 ||
+			TrackCount > MaxAnimSequenceTrackCount)
+		{
+			return false;
+		}
+
+		const uint64 SourceWriteTime = GetFileWriteTimeTicks(NormalizedSourcePath);
+		const uint64 SourceFileSize = GetFileSizeBytes(NormalizedSourcePath);
+		return SourceWriteTime != 0 &&
+			SourceFileSize != 0 &&
+			CachedSourceWriteTime == SourceWriteTime &&
+			CachedSourceFileSize == SourceFileSize;
+	}
+
 	FVector3f ReadVector3Json(JSON& Value, const FVector3f& Fallback = FVector3f::ZeroVector)
 	{
 		if (Value.JSONType() != JSON::Class::Array || Value.length() < 3)
@@ -913,6 +955,69 @@ UAnimSequence* FAnimSequenceAssetLoader::Load(const FString& Path) const
 	}
 
 	return Sequence;
+}
+
+bool FAnimSequenceAssetLoader::LoadMetadata(const FString& Path, FAnimSequenceAssetMetadata& OutMetadata) const
+{
+	OutMetadata = FAnimSequenceAssetMetadata{};
+
+	const FString NormalizedPath = NormalizeAnimSequencePath(Path);
+	if (NormalizedPath.empty() || !IsAnimSequenceAssetPath(NormalizedPath))
+	{
+		return false;
+	}
+
+	std::ifstream AnimFile(FPaths::ToWide(NormalizedPath));
+	if (!AnimFile.is_open())
+	{
+		return false;
+	}
+
+	const FString FileContent((std::istreambuf_iterator<char>(AnimFile)), std::istreambuf_iterator<char>());
+	JSON Root = JSON::Load(FileContent);
+	if (Root.JSONType() != JSON::Class::Object)
+	{
+		return false;
+	}
+
+	OutMetadata.SourceFilePath = GetStringOrDefault(Root, "SourceFilePath");
+	OutMetadata.SourceStackName = GetStringOrDefault(Root, "SourceStackName");
+	OutMetadata.PreviewMeshPath = GetStringOrDefault(Root, "PreviewMeshPath");
+	OutMetadata.NumberOfKeys = GetIntOrDefault(Root, "NumberOfKeys", 0);
+
+	if (JSON* Source = GetObjectOrNull(Root, "Source"))
+	{
+		OutMetadata.SourceFilePath = GetStringOrDefault(*Source, "FilePath", OutMetadata.SourceFilePath);
+		OutMetadata.SourceStackName = GetStringOrDefault(*Source, "ImportedStackName", OutMetadata.SourceStackName);
+		OutMetadata.SourceFileWriteTimeTicks = GetUInt64StringOrDefault(*Source, "FileWriteTimeTicks", 0);
+		OutMetadata.SourceFileSizeBytes = GetUInt64StringOrDefault(*Source, "FileSizeBytes", 0);
+		OutMetadata.SourceFileContentHash = GetStringOrDefault(*Source, "ContentHash");
+	}
+
+	if (JSON* ImportSettings = GetObjectOrNull(Root, "ImportSettings"))
+	{
+		OutMetadata.PreviewMeshPath = GetStringOrDefault(*ImportSettings, "PreviewMeshPath", OutMetadata.PreviewMeshPath);
+	}
+
+	if (JSON* Sequence = GetObjectOrNull(Root, "Sequence"))
+	{
+		OutMetadata.TrackCount = GetIntOrDefault(*Sequence, "TrackCount", OutMetadata.TrackCount);
+		OutMetadata.NumberOfKeys = GetIntOrDefault(*Sequence, "NumberOfKeys", OutMetadata.NumberOfKeys);
+	}
+	else if (Root.hasKey("Tracks") && Root["Tracks"].JSONType() == JSON::Class::Array)
+	{
+		OutMetadata.TrackCount = static_cast<int32>(Root["Tracks"].length());
+	}
+
+	OutMetadata.SourceFilePath = FPaths::Normalize(OutMetadata.SourceFilePath);
+	OutMetadata.PreviewMeshPath = FPaths::Normalize(OutMetadata.PreviewMeshPath);
+	return true;
+}
+
+bool FAnimSequenceAssetLoader::HasValidBinaryCache(const FString& Path) const
+{
+	const FString NormalizedPath = NormalizeAnimSequencePath(Path);
+	return !NormalizedPath.empty() && IsAnimSequenceAssetPath(NormalizedPath) && HasFreshAnimSequenceBinaryCache(NormalizedPath);
 }
 
 bool FAnimSequenceAssetLoader::Save(const FString& Path, const UAnimSequence* Sequence) const

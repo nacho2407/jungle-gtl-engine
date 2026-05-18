@@ -79,8 +79,8 @@ public:
 		const FVertexLayoutDesc* VertexLayout = nullptr);
 
 	FComputeShader* GetComputeShader(const FString& Key) const;
-    bool LoadComputeShader(const FString& FilePath, const FString& CSEntryPoint,
-                           const D3D_SHADER_MACRO* Defines = nullptr, const FString& Key = "");
+	bool LoadComputeShader(const FString& FilePath, const FString& CSEntryPoint,
+						   const D3D_SHADER_MACRO* Defines = nullptr, const FString& Key = "");
 
 	// Shader 파일 변경 시 관련 Stage/Program 캐시만 비웁니다. 다음 사용 시 Lazy Compile 됩니다.
 	void InvalidateShaderFile(const FString& Path);
@@ -118,7 +118,7 @@ public:
 	 * note: 병합하면서 충돌이 발생하거나 동일한 로직의 함수가 있다면 날려버리셔도 됩니다
 	 */
 	USkeletalMesh* LoadSkeletalMesh(const FString& Path);
-    USkeletalMesh* FindSkeletalMesh(const FString& Path) const;
+	USkeletalMesh* FindSkeletalMesh(const FString& Path) const;
 	TArray<FString> GetSkeletalMeshPaths() const;
 	FFbxMeshContentInfo InspectFbxMeshContent(const FString& Path);
 
@@ -130,11 +130,11 @@ public:
 	bool SaveCurve(const FString& Path, const UCurveFloatAsset* Curve);
 	TArray<FString> GetCurvePaths() const;
 
-    UAnimSequence* LoadAnimSequence(const FString& Path);
-    TArray<FString> ImportAnimationStacksFromFbx(const FString& Path);
-    bool SaveAnimSequence(const FString& Path, const UAnimSequence* Sequence);
-    UAnimSequence* FindAnimSequence(const FString& Path) const;
-    TArray<FString> GetAnimSequencePaths() const;
+	UAnimSequence* LoadAnimSequence(const FString& Path);
+	TArray<FString> ImportAnimationStacksFromFbx(const FString& Path);
+	bool SaveAnimSequence(const FString& Path, const UAnimSequence* Sequence);
+	UAnimSequence* FindAnimSequence(const FString& Path) const;
+	TArray<FString> GetAnimSequencePaths() const;
 
 	UAnimGraphAsset* LoadAnimGraph(const FString& Path);
 	bool SaveAnimGraph(UAnimGraphAsset* Asset, const FString& Path);
@@ -163,6 +163,7 @@ private:
 	uint64 GetFileWriteTimeTicks(const FString& Path) const;
 	uint64 GetFileSizeBytes(const FString& Path) const;
 	FString ComputeFileContentHashString(const FString& Path) const;
+	FString GetCachedFileContentHashString(const FString& Path, uint64 WriteTimeTicks, uint64 FileSizeBytes);
 	bool IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	bool IsSkeletalMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	void PreloadStaticMeshes();
@@ -197,6 +198,7 @@ private:
 
 	TMap<FString, USkeletalMesh*> SkeletalMeshMap;
     TMap<FString, UAnimSequence*> AnimSequenceMap;
+	TMap<FString, FString> FileContentHashCache;
 
 	/* Paths */
 	TArray<FString> ObjFilePaths;
@@ -205,7 +207,7 @@ private:
 	TArray<FString> FontFilePaths;
 	TArray<FString> TextureFilePaths;
 	TArray<FString> SkeletalMeshFilePaths;
-    TArray<FString> AnimSequenceFilePaths;
+	TArray<FString> AnimSequenceFilePaths;
 	TArray<FString> AnimationFbxSourceFilePaths;
 	TArray<FString> CurveFilePaths;
 };

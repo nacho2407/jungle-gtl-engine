@@ -11,27 +11,27 @@ class USkeletalMeshComponent;
 class IAnimPoseSource
 {
 public:
-    virtual ~IAnimPoseSource() = default;
-    virtual void Update(float DeltaTime) = 0;
-    virtual bool EvaluatePose(FPoseContext& OutPose) const = 0;
-    virtual void ResetTime() = 0;
+	virtual ~IAnimPoseSource() = default;
+	virtual void Update(float DeltaTime) = 0;
+	virtual bool EvaluatePose(FPoseContext& OutPose) const = 0;
+	virtual void ResetTime() = 0;
 };
 
 // 단일 시퀀스 재생용 포즈
 class FAnimSequencePoseSource : public IAnimPoseSource
 {
 private:
-    USkeletalMeshComponent* OwnerComponent = nullptr;
-    UAnimSequenceBase* Sequence = nullptr;
-    float CurrentTime = 0.0f;
+	USkeletalMeshComponent* OwnerComponent = nullptr;
+	UAnimSequenceBase* Sequence = nullptr;
+	float CurrentTime = 0.0f;
 
 public:
-    FAnimSequencePoseSource(USkeletalMeshComponent* InOwnerComponent, UAnimSequenceBase* InSequence)
-        : OwnerComponent(InOwnerComponent), Sequence(InSequence), CurrentTime(0.0f) {}
-    
-    virtual void Update(float DeltaTime) override;
-    virtual bool EvaluatePose(FPoseContext& OutPose) const override;
-    virtual void ResetTime() override;
+	FAnimSequencePoseSource(USkeletalMeshComponent* InOwnerComponent, UAnimSequenceBase* InSequence)
+		: OwnerComponent(InOwnerComponent), Sequence(InSequence), CurrentTime(0.0f) {}
+	
+	virtual void Update(float DeltaTime) override;
+	virtual bool EvaluatePose(FPoseContext& OutPose) const override;
+	virtual void ResetTime() override;
 };
 
 using FAnimTransitionCondition = std::function<bool()>;
@@ -39,74 +39,74 @@ using FAnimTransitionCondition = std::function<bool()>;
 // Transitions에 해당하면(bool형) ToState로 전이.　
 struct FAnimTransition
 {
-    FName ToState;
-    float BlendTime = 0.2f;
-    FAnimTransitionCondition Condition;
+	FName ToState;
+	float BlendTime = 0.2f;
+	FAnimTransitionCondition Condition;
 };
 
 struct FAnimTransitionDebugInfo
 {
-    FString FromState;
-    FString ToState;
-    float BlendTime = 0.0f;
+	FString FromState;
+	FString ToState;
+	float BlendTime = 0.0f;
 };
 
 // 특정 상태에 따른 name, PoseSource, 전이 목록 보유.
 struct FAnimStateNode
 {
-    FName Name;
-    std::shared_ptr<IAnimPoseSource> PoseSource;
-    TArray<FAnimTransition> Transitions;
+	FName Name;
+	std::shared_ptr<IAnimPoseSource> PoseSource;
+	TArray<FAnimTransition> Transitions;
 };
 
 UCLASS()
 class UAnimationStateMachine : public UObject
 {
 public:
-    GENERATED_BODY(UAnimationStateMachine, UObject)
+	GENERATED_BODY(UAnimationStateMachine, UObject)
 
-    void Initialize(USkeletalMeshComponent* Owner);
+	void Initialize(USkeletalMeshComponent* Owner);
 
-    void AddState(FName StateName, UAnimSequenceBase* Sequence);
-    void AddTransition(FName FromState, FName ToState, float BlendTime, FAnimTransitionCondition Condition);
-    void ClearTransitions();
-    void SetEntryState(FName StateName);
+	void AddState(FName StateName, UAnimSequenceBase* Sequence);
+	void AddTransition(FName FromState, FName ToState, float BlendTime, FAnimTransitionCondition Condition);
+	void ClearTransitions();
+	void SetEntryState(FName StateName);
 
-    void SetState(FName NewState, float BlendTime = 0.2f);
+	void SetState(FName NewState, float BlendTime = 0.2f);
 
-    void Update(float DeltaTime);
-    bool EvaluatePose(FPoseContext& OutPose) const;
+	void Update(float DeltaTime);
+	bool EvaluatePose(FPoseContext& OutPose) const;
 
 
-    // Lua Binding용
-    void AddStateByName(const FString& StateName, UAnimSequenceBase* Sequence);
-    void AddStateFromPath(const FString& StateName, const FString& AnimPath);
+	// Lua Binding용
+	void AddStateByName(const FString& StateName, UAnimSequenceBase* Sequence);
+	void AddStateFromPath(const FString& StateName, const FString& AnimPath);
 
-    void SetEntryStateByName(const FString& StateName);
-    void SetStateByName(const FString& StateName, float BlendTime = 0.2f);
+	void SetEntryStateByName(const FString& StateName);
+	void SetStateByName(const FString& StateName, float BlendTime = 0.2f);
 
-    FString GetCurrentStateName() const;
-    FString GetNextStateName() const;
-    bool IsBlending() const { return bBlending; }
+	FString GetCurrentStateName() const;
+	FString GetNextStateName() const;
+	bool IsBlending() const { return bBlending; }
 
-    TArray<FString> GetStateNames() const;
-    TArray<FAnimTransitionDebugInfo> GetTransitionDebugInfos() const;
-    float GetBlendAlpha() const;
-    float GetBlendDuration() const { return BlendDuration; }
-    float GetBlendElapsed() const { return BlendElapsed; }
+	TArray<FString> GetStateNames() const;
+	TArray<FAnimTransitionDebugInfo> GetTransitionDebugInfos() const;
+	float GetBlendAlpha() const;
+	float GetBlendDuration() const { return BlendDuration; }
+	float GetBlendElapsed() const { return BlendElapsed; }
 
 private:
-    TMap<FName, FAnimStateNode, FName::Hash> States;
+	TMap<FName, FAnimStateNode, FName::Hash> States;
 
-    FName CurrentState;
-    FName NextState;
+	FName CurrentState;
+	FName NextState;
 
-    bool bBlending = false;
-    float BlendElapsed = 0.0f;
-    float BlendDuration = 0.0f;
+	bool bBlending = false;
+	float BlendElapsed = 0.0f;
+	float BlendDuration = 0.0f;
 
-    TArray<FName> StateOrder;
+	TArray<FName> StateOrder;
 
-    USkeletalMeshComponent* OwnerComponent = nullptr;
-    APawn* OwnerPawn = nullptr;
+	USkeletalMeshComponent* OwnerComponent = nullptr;
+	APawn* OwnerPawn = nullptr;
 };

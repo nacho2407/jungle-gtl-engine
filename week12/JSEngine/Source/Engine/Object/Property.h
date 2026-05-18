@@ -2,6 +2,7 @@
 
 #include "Core/PropertyTypes.h"
 #include "Object/FName.h"
+#include "Object/ObjectPtr.h"
 
 #include <cstring>
 
@@ -65,7 +66,19 @@ template<> struct TPropertyType<FQuat>   { static constexpr EPropertyType Value 
 template<typename T>
 struct TPropertyType<T*>
 {
-	static constexpr EPropertyType Value = EPropertyType::SceneComponentRef;
+	static constexpr EPropertyType Value = EPropertyType::ObjectPtr;
+};
+
+template<typename T>
+struct TPropertyType<TObjectPtr<T>>
+{
+	static constexpr EPropertyType Value = EPropertyType::ObjectPtr;
+};
+
+template<typename T>
+struct TPropertyType<TSoftObjectPtr<T>>
+{
+	static constexpr EPropertyType Value = EPropertyType::SoftObjectPtr;
 };
 
 struct FProperty
@@ -86,7 +99,11 @@ struct FProperty
 
 	const FEnumMetaData* EnumMeta = nullptr;
 	UClass* ObjectClass = nullptr;
+	EObjectReferenceKind ReferenceKind = EObjectReferenceKind::None;
 	const FProperty* InnerProperty = nullptr;
+	const IArrayPropertyOps* ArrayOps = nullptr;
+	const ISoftObjectPtrOps* SoftObjectOps = nullptr;
+	const IObjectPtrOps* ObjectPtrOps = nullptr;
 
 	FProperty() = default;
 
@@ -96,7 +113,11 @@ struct FProperty
 	const void* GetValuePtr(const UObject* Container) const;
 
 	void SerializeItem(FArchive& Ar, UObject* Container) const;
-	bool CopyValue(UObject* DstContainer, const UObject* SrcContainer) const;
+	void SerializeValue(FArchive& Ar, void* ValuePtr) const;
+	bool CopyValue(void* DstValuePtr, const void* SrcValuePtr, const FDuplicateContext* Context = nullptr) const;
+	bool CopyValue(UObject* DstContainer, const UObject* SrcContainer, const FDuplicateContext* Context = nullptr) const;
+	void VisitReferences(FReferenceCollector& Collector, void* ValuePtr) const;
+	void VisitSoftReferences(FSoftReferenceCollector& Collector, void* ValuePtr) const;
 	bool IsSequencerScalar() const;
 	bool ReadScalarChannelValue(const UObject* Container, const FString& ChannelName, float& OutValue) const;
 	bool WriteScalarChannelValue(UObject* Container, const FString& ChannelName, float NewValue) const;
@@ -197,7 +218,11 @@ struct FPropertyParams
 
 	const FEnumMetaData* EnumMeta = nullptr;
 	UClass* ObjectClass = nullptr;
+	EObjectReferenceKind ReferenceKind = EObjectReferenceKind::None;
 	const FProperty* InnerProperty = nullptr;
+	const IArrayPropertyOps* ArrayOps = nullptr;
+	const ISoftObjectPtrOps* SoftObjectOps = nullptr;
+	const IObjectPtrOps* ObjectPtrOps = nullptr;
 };
 
 inline FProperty::FProperty(const FPropertyParams& Params)
@@ -213,7 +238,11 @@ inline FProperty::FProperty(const FPropertyParams& Params)
 	, Speed(Params.Speed)
 	, EnumMeta(Params.EnumMeta)
 	, ObjectClass(Params.ObjectClass)
+	, ReferenceKind(Params.ReferenceKind)
 	, InnerProperty(Params.InnerProperty)
+	, ArrayOps(Params.ArrayOps)
+	, SoftObjectOps(Params.SoftObjectOps)
+	, ObjectPtrOps(Params.ObjectPtrOps)
 {
 }
 

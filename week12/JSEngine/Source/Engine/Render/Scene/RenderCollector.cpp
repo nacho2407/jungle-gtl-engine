@@ -9,7 +9,6 @@
 #include "Component/SubUVComponent.h"
 #include "Component/PostProcess/Light/LightComponentBase.h"
 #include "Engine/Geometry/Frustum.h"
-#include "Engine/GameFramework/PrimitiveActors.h"
 
 namespace
 {
@@ -265,11 +264,6 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFla
 		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, WorldType, bIncludeEditorOnlyPrimitives);
 	}
 
-	if (Actor->IsA<ADecalSpotLightActor>())
-	{
-		ADecalSpotLightActor* SpotlightActor = Cast<ADecalSpotLightActor>(Actor);
-
-	}
 }
 
 void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode,

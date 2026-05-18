@@ -15,35 +15,35 @@ class UProceduralMeshComponent;
 class UStaticMesh;
 class USkeletalMeshComponent;
 
-UCLASS()
-class ACubeActor : public AActor
-{
-public:
-	GENERATED_BODY(ACubeActor, AActor)
-	ACubeActor() = default;
+// UCLASS(Placeable, DisplayName = "Cube", Category = "Geometry")
+// class ACubeActor : public AActor
+// {
+// public:
+// 	GENERATED_BODY(ACubeActor, AActor)
+// 	ACubeActor() = default;
+//
+// 	void InitDefaultComponents();
+// };
 
-	void InitDefaultComponents();
-};
+// UCLASS(Placeable, DisplayName = "Sphere", Category = "Geometry")
+// class ASphereActor : public AActor
+// {
+// public:
+// 	GENERATED_BODY(ASphereActor, AActor)
+// 	ASphereActor() = default;
+//
+// 	void InitDefaultComponents();
+// };
 
-UCLASS()
-class ASphereActor : public AActor
-{
-public:
-	GENERATED_BODY(ASphereActor, AActor)
-	ASphereActor() = default;
-
-	void InitDefaultComponents();
-};
-
-UCLASS()
-class APlaneActor : public AActor
-{
-public:
-	GENERATED_BODY(APlaneActor, AActor)
-	APlaneActor() = default;
-
-	void InitDefaultComponents();
-};
+// UCLASS(Placeable, DisplayName = "Plane", Category = "Geometry")
+// class APlaneActor : public AActor
+// {
+// public:
+// 	GENERATED_BODY(APlaneActor, AActor)
+// 	APlaneActor() = default;
+//
+// 	void InitDefaultComponents();
+// };
 
 UCLASS()
 class AAttachTestActor : public AActor
@@ -55,7 +55,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Empty Actor", Category = "Basic")
 class ASceneActor : public AActor
 {
 public:
@@ -69,7 +69,7 @@ public:
 	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Player Start", Category = "Gameplay")
 class APlayerStart : public AActor
 {
 public:
@@ -79,7 +79,7 @@ public:
 	void InitDefaultComponents() override;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Fog", Category = "Basic")
 class AFogActor : public AActor
 {
 public:
@@ -95,7 +95,7 @@ private:
 	UBillboardComponent* BillboardComp = nullptr;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Static Mesh", Category = "Basic")
 class AStaticMeshActor : public AActor
 {
 public:
@@ -105,7 +105,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Skeletal Mesh", Category = "Basic")
 class ASkeletalMeshActor : public AActor
 {
 public:
@@ -120,7 +120,7 @@ private:
 	USkeletalMeshComponent* SkeletalMeshComp = nullptr;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "SubUV", Category = "Basic")
 class ASubUVActor : public AActor
 {
 public:
@@ -130,7 +130,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Text Render", Category = "Basic")
 class ATextRenderActor : public AActor
 {
 public:
@@ -140,7 +140,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Billboard", Category = "Basic")
 class ABillboardActor : public AActor
 {
 public:
@@ -150,7 +150,7 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Decal", Category = "Basic")
 class ADecalActor : public AActor
 {
 public:
@@ -160,36 +160,13 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Fireball", Category = "Gameplay")
 class AFireballActor : public AActor {
 public:
 	GENERATED_BODY(AFireballActor, AActor)
 	AFireballActor() = default;
 	
 	void InitDefaultComponents();
-};
-
-UCLASS()
-class ADecalSpotLightActor : public AActor {
-public:
-	GENERATED_BODY(ADecalSpotLightActor, AActor)
-	ADecalSpotLightActor() = default;
-
-	void InitDefaultComponents();
-
-	void Tick(float DeltaTime) override;
-
-	const float GetRange() const { return Range; }
-	void SetRange(float InRange) { Range = InRange; }
-
-	const float GetAngle() const { return Angle; }
-	void SetAngle(float InAngle) { Angle = InAngle; }
-
-private:
-	UDecalComponent* DecalComp = nullptr;
-
-	float Range = 10.0f;
-	float Angle = 30.0f;
 };
 
 UCLASS()
@@ -210,7 +187,7 @@ protected:
 	UBillboardComponent* BillboardComp = nullptr;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Ambient Light", Category = "Light")
 class AAmbientLightActor : public ALightActor
 {
 public:
@@ -219,7 +196,7 @@ public:
 	void Tick(float DeltaTime) override;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Directional Light", Category = "Light")
 class ADirectionalLightActor : public ALightActor
 {
 public:
@@ -228,7 +205,7 @@ public:
 	void Tick(float DeltaTime) override;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Point Light", Category = "Light")
 class APointLightActor : public ALightActor
 {
 public:
@@ -237,7 +214,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Spot Light", Category = "Light")
 class ASpotlightActor : public APointLightActor 
 {
 public:
@@ -269,7 +246,7 @@ public:
 	void Tick(float DeltaTime) override;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Destructible", Category = "Gameplay")
 class ADestructibleActor : public AActor
 {
 public:
@@ -301,25 +278,7 @@ private:
 	uint32 SliceCount = 0;
 };
 
-UCLASS()
-class ABoundsBoxActor : public AActor
-{
-public:
-	GENERATED_BODY(ABoundsBoxActor, AActor)
-	void InitDefaultComponents() override;
-
-	void Tick(float DeltaTime) override;
-
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
-	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
-	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
-
-	void PostDuplicate(UObject* Original) override;
-private:
-	UBoxComponent* BoxComponent = nullptr;
-};
-
-UCLASS()
+UCLASS(Placeable, DisplayName = "Main Scene Destructible", Category = "Gameplay")
 class AMainSceneDestructibleActor : public AActor
 {
 public:

@@ -55,7 +55,10 @@ private:
 	void RenderDebugDetails(UObject* Object, AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderDebugDetailsItem(const FDebugDetailsItem& Item);
 	void RenderPropertyWidget(const FPropertyHandle& Handle);
-	bool RenderSceneComponentRefWidget(const FPropertyHandle& Handle, AActor* Owner);
+	bool RenderPropertyValueWidget(const FProperty& Property, void* ValuePtr, UObject* NotifyTarget, const char* Label, int32 ArrayIndex = -1);
+	bool RenderObjectPtrWidget(const FProperty& Property, void* ValuePtr, UObject* NotifyTarget, const char* Label, int32 ArrayIndex = -1);
+	bool RenderSoftObjectPtrWidget(const FProperty& Property, void* ValuePtr, const char* Label);
+	bool RenderArrayPropertyWidget(const FProperty& Property, void* ValuePtr, UObject* NotifyTarget);
 	void RenderSkeletalStateMachinePreview(class USkeletalMeshComponent* Comp);
 	void RenderSkeletalBonePoseDebug(class USkeletalMeshComponent* Comp);
 	void RenderInterpControlPoints(class UInterpToMovementComponent* Comp);

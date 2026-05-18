@@ -10,6 +10,7 @@ struct FJsonWriter : public FArchive
 	FString CurrentKey;
 	json::JSON& Root;
 	TArray<json::JSON*> ScopeStack;
+	IObjectReferenceResolver* ObjectResolver = nullptr;
 
 	FJsonWriter(json::JSON& InData)
 		: CurrentKey(), Root(InData)
@@ -19,6 +20,8 @@ struct FJsonWriter : public FArchive
 
 	virtual const FString& GetCurrentKey() { return CurrentKey; }
 	virtual void SetCurrentKey(const FString& Key) { CurrentKey = Key; }
+	void SetObjectResolver(IObjectReferenceResolver* InResolver) { ObjectResolver = InResolver; }
+	IObjectReferenceResolver* GetObjectResolver() override { return ObjectResolver; }
 
 	virtual void Serialize(void* Value, uint32 Size) override
 	{
