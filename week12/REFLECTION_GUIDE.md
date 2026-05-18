@@ -113,71 +113,21 @@ Lua에서 이 프로퍼티 값을 쓸 수 있다는 표시입니다.
 LuaRead, LuaWrite 둘 다 없다면 Lua 바인딩 대상이 아닙니다.
 
 NoEdit
-    리플렉션/직렬화 대상에는 남기지만 `EPropertyFlags::Edit`는 붙이지 않습니다.
-    즉 저장과 내부 리플렉션에는 사용하되, generic Details 패널 자동 렌더링에서는 제외합니다.
+저장 및 내부 리플렉션에는 사용되지만, 에디터에는 노출되지 않습니다.
 
-    예시:
+Min, Max, Speed
+자료형의 최소값, 최대값, 변경 단위를 결정합니다.
 
-    ```cpp
-    UPROPERTY(NoEdit)
-    TArray<FAnimGraphNodeDesc> Nodes;
-
-    UPROPERTY(NoEdit)
-    int32 RootNodeId = -1;
-    ```
-
-    전용 에디터 UI가 이미 있는 데이터에 사용합니다. 예를 들어 AnimGraph 노드는
-    `EditorAnimGraphWidget`이 직접 `Name`, `Position`, `AnimationPath`, `PlayRate`,
-    `bLoop` 등을 렌더링하므로, 같은 필드가 generic property widget에서 다시
-    자동 렌더링되면 ImGui ID stack 안에 `"Name"` / `"Position"` 같은 visible label이
-    중복되어 conflicting ID 오류가 날 수 있습니다.
-
-Min, ClampMin, UIMin
-Max, ClampMax, UIMax
-Speed 또는 Step
-
-ReferenceKind = RuntimeObject
-ReferenceKind = ActorComponent
-ReferenceKind = Asset
+ReferenceKind = RuntimeObject/ActorComponent/Asset
+ObjectPtr 계열 참조가 런타임 UObject인지, Actor 내부 Component인지, Asset인지 확인합니다.
+대부분 자동으로 참조됩니다.
 ```
 
-`ReferenceKind`는 **ObjectPtr 계열 참조를 어떤 방식으로 다룰지** 정하는 값입니다.
-
-```txt
-RuntimeObject
-    일반 런타임 UObject 참조입니다.
-
-ActorComponent
-    Actor 내부 Component 참조입니다.
-
-Asset
-    ObjectPtr 계열이지만 에셋처럼 다룰 참조입니다.
-```
-
-`ReferenceKind`가 필요한 경우는 다음처럼 **SoftObjectPtr이 아닌데 에셋처럼 취급해야 하는 ObjectPtr 계열**입니다.
-
-```cpp
-UPROPERTY(ReferenceKind = Asset)
-TObjectPtr<UMaterialInstance> MaterialInstanceAsset;
-
-UPROPERTY(ReferenceKind = Asset)
-UMaterialInterface* MaterialAsset;
-```
-
-자동 추론은 대략 다음 기준을 사용합니다.
-
-```txt
-TSoftObjectPtr<T>        -> Asset
-UStaticMesh 등 에셋 타입 -> Asset
-USceneComponent 계열     -> ActorComponent
-그 외 UObject 계열       -> RuntimeObject
-```
-
-자동 추론이 원하는 의미와 다를 때만 직접 적습니다.
+**SoftObjectPtr이 아닌데 에셋처럼 취급하는 ObjectPtr 계열**만 참조합니다.
 
 ```cpp
 UPROPERTY(ReferenceKind = RuntimeObject)
-TObjectPtr<UMaterialInstance> RuntimeMaterialInstance;
+TObjectPtr<UMaterialInstance> MaterialInstance;
 ```
 
 ---

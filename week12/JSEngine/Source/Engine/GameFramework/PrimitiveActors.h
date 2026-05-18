@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "AActor.h"
-#include "Component/MainSceneDestructibleComponent.h"
 #include "Core/CollisionTypes.h"
 
 class UTextRenderComponent;
@@ -14,46 +13,6 @@ class UProjectileMovementComponent;
 class UProceduralMeshComponent;
 class UStaticMesh;
 class USkeletalMeshComponent;
-
-// UCLASS(Placeable, DisplayName = "Cube", Category = "Geometry")
-// class ACubeActor : public AActor
-// {
-// public:
-// 	GENERATED_BODY(ACubeActor, AActor)
-// 	ACubeActor() = default;
-//
-// 	void InitDefaultComponents();
-// };
-
-// UCLASS(Placeable, DisplayName = "Sphere", Category = "Geometry")
-// class ASphereActor : public AActor
-// {
-// public:
-// 	GENERATED_BODY(ASphereActor, AActor)
-// 	ASphereActor() = default;
-//
-// 	void InitDefaultComponents();
-// };
-
-// UCLASS(Placeable, DisplayName = "Plane", Category = "Geometry")
-// class APlaneActor : public AActor
-// {
-// public:
-// 	GENERATED_BODY(APlaneActor, AActor)
-// 	APlaneActor() = default;
-//
-// 	void InitDefaultComponents();
-// };
-
-UCLASS()
-class AAttachTestActor : public AActor
-{
-public:
-	GENERATED_BODY(AAttachTestActor, AActor)
-	AAttachTestActor() = default;
-
-	void InitDefaultComponents();
-};
 
 UCLASS(Placeable, DisplayName = "Empty Actor", Category = "Basic")
 class ASceneActor : public AActor
@@ -160,15 +119,6 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS(Placeable, DisplayName = "Fireball", Category = "Gameplay")
-class AFireballActor : public AActor {
-public:
-	GENERATED_BODY(AFireballActor, AActor)
-	AFireballActor() = default;
-	
-	void InitDefaultComponents();
-};
-
 UCLASS()
 class ALightActor : public AActor
 {
@@ -221,83 +171,4 @@ public:
 	GENERATED_BODY(ASpotlightActor, APointLightActor)
 	void InitDefaultComponents() override;
 	void Tick(float DeltaTime) override;
-};
-
-UCLASS()
-class ABullet : public AActor
-{
-public:
-	GENERATED_BODY(ABullet, AActor)
-	void InitDefaultComponents() override;
-	void Tick(float DeltaTime) override;
-
-	void SetProjectileVelocity(FVector NewVelocity);
-
-private:
-	UProjectileMovementComponent* ProjectileComp = nullptr;
-};
-
-UCLASS()
-class ABladeSlash : public AActor
-{
-public:
-	GENERATED_BODY(ABladeSlash, AActor)
-	void InitDefaultComponents() override;
-	void Tick(float DeltaTime) override;
-};
-
-UCLASS(Placeable, DisplayName = "Destructible", Category = "Gameplay")
-class ADestructibleActor : public AActor
-{
-public:
-	GENERATED_BODY(ADestructibleActor, AActor)
-
-	// 데이터를 입력으로 받아 초기화
-	void InitDestructibleActor(UStaticMesh* StaticMesh);
-	void InitDestructibleActor(UProceduralMeshComponent* InProcMeshComp);
-
-	// 따로 StaticMesh 지정 안할 시 임의의 StaticMesh 로 초기화
-	void InitDefaultComponents() override;
-	void Tick(float DeltaTime) override;
-
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
-	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
-	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
-
-	void PostDuplicate(UObject* Original) override;
-
-	uint32 GetSliceCount() const { return SliceCount; }
-	void SetSliceCount(uint32 NewSliceCount) { SliceCount = NewSliceCount; }
-
-private:
-	UProceduralMeshComponent* ProcMeshComp = nullptr;
-	UBoxComponent* BoxComponent = nullptr;
-	// 물리 시뮬레이션 흉내용
-	UProjectileMovementComponent* ProjMoveComp = nullptr;
-	// 현재까지 잘려진 횟수
-	uint32 SliceCount = 0;
-};
-
-UCLASS(Placeable, DisplayName = "Main Scene Destructible", Category = "Gameplay")
-class AMainSceneDestructibleActor : public AActor
-{
-public:
-	GENERATED_BODY(AMainSceneDestructibleActor, AActor)
-
-	void InitDefaultComponents() override;
-	void PostComponentRegistered(UActorComponent* Comp) override;
-	void PostDuplicate(UObject* Original) override;
-
-	TArray<AMainSceneDestructibleActor*> SliceForMainScene(const FVector& PlanePointWorld, const FVector& PlaneNormalWorld, float SeparateSpeed);
-	void StopPresentationMotion();
-
-private:
-	void InitFromStaticMesh(UStaticMesh* StaticMesh, bool bAddPresentationComponent);
-	void InitFromProceduralMesh(UProceduralMeshComponent* InProcMeshComp, bool bAddPresentationComponent);
-	void RebindComponents();
-
-	UProceduralMeshComponent* ProcMeshComp = nullptr;
-	UBoxComponent* BoxComponent = nullptr;
-	UProjectileMovementComponent* ProjMoveComp = nullptr;
-	UMainSceneDestructibleComponent* PresentationComponent = nullptr;
 };

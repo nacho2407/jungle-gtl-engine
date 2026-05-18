@@ -9,7 +9,6 @@
 #include "Component/DecalComponent.h"
 #include "Component/FireballComponent.h"
 #include "Component/HeightFogComponent.h"
-#include "Component/MainSceneDestructibleComponent.h"
 #include "Component/MeshComponent.h"
 #include "Component/Movement/InterpToMovementComponent.h"
 #include "Component/Movement/MovementComponent.h"
@@ -83,7 +82,6 @@ namespace
 		if (MatchLuaTypeName(TypeName, "UBoxComponent", "BoxComponent")) return UBoxComponent::StaticClass();
 		if (MatchLuaTypeName(TypeName, "USphereComponent", "SphereComponent")) return USphereComponent::StaticClass();
 		if (MatchLuaTypeName(TypeName, "UCapsuleComponent", "CapsuleComponent")) return UCapsuleComponent::StaticClass();
-		if (MatchLuaTypeName(TypeName, "UMainSceneDestructibleComponent", "MainSceneDestructibleComponent")) return UMainSceneDestructibleComponent::StaticClass();
 		return nullptr;
 	}
 

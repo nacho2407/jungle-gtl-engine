@@ -23,43 +23,19 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
 {
 	USkinnedMeshComponent::Serialize(Ar);
 
-	if (Ar.IsLoading())
-	{
-		SetAnimationMode(AnimationMode);
-		bool bLoadedAnimInstance = false;
-		if (AnimInstance && Ar.HasKey("AnimInstance"))
-		{
-			Ar.BeginObject("AnimInstance");
-			AnimInstance->Serialize(Ar);
-			Ar.EndObject();
-			AnimationToPlay = Cast<UAnimSingleNodeInstance>(AnimInstance)
-				? Cast<UAnimSingleNodeInstance>(AnimInstance)->GetAnimation()
-				: nullptr;
-			SyncAnimationAssetPathFromAnimation(AnimationToPlay);
-			bLoadedAnimInstance = true;
-		}
-		if (!bLoadedAnimInstance && (!AnimationAssetPath.GetPath().empty() || AnimationMode == EAnimationMode::AnimationSingleNode))
-		{
-			ApplyAnimationFromAssetPath();
-		}
-		if (!bLoadedAnimInstance && AnimationMode == EAnimationMode::AnimationGraph)
-		{
-			ApplyAnimGraphFromAssetPath();
-		}
-	}
-	else if (Ar.IsSaving())
-	{
-		if (AnimationMode == EAnimationMode::AnimationSingleNode)
-		{
-			EnsureSingleNodeInstance();
-		}
+	if (!Ar.IsLoading())
+		return;
 
-		if (AnimInstance)
-		{
-			Ar.BeginObject("AnimInstance");
-			AnimInstance->Serialize(Ar);
-			Ar.EndObject();
-		}
+	SetAnimationMode(AnimationMode);
+
+	if (!AnimationAssetPath.GetPath().empty() || AnimationMode == EAnimationMode::AnimationSingleNode)
+	{
+		ApplyAnimationFromAssetPath();
+	}
+
+	if (AnimationMode == EAnimationMode::AnimationGraph)
+	{
+		ApplyAnimGraphFromAssetPath();
 	}
 }
 
@@ -81,12 +57,7 @@ void USkeletalMeshComponent::PostDuplicate(UObject* Original)
 
 	if (AnimationMode == EAnimationMode::AnimationSingleNode)
 	{
-		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
-		if (UAnimSingleNodeInstance* SourceSingleNode = Cast<UAnimSingleNodeInstance>(SourceComponent->GetAnimInstance()))
-		{
-			SingleNode->CopyPropertiesFrom(SourceSingleNode);
-			SingleNode->PostEditChangeProperty({ "AnimationAssetPath", EPropertyChangeType::ValueSet });
-		}
+		ApplyAnimationFromAssetPath();
 	}
 	else if (AnimationMode == EAnimationMode::AnimationGraph)
 	{
