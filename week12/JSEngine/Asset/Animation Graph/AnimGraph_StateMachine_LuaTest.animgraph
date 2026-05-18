@@ -1,0 +1,77 @@
+{
+    "Nodes": [
+        {
+            "NodeId": 1,
+            "Type": "StateMachine",
+            "Name": "Lua Parameter StateMachine",
+            "Position": [180.0, 150.0],
+            "AnimationPath": "",
+            "PlayRate": 1.0,
+            "Loop": true,
+            "InputPoseNodeId": -1,
+            "StateMachine": {
+                "EntryStateId": 1,
+                "States": [
+                    {
+                        "StateId": 1,
+                        "Name": "Idle",
+                        "AnimationPath": "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_Idle1_Base.animseq",
+                        "Position": [80.0, 120.0]
+                    },
+                    {
+                        "StateId": 2,
+                        "Name": "Run",
+                        "AnimationPath": "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_Run_Base.animseq",
+                        "Position": [320.0, 120.0]
+                    }
+                ],
+                "Transitions": [
+                    {
+                        "FromStateId": 1,
+                        "ToStateId": 2,
+                        "BlendTime": 0.2,
+                        "Priority": 0,
+                        "Condition": {
+                            "Type": "FloatGreater",
+                            "ParameterName": "Speed",
+                            "BoolValue": true,
+                            "Threshold": 0.5,
+                            "LuaFunctionName": ""
+                        }
+                    },
+                    {
+                        "FromStateId": 2,
+                        "ToStateId": 1,
+                        "BlendTime": 0.2,
+                        "Priority": 0,
+                        "Condition": {
+                            "Type": "FloatLess",
+                            "ParameterName": "Speed",
+                            "BoolValue": true,
+                            "Threshold": 0.5,
+                            "LuaFunctionName": ""
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "NodeId": 2,
+            "Type": "OutputPose",
+            "Name": "Output Pose",
+            "Position": [520.0, 150.0],
+            "AnimationPath": "",
+            "PlayRate": 1.0,
+            "Loop": true,
+            "InputPoseNodeId": 1,
+            "StateMachine": {
+                "EntryStateId": -1,
+                "States": [],
+                "Transitions": []
+            }
+        }
+    ],
+    "RootNodeId": 2,
+    "ObjectName": "AnimGraph_StateMachine_LuaTest",
+    "Type": "UAnimGraphAsset"
+}

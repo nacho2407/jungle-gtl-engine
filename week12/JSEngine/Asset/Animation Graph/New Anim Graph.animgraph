@@ -1,0 +1,70 @@
+{
+        "Nodes" : [{
+            "AnimationPath" : "",
+            "InputPoseNodeId" : 4,
+            "Loop" : true,
+            "Name" : "Output Pose",
+            "NodeId" : 2,
+            "PlayRate" : 1.000000,
+            "Position" : [620.000000, 149.000000],
+            "StateMachine" : {
+              "EntryStateId" : -1,
+              "States" : [],
+              "Transitions" : []
+            },
+            "Type" : "OutputPose"
+          }, {
+            "AnimationPath" : "",
+            "InputPoseNodeId" : -1,
+            "Loop" : true,
+            "Name" : "State Machine",
+            "NodeId" : 3,
+            "PlayRate" : 1.000000,
+            "Position" : [274.000000, 273.000000],
+            "StateMachine" : {
+              "EntryStateId" : 1,
+              "States" : [{
+                  "AnimationPath" : "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_Idle_In.animseq",
+                  "Name" : "Idle",
+                  "Position" : [80.000000, 100.000000],
+                  "StateId" : 1
+                }, {
+                  "AnimationPath" : "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_Run_In.animseq",
+                  "Name" : "Walk",
+                  "Position" : [120.000000, 80.000000],
+                  "StateId" : 2
+                }],
+              "Transitions" : [{
+                  "BlendTime" : 0.200000,
+                  "Condition" : {
+                    "BoolValue" : true,
+                    "LuaFunctionName" : "",
+                    "ParameterName" : "",
+                    "Threshold" : 0.000000,
+                    "Type" : "Always"
+                  },
+                  "FromStateId" : 1,
+                  "Priority" : 0,
+                  "ToStateId" : 2
+                }]
+            },
+            "Type" : "StateMachine"
+          }, {
+            "AnimationPath" : "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_ahri_skin14_recall.anm.animseq",
+            "InputPoseNodeId" : -1,
+            "Loop" : true,
+            "Name" : "Sequence Player",
+            "NodeId" : 4,
+            "PlayRate" : 1.000000,
+            "Position" : [286.000000, 150.000000],
+            "StateMachine" : {
+              "EntryStateId" : -1,
+              "States" : [],
+              "Transitions" : []
+            },
+            "Type" : "SequencePlayer"
+          }],
+        "ObjectName" : "UAnimGraphAsset_0",
+        "RootNodeId" : 2,
+        "Type" : "UAnimGraphAsset"
+      }
