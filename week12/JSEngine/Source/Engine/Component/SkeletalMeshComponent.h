@@ -101,7 +101,6 @@ private:
 
 	UAnimInstance* AnimInstance = nullptr;
 
-	UPROPERTY(DisplayName = "Animation")
 	TSoftObjectPtr<UAnimationAsset> AnimationAssetPath;
 
 	UPROPERTY(DisplayName = "Animation Mode")

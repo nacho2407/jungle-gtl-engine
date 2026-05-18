@@ -1,5 +1,7 @@
 ﻿#pragma once
+#include "Animation/AnimSequence.h"
 #include "AnimInstance.h"
+#include "Object/ObjectPtr.h"
 
 class USkeletalMesh;
 
@@ -16,7 +18,7 @@ public:
 	
 	void SetAnimation(UAnimSequenceBase* InAnimation);
 	void SetAnimationAssetPath(const FString& InAnimationAssetPath);
-	const FString& GetAnimationAssetPath() const { return AnimationAssetPath; }
+	const FString& GetAnimationAssetPath() const { return AnimationAssetPath.GetPath(); }
 	void Initialize(USkeletalMeshComponent* InOwnerComponent) override;
 	void BuildBoneMapping();
 
@@ -48,7 +50,7 @@ private:
 	UAnimSequenceBase* CachedMappingAnimation = nullptr;
 
 	UPROPERTY(DisplayName = "Animation")
-	FString AnimationAssetPath;
+	TSoftObjectPtr<UAnimationAsset> AnimationAssetPath;
 
 	UPROPERTY(DisplayName = "Play Rate", Min = "-4.0", Max = "4.0", Speed = "0.01")
 	float PlayRate = 1.0f;
