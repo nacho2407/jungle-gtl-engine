@@ -15,36 +15,6 @@ class UProceduralMeshComponent;
 class UStaticMesh;
 class USkeletalMeshComponent;
 
-UCLASS(Placeable, DisplayName = "Cube", Category = "Geometry")
-class ACubeActor : public AActor
-{
-public:
-	GENERATED_BODY(ACubeActor, AActor)
-	ACubeActor() = default;
-
-	void InitDefaultComponents();
-};
-
-UCLASS(Placeable, DisplayName = "Sphere", Category = "Geometry")
-class ASphereActor : public AActor
-{
-public:
-	GENERATED_BODY(ASphereActor, AActor)
-	ASphereActor() = default;
-
-	void InitDefaultComponents();
-};
-
-UCLASS(Placeable, DisplayName = "Plane", Category = "Geometry")
-class APlaneActor : public AActor
-{
-public:
-	GENERATED_BODY(APlaneActor, AActor)
-	APlaneActor() = default;
-
-	void InitDefaultComponents();
-};
-
 UCLASS()
 class AAttachTestActor : public AActor
 {
@@ -169,28 +139,6 @@ public:
 	void InitDefaultComponents();
 };
 
-UCLASS(Placeable, DisplayName = "Decal Spotlight", Category = "Light")
-class ADecalSpotLightActor : public AActor {
-public:
-	GENERATED_BODY(ADecalSpotLightActor, AActor)
-	ADecalSpotLightActor() = default;
-
-	void InitDefaultComponents();
-
-	void Tick(float DeltaTime) override;
-
-	const float GetRange() const { return Range; }
-	void SetRange(float InRange) { Range = InRange; }
-
-	const float GetAngle() const { return Angle; }
-	void SetAngle(float InAngle) { Angle = InAngle; }
-
-private:
-	UDecalComponent* DecalComp = nullptr;
-
-	float Range = 10.0f;
-	float Angle = 30.0f;
-};
 
 UCLASS()
 class ALightActor : public AActor

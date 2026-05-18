@@ -148,79 +148,7 @@ bool GetProceduralMeshLocalCenter(UProceduralMeshComponent* MeshComp, FVector& O
 
 	OutCenter = (Min + Max) * 0.5f;
 	return true;
-}
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void ACubeActor::InitDefaultComponents()
-{
-	auto* Cube = AddComponent<UStaticMeshComponent>();
-	Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
-	SetRootComponent(Cube);
-
-	// Text
-	//UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
-	//Text->SetFont(FName("Default"));
-	//Text->AttachToComponent(Cube);
-	//Text->SetText("UUID: " + std::to_string(GetUUID()));
-	//Text->SetTransient(true);
-	//Text->SetEditorOnly(true);
-	//Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
-}
-
-void ASphereActor::InitDefaultComponents()
-{
-	auto* Sphere = AddComponent<UStaticMeshComponent>();
-	//Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
-	SetRootComponent(Sphere);
-
-	//UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
-	//Text->SetFont(FName("Default"));
-	//Text->AttachToComponent(Sphere);
-	//Text->SetText("UUID: " + std::to_string(GetUUID()));
-	//Text->SetTransient(true);
-	//Text->SetEditorOnly(true);
-	//Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
-}
-
-void APlaneActor::InitDefaultComponents()
-{
-	auto* Plane = AddComponent<UStaticMeshComponent>();
-	Plane->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(PlaneMeshPath));
-	SetRootComponent(Plane);
-
-	//UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
-	//Text->SetFont(FName("Default"));
-	//Text->SetText(std::format("UUID: {}", GetUUID()));
-	//Text->SetTransient(true);
-	//Text->SetEditorOnly(true);
-	//Text->AttachToComponent(Plane);
-	//Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+}   
 }
 
 void AAttachTestActor::InitDefaultComponents()
@@ -476,48 +404,6 @@ void AFireballActor::InitDefaultComponents()
 	// Flare
 	UFireballComponent* Fireball = AddComponent<UFireballComponent>();
 	Fireball->AttachToComponent(Sphere);
-}
-
-void ADecalSpotLightActor::InitDefaultComponents()
-{
-	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-	Billboard->SetTextureName(FEditorResourcePaths::Icon("SpotLight_64x.png"));
-	Billboard->SetEditorOnly(true);
-	SetRootComponent(Billboard);
-
-	UDecalComponent* Decal = AddComponent<UDecalComponent>();
-	Decal->AttachToComponent(Billboard);
-	Decal->SetRelativeLocation(FVector(10, 0, 0));
-	DecalComp = Decal;
-
-	UMaterialInterface* DecalMat = FResourceManager::Get().GetMaterialInterface("DecalMat_SpotLight");
-	if (DecalMat == nullptr)
-	{
-		UMaterial* DecalOriginMat = Cast<UMaterial>(FResourceManager::Get().GetMaterialInterface("Asset/Material/DecalMat.mat"));
-		if (DecalOriginMat)
-		{
-			DecalMat = FResourceManager::Get().CreateMaterialInstance(DecalOriginMat->GetFilePath() + "_SpotLight", DecalOriginMat);
-		}
-	}
-	if (DecalMat == nullptr)
-	{
-		DecalMat = FResourceManager::Get().GetMaterialInterface("DefaultWhite");
-	}
-	Decal->SetMaterial(0, DecalMat);
-	if (DecalMat)
-	{
-		DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
-	}
-}
-
-void ADecalSpotLightActor::Tick(float DeltaTime)
-{
-	AActor::Tick(DeltaTime);
-
-	if (DecalComp)
-	{
-		DecalComp->SetSize(FVector(Range, Range, Range));
-	}
 }
 
 ULightComponent* ALightActor::GetLight() const

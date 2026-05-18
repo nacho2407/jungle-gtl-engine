@@ -15,6 +15,7 @@
 
 namespace
 {
+	const char* GetClassMenuCategory(const UClass* Class);
 	bool HasPlayerStart(UWorld* World);
 	bool IsPlaceableActorClass(const UClass* Class);
 	bool SortActorClassForPlacement(const UClass* Lhs, const UClass* Rhs);
@@ -85,7 +86,8 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
 	bool bSpawned = false;
 	RefreshPlaceableActorCache();
 
-	const char* LastCategory = nullptr;
+	const char* CurrentCategory = nullptr;
+	bool bCategoryMenuOpen = false;
 	for (int32 PrimitiveType = 0; PrimitiveType < static_cast<int32>(PlaceableActorClasses.size()); ++PrimitiveType)
 	{
 		UClass* Class = PlaceableActorClasses[PrimitiveType];
@@ -94,12 +96,21 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
 			continue;
 		}
 
-		const char* Category = Class->GetCategory();
-		if (PrimitiveType > 0 && std::strcmp(Category ? Category : "", LastCategory ? LastCategory : "") != 0)
+		const char* Category = GetClassMenuCategory(Class);
+		if (!CurrentCategory || std::strcmp(Category, CurrentCategory) != 0)
 		{
-			ImGui::Separator();
+			if (bCategoryMenuOpen)
+			{
+				ImGui::EndMenu();
+			}
+			CurrentCategory = Category;
+			bCategoryMenuOpen = ImGui::BeginMenu(CurrentCategory);
 		}
-		LastCategory = Category;
+
+		if (!bCategoryMenuOpen)
+		{
+			continue;
+		}
 
 		if (ImGui::MenuItem(Class->GetDisplayName()))
 		{
@@ -109,6 +120,11 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
 				ImGui::CloseCurrentPopup();
 			}
 		}
+	}
+
+	if (bCategoryMenuOpen)
+	{
+		ImGui::EndMenu();
 	}
 
 	return bSpawned;
@@ -214,6 +230,12 @@ void FEditorControlWidget::Render(float DeltaTime)
 
 namespace
 {
+	const char* GetClassMenuCategory(const UClass* Class)
+	{
+		const char* Category = Class ? Class->GetCategory() : nullptr;
+		return (Category && Category[0] != '\0') ? Category : "Misc";
+	}
+
 	bool HasPlayerStart(UWorld* World)
 	{
 		if (!World)
@@ -233,16 +255,13 @@ namespace
 
 	bool IsPlaceableActorClass(const UClass* Class)
 	{
-		return Class
-			&& Class->IsChildOf(AActor::StaticClass())
-			&& Class->HasAnyClassFlags(CF_Placeable)
-			&& !Class->HasAnyClassFlags(CF_Abstract);
+		return Class && Class->IsChildOf(AActor::StaticClass()) && Class->HasAnyClassFlags(CF_Placeable) && !Class->HasAnyClassFlags(CF_Abstract);
 	}
 
 	bool SortActorClassForPlacement(const UClass* Lhs, const UClass* Rhs)
 	{
-		const char* LhsCategory = Lhs && Lhs->GetCategory() ? Lhs->GetCategory() : "";
-		const char* RhsCategory = Rhs && Rhs->GetCategory() ? Rhs->GetCategory() : "";
+		const char* LhsCategory = GetClassMenuCategory(Lhs);
+		const char* RhsCategory = GetClassMenuCategory(Rhs);
 		const int32 CategoryOrder = std::strcmp(LhsCategory, RhsCategory);
 		if (CategoryOrder != 0)
 		{

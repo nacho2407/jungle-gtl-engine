@@ -1,9 +1,9 @@
 ﻿#include "Editor/UI/EditorPropertyWidget.h"
 
+#include "Editor/UI/ComponentMenuRegistry.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "ImGui/imgui.h"
-#include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SkeletalMeshComponent.h"
@@ -341,45 +341,6 @@ namespace
 		}
 		OutFilePath = FPaths::ToUtf8(SelectedPath.lexically_normal().wstring());
 		return true;
-	}
-
-	static bool IsSpawnableComponentClass(const UClass* Class)
-	{
-		return Class
-			&& Class->IsChildOf(UActorComponent::StaticClass())
-			&& Class->HasAnyClassFlags(CF_SpawnableComponent)
-			&& !Class->HasAnyClassFlags(CF_Abstract);
-	}
-
-	static bool SortComponentClassForMenu(const UClass* Lhs, const UClass* Rhs)
-	{
-		const char* LhsCategory = Lhs && Lhs->GetCategory() ? Lhs->GetCategory() : "";
-		const char* RhsCategory = Rhs && Rhs->GetCategory() ? Rhs->GetCategory() : "";
-		const int32 CategoryOrder = strcmp(LhsCategory, RhsCategory);
-		if (CategoryOrder != 0)
-		{
-			return CategoryOrder < 0;
-		}
-
-		const char* LhsLabel = Lhs ? Lhs->GetDisplayName() : "";
-		const char* RhsLabel = Rhs ? Rhs->GetDisplayName() : "";
-		return strcmp(LhsLabel, RhsLabel) < 0;
-	}
-
-	static void CollectSpawnableComponentClasses(TArray<UClass*>& OutClasses)
-	{
-		OutClasses.clear();
-		FReflectionRegistry::Get().GetClassesDerivedFrom(UActorComponent::StaticClass(), OutClasses);
-		OutClasses.erase(
-			std::remove_if(
-				OutClasses.begin(),
-				OutClasses.end(),
-				[](const UClass* Class)
-				{
-					return !IsSpawnableComponentClass(Class);
-				}),
-			OutClasses.end());
-		std::stable_sort(OutClasses.begin(), OutClasses.end(), SortComponentClassForMenu);
 	}
 
 	static void InitializeSpawnedComponentDefaults(UActorComponent* Component)
@@ -752,37 +713,19 @@ void FEditorPropertyWidget::RenderDetailsContextMenu(AActor* PrimaryActor, const
 
 	if (AddAttachTarget && ImGui::BeginMenu("Add Component"))
 	{
-		TArray<UClass*> ComponentClasses;
-		CollectSpawnableComponentClasses(ComponentClasses);
-		const char* LastCategory = nullptr;
-		for (UClass* ComponentClass : ComponentClasses)
+		if (UClass* ComponentClass = FComponentMenuRegistry::DrawSpawnableComponentClassMenu())
 		{
-			if (!ComponentClass)
+			if (EditorEngine)
 			{
-				continue;
+				EditorEngine->GetUndoSystem().CaptureSnapshot("Add Component");
 			}
-
-			const char* Category = ComponentClass->GetCategory();
-			if (LastCategory && strcmp(Category ? Category : "", LastCategory ? LastCategory : "") != 0)
+			if (UActorComponent* NewComp = PrimaryActor->AddComponentByClass(ComponentClass))
 			{
-				ImGui::Separator();
-			}
-			LastCategory = Category;
-
-			if (ImGui::Selectable(ComponentClass->GetDisplayName()))
-			{
+				InitializeSpawnedComponentDefaults(NewComp);
+				AttachAndSelectNewComponent(PrimaryActor, NewComp, AddAttachTarget);
 				if (EditorEngine)
 				{
-					EditorEngine->GetUndoSystem().CaptureSnapshot("Add Component");
-				}
-				if (UActorComponent* NewComp = PrimaryActor->AddComponentByClass(ComponentClass))
-				{
-					InitializeSpawnedComponentDefaults(NewComp);
-					AttachAndSelectNewComponent(PrimaryActor, NewComp, AddAttachTarget);
-					if (EditorEngine)
-					{
-						EditorEngine->GetSceneService().MarkDirty();
-					}
+					EditorEngine->GetSceneService().MarkDirty();
 				}
 			}
 		}
@@ -1474,48 +1417,6 @@ void FEditorPropertyWidget::RenderDebugDetails(UObject* Object, AActor* PrimaryA
 			}
 		}
 
-		if (ADecalSpotLightActor* SpotActor = Cast<ADecalSpotLightActor>(Actor))
-		{
-			Builder.AddCustom([this, SpotActor, &SelectedActors]()
-			{
-				DrawDetailsSeparator();
-				DrawDetailsSectionLabel("Spot Light Properties");
-
-				float Range = SpotActor->GetRange();
-				const bool bRangeEdited = ImGui::DragFloat("Range", &Range, 0.1f, 0.0f, 1000.0f);
-				if (ImGui::IsItemActivated() && EditorEngine)
-				{
-					EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Light");
-				}
-				if (bRangeEdited)
-				{
-					for (AActor* SelectedActor : SelectedActors)
-					{
-						if (ADecalSpotLightActor* LightActor = Cast<ADecalSpotLightActor>(SelectedActor))
-						{
-							LightActor->SetRange(Range);
-						}
-					}
-				}
-
-				float Angle = SpotActor->GetAngle();
-				const bool bAngleEdited = ImGui::DragFloat("Angle", &Angle, 0.1f, 0.0f, 180.0f);
-				if (ImGui::IsItemActivated() && EditorEngine)
-				{
-					EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Light");
-				}
-				if (bAngleEdited)
-				{
-					for (AActor* SelectedActor : SelectedActors)
-					{
-						if (ADecalSpotLightActor* LightActor = Cast<ADecalSpotLightActor>(SelectedActor))
-						{
-							LightActor->SetAngle(Angle);
-						}
-					}
-				}
-			});
-		}
 	}
 	else if (UActorComponent* Component = Cast<UActorComponent>(Object))
 	{
