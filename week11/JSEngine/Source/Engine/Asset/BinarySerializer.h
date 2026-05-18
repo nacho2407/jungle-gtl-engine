@@ -41,7 +41,7 @@ struct FSkeletalMeshBinaryHeader
 struct FAnimSequenceBinaryHeader
 {
     uint32 Magic = 0x4D494E41; //'ANIM'
-    uint32 Version = 5; // v5: direct-parent local FBX transform sampling
+    uint32 Version = 6; // v6: read FBX animation T/Q/S channels directly
     uint64 SourceFileWriteTime = 0;
     uint64 SourceFileSize = 0;
     uint32 AnimStackNameHash = 0;

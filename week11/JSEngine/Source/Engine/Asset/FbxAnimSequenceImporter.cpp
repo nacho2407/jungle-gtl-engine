@@ -289,19 +289,30 @@ static float GetMaxScaleDelta(const TArray<FVector>& ScaleKeys)
     return MaxDelta;
 }
 
-static FMatrix EvaluateEngineLocalBoneMatrix(
+static FTransform ToEngineTransform(const fbxsdk::FbxAMatrix& Matrix)
+{
+    FQuat Rotation = FFbxTransformUtils::ToFQuat(Matrix.GetQ());
+    Rotation.Normalize();
+
+    return FTransform(
+        Rotation,
+        FFbxTransformUtils::ToFVector(Matrix.GetT()),
+        FFbxTransformUtils::ToFVector(Matrix.GetS()));
+}
+
+static FTransform EvaluateEngineLocalBoneTransform(
     fbxsdk::FbxNode* BoneNode,
     fbxsdk::FbxNode* ParentBoneNode,
     fbxsdk::FbxTime SampleTime)
 {
     if (!BoneNode)
     {
-        return FMatrix::Identity;
+        return FTransform::Identity;
     }
 
     if (ParentBoneNode && BoneNode->GetParent() == ParentBoneNode)
     {
-        return FFbxTransformUtils::ToFMatrix(BoneNode->EvaluateLocalTransform(SampleTime));
+        return ToEngineTransform(BoneNode->EvaluateLocalTransform(SampleTime));
     }
 
     const FMatrix BoneGlobal =
@@ -309,14 +320,14 @@ static FMatrix EvaluateEngineLocalBoneMatrix(
 
     if (!ParentBoneNode)
     {
-        return BoneGlobal;
+        return ToEngineTransform(BoneNode->EvaluateGlobalTransform(SampleTime));
     }
 
     const FMatrix ParentGlobal =
         FFbxTransformUtils::ToFMatrix(ParentBoneNode->EvaluateGlobalTransform(SampleTime));
 
     // Runtime pose composition is Local * ParentGlobal, so import local is Global * ParentGlobal^-1.
-    return BoneGlobal * ParentGlobal.GetInverse();
+    return FTransform(BoneGlobal * ParentGlobal.GetInverse());
 }
 
 UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, const FString& TargetSkeletalMeshPath, USkeletalMesh* TargetSkeletalMesh)
@@ -517,9 +528,8 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
                 ParentBoneNode = BoneNodes[Bone.ParentIndex];
             }
 
-            const FMatrix LocalMatrix =
-                EvaluateEngineLocalBoneMatrix(BoneNode, ParentBoneNode, SampleTime);
-            const FTransform LocalTransform(LocalMatrix);
+            const FTransform LocalTransform =
+                EvaluateEngineLocalBoneTransform(BoneNode, ParentBoneNode, SampleTime);
 
             const FVector Translation = LocalTransform.GetTranslation();
 
