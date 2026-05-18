@@ -522,6 +522,7 @@ bool FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOp
 	FReferenceSkeleton& RefSkeleton = OutData.ReferenceSkeleton;
     TMap<FbxNode*, int32> BoneNodeToIndex;
     bool bHasImportedSkinnedMesh = false;
+    int32 ImportedSkinnedMeshCount = 0;
 
 
     if (FbxNode* RootNode = Scene->GetRootNode())
@@ -535,7 +536,8 @@ bool FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOp
                 RefSkeleton,
                 ESkeletalMeshImportPass::SkinnedMeshes,
                 BoneNodeToIndex,
-                bHasImportedSkinnedMesh);
+                bHasImportedSkinnedMesh,
+                ImportedSkinnedMeshCount);
         }
 
         // 2-pass: skin deformer가 없는 mesh 중 bone 아래에 붙은 mesh를 rigid mesh로 처리
@@ -547,7 +549,8 @@ bool FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOp
                 RefSkeleton,
                 ESkeletalMeshImportPass::RigidAttachedMeshes,
                 BoneNodeToIndex,
-                bHasImportedSkinnedMesh);
+                bHasImportedSkinnedMesh,
+                ImportedSkinnedMeshCount);
         }
     }
 
@@ -568,8 +571,9 @@ bool FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOp
     OutData.MeshData = SkeletalMesh;
 
     const double EndTime = FPlatformTime::Seconds();
-    UE_LOG("[FbxImporter] Skeletal FBX Loaded: %s (Vertices=%zu, Indices=%zu, Bones=%zu, Sections=%zu, Slots=%zu, %.3f sec)",
+    UE_LOG("[FbxImporter] Skeletal FBX Loaded: %s (SkinnedMeshes=%d, Vertices=%zu, Indices=%zu, Bones=%zu, Sections=%zu, Slots=%zu, %.3f sec)",
            Path.c_str(),
+           ImportedSkinnedMeshCount,
            SkeletalMesh->Vertices.size(),
            SkeletalMesh->Indices.size(),
            RefSkeleton.RefBones.size(),
@@ -966,7 +970,7 @@ void FFbxImporter::ComputeTangents(FStaticMesh* InStaticMesh)
 
 
 
-void FFbxImporter::CollectSkeletalMeshes(fbxsdk::FbxNode* Node, FSkeletalMesh* InSkeletalMesh, FReferenceSkeleton& InOutReferenceSkeleton, ESkeletalMeshImportPass Pass, TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex, bool& bHasImportedSkinnedMesh)
+void FFbxImporter::CollectSkeletalMeshes(fbxsdk::FbxNode* Node, FSkeletalMesh* InSkeletalMesh, FReferenceSkeleton& InOutReferenceSkeleton, ESkeletalMeshImportPass Pass, TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex, bool& bHasImportedSkinnedMesh, int32& ImportedSkinnedMeshCount)
 {
 
     if (!Node)
@@ -982,7 +986,8 @@ void FFbxImporter::CollectSkeletalMeshes(fbxsdk::FbxNode* Node, FSkeletalMesh* I
             InOutReferenceSkeleton,
             Pass,
             BoneNodeToIndex,
-            bHasImportedSkinnedMesh);
+            bHasImportedSkinnedMesh,
+            ImportedSkinnedMeshCount);
     }
 
     for (int32 i = 0; i < Node->GetChildCount(); ++i)
@@ -993,11 +998,12 @@ void FFbxImporter::CollectSkeletalMeshes(fbxsdk::FbxNode* Node, FSkeletalMesh* I
             InOutReferenceSkeleton,
             Pass,
             BoneNodeToIndex,
-            bHasImportedSkinnedMesh);
+            bHasImportedSkinnedMesh,
+            ImportedSkinnedMeshCount);
     }
 }
 
-void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InSkeletalMesh, FReferenceSkeleton& InOutReferenceSkeleton, ESkeletalMeshImportPass Pass, TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex, bool& bHasImportedSkinnedMesh)
+void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InSkeletalMesh, FReferenceSkeleton& InOutReferenceSkeleton, ESkeletalMeshImportPass Pass, TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex, bool& bHasImportedSkinnedMesh, int32& ImportedSkinnedMeshCount)
 {
     if (!Mesh || !InSkeletalMesh || Mesh->GetPolygonCount() <= 0)
     {
@@ -1040,6 +1046,9 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
     }
 
     const int32 ControlPointCount = Mesh->GetControlPointsCount();
+    const size_t MeshVertexStart = InSkeletalMesh->Vertices.size();
+    const size_t MeshIndexStart = InSkeletalMesh->Indices.size();
+    const size_t MeshSectionStart = InSkeletalMesh->Sections.size();
 
     const FbxAMatrix MeshGeometry = GetGeometryTransform(OwnerNode);
 
@@ -1347,6 +1356,20 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
             IndicesPerSlot.end());
 
         InSkeletalMesh->Sections.push_back(NewSection);
+    }
+
+    const size_t ImportedVertexCount = InSkeletalMesh->Vertices.size() - MeshVertexStart;
+    const size_t ImportedIndexCount = InSkeletalMesh->Indices.size() - MeshIndexStart;
+    const size_t ImportedSectionCount = InSkeletalMesh->Sections.size() - MeshSectionStart;
+    if (ImportedVertexCount > 0 && ImportedIndexCount > 0)
+    {
+        ++ImportedSkinnedMeshCount;
+        UE_LOG("[FbxImporter] Imported skinned mesh: Node=%s Vertices=%zu Indices=%zu Sections=%zu TotalSkinnedMeshes=%d",
+               OwnerNode ? OwnerNode->GetName() : "<null>",
+               ImportedVertexCount,
+               ImportedIndexCount,
+               ImportedSectionCount,
+               ImportedSkinnedMeshCount);
     }
 }
 
