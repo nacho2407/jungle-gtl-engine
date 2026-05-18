@@ -148,6 +148,8 @@ private:
 	void ClearDiscoveredResourceLists(bool bClearAtlasCache);
 	void RegisterDiscoveredAssetFile(const std::filesystem::path& FilePath, const std::filesystem::path& ProjectRootPath);
 	void SyncDiscoveredFbxAnimationAssets();
+	void WarmUpAnimationPreviewMeshCaches(const TArray<FString>& AnimSequenceAssetPaths);
+	bool EnsureSkeletalMeshCacheForAnimationPreview(const FString& PreviewMeshPath);
 	bool IsImportedAnimSequenceFresh(const FString& SourcePath, const FString& StackName, const FString& AnimSequenceAssetPath, bool& bOutNeedsMetadataRefresh);
 	void RefreshImportedAnimSequenceMetadata(UAnimSequence* Sequence, const FString& AnimSequenceAssetPath, const FString& SourcePath, const FString& StackName);
 	void InitializeDefaultWhiteTexture(ID3D11Device* Device);

@@ -1029,12 +1029,19 @@ void FResourceManager::SyncDiscoveredFbxAnimationAssets()
 
 	int32 ImportedCount = 0;
 	int32 AssetCount = 0;
+	TArray<FString> ImportedAnimSequenceAssetPaths;
 	for (const FString& FbxPath : AnimationFbxSourceFilePaths)
 	{
 		const TArray<FString> ImportedPaths = ImportAnimationStacksFromFbx(FbxPath);
 		AssetCount += static_cast<int32>(ImportedPaths.size());
 		for (const FString& ImportedPath : ImportedPaths)
 		{
+			if (std::find(ImportedAnimSequenceAssetPaths.begin(), ImportedAnimSequenceAssetPaths.end(), ImportedPath)
+				== ImportedAnimSequenceAssetPaths.end())
+			{
+				ImportedAnimSequenceAssetPaths.push_back(ImportedPath);
+			}
+
 			if (FindAnimSequence(ImportedPath))
 			{
 				++ImportedCount;
@@ -1042,10 +1049,97 @@ void FResourceManager::SyncDiscoveredFbxAnimationAssets()
 		}
 	}
 
+	WarmUpAnimationPreviewMeshCaches(ImportedAnimSequenceAssetPaths);
+
 	UE_LOG("[AnimSequenceStartupImport] Synced FBX animation sources: Sources=%d Assets=%d Loaded=%d",
 		static_cast<int32>(AnimationFbxSourceFilePaths.size()),
 		AssetCount,
 		ImportedCount);
+}
+
+void FResourceManager::WarmUpAnimationPreviewMeshCaches(const TArray<FString>& AnimSequenceAssetPaths)
+{
+	TArray<FString> PreviewMeshPaths;
+	PreviewMeshPaths.reserve(AnimSequenceAssetPaths.size());
+
+	for (const FString& AnimSequenceAssetPath : AnimSequenceAssetPaths)
+	{
+		UAnimSequence* Sequence = FindAnimSequence(AnimSequenceAssetPath);
+		if (!Sequence)
+		{
+			Sequence = AnimSequenceAssetLoader.Load(AnimSequenceAssetPath);
+			if (Sequence)
+			{
+				AnimSequenceMap[AnimSequenceAssetPath] = Sequence;
+			}
+		}
+
+		if (!Sequence)
+		{
+			continue;
+		}
+
+		FString PreviewMeshPath = FPaths::Normalize(Sequence->GetPreviewMeshPath());
+		if (PreviewMeshPath.empty())
+		{
+			PreviewMeshPath = FPaths::Normalize(Sequence->GetSourceFilePath());
+		}
+		if (PreviewMeshPath.empty())
+		{
+			continue;
+		}
+
+		if (std::find(PreviewMeshPaths.begin(), PreviewMeshPaths.end(), PreviewMeshPath) == PreviewMeshPaths.end())
+		{
+			PreviewMeshPaths.push_back(PreviewMeshPath);
+		}
+	}
+
+	int32 WarmedCount = 0;
+	for (const FString& PreviewMeshPath : PreviewMeshPaths)
+	{
+		if (EnsureSkeletalMeshCacheForAnimationPreview(PreviewMeshPath))
+		{
+			++WarmedCount;
+		}
+	}
+
+	if (!PreviewMeshPaths.empty())
+	{
+		UE_LOG("[AnimSequenceStartupImport] Warmed animation preview mesh caches: Requested=%d Ready=%d",
+			static_cast<int32>(PreviewMeshPaths.size()),
+			WarmedCount);
+	}
+}
+
+bool FResourceManager::EnsureSkeletalMeshCacheForAnimationPreview(const FString& PreviewMeshPath)
+{
+	const FString NormalizedPreviewMeshPath = FPaths::Normalize(PreviewMeshPath);
+	if (NormalizedPreviewMeshPath.empty() || !IsFbxSourcePath(NormalizedPreviewMeshPath))
+	{
+		return false;
+	}
+
+	if (FindSkeletalMesh(NormalizedPreviewMeshPath))
+	{
+		return true;
+	}
+
+	const FString BinaryPath = FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(NormalizedPreviewMeshPath);
+	if (IsSkeletalMeshBinaryValid(NormalizedPreviewMeshPath, BinaryPath))
+	{
+		return true;
+	}
+
+	const FFbxMeshContentInfo ContentInfo = InspectFbxMeshContent(NormalizedPreviewMeshPath);
+	if (!ContentInfo.bHasSkeletalMesh)
+	{
+		UE_LOG_WARNING("[AnimSequenceStartupImport] Preview mesh is not a skeletal FBX: %s",
+			NormalizedPreviewMeshPath.c_str());
+		return false;
+	}
+
+	return LoadSkeletalMesh(NormalizedPreviewMeshPath) != nullptr;
 }
 
 bool FResourceManager::IsImportedAnimSequenceFresh(
