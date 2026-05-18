@@ -2,6 +2,7 @@
 
 #include "Core/ResourceManager.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Core/Logging/Log.h"
 
 void UAnimGraphInstance::SetGraphAsset(UAnimGraphAsset* InAsset)
 {
@@ -10,6 +11,14 @@ void UAnimGraphInstance::SetGraphAsset(UAnimGraphAsset* InAsset)
     PreviousTime = 0.0f;
     SequenceCacheMap.clear();
     StateMachineCacheMap.clear();
+    LoggedNodeWarnings.clear();
+    bLoggedMissingGraph = false;
+
+    if (!GraphAsset)
+    {
+        UE_LOG_WARNING("[AnimGraphInstance] SetGraphAsset(nullptr)");
+        return;
+    }
 }
 
 void UAnimGraphInstance::NativeUpdateAnimation(float DeltaTime)
@@ -32,6 +41,14 @@ bool UAnimGraphInstance::EvaluatePose(FPoseContext& OutPoseContext)
 {
     if (!GraphAsset || GraphAsset->RootNodeId < 0)
     {
+        if (!bLoggedMissingGraph)
+        {
+            UE_LOG_WARNING(
+                "[AnimGraphInstance] EvaluatePose failed | GraphAsset=%s | RootNodeId=%d",
+                GraphAsset ? "valid" : "null",
+                GraphAsset ? GraphAsset->RootNodeId : -1);
+            bLoggedMissingGraph = true;
+        }
         return false;
     }
 
@@ -75,12 +92,18 @@ bool UAnimGraphInstance::EvaluateNode(int32 NodeId, FPoseContext& OutPoseContext
     const FAnimGraphNodeDesc* Node = GraphAsset->FindNode(NodeId);
     if (!Node)
     {
+        LogNodeWarningOnce(NodeId, "node id not found");
         return false;
     }
 
     switch (Node->Type)
     {
     case EAnimGraphNodeType::OutputPose:
+        if (Node->InputPoseNodeId < 0)
+        {
+            LogNodeWarningOnce(Node->NodeId, "OutputPose has no input pose");
+            return false;
+        }
 		return EvaluateNode(Node->InputPoseNodeId, OutPoseContext);
     case EAnimGraphNodeType::SequencePlayer:
 		return EvaluateSequencePlayer(*Node, OutPoseContext);
@@ -95,12 +118,14 @@ bool UAnimGraphInstance::EvaluateSequencePlayer(const FAnimGraphNodeDesc& Node, 
 {
     if (Node.AnimationPath.empty())
     {
+        LogNodeWarningOnce(Node.NodeId, "SequencePlayer AnimationPath is empty");
         return false;
     }
 
 	FAnimGraphSequenceCache& Cache = GetOrCreateSequenceCache(Node.NodeId, Node.AnimationPath);
     if (!Cache.Sequence)
     {
+        LogNodeWarningOnce(Node.NodeId, FString("failed to load sequence: ") + Node.AnimationPath);
         return false;
     }
 
@@ -130,7 +155,12 @@ bool UAnimGraphInstance::EvaluateSequencePlayer(const FAnimGraphNodeDesc& Node, 
     }
 
     OutPoseContext.TrackToBoneMap = Cache.TrackToBoneMap;
-    return Cache.Sequence->GetAnimationPose(PlayTime, OutPoseContext);
+    const bool bEvaluated = Cache.Sequence->GetAnimationPose(PlayTime, OutPoseContext);
+    if (!bEvaluated)
+    {
+        LogNodeWarningOnce(Node.NodeId, FString("sequence returned no pose: ") + Node.AnimationPath);
+    }
+    return bEvaluated;
 }
 
 FAnimGraphSequenceCache& UAnimGraphInstance::GetOrCreateSequenceCache(int32 NodeId, const FString& AnimationPath)
@@ -184,10 +214,23 @@ bool UAnimGraphInstance::EvaluateStateMachine(const FAnimGraphNodeDesc& Node, FP
     FAnimGraphStateMachineCache& Cache = GetOrCreateStateMachineCache(Node);
     if (!Cache.RuntimeMachine)
     {
+        LogNodeWarningOnce(Node.NodeId, "failed to build state machine runtime");
         return false;
     }
 
 	return Cache.RuntimeMachine->EvaluatePose(OutPoseContext);
+}
+
+bool UAnimGraphInstance::LogNodeWarningOnce(int32 NodeId, const FString& Message)
+{
+    if (LoggedNodeWarnings.find(NodeId) != LoggedNodeWarnings.end())
+    {
+        return false;
+    }
+
+    LoggedNodeWarnings.insert(NodeId);
+    UE_LOG_WARNING("[AnimGraphInstance] Node %d evaluate failed | %s", NodeId, Message.c_str());
+    return true;
 }
 
 FAnimGraphStateMachineCache& UAnimGraphInstance::GetOrCreateStateMachineCache(const FAnimGraphNodeDesc& Node)
@@ -216,6 +259,7 @@ UAnimationStateMachine* UAnimGraphInstance::BuildStateMachineRuntime(const FAnim
 
     TMap<int32, FString> StateIdToName;
 
+    int32 AddedStateCount = 0;
     for (const FAnimStateDesc& State : Desc.States)
     {
         if (State.StateId < 0 || State.Name.empty() || State.AnimationPath.empty())
@@ -225,6 +269,12 @@ UAnimationStateMachine* UAnimGraphInstance::BuildStateMachineRuntime(const FAnim
 
         StateIdToName[State.StateId] = State.Name;
         Machine->AddStateFromPath(State.Name, State.AnimationPath);
+        ++AddedStateCount;
+    }
+
+    if (AddedStateCount == 0)
+    {
+        UE_LOG_WARNING("[AnimGraphInstance] StateMachine has no valid states with animation paths.");
     }
 
 	auto EntryIt = StateIdToName.find(Desc.EntryStateId);

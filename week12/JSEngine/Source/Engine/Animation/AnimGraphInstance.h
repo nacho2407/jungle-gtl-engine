@@ -5,6 +5,8 @@
 #include "Animation/AnimGraphAsset.h"
 #include "Animation/AnimationStateMachine.h"
 
+#include <unordered_set>
+
 class UAnimSequence;
 class USkeletalMesh;
 
@@ -41,6 +43,7 @@ public:
 private:
 	bool EvaluateNode(int32 NodeId, FPoseContext& OutPoseContext);
 	bool EvaluateSequencePlayer(const FAnimGraphNodeDesc& Node, FPoseContext& OutPoseContext);
+	bool LogNodeWarningOnce(int32 NodeId, const FString& Message);
 
 	FAnimGraphSequenceCache& GetOrCreateSequenceCache(int32 NodeId, const FString& AnimationPath);
 	void BuildBoneMapping(FAnimGraphSequenceCache& Cache);
@@ -60,4 +63,7 @@ private:
 	
 	TMap<FString, float> FloatParameters;
 	TMap<FString, bool> BoolParameters;
+
+	bool bLoggedMissingGraph = false;
+	std::unordered_set<int32> LoggedNodeWarnings;
 };

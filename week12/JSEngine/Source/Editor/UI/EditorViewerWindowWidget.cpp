@@ -698,6 +698,8 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 		{
 			CachedAnimSequence = Sequence;
 			SelectedAnimTrackIndex = -1;
+			SelectedAnimNotifyIndex = -1;
+			snprintf(AnimNotifyNameBuffer, sizeof(AnimNotifyNameBuffer), "AnimNotify");
 		}
 
 
@@ -997,6 +999,80 @@ bool FEditorViewerWindowWidget::DrawAnimSequenceIconButton(
 	return bClicked;
 }
 
+bool FEditorViewerWindowWidget::SaveAnimSequenceAsset(UAnimSequence* Sequence)
+{
+	if (!Sequence)
+	{
+		return false;
+	}
+
+	FString SavePath = Sequence->GetAssetPath();
+	if (SavePath.empty() && Viewer)
+	{
+		SavePath = Viewer->GetFileName();
+	}
+
+	if (SavePath.empty())
+	{
+		return false;
+	}
+
+	return FResourceManager::Get().SaveAnimSequence(SavePath, Sequence);
+}
+
+void FEditorViewerWindowWidget::DrawAddAnimNotifyPopup(UAnimSequence* Sequence)
+{
+	if (!ImGui::BeginPopup("AddAnimNotifyPopup"))
+	{
+		return;
+	}
+
+	if (!Sequence || !Viewer)
+	{
+		ImGui::TextDisabled("Animation sequence is not loaded.");
+		ImGui::EndPopup();
+		return;
+	}
+
+	const float Length = std::max(0.0f, Sequence->GetPlayLength());
+	const float TriggerTime = std::clamp(Viewer->GetAnimationCurrentTime(), 0.0f, Length);
+
+	ImGui::Text("Add Anim Notify");
+	ImGui::Separator();
+	ImGui::Text("Time: %.3f sec", TriggerTime);
+	ImGui::SetNextItemWidth(220.0f);
+	ImGui::InputText("Name", AnimNotifyNameBuffer, sizeof(AnimNotifyNameBuffer));
+
+	const bool bHasName = AnimNotifyNameBuffer[0] != '\0';
+	ImGui::BeginDisabled(!bHasName);
+	if (ImGui::Button("Add", ImVec2(96.0f, 0.0f)))
+	{
+		const FString NotifyName = bHasName ? FString(AnimNotifyNameBuffer) : FString("AnimNotify");
+		Sequence->AddNotify(TriggerTime, FName(NotifyName));
+		SaveAnimSequenceAsset(Sequence);
+
+		const TArray<FAnimNotifyEvent>& Notifies = Sequence->GetNotifies();
+		for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(Notifies.size()); ++NotifyIndex)
+		{
+			if (Notifies[NotifyIndex].NotifyName.ToString() == NotifyName &&
+				std::abs(Notifies[NotifyIndex].TriggerTime - TriggerTime) <= 0.001f)
+			{
+				SelectedAnimNotifyIndex = NotifyIndex;
+			}
+		}
+
+		ImGui::CloseCurrentPopup();
+	}
+	ImGui::EndDisabled();
+	ImGui::SameLine();
+	if (ImGui::Button("Cancel", ImVec2(96.0f, 0.0f)))
+	{
+		ImGui::CloseCurrentPopup();
+	}
+
+	ImGui::EndPopup();
+}
+
 void FEditorViewerWindowWidget::RenderAnimSequenceToolbar(UAnimSequence* Sequence)
 {
 	constexpr ImGuiWindowFlags ToolbarFlags =
@@ -1062,6 +1138,21 @@ void FEditorViewerWindowWidget::RenderAnimSequenceToolbar(UAnimSequence* Sequenc
 		}
 	}
 	ImGui::SameLine();
+	if (ImGui::Button("+ Notify", ImVec2(86.0f, ButtonSize.y)))
+	{
+		if (AnimNotifyNameBuffer[0] == '\0')
+		{
+			snprintf(AnimNotifyNameBuffer, sizeof(AnimNotifyNameBuffer), "AnimNotify");
+		}
+		ImGui::OpenPopup("AddAnimNotifyPopup");
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Add single-shot notify at the current time");
+	}
+	DrawAddAnimNotifyPopup(Sequence);
+
+	ImGui::SameLine();
 	if (DrawAnimSequenceIconButton("ToEnd", AnimSequenceToEndIcon.Get(), "To End", ButtonSize))
 	{
 		Viewer->SetAnimationPlaying(false);
@@ -1117,6 +1208,7 @@ void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequen
 	const ImU32 MajorLineColor = ImGui::GetColorU32(ImVec4(0.46f, 0.50f, 0.58f, 1.0f));
 	const ImU32 TextColor = ImGui::GetColorU32(ImVec4(0.72f, 0.76f, 0.84f, 1.0f));
 	const ImU32 PlayheadColor = ImGui::GetColorU32(ImVec4(0.95f, 0.28f, 0.24f, 1.0f));
+	const ImU32 NotifyColor = ImGui::GetColorU32(ImVec4(0.95f, 0.70f, 0.22f, 1.0f));
 
 	DrawList->AddRectFilled(Min, Max, BgColor, 4.0f);
 	const float RulerY = Min.y + 28.0f;
@@ -1161,6 +1253,28 @@ void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequen
 	}
 
 	const ImVec2 MousePos = ImGui::GetIO().MousePos;
+	const TArray<FAnimNotifyEvent>& Notifies = Sequence->GetNotifies();
+	for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(Notifies.size()); ++NotifyIndex)
+	{
+		const FAnimNotifyEvent& Notify = Notifies[NotifyIndex];
+		const float NotifyX = TimeToX(Notify.TriggerTime);
+		DrawList->AddLine(ImVec2(NotifyX, TrackTop - 8.0f), ImVec2(NotifyX, TrackBottom), NotifyColor, 1.6f);
+		DrawList->AddTriangleFilled(
+			ImVec2(NotifyX, TrackTop - 12.0f),
+			ImVec2(NotifyX - 6.0f, TrackTop - 2.0f),
+			ImVec2(NotifyX + 6.0f, TrackTop - 2.0f),
+			NotifyColor);
+
+		if (bHovered &&
+			std::abs(MousePos.x - NotifyX) <= 6.0f &&
+			MousePos.y >= TrackTop - 16.0f && MousePos.y <= TrackBottom)
+		{
+			ImGui::SetTooltip("Notify: %s\nTime: %.3f sec",
+				Notify.NotifyName.ToString().c_str(),
+				Notify.TriggerTime);
+		}
+	}
+
 	if (bHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 	{
 		if (Viewer)
@@ -1256,6 +1370,60 @@ void FEditorViewerWindowWidget::RenderAnimSequenceDetails(UAnimSequence* Sequenc
 	{
 		PreviewMeshPathBufferSource = PreviewMeshPathBuffer;
 		Viewer->SetAnimationSequencePreviewMesh(PreviewMeshPathBufferSource);
+	}
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	if (ImGui::CollapsingHeader("Notifies", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		const TArray<FAnimNotifyEvent>& Notifies = Sequence->GetNotifies();
+		if (SelectedAnimNotifyIndex >= static_cast<int32>(Notifies.size()))
+		{
+			SelectedAnimNotifyIndex = -1;
+		}
+
+		if (Notifies.empty())
+		{
+			ImGui::TextDisabled("No notifies. Use + Notify next to Play.");
+		}
+		else
+		{
+			for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(Notifies.size()); ++NotifyIndex)
+			{
+				const FAnimNotifyEvent& Notify = Notifies[NotifyIndex];
+				char Label[256];
+				snprintf(
+					Label,
+					sizeof(Label),
+					"%.3f  %s##AnimNotify%d",
+					Notify.TriggerTime,
+					Notify.NotifyName.ToString().c_str(),
+					NotifyIndex);
+
+				if (ImGui::Selectable(Label, SelectedAnimNotifyIndex == NotifyIndex))
+				{
+					SelectedAnimNotifyIndex = NotifyIndex;
+					if (Viewer)
+					{
+						Viewer->SetAnimationTime(Notify.TriggerTime);
+					}
+				}
+
+				ImGui::SameLine();
+				ImGui::PushID(NotifyIndex);
+				if (ImGui::SmallButton("Delete"))
+				{
+					if (Sequence->RemoveNotifyAt(NotifyIndex))
+					{
+						SaveAnimSequenceAsset(Sequence);
+						SelectedAnimNotifyIndex = -1;
+						ImGui::PopID();
+						break;
+					}
+				}
+				ImGui::PopID();
+			}
+		}
 	}
 
 	ImGui::Spacing();

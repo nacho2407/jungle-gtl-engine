@@ -216,6 +216,11 @@ void USkeletalMeshComponent::SetAnimGraph(UAnimGraphAsset* Graph)
 {
 	if (!Graph)
 	{
+		if (AnimationMode == EAnimationMode::AnimationGraph)
+		{
+			AnimInstance = nullptr;
+			ResetToBindPose();
+		}
 		return;
 	}
 
@@ -239,17 +244,25 @@ void USkeletalMeshComponent::ApplyAnimGraphFromAssetPath()
 	{
 		if (AnimationMode == EAnimationMode::AnimationGraph)
 		{
+			UE_LOG_WARNING("[SkeletalMeshComponent] AnimationGraph mode selected, but AnimGraphAssetPath is empty.");
 			AnimInstance = nullptr;
 			ResetToBindPose();
 		}
 		return;
 	}
 
-	const FString& GraphPath = AnimGraphAssetPath.GetPath();
+	const FString GraphPath = FPaths::Normalize(AnimGraphAssetPath.GetPath());
+	AnimGraphAssetPath.SetPath(GraphPath);
+
 	UAnimGraphAsset* Graph = FResourceManager::Get().LoadAnimGraph(GraphPath);
 	if (!Graph)
 	{
 		UE_LOG_WARNING("[SkeletalMeshComponent] Failed to load anim graph: %s", GraphPath.c_str());
+		if (AnimationMode == EAnimationMode::AnimationGraph)
+		{
+			AnimInstance = nullptr;
+			ResetToBindPose();
+		}
 		return;
 	}
 

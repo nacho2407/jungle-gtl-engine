@@ -95,6 +95,8 @@ public:
 	virtual const TArray<FBoneAnimationTrack>& GetBoneAnimationTracks() const;
 	virtual bool GetAnimationPose(float Time, FPoseContext& OutPose) const { return false; }
 	void AddNotify(float InTriggerTime, const FName& InNotifyName);
+	void ClearNotifies();
+	bool RemoveNotifyAt(int32 NotifyIndex);
 
 	void SetPreviewMeshPath(const FString& InPreviewMeshPath) { PreviewMeshPath = InPreviewMeshPath; }
 	const FString& GetPreviewMeshPath() const { return PreviewMeshPath; }

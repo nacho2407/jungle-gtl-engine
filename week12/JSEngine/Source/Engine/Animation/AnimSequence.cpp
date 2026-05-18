@@ -33,6 +33,22 @@ void UAnimSequenceBase::AddNotify(float InTriggerTime, const FName& InNotifyName
 			[](const FAnimNotifyEvent& A, const FAnimNotifyEvent& B) { return A.TriggerTime < B.TriggerTime; });
 }
 
+void UAnimSequenceBase::ClearNotifies()
+{
+	Notifies.clear();
+}
+
+bool UAnimSequenceBase::RemoveNotifyAt(int32 NotifyIndex)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	Notifies.erase(Notifies.begin() + NotifyIndex);
+	return true;
+}
+
 namespace
 {
 	int32 GetTrackKeyCount(const FRawAnimSequenceTrack& Track)

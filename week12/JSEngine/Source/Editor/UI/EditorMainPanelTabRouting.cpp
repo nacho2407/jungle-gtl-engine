@@ -175,6 +175,12 @@ void FEditorMainPanel::RenderAnimGraphEditorDocument(float DeltaTime)
 		return;
 	}
 
+	if (!ActiveTab->Id.PayloadId.empty()
+		&& Widgets.AnimGraphWidget.GetEditingPath() != ActiveTab->Id.PayloadId)
+	{
+		Widgets.AnimGraphWidget.Open(ActiveTab->Id.PayloadId);
+	}
+
 	EditorTabs.SetTabDirty(ActiveTab->Id, Widgets.AnimGraphWidget.IsDirty());
 	Widgets.AnimGraphWidget.RenderEmbedded(DeltaTime);
 	ImGui::End();
