@@ -9,6 +9,8 @@ struct FPoseContext;
 class UAnimInstance;
 class UAnimSequenceBase;
 class UAnimSingleNodeInstance;
+class UAnimGraphAsset;
+class UAnimationAsset;
 class UAnimationStateMachine;
 struct FAnimNotifyEvent;
 
@@ -17,6 +19,7 @@ enum class EAnimationMode
 {
 	AnimationBlueprint UMETA(DisplayName = "Animation Blueprint"),
 	AnimationSingleNode UMETA(DisplayName = "Animation Single Node"),
+	AnimationGraph UMETA(DisplayName = "Animation Graph"),
 	AnimationCustomMode UMETA(DisplayName = "Animation Custom Mode")
 };
 
@@ -57,6 +60,10 @@ public:
 
 	void SetAnimationMode(EAnimationMode InAnimationMode);
 	EAnimationMode GetAnimationMode() const { return AnimationMode; }
+
+	void SetAnimGraph(UAnimGraphAsset* Graph);
+	void ApplyAnimGraphFromAssetPath();
+	const FString& GetAnimGraphAssetPath() const { return AnimGraphAssetPath; }
 
 	// 애니메이션
 	void PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping);
@@ -105,6 +112,9 @@ private:
 
 	UPROPERTY(DisplayName = "Animation Mode")
 	EAnimationMode AnimationMode = EAnimationMode::AnimationBlueprint;
+
+	UPROPERTY(DisplayName = "Anim Graph")
+	FString AnimGraphAssetPath;
 
 	UAnimationAsset* AnimationToPlay = nullptr;
 };

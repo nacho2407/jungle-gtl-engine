@@ -55,6 +55,12 @@ void FEditorMainPanel::RenderActiveDocumentToolbar()
 			ImGui::SameLine();
 			ImGui::TextUnformatted(Widgets.RuntimeUIPreviewWidget.GetPreviewDocumentPath().c_str());
 		}
+		else if (ActiveTab && ActiveTab->Id.Kind == EEditorTabKind::AnimGraphEditor)
+		{
+			ImGui::TextDisabled("Anim Graph");
+			ImGui::SameLine();
+			ImGui::TextUnformatted(Widgets.AnimGraphWidget.GetEditingPath().c_str());
+		}
 		else
 		{
 			ImGui::TextDisabled("No active document");
@@ -376,7 +382,13 @@ bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 
 	if (ImGui::BeginMenu("File"))
 	{
-		ImGui::MenuItem("Save Asset", "Ctrl+S", false, false);
+		const bool bAnimGraph = ActiveTab->Id.Kind == EEditorTabKind::AnimGraphEditor;
+		const char* SaveLabel = bAnimGraph && Widgets.AnimGraphWidget.IsDirty() ? "Save Asset *" : "Save Asset";
+		if (ImGui::MenuItem(SaveLabel, "Ctrl+S", false, bAnimGraph))
+		{
+			Widgets.AnimGraphWidget.Save();
+			EditorTabs.SetTabDirty(ActiveTab->Id, Widgets.AnimGraphWidget.IsDirty());
+		}
 		ImGui::Separator();
 		if (ActiveTab->bCanClose && ImGui::MenuItem("Close Tab"))
 		{
@@ -407,6 +419,14 @@ bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 			break;
 		case EEditorTabKind::RuntimeUIPreview:
 			ImGui::TextDisabled("Runtime UI Preview");
+			break;
+		case EEditorTabKind::AnimGraphEditor:
+			ImGui::TextDisabled("Anim Graph");
+			if (!Widgets.AnimGraphWidget.GetEditingPath().empty())
+			{
+				ImGui::Separator();
+				ImGui::TextDisabled("%s", Widgets.AnimGraphWidget.GetEditingPath().c_str());
+			}
 			break;
 		default:
 			ImGui::TextDisabled("Document");

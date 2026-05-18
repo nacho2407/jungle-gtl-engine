@@ -83,6 +83,26 @@ FString MakeRuntimeUIPreviewTabLabel(const FString& DocumentPath)
 	return FileName.empty() ? "Runtime UI Preview" : FileName;
 }
 
+FEditorTabId MakeAnimGraphEditorTabId(const FString& AnimGraphPath)
+{
+	FEditorTabId TabId;
+	TabId.Kind = EEditorTabKind::AnimGraphEditor;
+	TabId.PayloadId = AnimGraphPath;
+	return TabId;
+}
+
+FString MakeAnimGraphEditorTabLabel(const FString& AnimGraphPath)
+{
+	if (AnimGraphPath.empty())
+	{
+		return "Anim Graph";
+	}
+
+	const size_t SlashIndex = AnimGraphPath.find_last_of("/\\");
+	const FString FileName = SlashIndex == FString::npos ? AnimGraphPath : AnimGraphPath.substr(SlashIndex + 1);
+	return FileName.empty() ? "Anim Graph" : FileName;
+}
+
 void FEditorTabManager::ResetToLevelEditor()
 {
 	Tabs.clear();
@@ -163,6 +183,18 @@ bool FEditorTabManager::SetTabLabel(const FEditorTabId& Id, const FString& Label
 	}
 
 	Tabs[Index].Label = Label;
+	return true;
+}
+
+bool FEditorTabManager::SetTabDirty(const FEditorTabId& Id, bool bDirty)
+{
+	const int32 Index = FindTabIndex(Id);
+	if (Index < 0)
+	{
+		return false;
+	}
+
+	Tabs[Index].bDirty = bDirty;
 	return true;
 }
 
