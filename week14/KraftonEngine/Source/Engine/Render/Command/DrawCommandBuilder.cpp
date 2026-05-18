@@ -9,6 +9,7 @@
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Render/Proxy/ShapeSceneProxy.h"
 #include "Render/Proxy/BoneDebugSceneProxy.h"
+#include "Render/Proxy/SkeletalMeshSceneProxy.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/RenderConstants.h"
 #include "Render/RenderPass/PassRenderStateTable.h"
@@ -43,6 +44,7 @@ void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* In
 	CameraFadeCB.Create(InDevice, sizeof(FCameraFadeConstants), "CameraFadeCB");
 	CameraVignetteCB.Create(InDevice, sizeof(FCameraVignetteConstants), "CameraVignetteCB");
 	CameraLetterboxCB.Create(InDevice, sizeof(FCameraLetterboxConstants), "CameraLetterboxCB");
+	BoneHeatMapCB.Create(InDevice, sizeof(FBoneHeatMapConstants), "BoneHeatMapCB");
 }
 
 void FDrawCommandBuilder::Release()
@@ -71,6 +73,7 @@ void FDrawCommandBuilder::Release()
 	CameraFadeCB.Release();
 	CameraVignetteCB.Release();
 	CameraLetterboxCB.Release();
+	BoneHeatMapCB.Release();
 }
 
 // ============================================================
@@ -80,6 +83,10 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 {
 	DrawCommandList.Reset();
 	CollectViewMode = Frame.RenderOptions.ViewMode;
+	CollectSkinningMode = Frame.RenderOptions.SkinningMode;
+	bCollectWeightBoneHeatMap = Frame.RenderOptions.bWeightBoneHeatMap;
+	CollectWeightBoneHeatMapBoneIndex = Frame.RenderOptions.WeightBoneHeatMapBoneIndex;
+
 	bHasSelectionMaskCommands = false;
 
 	// 동적 지오메트리 초기화
@@ -96,19 +103,30 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 // ============================================================
 // SelectEffectiveShader — ViewMode에 따른 UberLit 셰이더 변형 선택
 // ============================================================
-FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode)
+FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode, bool bUseSkeletalVertexFactory, bool bWeightBoneHeatMap)
 {
 	if (ProxyShader != FShaderManager::Get().GetOrCreate(EShaderPath::UberLit))
 		return ProxyShader;
 
+	const EUberLitDefines::EVertexFactory VertexFactory = bUseSkeletalVertexFactory
+		? EUberLitDefines::EVertexFactory::SkeletalMesh
+		: EUberLitDefines::EVertexFactory::StaticMesh;
+
 	switch (ViewMode)
 	{
-	case EViewMode::Unlit:        return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Unlit));
-	case EViewMode::Lit_Gouraud:  return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Gouraud));
-	case EViewMode::Lit_Lambert:  return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Lambert));
-	case EViewMode::Lit_Phong:    return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong));
-	case EViewMode::LightCulling: return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong));
-	default:                      return ProxyShader;
+	case EViewMode::Unlit:
+		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Unlit, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap);
+	case EViewMode::Lit_Gouraud:
+		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Gouraud, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap);
+	case EViewMode::Lit_Lambert:
+		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Lambert, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap);
+	case EViewMode::Lit_Phong:
+	case EViewMode::LightCulling:
+		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Phong, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap);
+	default:
+		return bUseSkeletalVertexFactory
+			? FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Default, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap)
+			: ProxyShader;
 	}
 }
 
@@ -131,8 +149,22 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 	// if (!Proxy.GetMeshBuffer() || !Proxy.GetMeshBuffer()->IsValid()) return;
 	ID3D11DeviceContext* Ctx = CachedContext;
 
+	const bool bSkeletal = Proxy.HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh);
+	const bool bWeightBoneHeatMap = bSkeletal && bCollectWeightBoneHeatMap && CollectWeightBoneHeatMapBoneIndex >= 0;
+	const bool bGPUSkinning = bSkeletal && (CollectSkinningMode == ESkinningMode::GPU || bWeightBoneHeatMap);
+	const FSkeletalMeshSceneProxy* SkeletalProxy = bSkeletal
+		? static_cast<const FSkeletalMeshSceneProxy*>(&Proxy)
+		: nullptr;
+
 	FDrawCommandBuffer ProxyBuffer;
-	if (!Proxy.PrepareDrawBuffer(CachedDevice, Ctx, ProxyBuffer)) return;
+	if (bGPUSkinning)
+	{
+		if (!SkeletalProxy || !SkeletalProxy->PrepareGpuSkinningDrawBuffer(CachedDevice, Ctx, ProxyBuffer)) return;
+	}
+	else if (!Proxy.PrepareDrawBuffer(CachedDevice, Ctx, ProxyBuffer))
+	{
+		return;
+	}
 	if (!ProxyBuffer.HasBuffers()) return;
 
 	// PassState → RenderState 변환 (Wireframe 오버라이드 포함)
@@ -144,6 +176,13 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 	{
 		PerObjCB->Update(Ctx, &Proxy.GetPerObjectConstants(), sizeof(FPerObjectConstants));
 		Proxy.ClearPerObjectCBDirty();
+	}
+
+	if (bWeightBoneHeatMap)
+	{
+		FBoneHeatMapConstants BoneHeatMapConstants = {};
+		BoneHeatMapConstants.SelectedBoneIndex = CollectWeightBoneHeatMapBoneIndex;
+		BoneHeatMapCB.Update(Ctx, &BoneHeatMapConstants, sizeof(FBoneHeatMapConstants));
 	}
 
 	// SelectionMask 커맨드 존재 추적
@@ -162,7 +201,7 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 		FShader* SectionShader = (Section.Material && Section.Material->GetShader())
 			? Section.Material->GetShader()
 			: Proxy.GetShader();
-		FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode);
+		FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, bGPUSkinning, bWeightBoneHeatMap);
 
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Pass = Pass;
@@ -170,9 +209,15 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 		Cmd.RenderState = BaseRenderState;
 		Cmd.Buffer = ProxyBuffer;
 		Cmd.PerObjectCB = PerObjCB;
+		Cmd.bIsSkeletal = bSkeletal;
+		Cmd.bIsGpuSkinned = bGPUSkinning;
 		Cmd.Buffer.FirstIndex = Section.FirstIndex;
 		Cmd.Buffer.IndexCount = Section.IndexCount;
-
+		Cmd.Bindings.SkinMatrixSRV = bGPUSkinning && SkeletalProxy
+			? SkeletalProxy->GetSkinMatrixSRV(CachedDevice, Ctx)
+			: nullptr;
+		Cmd.Bindings.BoneHeatMapCB = bWeightBoneHeatMap ? &BoneHeatMapCB : nullptr;
+	
 		if (!bDepthOnly && Section.Material)
 		{
 			UMaterial* Mat = Section.Material;

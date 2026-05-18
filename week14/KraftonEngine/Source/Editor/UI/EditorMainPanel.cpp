@@ -16,6 +16,7 @@
 #include "Render/Pipeline/Renderer.h"
 #include "Engine/Input/InputSystem.h"
 
+#include "Editor/Slate/SlateApplication.h"
 #include "Editor/UI/ImGuiSetting.h"
 #include "Editor/UI/NotificationToast.h"
 
@@ -47,6 +48,8 @@ const FDebugPlaceActorOption GDebugPlaceActorOptions[] = {
 	{ "Directional Light", FLevelViewportLayout::EViewportPlaceActorType::DirectionalLight },
 	{ "Point Light", FLevelViewportLayout::EViewportPlaceActorType::PointLight },
 	{ "Spot Light", FLevelViewportLayout::EViewportPlaceActorType::SpotLight },
+	{ "Character",     FLevelViewportLayout::EViewportPlaceActorType::Character },
+	{ "Lua Character", FLevelViewportLayout::EViewportPlaceActorType::LuaCharacter },
 };
 
 }
@@ -86,6 +89,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	StatWidget.Initialize(InEditorEngine);
 	ContentBrowserWidget.Initialize(InEditorEngine, InRenderer.GetFD3DDevice().GetDevice());
 	ShadowMapDebugWidget.Initialize(InEditorEngine);
+	AnimationDebugWidget.Initialize(InEditorEngine);
 
 	AssetEditorManager.RegisterEditor<FFloatCurveEditorWidget>();
 	AssetEditorManager.RegisterEditor<FCameraShakeEditorWidget>();
@@ -95,6 +99,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 
 void FEditorMainPanel::Release()
 {
+	AssetEditorManager.CloseAll();
 	ConsoleWidget.Shutdown();
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
@@ -176,6 +181,12 @@ void FEditorMainPanel::Render(float DeltaTime)
 		ShadowMapDebugWidget.Render(DeltaTime);
 	}
 
+	if (!bHideEditorWindows && Settings.UI.bAnimationDebug)
+	{
+		SCOPE_STAT_CAT("AnimationDebugWidget.Render", "5_UI");
+		AnimationDebugWidget.Render(DeltaTime);
+	}
+
 	ProjectSettingsWidget.Render();
 	WorldSettingsWidget.Render();
 
@@ -255,6 +266,7 @@ void FEditorMainPanel::RenderMainMenuBar()
 		ImGui::Checkbox("ContentBrowser", &Settings.UI.bContentBrowser);
 		ImGui::Checkbox("Editor Debug", &Settings.UI.bEditorDebug);
 		ImGui::Checkbox("Shadow Map Debug", &Settings.UI.bShadowMapDebug);
+		ImGui::Checkbox("Animation Debug", &Settings.UI.bAnimationDebug);
 		ImGui::Separator();
 		ImGui::Checkbox("IMGUI_Setting", &Settings.UI.bImGUISettings);
 		ImGui::EndPopup();
@@ -716,24 +728,15 @@ void FEditorMainPanel::Update()
 
 	ImGuiIO& IO = ImGui::GetIO();
 
-	// 뷰포트 슬롯 위에서는 bUsingMouse를 해제해야 TickInteraction이 동작
-	bool bWantMouse = IO.WantCaptureMouse;
-	bool bWantKeyboard = IO.WantCaptureKeyboard || bShowShortcutOverlay;
-
-	const bool bMouseOverViewport = EditorEngine && EditorEngine->IsMouseOverViewport();
-	const bool bMouseOverAssetPreviewViewport = IsMouseOverAssetEditorPreviewViewport();
-
-	if (bMouseOverViewport || bMouseOverAssetPreviewViewport)
-	{
-		bWantMouse = false;
-		if (!IO.WantTextInput && !bShowShortcutOverlay)
-		{
-			bWantKeyboard = false;
-		}
-	}
-	InputSystem::Get().GetGuiInputState().bUsingMouse = bWantMouse;
-	InputSystem::Get().GetGuiInputState().bUsingKeyboard = bWantKeyboard;
+	// GuiState 는 ImGui IO 의 충실한 미러 한 곳뿐.
+	// "뷰포트 위면 해제" 핵은 제거 — 입력 소유권은 이제 FSlateApplication 의
+	// ImGui 인지 hover 가 단독으로 결정한다.
+	InputSystem::Get().GetGuiInputState().bUsingMouse     = IO.WantCaptureMouse;
+	InputSystem::Get().GetGuiInputState().bUsingKeyboard  = IO.WantCaptureKeyboard || bShowShortcutOverlay;
 	InputSystem::Get().GetGuiInputState().bUsingTextInput = IO.WantTextInput;
+
+	// ImGui 사실을 입력 소유권 중재자에 주입
+	FSlateApplication::Get().SetTextInputActive(IO.WantTextInput);
 
 	// IME는 ImGui가 텍스트 입력을 원할 때만 활성화.
 	if (Window)

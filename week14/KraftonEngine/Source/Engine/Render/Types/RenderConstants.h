@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Device/D3DDevice.h"
@@ -25,6 +25,7 @@ namespace ECBSlot
 	constexpr uint32 PerShader1 = 3; // b3: 셰이더별 여분 슬롯 #1 (PerShader2 예약)
 	constexpr uint32 Lighting = 4;   // b4: LightingBuffer (Ambient + Directional + 메타)
 	constexpr uint32 Shadow = 5;     // b5: ShadowBuffer (Shadow 행렬 + 파라미터)
+	constexpr uint32 BoneHeatMap = 6; // b6: SkeletalMesh bone weight heatmap
 }
 
 // HLSL 라이팅 SRV 슬롯 — 프레임에 1회 바인딩 (Forward Shading)
@@ -37,6 +38,11 @@ namespace ELightTexSlot
 	constexpr uint32 ClusterLightGrid = 12; // t12 : StructuredBuffer<uint2>
 }
 
+namespace EVertexFactoryTexSlot
+{
+	constexpr uint32 SkinMatrices = 13; // t13: StructuredBuffer<float4x4>
+}
+
 namespace ELightCullingUAVSlot
 {
 	constexpr uint32 ClusterAABB = 0;
@@ -44,6 +50,7 @@ namespace ELightCullingUAVSlot
 	constexpr uint32 LightGrid = 2;
 	constexpr uint32 GlobalCount = 3;
 }
+
 namespace ELightCullingSRVSlot
 {
 	constexpr uint32 ClusterAABB = 0;
@@ -95,6 +102,12 @@ struct FPerObjectConstants
 		Result.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 		return Result;
 	}
+};
+
+struct FBoneHeatMapConstants
+{
+	int32 SelectedBoneIndex = -1;
+	float Pad[3] = { 0.0f, 0.0f, 0.0f };
 };
 
 // =============================================================================

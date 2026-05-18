@@ -4,6 +4,7 @@
 #include "Engine/Profiling/Timer.h"
 #include "Engine/Profiling/MemoryStats.h"
 #include "Engine/Profiling/ShadowStats.h"
+#include "Engine/Profiling/Stats.h"
 #include "Engine/Profiling/GPUProfiler.h"
 #include "Slate/SWindow.h"
 #include "ImGui/imgui.h"
@@ -182,6 +183,121 @@ void FOverlayStatSystem::BuildShadowLines(TArray<FString>& OutLines) const
 #endif
 }
 
+void FOverlayStatSystem::BuildSkinningLines(TArray<FString>& OutLines) const
+{
+#if STATS
+	char Buffer[160] = {};
+
+	auto MarkStale = [](FSkinningOverlaySample& Sample)
+		{
+			Sample.bLive = false;
+		};
+	auto UpdateSample = [](FSkinningOverlaySample& Sample, const FStatEntry& Entry)
+		{
+			Sample.bValid = true;
+			Sample.bLive = true;
+			Sample.LastMs = Entry.LastTime * 1000.0;
+			Sample.AvgMs = Entry.AvgTime * 1000.0;
+			Sample.CallCount = Entry.CallCount;
+		};
+	auto AppendSample = [&](const char* Label, const FSkinningOverlaySample& Sample)
+		{
+			if (!Sample.bValid)
+			{
+				return;
+			}
+
+			snprintf(Buffer, sizeof(Buffer), "%s%s : %.3f ms  avg %.3f  calls %u",
+				Label,
+				Sample.bLive ? "" : " (last)",
+				Sample.LastMs,
+				Sample.AvgMs,
+				Sample.CallCount);
+			OutLines.push_back(FString(Buffer));
+		};
+	auto AppendModeTotal = [&](const char* Label, const FSkinningOverlaySample& A, const FSkinningOverlaySample& B)
+		{
+			if (!A.bValid || !B.bValid)
+			{
+				snprintf(Buffer, sizeof(Buffer), "%s : waiting for samples", Label);
+				OutLines.push_back(FString(Buffer));
+				return;
+			}
+
+			snprintf(Buffer, sizeof(Buffer), "%s : %.3f ms",
+				Label,
+				A.LastMs + B.LastMs);
+			OutLines.push_back(FString(Buffer));
+		};
+
+	MarkStale(CPUVertexSkinSample);
+	MarkStale(GPUMatrixUploadSample);
+	MarkStale(SkeletalPreDepthCPUPathSample);
+	MarkStale(SkeletalPreDepthGPUPathSample);
+
+	const TArray<FStatEntry>& CPUSnapshot = FStatManager::Get().GetSnapshot();
+	for (const FStatEntry& Entry : CPUSnapshot)
+	{
+		if (Entry.CallCount == 0)
+		{
+			continue;
+		}
+		if (!Entry.Category || strcmp(Entry.Category, "Skinning") != 0)
+		{
+			continue;
+		}
+
+		if (Entry.Name && strcmp(Entry.Name, "CPUSkinning_VertexSkin") == 0)
+		{
+			UpdateSample(CPUVertexSkinSample, Entry);
+		}
+		else if (Entry.Name && strcmp(Entry.Name, "GPUSkinning_MatrixUpload") == 0)
+		{
+			UpdateSample(GPUMatrixUploadSample, Entry);
+		}
+	}
+
+	const TArray<FStatEntry>& GPUSnapshot = FGPUProfiler::Get().GetGPUSnapshot();
+	for (const FStatEntry& Entry : GPUSnapshot)
+	{
+		if (Entry.CallCount == 0)
+		{
+			continue;
+		}
+		if (!Entry.Category || strcmp(Entry.Category, "Skinning") != 0)
+		{
+			continue;
+		}
+
+		if (Entry.Name && strcmp(Entry.Name, "SkeletalPreDepth_GPU_CPUPath") == 0)
+		{
+			UpdateSample(SkeletalPreDepthCPUPathSample, Entry);
+		}
+		else if (Entry.Name && strcmp(Entry.Name, "SkeletalPreDepth_GPU_GPUPath") == 0)
+		{
+			UpdateSample(SkeletalPreDepthGPUPathSample, Entry);
+		}
+	}
+
+	OutLines.push_back(FString("--- CPU Skinning Mode ---"));
+	AppendSample("CPU Vertex Skin", CPUVertexSkinSample);
+	AppendSample("GPU Skeletal PreDepth (CPU Path)", SkeletalPreDepthCPUPathSample);
+	AppendModeTotal("CPU Mode Total (CPU+GPU approx)", CPUVertexSkinSample, SkeletalPreDepthCPUPathSample);
+
+	OutLines.push_back(FString("--- GPU Skinning Mode ---"));
+	AppendSample("GPU Matrix Upload CPU", GPUMatrixUploadSample);
+	AppendSample("GPU Skeletal PreDepth (GPU Path)", SkeletalPreDepthGPUPathSample);
+	AppendModeTotal("GPU Mode Total (CPU+GPU approx)", GPUMatrixUploadSample, SkeletalPreDepthGPUPathSample);
+
+	if (OutLines.empty())
+	{
+		OutLines.push_back(FString("No Skinning stats this frame"));
+	}
+#else
+	OutLines.push_back(FString("Skinning stats unavailable (STATS=0)"));
+#endif
+}
+
 void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlayStatLine>& OutLines) const
 {
 	OutLines.clear();
@@ -202,6 +318,10 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 	if (bShowShadow)
 	{
 		EstimatedLineCount += 8;
+	}
+	if (bShowSkinning)
+	{
+		EstimatedLineCount += 4;
 	}
 	OutLines.reserve(EstimatedLineCount);
 
@@ -238,6 +358,13 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 	{
 		Lines.clear();
 		BuildShadowLines(Lines);
+		AppendGroup(Lines);
+	}
+
+	if (bShowSkinning)
+	{
+		Lines.clear();
+		BuildSkinningLines(Lines);
 		AppendGroup(Lines);
 	}
 }
@@ -338,5 +465,12 @@ void FOverlayStatSystem::RenderImGui(const UEditorEngine& Editor, const FRect& V
 		Lines.clear();
 		BuildShadowLines(Lines);
 		RenderWindow("##StatShadowOverlay", "Stat Shadow", ImVec4(0.08f, 0.05f, 0.12f, 0.62f), Lines);
+	}
+
+	if (bShowSkinning)
+	{
+		Lines.clear();
+		BuildSkinningLines(Lines);
+		RenderWindow("##StatSkinningOverlay", "Stat Skinning", ImVec4(0.05f, 0.10f, 0.08f, 0.62f), Lines);
 	}
 }

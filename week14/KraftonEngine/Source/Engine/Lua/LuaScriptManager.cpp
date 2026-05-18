@@ -5,6 +5,8 @@
 #include "Audio/AudioManager.h"
 #include "Component/ActionComponent.h"
 #include "Component/LuaScriptComponent.h"
+#include "Component/InputComponent.h"
+#include "Animation/LuaAnimInstance.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
@@ -38,6 +40,7 @@ std::unique_ptr<sol::state> FLuaScriptManager::Lua;
 sol::protected_function FLuaScriptManager::OnEscapePressedCallback;
 std::mutex FLuaScriptManager::ComponentMutex;
 TArray<ULuaScriptComponent*> FLuaScriptManager::RegisteredComponents;
+TArray<ULuaAnimInstance*>    FLuaScriptManager::RegisteredAnimInstances;
 FSubscriptionID FLuaScriptManager::WatchSub = 0;
 
 void FLuaScriptManager::SetOnEscapePressed(sol::protected_function Callback)
@@ -120,6 +123,28 @@ void FLuaScriptManager::UnregisterComponent(ULuaScriptComponent* Component)
 	}
 }
 
+void FLuaScriptManager::RegisterAnimInstance(ULuaAnimInstance* Instance)
+{
+	if (!Instance) return;
+	std::lock_guard<std::mutex> Lock(ComponentMutex);
+	auto It = std::find(RegisteredAnimInstances.begin(), RegisteredAnimInstances.end(), Instance);
+	if (It == RegisteredAnimInstances.end())
+	{
+		RegisteredAnimInstances.push_back(Instance);
+	}
+}
+
+void FLuaScriptManager::UnregisterAnimInstance(ULuaAnimInstance* Instance)
+{
+	if (!Instance) return;
+	std::lock_guard<std::mutex> Lock(ComponentMutex);
+	auto It = std::find(RegisteredAnimInstances.begin(), RegisteredAnimInstances.end(), Instance);
+	if (It != RegisteredAnimInstances.end())
+	{
+		RegisteredAnimInstances.erase(It);
+	}
+}
+
 void FLuaScriptManager::OnScriptsChanged(const TSet<FString>& ChangedFiles)
 {
 	TSet<ULuaScriptComponent*> Targets;
@@ -153,6 +178,33 @@ void FLuaScriptManager::OnScriptsChanged(const TSet<FString>& ChangedFiles)
 		UE_LOG("[LuaHotReload] Reloading: %s", Component->GetScriptFile().c_str());
 		FNotificationManager::Get().AddNotification("Lua Reloaded: " + Component->GetScriptFile(), ENotificationType::Success, 3.0f);
 		Component->ReloadScript();
+	}
+
+	// AnimInstance 측도 같은 패턴 — 매칭되는 ScriptFile 의 인스턴스 reload.
+	TSet<ULuaAnimInstance*> AnimTargets;
+	{
+		std::lock_guard<std::mutex> Lock(ComponentMutex);
+		for (ULuaAnimInstance* Inst : RegisteredAnimInstances)
+		{
+			if (!Inst) continue;
+			const FString& AnimScript = Inst->ScriptFile;
+			if (AnimScript.empty()) continue;
+			for (const FString& File : ChangedFiles)
+			{
+				if (File == AnimScript)
+				{
+					AnimTargets.insert(Inst);
+					break;
+				}
+			}
+		}
+	}
+	for (ULuaAnimInstance* Inst : AnimTargets)
+	{
+		if (!Inst) continue;
+		UE_LOG("[LuaHotReload] Reloading Anim: %s", Inst->ScriptFile.c_str());
+		FNotificationManager::Get().AddNotification("Anim Reloaded: " + Inst->ScriptFile, ENotificationType::Success, 3.0f);
+		Inst->ReloadScript();
 	}
 }
 
@@ -1052,7 +1104,35 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		sol::base_classes, sol::bases<AActor>(),
 		"IsPossessed", &APawn::IsPossessed,
 		"SetAutoPossessPlayer", &APawn::SetAutoPossessPlayer,
-		"GetAutoPossessPlayer", &APawn::GetAutoPossessPlayer);
+		"GetAutoPossessPlayer", &APawn::GetAutoPossessPlayer,
+		"GetInputComponent", &APawn::GetInputComponent);
+
+	// UInputComponent — Pawn::GetInputComponent 로 얻어 lua 에서 직접 매핑/binding 추가 가능.
+	// 예 (BeginPlay 안):
+	//   local input = obj:AsPawn():GetInputComponent()
+	//   input:AddActionMapping("Jump", 0x20)   -- VK_SPACE = 0x20
+	//   input:BindAction("Jump", "Pressed", function() print("jump!") end)
+	Lua.new_usertype<UInputComponent>("InputComponent",
+		"AddAxisMapping",   &UInputComponent::AddAxisMapping,
+		"AddActionMapping", &UInputComponent::AddActionMapping,
+		"BindAxis", [](UInputComponent& Self, const FString& Name, sol::protected_function Cb)
+		{
+			Self.BindAxis(Name, [Cb](float V)
+			{
+				auto R = Cb(V);
+				if (!R.valid()) { sol::error e = R; UE_LOG("[Lua] BindAxis cb error: %s", e.what()); }
+			});
+		},
+		"BindAction", [](UInputComponent& Self, const FString& Name, const FString& EventStr, sol::protected_function Cb)
+		{
+			const EInputEvent Ev = (EventStr == "Released") ? EInputEvent::Released : EInputEvent::Pressed;
+			Self.BindAction(Name, Ev, [Cb]()
+			{
+				auto R = Cb();
+				if (!R.valid()) { sol::error e = R; UE_LOG("[Lua] BindAction cb error: %s", e.what()); }
+			});
+		},
+		"ClearBindings", &UInputComponent::ClearBindings);
 
 	// --- World binding — 런타임 액터 spawn 용 (Engine 일반 기능) ---
 	sol::table World = Lua.create_named_table("World");

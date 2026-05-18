@@ -26,6 +26,18 @@ void FAssetEditorManager::Render(float DeltaTime)
 	}
 }
 
+void FAssetEditorManager::CloseAll()
+{
+	for (const auto& Editor : OpenEditors)
+	{
+		if (Editor && Editor->IsOpen())
+		{
+			Editor->Close();
+		}
+	}
+	OpenEditors.clear();
+}
+
 bool FAssetEditorManager::OpenEditorForObject(UObject* Object)
 {
 	RemoveClosedEditors();

@@ -1,7 +1,8 @@
-﻿#include "ContentBrowserElement.h"
+#include "ContentBrowserElement.h"
 
 #include "Asset/AssetPackage.h"
 #include "Editor/EditorEngine.h"
+#include "Core/Log.h"
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "CameraShake/CameraShakeAsset.h"
@@ -11,6 +12,7 @@
 #include "Mesh/StaticMesh.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/MeshManager.h"
+#include "Mesh/FbxImporter.h"
 
 #include <algorithm>
 
@@ -395,7 +397,38 @@ void MeshElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	{
 		return;
 	}
+
 	const FString FilePath = FPaths::ToUtf8(ContentItem.Path.wstring());
+	FString Extension = FPaths::ToUtf8(ContentItem.Path.extension());
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
+
+	if (Extension == ".fbx")
+	{
+		FString ProbeMessage;
+		const bool bHasSkinDeformer = FFbxImporter::HasSkinDeformer(FilePath, &ProbeMessage);
+
+		if (!ProbeMessage.empty())
+		{
+			UE_LOG("FBX skin deformer probe: Path=%s Message=%s", FilePath.c_str(), ProbeMessage.c_str());
+		}
+
+		if (bHasSkinDeformer)
+		{
+			if (USkeletalMesh* MeshAsset = FMeshManager::LoadSkeletalMesh(FilePath, Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice()))
+			{
+				Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
+			}
+		}
+		else
+		{
+			if (UStaticMesh* MeshAsset = FMeshManager::LoadStaticMesh(FilePath, Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice()))
+			{
+				Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
+			}
+		}
+		return;
+	}
+
 	if (USkeletalMesh* MeshAsset = FMeshManager::LoadSkeletalMesh(FilePath, Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice()))
 	{
 		Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);

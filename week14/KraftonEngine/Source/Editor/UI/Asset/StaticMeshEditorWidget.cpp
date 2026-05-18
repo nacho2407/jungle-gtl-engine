@@ -94,7 +94,7 @@ void FStaticMeshEditorWidget::Open(UObject* Object)
 
 	ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
 
-	ViewportClient.Initialize(GEngine->GetRenderer().GetFD3DDevice().GetDevice(), ViewportSize.x, ViewportSize.y);
+	ViewportClient.Initialize(GEngine->GetRenderer().GetFD3DDevice().GetDevice(), static_cast<uint32>(ViewportSize.x), static_cast<uint32>(ViewportSize.y));
 	ViewportClient.SetPreviewWorld(WorldContext.World);
 	ViewportClient.SetPreviewActor(Actor);
 	ViewportClient.SetPreviewMeshComponent(Actor->GetComponentByClass<UStaticMeshComponent>());
@@ -102,7 +102,7 @@ void FStaticMeshEditorWidget::Open(UObject* Object)
 
 	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
 
-	FSlateApplication::Get().RegisterViewport(&MeshViewportWindow, &ViewportClient);
+	FSlateApplication::Get().RegisterViewport(&ViewportClient);
 }
 
 void FStaticMeshEditorWidget::Close()
@@ -204,11 +204,12 @@ void FStaticMeshEditorWidget::Render(float DeltaTime)
 		if (VP && Size.x > 0 && Size.y > 0)
 		{
 			VP->RequestResize(static_cast<uint32>(Size.x), static_cast<uint32>(Size.y));
-			MeshViewportWindow.SetRect(FRect(ViewportPos.x, ViewportPos.y, Size.x, Size.y));
 
 			if (VP->GetSRV())
 			{
 				ImGui::Image((ImTextureID)VP->GetSRV(), Size);
+				// ImGui 인지 hover 를 입력 소유권 중재에 보고.
+				FSlateApplication::Get().SetViewportImGuiHovered(&ViewportClient, ImGui::IsItemHovered());
 			}
 
 			constexpr float ToolbarHeight = 28.0f;

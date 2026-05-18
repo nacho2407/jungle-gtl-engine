@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/RenderStateTypes.h"
@@ -37,10 +37,17 @@ struct FDrawCommandRenderState
 };
 
 // 셰이더 리소스 바인딩 — PerShaderCB + SRVs (per-material/section 단위로 갱신)
+
+// t0~t7: material texture slots
+// t8~t12: forward light / tile / cluster buffers
+// t16 + : scene / system / shadow resources
+// t14 ~ t15 : 비어있음
 struct FDrawCommandBindings
 {
-	FConstantBuffer*          PerShaderCB[2] = {};                            // [0]=b2, [1]=b3
+	FConstantBuffer*          PerShaderCB[2] = {};                           // [0]=b2, [1]=b3
+	FConstantBuffer*          BoneHeatMapCB = nullptr;                       // b6: SkeletalMesh weight heatmap
 	ID3D11ShaderResourceView* SRVs[(int)(EMaterialTextureSlot::Max)] = {};   // t0 ~ t7
+	ID3D11ShaderResourceView* SkinMatrixSRV = nullptr;						 // t13
 };
 
 /*
@@ -66,6 +73,10 @@ struct FDrawCommand
 
 	// ===== Sort =====
 	uint64 SortKey = 0;                              // 정렬 키 (Pass → Shader → MeshBuffer → SRV)
+
+	// ===== Profiling =====
+	bool bIsSkeletal = false;
+	bool bIsGpuSkinned = false;
 
 	// Fullscreen triangle 초기화 (PostProcess 등 SV_VertexID 기반 드로우)
 	void InitFullscreenTriangle(FShader* InShader, ERenderPass InPass, const FDrawCommandRenderState& InRenderState)

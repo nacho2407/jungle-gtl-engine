@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorPropertyWidget.h"
+#include "Editor/UI/EditorPropertyWidget.h"
 
 #include "Editor/EditorEngine.h"
 
@@ -1206,8 +1206,8 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 			}
 			if (bSelectedNone)
 				ImGui::SetItemDefaultFocus();
-			const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
-			for (const FMeshAssetListItem& Item : MeshFiles)
+			const TArray<FAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
+			for (const FAssetListItem& Item : MeshFiles)
 			{
 				bool bSelected = (CurrentPath == Item.FullPath);
 				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
@@ -1259,8 +1259,8 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 		if (bSelectedNone)
 			ImGui::SetItemDefaultFocus();
 
-		const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
-		for (const FMeshAssetListItem& Item : MeshFiles)
+		const TArray<FAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
+		for (const FAssetListItem& Item : MeshFiles)
 		{
 			bool bSelected = (CurrentPath == Item.FullPath);
 			if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
@@ -1649,8 +1649,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 					ImGui::SetItemDefaultFocus();
 				}
 
-				const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
-				for (const FMeshAssetListItem& Item : MeshFiles)
+				const TArray<FAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
+				for (const FAssetListItem& Item : MeshFiles)
 				{
 					const bool bSelected = CurrentMesh && CurrentMesh->GetAssetPathFileName() == Item.FullPath;
 					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
@@ -1723,8 +1723,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 					ImGui::SetItemDefaultFocus();
 				}
 
-				const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
-				for (const FMeshAssetListItem& Item : MeshFiles)
+				const TArray<FAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
+				for (const FAssetListItem& Item : MeshFiles)
 				{
 					const bool bSelected = CurrentMesh && CurrentMesh->GetAssetPathFileName() == Item.FullPath;
 					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))

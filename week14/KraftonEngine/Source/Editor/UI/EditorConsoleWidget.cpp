@@ -1,6 +1,7 @@
 ﻿#include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
+#include "Editor/Viewport/EditorPreviewViewportClient.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Object/Object.h"
 #include "Render/Types/ShadowSettings.h"
@@ -237,6 +238,8 @@ void FEditorConsoleWidget::RegisterDiagnosticsCommands()
 		"Diagnostics", "stat memory", "Shows the memory overlay stat.");
 	RegisterCommand("stat shadow", [this](const TArray<FString>& Args) { HandleStatShadow(Args); },
 		"Diagnostics", "stat shadow", "Shows the shadow overlay stat.");
+	RegisterCommand("stat skinning", [this](const TArray<FString>& Args) { HandleStatSkinning(Args); },
+		"Diagnostics", "stat skinning", "Shows the skinning CPU overlay stat.");
 	RegisterCommand("stat none", [this](const TArray<FString>& Args) { HandleStatNone(Args); },
 		"Diagnostics", "stat none", "Hides all overlay stats.");
 }
@@ -259,6 +262,8 @@ void FEditorConsoleWidget::RegisterRenderCommands()
 		"Render", "shadow bias <bias> [<slope_bias>]|reset", "Overrides global shadow bias values.");
 	RegisterCommand("shadow filter", [this](const TArray<FString>& Args) { HandleShadowFilter(Args); },
 		"Render", "shadow filter hard|pcf|vsm|reset", "Overrides shadow filter mode.");
+	RegisterCommand("skinning", [this](const TArray<FString>& Args) { HandleSkinningMode(Args); },
+		"Render", "skinning cpu|gpu", "Sets skeletal mesh skinning mode.");
 }
 
 void FEditorConsoleWidget::Shutdown()
@@ -844,6 +849,18 @@ void FEditorConsoleWidget::HandleStatShadow(const TArray<FString>& Args)
 	AddLog("Overlay stat %s: shadow\n", bEnabled ? "enabled" : "disabled");
 }
 
+void FEditorConsoleWidget::HandleStatSkinning(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+	const bool bEnabled = EditorEngine->GetOverlayStatSystem().ToggleSkinning();
+	AddLog("Overlay stat %s: skinning\n", bEnabled ? "enabled" : "disabled");
+}
+
 void FEditorConsoleWidget::HandleStatNone(const TArray<FString>& Args)
 {
 	(void)Args;
@@ -1196,6 +1213,54 @@ void FEditorConsoleWidget::HandleShadowFilter(const TArray<FString>& Args)
 		AddLog("[ERROR] Unknown filter mode: '%s'\n", Args[0].c_str());
 		AddLog("Usage: shadow filter hard|pcf|vsm|reset\n");
 	}
+}
+
+void FEditorConsoleWidget::HandleSkinningMode(const TArray<FString>& Args)
+{
+	if (Args.empty())
+	{
+		AddLog("skinning: %s\n", SkinningModeRuntime::Get() == ESkinningMode::GPU ? "GPU" : "CPU");
+		AddLog("Usage: skinning cpu|gpu\n");
+		return;
+	}
+
+	const FString Arg = ToLower(Args[0]);
+	ESkinningMode NewMode;
+	if (Arg == "cpu")
+	{
+		NewMode = ESkinningMode::CPU;
+	}
+	else if (Arg == "gpu")
+	{
+		NewMode = ESkinningMode::GPU;
+	}
+	else
+	{
+		AddLog("[ERROR] Unknown skinning mode: '%s'\n", Args[0].c_str());
+		AddLog("Usage: skinning cpu|gpu\n");
+		return;
+	}
+
+	SkinningModeRuntime::Set(NewMode);
+
+	if (EditorEngine)
+	{
+		for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
+		{
+			if (!VC) continue;
+			VC->GetRenderOptions().SkinningMode = NewMode;
+		}
+
+		TArray<IEditorPreviewViewportClient*> PreviewClients;
+		EditorEngine->CollectAssetEditorPreviewViewportClients(PreviewClients);
+		for (IEditorPreviewViewportClient* VC : PreviewClients)
+		{
+			if (!VC) continue;
+			VC->GetRenderOptions().SkinningMode = NewMode;
+		}
+	}
+
+	AddLog("Skinning mode set to %s.\n", NewMode == ESkinningMode::GPU ? "GPU" : "CPU");
 }
 
 // History & Tab-Completion Callback____________________________________________________________
