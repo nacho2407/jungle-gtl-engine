@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/PropertyTypes.h"
 #include "Core/Containers/Map.h"
@@ -7,23 +7,6 @@
 #include "Core/Containers/String.h"
 #include "Core/Reflection/ReflectionMacros.h"
 #include "Object/Class.h"
-
-struct FEnumValue
-{
-	const char* Name = nullptr;
-	const char* DisplayName = nullptr;
-	int64 Value = 0;
-};
-
-// 파싱된 Enum 타입에 대한 런타임 메타데이터입니다.
-// 추후 UObject - UField - UEnum 구조로 확장될 수 있습니다.
-struct UEnum
-{
-	const char* Name = nullptr;
-	uint8 Size = 0;
-	const FEnumValue* Values = nullptr;
-	uint32 Count = 0;
-};
 
 class FReflectionRegistry : public TSingleton<FReflectionRegistry>
 {
@@ -77,14 +60,30 @@ public:
 		return RuntimeClasses;
 	}
 
-	void RegisterEnum(const UEnum* Enum)
+	void RegisterStruct(const UScriptStruct* Struct)
 	{
-		if (!Enum || !Enum->Name)
+		if (!Struct || !Struct->GetName())
 		{
 			return;
 		}
 
-		RuntimeEnums[Enum->Name] = Enum;
+		RuntimeStructs[Struct->GetName()] = Struct;
+	}
+
+	const UScriptStruct* FindStruct(const FString& StructName) const
+	{
+		auto It = RuntimeStructs.find(StructName);
+		return It != RuntimeStructs.end() ? It->second : nullptr;
+	}
+
+	void RegisterEnum(const UEnum* Enum)
+	{
+		if (!Enum || !Enum->GetName())
+		{
+			return;
+		}
+
+		RuntimeEnums[Enum->GetName()] = Enum;
 	}
 
 	const UEnum* FindEnum(const FString& EnumName) const
@@ -92,8 +91,9 @@ public:
 		auto It = RuntimeEnums.find(EnumName);
 		return It != RuntimeEnums.end() ? It->second : nullptr;
 	}
-	
+
 private:
 	TMap<FString, UClass*> RuntimeClasses;
+	TMap<FString, const UScriptStruct*> RuntimeStructs;
 	TMap<FString, const UEnum*> RuntimeEnums;
 };

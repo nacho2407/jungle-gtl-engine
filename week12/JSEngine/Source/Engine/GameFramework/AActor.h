@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Object/Class.h"
 #include "Object/Object.h"
 #include "Component/SceneComponent.h"
 #include "Engine/GameFramework/WorldContext.h"

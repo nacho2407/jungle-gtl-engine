@@ -44,7 +44,7 @@ private:
 	UAnimGraphAsset* GraphAsset = nullptr;
 
 	TMap<int32, FAnimGraphSequenceCache> SequenceCacheMap;
-	
+
 	TMap<FString, float> FloatParameters;
 	TMap<FString, bool> BoolParameters;
 };
