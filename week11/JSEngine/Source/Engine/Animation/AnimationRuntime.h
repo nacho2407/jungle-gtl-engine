@@ -12,25 +12,8 @@ class USkeletalMesh;
 class FAnimationRuntime
 {
 public:
-    /**
-	 * @brief   skeletal mesh가 가진 bind pose 정보를 TArray<FTransform>의 local pose 형태로 만듦.
-	 * 
-	 *          현재 skeletal mesh 쪽은 matrix 기반 pose를 사용하는데, animation 쪽에서는 blending 등에서 
-	 *          transform 기준 보간을 사용하기 위해 pose를 transform으로 쪼개서 관리하고 있음.
-	 * 
-	 * @example animation이 없거나 sampling에 실패하고 fallback으로 bind pose를 뱉어줄 때, skeletal mesh의
-	 *          bind pose를 animation runtime pose 형식으로 만들어 사용하기 위해 사용
-	 */
-    static bool BuildBindLocalPoseFromMesh(const USkeletalMesh* Mesh, TArray<FTransform>& OutLocalPose);
-
 	/**
-	 * TODO: Milestone 1 검증용 debug pose. 실제 sequence evaluation이 연결되면 제거
-	 */
-    static bool BuildDebugOscillatingLocalPose(const USkeletalMesh* Mesh, float TimeSeconds, TArray<FTransform>& OutLocalPose);
-
-	/**
-	 * @brief BuildBindLocalPoseFromMesh와는 반대로, animation runtime의 FTransform local pose를
-	 *        기존 component가 사용하는 FMatrix local pose로 변환하는 bridge.
+	 * @brief animation runtime의 FTransform local pose를 기존 component가 사용하는 FMatrix local pose로 변환하는 bridge.
 	 * 
 	 *        row-vector convention을 따름에 유의
 	 */

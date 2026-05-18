@@ -1,4 +1,4 @@
-#include "Animation/AnimSequence.h"
+﻿#include "Animation/AnimSequence.h"
 
 #include "Asset/SkeletalMesh.h"
 #include "Object/ObjectFactory.h"
@@ -39,9 +39,66 @@ float UAnimSequenceBase::GetPlayLength() const
     return PlayLength;
 }
 
+float UAnimSequenceBase::GetFrameRate() const
+{
+    return 0.0f;
+}
+
+int32 UAnimSequenceBase::GetNumberOfFrames() const
+{
+    return 0;
+}
+
 void UAnimSequenceBase::SetPlayLength(float InPlayLength)
 {
     PlayLength = InPlayLength > 0.0f ? InPlayLength : 0.0f;
+}
+
+const TArray<FAnimNotifyEvent>& UAnimSequenceBase::GetNotifies() const
+{
+    return Notifies;
+}
+
+void UAnimSequenceBase::AddNotify(const FAnimNotifyEvent& Notify)
+{
+    FAnimNotifyEvent SanitizedNotify = Notify;
+    if (SanitizedNotify.TriggerTime < 0.0f)
+    {
+        SanitizedNotify.TriggerTime = 0.0f;
+    }
+    if (SanitizedNotify.Duration < 0.0f)
+    {
+        SanitizedNotify.Duration = 0.0f;
+    }
+
+    const float SequenceLength = GetPlayLength();
+    if (SequenceLength > 0.0f)
+    {
+        SanitizedNotify.TriggerTime = std::clamp(SanitizedNotify.TriggerTime, 0.0f, SequenceLength);
+
+        // duration notify가 sequence 끝 밖으로 이어지면 등록 시점에 잘라냄
+        const float MaxDuration = SequenceLength - SanitizedNotify.TriggerTime;
+        if (SanitizedNotify.Duration > MaxDuration)
+        {
+            SanitizedNotify.Duration = MaxDuration;
+        }
+    }
+
+    Notifies.push_back(SanitizedNotify);
+
+	// 재생 중 검사 용이, 최적화 가능성을 위한 notify 시간 순 정렬
+	// TriggerTime이 동일하면 Duration이 짧은 순으로 정렬(instant notify가 먼저 오도록하는 정책)
+    std::sort(
+        Notifies.begin(),
+        Notifies.end(),
+        [](const FAnimNotifyEvent& A, const FAnimNotifyEvent& B)
+        {
+            if (A.TriggerTime == B.TriggerTime)
+            {
+                return A.Duration < B.Duration;
+            }
+            return A.TriggerTime < B.TriggerTime;
+        });
 }
 
 bool UAnimSequenceBase::GetAnimationPose(
@@ -67,6 +124,16 @@ UAnimSequence::~UAnimSequence()
 float UAnimSequence::GetPlayLength() const
 {
     return DataModel ? DataModel->SequenceLength : UAnimSequenceBase::GetPlayLength();
+}
+
+float UAnimSequence::GetFrameRate() const
+{
+    return DataModel ? DataModel->FrameRate : UAnimSequenceBase::GetFrameRate();
+}
+
+int32 UAnimSequence::GetNumberOfFrames() const
+{
+    return DataModel ? DataModel->NumberOfFrames : UAnimSequenceBase::GetNumberOfFrames();
 }
 
 bool UAnimSequence::GetBonePose(float Time, const USkeletalMesh* Mesh, TArray<FMatrix>& OutLocalPose) const
