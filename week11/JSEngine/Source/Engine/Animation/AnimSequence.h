@@ -19,6 +19,8 @@ public:
 
     float GetPlayLength() const override;
     void SetPlayLength(float InPlayLength);
+    virtual float GetFrameRate() const;
+    virtual int32 GetNumberOfFrames() const;
 
     const TArray<FAnimNotifyEvent>& GetNotifies() const;
     void AddNotify(const FAnimNotifyEvent& Notify);
@@ -50,6 +52,8 @@ public:
     UAnimDataModel* DataModel = nullptr;
 
     float GetPlayLength() const override;
+    float GetFrameRate() const override;
+    int32 GetNumberOfFrames() const override;
 
     bool GetBonePose(float Time, const USkeletalMesh* Mesh, TArray<FMatrix>& OutLocalPose) const;
 

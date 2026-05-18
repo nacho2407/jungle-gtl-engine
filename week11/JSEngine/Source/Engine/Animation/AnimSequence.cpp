@@ -39,6 +39,16 @@ float UAnimSequenceBase::GetPlayLength() const
     return PlayLength;
 }
 
+float UAnimSequenceBase::GetFrameRate() const
+{
+    return 0.0f;
+}
+
+int32 UAnimSequenceBase::GetNumberOfFrames() const
+{
+    return 0;
+}
+
 void UAnimSequenceBase::SetPlayLength(float InPlayLength)
 {
     PlayLength = InPlayLength > 0.0f ? InPlayLength : 0.0f;
@@ -114,6 +124,16 @@ UAnimSequence::~UAnimSequence()
 float UAnimSequence::GetPlayLength() const
 {
     return DataModel ? DataModel->SequenceLength : UAnimSequenceBase::GetPlayLength();
+}
+
+float UAnimSequence::GetFrameRate() const
+{
+    return DataModel ? DataModel->FrameRate : UAnimSequenceBase::GetFrameRate();
+}
+
+int32 UAnimSequence::GetNumberOfFrames() const
+{
+    return DataModel ? DataModel->NumberOfFrames : UAnimSequenceBase::GetNumberOfFrames();
 }
 
 bool UAnimSequence::GetBonePose(float Time, const USkeletalMesh* Mesh, TArray<FMatrix>& OutLocalPose) const

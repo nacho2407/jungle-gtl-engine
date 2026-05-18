@@ -71,6 +71,13 @@ private:
     TArray<TArray<int32>> BoneToSocketIndices;  // bone idx → socket array indices
     FSkeletalMesh* CachedMesh = nullptr;
     USkeletalMeshComponent* CachedSkComp = nullptr;   // Render() 내내만 유효한 transient cache
+    float TimelineHeight = 140.0f;
+    float AnimationCurrentTime = 0.0f;
+    float AnimationMaxTime = 0.0f;
+    int32 AnimationTotalFrames = 1;
+    bool bAnimationLoop = true;
+    int32 SelectedAnimationStackIndex = 0;
+    FString LastRequestedAnimationKey;
 
     int32 PendingPreviewPickerSocketIdx = -1;  // picker modal 트리거; -1이면 닫힌 상태
     int32 RenameSocketIdx = -1;                // rename modal 트리거; -1이면 닫힌 상태

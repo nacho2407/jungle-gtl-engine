@@ -3,6 +3,7 @@
 #include "Editor/UI/EditorChromeConstants.h"
 #include "Editor/Viewer/EditorViewer.h"
 #include "Viewport/ViewportLayout.h"
+#include "Animation/AnimSequence.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -208,6 +209,13 @@ void FEditorViewerWindowWidget::Shutdown()
     BoneToSocketIndices.clear();
     CachedMesh = nullptr;
     CachedSkComp = nullptr; 
+    TimelineHeight = 140.0f;
+    AnimationCurrentTime = 0.0f;
+    AnimationMaxTime = 0.0f;
+    AnimationTotalFrames = 1;
+    bAnimationLoop = true;
+    SelectedAnimationStackIndex = 0;
+    LastRequestedAnimationKey.clear();
 
     PendingPreviewPickerSocketIdx = -1; 
     RenameSocketIdx = -1;               
@@ -706,13 +714,42 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
     USkeletalMesh* SkeletalMesh = SkelMeshComp ? SkelMeshComp->GetSkeletalMesh() : nullptr;
     FSkeletalMesh* MeshData = SkeletalMesh ? SkeletalMesh->GetMeshData() : nullptr;
 
+    USkeletalMeshComponent* PreviousSkComp = CachedSkComp;
     CachedSkComp = SkelMeshComp;
+    const bool bSkeletalMeshComponentChanged = PreviousSkComp != CachedSkComp;
+    auto ResetAnimationTimelineState = [&]()
+    {
+        AnimationCurrentTime = 0.0f;
+        AnimationMaxTime = 0.0f;
+        AnimationTotalFrames = 1;
+        bAnimationLoop = true;
+        SelectedAnimationStackIndex = 0;
+        LastRequestedAnimationKey.clear();
+    };
+
+    auto RefreshAnimationTimelineState = [&]()
+    {
+        AnimationCurrentTime = CachedSkComp ? CachedSkComp->GetPosition() : 0.0f;
+        AnimationMaxTime = CachedSkComp ? CachedSkComp->GetPlayLength() : 0.0f;
+
+        // asset에서 frame metadata 직접 조회
+        const UAnimSequenceBase* Sequence = CachedSkComp
+            ? Cast<UAnimSequenceBase>(CachedSkComp->GetAnimation())
+            : nullptr;
+        const int32 ImportedFrameCount = Sequence ? Sequence->GetNumberOfFrames() : 0;
+        const float ImportedFrameRate = Sequence ? Sequence->GetFrameRate() : 0.0f;
+        const float FallbackFrameRate = ImportedFrameRate > 0.0f ? ImportedFrameRate : 30.0f;
+        AnimationTotalFrames = ImportedFrameCount > 0
+            ? ImportedFrameCount
+            : std::max(1, static_cast<int32>(std::round(AnimationMaxTime * FallbackFrameRate)));
+    };
 
     if (!MeshData)
     {
         CachedMesh = nullptr;
         Children.clear();
         BoneToSocketIndices.clear();
+        ResetAnimationTimelineState();
         if (Viewer)
         {
             Viewer->ClearSelection();
@@ -720,16 +757,25 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
         ResetMeshDirtyBaseline();
         ImGui::TextDisabled("No skeletal mesh");
     }
-    else if (CachedMesh != MeshData)
+    else if (CachedMesh != MeshData || bSkeletalMeshComponentChanged)
     {
+        const bool bMeshChanged = CachedMesh != MeshData;
         CachedMesh = MeshData;
+        ResetAnimationTimelineState();
+        if (CachedSkComp)
+        {
+            CachedSkComp->SetLooping(bAnimationLoop);
+        }
         if (Viewer)
         {
             Viewer->ClearSelection();
         }
 
-        RebuildBoneTreeCaches(MeshData);
-        ResetMeshDirtyBaseline();
+        if (bMeshChanged)
+        {
+            RebuildBoneTreeCaches(MeshData);
+            ResetMeshDirtyBaseline();
+        }
     }
 
     if (MeshData)
@@ -779,7 +825,6 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 
     ImVec2 CenterAvailableSize = ImGui::GetContentRegionAvail();
 
-    static float TimelineHeight = 140.0f;
     float SpacingY = ImGui::GetStyle().ItemSpacing.y;
     float VerticalSplitterHeight = 4.0f;
 
@@ -845,11 +890,7 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
     // [CENTER - 3] 타임라인 영역 (좌: 컨트롤, 우: 스크러버)
     ImGui::BeginChild("AnimationTimelineZone", ImVec2(CenterAvailableSize.x, TimelineHeight), true, ImGuiWindowFlags_NoScrollbar);
 
-    static float CurrentTime = 0.794f;
-    static float MaxTime = 2.300f;
-    static int TotalFrames = 68;
-    float CurrentFrameF = (CurrentTime / std::max(MaxTime, 0.001f)) * TotalFrames;
-    float Percentage = (CurrentTime / std::max(MaxTime, 0.001f)) * 100.0f;
+    RefreshAnimationTimelineState();
 
     float TimelineFullWidth = ImGui::GetContentRegionAvail().x;
     float TimelineLeftPanelWidth = std::max(220.0f, TimelineFullWidth * 0.25f);
@@ -861,14 +902,31 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 4.0f));
     float BtnW = (TimelineLeftPanelWidth - (6.0f * 2.0f)) / 7.0f;
 
+    const int32 SafeTotalFramesForStep = std::max(AnimationTotalFrames, 1);
+    const float FrameStepSeconds = AnimationMaxTime > 0.0f
+        ? AnimationMaxTime / static_cast<float>(SafeTotalFramesForStep)
+        : 0.0f;
+
+    auto SeekAnimation = [&](float NewTime)
+    {
+        if (!CachedSkComp)
+        {
+            return;
+        }
+
+        CachedSkComp->SetPosition(NewTime, false);
+        CachedSkComp->RefreshAnimationPose();
+        AnimationCurrentTime = CachedSkComp->GetPosition();
+    };
+
     if (ImGui::Button("|<", ImVec2(BtnW, 24)))
     {
-        CachedSkComp->SetPosition(0.0f);
+        SeekAnimation(0.0f);
     }
     ImGui::SameLine();
     if (ImGui::Button("<<", ImVec2(BtnW, 24)))
     {
-        CurrentTime = std::max(0.0f, CurrentTime - (MaxTime / TotalFrames));
+        SeekAnimation(std::max(0.0f, AnimationCurrentTime - FrameStepSeconds));
     }
     ImGui::SameLine();
     if (ImGui::Button("<", ImVec2(BtnW, 24)))
@@ -877,7 +935,10 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
     ImGui::SameLine();
     if (ImGui::Button("||", ImVec2(BtnW, 24)))
     {
-        CachedSkComp->Pause();
+        if (CachedSkComp)
+        {
+            CachedSkComp->Pause();
+        }
     }
     ImGui::SameLine();
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
@@ -888,31 +949,41 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
     ImGui::PopStyleColor();
 
     if (ImGui::Button(">", ImVec2(BtnW, 24)))
-    { 
-		CachedSkComp->Play();
+    {
+        if (CachedSkComp)
+        {
+            CachedSkComp->SetLooping(bAnimationLoop);
+            CachedSkComp->Play();
+        }
     }
     ImGui::SameLine();
     if (ImGui::Button(">>", ImVec2(BtnW, 24)))
     {
-        CurrentTime = std::min(MaxTime, CurrentTime + (MaxTime / TotalFrames));
+        SeekAnimation(std::min(AnimationMaxTime, AnimationCurrentTime + FrameStepSeconds));
     }
     ImGui::SameLine();
     if (ImGui::Button(">|", ImVec2(BtnW, 24)))
     {
-        CurrentTime = MaxTime;
+        SeekAnimation(AnimationMaxTime);
     }
-    static bool bLoop = true;
-    if (ImGui::Checkbox("Loop Playback", &bLoop))
+    if (ImGui::Checkbox("Loop Playback", &bAnimationLoop))
     {
-        CachedSkComp->SetLooping(bLoop);
+        if (CachedSkComp)
+        {
+            CachedSkComp->SetLooping(bAnimationLoop);
+        }
     }
     ImGui::PopStyleVar();
     ImGui::Spacing();
 
-	FString FbxPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
-    TArray<FString> StackNames =  FResourceManager::Get().ListAnimStacks(FbxPath);
+    FString FbxPath;
+    TArray<FString> StackNames;
+    if (CachedSkComp && CachedSkComp->GetSkeletalMesh())
+    {
+        FbxPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
+        StackNames = FResourceManager::Get().ListAnimStacks(FbxPath);
+    }
 
-    static int SelectedAnimItem = 0;
     TArray<const char*> AnimItems;
     AnimItems.reserve(StackNames.size());
 
@@ -920,31 +991,50 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
     {
         AnimItems.push_back(StackName.c_str());
     }
-    if (SelectedAnimItem >= static_cast<int>(AnimItems.size()))
+    if (SelectedAnimationStackIndex >= static_cast<int32>(AnimItems.size()))
     {
-        SelectedAnimItem = 0;
+        SelectedAnimationStackIndex = 0;
     }
     ImGui::SetNextItemWidth(-1.0f);
-    const bool bAnimSelectionChanged =
-        ImGui::Combo("Animation List", &SelectedAnimItem, AnimItems.data(), static_cast<int>(AnimItems.size()));
-    if (CachedSkComp && !StackNames.empty() && SelectedAnimItem >= 0 && SelectedAnimItem < static_cast<int>(StackNames.size()))
+    bool bAnimSelectionChanged = false;
+    if (AnimItems.empty())
     {
-        const FString StackName = StackNames[SelectedAnimItem];
+        ImGui::TextDisabled("No animation stacks");
+    }
+    else
+    {
+        int SelectedAnimItem = static_cast<int>(SelectedAnimationStackIndex);
+        bAnimSelectionChanged = ImGui::Combo(
+            "Animation List",
+            &SelectedAnimItem,
+            AnimItems.data(),
+            static_cast<int>(AnimItems.size()));
+        SelectedAnimationStackIndex = static_cast<int32>(SelectedAnimItem);
+    }
+
+    if (CachedSkComp
+        && !StackNames.empty()
+        && SelectedAnimationStackIndex >= 0
+        && SelectedAnimationStackIndex < static_cast<int32>(StackNames.size()))
+    {
+        const FString StackName = StackNames[SelectedAnimationStackIndex];
         const FString AnimKey = FbxPath + "|" + StackName;
 
-        static FString LastRequestedAnimKey;
-        const bool bNeedsInitialLoad = CachedSkComp->GetAnimation() == nullptr && LastRequestedAnimKey != AnimKey;
-        if (bAnimSelectionChanged || bNeedsInitialLoad)
+        if (bAnimSelectionChanged || LastRequestedAnimationKey != AnimKey)
         {
-            // animation 미설정 상태에서는 0번 animation stack도 한 번 로드
-            CachedSkComp->SetAnimSequence(FbxPath, StackName);
-            LastRequestedAnimKey = AnimKey;
+            // 뷰어 인스턴스별 요청 키로 0번 stack 자동 로드와 선택 변경을 처리
+            LastRequestedAnimationKey = AnimKey;
+            if (CachedSkComp->SetAnimSequence(FbxPath, StackName))
+            {
+                // sequence 교체 직후에는 UI의 loop 기본값을 single node instance에 다시 반영
+                CachedSkComp->SetLooping(bAnimationLoop);
+                SeekAnimation(0.0f);
+                RefreshAnimationTimelineState();
+            }
         }
     }
     ImGui::Spacing();
 
-    //static bool bLoop = true;
-    //ImGui::Checkbox("Loop Playback", &bLoop);
     ImGui::TextDisabled("[Notify List Area]");
 
     ImGui::EndChild(); // TimelineLeftPanel
@@ -954,9 +1044,15 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
     // --- 하단 우측 패널 (스크러버) ---
     ImGui::BeginChild("TimelineRightPanel", ImVec2(TimelineRightPanelWidth, 0), false, ImGuiWindowFlags_NoScrollbar);
 
+    RefreshAnimationTimelineState();
+    const float SafeMaxTime = std::max(AnimationMaxTime, 0.001f);
+    const int32 SafeTotalFrames = std::max(AnimationTotalFrames, 1);
+    float CurrentFrameF = (AnimationCurrentTime / SafeMaxTime) * SafeTotalFrames;
+    float Percentage = (AnimationCurrentTime / SafeMaxTime) * 100.0f;
+
     ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
                        "Ani Percentage: %5.2f%%   CurrentTime: %.3f / %.3f (sec)   Frame: %.2f / %d",
-                       Percentage, CurrentTime, MaxTime, CurrentFrameF, TotalFrames);
+                       Percentage, AnimationCurrentTime, AnimationMaxTime, CurrentFrameF, AnimationTotalFrames);
     ImGui::Separator();
 
     float ScrubberWidth = ImGui::GetContentRegionAvail().x;
@@ -977,9 +1073,9 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
     TimelineDrawList->AddRect(TrackMin, TrackMax, IM_COL32(100, 100, 100, 255));
 
     int FrameStep = 10;
-    for (int i = 0; i <= TotalFrames; i += FrameStep)
+    for (int i = 0; i <= AnimationTotalFrames; i += FrameStep)
     {
-        float ratio = (float)i / std::max(TotalFrames, 1);
+        float ratio = (float)i / SafeTotalFrames;
         float tickX = TrackMin.x + (ratio * ScrubberWidth);
 
         TimelineDrawList->AddLine(
@@ -992,7 +1088,7 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
         TimelineDrawList->AddText(ImVec2(tickX + 4.0f, TrackMin.y + 2.0f), IM_COL32(200, 200, 200, 255), frameText);
     }
 
-    float PlayheadRatio = std::clamp(CurrentTime / std::max(MaxTime, 0.001f), 0.0f, 1.0f);
+    float PlayheadRatio = std::clamp(AnimationCurrentTime / SafeMaxTime, 0.0f, 1.0f);
     float PlayheadX = TrackMin.x + (PlayheadRatio * ScrubberWidth);
     float PlayheadWidth = 14.0f;
 
@@ -1005,11 +1101,13 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
         float newRatio = (mouseX - TrackMin.x) / ScrubberWidth;
         newRatio = std::clamp(newRatio, 0.0f, 1.0f);
 
-        CurrentTime = newRatio * MaxTime; // UI 표시용 업데이트
+        AnimationCurrentTime = newRatio * AnimationMaxTime;
 
         if (CachedSkComp)
         {
-            CachedSkComp->SetPosition(CurrentTime);
+            CachedSkComp->SetPosition(AnimationCurrentTime, false);
+            CachedSkComp->RefreshAnimationPose();
+            AnimationCurrentTime = CachedSkComp->GetPosition();
         }
     }
 
