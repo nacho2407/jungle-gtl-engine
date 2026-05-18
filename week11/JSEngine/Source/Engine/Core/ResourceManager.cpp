@@ -1067,6 +1067,11 @@ bool FResourceManager::IsAnimSequenceBinaryValid(
 		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "HeaderMissingOrInvalid");
 	}
 
+	if (Header.ImportVersion != FAnimSequenceBinaryConstants::ImportVersion)
+	{
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "ImportVersionMismatch");
+	}
+
 	const uint64 SourceWriteTime = GetFileWriteTimeTicks(FPaths::Normalize(SourcePath));
 	if (SourceWriteTime == 0)
 	{

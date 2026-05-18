@@ -58,9 +58,6 @@ constexpr uint32 MAX_SKELETAL_MESH_SLOTNAME_COUNT = 1024;
 constexpr uint32 MAX_SKELETAL_MESH_BONE_COUNT     = 65'536;
 constexpr uint32 MAX_SKELETAL_MESH_SOCKET_COUNT   = 1024;
 
-constexpr uint32 ANIM_SEQUENCE_BINARY_MAGIC = 0x4D494E41; // 'ANIM'
-constexpr uint32 ANIM_SEQUENCE_BINARY_VERSION = 6;       // v6: read FBX animation T/Q/S channels directly
-
 constexpr uint32 MAX_ANIM_SEQUENCE_TRACK_COUNT = 65'536;
 constexpr uint32 MAX_ANIM_SEQUENCE_KEY_COUNT = 1'000'000;
 
@@ -147,12 +144,17 @@ static bool IsValidSkeletalMeshHeader(const FSkeletalMeshBinaryHeader& Header)
 
 static bool IsValidAnimSequenceHeader(const FAnimSequenceBinaryHeader& Header)
 {
-    if (Header.Magic != ANIM_SEQUENCE_BINARY_MAGIC)
+    if (Header.Magic != FAnimSequenceBinaryConstants::Magic)
     {
         return false;
     }
 
-    if (Header.Version != ANIM_SEQUENCE_BINARY_VERSION)
+    if (Header.BinaryVersion != FAnimSequenceBinaryConstants::BinaryVersion)
+    {
+        return false;
+    }
+
+    if (Header.ImportVersion == 0)
     {
         return false;
     }
@@ -1235,7 +1237,8 @@ bool FBinarySerializer::ReadSkeletalBounds(std::ifstream& In, FSkeletalMesh& Out
 void FBinarySerializer::WriteAnimSequenceHeader(std::ofstream& Out, const FAnimSequenceBinaryHeader& Header)
 {
     WriteUInt32LE(Out, Header.Magic);
-    WriteUInt32LE(Out, Header.Version);
+    WriteUInt32LE(Out, Header.BinaryVersion);
+    WriteUInt32LE(Out, Header.ImportVersion);
     WriteUInt64LE(Out, Header.SourceFileWriteTime);
     WriteUInt64LE(Out, Header.SourceFileSize);
     WriteUInt32LE(Out, Header.AnimStackNameHash);
@@ -1251,7 +1254,8 @@ void FBinarySerializer::WriteAnimSequenceHeader(std::ofstream& Out, const FAnimS
 bool FBinarySerializer::ReadAnimSequenceHeader(std::ifstream& In, FAnimSequenceBinaryHeader& OutHeader) const
 {
   return ReadUInt32LE(In, OutHeader.Magic)
-        && ReadUInt32LE(In, OutHeader.Version)
+        && ReadUInt32LE(In, OutHeader.BinaryVersion)
+        && ReadUInt32LE(In, OutHeader.ImportVersion)
         && ReadUInt64LE(In, OutHeader.SourceFileWriteTime)
         && ReadUInt64LE(In, OutHeader.SourceFileSize)
         && ReadUInt32LE(In, OutHeader.AnimStackNameHash)
@@ -1562,8 +1566,9 @@ bool FBinarySerializer::SaveAnimSequence(const FString& BinaryPath, const FStrin
 	const FReferenceSkeleton* ReferenceSkeleton =
 		AnimSequence.Skeleton ? &AnimSequence.Skeleton->GetReferenceSkeleton() : nullptr;
 
-    Header.Magic = ANIM_SEQUENCE_BINARY_MAGIC;
-    Header.Version = ANIM_SEQUENCE_BINARY_VERSION;
+    Header.Magic = FAnimSequenceBinaryConstants::Magic;
+    Header.BinaryVersion = FAnimSequenceBinaryConstants::BinaryVersion;
+    Header.ImportVersion = FAnimSequenceBinaryConstants::ImportVersion;
     Header.SourceFileWriteTime = GetFileWriteTimeTicks(SourcePath);
     Header.SourceFileSize = GetFileSizeBytes(SourcePath);
     Header.AnimStackNameHash = GetStableStringHash(AnimSequence.AnimStackName);

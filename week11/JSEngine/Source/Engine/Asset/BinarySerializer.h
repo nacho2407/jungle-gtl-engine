@@ -9,6 +9,13 @@ struct FSkeletalMesh;
 struct FReferenceSkeleton;
 struct FMatrix;
 
+namespace FAnimSequenceBinaryConstants
+{
+    constexpr uint32 Magic = 0x4D494E41; // 'ANIM'
+    constexpr uint32 BinaryVersion = 7;  // v7: stores separate import version
+    constexpr uint32 ImportVersion = 1;  // v1: FBX evaluated T/Q/S sampling
+}
+
 /*
  *	[주의사항]
  *	- Header나 Body 정보가 변경되면 반드시 Version을 바꿔야 합니다.
@@ -40,8 +47,9 @@ struct FSkeletalMeshBinaryHeader
 };
 struct FAnimSequenceBinaryHeader
 {
-    uint32 Magic = 0x4D494E41; //'ANIM'
-    uint32 Version = 6; // v6: read FBX animation T/Q/S channels directly
+    uint32 Magic = FAnimSequenceBinaryConstants::Magic;
+    uint32 BinaryVersion = FAnimSequenceBinaryConstants::BinaryVersion;
+    uint32 ImportVersion = FAnimSequenceBinaryConstants::ImportVersion;
     uint64 SourceFileWriteTime = 0;
     uint64 SourceFileSize = 0;
     uint32 AnimStackNameHash = 0;
