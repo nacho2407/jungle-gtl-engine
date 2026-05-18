@@ -108,6 +108,20 @@ ASSET_ALLOWED_CLASS_MAP = {
     "SkeletalMesh": "USkeletalMesh",
     "Material": "UMaterial",
     "Texture": "UTexture2D",
+    "AnimSequence": "UAnimSequence",
+    "UAnimSequence": "UAnimSequence",
+    "Skeleton": "USkeleton",
+    "USkeleton": "USkeleton",
+}
+
+ASSET_OBJECT_CLASSES = {
+    "UStaticMesh",
+    "USkeletalMesh",
+    "UMaterial",
+    "UTexture2D",
+    "UAnimSequence",
+    "UAnimSequenceBase",
+    "USkeleton",
 }
 
 
@@ -367,6 +381,25 @@ def get_object_property_class(prop: ReflectedProperty) -> str | None:
     return None
 
 
+def get_object_reference_class(cpp_type: str, allowed_class: str | None = None) -> str | None:
+    if allowed_class:
+        return allowed_class
+
+    normalized = normalize_cpp_type(cpp_type)
+    object_ptr_inner = get_tobjectptr_inner_type(normalized)
+    if object_ptr_inner:
+        return object_ptr_inner
+
+    if normalized.endswith("*"):
+        return normalized[:-1].strip()
+    return None
+
+
+def is_asset_object_reference(cpp_type: str, allowed_class: str | None = None) -> bool:
+    object_class = get_object_reference_class(cpp_type, allowed_class)
+    return object_class in ASSET_OBJECT_CLASSES
+
+
 def get_object_property_ops(prop: ReflectedProperty) -> str:
     object_class = get_object_property_class(prop) or "UObject"
     if get_tobjectptr_inner_type(prop.cpp_type):
@@ -593,6 +626,15 @@ def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum]) -> tuple[
             struct_type_expr = f"{struct_type}::StaticStruct()" if struct_type and struct_type != "Struct" else "nullptr"
             asset_type = metadata.get("assettype")
             allowed_class = infer_allowed_class(asset_type, metadata.get("allowedclass"))
+
+            if property_type == "ObjectRef" and is_asset_object_reference(cpp_type, allowed_class):
+                asset_class = get_object_reference_class(cpp_type, allowed_class) or cpp_type
+                warnings.append(
+                    f"error: {class_name}.{member_name}: asset UObject reference '{asset_class}' "
+                    "must not be reflected as FObjectProperty; use FSoftObjectPtr/FString with AssetType instead"
+                )
+                cursor = semicolon + 1
+                continue
 
             found.append(
                 ReflectedProperty(
@@ -1304,6 +1346,14 @@ def main() -> int:
         fix_generated_includes=not args.no_fix_generated_includes,
         dry_run=args.dry_run,
     )
+
+    fatal_errors = [warning for warning in warnings if warning.startswith("error: ") or ": error: " in warning]
+    if fatal_errors:
+        for warning in warnings:
+            prefix = "error" if warning in fatal_errors else "warning"
+            text = warning[7:] if warning.startswith("error: ") else warning
+            print(f"{prefix}: {text}")
+        return 1
 
     changed = 0
     for item in reflected:
