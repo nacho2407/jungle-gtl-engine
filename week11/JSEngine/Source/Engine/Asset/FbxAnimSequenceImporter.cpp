@@ -14,19 +14,194 @@
 #include <algorithm>
 #include <cmath>
 // Helper Function
-static void BuildNodeNameMap(fbxsdk::FbxNode* Node, TMap<FString, fbxsdk::FbxNode*>& OutMap)
+static void BuildNodeNameMap(fbxsdk::FbxNode* Node, TMap<FString, TArray<fbxsdk::FbxNode*>>& OutMap)
 {
     if (!Node)
     {
         return;
     }
 
-    OutMap[FString(Node->GetName())] = Node;
+    OutMap[FString(Node->GetName())].push_back(Node);
 
     for (int32 ChildIndex = 0; ChildIndex < Node->GetChildCount(); ++ChildIndex)
     {
         BuildNodeNameMap(Node->GetChild(ChildIndex), OutMap);
     }
+}
+
+static FString GetNodePath(fbxsdk::FbxNode* Node)
+{
+    if (!Node)
+    {
+        return FString("<null>");
+    }
+
+    TArray<FString> Names;
+    for (fbxsdk::FbxNode* Current = Node; Current; Current = Current->GetParent())
+    {
+        Names.push_back(FString(Current->GetName()));
+    }
+
+    FString Result;
+    for (auto It = Names.rbegin(); It != Names.rend(); ++It)
+    {
+        if (!Result.empty())
+        {
+            Result += "/";
+        }
+        Result += *It;
+    }
+
+    return Result;
+}
+
+static bool HasAncestorNode(fbxsdk::FbxNode* Node, fbxsdk::FbxNode* Ancestor)
+{
+    if (!Node || !Ancestor)
+    {
+        return false;
+    }
+
+    for (fbxsdk::FbxNode* Current = Node->GetParent(); Current; Current = Current->GetParent())
+    {
+        if (Current == Ancestor)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool HasKnownBoneAncestor(fbxsdk::FbxNode* Node, const TMap<FString, int32>& BoneNameToIndex)
+{
+    if (!Node)
+    {
+        return false;
+    }
+
+    for (fbxsdk::FbxNode* Current = Node->GetParent(); Current; Current = Current->GetParent())
+    {
+        if (BoneNameToIndex.find(FString(Current->GetName())) != BoneNameToIndex.end())
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static fbxsdk::FbxNode* ResolveBoneNodeForSkeleton(
+    int32 BoneIndex,
+    const TArray<FBoneInfo>& Bones,
+    const TMap<FString, TArray<fbxsdk::FbxNode*>>& NodeNameMap,
+    const TMap<FString, int32>& BoneNameToIndex,
+    TArray<fbxsdk::FbxNode*>& BoneNodes,
+    TArray<uint8>& ResolveState,
+    const FString& SourcePath)
+{
+    if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(Bones.size()))
+    {
+        return nullptr;
+    }
+
+    if (ResolveState[BoneIndex] == 2)
+    {
+        return BoneNodes[BoneIndex];
+    }
+
+    if (ResolveState[BoneIndex] == 1)
+    {
+        UE_LOG_WARNING("[FbxAnimSequenceImporter] Cyclic reference skeleton parent chain. Bone=%s Fbx=%s",
+                       Bones[BoneIndex].Name.ToString().c_str(),
+                       SourcePath.c_str());
+        return nullptr;
+    }
+
+    ResolveState[BoneIndex] = 1;
+
+    const FBoneInfo& Bone = Bones[BoneIndex];
+    fbxsdk::FbxNode* ParentBoneNode = nullptr;
+    if (Bone.ParentIndex >= 0 && Bone.ParentIndex < static_cast<int32>(Bones.size()))
+    {
+        ParentBoneNode = ResolveBoneNodeForSkeleton(
+            Bone.ParentIndex,
+            Bones,
+            NodeNameMap,
+            BoneNameToIndex,
+            BoneNodes,
+            ResolveState,
+            SourcePath);
+    }
+
+    const FString BoneNameString = Bone.Name.ToString();
+    auto CandidatesIt = NodeNameMap.find(BoneNameString);
+    if (CandidatesIt == NodeNameMap.end() || CandidatesIt->second.empty())
+    {
+        ResolveState[BoneIndex] = 2;
+        return nullptr;
+    }
+
+    const TArray<fbxsdk::FbxNode*>& Candidates = CandidatesIt->second;
+    fbxsdk::FbxNode* SelectedNode = nullptr;
+    int32 MatchCount = 0;
+
+    if (ParentBoneNode)
+    {
+        for (fbxsdk::FbxNode* Candidate : Candidates)
+        {
+            if (HasAncestorNode(Candidate, ParentBoneNode))
+            {
+                if (!SelectedNode)
+                {
+                    SelectedNode = Candidate;
+                }
+                ++MatchCount;
+            }
+        }
+    }
+    else
+    {
+        for (fbxsdk::FbxNode* Candidate : Candidates)
+        {
+            if (!HasKnownBoneAncestor(Candidate, BoneNameToIndex))
+            {
+                if (!SelectedNode)
+                {
+                    SelectedNode = Candidate;
+                }
+                ++MatchCount;
+            }
+        }
+    }
+
+    if (!SelectedNode)
+    {
+        SelectedNode = Candidates[0];
+    }
+
+    if (Candidates.size() > 1)
+    {
+        UE_LOG_WARNING("[FbxAnimSequenceImporter] Duplicate FBX bone node names. Bone=%s Candidates=%zu HierarchyMatches=%d Selected=%s Fbx=%s",
+                       BoneNameString.c_str(),
+                       Candidates.size(),
+                       MatchCount,
+                       GetNodePath(SelectedNode).c_str(),
+                       SourcePath.c_str());
+    }
+
+    if (ParentBoneNode && !HasAncestorNode(SelectedNode, ParentBoneNode))
+    {
+        UE_LOG_WARNING("[FbxAnimSequenceImporter] Bone node hierarchy mismatch. Bone=%s Selected=%s ExpectedParent=%s Fbx=%s",
+                       BoneNameString.c_str(),
+                       GetNodePath(SelectedNode).c_str(),
+                       GetNodePath(ParentBoneNode).c_str(),
+                       SourcePath.c_str());
+    }
+
+    BoneNodes[BoneIndex] = SelectedNode;
+    ResolveState[BoneIndex] = 2;
+    return SelectedNode;
 }
 
 static fbxsdk::FbxAnimStack* GetFirstAnimStack(fbxsdk::FbxScene* Scene)
@@ -190,19 +365,37 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
     const float SequenceLength = static_cast<float>(DurationSeconds);
     const int32 NumberOfFrames = static_cast<int32>(std::floor(SequenceLength * FrameRate)) + 1;
 
-    TMap<FString, fbxsdk::FbxNode*> NodeNameMap;
+    TMap<FString, TArray<fbxsdk::FbxNode*>> NodeNameMap;
     BuildNodeNameMap(Context.Scene->GetRootNode(), NodeNameMap);
 
-    TArray<fbxsdk::FbxNode*> BoneNodes;
-    BoneNodes.resize(Bones.size(), nullptr);
+    TMap<FString, int32> BoneNameToIndex;
     for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
     {
         const FString BoneNameString = Bones[BoneIndex].Name.ToString();
-        auto NodeIt = NodeNameMap.find(BoneNameString);
-        if (NodeIt != NodeNameMap.end())
+        if (BoneNameToIndex.find(BoneNameString) != BoneNameToIndex.end())
         {
-            BoneNodes[BoneIndex] = NodeIt->second;
+            UE_LOG_WARNING("[FbxAnimSequenceImporter] Duplicate target skeleton bone names. Bone=%s Target=%s",
+                           BoneNameString.c_str(),
+                           TargetSkeletalMeshPath.c_str());
+            continue;
         }
+        BoneNameToIndex[BoneNameString] = BoneIndex;
+    }
+
+    TArray<fbxsdk::FbxNode*> BoneNodes;
+    BoneNodes.resize(Bones.size(), nullptr);
+    TArray<uint8> ResolveState;
+    ResolveState.resize(Bones.size(), 0);
+    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
+    {
+        ResolveBoneNodeForSkeleton(
+            BoneIndex,
+            Bones,
+            NodeNameMap,
+            BoneNameToIndex,
+            BoneNodes,
+            ResolveState,
+            Path);
     }
 
     TArray<FAnimationTrack> Tracks;
