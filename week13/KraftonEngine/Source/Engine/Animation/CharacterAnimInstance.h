@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Animation/AnimInstance.h"
 #include "Object/FName.h"
@@ -24,21 +24,23 @@ public:
 	~UCharacterAnimInstance() override = default;
 
 	// 외부 push 변수 — transition Condition 람다가 이 값을 읽음.
+	UPROPERTY(Edit, Category="Animation|Character", DisplayName="Speed", Min=0.0f, Max=100.0f, Speed=0.5f)
 	float Speed = 0.0f;
 
 	// 자동 구동(데모). false 로 두면 외부가 Speed 를 직접 갱신해야 함.
+	UPROPERTY(Edit, Save, Category="Animation|Character", DisplayName="Auto Drive Speed")
 	bool  bAutoDriveSpeed = true;
+	UPROPERTY(Edit, Save, Category="Animation|Character", DisplayName="Speed Threshold", Min=0.0f, Max=50.0f, Speed=0.1f)
 	float SpeedThreshold  = 10.0f;   // Idle ↔ Walk 임계값
+	UPROPERTY(Edit, Save, Category="Animation|Character", DisplayName="Auto Period (s)", Min=0.1f, Max=30.0f, Speed=0.1f)
 	float AutoPeriodSec   = 6.0f;    // Speed sin 한 사이클 길이
+	UPROPERTY(Edit, Save, Category="Animation|Character", DisplayName="Auto Speed Amp", Min=0.0f, Max=100.0f, Speed=0.5f)
 	float AutoSpeedAmp    = 15.0f;   // Speed 진폭 (Speed ∈ [0, 2*Amp])
 
 	// UAnimInstance:
 	void NativeInitializeAnimation() override;
 	void NativeUpdateAnimation(float DeltaSeconds) override;
 	void EvaluateAnimation(FPoseContext& Output) override;
-
-	// Editor 노출 — Speed 등 데모 파라미터. PostEdit 처리 불필요 (직접 멤버 mutation).
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	// PIE Duplicate / Scene save — Editor-set 데모 파라미터 라운드트립.
 	void Serialize(FArchive& Ar) override;

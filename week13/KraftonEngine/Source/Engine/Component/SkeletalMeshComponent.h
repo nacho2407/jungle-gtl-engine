@@ -41,7 +41,7 @@ public:
     // SingleNode 모드용 헬퍼. Custom 모드에선 무시 (자체 인스턴스가 자체 시퀀스를 관리).
     void SetAnimation(UAnimSequenceBase* InAsset);
     bool CanUseAnimation(UAnimSequenceBase* InAsset) const;
-    UAnimSequenceBase* GetAnimation() const { return AnimationData.AnimToPlay; }
+    UAnimSequenceBase* GetAnimation() const { return AnimationData.AnimToPlay.Get(); }
     void SetPlayRate(float InRate);
     void SetLooping(bool bInLoop);
     void SetPlaying(bool bInPlay);
@@ -64,7 +64,7 @@ public:
     void ClearAnimInstance();
 
     // Editor / 직렬화 통합.
-    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    void GetEditableProperties(TArray<FPropertyValue>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
     void Serialize(FArchive& Ar) override;
 
@@ -80,8 +80,11 @@ private:
 
 protected:
     // Animation 런타임 상태.
+    UPROPERTY(Edit, Save, Category="Animation", DisplayName="Animation Mode", Enum=EAnimationMode)
     EAnimationMode             AnimationMode = EAnimationMode::None;
+    UPROPERTY(Edit, Save, Category="Animation", DisplayName="Animation Data", Type=Struct)
     FSingleAnimationPlayData   AnimationData;
+    UPROPERTY(Edit, Save, Category="Animation", DisplayName="Anim Instance Class", Type=ClassRef, AllowedClass=UAnimInstance)
     TSubclassOf<UAnimInstance> AnimInstanceClass;
     UAnimInstance*             AnimInstance  = nullptr;
 
