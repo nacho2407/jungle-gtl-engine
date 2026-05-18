@@ -41,8 +41,10 @@ struct FSkeletalMeshBinaryHeader
 struct FAnimSequenceBinaryHeader
 {
     uint32 Magic = 0x4D494E41; //'ANIM'
-    uint32 Version = 2; // v2: engine-local animation tracks from global samples
+    uint32 Version = 3; // v3: source size and anim stack identity validation
     uint64 SourceFileWriteTime = 0;
+    uint64 SourceFileSize = 0;
+    uint32 AnimStackNameHash = 0;
 
     float SequenceLength = 0.0f;
     float FrameRate = 30.0f;

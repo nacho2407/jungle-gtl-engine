@@ -58,7 +58,7 @@ constexpr uint32 MAX_SKELETAL_MESH_BONE_COUNT     = 65'536;
 constexpr uint32 MAX_SKELETAL_MESH_SOCKET_COUNT   = 1024;
 
 constexpr uint32 ANIM_SEQUENCE_BINARY_MAGIC = 0x4D494E41; // 'ANIM'
-constexpr uint32 ANIM_SEQUENCE_BINARY_VERSION = 2;       // v2: engine-local animation tracks from global samples
+constexpr uint32 ANIM_SEQUENCE_BINARY_VERSION = 3;       // v3: source size and anim stack identity validation
 
 constexpr uint32 MAX_ANIM_SEQUENCE_TRACK_COUNT = 65'536;
 constexpr uint32 MAX_ANIM_SEQUENCE_KEY_COUNT = 1'000'000;
@@ -161,6 +161,11 @@ static bool IsValidAnimSequenceHeader(const FAnimSequenceBinaryHeader& Header)
         return false;
     }
 
+    if (Header.SourceFileWriteTime == 0 || Header.SourceFileSize == 0)
+    {
+        return false;
+    }
+
     if (Header.FrameRate <= 0.0f)
     {
         return false;
@@ -193,6 +198,32 @@ static uint64 GetFileWriteTimeTicks(const FString& Path)
 	auto WriteTime = fs::last_write_time(FilePath);
 	auto Duration = WriteTime.time_since_epoch();
 	return static_cast<uint64>(std::chrono::duration_cast<std::chrono::seconds>(Duration).count());
+}
+
+static uint64 GetFileSizeBytes(const FString& Path)
+{
+	namespace fs = std::filesystem;
+
+	fs::path FilePath(FPaths::ToAbsolute(FPaths::ToWide(Path)));
+	if (!fs::exists(FilePath))
+	{
+		return 0;
+	}
+
+	std::error_code Ec;
+	const uint64 FileSize = static_cast<uint64>(fs::file_size(FilePath, Ec));
+	return Ec ? 0 : FileSize;
+}
+
+static uint32 GetStableStringHash(const FString& String)
+{
+	uint32 Hash = 2166136261u;
+	for (unsigned char C : String)
+	{
+		Hash ^= static_cast<uint32>(C);
+		Hash *= 16777619u;
+	}
+	return Hash;
 }
 
 /* Primitive LE Writers */
@@ -1137,6 +1168,8 @@ void FBinarySerializer::WriteAnimSequenceHeader(std::ofstream& Out, const FAnimS
     WriteUInt32LE(Out, Header.Magic);
     WriteUInt32LE(Out, Header.Version);
     WriteUInt64LE(Out, Header.SourceFileWriteTime);
+    WriteUInt64LE(Out, Header.SourceFileSize);
+    WriteUInt32LE(Out, Header.AnimStackNameHash);
 
     WriteFloatLE(Out, Header.SequenceLength);
     WriteFloatLE(Out, Header.FrameRate);
@@ -1149,6 +1182,8 @@ bool FBinarySerializer::ReadAnimSequenceHeader(std::ifstream& In, FAnimSequenceB
   return ReadUInt32LE(In, OutHeader.Magic)
         && ReadUInt32LE(In, OutHeader.Version)
         && ReadUInt64LE(In, OutHeader.SourceFileWriteTime)
+        && ReadUInt64LE(In, OutHeader.SourceFileSize)
+        && ReadUInt32LE(In, OutHeader.AnimStackNameHash)
         && ReadFloatLE(In, OutHeader.SequenceLength)
         && ReadFloatLE(In, OutHeader.FrameRate)
         && ReadInt32LE(In, OutHeader.NumberOfFrames)
@@ -1454,6 +1489,8 @@ bool FBinarySerializer::SaveAnimSequence(const FString& BinaryPath, const FStrin
     Header.Magic = ANIM_SEQUENCE_BINARY_MAGIC;
     Header.Version = ANIM_SEQUENCE_BINARY_VERSION;
     Header.SourceFileWriteTime = GetFileWriteTimeTicks(SourcePath);
+    Header.SourceFileSize = GetFileSizeBytes(SourcePath);
+    Header.AnimStackNameHash = GetStableStringHash(AnimSequence.AnimStackName);
     Header.SequenceLength = DataModel->SequenceLength;
     Header.FrameRate = DataModel->FrameRate;
     Header.NumberOfFrames = DataModel->NumberOfFrames;

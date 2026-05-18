@@ -39,6 +39,31 @@ namespace
 		return true;
 #endif
 	}
+
+	uint64 GetFileSizeBytes(const FString& Path)
+	{
+		const FString NormalizedPath = FPaths::Normalize(Path);
+		std::filesystem::path FilePath(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)));
+		if (!std::filesystem::exists(FilePath))
+		{
+			return 0;
+		}
+
+		std::error_code Ec;
+		const uint64 FileSize = static_cast<uint64>(std::filesystem::file_size(FilePath, Ec));
+		return Ec ? 0 : FileSize;
+	}
+
+	uint32 GetStableStringHash(const FString& String)
+	{
+		uint32 Hash = 2166136261u;
+		for (unsigned char C : String)
+		{
+			Hash ^= static_cast<uint32>(C);
+			Hash *= 16777619u;
+		}
+		return Hash;
+	}
 }
 
 #pragma region __BINARY__
@@ -875,7 +900,7 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, 
 	const FString BinaryPath = FAssetPathPolicy::MakeWritableAnimSequenceCacheBinaryPath(NormalizedSource, NormalizedTarget, AnimStackName);
 	UAnimSequence* Anim = UObjectManager::Get().CreateObject<UAnimSequence>();
 
-	if (IsAnimSequenceBinaryValid(NormalizedSource, BinaryPath) && BinarySerializer.LoadAnimSequence(BinaryPath, *Anim))
+	if (IsAnimSequenceBinaryValid(NormalizedSource, BinaryPath, AnimStackName) && BinarySerializer.LoadAnimSequence(BinaryPath, *Anim))
 	{
 		Anim->Skeleton = TargetMesh->GetSkeleton();
 
@@ -926,7 +951,7 @@ TArray<FString> FResourceManager::GetAnimSequencePaths() const
 	return AnimSequenceFilePaths;
 }
 
-bool FResourceManager::IsAnimSequenceBinaryValid(const FString& SourcePath, const FString& BinaryPath) const
+bool FResourceManager::IsAnimSequenceBinaryValid(const FString& SourcePath, const FString& BinaryPath, const FString& AnimStackName) const
 {
 	FAnimSequenceBinaryHeader Header;
 	const FString NormalizedBinaryPath = FPaths::Normalize(BinaryPath);
@@ -942,7 +967,25 @@ bool FResourceManager::IsAnimSequenceBinaryValid(const FString& SourcePath, cons
 		return false;
 	}
 
-	return Header.SourceFileWriteTime == SourceWriteTime;
+	const uint64 SourceFileSize = GetFileSizeBytes(SourcePath);
+	if (SourceFileSize == 0)
+	{
+		return false;
+	}
+
+	if (Header.SourceFileWriteTime != SourceWriteTime ||
+		Header.SourceFileSize != SourceFileSize)
+	{
+		return false;
+	}
+
+	if (!AnimStackName.empty() &&
+		Header.AnimStackNameHash != GetStableStringHash(AnimStackName))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 bool FResourceManager::SaveSkeletalMesh(USkeletalMesh* Mesh)
