@@ -367,8 +367,10 @@ def make_runtime_property_flags(metadata):
     flags = [
         'EPropertyFlags::Read',
         'EPropertyFlags::Write',
-        'EPropertyFlags::Edit',
     ]
+
+    if get_metadata_value(metadata, 'NoEdit') is None:
+        flags.append('EPropertyFlags::Edit')
 
     if get_metadata_value(metadata, 'Transient') is not None:
         flags.append('EPropertyFlags::Transient')

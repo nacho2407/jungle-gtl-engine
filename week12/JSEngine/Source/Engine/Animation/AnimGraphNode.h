@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreMinimal.h"
 #include "Core/Reflection/ReflectionMacros.h"
@@ -94,7 +94,7 @@ struct FAnimGraphNodeDesc
 	EAnimGraphNodeType Type = EAnimGraphNodeType::SequencePlayer;
 	UPROPERTY()
 	FString Name;
-	UPROPERTY()
+	UPROPERTY(NoEdit)
 	FVector2 Position = FVector2(0.0f, 0.0f);
 
 	UPROPERTY()
@@ -111,13 +111,3 @@ struct FAnimGraphNodeDesc
 };
 
 FString AnimGraphNodeTypeToString(EAnimGraphNodeType Type);
-EAnimGraphNodeType AnimGraphNodeTypeFromString(const FString& Value);
-FString TransitionConditionTypeToString(EAnimTransitionConditionType Type);
-EAnimTransitionConditionType TransitionConditionTypeFromString(const FString& Value);
-
-struct FArchive;
-FArchive& operator<<(FArchive& Ar, FAnimTransitionConditionDesc& Desc);
-FArchive& operator<<(FArchive& Ar, FAnimStateTransitionDesc& Desc);
-FArchive& operator<<(FArchive& Ar, FAnimStateDesc& Desc);
-FArchive& operator<<(FArchive& Ar, FAnimStateMachineDesc& Desc);
-FArchive& operator<<(FArchive& Ar, FAnimGraphNodeDesc& Desc);
