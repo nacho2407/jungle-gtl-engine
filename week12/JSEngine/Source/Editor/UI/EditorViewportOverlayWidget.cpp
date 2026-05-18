@@ -827,16 +827,20 @@ void FEditorViewportOverlayWidget::RenderGroupedStatOverlay(float DeltaTime)
             const FSkinningStatsFrame& SkinStats = FSkinningStats::Get().GetSnapshot();
             ImGui::Spacing();
             ImGui::Separator();
-            ImGui::TextUnformatted("[ Skinning ]");
-            ImGui::Text("CPU Frame       : %.3f ms", SkinStats.CPUFrameTimeMs);
+            ImGui::TextUnformatted("[ Frame ]");
+            ImGui::Text("CPU             : %.3f ms", SkinStats.CPUFrameTimeMs);
             if (FSkinningStats::Get().ShouldCollectGPUStats())
             {
-                ImGui::Text("GPU Frame       : %.3f ms", SkinStats.GPUFrameTimeMs);
+                ImGui::Text("GPU             : %.3f ms", SkinStats.GPUFrameTimeMs);
             }
             else
             {
-                ImGui::TextUnformatted("GPU Frame       : Disabled");
+                ImGui::TextUnformatted("GPU             : Disabled");
             }
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::TextUnformatted("[ Skinning ]");
             ImGui::Text("CPU Anim/Pose   : %.3f / %.3f ms", SkinStats.CPUAnimationUpdateMs, SkinStats.CPUPoseBuildMs);
             ImGui::Text("CPU Skin/Upload : %.3f / %.3f ms", SkinStats.CPUSkinningMs, SkinStats.CPUSkinnedVertexBufferUploadMs);
             ImGui::Text("Upload Bytes    : CPU %.2f KB / Bone %.2f KB",
