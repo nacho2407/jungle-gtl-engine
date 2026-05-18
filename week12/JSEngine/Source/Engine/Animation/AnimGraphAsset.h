@@ -12,9 +12,9 @@ public:
 
 	void Serialize(FArchive& Ar) override;
 
-	UPROPERTY()
+	UPROPERTY(NoEdit)
 	TArray<FAnimGraphNodeDesc> Nodes;
-	UPROPERTY()
+	UPROPERTY(NoEdit)
 	int32 RootNodeId = -1;
 
 	const FAnimGraphNodeDesc* FindNode(int32 NodeId) const;

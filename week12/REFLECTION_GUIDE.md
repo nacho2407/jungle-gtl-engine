@@ -112,6 +112,26 @@ LuaWrite
 Lua에서 이 프로퍼티 값을 쓸 수 있다는 표시입니다.
 LuaRead, LuaWrite 둘 다 없다면 Lua 바인딩 대상이 아닙니다.
 
+NoEdit
+    리플렉션/직렬화 대상에는 남기지만 `EPropertyFlags::Edit`는 붙이지 않습니다.
+    즉 저장과 내부 리플렉션에는 사용하되, generic Details 패널 자동 렌더링에서는 제외합니다.
+
+    예시:
+
+    ```cpp
+    UPROPERTY(NoEdit)
+    TArray<FAnimGraphNodeDesc> Nodes;
+
+    UPROPERTY(NoEdit)
+    int32 RootNodeId = -1;
+    ```
+
+    전용 에디터 UI가 이미 있는 데이터에 사용합니다. 예를 들어 AnimGraph 노드는
+    `EditorAnimGraphWidget`이 직접 `Name`, `Position`, `AnimationPath`, `PlayRate`,
+    `bLoop` 등을 렌더링하므로, 같은 필드가 generic property widget에서 다시
+    자동 렌더링되면 ImGui ID stack 안에 `"Name"` / `"Position"` 같은 visible label이
+    중복되어 conflicting ID 오류가 날 수 있습니다.
+
 Min, ClampMin, UIMin
 Max, ClampMax, UIMax
 Speed 또는 Step

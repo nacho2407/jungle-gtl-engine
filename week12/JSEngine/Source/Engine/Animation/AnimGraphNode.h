@@ -88,36 +88,26 @@ struct FAnimGraphNodeDesc
 {
 	GENERATED_STRUCT_BODY(FAnimGraphNodeDesc)
 
-	UPROPERTY()
+	UPROPERTY(NoEdit)
 	int32 NodeId = -1;
-	UPROPERTY()
+	UPROPERTY(NoEdit)
 	EAnimGraphNodeType Type = EAnimGraphNodeType::SequencePlayer;
-	UPROPERTY()
+	UPROPERTY(NoEdit)
 	FString Name;
-	UPROPERTY()
+	UPROPERTY(NoEdit)
 	FVector2 Position = FVector2(0.0f, 0.0f);
 
-	UPROPERTY()
+	UPROPERTY(NoEdit)
 	FString AnimationPath;
-	UPROPERTY()
+	UPROPERTY(NoEdit)
 	float PlayRate = 1.0f;
-	UPROPERTY()
+	UPROPERTY(NoEdit)
 	bool bLoop = true;
 
-	UPROPERTY()
+	UPROPERTY(NoEdit)
 	int32 InputPoseNodeId = -1;
-	UPROPERTY()
+	UPROPERTY(NoEdit)
 	FAnimStateMachineDesc StateMachine;
 };
 
 FString AnimGraphNodeTypeToString(EAnimGraphNodeType Type);
-EAnimGraphNodeType AnimGraphNodeTypeFromString(const FString& Value);
-FString TransitionConditionTypeToString(EAnimTransitionConditionType Type);
-EAnimTransitionConditionType TransitionConditionTypeFromString(const FString& Value);
-
-struct FArchive;
-FArchive& operator<<(FArchive& Ar, FAnimTransitionConditionDesc& Desc);
-FArchive& operator<<(FArchive& Ar, FAnimStateTransitionDesc& Desc);
-FArchive& operator<<(FArchive& Ar, FAnimStateDesc& Desc);
-FArchive& operator<<(FArchive& Ar, FAnimStateMachineDesc& Desc);
-FArchive& operator<<(FArchive& Ar, FAnimGraphNodeDesc& Desc);
