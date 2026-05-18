@@ -93,6 +93,32 @@ static float GetSceneFrameRate(fbxsdk::FbxScene* Scene)
 
     return Rate > 0.0 ? static_cast<float>(Rate) : 30.0f;
 }
+
+static FMatrix EvaluateEngineLocalBoneMatrix(
+    fbxsdk::FbxNode* BoneNode,
+    fbxsdk::FbxNode* ParentBoneNode,
+    fbxsdk::FbxTime SampleTime)
+{
+    if (!BoneNode)
+    {
+        return FMatrix::Identity;
+    }
+
+    const FMatrix BoneGlobal =
+        FFbxTransformUtils::ToFMatrix(BoneNode->EvaluateGlobalTransform(SampleTime));
+
+    if (!ParentBoneNode)
+    {
+        return BoneGlobal;
+    }
+
+    const FMatrix ParentGlobal =
+        FFbxTransformUtils::ToFMatrix(ParentBoneNode->EvaluateGlobalTransform(SampleTime));
+
+    // Runtime pose composition is Local * ParentGlobal, so import local is Global * ParentGlobal^-1.
+    return BoneGlobal * ParentGlobal.GetInverse();
+}
+
 UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, const FString& TargetSkeletalMeshPath, USkeletalMesh* TargetSkeletalMesh)
 {	
 	return LoadAnimSequence(Path, TargetSkeletalMeshPath, FString(), TargetSkeletalMesh);
@@ -167,6 +193,18 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
     TMap<FString, fbxsdk::FbxNode*> NodeNameMap;
     BuildNodeNameMap(Context.Scene->GetRootNode(), NodeNameMap);
 
+    TArray<fbxsdk::FbxNode*> BoneNodes;
+    BoneNodes.resize(Bones.size(), nullptr);
+    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
+    {
+        const FString BoneNameString = Bones[BoneIndex].Name.ToString();
+        auto NodeIt = NodeNameMap.find(BoneNameString);
+        if (NodeIt != NodeNameMap.end())
+        {
+            BoneNodes[BoneIndex] = NodeIt->second;
+        }
+    }
+
     TArray<FAnimationTrack> Tracks;
     Tracks.reserve(Bones.size());
     for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
@@ -177,8 +215,8 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
         FAnimationTrack Track;
         Track.BoneName = Bone.Name;
         Track.BoneIndex = BoneIndex;
-        auto NodeIt = NodeNameMap.find(BoneNameString);
-        if (NodeIt == NodeNameMap.end() || !NodeIt->second)
+        fbxsdk::FbxNode* BoneNode = BoneNodes[BoneIndex];
+        if (!BoneNode)
         {
             UE_LOG_WARNING("[FbxAnimSequenceImporter] Bone node not found. Bone=%s Fbx=%s", BoneNameString.c_str(), Path.c_str());
             FTransform BindTransform(Bone.LocalBindTransform);
@@ -194,7 +232,6 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
             Tracks.push_back(Track);
             continue;
         }
-        fbxsdk::FbxNode* BoneNode = NodeIt->second;
         FRawAnimSequenceTrack& Raw = Track.InternalTrackData;
 
         Raw.PosKeys.reserve(NumberOfFrames);
@@ -212,13 +249,21 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
 
             SampleTime.SetSecondDouble(StartSeconds + static_cast<double>(LocalSeconds));
 
-            const fbxsdk::FbxAMatrix LocalTransform = BoneNode->EvaluateLocalTransform(SampleTime);
+            fbxsdk::FbxNode* ParentBoneNode = nullptr;
+            if (Bone.ParentIndex >= 0 && Bone.ParentIndex < static_cast<int32>(BoneNodes.size()))
+            {
+                ParentBoneNode = BoneNodes[Bone.ParentIndex];
+            }
 
-            const FVector Translation = FFbxTransformUtils::ToFVector(LocalTransform.GetT());
+            const FMatrix LocalMatrix =
+                EvaluateEngineLocalBoneMatrix(BoneNode, ParentBoneNode, SampleTime);
+            const FTransform LocalTransform(LocalMatrix);
 
-            FQuat Rotation = FFbxTransformUtils::ToFQuat(LocalTransform.GetQ());
+            const FVector Translation = LocalTransform.GetTranslation();
 
-            const FVector Scale = FFbxTransformUtils::ToFVector(LocalTransform.GetS());
+            FQuat Rotation = LocalTransform.GetRotation();
+
+            const FVector Scale = LocalTransform.GetScale3D();
             if (!Raw.RotKeys.empty() && FQuat::DotProduct(Raw.RotKeys.back(), Rotation) < 0.0f)
                 Rotation = Rotation * -1.0f;
 
