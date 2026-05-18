@@ -335,6 +335,8 @@ void UAnimSequence::Serialize(FArchive& Ar)
 
     Ar << AssetPathFileName;
     Ar << TargetSkeleton;
+    Ar << bForceRootLock;
+    Ar << RootMotionBoneName;
 
     if (!DataModel)
     {
@@ -536,6 +538,14 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
 
         const FRawAnimSequenceTrack& Raw = Track.InternalTrackData;
         FTransform Result = Output.Pose[BoneIndex];
+        const FVector BindLocation = Result.Location;   // pre-anim local (ResetToRefPose 결과)
+
+        // Force Root Lock — 이 본의 horizontal (X/Y) translation 을 bind 로 고정.
+        const bool bSuppressHorizontalTranslation =
+            bForceRootLock &&
+            !RootMotionBoneName.empty() &&
+            !Track.BoneName.empty() &&
+            Track.BoneName == RootMotionBoneName;
 
         if (!Raw.PosKeys.empty())
         {
@@ -545,6 +555,13 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
             if (P0 && P1)
             {
                 Result.Location = *P0 + (*P1 - *P0) * Alpha;
+                if (bSuppressHorizontalTranslation)
+                {
+                    // X/Y 는 bind 유지 → 캐릭터가 horizontal 로 안 움직임.
+                    // Z 는 anim 결과 그대로 → 발걸음 bobbing 살림.
+                    Result.Location.X = BindLocation.X;
+                    Result.Location.Y = BindLocation.Y;
+                }
             }
         }
 

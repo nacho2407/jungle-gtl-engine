@@ -68,7 +68,7 @@ public:
 	// CharacterMovement 의 bOrientRotationToMovement 와 동시 true 면 Movement 가 마지막 우선 —
 	// 보통 둘 중 하나만 켜는 것이 일반적.
 	bool bUseControllerRotationPitch = true;
-	bool bUseControllerRotationYaw   = true;
+	bool bUseControllerRotationYaw   = false;
 	bool bUseControllerRotationRoll  = false;
 
 protected:
