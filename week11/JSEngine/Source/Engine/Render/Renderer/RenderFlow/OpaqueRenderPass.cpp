@@ -74,6 +74,13 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
        Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);  
        Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
 
+        if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh && RenderBus->GetSkinningMode() == ESkinningMode::GPU)
+        {
+            Context->RenderResources->SkinningBuffer.Update(Context->DeviceContext, &Cmd.Constants.Skinning, sizeof(FSkinningConstants));
+            ID3D11Buffer* cb5 = Context->RenderResources->SkinningBuffer.GetBuffer();
+            Context->DeviceContext->VSSetConstantBuffers(5, 1, &cb5);
+        }
+
 	   ID3D11ShaderResourceView *ShadowSRV = FShadowAtlasManager::Get().GetSRV();
 	   Context->DeviceContext->PSSetShaderResources(10, 1, &ShadowSRV);
        ID3D11ShaderResourceView* PointShadowCubeSRV = FShadowAtlasManager::Get().GetCubeSRV();
@@ -124,6 +131,14 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            PermutationKey |= (uint32)EShaderFeature::ClusterCull;
        else if (RenderBus->GetLightCullMode() == ELightCullMode::Tiled)
            PermutationKey |= (uint32)EShaderFeature::TileCull;
+
+       if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh &&
+           RenderBus->GetSkinningMode() == ESkinningMode::GPU)
+       {
+           PermutationKey |= (uint32)EShaderFeature::Skeletal;
+           PermutationKey |= (uint32)EShaderFeature::GpuSkinning;
+       }
+
        bool bShadowApplied = false; // 추가
 
 	   // ShadowMap Permutation Key 조합
@@ -205,9 +220,6 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            Program->Bind(Context->DeviceContext);
            Cmd.Material->BindRenderStates(Context->DeviceContext);
            Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
-
-           // 현재는 CPU Skinning이라 추가 바인딩이 없지만, GPU Skinning에서는 여기서 Bone Buffer가 붙습니다.
-           BindVertexFactoryResources(Context->DeviceContext, Cmd.VertexFactoryType, Cmd);
        }
 
        auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);

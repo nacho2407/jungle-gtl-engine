@@ -5,6 +5,7 @@
 class FResourceManager;
 class USkeletalMesh;
 struct FSkeletalMesh;
+struct FReferenceSkeleton;
 
 class FSkeletalMeshLoadService
 {
@@ -19,7 +20,7 @@ private:
 
 	// 로드된 FSkeletalMesh 데이터 후처리:
 	// material slot resolve → USkeletalMesh wrap → cache 등록.
-	USkeletalMesh* FinalizeLoadedMesh(FSkeletalMesh* MeshData, const FString& ResolvePath, const FString& CacheKey);
+	USkeletalMesh* FinalizeLoadedMesh(FSkeletalMesh* MeshData, FReferenceSkeleton ReferenceSkeleton, const FString& ResolvePath, const FString& CacheKey);
 
 	FResourceManager& ResourceManager;
 };

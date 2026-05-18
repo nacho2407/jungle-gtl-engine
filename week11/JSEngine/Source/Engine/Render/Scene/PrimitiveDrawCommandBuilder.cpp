@@ -129,19 +129,23 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
         if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData()) return true;
 
-        SkeletalMeshComp->EnsureSkinningUpdated();
-        const bool bNeedsUpload = SkeletalMeshComp->ConsumeRenderStateDirty();
-
-        const TArray<FSkeletalMeshVertex>& SkinnedVertices = SkeletalMeshComp->GetSkinnedVertices();
-        const TArray<uint32>& Indices = SkeletalMesh->GetIndices(); // 이건 immutable이라 걍 asset에서 들고와도 댐
-
-        FMeshBuffer* MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
-            SkeletalMeshComp->GetUUID(),
-            SkeletalMesh,
-            SkinnedVertices,
-            Indices,
-            bNeedsUpload);
-        if (!MeshBuffer) return true;
+        FMeshBuffer* MeshBuffer = nullptr;
+        if (RenderBus.GetSkinningMode() == ESkinningMode::CPU)
+        {
+            SkeletalMeshComp->EnsureCPUSkinnedVerticesUpdated();
+            const bool bNeedsUpload = SkeletalMeshComp->ConsumeRenderStateDirty();
+            MeshBuffer = MeshBufferManager.GetCPUSkinnedMeshBuffer(
+                SkeletalMeshComp->GetUUID(),
+                SkeletalMesh,
+                SkeletalMeshComp->GetSkinnedVertices(),
+                SkeletalMesh->GetIndices(),
+                bNeedsUpload);
+        }
+        else if (RenderBus.GetSkinningMode() == ESkinningMode::GPU)
+        {
+            SkeletalMeshComp->EnsurePoseUpdated();
+            MeshBuffer = MeshBufferManager.GetGPUSkinningSourceBuffer(SkeletalMesh);
+        }
 
         const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();
         if (Sections.empty()) // fallback
@@ -177,6 +181,17 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.Type = ERenderCommandType::SkeletalMesh;
             Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
             Cmd.MeshBuffer = MeshBuffer;
+
+            if (RenderBus.GetSkinningMode() == ESkinningMode::CPU)
+            {
+                // TODO: Bone weight visualization에서 필요
+            }
+            else
+            {
+                std::memcpy(Cmd.Constants.Skinning.BoneMatrices,
+                    SkeletalMeshComp->GetSkinningMatrices().data(),
+                    SkeletalMeshComp->GetSkinningMatrices().size() * sizeof(FMatrix));
+            }
 
             Cmd.SectionIndexStart = Section.StartIndex;
             Cmd.SectionIndexCount = Section.IndexCount;

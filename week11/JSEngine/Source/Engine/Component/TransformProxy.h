@@ -113,6 +113,7 @@ public:
     virtual FMatrix GetTransform() const override
     {
         if (!SkelComp) return FMatrix::Identity;
+        SkelComp->EnsurePoseUpdated();
         return SkelComp->GetBoneGlobalTransform(BoneIndex);
     }
 
@@ -136,6 +137,7 @@ public:
     {
         if (!SkelComp)
             return FMatrix::Identity;
+        SkelComp->EnsurePoseUpdated();
         return SkelComp->GetSocketTransform(SocketName).ToMatrixWithScale();
     }
 
@@ -152,6 +154,8 @@ public:
         {
             if (Socket.Name != SocketName)
                 continue;
+
+            SkelComp->EnsurePoseUpdated();
 
             FTransform TargetWorld(M);
             TargetWorld.NormalizeRotation();
@@ -174,7 +178,7 @@ public:
 
             Socket.RelativeScale = SafeScale;
 
-            SkelComp->MarkSkinningDirty();
+            SkelComp->MarkPoseDirty();
             break;
         }
     }

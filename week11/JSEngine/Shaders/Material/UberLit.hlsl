@@ -6,16 +6,16 @@ cbuffer StaticMeshBuffer : register(b2)
 {
     float3 AmbientColor; // Ka
     float padding0;
-    
+
     float3 DiffuseColor; // Kd
     float padding1;
-    
+
     float3 SpecularColor; // Ks
-    float Shininess; // Ns    
-    
+    float Shininess; // Ns
+
     float2 ScrollUV;
     float2 padding2;
-    
+
     float3 EmissiveColor; // emissive glow color; non-zero means emissive
     float padding3;
 };
@@ -49,7 +49,7 @@ TextureCubeArray<float> PointShadowCube : register(t12);
 SamplerState SampleState : register(s0);
 SamplerComparisonState ShadowSampler : register(s1);
 
-Texture2D VSMMap : register(t11); // ?곷떒 ?좎뼵遺??異붽?
+Texture2D VSMMap : register(t11);
 
 struct VSInput
 {
@@ -58,17 +58,10 @@ struct VSInput
     float3 Normal : NORMAL;
     float2 UV : TEXCOORD;
     float4 Tangent : TANGENT;
-};
-
-struct SkeletalVSInput
-{
-    float3 Position : POSITION;
-    float3 Normal : NORMAL;
-    float2 UV : TEXCOORD;
-    float4 Tangent : TANGENT;
-    float4 Color : COLOR;
+#ifdef IS_SKELETAL
     uint4 BoneIndices : BLENDINDICES;
     float4 BoneWeights : BLENDWEIGHT;
+#endif
 };
 
 struct PSInput
@@ -91,19 +84,47 @@ struct PSOutput
     float4 WorldPos : SV_TARGET2;
 };
 
+#if IS_SKELETAL && IS_GPU_SKINNING
+VSInput Skinning(VSInput input)
+{
+    VSInput output;
+
+    output.Color = input.Color;
+    output.UV = input.UV;
+    output.Position = float3(0.0f, 0.0f, 0.0f);
+    output.Normal = float3(0.0f, 0.0f, 0.0f);
+    output.Tangent = float4(0.0f, 0.0f, 0.0f, input.Tangent.w);
+
+    for (uint i = 0; i < 4; i++)
+    {
+        row_major matrix BoneMatrix = BoneMatrices[input.BoneIndices[i]];
+        float BoneWeight = input.BoneWeights[i];
+        output.Position += BoneWeight * mul(float4(input.Position, 1.0), BoneMatrix).xyz;
+        output.Normal += BoneWeight * mul(float4(input.Normal, 0.0), BoneMatrix).xyz;
+        output.Tangent.xyz += BoneWeight * mul(float4(input.Tangent.xyz, 0.0), BoneMatrix).xyz;
+    }
+
+    return output;
+}
+#endif
+
 PSInput mainVS(VSInput input)
 {
     PSInput output;
+
+#if IS_SKELETAL && IS_GPU_SKINNING
+    input = Skinning(input);
+#endif
 
     output.WorldPos = mul(float4(input.Position, 1.0f), Model).xyz;
     output.ClipPos = ApplyMVP(input.Position);
     output.UV = input.UV + ScrollUV;
     output.WorldNormal = normalize(mul(input.Normal, (float3x3) WorldInvTrans));
-    
+
 #if HAS_NORMAL_MAP && !LIGHTING_MODEL_GOURAUD
     output.WorldTangent = float4(normalize(mul(input.Tangent.xyz, (float3x3)WorldInvTrans)), input.Tangent.w);
 #endif
-    
+
 #if LIGHTING_MODEL_GOURAUD
     float3 accumulatedLight = float3(0, 0, 0);
     float3 VertexSpecular = SpecularColor;
@@ -115,29 +136,18 @@ PSInput mainVS(VSInput input)
 
     accumulatedLight += CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
     accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess, VertexSpecular);
-    
+
     for (uint i = 0; i < LightCount; i++) {
         LightInfo light = Lights[i];
         accumulatedLight += light.Type == 0 ?
             CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess, VertexSpecular)
             : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess, VertexSpecular);
     }
-    
+
     output.LitColor = accumulatedLight;
 #endif
-    
-    return output;
-}
 
-PSInput SkeletalMeshVS(SkeletalVSInput input)
-{
-    VSInput passThrough;
-    passThrough.Position = input.Position;
-    passThrough.Color = input.Color;
-    passThrough.Normal = input.Normal;
-    passThrough.UV = input.UV;
-    passThrough.Tangent = input.Tangent;
-    return mainVS(passThrough);
+    return output;
 }
 
 #if HAS_NORMAL_MAP
@@ -192,7 +202,7 @@ uint SelectDirectionalCascade(float CameraDepth)
 
 float ComputeBias(float LightSpaceZ, float ConstantBias, float SlopeScaleBias)
 {
-    // 媛??湲곗슱湲곌? ??寃껋쑝濡?SlopBias 媛以묒튂瑜?寃곗젙
+    // 가장 기울기가 큰 것으로 SlopBias 가중치를 결정
     float dz_dx = ddx(LightSpaceZ);
     float dz_dy = ddy(LightSpaceZ);
     float slope = max(abs(dz_dx), abs(dz_dy));
@@ -237,7 +247,7 @@ float CalculateShadow(float4 worldPos)
     float BlendFactor = saturate((CameraDepth - (CascadeFar - BlendWidth)) / BlendWidth);
 
     float3 projCoords = ComputeShadowCoordCascade(worldPos, CascadeIndex);
-    
+
     float2 shadowUV = float2(
           projCoords.x * 0.5f + 0.5f,
           -projCoords.y * 0.5f + 0.5f
@@ -249,16 +259,16 @@ float CalculateShadow(float4 worldPos)
     {
         return 1.0f;
     }
-    
+
     FAtlasShadowData cascadeShadowData = AtlasShadowDatas[DirectionalShadowStartIndex + CascadeIndex];
-    
+
     float totalBias = ComputeBias(projCoords.z, cascadeShadowData.ConstantBias, cascadeShadowData.SlopedBias);
 #if SHADOW_MAP_VSM
     float ShadowFactor = ComputeShadowVSM(projCoords, cascadeShadowData.ScaleOffset, VSMMap, SampleState, 0.0001);
 #else
     float ShadowFactor = ComputeShadowPCF(projCoords, cascadeShadowData.ScaleOffset, (int) cascadeShadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
-#endif   
-    // 留덉?留??몃뜳???쒖쇅?섍퀬 釉붾젋??
+#endif
+    // 마지막 인덱스 제외하고 블렌드
     if (CascadeIndex < DirectionalCascadeCount - 1)
     {
         int NextCascade = CascadeIndex + 1;
@@ -266,14 +276,14 @@ float CalculateShadow(float4 worldPos)
         FAtlasShadowData nextCascadeShadowData = AtlasShadowDatas[DirectionalShadowStartIndex + NextCascade];
         float nextTotalBias = ComputeBias(NextCascadeProjCoords.z, nextCascadeShadowData.ConstantBias, nextCascadeShadowData.SlopedBias);
 
-#if SHADOW_MAP_VSM        
-        float NextCascadeShadowFactor = ComputeShadowVSM(NextCascadeProjCoords, nextCascadeShadowData.ScaleOffset , VSMMap, SampleState, 0.0001);        
-#else 
+#if SHADOW_MAP_VSM
+        float NextCascadeShadowFactor = ComputeShadowVSM(NextCascadeProjCoords, nextCascadeShadowData.ScaleOffset , VSMMap, SampleState, 0.0001);
+#else
         float NextCascadeShadowFactor = ComputeShadowPCF(NextCascadeProjCoords, nextCascadeShadowData.ScaleOffset, (int) nextCascadeShadowData.ShadowSoftness, ShadowSampler, ShadowMap, nextTotalBias);
 #endif
         ShadowFactor = lerp(ShadowFactor, NextCascadeShadowFactor, BlendFactor);
     }
-    
+
     return ShadowFactor;
 }
 #elif SHADOW_MAP_PSM
@@ -289,7 +299,7 @@ float CalculateShadow(float4 worldPos)
 
     float3 post = camClip.xyz / camClip.w;
     shadowCoord = mul(float4(post, 1.0f), ShadowViewProj);
-    
+
     if (abs(shadowCoord.w) < 1e-5f)
     {
         return 1.0f;
@@ -307,10 +317,10 @@ float CalculateShadow(float4 worldPos)
     {
         return 1.0f;
     }
-    
+
     FAtlasShadowData shadowData = AtlasShadowDatas[DirectionalShadowStartIndex];
     float totalBias = ComputeBias(projCoords.z, shadowData.ConstantBias, shadowData.SlopedBias);
-   
+
 #if SHADOW_MAP_VSM
     float shadowFactor = ComputeShadowVSM(projCoords, shadowData.ScaleOffset, VSMMap, SampleState, 0.0001);
 #else
@@ -328,19 +338,19 @@ float CalculateShadow(float4 worldPos)
 PSOutput mainPS(PSInput input) : SV_TARGET
 {
     PSOutput output;
-    
+
     float4 DiffuseTex = float4(1.f, 1.f, 1.f, 1.f);
 #if HAS_DIFFUSE_MAP
         DiffuseTex = DiffuseMap.Sample(SampleState, input.UV);
         clip(DiffuseTex.a - 0.001f);
 #endif
-    
+
     float4 FinalColor = float4(DiffuseColor * DiffuseTex.rgb, 1);
     float3 SpecularFactor = SpecularColor;
 #if HAS_SPECULAR_MAP
     SpecularFactor *= SpecularMap.Sample(SampleState, input.UV).rgb;
 #endif
-    
+
     float3 Emissive = EmissiveColor;
 #if HAS_EMISSIVE_MAP
     Emissive *= EmissiveMap.Sample(SampleState, input.UV).rgb;
@@ -359,32 +369,32 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 #if HAS_NORMAL_MAP && !LIGHTING_MODEL_GOURAUD
     N = PerturbNormal(input.WorldNormal, input.WorldTangent, input.UV);
 #endif
-    
+
     float3 accumulatedLight = float3(1, 1, 1);
-    
+
 #if LIGHT_HEATMAP
-#if CULLING_MODEL_CLUSTERED
-        uint2 tileCoord  = uint2(input.ClipPos.xy) / TILE_SIZE;
-        uint  numTilesX  = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
-        uint  numTilesY  = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
-        float z          = (IsOrthographic) ? NearZ + input.ClipPos.z * (FarZ - NearZ) : abs(Projection[3][2] / (input.ClipPos.z - Projection[0][2]));
-    
-        uint  sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
-        uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
-        float weight = saturate(float(clusterData.y) / 64.0); // MAX_LIGHTS_PER_TILE 湲곗?
-#elif CULLING_MODEL_TILED
-        uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
-        uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
-        uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
-        float weight = saturate((float)tileData.y / 64.0f); // MAX_LIGHTS_PER_TILE 湲곗?
+    #if CULLING_MODEL_CLUSTERED
+            uint2 tileCoord  = uint2(input.ClipPos.xy) / TILE_SIZE;
+            uint  numTilesX  = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
+            uint  numTilesY  = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
+            float z          = (IsOrthographic) ? NearZ + input.ClipPos.z * (FarZ - NearZ) : abs(Projection[3][2] / (input.ClipPos.z - Projection[0][2]));
+
+            uint  sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
+            uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
+            float weight = saturate(float(clusterData.y) / 64.0); // MAX_LIGHTS_PER_TILE 기준
+    #elif CULLING_MODEL_TILED
+            uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
+            uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
+            uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
+            float weight = saturate((float)tileData.y / 64.0f); // MAX_LIGHTS_PER_TILE 기준
 #endif
     float3 heatmapColor = GetHeatmapColor(weight);
-    
-    // ???寃쎄퀎???쒓컖??(?좏깮 ?ы빆: ??쇱쓽 媛?μ옄由?1?쎌????대몼寃?泥섎━)
+
+    // 타일 경계선 시각화 (선택 사항: 타일의 가장자리 1픽셀을 어둡게 처리)
     uint2 pixelInTile = uint2(input.ClipPos.xy) % TILE_SIZE;
     if (pixelInTile.x == 0 || pixelInTile.y == 0)
     {
-        heatmapColor *= 0.5f; 
+        heatmapColor *= 0.5f;
     }
 
     output.Color = float4(heatmapColor, 1.0f);
@@ -392,10 +402,10 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     output.WorldPos = float4(input.WorldPos, 1.f);
     return output;
 #endif
-            
+
 #if LIGHTING_MODEL_GOURAUD
     accumulatedLight = input.LitColor;
-    
+
 #elif LIGHTING_MODEL_LAMBERT || LIGHTING_MODEL_PHONG
 #if CULLING_MODEL_CLUSTERED
         uint2 tileCoord  = uint2(input.ClipPos.xy) / TILE_SIZE;
@@ -411,15 +421,15 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 #endif
 
     accumulatedLight = CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
-    
+
     float shadowFactor = CalculateShadow(float4(input.WorldPos, 1.0f));
-    
+
     float3 V = normalize(CameraPosition - input.WorldPos);
     if (IsOrthographic > 0.5f)
-    {  
+    {
         V = normalize(-float3(View[0].xyz));
     }
-    
+
 #if LIGHTING_MODEL_LAMBERT
         accumulatedLight += CalcDirectionalLambert(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N) * shadowFactor;
 #elif LIGHTING_MODEL_PHONG
@@ -433,20 +443,20 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         LightsToIterate = tileData.y;
 #else
         LightsToIterate = LightCount;
-#endif 
-    
+#endif
+
     for (uint i = 0; i < LightsToIterate; i++)
     {
 #if CULLING_MODEL_CLUSTERED
         uint lightIndex = CulledIndexBuffer[clusterData.x + i];
 #elif CULLING_MODEL_TILED
         uint lightIndex = CulledIndexBuffer[tileData.x + i];
-#else 
+#else
         uint lightIndex = i;
 #endif
         LightInfo light = Lights[lightIndex];
         float lightShadowFactor = ComputeShadowAtlas(lightIndex, float4(input.WorldPos, 1.0f), ShadowSampler, ShadowMap, SampleState, PointShadowCube);
-    
+
 #if LIGHTING_MODEL_LAMBERT
         accumulatedLight += (light.Type == 0 ?
             CalcSpotlightLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz)
@@ -458,7 +468,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 #endif
     }
 #endif
-    
+
     float4 DecalColor = float4(0, 0, 0, 0);
     for (uint i = 0; i < DecalCount; i++)
     {
@@ -499,8 +509,5 @@ PSOutput mainPS(PSInput input) : SV_TARGET
             output.Color.rgb = lerp(output.Color.rgb, cascadeColor, 0.5f);
     }
 #endif
- 
-   
-      
     return output;
 }

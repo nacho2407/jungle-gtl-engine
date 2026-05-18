@@ -25,7 +25,7 @@
 #include "Render/Resource/RenderResources.h"
 #include <d3d11.h>
 
-
+class UAnimSequence;
 class FMaterialLoadService;
 class FMaterialSerializationService;
 class FStaticMeshLoadService;
@@ -114,10 +114,15 @@ public:
 	 * note: 병합하면서 충돌이 발생하거나 동일한 로직의 함수가 있다면 날려버리셔도 됩니다
 	 */
 	USkeletalMesh* LoadSkeletalMesh(const FString& Path);
-    USkeletalMesh* FindSkeletalMesh(const FString& Path) const;
+	USkeletalMesh* FindSkeletalMesh(const FString& Path) const;
 	TArray<FString> GetSkeletalMeshPaths() const;
 	FFbxMeshContentInfo InspectFbxMeshContent(const FString& Path);
 
+	UAnimSequence* LoadAnimSequence(const FString& SourceFbxPath,const FString& TargetSkeletalMeshPath,const FString& AnimStackName);
+	UAnimSequence* FindAnimSequence(const FString& Key) const;
+	TArray<FString> GetAnimSequencePaths() const;
+	
+	bool IsAnimSequenceBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	// 에디터에서 socket 등 mesh data 변경 후 writable cache(.bin)에 저장.
 	bool SaveSkeletalMesh(USkeletalMesh* Mesh);
 
@@ -175,7 +180,8 @@ private:
 	FAtlasResourceCache AtlasCache;
 
 	TMap<FString, USkeletalMesh*> SkeletalMeshMap;
-
+	TMap<FString, UAnimSequence*> AnimSequenceMap;
+	TArray<FString> AnimSequenceFilePaths;
 	/* Paths */
 	TArray<FString> ObjFilePaths;
 	TArray<FString> MaterialFilePaths;

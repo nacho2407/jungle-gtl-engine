@@ -23,12 +23,7 @@ public:
 	bool operator==(const FName& Other) const;
 	bool operator!=(const FName& Other) const;
 
-	// 해시 지원 (TMap/TSet 키로 사용 가능)
-	struct Hash
-	{
-		size_t operator()(const FName& Name) const;
-	};
-
+	
 	// 원본 대소문자 유지된 표시용 문자열 반환
 	FString ToString() const;
 
@@ -37,11 +32,18 @@ public:
 
 	// None 이름
 	static const FName None;
+    uint32 GetComparisonIndex() const { return ComparisonIndex; }
+
 
 private:
 	uint32 ComparisonIndex;	// 소문자 변환된 문자열의 풀 인덱스 (비교용)
 	uint32 DisplayIndex;	// 원본 문자열의 풀 인덱스 (표시용)
 };
+inline uint32 GetTypeHash(const FName& Name)
+{
+    return Name.GetComparisonIndex();
+}
+
 
 // ============================================================
 // FNamePool — 전역 문자열 풀 (싱글턴)

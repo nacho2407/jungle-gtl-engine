@@ -1,6 +1,7 @@
 #include "Runtime/Script/ScriptManager.h"
 
 #include "Animation/ActorSequence.h"
+#include "Animation/AnimSequence.h"
 #include "Asset/CurveFloatAsset.h"
 #include "Runtime/Script/ScriptComponent.h"
 #include "Runtime/Script/ScriptUtils.h"
@@ -16,6 +17,13 @@ void FScriptManager::BindAnimationTypes()
     LUA_FIELD(StartTime, StartTime);
     LUA_FIELD(Duration, Duration);
     LUA_FIELD(Loop, bLoop);
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UAnimSequence, "AnimSequence", UObject)
+    LUA_FIELD(AnimStackName, AnimStackName);
+    LUA_FIELD(AssetPath, AssetPath);
+    LUA_FIELD(SourceFbxPath, SourceFbxPath);
+    LUA_FIELD(TargetSkeletonPath, TargetSkeletonPath);
     LUA_END_TYPE();
 
     LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UActorSequencePlayer, "ActorSequencePlayer", UObject)

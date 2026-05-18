@@ -1,9 +1,11 @@
-#include "Core/SkeletalMeshLoadService.h"
+﻿#include "Core/SkeletalMeshLoadService.h"
 
 #include "Core/AssetPathPolicy.h"
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
+#include "Asset/Skeleton.h"
+#include "Asset/SkeletalMeshTypes.h"
 
 #include <algorithm>
 #include <chrono>
@@ -33,6 +35,7 @@ USkeletalMesh* FSkeletalMeshLoadService::LoadSourceOrCachedBinary(const FString&
 	const FString BinaryPath = FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(NormalizedPath);
 
 	FSkeletalMesh* LoadedMeshData = nullptr;
+	FReferenceSkeleton LoadedReferenceSkeleton;
 	double BinaryLoadSec = 0.0;
 	double SourceLoadSec = 0.0;
 
@@ -42,10 +45,11 @@ USkeletalMesh* FSkeletalMeshLoadService::LoadSourceOrCachedBinary(const FString&
 		const auto BinaryStart = std::chrono::steady_clock::now();
 
 		LoadedMeshData = new FSkeletalMesh();
-		if (!ResourceManager.BinarySerializer.LoadSkeletalMesh(BinaryPath, *LoadedMeshData))
+		if (!ResourceManager.BinarySerializer.LoadSkeletalMesh(BinaryPath, *LoadedMeshData, LoadedReferenceSkeleton))
 		{
 			delete LoadedMeshData;
 			LoadedMeshData = nullptr;
+			LoadedReferenceSkeleton = {};
 		}
 
 		const auto BinaryEnd = std::chrono::steady_clock::now();
@@ -56,7 +60,14 @@ USkeletalMesh* FSkeletalMeshLoadService::LoadSourceOrCachedBinary(const FString&
 	if (LoadedMeshData == nullptr)
 	{
 		const auto SourceStart = std::chrono::steady_clock::now();
-		LoadedMeshData = ResourceManager.FbxImporter.LoadSkeletalMesh(NormalizedPath, LoadOptions);
+        FSkeletalMeshImportData ImportData;
+        if (!ResourceManager.FbxImporter.LoadSkeletalMesh(NormalizedPath, LoadOptions, ImportData))
+        {
+            return nullptr;
+        }
+        LoadedMeshData = ImportData.MeshData;
+		LoadedReferenceSkeleton = ImportData.ReferenceSkeleton;
+
 		const auto SourceEnd = std::chrono::steady_clock::now();
 		SourceLoadSec = std::chrono::duration<double>(SourceEnd - SourceStart).count();
 
@@ -68,7 +79,7 @@ USkeletalMesh* FSkeletalMeshLoadService::LoadSourceOrCachedBinary(const FString&
 		}
 
 		// Material 포인터는 직렬화 대상이 아니므로 이 시점에 그대로 굽고, resolve는 Finalize에서 한 번만.
-		const bool bSaveBinaryOk = ResourceManager.BinarySerializer.SaveSkeletalMesh(BinaryPath, NormalizedPath, *LoadedMeshData);
+		const bool bSaveBinaryOk = ResourceManager.BinarySerializer.SaveSkeletalMesh(BinaryPath, NormalizedPath, *LoadedMeshData, LoadedReferenceSkeleton);
 		if (bSaveBinaryOk)
 		{
 			UE_LOG("[SkeletalMeshLoad] Source=FBX | Path=%s | FbxSec=%.6f | BinarySave=OK | BinaryPath=%s",
@@ -86,14 +97,18 @@ USkeletalMesh* FSkeletalMeshLoadService::LoadSourceOrCachedBinary(const FString&
 		       NormalizedPath.c_str(), BinaryLoadSec, BinaryPath.c_str());
 	}
 
-	return FinalizeLoadedMesh(LoadedMeshData, NormalizedPath, NormalizedPath);
+	return FinalizeLoadedMesh(LoadedMeshData, LoadedReferenceSkeleton, NormalizedPath, NormalizedPath);
 }
 
-USkeletalMesh* FSkeletalMeshLoadService::FinalizeLoadedMesh(FSkeletalMesh* MeshData, const FString& ResolvePath, const FString& CacheKey)
+USkeletalMesh* FSkeletalMeshLoadService::FinalizeLoadedMesh(FSkeletalMesh* MeshData, FReferenceSkeleton ReferenceSkeleton, const FString& ResolvePath, const FString& CacheKey)
 {
 	ResourceManager.ResolveSkeletalMeshMaterialSlots(ResolvePath, MeshData);
 
 	USkeletalMesh* LoadedMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
+	ReferenceSkeleton.RebuildNameToIndex();
+	USkeleton* Skeleton = UObjectManager::Get().CreateObject<USkeleton>();
+	Skeleton->SetReferenceSkeleton(ReferenceSkeleton);
+	LoadedMesh->SetSkeleton(Skeleton);
 	LoadedMesh->SetMeshData(MeshData);
 
 	ResourceManager.SkeletalMeshMap[CacheKey] = LoadedMesh;

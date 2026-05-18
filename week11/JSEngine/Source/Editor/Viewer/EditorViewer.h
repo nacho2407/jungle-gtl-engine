@@ -76,7 +76,7 @@ private:
 
     FString FileName;
 
-    TMap<FName, UStaticMeshComponent*, FName::Hash> SocketPreviewMeshes;
+    TMap<FName, UStaticMeshComponent*> SocketPreviewMeshes;
 
     int32 SelectedBoneIndex = -1;
     int32 SelectedSocketIndex = -1;

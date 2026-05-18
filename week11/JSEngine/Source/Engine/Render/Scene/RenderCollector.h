@@ -43,6 +43,8 @@ private:
 public:
 	void Initialize(ID3D11Device* InDevice) { MeshBufferManager.Create(InDevice); }
 	void Release() { MeshBufferManager.Release(); }
+	void ReleaseCPUSkeletalMeshBuffers() { MeshBufferManager.ReleaseCPUSkeletalMeshBuffers(); }
+	void ReleaseGPUSkeletalMeshBuffers() { MeshBufferManager.ReleaseGPUSkeletalMeshBuffers(); }
 
 	void CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus,
 	                  const FFrustum* ViewFrustum = nullptr, bool bIncludeEditorOnlyPrimitives = false);

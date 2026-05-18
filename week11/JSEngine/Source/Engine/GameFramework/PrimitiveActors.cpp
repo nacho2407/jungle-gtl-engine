@@ -27,6 +27,10 @@
 #include "GameFramework/World.h"
 #include "Runtime/Script/ScriptManager.h"
 
+#include "Animation/AnimSequence.h"
+#include "Animation/AnimDataModel.h"
+#include "Core/Logging/Log.h"
+
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -423,6 +427,93 @@ void ASkeletalMeshActor::InitDefaultComponents()
 {
     SkeletalMeshComp = AddComponent<USkeletalMeshComponent>();
     SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/SimpleCharacter.fbx"));
+	//Test Code
+    const FString SkeletalMeshPath = "Asset/SkeletalMesh/Dragon_Baked_Actions_fbx_6.1_ASCII.fbx";
+    USkeletalMesh* LoadedSkeletalMesh = FResourceManager::Get().LoadSkeletalMesh(SkeletalMeshPath);
+
+    SkeletalMeshComp->SetSkeletalMesh(LoadedSkeletalMesh);
+
+    if (LoadedSkeletalMesh)
+    {
+        const FString AnimFbxPath = SkeletalMeshPath;
+        const FString TestStackName = "Run_New";
+
+        UAnimSequence* AnimSequence =
+            FResourceManager::Get().LoadAnimSequence(AnimFbxPath, SkeletalMeshPath, TestStackName);
+	    UE_LOG("[AnimImportTest] RequestedStack=%s", TestStackName.c_str());
+
+        if (!AnimSequence)
+        {
+            UE_LOG_ERROR("[AnimImportTest] LoadAnimSequence failed. Fbx=%s Target=%s",
+                         AnimFbxPath.c_str(),
+                         SkeletalMeshPath.c_str());
+        }
+        else if (!AnimSequence->DataModel)
+        {
+            UE_LOG_ERROR("[AnimImportTest] AnimSequence has no DataModel. Fbx=%s",
+                         AnimFbxPath.c_str());
+        }
+        else
+        {
+            const int32 BoneCount =
+                static_cast<int32>(LoadedSkeletalMesh->GetBones().size());
+
+            const int32 TrackCount =
+                static_cast<int32>(AnimSequence->DataModel->BoneAnimationTracks.size());
+
+            UE_LOG("[AnimImportTest] Loaded Anim. Length=%.3f FrameRate=%.3f Frames=%d Bones=%d Tracks=%d",
+                   AnimSequence->DataModel->SequenceLength,
+                   AnimSequence->DataModel->FrameRate,
+                   AnimSequence->DataModel->NumberOfFrames,
+                   BoneCount,
+                   TrackCount);
+
+            TArray<FMatrix> Pose0;
+            TArray<FMatrix> PoseMid;
+            TArray<FMatrix> PoseEnd;
+
+            const float Length = AnimSequence->DataModel->SequenceLength;
+            const float MidTime = Length * 0.5f;
+
+            const bool bPose0 =
+                AnimSequence->GetBonePose(0.0f, LoadedSkeletalMesh, Pose0);
+
+            const bool bPoseMid =
+                AnimSequence->GetBonePose(MidTime, LoadedSkeletalMesh, PoseMid);
+
+            const bool bPoseEnd =
+                AnimSequence->GetBonePose(Length, LoadedSkeletalMesh, PoseEnd);
+
+            UE_LOG("[AnimImportTest] Pose0=%d Size=%zu", bPose0 ? 1 : 0, Pose0.size());
+            UE_LOG("[AnimImportTest] PoseMid=%d Size=%zu Time=%.3f", bPoseMid ? 1 : 0, PoseMid.size(), MidTime);
+            UE_LOG("[AnimImportTest] PoseEnd=%d Size=%zu Time=%.3f", bPoseEnd ? 1 : 0, PoseEnd.size(), Length);
+
+            if (TrackCount != BoneCount)
+            {
+                UE_LOG_WARNING("[AnimImportTest] TrackCount != BoneCount. Tracks=%d Bones=%d",
+                               TrackCount,
+                               BoneCount);
+            }
+
+            if (Pose0.size() != LoadedSkeletalMesh->GetBones().size())
+            {
+                UE_LOG_ERROR("[AnimImportTest] Pose0 size mismatch.");
+            }
+
+            if (PoseMid.size() != LoadedSkeletalMesh->GetBones().size())
+            {
+                UE_LOG_ERROR("[AnimImportTest] PoseMid size mismatch.");
+            }
+
+            if (PoseEnd.size() != LoadedSkeletalMesh->GetBones().size())
+            {
+                UE_LOG_ERROR("[AnimImportTest] PoseEnd size mismatch.");
+            }
+        }
+    }
+
+
+	/// Test code
     SetRootComponent(SkeletalMeshComp);
 
     auto* Text = AddComponent<UTextRenderComponent>();

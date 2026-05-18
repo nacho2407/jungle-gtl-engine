@@ -15,6 +15,8 @@ enum class EShaderFeature : uint32
 	HasEmissiveMap	= 1 << 3,
 	HasAlphaMask	= 1 << 4,
     CascadeVis		= 1 << 5,
+	Skeletal		= 1 << 6,
+	GpuSkinning		= 1 << 7,
 
 	ClusterCull		= 1 << 11,
 	TileCull		= 1 << 12,
@@ -40,10 +42,17 @@ enum class EVSMBlurPass : uint32
 	Horizontal,
 	Vertical,
 };
+
 enum class EShadowFilter : uint32
 {
     PCF = 0,
     VSM = 1,
+};
+
+enum class ESkinningMode : uint32
+{
+	CPU,
+	GPU,
 };
 
 class FShaderHelper

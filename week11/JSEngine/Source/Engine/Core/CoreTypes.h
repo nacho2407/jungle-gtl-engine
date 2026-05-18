@@ -3,6 +3,7 @@
 #include <DirectXMath.h>
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
 
 using int8 = __int8;
 using int16 = __int16;
@@ -35,3 +36,35 @@ using SIZE_T = std::size_t;
 using ANSICHAR = char;
 using WIDECHAR = wchar_t;
 using TCHAR = WIDECHAR;
+inline uint32 GetTypeHash(uint32 Value)
+{
+    return Value;
+}
+
+inline uint32 GetTypeHash(int32 Value)
+{
+    return static_cast<uint32>(Value);
+}
+
+inline uint32 GetTypeHash(uint64 Value)
+{
+    return static_cast<uint32>(Value ^ (Value >> 32));
+}
+
+inline uint32 GetTypeHash(int64 Value)
+{
+    return GetTypeHash(static_cast<uint64>(Value));
+}
+
+template <typename T>
+inline uint32 GetTypeHash(T* Ptr)
+{
+    const uintptr_t Value = reinterpret_cast<uintptr_t>(Ptr);
+    return static_cast<uint32>(Value ^ (Value >> 32));
+}
+
+template <typename T>
+inline std::enable_if_t<std::is_enum_v<T>, uint32> GetTypeHash(T Value)
+{
+    return static_cast<uint32>(Value);
+}

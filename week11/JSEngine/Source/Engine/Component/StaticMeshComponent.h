@@ -38,7 +38,6 @@ public:
 private:
     void MarkBoundsDirty();
     void MarkRenderStateDirty();
-    void EnsureBoundsUpdated() const;
 
 private:
     UPROPERTY(EditAnywhere, Category="Asset", DisplayName="Static Mesh")

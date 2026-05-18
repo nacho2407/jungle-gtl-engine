@@ -94,8 +94,7 @@ bool FDepthPrePass::DrawCommand(const FRenderPassContext* Context)
 		}
 
 		Program->Bind(Context->DeviceContext);
-		BindVertexFactoryResources(Context->DeviceContext, Cmd.VertexFactoryType, Cmd);
-        CheckOverrideViewMode(Context);  
+        CheckOverrideViewMode(Context);
 
 		ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
 		if (IndexBuffer != nullptr)
