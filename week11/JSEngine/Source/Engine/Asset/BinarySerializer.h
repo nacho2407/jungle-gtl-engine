@@ -16,7 +16,7 @@ struct FMatrix;
 struct FStaticMeshBinaryHeader
 {
 	uint32 MagicNumber = 0x4853454D;
-	uint32 Version = 1;
+	uint32 Version = 2;					// v2: FBX mirrored transform winding correction
 	uint32 VertexCount = 0;
 	uint32 IndexCount = 0;
 	uint32 SectionCount = 0;
@@ -28,7 +28,7 @@ struct FStaticMeshBinaryHeader
 struct FSkeletalMeshBinaryHeader
 {
 	uint32 MagicNumber = 0x534D4B53;	// 'SKMS' (Skeletal MeSh)
-	uint32 Version = 2;					// v2: Sockets 블록 추가
+	uint32 Version = 3;					// v3: FBX mirrored transform winding correction
 	uint32 VertexCount = 0;
 	uint32 IndexCount = 0;
 	uint32 SectionCount = 0;

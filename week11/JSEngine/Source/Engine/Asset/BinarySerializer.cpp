@@ -38,10 +38,10 @@
 
 /* Validation Check Constants */
 constexpr uint32 STATIC_MESH_BINARY_MAGIC = 0x4853454D; // 'MESH'
-constexpr uint32 STATIC_MESH_BINARY_VERSION = 1;
+constexpr uint32 STATIC_MESH_BINARY_VERSION = 2;        // v2: FBX mirrored transform winding correction
 
 constexpr uint32 SKELETAL_MESH_BINARY_MAGIC   = 0x534D4B53; // 'SKMS'
-constexpr uint32 SKELETAL_MESH_BINARY_VERSION = 2;          // v2: Sockets 블록 추가
+constexpr uint32 SKELETAL_MESH_BINARY_VERSION = 3;          // v3: FBX mirrored transform winding correction
 
 //	Vailidation Checkers
 constexpr uint32 MAX_STATIC_MESH_VERTEX_COUNT   = 10'000'000;

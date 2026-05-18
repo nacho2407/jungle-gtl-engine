@@ -52,6 +52,41 @@ static FMatrix ToFMatrix(const FbxAMatrix& M)
         static_cast<float>(M.Get(3, 0)), static_cast<float>(M.Get(3, 1)), static_cast<float>(M.Get(3, 2)), static_cast<float>(M.Get(3, 3)));
 }
 
+static float GetUpper3x3Determinant(const FbxAMatrix& M)
+{
+    const double M00 = M.Get(0, 0);
+    const double M01 = M.Get(0, 1);
+    const double M02 = M.Get(0, 2);
+    const double M10 = M.Get(1, 0);
+    const double M11 = M.Get(1, 1);
+    const double M12 = M.Get(1, 2);
+    const double M20 = M.Get(2, 0);
+    const double M21 = M.Get(2, 1);
+    const double M22 = M.Get(2, 2);
+
+    return static_cast<float>(
+        M00 * (M11 * M22 - M12 * M21) -
+        M01 * (M10 * M22 - M12 * M20) +
+        M02 * (M10 * M21 - M11 * M20));
+}
+
+static bool DoesTransformFlipWinding(const FbxAMatrix& M)
+{
+    return GetUpper3x3Determinant(M) < 0.0f;
+}
+
+static void AppendTriangleIndices(
+    TArray<uint32>& OutIndices,
+    uint32 I0,
+    uint32 I1,
+    uint32 I2,
+    bool bReverseWinding)
+{
+    OutIndices.push_back(I0);
+    OutIndices.push_back(bReverseWinding ? I2 : I1);
+    OutIndices.push_back(bReverseWinding ? I1 : I2);
+}
+
 struct FTempInfluence
 {
     int32 BoneIndex = -1;
@@ -672,7 +707,9 @@ void FFbxImporter::ProcessMesh(FbxMesh* Mesh, FStaticMesh* InStaticMesh)
 	// FbxAxisSystem/FbxSystemUnit::ConvertScene은 노드 transform에 변환을 baked함.
 	// → control point에 GlobalTransform * GeometricTransform을 적용해야 단위/축이 반영됨.
 	FbxAMatrix VertexTransform;
+	VertexTransform.SetIdentity();
 	FbxAMatrix NormalTransform;
+	NormalTransform.SetIdentity();
 	if (OwnerNode)
 	{
 		const FbxVector4 T = OwnerNode->GetGeometricTranslation(FbxNode::eSourcePivot);
@@ -691,6 +728,8 @@ void FFbxImporter::ProcessMesh(FbxMesh* Mesh, FStaticMesh* InStaticMesh)
 
 	const FbxVector4* ControlPoints = Mesh->GetControlPoints();
 	if (!ControlPoints) return;
+
+	const bool bReverseWinding = DoesTransformFlipWinding(VertexTransform);
 
 	// 머티리얼 매핑 모드 확인 (per-polygon으로 가정, 그 외엔 단일 슬롯으로 처리)
 	FbxLayerElementArrayTemplate<int32>* MaterialIndices = nullptr;
@@ -742,6 +781,9 @@ void FFbxImporter::ProcessMesh(FbxMesh* Mesh, FStaticMesh* InStaticMesh)
 			SlotIndices.resize(SlotIdx + 1);
 		}
 
+		uint32 TriangleIndices[3] = {};
+		int32 TriangleVertexCount = 0;
+
 		for (int32 Corner = 0; Corner < 3; ++Corner)
 		{
 			const int32 CtrlPointIdx = Mesh->GetPolygonVertex(PolyIdx, Corner);
@@ -789,7 +831,17 @@ void FFbxImporter::ProcessMesh(FbxMesh* Mesh, FStaticMesh* InStaticMesh)
 
 			const uint32 NewIndex = static_cast<uint32>(InStaticMesh->Vertices.size());
 			InStaticMesh->Vertices.push_back(Vertex);
-			SlotIndices[SlotIdx].push_back(NewIndex);
+			TriangleIndices[TriangleVertexCount++] = NewIndex;
+		}
+
+		if (TriangleVertexCount == 3)
+		{
+			AppendTriangleIndices(
+				SlotIndices[SlotIdx],
+				TriangleIndices[0],
+				TriangleIndices[1],
+				TriangleIndices[2],
+				bReverseWinding);
 		}
 	}
 
@@ -1063,6 +1115,7 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
 
     const FbxAMatrix NormalBindGlobalWithGeometry =
         GetNormalTransformFromPositionTransform(MeshBindGlobalWithGeometry);
+    const bool bReverseWinding = DoesTransformFlipWinding(MeshBindGlobalWithGeometry);
 
     // parentIndex와 LocalBindTransform을 계산
     for (auto& Pair : BoneNodeToIndex)
@@ -1205,6 +1258,9 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
             SlotIndices.resize(SlotIdx + 1);
         }
 
+        uint32 TriangleIndices[3] = {};
+        int32 TriangleVertexCount = 0;
+
         for (int32 Corner = 0; Corner < 3; Corner++)
         {
             const int32 CtrlPointIdx = Mesh->GetPolygonVertex(PolyIdx, Corner);
@@ -1258,7 +1314,17 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
 
             const uint32 NewIndex = static_cast<uint32>(InSkeletalMesh->Vertices.size());
             InSkeletalMesh->Vertices.push_back(Vertex);
-            SlotIndices[SlotIdx].push_back(NewIndex);
+            TriangleIndices[TriangleVertexCount++] = NewIndex;
+        }
+
+        if (TriangleVertexCount == 3)
+        {
+            AppendTriangleIndices(
+                SlotIndices[SlotIdx],
+                TriangleIndices[0],
+                TriangleIndices[1],
+                TriangleIndices[2],
+                bReverseWinding);
         }
     }
 
@@ -1337,6 +1403,7 @@ void FFbxImporter::ProcessRigidAttachedMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh
     const FbxAMatrix OwnerGlobalWithGeometry = GetGlobalTransformWithGeometry(OwnerNode);
     const FbxAMatrix OwnerNormalGlobalWithGeometry =
         GetNormalTransformFromPositionTransform(OwnerGlobalWithGeometry);
+    const bool bReverseWinding = DoesTransformFlipWinding(OwnerGlobalWithGeometry);
 
     FbxLayerElementArrayTemplate<int32>* MaterialIndices = nullptr;
     FbxGeometryElement::EMappingMode MaterialMappingMode = FbxGeometryElement::eByPolygon;
@@ -1390,6 +1457,9 @@ void FFbxImporter::ProcessRigidAttachedMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh
         {
             SlotIndices.resize(SlotIdx + 1);
         }
+
+        uint32 TriangleIndices[3] = {};
+        int32 TriangleVertexCount = 0;
 
         for (int32 Corner = 0; Corner < 3; Corner++)
         {
@@ -1445,7 +1515,17 @@ void FFbxImporter::ProcessRigidAttachedMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh
 
             const uint32 NewIndex = static_cast<uint32>(InSkeletalMesh->Vertices.size());
             InSkeletalMesh->Vertices.push_back(Vertex);
-            SlotIndices[SlotIdx].push_back(NewIndex);
+            TriangleIndices[TriangleVertexCount++] = NewIndex;
+        }
+
+        if (TriangleVertexCount == 3)
+        {
+            AppendTriangleIndices(
+                SlotIndices[SlotIdx],
+                TriangleIndices[0],
+                TriangleIndices[1],
+                TriangleIndices[2],
+                bReverseWinding);
         }
     }
 
