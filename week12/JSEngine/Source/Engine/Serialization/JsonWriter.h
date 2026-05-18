@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Archive.h"
 #include "Core/Containers/String.h"
@@ -62,9 +62,19 @@ struct FJsonWriter : public FArchive
 		}
 	}
 
-	void EndObject()
+	virtual void BeginObject(int32 Index) override
+	{
+		json::JSON& Current = *ScopeStack.back();
+		if (Current.JSONType() == json::JSON::Class::Array && Index >= 0 && Index < static_cast<int32>(Current.length()))
+		{
+			ScopeStack.push_back(&Current.at(Index));
+		}
+	}
+
+	virtual void EndObject() override
 	{
 		if (ScopeStack.size() > 1) ScopeStack.pop_back();
+		CurrentKey.clear();
 	}
 
 	bool IsSaving() const override { return true; }

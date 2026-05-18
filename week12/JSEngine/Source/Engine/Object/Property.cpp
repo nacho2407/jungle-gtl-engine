@@ -1,9 +1,10 @@
-﻿#include "Object/Property.h"
+#include "Object/Property.h"
 
 #include "Animation/AnimSequence.h"
 #include "Asset/SkeletalMesh.h"
 #include "Asset/StaticMesh.h"
 #include "Core/Paths.h"
+#include "Core/Guid.h"
 #include "Core/Reflection/ReflectionRegistry.h"
 #include "Core/ResourceManager.h"
 #include "Object/Class.h"
@@ -27,8 +28,7 @@ namespace
 	bool CopyTypedValue(void* DstValuePtr, const void* SrcValuePtr);
 
 	void SerializeEnumValue(FArchive& Ar, void* ValuePtr, uint8 Size);
-	void SerializeGuidValue(FArchive& Ar, void* ValuePtr);
-	void SerializeQuatValue(FArchive& Ar, void* ValuePtr);
+	void SerializeStructValue(FArchive& Ar, const FProperty& Property, void* ValuePtr);
 	void SerializeObjectPtrValue(FArchive& Ar, const FProperty& Property, void* ValuePtr);
 	void SerializeSoftObjectPtrValue(FArchive& Ar, const FProperty& Property, void* ValuePtr);
 	void SerializeArrayValue(FArchive& Ar, const FProperty& Property, void* ValuePtr);
@@ -37,6 +37,8 @@ namespace
 	bool CopyObjectPtrValue(const FProperty& Property, void* DstValuePtr, const void* SrcValuePtr, const FDuplicateContext* Context);
 	bool CopySoftObjectPtrValue(const FProperty& Property, void* DstValuePtr, const void* SrcValuePtr);
 	bool CopyArrayValue(const FProperty& Property, void* DstValuePtr, const void* SrcValuePtr, const FDuplicateContext* Context);
+	bool CopyStructValue(const FProperty& Property, void* DstValuePtr, const void* SrcValuePtr);
+	bool IsStructEditorHint(const FProperty& Property, const char* Hint);
 }
 
 void* FProperty::GetValuePtr(UObject* Container) const
@@ -89,26 +91,11 @@ void FProperty::SerializeValue(FArchive& Ar, void* ValuePtr) const
 	case EPropertyType::Float:
 		Ar << *static_cast<float*>(ValuePtr);
 		break;
-	case EPropertyType::Vec3:
-		Ar << *static_cast<FVector*>(ValuePtr);
-		break;
-	case EPropertyType::Vec4:
-		Ar << *static_cast<FVector4*>(ValuePtr);
-		break;
 	case EPropertyType::String:
 		Ar << *static_cast<FString*>(ValuePtr);
 		break;
 	case EPropertyType::Name:
 		Ar << *static_cast<FName*>(ValuePtr);
-		break;
-	case EPropertyType::Color:
-		Ar << *static_cast<FColor*>(ValuePtr);
-		break;
-	case EPropertyType::Guid:
-		SerializeGuidValue(Ar, ValuePtr);
-		break;
-	case EPropertyType::Quat:
-		SerializeQuatValue(Ar, ValuePtr);
 		break;
 	case EPropertyType::Enum:
 		if (EnumMeta)
@@ -126,6 +113,8 @@ void FProperty::SerializeValue(FArchive& Ar, void* ValuePtr) const
 		SerializeArrayValue(Ar, *this, ValuePtr);
 		break;
 	case EPropertyType::Struct:
+		SerializeStructValue(Ar, *this, ValuePtr);
+		break;
 	case EPropertyType::Unknown:
 	default:
 		break;
@@ -147,16 +136,6 @@ bool FProperty::CopyValue(void* DstValuePtr, const void* SrcValuePtr, const FDup
 		return CopyTypedValue<int32>(DstValuePtr, SrcValuePtr);
 	case EPropertyType::Float:
 		return CopyTypedValue<float>(DstValuePtr, SrcValuePtr);
-	case EPropertyType::Vec3:
-		return CopyTypedValue<FVector>(DstValuePtr, SrcValuePtr);
-	case EPropertyType::Vec4:
-		return CopyTypedValue<FVector4>(DstValuePtr, SrcValuePtr);
-	case EPropertyType::Color:
-		return CopyTypedValue<FColor>(DstValuePtr, SrcValuePtr);
-	case EPropertyType::Guid:
-		return CopyTypedValue<FGuid>(DstValuePtr, SrcValuePtr);
-	case EPropertyType::Quat:
-		return CopyTypedValue<FQuat>(DstValuePtr, SrcValuePtr);
 	case EPropertyType::String:
 		return CopyTypedValue<FString>(DstValuePtr, SrcValuePtr);
 	case EPropertyType::Name:
@@ -170,12 +149,7 @@ bool FProperty::CopyValue(void* DstValuePtr, const void* SrcValuePtr, const FDup
 	case EPropertyType::Array:
 		return CopyArrayValue(*this, DstValuePtr, SrcValuePtr, Context);
 	case EPropertyType::Struct:
-		if (Size > 0)
-		{
-			std::memcpy(DstValuePtr, SrcValuePtr, Size);
-			return true;
-		}
-		return false;
+		return CopyStructValue(*this, DstValuePtr, SrcValuePtr);
 	case EPropertyType::Unknown:
 	default:
 		return false;
@@ -217,6 +191,20 @@ void FProperty::VisitReferences(FReferenceCollector& Collector, void* ValuePtr) 
 			}
 		}
 		break;
+	case EPropertyType::Struct:
+		if (ScriptStruct)
+		{
+			TArray<const FProperty*> ChildProperties;
+			ScriptStruct->GetAllProperties(ChildProperties);
+			for (const FProperty* Child : ChildProperties)
+			{
+				if (Child)
+				{
+					Child->VisitReferences(Collector, reinterpret_cast<uint8*>(ValuePtr) + Child->Offset);
+				}
+			}
+		}
+		break;
 	default:
 		break;
 	}
@@ -253,6 +241,20 @@ void FProperty::VisitSoftReferences(FSoftReferenceCollector& Collector, void* Va
 			}
 		}
 		break;
+	case EPropertyType::Struct:
+		if (ScriptStruct)
+		{
+			TArray<const FProperty*> ChildProperties;
+			ScriptStruct->GetAllProperties(ChildProperties);
+			for (const FProperty* Child : ChildProperties)
+			{
+				if (Child)
+				{
+					Child->VisitSoftReferences(Collector, reinterpret_cast<uint8*>(ValuePtr) + Child->Offset);
+				}
+			}
+		}
+		break;
 	default:
 		break;
 	}
@@ -268,9 +270,9 @@ bool FProperty::IsSequencerScalar() const
 	return Type == EPropertyType::Bool
 		|| Type == EPropertyType::Int
 		|| Type == EPropertyType::Float
-		|| Type == EPropertyType::Vec3
-		|| Type == EPropertyType::Vec4
-		|| Type == EPropertyType::Color;
+		|| IsStructEditorHint(*this, "FVector")
+		|| IsStructEditorHint(*this, "FVector4")
+		|| IsStructEditorHint(*this, "FColor");
 }
 
 bool FProperty::ReadScalarChannelValue(const UObject* Container, const FString& ChannelName, float& OutValue) const
@@ -304,7 +306,7 @@ bool FProperty::ReadScalarChannelValue(const UObject* Container, const FString& 
 		return true;
 	}
 
-	if (Type == EPropertyType::Vec3)
+	if (IsStructEditorHint(*this, "FVector"))
 	{
 		const FVector* Value = ContainerPtrToValuePtr<FVector>(Container);
 		if (!Value) return false;
@@ -313,7 +315,7 @@ bool FProperty::ReadScalarChannelValue(const UObject* Container, const FString& 
 		if (ChannelName == "Z") { OutValue = Value->Z; return true; }
 	}
 
-	if (Type == EPropertyType::Color)
+	if (IsStructEditorHint(*this, "FColor"))
 	{
 		const FColor* Value = ContainerPtrToValuePtr<FColor>(Container);
 		if (!Value) return false;
@@ -323,7 +325,7 @@ bool FProperty::ReadScalarChannelValue(const UObject* Container, const FString& 
 		if (ChannelName == "A") { OutValue = Value->A; return true; }
 	}
 
-	if (Type == EPropertyType::Vec4)
+	if (IsStructEditorHint(*this, "FVector4"))
 	{
 		const FVector4* Value = ContainerPtrToValuePtr<FVector4>(Container);
 		if (!Value) return false;
@@ -367,7 +369,7 @@ bool FProperty::WriteScalarChannelValue(UObject* Container, const FString& Chann
 		return true;
 	}
 
-	if (Type == EPropertyType::Vec3)
+	if (IsStructEditorHint(*this, "FVector"))
 	{
 		FVector* Value = ContainerPtrToValuePtr<FVector>(Container);
 		if (!Value) return false;
@@ -376,7 +378,7 @@ bool FProperty::WriteScalarChannelValue(UObject* Container, const FString& Chann
 		if (ChannelName == "Z") { Value->Z = NewValue; return true; }
 	}
 
-	if (Type == EPropertyType::Color)
+	if (IsStructEditorHint(*this, "FColor"))
 	{
 		FColor* Value = ContainerPtrToValuePtr<FColor>(Container);
 		if (!Value) return false;
@@ -386,7 +388,7 @@ bool FProperty::WriteScalarChannelValue(UObject* Container, const FString& Chann
 		if (ChannelName == "A") { Value->A = NewValue; return true; }
 	}
 
-	if (Type == EPropertyType::Vec4)
+	if (IsStructEditorHint(*this, "FVector4"))
 	{
 		FVector4* Value = ContainerPtrToValuePtr<FVector4>(Container);
 		if (!Value) return false;
@@ -525,32 +527,53 @@ namespace
 		}
 	}
 
-	void SerializeGuidValue(FArchive& Ar, void* ValuePtr)
-	{
-		FGuid* Guid = static_cast<FGuid*>(ValuePtr);
-		FString Text = Guid ? Guid->ToString() : FString();
-		Ar << Text;
-		if (Ar.IsLoading() && Guid)
-		{
-			*Guid = FGuid::FromString(Text);
-		}
-	}
 
-	void SerializeQuatValue(FArchive& Ar, void* ValuePtr)
+	void SerializeStructValue(FArchive& Ar, const FProperty& Property, void* ValuePtr)
 	{
-		FQuat* Quat = static_cast<FQuat*>(ValuePtr);
-		if (!Quat)
+		if (!Property.ScriptStruct || !ValuePtr)
 		{
 			return;
 		}
 
-		FVector4 Components(Quat->X, Quat->Y, Quat->Z, Quat->W);
-		Ar << Components;
-		if (Ar.IsLoading())
+		if (IsStructEditorHint(Property, "FGuid"))
 		{
-			*Quat = FQuat(Components.X, Components.Y, Components.Z, Components.W);
-			Quat->Normalize();
+			FGuid* Guid = static_cast<FGuid*>(ValuePtr);
+			FString Text;
+			if (Ar.IsSaving())
+			{
+				Text = Guid->ToString();
+			}
+			Ar << Text;
+			if (Ar.IsLoading())
+			{
+				FGuid::Parse(Text, *Guid);
+			}
+			return;
 		}
+
+		const FString Key = Ar.GetCurrentKey();
+		Ar.BeginObject(Key);
+
+		TArray<const FProperty*> ChildProperties;
+		Property.ScriptStruct->GetAllProperties(ChildProperties);
+		for (const FProperty* Child : ChildProperties)
+		{
+			if (!Child || !Child->Name || Child->IsTransient())
+			{
+				continue;
+			}
+
+			if (Ar.IsLoading() && !Ar.HasKey(Child->Name))
+			{
+				continue;
+			}
+
+			void* ChildPtr = reinterpret_cast<uint8*>(ValuePtr) + Child->Offset;
+			Ar << Child->Name;
+			Child->SerializeValue(Ar, ChildPtr);
+		}
+
+		Ar.EndObject();
 	}
 
 	void SerializeObjectPtrValue(FArchive& Ar, const FProperty& Property, void* ValuePtr)
@@ -709,5 +732,33 @@ namespace
 			Property.InnerProperty->CopyValue(DstElement, SrcElement, Context);
 		}
 		return true;
+	}
+
+	bool CopyStructValue(const FProperty& Property, void* DstValuePtr, const void* SrcValuePtr)
+	{
+		if (!Property.ScriptStruct || !Property.ScriptStruct->GetStructOps())
+		{
+			return false;
+		}
+
+		Property.ScriptStruct->Copy(DstValuePtr, SrcValuePtr);
+		return true;
+	}
+
+	bool IsStructEditorHint(const FProperty& Property, const char* Hint)
+	{
+		if (Property.Type != EPropertyType::Struct || !Hint)
+		{
+			return false;
+		}
+
+		if (Property.EditorHint && std::strcmp(Property.EditorHint, Hint) == 0)
+		{
+			return true;
+		}
+
+		return Property.ScriptStruct
+			&& Property.ScriptStruct->GetName()
+			&& std::strcmp(Property.ScriptStruct->GetName(), Hint) == 0;
 	}
 }

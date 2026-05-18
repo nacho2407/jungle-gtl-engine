@@ -22,7 +22,7 @@ public:
 private:
 	void RenderToolbar();
 	void RenderCanvas();
-	void RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& CanvasOrigin);
+	void RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& CanvasOrigin, int32 NodeIndex);
 	void RenderLinks(const ImVec2& CanvasOrigin);
 	void RenderDetails();
 	void RenderOutputPoseDetails(FAnimGraphNodeDesc& Node);
@@ -33,6 +33,7 @@ private:
 	FAnimGraphNodeDesc* FindFirstOutputPoseNode();
 	const FAnimGraphNodeDesc* FindFirstOutputPoseNode() const;
 	int32 GenerateNodeId() const;
+	bool NormalizeGraphNodeIds();
 	void NormalizeRootNode();
 	void AddSequencePlayerNode();
 	void AddOutputPoseNode();

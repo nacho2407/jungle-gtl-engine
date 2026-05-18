@@ -1,15 +1,21 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Core/Reflection/ReflectionMacros.h"
 
+USTRUCT(EditorHint = "FVector2")
 struct FVector2
 {
+	GENERATED_STRUCT_BODY(FVector2)
+
 public:
 	union
 	{
 		struct
 		{
+			UPROPERTY()
 			float X;
+			UPROPERTY()
 			float Y;
 		};
 

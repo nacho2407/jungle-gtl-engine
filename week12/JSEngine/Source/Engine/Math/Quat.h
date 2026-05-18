@@ -1,16 +1,24 @@
-﻿#pragma once
+#pragma once
 
 #include "Vector.h"
 #include "Core/EngineTypes.h"
+#include "Core/Reflection/ReflectionMacros.h"
 
 struct FMatrix;
 struct FRotator;
 
+USTRUCT(EditorHint = "FQuat")
 struct FQuat
 {
+	GENERATED_STRUCT_BODY(FQuat)
+
+	UPROPERTY()
 	float X = 0.0f;
+	UPROPERTY()
 	float Y = 0.0f;
+	UPROPERTY()
 	float Z = 0.0f;
+	UPROPERTY()
 	float W = 1.0f;
 
 	// 항등 쿼터니언입니다. 회전이 없는 상태를 나타냅니다.

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Animation/ActorSequence.h"
 #include "Object/Property.h"
@@ -38,8 +38,8 @@ public:
 		const FActorSequenceBinding& Binding);
 
 	static FString MakeComponentLabel(AActor* Owner, UActorComponent* Component);
-	static const char* GetDefaultChannelName(EPropertyType Type);
-	static EActorSequenceTrackType GetTrackType(EPropertyType Type);
+	static const char* GetDefaultChannelName(const FProperty& Property);
+	static EActorSequenceTrackType GetTrackType(const FProperty& Property);
 	static void GetChannelNames(EActorSequenceTrackType TrackType, TArray<const char*>& OutNames);
 
 	static bool AddTrackForProperty(

@@ -2,9 +2,13 @@
 
 #include "Core/CoreTypes.h"
 #include "Core/Containers/String.h"
+#include "Core/Reflection/ReflectionMacros.h"
 
+USTRUCT(EditorHint = "FGuid")
 struct FGuid
 {
+    GENERATED_STRUCT_BODY(FGuid)
+
     uint32 A = 0;
     uint32 B = 0;
     uint32 C = 0;

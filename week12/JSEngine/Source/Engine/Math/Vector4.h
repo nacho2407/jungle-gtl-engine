@@ -1,12 +1,16 @@
-﻿#pragma once
+#pragma once
 
 #include "Vector.h"
 #include "Utils.h"
+#include "Core/Reflection/ReflectionMacros.h"
 
 struct FMatrix;
 
+USTRUCT(EditorHint = "FVector4")
 struct FVector4
 {
+	GENERATED_STRUCT_BODY(FVector4)
+
 public:
 	//======================================//
 	//				constructor				//
@@ -205,9 +209,13 @@ public:
 	{
 		struct
 		{
+			UPROPERTY()
 			float X;
+			UPROPERTY()
 			float Y;
+			UPROPERTY()
 			float Z;
+			UPROPERTY()
 			float W;
 		};
 

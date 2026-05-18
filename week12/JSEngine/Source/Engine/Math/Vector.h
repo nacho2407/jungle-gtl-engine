@@ -3,16 +3,23 @@
 #include <cassert>
 
 #include "Core/CoreTypes.h"
+#include "Core/Reflection/ReflectionMacros.h"
 
+USTRUCT(EditorHint = "FVector")
 struct FVector
 {
+	GENERATED_STRUCT_BODY(FVector)
+
 public:
 	union
 	{
 		struct
 		{
+			UPROPERTY()
 			float X;
+			UPROPERTY()
 			float Y;
+			UPROPERTY()
 			float Z;
 		};
 
@@ -311,7 +318,7 @@ public:
 		using namespace DirectX;
 
 		const XMVector N = DirectX::XMVector3Normalize(ToXMVector());
-		
+
 		XMFLOAT3 nFloat;
 		XMStoreFloat3(&nFloat, N);
 
@@ -364,7 +371,7 @@ public:
 
 	// Linear interpolation from A to B at time t
 	static FVector Lerp(const FVector& A, const FVector& B, float t)
-    {
+	{
 		FVector Delta = B - A;
 		return A + Delta * t;
 	}

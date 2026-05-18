@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorAnimGraphWidget.h"
+﻿#include "Editor/UI/EditorAnimGraphWidget.h"
 
 #include "Core/ResourceManager.h"
 #include "Core/Paths.h"
@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
+#include <unordered_set>
 
 namespace
 {
@@ -50,8 +51,9 @@ void FEditorAnimGraphWidget::Open(const FString& InPath)
 	if (EditingAsset)
 	{
 		const int32 PreviousRootNodeId = EditingAsset->RootNodeId;
+		const bool bNodeIdsNormalized = NormalizeGraphNodeIds();
 		NormalizeRootNode();
-		bDirty = bDirty || PreviousRootNodeId != EditingAsset->RootNodeId;
+		bDirty = bDirty || bNodeIdsNormalized || PreviousRootNodeId != EditingAsset->RootNodeId;
 	}
 
 	if (!EditingAsset && EditorEngine)
@@ -193,13 +195,13 @@ void FEditorAnimGraphWidget::RenderCanvas()
 
 	RenderLinks(CanvasOrigin);
 
-	for (FAnimGraphNodeDesc& Node : EditingAsset->Nodes)
+	for (int32 NodeIndex = 0; NodeIndex < static_cast<int32>(EditingAsset->Nodes.size()); ++NodeIndex)
 	{
-		RenderNode(Node, CanvasOrigin);
+		RenderNode(EditingAsset->Nodes[NodeIndex], CanvasOrigin, NodeIndex);
 	}
 }
 
-void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& CanvasOrigin)
+void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& CanvasOrigin, int32 NodeIndex)
 {
 	const ImVec2 NodePos = Add(CanvasOrigin, ToImVec2(Node.Position));
 	const ImVec2 NodeSize(190.0f, 76.0f);
@@ -207,8 +209,8 @@ void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& 
 	const bool bSelected = SelectedNodeId == Node.NodeId;
 
 	ImGui::SetCursorScreenPos(NodePos);
-	char Id[64];
-	std::snprintf(Id, sizeof(Id), "##AnimGraphNode_%d", Node.NodeId);
+	char Id[96];
+	std::snprintf(Id, sizeof(Id), "##AnimGraphNode_%d_%d", Node.NodeId, NodeIndex);
 	ImGui::InvisibleButton(Id, NodeSize);
 
 	if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
@@ -299,10 +301,12 @@ void FEditorAnimGraphWidget::RenderDetails()
 	}
 
 	ImGui::TextDisabled("%s", AnimGraphNodeTypeToString(Node->Type).c_str());
-	if (ImGui::DragFloat2("Position", &Node->Position.X, 1.0f))
-	{
-		bDirty = true;
-	}
+
+	// Details 패널에서 노드 위치를 수정할 필요는 없을 것 같아 일단 주석 처리합니다.
+	//if (ImGui::DragFloat2("Position", &Node->Position.X, 1.0f))
+	//{
+	//	bDirty = true;
+	//}
 
 	if (Node->Type == EAnimGraphNodeType::SequencePlayer)
 	{
@@ -392,9 +396,11 @@ void FEditorAnimGraphWidget::RenderSequencePlayerDetails(FAnimGraphNodeDesc& Nod
 			Node.AnimationPath.clear();
 			bDirty = true;
 		}
-		for (const FString& Path : AnimPaths)
+		for (int32 PathIndex = 0; PathIndex < static_cast<int32>(AnimPaths.size()); ++PathIndex)
 		{
+			const FString& Path = AnimPaths[PathIndex];
 			const bool bSelected = Node.AnimationPath == Path;
+			ImGui::PushID(PathIndex);
 			if (ImGui::Selectable(Path.c_str(), bSelected))
 			{
 				Node.AnimationPath = Path;
@@ -404,6 +410,7 @@ void FEditorAnimGraphWidget::RenderSequencePlayerDetails(FAnimGraphNodeDesc& Nod
 			{
 				ImGui::SetItemDefaultFocus();
 			}
+			ImGui::PopID();
 		}
 		ImGui::EndCombo();
 	}
@@ -499,6 +506,42 @@ int32 FEditorAnimGraphWidget::GenerateNodeId() const
 		}
 	}
 	return MaxId + 1;
+}
+
+bool FEditorAnimGraphWidget::NormalizeGraphNodeIds()
+{
+	if (!EditingAsset)
+	{
+		return false;
+	}
+
+	std::unordered_set<int32> UsedIds;
+	int32 NextId = 1;
+	bool bChanged = false;
+
+	for (FAnimGraphNodeDesc& Node : EditingAsset->Nodes)
+	{
+		const int32 OldId = Node.NodeId;
+		const bool bValidUniqueId = OldId > 0 && UsedIds.find(OldId) == UsedIds.end();
+		if (bValidUniqueId)
+		{
+			UsedIds.insert(OldId);
+			NextId = std::max(NextId, OldId + 1);
+			continue;
+		}
+
+		while (UsedIds.find(NextId) != UsedIds.end())
+		{
+			++NextId;
+		}
+
+		Node.NodeId = NextId;
+		UsedIds.insert(Node.NodeId);
+		++NextId;
+		bChanged = true;
+	}
+
+	return bChanged;
 }
 
 void FEditorAnimGraphWidget::NormalizeRootNode()
@@ -605,6 +648,7 @@ void FEditorAnimGraphWidget::Save()
 		return;
 	}
 
+	NormalizeGraphNodeIds();
 	NormalizeRootNode();
 	if (FResourceManager::Get().SaveAnimGraph(EditingAsset, EditingPath))
 	{
