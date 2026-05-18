@@ -368,12 +368,25 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
     TMap<FString, TArray<fbxsdk::FbxNode*>> NodeNameMap;
     BuildNodeNameMap(Context.Scene->GetRootNode(), NodeNameMap);
 
+    int32 FbxNodeNameCount = 0;
+    int32 DuplicateFbxNodeNameGroupCount = 0;
+    for (const auto& Pair : NodeNameMap)
+    {
+        FbxNodeNameCount += static_cast<int32>(Pair.second.size());
+        if (Pair.second.size() > 1)
+        {
+            ++DuplicateFbxNodeNameGroupCount;
+        }
+    }
+
     TMap<FString, int32> BoneNameToIndex;
+    int32 DuplicateTargetBoneNameCount = 0;
     for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
     {
         const FString BoneNameString = Bones[BoneIndex].Name.ToString();
         if (BoneNameToIndex.find(BoneNameString) != BoneNameToIndex.end())
         {
+            ++DuplicateTargetBoneNameCount;
             UE_LOG_WARNING("[FbxAnimSequenceImporter] Duplicate target skeleton bone names. Bone=%s Target=%s",
                            BoneNameString.c_str(),
                            TargetSkeletalMeshPath.c_str());
@@ -397,6 +410,32 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
             ResolveState,
             Path);
     }
+
+    int32 MatchedBoneNodeCount = 0;
+    int32 MissingBoneNodeCount = 0;
+    for (fbxsdk::FbxNode* BoneNode : BoneNodes)
+    {
+        if (BoneNode)
+        {
+            ++MatchedBoneNodeCount;
+        }
+        else
+        {
+            ++MissingBoneNodeCount;
+        }
+    }
+
+    UE_LOG("[FbxAnimSequenceImporter] BoneNodeMatchSummary Fbx=%s Target=%s Stack=%s Bones=%zu Matched=%d Missing=%d FbxNodes=%d UniqueNodeNames=%zu DuplicateNodeNameGroups=%d DuplicateTargetBoneNames=%d",
+           Path.c_str(),
+           TargetSkeletalMeshPath.c_str(),
+           Stack->GetName(),
+           Bones.size(),
+           MatchedBoneNodeCount,
+           MissingBoneNodeCount,
+           FbxNodeNameCount,
+           NodeNameMap.size(),
+           DuplicateFbxNodeNameGroupCount,
+           DuplicateTargetBoneNameCount);
 
     TArray<FAnimationTrack> Tracks;
     Tracks.reserve(Bones.size());
@@ -488,8 +527,15 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
     AnimSequence->Skeleton = Skeleton;
     AnimSequence->DataModel = DataModel;
 
-    UE_LOG("[FbxAnimSequenceImporter] Loaded AnimSequence: %s Stack=%s Frames=%d Tracks=%zu Length=%.3f",
-           Path.c_str(), Stack->GetName(), NumberOfFrames, Tracks.size(), SequenceLength);
+    UE_LOG("[FbxAnimSequenceImporter] Loaded AnimSequence: %s Stack=%s FrameRate=%.3f Frames=%d Tracks=%zu Length=%.3f MatchedBones=%d MissingBones=%d",
+           Path.c_str(),
+           Stack->GetName(),
+           FrameRate,
+           NumberOfFrames,
+           Tracks.size(),
+           SequenceLength,
+           MatchedBoneNodeCount,
+           MissingBoneNodeCount);
 
     return AnimSequence;
 }
