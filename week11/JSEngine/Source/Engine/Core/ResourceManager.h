@@ -123,7 +123,7 @@ public:
 	UAnimSequence* FindAnimSequence(const FString& Key) const;
 	TArray<FString> GetAnimSequencePaths() const;
 	
-	bool IsAnimSequenceBinaryValid(const FString& SourcePath, const FString& BinaryPath, const FString& AnimStackName) const;
+	bool IsAnimSequenceBinaryValid(const FString& SourcePath, const FString& BinaryPath, const FString& AnimStackName, const FReferenceSkeleton* TargetReferenceSkeleton) const;
 	// 에디터에서 socket 등 mesh data 변경 후 writable cache(.bin)에 저장.
 	bool SaveSkeletalMesh(USkeletalMesh* Mesh);
 

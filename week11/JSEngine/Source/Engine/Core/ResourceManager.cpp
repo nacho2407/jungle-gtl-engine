@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <chrono>
 #include <cwctype>
+#include <cstring>
 #include "Asset/FileUtils.h"
 
 #include "DDSTextureLoader.h"
@@ -63,6 +64,67 @@ namespace
 			Hash *= 16777619u;
 		}
 		return Hash;
+	}
+
+	void HashBytes(uint32& Hash, const void* Data, size_t Size)
+	{
+		const unsigned char* Bytes = static_cast<const unsigned char*>(Data);
+		for (size_t Index = 0; Index < Size; ++Index)
+		{
+			Hash ^= static_cast<uint32>(Bytes[Index]);
+			Hash *= 16777619u;
+		}
+	}
+
+	void HashUInt32(uint32& Hash, uint32 Value)
+	{
+		HashBytes(Hash, &Value, sizeof(Value));
+	}
+
+	void HashInt32(uint32& Hash, int32 Value)
+	{
+		HashBytes(Hash, &Value, sizeof(Value));
+	}
+
+	void HashFloat(uint32& Hash, float Value)
+	{
+		uint32 Bits = 0;
+		std::memcpy(&Bits, &Value, sizeof(float));
+		HashUInt32(Hash, Bits);
+	}
+
+	void HashString(uint32& Hash, const FString& String)
+	{
+		HashBytes(Hash, String.data(), String.size());
+		const unsigned char Terminator = 0;
+		HashBytes(Hash, &Terminator, sizeof(Terminator));
+	}
+
+	uint32 GetReferenceSkeletonStableHash(const FReferenceSkeleton* ReferenceSkeleton)
+	{
+		if (!ReferenceSkeleton || ReferenceSkeleton->RefBones.empty())
+		{
+			return 0;
+		}
+
+		uint32 Hash = 2166136261u;
+		HashUInt32(Hash, static_cast<uint32>(ReferenceSkeleton->RefBones.size()));
+
+		for (const FBoneInfo& Bone : ReferenceSkeleton->RefBones)
+		{
+			HashString(Hash, Bone.Name.ToString());
+			HashInt32(Hash, Bone.ParentIndex);
+
+			for (int32 Row = 0; Row < 4; ++Row)
+			{
+				for (int32 Col = 0; Col < 4; ++Col)
+				{
+					HashFloat(Hash, Bone.LocalBindTransform.M[Row][Col]);
+				}
+			}
+		}
+
+		return Hash == 0 ? 1u : Hash;
 	}
 }
 
@@ -900,7 +962,8 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, 
 	const FString BinaryPath = FAssetPathPolicy::MakeWritableAnimSequenceCacheBinaryPath(NormalizedSource, NormalizedTarget, AnimStackName);
 	UAnimSequence* Anim = UObjectManager::Get().CreateObject<UAnimSequence>();
 
-	if (IsAnimSequenceBinaryValid(NormalizedSource, BinaryPath, AnimStackName) && BinarySerializer.LoadAnimSequence(BinaryPath, *Anim))
+	const FReferenceSkeleton* TargetReferenceSkeleton = TargetMesh->GetReferenceSkeleton();
+	if (IsAnimSequenceBinaryValid(NormalizedSource, BinaryPath, AnimStackName, TargetReferenceSkeleton) && BinarySerializer.LoadAnimSequence(BinaryPath, *Anim))
 	{
 		Anim->Skeleton = TargetMesh->GetSkeleton();
 
@@ -951,7 +1014,7 @@ TArray<FString> FResourceManager::GetAnimSequencePaths() const
 	return AnimSequenceFilePaths;
 }
 
-bool FResourceManager::IsAnimSequenceBinaryValid(const FString& SourcePath, const FString& BinaryPath, const FString& AnimStackName) const
+bool FResourceManager::IsAnimSequenceBinaryValid(const FString& SourcePath, const FString& BinaryPath, const FString& AnimStackName, const FReferenceSkeleton* TargetReferenceSkeleton) const
 {
 	FAnimSequenceBinaryHeader Header;
 	const FString NormalizedBinaryPath = FPaths::Normalize(BinaryPath);
@@ -981,6 +1044,17 @@ bool FResourceManager::IsAnimSequenceBinaryValid(const FString& SourcePath, cons
 
 	if (!AnimStackName.empty() &&
 		Header.AnimStackNameHash != GetStableStringHash(AnimStackName))
+	{
+		return false;
+	}
+
+	if (!TargetReferenceSkeleton || TargetReferenceSkeleton->RefBones.empty())
+	{
+		return false;
+	}
+
+	if (Header.TargetSkeletonBoneCount != static_cast<uint32>(TargetReferenceSkeleton->RefBones.size()) ||
+		Header.TargetSkeletonHash != GetReferenceSkeletonStableHash(TargetReferenceSkeleton))
 	{
 		return false;
 	}
