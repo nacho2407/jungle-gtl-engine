@@ -72,12 +72,14 @@ struct FJsonReader : public FArchive
 				++CurrentIdx;
 			}
 
+			CurrentKey.clear();
 			return;
 		}
 
 		if (!Key.empty() && Current.hasKey(Key.c_str()))
 		{
 			ScopeStack.push_back(&Current[Key.c_str()]);
+			CurrentKey.clear();
 		}
 	}
 
