@@ -133,8 +133,8 @@ namespace EShadowDepthDefines
 
 	// StaticMesh: 매크로 없음 (기본 경로)
 	inline const D3D_SHADER_MACRO StaticMesh[] = { {nullptr, nullptr} };
-	// SkeletalMesh: GPU skinning 활성화 매크로
-	inline const D3D_SHADER_MACRO SkeletalMesh[] = { {"USE_GPU_SKINNING", "1"}, {nullptr, nullptr} };
+	// SkeletalMesh: 별도 VS 엔트리포인트가 GPU skinning 경로를 선택한다.
+	inline const D3D_SHADER_MACRO SkeletalMesh[] = { {nullptr, nullptr} };
 
 	inline FShaderKey MakePermutationKey(EVertexFactory VF)
 	{
