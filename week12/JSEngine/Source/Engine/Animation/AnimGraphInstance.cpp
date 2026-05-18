@@ -9,6 +9,7 @@ void UAnimGraphInstance::SetGraphAsset(UAnimGraphAsset* InAsset)
     CurrentTime = 0.0f;
     PreviousTime = 0.0f;
     SequenceCacheMap.clear();
+    StateMachineCacheMap.clear();
 }
 
 void UAnimGraphInstance::NativeUpdateAnimation(float DeltaTime)
@@ -17,6 +18,14 @@ void UAnimGraphInstance::NativeUpdateAnimation(float DeltaTime)
 
     PreviousTime = CurrentTime;
 	CurrentTime += DeltaTime;
+
+    for (auto& Pair : StateMachineCacheMap)
+    {
+        if (Pair.second.RuntimeMachine)
+        {
+            Pair.second.RuntimeMachine->Update(DeltaTime);
+        }
+    }
 }
 
 bool UAnimGraphInstance::EvaluatePose(FPoseContext& OutPoseContext)
@@ -76,8 +85,7 @@ bool UAnimGraphInstance::EvaluateNode(int32 NodeId, FPoseContext& OutPoseContext
     case EAnimGraphNodeType::SequencePlayer:
 		return EvaluateSequencePlayer(*Node, OutPoseContext);
 	case EAnimGraphNodeType::StateMachine:
-        // 다음에 구현
-        return false;
+        return EvaluateStateMachine(*Node, OutPoseContext);
     default:
         return false;
     }
@@ -169,4 +177,140 @@ void UAnimGraphInstance::BuildBoneMapping(FAnimGraphSequenceCache& Cache)
 			Cache.TrackToBoneMap[TrackIndex] = It->second;
         }
     }
+}
+
+bool UAnimGraphInstance::EvaluateStateMachine(const FAnimGraphNodeDesc& Node, FPoseContext& OutPoseContext)
+{
+    FAnimGraphStateMachineCache& Cache = GetOrCreateStateMachineCache(Node);
+    if (!Cache.RuntimeMachine)
+    {
+        return false;
+    }
+
+	return Cache.RuntimeMachine->EvaluatePose(OutPoseContext);
+}
+
+FAnimGraphStateMachineCache& UAnimGraphInstance::GetOrCreateStateMachineCache(const FAnimGraphNodeDesc& Node)
+{
+    FAnimGraphStateMachineCache& Cache = StateMachineCacheMap[Node.NodeId];
+
+    const FString Signature = BuildStateMachineSignature(Node.StateMachine);
+    if (!Cache.RuntimeMachine || Cache.Signature != Signature)
+    {
+		Cache.RuntimeMachine = BuildStateMachineRuntime(Node.StateMachine);
+		Cache.Signature = Signature;
+    }
+
+    return Cache;
+}
+
+UAnimationStateMachine* UAnimGraphInstance::BuildStateMachineRuntime(const FAnimStateMachineDesc& Desc)
+{
+	UAnimationStateMachine* Machine = UObjectManager::Get().CreateObject<UAnimationStateMachine>();
+    if (!Machine)
+    {
+        return nullptr;
+    }
+
+    Machine->Initialize(OwnerComponent);
+
+    TMap<int32, FString> StateIdToName;
+
+    for (const FAnimStateDesc& State : Desc.States)
+    {
+        if (State.StateId < 0 || State.Name.empty() || State.AnimationPath.empty())
+        {
+            continue;
+        }
+
+        StateIdToName[State.StateId] = State.Name;
+        Machine->AddStateFromPath(State.Name, State.AnimationPath);
+    }
+
+	auto EntryIt = StateIdToName.find(Desc.EntryStateId);
+    if (EntryIt != StateIdToName.end())
+    {
+        Machine->SetEntryState(FName(EntryIt->second.c_str()));
+    }
+
+    for (const FAnimStateTransitionDesc& Transition : Desc.Transitions)
+    {
+        auto FromIt = StateIdToName.find(Transition.FromStateId);
+        auto ToIt = StateIdToName.find(Transition.ToStateId);
+
+        if (FromIt == StateIdToName.end() || ToIt == StateIdToName.end())
+        {
+            continue;
+        }
+
+        Machine->AddTransition(FName(FromIt->second.c_str()), FName(ToIt->second.c_str()), Transition.BlendTime, BuildConditionFunction(Transition.Condition));
+    }
+
+    return Machine;
+}
+
+FAnimTransitionCondition UAnimGraphInstance::BuildConditionFunction(const FAnimTransitionConditionDesc& Desc)
+{
+    switch (Desc.Type)
+    {
+    case EAnimTransitionConditionType::Always:
+        return []() { return true; };
+
+    case EAnimTransitionConditionType::BoolParameter:
+        return [this, Desc]() {
+            return GetBoolParameter(Desc.ParameterName) == Desc.BoolValue;
+            };
+
+    case EAnimTransitionConditionType::FloatGreater:
+        return [this, Desc]() {
+            return GetFloatParameter(Desc.ParameterName) > Desc.Threshold;
+            };
+
+    case EAnimTransitionConditionType::FloatLess:
+        return [this, Desc]() {
+            return GetFloatParameter(Desc.ParameterName) < Desc.Threshold;
+            };
+
+    case EAnimTransitionConditionType::LuaFunction:
+        return []() { return false; };
+    }
+
+    return []() { return false; };
+}
+
+FString UAnimGraphInstance::BuildStateMachineSignature(const FAnimStateMachineDesc& Desc) const
+{
+    FString Signature = std::to_string(Desc.EntryStateId);
+
+    for (const FAnimStateDesc& State : Desc.States)
+    {
+        Signature += "|S:";
+        Signature += std::to_string(State.StateId);
+        Signature += ",";
+        Signature += State.Name;
+        Signature += ",";
+        Signature += State.AnimationPath;
+    }
+
+    for (const FAnimStateTransitionDesc& Transition : Desc.Transitions)
+    {
+        Signature += "|T:";
+        Signature += std::to_string(Transition.FromStateId);
+        Signature += ">";
+        Signature += std::to_string(Transition.ToStateId);
+        Signature += ",";
+        Signature += std::to_string(Transition.BlendTime);
+        Signature += ",";
+        Signature += TransitionConditionTypeToString(Transition.Condition.Type);
+        Signature += ",";
+        Signature += Transition.Condition.ParameterName;
+        Signature += ",";
+        Signature += Transition.Condition.BoolValue ? "true" : "false";
+        Signature += ",";
+        Signature += std::to_string(Transition.Condition.Threshold);
+        Signature += ",";
+        Signature += Transition.Condition.LuaFunctionName;
+    }
+
+    return Signature;
 }
