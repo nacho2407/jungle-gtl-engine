@@ -83,6 +83,26 @@ FString MakeRuntimeUIPreviewTabLabel(const FString& DocumentPath)
 	return FileName.empty() ? "Runtime UI Preview" : FileName;
 }
 
+FEditorTabId MakeAnimGraphEditorTabId(const FString& AnimGraphPath)
+{
+	FEditorTabId TabId;
+	TabId.Kind = EEditorTabKind::AnimGraphEditor;
+	TabId.PayloadId = AnimGraphPath;
+	return TabId;
+}
+
+FString MakeAnimGraphEditorTabLabel(const FString& AnimGraphPath)
+{
+	if (AnimGraphPath.empty())
+	{
+		return "Anim Graph";
+	}
+
+	const size_t SlashIndex = AnimGraphPath.find_last_of("/\\");
+	const FString FileName = SlashIndex == FString::npos ? AnimGraphPath : AnimGraphPath.substr(SlashIndex + 1);
+	return FileName.empty() ? "Anim Graph" : FileName;
+}
+
 void FEditorTabManager::ResetToLevelEditor()
 {
 	Tabs.clear();

@@ -55,6 +55,12 @@ void FEditorMainPanel::RenderActiveDocumentToolbar()
 			ImGui::SameLine();
 			ImGui::TextUnformatted(Widgets.RuntimeUIPreviewWidget.GetPreviewDocumentPath().c_str());
 		}
+		else if (ActiveTab && ActiveTab->Id.Kind == EEditorTabKind::AnimGraphEditor)
+		{
+			ImGui::TextDisabled("Anim Graph");
+			ImGui::SameLine();
+			ImGui::TextUnformatted(Widgets.AnimGraphWidget.GetEditingPath().c_str());
+		}
 		else
 		{
 			ImGui::TextDisabled("No active document");
