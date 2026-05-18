@@ -1,4 +1,4 @@
-#include "ArrayProperty.h"
+﻿#include "ArrayProperty.h"
 
 #include "Serialization/Archive.h"
 #include "SimpleJSON/json.hpp"

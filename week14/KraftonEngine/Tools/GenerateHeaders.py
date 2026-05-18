@@ -316,7 +316,7 @@ def cpp_optional_string_literal(value: str | None) -> str:
 
 
 def is_soft_object_property(prop: ReflectedProperty) -> bool:
-    if prop.property_type in {"StaticMeshRef", "SkeletalMeshRef", "Script"}:
+    if prop.property_type in {"SoftObjectRef", "StaticMeshRef", "SkeletalMeshRef", "Script"}:
         return True
     normalized = normalize_cpp_type(prop.cpp_type)
     return normalized in {"FString", "FSoftObjectPtr"} and bool(prop.asset_type or prop.allowed_class)
