@@ -44,17 +44,17 @@ private:
 	FVector TargetPoint;
 
 	float Elapsed					= 0.f;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Pursuit", DisplayName="Update Lerp Interval")
 	float UpdateLerpInterval		= 2.0f;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Pursuit", DisplayName="Detection Radius")
 	float DetectionRadius			= 20.f;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Pursuit", DisplayName="Pursuit Speed")
 	float PursuitSpeed				= 1.f;
     float TargetPitch				= 0.f;
     float TargetYaw					= 0.f;
 
 	bool bIsActive					= true;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Rotation", DisplayName="Face Target Direction")
 	bool bFaceTargetDir				= true;
 	bool bAutoTargetPerspCamera		= true;		// If no target is set, default to the primary perspective camera on BeginPlay
 };

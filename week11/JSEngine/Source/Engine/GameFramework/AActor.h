@@ -186,33 +186,33 @@ protected:
 
     // ★ 추가 4: 변수들에 UPROPERTY 부착 (에디터 노출 및 가비지 컬렉터 추적 목적)
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Actor", DisplayName="Root Component")
     USceneComponent* RootComponent = nullptr;
 
     UPROPERTY() // 에디터엔 안 보이지만 GC가 추적해야 하는 포인터
     UWorld* OwningWorld = nullptr;
 
     // Transform 값들은 보통 RootComponent를 통해 조작하므로 매크로 생략
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Transform", DisplayName="Location")
     FVector PendingActorLocation = FVector(0, 0, 0);
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Transform", DisplayName="Rotation")
     FVector PendingActorRotation = FVector(0, 0, 0);
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Transform", DisplayName="Scale")
     FVector PendingActorScale = FVector(1, 1, 1);
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Actor", DisplayName="Visible")
     bool bVisible = true;
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Actor", DisplayName="Active")
     bool bIsActive = true;
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Actor", DisplayName="Tick In Editor")
     bool bTickInEditor = false;
 
     UPROPERTY() // 배열 안에 포인터가 있으므로 GC 추적 필요
     TArray<UActorComponent*> OwnedComponents;
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Actor", DisplayName="Tags")
     TArray<FString> Tags;
 
     // 렌더링용 캐시 및 엔진 내부 핸들 ID들은 에디터 노출/GC 추적이 필요 없으므로 매크로 생략

@@ -43,13 +43,13 @@ protected:
 	~ULightComponent() = default;
 
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Shadow", DisplayName="Shadow Resolution")
 	int32 ShadowResolutionScale = 2048;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Shadow", DisplayName="Constant Bias")
 	float ConstantBias = { 0.003f };
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Shadow", DisplayName="Slope Scaled Bias")
 	float SlopeScaledBias = { 0.12f } ;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Shadow", DisplayName="Shadow Sharpen")
 	float ShadowSharpen = 0.5f;
 
 	// 디버그용으로 Shadow Atlas에서 해당 라이트의 타일 위치와 크기를 저장하는 변수, 현재 지워도됩니다
@@ -58,6 +58,6 @@ public:
     float DebugShadowCubeIndex;
     bool bHasDebugShadowCubeTile = false;
 protected:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Shadow", DisplayName="Shadow Map Type")
 	EShadowMap eShadowMapType = EShadowMap::CSM;
 };

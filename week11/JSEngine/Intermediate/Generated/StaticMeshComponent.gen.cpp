@@ -1,6 +1,7 @@
 // [UHT generated source - do not edit]
 #include "Engine/Component/StaticMeshComponent.h"
 #include "Core/ReflectionDatabase.h"
+#include "Core/ReflectionUtils.h"
 
 void Register_UStaticMeshComponent()
 {
@@ -9,10 +10,9 @@ void Register_UStaticMeshComponent()
     info.GcPointerOffsets.clear();
     info.ClassName = "UStaticMeshComponent";
     info.ParentClassName = "UMeshComponent";
-    info.ParentClass = ReflectionDatabase::GetClass("UMeshComponent");
-    info.Properties.push_back({ "StaticMeshAsset", "UStaticMesh*", offsetof(UStaticMeshComponent, StaticMeshAsset), true });
+    info.Properties.push_back({ "StaticMeshAsset", "UStaticMesh*", offsetof(UStaticMeshComponent, StaticMeshAsset), PF_EditAnywhere, "Asset", "Static Mesh" });
     info.GcPointerOffsets.push_back(offsetof(UStaticMeshComponent, StaticMeshAsset));
-    info.Properties.push_back({ "StaticMeshAssetPath", "FString", offsetof(UStaticMeshComponent, StaticMeshAssetPath), true });
+    info.Properties.push_back({ "StaticMeshAssetPath", "FString", offsetof(UStaticMeshComponent, StaticMeshAssetPath), PF_EditAnywhere, "Asset", "Static Mesh Path" });
     ReflectionDatabase::AddClass("UStaticMeshComponent", &info);
 }
 

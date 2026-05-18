@@ -20,6 +20,7 @@
 #include "Component/PostProcess/Light/PointLightComponent.h"
 #include "Core/EditorResourcePaths.h"
 #include "Core/PropertyTypes.h"
+#include "Core/Containers/Map.h"
 #include "Core/Paths.h"
 #include "Core/Logging/Log.h"
 #include "Math/Color.h"
@@ -1432,69 +1433,94 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	AActor* Owner = SelectedComponent->GetOwner();
 	double PropertyWidgetMs = 0.0;
 
-	for (auto& Prop : Props)
-    {
-        if (!Prop.Name)
-        {
-            continue;
-        }
+	TMap<FString, TArray<FPropertyDescriptor*>> CategoryMap;
+	TArray<FString> CategoryOrder;
 
-		if (strcmp(Prop.Name, "Tags") == 0)
+	for (FPropertyDescriptor& Prop : Props)
+	{
+		if (!Prop.Name)
 		{
 			continue;
 		}
 
-        const bool bIsScriptName =
-            strcmp(Prop.Name, "ScriptName") == 0;
+		const char* PropertyKey = Prop.InternalName ? Prop.InternalName : Prop.Name;
+		if (strcmp(PropertyKey, "Tags") == 0)
+		{
+			continue;
+		}
 
-        FString OldScriptName;
+		FString Category = Prop.Category ? Prop.Category : "Default";
+		if (CategoryMap.find(Category) == CategoryMap.end())
+		{
+			CategoryOrder.push_back(Category);
+		}
+		CategoryMap[Category].push_back(&Prop);
+	}
 
-        if (bIsScriptName)
-        {
-            if (FString* ScriptNamePtr = static_cast<FString*>(Prop.ValuePtr))
-            {
-                OldScriptName = *ScriptNamePtr;
-            }
-        }
+	for (const FString& Category : CategoryOrder)
+	{
+		DrawDetailsSectionLabel(Category.c_str());
 
-        if (Prop.Type == EPropertyType::SceneComponentRef)
-        {
-            const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
-            RenderSceneComponentRefWidget(Prop, Owner);
-            if (bDetailsPerfTraceFrame)
-            {
-                PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
-            }
-        }
-        else
-        {
-            const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
-            RenderPropertyWidget(Prop);
-            if (bDetailsPerfTraceFrame)
-            {
-                PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
-            }
-        }
+		for (FPropertyDescriptor* PropPtr : CategoryMap[Category])
+		{
+			if (!PropPtr)
+			{
+				continue;
+			}
 
-        if (bIsScriptName)
-        {
-            UScriptComponent* ScriptComp = Cast<UScriptComponent>(SelectedComponent);
-            if (!ScriptComp)
-            {
-                return;
-            }
+			FPropertyDescriptor& Prop = *PropPtr;
+			const char* PropertyKey = Prop.InternalName ? Prop.InternalName : Prop.Name;
 
-            const FString& NewScriptName = ScriptComp->GetScriptName();
+			const bool bIsScriptName = strcmp(PropertyKey, "ScriptName") == 0;
+			FString OldScriptName;
 
-            if (OldScriptName != NewScriptName)
-            {
-                // ScriptName 변경으로 PostEditProperty -> ReloadLuaProperties가 실행됨.
-                // 기존 Props 안의 Lua property descriptor는 이제 무효이므로
-                // 이번 프레임 Details 렌더링을 중단한다.
-                return;
-            }
-        }
-    }
+			if (bIsScriptName)
+			{
+				if (FString* ScriptNamePtr = static_cast<FString*>(Prop.ValuePtr))
+				{
+					OldScriptName = *ScriptNamePtr;
+				}
+			}
+
+			if (Prop.Type == EPropertyType::SceneComponentRef)
+			{
+				const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
+				RenderSceneComponentRefWidget(Prop, Owner);
+				if (bDetailsPerfTraceFrame)
+				{
+					PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
+				}
+			}
+			else
+			{
+				const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
+				RenderPropertyWidget(Prop);
+				if (bDetailsPerfTraceFrame)
+				{
+					PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
+				}
+			}
+
+			if (bIsScriptName)
+			{
+				UScriptComponent* ScriptComp = Cast<UScriptComponent>(SelectedComponent);
+				if (!ScriptComp)
+				{
+					return;
+				}
+
+				const FString& NewScriptName = ScriptComp->GetScriptName();
+
+				if (OldScriptName != NewScriptName)
+				{
+					// ScriptName 변경으로 PostEditProperty -> ReloadLuaProperties가 실행됨.
+					// 기존 Props 안의 Lua property descriptor는 이제 무효이므로
+					// 이번 프레임 Details 렌더링을 중단한다.
+					return;
+				}
+			}
+		}
+	}
 	// Special: InterpToMovementComponent control points + behaviour + actions
 	double SkeletalDebugMs = 0.0;
 	if (USkeletalMeshComponent* SkeletalComp = Cast<USkeletalMeshComponent>(SelectedComponent))
@@ -1655,7 +1681,7 @@ void FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& P
 					EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Component Reference");
 				}
 				*ValuePtr = SceneComp;
-				SelectedComponent->PostEditChangeProperty({ Prop.Name, EPropertyChangeType::ValueSet });
+				SelectedComponent->PostEditChangeProperty({ Prop.InternalName ? Prop.InternalName : Prop.Name, EPropertyChangeType::ValueSet });
 			}
 			if (bSelected)
 				ImGui::SetItemDefaultFocus();
@@ -2235,7 +2261,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
 			bPropertyEditUndoCaptured = true;
 		}
-		SelectedComponent->PostEditChangeProperty({ Prop.Name, EPropertyChangeType::ValueSet });
+		SelectedComponent->PostEditChangeProperty({ Prop.InternalName ? Prop.InternalName : Prop.Name, EPropertyChangeType::ValueSet });
 		if (EditorEngine)
 		{
 			EditorEngine->GetSceneService().MarkDirty();

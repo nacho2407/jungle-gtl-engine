@@ -69,9 +69,9 @@ void UInterpToMovementComponent::GetEditableProperties(TArray<FPropertyDescripto
     //OutProps.push_back({ "Auto Activate",		  EPropertyType::Bool,		 &bAutoActivate });
     //OutProps.push_back({ "Orient To Movement",	  EPropertyType::Bool,		 &bFaceTargetDir });
 	//OutProps.push_back({ "Interp Duration",		  EPropertyType::Float,      &Duration,       0.1f, 2048.0f, 0.1f });
-	static const char* InterpBehaviourNames[] = { "One Shot", "One Shot Reverse", "Loop", "Ping-Pong" };
-	OutProps.push_back({ "Interp Mode",			  EPropertyType::Enum,		 &InterpBehaviour, 0,0,0, InterpBehaviourNames, 4});
-    OutProps.push_back({ "Control Points",		  EPropertyType::Vec3Array,  &ControlPoints });
+	//static const char* InterpBehaviourNames[] = { "One Shot", "One Shot Reverse", "Loop", "Ping-Pong" };
+	//OutProps.push_back({ "Interp Mode",			  EPropertyType::Enum,		 &InterpBehaviour, 0,0,0, InterpBehaviourNames, 4});
+    //OutProps.push_back({ "Control Points",		  EPropertyType::Vec3Array,  &ControlPoints });
 }
 
 // --- Control Point Management--------------------------------------------

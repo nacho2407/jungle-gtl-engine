@@ -6,6 +6,7 @@
 #include "Core/PropertyTypes.h"
 #include "Serialization/Archive.h"
 #include "Object/Object.h"
+#include "Core/RefelctionTypeInfo.h"
 
 #define DECLARE_CLASS(ClassName, ParentClass)                          \
 	using ThisClass = ClassName;									   \
@@ -21,11 +22,7 @@
         sizeof(ClassName)                                              \
     };
 
-// 1. 매크로 정의 (C++ 컴파일러는 무시하고, C# 파서만 읽을 껍데기)
-#define UCLASS()
-#define UPROPERTY(...)
-#define GENERATED_BODY()
-#define USTRUCT(...)
+
 
 enum EClassFlags : uint32_t
 {
@@ -37,48 +34,24 @@ enum EClassFlags : uint32_t
 
 struct FTypeInfo
 {
-	const char* name;
-	const FTypeInfo* Parent;
-	size_t size;
-	uint32_t ClassFlags = CF_None;
+    const char* name;
+    const FTypeInfo* Parent;
+    size_t size;
+    uint32_t ClassFlags = CF_None;
 
-	bool IsA(const FTypeInfo* Other) const {
-		for (const FTypeInfo* T = this; T; T = T->Parent) {
-			if (T == Other) {
-				return true;
-			}
-		}
-		return false;
-	}
+    bool IsA(const FTypeInfo* Other) const
+    {
+        for (const FTypeInfo* T = this; T; T = T->Parent)
+        {
+            if (T == Other)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 };
 
-// 2. 리플렉션 & 에디터용 메타데이터
-struct FPropertyInfo
-{
-    FName Name;
-    FString Type;
-    size_t Offset;
-    bool bIsEditAnywhere; // 에디터 UI에 그릴지 여부
-};
-
-// 3. 클래스 전체 정보 (+ GC 연동)
-struct FClassInfo
-{
-    FName ClassName;
-    FName ParentClassName;
-    FClassInfo* ParentClass = nullptr;
-
-    TArray<FPropertyInfo> Properties;
-    TArray<size_t> GcPointerOffsets;
-};
-
-struct FStructInfo
-{
-    FName StructName;
-    size_t Size; // 구조체의 크기 (UI에서 복사/할당할 때 유용함)
-    TArray<FPropertyInfo> Properties;
-    TArray<size_t> GcPointerOffsets;
-};
 
 class UObject
 {

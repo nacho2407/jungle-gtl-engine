@@ -18,11 +18,11 @@ protected:
 	~ULightComponentBase() = default;
 
 public:
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Light", DisplayName="Color")
 	FColor LightColor = FColor::White();
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Light", DisplayName="Intensity")
 	float Intensity = 1.0f;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Shadow", DisplayName="Cast Shadows")
 	bool bCastShadows = true;
 };

@@ -1,4 +1,4 @@
-#include "LightComponent.h"
+﻿#include "LightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
 #include "Render/Resource/ShadowAtlasManager.h"
@@ -153,34 +153,23 @@ void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 {
     ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 
-	static const char* ShadowMapTypeNames[] = { "CSM" ,"PSM" };
-	OutProps.push_back({ "ShadowMapType", EPropertyType::Enum, &eShadowMapType, 0.f, 0.f, 0.f, ShadowMapTypeNames, 2 });
+	//static const char* ShadowMapTypeNames[] = { "CSM" ,"PSM" };
+	//OutProps.push_back({ "ShadowMapType", EPropertyType::Enum, &eShadowMapType, 0.f, 0.f, 0.f, ShadowMapTypeNames, 2 });
 
-	OutProps.push_back({ "Shadow Resolution Scale", EPropertyType::Int, &ShadowResolutionScale});
+	//OutProps.push_back({ "Shadow Resolution Scale", EPropertyType::Int, &ShadowResolutionScale});
     PrintShadowMapDebugInfo(OutProps);
 
-	// ConstantBias = DepthBias * (1 / 2 ^ 24 or 16) + SlopeScaledBias * (MaxDepthSlope)
-	// MaxDepthSlope는 이제 셰이더에서 직접 구할 예정. 레스터라이즈로 할 경우 PSM 처리가 안됨
-	OutProps.push_back({ "Constant Bias ( DepthBias ^ (1 / TextureBit))", EPropertyType::Float, &ConstantBias, 0.000f, 0.01f, 0.001f });
-	OutProps.push_back({ "Slope-Scaled Bias", EPropertyType::Float, &SlopeScaledBias, 0.0f, 1.0f, 0.01f });
-    OutProps.push_back({ "Shadow Sharpen", EPropertyType::Float, &ShadowSharpen });
+	 //ConstantBias = DepthBias * (1 / 2 ^ 24 or 16) + SlopeScaledBias * (MaxDepthSlope)
+	 //MaxDepthSlope는 이제 셰이더에서 직접 구할 예정. 레스터라이즈로 할 경우 PSM 처리가 안됨
+	//OutProps.push_back({ "Constant Bias ( DepthBias ^ (1 / TextureBit))", EPropertyType::Float, &ConstantBias, 0.000f, 0.01f, 0.001f });
+	//OutProps.push_back({ "Slope-Scaled Bias", EPropertyType::Float, &SlopeScaledBias, 0.0f, 1.0f, 0.01f });
+ //   OutProps.push_back({ "Shadow Sharpen", EPropertyType::Float, &ShadowSharpen });
 }
 
 void ULightComponent::Serialize(FArchive& Ar)
 {
 	ULightComponentBase::Serialize(Ar);
-	
-	uint32 ShadowMapTypeValue = static_cast<uint32>(eShadowMapType);
-	Ar << "ShadowMapType" << ShadowMapTypeValue;
-	Ar << "ShadowResolutionScale" << ShadowResolutionScale;
-	Ar << "ConstantBias" << ConstantBias;
-	Ar << "SlopeScaledBias" << SlopeScaledBias;
-	Ar << "ShadowSharpen" << ShadowSharpen;
-
-	if (Ar.IsLoading())
-	{
-		eShadowMapType = static_cast<EShadowMap>(ShadowMapTypeValue);
-	}
+	ReflectionUtils::SerializeGeneratedPropertiesLocal(this, &ULightComponent::StaticClassInfo, Ar);
 }
 
 FMatrix ULightComponent::ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,

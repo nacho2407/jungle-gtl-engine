@@ -11,7 +11,10 @@ private:
     // "클래스 이름" -> "클래스 정보 포인터"를 매핑해두는 거대한 사전
     inline static TMap<FString, FClassInfo*> ClassMap;
 
-    inline static TMap<std::string, FStructInfo*> StructMap;
+    inline static TMap<FString, FStructInfo*> StructMap;
+
+	inline static TMap<FString, FEnumInfo*> EnumMap;
+
 
 public:
     // 1. 파서가 생성한 코드가 이 함수를 통해 정보를 제출합니다.
@@ -56,12 +59,12 @@ public:
         return ClassMap;
     }
 
-    static void AddStruct(const std::string& StructName, FStructInfo* StructInfo)
+    static void AddStruct(const FString& StructName, FStructInfo* StructInfo)
     {
         StructMap[StructName] = StructInfo;
     }
 
-    static FStructInfo* GetStruct(const std::string& StructName)
+    static FStructInfo* GetStruct(const FString& StructName)
     {
         auto it = StructMap.find(StructName);
         if (it != StructMap.end())
@@ -71,8 +74,43 @@ public:
         return nullptr; // 못 찾음
     }
 
-    static const TMap<std::string, FStructInfo*>& GetAllStructs()
+    static const TMap<FString, FStructInfo*>& GetAllStructs()
     {
         return StructMap;
+    }
+
+	//main()이 시작된 직후에 단 한 번 호출해서 부모자식 포인터를 싹 연결해줍니다.
+	static void ResolveDependencies()
+    {
+        // 1. 클래스 족보 연결
+        for (auto& Pair : ClassMap)
+        {
+            FClassInfo* Info = Pair.second;
+            if (Info->ParentClassName.IsValid())
+            {
+                Info->ParentClass = GetClass(Info->ParentClassName.ToString());
+            }
+        }
+
+        // 2. 구조체 족보 연결
+        for (auto& Pair : StructMap)
+        {
+            FStructInfo* Info = Pair.second;
+            if (Info->ParentStructName.IsValid())
+            {
+                Info->ParentStruct = GetStruct(Info->ParentStructName.ToString());
+            }
+        }
+    }
+
+	static void AddEnum(const FString& EnumName, FEnumInfo* EnumInfo)
+    {
+        EnumMap[EnumName] = EnumInfo;
+    }
+
+    static FEnumInfo* GetEnum(const FString& EnumName)
+    {
+        auto It = EnumMap.find(EnumName);
+        return It != EnumMap.end() ? It->second : nullptr;
     }
 };

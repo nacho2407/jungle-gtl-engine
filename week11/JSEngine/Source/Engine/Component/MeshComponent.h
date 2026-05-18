@@ -27,7 +27,7 @@ public:
 	virtual void TickComponent(float DeltaTime) override;
 
 protected:
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category="Materials", DisplayName="Materials")
 	TArray<UMaterialInterface*> Materials;
 	std::pair<float, float> ScrollUV = { };
 };

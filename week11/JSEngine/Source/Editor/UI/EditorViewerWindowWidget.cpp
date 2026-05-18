@@ -677,191 +677,375 @@ void FEditorViewerWindowWidget::RenderEmbedded(float DeltaTime)
 
 void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 {
-	(void)DeltaTime;
+    (void)DeltaTime;
 
-	FSceneViewport& SceneViewport = Viewer->GetViewport();
-
-	ID3D11ShaderResourceView* SRV = SceneViewport.GetOutSRV();
+    FSceneViewport& SceneViewport = Viewer->GetViewport();
+    ID3D11ShaderResourceView* SRV = SceneViewport.GetOutSRV();
 
     if (!SRV)
-	{
-		ImGui::TextDisabled("Viewer render target is not ready.");
+    {
+        ImGui::TextDisabled("Viewer render target is not ready.");
         return;
-	}
+    }
 
-	ImVec2 FullSize = ImGui::GetContentRegionAvail();
+    ImVec2 FullSize = ImGui::GetContentRegionAvail();
 
-		float CenterWidth = std::max(160.0f, FullSize.x - LeftPanelWidth - RightPanelWidth - (ImGui::GetStyle().ItemSpacing.x * 2.0f));
+    // 3분할 패널의 너비 계산 (좌, 우 패널을 빼고 남은 공간을 중앙 패널에 할당)
+    // 여백(ItemSpacing)과 스플리터 크기를 고려하여 CenterWidth 계산
+    float CenterWidth = std::max(160.0f, FullSize.x - LeftPanelWidth - RightPanelWidth - (ImGui::GetStyle().ItemSpacing.x * 3.0f) - 2.0f);
 
-		// =====================================================
-		// LEFT: Skeleton Tree
-		// =====================================================
-		ImGui::BeginChild("SkeletonPanel", ImVec2(LeftPanelWidth, 0), true);
+    // =====================================================
+    // LEFT: Skeleton Tree
+    // =====================================================
+    ImGui::BeginChild("SkeletonPanel", ImVec2(LeftPanelWidth, 0), true);
 
-		ImGui::Text("Skeleton");
+    ImGui::Text("Skeleton");
 
-		ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
-		USkeletalMeshComponent* SkelMeshComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
-		USkeletalMesh* SkeletalMesh = SkelMeshComp ? SkelMeshComp->GetSkeletalMesh() : nullptr;
-		FSkeletalMesh* MeshData = SkeletalMesh ? SkeletalMesh->GetMeshData() : nullptr;
+    ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+    USkeletalMeshComponent* SkelMeshComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+    USkeletalMesh* SkeletalMesh = SkelMeshComp ? SkelMeshComp->GetSkeletalMesh() : nullptr;
+    FSkeletalMesh* MeshData = SkeletalMesh ? SkeletalMesh->GetMeshData() : nullptr;
 
-		// 헬퍼들이 참조할 transient 캐시 (Render 호출 범위에서만 유효)
-		CachedSkComp = SkelMeshComp;
+    CachedSkComp = SkelMeshComp;
 
-		if (!MeshData)
-		{
-			CachedMesh = nullptr;
-			Children.clear();
-			BoneToSocketIndices.clear();
-			if (Viewer)
-			{
-				Viewer->ClearSelection();
-			}
-			ResetMeshDirtyBaseline();
-			ImGui::TextDisabled("No skeletal mesh");
-		}
-		else if (CachedMesh != MeshData)
-		{
-			CachedMesh = MeshData;
-			if (Viewer)
-			{
-				Viewer->ClearSelection();
-			}
-
-			RebuildBoneTreeCaches(MeshData);
-			ResetMeshDirtyBaseline();
-		}
-
-		if (MeshData)
-		{
-            ApplyPendingBoneTreeOpenState(MeshData);
-			const TArray<FBoneInfo>& Bones = ResolveCurrentBones();
-			for (int32 j = 0; j < static_cast<int32>(Bones.size()); ++j)
-			{
-				if (Bones[j].ParentIndex == -1)
-				{
-					DrawBoneNode(j, Bones, Children);
-				}
-			}
-		}
-
-		// 컨텍스트 메뉴에서 PendingPreviewPickerSocketIdx가 셋되면 모달 오픈.
-		// (BeginPopupContextItem 안에서 OpenPopup하지 않고 *바깥*에서 하는 것이 안전 — popup 스택 충돌 방지)
-		if (PendingPreviewPickerSocketIdx >= 0 && !ImGui::IsPopupOpen("PickStaticMesh"))
-		{
-			ImGui::OpenPopup("PickStaticMesh");
-		}
-		DrawPreviewPickerModal();
-
-		if (RenameSocketIdx >= 0 && !ImGui::IsPopupOpen("RenameSocket"))
-		{
-			ImGui::OpenPopup("RenameSocket");
-		}
-		DrawRenameModal();
-
-		// 선택된 socket의 properties 편집기 + Save 버튼 (좌측 패널 하단)
-		ImGui::Separator();
-		DrawSocketInspector();
-
-		ImGui::EndChild();
-
-        // Left Splitter
-        ImGui::SameLine();
-        ImGui::Button("##left_splitter", ImVec2(2.0f, -1.0f));
-        if (ImGui::IsItemActive())
+    if (!MeshData)
+    {
+        CachedMesh = nullptr;
+        Children.clear();
+        BoneToSocketIndices.clear();
+        if (Viewer)
         {
-            LeftPanelWidth += ImGui::GetIO().MouseDelta.x;
-            LeftPanelWidth = std::clamp(LeftPanelWidth, 100.0f, FullSize.x * 0.4f);
+            Viewer->ClearSelection();
         }
-        ImGui::SameLine();
-
-		// =====================================================
-		// CENTER: Viewport
-		// =====================================================
-		ImGui::BeginChild("ViewportPanel", ImVec2(CenterWidth, 0), false);
-
-		ImVec2 Size = ImGui::GetContentRegionAvail();
-
-		Size.x = std::max(Size.x, 1.0f);
-		Size.y = std::max(Size.y, 1.0f);
-
-		ImGui::Dummy(Size);
-        ImVec2 Min = ImGui::GetItemRectMin();
-        ImVec2 Max = ImGui::GetItemRectMax();
-		const POINT ClientMin = ImGuiScreenToClientPoint(EditorEngine ? EditorEngine->GetWindow() : nullptr, Min);
-		const bool bViewportHovered = ImGui::IsItemHovered();
-		const bool bViewportClicked =
-			bViewportHovered &&
-			(ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
-			 ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
-			 ImGui::IsMouseClicked(ImGuiMouseButton_Middle));
-
-		FViewportRect NewRect;
-        NewRect.X = (int32)ClientMin.x;
-        NewRect.Y = (int32)ClientMin.y;
-        NewRect.Width = (int32)(Max.x - Min.x);
-        NewRect.Height = (int32)(Max.y - Min.y);
-
-		SceneViewport.SetRect(NewRect);
-
-		if (auto* Client = SceneViewport.GetClient())
-		{
-			Client->SetViewportSize((float)NewRect.Width, (float)NewRect.Height);
-		}
-		if (bViewportClicked)
-		{
-			EditorEngine->FocusViewportInput(&SceneViewport);
-		}
-
-		ImDrawList* DrawList = ImGui::GetWindowDrawList();
-
-		ID3D11DeviceContext* DC =
-			EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
-
-		DrawList->AddCallback(SetOpaqueBlendStateCallback, DC);
-
-		// Render viewport
-        DrawList->AddImage((ImTextureID)SRV, Min, Max);
-
-		DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
-
-		ImGui::EndChild();
-
-        // Right Splitter
-        ImGui::SameLine();
-        ImGui::Button("##right_splitter", ImVec2(2.0f, -1.0f));
-        if (ImGui::IsItemActive())
+        ResetMeshDirtyBaseline();
+        ImGui::TextDisabled("No skeletal mesh");
+    }
+    else if (CachedMesh != MeshData)
+    {
+        CachedMesh = MeshData;
+        if (Viewer)
         {
-            RightPanelWidth -= ImGui::GetIO().MouseDelta.x;
-            RightPanelWidth = std::clamp(RightPanelWidth, 100.0f, FullSize.x * 0.4f);
+            Viewer->ClearSelection();
         }
-        ImGui::SameLine();
 
-		// =====================================================
-		// RIGHT: Bone Details
-		// =====================================================
-		ImGui::BeginChild("BoneDetailsPanel", ImVec2(RightPanelWidth, 0), true);
-		ImGui::Text("Details");
-		ImGui::Separator();
-		if (Viewer->GetSelectedBoneIndex() != -1 && SkelMeshComp)
-		{
-			RenderBoneDetails(SkelMeshComp);
-		}
-        else if (Viewer->GetSelectedSocketIndex() != -1 && SkelMeshComp)
+        RebuildBoneTreeCaches(MeshData);
+        ResetMeshDirtyBaseline();
+    }
+
+    if (MeshData)
+    {
+        ApplyPendingBoneTreeOpenState(MeshData);
+        const TArray<FBoneInfo>& Bones = ResolveCurrentBones();
+        for (int32 j = 0; j < static_cast<int32>(Bones.size()); ++j)
         {
-            // Socket details (Location, Rotation, Scale already in Left Panel, but showing something here is good)
-            if (CachedMesh && Viewer->GetSelectedSocketIndex() < (int32)CachedMesh->Sockets.size())
+            if (Bones[j].ParentIndex == -1)
             {
-                ImGui::Text("Socket: %s", CachedMesh->Sockets[Viewer->GetSelectedSocketIndex()].Name.ToString().c_str());
-                ImGui::Separator();
-                ImGui::Text("Selected Socket for transformation.");
+                DrawBoneNode(j, Bones, Children);
             }
         }
-		else
-		{
-			ImGui::TextDisabled("No bone or socket selected.");
-		}
-	ImGui::EndChild();
+    }
+
+    if (PendingPreviewPickerSocketIdx >= 0 && !ImGui::IsPopupOpen("PickStaticMesh"))
+    {
+        ImGui::OpenPopup("PickStaticMesh");
+    }
+    DrawPreviewPickerModal();
+
+    if (RenameSocketIdx >= 0 && !ImGui::IsPopupOpen("RenameSocket"))
+    {
+        ImGui::OpenPopup("RenameSocket");
+    }
+    DrawRenameModal();
+
+    ImGui::Separator();
+    DrawSocketInspector();
+
+    ImGui::EndChild(); // SkeletonPanel 종료
+
+    // --- Left Splitter ---
+    ImGui::SameLine();
+    ImGui::Button("##left_splitter", ImVec2(2.0f, -1.0f));
+    if (ImGui::IsItemActive())
+    {
+        LeftPanelWidth += ImGui::GetIO().MouseDelta.x;
+        LeftPanelWidth = std::clamp(LeftPanelWidth, 100.0f, FullSize.x * 0.4f);
+    }
+    ImGui::SameLine();
+
+    // =====================================================
+    // CENTER: Viewport & Animation Timeline
+    // =====================================================
+    ImGui::BeginChild("ViewportPanel", ImVec2(CenterWidth, 0), false, ImGuiWindowFlags_NoScrollbar);
+
+    ImVec2 CenterAvailableSize = ImGui::GetContentRegionAvail();
+
+    static float TimelineHeight = 140.0f;
+    float SpacingY = ImGui::GetStyle().ItemSpacing.y;
+    float VerticalSplitterHeight = 4.0f;
+
+    float ViewportHeight = CenterAvailableSize.y - TimelineHeight - VerticalSplitterHeight - (SpacingY * 2.0f);
+    ViewportHeight = std::max(ViewportHeight, 50.0f);
+    TimelineHeight = CenterAvailableSize.y - ViewportHeight - VerticalSplitterHeight - (SpacingY * 2.0f);
+
+    // [CENTER - 1] 3D 뷰포트 영역
+    ImGui::BeginChild("ViewportRenderZone", ImVec2(CenterAvailableSize.x, ViewportHeight), true, ImGuiWindowFlags_NoScrollbar);
+
+    ImVec2 Size = ImGui::GetContentRegionAvail();
+    Size.x = std::max(Size.x, 1.0f);
+    Size.y = std::max(Size.y, 1.0f);
+
+    ImGui::Dummy(Size);
+    ImVec2 Min = ImGui::GetItemRectMin();
+    ImVec2 Max = ImGui::GetItemRectMax();
+    const POINT ClientMin = ImGuiScreenToClientPoint(EditorEngine ? EditorEngine->GetWindow() : nullptr, Min);
+    const bool bViewportHovered = ImGui::IsItemHovered();
+    const bool bViewportClicked =
+        bViewportHovered &&
+        (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
+         ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
+         ImGui::IsMouseClicked(ImGuiMouseButton_Middle));
+
+    FViewportRect NewRect;
+    NewRect.X = (int32)ClientMin.x;
+    NewRect.Y = (int32)ClientMin.y;
+    NewRect.Width = (int32)(Max.x - Min.x);
+    NewRect.Height = (int32)(Max.y - Min.y);
+
+    SceneViewport.SetRect(NewRect);
+
+    if (auto* Client = SceneViewport.GetClient())
+    {
+        Client->SetViewportSize((float)NewRect.Width, (float)NewRect.Height);
+    }
+    if (bViewportClicked)
+    {
+        EditorEngine->FocusViewportInput(&SceneViewport);
+    }
+
+    ImDrawList* DrawList = ImGui::GetWindowDrawList();
+    ID3D11DeviceContext* DC = EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
+
+    DrawList->AddCallback(SetOpaqueBlendStateCallback, DC);
+    DrawList->AddImage((ImTextureID)SRV, Min, Max);
+    DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+
+    ImGui::EndChild(); // ViewportRenderZone
+
+    // [CENTER - 2] 중앙 상하 스플리터
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+    ImGui::Button("##VerticalSplitter", ImVec2(-1.0f, VerticalSplitterHeight));
+    if (ImGui::IsItemActive())
+    {
+        TimelineHeight -= ImGui::GetIO().MouseDelta.y;
+    }
+    ImGui::PopStyleColor(3);
+
+    // [CENTER - 3] 타임라인 영역 (좌: 컨트롤, 우: 스크러버)
+    ImGui::BeginChild("AnimationTimelineZone", ImVec2(CenterAvailableSize.x, TimelineHeight), true, ImGuiWindowFlags_NoScrollbar);
+
+    static float CurrentTime = 0.794f;
+    static float MaxTime = 2.300f;
+    static int TotalFrames = 68;
+    float CurrentFrameF = (CurrentTime / std::max(MaxTime, 0.001f)) * TotalFrames;
+    float Percentage = (CurrentTime / std::max(MaxTime, 0.001f)) * 100.0f;
+
+    float TimelineFullWidth = ImGui::GetContentRegionAvail().x;
+    float TimelineLeftPanelWidth = std::max(220.0f, TimelineFullWidth * 0.25f);
+    float TimelineRightPanelWidth = TimelineFullWidth - TimelineLeftPanelWidth - ImGui::GetStyle().ItemSpacing.x;
+
+    // --- 하단 좌측 패널 (컨트롤) ---
+    ImGui::BeginChild("TimelineLeftPanel", ImVec2(TimelineLeftPanelWidth, 0), false, ImGuiWindowFlags_NoScrollbar);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 4.0f));
+    float BtnW = (TimelineLeftPanelWidth - (6.0f * 2.0f)) / 7.0f;
+
+    if (ImGui::Button("|<", ImVec2(BtnW, 24)))
+    {
+        CachedSkComp->SetPosition(0.0f);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("<<", ImVec2(BtnW, 24)))
+    {
+        CurrentTime = std::max(0.0f, CurrentTime - (MaxTime / TotalFrames));
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("<", ImVec2(BtnW, 24)))
+    { /* 역재생 */
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("||", ImVec2(BtnW, 24)))
+    {
+        CachedSkComp->Pause();
+    }
+    ImGui::SameLine();
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+    if (ImGui::Button("(O)", ImVec2(BtnW, 24)))
+    { /* 특수 액션/녹음 */
+    }
+    ImGui::SameLine();
+    ImGui::PopStyleColor();
+
+    if (ImGui::Button(">", ImVec2(BtnW, 24)))
+    { 
+		CachedSkComp->Play();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(">>", ImVec2(BtnW, 24)))
+    {
+        CurrentTime = std::min(MaxTime, CurrentTime + (MaxTime / TotalFrames));
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(">|", ImVec2(BtnW, 24)))
+    {
+        CurrentTime = MaxTime;
+    }
+    static bool bLoop = true;
+    if (ImGui::Checkbox("Loop Playback", &bLoop))
+    {
+        CachedSkComp->SetLooping(bLoop);
+    }
+    ImGui::PopStyleVar();
+    ImGui::Spacing();
+
+	FString FbxPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
+    TArray<FString> StackNames =  FResourceManager::Get().ListAnimStacks(FbxPath);
+
+    static int SelectedAnimItem = 0;
+    TArray<const char*> AnimItems;
+    AnimItems.reserve(StackNames.size());
+
+    for (const FString& StackName : StackNames)
+    {
+        AnimItems.push_back(StackName.c_str());
+    }
+    if (SelectedAnimItem >= static_cast<int>(AnimItems.size()))
+    {
+        SelectedAnimItem = 0;
+    }
+    ImGui::SetNextItemWidth(-1.0f);
+    if (ImGui::Combo("Animation List", &SelectedAnimItem, AnimItems.data(), static_cast<int>(AnimItems.size())))
+    {
+        if (CachedSkComp && SelectedAnimItem > 0)
+        {
+            // 실제 프로젝트 경로에 맞게 수정 필요
+            FString FbxPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
+ 
+            FString StackName = AnimItems[SelectedAnimItem];
+
+            CachedSkComp->SetAnimSequence(FbxPath, StackName);
+        }
+    }
+    ImGui::Spacing();
+
+    //static bool bLoop = true;
+    //ImGui::Checkbox("Loop Playback", &bLoop);
+    ImGui::TextDisabled("[Notify List Area]");
+
+    ImGui::EndChild(); // TimelineLeftPanel
+
+    ImGui::SameLine(); // 타임라인 좌/우 분할
+
+    // --- 하단 우측 패널 (스크러버) ---
+    ImGui::BeginChild("TimelineRightPanel", ImVec2(TimelineRightPanelWidth, 0), false, ImGuiWindowFlags_NoScrollbar);
+
+    ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
+                       "Ani Percentage: %5.2f%%   CurrentTime: %.3f / %.3f (sec)   Frame: %.2f / %d",
+                       Percentage, CurrentTime, MaxTime, CurrentFrameF, TotalFrames);
+    ImGui::Separator();
+
+    float ScrubberWidth = ImGui::GetContentRegionAvail().x;
+    float ScrubberHeight = std::max(30.0f, ImGui::GetContentRegionAvail().y - 4.0f);
+
+    ImVec2 ScrubberPos = ImGui::GetCursorScreenPos();
+    ImDrawList* TimelineDrawList = ImGui::GetWindowDrawList();
+
+    ImGui::InvisibleButton("##CustomScrubber", ImVec2(ScrubberWidth, ScrubberHeight));
+
+    bool bScrubberActive = ImGui::IsItemActive();
+    bool bScrubberHovered = ImGui::IsItemHovered();
+
+    ImVec2 TrackMin = ScrubberPos;
+    ImVec2 TrackMax = ImVec2(ScrubberPos.x + ScrubberWidth, ScrubberPos.y + ScrubberHeight);
+
+    TimelineDrawList->AddRectFilled(TrackMin, TrackMax, IM_COL32(60, 60, 60, 255));
+    TimelineDrawList->AddRect(TrackMin, TrackMax, IM_COL32(100, 100, 100, 255));
+
+    int FrameStep = 10;
+    for (int i = 0; i <= TotalFrames; i += FrameStep)
+    {
+        float ratio = (float)i / std::max(TotalFrames, 1);
+        float tickX = TrackMin.x + (ratio * ScrubberWidth);
+
+        TimelineDrawList->AddLine(
+            ImVec2(tickX, TrackMin.y + ScrubberHeight * 0.4f),
+            ImVec2(tickX, TrackMax.y - 2.0f),
+            IM_COL32(180, 180, 180, 255));
+
+        char frameText[16];
+        sprintf_s(frameText, "%d", i);
+        TimelineDrawList->AddText(ImVec2(tickX + 4.0f, TrackMin.y + 2.0f), IM_COL32(200, 200, 200, 255), frameText);
+    }
+
+    float PlayheadRatio = std::clamp(CurrentTime / std::max(MaxTime, 0.001f), 0.0f, 1.0f);
+    float PlayheadX = TrackMin.x + (PlayheadRatio * ScrubberWidth);
+    float PlayheadWidth = 14.0f;
+
+    ImVec2 HeadMin = ImVec2(PlayheadX - PlayheadWidth * 0.5f, TrackMin.y + 2.0f);
+    ImVec2 HeadMax = ImVec2(PlayheadX + PlayheadWidth * 0.5f, TrackMax.y - 2.0f);
+
+    if (bScrubberActive)
+    {
+        float mouseX = ImGui::GetIO().MousePos.x;
+        float newRatio = (mouseX - TrackMin.x) / ScrubberWidth;
+        newRatio = std::clamp(newRatio, 0.0f, 1.0f);
+
+        CurrentTime = newRatio * MaxTime; // UI 표시용 업데이트
+
+        if (CachedSkComp)
+        {
+            CachedSkComp->SetPosition(CurrentTime);
+        }
+    }
+
+    ImU32 HeadColor = bScrubberHovered || bScrubberActive ? IM_COL32(180, 80, 80, 255) : IM_COL32(150, 70, 70, 255);
+    TimelineDrawList->AddRectFilled(HeadMin, HeadMax, HeadColor, 2.0f);
+    TimelineDrawList->AddRect(HeadMin, HeadMax, IM_COL32(50, 20, 20, 255), 2.0f);
+    TimelineDrawList->AddLine(ImVec2(PlayheadX, HeadMin.y), ImVec2(PlayheadX, HeadMax.y), IM_COL32(255, 150, 150, 100));
+
+    ImGui::EndChild(); // TimelineRightPanel
+    ImGui::EndChild(); // AnimationTimelineZone
+
+    ImGui::EndChild(); // ViewportPanel 종료
+
+    // ★★★ 핵심 수정 부분: 중앙 패널이 끝난 직후 SameLine()을 추가하여 우측 패널을 끌어올림 ★★★
+    ImGui::SameLine();
+
+    // =====================================================
+    // RIGHT: Bone Details
+    // =====================================================
+    ImGui::BeginChild("BoneDetailsPanel", ImVec2(RightPanelWidth, 0), true);
+    ImGui::Text("Details");
+    ImGui::Separator();
+    if (Viewer->GetSelectedBoneIndex() != -1 && SkelMeshComp)
+    {
+        RenderBoneDetails(SkelMeshComp);
+    }
+    else if (Viewer->GetSelectedSocketIndex() != -1 && SkelMeshComp)
+    {
+        if (CachedMesh && Viewer->GetSelectedSocketIndex() < (int32)CachedMesh->Sockets.size())
+        {
+            ImGui::Text("Socket: %s", CachedMesh->Sockets[Viewer->GetSelectedSocketIndex()].Name.ToString().c_str());
+            ImGui::Separator();
+            ImGui::Text("Selected Socket for transformation.");
+        }
+    }
+    else
+    {
+        ImGui::TextDisabled("No bone or socket selected.");
+    }
+    ImGui::EndChild(); // BoneDetailsPanel
 }
 
 void FEditorViewerWindowWidget::RenderBoneDetails(USkeletalMeshComponent* SkelComp)

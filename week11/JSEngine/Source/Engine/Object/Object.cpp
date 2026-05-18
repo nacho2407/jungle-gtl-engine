@@ -60,10 +60,12 @@ void UObject::CopyPropertiesFrom(UObject* Src)
 
     for (const FPropertyDescriptor& SrcProp : SrcProps)
     {
+        const char* SrcName = SrcProp.InternalName ? SrcProp.InternalName : SrcProp.Name;
         FPropertyDescriptor* DstProp = nullptr;
         for (FPropertyDescriptor& D : DstProps)
         {
-            if (strcmp(D.Name, SrcProp.Name) == 0)
+            const char* DstName = D.InternalName ? D.InternalName : D.Name;
+            if (strcmp(DstName, SrcName) == 0)
             {
                 DstProp = &D;
                 break;
@@ -85,19 +87,19 @@ void UObject::CopyPropertiesFrom(UObject* Src)
             if (Size > 0)
 			{
                 memcpy(DstProp->ValuePtr, SrcProp.ValuePtr, Size);
-				this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
+				this->PostEditChangeProperty({ SrcName, EPropertyChangeType::ValueSet });
 			}
             break;
         }
         case EPropertyType::String:
             *static_cast<FString*>(DstProp->ValuePtr) = *static_cast<const FString*>(SrcProp.ValuePtr);
-			this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
+			this->PostEditChangeProperty({ SrcName, EPropertyChangeType::ValueSet });
             break;
 
         case EPropertyType::Name:
             *static_cast<FName*>(DstProp->ValuePtr) = *static_cast<const FName*>(SrcProp.ValuePtr);
             // FName 은 리소스 키이므로 캐시 갱신을 위해 PostEditChangeProperty 를 호출합니다.
-            this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
+            this->PostEditChangeProperty({ SrcName, EPropertyChangeType::ValueSet });
             break;
 
         case EPropertyType::SceneComponentRef:
