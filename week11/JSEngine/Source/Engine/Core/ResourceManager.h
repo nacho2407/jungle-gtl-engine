@@ -118,6 +118,7 @@ public:
 	TArray<FString> GetSkeletalMeshPaths() const;
 	FFbxMeshContentInfo InspectFbxMeshContent(const FString& Path);
 
+	TArray<FString> ListAnimStacks(const FString& SourceFbxPath);
 	UAnimSequence* LoadAnimSequence(const FString& SourceFbxPath,const FString& TargetSkeletalMeshPath,const FString& AnimStackName);
 	UAnimSequence* FindAnimSequence(const FString& Key) const;
 	TArray<FString> GetAnimSequencePaths() const;
@@ -180,6 +181,7 @@ private:
 	FAtlasResourceCache AtlasCache;
 
 	TMap<FString, USkeletalMesh*> SkeletalMeshMap;
+	TMap<FString, TArray<FString>> AnimStackNamesMap;
 	TMap<FString, UAnimSequence*> AnimSequenceMap;
 	TArray<FString> AnimSequenceFilePaths;
 	/* Paths */
