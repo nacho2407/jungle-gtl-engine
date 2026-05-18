@@ -1,0 +1,40 @@
+{
+        "Nodes" : [{
+            "AnimationPath" : "",
+            "InputPoseNodeId" : -1,
+            "Name" : "Sequence Player",
+            "NodeId" : 1,
+            "PlayRate" : 1.000000,
+            "Position" : {
+              "X" : 120.000000,
+              "Y" : 120.000000
+            },
+            "StateMachine" : {
+              "EntryStateId" : -1,
+              "States" : [],
+              "Transitions" : []
+            },
+            "Type" : 1,
+            "bLoop" : true
+          }, {
+            "AnimationPath" : "",
+            "InputPoseNodeId" : 1,
+            "Name" : "Output Pose",
+            "NodeId" : 2,
+            "PlayRate" : 1.000000,
+            "Position" : {
+              "X" : 420.000000,
+              "Y" : 120.000000
+            },
+            "StateMachine" : {
+              "EntryStateId" : -1,
+              "States" : [],
+              "Transitions" : []
+            },
+            "Type" : 0,
+            "bLoop" : true
+          }],
+        "ObjectName" : "UAnimGraphAsset_0",
+        "RootNodeId" : 2,
+        "Type" : "UAnimGraphAsset"
+      }
