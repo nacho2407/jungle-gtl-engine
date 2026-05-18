@@ -925,16 +925,20 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
         SelectedAnimItem = 0;
     }
     ImGui::SetNextItemWidth(-1.0f);
-    if (ImGui::Combo("Animation List", &SelectedAnimItem, AnimItems.data(), static_cast<int>(AnimItems.size())))
+    const bool bAnimSelectionChanged =
+        ImGui::Combo("Animation List", &SelectedAnimItem, AnimItems.data(), static_cast<int>(AnimItems.size()));
+    if (CachedSkComp && !StackNames.empty() && SelectedAnimItem >= 0 && SelectedAnimItem < static_cast<int>(StackNames.size()))
     {
-        if (CachedSkComp && SelectedAnimItem > 0)
-        {
-            // 실제 프로젝트 경로에 맞게 수정 필요
-            FString FbxPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
- 
-            FString StackName = AnimItems[SelectedAnimItem];
+        const FString StackName = StackNames[SelectedAnimItem];
+        const FString AnimKey = FbxPath + "|" + StackName;
 
+        static FString LastRequestedAnimKey;
+        const bool bNeedsInitialLoad = CachedSkComp->GetAnimation() == nullptr && LastRequestedAnimKey != AnimKey;
+        if (bAnimSelectionChanged || bNeedsInitialLoad)
+        {
+            // animation 미설정 상태에서는 0번 animation stack도 한 번 로드
             CachedSkComp->SetAnimSequence(FbxPath, StackName);
+            LastRequestedAnimKey = AnimKey;
         }
     }
     ImGui::Spacing();
