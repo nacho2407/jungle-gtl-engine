@@ -63,16 +63,24 @@ struct FJsonReader : public FArchive
 		if (Current.JSONType() == json::JSON::Class::Array)
 		{
 			int32& CurrentIdx = ArrayIndexStack.back();
-			if (CurrentIdx < static_cast<int32>(Current.length()) && Current[CurrentIdx].JSONType() == json::JSON::Class::Object)
+
+			if (CurrentIdx < static_cast<int32>(Current.length()) &&
+				Current.at(CurrentIdx).JSONType() == json::JSON::Class::Object)
 			{
-				ScopeStack.push_back(&Current[CurrentIdx++]);
+				ScopeStack.push_back(&Current.at(CurrentIdx));
 				ArrayIndexStack.push_back(0);
+				++CurrentIdx;
 			}
+
+			CurrentKey.clear();
+			return;
 		}
-		else if (Current.hasKey(Key.c_str()))
+
+		if (!Key.empty() && Current.hasKey(Key.c_str()))
 		{
 			ScopeStack.push_back(&Current[Key.c_str()]);
 			ArrayIndexStack.push_back(0);
+			CurrentKey.clear();
 		}
 		CurrentKey.clear();
 	}

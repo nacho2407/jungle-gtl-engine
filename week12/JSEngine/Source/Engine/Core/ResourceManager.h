@@ -26,6 +26,8 @@
 #include "Render/Resource/RenderResources.h"
 #include <d3d11.h>
 
+#include "Animation/AnimGraphAsset.h"
+
 
 class FMaterialLoadService;
 class FMaterialSerializationService;
@@ -133,6 +135,9 @@ public:
 	bool SaveAnimSequence(const FString& Path, const UAnimSequence* Sequence);
 	UAnimSequence* FindAnimSequence(const FString& Path) const;
 	TArray<FString> GetAnimSequencePaths() const;
+
+	UAnimGraphAsset* LoadAnimGraph(const FString& Path);
+	bool SaveAnimGraph(UAnimGraphAsset* Asset, const FString& Path);
 
 	ID3D11SamplerState* GetOrCreateSamplerState(ESamplerType Type, ID3D11Device* Device = nullptr);
 	ID3D11DepthStencilState* GetOrCreateDepthStencilState(EDepthStencilType Type, ID3D11Device* Device = nullptr);

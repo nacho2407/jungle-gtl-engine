@@ -629,6 +629,7 @@ ASSET_OBJECT_TYPES = {
     'UAnimationAsset',
     'UAnimSequence',
     'UAnimSequenceBase',
+    'UAnimGraphAsset',
     'UTexture',
 }
 

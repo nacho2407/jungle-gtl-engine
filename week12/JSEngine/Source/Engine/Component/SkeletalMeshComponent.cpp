@@ -1,10 +1,13 @@
 ﻿#include "SkeletalMeshComponent.h"
 
 #include "Animation/AnimInstance.h"
+#include "Animation/AnimGraphAsset.h"
+#include "Animation/AnimGraphInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimationStateMachine.h"
 #include "Animation/StateMachineAnimInstance.h"
+#include "Core/ResourceManager.h"
 #include "Core/Logging/SkinningStats.h"
 #include "Core/Paths.h"
 #include "GameFramework/AActor.h"
@@ -39,6 +42,10 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
 		{
 			ApplyAnimationFromAssetPath();
 		}
+		if (!bLoadedAnimInstance && AnimationMode == EAnimationMode::AnimationGraph)
+		{
+			ApplyAnimGraphFromAssetPath();
+		}
 	}
 	else if (Ar.IsSaving())
 	{
@@ -68,6 +75,7 @@ void USkeletalMeshComponent::PostDuplicate(UObject* Original)
 
 	AnimInstance = nullptr;
 	AnimationAssetPath.SetPath(SourceComponent->AnimationAssetPath.GetPath());
+	AnimGraphAssetPath = SourceComponent->AnimGraphAssetPath;
 	AnimationToPlay = SourceComponent->AnimationToPlay;
 	AnimationMode = SourceComponent->AnimationMode;
 
@@ -79,6 +87,10 @@ void USkeletalMeshComponent::PostDuplicate(UObject* Original)
 			SingleNode->CopyPropertiesFrom(SourceSingleNode);
 			SingleNode->PostEditChangeProperty({ "AnimationAssetPath", EPropertyChangeType::ValueSet });
 		}
+	}
+	else if (AnimationMode == EAnimationMode::AnimationGraph)
+	{
+		ApplyAnimGraphFromAssetPath();
 	}
 }
 
@@ -97,6 +109,17 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
 	else if (PropertyName && std::strcmp(PropertyName, "AnimationAssetPath") == 0)
 	{
 		ApplyAnimationFromAssetPath();
+	}
+	else if (PropertyName && std::strcmp(PropertyName, "AnimGraphAssetPath") == 0)
+	{
+		if (!AnimGraphAssetPath.IsNull() && AnimationMode != EAnimationMode::AnimationGraph)
+		{
+			SetAnimationMode(EAnimationMode::AnimationGraph);
+		}
+		else
+		{
+			ApplyAnimGraphFromAssetPath();
+		}
 	}
 }
 
@@ -187,6 +210,44 @@ void USkeletalMeshComponent::SetAnimStateByName(const FString& StateName, float 
 	{
 		StateMachine->SetStateByName(StateName, BlendTime);
 	}
+}
+
+void USkeletalMeshComponent::SetAnimGraph(UAnimGraphAsset* Graph)
+{
+	if (!Graph)
+	{
+		return;
+	}
+
+	UAnimGraphInstance* Instance = UObjectManager::Get().CreateObject<UAnimGraphInstance>();
+	Instance->Initialize(this);
+	Instance->SetGraphAsset(Graph);
+
+	AnimInstance = Instance;
+	AnimationMode = EAnimationMode::AnimationGraph;
+}
+
+void USkeletalMeshComponent::ApplyAnimGraphFromAssetPath()
+{
+	if (AnimGraphAssetPath.IsNull())
+	{
+		if (AnimationMode == EAnimationMode::AnimationGraph)
+		{
+			AnimInstance = nullptr;
+			ResetToBindPose();
+		}
+		return;
+	}
+
+	const FString& GraphPath = AnimGraphAssetPath.GetPath();
+	UAnimGraphAsset* Graph = FResourceManager::Get().LoadAnimGraph(GraphPath);
+	if (!Graph)
+	{
+		UE_LOG_WARNING("[SkeletalMeshComponent] Failed to load anim graph: %s", GraphPath.c_str());
+		return;
+	}
+
+	SetAnimGraph(Graph);
 }
 
 void USkeletalMeshComponent::ResetToBindPose()
@@ -292,6 +353,14 @@ void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InAnimationMode)
 			SingleNode->SetAnimationAssetPath(AnimationAssetPath.GetPath());
 			AnimationToPlay = SingleNode->GetAnimation();
 		}
+	}
+	else if (AnimationMode == EAnimationMode::AnimationGraph)
+	{
+		ApplyAnimGraphFromAssetPath();
+	}
+	else
+	{
+		AnimInstance = nullptr;
 	}
 }
 

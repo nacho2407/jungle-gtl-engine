@@ -346,9 +346,16 @@
     <Exec Command="&quot;$(MSBuildProjectDirectory)\..\Scripts\python\python.exe&quot; &quot;$(MSBuildProjectDirectory)\..\Scripts\GenerateReflection.py&quot;" />
   </Target>
   <ItemGroup>
+    <ClCompile Include="Intermediate\Reflection\Animation\FAnimGraphNodeDesc.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\FAnimStateDesc.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\FAnimStateMachineDesc.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\FAnimStateTransitionDesc.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\FAnimTransitionConditionDesc.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UActorSequence.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UActorSequencePlayer.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimDataModel.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimGraphAsset.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimGraphInstance.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimInstance.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequence.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequenceBase.gen.cpp" />
@@ -403,6 +410,7 @@
     <ClCompile Include="Intermediate\Reflection\Component\UStaticMeshComponent.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Component\USubUVComponent.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Component\UTextRenderComponent.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Core\FGuid.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Editor\UEditorEngine.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\AActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\AAmbientLightActor.gen.cpp" />
@@ -431,6 +439,11 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\ATextRenderActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ULevel.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\UWorld.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Math\FColor.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Math\FQuat.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Math\FVector.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Math\FVector2.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Math\FVector4.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Misc\ObjViewer\UObjViewerEngine.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Render\Resource\UMaterial.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Render\Resource\UMaterialInstance.gen.cpp" />
@@ -513,6 +526,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorActorSequencerWidget.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorAnimGraphWidget.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -733,6 +750,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\ActorSequence.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimGraphAsset.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimGraphInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimGraphNode.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp" />
@@ -1032,6 +1052,7 @@
     <ClInclude Include="Source\Editor\UI\EditorActorSequenceEditModel.h" />
     <ClInclude Include="Source\Editor\UI\EditorActorSequenceTimeUtils.h" />
     <ClInclude Include="Source\Editor\UI\EditorActorSequencerWidget.h" />
+    <ClInclude Include="Source\Editor\UI\EditorAnimGraphWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorChromeConstants.h" />
     <ClInclude Include="Source\Editor\UI\EditorCommandContext.h" />
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h" />
@@ -1070,6 +1091,9 @@
     <ClInclude Include="Source\Editor\Viewport\SkeletalMeshViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h" />
     <ClInclude Include="Source\Engine\Animation\ActorSequence.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimGraphAsset.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimGraphInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimGraphNode.h" />
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSequence.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h" />

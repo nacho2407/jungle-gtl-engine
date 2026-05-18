@@ -11,6 +11,7 @@ class UScriptStruct;
 #define UMETA(...)
 #define USTRUCT(...)
 #define UFUNCTION(...)
+#define UDELEGATE(...)
 #define UINTERFACE(...)
 
 #define GENERATED_BODY(ClassName, ParentClass) \

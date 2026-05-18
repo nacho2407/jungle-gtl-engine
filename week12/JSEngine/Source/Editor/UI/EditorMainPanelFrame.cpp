@@ -84,6 +84,12 @@ void FEditorMainPanel::RenderMainViewport(float DeltaTime)
         return;
     }
 
+    if (EditorTabs.GetActiveTabKind() == EEditorTabKind::AnimGraphEditor)
+    {
+        RenderAnimGraphEditorDocument(DeltaTime);
+        return;
+    }
+
     RenderActiveViewerDocument(DeltaTime);
 }
 

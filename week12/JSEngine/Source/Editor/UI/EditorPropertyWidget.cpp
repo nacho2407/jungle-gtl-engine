@@ -32,6 +32,7 @@
 #include "Render/Resource/Material.h"
 #include "Asset/StaticMesh.h"
 #include "Asset/SkeletalMesh.h"
+#include "Animation/AnimGraphAsset.h"
 #include "Animation/AnimSequence.h"
 #include "Object/FName.h"
 #include "Object/Class.h"
@@ -142,7 +143,91 @@ namespace
 			&& (std::strcmp(Property->Name, "SkeletalMeshPath") == 0
 				|| std::strcmp(Property->Name, "SkinningMode") == 0
 				|| std::strcmp(Property->Name, "AnimationAssetPath") == 0
+				|| std::strcmp(Property->Name, "AnimGraphAssetPath") == 0
 				|| std::strcmp(Property->Name, "AnimationMode") == 0);
+	}
+
+	static TArray<FString> CollectAnimGraphAssetPaths()
+	{
+		TArray<FString> Result;
+		const std::filesystem::path AssetRoot = (std::filesystem::path(FPaths::RootDir()) / L"Asset").lexically_normal();
+		if (!std::filesystem::exists(AssetRoot))
+		{
+			return Result;
+		}
+
+		std::error_code ErrorCode;
+		for (const std::filesystem::directory_entry& Entry : std::filesystem::recursive_directory_iterator(AssetRoot, ErrorCode))
+		{
+			if (ErrorCode)
+			{
+				break;
+			}
+			if (!Entry.is_regular_file())
+			{
+				continue;
+			}
+
+			FString Extension = FPaths::ToUtf8(Entry.path().extension().wstring());
+			std::transform(Extension.begin(), Extension.end(), Extension.begin(),
+				[](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
+			if (Extension == ".animgraph")
+			{
+				Result.push_back(FPaths::Normalize(FPaths::ToRelativeString(Entry.path().wstring())));
+			}
+		}
+
+		std::sort(Result.begin(), Result.end());
+		return Result;
+	}
+
+	static bool RenderAnimGraphAssetPathWidget(FString& Value, const char* Label)
+	{
+		bool bChanged = false;
+		TArray<FString> Options = CollectAnimGraphAssetPaths();
+		const char* Preview = Value.empty() ? "<None>" : Value.c_str();
+
+		if (ImGui::BeginCombo(Label, Preview))
+		{
+			if (ImGui::Selectable("<None>", Value.empty()))
+			{
+				Value.clear();
+				bChanged = true;
+			}
+			for (const FString& Path : Options)
+			{
+				const bool bSelected = Value == Path;
+				if (ImGui::Selectable(Path.c_str(), bSelected))
+				{
+					Value = Path;
+					bChanged = true;
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("AnimGraphContentItem"))
+			{
+				if (Payload->Data && Payload->DataSize > 0)
+				{
+					const FString PayloadPath = static_cast<const char*>(Payload->Data);
+					const std::filesystem::path DroppedPath = FPaths::ToWide(PayloadPath);
+					Value = DroppedPath.is_absolute()
+						? FPaths::Normalize(FPaths::ToRelativeString(DroppedPath.wstring()))
+						: FPaths::Normalize(PayloadPath);
+					bChanged = true;
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+
+		return bChanged;
 	}
 
 	static FString MakePropertyWidgetLabel(const FProperty& Prop)
@@ -1866,6 +1951,11 @@ bool FEditorPropertyWidget::RenderSoftObjectPtrWidget(const FProperty& Property,
 			LocalOptions = FResourceManager::Get().GetAnimSequencePaths();
 			Options = &LocalOptions;
 		}
+		else if (Property.ObjectClass->IsChildOf(UAnimGraphAsset::StaticClass()))
+		{
+			LocalOptions = CollectAnimGraphAssetPaths();
+			Options = &LocalOptions;
+		}
 	}
 
 	if (Options && !Options->empty())
@@ -1902,6 +1992,27 @@ bool FEditorPropertyWidget::RenderSoftObjectPtrWidget(const FProperty& Property,
 			Property.SoftObjectOps->SetPath(ValuePtr, Buf);
 			bChanged = true;
 		}
+	}
+
+	if (Property.ObjectClass
+		&& Property.ObjectClass->IsChildOf(UAnimGraphAsset::StaticClass())
+		&& ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("AnimGraphContentItem"))
+		{
+			if (Payload->Data && Payload->DataSize > 0)
+			{
+				const FString PayloadPath = static_cast<const char*>(Payload->Data);
+				const std::filesystem::path DroppedPath = FPaths::ToWide(PayloadPath);
+				Property.SoftObjectOps->SetPath(
+					ValuePtr,
+					DroppedPath.is_absolute()
+						? FPaths::Normalize(FPaths::ToRelativeString(DroppedPath.wstring()))
+						: FPaths::Normalize(PayloadPath));
+				bChanged = true;
+			}
+		}
+		ImGui::EndDragDropTarget();
 	}
 
 	return bChanged;
@@ -2076,6 +2187,11 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 	case EPropertyType::String:
 	{
 		FString* Val = static_cast<FString*>(ValuePtr);
+		if (Property.Name && std::strcmp(Property.Name, "AnimGraphAssetPath") == 0)
+		{
+			return RenderAnimGraphAssetPathWidget(*Val, Label);
+		}
+
 		char Buf[512];
 		strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
 		if (ImGui::InputText(Label, Buf, sizeof(Buf)))

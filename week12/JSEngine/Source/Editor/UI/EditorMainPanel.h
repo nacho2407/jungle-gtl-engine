@@ -50,6 +50,7 @@ public:
 	void OpenMaterialAsset(UMaterialInterface* Material);
 	void OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex);
 	void OpenCurveAsset(const FString& CurvePath);
+	void OpenAnimGraphAsset(const FString& AnimGraphPath);
 	void OpenRuntimeUIPreviewAsset(const FString& RmlPath = "");
 	void OpenViewer(FEditorViewer* Viewer);
 	void RequestDockViewer(FEditorViewer* Viewer);
@@ -107,6 +108,7 @@ private:
 	FEditorViewerWindowWidget* FindViewerWidgetForTab(const FEditorTabId& TabId) const;
 	void RenderActiveViewerDocument(float DeltaTime);
 	void RenderRuntimeUIPreviewDocument(float DeltaTime);
+	void RenderAnimGraphEditorDocument(float DeltaTime);
 	void UpdateConsoleDrawerAnimation(float EffectiveDeltaTime);
 	void RenderLateFrameOverlays(float DeltaTime, float EffectiveDeltaTime, bool bDrawEditorPanels);
 	void EndImGuiFrame();

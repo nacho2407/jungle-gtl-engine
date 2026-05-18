@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Editor/UI/EditorWidget.h"
 #include "Asset/SkeletalMeshTypes.h"
+#include "Render/Common/ComPtr.h"
 
 class USkeletalMeshComponent;
 class FSceneViewport;
@@ -71,7 +72,14 @@ private:
     void RenderAnimSequenceToolbar(UAnimSequence* Sequence);
     void RenderAnimSequenceTimeline(UAnimSequence* Sequence);
     void RenderAnimSequenceDetails(UAnimSequence* Sequence, USkeletalMesh* PreviewMesh);
+    void RenderAnimSequenceList(UAnimSequence* Sequence);
     void SyncPreviewMeshPathBuffer();
+    void LoadAnimSequenceToolbarIcons();
+    bool DrawAnimSequenceIconButton(
+        const char* Id,
+        ID3D11ShaderResourceView* Icon,
+        const char* Tooltip,
+        const ImVec2& Size);
 	void RenderDetachedDocumentChrome(bool& bDockRequested, bool& bCloseRequested);
 	void RenderDetachedDocumentToolbar(bool& bDockRequested);
     void Shutdown();
@@ -96,6 +104,15 @@ private:
     char PreviewMeshPathBuffer[1024] = {};
     int32 SelectedAnimTrackIndex = -1;
     UAnimSequence* CachedAnimSequence = nullptr;
+
+    bool bAnimSequenceToolbarIconsLoadAttempted = false;
+    TComPtr<ID3D11ShaderResourceView> AnimSequencePlayIcon;
+    TComPtr<ID3D11ShaderResourceView> AnimSequencePauseIcon;
+    TComPtr<ID3D11ShaderResourceView> AnimSequenceReverseIcon;
+    TComPtr<ID3D11ShaderResourceView> AnimSequenceToFrontIcon;
+    TComPtr<ID3D11ShaderResourceView> AnimSequenceToEndIcon;
+    TComPtr<ID3D11ShaderResourceView> AnimSequenceLoopingIcon;
+    TComPtr<ID3D11ShaderResourceView> AnimSequenceNoLoopingIcon;
 
 	FEditorViewer* Viewer = nullptr;
     bool bOpen = false;

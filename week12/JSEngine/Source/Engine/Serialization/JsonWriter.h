@@ -45,17 +45,21 @@ struct FJsonWriter : public FArchive
 	virtual void BeginObject(const FString& Key) override
 	{
 		json::JSON& Current = *ScopeStack.back();
+
 		if (Current.JSONType() == json::JSON::Class::Array)
 		{
 			Current.append(json::Object());
 			ScopeStack.push_back(&Current.at(static_cast<int>(Current.length()) - 1));
+			CurrentKey.clear();
+			return;
 		}
-		else
+
+		if (!Key.empty())
 		{
 			Current[Key.c_str()] = json::Object();
 			ScopeStack.push_back(&Current[Key.c_str()]);
+			CurrentKey.clear();
 		}
-		CurrentKey.clear();
 	}
 
 	virtual void BeginObject(int32 Index) override
