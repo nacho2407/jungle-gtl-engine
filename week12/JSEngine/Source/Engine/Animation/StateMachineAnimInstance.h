@@ -11,6 +11,7 @@ public:
 	GENERATED_BODY(UStateMachineAnimInstance, UAnimInstance)
 
 	void SetStateMachine(UAnimationStateMachine* InStateMachine);
+	UAnimationStateMachine* GetStateMachine() const { return StateMachine; }
 
 	virtual void NativeUpdateAnimation(float DeltaTime) override;
 	virtual bool EvaluatePose(FPoseContext& OutPoseContext) override;
