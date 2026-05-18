@@ -232,20 +232,41 @@ bool USkeletalMeshComponent::SetAnimSequence(const FString& SourceFbxPath, const
 {
     if (!SkeletalMesh)
     {
+        UE_LOG_WARNING("[SkeletalMeshComponent] SetAnimSequence failed because SkeletalMesh is null. AnimPath=%s Stack=%s",
+                       SourceFbxPath.c_str(),
+                       AnimStackName.c_str());
+        return false;
+    }
+
+    const FString TargetSkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
+    if (TargetSkeletalMeshPath.empty())
+    {
+        UE_LOG_WARNING("[SkeletalMeshComponent] SetAnimSequence failed because target skeletal mesh path is empty. AnimPath=%s Stack=%s",
+                       SourceFbxPath.c_str(),
+                       AnimStackName.c_str());
         return false;
     }
 
     UAnimSequence* LoadedSequence = FResourceManager::Get().LoadAnimSequence(
         SourceFbxPath,
-        SkeletalMesh->GetAssetPathFileName(),
+        TargetSkeletalMeshPath,
         AnimStackName);
 
     if (!LoadedSequence)
     {
+        UE_LOG_WARNING("[SkeletalMeshComponent] SetAnimSequence failed to load sequence. AnimPath=%s Target=%s Stack=%s",
+                       SourceFbxPath.c_str(),
+                       TargetSkeletalMeshPath.c_str(),
+                       AnimStackName.c_str());
         return false;
     }
 
     SetAnimation(LoadedSequence);
+    UE_LOG("[SkeletalMeshComponent] SetAnimSequence succeeded. AnimPath=%s Target=%s Stack=%s Length=%.3f",
+           SourceFbxPath.c_str(),
+           TargetSkeletalMeshPath.c_str(),
+           LoadedSequence->AnimStackName.c_str(),
+           LoadedSequence->GetPlayLength());
     return true;
 }
 

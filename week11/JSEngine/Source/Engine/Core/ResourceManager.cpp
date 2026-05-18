@@ -965,6 +965,10 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, 
 	USkeletalMesh* TargetMesh = LoadSkeletalMesh(NormalizedTarget);
 	if (!TargetMesh)
 	{
+		UE_LOG_ERROR("[AnimSequenceLoad] Target skeletal mesh load failed. Path=%s Target=%s Stack=%s",
+		             NormalizedSource.c_str(),
+		             NormalizedTarget.c_str(),
+		             AnimStackName.c_str());
 		return nullptr;
 	}
 
@@ -1015,6 +1019,10 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, 
 	Anim = FbxImporter.LoadAnimSequence(NormalizedSource, NormalizedTarget, AnimStackName);
 	if (!Anim)
 	{
+		UE_LOG_ERROR("[AnimSequenceLoad] FBX import failed. Path=%s Target=%s Stack=%s",
+		             NormalizedSource.c_str(),
+		             NormalizedTarget.c_str(),
+		             AnimStackName.c_str());
 		return nullptr;
 	}
 	Anim->Skeleton = TargetMesh->GetSkeleton();
