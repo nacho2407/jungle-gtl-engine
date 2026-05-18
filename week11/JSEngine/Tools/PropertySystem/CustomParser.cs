@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -358,6 +359,21 @@ class CustomParser
         return false;
     }
 
+    static bool WriteAllTextIfChanged(string path, string content)
+    {
+        if (File.Exists(path))
+        {
+            string oldContent = File.ReadAllText(path);
+            if (oldContent == content)
+            {
+                return false;
+            }
+        }
+
+        File.WriteAllText(path, content);
+        return true;
+    }
+
     #endregion
 
     static void Main(string[] args)
@@ -389,8 +405,12 @@ class CustomParser
         Console.WriteLine($"[UHT] Source: {sourceDir}");
         Console.WriteLine($"[UHT] Output: {outputDir}");
 
-        var headerFiles = Directory.GetFiles(sourceDir, "*.h", SearchOption.AllDirectories);
+        var headerFiles = Directory.GetFiles(sourceDir, "*.h", SearchOption.AllDirectories)
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
         int parsedCount = 0;
+        int generatedWrittenCount = 0;
+        int generatedUnchangedCount = 0;
         List<string> generatedCppFiles = new List<string>();
 
         foreach (var file in headerFiles)
@@ -608,8 +628,16 @@ static FAutoRegister_{enumName} AutoRegister_{enumName}_Instance;
             }
             if (bHasReflectionData)
             {
-                File.WriteAllText(generatedHeaderPath, headerContent.ToString());
-                File.WriteAllText(generatedCppPath, cppContent.ToString());
+                if (WriteAllTextIfChanged(generatedHeaderPath, headerContent.ToString()))
+                    generatedWrittenCount++;
+                else
+                    generatedUnchangedCount++;
+
+                if (WriteAllTextIfChanged(generatedCppPath, cppContent.ToString()))
+                    generatedWrittenCount++;
+                else
+                    generatedUnchangedCount++;
+
                 generatedCppFiles.Add($"{fileNameOnly}.gen.cpp");
             }
         }
@@ -619,11 +647,16 @@ static FAutoRegister_{enumName} AutoRegister_{enumName}_Instance;
         masterContent.AppendLine("// [UHT generated master source - do not edit]");
         masterContent.AppendLine();
 
+        generatedCppFiles.Sort(StringComparer.OrdinalIgnoreCase);
         foreach (var genFile in generatedCppFiles)
             masterContent.AppendLine($"#include \"{genFile}\"");
 
-        File.WriteAllText(masterCppPath, masterContent.ToString());
+        if (WriteAllTextIfChanged(masterCppPath, masterContent.ToString()))
+            generatedWrittenCount++;
+        else
+            generatedUnchangedCount++;
+
         Console.WriteLine($"\n[UHT] Generated master: {masterCppPath}");
-        Console.WriteLine($"[UHT] Done. Parsed {parsedCount} classes.");
+        Console.WriteLine($"[UHT] Done. Parsed {parsedCount} classes. Written {generatedWrittenCount}, unchanged {generatedUnchangedCount}.");
     }
 }
