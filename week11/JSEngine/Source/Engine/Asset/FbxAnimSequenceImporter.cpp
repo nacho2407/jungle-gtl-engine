@@ -269,6 +269,26 @@ static float GetSceneFrameRate(fbxsdk::FbxScene* Scene)
     return Rate > 0.0 ? static_cast<float>(Rate) : 30.0f;
 }
 
+static float GetMaxScaleDelta(const TArray<FVector>& ScaleKeys)
+{
+    if (ScaleKeys.size() <= 1)
+    {
+        return 0.0f;
+    }
+
+    const FVector& BaseScale = ScaleKeys.front();
+    float MaxDelta = 0.0f;
+
+    for (const FVector& Scale : ScaleKeys)
+    {
+        MaxDelta = std::max(MaxDelta, std::fabs(Scale.X - BaseScale.X));
+        MaxDelta = std::max(MaxDelta, std::fabs(Scale.Y - BaseScale.Y));
+        MaxDelta = std::max(MaxDelta, std::fabs(Scale.Z - BaseScale.Z));
+    }
+
+    return MaxDelta;
+}
+
 static FMatrix EvaluateEngineLocalBoneMatrix(
     fbxsdk::FbxNode* BoneNode,
     fbxsdk::FbxNode* ParentBoneNode,
@@ -277,6 +297,11 @@ static FMatrix EvaluateEngineLocalBoneMatrix(
     if (!BoneNode)
     {
         return FMatrix::Identity;
+    }
+
+    if (ParentBoneNode && BoneNode->GetParent() == ParentBoneNode)
+    {
+        return FFbxTransformUtils::ToFMatrix(BoneNode->EvaluateLocalTransform(SampleTime));
     }
 
     const FMatrix BoneGlobal =
@@ -439,6 +464,10 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
 
     TArray<FAnimationTrack> Tracks;
     Tracks.reserve(Bones.size());
+    int32 AnimatedScaleTrackCount = 0;
+    float MaxScaleDelta = 0.0f;
+    FString MaxScaleDeltaBoneName;
+
     for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
     {
         const FBoneInfo& Bone = Bones[BoneIndex];
@@ -461,6 +490,7 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
             Raw.PosKeyTimes.push_back(0.0f);
             Raw.RotKeyTimes.push_back(0.0f);
             Raw.ScaleKeyTimes.push_back(0.0f);
+
             Tracks.push_back(Track);
             continue;
         }
@@ -509,8 +539,29 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
             Raw.RotKeyTimes.push_back(LocalSeconds);
             Raw.ScaleKeyTimes.push_back(LocalSeconds);
         }
+
+        const float ScaleDelta = GetMaxScaleDelta(Raw.ScaleKeys);
+        if (ScaleDelta > 1.0e-3f)
+        {
+            ++AnimatedScaleTrackCount;
+
+            if (ScaleDelta > MaxScaleDelta)
+            {
+                MaxScaleDelta = ScaleDelta;
+                MaxScaleDeltaBoneName = BoneNameString;
+            }
+        }
+
         Tracks.push_back(Track);
     }
+
+    UE_LOG("[FbxAnimSequenceImporter] ScaleTrackSummary Fbx=%s Stack=%s AnimatedScaleTracks=%d MaxScaleDelta=%.6f MaxScaleBone=%s",
+           Path.c_str(),
+           Stack->GetName(),
+           AnimatedScaleTrackCount,
+           MaxScaleDelta,
+           MaxScaleDeltaBoneName.c_str());
+
     UAnimDataModel* DataModel = new UAnimDataModel();
     DataModel->SequenceLength = SequenceLength;
     DataModel->FrameRate = FrameRate;

@@ -59,7 +59,7 @@ constexpr uint32 MAX_SKELETAL_MESH_BONE_COUNT     = 65'536;
 constexpr uint32 MAX_SKELETAL_MESH_SOCKET_COUNT   = 1024;
 
 constexpr uint32 ANIM_SEQUENCE_BINARY_MAGIC = 0x4D494E41; // 'ANIM'
-constexpr uint32 ANIM_SEQUENCE_BINARY_VERSION = 4;       // v4: target reference skeleton identity validation
+constexpr uint32 ANIM_SEQUENCE_BINARY_VERSION = 5;       // v5: direct-parent local FBX transform sampling
 
 constexpr uint32 MAX_ANIM_SEQUENCE_TRACK_COUNT = 65'536;
 constexpr uint32 MAX_ANIM_SEQUENCE_KEY_COUNT = 1'000'000;
