@@ -31,6 +31,8 @@
 #include "Asset/StaticMeshTypes.h"
 #include "Asset/StaticMeshSimplifier.h"
 #include "Render/Scene/RenderCommand.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonWriter.h"
 
 namespace
 {
@@ -1510,6 +1512,85 @@ UAnimSequence* FResourceManager::FindAnimSequence(const FString& Path) const
 TArray<FString> FResourceManager::GetAnimSequencePaths() const
 {
 	return AnimSequenceFilePaths;
+}
+
+UAnimGraphAsset* FResourceManager::LoadAnimGraph(const FString& Path)
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	const std::filesystem::path FilePath =
+		std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)));
+
+	std::ifstream In(FilePath);
+	if (!In.is_open())
+	{
+		UE_LOG_ERROR("[AnimGraphAsset] Failed to open: %s", NormalizedPath.c_str());
+		return nullptr;
+	}
+
+	std::string JsonStr(
+		(std::istreambuf_iterator<char>(In)),
+		std::istreambuf_iterator<char>()
+	);
+
+	json::JSON JsonData = json::JSON::Load(JsonStr);
+	if (JsonData.JSONType() != json::JSON::Class::Object)
+	{
+		UE_LOG_ERROR("[AnimGraphAsset] Invalid json: %s", NormalizedPath.c_str());
+		return nullptr;
+	}
+
+	UAnimGraphAsset* Asset = UObjectManager::Get().CreateObject<UAnimGraphAsset>();
+	if (!Asset)
+	{
+		UE_LOG_ERROR("[AnimGraphAsset] Failed to create asset object: %s", NormalizedPath.c_str());
+		return nullptr;
+	}
+
+	FJsonReader Reader(JsonData);
+	Asset->Serialize(Reader);
+
+	return Asset;
+}
+
+bool FResourceManager::SaveAnimGraph(UAnimGraphAsset* Asset, const FString& Path)
+{
+	if (!Asset)
+	{
+		return false;
+	}
+
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	const std::filesystem::path FilePath =
+		std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)));
+
+	json::JSON JsonData = json::JSON::Make(json::JSON::Class::Object);
+
+	FJsonWriter Writer(JsonData);
+	Asset->Serialize(Writer);
+
+	std::error_code ErrorCode;
+	std::filesystem::create_directories(FilePath.parent_path(), ErrorCode);
+	if (ErrorCode)
+	{
+		UE_LOG_ERROR(
+			"[AnimGraphAsset] Failed to create directory: %s",
+			NormalizedPath.c_str()
+		);
+		return false;
+	}
+
+	std::ofstream Out(FilePath);
+	if (!Out.is_open())
+	{
+		UE_LOG_ERROR(
+			"[AnimGraphAsset] Failed to open for writing: %s",
+			NormalizedPath.c_str()
+		);
+		return false;
+	}
+
+	Out << JsonData.dump(4);
+	return true;
 }
 
 const TArray<FString>& FResourceManager::GetTextureFilePath() const

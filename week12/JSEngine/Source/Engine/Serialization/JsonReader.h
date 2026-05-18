@@ -57,7 +57,22 @@ struct FJsonReader : public FArchive
 	virtual void BeginObject(const FString& Key) override
 	{
 		json::JSON& Current = *ScopeStack.back();
-		if (Current.hasKey(Key.c_str()))
+
+		if (Current.JSONType() == json::JSON::Class::Array)
+		{
+			int32& CurrentIdx = ArrayIndexStack.back();
+
+			if (CurrentIdx < static_cast<int32>(Current.length()) &&
+				Current.at(CurrentIdx).JSONType() == json::JSON::Class::Object)
+			{
+				ScopeStack.push_back(&Current.at(CurrentIdx));
+				++CurrentIdx;
+			}
+
+			return;
+		}
+
+		if (!Key.empty() && Current.hasKey(Key.c_str()))
 		{
 			ScopeStack.push_back(&Current[Key.c_str()]);
 		}

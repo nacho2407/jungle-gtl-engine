@@ -300,6 +300,12 @@
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimDataModel.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimGraphAsset.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimGraphInstance.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimInstance.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
@@ -1541,6 +1547,9 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimGraphNode.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimGraphAsset.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimGraphInstance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\Asset\EditorAssetService.h">
@@ -2612,6 +2621,9 @@
       <Filter>ThirdParty\luajit\src</Filter>
     </ClInclude>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimGraphNode.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimGraphAsset.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimGraphInstance.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Atmosphere\HeightFogPixelShader.hlsl">

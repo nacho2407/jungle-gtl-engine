@@ -1,10 +1,13 @@
 ﻿#include "SkeletalMeshComponent.h"
 
 #include "Animation/AnimInstance.h"
+#include "Animation/AnimGraphAsset.h"
+#include "Animation/AnimGraphInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimationStateMachine.h"
 #include "Animation/StateMachineAnimInstance.h"
+#include "Core/ResourceManager.h"
 #include "Core/Logging/SkinningStats.h"
 #include "GameFramework/AActor.h"
 
@@ -75,6 +78,10 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
 	if (PropertyName && std::strcmp(PropertyName, "AnimationMode") == 0)
 	{
 		SetAnimationMode(AnimationMode);
+	}
+	else if (PropertyName && std::strcmp(PropertyName, "AnimGraphAssetPath") == 0)
+	{
+		ApplyAnimGraphFromAssetPath();
 	}
 }
 
@@ -165,6 +172,43 @@ void USkeletalMeshComponent::SetAnimStateByName(const FString& StateName, float 
 	{
 		StateMachine->SetStateByName(StateName, BlendTime);
 	}
+}
+
+void USkeletalMeshComponent::SetAnimGraph(UAnimGraphAsset* Graph)
+{
+	if (!Graph)
+	{
+		return;
+	}
+
+	UAnimGraphInstance* Instance = UObjectManager::Get().CreateObject<UAnimGraphInstance>();
+	Instance->Initialize(this);
+	Instance->SetGraphAsset(Graph);
+
+	AnimInstance = Instance;
+	AnimationMode = EAnimationMode::AnimationGraph;
+}
+
+void USkeletalMeshComponent::ApplyAnimGraphFromAssetPath()
+{
+	if (AnimGraphAssetPath.empty())
+	{
+		if (AnimationMode == EAnimationMode::AnimationGraph)
+		{
+			AnimInstance = nullptr;
+			ResetToBindPose();
+		}
+		return;
+	}
+
+	UAnimGraphAsset* Graph = FResourceManager::Get().LoadAnimGraph(AnimGraphAssetPath);
+	if (!Graph)
+	{
+		UE_LOG_WARNING("[SkeletalMeshComponent] Failed to load anim graph: %s", AnimGraphAssetPath.c_str());
+		return;
+	}
+
+	SetAnimGraph(Graph);
 }
 
 void USkeletalMeshComponent::ResetToBindPose()
@@ -261,6 +305,10 @@ void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InAnimationMode)
 	{
 		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
 		SingleNode->SetAnimation(Cast<UAnimSequenceBase>(AnimationToPlay));
+	}
+	else if (AnimationMode == EAnimationMode::AnimationGraph)
+	{
+		ApplyAnimGraphFromAssetPath();
 	}
 }
 

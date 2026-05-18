@@ -349,6 +349,8 @@
     <ClCompile Include="Intermediate\Reflection\Animation\UActorSequence.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UActorSequencePlayer.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimDataModel.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimGraphAsset.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimGraphInstance.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimInstance.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequence.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequenceBase.gen.cpp" />
@@ -734,6 +736,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\ActorSequence.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimGraphAsset.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimGraphInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimGraphNode.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp" />
@@ -1070,6 +1075,9 @@
     <ClInclude Include="Source\Editor\Viewport\SkeletalMeshViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h" />
     <ClInclude Include="Source\Engine\Animation\ActorSequence.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimGraphAsset.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimGraphInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimGraphNode.h" />
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSequence.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h" />
