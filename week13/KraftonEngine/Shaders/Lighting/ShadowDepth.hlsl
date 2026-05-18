@@ -37,7 +37,6 @@ PS_Input_Shadow VS_SkeletalMesh(VS_Input_PNCTTBB input)
 {
     PS_Input_Shadow output;
 
-#ifdef USE_GPU_SKINNING
     FSkinningResult skinned = ApplyLinearBlendSkinning(
         input.position,
         input.normal,
@@ -45,9 +44,6 @@ PS_Input_Shadow VS_SkeletalMesh(VS_Input_PNCTTBB input)
         input.boneIndices,
         input.boneWeights);
     float4 worldPos = mul(skinned.position, Model);
-#else
-    float4 worldPos = mul(float4(input.position, 1.0f), Model);
-#endif
 
     float4 clipPos = mul(worldPos, LightViewProj);
     output.position = clipPos;
