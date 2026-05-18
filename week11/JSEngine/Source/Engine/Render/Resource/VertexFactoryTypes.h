@@ -16,7 +16,7 @@ struct ID3D11DeviceContext;
 enum class EVertexFactoryType : uint8
 {
     StaticMesh,
-    SkeletalMesh,
+    SkeletalMesh, // Only for GPU skinning, CPU skining uses StaticMesh
     ProceduralMesh,
     Primitive,
     Billboard,
