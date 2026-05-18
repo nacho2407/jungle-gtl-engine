@@ -2,8 +2,76 @@
 
 #include "Asset/SkeletalMesh.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Core/Paths.h"
+#include "Core/ResourceManager.h"
 
 #include <cmath>
+#include <cstring>
+
+namespace
+{
+	FString GetPersistentAnimationAssetPath(UAnimSequenceBase* Animation)
+	{
+		UAnimSequence* Sequence = Cast<UAnimSequence>(Animation);
+		if (!Sequence)
+		{
+			return "";
+		}
+
+		if (!Sequence->GetAssetPath().empty())
+		{
+			return FPaths::Normalize(Sequence->GetAssetPath());
+		}
+
+		if (!Sequence->GetSourceFilePath().empty())
+		{
+			return FPaths::Normalize(Sequence->GetSourceFilePath());
+		}
+
+		return "";
+	}
+}
+
+void UAnimSingleNodeInstance::Serialize(FArchive& Ar)
+{
+	UAnimInstance::Serialize(Ar);
+
+	if (Ar.IsLoading())
+	{
+		ApplyAnimationFromAssetPath();
+		SetPlayRate(PlayRate);
+		SetLooping(bLooping);
+		if (bAutoPlay && CurrentAnimation)
+		{
+			Play(bLooping);
+		}
+	}
+}
+
+void UAnimSingleNodeInstance::PostEditProperty(const char* PropertyName)
+{
+	UAnimInstance::PostEditProperty(PropertyName);
+
+	if (PropertyName && std::strcmp(PropertyName, "AnimationAssetPath") == 0)
+	{
+		ApplyAnimationFromAssetPath();
+	}
+	else if (PropertyName && std::strcmp(PropertyName, "PlayRate") == 0)
+	{
+		SetPlayRate(PlayRate);
+	}
+	else if (PropertyName && std::strcmp(PropertyName, "bLooping") == 0)
+	{
+		SetLooping(bLooping);
+	}
+	else if (PropertyName && std::strcmp(PropertyName, "bAutoPlay") == 0)
+	{
+		if (bAutoPlay && CurrentAnimation)
+		{
+			Play(bLooping);
+		}
+	}
+}
 
 void UAnimSingleNodeInstance::SetAnimation(UAnimSequenceBase* InAnimation)
 {
@@ -15,9 +83,16 @@ void UAnimSingleNodeInstance::SetAnimation(UAnimSequenceBase* InAnimation)
 	}
 
 	CurrentAnimation = InAnimation;
+	SyncAnimationAssetPathFromAnimation(InAnimation);
 	CurrentTime = 0.0f;
 	PreviousTime = 0.0f;
 	BuildBoneMapping();
+}
+
+void UAnimSingleNodeInstance::SetAnimationAssetPath(const FString& InAnimationAssetPath)
+{
+	AnimationAssetPath = FPaths::Normalize(InAnimationAssetPath);
+	ApplyAnimationFromAssetPath();
 }
 
 void UAnimSingleNodeInstance::Initialize(USkeletalMeshComponent* InOwnerComponent)
@@ -96,6 +171,55 @@ void UAnimSingleNodeInstance::SetPosition(float InPosition)
 float UAnimSingleNodeInstance::GetLength() const
 {
 	return CurrentAnimation ? CurrentAnimation->GetPlayLength() : 0.0f;
+}
+
+void UAnimSingleNodeInstance::ApplyAnimationFromAssetPath()
+{
+	const FString RequestedPath = AnimationAssetPath;
+	if (RequestedPath.empty())
+	{
+		SetAnimation(nullptr);
+		return;
+	}
+
+	UAnimSequenceBase* LoadedAnimation = Cast<UAnimSequenceBase>(
+		FResourceManager::Get().LoadAnimSequence(RequestedPath));
+	if (!LoadedAnimation)
+	{
+		CurrentAnimation = nullptr;
+		AnimationAssetPath = RequestedPath;
+		CurrentTime = 0.0f;
+		PreviousTime = 0.0f;
+		bPlaying = false;
+		BuildBoneMapping();
+		if (OwnerComponent)
+		{
+			OwnerComponent->ResetToBindPose();
+		}
+		UE_LOG_WARNING("[AnimSingleNodeInstance] Failed to load animation asset: %s", RequestedPath.c_str());
+		return;
+	}
+
+	SetAnimation(LoadedAnimation);
+	if (bAutoPlay)
+	{
+		Play(bLooping);
+	}
+}
+
+void UAnimSingleNodeInstance::SyncAnimationAssetPathFromAnimation(UAnimSequenceBase* Animation)
+{
+	if (!Animation)
+	{
+		AnimationAssetPath.clear();
+		return;
+	}
+
+	const FString PersistentPath = GetPersistentAnimationAssetPath(Animation);
+	if (!PersistentPath.empty())
+	{
+		AnimationAssetPath = PersistentPath;
+	}
 }
 
 //3-1. Update Phase(UAnimSequence::GetAnimationPose로 이어짐)

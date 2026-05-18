@@ -49,6 +49,7 @@
 #include "Runtime/Script/ScriptManager.h"
 #include <Runtime/Script/ScriptComponent.h>
 #include <commdlg.h>
+#include "Animation/AnimInstance.h"
 #include "Animation/AnimationStateMachine.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
@@ -1619,6 +1620,20 @@ void FEditorPropertyWidget::RenderDebugDetails(UObject* Object, AActor* PrimaryA
 		{
 			Builder.AddCustom([this, SkeletalComp]()
 			{
+				if (UAnimInstance* AnimInstance = SkeletalComp->GetAnimInstance())
+				{
+					TArray<const FProperty*> AnimProperties;
+					CollectEditableReflectedProperties(AnimInstance, AnimProperties);
+					if (!AnimProperties.empty())
+					{
+						DrawDetailsSeparator();
+						DrawDetailsSectionLabel("Anim Instance");
+						for (const FProperty* Property : AnimProperties)
+						{
+							RenderReflectionProperty(FPropertyHandle{ AnimInstance, Property });
+						}
+					}
+				}
 				RenderSkeletalStateMachinePreview(SkeletalComp);
 				RenderSkeletalBonePoseDebug(SkeletalComp);
 			});
