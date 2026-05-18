@@ -13,6 +13,7 @@
 #include "Common/Functions.hlsli"
 #include "Common/VertexLayouts.hlsli"
 #include "Common/SystemSamplers.hlsli"
+#include "Common/Skinning.hlsli"
 
 #if !defined(LIGHTING_MODEL_UNLIT)
 #include "Common/ForwardLighting.hlsli"
@@ -29,7 +30,6 @@
 Texture2D DiffuseTexture : register(t0);
 Texture2D NormalTexture : register(t1);
 
-
 // ── Per-Object Material (b2) — 기존 StaticMesh 와 레이아웃 동일 (호환성) ──
 cbuffer PerShader1 : register(b2)
 {
@@ -37,6 +37,7 @@ cbuffer PerShader1 : register(b2)
     float HasNormalMap;
     float3 _pad;
 };
+
 
 // 머티리얼 확장 파라미터 — 팀원 A CB 시스템 완성 후 b2 확장 예정
 static const float4 g_DefaultEmissive = float4(0, 0, 0, 0);
@@ -53,17 +54,17 @@ struct UberVS_Output
     float2 texcoord : TEXCOORD0;
     float3 worldPos : TEXCOORD1;
     float4 tangent : TANGENT;
+    float selectedBoneWeight : TEXCOORD4;
 #if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
     float3 litDiffuse  : TEXCOORD2;
     float3 litSpecular : TEXCOORD3;
 #endif
 };
 
-
 // =============================================================================
 // Vertex Shader
 // =============================================================================
-UberVS_Output VS(VS_Input_PNCTT input)
+UberVS_Output VS_StaticMesh(VS_Input_PNCTT input)
 {
     UberVS_Output output;
     
@@ -75,6 +76,7 @@ UberVS_Output VS(VS_Input_PNCTT input)
     output.normal = normalize(mul(input.normal, (float3x3) NormalMatrix));
     output.color = input.color * SectionColor;
     output.texcoord = input.texcoord;
+    output.selectedBoneWeight = 0.0f;
 
     float3 T = normalize(mul(input.tangent.xyz, M));
     T = normalize(T - output.normal * dot(output.normal, T));
@@ -86,6 +88,59 @@ UberVS_Output VS(VS_Input_PNCTT input)
     if (HasNormalMap > 0.5f)
     {
         float3 B = normalize(cross(N, T) * input.tangent.w);
+        float3x3 TBN = float3x3(T, B, N);
+
+        float3 tangentNormal = NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
+
+        N = normalize(mul(tangentNormal, TBN));
+    }
+
+    float3 V = normalize(CameraWorldPos - output.worldPos);
+    output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N);
+    output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess);
+
+#endif
+
+    return output;
+}
+
+// GPU Skinning
+UberVS_Output VS_SkeletalMesh(VS_Input_PNCTTBB input)
+{
+    UberVS_Output output;
+    
+    FSkinningResult skinned = ApplyLinearBlendSkinning(
+    input.position,
+    input.normal,
+    input.tangent.xyz,
+    input.boneIndices,
+    input.boneWeights);
+
+    float4 WeightedPosition = skinned.position;
+    float3 WeightedNormal = skinned.normal;
+    float3 WeightedTangent = skinned.tangent;
+    float SelectedWeight = GetBoneInfluenceWeight(input.boneIndices, input.boneWeights, SelectedBoneIndex);
+    
+    float3x3 M = (float3x3) Model;
+    
+    float4 worldPos4 = mul(WeightedPosition, Model);
+    output.worldPos = worldPos4.xyz;
+    output.position = mul(mul(worldPos4, View), Projection);
+    output.normal = normalize(mul(WeightedNormal, (float3x3) NormalMatrix));
+    output.color = input.color * SectionColor;
+    output.texcoord = input.texcoord;
+    output.selectedBoneWeight = SelectedWeight;
+
+    float3 T = normalize(mul(WeightedTangent, M));
+    T = normalize(T - output.normal * dot(output.normal, T));
+    output.tangent = float4(T, input.tangent.w);
+
+#if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
+    float3 N =  output.normal;
+
+    if (HasNormalMap > 0.5f)
+    {
+        float3 B = normalize(cross(N, T) * output.tangent.w);
         float3x3 TBN = float3x3(T, B, N);
 
         float3 tangentNormal = NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
@@ -124,6 +179,27 @@ UberPS_Output PS(UberVS_Output input)
         texColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
 
     float4 baseColor = texColor * input.color;
+
+#if defined(WEIGHT_BONE_HEATMAP) && WEIGHT_BONE_HEATMAP
+float Heat = saturate(input.selectedBoneWeight);
+
+float t0 = smoothstep(0.0f, 0.05f, Heat);   // 마젠타 ->  파랑
+float t1 = smoothstep(0.05f, 0.2f, Heat);   // 파랑   ->  시안
+float t2 = smoothstep(0.2f, 0.35f, Heat);   // 시안   ->  초록
+float t3 = smoothstep(0.35f, 0.5f, Heat);   // 초록   ->  노랑
+float t4 = smoothstep(0.5f, 1.0f, Heat);    // 노랑   ->  빨강
+
+float3 HeatColor = lerp(float3(1.0f, 0.0f, 1.0f),  float3(0.0f, 0.0f, 1.0f),  t0);
+HeatColor = lerp(HeatColor, float3(0.0f, 1.0f, 1.0f),  t1);
+HeatColor = lerp(HeatColor, float3(0.0f, 0.9f, 0.15f), t2);
+HeatColor = lerp(HeatColor, float3(1.0f, 1.0f, 0.0f),  t3);
+HeatColor = lerp(HeatColor, float3(1.0f, 0.05f, 0.0f), t4);
+
+output.Color = float4(HeatColor, 1.f);
+output.Normal = float4(normalize(input.normal), 1.0f);
+output.Culling = float4(0, 0, 0, 0);
+return output;
+#endif
 
     float3 N = normalize(input.normal);
 

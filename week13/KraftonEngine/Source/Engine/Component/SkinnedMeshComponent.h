@@ -59,6 +59,8 @@ public:
 	void SetBoneScaleByIndex(int32 BoneIndex, const FVector& NewScale);
 	void SetBoneLocalTransformByIndex(int32 BoneIndex, const FTransform& NewLocalTransform);
 
+	void SetBoneLocalTransforms(const TArray<FTransform>& LocalPose);
+
 	void GetCurrentBoneGlobalTransforms(TArray<FTransform>& OutGlobals) const;
 	void GetCurrentBoneGlobalMatrices(TArray<FMatrix>& OutGlobals) const;
 	const TArray<FVertexPNCTT>& GetSkinnedVertices() const { return SkinnedVertices; }
@@ -72,6 +74,7 @@ protected:
 
 	void InitSkinningCache();
 	void UpdateCPUSkinning();
+	void RefreshSkinningAfterPoseChanged();
 	void BuildBoneEditGlobalTransforms(TArray<FTransform>& OutGlobals) const;
 	void BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlobals) const;
 

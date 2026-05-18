@@ -50,6 +50,7 @@ public:
 		bool bImGUISettings = false;
 		bool bEditorDebug = false;
 		bool bShadowMapDebug = false;
+		bool bAnimationDebug = false;
 	} UI;
 
 	void SaveToFile(const FString& Path) const;

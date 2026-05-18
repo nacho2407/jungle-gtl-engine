@@ -106,6 +106,11 @@ void UObject::GetEditableProperties(TArray<FPropertyValue>& OutProps)
 	}
 }
 
+void UObject::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	(void)OutProps;
+}
+
 bool UObject::ShouldExposeProperty(const FProperty& /*Property*/) const
 {
 	return true;

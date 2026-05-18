@@ -269,13 +269,7 @@ void FEditorViewportClient::TickEditorShortcuts()
 		EditorEngine->RequestEndPlayMap();
 	}
 
-	const FGuiInputState& GuiInput = InputSystem::Get().GetGuiInputState();
-	const bool bAllowKeyboardInput = !GuiInput.bUsingKeyboard && !ImGui::GetIO().WantTextInput;
-	if (!bAllowKeyboardInput)
-	{
-		return;
-	}
-
+	// 키보드 소유권과 UpdateInputOwner 의 WantTextInput 해제로 게이팅 일원화됨.
 	if (SelectionManager && InputSystem::Get().GetKeyDown(VK_DELETE))
 	{
 		SelectionManager->DeleteSelectedActors();
@@ -377,10 +371,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
 	if (!FSlateApplication::Get().DoesClientOwnMouseInput(this)) return;
 
-	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard == true)
-	{
-		return;
-	}
+	// 텍스트 입력 중에는 카메라 키/마우스 조작을 가로채지 않는다.
+	if (ImGui::GetIO().WantTextInput) return;
 
 	InputSystem& Input = InputSystem::Get();
 	const bool bCtrlHeld = Input.GetKey(VK_CONTROL);
@@ -513,12 +505,9 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	// LineTrace 히트 판정용 AxisMask 갱신 (렌더링은 Proxy가 per-viewport로 직접 계산)
 	Gizmo->SetAxisMask(UGizmoComponent::ComputeAxisMask(RenderOptions.ViewportType, Gizmo->GetMode()));
 
-	// 기즈모 드래그 중에는 마우스가 뷰포트 밖으로 나가도 드래그 종료를 처리해야 함
-	if (InputSystem::Get().GetGuiInputState().bUsingMouse && !Gizmo->IsHolding() && !bIsMarqueeSelecting)
-	{
-		return;
-	}
-
+	// ImGui 인지 소유권으로 일원화: 진입 가드(Hovered||Captured)가 ImGui 가
+	// 마우스를 가진 경우를 이미 차단하고, 드래그 중엔 Captured 가 유지돼 뷰포트
+	// 밖으로 나가도 드래그가 이어진다. 별도 bUsingMouse 가드 불필요.
 	float ScrollNotches = InputSystem::Get().GetScrollNotches();
 	if (ScrollNotches != 0.0f)
 	{

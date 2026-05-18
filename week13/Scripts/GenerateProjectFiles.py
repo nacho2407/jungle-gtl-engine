@@ -74,6 +74,7 @@ ROOT_FILES = ["main.cpp"]
 
 # Include paths (relative to project dir)
 INCLUDE_PATHS = [
+    "Intermediate\\Generated",
     "Source\\Engine",
     "Source",
     "ThirdParty",
@@ -85,6 +86,10 @@ INCLUDE_PATHS = [
     "ThirdParty\\lua\\include",
     "ThirdParty\\sol2\\include",
     "ThirdParty\\fmod\\include",
+    "ThirdParty\\fbx\\include",
+    # PhysX(NuGet) — vcpkg.targets 가 조건부 Import 라 첫 clone 직후 IntelliSense 파싱 시점엔
+    # Exists()=false 로 include 경로가 안 잡힘. 직접 박아 restore 타이밍과 무관하게 잡히게 함.
+    "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\include",
     ".",
 ]
 
@@ -104,6 +109,7 @@ FMOD_RELEASE_DLL = "fmod.dll"
 # PhysX (NuGet, 4.1.2) — vcpkg auto applocal-deps가 일부 환경에서 동작하지 않아
 # PostBuildEvent 에서 명시적으로 *.dll 을 OutDir 로 복사한다.
 # Debug 구성은 debug\\bin, 그 외(Release/Game/ObjViewDebug/Demo)는 release bin 사용.
+# (Include 경로는 INCLUDE_PATHS 에 직접 추가됨 — 위 주석 참고.)
 PHYSX_DEBUG_BIN   = "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\debug\\bin"
 PHYSX_RELEASE_BIN = "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\bin"
 
@@ -113,6 +119,13 @@ LUA_LIB_DIR = "ThirdParty\\lua\\lib"
 LUA_BIN_DIR = "ThirdParty\\lua\\bin"
 LUA_LIB     = "lua51.lib"
 LUA_DLL     = "lua51.dll"
+
+# FBX SDK — 동적 링크. libfbxsdk.lib(import lib) + libfbxsdk.dll 를 사용하고,
+# Debug/Release 디렉터리가 분리되어 있어 구성별로 경로를 선택한다.
+FBX_DEBUG_LIB_DIR   = "ThirdParty\\fbx\\lib\\x64\\debug"
+FBX_RELEASE_LIB_DIR = "ThirdParty\\fbx\\lib\\x64\\release"
+FBX_LIB             = "libfbxsdk.lib"
+FBX_DLL             = "libfbxsdk.dll"
 
 # Additional linker settings
 ADDITIONAL_LIB_DIRS = [
@@ -300,6 +313,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
         library_paths = [rmlui_dir] if is_x64 else []
         if is_x64:
             library_paths.append(FMOD_LIB_DIR)
+            library_paths.append(FBX_DEBUG_LIB_DIR if cfg == "Debug" else FBX_RELEASE_LIB_DIR)
         library_path_value = ";".join(library_paths) + ";$(LibraryPath)" if library_paths else "$(LibraryPath)"
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond)
         ET.SubElement(pg, "OutDir").text = f"$(ProjectDir)Bin\\$(Configuration)\\"
@@ -331,6 +345,10 @@ def generate_vcxproj(files: dict[str, list[str]]):
             base_defs.append("WIN32")
         base_defs.append("NDEBUG" if is_release else "_DEBUG")
         base_defs.append("_CONSOLE")
+        # FBX SDK 동적 링크 — 정의되어야 헤더가 __declspec(dllimport)로 심볼을 선언한다.
+        # 미정의 시 static 멤버(FbxSurfaceMaterial::sDiffuse 등)가 LNK2001로 실패한다.
+        if is_x64:
+            base_defs.append("FBXSDK_SHARED")
         extra_defs = props.get("extra_defines", [])
         # WITH_EDITOR defaults to 1 unless explicitly overridden in extra_defines
         if not any(d.startswith("WITH_EDITOR=") for d in extra_defs):
@@ -338,6 +356,9 @@ def generate_vcxproj(files: dict[str, list[str]]):
         base_defs.extend(extra_defs)
         base_defs.append("%(PreprocessorDefinitions)")
         ET.SubElement(cl, "PreprocessorDefinitions").text = ";".join(base_defs)
+        ET.SubElement(cl, "AdditionalIncludeDirectories").text = (
+            ";".join(INCLUDE_PATHS) + ";%(AdditionalIncludeDirectories)"
+        )
 
         ET.SubElement(cl, "ConformanceMode").text = "true"
         # /bigobj — sol2 binding이 누적되며 LuaScriptManager.cpp가 섹션 한도를 넘어 필수화됨.
@@ -362,6 +383,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
             all_deps.extend(RMLUI_DEPENDENCIES)
             # fmod: Debug면 logging 버전(fmodL_vc.lib), 그 외 release 버전(fmod_vc.lib)
             all_deps.append(FMOD_DEBUG_LIB if cfg == "Debug" else FMOD_RELEASE_LIB)
+            all_deps.append(FBX_LIB)
         if all_deps:
             ET.SubElement(link, "AdditionalDependencies").text = (
                 ";".join(all_deps) + ";%(AdditionalDependencies)"
@@ -371,12 +393,14 @@ def generate_vcxproj(files: dict[str, list[str]]):
             rmlui_dir = RMLUI_DEBUG_DIR if cfg == "Debug" else RMLUI_RELEASE_DIR
             fmod_dll = FMOD_DEBUG_DLL if cfg == "Debug" else FMOD_RELEASE_DLL
             physx_bin = PHYSX_DEBUG_BIN if cfg == "Debug" else PHYSX_RELEASE_BIN
+            fbx_lib_dir = FBX_DEBUG_LIB_DIR if cfg == "Debug" else FBX_RELEASE_LIB_DIR
             post_build = ET.SubElement(idg, "PostBuildEvent")
             ET.SubElement(post_build, "Command").text = (
                 f'xcopy /Y "$(ProjectDir){rmlui_dir}\\*.dll" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){FMOD_LIB_DIR}\\{fmod_dll}" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){physx_bin}\\*.dll" "$(OutDir)"\n'
-                f'xcopy /Y "$(ProjectDir){LUA_BIN_DIR}\\{LUA_DLL}" "$(OutDir)"'
+                f'xcopy /Y "$(ProjectDir){LUA_BIN_DIR}\\{LUA_DLL}" "$(OutDir)"\n'
+                f'xcopy /Y "$(ProjectDir){fbx_lib_dir}\\{FBX_DLL}" "$(OutDir)"'
             )
 
     # ClCompile items

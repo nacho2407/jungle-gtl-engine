@@ -24,6 +24,12 @@ cbuffer PerObjectBuffer : register(b1)
     float4 PrimitiveColor;
 };
 
+cbuffer BoneHeatMapBuffer : register(b6)
+{
+    int SelectedBoneIndex;
+    float3 BoneHeatMapPad;
+};
+
 // 시스템 샘플러 (s0~s4)
 #include "Common/SystemSamplers.hlsli"
 

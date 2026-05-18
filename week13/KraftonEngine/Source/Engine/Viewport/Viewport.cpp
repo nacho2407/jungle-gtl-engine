@@ -100,22 +100,22 @@ bool FViewport::CreateResources()
 
 	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &RTTexture);
 	if (FAILED(hr)) return false;
-	RTTexture->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportSceneColorTexture"), "ViewportSceneColorTexture");
+	RTTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportSceneColorTexture")), "ViewportSceneColorTexture");
 
 	hr = Device->CreateRenderTargetView(RTTexture, nullptr, &RTV);
 	if (FAILED(hr)) return false;
-	RTV->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportSceneColorRTV"), "ViewportSceneColorRTV");
+	RTV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportSceneColorRTV")), "ViewportSceneColorRTV");
 
 	hr = Device->CreateShaderResourceView(RTTexture, nullptr, &SRV);
 	if (FAILED(hr)) return false;
-	SRV->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportSceneColorSRV"), "ViewportSceneColorSRV");
+	SRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportSceneColorSRV")), "ViewportSceneColorSRV");
 
 	// ── SceneColor 복사 텍스처 (FXAA 등 PostProcess용 CopyResource 대상) ──
 	D3D11_TEXTURE2D_DESC SceneColorCopyDesc = TexDesc;
 	SceneColorCopyDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;  // SRV 읽기 전용
 	hr = Device->CreateTexture2D(&SceneColorCopyDesc, nullptr, &SceneColorCopyTexture);
 	if (FAILED(hr)) return false;
-	SceneColorCopyTexture->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportSceneColorCopyTexture"), "ViewportSceneColorCopyTexture");
+	SceneColorCopyTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportSceneColorCopyTexture")), "ViewportSceneColorCopyTexture");
 
 	// ── 뎁스/스텐실 (TYPELESS → DSV + StencilSRV) ──
 	D3D11_TEXTURE2D_DESC DepthDesc = {};
@@ -130,7 +130,7 @@ bool FViewport::CreateResources()
 
 	hr = Device->CreateTexture2D(&DepthDesc, nullptr, &DepthTexture);
 	if (FAILED(hr)) return false;
-	DepthTexture->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportDepthTexture"), "ViewportDepthTexture");
+	DepthTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDepthTexture")), "ViewportDepthTexture");
 
 	// DSV: D24_UNORM_S8_UINT 로 해석 (기존과 동일한 뎁스/스텐실 동작)
 	D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
@@ -140,7 +140,7 @@ bool FViewport::CreateResources()
 
 	hr = Device->CreateDepthStencilView(DepthTexture, &DSVDesc, &DSV);
 	if (FAILED(hr)) return false;
-	DSV->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportDSV"), "ViewportDSV");
+	DSV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDSV")), "ViewportDSV");
 
 	// SRV 포맷 (DepthCopy/StencilCopy 생성에 재사용)
 	D3D11_SHADER_RESOURCE_VIEW_DESC DepthSRVDesc = {};
@@ -168,15 +168,15 @@ bool FViewport::CreateResources()
 
 	hr = Device->CreateTexture2D(&CopyDesc, nullptr, &DepthCopyTexture);
 	if (FAILED(hr)) return false;
-	DepthCopyTexture->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportDepthCopyTexture"), "ViewportDepthCopyTexture");
+	DepthCopyTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDepthCopyTexture")), "ViewportDepthCopyTexture");
 
 	hr = Device->CreateShaderResourceView(DepthCopyTexture, &DepthSRVDesc, &DepthCopySRV);
 	if (FAILED(hr)) return false;
-	DepthCopySRV->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportDepthCopySRV"), "ViewportDepthCopySRV");
+	DepthCopySRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDepthCopySRV")), "ViewportDepthCopySRV");
 
 	hr = Device->CreateShaderResourceView(DepthCopyTexture, &StencilSRVDesc, &StencilCopySRV);
 	if (FAILED(hr)) return false;
-	StencilCopySRV->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportStencilCopySRV"), "ViewportStencilCopySRV");
+	StencilCopySRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportStencilCopySRV")), "ViewportStencilCopySRV");
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC SceneColorCopySRVDesc = {};
 	SceneColorCopySRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -186,7 +186,7 @@ bool FViewport::CreateResources()
 
 	hr = Device->CreateShaderResourceView(SceneColorCopyTexture, &SceneColorCopySRVDesc, &SceneColorCopySRV);
 	if (FAILED(hr)) return false;
-	SceneColorCopySRV->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportSceneColorCopySRV"), "ViewportSceneColorCopySRV");
+	SceneColorCopySRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportSceneColorCopySRV")), "ViewportSceneColorCopySRV");
 
 	// ── GBuffer Normal RT (R16G16B16A16_FLOAT — 음수 지원) ──
 	D3D11_TEXTURE2D_DESC NormalDesc = {};
@@ -201,15 +201,15 @@ bool FViewport::CreateResources()
 
 	hr = Device->CreateTexture2D(&NormalDesc, nullptr, &NormalTexture);
 	if (FAILED(hr)) return false;
-	NormalTexture->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportNormalTexture"), "ViewportNormalTexture");
+	NormalTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportNormalTexture")), "ViewportNormalTexture");
 
 	hr = Device->CreateRenderTargetView(NormalTexture, nullptr, &NormalRTV);
 	if (FAILED(hr)) return false;
-	NormalRTV->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportNormalRTV"), "ViewportNormalRTV");
+	NormalRTV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportNormalRTV")), "ViewportNormalRTV");
 
 	hr = Device->CreateShaderResourceView(NormalTexture, nullptr, &NormalSRV);
 	if (FAILED(hr)) return false;
-	NormalSRV->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportNormalSRV"), "ViewportNormalSRV");
+	NormalSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportNormalSRV")), "ViewportNormalSRV");
 
 	// ── Culling Heatmap RT (R8G8B8A8_UNORM — 히트맵 색상) ──
 	D3D11_TEXTURE2D_DESC HeatmapDesc = {};
@@ -224,15 +224,15 @@ bool FViewport::CreateResources()
 
 	hr = Device->CreateTexture2D(&HeatmapDesc, nullptr, &CullingHeatmapTexture);
 	if (FAILED(hr)) return false;
-	CullingHeatmapTexture->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportCullingHeatmapTexture"), "ViewportCullingHeatmapTexture");
+	CullingHeatmapTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportCullingHeatmapTexture")), "ViewportCullingHeatmapTexture");
 
 	hr = Device->CreateRenderTargetView(CullingHeatmapTexture, nullptr, &CullingHeatmapRTV);
 	if (FAILED(hr)) return false;
-	CullingHeatmapRTV->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportCullingHeatmapRTV"), "ViewportCullingHeatmapRTV");
+	CullingHeatmapRTV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportCullingHeatmapRTV")), "ViewportCullingHeatmapRTV");
 
 	hr = Device->CreateShaderResourceView(CullingHeatmapTexture, nullptr, &CullingHeatmapSRV);
 	if (FAILED(hr)) return false;
-	CullingHeatmapSRV->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("ViewportCullingHeatmapSRV"), "ViewportCullingHeatmapSRV");
+	CullingHeatmapSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportCullingHeatmapSRV")), "ViewportCullingHeatmapSRV");
 
 	// ── 뷰포트 렉트 ──
 	ViewportRect.TopLeftX = 0.0f;

@@ -51,6 +51,7 @@ namespace Key
 	constexpr const char* LightCullingMode = "LightCullingMode";
 	constexpr const char* HeatMapMax = "HeatMapMax";
 	constexpr const char* Enable25DCulling = "Enable25DCulling";
+	constexpr const char* SkinningMode = "SkinningMode";
 
 	// Paths
 	constexpr const char* EditorStartLevel = "EditorStartLevel";
@@ -74,6 +75,7 @@ namespace Key
 	constexpr const char* ShowImGuiSettings = "ShowImGuiSettings";
 	constexpr const char* ShowEditorDebug = "ShowEditorDebug";
 	constexpr const char* ShowShadowMapDebug = "ShowShadowMapDebug";
+	constexpr const char* ShowAnimationDebug = "ShowAnimationDebug";
 
 	// Perspective Camera
 	constexpr const char* PerspectiveCamera = "PerspectiveCamera";
@@ -156,6 +158,7 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::LightCullingMode] = static_cast<int32>(Opts.LightCullingMode);
 	Obj[Key::HeatMapMax] = Opts.HeatMapMax;
 	Obj[Key::Enable25DCulling] = Opts.Enable25DCulling;
+	Obj[Key::SkinningMode] = static_cast<int32>(Opts.SkinningMode);
 	return Obj;
 }
 
@@ -225,6 +228,11 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.HeatMapMax = static_cast<float>(Obj[Key::HeatMapMax].ToFloat());
 	if (Obj.hasKey(Key::Enable25DCulling))
 		Opts.Enable25DCulling = Obj[Key::Enable25DCulling].ToBool();
+	if (Obj.hasKey(Key::SkinningMode))
+	{
+		Opts.SkinningMode = static_cast<ESkinningMode>(Obj[Key::SkinningMode].ToInt());
+		SkinningModeRuntime::Set(Opts.SkinningMode);
+	}
 }
 
 json::JSON SaveGizmoSettings(const FGizmoToolSettings& Gizmo)
@@ -318,6 +326,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	WidgetsObj[Key::ShowImGuiSettings] = UI.bImGUISettings;
 	WidgetsObj[Key::ShowEditorDebug] = UI.bEditorDebug;
 	WidgetsObj[Key::ShowShadowMapDebug] = UI.bShadowMapDebug;
+	WidgetsObj[Key::ShowAnimationDebug] = UI.bAnimationDebug;
 	Root[Key::UIWidgets] = WidgetsObj;
 
 	// Perspective Camera
@@ -449,6 +458,7 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		if (W.hasKey(Key::ShowImGuiSettings))  UI.bImGUISettings = W[Key::ShowImGuiSettings].ToBool();
 		if (W.hasKey(Key::ShowEditorDebug))    UI.bEditorDebug = W[Key::ShowEditorDebug].ToBool();
 		if (W.hasKey(Key::ShowShadowMapDebug)) UI.bShadowMapDebug = W[Key::ShowShadowMapDebug].ToBool();
+		if (W.hasKey(Key::ShowAnimationDebug)) UI.bAnimationDebug = W[Key::ShowAnimationDebug].ToBool();
 	}
 
 	// Perspective Camera

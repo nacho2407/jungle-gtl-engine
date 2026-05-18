@@ -7,6 +7,7 @@
 #include "Core/CoreTypes.h"
 
 namespace json { class JSON; }
+
 class FArchive;
 class UStruct;
 class UClass;
@@ -24,6 +25,7 @@ struct FStructProperty;
 struct FArrayProperty;
 class UObject;
 
+
 // 에디터에서 자동 위젯 매핑에 사용되는 프로퍼티 타입
 enum class EPropertyType : uint8_t
 {
@@ -39,6 +41,7 @@ enum class EPropertyType : uint8_t
 	SceneComponentRef, // Owner actor 내부 USceneComponent 참조
 	ObjectRef,
 	Color4,	   // FVector4 RGBA — ImGui::ColorEdit4 위젯
+	ClassRef,	  // TSubclassOf<T> 의 UClass* 슬롯. ClassBase 의 자식 콤보로 노출/직렬화.
 	Enum,
 	Struct,    // 자기기술 구조체 — StructType의 property metadata로 Children 생성
 	SoftObjectRef,
@@ -83,6 +86,25 @@ struct FEnumRegistrar
 	{
 		FEnum::GetAllEnums().push_back(InEnum);
 	}
+};
+
+struct FPropertyDescriptor
+{
+	FString Name;
+	EPropertyType Type = EPropertyType::Bool;
+	FString Category;
+	void* ValuePtr = nullptr;
+	float Min = 0.0f;
+	float Max = 0.0f;
+	float Speed = 0.1f;
+
+	const char** EnumNames = nullptr;
+	uint32 EnumCount = 0;
+	uint32 EnumSize = sizeof(int32);
+
+	UClass* ClassBase = nullptr;
+	const char* AssetTypeName = nullptr;
+	void (*StructFunc)(void*, TArray<FPropertyDescriptor>&) = nullptr;
 };
 
 // 객체 인스턴스에 바인딩된 프로퍼티 값 뷰

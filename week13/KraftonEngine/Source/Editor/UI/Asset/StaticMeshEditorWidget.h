@@ -3,7 +3,6 @@
 #include "AssetEditorWidget.h"
 #include "Object/FName.h"
 #include "Editor/Viewport/StaticMeshEditorViewportClient.h"
-#include "Slate/SWindow.h"
 
 struct FStaticMesh;
 struct ImDrawList;
@@ -32,7 +31,6 @@ private:
 	void RenderDetailsPanel(FStaticMesh* Asset) const;
 
 private:
-	SWindow MeshViewportWindow;
 	FStaticMeshEditorViewportClient ViewportClient;
 
 	uint32 InstanceId;

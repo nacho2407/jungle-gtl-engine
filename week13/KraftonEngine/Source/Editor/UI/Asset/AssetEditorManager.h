@@ -26,6 +26,7 @@ public:
 	void Tick(float DeltaTime);
 	void Render(float DeltaTime);
 
+	void CloseAll();
 	bool OpenEditorForObject(UObject* Object);
 
 	void CollectPreviewViewportClients(TArray<IEditorPreviewViewportClient*>& OutClients) const;

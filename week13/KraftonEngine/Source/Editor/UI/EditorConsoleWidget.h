@@ -105,6 +105,7 @@ private:
 	void HandleStatFPS(const TArray<FString>& Args);
 	void HandleStatMemory(const TArray<FString>& Args);
 	void HandleStatShadow(const TArray<FString>& Args);
+	void HandleStatSkinning(const TArray<FString>& Args);
 	void HandleStatNone(const TArray<FString>& Args);
 	void HandleCSMResolution(const TArray<FString>& Args);
 	void HandleCSMSplit(const TArray<FString>& Args);
@@ -114,6 +115,7 @@ private:
 	void HandleCSMBlendRange(const TArray<FString>& Args);
 	void HandleShadowBias(const TArray<FString>& Args);
 	void HandleShadowFilter(const TArray<FString>& Args);
+	void HandleSkinningMode(const TArray<FString>& Args);
 	void PrintCSMCascadeRanges();
 
 	static int32 TextEditCallback(ImGuiInputTextCallbackData* Data);
