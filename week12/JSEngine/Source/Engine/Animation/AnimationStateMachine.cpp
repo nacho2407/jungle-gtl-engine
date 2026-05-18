@@ -96,6 +96,14 @@ void UAnimationStateMachine::AddTransition(FName FromState, FName ToState, float
     States[FromState].Transitions.push_back(Transition);
 }
 
+void UAnimationStateMachine::ClearTransitions()
+{
+    for (auto& Pair : States)
+    {
+        Pair.second.Transitions.clear();
+    }
+}
+
 void UAnimationStateMachine::SetEntryState(FName StateName)
 {
     if (States.contains(StateName))

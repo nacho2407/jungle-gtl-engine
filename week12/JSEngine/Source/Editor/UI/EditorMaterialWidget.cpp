@@ -92,6 +92,43 @@ FString ResolveMaterialInstanceStem(const UMaterial* BaseMaterial)
 
 	return SanitizeAssetStem(BaseMaterial->GetName());
 }
+
+void AddUniqueTexturePath(TArray<FString>& Paths, const FString& Path)
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	if (!NormalizedPath.empty() && std::find(Paths.begin(), Paths.end(), NormalizedPath) == Paths.end())
+	{
+		Paths.push_back(NormalizedPath);
+	}
+}
+
+TArray<FString> BuildMaterialTexturePickerPaths(UEditorEngine* EditorEngine)
+{
+	TArray<FString> Paths;
+	if (EditorEngine)
+	{
+		for (const FString& Path : EditorEngine->GetAssetService().GetTextureAssetPaths())
+		{
+			AddUniqueTexturePath(Paths, Path);
+		}
+	}
+
+	for (const FString& Path : FResourceManager::Get().GetTextureFilePath())
+	{
+		AddUniqueTexturePath(Paths, Path);
+	}
+
+	for (TObjectIterator<UTexture> It; It; ++It)
+	{
+		if (UTexture* Texture = *It)
+		{
+			AddUniqueTexturePath(Paths, Texture->GetFilePath());
+		}
+	}
+
+	std::sort(Paths.begin(), Paths.end());
+	return Paths;
+}
 }
 
 #define MAT_SEPARATOR() ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
@@ -515,26 +552,33 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 			ImGui::BeginGroup();
 			ImGui::Text("%s", ParamName.c_str());
 			
-			FString CurrentPath = CurrentTex ? CurrentTex->GetName() : "None";
+			const FString CurrentPath = CurrentTex ? FPaths::Normalize(CurrentTex->GetFilePath()) : FString();
+			const FString CurrentLabel = CurrentPath.empty() ? FString("None") : CurrentPath;
 
 			ImGui::SetNextItemWidth(200.0f);
 			FString ComboId = "##Combo_" + ParamName;
-			if (ImGui::BeginCombo(ComboId.c_str(), CurrentPath.c_str()))
+			if (ImGui::BeginCombo(ComboId.c_str(), CurrentLabel.c_str()))
 			{
-				for (TObjectIterator<UTexture> It; It; ++It)
+				const TArray<FString> TexturePaths = BuildMaterialTexturePickerPaths(EditorEngine);
+				if (TexturePaths.empty())
 				{
-					UTexture* Texture = *It;
-					if (Texture && !Texture->GetFilePath().empty())
+					ImGui::TextDisabled("No texture assets");
+				}
+				for (const FString& TexPath : TexturePaths)
+				{
+					const bool bSelected = (TexPath == CurrentPath);
+					if (ImGui::Selectable(TexPath.c_str(), bSelected))
 					{
-						const FString& TexPath = Texture->GetFilePath().empty() ? "None" : Texture->GetFilePath();
-						bool bSelected = (TexPath == CurrentPath);
-						if (ImGui::Selectable(TexPath.c_str(), bSelected))
+						if (UTexture* Texture = FResourceManager::Get().LoadTexture(TexPath))
 						{
 							ParamValue.Value = Texture;
 							SelectedMaterialPtr->SetParam(ParamName, ParamValue);
 							SaveSelectedMaterialInstance();
 						}
-						if (bSelected) ImGui::SetItemDefaultFocus();
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
 					}
 				}
 				ImGui::EndCombo();
