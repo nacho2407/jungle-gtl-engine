@@ -8,6 +8,8 @@
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Component/StaticMeshComponent.h"
+#include "Engine/Core/EditorResourcePaths.h"
+#include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Component/GizmoComponent.h"
 #include "Component/TransformProxy.h"
@@ -15,6 +17,7 @@
 #include "Engine/Runtime/WindowsWindow.h"
 #include "imgui.h"
 #include "ImGui/imgui_impl_win32.h"
+#include "WICTextureLoader.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -699,7 +702,7 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 
 		RenderAnimSequenceToolbar(Sequence);
 
-		const float TimelineHeight = 170.0f;
+		const float TimelineHeight = 230.0f;
 		ImVec2 WorkSize = ImGui::GetContentRegionAvail();
 		const float ViewAreaHeight = std::max(180.0f, WorkSize.y - TimelineHeight - ImGui::GetStyle().ItemSpacing.y);
 		const float DetailsWidth = std::clamp(RightPanelWidth, 220.0f, std::max(220.0f, WorkSize.x * 0.4f));
@@ -896,13 +899,97 @@ void FEditorViewerWindowWidget::SyncPreviewMeshPathBuffer()
 	snprintf(PreviewMeshPathBuffer, sizeof(PreviewMeshPathBuffer), "%s", Path.c_str());
 }
 
+void FEditorViewerWindowWidget::LoadAnimSequenceToolbarIcons()
+{
+	if (bAnimSequenceToolbarIconsLoadAttempted)
+	{
+		return;
+	}
+
+	bAnimSequenceToolbarIconsLoadAttempted = true;
+	if (!EditorEngine)
+	{
+		return;
+	}
+
+	ID3D11Device* Device = EditorEngine->GetRenderer().GetFD3DDevice().GetDevice();
+	if (!Device)
+	{
+		return;
+	}
+
+	const std::wstring IconDir = FEditorResourcePaths::IconsAbsoluteDir();
+	auto LoadIcon = [&](const wchar_t* FileName, TComPtr<ID3D11ShaderResourceView>& OutIcon)
+	{
+		const std::wstring IconPath = IconDir + FileName;
+		DirectX::CreateWICTextureFromFile(Device, IconPath.c_str(), nullptr, OutIcon.GetAddressOf());
+	};
+
+	LoadIcon(L"Play.png", AnimSequencePlayIcon);
+	LoadIcon(L"Pause.png", AnimSequencePauseIcon);
+	LoadIcon(L"Reverse.png", AnimSequenceReverseIcon);
+	LoadIcon(L"To Front.png", AnimSequenceToFrontIcon);
+	LoadIcon(L"To End.png", AnimSequenceToEndIcon);
+	LoadIcon(L"Looping.png", AnimSequenceLoopingIcon);
+	LoadIcon(L"No Looping.png", AnimSequenceNoLoopingIcon);
+}
+
+bool FEditorViewerWindowWidget::DrawAnimSequenceIconButton(
+	const char* Id,
+	ID3D11ShaderResourceView* Icon,
+	const char* Tooltip,
+	const ImVec2& Size)
+{
+	ImGui::PushID(Id);
+	const bool bClicked = ImGui::InvisibleButton("##IconButton", Size);
+	const ImVec2 Min = ImGui::GetItemRectMin();
+	const ImVec2 Max = ImGui::GetItemRectMax();
+	const bool bHovered = ImGui::IsItemHovered();
+	const bool bActive = ImGui::IsItemActive();
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	const ImU32 BgColor = ImGui::GetColorU32(
+		bActive ? ImVec4(0.16f, 0.19f, 0.24f, 1.0f) :
+		bHovered ? ImVec4(0.13f, 0.16f, 0.20f, 1.0f) :
+				   ImVec4(0.10f, 0.12f, 0.15f, 1.0f));
+	const ImU32 BorderColor = ImGui::GetColorU32(
+		bHovered ? ImVec4(0.38f, 0.45f, 0.56f, 1.0f) : ImVec4(0.22f, 0.26f, 0.32f, 1.0f));
+	DrawList->AddRectFilled(Min, Max, BgColor, 5.0f);
+	DrawList->AddRect(Min, Max, BorderColor, 5.0f);
+
+	if (Icon)
+	{
+		const float Padding = std::max(5.0f, Size.x * 0.18f);
+		DrawList->AddImage(
+			reinterpret_cast<ImTextureID>(Icon),
+			ImVec2(Min.x + Padding, Min.y + Padding),
+			ImVec2(Max.x - Padding, Max.y - Padding));
+	}
+	else
+	{
+		const ImVec2 TextSize = ImGui::CalcTextSize("?");
+		DrawList->AddText(
+			ImVec2(Min.x + (Size.x - TextSize.x) * 0.5f, Min.y + (Size.y - TextSize.y) * 0.5f),
+			ImGui::GetColorU32(ImVec4(0.72f, 0.76f, 0.84f, 1.0f)),
+			"?");
+	}
+
+	if (bHovered && Tooltip)
+	{
+		ImGui::SetTooltip("%s", Tooltip);
+	}
+
+	ImGui::PopID();
+	return bClicked;
+}
+
 void FEditorViewerWindowWidget::RenderAnimSequenceToolbar(UAnimSequence* Sequence)
 {
 	constexpr ImGuiWindowFlags ToolbarFlags =
 		ImGuiWindowFlags_NoScrollbar |
 		ImGuiWindowFlags_NoScrollWithMouse;
-	ImGui::BeginChild("AnimSequenceToolbar", ImVec2(0.0f, 44.0f), false, ToolbarFlags);
-	ImGui::SetCursorPos(ImVec2(8.0f, 7.0f));
+	ImGui::BeginChild("AnimSequenceToolbar", ImVec2(0.0f, 56.0f), false, ToolbarFlags);
+	ImGui::SetCursorPos(ImVec2(8.0f, 8.0f));
 
 	if (!Sequence || !Viewer)
 	{
@@ -911,36 +998,70 @@ void FEditorViewerWindowWidget::RenderAnimSequenceToolbar(UAnimSequence* Sequenc
 		return;
 	}
 
+	LoadAnimSequenceToolbarIcons();
+
 	const bool bPlaying = Viewer->IsAnimationPlaying();
-	if (ImGui::Button(bPlaying ? "Pause" : "Play", ImVec2(72.0f, 0.0f)))
-	{
-		Viewer->SetAnimationPlaying(!bPlaying);
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Stop", ImVec2(64.0f, 0.0f)))
+	const float PlayRate = Viewer->GetAnimationPlayRate();
+	const bool bReversePlaying = bPlaying && PlayRate < 0.0f;
+	const bool bForwardPlaying = bPlaying && PlayRate >= 0.0f;
+	const ImVec2 ButtonSize(38.0f, 38.0f);
+
+	if (DrawAnimSequenceIconButton("ToFront", AnimSequenceToFrontIcon.Get(), "To Front", ButtonSize))
 	{
 		Viewer->SetAnimationPlaying(false);
 		Viewer->SetAnimationTime(0.0f);
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Restart", ImVec2(78.0f, 0.0f)))
+	if (DrawAnimSequenceIconButton(
+		"Reverse",
+		bReversePlaying ? AnimSequencePauseIcon.Get() : AnimSequenceReverseIcon.Get(),
+		bReversePlaying ? "Pause" : "Reverse",
+		ButtonSize))
 	{
-		Viewer->RestartAnimation();
+		if (bReversePlaying)
+		{
+			Viewer->SetAnimationPlaying(false);
+		}
+		else
+		{
+			const float ReverseRate = PlayRate == 0.0f ? -1.0f : -std::abs(PlayRate);
+			Viewer->SetAnimationPlayRate(ReverseRate);
+			Viewer->SetAnimationPlaying(true);
+		}
 	}
-
-	ImGui::SameLine(0.0f, 14.0f);
-	bool bLooping = Viewer->IsAnimationLooping();
-	if (ImGui::Checkbox("Loop", &bLooping))
+	ImGui::SameLine();
+	if (DrawAnimSequenceIconButton(
+		"Play",
+		bForwardPlaying ? AnimSequencePauseIcon.Get() : AnimSequencePlayIcon.Get(),
+		bForwardPlaying ? "Pause" : "Play",
+		ButtonSize))
 	{
-		Viewer->SetAnimationLooping(bLooping);
+		if (bForwardPlaying)
+		{
+			Viewer->SetAnimationPlaying(false);
+		}
+		else
+		{
+			const float ForwardRate = PlayRate == 0.0f ? 1.0f : std::abs(PlayRate);
+			Viewer->SetAnimationPlayRate(ForwardRate);
+			Viewer->SetAnimationPlaying(true);
+		}
 	}
-
-	ImGui::SameLine(0.0f, 14.0f);
-	float PlayRate = Viewer->GetAnimationPlayRate();
-	ImGui::SetNextItemWidth(96.0f);
-	if (ImGui::DragFloat("Rate", &PlayRate, 0.01f, -4.0f, 4.0f, "%.2f"))
+	ImGui::SameLine();
+	if (DrawAnimSequenceIconButton("ToEnd", AnimSequenceToEndIcon.Get(), "To End", ButtonSize))
 	{
-		Viewer->SetAnimationPlayRate(PlayRate);
+		Viewer->SetAnimationPlaying(false);
+		Viewer->SetAnimationTime(std::max(0.0f, Viewer->GetAnimationLength()));
+	}
+	ImGui::SameLine(0.0f, 14.0f);
+	const bool bLooping = Viewer->IsAnimationLooping();
+	if (DrawAnimSequenceIconButton(
+		"Loop",
+		bLooping ? AnimSequenceLoopingIcon.Get() : AnimSequenceNoLoopingIcon.Get(),
+		bLooping ? "Looping" : "No Looping",
+		ButtonSize))
+	{
+		Viewer->SetAnimationLooping(!bLooping);
 	}
 
 	ImGui::SameLine(0.0f, 18.0f);
@@ -967,7 +1088,7 @@ void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequen
 	const int32 FrameCount = DataModel ? DataModel->GetNumberOfFrames() : 0;
 
 	ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
-	CanvasSize.y = std::max(CanvasSize.y, 108.0f);
+	CanvasSize.y = std::max(CanvasSize.y, 160.0f);
 	CanvasSize.x = std::max(CanvasSize.x, 1.0f);
 	ImGui::InvisibleButton("##AnimTimelineCanvas", CanvasSize);
 
@@ -1049,6 +1170,41 @@ void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequen
 		PlayheadColor);
 }
 
+void FEditorViewerWindowWidget::RenderAnimSequenceList(UAnimSequence* Sequence)
+{
+	(void)Sequence;
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::TextDisabled("Other Anim Sequences");
+
+	const FString CurrentPath = Viewer ? FPaths::Normalize(Viewer->GetFileName()) : FString();
+	const TArray<FString> Paths = FResourceManager::Get().GetAnimSequencePaths();
+	int32 VisibleCount = 0;
+	const float ListHeight = std::max(72.0f, ImGui::GetContentRegionAvail().y);
+	if (ImGui::BeginChild("OtherAnimSequenceList", ImVec2(0.0f, ListHeight), false))
+	{
+		for (const FString& Path : Paths)
+		{
+			const FString NormalizedPath = FPaths::Normalize(Path);
+			if (!CurrentPath.empty() && NormalizedPath == CurrentPath)
+			{
+				continue;
+			}
+
+			const FString Name = GetBaseFileNameWithoutExtension(Path);
+			ImGui::TextUnformatted(Name.c_str());
+			++VisibleCount;
+		}
+
+		if (VisibleCount == 0)
+		{
+			ImGui::TextDisabled("No other .animseq files.");
+		}
+	}
+	ImGui::EndChild();
+}
+
 void FEditorViewerWindowWidget::RenderAnimSequenceDetails(UAnimSequence* Sequence, USkeletalMesh* PreviewMesh)
 {
 	ImGui::Text("Animation");
@@ -1119,6 +1275,8 @@ void FEditorViewerWindowWidget::RenderAnimSequenceDetails(UAnimSequence* Sequenc
 			}
 		}
 	}
+
+	RenderAnimSequenceList(Sequence);
 }
 
 void FEditorViewerWindowWidget::RenderAnimSequenceLeftPanel(UAnimSequence* Sequence, USkeletalMeshComponent* SkelMeshComp)
