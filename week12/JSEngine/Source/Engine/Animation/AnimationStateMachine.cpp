@@ -5,6 +5,7 @@
 #include "Component/SkeletalMeshComponent.h"
 
 #include <cmath>
+#include <algorithm>
 
 #include "Core/ResourceManager.h"
 
@@ -262,4 +263,54 @@ FString UAnimationStateMachine::GetCurrentStateName() const
 FString UAnimationStateMachine::GetNextStateName() const
 {
     return NextState.ToString();
+}
+
+TArray<FString> UAnimationStateMachine::GetStateNames() const
+{
+    TArray<FString> Result;
+    Result.reserve(States.size());
+
+    for (const auto& Pair : States)
+    {
+        Result.push_back(Pair.first.ToString());
+    }
+
+    return Result;
+}
+
+TArray<FAnimTransitionDebugInfo> UAnimationStateMachine::GetTransitionDebugInfos() const
+{
+    TArray<FAnimTransitionDebugInfo> Result;
+
+    for (const auto& Pair : States)
+    {
+        const FString FromState = Pair.first.ToString();
+        const FAnimStateNode& State = Pair.second;
+
+        for (const FAnimTransition& Transition : State.Transitions)
+        {
+            FAnimTransitionDebugInfo Info;
+            Info.FromState = FromState;
+            Info.ToState = Transition.ToState.ToString();
+            Info.BlendTime = Transition.BlendTime;
+            Result.push_back(Info);
+        }
+    }
+
+    return Result;
+}
+
+float UAnimationStateMachine::GetBlendAlpha() const
+{
+    if (!bBlending)
+    {
+        return 0.0f;
+    }
+
+    if (BlendDuration <= 0.0f)
+    {
+        return 1.0f;
+    }
+
+    return std::clamp(BlendElapsed / BlendDuration, 0.0f, 1.0f);
 }

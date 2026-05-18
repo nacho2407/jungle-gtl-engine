@@ -56,6 +56,7 @@ private:
 	void RenderDebugDetailsItem(const FDebugDetailsItem& Item);
 	void RenderPropertyWidget(const FPropertyHandle& Handle);
 	bool RenderSceneComponentRefWidget(const FPropertyHandle& Handle, AActor* Owner);
+	void RenderSkeletalStateMachinePreview(class USkeletalMeshComponent* Comp);
 	void RenderSkeletalBonePoseDebug(class USkeletalMeshComponent* Comp);
 	void RenderInterpControlPoints(class UInterpToMovementComponent* Comp);
 	void RenderMaterialPreviewTooltip(UMaterialInterface* Material);
