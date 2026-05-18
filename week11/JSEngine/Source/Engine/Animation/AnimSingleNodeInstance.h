@@ -33,12 +33,17 @@ public:
     bool IsLooping() const;
     bool IsPlaying() const;
     bool IsPaused() const;
+    void SetRootMotionMode(ERootMotionMode InMode);
+    ERootMotionMode GetRootMotionMode() const;
+    const FRootMotionDelta& GetLastExtractedRootMotion() const;
 
     void NativeUpdateAnimation(float DeltaSeconds) override;
     bool EvaluateAnimation(TArray<FTransform>& OutLocalPose) override;
 
 private:
     void AdvanceTime(float DeltaSeconds);
+    void ProcessRootMotion(TArray<FTransform>& InOutLocalPose);
+    void ClearRootMotionState();
     void TriggerAnimNotifies();
     void DispatchAnimNotify(const FAnimNotifyEvent& Notify, EAnimNotifyPhase Phase);
     void ClearActiveNotifyStates(bool bDispatchEnd);
@@ -71,4 +76,10 @@ private:
     bool bReachedEndThisFrame = false;
     bool bLoopedThisFrame = false;
     TArray<FActiveAnimNotifyState> ActiveNotifyStates;
+    ERootMotionMode RootMotionMode = ERootMotionMode::Ignore;
+    FRootMotionDelta LastExtractedRootMotion;
+
+	// 다음 프레임 delta 계산을 위한 previous 값
+    FTransform PreviousRootTransform = FTransform::Identity;
+    bool bHasPreviousRootTransform = false;
 };

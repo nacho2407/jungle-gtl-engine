@@ -62,6 +62,9 @@ public:
     bool IsLooping() const;
     bool IsPlaying() const;
     float GetPlayLength() const;
+    void SetRootMotionMode(ERootMotionMode InMode);
+    ERootMotionMode GetRootMotionMode() const;
+    FRootMotionDelta GetLastExtractedRootMotion() const;
 
     bool SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName = FString());
     void SetAnimationTime(float Time);

@@ -248,6 +248,26 @@ float USkeletalMeshComponent::GetPlayLength() const
     return SingleNodeInstance ? SingleNodeInstance->GetPlayLength() : 0.0f;
 }
 
+void USkeletalMeshComponent::SetRootMotionMode(ERootMotionMode InMode)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetRootMotionMode(InMode);
+    }
+}
+
+ERootMotionMode USkeletalMeshComponent::GetRootMotionMode() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetRootMotionMode() : ERootMotionMode::Ignore;
+}
+
+FRootMotionDelta USkeletalMeshComponent::GetLastExtractedRootMotion() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetLastExtractedRootMotion() : FRootMotionDelta();
+}
+
 bool USkeletalMeshComponent::SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName)
 {
     if (!SkeletalMesh)

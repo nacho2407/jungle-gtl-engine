@@ -1,9 +1,11 @@
 ﻿#include "Animation/AnimSingleNodeInstance.h"
 
 #include "Animation/AnimSequence.h"
+#include "Asset/SkeletalMesh.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Stats.h"
+#include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
 
 #include <algorithm>
@@ -68,6 +70,44 @@ bool IsTimeInsideNotifyState(float Time, const FAnimNotifyEvent& Notify)
     const float NotifyEnd = Notify.TriggerTime + Notify.Duration;
     return Time >= NotifyStart && Time <= NotifyEnd;
 }
+
+int32 FindRootMotionBoneIndex(const USkeletalMesh* Mesh, int32 PoseBoneCount)
+{
+    if (!Mesh || PoseBoneCount <= 0)
+    {
+        return -1;
+    }
+
+    const TArray<FBoneInfo>& Bones = Mesh->GetBones();
+    const int32 BoneCount = static_cast<int32>(Bones.size());
+    const int32 SearchCount = std::min(BoneCount, PoseBoneCount);
+    for (int32 BoneIndex = 0; BoneIndex < SearchCount; ++BoneIndex)
+    {
+        if (Bones[BoneIndex].ParentIndex < 0)
+        {
+            return BoneIndex;
+        }
+    }
+
+    return -1;
+}
+
+void ResetRootTranslationToBindPose(TArray<FTransform>& InOutLocalPose, const USkeletalMesh* Mesh, int32 RootBoneIndex)
+{
+    if (!Mesh || RootBoneIndex < 0 || RootBoneIndex >= static_cast<int32>(InOutLocalPose.size()))
+    {
+        return;
+    }
+
+    const TArray<FBoneInfo>& Bones = Mesh->GetBones();
+    if (RootBoneIndex >= static_cast<int32>(Bones.size()))
+    {
+        return;
+    }
+
+    const FTransform BindRootTransform(Bones[RootBoneIndex].LocalBindTransform);
+    InOutLocalPose[RootBoneIndex].SetTranslation(BindRootTransform.GetTranslation());
+}
 } // namespace
 
 void UAnimSingleNodeInstance::SetAnimationAsset(UAnimationAsset* NewAsset)
@@ -77,11 +117,13 @@ void UAnimSingleNodeInstance::SetAnimationAsset(UAnimationAsset* NewAsset)
         if (!NewAsset)
         {
             ClearActiveNotifyStates(true);
+            ClearRootMotionState();
         }
         return;
     }
 
     ClearActiveNotifyStates(true);
+    ClearRootMotionState();
 
     CurrentAsset = NewAsset;
     PreviousTime = 0.0f;
@@ -126,6 +168,7 @@ void UAnimSingleNodeInstance::Pause()
 void UAnimSingleNodeInstance::Stop()
 {
     ClearActiveNotifyStates(true);
+    ClearRootMotionState();
 
     bPlaying = false;
     bPaused = false;
@@ -138,6 +181,7 @@ void UAnimSingleNodeInstance::Stop()
 void UAnimSingleNodeInstance::SetPosition(float InTimeSeconds, bool bFireNotifies)
 {
     ClearActiveNotifyStates(bFireNotifies);
+    ClearRootMotionState();
 
     PreviousTime = CurrentTime;
     CurrentTime = NormalizeAnimationTime(InTimeSeconds, GetPlayLength(), bLooping);
@@ -206,6 +250,27 @@ bool UAnimSingleNodeInstance::IsPlaying() const
 bool UAnimSingleNodeInstance::IsPaused() const
 {
     return bPaused;
+}
+
+void UAnimSingleNodeInstance::SetRootMotionMode(ERootMotionMode InMode)
+{
+    if (RootMotionMode == InMode)
+    {
+        return;
+    }
+
+    RootMotionMode = InMode;
+    ClearRootMotionState();
+}
+
+ERootMotionMode UAnimSingleNodeInstance::GetRootMotionMode() const
+{
+    return RootMotionMode;
+}
+
+const FRootMotionDelta& UAnimSingleNodeInstance::GetLastExtractedRootMotion() const
+{
+    return LastExtractedRootMotion;
 }
 
 void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaSeconds)
@@ -279,6 +344,86 @@ void UAnimSingleNodeInstance::AdvanceTime(float DeltaSeconds)
     }
 
     CurrentTime = ClampAnimationTime(NewTime, PlayLength);
+}
+
+void UAnimSingleNodeInstance::ProcessRootMotion(TArray<FTransform>& InOutLocalPose)
+{
+    SCOPE_STAT("Anim.RootMotion");
+
+    if (RootMotionMode == ERootMotionMode::Ignore)
+    {
+        ClearRootMotionState();
+        return;
+    }
+
+    LastExtractedRootMotion = FRootMotionDelta();
+    if (InOutLocalPose.empty())
+    {
+        bHasPreviousRootTransform = false;
+        return;
+    }
+
+    USkeletalMeshComponent* Component = GetSkelMeshComponent();
+    const USkeletalMesh* Mesh = Component ? Component->GetSkeletalMesh() : nullptr;
+    const int32 RootBoneIndex = FindRootMotionBoneIndex(Mesh, static_cast<int32>(InOutLocalPose.size()));
+    if (RootBoneIndex < 0)
+    {
+        bHasPreviousRootTransform = false;
+        return;
+    }
+
+    const FTransform CurrentRootTransform = InOutLocalPose[RootBoneIndex];
+    if (!bHasPreviousRootTransform || bLoopedThisFrame)
+    {
+        // seek나 loop 직후에는 이전 root와 현재 root를 바로 비교하면 큰 delta가 튈 수 있으므로 기준점만 다시 잡음
+        PreviousRootTransform = CurrentRootTransform;
+        bHasPreviousRootTransform = true;
+        if (RootMotionMode == ERootMotionMode::ApplyToOwner)
+        {
+            ResetRootTranslationToBindPose(InOutLocalPose, Mesh, RootBoneIndex);
+        }
+        return;
+    }
+
+	// delta = 이전 pose matrix의 역행렬 * 현재 pose matrix
+    const FTransform DeltaTransform = PreviousRootTransform.Inverse() * CurrentRootTransform;
+    PreviousRootTransform = CurrentRootTransform;
+
+    LastExtractedRootMotion.DeltaTransform = DeltaTransform;
+    LastExtractedRootMotion.Translation = DeltaTransform.GetTranslation();
+    LastExtractedRootMotion.Rotation = DeltaTransform.GetRotation();
+    LastExtractedRootMotion.bHasRootMotion =
+        !LastExtractedRootMotion.Translation.IsNearlyZero() || !LastExtractedRootMotion.Rotation.IsIdentity();
+
+    if (RootMotionMode != ERootMotionMode::ApplyToOwner)
+    {
+        return;
+    }
+
+	// translation root motion 적용
+    if (Component && !LastExtractedRootMotion.Translation.IsNearlyZero())
+    {
+        const FVector WorldDelta = Component->GetWorldTransform().TransformVectorNoScale(LastExtractedRootMotion.Translation);
+        if (AActor* Owner = Component->GetOwner())
+        {
+            Owner->AddActorWorldOffset(WorldDelta);
+        }
+    }
+
+	// 누적 방식이 아님에 유의!
+    ResetRootTranslationToBindPose(InOutLocalPose, Mesh, RootBoneIndex);
+
+	/**
+	 * @TODO Milestone 2에서는 rotation root motion은 추출만 하고 owner 적용/pose 제거는 후속 정책으로 남김.
+	 *       Milestone 3+에서 owner rotation 적용 기준과 root rotation 제거 방식을 함께 결정
+	 */
+}
+
+void UAnimSingleNodeInstance::ClearRootMotionState()
+{
+    LastExtractedRootMotion = FRootMotionDelta();
+    PreviousRootTransform = FTransform::Identity;
+    bHasPreviousRootTransform = false;
 }
 
 void UAnimSingleNodeInstance::TriggerAnimNotifies()
@@ -492,6 +637,7 @@ bool UAnimSingleNodeInstance::EvaluateAnimation(TArray<FTransform>& OutLocalPose
         const FAnimExtractContext ExtractContext(CurrentTime, bLooping);
         if (Sequence->GetAnimationPose(OutLocalPose, Mesh, ExtractContext))
         {
+            ProcessRootMotion(OutLocalPose);
             return true;
         }
 
