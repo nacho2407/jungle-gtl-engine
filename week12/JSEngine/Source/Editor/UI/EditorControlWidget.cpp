@@ -18,6 +18,7 @@ namespace
 	const char* GetClassMenuCategory(const UClass* Class);
 	bool HasPlayerStart(UWorld* World);
 	bool IsPlaceableActorClass(const UClass* Class);
+	bool IsTopLevelPlaceActorClass(const UClass* Class);
 	bool SortActorClassForPlacement(const UClass* Lhs, const UClass* Rhs);
 }
 
@@ -93,6 +94,26 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
 		UClass* Class = PlaceableActorClasses[PrimitiveType];
 		if (!Class)
 		{
+			continue;
+		}
+
+		if (IsTopLevelPlaceActorClass(Class))
+		{
+			if (bCategoryMenuOpen)
+			{
+				ImGui::EndMenu();
+				bCategoryMenuOpen = false;
+				CurrentCategory = nullptr;
+			}
+
+			if (ImGui::MenuItem(Class->GetDisplayName()))
+			{
+				bSpawned = SpawnPrimitive(PrimitiveType, SpawnPoint, 1) || bSpawned;
+				if (bSpawned && bClosePopupOnSpawn)
+				{
+					ImGui::CloseCurrentPopup();
+				}
+			}
 			continue;
 		}
 
@@ -258,8 +279,20 @@ namespace
 		return Class && Class->IsChildOf(AActor::StaticClass()) && Class->HasAnyClassFlags(CF_Placeable) && !Class->HasAnyClassFlags(CF_Abstract);
 	}
 
+	bool IsTopLevelPlaceActorClass(const UClass* Class)
+	{
+		return Class && std::strcmp(Class->GetDisplayName(), "Empty Actor") == 0;
+	}
+
 	bool SortActorClassForPlacement(const UClass* Lhs, const UClass* Rhs)
 	{
+		const bool bLhsTopLevel = IsTopLevelPlaceActorClass(Lhs);
+		const bool bRhsTopLevel = IsTopLevelPlaceActorClass(Rhs);
+		if (bLhsTopLevel != bRhsTopLevel)
+		{
+			return bLhsTopLevel;
+		}
+
 		const char* LhsCategory = GetClassMenuCategory(Lhs);
 		const char* RhsCategory = GetClassMenuCategory(Rhs);
 		const int32 CategoryOrder = std::strcmp(LhsCategory, RhsCategory);

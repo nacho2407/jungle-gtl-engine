@@ -409,7 +409,6 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\AAttachTestActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ABillboardActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ABladeSlash.gen.cpp" />
-    <ClCompile Include="Intermediate\Reflection\GameFramework\ABoundsBoxActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ABullet.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ADecalActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ADefaultPawn.gen.cpp" />

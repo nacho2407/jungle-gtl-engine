@@ -11,6 +11,7 @@
 namespace
 {
 	bool IsSpawnableComponentClass(const UClass* Class);
+	const char* NormalizeComponentMenuCategory(const char* Category);
 	bool SortComponentClassForMenu(const UClass* Lhs, const UClass* Rhs);
 }
 
@@ -84,7 +85,7 @@ UClass* FComponentMenuRegistry::DrawSpawnableComponentClassMenu()
 const char* FComponentMenuRegistry::GetClassMenuCategory(const UClass* Class)
 {
 	const char* Category = Class ? Class->GetCategory() : nullptr;
-	return (Category && Category[0] != '\0') ? Category : "Misc";
+	return NormalizeComponentMenuCategory((Category && Category[0] != '\0') ? Category : "Misc");
 }
 
 namespace
@@ -95,6 +96,29 @@ namespace
 			&& Class->IsChildOf(UActorComponent::StaticClass())
 			&& Class->HasAnyClassFlags(CF_SpawnableComponent)
 			&& !Class->HasAnyClassFlags(CF_Abstract);
+	}
+
+	const char* NormalizeComponentMenuCategory(const char* Category)
+	{
+		if (!Category)
+		{
+			return "Misc";
+		}
+
+		if (std::strcmp(Category, "Rendering") == 0 || std::strcmp(Category, "Environment") == 0)
+		{
+			return "Basic";
+		}
+
+		if (std::strcmp(Category, "Animation") == 0
+			|| std::strcmp(Category, "Audio") == 0
+			|| std::strcmp(Category, "Camera") == 0
+			|| std::strcmp(Category, "Scripting") == 0)
+		{
+			return "System";
+		}
+
+		return Category;
 	}
 
 	bool SortComponentClassForMenu(const UClass* Lhs, const UClass* Rhs)

@@ -15,6 +15,36 @@ class UProceduralMeshComponent;
 class UStaticMesh;
 class USkeletalMeshComponent;
 
+// UCLASS(Placeable, DisplayName = "Cube", Category = "Geometry")
+// class ACubeActor : public AActor
+// {
+// public:
+// 	GENERATED_BODY(ACubeActor, AActor)
+// 	ACubeActor() = default;
+//
+// 	void InitDefaultComponents();
+// };
+
+// UCLASS(Placeable, DisplayName = "Sphere", Category = "Geometry")
+// class ASphereActor : public AActor
+// {
+// public:
+// 	GENERATED_BODY(ASphereActor, AActor)
+// 	ASphereActor() = default;
+//
+// 	void InitDefaultComponents();
+// };
+
+// UCLASS(Placeable, DisplayName = "Plane", Category = "Geometry")
+// class APlaneActor : public AActor
+// {
+// public:
+// 	GENERATED_BODY(APlaneActor, AActor)
+// 	APlaneActor() = default;
+//
+// 	void InitDefaultComponents();
+// };
+
 UCLASS()
 class AAttachTestActor : public AActor
 {
@@ -139,7 +169,6 @@ public:
 	void InitDefaultComponents();
 };
 
-
 UCLASS()
 class ALightActor : public AActor
 {
@@ -247,24 +276,6 @@ private:
 	UProjectileMovementComponent* ProjMoveComp = nullptr;
 	// 현재까지 잘려진 횟수
 	uint32 SliceCount = 0;
-};
-
-UCLASS(Placeable, DisplayName = "Bounding Box", Category = "Debug")
-class ABoundsBoxActor : public AActor
-{
-public:
-	GENERATED_BODY(ABoundsBoxActor, AActor)
-	void InitDefaultComponents() override;
-
-	void Tick(float DeltaTime) override;
-
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
-	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
-	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
-
-	void PostDuplicate(UObject* Original) override;
-private:
-	UBoxComponent* BoxComponent = nullptr;
 };
 
 UCLASS(Placeable, DisplayName = "Main Scene Destructible", Category = "Gameplay")

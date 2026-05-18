@@ -480,9 +480,6 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\ABladeSlash.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\GameFramework\ABoundsBoxActor.gen.cpp">
-      <Filter>Intermediate\Reflection\GameFramework</Filter>
-    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\ABullet.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>

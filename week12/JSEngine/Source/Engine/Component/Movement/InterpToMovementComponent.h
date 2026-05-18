@@ -6,7 +6,7 @@ enum class EInterpBehaviour {
 	OneShot UMETA(DisplayName = "One Shot"),
 	OneShotReverse UMETA(DisplayName = "One Shot Reverse"),
 	Loop UMETA(DisplayName = "Loop"),
-	PingPong UMETA(DisplayName = "Ping Pong"),
+	PingPong UMETA(DisplayName = "Ping Pong")
 };
 
 UCLASS(SpawnableComponent, DisplayName = "InterpToMovement Component", Category = "Movement")
