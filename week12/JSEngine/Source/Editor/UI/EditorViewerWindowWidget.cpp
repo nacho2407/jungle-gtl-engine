@@ -700,12 +700,11 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 			SelectedAnimTrackIndex = -1;
 		}
 
-		RenderAnimSequenceToolbar(Sequence);
 
-		const float TimelineHeight = 230.0f;
+		const float TimelineHeight = 350.0f;
 		ImVec2 WorkSize = ImGui::GetContentRegionAvail();
 		const float ViewAreaHeight = std::max(180.0f, WorkSize.y - TimelineHeight - ImGui::GetStyle().ItemSpacing.y);
-		const float DetailsWidth = std::clamp(RightPanelWidth, 220.0f, std::max(220.0f, WorkSize.x * 0.4f));
+		const float DetailsWidth = std::clamp(RightPanelWidth, 350.0f, std::max(350.0f, WorkSize.x * 0.4f));
 		const float ViewWidth = std::max(220.0f, WorkSize.x - DetailsWidth - ImGui::GetStyle().ItemSpacing.x);
 
 		RenderViewportPanel(SceneViewport, SRV, ImVec2(ViewWidth, ViewAreaHeight));
@@ -715,10 +714,25 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 		RenderAnimSequenceDetails(Sequence, SkeletalMesh);
 		ImGui::EndChild();
 
-		ImGui::BeginChild("AnimSequenceTimelinePanel", ImVec2(0.0f, 0.0f), true);
-		RenderAnimSequenceTimeline(Sequence);
-		ImGui::EndChild();
-		return;
+		const float TimelineListWidth = 350.0f;
+        const float SpacingX = ImGui::GetStyle().ItemSpacing.x;
+
+        const float TimelineWidth = std::max(
+            260.0f,
+            WorkSize.x - TimelineListWidth - SpacingX);
+
+        ImGui::BeginChild("AnimSequenceTimelinePanel", ImVec2(TimelineWidth, 0.0f), true);
+        RenderAnimSequenceToolbar(Sequence);
+        RenderAnimSequenceTimeline(Sequence);
+        ImGui::EndChild();
+
+        ImGui::SameLine();
+
+        ImGui::BeginChild("AnimSequenceListPanel", ImVec2(TimelineListWidth, 0.0f), true);
+        RenderAnimSequenceList(Sequence);
+        ImGui::EndChild();
+
+        return;
 	}
 
 	if (CachedAnimSequence)
@@ -1074,7 +1088,6 @@ void FEditorViewerWindowWidget::RenderAnimSequenceToolbar(UAnimSequence* Sequenc
 
 void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequence)
 {
-	ImGui::TextDisabled("Timeline");
 	if (!Sequence)
 	{
 		ImGui::SameLine();
@@ -1275,8 +1288,6 @@ void FEditorViewerWindowWidget::RenderAnimSequenceDetails(UAnimSequence* Sequenc
 			}
 		}
 	}
-
-	RenderAnimSequenceList(Sequence);
 }
 
 void FEditorViewerWindowWidget::RenderAnimSequenceLeftPanel(UAnimSequence* Sequence, USkeletalMeshComponent* SkelMeshComp)
