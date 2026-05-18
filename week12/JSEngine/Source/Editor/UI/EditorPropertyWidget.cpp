@@ -139,7 +139,6 @@ namespace
 			&& Property->Name
 			&& (std::strcmp(Property->Name, "SkeletalMeshPath") == 0
 				|| std::strcmp(Property->Name, "SkinningMode") == 0
-				|| std::strcmp(Property->Name, "AnimationAssetPath") == 0
 				|| std::strcmp(Property->Name, "AnimationMode") == 0);
 	}
 

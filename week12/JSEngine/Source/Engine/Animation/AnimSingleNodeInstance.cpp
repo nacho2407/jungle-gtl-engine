@@ -91,7 +91,7 @@ void UAnimSingleNodeInstance::SetAnimation(UAnimSequenceBase* InAnimation)
 
 void UAnimSingleNodeInstance::SetAnimationAssetPath(const FString& InAnimationAssetPath)
 {
-	AnimationAssetPath = FPaths::Normalize(InAnimationAssetPath);
+	AnimationAssetPath.SetPath(FPaths::Normalize(InAnimationAssetPath));
 	ApplyAnimationFromAssetPath();
 }
 
@@ -175,7 +175,7 @@ float UAnimSingleNodeInstance::GetLength() const
 
 void UAnimSingleNodeInstance::ApplyAnimationFromAssetPath()
 {
-	const FString RequestedPath = AnimationAssetPath;
+	const FString RequestedPath = AnimationAssetPath.GetPath();
 	if (RequestedPath.empty())
 	{
 		SetAnimation(nullptr);
@@ -187,7 +187,7 @@ void UAnimSingleNodeInstance::ApplyAnimationFromAssetPath()
 	if (!LoadedAnimation)
 	{
 		CurrentAnimation = nullptr;
-		AnimationAssetPath = RequestedPath;
+		AnimationAssetPath.SetPath(RequestedPath);
 		CurrentTime = 0.0f;
 		PreviousTime = 0.0f;
 		bPlaying = false;
@@ -211,14 +211,14 @@ void UAnimSingleNodeInstance::SyncAnimationAssetPathFromAnimation(UAnimSequenceB
 {
 	if (!Animation)
 	{
-		AnimationAssetPath.clear();
+		AnimationAssetPath.SetPath("");
 		return;
 	}
 
 	const FString PersistentPath = GetPersistentAnimationAssetPath(Animation);
 	if (!PersistentPath.empty())
 	{
-		AnimationAssetPath = PersistentPath;
+		AnimationAssetPath.SetPath(PersistentPath);
 	}
 }
 
