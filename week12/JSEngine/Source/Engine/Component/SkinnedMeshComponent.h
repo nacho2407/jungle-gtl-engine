@@ -89,7 +89,7 @@ protected:
 protected:
 	USkeletalMesh* SkeletalMesh = nullptr;
 
-	UPROPERTY(DisplayName = "SkeletalMesh")
+	UPROPERTY(DisplayName = "Skeletal Mesh")
 	TSoftObjectPtr<USkeletalMesh> SkeletalMeshPath;
 
 	TArray<FMatrix> CurrentLocalPose;
