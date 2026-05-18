@@ -2,15 +2,16 @@
 
 #include "GameFramework/AActor.h"
 
+#include "Source/Engine/GameFramework/DecalActor.generated.h"
 class UTextRenderComponent;
 class UDecalComponent;
 class UBillboardComponent;
 
+UCLASS()
 class ADecalActor : public AActor
 {
 public:
-	DECLARE_CLASS(ADecalActor, AActor)
-
+	GENERATED_BODY()
 	ADecalActor();
 
 	void InitDefaultComponents();

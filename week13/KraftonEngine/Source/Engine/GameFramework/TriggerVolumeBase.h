@@ -1,9 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/AActor.h"
 #include "Object/FName.h"
 #include "Math/Vector.h"
 
+#include "Source/Engine/GameFramework/TriggerVolumeBase.generated.h"
 class UBoxComponent;
 class UPrimitiveComponent;
 class APawn;
@@ -21,11 +22,11 @@ struct FHitResult;
 // 게임모드에서 트리거 종류를 구분할 때는 TriggerTag(FName)로 식별하거나
 // 본 클래스를 상속받은 서브클래스로 분기.
 // ============================================================
+UCLASS()
 class ATriggerVolumeBase : public AActor
 {
 public:
-	DECLARE_CLASS(ATriggerVolumeBase, AActor)
-
+	GENERATED_BODY()
 	ATriggerVolumeBase() = default;
 	~ATriggerVolumeBase() override = default;
 
@@ -35,7 +36,6 @@ public:
 	void InitDefaultComponents(const FVector& Extent = FVector(1.0f, 1.0f, 1.0f));
 	void PostDuplicate() override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	// 서브클래스 override hook — 베이스의 GameMode 통지 외 추가 동작이 필요할 때.
 	virtual void OnPossessedPawnEntered(APawn* Pawn) {}
@@ -46,8 +46,6 @@ public:
 	// 게임모드가 트리거 종류를 구분할 때 사용 (씬에 직렬화).
 	FName GetTriggerTag() const { return TriggerTag; }
 	void SetTriggerTag(const FName& InTag) { TriggerTag = InTag; }
-
-	void Serialize(FArchive& Ar) override;
 
 protected:
 	// 델리게이트 시그니처 — UPrimitiveComponent의 Begin/End Overlap에 매칭.
@@ -66,5 +64,6 @@ protected:
 		int32 OtherBodyIndex);
 
 	UBoxComponent* TriggerBox = nullptr;
+	UPROPERTY(Edit, Save, Category="Trigger", DisplayName="TriggerTag")
 	FName TriggerTag;  // 직렬화 — 디자이너가 씬에서 식별자를 지정
 };

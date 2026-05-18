@@ -3,13 +3,14 @@
 #include "Component/ActorComponent.h"
 #include "Math/Vector.h"
 
+#include "Source/Engine/Component/ActionComponent.generated.h"
 class USceneComponent;
 
+UCLASS()
 class UActionComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(UActionComponent, UActorComponent)
-
+	GENERATED_BODY()
 	UActionComponent() = default;
 	~UActionComponent() override = default;
 

@@ -1,4 +1,4 @@
-﻿#include "PointLightComponent.h"
+#include "PointLightComponent.h"
 #include "Engine/Serialization/Archive.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -26,8 +26,6 @@ namespace
 		}
 	}
 }
-
-IMPLEMENT_CLASS(UPointLightComponent, ULightComponent)
 
 void UPointLightComponent::ContributeSelectedVisuals(FScene& Scene) const
 {
@@ -71,13 +69,6 @@ void UPointLightComponent::DestroyFromScene()
 	World->GetScene().GetEnvironment().RemovePointLight(this);
 }
 
-void UPointLightComponent::Serialize(FArchive& Ar)
-{
-	ULightComponent::Serialize(Ar);
-	Ar << AttenuationRadius;
-	Ar << LightFalloffExponent;
-}
-
 // POV 매개변수는 base 시그니처 일관성 위해 받지만 큐브맵 face 별 매트릭스에는 사용 안 함.
 bool UPointLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, const FMinimalViewInfo* /*POV*/, int32 FaceIndex) const
 {
@@ -90,11 +81,4 @@ bool UPointLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, con
 	OutResult.Proj = VP.Proj;
 	OutResult.bIsOrtho = false;
 	return true;
-}
-
-void UPointLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	ULightComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "AttenuationRadius",EPropertyType::Float,"Lighting",&AttenuationRadius,0.05f,1000.f,0.01f });
-	OutProps.push_back({ "LightFalloffExponent",EPropertyType::Float,"Lighting",&LightFalloffExponent,0.05f,10.f,0.01f });
 }

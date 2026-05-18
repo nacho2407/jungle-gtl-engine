@@ -1,4 +1,4 @@
-﻿#include "PendulumMovementComponent.h"
+#include "PendulumMovementComponent.h"
 
 #include "Component/SceneComponent.h"
 #include "Math/MathUtils.h"
@@ -7,8 +7,6 @@
 #include "Serialization/Archive.h"
 
 #include <cmath>
-
-IMPLEMENT_CLASS(UPendulumMovementComponent, UMovementComponent)
 
 void UPendulumMovementComponent::BeginPlay()
 {
@@ -50,26 +48,4 @@ void UPendulumMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 	FQuat FinalQuat = InitialRelativeRotation * SwingQuat;
 
 	Target->SetRelativeRotation(FinalQuat);
-}
-
-void UPendulumMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UMovementComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Swing Axis",      EPropertyType::Vec3,    "Movement", &Axis });
-	OutProps.push_back({ "Amplitude (deg)", EPropertyType::Float,   "Movement", &Amplitude,  0.0f, 180.0f, 0.5f });
-	OutProps.push_back({ "Frequency (Hz)",  EPropertyType::Float,   "Movement", &Frequency,  0.01f, 10.0f, 0.01f });
-	OutProps.push_back({ "Phase (deg)",     EPropertyType::Float,   "Movement", &Phase,      0.0f, 360.0f, 1.0f });
-	OutProps.push_back({ "Angle Offset (deg)", EPropertyType::Float, "Movement", &AngleOffset, -180.0f, 180.0f, 0.5f });
-}
-
-void UPendulumMovementComponent::Serialize(FArchive& Ar)
-{
-	UMovementComponent::Serialize(Ar);
-	Ar << Axis.X;
-	Ar << Axis.Y;
-	Ar << Axis.Z;
-	Ar << Amplitude;
-	Ar << Frequency;
-	Ar << Phase;
-	Ar << AngleOffset;
 }

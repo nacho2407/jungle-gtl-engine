@@ -1,4 +1,4 @@
-﻿#include "Game/Pawn/WalkingPersonActor.h"
+#include "Game/Pawn/WalkingPersonActor.h"
 
 #include "Component/BoxComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -14,8 +14,6 @@
 #include "Core/Log.h"
 #include "Core/PropertyTypes.h"
 #include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS(AWalkingPersonActor, AActor)
 
 void AWalkingPersonActor::InitDefaultComponents(const FString& StaticMeshFileName, const FString& LuaScriptFile)
 {
@@ -215,16 +213,4 @@ void AWalkingPersonActor::ResetToInitialTransform()
 	{
 		LuaScript->CallFunction("ResetWalkingState");
 	}
-}
-
-void AWalkingPersonActor::Serialize(FArchive& Ar)
-{
-	Super::Serialize(Ar);
-	Ar << bQuestTarget;
-}
-
-void AWalkingPersonActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	Super::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Quest Target", EPropertyType::Bool, "Walking Person", &bQuestTarget });
 }

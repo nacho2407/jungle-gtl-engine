@@ -1,7 +1,8 @@
-﻿#pragma once
+#pragma once
 #include "Component/SceneComponent.h"
 #include "Math/Matrix.h"
 
+#include "Source/Engine/Component/Light/LightComponentBase.generated.h"
 enum class ELightComponentType : uint8
 {
 	Ambient,
@@ -20,22 +21,19 @@ struct FLightViewProjResult
 
 struct FMinimalViewInfo;
 
+UCLASS()
 class ULightComponentBase : public USceneComponent
 {
 public:
-	DECLARE_CLASS(ULightComponentBase, USceneComponent)
-
+	GENERATED_BODY()
 	ULightComponentBase() { SetComponentTickEnabled(false); }
 
 	virtual void PushToScene() {};
 	virtual void DestroyFromScene() {};
 	virtual void OnTransformDirty() override { USceneComponent::OnTransformDirty(); PushToScene(); }
-	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	virtual void PostEditProperty(const char* PropertyName) override { USceneComponent::PostEditProperty(PropertyName); PushToScene(); }
 	virtual void CreateRenderState() override { PushToScene(); }
 	virtual void DestroyRenderState() override { DestroyFromScene(); }
-
-	virtual void Serialize(FArchive& Ar) override;
 
 	float GetIntensity() const { return Intensity; }
 	FVector4 GetLightColor() const { return LightColor; }
@@ -53,8 +51,12 @@ public:
 	class UBillboardComponent* EnsureEditorBillboard();
 
 protected:
+	UPROPERTY(Edit, Save, Category="Lighting", DisplayName="Intensity", Min=0.0f, Max=50.0f, Speed=0.05f)
 	float Intensity = 1.f;
+	UPROPERTY(Edit, Save, Category="Lighting", DisplayName="Color", Type=Color4)
 	FVector4 LightColor = { 1.0f,1.0f,1.0f,1.0f };
+	UPROPERTY(Edit, Save, Category="Lighting", DisplayName="Visible")
 	bool bVisible = true;
+	UPROPERTY(Edit, Save, Category="Lighting", DisplayName="Cast Shadows")
 	bool bCastShadows = true;
 };

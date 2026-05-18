@@ -1,7 +1,4 @@
 #include "Game/GameState/GameStateCarGame.h"
-#include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS(AGameStateCarGame, AGameStateBase)
 
 void AGameStateCarGame::SetPhase(ECarGamePhase InPhase)
 {
@@ -84,10 +81,4 @@ const FScoreEvent* AGameStateCarGame::GetLatestScoreEvent() const
 		return nullptr;
 	}
 	return &ScoreEvents.back();
-}
-
-void AGameStateCarGame::Serialize(FArchive& Ar)
-{
-	Super::Serialize(Ar);
-	Ar << CurrentPhase;
 }

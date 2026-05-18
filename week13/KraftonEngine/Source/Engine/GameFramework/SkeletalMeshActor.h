@@ -1,14 +1,15 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/AActor.h"
 
+#include "Source/Engine/GameFramework/SkeletalMeshActor.generated.h"
 class USkeletalMeshComponent;
 
+UCLASS()
 class ASkeletalMeshActor : public AActor
 {
 public:
-	DECLARE_CLASS(ASkeletalMeshActor, AActor)
-
+	GENERATED_BODY()
 	ASkeletalMeshActor() = default;
 
 	void BeginPlay() override;

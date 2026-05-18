@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/ActorComponent.h"
 
@@ -11,18 +11,19 @@ class USceneComponent;
  * USceneComponent를 움직이는 로직들의 베이스 클래스.
  * 실제 이동 로직은 자식 클래스에서 담당합니다.
  */
+#include "Source/Engine/Component/Movement/MovementComponent.generated.h"
+
+UCLASS()
 class UMovementComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(UMovementComponent, UActorComponent)
+	GENERATED_BODY()
 
 	UMovementComponent() = default;
 	~UMovementComponent() override = default;
 
 	void BeginPlay() override;
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void Serialize(FArchive& Ar) override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	void SetUpdatedComponent(USceneComponent* NewUpdatedComponent);
@@ -40,6 +41,8 @@ protected:
 	USceneComponent* FindUpdatedComponentByPath(const FString& InPath) const;
 
 	USceneComponent* UpdatedComponent = nullptr; // 움직일 대상
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Auto Register Updated")
 	bool bAutoRegisterUpdatedComponent = true;
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Updated Component", Type=SceneComponentRef)
 	FString UpdatedComponentPath;
 };

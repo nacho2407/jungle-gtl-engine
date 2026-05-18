@@ -1,8 +1,6 @@
-﻿#include "GameFramework/SphereActor.h"
+#include "GameFramework/SphereActor.h"
 #include "Component/SphereComponent.h"
 #include "Core/Log.h"
-
-IMPLEMENT_CLASS(ASphereActor, AActor)
 
 void ASphereActor::InitDefaultComponents()
 {

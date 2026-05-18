@@ -1,4 +1,4 @@
-﻿#include "AnimState.h"
+#include "AnimState.h"
 #include "AnimInstance.h"
 #include "AnimSequenceBase.h"
 #include "AnimSequence.h"
@@ -6,9 +6,6 @@
 #include "PoseContext.h"
 
 #include <cmath>
-
-DEFINE_CLASS(UAnimState, UObject)
-
 void UAnimState::Tick(UAnimInstance* Instance, float DeltaSeconds)
 {
 	if (!Sequence) return;

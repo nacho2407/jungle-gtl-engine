@@ -3,11 +3,13 @@
 #include "Object/Object.h"
 #include "Animation/SkeletonTypes.h"
 
+#include "Source/Engine/Animation/Skeleton.generated.h"
+
+UCLASS()
 class USkeleton : public UObject
 {
 public:
-    DECLARE_CLASS(USkeleton, UObject)
-
+	GENERATED_BODY()
     USkeleton()           = default;
     ~USkeleton() override = default;
 

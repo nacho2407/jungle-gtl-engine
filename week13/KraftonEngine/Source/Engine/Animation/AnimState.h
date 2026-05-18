@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "Object/FName.h"
@@ -10,11 +10,14 @@ struct FPoseContext;
 
 // UAnimationStateMachine 의 한 노드. 상태별 시퀀스/속도/루프 등을 들고,
 // 진입 시 LocalTime 을 리셋, Tick 에서 시간 진행, Evaluate 에서 포즈 샘플링.
+
+#include "Source/Engine/Animation/AnimState.generated.h"
+
+UCLASS()
 class UAnimState : public UObject
 {
 public:
-	DECLARE_CLASS(UAnimState, UObject)
-
+	GENERATED_BODY()
 	UAnimState() = default;
 	~UAnimState() override = default;
 

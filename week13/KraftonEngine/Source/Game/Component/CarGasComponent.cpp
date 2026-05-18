@@ -6,20 +6,9 @@
 #include <algorithm>
 #include <cstring>
 
-IMPLEMENT_CLASS(UCarGasComponent, UActorComponent)
-
-void UCarGasComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UActorComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Gas", EPropertyType::Float, "Car Gas", &Gas, 0.0f, MaxGas, 0.5f });
-	OutProps.push_back({ "MaxGas", EPropertyType::Float, "Car Gas", &MaxGas, 0.0f, 1000.0f, 0.5f });
-}
-
 void UCarGasComponent::Serialize(FArchive& Ar)
 {
 	UActorComponent::Serialize(Ar);
-	Ar << Gas;
-	Ar << MaxGas;
 	ClampGas();
 }
 

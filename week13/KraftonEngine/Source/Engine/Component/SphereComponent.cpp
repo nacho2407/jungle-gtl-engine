@@ -9,8 +9,6 @@
 #include <cmath>
 #include <algorithm>
 
-IMPLEMENT_CLASS(USphereComponent, UShapeComponent)
-
 void USphereComponent::SetSphereRadius(float InRadius)
 {
 	SphereRadius = InRadius;
@@ -72,24 +70,12 @@ void USphereComponent::UpdateWorldAABB() const
 	bHasValidWorldAABB = true;
 }
 
-void USphereComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UShapeComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Sphere Radius", EPropertyType::Float, "Shape", &SphereRadius, 0.01f, 10000.0f, 1.0f });
-}
-
 void USphereComponent::PostEditProperty(const char* PropertyName)
 {
 	UShapeComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Sphere Radius") == 0)
+	if (strcmp(PropertyName, "SphereRadius") == 0 || strcmp(PropertyName, "Sphere Radius") == 0)
 	{
 		SetSphereRadius(SphereRadius);
 	}
-}
-
-void USphereComponent::Serialize(FArchive& Ar)
-{
-	UShapeComponent::Serialize(Ar);
-	Ar << SphereRadius;
 }

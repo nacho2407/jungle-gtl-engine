@@ -2,6 +2,7 @@
 
 #include "Game/Pawn/CarPawn.h"
 
+#include "Source/Game/Pawn/PoliceCar.generated.h"
 class APawn;
 class UPrimitiveComponent;
 class UPointLightComponent;
@@ -19,11 +20,11 @@ struct FHitResult;
 //
 // AI 추적 대상은 GameMode가 SetTarget 으로 주입한다.
 // ============================================================
+UCLASS()
 class APoliceCar : public ACarPawn
 {
 public:
-	DECLARE_CLASS(APoliceCar, ACarPawn)
-
+	GENERATED_BODY()
 	APoliceCar() = default;
 	~APoliceCar() override = default;
 

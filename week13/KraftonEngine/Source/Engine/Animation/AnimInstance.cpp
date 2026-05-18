@@ -6,9 +6,6 @@
 #include "AnimationRuntime.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Mesh/SkeletalMesh.h"
-#include "Object/Object.h"
-
-DEFINE_CLASS(UAnimInstance, UObject)
 
 void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 {

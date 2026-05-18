@@ -1,4 +1,4 @@
-﻿#include "DecalComponent.h"
+#include "DecalComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Materials/MaterialManager.h"
 #include "Collision/OBB.h"
@@ -13,8 +13,6 @@
 #include "Texture/Texture2D.h"
 #include "Materials/Material.h"
 #include <algorithm>
-
-IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
 
 void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
@@ -31,30 +29,19 @@ FPrimitiveSceneProxy* UDecalComponent::CreateSceneProxy()
 	return new FDecalSceneProxy(this);
 }
 
-void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Material", EPropertyType::MaterialSlot, "Rendering", &MaterialSlot });
-	OutProps.push_back({ "Color", EPropertyType::Vec4, "Rendering", &Color });
-	OutProps.push_back({ "FadeInDelay", EPropertyType::Float, "Rendering", &FadeInDelay });
-	OutProps.push_back({ "FadeInDuration", EPropertyType::Float, "Rendering", &FadeInDuration });
-	OutProps.push_back({ "FadeOutDelay", EPropertyType::Float, "Rendering", &FadeOutDelay });
-	OutProps.push_back({ "FadeOutDuration", EPropertyType::Float, "Rendering", &FadeOutDuration });
-}
-
 void UDecalComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Material") == 0)
+	if (strcmp(PropertyName, "MaterialSlot") == 0 || strcmp(PropertyName, "Material") == 0)
 	{
-		if (MaterialSlot.Path == "None" || MaterialSlot.Path.empty())
+		if (MaterialSlot == "None" || MaterialSlot.empty())
 		{
 			SetMaterial(nullptr);
 		}
 		else
 		{
-			UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot.Path);
+			UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot);
 			if (LoadedMat)
 			{
 				SetMaterial(LoadedMat);
@@ -68,24 +55,13 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 	}
 }
 
-void UDecalComponent::Serialize(FArchive& Ar)
-{
-	UPrimitiveComponent::Serialize(Ar);
-	Ar << MaterialSlot.Path;
-	Ar << Color;
-	Ar << FadeInDelay;
-	Ar << FadeInDuration;
-	Ar << FadeOutDelay;
-	Ar << FadeOutDuration;
-}
-
 void UDecalComponent::PostDuplicate()
 {
 	UPrimitiveComponent::PostDuplicate();
 
-	if (!MaterialSlot.Path.empty() && MaterialSlot.Path != "None")
+	if (!MaterialSlot.empty() && MaterialSlot != "None")
 	{
-		UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot.Path);
+		UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot);
 		if (LoadedMat)
 		{
 			SetMaterial(LoadedMat);
@@ -106,11 +82,11 @@ void UDecalComponent::SetMaterial(UMaterial* InMaterial)
 	Material = InMaterial;
 	if (Material)
 	{
-		MaterialSlot.Path = Material->GetAssetPathFileName();
+		MaterialSlot = Material->GetAssetPathFileName();
 	}
 	else
 	{
-		MaterialSlot.Path = "None";
+		MaterialSlot = "None";
 	}
 	MarkProxyDirty(EDirtyFlag::Material);
 }

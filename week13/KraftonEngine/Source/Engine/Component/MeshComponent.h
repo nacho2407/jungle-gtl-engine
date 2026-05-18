@@ -1,12 +1,15 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/PrimitiveComponent.h"
 
+
+#include "Source/Engine/Component/MeshComponent.generated.h"
+
+UCLASS()
 class UMeshComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UMeshComponent, UPrimitiveComponent)
-
+	GENERATED_BODY()
 	UMeshComponent() = default;
 	~UMeshComponent() override = default;
 };

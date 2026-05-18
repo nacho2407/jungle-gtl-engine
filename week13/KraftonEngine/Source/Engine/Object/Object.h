@@ -5,42 +5,23 @@
 #include "Core/Singleton.h"
 #include "Core/PropertyTypes.h"
 #include "Object/UClass.h"
+#include "Object/ObjectMacros.h"
+
+#include "Source/Engine/Object/Object.generated.h"
 
 class FArchive;
-
-// ---------------------------------------------------------------------------
-// RTTI Macros
-// ---------------------------------------------------------------------------
-
-#define DECLARE_CLASS(ClassName, ParentClass)                               \
-    using Super = ParentClass;                                             \
-    static UClass StaticClassInstance;                                      \
-    static FClassRegistrar s_Registrar;                                    \
-    static UClass* StaticClass() { return &StaticClassInstance; }           \
-    UClass* GetClass() const override { return StaticClass(); }
-
-#define DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, FlagsValue)         \
-    UClass ClassName::StaticClassInstance(                                  \
-        #ClassName,                                                        \
-        &ParentClass::StaticClassInstance,                                  \
-        sizeof(ClassName),                                                 \
-        FlagsValue                                                         \
-    );                                                                     \
-    FClassRegistrar ClassName::s_Registrar(&ClassName::StaticClassInstance);
-
-#define DEFINE_CLASS(ClassName, ParentClass)                                \
-    DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, CF_None)
-
-// ---------------------------------------------------------------------------
 
 // Forward — IsValid 의 실제 정의는 GUObjectSet 선언 뒤. UObject::GetTypedOuter 가
 // non-dependent name lookup 으로 IsValid 를 찾을 수 있게 미리 알려둠.
 class UObject;
 inline bool IsValid(const UObject* Object);
 
+UCLASS()
 class UObject
 {
 public:
+	GENERATED_BODY()
+
 	UObject();
 	virtual ~UObject();
 
@@ -73,9 +54,13 @@ public:
 
 	virtual UObject* Duplicate(UObject* NewOuter = nullptr) const;
 	virtual void Serialize(FArchive& Ar);
+	void SerializeProperties(FArchive& Ar, uint32 RequiredFlags);
 	virtual void PostDuplicate() {}
 
-	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps);
+	virtual void GetEditableProperties(TArray<FPropertyValue>& OutProps);
+	virtual void PreGetEditableProperties() {}
+	virtual bool ShouldExposeProperty(const FProperty& Property) const;
+	virtual void PostEditChangeProperty(const FPropertyChangedEvent& Event);
 	virtual void PostEditProperty(const char* PropertyName);
 
 	static void* operator new(size_t Size)

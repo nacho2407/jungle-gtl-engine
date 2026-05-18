@@ -9,8 +9,6 @@
 
 #include <algorithm>
 
-IMPLEMENT_CLASS(UActionComponent, UActorComponent)
-
 TArray<UActionComponent*> UActionComponent::TimeDilationComponents;
 bool UActionComponent::bHasCapturedGlobalBaseTimeDilation = false;
 float UActionComponent::GlobalBaseTimeDilation = 1.0f;

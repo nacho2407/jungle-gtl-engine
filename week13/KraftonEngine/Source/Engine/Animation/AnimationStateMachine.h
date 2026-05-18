@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "Object/FName.h"
@@ -32,11 +32,14 @@ struct FStateTransition
 // 매 프레임:
 //     FSM->Tick(Owner, dt);          // 전이 평가 + 활성 상태 시간 진행
 //     FSM->Evaluate(Owner, OutPose); // 단일 상태면 그대로, 블렌딩 중이면 두 포즈 섞기
+
+#include "Source/Engine/Animation/AnimationStateMachine.generated.h"
+
+UCLASS()
 class UAnimationStateMachine : public UObject
 {
 public:
-	DECLARE_CLASS(UAnimationStateMachine, UObject)
-
+	GENERATED_BODY()
 	UAnimationStateMachine() = default;
 	~UAnimationStateMachine() override = default;
 

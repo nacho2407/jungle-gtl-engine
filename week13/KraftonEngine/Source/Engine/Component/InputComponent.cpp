@@ -1,11 +1,8 @@
-﻿#include "InputComponent.h"
+#include "InputComponent.h"
 
 #include "Core/Log.h"
 #include "Input/InputSystem.h"
 #include "Object/ObjectFactory.h"
-
-IMPLEMENT_CLASS(UInputComponent, UActorComponent)
-
 void UInputComponent::AddAxisMapping(const FString& Name, int VKey, float Scale)
 {
 	FAxisMapping M;

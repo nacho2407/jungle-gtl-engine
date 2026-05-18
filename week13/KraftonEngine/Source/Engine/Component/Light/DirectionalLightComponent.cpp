@@ -1,4 +1,4 @@
-﻿#include "DirectionalLightComponent.h"
+#include "DirectionalLightComponent.h"
 #include "Render/Types/GlobalLightParams.h"
 #include "Render/Types/LightFrustumUtils.h"
 #include "Render/Types/MinimalViewInfo.h"
@@ -6,8 +6,6 @@
 #include "GameFramework/World.h"
 #include "Engine/Serialization/Archive.h"
 #include <cmath>
-
-IMPLEMENT_CLASS(UDirectionalLightComponent, ULightComponent)
 
 namespace
 {

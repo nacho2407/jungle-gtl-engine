@@ -1,12 +1,10 @@
-﻿#include "SpotLightComponent.h"
+#include "SpotLightComponent.h"
 #include "Engine/Serialization/Archive.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Math/MathUtils.h"
 #include "Render/Types/LightFrustumUtils.h"
 #include <cmath>
-
-IMPLEMENT_CLASS(USpotLightComponent, UPointLightComponent)
 
 void USpotLightComponent::ContributeSelectedVisuals(FScene& Scene) const
 {
@@ -87,13 +85,6 @@ void USpotLightComponent::DestroyFromScene()
 	World->GetScene().GetEnvironment().RemoveSpotLight(this);
 }
 
-void USpotLightComponent::Serialize(FArchive& Ar)
-{
-	UPointLightComponent::Serialize(Ar);
-	Ar << InnerConeAngle;
-	Ar << OuterConeAngle;
-}
-
 bool USpotLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, const FMinimalViewInfo* /*POV*/, int32 /*FaceIndex*/) const
 {
 	FSpotLightParams Params;
@@ -108,11 +99,4 @@ bool USpotLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, cons
 	OutResult.Proj = VP.Proj;
 	OutResult.bIsOrtho = false;
 	return true;
-}
-
-void USpotLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPointLightComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "InnerConeAngle", EPropertyType::Float, "Lighting", &InnerConeAngle, 0.0f, 89.0f, 0.1f });
-	OutProps.push_back({ "OuterConeAngle", EPropertyType::Float, "Lighting", &OuterConeAngle, 0.0f, 89.0f, 0.1f });
 }

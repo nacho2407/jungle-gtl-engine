@@ -1,4 +1,4 @@
-#include "GameFramework/Pawn.h"
+﻿#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerCameraManager.h"
 #include "Component/CameraComponent.h"
@@ -7,7 +7,6 @@
 #include "Core/PropertyTypes.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(APawn, AActor)
 
 void APawn::BeginPlay()
 {
@@ -49,16 +48,7 @@ void APawn::PossessedBy(APlayerController* PC)
 void APawn::UnPossessed()
 {
 	Controller = nullptr;
-}
 
-void APawn::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	Super::GetEditableProperties(OutProps);
-
-	OutProps.push_back({ "Auto Possess Player",          EPropertyType::Bool, "Pawn", &bAutoPossessPlayer            });
-	OutProps.push_back({ "Use Controller Rotation Yaw",  EPropertyType::Bool, "Pawn", &bUseControllerRotationYaw     });
-	OutProps.push_back({ "Use Controller Rotation Pitch",EPropertyType::Bool, "Pawn", &bUseControllerRotationPitch   });
-	OutProps.push_back({ "Use Controller Rotation Roll", EPropertyType::Bool, "Pawn", &bUseControllerRotationRoll    });
 }
 
 void APawn::Serialize(FArchive& Ar)

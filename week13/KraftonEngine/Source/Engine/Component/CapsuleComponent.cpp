@@ -9,8 +9,6 @@
 #include <cmath>
 #include <algorithm>
 
-IMPLEMENT_CLASS(UCapsuleComponent, UShapeComponent)
-
 void UCapsuleComponent::SetCapsuleSize(float InRadius, float InHalfHeight)
 {
 	CapsuleRadius = InRadius;
@@ -121,26 +119,13 @@ void UCapsuleComponent::UpdateWorldAABB() const
 	bHasValidWorldAABB = true;
 }
 
-void UCapsuleComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UShapeComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Capsule Radius", EPropertyType::Float, "Shape", &CapsuleRadius, 0.01f, 10000.0f, 1.0f });
-	OutProps.push_back({ "Capsule Half Height", EPropertyType::Float, "Shape", &CapsuleHalfHeight, 0.01f, 10000.0f, 1.0f });
-}
-
 void UCapsuleComponent::PostEditProperty(const char* PropertyName)
 {
 	UShapeComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Capsule Radius") == 0 || strcmp(PropertyName, "Capsule Half Height") == 0)
+	if (strcmp(PropertyName, "CapsuleRadius") == 0 || strcmp(PropertyName, "CapsuleHalfHeight") == 0
+		|| strcmp(PropertyName, "Capsule Radius") == 0 || strcmp(PropertyName, "Capsule Half Height") == 0)
 	{
 		SetCapsuleSize(CapsuleRadius, CapsuleHalfHeight);
 	}
-}
-
-void UCapsuleComponent::Serialize(FArchive& Ar)
-{
-	UShapeComponent::Serialize(Ar);
-	Ar << CapsuleRadius;
-	Ar << CapsuleHalfHeight;
 }

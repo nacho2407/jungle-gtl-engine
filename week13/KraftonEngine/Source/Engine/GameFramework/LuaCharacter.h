@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/Character.h"
 
@@ -14,11 +14,14 @@ class UCameraComponent;
 //
 // 3인칭 카메라: Capsule(Root) → SpringArm → Camera 체인. SpringArm 이 lag 적용.
 // Possess 시 APawn::PossessedBy 가 Camera 를 자동 ActiveCamera 로 잡음.
+
+#include "Source/Engine/GameFramework/LuaCharacter.generated.h"
+
+UCLASS()
 class ALuaCharacter : public ACharacter
 {
 public:
-	DECLARE_CLASS(ALuaCharacter, ACharacter)
-
+	GENERATED_BODY()
 	ALuaCharacter() = default;
 	~ALuaCharacter() override = default;
 

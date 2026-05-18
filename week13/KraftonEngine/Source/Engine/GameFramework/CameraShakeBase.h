@@ -3,6 +3,7 @@
 #include "Object/Object.h"
 #include "GameFramework/CameraTypes.h"
 
+#include "Source/Engine/GameFramework/CameraShakeBase.generated.h"
 class APlayerCameraManager;
 
 // ============================================================
@@ -18,11 +19,11 @@ class APlayerCameraManager;
 // 가 되면 매니저에서 제거된다.
 // UE: UCameraShakeBase
 // ============================================================
+UCLASS()
 class UCameraShakeBase : public UObject
 {
 public:
-	DECLARE_CLASS(UCameraShakeBase, UObject)
-
+	GENERATED_BODY()
 	UCameraShakeBase() = default;
 	~UCameraShakeBase() override = default;
 

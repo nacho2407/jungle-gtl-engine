@@ -5,6 +5,7 @@
 #include "Math/Vector.h"
 #include "Math/Quat.h"
 
+#include "Source/Engine/Component/SpringArmComponent.generated.h"
 // ============================================================
 // USpringArmComponent — 부착 액터 뒤를 부드럽게 따라가는 카메라 부착점.
 //
@@ -17,41 +18,49 @@
 // 충돌 인지(raycast) 는 별도 PR 에서 추가 — 현재는 lag 만 처리.
 // UE: USpringArmComponent (간소화)
 // ============================================================
+UCLASS()
 class USpringArmComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(USpringArmComponent, USceneComponent)
-
+	GENERATED_BODY()
 	USpringArmComponent() = default;
 	~USpringArmComponent() override = default;
 
 	void BeginPlay() override;
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void Serialize(FArchive& Ar) override;
-
 	// ─── 튜닝 파라미터 ─────────────────────────────────────────────
 	// arm 길이 — 부착점에서 카메라까지의 거리 (Local -X 방향).
+	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Target Arm Length", Min=0.0f, Max=100000.0f, Speed=1.0f)
 	float TargetArmLength = 300.0f;
 
 	// arm 끝점(카메라 위치) 에 추가되는 offset (Lagged 회전 기준 적용).
+	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Socket Offset", Type=Vec3, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FVector SocketOffset = FVector(0.0f, 0.0f, 0.0f);
 
 	// 부착점 자체에 추가되는 offset (Lagged 회전 기준 적용). 보통 머리 위/어깨 높이.
+	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Target Offset", Type=Vec3, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FVector TargetOffset = FVector(0.0f, 0.0f, 0.0f);
 
 	// Lag 옵션 — 끄면 부모를 즉시 따라감 (lag 없는 부착).
+	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Enable Camera Lag")
 	bool bEnableCameraLag = false;
+	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Enable Rotation Lag")
 	bool bEnableCameraRotationLag = false;
+	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Camera Lag Speed", Min=0.0f, Max=1000.0f, Speed=0.1f)
 	float CameraLagSpeed = 10.0f;          // 클수록 빠르게 따라옴
+	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Camera Rotation Lag Speed", Min=0.0f, Max=1000.0f, Speed=0.1f)
 	float CameraRotationLagSpeed = 10.0f;
+	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Camera Lag Max Distance", Min=0.0f, Max=100000.0f, Speed=1.0f)
 	float CameraLagMaxDistance = 0.0f;     // 0 = 무제한
 
 	// Collision 옵션 — 활성화 시 부착점 → ArmEnd 사이로 ray 를 쏴서 첫 충돌점까지만 arm
 	// 길이를 단축. 카메라가 벽/지형 너머로 빠지는 현상 방지. Owner Pawn 은 ignore.
 	// (본 엔진은 sphere sweep 미지원이라 단일 ray + ProbeSize 안전 거리로 근사한다.)
+	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Do Collision Test")
 	bool bDoCollisionTest = false;
+	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Probe Channel", Enum=ECollisionChannel)
 	ECollisionChannel ProbeChannel = ECollisionChannel::WorldStatic;
+	UPROPERTY(Edit, Save, Category="SpringArm", DisplayName="Probe Size", Min=0.0f, Max=100.0f, Speed=0.01f)
 	float ProbeSize = 0.12f;               // hit 지점에서 ProbeSize 만큼 안쪽에 정지
 
 	// Control rotation 사용 옵션 (UE 패턴). true 면 부모 (capsule) 의 world rotation 대신

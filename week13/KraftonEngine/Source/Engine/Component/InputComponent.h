@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/ActorComponent.h"
 #include "Core/CoreTypes.h"
@@ -18,11 +18,14 @@ enum class EInputEvent : uint8
 //
 // APawn 자식이 SetupInputComponent override 안에서 AddXxxMapping + BindXxx 호출하는 게 통상 패턴.
 // Lua 도 sol2 binding 으로 동일 API 사용 가능.
+
+#include "Source/Engine/Component/InputComponent.generated.h"
+
+UCLASS()
 class UInputComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(UInputComponent, UActorComponent)
-
+	GENERATED_BODY()
 	UInputComponent() = default;
 	~UInputComponent() override = default;
 

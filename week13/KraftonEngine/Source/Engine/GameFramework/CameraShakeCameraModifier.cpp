@@ -32,8 +32,6 @@ namespace
 	}
 }
 
-IMPLEMENT_CLASS(UCameraModifier_CameraShake, UCameraModifier)
-
 UCameraModifier_CameraShake::UCameraModifier_CameraShake()
 {
 	// shake 는 비교적 늦게 적용 (다른 효과 위에 흔들림이 얹어지는 게 자연). priority 100.

@@ -1,14 +1,15 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/AActor.h"
 
+#include "Source/Engine/GameFramework/BoxActor.generated.h"
 class UBoxComponent;
 
+UCLASS()
 class ABoxActor : public AActor
 {
 public:
-	DECLARE_CLASS(ABoxActor, AActor)
-
+	GENERATED_BODY()
 	ABoxActor() = default;
 
 	void InitDefaultComponents();

@@ -1,4 +1,4 @@
-﻿#include "Game/Meteor/Meteor.h"
+#include "Game/Meteor/Meteor.h"
 #include "Game/Pawn/CarPawn.h"
 #include "Audio/AudioManager.h"
 #include "Component/SphereComponent.h"
@@ -15,8 +15,6 @@
 
 #include <algorithm>
 #include <cstdlib>
-
-IMPLEMENT_CLASS(AMeteor, AActor)
 
 void AMeteor::InitDefaultComponents(const FString& StaticMeshFileName)
 {

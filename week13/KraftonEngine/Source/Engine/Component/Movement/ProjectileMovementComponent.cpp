@@ -1,4 +1,4 @@
-﻿#include "ProjectileMovementComponent.h"
+#include "ProjectileMovementComponent.h"
 
 #include "Component/SceneComponent.h"
 #include "GameFramework/AActor.h"
@@ -43,8 +43,6 @@ namespace
 	}
 }
 
-IMPLEMENT_CLASS(UProjectileMovementComponent, UMovementComponent)
-
 void UProjectileMovementComponent::BeginPlay()
 {
 	UMovementComponent::BeginPlay();
@@ -74,22 +72,6 @@ void UProjectileMovementComponent::TickComponent(float DeltaTime, ELevelTick Tic
 	}
 
 	UpdatedSceneComponent->SetWorldLocation(UpdatedSceneComponent->GetWorldLocation() + MoveDelta);
-}
-
-void UProjectileMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UMovementComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Velocity", EPropertyType::Vec3, "Movement", &Velocity, 0.0f, 0.0f, 1.0f });
-	OutProps.push_back({ "Initial Speed", EPropertyType::Float, "Movement", &InitialSpeed, 0.0f, 0.0f, 10.0f });
-	OutProps.push_back({ "Max Speed", EPropertyType::Float, "Movement", &MaxSpeed, 0.0f, 0.0f, 10.0f });
-}
-
-void UProjectileMovementComponent::Serialize(FArchive& Ar)
-{
-	UMovementComponent::Serialize(Ar);
-	Ar << Velocity;
-	Ar << InitialSpeed;
-	Ar << MaxSpeed;
 }
 
 void UProjectileMovementComponent::ContributeSelectedVisuals(FScene& Scene) const

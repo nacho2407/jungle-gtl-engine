@@ -13,8 +13,6 @@
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(UStaticMeshComponent, UMeshComponent)
-
 FPrimitiveSceneProxy* UStaticMeshComponent::CreateSceneProxy()
 {
 	return new FStaticMeshSceneProxy(this);
@@ -38,9 +36,9 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 			OverrideMaterials[i] = DefaultMaterials[i].MaterialInterface;
 
 			if (OverrideMaterials[i])
-				MaterialSlots[i].Path = OverrideMaterials[i]->GetAssetPathFileName();
+				MaterialSlots[i] = OverrideMaterials[i]->GetAssetPathFileName();
 			else
-				MaterialSlots[i].Path = "None";
+				MaterialSlots[i] = "None";
 		}
 	}
 	else
@@ -86,7 +84,7 @@ void UStaticMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial
 		// MaterialSlots 동기화 — 씬 저장 시 경로가 올바르게 직렬화되도록
 		if (ElementIndex < static_cast<int32>(MaterialSlots.size()))
 		{
-			MaterialSlots[ElementIndex].Path = InMaterial
+			MaterialSlots[ElementIndex] = InMaterial
 				? InMaterial->GetAssetPathFileName()
 				: "None";
 		}
@@ -209,20 +207,6 @@ primitive AABB 기준으로 후보만 추립니다.
 	return false; // bHit;
 }
 
-// FArchive 기반 직렬화 — 복제 왕복용. 자산은 경로로만 들고, 실제 로드는 PostDuplicate에서.
-static FArchive& operator<<(FArchive& Ar, FMaterialSlot& Slot)
-{
-	Ar << Slot.Path;
-	return Ar;
-}
-
-void UStaticMeshComponent::Serialize(FArchive& Ar)
-{
-	UMeshComponent::Serialize(Ar);
-	Ar << StaticMeshPath;
-	Ar << MaterialSlots;
-}
-
 void UStaticMeshComponent::PostDuplicate()
 {
 	UMeshComponent::PostDuplicate();
@@ -235,14 +219,14 @@ void UStaticMeshComponent::PostDuplicate()
 		if (Loaded)
 		{
 			// SetStaticMesh는 MaterialSlots를 덮어쓰므로, 직렬화된 슬롯 정보를 백업·복원한다.
-			TArray<FMaterialSlot> SavedSlots = MaterialSlots;
+			TArray<FSoftObjectPtr> SavedSlots = MaterialSlots;
 			SetStaticMesh(Loaded);
 
 			// Override material 재로딩
 			for (int32 i = 0; i < (int32)MaterialSlots.size() && i < (int32)SavedSlots.size(); ++i)
 			{
 				MaterialSlots[i] = SavedSlots[i];
-				const FString& MatPath = MaterialSlots[i].Path;
+				const FString& MatPath = MaterialSlots[i];
 				if (MatPath.empty() || MatPath == "None")
 				{
 					OverrideMaterials[i] = nullptr;
@@ -261,27 +245,17 @@ void UStaticMeshComponent::PostDuplicate()
 	MarkWorldBoundsDirty();
 }
 
-void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Static Mesh", EPropertyType::StaticMeshRef, "Mesh", &StaticMeshPath });
-
-	for (int32 i = 0; i < (int32)MaterialSlots.size(); ++i)
-	{
-		FPropertyDescriptor Desc;
-		Desc.Name = "Element " + std::to_string(i);
-		Desc.Type = EPropertyType::MaterialSlot;
-		Desc.Category = "Materials";
-		Desc.ValuePtr = &MaterialSlots[i];
-		OutProps.push_back(Desc);
-	}
-}
-
 void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Static Mesh") == 0)
+	if (strcmp(PropertyName, "StaticMesh") == 0 || strcmp(PropertyName, "Static Mesh") == 0)
+	{
+		SetStaticMesh(StaticMesh);
+		return;
+	}
+
+	if (strcmp(PropertyName, "StaticMeshPath") == 0)
 	{
 		if (StaticMeshPath.empty() || StaticMeshPath == "None")
 		{
@@ -305,8 +279,28 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 		// 인덱스 범위 유효성 검사
 		if (Index >= 0 && Index < (int32)MaterialSlots.size())
 		{
-			FString NewMatPath = MaterialSlots[Index].Path;
+			FString NewMatPath = MaterialSlots[Index];
 
+			if (NewMatPath == "None" || NewMatPath.empty())
+			{
+				SetMaterial(Index, nullptr);
+			}
+			else
+			{
+				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(NewMatPath);
+				if (LoadedMat)
+				{
+					SetMaterial(Index, LoadedMat);
+				}
+			}
+		}
+	}
+
+	if (strcmp(PropertyName, "MaterialSlots") == 0 || strcmp(PropertyName, "Materials") == 0)
+	{
+		for (int32 Index = 0; Index < (int32)MaterialSlots.size(); ++Index)
+		{
+			const FString& NewMatPath = MaterialSlots[Index];
 			if (NewMatPath == "None" || NewMatPath.empty())
 			{
 				SetMaterial(Index, nullptr);

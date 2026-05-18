@@ -1,10 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/ActorComponent.h"
 #include "Math/Rotator.h"
 #include "Math/Transform.h"
 #include "Math/Vector.h"
 
+#include "Source/Engine/Component/TemporaryBoneAnimatorComponent.generated.h"
 class USkeletalMesh;
 class USkeletalMeshComponent;
 
@@ -15,16 +16,14 @@ class USkeletalMeshComponent;
 
 #if JUNGLE_ENABLE_TEMP_BONE_ANIMATOR_COMPONENT
 
+UCLASS()
 class UTemporaryBoneAnimatorComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(UTemporaryBoneAnimatorComponent, UActorComponent)
-
+	GENERATED_BODY()
 	UTemporaryBoneAnimatorComponent() = default;
 	~UTemporaryBoneAnimatorComponent() override = default;
 
-	void Serialize(FArchive& Ar) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
 protected:
@@ -38,11 +37,17 @@ private:
 	void ApplyAnimatedBonePose(float DeltaTime);
 
 private:
+	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Target Bone Name")
 	FString TargetBoneName;
+	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Rotation Amplitude", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FRotator RotationAmplitude = FRotator(0.0f, 20.0f, 0.0f);
+	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Rotation Frequency", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.01f)
 	FRotator RotationFrequency = FRotator(1.0f, 1.0f, 1.0f);
+	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Rotation Phase", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FRotator RotationPhase = FRotator(0.0f, 0.0f, 0.0f);
+	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Rotation Offstet", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FRotator RotationOffset = FRotator(0.0f, 0.0f, 0.0f);
+	UPROPERTY(Edit, Save, Category="Temp Bone Animator", DisplayName="Enabled")
 	bool bEnabled = true;
 
 	USkeletalMeshComponent* TargetMeshComponent = nullptr;

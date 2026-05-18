@@ -1,7 +1,4 @@
-﻿#include "Animation/Skeleton.h"
-
-DEFINE_CLASS(USkeleton, UObject)
-
+#include "Animation/Skeleton.h"
 void USkeleton::Serialize(FArchive& Ar)
 {
     UObject::Serialize(Ar);

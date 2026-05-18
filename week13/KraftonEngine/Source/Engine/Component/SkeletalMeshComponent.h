@@ -4,19 +4,22 @@
 #include "Animation/AnimationMode.h"
 #include "Object/SubclassOf.h"
 
+#include "Source/Engine/Component/SkeletalMeshComponent.generated.h"
+
 class UAnimInstance;
 class UAnimSingleNodeInstance;
 class UAnimSequenceBase;
 class UClass;
 
-// USkinnedMeshComponent 위에 애니메이션 시스템(AnimInstance, FSM, 시퀀스 재생) 을 얹는 컴포넌트.
-// Skinning/bone/material/bounds 같은 mesh-layer 상태는 USkinnedMeshComponent 가 소유한다.
+// SkeletalMesh 전용 render proxy만 제공하는 얇은 wrapper.
+// Skinning/bone/material/bounds 상태는 모두 USkinnedMeshComponent가 소유한다.
+UCLASS()
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
 public:
-    DECLARE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
-    USkeletalMeshComponent() = default;
-    ~USkeletalMeshComponent() override;
+	GENERATED_BODY()
+	USkeletalMeshComponent() = default;
+	~USkeletalMeshComponent() override;
 
     // Render access 섹션: SceneProxy
     FPrimitiveSceneProxy* CreateSceneProxy() override;
@@ -38,7 +41,7 @@ public:
     // SingleNode 모드용 헬퍼. Custom 모드에선 무시 (자체 인스턴스가 자체 시퀀스를 관리).
     void SetAnimation(UAnimSequenceBase* InAsset);
     bool CanUseAnimation(UAnimSequenceBase* InAsset) const;
-    UAnimSequenceBase* GetAnimation() const { return AnimationData.AnimToPlay; }
+    UAnimSequenceBase* GetAnimation() const { return AnimationData.AnimToPlay.Get(); }
     void SetPlayRate(float InRate);
     void SetLooping(bool bInLoop);
     void SetPlaying(bool bInPlay);
@@ -61,7 +64,7 @@ public:
     void ClearAnimInstance();
 
     // Editor / 직렬화 통합.
-    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    void GetEditableProperties(TArray<FPropertyValue>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
     void Serialize(FArchive& Ar) override;
 
@@ -77,8 +80,11 @@ private:
 
 protected:
     // Animation 런타임 상태.
+    UPROPERTY(Edit, Save, Category="Animation", DisplayName="Animation Mode", Enum=EAnimationMode)
     EAnimationMode             AnimationMode = EAnimationMode::None;
+    UPROPERTY(Edit, Save, Category="Animation", DisplayName="Animation Data", Type=Struct)
     FSingleAnimationPlayData   AnimationData;
+    UPROPERTY(Edit, Save, Category="Animation", DisplayName="Anim Instance Class", Type=ClassRef, AllowedClass=UAnimInstance)
     TSubclassOf<UAnimInstance> AnimInstanceClass;
     UAnimInstance*             AnimInstance  = nullptr;
 

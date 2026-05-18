@@ -3,7 +3,10 @@
 
 #include "Math/Rotator.h"
 #include "Math/Transform.h"
+#include "Object/ObjectPtr.h"
+#include "Object/SoftObjectPtr.h"
 
+#include "Source/Engine/Component/SkinnedMeshComponent.generated.h"
 class USkeletalMesh;
 class UMaterial;
 
@@ -12,11 +15,11 @@ class UMaterial;
 // Mesh/Material 경로 관리, CPU skinning 결과, bone edit pose, bounds dirty 처리를
 // 한 곳에 모아 USkeletalMeshComponent가 렌더 proxy용 얇은 wrapper로 남을 수 있게 한다.
 // ==================================================================================
+UCLASS()
 class USkinnedMeshComponent : public UMeshComponent
 {
 public:
-	DECLARE_CLASS(USkinnedMeshComponent, UMeshComponent)
-
+	GENERATED_BODY()
 	USkinnedMeshComponent() = default;
 	~USkinnedMeshComponent() override = default;
 
@@ -33,14 +36,12 @@ public:
 	const TArray<UMaterial*>& GetOverrideMaterials() const { return OverrideMaterials; }
 
 	// Serialization/editor 섹션: asset pointer는 저장하지 않고 path를 저장한 뒤 로드 후 SetSkeletalMesh 흐름으로 복원한다.
-	void Serialize(FArchive& Ar) override;
 	void PostDuplicate() override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
-	const FString& GetSkeletalMeshPath() const { return SkeletalMeshPath; }
+	const FString& GetSkeletalMeshPath() const { return SkeletalMeshPath.ToString(); }
 
 	// Bone edit 섹션: bone getter/setter는 edit pose를 만들고 CPU skinning/cache revision까지 갱신해야 한다.
 	void EnsureBoneEditPose();
@@ -79,10 +80,13 @@ protected:
 
 protected:
 	// Mesh/material state는 SetSkeletalMesh와 PostEditProperty가 같은 경로를 쓰도록 여기서 소유한다.
-	USkeletalMesh* SkeletalMesh = nullptr;
-	FString SkeletalMeshPath = "None";
+	UPROPERTY(Edit, Category="Mesh", DisplayName="Skeletal Mesh")
+	TObjectPtr<USkeletalMesh> SkeletalMesh;
+	UPROPERTY(Save, Category="Mesh", DisplayName="Skeletal Mesh Path", AssetType="SkeletalMesh")
+	FSoftObjectPtr SkeletalMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
-	TArray<FMaterialSlot> MaterialSlots;
+	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", AssetType="Material")
+	TArray<FSoftObjectPtr> MaterialSlots;
 
 	// Bone edit pose는 asset 원본 bone을 직접 바꾸지 않고 component-local override로만 유지한다.
 	TArray<FMatrix> BoneEditLocalMatrices;

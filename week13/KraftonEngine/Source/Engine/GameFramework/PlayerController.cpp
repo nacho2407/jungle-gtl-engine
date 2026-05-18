@@ -5,8 +5,6 @@
 #include "Component/ActorComponent.h"
 #include "Component/CameraComponent.h"
 
-IMPLEMENT_CLASS(APlayerController, AActor)
-
 void APlayerController::BeginPlay()
 {
 	Super::BeginPlay();

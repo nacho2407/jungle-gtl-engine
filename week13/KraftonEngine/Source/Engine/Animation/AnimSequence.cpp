@@ -1,4 +1,4 @@
-﻿#include "AnimSequence.h"
+#include "AnimSequence.h"
 
 #include "AnimDataModel.h"
 #include "AnimNotify_LogMessage.h"
@@ -15,9 +15,6 @@
 
 #include <algorithm>
 #include <cmath>
-
-DEFINE_CLASS(UAnimSequence, UAnimSequenceBase)
-
 namespace
 {
     static float NormalizeTime(float Time, float Length, bool bLooping)

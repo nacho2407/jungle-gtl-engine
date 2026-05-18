@@ -1,9 +1,8 @@
-﻿#include "SceneComponent.h"
+#include "SceneComponent.h"
 #include "Object/ObjectFactory.h"
 #include <GameFramework/World.h>
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(USceneComponent, UActorComponent)
 HIDE_FROM_COMPONENT_LIST(USceneComponent)
 
 static void NotifyOctreeTransformChanged(USceneComponent* Comp)
@@ -52,26 +51,26 @@ void USceneComponent::AttachToComponent(USceneComponent* InParent)
 	SetParent(InParent);
 }
 
-void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+void USceneComponent::PreGetEditableProperties()
 {
-	UActorComponent::GetEditableProperties(OutProps);
+	UActorComponent::PreGetEditableProperties();
 	if (bCachedEulerDirty)
 	{
 		CachedEditRotator = RelativeTransform.GetRotator();
 		bCachedEulerDirty = false;
 	}
-	OutProps.push_back({ "Location", EPropertyType::Vec3, "Transform", &RelativeTransform.Location, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Rotation", EPropertyType::Rotator, "Transform", &CachedEditRotator, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Scale", EPropertyType::Vec3, "Transform", &RelativeTransform.Scale, 0.0f, 0.0f, 0.1f });
 }
 
 void USceneComponent::PostEditProperty(const char* PropertyName)
 {
-	bool bApplyChangeToPartition = (strcmp(PropertyName, "Location") == 0
+	bool bApplyChangeToPartition = (strcmp(PropertyName, "RelativeTransform.Location") == 0
+								|| strcmp(PropertyName, "RelativeTransform.Scale") == 0
+								|| strcmp(PropertyName, "CachedEditRotator") == 0
+								|| strcmp(PropertyName, "Location") == 0
 								|| strcmp(PropertyName, "Rotation") == 0
 								|| strcmp(PropertyName, "Scale") == 0);
 
-	if (strcmp(PropertyName, "Rotation") == 0)
+	if (strcmp(PropertyName, "CachedEditRotator") == 0 || strcmp(PropertyName, "Rotation") == 0)
 	{
 		ApplyCachedEditRotator();
 	}
@@ -88,17 +87,20 @@ void USceneComponent::PostEditProperty(const char* PropertyName)
 
 void USceneComponent::Serialize(FArchive& Ar)
 {
+	if (Ar.IsSaving())
+	{
+		CachedEditRotator = RelativeTransform.GetRotator();
+		bCachedEulerDirty = false;
+	}
+
 	UActorComponent::Serialize(Ar);
 	// ParentComponent / ChildComponents 는 직렬화 제외 — 복제 단계에서 명시적으로 재구성.
-	// FTransform은 trivially copyable이 아닐 수 있으므로 멤버 단위로 직렬화한다.
-	Ar << RelativeTransform.Location;
-	Ar << RelativeTransform.Rotation;
-	Ar << RelativeTransform.Scale;
 
 	if (Ar.IsLoading())
 	{
+		RelativeTransform.SetRotation(CachedEditRotator);
 		bTransformDirty = true;
-		bCachedEulerDirty = true;
+		bCachedEulerDirty = false;
 		bInverseWorldDirty = true;
 	}
 }

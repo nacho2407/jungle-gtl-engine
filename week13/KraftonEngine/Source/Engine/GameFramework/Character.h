@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/Pawn.h"
 
@@ -14,11 +14,14 @@ class UCharacterMovementComponent;
 //
 // minimal: Z=0 평지 가정, gravity/jump/floor sweep 없음. 후속 phase 에서 확장.
 // LuaScriptComponent 는 이 베이스에 부착하지 않는다 — Lua 로직이 필요하면 ALuaCharacter 사용.
+
+#include "Source/Engine/GameFramework/Character.generated.h"
+
+UCLASS()
 class ACharacter : public APawn
 {
 public:
-	DECLARE_CLASS(ACharacter, APawn)
-
+	GENERATED_BODY()
 	ACharacter() = default;
 	~ACharacter() override = default;
 

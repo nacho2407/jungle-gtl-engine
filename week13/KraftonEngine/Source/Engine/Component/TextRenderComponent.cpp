@@ -1,4 +1,4 @@
-﻿#include "TextRenderComponent.h"
+#include "TextRenderComponent.h"
 
 #include <cstring>
 #include "GameFramework/AActor.h"
@@ -9,8 +9,6 @@
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Serialization/Archive.h"
-
-IMPLEMENT_CLASS(UTextRenderComponent, UBillboardComponent)
 
 FPrimitiveSceneProxy* UTextRenderComponent::CreateSceneProxy()
 {
@@ -70,24 +68,6 @@ bool UTextRenderComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHi
 	return false;
 }
 
-void UTextRenderComponent::Serialize(FArchive& Ar)
-{
-	UBillboardComponent::Serialize(Ar);
-
-	Ar << Text;
-	Ar << FontName;
-	Ar << Color;
-	Ar << FontSize;
-	Ar << Spacing;
-	Ar << CharWidth;
-	Ar << CharHeight;
-	Ar << RenderSpace;
-	Ar << HAlign;
-	Ar << VAlign;
-	Ar << ScreenX;
-	Ar << ScreenY;
-}
-
 void UTextRenderComponent::PostDuplicate()
 {
 	UBillboardComponent::PostDuplicate();
@@ -126,22 +106,21 @@ UTextRenderComponent::UTextRenderComponent()
 	SetFont(FontName);
 }
 
-void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+bool UTextRenderComponent::ShouldExposeProperty(const FProperty& Property) const
 {
-	USceneComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Text", EPropertyType::String, "Text", &Text });
-	OutProps.push_back({ "Font", EPropertyType::Name, "Text", &FontName });
-	//OutProps.push_back({ "Color", EPropertyType::Vec4, "Text", &Color });
-	OutProps.push_back({ "Font Size", EPropertyType::Float, "Text", &FontSize, 0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Visible", EPropertyType::Bool, "Text", &bIsVisible });
+	if (Property.OwnerClassName && strcmp(Property.OwnerClassName, "UBillboardComponent") == 0)
+	{
+		return false;
+	}
+	return USceneComponent::ShouldExposeProperty(Property);
 }
 
 void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 {
-	// TextRender의 GetEditableProperties는 USceneComponent 베이스를 직접 사용한다.
+	// TextRender는 Billboard의 property를 숨기므로 post-edit도 SceneComponent로 직접 올린다.
 	USceneComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Font") == 0)
+	if (strcmp(PropertyName, "FontName") == 0 || strcmp(PropertyName, "Font") == 0)
 	{
 		SetFont(FontName);
 		MarkProxyDirty(EDirtyFlag::Mesh);
@@ -153,10 +132,14 @@ void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 		MarkProxyDirty(EDirtyFlag::Transform);
 		MarkWorldBoundsDirty();
 	}
-	else if (strcmp(PropertyName, "Font Size") == 0)
+	else if (strcmp(PropertyName, "FontSize") == 0 || strcmp(PropertyName, "Font Size") == 0)
 	{
 		MarkProxyDirty(EDirtyFlag::Mesh);
 		MarkProxyDirty(EDirtyFlag::Transform);
+	}
+	else if (strcmp(PropertyName, "Color") == 0)
+	{
+		MarkProxyDirty(EDirtyFlag::Material);
 	}
 	else if (strcmp(PropertyName, "Visible") == 0)
 	{

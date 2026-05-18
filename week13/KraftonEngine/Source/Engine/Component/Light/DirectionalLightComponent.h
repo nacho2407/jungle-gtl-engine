@@ -1,12 +1,15 @@
-﻿#pragma once
+#pragma once
 #include "Component/Light/LightComponentBase.h"
 #include "Component/Light/LightComponent.h"
 
+
+#include "Source/Engine/Component/Light/DirectionalLightComponent.generated.h"
+
+UCLASS()
 class UDirectionalLightComponent : public ULightComponent
 {
 public:
-	DECLARE_CLASS(UDirectionalLightComponent, ULightComponent)
-
+	GENERATED_BODY()
 	virtual ELightComponentType GetLightType() const override { return ELightComponentType::Directional; }
 	void ContributeSelectedVisuals(FScene& Scene) const;
 	virtual void PushToScene() override;

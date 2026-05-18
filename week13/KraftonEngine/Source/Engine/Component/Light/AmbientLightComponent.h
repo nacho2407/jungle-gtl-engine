@@ -1,10 +1,14 @@
 ﻿#pragma once
 #include "Component/Light/LightComponent.h"
 
+
+#include "Source/Engine/Component/Light/AmbientLightComponent.generated.h"
+
+UCLASS()
 class UAmbientLightComponent : public ULightComponent
 {
 public:
-	DECLARE_CLASS(UAmbientLightComponent, ULightComponent)
+	GENERATED_BODY()
 	UAmbientLightComponent();
 
 	virtual ELightComponentType GetLightType() const override { return ELightComponentType::Ambient; }

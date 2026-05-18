@@ -3,6 +3,7 @@
 #include "GameFramework/CameraModifier.h"
 #include "GameFramework/CameraTypes.h"
 
+#include "Source/Engine/GameFramework/CameraShakeCameraModifier.generated.h"
 class UCameraShakeBase;
 class UClass;
 
@@ -14,11 +15,11 @@ class UClass;
 // 매 프레임 update + 누적 → POV 에 가산. shake 이 IsFinished() 인 것은 자동 정리.
 // UE: UCameraModifier_CameraShake
 // ============================================================
+UCLASS()
 class UCameraModifier_CameraShake : public UCameraModifier
 {
 public:
-	DECLARE_CLASS(UCameraModifier_CameraShake, UCameraModifier)
-
+	GENERATED_BODY()
 	UCameraModifier_CameraShake();
 	~UCameraModifier_CameraShake() override = default;
 

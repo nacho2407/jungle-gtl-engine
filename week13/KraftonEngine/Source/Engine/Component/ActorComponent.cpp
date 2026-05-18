@@ -1,9 +1,8 @@
-﻿#include "ActorComponent.h"
+#include "ActorComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
 
-IMPLEMENT_CLASS(UActorComponent, UObject)
 HIDE_FROM_COMPONENT_LIST(UActorComponent)
 
 void UActorComponent::BeginPlay()
@@ -58,11 +57,7 @@ void UActorComponent::SetActive(bool bNewActive)
 void UActorComponent::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
-	Ar << bTickEnable;
-	Ar << bEditorOnly;
-	Ar << bIsActive;
-	Ar << bAutoActivate;
-	Ar << bHiddenInComponentTree;
+	SerializeProperties(Ar, PF_Save);
 }
 
 void UActorComponent::SetEditorOnly(bool bInEditorOnly)
@@ -84,15 +79,6 @@ void UActorComponent::SetOwner(AActor* Actor)
 	PrimaryComponentTick.bStartWithTickEnabled = true;
 }
 
-void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	//OutProps.push_back({ "Active", EPropertyType::Bool, "Component", &bIsActive });
-	//OutProps.push_back({ "Auto Activate", EPropertyType::Bool, "Component", &bAutoActivate });
-	//OutProps.push_back({ "Can Ever Tick", EPropertyType::Bool, "Component", &bCanEverTick });
-	OutProps.push_back({ "bTickEnable", EPropertyType::Bool, "Component", &bTickEnable });
-	OutProps.push_back({ "bEditorOnly", EPropertyType::Bool, "Component", &bEditorOnly });
-}
-
 void UActorComponent::PostEditProperty(const char* PropertyName)
 {
 	if (strcmp(PropertyName, "bTickEnable") == 0) {
@@ -104,5 +90,16 @@ void UActorComponent::PostEditProperty(const char* PropertyName)
 		// SetEditorOnly의 early-return 가드를 우회하여 렌더 상태를 직접 재생성한다.
 		DestroyRenderState();
 		CreateRenderState();
+	}
+
+	if (strcmp(PropertyName, "bIsActive") == 0) {
+		if (bIsActive)
+		{
+			Activate();
+		}
+		else
+		{
+			Deactivate();
+		}
 	}
 }

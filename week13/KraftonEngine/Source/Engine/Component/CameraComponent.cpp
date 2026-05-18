@@ -1,4 +1,4 @@
-﻿#include "Component/CameraComponent.h"
+#include "Component/CameraComponent.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -6,8 +6,6 @@
 #include "GameFramework/PlayerCameraManager.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include <cmath>
-
-IMPLEMENT_CLASS(UCameraComponent, USceneComponent)
 
 void UCameraComponent::BeginPlay()
 {
@@ -80,14 +78,4 @@ void UCameraComponent::GetCameraView(float /*DeltaTime*/, FMinimalViewInfo& OutP
 	OutPOV.NearClip    = CameraState.NearZ;
 	OutPOV.FarClip     = CameraState.FarZ;
 	OutPOV.bIsOrtho    = CameraState.bIsOrthogonal;
-}
-
-void UCameraComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	USceneComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "FOV",         EPropertyType::Float, "Camera", &CameraState.FOV, 0.1f,   3.14f,    0.01f });
-	OutProps.push_back({ "Near Z",      EPropertyType::Float, "Camera", &CameraState.NearZ, 0.01f,  100.0f,   0.01f });
-	OutProps.push_back({ "Far Z",       EPropertyType::Float, "Camera", &CameraState.FarZ, 1.0f,   100000.0f, 10.0f });
-	OutProps.push_back({ "Orthographic",EPropertyType::Bool,  "Camera", &CameraState.bIsOrthogonal});
-	OutProps.push_back({ "Ortho Width", EPropertyType::Float, "Camera", &CameraState.OrthoWidth, 0.1f,   1000.0f,  0.5f });
 }
