@@ -147,10 +147,15 @@ public:
 private:
 	void ClearDiscoveredResourceLists(bool bClearAtlasCache);
 	void RegisterDiscoveredAssetFile(const std::filesystem::path& FilePath, const std::filesystem::path& ProjectRootPath);
+	void SyncDiscoveredFbxAnimationAssets();
+	bool IsImportedAnimSequenceFresh(const FString& SourcePath, const FString& StackName, const FString& AnimSequenceAssetPath, bool& bOutNeedsMetadataRefresh);
+	void RefreshImportedAnimSequenceMetadata(UAnimSequence* Sequence, const FString& AnimSequenceAssetPath, const FString& SourcePath, const FString& StackName);
 	void InitializeDefaultWhiteTexture(ID3D11Device* Device);
 	void InitializeDefaultMaterial(ID3D11Device* Device);
 	void InitializeOutlineMaterial();
 	uint64 GetFileWriteTimeTicks(const FString& Path) const;
+	uint64 GetFileSizeBytes(const FString& Path) const;
+	FString ComputeFileContentHashString(const FString& Path) const;
 	bool IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	bool IsSkeletalMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	void PreloadStaticMeshes();
@@ -194,5 +199,6 @@ private:
 	TArray<FString> TextureFilePaths;
 	TArray<FString> SkeletalMeshFilePaths;
     TArray<FString> AnimSequenceFilePaths;
+	TArray<FString> AnimationFbxSourceFilePaths;
 	TArray<FString> CurveFilePaths;
 };
