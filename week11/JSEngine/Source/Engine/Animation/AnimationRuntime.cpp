@@ -2,30 +2,6 @@
 
 #include "Asset/SkeletalMesh.h"
 
-bool FAnimationRuntime::BuildBindLocalPoseFromMesh(const USkeletalMesh* Mesh, TArray<FTransform>& OutLocalPose)
-{
-    OutLocalPose.clear();
-
-    if (!Mesh)
-    {
-        return false;
-    }
-
-    const TArray<FBoneInfo>& Bones = Mesh->GetBones();
-    if (Bones.empty())
-    {
-        return false;
-    }
-
-    OutLocalPose.reserve(Bones.size());
-    for (const FBoneInfo& Bone : Bones)
-    {
-        OutLocalPose.push_back(FTransform(Bone.LocalBindTransform));
-    }
-
-    return true;
-}
-
 bool FAnimationRuntime::ConvertLocalPoseToMatrices(
     const TArray<FTransform>& LocalPose,
     TArray<FMatrix>& OutLocalMatrices)
