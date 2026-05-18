@@ -126,7 +126,25 @@ namespace
 	{
 		void* SrcPtr = SrcValue.GetValuePtr();
 		void* DstPtr = DstValue.GetValuePtr();
-		if (!SrcPtr || !DstPtr || SrcValue.GetType() != DstValue.GetType())
+		if (!SrcPtr || !DstPtr)
+		{
+			return false;
+		}
+
+		const FSoftObjectProperty* SrcSoftProperty = SrcValue.Property ? SrcValue.Property->AsSoftObjectProperty() : nullptr;
+		const FSoftObjectProperty* DstSoftProperty = DstValue.Property ? DstValue.Property->AsSoftObjectProperty() : nullptr;
+		if (SrcSoftProperty || DstSoftProperty)
+		{
+			if (!SrcSoftProperty || !DstSoftProperty)
+			{
+				return false;
+			}
+
+			DstSoftProperty->SetPath(DstValue.ContainerPtr, SrcSoftProperty->GetPath(SrcValue.ContainerPtr));
+			return true;
+		}
+
+		if (SrcValue.GetType() != DstValue.GetType())
 		{
 			return false;
 		}
@@ -147,21 +165,6 @@ namespace
 		case EPropertyType::SceneComponentRef:
 			*static_cast<FString*>(DstPtr) = *static_cast<FString*>(SrcPtr);
 			return true;
-		case EPropertyType::SoftObjectRef:
-		{
-			const FSoftObjectProperty* SrcSoftProperty = SrcValue.Property ? SrcValue.Property->AsSoftObjectProperty() : nullptr;
-			const FSoftObjectProperty* DstSoftProperty = DstValue.Property ? DstValue.Property->AsSoftObjectProperty() : nullptr;
-			const FString Path = SrcSoftProperty ? SrcSoftProperty->GetPath(SrcValue.ContainerPtr) : *static_cast<FString*>(SrcPtr);
-			if (DstSoftProperty)
-			{
-				DstSoftProperty->SetPath(DstValue.ContainerPtr, Path);
-			}
-			else
-			{
-				*static_cast<FString*>(DstPtr) = Path;
-			}
-			return true;
-		}
 		case EPropertyType::ObjectRef:
 			*static_cast<UObject**>(DstPtr) = *static_cast<UObject**>(SrcPtr);
 			return true;
