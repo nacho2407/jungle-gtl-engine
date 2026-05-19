@@ -5,6 +5,7 @@
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimDataModel.h"
 #include "Animation/AnimNotify_LogMessage.h"
+#include "Animation/AnimNotifyState_LogDuration.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Object/Object.h"
 
@@ -51,6 +52,22 @@ namespace
 			UObjectManager::Get().CreateObject<UAnimNotify_LogMessage>(Seq->GetDataModel());
 		Logic->Message = Name;
 		Event.Notify   = Logic;
+		return Event;
+	}
+
+	// State notify + 데모용 로직 객체(UAnimNotifyState_LogDuration).
+	// Duration > 0 → AnimInstance 가 Begin/Tick/End 경로로 dispatch (구간 활성 이벤트).
+	FAnimNotifyEvent MakeNotifyState(UAnimSequence* Seq, const FString& Name, float Time, float Duration)
+	{
+		FAnimNotifyEvent Event;
+		Event.NotifyName  = FName(Name);
+		Event.TriggerTime = Time;
+		Event.Duration    = std::max(Duration, 0.01f);
+
+		UAnimNotifyState_LogDuration* Logic =
+			UObjectManager::Get().CreateObject<UAnimNotifyState_LogDuration>(Seq->GetDataModel());
+		Logic->Tag        = Name;
+		Event.NotifyState = Logic;
 		return Event;
 	}
 
@@ -188,6 +205,16 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 				MakeNotify(Seq, Name, sPendingNotifyTime));
 			Seq->RefreshRuntimeNotifies();
 		}
+		if (ImGui::MenuItem("Add NotifyState (LogDuration)"))
+		{
+			static int sStateCounter = 0;
+			const FString Name = FString("State_") + std::to_string(++sStateCounter);
+			// default duration = 0.3s 또는 남은 길이 — 어느 쪽이든 클램프되어 들어감.
+			const float DefaultDur = std::min(0.3f, std::max(PlayLength - sPendingNotifyTime, 0.05f));
+			Seq->GetMutableModelNotifies().push_back(
+				MakeNotifyState(Seq, Name, sPendingNotifyTime, DefaultDur));
+			Seq->RefreshRuntimeNotifies();
+		}
 		ImGui::EndPopup();
 	}
 
@@ -301,8 +328,16 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			}
 
 			ImGui::PushID(i);
+
+			// State notify (Duration > 0) 면 오른쪽 끝에 6px resize 핸들을 분리.
+			// 본체 hit-rect 가 핸들 영역을 침범하지 않게 BodyW 를 줄여 click 분리.
+			constexpr float HandleW = 6.0f;
+			const bool      bHasDur  = (N.Duration > 0.0f);
+			const float     FullW    = BadgeW + 12.0f;
+			const float     BodyW    = bHasDur ? std::max(FullW - HandleW, 8.0f) : FullW;
+
 			ImGui::SetCursorScreenPos(ImVec2(NX - 6.0f, BadgeTop));
-			ImGui::InvisibleButton("##notify", ImVec2(BadgeW + 12.0f, BadgeBot - BadgeTop));
+			ImGui::InvisibleButton("##notify", ImVec2(BodyW, BadgeBot - BadgeTop));
 			const bool bHovered = ImGui::IsItemHovered();
 			const bool bActive  = ImGui::IsItemActive();
 
@@ -316,11 +351,14 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			{
 				sGrabOffsetTime = MouseTime() - N.TriggerTime;
 			}
-			// 임계값(io.MouseDragThreshold) 이상 움직였을 때만 이동 → 더블클릭은 제외
+			// 임계값(io.MouseDragThreshold) 이상 움직였을 때만 이동 → 더블클릭은 제외.
+			// Duration > 0 이면 End 도 같이 이동하므로 N.Duration 은 그대로, TriggerTime 만 갱신
+			// + 시퀀스 우측 경계 클램프 시 (TriggerTime + Duration) 가 PlayLength 넘지 않게.
 			if (bActive && ImGui::IsMouseDragging(ImGuiMouseButton_Left, -1.0f))
 			{
-				N.TriggerTime = std::clamp(MouseTime() - sGrabOffsetTime,
-				                           0.0f, PlayLength);
+				const float MaxStart = bHasDur ? std::max(PlayLength - N.Duration, 0.0f)
+				                               : PlayLength;
+				N.TriggerTime = std::clamp(MouseTime() - sGrabOffsetTime, 0.0f, MaxStart);
 			}
 			if (bHovered || bActive)
 			{
@@ -328,8 +366,34 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			}
 			if (bHovered && !bActive)
 			{
-				ImGui::SetTooltip("%s\n%.3f s\n(double-click: rename)",
-				                  Nm.c_str(), N.TriggerTime);
+				if (bHasDur)
+				{
+					ImGui::SetTooltip("%s\n%.3f s + %.3f s (state)\n(drag right edge: resize)",
+					                  Nm.c_str(), N.TriggerTime, N.Duration);
+				}
+				else
+				{
+					ImGui::SetTooltip("%s\n%.3f s\n(double-click: rename)",
+					                  Nm.c_str(), N.TriggerTime);
+				}
+			}
+
+			// 우측 끝 resize 핸들 — state notify 만. Duration 변경 후 RefreshRuntimeNotifies 는
+			// 함수 끝에서 일괄 처리되므로 별도 호출 불필요.
+			if (bHasDur)
+			{
+				ImGui::SetCursorScreenPos(ImVec2(NX - 6.0f + BodyW, BadgeTop));
+				ImGui::InvisibleButton("##notifyR", ImVec2(HandleW, BadgeBot - BadgeTop));
+				if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+				{
+					ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+				}
+				if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, -1.0f))
+				{
+					const float NewEnd = std::clamp(MouseTime(),
+					                                N.TriggerTime + 0.01f, PlayLength);
+					N.Duration = NewEnd - N.TriggerTime;
+				}
 			}
 
 			// 더블클릭 또는 컨텍스트 메뉴 → 이름 변경 팝업
@@ -376,6 +440,11 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 					{
 						Log->Message = sRenameBuf;
 					}
+					if (UAnimNotifyState_LogDuration* LogState =
+						Cast<UAnimNotifyState_LogDuration>(N.NotifyState))
+					{
+						LogState->Tag = sRenameBuf;
+					}
 					Seq->RefreshRuntimeNotifies();
 					ImGui::CloseCurrentPopup();
 				}
@@ -384,9 +453,13 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			ImGui::PopID();
 
 			const float MarkNX = TimeToX(N.TriggerTime);
-			const ImU32 Fill   = (bHovered || bActive)
-				? IM_COL32(120, 205, 125, 255) : IM_COL32(76, 175, 80, 255);
-			const ImU32 Border = IM_COL32(40, 95, 45, 255);
+			// State (Duration>0) 와 instant 컬러 분리 — state 파랑, instant 초록.
+			const ImU32 Fill = bHasDur
+				? ((bHovered || bActive) ? IM_COL32(110, 175, 240, 255) : IM_COL32(74, 145, 226, 255))
+				: ((bHovered || bActive) ? IM_COL32(120, 205, 125, 255) : IM_COL32(76, 175, 80,  255));
+			const ImU32 Border = bHasDur
+				? IM_COL32(30, 70, 130, 255)
+				: IM_COL32(40, 95, 45,  255);
 
 			const ImVec2 BMin(MarkNX, BadgeTop);
 			const ImVec2 BMax(MarkNX + BadgeW, BadgeBot);
