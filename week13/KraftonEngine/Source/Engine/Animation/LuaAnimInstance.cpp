@@ -5,6 +5,7 @@
 #include "Animation/AnimMontage.h"
 #include "Animation/AnimState.h"
 #include "Animation/PoseContext.h"
+#include "Animation/Nodes/AnimNode_BlendListByEnum.h"
 #include "Animation/Nodes/AnimNode_LayeredBlendPerBone.h"
 #include "Animation/Nodes/AnimNode_RefPose.h"
 #include "Animation/Nodes/AnimNode_Slot.h"
@@ -390,6 +391,36 @@ void ULuaAnimInstance::InstallBindings()
 			Layer->PerBoneMask = BuildBoneMaskFromRoot(GetSkeletalMesh(), MaskRootBone);
 			Layer->BlendWeight = 1.0f;   // 자동 weight 는 Blend 노드의 GetEffectiveBlendWeight 로 결정.
 			return Layer;
+		});
+
+	// BlendListByEnum — N 개의 입력 pose 중 enum 인덱스로 직접 선택. StateMachine 의 단순화
+	// 버전 (transitions 없음). 무장/비무장, 자세 enum 같이 명확한 분기에 사용.
+	// 예: local bl = Anim.create_blend_list_by_enum(0, 0.2)
+	//     Anim.blend_list_add_pose(bl, unarmed_pose)   -- index 0
+	//     Anim.blend_list_add_pose(bl, armed_pose)     -- index 1
+	//     Anim.blend_list_set_active(bl, self.WeaponEnum)  -- 매 update
+	Anim.set_function("create_blend_list_by_enum",
+		[this](sol::object InitialIndex, sol::object BlendTime) -> FAnimNode_BlendListByEnum*
+		{
+			FAnimNode_BlendListByEnum* B = MakeNode<FAnimNode_BlendListByEnum>();
+			B->ActiveChildIndex = InitialIndex.is<int>() ? InitialIndex.as<int>() : 0;
+			B->BlendTime        = BlendTime.is<float>()  ? BlendTime.as<float>()  : 0.2f;
+			return B;
+		});
+
+	// 입력 pose 를 enum 인덱스 순서로 append. 등록 순서 = enum value.
+	Anim.set_function("blend_list_add_pose",
+		[](FAnimNode_BlendListByEnum* B, FAnimNode_Base* Pose)
+		{
+			if (!B || !Pose) return;
+			B->InputPoses.push_back(Pose);
+		});
+
+	// 매 update 에서 외부가 활성 enum 값을 갱신. 변경 감지 시 BlendTime 동안 lerp.
+	Anim.set_function("blend_list_set_active",
+		[](FAnimNode_BlendListByEnum* B, int32 Idx)
+		{
+			if (B) B->ActiveChildIndex = Idx;
 		});
 }
 
