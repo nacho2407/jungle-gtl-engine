@@ -23,7 +23,7 @@ local IDLE_PATH = "Content/Data/hirasawa-yui/IdleWithSkin_mixamo_com.uasset"
 local WALK_PATH = "Content/Data/hirasawa-yui/Walking_mixamo_com.uasset"
 local JUMP_PATH = "Content/Data/hirasawa-yui/Jump_mixamo_com.uasset"
 
-local ATTACK_MONTAGE_PATH = "Content/Montages/mixamo_com_Montage.uasset"
+local ATTACK_MONTAGE_PATH = "Content/Montages/AM_MagicAttack.uasset"
 
 -- UpperBody mask 의 root 본 — Spine 부터 자손 (팔/머리/손) 까지 자동 mask BFS.
 -- mixamo rig 의 본 이름은 보통 "mixamorig:Spine" 류. 본 못 찾으면 mask 가 전부 false → base 100%.

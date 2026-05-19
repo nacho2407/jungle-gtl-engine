@@ -16,4 +16,8 @@ struct ContentBrowserContext final
 	UEditorEngine* EditorEngine;
 
 	bool bPendingContentRefresh = false;
+
+	// SelectedElement 에 대한 rename popup 요청 — F2 키 또는 우클릭 메뉴의 Rename 이 true 로 set.
+	// ContentBrowser::Render 가 다음 프레임 popup 열고 false 로 reset.
+	bool bRenameRequested = false;
 };

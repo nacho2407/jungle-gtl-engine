@@ -5,6 +5,7 @@
 #include "AnimNotifyState.h"
 #include "AnimSequenceBase.h"
 #include "AnimationRuntime.h"
+#include "Nodes/AnimNode_Root.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Mesh/SkeletalMesh.h"
 #include "GameFramework/Pawn.h"
@@ -38,8 +39,9 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 	NativeUpdateAnimation(DeltaSeconds);
 
 	// AnimGraph 트리 평가 — set 되어 있으면 root 부터 자식 Update 재귀 호출. 시간 진행 /
-	// transition / notify 적재 / 자식 노드의 LastRM 계산까지 노드들이 책임. 단 누적 (Accumulate)
-	// 은 노드가 직접 안 함 — 트리의 root 가 합성한 LastRM 을 외부에서 한 번만 push.
+	// transition / notify 적재 / 자식 노드의 LastRM 계산까지 노드들이 책임.
+	// RootMotion 누적은 FAnimNode_Root 안에서 mode 분기와 함께 처리 — AnimInstance 는 더 이상
+	// 직접 분기하지 않는다 (정책 단일 진입점).
 	if (RootNode)
 	{
 		FAnimationUpdateContext Ctx;
@@ -47,13 +49,6 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 		Ctx.DeltaSeconds     = DeltaSeconds;
 		Ctx.FinalBlendWeight = 1.0f;
 		RootNode->Update(Ctx);
-
-		// 트리 평가 후 root 의 합성 LastRM 을 mode 체크 후 누적. 이중 누적 방지 위해 단일 진입점.
-		// RootMotionFromMontagesOnly 면 base graph 측 RM 무시 (Montage 만 적용되도록).
-		if (RootMotionMode != ERootMotionMode::RootMotionFromMontagesOnly)
-		{
-			AccumulateRootMotion(RootNode->GetLastRootMotionDelta());
-		}
 	}
 
 	// Montage Tick (legacy fallback) — RootNode 없을 때만 일괄 tick.
@@ -132,7 +127,21 @@ void UAnimInstance::EvaluatePose(FPoseContext& Output)
 
 void UAnimInstance::SetRootNode(FAnimNode_Base* InRoot)
 {
-	RootNode = InRoot;
+	// InRoot 가 이미 FAnimNode_Root 면 그대로, 아니면 자동으로 Root 노드로 감싼다.
+	// 호출자 (lua / C++) 가 임의 노드를 root 로 박아도 정책 (RootMotion 누적 등) 의 단일
+	// 진입점을 보장. Auto-wrap 으로 만든 Root 도 OwnedNodes 가 lifetime 관리.
+	// IsRoot() 가상함수로 판별 — RTTI (dynamic_cast) 의존 없음.
+	if (InRoot && !InRoot->IsRoot())
+	{
+		FAnimNode_Root* Wrapper = MakeNode<FAnimNode_Root>();
+		Wrapper->ChildPose = InRoot;
+		RootNode = Wrapper;
+	}
+	else
+	{
+		RootNode = InRoot;
+	}
+
 	if (RootNode)
 	{
 		FAnimationInitializeContext InitCtx;

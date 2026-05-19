@@ -13,7 +13,9 @@
 #include "Animation/AnimState.h"
 #include "Animation/AnimationMode.h"
 #include "Animation/Nodes/AnimNode_Base.h"
+#include "Animation/Nodes/AnimNode_BlendListByEnum.h"
 #include "Animation/Nodes/AnimNode_LayeredBlendPerBone.h"
+#include "Animation/Nodes/AnimNode_Root.h"
 #include "Animation/Nodes/AnimNode_SequencePlayer.h"
 #include "Animation/Nodes/AnimNode_Slot.h"
 #include "Animation/Nodes/AnimNode_StateMachine.h"
@@ -36,7 +38,12 @@ namespace
 		const std::string IndentStr(static_cast<size_t>(Indent) * 2, ' ');
 		const char* TypeName = Node->GetDebugName();
 
-		if (auto* SM = dynamic_cast<FAnimNode_StateMachine*>(Node))
+		if (auto* Root = dynamic_cast<FAnimNode_Root*>(Node))
+		{
+			ImGui::Text("%s[%s]", IndentStr.c_str(), TypeName);
+			DrawAnimNode(Root->ChildPose, Indent + 1, AnimInst);
+		}
+		else if (auto* SM = dynamic_cast<FAnimNode_StateMachine*>(Node))
 		{
 			const FName CurrentName = SM->GetCurrentStateName();
 			UAnimState*  CurrentState = SM->GetCurrentState();
@@ -105,6 +112,29 @@ namespace
 			DrawAnimNode(Layer->BasePose, Indent + 2, AnimInst);
 			ImGui::Text("%s  blend:", IndentStr.c_str());
 			DrawAnimNode(Layer->BlendPose, Indent + 2, AnimInst);
+		}
+		else if (auto* BL = dynamic_cast<FAnimNode_BlendListByEnum*>(Node))
+		{
+			const int32 NumPoses = static_cast<int32>(BL->InputPoses.size());
+			const int32 Cur  = BL->GetCurrentChildIndex();
+			const int32 Prev = BL->GetPreviousChildIndex();
+			if (Prev >= 0)
+			{
+				ImGui::Text("%s[%s] poses=%d  active=%d  prev=%d  alpha=%.2f  blendT=%.2fs",
+					IndentStr.c_str(), TypeName, NumPoses, Cur, Prev,
+					BL->GetBlendAlpha(), BL->BlendTime);
+			}
+			else
+			{
+				ImGui::Text("%s[%s] poses=%d  active=%d  blendT=%.2fs",
+					IndentStr.c_str(), TypeName, NumPoses, Cur, BL->BlendTime);
+			}
+			for (int32 i = 0; i < NumPoses; ++i)
+			{
+				const char* Tag = (i == Cur) ? "current" : (i == Prev) ? "prev" : "idle";
+				ImGui::Text("%s  [%d] %s", IndentStr.c_str(), i, Tag);
+				DrawAnimNode(BL->InputPoses[i], Indent + 2, AnimInst);
+			}
 		}
 		else if (auto* Seq = dynamic_cast<FAnimNode_SequencePlayer*>(Node))
 		{
