@@ -7,6 +7,9 @@
 
 class USkeletalMeshComponent;
 
+/**
+ * @brief animation runtime 로직의 base class
+ */
 class UAnimInstance : public UObject
 {
 public:
@@ -42,6 +45,8 @@ public:
 
 protected:
     USkeletalMeshComponent* OwningComponent = nullptr;
+
+	// animation variable storages(for state machine)
     TMap<FName, float> FloatVariables;
     TMap<FName, bool> BoolVariables;
 };

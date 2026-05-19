@@ -417,6 +417,9 @@
     <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\AnimStateMachineLoader.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Asset\CurveAssetLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
@@ -1239,6 +1242,9 @@
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\CurveAssetLoader.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\AnimStateMachineLoader.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\CurveFloatAsset.h">

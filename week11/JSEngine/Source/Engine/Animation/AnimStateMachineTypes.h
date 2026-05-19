@@ -53,6 +53,12 @@ struct FAnimStateDesc
     FAnimStateAnimationRef Animation;
     bool bLooping = true;
     float PlayRate = 1.0f;
+
+	/**
+	 * @brief editor 내 state machine visual editor에서 해당 state node를 배치할 위치
+	 * 
+	 * @note  visual editor에서만 사용되는 optional data
+	 */
     FVector2 EditorPosition = FVector2::ZeroVector;
 };
 
