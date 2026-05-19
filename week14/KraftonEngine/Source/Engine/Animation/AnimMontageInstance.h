@@ -2,6 +2,7 @@
 
 #include "Object/Object.h"
 #include "Object/FName.h"
+#include "Math/Transform.h"
 
 class UAnimMontage;
 class UAnimInstance;
@@ -49,6 +50,10 @@ public:
     void Tick(float DeltaSeconds, UAnimInstance* Owner);
     void EvaluateMontagePose(FPoseContext& OutMontagePose);   // section + time → SourceSequence GetBonePose
 
+    // 매 Tick 이 채우는 raw root motion delta (BlendWeight 곱 안 함). Slot 노드가 GetBlendWeight
+    // 로 InputPose.LastRM 과 lerp 합성. 외부 누적은 RootNode 한 곳 (UAnimInstance::UpdateAnimation 끝).
+    const FTransform& GetLastRootMotionDelta() const { return LastRootMotionDelta; }
+
 private:
     void EnterBlendingIn(float InBlendInTime);
     void EnterBlendingOut(float InBlendOutTime);
@@ -73,4 +78,7 @@ private:
     float  BlendInTime     = 0.25f;
     float  BlendOutTime    = 0.25f;
     float  PlayRate        = 1.0f;
+
+    // 매 Tick 의 raw RM delta (W 곱 안 함). Slot 노드가 GetBlendWeight 로 lerp 책임.
+    FTransform LastRootMotionDelta;
 };

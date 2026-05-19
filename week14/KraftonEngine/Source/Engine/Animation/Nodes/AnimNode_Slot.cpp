@@ -28,16 +28,24 @@ void FAnimNode_Slot::Update(const FAnimationUpdateContext& Context)
 		InputLastRM = FTransform();
 	}
 
-	// 자기 slot 의 montage tick — Slot 노드가 단일 책임자. UpdateAnimation 의 일괄 tick 은
-	// RootNode null (legacy) 케이스 fallback 만. UE 본가 패턴과 정렬.
-	// 같은 SlotName 의 Slot 노드가 트리에 여러 개 있으면 동일 montage 가 중복 tick — 호출자 책임
-	// (보통 SlotName 당 1 노드 관례).
+	// 자기 slot 의 montage tick + RM 합성 — Slot 이 단일 책임자.
+	// Pose 합성과 동일 weight 로 LastRM 도 lerp(InputPose.LastRM, MontageRM, W). Montage 의
+	// LastRM 은 raw delta (W 곱 안 함) 라 Slot 측에서 lerp.
 	if (OwnerAnimInstance)
 	{
 		UAnimMontageInstance* MI = OwnerAnimInstance->GetMontageInstanceForSlot(SlotName);
 		if (MI && MI->IsActive())
 		{
 			MI->Tick(Context.DeltaSeconds, OwnerAnimInstance);
+
+			const float W = MI->GetBlendWeight();
+			if (W > 0.0f)
+			{
+				const FTransform& MontageRM = MI->GetLastRootMotionDelta();
+				InputLastRM.Location = InputLastRM.Location * (1.0f - W) + MontageRM.Location * W;
+				InputLastRM.Rotation = FQuat::Slerp(InputLastRM.Rotation.GetNormalized(),
+				                                    MontageRM.Rotation.GetNormalized(), W).GetNormalized();
+			}
 		}
 	}
 }
