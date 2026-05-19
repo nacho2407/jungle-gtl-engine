@@ -6,6 +6,7 @@
 #include "Animation/AnimState.h"
 #include "Animation/AnimationStateMachine.h"
 #include "Animation/PoseContext.h"
+#include "Animation/Nodes/AnimNode_Slot.h"
 #include "Animation/Nodes/AnimNode_StateMachine.h"
 #include "Animation/Nodes/AnimNode_SequencePlayer.h"
 #include "Component/Movement/CharacterMovementComponent.h"
@@ -82,13 +83,20 @@ void ULuaAnimInstance::NativeInitializeAnimation()
 	DispatchLuaInit();
 
 	// AnimGraph RootNode 박기.
-	//   - lua 가 Anim.set_root_node 명시 호출했으면 그 노드 (이미 SetRootNode 호출됨) — 여기 skip.
+	//   - lua 가 Anim.set_root_node 명시 호출했으면 그 노드가 이미 root.
 	//   - 안 했으면 (legacy 평면 API 만 사용) wrapper FSM 의 내부 노드를 root 로 fallback.
-	//   - 첫 CurrentState 의 OnEnter 가 Initialize 안에서 재귀 호출 → sub-graph 까지 init.
-	if (!GetRootNode())
+	FAnimNode_Base* GraphRoot = GetRootNode();
+	if (!GraphRoot)
 	{
-		SetRootNode(&FSM->GetNode());
+		GraphRoot = &FSM->GetNode();
 	}
+
+	// DefaultSlot 으로 wrap — RootNode 경로의 montage 처리는 트리 안 Slot 노드 책임.
+	// Slot.InputPose = lua 가 build 한 GraphRoot. 평소엔 pass-through, montage 활성 시 lerp.
+	FAnimNode_Slot* DefaultSlot = MakeNode<FAnimNode_Slot>();
+	DefaultSlot->SlotName  = DefaultMontageSlot;
+	DefaultSlot->InputPose = GraphRoot;
+	SetRootNode(DefaultSlot);   // 두 번째 호출 — Initialize 가 트리 전체 재귀, 안전.
 
 	// Hot-reload 등록 — .lua 파일 변경 시 FLuaScriptManager 가 ReloadScript 호출.
 	// 이미 등록된 경우 set-like 보장 (manager 측).
