@@ -23,6 +23,36 @@ void UCharacterMovementComponent::ConsumeInputVector(FVector& Out)
 	AccumulatedInput = FVector(0.0f, 0.0f, 0.0f);
 }
 
+void UCharacterMovementComponent::AddRootMotionDelta(const FTransform& LocalDelta)
+{
+	if (!bHasPendingRootMotion)
+	{
+		PendingRootMotion = LocalDelta;
+		bHasPendingRootMotion = true;
+		return;
+	}
+
+	// 누적 합성 — AnimInstance::AccumulateRootMotion 과 동일한 매트릭스 곱 패턴.
+	// 같은 frame 에 base + montage 처럼 여러 소스가 push 할 수 있어 합성 보장 필요.
+	const FMatrix M = LocalDelta.ToMatrix() * PendingRootMotion.ToMatrix();
+	PendingRootMotion.Location = FVector(M.M[3][0], M.M[3][1], M.M[3][2]);
+	PendingRootMotion.Rotation = (LocalDelta.Rotation * PendingRootMotion.Rotation).GetNormalized();
+	// Scale 은 root motion 에서 보통 1 — 무시.
+}
+
+bool UCharacterMovementComponent::ConsumePendingRootMotion(FTransform& OutLocalDelta)
+{
+	if (!bHasPendingRootMotion)
+	{
+		OutLocalDelta = FTransform();   // Identity
+		return false;
+	}
+	OutLocalDelta = PendingRootMotion;
+	PendingRootMotion = FTransform();
+	bHasPendingRootMotion = false;
+	return true;
+}
+
 void UCharacterMovementComponent::SetMovementMode(EMovementMode NewMode)
 {
 	if (MovementMode == NewMode) return;
