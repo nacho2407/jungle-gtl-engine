@@ -147,44 +147,9 @@ namespace
 				|| std::strcmp(Property->Name, "AnimationMode") == 0);
 	}
 
-	static TArray<FString> CollectAnimGraphAssetPaths()
-	{
-		TArray<FString> Result;
-		const std::filesystem::path AssetRoot = (std::filesystem::path(FPaths::RootDir()) / L"Asset").lexically_normal();
-		if (!std::filesystem::exists(AssetRoot))
-		{
-			return Result;
-		}
-
-		std::error_code ErrorCode;
-		for (const std::filesystem::directory_entry& Entry : std::filesystem::recursive_directory_iterator(AssetRoot, ErrorCode))
-		{
-			if (ErrorCode)
-			{
-				break;
-			}
-			if (!Entry.is_regular_file())
-			{
-				continue;
-			}
-
-			FString Extension = FPaths::ToUtf8(Entry.path().extension().wstring());
-			std::transform(Extension.begin(), Extension.end(), Extension.begin(),
-				[](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
-			if (Extension == ".animgraph")
-			{
-				Result.push_back(FPaths::Normalize(FPaths::ToRelativeString(Entry.path().wstring())));
-			}
-		}
-
-		std::sort(Result.begin(), Result.end());
-		return Result;
-	}
-
-	static bool RenderAnimGraphAssetPathWidget(FString& Value, const char* Label)
+	static bool RenderAnimGraphAssetPathWidget(FString& Value, const char* Label, const TArray<FString>& Options)
 	{
 		bool bChanged = false;
-		TArray<FString> Options = CollectAnimGraphAssetPaths();
 		const char* Preview = Value.empty() ? "<None>" : Value.c_str();
 
 		if (ImGui::BeginCombo(Label, Preview))
@@ -1953,8 +1918,7 @@ bool FEditorPropertyWidget::RenderSoftObjectPtrWidget(const FProperty& Property,
 		}
 		else if (Property.ObjectClass->IsChildOf(UAnimGraphAsset::StaticClass()))
 		{
-			LocalOptions = CollectAnimGraphAssetPaths();
-			Options = &LocalOptions;
+			Options = &EditorEngine->GetAssetService().GetAnimGraphAssetPaths();
 		}
 	}
 
@@ -2189,7 +2153,10 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 		FString* Val = static_cast<FString*>(ValuePtr);
 		if (Property.Name && std::strcmp(Property.Name, "AnimGraphAssetPath") == 0)
 		{
-			return RenderAnimGraphAssetPathWidget(*Val, Label);
+			const TArray<FString>& AnimGraphPaths = EditorEngine
+				? EditorEngine->GetAssetService().GetAnimGraphAssetPaths()
+				: EmptyAssetNames();
+			return RenderAnimGraphAssetPathWidget(*Val, Label, AnimGraphPaths);
 		}
 
 		char Buf[512];
