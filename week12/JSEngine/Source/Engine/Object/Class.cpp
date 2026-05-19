@@ -1,4 +1,6 @@
-#include "Object/Class.h"
+﻿#include "Object/Class.h"
+
+#include "Object/Function.h"
 
 #include <cstring>
 
@@ -85,6 +87,59 @@ bool UClass::IsChildOf(const UClass* Other) const
 UObject* UClass::CreateObject() const
 {
 	return CreateFunc ? CreateFunc() : nullptr;
+}
+
+void UClass::AddFunction(UFunction* Function)
+{
+	if (!Function || !Function->GetName())
+	{
+		return;
+	}
+
+	for (UFunction* ExistingFunction : Functions)
+	{
+		if (ExistingFunction && ExistingFunction->GetName() && std::strcmp(ExistingFunction->GetName(), Function->GetName()) == 0)
+		{
+			return;
+		}
+	}
+
+	Functions.push_back(Function);
+}
+
+UFunction* UClass::FindFunction(const char* FunctionName) const
+{
+	if (!FunctionName)
+	{
+		return nullptr;
+	}
+
+	for (UFunction* Function : Functions)
+	{
+		if (Function && Function->GetName() && std::strcmp(Function->GetName(), FunctionName) == 0)
+		{
+			return Function;
+		}
+	}
+
+	UClass* Super = GetSuperClass();
+	return Super ? Super->FindFunction(FunctionName) : nullptr;
+}
+
+void UClass::GetAllFunctions(TArray<const UFunction*>& OutFunctions) const
+{
+	if (UClass* Super = GetSuperClass())
+	{
+		Super->GetAllFunctions(OutFunctions);
+	}
+
+	for (const UFunction* Function : Functions)
+	{
+		if (Function)
+		{
+			OutFunctions.push_back(Function);
+		}
+	}
 }
 
 UScriptStruct::UScriptStruct(const char* InName, size_t InSize, size_t InAlignment, const IStructOps* InStructOps, const char* InDisplayName, const char* InCategory)

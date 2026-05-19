@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/PropertyTypes.h"
 #include "Object/FName.h"
@@ -31,6 +31,11 @@ enum class EPropertyFlags : uint32
 	Animatable = 1 << 5,
 	LuaRead    = 1 << 6,
 	LuaWrite   = 1 << 7,
+	Parm       = 1 << 8,
+	ReturnParm = 1 << 9,
+	OutParm    = 1 << 10,
+	RefParm    = 1 << 11,
+	ConstParm  = 1 << 12,
 };
 
 
