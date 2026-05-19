@@ -30,6 +30,13 @@ public:
 
 	virtual void Initialize(const FAnimationInitializeContext& Context)         { (void)Context; }
 	virtual void OnBecomeRelevant(const FAnimationInitializeContext& Context)   { (void)Context; }
+
+	// State machine 의 state 가 비활성 (다음 active state 로 fade 완료) 될 때 호출.
+	// StateMachine 노드는 BlendingFroms / CurrentState 의 transient state 를 clear — 재진입 시
+	// stale 잔여로 시각적 pop 방지. 단순 leaf 노드 (SequencePlayer / RefPose) 는 LocalTime 이
+	// OnBecomeRelevant 에서 reset 되므로 별도 동작 불필요.
+	virtual void OnDormant() {}
+
 	virtual void Update(const FAnimationUpdateContext& Context)                 { (void)Context; }
 	virtual void Evaluate(FPoseContext& Output) = 0;
 

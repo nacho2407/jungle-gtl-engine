@@ -30,12 +30,23 @@ void UAnimState::OnEnter(UAnimInstance* Instance)
 	}
 }
 
-void UAnimState::Tick(UAnimInstance* Instance, float DeltaSeconds)
+void UAnimState::OnExit(UAnimInstance* Instance)
+{
+	(void)Instance;
+	// SubGraph 가 SM 인 경우 BlendingFroms 잔여 정리 — 재진입 시 stale alpha 로 시각 pop 방지.
+	// SequencePlayer 의 LocalTime 은 다음 OnEnter 에서 reset 되므로 별도 처리 불필요.
+	if (SubGraphOverride)
+	{
+		SubGraphOverride->OnDormant();
+	}
+}
+
+void UAnimState::Tick(UAnimInstance* Instance, float DeltaSeconds, float Weight)
 {
 	FAnimationUpdateContext Ctx;
 	Ctx.AnimInstance     = Instance;
 	Ctx.DeltaSeconds     = DeltaSeconds;
-	Ctx.FinalBlendWeight = 1.0f;   // FSM 이 자기 blend weight 로 lerp 합성하므로 sub-graph 는 full.
+	Ctx.FinalBlendWeight = Weight;   // 부모 SM 이 전달 — BlendingFroms 의 fade-out 비율 반영.
 
 	if (SubGraphOverride)
 	{
