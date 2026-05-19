@@ -1347,6 +1347,51 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 		return bChanged;
 	}
 
+	if (AssetType == "LuaAnimScript")
+	{
+		// 콤보 + "Edit Script" 버튼 하이브리드 — Asset/Script/Anim 하위 .lua 선택 + 즉시 편집.
+		// 리스트는 FAssetRegistry::ListByTypeName 가 매 호출 시 디렉토리 스캔 (콤보 열 때만).
+		FString Preview = (CurrentPath.empty() || CurrentPath == "None") ? "None" : GetStemFromPath(CurrentPath);
+
+		float ButtonWidth = ImGui::CalcTextSize("Edit Script").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+		float Spacing     = ImGui::GetStyle().ItemSpacing.x;
+		ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
+
+		if (ImGui::BeginCombo("##LuaAnimScript", Preview.c_str()))
+		{
+			bool bSelectedNone = (CurrentPath == "None" || CurrentPath.empty());
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				SetPath("None");
+				bChanged = true;
+			}
+			if (bSelectedNone) ImGui::SetItemDefaultFocus();
+
+			const TArray<FAssetListItem>& LuaFiles = FAssetRegistry::ListByTypeName("LuaAnimScript");
+			for (const FAssetListItem& Item : LuaFiles)
+			{
+				bool bSelected = (CurrentPath == Item.FullPath);
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				{
+					SetPath(Item.FullPath);
+					bChanged = true;
+				}
+				if (bSelected) ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Edit Script"))
+		{
+			if (!FLuaScriptManager::OpenOrCreateScript(CurrentPath))
+			{
+				UE_LOG("Failed to open script file: %s", CurrentPath.c_str());
+			}
+		}
+		return bChanged;
+	}
+
 	FString Preview = CurrentPath.empty() ? "None" : GetStemFromPath(CurrentPath);
 	if (CurrentPath == "None") Preview = "None";
 
