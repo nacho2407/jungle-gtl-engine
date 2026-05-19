@@ -273,7 +273,6 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             BoneWeightHeatmapState.SelectedBoneIndex < static_cast<int32>(SkeletalMesh->GetBones().size());
         uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
         FConstantBuffer* BoneMatrixConstantBuffer = nullptr;
-        uint32 UploadedBoneMatrixCount = 0;
         if (bUseGPUSkinning)
         {
             FBoneMatrixConstants BoneMatrixConstants = {};
@@ -290,7 +289,6 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
                 if (FBoneMatrixConstants* Constants = RenderBus.GetMutableBoneMatrixConstants(BoneMatrixConstantsIndex))
                 {
                     *Constants = BoneMatrixConstants;
-                    UploadedBoneMatrixCount = BoneMatrixConstants.BoneCount;
                 }
             }
         }
@@ -300,8 +298,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             SkinningStatCache.VertexCount,
             static_cast<uint32>(SkinningStatCache.BoneCount),
             SkinningStatCache.AvgBoneInfluence,
-            bUseGPUSkinning,
-            UploadedBoneMatrixCount);
+            bUseGPUSkinning);
 
         FMeshBuffer* MeshBuffer = bUseGPUSkinning
             ? MeshBufferManager.GetGPUSkeletalMeshBuffer(SkeletalMesh)

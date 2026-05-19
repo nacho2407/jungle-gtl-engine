@@ -296,8 +296,9 @@ FConstantBuffer* FMeshBufferManager::GetGPUSkeletalBoneMatrixBuffer(
 		Device->GetImmediateContext(&DeviceContext);
 		if (DeviceContext)
 		{
-			BoneMatrixBuffer.Update(DeviceContext, &Constants, sizeof(FBoneMatrixConstants));
-			FSkinningStats::Get().AddGPUBoneMatrixUpload(Constants.BoneCount);
+			constexpr uint64 UploadBytes = sizeof(FBoneMatrixConstants);
+			BoneMatrixBuffer.Update(DeviceContext, &Constants, static_cast<uint32>(UploadBytes));
+			FSkinningStats::Get().AddGPUBoneMatrixUpload(Constants.BoneCount, UploadBytes);
 			DeviceContext->Release();
 		}
 	}

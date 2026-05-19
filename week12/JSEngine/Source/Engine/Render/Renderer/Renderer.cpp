@@ -9,6 +9,7 @@
 #include "Render/Common/ShadowTypes.h"
 #include "Render/Mesh/MeshManager.h"
 #include "Core/Logging/Stats.h"
+#include "Core/Logging/SkinningStats.h"
 #include "Core/Logging/GPUProfiler.h"
 #include "Component/BillboardComponent.h"
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
@@ -63,6 +64,12 @@ void BindVertexFactoryResources(
 				Context,
 				ConstantsToBind,
 				sizeof(FBoneMatrixConstants));
+			if (ConstantsToBind->BoneCount > 0)
+			{
+				FSkinningStats::Get().AddGPUBoneMatrixUpload(
+					ConstantsToBind->BoneCount,
+					sizeof(FBoneMatrixConstants));
+			}
 
 			BoneBuffer = RenderResources->BoneMatrixConstantBuffer.GetBuffer();
 		}
