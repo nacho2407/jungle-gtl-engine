@@ -1059,6 +1059,7 @@
     <ClCompile Include="Source\Engine\Asset\SkeletalMeshTypes.cpp" />
     <ClCompile Include="Source\Engine\Asset\Skeleton.cpp" />
     <ClCompile Include="Intermediate\Generated\JSEngine.Reflection.gen.cpp" />
+    <ClCompile Include="Source\Engine\ReflectionSystem\ReflectionLuaUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Audio\AudioSystem.h">
@@ -2059,6 +2060,7 @@
     <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionFunctionInfo.h" />
     <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionPropertyFlags.h" />
     <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionStructInfo.h" />
+    <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionLuaUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Source\Engine\Runtime\AppIcon.rc" />
@@ -2073,6 +2075,7 @@
     </None>
     <None Include="PropertySystem\OptOutParser.cs" />
     <None Include="Tools\PropertySystem\CustomParser.cs" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiSystem.cpp">
