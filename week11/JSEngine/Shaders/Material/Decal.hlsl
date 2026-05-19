@@ -89,7 +89,7 @@ PSInput VS(VSInput input)
 #endif
 }
 
-PSOutput mainPS(PSInput input) : SV_Target
+PSOutput PS(PSInput input) : SV_Target
 {
     PSOutput output;
 

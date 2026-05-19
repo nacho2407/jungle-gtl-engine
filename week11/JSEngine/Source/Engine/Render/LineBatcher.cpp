@@ -171,12 +171,12 @@ namespace
 
 		FShaderStageKey VSKey;
 		VSKey.FilePath = "Shaders/UI/Line.hlsl";
-		VSKey.EntryPoint = "mainVS";
+		VSKey.EntryPoint = "VS";
 		VSKey.Target = "vs_5_0";
 
 		FShaderStageKey PSKey;
 		PSKey.FilePath = "Shaders/UI/Line.hlsl";
-		PSKey.EntryPoint = "mainPS";
+		PSKey.EntryPoint = "PS";
 		PSKey.Target = "ps_5_0";
 
 		return FResourceManager::Get().GetOrCreateShaderProgram(

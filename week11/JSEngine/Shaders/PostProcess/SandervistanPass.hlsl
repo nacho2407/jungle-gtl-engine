@@ -59,7 +59,7 @@ float3 MotionBlur(float2 uv)
     return col / weightSum;
 }
 
-VSOutput mainVS(uint id : SV_VertexID)
+VSOutput VS(uint id : SV_VertexID)
 {
     float2 pos;
     if (id == 0)
@@ -74,7 +74,7 @@ VSOutput mainVS(uint id : SV_VertexID)
     return o;
 }
 
-float4 mainPS(VSOutput input) : SV_TARGET
+float4 PS(VSOutput input) : SV_TARGET
 {
     float2 uv = input.Pos.xy * InvResolution;
 
