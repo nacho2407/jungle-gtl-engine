@@ -185,15 +185,18 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.VertexFactoryType = CmdVertexFactoryType;
             Cmd.MeshBuffer = MeshBuffer;
 
-            if (RenderBus.GetSkinningMode() == ESkinningMode::CPU)
+            // Bone weight visualization 은 GPU skinning으로만 동작
+            if (RenderBus.GetSkinningMode() == ESkinningMode::GPU)
             {
-                // TODO: Bone weight visualization 은 GPU skinning으로만 동작
-            }
-            else
-            {
+                uint64 Size = SkeletalMeshComp->GetSkinningMatrices().size();
+                // TODO: Bone 개수는 256개 이상일 수 있음. StrcturedBuffer 고려..
+				if (Size > 256)
+				{
+                    Size = 256;
+				}
                 std::memcpy(Cmd.Constants.Skinning.BoneMatrices,
                     SkeletalMeshComp->GetSkinningMatrices().data(),
-                    SkeletalMeshComp->GetSkinningMatrices().size() * sizeof(FMatrix));
+                    Size * sizeof(FMatrix));
             }
 
             Cmd.SectionIndexStart = Section.StartIndex;

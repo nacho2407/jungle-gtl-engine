@@ -25,6 +25,7 @@ TArray<D3D_SHADER_MACRO> FShaderHelper::BuildUberLitMacros(uint32 PermutationKey
 	if (!!(Features & EShaderFeature::HasEmissiveMap)) AddMacro("HAS_EMISSIVE_MAP", "1");
 	if (!!(Features & EShaderFeature::HasAlphaMask))   AddMacro("HAS_ALPHA_MASK", "1");
 	if (!!(Features & EShaderFeature::GpuSkinning))    AddMacro("GPU_SKINNING", "1");
+	if (!!(Features & EShaderFeature::SelectedBoneWeight)) AddMacro("SELECTED_BONE_WEIGHT_VIS", "1");
 	if (!!(Features & EShaderFeature::ClusterCull))    AddMacro("CULLING_MODEL_CLUSTERED", "1");
 	if (!!(Features & EShaderFeature::TileCull))       AddMacro("CULLING_MODEL_TILED", "1");
 	if (!!(Features & EShaderFeature::ShadowCSM))      AddMacro("SHADOW_MAP_CSM", "1");

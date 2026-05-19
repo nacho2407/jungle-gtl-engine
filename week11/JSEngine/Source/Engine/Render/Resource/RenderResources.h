@@ -14,6 +14,7 @@ struct FRenderResources
 	FConstantBuffer LightBuffer;					// b3 (Ambient, Directional Light)		
 	FConstantBuffer ShadowBuffer;                   // b4
 	FConstantBuffer SkinningBuffer;					// b5
+	FConstantBuffer SelectedBoneBuffer;             // b6
 
     FConstantBuffer LightPassConstantBuffer;        // b7
     FConstantBuffer FogPassConstantBuffer;          // b9

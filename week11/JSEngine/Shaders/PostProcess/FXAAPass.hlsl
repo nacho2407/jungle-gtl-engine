@@ -64,7 +64,7 @@ struct VSOutput
 };
 
 // Fullscreen Triangle
-VSOutput mainVS(uint vertexID : SV_VertexID)
+VSOutput VS(uint vertexID : SV_VertexID)
 {
     VSOutput output;
 
@@ -93,7 +93,7 @@ float FxaaLuma(float3 rgb)
     return rgb.y * (0.587 / 0.299) + rgb.x;
 }
 
-float4 mainPS(VSOutput input) : SV_TARGET
+float4 PS(VSOutput input) : SV_TARGET
 {
     int2 ip = int2(input.ClipPos.xy);
     float2 uv = (float2(ip) + 0.5) * InvResolution;

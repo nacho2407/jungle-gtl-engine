@@ -8,7 +8,7 @@ struct VSOutput
     float4 ClipPos : SV_POSITION;
 };
 
-VSOutput mainVS(uint vertexID : SV_VertexID)
+VSOutput VS(uint vertexID : SV_VertexID)
 {
     float2 pos;
     if (vertexID == 0)
@@ -23,7 +23,7 @@ VSOutput mainVS(uint vertexID : SV_VertexID)
     return output;
 }
 
-float4 mainPS(VSOutput input) : SV_TARGET
+float4 PS(VSOutput input) : SV_TARGET
 {
     return OverlayColor;
 }

@@ -75,6 +75,9 @@ struct PSInput
 #elif HAS_NORMAL_MAP
     float4 WorldTangent : TEXCOORD5;
 #endif
+#if SELECTED_BONE_WEIGHT_VIS
+    float SelectedBoneWeight : TEXCOORD6;
+#endif
 };
 
 struct PSOutput
@@ -113,8 +116,19 @@ PSInput VS(VSInput input)
     PSInput output;
 
 #if GPU_SKINNING
+#if SELECTED_BONE_WEIGHT_VIS
+    float SelectedBoneWeight = 0.0f;
+    for (uint i = 0; i < 4; i++)
+    {
+        if (input.BoneIndices[i] == SelectedBoneIndex)
+        {
+            SelectedBoneWeight += input.BoneWeights[i];
+        }
+    }
+    output.SelectedBoneWeight = SelectedBoneWeight;
+#endif // SELECTED_BONE_WEIGHT_VIS
     input = Skinning(input);
-#endif
+#endif // GPU_SKINNING
 
     output.WorldPos = mul(float4(input.Position, 1.0f), Model).xyz;
     output.ClipPos = ApplyMVP(input.Position);
@@ -170,6 +184,22 @@ float3 GetHeatmapColor(float weight)
     color.g = smoothstep(0.0f, 0.4f, weight) - smoothstep(0.7f, 1.0f, weight);
     color.b = 1.0f - smoothstep(0.0f, 0.4f, weight);
     return color;
+}
+#endif
+
+#if SELECTED_BONE_WEIGHT_VIS
+float3 HsvToRgb(float3 hsv)
+{
+    float4 K = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    float3 p = abs(frac(hsv.xxx + K.xyz) * 6.0 - K.www);
+    return hsv.z * lerp(K.xxx, saturate(p - K.xxx), hsv.y);
+}
+
+float3 BoneWeightColor(float weight)
+{
+    float w = 1 - saturate(weight);
+    float hue = lerp(0.0, 0.78, w);
+    return HsvToRgb(float3(hue, 1.0, 1.0));
 }
 #endif
 
@@ -335,7 +365,7 @@ float CalculateShadow(float4 worldPos)
     }
 #endif
 
-PSOutput mainPS(PSInput input) : SV_TARGET
+PSOutput PS(PSInput input) : SV_TARGET
 {
     PSOutput output;
 
@@ -347,6 +377,11 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 
     float4 FinalColor = float4(DiffuseColor * DiffuseTex.rgb, 1);
     float3 SpecularFactor = SpecularColor;
+
+#if GPU_SKINNING && SELECTED_BONE_WEIGHT_VIS
+    FinalColor = float4(BoneWeightColor(input.SelectedBoneWeight), 1.0f);
+#endif // GPU_SKINNING && SELECTED_BONE_WEIGHT_VIS
+
 #if HAS_SPECULAR_MAP
     SpecularFactor *= SpecularMap.Sample(SampleState, input.UV).rgb;
 #endif
@@ -387,7 +422,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
             uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
             uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
             float weight = saturate((float)tileData.y / 64.0f); // MAX_LIGHTS_PER_TILE 기준
-#endif
+    #endif
     float3 heatmapColor = GetHeatmapColor(weight);
 
     // 타일 경계선 시각화 (선택 사항: 타일의 가장자리 1픽셀을 어둡게 처리)
