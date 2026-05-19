@@ -28,12 +28,9 @@ void UAnimGraphInstance::NativeUpdateAnimation(float DeltaTime)
     PreviousTime = CurrentTime;
 	CurrentTime += DeltaTime;
 
-    for (auto& Pair : StateMachineCacheMap)
+    if (GraphAsset && GraphAsset->RootNodeId >= 0)
     {
-        if (Pair.second.RuntimeMachine)
-        {
-            Pair.second.RuntimeMachine->Update(DeltaTime);
-        }
+        UpdateNode(GraphAsset->RootNodeId, DeltaTime);
     }
 }
 
@@ -83,6 +80,104 @@ bool UAnimGraphInstance::GetBoolParameter(const FString& Name) const
         return It->second;
     }
     return false;
+}
+
+void UAnimGraphInstance::UpdateNode(int32 NodeId, float DeltaTime)
+{
+    if (!GraphAsset) return;
+
+    const FAnimGraphNodeDesc* Node = GraphAsset->FindNode(NodeId);
+    if (!Node)
+    {
+        LogNodeWarningOnce(NodeId, "node id not found during update");
+        return;
+    }
+
+    switch (Node->Type)
+    {
+    case EAnimGraphNodeType::OutputPose:
+        if (Node->InputPoseNodeId >= 0)
+        {
+            UpdateNode(Node->InputPoseNodeId, DeltaTime);
+        }
+        break;
+
+    case EAnimGraphNodeType::SequencePlayer:
+        UpdateSequencePlayer(*Node, DeltaTime);
+        break;
+
+    case EAnimGraphNodeType::StateMachine:
+    {
+        FAnimGraphStateMachineCache& Cache = GetOrCreateStateMachineCache(*Node);
+        if (Cache.RuntimeMachine)
+        {
+            Cache.RuntimeMachine->Update(DeltaTime);
+        }
+        break;
+    }
+
+    default:
+        break;
+    }
+}
+
+void UAnimGraphInstance::UpdateSequencePlayer(const FAnimGraphNodeDesc& Node, float DeltaTime)
+{
+    if (Node.AnimationPath.empty())
+    {
+        return;
+    }
+
+    FAnimGraphSequenceCache& Cache = GetOrCreateSequenceCache(Node.NodeId, Node.AnimationPath);
+    if (!Cache.Sequence)
+    {
+        LogNodeWarningOnce(Node.NodeId, FString("failed to load sequence during update: ") + Node.AnimationPath);
+        return;
+    }
+
+    Cache.PreviousTime = Cache.CurrentTime;
+    Cache.CurrentTime += DeltaTime * Node.PlayRate;
+
+    bool bLooped = false;
+    const bool bReverse = Node.PlayRate < 0.0f;
+    const float Length = Cache.Sequence->GetPlayLength();
+
+    if (Length <= 0.0f)
+    {
+        Cache.PreviousTime = 0.0f;
+        Cache.CurrentTime = 0.0f;
+        return;
+    }
+
+    if (Node.bLoop)
+    {
+        if (!bReverse)
+        {
+            if (Cache.CurrentTime > Length)
+            {
+                Cache.CurrentTime = std::fmod(Cache.CurrentTime, Length);
+                bLooped = true;
+            }
+        }
+        else
+        {
+            if (Cache.CurrentTime < 0.0f)
+            {
+                Cache.CurrentTime = std::fmod(Cache.CurrentTime, Length);
+                if (Cache.CurrentTime < 0.0f)
+                {
+                    Cache.CurrentTime += Length;
+                }
+                bLooped = true;
+            }
+        }
+    }
+    else
+    {
+        Cache.CurrentTime = std::clamp(Cache.CurrentTime, 0.0f, Length);
+    }
+
+    TriggerAnimNotifies(Cache.Sequence, Cache.PreviousTime, Cache.CurrentTime, bLooped, bReverse);
 }
 
 bool UAnimGraphInstance::EvaluateNode(int32 NodeId, FPoseContext& OutPoseContext)
@@ -135,22 +230,15 @@ bool UAnimGraphInstance::EvaluateSequencePlayer(const FAnimGraphNodeDesc& Node, 
         BuildBoneMapping(Cache);
     }
 
-    float PlayTime = CurrentTime * Node.PlayRate;
+    float PlayTime = Cache.CurrentTime;
     const float Length = Cache.Sequence->GetPlayLength();
 
     if (Length > 0.0f)
     {
-        if (Node.bLoop)
+        PlayTime = Node.bLoop ? std::fmod(PlayTime, Length) : std::clamp(PlayTime, 0.0f, Length);
+        if (PlayTime < 0.0f)
         {
-            PlayTime = std::fmod(PlayTime, Length);
-            if (PlayTime < 0.0f)
-            {
-                PlayTime += Length;
-            }
-        }
-        else
-        {
-            PlayTime = std::clamp(PlayTime, 0.0f, Length);
+            PlayTime += Length;
         }
     }
 
@@ -166,6 +254,16 @@ bool UAnimGraphInstance::EvaluateSequencePlayer(const FAnimGraphNodeDesc& Node, 
 FAnimGraphSequenceCache& UAnimGraphInstance::GetOrCreateSequenceCache(int32 NodeId, const FString& AnimationPath)
 {
     FAnimGraphSequenceCache& Cache = SequenceCacheMap[NodeId];
+
+    if (Cache.AnimationPath != AnimationPath)
+    {
+        Cache.Sequence = nullptr;
+        Cache.AnimationPath = AnimationPath;
+        Cache.TrackToBoneMap.clear();
+        Cache.CachedMesh = nullptr;
+        Cache.PreviousTime = 0.0f;
+        Cache.CurrentTime = 0.0f;
+    }
 
     if (!Cache.Sequence)
     {

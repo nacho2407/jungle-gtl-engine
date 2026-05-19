@@ -11,7 +11,7 @@ public:
 	GENERATED_BODY(UAnimInstance, UObject)
 	UAnimInstance() = default;
 	~UAnimInstance() override = default;
-	
+
 	virtual void Initialize(USkeletalMeshComponent* InOwnerComponent);
 	virtual void NativeUpdateAnimation(float DeltaTime) {};
 	virtual bool EvaluatePose(FPoseContext& OutPoseContext) { return false; }
@@ -21,6 +21,7 @@ public:
 	USkeletalMeshComponent* GetOwnerComponent() const { return OwnerComponent; }
 
 	void TriggerAnimNotifies(UAnimSequenceBase* Sequence, float InPreviousTime, float InCurrentTime, bool bLooped, bool bReverse);
+	static void DispatchAnimNotifies(USkeletalMeshComponent* InOwnerComponent, UAnimSequenceBase* Sequence, float InPreviousTime, float InCurrentTime, bool bLooped, bool bReverse);
 
 protected:
 	USkeletalMeshComponent* OwnerComponent = nullptr;
