@@ -121,31 +121,46 @@ void UAnimationStateMachine::Evaluate(UAnimInstance* Owner, FPoseContext& Output
 		return;
 	}
 
-	// Step 3 임시: 가장 최근 from 만 사용한 2-pose blend (size 1 케이스는 기존 단일-from 동작과 동치).
-	// Step 4 에서 BlendingFroms 전체 + CurrentState 의 N-pose sequential lerp 로 확장.
 	if (BlendingFroms.empty())
 	{
 		CurrentState->Evaluate(Owner, Output);
 		return;
 	}
 
-	const FBlendingFrom& Last = BlendingFroms.back();
-
+	// N-pose sequential lerp 합성.
+	//   Acc = BlendingFroms[0].pose
+	//   for i in 0..N-1:
+	//     Next = (i+1 < N) ? BlendingFroms[i+1].pose : CurrentState.pose
+	//     Acc = lerp(Acc, Next, BlendingFroms[i].Alpha)   ← in-place 안전 (BlendTwoPosesTogether 가 본 i 끼리만 참조)
+	//
+	// size 1 검증: BlendingFroms = [{F0, α}], 루프 i=0 1회: Next=Current, Acc = lerp(F0, Cur, α)
+	//   → 기존 단일-from 식 lerp(FromPose, ToPose, BlendAlpha) 와 정확 동치.
+	//
 	// ★ ResetToRefPose 필수 — Sequence->GetBonePose 는 트랙 있는 본만 덮어씀.
-	//   ref pose 로 시작 안 하면 트랙 없는 본은 default FTransform(T=0,R=identity,S=1) 로 남고,
-	//   상대편 정상 pose 와 lerp 되어 본들이 부모 기준 (0,0,0) 으로 끌려감 ("바닥에 꼬꾸라짐").
-	FPoseContext FromPose;
-	FromPose.SkeletalMesh = Output.SkeletalMesh;
-	FromPose.ResetToRefPose();
+	//   ref pose 로 시작 안 하면 트랙 없는 본이 default FTransform 으로 남아 lerp 시
+	//   본들이 부모 기준 (0,0,0) 으로 끌려감 ("바닥에 꼬꾸라짐").
 
-	FPoseContext ToPose;
-	ToPose.SkeletalMesh = Output.SkeletalMesh;
-	ToPose.ResetToRefPose();
+	FPoseContext Acc;
+	Acc.SkeletalMesh = Output.SkeletalMesh;
+	Acc.ResetToRefPose();
+	BlendingFroms[0].State->Evaluate(Owner, Acc);
 
-	Last.State->Evaluate(Owner, FromPose);
-	CurrentState->Evaluate(Owner, ToPose);
+	FPoseContext Scratch;
+	Scratch.SkeletalMesh = Output.SkeletalMesh;
+	Scratch.ResetToRefPose();   // 첫 reuse 전에 size 잡힘.
 
-	FAnimationRuntime::BlendTwoPosesTogether(FromPose, ToPose, Last.Alpha, Output);
+	const size_t N = BlendingFroms.size();
+	for (size_t i = 0; i < N; ++i)
+	{
+		UAnimState* NextState = (i + 1 < N) ? BlendingFroms[i + 1].State : CurrentState;
+
+		Scratch.ResetToRefPose();
+		NextState->Evaluate(Owner, Scratch);
+
+		FAnimationRuntime::BlendTwoPosesTogether(Acc, Scratch, BlendingFroms[i].Alpha, Acc);
+	}
+
+	Output = Acc;
 }
 
 void UAnimationStateMachine::RequestTransition(FName To, float BlendDuration_)
