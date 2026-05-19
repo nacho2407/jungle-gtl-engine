@@ -2,11 +2,18 @@
 #include "AnimMontage.h"
 #include "AnimMontageInstance.h"
 #include "AnimNotify.h"
+#include "AnimNotifyState.h"
 #include "AnimSequenceBase.h"
 #include "AnimationRuntime.h"
+#include "Nodes/AnimNode_Root.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Mesh/SkeletalMesh.h"
 #include "GameFramework/Pawn.h"
+
+#include <algorithm>
+
+// Static 멤버 정의 — slot 이름 미지정 시 fallback. 가독성 위해 cpp 상단에 둠.
+const FName UAnimInstance::DefaultMontageSlot = FName("DefaultSlot");
 
 void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 {
@@ -18,49 +25,129 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 	// PIE pause / frame drop 등 비정상 케이스도 자동 안전.
 	PendingRootMotion = FTransform();
 
-	// 자식이 시간 진행 + AddAnimNotifies 로 큐에 적재 → 베이스가 일괄 dispatch.
+	// 활성 NotifyState seen 플래그 reset — AddAnimNotifies 가 매칭 시 true 표시,
+	// frame 끝에 false 인 항목은 NotifyEnd 후 제거 (시퀀스 전환 / weight drop / 자연 종료 통합 경로).
+	for (FActiveAnimNotifyState& A : ActiveNotifyStates)
+	{
+		A.bSeenThisFrame = false;
+	}
+
+	// NativeUpdateAnimation 은 RootNode 유무와 무관하게 항상 호출 — 사용자 변수 update hook.
+	// UE 본가 동일: AnimGraph 평가는 별개 단계. 자식이 graph build 하더라도 graph 평가에
+	// 입력으로 들어갈 변수 (예: Speed, Direction) 를 매 frame 갱신할 곳이 NativeUpdate.
+	// Legacy 자식 (RootNode 없음) 의 NativeUpdate 가 직접 FSM->Tick 호출 — 그쪽도 그대로 동작.
 	NativeUpdateAnimation(DeltaSeconds);
 
-	// Montage 도 Tick — section 진행, blend alpha, notify push.
-	if (MontageInstance && MontageInstance->IsActive())
+	// AnimGraph 트리 평가 — set 되어 있으면 root 부터 자식 Update 재귀 호출. 시간 진행 /
+	// transition / notify 적재 / 자식 노드의 LastRM 계산까지 노드들이 책임.
+	// RootMotion 누적은 FAnimNode_Root 안에서 mode 분기와 함께 처리 — AnimInstance 는 더 이상
+	// 직접 분기하지 않는다 (정책 단일 진입점).
+	if (RootNode)
 	{
-		MontageInstance->Tick(DeltaSeconds, this);
+		FAnimationUpdateContext Ctx;
+		Ctx.AnimInstance     = this;
+		Ctx.DeltaSeconds     = DeltaSeconds;
+		Ctx.FinalBlendWeight = 1.0f;
+		RootNode->Update(Ctx);
+	}
+
+	// Montage Tick (legacy fallback) — RootNode 없을 때만 일괄 tick.
+	// RootNode 경로에선 FAnimNode_Slot::Update 가 자기 slot 의 montage tick 책임 (Step 3.1).
+	if (!RootNode)
+	{
+		for (FMontageSlotEntry& Entry : MontageSlots)
+		{
+			if (Entry.Instance && Entry.Instance->IsActive())
+			{
+				Entry.Instance->Tick(DeltaSeconds, this);
+			}
+		}
 	}
 
 	DispatchQueuedAnimEvents();
+
+	// frame 끝 — unseen 활성 NotifyState 들 NotifyEnd 후 erase. 시퀀스 전환 / weight 0 drop /
+	// 자연 종료 모두 같은 경로로 끝남.
+	for (int32 i = static_cast<int32>(ActiveNotifyStates.size()) - 1; i >= 0; --i)
+	{
+		FActiveAnimNotifyState& A = ActiveNotifyStates[i];
+		if (!A.bSeenThisFrame)
+		{
+			if (A.State)
+			{
+				A.State->NotifyEnd(OwningComponent, const_cast<UAnimSequenceBase*>(A.Sequence));
+			}
+			ActiveNotifyStates.erase(ActiveNotifyStates.begin() + i);
+		}
+	}
 }
 
 void UAnimInstance::EvaluatePose(FPoseContext& Output)
 {
-	// 1) 자식이 base pose (FSM / SingleNode) 생성.
+	if (RootNode)
+	{
+		// RootNode 경로 — 트리 안의 FAnimNode_Slot 이 montage 처리. EvaluatePose 가
+		// special-case 합성을 또 하면 이중 적용 위험. Slot 노드에 위임.
+		RootNode->Evaluate(Output);
+		return;
+	}
+
+	// Legacy 경로 — RootNode 없으면 EvaluateAnimation 가상 호출 후 DefaultSlot 의 montage
+	// 만 special-case 합성. 새 코드는 RootNode 경로 사용해 이 path 안 탐.
 	EvaluateAnimation(Output);
 
-	// 2) Montage 활성이면 montage pose 평가 후 base 와 BlendWeight 로 lerp.
-	if (MontageInstance && MontageInstance->IsActive())
+	if (UAnimMontageInstance* DefaultMI = GetMontageInstanceForSlot(DefaultMontageSlot))
 	{
-		const float Weight = MontageInstance->GetBlendWeight();
-		if (Weight > 0.0f)
+		if (DefaultMI->IsActive())
 		{
-			FPoseContext MontagePose;
-			MontagePose.SkeletalMesh = Output.SkeletalMesh;
-			MontagePose.ResetToRefPose();
-			MontageInstance->EvaluateMontagePose(MontagePose);
+			const float Weight = DefaultMI->GetBlendWeight();
+			if (Weight > 0.0f)
+			{
+				FPoseContext MontagePose;
+				MontagePose.SkeletalMesh = Output.SkeletalMesh;
+				MontagePose.ResetToRefPose();
+				DefaultMI->EvaluateMontagePose(MontagePose);
 
-			if (Weight >= 1.0f)
-			{
-				// 완전 montage — base 무시.
-				Output = MontagePose;
-			}
-			else
-			{
-				// base × montage blend.
-				FPoseContext Blended;
-				Blended.SkeletalMesh = Output.SkeletalMesh;
-				Blended.ResetToRefPose();
-				FAnimationRuntime::BlendTwoPosesTogether(Output, MontagePose, Weight, Blended);
-				Output = Blended;
+				if (Weight >= 1.0f)
+				{
+					Output = MontagePose;
+				}
+				else
+				{
+					FPoseContext Blended;
+					Blended.SkeletalMesh = Output.SkeletalMesh;
+					Blended.ResetToRefPose();
+					FAnimationRuntime::BlendTwoPosesTogether(Output, MontagePose, Weight, Blended);
+					Output = Blended;
+				}
 			}
 		}
+	}
+}
+
+void UAnimInstance::SetRootNode(FAnimNode_Base* InRoot)
+{
+	// InRoot 가 이미 FAnimNode_Root 면 그대로, 아니면 자동으로 Root 노드로 감싼다.
+	// 호출자 (lua / C++) 가 임의 노드를 root 로 박아도 정책 (RootMotion 누적 등) 의 단일
+	// 진입점을 보장. Auto-wrap 으로 만든 Root 도 OwnedNodes 가 lifetime 관리.
+	// IsRoot() 가상함수로 판별 — RTTI (dynamic_cast) 의존 없음.
+	if (InRoot && !InRoot->IsRoot())
+	{
+		FAnimNode_Root* Wrapper = MakeNode<FAnimNode_Root>();
+		Wrapper->ChildPose = InRoot;
+		RootNode = Wrapper;
+	}
+	else
+	{
+		RootNode = InRoot;
+	}
+
+	if (RootNode)
+	{
+		FAnimationInitializeContext InitCtx;
+		InitCtx.AnimInstance = this;
+		InitCtx.SkeletalMesh = GetSkeletalMesh();
+		RootNode->Initialize(InitCtx);
 	}
 }
 
@@ -71,12 +158,13 @@ USkeletalMesh* UAnimInstance::GetSkeletalMesh() const
 
 APawn* UAnimInstance::TryGetPawnOwner() const
 {
+	// OwningComponent 가 set 보장 안 되는 경로 (생성 직후 등) 에서 호출 시 NPE 방지.
 	USkeletalMeshComponent* OwnerComponent = GetOwningComponent();
+	if (!OwnerComponent) return nullptr;
 	if (AActor* OwnerActor = OwnerComponent->GetOwner())
 	{
 		return Cast<APawn>(OwnerActor);
 	}
-
 	return nullptr;
 }
 
@@ -88,6 +176,7 @@ void UAnimInstance::AddAnimNotifies(float PreviousTime, float CurrentTime, const
 	const float Length = Sequence->GetPlayLength();
 	const bool  bWrapped = (CurrentTime < PreviousTime); // 루프로 시간 wrap
 
+	// Instant trigger 가 [Prev, Cur) 구간 안에 들어왔는지.
 	auto InRange = [&](float Trigger) -> bool
 	{
 		if (!bWrapped)
@@ -99,8 +188,71 @@ void UAnimInstance::AddAnimNotifies(float PreviousTime, float CurrentTime, const
 		       (Trigger >= 0.0f         && Trigger < CurrentTime);
 	};
 
+	// [a, b) 와 [c, d) 의 교집합 폭. 음수면 0.
+	auto OverlapWidth = [](float a, float b, float c, float d) -> float
+	{
+		const float Lo = std::max(a, c);
+		const float Hi = std::min(b, d);
+		return std::max(0.0f, Hi - Lo);
+	};
+
+	// 활성 set 안에서 (state, sequence, name) 매칭 entry 조회.
+	auto FindActive = [&](UAnimNotifyState* S, const UAnimSequenceBase* Seq, FName Name) -> FActiveAnimNotifyState*
+	{
+		for (FActiveAnimNotifyState& A : ActiveNotifyStates)
+		{
+			if (A.State == S && A.Sequence == Seq && A.NotifyName == Name) return &A;
+		}
+		return nullptr;
+	};
+
 	for (const FAnimNotifyEvent& Notify : Notifies)
 	{
+		// ── State notify (Duration > 0 + NotifyState 객체) ──
+		if (Notify.NotifyState && Notify.Duration > 0.0f)
+		{
+			const float EvStart = Notify.TriggerTime;
+			const float EvEnd   = Notify.TriggerTime + Notify.Duration;
+
+			float Overlap = 0.0f;
+			if (!bWrapped)
+			{
+				Overlap = OverlapWidth(PreviousTime, CurrentTime, EvStart, EvEnd);
+			}
+			else
+			{
+				// wrap 경계는 두 sub-range 합. (이벤트가 wrap 경계를 넘어가는 케이스는 v1 에선
+				// 클리핑된 상태로 처리 — 보통 Duration < PlayLength.)
+				Overlap += OverlapWidth(PreviousTime, Length,       EvStart, EvEnd);
+				Overlap += OverlapWidth(0.0f,         CurrentTime,  EvStart, EvEnd);
+			}
+
+			if (Overlap > 0.0f)
+			{
+				FActiveAnimNotifyState* A = FindActive(Notify.NotifyState, Sequence, Notify.NotifyName);
+				if (!A)
+				{
+					FActiveAnimNotifyState NewEntry;
+					NewEntry.State          = Notify.NotifyState;
+					NewEntry.Sequence       = Sequence;
+					NewEntry.NotifyName     = Notify.NotifyName;
+					NewEntry.TotalDuration  = Notify.Duration;
+					NewEntry.bSeenThisFrame = true;
+					ActiveNotifyStates.push_back(NewEntry);
+					// push_back 후 reference 무효화 가능 — 인덱스 재조회.
+					A = &ActiveNotifyStates.back();
+					A->State->NotifyBegin(OwningComponent, const_cast<UAnimSequenceBase*>(Sequence), Notify.Duration);
+				}
+				else
+				{
+					A->bSeenThisFrame = true;
+				}
+				A->State->NotifyTick(OwningComponent, const_cast<UAnimSequenceBase*>(Sequence), Overlap);
+			}
+			continue;
+		}
+
+		// ── Instant notify (기존 경로) ──
 		if (InRange(Notify.TriggerTime))
 		{
 			NotifyQueue.push_back({ Notify, Sequence });
@@ -108,36 +260,70 @@ void UAnimInstance::AddAnimNotifies(float PreviousTime, float CurrentTime, const
 	}
 }
 
-void UAnimInstance::PlayMontage(UAnimMontage* Montage, FName StartSection, float PlayRate, float BlendInTime)
+UAnimMontageInstance* UAnimInstance::GetMontageInstanceForSlot(FName SlotName) const
+{
+	const FName Key = (SlotName == FName::None) ? DefaultMontageSlot : SlotName;
+	for (const FMontageSlotEntry& Entry : MontageSlots)
+	{
+		if (Entry.SlotName == Key) return Entry.Instance;
+	}
+	return nullptr;
+}
+
+UAnimMontageInstance* UAnimInstance::GetMontageInstance() const
+{
+	return GetMontageInstanceForSlot(DefaultMontageSlot);
+}
+
+void UAnimInstance::PlayMontage(UAnimMontage* Montage, FName StartSection, float PlayRate, float BlendInTime, FName SlotName)
 {
 	if (!Montage) return;
-	if (!MontageInstance)
+	const FName Key = (SlotName == FName::None) ? DefaultMontageSlot : SlotName;
+
+	// 기존 slot entry 찾거나 새로 만들기 — 첫 PlayMontage 호출 시 lazy 생성.
+	UAnimMontageInstance* Instance = nullptr;
+	for (FMontageSlotEntry& Entry : MontageSlots)
 	{
-		MontageInstance = UObjectManager::Get().CreateObject<UAnimMontageInstance>(this);
+		if (Entry.SlotName == Key) { Instance = Entry.Instance; break; }
 	}
-	MontageInstance->Play(Montage, StartSection, PlayRate, BlendInTime);
+	if (!Instance)
+	{
+		Instance = UObjectManager::Get().CreateObject<UAnimMontageInstance>(this);
+		MontageSlots.push_back({ Key, Instance });
+	}
+	Instance->Play(Montage, StartSection, PlayRate, BlendInTime);
 }
 
-void UAnimInstance::StopMontage(float BlendOutTime)
+void UAnimInstance::StopMontage(float BlendOutTime, FName SlotName)
 {
-	if (MontageInstance) MontageInstance->Stop(BlendOutTime);
+	if (UAnimMontageInstance* MI = GetMontageInstanceForSlot(SlotName))
+	{
+		MI->Stop(BlendOutTime);
+	}
 }
 
-void UAnimInstance::Montage_JumpToSection(FName SectionName)
+void UAnimInstance::Montage_JumpToSection(FName SectionName, FName SlotName)
 {
-	if (MontageInstance) MontageInstance->JumpToSection(SectionName);
+	if (UAnimMontageInstance* MI = GetMontageInstanceForSlot(SlotName))
+	{
+		MI->JumpToSection(SectionName);
+	}
 }
 
-void UAnimInstance::Montage_SetNextSection(FName From, FName To)
+void UAnimInstance::Montage_SetNextSection(FName From, FName To, FName SlotName)
 {
-	if (MontageInstance) MontageInstance->SetNextSection(From, To);
+	if (UAnimMontageInstance* MI = GetMontageInstanceForSlot(SlotName))
+	{
+		MI->SetNextSection(From, To);
+	}
 }
 
-bool UAnimInstance::IsMontagePlaying(UAnimMontage* Montage) const
+bool UAnimInstance::IsMontagePlaying(UAnimMontage* Montage, FName SlotName) const
 {
-	if (!MontageInstance || !MontageInstance->IsActive()) return false;
+	UAnimMontageInstance* MI = GetMontageInstanceForSlot(SlotName);
+	if (!MI || !MI->IsActive()) return false;
 	if (!Montage) return true;
-	return MontageInstance->GetCurrentMontage() == Montage;
+	return MI->GetCurrentMontage() == Montage;
 }
 
 void UAnimInstance::AccumulateRootMotion(const FTransform& Delta)

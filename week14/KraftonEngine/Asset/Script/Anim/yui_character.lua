@@ -1,81 +1,82 @@
--- Phase B+C 데모 — UCharacterAnimInstance (C++) 의 mock 동작을 lua 로 재현 + Phase C 의
--- CharacterMovement 와 연결. ACharacter 위에 박힌 ULuaAnimInstance 가 이 스크립트 실행.
+-- Phase 2.6 — Sub-state-machine + LayeredBlendPerBone + UpperBody slot 데모.
+--
+--   Root = LayeredBlendPerBone(
+--            BasePose  = DefaultSlot ← TopSM (Locomotion ↔ Jump, Locomotion 안에 Idle/Walk sub-SM)
+--            BlendPose = UpperBodySlot ← RefPose
+--            Mask = Spine 본 트리)
+--
+-- DefaultSlot 의 montage 는 풀바디 (UE 의 DefaultSlot 컨벤션). UpperBodySlot 의 montage 는
+-- mask 영역 (상반신) 만. UpperBodySlot 의 montage 가 없을 땐 Slot.GetEffectiveBlendWeight 가
+-- 0 이라 base 100% — RefPose 가 영향 안 줌.
 --
 -- 사용 방법:
---   1) ACharacter (또는 ALuaCharacter) 의 SkeletalMesh 컴포넌트 선택
---   2) Animation Mode = Custom
---   3) Anim Instance Class = ULuaAnimInstance
---   4) Script File = "Anim/yui_character.lua" (Editor 콤보)
+--   1) ACharacter 의 SkeletalMesh 컴포넌트 선택
+--   2) Animation Mode = Custom + Anim Instance Class = ULuaAnimInstance
+--   3) Script File = "Anim/yui_character.lua"
 --
--- 시뮬레이션 모드 (DRIVE_MODE):
---   "movement" — Anim.get_owner_speed() 로 실제 CharacterMovement 속도 읽음 (WASD 로 이동 시 자동 전이).
---   "auto"     — sin 으로 Speed 자동 변동 (이동 없이 데모용. CharacterMovement 없는 SkeletalMeshActor 에서도 동작).
---
--- 시퀀스 모드 (USE_MOCK):
---   true  — mock sway/wave 시퀀스 (.uasset 없이 즉시 동작).
---   false — *_PATH 의 실제 시퀀스 (먼저 FBX import 필요).
+-- 좌클릭 = 풀바디 attack (DefaultSlot, 기존 동작)
+-- 우클릭 = 상반신만 attack (UpperBodySlot, 하반신 locomotion 유지)
 --
 -- Hot-reload: 이 파일 저장만 해도 에디터에서 즉시 반영.
-
-local USE_MOCK   = false
-local DRIVE_MODE = "movement"   -- "movement" 또는 "auto"
 
 local IDLE_PATH = "Content/Data/hirasawa-yui/IdleWithSkin_mixamo_com.uasset"
 local WALK_PATH = "Content/Data/hirasawa-yui/Walking_mixamo_com.uasset"
 local JUMP_PATH = "Content/Data/hirasawa-yui/Jump_mixamo_com.uasset"
 
--- 좌클릭 → montage 재생. 경로는 + New Montage 로 만든 .uasset 의 project-relative 경로.
--- + New Montage 가 자동 명명하는 규칙: <SequenceName>_Montage.uasset.
--- local ATTACK_MONTAGE_PATH = "Content/Montages/Standing 1H Magic Attack 03_mixamo_com_Montage.uasset"
-local ATTACK_MONTAGE_PATH = "Content/Montages/mixamo_com_Montage.uasset"
+local ATTACK_MONTAGE_PATH = "Content/Montages/AM_MagicAttack.uasset"
+
+-- UpperBody mask 의 root 본 — Spine 부터 자손 (팔/머리/손) 까지 자동 mask BFS.
+-- mixamo rig 의 본 이름은 보통 "mixamorig:Spine" 류. 본 못 찾으면 mask 가 전부 false → base 100%.
+local UPPER_BODY_ROOT_BONE = "Bip001 Spine"
 
 function init(self)
     self.Speed          = 0
-    self.t              = 0
-    self.SpeedThreshold = 0.5    -- m/s — movement 모드는 단위가 작음 (MaxWalkSpeed=6)
-    self.AutoPeriodSec  = 6.0
-    self.AutoSpeedAmp   = 15.0   -- auto 모드 전용 — Threshold 와 단위 무관 (legacy)
+    self.SpeedThreshold = 0.5
 
-    if USE_MOCK then
-        Anim.register_mock_state("Idle", "sway", 1.5, 8.0,  1.0, true)
-        Anim.register_mock_state("Walk", "wave", 0.8, 15.0, 1.0, true)
-        -- Jump 상태 — 1회 재생 (Loop=false). Falling 상태와 함께 활성.
-        Anim.register_mock_state("Jump", "wave", 0.5, 30.0, 1.0, false)
-    else
-        Anim.register_state("Idle", IDLE_PATH, 1.0, true)
-        Anim.register_state("Walk", WALK_PATH, 1.0, true)
-        Anim.register_state("Jump", JUMP_PATH, 1.0, false)
-    end
-
-    Anim.register_transition("Idle", "Walk",
+    -- ── Locomotion sub-SM (Idle ↔ Walk) ──
+    local loco = Anim.create_state_machine("Locomotion")
+    Anim.sm_add_state(loco, "Idle", Anim.create_sequence_player(IDLE_PATH, 1.0, true))
+    Anim.sm_add_state(loco, "Walk", Anim.create_sequence_player(WALK_PATH, 1.0, true))
+    Anim.sm_add_transition(loco, "Idle", "Walk",
         function() return self.Speed >  self.SpeedThreshold end, 0.2)
-    Anim.register_transition("Walk", "Idle",
+    Anim.sm_add_transition(loco, "Walk", "Idle",
         function() return self.Speed <= self.SpeedThreshold end, 0.2)
+    Anim.sm_set_initial_state(loco, "Idle")
 
-    -- AnyState → Jump — Falling 시작하는 순간 (지상 이탈 + 점프 둘 다 포함). 빠른 blend.
-    Anim.register_transition("AnyState", "Jump",
+    -- ── Top SM (Locomotion ↔ Jump) ──
+    local top = Anim.create_state_machine("Top")
+    Anim.sm_add_state(top, "Locomotion", loco)
+    Anim.sm_add_state(top, "Jump", Anim.create_sequence_player(JUMP_PATH, 1.0, false))
+    Anim.sm_add_transition(top, "AnyState", "Jump",
         function() return Anim.is_owner_falling() end, 0.1)
-    -- Jump → Idle — 착지 (Walking 복귀). 다음 frame 의 Idle↔Walk 전이가 자연스럽게 잡음.
-    Anim.register_transition("Jump", "Idle",
+    Anim.sm_add_transition(top, "Jump", "Locomotion",
         function() return not Anim.is_owner_falling() end, 0.5)
+    Anim.sm_set_initial_state(top, "Locomotion")
 
-    Anim.set_initial_state("Idle")
+    -- ── DefaultSlot — 풀바디 montage 진입점. InputPose = TopSM ──
+    local default_slot = Anim.create_slot("DefaultSlot", top)
+
+    -- ── UpperBodySlot — 상반신 montage 진입점. InputPose = RefPose ──
+    -- montage 없을 땐 Slot.GetEffectiveBlendWeight 가 0 이라 base 만 보임.
+    local upper_slot = Anim.create_slot("UpperBody", Anim.create_ref_pose())
+
+    -- ── LayeredBlend — Spine 본 트리만 upper_slot 적용. 하반신은 default_slot (loco/jump) ──
+    local layer = Anim.create_layered_blend_per_bone(default_slot, upper_slot, UPPER_BODY_ROOT_BONE)
+
+    Anim.set_root_node(layer)
 end
 
 function update(self, dt)
-    if DRIVE_MODE == "movement" then
-        -- 실제 CharacterMovement 의 속도. WASD 입력이 있으면 > 0, 없으면 0 (또는 braking 중 잔여).
-        self.Speed = Anim.get_owner_speed()
-    else
-        -- auto 모드 — sin 으로 자동 변동. CharacterMovement 없는 환경에서도 데모 동작.
-        self.t = self.t + dt
-        local omega = 2.0 * math.pi / self.AutoPeriodSec
-        self.Speed = self.AutoSpeedAmp + self.AutoSpeedAmp * math.sin(self.t * omega)
-    end
+    self.Speed = Anim.get_owner_speed()
 
-    -- 좌클릭 → attack montage 재생. 이미 재생 중이어도 PlayMontage 가 자연스럽게 재시작 (BlendIn).
+    -- 좌클릭 → 풀바디 attack (DefaultSlot 기본).
     if Anim.is_left_mouse_pressed() then
         Anim.play_montage(ATTACK_MONTAGE_PATH)
+    end
+
+    -- 우클릭 → 상반신만 attack (UpperBody slot). 하반신은 locomotion 유지.
+    if Anim.is_right_mouse_pressed() then
+        Anim.play_montage(ATTACK_MONTAGE_PATH, nil, nil, nil, "UpperBody")
     end
 end
 

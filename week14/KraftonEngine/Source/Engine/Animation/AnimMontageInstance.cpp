@@ -206,25 +206,29 @@ void UAnimMontageInstance::Tick(float DeltaSeconds, UAnimInstance* Owner)
         const float    PrevSeqTime  = Cur.StartTime + SectionTime;
         const float    NextSeqTime  = Cur.StartTime + std::min(SectionTime + Step, CurLen);
 
-        Owner->AddAnimNotifies(PrevSeqTime, NextSeqTime, SrcSeq);
+        // Notify 가시성 임계 가드 — Slot.GetBlendWeight 가 임계 이하면 안 보이는 가지로 간주.
+        // SequencePlayer 의 동일 패턴 (FinalBlendWeight > ZERO_ANIMWEIGHT_THRESH) 과 비대칭 해소.
+        if (GetBlendWeight() > 1e-4f)
+        {
+            Owner->AddAnimNotifies(PrevSeqTime, NextSeqTime, SrcSeq);
+        }
 
-        // Root motion — bEnableRootMotion 켜진 sequence 만, blend weight 곱해 누적.
-        // AccumulateRootMotion 측 mode 체크 (IgnoreRootMotion) 가 최종 게이트.
-        // RootMotionFromMontagesOnly mode 일 때 base FSM/SingleNode 누적은 호출자 측에서 skip,
-        // montage 는 mode 무관 누적 (Ignore 만 막힘).
+        // Root motion — raw delta 만 LastRM 에 채움. AccumulateRootMotion 직접 호출 X.
+        // Slot 노드가 GetBlendWeight 로 InputPose.LastRM 과 lerp 합성, RootNode 한 곳에서
+        // 단일 AccumulateRootMotion 호출. 트리 깊이 무관 일관성 + 이중 누적 위험 0.
         if (SrcSeq->GetEnableRootMotion())
         {
-            const float W = GetBlendWeight();
-            if (W > 0.0f)
-            {
-                const FTransform RawDelta = SrcSeq->ExtractRootMotion(PrevSeqTime, NextSeqTime, false);
-                // Translation 은 scalar scale. Rotation 은 identity 와 quat slerp 로 부분 적용.
-                FTransform Scaled;
-                Scaled.Location = RawDelta.Location * W;
-                Scaled.Rotation = FQuat::Slerp(FQuat::Identity, RawDelta.Rotation.GetNormalized(), W).GetNormalized();
-                Owner->AccumulateRootMotion(Scaled);
-            }
+            LastRootMotionDelta = SrcSeq->ExtractRootMotion(PrevSeqTime, NextSeqTime, false);
         }
+        else
+        {
+            LastRootMotionDelta = FTransform();
+        }
+    }
+    else
+    {
+        // Tick 자체 안 도는 경우 (예: BlendingOut 의 sectionTime clamp) — RM 도 0.
+        LastRootMotionDelta = FTransform();
     }
 
     SectionTime += Step;

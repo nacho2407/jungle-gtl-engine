@@ -15,7 +15,7 @@ public:
 	void Render(float DeltaTime) override;
 
 private:
-	void RenderFSMSection(UAnimInstance* AnimInst);
+	void RenderAnimGraphSection(UAnimInstance* AnimInst);   // RootNode 트리 시각화
 	void RenderVariablesSection(UAnimInstance* AnimInst);
 	void RenderRecentNotifiesSection(UAnimInstance* AnimInst);
 	void RenderPropertyReadOnly(const FPropertyValue& P);

@@ -88,7 +88,8 @@ void FAnimationRuntime::BlendTwoPosesTogether(
 
 		FTransform Result;
 		Result.Location = Ta.Location + (Tb.Location - Ta.Location) * Alpha;
-		Result.Rotation = FQuat::Slerp(Ta.Rotation, Tb.Rotation, Alpha);
+		// Slerp 인자 정규화 — quat drift 누적 방지. in-place 반복 누적 (LayeredBlend / SM 의 Acc).
+		Result.Rotation = FQuat::Slerp(Ta.Rotation.GetNormalized(), Tb.Rotation.GetNormalized(), Alpha).GetNormalized();
 		Result.Scale    = Ta.Scale    + (Tb.Scale    - Ta.Scale)    * Alpha;
 		Out.Pose[i] = Result;
 	}

@@ -70,6 +70,9 @@
     <Filter Include="Source\Engine\Animation">
       <UniqueIdentifier>{883a27c1-1a16-4122-ba2c-ce4f747faae7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Animation\Nodes">
+      <UniqueIdentifier>{68040e01-fc9d-9309-de2d-a5e599d58c79}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Asset">
       <UniqueIdentifier>{5425e5c6-8625-eb75-03f5-e74a5efa2fc3}</UniqueIdentifier>
     </Filter>
@@ -650,7 +653,19 @@
     <ClCompile Include="Source\Engine\Animation\AnimNotify.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimNotifyEvent.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimNotifyState.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimNotifyState_LogDuration.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimNotify_LogMessage.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimNotify_PlaySound.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp">
@@ -671,9 +686,6 @@
     <ClCompile Include="Source\Engine\Animation\AnimationRuntime.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Animation\AnimationStateMachine.cpp">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\CharacterAnimInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
@@ -685,6 +697,24 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\SkeletonManager.cpp">
       <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_BlendListByEnum.cpp">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_LayeredBlendPerBone.cpp">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_Root.cpp">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_SequencePlayer.cpp">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_Slot.cpp">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_StateMachine.cpp">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\AssetPackage.cpp">
       <Filter>Source\Engine\Asset</Filter>
@@ -1622,7 +1652,16 @@
     <ClInclude Include="Source\Engine\Animation\AnimNotifyEvent.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimNotifyState.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimNotifyState_LogDuration.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimNotify_LogMessage.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimNotify_PlaySound.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimSequence.h">
@@ -1644,9 +1683,6 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimationRuntime.h">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Animation\AnimationStateMachine.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\BoneAnimationTrack.h">
@@ -1672,6 +1708,33 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\SkeletonTypes.h">
       <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNodeContexts.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Base.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_BlendListByEnum.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_LayeredBlendPerBone.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_RefPose.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Root.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_SequencePlayer.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Slot.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_StateMachine.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\AssetPackage.h">
       <Filter>Source\Engine\Asset</Filter>

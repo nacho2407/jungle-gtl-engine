@@ -21,6 +21,14 @@ public:
 
 	std::wstring GetFileName() { return ContentItem.Path.filename(); }
 
+	// Rename UI 등 외부 코드가 path / stem / 디렉토리 여부를 알 수 있게.
+	const FContentItem& GetContentItem() const { return ContentItem; }
+
+	// 같은 디렉토리 안에서 NewStem 으로 rename. 파일은 확장자 유지, 디렉토리는 그대로 이름 변경.
+	// 중복이 있으면 false + OutError. 성공 시 ContentItem.Path/Name 갱신 후 true.
+	// 실제 .uasset 안의 AssetPathFileName 등 캐시는 별도로 reload 필요 (다음 refresh).
+	bool RenameTo(const FString& NewStem, FString* OutError = nullptr);
+
 protected:
 	FString EllipsisText(const FString& text, float maxWidth);
 
