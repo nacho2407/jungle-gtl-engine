@@ -1,6 +1,7 @@
 ﻿#include "Animation/AnimSingleNodeInstance.h"
 
 #include "Animation/AnimSequence.h"
+#include "Animation/AnimationRuntime.h"
 #include "Asset/SkeletalMesh.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Core/Logging/Log.h"
@@ -47,28 +48,6 @@ float WrapAnimationTime(float Time, float PlayLength)
 float NormalizeAnimationTime(float Time, float PlayLength, bool bLooping)
 {
     return bLooping ? WrapAnimationTime(Time, PlayLength) : ClampAnimationTime(Time, PlayLength);
-}
-
-bool IsInstantNotify(const FAnimNotifyEvent& Notify)
-{
-    return Notify.Duration <= 0.0f;
-}
-
-bool IsNotifyTimeInRange(float NotifyTime, float RangeStart, float RangeEnd, bool bReverse)
-{
-    if (!bReverse)
-    {
-        return NotifyTime > RangeStart && NotifyTime <= RangeEnd;
-    }
-
-    return NotifyTime >= RangeEnd && NotifyTime < RangeStart;
-}
-
-bool IsTimeInsideNotifyState(float Time, const FAnimNotifyEvent& Notify)
-{
-    const float NotifyStart = Notify.TriggerTime;
-    const float NotifyEnd = Notify.TriggerTime + Notify.Duration;
-    return Time >= NotifyStart && Time <= NotifyEnd;
 }
 
 FName ResolveNotifySourceAnimationName(const UAnimationAsset* Asset)
@@ -558,184 +537,47 @@ void UAnimSingleNodeInstance::TriggerAnimNotifies()
         return;
     }
 
-    const TArray<FAnimNotifyEvent>& Notifies = Sequence->GetNotifies();
-    if (Notifies.empty())
-    {
-        return;
-    }
-
-    const float PlayLength = GetPlayLength();
-    if (PlayLength <= AnimationTimeEpsilon)
-    {
-        return;
-    }
-
-    const bool bWrapped = bLoopedThisFrame;
-    const bool bReverseRange = bWrapped ? PlayRate < 0.0f : CurrentTime < PreviousTime;
-
-    if (bWrapped)
-    {
-        ClearActiveNotifyStates(true);
-    }
-
-	// instant notify loop
-    for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(Notifies.size()); ++NotifyIndex)
-    {
-        const FAnimNotifyEvent& Notify = Notifies[NotifyIndex];
-        if (!IsInstantNotify(Notify))
+    FAnimationRuntime::TriggerAnimNotifies(
+        MakeNotifyTriggerContext(Sequence),
+        ActiveNotifyStates,
+        [this](const FAnimNotifyDispatchEvent& NotifyEvent)
         {
-            continue;
-        }
-
-        bool bShouldDispatch = false;
-        if (bWrapped && !bReverseRange)
-        {
-            bShouldDispatch =
-                IsNotifyTimeInRange(Notify.TriggerTime, PreviousTime, PlayLength, false)
-                || IsNotifyTimeInRange(Notify.TriggerTime, 0.0f, CurrentTime, false);
-        }
-        else if (bWrapped)
-        {
-            bShouldDispatch =
-                IsNotifyTimeInRange(Notify.TriggerTime, PreviousTime, 0.0f, true)
-                || IsNotifyTimeInRange(Notify.TriggerTime, PlayLength, CurrentTime, true);
-        }
-        else
-        {
-            bShouldDispatch = IsNotifyTimeInRange(Notify.TriggerTime, PreviousTime, CurrentTime, bReverseRange);
-        }
-
-        if (bShouldDispatch)
-        {
-            DispatchAnimNotify(Notify, EAnimNotifyPhase::Instant);
-        }
-    }
-
-    if (bWrapped)
-    {
-        /**
-		 * @TODO Milestone 2에서는 duration notify의 loop wrap 재진입 순서를 완전 보장하지 않음.
-		 *       duration notify의 edge case 처리는 별도의 subsystem이 필요할 정도로 경우의 수가 복잡하여
-		 *       우선 급한 작업들 우선 처리하기 위해 현재는 건너뜀.
-		 * 
-		 *       Milestone 3+에서 loop segment split과 previous / current active state set comparison으로
-		 *       duration notify re-entry를 완전 처리할 예정...
-		 */
-        return;
-    }
-
-	/**
-	 * @note 일반 non-wrapped 구간에서는 이전 / 현재 시간이 duration 구간 안에 있는지만 비교.
-	 * 
-	 *       현재는 loop boundary를 가로지르는 state 재진입 순서를 처리하지 않으므로 위에서 wrap cleanup 후 종료함.
-	 *       즉, loop로 시간이 감긴 순간, 기존에 켜져 있던 duration notify state들을 일단 정리함
-	 */
-	// duration notify loop
-    for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(Notifies.size()); ++NotifyIndex)
-    {
-        const FAnimNotifyEvent& Notify = Notifies[NotifyIndex];
-        if (IsInstantNotify(Notify))
-        {
-            continue;
-        }
-
-        const bool bPrevInside = IsTimeInsideNotifyState(PreviousTime, Notify);
-        const bool bCurrInside = IsTimeInsideNotifyState(CurrentTime, Notify);
-        const bool bWasActive = IsNotifyStateActive(NotifyIndex);
-
-        if (!bWasActive && bCurrInside)
-        {
-            AddActiveNotifyState(NotifyIndex, Notify);
-            DispatchAnimNotify(Notify, EAnimNotifyPhase::Begin);
-        }
-
-        if (bCurrInside && IsNotifyStateActive(NotifyIndex))
-        {
-            DispatchAnimNotify(Notify, EAnimNotifyPhase::Tick);
-        }
-
-        if ((bWasActive || bPrevInside) && !bCurrInside)
-        {
-            RemoveActiveNotifyState(NotifyIndex, true);
-        }
-    }
-}
-
-void UAnimSingleNodeInstance::DispatchAnimNotify(const FAnimNotifyEvent& Notify, EAnimNotifyPhase Phase)
-{
-    if (USkeletalMeshComponent* Component = GetSkelMeshComponent())
-    {
-        FAnimNotifyDispatchEvent DispatchEvent;
-        DispatchEvent.Notify = Notify;
-        DispatchEvent.Phase = Phase;
-        DispatchEvent.SourceAnimationName = ResolveNotifySourceAnimationName(CurrentAsset);
-        DispatchEvent.TriggerWeight = 1.0f;
-        DispatchEvent.CurrentTime = CurrentTime;
-        Component->HandleAnimNotify(DispatchEvent);
-    }
+            DispatchAnimNotifyEvent(NotifyEvent);
+        });
 }
 
 void UAnimSingleNodeInstance::ClearActiveNotifyStates(bool bDispatchEnd)
 {
-    if (!bDispatchEnd)
-    {
-        ActiveNotifyStates.clear();
-        return;
-    }
-
-    // End 콜백 안에서 Stop / SetPosition 등이 다시 호출될 수 있으므로, 먼저 active 목록을 비움
-    const TArray<FActiveAnimNotifyState> StatesToEnd = ActiveNotifyStates;
-    ActiveNotifyStates.clear();
-    for (const FActiveAnimNotifyState& ActiveState : StatesToEnd)
-    {
-        DispatchAnimNotify(ActiveState.Notify, EAnimNotifyPhase::End);
-    }
+    FAnimationRuntime::ClearActiveAnimNotifyStates(
+        ActiveNotifyStates,
+        [this](const FAnimNotifyDispatchEvent& NotifyEvent)
+        {
+            DispatchAnimNotifyEvent(NotifyEvent);
+        },
+        bDispatchEnd,
+        MakeNotifyTriggerContext(Cast<UAnimSequenceBase>(CurrentAsset)));
 }
 
-bool UAnimSingleNodeInstance::IsNotifyStateActive(int32 NotifyIndex) const
+FAnimNotifyTriggerContext UAnimSingleNodeInstance::MakeNotifyTriggerContext(const UAnimSequenceBase* Sequence) const
 {
-    for (const FActiveAnimNotifyState& ActiveState : ActiveNotifyStates)
-    {
-        if (ActiveState.NotifyIndex == NotifyIndex)
-        {
-            return true;
-        }
-    }
-
-    return false;
+    FAnimNotifyTriggerContext Context;
+    Context.Sequence = Sequence;
+    Context.PreviousTime = PreviousTime;
+    Context.CurrentTime = CurrentTime;
+    Context.bLooping = bLooping;
+    Context.bReverse = PlayRate < 0.0f;
+    Context.bLooped = bLoopedThisFrame;
+    Context.TriggerWeight = 1.0f;
+    Context.TriggerWeightThreshold = 0.0f;
+    Context.SourceAnimationName = ResolveNotifySourceAnimationName(CurrentAsset);
+    return Context;
 }
 
-void UAnimSingleNodeInstance::AddActiveNotifyState(int32 NotifyIndex, const FAnimNotifyEvent& Notify)
+void UAnimSingleNodeInstance::DispatchAnimNotifyEvent(const FAnimNotifyDispatchEvent& NotifyEvent)
 {
-    if (IsNotifyStateActive(NotifyIndex))
+    if (USkeletalMeshComponent* Component = GetSkelMeshComponent())
     {
-        return;
-    }
-
-    FActiveAnimNotifyState ActiveState;
-    ActiveState.NotifyIndex = NotifyIndex;
-    ActiveState.Notify = Notify;
-    ActiveNotifyStates.push_back(ActiveState);
-}
-
-void UAnimSingleNodeInstance::RemoveActiveNotifyState(int32 NotifyIndex, bool bDispatchEnd)
-{
-    for (auto It = ActiveNotifyStates.begin(); It != ActiveNotifyStates.end(); ++It)
-    {
-        if (It->NotifyIndex != NotifyIndex)
-        {
-            continue;
-        }
-
-        const FAnimNotifyEvent NotifyToEnd = It->Notify;
-
-        ActiveNotifyStates.erase(It);
-        if (bDispatchEnd)
-        {
-            DispatchAnimNotify(NotifyToEnd, EAnimNotifyPhase::End);
-        }
-
-        return;
+        Component->HandleAnimNotify(NotifyEvent);
     }
 }
 

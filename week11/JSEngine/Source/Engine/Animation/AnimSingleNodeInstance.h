@@ -50,11 +50,9 @@ private:
     void ProcessRootMotion(TArray<FTransform>& InOutLocalPose);
     void ClearRootMotionState();
     void TriggerAnimNotifies();
-    void DispatchAnimNotify(const FAnimNotifyEvent& Notify, EAnimNotifyPhase Phase);
+    FAnimNotifyTriggerContext MakeNotifyTriggerContext(const UAnimSequenceBase* Sequence) const;
+    void DispatchAnimNotifyEvent(const FAnimNotifyDispatchEvent& NotifyEvent);
     void ClearActiveNotifyStates(bool bDispatchEnd);
-    bool IsNotifyStateActive(int32 NotifyIndex) const;
-    void AddActiveNotifyState(int32 NotifyIndex, const FAnimNotifyEvent& Notify);
-    void RemoveActiveNotifyState(int32 NotifyIndex, bool bDispatchEnd);
 
     UAnimationAsset* CurrentAsset = nullptr;
     float PreviousTime = 0.0f;
