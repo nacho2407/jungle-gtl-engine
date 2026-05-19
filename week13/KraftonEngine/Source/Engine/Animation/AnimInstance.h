@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "PoseContext.h"
@@ -12,6 +12,7 @@ class USkeletalMesh;
 class UAnimSequenceBase;
 class UAnimMontage;
 class UAnimMontageInstance;
+class APawn;
 
 // 큐에 적재된 한 프레임 분의 notify — dispatch 시 Sequence 컨텍스트 보존 위해 같이 들고 다님.
 // (UE 의 FAnimNotifyEventReference 와 의미 대응 — 우리는 value-copy 가 더 안전.)
@@ -58,6 +59,8 @@ public:
 	void SetOwningComponent(USkeletalMeshComponent* InComp) { OwningComponent = InComp; }
 	USkeletalMeshComponent* GetOwningComponent() const { return OwningComponent; }
 	USkeletalMesh*          GetSkeletalMesh()    const;
+
+	APawn* TryGetPawnOwner() const;
 
 	// ── Notify ──
 	// 자식(SingleNode, FSM 노드) 이 시퀀스 [PreviousTime, CurrentTime) 구간을 재생한 직후 호출.
