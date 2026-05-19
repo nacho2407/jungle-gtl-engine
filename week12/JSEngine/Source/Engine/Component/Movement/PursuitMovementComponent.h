@@ -55,7 +55,7 @@ private:
 
 	bool bIsActive					= true;
 
-	UPROPERTY(DisplayName = "Orient To Target")
+	UPROPERTY(DisplayName = "Orient To Target", LuaReadWrite, LuaName = FacingTargetDirection)
 	bool bFaceTargetDir				= true;
 
 	bool bAutoTargetPerspCamera		= true;		// If no target is set, default to the primary perspective camera on BeginPlay

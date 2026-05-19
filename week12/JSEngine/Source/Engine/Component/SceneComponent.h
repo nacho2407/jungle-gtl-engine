@@ -97,15 +97,15 @@ protected:
 	mutable FTransform CachedWorldTransform{};
 	mutable bool bTransformDirty = true;
 
-	UPROPERTY(DisplayName = "Location", Speed = 0.1f, Animatable)
+	UPROPERTY(DisplayName = "Location", Speed = 0.1f, Animatable, LuaReadWrite, LuaName = Location)
 	FVector RelativeLocation = FVector::ZeroVector;
 
 	// 에디터 표시 및 직렬화용 Euler 값입니다. 로드/수정 후 RelativeRotationQuat를 재계산합니다.
-	UPROPERTY(DisplayName = "Rotation", Speed = 0.1f, Animatable)
+	UPROPERTY(DisplayName = "Rotation", Speed = 0.1f, Animatable, LuaReadWrite, LuaName = Rotation)
 	FVector RelativeRotation = FVector::ZeroVector;
 
 	FQuat RelativeRotationQuat = FQuat::Identity; // 런타임 쿼터니언 캐시입니다.
 
-	UPROPERTY(DisplayName = "Scale", Speed = 0.1f, Animatable)
+	UPROPERTY(DisplayName = "Scale", Speed = 0.1f, Animatable, LuaReadWrite, LuaName = Scale)
 	FVector RelativeScale3D = FVector(1.0f, 1.0f, 1.0f);
 };

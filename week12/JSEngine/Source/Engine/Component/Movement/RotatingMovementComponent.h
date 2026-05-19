@@ -24,13 +24,13 @@ public:
 
 private:
 	// X=X축(Roll), Y=Y축(Pitch), Z=Z축(Yaw) 각속도 (deg/s)
-	UPROPERTY(DisplayName = "Rotation Rate", Min = -360.0f, Max = 360.0f, Speed = 1.0f)
+	UPROPERTY(DisplayName = "Rotation Rate", Min = -360.0f, Max = 360.0f, Speed = 1.0f, LuaReadWrite, LuaName = RotationRate)
 	FVector RotationRate = FVector(90.0f, 0.f, 0.f);
 
 	// 오브젝트 로컬 공간 기준 피벗 오프셋 (오브젝트 → 피벗 방향)
-	UPROPERTY(DisplayName = "Pivot Translation", Speed = 0.1f)
+	UPROPERTY(DisplayName = "Pivot Translation", Speed = 0.1f, LuaReadWrite, LuaName = PivotTranslation)
 	FVector PivotTranslation = FVector::ZeroVector;
 	
-	UPROPERTY(DisplayName = "Local Space Rotation")
+	UPROPERTY(DisplayName = "Local Space Rotation", LuaReadWrite, LuaName = RotationInLocalSpace)
 	bool bRotationInLocalSpace = true;
 };

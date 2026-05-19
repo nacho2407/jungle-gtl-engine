@@ -37,22 +37,22 @@ private:
 	UPROPERTY(DisplayName = "Fog Inscattering Color")
 	FColor FogInscatteringColor;
 
-	UPROPERTY(DisplayName = "Fog Density", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
+	UPROPERTY(DisplayName = "Fog Density", Min = 0.0f, Max = 1.0f, Speed = 0.01f, LuaReadWrite, LuaName = FogDensity)
 	float FogDensity = 0;
 
-	UPROPERTY(DisplayName = "Height Falloff", Min = 0.0f, Max = 10.0f, Speed = 0.01f)
+	UPROPERTY(DisplayName = "Height Falloff", Min = 0.0f, Max = 10.0f, Speed = 0.01f, LuaReadWrite, LuaName = HeightFalloff)
 	float HeightFalloff = 0;
 
-	UPROPERTY(DisplayName = "Fog Height")
+	UPROPERTY(DisplayName = "Fog Height", LuaReadWrite, LuaName = FogHeight)
 	float FogHeight = 0;
 
-	UPROPERTY(DisplayName = "Fog Start Distance", Min = 0.0f)
+	UPROPERTY(DisplayName = "Fog Start Distance", Min = 0.0f, LuaReadWrite, LuaName = FogStartDistance)
 	float FogStartDistance = 0;
 
-	UPROPERTY(DisplayName = "Fog Cutoff Distance")
+	UPROPERTY(DisplayName = "Fog Cutoff Distance", LuaReadWrite, LuaName = FogCutoffDistance)
 	float FogCutoffDistance = 1000;
 
-	UPROPERTY(DisplayName = "Fog Max Opacity", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
+	UPROPERTY(DisplayName = "Fog Max Opacity", Min = 0.0f, Max = 1.0f, Speed = 0.01f, LuaReadWrite, LuaName = FogMaxOpacity)
 	float FogMaxOpacity = 1.f;
 
 	// UPrimitiveComponent을(를) 통해 상속됨

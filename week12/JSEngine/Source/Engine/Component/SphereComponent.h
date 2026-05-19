@@ -15,7 +15,7 @@ public:
 	void PostDuplicate(UObject* Original) override;
 
 private:
-	UPROPERTY(DisplayName = "Sphere Radius")
+	UPROPERTY(DisplayName = "Sphere Radius", LuaReadOnly, LuaName = SphereRadius)
 	float SphereRadius = 0.5f;
 
 	// UShapeComponent을(를) 통해 상속됨

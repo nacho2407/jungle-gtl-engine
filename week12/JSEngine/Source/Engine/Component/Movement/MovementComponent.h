@@ -59,15 +59,16 @@ protected:
 	void MoveUpdatedComponent(const FVector& Delta);
 
 protected:
-	UPROPERTY(DisplayName = "Updated Component")
+	UPROPERTY(DisplayName = "Updated Component", NoEdit, Transient, LuaReadOnly, LuaName = UpdatedComponent)
 	TObjectPtr<USceneComponent> UpdatedComponent;
 
-	UPROPERTY(DisplayName = "Velocity")
+	UPROPERTY(DisplayName = "Velocity", LuaReadWrite, LuaName = Velocity)
 	FVector Velocity = FVector(-1.0f, 0.0f, 1.0f);
 
+	UPROPERTY(DisplayName = "Pending Input Vector", NoEdit, Transient, LuaReadWrite, LuaName = PendingInputVector)
 	FVector PendingInputVector = FVector::ZeroVector;          // 추후 플레이어 입력을 처리할 때 사용되는 벡터
 
-	UPROPERTY(DisplayName = "Plane Constraint Normal")
+	UPROPERTY(DisplayName = "Plane Constraint Normal", LuaReadWrite, LuaName = PlaneConstraintNormal)
 	FVector PlaneConstraintNormal = FVector(0.0f, 0.0f, 1.0f); // 이동을 특정 평면으로 제한하는 법선 벡터
 
 	UPROPERTY(DisplayName = "Update Only If Rendered")

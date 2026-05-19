@@ -91,7 +91,7 @@ Transient
 Animatable
     시퀀서/애니메이션 쪽에서 읽고 쓸 수 있는 프로퍼티라는 표시입니다.
 
-LuaRead / LuaWrite
+LuaReadOnly / LuaReadWrite
     Lua에서 이 프로퍼티 값을 읽고 쓸 수 있다는 표시입니다.
 
 NoEdit

@@ -73,19 +73,19 @@ protected:
 	FGuid PersistentGuid;
 
 private:
-	UPROPERTY(DisplayName = "Active")
+	UPROPERTY(DisplayName = "Active", LuaReadWrite, LuaName = Active)
 	bool bIsActive = true;
 
-	UPROPERTY(DisplayName = "Auto Activate")
+	UPROPERTY(DisplayName = "Auto Activate", LuaReadWrite, LuaName = AutoActivate)
 	bool bAutoActivate = true;
 
-	UPROPERTY(DisplayName = "Enable Tick")
+	UPROPERTY(DisplayName = "Enable Tick", LuaReadWrite, LuaName = TickEnabled)
 	bool bCanEverTick = true;
 
 	UPROPERTY(DisplayName = "Transient")
 	bool bTransient = false;
 
-	UPROPERTY(DisplayName = "Editor Only")
+	UPROPERTY(DisplayName = "Editor Only", LuaReadOnly, LuaName = EditorOnly)
 	bool bIsEditorOnly = false;
 };
 

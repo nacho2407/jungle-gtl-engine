@@ -99,7 +99,7 @@ public:
 	int32 GetUTF8Length(const FString& str) const;
 
 private:
-	UPROPERTY(DisplayName = "Text")
+	UPROPERTY(DisplayName = "Text", LuaReadWrite, LuaName = Text)
 	FString Text;
 
 	UPROPERTY(DisplayName = "Font")
@@ -110,7 +110,7 @@ private:
 	UPROPERTY(DisplayName = "Color")
 	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	UPROPERTY(DisplayName = "Font Size", Min = 0.1f, Max = 100.0f, Speed = 0.1f)
+	UPROPERTY(DisplayName = "Font Size", Min = 0.1f, Max = 100.0f, Speed = 0.1f, LuaReadWrite, LuaName = FontSize)
 	float FontSize = 1.0f;
 
 	UPROPERTY(DisplayName = "Spacing", Min = 0.0f, Max = 10.0f, Speed = 0.01f)

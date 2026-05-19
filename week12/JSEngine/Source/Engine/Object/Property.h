@@ -22,20 +22,20 @@ struct FQuat;
 // EPropertyFlags는 런타임 read/write/serialize/bind 정책까지 포괄합니다.
 enum class EPropertyFlags : uint32
 {
-	None       = 0,
-	Read       = 1 << 0,
-	Write      = 1 << 1,
-	Edit       = 1 << 2,
-	Transient  = 1 << 3,
-	SaveGame   = 1 << 4,
-	Animatable = 1 << 5,
-	LuaRead    = 1 << 6,
-	LuaWrite   = 1 << 7,
-	Parm       = 1 << 8,
-	ReturnParm = 1 << 9,
-	OutParm    = 1 << 10,
-	RefParm    = 1 << 11,
-	ConstParm  = 1 << 12,
+	None         = 0,
+	Read         = 1 << 0,
+	Write        = 1 << 1,
+	Edit         = 1 << 2,
+	Transient    = 1 << 3,
+	SaveGame     = 1 << 4,
+	Animatable   = 1 << 5,
+	LuaReadOnly  = 1 << 6,
+	LuaReadWrite = 1 << 7,
+	Parm         = 1 << 8,
+	ReturnParm   = 1 << 9,
+	OutParm      = 1 << 10,
+	RefParm      = 1 << 11,
+	ConstParm    = 1 << 12,
 };
 
 
