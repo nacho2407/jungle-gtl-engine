@@ -235,6 +235,22 @@ float UGizmoComponent::QuantizeDragAmount(float DragAmount)
 	return SnappedDelta;
 }
 
+float UGizmoComponent::QuantizeRotationAngleFromStart(float AngleRadians) const
+{
+	if (!bRotateSnapEnabled)
+	{
+		return AngleRadians;
+	}
+
+	const float Step = RotateSnapStepDegrees * MathUtil::DEG_TO_RAD;
+	if (Step <= 1e-6f)
+	{
+		return AngleRadians;
+	}
+
+	return std::round(AngleRadians / Step) * Step;
+}
+
 USceneComponent* UGizmoComponent::GetTargetSceneComponent() const
 {
 	return nullptr;
@@ -304,14 +320,14 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 		return;
 	}
 
-	FMatrix M = Proxy->GetTransform();
+	FMatrix M = InitialRotationDragTransform;
 	FVector Translation, Scale;
 	FMatrix RotationMat;
 	M.Decompose(Translation, RotationMat, Scale);
 
-	FQuat CurQuat = FQuat(RotationMat);
+	FQuat InitialQuat = FQuat(RotationMat);
 	FQuat DeltaQuat(DraggingRotationAxis, DragAmount);
-	FQuat NewQuat = CurQuat * DeltaQuat;
+	FQuat NewQuat = InitialQuat * DeltaQuat;
 	NewQuat.Normalize();
 
 	Proxy->SetTransform(FMatrix::MakeTRS(Translation, NewQuat.ToMatrix(), Scale));
@@ -529,36 +545,73 @@ void UGizmoComponent::UpdateLinearDrag(const FRay& Ray)
 	LastIntersectionLocation = CurrentIntersectionLocation;
 }
 
+float UGizmoComponent::ComputeRotationAngleOnPlane(const FVector& WorldPoint) const
+{
+	FVector CenterToPoint = WorldPoint - GetWorldLocation();
+	if (CenterToPoint.SizeSquared() < 1e-8f)
+	{
+		return InteractionCurAngle;
+	}
+
+	CenterToPoint.NormalizeSafe();
+	const float X = CenterToPoint.DotProduct(RotationPlaneX);
+	const float Y = CenterToPoint.DotProduct(RotationPlaneY);
+	return std::atan2(Y, X);
+}
+
 void UGizmoComponent::UpdateAngularDrag(const FRay& Ray)
 {
 	FVector AxisVector = GetVectorForAxis(SelectedAxis);
+	AxisVector.NormalizeSafe();
+	if (AxisVector.SizeSquared() < 1e-6f)
+	{
+		return;
+	}
+
 	FVector PlaneNormal = AxisVector;
 
 	float Denom = Ray.Direction.DotProduct(PlaneNormal);
-	if (std::abs(Denom) < 1e-6f) return;
+	if (std::abs(Denom) < 1e-6f)
+	{
+		return;
+	}
 
 	float DistanceToPlane = (GetWorldLocation() - Ray.Origin).DotProduct(PlaneNormal) / Denom;
 	FVector CurrentIntersectionLocation = Ray.Origin + (Ray.Direction * DistanceToPlane);
 
 	if (bIsFirstFrameOfDrag)
 	{
+		FVector CenterToStart = CurrentIntersectionLocation - GetWorldLocation();
+		if (CenterToStart.SizeSquared() < 1e-8f)
+		{
+			return;
+		}
+
+		CenterToStart.NormalizeSafe();
+
+		DraggingRotationAxis = AxisVector;
+		RotationPlaneX = CenterToStart;
+		RotationPlaneY = DraggingRotationAxis.CrossProduct(RotationPlaneX);
+		if (RotationPlaneY.SizeSquared() < 1e-8f)
+		{
+			return;
+		}
+		RotationPlaneY.NormalizeSafe();
+
+		InitialRotationDragTransform = Proxy->GetTransform();
+		InteractionStartAngle = 0.0f;
+		InteractionCurAngle = 0.0f;
 		LastIntersectionLocation = CurrentIntersectionLocation;
 		bIsFirstFrameOfDrag = false;
 		return;
 	}
 
-	FVector CenterToLast = (LastIntersectionLocation - GetWorldLocation()).Normalized();
-	FVector CenterToCurrent = (CurrentIntersectionLocation - GetWorldLocation()).Normalized();
+	InteractionCurAngle = ComputeRotationAngleOnPlane(CurrentIntersectionLocation);
+	float DeltaAngle = InteractionCurAngle - InteractionStartAngle;
+	DeltaAngle = QuantizeRotationAngleFromStart(DeltaAngle);
 
-	float DotProduct = MathUtil::Clamp(CenterToLast.DotProduct(CenterToCurrent), -1.0f, 1.0f);
-	float AngleRadians = std::acos(DotProduct);
-
-	FVector CrossProduct = CenterToLast.CrossProduct(CenterToCurrent);
-	float Sign = (CrossProduct.DotProduct(AxisVector) >= 0.0f) ? 1.0f : -1.0f;
-
-	float DeltaAngle = Sign * AngleRadians;
-
-	HandleDrag(DeltaAngle);
+	RotateTarget(DeltaAngle);
+	UpdateGizmoTransform();
 
 	LastIntersectionLocation = CurrentIntersectionLocation;
 }
@@ -629,6 +682,8 @@ void UGizmoComponent::DragEnd()
 	SetPressedOnHandle(false);
 	SelectedAxis = -1;
 	PendingSnapDelta = 0.0f;
+	InteractionStartAngle = 0.0f;
+	InteractionCurAngle = 0.0f;
 }
 
 void UGizmoComponent::SetNextMode()

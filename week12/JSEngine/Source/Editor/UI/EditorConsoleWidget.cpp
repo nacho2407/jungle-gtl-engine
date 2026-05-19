@@ -159,8 +159,7 @@ FEditorConsoleWidget::FEditorConsoleWidget()
 	RegisterCommand("suggest", "Show recommended commands. Usage: suggest [prefix]", [this](const TArray<FString>& Args) { CmdSuggest(Args); });
 	RegisterCommand("recommend", "Alias for suggest.", [this](const TArray<FString>& Args) { CmdSuggest(Args); });
 	RegisterCommand("recommendations", "Alias for suggest.", [this](const TArray<FString>& Args) { CmdSuggest(Args); });
-	RegisterCommand("stat", "Viewport and editor stats. Usage: stat <fps|memory|history|nametable|cascadevis|none>", [this](const TArray<FString>& Args) { CmdStat(Args); });
-	RegisterCommand("gpustats", "Toggle GPU timestamp profiler collection. Usage: gpustats <on|off|toggle|status>", [this](const TArray<FString>& Args) { CmdGPUStats(Args); });
+	RegisterCommand("stat", "Viewport and editor stats. Usage: stat <fps|memory|gpu|history|nametable|cascadevis|none>", [this](const TArray<FString>& Args) { CmdStat(Args); });
 	RegisterCommand("skinning", "Set global skeletal mesh skinning override. Usage: skinning <cpu|gpu|component>", [this](const TArray<FString>& Args) { CmdSkinning(Args); });
 
 	RegisterCommand("shadow", "Set shadow options. Usage: shadow filter <pcf|vsm>", [this](const TArray<FString>& Args){ CmdShadow(Args); });
@@ -562,15 +561,9 @@ void FEditorConsoleWidget::CmdSuggest(const TArray<FString>& Args)
 	{
 		AddLog("  stat fps              Toggle FPS stat on focused viewport\n");
 		AddLog("  stat memory           Toggle memory stat on focused viewport\n");
+		AddLog("  stat gpu              Toggle GPU timestamp profiler collection\n");
 		AddLog("  stat history          Print Undo/Redo history memory use\n");
 		AddLog("  stat none             Disable viewport stats\n");
-		bPrinted = true;
-	}
-	if (Prefix.empty() || FString("gpustats").find(Prefix) == 0)
-	{
-		AddLog("  gpustats on           Enable GPU timestamp profiler collection\n");
-		AddLog("  gpustats off          Disable GPU timestamp profiler collection\n");
-		AddLog("  gpustats status       Print GPU timestamp profiler status\n");
 		bPrinted = true;
 	}
 	if (Prefix.empty() || FString("shadow").find(Prefix) == 0)
@@ -780,16 +773,24 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 {
 	if (Args.size() < 2)
 	{
-		AddLog("[WARN] Usage: stat <fps|memory|nametable|none>\n");
+		AddLog("[WARN] Usage: stat <fps|memory|gpu|history|nametable|cascadevis|none>\n");
 		AddLog("[WARN]        stat history         -- print Undo/Redo history memory use\n");
 		AddLog("[WARN]        stat nametable list  -- dump all entries\n");
 		return;
 	}
 
-	if (!EditorEngine) return;
-
 	FString Target = Args[1];
 	std::transform(Target.begin(), Target.end(), Target.begin(), ::tolower);
+
+	if (Target == "gpu")
+	{
+		const bool bNewEnabled = !FGPUProfiler::Get().IsCollectionEnabled();
+		FGPUProfiler::Get().SetCollectionEnabled(bNewEnabled);
+		AddLog("Stat GPU %s\n", bNewEnabled ? "Enabled" : "Disabled");
+		return;
+	}
+
+	if (!EditorEngine) return;
 
 	FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
 	const int32 FocusedIdx  = Layout.GetLastFocusedViewportIndex();
@@ -900,46 +901,6 @@ void FEditorConsoleWidget::CmdSkinning(const TArray<FString>& Args)
 	{
 		AddLog("[ERROR] Invalid skinning mode: %s\n", Args[1].c_str());
 		AddLog("[WARN] Usage: skinning <cpu|gpu|component>\n");
-		return;
-	}
-}
-
-void FEditorConsoleWidget::CmdGPUStats(const TArray<FString>& Args)
-{
-	if (Args.size() < 2)
-	{
-		AddLog("GPU stats: %s\n",
-			FGPUProfiler::Get().IsCollectionEnabled() ? "on" : "off");
-		AddLog("[WARN] Usage: gpustats <on|off|toggle|status>\n");
-		return;
-	}
-
-	const FString ModeText = ToLowerCopy(Args[1]);
-	if (ModeText == "on" || ModeText == "true" || ModeText == "1" || ModeText == "enable" || ModeText == "enabled")
-	{
-		FGPUProfiler::Get().SetCollectionEnabled(true);
-		AddLog("GPU stats enabled.\n");
-	}
-	else if (ModeText == "off" || ModeText == "false" || ModeText == "0" || ModeText == "disable" || ModeText == "disabled")
-	{
-		FGPUProfiler::Get().SetCollectionEnabled(false);
-		AddLog("GPU stats disabled.\n");
-	}
-	else if (ModeText == "toggle")
-	{
-		const bool bNewEnabled = !FGPUProfiler::Get().IsCollectionEnabled();
-		FGPUProfiler::Get().SetCollectionEnabled(bNewEnabled);
-		AddLog("GPU stats %s.\n", bNewEnabled ? "enabled" : "disabled");
-	}
-	else if (ModeText == "status")
-	{
-		AddLog("GPU stats: %s\n",
-			FGPUProfiler::Get().IsCollectionEnabled() ? "on" : "off");
-	}
-	else
-	{
-		AddLog("[ERROR] Invalid GPU stats mode: %s\n", Args[1].c_str());
-		AddLog("[WARN] Usage: gpustats <on|off|toggle|status>\n");
 		return;
 	}
 }
