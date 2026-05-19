@@ -106,6 +106,8 @@ private:
     char PreviewMeshPathBuffer[1024] = {};
     int32 SelectedAnimTrackIndex = -1;
     int32 SelectedAnimNotifyIndex = -1;
+    int32 DraggingAnimNotifyIndex = -1;
+    bool bAnimNotifyDragDirty = false;
     UAnimSequence* CachedAnimSequence = nullptr;
     char AnimNotifyNameBuffer[128] = "AnimNotify";
 
