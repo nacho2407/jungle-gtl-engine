@@ -3,6 +3,7 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimStateMachineTypes.h"
 #include "Animation/AnimationTypes.h"
+#include "Core/Containers/Set.h"
 
 class UAnimSequenceBase;
 class UAnimStateMachine;
@@ -56,6 +57,16 @@ private:
     int32 FindRuntimeStateIndexByName(const FName& StateName) const;
     const FAnimStateRuntime* GetRuntimeState(int32 StateIndex) const;
     FAnimStateRuntime* GetRuntimeState(int32 StateIndex);
+    const FAnimTransitionDesc* FindBestTransitionFromState(int32 StateIndex) const;
+    bool EvaluateTransitionCondition(const FAnimTransitionDesc& Transition) const;
+    bool EvaluateStructuredCondition(
+        const FAnimTransitionConditionDesc& Condition,
+        const FAnimTransitionDesc& Transition) const;
+    static bool CompareFloat(float Lhs, EAnimCompareOperator Operator, float Rhs);
+    static bool CompareBool(bool Lhs, EAnimCompareOperator Operator, bool Rhs);
+    void WarnMissingConditionVariableOnce(
+        const FAnimTransitionDesc& Transition,
+        const FAnimTransitionConditionDesc& Condition) const;
 
     UAnimStateMachine* StateMachineAsset = nullptr;
     FAnimStateMachineDesc Desc;
@@ -68,4 +79,5 @@ private:
     FAnimTransitionRuntime ActiveTransition;
 
     float NotifyTriggerWeightThreshold = 0.5f;
+    mutable TSet<FString> MissingConditionWarningKeys;
 };
