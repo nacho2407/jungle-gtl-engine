@@ -16,7 +16,6 @@ public:
 
 private:
 	void RenderAnimGraphSection(UAnimInstance* AnimInst);   // RootNode 트리 시각화
-	void RenderFSMSection(UAnimInstance* AnimInst);         // legacy wrapper FSM (RootNode 없는 케이스)
 	void RenderVariablesSection(UAnimInstance* AnimInst);
 	void RenderRecentNotifiesSection(UAnimInstance* AnimInst);
 	void RenderPropertyReadOnly(const FPropertyValue& P);

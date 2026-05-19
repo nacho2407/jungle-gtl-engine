@@ -1,6 +1,5 @@
 ﻿#include "CharacterAnimInstance.h"
 
-#include "Animation/AnimationStateMachine.h"
 #include "Animation/AnimState.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/PoseContext.h"
@@ -105,21 +104,13 @@ void UCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		// Speed 평균이 SpeedThreshold 근방이 되도록 오프셋 (== AutoSpeedAmp).
 		Speed = AutoSpeedAmp + AutoSpeedAmp * std::sin(ElapsedTime * Omega);
 	}
-
-	// Legacy fallback — RootNode 가 set 안 됐을 때만 FSM wrapper 사용. 현재 흐름상 도달 X
-	// (NativeInitializeAnimation 에서 SetRootNode 항상 호출), 안전망으로 유지.
-	if (!GetRootNode() && FSM)
-	{
-		FSM->Tick(this, DeltaSeconds);
-	}
 }
 
 void UCharacterAnimInstance::EvaluateAnimation(FPoseContext& Output)
 {
-	// RootNode 가 set 되어 있으면 UAnimInstance::EvaluatePose 가 직접 트리 평가 — 여기 안 옴.
-	// Legacy fallback (RootNode null) 만 위해 유지.
-	if (FSM) FSM->Evaluate(this, Output);
-	else     Super::EvaluateAnimation(Output);
+	// RootNode 항상 set — UAnimInstance::EvaluatePose 가 직접 트리 평가. 여기 도달 X.
+	// Safety fallback 으로 ref pose.
+	Super::EvaluateAnimation(Output);
 }
 
 void UCharacterAnimInstance::Serialize(FArchive& Ar)

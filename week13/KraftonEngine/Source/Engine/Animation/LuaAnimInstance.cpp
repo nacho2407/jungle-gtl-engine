@@ -4,7 +4,6 @@
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimMontage.h"
 #include "Animation/AnimState.h"
-#include "Animation/AnimationStateMachine.h"
 #include "Animation/PoseContext.h"
 #include "Animation/Nodes/AnimNode_LayeredBlendPerBone.h"
 #include "Animation/Nodes/AnimNode_RefPose.h"
@@ -29,7 +28,7 @@
 ULuaAnimInstance::~ULuaAnimInstance()
 {
 	FLuaScriptManager::UnregisterAnimInstance(this);
-	ClearFSM();
+	ClearGraph();
 }
 
 // ──────────────────────────────────────────────
@@ -78,24 +77,19 @@ void ULuaAnimInstance::NativeInitializeAnimation()
 	LuaUpdate   = Env["update"];
 	LuaOnNotify = Env["on_notify"];
 
-	// FSM 생성 — legacy 평면 API (Anim.register_state 등) 가 호출되면 여기에 적재됨.
-	// 새 graph build API (Anim.create_state_machine 등) 만 쓰는 lua 는 wrapper 안 건드림.
-	FSM = UObjectManager::Get().CreateObject<UAnimationStateMachine>(this);
-
 	DispatchLuaInit();
 
-	// AnimGraph RootNode 박기.
-	//   - lua 가 Anim.set_root_node 명시 호출했으면 그 노드가 이미 root.
-	//   - 안 했으면 (legacy 평면 API 만 사용) wrapper FSM 의 내부 노드를 root 로 fallback.
+	// AnimGraph RootNode 확인 — lua 가 Anim.set_root_node 명시 호출해야.
+	// 안 했으면 lua 그래프 build 의도 자체가 없다는 의미 — 안전망으로 RefPose 노드 root.
 	FAnimNode_Base* GraphRoot = GetRootNode();
 	if (!GraphRoot)
 	{
-		GraphRoot = &FSM->GetNode();
+		UE_LOG("[LuaAnimInstance] init() 가 Anim.set_root_node 호출 안 함 — ref pose fallback.");
+		GraphRoot = MakeNode<FAnimNode_RefPose>();
 	}
 
 	// 자동 DefaultSlot wrap — RootNode 경로의 montage 처리를 트리 안 Slot 에서 한다.
-	// 단 lua 가 이미 Anim.create_slot 으로 명시 wrap 했으면 (root 가 Slot) skip — 이중 wrap 방지.
-	// 이중이라도 한쪽이 같은 SlotName 이면 pass-through 라 안전하지만, 트리 표현 깔끔성 우선.
+	// lua 가 이미 Anim.create_slot 으로 명시 wrap 했으면 (root 가 Slot) skip — 이중 wrap 방지.
 	const bool bAlreadyWrapped =
 		(std::strcmp(GraphRoot->GetDebugName(), "Slot") == 0);
 	if (!bAlreadyWrapped)
@@ -103,7 +97,7 @@ void ULuaAnimInstance::NativeInitializeAnimation()
 		FAnimNode_Slot* DefaultSlot = MakeNode<FAnimNode_Slot>();
 		DefaultSlot->SlotName  = DefaultMontageSlot;
 		DefaultSlot->InputPose = GraphRoot;
-		SetRootNode(DefaultSlot);   // 두 번째 호출 — Initialize 가 트리 전체 재귀, 안전.
+		SetRootNode(DefaultSlot);
 	}
 
 	// Hot-reload 등록 — .lua 파일 변경 시 FLuaScriptManager 가 ReloadScript 호출.
@@ -113,7 +107,7 @@ void ULuaAnimInstance::NativeInitializeAnimation()
 
 void ULuaAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
-	// 사용자 변수 갱신 — RootNode 유무와 무관하게 매 frame 호출됨 (UE 본가 NativeUpdate 패턴).
+	// 사용자 변수 갱신 — UE 본가 NativeUpdate 패턴.
 	// lua 의 update(self, dt) 가 self.Speed 같은 변수를 갱신하면 같은 frame 의 RootNode->Update
 	// 에서 condition 람다가 즉시 사용.
 	if (LuaUpdate.valid())
@@ -125,19 +119,6 @@ void ULuaAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			UE_LOG("[LuaAnimInstance] update() error: %s", Err.what());
 		}
 	}
-
-	// Legacy fallback — RootNode 가 set 안 됐을 때만 wrapper Tick. 현재 흐름상 도달 X
-	// (NativeInitializeAnimation 에서 SetRootNode 항상 호출), 안전망으로 유지.
-	if (!GetRootNode() && FSM)
-	{
-		FSM->Tick(this, DeltaSeconds);
-	}
-}
-
-void ULuaAnimInstance::EvaluateAnimation(FPoseContext& Output)
-{
-	if (FSM) FSM->Evaluate(this, Output);
-	else     Super::EvaluateAnimation(Output);
 }
 
 void ULuaAnimInstance::HandleAnimNotify(const FAnimNotifyEvent& Notify)
@@ -154,25 +135,19 @@ void ULuaAnimInstance::HandleAnimNotify(const FAnimNotifyEvent& Notify)
 
 void ULuaAnimInstance::ReloadScript()
 {
-	ClearFSM();
+	ClearGraph();
 	NativeInitializeAnimation();
 }
 
-void ULuaAnimInstance::ClearFSM()
+void ULuaAnimInstance::ClearGraph()
 {
-	// RootNode 가 FSM->GetNode() 의 raw 또는 OwnedNodes 의 raw 를 가리키는 상태 —
-	// 어느 쪽이든 dangling 방지 위해 RootNode 먼저 nullptr.
+	// RootNode 가 OwnedNodes 의 raw 를 가리키는 상태 — dangling 방지 위해 RootNode 먼저 nullptr.
 	SetRootNode(nullptr);
 
-	// 새 graph build API 로 생성된 노드들 정리 — ReloadScript 시 다시 build 하면 OwnedNodes 가
+	// graph build 로 생성된 노드들 정리 — ReloadScript 시 다시 build 하면 OwnedNodes 가
 	// 누적되어 메모리 leak. 매 reload 마다 cleanup.
 	OwnedNodes.clear();
 
-	if (FSM)
-	{
-		UObjectManager::Get().DestroyObject(FSM);
-		FSM = nullptr;
-	}
 	LuaInit     = sol::nil;
 	LuaUpdate   = sol::nil;
 	LuaOnNotify = sol::nil;
@@ -199,41 +174,6 @@ void ULuaAnimInstance::InstallBindings()
 	// Anim 모듈 — env 안에 namespace table 생성.
 	// this 캡처: env 가 ULuaAnimInstance 멤버이므로 lifetime 일치.
 	sol::table Anim = Env.create_named("Anim");
-
-	Anim.set_function("register_state",
-		[this](std::string Name, std::string Path, float Rate, bool Loop)
-		{
-			Lua_RegisterState(Name, Path, Rate, Loop);
-		});
-
-	// .uasset 없이 즉시 데모 가능하도록 mock 시퀀스 (Phase 3 의 UAnimSequence::CreateMock* 재활용).
-	// MockType = "sway" | "wave".
-	Anim.set_function("register_mock_state",
-		[this](std::string Name, std::string MockType, float Duration, float AmpDeg, float Rate, bool Loop)
-		{
-			Lua_RegisterMockState(Name, MockType, Duration, AmpDeg, Rate, Loop);
-		});
-
-	Anim.set_function("register_transition",
-		[this](std::string From, std::string To, sol::protected_function Cond, float BlendTime)
-		{
-			Lua_RegisterTransition(From, To, std::move(Cond), BlendTime);
-		});
-
-	Anim.set_function("set_initial_state",
-		[this](std::string Name)
-		{
-			Lua_SetInitialState(Name);
-		});
-
-	Anim.set_function("request_transition",
-		[this](std::string Name, float BlendDuration)
-		{
-			Lua_RequestTransition(Name, BlendDuration);
-		});
-
-	Anim.set_function("get_current_state",
-		[this]() { return Lua_GetCurrentState(); });
 
 	// Owner actor 의 UCharacterMovementComponent::GetSpeed 노출 — FSM condition 안에서
 	// self.Speed = Anim.get_owner_speed() 식으로 movement 시뮬레이션 결과를 그대로 사용.
@@ -467,120 +407,6 @@ void ULuaAnimInstance::InstallBindings()
 			Layer->BlendWeight = 1.0f;   // 자동 weight 는 Blend 노드의 GetEffectiveBlendWeight 로 결정.
 			return Layer;
 		});
-}
-
-// ──────────────────────────────────────────────
-// Lua → C++ 진입점 구현
-// ──────────────────────────────────────────────
-void ULuaAnimInstance::Lua_RegisterState(const std::string& Name, const std::string& AnimPath, float Rate, bool Loop)
-{
-	if (!FSM)
-	{
-		UE_LOG("[LuaAnimInstance] register_state called before FSM ready: %s", Name.c_str());
-		return;
-	}
-
-	UAnimSequence* Sequence = nullptr;
-	if (!AnimPath.empty() && AnimPath != "None")
-	{
-		Sequence = FAnimationManager::Get().LoadAnimation(AnimPath);
-		if (!Sequence)
-		{
-			UE_LOG("[LuaAnimInstance] register_state '%s' — anim not found: %s (ref pose fallback)",
-				Name.c_str(), AnimPath.c_str());
-		}
-	}
-
-	UAnimState* S = UObjectManager::Get().CreateObject<UAnimState>(this);
-	S->StateName = FName(Name.c_str());
-	S->Sequence  = Sequence;
-	S->PlayRate  = Rate;
-	S->bLooping  = Loop;
-	FSM->RegisterState(S);
-}
-
-void ULuaAnimInstance::Lua_RegisterMockState(const std::string& Name, const std::string& MockType,
-                                             float Duration, float AmplitudeDeg, float Rate, bool Loop)
-{
-	if (!FSM) return;
-	USkeletalMesh* Mesh = GetSkeletalMesh();
-	if (!Mesh)
-	{
-		UE_LOG("[LuaAnimInstance] register_mock_state '%s' — no SkeletalMesh", Name.c_str());
-		return;
-	}
-
-	UAnimSequence* Seq = nullptr;
-	if (MockType == "sway")
-	{
-		Seq = UAnimSequence::CreateMockSwaySequence(Mesh, /*BoneIdx*/0, Duration, AmplitudeDeg);
-	}
-	else if (MockType == "wave")
-	{
-		Seq = UAnimSequence::CreateMockWaveSequence(Mesh, Duration, AmplitudeDeg);
-	}
-	else
-	{
-		UE_LOG("[LuaAnimInstance] register_mock_state '%s' — unknown MockType '%s' (use \"sway\" or \"wave\")",
-			Name.c_str(), MockType.c_str());
-		return;
-	}
-
-	UAnimState* S = UObjectManager::Get().CreateObject<UAnimState>(this);
-	S->StateName = FName(Name.c_str());
-	S->Sequence  = Seq;
-	S->PlayRate  = Rate;
-	S->bLooping  = Loop;
-	FSM->RegisterState(S);
-}
-
-void ULuaAnimInstance::Lua_RegisterTransition(const std::string& From, const std::string& To,
-                                              sol::protected_function Cond, float BlendTime)
-{
-	if (!FSM)
-	{
-		UE_LOG("[LuaAnimInstance] register_transition called before FSM ready: %s -> %s",
-			From.c_str(), To.c_str());
-		return;
-	}
-
-	FStateTransition T;
-	T.From      = (From == "AnyState" || From.empty()) ? FName::None : FName(From.c_str());
-	T.To        = FName(To.c_str());
-	T.BlendTime = BlendTime;
-
-	// sol::protected_function 은 lua function ref 를 들고 다님 (복사 가능).
-	// 람다는 FSM 의 transitions 배열 안에 산다 → ULuaAnimInstance 가 살아있는 동안 안전.
-	// ULuaAnimInstance 소멸 시 ClearFSM → FSM 도 destroy → 람다 정리.
-	T.Condition = [Cond](UAnimInstance*) -> bool
-	{
-		auto R = Cond();
-		if (!R.valid())
-		{
-			sol::error Err = R;
-			UE_LOG("[LuaAnimInstance] transition condition error: %s", Err.what());
-			return false;
-		}
-		return R.get<bool>();
-	};
-
-	FSM->RegisterTransition(T);
-}
-
-void ULuaAnimInstance::Lua_SetInitialState(const std::string& Name)
-{
-	if (FSM) FSM->SetInitialState(FName(Name.c_str()));
-}
-
-void ULuaAnimInstance::Lua_RequestTransition(const std::string& Name, float BlendDuration)
-{
-	if (FSM) FSM->RequestTransition(FName(Name.c_str()), BlendDuration);
-}
-
-std::string ULuaAnimInstance::Lua_GetCurrentState() const
-{
-	if (!FSM) return "";
-	return FSM->GetCurrentStateName().ToString();
 }
 
 // ──────────────────────────────────────────────
