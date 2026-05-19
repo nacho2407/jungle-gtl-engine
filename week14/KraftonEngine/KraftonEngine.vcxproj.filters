@@ -674,9 +674,6 @@
     <ClCompile Include="Source\Engine\Animation\AnimationRuntime.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Animation\AnimationStateMachine.cpp">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\CharacterAnimInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
@@ -1659,9 +1656,6 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimationRuntime.h">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Animation\AnimationStateMachine.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\BoneAnimationTrack.h">
