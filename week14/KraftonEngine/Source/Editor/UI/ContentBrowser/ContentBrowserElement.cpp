@@ -12,11 +12,14 @@
 #include "Mesh/StaticMesh.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/MeshManager.h"
+#include "Mesh/FbxImporter.h"
 #include "Editor/UI/FbxImportOptionsDialog.h"
 #include "Editor/UI/Asset/MeshEditorWidget.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdio>
+#include <filesystem>
 #include <utility>
 
 static FString FormatBytes(uint64 Bytes)
@@ -67,6 +70,164 @@ static void DrawDetailRow(const char* Label, const FString& Value)
 	{
 		ImGui::SetTooltip("%s", Value.c_str());
 	}
+}
+
+static std::filesystem::path ResolveProjectPathForContentBrowser(const FString& Path)
+{
+	std::filesystem::path FullPath(FPaths::ToWide(Path));
+	if (!FullPath.is_absolute())
+	{
+		FullPath = std::filesystem::path(FPaths::RootDir()) / FullPath;
+	}
+	return FullPath.lexically_normal();
+}
+
+static bool ProjectFileExistsForContentBrowser(const FString& Path)
+{
+	const std::filesystem::path FullPath = ResolveProjectPathForContentBrowser(Path);
+	return std::filesystem::exists(FullPath) && std::filesystem::is_regular_file(FullPath);
+}
+
+static bool HasImportedFbxAssetForContentBrowser(const FString& SourceFbxPath)
+{
+	return ProjectFileExistsForContentBrowser(FMeshManager::GetSkeletalMeshBinaryFilePath(SourceFbxPath)) ||
+	ProjectFileExistsForContentBrowser(FMeshManager::GetStaticMeshBinaryFilePath(SourceFbxPath));
+}
+
+static bool TryOpenImportedFbxAssetForContentBrowser(ContentBrowserContext& Context, const FString& SourceFbxPath)
+{
+	if (!Context.EditorEngine)
+	{
+		return false;
+	}
+
+	ID3D11Device* Device = Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice();
+
+	const FString SkeletalPackagePath = FMeshManager::GetSkeletalMeshBinaryFilePath(SourceFbxPath);
+	if (ProjectFileExistsForContentBrowser(SkeletalPackagePath))
+	{
+		if (USkeletalMesh* MeshAsset = FMeshManager::LoadSkeletalMesh(SkeletalPackagePath, Device))
+		{
+			FMeshEditorWidget::ClearImportDurationForAsset(MeshAsset->GetAssetPathFileName());
+			Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
+			return true;
+		}
+	}
+
+	const FString StaticPackagePath = FMeshManager::GetStaticMeshBinaryFilePath(SourceFbxPath);
+	if (ProjectFileExistsForContentBrowser(StaticPackagePath))
+	{
+		if (UStaticMesh* MeshAsset = FMeshManager::LoadStaticMesh(StaticPackagePath, Device))
+		{
+			Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool ReimportOrImportStaticFbxForContentBrowser(ContentBrowserContext& Context, const FString& SourceFbxPath)
+{
+	if (!Context.EditorEngine)
+	{
+		return false;
+	}
+
+	ID3D11Device* Device            = Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice();
+	const FString StaticPackagePath = FMeshManager::GetStaticMeshBinaryFilePath(SourceFbxPath);
+
+	if (ProjectFileExistsForContentBrowser(StaticPackagePath))
+	{
+		UStaticMesh* Reimported = nullptr;
+		if (FMeshManager::ReimportStaticMesh(StaticPackagePath, Device, Reimported) && Reimported)
+		{
+			Context.bPendingContentRefresh = true;
+			Context.EditorEngine->OpenAssetEditorForObject(Reimported);
+			return true;
+		}
+		return false;
+	}
+
+	if (UStaticMesh* Imported = FMeshManager::LoadStaticMesh(SourceFbxPath, Device))
+	{
+		Context.bPendingContentRefresh = true;
+		Context.EditorEngine->OpenAssetEditorForObject(Imported);
+		return true;
+	}
+
+	return false;
+}
+
+static bool ImportFbxWithDefaultOptionsForContentBrowser(ContentBrowserContext& Context, const FString& SourceFbxPath)
+{
+	if (!Context.EditorEngine)
+	{
+		return false;
+	}
+
+	ID3D11Device* Device = Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice();
+
+	FString    ProbeMessage;
+	const bool bHasSkin = FFbxImporter::HasSkinDeformer(SourceFbxPath, &ProbeMessage);
+	if (!ProbeMessage.empty())
+	{
+		UE_LOG("FBX default import probe: Path=%s Message=%s", SourceFbxPath.c_str(), ProbeMessage.c_str());
+	}
+
+	if (bHasSkin)
+	{
+		FFbxSceneImportRequest Request;
+		Request.SourceFbxPath            = SourceFbxPath;
+		Request.bImportSkeleton          = true;
+		Request.bImportSkin              = true;
+		Request.bImportAnimations        = true;
+		Request.bOverwriteExistingAssets = true;
+
+		FFbxSceneImportResult Result;
+		const auto            ImportStart = std::chrono::steady_clock::now();
+		if (!FMeshManager::ImportFbxScene(Request, Device, Result))
+		{
+			return false;
+		}
+
+		if (Result.SkeletalMesh)
+		{
+			const std::chrono::duration<double> Elapsed = std::chrono::steady_clock::now() - ImportStart;
+			FMeshEditorWidget::RecordImportDurationForAsset(
+				Result.SkeletalMesh->GetAssetPathFileName(),
+				Elapsed.count()
+			);
+			Context.bPendingContentRefresh = true;
+			Context.EditorEngine->OpenAssetEditorForObject(Result.SkeletalMesh);
+			return true;
+		}
+
+		return false;
+	}
+
+	if (UStaticMesh* MeshAsset = FMeshManager::LoadStaticMesh(SourceFbxPath, Device))
+	{
+		Context.bPendingContentRefresh = true;
+		Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
+		return true;
+	}
+
+	TArray<FFbxAnimationStackInfo> AnimationStacks;
+	FString                        StackMessage;
+	if (FFbxImporter::ListAnimationStacks(SourceFbxPath, AnimationStacks, &StackMessage) && !AnimationStacks.empty())
+	{
+		UE_LOG(
+			"FBX default import skipped: animation-only FBX requires a target skeleton. Use right-click Import/Reimport Options. Path=%s",
+			SourceFbxPath.c_str()
+		);
+	}
+	else if (!StackMessage.empty())
+	{
+		UE_LOG("FBX animation stack query failed: Path=%s Message=%s", SourceFbxPath.c_str(), StackMessage.c_str());
+	}
+
+	return false;
 }
 
 bool ContentBrowserElement::RenameTo(const FString& NewStem, FString* OutError)
@@ -372,12 +533,14 @@ void ObjectElement::RenderContextMenu(ContentBrowserContext& Context)
 		{
 			UStaticMesh* Reimported = nullptr;
 
-			if (Context.EditorEngine)
-			{
-				FMeshManager::ReimportStaticMesh(
+			if (Context.EditorEngine && FMeshManager::ReimportStaticMesh(
 					PackagePath,
 					Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice(),
-					Reimported);
+					Reimported
+			) && Reimported)
+			{
+				Context.bPendingContentRefresh = true;
+				Context.EditorEngine->OpenAssetEditorForObject(Reimported);
 			}
 		}
 	}
@@ -441,7 +604,29 @@ void MeshElement::RenderContextMenu(ContentBrowserContext& Context)
 	FString Extension = FPaths::ToUtf8(ContentItem.Path.extension());
 	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
 
+	const FString FilePath = FPaths::ToUtf8(ContentItem.Path.wstring());
 	FString PackagePath = FPaths::ToUtf8(ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring());
+
+	if (Extension == ".fbx")
+	{
+		const bool bHasImportedAsset = HasImportedFbxAssetForContentBrowser(FilePath);
+		if (bHasImportedAsset && ImGui::MenuItem("Open Imported Asset"))
+		{
+			TryOpenImportedFbxAssetForContentBrowser(Context, FilePath);
+		}
+
+		if (ImGui::MenuItem(bHasImportedAsset ? "Reimport Options..." : "Import Options..."))
+		{
+			FFbxImportOptionsDialog::BeginSceneImport(Context.FbxImportDialog, FilePath);
+
+			if (!Context.FbxImportDialog.bHasSkin && Context.FbxImportDialog.AnimationStacks.empty())
+			{
+				Context.FbxImportDialog = FFbxSceneImportDialogState {};
+				ReimportOrImportStaticFbxForContentBrowser(Context, FilePath);
+			}
+		}
+		return;
+	}
 
 	if (Extension == ".uasset" && FMeshManager::IsSkeletalMeshPackage(PackagePath))
 	{
@@ -449,12 +634,15 @@ void MeshElement::RenderContextMenu(ContentBrowserContext& Context)
 		{
 			USkeletalMesh* Reimported = nullptr;
 
-			if (Context.EditorEngine)
-			{
-				FMeshManager::ReimportSkeletalMesh(
+			if (Context.EditorEngine && FMeshManager::ReimportSkeletalMesh(
 					PackagePath,
 					Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice(),
-					Reimported);
+					Reimported
+			) && Reimported)
+			{
+				FMeshEditorWidget::ClearImportDurationForAsset(Reimported->GetAssetPathFileName());
+				Context.bPendingContentRefresh = true;
+				Context.EditorEngine->OpenAssetEditorForObject(Reimported);
 			}
 		}
 	}
@@ -473,19 +661,12 @@ void MeshElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 
 	if (Extension == ".fbx")
 	{
-		FFbxImportOptionsDialog::BeginSceneImport(Context.FbxImportDialog, FilePath);
-
-		// Pure static FBX keeps the old fast path. Skeletal/animation FBX opens the shared import modal.
-		if (!Context.FbxImportDialog.bHasSkin && Context.FbxImportDialog.AnimationStacks.empty())
+		if (TryOpenImportedFbxAssetForContentBrowser(Context, FilePath))
 		{
-			Context.FbxImportDialog = FFbxSceneImportDialogState {};
-			if (UStaticMesh* MeshAsset = FMeshManager::LoadStaticMesh(FilePath, Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice()))
-			{
-				Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
-			}
 			return;
 		}
 
+		ImportFbxWithDefaultOptionsForContentBrowser(Context, FilePath);
 		return;
 	}
 
