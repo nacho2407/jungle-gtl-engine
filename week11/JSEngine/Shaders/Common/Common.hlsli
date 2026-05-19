@@ -47,6 +47,12 @@ cbuffer SkinningBuffer : register(b5)
     row_major matrix BonePalette[MAX_BONES];
 }
 
+cbuffer SelectedBoneBuffer : register(b6)
+{
+    uint SelectedBoneIndex;
+    float3 SelectedBonePadding;
+}
+
 struct FLightShadowIndices
 {
     uint ShadowIndex;

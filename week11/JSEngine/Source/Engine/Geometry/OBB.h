@@ -4,6 +4,7 @@
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 #include "Math/Quat.h"
+#include "Geometry/AABB.h"
 
 struct FOBB
 {

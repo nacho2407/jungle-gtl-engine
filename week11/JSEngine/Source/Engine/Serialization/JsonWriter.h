@@ -3,6 +3,11 @@
 #include "Archive.h"
 #include "Core/Containers/String.h"
 #include "Core/Containers/Array.h"
+#include "Math/Vector2.h"
+#include "Math/Vector.h"
+#include "Math/Vector4.h"
+#include "Math/Color.h"
+#include "Math/Matrix.h"
 #include "SimpleJSON/json.hpp"
 
 struct FJsonWriter : public FArchive
@@ -30,6 +35,7 @@ struct FJsonWriter : public FArchive
 		json::JSON& Current = *ScopeStack.back();
 		Current[Key.c_str()] = json::Array();
 		ScopeStack.push_back(&Current[Key.c_str()]);
+        CurrentKey.clear();
 	}
 
 	virtual void EndArray() override
@@ -39,12 +45,13 @@ struct FJsonWriter : public FArchive
 		CurrentKey.clear();
 	}
 
-	void BeginObject(const FString& Key)
-	{
-		json::JSON& Current = *ScopeStack.back();
-		Current[Key.c_str()] = json::Object();
-		ScopeStack.push_back(&Current[Key.c_str()]);
-	}
+	void BeginObject(const FString& Key) override
+    {
+        json::JSON& Current = *ScopeStack.back();
+        Current[Key.c_str()] = json::Object();
+        ScopeStack.push_back(&Current[Key.c_str()]);
+        CurrentKey.clear();
+    }
 
 	void EndObject()
 	{

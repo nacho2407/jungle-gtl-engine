@@ -1,11 +1,15 @@
-#include "Runtime/Script/ScriptManager.h"
+﻿#include "Runtime/Script/ScriptManager.h"
 
 #include "Core/Logging/Log.h"
 #include "Core/CollisionTypes.h"
 #include "Geometry/Transform.h"
 #include "Math/Vector.h"
+#include "Math/Color.h"
+#include "Math/Vector2.h"
+#include "Math/Vector4.h"
 #include "Object/Object.h"
 #include "Runtime/Script/ScriptUtils.h"
+#include "ReflectionSystem/ReflectionLuaUtils.h"
 #include "ThirdParty/sol/sol.hpp"
 
 namespace
@@ -185,7 +189,160 @@ void FScriptManager::BindMathTypes()
     LUA_META(division, [](const FVector& V, float S)
              { return V / S; });
     LUA_END_TYPE();
+    LUA_BEGIN_TYPE_FACTORY(GLuaState, FVector2, "Vector2", []()
+                           { return FVector2(); }, [](float X, float Y)
+                           { return FVector2(X, Y); })
+    LUA_FIELD(X, X);
+    LUA_FIELD(Y, Y);
+    LUA_FIELD(x, X);
+    LUA_FIELD(y, Y);
+    LUA_SET(Zero, []()
+            { return FVector2::Zero(); });
+    LUA_SET(One, []()
+            { return FVector2::One(); });
+    LUA_SET(UnitX, []()
+            { return FVector2::UnitX(); });
+    LUA_SET(UnitY, []()
+            { return FVector2::UnitY(); });
+    LUA_META(equal_to, [](const FVector2& A, const FVector2& B)
+             { return A == B; });
+    LUA_META(addition, [](const FVector2& A, const FVector2& B)
+             { return A + B; });
+    LUA_META(subtraction, [](const FVector2& A, const FVector2& B)
+             { return A - B; });
+    LUA_META(unary_minus, [](const FVector2& V)
+             { return -V; });
+    LUA_META(multiplication, sol::overload(
+                                 [](const FVector2& V, float S)
+                                 {
+                                     return V * S;
+                                 },
+                                 [](float S, const FVector2& V)
+                                 {
+                                     return V * S;
+                                 }));
+    LUA_META(division, [](const FVector2& V, float S)
+             { return V / S; });
+    LUA_END_TYPE();
 
+    LUA_BEGIN_TYPE_FACTORY(GLuaState, FVector4, "Vector4", []()
+                           { return FVector4(); }, [](float X, float Y, float Z, float W)
+                           { return FVector4(X, Y, Z, W); })
+    LUA_FIELD(X, X);
+    LUA_FIELD(Y, Y);
+    LUA_FIELD(Z, Z);
+    LUA_FIELD(W, W);
+    LUA_FIELD(x, X);
+    LUA_FIELD(y, Y);
+    LUA_FIELD(z, Z);
+    LUA_FIELD(w, W);
+    LUA_METHOD(Length, Length);
+    LUA_METHOD(IsPoint, IsPoint);
+    LUA_METHOD(IsVector, IsVector);
+    LUA_METHOD(Normalize, Normalize);
+    LUA_SET(Dot, [](const FVector4& Self, const FVector4& Other)
+            { return Self.Dot(Other); });
+    LUA_SET(Cross, [](const FVector4& Self, const FVector4& Other)
+            { return Self.Cross(Other); });
+    LUA_SET(Zero, []()
+            { return FVector4::Zero(); });
+    LUA_SET(Point, sol::overload(
+                       []()
+                       {
+                           return FVector4::Point();
+                       },
+                       [](float X, float Y, float Z)
+                       {
+                           return FVector4::Point(X, Y, Z);
+                       }));
+    LUA_SET(Vector, [](float X, float Y, float Z)
+            { return FVector4::Vector(X, Y, Z); });
+    LUA_META(equal_to, [](const FVector4& A, const FVector4& B)
+             { return A == B; });
+    LUA_META(addition, [](const FVector4& A, const FVector4& B)
+             { return A + B; });
+    LUA_META(subtraction, [](const FVector4& A, const FVector4& B)
+             { return A - B; });
+    LUA_META(multiplication, sol::overload(
+                                 [](const FVector4& V, float S)
+                                 {
+                                     return V * S;
+                                 },
+                                 [](float S, const FVector4& V)
+                                 {
+                                     return V * S;
+                                 }));
+    LUA_META(division, [](const FVector4& V, float S)
+             { return V / S; });
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_FACTORY(GLuaState, FColor, "Color", []()
+                           { return FColor(); }, [](float R, float G, float B, float A)
+                           { return FColor(R, G, B, A); })
+    LUA_FIELD(R, R);
+    LUA_FIELD(G, G);
+    LUA_FIELD(B, B);
+    LUA_FIELD(A, A);
+    LUA_FIELD(r, r);
+    LUA_FIELD(g, g);
+    LUA_FIELD(b, b);
+    LUA_FIELD(a, a);
+    LUA_METHOD(ToVector4, ToVector4);
+    LUA_METHOD(ToPackedABGR, ToPackedABGR);
+    LUA_SET(White, []()
+            { return FColor::White(); });
+    LUA_SET(Black, []()
+            { return FColor::Black(); });
+    LUA_SET(Red, []()
+            { return FColor::Red(); });
+    LUA_SET(Green, []()
+            { return FColor::Green(); });
+    LUA_SET(Blue, []()
+            { return FColor::Blue(); });
+    LUA_SET(Yellow, []()
+            { return FColor::Yellow(); });
+    LUA_SET(Magenta, []()
+            { return FColor::Magenta(); });
+    LUA_SET(Cyan, []()
+            { return FColor::Cyan(); });
+    LUA_SET(Gray, []()
+            { return FColor::Gray(); });
+    LUA_SET(Transparent, []()
+            { return FColor::Transparent(); });
+    LUA_SET(Lerp, [](const FColor& A, const FColor& B, float T)
+            { return FColor::Lerp(A, B, T); });
+    LUA_META(addition, sol::overload(
+                           [](const FColor& A, const FColor& B)
+                           {
+                               return A + B;
+                           },
+                           [](const FColor& A, float V)
+                           {
+                               return A + V;
+                           }));
+    LUA_META(subtraction, sol::overload(
+                              [](const FColor& A, const FColor& B)
+                              {
+                                  return A - B;
+                              },
+                              [](const FColor& A, float V)
+                              {
+                                  return A - V;
+                              }));
+    LUA_META(multiplication, sol::overload(
+                                 [](const FColor& A, const FColor& B)
+                                 {
+                                     return A * B;
+                                 },
+                                 [](const FColor& A, float V)
+                                 {
+                                     return A * V;
+                                 },
+                                 [](float V, const FColor& A)
+                                 {
+                                     return A * V;
+                                 }));
+    LUA_END_TYPE();
     LUA_BEGIN_TYPE_FACTORY(GLuaState, FQuat, "Quat", []()
                            { return FQuat(); }, [](float X, float Y, float Z, float W)
                            { return FQuat(X, Y, Z, W); })
@@ -265,5 +422,9 @@ void FScriptManager::BindObjectTypes()
     LUA_SET(GetName, &LuaGetObjectName);
     LUA_SET(GetType, &LuaGetObjectType);
     LUA_SET(IsA, &LuaObjectIsA);
+    LUA_SET(GetProperty, [](sol::this_state State, UObject& Object, const FString& Name)
+            { return ReflectionLuaUtils::GetProperty(State, &Object, Name); });
+    LUA_SET(SetProperty, [](UObject& Object, const FString& Name, const sol::object& Value)
+            { return ReflectionLuaUtils::SetProperty(&Object, Name, Value); });
     LUA_END_TYPE();
 }

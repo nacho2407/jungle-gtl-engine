@@ -1,5 +1,4 @@
 ﻿#include "JsonReader.h"
-
 FArchive& FJsonReader::operator<<(bool& Value)
 {
 	json::JSON& Current = *ScopeStack.back();

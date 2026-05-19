@@ -9,6 +9,12 @@ using System.Text.RegularExpressions;
 
 class CustomParser
 {
+    //struct ParsedClassInfo
+    //{
+    //    public string ClassName;
+    //    public string ParentName;
+    //}
+
     static readonly Regex ClassRegex = new Regex(
         @"UCLASS\s*\([^)]*\)\s*class\s+(?:[A-Z0-9_]+_API\s+)?(?<name>\w+)\s*:\s*public\s+(?<parent>\w+)",
         RegexOptions.Singleline);
@@ -25,7 +31,104 @@ class CustomParser
         @"UENUM\s*\([^)]*\)\s*enum\s+class\s+(?:[A-Z0-9_]+_API\s+)?(?<name>\w+)",
         RegexOptions.Singleline);
 
+    static readonly Regex FunctionRegex = new Regex(
+        @"UFUNCTION\s*\((?<options>[^)]*)\)\s+(?:virtual\s+)?(?:inline\s+)?(?<static>static\s+)?(?:inline\s+)?(?<return>[A-Za-z_]\w*(?:::\w+)*(?:\s*<[^;{}()]+>)?\s*[*&]?)\s+(?<name>\w+)\s*\((?<params>[^)]*)\)\s*(?<const>const)?\s*(?:override\s*)?(?:final\s*)?(?:;|\{)",
+        RegexOptions.Singleline);
+
     #region Helper Methods
+
+    static bool IsChildOf(string className, string targetBase, Dictionary<string, string> parentMap)
+    {
+        string current = className;
+        while (parentMap.TryGetValue(current, out string parent))
+        {
+            if (parent == targetBase)
+                return true;
+            current = parent;
+        }
+        return false;
+    }
+
+    static string GetPropertyInstantiationCode(string type, string varName)
+    {
+        type = type.Trim();
+
+        // 1. 기본 숫자/불리언/문자열 타입 매핑
+        if (type == "bool") return $"        FBoolProperty* {varName} = new FBoolProperty();";
+        if (type == "int8") return $"        FInt8Property* {varName} = new FInt8Property();";
+        if (type == "int16") return $"        FInt16Property* {varName} = new FInt16Property();";
+        if (type == "int32" || type == "int") return $"        FIntProperty* {varName} = new FIntProperty();";
+        if (type == "int64") return $"        FInt64Property* {varName} = new FInt64Property();";
+        if (type == "uint8" || type == "byte") return $"        FByteProperty* {varName} = new FByteProperty();";
+        if (type == "uint16") return $"        FUInt16Property* {varName} = new FUInt16Property();";
+        if (type == "uint32") return $"        FUInt32Property* {varName} = new FUInt32Property();";
+        if (type == "uint64") return $"        FUInt64Property* {varName} = new FUInt64Property();";
+        if (type == "float") return $"        FFloatProperty* {varName} = new FFloatProperty();";
+        if (type == "double") return $"        FDoubleProperty* {varName} = new FDoubleProperty();";
+        if (type == "FName") return $"        FNameProperty* {varName} = new FNameProperty();";
+        if (type == "FString") return $"        FStrProperty* {varName} = new FStrProperty();";
+        if (type == "FText") return $"        FTextProperty* {varName} = new FTextProperty();";
+
+        // 2. 배열 (TArray) - 재귀적으로 내부 프로퍼티까지 생성!
+        Match arrayMatch = Regex.Match(type, @"^TArray\s*<\s*(.+)\s*>$");
+        if (arrayMatch.Success)
+        {
+            string innerType = arrayMatch.Groups[1].Value.Trim();
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"        FArrayProperty* {varName} = new FArrayProperty();");
+            sb.AppendLine($"        {varName}->ArrayOps = TScriptArrayOps<{innerType}>::Make();");
+
+            string innerVar = varName + "_Inner";
+            sb.AppendLine(GetPropertyInstantiationCode(innerType, innerVar));
+            sb.AppendLine($"        {innerVar}->CPPType = \"{EscapeForCppString(innerType)}\";");
+            sb.AppendLine($"        {innerVar}->ElementSize = sizeof({innerType});");
+            sb.AppendLine($"        {varName}->Inner = {innerVar};");
+            return sb.ToString();
+        }
+
+        // 3. 컨테이너 (TMap, TSet)
+        if (type.StartsWith("TMap<")) return $"        FMapProperty* {varName} = new FMapProperty();";
+        if (type.StartsWith("TSet<")) return $"        FSetProperty* {varName} = new FSetProperty();";
+
+        // 4. 포인터 및 특수 포인터 (UObject 기반)
+        if (type.EndsWith("*")) return $"        FObjectProperty* {varName} = new FObjectProperty();";
+        if (type.StartsWith("FSoftObjectPtr") || type.StartsWith("TSoftObjectPtr<")) return $"        FSoftObjectProperty* {varName} = new FSoftObjectProperty();";
+        if (type.StartsWith("FSoftClassPtr") || type.StartsWith("TSoftClassPtr<")) return $"        FSoftClassProperty* {varName} = new FSoftClassProperty();";
+        if (type.StartsWith("FWeakObjectPtr") || type.StartsWith("TWeakObjectPtr<")) return $"        FWeakObjectProperty* {varName} = new FWeakObjectProperty();";
+        if (type.StartsWith("FLazyObjectPtr") || type.StartsWith("TLazyObjectPtr<")) return $"        FLazyObjectProperty* {varName} = new FLazyObjectProperty();";
+        if (type.StartsWith("FScriptInterface")) return $"        FInterfaceProperty* {varName} = new FInterfaceProperty();";
+
+        // 5. Enum (언리얼 네이밍 규칙인 E로 시작한다고 가정)
+        if (type.StartsWith("E")) return $"        FEnumProperty* {varName} = new FEnumProperty();";
+
+        // 6. 그 외의 모든 것은 구조체(Struct)로 간주
+        return $"        FStructProperty* {varName} = new FStructProperty();";
+    }
+
+    static string GeneratePropertyCode(string cppType, string propName, string ownerName, ParsedPropertyOptions options)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("    {");
+
+        // 타입에 맞는 C++ 인스턴스 생성 코드 가져오기 (예: FIntProperty* prop = new FIntProperty();)
+        sb.AppendLine(GetPropertyInstantiationCode(cppType, "prop"));
+
+        // 공통 속성(부모 FProperty) 데이터 채워넣기
+        sb.AppendLine($"        prop->Name = FName(\"{EscapeForCppString(propName)}\");");
+        sb.AppendLine($"        prop->CPPType = \"{EscapeForCppString(cppType)}\";");
+        sb.AppendLine($"        prop->Offset = offsetof({ownerName}, {propName});");
+        sb.AppendLine($"        prop->ElementSize = sizeof({cppType});");
+        sb.AppendLine($"        prop->Flags = {options.FlagsExpression};");
+        sb.AppendLine($"        prop->Category = \"{EscapeForCppString(options.Category)}\";");
+
+        string disp = string.IsNullOrEmpty(options.DisplayName) ? propName : options.DisplayName;
+        sb.AppendLine($"        prop->DisplayName = \"{EscapeForCppString(disp)}\";");
+
+        // FClassInfo / FStructInfo의 ReflectedProperties 배열에 넣기
+        sb.AppendLine("        info.ReflectedProperties.push_back(prop);");
+        sb.AppendLine("    }");
+        return sb.ToString();
+    }
 
     struct ParsedPropertyOptions
     {
@@ -137,6 +240,139 @@ class CustomParser
         };
     }
 
+    //function options 파싱을 위한 구조체와 메서드 (UPROPERTY 옵션과 유사한 방식으로)
+    struct ParsedFunctionOptions
+    {
+        public string FlagsExpression;
+        public string Category;
+        public string DisplayName;
+    }
+
+    static ParsedFunctionOptions ParseFunctionOptions(string options)
+    {
+        List<string> flags = new List<string>();
+        string category = "Default";
+        string displayName = "";
+
+        foreach (string rawOption in SplitPropertyOptions(options))
+        {
+            string option = rawOption.Trim();
+
+            if (option.Equals("Callable", StringComparison.Ordinal))
+                flags.Add("FF_Callable");
+            else if (option.Equals("ScriptCallable", StringComparison.Ordinal))
+                flags.Add("FF_ScriptCallable");
+            else if (option.Equals("CallInEditor", StringComparison.Ordinal))
+                flags.Add("FF_CallInEditor");
+            else if (option.Equals("Event", StringComparison.Ordinal))
+                flags.Add("FF_Event");
+            else if (option.Equals("Const", StringComparison.Ordinal))
+                flags.Add("FF_Const");
+            else if (option.Equals("Static", StringComparison.Ordinal))
+                flags.Add("FF_Static");
+            else if (option.Equals("Exec", StringComparison.Ordinal))
+                flags.Add("FF_Exec");
+            else
+            {
+                Match categoryMatch = Regex.Match(option, @"^Category\s*=\s*""(?<category>[^""]*)""$");
+                if (categoryMatch.Success)
+                {
+                    category = categoryMatch.Groups["category"].Value;
+                    continue;
+                }
+
+                Match displayNameMatch = Regex.Match(option, @"^(?:DisplayName|Display)\s*=\s*""(?<displayName>[^""]*)""$");
+                if (displayNameMatch.Success)
+                    displayName = displayNameMatch.Groups["displayName"].Value;
+            }
+        }
+
+        return new ParsedFunctionOptions
+        {
+            FlagsExpression = flags.Count > 0 ? string.Join(" | ", flags) : "FF_None",
+            Category = category,
+            DisplayName = displayName
+        };
+    }
+
+    // 함수 시그니처/파라미터  파싱을 위한 구조체와 메서드
+    struct ParsedFunctionParam
+    {
+        public string Type;
+        public string Name;
+    }
+
+    static List<ParsedFunctionParam> ParseFunctionParams(string paramText)
+    {
+        List<ParsedFunctionParam> result = new List<ParsedFunctionParam>();
+
+        paramText = paramText.Trim();
+        if (paramText.Length == 0 || paramText == "void")
+            return result;
+
+        foreach (string raw in SplitPropertyOptions(paramText))
+        {
+            string p = raw.Trim();
+
+            int defaultEq = p.IndexOf('=');
+            if (defaultEq >= 0)
+                p = p.Substring(0, defaultEq).Trim();
+
+            Match m = Regex.Match(
+                p,
+                @"^(?<type>.+?)(?:\s+)(?<name>[A-Za-z_]\w*)$",
+                RegexOptions.Singleline);
+
+            if (!m.Success)
+                continue;
+
+            result.Add(new ParsedFunctionParam
+            {
+                Type = m.Groups["type"].Value.Trim(),
+                Name = m.Groups["name"].Value.Trim()
+            });
+        }
+
+        return result;
+    }
+
+    struct ParsedFunctionBinding
+    {
+        public string ClassName;
+        public string FunctionName;
+        public string ReturnType;
+        public List<ParsedFunctionParam> Params;
+        public bool bStatic;
+    }
+
+    static string GetLuaTypeName(string className)
+    {
+        if ((className.StartsWith("U") || className.StartsWith("A")) && className.Length > 1)
+            return className.Substring(1);
+        return className;
+    }
+
+    static bool HasFlagExpression(string flagsExpr, string flag)
+    {
+        return flagsExpr.Split('|').Any(x => x.Trim() == flag);
+    }
+
+    static string BuildLambdaParamList(List<ParsedFunctionParam> parameters, bool bIsStatic)
+    {
+        if (parameters.Count == 0)
+            return "";
+
+        string paramList = string.Join(", ", parameters.Select(p => $"{p.Type} {p.Name}"));
+        // static이면 Self가 없으므로 콤마 없이 바로 리턴, 멤버 함수면 Self 뒤에 오므로 콤마 추가
+        return bIsStatic ? paramList : ", " + paramList;
+    }
+
+    static string BuildArgumentList(List<ParsedFunctionParam> parameters)
+    {
+        return string.Join(", ", parameters.Select(p => p.Name));
+    }
+
+    // UENUM의 열거값 이름과 값을 파싱하는 메서드 (괄호와 템플릿을 고려하여 콤마로 분리)
     static List<string> ParseEnumValueNames(string enumBody)
     {
         List<string> values = new List<string>();
@@ -412,7 +648,11 @@ class CustomParser
         int generatedWrittenCount = 0;
         int generatedUnchangedCount = 0;
         List<string> generatedCppFiles = new List<string>();
+        List<string> allParsedClasses = new List<string>();         //마스터 파일에서 BindLua_XXX 를 줄줄이 호출하기 위해 클래스 이름을 모아둘 리스트
+        List<string> luaBindableClasses = new List<string>();
 
+        Dictionary<string, string> parentMap = new Dictionary<string, string>(); 
+        
         foreach (var file in headerFiles)
         {
             if (file.EndsWith(".generated.h", StringComparison.OrdinalIgnoreCase))
@@ -443,8 +683,9 @@ class CustomParser
             StringBuilder cppContent = new StringBuilder();
             cppContent.AppendLine("// [UHT generated source - do not edit]");
             cppContent.AppendLine($"#include \"{includePath}\"");
-            cppContent.AppendLine("#include \"Core/ReflectionDatabase.h\"");
-            cppContent.AppendLine("#include \"Core/ReflectionUtils.h\"");
+            cppContent.AppendLine("#include \"ReflectionSystem/ReflectionDatabase.h\"");
+            cppContent.AppendLine("#include \"ReflectionSystem/ReflectionUtils.h\"");
+            cppContent.AppendLine("#include \"ThirdParty/sol/sol.hpp\""); // Lua sol2 인클루드 추가
             cppContent.AppendLine();
 
             // ---------------------------------------------------------
@@ -475,6 +716,7 @@ public: \
     info.StructName = ""{structName}"";
     info.Size = sizeof({structName});");
                 cppContent.AppendLine("    info.Properties.clear();");
+                cppContent.AppendLine("    info.ReflectedProperties.clear();");
                 cppContent.AppendLine("    info.GcPointerOffsets.clear();");
 
                 cppContent.AppendLine($"    info.ParentStructName = \"{EscapeForCppString(parentName)}\";");
@@ -491,22 +733,23 @@ public: \
                 {
                     MatchCollection props = PropertyRegex.Matches(structBody);
 
+                    // 기존 foreach (Match prop in props) 내부 코드를 이렇게 변경하세요:
                     foreach (Match prop in props)
                     {
                         string options = prop.Groups["options"].Value;
                         string type = prop.Groups["type"].Value.Trim();
                         string name = prop.Groups["name"].Value;
                         ParsedPropertyOptions parsedOptions = ParsePropertyOptions(options);
-                        string displayName = string.IsNullOrEmpty(parsedOptions.DisplayName) ? name : parsedOptions.DisplayName;
 
-                        cppContent.AppendLine(
-                            $"    info.Properties.push_back({{ \"{EscapeForCppString(name)}\", \"{EscapeForCppString(type)}\", offsetof({structName}, {name}), {parsedOptions.FlagsExpression}, \"{EscapeForCppString(parsedOptions.Category)}\", \"{EscapeForCppString(displayName)}\" }});");
+                        // ★ 새로운 FProperty 생성 코드 주입
+                        string propCode = GeneratePropertyCode(type, name, structName, parsedOptions);
+                        cppContent.AppendLine(propCode);
 
-                        if (type.Contains("*"))
-                        {
-                            cppContent.AppendLine(
-                                $"    info.GcPointerOffsets.push_back(offsetof({structName}, {name}));");
-                        }
+                        //// GC 추적용 포인터 기록 (선택 사항: 나중에 CollectReferences로 완벽히 대체되면 지우셔도 됩니다)
+                        //if (type.Contains("*"))
+                        //{
+                        //    cppContent.AppendLine($"    info.GcPointerOffsets.push_back(offsetof({structName}, {name}));");
+                        //}
                     }
                 }
 
@@ -569,15 +812,15 @@ static FAutoRegister_{enumName} AutoRegister_{enumName}_Instance;
                 string className = classMatch.Groups["name"].Value;
                 string parentName = classMatch.Groups["parent"].Value;
 
-                //int classStart = classMatch.Index;
-                //int classEnd = (i + 1 < classMatches.Count)
-                //    ? classMatches[i + 1].Index
-                //    : parseCode.Length;
-                //string classBlock = parseCode.Substring(classStart, classEnd - classStart);
-
                 if (!TryExtractBraceBlock(parseCode, classMatch.Index, out _, out _, out string classBlock))
                     continue;
 
+                allParsedClasses.Add(className);
+
+                parentMap[className] = parentName;
+
+                // Lua 바인딩을 위해 수집할 리스트 생성
+                List<ParsedFunctionBinding> scriptCallableFunctions = new List<ParsedFunctionBinding>();
 
                 parsedCount++;
                 Console.WriteLine($"[UHT] Class: {className} : {parentName} ({includePath})");
@@ -595,25 +838,109 @@ static FAutoRegister_{enumName} AutoRegister_{enumName}_Instance;
                 cppContent.AppendLine("{");
                 cppContent.AppendLine($"    FClassInfo& info = {className}::StaticClassInfo;");
                 cppContent.AppendLine("    info.Properties.clear();");
+                cppContent.AppendLine("    info.ReflectedProperties.clear();");
                 cppContent.AppendLine("    info.GcPointerOffsets.clear();");
+                cppContent.AppendLine("    info.Functions.clear();");
+
                 cppContent.AppendLine($"    info.ClassName = \"{EscapeForCppString(className)}\";");
                 cppContent.AppendLine($"    info.ParentClassName = \"{EscapeForCppString(parentName)}\";");
-                //cppContent.AppendLine($"    info.ParentClass = ReflectionDatabase::GetClass(\"{EscapeForCppString(parentName)}\");");
+
+
+                //function parsing
+                MatchCollection functions = FunctionRegex.Matches(classBlock);
+
+                foreach (Match func in functions)
+                {
+                    string options = func.Groups["options"].Value;
+                    string returnType = func.Groups["return"].Value.Trim();
+                    string functionName = func.Groups["name"].Value.Trim();
+                    string paramText = func.Groups["params"].Value;
+                    bool bStatic = func.Groups["static"].Success;
+                    bool bConst = func.Groups["const"].Success;
+
+                    ParsedFunctionOptions parsedOptions = ParseFunctionOptions(options);
+
+                    List<string> extraFlags = new List<string>();
+                    if (bStatic && !parsedOptions.FlagsExpression.Contains("FF_Static"))
+                        extraFlags.Add("FF_Static");
+                    if (bConst && !parsedOptions.FlagsExpression.Contains("FF_Const"))
+                        extraFlags.Add("FF_Const");
+
+                    string flagsExpr = parsedOptions.FlagsExpression;
+                    if (extraFlags.Count > 0)
+                        flagsExpr = flagsExpr == "FF_None"
+                            ? string.Join(" | ", extraFlags)
+                            : flagsExpr + " | " + string.Join(" | ", extraFlags);
+
+                    cppContent.AppendLine("    {");
+                    cppContent.AppendLine("        FFunctionInfo func;");
+                    cppContent.AppendLine($"        func.Name = FName(\"{EscapeForCppString(functionName)}\");");
+                    cppContent.AppendLine($"        func.ReturnType = \"{EscapeForCppString(returnType)}\";");
+                    cppContent.AppendLine($"        func.Flags = {flagsExpr};");
+                    cppContent.AppendLine($"        func.Category = \"{EscapeForCppString(parsedOptions.Category)}\";");
+                    cppContent.AppendLine($"        func.DisplayName = \"{EscapeForCppString(string.IsNullOrEmpty(parsedOptions.DisplayName) ? functionName : parsedOptions.DisplayName)}\";");
+
+                    List<ParsedFunctionParam> parsedParams = ParseFunctionParams(paramText);
+                    if (parsedParams.Count == 0)
+                    {
+                        if (bStatic)
+                        {
+                            cppContent.AppendLine($"        func.NativeInvoker = [](UObject*) {{ {className}::{functionName}(); }};");
+                        }
+                        else
+                        {
+                            cppContent.AppendLine($"        func.NativeInvoker = [](UObject* Object) {{ if (auto* TypedObject = static_cast<{className}*>(Object)) TypedObject->{functionName}(); }};");
+                        }
+                    }
+
+                    foreach (ParsedFunctionParam param in parsedParams)
+                    {
+                        cppContent.AppendLine("        {");
+                        cppContent.AppendLine("            FParameterInfo param;");
+                        cppContent.AppendLine($"            param.Name = FName(\"{EscapeForCppString(param.Name)}\");");
+                        cppContent.AppendLine($"            param.CPPType = \"{EscapeForCppString(param.Type)}\";");
+                        cppContent.AppendLine("            func.Parameters.push_back(param);");
+                        cppContent.AppendLine("        }");
+                    }
+
+                    cppContent.AppendLine("        info.Functions.push_back(func);");
+                    cppContent.AppendLine("    }");
+
+                    // Lua 바인딩 수집 로직 추가
+                    bool bScriptCallable = HasFlagExpression(flagsExpr, "FF_ScriptCallable");
+                    if (bScriptCallable)
+                    {
+                        scriptCallableFunctions.Add(new ParsedFunctionBinding
+                        {
+                            ClassName = className,
+                            FunctionName = functionName,
+                            ReturnType = returnType,
+                            Params = parsedParams,
+                            bStatic = bStatic
+                        });
+                    }
+                }
+
+                //property parsing
 
                 MatchCollection properties = PropertyRegex.Matches(classBlock);
+
+                // 기존 foreach (Match prop in properties) 내부 코드를 이렇게 변경하세요:
                 foreach (Match prop in properties)
                 {
                     string options = prop.Groups["options"].Value;
                     string type = prop.Groups["type"].Value.Trim();
                     string name = prop.Groups["name"].Value;
                     ParsedPropertyOptions parsedOptions = ParsePropertyOptions(options);
-                    string displayName = string.IsNullOrEmpty(parsedOptions.DisplayName) ? name : parsedOptions.DisplayName;
 
                     Console.WriteLine($"   property: {type} {name} ({options})");
-                    cppContent.AppendLine($"    info.Properties.push_back({{ \"{EscapeForCppString(name)}\", \"{EscapeForCppString(type)}\", offsetof({className}, {name}), {parsedOptions.FlagsExpression}, \"{EscapeForCppString(parsedOptions.Category)}\", \"{EscapeForCppString(displayName)}\" }});");
 
-                    if (type.Contains("*"))
-                        cppContent.AppendLine($"    info.GcPointerOffsets.push_back(offsetof({className}, {name}));");
+                    // ★ 새로운 FProperty 생성 코드 주입
+                    string propCode = GeneratePropertyCode(type, name, className, parsedOptions);
+                    cppContent.AppendLine(propCode);
+
+                    //if (type.Contains("*"))
+                    //    cppContent.AppendLine($"    info.GcPointerOffsets.push_back(offsetof({className}, {name}));");
                 }
 
                 cppContent.AppendLine($"    ReflectionDatabase::AddClass(\"{EscapeForCppString(className)}\", &info);");
@@ -625,6 +952,50 @@ static FAutoRegister_{enumName} AutoRegister_{enumName}_Instance;
                 cppContent.AppendLine("};");
                 cppContent.AppendLine($"static FAutoRegister_{className} AutoRegister_{className}_Instance;");
                 cppContent.AppendLine();
+
+                cppContent.AppendLine($"void BindLua_{className}(sol::state& Lua)");
+                cppContent.AppendLine("{");
+                string luaTypeName = GetLuaTypeName(className);
+                cppContent.AppendLine($"    sol::object UserTypeObject = Lua[\"{luaTypeName}\"];");
+                cppContent.AppendLine("    if (!UserTypeObject.valid() || UserTypeObject == sol::nil || UserTypeObject.get_type() != sol::type::table)");
+                cppContent.AppendLine("    {");
+                cppContent.AppendLine("        return;");
+                cppContent.AppendLine("    }");
+                cppContent.AppendLine("    sol::table UserType = UserTypeObject.as<sol::table>();");
+                cppContent.AppendLine();
+
+                foreach (var bind in scriptCallableFunctions)
+                {
+                    string lambdaParams = BuildLambdaParamList(bind.Params, bind.bStatic);
+                    string argList = BuildArgumentList(bind.Params);
+                    string returnTypeDecl = bind.ReturnType == "void" ? "void" : bind.ReturnType;
+                    string returnStmt = bind.ReturnType == "void" ? "" : "return ";
+
+                    cppContent.AppendLine($"    UserType[\"{bind.FunctionName}\"] =");
+
+                    if (bind.bStatic)
+                    {
+                        cppContent.AppendLine($"        []({lambdaParams}) -> {returnTypeDecl}");
+                        cppContent.AppendLine("        {");
+                        cppContent.AppendLine($"            {returnStmt}{bind.ClassName}::{bind.FunctionName}({argList});");
+                        cppContent.AppendLine("        };");
+                    }
+                    else
+                    {
+                        string selfParam = $"{bind.ClassName}& Self";
+                        cppContent.AppendLine($"        []({selfParam}{lambdaParams}) -> {returnTypeDecl}");
+                        cppContent.AppendLine("        {");
+                        cppContent.AppendLine($"            {returnStmt}Self.{bind.FunctionName}({argList});");
+                        cppContent.AppendLine("        };");
+                    }
+                }
+                cppContent.AppendLine("}");
+                cppContent.AppendLine();
+
+                if (scriptCallableFunctions.Count > 0)
+                {
+                    luaBindableClasses.Add(className);
+                }
             }
             if (bHasReflectionData)
             {
@@ -645,11 +1016,50 @@ static FAutoRegister_{enumName} AutoRegister_{enumName}_Instance;
         string masterCppPath = Path.Combine(outputDir, "JSEngine.Reflection.gen.cpp");
         StringBuilder masterContent = new StringBuilder();
         masterContent.AppendLine("// [UHT generated master source - do not edit]");
+        masterContent.AppendLine("#include \"ThirdParty/sol/sol.hpp\"");
         masterContent.AppendLine();
 
         generatedCppFiles.Sort(StringComparer.OrdinalIgnoreCase);
         foreach (var genFile in generatedCppFiles)
             masterContent.AppendLine($"#include \"{genFile}\"");
+
+        // 추가: UActorComponent 파생 클래스들의 다운캐스팅 헬퍼 자동 생성
+        masterContent.AppendLine();
+        masterContent.AppendLine("void BindGeneratedLuaCasts(sol::state& Lua)");
+        masterContent.AppendLine("{");
+        masterContent.AppendLine("    sol::object ActorComponentObject = Lua[\"ActorComponent\"];");
+        masterContent.AppendLine("    if (!ActorComponentObject.valid() || ActorComponentObject == sol::nil || ActorComponentObject.get_type() != sol::type::table)");
+        masterContent.AppendLine("    {");
+        masterContent.AppendLine("        return;");
+        masterContent.AppendLine("    }");
+        masterContent.AppendLine("    sol::table ActorComponentType = ActorComponentObject.as<sol::table>();");
+        masterContent.AppendLine();
+
+        foreach (string className in allParsedClasses)
+        {
+            // 상속 계층을 따라 올라가며 UActorComponent의 자식인지 확인
+            if (IsChildOf(className, "UActorComponent", parentMap))
+            {
+                string luaTypeName = GetLuaTypeName(className);
+                masterContent.AppendLine($"    ActorComponentType[\"As{luaTypeName}\"] =");
+                masterContent.AppendLine($"        [](UActorComponent& Self) -> {className}*");
+                masterContent.AppendLine("        {");
+                masterContent.AppendLine($"            return Cast<{className}>(&Self);");
+                masterContent.AppendLine("        };");
+            }
+        }
+        masterContent.AppendLine("}");
+
+        // 추가: 수집한 클래스 이름들을 돌면서 BindLua_XXX 호출 코드를 생성
+        masterContent.AppendLine();
+        masterContent.AppendLine("void BindGeneratedLuaFunctions(sol::state& Lua)");
+        masterContent.AppendLine("{");
+        masterContent.AppendLine("    BindGeneratedLuaCasts(Lua);");
+        foreach (string className in luaBindableClasses)
+        {
+            masterContent.AppendLine($"    BindLua_{className}(Lua);");
+        }
+        masterContent.AppendLine("}");
 
         if (WriteAllTextIfChanged(masterCppPath, masterContent.ToString()))
             generatedWrittenCount++;

@@ -45,6 +45,7 @@ struct FJsonReader : public FArchive
 		OutCount = (int32)Array.length();
 		ScopeStack.push_back(&Array);
 		ArrayIndexStack.push_back(0);
+        CurrentKey.clear();
 	}
 
 	virtual void EndArray() override
@@ -55,13 +56,14 @@ struct FJsonReader : public FArchive
 	}
 
 	virtual void BeginObject(const FString& Key) override
-	{
-		json::JSON& Current = *ScopeStack.back();
-		if (Current.hasKey(Key.c_str()))
-		{
-			ScopeStack.push_back(&Current[Key.c_str()]);
-		}
-	}
+    {
+        json::JSON& Current = *ScopeStack.back();
+        if (Current.hasKey(Key.c_str()))
+        {
+            ScopeStack.push_back(&Current[Key.c_str()]);
+        }
+        CurrentKey.clear();
+    }
 
 	virtual void BeginObject(int32 Index) override
 	{

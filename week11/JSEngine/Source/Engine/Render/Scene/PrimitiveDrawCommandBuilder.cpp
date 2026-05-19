@@ -211,11 +211,8 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.VertexFactoryType = CmdVertexFactoryType;
             Cmd.MeshBuffer = MeshBuffer;
 
-            if (RenderBus.GetSkinningMode() == ESkinningMode::CPU)
-            {
-                // TODO: Bone weight visualization 은 GPU skinning으로만 동작
-            }
-            else
+            // Bone weight visualization 은 GPU skinning으로만 동작
+            if (RenderBus.GetSkinningMode() == ESkinningMode::GPU)
             {
                 FillSkinningBonePalette(
                     Cmd.Constants.Skinning,

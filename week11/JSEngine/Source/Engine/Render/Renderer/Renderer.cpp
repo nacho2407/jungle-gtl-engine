@@ -74,7 +74,7 @@ namespace
 		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
 	}
 
-	FShaderProgram* GetFullscreenProgram(const FString& ShaderPath, const FString& VSEntryPoint = "mainVS", const FString& PSEntryPoint = "mainPS")
+	FShaderProgram* GetFullscreenProgram(const FString& ShaderPath, const FString& VSEntryPoint = "VS", const FString& PSEntryPoint = "PS")
 	{
 		FShaderStageKey VSKey;
 		VSKey.FilePath = ShaderPath;
@@ -295,6 +295,7 @@ void FRenderer::CreateResources()
 	Resources.ShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowConstants));
 	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FUberConstants));
     Resources.SkinningBuffer.Create(Device.GetDevice(), sizeof(FSkinningConstants));
+    Resources.SelectedBoneBuffer.Create(Device.GetDevice(), sizeof(FSelectedBoneConstants));
     Resources.LightShadowIndexBuffer.Create(Device.GetDevice(), sizeof(FLightShadowIndices), 1024);
     Resources.AtlasShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowAtlasConstants), 1024);
 
@@ -365,6 +366,7 @@ void FRenderer::Release()
 	Resources.ShadowBuffer.Release();
 	Resources.LightBuffer.Release();
     Resources.SkinningBuffer.Release();
+    Resources.SelectedBoneBuffer.Release();
 	Resources.LightShadowIndexBuffer.Release();
 	Resources.AtlasShadowBuffer.Release();
 	Resources.LightStructuredBuffer.Release();

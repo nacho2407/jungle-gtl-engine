@@ -1,7 +1,7 @@
 ﻿#include "Component/CameraComponent.h"
 #include <algorithm>
 #include <cmath>
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(UCameraComponent, USceneComponent)
 REGISTER_FACTORY(UCameraComponent)

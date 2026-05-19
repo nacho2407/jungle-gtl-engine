@@ -9,6 +9,8 @@
 
 #include "Geometry/OBB.h"
 
+using FBoundingBox = FAABB;
+
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct ID3D11Buffer;

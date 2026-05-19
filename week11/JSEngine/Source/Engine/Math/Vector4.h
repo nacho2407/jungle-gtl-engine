@@ -2,12 +2,19 @@
 
 #include "Vector.h"
 #include "Utils.h"
+#include "ReflectionSystem/ReflectionTypeInfo.h"
 
+#include "Vector4.generated.h"
 struct FMatrix;
+
+USTRUCT()
 
 struct FVector4
 {
-public:
+
+		GENERATED_BODY_FVector4()
+
+    public:
 	//======================================//
 	//				constructor				//
 	//======================================//
@@ -205,9 +212,13 @@ public:
 	{
 		struct
 		{
+            UPROPERTY(EditAnywhere, Category = "Default", DisplayName = "X")
 			float X;
+            UPROPERTY(EditAnywhere, Category = "Default", DisplayName = "Y")
 			float Y;
+            UPROPERTY(EditAnywhere, Category = "Default", DisplayName = "Z")
 			float Z;
+            UPROPERTY(EditAnywhere, Category = "Default", DisplayName = "W")
 			float W;
 		};
 

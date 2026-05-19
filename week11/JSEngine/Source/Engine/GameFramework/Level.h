@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "Object/Object.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 #include "GameFramework/AActor.h"
 
 #include "Level.generated.h"

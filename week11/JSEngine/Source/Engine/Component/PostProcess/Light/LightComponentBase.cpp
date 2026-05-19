@@ -1,6 +1,6 @@
-#include "LightComponentBase.h"
+﻿#include "LightComponentBase.h"
 #include "Object/ObjectFactory.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(ULightComponentBase, USceneComponent)
 REGISTER_FACTORY(ULightComponentBase)
@@ -26,7 +26,5 @@ void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 void ULightComponentBase::Serialize(FArchive& Ar)
 {
 	USceneComponent::Serialize(Ar);
-	Ar << "Color" << LightColor;
-	Ar << "Intensity" << Intensity;
-	Ar << "CastShadows" << bCastShadows;
+    ReflectionUtils::SerializeGeneratedPropertiesLocal(this, &ULightComponentBase::StaticClassInfo, Ar);
 }

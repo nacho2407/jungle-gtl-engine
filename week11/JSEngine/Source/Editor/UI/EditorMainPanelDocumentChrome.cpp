@@ -249,6 +249,7 @@ void FEditorMainPanel::RenderViewerToolbarControls(FEditorViewer* Viewer)
 		ImGui::MenuItem("Selected Bone Only", nullptr, &ShowFlags.bShowOnlySelectedBone);
 		ImGui::EndDisabled();
 		ImGui::Separator();
+		ImGui::MenuItem("Selected Bone Weight\n(Force GPU Skinning)", nullptr, &ShowFlags.bShowSelectedBoneWeight);
 		ImGui::MenuItem("Bounding Box", nullptr, &ShowFlags.bShowBoundingBox);
 		ImGui::MenuItem("Outline", nullptr, &ShowFlags.bShowOutline);
 		ImGui::EndPopup();
@@ -363,14 +364,6 @@ bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 					Client.ResetCamera();
 					Client.ApplyCameraMode();
 				}
-				ImGui::Separator();
-				ImGui::MenuItem("Skeletal Mesh", nullptr, &ShowFlags.bShowSkeletalMesh);
-				ImGui::MenuItem("Bones", nullptr, &ShowFlags.bShowBones);
-				ImGui::BeginDisabled(!ShowFlags.bShowBones);
-				ImGui::MenuItem("Selected Bone Only", nullptr, &ShowFlags.bShowOnlySelectedBone);
-				ImGui::EndDisabled();
-				ImGui::MenuItem("Bounding Box", nullptr, &ShowFlags.bShowBoundingBox);
-				ImGui::MenuItem("Outline", nullptr, &ShowFlags.bShowOutline);
 			}
 			else
 			{

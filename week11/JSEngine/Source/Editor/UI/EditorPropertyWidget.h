@@ -47,6 +47,7 @@ private:
 	void RenderActorTags(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderComponentTags(UActorComponent* Component);
 	void RenderComponentProperties();
+	void RenderCallInEditorFunctions(UActorComponent* Component);
 	void RenderPropertyWidget(struct FPropertyDescriptor& Prop);
 	void RenderSceneComponentRefWidget(struct FPropertyDescriptor& Prop, AActor* Owner);
 	void RenderSkeletalBonePoseDebug(class USkeletalMeshComponent* Comp);

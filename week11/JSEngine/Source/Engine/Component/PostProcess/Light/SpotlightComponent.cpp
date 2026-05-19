@@ -1,7 +1,7 @@
 ﻿#include "SpotlightComponent.h"
 #include "Object/ObjectFactory.h"
 #include <algorithm>
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 namespace
 {

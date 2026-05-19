@@ -1,6 +1,6 @@
-#include "SceneComponent.h"
+﻿#include "SceneComponent.h"
 #include "Object/ObjectFactory.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(USceneComponent, UActorComponent)
 REGISTER_FACTORY(USceneComponent)
@@ -35,10 +35,7 @@ void USceneComponent::Serialize(FArchive& Ar)
 		}
 	}
 
-	Ar << "Location" << RelativeLocation;
-	Ar << "Rotation" << RelativeRotation;
-	Ar << "Scale" << RelativeScale3D;
-	Ar << "AttachSocket" << AttachSocketName;
+	ReflectionUtils::SerializeGeneratedPropertiesLocal(this, &USceneComponent::StaticClassInfo, Ar);
 }
 USceneComponent::USceneComponent()
 {

@@ -1,5 +1,5 @@
-#include "SinusoidalCameraShakePattern.h"
-#include "Core/ReflectionUtils.h"
+﻿#include "SinusoidalCameraShakePattern.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(USinusoidalCameraShakePattern, UCameraShakePattern)
 REGISTER_FACTORY(USinusoidalCameraShakePattern)

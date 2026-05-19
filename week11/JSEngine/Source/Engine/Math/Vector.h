@@ -3,16 +3,27 @@
 #include <cassert>
 
 #include "Core/CoreTypes.h"
+#include "ReflectionSystem/ReflectionTypeInfo.h"
 
+#include "Vector.generated.h"
+
+USTRUCT()
 struct FVector
 {
-public:
+
+	GENERATED_BODY_FVector()
+
+
+    public:
 	union
 	{
 		struct
 		{
+            UPROPERTY(EditAnywhere, Category = "Default", DisplayName = "X")
 			float X;
+            UPROPERTY(EditAnywhere, Category = "Default", DisplayName = "Y")
 			float Y;
+            UPROPERTY(EditAnywhere, Category = "Default", DisplayName = "Z")
 			float Z;
 		};
 

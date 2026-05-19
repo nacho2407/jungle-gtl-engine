@@ -1,5 +1,5 @@
 ﻿#include "FireballComponent.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 DEFINE_CLASS(UFireballComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UFireballComponent)
 
