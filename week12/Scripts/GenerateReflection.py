@@ -40,6 +40,37 @@ REFLECTION_OUTPUT_DIR = ROOT / 'JSEngine' / 'Intermediate' / 'Reflection'
 
 ALL_CLASS_INFOS = []
 GENERATED_LUA_BINDING_CLASSES = []
+EXPECTED_GENERATED_FILES = set()
+GENERATED_FILE_SUFFIXES = ('.gen.cpp', '.gen.h')
+
+
+def record_generated_file(gen_filepath):
+	EXPECTED_GENERATED_FILES.add(gen_filepath.resolve())
+
+
+def cleanup_stale_generated_files():
+	if not REFLECTION_OUTPUT_DIR.exists():
+		return
+
+	stale_files = []
+	for gen_filepath in REFLECTION_OUTPUT_DIR.rglob('*'):
+		if not gen_filepath.is_file():
+			continue
+		if not gen_filepath.name.endswith(GENERATED_FILE_SUFFIXES):
+			continue
+		if gen_filepath.resolve() in EXPECTED_GENERATED_FILES:
+			continue
+		stale_files.append(gen_filepath)
+
+	for stale_file in stale_files:
+		stale_file.unlink()
+		print(f'Removed stale generated file: {stale_file.relative_to(ROOT)}')
+
+	for directory in sorted((path for path in REFLECTION_OUTPUT_DIR.rglob('*') if path.is_dir()), reverse=True):
+		try:
+			directory.rmdir()
+		except OSError:
+			pass
 
 
 # 생성되는 gen.cpp에서 원본 헤더를 include할 때 사용할 상대 경로를 만듭니다.
@@ -1418,6 +1449,7 @@ def generate_lua_bindings_file():
 """
 
 	gen_filepath = REFLECTION_OUTPUT_DIR / 'GeneratedLuaBindings.gen.cpp'
+	record_generated_file(gen_filepath)
 	gen_filepath.parent.mkdir(parents=True, exist_ok=True)
 	with open(gen_filepath, 'w', encoding='utf-8', newline='\n') as f:
 		f.write(gen_code)
@@ -1673,6 +1705,7 @@ static Z_AutoRegister_UClass_{class_name} Z_AutoRegister_UClass_{class_name}_Var
 """
 
 	gen_filepath = make_generated_file_path(header_path, class_name)
+	record_generated_file(gen_filepath)
 	gen_filepath.parent.mkdir(parents=True, exist_ok=True)
 	with open(gen_filepath, 'w', encoding='utf-8', newline='\n') as f:
 		f.write(gen_code)
@@ -1798,6 +1831,7 @@ static Z_AutoRegister_UScriptStruct_{struct_name} Z_AutoRegister_UScriptStruct_{
 """
 
 	gen_filepath = make_generated_file_path(header_path, struct_name)
+	record_generated_file(gen_filepath)
 	gen_filepath.parent.mkdir(parents=True, exist_ok=True)
 	with open(gen_filepath, 'w', encoding='utf-8', newline='\n') as f:
 		f.write(gen_code)
@@ -1913,3 +1947,4 @@ if __name__ == '__main__':
 	for header in iter_header_paths():
 		parse_header_and_generate(header, enums, structs)
 	generate_lua_bindings_file()
+	cleanup_stale_generated_files()
