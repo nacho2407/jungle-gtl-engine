@@ -66,6 +66,63 @@ static void DrawDetailRow(const char* Label, const FString& Value)
 	}
 }
 
+bool ContentBrowserElement::RenameTo(const FString& NewStem, FString* OutError)
+{
+	auto SetError = [&](const char* Msg) { if (OutError) *OutError = Msg; };
+
+	if (NewStem.empty())
+	{
+		SetError("Name cannot be empty.");
+		return false;
+	}
+
+	// Windows 금지 문자 차단 — 파일 시스템 에러 떨어지기 전에 명시적 메시지.
+	static const char* kInvalidChars = "\\/:*?\"<>|";
+	if (NewStem.find_first_of(kInvalidChars) != FString::npos)
+	{
+		SetError("Name contains invalid character (\\/:*?\"<>|).");
+		return false;
+	}
+
+	const std::filesystem::path Dir = ContentItem.Path.parent_path();
+	const std::wstring NewStemW = FPaths::ToWide(NewStem);
+
+	// 파일은 확장자 유지, 디렉토리는 stem 자체가 곧 이름.
+	std::filesystem::path NewPath;
+	if (ContentItem.bIsDirectory)
+	{
+		NewPath = Dir / NewStemW;
+	}
+	else
+	{
+		NewPath = Dir / (NewStemW + ContentItem.Path.extension().wstring());
+	}
+
+	// 같은 path 면 no-op (성공 처리).
+	if (NewPath == ContentItem.Path)
+	{
+		return true;
+	}
+
+	if (std::filesystem::exists(NewPath))
+	{
+		SetError("A file with that name already exists in this directory.");
+		return false;
+	}
+
+	std::error_code Ec;
+	std::filesystem::rename(ContentItem.Path, NewPath, Ec);
+	if (Ec)
+	{
+		SetError(Ec.message().c_str());
+		return false;
+	}
+
+	ContentItem.Path = NewPath;
+	ContentItem.Name = NewPath.filename().wstring();
+	return true;
+}
+
 bool ContentBrowserElement::RenderSelectSpace(ContentBrowserContext& Context)
 {
 	FString Name = FPaths::ToUtf8(ContentItem.Name);
@@ -152,6 +209,15 @@ void ContentBrowserElement::Render(ContentBrowserContext& Context)
 
 	if (ImGui::BeginPopupContextItem())
 	{
+		// 모든 element 공통 — 자식 클래스의 RenderContextMenu 위에 Rename 항목 제공.
+		// 클릭 시 이 element 를 selected 로 만들고 rename popup 요청 set — ContentBrowser
+		// 가 다음 프레임 modal popup 열어 처리.
+		if (ImGui::MenuItem("Rename"))
+		{
+			Context.SelectedElement = shared_from_this();
+			Context.bRenameRequested = true;
+		}
+		ImGui::Separator();
 		RenderContextMenu(Context);
 		ImGui::EndPopup();
 	}
