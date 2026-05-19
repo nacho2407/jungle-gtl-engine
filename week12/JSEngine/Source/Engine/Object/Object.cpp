@@ -141,7 +141,7 @@ void UObject::CopyPropertiesFrom(UObject* Src, const FDuplicateContext* Context)
 
 		if (DstProperty->CopyValue(this, Src, Context))
 		{
-			PostEditChangeProperty({ DstProperty->Name, EPropertyChangeType::ValueSet });
+			PostEditProperty(DstProperty->Name);
 		}
 	}
 }

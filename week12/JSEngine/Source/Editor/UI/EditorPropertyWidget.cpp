@@ -2455,7 +2455,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(const FPropertyHandle& Handle)
 			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
 			bPropertyEditUndoCaptured = true;
 		}
-		NotifyTarget->PostEditChangeProperty({ Property.Name, EPropertyChangeType::ValueSet });
+		NotifyTarget->PostEditProperty(Property.Name);
 		if (EditorEngine)
 		{
 			EditorEngine->GetSceneService().MarkDirty();
