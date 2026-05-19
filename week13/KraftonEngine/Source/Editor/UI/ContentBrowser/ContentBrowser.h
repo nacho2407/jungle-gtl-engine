@@ -25,7 +25,7 @@ public:
 private:
 	void LoadFromSettings();
 	void RefreshContent();
-	void DrawDirNode(FDirNode InNode);
+	void DrawDirNode(const FDirNode& InNode);
 	void DrawContents();
 
 	TArray<FContentItem> ReadDirectory(std::wstring Path);
