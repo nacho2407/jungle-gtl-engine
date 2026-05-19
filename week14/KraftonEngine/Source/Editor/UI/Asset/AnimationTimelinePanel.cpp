@@ -4,10 +4,13 @@
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimDataModel.h"
-#include "Animation/AnimNotify_LogMessage.h"
-#include "Animation/AnimNotifyState_LogDuration.h"
+#include "Animation/AnimNotify.h"
+#include "Animation/AnimNotifyState.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Object/Object.h"
+#include "Object/ObjectFactory.h"
+#include "Object/UClass.h"
+#include "Core/PropertyTypes.h"
 
 #include <imgui.h>
 #include <algorithm>
@@ -39,36 +42,192 @@ namespace
 	constexpr ImU32 ColNotify    = IM_COL32(74, 145, 226, 255);
 	constexpr ImU32 ColNotifyDur = IM_COL32(74, 145, 226, 110);
 
-	// 노티파이 + 데모용 로직 객체(UAnimNotify_LogMessage)를 함께 생성.
-	// 트리거 시 콘솔에 메시지를 찍어 dispatch 경로가 실제 연결됐음을 확인할 수 있다.
-	FAnimNotifyEvent MakeNotify(UAnimSequence* Seq, const FString& Name, float Time)
+	// 등록된 모든 UClass 중 Base 의 구체 서브클래스만 수집 (Base 자체는 제외).
+	// ObjectFactory 가 UCLASS 등록 시 자동으로 클래스명 → 인스턴스 함수를 등록하므로
+	// 새 Notify/NotifyState 클래스를 추가하면 별도 작업 없이 자동으로 콤보에 노출된다.
+	TArray<UClass*> EnumerateConcreteSubclasses(UClass* Base)
+	{
+		TArray<UClass*> Out;
+		if (!Base) return Out;
+		for (UClass* C : UClass::GetAllClasses())
+		{
+			if (!C || C == Base) continue;
+			if (!C->IsA(Base)) continue;
+			Out.push_back(C);
+		}
+		return Out;
+	}
+
+	// Notify/NotifyState 인스턴스 생성 + FAnimNotifyEvent 채워 반환.
+	// bAsState=true → NotifyState 슬롯, false → Notify 슬롯. ObjectFactory::Create 가 클래스
+	// 이름으로 인스턴스 만들고 DataModel 을 Outer 로 매단다 (라이프타임 체인).
+	FAnimNotifyEvent MakeNotifyFromClass(UAnimSequence* Seq, UClass* Cls,
+	                                     const FString& Name, float Time,
+	                                     float Duration, bool bAsState)
 	{
 		FAnimNotifyEvent Event;
 		Event.NotifyName  = FName(Name);
 		Event.TriggerTime = Time;
-		Event.Duration    = 0.0f;
+		Event.Duration    = bAsState ? std::max(Duration, 0.01f) : 0.0f;
 
-		UAnimNotify_LogMessage* Logic =
-			UObjectManager::Get().CreateObject<UAnimNotify_LogMessage>(Seq->GetDataModel());
-		Logic->Message = Name;
-		Event.Notify   = Logic;
+		if (Cls && Seq)
+		{
+			UObject* Created = FObjectFactory::Get().Create(Cls->GetName(), Seq->GetDataModel());
+			if (bAsState)
+			{
+				Event.NotifyState = Cast<UAnimNotifyState>(Created);
+			}
+			else
+			{
+				Event.Notify = Cast<UAnimNotify>(Created);
+			}
+		}
 		return Event;
 	}
 
-	// State notify + 데모용 로직 객체(UAnimNotifyState_LogDuration).
-	// Duration > 0 → AnimInstance 가 Begin/Tick/End 경로로 dispatch (구간 활성 이벤트).
-	FAnimNotifyEvent MakeNotifyState(UAnimSequence* Seq, const FString& Name, float Time, float Duration)
+	// 한 UObject 의 UPROPERTY(Edit) 필드를 인플레이스로 그려준다. Notify/NotifyState 의
+	// payload 편집용 경량 인스펙터 — 풀 FEditorPropertyWidget 의존성 없이 timeline 패널 안에서
+	// 자족. 지원 타입은 Notify payload 에 흔히 쓰일 단순형 (Bool/Int/Float/String/Vec3/Vec4/Color4).
+	// 그 외 타입은 disabled placeholder.
+	bool RenderObjectPropertiesInline(UObject* Object)
 	{
-		FAnimNotifyEvent Event;
-		Event.NotifyName  = FName(Name);
-		Event.TriggerTime = Time;
-		Event.Duration    = std::max(Duration, 0.01f);
+		if (!Object)
+		{
+			ImGui::TextDisabled("(no object)");
+			return false;
+		}
+		TArray<FPropertyValue> Props;
+		Object->GetEditableProperties(Props);
+		if (Props.empty())
+		{
+			ImGui::TextDisabled("(no editable properties)");
+			return false;
+		}
 
-		UAnimNotifyState_LogDuration* Logic =
-			UObjectManager::Get().CreateObject<UAnimNotifyState_LogDuration>(Seq->GetDataModel());
-		Logic->Tag        = Name;
-		Event.NotifyState = Logic;
-		return Event;
+		bool bAnyChanged = false;
+
+		if (ImGui::BeginTable("##notifyProps", 2,
+		                      ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV))
+		{
+			ImGui::TableSetupColumn("##label", ImGuiTableColumnFlags_WidthFixed, 120.0f);
+			ImGui::TableSetupColumn("##value", ImGuiTableColumnFlags_WidthStretch);
+
+			for (FPropertyValue& Prop : Props)
+			{
+				const bool bReadOnly = Prop.Property && (Prop.Property->Flags & PF_ReadOnly) != 0;
+				const char* Disp = Prop.GetDisplayName();
+				if (!Disp || !*Disp) Disp = Prop.GetName();
+
+				ImGui::PushID(Prop.GetName() ? Prop.GetName() : "");
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				ImGui::AlignTextToFramePadding();
+				ImGui::TextUnformatted(Disp ? Disp : "");
+				ImGui::TableSetColumnIndex(1);
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				if (bReadOnly) ImGui::BeginDisabled();
+
+				bool bChanged = false;
+				switch (Prop.GetType())
+				{
+				case EPropertyType::Bool:
+				{
+					bool* V = static_cast<bool*>(Prop.GetValuePtr());
+					if (V) bChanged = ImGui::Checkbox("##v", V);
+					break;
+				}
+				case EPropertyType::ByteBool:
+				{
+					uint8* V = static_cast<uint8*>(Prop.GetValuePtr());
+					if (V)
+					{
+						bool b = (*V != 0);
+						if (ImGui::Checkbox("##v", &b)) { *V = b ? 1 : 0; bChanged = true; }
+					}
+					break;
+				}
+				case EPropertyType::Int:
+				{
+					int32* V = static_cast<int32*>(Prop.GetValuePtr());
+					if (V) bChanged = ImGui::DragInt("##v", V, Prop.GetSpeed());
+					break;
+				}
+				case EPropertyType::Float:
+				{
+					float* V = static_cast<float*>(Prop.GetValuePtr());
+					if (V) bChanged = ImGui::DragFloat("##v", V, Prop.GetSpeed());
+					break;
+				}
+				case EPropertyType::Vec3:
+				{
+					float* V = static_cast<float*>(Prop.GetValuePtr());
+					if (V) bChanged = ImGui::DragFloat3("##v", V, Prop.GetSpeed());
+					break;
+				}
+				case EPropertyType::Vec4:
+				{
+					float* V = static_cast<float*>(Prop.GetValuePtr());
+					if (V) bChanged = ImGui::DragFloat4("##v", V, Prop.GetSpeed());
+					break;
+				}
+				case EPropertyType::Color4:
+				{
+					float* V = static_cast<float*>(Prop.GetValuePtr());
+					if (V) bChanged = ImGui::ColorEdit4("##v", V);
+					break;
+				}
+				case EPropertyType::String:
+				{
+					FString* S = static_cast<FString*>(Prop.GetValuePtr());
+					if (S)
+					{
+						char Buf[256];
+						strncpy_s(Buf, sizeof(Buf), S->c_str(), _TRUNCATE);
+						if (ImGui::InputText("##v", Buf, sizeof(Buf)))
+						{
+							*S = Buf;
+							bChanged = true;
+						}
+					}
+					break;
+				}
+				case EPropertyType::Name:
+				{
+					FName* N = static_cast<FName*>(Prop.GetValuePtr());
+					if (N)
+					{
+						FString Cur = N->ToString();
+						char Buf[256];
+						strncpy_s(Buf, sizeof(Buf), Cur.c_str(), _TRUNCATE);
+						if (ImGui::InputText("##v", Buf, sizeof(Buf)))
+						{
+							*N = FName(FString(Buf));
+							bChanged = true;
+						}
+					}
+					break;
+				}
+				default:
+					ImGui::TextDisabled("(unsupported type)");
+					break;
+				}
+
+				if (bReadOnly) ImGui::EndDisabled();
+
+				if (bChanged)
+				{
+					bAnyChanged = true;
+					if (Prop.Property)
+					{
+						Object->PostEditProperty(Prop.Property->Name);
+					}
+				}
+				ImGui::PopID();
+			}
+			ImGui::EndTable();
+		}
+		return bAnyChanged;
 	}
 
 	int NiceFrameStep(int Raw)
@@ -197,23 +356,50 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 	{
 		ImGui::TextDisabled("%.3f s", sPendingNotifyTime);
 		ImGui::Separator();
-		if (ImGui::MenuItem("Add Notify"))
+
+		// 등록된 UAnimNotify 자손 (instant) 클래스 enum → 콤보 메뉴.
+		if (ImGui::BeginMenu("Add Notify (instant)"))
 		{
-			static int sNotifyCounter = 0;
-			const FString Name = FString("Notify_") + std::to_string(++sNotifyCounter);
-			Seq->GetMutableModelNotifies().push_back(
-				MakeNotify(Seq, Name, sPendingNotifyTime));
-			Seq->RefreshRuntimeNotifies();
+			const TArray<UClass*> NotifyClasses = EnumerateConcreteSubclasses(UAnimNotify::StaticClass());
+			if (NotifyClasses.empty())
+			{
+				ImGui::TextDisabled("(no UAnimNotify subclass registered)");
+			}
+			for (UClass* Cls : NotifyClasses)
+			{
+				if (ImGui::MenuItem(Cls->GetName()))
+				{
+					static int sNotifyCounter = 0;
+					const FString Name = FString(Cls->GetName()) + "_" + std::to_string(++sNotifyCounter);
+					Seq->GetMutableModelNotifies().push_back(
+						MakeNotifyFromClass(Seq, Cls, Name, sPendingNotifyTime, 0.0f, false));
+					Seq->RefreshRuntimeNotifies();
+				}
+			}
+			ImGui::EndMenu();
 		}
-		if (ImGui::MenuItem("Add NotifyState (LogDuration)"))
+
+		// 등록된 UAnimNotifyState 자손 (duration) 클래스 enum → 콤보 메뉴.
+		if (ImGui::BeginMenu("Add NotifyState (duration)"))
 		{
-			static int sStateCounter = 0;
-			const FString Name = FString("State_") + std::to_string(++sStateCounter);
-			// default duration = 0.3s 또는 남은 길이 — 어느 쪽이든 클램프되어 들어감.
-			const float DefaultDur = std::min(0.3f, std::max(PlayLength - sPendingNotifyTime, 0.05f));
-			Seq->GetMutableModelNotifies().push_back(
-				MakeNotifyState(Seq, Name, sPendingNotifyTime, DefaultDur));
-			Seq->RefreshRuntimeNotifies();
+			const TArray<UClass*> StateClasses = EnumerateConcreteSubclasses(UAnimNotifyState::StaticClass());
+			if (StateClasses.empty())
+			{
+				ImGui::TextDisabled("(no UAnimNotifyState subclass registered)");
+			}
+			for (UClass* Cls : StateClasses)
+			{
+				if (ImGui::MenuItem(Cls->GetName()))
+				{
+					static int sStateCounter = 0;
+					const FString Name = FString(Cls->GetName()) + "_" + std::to_string(++sStateCounter);
+					const float DefaultDur = std::min(0.3f, std::max(PlayLength - sPendingNotifyTime, 0.05f));
+					Seq->GetMutableModelNotifies().push_back(
+						MakeNotifyFromClass(Seq, Cls, Name, sPendingNotifyTime, DefaultDur, true));
+					Seq->RefreshRuntimeNotifies();
+				}
+			}
+			ImGui::EndMenu();
 		}
 		ImGui::EndPopup();
 	}
@@ -295,12 +481,9 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 		            ColLabel, "1");
 		if (DrawAddButton("##addNotify", LaneY, NotifyLaneH))
 		{
-			// 현재 재생 위치에 노티파이 추가 (로직 객체 포함).
-			static int sLaneNotifyCounter = 0;
-			const FString Name = FString("Notify_L") + std::to_string(++sLaneNotifyCounter);
-			Seq->GetMutableModelNotifies().push_back(
-				MakeNotify(Seq, Name, CurrentTime));
-			Seq->RefreshRuntimeNotifies();
+			// 같은 컨텍스트 popup 재사용 — playhead 시각으로 진입. 클래스 picker 제공.
+			sPendingNotifyTime = CurrentTime;
+			ImGui::OpenPopup("##addNotifyCtx");
 		}
 		DL->AddRectFilled(ImVec2(CanvasX, LaneY),
 		                  ImVec2(CanvasX + CanvasW, LaneY + NotifyLaneH), IM_COL32(24, 24, 24, 255));
@@ -368,12 +551,12 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			{
 				if (bHasDur)
 				{
-					ImGui::SetTooltip("%s\n%.3f s + %.3f s (state)\n(drag right edge: resize)",
+					ImGui::SetTooltip("%s\n%.3f s + %.3f s (state)\n(double-click: properties, drag right edge: resize)",
 					                  Nm.c_str(), N.TriggerTime, N.Duration);
 				}
 				else
 				{
-					ImGui::SetTooltip("%s\n%.3f s\n(double-click: rename)",
+					ImGui::SetTooltip("%s\n%.3f s\n(double-click: properties)",
 					                  Nm.c_str(), N.TriggerTime);
 				}
 			}
@@ -396,16 +579,21 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 				}
 			}
 
-			// 더블클릭 또는 컨텍스트 메뉴 → 이름 변경 팝업
+			// 더블클릭 → Properties 팝업 (UPROPERTY(Edit) 편집), 컨텍스트 메뉴 → Rename/Properties/Delete.
 			bool bOpenRename = false;
+			bool bOpenProps  = false;
 			if (bHovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 			{
-				bOpenRename = true;
+				bOpenProps = true;
 			}
 			if (ImGui::BeginPopupContextItem("##notifyCtx"))
 			{
 				ImGui::TextDisabled("%s", Nm.c_str());
 				ImGui::Separator();
+				if (ImGui::MenuItem("Properties..."))
+				{
+					bOpenProps = true;
+				}
 				if (ImGui::MenuItem("Rename"))
 				{
 					bOpenRename = true;
@@ -421,6 +609,10 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 				snprintf(sRenameBuf, sizeof(sRenameBuf), "%s", Nm.c_str());
 				ImGui::OpenPopup("##notifyRename");
 			}
+			if (bOpenProps)
+			{
+				ImGui::OpenPopup("##notifyProps");
+			}
 			if (ImGui::BeginPopup("##notifyRename"))
 			{
 				ImGui::TextDisabled("Rename Notify");
@@ -434,17 +626,40 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 				ImGui::SameLine();
 				if ((bCommit || ImGui::Button("OK")) && sRenameBuf[0] != '\0')
 				{
+					// 표시 이름만 변경. Payload (Message/Tag 등) 는 Properties 팝업에서 UPROPERTY 편집.
 					N.NotifyName = FName(FString(sRenameBuf));
-					if (UAnimNotify_LogMessage* Log =
-						Cast<UAnimNotify_LogMessage>(N.Notify))
-					{
-						Log->Message = sRenameBuf;
-					}
-					if (UAnimNotifyState_LogDuration* LogState =
-						Cast<UAnimNotifyState_LogDuration>(N.NotifyState))
-					{
-						LogState->Tag = sRenameBuf;
-					}
+					Seq->RefreshRuntimeNotifies();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
+
+			// Properties 팝업 — 컨텍스트 메뉴에서 "Properties..." 선택 시 열림.
+			// N.Notify / N.NotifyState 의 UPROPERTY(Edit) 필드를 인플레이스 편집.
+			if (ImGui::BeginPopup("##notifyProps"))
+			{
+				const FString ClsName = N.Notify       ? FString(N.Notify->GetClass()->GetName())
+				                      : N.NotifyState  ? FString(N.NotifyState->GetClass()->GetName())
+				                                       : FString("None");
+				ImGui::TextDisabled("%s  (%s)", Nm.c_str(), ClsName.c_str());
+				ImGui::Separator();
+
+				if (N.Notify)
+				{
+					RenderObjectPropertiesInline(N.Notify);
+				}
+				if (N.NotifyState)
+				{
+					RenderObjectPropertiesInline(N.NotifyState);
+				}
+				if (!N.Notify && !N.NotifyState)
+				{
+					ImGui::TextDisabled("(no notify object bound)");
+				}
+
+				ImGui::Separator();
+				if (ImGui::Button("Close"))
+				{
 					Seq->RefreshRuntimeNotifies();
 					ImGui::CloseCurrentPopup();
 				}
