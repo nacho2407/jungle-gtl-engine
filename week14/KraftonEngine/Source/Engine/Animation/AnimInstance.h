@@ -97,18 +97,25 @@ public:
 	ERootMotionMode GetRootMotionMode() const { return RootMotionMode; }
 	void            SetRootMotionMode(ERootMotionMode InMode) { RootMotionMode = InMode; }
 
-	// ── Montage ──
-	// AnimInstance 한 개 당 활성 montage 1개 (default slot, whole-body).
-	// PlayMontage: 새 montage 재생 시작. 이미 다른 montage 가 활성이면 즉시 교체 (BlendIn).
-	// StopMontage: 현재 montage BlendOut 시작.
-	// Montage_JumpToSection / SetNextSection: 재생 중 section 흐름 제어.
+	// ── Montage (Phase 2.1+: slot 별 보유) ──
+	// SlotName 은 마지막 default 인자 — 미지정 (FName::None) 시 내부에서 DefaultMontageSlot
+	// 으로 resolve. 기존 호출 (PlayMontage(M) 등) 은 자동으로 DefaultSlot 사용 — backward compat.
+	// Phase 2.2 에서 FAnimNode_Slot 이 GetMontageInstanceForSlot 으로 trees 안에서 조회.
+	static const FName DefaultMontageSlot;
+
 	void  PlayMontage(UAnimMontage* Montage, FName StartSection = FName::None,
-	                  float PlayRate = 1.0f, float BlendInTime = -1.0f);
-	void  StopMontage(float BlendOutTime = -1.0f);
-	void  Montage_JumpToSection(FName SectionName);
-	void  Montage_SetNextSection(FName From, FName To);
-	bool  IsMontagePlaying(UAnimMontage* Montage = nullptr) const;
-	UAnimMontageInstance* GetMontageInstance() const { return MontageInstance; }
+	                  float PlayRate = 1.0f, float BlendInTime = -1.0f,
+	                  FName SlotName = FName::None);
+	void  StopMontage(float BlendOutTime = -1.0f, FName SlotName = FName::None);
+	void  Montage_JumpToSection(FName SectionName, FName SlotName = FName::None);
+	void  Montage_SetNextSection(FName From, FName To, FName SlotName = FName::None);
+	bool  IsMontagePlaying(UAnimMontage* Montage = nullptr, FName SlotName = FName::None) const;
+
+	// Slot 별 montage instance 조회. 없으면 nullptr.
+	UAnimMontageInstance* GetMontageInstanceForSlot(FName SlotName) const;
+
+	// Legacy alias — DefaultSlot 의 instance. 새 코드는 GetMontageInstanceForSlot 권장.
+	UAnimMontageInstance* GetMontageInstance() const;
 
 	// ── AnimGraph (Phase 1.4+) ──
 	// 자식이 NativeInitializeAnimation 에서 MakeNode 로 노드 트리 build 후 SetRootNode 호출.
@@ -145,8 +152,14 @@ protected:
 	UPROPERTY(Edit, Save, Category="Animation", DisplayName="Root Motion Mode", Enum=ERootMotionMode)
 	ERootMotionMode               RootMotionMode = ERootMotionMode::RootMotionFromEverything;
 
-	// Montage 인스턴스 — lazily 생성 (PlayMontage 첫 호출 시).
-	UAnimMontageInstance*         MontageInstance = nullptr;
+	// Slot 이름 → montage instance. 보통 1-2 개 (DefaultSlot, UpperBodySlot 등) 라
+	// 선형 탐색 OK. FName 키 TMap 의 hash 지원이 없어 array 사용.
+	struct FMontageSlotEntry
+	{
+		FName                 SlotName;
+		UAnimMontageInstance* Instance = nullptr;
+	};
+	TArray<FMontageSlotEntry>     MontageSlots;
 
 	// AnimGraph 트리의 root — null 이면 legacy 경로. 모든 노드는 OwnedNodes 가 단일 소유.
 	FAnimNode_Base*                              RootNode = nullptr;
