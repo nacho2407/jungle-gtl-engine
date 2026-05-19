@@ -80,7 +80,6 @@ private:
 	void CmdSuggest(const TArray<FString>& Args);
 	void CmdStat(const TArray<FString>& Args);
 	void CmdSkinning(const TArray<FString>& Args);
-	void CmdGPUStats(const TArray<FString>& Args);
     void CmdShadow(const TArray<FString>& Args);
 	void CmdCrash(const TArray<FString>& Args);
 	void PrintHistoryStats();
