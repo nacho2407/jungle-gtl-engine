@@ -1,5 +1,6 @@
 ﻿#include "Animation/AnimStateMachineInstance.h"
 
+#include "Animation/AnimationRuntime.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimStateMachine.h"
 #include "Asset/SkeletalMesh.h"
@@ -154,38 +155,27 @@ bool UAnimStateMachineInstance::SetStateMachine(UAnimStateMachine* InStateMachin
 
 void UAnimStateMachineInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
-    TargetStateIndex = -1;
-
-    FAnimStateRuntime* CurrentState = GetRuntimeState(CurrentStateIndex);
-    if (!CurrentState || !CurrentState->Desc || !CurrentState->Sequence)
+    if (ActiveTransition.bActive)
     {
+        TargetStateIndex = ActiveTransition.ToStateIndex;
+        UpdateStateTime(ActiveTransition.FromStateIndex, DeltaSeconds);
+        UpdateStateTime(ActiveTransition.ToStateIndex, DeltaSeconds);
+
+        ActiveTransition.ElapsedTime += DeltaSeconds;
+        if (GetTransitionAlpha() >= 1.0f)
+        {
+            FinishTransition();
+        }
         return;
     }
 
-    CurrentState->PreviousTime = CurrentState->CurrentTime;
+    TargetStateIndex = -1;
+    UpdateStateTime(CurrentStateIndex, DeltaSeconds);
 
-    const float PlayLength = CurrentState->Sequence->GetPlayLength();
-    if (PlayLength <= AnimationTimeEpsilon)
+    if (const FAnimTransitionDesc* CandidateTransition = FindBestTransitionFromState(CurrentStateIndex))
     {
-        CurrentState->CurrentTime = 0.0f;
+        StartTransition(*CandidateTransition);
     }
-    else
-    {
-        const float PlayRate = CurrentState->Desc->PlayRate;
-        if (std::fabs(PlayRate) > AnimationTimeEpsilon)
-        {
-            const float NewTime = CurrentState->CurrentTime + DeltaSeconds * PlayRate;
-            // 지금 단계에서는 transition이 없으므로 current state 하나의 시간만 sequence 정책에 맞춰 진행
-            CurrentState->CurrentTime = CurrentState->Desc->bLooping
-                ? WrapStateTime(NewTime, PlayLength)
-                : ClampStateTime(NewTime, PlayLength);
-        }
-    }
-
-    const FAnimTransitionDesc* CandidateTransition = FindBestTransitionFromState(CurrentStateIndex);
-    TargetStateIndex = CandidateTransition
-        ? FindRuntimeStateIndexByName(CandidateTransition->ToState)
-        : -1;
 }
 
 bool UAnimStateMachineInstance::EvaluateAnimation(TArray<FTransform>& OutLocalPose)
@@ -197,16 +187,28 @@ bool UAnimStateMachineInstance::EvaluateAnimation(TArray<FTransform>& OutLocalPo
         return false;
     }
 
-    const FAnimStateRuntime* CurrentState = GetRuntimeState(CurrentStateIndex);
-    if (!CurrentState || !CurrentState->Desc || !CurrentState->Sequence)
+    if (!ActiveTransition.bActive)
+    {
+        return EvaluateStatePose(CurrentStateIndex, Mesh, OutLocalPose);
+    }
+
+    TArray<FTransform> SourcePose;
+    if (ActiveTransition.bUseSourcePoseSnapshot)
+    {
+        SourcePose = ActiveTransition.SourcePoseSnapshot;
+    }
+    else if (!EvaluateStatePose(ActiveTransition.FromStateIndex, Mesh, SourcePose))
     {
         return false;
     }
 
-    const FAnimExtractContext ExtractContext(
-        CurrentState->CurrentTime,
-        CurrentState->Desc->bLooping);
-    return CurrentState->Sequence->GetAnimationPose(OutLocalPose, Mesh, ExtractContext);
+    TArray<FTransform> TargetPose;
+    if (!EvaluateStatePose(ActiveTransition.ToStateIndex, Mesh, TargetPose))
+    {
+        return false;
+    }
+
+    return FAnimationRuntime::BlendLocalPoses(SourcePose, TargetPose, GetTransitionAlpha(), OutLocalPose);
 }
 
 FName UAnimStateMachineInstance::GetCurrentStateName() const
@@ -290,6 +292,104 @@ UAnimStateMachineInstance::FAnimStateRuntime* UAnimStateMachineInstance::GetRunt
     return IsValidStateIndex(StateIndex) ? &RuntimeStates[StateIndex] : nullptr;
 }
 
+void UAnimStateMachineInstance::UpdateStateTime(int32 StateIndex, float DeltaSeconds)
+{
+    FAnimStateRuntime* State = GetRuntimeState(StateIndex);
+    if (!State || !State->Desc || !State->Sequence)
+    {
+        return;
+    }
+
+    State->PreviousTime = State->CurrentTime;
+
+    const float PlayLength = State->Sequence->GetPlayLength();
+    if (PlayLength <= AnimationTimeEpsilon)
+    {
+        State->CurrentTime = 0.0f;
+        return;
+    }
+
+    const float PlayRate = State->Desc->PlayRate;
+    if (std::fabs(PlayRate) <= AnimationTimeEpsilon)
+    {
+        return;
+    }
+
+    const float NewTime = State->CurrentTime + DeltaSeconds * PlayRate;
+    State->CurrentTime = State->Desc->bLooping
+        ? WrapStateTime(NewTime, PlayLength)
+        : ClampStateTime(NewTime, PlayLength);
+}
+
+void UAnimStateMachineInstance::StartTransition(const FAnimTransitionDesc& Transition)
+{
+    const int32 ToStateIndex = FindRuntimeStateIndexByName(Transition.ToState);
+    if (!IsValidStateIndex(CurrentStateIndex) ||
+        !IsValidStateIndex(ToStateIndex) ||
+        ToStateIndex == CurrentStateIndex)
+    {
+        return;
+    }
+
+    FAnimStateRuntime* TargetState = GetRuntimeState(ToStateIndex);
+    if (!TargetState)
+    {
+        return;
+    }
+
+    PreviousStateIndex = CurrentStateIndex;
+    TargetStateIndex = ToStateIndex;
+
+    // target state는 transition에 진입하는 순간부터 시간 0.0으로 재생
+    TargetState->PreviousTime = 0.0f;
+    TargetState->CurrentTime = 0.0f;
+
+    ActiveTransition = FAnimTransitionRuntime();
+    ActiveTransition.bActive = true;
+    ActiveTransition.FromStateIndex = CurrentStateIndex;
+    ActiveTransition.ToStateIndex = ToStateIndex;
+    ActiveTransition.ElapsedTime = 0.0f;
+    ActiveTransition.BlendTime = Transition.BlendTime;
+    ActiveTransition.Priority = Transition.Priority;
+
+    if (ActiveTransition.BlendTime <= AnimationTimeEpsilon)
+    {
+        FinishTransition();
+    }
+}
+
+void UAnimStateMachineInstance::FinishTransition()
+{
+    const int32 FinishedFromStateIndex = ActiveTransition.FromStateIndex;
+    const int32 FinishedToStateIndex = ActiveTransition.ToStateIndex;
+
+    if (IsValidStateIndex(FinishedToStateIndex))
+    {
+        CurrentStateIndex = FinishedToStateIndex;
+        PreviousStateIndex = FinishedFromStateIndex;
+    }
+
+    TargetStateIndex = -1;
+    ActiveTransition = FAnimTransitionRuntime();
+}
+
+bool UAnimStateMachineInstance::EvaluateStatePose(
+    int32 StateIndex,
+    const USkeletalMesh* Mesh,
+    TArray<FTransform>& OutPose) const
+{
+    const FAnimStateRuntime* State = GetRuntimeState(StateIndex);
+    if (!Mesh || !State || !State->Desc || !State->Sequence)
+    {
+        return false;
+    }
+
+    const FAnimExtractContext ExtractContext(
+        State->CurrentTime,
+        State->Desc->bLooping);
+    return State->Sequence->GetAnimationPose(OutPose, Mesh, ExtractContext);
+}
+
 const FAnimTransitionDesc* UAnimStateMachineInstance::FindBestTransitionFromState(int32 StateIndex) const
 {
     const FAnimStateRuntime* State = GetRuntimeState(StateIndex);
@@ -307,7 +407,8 @@ const FAnimTransitionDesc* UAnimStateMachineInstance::FindBestTransitionFromStat
             continue;
         }
 
-        if (FindRuntimeStateIndexByName(Transition->ToState) < 0)
+        const int32 ToStateIndex = FindRuntimeStateIndexByName(Transition->ToState);
+        if (ToStateIndex < 0 || ToStateIndex == StateIndex)
         {
             continue;
         }

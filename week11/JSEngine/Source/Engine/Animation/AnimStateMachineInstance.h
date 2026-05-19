@@ -7,6 +7,7 @@
 
 class UAnimSequenceBase;
 class UAnimStateMachine;
+class USkeletalMesh;
 
 class UAnimStateMachineInstance : public UAnimInstance
 {
@@ -57,6 +58,10 @@ private:
     int32 FindRuntimeStateIndexByName(const FName& StateName) const;
     const FAnimStateRuntime* GetRuntimeState(int32 StateIndex) const;
     FAnimStateRuntime* GetRuntimeState(int32 StateIndex);
+    void UpdateStateTime(int32 StateIndex, float DeltaSeconds);
+    void StartTransition(const FAnimTransitionDesc& Transition);
+    void FinishTransition();
+    bool EvaluateStatePose(int32 StateIndex, const USkeletalMesh* Mesh, TArray<FTransform>& OutPose) const;
     const FAnimTransitionDesc* FindBestTransitionFromState(int32 StateIndex) const;
     bool EvaluateTransitionCondition(const FAnimTransitionDesc& Transition) const;
     bool EvaluateStructuredCondition(
