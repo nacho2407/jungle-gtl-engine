@@ -21,6 +21,8 @@ struct TSubclassOf
 	TSubclassOf& operator=(UClass* InClass) { Assign(InClass); return *this; }
 	TSubclassOf& operator=(std::nullptr_t)  { Class = nullptr; return *this; }
 
+	void AssignUnchecked(UClass* InClass)   { Class = InClass; }
+
 	UClass*  Get() const                    { return Class; }
 	operator UClass*() const                { return Class; }
 	UClass*  operator->() const             { return Class; }

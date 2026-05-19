@@ -19,7 +19,6 @@
 #include "Object/UClass.h"
 #include "Render/Proxy/SkeletalMeshSceneProxy.h"
 #include "Serialization/Archive.h"
-#include "Serialization/MemoryArchive.h"
 
 #include <algorithm>
 #include <cstring>
@@ -243,21 +242,13 @@ void USkeletalMeshComponent::InitializeAnimation()
         if (!AnimInstanceClass) return;
         UObject* Obj = FObjectFactory::Get().Create(AnimInstanceClass->GetName(), this);
         AnimInstance = Cast<UAnimInstance>(Obj);
-        if (!AnimInstance)
+		if (!AnimInstance)
         {
             // 클래스가 등록 안됐거나 캐스트 실패 — 무관한 객체가 생성됐을 수 있으니 정리.
             if (Obj) UObjectManager::Get().DestroyObject(Obj);
             return;
         }
         AnimInstance->SetOwningComponent(this);
-
-        // Editor-set 데이터 (Serialize 라운드트립으로 들어온 ScriptFile 등) 가 buffer 에 있으면
-        // 새 AnimInstance 에 주입 — NativeInitializeAnimation 보다 먼저.
-        if (!AnimInstanceData.empty())
-        {
-            FMemoryArchive Reader(AnimInstanceData, /*bIsSaving*/false);
-            AnimInstance->Serialize(Reader);
-        }
 
         AnimInstance->NativeInitializeAnimation();
         break;
@@ -387,31 +378,6 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
     Ar << AnimationData.bLooping;
     Ar << AnimationData.bPlaying;
 
-    // AnimInstanceClass — 클래스 이름 라운드트립. 복원 시 TSubclassOf 의 IsA 가드로 잘못된 클래스 자동 nullptr.
-    if (Ar.IsLoading())
-    {
-        FString ClassName;
-        Ar << ClassName;
-        AnimInstanceClass = (ClassName.empty() || ClassName == "None")
-            ? nullptr
-            : UClass::FindByName(ClassName.c_str());
-    }
-    else
-    {
-        FString ClassName = AnimInstanceClass.Get() ? FString(AnimInstanceClass.Get()->GetName()) : FString("None");
-        Ar << ClassName;
-    }
-
-    // AnimInstance 의 Editor-set 데이터 (ScriptFile 등) opaque buffer 라운드트립.
-    // Save 시 live 인스턴스에서 매번 재추출 — 옵션 (a): Editor 작업 직후에는 갱신 안 하고 Save 시점 1회.
-    // Load 시 buffer 만 채우고, 실제 적용은 InitializeAnimation 안에서 (AnimInstance 생성 직후).
-    if (Ar.IsSaving() && AnimInstance)
-    {
-        FMemoryArchive Writer(/*bIsSaving*/true);
-        AnimInstance->Serialize(Writer);
-        AnimInstanceData = Writer.GetBuffer();
-    }
-    Ar << AnimInstanceData;
 }
 
 bool USkeletalMeshComponent::EvaluateAnimInstance(float DeltaTime)
