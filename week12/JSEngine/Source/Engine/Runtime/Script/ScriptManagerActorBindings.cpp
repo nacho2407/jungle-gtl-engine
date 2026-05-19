@@ -312,9 +312,6 @@ void FScriptManager::BindActorTypes()
 	LUA_RW_PROPERTY(Scale, GetActorScale, SetActorScale);
 	LUA_RO_PROPERTY(UUID, GetUUID);
 	LUA_RO_PROPERTY(RootComponent, GetRootComponent);
-	LUA_RW_PROPERTY(Active, IsActive, SetActive);
-	LUA_RW_PROPERTY(Visible, IsVisible, SetVisible);
-	LUA_RW_PROPERTY(TickInEditor, ShouldTickInEditor, SetTickInEditor);
 	LUA_METHOD(Duplicate, Duplicate);
 	LUA_METHOD(GetActorForwardVector, GetActorForward);
 	LUA_METHOD(GetActorRightVector, GetActorRight);

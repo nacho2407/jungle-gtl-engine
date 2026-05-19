@@ -187,13 +187,13 @@ protected:
 	FVector PendingActorRotation = FVector(0, 0, 0);
 	FVector PendingActorScale = FVector(1, 1, 1);
 
-	UPROPERTY(DisplayName = "Visible")
+	UPROPERTY(DisplayName = "Visible", LuaReadWrite, LuaName = Visible)
 	bool bVisible = true;
-	
-	UPROPERTY(DisplayName = "Active")
+
+	UPROPERTY(DisplayName = "Active", LuaReadWrite, LuaName = Active)
 	bool bIsActive = true;
-	
-	UPROPERTY(DisplayName = "Tick in Editor")
+
+	UPROPERTY(DisplayName = "Tick in Editor", LuaReadWrite, LuaName = TickInEditor)
 	bool bTickInEditor = false;
 
 	TArray<UActorComponent*> OwnedComponents;

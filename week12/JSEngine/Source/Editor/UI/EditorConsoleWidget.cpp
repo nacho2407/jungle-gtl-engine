@@ -82,6 +82,16 @@ FString LowerText(const char* Text)
 	return Text ? ToLowerCopy(Text) : FString();
 }
 
+FString TrimTrailingLineBreaks(const char* Text)
+{
+	FString Result = Text ? Text : "";
+	while (!Result.empty() && (Result.back() == '\n' || Result.back() == '\r'))
+	{
+		Result.pop_back();
+	}
+	return Result;
+}
+
 ELogVerbosity InferLogVerbosity(const char* Text)
 {
 	const FString Lower = LowerText(Text);
@@ -270,16 +280,7 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 			if (!IsLogLevelVisible(Verbosity)) continue;
 			if (!Filter.PassFilter(Item)) continue;
 
-			bool bHasColor = false;
-			ImVec4 Color = GetConsoleLogColor(Item, Verbosity, bHasColor);
-
-			if (bHasColor) {
-				ImGui::PushStyleColor(ImGuiCol_Text, Color);
-			}
-			ImGui::TextUnformatted(Item);
-			if (bHasColor) {
-				ImGui::PopStyleColor();
-			}
+			RenderLogLine(i, Item, Verbosity);
 		}
 
 		if (ScrollToBottom || (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())) {
@@ -367,18 +368,7 @@ void FEditorConsoleWidget::RenderLogContents(float Height)
 				continue;
 			}
 
-			bool bHasColor = false;
-			ImVec4 Color = GetConsoleLogColor(Item, Verbosity, bHasColor);
-
-			if (bHasColor)
-			{
-				ImGui::PushStyleColor(ImGuiCol_Text, Color);
-			}
-			ImGui::TextUnformatted(Item);
-			if (bHasColor)
-			{
-				ImGui::PopStyleColor();
-			}
+			RenderLogLine(i, Item, Verbosity);
 		}
 
 		if (ScrollToBottom || (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
@@ -388,6 +378,68 @@ void FEditorConsoleWidget::RenderLogContents(float Height)
 		ScrollToBottom = false;
 	}
 	ImGui::EndChild();
+}
+
+void FEditorConsoleWidget::RenderLogLine(int32 MessageIndex, const char* Item, ELogVerbosity Verbosity)
+{
+	if (!Item)
+	{
+		return;
+	}
+
+	const FString DisplayText = TrimTrailingLineBreaks(Item);
+	const char* Text = DisplayText.c_str();
+	bool bHasColor = false;
+	ImVec4 Color = GetConsoleLogColor(Text, Verbosity, bHasColor);
+
+	ImGui::PushID(MessageIndex);
+	if (bHasColor)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, Color);
+	}
+
+	const ImVec2 CursorPos = ImGui::GetCursorScreenPos();
+	const ImVec2 TextSize = ImGui::CalcTextSize(Text, nullptr, false);
+	const float RowHeight = ImGui::GetTextLineHeightWithSpacing();
+	const float RowWidth = std::max(ImGui::GetContentRegionAvail().x, TextSize.x);
+	const bool bSelected = SelectedLogMessageIndex == MessageIndex;
+
+	ImGui::Selectable("##LogLine", bSelected, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(RowWidth, RowHeight));
+	const bool bHovered = ImGui::IsItemHovered();
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+	{
+		SelectedLogMessageIndex = MessageIndex;
+	}
+	if (bHovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+	{
+		SelectedLogMessageIndex = MessageIndex;
+		ImGui::SetClipboardText(Text);
+	}
+	if (bSelected && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
+		&& ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C, false))
+	{
+		ImGui::SetClipboardText(Text);
+	}
+
+	if (ImGui::BeginPopupContextItem("CopyLogLine"))
+	{
+		SelectedLogMessageIndex = MessageIndex;
+		if (ImGui::MenuItem("Copy"))
+		{
+			ImGui::SetClipboardText(Text);
+		}
+		ImGui::EndPopup();
+	}
+
+	ImGui::SetCursorScreenPos(ImVec2(CursorPos.x, CursorPos.y + (RowHeight - ImGui::GetTextLineHeight()) * 0.5f));
+	ImGui::TextUnformatted(Text);
+	ImGui::SetCursorScreenPos(ImVec2(CursorPos.x, CursorPos.y + RowHeight));
+
+	if (bHasColor)
+	{
+		ImGui::PopStyleColor();
+	}
+	ImGui::PopID();
 }
 
 void FEditorConsoleWidget::RenderInputLine(const char* Id, float Width, bool bRequestFocus)
@@ -907,40 +959,40 @@ void FEditorConsoleWidget::CmdSkinning(const TArray<FString>& Args)
 
 void FEditorConsoleWidget::CmdShadow(const TArray<FString>& Args)
 {
-    if (Args.size() < 3)
-    {
-        AddLog("[WARN] Usage: shadow filter <pcf|vsm>\n");
-        return;
-    }
+	if (Args.size() < 3)
+	{
+		AddLog("[WARN] Usage: shadow filter <pcf|vsm>\n");
+		return;
+	}
 
-    FString CommandTarget = Args[1];
-    FString CommandValue = Args[2];
+	FString CommandTarget = Args[1];
+	FString CommandValue = Args[2];
 
-    // 대소문자 구분 없이 처리하기 위해 소문자로 변환
-    std::transform(CommandTarget.begin(), CommandTarget.end(), CommandTarget.begin(), ::tolower);
-    std::transform(CommandValue.begin(), CommandValue.end(), CommandValue.begin(), ::tolower);
+	// 대소문자 구분 없이 처리하기 위해 소문자로 변환
+	std::transform(CommandTarget.begin(), CommandTarget.end(), CommandTarget.begin(), ::tolower);
+	std::transform(CommandValue.begin(), CommandValue.end(), CommandValue.begin(), ::tolower);
 
-    if (CommandTarget == "filter")
-    {
-        if (CommandValue == "vsm")
-        {
-            FEditorSettings::Get().ShadowFilterMode = EShadowFilter::VSM;
-            AddLog("Shadow filter mode changed to: VSM\n");
-        }
-        else if (CommandValue == "pcf")
-        {
-            FEditorSettings::Get().ShadowFilterMode = EShadowFilter::PCF;
-            AddLog("Shadow filter mode changed to: PCF\n");
-        }
-        else
-        {
-            AddLog("[ERROR] Invalid shadow filter mode: %s\n", CommandValue.c_str());
-        }
-    }
-    else
-    {
-        AddLog("[ERROR] Unknown shadow command target: %s\n", CommandTarget.c_str());
-    }
+	if (CommandTarget == "filter")
+	{
+		if (CommandValue == "vsm")
+		{
+			FEditorSettings::Get().ShadowFilterMode = EShadowFilter::VSM;
+			AddLog("Shadow filter mode changed to: VSM\n");
+		}
+		else if (CommandValue == "pcf")
+		{
+			FEditorSettings::Get().ShadowFilterMode = EShadowFilter::PCF;
+			AddLog("Shadow filter mode changed to: PCF\n");
+		}
+		else
+		{
+			AddLog("[ERROR] Invalid shadow filter mode: %s\n", CommandValue.c_str());
+		}
+	}
+	else
+	{
+		AddLog("[ERROR] Unknown shadow command target: %s\n", CommandTarget.c_str());
+	}
 }
 
 void FEditorConsoleWidget::CmdCrash(const TArray<FString>& Args)

@@ -2,9 +2,9 @@
 
 #include "Core/Containers/String.h"
 #include "Core/Logging/Log.h"
+#include "Object/Property.h"
 #include "ThirdParty/sol/sol.hpp"
 
-struct FProperty;
 class UObject;
 class UFunction;
 
@@ -25,6 +25,68 @@ public:
 class FLuaBindingRegistry
 {
 public:
+	template <typename T>
+	static bool RegisterClassProperty(
+		sol::state& Lua,
+		const char* LuaTypeName,
+		const char* PropertyName,
+		const FProperty* Property,
+		bool bWritable)
+	{
+		if (!LuaTypeName || !PropertyName || !Property)
+		{
+			return false;
+		}
+		if (!HasPropertyFlag(Property->Flags, EPropertyFlags::LuaReadOnly)
+			&& !HasPropertyFlag(Property->Flags, EPropertyFlags::LuaReadWrite))
+		{
+			return false;
+		}
+		bWritable = bWritable && HasPropertyFlag(Property->Flags, EPropertyFlags::LuaReadWrite);
+
+		sol::object TypeObj = Lua[LuaTypeName];
+		if (!TypeObj.valid() || TypeObj == sol::nil)
+		{
+			UE_LOG_WARNING("[LuaBinding] Lua type not found: %s", LuaTypeName);
+			return false;
+		}
+
+		sol::table TypeTable = TypeObj.as<sol::table>();
+		sol::object Existing = TypeTable[PropertyName];
+		if (Existing.valid() && Existing != sol::nil)
+		{
+			UE_LOG_WARNING("[LuaBinding] Overwriting Lua property %s.%s", LuaTypeName, PropertyName);
+		}
+
+		lua_State* State = Lua.lua_state();
+		sol::usertype<T> UserType = TypeObj.as<sol::usertype<T>>();
+		if (bWritable)
+		{
+			UserType.set(PropertyName, sol::property(
+				[Property, State](T& Self) -> sol::object
+				{
+					return FLuaPropertyValueCodec::ReadPropertyToLuaValue(State, *Property, Property->GetValuePtr(&Self));
+				},
+				[Property](T& Self, sol::object Value)
+				{
+					if (FLuaPropertyValueCodec::WriteLuaValueToProperty(Value, *Property, Property->GetValuePtr(&Self)))
+					{
+						Self.PostEditProperty(Property->Name);
+					}
+				}));
+		}
+		else
+		{
+			UserType.set(PropertyName, sol::property(
+				[Property, State](T& Self) -> sol::object
+				{
+					return FLuaPropertyValueCodec::ReadPropertyToLuaValue(State, *Property, Property->GetValuePtr(&Self));
+				}));
+		}
+
+		return true;
+	}
+
 	template <typename T>
 	static bool RegisterClassFunction(
 		sol::state& Lua,
@@ -52,7 +114,8 @@ public:
 			return false;
 		}
 
-		TypeTable[FunctionName] = Wrapper;
+		sol::usertype<T> UserType = TypeObj.as<sol::usertype<T>>();
+		UserType.set(FunctionName, Wrapper);
 		return true;
 	}
 };

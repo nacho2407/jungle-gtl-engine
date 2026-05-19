@@ -97,21 +97,21 @@ private:
 	void SetViewRotationDegrees(float PitchDegrees, float YawDegrees);
 
 private:
-	UPROPERTY(DisplayName = "FOV", Animatable, Min = 0.1f, Max = 3.14f, Speed = 0.01f)
+	UPROPERTY(DisplayName = "FOV", Animatable, Min = 0.1f, Max = 3.14f, Speed = 0.01f, LuaReadWrite, LuaName = FOV)
 	float FOV = 3.14159265358979f / 3.0f;
 
 	float AspectRatio = 16.0f / 9.0f;
 
-	UPROPERTY(DisplayName = "Near Z", Min = 0.01f, Max = 100.0f, Speed = 0.01f)
+	UPROPERTY(DisplayName = "Near Z", Min = 0.01f, Max = 100.0f, Speed = 0.01f, LuaReadOnly, LuaName = NearPlane)
 	float NearZ = 0.1f;
 
-	UPROPERTY(DisplayName = "Far Z", Min = 1.0f, Max = 100000.0f, Speed = 10.0f)
+	UPROPERTY(DisplayName = "Far Z", Min = 1.0f, Max = 100000.0f, Speed = 10.0f, LuaReadOnly, LuaName = FarPlane)
 	float FarZ = 1000.0f;
 
-	UPROPERTY(DisplayName = "Ortho Width", Animatable, Min = 0.1f, Max = 1000.0f, Speed = 0.5f)
+	UPROPERTY(DisplayName = "Ortho Width", Animatable, Min = 0.1f, Max = 1000.0f, Speed = 0.5f, LuaReadWrite, LuaName = OrthoWidth)
 	float OrthoWidth = 10.0f;
 
-	UPROPERTY(DisplayName = "Orthographic")
+	UPROPERTY(DisplayName = "Orthographic", LuaReadWrite)
 	bool bIsOrthogonal = false;
 
 	UPROPERTY(DisplayName = "Vignette Enabled")

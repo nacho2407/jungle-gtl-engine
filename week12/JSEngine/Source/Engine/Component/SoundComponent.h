@@ -38,19 +38,19 @@ protected:
 
 private:
 	// SoundRegistry 키 또는 Asset/Audio 기준 파일 경로를 넣습니다.
-	UPROPERTY(DisplayName = "Sound")
+	UPROPERTY(DisplayName = "Sound", LuaReadWrite, LuaName = Sound)
 	FString SoundKeyOrPath;
 
 	UPROPERTY(DisplayName = "Play On BeginPlay")
 	bool bPlayOnBeginPlay = false;
 
-	UPROPERTY(DisplayName = "Loop")
+	UPROPERTY(DisplayName = "Loop", LuaReadWrite, LuaName = Looping)
 	bool bLoop = false;
 
-	UPROPERTY(DisplayName = "Spatialized")
+	UPROPERTY(DisplayName = "Spatialized", LuaReadWrite, LuaName = Spatialized)
 	bool bSpatialized = true;
 
-	UPROPERTY(DisplayName = "Volume Scale", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
+	UPROPERTY(DisplayName = "Volume Scale", Min = 0.0f, Max = 2.0f, Speed = 0.01f, LuaReadWrite, LuaName = VolumeScale)
 	float VolumeScale = 1.0f;
 
 	UPROPERTY(DisplayName = "Fade In", Min = 0.0f, Max = 10.0f, Speed = 0.01f)

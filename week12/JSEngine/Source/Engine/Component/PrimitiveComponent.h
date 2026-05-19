@@ -93,16 +93,16 @@ protected:
 protected:
 	mutable FAABB WorldAABB;
 
-	UPROPERTY(DisplayName = "Visible")
+	UPROPERTY(DisplayName = "Visible", LuaReadWrite, LuaName = Visible)
 	bool bIsVisible = true;
 
-	UPROPERTY(DisplayName = "Enable Cull")
+	UPROPERTY(DisplayName = "Enable Cull", LuaReadWrite, LuaName = EnableCull)
 	bool bEnableCull = true; // frustum, occlusion culling으로 컬링될지 여부 판정
 
 	UPROPERTY(DisplayName = "Cast Decal")
 	bool bCastDecal = true;
 
-	UPROPERTY(DisplayName = "Generate Overlap Events")
+	UPROPERTY(DisplayName = "Generate Overlap Events", LuaReadOnly, LuaName = GenerateOverlapEvents)
 	bool bGenerateOverlapEvents = false;
 
 	bool bBlockComponent = false; // ComponentHit

@@ -32,13 +32,13 @@ public:
 	void SetRadiusFallOff(float InFallOff) { if (InFallOff) RadiusFallOff = InFallOff; }
 
 private:
-	UPROPERTY(DisplayName = "Intensity")
+	UPROPERTY(DisplayName = "Intensity", LuaReadWrite, LuaName = Intensity)
 	float  Intensity		= 1.f;
 
-	UPROPERTY(DisplayName = "Radius")
+	UPROPERTY(DisplayName = "Radius", LuaReadWrite, LuaName = Radius)
 	float  Radius			= 15.f;
 
-	UPROPERTY(DisplayName = "Radius Falloff")
+	UPROPERTY(DisplayName = "Radius Falloff", LuaReadWrite, LuaName = RadiusFallOff)
 	float  RadiusFallOff	= 1.f;
 
 	UPROPERTY(DisplayName = "Color")

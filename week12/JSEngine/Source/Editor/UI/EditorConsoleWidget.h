@@ -60,6 +60,7 @@ private:
 	EPresentationMode PresentationMode = EPresentationMode::Drawer;
 	bool bPendingCrashCommand = false;
 	ECrashCommandTarget PendingCrashTarget = ECrashCommandTarget::None;
+	int32 SelectedLogMessageIndex = -1;
 
 	// 백틱(`) 키로 포커스 요청 시 true — 다음 InputText 렌더링 직전에 SetKeyboardFocusHere 호출
 	bool bRequestFocusInput = false;
@@ -80,12 +81,13 @@ private:
 	void CmdSuggest(const TArray<FString>& Args);
 	void CmdStat(const TArray<FString>& Args);
 	void CmdSkinning(const TArray<FString>& Args);
-    void CmdShadow(const TArray<FString>& Args);
+	void CmdShadow(const TArray<FString>& Args);
 	void CmdCrash(const TArray<FString>& Args);
 	void PrintHistoryStats();
 	void PrintCommandList(const FString& Prefix = "");
 	FString FindClosestCommand(const FString& Query) const;
 	TArray<FString> BuildCommandSuggestions(const FString& Query) const;
+	void RenderLogLine(int32 MessageIndex, const char* Item, ELogVerbosity Verbosity);
 	void RenderCommandSuggestions(const char* Id, const ImVec2& InputMin, const ImVec2& InputSize);
 	void ExecutePendingCrashCommand();
 	void ClearPendingCrashCommand();

@@ -24,10 +24,10 @@ public:
 	}
 
 private:
-	UPROPERTY(DisplayName = "Capsule Half Height")
+	UPROPERTY(DisplayName = "Capsule Half Height", LuaReadOnly, LuaName = CapsuleHalfHeight)
 	float CapsuleHalfHeight = 0.5f;
 
-	UPROPERTY(DisplayName = "Capsule Radius")
+	UPROPERTY(DisplayName = "Capsule Radius", LuaReadOnly, LuaName = CapsuleRadius)
 	float CapsuleRadius = 0.5f;
 
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;

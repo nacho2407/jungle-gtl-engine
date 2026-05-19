@@ -76,7 +76,7 @@ protected:
 
 	float  TimeAccumulator = 0.0f;
 
-	UPROPERTY(DisplayName = "Loop")
+	UPROPERTY(DisplayName = "Loop", LuaReadWrite, LuaName = Loop)
 	bool   bLoop = true;
 };
 

@@ -412,10 +412,10 @@ def make_runtime_property_flags(metadata):
 		flags.append('EPropertyFlags::SaveGame')
 	if get_metadata_value(metadata, 'Animatable') is not None:
 		flags.append('EPropertyFlags::Animatable')
-	if get_metadata_value(metadata, 'LuaRead') is not None:
-		flags.append('EPropertyFlags::LuaRead')
-	if get_metadata_value(metadata, 'LuaWrite') is not None:
-		flags.append('EPropertyFlags::LuaWrite')
+	if get_metadata_value(metadata, 'LuaReadOnly') is not None:
+		flags.append('EPropertyFlags::LuaReadOnly')
+	if get_metadata_value(metadata, 'LuaReadWrite') is not None:
+		flags.append('EPropertyFlags::LuaReadWrite')
 
 	return ' | '.join(flags)
 
@@ -1407,6 +1407,13 @@ def lua_type_name_for_class(class_name):
 	return class_name
 
 
+def make_lua_property_name(prop):
+	lua_name = get_metadata_value(prop.get('metadata', {}), 'LuaName')
+	if lua_name:
+		return lua_name
+	return prop['display_name'] or prop['name']
+
+
 def class_inheritance_depth(class_info, class_map):
 	depth = 0
 	seen = set()
@@ -1513,6 +1520,21 @@ def generate_class_file(header_path, class_info, properties, functions, used_enu
 	function_exec_methods = []
 	function_lua_methods = []
 	lua_registration_lines = []
+
+	for prop in properties:
+		metadata = prop.get('metadata', {})
+		if get_metadata_value(metadata, 'LuaReadOnly') is None and get_metadata_value(metadata, 'LuaReadWrite') is None:
+			continue
+
+		lua_property_name = make_lua_property_name(prop)
+		lua_property_writable = 'true' if get_metadata_value(metadata, 'LuaReadWrite') is not None else 'false'
+		lua_registration_lines.append(
+			f'        FLuaBindingRegistry::RegisterClassProperty<{class_name}>(\n'
+			f'            Lua,\n'
+			f'            "{lua_type_name_for_class(class_name)}",\n'
+			f'            {cpp_string_literal(lua_property_name)},\n'
+			f'            {class_name}::StaticClass()->FindProperty("{prop["name"]}"),\n'
+			f'            {lua_property_writable});')
 
 	for function_info in functions:
 		params_struct_name = function_info['params_struct']
@@ -1711,7 +1733,7 @@ static Z_AutoRegister_UClass_{class_name} Z_AutoRegister_UClass_{class_name}_Var
 		f.write(gen_code)
 	print(f'Generated: {gen_filepath.relative_to(ROOT)}')
 
-	if any(function_info.get('lua_callable') for function_info in functions):
+	if lua_registration_lines:
 		GENERATED_LUA_BINDING_CLASSES.append({
 			'name': class_name,
 			'parent_name': parent_name,
@@ -1878,6 +1900,7 @@ def parse_header_and_generate(header_path, enum_map, struct_map):
 				'name': var_name,
 				'display_name': get_metadata_value(metadata, 'DisplayName', 'Display'),
 				'category': get_metadata_value(metadata, 'Category'),
+				'metadata': metadata,
 				'property_flags': make_runtime_property_flags(metadata),
 				'min': cpp_float_literal(get_metadata_value(metadata, 'Min', 'ClampMin', 'UIMin'), '0.0f'),
 				'max': cpp_float_literal(get_metadata_value(metadata, 'Max', 'ClampMax', 'UIMax'), '0.0f'),
@@ -1918,6 +1941,7 @@ def parse_header_and_generate(header_path, enum_map, struct_map):
 				'name': var_name,
 				'display_name': get_metadata_value(metadata, 'DisplayName', 'Display'),
 				'category': get_metadata_value(metadata, 'Category'),
+				'metadata': metadata,
 				'property_flags': make_runtime_property_flags(metadata),
 				'min': cpp_float_literal(get_metadata_value(metadata, 'Min', 'ClampMin', 'UIMin'), '0.0f'),
 				'max': cpp_float_literal(get_metadata_value(metadata, 'Max', 'ClampMax', 'UIMax'), '0.0f'),

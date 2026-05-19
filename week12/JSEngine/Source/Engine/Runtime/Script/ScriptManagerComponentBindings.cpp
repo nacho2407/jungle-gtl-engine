@@ -203,10 +203,6 @@ void FScriptManager::BindComponentTypes()
 	LUA_SET(GetTags, &ComponentTagsToLuaTable);
 	LUA_RO_PROPERTY(Owner, GetOwner);
 	LUA_RO_PROPERTY(Actor, GetOwner);
-	LUA_RW_PROPERTY(Active, IsActive, SetActive);
-	LUA_RW_PROPERTY(AutoActivate, IsAutoActivate, SetAutoActivate);
-	LUA_RW_PROPERTY(TickEnabled, IsComponentTickEnabled, SetComponentTickEnabled);
-	LUA_RO_PROPERTY(EditorOnly, IsEditorOnly);
 	LUA_END_TYPE();
 
 	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USceneComponent, "SceneComponent", UActorComponent, UObject)
@@ -214,9 +210,6 @@ void FScriptManager::BindComponentTypes()
 	LUA_METHOD(AttachToComponent, AttachToComponent);
 	LUA_METHOD(GetRelativeLocation, GetRelativeLocation);
 	LUA_METHOD(SetRelativeLocation, SetRelativeLocation);
-	LUA_RW_PROPERTY(Location, GetRelativeLocation, SetRelativeLocation);
-	LUA_RW_PROPERTY(Rotation, GetRelativeRotation, SetRelativeRotation);
-	LUA_RW_PROPERTY(Scale, GetRelativeScale, SetRelativeScale);
 	LUA_RO_PROPERTY(Forward, GetForwardVector);
 	LUA_END_TYPE();
 
@@ -231,38 +224,23 @@ void FScriptManager::BindComponentTypes()
 	LUA_METHOD(StopMovementImmediately, StopMovementImmediately);
 	LUA_METHOD(ConstrainDirectionToPlane, ConstrainDirectionToPlane);
 	LUA_METHOD(ConstrainLocationToPlane, ConstrainLocationToPlane);
-	LUA_RW_PROPERTY(Velocity, GetVelocity, SetVelocity);
-	LUA_RW_PROPERTY(PendingInputVector, GetPendingInputVector, SetPendingInputVector);
-	LUA_RW_PROPERTY(PlaneConstraintNormal, GetPlaneConstraintNormal, SetPlaneConstraintNormal);
-	LUA_RO_PROPERTY(UpdatedComponent, GetUpdatedComponent);
 	LUA_END_TYPE();
 
 	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UProjectileMovementComponent, "ProjectileMovementComponent", UMovementComponent, UActorComponent, UObject)
-	LUA_RW_PROPERTY(InitialSpeed, GetInitialSpeed, SetInitialSpeed);
-	LUA_RW_PROPERTY(MaxSpeed, GetMaxSpeed, SetMaxSpeed);
-	LUA_RW_PROPERTY(GravityScale, GetGravityScale, SetGravityScale);
-	LUA_RW_PROPERTY(RotationFollowsVelocity, GetRotationFollowsVelocity, SetRotationFollowsVelocity);
 	LUA_END_TYPE();
 
 	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UPursuitMovementComponent, "PursuitMovementComponent", UMovementComponent, UActorComponent, UObject)
 	LUA_METHOD(ClearTarget, ClearTarget);
 	LUA_METHOD(IsInPursuit, IsInPursuit);
-	LUA_RW_PROPERTY(FacingTargetDirection, IsFacingTargetDir, ShouldFaceTargetDir);
 	LUA_END_TYPE();
 
 	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, URotatingMovementComponent, "RotatingMovementComponent", UMovementComponent, UActorComponent, UObject)
-	LUA_RW_PROPERTY(RotationRate, GetRotationRate, SetRotationSpeed);
-	LUA_RW_PROPERTY(PivotTranslation, GetPivotTranslation, SetPivotTranslation);
-	LUA_RW_PROPERTY(RotationInLocalSpace, IsRotationInLocalSpace, SetRotationInLocalSpace);
 	LUA_END_TYPE();
 
 	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UInterpToMovementComponent, "InterpToMovementComponent", UMovementComponent, UActorComponent, UObject)
 	LUA_METHOD(AddControlPoint, AddControlPoint);
 	LUA_METHOD(RemoveControlPoint, RemoveControlPoint);
 	LUA_METHOD(SetControlPoint, SetControlPoint);
-	LUA_RW_PROPERTY(Duration, GetInterpDuration, SetInterpDuration);
-	LUA_RW_PROPERTY(FacingTargetDirection, IsFacingTargetDir, ShouldFaceTargetDir);
-	LUA_RW_PROPERTY(AutoActivate, IsAutoActivating, ShouldAutoActivate);
 	LUA_METHOD(Initiate, Initiate);
 	LUA_METHOD(Reset, Reset);
 	LUA_METHOD(ResetAndHalt, ResetAndHalt);
@@ -318,10 +296,6 @@ void FScriptManager::BindComponentTypes()
 	LUA_METHOD(Set3DAttenuation, Set3DAttenuation);
 	LUA_METHOD(Get3DAttenuationModel, Get3DAttenuationModel);
 	LUA_METHOD(Get3DRolloffFactor, Get3DRolloffFactor);
-	LUA_RW_PROPERTY(Sound, GetSound, SetSound);
-	LUA_RW_PROPERTY(Looping, IsLooping, SetLoop);
-	LUA_RW_PROPERTY(Spatialized, IsSpatialized, SetSpatialized);
-	LUA_RW_PROPERTY(VolumeScale, GetVolumeScale, SetVolumeScale);
 	LUA_END_TYPE();
 
 	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UScriptComponent, "ScriptComponent", UActorComponent, UObject)
@@ -334,7 +308,6 @@ void FScriptManager::BindComponentTypes()
 	LUA_METHOD(CreateSinusoidalCameraShakePattern, CreateSinusoidalCameraShakePattern);
 	LUA_METHOD(StartCameraShakePattern, StartCameraShakePattern);
 	LUA_METHOD(StopCameraShake, StopCameraShake);
-	LUA_RW_PROPERTY(ScriptName, GetScriptName, SetScriptName);
 	LUA_END_TYPE();
 
 	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UCameraShakeBase, "CameraShakeBase", UObject)
@@ -466,11 +439,6 @@ void FScriptManager::BindCameraTypes()
 								UActorComponent,
 								UObject)
 	LUA_METHOD(look_at, LookAt);
-	LUA_RW_PROPERTY(FOV, GetFOV, SetFOV);
-	LUA_RW_PROPERTY(OrthoWidth, GetOrthoWidth, SetOrthoWidth);
-	LUA_RW_PROPERTY(Orthographic, IsOrthogonal, SetOrthographic);
-	LUA_RO_PROPERTY(NearPlane, GetNearPlane);
-	LUA_RO_PROPERTY(FarPlane, GetFarPlane);
 	LUA_METHOD(get_view_matrix, GetViewMatrix);
 	LUA_METHOD(get_projection_matrix, GetProjectionMatrix);
 	LUA_METHOD(move_forward, MoveForward);
@@ -498,9 +466,6 @@ void FScriptManager::BindPrimitiveTypes()
 								USceneComponent,
 								UActorComponent,
 								UObject)
-	LUA_RW_PROPERTY(Visible, IsVisible, SetVisibility);
-	LUA_RW_PROPERTY(EnableCull, IsEnableCull, SetEnableCull);
-	LUA_RO_PROPERTY(GenerateOverlapEvents, ShouldGenerateOverlapEvents);
 	LUA_RO_PROPERTY(NumMaterials, GetNumMaterials);
 	LUA_RO_PROPERTY(SupportsOutline, SupportsOutline);
 	LUA_METHOD(is_overlapping_actor, IsOverlappingActor);
@@ -530,7 +495,6 @@ void FScriptManager::BindPrimitiveTypes()
 								UObject)
 	LUA_METHOD(GetSphereRadius, GetSphereRadius);
 	LUA_METHOD(GetScaledSphereRadius, GetScaledSphereRadius);
-	LUA_RO_PROPERTY(SphereRadius, GetSphereRadius);
 	LUA_END_TYPE();
 
 	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UCapsuleComponent, "CapsuleComponent",
@@ -543,8 +507,6 @@ void FScriptManager::BindPrimitiveTypes()
 	LUA_METHOD(GetCapsuleRadius, GetCapsuleRadius);
 	LUA_METHOD(GetScaledCapsuleHalfHeight, GetScaledCapsuleHalfHeight);
 	LUA_METHOD(GetScaledCapsuleRadius, GetScaledCapsuleRadius);
-	LUA_RO_PROPERTY(CapsuleHalfHeight, GetCapsuleHalfHeight);
-	LUA_RO_PROPERTY(CapsuleRadius, GetCapsuleRadius);
 	LUA_END_TYPE();
 
 	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UFireballComponent, "FireballComponent",
@@ -552,9 +514,6 @@ void FScriptManager::BindPrimitiveTypes()
 								USceneComponent,
 								UActorComponent,
 								UObject)
-	LUA_RW_PROPERTY(Intensity, GetIntensity, SetIntensity);
-	LUA_RW_PROPERTY(Radius, GetRadius, SetRadius);
-	LUA_RW_PROPERTY(RadiusFallOff, GetRadiusFallOff, SetRadiusFallOff);
 	LUA_END_TYPE();
 
 	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UHeightFogComponent, "HeightFogComponent",
@@ -562,12 +521,6 @@ void FScriptManager::BindPrimitiveTypes()
 								USceneComponent,
 								UActorComponent,
 								UObject)
-	LUA_RW_PROPERTY(FogDensity, GetFogDensity, SetFogDensity);
-	LUA_RW_PROPERTY(HeightFalloff, GetHeightFalloff, SetHeightFalloff);
-	LUA_RW_PROPERTY(FogHeight, GetFogHeight, SetFogHeight);
-	LUA_RW_PROPERTY(FogStartDistance, GetFogStartDistance, SetFogStartDistance);
-	LUA_RW_PROPERTY(FogCutoffDistance, GetFogCutoffDistance, SetFogCutoffDistance);
-	LUA_RW_PROPERTY(FogMaxOpacity, GetFogMaxOpacity, SetFogMaxOpacity);
 	LUA_END_TYPE();
 
 	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USubUVComponent, "SubUVComponent",
@@ -581,7 +534,6 @@ void FScriptManager::BindPrimitiveTypes()
 	LUA_METHOD(GetParticleName, GetParticleName);
 	LUA_RW_PROPERTY(FrameIndex, GetFrameIndex, SetFrameIndex);
 	LUA_METHOD(SetFrameRate, SetFrameRate);
-	LUA_RW_PROPERTY(Loop, IsLoop, SetLoop);
 	LUA_METHOD(IsFinished, IsFinished);
 	LUA_METHOD(Play, Play);
 	LUA_SET(SetSpriteSize, [](USubUVComponent& Self, float Width, float Height)
@@ -595,11 +547,9 @@ void FScriptManager::BindPrimitiveTypes()
 								USceneComponent,
 								UActorComponent,
 								UObject)
-	LUA_RW_PROPERTY(Text, GetText, SetText);
 	LUA_SET(SetFont, [](UTextRenderComponent& Self, const FString& FontName)
 			{ Self.SetFont(FName(FontName)); });
 	LUA_METHOD(GetFontName, GetFontName);
-	LUA_RW_PROPERTY(FontSize, GetFontSize, SetFontSize);
 	LUA_SET(SetScreenPosition, [](UTextRenderComponent& Self, float X, float Y)
 			{ Self.SetScreenPosition(X, Y); });
 	LUA_METHOD(GetScreenX, GetScreenX);
