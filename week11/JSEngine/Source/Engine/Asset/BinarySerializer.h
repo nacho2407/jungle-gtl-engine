@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreMinimal.h"
 
@@ -74,6 +74,12 @@ public:
 	bool SaveAnimSequence(const FString& BinaryPath, const FString& SourcePath, const UAnimSequence& AnimSequence);
 	bool LoadAnimSequence(const FString& BinaryPath, UAnimSequence& OutAnimSequence);
 	bool ReadAnimSequenceHeader(const FString& BinaryPath, FAnimSequenceBinaryHeader& OutHeader) const;
+	bool ReadAnimSequenceIdentity(
+		const FString& BinaryPath,
+		FAnimSequenceBinaryHeader& OutHeader,
+		FString& OutSourceFbxPath,
+		FString& OutTargetSkeletonPath,
+		FString& OutAnimStackName) const;
 	
 	//	Header Read + 검사 장치
 	bool ReadStaticMeshHeader(const FString& BinaryPath, FStaticMeshBinaryHeader& OutHeader) const;

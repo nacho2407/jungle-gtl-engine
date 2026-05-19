@@ -121,7 +121,7 @@ UStaticMesh* FStaticMeshLoadService::LoadBinaryDrop(const FString& NormalizedPat
 		}
 		if (FAssetPathPolicy::FileExists(SourcePath))
 		{
-			ResourceManager.LoadMaterial(SourcePath, EMaterialShaderType::SurfaceLit);
+			ResourceManager.LoadMaterial(SourcePath, EMaterialShaderType::SurfaceLit, nullptr, /*bAllowSourceImport=*/ false);
 		}
 	}
 
@@ -144,8 +144,6 @@ UStaticMesh* FStaticMeshLoadService::LoadBinaryDrop(const FString& NormalizedPat
 
 UStaticMesh* FStaticMeshLoadService::LoadSourceOrCachedBinary(const FString& NormalizedPath)
 {
-	ResourceManager.LoadMaterial(NormalizedPath, EMaterialShaderType::SurfaceLit);
-
 	FStaticMeshLoadOptions LoadOptions = ResourceManager.StaticMeshCache.GetLoadOptions(NormalizedPath);
 	const FString BinaryPath = FAssetPathPolicy::MakeWritableStaticMeshCacheBinaryPath(NormalizedPath);
 
@@ -197,6 +195,8 @@ UStaticMesh* FStaticMeshLoadService::LoadSourceOrCachedBinary(const FString& Nor
 
 		// Binary serialize는 SlotName만 쓰고 Material* 포인터는 안 쓰므로,
 		// resolve는 최종 단계(FinalizeLoadedMesh)에서 한 번만 하면 됨.
+		ResourceManager.LoadMaterial(NormalizedPath, EMaterialShaderType::SurfaceLit, nullptr, /*bAllowSourceImport=*/ true);
+
 		const bool bSaveBinaryOk = ResourceManager.BinarySerializer.SaveStaticMesh(BinaryPath, NormalizedPath, *LoadedMeshData);
 		if (bSaveBinaryOk)
 		{
@@ -221,6 +221,8 @@ UStaticMesh* FStaticMeshLoadService::LoadSourceOrCachedBinary(const FString& Nor
 	}
 	else
 	{
+		ResourceManager.LoadMaterial(NormalizedPath, EMaterialShaderType::SurfaceLit, nullptr, /*bAllowSourceImport=*/ false);
+
 		UE_LOG(
 			"[StaticMeshLoad] Source=Binary | Path=%s | BinarySec=%.6f | BinaryPath=%s",
 			NormalizedPath.c_str(),

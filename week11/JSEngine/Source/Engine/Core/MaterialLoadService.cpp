@@ -19,7 +19,7 @@ FMaterialLoadService::FMaterialLoadService(FResourceManager& InResourceManager)
 {
 }
 
-bool FMaterialLoadService::Load(const FString& MtlFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device)
+bool FMaterialLoadService::Load(const FString& MtlFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device, bool bAllowSourceImport)
 {
 	const FString NormalizedMtlFilePath = FPaths::Normalize(MtlFilePath);
 	if (NormalizedMtlFilePath.empty())
@@ -38,7 +38,7 @@ bool FMaterialLoadService::Load(const FString& MtlFilePath, EMaterialShaderType 
 			return false;
 		}
 
-		const bool bLoadedMaterial = Load(ResolvedMtlPath, ShaderType, Device);
+		const bool bLoadedMaterial = Load(ResolvedMtlPath, ShaderType, Device, bAllowSourceImport);
 		if (bLoadedMaterial)
 		{
 			ResourceManager.RegisterObjMaterialSlotAliases(NormalizedMtlFilePath, ResolvedMtlPath);
@@ -49,7 +49,7 @@ bool FMaterialLoadService::Load(const FString& MtlFilePath, EMaterialShaderType 
 
 	if (RequestedExtension == L".fbx")
 	{
-		return FFbxMaterialLoadService(ResourceManager).Load(NormalizedMtlFilePath, ShaderType, Device);
+		return FFbxMaterialLoadService(ResourceManager).Load(NormalizedMtlFilePath, ShaderType, Device, bAllowSourceImport);
 	}
 
 	TMap<FString, UMaterial*> Parsed;

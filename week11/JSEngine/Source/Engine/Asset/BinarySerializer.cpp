@@ -1,4 +1,4 @@
-﻿#include "BinarySerializer.h"
+#include "BinarySerializer.h"
 
 #include "Asset/StaticMeshTypes.h"
 #include "Asset/SkeletalMeshTypes.h"
@@ -1709,6 +1709,32 @@ bool FBinarySerializer::ReadAnimSequenceHeader(const FString& BinaryPath, FAnimS
         return false;
 
     return IsValidAnimSequenceHeader(OutHeader);
+}
+
+bool FBinarySerializer::ReadAnimSequenceIdentity(
+    const FString& BinaryPath,
+    FAnimSequenceBinaryHeader& OutHeader,
+    FString& OutSourceFbxPath,
+    FString& OutTargetSkeletonPath,
+    FString& OutAnimStackName) const
+{
+    std::ifstream In(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(BinaryPath))), std::ios::binary);
+    if (!In.is_open())
+        return false;
+
+    if (!ReadAnimSequenceHeader(In, OutHeader) || !IsValidAnimSequenceHeader(OutHeader))
+        return false;
+
+    FString AssetPath;
+    if (!ReadString(In, AssetPath) ||
+        !ReadString(In, OutSourceFbxPath) ||
+        !ReadString(In, OutTargetSkeletonPath) ||
+        !ReadString(In, OutAnimStackName))
+    {
+        return false;
+    }
+
+    return !OutSourceFbxPath.empty() && !OutAnimStackName.empty();
 }
 
 bool FBinarySerializer::ReadSkeletalMeshHeader(const FString& BinaryPath, FSkeletalMeshBinaryHeader& OutHeader) const
