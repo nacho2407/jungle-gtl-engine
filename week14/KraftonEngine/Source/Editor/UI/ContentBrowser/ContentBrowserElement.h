@@ -106,6 +106,26 @@ protected:
 	uint32 GetAccentColor() const override { return IM_COL32(126, 140, 255, 255); }
 };
 
+class AnimationElement final : public ContentBrowserElement
+{
+public:
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
+
+protected:
+	const char* GetTypeLabel() const override { return "Animation"; }
+	uint32 GetAccentColor() const override { return IM_COL32(255, 180, 90, 255); }
+};
+
+class SkeletonElement final : public ContentBrowserElement
+{
+public:
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
+
+protected:
+	const char* GetTypeLabel() const override { return "Skeleton"; }
+	uint32 GetAccentColor() const override { return IM_COL32(180, 130, 255, 255); }
+};
+
 class PNGElement final : public ContentBrowserElement
 {
 public:
