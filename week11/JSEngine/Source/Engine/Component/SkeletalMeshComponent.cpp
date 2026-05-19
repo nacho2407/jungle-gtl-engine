@@ -1,5 +1,6 @@
 ﻿#include "SkeletalMeshComponent.h"
 
+#include <string>
 #include <utility>
 
 #include "Animation/AnimInstance.h"
@@ -74,8 +75,7 @@ bool USkeletalMeshComponent::ApplyAnimationLocalPose(const TArray<FTransform>& L
 
     if (!FAnimationRuntime::HasMatchingBoneCount(SkeletalMesh, LocalPose))
     {
-        UE_LOG_WARNING(
-            "[SkeletalMeshComponent] Animation local pose bone count mismatch. MeshBones=%d, PoseBones=%d",
+        WarnPoseBoneCountMismatchOnce(
             static_cast<int32>(SkeletalMesh->GetBones().size()),
             static_cast<int32>(LocalPose.size()));
         return false;
@@ -92,6 +92,24 @@ bool USkeletalMeshComponent::ApplyAnimationLocalPose(const TArray<FTransform>& L
     CurrentLocalPose = std::move(LocalMatrices);
     MarkPoseDirty();
     return true;
+}
+
+void USkeletalMeshComponent::WarnPoseBoneCountMismatchOnce(int32 MeshBoneCount, int32 PoseBoneCount)
+{
+    const FString MeshPath = SkeletalMesh ? SkeletalMesh->GetAssetPathFileName() : FString();
+    const FString WarningKey =
+        MeshPath + "|" + std::to_string(MeshBoneCount) + "|" + std::to_string(PoseBoneCount);
+    if (PoseBoneCountMismatchWarningKeys.find(WarningKey) != PoseBoneCountMismatchWarningKeys.end())
+    {
+        return;
+    }
+
+    PoseBoneCountMismatchWarningKeys.insert(WarningKey);
+    UE_LOG_WARNING(
+        "[SkeletalMeshComponent] Animation local pose bone count mismatch. Mesh=%s MeshBones=%d PoseBones=%d",
+        MeshPath.c_str(),
+        MeshBoneCount,
+        PoseBoneCount);
 }
 
 bool USkeletalMeshComponent::RefreshAnimationPose()

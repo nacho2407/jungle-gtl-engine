@@ -6,6 +6,7 @@
 #include "Asset/SkeletalMesh.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Core/Logging/Log.h"
+#include "Core/Logging/Stats.h"
 #include "Core/ResourceManager.h"
 #include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
@@ -174,6 +175,8 @@ bool UAnimStateMachineInstance::SetStateMachine(UAnimStateMachine* InStateMachin
 
 void UAnimStateMachineInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
+    SCOPE_STAT("Anim.StateMachine.Update");
+
     if (ActiveTransition.bActive)
     {
         TargetStateIndex = ActiveTransition.ToStateIndex;
@@ -233,6 +236,8 @@ void UAnimStateMachineInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 bool UAnimStateMachineInstance::EvaluateAnimation(TArray<FTransform>& OutLocalPose)
 {
+    SCOPE_STAT("Anim.StateMachine.Evaluate");
+
     USkeletalMeshComponent* Component = GetSkelMeshComponent();
     const USkeletalMesh* Mesh = Component ? Component->GetSkeletalMesh() : nullptr;
     if (!Mesh)
@@ -393,6 +398,8 @@ void UAnimStateMachineInstance::TriggerStateNotifies(
     bool bFromTransitionSource,
     bool bFromTransitionTarget)
 {
+    SCOPE_STAT("Anim.StateMachine.Notify");
+
     FAnimStateRuntime* State = GetRuntimeState(StateIndex);
     if (!State || !State->Sequence)
     {
@@ -696,6 +703,8 @@ const FAnimTransitionDesc* UAnimStateMachineInstance::FindBestAnyTransition(int3
 
 const FAnimTransitionDesc* UAnimStateMachineInstance::FindBestInterruptTransition() const
 {
+    SCOPE_STAT("Anim.StateMachine.Interrupt");
+
     if (!ActiveTransition.bActive || !IsValidStateIndex(ActiveTransition.ToStateIndex))
     {
         return nullptr;
@@ -736,6 +745,8 @@ const FAnimTransitionDesc* UAnimStateMachineInstance::FindBestInterruptTransitio
 
 bool UAnimStateMachineInstance::EvaluateTransitionCondition(const FAnimTransitionDesc& Transition) const
 {
+    SCOPE_STAT("Anim.StateMachine.Condition");
+
     return EvaluateStructuredCondition(Transition.Condition, Transition);
 }
 

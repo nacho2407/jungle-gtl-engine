@@ -1085,6 +1085,7 @@ UAnimStateMachine* FResourceManager::LoadAnimStateMachine(const FString& Path)
 	const FString NormalizedPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
 	if (NormalizedPath.empty())
 	{
+		UE_LOG_WARNING("[ResourceManager] Invalid anim state machine path. Path=%s", Path.c_str());
 		return nullptr;
 	}
 
@@ -1098,6 +1099,7 @@ UAnimStateMachine* FResourceManager::LoadAnimStateMachine(const FString& Path)
 	UAnimStateMachine* StateMachine = Loader.Load(NormalizedPath);
 	if (!StateMachine)
 	{
+		UE_LOG_WARNING("[ResourceManager] Failed to load anim state machine. Path=%s", NormalizedPath.c_str());
 		return nullptr;
 	}
 

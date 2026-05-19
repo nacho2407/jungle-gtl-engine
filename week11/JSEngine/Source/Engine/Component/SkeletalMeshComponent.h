@@ -3,6 +3,7 @@
 #include "SkeletalMeshComponent.generated.h"
 
 #include "Animation/AnimationTypes.h"
+#include "Core/Containers/Set.h"
 #include "Core/Delegates/Delegate.h"
 #include "Component/SkinnedMeshComponent.h"
 
@@ -108,6 +109,7 @@ private:
     void DestroyAnimInstance();
     UAnimSingleNodeInstance* GetSingleNodeInstance() const;
     UAnimSingleNodeInstance* EnsureSingleNodeInstance();
+    void WarnPoseBoneCountMismatchOnce(int32 MeshBoneCount, int32 PoseBoneCount);
 
 private:
     EAnimationMode AnimationMode = EAnimationMode::None;
@@ -117,4 +119,5 @@ private:
 	// for stat / debug
     FAnimNotifyDispatchEvent LastAnimNotifyEvent;
     bool bHasLastAnimNotifyEvent = false;
+    TSet<FString> PoseBoneCountMismatchWarningKeys;
 };
