@@ -53,62 +53,7 @@ namespace
 		return Extension == L".fbx";
 	}
 
-	bool HasAnimSequenceTrackKeys(const UAnimSequence* Sequence)
-	{
-		const UAnimDataModel* DataModel = Sequence ? Sequence->GetDataModel() : nullptr;
-		if (!DataModel)
-		{
-			return false;
-		}
-
-		for (const FBoneAnimationTrack& Track : DataModel->GetBoneAnimationTracks())
-		{
-			if (!Track.InternalTrack.PosKeys.empty() ||
-				!Track.InternalTrack.RotKeys.empty() ||
-				!Track.InternalTrack.ScaleKeys.empty())
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	UAnimSequence* ReimportAnimSequenceFromSource(
-		FFbxImporter& FbxImporter,
-		const FString& AnimSequenceAssetPath,
-		const UAnimSequence* StaleSequence)
-	{
-		if (!StaleSequence)
-		{
-			return nullptr;
-		}
-
-		const FString SourceFilePath = FPaths::Normalize(StaleSequence->GetSourceFilePath());
-		if (SourceFilePath.empty() || !IsFbxSourcePath(SourceFilePath) || !FAssetPathPolicy::FileExists(SourceFilePath))
-		{
-			return nullptr;
-		}
-
-		FFbxAnimImportOptions ImportOptions;
-		ImportOptions.StackName = StaleSequence->GetSourceStackName();
-		ImportOptions.PreviewMeshPath = StaleSequence->GetPreviewMeshPath().empty()
-			? SourceFilePath
-			: StaleSequence->GetPreviewMeshPath();
-
-		UAnimSequence* ReimportedSequence = FbxImporter.LoadAnimSequence(SourceFilePath, ImportOptions);
-		if (!ReimportedSequence || !HasAnimSequenceTrackKeys(ReimportedSequence))
-		{
-			return nullptr;
-		}
-
-		ReimportedSequence->SetAssetPath(AnimSequenceAssetPath);
-		ReimportedSequence->SetSourceFilePath(SourceFilePath);
-		if (ReimportedSequence->GetPreviewMeshPath().empty())
-		{
-			ReimportedSequence->SetPreviewMeshPath(ImportOptions.PreviewMeshPath);
-		}
-		return ReimportedSequence;
-	}
+	
 }
 
 #pragma region __BINARY__
@@ -1044,43 +989,6 @@ TArray<FString> FResourceManager::GetCurvePaths() const
 	return CurveFilePaths;
 }
 
-void FResourceManager::SyncDiscoveredFbxAnimationAssets()
-{
-	if (AnimationFbxSourceFilePaths.empty())
-	{
-		return;
-	}
-
-	int32 ImportedCount = 0;
-	int32 AssetCount = 0;
-	TArray<FString> ImportedAnimSequenceAssetPaths;
-	for (const FString& FbxPath : AnimationFbxSourceFilePaths)
-	{
-		const TArray<FString> ImportedPaths = ImportAnimationStacksFromFbx(FbxPath);
-		AssetCount += static_cast<int32>(ImportedPaths.size());
-		for (const FString& ImportedPath : ImportedPaths)
-		{
-			if (std::find(ImportedAnimSequenceAssetPaths.begin(), ImportedAnimSequenceAssetPaths.end(), ImportedPath)
-				== ImportedAnimSequenceAssetPaths.end())
-			{
-				ImportedAnimSequenceAssetPaths.push_back(ImportedPath);
-			}
-
-			if (FindAnimSequence(ImportedPath))
-			{
-				++ImportedCount;
-			}
-		}
-	}
-
-	WarmUpAnimationPreviewMeshCaches(ImportedAnimSequenceAssetPaths);
-
-	UE_LOG("[AnimSequenceStartupImport] Synced FBX animation sources: Sources=%d Assets=%d Loaded=%d",
-		static_cast<int32>(AnimationFbxSourceFilePaths.size()),
-		AssetCount,
-		ImportedCount);
-}
-
 void FResourceManager::WarmUpAnimationPreviewMeshCaches(const TArray<FString>& AnimSequenceAssetPaths)
 {
 	TArray<FString> PreviewMeshPaths;
@@ -1157,91 +1065,6 @@ bool FResourceManager::EnsureSkeletalMeshCacheForAnimationPreview(const FString&
 	return LoadSkeletalMesh(NormalizedPreviewMeshPath) != nullptr;
 }
 
-bool FResourceManager::IsImportedAnimSequenceFresh(
-	const FString& SourcePath,
-	const FString& StackName,
-	const FString& AnimSequenceAssetPath,
-	bool& bOutNeedsMetadataRefresh)
-{
-	bOutNeedsMetadataRefresh = false;
-
-	FAnimSequenceAssetMetadata ExistingMetadata;
-	if (!AnimSequenceAssetLoader.LoadMetadata(AnimSequenceAssetPath, ExistingMetadata) ||
-		ExistingMetadata.TrackCount <= 0 ||
-		!AnimSequenceAssetLoader.HasValidBinaryCache(AnimSequenceAssetPath))
-	{
-		return false;
-	}
-
-	const FString NormalizedSourcePath = FPaths::Normalize(SourcePath);
-	const FString ExistingSourcePath = FPaths::Normalize(ExistingMetadata.SourceFilePath);
-	if (ExistingSourcePath != NormalizedSourcePath ||
-		ExistingMetadata.SourceStackName != StackName)
-	{
-		return false;
-	}
-
-	const uint64 SourceWriteTimeTicks = GetFileWriteTimeTicks(NormalizedSourcePath);
-	const uint64 SourceFileSizeBytes = GetFileSizeBytes(NormalizedSourcePath);
-	if (SourceWriteTimeTicks == 0 || SourceFileSizeBytes == 0)
-	{
-		return false;
-	}
-
-	const bool bFastMetadataMatches =
-		ExistingMetadata.SourceFileWriteTimeTicks == SourceWriteTimeTicks &&
-		ExistingMetadata.SourceFileSizeBytes == SourceFileSizeBytes;
-
-	if (bFastMetadataMatches && !ExistingMetadata.SourceFileContentHash.empty())
-	{
-		return true;
-	}
-
-	const FString SourceContentHash =
-		GetCachedFileContentHashString(NormalizedSourcePath, SourceWriteTimeTicks, SourceFileSizeBytes);
-	if (SourceContentHash.empty())
-	{
-		return false;
-	}
-
-	if (bFastMetadataMatches ||
-		(!ExistingMetadata.SourceFileContentHash.empty() &&
-		 ExistingMetadata.SourceFileContentHash == SourceContentHash))
-	{
-		bOutNeedsMetadataRefresh = false;
-		return true;
-	}
-
-	return false;
-}
-
-void FResourceManager::RefreshImportedAnimSequenceMetadata(
-	UAnimSequence* Sequence,
-	const FString& AnimSequenceAssetPath,
-	const FString& SourcePath,
-	const FString& StackName)
-{
-	if (!Sequence)
-	{
-		return;
-	}
-
-	const FString NormalizedSourcePath = FPaths::Normalize(SourcePath);
-	Sequence->SetAssetPath(FPaths::Normalize(AnimSequenceAssetPath));
-	Sequence->SetSourceFilePath(NormalizedSourcePath);
-	Sequence->SetSourceStackName(StackName);
-	if (Sequence->GetPreviewMeshPath().empty())
-	{
-		Sequence->SetPreviewMeshPath(NormalizedSourcePath);
-	}
-
-	if (!AnimSequenceAssetLoader.Save(AnimSequenceAssetPath, Sequence))
-	{
-		UE_LOG_WARNING("[AnimSequenceStartupImport] Failed to refresh anim sequence metadata: %s",
-			AnimSequenceAssetPath.c_str());
-	}
-}
-
 TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Path)
 {
 	TArray<FString> ImportedAssetPaths;
@@ -1252,6 +1075,30 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 		return ImportedAssetPaths;
 	}
 
+	// 1. 이미 임포트된 에셋이 있는지 확인 (FBX 원본이 변경되지 않는다는 전제)
+	for (const FString& AssetPath : AnimSequenceFilePaths)
+	{
+		FAnimSequenceAssetMetadata Metadata;
+		if (AnimSequenceAssetLoader.LoadMetadata(AssetPath, Metadata))
+		{
+			if (FPaths::Normalize(Metadata.SourceFilePath) == NormalizedPath)
+			{
+				ImportedAssetPaths.push_back(AssetPath);
+			}
+		}
+	}
+
+	// 이미 에셋이 존재한다면 FBX를 열지 않고 즉시 반환
+	if (!ImportedAssetPaths.empty())
+	{
+		if (UAnimSequence* FirstSequence = FindAnimSequence(ImportedAssetPaths.front()))
+		{
+			AnimSequenceMap[NormalizedPath] = FirstSequence;
+		}
+		return ImportedAssetPaths;
+	}
+
+	// 2. 임포트된 에셋이 없는 경우에만 FBX 파싱 (최초 1회)
 	const TArray<FString> StackNames = FbxImporter.GetAnimationStackNames(NormalizedPath);
 	if (StackNames.empty())
 	{
@@ -1261,6 +1108,7 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 	ImportedAssetPaths.reserve(StackNames.size());
 	TArray<FString> StaleStackNames;
 	StaleStackNames.reserve(StackNames.size());
+	
 	for (const FString& StackName : StackNames)
 	{
 		if (StackName.empty())
@@ -1269,51 +1117,17 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 		}
 
 		const FString ImportedAssetPath = FAssetPathPolicy::MakeImportedAnimSequenceAssetPath(NormalizedPath, StackName);
-
-		if (FAssetPathPolicy::FileExists(ImportedAssetPath))
-		{
-			bool bNeedsMetadataRefresh = false;
-			if (IsImportedAnimSequenceFresh(NormalizedPath, StackName, ImportedAssetPath, bNeedsMetadataRefresh))
-			{
-				if (bNeedsMetadataRefresh)
-				{
-					RefreshImportedAnimSequenceMetadata(
-						FindAnimSequence(ImportedAssetPath),
-						ImportedAssetPath,
-						NormalizedPath,
-						StackName);
-				}
-
-				if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), ImportedAssetPath) == AnimSequenceFilePaths.end())
-				{
-					AnimSequenceFilePaths.push_back(ImportedAssetPath);
-				}
-				ImportedAssetPaths.push_back(ImportedAssetPath);
-				continue;
-			}
-
-			UE_LOG("[AnimSequenceImport] Reimport stale FBX animation stack: %s | Stack=%s | Asset=%s",
-				NormalizedPath.c_str(),
-				StackName.c_str(),
-				ImportedAssetPath.c_str());
-		}
-		else
-		{
-			UE_LOG("[AnimSequenceImport] Import missing FBX animation stack: %s | Stack=%s | Asset=%s",
-				NormalizedPath.c_str(),
-				StackName.c_str(),
-				ImportedAssetPath.c_str());
-		}
-
+		
 		if (FAssetPathPolicy::FileExists(ImportedAssetPath))
 		{
 			if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), ImportedAssetPath) == AnimSequenceFilePaths.end())
 			{
 				AnimSequenceFilePaths.push_back(ImportedAssetPath);
 			}
+			ImportedAssetPaths.push_back(ImportedAssetPath);
+			continue;
 		}
-
-		AnimSequenceMap.erase(ImportedAssetPath);
+		
 		StaleStackNames.push_back(StackName);
 	}
 
@@ -1388,7 +1202,6 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 	{
 		if (UAnimSequence* FirstSequence = FindAnimSequence(ImportedAssetPaths.front()))
 		{
-			// 기존 코드가 FBX 경로 자체를 LoadAnimSequence()에 넘겨도 첫 번째 stack을 반환하던 동작은 유지한다.
 			AnimSequenceMap[NormalizedPath] = FirstSequence;
 		}
 	}
@@ -1402,18 +1215,6 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
 
 	if (UAnimSequence* FoundSequence = FindAnimSequence(NormalizedPath))
 	{
-		if (FAssetPathPolicy::IsAnimSequenceAssetPath(NormalizedPath) && !HasAnimSequenceTrackKeys(FoundSequence))
-		{
-			if (UAnimSequence* ReimportedSequence = ReimportAnimSequenceFromSource(FbxImporter, NormalizedPath, FoundSequence))
-			{
-				if (AnimSequenceAssetLoader.Save(NormalizedPath, ReimportedSequence))
-				{
-					UE_LOG("[AnimSequenceLoad] Rebuilt empty anim sequence asset from source: %s", NormalizedPath.c_str());
-				}
-				AnimSequenceMap[NormalizedPath] = ReimportedSequence;
-				return ReimportedSequence;
-			}
-		}
 		return FoundSequence;
 	}
 
@@ -1421,17 +1222,6 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
 	if (FAssetPathPolicy::IsAnimSequenceAssetPath(NormalizedPath))
 	{
 		LoadedSequence = AnimSequenceAssetLoader.Load(NormalizedPath);
-		if (LoadedSequence && !HasAnimSequenceTrackKeys(LoadedSequence))
-		{
-			if (UAnimSequence* ReimportedSequence = ReimportAnimSequenceFromSource(FbxImporter, NormalizedPath, LoadedSequence))
-			{
-				if (AnimSequenceAssetLoader.Save(NormalizedPath, ReimportedSequence))
-				{
-					UE_LOG("[AnimSequenceLoad] Rebuilt empty anim sequence asset from source: %s", NormalizedPath.c_str());
-				}
-				LoadedSequence = ReimportedSequence;
-			}
-		}
 	}
 	else if (IsFbxSourcePath(NormalizedPath))
 	{
@@ -1445,7 +1235,7 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
 			}
 		}
 
-		// 안전망: stack 전체 import가 실패한 경우 기존 단일 stack import 경로를 한 번 더 시도한다.
+		// 안전망: 단일 stack fallback
 		if (!LoadedSequence)
 		{
 			LoadedSequence = FbxImporter.LoadAnimSequence(NormalizedPath);
@@ -1459,7 +1249,6 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
 
 				if (AnimSequenceAssetLoader.Save(ImportedAssetPath, LoadedSequence))
 				{
-					AnimSequenceMap[ImportedAssetPath] = LoadedSequence;
 					if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), ImportedAssetPath) == AnimSequenceFilePaths.end())
 					{
 						AnimSequenceFilePaths.push_back(ImportedAssetPath);
@@ -1479,11 +1268,16 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
 
 	if (!LoadedSequence)
 	{
-		UE_LOG_ERROR("[AnimSequenceLoad] Failed | Path=%s", NormalizedPath.c_str());
+		UE_LOG_WARNING("[AnimSequenceLoad] Failed to load anim sequence: %s", NormalizedPath.c_str());
 		return nullptr;
 	}
 
 	AnimSequenceMap[NormalizedPath] = LoadedSequence;
+	if (LoadedSequence->GetAssetPath().empty())
+	{
+		LoadedSequence->SetAssetPath(NormalizedPath);
+	}
+
 	if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), NormalizedPath) == AnimSequenceFilePaths.end())
 	{
 		AnimSequenceFilePaths.push_back(NormalizedPath);
