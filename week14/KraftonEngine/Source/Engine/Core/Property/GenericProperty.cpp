@@ -37,8 +37,6 @@ json::JSON FGenericProperty::SerializeValue(void* ValuePtr) const
 		arr.append(static_cast<double>(v[3]));
 		return arr;
 	}
-	case EPropertyType::SceneComponentRef:
-		return JSON(*static_cast<FString*>(ValuePtr));
 	case EPropertyType::ByteBool:
 		return JSON(static_cast<bool>(*static_cast<uint8*>(ValuePtr) != 0));
 	default:
@@ -82,9 +80,6 @@ void FGenericProperty::DeserializeValue(void* ValuePtr, json::JSON& Value) const
 		}
 		break;
 	}
-	case EPropertyType::SceneComponentRef:
-		*static_cast<FString*>(ValuePtr) = Value.ToString();
-		break;
 	default:
 		break;
 	}
@@ -111,9 +106,6 @@ void FGenericProperty::SerializeValue(void* ValuePtr, FArchive& Ar) const
 	case EPropertyType::Vec4:
 	case EPropertyType::Color4:
 		Ar << *static_cast<FVector4*>(ValuePtr);
-		break;
-	case EPropertyType::SceneComponentRef:
-		Ar << *static_cast<FString*>(ValuePtr);
 		break;
 	default:
 		break;

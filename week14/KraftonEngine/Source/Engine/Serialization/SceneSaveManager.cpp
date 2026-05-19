@@ -62,7 +62,6 @@ namespace SceneKeys
 	static constexpr const char* Children = "Children";
 	static constexpr const char* HiddenInComponentTree = "bHiddenInComponentTree";
 	static constexpr const char* ObjectId = "ObjectId";
-	static constexpr const char* RuntimeUUID = "RuntimeUUID";
 }
 
 uint32 FSceneSaveManager::FSceneSaveContext::RegisterSceneObject(const UObject* Object)
@@ -665,21 +664,17 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 			UObject* ResolvedObject = nullptr;
 			if (Value.JSONType() == json::JSON::Class::Object)
 			{
-				if (Value.hasKey(SceneKeys::ObjectId))
+				if (!Value.hasKey(SceneKeys::ObjectId))
 				{
-					const uint32 ObjectId = static_cast<uint32>(Value[SceneKeys::ObjectId].ToInt());
-					ResolvedObject = ObjectId != 0 ? Context.FindObjectById(ObjectId) : nullptr;
+					continue;
 				}
-				else if (Value.hasKey(SceneKeys::RuntimeUUID))
-				{
-					const uint32 RuntimeUUID = static_cast<uint32>(Value[SceneKeys::RuntimeUUID].ToInt());
-					ResolvedObject = RuntimeUUID != 0 ? UObjectManager::Get().FindByUUID(RuntimeUUID) : nullptr;
-				}
+
+				const uint32 ObjectId = static_cast<uint32>(Value[SceneKeys::ObjectId].ToInt());
+				ResolvedObject = ObjectId != 0 ? Context.FindObjectById(ObjectId) : nullptr;
 			}
-			else
+			else if (!Value.IsNull())
 			{
-				const uint32 RuntimeUUID = static_cast<uint32>(Value.ToInt());
-				ResolvedObject = RuntimeUUID != 0 ? UObjectManager::Get().FindByUUID(RuntimeUUID) : nullptr;
+				continue;
 			}
 
 			ObjectProperty->SetObjectValue(Obj, ResolvedObject);
