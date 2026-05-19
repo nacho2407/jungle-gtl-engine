@@ -10,7 +10,6 @@
 #include <chrono>
 #include <cctype>
 #include <cstring>
-#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -38,6 +37,36 @@ namespace
 	FString NormalizeAnimSequencePath(const FString& Path)
 	{
 		return FPaths::Normalize(Path);
+	}
+
+	FString MakeProjectRelativePath(const FString& Path)
+	{
+		const FString NormalizedPath = FPaths::Normalize(Path);
+		if (NormalizedPath.empty())
+		{
+			return {};
+		}
+
+		std::filesystem::path FsPath(FPaths::ToWide(NormalizedPath));
+		if (!FsPath.is_absolute())
+		{
+			return NormalizedPath;
+		}
+
+		std::error_code ErrorCode;
+		const std::filesystem::path RelativePath = std::filesystem::relative(FsPath, std::filesystem::path(FPaths::RootDir()), ErrorCode);
+		if (ErrorCode || RelativePath.empty())
+		{
+			return NormalizedPath;
+		}
+
+		const std::wstring RelativeText = RelativePath.generic_wstring();
+		if (RelativeText == L".." || RelativeText.rfind(L"../", 0) == 0)
+		{
+			return NormalizedPath;
+		}
+
+		return FPaths::Normalize(FPaths::ToUtf8(RelativeText));
 	}
 
 	FString ToLowerCopy(FString Value)
@@ -104,11 +133,6 @@ namespace
 		return ErrorCode ? 0 : Size;
 	}
 
-	FString UInt64ToString(uint64 Value)
-	{
-		return std::to_string(Value);
-	}
-
 	uint64 ParseUInt64String(const FString& Value, uint64 DefaultValue = 0)
 	{
 		if (Value.empty())
@@ -124,41 +148,6 @@ namespace
 		{
 			return DefaultValue;
 		}
-	}
-
-	FString ComputeFileContentHashString(const FString& Path)
-	{
-		const FString NormalizedPath = FPaths::Normalize(Path);
-		if (NormalizedPath.empty())
-		{
-			return "";
-		}
-
-		std::ifstream In(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)), std::ios::binary);
-		if (!In.is_open())
-		{
-			return "";
-		}
-
-		constexpr uint64 FnvOffsetBasis = 14695981039346656037ull;
-		constexpr uint64 FnvPrime = 1099511628211ull;
-		uint64 Hash = FnvOffsetBasis;
-
-		char Buffer[64 * 1024];
-		while (In.good())
-		{
-			In.read(Buffer, sizeof(Buffer));
-			const std::streamsize BytesRead = In.gcount();
-			for (std::streamsize Index = 0; Index < BytesRead; ++Index)
-			{
-				Hash ^= static_cast<unsigned char>(Buffer[Index]);
-				Hash *= FnvPrime;
-			}
-		}
-
-		char HashText[32] = {};
-		std::snprintf(HashText, sizeof(HashText), "fnv1a64:%016llx", static_cast<unsigned long long>(Hash));
-		return FString(HashText);
 	}
 
 	void WriteUInt32LE(std::ofstream& Out, uint32 Value)
@@ -825,7 +814,7 @@ namespace
 
 		if (!SourceFilePath.empty())
 		{
-			const FString NormalizedSourceFilePath = FPaths::Normalize(SourceFilePath);
+			const FString NormalizedSourceFilePath = MakeProjectRelativePath(SourceFilePath);
 			Sequence->SetSourceFilePath(NormalizedSourceFilePath);
 			if (SourceFileWriteTimeTicks == 0)
 			{
@@ -842,7 +831,7 @@ namespace
 		}
 
 		Sequence->SetSourceStackName(SourceStackName);
-		Sequence->SetPreviewMeshPath(PreviewMeshPath);
+		Sequence->SetPreviewMeshPath(MakeProjectRelativePath(PreviewMeshPath));
 		Sequence->SetSourceFileWriteTimeTicks(SourceFileWriteTimeTicks);
 		Sequence->SetSourceFileSizeBytes(SourceFileSizeBytes);
 		Sequence->SetSourceFileContentHash(SourceFileContentHash);
@@ -1123,8 +1112,8 @@ bool FAnimSequenceAssetLoader::LoadMetadata(const FString& Path, FAnimSequenceAs
 		OutMetadata.TrackCount = static_cast<int32>(Root["Tracks"].length());
 	}
 
-	OutMetadata.SourceFilePath = FPaths::Normalize(OutMetadata.SourceFilePath);
-	OutMetadata.PreviewMeshPath = FPaths::Normalize(OutMetadata.PreviewMeshPath);
+	OutMetadata.SourceFilePath = MakeProjectRelativePath(OutMetadata.SourceFilePath);
+	OutMetadata.PreviewMeshPath = MakeProjectRelativePath(OutMetadata.PreviewMeshPath);
 	return true;
 }
 
@@ -1149,21 +1138,20 @@ bool FAnimSequenceAssetLoader::Save(const FString& Path, const UAnimSequence* Se
 
 	const UAnimDataModel* DataModel = Sequence->GetDataModel();
 
-	const FString SourceFilePath = FPaths::Normalize(Sequence->GetSourceFilePath());
-	const uint64 SourceFileWriteTimeTicks = GetFileWriteTimeTicks(SourceFilePath);
-	const uint64 SourceFileSizeBytes = GetFileSizeBytes(SourceFilePath);
-	const FString SourceFileContentHash = ComputeFileContentHashString(SourceFilePath);
-	const FString DerivedDataCachePath = MakeAnimSequenceBinaryCachePath(NormalizedPath);
+	const FString StableAssetPath = MakeProjectRelativePath(NormalizedPath);
+	const FString SourceFilePath = MakeProjectRelativePath(Sequence->GetSourceFilePath());
+	const FString PreviewMeshPath = MakeProjectRelativePath(Sequence->GetPreviewMeshPath());
+	const FString DerivedDataCachePath = MakeProjectRelativePath(MakeAnimSequenceBinaryCachePath(StableAssetPath));
 
 	JSON Root = JSON::Make(JSON::Class::Object);
 	Root["Format"] = AnimSequenceFormatName;
 	Root["Version"] = AnimSequenceFormatVersion;
-	Root["AssetPath"] = NormalizedPath;
+	Root["AssetPath"] = StableAssetPath;
 
 	// Backward-compatible flat fields. New code should prefer the grouped descriptor blocks below.
 	Root["SourceFilePath"] = SourceFilePath;
 	Root["SourceStackName"] = Sequence->GetSourceStackName();
-	Root["PreviewMeshPath"] = Sequence->GetPreviewMeshPath();
+	Root["PreviewMeshPath"] = PreviewMeshPath;
 	Root["PlayLength"] = DataModel->GetPlayLength();
 	Root["FrameRateNumerator"] = DataModel->GetFrameRate().Numerator;
 	Root["FrameRateDenominator"] = DataModel->GetFrameRate().Denominator;
@@ -1172,9 +1160,6 @@ bool FAnimSequenceAssetLoader::Save(const FString& Path, const UAnimSequence* Se
 
 	JSON Source = JSON::Make(JSON::Class::Object);
 	Source["FilePath"] = SourceFilePath;
-	Source["FileWriteTimeTicks"] = UInt64ToString(SourceFileWriteTimeTicks);
-	Source["FileSizeBytes"] = UInt64ToString(SourceFileSizeBytes);
-	Source["ContentHash"] = SourceFileContentHash;
 	Source["ImportedStackName"] = Sequence->GetSourceStackName();
 	Root["Source"] = Source;
 
@@ -1182,7 +1167,7 @@ bool FAnimSequenceAssetLoader::Save(const FString& Path, const UAnimSequence* Se
 	ImportSettings["SampleRate"] = DataModel->GetFrameRate().Numerator;
 	ImportSettings["FrameRateNumerator"] = DataModel->GetFrameRate().Numerator;
 	ImportSettings["FrameRateDenominator"] = DataModel->GetFrameRate().Denominator;
-	ImportSettings["PreviewMeshPath"] = Sequence->GetPreviewMeshPath();
+	ImportSettings["PreviewMeshPath"] = PreviewMeshPath;
 	Root["ImportSettings"] = ImportSettings;
 
 	JSON SequenceJson = JSON::Make(JSON::Class::Object);

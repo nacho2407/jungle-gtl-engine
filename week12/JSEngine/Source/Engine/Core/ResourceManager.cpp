@@ -53,6 +53,36 @@ namespace
 		return Extension == L".fbx";
 	}
 
+	FString MakeProjectRelativePath(const FString& Path)
+	{
+		const FString NormalizedPath = FPaths::Normalize(Path);
+		if (NormalizedPath.empty())
+		{
+			return {};
+		}
+
+		std::filesystem::path FsPath(FPaths::ToWide(NormalizedPath));
+		if (!FsPath.is_absolute())
+		{
+			return NormalizedPath;
+		}
+
+		std::error_code ErrorCode;
+		const std::filesystem::path RelativePath = std::filesystem::relative(FsPath, std::filesystem::path(FPaths::RootDir()), ErrorCode);
+		if (ErrorCode || RelativePath.empty())
+		{
+			return NormalizedPath;
+		}
+
+		const std::wstring RelativeText = RelativePath.generic_wstring();
+		if (RelativeText == L".." || RelativeText.rfind(L"../", 0) == 0)
+		{
+			return NormalizedPath;
+		}
+
+		return FPaths::Normalize(FPaths::ToUtf8(RelativeText));
+	}
+
 	
 }
 
@@ -1070,6 +1100,7 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 	TArray<FString> ImportedAssetPaths;
 
 	const FString NormalizedPath = FPaths::Normalize(Path);
+	const FString StableSourcePath = MakeProjectRelativePath(NormalizedPath);
 	if (!IsFbxSourcePath(NormalizedPath))
 	{
 		return ImportedAssetPaths;
@@ -1081,7 +1112,7 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 		FAnimSequenceAssetMetadata Metadata;
 		if (AnimSequenceAssetLoader.LoadMetadata(AssetPath, Metadata))
 		{
-			if (FPaths::Normalize(Metadata.SourceFilePath) == NormalizedPath)
+			if (MakeProjectRelativePath(Metadata.SourceFilePath) == StableSourcePath)
 			{
 				ImportedAssetPaths.push_back(AssetPath);
 			}
@@ -1169,6 +1200,43 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
 	if (FAssetPathPolicy::IsAnimSequenceAssetPath(NormalizedPath))
 	{
 		LoadedSequence = AnimSequenceAssetLoader.Load(NormalizedPath);
+		if (LoadedSequence &&
+			LoadedSequence->GetDataModel() &&
+			LoadedSequence->GetDataModel()->GetBoneAnimationTracks().empty() &&
+			!LoadedSequence->AreJsonTracksEmbedded())
+		{
+			const FString SourceFilePath = MakeProjectRelativePath(LoadedSequence->GetSourceFilePath());
+			if (IsFbxSourcePath(SourceFilePath))
+			{
+				FFbxAnimImportOptions ImportOptions;
+				ImportOptions.StackName = LoadedSequence->GetSourceStackName();
+				ImportOptions.PreviewMeshPath = MakeProjectRelativePath(
+					LoadedSequence->GetPreviewMeshPath().empty()
+						? SourceFilePath
+						: LoadedSequence->GetPreviewMeshPath());
+				ImportOptions.SampleRate = LoadedSequence->GetDataModel()->GetFrameRate().Numerator;
+
+				if (UAnimSequence* RebuiltSequence = FbxImporter.LoadAnimSequence(SourceFilePath, ImportOptions))
+				{
+					RebuiltSequence->SetAssetPath(NormalizedPath);
+					RebuiltSequence->SetSourceFilePath(SourceFilePath);
+					RebuiltSequence->SetSourceStackName(LoadedSequence->GetSourceStackName());
+					RebuiltSequence->SetPreviewMeshPath(ImportOptions.PreviewMeshPath);
+					RebuiltSequence->ClearNotifies();
+					for (const FAnimNotifyStateEvent& Notify : LoadedSequence->GetNotifies())
+					{
+						RebuiltSequence->AddNotify(Notify.TriggerTime, Notify.NotifyName, Notify.Duration);
+					}
+
+					if (!AnimSequenceAssetLoader.Save(NormalizedPath, RebuiltSequence))
+					{
+						UE_LOG_WARNING("[AnimSequenceLoad] Failed to rebuild binary cache for anim sequence: %s",
+							NormalizedPath.c_str());
+					}
+					LoadedSequence = RebuiltSequence;
+				}
+			}
+		}
 	}
 	// 3. FBX 소스 경로인 경우라면 진짜 일을 시작함
 	else if (IsFbxSourcePath(NormalizedPath))
