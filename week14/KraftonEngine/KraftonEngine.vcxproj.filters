@@ -1,6 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Intermediate">
+      <UniqueIdentifier>{01701d33-f691-8ee6-7d2f-c4f8141e6b71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate\Generated">
+      <UniqueIdentifier>{c5993ed0-c923-5ff8-615e-95352d480ecd}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{4cc279fc-92e1-51e4-a50f-52a3df29a34b}</UniqueIdentifier>
     </Filter>
@@ -572,16 +578,16 @@
     <ClCompile Include="Source\Editor\UI\NotificationToast.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Asset\AnimationTimelinePanel.cpp">
-      <Filter>Source\Editor\UI\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Asset\AnimationTransportBar.cpp">
+    <ClCompile Include="Source\Editor\UI\Asset\AnimMontagePropertyPanel.cpp">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\AnimSequencePropertyPanel.cpp">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Asset\AnimMontagePropertyPanel.cpp">
+    <ClCompile Include="Source\Editor\UI\Asset\AnimationTimelinePanel.cpp">
+      <Filter>Source\Editor\UI\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\AnimationTransportBar.cpp">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp">
@@ -635,6 +641,12 @@
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimMontage.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimMontageInstance.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimNotify.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
@@ -645,12 +657,6 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimSequenceBase.cpp">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Animation\AnimMontage.cpp">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Animation\AnimMontageInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp">
@@ -1419,7 +1425,9 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp" />
+    <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp">
+      <Filter>Intermediate\Generated</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1521,16 +1529,16 @@
     <ClInclude Include="Source\Editor\UI\NotificationToast.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Asset\AnimationTimelinePanel.h">
-      <Filter>Source\Editor\UI\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Asset\AnimationTransportBar.h">
+    <ClInclude Include="Source\Editor\UI\Asset\AnimMontagePropertyPanel.h">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\AnimSequencePropertyPanel.h">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Asset\AnimMontagePropertyPanel.h">
+    <ClInclude Include="Source\Editor\UI\Asset\AnimationTimelinePanel.h">
+      <Filter>Source\Editor\UI\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\AnimationTransportBar.h">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h">
@@ -1602,6 +1610,12 @@
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimMontage.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimMontageInstance.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimNotify.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
@@ -1615,12 +1629,6 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimSequenceBase.h">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Animation\AnimMontage.h">
-      <Filter>Source\Engine\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Animation\AnimMontageInstance.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h">
