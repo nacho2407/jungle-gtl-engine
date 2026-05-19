@@ -534,6 +534,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\ArrayProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\BoolProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\ClassProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\EnumProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\GenericProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\NameProperty.cpp" />
@@ -886,6 +887,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Core\TickFunction.h" />
     <ClInclude Include="Source\Engine\Core\Property\ArrayProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\BoolProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\ClassProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\EnumProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\GenericProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\NameProperty.h" />

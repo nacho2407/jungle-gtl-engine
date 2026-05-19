@@ -26,6 +26,7 @@ private:
 	bool RenderSoftObjectPropertyWidget(struct FPropertyValue& Prop);
 	bool RenderEnumPropertyWidget(struct FPropertyValue& Prop);
 	bool RenderStructPropertyWidget(struct FPropertyValue& Prop, bool bDispatchChange, const FString& PropertyPath);
+	bool RenderArrayPropertyWidget(struct FPropertyValue& Prop, bool bDispatchChange, const FString& PropertyPath);
 
 	void PropagatePropertyChange(const FString& PropName, const TArray<AActor*>& SelectedActors);
 

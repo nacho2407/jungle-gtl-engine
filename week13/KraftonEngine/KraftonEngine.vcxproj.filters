@@ -896,6 +896,9 @@
     <ClCompile Include="Source\Engine\Core\Property\BoolProperty.cpp">
       <Filter>Source\Engine\Core\Property</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Property\ClassProperty.cpp">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Core\Property\EnumProperty.cpp">
       <Filter>Source\Engine\Core\Property</Filter>
     </ClCompile>
@@ -1944,6 +1947,9 @@
       <Filter>Source\Engine\Core\Property</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Property\BoolProperty.h">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Property\ClassProperty.h">
       <Filter>Source\Engine\Core\Property</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Property\EnumProperty.h">

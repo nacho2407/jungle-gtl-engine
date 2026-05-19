@@ -9,8 +9,6 @@
 #include "Component/Movement/MovementComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/StaticMeshComponent.h"
-#include "Component/SkeletalMeshComponent.h"
 #include "Component/SceneComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/Light/LightComponentBase.h"
@@ -18,7 +16,12 @@
 #include "Component/HeightFogComponent.h"
 #include "GameFramework/AActor.h"
 #include "Asset/AssetRegistry.h"
+#include "Core/Property/ClassProperty.h"
+#include "Core/Property/ArrayProperty.h"
 #include "Core/Property/NumericProperty.h"
+#include "Core/Property/ObjectProperty.h"
+#include "Core/Property/StructProperty.h"
+#include "Core/Property/SoftObjectProperty.h"
 #include "Core/ClassTypes.h"
 #include "Math/FloatCurve.h"
 #include "Lua/LuaScriptManager.h"
@@ -32,6 +35,7 @@
 #include "Mesh/StaticMesh.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Platform/Paths.h"
+#include "SimpleJSON/json.hpp"
 
 #include <Windows.h>
 #include <commdlg.h>
@@ -266,14 +270,25 @@ namespace
 			*static_cast<UObject**>(DstPtr) = *static_cast<UObject**>(SrcPtr);
 			return true;
 		case EPropertyType::ClassRef:
-			*static_cast<UClass**>(DstPtr) = *static_cast<UClass**>(SrcPtr);
+		{
+			const FClassProperty* SrcClassProperty = SrcValue.Property ? SrcValue.Property->AsClassProperty() : nullptr;
+			const FClassProperty* DstClassProperty = DstValue.Property ? DstValue.Property->AsClassProperty() : nullptr;
+			if (!SrcClassProperty || !DstClassProperty)
+			{
+				return false;
+			}
+			DstClassProperty->SetClassValue(DstValue.ContainerPtr, SrcClassProperty->GetClassValue(SrcValue.ContainerPtr));
 			return true;
+		}
 		case EPropertyType::Name:
 			*static_cast<FName*>(DstPtr) = *static_cast<FName*>(SrcPtr);
 			return true;
-		case EPropertyType::SoftObjectRefArray:
-			*static_cast<TArray<FSoftObjectPtr>*>(DstPtr) = *static_cast<TArray<FSoftObjectPtr>*>(SrcPtr);
+		case EPropertyType::Array:
+		{
+			json::JSON JsonValue = SrcValue.Property->SerializeValue(SrcPtr, SrcValue.Object, nullptr);
+			DstValue.Property->DeserializeValue(DstPtr, JsonValue, DstValue.Object, nullptr);
 			return true;
+		}
 		case EPropertyType::Struct:
 		{
 			if (!SrcValue.GetStructType() || !DstValue.GetStructType())
@@ -339,14 +354,14 @@ namespace
 
 	bool RenderClassPropertyWidget(FPropertyValue& Prop)
 	{
-		UClass** Value = static_cast<UClass**>(Prop.GetValuePtr());
-		if (!Value)
+		const FClassProperty* ClassProperty = Prop.Property ? Prop.Property->AsClassProperty() : nullptr;
+		if (!ClassProperty || !Prop.GetValuePtr())
 		{
 			return false;
 		}
 
 		UClass* AllowedClass = GetAllowedClassMetadata(Prop);
-		UClass* CurrentClass = *Value;
+		UClass* CurrentClass = ClassProperty->GetClassValue(Prop.ContainerPtr);
 		FString Preview = CurrentClass ? CurrentClass->GetName() : FString("None");
 		bool bChanged = false;
 
@@ -355,7 +370,7 @@ namespace
 			const bool bSelectedNone = CurrentClass == nullptr;
 			if (ImGui::Selectable("None", bSelectedNone))
 			{
-				*Value = nullptr;
+				ClassProperty->SetClassValue(Prop.ContainerPtr, nullptr);
 				bChanged = true;
 			}
 			if (bSelectedNone)
@@ -378,7 +393,7 @@ namespace
 				const bool bSelected = Candidate == CurrentClass;
 				if (ImGui::Selectable(Candidate->GetName(), bSelected))
 				{
-					*Value = Candidate;
+					ClassProperty->SetClassValue(Prop.ContainerPtr, Candidate);
 					bChanged = true;
 				}
 				if (bSelected)
@@ -1681,6 +1696,93 @@ bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop, boo
 	return bChanged;
 }
 
+bool FEditorPropertyWidget::RenderArrayPropertyWidget(FPropertyValue& Prop, bool bDispatchChange, const FString& PropertyPath)
+{
+	const FArrayProperty* ArrayProperty = Prop.Property ? Prop.Property->AsArrayProperty() : nullptr;
+	void* ArrayPtr = Prop.GetValuePtr();
+	if (!ArrayProperty || !ArrayPtr || !ArrayProperty->GetArrayOps() || !ArrayProperty->GetInnerProperty())
+	{
+		return false;
+	}
+
+	const FArrayProperty::FArrayOps* Ops = ArrayProperty->GetArrayOps();
+	const FProperty* InnerProperty = ArrayProperty->GetInnerProperty();
+	if (!Ops->GetNum || !Ops->GetElementPtr)
+	{
+		return false;
+	}
+
+	bool bChanged = false;
+	size_t Num = Ops->GetNum(ArrayPtr);
+
+	if (Ops->InsertDefault && ImGui::Button("+"))
+	{
+		Ops->InsertDefault(ArrayPtr, Num);
+		bChanged = true;
+		if (bDispatchChange)
+		{
+			DispatchPostEditChange(Prop, EPropertyChangeType::ArrayAdd, static_cast<int32>(Num), MakeArrayElementPath(PropertyPath, static_cast<int32>(Num)));
+		}
+		Num = Ops->GetNum(ArrayPtr);
+	}
+
+	for (int32 ElemIdx = 0; ElemIdx < static_cast<int32>(Num); ++ElemIdx)
+	{
+		void* ElementPtr = Ops->GetElementPtr(ArrayPtr, static_cast<size_t>(ElemIdx));
+		if (!ElementPtr)
+		{
+			continue;
+		}
+
+		ImGui::PushID(ElemIdx);
+
+		FString ElementName = "Element " + std::to_string(ElemIdx);
+		const FString ElementPath = MakeArrayElementPath(PropertyPath, ElemIdx);
+
+		if (Ops->RemoveAt && ImGui::Button("-"))
+		{
+			Ops->RemoveAt(ArrayPtr, static_cast<size_t>(ElemIdx));
+			bChanged = true;
+			if (bDispatchChange)
+			{
+				DispatchPostEditChange(Prop, EPropertyChangeType::ArrayRemove, ElemIdx, ElementPath, ElementName.c_str(), ElementName.c_str());
+			}
+			ImGui::PopID();
+			break;
+		}
+
+		if (Ops->RemoveAt)
+		{
+			ImGui::SameLine();
+		}
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(ElementName.c_str());
+		ImGui::SameLine(120.0f);
+		ImGui::SetNextItemWidth(-1);
+
+		FPropertyValue ElementValue;
+		ElementValue.Object = Prop.Object;
+		ElementValue.Property = InnerProperty;
+		ElementValue.ContainerPtr = ElementPtr;
+
+		TArray<FPropertyValue> ElementProps;
+		ElementProps.push_back(ElementValue);
+		int32 ElementPropIndex = 0;
+		if (RenderPropertyWidget(ElementProps, ElementPropIndex, false, ElementPath))
+		{
+			bChanged = true;
+			if (bDispatchChange)
+			{
+				DispatchPostEditChange(Prop, EPropertyChangeType::ValueSet, ElemIdx, ElementPath, ElementName.c_str(), ElementName.c_str());
+			}
+		}
+
+		ImGui::PopID();
+	}
+
+	return bChanged;
+}
+
 bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, int32& Index, bool bDispatchChange, const FString& PropertyPath)
 {
 	ImGui::PushID(Index);
@@ -2078,105 +2180,9 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 		bChanged = RenderSoftObjectPropertyWidget(Prop);
 		break;
 	}
-	case EPropertyType::SoftObjectRefArray:
+	case EPropertyType::Array:
 	{
-		TArray<FSoftObjectPtr>* Slots = static_cast<TArray<FSoftObjectPtr>*>(Prop.GetValuePtr());
-		if (!Slots)
-		{
-			break;
-		}
-
-		for (int32 ElemIdx = 0; ElemIdx < (int32)Slots->size(); ++ElemIdx)
-		{
-			FSoftObjectPtr& Slot = (*Slots)[ElemIdx];
-			FString SlotPath = Slot.ToString();
-			ImGui::PushID(ElemIdx);
-
-			FString SlotName = "Element " + std::to_string(ElemIdx);
-			if (SelectedComponent)
-			{
-				if (SelectedComponent->IsA<UStaticMeshComponent>())
-				{
-					UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(SelectedComponent);
-					if (SMC->GetStaticMesh() && ElemIdx < (int32)SMC->GetStaticMesh()->GetStaticMaterials().size())
-					{
-						SlotName = "Element " + std::to_string(ElemIdx) + " - "
-							+ SMC->GetStaticMesh()->GetStaticMaterials()[ElemIdx].MaterialSlotName;
-					}
-				}
-				else if (SelectedComponent->IsA<USkeletalMeshComponent>())
-				{
-					USkeletalMeshComponent* SMC = static_cast<USkeletalMeshComponent*>(SelectedComponent);
-					if (SMC->GetSkeletalMesh() && ElemIdx < (int32)SMC->GetSkeletalMesh()->GetSkeletalMaterials().size())
-					{
-						SlotName = "Element " + std::to_string(ElemIdx) + " - "
-							+ SMC->GetSkeletalMesh()->GetSkeletalMaterials()[ElemIdx].MaterialSlotName;
-					}
-				}
-			}
-
-			ImGui::AlignTextToFramePadding();
-			ImGui::TextUnformatted(SlotName.c_str());
-			ImGui::SameLine(120.0f);
-			ImGui::SetNextItemWidth(-1);
-
-			FString Preview = (SlotPath.empty() || SlotPath == "None") ? "None" : SlotPath;
-			if (ImGui::BeginCombo("##Mat", Preview.c_str()))
-			{
-				bool bSelectedNone = (SlotPath == "None" || SlotPath.empty());
-				if (ImGui::Selectable("None", bSelectedNone))
-				{
-					Slot.SetPath("None");
-					SlotPath = "None";
-					bChanged = true;
-					if (bDispatchChange)
-					{
-						const FString ElementName = "Element " + std::to_string(ElemIdx);
-						DispatchPostEditChange(Prop, EPropertyChangeType::ValueSet, ElemIdx, MakeArrayElementPath(EffectivePropertyPath, ElemIdx), ElementName.c_str(), ElementName.c_str());
-					}
-				}
-				if (bSelectedNone) ImGui::SetItemDefaultFocus();
-
-				const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
-				for (const FMaterialAssetListItem& Item : MatFiles)
-				{
-					bool bSelected = (SlotPath == Item.FullPath);
-					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
-					{
-						Slot.SetPath(Item.FullPath);
-						SlotPath = Item.FullPath;
-						bChanged = true;
-						if (bDispatchChange)
-						{
-							const FString ElementName = "Element " + std::to_string(ElemIdx);
-							DispatchPostEditChange(Prop, EPropertyChangeType::ValueSet, ElemIdx, MakeArrayElementPath(EffectivePropertyPath, ElemIdx), ElementName.c_str(), ElementName.c_str());
-						}
-					}
-					if (bSelected) ImGui::SetItemDefaultFocus();
-				}
-				ImGui::EndCombo();
-			}
-
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MaterialContentItem"))
-				{
-					FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
-					Slot.SetPath(FPaths::ToUtf8(
-						ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
-					));
-					bChanged = true;
-					if (bDispatchChange)
-					{
-						const FString ElementName = "Element " + std::to_string(ElemIdx);
-						DispatchPostEditChange(Prop, EPropertyChangeType::ValueSet, ElemIdx, MakeArrayElementPath(EffectivePropertyPath, ElemIdx), ElementName.c_str(), ElementName.c_str());
-					}
-				}
-				ImGui::EndDragDropTarget();
-			}
-
-			ImGui::PopID();
-		}
+		bChanged = RenderArrayPropertyWidget(Prop, bDispatchChange, EffectivePropertyPath);
 		bDispatchChange = false;
 		break;
 	}

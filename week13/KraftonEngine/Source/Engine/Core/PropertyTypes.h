@@ -20,6 +20,7 @@ struct FNameProperty;
 struct FEnumProperty;
 struct FObjectPropertyBase;
 struct FObjectProperty;
+struct FClassProperty;
 struct FSoftObjectProperty;
 struct FStructProperty;
 struct FArrayProperty;
@@ -51,7 +52,7 @@ enum class EPropertyType : uint8_t
 	Enum,
 	Struct,    // 자기기술 구조체 — StructType의 property metadata로 Children 생성
 	SoftObjectRef,
-	SoftObjectRefArray,
+	Array,
 };
 
 struct FEnum
@@ -123,6 +124,7 @@ enum EPropertyFlags : uint32
 	PF_Save = 1 << 1,
 	PF_ReadOnly = 1 << 2,
 	PF_Transient = 1 << 3, //저장, 로드에서 제외
+	PF_InstancedReference = 1 << 4,
 };
 
 enum class EPropertyChangeType : uint8
@@ -210,6 +212,7 @@ struct FProperty
 	virtual const FEnumProperty* AsEnumProperty() const { return nullptr; }
 	virtual const FObjectPropertyBase* AsObjectPropertyBase() const { return nullptr; }
 	virtual const FObjectProperty* AsObjectProperty() const { return nullptr; }
+	virtual const FClassProperty* AsClassProperty() const { return nullptr; }
 	virtual const FSoftObjectProperty* AsSoftObjectProperty() const { return nullptr; }
 	virtual const FStructProperty* AsStructProperty() const { return nullptr; }
 	virtual const FArrayProperty* AsArrayProperty() const { return nullptr; }
@@ -223,13 +226,16 @@ struct FProperty
 	virtual void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const = 0;
 	virtual json::JSON SerializeValue(void* ValuePtr, const FJsonObjectReferenceContext* RefContext) const;
 	virtual void	   DeserializeValue(void* ValuePtr, json::JSON& Value, const FJsonObjectReferenceContext* RefContext) const;
+	virtual json::JSON SerializeValue(void* ValuePtr, UObject* Owner, const FJsonObjectReferenceContext* RefContext) const;
+	virtual void	   DeserializeValue(void* ValuePtr, json::JSON& Value, UObject* Owner, const FJsonObjectReferenceContext* RefContext) const;
+	virtual void	   SerializeValue(void* ValuePtr, UObject* Owner, FArchive& Ar) const;
 	virtual void	   SerializeValue(void* ValuePtr, FArchive& Ar) const = 0;
 
-	json::JSON Serialize(UObject* Object) const;
-	void	   Deserialize(UObject* Object, json::JSON& Value) const;
-	json::JSON Serialize(UObject* Object, const FJsonObjectReferenceContext* RefContext) const;
-	void	   Deserialize(UObject* Object, json::JSON& Value, const FJsonObjectReferenceContext* RefContext) const;
-	void	   Serialize(UObject* Object, FArchive& Ar) const;
+	virtual json::JSON Serialize(UObject* Object) const;
+	virtual void	   Deserialize(UObject* Object, json::JSON& Value) const;
+	virtual json::JSON Serialize(UObject* Object, const FJsonObjectReferenceContext* RefContext) const;
+	virtual void	   Deserialize(UObject* Object, json::JSON& Value, const FJsonObjectReferenceContext* RefContext) const;
+	virtual void	   Serialize(UObject* Object, FArchive& Ar) const;
 };
 
 struct FGenericProperty : FProperty
@@ -295,14 +301,3 @@ struct FObjectPropertyBase : FProperty
 	UClass* GetAllowedClassType() const;
 	const FObjectPropertyBase* AsObjectPropertyBase() const override { return this; }
 };
-
-#include "Core/Property/GenericProperty.h"
-#include "Core/Property/BoolProperty.h"
-#include "Core/Property/StringProperty.h"
-#include "Core/Property/NameProperty.h"
-#include "Core/Property/NumericProperty.h"
-#include "Core/Property/EnumProperty.h"
-#include "Core/Property/ObjectProperty.h"
-#include "Core/Property/SoftObjectProperty.h"
-#include "Core/Property/StructProperty.h"
-#include "Core/Property/ArrayProperty.h"
