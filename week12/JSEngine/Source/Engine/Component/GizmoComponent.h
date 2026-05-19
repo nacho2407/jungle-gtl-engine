@@ -25,6 +25,11 @@ private:
 	const TArray<AActor*>* AllSelectedActors = nullptr;
 	EGizmoMode CurMode = EGizmoMode::Translate;
 	FVector LastIntersectionLocation;
+	FVector RotationPlaneX;
+	FVector RotationPlaneY;
+	float InteractionStartAngle = 0.0f;
+	float InteractionCurAngle = 0.0f;
+	FMatrix InitialRotationDragTransform;
 	const float AxisLength = 1.0f;
 	float Radius = 0.1f;
 	const float ScaleSensitivity = 1.0f;
@@ -53,7 +58,9 @@ private:
 
 	void UpdateLinearDrag(const FRay& Ray);
 	void UpdateAngularDrag(const FRay& Ray);
+	float ComputeRotationAngleOnPlane(const FVector& WorldPoint) const;
 	float QuantizeDragAmount(float DragAmount);
+	float QuantizeRotationAngleFromStart(float AngleRadians) const;
 	USceneComponent* GetTargetSceneComponent() const;
 	FVector GetTargetLocation() const;
 	FVector GetTargetRotation() const;
