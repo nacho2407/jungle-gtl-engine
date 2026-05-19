@@ -154,7 +154,7 @@ static bool IsValidAnimSequenceHeader(const FAnimSequenceBinaryHeader& Header)
         return false;
     }
 
-    if (Header.ImportVersion == 0)
+    if (Header.DerivedDataVersion == 0)
     {
         return false;
     }
@@ -1238,7 +1238,7 @@ void FBinarySerializer::WriteAnimSequenceHeader(std::ofstream& Out, const FAnimS
 {
     WriteUInt32LE(Out, Header.Magic);
     WriteUInt32LE(Out, Header.BinaryVersion);
-    WriteUInt32LE(Out, Header.ImportVersion);
+    WriteUInt32LE(Out, Header.DerivedDataVersion);
     WriteUInt64LE(Out, Header.SourceFileWriteTime);
     WriteUInt64LE(Out, Header.SourceFileSize);
     WriteUInt32LE(Out, Header.AnimStackNameHash);
@@ -1255,7 +1255,7 @@ bool FBinarySerializer::ReadAnimSequenceHeader(std::ifstream& In, FAnimSequenceB
 {
   return ReadUInt32LE(In, OutHeader.Magic)
         && ReadUInt32LE(In, OutHeader.BinaryVersion)
-        && ReadUInt32LE(In, OutHeader.ImportVersion)
+        && ReadUInt32LE(In, OutHeader.DerivedDataVersion)
         && ReadUInt64LE(In, OutHeader.SourceFileWriteTime)
         && ReadUInt64LE(In, OutHeader.SourceFileSize)
         && ReadUInt32LE(In, OutHeader.AnimStackNameHash)
@@ -1568,7 +1568,7 @@ bool FBinarySerializer::SaveAnimSequence(const FString& BinaryPath, const FStrin
 
     Header.Magic = FAnimSequenceBinaryConstants::Magic;
     Header.BinaryVersion = FAnimSequenceBinaryConstants::BinaryVersion;
-    Header.ImportVersion = FAnimSequenceBinaryConstants::ImportVersion;
+    Header.DerivedDataVersion = FAnimSequenceBinaryConstants::DerivedDataVersion;
     Header.SourceFileWriteTime = GetFileWriteTimeTicks(SourcePath);
     Header.SourceFileSize = GetFileSizeBytes(SourcePath);
     Header.AnimStackNameHash = GetStableStringHash(AnimSequence.AnimStackName);

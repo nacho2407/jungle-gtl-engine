@@ -13,7 +13,7 @@ namespace FAnimSequenceBinaryConstants
 {
     constexpr uint32 Magic = 0x4D494E41; // 'ANIM'
     constexpr uint32 BinaryVersion = 7;  // v7: stores separate import version
-    constexpr uint32 ImportVersion = 2;  // v2: only authored FBX scale curves produce animated scale keys
+    constexpr uint32 DerivedDataVersion = 2;  // v2: only authored FBX scale curves produce animated scale keys
 }
 
 /*
@@ -49,7 +49,7 @@ struct FAnimSequenceBinaryHeader
 {
     uint32 Magic = FAnimSequenceBinaryConstants::Magic;
     uint32 BinaryVersion = FAnimSequenceBinaryConstants::BinaryVersion;
-    uint32 ImportVersion = FAnimSequenceBinaryConstants::ImportVersion;
+    uint32 DerivedDataVersion = FAnimSequenceBinaryConstants::DerivedDataVersion;
     uint64 SourceFileWriteTime = 0;
     uint64 SourceFileSize = 0;
     uint32 AnimStackNameHash = 0;
