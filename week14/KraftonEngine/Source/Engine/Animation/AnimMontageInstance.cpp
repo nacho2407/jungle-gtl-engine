@@ -199,12 +199,32 @@ void UAnimMontageInstance::Tick(float DeltaSeconds, UAnimInstance* Owner)
     const FCompositeSection& Cur     = Sections[CurrentSectionIndex];
     const float              CurLen  = std::max(Cur.LinkTime - Cur.StartTime, 0.0f);
 
-    // Notify 큐에 적재 — SourceSequence 의 notify (sequence 시간 기준) 가 그대로 dispatch.
+    // Notify 큐 적재 + Root motion 누적 — 둘 다 source sequence 의 시간 구간 [PrevSeqTime, NextSeqTime).
     if (Owner && CurrentMontage->GetSourceSequence() && CurLen > 0.0f)
     {
-        const float PrevSeqTime = Cur.StartTime + SectionTime;
-        const float NextSeqTime = Cur.StartTime + std::min(SectionTime + Step, CurLen);
-        Owner->AddAnimNotifies(PrevSeqTime, NextSeqTime, CurrentMontage->GetSourceSequence());
+        UAnimSequence* SrcSeq       = CurrentMontage->GetSourceSequence();
+        const float    PrevSeqTime  = Cur.StartTime + SectionTime;
+        const float    NextSeqTime  = Cur.StartTime + std::min(SectionTime + Step, CurLen);
+
+        Owner->AddAnimNotifies(PrevSeqTime, NextSeqTime, SrcSeq);
+
+        // Root motion — bEnableRootMotion 켜진 sequence 만, blend weight 곱해 누적.
+        // AccumulateRootMotion 측 mode 체크 (IgnoreRootMotion) 가 최종 게이트.
+        // RootMotionFromMontagesOnly mode 일 때 base FSM/SingleNode 누적은 호출자 측에서 skip,
+        // montage 는 mode 무관 누적 (Ignore 만 막힘).
+        if (SrcSeq->GetEnableRootMotion())
+        {
+            const float W = GetBlendWeight();
+            if (W > 0.0f)
+            {
+                const FTransform RawDelta = SrcSeq->ExtractRootMotion(PrevSeqTime, NextSeqTime, false);
+                // Translation 은 scalar scale. Rotation 은 identity 와 quat slerp 로 부분 적용.
+                FTransform Scaled;
+                Scaled.Location = RawDelta.Location * W;
+                Scaled.Rotation = FQuat::Slerp(FQuat::Identity, RawDelta.Rotation.GetNormalized(), W).GetNormalized();
+                Owner->AccumulateRootMotion(Scaled);
+            }
+        }
     }
 
     SectionTime += Step;

@@ -80,7 +80,8 @@ void UAnimationStateMachine::Tick(UAnimInstance* Owner, float DeltaSeconds)
 
 	// 4) Root motion delta 누적 — blend 중이면 weight lerp.
 	//    From: weight (1 - BlendAlpha), Current: weight BlendAlpha. 합한 delta 를 instance 에 push.
-	if (Owner)
+	//    RootMotionFromMontagesOnly mode 일 때 FSM base 누적 skip (Montage 만 적용되도록).
+	if (Owner && Owner->GetRootMotionMode() != ERootMotionMode::RootMotionFromMontagesOnly)
 	{
 		const FTransform& CurDelta = CurrentState->GetLastRootMotionDelta();
 		if (FromState)

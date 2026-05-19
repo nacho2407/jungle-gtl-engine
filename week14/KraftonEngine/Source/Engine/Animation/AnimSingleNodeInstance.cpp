@@ -35,10 +35,11 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaSeconds)
 	// 큐에 적재만 — 실제 dispatch 는 베이스 UAnimInstance::UpdateAnimation 끝에서 1회.
 	AddAnimNotifies(PreviousTime, CurrentTime, CurrentAsset);
 
-	// Root motion 누적 — bEnableRootMotion 켜진 anim 만 효과 있음.
+	// Root motion 누적 — bEnableRootMotion 켜진 anim + base 누적 허용 mode 일 때만.
+	// RootMotionFromMontagesOnly 면 base 측 누적 skip (Montage 만 누적되도록).
 	if (UAnimSequence* Seq = Cast<UAnimSequence>(CurrentAsset))
 	{
-		if (Seq->GetEnableRootMotion())
+		if (Seq->GetEnableRootMotion() && GetRootMotionMode() != ERootMotionMode::RootMotionFromMontagesOnly)
 		{
 			const FTransform Delta = Seq->ExtractRootMotion(PreviousTime, CurrentTime, bLooping);
 			AccumulateRootMotion(Delta);
