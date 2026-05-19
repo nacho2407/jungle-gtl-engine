@@ -45,5 +45,12 @@ public:
 		return Identity;
 	}
 
+	// 이 노드가 "유효한 출력" 을 내는 정도 (0..1).
+	//   Slot — montage active 면 그 BlendWeight, 아니면 0 (= base 만 보이게)
+	//   다른 노드 — default 1.0 (= 항상 유효)
+	// LayeredBlendPerBone 가 BlendPose 의 이 값을 자동 weight 로 사용해 montage 없을 때
+	// 자연스럽게 base 100% 가 되도록.
+	virtual float GetEffectiveBlendWeight() const { return 1.0f; }
+
 	virtual const char* GetDebugName() const { return "AnimNode"; }
 };

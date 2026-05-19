@@ -6,6 +6,8 @@
 #include "Animation/AnimState.h"
 #include "Animation/AnimationStateMachine.h"
 #include "Animation/PoseContext.h"
+#include "Animation/Nodes/AnimNode_LayeredBlendPerBone.h"
+#include "Animation/Nodes/AnimNode_RefPose.h"
 #include "Animation/Nodes/AnimNode_Slot.h"
 #include "Animation/Nodes/AnimNode_StateMachine.h"
 #include "Animation/Nodes/AnimNode_SequencePlayer.h"
@@ -270,12 +272,14 @@ void ULuaAnimInstance::InstallBindings()
 		});
 
 	// ── Montage 트리거 (lua → AnimInstance) ──
-	//   Anim.play_montage(path)                       — section/rate/blend default.
-	//   Anim.play_montage(path, "SectionName")        — section 지정.
-	//   Anim.play_montage(path, "SectionName", 1.5)   — section + rate.
-	//   PlayMontage 는 새 montage 들어오면 즉시 교체 (BlendIn 으로 자연 전환).
+	//   Anim.play_montage(path)                              — DefaultSlot, default 옵션.
+	//   Anim.play_montage(path, "SectionName")               — section 지정.
+	//   Anim.play_montage(path, "SectionName", 1.5)          — + rate.
+	//   Anim.play_montage(path, "SectionName", 1.0, 0.2)     — + blendIn.
+	//   Anim.play_montage(path, nil, nil, nil, "UpperBody")  — slot 만 명시.
 	Anim.set_function("play_montage",
-		[this](std::string Path, sol::object Section, sol::object Rate, sol::object BlendIn)
+		[this](std::string Path, sol::object Section, sol::object Rate, sol::object BlendIn,
+		       sol::object SlotName)
 		{
 			if (Path.empty()) return;
 			UAnimMontage* M = FAnimationManager::Get().LoadMontage(Path);
@@ -292,7 +296,14 @@ void ULuaAnimInstance::InstallBindings()
 			}
 			const float PlayRate    = Rate.is<float>()    ? Rate.as<float>()    : 1.0f;
 			const float BlendInTime = BlendIn.is<float>() ? BlendIn.as<float>() : -1.0f;
-			PlayMontage(M, SectionName, PlayRate, BlendInTime);
+
+			FName Slot = FName::None;   // None → 내부에서 DefaultMontageSlot resolve.
+			if (SlotName.is<std::string>())
+			{
+				const std::string Str = SlotName.as<std::string>();
+				if (!Str.empty()) Slot = FName(Str);
+			}
+			PlayMontage(M, SectionName, PlayRate, BlendInTime, Slot);
 		});
 
 	Anim.set_function("stop_montage",
@@ -414,6 +425,29 @@ void ULuaAnimInstance::InstallBindings()
 			Slot->SlotName  = Name.empty() ? DefaultMontageSlot : FName(Name.c_str());
 			Slot->InputPose = Input;
 			return Slot;
+		});
+
+	// Ref pose 노드 — 단순 ref pose 출력. LayeredBlend 의 BlendPose 의 InputPose 로
+	// 활용 (slot 비어있을 때 effective weight 0 이라 시각 영향 X).
+	Anim.set_function("create_ref_pose",
+		[this]() -> FAnimNode_RefPose*
+		{
+			return MakeNode<FAnimNode_RefPose>();
+		});
+
+	// Per-bone layered blend — base + blend + bone mask. root bone name 으로 mask BFS 자동.
+	// 예: local layer = Anim.create_layered_blend_per_bone(loco, upper_slot, "Spine")
+	//     상반신 (Spine 트리) 만 upper_slot 의 montage 영향, 하반신 loco 그대로.
+	Anim.set_function("create_layered_blend_per_bone",
+		[this](FAnimNode_Base* Base, FAnimNode_Base* Blend, std::string MaskRootBone)
+			-> FAnimNode_LayeredBlendPerBone*
+		{
+			FAnimNode_LayeredBlendPerBone* Layer = MakeNode<FAnimNode_LayeredBlendPerBone>();
+			Layer->BasePose    = Base;
+			Layer->BlendPose   = Blend;
+			Layer->PerBoneMask = BuildBoneMaskFromRoot(GetSkeletalMesh(), MaskRootBone);
+			Layer->BlendWeight = 1.0f;   // 자동 weight 는 Blend 노드의 GetEffectiveBlendWeight 로 결정.
+			return Layer;
 		});
 }
 

@@ -30,6 +30,11 @@ public:
 	void Evaluate(FPoseContext& Output) override;
 
 	const FTransform& GetLastRootMotionDelta() const override { return InputLastRM; }
+
+	// Montage active 면 그 BlendWeight, 아니면 0. LayeredBlend 가 BlendPose 의 이 값을
+	// 자동 weight 로 사용해 montage 없을 때 base 100% (UpperBody 데모의 핵심 메커니즘).
+	float GetEffectiveBlendWeight() const override;
+
 	const char* GetDebugName() const override { return "Slot"; }
 
 private:

@@ -1697,6 +1697,9 @@
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_LayeredBlendPerBone.h">
       <Filter>Source\Engine\Animation\Nodes</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_RefPose.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_SequencePlayer.h">
       <Filter>Source\Engine\Animation\Nodes</Filter>
     </ClInclude>
