@@ -1,18 +1,20 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Asset/AssetRegistry.h"
+#include "Animation/SkeletonTypes.h"
 
 class UAnimSequence;
 class UAnimMontage;
 
 struct FAnimationImportRequest
 {
-    FString SourceFbxPath;
-    FString TargetSkeletonPath = "None";
-    FString DestinationDirectory;
-    bool    bAllowTargetExtraBones   = false;
-    bool    bOverwriteExistingAssets = false;
+    FString     SourceFbxPath;
+    FString     TargetSkeletonPath = "None";
+    FString     DestinationDirectory;
+    bool        bAllowTargetExtraBones   = false;
+    bool        bOverwriteExistingAssets = false;
+    TSet<int32> SelectedAnimationStackIndices;
 };
 
 class FAnimationManager
@@ -29,6 +31,17 @@ public:
     bool SaveAnimationPreservingMetadata(UAnimSequence* Sequence);
 
     bool ImportAnimationForSkeleton(const FAnimationImportRequest& Request, TArray<UAnimSequence*>* OutSequences = nullptr);
+
+    bool SaveImportedAnimationsForSkeleton(
+        const FString&            SourceFbxPath,
+        const FReferenceSkeleton& SourceSkeleton,
+        const FString&            TargetSkeletonPath,
+        const FString&            DestinationDirectory,
+        bool                      bAllowTargetExtraBones,
+        bool                      bOverwriteExistingAssets,
+        TArray<UAnimSequence*>&   ImportedSequences,
+        TArray<UAnimSequence*>*   OutSequences = nullptr
+        );
 
     // Content/ 하위를 스캔해 디스크의 AnimSequence .uasset 들을 목록에 채운다.
     // 시작 시/임포트 후 호출 — 런타임 Load/Save 만으로는 기존 파일이 목록에 안 잡힌다.

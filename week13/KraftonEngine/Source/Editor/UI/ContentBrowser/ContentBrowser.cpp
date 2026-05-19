@@ -1,4 +1,4 @@
-﻿#include "ContentBrowser.h"
+#include "ContentBrowser.h"
 
 #include "Asset/AssetPackage.h"
 #include "CameraShake/CameraShakeAsset.h"
@@ -10,9 +10,15 @@
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "Mesh/MeshManager.h"
+#include "Mesh/SkeletalMesh.h"
+#include "Editor/UI/Asset/MeshEditorWidget.h"
 #include "EditorEngine.h"
+#include "Editor/UI/FbxImportOptionsDialog.h"
 
 #include <algorithm>
+#include <chrono>
+#include <cstdio>
+#include <filesystem>
 
 namespace
 {
@@ -82,6 +88,16 @@ namespace
 		}
 
 		return PIt == P.end();
+	}
+}
+
+namespace
+{
+	using FContentBrowserImportClock = std::chrono::steady_clock;
+
+	static double GetElapsedImportSeconds(const FContentBrowserImportClock::time_point& StartTime)
+	{
+		return std::chrono::duration<double>(FContentBrowserImportClock::now() - StartTime).count();
 	}
 }
 
@@ -248,7 +264,57 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 
 	ImGui::EndTable();
 
+	RenderFbxImportOptionsPopup();
+
 	ImGui::End();
+}
+
+void FEditorContentBrowserWidget::RenderFbxImportOptionsPopup()
+{
+	FFbxSceneImportRequest       Request;
+	const EFbxImportDialogResult DialogResult = FFbxImportOptionsDialog::RenderSceneImportPopup(
+		"FBX Import Options",
+		BrowserContext.FbxImportDialog,
+		Request
+	);
+
+	if (DialogResult != EFbxImportDialogResult::Submitted)
+	{
+		return;
+	}
+
+	if (!BrowserContext.EditorEngine)
+	{
+		BrowserContext.FbxImportDialog.Error = "Editor engine is not available.";
+		return;
+	}
+
+	FFbxSceneImportResult Result;
+	const auto            ImportStartTime = FContentBrowserImportClock::now();
+	const bool            bImported       = FMeshManager::ImportFbxScene(
+		Request,
+		BrowserContext.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice(),
+		Result
+	);
+
+	if (bImported)
+	{
+		if (Result.SkeletalMesh)
+		{
+			FMeshEditorWidget::RecordImportDurationForAsset(
+				Result.SkeletalMesh->GetAssetPathFileName(),
+				GetElapsedImportSeconds(ImportStartTime)
+			);
+			BrowserContext.EditorEngine->OpenAssetEditorForObject(Result.SkeletalMesh);
+		}
+
+		Refresh();
+		FFbxImportOptionsDialog::RequestClose(BrowserContext.FbxImportDialog);
+	}
+	else
+	{
+		BrowserContext.FbxImportDialog.Error = "FBX import failed. See the engine log for details.";
+	}
 }
 
 void FEditorContentBrowserWidget::Refresh()

@@ -12,7 +12,54 @@ FFbxSceneHandle::~FFbxSceneHandle()
 	}
 }
 
+namespace
+{
+	static void ApplyFbxImportOptions(FbxIOSettings* IoSettings, const FFbxSceneLoadOptions& Options)
+	{
+		if (!IoSettings)
+		{
+			return;
+		}
+
+		IoSettings->SetBoolProp(IMP_FBX_MATERIAL, Options.bImportMaterials);
+		IoSettings->SetBoolProp(IMP_FBX_TEXTURE, Options.bImportTextures);
+		IoSettings->SetBoolProp(IMP_FBX_LINK, Options.bImportLinks);
+		IoSettings->SetBoolProp(IMP_FBX_SHAPE, Options.bImportShapes);
+		IoSettings->SetBoolProp(IMP_FBX_GOBO, Options.bImportGobos);
+		IoSettings->SetBoolProp(IMP_FBX_ANIMATION, Options.bImportAnimations);
+		IoSettings->SetBoolProp(IMP_FBX_GLOBAL_SETTINGS, Options.bImportGlobalSettings);
+	}
+
+	static void ApplyFbxAnimationStackSelection(FbxImporter* Importer, const FFbxSceneLoadOptions& Options)
+	{
+		if (!Importer || !Options.bImportAnimations || Options.SelectedAnimationStackIndices.empty())
+		{
+			return;
+		}
+
+		const int32 AnimStackCount = Importer->GetAnimStackCount();
+		for (int32 StackIndex = 0; StackIndex < AnimStackCount; ++StackIndex)
+		{
+			if (FbxTakeInfo* TakeInfo = Importer->GetTakeInfo(StackIndex))
+			{
+				TakeInfo->mSelect = Options.SelectedAnimationStackIndices.find(StackIndex) != Options.
+				SelectedAnimationStackIndices.end();
+			}
+		}
+	}
+}
+
 bool FFbxSceneLoader::Load(const FString& SourcePath, FFbxSceneHandle& OutScene, FString* OutMessage)
+{
+	return Load(SourcePath, FFbxSceneLoadOptions(), OutScene, OutMessage);
+}
+
+bool FFbxSceneLoader::Load(
+	const FString&              SourcePath,
+	const FFbxSceneLoadOptions& Options,
+	FFbxSceneHandle&            OutScene,
+	FString*                    OutMessage
+	)
 {
 	if (OutScene.Manager)
 	{
@@ -36,6 +83,7 @@ bool FFbxSceneLoader::Load(const FString& SourcePath, FFbxSceneHandle& OutScene,
 		return false;
 	}
 	SdkManager->SetIOSettings(IoSettings);
+	ApplyFbxImportOptions(IoSettings, Options);
 
 	FbxScene* Scene = FbxScene::Create(SdkManager, "FBX Scene");
 	FbxImporter* Importer = FbxImporter::Create(SdkManager, "");
@@ -55,6 +103,8 @@ bool FFbxSceneLoader::Load(const FString& SourcePath, FFbxSceneHandle& OutScene,
 		if (OutMessage) *OutMessage = FString("FBX importer initialize failed: ") + SourcePath;
 		return false;
 	}
+
+	ApplyFbxAnimationStackSelection(Importer, Options);
 
 	if (!Importer->Import(Scene))
 	{

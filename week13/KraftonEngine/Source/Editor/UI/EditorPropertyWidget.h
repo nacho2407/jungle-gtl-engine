@@ -1,7 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include "Editor/UI/EditorWidget.h"
 #include "Object/Object.h"
+#include "Asset/AssetRegistry.h"
+#include "Editor/UI/FbxImportOptionsDialog.h"
 
 class UActorComponent;
 class AActor;
@@ -43,4 +45,6 @@ private:
 	FString PendingStaticMeshImportPath;
 	FString* PendingStaticMeshImportTarget = nullptr;
 	int32 PendingStaticFbxSkinnedMeshPolicy = 0;
+
+	FFbxSceneImportDialogState SkeletalFbxImportDialog;
 };

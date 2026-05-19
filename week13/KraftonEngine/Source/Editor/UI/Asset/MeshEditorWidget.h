@@ -1,6 +1,7 @@
 #pragma once
 #include "AssetEditorWidget.h"
 #include "Editor/Viewport/MeshEditorViewportClient.h"
+#include "Editor/UI/FbxImportOptionsDialog.h"
 
 struct FSkeletalMesh;
 struct ImDrawList;
@@ -24,6 +25,8 @@ struct FAnimationTabState
 	int32          SelectedNotifyIndex   = -1;
 	float          AnimListWidth         = 200.0f;
 	float          AnimDetailsWidth      = 280.0f;
+
+	FFbxAnimationImportDialogState AnimationImportDialog;
 };
 
 class FMeshEditorWidget : public FAssetEditorWidget

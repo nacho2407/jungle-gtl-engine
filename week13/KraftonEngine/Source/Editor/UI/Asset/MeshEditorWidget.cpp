@@ -782,21 +782,36 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 		FString Path                      = FEditorFileUtils::OpenFileDialog(Opts);
 		if (!Path.empty())
 		{
-			FAnimationImportRequest Request;
-			Request.SourceFbxPath      = Path;
-			Request.TargetSkeletonPath = SkeletalMesh->GetSkeletonBinding().SkeletonPath;
+			FFbxImportOptionsDialog::BeginAnimationImport(AnimTabState.AnimationImportDialog, Path);
+		}
+	}
 
-			TArray<UAnimSequence*> ImportedSequences;
-			FAnimationManager::Get().ImportAnimationForSkeleton(Request, &ImportedSequences);
-			// 임포트 성공/스킵(이미 존재) 무관하게 디스크를 다시 스캔해 목록 갱신.
-			FAnimationManager::Get().RefreshAvailableAnimations();
-			if (!ImportedSequences.empty())
-			{
-				AnimTabState.CurrentSequence     = ImportedSequences[0];
-				AnimTabState.SelectedAnimIndex   = -1;
-				AnimTabState.SelectedNotifyIndex = -1;
-				ApplyAnimationToComponent();
-			}
+	FAnimationImportRequest      AnimationImportRequest;
+	const EFbxImportDialogResult AnimationImportDialogResult = FFbxImportOptionsDialog::RenderAnimationImportPopup(
+		"Import Animation FBX Options",
+		AnimTabState.AnimationImportDialog,
+		SkeletalMesh ? SkeletalMesh->GetSkeletonBinding().SkeletonPath : FString("None"),
+		AnimationImportRequest
+	);
+
+	if (AnimationImportDialogResult == EFbxImportDialogResult::Submitted)
+	{
+		TArray<UAnimSequence*> ImportedSequences;
+		FAnimationManager::Get().ImportAnimationForSkeleton(AnimationImportRequest, &ImportedSequences);
+		// 임포트 성공/스킵(이미 존재) 무관하게 디스크를 다시 스캔해 목록 갱신.
+		FAnimationManager::Get().RefreshAvailableAnimations();
+		if (!ImportedSequences.empty())
+		{
+			AnimTabState.CurrentSequence     = ImportedSequences[0];
+			AnimTabState.SelectedAnimIndex   = -1;
+			AnimTabState.SelectedNotifyIndex = -1;
+			ApplyAnimationToComponent();
+			FFbxImportOptionsDialog::RequestClose(AnimTabState.AnimationImportDialog);
+		}
+		else
+		{
+			AnimTabState.AnimationImportDialog.Error =
+			"No animation was imported. Existing assets may have been skipped.";
 		}
 	}
 
