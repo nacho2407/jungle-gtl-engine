@@ -638,13 +638,18 @@ void MeshElement::RenderContextMenu(ContentBrowserContext& Context)
 		{
 			USkeletalMesh* Reimported = nullptr;
 
+			const auto ReimportStart = std::chrono::steady_clock::now();
 			if (Context.EditorEngine && FMeshManager::ReimportSkeletalMesh(
 					PackagePath,
 					Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice(),
 					Reimported
 			) && Reimported)
 			{
-				FMeshEditorWidget::ClearImportDurationForAsset(Reimported->GetAssetPathFileName());
+				const std::chrono::duration<double> Elapsed = std::chrono::steady_clock::now() - ReimportStart;
+				FMeshEditorWidget::RecordImportDurationForAsset(
+					Reimported->GetAssetPathFileName(),
+					Elapsed.count()
+				);
 				Context.bPendingContentRefresh = true;
 				Context.EditorEngine->OpenAssetEditorForObject(Reimported);
 			}

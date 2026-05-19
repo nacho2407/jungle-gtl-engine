@@ -34,6 +34,7 @@
 #include "Mesh/MeshManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/SkeletalMesh.h"
+#include "Editor/UI/Asset/MeshEditorWidget.h"
 #include "Platform/Paths.h"
 #include "SimpleJSON/json.hpp"
 
@@ -41,6 +42,7 @@
 #include <commdlg.h>
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cfloat>
 #include <cstring>
 #include <filesystem>
@@ -1429,10 +1431,16 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 		if (DialogResult == EFbxImportDialogResult::Submitted)
 		{
 			FFbxSceneImportResult Result;
+			const auto ImportStart = std::chrono::steady_clock::now();
 			if (FMeshManager::ImportFbxScene(Request, GEngine->GetRenderer().GetFD3DDevice().GetDevice(), Result))
 			{
 				if (Result.SkeletalMesh)
 				{
+					const std::chrono::duration<double> Elapsed = std::chrono::steady_clock::now() - ImportStart;
+					FMeshEditorWidget::RecordImportDurationForAsset(
+						Result.SkeletalMesh->GetAssetPathFileName(),
+						Elapsed.count()
+					);
 					SetPath(Result.SkeletalMesh->GetAssetPathFileName());
 					bChanged = true;
 				}
@@ -2092,10 +2100,16 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 			if (DialogResult == EFbxImportDialogResult::Submitted)
 			{
 				FFbxSceneImportResult Result;
+				const auto ImportStart = std::chrono::steady_clock::now();
 				if (FMeshManager::ImportFbxScene(Request, GEngine->GetRenderer().GetFD3DDevice().GetDevice(), Result))
 				{
 					if (Result.SkeletalMesh)
 					{
+						const std::chrono::duration<double> Elapsed = std::chrono::steady_clock::now() - ImportStart;
+						FMeshEditorWidget::RecordImportDurationForAsset(
+							Result.SkeletalMesh->GetAssetPathFileName(),
+							Elapsed.count()
+						);
 						SetObjectValue(Result.SkeletalMesh);
 					}
 					FMeshManager::ScanMeshAssets();
