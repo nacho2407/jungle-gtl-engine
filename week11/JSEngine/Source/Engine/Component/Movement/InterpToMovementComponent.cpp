@@ -2,7 +2,7 @@
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Math/Quat.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(UInterpToMovementComponent, UMovementComponent)
 REGISTER_FACTORY(UInterpToMovementComponent)

@@ -2,7 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector4.h"
-#include "Core/ReflectionTypeInfo.h"
+#include "ReflectionSystem/ReflectionTypeInfo.h"
 
 #include "Color.generated.h"
 

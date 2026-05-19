@@ -1,6 +1,6 @@
-#include "SphereComponent.h"
+﻿#include "SphereComponent.h"
 #include "Object/Object.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(USphereComponent, UShapeComponent)
 REGISTER_FACTORY(USphereComponent)

@@ -1,5 +1,5 @@
-#include "Camera/CameraShakeBase.h"
-#include "Core/ReflectionUtils.h"
+﻿#include "Camera/CameraShakeBase.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(UCameraShakePattern, UObject)
 DEFINE_CLASS(UCameraShakeBase, UObject)

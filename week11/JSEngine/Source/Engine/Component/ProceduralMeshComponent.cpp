@@ -1,4 +1,4 @@
-#include "ProceduralMeshComponent.h"
+﻿#include "ProceduralMeshComponent.h"
 #include "StaticMeshComponent.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
@@ -7,7 +7,7 @@
 #include "Core/ResourceManager.h"
 #include "Core/Paths.h"
 #include <filesystem>
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(UProceduralMeshComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UProceduralMeshComponent)

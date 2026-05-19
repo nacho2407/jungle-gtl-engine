@@ -10,7 +10,7 @@
 //    ReflectedProperty.h      ← 여기서 FProperty 계층 정의
 // ============================================================
 
-#include "CoreMinimal.h"
+#include "Core/CoreMinimal.h"
 #include "Object/FName.h"
 #include "Serialization/Archive.h"
 #include "ReflectionTypeInfo.h"  // FClassInfo, FStructInfo, FEnumInfo, EPropertyFlags
@@ -779,6 +779,18 @@ public:
         (void)Value;
     }
 
+	virtual void CollectReferences(FReferenceCollector& Collector, void* Value) const override
+    {
+        if (!StructInfo)
+            return;
+
+        for (FProperty* ChildProp : StructInfo->ReflectedProperties)
+        {
+            if (ChildProp)
+                ChildProp->CollectReferencesInContainer(Collector, Value);
+        }
+    }
+
 private:
     static void SerializeLegacyStructField(FArchive& Ar, const FString& TypeName, void* Value)
     {
@@ -843,7 +855,7 @@ public:
 class FDelegateProperty : public FProperty
 {
 public:
-    void* SignatureFunction = nullptr;
+    FFunctionInfo* SignatureFunction = nullptr;
 
     virtual EReflectedPropertyKind GetKind() const override { return EReflectedPropertyKind::Delegate; }
 

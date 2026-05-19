@@ -1,5 +1,5 @@
 ﻿#include "StaticMeshComponent.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 #include <cfloat>
 #include <cstring>
 

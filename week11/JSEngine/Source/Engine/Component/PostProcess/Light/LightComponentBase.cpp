@@ -1,6 +1,6 @@
 ﻿#include "LightComponentBase.h"
 #include "Object/ObjectFactory.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(ULightComponentBase, USceneComponent)
 REGISTER_FACTORY(ULightComponentBase)

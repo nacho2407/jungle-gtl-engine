@@ -6,7 +6,7 @@
 #include <cassert>
 #include <functional>
 
-#include "Core/ReflectionTypeInfo.h"
+#include "ReflectionSystem/ReflectionTypeInfo.h"
 
 #include "Vector2.generated.h"
 

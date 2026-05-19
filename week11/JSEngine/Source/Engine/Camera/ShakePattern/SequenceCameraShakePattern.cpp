@@ -1,5 +1,5 @@
-#include "SequenceCameraShakePattern.h"
-#include "Core/ReflectionUtils.h"
+﻿#include "SequenceCameraShakePattern.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 #include "Animation/CurvePlayback.h"
 #include "Core/Logging/Log.h"

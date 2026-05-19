@@ -1421,6 +1421,7 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
 	RenderEditableName("Name##Component", SelectedComponent, &bFocusComponentNameNextFrame); // 편집 가능한 UI
 	RenderComponentTags(SelectedComponent);
+	RenderCallInEditorFunctions(SelectedComponent);
 
 	DrawDetailsSeparator();
 
@@ -1634,6 +1635,64 @@ void FEditorPropertyWidget::RenderComponentProperties()
 			PropertyWidgetMs,
 			SkeletalDebugMs,
 			Props.size());
+	}
+}
+
+void FEditorPropertyWidget::RenderCallInEditorFunctions(UActorComponent* Component)
+{
+	if (!Component)
+	{
+		return;
+	}
+
+	FClassInfo* ClassInfo = Component->GetStaticClass();
+	bool bHasCallInEditorFunction = false;
+
+	for (FClassInfo* Info = ClassInfo; Info; Info = Info->ParentClass)
+	{
+		for (const FFunctionInfo& Function : Info->Functions)
+		{
+			if ((Function.Flags & FF_CallInEditor) == 0)
+			{
+				continue;
+			}
+
+			if (!bHasCallInEditorFunction)
+			{
+				DrawDetailsSeparator();
+				DrawDetailsSectionLabel("Actions");
+				bHasCallInEditorFunction = true;
+			}
+
+			const FString ButtonText = Function.DisplayName.empty()
+				? Function.Name.ToString()
+				: Function.DisplayName;
+
+			ImGui::PushID(Function.Name.ToString().c_str());
+			const bool bCanInvoke = Function.NativeInvoker && Function.Parameters.empty();
+			ImGui::BeginDisabled(!bCanInvoke);
+			if (ImGui::Button(ButtonText.c_str(), ImVec2(-1.0f, 0.0f)))
+			{
+				if (EditorEngine)
+				{
+					EditorEngine->GetUndoSystem().CaptureSnapshot("Call In Editor");
+				}
+
+				Function.NativeInvoker(Component);
+
+				if (EditorEngine)
+				{
+					EditorEngine->GetSceneService().MarkDirty();
+				}
+			}
+			ImGui::EndDisabled();
+
+			if (!bCanInvoke && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+			{
+				ImGui::SetTooltip("Only zero-parameter native functions can be called here.");
+			}
+			ImGui::PopID();
+		}
 	}
 }
 

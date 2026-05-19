@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "World.generated.h"
 
 #include <functional>
 
 #include "Object/Object.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 #include "GameFramework/AActor.h"
 #include "Level.h"
 #include "Spatial/WorldSpatialIndex.h"

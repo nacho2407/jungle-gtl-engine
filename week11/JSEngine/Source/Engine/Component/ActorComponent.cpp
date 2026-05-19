@@ -1,6 +1,6 @@
 ﻿#include "ActorComponent.h"
 #include "Object/ObjectFactory.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 #include <algorithm>
 #include <cctype>

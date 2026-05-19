@@ -1,5 +1,5 @@
 ﻿#include "TextRenderComponent.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 #include <cmath>
 #include <cstring>

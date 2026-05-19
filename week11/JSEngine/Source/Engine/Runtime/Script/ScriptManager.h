@@ -23,6 +23,12 @@ struct FLuaScriptLoadResult
     sol::table ScriptClass;
 };
 
+namespace sol
+{
+class state;
+}
+void BindGeneratedLuaFunctions(sol::state& Lua);
+
 class FScriptManager : public TSingleton<FScriptManager>
 {
     friend class TSingleton<FScriptManager>;

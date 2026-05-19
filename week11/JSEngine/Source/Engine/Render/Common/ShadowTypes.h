@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Core/CoreTypes.h"
-#include "Core/ReflectionTypeInfo.h"
+#include "ReflectionSystem/ReflectionTypeInfo.h"
 
 // ShadowMap Method
 UENUM()
