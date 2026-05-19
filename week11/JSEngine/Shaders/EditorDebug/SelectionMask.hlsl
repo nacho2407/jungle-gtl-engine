@@ -38,7 +38,7 @@ float3 Skinning(float3 Position, uint4 BoneIndices, float4 BoneWeights)
     float3 SkinnedPosition = float3(0.0f, 0.0f, 0.0f);
     for (uint i = 0; i < 4; ++i)
     {
-        SkinnedPosition += BoneWeights[i] * mul(float4(Position, 1.0f), BoneMatrices[BoneIndices[i]]).xyz;
+        SkinnedPosition += BoneWeights[i] * mul(float4(Position, 1.0f), BonePalette[BoneIndices[i]]).xyz;
     }
 
     return SkinnedPosition;
