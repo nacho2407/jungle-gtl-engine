@@ -43,14 +43,16 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 		}
 	}
 
-	// Montage Tick — slot 별 보유분 모두 순회. section 진행 / blend alpha / notify push.
-	// Phase 2.2 에서 FAnimNode_Slot 이 트리 안에서 조회하도록 옮길 예정 (montage tick 위치는
-	// 일관성을 위해 phase 3 정리 후보).
-	for (FMontageSlotEntry& Entry : MontageSlots)
+	// Montage Tick (legacy fallback) — RootNode 없을 때만 일괄 tick.
+	// RootNode 경로에선 FAnimNode_Slot::Update 가 자기 slot 의 montage tick 책임 (Step 3.1).
+	if (!RootNode)
 	{
-		if (Entry.Instance && Entry.Instance->IsActive())
+		for (FMontageSlotEntry& Entry : MontageSlots)
 		{
-			Entry.Instance->Tick(DeltaSeconds, this);
+			if (Entry.Instance && Entry.Instance->IsActive())
+			{
+				Entry.Instance->Tick(DeltaSeconds, this);
+			}
 		}
 	}
 

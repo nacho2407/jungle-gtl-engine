@@ -27,7 +27,19 @@ void FAnimNode_Slot::Update(const FAnimationUpdateContext& Context)
 	{
 		InputLastRM = FTransform();
 	}
-	// Montage Tick 은 UAnimInstance::UpdateAnimation 의 일괄 처리 — 여기 호출 안 함.
+
+	// 자기 slot 의 montage tick — Slot 노드가 단일 책임자. UpdateAnimation 의 일괄 tick 은
+	// RootNode null (legacy) 케이스 fallback 만. UE 본가 패턴과 정렬.
+	// 같은 SlotName 의 Slot 노드가 트리에 여러 개 있으면 동일 montage 가 중복 tick — 호출자 책임
+	// (보통 SlotName 당 1 노드 관례).
+	if (OwnerAnimInstance)
+	{
+		UAnimMontageInstance* MI = OwnerAnimInstance->GetMontageInstanceForSlot(SlotName);
+		if (MI && MI->IsActive())
+		{
+			MI->Tick(Context.DeltaSeconds, OwnerAnimInstance);
+		}
+	}
 }
 
 float FAnimNode_Slot::GetEffectiveBlendWeight() const
