@@ -18,10 +18,25 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 	// PIE pause / frame drop 등 비정상 케이스도 자동 안전.
 	PendingRootMotion = FTransform();
 
-	// 자식이 시간 진행 + AddAnimNotifies 로 큐에 적재 → 베이스가 일괄 dispatch.
-	NativeUpdateAnimation(DeltaSeconds);
+	if (RootNode)
+	{
+		// AnimGraph 경로 — 트리 루트가 자식 노드 Update 재귀 호출. 시간 진행 / transition /
+		// notify 적재 / RM 누적 모두 노드들이 책임.
+		FAnimationUpdateContext Ctx;
+		Ctx.AnimInstance     = this;
+		Ctx.DeltaSeconds     = DeltaSeconds;
+		Ctx.FinalBlendWeight = 1.0f;
+		RootNode->Update(Ctx);
+	}
+	else
+	{
+		// Legacy 경로 — 자식의 NativeUpdateAnimation 가상 호출.
+		// 자식이 시간 진행 + AddAnimNotifies 로 큐에 적재 → 베이스가 일괄 dispatch.
+		NativeUpdateAnimation(DeltaSeconds);
+	}
 
 	// Montage 도 Tick — section 진행, blend alpha, notify push.
+	// (Phase 2.2 에서 Slot 노드로 옮겨 RootNode 트리 안에서 처리 예정 — 현 단계는 양쪽 경로 공통.)
 	if (MontageInstance && MontageInstance->IsActive())
 	{
 		MontageInstance->Tick(DeltaSeconds, this);
@@ -32,10 +47,19 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 
 void UAnimInstance::EvaluatePose(FPoseContext& Output)
 {
-	// 1) 자식이 base pose (FSM / SingleNode) 생성.
-	EvaluateAnimation(Output);
+	// 1) base pose 생성 — RootNode 트리 또는 legacy 가상 호출.
+	if (RootNode)
+	{
+		RootNode->Evaluate(Output);
+	}
+	else
+	{
+		EvaluateAnimation(Output);
+	}
 
 	// 2) Montage 활성이면 montage pose 평가 후 base 와 BlendWeight 로 lerp.
+	//    (Phase 2.2 에서 Slot 노드로 옮김 — RootNode 경로에선 트리 내부에서 처리되고
+	//    여기 special-case 코드는 legacy path 전용으로 축소될 예정.)
 	if (MontageInstance && MontageInstance->IsActive())
 	{
 		const float Weight = MontageInstance->GetBlendWeight();
@@ -61,6 +85,18 @@ void UAnimInstance::EvaluatePose(FPoseContext& Output)
 				Output = Blended;
 			}
 		}
+	}
+}
+
+void UAnimInstance::SetRootNode(FAnimNode_Base* InRoot)
+{
+	RootNode = InRoot;
+	if (RootNode)
+	{
+		FAnimationInitializeContext InitCtx;
+		InitCtx.AnimInstance = this;
+		InitCtx.SkeletalMesh = GetSkeletalMesh();
+		RootNode->Initialize(InitCtx);
 	}
 }
 

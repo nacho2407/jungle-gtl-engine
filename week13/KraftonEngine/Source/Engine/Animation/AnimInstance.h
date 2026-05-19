@@ -6,6 +6,10 @@
 #include "Math/Transform.h"
 #include "Object/FName.h"
 #include "AnimationMode.h"
+#include "Nodes/AnimNode_Base.h"
+
+#include <memory>
+#include <utility>
 
 class USkeletalMeshComponent;
 class USkeletalMesh;
@@ -106,6 +110,24 @@ public:
 	bool  IsMontagePlaying(UAnimMontage* Montage = nullptr) const;
 	UAnimMontageInstance* GetMontageInstance() const { return MontageInstance; }
 
+	// ── AnimGraph (Phase 1.4+) ──
+	// 자식이 NativeInitializeAnimation 에서 MakeNode 로 노드 트리 build 후 SetRootNode 호출.
+	// RootNode 가 set 되면 UpdateAnimation / EvaluatePose 가 트리 평가 경로로 진행 — legacy
+	// NativeUpdateAnimation / EvaluateAnimation 가상 호출은 skip. RootNode 가 null 이면 legacy.
+	void            SetRootNode(FAnimNode_Base* InRoot);
+	FAnimNode_Base* GetRootNode() const { return RootNode; }
+
+	// 노드 빌더 헬퍼 — 노드 생성 후 OwnedNodes 에 push, raw 반환. lifetime 자동 관리.
+	// 트리의 부모-자식 참조는 raw pointer 로 — OwnedNodes 가 모든 노드의 단일 소유자.
+	template<typename T, typename... Args>
+	T* MakeNode(Args&&... InArgs)
+	{
+		auto NodePtr = std::make_unique<T>(std::forward<Args>(InArgs)...);
+		T* Raw = NodePtr.get();
+		OwnedNodes.push_back(std::move(NodePtr));
+		return Raw;
+	}
+
 protected:
 	USkeletalMeshComponent*       OwningComponent = nullptr;
 	TArray<FQueuedAnimNotify>     NotifyQueue;
@@ -125,4 +147,8 @@ protected:
 
 	// Montage 인스턴스 — lazily 생성 (PlayMontage 첫 호출 시).
 	UAnimMontageInstance*         MontageInstance = nullptr;
+
+	// AnimGraph 트리의 root — null 이면 legacy 경로. 모든 노드는 OwnedNodes 가 단일 소유.
+	FAnimNode_Base*                              RootNode = nullptr;
+	TArray<std::unique_ptr<FAnimNode_Base>>      OwnedNodes;
 };
