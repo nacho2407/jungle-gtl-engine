@@ -1170,18 +1170,10 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		}
 		else if (Item.Extension == ".fbx")
 		{
-            const FString RelativePath = MakeRelativeProjectPath(Item.Path);
-            const TArray<FString> ImportedAnimSequencePaths = FResourceManager::Get().ImportAnimationStacksFromFbx(RelativePath);
-            if (!ImportedAnimSequencePaths.empty())
-            {
-                bNeedsRefresh = true;
-                EditorEngine->CreateViewer(ImportedAnimSequencePaths.front());
-                
-            }
-            else 
-            {
-                EditorEngine->CreateViewer(RelativePath);
-            }
+			// FBX files can contain animation stacks, but opening the raw FBX from the
+			// Content Browser should always show the skeletal mesh viewer. Animation
+			// sequences remain available through their generated .sequence/.animseq assets.
+			EditorEngine->CreateViewer(MakeRelativeProjectPath(Item.Path));
 		}
 		else if (Item.Extension == ".rml")
 		{
