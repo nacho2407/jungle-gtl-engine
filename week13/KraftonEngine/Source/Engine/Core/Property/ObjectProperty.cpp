@@ -54,6 +54,20 @@ void FObjectProperty::SerializeValue(void* ValuePtr, FArchive& Ar) const
 
 	if (Ar.IsLoading())
 	{
-		SetObjectValueFromValuePtr(ValuePtr, UUID != 0 ? UObjectManager::Get().FindByUUID(UUID) : nullptr);
+		UObject* ResolvedObject = Ar.ResolveObjectReference(UUID);
+		SetObjectValueFromValuePtr(ValuePtr, ResolvedObject ? ResolvedObject : (UUID != 0 ? UObjectManager::Get().FindByUUID(UUID) : nullptr));
+		if (Ar.IsObjectReferenceRemapping() && UUID != 0 && !ResolvedObject)
+		{
+			Ar.AddObjectReferenceFixup(
+				UUID,
+				[this, ValuePtr](UObject* Duplicate)
+				{
+					if (Duplicate)
+					{
+						SetObjectValueFromValuePtr(ValuePtr, Duplicate);
+					}
+				}
+			);
+		}
 	}
 }

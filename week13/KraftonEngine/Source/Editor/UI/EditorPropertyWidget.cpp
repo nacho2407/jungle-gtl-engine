@@ -16,6 +16,7 @@
 #include "Component/Light/LightComponentBase.h"
 #include "Component/DecalComponent.h"
 #include "Component/HeightFogComponent.h"
+#include "GameFramework/AActor.h"
 #include "Asset/AssetRegistry.h"
 #include "Core/Property/NumericProperty.h"
 #include "Core/ClassTypes.h"
@@ -136,6 +137,64 @@ namespace
 		return ArrayPath + "[" + std::to_string(ArrayIndex) + "]";
 	}
 
+	AActor* GetPropertyOwnerActor(const FPropertyValue& Prop)
+	{
+		if (AActor* Actor = Cast<AActor>(Prop.Object))
+		{
+			return Actor;
+		}
+		if (UActorComponent* Component = Cast<UActorComponent>(Prop.Object))
+		{
+			return Component->GetOwner();
+		}
+		return nullptr;
+	}
+
+	TArray<UObject*> GetOwnerObjectReferenceChoices(const FPropertyValue& Prop, UClass* AllowedClass)
+	{
+		TArray<UObject*> Choices;
+		if (!AllowedClass)
+		{
+			return Choices;
+		}
+
+		AActor* OwnerActor = GetPropertyOwnerActor(Prop);
+		if (!OwnerActor)
+		{
+			return Choices;
+		}
+
+		if (OwnerActor->GetClass()->IsA(AllowedClass))
+		{
+			Choices.push_back(OwnerActor);
+		}
+
+		for (UActorComponent* Component : OwnerActor->GetComponents())
+		{
+			if (Component && Component->GetClass()->IsA(AllowedClass))
+			{
+				Choices.push_back(Component);
+			}
+		}
+
+		return Choices;
+	}
+
+	FString GetObjectReferenceChoiceLabel(const UObject* Object)
+	{
+		if (!Object)
+		{
+			return "None";
+		}
+
+		FString Label = Object->GetFName().ToString();
+		if (Label.empty())
+		{
+			Label = Object->GetClass()->GetName();
+		}
+		return Label;
+	}
+
 	void DispatchPostEditChange(
 		const FPropertyValue& Prop,
 		EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet,
@@ -201,7 +260,6 @@ namespace
 		case EPropertyType::Color4:        Size = sizeof(float) * 4; break;
 		case EPropertyType::Enum:          Size = SrcValue.GetEnumType() ? SrcValue.GetEnumType()->GetSize() : sizeof(int32); break;
 		case EPropertyType::String:
-		case EPropertyType::SceneComponentRef:
 			*static_cast<FString*>(DstPtr) = *static_cast<FString*>(SrcPtr);
 			return true;
 		case EPropertyType::ObjectRef:
@@ -1759,62 +1817,6 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 		bChanged = RenderClassPropertyWidget(Prop);
 		break;
 	}
-	case EPropertyType::SceneComponentRef:
-	{
-		FString* Val = static_cast<FString*>(Prop.GetValuePtr());
-		UMovementComponent* MovementComp = SelectedComponent ? Cast<UMovementComponent>(SelectedComponent) : nullptr;
-		FString Preview = MovementComp ? MovementComp->GetUpdatedComponentDisplayName() : FString("None");
-
-		if (ImGui::BeginCombo("##Value", Preview.c_str()))
-		{
-			bool bSelectedAuto = Val->empty();
-			if (ImGui::Selectable("Auto (Root)", bSelectedAuto))
-			{
-				Val->clear();
-				bChanged = true;
-			}
-			if (bSelectedAuto)
-			{
-				ImGui::SetItemDefaultFocus();
-			}
-
-			if (MovementComp)
-			{
-				for (USceneComponent* Candidate : MovementComp->GetOwnerSceneComponents())
-				{
-					if (!Candidate)
-					{
-						continue;
-					}
-
-					FString CandidatePath = MovementComp->BuildUpdatedComponentPath(Candidate);
-					FString CandidateName = Candidate->GetFName().ToString();
-					if (CandidateName.empty())
-					{
-						CandidateName = Candidate->GetClass()->GetName();
-					}
-					if (!CandidatePath.empty())
-					{
-						CandidateName += " (" + CandidatePath + ")";
-					}
-
-					bool bSelected = (*Val == CandidatePath);
-					if (ImGui::Selectable(CandidateName.c_str(), bSelected))
-					{
-						*Val = CandidatePath;
-						bChanged = true;
-					}
-					if (bSelected)
-					{
-						ImGui::SetItemDefaultFocus();
-					}
-				}
-			}
-
-			ImGui::EndCombo();
-		}
-		break;
-	}
 	case EPropertyType::ObjectRef:
 	{
 		const FObjectProperty* ObjectValueProperty = Prop.Property ? Prop.Property->AsObjectProperty() : nullptr;
@@ -1988,6 +1990,41 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 				}
 			}
 
+			break;
+		}
+
+		if (AllowedClass && AllowedClass->IsA(UActorComponent::StaticClass()))
+		{
+			Preview = GetObjectReferenceChoiceLabel(Current);
+
+			if (ImGui::BeginCombo("##OwnerObjectRef", Preview.c_str()))
+			{
+				const bool bSelectedNone = Current == nullptr;
+				if (ImGui::Selectable("None", bSelectedNone))
+				{
+					SetObjectValue(nullptr);
+				}
+				if (bSelectedNone)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+
+				for (UObject* Candidate : GetOwnerObjectReferenceChoices(Prop, AllowedClass))
+				{
+					const FString CandidateName = GetObjectReferenceChoiceLabel(Candidate);
+					const bool bSelected = Current == Candidate;
+					if (ImGui::Selectable(CandidateName.c_str(), bSelected))
+					{
+						SetObjectValue(Candidate);
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+
+				ImGui::EndCombo();
+			}
 			break;
 		}
 

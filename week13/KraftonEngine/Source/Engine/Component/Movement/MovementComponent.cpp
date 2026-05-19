@@ -1,21 +1,17 @@
-#include "Component/Movement/MovementComponent.h"
+﻿#include "Component/Movement/MovementComponent.h"
 
 #include "Component/SceneComponent.h"
 #include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 
-#include <cstdlib>
 #include <cstring>
-#include <sstream>
 
 // Base movement logic only; concrete movement types should be added instead.
 HIDE_FROM_COMPONENT_LIST(UMovementComponent)
 
 namespace
 {
-	constexpr const char* RootComponentPathToken = "Root";
-
 	void GatherSceneComponentsRecursive(USceneComponent* Component, TArray<USceneComponent*>& OutComponents)
 	{
 		if (!Component)
@@ -49,14 +45,14 @@ void UMovementComponent::PostEditProperty(const char* PropertyName)
 
 	if (std::strcmp(PropertyName, "bAutoRegisterUpdatedComponent") == 0 || std::strcmp(PropertyName, "Auto Register Updated") == 0)
 	{
-		if (bAutoRegisterUpdatedComponent && UpdatedComponentPath.empty())
+		if (bAutoRegisterUpdatedComponent && !UpdatedComponent)
 		{
 			TryAutoRegisterUpdatedComponent();
 		}
 		return;
 	}
 
-	if (std::strcmp(PropertyName, "UpdatedComponentPath") == 0 || std::strcmp(PropertyName, "Updated Component") == 0)
+	if (std::strcmp(PropertyName, "UpdatedComponent") == 0 || std::strcmp(PropertyName, "Updated Component") == 0)
 	{
 		ResolveUpdatedComponent();
 	}
@@ -65,11 +61,7 @@ void UMovementComponent::PostEditProperty(const char* PropertyName)
 void UMovementComponent::SetUpdatedComponent(USceneComponent* NewUpdatedComponent)
 {
 	UpdatedComponent = NewUpdatedComponent;
-	UpdatedComponentPath = BuildUpdatedComponentPath(NewUpdatedComponent);
-	if (UpdatedComponent)
-	{
-		bAutoRegisterUpdatedComponent = false;
-	}
+	bAutoRegisterUpdatedComponent = UpdatedComponent == nullptr;
 }
 
 USceneComponent* UMovementComponent::GetUpdatedComponent() const
@@ -85,7 +77,6 @@ void UMovementComponent::ClearUpdatedComponentIfMatches(const USceneComponent* R
 	}
 
 	UpdatedComponent = nullptr;
-	UpdatedComponentPath.clear();
 	bAutoRegisterUpdatedComponent = true;
 	TryAutoRegisterUpdatedComponent();
 }
@@ -104,7 +95,6 @@ void UMovementComponent::TryAutoRegisterUpdatedComponent()
 	}
 
 	UpdatedComponent = OwnerActor->GetRootComponent();
-	UpdatedComponentPath.clear();
 }
 
 TArray<USceneComponent*> UMovementComponent::GetOwnerSceneComponents() const
@@ -134,154 +124,27 @@ FString UMovementComponent::GetUpdatedComponentDisplayName() const
 	{
 		DisplayName = CurrentUpdatedComponent->GetClass()->GetName();
 	}
-
-	const FString ComponentPath = BuildUpdatedComponentPath(CurrentUpdatedComponent);
-	if (!ComponentPath.empty())
-	{
-		DisplayName += " (" + ComponentPath + ")";
-	}
 	return DisplayName;
 }
 
 bool UMovementComponent::ResolveUpdatedComponent()
 {
-	if (!UpdatedComponentPath.empty())
+	if (UpdatedComponent)
 	{
-		if (USceneComponent* ResolvedComponent = FindUpdatedComponentByPath(UpdatedComponentPath))
+		for (USceneComponent* Candidate : GetOwnerSceneComponents())
 		{
-			UpdatedComponent = ResolvedComponent;
-			bAutoRegisterUpdatedComponent = false;
-			return true;
+			if (Candidate == UpdatedComponent)
+			{
+				bAutoRegisterUpdatedComponent = false;
+				return true;
+			}
 		}
 	}
 
 	UpdatedComponent = nullptr;
-	bAutoRegisterUpdatedComponent = true;
-	TryAutoRegisterUpdatedComponent();
+	if (bAutoRegisterUpdatedComponent)
+	{
+		TryAutoRegisterUpdatedComponent();
+	}
 	return UpdatedComponent != nullptr;
-}
-
-FString UMovementComponent::BuildUpdatedComponentPath(const USceneComponent* TargetComponent) const
-{
-	if (!TargetComponent)
-	{
-		return FString();
-	}
-
-	AActor* OwnerActor = GetOwner();
-	USceneComponent* RootComponent = OwnerActor ? OwnerActor->GetRootComponent() : nullptr;
-	if (!RootComponent)
-	{
-		return FString();
-	}
-
-	if (TargetComponent == RootComponent)
-	{
-		return RootComponentPathToken;
-	}
-
-	TArray<int32> PathIndices;
-	const USceneComponent* Current = TargetComponent;
-	while (Current && Current != RootComponent)
-	{
-		const USceneComponent* Parent = Current->GetParent();
-		if (!Parent)
-		{
-			return FString();
-		}
-
-		const TArray<USceneComponent*>& Siblings = Parent->GetChildren();
-		int32 ChildIndex = -1;
-		for (int32 Index = 0; Index < static_cast<int32>(Siblings.size()); ++Index)
-		{
-			if (Siblings[Index] == Current)
-			{
-				ChildIndex = Index;
-				break;
-			}
-		}
-		if (ChildIndex < 0)
-		{
-			return FString();
-		}
-
-		PathIndices.push_back(ChildIndex);
-		Current = Parent;
-	}
-
-	if (Current != RootComponent)
-	{
-		return FString();
-	}
-
-	FString Path = RootComponentPathToken;
-	for (auto It = PathIndices.rbegin(); It != PathIndices.rend(); ++It)
-	{
-		Path += "/";
-		Path += std::to_string(*It);
-	}
-	return Path;
-}
-
-USceneComponent* UMovementComponent::FindUpdatedComponentByPath(const FString& InPath) const
-{
-	if (InPath.empty())
-	{
-		return nullptr;
-	}
-
-	AActor* OwnerActor = GetOwner();
-	USceneComponent* Current = OwnerActor ? OwnerActor->GetRootComponent() : nullptr;
-	if (!Current)
-	{
-		return nullptr;
-	}
-
-	if (InPath == RootComponentPathToken)
-	{
-		return Current;
-	}
-
-	std::stringstream Stream(InPath);
-	FString Segment;
-	bool bExpectRoot = true;
-	while (std::getline(Stream, Segment, '/'))
-	{
-		if (Segment.empty())
-		{
-			continue;
-		}
-
-		if (bExpectRoot)
-		{
-			bExpectRoot = false;
-			if (Segment != RootComponentPathToken)
-			{
-				return nullptr;
-			}
-			continue;
-		}
-
-		char* ParseEnd = nullptr;
-		const long ParsedIndex = std::strtol(Segment.c_str(), &ParseEnd, 10);
-		if (ParseEnd == Segment.c_str() || *ParseEnd != '\0')
-		{
-			return nullptr;
-		}
-
-		const int32 ChildIndex = static_cast<int32>(ParsedIndex);
-		const TArray<USceneComponent*>& Children = Current->GetChildren();
-		if (ChildIndex < 0 || ChildIndex >= static_cast<int32>(Children.size()))
-		{
-			return nullptr;
-		}
-
-		Current = Children[ChildIndex];
-		if (!Current)
-		{
-			return nullptr;
-		}
-	}
-
-	return Current;
 }
