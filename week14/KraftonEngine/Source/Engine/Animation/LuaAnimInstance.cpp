@@ -306,20 +306,38 @@ void ULuaAnimInstance::InstallBindings()
 			PlayMontage(M, SectionName, PlayRate, BlendInTime, Slot);
 		});
 
+	// Slot 인자는 모든 montage API 의 마지막 sol::object — None/missing 이면 DefaultSlot.
+	// 시그니처:
+	//   Anim.stop_montage(blendOut, slot)
+	//   Anim.is_montage_playing(slot)
+	//   Anim.jump_to_section(section_name, slot)
+	auto ResolveSlot = [](const sol::object& SlotObj) -> FName
+	{
+		if (SlotObj.is<std::string>())
+		{
+			const std::string Str = SlotObj.as<std::string>();
+			if (!Str.empty()) return FName(Str);
+		}
+		return FName::None;   // None → 내부에서 DefaultMontageSlot resolve.
+	};
+
 	Anim.set_function("stop_montage",
-		[this](sol::object BlendOut)
+		[this, ResolveSlot](sol::object BlendOut, sol::object SlotName)
 		{
 			const float BlendOutTime = BlendOut.is<float>() ? BlendOut.as<float>() : -1.0f;
-			StopMontage(BlendOutTime);
+			StopMontage(BlendOutTime, ResolveSlot(SlotName));
 		});
 
 	Anim.set_function("is_montage_playing",
-		[this]() -> bool { return IsMontagePlaying(); });
+		[this, ResolveSlot](sol::object SlotName) -> bool
+		{
+			return IsMontagePlaying(nullptr, ResolveSlot(SlotName));
+		});
 
 	Anim.set_function("jump_to_section",
-		[this](std::string Name)
+		[this, ResolveSlot](std::string Name, sol::object SlotName)
 		{
-			if (!Name.empty()) Montage_JumpToSection(FName(Name));
+			if (!Name.empty()) Montage_JumpToSection(FName(Name), ResolveSlot(SlotName));
 		});
 
 	// ── Input edge detection — lua FSM/montage trigger 용 ──
