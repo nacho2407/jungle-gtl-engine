@@ -27,7 +27,7 @@ local ATTACK_MONTAGE_PATH = "Content/Montages/mixamo_com_Montage.uasset"
 
 -- UpperBody mask 의 root 본 — Spine 부터 자손 (팔/머리/손) 까지 자동 mask BFS.
 -- mixamo rig 의 본 이름은 보통 "mixamorig:Spine" 류. 본 못 찾으면 mask 가 전부 false → base 100%.
-local UPPER_BODY_ROOT_BONE = "mixamorig:Spine"
+local UPPER_BODY_ROOT_BONE = "Bip001 Spine"
 
 function init(self)
     self.Speed          = 0
