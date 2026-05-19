@@ -943,6 +943,16 @@ TArray<FString> FResourceManager::ListAnimStacks(const FString& SourceFbxPath)
 		return It->second;
 	}
 
+	TArray<FString> StackNames = FbxImporter.ListAnimStacks(NormalizedSource);
+	if (!StackNames.empty())
+	{
+		AnimStackNamesMap[NormalizedSource] = StackNames;
+		UE_LOG("[AnimSequenceLoad] Source=FBXMetadata | Path=%s | Stacks=%zu",
+		       NormalizedSource.c_str(),
+		       StackNames.size());
+		return StackNames;
+	}
+
 	TArray<FString> CachedStackNames;
 	const fs::path AnimBinDir = fs::path(FPaths::RootDir()) / "Asset" / "AnimSequence" / "Bin";
 	if (fs::exists(AnimBinDir) && fs::is_directory(AnimBinDir))
@@ -991,7 +1001,6 @@ TArray<FString> FResourceManager::ListAnimStacks(const FString& SourceFbxPath)
 		return CachedStackNames;
 	}
 
-	TArray<FString> StackNames = FbxImporter.ListAnimStacks(NormalizedSource);
 	AnimStackNamesMap[NormalizedSource] = StackNames;
 	return StackNames;
 }

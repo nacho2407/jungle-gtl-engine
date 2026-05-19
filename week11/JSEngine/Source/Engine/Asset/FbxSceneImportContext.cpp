@@ -6,7 +6,7 @@ FFbxSceneImportContext::~FFbxSceneImportContext()
 {
     Destroy();
 }
-bool FFbxSceneImportContext::Import(const FString& Path)
+bool FFbxSceneImportContext::Import(const FString& Path, const FString& AnimStackName)
 {
     Destroy();
 
@@ -39,6 +39,41 @@ bool FFbxSceneImportContext::Import(const FString& Path)
         return false;
     }
 
+    if (!AnimStackName.empty())
+    {
+        bool bFoundRequestedTake = false;
+        const int32 StackCount = Importer->GetAnimStackCount();
+        for (int32 StackIndex = 0; StackIndex < StackCount; ++StackIndex)
+        {
+            fbxsdk::FbxTakeInfo* TakeInfo = Importer->GetTakeInfo(StackIndex);
+            if (!TakeInfo)
+            {
+                continue;
+            }
+
+            const FString TakeName(TakeInfo->mName.Buffer());
+            const FString ImportName(TakeInfo->mImportName.Buffer());
+            const bool bMatches = TakeName == AnimStackName || ImportName == AnimStackName;
+            TakeInfo->mSelect = bMatches;
+
+            if (bMatches)
+            {
+                TakeInfo->mImportName = AnimStackName.c_str();
+                bFoundRequestedTake = true;
+            }
+        }
+
+        bRequestedAnimStackFound = bFoundRequestedTake;
+        Manager->GetIOSettings()->SetStringProp(IMP_FBX_CURRENT_TAKE_NAME, AnimStackName.c_str());
+
+        if (!bFoundRequestedTake)
+        {
+            UE_LOG_WARNING("[FbxSceneImportContext] Requested anim stack was not found in take info. Fbx=%s Stack=%s",
+                           Path.c_str(),
+                           AnimStackName.c_str());
+        }
+    }
+
     const bool bImported = Importer->Import(Scene);
     if (!bImported)
     {
@@ -61,6 +96,8 @@ bool FFbxSceneImportContext::Import(const FString& Path)
 
 void FFbxSceneImportContext::Destroy()
 {
+    bRequestedAnimStackFound = false;
+
     if (Manager)
     {
         Manager->Destroy();
