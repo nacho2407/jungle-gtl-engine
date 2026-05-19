@@ -411,14 +411,8 @@ void ULuaAnimInstance::PostEditProperty(const char* PropertyName)
 
 void ULuaAnimInstance::Serialize(FArchive& Ar)
 {
-	// Super::Serialize → UObject::Serialize → SerializeProperties(Ar, PF_Save) 가
-	// reflection 으로 PF_Save 박힌 모든 멤버를 자동 직렬화한다. ScriptFile 은
-	// UPROPERTY(Edit, Save, ...) 라 여기 포함 — 수동 Ar << ScriptFile 추가 시
-	// 더블 직렬화로 archive 스트림에 같은 데이터 2번 들어가 buffer 비대 + offset
-	// 손상 위험 (PF_Save 또는 수동 한 쪽만 떼면 archive 깨짐).
-	//
-	// PIE Duplicate / Scene save / AnimInstanceData buffer 라운드트립 시
-	// 새 인스턴스의 NativeInitializeAnimation 보다 먼저 호출되므로 init 안에서
-	// ScriptFile 값이 살아있다 — reflection 자동 직렬화로도 동일하게 보장됨.
 	Super::Serialize(Ar);
+	// PIE Duplicate / Scene save 시 Component 가 이 함수를 호출해 buffer 라운드트립.
+	// 새 인스턴스의 NativeInitializeAnimation 보다 먼저 호출되므로 init 안에서 ScriptFile 살아있음.
+	Ar << ScriptFile;
 }
