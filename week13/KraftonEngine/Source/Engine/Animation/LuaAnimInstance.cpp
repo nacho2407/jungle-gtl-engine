@@ -6,6 +6,8 @@
 #include "Animation/AnimState.h"
 #include "Animation/AnimationStateMachine.h"
 #include "Animation/PoseContext.h"
+#include "Animation/Nodes/AnimNode_StateMachine.h"
+#include "Animation/Nodes/AnimNode_SequencePlayer.h"
 #include "Component/Movement/CharacterMovementComponent.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Core/Log.h"
@@ -73,15 +75,20 @@ void ULuaAnimInstance::NativeInitializeAnimation()
 	LuaUpdate   = Env["update"];
 	LuaOnNotify = Env["on_notify"];
 
-	// FSM 생성 (init 안에서 lua 가 Anim.register_* 호출하면 FSM 에 적재됨).
+	// FSM 생성 — legacy 평면 API (Anim.register_state 등) 가 호출되면 여기에 적재됨.
+	// 새 graph build API (Anim.create_state_machine 등) 만 쓰는 lua 는 wrapper 안 건드림.
 	FSM = UObjectManager::Get().CreateObject<UAnimationStateMachine>(this);
 
 	DispatchLuaInit();
 
-	// AnimGraph RootNode 박기 — wrapper 의 내부 노드를 트리 root 로 사용.
-	// init(self) 가 register_state/transition/set_initial_state 다 호출한 *후* 박아야 Initialize
-	// 가 첫 CurrentState 의 OnEnter 까지 재귀 호출. lua 의 평면 FSM 호출이 그대로 RootNode 경로로 흐름.
-	SetRootNode(&FSM->GetNode());
+	// AnimGraph RootNode 박기.
+	//   - lua 가 Anim.set_root_node 명시 호출했으면 그 노드 (이미 SetRootNode 호출됨) — 여기 skip.
+	//   - 안 했으면 (legacy 평면 API 만 사용) wrapper FSM 의 내부 노드를 root 로 fallback.
+	//   - 첫 CurrentState 의 OnEnter 가 Initialize 안에서 재귀 호출 → sub-graph 까지 init.
+	if (!GetRootNode())
+	{
+		SetRootNode(&FSM->GetNode());
+	}
 
 	// Hot-reload 등록 — .lua 파일 변경 시 FLuaScriptManager 가 ReloadScript 호출.
 	// 이미 등록된 경우 set-like 보장 (manager 측).
@@ -137,10 +144,13 @@ void ULuaAnimInstance::ReloadScript()
 
 void ULuaAnimInstance::ClearFSM()
 {
-	// RootNode 가 FSM->GetNode() 의 raw 포인터를 가리키는 상태 — wrapper 먼저 destroy 하면
-	// dangling. 순서: SetRootNode(nullptr) → DestroyObject. ReloadScript 가 이 함수 호출 후
-	// NativeInitializeAnimation 다시 실행 → 새 FSM 생성 + 새 RootNode 박힘.
+	// RootNode 가 FSM->GetNode() 의 raw 또는 OwnedNodes 의 raw 를 가리키는 상태 —
+	// 어느 쪽이든 dangling 방지 위해 RootNode 먼저 nullptr.
 	SetRootNode(nullptr);
+
+	// 새 graph build API 로 생성된 노드들 정리 — ReloadScript 시 다시 build 하면 OwnedNodes 가
+	// 누적되어 메모리 leak. 매 reload 마다 cleanup.
+	OwnedNodes.clear();
 
 	if (FSM)
 	{
@@ -295,6 +305,89 @@ void ULuaAnimInstance::InstallBindings()
 		[]() -> bool { return InputSystem::Get().GetKeyDown(VK_RBUTTON); });
 	Anim.set_function("is_key_pressed",
 		[](int VK) -> bool { return InputSystem::Get().GetKeyDown(VK); });
+
+	// ── AnimGraph build API (Phase 1.6b) — sub-state-machine / 임의 트리 표현 ──
+	// 노드는 UAnimInstance::MakeNode 가 OwnedNodes 에 push 후 raw 반환 — lifetime 은 C++ 가 관리.
+	// lua 는 raw pointer 핸들만 들고 다님 (light userdata). 다른 build 함수의 인자로 그대로 전달.
+	// sub-graph 가 또 다른 state machine 이면 자연스럽게 sub-state-machine 구성.
+
+	// SM 노드 생성 — name 은 디버그용 (현재는 무시).
+	Anim.set_function("create_state_machine",
+		[this](sol::object /*Name*/) -> FAnimNode_StateMachine*
+		{
+			return MakeNode<FAnimNode_StateMachine>();
+		});
+
+	// Sequence player 노드 — asset path 로드 + 파라미터 박음. None / 실패 시 ref pose fallback.
+	Anim.set_function("create_sequence_player",
+		[this](std::string Path, float Rate, bool Loop) -> FAnimNode_SequencePlayer*
+		{
+			FAnimNode_SequencePlayer* P = MakeNode<FAnimNode_SequencePlayer>();
+			if (!Path.empty() && Path != "None")
+			{
+				P->Sequence = FAnimationManager::Get().LoadAnimation(Path);
+				if (!P->Sequence)
+				{
+					UE_LOG("[LuaAnim] create_sequence_player — anim load failed: %s", Path.c_str());
+				}
+			}
+			P->PlayRate = Rate;
+			P->bLooping = Loop;
+			return P;
+		});
+
+	// SM 에 state 추가 — SubGraphOverride 로 임의 노드를 state 의 sub-graph 로 박음.
+	Anim.set_function("sm_add_state",
+		[this](FAnimNode_StateMachine* SM, std::string Name, FAnimNode_Base* SubGraph)
+		{
+			if (!SM || !SubGraph)
+			{
+				UE_LOG("[LuaAnim] sm_add_state '%s' — null SM or SubGraph", Name.c_str());
+				return;
+			}
+			UAnimState* S = UObjectManager::Get().CreateObject<UAnimState>(this);
+			S->StateName        = FName(Name.c_str());
+			S->SubGraphOverride = SubGraph;
+			SM->RegisterState(S);
+		});
+
+	// SM 에 transition 등록. "AnyState" → FName::None (legacy 와 동일).
+	Anim.set_function("sm_add_transition",
+		[](FAnimNode_StateMachine* SM, std::string From, std::string To,
+		   sol::protected_function Cond, float BlendTime)
+		{
+			if (!SM) return;
+			FStateTransition T;
+			T.From      = (From == "AnyState" || From.empty()) ? FName::None : FName(From.c_str());
+			T.To        = FName(To.c_str());
+			T.BlendTime = BlendTime;
+			T.Condition = [Cond](UAnimInstance*) -> bool
+			{
+				auto R = Cond();
+				if (!R.valid())
+				{
+					sol::error Err = R;
+					UE_LOG("[LuaAnim] sm_add_transition condition error: %s", Err.what());
+					return false;
+				}
+				return R.get<bool>();
+			};
+			SM->RegisterTransition(T);
+		});
+
+	Anim.set_function("sm_set_initial_state",
+		[](FAnimNode_StateMachine* SM, std::string Name)
+		{
+			if (SM) SM->SetInitialState(FName(Name.c_str()));
+		});
+
+	// 트리의 root 박기 — UAnimInstance::SetRootNode 가 Initialize 호출.
+	// NativeInitializeAnimation 의 fallback (wrapper FSM 사용) 보다 lua 가 명시 호출하는 게 우선.
+	Anim.set_function("set_root_node",
+		[this](FAnimNode_Base* Root)
+		{
+			SetRootNode(Root);
+		});
 }
 
 // ──────────────────────────────────────────────
