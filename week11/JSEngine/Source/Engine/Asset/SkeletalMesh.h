@@ -22,8 +22,11 @@ public:
 
     const FString& GetAssetPathFileName() const;
 
-    const TArray<FSkeletalMeshVertex>& GetVertices() const;
-    const TArray<uint32>& GetIndices() const;
+    const FSkeletalMeshRenderData* GetResourceForRendering() const;
+    const FSkeletalMeshLODRenderData* GetLODRenderData(int32 LODIndex = 0) const;
+
+    const TArray<FSkeletalMeshVertex>& GetVertices(int32 LODIndex = 0) const;
+    const TArray<uint32>& GetIndices(int32 LODIndex = 0) const;
 
     const TArray<FBoneInfo>& GetBones() const;
 
@@ -33,7 +36,8 @@ public:
     const FMatrix& GetGlobalBindTransform(int32 BoneIndex) const;
     const FMatrix& GetInverseBindPose(int32 BoneIndex) const;
 
-    const TArray<FStaticMeshSection>& GetSections() const;
+    const TArray<FSkeletalMeshRenderSection>& GetRenderSections(int32 LODIndex = 0) const;
+    const TArray<FSkeletalMeshRenderSection>& GetSections(int32 LODIndex = 0) const;
     const TArray<FStaticMeshMaterialSlot>& GetMaterialSlots() const;
 
     // Sockets

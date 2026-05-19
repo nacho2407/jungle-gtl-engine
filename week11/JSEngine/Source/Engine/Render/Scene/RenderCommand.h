@@ -187,7 +187,7 @@ struct FShadowAtlasConstants
 
 struct FSkinningConstants
 {
-	FMatrix BoneMatrices[256]; // MAX_BONES in .hlsl
+	FMatrix BonePalette[256]; // MAX_BONES in .hlsl
 };
 
 struct FUberConstants

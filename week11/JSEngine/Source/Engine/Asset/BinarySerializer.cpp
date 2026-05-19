@@ -42,7 +42,7 @@ constexpr uint32 STATIC_MESH_BINARY_MAGIC = 0x4853454D; // 'MESH'
 constexpr uint32 STATIC_MESH_BINARY_VERSION = 2;        // v2: FBX mirrored transform winding correction
 
 constexpr uint32 SKELETAL_MESH_BINARY_MAGIC   = 0x534D4B53; // 'SKMS'
-constexpr uint32 SKELETAL_MESH_BINARY_VERSION = 3;          // v3: FBX mirrored transform winding correction
+constexpr uint32 SKELETAL_MESH_BINARY_VERSION = 4;          // v4: LOD render data + section bone maps
 
 //	Vailidation Checkers
 constexpr uint32 MAX_STATIC_MESH_VERTEX_COUNT   = 10'000'000;
@@ -104,22 +104,12 @@ static bool IsValidSkeletalMeshHeader(const FSkeletalMeshBinaryHeader& Header)
 	}
 
 	// v1과 v2 모두 수용. v1은 SocketCount가 0인 것으로 간주.
-	if (Header.Version != 1 && Header.Version != SKELETAL_MESH_BINARY_VERSION)
+	if (Header.Version != SKELETAL_MESH_BINARY_VERSION)
 	{
 		return false;
 	}
 
-	if (Header.VertexCount > MAX_SKELETAL_MESH_VERTEX_COUNT)
-	{
-		return false;
-	}
-
-	if (Header.IndexCount > MAX_SKELETAL_MESH_INDEX_COUNT)
-	{
-		return false;
-	}
-
-	if (Header.SectionCount > MAX_SKELETAL_MESH_SECTION_COUNT)
+	if (Header.LODCount > 16)
 	{
 		return false;
 	}
@@ -848,9 +838,7 @@ void FBinarySerializer::WriteSkeletalHeader(std::ofstream& Out, const FSkeletalM
 	// Save는 항상 v2 포맷으로 기록 (SocketCount 포함).
 	WriteUInt32LE(Out, Header.MagicNumber);
 	WriteUInt32LE(Out, Header.Version);
-	WriteUInt32LE(Out, Header.VertexCount);
-	WriteUInt32LE(Out, Header.IndexCount);
-	WriteUInt32LE(Out, Header.SectionCount);
+	WriteUInt32LE(Out, Header.LODCount);
 	WriteUInt32LE(Out, Header.SlotCount);
 	WriteUInt32LE(Out, Header.BoneCount);
 	WriteUInt32LE(Out, Header.SocketCount);
@@ -862,20 +850,10 @@ bool FBinarySerializer::ReadSkeletalHeader(std::ifstream& In, FSkeletalMeshBinar
 	// v1: SocketCount 필드 없음. v2부터 SocketCount 포함.
 	if (!ReadUInt32LE(In, OutHeader.MagicNumber))   return false;
 	if (!ReadUInt32LE(In, OutHeader.Version))       return false;
-	if (!ReadUInt32LE(In, OutHeader.VertexCount))   return false;
-	if (!ReadUInt32LE(In, OutHeader.IndexCount))    return false;
-	if (!ReadUInt32LE(In, OutHeader.SectionCount))  return false;
+	if (!ReadUInt32LE(In, OutHeader.LODCount))      return false;
 	if (!ReadUInt32LE(In, OutHeader.SlotCount))     return false;
 	if (!ReadUInt32LE(In, OutHeader.BoneCount))     return false;
-
-	if (OutHeader.Version >= 2)
-	{
-		if (!ReadUInt32LE(In, OutHeader.SocketCount)) return false;
-	}
-	else
-	{
-		OutHeader.SocketCount = 0;
-	}
+	if (!ReadUInt32LE(In, OutHeader.SocketCount))   return false;
 
 	if (!ReadUInt64LE(In, OutHeader.SourceFileWriteTime)) return false;
 	return true;
@@ -909,12 +887,12 @@ bool FBinarySerializer::ReadMatrix4x4(std::ifstream& In, FMatrix& OutM) const
 	return true;
 }
 
-void FBinarySerializer::WriteSkeletalVertices(std::ofstream& Out, const FSkeletalMesh& Data)
+void FBinarySerializer::WriteSkeletalVertices(std::ofstream& Out, const TArray<FSkeletalMeshVertex>& Vertices)
 {
-	uint32 Count = static_cast<uint32>(Data.Vertices.size());
+	uint32 Count = static_cast<uint32>(Vertices.size());
 	WriteUInt32LE(Out, Count);
 
-	for (const FSkeletalMeshVertex& V : Data.Vertices)
+	for (const FSkeletalMeshVertex& V : Vertices)
 	{
 		//	Position
 		WriteFloatLE(Out, V.Position.X);
@@ -953,7 +931,7 @@ void FBinarySerializer::WriteSkeletalVertices(std::ofstream& Out, const FSkeleta
 	}
 }
 
-bool FBinarySerializer::ReadSkeletalVertices(std::ifstream& In, FSkeletalMesh& OutData, uint32 VertexCount) const
+bool FBinarySerializer::ReadSkeletalVertices(std::ifstream& In, TArray<FSkeletalMeshVertex>& OutVertices, uint32 VertexCount) const
 {
 	uint32 Count = 0;
 	if (!ReadUInt32LE(In, Count))
@@ -967,9 +945,9 @@ bool FBinarySerializer::ReadSkeletalVertices(std::ifstream& In, FSkeletalMesh& O
 		return false;
 	}
 
-	OutData.Vertices.resize(Count);
+	OutVertices.resize(Count);
 
-	for (FSkeletalMeshVertex& V : OutData.Vertices)
+	for (FSkeletalMeshVertex& V : OutVertices)
 	{
 		//	Position
 		if (!ReadFloatLE(In, V.Position.X) ||
@@ -1031,40 +1009,148 @@ bool FBinarySerializer::ReadSkeletalVertices(std::ifstream& In, FSkeletalMesh& O
 	return In.good();
 }
 
-void FBinarySerializer::WriteSkeletalSections(std::ofstream& Out, const FSkeletalMesh& Data)
+void FBinarySerializer::WriteSkeletalLODRenderData(std::ofstream& Out, const FSkeletalMeshLODRenderData& LOD)
 {
-	uint32 Count = static_cast<uint32>(Data.Sections.size());
-	WriteUInt32LE(Out, Count);
+	const uint32 VertexCount = static_cast<uint32>(LOD.StaticVertices.size());
+	const uint32 IndexCount = static_cast<uint32>(LOD.Indices.size());
+	const uint32 SectionCount = static_cast<uint32>(LOD.RenderSections.size());
+	const uint32 ActiveBoneCount = static_cast<uint32>(LOD.ActiveBoneIndices.size());
+	const uint32 RequiredBoneCount = static_cast<uint32>(LOD.RequiredBones.size());
 
-	for (const FStaticMeshSection& Section : Data.Sections)
+	WriteUInt32LE(Out, VertexCount);
+	WriteUInt32LE(Out, IndexCount);
+	WriteUInt32LE(Out, SectionCount);
+	WriteUInt32LE(Out, ActiveBoneCount);
+	WriteUInt32LE(Out, RequiredBoneCount);
+
+	WriteSkeletalVertices(Out, LOD.StaticVertices);
+	WriteIndexArray(Out, LOD.Indices);
+
+	for (const FSkeletalMeshRenderSection& Section : LOD.RenderSections)
 	{
-		WriteUInt32LE(Out, Section.StartIndex);
+		WriteUInt32LE(Out, Section.BaseIndex);
 		WriteUInt32LE(Out, Section.IndexCount);
-		WriteInt32LE(Out, Section.MaterialSlotIndex);
+		WriteUInt32LE(Out, Section.BaseVertexIndex);
+		WriteUInt32LE(Out, Section.NumVertices);
+		WriteUInt32LE(Out, Section.NumTriangles);
+		WriteInt32LE(Out, Section.MaterialIndex);
+		WriteInt32LE(Out, Section.MaxBoneInfluences);
+
+		const uint32 BoneMapCount = static_cast<uint32>(Section.BoneMap.size());
+		WriteUInt32LE(Out, BoneMapCount);
+		for (FBoneIndexType BoneIndex : Section.BoneMap)
+		{
+			WriteInt32LE(Out, BoneIndex);
+		}
+	}
+
+	WriteUInt32LE(Out, ActiveBoneCount);
+	for (FBoneIndexType BoneIndex : LOD.ActiveBoneIndices)
+	{
+		WriteInt32LE(Out, BoneIndex);
+	}
+
+	WriteUInt32LE(Out, RequiredBoneCount);
+	for (FBoneIndexType BoneIndex : LOD.RequiredBones)
+	{
+		WriteInt32LE(Out, BoneIndex);
 	}
 }
 
-bool FBinarySerializer::ReadSkeletalSections(std::ifstream& In, FSkeletalMesh& OutData, uint32 SectionCount) const
+bool FBinarySerializer::ReadSkeletalLODRenderData(std::ifstream& In, FSkeletalMeshLODRenderData& OutLOD) const
 {
-	uint32 Count = 0;
-	if (!ReadUInt32LE(In, Count))
+	uint32 VertexCount = 0;
+	uint32 IndexCount = 0;
+	uint32 SectionCount = 0;
+	uint32 ActiveBoneCount = 0;
+	uint32 RequiredBoneCount = 0;
+
+	if (!ReadUInt32LE(In, VertexCount) ||
+		!ReadUInt32LE(In, IndexCount) ||
+		!ReadUInt32LE(In, SectionCount) ||
+		!ReadUInt32LE(In, ActiveBoneCount) ||
+		!ReadUInt32LE(In, RequiredBoneCount))
 	{
 		return false;
 	}
 
-	if (Count != SectionCount || Count > MAX_SKELETAL_MESH_SECTION_COUNT)
+	if (VertexCount > MAX_SKELETAL_MESH_VERTEX_COUNT ||
+		IndexCount > MAX_SKELETAL_MESH_INDEX_COUNT ||
+		SectionCount > MAX_SKELETAL_MESH_SECTION_COUNT ||
+		ActiveBoneCount > MAX_SKELETAL_MESH_BONE_COUNT ||
+		RequiredBoneCount > MAX_SKELETAL_MESH_BONE_COUNT)
 	{
 		In.setstate(std::ios::failbit);
 		return false;
 	}
 
-	OutData.Sections.resize(Count);
-
-	for (FStaticMeshSection& Section : OutData.Sections)
+	if (!ReadSkeletalVertices(In, OutLOD.StaticVertices, VertexCount))
 	{
-		if (!ReadUInt32LE(In, Section.StartIndex) ||
+		return false;
+	}
+
+	if (!ReadIndexArray(In, OutLOD.Indices) || OutLOD.Indices.size() != IndexCount)
+	{
+		return false;
+	}
+
+	OutLOD.RenderSections.resize(SectionCount);
+	for (FSkeletalMeshRenderSection& Section : OutLOD.RenderSections)
+	{
+		uint32 BoneMapCount = 0;
+		if (!ReadUInt32LE(In, Section.BaseIndex) ||
 			!ReadUInt32LE(In, Section.IndexCount) ||
-			!ReadInt32LE(In, Section.MaterialSlotIndex))
+			!ReadUInt32LE(In, Section.BaseVertexIndex) ||
+			!ReadUInt32LE(In, Section.NumVertices) ||
+			!ReadUInt32LE(In, Section.NumTriangles) ||
+			!ReadInt32LE(In, Section.MaterialIndex) ||
+			!ReadInt32LE(In, Section.MaxBoneInfluences) ||
+			!ReadUInt32LE(In, BoneMapCount))
+		{
+			return false;
+		}
+
+		if (BoneMapCount > MAX_GPUSKIN_BONES_PER_SECTION)
+		{
+			In.setstate(std::ios::failbit);
+			return false;
+		}
+
+		Section.BoneMap.resize(BoneMapCount);
+		for (FBoneIndexType& BoneIndex : Section.BoneMap)
+		{
+			if (!ReadInt32LE(In, BoneIndex))
+			{
+				return false;
+			}
+		}
+	}
+
+	uint32 StoredActiveBoneCount = 0;
+	if (!ReadUInt32LE(In, StoredActiveBoneCount) || StoredActiveBoneCount != ActiveBoneCount)
+	{
+		return false;
+	}
+
+	OutLOD.ActiveBoneIndices.resize(ActiveBoneCount);
+	for (FBoneIndexType& BoneIndex : OutLOD.ActiveBoneIndices)
+	{
+		if (!ReadInt32LE(In, BoneIndex))
+		{
+			return false;
+		}
+	}
+
+	uint32 StoredRequiredBoneCount = 0;
+	if (!ReadUInt32LE(In, StoredRequiredBoneCount) || StoredRequiredBoneCount != RequiredBoneCount)
+	{
+		return false;
+	}
+
+	OutLOD.RequiredBones.resize(RequiredBoneCount);
+	for (FBoneIndexType& BoneIndex : OutLOD.RequiredBones)
+	{
+		if (!ReadInt32LE(In, BoneIndex))
 		{
 			return false;
 		}
@@ -1402,9 +1488,7 @@ bool FBinarySerializer::SaveSkeletalMesh(const FString& BinaryPath, const FStrin
 	FSkeletalMeshBinaryHeader Header;
 	Header.MagicNumber = SKELETAL_MESH_BINARY_MAGIC;
 	Header.Version     = SKELETAL_MESH_BINARY_VERSION;
-	Header.VertexCount  = static_cast<uint32>(Data.Vertices.size());
-	Header.IndexCount   = static_cast<uint32>(Data.Indices.size());
-	Header.SectionCount = static_cast<uint32>(Data.Sections.size());
+	Header.LODCount     = static_cast<uint32>(Data.RenderData.LODRenderData.size());
 	Header.SlotCount    = static_cast<uint32>(Data.MaterialSlots.size());
 	Header.BoneCount    = static_cast<uint32>(ReferenceSkeleton.RefBones.size());
 	Header.SocketCount  = static_cast<uint32>(Data.Sockets.size());
@@ -1418,9 +1502,11 @@ bool FBinarySerializer::SaveSkeletalMesh(const FString& BinaryPath, const FStrin
 	WriteSkeletalHeader(Out, Header);
 
 	WriteString(Out, Data.PathFileName);
-	WriteSkeletalVertices(Out, Data);
-	WriteIndexArray(Out, Data.Indices);
-	WriteSkeletalSections(Out, Data);
+	WriteUInt32LE(Out, Header.LODCount);
+	for (const FSkeletalMeshLODRenderData& LOD : Data.RenderData.LODRenderData)
+	{
+		WriteSkeletalLODRenderData(Out, LOD);
+	}
 
 	//	Material Slots — StaticMesh와 동일하게 SlotName만 저장. Material* 포인터는 로드 후 resolve.
 	uint32 SlotCount = static_cast<uint32>(Data.MaterialSlots.size());
@@ -1461,19 +1547,24 @@ bool FBinarySerializer::LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMes
 		return false;
 	}
 
-	if (!ReadSkeletalVertices(In, OutData, Header.VertexCount))
+	uint32 LODCount = 0;
+	if (!ReadUInt32LE(In, LODCount))
 	{
 		return false;
 	}
 
-	if (!ReadIndexArray(In, OutData.Indices))
+	if (LODCount != Header.LODCount || LODCount > 16)
 	{
 		return false;
 	}
 
-	if (!ReadSkeletalSections(In, OutData, Header.SectionCount))
+	OutData.RenderData.LODRenderData.resize(LODCount);
+	for (FSkeletalMeshLODRenderData& LOD : OutData.RenderData.LODRenderData)
 	{
-		return false;
+		if (!ReadSkeletalLODRenderData(In, LOD))
+		{
+			return false;
+		}
 	}
 
 	uint32 SlotCount = 0;
@@ -1527,9 +1618,7 @@ bool FBinarySerializer::LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMes
 	}
 
 	//	Header ↔ Body 카운트 cross-check
-	if (!(OutData.Vertices.size()      == Header.VertexCount  &&
-	      OutData.Indices.size()       == Header.IndexCount   &&
-	      OutData.Sections.size()      == Header.SectionCount &&
+	if (!(OutData.RenderData.LODRenderData.size() == Header.LODCount &&
 	      OutData.MaterialSlots.size() == Header.SlotCount    &&
 	      OutReferenceSkeleton.RefBones.size() == Header.BoneCount &&
 	      OutData.Sockets.size()       == Header.SocketCount))

@@ -93,22 +93,30 @@ struct FTempInfluence
     float Weight = 0.0f;
 };
 
-/**
- * @brief 영향력 상위 4개의 bone을 FSkeletalMeshVertex에 할당
- */
-static void AssignTop4Influences(
-    const TArray<FTempInfluence>& SourceInfluences,
-    FSkeletalMeshVertex& OutVertex)
+struct FRawBoneInfluence
 {
-    for (int32 i = 0; i < 4; ++i)
-    {
-        OutVertex.BoneIndices[i] = 0;
-        OutVertex.BoneWeights[i] = 0.0f;
-    }
+    int32 GlobalBoneIndex = -1;
+    float Weight = 0.0f;
+};
 
+struct FSkeletalImportVertex
+{
+    FSkeletalMeshVertex Vertex;
+    TArray<FRawBoneInfluence> Influences;
+};
+
+struct FSkeletalImportTriangle
+{
+    FSkeletalImportVertex Vertices[3];
+    int32 MaterialIndex = -1;
+};
+
+static TArray<FRawBoneInfluence> BuildTop4GlobalInfluences(const TArray<FTempInfluence>& SourceInfluences)
+{
+    TArray<FRawBoneInfluence> Result;
     if (SourceInfluences.empty())
     {
-        return;
+        return Result;
     }
 
 	// 정렬은 그냥 standard sort 활용
@@ -116,46 +124,36 @@ static void AssignTop4Influences(
     std::sort(Sorted.begin(), Sorted.end(), [](const FTempInfluence& A, const FTempInfluence& B)
                 { return A.Weight > B.Weight; });
 
-    int32 WrittenCount = 0;
     float Sum = 0.0f;
 
     for (const FTempInfluence& Influence : Sorted)
     {
-        if (WrittenCount >= 4)
+        if (Result.size() >= MAX_BONE_INFLUENCES)
         {
             break;
         }
 
-		/*
-		 * note: 현재 BoneIndices가 uint8이라서 bone 개수가 256개 이상이면 무시
-		 */
-        if (Influence.BoneIndex < 0 || Influence.BoneIndex > 255 || Influence.Weight <= 0.0f)
+        if (Influence.BoneIndex < 0 || Influence.Weight <= 0.0f)
         {
             continue;
         }
 
-        OutVertex.BoneIndices[WrittenCount] = static_cast<uint8>(Influence.BoneIndex);
-        OutVertex.BoneWeights[WrittenCount] = Influence.Weight;
+        Result.push_back({ Influence.BoneIndex, Influence.Weight });
         Sum += Influence.Weight;
-
-        ++WrittenCount;
     }
 
     if (Sum <= 1e-6f)
     {
-        for (int32 i = 0; i < 4; ++i)
-        {
-            OutVertex.BoneIndices[i] = 0;
-            OutVertex.BoneWeights[i] = 0.0f;
-        }
-
-        return;
+        Result.clear();
+        return Result;
     }
 
-    for (int32 i = 0; i < WrittenCount; ++i)
+    for (FRawBoneInfluence& Influence : Result)
     {
-        OutVertex.BoneWeights[i] /= Sum;
+        Influence.Weight /= Sum;
     }
+
+    return Result;
 }
 
 /**
@@ -373,20 +371,208 @@ static void ResetVertexInfluences(FSkeletalMeshVertex& Vertex)
     }
 }
 
-static void AssignRigidInfluence(FSkeletalMeshVertex& Vertex, int32 BoneIndex)
+static FSkeletalMeshLODRenderData& EnsureLOD0(FSkeletalMesh* InSkeletalMesh)
 {
-    ResetVertexInfluences(Vertex);
-
-    if (BoneIndex < 0 || BoneIndex > 255)
+    if (InSkeletalMesh->RenderData.LODRenderData.empty())
     {
-        /*
-         * note: 현재 BoneIndices가 uint8이라서 BoneIndex가 255 이상이면 무시
-         */
+        InSkeletalMesh->RenderData.LODRenderData.resize(1);
+    }
+
+    return InSkeletalMesh->RenderData.LODRenderData[0];
+}
+
+static bool ContainsBoneIndex(const TArray<FBoneIndexType>& BoneIndices, FBoneIndexType BoneIndex)
+{
+    return std::find(BoneIndices.begin(), BoneIndices.end(), BoneIndex) != BoneIndices.end();
+}
+
+static int32 CountAdditionalBonesForTriangle(
+    const TArray<FBoneIndexType>& BoneMap,
+    const FSkeletalImportTriangle& Triangle)
+{
+    TArray<FBoneIndexType> AdditionalBones;
+
+    for (const FSkeletalImportVertex& ImportVertex : Triangle.Vertices)
+    {
+        for (const FRawBoneInfluence& Influence : ImportVertex.Influences)
+        {
+            const FBoneIndexType GlobalBoneIndex = Influence.GlobalBoneIndex;
+            if (GlobalBoneIndex < 0 || Influence.Weight <= 0.0f)
+            {
+                continue;
+            }
+
+            if (!ContainsBoneIndex(BoneMap, GlobalBoneIndex) &&
+                !ContainsBoneIndex(AdditionalBones, GlobalBoneIndex))
+            {
+                AdditionalBones.push_back(GlobalBoneIndex);
+            }
+        }
+    }
+
+    return static_cast<int32>(AdditionalBones.size());
+}
+
+static FSectionBoneIndexType FindOrAddSectionBone(
+    TArray<FBoneIndexType>& BoneMap,
+    FBoneIndexType GlobalBoneIndex)
+{
+    for (int32 Index = 0; Index < static_cast<int32>(BoneMap.size()); ++Index)
+    {
+        if (BoneMap[Index] == GlobalBoneIndex)
+        {
+            return static_cast<FSectionBoneIndexType>(Index);
+        }
+    }
+
+    BoneMap.push_back(GlobalBoneIndex);
+    return static_cast<FSectionBoneIndexType>(BoneMap.size() - 1);
+}
+
+static void RebuildLODRequiredBones(FSkeletalMeshLODRenderData& LOD)
+{
+    LOD.ActiveBoneIndices.clear();
+    LOD.RequiredBones.clear();
+
+    for (const FSkeletalMeshRenderSection& Section : LOD.RenderSections)
+    {
+        for (FBoneIndexType BoneIndex : Section.BoneMap)
+        {
+            if (BoneIndex < 0 || ContainsBoneIndex(LOD.ActiveBoneIndices, BoneIndex))
+            {
+                continue;
+            }
+
+            LOD.ActiveBoneIndices.push_back(BoneIndex);
+            LOD.RequiredBones.push_back(BoneIndex);
+        }
+    }
+}
+
+static void FinalizeSkeletalRenderSection(
+    const FSkeletalMeshLODRenderData& LOD,
+    FSkeletalMeshRenderSection& Section,
+    TArray<FSkeletalMeshRenderSection>& OutSections)
+{
+    Section.IndexCount = static_cast<uint32>(LOD.Indices.size()) - Section.BaseIndex;
+    Section.NumVertices = static_cast<uint32>(LOD.StaticVertices.size()) - Section.BaseVertexIndex;
+    Section.NumTriangles = Section.IndexCount / 3;
+
+    if (Section.IndexCount > 0 && Section.NumVertices > 0)
+    {
+        OutSections.push_back(Section);
+    }
+}
+
+static FSkeletalMeshRenderSection MakeSkeletalRenderSection(
+    const FSkeletalMeshLODRenderData& LOD,
+    int32 MaterialIndex)
+{
+    FSkeletalMeshRenderSection Section;
+    Section.BaseIndex = static_cast<uint32>(LOD.Indices.size());
+    Section.BaseVertexIndex = static_cast<uint32>(LOD.StaticVertices.size());
+    Section.MaterialIndex = MaterialIndex;
+    Section.MaxBoneInfluences = MAX_BONE_INFLUENCES;
+    return Section;
+}
+
+static void AppendImportTriangleToLOD(
+    const FSkeletalImportTriangle& Triangle,
+    FSkeletalMeshLODRenderData& OutLOD,
+    FSkeletalMeshRenderSection& Section)
+{
+    for (const FSkeletalImportVertex& ImportVertex : Triangle.Vertices)
+    {
+        FSkeletalMeshVertex RenderVertex = ImportVertex.Vertex;
+        ResetVertexInfluences(RenderVertex);
+
+        float WeightSum = 0.0f;
+        int32 WrittenInfluenceCount = 0;
+        for (const FRawBoneInfluence& Influence : ImportVertex.Influences)
+        {
+            if (WrittenInfluenceCount >= MAX_BONE_INFLUENCES ||
+                Influence.GlobalBoneIndex < 0 ||
+                Influence.Weight <= 0.0f)
+            {
+                continue;
+            }
+
+            const FSectionBoneIndexType LocalBoneIndex =
+                FindOrAddSectionBone(Section.BoneMap, Influence.GlobalBoneIndex);
+
+            RenderVertex.BoneIndices[WrittenInfluenceCount] = LocalBoneIndex;
+            RenderVertex.BoneWeights[WrittenInfluenceCount] = Influence.Weight;
+            WeightSum += Influence.Weight;
+            ++WrittenInfluenceCount;
+        }
+
+        if (WeightSum > 1e-6f)
+        {
+            for (int32 InfluenceIndex = 0; InfluenceIndex < WrittenInfluenceCount; ++InfluenceIndex)
+            {
+                RenderVertex.BoneWeights[InfluenceIndex] /= WeightSum;
+            }
+        }
+
+        const uint32 NewVertexIndex = static_cast<uint32>(OutLOD.StaticVertices.size());
+        OutLOD.StaticVertices.push_back(RenderVertex);
+        OutLOD.Indices.push_back(NewVertexIndex);
+    }
+}
+
+static void BuildSkeletalMeshLODRenderData(
+    const TArray<FSkeletalImportTriangle>& ImportTriangles,
+    FSkeletalMeshLODRenderData& OutLOD)
+{
+    if (ImportTriangles.empty())
+    {
         return;
     }
 
-    Vertex.BoneIndices[0] = static_cast<uint8>(BoneIndex);
-    Vertex.BoneWeights[0] = 1.0f;
+    int32 MaxMaterialIndex = -1;
+    for (const FSkeletalImportTriangle& Triangle : ImportTriangles)
+    {
+        MaxMaterialIndex = std::max(MaxMaterialIndex, Triangle.MaterialIndex);
+    }
+
+    for (int32 MaterialIndex = 0; MaterialIndex <= MaxMaterialIndex; ++MaterialIndex)
+    {
+        FSkeletalMeshRenderSection CurrentSection = MakeSkeletalRenderSection(OutLOD, MaterialIndex);
+        bool bHasOpenSection = false;
+
+        for (const FSkeletalImportTriangle& Triangle : ImportTriangles)
+        {
+            if (Triangle.MaterialIndex != MaterialIndex)
+            {
+                continue;
+            }
+
+            if (!bHasOpenSection)
+            {
+                CurrentSection = MakeSkeletalRenderSection(OutLOD, MaterialIndex);
+                bHasOpenSection = true;
+            }
+
+            const int32 AdditionalBoneCount =
+                CountAdditionalBonesForTriangle(CurrentSection.BoneMap, Triangle);
+
+            if (!CurrentSection.BoneMap.empty() &&
+                CurrentSection.BoneMap.size() + AdditionalBoneCount > MAX_GPUSKIN_BONES_PER_SECTION)
+            {
+                FinalizeSkeletalRenderSection(OutLOD, CurrentSection, OutLOD.RenderSections);
+                CurrentSection = MakeSkeletalRenderSection(OutLOD, MaterialIndex);
+            }
+
+            AppendImportTriangleToLOD(Triangle, OutLOD, CurrentSection);
+        }
+
+        if (bHasOpenSection)
+        {
+            FinalizeSkeletalRenderSection(OutLOD, CurrentSection, OutLOD.RenderSections);
+        }
+    }
+
+    RebuildLODRequiredBones(OutLOD);
 }
 
 }
@@ -556,7 +742,11 @@ bool FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOp
 
     Manager->Destroy();
 
-    if (SkeletalMesh->Vertices.empty() || SkeletalMesh->Indices.empty() || RefSkeleton.RefBones.empty())
+    const FSkeletalMeshLODRenderData* LOD = SkeletalMesh->RenderData.LODRenderData.empty()
+        ? nullptr
+        : &SkeletalMesh->RenderData.LODRenderData[0];
+
+    if (!LOD || LOD->StaticVertices.empty() || LOD->Indices.empty() || RefSkeleton.RefBones.empty())
     {
         UE_LOG_ERROR("[FbxImporter] No skeletal geometry or bones found: %s", Path.c_str());
         delete SkeletalMesh;
@@ -574,10 +764,10 @@ bool FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOp
     UE_LOG("[FbxImporter] Skeletal FBX Loaded: %s (SkinnedMeshes=%d, Vertices=%zu, Indices=%zu, Bones=%zu, Sections=%zu, Slots=%zu, %.3f sec)",
            Path.c_str(),
            ImportedSkinnedMeshCount,
-           SkeletalMesh->Vertices.size(),
-           SkeletalMesh->Indices.size(),
+           LOD->StaticVertices.size(),
+           LOD->Indices.size(),
            RefSkeleton.RefBones.size(),
-           SkeletalMesh->Sections.size(),
+           LOD->RenderSections.size(),
            SkeletalMesh->MaterialSlots.size(),
            EndTime - StartTime);
 
@@ -1046,9 +1236,10 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
     }
 
     const int32 ControlPointCount = Mesh->GetControlPointsCount();
-    const size_t MeshVertexStart = InSkeletalMesh->Vertices.size();
-    const size_t MeshIndexStart = InSkeletalMesh->Indices.size();
-    const size_t MeshSectionStart = InSkeletalMesh->Sections.size();
+    FSkeletalMeshLODRenderData& LOD = EnsureLOD0(InSkeletalMesh);
+    const size_t MeshVertexStart = LOD.StaticVertices.size();
+    const size_t MeshIndexStart = LOD.Indices.size();
+    const size_t MeshSectionStart = LOD.RenderSections.size();
 
     const FbxAMatrix MeshGeometry = GetGeometryTransform(OwnerNode);
 
@@ -1223,7 +1414,7 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
         MaterialMappingMode = Mesh->GetElementMaterial()->GetMappingMode();
     }
 
-    TArray<TArray<uint32>> SlotIndices;
+    TArray<FSkeletalImportTriangle> ImportTriangles;
 
     // polygon corner를 FSkeletalMeshVertex로 변환
     const int32 PolygonCount = Mesh->GetPolygonCount();
@@ -1262,12 +1453,9 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
         }
 
         const int32 SlotIdx = GetOrAddMaterialSlot(InSkeletalMesh, MaterialName);
-        if (SlotIdx >= static_cast<int32>(SlotIndices.size()))
-        {
-            SlotIndices.resize(SlotIdx + 1);
-        }
 
-        uint32 TriangleIndices[3] = {};
+        FSkeletalImportTriangle ImportTri;
+        ImportTri.MaterialIndex = SlotIdx;
         int32 TriangleVertexCount = 0;
 
         for (int32 Corner = 0; Corner < 3; Corner++)
@@ -1278,12 +1466,12 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
                 continue;
             }
 
-            FSkeletalMeshVertex Vertex = {};
-            ResetVertexInfluences(Vertex);
+            FSkeletalImportVertex ImportVertex = {};
+            ResetVertexInfluences(ImportVertex.Vertex);
 
             FbxVector4 Pos = ControlPoints[CtrlPointIdx];
             Pos = MeshBindGlobalWithGeometry.MultT(Pos);
-            Vertex.Position = ToFVector(Pos);
+            ImportVertex.Vertex.Position = ToFVector(Pos);
 
             FbxVector4 Normal(0, 0, 1, 0);
             if (Mesh->GetPolygonVertexNormal(PolyIdx, Corner, Normal))
@@ -1291,15 +1479,15 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
                 Normal[3] = 0.0;
                 Normal = NormalBindGlobalWithGeometry.MultT(Normal);
 
-                Vertex.Normal = ToFVector(Normal);
-                Vertex.Normal.NormalizeSafe();
+                ImportVertex.Vertex.Normal = ToFVector(Normal);
+                ImportVertex.Vertex.Normal.NormalizeSafe();
             }
             else
             {
-                Vertex.Normal = FVector(0.0f, 0.0f, 1.0f);
+                ImportVertex.Vertex.Normal = FVector(0.0f, 0.0f, 1.0f);
             }
 
-            Vertex.UVs = FVector2(0.0f, 0.0f);
+            ImportVertex.Vertex.UVs = FVector2(0.0f, 0.0f);
             if (Mesh->GetElementUVCount() > 0)
             {
                 FbxStringList UVNames;
@@ -1312,55 +1500,34 @@ void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InS
 
                     if (Mesh->GetPolygonVertexUV(PolyIdx, Corner, UVName, UV, bUnmapped))
                     {
-                        Vertex.UVs = ToFVector2(UV);
+                        ImportVertex.Vertex.UVs = ToFVector2(UV);
                     }
                 }
             }
 
-            Vertex.Color = FColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+            ImportVertex.Vertex.Color = FColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
-            AssignTop4Influences(InfluencesByControlPoint[CtrlPointIdx], Vertex);
+            ImportVertex.Influences = BuildTop4GlobalInfluences(InfluencesByControlPoint[CtrlPointIdx]);
 
-            const uint32 NewIndex = static_cast<uint32>(InSkeletalMesh->Vertices.size());
-            InSkeletalMesh->Vertices.push_back(Vertex);
-            TriangleIndices[TriangleVertexCount++] = NewIndex;
+            ImportTri.Vertices[TriangleVertexCount++] = ImportVertex;
         }
 
         if (TriangleVertexCount == 3)
         {
-            AppendTriangleIndices(
-                SlotIndices[SlotIdx],
-                TriangleIndices[0],
-                TriangleIndices[1],
-                TriangleIndices[2],
-                bReverseWinding);
+            if (bReverseWinding)
+            {
+                std::swap(ImportTri.Vertices[1], ImportTri.Vertices[2]);
+            }
+
+            ImportTriangles.push_back(ImportTri);
         }
     }
 
-    for (int32 SlotIdx = 0; SlotIdx < static_cast<int32>(SlotIndices.size()); SlotIdx++)
-    {
-        TArray<uint32>& IndicesPerSlot = SlotIndices[SlotIdx];
-        if (IndicesPerSlot.empty())
-        {
-            continue;
-        }
+    BuildSkeletalMeshLODRenderData(ImportTriangles, LOD);
 
-        FStaticMeshSection NewSection;
-        NewSection.StartIndex = static_cast<uint32>(InSkeletalMesh->Indices.size());
-        NewSection.IndexCount = static_cast<uint32>(IndicesPerSlot.size());
-        NewSection.MaterialSlotIndex = SlotIdx;
-
-        InSkeletalMesh->Indices.insert(
-            InSkeletalMesh->Indices.end(),
-            IndicesPerSlot.begin(),
-            IndicesPerSlot.end());
-
-        InSkeletalMesh->Sections.push_back(NewSection);
-    }
-
-    const size_t ImportedVertexCount = InSkeletalMesh->Vertices.size() - MeshVertexStart;
-    const size_t ImportedIndexCount = InSkeletalMesh->Indices.size() - MeshIndexStart;
-    const size_t ImportedSectionCount = InSkeletalMesh->Sections.size() - MeshSectionStart;
+    const size_t ImportedVertexCount = LOD.StaticVertices.size() - MeshVertexStart;
+    const size_t ImportedIndexCount = LOD.Indices.size() - MeshIndexStart;
+    const size_t ImportedSectionCount = LOD.RenderSections.size() - MeshSectionStart;
     if (ImportedVertexCount > 0 && ImportedIndexCount > 0)
     {
         ++ImportedSkinnedMeshCount;
@@ -1407,15 +1574,6 @@ void FFbxImporter::ProcessRigidAttachedMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh
         return;
     }
 
-    if (AttachBoneIndex > 255)
-    {
-        UE_LOG_WARNING(
-            "[FbxImporter] Skip rigid mesh because attach bone index exceeds uint8 limit | Node=%s | BoneIndex=%d",
-            OwnerNode->GetName(),
-            AttachBoneIndex);
-        return;
-    }
-
     const FbxVector4* ControlPoints = Mesh->GetControlPoints();
     if (!ControlPoints)
     {
@@ -1438,7 +1596,7 @@ void FFbxImporter::ProcessRigidAttachedMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh
         MaterialMappingMode = Mesh->GetElementMaterial()->GetMappingMode();
     }
 
-    TArray<TArray<uint32>> SlotIndices;
+    TArray<FSkeletalImportTriangle> ImportTriangles;
 
     const int32 PolygonCount = Mesh->GetPolygonCount();
 
@@ -1477,12 +1635,9 @@ void FFbxImporter::ProcessRigidAttachedMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh
         }
 
         const int32 SlotIdx = GetOrAddMaterialSlot(InSkeletalMesh, MaterialName);
-        if (SlotIdx >= static_cast<int32>(SlotIndices.size()))
-        {
-            SlotIndices.resize(SlotIdx + 1);
-        }
 
-        uint32 TriangleIndices[3] = {};
+        FSkeletalImportTriangle ImportTri;
+        ImportTri.MaterialIndex = SlotIdx;
         int32 TriangleVertexCount = 0;
 
         for (int32 Corner = 0; Corner < 3; Corner++)
@@ -1493,12 +1648,12 @@ void FFbxImporter::ProcessRigidAttachedMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh
                 continue;
             }
 
-            FSkeletalMeshVertex Vertex = {};
-            ResetVertexInfluences(Vertex);
+            FSkeletalImportVertex ImportVertex = {};
+            ResetVertexInfluences(ImportVertex.Vertex);
 
             FbxVector4 Pos = ControlPoints[CtrlPointIdx];
             Pos = OwnerGlobalWithGeometry.MultT(Pos);
-            Vertex.Position = ToFVector(Pos);
+            ImportVertex.Vertex.Position = ToFVector(Pos);
 
             FbxVector4 Normal(0, 0, 1, 0);
             if (Mesh->GetPolygonVertexNormal(PolyIdx, Corner, Normal))
@@ -1506,15 +1661,15 @@ void FFbxImporter::ProcessRigidAttachedMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh
                 Normal[3] = 0.0;
                 Normal = OwnerNormalGlobalWithGeometry.MultT(Normal);
 
-                Vertex.Normal = ToFVector(Normal);
-                Vertex.Normal.NormalizeSafe();
+                ImportVertex.Vertex.Normal = ToFVector(Normal);
+                ImportVertex.Vertex.Normal.NormalizeSafe();
             }
             else
             {
-                Vertex.Normal = FVector(0.0f, 0.0f, 1.0f);
+                ImportVertex.Vertex.Normal = FVector(0.0f, 0.0f, 1.0f);
             }
 
-            Vertex.UVs = FVector2(0.0f, 0.0f);
+            ImportVertex.Vertex.UVs = FVector2(0.0f, 0.0f);
             if (Mesh->GetElementUVCount() > 0)
             {
                 FbxStringList UVNames;
@@ -1527,52 +1682,32 @@ void FFbxImporter::ProcessRigidAttachedMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh
 
                     if (Mesh->GetPolygonVertexUV(PolyIdx, Corner, UVName, UV, bUnmapped))
                     {
-                        Vertex.UVs = ToFVector2(UV);
+                        ImportVertex.Vertex.UVs = ToFVector2(UV);
                     }
                 }
             }
 
-            Vertex.Color = FColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+            ImportVertex.Vertex.Color = FColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
             // skin이 없는 rigid mesh이므로 parent bone 하나에 100% 붙임
-            AssignRigidInfluence(Vertex, AttachBoneIndex);
+            ImportVertex.Influences = { { AttachBoneIndex, 1.0f } };
 
-            const uint32 NewIndex = static_cast<uint32>(InSkeletalMesh->Vertices.size());
-            InSkeletalMesh->Vertices.push_back(Vertex);
-            TriangleIndices[TriangleVertexCount++] = NewIndex;
+            ImportTri.Vertices[TriangleVertexCount++] = ImportVertex;
         }
 
         if (TriangleVertexCount == 3)
         {
-            AppendTriangleIndices(
-                SlotIndices[SlotIdx],
-                TriangleIndices[0],
-                TriangleIndices[1],
-                TriangleIndices[2],
-                bReverseWinding);
+            if (bReverseWinding)
+            {
+                std::swap(ImportTri.Vertices[1], ImportTri.Vertices[2]);
+            }
+
+            ImportTriangles.push_back(ImportTri);
         }
     }
 
-    for (int32 SlotIdx = 0; SlotIdx < static_cast<int32>(SlotIndices.size()); SlotIdx++)
-    {
-        TArray<uint32>& IndicesPerSlot = SlotIndices[SlotIdx];
-        if (IndicesPerSlot.empty())
-        {
-            continue;
-        }
-
-        FStaticMeshSection NewSection;
-        NewSection.StartIndex = static_cast<uint32>(InSkeletalMesh->Indices.size());
-        NewSection.IndexCount = static_cast<uint32>(IndicesPerSlot.size());
-        NewSection.MaterialSlotIndex = SlotIdx;
-
-        InSkeletalMesh->Indices.insert(
-            InSkeletalMesh->Indices.end(),
-            IndicesPerSlot.begin(),
-            IndicesPerSlot.end());
-
-        InSkeletalMesh->Sections.push_back(NewSection);
-    }
+    FSkeletalMeshLODRenderData& LOD = EnsureLOD0(InSkeletalMesh);
+    BuildSkeletalMeshLODRenderData(ImportTriangles, LOD);
 }
 
 
@@ -1610,7 +1745,16 @@ FAABB FFbxImporter::BuildLocalBounds(FSkeletalMesh* InSkeletalMesh) const
         return Bounds;
     }
 
-    for (const FSkeletalMeshVertex& Vertex : InSkeletalMesh->Vertices)
+    const FSkeletalMeshLODRenderData* LOD = InSkeletalMesh->RenderData.LODRenderData.empty()
+        ? nullptr
+        : &InSkeletalMesh->RenderData.LODRenderData[0];
+
+    if (!LOD)
+    {
+        return Bounds;
+    }
+
+    for (const FSkeletalMeshVertex& Vertex : LOD->StaticVertices)
     {
         Bounds.Expand(Vertex.Position);
     }
@@ -1627,7 +1771,8 @@ void FFbxImporter::ComputeTangents(FSkeletalMesh* InSkeletalMesh)
         return;
     }
 
-    const uint64 VertexCount = InSkeletalMesh->Vertices.size();
+    FSkeletalMeshLODRenderData& LOD = EnsureLOD0(InSkeletalMesh);
+    const uint64 VertexCount = LOD.StaticVertices.size();
     if (VertexCount == 0)
     {
         return;
@@ -1636,7 +1781,7 @@ void FFbxImporter::ComputeTangents(FSkeletalMesh* InSkeletalMesh)
     TArray<FVector> TangentAcc(VertexCount, FVector(0.0f, 0.0f, 0.0f));
     TArray<FVector> BitangentAcc(VertexCount, FVector(0.0f, 0.0f, 0.0f));
 
-    const TArray<uint32>& Idx = InSkeletalMesh->Indices;
+    const TArray<uint32>& Idx = LOD.Indices;
 
     for (uint64 i = 0; i + 2 < Idx.size(); i += 3)
     {
@@ -1649,9 +1794,9 @@ void FFbxImporter::ComputeTangents(FSkeletalMesh* InSkeletalMesh)
             continue;
         }
 
-        const FSkeletalMeshVertex& V0 = InSkeletalMesh->Vertices[I0];
-        const FSkeletalMeshVertex& V1 = InSkeletalMesh->Vertices[I1];
-        const FSkeletalMeshVertex& V2 = InSkeletalMesh->Vertices[I2];
+        const FSkeletalMeshVertex& V0 = LOD.StaticVertices[I0];
+        const FSkeletalMeshVertex& V1 = LOD.StaticVertices[I1];
+        const FSkeletalMeshVertex& V2 = LOD.StaticVertices[I2];
 
         FVector T;
         FVector B;
@@ -1677,7 +1822,7 @@ void FFbxImporter::ComputeTangents(FSkeletalMesh* InSkeletalMesh)
 
     for (uint64 i = 0; i < VertexCount; i++)
     {
-        const FVector& N = InSkeletalMesh->Vertices[i].Normal;
+        const FVector& N = LOD.StaticVertices[i].Normal;
         FVector T = TangentAcc[i];
 
         T = T - N * FVector::DotProduct(N, T);
@@ -1691,6 +1836,6 @@ void FFbxImporter::ComputeTangents(FSkeletalMesh* InSkeletalMesh)
                 ? -1.0f
                 : 1.0f;
 
-        InSkeletalMesh->Vertices[i].Tangent = FVector4(T.X, T.Y, T.Z, Sign);
+        LOD.StaticVertices[i].Tangent = FVector4(T.X, T.Y, T.Z, Sign);
     }
 }

@@ -21,6 +21,8 @@
 #include "Render/Scene/RenderBus.h"
 #include "Spatial/WorldSpatialIndex.h"
 
+#include <algorithm>
+
 namespace
 {
     FColor MakeBVHInternalNodeColor(int32 PathIndexFromLeaf, int32 PathLength)
@@ -60,6 +62,30 @@ namespace
             RenderBus.GetCameraForward(),
             RenderBus.GetCameraRight(),
             RenderBus.GetCameraUp());
+    }
+
+    void FillSkinningBonePalette(
+        FSkinningConstants& OutConstants,
+        const FSkeletalMeshRenderSection& Section,
+        const TArray<FMatrix>& SkinningMatrices)
+    {
+        for (FMatrix& BoneMatrix : OutConstants.BonePalette)
+        {
+            BoneMatrix = FMatrix::Identity;
+        }
+
+        const int32 PaletteCount = std::min(
+            static_cast<int32>(Section.BoneMap.size()),
+            MAX_GPUSKIN_BONES_PER_SECTION);
+
+        for (int32 LocalBoneIndex = 0; LocalBoneIndex < PaletteCount; ++LocalBoneIndex)
+        {
+            const int32 GlobalBoneIndex = Section.BoneMap[LocalBoneIndex];
+            if (GlobalBoneIndex >= 0 && GlobalBoneIndex < static_cast<int32>(SkinningMatrices.size()))
+            {
+                OutConstants.BonePalette[LocalBoneIndex] = SkinningMatrices[GlobalBoneIndex];
+            }
+        }
     }
 
     FAABB BuildQuadAABB(const FMatrix& WorldMatrix)
@@ -453,13 +479,14 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
         {
             USkeletalMeshComponent* SkeletalMeshComp = static_cast<USkeletalMeshComponent*>(primitiveComponent);
             const USkeletalMesh* SkeletalMesh = SkeletalMeshComp->GetSkeletalMesh();
-            const TArray<FStaticMeshSection>& Sections = SkeletalMesh ? SkeletalMesh->GetSections() : TArray<FStaticMeshSection>();
+            const FSkeletalMeshLODRenderData* LODData = SkeletalMesh ? SkeletalMesh->GetLODRenderData(0) : nullptr;
+            const TArray<FSkeletalMeshRenderSection>& Sections = LODData ? LODData->RenderSections : TArray<FSkeletalMeshRenderSection>();
 
             if (!Sections.empty())
             {
                 for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
                 {
-                    const FStaticMeshSection& Section = Sections[SectionIdx];
+                    const FSkeletalMeshRenderSection& Section = Sections[SectionIdx];
                     if (Section.IndexCount == 0)
                     {
                         continue;
@@ -467,9 +494,16 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
 
                     FRenderCommand MaskCmd = BaseCmd;
                     MaskCmd.Type = ERenderCommandType::SelectionMask;
-                    MaskCmd.SectionIndexStart = Section.StartIndex;
+                    MaskCmd.SectionIndexStart = Section.BaseIndex;
                     MaskCmd.SectionIndexCount = Section.IndexCount;
                     MaskCmd.Material = Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(SectionIdx));
+                    if (RenderBus.GetSkinningMode() == ESkinningMode::GPU)
+                    {
+                        FillSkinningBonePalette(
+                            MaskCmd.Constants.Skinning,
+                            Section,
+                            SkeletalMeshComp->GetSkinningMatrices());
+                    }
                     RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
                 }
             }
