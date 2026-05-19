@@ -14,16 +14,19 @@ struct FSkinningStatsFrame
 	double CPUSkinnedVertexBufferUploadMs = 0.0;
 	uint64 CPUSkinnedVertexBufferUploadBytes = 0;
 
-	double GPUBoneMatrixUploadMs = 0.0;
-	uint64 GPUBoneMatrixUploadBytes = 0;
-
 	uint32 VisibleSkinnedMeshCount = 0;
+	uint32 VisibleCPUSkinnedMeshCount = 0;
+	uint32 VisibleGPUSkinnedMeshCount = 0;
 	uint64 VisibleSkinnedVertexCount = 0;
 	uint64 TotalBoneCount = 0;
 	double TotalBoneInfluenceCount = 0.0;
 	uint64 BoneInfluenceVertexCount = 0;
-	uint32 SkinnedPassCount = 0;
-	double EstimatedGPUVertexSkinningWork = 0.0;
+
+	uint64 GPUBoneMatrixCount = 0;
+	// Logical bone matrix payload, counted once per visible GPU-skinned mesh.
+	uint64 GPUBoneMatrixPayloadBytes = 0;
+	uint32 GPUSkinnedDrawPassCount = 0;
+	double EstimatedGPUSkinningInfluenceWork = 0.0;
 
 	double GetAvgBoneInfluencePerVertex() const
 	{
@@ -47,9 +50,13 @@ public:
 	void AddCPUPoseBuild(double Ms) { Current.CPUPoseBuildMs += Ms; }
 	void AddCPUSkinning(double Ms) { Current.CPUSkinningMs += Ms; }
 	void AddCPUSkinnedVertexBufferUpload(double Ms, uint64 Bytes);
-	void AddGPUBoneMatrixUpload(double Ms, uint64 Bytes);
-	void AddVisibleSkinnedMesh(uint64 VertexCount, uint32 BoneCount, double AvgInfluence);
-	void AddSkinnedDraw(uint64 WorkVertexCount, double AvgInfluence);
+	void AddVisibleSkinnedMesh(
+		uint64 VertexCount,
+		uint32 BoneCount,
+		double AvgInfluence,
+		bool bUsesGPUSkinning,
+		uint32 UploadedBoneMatrixCount);
+	void AddGPUSkinnedDraw(uint64 WorkVertexCount, double AvgInfluence);
 
 private:
 	FSkinningStats() = default;

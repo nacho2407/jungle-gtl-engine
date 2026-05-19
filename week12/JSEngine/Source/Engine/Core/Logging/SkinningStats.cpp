@@ -1,5 +1,7 @@
 #include "Core/Logging/SkinningStats.h"
 
+#include "Math/Matrix.h"
+
 #include <Windows.h>
 
 namespace
@@ -25,25 +27,35 @@ void FSkinningStats::AddCPUSkinnedVertexBufferUpload(double Ms, uint64 Bytes)
 	Current.CPUSkinnedVertexBufferUploadBytes += Bytes;
 }
 
-void FSkinningStats::AddGPUBoneMatrixUpload(double Ms, uint64 Bytes)
-{
-	Current.GPUBoneMatrixUploadMs += Ms;
-	Current.GPUBoneMatrixUploadBytes += Bytes;
-}
-
-void FSkinningStats::AddVisibleSkinnedMesh(uint64 VertexCount, uint32 BoneCount, double AvgInfluence)
+void FSkinningStats::AddVisibleSkinnedMesh(
+	uint64 VertexCount,
+	uint32 BoneCount,
+	double AvgInfluence,
+	bool bUsesGPUSkinning,
+	uint32 UploadedBoneMatrixCount)
 {
 	Current.VisibleSkinnedMeshCount++;
 	Current.VisibleSkinnedVertexCount += VertexCount;
 	Current.TotalBoneCount += BoneCount;
 	Current.TotalBoneInfluenceCount += AvgInfluence * static_cast<double>(VertexCount);
 	Current.BoneInfluenceVertexCount += VertexCount;
+
+	if (bUsesGPUSkinning)
+	{
+		Current.VisibleGPUSkinnedMeshCount++;
+		Current.GPUBoneMatrixCount += UploadedBoneMatrixCount;
+		Current.GPUBoneMatrixPayloadBytes += static_cast<uint64>(UploadedBoneMatrixCount) * sizeof(FMatrix);
+	}
+	else
+	{
+		Current.VisibleCPUSkinnedMeshCount++;
+	}
 }
 
-void FSkinningStats::AddSkinnedDraw(uint64 WorkVertexCount, double AvgInfluence)
+void FSkinningStats::AddGPUSkinnedDraw(uint64 WorkVertexCount, double AvgInfluence)
 {
-	Current.SkinnedPassCount++;
-	Current.EstimatedGPUVertexSkinningWork += static_cast<double>(WorkVertexCount) * AvgInfluence;
+	Current.GPUSkinnedDrawPassCount++;
+	Current.EstimatedGPUSkinningInfluenceWork += static_cast<double>(WorkVertexCount) * AvgInfluence;
 }
 
 FSkinningScopedTimer::FSkinningScopedTimer(RecordFunc InRecordFunc)
