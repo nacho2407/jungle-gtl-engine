@@ -43,6 +43,18 @@ void FAnimNode_StateMachine::SetInitialState(FName StateName)
 	}
 }
 
+void FAnimNode_StateMachine::Initialize(const FAnimationInitializeContext& Context)
+{
+	// 트리 build 직후 1 회 — 첫 CurrentState 의 OnEnter 호출해 sub-graph 까지 재귀 init.
+	if (CurrentState) CurrentState->OnEnter(Context.AnimInstance);
+}
+
+void FAnimNode_StateMachine::OnBecomeRelevant(const FAnimationInitializeContext& Context)
+{
+	// 부모 SM 의 state 가 이 sub-SM 으로 전환된 경우 — 자기 current state 진입을 알림.
+	if (CurrentState) CurrentState->OnEnter(Context.AnimInstance);
+}
+
 void FAnimNode_StateMachine::Update(const FAnimationUpdateContext& Context)
 {
 	if (!CurrentState) return;
@@ -101,27 +113,26 @@ void FAnimNode_StateMachine::Update(const FAnimationUpdateContext& Context)
 		BlendingFroms.resize(Write);
 	}
 
-	// 4) Root motion delta 누적 — sequential lerp 합성.
-	if (Owner && Owner->GetRootMotionMode() != ERootMotionMode::RootMotionFromMontagesOnly)
+	// 4) Root motion delta 합성 — sequential lerp 결과를 자기 LastRootMotionDelta 에 저장.
+	//    AnimInstance->AccumulateRootMotion 직접 호출 X. 외부 (부모 SM 또는 AnimInstance 의
+	//    UpdateAnimation 끝) 가 RootNode 의 LastRM 한 번 받아 누적. 이중 누적 / mode 처리
+	//    모두 외부 단일 진입점.
+	if (BlendingFroms.empty())
 	{
-		if (BlendingFroms.empty())
+		LastRootMotionDelta = CurrentState->GetLastRootMotionDelta();
+	}
+	else
+	{
+		LastRootMotionDelta = BlendingFroms[0].State->GetLastRootMotionDelta();
+		for (size_t i = 0; i < BlendingFroms.size(); ++i)
 		{
-			Owner->AccumulateRootMotion(CurrentState->GetLastRootMotionDelta());
-		}
-		else
-		{
-			FTransform Acc = BlendingFroms[0].State->GetLastRootMotionDelta();
-			for (size_t i = 0; i < BlendingFroms.size(); ++i)
-			{
-				const FTransform& Next = (i + 1 < BlendingFroms.size())
-					? BlendingFroms[i + 1].State->GetLastRootMotionDelta()
-					: CurrentState->GetLastRootMotionDelta();
-				const float a = BlendingFroms[i].Alpha;
-				Acc.Location = Acc.Location * (1.0f - a) + Next.Location * a;
-				Acc.Rotation = FQuat::Slerp(Acc.Rotation.GetNormalized(),
-				                            Next.Rotation.GetNormalized(), a).GetNormalized();
-			}
-			Owner->AccumulateRootMotion(Acc);
+			const FTransform& Next = (i + 1 < BlendingFroms.size())
+				? BlendingFroms[i + 1].State->GetLastRootMotionDelta()
+				: CurrentState->GetLastRootMotionDelta();
+			const float a = BlendingFroms[i].Alpha;
+			LastRootMotionDelta.Location = LastRootMotionDelta.Location * (1.0f - a) + Next.Location * a;
+			LastRootMotionDelta.Rotation = FQuat::Slerp(LastRootMotionDelta.Rotation.GetNormalized(),
+			                                            Next.Rotation.GetNormalized(), a).GetNormalized();
 		}
 	}
 }

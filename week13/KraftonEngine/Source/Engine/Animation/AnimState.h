@@ -48,6 +48,11 @@ public:
 	// FSM 이 blend 중 두 상태의 delta 를 weight lerp 후 AnimInstance 에 누적.
 	const FTransform& GetLastRootMotionDelta() const { return LastRootMotionDelta; }
 
+	// Phase 1.5b+: 임의 FAnimNode_Base 를 state 의 sub-graph 로 사용. set 되면 internal Player
+	// 무시하고 SubGraphOverride 에 시간 진행 / pose 평가 / RM 모두 위임. sub-state-machine
+	// (Locomotion 안에 Idle/Walk sub-SM) 같은 트리 구성에 사용.
+	FAnimNode_Base* SubGraphOverride = nullptr;
+
 protected:
 	float      LocalTime = 0.0f;
 	FTransform LastRootMotionDelta;   // 매 Tick 후 갱신; FSM 이 Evaluate 후 읽음

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AnimNodeContexts.h"
+#include "Math/Transform.h"
 
 struct FPoseContext;
 
@@ -31,6 +32,18 @@ public:
 	virtual void OnBecomeRelevant(const FAnimationInitializeContext& Context)   { (void)Context; }
 	virtual void Update(const FAnimationUpdateContext& Context)                 { (void)Context; }
 	virtual void Evaluate(FPoseContext& Output) = 0;
+
+	// 매 Update 가 마지막으로 계산한 root motion delta.
+	//   SequencePlayer — 자기 sequence 의 ExtractRootMotion 결과
+	//   StateMachine — 자식 노드들의 LastRM 을 multi-blend sequential lerp 결과
+	// 노드 자체는 AnimInstance->AccumulateRootMotion 을 호출하지 않는다 (= 외부 누적 패턴).
+	// AnimInstance::UpdateAnimation 끝에서 RootNode 의 값 한 번만 누적해 트리 깊이와
+	// 무관하게 이중 누적 위험 0. mode 체크도 그 한 곳에서.
+	virtual const FTransform& GetLastRootMotionDelta() const
+	{
+		static const FTransform Identity;
+		return Identity;
+	}
 
 	virtual const char* GetDebugName() const { return "AnimNode"; }
 };

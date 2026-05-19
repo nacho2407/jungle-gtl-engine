@@ -26,6 +26,7 @@ public:
 	void OnBecomeRelevant(const FAnimationInitializeContext& Context) override;
 	void Update(const FAnimationUpdateContext& Context) override;
 	void Evaluate(FPoseContext& Output) override;
+	const FTransform& GetLastRootMotionDelta() const override { return LastRootMotionDelta; }
 
 	const char* GetDebugName() const override { return "SequencePlayer"; }
 };

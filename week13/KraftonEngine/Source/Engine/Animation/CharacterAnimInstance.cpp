@@ -43,30 +43,47 @@ void UCharacterAnimInstance::NativeInitializeAnimation()
 	UAnimSequence* Walk = UAnimSequence::CreateMockWaveSequence(
 		Mesh, /*Duration*/0.8f, /*AmpDeg*/15.0f);
 
-	// AnimGraph 트리 build — Phase 1.5: 단순 SM 한 개 (sub-SM 데모는 후속 step).
+	// AnimGraph 트리 build — Phase 1.5b: sub-state-machine 데모.
+	//   RootNode = Top-SM
+	//                └─ State "Locomotion"  (SubGraphOverride = Loco-SM)
+	//                       Loco-SM ├─ State "Idle" → Idle Sequence
+	//                                └─ State "Walk" → Walk Sequence
+	//                                transitions: Idle↔Walk (Speed)
+	//
+	// Top-SM 이 단일 state 만 갖는 건 일시적 — Jump anim 자산 추가 시 Top 에 "Jump" state 추가 +
+	// 두 transition 등록만으로 확장. sub-state-machine 의 핵심 의미 (자기 안에 sub-SM 보유한
+	// state) 는 단일 state 라도 검증 가능.
+	//
 	// MakeNode 헬퍼가 OwnedNodes 에 push 후 raw 반환 — lifetime 은 AnimInstance 가 관리.
-	FAnimNode_StateMachine* SM = MakeNode<FAnimNode_StateMachine>();
-	SM->RegisterState(MakeAnimState(FName("Idle"), Idle, 1.0f, true, this));
-	SM->RegisterState(MakeAnimState(FName("Walk"), Walk, 1.0f, true, this));
 
-	// Condition 람다는 this 캡처로 멤버 Speed 를 읽음 — Speed 는 NativeUpdateAnimation 이
-	// 매 frame 갱신 (auto-drive sin 또는 외부 push). 새 조건은 람다 추가만으로 끝.
-	SM->RegisterTransition({
+	FAnimNode_StateMachine* LocoSM = MakeNode<FAnimNode_StateMachine>();
+	LocoSM->RegisterState(MakeAnimState(FName("Idle"), Idle, 1.0f, true, this));
+	LocoSM->RegisterState(MakeAnimState(FName("Walk"), Walk, 1.0f, true, this));
+	LocoSM->RegisterTransition({
 		FName("Idle"), FName("Walk"),
 		[this](UAnimInstance*) { return Speed >  SpeedThreshold; },
 		/*BlendTime*/0.20f
 	});
-	SM->RegisterTransition({
+	LocoSM->RegisterTransition({
 		FName("Walk"), FName("Idle"),
 		[this](UAnimInstance*) { return Speed <= SpeedThreshold; },
 		0.20f
 	});
+	LocoSM->SetInitialState(FName("Idle"));
 
-	SM->SetInitialState(FName("Idle"));
+	// Top SM 의 "Locomotion" state — SubGraphOverride 로 Loco-SM 위임.
+	UAnimState* LocomotionState = UObjectManager::Get().CreateObject<UAnimState>(this);
+	LocomotionState->StateName        = FName("Locomotion");
+	LocomotionState->SubGraphOverride = LocoSM;
 
-	// RootNode 박기 — UAnimInstance::UpdateAnimation 이 매 frame 트리 평가하게 됨.
-	// FSM wrapper 멤버는 사용 안 함 (FSM == nullptr 유지). legacy 경로 안 탐.
-	SetRootNode(SM);
+	FAnimNode_StateMachine* TopSM = MakeNode<FAnimNode_StateMachine>();
+	TopSM->RegisterState(LocomotionState);
+	TopSM->SetInitialState(FName("Locomotion"));
+
+	// RootNode 박기 — Initialize 호출이 Top-SM 의 CurrentState (Locomotion) ->OnEnter →
+	// SubGraphOverride (Loco-SM) ->OnBecomeRelevant → Loco-SM 의 CurrentState (Idle) ->OnEnter
+	// 까지 재귀로 sub-graph 까지 초기화.
+	SetRootNode(TopSM);
 }
 
 void UCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
