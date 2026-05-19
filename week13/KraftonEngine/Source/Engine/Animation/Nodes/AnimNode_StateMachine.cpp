@@ -115,9 +115,16 @@ void FAnimNode_StateMachine::Update(const FAnimationUpdateContext& Context)
 
 	// 4) Root motion delta 합성 — sequential lerp 결과를 자기 LastRootMotionDelta 에 저장.
 	//    AnimInstance->AccumulateRootMotion 직접 호출 X. 외부 (부모 SM 또는 AnimInstance 의
-	//    UpdateAnimation 끝) 가 RootNode 의 LastRM 한 번 받아 누적. 이중 누적 / mode 처리
+	//    UpdateAnimation 끝) 가 RootNode 의 LastRM 한 번 받아 누적. 이중 누적 / Ignore mode 처리
 	//    모두 외부 단일 진입점.
-	if (BlendingFroms.empty())
+	//
+	// RootMotionFromMontagesOnly mode 일 때 base FSM 측 RM 은 0 — Montage 만 적용되도록.
+	// 자식 state 의 RM 합성을 통째 skip 해서 LastRM = identity.
+	if (Owner && Owner->GetRootMotionMode() == ERootMotionMode::RootMotionFromMontagesOnly)
+	{
+		LastRootMotionDelta = FTransform();
+	}
+	else if (BlendingFroms.empty())
 	{
 		LastRootMotionDelta = CurrentState->GetLastRootMotionDelta();
 	}
