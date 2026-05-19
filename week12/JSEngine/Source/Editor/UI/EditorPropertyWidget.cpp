@@ -1,10 +1,11 @@
-#include "Editor/UI/EditorPropertyWidget.h"
+﻿#include "Editor/UI/EditorPropertyWidget.h"
 
 #include "Editor/UI/ComponentMenuRegistry.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "ImGui/imgui.h"
 #include "GameFramework/World.h"
+#include "Core/AssetPathPolicy.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Component/BillboardComponent.h"
@@ -17,6 +18,7 @@
 #include "Component/Movement/InterpToMovementComponent.h"
 #include "Component/Movement/PursuitMovementComponent.h"
 #include "Component/ActorSequenceComponent.h"
+#include "Animation/AnimSingleNodeInstance.h"
 #include "Component/PostProcess/Light/PointLightComponent.h"
 #include "Core/EditorResourcePaths.h"
 #include "Core/DebugDetails.h"
@@ -147,44 +149,9 @@ namespace
 				|| std::strcmp(Property->Name, "AnimationMode") == 0);
 	}
 
-	static TArray<FString> CollectAnimGraphAssetPaths()
-	{
-		TArray<FString> Result;
-		const std::filesystem::path AssetRoot = (std::filesystem::path(FPaths::RootDir()) / L"Asset").lexically_normal();
-		if (!std::filesystem::exists(AssetRoot))
-		{
-			return Result;
-		}
-
-		std::error_code ErrorCode;
-		for (const std::filesystem::directory_entry& Entry : std::filesystem::recursive_directory_iterator(AssetRoot, ErrorCode))
-		{
-			if (ErrorCode)
-			{
-				break;
-			}
-			if (!Entry.is_regular_file())
-			{
-				continue;
-			}
-
-			FString Extension = FPaths::ToUtf8(Entry.path().extension().wstring());
-			std::transform(Extension.begin(), Extension.end(), Extension.begin(),
-				[](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
-			if (Extension == ".animgraph")
-			{
-				Result.push_back(FPaths::Normalize(FPaths::ToRelativeString(Entry.path().wstring())));
-			}
-		}
-
-		std::sort(Result.begin(), Result.end());
-		return Result;
-	}
-
-	static bool RenderAnimGraphAssetPathWidget(FString& Value, const char* Label)
+	static bool RenderAnimGraphAssetPathWidget(FString& Value, const char* Label, const TArray<FString>& Options)
 	{
 		bool bChanged = false;
-		TArray<FString> Options = CollectAnimGraphAssetPaths();
 		const char* Preview = Value.empty() ? "<None>" : Value.c_str();
 
 		if (ImGui::BeginCombo(Label, Preview))
@@ -380,6 +347,85 @@ namespace
 		return FPaths::Normalize(PathText);
 	}
 
+	static FString GetLuaScriptDisplayName(const FString& ScriptReference)
+	{
+		if (ScriptReference.empty())
+		{
+			return "<None>";
+		}
+
+		std::filesystem::path ScriptPath(FPaths::ToWide(ScriptReference));
+		if (ScriptPath.has_filename())
+		{
+			return FPaths::ToUtf8(ScriptPath.filename().generic_wstring());
+		}
+
+		return ScriptReference;
+	}
+
+	static bool RenderLuaScriptComboWidget(FString& Value, const char* Label)
+	{
+		bool bChanged = false;
+		const FString Preview = GetLuaScriptDisplayName(Value);
+		if (ImGui::BeginCombo(Label, Preview.c_str()))
+		{
+			FScriptManager& ScriptManager = FScriptManager::Get();
+			ScriptManager.RefreshLuaScriptFiles();
+
+			TArray<FString> ScriptReferences;
+			for (const auto& Pair : ScriptManager.GetScriptArray())
+			{
+				const FLuaScriptInfo& Info = Pair.second;
+				if (!Info.ScriptPath.empty())
+				{
+					ScriptReferences.push_back(MakeScriptReferenceFromPath(FPaths::ToUtf8(Info.ScriptPath)));
+				}
+				else
+				{
+					ScriptReferences.push_back(Pair.first.ToString());
+				}
+			}
+
+			std::sort(ScriptReferences.begin(), ScriptReferences.end());
+			ScriptReferences.erase(
+				std::unique(ScriptReferences.begin(), ScriptReferences.end()),
+				ScriptReferences.end());
+
+			const bool bNoneSelected = Value.empty();
+			if (ImGui::Selectable("<None>", bNoneSelected))
+			{
+				Value.clear();
+				bChanged = true;
+			}
+			if (bNoneSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
+			for (const FString& ScriptReference : ScriptReferences)
+			{
+				const FString DisplayName = GetLuaScriptDisplayName(ScriptReference);
+				const bool bSelected = Value == ScriptReference
+					|| GetLuaScriptDisplayName(Value) == DisplayName;
+
+				if (ImGui::Selectable(DisplayName.c_str(), bSelected))
+				{
+					Value = ScriptReference;
+					bChanged = true;
+				}
+
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+
+		return bChanged;
+	}
+
 	static bool PromptCreateScriptAs(UEditorEngine* EditorEngine, const FString& ScriptPathHint, FString& OutFilePath)
 	{
 		OutFilePath.clear();
@@ -470,6 +516,24 @@ namespace
 			HeightFog->SetHeightFalloff(0);
 			HeightFog->SetFogHeight(0);
 		}
+	}
+
+    static const FProperty* FindPropertyByName(const TArray<const FProperty*>& Properties, const char* Name)
+	{
+	    if (!Name)
+	    {
+			return nullptr;
+	    }
+
+		for (const FProperty* Property : Properties)
+		{
+		    if (Property && Property->Name && std::strcmp(Property->Name, Name) == 0)
+		    {
+				return Property;
+		    }
+		}
+
+		return nullptr;
 	}
 }
 
@@ -1377,28 +1441,80 @@ void FEditorPropertyWidget::RenderComponentProperties()
 
 	const bool bUseSkeletalMeshSection = Cast<USkeletalMeshComponent>(SelectedComponent) != nullptr;
 	bool bRenderedSkeletalMeshSection = false;
-	if (bUseSkeletalMeshSection)
-	{
-		for (const FProperty* Property : ReflectedProperties)
-		{
-			if (!Property || !Property->Name || std::strcmp(Property->Name, "Tags") == 0 || !IsSkeletalMeshSectionProperty(Property))
-			{
-				continue;
-			}
 
-			if (!bRenderedSkeletalMeshSection)
+	auto RenderCountedProperty = [&](UObject* OwnerObject, const FProperty* Property)
+		{
+			if (!OwnerObject || !Property)
 			{
-				DrawDetailsSectionLabel("Skeletal Mesh");
-				ImGui::Spacing();
-				bRenderedSkeletalMeshSection = true;
+				return;
 			}
 
 			const FDetailsPerfClock::time_point PropStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
-			RenderReflectionProperty(FPropertyHandle{ SelectedComponent, Property });
+
+			RenderReflectionProperty(FPropertyHandle{ OwnerObject, Property });
 			++RenderedPropertyCount;
+
 			if (bDetailsPerfTraceFrame)
 			{
 				PropertyWidgetMs += DetailsPerfMs(PropStart, FDetailsPerfClock::now());
+			}
+		};
+
+	if (USkeletalMeshComponent* SkeletalComp = Cast<USkeletalMeshComponent>(SelectedComponent))
+	{
+		DrawDetailsSectionLabel("Skeletal Mesh");
+		ImGui::Spacing();
+		bRenderedSkeletalMeshSection = true;
+
+		if (const FProperty* Prop = FindPropertyByName(ReflectedProperties, "SkeletalMeshPath"))
+		{
+			RenderCountedProperty(SelectedComponent, Prop);
+		}
+
+		if (const FProperty* Prop = FindPropertyByName(ReflectedProperties, "SkinningMode"))
+		{
+			RenderCountedProperty(SelectedComponent, Prop);
+		}
+
+		if (const FProperty* Prop = FindPropertyByName(ReflectedProperties, "AnimationMode"))
+		{
+			RenderCountedProperty(SelectedComponent, Prop);
+		}
+
+		if (SkeletalComp->GetAnimationMode() == EAnimationMode::AnimationSingleNode)
+		{
+			if (const FProperty* Prop = FindPropertyByName(ReflectedProperties, "AnimationAssetPath"))
+			{
+				RenderCountedProperty(SelectedComponent, Prop);
+			}
+
+			if (UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(SkeletalComp->GetAnimInstance()))
+			{
+				TArray<const FProperty*> AnimProps;
+				CollectEditableReflectedProperties(SingleNode, AnimProps);
+
+				if (const FProperty* Prop = FindPropertyByName(AnimProps, "PlayRate"))
+				{
+					RenderCountedProperty(SingleNode, Prop);
+				}
+
+				if (const FProperty* Prop = FindPropertyByName(AnimProps, "bLooping"))
+				{
+					RenderCountedProperty(SingleNode, Prop);
+				}
+
+				if (const FProperty* Prop = FindPropertyByName(AnimProps, "bAutoPlay"))
+				{
+					RenderCountedProperty(SingleNode, Prop);
+				}
+			}
+		}
+
+		else if (SkeletalComp->GetAnimationMode() == EAnimationMode::AnimationGraph)
+		{
+			if (const FProperty* Prop = FindPropertyByName(ReflectedProperties, "AnimGraphAssetPath"))
+			{
+				RenderCountedProperty(SelectedComponent, Prop);
 			}
 		}
 	}
@@ -1563,24 +1679,9 @@ void FEditorPropertyWidget::RenderDebugDetails(UObject* Object, AActor* PrimaryA
 		if (USkeletalMeshComponent* SkeletalComp = Cast<USkeletalMeshComponent>(Component))
 		{
 			Builder.AddCustom([this, SkeletalComp]()
-			{
-				if (UAnimInstance* AnimInstance = SkeletalComp->GetAnimInstance())
 				{
-					TArray<const FProperty*> AnimProperties;
-					CollectEditableReflectedProperties(AnimInstance, AnimProperties);
-					if (!AnimProperties.empty())
-					{
-						DrawDetailsSeparator();
-						DrawDetailsSectionLabel("Anim Instance");
-						for (const FProperty* Property : AnimProperties)
-						{
-							RenderReflectionProperty(FPropertyHandle{ AnimInstance, Property });
-						}
-					}
-				}
-				RenderSkeletalStateMachinePreview(SkeletalComp);
-				RenderSkeletalBonePoseDebug(SkeletalComp);
-			});
+					RenderSkeletalBonePoseDebug(SkeletalComp);
+				});
 		}
 
 		if (UInterpToMovementComponent* InterpComp = Cast<UInterpToMovementComponent>(Component))
@@ -1948,13 +2049,21 @@ bool FEditorPropertyWidget::RenderSoftObjectPtrWidget(const FProperty& Property,
 		}
 		else if (Property.ObjectClass->IsChildOf(UAnimationAsset::StaticClass()))
 		{
-			LocalOptions = FResourceManager::Get().GetAnimSequencePaths();
+			LocalOptions.clear();
+
+			for (const FString& Path : FResourceManager::Get().GetAnimSequencePaths())
+			{
+				if (FAssetPathPolicy::IsAnimSequenceAssetPath(Path))
+				{
+					LocalOptions.push_back(Path);
+				}
+			}
+
 			Options = &LocalOptions;
 		}
 		else if (Property.ObjectClass->IsChildOf(UAnimGraphAsset::StaticClass()))
 		{
-			LocalOptions = CollectAnimGraphAssetPaths();
-			Options = &LocalOptions;
+			Options = &EditorEngine->GetAssetService().GetAnimGraphAssetPaths();
 		}
 	}
 
@@ -2187,9 +2296,17 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 	case EPropertyType::String:
 	{
 		FString* Val = static_cast<FString*>(ValuePtr);
+		if (Property.Name && std::strcmp(Property.Name, "ScriptName") == 0 && Cast<UScriptComponent>(NotifyTarget))
+		{
+			return RenderLuaScriptComboWidget(*Val, Label);
+		}
+
 		if (Property.Name && std::strcmp(Property.Name, "AnimGraphAssetPath") == 0)
 		{
-			return RenderAnimGraphAssetPathWidget(*Val, Label);
+			const TArray<FString>& AnimGraphPaths = EditorEngine
+				? EditorEngine->GetAssetService().GetAnimGraphAssetPaths()
+				: EmptyAssetNames();
+			return RenderAnimGraphAssetPathWidget(*Val, Label, AnimGraphPaths);
 		}
 
 		char Buf[512];

@@ -24,11 +24,12 @@ private:
 	USkeletalMeshComponent* OwnerComponent = nullptr;
 	UAnimSequenceBase* Sequence = nullptr;
 	float CurrentTime = 0.0f;
+	float PreviousTime = 0.0f;
 
 public:
 	FAnimSequencePoseSource(USkeletalMeshComponent* InOwnerComponent, UAnimSequenceBase* InSequence)
 		: OwnerComponent(InOwnerComponent), Sequence(InSequence), CurrentTime(0.0f) {}
-	
+
 	virtual void Update(float DeltaTime) override;
 	virtual bool EvaluatePose(FPoseContext& OutPose) const override;
 	virtual void ResetTime() override;

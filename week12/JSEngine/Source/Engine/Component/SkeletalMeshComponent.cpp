@@ -162,7 +162,7 @@ void USkeletalMeshComponent::SetAnimationStateMachine(UAnimationStateMachine* In
 	Instance->SetStateMachine(InStateMachine);
 
 	AnimInstance = Instance;
-	AnimationMode = EAnimationMode::AnimationCustomMode;
+	AnimationMode = EAnimationMode::AnimationStateMachine;
 }
 
 UAnimationStateMachine* USkeletalMeshComponent::GetAnimationStateMachine() const

@@ -1,9 +1,11 @@
-#include "ScriptComponent.h"
+﻿#include "ScriptComponent.h"
 #include "ScriptManager.h"
+#include "Animation/AnimTypes.h"
 #include "Camera/CameraModifier_CameraShake.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Camera/ShakePattern/SequenceCameraShakePattern.h"
 #include "Camera/ShakePattern/SinusoidalCameraShakePattern.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Camera/CameraShakeBase.h"
 #include "Engine/Runtime/Engine.h"
 #include "GameFramework/PlayerController.h"
@@ -1202,4 +1204,30 @@ void UScriptComponent::OnEndOverlap(
 		OtherBodyIndex,
 		bFromSweep,
 		SweepResult);
+}
+
+void UScriptComponent::OnAnimNotify(
+	USkeletalMeshComponent* MeshComponent,
+	const FAnimNotifyEvent& Notify)
+{
+	if (!ScriptInstance.valid())
+	{
+		return;
+	}
+
+	const FString NotifyName = Notify.NotifyName.ToString();
+
+	sol::state_view Lua(ScriptInstance.lua_state());
+	sol::table NotifyInfo = Lua.create_table();
+	NotifyInfo["NotifyName"] = NotifyName;
+	NotifyInfo["Name"] = NotifyName;
+	NotifyInfo["TriggerTime"] = Notify.TriggerTime;
+	NotifyInfo["Time"] = Notify.TriggerTime;
+
+	CallScriptFunction(
+		"OnAnimNotify",
+		MeshComponent,
+		NotifyName,
+		Notify.TriggerTime,
+		NotifyInfo);
 }

@@ -45,6 +45,35 @@ namespace
         }
     }
 
+    bool AddSelectionMaskCommandsFromMainPass(UPrimitiveComponent* PrimitiveComponent, FRenderBus& RenderBus)
+    {
+        if (!PrimitiveComponent)
+        {
+            return false;
+        }
+
+        bool bAdded = false;
+        const TArray<FRenderCommand>& OpaqueCommands = RenderBus.GetCommands(ERenderPass::Opaque);
+        for (const FRenderCommand& SourceCmd : OpaqueCommands)
+        {
+            if (SourceCmd.SourcePrimitive != PrimitiveComponent || !SourceCmd.MeshBuffer || SourceCmd.SectionIndexCount == 0)
+            {
+                continue;
+            }
+
+            FRenderCommand MaskCmd = SourceCmd;
+            MaskCmd.Type = ERenderCommandType::SelectionMask;
+            MaskCmd.bUseBoneWeightHeatmap = false;
+            MaskCmd.BoneWeightHeatmapBoneIndex = -1;
+            MaskCmd.AvgBoneInfluencePerVertex = 0.0f;
+            MaskCmd.SkinningWorkVertexCount = 0;
+            RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
+            bAdded = true;
+        }
+
+        return bAdded;
+    }
+
     FColor MakeBVHInternalNodeColor(int32 PathIndexFromLeaf, int32 PathLength)
     {
         if (PathLength <= 1)
@@ -288,6 +317,21 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
     bool bHasSelectionMask = false;
     std::unordered_set<int32> SeenBVHNodeIndices;
 
+    auto CollectSelectionBounds = [&](UPrimitiveComponent* PrimitiveComponent)
+    {
+        UDecalComponent* DecalComp = Cast<UDecalComponent>(PrimitiveComponent);
+        if (DecalComp)
+        {
+            CollectOBBCommand(PrimitiveComponent, ShowFlags, RenderBus);
+        }
+        else
+        {
+            CollectAABBCommand(PrimitiveComponent, ShowFlags, RenderBus);
+        }
+
+        CollectBVHInternalNodeAABBs(PrimitiveComponent, ShowFlags, RenderBus, SeenBVHNodeIndices);
+    };
+
     for (UActorComponent* Comp : Actor->GetComponents())
     {
         if (UDirectionalLightComponent* DirLight = Cast<UDirectionalLightComponent>(Comp))
@@ -312,6 +356,15 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
             UWorld* World = Actor->GetFocusedWorld();
             if (World && World->GetWorldType() != EWorldType::Editor)
                 continue;
+        }
+
+        if (primitiveComponent->SupportsOutline() &&
+            primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SkeletalMesh &&
+            AddSelectionMaskCommandsFromMainPass(primitiveComponent, RenderBus))
+        {
+            bHasSelectionMask = true;
+            CollectSelectionBounds(primitiveComponent);
+            continue;
         }
 
         FMeshBuffer* MeshBuffer = nullptr;
@@ -511,17 +564,7 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
         }
         bHasSelectionMask = true;
 
-        UDecalComponent* DecalComp = Cast<UDecalComponent>(primitiveComponent);
-        if (DecalComp)
-        {
-            CollectOBBCommand(primitiveComponent, ShowFlags, RenderBus);
-        }
-        else
-        {
-            CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
-        }
-
-        CollectBVHInternalNodeAABBs(primitiveComponent, ShowFlags, RenderBus, SeenBVHNodeIndices);
+        CollectSelectionBounds(primitiveComponent);
     }
 
     return bHasSelectionMask;

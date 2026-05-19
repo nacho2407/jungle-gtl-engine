@@ -264,7 +264,6 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
         const bool bNeedsUpload = SkeletalMeshComp->ConsumeRenderStateDirty();
 
         const ESkinningMode SkinningMode = SkeletalMeshComp->GetResolvedSkinningMode();
-        const bool bUseCPUSkinning = SkinningMode == ESkinningMode::CPU;
         const bool bUseGPUSkinning = SkinningMode == ESkinningMode::GPU;
         const FBoneWeightHeatmapViewState& BoneWeightHeatmapState = RenderBus.GetBoneWeightHeatmapViewState();
         const bool bUseBoneWeightHeatmap =
@@ -283,10 +282,15 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
         }
         const TArray<uint32>& Indices = SkeletalMesh->GetIndices(); // 이건 immutable이라 걍 asset에서 들고와도 댐
         const FSkeletalMeshSkinningStatCache& SkinningStatCache = GetSkeletalMeshSkinningStatCache(SkeletalMesh);
+        const uint32 UploadedBoneMatrixCount = bUseGPUSkinning
+            ? static_cast<uint32>((std::min<uint64>)(SkinningStatCache.BoneCount, MaxGPUSkinBones))
+            : 0;
         FSkinningStats::Get().AddVisibleSkinnedMesh(
             SkinningStatCache.VertexCount,
             static_cast<uint32>(SkinningStatCache.BoneCount),
-            SkinningStatCache.AvgBoneInfluence);
+            SkinningStatCache.AvgBoneInfluence,
+            bUseGPUSkinning,
+            UploadedBoneMatrixCount);
 
         FMeshBuffer* MeshBuffer = bUseGPUSkinning
             ? MeshBufferManager.GetGPUSkeletalMeshBuffer(SkeletalMesh)

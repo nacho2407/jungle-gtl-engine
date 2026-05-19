@@ -3,7 +3,6 @@
 #include <array>
 #include <iostream>
 #include <algorithm>
-#include <chrono>
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Render/Common/RenderTypes.h"
@@ -11,7 +10,6 @@
 #include "Render/Mesh/MeshManager.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
-#include "Core/Logging/SkinningStats.h"
 #include "Component/BillboardComponent.h"
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
 #include "Component/PrimitiveComponent.h"
@@ -19,6 +17,7 @@
 #include "GameFramework/AActor.h"
 #include "Render/Renderer/RenderTarget/RenderTargetFactory.h"
 #include "Render/Renderer/RenderTarget/DepthStencilFactory.h"
+#include "Render/Renderer/RenderFlow/SelectionMaskRenderPass.h"
 #include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/ShadowAtlasManager.h"
@@ -53,25 +52,10 @@ void BindVertexFactoryResources(
 			? BoneMatrixConstants
 			: &EmptyBoneMatrixConstants;
 
-		const bool bRecordBoneMatrixUpload = BoneMatrixConstants != nullptr;
-		std::chrono::steady_clock::time_point UploadStart;
-		if (bRecordBoneMatrixUpload)
-		{
-			UploadStart = std::chrono::steady_clock::now();
-		}
-
 		RenderResources->BoneMatrixConstantBuffer.Update(
 			Context,
 			ConstantsToBind,
 			sizeof(FBoneMatrixConstants));
-
-		if (bRecordBoneMatrixUpload)
-		{
-			const auto UploadEnd = std::chrono::steady_clock::now();
-			FSkinningStats::Get().AddGPUBoneMatrixUpload(
-				std::chrono::duration<double, std::milli>(UploadEnd - UploadStart).count(),
-				sizeof(FBoneMatrixConstants));
-		}
 
 		ID3D11Buffer* BoneBuffer = RenderResources->BoneMatrixConstantBuffer.GetBuffer();
 		Context->VSSetConstantBuffers(5, 1, &BoneBuffer);
@@ -322,6 +306,7 @@ void FRenderer::Create(HWND hWindow)
 			&FVertexFactoryRegistry::Get(EVertexFactoryType::StaticMesh).PositionOnlyLayout);
 	}
 
+	FSelectionMaskRenderPass::WarmUpShaderPrograms();
 }
 
 void FRenderer::CreateResources()

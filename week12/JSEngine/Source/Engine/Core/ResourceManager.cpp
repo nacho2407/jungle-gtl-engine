@@ -1484,7 +1484,8 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
 	}
 
 	AnimSequenceMap[NormalizedPath] = LoadedSequence;
-	if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), NormalizedPath) == AnimSequenceFilePaths.end())
+	if (FAssetPathPolicy::IsAnimSequenceAssetPath(NormalizedPath)
+		&& std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), NormalizedPath) == AnimSequenceFilePaths.end())
 	{
 		AnimSequenceFilePaths.push_back(NormalizedPath);
 	}

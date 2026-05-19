@@ -694,3 +694,14 @@ void AActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Othe
 		}
 	}
 }
+
+void AActor::OnAnimNotify(USkeletalMeshComponent* MeshComponent, const FAnimNotifyEvent& Notify)
+{
+	for (UActorComponent* Component : GetComponents())
+	{
+		if (UScriptComponent* ScriptComponent = Cast<UScriptComponent>(Component))
+		{
+			ScriptComponent->OnAnimNotify(MeshComponent, Notify);
+		}
+	}
+}
