@@ -116,6 +116,17 @@ void USkeletalMeshComponent::PostDuplicate(UObject* Original)
 	AnimationMode = SourceComponent->AnimationMode;
 	UAnimSingleNodeInstance* SourceSingleNode = Cast<UAnimSingleNodeInstance>(SourceComponent->AnimInstance);
 
+	// SingleNodeInstance가 들고 있는 최신 path를 우선 사용하고,
+	// 없으면 component의 AnimationAssetPath를 fallback으로 사용합니다.
+	if (SourceSingleNode && !SourceSingleNode->GetAnimationAssetPath().empty())
+	{
+		AnimationAssetPath.SetPath(SourceSingleNode->GetAnimationAssetPath());
+	}
+	else
+	{
+		AnimationAssetPath.SetPath(SourceComponent->AnimationAssetPath.GetPath());
+	}
+
 	if (AnimationMode == EAnimationMode::AnimationSingleNode)
 	{
 		ApplyAnimationFromAssetPath();
@@ -492,6 +503,10 @@ void USkeletalMeshComponent::ApplyAnimationFromAssetPath()
 		SetAnimation(nullptr);
 		return;
 	}
+
+	// AnimationToPlay가 예전 포인터를 들고 있으면 SetAnimationMode 내부에서
+	// SyncAnimationAssetPathFromAnimation()이 stale path로 덮어쓰므로, 미리 클리어합니다.
+	AnimationToPlay = nullptr;
 
 	SetAnimationMode(EAnimationMode::AnimationSingleNode);
 	UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
