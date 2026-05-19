@@ -1,13 +1,13 @@
 ﻿#pragma once
 
 #include "Animation/AnimGraphAsset.h"
+#include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Component/SkinnedMeshComponent.h"
 #include "Core/Delegates/Delegate.h"
 #include "Object/ObjectPtr.h"
 
 struct FPoseContext;
-class UAnimInstance;
 class UAnimSequenceBase;
 class UAnimSingleNodeInstance;
 class UAnimationAsset;
@@ -118,7 +118,8 @@ private:
 	void ApplyAnimationFromAssetPath();
 	void SyncAnimationAssetPathFromAnimation(UAnimationAsset* Animation);
 
-	UAnimInstance* AnimInstance = nullptr;
+	UPROPERTY(DisplayName = "Anim Instance", ReferenceKind = Asset)
+	TObjectPtr<UAnimInstance> AnimInstance = nullptr;
 
 	UPROPERTY(DisplayName = "Animation")
 	TSoftObjectPtr<UAnimationAsset> AnimationAssetPath;

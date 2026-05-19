@@ -7,24 +7,84 @@
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimationStateMachine.h"
 #include "Animation/StateMachineAnimInstance.h"
+#include "Core/Reflection/ReflectionRegistry.h"
 #include "Core/ResourceManager.h"
 #include "Core/Logging/SkinningStats.h"
 #include "Core/Paths.h"
 #include "GameFramework/AActor.h"
+#include "Object/Class.h"
+#include "Object/Object.h"
 
 #include <cstring>
 
 namespace
 {
+	constexpr const char* AnimInstanceDataKey = "AnimInstanceData";
+	constexpr const char* SerializedObjectTypeKey = "Type";
+
 	FString GetPersistentAnimationAssetPath(UAnimationAsset* Animation);
+	UAnimInstance* CreateAnimInstanceFromClassName(const FString& ClassName);
 }
 
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
 {
 	USkinnedMeshComponent::Serialize(Ar);
 
-	if (!Ar.IsLoading())
+	if (Ar.IsSaving())
+	{
+		if (AnimInstance)
+		{
+			Ar.BeginObject(AnimInstanceDataKey);
+			AnimInstance->Serialize(Ar);
+			Ar.EndObject();
+		}
 		return;
+	}
+
+	if (!Ar.IsLoading())
+	{
+		return;
+	}
+
+	if (Ar.HasKey(AnimInstanceDataKey))
+	{
+		Ar.BeginObject(AnimInstanceDataKey);
+
+		FString AnimInstanceClassName;
+		if (Ar.HasKey(SerializedObjectTypeKey))
+		{
+			Ar << SerializedObjectTypeKey << AnimInstanceClassName;
+		}
+
+		UAnimInstance* LoadedAnimInstance = CreateAnimInstanceFromClassName(AnimInstanceClassName);
+		if (LoadedAnimInstance)
+		{
+			LoadedAnimInstance->Serialize(Ar);
+			LoadedAnimInstance->Initialize(this);
+			AnimInstance = LoadedAnimInstance;
+
+			if (UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+			{
+				const FString& LoadedAnimationPath = SingleNode->GetAnimationAssetPath();
+				if (!LoadedAnimationPath.empty())
+				{
+					AnimationAssetPath.SetPath(LoadedAnimationPath);
+				}
+				AnimationToPlay = Cast<UAnimationAsset>(SingleNode->GetAnimation());
+			}
+			else if (UAnimGraphInstance* GraphInstance = Cast<UAnimGraphInstance>(AnimInstance))
+			{
+				if (!AnimGraphAssetPath.IsNull())
+				{
+					UAnimGraphAsset* Graph = FResourceManager::Get().LoadAnimGraph(FPaths::Normalize(AnimGraphAssetPath.GetPath()));
+					GraphInstance->SetGraphAsset(Graph);
+				}
+			}
+		}
+
+		Ar.EndObject();
+		return;
+	}
 
 	SetAnimationMode(AnimationMode);
 
@@ -636,5 +696,19 @@ void USkeletalMeshComponent::HandleAnimNotifyEnd(const FAnimNotifyStateEvent& No
 	if (AActor* OwnerActor = GetOwner())
 	{
 		OwnerActor->OnAnimNotifyEnd(this, Notify);
+	}
+}
+
+namespace
+{
+	UAnimInstance* CreateAnimInstanceFromClassName(const FString& ClassName)
+	{
+		UClass* Class = FReflectionRegistry::Get().FindClass(ClassName);
+		if (!Class || !Class->IsChildOf(UAnimInstance::StaticClass()) || Class->HasAnyClassFlags(CF_Abstract))
+		{
+			return nullptr;
+		}
+
+		return Cast<UAnimInstance>(NewObject(Class));
 	}
 }

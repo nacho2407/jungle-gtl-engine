@@ -25,6 +25,10 @@ public:
 
 protected:
 	USkeletalMeshComponent* OwnerComponent = nullptr;
+
+	UPROPERTY(NoEdit)
 	float CurrentTime = 0.0f;
+
+	UPROPERTY(NoEdit)
 	float PreviousTime = 0.0f;
 };
