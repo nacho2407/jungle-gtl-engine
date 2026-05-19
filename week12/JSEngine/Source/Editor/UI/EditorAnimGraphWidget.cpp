@@ -26,6 +26,64 @@ namespace
 		return ImVec2(A.x - B.x, A.y - B.y);
 	}
 
+	ImVec2 Mul(const ImVec2& Value, float Scale)
+	{
+		return ImVec2(Value.x * Scale, Value.y * Scale);
+	}
+
+	float Length(const ImVec2& Value)
+	{
+		return std::sqrt(Value.x * Value.x + Value.y * Value.y);
+	}
+
+	ImVec2 NormalizeSafe(const ImVec2& Value, const ImVec2& Fallback = ImVec2(1.0f, 0.0f))
+	{
+		const float ValueLength = Length(Value);
+		return ValueLength > 0.001f ? ImVec2(Value.x / ValueLength, Value.y / ValueLength) : Fallback;
+	}
+
+	ImVec2 Perpendicular(const ImVec2& Value)
+	{
+		return ImVec2(-Value.y, Value.x);
+	}
+
+	ImVec2 CenterOfRect(const ImVec2& Min, const ImVec2& Max)
+	{
+		return ImVec2((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
+	}
+
+	ImVec2 GetRectEdgePoint(const ImVec2& Min, const ImVec2& Max, const ImVec2& Toward)
+	{
+		const ImVec2 Center = CenterOfRect(Min, Max);
+		const ImVec2 Delta = Sub(Toward, Center);
+		const float HalfWidth = std::max(1.0f, (Max.x - Min.x) * 0.5f);
+		const float HalfHeight = std::max(1.0f, (Max.y - Min.y) * 0.5f);
+
+		if (std::fabs(Delta.x) <= 0.001f && std::fabs(Delta.y) <= 0.001f)
+		{
+			return ImVec2(Max.x, Center.y);
+		}
+
+		const float ScaleX = std::fabs(Delta.x) > 0.001f ? HalfWidth / std::fabs(Delta.x) : std::numeric_limits<float>::max();
+		const float ScaleY = std::fabs(Delta.y) > 0.001f ? HalfHeight / std::fabs(Delta.y) : std::numeric_limits<float>::max();
+		const float Scale = std::min(ScaleX, ScaleY);
+		return Add(Center, Mul(Delta, Scale));
+	}
+
+	void DrawArrowHead(ImDrawList* DrawList, const ImVec2& Tip, const ImVec2& Direction, ImU32 Color, float Size);
+
+	void DrawDirectionalBezier(ImDrawList* DrawList, const ImVec2& From, const ImVec2& To, ImU32 Color, float Thickness, float ArrowSize)
+	{
+		const ImVec2 Delta = Sub(To, From);
+		const float Distance = Length(Delta);
+		const ImVec2 Direction = NormalizeSafe(Delta);
+		const float HandleLength = std::min(120.0f, std::max(45.0f, Distance * 0.35f));
+		const ImVec2 ControlA = Add(From, Mul(Direction, HandleLength));
+		const ImVec2 ControlB = Sub(To, Mul(Direction, HandleLength));
+		DrawList->AddBezierCubic(From, ControlA, ControlB, To, Color, Thickness);
+		DrawArrowHead(DrawList, To, Sub(To, ControlB), Color, ArrowSize);
+	}
+
 	ImVec2 ToImVec2(const FVector2& Value)
 	{
 		return ImVec2(Value.X, Value.Y);
@@ -231,9 +289,16 @@ namespace
 		return Add(CanvasOrigin, ImVec2(Node.Position.X + AnimGraphNodeWidth, Node.Position.Y + GetAnimGraphNodeHeight(Node) * 0.5f));
 	}
 
-	ImVec2 GetStateMachineEntryNodePos(const ImVec2& CanvasOrigin)
+	ImVec2 GetStateMachineEntryNodePos(const FAnimStateMachineDesc& Machine, const ImVec2& CanvasOrigin)
 	{
-		return Add(CanvasOrigin, ImVec2(36.0f, 84.0f));
+		float X = Machine.EntryPosition.X;
+		float Y = Machine.EntryPosition.Y;
+		if (X == 0.0f && Y == 0.0f)
+		{
+			X = 36.0f;
+			Y = 84.0f;
+		}
+		return Add(CanvasOrigin, ImVec2(X, Y));
 	}
 
 	int32 FindStateIndexById(const FAnimStateMachineDesc& Machine, int32 StateId)
@@ -487,17 +552,17 @@ void FEditorAnimGraphWidget::RenderToolbar()
 
 	if (ImGui::Button("Add Sequence"))
 	{
-		AddSequencePlayerNode(FVector2(120.0f, 120.0f));
+		AddSequencePlayerNode(GetToolbarSpawnPosition());
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Add StateMachine"))
 	{
-		AddStateMachineNode(FVector2(120.0f, 120.0f));
+		AddStateMachineNode(GetToolbarSpawnPosition());
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Add Output"))
 	{
-		AddOutputPoseNode(FVector2(120.0f, 120.0f));
+		AddOutputPoseNode(GetToolbarSpawnPosition());
 	}
 	ImGui::SameLine();
 	ImGui::BeginDisabled(SelectedNodeId < 0);
@@ -538,6 +603,8 @@ void FEditorAnimGraphWidget::RenderAnimGraphCanvas()
 {
 	const ImVec2 CanvasOrigin = ImGui::GetCursorScreenPos();
 	const ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
+	LastAnimGraphCanvasOrigin = CanvasOrigin;
+	LastAnimGraphCanvasSize = CanvasSize;
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
 	DrawList->AddRectFilled(
@@ -601,6 +668,8 @@ void FEditorAnimGraphWidget::RenderStateMachineCanvas()
 
 	const ImVec2 CanvasOrigin = ImGui::GetCursorScreenPos();
 	const ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
+	LastStateMachineCanvasOrigin = CanvasOrigin;
+	LastStateMachineCanvasSize = CanvasSize;
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
 	DrawList->AddRectFilled(
@@ -643,7 +712,7 @@ void FEditorAnimGraphWidget::RenderStateMachineCanvas()
 	DrawList->AddText(
 		Add(CanvasOrigin, ImVec2(12.0f, 12.0f)),
 		ImGui::GetColorU32(ImGuiCol_TextDisabled),
-		"StateMachine View - drag states, connect Out -> In or In -> Out. Arrow shows transition direction.");
+		"StateMachine View - drag states, connect edge to edge. Arrow shows transition direction.");
 
 	if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
 	{
@@ -665,16 +734,28 @@ void FEditorAnimGraphWidget::RenderStateMachineCanvas()
 
 	RenderStateMachineLinks(*MachineNode, CanvasOrigin);
 
-	const ImVec2 EntryPos = GetStateMachineEntryNodePos(CanvasOrigin);
+	const ImVec2 EntryPos = GetStateMachineEntryNodePos(MachineNode->StateMachine, CanvasOrigin);
 	const ImVec2 EntryMax = Add(EntryPos, ImVec2(StateMachineEntryNodeWidth, StateMachineEntryNodeHeight));
 	DrawList->AddRectFilled(EntryPos, EntryMax, ImGui::GetColorU32(ImVec4(0.28f, 0.28f, 0.18f, 1.0f)), 6.0f);
 	DrawList->AddRect(EntryPos, EntryMax, ImGui::GetColorU32(ImVec4(0.70f, 0.64f, 0.32f, 1.0f)), 6.0f);
 	DrawList->AddText(Add(EntryPos, ImVec2(12.0f, 8.0f)), ImGui::GetColorU32(ImGuiCol_Text), "Entry");
 	DrawList->AddText(Add(EntryPos, ImVec2(12.0f, 27.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), GetStateDisplayName(MachineNode->StateMachine, MachineNode->StateMachine.EntryStateId).c_str());
-	DrawList->AddCircleFilled(
-		Add(EntryPos, ImVec2(StateMachineEntryNodeWidth, StateMachineEntryNodeHeight * 0.5f)),
-		StateMachineNodePinRadius,
-		ImGui::GetColorU32(ImVec4(1.0f, 0.82f, 0.35f, 1.0f)));
+
+	ImGui::SetCursorScreenPos(EntryPos);
+	ImGui::InvisibleButton("##StateMachineEntryNode", ImVec2(StateMachineEntryNodeWidth, StateMachineEntryNodeHeight), ImGuiButtonFlags_MouseButtonLeft);
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+	{
+		SelectedNodeId = MachineNode->NodeId;
+		SelectedStateId = -1;
+		SelectedTransitionIndex = -1;
+	}
+	if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+	{
+		const ImVec2 Delta = ImGui::GetIO().MouseDelta;
+		MachineNode->StateMachine.EntryPosition.X += Delta.x;
+		MachineNode->StateMachine.EntryPosition.Y += Delta.y;
+		bDirty = true;
+	}
 
 	for (int32 StateIndex = 0; StateIndex < static_cast<int32>(MachineNode->StateMachine.States.size()); ++StateIndex)
 	{
@@ -695,13 +776,16 @@ void FEditorAnimGraphWidget::RenderStateMachineLinks(FAnimGraphNodeDesc& Machine
 	if (EntryStateIndex >= 0)
 	{
 		const FAnimStateDesc& EntryState = Machine.States[EntryStateIndex];
-		const ImVec2 EntryPos = GetStateMachineEntryNodePos(CanvasOrigin);
-		const ImVec2 From = Add(EntryPos, ImVec2(StateMachineEntryNodeWidth, StateMachineEntryNodeHeight * 0.5f));
-		const ImVec2 To = GetStateMachineStateInputPinPos(EntryState, CanvasOrigin, EntryStateIndex);
+		const ImVec2 EntryMin = GetStateMachineEntryNodePos(Machine, CanvasOrigin);
+		const ImVec2 EntryMax = Add(EntryMin, ImVec2(StateMachineEntryNodeWidth, StateMachineEntryNodeHeight));
+		const ImVec2 StateMin = GetStateMachineStateNodePos(EntryState, CanvasOrigin, EntryStateIndex);
+		const ImVec2 StateMax = Add(StateMin, ImVec2(StateMachineStateNodeWidth, StateMachineStateNodeHeight));
+		const ImVec2 EntryCenter = CenterOfRect(EntryMin, EntryMax);
+		const ImVec2 StateCenter = CenterOfRect(StateMin, StateMax);
+		const ImVec2 From = GetRectEdgePoint(EntryMin, EntryMax, StateCenter);
+		const ImVec2 To = GetRectEdgePoint(StateMin, StateMax, EntryCenter);
 		const ImU32 EntryLinkColor = ImGui::GetColorU32(ImVec4(1.0f, 0.82f, 0.35f, 1.0f));
-		const ImVec2 EntryControlB = Sub(To, ImVec2(70.0f, 0.0f));
-		DrawList->AddBezierCubic(From, Add(From, ImVec2(70.0f, 0.0f)), EntryControlB, To, EntryLinkColor, 3.0f);
-		DrawArrowHead(DrawList, To, Sub(To, EntryControlB), EntryLinkColor, 16.0f);
+		DrawDirectionalBezier(DrawList, From, To, EntryLinkColor, 3.0f, 16.0f);
 	}
 
 	int32 ClickedTransitionIndex = -1;
@@ -720,10 +804,18 @@ void FEditorAnimGraphWidget::RenderStateMachineLinks(FAnimGraphNodeDesc& Machine
 
 		const FAnimStateDesc& FromState = Machine.States[FromIndex];
 		const FAnimStateDesc& ToState = Machine.States[ToIndex];
-		const ImVec2 From = GetStateMachineStateOutputPinPos(FromState, CanvasOrigin, FromIndex);
-		const ImVec2 To = GetStateMachineStateInputPinPos(ToState, CanvasOrigin, ToIndex);
-		const ImVec2 ControlA = Add(From, ImVec2(80.0f, 0.0f));
-		const ImVec2 ControlB = Sub(To, ImVec2(80.0f, 0.0f));
+		const ImVec2 FromMin = GetStateMachineStateNodePos(FromState, CanvasOrigin, FromIndex);
+		const ImVec2 FromMax = Add(FromMin, ImVec2(StateMachineStateNodeWidth, StateMachineStateNodeHeight));
+		const ImVec2 ToMin = GetStateMachineStateNodePos(ToState, CanvasOrigin, ToIndex);
+		const ImVec2 ToMax = Add(ToMin, ImVec2(StateMachineStateNodeWidth, StateMachineStateNodeHeight));
+		const ImVec2 FromCenter = CenterOfRect(FromMin, FromMax);
+		const ImVec2 ToCenter = CenterOfRect(ToMin, ToMax);
+		const bool bHasReverseTransition = HasTransition(Machine, Transition.ToStateId, Transition.FromStateId);
+		const ImVec2 Direction = NormalizeSafe(Sub(ToCenter, FromCenter));
+		const ImVec2 Normal = Perpendicular(Direction);
+		const float LaneOffset = bHasReverseTransition ? 22.0f : 0.0f;
+		const ImVec2 From = Add(GetRectEdgePoint(FromMin, FromMax, ToCenter), Mul(Normal, LaneOffset));
+		const ImVec2 To = Add(GetRectEdgePoint(ToMin, ToMax, FromCenter), Mul(Normal, LaneOffset));
 		const bool bSelectedTransition = SelectedTransitionIndex == TransitionIndex;
 		const bool bRelatedToSelectedState = SelectedStateId == Transition.FromStateId || SelectedStateId == Transition.ToStateId;
 		const ImU32 LinkColor = ImGui::GetColorU32(
@@ -733,16 +825,15 @@ void FEditorAnimGraphWidget::RenderStateMachineLinks(FAnimGraphNodeDesc& Machine
 			? ImVec4(0.95f, 0.72f, 1.0f, 1.0f)
 			: ImVec4(0.72f, 0.60f, 0.95f, 1.0f));
 
-		DrawList->AddBezierCubic(
+		DrawDirectionalBezier(
+			DrawList,
 			From,
-			ControlA,
-			ControlB,
 			To,
 			LinkColor,
-			bSelectedTransition ? 4.0f : (bRelatedToSelectedState ? 3.5f : 2.5f));
-		DrawArrowHead(DrawList, To, Sub(To, ControlB), LinkColor, bSelectedTransition ? 20.0f : 16.0f);
+			bSelectedTransition ? 4.0f : (bRelatedToSelectedState ? 3.5f : 2.5f),
+			bSelectedTransition ? 20.0f : 16.0f);
 
-		if (bCanSelectTransition && DistanceSquaredToBezier(MousePos, From, ControlA, ControlB, To) <= 14.0f * 14.0f)
+		if (bCanSelectTransition && DistanceSquaredToSegment(MousePos, From, To) <= 18.0f * 18.0f)
 		{
 			ClickedTransitionIndex = TransitionIndex;
 		}
@@ -778,25 +869,10 @@ void FEditorAnimGraphWidget::RenderPendingStateMachineTransitionLink(FAnimGraphN
 		}
 
 		const FAnimStateDesc& FromState = Machine.States[FromIndex];
-		const ImVec2 From = GetStateMachineStateOutputPinPos(FromState, CanvasOrigin, FromIndex);
-		const ImVec2 ControlB = Sub(MousePos, ImVec2(80.0f, 0.0f));
-		DrawList->AddBezierCubic(From, Add(From, ImVec2(80.0f, 0.0f)), ControlB, MousePos, LinkColor, 3.0f);
-		DrawArrowHead(DrawList, MousePos, Sub(MousePos, ControlB), LinkColor, 16.0f);
-	}
-	else if (DraggingTransitionToStateId >= 0)
-	{
-		const int32 ToIndex = FindStateIndexById(Machine, DraggingTransitionToStateId);
-		if (ToIndex < 0)
-		{
-			DraggingTransitionToStateId = -1;
-			return;
-		}
-
-		const FAnimStateDesc& ToState = Machine.States[ToIndex];
-		const ImVec2 To = GetStateMachineStateInputPinPos(ToState, CanvasOrigin, ToIndex);
-		const ImVec2 ControlB = Sub(To, ImVec2(80.0f, 0.0f));
-		DrawList->AddBezierCubic(MousePos, Add(MousePos, ImVec2(80.0f, 0.0f)), ControlB, To, LinkColor, 3.0f);
-		DrawArrowHead(DrawList, To, Sub(To, ControlB), LinkColor, 16.0f);
+		const ImVec2 FromMin = GetStateMachineStateNodePos(FromState, CanvasOrigin, FromIndex);
+		const ImVec2 FromMax = Add(FromMin, ImVec2(StateMachineStateNodeWidth, StateMachineStateNodeHeight));
+		const ImVec2 From = GetRectEdgePoint(FromMin, FromMax, MousePos);
+		DrawDirectionalBezier(DrawList, From, MousePos, LinkColor, 3.0f, 16.0f);
 	}
 
 	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
@@ -838,6 +914,23 @@ void FEditorAnimGraphWidget::RenderSelectedStateMachineStateEditor(FAnimGraphNod
 		{
 			bDirty = true;
 		}
+
+		if (ImGui::DragFloat("Play Rate", &State.PlayRate, 0.01f, -10.0f, 10.0f))
+		{
+			bDirty = true;
+		}
+
+		if (ImGui::Checkbox("Loop", &State.bLoop))
+		{
+			bDirty = true;
+		}
+
+		ImGui::BeginDisabled(State.bLoop);
+		if (ImGui::Checkbox("Auto Next On End", &State.bAutoAdvanceOnEnd))
+		{
+			bDirty = true;
+		}
+		ImGui::EndDisabled();
 
 		if (ImGui::DragFloat2("Position", &State.Position.X, 1.0f))
 		{
@@ -1024,7 +1117,10 @@ void FEditorAnimGraphWidget::RenderSelectedStateMachineTransitionEditor(FAnimGra
 			"BoolParameter",
 			"FloatGreater",
 			"FloatLess",
-			"LuaFunction"
+			"LuaFunction",
+			"IntEquals",
+			"IntGreater",
+			"IntLess"
 		};
 		int32 ConditionIndex = static_cast<int32>(Transition.Condition.Type);
 		if (ConditionIndex < 0 || ConditionIndex >= static_cast<int32>(std::size(ConditionLabels)))
@@ -1039,7 +1135,10 @@ void FEditorAnimGraphWidget::RenderSelectedStateMachineTransitionEditor(FAnimGra
 
 		if (Transition.Condition.Type == EAnimTransitionConditionType::BoolParameter
 			|| Transition.Condition.Type == EAnimTransitionConditionType::FloatGreater
-			|| Transition.Condition.Type == EAnimTransitionConditionType::FloatLess)
+			|| Transition.Condition.Type == EAnimTransitionConditionType::FloatLess
+			|| Transition.Condition.Type == EAnimTransitionConditionType::IntEquals
+			|| Transition.Condition.Type == EAnimTransitionConditionType::IntGreater
+			|| Transition.Condition.Type == EAnimTransitionConditionType::IntLess)
 		{
 			char ParameterBuffer[128] = {};
 			std::strncpy(ParameterBuffer, Transition.Condition.ParameterName.c_str(), sizeof(ParameterBuffer) - 1);
@@ -1061,6 +1160,15 @@ void FEditorAnimGraphWidget::RenderSelectedStateMachineTransitionEditor(FAnimGra
 			|| Transition.Condition.Type == EAnimTransitionConditionType::FloatLess)
 		{
 			if (ImGui::DragFloat("Threshold", &Transition.Condition.Threshold, 0.1f))
+			{
+				bDirty = true;
+			}
+		}
+		else if (Transition.Condition.Type == EAnimTransitionConditionType::IntEquals
+			|| Transition.Condition.Type == EAnimTransitionConditionType::IntGreater
+			|| Transition.Condition.Type == EAnimTransitionConditionType::IntLess)
+		{
+			if (ImGui::InputInt("Int Value", &Transition.Condition.IntValue))
 			{
 				bDirty = true;
 			}
@@ -1102,12 +1210,11 @@ void FEditorAnimGraphWidget::RenderStateMachineStateNode(FAnimGraphNodeDesc& Mac
 	const ImVec2 OutputPin = Add(NodePos, ImVec2(StateMachineStateNodeWidth, StateMachineStateNodeHeight * 0.5f));
 	const bool bSelected = SelectedStateId == State.StateId;
 	const bool bEntry = MachineNode.StateMachine.EntryStateId == State.StateId;
+	const bool bStateBodyHovered = ImGui::IsMouseHoveringRect(NodePos, NodeMax, true);
 	const bool bInputPinHovered = IsMouseNear(InputPin, AnimGraphPinHitRadius);
 	const bool bOutputPinHovered = IsMouseNear(OutputPin, AnimGraphPinHitRadius);
 	const bool bDraggingFromThisOutput = DraggingTransitionFromStateId == State.StateId;
-	const bool bDraggingToThisInput = DraggingTransitionToStateId == State.StateId;
-	const bool bValidInputDrop = DraggingTransitionFromStateId >= 0 && DraggingTransitionFromStateId != State.StateId && bInputPinHovered;
-	const bool bValidOutputDrop = DraggingTransitionToStateId >= 0 && DraggingTransitionToStateId != State.StateId && bOutputPinHovered;
+	const bool bValidInputDrop = DraggingTransitionFromStateId >= 0 && DraggingTransitionFromStateId != State.StateId && bStateBodyHovered;
 	const bool bAnyTransitionDrag = DraggingTransitionFromStateId >= 0 || DraggingTransitionToStateId >= 0;
 
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
@@ -1160,25 +1267,13 @@ void FEditorAnimGraphWidget::RenderStateMachineStateNode(FAnimGraphNodeDesc& Mac
 		SelectedNodeId = MachineNode.NodeId;
 		SelectedStateId = State.StateId;
 		SelectedTransitionIndex = -1;
-		DraggingTransitionToStateId = State.StateId;
-		DraggingTransitionFromStateId = -1;
+		DraggingTransitionFromStateId = State.StateId;
+		DraggingTransitionToStateId = -1;
 	}
 
 	if (bValidInputDrop && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 	{
 		if (AddTransitionToStateMachine(MachineNode.StateMachine, DraggingTransitionFromStateId, State.StateId))
-		{
-			SelectedNodeId = MachineNode.NodeId;
-			SelectedStateId = -1;
-			SelectedTransitionIndex = static_cast<int32>(MachineNode.StateMachine.Transitions.size()) - 1;
-			bDirty = true;
-		}
-		DraggingTransitionFromStateId = -1;
-		DraggingTransitionToStateId = -1;
-	}
-	else if (bValidOutputDrop && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
-	{
-		if (AddTransitionToStateMachine(MachineNode.StateMachine, State.StateId, DraggingTransitionToStateId))
 		{
 			SelectedNodeId = MachineNode.NodeId;
 			SelectedStateId = -1;
@@ -1202,21 +1297,25 @@ void FEditorAnimGraphWidget::RenderStateMachineStateNode(FAnimGraphNodeDesc& Mac
 	}
 	else
 	{
-		DrawList->AddText(Add(NodePos, ImVec2(9.0f, 48.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "Drag to move");
+		const char* LoopText = State.bLoop ? "Loop" : (State.bAutoAdvanceOnEnd ? "Once -> Auto" : "Once");
+		DrawList->AddText(Add(NodePos, ImVec2(9.0f, 48.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), LoopText);
 	}
 	DrawList->PopClipRect();
 
 	const ImU32 PinOutlineColor = ImGui::GetColorU32(ImVec4(0.12f, 0.10f, 0.16f, 1.0f));
-	const ImU32 PinColor = ImGui::GetColorU32(ImVec4(0.78f, 0.76f, 1.0f, 1.0f));
 	const ImU32 PinHoverColor = ImGui::GetColorU32(ImVec4(1.0f, 0.82f, 0.35f, 1.0f));
-	const bool bInputHighlighted = bInputPinHovered || bValidInputDrop || bDraggingToThisInput;
-	const bool bOutputHighlighted = bOutputPinHovered || bValidOutputDrop || bDraggingFromThisOutput;
-	DrawList->AddCircleFilled(InputPin, StateMachineNodePinRadius + (bInputHighlighted ? 2.0f : 0.0f), bInputHighlighted ? PinHoverColor : PinColor);
-	DrawList->AddCircle(InputPin, StateMachineNodePinRadius + 1.0f, PinOutlineColor, 12, 1.5f);
-	DrawList->AddText(Sub(InputPin, ImVec2(24.0f, 19.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "In");
-	DrawList->AddCircleFilled(OutputPin, StateMachineNodePinRadius + (bOutputHighlighted ? 2.0f : 0.0f), bOutputHighlighted ? PinHoverColor : PinColor);
-	DrawList->AddCircle(OutputPin, StateMachineNodePinRadius + 1.0f, PinOutlineColor, 12, 1.5f);
-	DrawList->AddText(Add(OutputPin, ImVec2(8.0f, -19.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "Out");
+	const bool bInputHighlighted = bInputPinHovered || bValidInputDrop || bDraggingFromThisOutput;
+	const bool bOutputHighlighted = bOutputPinHovered || bValidInputDrop || bDraggingFromThisOutput;
+	if (bInputHighlighted)
+	{
+		DrawList->AddCircleFilled(InputPin, StateMachineNodePinRadius + 2.0f, PinHoverColor);
+		DrawList->AddCircle(InputPin, StateMachineNodePinRadius + 3.0f, PinOutlineColor, 12, 1.5f);
+	}
+	if (bOutputHighlighted)
+	{
+		DrawList->AddCircleFilled(OutputPin, StateMachineNodePinRadius + 2.0f, PinHoverColor);
+		DrawList->AddCircle(OutputPin, StateMachineNodePinRadius + 3.0f, PinOutlineColor, 12, 1.5f);
+	}
 }
 
 void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& CanvasOrigin, int32 NodeIndex)
@@ -1358,7 +1457,6 @@ void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& 
 	ImGui::PopID();
 
 	const ImU32 PinOutlineColor = ImGui::GetColorU32(ImVec4(0.12f, 0.15f, 0.20f, 1.0f));
-	const ImU32 PinColor = ImGui::GetColorU32(ImVec4(0.72f, 0.82f, 1.0f, 1.0f));
 	const ImU32 PinHoverColor = ImGui::GetColorU32(ImVec4(1.0f, 0.82f, 0.35f, 1.0f));
 
 	if (Node.Type == EAnimGraphNodeType::OutputPose)
@@ -1366,9 +1464,11 @@ void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& 
 		const ImVec2 InputPin = GetAnimGraphNodeInputPinPos(Node, CanvasOrigin);
 		const bool bHoveredInputPin = IsMouseNear(InputPin, AnimGraphPinHitRadius);
 		const bool bDraggingThisInputPin = DraggingInputNodeId == Node.NodeId;
-		DrawList->AddCircleFilled(InputPin, AnimGraphPinRadius + ((bHoveredInputPin || bDraggingThisInputPin) ? 2.0f : 0.0f), (bHoveredInputPin || bDraggingThisInputPin) ? PinHoverColor : PinColor);
-		DrawList->AddCircle(InputPin, AnimGraphPinRadius + 1.0f, PinOutlineColor, 12, 1.5f);
-		DrawList->AddText(Sub(InputPin, ImVec2(24.0f, 19.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "In");
+		if (bHoveredInputPin || bDraggingThisInputPin)
+		{
+			DrawList->AddCircleFilled(InputPin, AnimGraphPinRadius + 2.0f, PinHoverColor);
+			DrawList->AddCircle(InputPin, AnimGraphPinRadius + 3.0f, PinOutlineColor, 12, 1.5f);
+		}
 
 		if (bHoveredInputPin && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
@@ -1382,9 +1482,11 @@ void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& 
 		const ImVec2 OutputPin = GetAnimGraphNodeOutputPinPos(Node, CanvasOrigin);
 		const bool bHoveredOutputPin = IsMouseNear(OutputPin, AnimGraphPinHitRadius);
 		const bool bDraggingThisPin = DraggingOutputNodeId == Node.NodeId;
-		DrawList->AddCircleFilled(OutputPin, AnimGraphPinRadius + ((bHoveredOutputPin || bDraggingThisPin) ? 2.0f : 0.0f), (bHoveredOutputPin || bDraggingThisPin) ? PinHoverColor : PinColor);
-		DrawList->AddCircle(OutputPin, AnimGraphPinRadius + 1.0f, PinOutlineColor, 12, 1.5f);
-		DrawList->AddText(Add(OutputPin, ImVec2(8.0f, -19.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "Out");
+		if (bHoveredOutputPin || bDraggingThisPin)
+		{
+			DrawList->AddCircleFilled(OutputPin, AnimGraphPinRadius + 2.0f, PinHoverColor);
+			DrawList->AddCircle(OutputPin, AnimGraphPinRadius + 3.0f, PinOutlineColor, 12, 1.5f);
+		}
 
 		if (bHoveredOutputPin && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
@@ -1412,24 +1514,19 @@ void FEditorAnimGraphWidget::RenderLinks(const ImVec2& CanvasOrigin)
 			continue;
 		}
 
-		const ImVec2 From = GetAnimGraphNodeOutputPinPos(*InputNode, CanvasOrigin);
-		const ImVec2 To = GetAnimGraphNodeInputPinPos(Node, CanvasOrigin);
+		const ImVec2 SourceMin = Add(CanvasOrigin, ToImVec2(InputNode->Position));
+		const ImVec2 SourceMax = Add(SourceMin, GetAnimGraphNodeSize(*InputNode));
+		const ImVec2 TargetMin = Add(CanvasOrigin, ToImVec2(Node.Position));
+		const ImVec2 TargetMax = Add(TargetMin, GetAnimGraphNodeSize(Node));
+		const ImVec2 SourceCenter = CenterOfRect(SourceMin, SourceMax);
+		const ImVec2 TargetCenter = CenterOfRect(TargetMin, TargetMax);
+		const ImVec2 From = GetRectEdgePoint(SourceMin, SourceMax, TargetCenter);
+		const ImVec2 To = GetRectEdgePoint(TargetMin, TargetMax, SourceCenter);
 		const bool bSelectedLink = SelectedNodeId == Node.NodeId || SelectedNodeId == InputNode->NodeId;
 		const ImU32 LinkColor = ImGui::GetColorU32(
 			bSelectedLink ? ImVec4(1.0f, 0.82f, 0.35f, 1.0f) : ImVec4(0.55f, 0.72f, 1.0f, 1.0f));
 
-		const ImVec2 ControlB = Sub(To, ImVec2(90.0f, 0.0f));
-		DrawList->AddBezierCubic(
-			From,
-			Add(From, ImVec2(90.0f, 0.0f)),
-			ControlB,
-			To,
-			LinkColor,
-			bSelectedLink ? 4.0f : 3.0f);
-		DrawArrowHead(DrawList, To, Sub(To, ControlB), LinkColor, bSelectedLink ? 15.0f : 12.0f);
-
-		DrawList->AddCircleFilled(From, AnimGraphPinRadius + 1.0f, LinkColor);
-		DrawList->AddCircleFilled(To, AnimGraphPinRadius + 1.0f, LinkColor);
+		DrawDirectionalBezier(DrawList, From, To, LinkColor, bSelectedLink ? 4.0f : 3.0f, bSelectedLink ? 15.0f : 12.0f);
 	}
 }
 
@@ -1453,10 +1550,10 @@ void FEditorAnimGraphWidget::RenderPendingLink(const ImVec2& CanvasOrigin)
 			return;
 		}
 
-		const ImVec2 From = GetAnimGraphNodeOutputPinPos(*SourceNode, CanvasOrigin);
-		const ImVec2 ControlB = Sub(MousePos, ImVec2(90.0f, 0.0f));
-		DrawList->AddBezierCubic(From, Add(From, ImVec2(90.0f, 0.0f)), ControlB, MousePos, LinkColor, 3.0f);
-		DrawArrowHead(DrawList, MousePos, Sub(MousePos, ControlB), LinkColor, 16.0f);
+		const ImVec2 SourceMin = Add(CanvasOrigin, ToImVec2(SourceNode->Position));
+		const ImVec2 SourceMax = Add(SourceMin, GetAnimGraphNodeSize(*SourceNode));
+		const ImVec2 From = GetRectEdgePoint(SourceMin, SourceMax, MousePos);
+		DrawDirectionalBezier(DrawList, From, MousePos, LinkColor, 3.0f, 16.0f);
 
 		if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 		{
@@ -1470,8 +1567,9 @@ void FEditorAnimGraphWidget::RenderPendingLink(const ImVec2& CanvasOrigin)
 				continue;
 			}
 
-			const ImVec2 InputPin = GetAnimGraphNodeInputPinPos(Candidate, CanvasOrigin);
-			if (!IsMouseNear(InputPin, AnimGraphPinHitRadius))
+			const ImVec2 TargetMin = Add(CanvasOrigin, ToImVec2(Candidate.Position));
+			const ImVec2 TargetMax = Add(TargetMin, GetAnimGraphNodeSize(Candidate));
+			if (!ImGui::IsMouseHoveringRect(TargetMin, TargetMax, true))
 			{
 				continue;
 			}
@@ -1493,10 +1591,10 @@ void FEditorAnimGraphWidget::RenderPendingLink(const ImVec2& CanvasOrigin)
 			return;
 		}
 
-		const ImVec2 To = GetAnimGraphNodeInputPinPos(*OutputNode, CanvasOrigin);
-		const ImVec2 ControlB = Sub(To, ImVec2(90.0f, 0.0f));
-		DrawList->AddBezierCubic(MousePos, Add(MousePos, ImVec2(90.0f, 0.0f)), ControlB, To, LinkColor, 3.0f);
-		DrawArrowHead(DrawList, To, Sub(To, ControlB), LinkColor, 16.0f);
+		const ImVec2 TargetMin = Add(CanvasOrigin, ToImVec2(OutputNode->Position));
+		const ImVec2 TargetMax = Add(TargetMin, GetAnimGraphNodeSize(*OutputNode));
+		const ImVec2 To = GetRectEdgePoint(TargetMin, TargetMax, MousePos);
+		DrawDirectionalBezier(DrawList, MousePos, To, LinkColor, 3.0f, 16.0f);
 
 		if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 		{
@@ -1510,8 +1608,9 @@ void FEditorAnimGraphWidget::RenderPendingLink(const ImVec2& CanvasOrigin)
 				continue;
 			}
 
-			const ImVec2 OutputPin = GetAnimGraphNodeOutputPinPos(Candidate, CanvasOrigin);
-			if (!IsMouseNear(OutputPin, AnimGraphPinHitRadius))
+			const ImVec2 SourceMin = Add(CanvasOrigin, ToImVec2(Candidate.Position));
+			const ImVec2 SourceMax = Add(SourceMin, GetAnimGraphNodeSize(Candidate));
+			if (!ImGui::IsMouseHoveringRect(SourceMin, SourceMax, true))
 			{
 				continue;
 			}
@@ -1955,6 +2054,23 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 				bDirty = true;
 			}
 
+			if (ImGui::DragFloat("Play Rate", &State.PlayRate, 0.01f, -10.0f, 10.0f))
+			{
+				bDirty = true;
+			}
+
+			if (ImGui::Checkbox("Loop", &State.bLoop))
+			{
+				bDirty = true;
+			}
+
+			ImGui::BeginDisabled(State.bLoop);
+			if (ImGui::Checkbox("Auto Next On End", &State.bAutoAdvanceOnEnd))
+			{
+				bDirty = true;
+			}
+			ImGui::EndDisabled();
+
 			if (ImGui::DragFloat2("Position", &State.Position.X, 1.0f))
 			{
 				bDirty = true;
@@ -2095,7 +2211,10 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 				"BoolParameter",
 				"FloatGreater",
 				"FloatLess",
-				"LuaFunction"
+				"LuaFunction",
+				"IntEquals",
+				"IntGreater",
+				"IntLess"
 			};
 			int32 ConditionIndex = static_cast<int32>(Transition.Condition.Type);
 			if (ConditionIndex < 0 || ConditionIndex >= static_cast<int32>(std::size(ConditionLabels)))
@@ -2110,7 +2229,10 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 
 			if (Transition.Condition.Type == EAnimTransitionConditionType::BoolParameter
 				|| Transition.Condition.Type == EAnimTransitionConditionType::FloatGreater
-				|| Transition.Condition.Type == EAnimTransitionConditionType::FloatLess)
+				|| Transition.Condition.Type == EAnimTransitionConditionType::FloatLess
+				|| Transition.Condition.Type == EAnimTransitionConditionType::IntEquals
+				|| Transition.Condition.Type == EAnimTransitionConditionType::IntGreater
+				|| Transition.Condition.Type == EAnimTransitionConditionType::IntLess)
 			{
 				char ParameterBuffer[128] = {};
 				std::strncpy(ParameterBuffer, Transition.Condition.ParameterName.c_str(), sizeof(ParameterBuffer) - 1);
@@ -2132,6 +2254,15 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 				|| Transition.Condition.Type == EAnimTransitionConditionType::FloatLess)
 			{
 				if (ImGui::DragFloat("Threshold", &Transition.Condition.Threshold, 0.1f))
+				{
+					bDirty = true;
+				}
+			}
+			else if (Transition.Condition.Type == EAnimTransitionConditionType::IntEquals
+				|| Transition.Condition.Type == EAnimTransitionConditionType::IntGreater
+				|| Transition.Condition.Type == EAnimTransitionConditionType::IntLess)
+			{
+				if (ImGui::InputInt("Int Value", &Transition.Condition.IntValue))
 				{
 					bDirty = true;
 				}
@@ -2404,7 +2535,26 @@ void FEditorAnimGraphWidget::AddStateToStateMachine(FAnimStateMachineDesc& State
 	FAnimStateDesc State;
 	State.StateId = GenerateStateId(StateMachine);
 	State.Name = "State " + std::to_string(State.StateId);
-	State.Position = FVector2(80.0f + static_cast<float>(StateMachine.States.size()) * 40.0f, 80.0f);
+
+	const bool bHasCanvas = LastStateMachineCanvasSize.x > 1.0f && LastStateMachineCanvasSize.y > 1.0f;
+	if (bHasCanvas)
+	{
+		const ImVec2 Mouse = ImGui::GetIO().MousePos;
+		const float LocalX = std::clamp(
+			Mouse.x - LastStateMachineCanvasOrigin.x - StateMachineStateNodeWidth * 0.5f,
+			24.0f,
+			std::max(24.0f, LastStateMachineCanvasSize.x - StateMachineStateNodeWidth - 24.0f));
+		const float LocalY = std::clamp(
+			Mouse.y - LastStateMachineCanvasOrigin.y - StateMachineStateNodeHeight * 0.5f,
+			56.0f,
+			std::max(56.0f, LastStateMachineCanvasSize.y - StateMachineStateNodeHeight - 24.0f));
+		State.Position = FVector2(LocalX, LocalY);
+	}
+	else
+	{
+		State.Position = FVector2(80.0f + static_cast<float>(StateMachine.States.size()) * 40.0f, 80.0f);
+	}
+
 	StateMachine.States.push_back(State);
 	SelectedStateId = State.StateId;
 	SelectedTransitionIndex = -1;
@@ -2567,6 +2717,20 @@ void FEditorAnimGraphWidget::NormalizeRootNode()
 	{
 		EditingAsset->RootNodeId = -1;
 	}
+}
+
+FVector2 FEditorAnimGraphWidget::GetToolbarSpawnPosition() const
+{
+	const ImVec2 Mouse = ImGui::GetIO().MousePos;
+	const bool bHasCanvas = LastAnimGraphCanvasSize.x > 1.0f && LastAnimGraphCanvasSize.y > 1.0f;
+	if (!bHasCanvas)
+	{
+		return FVector2(120.0f, 120.0f);
+	}
+
+	const float LocalX = std::clamp(Mouse.x - LastAnimGraphCanvasOrigin.x, 24.0f, std::max(24.0f, LastAnimGraphCanvasSize.x - AnimGraphNodeWidth - 24.0f));
+	const float LocalY = std::clamp(Mouse.y - LastAnimGraphCanvasOrigin.y, 24.0f, std::max(24.0f, LastAnimGraphCanvasSize.y - AnimGraphNodeDefaultHeight - 24.0f));
+	return FVector2(LocalX, LocalY);
 }
 
 void FEditorAnimGraphWidget::AddSequencePlayerNode(const FVector2& SpawnPosition)

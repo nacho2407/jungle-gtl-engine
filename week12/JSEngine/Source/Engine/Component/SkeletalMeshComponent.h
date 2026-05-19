@@ -68,8 +68,10 @@ public:
 	const FString& GetAnimGraphAssetPath() const { return AnimGraphAssetPath.GetPath(); }
 	void SetAnimGraphFloatParameter(const FString& Name, float Value);
 	void SetAnimGraphBoolParameter(const FString& Name, bool Value);
+	void SetAnimGraphIntParameter(const FString& Name, int32 Value);
 	float GetAnimGraphFloatParameter(const FString& Name) const;
 	bool GetAnimGraphBoolParameter(const FString& Name) const;
+	int32 GetAnimGraphIntParameter(const FString& Name) const;
 
 	// 애니메이션
 	void PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping);

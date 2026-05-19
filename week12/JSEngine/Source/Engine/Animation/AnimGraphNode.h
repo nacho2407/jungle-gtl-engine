@@ -19,6 +19,9 @@ enum class EAnimTransitionConditionType
 	FloatGreater UMETA(DisplayName = "Float Greater"),
 	FloatLess UMETA(DisplayName = "Float Less"),
 	LuaFunction UMETA(DisplayName = "Lua Function"),
+	IntEquals UMETA(DisplayName = "Int Equals"),
+	IntGreater UMETA(DisplayName = "Int Greater"),
+	IntLess UMETA(DisplayName = "Int Less"),
 };
 
 USTRUCT()
@@ -34,6 +37,8 @@ struct FAnimTransitionConditionDesc
 	bool BoolValue = true;
 	UPROPERTY()
 	float Threshold = 0.0f;
+	UPROPERTY()
+	int32 IntValue = 0;
 	UPROPERTY()
 	FString LuaFunctionName;
 };
@@ -68,6 +73,12 @@ struct FAnimStateDesc
 	FString AnimationPath;
 	UPROPERTY()
 	FVector2 Position = FVector2(0.0f, 0.0f);
+	UPROPERTY()
+	float PlayRate = 1.0f;
+	UPROPERTY()
+	bool bLoop = true;
+	UPROPERTY()
+	bool bAutoAdvanceOnEnd = true;
 };
 
 USTRUCT()
@@ -77,6 +88,8 @@ struct FAnimStateMachineDesc
 
 	UPROPERTY()
 	int32 EntryStateId = -1;
+	UPROPERTY()
+	FVector2 EntryPosition = FVector2(36.0f, 84.0f);
 	UPROPERTY()
 	TArray<FAnimStateDesc> States;
 	UPROPERTY()

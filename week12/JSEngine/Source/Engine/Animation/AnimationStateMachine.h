@@ -15,6 +15,8 @@ public:
 	virtual void Update(float DeltaTime) = 0;
 	virtual bool EvaluatePose(FPoseContext& OutPose) const = 0;
 	virtual void ResetTime() = 0;
+	virtual bool IsFinished() const = 0;
+	virtual bool IsLooping() const = 0;
 };
 
 // 단일 시퀀스 재생용 포즈
@@ -25,14 +27,27 @@ private:
 	UAnimSequenceBase* Sequence = nullptr;
 	float CurrentTime = 0.0f;
 	float PreviousTime = 0.0f;
+	float PlayRate = 1.0f;
+	bool bLoop = true;
+	bool bFinished = false;
 
 public:
-	FAnimSequencePoseSource(USkeletalMeshComponent* InOwnerComponent, UAnimSequenceBase* InSequence)
-		: OwnerComponent(InOwnerComponent), Sequence(InSequence), CurrentTime(0.0f) {}
+	FAnimSequencePoseSource(USkeletalMeshComponent* InOwnerComponent, UAnimSequenceBase* InSequence, float InPlayRate = 1.0f, bool bInLoop = true)
+		: OwnerComponent(InOwnerComponent)
+		, Sequence(InSequence)
+		, CurrentTime(0.0f)
+		, PreviousTime(0.0f)
+		, PlayRate(InPlayRate)
+		, bLoop(bInLoop)
+		, bFinished(false)
+	{
+	}
 
 	virtual void Update(float DeltaTime) override;
 	virtual bool EvaluatePose(FPoseContext& OutPose) const override;
 	virtual void ResetTime() override;
+	virtual bool IsFinished() const override { return !bLoop && bFinished; }
+	virtual bool IsLooping() const override { return bLoop; }
 };
 
 using FAnimTransitionCondition = std::function<bool()>;
@@ -42,6 +57,7 @@ struct FAnimTransition
 {
 	FName ToState;
 	float BlendTime = 0.2f;
+	int32 Priority = 0;
 	FAnimTransitionCondition Condition;
 };
 
@@ -51,6 +67,7 @@ struct FAnimStateNode
 	FName Name;
 	std::shared_ptr<IAnimPoseSource> PoseSource;
 	TArray<FAnimTransition> Transitions;
+	bool bAutoAdvanceOnEnd = true;
 };
 
 UCLASS()
@@ -61,8 +78,8 @@ public:
 
 	void Initialize(USkeletalMeshComponent* Owner);
 
-	void AddState(FName StateName, UAnimSequenceBase* Sequence);
-	void AddTransition(FName FromState, FName ToState, float BlendTime, FAnimTransitionCondition Condition);
+	void AddState(FName StateName, UAnimSequenceBase* Sequence, float PlayRate = 1.0f, bool bLoop = true, bool bAutoAdvanceOnEnd = true);
+	void AddTransition(FName FromState, FName ToState, float BlendTime, FAnimTransitionCondition Condition, int32 Priority = 0);
 	void ClearTransitions();
 	void SetEntryState(FName StateName);
 
@@ -75,6 +92,8 @@ public:
 	// Lua Binding용
 	void AddStateByName(const FString& StateName, UAnimSequenceBase* Sequence);
 	void AddStateFromPath(const FString& StateName, const FString& AnimPath);
+	void AddStateByNameWithPlayback(const FString& StateName, UAnimSequenceBase* Sequence, float PlayRate, bool bLoop, bool bAutoAdvanceOnEnd);
+	void AddStateFromPathWithPlayback(const FString& StateName, const FString& AnimPath, float PlayRate, bool bLoop, bool bAutoAdvanceOnEnd);
 
 	void SetEntryStateByName(const FString& StateName);
 	void SetStateByName(const FString& StateName, float BlendTime = 0.2f);
@@ -87,6 +106,9 @@ public:
 	float GetBlendAlpha() const;
 	float GetBlendDuration() const { return BlendDuration; }
 	float GetBlendElapsed() const { return BlendElapsed; }
+
+private:
+	bool TryStartTransitionFromCurrentState();
 
 private:
 	TMap<FName, FAnimStateNode, FName::Hash> States;
