@@ -9,8 +9,6 @@
 
 #include <algorithm>
 
-DEFINE_CLASS(UAnimMontageInstance, UObject)
-
 void UAnimMontageInstance::Play(UAnimMontage* InMontage, FName StartSection, float InPlayRate, float InBlendInTime)
 {
     if (!InMontage)

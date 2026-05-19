@@ -19,10 +19,14 @@ struct FPoseContext;
 //   Tick(dt, Owner)        — SectionTime 진행, section 끝나면 chain, blend alpha 갱신
 //   GetBlendWeight()       — 현재 blend 가중치 (0..1) → AnimInstance 가 base pose 와 blend
 //   EvaluateMontagePose()  — 현재 시점 montage 의 본 pose 생성 (base 와 blend 는 caller 담당)
+
+#include "Source/Engine/Animation/AnimMontageInstance.generated.h"
+
+UCLASS()
 class UAnimMontageInstance : public UObject
 {
 public:
-    DECLARE_CLASS(UAnimMontageInstance, UObject)
+    GENERATED_BODY()
 
     UAnimMontageInstance()           = default;
     ~UAnimMontageInstance() override = default;
