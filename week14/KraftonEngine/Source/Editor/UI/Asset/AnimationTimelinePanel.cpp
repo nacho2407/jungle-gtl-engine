@@ -6,6 +6,7 @@
 #include "Animation/AnimDataModel.h"
 #include "Animation/AnimNotify.h"
 #include "Animation/AnimNotifyState.h"
+#include "Animation/AnimationManager.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
@@ -278,8 +279,24 @@ namespace
 void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
                                      USkeletalMeshComponent* Comp,
                                      UAnimSequence* Seq,
-                                     float PanelHeight)
+                                     float PanelHeight,
+                                     int32& InOutSelectedNotifyIndex)
 {
+	// 변경 누적 플래그 — drag/resize 등 연속 이벤트는 매 프레임 commit 하지 않고
+	// 마우스 release 시점에 일괄 save (디스크 thrash 방지). 인스턴트 이벤트는 즉시 save.
+	// 프레임 간 보존 위해 static — 마우스 누르고 있는 동안 dirty 유지, release 에 일괄 flush.
+	static bool sPendingSave = false;
+	auto SaveSeqNow = [&]() {
+		if (Seq) FAnimationManager::Get().SaveAnimationPreservingMetadata(Seq);
+	};
+
+	// 선택 인덱스 stale clamp — 시퀀스 전환 등으로 out-of-range 면 -1.
+	if (Seq)
+	{
+		const int32 NotifyCount = static_cast<int32>(Seq->GetNotifies().size());
+		if (InOutSelectedNotifyIndex >= NotifyCount) InOutSelectedNotifyIndex = -1;
+	}
+
 	ImGui::BeginChild("##AnimTimelinePanel", ImVec2(0.0f, PanelHeight), false,
 	                  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
@@ -333,6 +350,12 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			Comp->SetPlaying(false);
 		}
 	}
+	// 빈 영역 클릭 → notify 선택 해제. 노티 배지는 더 늦게 그려져 입력을 먼저 가져가므로
+	// scrub.IsItemActivated 가 트리거되었다는 것은 배지 hit 가 아니라는 뜻.
+	if (ImGui::IsItemActivated())
+	{
+		InOutSelectedNotifyIndex = -1;
+	}
 
 	// ── 노티파이 레인 우클릭 → "Add Notify" 팝업 ──
 	// 클릭 지점 시간에 노티파이(+LogMessage 로직)를 추가 → DataModel 에 기록되어
@@ -374,6 +397,8 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 					Seq->GetMutableModelNotifies().push_back(
 						MakeNotifyFromClass(Seq, Cls, Name, sPendingNotifyTime, 0.0f, false));
 					Seq->RefreshRuntimeNotifies();
+					InOutSelectedNotifyIndex = static_cast<int32>(Seq->GetMutableModelNotifies().size()) - 1;
+					SaveSeqNow();
 				}
 			}
 			ImGui::EndMenu();
@@ -397,6 +422,8 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 					Seq->GetMutableModelNotifies().push_back(
 						MakeNotifyFromClass(Seq, Cls, Name, sPendingNotifyTime, DefaultDur, true));
 					Seq->RefreshRuntimeNotifies();
+					InOutSelectedNotifyIndex = static_cast<int32>(Seq->GetMutableModelNotifies().size()) - 1;
+					SaveSeqNow();
 				}
 			}
 			ImGui::EndMenu();
@@ -529,10 +556,11 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 				                  0.0f, 1.0f) * PlayLength;
 			};
 
-			// 누른 순간 잡은 지점-앵커 시간차를 기록 (드래그 시 점프 방지)
+			// 누른 순간 잡은 지점-앵커 시간차를 기록 + selection 설정.
 			if (ImGui::IsItemActivated())
 			{
-				sGrabOffsetTime = MouseTime() - N.TriggerTime;
+				sGrabOffsetTime          = MouseTime() - N.TriggerTime;
+				InOutSelectedNotifyIndex = i;
 			}
 			// 임계값(io.MouseDragThreshold) 이상 움직였을 때만 이동 → 더블클릭은 제외.
 			// Duration > 0 이면 End 도 같이 이동하므로 N.Duration 은 그대로, TriggerTime 만 갱신
@@ -541,7 +569,8 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			{
 				const float MaxStart = bHasDur ? std::max(PlayLength - N.Duration, 0.0f)
 				                               : PlayLength;
-				N.TriggerTime = std::clamp(MouseTime() - sGrabOffsetTime, 0.0f, MaxStart);
+				N.TriggerTime    = std::clamp(MouseTime() - sGrabOffsetTime, 0.0f, MaxStart);
+				sPendingSave    = true;   // 마우스 release 시 일괄 save.
 			}
 			if (bHovered || bActive)
 			{
@@ -551,18 +580,17 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			{
 				if (bHasDur)
 				{
-					ImGui::SetTooltip("%s\n%.3f s + %.3f s (state)\n(double-click: properties, drag right edge: resize)",
+					ImGui::SetTooltip("%s\n%.3f s + %.3f s (state)\n(click: select / drag right edge: resize)",
 					                  Nm.c_str(), N.TriggerTime, N.Duration);
 				}
 				else
 				{
-					ImGui::SetTooltip("%s\n%.3f s\n(double-click: properties)",
+					ImGui::SetTooltip("%s\n%.3f s\n(click: select)",
 					                  Nm.c_str(), N.TriggerTime);
 				}
 			}
 
-			// 우측 끝 resize 핸들 — state notify 만. Duration 변경 후 RefreshRuntimeNotifies 는
-			// 함수 끝에서 일괄 처리되므로 별도 호출 불필요.
+			// 우측 끝 resize 핸들 — state notify 만.
 			if (bHasDur)
 			{
 				ImGui::SetCursorScreenPos(ImVec2(NX - 6.0f + BodyW, BadgeTop));
@@ -571,29 +599,26 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 				{
 					ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
 				}
+				if (ImGui::IsItemActivated())
+				{
+					InOutSelectedNotifyIndex = i;
+				}
 				if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, -1.0f))
 				{
 					const float NewEnd = std::clamp(MouseTime(),
 					                                N.TriggerTime + 0.01f, PlayLength);
-					N.Duration = NewEnd - N.TriggerTime;
+					N.Duration     = NewEnd - N.TriggerTime;
+					sPendingSave   = true;
 				}
 			}
 
-			// 더블클릭 → Properties 팝업 (UPROPERTY(Edit) 편집), 컨텍스트 메뉴 → Rename/Properties/Delete.
+			// 우클릭 컨텍스트 메뉴 — Rename / Delete. Properties 편집은 좌상단 AssetDetails 패널.
 			bool bOpenRename = false;
-			bool bOpenProps  = false;
-			if (bHovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-			{
-				bOpenProps = true;
-			}
 			if (ImGui::BeginPopupContextItem("##notifyCtx"))
 			{
+				InOutSelectedNotifyIndex = i;
 				ImGui::TextDisabled("%s", Nm.c_str());
 				ImGui::Separator();
-				if (ImGui::MenuItem("Properties..."))
-				{
-					bOpenProps = true;
-				}
 				if (ImGui::MenuItem("Rename"))
 				{
 					bOpenRename = true;
@@ -609,10 +634,6 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 				snprintf(sRenameBuf, sizeof(sRenameBuf), "%s", Nm.c_str());
 				ImGui::OpenPopup("##notifyRename");
 			}
-			if (bOpenProps)
-			{
-				ImGui::OpenPopup("##notifyProps");
-			}
 			if (ImGui::BeginPopup("##notifyRename"))
 			{
 				ImGui::TextDisabled("Rename Notify");
@@ -626,41 +647,9 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 				ImGui::SameLine();
 				if ((bCommit || ImGui::Button("OK")) && sRenameBuf[0] != '\0')
 				{
-					// 표시 이름만 변경. Payload (Message/Tag 등) 는 Properties 팝업에서 UPROPERTY 편집.
 					N.NotifyName = FName(FString(sRenameBuf));
 					Seq->RefreshRuntimeNotifies();
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::EndPopup();
-			}
-
-			// Properties 팝업 — 컨텍스트 메뉴에서 "Properties..." 선택 시 열림.
-			// N.Notify / N.NotifyState 의 UPROPERTY(Edit) 필드를 인플레이스 편집.
-			if (ImGui::BeginPopup("##notifyProps"))
-			{
-				const FString ClsName = N.Notify       ? FString(N.Notify->GetClass()->GetName())
-				                      : N.NotifyState  ? FString(N.NotifyState->GetClass()->GetName())
-				                                       : FString("None");
-				ImGui::TextDisabled("%s  (%s)", Nm.c_str(), ClsName.c_str());
-				ImGui::Separator();
-
-				if (N.Notify)
-				{
-					RenderObjectPropertiesInline(N.Notify);
-				}
-				if (N.NotifyState)
-				{
-					RenderObjectPropertiesInline(N.NotifyState);
-				}
-				if (!N.Notify && !N.NotifyState)
-				{
-					ImGui::TextDisabled("(no notify object bound)");
-				}
-
-				ImGui::Separator();
-				if (ImGui::Button("Close"))
-				{
-					Seq->RefreshRuntimeNotifies();
+					SaveSeqNow();
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::EndPopup();
@@ -679,6 +668,13 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			const ImVec2 BMin(MarkNX, BadgeTop);
 			const ImVec2 BMax(MarkNX + BadgeW, BadgeBot);
 			DL->AddRectFilled(BMin, BMax, Fill, 3.0f);
+			// 선택된 entry 면 노란 outline 으로 강조 (좌상단 AssetDetails 패널과 동기 확인용).
+			if (i == InOutSelectedNotifyIndex)
+			{
+				DL->AddRect(ImVec2(BMin.x - 1.0f, BMin.y - 1.0f),
+				            ImVec2(BMax.x + 1.0f, BMax.y + 1.0f),
+				            IM_COL32(255, 200, 60, 255), 3.0f, 0, 2.0f);
+			}
 			DL->AddRect(BMin, BMax, Border, 3.0f);
 
 			const float  DiaR = 4.5f;
@@ -699,6 +695,17 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 		if (PendingDelete >= 0 && PendingDelete < static_cast<int>(Notifies.size()))
 		{
 			Notifies.erase(Notifies.begin() + PendingDelete);
+
+			// 선택 인덱스 stale 처리 — 삭제된 항목이 선택이면 해제, 뒤쪽이었으면 한 칸 당김.
+			if (InOutSelectedNotifyIndex == PendingDelete)
+			{
+				InOutSelectedNotifyIndex = -1;
+			}
+			else if (InOutSelectedNotifyIndex > PendingDelete)
+			{
+				--InOutSelectedNotifyIndex;
+			}
+			SaveSeqNow();
 		}
 		// 추가/삭제/드래그(시간 변경)를 dispatch 캐시에 반영 → 프리뷰에서 실제 발사.
 		Seq->RefreshRuntimeNotifies();
@@ -775,5 +782,102 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 	ImGui::SetCursorScreenPos(Origin);
 	ImGui::Dummy(ImVec2(FullW, PanelHeight));
 
+	// Drag/Resize 의 누적 dirty 를 마우스 release 에 일괄 save (frame 별 디스크 thrash 방지).
+	if (sPendingSave && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
+	{
+		SaveSeqNow();
+		sPendingSave = false;
+	}
+
 	ImGui::EndChild();
+}
+
+bool FAnimationTimelinePanel::RenderNotifyDetails(UAnimSequence* Seq, int32 SelectedNotifyIndex)
+{
+	if (!Seq) return false;
+	const TArray<FAnimNotifyEvent>& Notifies = Seq->GetNotifies();
+	if (SelectedNotifyIndex < 0 || SelectedNotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	// const_cast — GetMutableModelNotifies 가 DataModel 측 mutable 컨테이너 보장.
+	TArray<FAnimNotifyEvent>& Mutable = Seq->GetMutableModelNotifies();
+	if (SelectedNotifyIndex >= static_cast<int32>(Mutable.size())) return false;
+	FAnimNotifyEvent& N = Mutable[SelectedNotifyIndex];
+
+	const FString ClsName = N.Notify      ? FString(N.Notify->GetClass()->GetName())
+	                      : N.NotifyState ? FString(N.NotifyState->GetClass()->GetName())
+	                                      : FString("None");
+	const bool bIsState = (N.NotifyState != nullptr) && (N.Duration > 0.0f);
+
+	ImGui::TextUnformatted("Notify Details");
+	ImGui::Separator();
+	ImGui::TextDisabled("Class:  %s", ClsName.c_str());
+	ImGui::TextDisabled("Type:   %s", bIsState ? "State (duration)" : "Instant");
+	ImGui::Dummy(ImVec2(0, 4));
+
+	bool bChanged = false;
+
+	// Name 편집 — 인플레이스.
+	{
+		FString Cur = N.NotifyName.ToString();
+		char Buf[256];
+		strncpy_s(Buf, sizeof(Buf), Cur.c_str(), _TRUNCATE);
+		ImGui::TextUnformatted("Name");
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		if (ImGui::InputText("##notifyName", Buf, sizeof(Buf)))
+		{
+			N.NotifyName = FName(FString(Buf));
+			bChanged     = true;
+		}
+	}
+
+	// TriggerTime 편집 + (state) Duration 편집.
+	{
+		ImGui::TextUnformatted("Trigger Time (sec)");
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		const float MaxStart = bIsState
+			? std::max(Seq->GetPlayLength() - N.Duration, 0.0f)
+			: Seq->GetPlayLength();
+		if (ImGui::DragFloat("##trig", &N.TriggerTime, 0.01f, 0.0f, MaxStart, "%.3f"))
+		{
+			bChanged = true;
+		}
+	}
+	if (bIsState)
+	{
+		ImGui::TextUnformatted("Duration (sec)");
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		const float MaxDur = std::max(Seq->GetPlayLength() - N.TriggerTime, 0.01f);
+		if (ImGui::DragFloat("##dur", &N.Duration, 0.01f, 0.01f, MaxDur, "%.3f"))
+		{
+			bChanged = true;
+		}
+	}
+
+	ImGui::Dummy(ImVec2(0, 6));
+	ImGui::Separator();
+	ImGui::TextUnformatted("Properties");
+	ImGui::Separator();
+
+	if (N.Notify)
+	{
+		if (RenderObjectPropertiesInline(N.Notify))      bChanged = true;
+	}
+	if (N.NotifyState)
+	{
+		if (RenderObjectPropertiesInline(N.NotifyState)) bChanged = true;
+	}
+	if (!N.Notify && !N.NotifyState)
+	{
+		ImGui::TextDisabled("(no notify object bound)");
+	}
+
+	if (bChanged)
+	{
+		Seq->RefreshRuntimeNotifies();
+		FAnimationManager::Get().SaveAnimationPreservingMetadata(Seq);
+	}
+	return bChanged;
 }
