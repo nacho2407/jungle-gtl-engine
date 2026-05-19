@@ -939,20 +939,22 @@ void FEditorViewerWindowWidget::LoadAnimSequenceToolbarIcons()
 		return;
 	}
 
-	const std::wstring IconDir = FEditorResourcePaths::IconsAbsoluteDir();
+	const std::wstring IconDir = FEditorResourcePaths::ToolIconsAbsoluteDir();
 	auto LoadIcon = [&](const wchar_t* FileName, TComPtr<ID3D11ShaderResourceView>& OutIcon)
 	{
 		const std::wstring IconPath = IconDir + FileName;
 		DirectX::CreateWICTextureFromFile(Device, IconPath.c_str(), nullptr, OutIcon.GetAddressOf());
 	};
 
-	LoadIcon(L"Play.png", AnimSequencePlayIcon);
-	LoadIcon(L"Pause.png", AnimSequencePauseIcon);
-	LoadIcon(L"Reverse.png", AnimSequenceReverseIcon);
-	LoadIcon(L"To Front.png", AnimSequenceToFrontIcon);
-	LoadIcon(L"To End.png", AnimSequenceToEndIcon);
-	LoadIcon(L"Looping.png", AnimSequenceLoopingIcon);
-	LoadIcon(L"No Looping.png", AnimSequenceNoLoopingIcon);
+	LoadIcon(L"PlayControlsPlayForward.png", AnimSequencePlayIcon);
+	LoadIcon(L"PlayControlsPause.png", AnimSequencePauseIcon);
+	LoadIcon(L"PlayControlsPlayReverse.png", AnimSequenceReverseIcon);
+	LoadIcon(L"PlayControlsToFront.png", AnimSequenceToFrontIcon);
+	LoadIcon(L"PlayControlsToEnd.png", AnimSequenceToEndIcon);
+	LoadIcon(L"PlayControlsLooping.png", AnimSequenceLoopingIcon);
+	LoadIcon(L"PlayControlsNoLooping.png", AnimSequenceNoLoopingIcon);
+	LoadIcon(L"PlayControlsToNexting.png", AnimSequenceToNextingIcon);
+	LoadIcon(L"PlayControlsToPreviousing.png", AnimSequenceToPreviousingIcon);
 }
 
 bool FEditorViewerWindowWidget::DrawAnimSequenceIconButton(
@@ -1142,20 +1144,6 @@ void FEditorViewerWindowWidget::RenderAnimSequenceToolbar(UAnimSequence* Sequenc
 			Viewer->SetAnimationPlaying(true);
 		}
 	}
-	ImGui::SameLine();
-	if (ImGui::Button("+ Notify", ImVec2(86.0f, ButtonSize.y)))
-	{
-		if (AnimNotifyNameBuffer[0] == '\0')
-		{
-			snprintf(AnimNotifyNameBuffer, sizeof(AnimNotifyNameBuffer), "AnimNotify");
-		}
-		ImGui::OpenPopup("AddAnimNotifyPopup");
-	}
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("Add single-shot notify at the current time");
-	}
-	DrawAddAnimNotifyPopup(Sequence);
 
 	ImGui::SameLine();
 	if (DrawAnimSequenceIconButton("ToEnd", AnimSequenceToEndIcon.Get(), "To End", ButtonSize))
@@ -1174,6 +1162,21 @@ void FEditorViewerWindowWidget::RenderAnimSequenceToolbar(UAnimSequence* Sequenc
 		Viewer->SetAnimationLooping(!bLooping);
 	}
 
+	ImGui::SameLine();
+    if (ImGui::Button("+ Notify", ImVec2(86.0f, ButtonSize.y)))
+    {
+        if (AnimNotifyNameBuffer[0] == '\0')
+        {
+            snprintf(AnimNotifyNameBuffer, sizeof(AnimNotifyNameBuffer), "AnimNotify");
+        }
+        ImGui::OpenPopup("AddAnimNotifyPopup");
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("Add single-shot notify at the current time");
+    }
+    DrawAddAnimNotifyPopup(Sequence);
+	
 	ImGui::SameLine(0.0f, 18.0f);
 	const float CurrentTime = Viewer->GetAnimationCurrentTime();
 	const float Length = std::max(0.0f, Viewer->GetAnimationLength());
