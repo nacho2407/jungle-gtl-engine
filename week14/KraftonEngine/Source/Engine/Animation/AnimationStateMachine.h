@@ -69,24 +69,25 @@ public:
 	void RequestTransition(FName To, float BlendDuration);
 
 	FName GetCurrentStateName() const { return CurrentStateName; }
-	bool  IsBlending() const          { return FromState != nullptr; }
+	bool  IsBlending() const          { return !BlendingFroms.empty(); }
 
 	// Read-only inspection — Editor debug widget 및 향후 도구 (Lua inspect 등) 용.
 	const TArray<UAnimState*>&      GetStates()        const { return States; }
 	const TArray<FStateTransition>& GetTransitions()   const { return Transitions; }
 	UAnimState* GetCurrentState()  const { return CurrentState; }
-	UAnimState* GetFromState()     const { return FromState; }
-	float       GetBlendAlpha()    const { return BlendAlpha; }
-	float       GetBlendDuration() const { return BlendDuration; }
 
-	// Multi-blend inspection — 진행중 모든 from 항목. Step 1 에선 빈 array (아직 미사용).
+	// 호환용 single-from getter — "가장 최근 from" 반환. multi-from 정보가 필요하면 GetBlendingFroms.
+	UAnimState* GetFromState()     const { return BlendingFroms.empty() ? nullptr : BlendingFroms.back().State; }
+	float       GetBlendAlpha()    const { return BlendingFroms.empty() ? 1.0f   : BlendingFroms.back().Alpha; }
+	float       GetBlendDuration() const { return BlendingFroms.empty() ? 0.0f   : BlendingFroms.back().Duration; }
+
+	// Multi-blend inspection — 진행중 모든 from 항목 (oldest=[0], latest=back).
 	const TArray<FBlendingFrom>& GetBlendingFroms() const { return BlendingFroms; }
 
 private:
 	UAnimState* FindState(FName Name) const;
 	void        EnterState(UAnimInstance* Owner, FName NewState);
 	void        BeginBlend(UAnimInstance* Owner, FName NewState, float BlendDuration);
-	void        FinishBlend(UAnimInstance* Owner);
 
 	TArray<UAnimState*>     States;       // FName 키 → 선형 탐색 (보통 <20 개)
 	TArray<FStateTransition> Transitions;
@@ -94,13 +95,9 @@ private:
 	FName       CurrentStateName = FName::None;
 	UAnimState* CurrentState     = nullptr;
 
-	// 블렌딩 상태 (FromState != nullptr 일 때 활성).
-	UAnimState* FromState        = nullptr;
-	float       BlendAlpha       = 1.0f;  // 0 → FromState, 1 → CurrentState
-	float       BlendDuration    = 0.0f;
-
-	// Multi-blend 진행중 from 스택. Step 2 부터 채워지고 Step 3 부터 Tick/Evaluate 가 사용.
-	// oldest 가 [0], latest 가 back. 빠른 연쇄로 무한 grow 막기 위해 한도 도달 시 oldest 강제 정리.
+	// Multi-blend 진행중 from 스택 — A→B→C 같은 빠른 연쇄에서 모든 from 을 보존.
+	// oldest 가 [0], latest 가 back. Tick 에서 dt/Duration 만큼 alpha 증가, 1.0 도달분 OnExit + erase.
+	// 빠른 연쇄로 무한 grow 막기 위해 한도 도달 시 oldest 강제 정리.
 	TArray<FBlendingFrom>     BlendingFroms;
 	static constexpr int32    MaxBlendingFroms = 4;
 };
