@@ -2,11 +2,14 @@
 #include "AnimMontage.h"
 #include "AnimMontageInstance.h"
 #include "AnimNotify.h"
+#include "AnimNotifyState.h"
 #include "AnimSequenceBase.h"
 #include "AnimationRuntime.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Mesh/SkeletalMesh.h"
 #include "GameFramework/Pawn.h"
+
+#include <algorithm>
 
 // Static 멤버 정의 — slot 이름 미지정 시 fallback. 가독성 위해 cpp 상단에 둠.
 const FName UAnimInstance::DefaultMontageSlot = FName("DefaultSlot");
@@ -20,6 +23,13 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 	// consume 했으므로 시점에 이미 identity — no-op.
 	// PIE pause / frame drop 등 비정상 케이스도 자동 안전.
 	PendingRootMotion = FTransform();
+
+	// 활성 NotifyState seen 플래그 reset — AddAnimNotifies 가 매칭 시 true 표시,
+	// frame 끝에 false 인 항목은 NotifyEnd 후 제거 (시퀀스 전환 / weight drop / 자연 종료 통합 경로).
+	for (FActiveAnimNotifyState& A : ActiveNotifyStates)
+	{
+		A.bSeenThisFrame = false;
+	}
 
 	// NativeUpdateAnimation 은 RootNode 유무와 무관하게 항상 호출 — 사용자 변수 update hook.
 	// UE 본가 동일: AnimGraph 평가는 별개 단계. 자식이 graph build 하더라도 graph 평가에
@@ -60,6 +70,21 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 	}
 
 	DispatchQueuedAnimEvents();
+
+	// frame 끝 — unseen 활성 NotifyState 들 NotifyEnd 후 erase. 시퀀스 전환 / weight 0 drop /
+	// 자연 종료 모두 같은 경로로 끝남.
+	for (int32 i = static_cast<int32>(ActiveNotifyStates.size()) - 1; i >= 0; --i)
+	{
+		FActiveAnimNotifyState& A = ActiveNotifyStates[i];
+		if (!A.bSeenThisFrame)
+		{
+			if (A.State)
+			{
+				A.State->NotifyEnd(OwningComponent, const_cast<UAnimSequenceBase*>(A.Sequence));
+			}
+			ActiveNotifyStates.erase(ActiveNotifyStates.begin() + i);
+		}
+	}
 }
 
 void UAnimInstance::EvaluatePose(FPoseContext& Output)
@@ -142,6 +167,7 @@ void UAnimInstance::AddAnimNotifies(float PreviousTime, float CurrentTime, const
 	const float Length = Sequence->GetPlayLength();
 	const bool  bWrapped = (CurrentTime < PreviousTime); // 루프로 시간 wrap
 
+	// Instant trigger 가 [Prev, Cur) 구간 안에 들어왔는지.
 	auto InRange = [&](float Trigger) -> bool
 	{
 		if (!bWrapped)
@@ -153,8 +179,71 @@ void UAnimInstance::AddAnimNotifies(float PreviousTime, float CurrentTime, const
 		       (Trigger >= 0.0f         && Trigger < CurrentTime);
 	};
 
+	// [a, b) 와 [c, d) 의 교집합 폭. 음수면 0.
+	auto OverlapWidth = [](float a, float b, float c, float d) -> float
+	{
+		const float Lo = std::max(a, c);
+		const float Hi = std::min(b, d);
+		return std::max(0.0f, Hi - Lo);
+	};
+
+	// 활성 set 안에서 (state, sequence, name) 매칭 entry 조회.
+	auto FindActive = [&](UAnimNotifyState* S, const UAnimSequenceBase* Seq, FName Name) -> FActiveAnimNotifyState*
+	{
+		for (FActiveAnimNotifyState& A : ActiveNotifyStates)
+		{
+			if (A.State == S && A.Sequence == Seq && A.NotifyName == Name) return &A;
+		}
+		return nullptr;
+	};
+
 	for (const FAnimNotifyEvent& Notify : Notifies)
 	{
+		// ── State notify (Duration > 0 + NotifyState 객체) ──
+		if (Notify.NotifyState && Notify.Duration > 0.0f)
+		{
+			const float EvStart = Notify.TriggerTime;
+			const float EvEnd   = Notify.TriggerTime + Notify.Duration;
+
+			float Overlap = 0.0f;
+			if (!bWrapped)
+			{
+				Overlap = OverlapWidth(PreviousTime, CurrentTime, EvStart, EvEnd);
+			}
+			else
+			{
+				// wrap 경계는 두 sub-range 합. (이벤트가 wrap 경계를 넘어가는 케이스는 v1 에선
+				// 클리핑된 상태로 처리 — 보통 Duration < PlayLength.)
+				Overlap += OverlapWidth(PreviousTime, Length,       EvStart, EvEnd);
+				Overlap += OverlapWidth(0.0f,         CurrentTime,  EvStart, EvEnd);
+			}
+
+			if (Overlap > 0.0f)
+			{
+				FActiveAnimNotifyState* A = FindActive(Notify.NotifyState, Sequence, Notify.NotifyName);
+				if (!A)
+				{
+					FActiveAnimNotifyState NewEntry;
+					NewEntry.State          = Notify.NotifyState;
+					NewEntry.Sequence       = Sequence;
+					NewEntry.NotifyName     = Notify.NotifyName;
+					NewEntry.TotalDuration  = Notify.Duration;
+					NewEntry.bSeenThisFrame = true;
+					ActiveNotifyStates.push_back(NewEntry);
+					// push_back 후 reference 무효화 가능 — 인덱스 재조회.
+					A = &ActiveNotifyStates.back();
+					A->State->NotifyBegin(OwningComponent, const_cast<UAnimSequenceBase*>(Sequence), Notify.Duration);
+				}
+				else
+				{
+					A->bSeenThisFrame = true;
+				}
+				A->State->NotifyTick(OwningComponent, const_cast<UAnimSequenceBase*>(Sequence), Overlap);
+			}
+			continue;
+		}
+
+		// ── Instant notify (기존 경로) ──
 		if (InRange(Notify.TriggerTime))
 		{
 			NotifyQueue.push_back({ Notify, Sequence });

@@ -660,22 +660,36 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 	else if (AnimTabState.CurrentSequence)
 	{
 		UAnimSequence* Seq = AnimTabState.CurrentSequence;
-		ImGui::TextUnformatted("Asset Details");
-		ImGui::Separator();
-		ImGui::Text("Name:   %s", Seq->GetName().c_str());
-		ImGui::Text("Length: %.3f s", Seq->GetPlayLength());
-		ImGui::Text("FPS:    %.1f", Seq->GetFrameRate());
-		ImGui::Text("Frames: %d", Seq->GetNumberOfFrames());
-		ImGui::Dummy(ImVec2(0, 6));
-		const FString& Path = Seq->GetAssetPathFileName();
-		if (!Path.empty() && Path != "None")
-		{
-			ImGui::TextWrapped("Path:\n%s", Path.c_str());
-		}
+		// Notify entry 가 타임라인에서 선택되어 있으면 Notify 의 UPROPERTY 편집 UI 를 표시.
+		// 아니면 기존 시퀀스 메타 + Root Motion 패널.
+		const int32 NotifyCount = static_cast<int32>(Seq->GetNotifies().size());
+		const bool bShowNotifyDetails =
+			AnimTabState.SelectedNotifyIndex >= 0 &&
+			AnimTabState.SelectedNotifyIndex < NotifyCount;
 
-		// AnimSequence property 패널 — root motion 등 편집 가능한 항목.
-		ImGui::Dummy(ImVec2(0, 12));
-		FAnimSequencePropertyPanel::Render(Seq);
+		if (bShowNotifyDetails)
+		{
+			FAnimationTimelinePanel::RenderNotifyDetails(Seq, AnimTabState.SelectedNotifyIndex);
+		}
+		else
+		{
+			ImGui::TextUnformatted("Asset Details");
+			ImGui::Separator();
+			ImGui::Text("Name:   %s", Seq->GetName().c_str());
+			ImGui::Text("Length: %.3f s", Seq->GetPlayLength());
+			ImGui::Text("FPS:    %.1f", Seq->GetFrameRate());
+			ImGui::Text("Frames: %d", Seq->GetNumberOfFrames());
+			ImGui::Dummy(ImVec2(0, 6));
+			const FString& Path = Seq->GetAssetPathFileName();
+			if (!Path.empty() && Path != "None")
+			{
+				ImGui::TextWrapped("Path:\n%s", Path.c_str());
+			}
+
+			// AnimSequence property 패널 — root motion 등 편집 가능한 항목.
+			ImGui::Dummy(ImVec2(0, 12));
+			FAnimSequencePropertyPanel::Render(Seq);
+		}
 	}
 	else
 	{
@@ -715,8 +729,9 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 			UAnimSequence* Seq = FAnimationManager::Get().LoadAnimation(Path);
 			if (Seq && Seq->IsCompatibleWith(SkeletalMesh))
 			{
-				AnimTabState.CurrentSequence   = Seq;
-				AnimTabState.SelectedAnimIndex = -1;
+				AnimTabState.CurrentSequence     = Seq;
+				AnimTabState.SelectedAnimIndex   = -1;
+				AnimTabState.SelectedNotifyIndex = -1;
 				ApplyAnimationToComponent();
 			}
 		}
@@ -741,8 +756,9 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 			FAnimationManager::Get().RefreshAvailableAnimations();
 			if (!ImportedSequences.empty())
 			{
-				AnimTabState.CurrentSequence   = ImportedSequences[0];
-				AnimTabState.SelectedAnimIndex = -1;
+				AnimTabState.CurrentSequence     = ImportedSequences[0];
+				AnimTabState.SelectedAnimIndex   = -1;
+				AnimTabState.SelectedNotifyIndex = -1;
 				ApplyAnimationToComponent();
 			}
 		}
@@ -838,6 +854,7 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 			{
 				AnimTabState.SelectedMontageIndex = E.OriginalIndex;
 				AnimTabState.bMontageSelected     = true;
+				AnimTabState.SelectedNotifyIndex  = -1;
 				if (UAnimMontage* M = FAnimationManager::Get().LoadMontage(E.FullPath))
 				{
 					AnimTabState.CurrentMontage = M;
@@ -845,8 +862,9 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 			}
 			else
 			{
-				AnimTabState.SelectedAnimIndex = E.OriginalIndex;
-				AnimTabState.bMontageSelected  = false;
+				AnimTabState.SelectedAnimIndex   = E.OriginalIndex;
+				AnimTabState.bMontageSelected    = false;
+				AnimTabState.SelectedNotifyIndex = -1;
 				if (UAnimSequence* Seq = FAnimationManager::Get().LoadAnimation(E.FullPath))
 				{
 					if (Seq->IsCompatibleWith(SkeletalMesh))
@@ -883,7 +901,8 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 		Comp->SetPlaying(!bPlaying);
 	}
 
-	FAnimationTimelinePanel::Render(NodeInst, Comp, AnimTabState.CurrentSequence, TimelineHeight);
+	FAnimationTimelinePanel::Render(NodeInst, Comp, AnimTabState.CurrentSequence, TimelineHeight,
+	                                AnimTabState.SelectedNotifyIndex);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
