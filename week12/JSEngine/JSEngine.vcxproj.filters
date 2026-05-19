@@ -555,6 +555,9 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\UWorld.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\GeneratedLuaBindings.gen.cpp">
+      <Filter>Intermediate\Reflection</Filter>
+    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Math\FColor.gen.cpp">
       <Filter>Intermediate\Reflection\Math</Filter>
     </ClCompile>
@@ -1203,6 +1206,9 @@
     <ClCompile Include="Source\Engine\Object\FName.cpp">
       <Filter>Source\Engine\Object</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Object\Function.cpp">
+      <Filter>Source\Engine\Object</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Object\Object.cpp">
       <Filter>Source\Engine\Object</Filter>
     </ClCompile>
@@ -1417,6 +1423,9 @@
       <Filter>Source\Engine\Runtime\Script\API</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\Script\CoroutineScheduler.cpp">
+      <Filter>Source\Engine\Runtime\Script</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Runtime\Script\LuaReflectionBridge.cpp">
       <Filter>Source\Engine\Runtime\Script</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptComponent.cpp">
@@ -2248,6 +2257,9 @@
     <ClInclude Include="Source\Engine\Object\FName.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Object\Function.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Object\Object.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
@@ -2477,6 +2489,9 @@
       <Filter>Source\Engine\Runtime\Script</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Runtime\Script\CoroutineScheduler.h">
+      <Filter>Source\Engine\Runtime\Script</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Runtime\Script\LuaReflectionBridge.h">
       <Filter>Source\Engine\Runtime\Script</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptComponent.h">

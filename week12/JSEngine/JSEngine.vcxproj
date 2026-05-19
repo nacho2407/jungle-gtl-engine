@@ -432,6 +432,7 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\ATextRenderActor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\ULevel.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\GameFramework\UWorld.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\GeneratedLuaBindings.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Math\FColor.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Math\FQuat.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Math\FVector.gen.cpp" />
@@ -870,6 +871,7 @@
     <ClCompile Include="Source\Engine\Object\Class.cpp" />
     <ClCompile Include="Source\Engine\Object\EngineStatics.cpp" />
     <ClCompile Include="Source\Engine\Object\FName.cpp" />
+    <ClCompile Include="Source\Engine\Object\Function.cpp" />
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Object\Property.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
@@ -942,6 +944,7 @@
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaUIAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaWorldAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\CoroutineScheduler.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\LuaReflectionBridge.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManager.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerActorBindings.cpp" />
@@ -1247,6 +1250,7 @@
     <ClInclude Include="Source\Engine\Object\Class.h" />
     <ClInclude Include="Source\Engine\Object\EngineStatics.h" />
     <ClInclude Include="Source\Engine\Object\FName.h" />
+    <ClInclude Include="Source\Engine\Object\Function.h" />
     <ClInclude Include="Source\Engine\Object\Object.h" />
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
     <ClInclude Include="Source\Engine\Object\ObjectPtr.h" />
@@ -1324,6 +1328,7 @@
     <ClInclude Include="Source\Engine\Runtime\Script\API\LuaEngineAPIBindings.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\Coroutine.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\CoroutineScheduler.h" />
+    <ClInclude Include="Source\Engine\Runtime\Script\LuaReflectionBridge.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptManager.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptUtils.h" />

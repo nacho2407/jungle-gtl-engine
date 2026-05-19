@@ -6,6 +6,7 @@
 #include "Math/Vector.h"
 #include "Object/Class.h"
 #include "Object/Object.h"
+#include "Runtime/Script/LuaReflectionBridge.h"
 #include "Runtime/Script/ScriptUtils.h"
 #include "ThirdParty/sol/sol.hpp"
 
@@ -265,5 +266,6 @@ void FScriptManager::BindObjectTypes()
 	LUA_SET(GetName, &LuaGetObjectName);
 	LUA_SET(GetType, &LuaGetObjectType);
 	LUA_SET(IsA, &LuaObjectIsA);
+	LUA_SET(Call, &FLuaReflectionFunctionBridge::CallByName);
 	LUA_END_TYPE();
 }

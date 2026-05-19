@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "EngineStatics.h"
 #include "Core/Containers/Array.h"
@@ -13,6 +13,7 @@
 #include <type_traits>
 
 class UClass;
+class UFunction;
 class FDebugDetailsBuilder;
 struct FDuplicateContext;
 
@@ -78,6 +79,7 @@ public:
 	bool IsA() const { return IsA(T::StaticClass()); }
 
 	bool IsValidLowLevel() const { return this != nullptr; }
+	virtual void ProcessEvent(UFunction* Function, void* Params);
 
 	// -----------------------------------------------------------------------
 	// 프로퍼티 시스템 — 런타임 UClass/FProperty 메타데이터를 공유합니다.

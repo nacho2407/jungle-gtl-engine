@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreMinimal.h"
 #include "Object/Object.h"
@@ -7,6 +7,7 @@
 #include <new>
 
 class UObject;
+class UFunction;
 
 struct IStructOps
 {
@@ -95,9 +96,14 @@ public:
 	bool HasAnyClassFlags(uint32 Flags) const { return (ClassFlags & Flags) != 0; }
 	UObject* CreateObject() const;
 
+	void AddFunction(UFunction* Function);
+	UFunction* FindFunction(const char* FunctionName) const;
+	void GetAllFunctions(TArray<const UFunction*>& OutFunctions) const;
+
 private:
 	uint32 ClassFlags = 0;
 	FCreateObjectFunc CreateFunc = nullptr;
+	TArray<UFunction*> Functions;
 };
 
 class UScriptStruct : public UStruct

@@ -1,7 +1,8 @@
-#include "Object.h"
+﻿#include "Object.h"
 #include "EngineStatics.h"
 #include "Object/FName.h"
 #include "Object/Class.h"
+#include "Object/Function.h"
 #include "Object/Property.h"
 #include "Core/Reflection/ReflectionRegistry.h"
 
@@ -83,6 +84,14 @@ bool UObject::IsA(const UClass* Class) const
 {
 	UClass* ThisClass = GetClass();
 	return ThisClass && ThisClass->IsChildOf(Class);
+}
+
+void UObject::ProcessEvent(UFunction* Function, void* Params)
+{
+	if (Function)
+	{
+		Function->Invoke(this, Params);
+	}
 }
 
 UObject* NewObject(UClass* Class)

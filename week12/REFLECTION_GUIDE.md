@@ -99,6 +99,9 @@ NoEdit
 
 Min, Max, Speed
     자료형의 최소값, 최대값, 변경 단위를 결정합니다.
+    
+ReferenceKind = (RuntimeObject / ActorComponent / Asset) 
+    참조하는 UObject가 런타임 오브젝트인지, 컴포넌트인지, 에셋인지 명시합니다.
 ```
 
 ---
@@ -129,15 +132,66 @@ Hidden
 
 ---
 
+### UFUNCTION
+
+Lua나 런타임 시스템에서 C++ 멤버 함수를 이름으로 호출해야 한다면 `UFUNCTION()`을 붙입니다.
+
+```cpp
+UFUNCTION(LuaCallable, BlueprintPure, Category = "Actor")
+FVector GetActorLocation() const;
+
+UFUNCTION(LuaCallable, BlueprintCallable, Category = "Actor")
+void SetActorLocation(const FVector& Location);
+```
+
+지원 항목:
+
+```txt
+LuaCallable
+    Lua에서 같은 이름의 멤버 함수로 호출할 수 있게 합니다.
+    예: Actor:GetActorLocation(), Actor:SetActorLocation(Vector(0, 0, 100))
+
+BlueprintCallable
+    상태를 바꿀 수 있는 일반 호출 함수라는 표시입니다.
+    지금은 메타데이터 플래그로 저장되며, 이후 툴/그래프 노출에 사용할 수 있습니다.
+
+BlueprintPure
+    상태를 바꾸지 않는 조회 함수라는 표시입니다.
+    const 함수와 함께 사용하는 것을 권장합니다.
+
+DisplayName 또는 Display / Category
+    함수 목록이나 툴에서 표시할 이름과 카테고리입니다.
+```
+
+`LuaCallable`을 붙인 함수는 Lua에서 일반 멤버 함수처럼 호출할 수 있습니다.
+
+```lua
+local Location = Actor:GetActorLocation()
+Actor:SetActorLocation(Vector(0, 0, 100))
+```
+
+함수 이름을 문자열로 다뤄야 할 때는 모든 UObject에서 공통으로 제공되는 `Call()`을 사용할 수 있습니다.
+
+```lua
+Actor:Call("SetActorLocation", Vector(0, 0, 100))
+```
+
+주의사항:
+
+- UObject의 `public` 멤버 함수에만 사용합니다. 그 외엔 수동으로 바인딩합니다.
+- `static` 함수, inline body가 있는 함수, 기본 인자, 오버로드는 현재 지원하지 않습니다.
+- 함수 포인터, `TMap`, `TSet` 타입은 현재 지원하지 않습니다. 
+
+---
+
 ## 3. 현재 지원되는 타입
 
-현재 지원되는 타입:
+현재 리플렉션 프로퍼티와 `UFUNCTION()` 파라미터/반환값에서 지원되는 타입:
 
 ```cpp
 bool / int / int32 / float / FString / FName
 UENUM()을 적은 모든 열거형
 USTRUCT() + GENERATED_STRUCT_BODY()를 적은 모든 구조체
-UFUNCTION()을 단 모든 함수
 
 TObjectPtr<T>
 TSoftObjectPtr<T>
@@ -179,9 +233,9 @@ GC 대상인가, 아니면 그냥 cache인가?
 
 ### 그러면 raw pointer는 이제 쓰면 안 되나요?
 
-소유하지 않고, 저장하지 않고, 리플렉션으로 관리할 필요도 없다면 raw pointer를 사용합니다.
+`소유하지 않고, 저장하지 않고, 리플렉션으로 관리할 필요도 없다면 raw pointer를 사용합니다.`
 
-라고 말하면 너무 어렵겠죠? 아래의 세 가지 질문을 던져 봅시다.
+사실 이렇게 말하면 너무 어렵습니다. 아래의 세 가지 질문을 던져 봅시다.
 
 ```
 이 포인터를 저장을 해 줘야 할까?
@@ -207,7 +261,18 @@ TObjectPtr<USceneComponent> UpdatedComponent;
 주의사항:
 
 - `Asset`의 포인터는 `SoftObjectPtr<T>`를 사용해서 경로로 참조하는 것을 권장합니다.
+- `UObjectPtr<T>`인데 Asset을 참조할 경우 `ReferenceKind`를 명시합니다.
+- `TArray<USkeletalMesh*>` 등 raw pointer 배열일 경우에도 `ReferenceKind`를 명시합니다.
 
+예시:
+
+```cpp
+UPROPERTY(ReferenceKind = Asset)
+TObjectPtr<UAnimInstance> AnimInstance = nullptr
+
+UPROPERTY(DisplayName = "Materials", ReferenceType = Asset)
+TArray<UMaterialInterface*> Materials;
+```
 
 ---
 
@@ -262,6 +327,7 @@ private:
 [ ] 저장하지 않을 값은 Transient를 적거나 UPROPERTY()를 붙이지 않았는가?
 [ ] 런타임 객체 참조는 TObjectPtr을 사용했는가?
 [ ] 에셋 참조는 TSoftObjectPtr을 사용했는가?
+[ ] Lua에서 호출할 멤버 함수에는 UFUNCTION(LuaCallable)을 붙였는가?
 ```
 
 ---
