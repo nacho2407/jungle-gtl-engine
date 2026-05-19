@@ -135,8 +135,8 @@ public:
 
 	// ── AnimGraph (Phase 1.4+) ──
 	// 자식이 NativeInitializeAnimation 에서 MakeNode 로 노드 트리 build 후 SetRootNode 호출.
-	// RootNode 가 set 되면 UpdateAnimation / EvaluatePose 가 트리 평가 경로로 진행 — legacy
-	// NativeUpdateAnimation / EvaluateAnimation 가상 호출은 skip. RootNode 가 null 이면 legacy.
+	// InRoot 가 FAnimNode_Root 가 아니면 자동으로 wrap (IsRoot() 가상함수로 판별) — RootMotion
+	// 누적 등 정책 hook 의 단일 진입점 보장. null 이면 legacy 경로 (NativeUpdate/Evaluate).
 	void            SetRootNode(FAnimNode_Base* InRoot);
 	FAnimNode_Base* GetRootNode() const { return RootNode; }
 
