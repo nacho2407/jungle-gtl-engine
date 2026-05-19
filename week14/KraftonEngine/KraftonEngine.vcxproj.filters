@@ -695,6 +695,9 @@
     <ClCompile Include="Source\Engine\Animation\SkeletonManager.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_BlendListByEnum.cpp">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_LayeredBlendPerBone.cpp">
       <Filter>Source\Engine\Animation\Nodes</Filter>
     </ClCompile>
@@ -1701,6 +1704,9 @@
       <Filter>Source\Engine\Animation\Nodes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Base.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_BlendListByEnum.h">
       <Filter>Source\Engine\Animation\Nodes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_LayeredBlendPerBone.h">
