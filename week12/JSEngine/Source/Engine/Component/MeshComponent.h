@@ -22,7 +22,7 @@ public:
 	virtual void TickComponent(float DeltaTime) override;
 
 protected:
-	UPROPERTY(DisplayName = "Materials")
+	UPROPERTY(DisplayName = "Materials", ReferenceType = Asset)
 	TArray<UMaterialInterface*> Materials;
 
 	UPROPERTY(DisplayName = "Scroll U", Min = -1.0f, Max = 1.0f, Speed = 0.01f)

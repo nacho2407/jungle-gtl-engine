@@ -51,7 +51,7 @@ public:
 private:
 	TArray<FMeshSection> Sections;
 
-	UPROPERTY(DisplayName = "Materials")
+	UPROPERTY(DisplayName = "Materials", ReferenceType = Asset)
 	TArray<UMaterialInterface*> Materials;
 };
 

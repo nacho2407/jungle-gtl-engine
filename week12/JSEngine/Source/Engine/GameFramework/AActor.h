@@ -81,7 +81,9 @@ public:
 	}
 
 	// Transform — Location
+	UFUNCTION(LuaCallable, BlueprintPure, Category = "Actor")
 	FVector GetActorLocation() const;
+	UFUNCTION(LuaCallable, BlueprintCallable, Category = "Actor")
 	void SetActorLocation(const FVector& Location);
 	void AddActorWorldOffset(const FVector& Delta)
 	{
