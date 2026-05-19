@@ -29,6 +29,32 @@ inline const char* GAnimationModeNames[] = {
 };
 inline constexpr uint32 GAnimationModeCount = sizeof(GAnimationModeNames) / sizeof(GAnimationModeNames[0]);
 
+// AnimInstance 가 어떤 소스에서 root motion 을 누적할지 결정.
+// UE 의 ERootMotionMode 와 의미 동일. 본가는 SkeletalMeshComponent 에 박지만,
+// 우리 구조에선 AnimInstance 가 누적 buffer + Montage 보유 + base/FSM 누적 분기를
+// 모두 들고 있어 정책도 같은 클래스에 두는 게 일관성 있음.
+//
+// 누적 책임 매트릭스:
+//   IgnoreRootMotion          — Base/Montage 모두 누적 안 함 (Consume 시 항상 identity)
+//   RootMotionFromEverything  — Base (SingleNode/FSM) + Montage 둘 다 누적
+//   RootMotionFromMontagesOnly — Montage 만 누적, Base 는 skip
+//
+// 현재 default 는 RootMotionFromEverything — 기존 동작 (항상 누적) 과 동일하므로 회귀 0.
+UENUM()
+enum class ERootMotionMode : uint8
+{
+	IgnoreRootMotion,
+	RootMotionFromEverything,
+	RootMotionFromMontagesOnly,
+};
+
+inline const char* GRootMotionModeNames[] = {
+	"IgnoreRootMotion",
+	"RootMotionFromEverything",
+	"RootMotionFromMontagesOnly",
+};
+inline constexpr uint32 GRootMotionModeCount = sizeof(GRootMotionModeNames) / sizeof(GRootMotionModeNames[0]);
+
 // SingleNode 모드에서 직렬화/에디터 노출용으로 묶어 두는 재생 파라미터.
 // AnimToPlay 는 런타임 포인터, AnimToPlayPath 는 직렬화/에디터용 식별자 (= asset 경로).
 // SetAnimation 등 설정 경로는 두 멤버를 항상 동기화한다.

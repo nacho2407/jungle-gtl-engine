@@ -5,6 +5,7 @@
 #include "AnimNotifyEvent.h"
 #include "Math/Transform.h"
 #include "Object/FName.h"
+#include "AnimationMode.h"
 
 class USkeletalMeshComponent;
 class USkeletalMesh;
@@ -81,8 +82,13 @@ public:
 	// SkeletalMeshComponent 가 매 프레임 Tick 끝에서 ConsumeRootMotion 로 소비 후
 	// owning actor 의 transform 에 적용. 소비 시 누적 buffer 0 으로 초기화.
 	// Delta 는 root 본 local 좌표계 — 호출자가 actor world frame 으로 변환해야 함.
+	//
+	// RootMotionMode 가 누적 소스를 결정 (현재 dormant — 후속 step 에서 분기에 반영).
 	void AccumulateRootMotion(const FTransform& Delta);
 	FTransform ConsumeRootMotion();
+
+	ERootMotionMode GetRootMotionMode() const { return RootMotionMode; }
+	void            SetRootMotionMode(ERootMotionMode InMode) { RootMotionMode = InMode; }
 
 	// ── Montage ──
 	// AnimInstance 한 개 당 활성 montage 1개 (default slot, whole-body).
@@ -108,6 +114,11 @@ protected:
 
 	// Root motion 누적 (UpdateAnimation 한 프레임 분, Consume 시 reset).
 	FTransform                    PendingRootMotion;
+
+	// Root motion 누적 정책. default = RootMotionFromEverything (기존 동작 유지).
+	// 후속 step 에서 AccumulateRootMotion / Montage 누적 / Consume 분기에 체크 추가됨.
+	UPROPERTY(Edit, Save, Category="Animation", DisplayName="Root Motion Mode", Enum=ERootMotionMode)
+	ERootMotionMode               RootMotionMode = ERootMotionMode::RootMotionFromEverything;
 
 	// Montage 인스턴스 — lazily 생성 (PlayMontage 첫 호출 시).
 	UAnimMontageInstance*         MontageInstance = nullptr;
