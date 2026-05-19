@@ -26,6 +26,7 @@
 #include <d3d11.h>
 
 class UAnimSequence;
+class UAnimStateMachine;
 class FMaterialLoadService;
 class FMaterialSerializationService;
 class FStaticMeshLoadService;
@@ -122,6 +123,11 @@ public:
 	UAnimSequence* LoadAnimSequence(const FString& SourceFbxPath,const FString& TargetSkeletalMeshPath,const FString& AnimStackName);
 	UAnimSequence* FindAnimSequence(const FString& Key) const;
 	TArray<FString> GetAnimSequencePaths() const;
+
+	UAnimStateMachine* LoadAnimStateMachine(const FString& Path);
+	UAnimStateMachine* FindAnimStateMachine(const FString& Path) const;
+	bool SaveAnimStateMachine(const FString& Path, const UAnimStateMachine* StateMachine);
+	TArray<FString> GetAnimStateMachinePaths() const;
 	
 	bool IsAnimSequenceBinaryValid(
 		const FString& SourcePath,
@@ -188,8 +194,10 @@ private:
 	TMap<FString, USkeletalMesh*> SkeletalMeshMap;
 	TMap<FString, TArray<FString>> AnimStackNamesMap;
 	TMap<FString, UAnimSequence*> AnimSequenceMap;
+    TMap<FString, UAnimStateMachine*> AnimStateMachineMap;
+    /* Paths */
 	TArray<FString> AnimSequenceFilePaths;
-	/* Paths */
+	TArray<FString> AnimStateMachineFilePaths;
 	TArray<FString> ObjFilePaths;
 	TArray<FString> MaterialFilePaths;
 	TArray<FString> ParticleFilePaths;
