@@ -27,10 +27,14 @@ struct FCompositeSection
 // 런타임에서는 UAnimMontageInstance 가 현재 section + 경과 시간을 추적하면서
 // GetBonePose 를 호출해 본 pose 를 평가. AnimInstance::EvaluateAnimation 가
 // base FSM pose 와 BlendWeight 로 lerp.
+
+#include "Source/Engine/Animation/AnimMontage.generated.h"
+
+UCLASS()
 class UAnimMontage : public UAnimSequenceBase
 {
 public:
-    DECLARE_CLASS(UAnimMontage, UAnimSequenceBase)
+    GENERATED_BODY()
 
     UAnimMontage()           = default;
     ~UAnimMontage() override = default;

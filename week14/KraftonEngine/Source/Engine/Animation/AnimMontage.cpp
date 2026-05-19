@@ -4,9 +4,6 @@
 #include "AnimExtractContext.h"
 #include "AnimationManager.h"
 #include "PoseContext.h"
-#include "Object/Object.h"
-
-DEFINE_CLASS(UAnimMontage, UAnimSequenceBase)
 
 FArchive& operator<<(FArchive& Ar, FCompositeSection& S)
 {
