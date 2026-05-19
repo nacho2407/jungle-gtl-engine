@@ -19,8 +19,11 @@ struct FAnimGraphStateMachineCache
 struct FAnimGraphSequenceCache
 {
 	UAnimSequence* Sequence = nullptr;
+	FString AnimationPath;
 	TArray<int32> TrackToBoneMap;
 	USkeletalMesh* CachedMesh = nullptr;
+	float PreviousTime = 0.0f;
+	float CurrentTime = 0.0f;
 };
 
 UCLASS()
@@ -41,13 +44,15 @@ public:
 
 
 private:
+	void UpdateNode(int32 NodeId, float DeltaTime);
+	void UpdateSequencePlayer(const FAnimGraphNodeDesc& Node, float DeltaTime);
 	bool EvaluateNode(int32 NodeId, FPoseContext& OutPoseContext);
 	bool EvaluateSequencePlayer(const FAnimGraphNodeDesc& Node, FPoseContext& OutPoseContext);
 	bool LogNodeWarningOnce(int32 NodeId, const FString& Message);
 
 	FAnimGraphSequenceCache& GetOrCreateSequenceCache(int32 NodeId, const FString& AnimationPath);
 	void BuildBoneMapping(FAnimGraphSequenceCache& Cache);
-    
+
     bool EvaluateStateMachine(const FAnimGraphNodeDesc& Node, FPoseContext& OutPoseContext);
 
 	FAnimGraphStateMachineCache& GetOrCreateStateMachineCache(const FAnimGraphNodeDesc& Node);
@@ -60,7 +65,7 @@ private:
 
 	TMap<int32, FAnimGraphSequenceCache> SequenceCacheMap;
 	TMap<int32, FAnimGraphStateMachineCache> StateMachineCacheMap;
-	
+
 	TMap<FString, float> FloatParameters;
 	TMap<FString, bool> BoolParameters;
 

@@ -16,6 +16,7 @@ enum class EEditorAssetType : uint8
 	SkeletalMesh,
 	Texture,
 	Material,
+	AnimGraph,
 	Font,
 	Particle,
 	Scene,
@@ -41,6 +42,7 @@ public:
 	const TArray<FString>& GetSkeletalMeshAssetPaths() const { return SkeletalMeshPaths; }
 	const TArray<FString>& GetTextureAssetPaths() const { return TexturePaths; }
 	const TArray<FString>& GetMaterialInterfaceNames() const { return MaterialInterfaceNames; }
+	const TArray<FString>& GetAnimGraphAssetPaths() const { return AnimGraphPaths; }
 	const TArray<FString>& GetFontNames() const { return FontNames; }
 	const TArray<FString>& GetParticleNames() const { return ParticleNames; }
 
@@ -65,6 +67,7 @@ private:
 	TArray<FString> SkeletalMeshPaths;
 	TArray<FString> TexturePaths;
 	TArray<FString> MaterialInterfaceNames;
+	TArray<FString> AnimGraphPaths;
 	TArray<FString> FontNames;
 	TArray<FString> ParticleNames;
 	TArray<UMaterialInterface*> CachedMaterialInterfaces;
@@ -74,6 +77,7 @@ private:
 	TArray<FEditorAssetItem> SkeletalMeshItems;
 	TArray<FEditorAssetItem> TextureItems;
 	TArray<FEditorAssetItem> MaterialItems;
+	TArray<FEditorAssetItem> AnimGraphItems;
 	TArray<FEditorAssetItem> FontItems;
 	TArray<FEditorAssetItem> ParticleItems;
 	TArray<FEditorAssetItem> EmptyItems;

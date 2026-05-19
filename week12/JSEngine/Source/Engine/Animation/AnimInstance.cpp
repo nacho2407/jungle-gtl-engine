@@ -9,10 +9,18 @@ void UAnimInstance::Initialize(USkeletalMeshComponent* InOwnerComponent)
 
 void UAnimInstance::TriggerAnimNotifies(UAnimSequenceBase* Sequence, float InPreviousTime, float InCurrentTime, bool bLooped, bool bReverse)
 {
-	if (!Sequence || !OwnerComponent) return;
+	DispatchAnimNotifies(OwnerComponent, Sequence, InPreviousTime, InCurrentTime, bLooped, bReverse);
+}
+
+void UAnimInstance::DispatchAnimNotifies(USkeletalMeshComponent* InOwnerComponent, UAnimSequenceBase* Sequence, float InPreviousTime, float InCurrentTime, bool bLooped, bool bReverse)
+{
+	if (!Sequence || !InOwnerComponent) return;
 
 	const float Length = Sequence->GetPlayLength();
+	if (Length <= 0.0f) return;
+
 	const TArray<FAnimNotifyEvent>& Notifies = Sequence->GetNotifies();
+	if (Notifies.empty()) return;
 
 	auto TriggerRange = [&](float Start, float End)
 		{
@@ -23,7 +31,7 @@ void UAnimInstance::TriggerAnimNotifies(UAnimSequenceBase* Sequence, float InPre
 
 				if (bHit)
 				{
-					OwnerComponent->HandleAnimNotify(Notify);
+					InOwnerComponent->HandleAnimNotify(Notify);
 				}
 			}
 		};

@@ -165,7 +165,7 @@ public:
 	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-	virtual void OnAnimNotify(USkeletalMeshComponent*, const FAnimNotifyEvent& Notify) {}
+	virtual void OnAnimNotify(USkeletalMeshComponent* MeshComponent, const FAnimNotifyEvent& Notify);
 
 	void MarkPendingKill() { bPendingKill = true; }
 	bool IsPendingKill() const { return bPendingKill; }

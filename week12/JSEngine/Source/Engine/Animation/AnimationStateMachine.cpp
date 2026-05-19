@@ -1,5 +1,6 @@
 ﻿#include "AnimationStateMachine.h"
 
+#include "AnimInstance.h"
 #include "AnimationRuntime.h"
 #include "Asset/SkeletalMesh.h"
 #include "Component/SkeletalMeshComponent.h"
@@ -16,13 +17,42 @@ void FAnimSequencePoseSource::Update(float DeltaTime)
 		return;
 	}
 
+	PreviousTime = CurrentTime;
 	CurrentTime += DeltaTime;
 
+	bool bLooped = false;
+	const bool bReverse = DeltaTime < 0.0f;
+
 	const float Length = Sequence->GetPlayLength();
-	if (Length > 0.0f)
+	if (Length <= 0.0f)
 	{
-		CurrentTime = std::fmod(CurrentTime, Length);
+		CurrentTime = 0.0f;
+		PreviousTime = 0.0f;
+		return;
 	}
+
+	if (!bReverse)
+	{
+		if (CurrentTime > Length)
+		{
+			CurrentTime = std::fmod(CurrentTime, Length);
+			bLooped = true;
+		}
+	}
+	else
+	{
+		if (CurrentTime < 0.0f)
+		{
+			CurrentTime = std::fmod(CurrentTime, Length);
+			if (CurrentTime < 0.0f)
+			{
+				CurrentTime += Length;
+			}
+			bLooped = true;
+		}
+	}
+
+	UAnimInstance::DispatchAnimNotifies(OwnerComponent, Sequence, PreviousTime, CurrentTime, bLooped, bReverse);
 }
 
 bool FAnimSequencePoseSource::EvaluatePose(FPoseContext& OutPose) const
@@ -66,6 +96,7 @@ bool FAnimSequencePoseSource::EvaluatePose(FPoseContext& OutPose) const
 void FAnimSequencePoseSource::ResetTime()
 {
 	CurrentTime = 0.0f;
+	PreviousTime = 0.0f;
 }
 
 void UAnimationStateMachine::Initialize(USkeletalMeshComponent* Owner)

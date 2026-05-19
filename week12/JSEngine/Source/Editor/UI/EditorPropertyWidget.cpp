@@ -147,44 +147,9 @@ namespace
 				|| std::strcmp(Property->Name, "AnimationMode") == 0);
 	}
 
-	static TArray<FString> CollectAnimGraphAssetPaths()
-	{
-		TArray<FString> Result;
-		const std::filesystem::path AssetRoot = (std::filesystem::path(FPaths::RootDir()) / L"Asset").lexically_normal();
-		if (!std::filesystem::exists(AssetRoot))
-		{
-			return Result;
-		}
-
-		std::error_code ErrorCode;
-		for (const std::filesystem::directory_entry& Entry : std::filesystem::recursive_directory_iterator(AssetRoot, ErrorCode))
-		{
-			if (ErrorCode)
-			{
-				break;
-			}
-			if (!Entry.is_regular_file())
-			{
-				continue;
-			}
-
-			FString Extension = FPaths::ToUtf8(Entry.path().extension().wstring());
-			std::transform(Extension.begin(), Extension.end(), Extension.begin(),
-				[](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
-			if (Extension == ".animgraph")
-			{
-				Result.push_back(FPaths::Normalize(FPaths::ToRelativeString(Entry.path().wstring())));
-			}
-		}
-
-		std::sort(Result.begin(), Result.end());
-		return Result;
-	}
-
-	static bool RenderAnimGraphAssetPathWidget(FString& Value, const char* Label)
+	static bool RenderAnimGraphAssetPathWidget(FString& Value, const char* Label, const TArray<FString>& Options)
 	{
 		bool bChanged = false;
-		TArray<FString> Options = CollectAnimGraphAssetPaths();
 		const char* Preview = Value.empty() ? "<None>" : Value.c_str();
 
 		if (ImGui::BeginCombo(Label, Preview))
@@ -378,6 +343,85 @@ namespace
 			return FPaths::ToRelativeString(ScriptPath.lexically_normal().wstring());
 		}
 		return FPaths::Normalize(PathText);
+	}
+
+	static FString GetLuaScriptDisplayName(const FString& ScriptReference)
+	{
+		if (ScriptReference.empty())
+		{
+			return "<None>";
+		}
+
+		std::filesystem::path ScriptPath(FPaths::ToWide(ScriptReference));
+		if (ScriptPath.has_filename())
+		{
+			return FPaths::ToUtf8(ScriptPath.filename().generic_wstring());
+		}
+
+		return ScriptReference;
+	}
+
+	static bool RenderLuaScriptComboWidget(FString& Value, const char* Label)
+	{
+		bool bChanged = false;
+		const FString Preview = GetLuaScriptDisplayName(Value);
+		if (ImGui::BeginCombo(Label, Preview.c_str()))
+		{
+			FScriptManager& ScriptManager = FScriptManager::Get();
+			ScriptManager.RefreshLuaScriptFiles();
+
+			TArray<FString> ScriptReferences;
+			for (const auto& Pair : ScriptManager.GetScriptArray())
+			{
+				const FLuaScriptInfo& Info = Pair.second;
+				if (!Info.ScriptPath.empty())
+				{
+					ScriptReferences.push_back(MakeScriptReferenceFromPath(FPaths::ToUtf8(Info.ScriptPath)));
+				}
+				else
+				{
+					ScriptReferences.push_back(Pair.first.ToString());
+				}
+			}
+
+			std::sort(ScriptReferences.begin(), ScriptReferences.end());
+			ScriptReferences.erase(
+				std::unique(ScriptReferences.begin(), ScriptReferences.end()),
+				ScriptReferences.end());
+
+			const bool bNoneSelected = Value.empty();
+			if (ImGui::Selectable("<None>", bNoneSelected))
+			{
+				Value.clear();
+				bChanged = true;
+			}
+			if (bNoneSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
+			for (const FString& ScriptReference : ScriptReferences)
+			{
+				const FString DisplayName = GetLuaScriptDisplayName(ScriptReference);
+				const bool bSelected = Value == ScriptReference
+					|| GetLuaScriptDisplayName(Value) == DisplayName;
+
+				if (ImGui::Selectable(DisplayName.c_str(), bSelected))
+				{
+					Value = ScriptReference;
+					bChanged = true;
+				}
+
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+
+		return bChanged;
 	}
 
 	static bool PromptCreateScriptAs(UEditorEngine* EditorEngine, const FString& ScriptPathHint, FString& OutFilePath)
@@ -1953,8 +1997,7 @@ bool FEditorPropertyWidget::RenderSoftObjectPtrWidget(const FProperty& Property,
 		}
 		else if (Property.ObjectClass->IsChildOf(UAnimGraphAsset::StaticClass()))
 		{
-			LocalOptions = CollectAnimGraphAssetPaths();
-			Options = &LocalOptions;
+			Options = &EditorEngine->GetAssetService().GetAnimGraphAssetPaths();
 		}
 	}
 
@@ -2187,9 +2230,17 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 	case EPropertyType::String:
 	{
 		FString* Val = static_cast<FString*>(ValuePtr);
+		if (Property.Name && std::strcmp(Property.Name, "ScriptName") == 0 && Cast<UScriptComponent>(NotifyTarget))
+		{
+			return RenderLuaScriptComboWidget(*Val, Label);
+		}
+
 		if (Property.Name && std::strcmp(Property.Name, "AnimGraphAssetPath") == 0)
 		{
-			return RenderAnimGraphAssetPathWidget(*Val, Label);
+			const TArray<FString>& AnimGraphPaths = EditorEngine
+				? EditorEngine->GetAssetService().GetAnimGraphAssetPaths()
+				: EmptyAssetNames();
+			return RenderAnimGraphAssetPathWidget(*Val, Label, AnimGraphPaths);
 		}
 
 		char Buf[512];
