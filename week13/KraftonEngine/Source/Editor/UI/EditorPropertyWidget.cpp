@@ -101,6 +101,20 @@ namespace
 		return It != Metadata.end() ? &It->second : nullptr;
 	}
 
+	bool IsTruthyMetadataValue(const FString& Value)
+	{
+		return Value.empty() || Value == "true" || Value == "1" || Value == "yes";
+	}
+
+	bool HasTruthyPropertyMetadata(const FPropertyValue& Prop, const FString& Key)
+	{
+		if (const FString* Value = FindPropertyMetadata(Prop, Key))
+		{
+			return IsTruthyMetadataValue(*Value);
+		}
+		return false;
+	}
+
 	FString GetAssetTypeMetadata(const FPropertyValue& Prop)
 	{
 		if (const FString* AssetType = FindPropertyMetadata(Prop, "assettype"))
@@ -1714,8 +1728,9 @@ bool FEditorPropertyWidget::RenderArrayPropertyWidget(FPropertyValue& Prop, bool
 
 	bool bChanged = false;
 	size_t Num = Ops->GetNum(ArrayPtr);
+	const bool bEditFixedSize = HasTruthyPropertyMetadata(Prop, "editfixedsize") || HasTruthyPropertyMetadata(Prop, "fixedsize");
 
-	if (Ops->InsertDefault && ImGui::Button("+"))
+	if (!bEditFixedSize && Ops->InsertDefault && ImGui::Button("+"))
 	{
 		Ops->InsertDefault(ArrayPtr, Num);
 		bChanged = true;
@@ -1739,7 +1754,7 @@ bool FEditorPropertyWidget::RenderArrayPropertyWidget(FPropertyValue& Prop, bool
 		FString ElementName = "Element " + std::to_string(ElemIdx);
 		const FString ElementPath = MakeArrayElementPath(PropertyPath, ElemIdx);
 
-		if (Ops->RemoveAt && ImGui::Button("-"))
+		if (!bEditFixedSize && Ops->RemoveAt && ImGui::Button("-"))
 		{
 			Ops->RemoveAt(ArrayPtr, static_cast<size_t>(ElemIdx));
 			bChanged = true;
@@ -1751,7 +1766,7 @@ bool FEditorPropertyWidget::RenderArrayPropertyWidget(FPropertyValue& Prop, bool
 			break;
 		}
 
-		if (Ops->RemoveAt)
+		if (!bEditFixedSize && Ops->RemoveAt)
 		{
 			ImGui::SameLine();
 		}

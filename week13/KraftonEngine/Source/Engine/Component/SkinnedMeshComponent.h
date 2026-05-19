@@ -85,7 +85,7 @@ protected:
 	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Skeletal Mesh", AssetType="SkeletalMesh")
 	FSoftObjectPtr SkeletalMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
-	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", AssetType="Material")
+	UPROPERTY(Edit, Save, EditFixedSize, Category="Materials", DisplayName="Materials", AssetType="Material")
 	TArray<FSoftObjectPtr> MaterialSlots;
 
 	// Bone edit pose는 asset 원본 bone을 직접 바꾸지 않고 component-local override로만 유지한다.
