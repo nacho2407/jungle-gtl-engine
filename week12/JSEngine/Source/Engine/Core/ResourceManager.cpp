@@ -1103,7 +1103,7 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 	FFbxAnimImportOptions ImportOptions;
 	ImportOptions.PreviewMeshPath = NormalizedPath;
 
-	// LoadAnimSequences가 내부적으로 GetAnimationStackNames 역할도 겸함
+	// LoadAnimSequences가 FBX를 한 번 열어서 stack 순회와 sequence 생성을 같이 처리한다.
 	TArray<FFbxAnimStackImportResult> ImportResults = FbxImporter.LoadAnimSequences(NormalizedPath, ImportOptions);
 	
 	for (const FFbxAnimStackImportResult& Result : ImportResults)
@@ -1183,6 +1183,12 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
 			if (!LoadedSequence)
 			{
 				LoadedSequence = AnimSequenceAssetLoader.Load(FirstAssetPath);
+				if (LoadedSequence)
+				{
+					// FBX 경로로 요청해서 이미 생성된 .animseq를 읽은 경우,
+					// source FBX key와 asset key 둘 다 같은 객체를 가리키게 해서 다음 요청에서 재로드하지 않는다.
+					AnimSequenceMap[FirstAssetPath] = LoadedSequence;
+				}
 			}
 		}
 	}

@@ -161,23 +161,12 @@ namespace
 		}
 	}
 
-	void CollectSkeletonNodesRecursive(FbxNode* Node, TArray<FbxNode*>& OutNodes)
+	struct FAnimationTrackNodeCollection
 	{
-		if (!Node)
-		{
-			return;
-		}
-
-		if (IsSkeletonNode(Node))
-		{
-			AddUniqueNode(OutNodes, Node);
-		}
-
-		for (int32 ChildIndex = 0; ChildIndex < Node->GetChildCount(); ++ChildIndex)
-		{
-			CollectSkeletonNodesRecursive(Node->GetChild(ChildIndex), OutNodes);
-		}
-	}
+		TArray<FbxNode*> TrackNodes;
+		TArray<FbxNode*> AnimatedTransformNodes;
+		bool bHasTransformAnimation = false;
+	};
 
 	bool ClusterHasPositiveWeight(FbxCluster* Cluster)
 	{
@@ -234,75 +223,90 @@ namespace
 		}
 	}
 
-	void CollectSkinClusterLinkNodesRecursive(FbxNode* Node, TArray<FbxNode*>& OutNodes)
+	void CollectAnimationTrackNodesRecursive(
+		FbxNode* Node,
+		FbxAnimStack* Stack,
+		FAnimationTrackNodeCollection& OutCollection)
 	{
 		if (!Node)
 		{
 			return;
+		}
+
+		// 한 번의 scene 순회에서 세 가지를 같이 모은다.
+		// 1) eSkeleton node: 일반적인 bone track 후보
+		// 2) skin cluster link node: skeleton attribute가 빠진 FBX의 bone 후보
+		// 3) transform curve가 실제로 있는 node: animation 존재 여부와 fallback track 후보
+		// 이전 구현은 stack 유효성 검사용 순회와 실제 track 수집 순회를 따로 해서
+		// FBX scene을 stack마다 최소 두 번 훑었다. 여기서는 같은 순회 결과를 import에 재사용한다.
+		if (NodeHasTransformCurveKeys(Node, Stack))
+		{
+			OutCollection.bHasTransformAnimation = true;
+			AddUniqueNode(OutCollection.AnimatedTransformNodes, Node);
+		}
+
+		if (IsSkeletonNode(Node))
+		{
+			AddUniqueNode(OutCollection.TrackNodes, Node);
 		}
 
 		if (FbxMesh* Mesh = Node->GetMesh())
 		{
-			CollectSkinClusterLinkNodes(Mesh, OutNodes);
+			CollectSkinClusterLinkNodes(Mesh, OutCollection.TrackNodes);
 		}
 
 		for (int32 ChildIndex = 0; ChildIndex < Node->GetChildCount(); ++ChildIndex)
 		{
-			CollectSkinClusterLinkNodesRecursive(Node->GetChild(ChildIndex), OutNodes);
+			CollectAnimationTrackNodesRecursive(Node->GetChild(ChildIndex), Stack, OutCollection);
 		}
 	}
 
-	void CollectAnimatedTransformNodesRecursive(FbxNode* Node, FbxAnimStack* Stack, TArray<FbxNode*>& OutNodes)
+	bool HasTransformAnimationRecursive(FbxNode* Node, FbxAnimStack* Stack)
 	{
 		if (!Node)
 		{
-			return;
+			return false;
 		}
 
 		if (NodeHasTransformCurveKeys(Node, Stack))
 		{
-			AddUniqueNode(OutNodes, Node);
+			return true;
 		}
 
 		for (int32 ChildIndex = 0; ChildIndex < Node->GetChildCount(); ++ChildIndex)
 		{
-			CollectAnimatedTransformNodesRecursive(Node->GetChild(ChildIndex), Stack, OutNodes);
+			if (HasTransformAnimationRecursive(Node->GetChild(ChildIndex), Stack))
+			{
+				return true;
+			}
 		}
+
+		return false;
 	}
 
-	TArray<FbxNode*> CollectAnimationTrackNodes(FbxScene* Scene, FbxAnimStack* Stack)
+	FAnimationTrackNodeCollection CollectAnimationTrackNodes(FbxScene* Scene, FbxAnimStack* Stack)
 	{
-		TArray<FbxNode*> Nodes;
-		if (!Scene || !Scene->GetRootNode())
+		FAnimationTrackNodeCollection Collection;
+		if (!Scene || !Scene->GetRootNode() || !Stack)
 		{
-			return Nodes;
+			return Collection;
 		}
 
 		FbxNode* RootNode = Scene->GetRootNode();
 		for (int32 ChildIndex = 0; ChildIndex < RootNode->GetChildCount(); ++ChildIndex)
 		{
-			// 정상적인 skeletal animation FBX라면 bone node들이 eSkeleton attribute를 가진다.
-			// 먼저 skeleton node들을 수집해서 각 bone에 대응하는 animation track 후보로 사용한다.
-			CollectSkeletonNodesRecursive(RootNode->GetChild(ChildIndex), Nodes);
+			CollectAnimationTrackNodesRecursive(RootNode->GetChild(ChildIndex), Stack, Collection);
 		}
 
-		for (int32 ChildIndex = 0; ChildIndex < RootNode->GetChildCount(); ++ChildIndex)
+		// 정상 skeletal FBX에서는 TrackNodes가 bone/cluster link로 채워진다.
+		// 다만 transform animation만 들어있는 FBX도 열 수 있게, bone 후보가 전혀 없을 때만
+		// curve가 달린 node들을 runtime track으로 사용한다.
+		if (Collection.TrackNodes.empty())
 		{
-			// 일부 FBX는 cluster link node가 eSkeleton attribute를 갖지 않는다.
-			// Skeletal mesh import는 cluster link를 bone으로 쓰므로 animation track 후보에도 추가한다.
-			CollectSkinClusterLinkNodesRecursive(RootNode->GetChild(ChildIndex), Nodes);
+			Collection.TrackNodes = Collection.AnimatedTransformNodes;
 		}
 
-		// skeleton attribute가 없고 skin cluster도 없는 FBX도 있으므로, 그 경우에는 transform curve가 있는 node를 fallback으로 사용한다.
-		if (Nodes.empty())
-		{
-			for (int32 ChildIndex = 0; ChildIndex < RootNode->GetChildCount(); ++ChildIndex)
-			{
-				CollectAnimatedTransformNodesRecursive(RootNode->GetChild(ChildIndex), Stack, Nodes);
-			}
-		}
-
-		return Nodes;
+		return Collection;
 	}
 
 	bool StackHasTransformAnimation(FbxScene* Scene, FbxAnimStack* Stack)
@@ -312,14 +316,16 @@ namespace
 			return false;
 		}
 
-		TArray<FbxNode*> AnimatedNodes;
 		FbxNode* RootNode = Scene->GetRootNode();
 		for (int32 ChildIndex = 0; ChildIndex < RootNode->GetChildCount(); ++ChildIndex)
 		{
-			CollectAnimatedTransformNodesRecursive(RootNode->GetChild(ChildIndex), Stack, AnimatedNodes);
+			if (HasTransformAnimationRecursive(RootNode->GetChild(ChildIndex), Stack))
+			{
+				return true;
+			}
 		}
 
-		return !AnimatedNodes.empty();
+		return false;
 	}
 
 	bool IsUsableTimeSpan(const FbxTimeSpan& TimeSpan)
@@ -535,7 +541,14 @@ namespace
 		return FTransform(FQuat(RotationMatrix).GetNormalized(), Translation, Scale);
 	}
 
-	//1. Animation Import and Sampling Phase(UAnimSingleNodeInstance::BuildBoneMapping()으로 이어짐)
+	// Animation Import and Sampling Phase.
+	// FBX 원본에는 “본 하나당 transform key 배열”이 바로 들어있는 것이 아니다.
+	// 대략 다음 형태다.
+	// - FbxAnimStack: 하나의 take/clip. 엔진에서는 UAnimSequence 하나에 대응시킨다.
+	// - FbxAnimLayer: stack 안의 layer. FBX SDK evaluator가 현재 stack의 layer/curve를 평가한다.
+	// - FbxAnimCurve: node의 LclTranslation/Rotation/Scaling 성분별 X/Y/Z curve.
+	// importer는 curve 자체를 저장하지 않고, 일정한 sample rate로 EvaluateGlobalTransform()을 호출해서
+	// 엔진 런타임이 바로 사용할 수 있는 FBoneAnimationTrack / FRawAnimSequenceTrack으로 bake한다.
 	TMap<FbxNode*, FMatrix> BuildSampleGlobalTransformCache(
 		const TArray<FbxNode*>& TrackNodes,
 		const FbxTime& SampleTime)
@@ -545,66 +558,37 @@ namespace
 
 		for (FbxNode* Node : TrackNodes)
 		{
-			if (!Node)
-			{
-				continue;
-			}
-
 			GlobalTransformByNode[Node] = ToFMatrix(Node->EvaluateGlobalTransform(SampleTime));
 		}
 
 		return GlobalTransformByNode;
 	}
 
-	FMatrix GetSampledGlobalTransform(
+	FMatrix GetCachedGlobalTransform(
 		FbxNode* Node,
-		const FbxTime& SampleTime,
 		const TMap<FbxNode*, FMatrix>& GlobalTransformByNode)
 	{
-		if (!Node)
-		{
-			return FMatrix::Identity;
-		}
-
 		auto It = GlobalTransformByNode.find(Node);
-		if (It != GlobalTransformByNode.end())
-		{
-			return It->second;
-		}
-
-		return ToFMatrix(Node->EvaluateGlobalTransform(SampleTime));
+		return It != GlobalTransformByNode.end() ? It->second : FMatrix::Identity;
 	}
 
 	void AppendSampledRuntimeLocalTransform(
 		FbxNode* Node,
 		FbxNode* RuntimeParentNode,
-		const FbxTime& SampleTime,
 		const TMap<FbxNode*, FMatrix>& GlobalTransformByNode,
 		FRawAnimSequenceTrack& OutTrack,
 		FAnimationTrackSamplingState& SamplingState)
 	{
-		FMatrix RuntimeLocalTransform = FMatrix::Identity;
-		// 실제 animation key를 생성하는 지점입니다.
-		// FBX의 LclTranslation/LclRotation/LclScaling을 직접 조립하지 않고,
-		// 샘플 시점의 global transform을 평가한 뒤 런타임에서 사용하는 parent 기준 local transform으로 재계산합니다.
-		// 즉, FBX 원본 local 값을 그대로 저장하지 않고, 엔진 런타임 bone 계층에 맞는 local key를 저장합니다.
-
-		if (Node)
-		{
-			const FMatrix EngineGlobalTransform = GetSampledGlobalTransform(Node, SampleTime, GlobalTransformByNode);
-			if (RuntimeParentNode)
-			{
-				const FMatrix EngineParentGlobalTransform = GetSampledGlobalTransform(
-					RuntimeParentNode,
-					SampleTime,
-					GlobalTransformByNode);
-				RuntimeLocalTransform = EngineGlobalTransform * EngineParentGlobalTransform.GetInverse();
-			}
-			else
-			{
-				RuntimeLocalTransform = EngineGlobalTransform;
-			}
-		}
+		// 실제 animation key를 생성하는 지점.
+		// FBX의 LclTranslation/LclRotation/LclScaling 값을 직접 조립하지 않는다.
+		// FBX SDK evaluator가 현재 AnimStack/Layer/Curve를 반영한 global transform을 계산하게 하고,
+		// 그 결과를 엔진의 runtime parent 기준 local transform으로 다시 바꾼다.
+		// 이렇게 해야 FBX 중간 노드가 animation track에는 없지만 transform 계층에는 있는 경우에도
+		// 그 중간 transform이 key 안에 bake되어 런타임 bone 계층과 맞는다.
+		const FMatrix EngineGlobalTransform = GetCachedGlobalTransform(Node, GlobalTransformByNode);
+		const FMatrix RuntimeLocalTransform = RuntimeParentNode
+			? EngineGlobalTransform * GetCachedGlobalTransform(RuntimeParentNode, GlobalTransformByNode).GetInverse()
+			: EngineGlobalTransform;
 
 		const FTransform EngineTransform = DecomposeRuntimeLocalForAnimation(
 			RuntimeLocalTransform,
@@ -627,20 +611,17 @@ namespace
 				EngineTransform.GetScale3D().Z);
 		}
 
-		//엔진에서 쓰이는 FRawAnimSequenceTrack 만들 시간입니다.
-		//PosKey
+		// 엔진이 재생 때 바로 접근하는 raw track에 sample 하나를 추가한다.
 		OutTrack.PosKeys.push_back(EngineTransform.GetTranslation());
 
-		//RotKey
 		FQuat Rotation = EngineTransform.GetRotation().GetNormalized();
 		if (!OutTrack.RotKeys.empty())
 		{
-			//쿼터니언은 솔직히 잘 모르겠습니다.
+			// q와 -q는 같은 회전을 뜻하지만, 인접 key의 부호가 뒤집히면 보간 경로가 길어진다.
+			// 이전 key와 같은 hemisphere에 두어 shortest-arc slerp가 안정적으로 동작하게 한다.
 			Rotation.EnforceShortestArcWith(OutTrack.RotKeys.back());
 		}
 		OutTrack.RotKeys.push_back(Rotation);
-		
-		//ScaleKey
 		OutTrack.ScaleKeys.push_back(EngineTransform.GetScale3D());
 	}
 
@@ -655,10 +636,22 @@ namespace
 			return nullptr;
 		}
 
+		// FBX evaluator는 Scene의 CurrentAnimationStack을 기준으로 node transform을 평가한다.
+		// 이 호출 이후 EvaluateGlobalTransform(Time)은 해당 AnimStack 아래 layer/curve들을 반영한다.
 		Scene->SetCurrentAnimationStack(AnimStack);
 
-		//FbxAnimStack 하나를 UAnimSequence 하나로 변환합니다.
-		const TArray<FbxNode*> TrackNodes = CollectAnimationTrackNodes(Scene, AnimStack);
+		// FbxAnimStack 하나를 UAnimSequence 하나로 변환한다.
+		// 여기서 track node 수집과 “이 stack에 실제 transform curve가 있는지” 판정을 한 번에 끝낸다.
+		const FAnimationTrackNodeCollection TrackNodeCollection = CollectAnimationTrackNodes(Scene, AnimStack);
+		if (!TrackNodeCollection.bHasTransformAnimation)
+		{
+			UE_LOG("[FbxAnimationImporter] Skip stack with no transform animation: %s | Stack=%s",
+				SourcePath.c_str(),
+				AnimStack->GetName());
+			return nullptr;
+		}
+
+		const TArray<FbxNode*>& TrackNodes = TrackNodeCollection.TrackNodes;
 		if (TrackNodes.empty())
 		{
 			UE_LOG_ERROR("[FbxAnimationImporter] No skeleton or animated transform node found: %s | Stack=%s",
@@ -708,11 +701,6 @@ namespace
 
 		for (FbxNode* Node : TrackNodes)
 		{
-			if (!Node)
-			{
-				continue;
-			}
-
 			FBoneAnimationTrack Track;
 			Track.Name = FName(FString(Node->GetName()));
 			Track.InternalTrack.PosKeys.reserve(KeyCount);
@@ -744,7 +732,6 @@ namespace
 				AppendSampledRuntimeLocalTransform(
 					Node,
 					RuntimeParentNodes[TrackIndex],
-					SampleTime,
 					GlobalTransformByNode,
 					Tracks[TrackIndex].InternalTrack,
 					SamplingStates[TrackIndex]);
@@ -795,49 +782,6 @@ UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path)
 {
 	FFbxAnimImportOptions ImportOptions;
 	return LoadAnimSequence(Path, ImportOptions);
-}
-
-TArray<FString> FFbxImporter::GetAnimationStackNames(const FString& Path)
-{
-	TArray<FString> StackNames;
-
-	FbxManager* Manager = FbxManager::Create();
-	if (!Manager)
-	{
-		UE_LOG_ERROR("[FbxAnimationImporter] Failed to create FbxManager for stack scan");
-		return StackNames;
-	}
-
-	FbxIOSettings* IOSettings = FbxIOSettings::Create(Manager, IOSROOT);
-	Manager->SetIOSettings(IOSettings);
-
-	FbxScene* Scene = FbxScene::Create(Manager, "ScanAnimationStacksScene");
-	if (!Scene)
-	{
-		UE_LOG_ERROR("[FbxAnimationImporter] Failed to create FbxScene for stack scan");
-		Manager->Destroy();
-		return StackNames;
-	}
-
-	if (!ImportScene(Path, Manager, Scene))
-	{
-		Manager->Destroy();
-		return StackNames;
-	}
-
-	const int32 StackCount = Scene->GetSrcObjectCount<FbxAnimStack>();
-	StackNames.reserve(StackCount);
-	for (int32 StackIndex = 0; StackIndex < StackCount; ++StackIndex)
-	{
-		FbxAnimStack* Stack = Scene->GetSrcObject<FbxAnimStack>(StackIndex);
-		if (Stack && StackHasTransformAnimation(Scene, Stack))
-		{
-			StackNames.push_back(FString(Stack->GetName()));
-		}
-	}
-
-	Manager->Destroy();
-	return StackNames;
 }
 
 UAnimSequence* FFbxImporter::LoadAnimSequence(const FString& Path, const FFbxAnimImportOptions& ImportOptions)
@@ -946,14 +890,6 @@ TArray<FFbxAnimStackImportResult> FFbxImporter::LoadAnimSequences(const FString&
 		FbxAnimStack* AnimStack = Scene->GetSrcObject<FbxAnimStack>(StackIndex);
 		if (!AnimStack)
 		{
-			continue;
-		}
-
-		if (!StackHasTransformAnimation(Scene, AnimStack))
-		{
-			UE_LOG("[FbxAnimationImporter] Skip stack with no transform animation: %s | Stack=%s",
-				Path.c_str(),
-				AnimStack->GetName());
 			continue;
 		}
 

@@ -24,13 +24,15 @@ namespace
 	constexpr const char* AnimSequenceFormatName = "JSE.AnimSequence";
 	constexpr int32 AnimSequenceFormatVersion = 2;
 
-	// Companion cache format for .animseq. The JSON file remains the editable source,
-	// and this cache is rebuilt whenever the source JSON timestamp changes.
+	// Companion cache format for .animseq. The JSON file remains the editable descriptor,
+	// but fresh binary cache now contains all runtime data needed for playback.
+	// v2 adds AnimNotify data so Load() can skip JSON parsing on cache hit.
 	constexpr uint32 AnimSequenceBinaryMagic = 0x51455341; // 'ASEQ'
-	constexpr uint32 AnimSequenceBinaryVersion = 1;
+	constexpr uint32 AnimSequenceBinaryVersion = 2;
 
 	constexpr uint32 MaxAnimSequenceTrackCount = 65'536;
 	constexpr uint32 MaxAnimSequenceKeyCount = 1'000'000;
+	constexpr uint32 MaxAnimSequenceNotifyCount = 65'536;
 	constexpr uint32 MaxAnimSequenceStringLength = 65'536;
 
 	FString NormalizeAnimSequencePath(const FString& Path)
@@ -405,6 +407,57 @@ namespace
 			   ReadVectorKeyArrayBinary(In, OutTrack.InternalTrack.ScaleKeys);
 	}
 
+	void WriteNotifyBinary(std::ofstream& Out, const FAnimNotifyEvent& Notify)
+	{
+		WriteFloatLE(Out, Notify.TriggerTime);
+		WriteStringBinary(Out, Notify.NotifyName.ToString());
+	}
+
+	bool ReadNotifyBinary(std::ifstream& In, FAnimNotifyEvent& OutNotify)
+	{
+		FString NotifyName;
+		if (!ReadFloatLE(In, OutNotify.TriggerTime) || !ReadStringBinary(In, NotifyName))
+		{
+			return false;
+		}
+
+		OutNotify.NotifyName = FName(NotifyName);
+		return true;
+	}
+
+	void WriteNotifyArrayBinary(std::ofstream& Out, const TArray<FAnimNotifyEvent>& Notifies)
+	{
+		WriteUInt32LE(Out, static_cast<uint32>(Notifies.size()));
+		for (const FAnimNotifyEvent& Notify : Notifies)
+		{
+			WriteNotifyBinary(Out, Notify);
+		}
+	}
+
+	bool ReadNotifyArrayBinary(std::ifstream& In, TArray<FAnimNotifyEvent>& OutNotifies)
+	{
+		uint32 Count = 0;
+		if (!ReadUInt32LE(In, Count) || Count > MaxAnimSequenceNotifyCount)
+		{
+			return false;
+		}
+
+		OutNotifies.clear();
+		OutNotifies.reserve(Count);
+		for (uint32 Index = 0; Index < Count; ++Index)
+		{
+			FAnimNotifyEvent Notify;
+			if (!ReadNotifyBinary(In, Notify))
+			{
+				OutNotifies.clear();
+				return false;
+			}
+			OutNotifies.push_back(Notify);
+		}
+
+		return true;
+	}
+
 	bool SaveAnimSequenceBinaryCache(const FString& SourcePath, const UAnimSequence* Sequence)
 	{
 		if (!Sequence || !Sequence->GetDataModel())
@@ -431,7 +484,8 @@ namespace
 
 		const UAnimDataModel* DataModel = Sequence->GetDataModel();
 		const TArray<FBoneAnimationTrack>& Tracks = DataModel->GetBoneAnimationTracks();
-		if (Tracks.size() > MaxAnimSequenceTrackCount)
+		const TArray<FAnimNotifyEvent>& Notifies = Sequence->GetNotifies();
+		if (Tracks.size() > MaxAnimSequenceTrackCount || Notifies.size() > MaxAnimSequenceNotifyCount)
 		{
 			return false;
 		}
@@ -461,6 +515,7 @@ namespace
 		WriteStringBinary(Out, Sequence->GetSourceFilePath());
 		WriteStringBinary(Out, Sequence->GetSourceStackName());
 		WriteStringBinary(Out, Sequence->GetPreviewMeshPath());
+		WriteNotifyArrayBinary(Out, Notifies);
 
 		for (const FBoneAnimationTrack& Track : Tracks)
 		{
@@ -536,6 +591,12 @@ namespace
 			return nullptr;
 		}
 
+		TArray<FAnimNotifyEvent> Notifies;
+		if (!ReadNotifyArrayBinary(In, Notifies))
+		{
+			return nullptr;
+		}
+
 		TArray<FBoneAnimationTrack> Tracks;
 		Tracks.reserve(TrackCount);
 		for (uint32 TrackIndex = 0; TrackIndex < TrackCount; ++TrackIndex)
@@ -570,6 +631,11 @@ namespace
 		DataModel->SetNumberOfKeys(NumberOfKeys);
 		DataModel->GetMutableBoneAnimationTracks() = std::move(Tracks);
 
+		for (const FAnimNotifyEvent& Notify : Notifies)
+		{
+			Sequence->AddNotify(Notify.TriggerTime, Notify.NotifyName);
+		}
+
 		UE_LOG("[AnimSequenceAssetLoader] Loaded binary anim sequence cache: %s", BinaryPath.c_str());
 		return Sequence;
 	}
@@ -602,7 +668,6 @@ namespace
 
 		if (Magic != AnimSequenceBinaryMagic ||
 			Version != AnimSequenceBinaryVersion ||
-			TrackCount == 0 ||
 			TrackCount > MaxAnimSequenceTrackCount)
 		{
 			return false;
@@ -943,6 +1008,13 @@ UAnimSequence* FAnimSequenceAssetLoader::Load(const FString& Path) const
 		return nullptr;
 	}
 
+	// Fast path: .animseq JSON은 편집 가능한 descriptor이고, Bin/*.bin은 재생용 raw data cache다.
+	// v2 binary에는 tracks와 notifies가 모두 들어있으므로 fresh cache라면 JSON을 열고 파싱하지 않는다.
+	if (UAnimSequence* BinarySequence = LoadAnimSequenceBinaryCache(NormalizedPath))
+	{
+		return BinarySequence;
+	}
+
 	std::ifstream AnimFile(FPaths::ToWide(NormalizedPath));
 	if (!AnimFile.is_open())
 	{
@@ -962,14 +1034,6 @@ UAnimSequence* FAnimSequenceAssetLoader::Load(const FString& Path) const
 	if (!Format.empty() && Format != AnimSequenceFormatName)
 	{
 		UE_LOG_WARNING("[AnimSequenceAssetLoader] Unexpected anim sequence format: %s | Path=%s", Format.c_str(), NormalizedPath.c_str());
-	}
-
-	if (UAnimSequence* BinarySequence = LoadAnimSequenceBinaryCache(NormalizedPath))
-	{
-		ApplyAnimSequenceDescriptorMetadata(Root, NormalizedPath, BinarySequence);
-		ApplyAnimSequenceDescriptorDataModel(Root, BinarySequence->GetDataModel());
-		ApplyAnimSequenceDescriptorNotifies(Root, BinarySequence);
-		return BinarySequence;
 	}
 
 	UAnimSequence* Sequence = UObjectManager::Get().CreateObject<UAnimSequence>();
