@@ -17,6 +17,7 @@ public:
 	UAnimNotify_LogMessage() = default;
 	~UAnimNotify_LogMessage() override = default;
 
+	UPROPERTY(Edit, Save, Category="Notify", DisplayName="Message")
 	FString Message = "LogMessage";
 
 	void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Anim) override;

@@ -6,12 +6,17 @@
 #include "Math/Transform.h"
 #include "Object/FName.h"
 #include "AnimationMode.h"
+#include "Nodes/AnimNode_Base.h"
+
+#include <memory>
+#include <utility>
 
 class USkeletalMeshComponent;
 class USkeletalMesh;
 class UAnimSequenceBase;
 class UAnimMontage;
 class UAnimMontageInstance;
+class UAnimNotifyState;
 class APawn;
 
 // 큐에 적재된 한 프레임 분의 notify — dispatch 시 Sequence 컨텍스트 보존 위해 같이 들고 다님.
@@ -20,6 +25,18 @@ struct FQueuedAnimNotify
 {
 	FAnimNotifyEvent         Event;
 	const UAnimSequenceBase* Sequence = nullptr;
+};
+
+// 활성 상태로 추적 중인 NotifyState 한 항목 — 매 프레임 [Prev, Cur) 와 이벤트 구간이 겹치면
+// bSeenThisFrame 가 true. 프레임 끝에서 false 인 항목은 NotifyEnd 후 제거.
+// 시퀀스 전환 / weight drop 등 자연스러운 종료 모두 같은 경로 (다음 프레임에 안 보임 → End).
+struct FActiveAnimNotifyState
+{
+	UAnimNotifyState*        State          = nullptr;
+	const UAnimSequenceBase* Sequence       = nullptr;
+	FName                    NotifyName;
+	float                    TotalDuration  = 0.0f;
+	bool                     bSeenThisFrame = false;
 };
 
 // 모든 애니메이션 인스턴스의 베이스. SkeletalMeshComponent 1개에 1개 인스턴스.
@@ -80,6 +97,9 @@ public:
 	// 가장 오래된 것이 [0], 가장 최근이 [size-1].
 	const TArray<FQueuedAnimNotify>& GetRecentNotifies() const { return RecentNotifies; }
 
+	// 현재 활성 중인 NotifyState 목록 — Editor 디버그 위젯 노출용.
+	const TArray<FActiveAnimNotifyState>& GetActiveNotifyStates() const { return ActiveNotifyStates; }
+
 	// ── Root Motion ──
 	// 자식 (SingleNode/FSM) 이 UpdateAnimation 안에서 AccumulateRootMotion 으로 누적.
 	// SkeletalMeshComponent 가 매 프레임 Tick 끝에서 ConsumeRootMotion 로 소비 후
@@ -93,18 +113,43 @@ public:
 	ERootMotionMode GetRootMotionMode() const { return RootMotionMode; }
 	void            SetRootMotionMode(ERootMotionMode InMode) { RootMotionMode = InMode; }
 
-	// ── Montage ──
-	// AnimInstance 한 개 당 활성 montage 1개 (default slot, whole-body).
-	// PlayMontage: 새 montage 재생 시작. 이미 다른 montage 가 활성이면 즉시 교체 (BlendIn).
-	// StopMontage: 현재 montage BlendOut 시작.
-	// Montage_JumpToSection / SetNextSection: 재생 중 section 흐름 제어.
+	// ── Montage (Phase 2.1+: slot 별 보유) ──
+	// SlotName 은 마지막 default 인자 — 미지정 (FName::None) 시 내부에서 DefaultMontageSlot
+	// 으로 resolve. 기존 호출 (PlayMontage(M) 등) 은 자동으로 DefaultSlot 사용 — backward compat.
+	// Phase 2.2 에서 FAnimNode_Slot 이 GetMontageInstanceForSlot 으로 trees 안에서 조회.
+	static const FName DefaultMontageSlot;
+
 	void  PlayMontage(UAnimMontage* Montage, FName StartSection = FName::None,
-	                  float PlayRate = 1.0f, float BlendInTime = -1.0f);
-	void  StopMontage(float BlendOutTime = -1.0f);
-	void  Montage_JumpToSection(FName SectionName);
-	void  Montage_SetNextSection(FName From, FName To);
-	bool  IsMontagePlaying(UAnimMontage* Montage = nullptr) const;
-	UAnimMontageInstance* GetMontageInstance() const { return MontageInstance; }
+	                  float PlayRate = 1.0f, float BlendInTime = -1.0f,
+	                  FName SlotName = FName::None);
+	void  StopMontage(float BlendOutTime = -1.0f, FName SlotName = FName::None);
+	void  Montage_JumpToSection(FName SectionName, FName SlotName = FName::None);
+	void  Montage_SetNextSection(FName From, FName To, FName SlotName = FName::None);
+	bool  IsMontagePlaying(UAnimMontage* Montage = nullptr, FName SlotName = FName::None) const;
+
+	// Slot 별 montage instance 조회. 없으면 nullptr.
+	UAnimMontageInstance* GetMontageInstanceForSlot(FName SlotName) const;
+
+	// Legacy alias — DefaultSlot 의 instance. 새 코드는 GetMontageInstanceForSlot 권장.
+	UAnimMontageInstance* GetMontageInstance() const;
+
+	// ── AnimGraph (Phase 1.4+) ──
+	// 자식이 NativeInitializeAnimation 에서 MakeNode 로 노드 트리 build 후 SetRootNode 호출.
+	// InRoot 가 FAnimNode_Root 가 아니면 자동으로 wrap (IsRoot() 가상함수로 판별) — RootMotion
+	// 누적 등 정책 hook 의 단일 진입점 보장. null 이면 legacy 경로 (NativeUpdate/Evaluate).
+	void            SetRootNode(FAnimNode_Base* InRoot);
+	FAnimNode_Base* GetRootNode() const { return RootNode; }
+
+	// 노드 빌더 헬퍼 — 노드 생성 후 OwnedNodes 에 push, raw 반환. lifetime 자동 관리.
+	// 트리의 부모-자식 참조는 raw pointer 로 — OwnedNodes 가 모든 노드의 단일 소유자.
+	template<typename T, typename... Args>
+	T* MakeNode(Args&&... InArgs)
+	{
+		auto NodePtr = std::make_unique<T>(std::forward<Args>(InArgs)...);
+		T* Raw = NodePtr.get();
+		OwnedNodes.push_back(std::move(NodePtr));
+		return Raw;
+	}
 
 protected:
 	USkeletalMeshComponent*       OwningComponent = nullptr;
@@ -115,6 +160,10 @@ protected:
 	static constexpr size_t       RecentNotifyCapacity = 10;
 	TArray<FQueuedAnimNotify>     RecentNotifies;
 
+	// 활성 NotifyState 추적 — UpdateAnimation 시작 시 bSeenThisFrame 리셋, AddAnimNotifies 가
+	// 매칭 시 true 마킹 후 Begin/Tick 호출. UpdateAnimation 끝에서 unseen 항목 NotifyEnd + 제거.
+	TArray<FActiveAnimNotifyState> ActiveNotifyStates;
+
 	// Root motion 누적 (UpdateAnimation 한 프레임 분, Consume 시 reset).
 	FTransform                    PendingRootMotion;
 
@@ -123,6 +172,16 @@ protected:
 	UPROPERTY(Edit, Save, Category="Animation", DisplayName="Root Motion Mode", Enum=ERootMotionMode)
 	ERootMotionMode               RootMotionMode = ERootMotionMode::RootMotionFromEverything;
 
-	// Montage 인스턴스 — lazily 생성 (PlayMontage 첫 호출 시).
-	UAnimMontageInstance*         MontageInstance = nullptr;
+	// Slot 이름 → montage instance. 보통 1-2 개 (DefaultSlot, UpperBodySlot 등) 라
+	// 선형 탐색 OK. FName 키 TMap 의 hash 지원이 없어 array 사용.
+	struct FMontageSlotEntry
+	{
+		FName                 SlotName;
+		UAnimMontageInstance* Instance = nullptr;
+	};
+	TArray<FMontageSlotEntry>     MontageSlots;
+
+	// AnimGraph 트리의 root — null 이면 legacy 경로. 모든 노드는 OwnedNodes 가 단일 소유.
+	FAnimNode_Base*                              RootNode = nullptr;
+	TArray<std::unique_ptr<FAnimNode_Base>>      OwnedNodes;
 };

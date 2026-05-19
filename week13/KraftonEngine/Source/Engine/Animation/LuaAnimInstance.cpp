@@ -4,8 +4,13 @@
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimMontage.h"
 #include "Animation/AnimState.h"
-#include "Animation/AnimationStateMachine.h"
 #include "Animation/PoseContext.h"
+#include "Animation/Nodes/AnimNode_BlendListByEnum.h"
+#include "Animation/Nodes/AnimNode_LayeredBlendPerBone.h"
+#include "Animation/Nodes/AnimNode_RefPose.h"
+#include "Animation/Nodes/AnimNode_Slot.h"
+#include "Animation/Nodes/AnimNode_StateMachine.h"
+#include "Animation/Nodes/AnimNode_SequencePlayer.h"
 #include "Component/Movement/CharacterMovementComponent.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Core/Log.h"
@@ -24,7 +29,7 @@
 ULuaAnimInstance::~ULuaAnimInstance()
 {
 	FLuaScriptManager::UnregisterAnimInstance(this);
-	ClearFSM();
+	ClearGraph();
 }
 
 // ──────────────────────────────────────────────
@@ -73,10 +78,18 @@ void ULuaAnimInstance::NativeInitializeAnimation()
 	LuaUpdate   = Env["update"];
 	LuaOnNotify = Env["on_notify"];
 
-	// FSM 생성 (init 안에서 lua 가 Anim.register_* 호출하면 FSM 에 적재됨).
-	FSM = UObjectManager::Get().CreateObject<UAnimationStateMachine>(this);
-
 	DispatchLuaInit();
+
+	// AnimGraph RootNode 확인 — lua 가 Anim.set_root_node 명시 호출 + 트리 안에 Slot 노드 박기
+	// 책임은 사용자. 자동 wrap 안 함 (이전 자동 wrap 가드가 트리 깊이 검사 안 해서 같은
+	// SlotName 의 Slot 이 중복 박혀 MontageInstance Tick 이 2× 진행되는 버그 — Character 의
+	// 명시 wrap 패턴과 통일).
+	// 안 했으면 (lua 가 set_root_node 호출 안 함) — RefPose fallback + 경고.
+	if (!GetRootNode())
+	{
+		UE_LOG("[LuaAnimInstance] init() 가 Anim.set_root_node 호출 안 함 — ref pose fallback.");
+		SetRootNode(MakeNode<FAnimNode_RefPose>());
+	}
 
 	// Hot-reload 등록 — .lua 파일 변경 시 FLuaScriptManager 가 ReloadScript 호출.
 	// 이미 등록된 경우 set-like 보장 (manager 측).
@@ -85,6 +98,9 @@ void ULuaAnimInstance::NativeInitializeAnimation()
 
 void ULuaAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
+	// 사용자 변수 갱신 — UE 본가 NativeUpdate 패턴.
+	// lua 의 update(self, dt) 가 self.Speed 같은 변수를 갱신하면 같은 frame 의 RootNode->Update
+	// 에서 condition 람다가 즉시 사용.
 	if (LuaUpdate.valid())
 	{
 		auto R = LuaUpdate(LuaSelf, DeltaSeconds);
@@ -94,14 +110,6 @@ void ULuaAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			UE_LOG("[LuaAnimInstance] update() error: %s", Err.what());
 		}
 	}
-
-	if (FSM) FSM->Tick(this, DeltaSeconds);
-}
-
-void ULuaAnimInstance::EvaluateAnimation(FPoseContext& Output)
-{
-	if (FSM) FSM->Evaluate(this, Output);
-	else     Super::EvaluateAnimation(Output);
 }
 
 void ULuaAnimInstance::HandleAnimNotify(const FAnimNotifyEvent& Notify)
@@ -118,17 +126,19 @@ void ULuaAnimInstance::HandleAnimNotify(const FAnimNotifyEvent& Notify)
 
 void ULuaAnimInstance::ReloadScript()
 {
-	ClearFSM();
+	ClearGraph();
 	NativeInitializeAnimation();
 }
 
-void ULuaAnimInstance::ClearFSM()
+void ULuaAnimInstance::ClearGraph()
 {
-	if (FSM)
-	{
-		UObjectManager::Get().DestroyObject(FSM);
-		FSM = nullptr;
-	}
+	// RootNode 가 OwnedNodes 의 raw 를 가리키는 상태 — dangling 방지 위해 RootNode 먼저 nullptr.
+	SetRootNode(nullptr);
+
+	// graph build 로 생성된 노드들 정리 — ReloadScript 시 다시 build 하면 OwnedNodes 가
+	// 누적되어 메모리 leak. 매 reload 마다 cleanup.
+	OwnedNodes.clear();
+
 	LuaInit     = sol::nil;
 	LuaUpdate   = sol::nil;
 	LuaOnNotify = sol::nil;
@@ -155,41 +165,6 @@ void ULuaAnimInstance::InstallBindings()
 	// Anim 모듈 — env 안에 namespace table 생성.
 	// this 캡처: env 가 ULuaAnimInstance 멤버이므로 lifetime 일치.
 	sol::table Anim = Env.create_named("Anim");
-
-	Anim.set_function("register_state",
-		[this](std::string Name, std::string Path, float Rate, bool Loop)
-		{
-			Lua_RegisterState(Name, Path, Rate, Loop);
-		});
-
-	// .uasset 없이 즉시 데모 가능하도록 mock 시퀀스 (Phase 3 의 UAnimSequence::CreateMock* 재활용).
-	// MockType = "sway" | "wave".
-	Anim.set_function("register_mock_state",
-		[this](std::string Name, std::string MockType, float Duration, float AmpDeg, float Rate, bool Loop)
-		{
-			Lua_RegisterMockState(Name, MockType, Duration, AmpDeg, Rate, Loop);
-		});
-
-	Anim.set_function("register_transition",
-		[this](std::string From, std::string To, sol::protected_function Cond, float BlendTime)
-		{
-			Lua_RegisterTransition(From, To, std::move(Cond), BlendTime);
-		});
-
-	Anim.set_function("set_initial_state",
-		[this](std::string Name)
-		{
-			Lua_SetInitialState(Name);
-		});
-
-	Anim.set_function("request_transition",
-		[this](std::string Name, float BlendDuration)
-		{
-			Lua_RequestTransition(Name, BlendDuration);
-		});
-
-	Anim.set_function("get_current_state",
-		[this]() { return Lua_GetCurrentState(); });
 
 	// Owner actor 의 UCharacterMovementComponent::GetSpeed 노출 — FSM condition 안에서
 	// self.Speed = Anim.get_owner_speed() 식으로 movement 시뮬레이션 결과를 그대로 사용.
@@ -227,13 +202,27 @@ void ULuaAnimInstance::InstallBindings()
 			return Move ? Move->IsFalling() : false;
 		});
 
+	// Slot 인자는 sol::object — None/missing 이면 FName::None (→ 내부에서 DefaultMontageSlot resolve).
+	// play_montage / stop_montage / is_montage_playing / jump_to_section 모두 공통 사용.
+	auto ResolveSlot = [](const sol::object& SlotObj) -> FName
+	{
+		if (SlotObj.is<std::string>())
+		{
+			const std::string Str = SlotObj.as<std::string>();
+			if (!Str.empty()) return FName(Str);
+		}
+		return FName::None;
+	};
+
 	// ── Montage 트리거 (lua → AnimInstance) ──
-	//   Anim.play_montage(path)                       — section/rate/blend default.
-	//   Anim.play_montage(path, "SectionName")        — section 지정.
-	//   Anim.play_montage(path, "SectionName", 1.5)   — section + rate.
-	//   PlayMontage 는 새 montage 들어오면 즉시 교체 (BlendIn 으로 자연 전환).
+	//   Anim.play_montage(path)                              — DefaultSlot, default 옵션.
+	//   Anim.play_montage(path, "SectionName")               — section 지정.
+	//   Anim.play_montage(path, "SectionName", 1.5)          — + rate.
+	//   Anim.play_montage(path, "SectionName", 1.0, 0.2)     — + blendIn.
+	//   Anim.play_montage(path, nil, nil, nil, "UpperBody")  — slot 만 명시.
 	Anim.set_function("play_montage",
-		[this](std::string Path, sol::object Section, sol::object Rate, sol::object BlendIn)
+		[this, ResolveSlot](std::string Path, sol::object Section, sol::object Rate, sol::object BlendIn,
+		                    sol::object SlotName)
 		{
 			if (Path.empty()) return;
 			UAnimMontage* M = FAnimationManager::Get().LoadMontage(Path);
@@ -250,23 +239,30 @@ void ULuaAnimInstance::InstallBindings()
 			}
 			const float PlayRate    = Rate.is<float>()    ? Rate.as<float>()    : 1.0f;
 			const float BlendInTime = BlendIn.is<float>() ? BlendIn.as<float>() : -1.0f;
-			PlayMontage(M, SectionName, PlayRate, BlendInTime);
+			PlayMontage(M, SectionName, PlayRate, BlendInTime, ResolveSlot(SlotName));
 		});
 
+	// ── Montage 제어 API — slot 인자 (마지막 sol::object) ──
+	//   Anim.stop_montage(blendOut, slot)
+	//   Anim.is_montage_playing(slot)
+	//   Anim.jump_to_section(section_name, slot)
 	Anim.set_function("stop_montage",
-		[this](sol::object BlendOut)
+		[this, ResolveSlot](sol::object BlendOut, sol::object SlotName)
 		{
 			const float BlendOutTime = BlendOut.is<float>() ? BlendOut.as<float>() : -1.0f;
-			StopMontage(BlendOutTime);
+			StopMontage(BlendOutTime, ResolveSlot(SlotName));
 		});
 
 	Anim.set_function("is_montage_playing",
-		[this]() -> bool { return IsMontagePlaying(); });
+		[this, ResolveSlot](sol::object SlotName) -> bool
+		{
+			return IsMontagePlaying(nullptr, ResolveSlot(SlotName));
+		});
 
 	Anim.set_function("jump_to_section",
-		[this](std::string Name)
+		[this, ResolveSlot](std::string Name, sol::object SlotName)
 		{
-			if (!Name.empty()) Montage_JumpToSection(FName(Name));
+			if (!Name.empty()) Montage_JumpToSection(FName(Name), ResolveSlot(SlotName));
 		});
 
 	// ── Input edge detection — lua FSM/montage trigger 용 ──
@@ -277,120 +273,155 @@ void ULuaAnimInstance::InstallBindings()
 		[]() -> bool { return InputSystem::Get().GetKeyDown(VK_RBUTTON); });
 	Anim.set_function("is_key_pressed",
 		[](int VK) -> bool { return InputSystem::Get().GetKeyDown(VK); });
-}
 
-// ──────────────────────────────────────────────
-// Lua → C++ 진입점 구현
-// ──────────────────────────────────────────────
-void ULuaAnimInstance::Lua_RegisterState(const std::string& Name, const std::string& AnimPath, float Rate, bool Loop)
-{
-	if (!FSM)
-	{
-		UE_LOG("[LuaAnimInstance] register_state called before FSM ready: %s", Name.c_str());
-		return;
-	}
+	// ── AnimGraph build API (Phase 1.6b) — sub-state-machine / 임의 트리 표현 ──
+	// 노드는 UAnimInstance::MakeNode 가 OwnedNodes 에 push 후 raw 반환 — lifetime 은 C++ 가 관리.
+	// lua 는 raw pointer 핸들만 들고 다님 (light userdata). 다른 build 함수의 인자로 그대로 전달.
+	// sub-graph 가 또 다른 state machine 이면 자연스럽게 sub-state-machine 구성.
 
-	UAnimSequence* Sequence = nullptr;
-	if (!AnimPath.empty() && AnimPath != "None")
-	{
-		Sequence = FAnimationManager::Get().LoadAnimation(AnimPath);
-		if (!Sequence)
+	// SM 노드 생성 — name 은 디버그용 (현재는 무시).
+	Anim.set_function("create_state_machine",
+		[this](sol::object /*Name*/) -> FAnimNode_StateMachine*
 		{
-			UE_LOG("[LuaAnimInstance] register_state '%s' — anim not found: %s (ref pose fallback)",
-				Name.c_str(), AnimPath.c_str());
-		}
-	}
+			return MakeNode<FAnimNode_StateMachine>();
+		});
 
-	UAnimState* S = UObjectManager::Get().CreateObject<UAnimState>(this);
-	S->StateName = FName(Name.c_str());
-	S->Sequence  = Sequence;
-	S->PlayRate  = Rate;
-	S->bLooping  = Loop;
-	FSM->RegisterState(S);
-}
-
-void ULuaAnimInstance::Lua_RegisterMockState(const std::string& Name, const std::string& MockType,
-                                             float Duration, float AmplitudeDeg, float Rate, bool Loop)
-{
-	if (!FSM) return;
-	USkeletalMesh* Mesh = GetSkeletalMesh();
-	if (!Mesh)
-	{
-		UE_LOG("[LuaAnimInstance] register_mock_state '%s' — no SkeletalMesh", Name.c_str());
-		return;
-	}
-
-	UAnimSequence* Seq = nullptr;
-	if (MockType == "sway")
-	{
-		Seq = UAnimSequence::CreateMockSwaySequence(Mesh, /*BoneIdx*/0, Duration, AmplitudeDeg);
-	}
-	else if (MockType == "wave")
-	{
-		Seq = UAnimSequence::CreateMockWaveSequence(Mesh, Duration, AmplitudeDeg);
-	}
-	else
-	{
-		UE_LOG("[LuaAnimInstance] register_mock_state '%s' — unknown MockType '%s' (use \"sway\" or \"wave\")",
-			Name.c_str(), MockType.c_str());
-		return;
-	}
-
-	UAnimState* S = UObjectManager::Get().CreateObject<UAnimState>(this);
-	S->StateName = FName(Name.c_str());
-	S->Sequence  = Seq;
-	S->PlayRate  = Rate;
-	S->bLooping  = Loop;
-	FSM->RegisterState(S);
-}
-
-void ULuaAnimInstance::Lua_RegisterTransition(const std::string& From, const std::string& To,
-                                              sol::protected_function Cond, float BlendTime)
-{
-	if (!FSM)
-	{
-		UE_LOG("[LuaAnimInstance] register_transition called before FSM ready: %s -> %s",
-			From.c_str(), To.c_str());
-		return;
-	}
-
-	FStateTransition T;
-	T.From      = (From == "AnyState" || From.empty()) ? FName::None : FName(From.c_str());
-	T.To        = FName(To.c_str());
-	T.BlendTime = BlendTime;
-
-	// sol::protected_function 은 lua function ref 를 들고 다님 (복사 가능).
-	// 람다는 FSM 의 transitions 배열 안에 산다 → ULuaAnimInstance 가 살아있는 동안 안전.
-	// ULuaAnimInstance 소멸 시 ClearFSM → FSM 도 destroy → 람다 정리.
-	T.Condition = [Cond](UAnimInstance*) -> bool
-	{
-		auto R = Cond();
-		if (!R.valid())
+	// Sequence player 노드 — asset path 로드 + 파라미터 박음. None / 실패 시 ref pose fallback.
+	Anim.set_function("create_sequence_player",
+		[this](std::string Path, float Rate, bool Loop) -> FAnimNode_SequencePlayer*
 		{
-			sol::error Err = R;
-			UE_LOG("[LuaAnimInstance] transition condition error: %s", Err.what());
-			return false;
-		}
-		return R.get<bool>();
-	};
+			FAnimNode_SequencePlayer* P = MakeNode<FAnimNode_SequencePlayer>();
+			if (!Path.empty() && Path != "None")
+			{
+				P->Sequence = FAnimationManager::Get().LoadAnimation(Path);
+				if (!P->Sequence)
+				{
+					UE_LOG("[LuaAnim] create_sequence_player — anim load failed: %s", Path.c_str());
+				}
+			}
+			P->PlayRate = Rate;
+			P->bLooping = Loop;
+			return P;
+		});
 
-	FSM->RegisterTransition(T);
-}
+	// SM 에 state 추가 — SubGraphOverride 로 임의 노드를 state 의 sub-graph 로 박음.
+	Anim.set_function("sm_add_state",
+		[this](FAnimNode_StateMachine* SM, std::string Name, FAnimNode_Base* SubGraph)
+		{
+			if (!SM || !SubGraph)
+			{
+				UE_LOG("[LuaAnim] sm_add_state '%s' — null SM or SubGraph", Name.c_str());
+				return;
+			}
+			UAnimState* S = UObjectManager::Get().CreateObject<UAnimState>(this);
+			S->StateName        = FName(Name.c_str());
+			S->SubGraphOverride = SubGraph;
+			SM->RegisterState(S);
+		});
 
-void ULuaAnimInstance::Lua_SetInitialState(const std::string& Name)
-{
-	if (FSM) FSM->SetInitialState(FName(Name.c_str()));
-}
+	// SM 에 transition 등록. "AnyState" → FName::None (legacy 와 동일).
+	Anim.set_function("sm_add_transition",
+		[](FAnimNode_StateMachine* SM, std::string From, std::string To,
+		   sol::protected_function Cond, float BlendTime)
+		{
+			if (!SM) return;
+			FStateTransition T;
+			T.From      = (From == "AnyState" || From.empty()) ? FName::None : FName(From.c_str());
+			T.To        = FName(To.c_str());
+			T.BlendTime = BlendTime;
+			T.Condition = [Cond](UAnimInstance*) -> bool
+			{
+				auto R = Cond();
+				if (!R.valid())
+				{
+					sol::error Err = R;
+					UE_LOG("[LuaAnim] sm_add_transition condition error: %s", Err.what());
+					return false;
+				}
+				return R.get<bool>();
+			};
+			SM->RegisterTransition(T);
+		});
 
-void ULuaAnimInstance::Lua_RequestTransition(const std::string& Name, float BlendDuration)
-{
-	if (FSM) FSM->RequestTransition(FName(Name.c_str()), BlendDuration);
-}
+	Anim.set_function("sm_set_initial_state",
+		[](FAnimNode_StateMachine* SM, std::string Name)
+		{
+			if (SM) SM->SetInitialState(FName(Name.c_str()));
+		});
 
-std::string ULuaAnimInstance::Lua_GetCurrentState() const
-{
-	if (!FSM) return "";
-	return FSM->GetCurrentStateName().ToString();
+	// 트리의 root 박기 — UAnimInstance::SetRootNode 가 Initialize 호출.
+	// NativeInitializeAnimation 의 fallback (wrapper FSM 사용) 보다 lua 가 명시 호출하는 게 우선.
+	Anim.set_function("set_root_node",
+		[this](FAnimNode_Base* Root)
+		{
+			SetRootNode(Root);
+		});
+
+	// Slot 노드 생성 — Montage 진입점. SlotName 이 빈 문자열이면 DefaultSlot 사용.
+	// 트리 안에 박아 사용. 예: local slot = Anim.create_slot("UpperBody", base_pose).
+	// 보통 자동 wrap (NativeInitializeAnimation 끝) 만으로도 DefaultSlot 은 트리에 박힘 —
+	// 명시 호출은 추가 slot (UpperBody 등) 또는 트리 위치 명시할 때 사용.
+	Anim.set_function("create_slot",
+		[this](std::string Name, FAnimNode_Base* Input) -> FAnimNode_Slot*
+		{
+			FAnimNode_Slot* Slot = MakeNode<FAnimNode_Slot>();
+			Slot->SlotName  = Name.empty() ? DefaultMontageSlot : FName(Name.c_str());
+			Slot->InputPose = Input;
+			return Slot;
+		});
+
+	// Ref pose 노드 — 단순 ref pose 출력. LayeredBlend 의 BlendPose 의 InputPose 로
+	// 활용 (slot 비어있을 때 effective weight 0 이라 시각 영향 X).
+	Anim.set_function("create_ref_pose",
+		[this]() -> FAnimNode_RefPose*
+		{
+			return MakeNode<FAnimNode_RefPose>();
+		});
+
+	// Per-bone layered blend — base + blend + bone mask. root bone name 으로 mask BFS 자동.
+	// 예: local layer = Anim.create_layered_blend_per_bone(loco, upper_slot, "Spine")
+	//     상반신 (Spine 트리) 만 upper_slot 의 montage 영향, 하반신 loco 그대로.
+	Anim.set_function("create_layered_blend_per_bone",
+		[this](FAnimNode_Base* Base, FAnimNode_Base* Blend, std::string MaskRootBone)
+			-> FAnimNode_LayeredBlendPerBone*
+		{
+			FAnimNode_LayeredBlendPerBone* Layer = MakeNode<FAnimNode_LayeredBlendPerBone>();
+			Layer->BasePose    = Base;
+			Layer->BlendPose   = Blend;
+			Layer->PerBoneMask = BuildBoneMaskFromRoot(GetSkeletalMesh(), MaskRootBone);
+			Layer->BlendWeight = 1.0f;   // 자동 weight 는 Blend 노드의 GetEffectiveBlendWeight 로 결정.
+			return Layer;
+		});
+
+	// BlendListByEnum — N 개의 입력 pose 중 enum 인덱스로 직접 선택. StateMachine 의 단순화
+	// 버전 (transitions 없음). 무장/비무장, 자세 enum 같이 명확한 분기에 사용.
+	// 예: local bl = Anim.create_blend_list_by_enum(0, 0.2)
+	//     Anim.blend_list_add_pose(bl, unarmed_pose)   -- index 0
+	//     Anim.blend_list_add_pose(bl, armed_pose)     -- index 1
+	//     Anim.blend_list_set_active(bl, self.WeaponEnum)  -- 매 update
+	Anim.set_function("create_blend_list_by_enum",
+		[this](sol::object InitialIndex, sol::object BlendTime) -> FAnimNode_BlendListByEnum*
+		{
+			FAnimNode_BlendListByEnum* B = MakeNode<FAnimNode_BlendListByEnum>();
+			B->ActiveChildIndex = InitialIndex.is<int>() ? InitialIndex.as<int>() : 0;
+			B->BlendTime        = BlendTime.is<float>()  ? BlendTime.as<float>()  : 0.2f;
+			return B;
+		});
+
+	// 입력 pose 를 enum 인덱스 순서로 append. 등록 순서 = enum value.
+	Anim.set_function("blend_list_add_pose",
+		[](FAnimNode_BlendListByEnum* B, FAnimNode_Base* Pose)
+		{
+			if (!B || !Pose) return;
+			B->InputPoses.push_back(Pose);
+		});
+
+	// 매 update 에서 외부가 활성 enum 값을 갱신. 변경 감지 시 BlendTime 동안 lerp.
+	Anim.set_function("blend_list_set_active",
+		[](FAnimNode_BlendListByEnum* B, int32 Idx)
+		{
+			if (B) B->ActiveChildIndex = Idx;
+		});
 }
 
 // ──────────────────────────────────────────────

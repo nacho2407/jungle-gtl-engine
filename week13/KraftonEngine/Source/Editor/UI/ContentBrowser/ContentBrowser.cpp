@@ -122,6 +122,80 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		BrowserContext.bPendingContentRefresh = false;
 	}
 
+	// ── F2 / 우클릭 메뉴 → Rename popup ──
+	// 윈도우 포커스 + 텍스트 입력 중 아님 + Selected 있음 → popup 열기.
+	// (우클릭 메뉴의 "Rename" 항목은 SelectedElement->Render 안에서 PendingRenameOpen 플래그 set.)
+	static char       sRenameBuf[256] = {};
+	static FString    sRenameError;
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+	    !ImGui::GetIO().WantTextInput &&
+	    ImGui::IsKeyPressed(ImGuiKey_F2, false) &&
+	    BrowserContext.SelectedElement)
+	{
+		BrowserContext.bRenameRequested = true;
+	}
+	if (BrowserContext.bRenameRequested && BrowserContext.SelectedElement)
+	{
+		const FContentItem& Item = BrowserContext.SelectedElement->GetContentItem();
+		const FString Stem = Item.bIsDirectory
+			? FPaths::ToUtf8(Item.Path.filename().wstring())
+			: FPaths::ToUtf8(Item.Path.stem().wstring());
+		strncpy_s(sRenameBuf, sizeof(sRenameBuf), Stem.c_str(), _TRUNCATE);
+		sRenameError.clear();
+		ImGui::OpenPopup("##RenameElement");
+		BrowserContext.bRenameRequested = false;
+	}
+	if (ImGui::BeginPopupModal("##RenameElement", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::TextUnformatted("Rename");
+		ImGui::Separator();
+		if (ImGui::IsWindowAppearing())
+		{
+			ImGui::SetKeyboardFocusHere();
+		}
+		ImGui::SetNextItemWidth(320.0f);
+		const bool bSubmit = ImGui::InputText("##rename", sRenameBuf, sizeof(sRenameBuf),
+			ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+
+		if (!sRenameError.empty())
+		{
+			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", sRenameError.c_str());
+		}
+
+		const bool bOk     = bSubmit || ImGui::Button("OK");
+		ImGui::SameLine();
+		const bool bCancel = ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape);
+
+		if (bOk)
+		{
+			if (BrowserContext.SelectedElement)
+			{
+				FString Error;
+				if (BrowserContext.SelectedElement->RenameTo(sRenameBuf, &Error))
+				{
+					// 디스크 변경됐으니 다음 frame 에 디렉토리 다시 스캔. SelectedElement 의
+					// shared_ptr 는 무효화될 거라 해제 — 사용자가 다시 클릭해 선택.
+					BrowserContext.SelectedElement.reset();
+					BrowserContext.bPendingContentRefresh = true;
+					ImGui::CloseCurrentPopup();
+				}
+				else
+				{
+					sRenameError = Error;
+				}
+			}
+			else
+			{
+				ImGui::CloseCurrentPopup();
+			}
+		}
+		if (bCancel)
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+
 	ImGui::SameLine();
 	std::wstring PathText = BrowserContext.CurrentPath;
 	if (BrowserContext.SelectedElement)

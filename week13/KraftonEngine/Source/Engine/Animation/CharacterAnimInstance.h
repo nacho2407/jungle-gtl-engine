@@ -3,8 +3,6 @@
 #include "Animation/AnimInstance.h"
 #include "Object/FName.h"
 
-class UAnimationStateMachine;
-
 // 확장 FSM 데모용 AnimInstance.
 //   - Idle / Walk 두 상태를 mock 시퀀스로 등록하고 Speed 값으로 전이.
 //   - Speed 는 외부(캐릭터 액터/입력) 가 push 하는 게 정석이지만
@@ -45,9 +43,6 @@ public:
 	// PIE Duplicate / Scene save — Editor-set 데모 파라미터 라운드트립.
 	void Serialize(FArchive& Ar) override;
 
-	UAnimationStateMachine* GetFSM() const { return FSM; }
-
 private:
-	UAnimationStateMachine* FSM = nullptr;
 	float ElapsedTime = 0.0f;
 };

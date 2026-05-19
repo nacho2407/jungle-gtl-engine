@@ -1,54 +1,77 @@
 #include "AnimState.h"
 #include "AnimInstance.h"
-#include "AnimSequenceBase.h"
-#include "AnimSequence.h"
-#include "AnimExtractContext.h"
 #include "PoseContext.h"
+#include "Nodes/AnimNodeContexts.h"
 
-#include <cmath>
-void UAnimState::Tick(UAnimInstance* Instance, float DeltaSeconds)
+// 외부 public 필드 → 내부 Player 로 동기화.
+static void SyncToPlayer(UAnimState& S, FAnimNode_SequencePlayer& Player)
 {
-	if (!Sequence) return;
-	const float Length = Sequence->GetPlayLength();
-	if (Length <= 0.0f) return;
+	Player.Sequence  = S.Sequence;
+	Player.PlayRate  = S.PlayRate;
+	Player.bLooping  = S.bLooping;
+	Player.LocalTime = S.GetLocalTime();
+}
 
-	const float PreviousTime = LocalTime;
-	LocalTime += DeltaSeconds * PlayRate;
-	if (bLooping)
+void UAnimState::OnEnter(UAnimInstance* Instance)
+{
+	LocalTime = 0.0f;
+
+	FAnimationInitializeContext InitCtx;
+	InitCtx.AnimInstance = Instance;
+
+	if (SubGraphOverride)
 	{
-		LocalTime = std::fmod(LocalTime, Length);
-		if (LocalTime < 0.0f) LocalTime += Length;
+		// Sub-SM 같은 임의 노드 — 자기 init 후크 호출. 자식 SM 이면 자기 current state OnEnter 까지 재귀.
+		SubGraphOverride->OnBecomeRelevant(InitCtx);
 	}
 	else
 	{
-		if (LocalTime < 0.0f)   LocalTime = 0.0f;
-		if (LocalTime > Length) LocalTime = Length;
+		Player.OnBecomeRelevant(InitCtx);
 	}
+}
 
-	// 큐에 적재만 — 실제 dispatch 는 베이스 UAnimInstance::UpdateAnimation 끝에서 1회.
-	// (SingleNode 든 FSM 든 자식은 AddAnimNotifies 만 호출, dispatch 책임은 베이스에 통합.)
-	if (Instance) Instance->AddAnimNotifies(PreviousTime, LocalTime, Sequence);
-
-	// Root motion delta 계산 — FSM 이 blend lerp 후 instance 에 누적.
-	LastRootMotionDelta = FTransform();
-	if (UAnimSequence* Seq = Cast<UAnimSequence>(Sequence))
+void UAnimState::OnExit(UAnimInstance* Instance)
+{
+	(void)Instance;
+	// SubGraph 가 SM 인 경우 BlendingFroms 잔여 정리 — 재진입 시 stale alpha 로 시각 pop 방지.
+	// SequencePlayer 의 LocalTime 은 다음 OnEnter 에서 reset 되므로 별도 처리 불필요.
+	if (SubGraphOverride)
 	{
-		if (Seq->GetEnableRootMotion())
-		{
-			LastRootMotionDelta = Seq->ExtractRootMotion(PreviousTime, LocalTime, bLooping);
-		}
+		SubGraphOverride->OnDormant();
+	}
+}
+
+void UAnimState::Tick(UAnimInstance* Instance, float DeltaSeconds, float Weight)
+{
+	FAnimationUpdateContext Ctx;
+	Ctx.AnimInstance     = Instance;
+	Ctx.DeltaSeconds     = DeltaSeconds;
+	Ctx.FinalBlendWeight = Weight;   // 부모 SM 이 전달 — BlendingFroms 의 fade-out 비율 반영.
+
+	if (SubGraphOverride)
+	{
+		SubGraphOverride->Update(Ctx);
+		// LastRM mirror — 부모 SM 이 GetLastRootMotionDelta 로 읽음.
+		LastRootMotionDelta = SubGraphOverride->GetLastRootMotionDelta();
+	}
+	else
+	{
+		SyncToPlayer(*this, Player);
+		Player.Update(Ctx);
+		LocalTime           = Player.LocalTime;
+		LastRootMotionDelta = Player.LastRootMotionDelta;
 	}
 }
 
 void UAnimState::Evaluate(UAnimInstance* /*Instance*/, FPoseContext& Output)
 {
-	if (!Sequence)
+	if (SubGraphOverride)
 	{
-		Output.ResetToRefPose();
-		return;
+		SubGraphOverride->Evaluate(Output);
 	}
-	FAnimExtractContext Ctx;
-	Ctx.CurrentTime = LocalTime;
-	Ctx.bLooping    = bLooping;
-	Sequence->GetBonePose(Output, Ctx);
+	else
+	{
+		SyncToPlayer(*this, Player);
+		Player.Evaluate(Output);
+	}
 }
