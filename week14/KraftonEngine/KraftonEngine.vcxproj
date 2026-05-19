@@ -465,6 +465,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Animation\LuaAnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\Skeleton.cpp" />
     <ClCompile Include="Source\Engine\Animation\SkeletonManager.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_LayeredBlendPerBone.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_SequencePlayer.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_Slot.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_StateMachine.cpp" />
@@ -801,6 +802,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Animation\SkeletonTypes.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNodeContexts.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Base.h" />
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_LayeredBlendPerBone.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_SequencePlayer.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Slot.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_StateMachine.h" />
