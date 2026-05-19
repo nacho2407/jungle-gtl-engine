@@ -43,11 +43,15 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 		}
 	}
 
-	// Montage 도 Tick — section 진행, blend alpha, notify push.
-	// (Phase 2.2 에서 Slot 노드로 옮겨 RootNode 트리 안에서 처리 예정 — 현 단계는 양쪽 경로 공통.)
-	if (MontageInstance && MontageInstance->IsActive())
+	// Montage Tick — slot 별 보유분 모두 순회. section 진행 / blend alpha / notify push.
+	// Phase 2.2 에서 FAnimNode_Slot 이 트리 안에서 조회하도록 옮길 예정 (montage tick 위치는
+	// 일관성을 위해 phase 3 정리 후보).
+	for (FMontageSlotEntry& Entry : MontageSlots)
 	{
-		MontageInstance->Tick(DeltaSeconds, this);
+		if (Entry.Instance && Entry.Instance->IsActive())
+		{
+			Entry.Instance->Tick(DeltaSeconds, this);
+		}
 	}
 
 	DispatchQueuedAnimEvents();
@@ -66,31 +70,36 @@ void UAnimInstance::EvaluatePose(FPoseContext& Output)
 	}
 
 	// 2) Montage 활성이면 montage pose 평가 후 base 와 BlendWeight 로 lerp.
-	//    (Phase 2.2 에서 Slot 노드로 옮김 — RootNode 경로에선 트리 내부에서 처리되고
-	//    여기 special-case 코드는 legacy path 전용으로 축소될 예정.)
-	if (MontageInstance && MontageInstance->IsActive())
+	//    Phase 2.1: DefaultSlot 의 montage 만 처리 — single slot 케이스는 phase 2.0 (단일
+	//    MontageInstance) 와 동작 동등. UpperBody 등 다른 slot 의 montage 는 Phase 2.2/2.3 의
+	//    FAnimNode_Slot 도입 후 RootNode 트리 안에서 처리. 그 시점에 이 special-case 는
+	//    legacy path 전용으로 축소.
+	if (UAnimMontageInstance* DefaultMI = GetMontageInstanceForSlot(DefaultMontageSlot))
 	{
-		const float Weight = MontageInstance->GetBlendWeight();
-		if (Weight > 0.0f)
+		if (DefaultMI->IsActive())
 		{
-			FPoseContext MontagePose;
-			MontagePose.SkeletalMesh = Output.SkeletalMesh;
-			MontagePose.ResetToRefPose();
-			MontageInstance->EvaluateMontagePose(MontagePose);
+			const float Weight = DefaultMI->GetBlendWeight();
+			if (Weight > 0.0f)
+			{
+				FPoseContext MontagePose;
+				MontagePose.SkeletalMesh = Output.SkeletalMesh;
+				MontagePose.ResetToRefPose();
+				DefaultMI->EvaluateMontagePose(MontagePose);
 
-			if (Weight >= 1.0f)
-			{
-				// 완전 montage — base 무시.
-				Output = MontagePose;
-			}
-			else
-			{
-				// base × montage blend.
-				FPoseContext Blended;
-				Blended.SkeletalMesh = Output.SkeletalMesh;
-				Blended.ResetToRefPose();
-				FAnimationRuntime::BlendTwoPosesTogether(Output, MontagePose, Weight, Blended);
-				Output = Blended;
+				if (Weight >= 1.0f)
+				{
+					// 완전 montage — base 무시.
+					Output = MontagePose;
+				}
+				else
+				{
+					// base × montage blend.
+					FPoseContext Blended;
+					Blended.SkeletalMesh = Output.SkeletalMesh;
+					Blended.ResetToRefPose();
+					FAnimationRuntime::BlendTwoPosesTogether(Output, MontagePose, Weight, Blended);
+					Output = Blended;
+				}
 			}
 		}
 	}
@@ -152,36 +161,72 @@ void UAnimInstance::AddAnimNotifies(float PreviousTime, float CurrentTime, const
 	}
 }
 
-void UAnimInstance::PlayMontage(UAnimMontage* Montage, FName StartSection, float PlayRate, float BlendInTime)
+const FName UAnimInstance::DefaultMontageSlot = FName("DefaultSlot");
+
+UAnimMontageInstance* UAnimInstance::GetMontageInstanceForSlot(FName SlotName) const
+{
+	const FName Key = (SlotName == FName::None) ? DefaultMontageSlot : SlotName;
+	for (const FMontageSlotEntry& Entry : MontageSlots)
+	{
+		if (Entry.SlotName == Key) return Entry.Instance;
+	}
+	return nullptr;
+}
+
+UAnimMontageInstance* UAnimInstance::GetMontageInstance() const
+{
+	return GetMontageInstanceForSlot(DefaultMontageSlot);
+}
+
+void UAnimInstance::PlayMontage(UAnimMontage* Montage, FName StartSection, float PlayRate, float BlendInTime, FName SlotName)
 {
 	if (!Montage) return;
-	if (!MontageInstance)
+	const FName Key = (SlotName == FName::None) ? DefaultMontageSlot : SlotName;
+
+	// 기존 slot entry 찾거나 새로 만들기 — 첫 PlayMontage 호출 시 lazy 생성.
+	UAnimMontageInstance* Instance = nullptr;
+	for (FMontageSlotEntry& Entry : MontageSlots)
 	{
-		MontageInstance = UObjectManager::Get().CreateObject<UAnimMontageInstance>(this);
+		if (Entry.SlotName == Key) { Instance = Entry.Instance; break; }
 	}
-	MontageInstance->Play(Montage, StartSection, PlayRate, BlendInTime);
+	if (!Instance)
+	{
+		Instance = UObjectManager::Get().CreateObject<UAnimMontageInstance>(this);
+		MontageSlots.push_back({ Key, Instance });
+	}
+	Instance->Play(Montage, StartSection, PlayRate, BlendInTime);
 }
 
-void UAnimInstance::StopMontage(float BlendOutTime)
+void UAnimInstance::StopMontage(float BlendOutTime, FName SlotName)
 {
-	if (MontageInstance) MontageInstance->Stop(BlendOutTime);
+	if (UAnimMontageInstance* MI = GetMontageInstanceForSlot(SlotName))
+	{
+		MI->Stop(BlendOutTime);
+	}
 }
 
-void UAnimInstance::Montage_JumpToSection(FName SectionName)
+void UAnimInstance::Montage_JumpToSection(FName SectionName, FName SlotName)
 {
-	if (MontageInstance) MontageInstance->JumpToSection(SectionName);
+	if (UAnimMontageInstance* MI = GetMontageInstanceForSlot(SlotName))
+	{
+		MI->JumpToSection(SectionName);
+	}
 }
 
-void UAnimInstance::Montage_SetNextSection(FName From, FName To)
+void UAnimInstance::Montage_SetNextSection(FName From, FName To, FName SlotName)
 {
-	if (MontageInstance) MontageInstance->SetNextSection(From, To);
+	if (UAnimMontageInstance* MI = GetMontageInstanceForSlot(SlotName))
+	{
+		MI->SetNextSection(From, To);
+	}
 }
 
-bool UAnimInstance::IsMontagePlaying(UAnimMontage* Montage) const
+bool UAnimInstance::IsMontagePlaying(UAnimMontage* Montage, FName SlotName) const
 {
-	if (!MontageInstance || !MontageInstance->IsActive()) return false;
+	UAnimMontageInstance* MI = GetMontageInstanceForSlot(SlotName);
+	if (!MI || !MI->IsActive()) return false;
 	if (!Montage) return true;
-	return MontageInstance->GetCurrentMontage() == Montage;
+	return MI->GetCurrentMontage() == Montage;
 }
 
 void UAnimInstance::AccumulateRootMotion(const FTransform& Delta)
