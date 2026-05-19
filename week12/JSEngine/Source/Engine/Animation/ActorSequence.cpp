@@ -514,8 +514,7 @@ void UActorSequencePlayer::ClearAppliedValues()
 				Resolved.BaseFloatValue);
 			if (Resolved.ResolvedObject)
 			{
-				Resolved.ResolvedObject->PostEditChangeProperty(
-					{ Resolved.ResolvedProperty->Name, EPropertyChangeType::ValueSet });
+				Resolved.ResolvedObject->PostEditProperty(Resolved.ResolvedProperty->Name);
 			}
 		}
 		Resolved.LastValue = 0.0f;
@@ -676,11 +675,5 @@ void UActorSequencePlayer::ApplyFloat(FResolvedActorSequenceTrack& Resolved, flo
 		bResolveDirty = true;
 		return;
 	}
-	Resolved.ResolvedObject->PostEditChangeProperty(
-		{
-			Resolved.ResolvedProperty->Name,
-			Context == ESequencePlayerContext::EditorPreview
-				? EPropertyChangeType::Preview
-				: EPropertyChangeType::Runtime
-		});
+	Resolved.ResolvedObject->PostEditProperty(Resolved.ResolvedProperty->Name);
 }

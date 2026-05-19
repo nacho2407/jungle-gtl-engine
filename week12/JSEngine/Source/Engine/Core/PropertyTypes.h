@@ -51,20 +51,6 @@ constexpr bool HasPropertyUsage(EPropertyUsageFlags Value, EPropertyUsageFlags F
 	return (static_cast<uint8_t>(Value) & static_cast<uint8_t>(Flag)) != 0;
 }
 
-enum class EPropertyChangeType : uint8_t
-{
-	ValueSet,
-	Interactive,
-	Preview,
-	Runtime,
-};
-
-struct FPropertyChangedEvent
-{
-	const char* PropertyName = nullptr;
-	EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet;
-};
-
 class UEnum;
 using FEnumMetaData = UEnum;
 

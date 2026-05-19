@@ -53,7 +53,7 @@ void FEditorActorSequenceDetails::MarkEdited(
 	}
 
 	SequenceComp->MarkSequenceDirty();
-	SequenceComp->PostEditChangeProperty({ "Sequence", EPropertyChangeType::ValueSet });
+	SequenceComp->PostEditProperty("Sequence");
 
 	if (EditorEngine)
 	{

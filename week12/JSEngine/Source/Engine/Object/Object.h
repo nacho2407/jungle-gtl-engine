@@ -28,34 +28,23 @@ enum EClassFlags : uint32_t
 	CF_SpawnableComponent = 1 << 5,
 };
 
+// 모든 실제 게임/에디터 객체의 공통 기반 클래스입니다.
+// UUID, Object Name, RTTI, UPROPERTY 필드, UFUNCTION 함수, 프로퍼티 편집 후 후처리(PostEditProperty) 기능을 제공합니다.
 class UObject
 {
 public:
 	UObject();
 	virtual ~UObject();
-
-	// -----------------------------------------------------------------------
-	// 복제 시스템
-	// Duplicate()     : UClass/CreateFunc로 같은 타입의 인스턴스를 생성한 뒤
-	//                   CopyPropertiesFrom → PostDuplicate 순으로 호출합니다.
-	//                   개별 클래스에서 오버라이드할 필요 없습니다.
-	// PostDuplicate() : Duplicate() 내부에서 CopyPropertiesFrom 직후 호출되는 가상 훅.
-	//                   프로퍼티 시스템에 노출되지 않은 필드 복사, 포인터 재연결 등
-	//                   클래스별 후처리를 이곳에 구현합니다.
-	//                   하위 클래스 구현 시 부모의 PostDuplicate 를 먼저 호출해야 합니다.
-	// -----------------------------------------------------------------------
-	virtual UObject* Duplicate(const FDuplicateContext* Context = nullptr);
-	virtual void PostDuplicate(UObject* Original)
-	{
-		ObjectName = Original->ObjectName;
-	}
-
+	
+	// ────────────────────────────────────────────────────────────
+	// UUID/InternalIndex는 UObjectManager와 GUObjectArray가 런타임에서 객체를 식별하기 위해 사용합니다.
+	// ObjectName은 저장/에디터 표시용으로 사용되는 이름입니다.
+	// ────────────────────────────────────────────────────────────
 	uint32 GetUUID() const { return UUID; }
 	uint32 GetInternalIndex() const { return InternalIndex; }
 	void SetUUID(uint32 InUUID) { UUID = InUUID; }
 	void SetInternalIndex(uint32 InIndex) { InternalIndex = InIndex; }
 
-	// FName
 	FName GetFName() const { return ObjectName; }
 	void SetFName(const FName& InName) { ObjectName = InName; }
 
@@ -68,7 +57,9 @@ public:
 
 	FObjectNameProxy GetName() const { return FObjectNameProxy(ObjectName.ToString()); }
 
-	// RTTI stuffs
+	// ────────────────────────────────────────────────────────────
+	// 런타임 타입 정보(RTTI): 리플렉션된 클래스들은 GetClass()에서 자신의 클래스를 반환합니다.
+	// ────────────────────────────────────────────────────────────
 	static UClass* StaticClass();
 	virtual UClass* GetClass() const { return StaticClass(); }
 	const char* GetClassName() const;
@@ -79,18 +70,31 @@ public:
 	bool IsA() const { return IsA(T::StaticClass()); }
 
 	bool IsValidLowLevel() const { return this != nullptr; }
+	
+	// ────────────────────────────────────────────────────────────
+	// 리플렉션된 함수 실행: ProcessEvent()에서 UFunction::Invoke()를 호출하여 리플렉션된 함수를 실행합니다.
+	// ────────────────────────────────────────────────────────────
 	virtual void ProcessEvent(UFunction* Function, void* Params);
 
-	// -----------------------------------------------------------------------
-	// 프로퍼티 시스템 — 런타임 UClass/FProperty 메타데이터를 공유합니다.
-	// PostEditChangeProperty: 프로퍼티 값 변경 후 리소스 재로딩 등 처리.
-	// CopyPropertiesFrom    : FProperty에 노출된 프로퍼티를 이름 기반으로 복사.
-	// -----------------------------------------------------------------------
-	virtual void PostEditChangeProperty(const FPropertyChangedEvent& Event) { PostEditProperty(Event.PropertyName); }
+	// ────────────────────────────────────────────────────────────
+	// 프로퍼티 갱신 후처리: 프로퍼티가 런타임에 편집되면 PostEditProperty()가 호출됩니다.
+	// ex) 객체의 에셋 경로를 수정하면, 해당 에셋을 다시 로드해서 에디터에 보여줘야 합니다.
+	// ────────────────────────────────────────────────────────────
 	virtual void PostEditProperty(const char* PropertyName) {}
 	virtual void BuildDebugDetails(FDebugDetailsBuilder& Builder) {}
+
+	// ────────────────────────────────────────────────────────────
+	// Duplicate: UClass/CreateFunc을 통해 같은 클래스의 객체를 생성하고, 프로퍼티를 복사한 뒤 PostDuplicate()를 호출합니다.
+	// PostDuplicate: 리플렉션되지 않는 필드를 처리하거나, 관계를 복구하는 용도로 사용됩니다.
+    // CopyPropertiesFrom: 컨텍스트에서 이름 기준으로 리플렉션된 프로퍼티들을 복제된 객체에 다시 맵핑합니다.
+	// ────────────────────────────────────────────────────────────
+	virtual UObject* Duplicate(const FDuplicateContext* Context = nullptr);
+	virtual void PostDuplicate(UObject* Original) { ObjectName = Original->ObjectName; }
 	void CopyPropertiesFrom(UObject* Src, const FDuplicateContext* Context = nullptr);
 
+	// ────────────────────────────────────────────────────────────
+	// 직렬화: 객체의 이름(Type, ObjectName)을 기록한 뒤, SerializeProperties()로 리플렉션 프로퍼티들을 직렬화합니다.
+	// ────────────────────────────────────────────────────────────
 	virtual void Serialize(FArchive& Ar);
 	void SerializeProperties(FArchive& Ar);
 
@@ -127,6 +131,7 @@ inline T* NewObject()
 	return Cast<T>(NewObject(T::StaticClass()));
 }
 
+// 전역 UObject 생성/삭제/조회 관리자입니다.
 class UObjectManager : public TSingleton<UObjectManager>
 {
 	friend class TSingleton<UObjectManager>;
@@ -152,16 +157,18 @@ public:
 		delete Obj;
 	}
 
-private:
-	TMap<FString, uint32> NameCounters;
-
-public:
 	UObject* FindByUUID(uint32 InUUID)
 	{
 		for (auto* Obj : GUObjectArray)
 			if (Obj && Obj->GetUUID() == InUUID)
 				return Obj;
 		return nullptr;
+	}
+
+	UObject* FindByIndex(uint32 Index)
+	{
+		if (Index >= GUObjectArray.size()) return nullptr;
+		return GUObjectArray[Index];
 	}
 
 	bool ContainsObject(const UObject* InObject)
@@ -181,12 +188,7 @@ public:
 		return false;
 	}
 
-	UObject* FindByIndex(uint32 Index)
-	{
-		if (Index >= GUObjectArray.size()) return nullptr;
-		return GUObjectArray[Index];
-	}
-
+	// 크래시 테스트용 결함 주입 기능입니다. 실제 게임 코드에서는 절대 사용하지 마세요.
 	UObject* GetRandomObject()
 	{
 		if (GUObjectArray.empty())
@@ -194,12 +196,13 @@ public:
 			return nullptr;
 		}
 
-		// CrashTest의 fault injection 전용입니다. 일반 게임 로직에서는 객체 생명주기 API를 사용해야 합니다.
 		const int32 Index = rand() % static_cast<int32>(GUObjectArray.size());
 		return GUObjectArray[Index];
 	}
-};
 
+private:
+	TMap<FString, uint32> NameCounters;
+};
 
 template<typename T>
 inline UObject* CreateReflectedObject()
