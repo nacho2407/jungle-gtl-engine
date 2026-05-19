@@ -116,7 +116,6 @@ inline const FString& GetMaterialPixelShaderPath(EMaterialShaderType Type)
 
 inline const FString& GetMaterialPixelShaderEntryPoint(EMaterialShaderType Type)
 {
-	static const FString MainPS = "mainPS";
 	static const FString PS = "PS";
 
 	switch (Type)
@@ -130,6 +129,6 @@ inline const FString& GetMaterialPixelShaderEntryPoint(EMaterialShaderType Type)
 	case EMaterialShaderType::SurfaceLit:
 	case EMaterialShaderType::Decal:
 	default:
-		return MainPS;
+		return PS;
 	}
 }

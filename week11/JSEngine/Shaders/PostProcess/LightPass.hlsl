@@ -36,7 +36,7 @@ cbuffer LightPassConstants : register(b7)
 };
 
 // Fullscreen Triangle VS
-VSOutput mainVS(uint vertexID : SV_VertexID)
+VSOutput VS(uint vertexID : SV_VertexID)
 {
     VSOutput output;
 
@@ -61,7 +61,7 @@ VSOutput mainVS(uint vertexID : SV_VertexID)
 }
 
 // PS
-float4 mainPS(VSOutput input) : SV_TARGET
+float4 PS(VSOutput input) : SV_TARGET
 {
     int2 ip = int2(input.ClipPos.xy);
     float3 albedo = SceneColor.Load(int3(ip, 0)).rgb;
