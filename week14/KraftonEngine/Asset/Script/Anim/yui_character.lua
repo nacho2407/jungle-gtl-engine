@@ -1,79 +1,68 @@
--- Phase B+C 데모 — UCharacterAnimInstance (C++) 의 mock 동작을 lua 로 재현 + Phase C 의
--- CharacterMovement 와 연결. ACharacter 위에 박힌 ULuaAnimInstance 가 이 스크립트 실행.
+-- Phase 1.6b — Sub-state-machine 데모.
+-- UE Third Person Template 의 Locomotion + Jump 구조를 모방.
+--
+--   RootNode = Top SM (Locomotion ↔ Jump)
+--     ├─ State "Locomotion"  → sub-SM
+--     │       ├─ State "Idle" → Idle Sequence
+--     │       └─ State "Walk" → Walk Sequence
+--     │       (Speed 임계값으로 Idle ↔ Walk 자체 전이 — Jump 끝나도 Walk/Idle 적절히 복귀)
+--     └─ State "Jump"        → Jump Sequence (loop=false)
 --
 -- 사용 방법:
---   1) ACharacter (또는 ALuaCharacter) 의 SkeletalMesh 컴포넌트 선택
+--   1) ACharacter 의 SkeletalMesh 컴포넌트 선택
 --   2) Animation Mode = Custom
 --   3) Anim Instance Class = ULuaAnimInstance
 --   4) Script File = "Anim/yui_character.lua" (Editor 콤보)
 --
--- 시뮬레이션 모드 (DRIVE_MODE):
---   "movement" — Anim.get_owner_speed() 로 실제 CharacterMovement 속도 읽음 (WASD 로 이동 시 자동 전이).
---   "auto"     — sin 으로 Speed 자동 변동 (이동 없이 데모용. CharacterMovement 없는 SkeletalMeshActor 에서도 동작).
---
--- 시퀀스 모드 (USE_MOCK):
---   true  — mock sway/wave 시퀀스 (.uasset 없이 즉시 동작).
---   false — *_PATH 의 실제 시퀀스 (먼저 FBX import 필요).
---
+-- 좌클릭 → attack montage 재생.
 -- Hot-reload: 이 파일 저장만 해도 에디터에서 즉시 반영.
-
-local USE_MOCK   = false
-local DRIVE_MODE = "movement"   -- "movement" 또는 "auto"
 
 local IDLE_PATH = "Content/Data/hirasawa-yui/IdleWithSkin_mixamo_com.uasset"
 local WALK_PATH = "Content/Data/hirasawa-yui/Walking_mixamo_com.uasset"
 local JUMP_PATH = "Content/Data/hirasawa-yui/Jump_mixamo_com.uasset"
 
--- 좌클릭 → montage 재생. 경로는 + New Montage 로 만든 .uasset 의 project-relative 경로.
--- + New Montage 가 자동 명명하는 규칙: <SequenceName>_Montage.uasset.
--- local ATTACK_MONTAGE_PATH = "Content/Montages/Standing 1H Magic Attack 03_mixamo_com_Montage.uasset"
 local ATTACK_MONTAGE_PATH = "Content/Montages/mixamo_com_Montage.uasset"
 
 function init(self)
     self.Speed          = 0
-    self.t              = 0
-    self.SpeedThreshold = 0.5    -- m/s — movement 모드는 단위가 작음 (MaxWalkSpeed=6)
-    self.AutoPeriodSec  = 6.0
-    self.AutoSpeedAmp   = 15.0   -- auto 모드 전용 — Threshold 와 단위 무관 (legacy)
+    self.SpeedThreshold = 0.5    -- m/s — MaxWalkSpeed=6 환경에서 작은 임계
 
-    if USE_MOCK then
-        Anim.register_mock_state("Idle", "sway", 1.5, 8.0,  1.0, true)
-        Anim.register_mock_state("Walk", "wave", 0.8, 15.0, 1.0, true)
-        -- Jump 상태 — 1회 재생 (Loop=false). Falling 상태와 함께 활성.
-        Anim.register_mock_state("Jump", "wave", 0.5, 30.0, 1.0, false)
-    else
-        Anim.register_state("Idle", IDLE_PATH, 1.0, true)
-        Anim.register_state("Walk", WALK_PATH, 1.0, true)
-        Anim.register_state("Jump", JUMP_PATH, 1.0, false)
-    end
-
-    Anim.register_transition("Idle", "Walk",
+    -- ── Locomotion sub-SM (Idle ↔ Walk) ──
+    local loco = Anim.create_state_machine("Locomotion")
+    Anim.sm_add_state(loco, "Idle", Anim.create_sequence_player(IDLE_PATH, 1.0, true))
+    Anim.sm_add_state(loco, "Walk", Anim.create_sequence_player(WALK_PATH, 1.0, true))
+    Anim.sm_add_transition(loco, "Idle", "Walk",
         function() return self.Speed >  self.SpeedThreshold end, 0.2)
-    Anim.register_transition("Walk", "Idle",
+    Anim.sm_add_transition(loco, "Walk", "Idle",
         function() return self.Speed <= self.SpeedThreshold end, 0.2)
+    Anim.sm_set_initial_state(loco, "Idle")
+
+    -- ── Top SM (Locomotion ↔ Jump) ──
+    local top = Anim.create_state_machine("Top")
+    -- Locomotion state 의 sub-graph 가 위에서 만든 loco SM — sub-state-machine 핵심.
+    Anim.sm_add_state(top, "Locomotion", loco)
+    Anim.sm_add_state(top, "Jump", Anim.create_sequence_player(JUMP_PATH, 1.0, false))
 
     -- AnyState → Jump — Falling 시작하는 순간 (지상 이탈 + 점프 둘 다 포함). 빠른 blend.
-    Anim.register_transition("AnyState", "Jump",
+    Anim.sm_add_transition(top, "AnyState", "Jump",
         function() return Anim.is_owner_falling() end, 0.1)
-    -- Jump → Idle — 착지 (Walking 복귀). 다음 frame 의 Idle↔Walk 전이가 자연스럽게 잡음.
-    Anim.register_transition("Jump", "Idle",
+    -- Jump → Locomotion — 착지. 복귀 시 sub-SM 의 마지막 active state (Idle 또는 Walk) 유지.
+    --   = "Jump 끝났는데 1 frame Idle 거쳐 Walk 로 끊기는" 패턴이 sub-SM 으로 자연 해결.
+    Anim.sm_add_transition(top, "Jump", "Locomotion",
         function() return not Anim.is_owner_falling() end, 0.5)
 
-    Anim.set_initial_state("Idle")
+    Anim.sm_set_initial_state(top, "Locomotion")
+
+    -- 트리 root 박기 — RootNode 가 set 되면 NativeInitializeAnimation 의 wrapper FSM fallback
+    -- 은 건너뜀 (legacy register_state 같이 안 씀).
+    Anim.set_root_node(top)
 end
 
 function update(self, dt)
-    if DRIVE_MODE == "movement" then
-        -- 실제 CharacterMovement 의 속도. WASD 입력이 있으면 > 0, 없으면 0 (또는 braking 중 잔여).
-        self.Speed = Anim.get_owner_speed()
-    else
-        -- auto 모드 — sin 으로 자동 변동. CharacterMovement 없는 환경에서도 데모 동작.
-        self.t = self.t + dt
-        local omega = 2.0 * math.pi / self.AutoPeriodSec
-        self.Speed = self.AutoSpeedAmp + self.AutoSpeedAmp * math.sin(self.t * omega)
-    end
+    -- 실제 CharacterMovement 속도 — WASD 입력에 따른 즉시 반응.
+    self.Speed = Anim.get_owner_speed()
 
-    -- 좌클릭 → attack montage 재생. 이미 재생 중이어도 PlayMontage 가 자연스럽게 재시작 (BlendIn).
+    -- 좌클릭 → attack montage. 이미 재생 중이어도 PlayMontage 가 자연스럽게 재시작 (BlendIn).
     if Anim.is_left_mouse_pressed() then
         Anim.play_montage(ATTACK_MONTAGE_PATH)
     end
