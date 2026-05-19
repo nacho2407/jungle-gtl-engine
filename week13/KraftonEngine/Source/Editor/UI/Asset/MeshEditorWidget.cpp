@@ -750,34 +750,6 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 
 	ImGui::Separator();
 
-	ImGui::TextUnformatted("Animations");
-	const TArray<FAssetListItem> AnimFiles = FAssetRegistry::ListAnimationsForSkeleton(SkeletalMesh->GetSkeletonBinding(), false);
-	for (int32 i = 0; i < static_cast<int32>(AnimFiles.size()); ++i)
-	{
-		const FAssetListItem& Item      = AnimFiles[i];
-		const bool            bSelected = (AnimTabState.SelectedAnimIndex == i && !AnimTabState.bMontageSelected);
-		if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
-		{
-			AnimTabState.SelectedAnimIndex   = i;
-			AnimTabState.bMontageSelected    = false;
-			UAnimSequence* Seq               = FAnimationManager::Get().LoadAnimation(Item.FullPath);
-			if (Seq && Seq->IsCompatibleWith(SkeletalMesh))
-			{
-				AnimTabState.CurrentSequence = Seq;
-				ApplyAnimationToComponent();
-			}
-		}
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip("%s", Item.FullPath.c_str());
-		}
-	}
-
-	// ── Montages ──
-	ImGui::Dummy(ImVec2(0, 10));
-	ImGui::Separator();
-	ImGui::TextUnformatted("Montages");
-
 	// 디스크 스캔 — montage 목록 초기화 (최초 1회 + Refresh 시).
 	static bool sMontagesScanned = false;
 	if (!sMontagesScanned)
@@ -786,45 +758,110 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 		sMontagesScanned = true;
 	}
 
-	// + New Montage — 현재 선택된 sequence 가 있으면 source 로 새 montage 생성.
-	if (ImGui::Button("+ New Montage", ImVec2(-1.0f, 0.0f)))
-	{
-		if (AnimTabState.CurrentSequence)
-		{
-			// 이름/경로 자동 — Content/Montages/<SequenceName>_Montage.uasset
-			const FString MontageName = AnimTabState.CurrentSequence->GetName() + "_Montage";
-			const FString PackagePath = FString("Content/Montages/") + MontageName + ".uasset";
-			UAnimMontage* Montage = FAnimationManager::Get().CreateMontage(AnimTabState.CurrentSequence, MontageName);
-			if (Montage)
-			{
-				FAnimationManager::Get().SaveMontage(Montage, PackagePath);
-				FAnimationManager::Get().RefreshAvailableMontages();
-				AnimTabState.CurrentMontage    = Montage;
-				AnimTabState.bMontageSelected  = true;
-				AnimTabState.SelectedMontageIndex = -1;   // 인덱스는 새 스캔 후 재 매핑
-			}
-		}
-		// else: 선택된 sequence 없으면 무시 (조용히 — UI 에서 버튼 클릭만 무시)
-	}
+	const TArray<FAssetListItem> AnimFiles      = FAssetRegistry::ListAnimationsForSkeleton(SkeletalMesh->GetSkeletonBinding(), false);
+	const TArray<FAssetListItem>& MontageFiles  = FAnimationManager::Get().GetAvailableMontageFiles();
 
-	const TArray<FAssetListItem>& MontageFiles = FAnimationManager::Get().GetAvailableMontageFiles();
-	for (int32 i = 0; i < static_cast<int32>(MontageFiles.size()); ++i)
+	// asset 경로의 stem (확장자/디렉토리 제거) — 자동 montage 이름의 source 식별자.
+	auto ExtractStem = [](const FString& Path) -> FString
 	{
-		const FAssetListItem& Item = MontageFiles[i];
-		const bool bSelected = (AnimTabState.bMontageSelected && AnimTabState.SelectedMontageIndex == i);
-		if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+		const size_t LastSlash = Path.find_last_of("/\\");
+		const size_t Start = (LastSlash == FString::npos) ? 0 : LastSlash + 1;
+		const size_t LastDot = Path.find_last_of('.');
+		const size_t End = (LastDot == FString::npos || LastDot < Start) ? Path.size() : LastDot;
+		return Path.substr(Start, End - Start);
+	};
+
+	// + New Montage — 현재 선택된 sequence 가 있으면 source 로 새 montage 생성.
+	// 이름은 sequence 의 asset path stem 사용 (UObject::GetName() 의 자동생성 ObjectName 회피).
+	const bool bCanCreateMontage = (AnimTabState.CurrentSequence != nullptr) && !AnimTabState.bMontageSelected;
+	if (!bCanCreateMontage) ImGui::BeginDisabled();
+	if (ImGui::Button("+ New Montage (from selected sequence)", ImVec2(-1.0f, 0.0f)))
+	{
+		const FString Stem = ExtractStem(AnimTabState.CurrentSequence->GetAssetPathFileName());
+		const FString MontageName = Stem + "_Montage";
+		const FString PackagePath = FString("Content/Montages/") + MontageName + ".uasset";
+		UAnimMontage* Montage = FAnimationManager::Get().CreateMontage(AnimTabState.CurrentSequence, MontageName);
+		if (Montage)
 		{
-			AnimTabState.SelectedMontageIndex = i;
-			AnimTabState.bMontageSelected     = true;
-			UAnimMontage* M = FAnimationManager::Get().LoadMontage(Item.FullPath);
-			if (M)
+			FAnimationManager::Get().SaveMontage(Montage, PackagePath);
+			FAnimationManager::Get().RefreshAvailableMontages();
+			AnimTabState.CurrentMontage    = Montage;
+			AnimTabState.bMontageSelected  = true;
+
+			// 새 montage 의 인덱스 즉시 매핑 — list 의 hilight + 다음 클릭의 일관 동작 보장.
+			const TArray<FAssetListItem>& Updated = FAnimationManager::Get().GetAvailableMontageFiles();
+			AnimTabState.SelectedMontageIndex = -1;
+			for (int32 j = 0; j < static_cast<int32>(Updated.size()); ++j)
 			{
-				AnimTabState.CurrentMontage = M;
+				if (Updated[j].FullPath == PackagePath)
+				{
+					AnimTabState.SelectedMontageIndex = j;
+					break;
+				}
 			}
 		}
+	}
+	if (!bCanCreateMontage) ImGui::EndDisabled();
+
+	// 통합 리스트 — Sequence + Montage 한 selectable. 알파벳 정렬 (Walking_mixamo_com 옆에
+	// Walking_mixamo_com_Montage 가 자연스럽게 인접). 시각 구분: Montage 는 노랑 + [M] prefix.
+	struct FEntry
+	{
+		FString  DisplayName;
+		FString  FullPath;
+		bool     bIsMontage = false;
+		int32    OriginalIndex = -1;   // AnimFiles 또는 MontageFiles 의 인덱스
+	};
+	TArray<FEntry> Entries;
+	Entries.reserve(AnimFiles.size() + MontageFiles.size());
+	for (int32 i = 0; i < static_cast<int32>(AnimFiles.size());    ++i) Entries.push_back({ AnimFiles[i].DisplayName,    AnimFiles[i].FullPath,    false, i });
+	for (int32 i = 0; i < static_cast<int32>(MontageFiles.size()); ++i) Entries.push_back({ MontageFiles[i].DisplayName, MontageFiles[i].FullPath, true,  i });
+	std::sort(Entries.begin(), Entries.end(),
+		[](const FEntry& A, const FEntry& B) { return A.DisplayName < B.DisplayName; });
+
+	ImGui::TextUnformatted("Animations & Montages");
+	for (const FEntry& E : Entries)
+	{
+		const bool bSelected =
+			E.bIsMontage
+				? (AnimTabState.bMontageSelected && AnimTabState.SelectedMontageIndex == E.OriginalIndex)
+				: (!AnimTabState.bMontageSelected && AnimTabState.SelectedAnimIndex == E.OriginalIndex);
+
+		// 시각 구분 — Montage 는 노랑 톤. Sequence 는 기본 색.
+		const ImU32 Color = E.bIsMontage ? IM_COL32(255, 200, 100, 255) : IM_COL32(255, 255, 255, 255);
+		ImGui::PushStyleColor(ImGuiCol_Text, Color);
+
+		const FString Label = (E.bIsMontage ? "[M] " : "      ") + E.DisplayName;
+		if (ImGui::Selectable(Label.c_str(), bSelected))
+		{
+			if (E.bIsMontage)
+			{
+				AnimTabState.SelectedMontageIndex = E.OriginalIndex;
+				AnimTabState.bMontageSelected     = true;
+				if (UAnimMontage* M = FAnimationManager::Get().LoadMontage(E.FullPath))
+				{
+					AnimTabState.CurrentMontage = M;
+				}
+			}
+			else
+			{
+				AnimTabState.SelectedAnimIndex = E.OriginalIndex;
+				AnimTabState.bMontageSelected  = false;
+				if (UAnimSequence* Seq = FAnimationManager::Get().LoadAnimation(E.FullPath))
+				{
+					if (Seq->IsCompatibleWith(SkeletalMesh))
+					{
+						AnimTabState.CurrentSequence = Seq;
+						ApplyAnimationToComponent();
+					}
+				}
+			}
+		}
+		ImGui::PopStyleColor();
+
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("%s", Item.FullPath.c_str());
+			ImGui::SetTooltip("%s\n%s", E.bIsMontage ? "Montage" : "Sequence", E.FullPath.c_str());
 		}
 	}
 	ImGui::EndChild();
