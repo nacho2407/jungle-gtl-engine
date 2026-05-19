@@ -1,4 +1,5 @@
 ﻿#include "Mesh/Fbx/FbxAnimationImporter.h"
+#include "Mesh/Fbx/FbxSceneQuery.h"
 #include "Mesh/Fbx/FbxTransformUtils.h"
 #include "Animation/AnimationRuntime.h"
 #include "Animation/AnimDataModel.h"
@@ -1220,7 +1221,11 @@ bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext&
 					}
 				}
 
-				BoneLocalTransforms[BoneIndex] = FAnimationRuntime::DecomposeMatrix(FFbxTransformUtils::ToEngineMatrix(BakeResult.FinalMatrix));
+				const bool bAbsorbWrapperTransform = Context.Bones[BoneIndex].ParentIndex < 0 && FFbxSceneQuery::HasNonSkeletonWrapperParent(BoneNode);
+				const FbxAMatrix FinalFbxMatrix = bAbsorbWrapperTransform
+					? BoneNode->EvaluateGlobalTransform(Time)
+					: BakeResult.FinalMatrix;
+				BoneLocalTransforms[BoneIndex] = FAnimationRuntime::DecomposeMatrix(FFbxTransformUtils::ToEngineMatrix(FinalFbxMatrix));
 			}
 
 			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Context.Bones.size()); ++BoneIndex)

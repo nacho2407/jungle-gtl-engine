@@ -38,6 +38,24 @@ bool FFbxSceneQuery::IsSkeletonNode(FbxNode* Node)
 	return Attr && Attr->GetAttributeType() == FbxNodeAttribute::eSkeleton;
 }
 
+bool FFbxSceneQuery::HasNonSkeletonWrapperParent(FbxNode* Node)
+{
+	for (FbxNode* Parent = Node ? Node->GetParent() : nullptr; Parent; Parent = Parent->GetParent())
+	{
+		if (IsSkeletonNode(Parent))
+		{
+			return false;
+		}
+
+		if (Parent->GetParent())
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool FFbxSceneQuery::MeshHasSkin(FbxMesh* Mesh)
 {
 	if (!Mesh)
