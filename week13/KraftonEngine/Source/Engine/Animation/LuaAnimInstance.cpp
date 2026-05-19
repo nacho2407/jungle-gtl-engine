@@ -79,25 +79,15 @@ void ULuaAnimInstance::NativeInitializeAnimation()
 
 	DispatchLuaInit();
 
-	// AnimGraph RootNode 확인 — lua 가 Anim.set_root_node 명시 호출해야.
-	// 안 했으면 lua 그래프 build 의도 자체가 없다는 의미 — 안전망으로 RefPose 노드 root.
-	FAnimNode_Base* GraphRoot = GetRootNode();
-	if (!GraphRoot)
+	// AnimGraph RootNode 확인 — lua 가 Anim.set_root_node 명시 호출 + 트리 안에 Slot 노드 박기
+	// 책임은 사용자. 자동 wrap 안 함 (이전 자동 wrap 가드가 트리 깊이 검사 안 해서 같은
+	// SlotName 의 Slot 이 중복 박혀 MontageInstance Tick 이 2× 진행되는 버그 — Character 의
+	// 명시 wrap 패턴과 통일).
+	// 안 했으면 (lua 가 set_root_node 호출 안 함) — RefPose fallback + 경고.
+	if (!GetRootNode())
 	{
 		UE_LOG("[LuaAnimInstance] init() 가 Anim.set_root_node 호출 안 함 — ref pose fallback.");
-		GraphRoot = MakeNode<FAnimNode_RefPose>();
-	}
-
-	// 자동 DefaultSlot wrap — RootNode 경로의 montage 처리를 트리 안 Slot 에서 한다.
-	// lua 가 이미 Anim.create_slot 으로 명시 wrap 했으면 (root 가 Slot) skip — 이중 wrap 방지.
-	const bool bAlreadyWrapped =
-		(std::strcmp(GraphRoot->GetDebugName(), "Slot") == 0);
-	if (!bAlreadyWrapped)
-	{
-		FAnimNode_Slot* DefaultSlot = MakeNode<FAnimNode_Slot>();
-		DefaultSlot->SlotName  = DefaultMontageSlot;
-		DefaultSlot->InputPose = GraphRoot;
-		SetRootNode(DefaultSlot);
+		SetRootNode(MakeNode<FAnimNode_RefPose>());
 	}
 
 	// Hot-reload 등록 — .lua 파일 변경 시 FLuaScriptManager 가 ReloadScript 호출.
