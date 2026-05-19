@@ -87,8 +87,10 @@ protected:
 	void  ApplyInputToVelocity(const FVector& Input, float DeltaTime);
 
 	// Mode 별 Z 처리 + 위치 갱신.
-	void  TickWalking(float DeltaTime);
-	void  TickFalling(float DeltaTime);
+	// RootMotionWorldXY 는 이번 frame 의 root motion 평면 변위 (world frame, Z=0 보장).
+	// XY 적용 단계에 합산되고 floor stick / gravity 는 mode 가 자체 결정.
+	void  TickWalking(float DeltaTime, const FVector& RootMotionWorldXY);
+	void  TickFalling(float DeltaTime, const FVector& RootMotionWorldXY);
 
 	// capsule 중심에서 down raycast — bHit + WorldHitLocation 사용.
 	bool  TraceFloor(FHitResult& OutHit) const;

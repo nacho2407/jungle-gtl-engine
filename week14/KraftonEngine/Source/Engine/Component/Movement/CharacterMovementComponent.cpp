@@ -5,6 +5,7 @@
 #include "Core/PropertyTypes.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "Math/Quat.h"
 #include "Math/Rotator.h"
 #include "Object/ObjectFactory.h"
 #include "Physics/IPhysicsScene.h"
@@ -82,17 +83,49 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	// 1) Input 처리 — XY velocity 갱신 (양 mode 공통).
 	ApplyInputToVelocity(Input, DeltaTime);
 
-	// 2) Mode 별 Z 처리 + 위치 적용.
+	// 2) Root motion 소비 — local delta 를 world frame 으로 변환 (Updated 의 yaw 기준).
+	//    XY 만 mode 분기로 위임. Z 는 두 mode 모두 무시:
+	//      Walking — floor stick 이 Z 결정
+	//      Falling — gravity 가 Z 결정
+	//    Climbing/Swimming 같은 mode 추가 시 그때 재검토.
+	FTransform RootMotionDelta;
+	const bool bHadRootMotion = ConsumePendingRootMotion(RootMotionDelta);
+	FVector RootMotionWorldXY(0.0f, 0.0f, 0.0f);
+	if (bHadRootMotion)
+	{
+		const FRotator ActorRot = Updated->GetWorldRotation();
+		const FQuat    YawOnly  = FRotator(0.0f, 0.0f, ActorRot.Yaw).ToQuaternion();
+		const FVector  World    = YawOnly.RotateVector(RootMotionDelta.Location);
+		RootMotionWorldXY.X     = World.X;
+		RootMotionWorldXY.Y     = World.Y;
+	}
+
+	// 3) Mode 별 Z 처리 + 위치 적용 (input velocity + root motion XY 합산).
 	if (MovementMode == EMovementMode::Walking)
 	{
-		TickWalking(DeltaTime);
+		TickWalking(DeltaTime, RootMotionWorldXY);
 	}
 	else
 	{
-		TickFalling(DeltaTime);
+		TickFalling(DeltaTime, RootMotionWorldXY);
 	}
 
-	// 3) Orient yaw to movement direction — 양 mode 공통. Falling 중에도 air control 로
+	// 4) Root motion yaw 적용. yaw 만 추출 — root motion 의 pitch/roll 은 캐릭터 capsule
+	//    회전에 일반적으로 의미 없음 (UE 도 yaw 만 적용). bOrientRotationToMovement 와의
+	//    충돌은 Step 6 에서 본격 정리 — 지금은 단순 누적이라 PhysOrientToMovement 가
+	//    같은 frame 에 yaw 를 덮을 수 있음.
+	if (bHadRootMotion)
+	{
+		const FRotator DeltaRot = RootMotionDelta.Rotation.ToRotator();
+		if (std::fabs(DeltaRot.Yaw) > 1e-4f)
+		{
+			FRotator R = Updated->GetRelativeRotation();
+			R.Yaw += DeltaRot.Yaw;
+			Updated->SetRelativeRotation(R);
+		}
+	}
+
+	// 5) Orient yaw to movement direction — 양 mode 공통. Falling 중에도 air control 로
 	//    방향이 바뀌면 자연스럽게 회전. Velocity.XY ≈ 0 이면 no-op (마지막 facing 유지).
 	if (bOrientRotationToMovement)
 	{
@@ -168,7 +201,7 @@ void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, flo
 	}
 }
 
-void UCharacterMovementComponent::TickWalking(float DeltaTime)
+void UCharacterMovementComponent::TickWalking(float DeltaTime, const FVector& RootMotionWorldXY)
 {
 	USceneComponent* Updated = GetUpdatedComponent();
 
@@ -179,15 +212,18 @@ void UCharacterMovementComponent::TickWalking(float DeltaTime)
 		Velocity.Z = JumpZVelocity;
 		SetMovementMode(EMovementMode::Falling);
 		// XY 이동은 Falling 분기로 위임 — 한 frame 안 mode 전환이라 즉시 falling tick.
-		TickFalling(DeltaTime);
+		TickFalling(DeltaTime, RootMotionWorldXY);
 		return;
 	}
 
 	// Walking 중 Z velocity 는 0 — floor stick 으로만 Z 결정.
 	Velocity.Z = 0.0f;
 
-	// XY 먼저 이동.
-	const FVector XYOffset(Velocity.X * DeltaTime, Velocity.Y * DeltaTime, 0.0f);
+	// XY 이동: input velocity * dt + root motion XY (이미 world frame).
+	const FVector XYOffset(
+		Velocity.X * DeltaTime + RootMotionWorldXY.X,
+		Velocity.Y * DeltaTime + RootMotionWorldXY.Y,
+		0.0f);
 	Updated->SetWorldLocation(Updated->GetWorldLocation() + XYOffset);
 
 	// Floor 잡혔는지 — 이동 직후 위치에서 다시 trace.
@@ -205,14 +241,18 @@ void UCharacterMovementComponent::TickWalking(float DeltaTime)
 	Updated->SetWorldLocation(NewLoc);
 }
 
-void UCharacterMovementComponent::TickFalling(float DeltaTime)
+void UCharacterMovementComponent::TickFalling(float DeltaTime, const FVector& RootMotionWorldXY)
 {
 	USceneComponent* Updated = GetUpdatedComponent();
 
 	// Gravity — Z 만. (양수 Gravity → -Z 가속)
 	Velocity.Z -= Gravity * DeltaTime;
 
-	const FVector Offset = Velocity * DeltaTime;
+	// Velocity * dt 의 XY 에 root motion XY 합산. Z 는 gravity 가 책임이라 root motion 무시.
+	const FVector Offset(
+		Velocity.X * DeltaTime + RootMotionWorldXY.X,
+		Velocity.Y * DeltaTime + RootMotionWorldXY.Y,
+		Velocity.Z * DeltaTime);
 	Updated->SetWorldLocation(Updated->GetWorldLocation() + Offset);
 
 	// 올라가는 중 (점프 arc 상승) 엔 floor 체크 skip — 안 그러면 점프 직후 1 frame 의
