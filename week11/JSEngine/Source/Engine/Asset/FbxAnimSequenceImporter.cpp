@@ -32,6 +32,84 @@ static void SortAnimStackNames(TArray<FString>& Names)
     std::sort(Names.begin(), Names.end());
 }
 
+class FScopedFbxManager
+{
+public:
+    explicit FScopedFbxManager(fbxsdk::FbxManager* InManager)
+        : Manager(InManager)
+    {
+    }
+
+    ~FScopedFbxManager()
+    {
+        Reset();
+    }
+
+    FScopedFbxManager(const FScopedFbxManager&) = delete;
+    FScopedFbxManager& operator=(const FScopedFbxManager&) = delete;
+
+    fbxsdk::FbxManager* Get() const
+    {
+        return Manager;
+    }
+
+    fbxsdk::FbxManager* operator->() const
+    {
+        return Manager;
+    }
+
+    void Reset()
+    {
+        if (Manager)
+        {
+            Manager->Destroy();
+            Manager = nullptr;
+        }
+    }
+
+private:
+    fbxsdk::FbxManager* Manager = nullptr;
+};
+
+class FScopedFbxImporter
+{
+public:
+    explicit FScopedFbxImporter(fbxsdk::FbxImporter* InImporter)
+        : Importer(InImporter)
+    {
+    }
+
+    ~FScopedFbxImporter()
+    {
+        Reset();
+    }
+
+    FScopedFbxImporter(const FScopedFbxImporter&) = delete;
+    FScopedFbxImporter& operator=(const FScopedFbxImporter&) = delete;
+
+    fbxsdk::FbxImporter* Get() const
+    {
+        return Importer;
+    }
+
+    fbxsdk::FbxImporter* operator->() const
+    {
+        return Importer;
+    }
+
+    void Reset()
+    {
+        if (Importer)
+        {
+            Importer->Destroy();
+            Importer = nullptr;
+        }
+    }
+
+private:
+    fbxsdk::FbxImporter* Importer = nullptr;
+};
+
 static void BuildNodeNameMap(fbxsdk::FbxNode* Node, TMap<FString, TArray<fbxsdk::FbxNode*>>& OutMap)
 {
     if (!Node)
@@ -711,18 +789,24 @@ TArray<FString> FFbxAnimSequenceImporter::ListAnimStacks(const FString& Path)
 {
     TArray<FString> Result;
 
-    fbxsdk::FbxManager* Manager = fbxsdk::FbxManager::Create();
-    if (!Manager)
+    FScopedFbxManager Manager(fbxsdk::FbxManager::Create());
+    if (!Manager.Get())
     {
         UE_LOG_ERROR("[FbxAnimSequenceImporter] Failed to create FbxManager for stack list: %s", Path.c_str());
         return Result;
     }
 
-    fbxsdk::FbxIOSettings* IOSettings = fbxsdk::FbxIOSettings::Create(Manager, IOSROOT);
+    fbxsdk::FbxIOSettings* IOSettings = fbxsdk::FbxIOSettings::Create(Manager.Get(), IOSROOT);
     Manager->SetIOSettings(IOSettings);
 
-    fbxsdk::FbxImporter* Importer = fbxsdk::FbxImporter::Create(Manager, "");
-    if (Importer && Importer->Initialize(Path.c_str(), -1, Manager->GetIOSettings()))
+    FScopedFbxImporter Importer(fbxsdk::FbxImporter::Create(Manager.Get(), ""));
+    if (!Importer.Get())
+    {
+        UE_LOG_ERROR("[FbxAnimSequenceImporter] Failed to create FbxImporter for stack list: %s", Path.c_str());
+        return Result;
+    }
+
+    if (Importer->Initialize(Path.c_str(), -1, Manager->GetIOSettings()))
     {
         const int32 StackCount = Importer->GetAnimStackCount();
         for (int32 StackIndex = 0; StackIndex < StackCount; ++StackIndex)
@@ -738,18 +822,12 @@ TArray<FString> FFbxAnimSequenceImporter::ListAnimStacks(const FString& Path)
             AddUniqueAnimStackName(Result, !TakeName.empty() ? TakeName : ImportName);
         }
     }
-    else if (Importer)
+    else
     {
         UE_LOG_ERROR("[FbxAnimSequenceImporter] Initialize failed while listing stacks: %s (%s)",
                      Path.c_str(),
                      Importer->GetStatus().GetErrorString());
     }
-
-    if (Importer)
-    {
-        Importer->Destroy();
-    }
-    Manager->Destroy();
 
     if (!Result.empty())
     {
