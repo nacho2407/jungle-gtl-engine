@@ -1,22 +1,17 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
-#include "Core/Containers/String.h"
-#include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/ShaderTypes.h"
 #include "Render/Resource/VertexTypes.h"
 
 #include <cstddef>
-
-struct FRenderCommand;
-struct ID3D11DeviceContext;
 
 // Mesh Vertex 데이터를 어떤 방식으로 해석할지 나타내는 타입입니다.
 // Material이 Static/Skeletal 여부를 알지 않도록 RenderCommand가 이 값을 들고 갑니다.
 enum class EVertexFactoryType : uint8
 {
     StaticMesh,
-    SkeletalMesh,
+    SkeletalMesh, // Only for GPU skinning, CPU skining uses StaticMesh
     ProceduralMesh,
     Primitive,
     Billboard,
@@ -27,18 +22,8 @@ enum class EVertexFactoryType : uint8
     Decal,
 };
 
-// VertexFactory별 Shader Entry 정책입니다.
-// 같은 Material PS라도 StaticMeshVS / SkeletalMeshVS처럼 VS만 갈아끼울 수 있게 분리합니다.
 struct FVertexFactoryDesc
 {
-    FString VertexShaderPath;
-    FString DepthPassVSPath;
-    FString ShadowPassVSPath;
-    FString SelectionPassVSPath;
-    FString BasePassVSEntry;
-    FString DepthPassVSEntry;
-    FString ShadowPassVSEntry;
-    FString SelectionPassVSEntry;
     FVertexLayoutDesc VertexLayout;
     FVertexLayoutDesc PositionOnlyLayout;
     FVertexLayoutDesc SelectionLayout;
@@ -103,92 +88,36 @@ public:
         };
 
         static const FVertexFactoryDesc StaticMeshDesc = {
-            FShaderPaths::MaterialUberLit,
-            FShaderPaths::DepthPrepass,
-            FShaderPaths::Shadow,
-            FShaderPaths::EditorSelectionMask,
-            "mainVS",
-            "DepthPrepassVS",
-            "ShadowVS",
-            "VSStaticMesh",
             NormalVertexLayout,
             PositionOnlyLayout,
             NormalVertexLayout
         };
         static const FVertexFactoryDesc SkeletalMeshDesc = {
-            FShaderPaths::MaterialUberLit,
-            FShaderPaths::DepthPrepass,
-            FShaderPaths::Shadow,
-            FShaderPaths::EditorSelectionMask,
-            "mainVS",
-            "DepthPrepassVS",
-            "ShadowVS",
-            "VSSkeletalMesh",
             SkeletalVertexLayout,
             PositionOnlyLayout,
             SkeletalVertexLayout
         };
         static const FVertexFactoryDesc DecalDesc = {
-            FShaderPaths::MaterialDecal,
-            FShaderPaths::DepthPrepass,
-            FShaderPaths::Shadow,
-            FShaderPaths::EditorSelectionMask,
-            "mainVS",
-            "DepthPrepassVS",
-            "ShadowVS",
-            "VSStaticMesh",
             NormalVertexLayout,
             PositionOnlyLayout,
             NormalVertexLayout
         };
         static const FVertexFactoryDesc GizmoDesc = {
-            FShaderPaths::EditorGizmo,
-            FShaderPaths::EditorGizmo,
-            FShaderPaths::EditorGizmo,
-            FShaderPaths::EditorGizmo,
-            "VS",
-            "VS",
-            "VS",
-            "VS",
             PrimitiveVertexLayout,
             PrimitiveVertexLayout,
             PrimitiveVertexLayout
         };
         static const FVertexFactoryDesc PrimitiveDesc = {
-            FShaderPaths::EditorPrimitive,
-            FShaderPaths::DepthPrepass,
-            FShaderPaths::Shadow,
-            FShaderPaths::EditorSelectionMask,
-            "VS",
-            "DepthPrepassVS",
-            "ShadowVS",
-            "VSPrimitive",
             PrimitiveVertexLayout,
             PositionOnlyLayout,
             PrimitiveVertexLayout
         };
         static const FVertexFactoryDesc TexturedQuadDesc = {
-            FShaderPaths::UISubUV,
-            FShaderPaths::DepthPrepass,
-            FShaderPaths::Shadow,
-            FShaderPaths::EditorSelectionMask,
-            "VS",
-            "DepthPrepassVS",
-            "ShadowVS",
-            "VSBillboard",
             TextureVertexLayout,
             PositionOnlyLayout,
             PrimitiveVertexLayout
         };
         static const FVertexFactoryDesc TextDesc = {
-            FShaderPaths::UIFont,
-            FShaderPaths::DepthPrepass,
-            FShaderPaths::Shadow,
-            FShaderPaths::EditorSelectionMask,
-            "VS",
-            "DepthPrepassVS",
-            "ShadowVS",
-            "VSBillboard",
             TexturePositionUVLayout,
             PositionOnlyLayout,
             PrimitiveVertexLayout

@@ -1,4 +1,4 @@
-﻿#include "RenderCollector.h"
+#include "RenderCollector.h"
 
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
@@ -112,6 +112,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 	ResetCullingStats();
 	ResetDecalStats();
 	ResetLightStats();
+	ReleaseStaleCPUSkeletalMeshBuffers();
 
 	if (!World) return;
 

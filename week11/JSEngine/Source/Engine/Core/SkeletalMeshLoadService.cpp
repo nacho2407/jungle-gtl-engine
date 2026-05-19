@@ -1,4 +1,4 @@
-﻿#include "Core/SkeletalMeshLoadService.h"
+#include "Core/SkeletalMeshLoadService.h"
 
 #include "Core/AssetPathPolicy.h"
 #include "Core/Logging/Log.h"
@@ -108,7 +108,7 @@ USkeletalMesh* FSkeletalMeshLoadService::FinalizeLoadedMesh(FSkeletalMesh* MeshD
 	ReferenceSkeleton.RebuildNameToIndex();
 	USkeleton* Skeleton = UObjectManager::Get().CreateObject<USkeleton>();
 	Skeleton->SetReferenceSkeleton(ReferenceSkeleton);
-	LoadedMesh->SetSkeleton(Skeleton);
+	LoadedMesh->SetSkeleton(Skeleton, true);
 	LoadedMesh->SetMeshData(MeshData);
 
 	ResourceManager.SkeletalMeshMap[CacheKey] = LoadedMesh;

@@ -13,81 +13,65 @@ cbuffer EditorPickingBuffer : register(b12)
 Texture2D PickTexture : register(t0);
 SamplerState PickSampler : register(s0);
 
-struct VSInputPrimitive
+struct VSInput
 {
     float3 Position : POSITION;
     float4 Color : COLOR;
-};
-
-struct VSInputStaticMesh
-{
-    float3 Position : POSITION;
-    float4 Color : COLOR;
+#if defined(VF_MESH)
     float3 Normal : NORMAL;
     float2 UV : TEXCOORD;
     float4 Tangent : TANGENT;
-};
-
-struct VSInputSkeletalMesh
-{
-    float3 Position : POSITION;
-    float3 Normal : NORMAL;
-    float2 UV : TEXCOORD;
-    float4 Tangent : TANGENT;
-    float4 Color : COLOR;
+#endif
+#ifdef GPU_SKINNING
     uint4 BoneIndices : BLENDINDICES;
     float4 BoneWeights : BLENDWEIGHT;
+#endif
 };
 
-struct VSOutputPrimitive
-{
-    float4 Position : SV_POSITION;
-};
-
-struct VSOutputTextured
+struct VSOutput
 {
     float4 Position : SV_POSITION;
     float2 UV : TEXCOORD0;
 };
 
-VSOutputPrimitive VSPrimitive(VSInputPrimitive Input)
+#ifdef GPU_SKINNING
+float3 Skinning(float3 Position, uint4 BoneIndices, float4 BoneWeights)
 {
-    VSOutputPrimitive Output;
-    Output.Position = ApplyMVP(Input.Position);
-    return Output;
-}
+    float3 SkinnedPosition = float3(0.0f, 0.0f, 0.0f);
+    for (uint i = 0; i < 4; ++i)
+    {
+        SkinnedPosition += BoneWeights[i] * mul(float4(Position, 1.0f), BoneMatrices[BoneIndices[i]]).xyz;
+    }
 
-VSOutputTextured VSBillboard(VSInputPrimitive Input)
+    return SkinnedPosition;
+}
+#endif
+
+VSOutput VS(VSInput Input)
 {
-    VSOutputTextured Output;
-    Output.Position = ApplyMVP(Input.Position);
+    VSOutput Output;
+
+#ifdef GPU_SKINNING
+    float3 Position = Skinning(Input.Position, Input.BoneIndices, Input.BoneWeights);
+#else
+    float3 Position = Input.Position;
+#endif
+
+    Output.Position = ApplyMVP(Position);
+
+#if defined(VF_BILLBOARD)
     float2 LocalUV = float2(0.5f - Input.Position.y, 0.5f - Input.Position.z);
     Output.UV = UVOffset + LocalUV * UVScale;
-    return Output;
-}
-
-VSOutputTextured VSStaticMesh(VSInputStaticMesh Input)
-{
-    VSOutputTextured Output;
-    Output.Position = ApplyMVP(Input.Position);
+#elif defined(VF_MESH)
     Output.UV = UVOffset + Input.UV * UVScale;
+#else
+    Output.UV = float2(0.0f, 0.0f);
+#endif
+
     return Output;
 }
 
-VSOutputTextured VSSkeletalMesh(VSInputSkeletalMesh Input)
-{
-    VSOutputTextured Output;
-    Output.Position = ApplyMVP(Input.Position);
-    Output.UV = UVOffset + Input.UV * UVScale;
-    return Output;
-}
-
-uint PSOpaque(VSOutputPrimitive Input) : SV_TARGET
-{
-    return PickingId;
-}
-
-uint PSTextured(VSOutputTextured Input) : SV_TARGET
+uint PS(VSOutput Input) : SV_TARGET
 {
     if (UseAlphaTest != 0)
     {

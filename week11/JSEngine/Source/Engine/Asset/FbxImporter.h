@@ -64,7 +64,8 @@ private:
 			FReferenceSkeleton& InOutReferenceSkeleton,
 			ESkeletalMeshImportPass Pass,
 			TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex,
-			bool& bHasImportedSkinnedMesh);
+			bool& bHasImportedSkinnedMesh,
+			int32& ImportedSkinnedMeshCount);
 
     void ProcessSkeletalMesh(
         fbxsdk::FbxMesh* Mesh,
@@ -72,7 +73,8 @@ private:
 		FReferenceSkeleton& InOutReferenceSkeleton,
         ESkeletalMeshImportPass Pass,
         TMap<fbxsdk::FbxNode*, int32>& BoneNodeToIndex,
-        bool& bHasImportedSkinnedMesh);
+        bool& bHasImportedSkinnedMesh,
+        int32& ImportedSkinnedMeshCount);
 
 	void ProcessRigidAttachedMesh(
         fbxsdk::FbxMesh* Mesh,

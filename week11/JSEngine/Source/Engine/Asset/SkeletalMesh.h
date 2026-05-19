@@ -44,14 +44,16 @@ public:
     const FAABB& GetLocalBounds() const;
 
     bool HasValidMeshData() const;
-    void SetSkeleton(USkeleton* InSkeleton);
+    void SetSkeleton(USkeleton* InSkeleton, bool bTakeOwnership = false);
     USkeleton* GetSkeleton() const;
     const FReferenceSkeleton* GetReferenceSkeleton() const;
 
 private:
     void RebuildLocalBoundsFromMeshData();
+    void ReleaseOwnedSkeleton();
 
 private:
     USkeleton* Skeleton = nullptr;
+    bool bOwnsSkeleton = false;
     FSkeletalMesh* MeshData = nullptr;
 };

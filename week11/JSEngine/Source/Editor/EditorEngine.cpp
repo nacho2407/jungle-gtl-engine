@@ -1,4 +1,4 @@
-﻿#include "Editor/EditorEngine.h"
+#include "Editor/EditorEngine.h"
 
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
@@ -283,7 +283,10 @@ void UEditorEngine::Tick(float DeltaTime)
     ViewportLayout.Tick(DeltaTime);
     for (auto& ViewerPtr : Viewers)
     {
-        ViewerPtr->Tick(DeltaTime);
+        if (IsViewerVisible(ViewerPtr.get()))
+        {
+            ViewerPtr->Tick(DeltaTime);
+        }
     }
     MainPanel.Update();
 #if STATS
@@ -602,6 +605,12 @@ void UEditorEngine::WorldTick(float DeltaTime)
         if (!Ctx.World || Ctx.bPaused)
             continue;
 
+        if (Ctx.WorldType == EWorldType::ViewerPreview &&
+            !IsViewerPreviewWorldVisible(Ctx.World))
+        {
+            continue;
+        }
+
         Ctx.World->Tick(DeltaTime);
     }
 
@@ -643,23 +652,73 @@ void UEditorEngine::RemoveViewer(FEditorViewer* InViewer)
     {
         if (it->get() == InViewer)
         {
-            MainPanel.CloseViewer(InViewer);
-			
-            // Find world handle and unregister
+            bool bHasWorldHandle = false;
+            FName WorldHandle = FName::None;
+
             if (FEditorViewportClient* Client = static_cast<FEditorViewportClient*>((*it)->GetViewport().GetClient()))
             {
                 if (UWorld* World = Client->GetFocusedWorld())
                 {
                     if (FWorldContext* Ctx = GetWorldContextFromWorld(World))
                     {
-                        UnregisterWorld(Ctx->ContextHandle);
+                        bHasWorldHandle = true;
+                        WorldHandle = Ctx->ContextHandle;
                     }
                 }
             }
 
+            MainPanel.CloseViewer(InViewer);
             (*it)->Shutdown();
+
+            if (bHasWorldHandle)
+            {
+                UnregisterWorld(WorldHandle);
+            }
+
             Viewers.erase(it);
+            ResetViewerViewportRenderTargets();
+            Renderer.TrimViewerViewportResources(static_cast<uint32>(Viewers.size()));
             return;
+        }
+    }
+}
+
+bool UEditorEngine::IsViewerVisible(FEditorViewer* Viewer) const
+{
+    return Viewer && MainPanel.IsViewerViewportVisible(Viewer);
+}
+
+bool UEditorEngine::IsViewerPreviewWorldVisible(const UWorld* World) const
+{
+    if (!World)
+    {
+        return false;
+    }
+
+    for (const auto& ViewerPtr : Viewers)
+    {
+        if (!ViewerPtr)
+        {
+            continue;
+        }
+
+        const FEditorViewportClient* Client = &ViewerPtr->GetClient();
+        if (Client->GetFocusedWorld() == World)
+        {
+            return IsViewerVisible(ViewerPtr.get());
+        }
+    }
+
+    return false;
+}
+
+void UEditorEngine::ResetViewerViewportRenderTargets()
+{
+    for (auto& ViewerPtr : Viewers)
+    {
+        if (ViewerPtr)
+        {
+            ViewerPtr->GetViewport().SetRenderTargetSet(nullptr);
         }
     }
 }
@@ -1220,6 +1279,15 @@ void UEditorEngine::CloseScene()
     EditorInputRouter.ClearTargets();
     UnbindActorDestroyedListener(ActorDestroyedListenerWorld);
 
+    for (auto& ViewerPtr : Viewers)
+    {
+        if (ViewerPtr)
+        {
+            MainPanel.CloseViewer(ViewerPtr.get());
+            ViewerPtr->Shutdown();
+        }
+    }
+
     for (FWorldContext& Ctx : WorldList)
     {
         Ctx.World->EndPlay(EEndPlayReason::Type::EndPlayInEditor);
@@ -1242,17 +1310,8 @@ void UEditorEngine::CloseScene()
         }
     }
 
-    for (auto& ViewerPtr : Viewers)
-    {
-        MainPanel.CloseViewer(ViewerPtr.get());
-        if (FEditorViewportClient* ViewportClient = static_cast<FEditorViewportClient*>(ViewerPtr->GetViewport().GetClient()))
-        {
-            ViewportClient->DestroyCamera();
-            ViewportClient->SetWorld(nullptr);
-        }
-    }
-
 	Viewers.clear();
+    Renderer.TrimViewerViewportResources(0);
 }
 
 void UEditorEngine::NewScene()

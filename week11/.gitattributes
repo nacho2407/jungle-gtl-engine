@@ -1,2 +1,16 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+.gitattributes text eol=crlf
+
+# Visual Studio/C++ sources should use CRLF in the working tree.
+*.sln text eol=crlf
+*.vcxproj text eol=crlf
+*.filters text eol=crlf
+*.props text eol=crlf
+*.targets text eol=crlf
+*.h text eol=crlf
+*.hpp text eol=crlf
+*.c text eol=crlf
+*.cpp text eol=crlf
+*.cc text eol=crlf
+*.cxx text eol=crlf

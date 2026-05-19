@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 /*
 	실제 렌더링을 담당하는 Class 입니다. (Rendering 최상위 클래스)
@@ -174,6 +174,7 @@ public:
 	// 추가로 VP 를 받아서 원래 해당하는 Resource 를 찾아야하는데 현재는 Index 로 찾는 중
     FViewportRenderResource& AcquireViewportResource(uint32 W, uint32 H, int32 Index);
     FViewportRenderResource& AcquireViewerViewportResource(uint32 Index, uint32 W, uint32 H);
+    void TrimViewerViewportResources(uint32 ActiveCount);
     void InitializeViewportResource(uint32 Width, uint32 Height, int32 Index);
     void ReleaseViewportResource(int32 Index);
 	FViewportRenderResource& AcquirePreviewResource(uint32 W, uint32 H);

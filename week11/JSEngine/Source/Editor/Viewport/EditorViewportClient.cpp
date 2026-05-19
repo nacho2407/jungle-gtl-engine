@@ -315,6 +315,7 @@ void FEditorViewportClient::DestroyCamera()
 {
 	bHasCamera = false;
 	InputRouter.GetEditorWorldController().NullifyCamera();
+	InputRouter.GetGameInputBridge().NullifyCamera();
 }
 
 void FEditorViewportClient::ResetCamera()

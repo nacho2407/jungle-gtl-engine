@@ -14,19 +14,194 @@
 #include <algorithm>
 #include <cmath>
 // Helper Function
-static void BuildNodeNameMap(fbxsdk::FbxNode* Node, TMap<FString, fbxsdk::FbxNode*>& OutMap)
+static void BuildNodeNameMap(fbxsdk::FbxNode* Node, TMap<FString, TArray<fbxsdk::FbxNode*>>& OutMap)
 {
     if (!Node)
     {
         return;
     }
 
-    OutMap[FString(Node->GetName())] = Node;
+    OutMap[FString(Node->GetName())].push_back(Node);
 
     for (int32 ChildIndex = 0; ChildIndex < Node->GetChildCount(); ++ChildIndex)
     {
         BuildNodeNameMap(Node->GetChild(ChildIndex), OutMap);
     }
+}
+
+static FString GetNodePath(fbxsdk::FbxNode* Node)
+{
+    if (!Node)
+    {
+        return FString("<null>");
+    }
+
+    TArray<FString> Names;
+    for (fbxsdk::FbxNode* Current = Node; Current; Current = Current->GetParent())
+    {
+        Names.push_back(FString(Current->GetName()));
+    }
+
+    FString Result;
+    for (auto It = Names.rbegin(); It != Names.rend(); ++It)
+    {
+        if (!Result.empty())
+        {
+            Result += "/";
+        }
+        Result += *It;
+    }
+
+    return Result;
+}
+
+static bool HasAncestorNode(fbxsdk::FbxNode* Node, fbxsdk::FbxNode* Ancestor)
+{
+    if (!Node || !Ancestor)
+    {
+        return false;
+    }
+
+    for (fbxsdk::FbxNode* Current = Node->GetParent(); Current; Current = Current->GetParent())
+    {
+        if (Current == Ancestor)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool HasKnownBoneAncestor(fbxsdk::FbxNode* Node, const TMap<FString, int32>& BoneNameToIndex)
+{
+    if (!Node)
+    {
+        return false;
+    }
+
+    for (fbxsdk::FbxNode* Current = Node->GetParent(); Current; Current = Current->GetParent())
+    {
+        if (BoneNameToIndex.find(FString(Current->GetName())) != BoneNameToIndex.end())
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static fbxsdk::FbxNode* ResolveBoneNodeForSkeleton(
+    int32 BoneIndex,
+    const TArray<FBoneInfo>& Bones,
+    const TMap<FString, TArray<fbxsdk::FbxNode*>>& NodeNameMap,
+    const TMap<FString, int32>& BoneNameToIndex,
+    TArray<fbxsdk::FbxNode*>& BoneNodes,
+    TArray<uint8>& ResolveState,
+    const FString& SourcePath)
+{
+    if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(Bones.size()))
+    {
+        return nullptr;
+    }
+
+    if (ResolveState[BoneIndex] == 2)
+    {
+        return BoneNodes[BoneIndex];
+    }
+
+    if (ResolveState[BoneIndex] == 1)
+    {
+        UE_LOG_WARNING("[FbxAnimSequenceImporter] Cyclic reference skeleton parent chain. Bone=%s Fbx=%s",
+                       Bones[BoneIndex].Name.ToString().c_str(),
+                       SourcePath.c_str());
+        return nullptr;
+    }
+
+    ResolveState[BoneIndex] = 1;
+
+    const FBoneInfo& Bone = Bones[BoneIndex];
+    fbxsdk::FbxNode* ParentBoneNode = nullptr;
+    if (Bone.ParentIndex >= 0 && Bone.ParentIndex < static_cast<int32>(Bones.size()))
+    {
+        ParentBoneNode = ResolveBoneNodeForSkeleton(
+            Bone.ParentIndex,
+            Bones,
+            NodeNameMap,
+            BoneNameToIndex,
+            BoneNodes,
+            ResolveState,
+            SourcePath);
+    }
+
+    const FString BoneNameString = Bone.Name.ToString();
+    auto CandidatesIt = NodeNameMap.find(BoneNameString);
+    if (CandidatesIt == NodeNameMap.end() || CandidatesIt->second.empty())
+    {
+        ResolveState[BoneIndex] = 2;
+        return nullptr;
+    }
+
+    const TArray<fbxsdk::FbxNode*>& Candidates = CandidatesIt->second;
+    fbxsdk::FbxNode* SelectedNode = nullptr;
+    int32 MatchCount = 0;
+
+    if (ParentBoneNode)
+    {
+        for (fbxsdk::FbxNode* Candidate : Candidates)
+        {
+            if (HasAncestorNode(Candidate, ParentBoneNode))
+            {
+                if (!SelectedNode)
+                {
+                    SelectedNode = Candidate;
+                }
+                ++MatchCount;
+            }
+        }
+    }
+    else
+    {
+        for (fbxsdk::FbxNode* Candidate : Candidates)
+        {
+            if (!HasKnownBoneAncestor(Candidate, BoneNameToIndex))
+            {
+                if (!SelectedNode)
+                {
+                    SelectedNode = Candidate;
+                }
+                ++MatchCount;
+            }
+        }
+    }
+
+    if (!SelectedNode)
+    {
+        SelectedNode = Candidates[0];
+    }
+
+    if (Candidates.size() > 1)
+    {
+        UE_LOG_WARNING("[FbxAnimSequenceImporter] Duplicate FBX bone node names. Bone=%s Candidates=%zu HierarchyMatches=%d Selected=%s Fbx=%s",
+                       BoneNameString.c_str(),
+                       Candidates.size(),
+                       MatchCount,
+                       GetNodePath(SelectedNode).c_str(),
+                       SourcePath.c_str());
+    }
+
+    if (ParentBoneNode && !HasAncestorNode(SelectedNode, ParentBoneNode))
+    {
+        UE_LOG_WARNING("[FbxAnimSequenceImporter] Bone node hierarchy mismatch. Bone=%s Selected=%s ExpectedParent=%s Fbx=%s",
+                       BoneNameString.c_str(),
+                       GetNodePath(SelectedNode).c_str(),
+                       GetNodePath(ParentBoneNode).c_str(),
+                       SourcePath.c_str());
+    }
+
+    BoneNodes[BoneIndex] = SelectedNode;
+    ResolveState[BoneIndex] = 2;
+    return SelectedNode;
 }
 
 static fbxsdk::FbxAnimStack* GetFirstAnimStack(fbxsdk::FbxScene* Scene)
@@ -93,6 +268,108 @@ static float GetSceneFrameRate(fbxsdk::FbxScene* Scene)
 
     return Rate > 0.0 ? static_cast<float>(Rate) : 30.0f;
 }
+
+static float GetMaxScaleDelta(const TArray<FVector>& ScaleKeys)
+{
+    if (ScaleKeys.size() <= 1)
+    {
+        return 0.0f;
+    }
+
+    const FVector& BaseScale = ScaleKeys.front();
+    float MaxDelta = 0.0f;
+
+    for (const FVector& Scale : ScaleKeys)
+    {
+        MaxDelta = std::max(MaxDelta, std::fabs(Scale.X - BaseScale.X));
+        MaxDelta = std::max(MaxDelta, std::fabs(Scale.Y - BaseScale.Y));
+        MaxDelta = std::max(MaxDelta, std::fabs(Scale.Z - BaseScale.Z));
+    }
+
+    return MaxDelta;
+}
+
+static bool HasCurveKeys(fbxsdk::FbxAnimCurve* Curve)
+{
+    return Curve && Curve->KeyGetCount() > 0;
+}
+
+static bool HasAuthoredScaleCurve(fbxsdk::FbxNode* Node, fbxsdk::FbxAnimStack* Stack)
+{
+    if (!Node || !Stack)
+    {
+        return false;
+    }
+
+    const int32 LayerCount = Stack->GetMemberCount<fbxsdk::FbxAnimLayer>();
+    for (int32 LayerIndex = 0; LayerIndex < LayerCount; ++LayerIndex)
+    {
+        fbxsdk::FbxAnimLayer* Layer = Stack->GetMember<fbxsdk::FbxAnimLayer>(LayerIndex);
+        if (!Layer)
+        {
+            continue;
+        }
+
+        if (HasCurveKeys(Node->LclScaling.GetCurve(Layer, FBXSDK_CURVENODE_COMPONENT_X)) ||
+            HasCurveKeys(Node->LclScaling.GetCurve(Layer, FBXSDK_CURVENODE_COMPONENT_Y)) ||
+            HasCurveKeys(Node->LclScaling.GetCurve(Layer, FBXSDK_CURVENODE_COMPONENT_Z)))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static void SetConstantScaleTrack(FRawAnimSequenceTrack& Raw, const FVector& Scale)
+{
+    Raw.ScaleKeys.clear();
+    Raw.ScaleKeyTimes.clear();
+    Raw.ScaleKeys.push_back(Scale);
+    Raw.ScaleKeyTimes.push_back(0.0f);
+}
+
+static FTransform ToEngineTransform(const fbxsdk::FbxAMatrix& Matrix)
+{
+    FQuat Rotation = FFbxTransformUtils::ToFQuat(Matrix.GetQ());
+    Rotation.Normalize();
+
+    return FTransform(
+        Rotation,
+        FFbxTransformUtils::ToFVector(Matrix.GetT()),
+        FFbxTransformUtils::ToFVector(Matrix.GetS()));
+}
+
+static FTransform EvaluateEngineLocalBoneTransform(
+    fbxsdk::FbxNode* BoneNode,
+    fbxsdk::FbxNode* ParentBoneNode,
+    fbxsdk::FbxTime SampleTime)
+{
+    if (!BoneNode)
+    {
+        return FTransform::Identity;
+    }
+
+    if (ParentBoneNode && BoneNode->GetParent() == ParentBoneNode)
+    {
+        return ToEngineTransform(BoneNode->EvaluateLocalTransform(SampleTime));
+    }
+
+    const FMatrix BoneGlobal =
+        FFbxTransformUtils::ToFMatrix(BoneNode->EvaluateGlobalTransform(SampleTime));
+
+    if (!ParentBoneNode)
+    {
+        return ToEngineTransform(BoneNode->EvaluateGlobalTransform(SampleTime));
+    }
+
+    const FMatrix ParentGlobal =
+        FFbxTransformUtils::ToFMatrix(ParentBoneNode->EvaluateGlobalTransform(SampleTime));
+
+    // Runtime pose composition is Local * ParentGlobal, so import local is Global * ParentGlobal^-1.
+    return FTransform(BoneGlobal * ParentGlobal.GetInverse());
+}
+
 UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, const FString& TargetSkeletalMeshPath, USkeletalMesh* TargetSkeletalMesh)
 {	
 	return LoadAnimSequence(Path, TargetSkeletalMeshPath, FString(), TargetSkeletalMesh);
@@ -164,11 +441,87 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
     const float SequenceLength = static_cast<float>(DurationSeconds);
     const int32 NumberOfFrames = static_cast<int32>(std::floor(SequenceLength * FrameRate)) + 1;
 
-    TMap<FString, fbxsdk::FbxNode*> NodeNameMap;
+    TMap<FString, TArray<fbxsdk::FbxNode*>> NodeNameMap;
     BuildNodeNameMap(Context.Scene->GetRootNode(), NodeNameMap);
+
+    int32 FbxNodeNameCount = 0;
+    int32 DuplicateFbxNodeNameGroupCount = 0;
+    for (const auto& Pair : NodeNameMap)
+    {
+        FbxNodeNameCount += static_cast<int32>(Pair.second.size());
+        if (Pair.second.size() > 1)
+        {
+            ++DuplicateFbxNodeNameGroupCount;
+        }
+    }
+
+    TMap<FString, int32> BoneNameToIndex;
+    int32 DuplicateTargetBoneNameCount = 0;
+    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
+    {
+        const FString BoneNameString = Bones[BoneIndex].Name.ToString();
+        if (BoneNameToIndex.find(BoneNameString) != BoneNameToIndex.end())
+        {
+            ++DuplicateTargetBoneNameCount;
+            UE_LOG_WARNING("[FbxAnimSequenceImporter] Duplicate target skeleton bone names. Bone=%s Target=%s",
+                           BoneNameString.c_str(),
+                           TargetSkeletalMeshPath.c_str());
+            continue;
+        }
+        BoneNameToIndex[BoneNameString] = BoneIndex;
+    }
+
+    TArray<fbxsdk::FbxNode*> BoneNodes;
+    BoneNodes.resize(Bones.size(), nullptr);
+    TArray<uint8> ResolveState;
+    ResolveState.resize(Bones.size(), 0);
+    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
+    {
+        ResolveBoneNodeForSkeleton(
+            BoneIndex,
+            Bones,
+            NodeNameMap,
+            BoneNameToIndex,
+            BoneNodes,
+            ResolveState,
+            Path);
+    }
+
+    int32 MatchedBoneNodeCount = 0;
+    int32 MissingBoneNodeCount = 0;
+    for (fbxsdk::FbxNode* BoneNode : BoneNodes)
+    {
+        if (BoneNode)
+        {
+            ++MatchedBoneNodeCount;
+        }
+        else
+        {
+            ++MissingBoneNodeCount;
+        }
+    }
+
+    UE_LOG("[FbxAnimSequenceImporter] BoneNodeMatchSummary Fbx=%s Target=%s Stack=%s Bones=%zu Matched=%d Missing=%d FbxNodes=%d UniqueNodeNames=%zu DuplicateNodeNameGroups=%d DuplicateTargetBoneNames=%d",
+           Path.c_str(),
+           TargetSkeletalMeshPath.c_str(),
+           Stack->GetName(),
+           Bones.size(),
+           MatchedBoneNodeCount,
+           MissingBoneNodeCount,
+           FbxNodeNameCount,
+           NodeNameMap.size(),
+           DuplicateFbxNodeNameGroupCount,
+           DuplicateTargetBoneNameCount);
 
     TArray<FAnimationTrack> Tracks;
     Tracks.reserve(Bones.size());
+    int32 AuthoredScaleCurveTrackCount = 0;
+    int32 CurvelessScaleTrackCount = 0;
+    int32 CollapsedConstantScaleTrackCount = 0;
+    int32 AnimatedScaleTrackCount = 0;
+    float MaxScaleDelta = 0.0f;
+    FString MaxScaleDeltaBoneName;
+
     for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
     {
         const FBoneInfo& Bone = Bones[BoneIndex];
@@ -177,8 +530,8 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
         FAnimationTrack Track;
         Track.BoneName = Bone.Name;
         Track.BoneIndex = BoneIndex;
-        auto NodeIt = NodeNameMap.find(BoneNameString);
-        if (NodeIt == NodeNameMap.end() || !NodeIt->second)
+        fbxsdk::FbxNode* BoneNode = BoneNodes[BoneIndex];
+        if (!BoneNode)
         {
             UE_LOG_WARNING("[FbxAnimSequenceImporter] Bone node not found. Bone=%s Fbx=%s", BoneNameString.c_str(), Path.c_str());
             FTransform BindTransform(Bone.LocalBindTransform);
@@ -191,19 +544,31 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
             Raw.PosKeyTimes.push_back(0.0f);
             Raw.RotKeyTimes.push_back(0.0f);
             Raw.ScaleKeyTimes.push_back(0.0f);
+
             Tracks.push_back(Track);
             continue;
         }
-        fbxsdk::FbxNode* BoneNode = NodeIt->second;
         FRawAnimSequenceTrack& Raw = Track.InternalTrackData;
 
         Raw.PosKeys.reserve(NumberOfFrames);
         Raw.RotKeys.reserve(NumberOfFrames);
-        Raw.ScaleKeys.reserve(NumberOfFrames);
 
         Raw.PosKeyTimes.reserve(NumberOfFrames);
         Raw.RotKeyTimes.reserve(NumberOfFrames);
-        Raw.ScaleKeyTimes.reserve(NumberOfFrames);
+
+        const FTransform BindTransform(Bone.LocalBindTransform);
+        const FVector BindScale = BindTransform.GetScale3D();
+        const bool bHasAuthoredScaleCurve = HasAuthoredScaleCurve(BoneNode, Stack);
+        if (bHasAuthoredScaleCurve)
+        {
+            ++AuthoredScaleCurveTrackCount;
+            Raw.ScaleKeys.reserve(NumberOfFrames);
+            Raw.ScaleKeyTimes.reserve(NumberOfFrames);
+        }
+        else
+        {
+            ++CurvelessScaleTrackCount;
+        }
 
         for (int32 FrameIndex = 0; FrameIndex < NumberOfFrames; ++FrameIndex)
         {
@@ -212,13 +577,20 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
 
             SampleTime.SetSecondDouble(StartSeconds + static_cast<double>(LocalSeconds));
 
-            const fbxsdk::FbxAMatrix LocalTransform = BoneNode->EvaluateLocalTransform(SampleTime);
+            fbxsdk::FbxNode* ParentBoneNode = nullptr;
+            if (Bone.ParentIndex >= 0 && Bone.ParentIndex < static_cast<int32>(BoneNodes.size()))
+            {
+                ParentBoneNode = BoneNodes[Bone.ParentIndex];
+            }
 
-            const FVector Translation = FFbxTransformUtils::ToFVector(LocalTransform.GetT());
+            const FTransform LocalTransform =
+                EvaluateEngineLocalBoneTransform(BoneNode, ParentBoneNode, SampleTime);
 
-            FQuat Rotation = FFbxTransformUtils::ToFQuat(LocalTransform.GetQ());
+            const FVector Translation = LocalTransform.GetTranslation();
 
-            const FVector Scale = FFbxTransformUtils::ToFVector(LocalTransform.GetS());
+            FQuat Rotation = LocalTransform.GetRotation();
+
+            const FVector Scale = LocalTransform.GetScale3D();
             if (!Raw.RotKeys.empty() && FQuat::DotProduct(Raw.RotKeys.back(), Rotation) < 0.0f)
                 Rotation = Rotation * -1.0f;
 
@@ -226,14 +598,53 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
 
             Raw.PosKeys.push_back(Translation);
             Raw.RotKeys.push_back(Rotation);
-            Raw.ScaleKeys.push_back(Scale);
 
             Raw.PosKeyTimes.push_back(LocalSeconds);
             Raw.RotKeyTimes.push_back(LocalSeconds);
-            Raw.ScaleKeyTimes.push_back(LocalSeconds);
+
+            if (bHasAuthoredScaleCurve)
+            {
+                Raw.ScaleKeys.push_back(Scale);
+                Raw.ScaleKeyTimes.push_back(LocalSeconds);
+            }
         }
+
+        if (!bHasAuthoredScaleCurve)
+        {
+            SetConstantScaleTrack(Raw, BindScale);
+        }
+        else if (GetMaxScaleDelta(Raw.ScaleKeys) <= 1.0e-4f)
+        {
+            const FVector ConstantScale = Raw.ScaleKeys.empty() ? BindScale : Raw.ScaleKeys.front();
+            SetConstantScaleTrack(Raw, ConstantScale);
+            ++CollapsedConstantScaleTrackCount;
+        }
+
+        const float ScaleDelta = GetMaxScaleDelta(Raw.ScaleKeys);
+        if (ScaleDelta > 1.0e-3f)
+        {
+            ++AnimatedScaleTrackCount;
+
+            if (ScaleDelta > MaxScaleDelta)
+            {
+                MaxScaleDelta = ScaleDelta;
+                MaxScaleDeltaBoneName = BoneNameString;
+            }
+        }
+
         Tracks.push_back(Track);
     }
+
+    UE_LOG("[FbxAnimSequenceImporter] ScaleTrackSummary Fbx=%s Stack=%s AuthoredScaleCurves=%d CurvelessConstantScaleTracks=%d CollapsedConstantScaleTracks=%d AnimatedScaleTracks=%d MaxScaleDelta=%.6f MaxScaleBone=%s",
+           Path.c_str(),
+           Stack->GetName(),
+           AuthoredScaleCurveTrackCount,
+           CurvelessScaleTrackCount,
+           CollapsedConstantScaleTrackCount,
+           AnimatedScaleTrackCount,
+           MaxScaleDelta,
+           MaxScaleDeltaBoneName.c_str());
+
     UAnimDataModel* DataModel = new UAnimDataModel();
     DataModel->SequenceLength = SequenceLength;
     DataModel->FrameRate = FrameRate;
@@ -250,8 +661,15 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
     AnimSequence->Skeleton = Skeleton;
     AnimSequence->DataModel = DataModel;
 
-    UE_LOG("[FbxAnimSequenceImporter] Loaded AnimSequence: %s Stack=%s Frames=%d Tracks=%zu Length=%.3f",
-           Path.c_str(), Stack->GetName(), NumberOfFrames, Tracks.size(), SequenceLength);
+    UE_LOG("[FbxAnimSequenceImporter] Loaded AnimSequence: %s Stack=%s FrameRate=%.3f Frames=%d Tracks=%zu Length=%.3f MatchedBones=%d MissingBones=%d",
+           Path.c_str(),
+           Stack->GetName(),
+           FrameRate,
+           NumberOfFrames,
+           Tracks.size(),
+           SequenceLength,
+           MatchedBoneNodeCount,
+           MissingBoneNodeCount);
 
     return AnimSequence;
 }

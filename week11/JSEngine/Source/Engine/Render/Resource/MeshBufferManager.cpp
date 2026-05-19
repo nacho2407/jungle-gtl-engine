@@ -1,8 +1,9 @@
-﻿#include "MeshBufferManager.h"
+#include "MeshBufferManager.h"
 
 #include "Asset/SkeletalMesh.h"
 #include "Asset/StaticMesh.h"
 #include "Component/ProceduralMeshComponent.h"
+#include "Object/Object.h"
 
 namespace
 {
@@ -20,7 +21,7 @@ namespace
 		return QuadMeshData;
 	}
 
-	bool UpdateSkeletalMeshBufferVertices(ID3D11Device* Device, FMeshBuffer& Buffer, const TArray<FSkeletalMeshVertex>& Vertices)
+	bool UpdateSkinnedVerticesBuffer(ID3D11Device* Device, FMeshBuffer& Buffer, const TArray<FNormalVertex>& Vertices)
 	{
 		if (!Device)
 		{
@@ -176,7 +177,7 @@ FMeshBuffer* FMeshBufferManager::GetProcMeshBuffer(uint32 ProcMeshCompUUID, cons
     return &NewBuffer;
 }
 
-FMeshBuffer* FMeshBufferManager::GetCPUSkinnedMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FSkeletalMeshVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload)
+FMeshBuffer* FMeshBufferManager::GetCPUSkinnedMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload)
 {
 	if (!Device || !SkeletalMeshAsset || Vertices.empty() || Indices.empty())
 	{
@@ -202,7 +203,7 @@ FMeshBuffer* FMeshBufferManager::GetCPUSkinnedMeshBuffer(uint32 SkeletalMeshComp
 			{
 				if (bNeedsUpload)
 				{
-					UpdateSkeletalMeshBufferVertices(Device, Existing, Vertices);
+					UpdateSkinnedVerticesBuffer(Device, Existing, Vertices);
 				}
 
 				return &Existing;
@@ -213,8 +214,8 @@ FMeshBuffer* FMeshBufferManager::GetCPUSkinnedMeshBuffer(uint32 SkeletalMeshComp
 	}
 
 	FMeshBuffer& NewBuffer = CPUSkeletalMeshBufferMap[SkeletalMeshCompUUID];
-	NewBuffer.CreateDynamicVertices<FSkeletalMeshVertex>(Device, static_cast<uint32>(Vertices.size()), Indices);
-	UpdateSkeletalMeshBufferVertices(Device, NewBuffer, Vertices);
+	NewBuffer.CreateDynamicVertices<FNormalVertex>(Device, static_cast<uint32>(Vertices.size()), Indices);
+	UpdateSkinnedVerticesBuffer(Device, NewBuffer, Vertices);
 	CPUSkeletalMeshSourceMap[SkeletalMeshCompUUID] = SkeletalMeshAsset;
 
 	return NewBuffer.IsValid() ? &NewBuffer : nullptr;
@@ -255,6 +256,35 @@ void FMeshBufferManager::ReleaseCPUSkeletalMeshBuffers()
 
 	CPUSkeletalMeshBufferMap.clear();
 	CPUSkeletalMeshSourceMap.clear();
+}
+
+void FMeshBufferManager::ReleaseCPUSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID)
+{
+	auto BufferIt = CPUSkeletalMeshBufferMap.find(SkeletalMeshCompUUID);
+	if (BufferIt != CPUSkeletalMeshBufferMap.end())
+	{
+		BufferIt->second.Release();
+		CPUSkeletalMeshBufferMap.erase(BufferIt);
+	}
+
+	CPUSkeletalMeshSourceMap.erase(SkeletalMeshCompUUID);
+}
+
+void FMeshBufferManager::ReleaseStaleCPUSkeletalMeshBuffers()
+{
+	TArray<uint32> StaleComponentIds;
+	for (const auto& Pair : CPUSkeletalMeshBufferMap)
+	{
+		if (!UObjectManager::Get().FindByUUID(Pair.first))
+		{
+			StaleComponentIds.push_back(Pair.first);
+		}
+	}
+
+	for (uint32 ComponentId : StaleComponentIds)
+	{
+		ReleaseCPUSkeletalMeshBuffer(ComponentId);
+	}
 }
 
 void FMeshBufferManager::ReleaseGPUSkeletalMeshBuffers()

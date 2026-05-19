@@ -1,4 +1,4 @@
-﻿#include "SkeletalMesh.h"
+#include "SkeletalMesh.h"
 
 #include "Core/Logging/Log.h"
 #include "Engine/Geometry/Transform.h"
@@ -18,6 +18,8 @@ USkeletalMesh::~USkeletalMesh()
         delete MeshData;
         MeshData = nullptr;
     }
+
+    ReleaseOwnedSkeleton();
 }
 
 void USkeletalMesh::SetMeshData(FSkeletalMesh* InMeshData)
@@ -159,9 +161,17 @@ bool USkeletalMesh::HasValidMeshData() const
 	return MeshData != nullptr && !MeshData->Vertices.empty() && !MeshData->Indices.empty() && !GetBones().empty();
 }
 
-void USkeletalMesh::SetSkeleton(USkeleton* InSkeleton)
+void USkeletalMesh::SetSkeleton(USkeleton* InSkeleton, bool bTakeOwnership)
 {
+    if (Skeleton == InSkeleton)
+    {
+        bOwnsSkeleton = bTakeOwnership && InSkeleton != nullptr;
+        return;
+    }
+
+    ReleaseOwnedSkeleton();
     Skeleton = InSkeleton;
+    bOwnsSkeleton = bTakeOwnership && InSkeleton != nullptr;
 }
 
 USkeleton* USkeletalMesh::GetSkeleton() const
@@ -189,4 +199,15 @@ void USkeletalMesh::RebuildLocalBoundsFromMeshData()
     {
         MeshData->LocalBounds.Expand(Vertex.Position);
     }
+}
+
+void USkeletalMesh::ReleaseOwnedSkeleton()
+{
+    if (Skeleton && bOwnsSkeleton)
+    {
+        UObjectManager::Get().DestroyObject(Skeleton);
+    }
+
+    Skeleton = nullptr;
+    bOwnsSkeleton = false;
 }

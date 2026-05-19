@@ -41,24 +41,38 @@ namespace
 	FShaderProgram* GetShadowProgram(EVertexFactoryType VertexFactoryType, uint32 ShadowKey)
 	{
 		const FVertexFactoryDesc& VertexFactory = FVertexFactoryRegistry::Get(VertexFactoryType);
+		const FVertexLayoutDesc& VertexLayout =
+			VertexFactoryType == EVertexFactoryType::SkeletalMesh
+				? VertexFactory.VertexLayout
+				: VertexFactory.PositionOnlyLayout;
+		const bool bGpuSkinning = VertexFactoryType == EVertexFactoryType::SkeletalMesh;
+		const uint32 PermutationKey = bGpuSkinning
+			? (ShadowKey | static_cast<uint32>(EShaderFeature::GpuSkinning))
+			: ShadowKey;
 		auto Macros = FShaderHelper::BuildShadowMapMacros(static_cast<EShadowMap>(ShadowKey));
+		if (bGpuSkinning && !Macros.empty())
+		{
+			Macros.insert(Macros.end() - 1, { "GPU_SKINNING", "1" });
+		}
 
 		FShaderStageKey VSKey;
-		VSKey.FilePath = VertexFactory.ShadowPassVSPath.empty() ? FShaderPaths::Shadow : VertexFactory.ShadowPassVSPath;
-		VSKey.EntryPoint = VertexFactory.ShadowPassVSEntry;
-		VSKey.PermutationKey = ShadowKey;
+		VSKey.FilePath = FShaderPaths::Shadow;
+		VSKey.EntryPoint = "VS";
+		VSKey.Target = "vs_5_0";
+		VSKey.PermutationKey = PermutationKey;
 
 		FShaderStageKey PSKey;
 		PSKey.FilePath = FShaderPaths::Shadow;
-		PSKey.EntryPoint = "ShadowPS";
-		PSKey.PermutationKey = ShadowKey;
+		PSKey.EntryPoint = "PS";
+		PSKey.Target = "ps_5_0";
+		PSKey.PermutationKey = PermutationKey;
 
 		return FResourceManager::Get().GetOrCreateShaderProgram(
 			VSKey,
 			PSKey,
 			Macros.data(),
 			Macros.data(),
-			&VertexFactory.PositionOnlyLayout);
+			&VertexLayout);
 	}
 }
 
@@ -111,6 +125,14 @@ void FShadowPass::RenderShadowDepth(
 
 		uint32 Offset = 0;
 		DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+
+		if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh &&
+			Context->RenderBus->GetSkinningMode() == ESkinningMode::GPU)
+		{
+			Context->RenderResources->SkinningBuffer.Update(DeviceContext, &Cmd.Constants.Skinning, sizeof(FSkinningConstants));
+			ID3D11Buffer* cb5 = Context->RenderResources->SkinningBuffer.GetBuffer();
+			DeviceContext->VSSetConstantBuffers(5, 1, &cb5);
+		}
 
 		FShaderProgram* Program = GetShadowProgram(Cmd.VertexFactoryType, ShadowKey);
 		if (!Program)

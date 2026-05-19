@@ -2,6 +2,7 @@
 
 #include "Asset/StaticMeshTypes.h"
 #include "Asset/SkeletalMeshTypes.h"
+#include "Asset/Skeleton.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimDataModel.h"
 #include "Animation/AnimTypes.h"
@@ -38,10 +39,10 @@
 
 /* Validation Check Constants */
 constexpr uint32 STATIC_MESH_BINARY_MAGIC = 0x4853454D; // 'MESH'
-constexpr uint32 STATIC_MESH_BINARY_VERSION = 1;
+constexpr uint32 STATIC_MESH_BINARY_VERSION = 2;        // v2: FBX mirrored transform winding correction
 
 constexpr uint32 SKELETAL_MESH_BINARY_MAGIC   = 0x534D4B53; // 'SKMS'
-constexpr uint32 SKELETAL_MESH_BINARY_VERSION = 2;          // v2: Sockets 블록 추가
+constexpr uint32 SKELETAL_MESH_BINARY_VERSION = 3;          // v3: FBX mirrored transform winding correction
 
 //	Vailidation Checkers
 constexpr uint32 MAX_STATIC_MESH_VERTEX_COUNT   = 10'000'000;
@@ -56,9 +57,6 @@ constexpr uint32 MAX_SKELETAL_MESH_SECTION_COUNT  = 100'000;
 constexpr uint32 MAX_SKELETAL_MESH_SLOTNAME_COUNT = 1024;
 constexpr uint32 MAX_SKELETAL_MESH_BONE_COUNT     = 65'536;
 constexpr uint32 MAX_SKELETAL_MESH_SOCKET_COUNT   = 1024;
-
-constexpr uint32 ANIM_SEQUENCE_BINARY_MAGIC = 0x4D494E41; // 'ANIM'
-constexpr uint32 ANIM_SEQUENCE_BINARY_VERSION = 1;
 
 constexpr uint32 MAX_ANIM_SEQUENCE_TRACK_COUNT = 65'536;
 constexpr uint32 MAX_ANIM_SEQUENCE_KEY_COUNT = 1'000'000;
@@ -146,17 +144,34 @@ static bool IsValidSkeletalMeshHeader(const FSkeletalMeshBinaryHeader& Header)
 
 static bool IsValidAnimSequenceHeader(const FAnimSequenceBinaryHeader& Header)
 {
-    if (Header.Magic != ANIM_SEQUENCE_BINARY_MAGIC)
+    if (Header.Magic != FAnimSequenceBinaryConstants::Magic)
     {
         return false;
     }
 
-    if (Header.Version != ANIM_SEQUENCE_BINARY_VERSION)
+    if (Header.BinaryVersion != FAnimSequenceBinaryConstants::BinaryVersion)
+    {
+        return false;
+    }
+
+    if (Header.DerivedDataVersion == 0)
     {
         return false;
     }
 
     if (Header.SequenceLength < 0.0f)
+    {
+        return false;
+    }
+
+    if (Header.SourceFileWriteTime == 0 || Header.SourceFileSize == 0)
+    {
+        return false;
+    }
+
+    if (Header.TargetSkeletonBoneCount == 0 ||
+        Header.TargetSkeletonBoneCount > MAX_SKELETAL_MESH_BONE_COUNT ||
+        Header.TargetSkeletonHash == 0)
     {
         return false;
     }
@@ -193,6 +208,93 @@ static uint64 GetFileWriteTimeTicks(const FString& Path)
 	auto WriteTime = fs::last_write_time(FilePath);
 	auto Duration = WriteTime.time_since_epoch();
 	return static_cast<uint64>(std::chrono::duration_cast<std::chrono::seconds>(Duration).count());
+}
+
+static uint64 GetFileSizeBytes(const FString& Path)
+{
+	namespace fs = std::filesystem;
+
+	fs::path FilePath(FPaths::ToAbsolute(FPaths::ToWide(Path)));
+	if (!fs::exists(FilePath))
+	{
+		return 0;
+	}
+
+	std::error_code Ec;
+	const uint64 FileSize = static_cast<uint64>(fs::file_size(FilePath, Ec));
+	return Ec ? 0 : FileSize;
+}
+
+static uint32 GetStableStringHash(const FString& String)
+{
+	uint32 Hash = 2166136261u;
+	for (unsigned char C : String)
+	{
+		Hash ^= static_cast<uint32>(C);
+		Hash *= 16777619u;
+	}
+	return Hash;
+}
+
+static void HashBytes(uint32& Hash, const void* Data, size_t Size)
+{
+	const unsigned char* Bytes = static_cast<const unsigned char*>(Data);
+	for (size_t Index = 0; Index < Size; ++Index)
+	{
+		Hash ^= static_cast<uint32>(Bytes[Index]);
+		Hash *= 16777619u;
+	}
+}
+
+static void HashUInt32(uint32& Hash, uint32 Value)
+{
+	HashBytes(Hash, &Value, sizeof(Value));
+}
+
+static void HashInt32(uint32& Hash, int32 Value)
+{
+	HashBytes(Hash, &Value, sizeof(Value));
+}
+
+static void HashFloat(uint32& Hash, float Value)
+{
+	uint32 Bits = 0;
+	std::memcpy(&Bits, &Value, sizeof(float));
+	HashUInt32(Hash, Bits);
+}
+
+static void HashString(uint32& Hash, const FString& String)
+{
+	HashBytes(Hash, String.data(), String.size());
+	const unsigned char Terminator = 0;
+	HashBytes(Hash, &Terminator, sizeof(Terminator));
+}
+
+static uint32 GetReferenceSkeletonStableHash(const FReferenceSkeleton* ReferenceSkeleton)
+{
+	if (!ReferenceSkeleton || ReferenceSkeleton->RefBones.empty())
+	{
+		return 0;
+	}
+
+	uint32 Hash = 2166136261u;
+	HashUInt32(Hash, static_cast<uint32>(ReferenceSkeleton->RefBones.size()));
+
+	for (const FBoneInfo& Bone : ReferenceSkeleton->RefBones)
+	{
+		HashString(Hash, Bone.Name.ToString());
+		HashInt32(Hash, Bone.ParentIndex);
+
+		for (int32 Row = 0; Row < 4; ++Row)
+		{
+			for (int32 Col = 0; Col < 4; ++Col)
+			{
+				HashFloat(Hash, Bone.LocalBindTransform.M[Row][Col]);
+			}
+		}
+	}
+
+	return Hash == 0 ? 1u : Hash;
 }
 
 /* Primitive LE Writers */
@@ -1135,8 +1237,13 @@ bool FBinarySerializer::ReadSkeletalBounds(std::ifstream& In, FSkeletalMesh& Out
 void FBinarySerializer::WriteAnimSequenceHeader(std::ofstream& Out, const FAnimSequenceBinaryHeader& Header)
 {
     WriteUInt32LE(Out, Header.Magic);
-    WriteUInt32LE(Out, Header.Version);
+    WriteUInt32LE(Out, Header.BinaryVersion);
+    WriteUInt32LE(Out, Header.DerivedDataVersion);
     WriteUInt64LE(Out, Header.SourceFileWriteTime);
+    WriteUInt64LE(Out, Header.SourceFileSize);
+    WriteUInt32LE(Out, Header.AnimStackNameHash);
+    WriteUInt32LE(Out, Header.TargetSkeletonBoneCount);
+    WriteUInt32LE(Out, Header.TargetSkeletonHash);
 
     WriteFloatLE(Out, Header.SequenceLength);
     WriteFloatLE(Out, Header.FrameRate);
@@ -1147,8 +1254,13 @@ void FBinarySerializer::WriteAnimSequenceHeader(std::ofstream& Out, const FAnimS
 bool FBinarySerializer::ReadAnimSequenceHeader(std::ifstream& In, FAnimSequenceBinaryHeader& OutHeader) const
 {
   return ReadUInt32LE(In, OutHeader.Magic)
-        && ReadUInt32LE(In, OutHeader.Version)
+        && ReadUInt32LE(In, OutHeader.BinaryVersion)
+        && ReadUInt32LE(In, OutHeader.DerivedDataVersion)
         && ReadUInt64LE(In, OutHeader.SourceFileWriteTime)
+        && ReadUInt64LE(In, OutHeader.SourceFileSize)
+        && ReadUInt32LE(In, OutHeader.AnimStackNameHash)
+        && ReadUInt32LE(In, OutHeader.TargetSkeletonBoneCount)
+        && ReadUInt32LE(In, OutHeader.TargetSkeletonHash)
         && ReadFloatLE(In, OutHeader.SequenceLength)
         && ReadFloatLE(In, OutHeader.FrameRate)
         && ReadInt32LE(In, OutHeader.NumberOfFrames)
@@ -1451,9 +1563,17 @@ bool FBinarySerializer::SaveAnimSequence(const FString& BinaryPath, const FStrin
     const UAnimDataModel* DataModel = AnimSequence.DataModel;
 
 	FAnimSequenceBinaryHeader Header;
-    Header.Magic = ANIM_SEQUENCE_BINARY_MAGIC;
-    Header.Version = ANIM_SEQUENCE_BINARY_VERSION;
+	const FReferenceSkeleton* ReferenceSkeleton =
+		AnimSequence.Skeleton ? &AnimSequence.Skeleton->GetReferenceSkeleton() : nullptr;
+
+    Header.Magic = FAnimSequenceBinaryConstants::Magic;
+    Header.BinaryVersion = FAnimSequenceBinaryConstants::BinaryVersion;
+    Header.DerivedDataVersion = FAnimSequenceBinaryConstants::DerivedDataVersion;
     Header.SourceFileWriteTime = GetFileWriteTimeTicks(SourcePath);
+    Header.SourceFileSize = GetFileSizeBytes(SourcePath);
+    Header.AnimStackNameHash = GetStableStringHash(AnimSequence.AnimStackName);
+    Header.TargetSkeletonBoneCount = ReferenceSkeleton ? static_cast<uint32>(ReferenceSkeleton->RefBones.size()) : 0;
+    Header.TargetSkeletonHash = GetReferenceSkeletonStableHash(ReferenceSkeleton);
     Header.SequenceLength = DataModel->SequenceLength;
     Header.FrameRate = DataModel->FrameRate;
     Header.NumberOfFrames = DataModel->NumberOfFrames;

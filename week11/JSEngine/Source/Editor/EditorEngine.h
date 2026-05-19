@@ -119,6 +119,9 @@ private:
 	void StopPlaySessionNow();
 	void NewScene();
 	bool CreateDefaultSceneAsset(const FString& FilePath);
+	bool IsViewerVisible(FEditorViewer* Viewer) const;
+	bool IsViewerPreviewWorldVisible(const UWorld* World) const;
+	void ResetViewerViewportRenderTargets();
 	APlayerController* SpawnPIEPlayerController(
 		UWorld* PIEWorld,
 		FEditorViewportClient* FocusedClient

@@ -1,4 +1,4 @@
-﻿#include "Core/ResourceManager.h"
+#include "Core/ResourceManager.h"
 
 #include "Core/Paths.h"
 #include "Core/AssetPathPolicy.h"
@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <chrono>
 #include <cwctype>
+#include <cstring>
 #include "Asset/FileUtils.h"
 
 #include "DDSTextureLoader.h"
@@ -38,6 +39,101 @@ namespace
 #else
 		return true;
 #endif
+	}
+
+	uint64 GetFileSizeBytes(const FString& Path)
+	{
+		const FString NormalizedPath = FPaths::Normalize(Path);
+		std::filesystem::path FilePath(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)));
+		if (!std::filesystem::exists(FilePath))
+		{
+			return 0;
+		}
+
+		std::error_code Ec;
+		const uint64 FileSize = static_cast<uint64>(std::filesystem::file_size(FilePath, Ec));
+		return Ec ? 0 : FileSize;
+	}
+
+	uint32 GetStableStringHash(const FString& String)
+	{
+		uint32 Hash = 2166136261u;
+		for (unsigned char C : String)
+		{
+			Hash ^= static_cast<uint32>(C);
+			Hash *= 16777619u;
+		}
+		return Hash;
+	}
+
+	void HashBytes(uint32& Hash, const void* Data, size_t Size)
+	{
+		const unsigned char* Bytes = static_cast<const unsigned char*>(Data);
+		for (size_t Index = 0; Index < Size; ++Index)
+		{
+			Hash ^= static_cast<uint32>(Bytes[Index]);
+			Hash *= 16777619u;
+		}
+	}
+
+	void HashUInt32(uint32& Hash, uint32 Value)
+	{
+		HashBytes(Hash, &Value, sizeof(Value));
+	}
+
+	void HashInt32(uint32& Hash, int32 Value)
+	{
+		HashBytes(Hash, &Value, sizeof(Value));
+	}
+
+	void HashFloat(uint32& Hash, float Value)
+	{
+		uint32 Bits = 0;
+		std::memcpy(&Bits, &Value, sizeof(float));
+		HashUInt32(Hash, Bits);
+	}
+
+	void HashString(uint32& Hash, const FString& String)
+	{
+		HashBytes(Hash, String.data(), String.size());
+		const unsigned char Terminator = 0;
+		HashBytes(Hash, &Terminator, sizeof(Terminator));
+	}
+
+	uint32 GetReferenceSkeletonStableHash(const FReferenceSkeleton* ReferenceSkeleton)
+	{
+		if (!ReferenceSkeleton || ReferenceSkeleton->RefBones.empty())
+		{
+			return 0;
+		}
+
+		uint32 Hash = 2166136261u;
+		HashUInt32(Hash, static_cast<uint32>(ReferenceSkeleton->RefBones.size()));
+
+		for (const FBoneInfo& Bone : ReferenceSkeleton->RefBones)
+		{
+			HashString(Hash, Bone.Name.ToString());
+			HashInt32(Hash, Bone.ParentIndex);
+
+			for (int32 Row = 0; Row < 4; ++Row)
+			{
+				for (int32 Col = 0; Col < 4; ++Col)
+				{
+					HashFloat(Hash, Bone.LocalBindTransform.M[Row][Col]);
+				}
+			}
+		}
+
+		return Hash == 0 ? 1u : Hash;
+	}
+
+	bool SetAnimSequenceCacheInvalidReason(FString* OutInvalidReason, const FString& Reason)
+	{
+		if (OutInvalidReason)
+		{
+			*OutInvalidReason = Reason;
+		}
+		return false;
 	}
 }
 
@@ -470,12 +566,6 @@ void FResourceManager::ReleaseGPUResources()
 
 	RenderStateCache.Release();
 
-	for (auto& [Path, Mesh] : SkeletalMeshMap)
-	{
-		UObjectManager::Get().DestroyObject(Mesh);
-	}
-	SkeletalMeshMap.clear();
-
 	for (auto& [Path, Anim] : AnimSequenceMap)
 	{
 		UObjectManager::Get().DestroyObject(Anim);
@@ -483,6 +573,12 @@ void FResourceManager::ReleaseGPUResources()
 	AnimSequenceMap.clear();
 	AnimSequenceFilePaths.clear();
 	AnimStackNamesMap.clear();
+
+	for (auto& [Path, Mesh] : SkeletalMeshMap)
+	{
+		UObjectManager::Get().DestroyObject(Mesh);
+	}
+	SkeletalMeshMap.clear();
 
 	DefaultWhiteTexture.Reset();
 	CachedDevice.Reset();
@@ -869,13 +965,26 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, 
 	USkeletalMesh* TargetMesh = LoadSkeletalMesh(NormalizedTarget);
 	if (!TargetMesh)
 	{
+		UE_LOG_ERROR("[AnimSequenceLoad] Target skeletal mesh load failed. Path=%s Target=%s Stack=%s",
+		             NormalizedSource.c_str(),
+		             NormalizedTarget.c_str(),
+		             AnimStackName.c_str());
 		return nullptr;
 	}
 
 	const FString BinaryPath = FAssetPathPolicy::MakeWritableAnimSequenceCacheBinaryPath(NormalizedSource, NormalizedTarget, AnimStackName);
 	UAnimSequence* Anim = UObjectManager::Get().CreateObject<UAnimSequence>();
 
-	if (IsAnimSequenceBinaryValid(NormalizedSource, BinaryPath) && BinarySerializer.LoadAnimSequence(BinaryPath, *Anim))
+	const FReferenceSkeleton* TargetReferenceSkeleton = TargetMesh->GetReferenceSkeleton();
+	FString CacheInvalidReason;
+	const bool bAnimBinaryValid = IsAnimSequenceBinaryValid(
+		NormalizedSource,
+		BinaryPath,
+		AnimStackName,
+		TargetReferenceSkeleton,
+		&CacheInvalidReason);
+
+	if (bAnimBinaryValid && BinarySerializer.LoadAnimSequence(BinaryPath, *Anim))
 	{
 		Anim->Skeleton = TargetMesh->GetSkeleton();
 
@@ -892,11 +1001,28 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, 
 
 		return Anim;
 	}
+
+	if (bAnimBinaryValid)
+	{
+		CacheInvalidReason = "BinaryBodyLoadFailed";
+	}
+
+	UE_LOG("[AnimSequenceLoad] CacheInvalid | Reason=%s | Path=%s | Stack=%s | Target=%s | BinaryPath=%s",
+	       CacheInvalidReason.c_str(),
+	       NormalizedSource.c_str(),
+	       AnimStackName.c_str(),
+	       NormalizedTarget.c_str(),
+	       BinaryPath.c_str());
+
 	UObjectManager::Get().DestroyObject(Anim);
 
 	Anim = FbxImporter.LoadAnimSequence(NormalizedSource, NormalizedTarget, AnimStackName);
 	if (!Anim)
 	{
+		UE_LOG_ERROR("[AnimSequenceLoad] FBX import failed. Path=%s Target=%s Stack=%s",
+		             NormalizedSource.c_str(),
+		             NormalizedTarget.c_str(),
+		             AnimStackName.c_str());
 		return nullptr;
 	}
 	Anim->Skeleton = TargetMesh->GetSkeleton();
@@ -926,23 +1052,70 @@ TArray<FString> FResourceManager::GetAnimSequencePaths() const
 	return AnimSequenceFilePaths;
 }
 
-bool FResourceManager::IsAnimSequenceBinaryValid(const FString& SourcePath, const FString& BinaryPath) const
+bool FResourceManager::IsAnimSequenceBinaryValid(
+	const FString& SourcePath,
+	const FString& BinaryPath,
+	const FString& AnimStackName,
+	const FReferenceSkeleton* TargetReferenceSkeleton,
+	FString* OutInvalidReason) const
 {
 	FAnimSequenceBinaryHeader Header;
 	const FString NormalizedBinaryPath = FPaths::Normalize(BinaryPath);
 
 	if (!BinarySerializer.ReadAnimSequenceHeader(NormalizedBinaryPath, Header))
 	{
-		return false;
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "HeaderMissingOrInvalid");
+	}
+
+	if (Header.DerivedDataVersion != FAnimSequenceBinaryConstants::DerivedDataVersion)
+	{
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "DerivedDataVersionMismatch");
 	}
 
 	const uint64 SourceWriteTime = GetFileWriteTimeTicks(FPaths::Normalize(SourcePath));
 	if (SourceWriteTime == 0)
 	{
-		return false;
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "SourceTimestampMissing");
 	}
 
-	return Header.SourceFileWriteTime == SourceWriteTime;
+	const uint64 SourceFileSize = GetFileSizeBytes(SourcePath);
+	if (SourceFileSize == 0)
+	{
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "SourceFileSizeMissing");
+	}
+
+	if (Header.SourceFileWriteTime != SourceWriteTime)
+	{
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "SourceTimestampMismatch");
+	}
+
+	if (Header.SourceFileSize != SourceFileSize)
+	{
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "SourceFileSizeMismatch");
+	}
+
+	if (!AnimStackName.empty() &&
+		Header.AnimStackNameHash != GetStableStringHash(AnimStackName))
+	{
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "AnimStackMismatch");
+	}
+
+	if (!TargetReferenceSkeleton || TargetReferenceSkeleton->RefBones.empty())
+	{
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "TargetSkeletonMissing");
+	}
+
+	if (Header.TargetSkeletonBoneCount != static_cast<uint32>(TargetReferenceSkeleton->RefBones.size()))
+	{
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "TargetSkeletonBoneCountMismatch");
+	}
+
+	if (Header.TargetSkeletonHash != GetReferenceSkeletonStableHash(TargetReferenceSkeleton))
+	{
+		return SetAnimSequenceCacheInvalidReason(OutInvalidReason, "TargetSkeletonHashMismatch");
+	}
+
+	return true;
 }
 
 bool FResourceManager::SaveSkeletalMesh(USkeletalMesh* Mesh)

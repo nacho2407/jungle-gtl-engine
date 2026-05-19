@@ -9,6 +9,13 @@ struct FSkeletalMesh;
 struct FReferenceSkeleton;
 struct FMatrix;
 
+namespace FAnimSequenceBinaryConstants
+{
+    constexpr uint32 Magic = 0x4D494E41; // 'ANIM'
+    constexpr uint32 BinaryVersion = 7;  // v7: stores separate import version
+    constexpr uint32 DerivedDataVersion = 2;  // v2: only authored FBX scale curves produce animated scale keys
+}
+
 /*
  *	[주의사항]
  *	- Header나 Body 정보가 변경되면 반드시 Version을 바꿔야 합니다.
@@ -16,7 +23,7 @@ struct FMatrix;
 struct FStaticMeshBinaryHeader
 {
 	uint32 MagicNumber = 0x4853454D;
-	uint32 Version = 1;
+	uint32 Version = 2;					// v2: FBX mirrored transform winding correction
 	uint32 VertexCount = 0;
 	uint32 IndexCount = 0;
 	uint32 SectionCount = 0;
@@ -28,7 +35,7 @@ struct FStaticMeshBinaryHeader
 struct FSkeletalMeshBinaryHeader
 {
 	uint32 MagicNumber = 0x534D4B53;	// 'SKMS' (Skeletal MeSh)
-	uint32 Version = 2;					// v2: Sockets 블록 추가
+	uint32 Version = 3;					// v3: FBX mirrored transform winding correction
 	uint32 VertexCount = 0;
 	uint32 IndexCount = 0;
 	uint32 SectionCount = 0;
@@ -40,9 +47,14 @@ struct FSkeletalMeshBinaryHeader
 };
 struct FAnimSequenceBinaryHeader
 {
-    uint32 Magic = 0x4D494E41; //'ANIM'
-    uint32 Version = 1;
+    uint32 Magic = FAnimSequenceBinaryConstants::Magic;
+    uint32 BinaryVersion = FAnimSequenceBinaryConstants::BinaryVersion;
+    uint32 DerivedDataVersion = FAnimSequenceBinaryConstants::DerivedDataVersion;
     uint64 SourceFileWriteTime = 0;
+    uint64 SourceFileSize = 0;
+    uint32 AnimStackNameHash = 0;
+    uint32 TargetSkeletonBoneCount = 0;
+    uint32 TargetSkeletonHash = 0;
 
     float SequenceLength = 0.0f;
     float FrameRate = 30.0f;
