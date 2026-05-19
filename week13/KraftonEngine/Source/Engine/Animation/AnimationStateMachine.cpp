@@ -60,43 +60,55 @@ void UAnimationStateMachine::Tick(UAnimInstance* Owner, float DeltaSeconds)
 	// 2) 현재 상태 시간 진행.
 	CurrentState->Tick(Owner, DeltaSeconds);
 
-	// 3) 블렌딩 중이면 FromState 도 시간 진행 + 블렌드 알파 증가.
-	if (FromState)
+	// 3) BlendingFroms 모두 Tick + alpha 증가 + 1.0 도달분 OnExit + 단일 패스 compaction.
+	//    Step 6 에서 같은 state 중복 Tick 방지 가드 추가 예정 (A→B→A 케이스).
 	{
-		FromState->Tick(Owner, DeltaSeconds);
-		if (BlendDuration > 0.0f)
+		size_t Write = 0;
+		for (size_t Read = 0; Read < BlendingFroms.size(); ++Read)
 		{
-			BlendAlpha += DeltaSeconds / BlendDuration;
-			if (BlendAlpha >= 1.0f)
+			FBlendingFrom& BF = BlendingFroms[Read];
+			if (BF.State) BF.State->Tick(Owner, DeltaSeconds);
+			if (BF.Duration > 0.0f) BF.Alpha += DeltaSeconds / BF.Duration;
+			else                    BF.Alpha = 1.0f;
+
+			if (BF.Alpha >= 1.0f)
 			{
-				FinishBlend(Owner);
+				if (BF.State) BF.State->OnExit(Owner);
+				// drop — Write 증가 안 함.
+			}
+			else
+			{
+				if (Write != Read) BlendingFroms[Write] = BF;
+				++Write;
 			}
 		}
-		else
-		{
-			FinishBlend(Owner);
-		}
+		BlendingFroms.resize(Write);
 	}
 
-	// 4) Root motion delta 누적 — blend 중이면 weight lerp.
-	//    From: weight (1 - BlendAlpha), Current: weight BlendAlpha. 합한 delta 를 instance 에 push.
+	// 4) Root motion delta 누적 — sequential lerp 합성.
+	//    Acc = BlendingFroms[0].delta, 그 후 차례로 Acc = lerp(Acc, Next.delta, alpha[i]).
+	//    Next = (i+1<N) ? BlendingFroms[i+1].delta : CurrentState.delta.
 	//    RootMotionFromMontagesOnly mode 일 때 FSM base 누적 skip (Montage 만 적용되도록).
 	if (Owner && Owner->GetRootMotionMode() != ERootMotionMode::RootMotionFromMontagesOnly)
 	{
-		const FTransform& CurDelta = CurrentState->GetLastRootMotionDelta();
-		if (FromState)
+		if (BlendingFroms.empty())
 		{
-			const FTransform& FromDelta = FromState->GetLastRootMotionDelta();
-			const float wTo   = BlendAlpha;
-			const float wFrom = 1.0f - BlendAlpha;
-			FTransform Blended;
-			Blended.Location = FromDelta.Location * wFrom + CurDelta.Location * wTo;
-			Blended.Rotation = FQuat::Slerp(FromDelta.Rotation.GetNormalized(), CurDelta.Rotation.GetNormalized(), BlendAlpha).GetNormalized();
-			Owner->AccumulateRootMotion(Blended);
+			Owner->AccumulateRootMotion(CurrentState->GetLastRootMotionDelta());
 		}
 		else
 		{
-			Owner->AccumulateRootMotion(CurDelta);
+			FTransform Acc = BlendingFroms[0].State->GetLastRootMotionDelta();
+			for (size_t i = 0; i < BlendingFroms.size(); ++i)
+			{
+				const FTransform& Next = (i + 1 < BlendingFroms.size())
+					? BlendingFroms[i + 1].State->GetLastRootMotionDelta()
+					: CurrentState->GetLastRootMotionDelta();
+				const float a = BlendingFroms[i].Alpha;
+				Acc.Location = Acc.Location * (1.0f - a) + Next.Location * a;
+				Acc.Rotation = FQuat::Slerp(Acc.Rotation.GetNormalized(),
+				                            Next.Rotation.GetNormalized(), a).GetNormalized();
+			}
+			Owner->AccumulateRootMotion(Acc);
 		}
 	}
 }
@@ -109,29 +121,31 @@ void UAnimationStateMachine::Evaluate(UAnimInstance* Owner, FPoseContext& Output
 		return;
 	}
 
-	if (FromState)
-	{
-		// 두 상태 평가 후 BlendTwoPosesTogether.
-		// ★ ResetToRefPose 필수 — Sequence->GetBonePose 는 트랙 있는 본만 덮어씀.
-		//   ref pose 로 시작 안 하면 트랙 없는 본은 default FTransform(T=0,R=identity,S=1) 로 남고,
-		//   상대편 정상 pose 와 lerp 되어 본들이 부모 기준 (0,0,0) 으로 끌려감 ("바닥에 꼬꾸라짐").
-		FPoseContext FromPose;
-		FromPose.SkeletalMesh = Output.SkeletalMesh;
-		FromPose.ResetToRefPose();   // resize + bone[i].LocalMatrix 분해해서 채움
-
-		FPoseContext ToPose;
-		ToPose.SkeletalMesh = Output.SkeletalMesh;
-		ToPose.ResetToRefPose();
-
-		FromState->Evaluate(Owner, FromPose);
-		CurrentState->Evaluate(Owner, ToPose);
-
-		FAnimationRuntime::BlendTwoPosesTogether(FromPose, ToPose, BlendAlpha, Output);
-	}
-	else
+	// Step 3 임시: 가장 최근 from 만 사용한 2-pose blend (size 1 케이스는 기존 단일-from 동작과 동치).
+	// Step 4 에서 BlendingFroms 전체 + CurrentState 의 N-pose sequential lerp 로 확장.
+	if (BlendingFroms.empty())
 	{
 		CurrentState->Evaluate(Owner, Output);
+		return;
 	}
+
+	const FBlendingFrom& Last = BlendingFroms.back();
+
+	// ★ ResetToRefPose 필수 — Sequence->GetBonePose 는 트랙 있는 본만 덮어씀.
+	//   ref pose 로 시작 안 하면 트랙 없는 본은 default FTransform(T=0,R=identity,S=1) 로 남고,
+	//   상대편 정상 pose 와 lerp 되어 본들이 부모 기준 (0,0,0) 으로 끌려감 ("바닥에 꼬꾸라짐").
+	FPoseContext FromPose;
+	FromPose.SkeletalMesh = Output.SkeletalMesh;
+	FromPose.ResetToRefPose();
+
+	FPoseContext ToPose;
+	ToPose.SkeletalMesh = Output.SkeletalMesh;
+	ToPose.ResetToRefPose();
+
+	Last.State->Evaluate(Owner, FromPose);
+	CurrentState->Evaluate(Owner, ToPose);
+
+	FAnimationRuntime::BlendTwoPosesTogether(FromPose, ToPose, Last.Alpha, Output);
 }
 
 void UAnimationStateMachine::RequestTransition(FName To, float BlendDuration_)
@@ -164,30 +178,19 @@ void UAnimationStateMachine::BeginBlend(UAnimInstance* Owner, FName NewState, fl
 	UAnimState* Target = FindState(NewState);
 	if (!Target || Target == CurrentState) return;
 
-	// 진행중 from 이 있으면 BlendingFroms 에 push — 폐기하지 않고 multi-blend stack 으로 보존.
-	// 그 항목의 Alpha 는 현재 BlendAlpha 그대로 (의미: "FromState → 그 다음 단계 state 로의 진행도"
-	// 가 multi 화 후엔 "FromState → 새 BlendingFroms.back() (= 직전 CurrentState) 로의 진행도"
-	// 가 되는데, 직전 CurrentState 가 곧 새 from 으로 들어가므로 alpha 값은 그대로 valid).
-	// Step 3 에서 Tick/Evaluate 가 이 stack 을 N-pose blend 로 소비. 이 커밋은 push 만 함.
-	if (FromState)
+	// 상한 초과 시 oldest 강제 정리 — OnExit 후 erase. 일반 게임플레이는 거의 도달 안 함.
+	if (BlendingFroms.size() >= static_cast<size_t>(MaxBlendingFroms))
 	{
-		// 상한 초과 시 oldest 강제 정리 — OnExit 후 erase. 일반 게임플레이는 거의 도달 안 함.
-		if (BlendingFroms.size() >= static_cast<size_t>(MaxBlendingFroms))
+		if (UAnimState* Oldest = BlendingFroms[0].State)
 		{
-			if (UAnimState* Oldest = BlendingFroms[0].State)
-			{
-				Oldest->OnExit(Owner);
-			}
-			BlendingFroms.erase(BlendingFroms.begin());
+			Oldest->OnExit(Owner);
 		}
-		BlendingFroms.push_back({ FromState, BlendAlpha, BlendDuration });
+		BlendingFroms.erase(BlendingFroms.begin());
 	}
 
-	// 이전 블렌드가 끝나기 전 새 전이 — 진행중 From 은 위에서 stack 으로 옮겼고,
-	// 현재 상태를 새 From 으로 박는다.
-	FromState        = CurrentState;
-	BlendAlpha       = 0.0f;
-	BlendDuration    = Duration;
+	// 현재 CurrentState 를 새 from 으로 BlendingFroms 에 push (alpha=0).
+	// 진행중 from 들도 그대로 stack 에 남아 Tick/Evaluate 가 모두 합성.
+	BlendingFroms.push_back({ CurrentState, 0.0f, Duration });
 
 	CurrentState     = Target;
 	CurrentStateName = NewState;
@@ -195,14 +198,12 @@ void UAnimationStateMachine::BeginBlend(UAnimInstance* Owner, FName NewState, fl
 
 	if (Duration <= 0.0f)
 	{
-		FinishBlend(Owner);
+		// Instant cut — 위에서 push 한 항목 즉시 OnExit + pop. Step 6 에서 진행중 다른 from
+		// 들도 같이 cleanup 하는 정책 추가 예정.
+		if (BlendingFroms.back().State)
+		{
+			BlendingFroms.back().State->OnExit(Owner);
+		}
+		BlendingFroms.pop_back();
 	}
-}
-
-void UAnimationStateMachine::FinishBlend(UAnimInstance* Owner)
-{
-	if (FromState) FromState->OnExit(Owner);
-	FromState     = nullptr;
-	BlendAlpha    = 1.0f;
-	BlendDuration = 0.0f;
 }
