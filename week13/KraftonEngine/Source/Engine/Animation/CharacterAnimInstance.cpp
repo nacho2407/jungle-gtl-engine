@@ -4,6 +4,7 @@
 #include "Animation/AnimState.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/PoseContext.h"
+#include "Animation/Nodes/AnimNode_Slot.h"
 #include "Animation/Nodes/AnimNode_StateMachine.h"
 #include "Core/PropertyTypes.h"
 #include "Math/MathUtils.h"
@@ -80,10 +81,17 @@ void UCharacterAnimInstance::NativeInitializeAnimation()
 	TopSM->RegisterState(LocomotionState);
 	TopSM->SetInitialState(FName("Locomotion"));
 
-	// RootNode 박기 — Initialize 호출이 Top-SM 의 CurrentState (Locomotion) ->OnEnter →
-	// SubGraphOverride (Loco-SM) ->OnBecomeRelevant → Loco-SM 의 CurrentState (Idle) ->OnEnter
-	// 까지 재귀로 sub-graph 까지 초기화.
-	SetRootNode(TopSM);
+	// DefaultSlot 으로 wrap — RootNode 경로의 montage 가 트리 안 Slot 노드 통해 처리되도록.
+	// Slot.InputPose = TopSM 이므로 평소엔 montage 없으면 pass-through (overhead 무), 좌클릭
+	// attack montage 같은 PlayMontage 호출 시 Slot 안에서 lerp.
+	FAnimNode_Slot* DefaultSlot = MakeNode<FAnimNode_Slot>();
+	DefaultSlot->SlotName  = DefaultMontageSlot;
+	DefaultSlot->InputPose = TopSM;
+
+	// RootNode 박기 — Initialize 호출이 DefaultSlot.InputPose (TopSM) → TopSM.CurrentState
+	// (Locomotion) ->OnEnter → SubGraphOverride (Loco-SM) ->OnBecomeRelevant →
+	// Loco-SM 의 CurrentState (Idle) ->OnEnter 까지 재귀로 sub-graph 까지 초기화.
+	SetRootNode(DefaultSlot);
 }
 
 void UCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)

@@ -59,21 +59,18 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 
 void UAnimInstance::EvaluatePose(FPoseContext& Output)
 {
-	// 1) base pose 생성 — RootNode 트리 또는 legacy 가상 호출.
 	if (RootNode)
 	{
+		// RootNode 경로 — 트리 안의 FAnimNode_Slot 이 montage 처리. EvaluatePose 가
+		// special-case 합성을 또 하면 이중 적용 위험. Slot 노드에 위임.
 		RootNode->Evaluate(Output);
-	}
-	else
-	{
-		EvaluateAnimation(Output);
+		return;
 	}
 
-	// 2) Montage 활성이면 montage pose 평가 후 base 와 BlendWeight 로 lerp.
-	//    Phase 2.1: DefaultSlot 의 montage 만 처리 — single slot 케이스는 phase 2.0 (단일
-	//    MontageInstance) 와 동작 동등. UpperBody 등 다른 slot 의 montage 는 Phase 2.2/2.3 의
-	//    FAnimNode_Slot 도입 후 RootNode 트리 안에서 처리. 그 시점에 이 special-case 는
-	//    legacy path 전용으로 축소.
+	// Legacy 경로 — RootNode 없으면 EvaluateAnimation 가상 호출 후 DefaultSlot 의 montage
+	// 만 special-case 합성. 새 코드는 RootNode 경로 사용해 이 path 안 탐.
+	EvaluateAnimation(Output);
+
 	if (UAnimMontageInstance* DefaultMI = GetMontageInstanceForSlot(DefaultMontageSlot))
 	{
 		if (DefaultMI->IsActive())
@@ -88,12 +85,10 @@ void UAnimInstance::EvaluatePose(FPoseContext& Output)
 
 				if (Weight >= 1.0f)
 				{
-					// 완전 montage — base 무시.
 					Output = MontagePose;
 				}
 				else
 				{
-					// base × montage blend.
 					FPoseContext Blended;
 					Blended.SkeletalMesh = Output.SkeletalMesh;
 					Blended.ResetToRefPose();
