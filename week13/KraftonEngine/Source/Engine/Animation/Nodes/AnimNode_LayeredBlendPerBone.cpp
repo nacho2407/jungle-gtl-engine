@@ -22,14 +22,16 @@ void FAnimNode_LayeredBlendPerBone::OnBecomeRelevant(const FAnimationInitializeC
 
 void FAnimNode_LayeredBlendPerBone::Update(const FAnimationUpdateContext& Context)
 {
-	// Base 는 항상 시간 진행 — 보통 locomotion 같은 base layer, 매 frame 흐름 유지.
+	// Base 는 항상 시간 진행 — 보통 locomotion 같은 base layer.
 	if (BasePose) BasePose->Update(Context);
 
-	// Blend 는 가시성 (BlendWeight × Context.FinalBlendWeight) 가 임계 이상일 때만 진행.
-	// 안 보이는 가지의 notify 발사 / RM 누적 막음. FractionalWeight 로 weight 누적 전파.
-	if (BlendPose && BlendWeight > ZERO_ANIMWEIGHT_THRESH)
+	// Blend Update 도 항상 호출 (Slot 내부의 montage time 진행 등). visibility 가드는
+	// GetEffectiveBlendWeight 의 weight 가 임계 이상일 때 자식 weight 전파 — Slot 비활성이면
+	// effective 0 이라 사실상 inactive 가지.
+	if (BlendPose)
 	{
-		BlendPose->Update(Context.FractionalWeight(BlendWeight));
+		const float Effective = BlendPose->GetEffectiveBlendWeight();
+		BlendPose->Update(Context.FractionalWeight(BlendWeight * Effective));
 	}
 
 	BaseLastRM = BasePose ? BasePose->GetLastRootMotionDelta() : FTransform();
@@ -47,9 +49,11 @@ void FAnimNode_LayeredBlendPerBone::Evaluate(FPoseContext& Output)
 		Output.ResetToRefPose();
 	}
 
-	// 2) Weight 0 이거나 BlendPose 없으면 base 그대로.
-	const float W = std::clamp(BlendWeight, 0.0f, 1.0f);
-	if (!BlendPose || W <= ZERO_ANIMWEIGHT_THRESH) return;
+	// 2) Effective weight 계산 — 외부 BlendWeight × BlendPose 의 GetEffectiveBlendWeight.
+	//    Slot 의 경우 montage 비활성 → effective 0 → base 100%. 자동 fade.
+	if (!BlendPose) return;
+	const float W = std::clamp(BlendWeight * BlendPose->GetEffectiveBlendWeight(), 0.0f, 1.0f);
+	if (W <= ZERO_ANIMWEIGHT_THRESH) return;
 
 	// 3) BlendPose 평가 → 별 buffer.
 	FPoseContext BlendCtx;

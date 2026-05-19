@@ -30,6 +30,14 @@ void FAnimNode_Slot::Update(const FAnimationUpdateContext& Context)
 	// Montage Tick 은 UAnimInstance::UpdateAnimation 의 일괄 처리 — 여기 호출 안 함.
 }
 
+float FAnimNode_Slot::GetEffectiveBlendWeight() const
+{
+	if (!OwnerAnimInstance) return 0.0f;
+	UAnimMontageInstance* MI = OwnerAnimInstance->GetMontageInstanceForSlot(SlotName);
+	if (!MI || !MI->IsActive()) return 0.0f;
+	return MI->GetBlendWeight();
+}
+
 void FAnimNode_Slot::Evaluate(FPoseContext& Output)
 {
 	// 1) InputPose 평가 — base pose 가 Output 에 들어감. 없으면 ref pose fallback.
