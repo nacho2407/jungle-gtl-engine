@@ -2,19 +2,28 @@
 #include "Core/CoreMinimal.h"
 #include "Object/FName.h"
 
-struct FAnimNotifyEvent
-{
-    float TriggerTime = 0.0f;
-    FName NotifyName;
-};
+#include <algorithm>
 
-// 나중에 추가할 수도 있음.
 struct FAnimNotifyStateEvent
 {
     float TriggerTime = 0.0f;
     float Duration = 0.0f;
     FName NotifyName;
+
+    float GetEndTime() const
+    {
+        return TriggerTime + std::max(0.0f, Duration);
+    }
+
+    bool IsState() const
+    {
+        return Duration > 0.0f;
+    }
 };
+
+// Legacy compatibility: old code that still names this as FAnimNotifyEvent now uses the
+// state-capable event payload. Duration == 0 means a one-shot notify.
+using FAnimNotifyEvent = FAnimNotifyStateEvent;
 
 struct FPoseContext
 {

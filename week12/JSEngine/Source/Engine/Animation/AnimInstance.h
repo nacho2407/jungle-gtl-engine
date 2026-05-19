@@ -20,8 +20,8 @@ public:
 	float GetPreviousTime() const { return PreviousTime; }
 	USkeletalMeshComponent* GetOwnerComponent() const { return OwnerComponent; }
 
-	void TriggerAnimNotifies(UAnimSequenceBase* Sequence, float InPreviousTime, float InCurrentTime, bool bLooped, bool bReverse);
-	static void DispatchAnimNotifies(USkeletalMeshComponent* InOwnerComponent, UAnimSequenceBase* Sequence, float InPreviousTime, float InCurrentTime, bool bLooped, bool bReverse);
+	void TriggerAnimNotifies(UAnimSequenceBase* Sequence, float InPreviousTime, float InCurrentTime, bool bLooped, bool bReverse, float DeltaTime = 0.0f);
+	static void DispatchAnimNotifies(USkeletalMeshComponent* InOwnerComponent, UAnimSequenceBase* Sequence, float InPreviousTime, float InCurrentTime, bool bLooped, bool bReverse, float DeltaTime = 0.0f);
 
 protected:
 	USkeletalMeshComponent* OwnerComponent = nullptr;

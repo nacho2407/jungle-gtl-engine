@@ -875,7 +875,13 @@ namespace
 				TriggerTime = GetFloatOrDefault(NotifyJson, "Time", TriggerTime);
 			}
 
-			Sequence->AddNotify(TriggerTime, FName(NotifyName));
+			float Duration = GetFloatOrDefault(NotifyJson, "Duration", 0.0f);
+			if (NotifyJson.hasKey("EndTime"))
+			{
+				Duration = GetFloatOrDefault(NotifyJson, "EndTime", TriggerTime) - TriggerTime;
+			}
+
+			Sequence->AddNotify(TriggerTime, FName(NotifyName), Duration);
 		}
 	}
 
@@ -1124,11 +1130,13 @@ bool FAnimSequenceAssetLoader::Save(const FString& Path, const UAnimSequence* Se
 	Root["Sequence"] = SequenceJson;
 
 	JSON NotifiesJson = JSON::Make(JSON::Class::Array);
-	for (const FAnimNotifyEvent& Notify : Sequence->GetNotifies())
+	for (const FAnimNotifyStateEvent& Notify : Sequence->GetNotifies())
 	{
 		JSON NotifyJson = JSON::Make(JSON::Class::Object);
 		NotifyJson["NotifyName"] = Notify.NotifyName.ToString();
 		NotifyJson["TriggerTime"] = Notify.TriggerTime;
+		NotifyJson["Duration"] = Notify.Duration;
+		NotifyJson["EndTime"] = Notify.GetEndTime();
 		NotifiesJson.append(NotifyJson);
 	}
 	Root["Notifies"] = NotifiesJson;

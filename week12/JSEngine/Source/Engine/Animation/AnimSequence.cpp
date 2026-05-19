@@ -20,17 +20,19 @@ const TArray<FBoneAnimationTrack>& UAnimSequenceBase::GetBoneAnimationTracks() c
 	return DataModel ? DataModel->GetBoneAnimationTracks() : EmptyTracks;
 }
 
-void UAnimSequenceBase::AddNotify(float InTriggerTime, const FName& InNotifyName)
+void UAnimSequenceBase::AddNotify(float InTriggerTime, const FName& InNotifyName, float InDuration)
 {
-	FAnimNotifyEvent NewNotify;
+	FAnimNotifyStateEvent NewNotify;
 
-	NewNotify.TriggerTime = std::clamp(InTriggerTime, 0.0f, GetPlayLength());
+	const float Length = std::max(0.0f, GetPlayLength());
+	NewNotify.TriggerTime = std::clamp(InTriggerTime, 0.0f, Length);
+	NewNotify.Duration = std::clamp(InDuration, 0.0f, std::max(0.0f, Length - NewNotify.TriggerTime));
 	NewNotify.NotifyName = InNotifyName;
 
 	Notifies.push_back(NewNotify);
 
 	std::ranges::sort(Notifies,
-			[](const FAnimNotifyEvent& A, const FAnimNotifyEvent& B) { return A.TriggerTime < B.TriggerTime; });
+			[](const FAnimNotifyStateEvent& A, const FAnimNotifyStateEvent& B) { return A.TriggerTime < B.TriggerTime; });
 }
 
 void UAnimSequenceBase::ClearNotifies()
@@ -49,6 +51,21 @@ bool UAnimSequenceBase::RemoveNotifyAt(int32 NotifyIndex)
 	return true;
 }
 
+bool UAnimSequenceBase::SetNotifyName(int32 NotifyIndex, const FName& InNotifyName)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	if (!InNotifyName.IsValid())
+	{
+		return false;
+	}
+
+	Notifies[NotifyIndex].NotifyName = InNotifyName;
+	return true;
+}
 
 bool UAnimSequenceBase::SetNotifyTriggerTime(int32 NotifyIndex, float InTriggerTime)
 {
@@ -57,7 +74,37 @@ bool UAnimSequenceBase::SetNotifyTriggerTime(int32 NotifyIndex, float InTriggerT
 		return false;
 	}
 
-	Notifies[NotifyIndex].TriggerTime = std::clamp(InTriggerTime, 0.0f, GetPlayLength());
+	const float Length = std::max(0.0f, GetPlayLength());
+	FAnimNotifyStateEvent& Notify = Notifies[NotifyIndex];
+	Notify.TriggerTime = std::clamp(InTriggerTime, 0.0f, Length);
+	Notify.Duration = std::clamp(Notify.Duration, 0.0f, std::max(0.0f, Length - Notify.TriggerTime));
+	return true;
+}
+
+bool UAnimSequenceBase::SetNotifyDuration(int32 NotifyIndex, float InDuration)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	const float Length = std::max(0.0f, GetPlayLength());
+	FAnimNotifyStateEvent& Notify = Notifies[NotifyIndex];
+	Notify.Duration = std::clamp(InDuration, 0.0f, std::max(0.0f, Length - Notify.TriggerTime));
+	return true;
+}
+
+bool UAnimSequenceBase::SetNotifyTimeRange(int32 NotifyIndex, float InTriggerTime, float InDuration)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	const float Length = std::max(0.0f, GetPlayLength());
+	FAnimNotifyStateEvent& Notify = Notifies[NotifyIndex];
+	Notify.TriggerTime = std::clamp(InTriggerTime, 0.0f, Length);
+	Notify.Duration = std::clamp(InDuration, 0.0f, std::max(0.0f, Length - Notify.TriggerTime));
 	return true;
 }
 
@@ -68,15 +115,17 @@ bool UAnimSequenceBase::MoveNotifyAt(int32 NotifyIndex, float InTriggerTime, int
 		return false;
 	}
 
-	FAnimNotifyEvent MovedNotify = Notifies[NotifyIndex];
-	MovedNotify.TriggerTime = std::clamp(InTriggerTime, 0.0f, GetPlayLength());
+	const float Length = std::max(0.0f, GetPlayLength());
+	FAnimNotifyStateEvent MovedNotify = Notifies[NotifyIndex];
+	MovedNotify.TriggerTime = std::clamp(InTriggerTime, 0.0f, Length);
+	MovedNotify.Duration = std::clamp(MovedNotify.Duration, 0.0f, std::max(0.0f, Length - MovedNotify.TriggerTime));
 
 	Notifies.erase(Notifies.begin() + NotifyIndex);
 	const auto InsertIt = std::lower_bound(
 		Notifies.begin(),
 		Notifies.end(),
 		MovedNotify.TriggerTime,
-		[](const FAnimNotifyEvent& Notify, float TriggerTime)
+		[](const FAnimNotifyStateEvent& Notify, float TriggerTime)
 		{
 			return Notify.TriggerTime < TriggerTime;
 		});

@@ -701,6 +701,8 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 			SelectedAnimTrackIndex = -1;
 			SelectedAnimNotifyIndex = -1;
 			DraggingAnimNotifyIndex = -1;
+			SelectedAnimNotifyNameBufferIndex = -1;
+			SelectedAnimNotifyNameBuffer[0] = '\0';
 			bAnimNotifyDragDirty = false;
 			snprintf(AnimNotifyNameBuffer, sizeof(AnimNotifyNameBuffer), "AnimNotify");
 		}
@@ -744,6 +746,8 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 	{
 		CachedAnimSequence = nullptr;
 		DraggingAnimNotifyIndex = -1;
+		SelectedAnimNotifyNameBufferIndex = -1;
+		SelectedAnimNotifyNameBuffer[0] = '\0';
 		bAnimNotifyDragDirty = false;
 	}
 
@@ -1043,22 +1047,29 @@ void FEditorViewerWindowWidget::DrawAddAnimNotifyPopup(UAnimSequence* Sequence)
 
 	const float Length = std::max(0.0f, Sequence->GetPlayLength());
 	const float TriggerTime = std::clamp(Viewer->GetAnimationCurrentTime(), 0.0f, Length);
+	AnimNotifyDurationToAdd = std::clamp(AnimNotifyDurationToAdd, 0.0f, std::max(0.0f, Length - TriggerTime));
 
-	ImGui::Text("Add Anim Notify");
+	ImGui::Text("Add Anim Notify State");
 	ImGui::Separator();
-	ImGui::Text("Time: %.3f sec", TriggerTime);
+	ImGui::Text("Start: %.3f sec", TriggerTime);
 	ImGui::SetNextItemWidth(220.0f);
 	ImGui::InputText("Name", AnimNotifyNameBuffer, sizeof(AnimNotifyNameBuffer));
+	ImGui::SetNextItemWidth(120.0f);
+	if (ImGui::InputFloat("Duration", &AnimNotifyDurationToAdd, 0.01f, 0.1f, "%.3f"))
+	{
+		AnimNotifyDurationToAdd = std::clamp(AnimNotifyDurationToAdd, 0.0f, std::max(0.0f, Length - TriggerTime));
+	}
+	ImGui::TextDisabled("Duration 0.0 = instant notify, Duration > 0 = state notify");
 
 	const bool bHasName = AnimNotifyNameBuffer[0] != '\0';
 	ImGui::BeginDisabled(!bHasName);
 	if (ImGui::Button("Add", ImVec2(96.0f, 0.0f)))
 	{
 		const FString NotifyName = bHasName ? FString(AnimNotifyNameBuffer) : FString("AnimNotify");
-		Sequence->AddNotify(TriggerTime, FName(NotifyName));
+		Sequence->AddNotify(TriggerTime, FName(NotifyName), AnimNotifyDurationToAdd);
 		SaveAnimSequenceAsset(Sequence);
 
-		const TArray<FAnimNotifyEvent>& Notifies = Sequence->GetNotifies();
+		const TArray<FAnimNotifyStateEvent>& Notifies = Sequence->GetNotifies();
 		for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(Notifies.size()); ++NotifyIndex)
 		{
 			if (Notifies[NotifyIndex].NotifyName.ToString() == NotifyName &&
@@ -1200,7 +1211,7 @@ void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequen
 	const int32 FrameCount = DataModel ? DataModel->GetNumberOfFrames() : 0;
 
 	ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
-	CanvasSize.y = std::max(CanvasSize.y, 160.0f);
+	CanvasSize.y = std::max(CanvasSize.y, 170.0f);
 	CanvasSize.x = std::max(CanvasSize.x, 1.0f);
 	ImGui::InvisibleButton("##AnimTimelineCanvas", CanvasSize);
 
@@ -1217,11 +1228,15 @@ void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequen
 	const ImU32 TextColor = ImGui::GetColorU32(ImVec4(0.72f, 0.76f, 0.84f, 1.0f));
 	const ImU32 PlayheadColor = ImGui::GetColorU32(ImVec4(0.95f, 0.28f, 0.24f, 1.0f));
 	const ImU32 NotifyColor = ImGui::GetColorU32(ImVec4(0.95f, 0.70f, 0.22f, 1.0f));
+	const ImU32 NotifySelectedColor = ImGui::GetColorU32(ImVec4(1.0f, 0.84f, 0.36f, 1.0f));
+	const ImU32 NotifyBodyColor = ImGui::GetColorU32(ImVec4(0.95f, 0.70f, 0.22f, 0.24f));
 
 	DrawList->AddRectFilled(Min, Max, BgColor, 4.0f);
 	const float RulerY = Min.y + 28.0f;
 	const float TrackTop = Min.y + 54.0f;
 	const float TrackBottom = Max.y - 18.0f;
+	const float NotifyBarTop = TrackTop + 14.0f;
+	const float NotifyBarBottom = TrackBottom - 14.0f;
 	DrawList->AddRectFilled(ImVec2(Min.x + 8.0f, TrackTop), ImVec2(Max.x - 8.0f, TrackBottom), TrackColor, 4.0f);
 
 	const float TrackMinX = Min.x + 12.0f;
@@ -1261,42 +1276,99 @@ void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequen
 	}
 
 	const ImVec2 MousePos = ImGui::GetIO().MousePos;
-	const TArray<FAnimNotifyEvent>& Notifies = Sequence->GetNotifies();
+	const TArray<FAnimNotifyStateEvent>& Notifies = Sequence->GetNotifies();
 	int32 HoveredAnimNotifyIndex = -1;
-	float HoveredAnimNotifyDistance = FLT_MAX;
+	int32 HoveredAnimNotifyMode = 0;
+	float HoveredPriority = FLT_MAX;
+
 	for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(Notifies.size()); ++NotifyIndex)
 	{
-		const FAnimNotifyEvent& Notify = Notifies[NotifyIndex];
-		const float NotifyX = TimeToX(Notify.TriggerTime);
+		const FAnimNotifyStateEvent& Notify = Notifies[NotifyIndex];
+		const float NotifyStartTime = std::clamp(Notify.TriggerTime, 0.0f, Length);
+		const float NotifyDuration = std::clamp(Notify.Duration, 0.0f, std::max(0.0f, Length - NotifyStartTime));
+		const float NotifyEndTime = NotifyStartTime + NotifyDuration;
+		const float NotifyStartX = TimeToX(NotifyStartTime);
+		const float NotifyEndX = TimeToX(NotifyEndTime);
 		const bool bSelected = SelectedAnimNotifyIndex == NotifyIndex || DraggingAnimNotifyIndex == NotifyIndex;
-		const float MarkerHalfWidth = bSelected ? 8.0f : 6.0f;
-		const float MarkerHeight = bSelected ? 14.0f : 12.0f;
-		const float LineThickness = bSelected ? 2.4f : 1.6f;
+		const ImU32 Color = bSelected ? NotifySelectedColor : NotifyColor;
 
-		DrawList->AddLine(ImVec2(NotifyX, TrackTop - 8.0f), ImVec2(NotifyX, TrackBottom), NotifyColor, LineThickness);
-		DrawList->AddTriangleFilled(
-			ImVec2(NotifyX, TrackTop - MarkerHeight),
-			ImVec2(NotifyX - MarkerHalfWidth, TrackTop - 2.0f),
-			ImVec2(NotifyX + MarkerHalfWidth, TrackTop - 2.0f),
-			NotifyColor);
-
-		const float DistanceToMouse = std::abs(MousePos.x - NotifyX);
-		if (bHovered &&
-			DistanceToMouse <= 8.0f &&
-			MousePos.y >= TrackTop - 18.0f && MousePos.y <= TrackBottom &&
-			DistanceToMouse < HoveredAnimNotifyDistance)
+		if (NotifyDuration > 0.0001f)
 		{
-			HoveredAnimNotifyIndex = NotifyIndex;
-			HoveredAnimNotifyDistance = DistanceToMouse;
+			DrawList->AddRectFilled(
+				ImVec2(NotifyStartX, NotifyBarTop),
+				ImVec2(std::max(NotifyStartX + 2.0f, NotifyEndX), NotifyBarBottom),
+				NotifyBodyColor,
+				3.0f);
+			DrawList->AddRect(
+				ImVec2(NotifyStartX, NotifyBarTop),
+				ImVec2(std::max(NotifyStartX + 2.0f, NotifyEndX), NotifyBarBottom),
+				Color,
+				3.0f,
+				0,
+				bSelected ? 2.0f : 1.2f);
+			DrawList->AddLine(ImVec2(NotifyStartX, TrackTop - 8.0f), ImVec2(NotifyStartX, TrackBottom), Color, bSelected ? 2.2f : 1.4f);
+			DrawList->AddLine(ImVec2(NotifyEndX, TrackTop), ImVec2(NotifyEndX, TrackBottom), Color, bSelected ? 2.2f : 1.4f);
+
+			const bool bYInBar = MousePos.y >= NotifyBarTop - 6.0f && MousePos.y <= NotifyBarBottom + 6.0f;
+			const float StartDistance = std::abs(MousePos.x - NotifyStartX);
+			const float EndDistance = std::abs(MousePos.x - NotifyEndX);
+			const bool bBodyHit = bYInBar && MousePos.x >= std::min(NotifyStartX, NotifyEndX) && MousePos.x <= std::max(NotifyStartX, NotifyEndX);
+
+			if (bHovered && bYInBar && StartDistance <= 7.0f && StartDistance < HoveredPriority)
+			{
+				HoveredAnimNotifyIndex = NotifyIndex;
+				HoveredAnimNotifyMode = 2;
+				HoveredPriority = StartDistance;
+			}
+			if (bHovered && bYInBar && EndDistance <= 7.0f && EndDistance < HoveredPriority)
+			{
+				HoveredAnimNotifyIndex = NotifyIndex;
+				HoveredAnimNotifyMode = 3;
+				HoveredPriority = EndDistance;
+			}
+			if (bHovered && bBodyHit && HoveredPriority == FLT_MAX)
+			{
+				HoveredAnimNotifyIndex = NotifyIndex;
+				HoveredAnimNotifyMode = 1;
+				HoveredPriority = 9999.0f;
+			}
+		}
+		else
+		{
+			const float MarkerHalfWidth = bSelected ? 8.0f : 6.0f;
+			const float MarkerHeight = bSelected ? 14.0f : 12.0f;
+			const float LineThickness = bSelected ? 2.4f : 1.6f;
+
+			DrawList->AddLine(ImVec2(NotifyStartX, TrackTop - 8.0f), ImVec2(NotifyStartX, TrackBottom), Color, LineThickness);
+			DrawList->AddTriangleFilled(
+				ImVec2(NotifyStartX, TrackTop - MarkerHeight),
+				ImVec2(NotifyStartX - MarkerHalfWidth, TrackTop - 2.0f),
+				ImVec2(NotifyStartX + MarkerHalfWidth, TrackTop - 2.0f),
+				Color);
+
+			const float DistanceToMouse = std::abs(MousePos.x - NotifyStartX);
+			if (bHovered &&
+				DistanceToMouse <= 8.0f &&
+				MousePos.y >= TrackTop - 18.0f && MousePos.y <= TrackBottom &&
+				DistanceToMouse < HoveredPriority)
+			{
+				HoveredAnimNotifyIndex = NotifyIndex;
+				HoveredAnimNotifyMode = 1;
+				HoveredPriority = DistanceToMouse;
+			}
 		}
 	}
 
 	if (HoveredAnimNotifyIndex >= 0 && HoveredAnimNotifyIndex < static_cast<int32>(Notifies.size()))
 	{
-		const FAnimNotifyEvent& HoveredNotify = Notifies[HoveredAnimNotifyIndex];
-		ImGui::SetTooltip("Notify: %s\nTime: %.3f sec\nDrag to move",
+		const FAnimNotifyStateEvent& HoveredNotify = Notifies[HoveredAnimNotifyIndex];
+		const char* ModeText = HoveredAnimNotifyMode == 2 ? "Drag start" : HoveredAnimNotifyMode == 3 ? "Drag end" : "Drag to move";
+		ImGui::SetTooltip("Notify: %s\nStart: %.3f sec\nDuration: %.3f sec\nEnd: %.3f sec\n%s",
 			HoveredNotify.NotifyName.ToString().c_str(),
-			HoveredNotify.TriggerTime);
+			HoveredNotify.TriggerTime,
+			HoveredNotify.Duration,
+			HoveredNotify.GetEndTime(),
+			ModeText);
 	}
 
 	if (bHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
@@ -1305,6 +1377,8 @@ void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequen
 		{
 			SelectedAnimNotifyIndex = HoveredAnimNotifyIndex;
 			DraggingAnimNotifyIndex = HoveredAnimNotifyIndex;
+			AnimNotifyDragMode = HoveredAnimNotifyMode;
+			AnimNotifyDragGrabOffset = XToTime(MousePos.x) - Notifies[HoveredAnimNotifyIndex].TriggerTime;
 			bAnimNotifyDragDirty = false;
 			if (Viewer)
 			{
@@ -1318,15 +1392,39 @@ void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequen
 		}
 	}
 
-	if (DraggingAnimNotifyIndex >= 0 && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+	if (DraggingAnimNotifyIndex >= 0 && DraggingAnimNotifyIndex < static_cast<int32>(Notifies.size()) && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
 	{
-		const float NewTriggerTime = XToTime(MousePos.x);
-		if (Sequence->SetNotifyTriggerTime(DraggingAnimNotifyIndex, NewTriggerTime))
+		const FAnimNotifyStateEvent& Notify = Notifies[DraggingAnimNotifyIndex];
+		const float MouseTime = XToTime(MousePos.x);
+		bool bChanged = false;
+		float PreviewTime = Notify.TriggerTime;
+
+		if (AnimNotifyDragMode == 2)
+		{
+			const float OldEndTime = Notify.GetEndTime();
+			const float NewStartTime = std::clamp(MouseTime, 0.0f, OldEndTime);
+			bChanged = Sequence->SetNotifyTimeRange(DraggingAnimNotifyIndex, NewStartTime, OldEndTime - NewStartTime);
+			PreviewTime = NewStartTime;
+		}
+		else if (AnimNotifyDragMode == 3)
+		{
+			const float NewEndTime = std::clamp(MouseTime, Notify.TriggerTime, Length);
+			bChanged = Sequence->SetNotifyDuration(DraggingAnimNotifyIndex, NewEndTime - Notify.TriggerTime);
+			PreviewTime = NewEndTime;
+		}
+		else
+		{
+			const float NewTriggerTime = std::clamp(MouseTime - AnimNotifyDragGrabOffset, 0.0f, std::max(0.0f, Length - Notify.Duration));
+			bChanged = Sequence->SetNotifyTriggerTime(DraggingAnimNotifyIndex, NewTriggerTime);
+			PreviewTime = NewTriggerTime;
+		}
+
+		if (bChanged)
 		{
 			bAnimNotifyDragDirty = true;
 			if (Viewer)
 			{
-				Viewer->SetAnimationTime(NewTriggerTime);
+				Viewer->SetAnimationTime(PreviewTime);
 			}
 		}
 	}
@@ -1338,7 +1436,7 @@ void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequen
 	if (DraggingAnimNotifyIndex >= 0 && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 	{
 		int32 NewNotifyIndex = DraggingAnimNotifyIndex;
-		const TArray<FAnimNotifyEvent>& UpdatedNotifies = Sequence->GetNotifies();
+		const TArray<FAnimNotifyStateEvent>& UpdatedNotifies = Sequence->GetNotifies();
 		if (DraggingAnimNotifyIndex < static_cast<int32>(UpdatedNotifies.size()))
 		{
 			const float FinalTriggerTime = UpdatedNotifies[DraggingAnimNotifyIndex].TriggerTime;
@@ -1350,6 +1448,8 @@ void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequen
 
 		SelectedAnimNotifyIndex = NewNotifyIndex;
 		DraggingAnimNotifyIndex = -1;
+		AnimNotifyDragMode = 0;
+		AnimNotifyDragGrabOffset = 0.0f;
 		bAnimNotifyDragDirty = false;
 	}
 
@@ -1442,10 +1542,12 @@ void FEditorViewerWindowWidget::RenderAnimSequenceDetails(UAnimSequence* Sequenc
 	ImGui::Separator();
 	if (ImGui::CollapsingHeader("Notifies", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		const TArray<FAnimNotifyEvent>& Notifies = Sequence->GetNotifies();
+		const TArray<FAnimNotifyStateEvent>& Notifies = Sequence->GetNotifies();
 		if (SelectedAnimNotifyIndex >= static_cast<int32>(Notifies.size()))
 		{
 			SelectedAnimNotifyIndex = -1;
+			SelectedAnimNotifyNameBufferIndex = -1;
+			SelectedAnimNotifyNameBuffer[0] = '\0';
 		}
 
 		if (Notifies.empty())
@@ -1456,39 +1558,122 @@ void FEditorViewerWindowWidget::RenderAnimSequenceDetails(UAnimSequence* Sequenc
 		{
 			for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(Notifies.size()); ++NotifyIndex)
 			{
-				const FAnimNotifyEvent& Notify = Notifies[NotifyIndex];
+				const FAnimNotifyStateEvent& Notify = Notifies[NotifyIndex];
 				char Label[256];
 				snprintf(
 					Label,
 					sizeof(Label),
-					"%.3f  %s##AnimNotify%d",
+					"%.3f - %.3f  %s##AnimNotify%d",
 					Notify.TriggerTime,
+					Notify.GetEndTime(),
 					Notify.NotifyName.ToString().c_str(),
 					NotifyIndex);
+
+				ImGui::PushID(NotifyIndex);
+				if (ImGui::SmallButton("Delete"))
+				{
+					const int32 DeletedIndex = NotifyIndex;
+					if (Sequence->RemoveNotifyAt(DeletedIndex))
+					{
+						SaveAnimSequenceAsset(Sequence);
+						if (SelectedAnimNotifyIndex == DeletedIndex)
+						{
+							SelectedAnimNotifyIndex = -1;
+						}
+						else if (SelectedAnimNotifyIndex > DeletedIndex)
+						{
+							--SelectedAnimNotifyIndex;
+						}
+
+						if (DraggingAnimNotifyIndex == DeletedIndex)
+						{
+							DraggingAnimNotifyIndex = -1;
+							AnimNotifyDragMode = 0;
+							AnimNotifyDragGrabOffset = 0.0f;
+							bAnimNotifyDragDirty = false;
+						}
+						else if (DraggingAnimNotifyIndex > DeletedIndex)
+						{
+							--DraggingAnimNotifyIndex;
+						}
+
+						SelectedAnimNotifyNameBufferIndex = -1;
+						SelectedAnimNotifyNameBuffer[0] = '\0';
+						ImGui::PopID();
+						break;
+					}
+				}
+				ImGui::SameLine();
 
 				if (ImGui::Selectable(Label, SelectedAnimNotifyIndex == NotifyIndex))
 				{
 					SelectedAnimNotifyIndex = NotifyIndex;
+					SelectedAnimNotifyNameBufferIndex = -1;
 					if (Viewer)
 					{
 						Viewer->SetAnimationTime(Notify.TriggerTime);
 					}
 				}
-
-				ImGui::SameLine();
-				ImGui::PushID(NotifyIndex);
-				if (ImGui::SmallButton("Delete"))
-				{
-					if (Sequence->RemoveNotifyAt(NotifyIndex))
-					{
-						SaveAnimSequenceAsset(Sequence);
-						SelectedAnimNotifyIndex = -1;
-						ImGui::PopID();
-						break;
-					}
-				}
 				ImGui::PopID();
 			}
+		}
+
+		const TArray<FAnimNotifyStateEvent>& CurrentNotifies = Sequence->GetNotifies();
+		if (SelectedAnimNotifyIndex >= 0 && SelectedAnimNotifyIndex < static_cast<int32>(CurrentNotifies.size()))
+		{
+			ImGui::Spacing();
+			ImGui::Separator();
+			const FAnimNotifyStateEvent& SelectedNotify = CurrentNotifies[SelectedAnimNotifyIndex];
+			ImGui::Text("Selected: %s", SelectedNotify.NotifyName.ToString().c_str());
+
+			if (SelectedAnimNotifyNameBufferIndex != SelectedAnimNotifyIndex)
+			{
+				snprintf(
+					SelectedAnimNotifyNameBuffer,
+					sizeof(SelectedAnimNotifyNameBuffer),
+					"%s",
+					SelectedNotify.NotifyName.ToString().c_str());
+				SelectedAnimNotifyNameBufferIndex = SelectedAnimNotifyIndex;
+			}
+
+			ImGui::SetNextItemWidth(180.0f);
+			if (ImGui::InputText("Name", SelectedAnimNotifyNameBuffer, sizeof(SelectedAnimNotifyNameBuffer)))
+			{
+				if (SelectedAnimNotifyNameBuffer[0] != '\0' && Sequence->SetNotifyName(SelectedAnimNotifyIndex, FName(FString(SelectedAnimNotifyNameBuffer))))
+				{
+					SaveAnimSequenceAsset(Sequence);
+				}
+			}
+
+			float StartTime = Sequence->GetNotifies()[SelectedAnimNotifyIndex].TriggerTime;
+			float Duration = Sequence->GetNotifies()[SelectedAnimNotifyIndex].Duration;
+			ImGui::SetNextItemWidth(110.0f);
+			if (ImGui::InputFloat("Start", &StartTime, 0.01f, 0.1f, "%.3f"))
+			{
+				if (Sequence->SetNotifyTriggerTime(SelectedAnimNotifyIndex, StartTime))
+				{
+					int32 NewNotifyIndex = SelectedAnimNotifyIndex;
+					const float FinalTriggerTime = Sequence->GetNotifies()[SelectedAnimNotifyIndex].TriggerTime;
+					Sequence->MoveNotifyAt(SelectedAnimNotifyIndex, FinalTriggerTime, &NewNotifyIndex);
+					SelectedAnimNotifyIndex = NewNotifyIndex;
+					SelectedAnimNotifyNameBufferIndex = -1;
+					SaveAnimSequenceAsset(Sequence);
+					if (Viewer)
+					{
+						Viewer->SetAnimationTime(std::clamp(StartTime, 0.0f, Sequence->GetPlayLength()));
+					}
+				}
+			}
+			ImGui::SetNextItemWidth(110.0f);
+			if (ImGui::InputFloat("Duration", &Duration, 0.01f, 0.1f, "%.3f"))
+			{
+				if (Sequence->SetNotifyDuration(SelectedAnimNotifyIndex, Duration))
+				{
+					SaveAnimSequenceAsset(Sequence);
+				}
+			}
+			ImGui::Text("End: %.3f", Sequence->GetNotifies()[SelectedAnimNotifyIndex].GetEndTime());
+			ImGui::TextDisabled("Duration 0.0 is treated as an instant notify.");
 		}
 	}
 
