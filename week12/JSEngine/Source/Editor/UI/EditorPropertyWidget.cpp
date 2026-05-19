@@ -345,6 +345,85 @@ namespace
 		return FPaths::Normalize(PathText);
 	}
 
+	static FString GetLuaScriptDisplayName(const FString& ScriptReference)
+	{
+		if (ScriptReference.empty())
+		{
+			return "<None>";
+		}
+
+		std::filesystem::path ScriptPath(FPaths::ToWide(ScriptReference));
+		if (ScriptPath.has_filename())
+		{
+			return FPaths::ToUtf8(ScriptPath.filename().generic_wstring());
+		}
+
+		return ScriptReference;
+	}
+
+	static bool RenderLuaScriptComboWidget(FString& Value, const char* Label)
+	{
+		bool bChanged = false;
+		const FString Preview = GetLuaScriptDisplayName(Value);
+		if (ImGui::BeginCombo(Label, Preview.c_str()))
+		{
+			FScriptManager& ScriptManager = FScriptManager::Get();
+			ScriptManager.RefreshLuaScriptFiles();
+
+			TArray<FString> ScriptReferences;
+			for (const auto& Pair : ScriptManager.GetScriptArray())
+			{
+				const FLuaScriptInfo& Info = Pair.second;
+				if (!Info.ScriptPath.empty())
+				{
+					ScriptReferences.push_back(MakeScriptReferenceFromPath(FPaths::ToUtf8(Info.ScriptPath)));
+				}
+				else
+				{
+					ScriptReferences.push_back(Pair.first.ToString());
+				}
+			}
+
+			std::sort(ScriptReferences.begin(), ScriptReferences.end());
+			ScriptReferences.erase(
+				std::unique(ScriptReferences.begin(), ScriptReferences.end()),
+				ScriptReferences.end());
+
+			const bool bNoneSelected = Value.empty();
+			if (ImGui::Selectable("<None>", bNoneSelected))
+			{
+				Value.clear();
+				bChanged = true;
+			}
+			if (bNoneSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
+			for (const FString& ScriptReference : ScriptReferences)
+			{
+				const FString DisplayName = GetLuaScriptDisplayName(ScriptReference);
+				const bool bSelected = Value == ScriptReference
+					|| GetLuaScriptDisplayName(Value) == DisplayName;
+
+				if (ImGui::Selectable(DisplayName.c_str(), bSelected))
+				{
+					Value = ScriptReference;
+					bChanged = true;
+				}
+
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+
+		return bChanged;
+	}
+
 	static bool PromptCreateScriptAs(UEditorEngine* EditorEngine, const FString& ScriptPathHint, FString& OutFilePath)
 	{
 		OutFilePath.clear();
@@ -2151,6 +2230,11 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 	case EPropertyType::String:
 	{
 		FString* Val = static_cast<FString*>(ValuePtr);
+		if (Property.Name && std::strcmp(Property.Name, "ScriptName") == 0 && Cast<UScriptComponent>(NotifyTarget))
+		{
+			return RenderLuaScriptComboWidget(*Val, Label);
+		}
+
 		if (Property.Name && std::strcmp(Property.Name, "AnimGraphAssetPath") == 0)
 		{
 			const TArray<FString>& AnimGraphPaths = EditorEngine
