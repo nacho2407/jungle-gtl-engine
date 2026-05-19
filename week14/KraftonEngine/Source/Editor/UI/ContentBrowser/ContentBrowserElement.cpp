@@ -12,21 +12,12 @@
 #include "Mesh/StaticMesh.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/MeshManager.h"
-#include "Mesh/FbxImporter.h"
+#include "Editor/UI/FbxImportOptionsDialog.h"
 #include "Editor/UI/Asset/MeshEditorWidget.h"
 
 #include <algorithm>
-#include <chrono>
-
-namespace
-{
-	using FContentBrowserImportClock = std::chrono::steady_clock;
-
-	double GetElapsedImportSeconds(const FContentBrowserImportClock::time_point& StartTime)
-	{
-		return std::chrono::duration<double>(FContentBrowserImportClock::now() - StartTime).count();
-	}
-}
+#include <cstdio>
+#include <utility>
 
 static FString FormatBytes(uint64 Bytes)
 {
@@ -482,32 +473,19 @@ void MeshElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 
 	if (Extension == ".fbx")
 	{
-		FString ProbeMessage;
-		const bool bHasSkinDeformer = FFbxImporter::HasSkinDeformer(FilePath, &ProbeMessage);
+		FFbxImportOptionsDialog::BeginSceneImport(Context.FbxImportDialog, FilePath);
 
-		if (!ProbeMessage.empty())
+		// Pure static FBX keeps the old fast path. Skeletal/animation FBX opens the shared import modal.
+		if (!Context.FbxImportDialog.bHasSkin && Context.FbxImportDialog.AnimationStacks.empty())
 		{
-			UE_LOG("FBX skin deformer probe: Path=%s Message=%s", FilePath.c_str(), ProbeMessage.c_str());
-		}
-
-		if (bHasSkinDeformer)
-		{
-			const auto ImportStartTime = FContentBrowserImportClock::now();
-			if (USkeletalMesh* MeshAsset = FMeshManager::LoadSkeletalMesh(FilePath, Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice()))
-			{
-				FMeshEditorWidget::RecordImportDurationForAsset(
-					MeshAsset->GetAssetPathFileName(),
-					GetElapsedImportSeconds(ImportStartTime));
-				Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
-			}
-		}
-		else
-		{
+			Context.FbxImportDialog = FFbxSceneImportDialogState {};
 			if (UStaticMesh* MeshAsset = FMeshManager::LoadStaticMesh(FilePath, Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice()))
 			{
 				Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
 			}
+			return;
 		}
+
 		return;
 	}
 

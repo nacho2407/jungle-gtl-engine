@@ -81,7 +81,7 @@ bool FFbxSkeletalMeshImporter::Import(FbxScene* Scene, FFbxImportContext& Contex
 		return false;
 	}
 
-	if (!FFbxAnimationImporter::ImportAnimations(Scene, Context, OutMessage))
+	if (!FFbxAnimationImporter::ImportAnimations(Scene, Context, nullptr, OutMessage))
 	{
 		return false;
 	}

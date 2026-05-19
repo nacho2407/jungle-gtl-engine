@@ -1,4 +1,4 @@
-﻿#include "Mesh/Fbx/FbxAnimationImporter.h"
+#include "Mesh/Fbx/FbxAnimationImporter.h"
 #include "Mesh/Fbx/FbxSceneQuery.h"
 #include "Mesh/Fbx/FbxTransformUtils.h"
 #include "Animation/AnimationRuntime.h"
@@ -23,8 +23,13 @@ namespace
 		SdkEvaluatorOnly
 	};
 
-	static constexpr EFbxAnimationBakePolicy GAnimationBakePolicy      = EFbxAnimationBakePolicy::DirectLayeredOnly;
-	static constexpr double                  GDirectBakeErrorTolerance = 0.001;
+	static constexpr EFbxAnimationBakePolicy GAnimationBakePolicy          = EFbxAnimationBakePolicy::DirectLayeredOnly;
+	static constexpr bool                    GValidateDirectBakeAgainstSdk = false;
+	static constexpr bool                    GStoreSourceTransformCurves   = false;
+	static constexpr double                  GDirectBakeErrorTolerance     = 0.001;
+	static constexpr float                   GConstantPositionTolerance    = 1.0e-5f;
+	static constexpr float                   GConstantScaleTolerance       = 1.0e-5f;
+	static constexpr float                   GConstantRotationTolerance    = 1.0e-5f;
 	
 	static float GetSceneSampleRate(FbxScene* Scene)
 	{
@@ -526,6 +531,113 @@ namespace
 		return Count;
 	}
 
+	static bool HasTransformCurveAnyLayer(FbxNode* Node, FbxAnimStack* AnimStack)
+	{
+		if (!Node || !AnimStack)
+		{
+			return false;
+		}
+
+		const int32 LayerCount = AnimStack->GetMemberCount<FbxAnimLayer>();
+		for (int32 LayerIndex = 0; LayerIndex < LayerCount; ++LayerIndex)
+		{
+			FbxAnimLayer* Layer = AnimStack->GetMember<FbxAnimLayer>(LayerIndex);
+			if (Layer && GetTransformCurveSet(Node, Layer).HasAnyCurve())
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	static bool HasAnimatedNonSkeletonParent(FbxNode* Node, FbxAnimStack* AnimStack)
+	{
+		FbxNode* Parent = Node ? Node->GetParent() : nullptr;
+		while (Parent && !FFbxSceneQuery::IsSkeletonNode(Parent))
+		{
+			if (HasTransformCurveAnyLayer(Parent, AnimStack))
+			{
+				return true;
+			}
+
+			Parent = Parent->GetParent();
+		}
+
+		return false;
+	}
+
+	static bool AreVectorsConstant(const TArray<FVector>& Keys, float Tolerance)
+	{
+		if (Keys.size() <= 1)
+		{
+			return true;
+		}
+
+		const FVector First = Keys.front();
+		for (const FVector& Key : Keys)
+		{
+			if (std::fabs(Key.X - First.X) > Tolerance || std::fabs(Key.Y - First.Y) > Tolerance || std::fabs(
+				Key.Z - First.Z
+			) > Tolerance)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	static bool AreQuatsConstant(const TArray<FQuat>& Keys, float Tolerance)
+	{
+		if (Keys.size() <= 1)
+		{
+			return true;
+		}
+
+		const FQuat First = Keys.front().GetNormalized();
+		for (const FQuat& RawKey : Keys)
+		{
+			const FQuat Key             = RawKey.GetNormalized();
+			const bool  bSameHemisphere = std::fabs(Key.X - First.X) <= Tolerance && std::fabs(Key.Y - First.Y) <=
+			Tolerance && std::fabs(Key.Z - First.Z) <= Tolerance && std::fabs(Key.W - First.W) <= Tolerance;
+
+			const bool bOppositeHemisphere = std::fabs(Key.X + First.X) <= Tolerance && std::fabs(Key.Y + First.Y) <=
+			Tolerance && std::fabs(Key.Z + First.Z) <= Tolerance && std::fabs(Key.W + First.W) <= Tolerance;
+
+			if (!bSameHemisphere && !bOppositeHemisphere)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	static void CollapseConstantRawTrackChannels(FRawAnimSequenceTrack& RawTrack)
+	{
+		if (AreVectorsConstant(RawTrack.PosKeys, GConstantPositionTolerance) && RawTrack.PosKeys.size() > 1)
+		{
+			const FVector Constant = RawTrack.PosKeys.front();
+			RawTrack.PosKeys.clear();
+			RawTrack.PosKeys.push_back(Constant);
+		}
+
+		if (AreQuatsConstant(RawTrack.RotKeys, GConstantRotationTolerance) && RawTrack.RotKeys.size() > 1)
+		{
+			const FQuat Constant = RawTrack.RotKeys.front().GetNormalized();
+			RawTrack.RotKeys.clear();
+			RawTrack.RotKeys.push_back(Constant);
+		}
+
+		if (AreVectorsConstant(RawTrack.ScaleKeys, GConstantScaleTolerance) && RawTrack.ScaleKeys.size() > 1)
+		{
+			const FVector Constant = RawTrack.ScaleKeys.front();
+			RawTrack.ScaleKeys.clear();
+			RawTrack.ScaleKeys.push_back(Constant);
+		}
+	}
+
 	struct FFbxLayerTransformSample
 	{
 		FVector Translation = FVector::ZeroVector;
@@ -980,8 +1092,6 @@ namespace
 			return Result;
 		}
 
-		Result.SdkMatrix = Node->EvaluateLocalTransform(Time);
-
 		switch (GAnimationBakePolicy)
 		{
 		case EFbxAnimationBakePolicy::DirectBaseLayerOnly:
@@ -1002,6 +1112,7 @@ namespace
 		}
 		case EFbxAnimationBakePolicy::SdkEvaluatorOnly:
 		{
+			Result.SdkMatrix        = Node->EvaluateLocalTransform(Time);
 			Result.FinalMatrix      = Result.SdkMatrix;
 			Result.bUsedSdkFallback = true;
 			break;
@@ -1011,6 +1122,7 @@ namespace
 			Result.DirectMatrix = AnimLayerCount > 1 ? EvaluateLocalFbxMatrixFromCompositedLayersCandidate(Node, AnimStack, Time)
 			: EvaluateLocalFbxMatrixFromCurves(Node, BaseLayer, Time);
 
+			Result.SdkMatrix           = Node->EvaluateLocalTransform(Time);
 			Result.bHasDirectCandidate = true;
 			Result.Error               = ComputeFbxMatrixMaxError(Result.DirectMatrix, Result.SdkMatrix);
 
@@ -1027,17 +1139,24 @@ namespace
 		}
 		}
 
-		if (Result.bHasDirectCandidate)
+		if (GValidateDirectBakeAgainstSdk && Result.bHasDirectCandidate)
 		{
-			Result.Error = ComputeFbxMatrixMaxError(Result.DirectMatrix, Result.SdkMatrix);
+			Result.SdkMatrix = Node->EvaluateLocalTransform(Time);
+			Result.Error     = ComputeFbxMatrixMaxError(Result.DirectMatrix, Result.SdkMatrix);
 		}
 
 		return Result;
 	}
 
+
 }
 
-bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext& Context, FString* OutMessage)
+bool FFbxAnimationImporter::ImportAnimations(
+	FbxScene*                         Scene,
+	FFbxImportContext&                Context,
+	const FFbxAnimationImportOptions* Options,
+	FString*                          OutMessage
+	)
 {
 	Context.AnimSequences.clear();
 
@@ -1058,6 +1177,11 @@ bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext&
 
 	for (int32 StackIndex = 0; StackIndex < AnimStackCount; ++StackIndex)
 	{
+		if (Options && !Options->ShouldImportStack(StackIndex))
+		{
+			continue;
+		}
+
 		FbxAnimStack* AnimStack = Scene->GetSrcObject<FbxAnimStack>(StackIndex);
 		if (!AnimStack)
 		{
@@ -1122,39 +1246,67 @@ bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext&
 		DataModel->SetTiming(static_cast<float>(DurationSeconds), SampleRate, NumFrames);
 		DataModel->BoneAnimationTracks.resize(Context.Bones.size());
 
+		TArray<bool> BoneHasAnimatedCurves;
+		BoneHasAnimatedCurves.resize(Context.Bones.size(), false);
+
+		for (const auto& Pair : Context.BoneNodeToIndex)
+		{
+			FbxNode*    BoneNode  = Pair.first;
+			const int32 BoneIndex = Pair.second;
+			if (!BoneNode || BoneIndex < 0 || BoneIndex >= static_cast<int32>(BoneHasAnimatedCurves.size()))
+			{
+				continue;
+			}
+
+			BoneHasAnimatedCurves[BoneIndex] = HasTransformCurveAnyLayer(BoneNode, AnimStack) || (Context.Bones[
+				BoneIndex].ParentIndex < 0 && HasAnimatedNonSkeletonParent(BoneNode, AnimStack));
+		}
+
 		for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Context.Bones.size()); ++BoneIndex)
 		{
 			FBoneAnimationTrack& Track = DataModel->BoneAnimationTracks[BoneIndex];
 
 			Track.BoneTreeIndex = BoneIndex;
 			Track.BoneName = Context.Bones[BoneIndex].Name;
-			Track.InternalTrackData.PosKeys.reserve(NumFrames);
-			Track.InternalTrackData.RotKeys.reserve(NumFrames);
-			Track.InternalTrackData.ScaleKeys.reserve(NumFrames);
+
+			FRawAnimSequenceTrack& Raw = Track.InternalTrackData;
+			if (BoneHasAnimatedCurves[BoneIndex])
+			{
+				Raw.PosKeys.reserve(NumFrames);
+				Raw.RotKeys.reserve(NumFrames);
+				Raw.ScaleKeys.reserve(NumFrames);
+			}
 		}
 
-		for (const auto& Pair : Context.BoneNodeToIndex)
+		if (GStoreSourceTransformCurves)
 		{
-			FbxNode*    BoneNode  = Pair.first;
-			const int32 BoneIndex = Pair.second;
-
-			if (!BoneNode)
+			for (const auto& Pair : Context.BoneNodeToIndex)
 			{
-				continue;
+				FbxNode*    BoneNode  = Pair.first;
+				const int32 BoneIndex = Pair.second;
+
+				if (!BoneNode)
+				{
+					continue;
+				}
+
+				if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(DataModel->BoneAnimationTracks.size()))
+				{
+					continue;
+				}
+
+				FRawAnimSequenceTrack& RawTrack = DataModel->BoneAnimationTracks[BoneIndex].InternalTrackData;
+				CopySourceTransformCurves(BoneNode, AnimStack, StartSeconds, RawTrack);
 			}
 
-			if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(DataModel->BoneAnimationTracks.size()))
-			{
-				continue;
-			}
-
-			FRawAnimSequenceTrack& RawTrack = DataModel->BoneAnimationTracks[BoneIndex].InternalTrackData;
-
-			CopySourceTransformCurves(BoneNode, AnimStack, StartSeconds, RawTrack);
+			const int32 SourceCurveKeyCount = CountSourceCurveKeys(DataModel);
+			UE_LOG(
+				"Animation source curves stored: Stack=%s, LayerCount=%d, SourceCurveKeys=%d",
+				AnimStack->GetName(),
+				AnimLayerCount,
+				SourceCurveKeyCount
+			);
 		}
-
-		const int32 SourceCurveKeyCount = CountSourceCurveKeys(DataModel);
-		UE_LOG("Animation source curves stored: Stack=%s, LayerCount=%d, SourceCurveKeys=%d", AnimStack->GetName(), AnimLayerCount, SourceCurveKeyCount);
 
 		FFbxLayeredBakeStats BakeStats;
 
@@ -1163,6 +1315,14 @@ bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext&
 		for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Context.Bones.size()); ++BoneIndex)
 		{
 			BindLocalTransforms[BoneIndex] = FAnimationRuntime::DecomposeMatrix(Context.Bones[BoneIndex].LocalMatrix);
+
+			if (!BoneHasAnimatedCurves[BoneIndex])
+			{
+				FRawAnimSequenceTrack& Raw = DataModel->BoneAnimationTracks[BoneIndex].InternalTrackData;
+				Raw.PosKeys.push_back(BindLocalTransforms[BoneIndex].Location);
+				Raw.RotKeys.push_back(BindLocalTransforms[BoneIndex].Rotation.GetNormalized());
+				Raw.ScaleKeys.push_back(BindLocalTransforms[BoneIndex].Scale);
+			}
 		}
 
 		TArray<FTransform> BoneLocalTransforms;
@@ -1177,7 +1337,7 @@ bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext&
 			FbxTime Time;
 			Time.SetSecondDouble(StartSeconds + LocalSeconds);
 
-			// 기본값은 미리 계산한 bind/local pose다. FBX node가 있는 bone은 아래에서 curve 평가값으로 덮어쓴다.
+			// 기본값은 미리 계산한 bind/local pose다. FBX node가 있는 animated bone만 아래에서 curve 평가값으로 덮어쓴다.
 			BoneLocalTransforms = BindLocalTransforms;
 
 			for (const auto& Pair : Context.BoneNodeToIndex)
@@ -1195,6 +1355,11 @@ bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext&
 					continue;
 				}
 
+				if (!BoneHasAnimatedCurves[BoneIndex])
+				{
+					continue;
+				}
+
 				// 직접 multi-layer candidate를 만들고, policy에 따라 direct / SDK fallback / SDK only 중 하나를 최종 bake 값으로 사용한다.
 				const FFbxBakeMatrixResult BakeResult = EvaluateLocalFbxMatrixForBake(BoneNode, AnimStack, AnimLayer, Time, AnimLayerCount);
 
@@ -1205,7 +1370,8 @@ bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext&
 					BakeStats.FallbackSamples++;
 				}
 
-				if (FrameIndex == 0 || FrameIndex == NumFrames / 2 || FrameIndex == NumFrames - 1)
+				if (GValidateDirectBakeAgainstSdk && (FrameIndex == 0 || FrameIndex == NumFrames / 2 || FrameIndex ==
+					NumFrames - 1))
 				{
 					if (BakeResult.Error > GDirectBakeErrorTolerance)
 					{
@@ -1230,6 +1396,11 @@ bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext&
 
 			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Context.Bones.size()); ++BoneIndex)
 			{
+				if (!BoneHasAnimatedCurves[BoneIndex])
+				{
+					continue;
+				}
+
 				const FTransform&      LocalTransform = BoneLocalTransforms[BoneIndex];
 				FRawAnimSequenceTrack& Raw            = DataModel->BoneAnimationTracks[BoneIndex].InternalTrackData;
 
@@ -1239,13 +1410,29 @@ bool FFbxAnimationImporter::ImportAnimations(FbxScene* Scene, FFbxImportContext&
 			}
 		}
 
+		int32 CollapsedTrackChannelCount = 0;
+		for (FBoneAnimationTrack& Track : DataModel->BoneAnimationTracks)
+		{
+			FRawAnimSequenceTrack& Raw              = Track.InternalTrackData;
+			const size_t           PosCountBefore   = Raw.PosKeys.size();
+			const size_t           RotCountBefore   = Raw.RotKeys.size();
+			const size_t           ScaleCountBefore = Raw.ScaleKeys.size();
+
+			CollapseConstantRawTrackChannels(Raw);
+
+			CollapsedTrackChannelCount += (PosCountBefore > 1 && Raw.PosKeys.size() == 1) ? 1 : 0;
+			CollapsedTrackChannelCount += (RotCountBefore > 1 && Raw.RotKeys.size() == 1) ? 1 : 0;
+			CollapsedTrackChannelCount += (ScaleCountBefore > 1 && Raw.ScaleKeys.size() == 1) ? 1 : 0;
+		}
+
 		UE_LOG(
-			"FBX layered bake stats: Stack=%s, LayerCount=%d, Tested=%d, Fallback=%d, MaxError=%.6f",
+			"FBX layered bake stats: Stack=%s, LayerCount=%d, Tested=%d, Fallback=%d, MaxError=%.6f, CollapsedChannels=%d",
 			AnimStack->GetName(),
 			AnimLayerCount,
 			BakeStats.TestedSamples,
 			BakeStats.FallbackSamples,
-			BakeStats.MaxError
+			BakeStats.MaxError,
+			CollapsedTrackChannelCount
 		);
 
 		UAnimSequence* Sequence = UObjectManager::Get().CreateObject<UAnimSequence>();

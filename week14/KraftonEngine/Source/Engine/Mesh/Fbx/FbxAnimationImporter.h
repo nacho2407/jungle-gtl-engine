@@ -8,5 +8,10 @@
 class FFbxAnimationImporter
 {
 public:
-	static bool ImportAnimations(FbxScene* Scene, FFbxImportContext& Context, FString* OutMessage = nullptr);
+	static bool ImportAnimations(
+		FbxScene*                         Scene,
+		FFbxImportContext&                Context,
+		const FFbxAnimationImportOptions* Options    = nullptr,
+		FString*                          OutMessage = nullptr
+		);
 };

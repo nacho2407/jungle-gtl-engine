@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorPropertyWidget.h"
+#include "Editor/UI/EditorPropertyWidget.h"
 
 #include "Editor/EditorEngine.h"
 
@@ -39,6 +39,8 @@
 #include <cfloat>
 #include <cstring>
 #include <filesystem>
+#include <cstdio>
+#include <utility>
 
 #include "Materials/MaterialManager.h"
 
@@ -53,6 +55,8 @@ namespace
 		std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
 		return Extension == L".fbx";
 	}
+
+
 
 	bool ShouldHideInComponentTree(const UActorComponent* Component, bool bShowEditorOnlyComponents)
 	{
@@ -1300,15 +1304,35 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 			FString FbxPath = OpenFbxFileDialog();
 			if (!FbxPath.empty())
 			{
-				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-				USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(FbxPath, Device);
-				if (Loaded)
-				{
-					SetPath(FMeshManager::GetSkeletalMeshBinaryFilePath(FbxPath));
-					bChanged = true;
-				}
+				FFbxImportOptionsDialog::BeginSceneImport(SkeletalFbxImportDialog, FbxPath);
 			}
 		}
+
+		FFbxSceneImportRequest       Request;
+		const EFbxImportDialogResult DialogResult = FFbxImportOptionsDialog::RenderSceneImportPopup(
+			"Skeletal FBX Import Options",
+			SkeletalFbxImportDialog,
+			Request
+		);
+		if (DialogResult == EFbxImportDialogResult::Submitted)
+		{
+			FFbxSceneImportResult Result;
+			if (FMeshManager::ImportFbxScene(Request, GEngine->GetRenderer().GetFD3DDevice().GetDevice(), Result))
+			{
+				if (Result.SkeletalMesh)
+				{
+					SetPath(Result.SkeletalMesh->GetAssetPathFileName());
+					bChanged = true;
+				}
+				FMeshManager::ScanMeshAssets();
+				FFbxImportOptionsDialog::RequestClose(SkeletalFbxImportDialog);
+			}
+			else
+			{
+				SkeletalFbxImportDialog.Error = "FBX import failed. See the engine log for details.";
+			}
+		}
+
 		return bChanged;
 	}
 
@@ -1913,14 +1937,34 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 				FString FbxPath = OpenFbxFileDialog();
 				if (!FbxPath.empty())
 				{
-					ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-					USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(FbxPath, Device);
-					if (Loaded)
-					{
-						SetObjectValue(Loaded);
-					}
+					FFbxImportOptionsDialog::BeginSceneImport(SkeletalFbxImportDialog, FbxPath);
 				}
 			}
+
+			FFbxSceneImportRequest       Request;
+			const EFbxImportDialogResult DialogResult = FFbxImportOptionsDialog::RenderSceneImportPopup(
+				"Object Skeletal FBX Import Options",
+				SkeletalFbxImportDialog,
+				Request
+			);
+			if (DialogResult == EFbxImportDialogResult::Submitted)
+			{
+				FFbxSceneImportResult Result;
+				if (FMeshManager::ImportFbxScene(Request, GEngine->GetRenderer().GetFD3DDevice().GetDevice(), Result))
+				{
+					if (Result.SkeletalMesh)
+					{
+						SetObjectValue(Result.SkeletalMesh);
+					}
+					FMeshManager::ScanMeshAssets();
+					FFbxImportOptionsDialog::RequestClose(SkeletalFbxImportDialog);
+				}
+				else
+				{
+					SkeletalFbxImportDialog.Error = "FBX import failed. See the engine log for details.";
+				}
+			}
+
 			break;
 		}
 

@@ -575,6 +575,9 @@
     <ClCompile Include="Source\Editor\UI\EditorWorldSettingsWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\FbxImportOptionsDialog.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\ImGuiSetting.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -1551,6 +1554,9 @@
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorWorldSettingsWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\FbxImportOptionsDialog.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\ImGuiSetting.h">
