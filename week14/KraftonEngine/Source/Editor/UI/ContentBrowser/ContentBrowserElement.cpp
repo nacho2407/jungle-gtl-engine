@@ -13,8 +13,20 @@
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/FbxImporter.h"
+#include "Editor/UI/Asset/MeshEditorWidget.h"
 
 #include <algorithm>
+#include <chrono>
+
+namespace
+{
+	using FContentBrowserImportClock = std::chrono::steady_clock;
+
+	double GetElapsedImportSeconds(const FContentBrowserImportClock::time_point& StartTime)
+	{
+		return std::chrono::duration<double>(FContentBrowserImportClock::now() - StartTime).count();
+	}
+}
 
 static FString FormatBytes(uint64 Bytes)
 {
@@ -414,8 +426,12 @@ void MeshElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 
 		if (bHasSkinDeformer)
 		{
+			const auto ImportStartTime = FContentBrowserImportClock::now();
 			if (USkeletalMesh* MeshAsset = FMeshManager::LoadSkeletalMesh(FilePath, Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice()))
 			{
+				FMeshEditorWidget::RecordImportDurationForAsset(
+					MeshAsset->GetAssetPathFileName(),
+					GetElapsedImportSeconds(ImportStartTime));
 				Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
 			}
 		}
@@ -431,6 +447,7 @@ void MeshElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 
 	if (USkeletalMesh* MeshAsset = FMeshManager::LoadSkeletalMesh(FilePath, Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice()))
 	{
+		FMeshEditorWidget::ClearImportDurationForAsset(MeshAsset->GetAssetPathFileName());
 		Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
 	}
 }

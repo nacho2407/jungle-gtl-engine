@@ -29,6 +29,7 @@
 #include <imgui.h>
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 
 // Paths.h가 끌어오는 Windows.h는 GetCurrentTime을 GetTickCount로 치환한다.
 #ifdef GetCurrentTime
@@ -54,6 +55,32 @@ namespace
 		return Result;
 	}
 
+	FString FormatMeshStatSeconds(double Seconds)
+	{
+		char Buffer[64] = {};
+		std::snprintf(Buffer, sizeof(Buffer), "%.3f sec", Seconds);
+		return FString(Buffer);
+	}
+
+	TMap<FString, double> GMeshImportDurationsByAssetPath;
+
+	double GetRecordedImportDurationSeconds(const USkeletalMesh* Mesh)
+	{
+		if (!Mesh)
+		{
+			return -1.0;
+		}
+
+		const FString& AssetPath = Mesh->GetAssetPathFileName();
+		if (AssetPath.empty() || AssetPath == "None")
+		{
+			return -1.0;
+		}
+
+		auto It = GMeshImportDurationsByAssetPath.find(AssetPath);
+		return It != GMeshImportDurationsByAssetPath.end() ? It->second : -1.0;
+	}
+
 	EUberLitDefines::ELightingModel GetLightingModelForViewMode(EViewMode ViewMode)
 	{
 		switch (ViewMode)
@@ -69,6 +96,26 @@ namespace
 }
 
 static uint32 GNextMeshEditorInstanceId = 0;
+
+void FMeshEditorWidget::RecordImportDurationForAsset(const FString& AssetPath, double Seconds)
+{
+	if (AssetPath.empty() || AssetPath == "None" || Seconds < 0.0)
+	{
+		return;
+	}
+
+	GMeshImportDurationsByAssetPath[AssetPath] = Seconds;
+}
+
+void FMeshEditorWidget::ClearImportDurationForAsset(const FString& AssetPath)
+{
+	if (AssetPath.empty() || AssetPath == "None")
+	{
+		return;
+	}
+
+	GMeshImportDurationsByAssetPath.erase(AssetPath);
+}
 
 FMeshEditorWidget::FMeshEditorWidget()
 	: InstanceId(GNextMeshEditorInstanceId++)
@@ -862,18 +909,29 @@ void FMeshEditorWidget::RenderMeshStatsOverlay(ImDrawList* DrawList, const ImVec
 
 	size_t VertexCount   = 0;
 	size_t TriangleCount = 0;
+	size_t IndexCount    = 0;
+	double ImportSeconds = -1.0;
 
 	if (const USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
 	{
 		if (const FSkeletalMesh* Asset = SkeletalMesh->GetSkeletalMeshAsset())
 		{
 			VertexCount   = Asset->Vertices.size();
+			IndexCount    = Asset->Indices.size();
 			TriangleCount = Asset->Indices.size() / 3;
 		}
+		ImportSeconds = GetRecordedImportDurationSeconds(SkeletalMesh);
 	}
 
-	const FString Text =
-		"Triangles: " + FormatMeshStatCount(TriangleCount) + "\n" + "Vertices: " + FormatMeshStatCount(VertexCount);
+	FString Text =
+		"Triangles: " + FormatMeshStatCount(TriangleCount) + "\n" +
+		"Vertices: " + FormatMeshStatCount(VertexCount) + "\n" +
+		"Indices: " + FormatMeshStatCount(IndexCount);
+
+	if (ImportSeconds >= 0.0)
+	{
+		Text += "\nImport Time: " + FormatMeshStatSeconds(ImportSeconds);
+	}
 
 	const ImVec2 TextPos(ViewportPos.x + 8.0f, ViewportPos.y + 36.0f);
 	DrawList->AddText(ImVec2(TextPos.x + 1.0f, TextPos.y + 1.0f), IM_COL32(0, 0, 0, 220), Text.c_str());

@@ -44,6 +44,9 @@ public:
 
 	FMeshEditorViewportClient* GetViewportClient() { return &ViewportClient; }
 
+	static void RecordImportDurationForAsset(const FString& AssetPath, double Seconds);
+	static void ClearImportDurationForAsset(const FString& AssetPath);
+
 private:
 	// Tab bar
 	void RenderTabBar();
