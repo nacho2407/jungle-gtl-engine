@@ -13,6 +13,12 @@
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/FbxImporter.h"
+#include "Animation/AnimSequence.h"
+#include "Animation/AnimMontage.h"
+#include "Animation/AnimationManager.h"
+#include "Animation/Skeleton.h"
+#include "Animation/SkeletonManager.h"
+#include "Asset/AssetRegistry.h"
 #include "Editor/UI/FbxImportOptionsDialog.h"
 #include "Editor/UI/Asset/MeshEditorWidget.h"
 
@@ -217,10 +223,8 @@ static bool ImportFbxWithDefaultOptionsForContentBrowser(ContentBrowserContext& 
 	FString                        StackMessage;
 	if (FFbxImporter::ListAnimationStacks(SourceFbxPath, AnimationStacks, &StackMessage) && !AnimationStacks.empty())
 	{
-		UE_LOG(
-			"FBX default import skipped: animation-only FBX requires a target skeleton. Use right-click Import/Reimport Options. Path=%s",
-			SourceFbxPath.c_str()
-		);
+		FFbxImportOptionsDialog::BeginSceneImport(Context.FbxImportDialog, SourceFbxPath);
+		return true;
 	}
 	else if (!StackMessage.empty())
 	{
@@ -674,6 +678,98 @@ void MeshElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	{
 		FMeshEditorWidget::ClearImportDurationForAsset(MeshAsset->GetAssetPathFileName());
 		Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
+	}
+}
+
+static USkeletalMesh* ResolveCompatibleSkeletalMeshForBinding(ContentBrowserContext& Context, const FSkeletonBinding& Binding)
+{
+	if (!Context.EditorEngine)
+	{
+		return nullptr;
+	}
+
+	ID3D11Device* Device = Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice();
+
+	const TArray<FAssetListItem> Meshes = FAssetRegistry::ListMeshesForSkeleton(Binding, /*bAllowSameStructure=*/true);
+	for (const FAssetListItem& Item : Meshes)
+	{
+		if (USkeletalMesh* Mesh = FMeshManager::LoadSkeletalMesh(Item.FullPath, Device))
+		{
+			return Mesh;
+		}
+	}
+
+	return nullptr;
+}
+
+void AnimationElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
+
+	const FString PackagePath = FPaths::ToUtf8(ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring());
+
+	EAssetPackageType PackageType = EAssetPackageType::Unknown;
+	if (!FAssetPackage::GetPackageType(PackagePath, PackageType))
+	{
+		return;
+	}
+
+	FSkeletonBinding Binding;
+	if (PackageType == EAssetPackageType::AnimSequence)
+	{
+		UAnimSequence* Seq = FAnimationManager::Get().LoadAnimation(PackagePath);
+		if (!Seq)
+		{
+			return;
+		}
+		Binding = Seq->GetSkeletonBinding();
+	}
+	else if (PackageType == EAssetPackageType::AnimMontage)
+	{
+		UAnimMontage* Montage = FAnimationManager::Get().LoadMontage(PackagePath);
+		if (!Montage)
+		{
+			return;
+		}
+		if (const UAnimSequence* Src = Montage->GetSourceSequence())
+		{
+			Binding = Src->GetSkeletonBinding();
+		}
+	}
+	else
+	{
+		return;
+	}
+
+	if (USkeletalMesh* Mesh = ResolveCompatibleSkeletalMeshForBinding(Context, Binding))
+	{
+		FMeshEditorWidget::ClearImportDurationForAsset(Mesh->GetAssetPathFileName());
+		Context.EditorEngine->OpenAssetEditorForObject(Mesh);
+	}
+}
+
+void SkeletonElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
+
+	const FString PackagePath = FPaths::ToUtf8(ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring());
+
+	USkeleton* Skeleton = FSkeletonManager::Get().LoadSkeleton(PackagePath);
+	if (!Skeleton)
+	{
+		return;
+	}
+
+	if (USkeletalMesh* Mesh = ResolveCompatibleSkeletalMeshForBinding(Context, Skeleton->GetSkeletonBinding()))
+	{
+		FMeshEditorWidget::ClearImportDurationForAsset(Mesh->GetAssetPathFileName());
+		Context.EditorEngine->OpenAssetEditorForObject(Mesh);
 	}
 }
 
