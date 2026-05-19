@@ -278,23 +278,21 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 	}
 	else if (Extension == L".obj" || Extension == L".fbx")
 	{
-		ObjFilePaths.push_back(RelativePath);
-
-		FStaticMeshResource Resource;
-		Resource.Name = RelativePath;
-		Resource.Path = RelativePath;
-		Resource.bPreload = false;
-		Resource.bNormalizeToUnitCube = false;
-		StaticMeshCache.RegisterResource(Resource);
-
-		if (Extension == L".fbx")
+		if (FAssetPathPolicy::IsStaticMeshSourcePath(RelativePath))
 		{
-			const FString AbsolutePath = FPaths::Normalize(FPaths::ToUtf8(FilePath.wstring()));
-			const FFbxMeshContentInfo ContentInfo = FbxImporter.InspectMeshContent(AbsolutePath);
-			if (ContentInfo.bHasSkeletalMesh)
-			{
-				SkeletalMeshFilePaths.push_back(RelativePath);
-			}
+			ObjFilePaths.push_back(RelativePath);
+
+			FStaticMeshResource Resource;
+			Resource.Name = RelativePath;
+			Resource.Path = RelativePath;
+			Resource.bPreload = false;
+			Resource.bNormalizeToUnitCube = false;
+			StaticMeshCache.RegisterResource(Resource);
+		}
+
+		if (FAssetPathPolicy::IsSkeletalMeshSourcePath(RelativePath))
+		{
+			SkeletalMeshFilePaths.push_back(RelativePath);
 		}
 	}
 	else if (Extension == L".mtl" || Extension == L".mat" || Extension == L".matinst")

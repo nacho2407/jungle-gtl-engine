@@ -7,6 +7,7 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Asset/CurveFloatAsset.h"
 #include "Asset/StaticMesh.h"
+#include "Core/AssetPathPolicy.h"
 #include "Core/ResourceManager.h"
 #include "Runtime/Script/ScriptManager.h"
 #include "Render/Resource/Material.h"
@@ -1139,7 +1140,7 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		{
 			EditorEngine->GetNotificationService().Info("Prefab selected. Drag to viewport or right-click to spawn.");
 		}
-		else if (Item.Extension == ".fbx")
+		else if (Item.Extension == ".fbx" && FAssetPathPolicy::IsSkeletalMeshSourcePath(MakeRelativeProjectPath(Item.Path)))
 		{
             EditorEngine->CreateViewer(MakeRelativeProjectPath(Item.Path));
 		}
