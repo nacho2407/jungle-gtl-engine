@@ -702,6 +702,8 @@
     <ClCompile Include="Source\Engine\Animation\AnimationRuntime.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimStateMachine.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimStateMachineTypes.cpp" />
     <ClCompile Include="Source\Engine\Collision\Collision.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayCollision\RayCollision.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
@@ -1037,6 +1039,8 @@
     <ClInclude Include="Source\Engine\Animation\AnimationTypes.h" />
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimStateMachine.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimStateMachineTypes.h" />
     <ClInclude Include="Source\Engine\Collision\Collision.h" />
     <ClInclude Include="Source\Engine\Collision\RayCollision\RayCollision.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />

@@ -459,6 +459,12 @@
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimStateMachine.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimStateMachineTypes.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Collision\RayCollision\RayCollision.cpp">
       <Filter>Source\Engine\Collision\RayCollision</Filter>
     </ClCompile>
@@ -1281,6 +1287,12 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimStateMachine.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimStateMachineTypes.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\RayCollision\RayCollision.h">
