@@ -20,6 +20,15 @@ public:
     static bool ConvertLocalPoseToMatrices(const TArray<FTransform>& LocalPose, TArray<FMatrix>& OutLocalMatrices);
 
 	/**
+	 * @brief 두 개의 local pose를 Alpha 비율로 섞어서 최종 local pose를 만드는 함수
+	 */
+    static bool BlendLocalPoses(
+        const TArray<FTransform>& PoseA,
+        const TArray<FTransform>& PoseB,
+        float Alpha,
+        TArray<FTransform>& OutPose);
+
+	/**
 	 * @brief skeletal mesh의 bone 개수와 거기에 적용할 animation pose 배열 개수가 일치하는지 검사.
 	 * 
 	 *        animation asset의 track 개수와 skeletal mesh bone 개수는 충분히 다를 수 있지만,
