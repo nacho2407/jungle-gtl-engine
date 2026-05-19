@@ -1,13 +1,13 @@
 {
         "Nodes" : [{
-            "AnimationPath" : "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_ahri_skin14_recall.anm.animseq",
+            "AnimationPath" : "",
             "InputPoseNodeId" : -1,
             "Name" : "Sequence Player",
             "NodeId" : 1,
             "PlayRate" : 1.000000,
             "Position" : {
-              "X" : 397.000000,
-              "Y" : 150.000000
+              "X" : 120.000000,
+              "Y" : 120.000000
             },
             "StateMachine" : {
               "EntryStateId" : -1,
@@ -23,8 +23,8 @@
             "NodeId" : 2,
             "PlayRate" : 1.000000,
             "Position" : {
-              "X" : 731.000000,
-              "Y" : 158.000000
+              "X" : 420.000000,
+              "Y" : 120.000000
             },
             "StateMachine" : {
               "EntryStateId" : -1,
@@ -34,7 +34,7 @@
             "Type" : 0,
             "bLoop" : true
           }],
-        "ObjectName" : "UAnimGraphAsset_26",
+        "ObjectName" : "UAnimGraphAsset_0",
         "RootNodeId" : 2,
         "Type" : "UAnimGraphAsset"
       }
