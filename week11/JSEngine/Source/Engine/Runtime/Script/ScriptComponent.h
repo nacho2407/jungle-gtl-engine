@@ -18,7 +18,9 @@ class UCameraShakeBase;
 class UCameraShakePattern;
 class USequenceCameraShakePattern;
 class USinusoidalCameraShakePattern;
+class USkeletalMeshComponent;
 struct FHitResult;
+struct FAnimNotifyDispatchEvent;
 struct FLuaScriptLoadResult;
 
 enum class ELuaScriptPropertyType
@@ -145,6 +147,10 @@ public:
         int32 OtherBodyIndex,
         bool bFromSweep,
         const FHitResult& SweepResult);
+
+    void OnAnimNotify(
+        USkeletalMeshComponent* SourceComponent,
+        const FAnimNotifyDispatchEvent& NotifyEvent);
 
 
 private:

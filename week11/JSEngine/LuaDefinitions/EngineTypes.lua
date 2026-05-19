@@ -202,6 +202,9 @@ function ActorComponent:GetActor() end
 ---@return ActorSequenceComponent|nil
 function ActorComponent:AsActorSequenceComponent() end
 
+---@return SkeletalMeshComponent|nil
+function ActorComponent:AsSkeletalMeshComponent() end
+
 ---@return boolean
 function ActorComponent:IsActive() end
 
@@ -417,7 +420,13 @@ function StaticMesh:HasValidMesh() end
 ---@return integer
 function StaticMesh:GetValidLODCount() end
 
----@class StaticMeshComponent: ActorComponent
+---@class MeshComponent: PrimitiveComponent
+local MeshComponent = {}
+
+---@return integer
+function MeshComponent:GetNumMaterials() end
+
+---@class StaticMeshComponent: MeshComponent
 local StaticMeshComponent = {}
 
 ---@return StaticMesh|nil
@@ -431,6 +440,82 @@ function StaticMeshComponent:HasValidMesh() end
 
 ---@return integer
 function StaticMeshComponent:GetPrimitiveType() end
+
+---@class SkinnedMeshComponent: MeshComponent
+local SkinnedMeshComponent = {}
+
+---@return Object|nil
+function SkinnedMeshComponent:GetSkeletalMesh() end
+
+---@param mesh Object
+function SkinnedMeshComponent:SetSkeletalMesh(mesh) end
+
+---@return boolean
+function SkinnedMeshComponent:HasValidMesh() end
+
+---@param boneIndex integer
+---@return any
+function SkinnedMeshComponent:GetBoneWorldMatrix(boneIndex) end
+
+---@class SkeletalMeshComponent: SkinnedMeshComponent
+local SkeletalMeshComponent = {}
+
+---@param path string
+---@param stackName? string
+---@return boolean
+function SkeletalMeshComponent:SetAnimSequence(path, stackName) end
+
+---@param path string
+---@return boolean
+function SkeletalMeshComponent:SetAnimStateMachine(path) end
+
+---@param name string
+---@param value number
+function SkeletalMeshComponent:SetAnimVariableFloat(name, value) end
+
+---@param name string
+---@param defaultValue? number
+---@return number
+function SkeletalMeshComponent:GetAnimVariableFloat(name, defaultValue) end
+
+---@param name string
+---@param value boolean
+function SkeletalMeshComponent:SetAnimVariableBool(name, value) end
+
+---@param name string
+---@param defaultValue? boolean
+---@return boolean
+function SkeletalMeshComponent:GetAnimVariableBool(name, defaultValue) end
+
+---@return string
+function SkeletalMeshComponent:GetCurrentAnimStateName() end
+
+---@return string
+function SkeletalMeshComponent:GetPreviousAnimStateName() end
+
+---@return string
+function SkeletalMeshComponent:GetTargetAnimStateName() end
+
+---@return number
+function SkeletalMeshComponent:GetAnimTransitionAlpha() end
+
+---@return boolean
+function SkeletalMeshComponent:IsAnimTransitioning() end
+
+function SkeletalMeshComponent:PlayAnim() end
+function SkeletalMeshComponent:StopAnim() end
+
+---@param time number
+function SkeletalMeshComponent:SetAnimTime(time) end
+
+---@param time number
+function SkeletalMeshComponent:SetAnimationTime(time) end
+
+---@return number
+function SkeletalMeshComponent:GetAnimationTime() end
+
+---@return boolean
+function SkeletalMeshComponent:IsAnimPlaying() end
 
 ---@class BillboardComponent: SceneComponent
 local BillboardComponent = {}

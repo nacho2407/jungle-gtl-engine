@@ -10,7 +10,9 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Asset/CurveFloatAsset.h"
+#include "Animation/AnimationTypes.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Core/Paths.h"
 #include "Core/CollisionTypes.h"
 #include "Core/ResourceManager.h"
@@ -389,6 +391,23 @@ bool SetLuaTableProperty(sol::table& Table, const FLuaScriptProperty& Prop)
         }
 
         return Cast<UCameraShakePattern>(Source->Duplicate());
+    }
+
+    const char* AnimNotifyPhaseToString(EAnimNotifyPhase Phase)
+    {
+        switch (Phase)
+        {
+        case EAnimNotifyPhase::Instant:
+            return "Instant";
+        case EAnimNotifyPhase::Begin:
+            return "Begin";
+        case EAnimNotifyPhase::Tick:
+            return "Tick";
+        case EAnimNotifyPhase::End:
+            return "End";
+        default:
+            return "Unknown";
+        }
     }
 }
 
@@ -1345,4 +1364,19 @@ void UScriptComponent::OnEndOverlap(
         OtherBodyIndex,
         bFromSweep,
         SweepResult);
+}
+
+void UScriptComponent::OnAnimNotify(
+    USkeletalMeshComponent* SourceComponent,
+    const FAnimNotifyDispatchEvent& NotifyEvent)
+{
+    (void)SourceComponent;
+
+    // Lua 쪽 gameplay callback은 자주 쓰는 값만 간단한 타입으로 전달
+    CallScriptFunction(
+        "OnAnimNotify",
+        NotifyEvent.Notify.NotifyName.ToString(),
+        FString(AnimNotifyPhaseToString(NotifyEvent.Phase)),
+        NotifyEvent.SourceStateName.ToString(),
+        NotifyEvent.TriggerWeight);
 }
