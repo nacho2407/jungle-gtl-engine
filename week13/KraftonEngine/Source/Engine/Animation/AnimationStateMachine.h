@@ -19,6 +19,17 @@ struct FStateTransition
 	float BlendTime = 0.2f;
 };
 
+// 진행중 from-state 한 항목. 빠른 연쇄 transition (A→B blend 중 B→C) 시
+// 단일 FromState 로는 A 가 폐기되어 시각 끊김 → 모든 from 을 stack 으로 보존.
+// Alpha 는 "이 from 이 *그 다음 단계의 state* (= 더 최근 BlendingFrom 또는 CurrentState)
+// 로 fade-out 된 진행도" 의미. 매 Tick 에서 dt/Duration 만큼 증가, 1.0 도달 시 OnExit + 제거.
+struct FBlendingFrom
+{
+	UAnimState* State    = nullptr;
+	float       Alpha    = 0.0f;
+	float       Duration = 0.0f;
+};
+
 // 데이터 기반 확장 가능 FSM.
 //
 // 사용 예:
@@ -68,6 +79,9 @@ public:
 	float       GetBlendAlpha()    const { return BlendAlpha; }
 	float       GetBlendDuration() const { return BlendDuration; }
 
+	// Multi-blend inspection — 진행중 모든 from 항목. Step 1 에선 빈 array (아직 미사용).
+	const TArray<FBlendingFrom>& GetBlendingFroms() const { return BlendingFroms; }
+
 private:
 	UAnimState* FindState(FName Name) const;
 	void        EnterState(UAnimInstance* Owner, FName NewState);
@@ -84,4 +98,9 @@ private:
 	UAnimState* FromState        = nullptr;
 	float       BlendAlpha       = 1.0f;  // 0 → FromState, 1 → CurrentState
 	float       BlendDuration    = 0.0f;
+
+	// Multi-blend 진행중 from 스택. Step 2 부터 채워지고 Step 3 부터 Tick/Evaluate 가 사용.
+	// oldest 가 [0], latest 가 back. 빠른 연쇄로 무한 grow 막기 위해 한도 도달 시 oldest 강제 정리.
+	TArray<FBlendingFrom>     BlendingFroms;
+	static constexpr int32    MaxBlendingFroms = 4;
 };
