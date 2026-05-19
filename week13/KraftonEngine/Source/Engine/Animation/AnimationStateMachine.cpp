@@ -57,17 +57,29 @@ void UAnimationStateMachine::Tick(UAnimInstance* Owner, float DeltaSeconds)
 		}
 	}
 
+	// 같은 UAnimState 가 CurrentState 와 BlendingFroms 둘 다 (또는 BlendingFroms 안에서 중복) 있는 경우
+	// — A→B→A 같은 빠른 연쇄 패턴. 같은 state 에 dt 만큼 Tick 을 두 번 호출하면 LocalTime 이
+	// 2× 진행하고 LastRootMotionDelta 가 덮어쓰임 → A 의 from 으로서의 root motion 손실 + 시간 가속.
+	// 가드: 이미 Tick 호출한 state 추적.
+	TArray<UAnimState*> Ticked;
+	auto TryTick = [&](UAnimState* S)
+	{
+		if (!S) return;
+		for (UAnimState* T : Ticked) if (T == S) return;
+		S->Tick(Owner, DeltaSeconds);
+		Ticked.push_back(S);
+	};
+
 	// 2) 현재 상태 시간 진행.
-	CurrentState->Tick(Owner, DeltaSeconds);
+	TryTick(CurrentState);
 
 	// 3) BlendingFroms 모두 Tick + alpha 증가 + 1.0 도달분 OnExit + 단일 패스 compaction.
-	//    Step 6 에서 같은 state 중복 Tick 방지 가드 추가 예정 (A→B→A 케이스).
 	{
 		size_t Write = 0;
 		for (size_t Read = 0; Read < BlendingFroms.size(); ++Read)
 		{
 			FBlendingFrom& BF = BlendingFroms[Read];
-			if (BF.State) BF.State->Tick(Owner, DeltaSeconds);
+			TryTick(BF.State);
 			if (BF.Duration > 0.0f) BF.Alpha += DeltaSeconds / BF.Duration;
 			else                    BF.Alpha = 1.0f;
 
@@ -213,12 +225,12 @@ void UAnimationStateMachine::BeginBlend(UAnimInstance* Owner, FName NewState, fl
 
 	if (Duration <= 0.0f)
 	{
-		// Instant cut — 위에서 push 한 항목 즉시 OnExit + pop. Step 6 에서 진행중 다른 from
-		// 들도 같이 cleanup 하는 정책 추가 예정.
-		if (BlendingFroms.back().State)
+		// Instant cut — 위에서 push 한 항목 포함 진행중 모든 from 즉시 OnExit + clear.
+		// 이전 transition history 를 전부 끊는 게 instant cut 의 의도 (Duration<=0 명시 = "이전 흐름 끊고 즉시 이 상태로").
+		for (FBlendingFrom& BF : BlendingFroms)
 		{
-			BlendingFroms.back().State->OnExit(Owner);
+			if (BF.State) BF.State->OnExit(Owner);
 		}
-		BlendingFroms.pop_back();
+		BlendingFroms.clear();
 	}
 }
