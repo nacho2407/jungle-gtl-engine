@@ -249,7 +249,8 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 			   Context->DeviceContext,
 			   Cmd.VertexFactoryType,
 			   Context->RenderBus->GetBoneMatrixConstants(Cmd),
-			   Context->RenderResources);
+			   Context->RenderResources,
+			   Cmd.BoneMatrixConstantBuffer);
 
 		   if (bBoneWeightHeatmapMode)
 		   {

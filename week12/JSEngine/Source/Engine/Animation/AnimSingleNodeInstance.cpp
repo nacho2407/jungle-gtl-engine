@@ -79,6 +79,7 @@ void UAnimSingleNodeInstance::SetAnimation(UAnimSequenceBase* InAnimation)
 	{
 		CurrentTime = 0.0f;
 		PreviousTime = 0.0f;
+		bPoseDirty = true;
 		return;
 	}
 
@@ -86,6 +87,7 @@ void UAnimSingleNodeInstance::SetAnimation(UAnimSequenceBase* InAnimation)
 	SyncAnimationAssetPathFromAnimation(InAnimation);
 	CurrentTime = 0.0f;
 	PreviousTime = 0.0f;
+	bPoseDirty = true;
 	BuildBoneMapping();
 }
 
@@ -148,6 +150,7 @@ void UAnimSingleNodeInstance::Play(bool bInLooping)
 {
 	bLooping = bInLooping;
 	bPlaying = true;
+	bPoseDirty = true;
 }
 
 void UAnimSingleNodeInstance::Stop()
@@ -155,6 +158,7 @@ void UAnimSingleNodeInstance::Stop()
 	bPlaying = false;
 	CurrentTime = 0.0f;
 	PreviousTime = 0.0f;
+	bPoseDirty = true;
 }
 
 void UAnimSingleNodeInstance::Pause()
@@ -166,6 +170,7 @@ void UAnimSingleNodeInstance::SetPosition(float InPosition)
 {
 	CurrentTime = InPosition;
 	PreviousTime = InPosition;
+	bPoseDirty = true;
 }
 
 void UAnimSingleNodeInstance::CopyPlaybackSettingsFrom(const UAnimSingleNodeInstance* SourceInstance)
@@ -212,6 +217,7 @@ void UAnimSingleNodeInstance::ApplyAnimationFromAssetPath()
 		CurrentTime = 0.0f;
 		PreviousTime = 0.0f;
 		bPlaying = false;
+		bPoseDirty = true;
 		BuildBoneMapping();
 		if (OwnerComponent)
 		{
@@ -249,6 +255,7 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaTime)
 {
 	if (!bPlaying || !CurrentAnimation) return;
 
+	const float OriginalTime = CurrentTime;
 	PreviousTime = CurrentTime;
 	CurrentTime += DeltaTime * PlayRate;
 
@@ -261,6 +268,7 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaTime)
 	{
 		CurrentTime = 0.0f;
 		bPlaying = false;
+		bPoseDirty = bPoseDirty || CurrentTime != OriginalTime;
 		TriggerAnimNotifies(CurrentAnimation, PreviousTime, CurrentTime, bLooped, bReverse, DeltaTime);
 		return;
 	}
@@ -302,6 +310,7 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaTime)
 		}
 	}
 
+	bPoseDirty = bPoseDirty || CurrentTime != OriginalTime;
 	TriggerAnimNotifies(CurrentAnimation, PreviousTime, CurrentTime, bLooped, bReverse, DeltaTime);
 }
 
@@ -309,11 +318,22 @@ bool UAnimSingleNodeInstance::EvaluatePose(FPoseContext& OutPoseContext)
 {
 	if (!CurrentAnimation) return false;
 
-	if (NeedsBoneMappingRebuild())
+	const bool bNeedsMappingRebuild = NeedsBoneMappingRebuild();
+	if (!bPoseDirty && !bNeedsMappingRebuild)
+	{
+		return false;
+	}
+
+	if (bNeedsMappingRebuild)
 	{
 		BuildBoneMapping();
 	}
 
 	OutPoseContext.TrackToBoneMap = TrackToBoneMap;
-	return CurrentAnimation->GetAnimationPose(CurrentTime, OutPoseContext);
+	const bool bEvaluated = CurrentAnimation->GetAnimationPose(CurrentTime, OutPoseContext);
+	if (bEvaluated)
+	{
+		bPoseDirty = false;
+	}
+	return bEvaluated;
 }

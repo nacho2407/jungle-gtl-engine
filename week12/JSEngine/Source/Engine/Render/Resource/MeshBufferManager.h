@@ -11,6 +11,7 @@ class UProceduralMeshComponent;
 
 class UStaticMesh;
 class USkeletalMesh;
+struct FBoneMatrixConstants;
 
 /*
 	Mesh Manager에서 넘겨 받은 MeshData를 바탕으로 MeshBuffer를 생성하고 소유합니다.
@@ -30,6 +31,7 @@ private:
 	TMap<uint32, FMeshBuffer> CPUSkeletalMeshBufferMap;
 	TMap<uint32, const USkeletalMesh*> CPUSkeletalMeshSourceMap;
 	TMap<const USkeletalMesh*, FMeshBuffer> GPUSkeletalMeshBufferMap;
+	TMap<uint32, FConstantBuffer> GPUSkeletalBoneMatrixBufferMap;
 
 public:
 
@@ -45,4 +47,5 @@ public:
     FMeshBuffer* GetProcMeshBuffer(uint32 ProcMeshCompUUID, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices);
 	FMeshBuffer* GetCPUSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FSkeletalMeshVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload);
 	FMeshBuffer* GetGPUSkeletalMeshBuffer(const USkeletalMesh* SkeletalMeshAsset);
+	FConstantBuffer* GetGPUSkeletalBoneMatrixBuffer(uint32 SkeletalMeshCompUUID, const FBoneMatrixConstants& Constants, bool bNeedsUpload);
 };
