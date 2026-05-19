@@ -1,4 +1,4 @@
-#include "EditorOverlayCollector.h"
+﻿#include "EditorOverlayCollector.h"
 
 #include "Component/BillboardComponent.h"
 #include "Component/DecalComponent.h"
@@ -263,6 +263,7 @@ void FEditorOverlayCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFl
     FMatrix WorldMatrix = Gizmo->GetWorldMatrix();
     bool bHolding = Gizmo->IsHolding();
     int32 SelectedAxis = Gizmo->GetSelectedAxis();
+	(void)bIsActiveOperation;
 
     auto CreateGizmoCmd = [&](bool bInner) {
         FRenderCommand Cmd = {};
@@ -292,7 +293,7 @@ void FEditorOverlayCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFl
         Material->SetVector4("GizmoColorTint", FVector4(1.0f, 1.0f, 1.0f, 1.0f));
         Material->SetBool("bIsInnerGizmo", bInner);
         Material->SetBool("bClicking", bHolding);
-        Material->SetUInt("SelectedAxis", (SelectedAxis >= 0 && bIsActiveOperation) ? (uint32)SelectedAxis : 0xffffffffu);
+		Material->SetUInt("SelectedAxis", (SelectedAxis >= 0) ? (uint32)SelectedAxis : 0xffffffffu);
         Material->SetFloat("HoveredAxisOpacity", 0.3f);
 
         return Cmd;
