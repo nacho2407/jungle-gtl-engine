@@ -272,25 +272,33 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             BoneWeightHeatmapState.SelectedBoneIndex >= 0 &&
             BoneWeightHeatmapState.SelectedBoneIndex < static_cast<int32>(SkeletalMesh->GetBones().size());
         uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
+        FConstantBuffer* BoneMatrixConstantBuffer = nullptr;
         if (bUseGPUSkinning)
         {
-            BoneMatrixConstantsIndex = RenderBus.AllocateBoneMatrixConstants();
-            if (FBoneMatrixConstants* Constants = RenderBus.GetMutableBoneMatrixConstants(BoneMatrixConstantsIndex))
+            FBoneMatrixConstants BoneMatrixConstants = {};
+            BuildBoneMatrixConstants(SkeletalMeshComp, BoneMatrixConstants);
+
+            BoneMatrixConstantBuffer = MeshBufferManager.GetGPUSkeletalBoneMatrixBuffer(
+                SkeletalMeshComp->GetUUID(),
+                BoneMatrixConstants,
+                bNeedsUpload);
+
+            if (!BoneMatrixConstantBuffer)
             {
-                BuildBoneMatrixConstants(SkeletalMeshComp, *Constants);
+                BoneMatrixConstantsIndex = RenderBus.AllocateBoneMatrixConstants();
+                if (FBoneMatrixConstants* Constants = RenderBus.GetMutableBoneMatrixConstants(BoneMatrixConstantsIndex))
+                {
+                    *Constants = BoneMatrixConstants;
+                }
             }
         }
         const TArray<uint32>& Indices = SkeletalMesh->GetIndices(); // 이건 immutable이라 걍 asset에서 들고와도 댐
         const FSkeletalMeshSkinningStatCache& SkinningStatCache = GetSkeletalMeshSkinningStatCache(SkeletalMesh);
-        const uint32 UploadedBoneMatrixCount = bUseGPUSkinning
-            ? static_cast<uint32>((std::min<uint64>)(SkinningStatCache.BoneCount, MaxGPUSkinBones))
-            : 0;
         FSkinningStats::Get().AddVisibleSkinnedMesh(
             SkinningStatCache.VertexCount,
             static_cast<uint32>(SkinningStatCache.BoneCount),
             SkinningStatCache.AvgBoneInfluence,
-            bUseGPUSkinning,
-            UploadedBoneMatrixCount);
+            bUseGPUSkinning);
 
         FMeshBuffer* MeshBuffer = bUseGPUSkinning
             ? MeshBufferManager.GetGPUSkeletalMeshBuffer(SkeletalMesh)
@@ -299,7 +307,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
                 SkeletalMesh,
                 SkeletalMeshComp->GetSkinnedVertices(),
                 Indices,
-                bNeedsUpload);
+                SkeletalMeshComp->ConsumeCPUSkinnedVertexBufferDirty());
         if (!MeshBuffer) return true;
 
         const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();
@@ -313,6 +321,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.MeshBuffer = MeshBuffer;
             Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
             Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
+            Cmd.BoneMatrixConstantBuffer = BoneMatrixConstantBuffer;
             Cmd.bUseBoneWeightHeatmap = bUseBoneWeightHeatmap;
             Cmd.BoneWeightHeatmapBoneIndex = bUseBoneWeightHeatmap
                 ? BoneWeightHeatmapState.SelectedBoneIndex
@@ -346,6 +355,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.MeshBuffer = MeshBuffer;
             Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
             Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
+            Cmd.BoneMatrixConstantBuffer = BoneMatrixConstantBuffer;
             Cmd.bUseBoneWeightHeatmap = bUseBoneWeightHeatmap;
             Cmd.BoneWeightHeatmapBoneIndex = bUseBoneWeightHeatmap
                 ? BoneWeightHeatmapState.SelectedBoneIndex

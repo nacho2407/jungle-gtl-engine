@@ -12,6 +12,7 @@ struct ID3D11Buffer;
 struct ID3D11DeviceContext;
 struct FBoneMatrixConstants;
 struct FRenderResources;
+class FConstantBuffer;
 
 // Mesh Vertex 데이터를 어떤 방식으로 해석할지 나타내는 타입입니다.
 // Material이 Static/Skeletal 여부를 알지 않도록 RenderCommand가 이 값을 들고 갑니다.
@@ -224,4 +225,5 @@ void BindVertexFactoryResources(
     ID3D11DeviceContext* Context,
     EVertexFactoryType Type,
     const FBoneMatrixConstants* BoneMatrixConstants,
-    FRenderResources* RenderResources);
+    FRenderResources* RenderResources,
+    FConstantBuffer* BoneMatrixConstantBuffer = nullptr);

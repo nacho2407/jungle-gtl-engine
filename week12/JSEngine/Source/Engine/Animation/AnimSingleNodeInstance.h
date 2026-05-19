@@ -57,6 +57,7 @@ private:
 	float PlayRate = 1.0f;
 
 	bool bPlaying = false;
+	bool bPoseDirty = true;
 
 	UPROPERTY(DisplayName = "Loop")
 	bool bLooping = false;

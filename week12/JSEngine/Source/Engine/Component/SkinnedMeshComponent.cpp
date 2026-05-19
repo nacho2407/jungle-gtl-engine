@@ -48,6 +48,24 @@ static void ComputeGlobalPoseRecursive(
 	Visited[BoneIndex] = true;
 }
 
+static bool ArePosesNearlyEqual(const TArray<FMatrix>& A, const TArray<FMatrix>& B)
+{
+	if (A.size() != B.size())
+	{
+		return false;
+	}
+
+	for (int32 Index = 0; Index < static_cast<int32>(A.size()); ++Index)
+	{
+		if (!A[Index].Equals(B[Index]))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 } // namespace
 
 void USkinnedMeshComponent::Serialize(FArchive& Ar)
@@ -101,6 +119,7 @@ void USkinnedMeshComponent::PostDuplicate(UObject* Original)
 	SkinnedVertices = SourceComponent->SkinnedVertices;
 	SkinningMode = SourceComponent->SkinningMode;
 	LastResolvedSkinningMode = SourceComponent->LastResolvedSkinningMode;
+	bCPUSkinnedVertexBufferDirty = true;
 
 	Materials = TArray<UMaterialInterface*>(SourceComponent->Materials.size());
 	for (int32 i = 0; i < static_cast<int32>(SourceComponent->Materials.size()); ++i)
@@ -167,6 +186,7 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
 	CurrentGlobalPose.clear();
 	SkinningMatrices.clear();
 	SkinnedVertices.clear();
+	bCPUSkinnedVertexBufferDirty = true;
 
 	if (SkeletalMesh)
 	{
@@ -190,7 +210,7 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
 		}
 
 		InitializePoseFromBindPose();
-		SkinnedVertices.resize(SkeletalMesh->GetVertices().size());
+		SkinnedVertices = SkeletalMesh->GetVertices();
 	}
 	else
 	{
@@ -215,6 +235,11 @@ bool USkinnedMeshComponent::SetCurrentLocalPose(const TArray<FMatrix>& InLocalPo
 		return false;
 	}
 
+	if (ArePosesNearlyEqual(CurrentLocalPose, InLocalPose))
+	{
+		return true;
+	}
+
 	CurrentLocalPose = InLocalPose;
 	MarkSkinningDirty();
 	return true;
@@ -229,6 +254,7 @@ void USkinnedMeshComponent::SetSkinningMode(ESkinningMode InMode)
 
 	SkinningMode = InMode;
 	MarkSkinningDirty();
+	bCPUSkinnedVertexBufferDirty = true;
 	MarkBoundsDirty();
 	MarkRenderStateDirty();
 }
@@ -419,6 +445,13 @@ bool USkinnedMeshComponent::ConsumeRenderStateDirty()
 	return bWasDirty;
 }
 
+bool USkinnedMeshComponent::ConsumeCPUSkinnedVertexBufferDirty()
+{
+	const bool bWasDirty = bCPUSkinnedVertexBufferDirty;
+	bCPUSkinnedVertexBufferDirty = false;
+	return bWasDirty;
+}
+
 void USkinnedMeshComponent::EnsureSkinningUpdated()
 {
 	const ESkinningMode ResolvedSkinningMode = GetResolvedSkinningMode();
@@ -449,6 +482,7 @@ void USkinnedMeshComponent::EnsureSkinningUpdated()
 	if (ResolvedSkinningMode == ESkinningMode::CPU)
 	{
 		SkinVerticesCPU();
+		bCPUSkinnedVertexBufferDirty = true;
 	}
 
 	bSkinningDirty = false;
@@ -595,6 +629,7 @@ void USkinnedMeshComponent::SkinVerticesCPU()
 	if (!HasValidMesh())
 	{
 		SkinnedVertices.clear();
+		bCPUSkinnedVertexBufferDirty = true;
 		return;
 	}
 

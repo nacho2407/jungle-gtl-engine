@@ -371,6 +371,7 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
         FMeshBuffer* MeshBuffer = nullptr;
         bool bUseGPUSkinning = false;
         uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
+        FConstantBuffer* BoneMatrixConstantBuffer = nullptr;
         if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh)
         {
             auto* StaticMeshComp = static_cast<UStaticMeshComponent*>(primitiveComponent);
@@ -389,10 +390,20 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
             bUseGPUSkinning = SkeletalMeshComp->GetResolvedSkinningMode() == ESkinningMode::GPU;
             if (bUseGPUSkinning)
             {
-                BoneMatrixConstantsIndex = RenderBus.AllocateBoneMatrixConstants();
-                if (FBoneMatrixConstants* Constants = RenderBus.GetMutableBoneMatrixConstants(BoneMatrixConstantsIndex))
+                FBoneMatrixConstants BoneMatrixConstants = {};
+                BuildBoneMatrixConstants(SkeletalMeshComp, BoneMatrixConstants);
+                BoneMatrixConstantBuffer = MeshBufferManager.GetGPUSkeletalBoneMatrixBuffer(
+                    SkeletalMeshComp->GetUUID(),
+                    BoneMatrixConstants,
+                    /*bNeedsUpload=*/ false);
+
+                if (!BoneMatrixConstantBuffer)
                 {
-                    BuildBoneMatrixConstants(SkeletalMeshComp, *Constants);
+                    BoneMatrixConstantsIndex = RenderBus.AllocateBoneMatrixConstants();
+                    if (FBoneMatrixConstants* Constants = RenderBus.GetMutableBoneMatrixConstants(BoneMatrixConstantsIndex))
+                    {
+                        *Constants = BoneMatrixConstants;
+                    }
                 }
             }
 
@@ -432,6 +443,7 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
             BaseCmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
             BaseCmd.bUseBoneMatrixConstants = bUseGPUSkinning;
             BaseCmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
+            BaseCmd.BoneMatrixConstantBuffer = BoneMatrixConstantBuffer;
         }
         else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Text)
         {

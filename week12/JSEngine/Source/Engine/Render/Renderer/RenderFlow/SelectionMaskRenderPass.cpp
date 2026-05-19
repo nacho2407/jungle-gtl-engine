@@ -230,7 +230,8 @@ bool FSelectionMaskRenderPass::DrawCommand(const FRenderPassContext* Context)
             Context->DeviceContext,
             Cmd.VertexFactoryType,
             Context->RenderBus->GetBoneMatrixConstants(Cmd),
-            Context->RenderResources);
+            Context->RenderResources,
+            Cmd.BoneMatrixConstantBuffer);
 
         Context->RenderResources->PerObjectConstantBuffer.Update(Context->DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
         ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
