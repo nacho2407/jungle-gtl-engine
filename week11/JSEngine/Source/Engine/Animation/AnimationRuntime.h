@@ -1,8 +1,11 @@
 ﻿#pragma once
 
+#include "Animation/AnimationTypes.h"
 #include "Core/Containers/Array.h"
 #include "Engine/Geometry/Transform.h"
 #include "Math/Matrix.h"
+
+#include <functional>
 
 class USkeletalMesh;
 
@@ -12,6 +15,8 @@ class USkeletalMesh;
 class FAnimationRuntime
 {
 public:
+    using FAnimNotifyDispatchFunction = std::function<void(const FAnimNotifyDispatchEvent&)>;
+
 	/**
 	 * @brief animation runtime의 FTransform local pose를 기존 component가 사용하는 FMatrix local pose로 변환하는 bridge.
 	 * 
@@ -27,6 +32,23 @@ public:
         const TArray<FTransform>& PoseB,
         float Alpha,
         TArray<FTransform>& OutPose);
+
+	/**
+	 * @brief 특정 animation sequence의 time 구간을 검사하여 그 사이 발생하는 notify를 dispatch
+	 */
+    static void TriggerAnimNotifies(
+        const FAnimNotifyTriggerContext& Context,
+        TArray<FActiveAnimNotifyState>& InOutActiveNotifyStates,
+        const FAnimNotifyDispatchFunction& DispatchFunc);
+
+	/**
+	 * @brief 현재 active 상태인 모든 duration notify state 정리
+	 */
+    static void ClearActiveAnimNotifyStates(
+        TArray<FActiveAnimNotifyState>& InOutActiveNotifyStates,
+        const FAnimNotifyDispatchFunction& DispatchFunc,
+        bool bDispatchEnd,
+        const FAnimNotifyTriggerContext& Context);
 
 	/**
 	 * @brief skeletal mesh의 bone 개수와 거기에 적용할 animation pose 배열 개수가 일치하는지 검사.
