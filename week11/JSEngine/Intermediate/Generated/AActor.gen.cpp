@@ -156,11 +156,12 @@ static FAutoRegister_AActor AutoRegister_AActor_Instance;
 
 void BindLua_AActor(sol::state& Lua)
 {
-    sol::table UserType = Lua["Actor"];
-    if (!UserType.valid())
+    sol::object UserTypeObject = Lua["Actor"];
+    if (!UserTypeObject.valid() || UserTypeObject == sol::nil || UserTypeObject.get_type() != sol::type::table)
     {
         return;
     }
+    sol::table UserType = UserTypeObject.as<sol::table>();
 
 }
 
