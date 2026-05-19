@@ -61,6 +61,23 @@ float WrapStateTime(float Time, float PlayLength)
 
     return WrappedTime;
 }
+
+const FAnimTransitionDesc* ChooseHigherPriorityTransition(
+    const FAnimTransitionDesc* CurrentBest,
+    const FAnimTransitionDesc* Candidate)
+{
+    if (!Candidate)
+    {
+        return CurrentBest;
+    }
+
+    if (!CurrentBest || Candidate->Priority > CurrentBest->Priority)
+    {
+        return Candidate;
+    }
+
+    return CurrentBest;
+}
 }
 
 void UAnimStateMachineInstance::NativeInitializeAnimation()
@@ -161,6 +178,16 @@ void UAnimStateMachineInstance::NativeUpdateAnimation(float DeltaSeconds)
         UpdateStateTime(ActiveTransition.FromStateIndex, DeltaSeconds);
         UpdateStateTime(ActiveTransition.ToStateIndex, DeltaSeconds);
 
+        if (const FAnimTransitionDesc* InterruptTransition = FindBestInterruptTransition())
+        {
+            TArray<FTransform> CurrentBlendedPose;
+            if (EvaluateAnimation(CurrentBlendedPose))
+            {
+                StartTransitionFromSnapshot(*InterruptTransition, CurrentBlendedPose);
+                return;
+            }
+        }
+
         ActiveTransition.ElapsedTime += DeltaSeconds;
         if (GetTransitionAlpha() >= 1.0f)
         {
@@ -175,6 +202,12 @@ void UAnimStateMachineInstance::NativeUpdateAnimation(float DeltaSeconds)
     if (const FAnimTransitionDesc* CandidateTransition = FindBestTransitionFromState(CurrentStateIndex))
     {
         StartTransition(*CandidateTransition);
+        return;
+    }
+
+    if (const FAnimTransitionDesc* AnyTransition = FindBestAnyTransition(CurrentStateIndex))
+    {
+        StartTransition(*AnyTransition);
     }
 }
 
@@ -358,6 +391,49 @@ void UAnimStateMachineInstance::StartTransition(const FAnimTransitionDesc& Trans
     }
 }
 
+void UAnimStateMachineInstance::StartTransitionFromSnapshot(
+    const FAnimTransitionDesc& Transition,
+    const TArray<FTransform>& SourcePoseSnapshot)
+{
+    const int32 ToStateIndex = FindRuntimeStateIndexByName(Transition.ToState);
+    if (SourcePoseSnapshot.empty() ||
+        !ActiveTransition.bActive ||
+        !IsValidStateIndex(ToStateIndex) ||
+        ToStateIndex == ActiveTransition.ToStateIndex)
+    {
+        return;
+    }
+
+    FAnimStateRuntime* TargetState = GetRuntimeState(ToStateIndex);
+    if (!TargetState)
+    {
+        return;
+    }
+
+    PreviousStateIndex = ActiveTransition.ToStateIndex;
+    TargetStateIndex = ToStateIndex;
+
+    // 현재 화면에 보이던 blended pose를 새 transition의 source로 고정
+    TargetState->PreviousTime = 0.0f;
+    TargetState->CurrentTime = 0.0f;
+
+    const int32 SnapshotSourceStateIndex = ActiveTransition.ToStateIndex;
+    ActiveTransition = FAnimTransitionRuntime();
+    ActiveTransition.bActive = true;
+    ActiveTransition.FromStateIndex = SnapshotSourceStateIndex;
+    ActiveTransition.ToStateIndex = ToStateIndex;
+    ActiveTransition.ElapsedTime = 0.0f;
+    ActiveTransition.BlendTime = Transition.BlendTime;
+    ActiveTransition.Priority = Transition.Priority;
+    ActiveTransition.bUseSourcePoseSnapshot = true;
+    ActiveTransition.SourcePoseSnapshot = SourcePoseSnapshot;
+
+    if (ActiveTransition.BlendTime <= AnimationTimeEpsilon)
+    {
+        FinishTransition();
+    }
+}
+
 void UAnimStateMachineInstance::FinishTransition()
 {
     const int32 FinishedFromStateIndex = ActiveTransition.FromStateIndex;
@@ -390,6 +466,19 @@ bool UAnimStateMachineInstance::EvaluateStatePose(
     return State->Sequence->GetAnimationPose(OutPose, Mesh, ExtractContext);
 }
 
+bool UAnimStateMachineInstance::IsAnyTransition(const FAnimTransitionDesc& Transition) const
+{
+    return FAnimStateMachineDesc::IsAnyStateName(Transition.FromState);
+}
+
+bool UAnimStateMachineInstance::CanUseTransitionTarget(
+    const FAnimTransitionDesc& Transition,
+    int32 BlockedStateIndex) const
+{
+    const int32 ToStateIndex = FindRuntimeStateIndexByName(Transition.ToState);
+    return ToStateIndex >= 0 && ToStateIndex != BlockedStateIndex;
+}
+
 const FAnimTransitionDesc* UAnimStateMachineInstance::FindBestTransitionFromState(int32 StateIndex) const
 {
     const FAnimStateRuntime* State = GetRuntimeState(StateIndex);
@@ -402,13 +491,12 @@ const FAnimTransitionDesc* UAnimStateMachineInstance::FindBestTransitionFromStat
     const FAnimTransitionDesc* BestTransition = nullptr;
     for (const FAnimTransitionDesc* Transition : RuntimeTransitions)
     {
-        if (!Transition || Transition->FromState != StateName)
+        if (!Transition || IsAnyTransition(*Transition) || Transition->FromState != StateName)
         {
             continue;
         }
 
-        const int32 ToStateIndex = FindRuntimeStateIndexByName(Transition->ToState);
-        if (ToStateIndex < 0 || ToStateIndex == StateIndex)
+        if (!CanUseTransitionTarget(*Transition, StateIndex))
         {
             continue;
         }
@@ -419,10 +507,74 @@ const FAnimTransitionDesc* UAnimStateMachineInstance::FindBestTransitionFromStat
         }
 
         // 같은 priority면 JSON 순서 상 먼저 찾은 후보를 사용
-        if (!BestTransition || Transition->Priority > BestTransition->Priority)
+        BestTransition = ChooseHigherPriorityTransition(BestTransition, Transition);
+    }
+
+    return BestTransition;
+}
+
+const FAnimTransitionDesc* UAnimStateMachineInstance::FindBestAnyTransition(int32 BlockedStateIndex) const
+{
+    const FAnimTransitionDesc* BestTransition = nullptr;
+    for (const FAnimTransitionDesc* Transition : RuntimeTransitions)
+    {
+        if (!Transition || !IsAnyTransition(*Transition))
         {
-            BestTransition = Transition;
+            continue;
         }
+
+        if (!CanUseTransitionTarget(*Transition, BlockedStateIndex))
+        {
+            continue;
+        }
+
+        if (!EvaluateTransitionCondition(*Transition))
+        {
+            continue;
+        }
+
+        // 같은 priority면 JSON 순서 상 먼저 찾은 후보를 사용
+        BestTransition = ChooseHigherPriorityTransition(BestTransition, Transition);
+    }
+
+    return BestTransition;
+}
+
+const FAnimTransitionDesc* UAnimStateMachineInstance::FindBestInterruptTransition() const
+{
+    if (!ActiveTransition.bActive || !IsValidStateIndex(ActiveTransition.ToStateIndex))
+    {
+        return nullptr;
+    }
+
+    const int32 BlockedStateIndex = ActiveTransition.ToStateIndex;
+    const FAnimStateRuntime* TargetState = GetRuntimeState(ActiveTransition.ToStateIndex);
+    const FName TargetStateName = TargetState && TargetState->Desc ? TargetState->Desc->Name : FName();
+
+    const FAnimTransitionDesc* BestTransition = nullptr;
+    for (const FAnimTransitionDesc* Transition : RuntimeTransitions)
+    {
+        if (!Transition)
+        {
+            continue;
+        }
+
+        const bool bAnyTransition = IsAnyTransition(*Transition);
+        const bool bTargetOutgoingTransition =
+            !bAnyTransition && TargetStateName.IsValid() && Transition->FromState == TargetStateName;
+        if (!bAnyTransition && !bTargetOutgoingTransition)
+        {
+            continue;
+        }
+
+        if (Transition->Priority <= ActiveTransition.Priority ||
+            !CanUseTransitionTarget(*Transition, BlockedStateIndex) ||
+            !EvaluateTransitionCondition(*Transition))
+        {
+            continue;
+        }
+
+        BestTransition = ChooseHigherPriorityTransition(BestTransition, Transition);
     }
 
     return BestTransition;

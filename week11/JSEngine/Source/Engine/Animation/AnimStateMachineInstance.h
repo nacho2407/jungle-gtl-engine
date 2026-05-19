@@ -60,9 +60,16 @@ private:
     FAnimStateRuntime* GetRuntimeState(int32 StateIndex);
     void UpdateStateTime(int32 StateIndex, float DeltaSeconds);
     void StartTransition(const FAnimTransitionDesc& Transition);
+    void StartTransitionFromSnapshot(
+        const FAnimTransitionDesc& Transition,
+        const TArray<FTransform>& SourcePoseSnapshot);
     void FinishTransition();
     bool EvaluateStatePose(int32 StateIndex, const USkeletalMesh* Mesh, TArray<FTransform>& OutPose) const;
+    bool IsAnyTransition(const FAnimTransitionDesc& Transition) const;
+    bool CanUseTransitionTarget(const FAnimTransitionDesc& Transition, int32 BlockedStateIndex) const;
     const FAnimTransitionDesc* FindBestTransitionFromState(int32 StateIndex) const;
+    const FAnimTransitionDesc* FindBestAnyTransition(int32 BlockedStateIndex) const;
+    const FAnimTransitionDesc* FindBestInterruptTransition() const;
     bool EvaluateTransitionCondition(const FAnimTransitionDesc& Transition) const;
     bool EvaluateStructuredCondition(
         const FAnimTransitionConditionDesc& Condition,
