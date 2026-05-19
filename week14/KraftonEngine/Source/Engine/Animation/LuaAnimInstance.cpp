@@ -401,7 +401,9 @@ void ULuaAnimInstance::PostEditProperty(const char* PropertyName)
 	Super::PostEditProperty(PropertyName);
 	if (!PropertyName) return;
 
-	if (std::strcmp(PropertyName, "Script File") == 0)
+	// EditorPropertyWidget 이 Prop.GetName() (internal C++ 멤버 이름) 을 넘기므로
+	// DisplayName "Script File" 이 아닌 internal "ScriptFile" 로 매칭해야 한다.
+	if (std::strcmp(PropertyName, "ScriptFile") == 0)
 	{
 		ReloadScript();
 	}
