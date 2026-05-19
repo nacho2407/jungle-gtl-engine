@@ -41,10 +41,6 @@ public:
 	void TakeSnapshot();
 	const FSkinningStatsFrame& GetSnapshot() const { return Snapshot; }
 
-	void SetGPUStatsEnabled(bool bEnabled) { bGPUStatsEnabled = bEnabled; }
-	bool IsGPUStatsEnabled() const { return bGPUStatsEnabled; }
-	bool ShouldCollectGPUStats() const;
-
 	void RecordCPUFrameTime(double Ms) { Current.CPUFrameTimeMs = Ms; }
 	void RecordGPUFrameTime(double Ms) { Current.GPUFrameTimeMs = Ms; }
 	void AddCPUAnimationUpdate(double Ms) { Current.CPUAnimationUpdateMs += Ms; }
@@ -61,7 +57,6 @@ private:
 
 	FSkinningStatsFrame Current;
 	FSkinningStatsFrame Snapshot;
-	bool bGPUStatsEnabled = false;
 };
 
 class FSkinningScopedTimer
