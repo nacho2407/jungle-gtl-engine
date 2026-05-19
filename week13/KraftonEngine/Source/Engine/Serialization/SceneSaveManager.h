@@ -53,13 +53,14 @@ public:
 	static TArray<FString> GetSceneFileList();
 
 private:
-	struct FSceneSaveContext
+	struct FSceneSaveContext : FJsonObjectReferenceContext
 	{
 		TMap<const UObject*, uint32> ObjectToId;
 		uint32 NextObjectId = 1;
 
 		uint32 RegisterSceneObject(const UObject* Object);
 		uint32 FindObjectId(const UObject* Object) const;
+		bool SerializeObjectReference(const UObject* Object, json::JSON& OutValue) const override;
 	};
 
 	struct FPendingPropertyLoad
@@ -68,7 +69,7 @@ private:
 		json::JSON* Properties = nullptr;
 	};
 
-	struct FSceneLoadContext
+	struct FSceneLoadContext : FJsonObjectReferenceContext
 	{
 		TMap<uint32, UObject*> ObjectById;
 		TArray<FPendingPropertyLoad> PendingProperties;
@@ -76,6 +77,7 @@ private:
 		void RegisterLoadedObject(json::JSON& Node, UObject* Object);
 		UObject* FindObjectById(uint32 ObjectId) const;
 		void QueueProperties(UObject* Object, json::JSON& Properties);
+		bool DeserializeObjectReference(json::JSON& Value, UObject*& OutObject) const override;
 	};
 
 	// ---- Serialization ----

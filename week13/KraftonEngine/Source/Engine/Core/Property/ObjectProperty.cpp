@@ -41,6 +41,38 @@ void FObjectProperty::DeserializeValue(void* ValuePtr, json::JSON& Value) const
 	SetObjectValueFromValuePtr(ValuePtr, UUID != 0 ? UObjectManager::Get().FindByUUID(UUID) : nullptr);
 }
 
+json::JSON FObjectProperty::SerializeValue(void* ValuePtr, const FJsonObjectReferenceContext* RefContext) const
+{
+	using namespace json;
+
+	UObject* Object = GetObjectValueFromValuePtr(ValuePtr);
+	if (RefContext)
+	{
+		JSON RefValue;
+		if (RefContext->SerializeObjectReference(Object, RefValue))
+		{
+			return RefValue;
+		}
+	}
+
+	return SerializeValue(ValuePtr);
+}
+
+void FObjectProperty::DeserializeValue(void* ValuePtr, json::JSON& Value, const FJsonObjectReferenceContext* RefContext) const
+{
+	if (RefContext)
+	{
+		UObject* Object = nullptr;
+		if (RefContext->DeserializeObjectReference(Value, Object))
+		{
+			SetObjectValueFromValuePtr(ValuePtr, Object);
+			return;
+		}
+	}
+
+	DeserializeValue(ValuePtr, Value);
+}
+
 void FObjectProperty::SerializeValue(void* ValuePtr, FArchive& Ar) const
 {
 	uint32 UUID = 0;
