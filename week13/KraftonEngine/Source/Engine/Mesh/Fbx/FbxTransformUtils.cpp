@@ -26,6 +26,11 @@ FMatrix FFbxTransformUtils::ToEngineMatrix(const FbxAMatrix& FbxMat)
 	return Mat;
 }
 
+FMatrix FFbxTransformUtils::ToEngineInverseMatrix(const FbxAMatrix& FbxMat)
+{
+	return ToEngineMatrix(FbxMat.Inverse());
+}
+
 FbxAMatrix FFbxTransformUtils::GetGeometryTransform(FbxNode* Node)
 {
 	FbxAMatrix GeometryTransform;

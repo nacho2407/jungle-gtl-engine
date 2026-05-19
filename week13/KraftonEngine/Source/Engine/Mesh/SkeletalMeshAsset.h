@@ -92,6 +92,7 @@ struct FSkeletalMeshRange
 	uint32 VertexEnd = 0;
 	uint32 FirstIndex = 0;
 	uint32 IndexCount = 0;
+	// Legacy serialization slot. New imports bake mesh bind transforms into vertices.
 	FMatrix MeshBindGlobal = FMatrix::Identity;
 
 	friend FArchive& operator<<(FArchive& Ar, FSkeletalMeshRange& Range)

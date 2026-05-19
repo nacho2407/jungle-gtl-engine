@@ -63,6 +63,7 @@ public:
 
 	void GetCurrentBoneGlobalTransforms(TArray<FTransform>& OutGlobals) const;
 	void GetCurrentBoneGlobalMatrices(TArray<FMatrix>& OutGlobals) const;
+	void BuildSkinMatrices(TArray<FMatrix>& OutSkinMatrices) const;
 	const TArray<FVertexPNCTT>& GetSkinnedVertices() const { return SkinnedVertices; }
 	uint64 GetSkinnedRevision() const { return SkinnedRevision; }
 	FMeshBuffer* GetMeshBuffer() const override;

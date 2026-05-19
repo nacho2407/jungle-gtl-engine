@@ -179,24 +179,9 @@ bool FSkeletalMeshSceneProxy::UpdateSkinMatrixBuffer(ID3D11Device* Device, ID3D1
 		return true;
 	}
 
-	TArray<FMatrix> BoneGlobals;
-	SMC->GetCurrentBoneGlobalMatrices(BoneGlobals);
-
 	TArray<FMatrix> SkinMatrices;
-	SkinMatrices.resize(MatrixCount, FMatrix::Identity);
-
-	const FMatrix MeshBindGlobal = !Asset->MeshRanges.empty()
-		? Asset->MeshRanges[0].MeshBindGlobal
-		: FMatrix::Identity;
-
-	for (uint32 BoneIndex = 0; BoneIndex < MatrixCount; ++BoneIndex)
-	{
-		if (BoneIndex < BoneGlobals.size())
-		{
-			SkinMatrices[BoneIndex] =
-				MeshBindGlobal * Asset->Bones[BoneIndex].InverseBindPoseMatrix * BoneGlobals[BoneIndex];
-		}
-	}
+	SMC->BuildSkinMatrices(SkinMatrices);
+	if (SkinMatrices.size() != MatrixCount) return false;
 
 	{
 		SCOPE_STAT_CAT("GPUSkinning_MatrixUpload", "Skinning");
