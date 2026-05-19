@@ -427,6 +427,7 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
         ShowFlags.bFog = false;
         ShowFlags.bShadow = false;
         ShowFlags.bGammaCorrection = false;
+        ShowFlags.bSelectedBoneWeight = VFlags.bShowSelectedBoneWeight;
         ShowFlags.GammaValue = Settings.ShowFlags.GammaValue;
         const FEditorViewportState* ViewportState = VC->GetViewportState();
         const EViewMode ViewMode = ViewportState ? ViewportState->ViewMode : EViewMode::Lit_BlinnPhong;
@@ -444,9 +445,16 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
         Bus.SetRenderSettings(ViewMode, ShowFlags);
         Bus.SetLightCullMode(ViewportState ? ViewportState->LightCullMode : ELightCullMode::None);
         Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
-        if (LastSkinningMode != Settings.SkinningMode)
+
+        ESkinningMode SkinningMode = Settings.SkinningMode;
+        if (VFlags.bShowSelectedBoneWeight)
         {
-            if (Settings.SkinningMode == ESkinningMode::CPU)
+            SkinningMode = ESkinningMode::GPU;
+        }
+
+        if (LastSkinningMode != SkinningMode)
+        {
+            if (SkinningMode == ESkinningMode::CPU)
             {
                 Collector.ReleaseGPUSkeletalMeshBuffers();
             }
@@ -454,9 +462,15 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
             {
                 Collector.ReleaseCPUSkeletalMeshBuffers();
             }
-            LastSkinningMode = Settings.SkinningMode;
+            LastSkinningMode = SkinningMode;
         }
-        Bus.SetSkinningMode(Settings.SkinningMode);
+
+        Bus.SetSkinningMode(SkinningMode);
+        if (Viewers[i]->GetSelectedBoneIndex() >= 0)
+        {
+            Bus.SelectedBoneIndex = static_cast<uint32>(Viewers[i]->GetSelectedBoneIndex());
+        }
+
         Bus.SetViewportSize(FVector2((float)Rect.Width, (float)Rect.Height));
         Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
         Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
