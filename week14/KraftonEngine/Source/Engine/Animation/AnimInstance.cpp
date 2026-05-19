@@ -10,6 +10,14 @@
 
 void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 {
+	// Stale guard: 이전 frame 의 PendingRootMotion 이 남아있으면 누구도 consume 안 한 것 — drop.
+	// ACharacter 외 actor 에 root motion 켠 anim 을 붙이면 CMC 가 없어 영원히 누적될 위험
+	// (AccumulateRootMotion 이 매트릭스 곱 → 큰 transform → NaN). 매 frame reset 으로 차단.
+	// ACharacter 케이스에선 CMC::TickComponent (TG_DuringPhysics) 가 직전 frame 끝에 이미
+	// consume 했으므로 시점에 이미 identity — no-op.
+	// PIE pause / frame drop 등 비정상 케이스도 자동 안전.
+	PendingRootMotion = FTransform();
+
 	// 자식이 시간 진행 + AddAnimNotifies 로 큐에 적재 → 베이스가 일괄 dispatch.
 	NativeUpdateAnimation(DeltaSeconds);
 
