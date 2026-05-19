@@ -18,6 +18,10 @@ struct FAnimationTabState
 	int32          SelectedAnimIndex     = -1;
 	int32          SelectedMontageIndex  = -1;
 	bool           bMontageSelected      = false;     // true 면 좌측 패널이 montage 표시
+	// 타임라인에서 선택된 Notify entry 인덱스 (현재 시퀀스의 DataModel->Notifies 기준).
+	// -1 = 미선택. 시퀀스/몽타주 전환 시 -1 reset 필요.
+	// 유효 시 좌상단 AssetDetails 패널이 시퀀스 정보 대신 Notify 의 UPROPERTY 편집 UI 를 그림.
+	int32          SelectedNotifyIndex   = -1;
 	float          AnimListWidth         = 200.0f;
 	float          AnimDetailsWidth      = 280.0f;
 };

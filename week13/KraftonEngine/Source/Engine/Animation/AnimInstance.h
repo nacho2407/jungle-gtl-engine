@@ -16,6 +16,7 @@ class USkeletalMesh;
 class UAnimSequenceBase;
 class UAnimMontage;
 class UAnimMontageInstance;
+class UAnimNotifyState;
 class APawn;
 
 // 큐에 적재된 한 프레임 분의 notify — dispatch 시 Sequence 컨텍스트 보존 위해 같이 들고 다님.
@@ -24,6 +25,18 @@ struct FQueuedAnimNotify
 {
 	FAnimNotifyEvent         Event;
 	const UAnimSequenceBase* Sequence = nullptr;
+};
+
+// 활성 상태로 추적 중인 NotifyState 한 항목 — 매 프레임 [Prev, Cur) 와 이벤트 구간이 겹치면
+// bSeenThisFrame 가 true. 프레임 끝에서 false 인 항목은 NotifyEnd 후 제거.
+// 시퀀스 전환 / weight drop 등 자연스러운 종료 모두 같은 경로 (다음 프레임에 안 보임 → End).
+struct FActiveAnimNotifyState
+{
+	UAnimNotifyState*        State          = nullptr;
+	const UAnimSequenceBase* Sequence       = nullptr;
+	FName                    NotifyName;
+	float                    TotalDuration  = 0.0f;
+	bool                     bSeenThisFrame = false;
 };
 
 // 모든 애니메이션 인스턴스의 베이스. SkeletalMeshComponent 1개에 1개 인스턴스.
@@ -84,6 +97,9 @@ public:
 	// 가장 오래된 것이 [0], 가장 최근이 [size-1].
 	const TArray<FQueuedAnimNotify>& GetRecentNotifies() const { return RecentNotifies; }
 
+	// 현재 활성 중인 NotifyState 목록 — Editor 디버그 위젯 노출용.
+	const TArray<FActiveAnimNotifyState>& GetActiveNotifyStates() const { return ActiveNotifyStates; }
+
 	// ── Root Motion ──
 	// 자식 (SingleNode/FSM) 이 UpdateAnimation 안에서 AccumulateRootMotion 으로 누적.
 	// SkeletalMeshComponent 가 매 프레임 Tick 끝에서 ConsumeRootMotion 로 소비 후
@@ -143,6 +159,10 @@ protected:
 	// 비용: dispatch 당 push 1회 + cap 초과 시 erase front 1회 — 무시 가능.
 	static constexpr size_t       RecentNotifyCapacity = 10;
 	TArray<FQueuedAnimNotify>     RecentNotifies;
+
+	// 활성 NotifyState 추적 — UpdateAnimation 시작 시 bSeenThisFrame 리셋, AddAnimNotifies 가
+	// 매칭 시 true 마킹 후 Begin/Tick 호출. UpdateAnimation 끝에서 unseen 항목 NotifyEnd + 제거.
+	TArray<FActiveAnimNotifyState> ActiveNotifyStates;
 
 	// Root motion 누적 (UpdateAnimation 한 프레임 분, Consume 시 reset).
 	FTransform                    PendingRootMotion;
