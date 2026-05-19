@@ -115,13 +115,17 @@ void ACharacter::Tick(float DeltaTime)
 	}
 
 	// 같은 frame 안 ControlRotation 변경을 capsule (RootComponent) 에 즉시 반영 — 1 frame 지연 없음.
-	// 옵션 충돌 가드: CharacterMovement::bOrientRotationToMovement = true 면 yaw 는 Movement
-	// 의 PhysOrientToMovement 가 처리. ApplyControllerRotationToRoot 가 같은 frame 에 yaw 를
-	// ControlYaw 로 덮어쓰면 두 곳에서 토글 → 캐릭터가 이동 방향 안 보고 끊김 현상.
-	// → pitch/roll 만 apply, yaw 는 movement 에 양보.
+	// 옵션 충돌 가드:
+	//   1) bOrientRotationToMovement = true → yaw 는 Movement::PhysOrientToMovement 가 처리.
+	//   2) 직전 frame 에 root motion 이 yaw 를 적용했다 → 이번 frame 도 root motion 이 yaw 를
+	//      이어받을 가능성이 큼. Character 가 control yaw 로 덮으면 root motion 회전이 즉시
+	//      뒤집혀 토글링 됨 (turn-in-place / strafe anim 의 시각 손상). Movement 측에 양보.
+	// 두 경우 모두 pitch/roll 만 apply, yaw 는 movement 에 양보.
 	if (CapsuleComponent)
 	{
-		const bool bMovementHandlesYaw = CharacterMovement && CharacterMovement->bOrientRotationToMovement;
+		const bool bMovementHandlesYaw = CharacterMovement &&
+			(CharacterMovement->bOrientRotationToMovement ||
+			 CharacterMovement->HasYawDrivenByRootMotion());
 
 		FRotator R = CapsuleComponent->GetRelativeRotation();
 		bool bChanged = false;
