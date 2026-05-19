@@ -3,6 +3,7 @@
 #include "MovementComponent.h"
 #include "Core/CollisionTypes.h"   // FHitResult
 #include "Math/Vector.h"
+#include "Math/Transform.h"
 
 // UE 의 EMovementMode minimal subset — 후속 단계에서 NavWalking/Swimming 등 확장.
 enum class EMovementMode : uint8
@@ -34,6 +35,14 @@ public:
 	// Controller 등 외부에서 매 frame 누적. TickComponent 가 ConsumeInputVector 로 비움.
 	void AddInputVector(const FVector& WorldDirection, float ScaleValue = 1.0f);
 	void ConsumeInputVector(FVector& OutAccumulated);
+
+	// Root motion delta 입력 — local 좌표계 (root 본 기준) 의 한 프레임 분.
+	// 호출자 (보통 ACharacter::Tick 또는 CMC 가 직접 mesh anim instance 에서) 가 매 frame 누적.
+	// 여러 번 호출 시 합성됨 (translation 합산, rotation quat 곱). TickComponent 가 1회 소비.
+	// CMC 는 mode 를 모름 — "받으면 적용" 만. 어디서 가져올지는 AnimInstance::RootMotionMode 가 결정.
+	void AddRootMotionDelta(const FTransform& LocalDelta);
+	bool ConsumePendingRootMotion(FTransform& OutLocalDelta);
+	bool HasPendingRootMotion() const { return bHasPendingRootMotion; }
 
 	const FVector& GetVelocity() const { return Velocity; }
 	float          GetSpeed()    const { return Velocity.Length(); }
@@ -92,6 +101,12 @@ protected:
 
 	// Jump() 가 set, TickWalking 이 consume. edge-triggered 라 동일 프레임 다중 호출도 1회 점프.
 	bool          bWantsJump       = false;
+
+	// Root motion 누적 buffer — 매 frame AddRootMotionDelta 로 합성, TickComponent 가 1회 소비.
+	// PendingRootMotion 이 identity 라도 "이번 frame 에 root motion 이 있었다" 와 구분 필요해 bool 별도.
+	// (현재는 dormant — TickComponent 가 아직 ConsumePendingRootMotion 호출 안 함)
+	FTransform    PendingRootMotion;
+	bool          bHasPendingRootMotion = false;
 
 	// 평면 속도 기준 yaw 를 RotationYawRate * dt 로 lerp. TickComponent 끝에서 적용.
 	void  PhysOrientToMovement(float DeltaTime);
