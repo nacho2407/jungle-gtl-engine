@@ -15,6 +15,7 @@
 #include "Animation/Nodes/AnimNode_Base.h"
 #include "Animation/Nodes/AnimNode_BlendListByEnum.h"
 #include "Animation/Nodes/AnimNode_LayeredBlendPerBone.h"
+#include "Animation/Nodes/AnimNode_Root.h"
 #include "Animation/Nodes/AnimNode_SequencePlayer.h"
 #include "Animation/Nodes/AnimNode_Slot.h"
 #include "Animation/Nodes/AnimNode_StateMachine.h"
@@ -37,7 +38,12 @@ namespace
 		const std::string IndentStr(static_cast<size_t>(Indent) * 2, ' ');
 		const char* TypeName = Node->GetDebugName();
 
-		if (auto* SM = dynamic_cast<FAnimNode_StateMachine*>(Node))
+		if (auto* Root = dynamic_cast<FAnimNode_Root*>(Node))
+		{
+			ImGui::Text("%s[%s]", IndentStr.c_str(), TypeName);
+			DrawAnimNode(Root->ChildPose, Indent + 1, AnimInst);
+		}
+		else if (auto* SM = dynamic_cast<FAnimNode_StateMachine*>(Node))
 		{
 			const FName CurrentName = SM->GetCurrentStateName();
 			UAnimState*  CurrentState = SM->GetCurrentState();
