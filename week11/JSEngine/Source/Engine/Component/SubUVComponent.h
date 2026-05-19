@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "SubUVComponent.generated.h"
 
@@ -40,11 +40,16 @@ public:
 	uint32 GetFrameIndex() const { return FrameIndex; }
 
 	// --- Playback ---
+    UFUNCTION( ScriptCallable)
 	void SetFrameRate(float InFPS) { PlayRate = InFPS; }
+    UFUNCTION(ScriptCallable)
 	void SetLoop(bool bInLoop) { bLoop = bInLoop; }
+    UFUNCTION(ScriptCallable)
 	bool IsLoop()     const { return bLoop; }
+    UFUNCTION(ScriptCallable)
 	bool IsFinished() const { return !bLoop && bIsExecute; }
-	void Play() { FrameIndex = 0; TimeAccumulator = 0.0f; bIsExecute = false; } // 처음부터 다시 재생
+    UFUNCTION(CallInEditor, ScriptCallable, DisplayName = "Replay")
+    void Play(); // 처음부터 다시 재생
 
 	// --- Sprite Size (월드 공간 크기) ---
 	void SetSpriteSize(float InWidth, float InHeight) { Width = InWidth; Height = InHeight; }

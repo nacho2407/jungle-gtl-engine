@@ -1,7 +1,7 @@
-#include "RotatingMovementComponent.h"
+﻿#include "RotatingMovementComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Object/ObjectFactory.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(URotatingMovementComponent, UMovementComponent)
 REGISTER_FACTORY(URotatingMovementComponent)

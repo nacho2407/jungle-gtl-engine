@@ -2,7 +2,7 @@
 
 #include "Vector.h"
 #include "Utils.h"
-#include "Core/ReflectionTypeInfo.h"
+#include "ReflectionSystem/ReflectionTypeInfo.h"
 
 #include "Vector4.generated.h"
 struct FMatrix;

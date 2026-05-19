@@ -5,7 +5,7 @@
 #include "GameFramework/World.h"
 #include "Core/Delegates/Delegate.h"
 #include <Runtime/Script/ScriptComponent.h>
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 #include <algorithm>
 #include <cctype>

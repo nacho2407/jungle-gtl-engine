@@ -1,4 +1,4 @@
-#include "ScriptManager.h"
+﻿#include "ScriptManager.h"
 
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
@@ -331,6 +331,7 @@ void FScriptManager::BindLuaState()
     BindCameraTypes();
     BindPrimitiveTypes();
     BindDecalTypes();
+    BindGeneratedLuaFunctions(*GLuaState);
     BindEngineAPI();
 
     GLuaState->set_function("Log", &Log);

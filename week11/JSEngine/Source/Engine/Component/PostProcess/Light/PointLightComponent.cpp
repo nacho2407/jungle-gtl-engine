@@ -1,7 +1,7 @@
 ﻿#include "PointLightComponent.h"
 #include "Object/ObjectFactory.h"
 #include <Render/Resource/ShadowAtlasManager.h>
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(UPointLightComponent, ULightComponent)
 REGISTER_FACTORY(UPointLightComponent)

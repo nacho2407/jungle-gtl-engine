@@ -1,7 +1,8 @@
 // [UHT generated source - do not edit]
 #include "Engine/GameFramework/AActor.h"
-#include "Core/ReflectionDatabase.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionDatabase.h"
+#include "ReflectionSystem/ReflectionUtils.h"
+#include "ThirdParty/sol/sol.hpp"
 
 void Register_AActor()
 {
@@ -9,6 +10,7 @@ void Register_AActor()
     info.Properties.clear();
     info.ReflectedProperties.clear();
     info.GcPointerOffsets.clear();
+    info.Functions.clear();
     info.ClassName = "AActor";
     info.ParentClassName = "UObject";
     {
@@ -151,4 +153,14 @@ struct FAutoRegister_AActor
     FAutoRegister_AActor() { Register_AActor(); }
 };
 static FAutoRegister_AActor AutoRegister_AActor_Instance;
+
+void BindLua_AActor(sol::state& Lua)
+{
+    sol::table UserType = Lua["Actor"];
+    if (!UserType.valid())
+    {
+        return;
+    }
+
+}
 

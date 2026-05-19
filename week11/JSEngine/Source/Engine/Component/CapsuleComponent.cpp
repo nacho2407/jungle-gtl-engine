@@ -1,6 +1,6 @@
 ﻿#include "CapsuleComponent.h"
 #include "Object/Object.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(UCapsuleComponent, UShapeComponent)
 REGISTER_FACTORY(UCapsuleComponent)

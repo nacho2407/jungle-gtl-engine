@@ -16,7 +16,7 @@
 #include "Core/ResourceManager.h"
 #include <algorithm>
 #include <filesystem>
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 #ifdef GetCurrentTime
 #undef GetCurrentTime
