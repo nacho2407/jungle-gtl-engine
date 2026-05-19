@@ -1,6 +1,7 @@
 ﻿#include "Asset/AnimStateMachineLoader.h"
 
 #include "Animation/AnimStateMachine.h"
+#include "Core/AssetPathPolicy.h"
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
 #include "Object/Object.h"
@@ -28,17 +29,6 @@ namespace
                 return static_cast<char>(std::tolower(Ch));
             });
         return Text;
-    }
-
-    FString NormalizeStateMachinePath(const FString& Path)
-    {
-        return FPaths::Normalize(Path);
-    }
-
-    bool IsAnimStateMachineAssetPath(const FString& Path)
-    {
-        FString LowerPath = ToLowerString(FPaths::Normalize(Path));
-        return std::filesystem::path(FPaths::ToWide(LowerPath)).extension() == L".animsm";
     }
 
     bool IsValidAnimStateName(const FName& StateName)
@@ -868,7 +858,7 @@ UAnimStateMachine* FAnimStateMachineLoader::Load(const FString& Path) const
         return nullptr;
     }
 
-    const FString NormalizedPath = NormalizeStateMachinePath(Path);
+    const FString NormalizedPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
     UAnimStateMachine* StateMachine = UObjectManager::Get().CreateObject<UAnimStateMachine>();
     StateMachine->SetDesc(Desc);
     StateMachine->SetAssetPath(NormalizedPath);
@@ -898,8 +888,8 @@ FString FAnimStateMachineLoader::GetLoaderName() const
 
 bool FAnimStateMachineLoader::ReadDesc(const FString& Path, FAnimStateMachineDesc& OutDesc) const
 {
-    const FString NormalizedPath = NormalizeStateMachinePath(Path);
-    if (NormalizedPath.empty() || !IsAnimStateMachineAssetPath(NormalizedPath))
+    const FString NormalizedPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
+    if (NormalizedPath.empty())
     {
         return false;
     }
@@ -1002,8 +992,8 @@ bool FAnimStateMachineLoader::ReadDesc(const FString& Path, FAnimStateMachineDes
 
 bool FAnimStateMachineLoader::WriteDesc(const FString& Path, const FAnimStateMachineDesc& Desc) const
 {
-    const FString NormalizedPath = NormalizeStateMachinePath(Path);
-    if (NormalizedPath.empty() || !IsAnimStateMachineAssetPath(NormalizedPath))
+    const FString NormalizedPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
+    if (NormalizedPath.empty())
     {
         return false;
     }

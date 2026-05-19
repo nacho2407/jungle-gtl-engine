@@ -14,9 +14,9 @@ class UAnimSequenceBase;
  */
 enum class EAnimationMode: uint8
 {
-    None,
-    SingleNode,
-    AnimInstance,
+    None, // animation runtime을 사용하지 않음
+    SingleNode, // component가 단일 animation asset 재생용 instance 사용
+    AnimInstance, // component가 UAnimInstance subclass에게 animation update / evaluate를 위임
 };
 
 /**

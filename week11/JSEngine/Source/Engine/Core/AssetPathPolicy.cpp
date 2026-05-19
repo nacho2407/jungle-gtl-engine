@@ -1,4 +1,4 @@
-#include "Core/AssetPathPolicy.h"
+﻿#include "Core/AssetPathPolicy.h"
 
 #include "Core/Paths.h"
 
@@ -39,6 +39,19 @@ namespace
 
 		return Token;
 	}
+
+	FString ToLowerString(FString Text)
+	{
+		std::transform(
+			Text.begin(),
+			Text.end(),
+			Text.begin(),
+			[](unsigned char Ch)
+			{
+				return static_cast<char>(std::tolower(Ch));
+			});
+		return Text;
+	}
 }
 
 bool FAssetPathPolicy::FileExists(const FString& Path)
@@ -71,12 +84,39 @@ bool FAssetPathPolicy::IsSequenceAssetPath(const FString& Path)
 	return Extension == L".sequence";
 }
 
+bool FAssetPathPolicy::IsAnimStateMachineAssetPath(const FString& Path)
+{
+	const FString LowerPath = ToLowerString(FPaths::Normalize(Path));
+	std::filesystem::path FsPath(FPaths::ToWide(LowerPath));
+	return FsPath.extension() == L".animsm";
+}
+
 bool FAssetPathPolicy::IsSerializedMaterialAssetPath(const FString& Path)
 {
 	std::filesystem::path FsPath(FPaths::ToWide(FPaths::Normalize(Path)));
 	std::wstring Extension = FsPath.extension().wstring();
 	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
 	return Extension == L".mat" || Extension == L".matinst";
+}
+
+FString FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(const FString& Path)
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	if (NormalizedPath.empty() || !IsAnimStateMachineAssetPath(NormalizedPath))
+	{
+		return {};
+	}
+
+	std::filesystem::path FsPath(FPaths::ToWide(NormalizedPath));
+	if (FsPath.has_parent_path() || FsPath.is_absolute())
+	{
+		return FPaths::ToString(FsPath.lexically_normal().generic_wstring());
+	}
+
+	// 파일명만 받은 경우에는 state machine 기본 asset 디렉터리 아래로 해석
+	const std::filesystem::path DefaultPath =
+		std::filesystem::path(L"Asset") / L"Animation" / L"StateMachine" / FsPath.filename();
+	return FPaths::ToString(DefaultPath.generic_wstring());
 }
 
 FString FAssetPathPolicy::MakeCookedStaticMeshBinaryPath(const FString& SourcePath)
@@ -165,7 +205,7 @@ FString FAssetPathPolicy::MakeWritableAnimSequenceCacheBinaryPath(const FString&
 	const FString NormalizedTargetPath = FPaths::Normalize(TargetSkeletalMeshPath);
 	std::filesystem::path TargetFsPath(FPaths::ToWide(NormalizedTargetPath));
 
-	std::filesystem::path BinDir = std::filesystem::path(FPaths::RootDir()) / "Asset" / "AnimSequence" / "Bin";
+	std::filesystem::path BinDir = std::filesystem::path(FPaths::RootDir()) / "Asset" / "Animation" / "Sequence" / "Bin";
 
 	if (!std::filesystem::exists(BinDir))
 	{

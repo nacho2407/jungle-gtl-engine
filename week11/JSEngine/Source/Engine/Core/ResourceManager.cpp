@@ -1,4 +1,4 @@
-#include "Core/ResourceManager.h"
+﻿#include "Core/ResourceManager.h"
 
 #include "Core/Paths.h"
 #include "Core/AssetPathPolicy.h"
@@ -491,7 +491,7 @@ void FResourceManager::DeleteAllCacheFiles()
 	const TArray<fs::path> BinRootPaths = {
 		fs::path(FPaths::RootDir()) / "Asset" / "Mesh" / "Bin",
 		fs::path(FPaths::RootDir()) / "Asset" / "SkeletalMesh" / "Bin",
-		fs::path(FPaths::RootDir()) / "Asset" / "AnimSequence" / "Bin"
+		fs::path(FPaths::RootDir()) / "Asset" / "Animation" / "Sequence" / "Bin"
 	};
 
 	for (const fs::path& BinRootPath : BinRootPaths)
