@@ -18,21 +18,21 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 	// PIE pause / frame drop 등 비정상 케이스도 자동 안전.
 	PendingRootMotion = FTransform();
 
+	// NativeUpdateAnimation 은 RootNode 유무와 무관하게 항상 호출 — 사용자 변수 update hook.
+	// UE 본가 동일: AnimGraph 평가는 별개 단계. 자식이 graph build 하더라도 graph 평가에
+	// 입력으로 들어갈 변수 (예: Speed, Direction) 를 매 frame 갱신할 곳이 NativeUpdate.
+	// Legacy 자식 (RootNode 없음) 의 NativeUpdate 가 직접 FSM->Tick 호출 — 그쪽도 그대로 동작.
+	NativeUpdateAnimation(DeltaSeconds);
+
+	// AnimGraph 트리 평가 — set 되어 있으면 root 부터 자식 Update 재귀 호출. 시간 진행 /
+	// transition / notify 적재 / RM 누적 모두 노드들이 책임.
 	if (RootNode)
 	{
-		// AnimGraph 경로 — 트리 루트가 자식 노드 Update 재귀 호출. 시간 진행 / transition /
-		// notify 적재 / RM 누적 모두 노드들이 책임.
 		FAnimationUpdateContext Ctx;
 		Ctx.AnimInstance     = this;
 		Ctx.DeltaSeconds     = DeltaSeconds;
 		Ctx.FinalBlendWeight = 1.0f;
 		RootNode->Update(Ctx);
-	}
-	else
-	{
-		// Legacy 경로 — 자식의 NativeUpdateAnimation 가상 호출.
-		// 자식이 시간 진행 + AddAnimNotifies 로 큐에 적재 → 베이스가 일괄 dispatch.
-		NativeUpdateAnimation(DeltaSeconds);
 	}
 
 	// Montage 도 Tick — section 진행, blend alpha, notify push.
