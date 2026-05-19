@@ -38,6 +38,7 @@ private:
         UAnimSequenceBase* Sequence = nullptr;
         float PreviousTime = 0.0f;
         float CurrentTime = 0.0f;
+        bool bLoopedThisFrame = false;
         TArray<FActiveAnimNotifyState> ActiveNotifyStates;
     };
 
@@ -59,6 +60,21 @@ private:
     const FAnimStateRuntime* GetRuntimeState(int32 StateIndex) const;
     FAnimStateRuntime* GetRuntimeState(int32 StateIndex);
     void UpdateStateTime(int32 StateIndex, float DeltaSeconds);
+    void TriggerStateNotifies(
+        int32 StateIndex,
+        float DeltaSeconds,
+        float TriggerWeight,
+        bool bFromTransitionSource,
+        bool bFromTransitionTarget);
+    void ClearStateNotifyStates(int32 StateIndex, bool bDispatchEnd);
+    void ClearInactiveNotifyStates(const TSet<int32>& ActiveStateIndices);
+    FAnimNotifyTriggerContext MakeStateNotifyContext(
+        int32 StateIndex,
+        float DeltaSeconds,
+        float TriggerWeight,
+        bool bFromTransitionSource,
+        bool bFromTransitionTarget) const;
+    void DispatchAnimNotifyEvent(const FAnimNotifyDispatchEvent& NotifyEvent);
     void StartTransition(const FAnimTransitionDesc& Transition);
     void StartTransitionFromSnapshot(
         const FAnimTransitionDesc& Transition,

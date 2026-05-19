@@ -188,6 +188,23 @@ void UAnimStateMachineInstance::NativeUpdateAnimation(float DeltaSeconds)
             }
         }
 
+        const float TransitionAlpha = GetTransitionAlpha();
+        if (!ActiveTransition.bUseSourcePoseSnapshot)
+        {
+            TriggerStateNotifies(
+                ActiveTransition.FromStateIndex,
+                DeltaSeconds,
+                1.0f - TransitionAlpha,
+                true,
+                false);
+        }
+        TriggerStateNotifies(
+            ActiveTransition.ToStateIndex,
+            DeltaSeconds,
+            TransitionAlpha,
+            false,
+            true);
+
         ActiveTransition.ElapsedTime += DeltaSeconds;
         if (GetTransitionAlpha() >= 1.0f)
         {
@@ -198,6 +215,7 @@ void UAnimStateMachineInstance::NativeUpdateAnimation(float DeltaSeconds)
 
     TargetStateIndex = -1;
     UpdateStateTime(CurrentStateIndex, DeltaSeconds);
+    TriggerStateNotifies(CurrentStateIndex, DeltaSeconds, 1.0f, false, false);
 
     if (const FAnimTransitionDesc* CandidateTransition = FindBestTransitionFromState(CurrentStateIndex))
     {
@@ -280,6 +298,11 @@ bool UAnimStateMachineInstance::IsTransitioning() const
 
 void UAnimStateMachineInstance::ResetRuntime()
 {
+    for (int32 StateIndex = 0; StateIndex < static_cast<int32>(RuntimeStates.size()); ++StateIndex)
+    {
+        ClearStateNotifyStates(StateIndex, true);
+    }
+
     StateMachineAsset = nullptr;
     Desc = FAnimStateMachineDesc();
     RuntimeStates.clear();
@@ -333,6 +356,7 @@ void UAnimStateMachineInstance::UpdateStateTime(int32 StateIndex, float DeltaSec
         return;
     }
 
+    State->bLoopedThisFrame = false;
     State->PreviousTime = State->CurrentTime;
 
     const float PlayLength = State->Sequence->GetPlayLength();
@@ -349,9 +373,114 @@ void UAnimStateMachineInstance::UpdateStateTime(int32 StateIndex, float DeltaSec
     }
 
     const float NewTime = State->CurrentTime + DeltaSeconds * PlayRate;
+    if (State->Desc->bLooping)
+    {
+        State->bLoopedThisFrame = NewTime < 0.0f || NewTime >= PlayLength;
+    }
+
     State->CurrentTime = State->Desc->bLooping
         ? WrapStateTime(NewTime, PlayLength)
         : ClampStateTime(NewTime, PlayLength);
+}
+
+void UAnimStateMachineInstance::TriggerStateNotifies(
+    int32 StateIndex,
+    float DeltaSeconds,
+    float TriggerWeight,
+    bool bFromTransitionSource,
+    bool bFromTransitionTarget)
+{
+    FAnimStateRuntime* State = GetRuntimeState(StateIndex);
+    if (!State || !State->Sequence)
+    {
+        return;
+    }
+
+    FAnimationRuntime::TriggerAnimNotifies(
+        MakeStateNotifyContext(
+            StateIndex,
+            DeltaSeconds,
+            TriggerWeight,
+            bFromTransitionSource,
+            bFromTransitionTarget),
+        State->ActiveNotifyStates,
+        [this](const FAnimNotifyDispatchEvent& NotifyEvent)
+        {
+            DispatchAnimNotifyEvent(NotifyEvent);
+        });
+}
+
+void UAnimStateMachineInstance::ClearStateNotifyStates(int32 StateIndex, bool bDispatchEnd)
+{
+    FAnimStateRuntime* State = GetRuntimeState(StateIndex);
+    if (!State)
+    {
+        return;
+    }
+
+    FAnimationRuntime::ClearActiveAnimNotifyStates(
+        State->ActiveNotifyStates,
+        [this](const FAnimNotifyDispatchEvent& NotifyEvent)
+        {
+            DispatchAnimNotifyEvent(NotifyEvent);
+        },
+        bDispatchEnd,
+        MakeStateNotifyContext(StateIndex, 0.0f, 0.0f, false, false));
+}
+
+void UAnimStateMachineInstance::ClearInactiveNotifyStates(const TSet<int32>& ActiveStateIndices)
+{
+    for (int32 StateIndex = 0; StateIndex < static_cast<int32>(RuntimeStates.size()); ++StateIndex)
+    {
+        if (ActiveStateIndices.find(StateIndex) != ActiveStateIndices.end())
+        {
+            continue;
+        }
+
+        ClearStateNotifyStates(StateIndex, true);
+    }
+}
+
+FAnimNotifyTriggerContext UAnimStateMachineInstance::MakeStateNotifyContext(
+    int32 StateIndex,
+    float DeltaSeconds,
+    float TriggerWeight,
+    bool bFromTransitionSource,
+    bool bFromTransitionTarget) const
+{
+    FAnimNotifyTriggerContext Context;
+
+    const FAnimStateRuntime* State = GetRuntimeState(StateIndex);
+    if (!State || !State->Desc)
+    {
+        return Context;
+    }
+
+    Context.Sequence = State->Sequence;
+    Context.PreviousTime = State->PreviousTime;
+    Context.CurrentTime = State->CurrentTime;
+    Context.DeltaSeconds = DeltaSeconds;
+    Context.bLooping = State->Desc->bLooping;
+    Context.bReverse = State->Desc->PlayRate < 0.0f;
+    Context.bLooped = State->bLoopedThisFrame;
+    Context.TriggerWeight = TriggerWeight;
+    Context.TriggerWeightThreshold = NotifyTriggerWeightThreshold;
+    Context.SourceStateName = State->Desc->Name;
+    Context.SourceAnimationName = State->Desc->Animation.AnimStackName.empty()
+        ? (State->Sequence ? State->Sequence->GetFName() : FName())
+        : FName(State->Desc->Animation.AnimStackName);
+    Context.bFromStateMachine = true;
+    Context.bFromTransitionSource = bFromTransitionSource;
+    Context.bFromTransitionTarget = bFromTransitionTarget;
+    return Context;
+}
+
+void UAnimStateMachineInstance::DispatchAnimNotifyEvent(const FAnimNotifyDispatchEvent& NotifyEvent)
+{
+    if (USkeletalMeshComponent* Component = GetSkelMeshComponent())
+    {
+        Component->HandleAnimNotify(NotifyEvent);
+    }
 }
 
 void UAnimStateMachineInstance::StartTransition(const FAnimTransitionDesc& Transition)
@@ -374,8 +503,10 @@ void UAnimStateMachineInstance::StartTransition(const FAnimTransitionDesc& Trans
     TargetStateIndex = ToStateIndex;
 
     // target state는 transition에 진입하는 순간부터 시간 0.0으로 재생
+    ClearStateNotifyStates(ToStateIndex, true);
     TargetState->PreviousTime = 0.0f;
     TargetState->CurrentTime = 0.0f;
+    TargetState->bLoopedThisFrame = false;
 
     ActiveTransition = FAnimTransitionRuntime();
     ActiveTransition.bActive = true;
@@ -388,7 +519,13 @@ void UAnimStateMachineInstance::StartTransition(const FAnimTransitionDesc& Trans
     if (ActiveTransition.BlendTime <= AnimationTimeEpsilon)
     {
         FinishTransition();
+        return;
     }
+
+    TSet<int32> ActiveStateIndices;
+    ActiveStateIndices.insert(ActiveTransition.FromStateIndex);
+    ActiveStateIndices.insert(ActiveTransition.ToStateIndex);
+    ClearInactiveNotifyStates(ActiveStateIndices);
 }
 
 void UAnimStateMachineInstance::StartTransitionFromSnapshot(
@@ -414,8 +551,10 @@ void UAnimStateMachineInstance::StartTransitionFromSnapshot(
     TargetStateIndex = ToStateIndex;
 
     // 현재 화면에 보이던 blended pose를 새 transition의 source로 고정
+    ClearStateNotifyStates(ToStateIndex, true);
     TargetState->PreviousTime = 0.0f;
     TargetState->CurrentTime = 0.0f;
+    TargetState->bLoopedThisFrame = false;
 
     const int32 SnapshotSourceStateIndex = ActiveTransition.ToStateIndex;
     ActiveTransition = FAnimTransitionRuntime();
@@ -431,7 +570,12 @@ void UAnimStateMachineInstance::StartTransitionFromSnapshot(
     if (ActiveTransition.BlendTime <= AnimationTimeEpsilon)
     {
         FinishTransition();
+        return;
     }
+
+    TSet<int32> ActiveStateIndices;
+    ActiveStateIndices.insert(ActiveTransition.ToStateIndex);
+    ClearInactiveNotifyStates(ActiveStateIndices);
 }
 
 void UAnimStateMachineInstance::FinishTransition()
@@ -447,6 +591,13 @@ void UAnimStateMachineInstance::FinishTransition()
 
     TargetStateIndex = -1;
     ActiveTransition = FAnimTransitionRuntime();
+
+    TSet<int32> ActiveStateIndices;
+    if (IsValidStateIndex(CurrentStateIndex))
+    {
+        ActiveStateIndices.insert(CurrentStateIndex);
+    }
+    ClearInactiveNotifyStates(ActiveStateIndices);
 }
 
 bool UAnimStateMachineInstance::EvaluateStatePose(
