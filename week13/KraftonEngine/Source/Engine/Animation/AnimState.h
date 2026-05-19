@@ -37,8 +37,10 @@ public:
 	// 후크 — 데이터 기반 FSM 에서는 대부분 기본 구현만으로 충분하지만,
 	// 자식이 진입 효과/특수 평가를 넣을 수 있도록 가상함수로 남긴다.
 	virtual void OnEnter(UAnimInstance* Instance);
-	virtual void OnExit (UAnimInstance* Instance) { (void)Instance; }
-	virtual void Tick   (UAnimInstance* Instance, float DeltaSeconds);
+	virtual void OnExit (UAnimInstance* Instance);
+	// Weight 인자 — 부모 SM 이 자기 visible 비율을 전달. 자식 SequencePlayer 의
+	// AddAnimNotifies 가 가시성 임계 가드에 사용. default 1.0 (단일 진입).
+	virtual void Tick   (UAnimInstance* Instance, float DeltaSeconds, float Weight = 1.0f);
 	virtual void Evaluate(UAnimInstance* Instance, FPoseContext& Output);
 
 	float GetLocalTime() const { return LocalTime; }

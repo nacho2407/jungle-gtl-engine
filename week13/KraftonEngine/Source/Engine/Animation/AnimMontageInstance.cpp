@@ -206,7 +206,12 @@ void UAnimMontageInstance::Tick(float DeltaSeconds, UAnimInstance* Owner)
         const float    PrevSeqTime  = Cur.StartTime + SectionTime;
         const float    NextSeqTime  = Cur.StartTime + std::min(SectionTime + Step, CurLen);
 
-        Owner->AddAnimNotifies(PrevSeqTime, NextSeqTime, SrcSeq);
+        // Notify 가시성 임계 가드 — Slot.GetBlendWeight 가 임계 이하면 안 보이는 가지로 간주.
+        // SequencePlayer 의 동일 패턴 (FinalBlendWeight > ZERO_ANIMWEIGHT_THRESH) 과 비대칭 해소.
+        if (GetBlendWeight() > 1e-4f)
+        {
+            Owner->AddAnimNotifies(PrevSeqTime, NextSeqTime, SrcSeq);
+        }
 
         // Root motion — raw delta 만 LastRM 에 채움. AccumulateRootMotion 직접 호출 X.
         // Slot 노드가 GetBlendWeight 로 InputPose.LastRM 과 lerp 합성, RootNode 한 곳에서

@@ -55,6 +55,18 @@ void FAnimNode_StateMachine::OnBecomeRelevant(const FAnimationInitializeContext&
 	if (CurrentState) CurrentState->OnEnter(Context.AnimInstance);
 }
 
+void FAnimNode_StateMachine::OnDormant()
+{
+	// Sub-SM 이 부모 SM 의 비활성 state 가 되어 dormant — 다음 활성화 시 stale 시각/blend 방지.
+	// 진행중 BlendingFroms 의 잔여 alpha 가 다음 OnBecomeRelevant 후 잘못 적용되는 것을 막음.
+	for (FBlendingFrom& BF : BlendingFroms)
+	{
+		if (BF.State) BF.State->OnExit(nullptr);
+	}
+	BlendingFroms.clear();
+	if (CurrentState) CurrentState->OnExit(nullptr);
+}
+
 void FAnimNode_StateMachine::Update(const FAnimationUpdateContext& Context)
 {
 	if (!CurrentState) return;
@@ -79,16 +91,21 @@ void FAnimNode_StateMachine::Update(const FAnimationUpdateContext& Context)
 	// 있는 경우 — A→B→A 같은 빠른 연쇄. 같은 state 에 dt 만큼 Tick 두 번 호출 시 LocalTime
 	// 2× 진행 + LastRootMotionDelta 덮어쓰기 → from RM 손실. 가드: 이미 Tick 호출한 state 추적.
 	TArray<UAnimState*> Ticked;
-	auto TryTick = [&](UAnimState* S)
+	auto TryTick = [&](UAnimState* S, float W)
 	{
 		if (!S) return;
 		for (UAnimState* T : Ticked) if (T == S) return;
-		S->Tick(Owner, DeltaSeconds);
+		S->Tick(Owner, DeltaSeconds, W);
 		Ticked.push_back(S);
 	};
 
-	// 2) 현재 상태 시간 진행.
-	TryTick(CurrentState);
+	// 2) 현재 상태 시간 진행 — visible weight 는 외부 부모 ctx × CurrentState 의 가시 비율.
+	//    Multi-blend 의 누적 weight 모델: CurrentState 가 latest BlendingFroms 까지의 fade-in
+	//    완료 후의 100% 부분, BlendingFroms[i] 는 (1-α_i) 만큼 잔존. 정확한 sequential lerp
+	//    weight 계산은 N-pose 와 동일 정밀도 필요하지만, notify 가시성 가드 목적이라
+	//    Current=W_parent, Blend[i]=W_parent*(1-α_i) 근사로 충분.
+	const float ParentW = Context.FinalBlendWeight;
+	TryTick(CurrentState, ParentW);
 
 	// 3) BlendingFroms 모두 Tick + alpha 증가 + 1.0 도달분 OnExit + 단일 패스 compaction.
 	{
@@ -96,7 +113,8 @@ void FAnimNode_StateMachine::Update(const FAnimationUpdateContext& Context)
 		for (size_t Read = 0; Read < BlendingFroms.size(); ++Read)
 		{
 			FBlendingFrom& BF = BlendingFroms[Read];
-			TryTick(BF.State);
+			const float BlendW = ParentW * (1.0f - BF.Alpha);   // fade-out 진행도 반영.
+			TryTick(BF.State, BlendW);
 			if (BF.Duration > 0.0f) BF.Alpha += DeltaSeconds / BF.Duration;
 			else                    BF.Alpha = 1.0f;
 
