@@ -93,6 +93,29 @@ uint32 FSceneSaveManager::FSceneSaveContext::FindObjectId(const UObject* Object)
 	return It != ObjectToId.end() ? It->second : 0;
 }
 
+bool FSceneSaveManager::FSceneSaveContext::SerializeObjectReference(const UObject* Object, json::JSON& OutValue) const
+{
+	using namespace json;
+
+	if (!Object)
+	{
+		OutValue = JSON();
+		return true;
+	}
+
+	const uint32 ObjectId = FindObjectId(Object);
+	if (ObjectId == 0)
+	{
+		OutValue = JSON();
+		return true;
+	}
+
+	JSON Ref = json::Object();
+	Ref[SceneKeys::ObjectId] = static_cast<int>(ObjectId);
+	OutValue = Ref;
+	return true;
+}
+
 void FSceneSaveManager::FSceneLoadContext::RegisterLoadedObject(json::JSON& Node, UObject* Object)
 {
 	if (!Object || !Node.hasKey(SceneKeys::ObjectId))
@@ -121,6 +144,24 @@ void FSceneSaveManager::FSceneLoadContext::QueueProperties(UObject* Object, json
 	}
 
 	PendingProperties.push_back({ Object, &Properties });
+}
+
+bool FSceneSaveManager::FSceneLoadContext::DeserializeObjectReference(json::JSON& Value, UObject*& OutObject) const
+{
+	OutObject = nullptr;
+	if (Value.IsNull())
+	{
+		return true;
+	}
+
+	if (Value.JSONType() != json::JSON::Class::Object || !Value.hasKey(SceneKeys::ObjectId))
+	{
+		return false;
+	}
+
+	const uint32 ObjectId = static_cast<uint32>(Value[SceneKeys::ObjectId].ToInt());
+	OutObject = ObjectId != 0 ? FindObjectById(ObjectId) : nullptr;
+	return true;
 }
 
 static void SerializeComponentEditorMetadata(json::JSON& Node, const UActorComponent* Comp)
@@ -377,30 +418,7 @@ json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj, FSceneSaveContex
 			continue;
 		}
 
-		if (const FObjectProperty* ObjectProperty = Prop->AsObjectProperty())
-		{
-			UObject* ReferencedObject = ObjectProperty->GetObjectValue(Obj);
-			if (!ReferencedObject)
-			{
-				Props[Prop->Name] = JSON();
-				continue;
-			}
-
-			const uint32 ObjectId = Context.FindObjectId(ReferencedObject);
-			if (ObjectId != 0)
-			{
-				JSON Ref = json::Object();
-				Ref[SceneKeys::ObjectId] = static_cast<int>(ObjectId);
-				Props[Prop->Name] = Ref;
-			}
-			else
-			{
-				Props[Prop->Name] = JSON();
-			}
-			continue;
-		}
-
-		Props[Prop->Name] = Prop->Serialize(Obj);
+		Props[Prop->Name] = Prop->Serialize(Obj, &Context);
 	}
 	return Props;
 }
@@ -659,30 +677,7 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 		}
 
 		json::JSON& Value = PropsJSON[PropertyKey];
-		if (const FObjectProperty* ObjectProperty = Property->AsObjectProperty())
-		{
-			UObject* ResolvedObject = nullptr;
-			if (Value.JSONType() == json::JSON::Class::Object)
-			{
-				if (!Value.hasKey(SceneKeys::ObjectId))
-				{
-					continue;
-				}
-
-				const uint32 ObjectId = static_cast<uint32>(Value[SceneKeys::ObjectId].ToInt());
-				ResolvedObject = ObjectId != 0 ? Context.FindObjectById(ObjectId) : nullptr;
-			}
-			else if (!Value.IsNull())
-			{
-				continue;
-			}
-
-			ObjectProperty->SetObjectValue(Obj, ResolvedObject);
-		}
-		else
-		{
-			Property->Deserialize(Obj, Value);
-		}
+		Property->Deserialize(Obj, Value, &Context);
 
 		FPropertyChangedEvent Event;
 		Event.Object = Obj;

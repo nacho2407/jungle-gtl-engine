@@ -78,6 +78,8 @@ struct FObjectProperty : FObjectPropertyBase
 
 	json::JSON SerializeValue(void* ValuePtr) const override;
 	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
+	json::JSON SerializeValue(void* ValuePtr, const FJsonObjectReferenceContext* RefContext) const override;
+	void	   DeserializeValue(void* ValuePtr, json::JSON& Value, const FJsonObjectReferenceContext* RefContext) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 
 private:
