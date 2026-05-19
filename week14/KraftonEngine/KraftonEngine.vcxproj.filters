@@ -665,6 +665,9 @@
     <ClCompile Include="Source\Engine\Animation\AnimNotify_LogMessage.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimNotify_PlaySound.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
@@ -1653,6 +1656,9 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimNotify_LogMessage.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimNotify_PlaySound.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimSequence.h">

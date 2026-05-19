@@ -457,6 +457,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Animation\AnimNotifyState.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimNotifyState_LogDuration.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimNotify_LogMessage.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimNotify_PlaySound.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSequenceBase.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp" />
@@ -789,6 +790,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Animation\AnimNotifyState.h" />
     <ClInclude Include="Source\Engine\Animation\AnimNotifyState_LogDuration.h" />
     <ClInclude Include="Source\Engine\Animation\AnimNotify_LogMessage.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimNotify_PlaySound.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSequence.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSequenceBase.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h" />
