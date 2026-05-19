@@ -1,7 +1,6 @@
 #include "AnimNode_Root.h"
 
 #include "Animation/AnimInstance.h"
-#include "Animation/AnimationMode.h"
 #include "Animation/PoseContext.h"
 
 void FAnimNode_Root::Initialize(const FAnimationInitializeContext& Context)
@@ -25,19 +24,14 @@ void FAnimNode_Root::Update(const FAnimationUpdateContext& Context)
 
 	ChildPose->Update(Context);
 
-	// 트리 평가 후 RootMotion 누적 — AnimInstance 에 있던 분기를 그대로 이동 (정책 단일 진입점).
-	// RootMotionFromMontagesOnly 분기는 외부 정책: base graph 측 RM 무시 (Slot 만 적용).
-	// AccumulateRootMotion 내부의 IgnoreRootMotion 가드는 그쪽이 책임.
-	//
-	// 주의: 이전 AnimInstance::UpdateAnimation 에 있던 분기 (`mode != MontagesOnly`) 를 그대로
-	// 복원. StateMachine 측에서 이미 MontagesOnly 면 자기 LastRM 을 0 처리하므로 이 외부 분기는
-	// 사실상 redundant 로 보이지만, 기존 동작 보존을 위해 그대로 유지.
+	// 트리 평가 후 RootMotion 누적 — RootMotionFromMontagesOnly 일 때도 호출.
+	// StateMachine 가 그 모드에서 자기 LastRM 을 Identity 로 처리하고, Slot 은
+	// lerp(0, montageRM, w) = montageRM*w 만 노출하므로 ChildPose.LastRM 자체가 이미
+	// "montage 만" 의 결과. 외부에서 또 분기로 막으면 montage RM 도 누적 안 되는
+	// 버그가 됨. IgnoreRootMotion 가드는 AccumulateRootMotion 내부에서 처리.
 	if (UAnimInstance* Owner = Context.AnimInstance)
 	{
-		if (Owner->GetRootMotionMode() != ERootMotionMode::RootMotionFromMontagesOnly)
-		{
-			Owner->AccumulateRootMotion(ChildPose->GetLastRootMotionDelta());
-		}
+		Owner->AccumulateRootMotion(ChildPose->GetLastRootMotionDelta());
 	}
 }
 
