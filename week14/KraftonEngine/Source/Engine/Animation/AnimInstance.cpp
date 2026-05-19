@@ -122,6 +122,11 @@ bool UAnimInstance::IsMontagePlaying(UAnimMontage* Montage) const
 
 void UAnimInstance::AccumulateRootMotion(const FTransform& Delta)
 {
+	// Mode 가 Ignore 면 누적 자체 skip — PendingRootMotion 은 identity 로 유지.
+	// RootMotionFromMontagesOnly 일 때 base (SingleNode/FSM) 누적 skip 은 호출자 측 책임
+	// (Step 5 에서 base 누적 호출 지점에 mode 체크가 들어간다 — 여기선 둘 다 통과).
+	if (RootMotionMode == ERootMotionMode::IgnoreRootMotion) return;
+
 	// 두 delta 합성 — row-vec 매트릭스로 정확히 누적 후 다시 분해.
 	// 단순한 합산은 회전 누적 시 부정확. 매트릭스 곱이 안전.
 	const FMatrix M = Delta.ToMatrix() * PendingRootMotion.ToMatrix();

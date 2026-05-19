@@ -1,10 +1,13 @@
 #include "CharacterMovementComponent.h"
 
+#include "Animation/AnimInstance.h"
 #include "Component/CapsuleComponent.h"
 #include "Component/SceneComponent.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/TickFunction.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/World.h"
 #include "Math/Quat.h"
 #include "Math/Rotator.h"
@@ -94,6 +97,23 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 	// 1) Input 처리 — XY velocity 갱신 (양 mode 공통).
 	ApplyInputToVelocity(Input, DeltaTime);
+
+	// 1.5) Owner Character 의 Mesh AnimInstance 가 누적해둔 root motion 을 가져와 자기 buffer 로 push.
+	//      Mesh tick (TG_PrePhysics) 이 이미 끝나 PendingRootMotion 이 채워진 상태.
+	//      Mode 가 Ignore 면 가져갈 필요 자체가 없음 (AccumulateRootMotion 측에서 누적도 안 됨).
+	if (ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner()))
+	{
+		if (USkeletalMeshComponent* Mesh = OwnerCharacter->GetMesh())
+		{
+			if (UAnimInstance* AI = Mesh->GetAnimInstance())
+			{
+				if (AI->GetRootMotionMode() != ERootMotionMode::IgnoreRootMotion)
+				{
+					AddRootMotionDelta(AI->ConsumeRootMotion());
+				}
+			}
+		}
+	}
 
 	// 2) Root motion 소비 — local delta 를 world frame 으로 변환 (Updated 의 yaw 기준).
 	//    XY 만 mode 분기로 위임. Z 는 두 mode 모두 무시:

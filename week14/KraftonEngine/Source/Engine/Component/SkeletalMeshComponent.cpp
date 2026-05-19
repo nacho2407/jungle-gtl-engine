@@ -434,34 +434,14 @@ bool USkeletalMeshComponent::EvaluateAnimInstance(float DeltaTime)
 
     AnimInstance->UpdateAnimation(DeltaTime);
 
-    // Root Motion 적용 — UpdateAnimation 동안 누적된 delta 를 owning actor 의 world transform 에 반영.
-    // Delta 는 root 본의 local 좌표계 기준 → actor 의 현재 rotation 을 곱해 world delta 로 변환.
-    // Horizontal (X/Y) 만 actor 에 적용, vertical Z 는 CharacterMovement (gravity / jump) 에 위임.
-    if (AnimInstance)
-    {
-        const FTransform RootDelta = AnimInstance->ConsumeRootMotion();
-        if (AActor* OwnerActor = GetOwner())
-        {
-            // Translation: actor 의 yaw 로 회전시켜 character forward 방향 기준으로 적용.
-            const FRotator ActorRot = OwnerActor->GetActorRotation();
-            const FQuat    YawOnly  = FRotator(0.0f, 0.0f, ActorRot.Yaw).ToQuaternion();
-            FVector WorldDelta      = YawOnly.RotateVector(RootDelta.Location);
-            WorldDelta.Z            = 0.0f;   // CharacterMovement 가 Z 관리
-            if (WorldDelta.Length() > 1e-4f)
-            {
-                OwnerActor->AddActorWorldOffset(WorldDelta);
-            }
-
-            // Rotation: root motion 의 yaw 만 actor 에 적용 (pitch/roll 은 본 pose 가 처리).
-            const FRotator DeltaRot = RootDelta.Rotation.ToRotator();
-            if (std::fabs(DeltaRot.Yaw) > 1e-4f)
-            {
-                FRotator NewRot = ActorRot;
-                NewRot.Yaw += DeltaRot.Yaw;
-                OwnerActor->SetActorRotation(NewRot);
-            }
-        }
-    }
+    // Root motion 적용은 UCharacterMovementComponent 가 책임.
+    // CMC::TickComponent (TG_DuringPhysics) 가 매 frame 이 AnimInstance->ConsumeRootMotion 으로
+    // 누적값을 가져가 capsule 이동 / 회전에 반영한다 (sweep / floor stick 통과).
+    // Mesh 는 actor transform 을 직접 만지지 않는다 — UE 본가 패턴.
+    //
+    // 주의: CMC 가 없는 actor 에 root motion 켠 anim 을 붙이면 누적값이 anywhere 도
+    // 소비되지 않아 in-place 로 보인다. ACharacter 외 케이스에서 root motion 이 필요해지면
+    // 별도 소비 경로가 추가되어야 한다.
 
     FPoseContext Out;
     Out.SkeletalMesh = Mesh;
