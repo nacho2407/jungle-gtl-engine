@@ -722,8 +722,9 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 
 				ImGui::Separator();
 
-				ImGui::TextColored(ImVec4(1.f, 1.f, 1.f, 1.f), "- Total Allocated Counts: %d", EngineStatics::GetTotalAllocationCount());
-				ImGui::TextColored(ImVec4(1.f, 1.f, 1.f, 1.f), "- Total Allocated Bytes: %.2f KB", EngineStatics::GetTotalAllocationBytes() / 1024.f);
+				ImGui::TextColored(ImVec4(1.f, 1.f, 1.f, 1.f), "- Allocations: %d / %.2f KB",
+					EngineStatics::GetTotalAllocationCount(),
+					EngineStatics::GetTotalAllocationBytes() / 1024.f);
 			}
 		}
 
@@ -844,18 +845,23 @@ void FEditorViewportOverlayWidget::RenderGroupedStatOverlay(float DeltaTime)
             ImGui::TextUnformatted("[ Skinning ]");
             ImGui::Text("CPU Anim/Pose   : %.3f / %.3f ms", SkinStats.CPUAnimationUpdateMs, SkinStats.CPUPoseBuildMs);
             ImGui::Text("CPU Skin/Upload : %.3f / %.3f ms", SkinStats.CPUSkinningMs, SkinStats.CPUSkinnedVertexBufferUploadMs);
-            ImGui::Text("Upload Bytes    : CPU %.2f KB / Bone %.2f KB",
-                SkinStats.CPUSkinnedVertexBufferUploadBytes / 1024.0f,
-                SkinStats.GPUBoneMatrixUploadBytes / 1024.0f);
+            ImGui::Text("CPU Upload      : %.2f KB",
+                SkinStats.CPUSkinnedVertexBufferUploadBytes / 1024.0f);
+            ImGui::Text("GPU Bone Data   : %llu / %.2f KB",
+                static_cast<unsigned long long>(SkinStats.GPUBoneMatrixCount),
+                SkinStats.GPUBoneMatrixPayloadBytes / 1024.0f);
+            ImGui::Text("Meshes CPU/GPU  : %u / %u",
+                SkinStats.VisibleCPUSkinnedMeshCount,
+                SkinStats.VisibleGPUSkinnedMeshCount);
             ImGui::Text("Meshes/Verts    : %u / %llu",
                 SkinStats.VisibleSkinnedMeshCount,
                 static_cast<unsigned long long>(SkinStats.VisibleSkinnedVertexCount));
             ImGui::Text("Bones/Influence : %llu / %.2f",
                 static_cast<unsigned long long>(SkinStats.TotalBoneCount),
                 SkinStats.GetAvgBoneInfluencePerVertex());
-            ImGui::Text("Pass/Work       : %u / %.0f",
-                SkinStats.SkinnedPassCount,
-                SkinStats.EstimatedGPUVertexSkinningWork);
+            ImGui::Text("GPU Draw/Work   : %u / %.0f",
+                SkinStats.GPUSkinnedDrawPassCount,
+                SkinStats.EstimatedGPUSkinningInfluenceWork);
         }
 
         FShadowAtlasManager& ShadowAtlasManager = FShadowAtlasManager::Get();
@@ -907,7 +913,7 @@ void FEditorViewportOverlayWidget::RenderGroupedStatOverlay(float DeltaTime)
         ImGui::Text("Mesh     : %.2f KB", MeshMemoryBytes / 1024.0f);
         ImGui::Text("Material : %.2f KB", MaterialMemoryBytes / 1024.0f);
         ImGui::Text("FName    : %.2f KB", FNamePool::Get().GetTotalBytes() / 1024.0f);
-        ImGui::Text("Objects  : %d / %.2f KB",
+        ImGui::Text("Alloc    : %d / %.2f KB",
             EngineStatics::GetTotalAllocationCount(),
             EngineStatics::GetTotalAllocationBytes() / 1024.0f);
     }

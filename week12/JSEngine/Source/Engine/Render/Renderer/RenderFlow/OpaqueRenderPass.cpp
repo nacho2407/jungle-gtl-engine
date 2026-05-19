@@ -281,7 +281,7 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 		   Cmd.Type == ERenderCommandType::SkeletalMesh && Cmd.bUseBoneMatrixConstants;
 	   if (bGPUSkinnedDraw)
 	   {
-		   FSkinningStats::Get().AddSkinnedDraw(
+		   FSkinningStats::Get().AddGPUSkinnedDraw(
 			   Cmd.SkinningWorkVertexCount,
 			   Cmd.AvgBoneInfluencePerVertex);
 	   }

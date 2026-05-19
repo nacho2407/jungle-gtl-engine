@@ -6,6 +6,7 @@ class FSelectionMaskRenderPass : public FBaseRenderPass
 public:
     bool Initialize() override;
     bool Release() override;
+    static void WarmUpShaderPrograms();
 
 private:
     bool Begin(const FRenderPassContext* Context) override;

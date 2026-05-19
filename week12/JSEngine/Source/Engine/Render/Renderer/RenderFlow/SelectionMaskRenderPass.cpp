@@ -61,10 +61,8 @@ static uint32 GetSelectionMaskShaderKey(const FRenderCommand& Cmd)
     return 0;
 }
 
-static FShaderProgram* GetSelectionMaskProgram(const FRenderCommand& Cmd)
+static FShaderProgram* GetSelectionMaskProgram(uint32 ShaderKey)
 {
-    const uint32 ShaderKey = GetSelectionMaskShaderKey(Cmd);
-
     const char* VSEntry = "VSPrimitive";
     const char* PSEntry = "PSPrimitive";
     const FVertexLayoutDesc* VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::Primitive).SelectionLayout;
@@ -103,6 +101,11 @@ static FShaderProgram* GetSelectionMaskProgram(const FRenderCommand& Cmd)
         nullptr,
         nullptr,
         VertexLayout);
+}
+
+static FShaderProgram* GetSelectionMaskProgram(const FRenderCommand& Cmd)
+{
+    return GetSelectionMaskProgram(GetSelectionMaskShaderKey(Cmd));
 }
 
 static void BuildSelectionMaskConstants(
@@ -174,6 +177,14 @@ bool FSelectionMaskRenderPass::Initialize()
 bool FSelectionMaskRenderPass::Release()
 {
     return true;
+}
+
+void FSelectionMaskRenderPass::WarmUpShaderPrograms()
+{
+    for (uint32 ShaderKey = 0; ShaderKey <= 3; ++ShaderKey)
+    {
+        GetSelectionMaskProgram(ShaderKey);
+    }
 }
 
 bool FSelectionMaskRenderPass::Begin(const FRenderPassContext* Context)
