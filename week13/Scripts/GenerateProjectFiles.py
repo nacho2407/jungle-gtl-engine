@@ -72,6 +72,12 @@ RC_EXTS = {".rc"}
 # Root-level files to include (relative to project dir)
 ROOT_FILES = ["main.cpp"]
 
+# Generated-only sources to include in ClCompile even though they live outside
+# SCAN_DIRS. Created by GenerateHeaders.py during PreBuildEvent. Reflection.generated.cpp
+# is a TU hub that #includes the per-type *.generated.cpp files, so this single entry
+# is enough to pull all reflection code into the link.
+EXTRA_CL_COMPILE_FILES = ["Intermediate\\Generated\\Reflection.generated.cpp"]
+
 # Include paths (relative to project dir)
 INCLUDE_PATHS = [
     "Intermediate\\Generated",
@@ -112,6 +118,11 @@ FMOD_RELEASE_DLL = "fmod.dll"
 # (Include 경로는 INCLUDE_PATHS 에 직접 추가됨 — 위 주석 참고.)
 PHYSX_DEBUG_BIN   = "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\debug\\bin"
 PHYSX_RELEASE_BIN = "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\bin"
+
+# Reflection — UCLASS/UPROPERTY 매크로 → *.generated.h/.cpp 자동 생성.
+# 빌드 시작 직전(PreBuildEvent)과 ClCompile 직전(GenerateReflectionHeaders target)
+# 두 위치에 모두 박는다 — VS IDE / msbuild 호출 경로 모두 커버.
+GENERATE_HEADERS_TOOL = "Tools\\GenerateHeaders.py"
 
 # Lua (LuaJIT, 5.1 ABI) — lua51.dll 은 .gitignore 의 **/[Bb]in/* 에 걸려 있어
 # 팀원이 직접 ThirdParty\\lua\\bin\\lua51.dll 위치에 배치해야 한다 (LuaJIT 배포본).
@@ -192,6 +203,11 @@ def scan_files(project_dir: Path) -> dict[str, list[str]]:
         full = project_dir / root_file
         if full.exists():
             result["ClCompile"].append(root_file.replace("/", "\\"))
+
+    # Generated-only sources — exist after the first build's PreBuildEvent,
+    # so we add them unconditionally rather than gating on Path.exists().
+    for extra in EXTRA_CL_COMPILE_FILES:
+        result["ClCompile"].append(extra)
 
     # Add root-level .rc files
     for f in sorted(project_dir.glob("*.rc")):
@@ -403,6 +419,13 @@ def generate_vcxproj(files: dict[str, list[str]]):
                 f'xcopy /Y "$(ProjectDir){fbx_lib_dir}\\{FBX_DLL}" "$(OutDir)"'
             )
 
+        # Reflection codegen — UCLASS/UPROPERTY 매크로가 박힌 헤더로부터
+        # *.generated.h/.cpp 를 생성. 모든 구성에서 동일하게 1회 실행.
+        pre_build = ET.SubElement(idg, "PreBuildEvent")
+        ET.SubElement(pre_build, "Command").text = (
+            f'python "$(ProjectDir){GENERATE_HEADERS_TOOL}" --root "$(ProjectDir)."'
+        )
+
     # ClCompile items
     ig = ET.SubElement(proj, "ItemGroup")
     for f in files["ClCompile"]:
@@ -452,8 +475,27 @@ def generate_vcxproj(files: dict[str, list[str]]):
             ET.SubElement(ext_targets, "Import",
                           Project=targets_path,
                           Condition=f"Exists('{targets_path}')")
+    else:
+        ET.SubElement(proj, "ImportGroup", Label="ExtensionTargets")
 
-        # EnsureNuGetPackageBuildImports target
+    # Reflection codegen — ClCompile 직전 한 번 더 보장.
+    # PreBuildEvent 만으로는 IDE 의 IntelliSense 파싱 시점이나 incremental build 에서
+    # 누락될 수 있어 BeforeTargets="ClCompile" 타깃을 별도로 둔다.
+    # $(PythonExe) 가 비어 있으면 "python" 폴백.
+    pg = ET.SubElement(proj, "PropertyGroup")
+    ET.SubElement(pg, "PythonExe", Condition="'$(PythonExe)'==''").text = "python"
+    refl = ET.SubElement(proj, "Target",
+                         Name="GenerateReflectionHeaders",
+                         BeforeTargets="ClCompile")
+    ET.SubElement(refl, "Exec",
+                  Command=(
+                      f'"$(PythonExe)" "$(MSBuildProjectDirectory)\\{GENERATE_HEADERS_TOOL}"'
+                      f' --root "$(MSBuildProjectDirectory)"'
+                  ),
+                  WorkingDirectory="$(MSBuildProjectDirectory)")
+
+    # NuGet sanity-check target
+    if NUGET_PACKAGES:
         ensure = ET.SubElement(proj, "Target",
                                Name="EnsureNuGetPackageBuildImports",
                                BeforeTargets="PrepareForBuild")
@@ -468,8 +510,6 @@ def generate_vcxproj(files: dict[str, list[str]]):
             ET.SubElement(ensure, "Error",
                           Condition=f"!Exists('{targets_path}')",
                           Text=f"$([System.String]::Format('$(ErrorText)', '{targets_path}'))")
-    else:
-        ET.SubElement(proj, "ImportGroup", Label="ExtensionTargets")
 
     write_xml(proj, PROJECT_DIR / f"{PROJECT_NAME}.vcxproj")
 
