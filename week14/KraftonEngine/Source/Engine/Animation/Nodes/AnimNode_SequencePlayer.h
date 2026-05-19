@@ -6,13 +6,13 @@
 class UAnimSequenceBase;
 
 // 단일 sequence 재생 노드 — AnimGraph 의 leaf.
-//   Update: LocalTime 진행 + AddAnimNotifies (weight > threshold 일 때만) + LastRootMotionDelta 계산.
+//   Update: LocalTime 진행 + AddAnimNotifies (Context.FinalBlendWeight > THRESH 일 때만)
+//           + LastRootMotionDelta 계산.
 //   Evaluate: Sequence->GetBonePose 호출해 Output 채움.
 //
-// Root motion: SequencePlayer 자체는 AnimInstance 에 직접 누적 안 함. 부모 (StateMachine 등) 가
-// 자기 자식들의 LastRootMotionDelta 를 자체 합성 정책 (예: multi-blend sequential lerp) 으로
-// 모아 AnimInstance->AccumulateRootMotion 호출. SequencePlayer 가 트리의 root 인 경우는
-// AnimInstance 가 RootNode 평가 후 직접 가져가는 옵션 — phase 1.4 에서 정리.
+// Root motion 은 외부 누적 패턴 — SequencePlayer 는 LastRootMotionDelta 만 채움, 직접
+// AccumulateRootMotion 호출 X. 부모 (StateMachine / Slot / LayeredBlend) 가 자기 자식의
+// LastRM 을 합성 후 자기 LastRM 으로, 결국 RootNode 단일 진입점에서 한 번 누적.
 class FAnimNode_SequencePlayer : public FAnimNode_Base
 {
 public:

@@ -9,12 +9,15 @@ class UAnimSequenceBase;
 class UAnimInstance;
 struct FPoseContext;
 
-// UAnimationStateMachine 의 한 노드. 상태별 시퀀스/속도/루프 등을 들고,
-// 진입 시 LocalTime 을 리셋, Tick 에서 시간 진행, Evaluate 에서 포즈 샘플링.
+// FAnimNode_StateMachine 의 한 상태. 상태별 시퀀스/속도/루프 등을 들고, 진입 시 LocalTime
+// 을 리셋, Tick 에서 시간 진행, Evaluate 에서 포즈 샘플링.
 //
-// 내부 구현은 FAnimNode_SequencePlayer 한 개에 위임 — Tick/Evaluate 직전에 외부 public
-// 필드 (Sequence/PlayRate/bLooping) 를 player 로 sync, 호출 후 player 의 LocalTime/RM 을
-// 외부 mirror 멤버에 반영. 외부 API 호환 유지 (phase 1.3 까지 wrapper, phase 3 후보 제거).
+// 두 가지 모드:
+//   A) Sequence 직접 — 외부 public 필드 (Sequence/PlayRate/bLooping) 를 내부 FAnimNode_
+//      SequencePlayer 한 개에 sync 후 위임. 단순 leaf state.
+//   B) SubGraphOverride — 임의 FAnimNode_Base (예: sub-SM) 를 박아 trees 안의 sub-tree 로.
+//      OnEnter 시 SubGraph.OnBecomeRelevant, OnExit 시 SubGraph.OnDormant 후크 호출 — sub-SM
+//      의 BlendingFroms 등 transient 정리.
 
 #include "Source/Engine/Animation/AnimState.generated.h"
 

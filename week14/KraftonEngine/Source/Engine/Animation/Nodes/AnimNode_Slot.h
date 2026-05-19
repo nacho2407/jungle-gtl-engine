@@ -7,17 +7,22 @@ class UAnimInstance;
 
 // AnimGraph 의 Montage 진입점 노드 (UE 의 FAnimNode_Slot 대응).
 //
+// Update:
+//   1) InputPose.Update → InputLastRM mirror
+//   2) AnimInstance 의 SlotName 매칭 MontageInstance 조회
+//   3) active 면 MontageInstance.Tick(dt) + Slot.LastRM = lerp(InputLastRM, MI.LastRM, W)
+//
 // Evaluate:
-//   1) InputPose 평가 → Output (base pose)
-//   2) AnimInstance 에서 SlotName 의 active montage 조회
-//   3) 활성이고 BlendWeight > 0 이면 montage pose 평가 후 BlendTwoPosesTogether 로 lerp
-//   4) 없거나 weight 0 이면 InputPose 그대로 pass-through (overhead 무)
+//   1) InputPose.Evaluate → Output (base pose)
+//   2) Active + W > 0 이면 MontagePose 평가 후 BlendTwoPosesTogether 로 lerp (in-place 안전)
+//   3) 없거나 weight 0 이면 InputPose 그대로 pass-through — overhead 무
 //
-// Montage Tick 은 UAnimInstance::UpdateAnimation 에서 모든 slot 일괄 처리 — Slot 노드의
-// Update 는 InputPose Update + LastRM mirror 만. Phase 3 에서 Slot 안으로 Tick 옮길 가능성.
+// 단일 책임 — Slot 이 자기 slot 의 montage 의 모든 처리 (Tick / Evaluate / RM 합성) 를 맡음.
+// Root motion 은 외부 누적 패턴이라 직접 AccumulateRootMotion 호출 안 함 — Slot.LastRM 만 채움,
+// 부모 (LayeredBlend 또는 RootNode) 가 단일 진입점에서 누적.
 //
-// Root motion: InputPose 의 LastRM 그대로 반환. Montage 의 RM 은 UAnimMontageInstance::Tick 안에서
-// AnimInstance->AccumulateRootMotion 으로 직접 누적 (현재 패턴 유지). Phase 3 정리 후보.
+// EffectiveBlendWeight = montage active 면 montage.GetBlendWeight, 아니면 0.
+// LayeredBlend 의 BlendPose 로 박힐 때 이 값이 자동 weight 가 되어 montage 없을 때 base 100%.
 class FAnimNode_Slot : public FAnimNode_Base
 {
 public:
