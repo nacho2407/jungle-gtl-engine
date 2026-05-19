@@ -78,6 +78,11 @@ void ULuaAnimInstance::NativeInitializeAnimation()
 
 	DispatchLuaInit();
 
+	// AnimGraph RootNode 박기 — wrapper 의 내부 노드를 트리 root 로 사용.
+	// init(self) 가 register_state/transition/set_initial_state 다 호출한 *후* 박아야 Initialize
+	// 가 첫 CurrentState 의 OnEnter 까지 재귀 호출. lua 의 평면 FSM 호출이 그대로 RootNode 경로로 흐름.
+	SetRootNode(&FSM->GetNode());
+
 	// Hot-reload 등록 — .lua 파일 변경 시 FLuaScriptManager 가 ReloadScript 호출.
 	// 이미 등록된 경우 set-like 보장 (manager 측).
 	FLuaScriptManager::RegisterAnimInstance(this);
@@ -85,6 +90,9 @@ void ULuaAnimInstance::NativeInitializeAnimation()
 
 void ULuaAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
+	// 사용자 변수 갱신 — RootNode 유무와 무관하게 매 frame 호출됨 (UE 본가 NativeUpdate 패턴).
+	// lua 의 update(self, dt) 가 self.Speed 같은 변수를 갱신하면 같은 frame 의 RootNode->Update
+	// 에서 condition 람다가 즉시 사용.
 	if (LuaUpdate.valid())
 	{
 		auto R = LuaUpdate(LuaSelf, DeltaSeconds);
@@ -95,7 +103,12 @@ void ULuaAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		}
 	}
 
-	if (FSM) FSM->Tick(this, DeltaSeconds);
+	// Legacy fallback — RootNode 가 set 안 됐을 때만 wrapper Tick. 현재 흐름상 도달 X
+	// (NativeInitializeAnimation 에서 SetRootNode 항상 호출), 안전망으로 유지.
+	if (!GetRootNode() && FSM)
+	{
+		FSM->Tick(this, DeltaSeconds);
+	}
 }
 
 void ULuaAnimInstance::EvaluateAnimation(FPoseContext& Output)
@@ -124,6 +137,11 @@ void ULuaAnimInstance::ReloadScript()
 
 void ULuaAnimInstance::ClearFSM()
 {
+	// RootNode 가 FSM->GetNode() 의 raw 포인터를 가리키는 상태 — wrapper 먼저 destroy 하면
+	// dangling. 순서: SetRootNode(nullptr) → DestroyObject. ReloadScript 가 이 함수 호출 후
+	// NativeInitializeAnimation 다시 실행 → 새 FSM 생성 + 새 RootNode 박힘.
+	SetRootNode(nullptr);
+
 	if (FSM)
 	{
 		UObjectManager::Get().DestroyObject(FSM);
