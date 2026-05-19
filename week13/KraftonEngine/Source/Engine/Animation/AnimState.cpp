@@ -1,54 +1,45 @@
 #include "AnimState.h"
 #include "AnimInstance.h"
-#include "AnimSequenceBase.h"
-#include "AnimSequence.h"
-#include "AnimExtractContext.h"
 #include "PoseContext.h"
+#include "Nodes/AnimNodeContexts.h"
 
-#include <cmath>
+// 외부 public 필드 → 내부 Player 로 동기화.
+static void SyncToPlayer(UAnimState& S, FAnimNode_SequencePlayer& Player)
+{
+	Player.Sequence  = S.Sequence;
+	Player.PlayRate  = S.PlayRate;
+	Player.bLooping  = S.bLooping;
+	Player.LocalTime = S.GetLocalTime();
+}
+
+void UAnimState::OnEnter(UAnimInstance* Instance)
+{
+	(void)Instance;
+	LocalTime = 0.0f;
+
+	// 노드 측에도 reset 알림 — phase 1.4 이후 RootNode 경로에서 OnBecomeRelevant 가 일관 활용.
+	FAnimationInitializeContext InitCtx;
+	InitCtx.AnimInstance = Instance;
+	Player.OnBecomeRelevant(InitCtx);
+}
+
 void UAnimState::Tick(UAnimInstance* Instance, float DeltaSeconds)
 {
-	if (!Sequence) return;
-	const float Length = Sequence->GetPlayLength();
-	if (Length <= 0.0f) return;
+	SyncToPlayer(*this, Player);
 
-	const float PreviousTime = LocalTime;
-	LocalTime += DeltaSeconds * PlayRate;
-	if (bLooping)
-	{
-		LocalTime = std::fmod(LocalTime, Length);
-		if (LocalTime < 0.0f) LocalTime += Length;
-	}
-	else
-	{
-		if (LocalTime < 0.0f)   LocalTime = 0.0f;
-		if (LocalTime > Length) LocalTime = Length;
-	}
+	FAnimationUpdateContext Ctx;
+	Ctx.AnimInstance     = Instance;
+	Ctx.DeltaSeconds     = DeltaSeconds;
+	Ctx.FinalBlendWeight = 1.0f;   // FSM 이 자기 blend weight 로 lerp 합성하므로 player 는 full.
+	Player.Update(Ctx);
 
-	// 큐에 적재만 — 실제 dispatch 는 베이스 UAnimInstance::UpdateAnimation 끝에서 1회.
-	// (SingleNode 든 FSM 든 자식은 AddAnimNotifies 만 호출, dispatch 책임은 베이스에 통합.)
-	if (Instance) Instance->AddAnimNotifies(PreviousTime, LocalTime, Sequence);
-
-	// Root motion delta 계산 — FSM 이 blend lerp 후 instance 에 누적.
-	LastRootMotionDelta = FTransform();
-	if (UAnimSequence* Seq = Cast<UAnimSequence>(Sequence))
-	{
-		if (Seq->GetEnableRootMotion())
-		{
-			LastRootMotionDelta = Seq->ExtractRootMotion(PreviousTime, LocalTime, bLooping);
-		}
-	}
+	// 내부 → 외부 mirror.
+	LocalTime           = Player.LocalTime;
+	LastRootMotionDelta = Player.LastRootMotionDelta;
 }
 
 void UAnimState::Evaluate(UAnimInstance* /*Instance*/, FPoseContext& Output)
 {
-	if (!Sequence)
-	{
-		Output.ResetToRefPose();
-		return;
-	}
-	FAnimExtractContext Ctx;
-	Ctx.CurrentTime = LocalTime;
-	Ctx.bLooping    = bLooping;
-	Sequence->GetBonePose(Output, Ctx);
+	SyncToPlayer(*this, Player);
+	Player.Evaluate(Output);
 }
