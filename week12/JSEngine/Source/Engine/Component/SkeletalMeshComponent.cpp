@@ -451,7 +451,7 @@ void USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool 
 	SetAnimationMode(EAnimationMode::AnimationSingleNode);
 	SetAnimation(NewAnimToPlay);
 
-	UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
+	UAnimSingleNodeInstance* SingleNode = GetOrCreateSingleNodeInstance();
 	SingleNode->SetAnimation(Cast<UAnimSequenceBase>(NewAnimToPlay));
 	Play(bLooping);
 }
@@ -462,7 +462,7 @@ void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InAnimationMode)
 
 	if (AnimationMode == EAnimationMode::AnimationSingleNode)
 	{
-		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
+		UAnimSingleNodeInstance* SingleNode = GetOrCreateSingleNodeInstance();
 		if (AnimationToPlay)
 		{
 			SingleNode->SetAnimation(Cast<UAnimSequenceBase>(AnimationToPlay));
@@ -496,12 +496,17 @@ void USkeletalMeshComponent::SetAnimation(UAnimationAsset* NewAnimation)
 
 	if (AnimationMode == EAnimationMode::AnimationSingleNode)
 	{
-		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
+		UAnimSingleNodeInstance* SingleNode = GetOrCreateSingleNodeInstance();
 		SingleNode->SetAnimation(Cast<UAnimSequenceBase>(NewAnimation));
 	}
 }
 
-UAnimSingleNodeInstance* USkeletalMeshComponent::EnsureSingleNodeInstance()
+UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const
+{
+	return Cast<UAnimSingleNodeInstance>(AnimInstance);
+}
+
+UAnimSingleNodeInstance* USkeletalMeshComponent::GetOrCreateSingleNodeInstance()
 {
 	UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance);
 	if (!SingleNode)
@@ -527,7 +532,7 @@ void USkeletalMeshComponent::ApplyAnimationFromAssetPath()
 	AnimationToPlay = nullptr;
 
 	SetAnimationMode(EAnimationMode::AnimationSingleNode);
-	UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
+	UAnimSingleNodeInstance* SingleNode = GetOrCreateSingleNodeInstance();
 	SingleNode->SetAnimationAssetPath(RequestedPath);
 	AnimationToPlay = SingleNode->GetAnimation();
 	if (!AnimationToPlay)
@@ -556,7 +561,7 @@ void USkeletalMeshComponent::Play(bool bInLooping)
 {
 	if (AnimationMode == EAnimationMode::AnimationSingleNode)
 	{
-		UAnimSingleNodeInstance* SingleNode = EnsureSingleNodeInstance();
+		UAnimSingleNodeInstance* SingleNode = GetOrCreateSingleNodeInstance();
 		if (!SingleNode->GetAnimation() && !AnimationAssetPath.GetPath().empty())
 		{
 			SingleNode->SetAnimationAssetPath(AnimationAssetPath.GetPath());

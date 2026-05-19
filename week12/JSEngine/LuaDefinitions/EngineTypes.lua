@@ -457,6 +457,12 @@ function StaticMeshComponent:GetPrimitiveType() end
 
 ---@class SkeletalMeshComponent: ActorComponent
 local SkeletalMeshComponent = {}
+---@return AnimInstance|nil
+function SkeletalMeshComponent:GetAnimInstance() end
+---@return AnimSingleNodeInstance|nil
+function SkeletalMeshComponent:GetSingleNodeInstance() end
+---@return AnimSingleNodeInstance|nil
+function SkeletalMeshComponent:GetOrCreateSingleNodeInstance() end
 ---@return AnimationStateMachine|nil
 function SkeletalMeshComponent:CreateAnimationStateMachine() end
 ---@return AnimationStateMachine|nil

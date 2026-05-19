@@ -1,5 +1,6 @@
 ﻿#include "Runtime/Script/ScriptManager.h"
 
+#include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimationStateMachine.h"
 #include "Asset/CurveFloatAsset.h"
 #include "Asset/StaticMesh.h"
@@ -424,6 +425,9 @@ void FScriptManager::BindSkeletalMeshTypes()
 {
     LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USkeletalMeshComponent, "SkeletalMeshComponent",
         USkinnedMeshComponent, UMeshComponent, UPrimitiveComponent, USceneComponent, UActorComponent, UObject)
+    LUA_METHOD(GetAnimInstance, GetAnimInstance);
+    LUA_METHOD(GetSingleNodeInstance, GetSingleNodeInstance);
+    LUA_METHOD(GetOrCreateSingleNodeInstance, GetOrCreateSingleNodeInstance);
     LUA_METHOD(Play, Play);
     LUA_METHOD(Stop, Stop);
     LUA_METHOD(Pause, Pause);
