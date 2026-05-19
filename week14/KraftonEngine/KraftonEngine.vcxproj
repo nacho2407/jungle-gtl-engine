@@ -796,6 +796,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Animation\Skeleton.h" />
     <ClInclude Include="Source\Engine\Animation\SkeletonManager.h" />
     <ClInclude Include="Source\Engine\Animation\SkeletonTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNodeContexts.h" />
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Base.h" />
     <ClInclude Include="Source\Engine\Asset\AssetPackage.h" />
     <ClInclude Include="Source\Engine\Asset\AssetRegistry.h" />
     <ClInclude Include="Source\Engine\Audio\AudioManager.h" />
