@@ -3,6 +3,7 @@
 #include "Object/Object.h"
 #include "Object/FName.h"
 #include "Math/Transform.h"
+#include "Nodes/AnimNode_SequencePlayer.h"
 
 class UAnimSequenceBase;
 class UAnimInstance;
@@ -10,6 +11,10 @@ struct FPoseContext;
 
 // UAnimationStateMachine 의 한 노드. 상태별 시퀀스/속도/루프 등을 들고,
 // 진입 시 LocalTime 을 리셋, Tick 에서 시간 진행, Evaluate 에서 포즈 샘플링.
+//
+// 내부 구현은 FAnimNode_SequencePlayer 한 개에 위임 — Tick/Evaluate 직전에 외부 public
+// 필드 (Sequence/PlayRate/bLooping) 를 player 로 sync, 호출 후 player 의 LocalTime/RM 을
+// 외부 mirror 멤버에 반영. 외부 API 호환 유지 (phase 1.3 까지 wrapper, phase 3 후보 제거).
 
 #include "Source/Engine/Animation/AnimState.generated.h"
 
@@ -31,7 +36,7 @@ public:
 
 	// 후크 — 데이터 기반 FSM 에서는 대부분 기본 구현만으로 충분하지만,
 	// 자식이 진입 효과/특수 평가를 넣을 수 있도록 가상함수로 남긴다.
-	virtual void OnEnter(UAnimInstance* Instance) { (void)Instance; LocalTime = 0.0f; }
+	virtual void OnEnter(UAnimInstance* Instance);
 	virtual void OnExit (UAnimInstance* Instance) { (void)Instance; }
 	virtual void Tick   (UAnimInstance* Instance, float DeltaSeconds);
 	virtual void Evaluate(UAnimInstance* Instance, FPoseContext& Output);
@@ -46,4 +51,7 @@ public:
 protected:
 	float      LocalTime = 0.0f;
 	FTransform LastRootMotionDelta;   // 매 Tick 후 갱신; FSM 이 Evaluate 후 읽음
+
+	// 실제 시간 진행 / pose 평가 / RM 계산 로직은 이 노드가 담당. 외부 멤버와 양방향 sync.
+	FAnimNode_SequencePlayer Player;
 };
