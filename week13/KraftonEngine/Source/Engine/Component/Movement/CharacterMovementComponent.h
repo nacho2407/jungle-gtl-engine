@@ -44,6 +44,11 @@ public:
 	bool ConsumePendingRootMotion(FTransform& OutLocalDelta);
 	bool HasPendingRootMotion() const { return bHasPendingRootMotion; }
 
+	// 직전 TickComponent 에서 root motion 의 yaw 가 capsule rotation 에 실제로 적용됐는지.
+	// ACharacter::Tick 이 control yaw 를 capsule 에 덮어쓰기 전에 query 해서 충돌 회피
+	// (root motion 회전이 활성 중인 frame 은 control yaw 가 덮으면 회전이 토글되어 끊김).
+	bool HasYawDrivenByRootMotion() const { return bAppliedRootMotionYawThisFrame; }
+
 	const FVector& GetVelocity() const { return Velocity; }
 	float          GetSpeed()    const { return Velocity.Length(); }
 
@@ -106,9 +111,12 @@ protected:
 
 	// Root motion 누적 buffer — 매 frame AddRootMotionDelta 로 합성, TickComponent 가 1회 소비.
 	// PendingRootMotion 이 identity 라도 "이번 frame 에 root motion 이 있었다" 와 구분 필요해 bool 별도.
-	// (현재는 dormant — TickComponent 가 아직 ConsumePendingRootMotion 호출 안 함)
 	FTransform    PendingRootMotion;
 	bool          bHasPendingRootMotion = false;
+
+	// 직전 TickComponent 에서 root motion yaw 가 실제 적용됐는지 (외부 query 용 — Character 의 yaw 가드).
+	// 매 Tick 시작에 reset 후 yaw 적용 시 true.
+	bool          bAppliedRootMotionYawThisFrame = false;
 
 	// 평면 속도 기준 yaw 를 RotationYawRate * dt 로 lerp. TickComponent 끝에서 적용.
 	void  PhysOrientToMovement(float DeltaTime);

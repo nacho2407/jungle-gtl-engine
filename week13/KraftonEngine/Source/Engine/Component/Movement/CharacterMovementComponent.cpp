@@ -91,6 +91,10 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	if (!Updated) return;
 	if (DeltaTime <= 0.0f) return;
 
+	// 매 Tick 회전 적용 상태 reset — 이번 frame 에 root motion 이 yaw 를 적용했는지를
+	// 외부 (Character::Tick) 가 query 할 수 있어야 yaw 충돌 회피 가능.
+	bAppliedRootMotionYawThisFrame = false;
+
 	FVector Input;
 	ConsumeInputVector(Input);
 	Input.Z = 0.0f;   // XY 평면만 — Z 는 mode 가 결정.
@@ -143,9 +147,9 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	}
 
 	// 4) Root motion yaw 적용. yaw 만 추출 — root motion 의 pitch/roll 은 캐릭터 capsule
-	//    회전에 일반적으로 의미 없음 (UE 도 yaw 만 적용). bOrientRotationToMovement 와의
-	//    충돌은 Step 6 에서 본격 정리 — 지금은 단순 누적이라 PhysOrientToMovement 가
-	//    같은 frame 에 yaw 를 덮을 수 있음.
+	//    회전에 일반적으로 의미 없음 (UE 도 yaw 만 적용).
+	//    yaw 가 적용되면 bAppliedRootMotionYawThisFrame 을 켜서 PhysOrientToMovement /
+	//    Character 의 control yaw 덮어쓰기 둘 다 같은 frame skip 되도록 한다.
 	if (bHadRootMotion)
 	{
 		const FRotator DeltaRot = RootMotionDelta.Rotation.ToRotator();
@@ -154,12 +158,14 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 			FRotator R = Updated->GetRelativeRotation();
 			R.Yaw += DeltaRot.Yaw;
 			Updated->SetRelativeRotation(R);
+			bAppliedRootMotionYawThisFrame = true;
 		}
 	}
 
-	// 5) Orient yaw to movement direction — 양 mode 공통. Falling 중에도 air control 로
-	//    방향이 바뀌면 자연스럽게 회전. Velocity.XY ≈ 0 이면 no-op (마지막 facing 유지).
-	if (bOrientRotationToMovement)
+	// 5) Orient yaw to movement direction. Root motion 이 yaw 를 잡고 있는 frame 은 skip —
+	//    그렇지 않으면 PhysOrient 가 root motion 회전을 Velocity 방향으로 다시 lerp 해
+	//    의도된 회전이 무효화된다 (turn-in-place anim 가장 큰 피해).
+	if (bOrientRotationToMovement && !bAppliedRootMotionYawThisFrame)
 	{
 		PhysOrientToMovement(DeltaTime);
 	}
