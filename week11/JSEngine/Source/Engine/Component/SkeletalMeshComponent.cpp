@@ -1,4 +1,4 @@
-#include "SkeletalMeshComponent.h"
+﻿#include "SkeletalMeshComponent.h"
 
 #include <utility>
 
@@ -10,6 +10,7 @@
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Stats.h"
 #include "Core/ResourceManager.h"
+#include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
@@ -85,6 +86,8 @@ bool USkeletalMeshComponent::ApplyAnimationLocalPose(const TArray<FTransform>& L
         return false;
     }
 
+    // global pose, skinning matrices를 포함한 실제 posing 결과 반영은 USkinnedMeshComponent::EnsureSkinningUpdated에서 진행
+	// 효율을 위해 move semantics 사용
     CurrentLocalPose = std::move(LocalMatrices);
     MarkPoseDirty();
     return true;
@@ -97,6 +100,7 @@ bool USkeletalMeshComponent::RefreshAnimationPose()
         return false;
     }
 
+    // scrubber처럼 시간을 직접 바꾼 뒤 tick을 기다리지 않고 현재 시간의 pose를 즉시 반영할 때 사용
     TArray<FTransform> LocalPose;
     if (!AnimInstance->EvaluateAnimation(LocalPose))
     {
@@ -121,13 +125,15 @@ void USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool 
         return;
     }
 
+    SingleNodeInstance->SetAnimationAsset(NewAnimToPlay);
+    SingleNodeInstance->SetLooping(bLooping);
+
     if (!NewAnimToPlay)
     {
         UE_LOG_WARNING("[SkeletalMeshComponent] PlayAnimation called with null animation asset.");
+        return;
     }
 
-    SingleNodeInstance->SetAnimationAsset(NewAnimToPlay);
-    SingleNodeInstance->SetLooping(bLooping);
     SingleNodeInstance->Play();
 }
 
@@ -188,6 +194,12 @@ float USkeletalMeshComponent::GetPosition() const
     return SingleNodeInstance ? SingleNodeInstance->GetPosition() : 0.0f;
 }
 
+float USkeletalMeshComponent::GetPreviousTime() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetPreviousTime() : 0.0f;
+}
+
 void USkeletalMeshComponent::SetPlayRate(float InPlayRate)
 {
     if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
@@ -200,6 +212,20 @@ float USkeletalMeshComponent::GetPlayRate() const
 {
     const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
     return SingleNodeInstance ? SingleNodeInstance->GetPlayRate() : 1.0f;
+}
+
+void USkeletalMeshComponent::SetReversePlay(bool bInReversePlay)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetReversePlay(bInReversePlay);
+    }
+}
+
+bool USkeletalMeshComponent::IsReversePlay() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->IsReversePlay() : false;
 }
 
 void USkeletalMeshComponent::SetLooping(bool bInLooping)
@@ -222,10 +248,64 @@ bool USkeletalMeshComponent::IsPlaying() const
     return SingleNodeInstance ? SingleNodeInstance->IsPlaying() : false;
 }
 
+bool USkeletalMeshComponent::IsPaused() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->IsPaused() : false;
+}
+
 float USkeletalMeshComponent::GetPlayLength() const
 {
-    const UAnimationAsset* Animation = GetAnimation();
-    return Animation ? Animation->GetPlayLength() : 0.0f;
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetPlayLength() : 0.0f;
+}
+
+void USkeletalMeshComponent::SetRootMotionMode(ERootMotionMode InMode)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetRootMotionMode(InMode);
+    }
+}
+
+ERootMotionMode USkeletalMeshComponent::GetRootMotionMode() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetRootMotionMode() : ERootMotionMode::Ignore;
+}
+
+FRootMotionDelta USkeletalMeshComponent::GetLastExtractedRootMotion() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetLastExtractedRootMotion() : FRootMotionDelta();
+}
+
+void USkeletalMeshComponent::SetRootMotionBoneIndex(int32 InBoneIndex)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetRootMotionBoneIndex(InBoneIndex);
+    }
+}
+
+int32 USkeletalMeshComponent::GetRootMotionBoneIndex() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetRootMotionBoneIndex() : -1;
+}
+
+void USkeletalMeshComponent::SetRootMotionBoneName(const FName& InBoneName)
+{
+    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    {
+        SingleNodeInstance->SetRootMotionBoneName(InBoneName);
+    }
+}
+
+FName USkeletalMeshComponent::GetRootMotionBoneName() const
+{
+    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
+    return SingleNodeInstance ? SingleNodeInstance->GetRootMotionBoneName() : FName();
 }
 
 bool USkeletalMeshComponent::SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName)
@@ -305,6 +385,35 @@ void USkeletalMeshComponent::StopAnim()
     Stop();
 }
 
+void USkeletalMeshComponent::HandleAnimNotify(const FAnimNotifyDispatchEvent& NotifyEvent)
+{
+    LastAnimNotifyEvent = NotifyEvent;
+    bHasLastAnimNotifyEvent = true;
+
+    OnAnimNotify.Broadcast(this, NotifyEvent);
+
+    if (AActor* Owner = GetOwner())
+    {
+        Owner->HandleAnimNotify(this, NotifyEvent);
+    }
+}
+
+bool USkeletalMeshComponent::HasLastAnimNotifyEvent() const
+{
+    return bHasLastAnimNotifyEvent;
+}
+
+const FAnimNotifyDispatchEvent& USkeletalMeshComponent::GetLastAnimNotifyEvent() const
+{
+    return LastAnimNotifyEvent;
+}
+
+void USkeletalMeshComponent::ClearLastAnimNotifyEvent()
+{
+    LastAnimNotifyEvent = FAnimNotifyDispatchEvent();
+    bHasLastAnimNotifyEvent = false;
+}
+
 void USkeletalMeshComponent::RecreateAnimInstance()
 {
     DestroyAnimInstance();
@@ -364,6 +473,7 @@ void USkeletalMeshComponent::DestroyAnimInstance()
         UObjectManager::Get().DestroyObject(AnimInstance);
     }
     AnimInstance = nullptr;
+    ClearLastAnimNotifyEvent();
 }
 
 UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const

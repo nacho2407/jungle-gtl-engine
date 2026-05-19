@@ -130,6 +130,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
         if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData()) return true;
 
         FMeshBuffer* MeshBuffer = nullptr;
+        EVertexFactoryType CmdVertexFactoryType;
         if (RenderBus.GetSkinningMode() == ESkinningMode::CPU)
         {
             SkeletalMeshComp->EnsureCPUSkinnedVerticesUpdated();
@@ -140,11 +141,13 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
                 SkeletalMeshComp->GetSkinnedVertices(),
                 SkeletalMesh->GetIndices(),
                 bNeedsUpload);
+            CmdVertexFactoryType = EVertexFactoryType::StaticMesh;
         }
         else if (RenderBus.GetSkinningMode() == ESkinningMode::GPU)
         {
             SkeletalMeshComp->EnsurePoseUpdated();
             MeshBuffer = MeshBufferManager.GetGPUSkinningSourceBuffer(SkeletalMesh);
+            CmdVertexFactoryType = EVertexFactoryType::SkeletalMesh;
         }
 
         const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();
@@ -154,7 +157,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
             Cmd.SourcePrimitive = Primitive;
             Cmd.Type = ERenderCommandType::SkeletalMesh;
-            Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
+            Cmd.VertexFactoryType = CmdVertexFactoryType;
             Cmd.MeshBuffer = MeshBuffer;
             Cmd.SectionIndexStart = 0;
             Cmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
@@ -179,12 +182,12 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
             Cmd.SourcePrimitive = Primitive;
             Cmd.Type = ERenderCommandType::SkeletalMesh;
-            Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
+            Cmd.VertexFactoryType = CmdVertexFactoryType;
             Cmd.MeshBuffer = MeshBuffer;
 
             if (RenderBus.GetSkinningMode() == ESkinningMode::CPU)
             {
-                // TODO: Bone weight visualization에서 필요
+                // TODO: Bone weight visualization 은 GPU skinning으로만 동작
             }
             else
             {

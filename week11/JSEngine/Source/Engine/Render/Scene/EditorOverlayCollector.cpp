@@ -347,7 +347,15 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
         }
         else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SkeletalMesh)
         {
-            BaseCmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
+            if (RenderBus.GetSkinningMode() == ESkinningMode::CPU)
+            {
+                BaseCmd.VertexFactoryType = EVertexFactoryType::StaticMesh;
+            }
+            else if (RenderBus.GetSkinningMode() == ESkinningMode::GPU)
+            {
+                BaseCmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
+            }
+
         }
         else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Text)
         {

@@ -3,6 +3,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
+#include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/Texture.h"
 #include "Render/Resource/VertexFactoryTypes.h"
@@ -48,7 +49,7 @@ static uint32 GetSelectionMaskShaderKey(const FRenderCommand& Cmd)
     }
 
     const EPrimitiveType PrimitiveType = Primitive->GetPrimitiveType();
-    if (PrimitiveType == EPrimitiveType::EPT_StaticMesh)
+    if (PrimitiveType == EPrimitiveType::EPT_StaticMesh || PrimitiveType == EPrimitiveType::EPT_SkeletalMesh)
     {
         return 1;
     }
@@ -65,43 +66,43 @@ static FShaderProgram* GetSelectionMaskProgram(const FRenderCommand& Cmd)
 {
     const uint32 ShaderKey = GetSelectionMaskShaderKey(Cmd);
 
-    const char* VSEntry = "VSPrimitive";
-    const char* PSEntry = "PSPrimitive";
     const FVertexLayoutDesc* VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::Primitive).SelectionLayout;
+    TArray<D3D_SHADER_MACRO> Macros;
     if (ShaderKey == 1)
     {
-        VSEntry = "VSStaticMesh";
-        PSEntry = "PSTextured";
+        Macros.push_back({ "VF_MESH", "1" });
         VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::StaticMesh).SelectionLayout;
     }
     else if (ShaderKey == 2)
     {
-        VSEntry = "VSBillboard";
-        PSEntry = "PSTextured";
+        Macros.push_back({ "VF_BILLBOARD", "1" });
         VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::Billboard).SelectionLayout;
     }
     else if (ShaderKey == 3)
     {
-        VSEntry = "VSSkeletalMesh";
-        PSEntry = "PSTextured";
+        Macros.push_back({ "VF_MESH", "1" });
+        Macros.push_back({ "GPU_SKINNING", "1" });
         VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::SkeletalMesh).SelectionLayout;
     }
+    Macros.push_back({ nullptr, nullptr });
 
     FShaderStageKey VSKey;
     VSKey.FilePath = FShaderPaths::EditorSelectionMask;
-    VSKey.EntryPoint = VSEntry;
+    VSKey.EntryPoint = "VS";
+    VSKey.Target = "vs_5_0";
     VSKey.PermutationKey = ShaderKey;
 
     FShaderStageKey PSKey;
     PSKey.FilePath = FShaderPaths::EditorSelectionMask;
-    PSKey.EntryPoint = PSEntry;
+    PSKey.EntryPoint = "PS";
+    PSKey.Target = "ps_5_0";
     PSKey.PermutationKey = ShaderKey;
 
     return FResourceManager::Get().GetOrCreateShaderProgram(
         VSKey,
         PSKey,
-        nullptr,
-        nullptr,
+        Macros.data(),
+        Macros.data(),
         VertexLayout);
 }
 
@@ -232,6 +233,14 @@ bool FSelectionMaskRenderPass::DrawCommand(const FRenderPassContext* Context)
         Context->DeviceContext->VSSetConstantBuffers(12, 1, &cb12);
         Context->DeviceContext->PSSetConstantBuffers(12, 1, &cb12);
         Context->DeviceContext->PSSetShaderResources(0, 1, &TextureSRV);
+
+        if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh &&
+            Context->RenderBus->GetSkinningMode() == ESkinningMode::GPU)
+        {
+            Context->RenderResources->SkinningBuffer.Update(Context->DeviceContext, &Cmd.Constants.Skinning, sizeof(FSkinningConstants));
+            ID3D11Buffer* cb5 = Context->RenderResources->SkinningBuffer.GetBuffer();
+            Context->DeviceContext->VSSetConstantBuffers(5, 1, &cb5);
+        }
 
         if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
         {

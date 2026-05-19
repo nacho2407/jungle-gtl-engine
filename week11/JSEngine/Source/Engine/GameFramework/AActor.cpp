@@ -1,4 +1,4 @@
-#include "GameFramework/AActor.h"
+﻿#include "GameFramework/AActor.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
 #include "Component/Movement/MovementComponent.h"
@@ -712,4 +712,11 @@ void AActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Othe
                 SweepResult);
         }
     }
+}
+
+void AActor::HandleAnimNotify(USkeletalMeshComponent* SourceComponent, const FAnimNotifyDispatchEvent& NotifyEvent)
+{
+	// 기본 구현은 no-op
+    (void)SourceComponent;
+    (void)NotifyEvent;
 }

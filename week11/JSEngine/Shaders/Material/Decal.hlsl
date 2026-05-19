@@ -46,7 +46,7 @@ struct PSOutput
 };
 
 
-PSInput mainVS(VSInput input)
+PSInput VS(VSInput input)
 {
     PSInput output;
 

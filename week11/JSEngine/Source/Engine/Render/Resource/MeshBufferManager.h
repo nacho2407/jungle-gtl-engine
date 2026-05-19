@@ -39,7 +39,7 @@ public:
     FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0);
     // Key by component UUID and accept raw section data to avoid header coupling with ProceduralMeshComponent.
 	FMeshBuffer* GetProcMeshBuffer(uint32 ProcMeshCompUUID, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices);
-	FMeshBuffer* GetCPUSkinnedMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FSkeletalMeshVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload);
+	FMeshBuffer* GetCPUSkinnedMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload);
 	FMeshBuffer* GetGPUSkinningSourceBuffer(const USkeletalMesh* SkeletalMeshAsset);
 	void ReleaseCPUSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID);
 	void ReleaseStaleCPUSkeletalMeshBuffers();

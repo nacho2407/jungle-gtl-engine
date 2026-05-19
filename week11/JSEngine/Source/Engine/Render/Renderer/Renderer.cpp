@@ -37,8 +37,8 @@ namespace
 		const FVertexFactoryDesc& VertexFactoryDesc = FVertexFactoryRegistry::Get(Cmd.VertexFactoryType);
 
 		FShaderStageKey VSKey;
-		VSKey.FilePath = VertexFactoryDesc.VertexShaderPath;
-		VSKey.EntryPoint = VertexFactoryDesc.BasePassVSEntry;
+		VSKey.FilePath = Cmd.Material->GetPixelShaderPath();
+		VSKey.EntryPoint = "VS";
 		VSKey.Target = "vs_5_0";
 
 		FShaderStageKey PSKey;
@@ -89,26 +89,39 @@ namespace
 		return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
 	}
 
+	TArray<D3D_SHADER_MACRO> BuildVertexFactoryMacros(uint32 ShaderKey)
+	{
+		TArray<D3D_SHADER_MACRO> Macros;
+		if (ShaderKey == 1)
+		{
+			Macros.push_back({ "VF_MESH", "1" });
+		}
+		else if (ShaderKey == 2)
+		{
+			Macros.push_back({ "VF_BILLBOARD", "1" });
+		}
+		else if (ShaderKey == 3)
+		{
+			Macros.push_back({ "VF_MESH", "1" });
+			Macros.push_back({ "GPU_SKINNING", "1" });
+		}
+
+		Macros.push_back({ nullptr, nullptr });
+		return Macros;
+	}
+
 	FShaderProgram* GetEditorIdPickProgram(uint32 ShaderKey)
 	{
-		const char* VSEntryPoint = "VSPrimitive";
-		const char* PSEntryPoint = "PSOpaque";
 		const FVertexLayoutDesc* VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::Primitive).SelectionLayout;
 		switch (ShaderKey)
 		{
 		case 1:
-			VSEntryPoint = "VSStaticMesh";
-			PSEntryPoint = "PSTextured";
 			VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::StaticMesh).SelectionLayout;
 			break;
 		case 2:
-			VSEntryPoint = "VSBillboard";
-			PSEntryPoint = "PSTextured";
 			VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::Billboard).SelectionLayout;
 			break;
 		case 3:
-			VSEntryPoint = "VSSkeletalMesh";
-			PSEntryPoint = "PSTextured";
 			VertexLayout = &FVertexFactoryRegistry::Get(EVertexFactoryType::SkeletalMesh).SelectionLayout;
 			break;
 		default:
@@ -117,19 +130,22 @@ namespace
 
 		FShaderStageKey VSKey;
 		VSKey.FilePath = FShaderPaths::EditorIDPick;
-		VSKey.EntryPoint = VSEntryPoint;
+		VSKey.EntryPoint = "VS";
 		VSKey.Target = "vs_5_0";
+		VSKey.PermutationKey = ShaderKey;
 
 		FShaderStageKey PSKey;
 		PSKey.FilePath = FShaderPaths::EditorIDPick;
-		PSKey.EntryPoint = PSEntryPoint;
+		PSKey.EntryPoint = "PS";
 		PSKey.Target = "ps_5_0";
+		PSKey.PermutationKey = ShaderKey;
 
+		TArray<D3D_SHADER_MACRO> Macros = BuildVertexFactoryMacros(ShaderKey);
 		return FResourceManager::Get().GetOrCreateShaderProgram(
 			VSKey,
 			PSKey,
-			nullptr,
-			nullptr,
+			Macros.data(),
+			Macros.data(),
 			VertexLayout);
 	}
 }
@@ -262,8 +278,8 @@ void FRenderer::Create(HWND hWindow)
 	{
 		auto Macros = FShaderHelper::BuildShadowMapMacros(static_cast<EShadowMap>(ShadowMapIdx));
 		FResourceManager::Get().GetOrCreateShaderProgram(
-			FShaderStageKey{ FShaderPaths::Shadow, "ShadowVS", "vs_5_0", ShadowMapIdx },
-			FShaderStageKey{ FShaderPaths::Shadow, "ShadowPS", "ps_5_0", ShadowMapIdx },
+			FShaderStageKey{ FShaderPaths::Shadow, "VS", "vs_5_0", ShadowMapIdx },
+			FShaderStageKey{ FShaderPaths::Shadow, "PS", "ps_5_0", ShadowMapIdx },
 			Macros.data(),
 			Macros.data(),
 			&FVertexFactoryRegistry::Get(EVertexFactoryType::StaticMesh).PositionOnlyLayout);
@@ -685,6 +701,14 @@ void FRenderer::RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewpor
             ID3D11Buffer* PickingBuffer = Resources.EditorPickingConstantBuffer.GetBuffer();
             Context->VSSetConstantBuffers(12, 1, &PickingBuffer);
             Context->PSSetConstantBuffers(12, 1, &PickingBuffer);
+
+            if (Command.VertexFactoryType == EVertexFactoryType::SkeletalMesh &&
+                InRenderBus.GetSkinningMode() == ESkinningMode::GPU)
+            {
+                Resources.SkinningBuffer.Update(Context, &Command.Constants.Skinning, sizeof(FSkinningConstants));
+                ID3D11Buffer* cb5 = Resources.SkinningBuffer.GetBuffer();
+                Context->VSSetConstantBuffers(5, 1, &cb5);
+            }
 
             Context->PSSetShaderResources(0, 1, &TextureSRV);
             FShaderProgram* PickProgram = GetEditorIdPickProgram(ShaderKey);
