@@ -32,8 +32,8 @@ class CustomParser
         RegexOptions.Singleline);
 
     static readonly Regex FunctionRegex = new Regex(
-    @"UFUNCTION\s*\((?<options>[^)]*)\)\s+(?<static>static\s+)?(?<return>[A-Za-z_]\w*(?:::\w+)*(?:\s*<[^;{}()]+>)?\s*[*&]?)\s+(?<name>\w+)\s*\((?<params>[^)]*)\)\s*(?<const>const)?\s*;",
-    RegexOptions.Singleline);
+        @"UFUNCTION\s*\((?<options>[^)]*)\)\s+(?:virtual\s+)?(?:inline\s+)?(?<static>static\s+)?(?:inline\s+)?(?<return>[A-Za-z_]\w*(?:::\w+)*(?:\s*<[^;{}()]+>)?\s*[*&]?)\s+(?<name>\w+)\s*\((?<params>[^)]*)\)\s*(?<const>const)?\s*(?:override\s*)?(?:final\s*)?(?:;|\{)",
+        RegexOptions.Singleline);
 
     #region Helper Methods
 

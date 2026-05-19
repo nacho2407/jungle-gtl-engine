@@ -36,19 +36,66 @@ end
 --LifeCycle
 function Script:BeginPlay()
     local comp = self.owner:GetComponentByType("SubUVComponent")
-local subuv = comp and comp:AsSubUVComponent()
+    local subuv = comp and comp:AsSubUVComponent()
 
-if subuv == nil then
-    Log("[LuaTest] cast failed")
-    return
-end
+    if subuv == nil then
+        Log("[LuaTest] SubUVComponent not found or cast failed")
+        return
+    end
 
-Log("[LuaTest] subuv.Play type = " .. tostring(type(subuv.Play)))
+    Log("[LuaTest] subuv.Play type = " .. tostring(type(subuv.Play)))
+    Log("[LuaTest] subuv.SetFrameRate type = " .. tostring(type(subuv.SetFrameRate)))
+    Log("[LuaTest] subuv.SetLoop type = " .. tostring(type(subuv.SetLoop)))
 
-subuv.FrameIndex = 5
-subuv:Play()
+    local okRate, errRate = pcall(function()
+        subuv:SetFrameRate(12.5)
+    end)
+    Log("[LuaTest] SetFrameRate(12.5) ok = " .. tostring(okRate))
+    if not okRate then
+        Log("[LuaTest] SetFrameRate error = " .. tostring(errRate))
+    end
 
-Log("[LuaTest] after Play FrameIndex = " .. tostring(subuv.FrameIndex))
+    local okLoopFalse, errLoopFalse = pcall(function()
+        subuv:SetLoop(false)
+    end)
+    Log("[LuaTest] SetLoop(false) ok = " .. tostring(okLoopFalse))
+    if not okLoopFalse then
+        Log("[LuaTest] SetLoop(false) error = " .. tostring(errLoopFalse))
+    end
+
+    subuv.FrameIndex = 7
+    Log("[LuaTest] before Play FrameIndex = " .. tostring(subuv.FrameIndex))
+
+    local okPlay, errPlay = pcall(function()
+        subuv:Play()
+    end)
+    Log("[LuaTest] Play() ok = " .. tostring(okPlay))
+    if not okPlay then
+        Log("[LuaTest] Play error = " .. tostring(errPlay))
+    end
+
+    Log("[LuaTest] after Play FrameIndex = " .. tostring(subuv.FrameIndex))
+
+    local okLoopTrue, errLoopTrue = pcall(function()
+        subuv:SetLoop(true)
+    end)
+    Log("[LuaTest] SetLoop(true) ok = " .. tostring(okLoopTrue))
+    if not okLoopTrue then
+        Log("[LuaTest] SetLoop(true) error = " .. tostring(errLoopTrue))
+    end
+
+    Log("[LuaTest] IsLoop type = " .. tostring(type(subuv.IsLoop)))
+Log("[LuaTest] IsFinished type = " .. tostring(type(subuv.IsFinished)))
+
+local okIsLoop, resultIsLoop = pcall(function()
+    return subuv:IsLoop()
+end)
+Log("[LuaTest] IsLoop() ok = " .. tostring(okIsLoop) .. ", result = " .. tostring(resultIsLoop))
+
+local okFinished, resultFinished = pcall(function()
+    return subuv:IsFinished()
+end)
+Log("[LuaTest] IsFinished() ok = " .. tostring(okFinished) .. ", result = " .. tostring(resultFinished))
 end
 
 function Script:Tick(dt)

@@ -40,9 +40,13 @@ public:
 	uint32 GetFrameIndex() const { return FrameIndex; }
 
 	// --- Playback ---
+    UFUNCTION( ScriptCallable)
 	void SetFrameRate(float InFPS) { PlayRate = InFPS; }
+    UFUNCTION(ScriptCallable)
 	void SetLoop(bool bInLoop) { bLoop = bInLoop; }
+    UFUNCTION(ScriptCallable)
 	bool IsLoop()     const { return bLoop; }
+    UFUNCTION(ScriptCallable)
 	bool IsFinished() const { return !bLoop && bIsExecute; }
     UFUNCTION(CallInEditor, ScriptCallable, DisplayName = "Replay")
     void Play(); // 처음부터 다시 재생
