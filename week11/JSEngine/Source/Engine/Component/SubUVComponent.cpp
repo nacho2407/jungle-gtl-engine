@@ -72,6 +72,8 @@ void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 
 void USubUVComponent::PostEditProperty(const char* PropertyName)
 {
+    UBillboardComponent::PostEditProperty(PropertyName);
+
 	if (strcmp(PropertyName, "Particle") == 0)
 	{
 		SetParticle(ParticleName);
