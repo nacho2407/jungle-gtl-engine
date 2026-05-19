@@ -51,6 +51,22 @@ bool UAnimSequenceBase::RemoveNotifyAt(int32 NotifyIndex)
 	return true;
 }
 
+bool UAnimSequenceBase::SetNotifyName(int32 NotifyIndex, const FName& InNotifyName)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	if (!InNotifyName.IsValid())
+	{
+		return false;
+	}
+
+	Notifies[NotifyIndex].NotifyName = InNotifyName;
+	return true;
+}
+
 bool UAnimSequenceBase::SetNotifyTriggerTime(int32 NotifyIndex, float InTriggerTime)
 {
 	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))

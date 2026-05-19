@@ -98,6 +98,7 @@ public:
 	void AddNotifyState(float InTriggerTime, float InDuration, const FName& InNotifyName) { AddNotify(InTriggerTime, InNotifyName, InDuration); }
 	void ClearNotifies();
 	bool RemoveNotifyAt(int32 NotifyIndex);
+	bool SetNotifyName(int32 NotifyIndex, const FName& InNotifyName);
 	bool SetNotifyTriggerTime(int32 NotifyIndex, float InTriggerTime);
 	bool SetNotifyDuration(int32 NotifyIndex, float InDuration);
 	bool SetNotifyTimeRange(int32 NotifyIndex, float InTriggerTime, float InDuration);

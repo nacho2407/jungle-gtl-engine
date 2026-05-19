@@ -701,6 +701,8 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 			SelectedAnimTrackIndex = -1;
 			SelectedAnimNotifyIndex = -1;
 			DraggingAnimNotifyIndex = -1;
+			SelectedAnimNotifyNameBufferIndex = -1;
+			SelectedAnimNotifyNameBuffer[0] = '\0';
 			bAnimNotifyDragDirty = false;
 			snprintf(AnimNotifyNameBuffer, sizeof(AnimNotifyNameBuffer), "AnimNotify");
 		}
@@ -744,6 +746,8 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 	{
 		CachedAnimSequence = nullptr;
 		DraggingAnimNotifyIndex = -1;
+		SelectedAnimNotifyNameBufferIndex = -1;
+		SelectedAnimNotifyNameBuffer[0] = '\0';
 		bAnimNotifyDragDirty = false;
 	}
 
@@ -1539,6 +1543,8 @@ void FEditorViewerWindowWidget::RenderAnimSequenceDetails(UAnimSequence* Sequenc
 		if (SelectedAnimNotifyIndex >= static_cast<int32>(Notifies.size()))
 		{
 			SelectedAnimNotifyIndex = -1;
+			SelectedAnimNotifyNameBufferIndex = -1;
+			SelectedAnimNotifyNameBuffer[0] = '\0';
 		}
 
 		if (Notifies.empty())
@@ -1560,40 +1566,84 @@ void FEditorViewerWindowWidget::RenderAnimSequenceDetails(UAnimSequence* Sequenc
 					Notify.NotifyName.ToString().c_str(),
 					NotifyIndex);
 
-				if (ImGui::Selectable(Label, SelectedAnimNotifyIndex == NotifyIndex))
-				{
-					SelectedAnimNotifyIndex = NotifyIndex;
-					if (Viewer)
-					{
-						Viewer->SetAnimationTime(Notify.TriggerTime);
-					}
-				}
-
-				ImGui::SameLine();
 				ImGui::PushID(NotifyIndex);
 				if (ImGui::SmallButton("Delete"))
 				{
-					if (Sequence->RemoveNotifyAt(NotifyIndex))
+					const int32 DeletedIndex = NotifyIndex;
+					if (Sequence->RemoveNotifyAt(DeletedIndex))
 					{
 						SaveAnimSequenceAsset(Sequence);
-						SelectedAnimNotifyIndex = -1;
+						if (SelectedAnimNotifyIndex == DeletedIndex)
+						{
+							SelectedAnimNotifyIndex = -1;
+						}
+						else if (SelectedAnimNotifyIndex > DeletedIndex)
+						{
+							--SelectedAnimNotifyIndex;
+						}
+
+						if (DraggingAnimNotifyIndex == DeletedIndex)
+						{
+							DraggingAnimNotifyIndex = -1;
+							AnimNotifyDragMode = 0;
+							AnimNotifyDragGrabOffset = 0.0f;
+							bAnimNotifyDragDirty = false;
+						}
+						else if (DraggingAnimNotifyIndex > DeletedIndex)
+						{
+							--DraggingAnimNotifyIndex;
+						}
+
+						SelectedAnimNotifyNameBufferIndex = -1;
+						SelectedAnimNotifyNameBuffer[0] = '\0';
 						ImGui::PopID();
 						break;
+					}
+				}
+				ImGui::SameLine();
+
+				if (ImGui::Selectable(Label, SelectedAnimNotifyIndex == NotifyIndex))
+				{
+					SelectedAnimNotifyIndex = NotifyIndex;
+					SelectedAnimNotifyNameBufferIndex = -1;
+					if (Viewer)
+					{
+						Viewer->SetAnimationTime(Notify.TriggerTime);
 					}
 				}
 				ImGui::PopID();
 			}
 		}
 
-		if (SelectedAnimNotifyIndex >= 0 && SelectedAnimNotifyIndex < static_cast<int32>(Notifies.size()))
+		const TArray<FAnimNotifyStateEvent>& CurrentNotifies = Sequence->GetNotifies();
+		if (SelectedAnimNotifyIndex >= 0 && SelectedAnimNotifyIndex < static_cast<int32>(CurrentNotifies.size()))
 		{
 			ImGui::Spacing();
 			ImGui::Separator();
-			const FAnimNotifyStateEvent& SelectedNotify = Notifies[SelectedAnimNotifyIndex];
+			const FAnimNotifyStateEvent& SelectedNotify = CurrentNotifies[SelectedAnimNotifyIndex];
 			ImGui::Text("Selected: %s", SelectedNotify.NotifyName.ToString().c_str());
 
-			float StartTime = SelectedNotify.TriggerTime;
-			float Duration = SelectedNotify.Duration;
+			if (SelectedAnimNotifyNameBufferIndex != SelectedAnimNotifyIndex)
+			{
+				snprintf(
+					SelectedAnimNotifyNameBuffer,
+					sizeof(SelectedAnimNotifyNameBuffer),
+					"%s",
+					SelectedNotify.NotifyName.ToString().c_str());
+				SelectedAnimNotifyNameBufferIndex = SelectedAnimNotifyIndex;
+			}
+
+			ImGui::SetNextItemWidth(180.0f);
+			if (ImGui::InputText("Name", SelectedAnimNotifyNameBuffer, sizeof(SelectedAnimNotifyNameBuffer)))
+			{
+				if (SelectedAnimNotifyNameBuffer[0] != '\0' && Sequence->SetNotifyName(SelectedAnimNotifyIndex, FName(FString(SelectedAnimNotifyNameBuffer))))
+				{
+					SaveAnimSequenceAsset(Sequence);
+				}
+			}
+
+			float StartTime = Sequence->GetNotifies()[SelectedAnimNotifyIndex].TriggerTime;
+			float Duration = Sequence->GetNotifies()[SelectedAnimNotifyIndex].Duration;
 			ImGui::SetNextItemWidth(110.0f);
 			if (ImGui::InputFloat("Start", &StartTime, 0.01f, 0.1f, "%.3f"))
 			{
@@ -1603,6 +1653,7 @@ void FEditorViewerWindowWidget::RenderAnimSequenceDetails(UAnimSequence* Sequenc
 					const float FinalTriggerTime = Sequence->GetNotifies()[SelectedAnimNotifyIndex].TriggerTime;
 					Sequence->MoveNotifyAt(SelectedAnimNotifyIndex, FinalTriggerTime, &NewNotifyIndex);
 					SelectedAnimNotifyIndex = NewNotifyIndex;
+					SelectedAnimNotifyNameBufferIndex = -1;
 					SaveAnimSequenceAsset(Sequence);
 					if (Viewer)
 					{

@@ -112,6 +112,8 @@ private:
     bool bAnimNotifyDragDirty = false;
     UAnimSequence* CachedAnimSequence = nullptr;
     char AnimNotifyNameBuffer[128] = "AnimNotify";
+    char SelectedAnimNotifyNameBuffer[128] = {};
+    int32 SelectedAnimNotifyNameBufferIndex = -1;
     float AnimNotifyDurationToAdd = 0.0f;
 
     bool bAnimSequenceToolbarIconsLoadAttempted = false;
