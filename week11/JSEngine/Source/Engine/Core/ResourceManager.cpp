@@ -1,4 +1,4 @@
-﻿#include "Core/ResourceManager.h"
+#include "Core/ResourceManager.h"
 
 #include "Core/Paths.h"
 #include "Core/AssetPathPolicy.h"
@@ -566,12 +566,6 @@ void FResourceManager::ReleaseGPUResources()
 
 	RenderStateCache.Release();
 
-	for (auto& [Path, Mesh] : SkeletalMeshMap)
-	{
-		UObjectManager::Get().DestroyObject(Mesh);
-	}
-	SkeletalMeshMap.clear();
-
 	for (auto& [Path, Anim] : AnimSequenceMap)
 	{
 		UObjectManager::Get().DestroyObject(Anim);
@@ -579,6 +573,12 @@ void FResourceManager::ReleaseGPUResources()
 	AnimSequenceMap.clear();
 	AnimSequenceFilePaths.clear();
 	AnimStackNamesMap.clear();
+
+	for (auto& [Path, Mesh] : SkeletalMeshMap)
+	{
+		UObjectManager::Get().DestroyObject(Mesh);
+	}
+	SkeletalMeshMap.clear();
 
 	DefaultWhiteTexture.Reset();
 	CachedDevice.Reset();

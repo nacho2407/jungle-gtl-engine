@@ -59,7 +59,7 @@ UAnimSequence::~UAnimSequence()
 {
     if (DataModel)
     {
-        delete DataModel;
+        UObjectManager::Get().DestroyObject(DataModel);
         DataModel = nullptr;
     }
 }
