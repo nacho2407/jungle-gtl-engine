@@ -86,6 +86,31 @@ namespace
 		return Event;
 	}
 
+	// 가용 폭에 안 맞으면 끝에 "..." 을 붙여 잘라낸다. CalcTextSize 가 픽셀 단위 폭을 알려주므로
+	// 끝부터 한 글자씩 줄여가며 ellipsis 와 합한 폭이 들어맞을 때까지 반복. 일반 notify 이름은
+	// 짧으므로 linear truncation 비용 무시 가능.
+	std::string TruncateWithEllipsis(const std::string& In, float MaxW)
+	{
+		if (MaxW <= 0.0f || In.empty()) return "";
+		const ImVec2 Full = ImGui::CalcTextSize(In.c_str());
+		if (Full.x <= MaxW) return In;
+
+		static const std::string Ellipsis = "...";
+		const float EllipsisW = ImGui::CalcTextSize(Ellipsis.c_str()).x;
+		if (MaxW <= EllipsisW) return Ellipsis;
+
+		std::string Buf = In;
+		while (Buf.size() > 1)
+		{
+			Buf.pop_back();
+			if (ImGui::CalcTextSize((Buf + Ellipsis).c_str()).x <= MaxW)
+			{
+				return Buf + Ellipsis;
+			}
+		}
+		return Ellipsis;
+	}
+
 	// 한 UObject 의 UPROPERTY(Edit) 필드를 인플레이스로 그려준다. Notify/NotifyState 의
 	// payload 편집용 경량 인스펙터 — 풀 FEditorPropertyWidget 의존성 없이 timeline 패널 안에서
 	// 자족. 지원 타입은 Notify payload 에 흔히 쓰일 단순형 (Bool/Int/Float/String/Vec3/Vec4/Color4).
@@ -531,10 +556,16 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			const std::string Nm  = N.NotifyName.ToString();
 			const ImVec2      TSz = ImGui::CalcTextSize(Nm.c_str());
 
-			float BadgeW = TSz.x + 16.0f;
+			// State (Duration>0) 는 시각적 폭 = Duration 그대로 (이름이 길어도 늘어나지 않음, 잘림).
+			// Instant 는 이름 폭 + 패딩 (시간이 0 이라 시각적 폭 의미 없음).
+			float BadgeW;
 			if (N.Duration > 0.0f)
 			{
-				BadgeW = std::max(BadgeW, TimeToX(N.TriggerTime + N.Duration) - NX);
+				BadgeW = std::max(TimeToX(N.TriggerTime + N.Duration) - NX, 6.0f);
+			}
+			else
+			{
+				BadgeW = TSz.x + 16.0f;
 			}
 
 			ImGui::PushID(i);
@@ -686,10 +717,18 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 
 			if (!Nm.empty())
 			{
-				DL->PushClipRect(BMin, BMax, true);
-				DL->AddText(ImVec2(MarkNX + 8.0f, BadgeMidY - TSz.y * 0.5f),
-				            IM_COL32(20, 35, 22, 255), Nm.c_str());
-				DL->PopClipRect();
+				// State notify 는 시각적 폭이 우선 — 이름이 길면 "..." 으로 잘라 표기.
+				// (Instant 는 BadgeW 가 이름 폭에 맞춰 자동 확장되므로 truncation 무영향.)
+				const float TextStartX = MarkNX + 8.0f;
+				const float MaxTextW   = std::max(BMax.x - TextStartX - 4.0f, 0.0f);
+				const std::string Disp = TruncateWithEllipsis(Nm, MaxTextW);
+				if (!Disp.empty())
+				{
+					DL->PushClipRect(BMin, BMax, true);
+					DL->AddText(ImVec2(TextStartX, BadgeMidY - TSz.y * 0.5f),
+					            IM_COL32(20, 35, 22, 255), Disp.c_str());
+					DL->PopClipRect();
+				}
 			}
 		}
 		if (PendingDelete >= 0 && PendingDelete < static_cast<int>(Notifies.size()))
