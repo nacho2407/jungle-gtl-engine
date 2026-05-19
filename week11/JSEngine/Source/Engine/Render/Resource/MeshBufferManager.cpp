@@ -1,8 +1,9 @@
-﻿#include "MeshBufferManager.h"
+#include "MeshBufferManager.h"
 
 #include "Asset/SkeletalMesh.h"
 #include "Asset/StaticMesh.h"
 #include "Component/ProceduralMeshComponent.h"
+#include "Object/Object.h"
 
 namespace
 {
@@ -255,6 +256,35 @@ void FMeshBufferManager::ReleaseCPUSkeletalMeshBuffers()
 
 	CPUSkeletalMeshBufferMap.clear();
 	CPUSkeletalMeshSourceMap.clear();
+}
+
+void FMeshBufferManager::ReleaseCPUSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID)
+{
+	auto BufferIt = CPUSkeletalMeshBufferMap.find(SkeletalMeshCompUUID);
+	if (BufferIt != CPUSkeletalMeshBufferMap.end())
+	{
+		BufferIt->second.Release();
+		CPUSkeletalMeshBufferMap.erase(BufferIt);
+	}
+
+	CPUSkeletalMeshSourceMap.erase(SkeletalMeshCompUUID);
+}
+
+void FMeshBufferManager::ReleaseStaleCPUSkeletalMeshBuffers()
+{
+	TArray<uint32> StaleComponentIds;
+	for (const auto& Pair : CPUSkeletalMeshBufferMap)
+	{
+		if (!UObjectManager::Get().FindByUUID(Pair.first))
+		{
+			StaleComponentIds.push_back(Pair.first);
+		}
+	}
+
+	for (uint32 ComponentId : StaleComponentIds)
+	{
+		ReleaseCPUSkeletalMeshBuffer(ComponentId);
+	}
 }
 
 void FMeshBufferManager::ReleaseGPUSkeletalMeshBuffers()

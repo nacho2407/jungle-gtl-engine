@@ -1,4 +1,4 @@
-﻿#include "EditorViewer.h"
+#include "EditorViewer.h"
 #include "EditorEngine.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/Selection/SelectionManager.h"
@@ -186,15 +186,20 @@ void FEditorViewer::Init(
 
 void FEditorViewer::Shutdown()
 {
-    // UEditorEngine::Shutdown 흐름:
-    //   CloseScene() (ViewTarget actor 포함 destroy) → ... → Viewer.Shutdown()
-    // 이 시점에 ViewTarget raw 포인터는 dangling이므로 RemoveComponent를 호출하면 안 됨.
-    // SocketPreview 컴포넌트들은 ViewTarget actor 소멸자가 이미 함께 destroy함.
-    // 우리는 단순히 map만 비우고 포인터를 null로 잡는다.
-    SocketPreviewMeshes.clear();
+    ClearSelection();
+    ClearAllSocketPreviews();
     ViewTarget = nullptr;
-    Client.SetBonePickHandler(nullptr);
 
+    Client.SetBonePickHandler(nullptr);
+    Client.DestroyCamera();
+    Client.SetGizmo(nullptr);
+    Client.SetSelectionManager(nullptr);
+    Client.SetWorld(nullptr);
+    Client.SetViewport(nullptr);
+    Client.SetState(nullptr);
+
+    Viewport.SetRenderTargetSet(nullptr);
+    Viewport.SetEditorIdPickActors(TArray<AActor*>());
     Viewport.SetClient(nullptr);
 }
 

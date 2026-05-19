@@ -1,4 +1,4 @@
-﻿#include "EditorRenderPipeline.h"
+#include "EditorRenderPipeline.h"
 
 #include "Editor/EditorEngine.h"
 #include "Camera/PlayerCameraManager.h"
@@ -368,6 +368,11 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
 
 	for (size_t i = 0; i < Viewers.size(); i++)
 	{
+        if (!Viewers[i] || !Editor->GetMainPanel().IsViewerViewportVisible(Viewers[i].get()))
+        {
+            continue;
+        }
+
         const auto ViewportRenderStart = std::chrono::steady_clock::now();
 
         FSceneViewport& SceneViewport = Viewers[i]->GetViewport();

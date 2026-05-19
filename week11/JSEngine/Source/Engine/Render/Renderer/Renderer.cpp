@@ -935,6 +935,18 @@ FViewportRenderResource& FRenderer::AcquireViewerViewportResource(uint32 Index, 
     return Resource;
 }
 
+void FRenderer::TrimViewerViewportResources(uint32 ActiveCount)
+{
+    while (ViewerViewportResources.size() > ActiveCount)
+    {
+        if (ViewerViewportResources.back())
+        {
+            ReleaseRenderResource(*ViewerViewportResources.back());
+        }
+        ViewerViewportResources.pop_back();
+    }
+}
+
 void FRenderer::InitializeViewportResource(uint32 Width, uint32 Height, int32 Index)
 {
     FViewportRenderResource& Res = ViewportResources[Index];

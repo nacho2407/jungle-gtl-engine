@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "RenderBus.h"
 #include "DecalCommandBuilder.h"
 #include "EditorOverlayCollector.h"
@@ -44,6 +44,7 @@ public:
 	void Initialize(ID3D11Device* InDevice) { MeshBufferManager.Create(InDevice); }
 	void Release() { MeshBufferManager.Release(); }
 	void ReleaseCPUSkeletalMeshBuffers() { MeshBufferManager.ReleaseCPUSkeletalMeshBuffers(); }
+	void ReleaseStaleCPUSkeletalMeshBuffers() { MeshBufferManager.ReleaseStaleCPUSkeletalMeshBuffers(); }
 	void ReleaseGPUSkeletalMeshBuffers() { MeshBufferManager.ReleaseGPUSkeletalMeshBuffers(); }
 
 	void CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus,
