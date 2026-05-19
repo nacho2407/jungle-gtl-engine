@@ -14,32 +14,53 @@ static void SyncToPlayer(UAnimState& S, FAnimNode_SequencePlayer& Player)
 
 void UAnimState::OnEnter(UAnimInstance* Instance)
 {
-	(void)Instance;
 	LocalTime = 0.0f;
 
-	// 노드 측에도 reset 알림 — phase 1.4 이후 RootNode 경로에서 OnBecomeRelevant 가 일관 활용.
 	FAnimationInitializeContext InitCtx;
 	InitCtx.AnimInstance = Instance;
-	Player.OnBecomeRelevant(InitCtx);
+
+	if (SubGraphOverride)
+	{
+		// Sub-SM 같은 임의 노드 — 자기 init 후크 호출. 자식 SM 이면 자기 current state OnEnter 까지 재귀.
+		SubGraphOverride->OnBecomeRelevant(InitCtx);
+	}
+	else
+	{
+		Player.OnBecomeRelevant(InitCtx);
+	}
 }
 
 void UAnimState::Tick(UAnimInstance* Instance, float DeltaSeconds)
 {
-	SyncToPlayer(*this, Player);
-
 	FAnimationUpdateContext Ctx;
 	Ctx.AnimInstance     = Instance;
 	Ctx.DeltaSeconds     = DeltaSeconds;
-	Ctx.FinalBlendWeight = 1.0f;   // FSM 이 자기 blend weight 로 lerp 합성하므로 player 는 full.
-	Player.Update(Ctx);
+	Ctx.FinalBlendWeight = 1.0f;   // FSM 이 자기 blend weight 로 lerp 합성하므로 sub-graph 는 full.
 
-	// 내부 → 외부 mirror.
-	LocalTime           = Player.LocalTime;
-	LastRootMotionDelta = Player.LastRootMotionDelta;
+	if (SubGraphOverride)
+	{
+		SubGraphOverride->Update(Ctx);
+		// LastRM mirror — 부모 SM 이 GetLastRootMotionDelta 로 읽음.
+		LastRootMotionDelta = SubGraphOverride->GetLastRootMotionDelta();
+	}
+	else
+	{
+		SyncToPlayer(*this, Player);
+		Player.Update(Ctx);
+		LocalTime           = Player.LocalTime;
+		LastRootMotionDelta = Player.LastRootMotionDelta;
+	}
 }
 
 void UAnimState::Evaluate(UAnimInstance* /*Instance*/, FPoseContext& Output)
 {
-	SyncToPlayer(*this, Player);
-	Player.Evaluate(Output);
+	if (SubGraphOverride)
+	{
+		SubGraphOverride->Evaluate(Output);
+	}
+	else
+	{
+		SyncToPlayer(*this, Player);
+		Player.Evaluate(Output);
+	}
 }

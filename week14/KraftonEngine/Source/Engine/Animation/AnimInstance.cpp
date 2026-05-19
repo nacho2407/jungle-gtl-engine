@@ -25,7 +25,8 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 	NativeUpdateAnimation(DeltaSeconds);
 
 	// AnimGraph 트리 평가 — set 되어 있으면 root 부터 자식 Update 재귀 호출. 시간 진행 /
-	// transition / notify 적재 / RM 누적 모두 노드들이 책임.
+	// transition / notify 적재 / 자식 노드의 LastRM 계산까지 노드들이 책임. 단 누적 (Accumulate)
+	// 은 노드가 직접 안 함 — 트리의 root 가 합성한 LastRM 을 외부에서 한 번만 push.
 	if (RootNode)
 	{
 		FAnimationUpdateContext Ctx;
@@ -33,6 +34,13 @@ void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 		Ctx.DeltaSeconds     = DeltaSeconds;
 		Ctx.FinalBlendWeight = 1.0f;
 		RootNode->Update(Ctx);
+
+		// 트리 평가 후 root 의 합성 LastRM 을 mode 체크 후 누적. 이중 누적 방지 위해 단일 진입점.
+		// RootMotionFromMontagesOnly 면 base graph 측 RM 무시 (Montage 만 적용되도록).
+		if (RootMotionMode != ERootMotionMode::RootMotionFromMontagesOnly)
+		{
+			AccumulateRootMotion(RootNode->GetLastRootMotionDelta());
+		}
 	}
 
 	// Montage 도 Tick — section 진행, blend alpha, notify push.

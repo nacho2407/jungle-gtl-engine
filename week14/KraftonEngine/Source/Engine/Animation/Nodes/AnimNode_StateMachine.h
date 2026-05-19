@@ -43,8 +43,11 @@ public:
 	void RequestTransition(FName To, float BlendDuration);
 
 	// AnimNode interface.
+	void Initialize(const FAnimationInitializeContext& Context) override;
+	void OnBecomeRelevant(const FAnimationInitializeContext& Context) override;
 	void Update(const FAnimationUpdateContext& Context) override;
 	void Evaluate(FPoseContext& Output) override;
+	const FTransform& GetLastRootMotionDelta() const override { return LastRootMotionDelta; }
 	const char* GetDebugName() const override { return "StateMachine"; }
 
 	// Inspection.
@@ -73,4 +76,8 @@ private:
 	// Multi-blend 진행중 from 스택 (oldest=[0], latest=back). 한도 도달 시 oldest 강제 정리.
 	TArray<FBlendingFrom>     BlendingFroms;
 	static constexpr int32    MaxBlendingFroms = 4;
+
+	// 매 Update 가 자식들의 LastRM 을 sequential lerp 한 결과. 외부 (부모 SM 또는 AnimInstance)
+	// 가 누적 책임. SM 자체는 AccumulateRootMotion 호출 안 함 — 이중 누적 방지.
+	FTransform LastRootMotionDelta;
 };
