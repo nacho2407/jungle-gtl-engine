@@ -307,7 +307,7 @@ void FEditorContentBrowserWidget::RefreshContent()
 	}
 }
 
-void FEditorContentBrowserWidget::DrawDirNode(FDirNode InNode)
+void FEditorContentBrowserWidget::DrawDirNode(const FDirNode& InNode)
 {
 	ImGuiTreeNodeFlags Flag =
 		InNode.Children.empty() ? ImGuiTreeNodeFlags_Leaf : ImGuiTreeNodeFlags_OpenOnArrow;
