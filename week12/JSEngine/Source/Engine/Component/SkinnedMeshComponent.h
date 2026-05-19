@@ -64,6 +64,7 @@ public:
 	virtual const FAABB& GetWorldAABB() const;
 
 	bool ConsumeRenderStateDirty();
+	bool ConsumeCPUSkinnedVertexBufferDirty();
 
 	void EnsureSkinningUpdated();
 
@@ -102,6 +103,7 @@ protected:
 
 	ESkinningMode LastResolvedSkinningMode = ESkinningMode::GPU;
 	bool bSkinningDirty = true;
+	bool bCPUSkinnedVertexBufferDirty = true;
 
 	mutable bool bBoundsDirty = true;
 	bool bRenderStateDirty = true;

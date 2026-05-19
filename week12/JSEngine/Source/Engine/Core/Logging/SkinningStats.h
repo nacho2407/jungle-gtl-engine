@@ -23,7 +23,7 @@ struct FSkinningStatsFrame
 	uint64 BoneInfluenceVertexCount = 0;
 
 	uint64 GPUBoneMatrixCount = 0;
-	// Logical bone matrix payload, counted once per visible GPU-skinned mesh.
+	// Actual bone matrix payload uploaded into GPU constant buffers this frame.
 	uint64 GPUBoneMatrixPayloadBytes = 0;
 	uint32 GPUSkinnedDrawPassCount = 0;
 	double EstimatedGPUSkinningInfluenceWork = 0.0;
@@ -56,6 +56,7 @@ public:
 		double AvgInfluence,
 		bool bUsesGPUSkinning,
 		uint32 UploadedBoneMatrixCount);
+	void AddGPUBoneMatrixUpload(uint32 UploadedBoneMatrixCount);
 	void AddGPUSkinnedDraw(uint64 WorkVertexCount, double AvgInfluence);
 
 private:

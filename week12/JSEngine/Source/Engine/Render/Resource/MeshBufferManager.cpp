@@ -4,6 +4,7 @@
 #include "Asset/StaticMesh.h"
 #include "Component/ProceduralMeshComponent.h"
 #include "Core/Logging/SkinningStats.h"
+#include "Render/Scene/RenderCommand.h"
 
 #include <chrono>
 
@@ -102,6 +103,13 @@ void FMeshBufferManager::Release()
 	}
 
 	GPUSkeletalMeshBufferMap.clear();
+
+	for (auto& pair : GPUSkeletalBoneMatrixBufferMap)
+	{
+		pair.second.Release();
+	}
+
+	GPUSkeletalBoneMatrixBufferMap.clear();
     
     Device = nullptr;
 }
@@ -263,4 +271,36 @@ FMeshBuffer* FMeshBufferManager::GetGPUSkeletalMeshBuffer(const USkeletalMesh* S
 	NewBuffer.CreateImmutableVertices(Device, Vertices, Indices);
 
 	return NewBuffer.IsValid() ? &NewBuffer : nullptr;
+}
+
+FConstantBuffer* FMeshBufferManager::GetGPUSkeletalBoneMatrixBuffer(
+	uint32 SkeletalMeshCompUUID,
+	const FBoneMatrixConstants& Constants,
+	bool bNeedsUpload)
+{
+	if (!Device)
+	{
+		return nullptr;
+	}
+
+	FConstantBuffer& BoneMatrixBuffer = GPUSkeletalBoneMatrixBufferMap[SkeletalMeshCompUUID];
+	if (!BoneMatrixBuffer.GetBuffer())
+	{
+		BoneMatrixBuffer.Create(Device, sizeof(FBoneMatrixConstants));
+		bNeedsUpload = true;
+	}
+
+	if (bNeedsUpload)
+	{
+		ID3D11DeviceContext* DeviceContext = nullptr;
+		Device->GetImmediateContext(&DeviceContext);
+		if (DeviceContext)
+		{
+			BoneMatrixBuffer.Update(DeviceContext, &Constants, sizeof(FBoneMatrixConstants));
+			FSkinningStats::Get().AddGPUBoneMatrixUpload(Constants.BoneCount);
+			DeviceContext->Release();
+		}
+	}
+
+	return BoneMatrixBuffer.GetBuffer() ? &BoneMatrixBuffer : nullptr;
 }

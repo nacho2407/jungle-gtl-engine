@@ -43,13 +43,18 @@ void FSkinningStats::AddVisibleSkinnedMesh(
 	if (bUsesGPUSkinning)
 	{
 		Current.VisibleGPUSkinnedMeshCount++;
-		Current.GPUBoneMatrixCount += UploadedBoneMatrixCount;
-		Current.GPUBoneMatrixPayloadBytes += static_cast<uint64>(UploadedBoneMatrixCount) * sizeof(FMatrix);
+		AddGPUBoneMatrixUpload(UploadedBoneMatrixCount);
 	}
 	else
 	{
 		Current.VisibleCPUSkinnedMeshCount++;
 	}
+}
+
+void FSkinningStats::AddGPUBoneMatrixUpload(uint32 UploadedBoneMatrixCount)
+{
+	Current.GPUBoneMatrixCount += UploadedBoneMatrixCount;
+	Current.GPUBoneMatrixPayloadBytes += static_cast<uint64>(UploadedBoneMatrixCount) * sizeof(FMatrix);
 }
 
 void FSkinningStats::AddGPUSkinnedDraw(uint64 WorkVertexCount, double AvgInfluence)

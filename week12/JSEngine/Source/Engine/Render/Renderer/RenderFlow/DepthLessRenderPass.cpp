@@ -111,7 +111,8 @@ bool FDepthLessRenderPass::DrawCommand(const FRenderPassContext* Context)
                 Context->DeviceContext,
                 Cmd.VertexFactoryType,
                 Context->RenderBus->GetBoneMatrixConstants(Cmd),
-                Context->RenderResources);
+                Context->RenderResources,
+                Cmd.BoneMatrixConstantBuffer);
         }
 
         Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);

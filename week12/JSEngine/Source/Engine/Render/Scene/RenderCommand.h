@@ -447,6 +447,7 @@ struct FRenderCommand
 
 	bool bUseBoneMatrixConstants = false;
 	uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
+	FConstantBuffer* BoneMatrixConstantBuffer = nullptr;
 
 	bool bUseBoneWeightHeatmap = false;
 	int32 BoneWeightHeatmapBoneIndex = -1;

@@ -38,7 +38,8 @@ void BindVertexFactoryResources(
 	ID3D11DeviceContext* Context,
 	EVertexFactoryType Type,
 	const FBoneMatrixConstants* BoneMatrixConstants,
-	FRenderResources* RenderResources)
+	FRenderResources* RenderResources,
+	FConstantBuffer* BoneMatrixConstantBuffer)
 {
 	if (!Context || !RenderResources)
 	{
@@ -47,17 +48,25 @@ void BindVertexFactoryResources(
 
 	if (Type == EVertexFactoryType::SkeletalMesh)
 	{
-		static const FBoneMatrixConstants EmptyBoneMatrixConstants = {};
-		const FBoneMatrixConstants* ConstantsToBind = BoneMatrixConstants
-			? BoneMatrixConstants
-			: &EmptyBoneMatrixConstants;
+		ID3D11Buffer* BoneBuffer = BoneMatrixConstantBuffer
+			? BoneMatrixConstantBuffer->GetBuffer()
+			: nullptr;
 
-		RenderResources->BoneMatrixConstantBuffer.Update(
-			Context,
-			ConstantsToBind,
-			sizeof(FBoneMatrixConstants));
+		if (!BoneBuffer)
+		{
+			static const FBoneMatrixConstants EmptyBoneMatrixConstants = {};
+			const FBoneMatrixConstants* ConstantsToBind = BoneMatrixConstants
+				? BoneMatrixConstants
+				: &EmptyBoneMatrixConstants;
 
-		ID3D11Buffer* BoneBuffer = RenderResources->BoneMatrixConstantBuffer.GetBuffer();
+			RenderResources->BoneMatrixConstantBuffer.Update(
+				Context,
+				ConstantsToBind,
+				sizeof(FBoneMatrixConstants));
+
+			BoneBuffer = RenderResources->BoneMatrixConstantBuffer.GetBuffer();
+		}
+
 		Context->VSSetConstantBuffers(5, 1, &BoneBuffer);
 	}
 }
@@ -739,7 +748,8 @@ void FRenderer::RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewpor
 				Context,
 				Command.VertexFactoryType,
 				InRenderBus.GetBoneMatrixConstants(Command),
-				&Resources);
+				&Resources,
+				Command.BoneMatrixConstantBuffer);
 			DrawIdPickCommand(Context, Command);
 		}
 	}
@@ -1543,7 +1553,8 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 				InDeviceContext,
 				InCommand.VertexFactoryType,
 				nullptr,
-				&Resources);
+				&Resources,
+				InCommand.BoneMatrixConstantBuffer);
 		}
 	}
 
