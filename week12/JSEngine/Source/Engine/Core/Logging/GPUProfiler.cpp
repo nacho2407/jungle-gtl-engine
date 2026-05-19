@@ -60,12 +60,33 @@ void FGPUProfiler::Shutdown()
 	Context.Reset();
 	WriteIndex = 0;
 	bSkipFrame = false;
+	bFrameActive = false;
 	bInitialized = false;
+}
+
+void FGPUProfiler::SetCollectionEnabled(bool bEnabled)
+{
+	if (bCollectionEnabled == bEnabled)
+	{
+		return;
+	}
+
+	bCollectionEnabled = bEnabled;
+	if (!bCollectionEnabled)
+	{
+		GPUStats.clear();
+		Snapshot.clear();
+	}
 }
 
 void FGPUProfiler::BeginFrame()
 {
 	if (!bInitialized) return;
+	if (!bCollectionEnabled)
+	{
+		bFrameActive = false;
+		return;
+	}
 
 	for (uint32 FrameIndex = 0; FrameIndex < FRAME_COUNT; ++FrameIndex)
 	{
@@ -86,11 +107,13 @@ void FGPUProfiler::BeginFrame()
 		if (Frames[WriteIndex].bSubmitted)
 		{
 			bSkipFrame = true;
+			bFrameActive = false;
 			return;
 		}
 	}
 
 	bSkipFrame = false;
+	bFrameActive = true;
 
 	// 현재 프레임 시작
 	FFrameData& Write = Frames[WriteIndex];
@@ -102,10 +125,12 @@ void FGPUProfiler::BeginFrame()
 void FGPUProfiler::EndFrame()
 {
 	if (!bInitialized) return;
+	if (!bFrameActive) return;
 	if (bSkipFrame) return;
 
 	Context->End(Frames[WriteIndex].DisjointQuery.Get());
 	Frames[WriteIndex].bSubmitted = true;
+	bFrameActive = false;
 
 	// 프레임 스왑
 	WriteIndex = 1 - WriteIndex;
@@ -114,6 +139,7 @@ void FGPUProfiler::EndFrame()
 uint32 FGPUProfiler::BeginTimestamp(const char* Name)
 {
 	if (!bInitialized) return UINT32_MAX;
+	if (!bFrameActive) return UINT32_MAX;
 	if (bSkipFrame) return UINT32_MAX;
 
 	FFrameData& Write = Frames[WriteIndex];
@@ -128,6 +154,7 @@ uint32 FGPUProfiler::BeginTimestamp(const char* Name)
 void FGPUProfiler::EndTimestamp(uint32 Index)
 {
 	if (!bInitialized || Index == UINT32_MAX) return;
+	if (!bFrameActive) return;
 	if (bSkipFrame) return;
 
 	FFrameData& Write = Frames[WriteIndex];

@@ -102,7 +102,7 @@ void AStaticMeshActor::InitDefaultComponents()
 void ASkeletalMeshActor::InitDefaultComponents()
 {
 	SkeletalMeshComp = AddComponent<USkeletalMeshComponent>();
-	SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/Ahri/Ahri.fbx"));
+	SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/LowPolyMaleHuman/LowPolyMaleHuman.fbx"));
 	SetRootComponent(SkeletalMeshComp);
 
 	// ─────────────────────────────────────────────────────────────────────

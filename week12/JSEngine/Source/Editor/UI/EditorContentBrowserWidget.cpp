@@ -1170,7 +1170,18 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		}
 		else if (Item.Extension == ".fbx")
 		{
-            EditorEngine->CreateViewer(MakeRelativeProjectPath(Item.Path));
+            const FString RelativePath = MakeRelativeProjectPath(Item.Path);
+            const TArray<FString> ImportedAnimSequencePaths = FResourceManager::Get().ImportAnimationStacksFromFbx(RelativePath);
+            if (!ImportedAnimSequencePaths.empty())
+            {
+                bNeedsRefresh = true;
+                EditorEngine->CreateViewer(ImportedAnimSequencePaths.front());
+                
+            }
+            else 
+            {
+                EditorEngine->CreateViewer(RelativePath);
+            }
 		}
 		else if (Item.Extension == ".rml")
 		{

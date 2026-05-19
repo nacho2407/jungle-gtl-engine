@@ -28,6 +28,9 @@ public:
 	void Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InContext);
 	void Shutdown();
 
+	void SetCollectionEnabled(bool bEnabled);
+	bool IsCollectionEnabled() const { return bCollectionEnabled; }
+
 	void BeginFrame();
 	void EndFrame();
 
@@ -66,6 +69,12 @@ private:
 	TComPtr<ID3D11DeviceContext> Context;
 	bool bInitialized = false;
 	bool bSkipFrame = false;
+	bool bFrameActive = false;
+#if STATS
+	bool bCollectionEnabled = true;
+#else
+	bool bCollectionEnabled = false;
+#endif
 
 	bool CollectFrame(uint32 FrameIndex);
 
