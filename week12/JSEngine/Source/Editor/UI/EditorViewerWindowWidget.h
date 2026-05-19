@@ -124,6 +124,8 @@ private:
     TComPtr<ID3D11ShaderResourceView> AnimSequenceToEndIcon;
     TComPtr<ID3D11ShaderResourceView> AnimSequenceLoopingIcon;
     TComPtr<ID3D11ShaderResourceView> AnimSequenceNoLoopingIcon;
+    TComPtr<ID3D11ShaderResourceView> AnimSequenceToNextingIcon;
+    TComPtr<ID3D11ShaderResourceView> AnimSequenceToPreviousingIcon;
 
 	FEditorViewer* Viewer = nullptr;
     bool bOpen = false;
