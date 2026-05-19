@@ -948,9 +948,10 @@
     <ClInclude Include="Source\Engine\Component\SkeletalMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\SkinnedMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\TransformProxy.h" />
-    <ClInclude Include="Source\Engine\Core\RefelctionTypeInfo.h" />
     <ClInclude Include="Source\Engine\Core\ReflectionDatabase.h" />
+    <ClInclude Include="Source\Engine\Core\ReflectionFwd.h" />
     <ClInclude Include="Source\Engine\Core\ReflectionMacros.h" />
+    <ClInclude Include="Source\Engine\Core\ReflectionTypeInfo.h" />
     <ClInclude Include="Source\Engine\Core\ReflectionUtils.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.h" />
@@ -1091,6 +1092,7 @@
     <ClInclude Include="Source\Engine\Core\Paths.h" />
     <ClInclude Include="Source\Engine\Core\PlatformTime.h" />
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h" />
+    <ClInclude Include="Source\Engine\Core\ReflectedProperty.h" />
     <ClInclude Include="Source\Engine\Core\ResourceManager.h" />
     <ClInclude Include="Source\Engine\Core\ResourceMemoryReporter.h" />
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />

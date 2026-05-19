@@ -1,9 +1,12 @@
 ﻿#include "RayCollision.h"
 #include "Component/PrimitiveComponent.h"
+#include "Geometry/AABB.h"
 #include <cmath>
 #include <cfloat>
 #include <algorithm>
 #include <cstdint>
+
+using FBoundingBox = FAABB;
 
 bool FRayCollision::CheckRayAABB(const FRay& Ray, const FVector& AABBMin, const FVector& AABBMax)
 {

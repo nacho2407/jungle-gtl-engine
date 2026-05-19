@@ -1058,6 +1058,7 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\SkeletalMeshTypes.cpp" />
     <ClCompile Include="Source\Engine\Asset\Skeleton.cpp" />
+    <ClCompile Include="Intermediate\Generated\JSEngine.Reflection.gen.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Audio\AudioSystem.h">
@@ -1430,6 +1431,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\ReflectedProperty.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\ResourceManager.h">
@@ -2047,6 +2051,9 @@
     <ClInclude Include="Source\Engine\Core\ReflectionMacros.h" />
     <ClInclude Include="Source\Engine\Component\TransformProxy.h" />
     <ClInclude Include="Source\Engine\Core\ReflectionUtils.h" />
+    <ClInclude Include="Source\Engine\Core\ReflectionDatabase.h" />
+    <ClInclude Include="Source\Engine\Core\ReflectionFwd.h" />
+    <ClInclude Include="Source\Engine\Core\ReflectionTypeInfo.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Source\Engine\Runtime\AppIcon.rc" />

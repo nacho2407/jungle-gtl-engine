@@ -68,7 +68,7 @@ public:
         return *TargetPtr;
     }
 
-	static FString NormalizeTypeName(FString TypeName)
+    static FString NormalizeTypeName(FString TypeName)
     {
         TypeName.erase(
             std::remove_if(TypeName.begin(), TypeName.end(), ::isspace),
@@ -76,7 +76,7 @@ public:
         return TypeName;
     }
 
-	static bool TryConvertType(const FString& TypeName, EPropertyType& OutType)
+    static bool TryConvertType(const FString& TypeName, EPropertyType& OutType)
     {
         FString NormalizedType = NormalizeTypeName(TypeName);
 
@@ -139,6 +139,16 @@ public:
 
         uint8* Base = reinterpret_cast<uint8*>(Object);
 
+        if (!ClassInfo->ReflectedProperties.empty())
+        {
+            for (FProperty* Prop : ClassInfo->ReflectedProperties)
+            {
+                Prop->SerializeInContainer(Ar, Object);
+            }
+            return;
+        }
+
+        // fallback: old FPropertyInfo path
         for (const FPropertyInfo& Prop : ClassInfo->Properties)
         {
             if (!Prop.ShouldSerialize())
@@ -225,7 +235,7 @@ public:
         }
     }
 
-	// 구조체 내부를 까서 프로퍼티 배열에 평탄화(Flatten)하여 집어넣는 도우미 함수
+    // 구조체 내부를 까서 프로퍼티 배열에 평탄화(Flatten)하여 집어넣는 도우미 함수
     static void AppendStructProperties(
         uint8* StructBasePtr,
         FStructInfo* StructInfo,
@@ -235,58 +245,92 @@ public:
         if (!StructBasePtr || !StructInfo)
             return;
 
-		if (StructInfo->ParentStruct)
+        if (StructInfo->ParentStruct)
         {
             AppendStructProperties(StructBasePtr, StructInfo->ParentStruct, OutProps, Prefix);
         }
 
-        for (auto& Prop : StructInfo->Properties)
+        for (FProperty* Prop : StructInfo->ReflectedProperties)
         {
-            if (!Prop.IsEditorVisible())
+            if (!Prop || !Prop->IsEditorVisible())
                 continue;
 
-            EPropertyType UiType;
-            FString PropertyLabel = Prop.DisplayName.empty() ? Prop.Name.ToString() : Prop.DisplayName;
+            FString PropertyLabel = Prop->DisplayName.empty()
+                                        ? Prop->Name.ToString()
+                                        : Prop->DisplayName;
+
             FString DisplayName = Prefix + "." + PropertyLabel;
 
-            // 1. 구조체 안의 변수가 int, float 같은 기본 타입이라면?
-            if (TryConvertType(Prop.Type.c_str(), UiType))
+            FPropertyDescriptor Desc;
+            Desc.Name = GetStablePropertyName(FName(DisplayName));
+            Desc.ValuePtr = Prop->ContainerPtrToValuePtr(StructBasePtr);
+            Desc.InternalName = GetStablePropertyName(Prop->Name);
+            Desc.Category = Prop->Category.empty()
+                                ? "Default"
+                                : GetStablePropertyName(FName(Prop->Category));
+
+            if (FNumericProperty* NumericProp = dynamic_cast<FNumericProperty*>(Prop))
             {
-                FPropertyDescriptor Desc;
-                Desc.Name = GetStablePropertyName(FName(DisplayName));
-                Desc.Type = UiType;
-                Desc.ValuePtr = StructBasePtr + Prop.Offset;
-                Desc.InternalName = GetStablePropertyName(Prop.Name);
-                Desc.Category = GetStablePropertyCategory(Prop);
+                Desc.Type = NumericProp->IsFloatingPoint()
+                                ? EPropertyType::Float
+                                : EPropertyType::Int;
+
                 OutProps.push_back(Desc);
             }
-            // ★ 2. 열거형(Enum)인지 검사
-            else if (FEnumInfo* EnumInfo = ReflectionDatabase::GetEnum(Prop.Type))
+            else if (dynamic_cast<FBoolProperty*>(Prop))
             {
-                FPropertyDescriptor Desc;
-                Desc.Name = GetStablePropertyName(FName(DisplayName));
+                Desc.Type = EPropertyType::Bool;
+                OutProps.push_back(Desc);
+            }
+            else if (dynamic_cast<FStrProperty*>(Prop))
+            {
+                Desc.Type = EPropertyType::String;
+                OutProps.push_back(Desc);
+            }
+            else if (dynamic_cast<FNameProperty*>(Prop))
+            {
+                Desc.Type = EPropertyType::Name;
+                OutProps.push_back(Desc);
+            }
+            else if (FEnumProperty* EnumProp = dynamic_cast<FEnumProperty*>(Prop))
+            {
                 Desc.Type = EPropertyType::Enum;
-                Desc.ValuePtr = StructBasePtr + Prop.Offset;
-                Desc.InternalName = GetStablePropertyName(Prop.Name);
-                Desc.Category = GetStablePropertyCategory(Prop);
 
-                if (!EnumInfo->CachedNames.empty())
+                if (EnumProp->EnumInfo && !EnumProp->EnumInfo->CachedNames.empty())
                 {
-                    Desc.EnumNames = EnumInfo->CachedNames.data();
-                    Desc.EnumCount = static_cast<uint32>(EnumInfo->CachedNames.size());
+                    Desc.EnumNames = EnumProp->EnumInfo->CachedNames.data();
+                    Desc.EnumCount = static_cast<uint32>(EnumProp->EnumInfo->CachedNames.size());
                 }
 
                 OutProps.push_back(Desc);
             }
-            // 3. 구조체 안의 변수가 또 다른 구조체라면? (중첩 구조체)
-            else
+            else if (FStructProperty* NestedStructProp = dynamic_cast<FStructProperty*>(Prop))
             {
-                FStructInfo* NestedStruct = ReflectionDatabase::GetStruct(Prop.Type);
-                if (NestedStruct)
+                FStructInfo* NestedStructInfo = NestedStructProp->StructInfo;
+
+                if (!NestedStructInfo)
                 {
-                    FString NextPrefix = Prefix + "." + PropertyLabel;
-                    // 재귀적으로 한 번 더 파고듭니다!
-                    AppendStructProperties(StructBasePtr + Prop.Offset, NestedStruct, OutProps, NextPrefix);
+                    NestedStructInfo = ReflectionDatabase::GetStruct(NestedStructProp->CPPType);
+                }
+
+                if (NestedStructInfo)
+                {
+                    uint8* NestedStructBase =
+                        static_cast<uint8*>(NestedStructProp->ContainerPtrToValuePtr(StructBasePtr));
+
+                    AppendStructProperties(
+                        NestedStructBase,
+                        NestedStructInfo,
+                        OutProps,
+                        DisplayName);
+                }
+            }
+            else if (FArrayProperty* ArrayProp = dynamic_cast<FArrayProperty*>(Prop))
+            {
+                if (ArrayProp->Inner && ArrayProp->Inner->CPPType == "FVector")
+                {
+                    Desc.Type = EPropertyType::Vec3Array;
+                    OutProps.push_back(Desc);
                 }
             }
         }
@@ -300,7 +344,7 @@ public:
         AppendGeneratedPropertiesRecursive(Object, ClassInfo, OutProps);
     }
 
-	static void AppendGeneratedPropertiesRecursive(
+    static void AppendGeneratedPropertiesRecursive(
         UObject* Object,
         FClassInfo* ClassInfo,
         TArray<FPropertyDescriptor>& OutProps)
@@ -312,69 +356,112 @@ public:
 
         uint8* Base = reinterpret_cast<uint8*>(Object);
 
-        /*for (FPropertyInfo& Prop : ClassInfo->Properties)
+        for (auto& Prop : ClassInfo->ReflectedProperties)
         {
-            if (!Prop.IsEditorVisible())
+            if (!Prop->IsEditorVisible())
                 continue;
 
-            EPropertyType UiType;
-            if (!TryConvertType(Prop.Type, UiType))
-                continue;
-
-            OutProps.push_back({ GetStablePropertyName(Prop.Name),
-                                 UiType,
-                                 Base + Prop.Offset });
-        }*/
-
-		for (auto& Prop : ClassInfo->Properties)
-        {
-            if (!Prop.IsEditorVisible())
-                continue;
-
-            EPropertyType UiType;
-
-            // 1. 기본 타입(int, float 등)인 경우 기존처럼 바로 추가
-            if (TryConvertType(Prop.Type, UiType))
+            FPropertyDescriptor Desc;
+            Desc.Name = Prop->GetLabel();
+            Desc.ValuePtr = Prop->ContainerPtrToValuePtr(Object);
+            Desc.InternalName = GetStablePropertyName(Prop->Name);
+            Desc.Category = Prop->Category.c_str();
+            if (FNumericProperty* NumericProp = dynamic_cast<FNumericProperty*>(Prop))
             {
-                FPropertyDescriptor Desc;
-                Desc.Name = GetStablePropertyLabel(Prop);
-                Desc.Type = UiType;
-                Desc.ValuePtr = Base + Prop.Offset;
-                Desc.InternalName = GetStableInternalPropertyName(Prop);
-                Desc.Category = GetStablePropertyCategory(Prop);
+                if (NumericProp->IsFloatingPoint())
+                {
+                    Desc.Type = EPropertyType::Float;
+                }
+                else
+                {
+                    Desc.Type = EPropertyType::Int;
+                }
+
                 OutProps.push_back(Desc);
             }
-            // 2. 열거형(Enum)인지 검사
-            else if (FEnumInfo* EnumInfo = ReflectionDatabase::GetEnum(Prop.Type))
+            else if (dynamic_cast<FBoolProperty*>(Prop))
             {
-                // 구조체나 클래스 모두 동일하게 적용
-                FPropertyDescriptor Desc;
-                Desc.Name = GetStablePropertyLabel(Prop);
+                Desc.Type = EPropertyType::Bool;
+                OutProps.push_back(Desc);
+            }
+            else if (dynamic_cast<FStrProperty*>(Prop))
+            {
+                Desc.Type = EPropertyType::String;
+                OutProps.push_back(Desc);
+            }
+            else if (dynamic_cast<FNameProperty*>(Prop))
+            {
+                Desc.Type = EPropertyType::Name;
+                OutProps.push_back(Desc);
+            }
+            else if (FEnumProperty* EnumProp = dynamic_cast<FEnumProperty*>(Prop))
+            {
                 Desc.Type = EPropertyType::Enum;
-                Desc.ValuePtr = Base + Prop.Offset;
-                Desc.InternalName = GetStableInternalPropertyName(Prop);
-                Desc.Category = GetStablePropertyCategory(Prop);
 
-                if (!EnumInfo->CachedNames.empty())
+                if (EnumProp->EnumInfo && !EnumProp->EnumInfo->CachedNames.empty())
                 {
-                    Desc.EnumNames = EnumInfo->CachedNames.data();
-                    Desc.EnumCount = static_cast<uint32>(EnumInfo->CachedNames.size());
+                    Desc.EnumNames = EnumProp->EnumInfo->CachedNames.data();
+                    Desc.EnumCount = static_cast<uint32>(EnumProp->EnumInfo->CachedNames.size());
                 }
 
                 OutProps.push_back(Desc);
             }
-            // 3. 기본 타입이 아니라면 구조체(FStructInfo)인지 확인!
-            else
+            else if (FStructProperty* StructProp = dynamic_cast<FStructProperty*>(Prop))
             {
-                FStructInfo* StructInfo = ReflectionDatabase::GetStruct(Prop.Type);
-                if (StructInfo)
-                {
-                    // 구조체 메모리 시작 주소 = 객체 베이스 주소 + 구조체 변수의 오프셋
-                    uint8* StructBasePtr = Base + Prop.Offset;
+                FStructInfo* StructInfo = StructProp->StructInfo
+                                              ? StructProp->StructInfo
+                                              : ReflectionDatabase::GetStruct(StructProp->CPPType);
 
-                    // 구조체 내부 변수들을 긁어와서 OutProps에 평탄화해서 담아줍니다.
-                    AppendStructProperties(StructBasePtr, StructInfo, OutProps, GetStablePropertyLabel(Prop));
+                if (!StructInfo)
+                    continue;
+
+                if (StructInfo->EditorWidget == EStructEditorWidget::Vector3)
+                {
+                    Desc.Type = EPropertyType::Vec3;
+                    OutProps.push_back(Desc);
                 }
+                else if (StructInfo->EditorWidget == EStructEditorWidget::Vector4)
+                {
+                    Desc.Type = EPropertyType::Vec4;
+                    OutProps.push_back(Desc);
+                }
+                else if (StructInfo->EditorWidget == EStructEditorWidget::Color)
+                {
+                    Desc.Type = EPropertyType::Color;
+                    OutProps.push_back(Desc);
+                }
+                else
+                {
+                    uint8* StructBasePtr =
+                        static_cast<uint8*>(Prop->ContainerPtrToValuePtr(Object));
+
+                    AppendStructProperties(
+                        StructBasePtr,
+                        StructInfo,
+                        OutProps,
+                        Prop->GetLabel());
+                }
+            }
+            else if (FArrayProperty* ArrayProp = dynamic_cast<FArrayProperty*>(Prop))
+            {
+                // 임시 bridge: 기존 UI가 Vec3Array만 지원하니까 그 경우만 연결
+                if (ArrayProp->Inner && ArrayProp->Inner->CPPType == "FVector")
+                {
+                    Desc.Type = EPropertyType::Vec3Array;
+                    OutProps.push_back(Desc);
+                }
+            }
+            else if (FObjectProperty* ObjectProp = dynamic_cast<FObjectProperty*>(Prop))
+            {
+                // 지금 기존 UI에서 UObject* 일반 picker가 없다면 일단 skip.
+                // 나중에 Asset/Object picker 생기면 여기서 EPropertyType::Object 같은 걸로 연결.
+                (void)ObjectProp;
+            }
+            else if (FSoftObjectProperty* SoftObjectProp = dynamic_cast<FSoftObjectProperty*>(Prop))
+            {
+                // 에셋 드래그앤드롭 UI 붙일 자리.
+                // 지금은 기존 EPropertyType::String 또는 Material로 임시 연결 가능.
+                (void)SoftObjectProp;
             }
         }
     }

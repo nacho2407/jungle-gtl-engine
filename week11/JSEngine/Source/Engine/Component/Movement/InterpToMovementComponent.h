@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "MovementComponent.h"
-#include "Core/RefelctionTypeInfo.h"
+#include "Core/ReflectionTypeInfo.h"
 
 #include "InterpToMovementComponent.generated.h"
 

@@ -1,15 +1,28 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Math/Vector.h"
 
+#include <cassert>
+#include <functional>
+
+#include "Core/ReflectionTypeInfo.h"
+
+#include "Vector2.generated.h"
+
+USTRUCT()
 struct FVector2
 {
-public:
+GENERATED_BODY_FVector2()
+
+    public:
 	union
 	{
 		struct
 		{
+            UPROPERTY(EditAnywhere, Category = "Default", DisplayName = "X")
 			float X;
+            UPROPERTY(EditAnywhere, Category = "Default", DisplayName = "Y")
 			float Y;
 		};
 

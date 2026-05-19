@@ -6,7 +6,7 @@
 #include "Core/PropertyTypes.h"
 #include "Serialization/Archive.h"
 #include "Object/Object.h"
-#include "Core/RefelctionTypeInfo.h"
+#include "Core/ReflectionTypeInfo.h"
 
 #define DECLARE_CLASS(ClassName, ParentClass)                          \
 	using ThisClass = ClassName;									   \

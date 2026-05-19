@@ -26,6 +26,87 @@ class CustomParser
 
     #region Helper Methods
 
+    static string GetPropertyInstantiationCode(string type, string varName)
+    {
+        type = type.Trim();
+
+        // 1. 기본 숫자/불리언/문자열 타입 매핑
+        if (type == "bool") return $"        FBoolProperty* {varName} = new FBoolProperty();";
+        if (type == "int8") return $"        FInt8Property* {varName} = new FInt8Property();";
+        if (type == "int16") return $"        FInt16Property* {varName} = new FInt16Property();";
+        if (type == "int32" || type == "int") return $"        FIntProperty* {varName} = new FIntProperty();";
+        if (type == "int64") return $"        FInt64Property* {varName} = new FInt64Property();";
+        if (type == "uint8" || type == "byte") return $"        FByteProperty* {varName} = new FByteProperty();";
+        if (type == "uint16") return $"        FUInt16Property* {varName} = new FUInt16Property();";
+        if (type == "uint32") return $"        FUInt32Property* {varName} = new FUInt32Property();";
+        if (type == "uint64") return $"        FUInt64Property* {varName} = new FUInt64Property();";
+        if (type == "float") return $"        FFloatProperty* {varName} = new FFloatProperty();";
+        if (type == "double") return $"        FDoubleProperty* {varName} = new FDoubleProperty();";
+        if (type == "FName") return $"        FNameProperty* {varName} = new FNameProperty();";
+        if (type == "FString") return $"        FStrProperty* {varName} = new FStrProperty();";
+        if (type == "FText") return $"        FTextProperty* {varName} = new FTextProperty();";
+
+        // 2. 배열 (TArray) - 재귀적으로 내부 프로퍼티까지 생성!
+        Match arrayMatch = Regex.Match(type, @"^TArray\s*<\s*(.+)\s*>$");
+        if (arrayMatch.Success)
+        {
+            string innerType = arrayMatch.Groups[1].Value.Trim();
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"        FArrayProperty* {varName} = new FArrayProperty();");
+            sb.AppendLine($"        {varName}->ArrayOps = TScriptArrayOps<{innerType}>::Make();");
+
+            string innerVar = varName + "_Inner";
+            sb.AppendLine(GetPropertyInstantiationCode(innerType, innerVar));
+            sb.AppendLine($"        {innerVar}->CPPType = \"{EscapeForCppString(innerType)}\";");
+            sb.AppendLine($"        {innerVar}->ElementSize = sizeof({innerType});");
+            sb.AppendLine($"        {varName}->Inner = {innerVar};");
+            return sb.ToString();
+        }
+
+        // 3. 컨테이너 (TMap, TSet)
+        if (type.StartsWith("TMap<")) return $"        FMapProperty* {varName} = new FMapProperty();";
+        if (type.StartsWith("TSet<")) return $"        FSetProperty* {varName} = new FSetProperty();";
+
+        // 4. 포인터 및 특수 포인터 (UObject 기반)
+        if (type.EndsWith("*")) return $"        FObjectProperty* {varName} = new FObjectProperty();";
+        if (type.StartsWith("FSoftObjectPtr") || type.StartsWith("TSoftObjectPtr<")) return $"        FSoftObjectProperty* {varName} = new FSoftObjectProperty();";
+        if (type.StartsWith("FSoftClassPtr") || type.StartsWith("TSoftClassPtr<")) return $"        FSoftClassProperty* {varName} = new FSoftClassProperty();";
+        if (type.StartsWith("FWeakObjectPtr") || type.StartsWith("TWeakObjectPtr<")) return $"        FWeakObjectProperty* {varName} = new FWeakObjectProperty();";
+        if (type.StartsWith("FLazyObjectPtr") || type.StartsWith("TLazyObjectPtr<")) return $"        FLazyObjectProperty* {varName} = new FLazyObjectProperty();";
+        if (type.StartsWith("FScriptInterface")) return $"        FInterfaceProperty* {varName} = new FInterfaceProperty();";
+
+        // 5. Enum (언리얼 네이밍 규칙인 E로 시작한다고 가정)
+        if (type.StartsWith("E")) return $"        FEnumProperty* {varName} = new FEnumProperty();";
+
+        // 6. 그 외의 모든 것은 구조체(Struct)로 간주
+        return $"        FStructProperty* {varName} = new FStructProperty();";
+    }
+
+    static string GeneratePropertyCode(string cppType, string propName, string ownerName, ParsedPropertyOptions options)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("    {");
+
+        // 타입에 맞는 C++ 인스턴스 생성 코드 가져오기 (예: FIntProperty* prop = new FIntProperty();)
+        sb.AppendLine(GetPropertyInstantiationCode(cppType, "prop"));
+
+        // 공통 속성(부모 FProperty) 데이터 채워넣기
+        sb.AppendLine($"        prop->Name = FName(\"{EscapeForCppString(propName)}\");");
+        sb.AppendLine($"        prop->CPPType = \"{EscapeForCppString(cppType)}\";");
+        sb.AppendLine($"        prop->Offset = offsetof({ownerName}, {propName});");
+        sb.AppendLine($"        prop->ElementSize = sizeof({cppType});");
+        sb.AppendLine($"        prop->Flags = {options.FlagsExpression};");
+        sb.AppendLine($"        prop->Category = \"{EscapeForCppString(options.Category)}\";");
+
+        string disp = string.IsNullOrEmpty(options.DisplayName) ? propName : options.DisplayName;
+        sb.AppendLine($"        prop->DisplayName = \"{EscapeForCppString(disp)}\";");
+
+        // FClassInfo / FStructInfo의 ReflectedProperties 배열에 넣기
+        sb.AppendLine("        info.ReflectedProperties.push_back(prop);");
+        sb.AppendLine("    }");
+        return sb.ToString();
+    }
+
     struct ParsedPropertyOptions
     {
         public string FlagsExpression;
@@ -455,6 +536,7 @@ public: \
     info.StructName = ""{structName}"";
     info.Size = sizeof({structName});");
                 cppContent.AppendLine("    info.Properties.clear();");
+                cppContent.AppendLine("    info.ReflectedProperties.clear();");
                 cppContent.AppendLine("    info.GcPointerOffsets.clear();");
 
                 cppContent.AppendLine($"    info.ParentStructName = \"{EscapeForCppString(parentName)}\";");
@@ -471,22 +553,23 @@ public: \
                 {
                     MatchCollection props = PropertyRegex.Matches(structBody);
 
+                    // 기존 foreach (Match prop in props) 내부 코드를 이렇게 변경하세요:
                     foreach (Match prop in props)
                     {
                         string options = prop.Groups["options"].Value;
                         string type = prop.Groups["type"].Value.Trim();
                         string name = prop.Groups["name"].Value;
                         ParsedPropertyOptions parsedOptions = ParsePropertyOptions(options);
-                        string displayName = string.IsNullOrEmpty(parsedOptions.DisplayName) ? name : parsedOptions.DisplayName;
 
-                        cppContent.AppendLine(
-                            $"    info.Properties.push_back({{ \"{EscapeForCppString(name)}\", \"{EscapeForCppString(type)}\", offsetof({structName}, {name}), {parsedOptions.FlagsExpression}, \"{EscapeForCppString(parsedOptions.Category)}\", \"{EscapeForCppString(displayName)}\" }});");
+                        // ★ 새로운 FProperty 생성 코드 주입
+                        string propCode = GeneratePropertyCode(type, name, structName, parsedOptions);
+                        cppContent.AppendLine(propCode);
 
-                        if (type.Contains("*"))
-                        {
-                            cppContent.AppendLine(
-                                $"    info.GcPointerOffsets.push_back(offsetof({structName}, {name}));");
-                        }
+                        //// GC 추적용 포인터 기록 (선택 사항: 나중에 CollectReferences로 완벽히 대체되면 지우셔도 됩니다)
+                        //if (type.Contains("*"))
+                        //{
+                        //    cppContent.AppendLine($"    info.GcPointerOffsets.push_back(offsetof({structName}, {name}));");
+                        //}
                     }
                 }
 
@@ -575,25 +658,30 @@ static FAutoRegister_{enumName} AutoRegister_{enumName}_Instance;
                 cppContent.AppendLine("{");
                 cppContent.AppendLine($"    FClassInfo& info = {className}::StaticClassInfo;");
                 cppContent.AppendLine("    info.Properties.clear();");
+                cppContent.AppendLine("    info.ReflectedProperties.clear();");
                 cppContent.AppendLine("    info.GcPointerOffsets.clear();");
                 cppContent.AppendLine($"    info.ClassName = \"{EscapeForCppString(className)}\";");
                 cppContent.AppendLine($"    info.ParentClassName = \"{EscapeForCppString(parentName)}\";");
                 //cppContent.AppendLine($"    info.ParentClass = ReflectionDatabase::GetClass(\"{EscapeForCppString(parentName)}\");");
 
                 MatchCollection properties = PropertyRegex.Matches(classBlock);
+
+                // 기존 foreach (Match prop in properties) 내부 코드를 이렇게 변경하세요:
                 foreach (Match prop in properties)
                 {
                     string options = prop.Groups["options"].Value;
                     string type = prop.Groups["type"].Value.Trim();
                     string name = prop.Groups["name"].Value;
                     ParsedPropertyOptions parsedOptions = ParsePropertyOptions(options);
-                    string displayName = string.IsNullOrEmpty(parsedOptions.DisplayName) ? name : parsedOptions.DisplayName;
 
                     Console.WriteLine($"   property: {type} {name} ({options})");
-                    cppContent.AppendLine($"    info.Properties.push_back({{ \"{EscapeForCppString(name)}\", \"{EscapeForCppString(type)}\", offsetof({className}, {name}), {parsedOptions.FlagsExpression}, \"{EscapeForCppString(parsedOptions.Category)}\", \"{EscapeForCppString(displayName)}\" }});");
 
-                    if (type.Contains("*"))
-                        cppContent.AppendLine($"    info.GcPointerOffsets.push_back(offsetof({className}, {name}));");
+                    // ★ 새로운 FProperty 생성 코드 주입
+                    string propCode = GeneratePropertyCode(type, name, className, parsedOptions);
+                    cppContent.AppendLine(propCode);
+
+                    //if (type.Contains("*"))
+                    //    cppContent.AppendLine($"    info.GcPointerOffsets.push_back(offsetof({className}, {name}));");
                 }
 
                 cppContent.AppendLine($"    ReflectionDatabase::AddClass(\"{EscapeForCppString(className)}\", &info);");

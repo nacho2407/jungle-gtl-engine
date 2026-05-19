@@ -4,13 +4,15 @@
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
-
+#include "Geometry/AABB.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "GameFramework/World.h"
 #include "Object/Object.h"
 #include "Camera/ViewportCamera.h"
+
+using FBoundingBox = FAABB;
 
 namespace
 {
