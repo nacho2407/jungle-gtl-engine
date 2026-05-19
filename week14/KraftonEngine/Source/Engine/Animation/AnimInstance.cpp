@@ -6,6 +6,7 @@
 #include "AnimationRuntime.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Mesh/SkeletalMesh.h"
+#include "GameFramework/Pawn.h"
 
 void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 {
@@ -58,6 +59,17 @@ void UAnimInstance::EvaluatePose(FPoseContext& Output)
 USkeletalMesh* UAnimInstance::GetSkeletalMesh() const
 {
 	return OwningComponent ? OwningComponent->GetSkeletalMesh() : nullptr;
+}
+
+APawn* UAnimInstance::TryGetPawnOwner() const
+{
+	USkeletalMeshComponent* OwnerComponent = GetOwningComponent();
+	if (AActor* OwnerActor = OwnerComponent->GetOwner())
+	{
+		return Cast<APawn>(OwnerActor);
+	}
+
+	return nullptr;
 }
 
 void UAnimInstance::AddAnimNotifies(float PreviousTime, float CurrentTime, const UAnimSequenceBase* Sequence)
