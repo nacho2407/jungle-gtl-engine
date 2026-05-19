@@ -319,34 +319,6 @@ TArray<FString> UAnimationStateMachine::GetStateNames() const
 	return Result;
 }
 
-TArray<FAnimTransitionDebugInfo> UAnimationStateMachine::GetTransitionDebugInfos() const
-{
-	TArray<FAnimTransitionDebugInfo> Result;
-
-	for (const FName& FromStateName : StateOrder)
-	{
-		auto It = States.find(FromStateName);
-		if (It == States.end())
-		{
-			continue;
-		}
-
-		const FString FromState = FromStateName.ToString();
-		const FAnimStateNode& State = It->second;
-
-		for (const FAnimTransition& Transition : State.Transitions)
-		{
-			FAnimTransitionDebugInfo Info;
-			Info.FromState = FromState;
-			Info.ToState = Transition.ToState.ToString();
-			Info.BlendTime = Transition.BlendTime;
-			Result.push_back(Info);
-		}
-	}
-
-	return Result;
-}
-
 float UAnimationStateMachine::GetBlendAlpha() const
 {
 	if (!bBlending)

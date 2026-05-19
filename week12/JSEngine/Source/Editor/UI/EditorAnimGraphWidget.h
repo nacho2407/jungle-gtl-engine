@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/UI/EditorWidget.h"
 #include "Animation/AnimGraphAsset.h"
@@ -78,9 +78,9 @@ private:
 	bool HasTransition(const FAnimStateMachineDesc& StateMachine, int32 FromStateId, int32 ToStateId) const;
 	bool NormalizeGraphNodeIds();
 	void NormalizeRootNode();
-	void AddSequencePlayerNode();
-	void AddOutputPoseNode();
-	void AddStateMachineNode();
+	void AddSequencePlayerNode(const FVector2& SpawnPosition);
+	void AddOutputPoseNode(const FVector2& SpawnPosition);
+	void AddStateMachineNode(const FVector2& SpawnPosition);
 	void DeleteSelectedNode();
 	void EnterStateMachineView(int32 StateMachineNodeId);
 	void LeaveStateMachineView();

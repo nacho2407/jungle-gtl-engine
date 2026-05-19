@@ -2623,37 +2623,6 @@ void FEditorPropertyWidget::RenderSkeletalStateMachinePreview(USkeletalMeshCompo
 			ImGui::PopID();
 		}
 	}
-
-	const TArray<FAnimTransitionDebugInfo> Transitions = StateMachine->GetTransitionDebugInfos();
-	if (!Transitions.empty())
-	{
-		ImGui::Spacing();
-		ImGui::TextUnformatted("Transitions");
-
-		if (ImGui::BeginTable("##StateMachineTransitions", 3, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg))
-		{
-			ImGui::TableSetupColumn("From");
-			ImGui::TableSetupColumn("To");
-			ImGui::TableSetupColumn("Blend");
-			ImGui::TableHeadersRow();
-
-			for (const FAnimTransitionDebugInfo& Transition : Transitions)
-			{
-				ImGui::TableNextRow();
-
-				ImGui::TableSetColumnIndex(0);
-				ImGui::TextUnformatted(Transition.FromState.c_str());
-
-				ImGui::TableSetColumnIndex(1);
-				ImGui::TextUnformatted(Transition.ToState.c_str());
-
-				ImGui::TableSetColumnIndex(2);
-				ImGui::Text("%.2fs", Transition.BlendTime);
-			}
-
-			ImGui::EndTable();
-		}
-	}
 }
 
 void FEditorPropertyWidget::RenderSkeletalBonePoseDebug(USkeletalMeshComponent* Comp)

@@ -362,7 +362,6 @@
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSingleNodeInstance.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimationAsset.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimationStateMachine.gen.cpp" />
-    <ClCompile Include="Intermediate\Reflection\Animation\UDebugAnimSequence.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UStateMachineAnimInstance.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Asset\UCurveFloatAsset.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Asset\USkeletalMesh.gen.cpp" />

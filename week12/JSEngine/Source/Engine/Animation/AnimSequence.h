@@ -163,29 +163,3 @@ private:
 	int32 DerivedDataCacheVersion = 0;
 	bool bJsonTracksEmbedded = false;
 };
-
-// Debug용. 추후 삭제.
-UCLASS()
-class UDebugAnimSequence : public UAnimSequenceBase
-{
-public:
-	GENERATED_BODY(UDebugAnimSequence, UAnimSequenceBase)
-
-	float GetPlayLength() const override { return 5.0f; }
-	bool GetAnimationPose(float Time, FPoseContext& OutPose) const override
-	{
-		if (OutPose.LocalPose.size() <= 1)
-		{
-			return false;
-		}
-
-		const float Angle = std::sin(Time * 6.283185f) * 30.0f;
-
-		FMatrix Base = OutPose.LocalPose[1];
-		FMatrix AnimRot = FMatrix::MakeRotationEuler(FVector(0.0f, 0.0f, Angle));
-
-		OutPose.LocalPose[1] = AnimRot * Base;
-
-		return true;
-	}
-};
