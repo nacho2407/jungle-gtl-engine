@@ -447,9 +447,6 @@
     <ClCompile Include="Intermediate\Reflection\Component\UHeightFogComponent.gen.cpp">
       <Filter>Intermediate\Reflection\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\Component\UMainSceneDestructibleComponent.gen.cpp">
-      <Filter>Intermediate\Reflection\Component</Filter>
-    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Component\UMeshComponent.gen.cpp">
       <Filter>Intermediate\Reflection\Component</Filter>
     </ClCompile>
@@ -501,16 +498,7 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\AAmbientLightActor.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\GameFramework\AAttachTestActor.gen.cpp">
-      <Filter>Intermediate\Reflection\GameFramework</Filter>
-    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\ABillboardActor.gen.cpp">
-      <Filter>Intermediate\Reflection\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\GameFramework\ABladeSlash.gen.cpp">
-      <Filter>Intermediate\Reflection\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\GameFramework\ABullet.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\ADecalActor.gen.cpp">
@@ -519,13 +507,7 @@
     <ClCompile Include="Intermediate\Reflection\GameFramework\ADefaultPawn.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\GameFramework\ADestructibleActor.gen.cpp">
-      <Filter>Intermediate\Reflection\GameFramework</Filter>
-    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\ADirectionalLightActor.gen.cpp">
-      <Filter>Intermediate\Reflection\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\GameFramework\AFireballActor.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\AFogActor.gen.cpp">
@@ -535,9 +517,6 @@
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\ALightActor.gen.cpp">
-      <Filter>Intermediate\Reflection\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\GameFramework\AMainSceneDestructibleActor.gen.cpp">
       <Filter>Intermediate\Reflection\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\GameFramework\APawn.gen.cpp">
@@ -982,9 +961,6 @@
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\MainSceneDestructibleComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp">
@@ -1928,9 +1904,6 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\MainSceneDestructibleComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\MeshComponent.h">

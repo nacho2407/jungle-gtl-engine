@@ -8,8 +8,10 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cmath>
 #include <cstring>
 #include <filesystem>
+#include <limits>
 #include <unordered_set>
 
 namespace
@@ -43,6 +45,13 @@ namespace
 	constexpr float AnimGraphPinRadius = 5.0f;
 	constexpr float AnimGraphPinHitRadius = 13.0f;
 
+	constexpr float StateMachineEntryNodeWidth = 96.0f;
+	constexpr float StateMachineEntryNodeHeight = 48.0f;
+	constexpr float StateMachineStateNodeWidth = 190.0f;
+	constexpr float StateMachineStateNodeHeight = 70.0f;
+	constexpr float StateMachineNodePinRadius = 5.0f;
+	constexpr float StateMachineNodeHeaderHeight = 22.0f;
+
 	float GetAnimGraphNodeHeight(const FAnimGraphNodeDesc& Node)
 	{
 		switch (Node.Type)
@@ -70,6 +79,148 @@ namespace
 		return Dx * Dx + Dy * Dy <= Radius * Radius;
 	}
 
+
+
+	long long MakeStateNameEditKey(int32 MachineNodeId, int32 StateId)
+	{
+		return (static_cast<long long>(MachineNodeId) << 32) ^ static_cast<unsigned int>(StateId);
+	}
+
+	void CopyToFixedBuffer(std::array<char, 256>& Buffer, const FString& Value)
+	{
+		std::fill(Buffer.begin(), Buffer.end(), '\0');
+		std::strncpy(Buffer.data(), Value.c_str(), Buffer.size() - 1);
+	}
+
+	FString FitTextToWidth(const FString& Text, float MaxWidth)
+	{
+		if (MaxWidth <= 0.0f || ImGui::CalcTextSize(Text.c_str()).x <= MaxWidth)
+		{
+			return Text;
+		}
+
+		constexpr const char* Ellipsis = "...";
+		const float EllipsisWidth = ImGui::CalcTextSize(Ellipsis).x;
+		FString Result;
+		Result.reserve(Text.size());
+		for (char C : Text)
+		{
+			Result.push_back(C);
+			if (ImGui::CalcTextSize(Result.c_str()).x + EllipsisWidth > MaxWidth)
+			{
+				if (!Result.empty())
+				{
+					Result.pop_back();
+				}
+				break;
+			}
+		}
+		Result += Ellipsis;
+		return Result;
+	}
+
+	struct FInputTextResizeCallbackData
+	{
+		FString* Value = nullptr;
+	};
+
+	int32 InputTextResizeCallback(ImGuiInputTextCallbackData* Data)
+	{
+		FInputTextResizeCallbackData* UserData = static_cast<FInputTextResizeCallbackData*>(Data->UserData);
+		if (!UserData || !UserData->Value)
+		{
+			return 0;
+		}
+
+		FString& Value = *UserData->Value;
+		if (Data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+		{
+			Value.resize(static_cast<size_t>(Data->BufTextLen));
+			Data->Buf = const_cast<char*>(Value.c_str());
+		}
+		return 0;
+	}
+
+	bool InputFString(const char* Label, FString& Value, ImGuiInputTextFlags Flags = 0)
+	{
+		Value.reserve(std::max<size_t>(Value.capacity(), 64));
+
+		Flags |= ImGuiInputTextFlags_CallbackResize;
+		FInputTextResizeCallbackData CallbackData;
+		CallbackData.Value = &Value;
+		const bool bChanged = ImGui::InputText(
+			Label,
+			const_cast<char*>(Value.c_str()),
+			Value.capacity() + 1,
+			Flags,
+			InputTextResizeCallback,
+			&CallbackData);
+		if (bChanged)
+		{
+			Value.resize(std::strlen(Value.c_str()));
+		}
+		return bChanged;
+	}
+
+	void DrawArrowHead(ImDrawList* DrawList, const ImVec2& Tip, const ImVec2& Direction, ImU32 Color, float Size = 12.0f)
+	{
+		float Length = std::sqrt(Direction.x * Direction.x + Direction.y * Direction.y);
+		if (Length <= 0.001f)
+		{
+			return;
+		}
+
+		const ImVec2 Unit(Direction.x / Length, Direction.y / Length);
+		const ImVec2 Normal(-Unit.y, Unit.x);
+		const ImVec2 Base = Sub(Tip, ImVec2(Unit.x * Size, Unit.y * Size));
+		const ImVec2 P1 = Add(Base, ImVec2(Normal.x * Size * 0.55f, Normal.y * Size * 0.55f));
+		const ImVec2 P2 = Sub(Base, ImVec2(Normal.x * Size * 0.55f, Normal.y * Size * 0.55f));
+		DrawList->AddTriangleFilled(Tip, P1, P2, Color);
+	}
+
+	float DistanceSquaredToSegment(const ImVec2& Point, const ImVec2& A, const ImVec2& B)
+	{
+		const float ABx = B.x - A.x;
+		const float ABy = B.y - A.y;
+		const float APx = Point.x - A.x;
+		const float APy = Point.y - A.y;
+		const float LenSq = ABx * ABx + ABy * ABy;
+		float T = LenSq > 0.0001f ? (APx * ABx + APy * ABy) / LenSq : 0.0f;
+		T = std::max(0.0f, std::min(1.0f, T));
+		const float ClosestX = A.x + ABx * T;
+		const float ClosestY = A.y + ABy * T;
+		const float Dx = Point.x - ClosestX;
+		const float Dy = Point.y - ClosestY;
+		return Dx * Dx + Dy * Dy;
+	}
+
+	ImVec2 CubicBezierPoint(const ImVec2& P0, const ImVec2& P1, const ImVec2& P2, const ImVec2& P3, float T)
+	{
+		const float U = 1.0f - T;
+		const float TT = T * T;
+		const float UU = U * U;
+		const float UUU = UU * U;
+		const float TTT = TT * T;
+		return ImVec2(
+			UUU * P0.x + 3.0f * UU * T * P1.x + 3.0f * U * TT * P2.x + TTT * P3.x,
+			UUU * P0.y + 3.0f * UU * T * P1.y + 3.0f * U * TT * P2.y + TTT * P3.y);
+	}
+
+	float DistanceSquaredToBezier(const ImVec2& Point, const ImVec2& P0, const ImVec2& P1, const ImVec2& P2, const ImVec2& P3)
+	{
+		float BestDistanceSq = std::numeric_limits<float>::max();
+		ImVec2 Prev = P0;
+		constexpr int32 SampleCount = 24;
+		for (int32 SampleIndex = 1; SampleIndex <= SampleCount; ++SampleIndex)
+		{
+			const float T = static_cast<float>(SampleIndex) / static_cast<float>(SampleCount);
+			const ImVec2 Current = CubicBezierPoint(P0, P1, P2, P3, T);
+			BestDistanceSq = std::min(BestDistanceSq, DistanceSquaredToSegment(Point, Prev, Current));
+			Prev = Current;
+		}
+		return BestDistanceSq;
+	}
+
 	ImVec2 GetAnimGraphNodeInputPinPos(const FAnimGraphNodeDesc& Node, const ImVec2& CanvasOrigin)
 	{
 		return Add(CanvasOrigin, ImVec2(Node.Position.X, Node.Position.Y + GetAnimGraphNodeHeight(Node) * 0.5f));
@@ -78,6 +229,47 @@ namespace
 	ImVec2 GetAnimGraphNodeOutputPinPos(const FAnimGraphNodeDesc& Node, const ImVec2& CanvasOrigin)
 	{
 		return Add(CanvasOrigin, ImVec2(Node.Position.X + AnimGraphNodeWidth, Node.Position.Y + GetAnimGraphNodeHeight(Node) * 0.5f));
+	}
+
+	ImVec2 GetStateMachineEntryNodePos(const ImVec2& CanvasOrigin)
+	{
+		return Add(CanvasOrigin, ImVec2(36.0f, 84.0f));
+	}
+
+	int32 FindStateIndexById(const FAnimStateMachineDesc& Machine, int32 StateId)
+	{
+		for (int32 Index = 0; Index < static_cast<int32>(Machine.States.size()); ++Index)
+		{
+			if (Machine.States[Index].StateId == StateId)
+			{
+				return Index;
+			}
+		}
+		return -1;
+	}
+
+	ImVec2 GetStateMachineStateNodePos(const FAnimStateDesc& State, const ImVec2& CanvasOrigin, int32 StateIndex)
+	{
+		float X = State.Position.X;
+		float Y = State.Position.Y;
+		if (X == 0.0f && Y == 0.0f)
+		{
+			X = 190.0f + static_cast<float>(StateIndex % 3) * 190.0f;
+			Y = 70.0f + static_cast<float>(StateIndex / 3) * 115.0f;
+		}
+		return Add(CanvasOrigin, ImVec2(X, Y));
+	}
+
+	ImVec2 GetStateMachineStateInputPinPos(const FAnimStateDesc& State, const ImVec2& CanvasOrigin, int32 StateIndex)
+	{
+		const ImVec2 Pos = GetStateMachineStateNodePos(State, CanvasOrigin, StateIndex);
+		return Add(Pos, ImVec2(0.0f, StateMachineStateNodeHeight * 0.5f));
+	}
+
+	ImVec2 GetStateMachineStateOutputPinPos(const FAnimStateDesc& State, const ImVec2& CanvasOrigin, int32 StateIndex)
+	{
+		const ImVec2 Pos = GetStateMachineStateNodePos(State, CanvasOrigin, StateIndex);
+		return Add(Pos, ImVec2(StateMachineStateNodeWidth, StateMachineStateNodeHeight * 0.5f));
 	}
 }
 
@@ -91,6 +283,16 @@ void FEditorAnimGraphWidget::Open(const FString& InPath)
 	EditingPath = FPaths::Normalize(InPath);
 	EditingAsset = FResourceManager::Get().LoadAnimGraph(EditingPath);
 	SelectedNodeId = -1;
+	DraggingOutputNodeId = -1;
+	DraggingInputNodeId = -1;
+	DraggingTransitionFromStateId = -1;
+	DraggingTransitionToStateId = -1;
+	ViewMode = EViewMode::AnimGraph;
+	EditingStateMachineNodeId = -1;
+	SelectedStateId = -1;
+	SelectedTransitionIndex = -1;
+	EditingStateNameKey = -1;
+	StateNameEditBuffers.clear();
 	bDirty = false;
 	bOpen = EditingAsset != nullptr;
 	if (EditingAsset)
@@ -112,6 +314,16 @@ void FEditorAnimGraphWidget::Close()
 	EditingPath.clear();
 	EditingAsset = nullptr;
 	SelectedNodeId = -1;
+	DraggingOutputNodeId = -1;
+	DraggingInputNodeId = -1;
+	DraggingTransitionFromStateId = -1;
+	DraggingTransitionToStateId = -1;
+	ViewMode = EViewMode::AnimGraph;
+	EditingStateMachineNodeId = -1;
+	SelectedStateId = -1;
+	SelectedTransitionIndex = -1;
+	EditingStateNameKey = -1;
+	StateNameEditBuffers.clear();
 	bDirty = false;
 	bOpen = false;
 }
@@ -177,9 +389,12 @@ void FEditorAnimGraphWidget::RenderEmbedded(float DeltaTime)
 	RenderToolbar();
 	ImGui::Separator();
 
-	const float DetailsWidth = 330.0f;
 	const ImVec2 Available = ImGui::GetContentRegionAvail();
-	const float CanvasWidth = std::max(260.0f, Available.x - DetailsWidth - 8.0f);
+	const float SplitterWidth = 6.0f;
+	const float MinDetailsWidth = 220.0f;
+	const float MaxDetailsWidth = std::max(MinDetailsWidth, Available.x - 260.0f - SplitterWidth);
+	DetailsPanelWidth = std::max(MinDetailsWidth, std::min(DetailsPanelWidth, MaxDetailsWidth));
+	const float CanvasWidth = std::max(260.0f, Available.x - DetailsPanelWidth - SplitterWidth);
 
 	if (ImGui::BeginChild("##AnimGraphCanvasPane", ImVec2(CanvasWidth, 0.0f), true))
 	{
@@ -187,9 +402,20 @@ void FEditorAnimGraphWidget::RenderEmbedded(float DeltaTime)
 	}
 	ImGui::EndChild();
 
-	ImGui::SameLine();
+	ImGui::SameLine(0.0f, 0.0f);
+	ImGui::InvisibleButton("##AnimGraphDetailsSplitter", ImVec2(SplitterWidth, Available.y));
+	if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+	{
+		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+	}
+	if (ImGui::IsItemActive())
+	{
+		DetailsPanelWidth = std::max(MinDetailsWidth, std::min(DetailsPanelWidth - ImGui::GetIO().MouseDelta.x, MaxDetailsWidth));
+	}
 
-	if (ImGui::BeginChild("##AnimGraphDetailsPane", ImVec2(0.0f, 0.0f), true))
+	ImGui::SameLine(0.0f, 0.0f);
+
+	if (ImGui::BeginChild("##AnimGraphDetailsPane", ImVec2(DetailsPanelWidth, 0.0f), true, ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_HorizontalScrollbar))
 	{
 		RenderDetails();
 	}
@@ -211,6 +437,48 @@ void FEditorAnimGraphWidget::RenderToolbar()
 	if (ImGui::Button("Save + Reload"))
 	{
 		SaveAndReload();
+	}
+
+	if (ViewMode == EViewMode::StateMachine)
+	{
+		FAnimGraphNodeDesc* MachineNode = FindEditingStateMachineNode();
+
+		ImGui::SameLine();
+		ImGui::TextDisabled("|");
+		ImGui::SameLine();
+		if (ImGui::Button("< Back"))
+		{
+			LeaveStateMachineView();
+		}
+
+		if (MachineNode)
+		{
+			ImGui::SameLine();
+			ImGui::TextDisabled("AnimGraph > %s #%d", GetNodeDisplayName(*MachineNode).c_str(), MachineNode->NodeId);
+			ImGui::SameLine();
+			if (ImGui::Button("Add State"))
+			{
+				AddStateToStateMachine(MachineNode->StateMachine);
+				bDirty = true;
+			}
+
+			ImGui::Spacing();
+			ImGui::TextDisabled("%s%s", EditingPath.c_str(), bDirty ? " *" : "");
+			ImGui::SameLine();
+			ImGui::TextDisabled(
+				"StateMachine #%d | Entry: %s | States: %d | Transitions: %d | Dirty: %s",
+				MachineNode->NodeId,
+				GetStateDisplayName(MachineNode->StateMachine, MachineNode->StateMachine.EntryStateId).c_str(),
+				static_cast<int32>(MachineNode->StateMachine.States.size()),
+				static_cast<int32>(MachineNode->StateMachine.Transitions.size()),
+				bDirty ? "true" : "false");
+		}
+		else
+		{
+			ImGui::SameLine();
+			ImGui::TextDisabled("Missing StateMachine");
+		}
+		return;
 	}
 
 	ImGui::SameLine();
@@ -255,6 +523,17 @@ void FEditorAnimGraphWidget::RenderToolbar()
 }
 
 void FEditorAnimGraphWidget::RenderCanvas()
+{
+	if (ViewMode == EViewMode::StateMachine)
+	{
+		RenderStateMachineCanvas();
+		return;
+	}
+
+	RenderAnimGraphCanvas();
+}
+
+void FEditorAnimGraphWidget::RenderAnimGraphCanvas()
 {
 	const ImVec2 CanvasOrigin = ImGui::GetCursorScreenPos();
 	const ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
@@ -304,6 +583,636 @@ void FEditorAnimGraphWidget::RenderCanvas()
 	RenderPendingLink(CanvasOrigin);
 }
 
+void FEditorAnimGraphWidget::RenderStateMachineCanvas()
+{
+	FAnimGraphNodeDesc* MachineNode = FindEditingStateMachineNode();
+	if (!MachineNode || MachineNode->Type != EAnimGraphNodeType::StateMachine)
+	{
+		LeaveStateMachineView();
+		ImGui::TextDisabled("StateMachine node is missing.");
+		return;
+	}
+
+	const ImVec2 CanvasOrigin = ImGui::GetCursorScreenPos();
+	const ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	DrawList->AddRectFilled(
+		CanvasOrigin,
+		Add(CanvasOrigin, CanvasSize),
+		ImGui::GetColorU32(ImVec4(0.10f, 0.09f, 0.12f, 1.0f)),
+		4.0f);
+
+	const bool bHasSelectedEditorPanel = SelectedStateId >= 0 || SelectedTransitionIndex >= 0;
+	const float SelectedEditorPanelWidth = SelectedStateId >= 0 ? 330.0f : 310.0f;
+	const float SelectedEditorPanelHeight = std::min(SelectedStateId >= 0 ? 430.0f : 360.0f, std::max(180.0f, CanvasSize.y - 58.0f));
+	const ImVec2 SelectedEditorPanelMin = Add(CanvasOrigin, ImVec2(std::max(12.0f, CanvasSize.x - SelectedEditorPanelWidth - 14.0f), 44.0f));
+	const ImVec2 SelectedEditorPanelMax = Add(SelectedEditorPanelMin, ImVec2(SelectedEditorPanelWidth, SelectedEditorPanelHeight));
+	const bool bMouseOverSelectedEditorPanel = bHasSelectedEditorPanel
+		&& ImGui::IsMouseHoveringRect(SelectedEditorPanelMin, SelectedEditorPanelMax, true);
+
+	ImGui::SetNextItemAllowOverlap();
+	ImGui::InvisibleButton(
+		"##StateMachineCanvas",
+		CanvasSize,
+		ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
+
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !bMouseOverSelectedEditorPanel)
+	{
+		SelectedStateId = -1;
+		SelectedTransitionIndex = -1;
+		SelectedNodeId = MachineNode->NodeId;
+	}
+
+	if (ImGui::BeginPopupContextItem("##StateMachineCanvasContext"))
+	{
+		if (ImGui::MenuItem("Add State"))
+		{
+			AddStateToStateMachine(MachineNode->StateMachine);
+			bDirty = true;
+		}
+		ImGui::EndPopup();
+	}
+
+	DrawList->AddText(
+		Add(CanvasOrigin, ImVec2(12.0f, 12.0f)),
+		ImGui::GetColorU32(ImGuiCol_TextDisabled),
+		"StateMachine View - drag states, connect Out -> In or In -> Out. Arrow shows transition direction.");
+
+	if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+	{
+		if (SelectedTransitionIndex >= 0)
+		{
+			if (DeleteTransitionFromStateMachine(MachineNode->StateMachine, SelectedTransitionIndex))
+			{
+				bDirty = true;
+			}
+		}
+		else if (SelectedStateId >= 0)
+		{
+			if (DeleteStateFromStateMachine(MachineNode->StateMachine, SelectedStateId))
+			{
+				bDirty = true;
+			}
+		}
+	}
+
+	RenderStateMachineLinks(*MachineNode, CanvasOrigin);
+
+	const ImVec2 EntryPos = GetStateMachineEntryNodePos(CanvasOrigin);
+	const ImVec2 EntryMax = Add(EntryPos, ImVec2(StateMachineEntryNodeWidth, StateMachineEntryNodeHeight));
+	DrawList->AddRectFilled(EntryPos, EntryMax, ImGui::GetColorU32(ImVec4(0.28f, 0.28f, 0.18f, 1.0f)), 6.0f);
+	DrawList->AddRect(EntryPos, EntryMax, ImGui::GetColorU32(ImVec4(0.70f, 0.64f, 0.32f, 1.0f)), 6.0f);
+	DrawList->AddText(Add(EntryPos, ImVec2(12.0f, 8.0f)), ImGui::GetColorU32(ImGuiCol_Text), "Entry");
+	DrawList->AddText(Add(EntryPos, ImVec2(12.0f, 27.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), GetStateDisplayName(MachineNode->StateMachine, MachineNode->StateMachine.EntryStateId).c_str());
+	DrawList->AddCircleFilled(
+		Add(EntryPos, ImVec2(StateMachineEntryNodeWidth, StateMachineEntryNodeHeight * 0.5f)),
+		StateMachineNodePinRadius,
+		ImGui::GetColorU32(ImVec4(1.0f, 0.82f, 0.35f, 1.0f)));
+
+	for (int32 StateIndex = 0; StateIndex < static_cast<int32>(MachineNode->StateMachine.States.size()); ++StateIndex)
+	{
+		RenderStateMachineStateNode(*MachineNode, MachineNode->StateMachine.States[StateIndex], CanvasOrigin, StateIndex);
+	}
+
+	RenderPendingStateMachineTransitionLink(*MachineNode, CanvasOrigin);
+	RenderSelectedStateMachineStateEditor(*MachineNode, CanvasOrigin, CanvasSize);
+	RenderSelectedStateMachineTransitionEditor(*MachineNode, CanvasOrigin, CanvasSize);
+}
+
+void FEditorAnimGraphWidget::RenderStateMachineLinks(FAnimGraphNodeDesc& MachineNode, const ImVec2& CanvasOrigin)
+{
+	FAnimStateMachineDesc& Machine = MachineNode.StateMachine;
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	const int32 EntryStateIndex = FindStateIndexById(Machine, Machine.EntryStateId);
+	if (EntryStateIndex >= 0)
+	{
+		const FAnimStateDesc& EntryState = Machine.States[EntryStateIndex];
+		const ImVec2 EntryPos = GetStateMachineEntryNodePos(CanvasOrigin);
+		const ImVec2 From = Add(EntryPos, ImVec2(StateMachineEntryNodeWidth, StateMachineEntryNodeHeight * 0.5f));
+		const ImVec2 To = GetStateMachineStateInputPinPos(EntryState, CanvasOrigin, EntryStateIndex);
+		const ImU32 EntryLinkColor = ImGui::GetColorU32(ImVec4(1.0f, 0.82f, 0.35f, 1.0f));
+		const ImVec2 EntryControlB = Sub(To, ImVec2(70.0f, 0.0f));
+		DrawList->AddBezierCubic(From, Add(From, ImVec2(70.0f, 0.0f)), EntryControlB, To, EntryLinkColor, 3.0f);
+		DrawArrowHead(DrawList, To, Sub(To, EntryControlB), EntryLinkColor, 16.0f);
+	}
+
+	int32 ClickedTransitionIndex = -1;
+	const bool bCanSelectTransition = DraggingTransitionFromStateId < 0 && DraggingTransitionToStateId < 0 && ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+	const ImVec2 MousePos = ImGui::GetIO().MousePos;
+
+	for (int32 TransitionIndex = 0; TransitionIndex < static_cast<int32>(Machine.Transitions.size()); ++TransitionIndex)
+	{
+		const FAnimStateTransitionDesc& Transition = Machine.Transitions[TransitionIndex];
+		const int32 FromIndex = FindStateIndexById(Machine, Transition.FromStateId);
+		const int32 ToIndex = FindStateIndexById(Machine, Transition.ToStateId);
+		if (FromIndex < 0 || ToIndex < 0)
+		{
+			continue;
+		}
+
+		const FAnimStateDesc& FromState = Machine.States[FromIndex];
+		const FAnimStateDesc& ToState = Machine.States[ToIndex];
+		const ImVec2 From = GetStateMachineStateOutputPinPos(FromState, CanvasOrigin, FromIndex);
+		const ImVec2 To = GetStateMachineStateInputPinPos(ToState, CanvasOrigin, ToIndex);
+		const ImVec2 ControlA = Add(From, ImVec2(80.0f, 0.0f));
+		const ImVec2 ControlB = Sub(To, ImVec2(80.0f, 0.0f));
+		const bool bSelectedTransition = SelectedTransitionIndex == TransitionIndex;
+		const bool bRelatedToSelectedState = SelectedStateId == Transition.FromStateId || SelectedStateId == Transition.ToStateId;
+		const ImU32 LinkColor = ImGui::GetColorU32(
+			bSelectedTransition
+			? ImVec4(1.0f, 0.82f, 0.35f, 1.0f)
+			: bRelatedToSelectedState
+			? ImVec4(0.95f, 0.72f, 1.0f, 1.0f)
+			: ImVec4(0.72f, 0.60f, 0.95f, 1.0f));
+
+		DrawList->AddBezierCubic(
+			From,
+			ControlA,
+			ControlB,
+			To,
+			LinkColor,
+			bSelectedTransition ? 4.0f : (bRelatedToSelectedState ? 3.5f : 2.5f));
+		DrawArrowHead(DrawList, To, Sub(To, ControlB), LinkColor, bSelectedTransition ? 20.0f : 16.0f);
+
+		if (bCanSelectTransition && DistanceSquaredToBezier(MousePos, From, ControlA, ControlB, To) <= 14.0f * 14.0f)
+		{
+			ClickedTransitionIndex = TransitionIndex;
+		}
+	}
+
+	if (ClickedTransitionIndex >= 0)
+	{
+		SelectedNodeId = MachineNode.NodeId;
+		SelectedStateId = -1;
+		SelectedTransitionIndex = ClickedTransitionIndex;
+	}
+}
+
+void FEditorAnimGraphWidget::RenderPendingStateMachineTransitionLink(FAnimGraphNodeDesc& MachineNode, const ImVec2& CanvasOrigin)
+{
+	if (DraggingTransitionFromStateId < 0 && DraggingTransitionToStateId < 0)
+	{
+		return;
+	}
+
+	FAnimStateMachineDesc& Machine = MachineNode.StateMachine;
+	const ImVec2 MousePos = ImGui::GetIO().MousePos;
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	const ImU32 LinkColor = ImGui::GetColorU32(ImVec4(1.0f, 0.82f, 0.35f, 1.0f));
+
+	if (DraggingTransitionFromStateId >= 0)
+	{
+		const int32 FromIndex = FindStateIndexById(Machine, DraggingTransitionFromStateId);
+		if (FromIndex < 0)
+		{
+			DraggingTransitionFromStateId = -1;
+			return;
+		}
+
+		const FAnimStateDesc& FromState = Machine.States[FromIndex];
+		const ImVec2 From = GetStateMachineStateOutputPinPos(FromState, CanvasOrigin, FromIndex);
+		const ImVec2 ControlB = Sub(MousePos, ImVec2(80.0f, 0.0f));
+		DrawList->AddBezierCubic(From, Add(From, ImVec2(80.0f, 0.0f)), ControlB, MousePos, LinkColor, 3.0f);
+		DrawArrowHead(DrawList, MousePos, Sub(MousePos, ControlB), LinkColor, 16.0f);
+	}
+	else if (DraggingTransitionToStateId >= 0)
+	{
+		const int32 ToIndex = FindStateIndexById(Machine, DraggingTransitionToStateId);
+		if (ToIndex < 0)
+		{
+			DraggingTransitionToStateId = -1;
+			return;
+		}
+
+		const FAnimStateDesc& ToState = Machine.States[ToIndex];
+		const ImVec2 To = GetStateMachineStateInputPinPos(ToState, CanvasOrigin, ToIndex);
+		const ImVec2 ControlB = Sub(To, ImVec2(80.0f, 0.0f));
+		DrawList->AddBezierCubic(MousePos, Add(MousePos, ImVec2(80.0f, 0.0f)), ControlB, To, LinkColor, 3.0f);
+		DrawArrowHead(DrawList, To, Sub(To, ControlB), LinkColor, 16.0f);
+	}
+
+	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+	{
+		DraggingTransitionFromStateId = -1;
+		DraggingTransitionToStateId = -1;
+	}
+}
+
+void FEditorAnimGraphWidget::RenderSelectedStateMachineStateEditor(FAnimGraphNodeDesc& MachineNode, const ImVec2& CanvasOrigin, const ImVec2& CanvasSize)
+{
+	FAnimStateMachineDesc& Machine = MachineNode.StateMachine;
+	const int32 StateIndex = FindStateIndexById(Machine, SelectedStateId);
+	if (StateIndex < 0)
+	{
+		SelectedStateId = -1;
+		return;
+	}
+
+	FAnimStateDesc& State = Machine.States[StateIndex];
+	const float PanelWidth = 330.0f;
+	const float PanelHeight = std::min(430.0f, std::max(180.0f, CanvasSize.y - 58.0f));
+	ImGui::SetCursorScreenPos(Add(CanvasOrigin, ImVec2(std::max(12.0f, CanvasSize.x - PanelWidth - 14.0f), 44.0f)));
+	ImGui::SetNextItemAllowOverlap();
+	ImGui::PushID("SelectedStateMachineStateEditor");
+	if (ImGui::BeginChild("##SelectedStateEditor", ImVec2(PanelWidth, PanelHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar))
+	{
+		ImGui::TextUnformatted("Selected State");
+		ImGui::SameLine();
+		ImGui::TextDisabled("#%d", State.StateId);
+		ImGui::Separator();
+
+		if (RenderStateNameInput("Name", MachineNode.NodeId, State))
+		{
+			bDirty = true;
+		}
+
+		if (RenderAnimationPathCombo("Animation", State.AnimationPath))
+		{
+			bDirty = true;
+		}
+
+		if (ImGui::DragFloat2("Position", &State.Position.X, 1.0f))
+		{
+			bDirty = true;
+		}
+
+		const bool bIsEntry = Machine.EntryStateId == State.StateId;
+		if (bIsEntry)
+		{
+			ImGui::TextDisabled("Entry State");
+		}
+		else if (ImGui::Button("Set As Entry"))
+		{
+			Machine.EntryStateId = State.StateId;
+			bDirty = true;
+		}
+
+		ImGui::SeparatorText("Outgoing");
+		bool bHasOutgoing = false;
+		int32 TransitionToDelete = -1;
+		for (int32 TransitionIndex = 0; TransitionIndex < static_cast<int32>(Machine.Transitions.size()); ++TransitionIndex)
+		{
+			const FAnimStateTransitionDesc& Transition = Machine.Transitions[TransitionIndex];
+			if (Transition.FromStateId != State.StateId)
+			{
+				continue;
+			}
+
+			bHasOutgoing = true;
+			ImGui::PushID(TransitionIndex);
+			ImGui::Text("-> %s", GetStateDisplayName(Machine, Transition.ToStateId).c_str());
+			ImGui::SameLine();
+			if (ImGui::SmallButton("Select"))
+			{
+				SelectedTransitionIndex = TransitionIndex;
+				SelectedStateId = -1;
+			}
+			ImGui::SameLine();
+			if (ImGui::SmallButton("Delete"))
+			{
+				TransitionToDelete = TransitionIndex;
+			}
+			ImGui::PopID();
+		}
+		if (!bHasOutgoing)
+		{
+			ImGui::TextDisabled("No outgoing transitions.");
+		}
+
+		ImGui::SeparatorText("Incoming");
+		bool bHasIncoming = false;
+		for (int32 TransitionIndex = 0; TransitionIndex < static_cast<int32>(Machine.Transitions.size()); ++TransitionIndex)
+		{
+			const FAnimStateTransitionDesc& Transition = Machine.Transitions[TransitionIndex];
+			if (Transition.ToStateId != State.StateId)
+			{
+				continue;
+			}
+
+			bHasIncoming = true;
+			ImGui::PushID(TransitionIndex + 10000);
+			ImGui::Text("<- %s", GetStateDisplayName(Machine, Transition.FromStateId).c_str());
+			ImGui::SameLine();
+			if (ImGui::SmallButton("Select"))
+			{
+				SelectedTransitionIndex = TransitionIndex;
+				SelectedStateId = -1;
+			}
+			ImGui::SameLine();
+			if (ImGui::SmallButton("Delete"))
+			{
+				TransitionToDelete = TransitionIndex;
+			}
+			ImGui::PopID();
+		}
+		if (!bHasIncoming)
+		{
+			ImGui::TextDisabled("No incoming transitions.");
+		}
+
+		if (TransitionToDelete >= 0)
+		{
+			if (DeleteTransitionFromStateMachine(Machine, TransitionToDelete))
+			{
+				SelectedStateId = State.StateId;
+				bDirty = true;
+			}
+		}
+
+		ImGui::Separator();
+		if (ImGui::Button("Delete State"))
+		{
+			if (DeleteStateFromStateMachine(Machine, State.StateId))
+			{
+				bDirty = true;
+			}
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Close"))
+		{
+			SelectedStateId = -1;
+		}
+	}
+	ImGui::EndChild();
+	ImGui::PopID();
+}
+
+void FEditorAnimGraphWidget::RenderSelectedStateMachineTransitionEditor(FAnimGraphNodeDesc& MachineNode, const ImVec2& CanvasOrigin, const ImVec2& CanvasSize)
+{
+	FAnimStateMachineDesc& Machine = MachineNode.StateMachine;
+	if (SelectedTransitionIndex < 0 || SelectedTransitionIndex >= static_cast<int32>(Machine.Transitions.size()))
+	{
+		return;
+	}
+
+	FAnimStateTransitionDesc& Transition = Machine.Transitions[SelectedTransitionIndex];
+	const float PanelWidth = 310.0f;
+	const float PanelHeight = std::min(360.0f, std::max(180.0f, CanvasSize.y - 58.0f));
+	ImGui::SetCursorScreenPos(Add(CanvasOrigin, ImVec2(std::max(12.0f, CanvasSize.x - PanelWidth - 14.0f), 44.0f)));
+	ImGui::SetNextItemAllowOverlap();
+	ImGui::PushID("SelectedStateMachineTransitionEditor");
+	if (ImGui::BeginChild("##SelectedTransitionEditor", ImVec2(PanelWidth, PanelHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar))
+	{
+		ImGui::TextUnformatted("Selected Transition");
+		ImGui::SameLine();
+		ImGui::TextDisabled("#%d", SelectedTransitionIndex);
+		ImGui::Separator();
+
+		if (ImGui::BeginCombo("From", GetStateDisplayName(Machine, Transition.FromStateId).c_str()))
+		{
+			for (const FAnimStateDesc& State : Machine.States)
+			{
+				const FString Label = GetStateDisplayName(Machine, State.StateId);
+				const bool bSelected = Transition.FromStateId == State.StateId;
+				if (ImGui::Selectable(Label.c_str(), bSelected))
+				{
+					if (State.StateId != Transition.ToStateId && !HasTransition(Machine, State.StateId, Transition.ToStateId))
+					{
+						Transition.FromStateId = State.StateId;
+						bDirty = true;
+					}
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		if (ImGui::BeginCombo("To", GetStateDisplayName(Machine, Transition.ToStateId).c_str()))
+		{
+			for (const FAnimStateDesc& State : Machine.States)
+			{
+				const FString Label = GetStateDisplayName(Machine, State.StateId);
+				const bool bSelected = Transition.ToStateId == State.StateId;
+				if (ImGui::Selectable(Label.c_str(), bSelected))
+				{
+					if (State.StateId != Transition.FromStateId && !HasTransition(Machine, Transition.FromStateId, State.StateId))
+					{
+						Transition.ToStateId = State.StateId;
+						bDirty = true;
+					}
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		if (ImGui::DragFloat("Blend", &Transition.BlendTime, 0.01f, 0.0f, 5.0f))
+		{
+			bDirty = true;
+		}
+		if (ImGui::InputInt("Priority", &Transition.Priority))
+		{
+			bDirty = true;
+		}
+
+		const char* ConditionLabels[] = {
+			"AlwaysTrue",
+			"BoolParameter",
+			"FloatGreater",
+			"FloatLess",
+			"LuaFunction"
+		};
+		int32 ConditionIndex = static_cast<int32>(Transition.Condition.Type);
+		if (ConditionIndex < 0 || ConditionIndex >= static_cast<int32>(std::size(ConditionLabels)))
+		{
+			ConditionIndex = 0;
+		}
+		if (ImGui::Combo("Condition", &ConditionIndex, ConditionLabels, static_cast<int32>(std::size(ConditionLabels))))
+		{
+			Transition.Condition.Type = static_cast<EAnimTransitionConditionType>(ConditionIndex);
+			bDirty = true;
+		}
+
+		if (Transition.Condition.Type == EAnimTransitionConditionType::BoolParameter
+			|| Transition.Condition.Type == EAnimTransitionConditionType::FloatGreater
+			|| Transition.Condition.Type == EAnimTransitionConditionType::FloatLess)
+		{
+			char ParameterBuffer[128] = {};
+			std::strncpy(ParameterBuffer, Transition.Condition.ParameterName.c_str(), sizeof(ParameterBuffer) - 1);
+			if (ImGui::InputText("Parameter", ParameterBuffer, sizeof(ParameterBuffer)))
+			{
+				Transition.Condition.ParameterName = ParameterBuffer;
+				bDirty = true;
+			}
+		}
+
+		if (Transition.Condition.Type == EAnimTransitionConditionType::BoolParameter)
+		{
+			if (ImGui::Checkbox("Bool Value", &Transition.Condition.BoolValue))
+			{
+				bDirty = true;
+			}
+		}
+		else if (Transition.Condition.Type == EAnimTransitionConditionType::FloatGreater
+			|| Transition.Condition.Type == EAnimTransitionConditionType::FloatLess)
+		{
+			if (ImGui::DragFloat("Threshold", &Transition.Condition.Threshold, 0.1f))
+			{
+				bDirty = true;
+			}
+		}
+		else if (Transition.Condition.Type == EAnimTransitionConditionType::LuaFunction)
+		{
+			char LuaFunctionBuffer[128] = {};
+			std::strncpy(LuaFunctionBuffer, Transition.Condition.LuaFunctionName.c_str(), sizeof(LuaFunctionBuffer) - 1);
+			if (ImGui::InputText("Lua Function", LuaFunctionBuffer, sizeof(LuaFunctionBuffer)))
+			{
+				Transition.Condition.LuaFunctionName = LuaFunctionBuffer;
+				bDirty = true;
+			}
+		}
+
+		if (ImGui::Button("Delete Transition"))
+		{
+			if (DeleteTransitionFromStateMachine(Machine, SelectedTransitionIndex))
+			{
+				bDirty = true;
+			}
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Close"))
+		{
+			SelectedTransitionIndex = -1;
+		}
+	}
+	ImGui::EndChild();
+	ImGui::PopID();
+}
+
+void FEditorAnimGraphWidget::RenderStateMachineStateNode(FAnimGraphNodeDesc& MachineNode, FAnimStateDesc& State, const ImVec2& CanvasOrigin, int32 StateIndex)
+{
+	const ImVec2 NodePos = GetStateMachineStateNodePos(State, CanvasOrigin, StateIndex);
+	const ImVec2 NodeSize = ImVec2(StateMachineStateNodeWidth, StateMachineStateNodeHeight);
+	const ImVec2 NodeMax = Add(NodePos, NodeSize);
+	const ImVec2 InputPin = Add(NodePos, ImVec2(0.0f, StateMachineStateNodeHeight * 0.5f));
+	const ImVec2 OutputPin = Add(NodePos, ImVec2(StateMachineStateNodeWidth, StateMachineStateNodeHeight * 0.5f));
+	const bool bSelected = SelectedStateId == State.StateId;
+	const bool bEntry = MachineNode.StateMachine.EntryStateId == State.StateId;
+	const bool bInputPinHovered = IsMouseNear(InputPin, AnimGraphPinHitRadius);
+	const bool bOutputPinHovered = IsMouseNear(OutputPin, AnimGraphPinHitRadius);
+	const bool bDraggingFromThisOutput = DraggingTransitionFromStateId == State.StateId;
+	const bool bDraggingToThisInput = DraggingTransitionToStateId == State.StateId;
+	const bool bValidInputDrop = DraggingTransitionFromStateId >= 0 && DraggingTransitionFromStateId != State.StateId && bInputPinHovered;
+	const bool bValidOutputDrop = DraggingTransitionToStateId >= 0 && DraggingTransitionToStateId != State.StateId && bOutputPinHovered;
+	const bool bAnyTransitionDrag = DraggingTransitionFromStateId >= 0 || DraggingTransitionToStateId >= 0;
+
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	const ImU32 BodyColor = ImGui::GetColorU32(bSelected ? ImVec4(0.30f, 0.24f, 0.44f, 1.0f) : ImVec4(0.22f, 0.20f, 0.28f, 1.0f));
+	const ImU32 HeaderColor = ImGui::GetColorU32(bEntry ? ImVec4(0.38f, 0.32f, 0.18f, 1.0f) : ImVec4(0.35f, 0.25f, 0.45f, 1.0f));
+	DrawList->AddRectFilled(NodePos, NodeMax, BodyColor, 6.0f);
+	DrawList->AddRectFilled(NodePos, ImVec2(NodeMax.x, NodePos.y + StateMachineNodeHeaderHeight), HeaderColor, 6.0f);
+	DrawList->AddRect(NodePos, NodeMax, ImGui::GetColorU32(bSelected ? ImVec4(1.0f, 0.82f, 0.35f, 1.0f) : ImVec4(0.55f, 0.45f, 0.70f, 1.0f)), 6.0f, 0, bSelected ? 2.0f : 1.0f);
+
+	ImGui::SetCursorScreenPos(NodePos);
+	char StateButtonId[96];
+	std::snprintf(StateButtonId, sizeof(StateButtonId), "##StateMachineState_%d_%d", MachineNode.NodeId, State.StateId);
+	ImGui::InvisibleButton(StateButtonId, NodeSize, ImGuiButtonFlags_MouseButtonLeft);
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !bInputPinHovered && !bOutputPinHovered)
+	{
+		SelectedNodeId = MachineNode.NodeId;
+		SelectedStateId = State.StateId;
+		SelectedTransitionIndex = -1;
+		if (State.Position.X == 0.0f && State.Position.Y == 0.0f)
+		{
+			State.Position.X = NodePos.x - CanvasOrigin.x;
+			State.Position.Y = NodePos.y - CanvasOrigin.y;
+		}
+	}
+
+	if (ImGui::IsItemActive() && !bInputPinHovered && !bOutputPinHovered && !bAnyTransitionDrag && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+	{
+		const ImVec2 Delta = ImGui::GetIO().MouseDelta;
+		if (State.Position.X == 0.0f && State.Position.Y == 0.0f)
+		{
+			State.Position.X = NodePos.x - CanvasOrigin.x;
+			State.Position.Y = NodePos.y - CanvasOrigin.y;
+		}
+		State.Position.X += Delta.x;
+		State.Position.Y += Delta.y;
+		bDirty = true;
+	}
+
+	if (bOutputPinHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+	{
+		SelectedNodeId = MachineNode.NodeId;
+		SelectedStateId = State.StateId;
+		SelectedTransitionIndex = -1;
+		DraggingTransitionFromStateId = State.StateId;
+		DraggingTransitionToStateId = -1;
+	}
+
+	if (bInputPinHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+	{
+		SelectedNodeId = MachineNode.NodeId;
+		SelectedStateId = State.StateId;
+		SelectedTransitionIndex = -1;
+		DraggingTransitionToStateId = State.StateId;
+		DraggingTransitionFromStateId = -1;
+	}
+
+	if (bValidInputDrop && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+	{
+		if (AddTransitionToStateMachine(MachineNode.StateMachine, DraggingTransitionFromStateId, State.StateId))
+		{
+			SelectedNodeId = MachineNode.NodeId;
+			SelectedStateId = -1;
+			SelectedTransitionIndex = static_cast<int32>(MachineNode.StateMachine.Transitions.size()) - 1;
+			bDirty = true;
+		}
+		DraggingTransitionFromStateId = -1;
+		DraggingTransitionToStateId = -1;
+	}
+	else if (bValidOutputDrop && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+	{
+		if (AddTransitionToStateMachine(MachineNode.StateMachine, State.StateId, DraggingTransitionToStateId))
+		{
+			SelectedNodeId = MachineNode.NodeId;
+			SelectedStateId = -1;
+			SelectedTransitionIndex = static_cast<int32>(MachineNode.StateMachine.Transitions.size()) - 1;
+			bDirty = true;
+		}
+		DraggingTransitionFromStateId = -1;
+		DraggingTransitionToStateId = -1;
+	}
+
+	DrawList->PushClipRect(Add(NodePos, ImVec2(8.0f, 2.0f)), Sub(NodeMax, ImVec2(8.0f, 2.0f)), true);
+	const float StateTextWidth = StateMachineStateNodeWidth - 18.0f;
+	const FString StateTitle = FitTextToWidth(GetStateDisplayName(MachineNode.StateMachine, State.StateId), StateTextWidth);
+	DrawList->AddText(Add(NodePos, ImVec2(9.0f, 4.0f)), ImGui::GetColorU32(ImGuiCol_Text), StateTitle.c_str());
+	const FString AnimName = State.AnimationPath.empty() ? FString("<No Animation>") : GetFileName(State.AnimationPath);
+	const FString FittedAnimName = FitTextToWidth(AnimName, StateTextWidth);
+	DrawList->AddText(Add(NodePos, ImVec2(9.0f, 28.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), FittedAnimName.c_str());
+	if (bEntry)
+	{
+		DrawList->AddText(Add(NodePos, ImVec2(9.0f, 48.0f)), ImGui::GetColorU32(ImVec4(1.0f, 0.82f, 0.35f, 1.0f)), "Entry State");
+	}
+	else
+	{
+		DrawList->AddText(Add(NodePos, ImVec2(9.0f, 48.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "Drag to move");
+	}
+	DrawList->PopClipRect();
+
+	const ImU32 PinOutlineColor = ImGui::GetColorU32(ImVec4(0.12f, 0.10f, 0.16f, 1.0f));
+	const ImU32 PinColor = ImGui::GetColorU32(ImVec4(0.78f, 0.76f, 1.0f, 1.0f));
+	const ImU32 PinHoverColor = ImGui::GetColorU32(ImVec4(1.0f, 0.82f, 0.35f, 1.0f));
+	const bool bInputHighlighted = bInputPinHovered || bValidInputDrop || bDraggingToThisInput;
+	const bool bOutputHighlighted = bOutputPinHovered || bValidOutputDrop || bDraggingFromThisOutput;
+	DrawList->AddCircleFilled(InputPin, StateMachineNodePinRadius + (bInputHighlighted ? 2.0f : 0.0f), bInputHighlighted ? PinHoverColor : PinColor);
+	DrawList->AddCircle(InputPin, StateMachineNodePinRadius + 1.0f, PinOutlineColor, 12, 1.5f);
+	DrawList->AddText(Sub(InputPin, ImVec2(24.0f, 19.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "In");
+	DrawList->AddCircleFilled(OutputPin, StateMachineNodePinRadius + (bOutputHighlighted ? 2.0f : 0.0f), bOutputHighlighted ? PinHoverColor : PinColor);
+	DrawList->AddCircle(OutputPin, StateMachineNodePinRadius + 1.0f, PinOutlineColor, 12, 1.5f);
+	DrawList->AddText(Add(OutputPin, ImVec2(8.0f, -19.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "Out");
+}
+
 void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& CanvasOrigin, int32 NodeIndex)
 {
 	const ImVec2 NodePos = Add(CanvasOrigin, ToImVec2(Node.Position));
@@ -338,6 +1247,13 @@ void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& 
 	if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 	{
 		SelectedNodeId = Node.NodeId;
+	}
+
+	if (Node.Type == EAnimGraphNodeType::StateMachine
+		&& ImGui::IsItemHovered()
+		&& ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+	{
+		EnterStateMachineView(Node.NodeId);
 	}
 
 	if (bSelected && ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
@@ -442,10 +1358,18 @@ void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& 
 	if (Node.Type == EAnimGraphNodeType::OutputPose)
 	{
 		const ImVec2 InputPin = GetAnimGraphNodeInputPinPos(Node, CanvasOrigin);
-		const bool bHoveredInputPin = DraggingOutputNodeId >= 0 && IsMouseNear(InputPin, AnimGraphPinHitRadius);
-		DrawList->AddCircleFilled(InputPin, AnimGraphPinRadius + (bHoveredInputPin ? 2.0f : 0.0f), bHoveredInputPin ? PinHoverColor : PinColor);
+		const bool bHoveredInputPin = IsMouseNear(InputPin, AnimGraphPinHitRadius);
+		const bool bDraggingThisInputPin = DraggingInputNodeId == Node.NodeId;
+		DrawList->AddCircleFilled(InputPin, AnimGraphPinRadius + ((bHoveredInputPin || bDraggingThisInputPin) ? 2.0f : 0.0f), (bHoveredInputPin || bDraggingThisInputPin) ? PinHoverColor : PinColor);
 		DrawList->AddCircle(InputPin, AnimGraphPinRadius + 1.0f, PinOutlineColor, 12, 1.5f);
-		DrawList->AddText(Add(InputPin, ImVec2(8.0f, -7.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "In");
+		DrawList->AddText(Sub(InputPin, ImVec2(24.0f, 19.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "In");
+
+		if (bHoveredInputPin && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			SelectedNodeId = Node.NodeId;
+			DraggingInputNodeId = Node.NodeId;
+			DraggingOutputNodeId = -1;
+		}
 	}
 	else
 	{
@@ -454,12 +1378,13 @@ void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& 
 		const bool bDraggingThisPin = DraggingOutputNodeId == Node.NodeId;
 		DrawList->AddCircleFilled(OutputPin, AnimGraphPinRadius + ((bHoveredOutputPin || bDraggingThisPin) ? 2.0f : 0.0f), (bHoveredOutputPin || bDraggingThisPin) ? PinHoverColor : PinColor);
 		DrawList->AddCircle(OutputPin, AnimGraphPinRadius + 1.0f, PinOutlineColor, 12, 1.5f);
-		DrawList->AddText(Sub(OutputPin, ImVec2(30.0f, 7.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "Out");
+		DrawList->AddText(Add(OutputPin, ImVec2(8.0f, -19.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "Out");
 
 		if (bHoveredOutputPin && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
 			SelectedNodeId = Node.NodeId;
 			DraggingOutputNodeId = Node.NodeId;
+			DraggingInputNodeId = -1;
 		}
 	}
 }
@@ -487,13 +1412,15 @@ void FEditorAnimGraphWidget::RenderLinks(const ImVec2& CanvasOrigin)
 		const ImU32 LinkColor = ImGui::GetColorU32(
 			bSelectedLink ? ImVec4(1.0f, 0.82f, 0.35f, 1.0f) : ImVec4(0.55f, 0.72f, 1.0f, 1.0f));
 
+		const ImVec2 ControlB = Sub(To, ImVec2(90.0f, 0.0f));
 		DrawList->AddBezierCubic(
 			From,
 			Add(From, ImVec2(90.0f, 0.0f)),
-			Sub(To, ImVec2(90.0f, 0.0f)),
+			ControlB,
 			To,
 			LinkColor,
 			bSelectedLink ? 4.0f : 3.0f);
+		DrawArrowHead(DrawList, To, Sub(To, ControlB), LinkColor, bSelectedLink ? 15.0f : 12.0f);
 
 		DrawList->AddCircleFilled(From, AnimGraphPinRadius + 1.0f, LinkColor);
 		DrawList->AddCircleFilled(To, AnimGraphPinRadius + 1.0f, LinkColor);
@@ -502,57 +1429,101 @@ void FEditorAnimGraphWidget::RenderLinks(const ImVec2& CanvasOrigin)
 
 void FEditorAnimGraphWidget::RenderPendingLink(const ImVec2& CanvasOrigin)
 {
-	if (!EditingAsset || DraggingOutputNodeId < 0)
+	if (!EditingAsset || (DraggingOutputNodeId < 0 && DraggingInputNodeId < 0))
 	{
-		return;
-	}
-
-	const FAnimGraphNodeDesc* SourceNode = EditingAsset->FindNode(DraggingOutputNodeId);
-	if (!SourceNode || SourceNode->Type == EAnimGraphNodeType::OutputPose)
-	{
-		DraggingOutputNodeId = -1;
 		return;
 	}
 
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
-	const ImVec2 From = GetAnimGraphNodeOutputPinPos(*SourceNode, CanvasOrigin);
-	const ImVec2 To = ImGui::GetIO().MousePos;
+	const ImVec2 MousePos = ImGui::GetIO().MousePos;
 	const ImU32 LinkColor = ImGui::GetColorU32(ImVec4(1.0f, 0.82f, 0.35f, 1.0f));
-	DrawList->AddBezierCubic(
-		From,
-		Add(From, ImVec2(90.0f, 0.0f)),
-		Sub(To, ImVec2(90.0f, 0.0f)),
-		To,
-		LinkColor,
-		3.0f);
 
-	if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+	if (DraggingOutputNodeId >= 0)
 	{
-		return;
+		const FAnimGraphNodeDesc* SourceNode = EditingAsset->FindNode(DraggingOutputNodeId);
+		if (!SourceNode || SourceNode->Type == EAnimGraphNodeType::OutputPose)
+		{
+			DraggingOutputNodeId = -1;
+			return;
+		}
+
+		const ImVec2 From = GetAnimGraphNodeOutputPinPos(*SourceNode, CanvasOrigin);
+		const ImVec2 ControlB = Sub(MousePos, ImVec2(90.0f, 0.0f));
+		DrawList->AddBezierCubic(From, Add(From, ImVec2(90.0f, 0.0f)), ControlB, MousePos, LinkColor, 3.0f);
+		DrawArrowHead(DrawList, MousePos, Sub(MousePos, ControlB), LinkColor, 16.0f);
+
+		if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+		{
+			return;
+		}
+
+		for (FAnimGraphNodeDesc& Candidate : EditingAsset->Nodes)
+		{
+			if (Candidate.Type != EAnimGraphNodeType::OutputPose)
+			{
+				continue;
+			}
+
+			const ImVec2 InputPin = GetAnimGraphNodeInputPinPos(Candidate, CanvasOrigin);
+			if (!IsMouseNear(InputPin, AnimGraphPinHitRadius))
+			{
+				continue;
+			}
+
+			SelectedNodeId = Candidate.NodeId;
+			if (SetOutputPoseInput(Candidate, SourceNode->NodeId))
+			{
+				bDirty = true;
+			}
+			break;
+		}
+	}
+	else if (DraggingInputNodeId >= 0)
+	{
+		FAnimGraphNodeDesc* OutputNode = EditingAsset->FindNode(DraggingInputNodeId);
+		if (!OutputNode || OutputNode->Type != EAnimGraphNodeType::OutputPose)
+		{
+			DraggingInputNodeId = -1;
+			return;
+		}
+
+		const ImVec2 To = GetAnimGraphNodeInputPinPos(*OutputNode, CanvasOrigin);
+		const ImVec2 ControlB = Sub(To, ImVec2(90.0f, 0.0f));
+		DrawList->AddBezierCubic(MousePos, Add(MousePos, ImVec2(90.0f, 0.0f)), ControlB, To, LinkColor, 3.0f);
+		DrawArrowHead(DrawList, To, Sub(To, ControlB), LinkColor, 16.0f);
+
+		if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+		{
+			return;
+		}
+
+		for (const FAnimGraphNodeDesc& Candidate : EditingAsset->Nodes)
+		{
+			if (Candidate.NodeId == OutputNode->NodeId || Candidate.Type == EAnimGraphNodeType::OutputPose)
+			{
+				continue;
+			}
+
+			const ImVec2 OutputPin = GetAnimGraphNodeOutputPinPos(Candidate, CanvasOrigin);
+			if (!IsMouseNear(OutputPin, AnimGraphPinHitRadius))
+			{
+				continue;
+			}
+
+			SelectedNodeId = OutputNode->NodeId;
+			if (SetOutputPoseInput(*OutputNode, Candidate.NodeId))
+			{
+				bDirty = true;
+			}
+			break;
+		}
 	}
 
-	for (FAnimGraphNodeDesc& Candidate : EditingAsset->Nodes)
+	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 	{
-		if (Candidate.Type != EAnimGraphNodeType::OutputPose)
-		{
-			continue;
-		}
-
-		const ImVec2 InputPin = GetAnimGraphNodeInputPinPos(Candidate, CanvasOrigin);
-		if (!IsMouseNear(InputPin, AnimGraphPinHitRadius))
-		{
-			continue;
-		}
-
-		SelectedNodeId = Candidate.NodeId;
-		if (SetOutputPoseInput(Candidate, SourceNode->NodeId))
-		{
-			bDirty = true;
-		}
-		break;
+		DraggingOutputNodeId = -1;
+		DraggingInputNodeId = -1;
 	}
-
-	DraggingOutputNodeId = -1;
 }
 
 void FEditorAnimGraphWidget::RenderDetails()
@@ -567,11 +1538,11 @@ void FEditorAnimGraphWidget::RenderDetails()
 	ImGui::TextUnformatted("Node");
 	ImGui::Separator();
 
-	char NameBuffer[128] = {};
-	std::strncpy(NameBuffer, Node->Name.c_str(), sizeof(NameBuffer) - 1);
-	if (ImGui::InputText("Name", NameBuffer, sizeof(NameBuffer)))
+	const float DetailItemWidth = std::max(120.0f, ImGui::GetContentRegionAvail().x - 92.0f);
+	ImGui::PushItemWidth(DetailItemWidth);
+
+	if (InputFString("Name", Node->Name))
 	{
-		Node->Name = NameBuffer;
 		bDirty = true;
 	}
 
@@ -595,6 +1566,8 @@ void FEditorAnimGraphWidget::RenderDetails()
 	{
 		RenderStateMachineDetails(*Node);
 	}
+
+	ImGui::PopItemWidth();
 }
 
 void FEditorAnimGraphWidget::RenderOutputPoseDetails(FAnimGraphNodeDesc& Node)
@@ -831,6 +1804,89 @@ bool FEditorAnimGraphWidget::RenderStateMachineEntryCombo(const char* Label, FAn
 	return bChanged;
 }
 
+
+bool FEditorAnimGraphWidget::RenderStateNameInput(const char* Label, int32 MachineNodeId, FAnimStateDesc& State)
+{
+	const long long Key = MakeStateNameEditKey(MachineNodeId, State.StateId);
+	std::array<char, 256>& Buffer = StateNameEditBuffers[Key];
+
+	// State 이름은 Details의 Tree header, Entry combo, Transition label 등 여러 UI에 동시에 쓰입니다.
+	// 입력 중 매 글자마다 실제 State.Name을 바꾸면 그 주변 UI가 즉시 갱신되며 InputText 포커스가 끊길 수 있으므로,
+	// 편집 중에는 고정 버퍼를 사용하고 입력 완료 시 실제 이름에 반영합니다.
+	if (EditingStateNameKey != Key)
+	{
+		CopyToFixedBuffer(Buffer, State.Name);
+	}
+
+	bool bCommitted = false;
+	const bool bChanged = ImGui::InputText(Label, Buffer.data(), Buffer.size());
+	if (ImGui::IsItemActive())
+	{
+		EditingStateNameKey = Key;
+	}
+	if (ImGui::IsItemDeactivatedAfterEdit())
+	{
+		const FString NewName = Buffer.data();
+		if (State.Name != NewName)
+		{
+			State.Name = NewName;
+			bCommitted = true;
+		}
+		EditingStateNameKey = -1;
+	}
+	else if (ImGui::IsItemDeactivated() && EditingStateNameKey == Key)
+	{
+		EditingStateNameKey = -1;
+	}
+
+	// Enter 키로 입력을 마쳤을 때도 바로 반영합니다.
+	if (EditingStateNameKey == Key && ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Enter, false))
+	{
+		const FString NewName = Buffer.data();
+		if (State.Name != NewName)
+		{
+			State.Name = NewName;
+			bCommitted = true;
+		}
+		EditingStateNameKey = -1;
+	}
+
+	return bCommitted || bChanged;
+}
+
+void FEditorAnimGraphWidget::CommitStateNameEdits()
+{
+	if (!EditingAsset || StateNameEditBuffers.empty())
+	{
+		return;
+	}
+
+	for (FAnimGraphNodeDesc& Node : EditingAsset->Nodes)
+	{
+		if (Node.Type != EAnimGraphNodeType::StateMachine)
+		{
+			continue;
+		}
+
+		for (FAnimStateDesc& State : Node.StateMachine.States)
+		{
+			const long long Key = MakeStateNameEditKey(Node.NodeId, State.StateId);
+			auto It = StateNameEditBuffers.find(Key);
+			if (It == StateNameEditBuffers.end())
+			{
+				continue;
+			}
+
+			const FString NewName = It->second.data();
+			if (State.Name != NewName)
+			{
+				State.Name = NewName;
+				bDirty = true;
+			}
+		}
+	}
+}
+
 void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 {
 	FAnimStateMachineDesc& Machine = Node.StateMachine;
@@ -883,11 +1939,8 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 		const FString Header = GetStateDisplayName(Machine, State.StateId) + "##State";
 		if (ImGui::TreeNodeEx(Header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			char StateNameBuffer[128] = {};
-			std::strncpy(StateNameBuffer, State.Name.c_str(), sizeof(StateNameBuffer) - 1);
-			if (ImGui::InputText("Name", StateNameBuffer, sizeof(StateNameBuffer)))
+			if (RenderStateNameInput("Name", Node.NodeId, State))
 			{
-				State.Name = StateNameBuffer;
 				bDirty = true;
 			}
 
@@ -950,6 +2003,11 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 		{
 			Machine.EntryStateId = Machine.States.empty() ? -1 : Machine.States.front().StateId;
 		}
+		if (SelectedStateId == StateToDelete)
+		{
+			SelectedStateId = -1;
+		}
+		SelectedTransitionIndex = -1;
 		bDirty = true;
 	}
 
@@ -957,13 +2015,15 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 	ImGui::BeginDisabled(Machine.States.size() < 2);
 	if (ImGui::Button("Add Transition"))
 	{
-		FAnimStateTransitionDesc Transition;
-		Transition.FromStateId = Machine.States[0].StateId;
-		Transition.ToStateId = Machine.States.size() > 1 ? Machine.States[1].StateId : Machine.States[0].StateId;
-		Transition.BlendTime = 0.2f;
-		Transition.Condition.Type = EAnimTransitionConditionType::AlwaysTrue;
-		Machine.Transitions.push_back(Transition);
-		bDirty = true;
+		const int32 FromStateId = Machine.States[0].StateId;
+		const int32 ToStateId = Machine.States.size() > 1 ? Machine.States[1].StateId : Machine.States[0].StateId;
+		if (AddTransitionToStateMachine(Machine, FromStateId, ToStateId))
+		{
+			SelectedNodeId = Node.NodeId;
+			SelectedStateId = -1;
+			SelectedTransitionIndex = static_cast<int32>(Machine.Transitions.size()) - 1;
+			bDirty = true;
+		}
 	}
 	ImGui::EndDisabled();
 
@@ -977,7 +2037,12 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 			+ " -> "
 			+ GetStateDisplayName(Machine, Transition.ToStateId)
 			+ "##Transition";
-		if (ImGui::TreeNodeEx(Header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+		const bool bSelectedTransitionInDetails = SelectedTransitionIndex == TransitionIndex;
+		if (bSelectedTransitionInDetails)
+		{
+			ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+		}
+		if (ImGui::TreeNodeEx(Header.c_str(), bSelectedTransitionInDetails ? ImGuiTreeNodeFlags_DefaultOpen : 0))
 		{
 			if (ImGui::BeginCombo("From", GetStateDisplayName(Machine, Transition.FromStateId).c_str()))
 			{
@@ -1091,6 +2156,7 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 	if (TransitionToDelete >= 0 && TransitionToDelete < static_cast<int32>(Machine.Transitions.size()))
 	{
 		Machine.Transitions.erase(Machine.Transitions.begin() + TransitionToDelete);
+		SelectedTransitionIndex = -1;
 		bDirty = true;
 	}
 }
@@ -1103,6 +2169,28 @@ FAnimGraphNodeDesc* FEditorAnimGraphWidget::FindSelectedNode()
 const FAnimGraphNodeDesc* FEditorAnimGraphWidget::FindSelectedNode() const
 {
 	return EditingAsset ? EditingAsset->FindNode(SelectedNodeId) : nullptr;
+}
+
+FAnimGraphNodeDesc* FEditorAnimGraphWidget::FindEditingStateMachineNode()
+{
+	if (!EditingAsset || EditingStateMachineNodeId < 0)
+	{
+		return nullptr;
+	}
+
+	FAnimGraphNodeDesc* Node = EditingAsset->FindNode(EditingStateMachineNodeId);
+	return Node && Node->Type == EAnimGraphNodeType::StateMachine ? Node : nullptr;
+}
+
+const FAnimGraphNodeDesc* FEditorAnimGraphWidget::FindEditingStateMachineNode() const
+{
+	if (!EditingAsset || EditingStateMachineNodeId < 0)
+	{
+		return nullptr;
+	}
+
+	const FAnimGraphNodeDesc* Node = EditingAsset->FindNode(EditingStateMachineNodeId);
+	return Node && Node->Type == EAnimGraphNodeType::StateMachine ? Node : nullptr;
 }
 
 FAnimGraphNodeDesc* FEditorAnimGraphWidget::FindFirstOutputPoseNode()
@@ -1312,10 +2400,104 @@ void FEditorAnimGraphWidget::AddStateToStateMachine(FAnimStateMachineDesc& State
 	State.Name = "State " + std::to_string(State.StateId);
 	State.Position = FVector2(80.0f + static_cast<float>(StateMachine.States.size()) * 40.0f, 80.0f);
 	StateMachine.States.push_back(State);
+	SelectedStateId = State.StateId;
+	SelectedTransitionIndex = -1;
 	if (StateMachine.EntryStateId < 0)
 	{
 		StateMachine.EntryStateId = State.StateId;
 	}
+}
+
+
+bool FEditorAnimGraphWidget::AddTransitionToStateMachine(FAnimStateMachineDesc& StateMachine, int32 FromStateId, int32 ToStateId)
+{
+	if (FromStateId < 0 || ToStateId < 0 || FromStateId == ToStateId)
+	{
+		return false;
+	}
+
+	if (FindStateIndexById(StateMachine, FromStateId) < 0 || FindStateIndexById(StateMachine, ToStateId) < 0)
+	{
+		return false;
+	}
+
+	if (HasTransition(StateMachine, FromStateId, ToStateId))
+	{
+		return false;
+	}
+
+	FAnimStateTransitionDesc Transition;
+	Transition.FromStateId = FromStateId;
+	Transition.ToStateId = ToStateId;
+	Transition.BlendTime = 0.2f;
+	Transition.Condition.Type = EAnimTransitionConditionType::AlwaysTrue;
+	StateMachine.Transitions.push_back(Transition);
+	return true;
+}
+
+bool FEditorAnimGraphWidget::DeleteStateFromStateMachine(FAnimStateMachineDesc& StateMachine, int32 StateId)
+{
+	if (FindStateIndexById(StateMachine, StateId) < 0)
+	{
+		return false;
+	}
+
+	StateMachine.States.erase(
+		std::remove_if(
+			StateMachine.States.begin(),
+			StateMachine.States.end(),
+			[StateId](const FAnimStateDesc& State)
+			{
+				return State.StateId == StateId;
+			}),
+		StateMachine.States.end());
+
+	StateMachine.Transitions.erase(
+		std::remove_if(
+			StateMachine.Transitions.begin(),
+			StateMachine.Transitions.end(),
+			[StateId](const FAnimStateTransitionDesc& Transition)
+			{
+				return Transition.FromStateId == StateId || Transition.ToStateId == StateId;
+			}),
+		StateMachine.Transitions.end());
+
+	if (StateMachine.EntryStateId == StateId)
+	{
+		StateMachine.EntryStateId = StateMachine.States.empty() ? -1 : StateMachine.States.front().StateId;
+	}
+
+	if (SelectedStateId == StateId)
+	{
+		SelectedStateId = -1;
+	}
+	SelectedTransitionIndex = -1;
+	DraggingTransitionFromStateId = -1;
+	return true;
+}
+
+bool FEditorAnimGraphWidget::DeleteTransitionFromStateMachine(FAnimStateMachineDesc& StateMachine, int32 TransitionIndex)
+{
+	if (TransitionIndex < 0 || TransitionIndex >= static_cast<int32>(StateMachine.Transitions.size()))
+	{
+		return false;
+	}
+
+	StateMachine.Transitions.erase(StateMachine.Transitions.begin() + TransitionIndex);
+	SelectedTransitionIndex = -1;
+	return true;
+}
+
+bool FEditorAnimGraphWidget::HasTransition(const FAnimStateMachineDesc& StateMachine, int32 FromStateId, int32 ToStateId) const
+{
+	for (const FAnimStateTransitionDesc& Transition : StateMachine.Transitions)
+	{
+		if (Transition.FromStateId == FromStateId && Transition.ToStateId == ToStateId)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 bool FEditorAnimGraphWidget::NormalizeGraphNodeIds()
@@ -1501,6 +2683,42 @@ void FEditorAnimGraphWidget::DeleteSelectedNode()
 	bDirty = true;
 }
 
+void FEditorAnimGraphWidget::EnterStateMachineView(int32 StateMachineNodeId)
+{
+	if (!EditingAsset)
+	{
+		return;
+	}
+
+	const FAnimGraphNodeDesc* Node = EditingAsset->FindNode(StateMachineNodeId);
+	if (!Node || Node->Type != EAnimGraphNodeType::StateMachine)
+	{
+		return;
+	}
+
+	SelectedNodeId = StateMachineNodeId;
+	EditingStateMachineNodeId = StateMachineNodeId;
+	SelectedStateId = -1;
+	SelectedTransitionIndex = -1;
+	DraggingOutputNodeId = -1;
+	DraggingInputNodeId = -1;
+	DraggingTransitionFromStateId = -1;
+	DraggingTransitionToStateId = -1;
+	ViewMode = EViewMode::StateMachine;
+}
+
+void FEditorAnimGraphWidget::LeaveStateMachineView()
+{
+	ViewMode = EViewMode::AnimGraph;
+	EditingStateMachineNodeId = -1;
+	SelectedStateId = -1;
+	SelectedTransitionIndex = -1;
+	DraggingOutputNodeId = -1;
+	DraggingInputNodeId = -1;
+	DraggingTransitionFromStateId = -1;
+	DraggingTransitionToStateId = -1;
+}
+
 void FEditorAnimGraphWidget::Save()
 {
 	if (!EditingAsset || EditingPath.empty())
@@ -1508,6 +2726,7 @@ void FEditorAnimGraphWidget::Save()
 		return;
 	}
 
+	CommitStateNameEdits();
 	NormalizeGraphNodeIds();
 	NormalizeRootNode();
 	if (FResourceManager::Get().SaveAnimGraph(EditingAsset, EditingPath))

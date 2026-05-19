@@ -494,8 +494,9 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 		RegisterDiscoveredAssetFile(Entry.path(), ProjectRootPath);
 	}
 
-	SyncDiscoveredFbxAnimationAssets();
-
+	// Startup should only discover assets. FBX animation import/binary cache generation
+    // is intentionally deferred until an animation asset is explicitly opened or requested.
+	
 	PreloadStaticMeshes();
 
 	if (LoadGPUResources(CachedDevice.Get()))

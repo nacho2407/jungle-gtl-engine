@@ -20,6 +20,7 @@
 #include "WICTextureLoader.h"
 
 #include <algorithm>
+#include <cfloat>
 #include <cstdio>
 #include <cmath>
 #include <functional>
@@ -699,6 +700,8 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 			CachedAnimSequence = Sequence;
 			SelectedAnimTrackIndex = -1;
 			SelectedAnimNotifyIndex = -1;
+			DraggingAnimNotifyIndex = -1;
+			bAnimNotifyDragDirty = false;
 			snprintf(AnimNotifyNameBuffer, sizeof(AnimNotifyNameBuffer), "AnimNotify");
 		}
 
@@ -740,6 +743,8 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 	if (CachedAnimSequence)
 	{
 		CachedAnimSequence = nullptr;
+		DraggingAnimNotifyIndex = -1;
+		bAnimNotifyDragDirty = false;
 	}
 
 	RenderSkeletonLeftPanel(SkelMeshComp, MeshData);
@@ -1254,37 +1259,95 @@ void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequen
 
 	const ImVec2 MousePos = ImGui::GetIO().MousePos;
 	const TArray<FAnimNotifyEvent>& Notifies = Sequence->GetNotifies();
+	int32 HoveredAnimNotifyIndex = -1;
+	float HoveredAnimNotifyDistance = FLT_MAX;
 	for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(Notifies.size()); ++NotifyIndex)
 	{
 		const FAnimNotifyEvent& Notify = Notifies[NotifyIndex];
 		const float NotifyX = TimeToX(Notify.TriggerTime);
-		DrawList->AddLine(ImVec2(NotifyX, TrackTop - 8.0f), ImVec2(NotifyX, TrackBottom), NotifyColor, 1.6f);
+		const bool bSelected = SelectedAnimNotifyIndex == NotifyIndex || DraggingAnimNotifyIndex == NotifyIndex;
+		const float MarkerHalfWidth = bSelected ? 8.0f : 6.0f;
+		const float MarkerHeight = bSelected ? 14.0f : 12.0f;
+		const float LineThickness = bSelected ? 2.4f : 1.6f;
+
+		DrawList->AddLine(ImVec2(NotifyX, TrackTop - 8.0f), ImVec2(NotifyX, TrackBottom), NotifyColor, LineThickness);
 		DrawList->AddTriangleFilled(
-			ImVec2(NotifyX, TrackTop - 12.0f),
-			ImVec2(NotifyX - 6.0f, TrackTop - 2.0f),
-			ImVec2(NotifyX + 6.0f, TrackTop - 2.0f),
+			ImVec2(NotifyX, TrackTop - MarkerHeight),
+			ImVec2(NotifyX - MarkerHalfWidth, TrackTop - 2.0f),
+			ImVec2(NotifyX + MarkerHalfWidth, TrackTop - 2.0f),
 			NotifyColor);
 
+		const float DistanceToMouse = std::abs(MousePos.x - NotifyX);
 		if (bHovered &&
-			std::abs(MousePos.x - NotifyX) <= 6.0f &&
-			MousePos.y >= TrackTop - 16.0f && MousePos.y <= TrackBottom)
+			DistanceToMouse <= 8.0f &&
+			MousePos.y >= TrackTop - 18.0f && MousePos.y <= TrackBottom &&
+			DistanceToMouse < HoveredAnimNotifyDistance)
 		{
-			ImGui::SetTooltip("Notify: %s\nTime: %.3f sec",
-				Notify.NotifyName.ToString().c_str(),
-				Notify.TriggerTime);
+			HoveredAnimNotifyIndex = NotifyIndex;
+			HoveredAnimNotifyDistance = DistanceToMouse;
 		}
+	}
+
+	if (HoveredAnimNotifyIndex >= 0 && HoveredAnimNotifyIndex < static_cast<int32>(Notifies.size()))
+	{
+		const FAnimNotifyEvent& HoveredNotify = Notifies[HoveredAnimNotifyIndex];
+		ImGui::SetTooltip("Notify: %s\nTime: %.3f sec\nDrag to move",
+			HoveredNotify.NotifyName.ToString().c_str(),
+			HoveredNotify.TriggerTime);
 	}
 
 	if (bHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 	{
-		if (Viewer)
+		if (HoveredAnimNotifyIndex >= 0)
+		{
+			SelectedAnimNotifyIndex = HoveredAnimNotifyIndex;
+			DraggingAnimNotifyIndex = HoveredAnimNotifyIndex;
+			bAnimNotifyDragDirty = false;
+			if (Viewer)
+			{
+				Viewer->SetAnimationPlaying(false);
+				Viewer->SetAnimationTime(Notifies[HoveredAnimNotifyIndex].TriggerTime);
+			}
+		}
+		else if (Viewer)
 		{
 			Viewer->SetAnimationTime(XToTime(MousePos.x));
 		}
 	}
-	if (bActive && ImGui::IsMouseDragging(ImGuiMouseButton_Left) && Viewer)
+
+	if (DraggingAnimNotifyIndex >= 0 && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+	{
+		const float NewTriggerTime = XToTime(MousePos.x);
+		if (Sequence->SetNotifyTriggerTime(DraggingAnimNotifyIndex, NewTriggerTime))
+		{
+			bAnimNotifyDragDirty = true;
+			if (Viewer)
+			{
+				Viewer->SetAnimationTime(NewTriggerTime);
+			}
+		}
+	}
+	else if (bActive && ImGui::IsMouseDragging(ImGuiMouseButton_Left) && Viewer)
 	{
 		Viewer->SetAnimationTime(XToTime(MousePos.x));
+	}
+
+	if (DraggingAnimNotifyIndex >= 0 && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+	{
+		int32 NewNotifyIndex = DraggingAnimNotifyIndex;
+		const TArray<FAnimNotifyEvent>& UpdatedNotifies = Sequence->GetNotifies();
+		if (DraggingAnimNotifyIndex < static_cast<int32>(UpdatedNotifies.size()))
+		{
+			const float FinalTriggerTime = UpdatedNotifies[DraggingAnimNotifyIndex].TriggerTime;
+			if (bAnimNotifyDragDirty && Sequence->MoveNotifyAt(DraggingAnimNotifyIndex, FinalTriggerTime, &NewNotifyIndex))
+			{
+				SaveAnimSequenceAsset(Sequence);
+			}
+		}
+
+		SelectedAnimNotifyIndex = NewNotifyIndex;
+		DraggingAnimNotifyIndex = -1;
+		bAnimNotifyDragDirty = false;
 	}
 
 	const float CurrentTime = Viewer ? Viewer->GetAnimationCurrentTime() : 0.0f;

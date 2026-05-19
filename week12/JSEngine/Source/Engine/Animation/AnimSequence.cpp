@@ -49,6 +49,48 @@ bool UAnimSequenceBase::RemoveNotifyAt(int32 NotifyIndex)
 	return true;
 }
 
+
+bool UAnimSequenceBase::SetNotifyTriggerTime(int32 NotifyIndex, float InTriggerTime)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	Notifies[NotifyIndex].TriggerTime = std::clamp(InTriggerTime, 0.0f, GetPlayLength());
+	return true;
+}
+
+bool UAnimSequenceBase::MoveNotifyAt(int32 NotifyIndex, float InTriggerTime, int32* OutNewIndex)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	FAnimNotifyEvent MovedNotify = Notifies[NotifyIndex];
+	MovedNotify.TriggerTime = std::clamp(InTriggerTime, 0.0f, GetPlayLength());
+
+	Notifies.erase(Notifies.begin() + NotifyIndex);
+	const auto InsertIt = std::lower_bound(
+		Notifies.begin(),
+		Notifies.end(),
+		MovedNotify.TriggerTime,
+		[](const FAnimNotifyEvent& Notify, float TriggerTime)
+		{
+			return Notify.TriggerTime < TriggerTime;
+		});
+
+	const int32 NewIndex = static_cast<int32>(InsertIt - Notifies.begin());
+	Notifies.insert(InsertIt, MovedNotify);
+	if (OutNewIndex)
+	{
+		*OutNewIndex = NewIndex;
+	}
+
+	return true;
+}
+
 namespace
 {
 	int32 GetTrackKeyCount(const FRawAnimSequenceTrack& Track)
