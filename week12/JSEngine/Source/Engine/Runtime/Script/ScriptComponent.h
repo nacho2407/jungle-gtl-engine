@@ -18,7 +18,7 @@ class USequenceCameraShakePattern;
 class USinusoidalCameraShakePattern;
 class USkeletalMeshComponent;
 struct FHitResult;
-struct FAnimNotifyEvent;
+struct FAnimNotifyStateEvent;
 struct FLuaScriptLoadResult;
 
 enum class ELuaScriptPropertyType
@@ -143,7 +143,17 @@ public:
 
 	void OnAnimNotify(
 		USkeletalMeshComponent* MeshComponent,
-		const FAnimNotifyEvent& Notify);
+		const FAnimNotifyStateEvent& Notify);
+	void OnAnimNotifyBegin(
+		USkeletalMeshComponent* MeshComponent,
+		const FAnimNotifyStateEvent& Notify);
+	void OnAnimNotifyTick(
+		USkeletalMeshComponent* MeshComponent,
+		const FAnimNotifyStateEvent& Notify,
+		float DeltaTime);
+	void OnAnimNotifyEnd(
+		USkeletalMeshComponent* MeshComponent,
+		const FAnimNotifyStateEvent& Notify);
 
 
 private:

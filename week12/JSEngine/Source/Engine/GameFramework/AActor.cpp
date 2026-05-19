@@ -1,13 +1,75 @@
 ﻿#include "GameFramework/AActor.h"
+#include "Animation/AnimTypes.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
 #include "GameFramework/World.h"
 #include "Core/Delegates/Delegate.h"
+#include "Object/Function.h"
 #include <Runtime/Script/ScriptComponent.h>
 
 #include <algorithm>
 #include <cctype>
 
+namespace
+{
+	FString MakeAnimNotifyFunctionSuffix(const FName& NotifyName)
+	{
+		FString Source = NotifyName.ToString();
+		FString Result;
+		Result.reserve(Source.size());
+
+		for (char Ch : Source)
+		{
+			const unsigned char C = static_cast<unsigned char>(Ch);
+			if (std::isalnum(C) || Ch == '_')
+			{
+				Result.push_back(Ch);
+			}
+			else
+			{
+				Result.push_back('_');
+			}
+		}
+
+		return Result.empty() ? FString("AnimNotify") : Result;
+	}
+
+	bool TryInvokeZeroParamUFunction(UObject* Object, const FString& FunctionName)
+	{
+		if (!Object || FunctionName.empty())
+		{
+			return false;
+		}
+
+		UClass* Class = Object->GetClass();
+		UFunction* Function = Class ? Class->FindFunction(FunctionName.c_str()) : nullptr;
+		if (!Function || Function->GetParmsSize() != 0)
+		{
+			return false;
+		}
+
+		Object->ProcessEvent(Function, nullptr);
+		return true;
+	}
+
+	void DispatchAnimNotifyUFunctions(UObject* Object, const FAnimNotifyStateEvent& Notify, const char* Phase)
+	{
+		if (!Object)
+		{
+			return;
+		}
+
+		const FString Suffix = MakeAnimNotifyFunctionSuffix(Notify.NotifyName);
+		if (!Phase || Phase[0] == '\0')
+		{
+			TryInvokeZeroParamUFunction(Object, FString("AnimNotify_") + Suffix);
+			return;
+		}
+
+		TryInvokeZeroParamUFunction(Object, FString("AnimNotify") + Phase + "_" + Suffix);
+		TryInvokeZeroParamUFunction(Object, FString("AnimNotify_") + Suffix + "_" + Phase);
+	}
+}
 
 static FString TrimObjectNameText(const FString& Name)
 {
@@ -695,13 +757,62 @@ void AActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Othe
 	}
 }
 
-void AActor::OnAnimNotify(USkeletalMeshComponent* MeshComponent, const FAnimNotifyEvent& Notify)
+void AActor::OnAnimNotify(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Notify)
 {
+	DispatchAnimNotifyUFunctions(this, Notify, "");
+
 	for (UActorComponent* Component : GetComponents())
 	{
+		DispatchAnimNotifyUFunctions(Component, Notify, "");
+
 		if (UScriptComponent* ScriptComponent = Cast<UScriptComponent>(Component))
 		{
 			ScriptComponent->OnAnimNotify(MeshComponent, Notify);
+		}
+	}
+}
+
+void AActor::OnAnimNotifyBegin(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Notify)
+{
+	DispatchAnimNotifyUFunctions(this, Notify, "Begin");
+
+	for (UActorComponent* Component : GetComponents())
+	{
+		DispatchAnimNotifyUFunctions(Component, Notify, "Begin");
+
+		if (UScriptComponent* ScriptComponent = Cast<UScriptComponent>(Component))
+		{
+			ScriptComponent->OnAnimNotifyBegin(MeshComponent, Notify);
+		}
+	}
+}
+
+void AActor::OnAnimNotifyTick(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Notify, float DeltaTime)
+{
+	DispatchAnimNotifyUFunctions(this, Notify, "Tick");
+
+	for (UActorComponent* Component : GetComponents())
+	{
+		DispatchAnimNotifyUFunctions(Component, Notify, "Tick");
+
+		if (UScriptComponent* ScriptComponent = Cast<UScriptComponent>(Component))
+		{
+			ScriptComponent->OnAnimNotifyTick(MeshComponent, Notify, DeltaTime);
+		}
+	}
+}
+
+void AActor::OnAnimNotifyEnd(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Notify)
+{
+	DispatchAnimNotifyUFunctions(this, Notify, "End");
+
+	for (UActorComponent* Component : GetComponents())
+	{
+		DispatchAnimNotifyUFunctions(Component, Notify, "End");
+
+		if (UScriptComponent* ScriptComponent = Cast<UScriptComponent>(Component))
+		{
+			ScriptComponent->OnAnimNotifyEnd(MeshComponent, Notify);
 		}
 	}
 }

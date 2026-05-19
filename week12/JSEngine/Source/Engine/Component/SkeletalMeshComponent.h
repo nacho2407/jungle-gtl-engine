@@ -12,7 +12,7 @@ class UAnimSequenceBase;
 class UAnimSingleNodeInstance;
 class UAnimationAsset;
 class UAnimationStateMachine;
-struct FAnimNotifyEvent;
+struct FAnimNotifyStateEvent;
 
 UENUM()
 enum class EAnimationMode
@@ -33,7 +33,8 @@ UCLASS(SpawnableComponent, DisplayName = "SkeletalMesh Component", Category = "B
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
 public:
-	DECLARE_DELEGATE(FOnAnimNotify, USkeletalMeshComponent*, const FAnimNotifyEvent&)
+	DECLARE_DELEGATE(FOnAnimNotify, USkeletalMeshComponent*, const FAnimNotifyStateEvent&)
+	DECLARE_DELEGATE(FOnAnimNotifyStateTick, USkeletalMeshComponent*, const FAnimNotifyStateEvent&, float)
 	GENERATED_BODY(USkeletalMeshComponent, USkinnedMeshComponent)
 
 	USkeletalMeshComponent() = default;
@@ -92,7 +93,10 @@ public:
 	void SetLooping(bool bInLooping);
 
 	// 노티파이 수신 - AnimInstance가 호출해줄 함수
-	virtual void HandleAnimNotify(const FAnimNotifyEvent& Notify);
+	virtual void HandleAnimNotify(const FAnimNotifyStateEvent& Notify);
+	virtual void HandleAnimNotifyBegin(const FAnimNotifyStateEvent& Notify);
+	virtual void HandleAnimNotifyTick(const FAnimNotifyStateEvent& Notify, float DeltaTime);
+	virtual void HandleAnimNotifyEnd(const FAnimNotifyStateEvent& Notify);
 	void ApplyAnimationPose(const FPoseContext& PoseContext);
 
 	// StateMachine
@@ -105,6 +109,9 @@ public:
 
 public:
 	FOnAnimNotify OnAnimNotifyDelegate;
+	FOnAnimNotify OnAnimNotifyBeginDelegate;
+	FOnAnimNotifyStateTick OnAnimNotifyTickDelegate;
+	FOnAnimNotify OnAnimNotifyEndDelegate;
 
 private:
 	UAnimSingleNodeInstance* EnsureSingleNodeInstance();

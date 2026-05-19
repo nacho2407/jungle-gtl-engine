@@ -52,7 +52,7 @@ void FAnimSequencePoseSource::Update(float DeltaTime)
 		}
 	}
 
-	UAnimInstance::DispatchAnimNotifies(OwnerComponent, Sequence, PreviousTime, CurrentTime, bLooped, bReverse);
+	UAnimInstance::DispatchAnimNotifies(OwnerComponent, Sequence, PreviousTime, CurrentTime, bLooped, bReverse, DeltaTime);
 }
 
 bool FAnimSequencePoseSource::EvaluatePose(FPoseContext& OutPose) const

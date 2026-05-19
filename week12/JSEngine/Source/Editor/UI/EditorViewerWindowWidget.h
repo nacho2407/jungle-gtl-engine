@@ -107,9 +107,12 @@ private:
     int32 SelectedAnimTrackIndex = -1;
     int32 SelectedAnimNotifyIndex = -1;
     int32 DraggingAnimNotifyIndex = -1;
+    int32 AnimNotifyDragMode = 0; // 0=None, 1=Move, 2=Start, 3=End
+    float AnimNotifyDragGrabOffset = 0.0f;
     bool bAnimNotifyDragDirty = false;
     UAnimSequence* CachedAnimSequence = nullptr;
     char AnimNotifyNameBuffer[128] = "AnimNotify";
+    float AnimNotifyDurationToAdd = 0.0f;
 
     bool bAnimSequenceToolbarIconsLoadAttempted = false;
     TComPtr<ID3D11ShaderResourceView> AnimSequencePlayIcon;

@@ -91,13 +91,16 @@ public:
 	void SetDataModel(UAnimDataModel* InDataModel) { DataModel = InDataModel; }
 
 	virtual float GetPlayLength() const { return PlayLength; }
-	virtual const TArray<FAnimNotifyEvent>& GetNotifies() const { return Notifies; }
+	virtual const TArray<FAnimNotifyStateEvent>& GetNotifies() const { return Notifies; }
 	virtual const TArray<FBoneAnimationTrack>& GetBoneAnimationTracks() const;
 	virtual bool GetAnimationPose(float Time, FPoseContext& OutPose) const { return false; }
-	void AddNotify(float InTriggerTime, const FName& InNotifyName);
+	void AddNotify(float InTriggerTime, const FName& InNotifyName, float InDuration = 0.0f);
+	void AddNotifyState(float InTriggerTime, float InDuration, const FName& InNotifyName) { AddNotify(InTriggerTime, InNotifyName, InDuration); }
 	void ClearNotifies();
 	bool RemoveNotifyAt(int32 NotifyIndex);
 	bool SetNotifyTriggerTime(int32 NotifyIndex, float InTriggerTime);
+	bool SetNotifyDuration(int32 NotifyIndex, float InDuration);
+	bool SetNotifyTimeRange(int32 NotifyIndex, float InTriggerTime, float InDuration);
 	bool MoveNotifyAt(int32 NotifyIndex, float InTriggerTime, int32* OutNewIndex = nullptr);
 
 	void SetPreviewMeshPath(const FString& InPreviewMeshPath) { PreviewMeshPath = InPreviewMeshPath; }
@@ -105,7 +108,7 @@ public:
 
 protected:
 	float PlayLength = 5.0f;
-	TArray<FAnimNotifyEvent> Notifies;
+	TArray<FAnimNotifyStateEvent> Notifies;
 	UAnimDataModel* DataModel = nullptr;
 	FString PreviewMeshPath;
 };

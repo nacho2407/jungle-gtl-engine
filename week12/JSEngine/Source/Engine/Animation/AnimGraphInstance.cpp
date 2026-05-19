@@ -177,7 +177,7 @@ void UAnimGraphInstance::UpdateSequencePlayer(const FAnimGraphNodeDesc& Node, fl
         Cache.CurrentTime = std::clamp(Cache.CurrentTime, 0.0f, Length);
     }
 
-    TriggerAnimNotifies(Cache.Sequence, Cache.PreviousTime, Cache.CurrentTime, bLooped, bReverse);
+    TriggerAnimNotifies(Cache.Sequence, Cache.PreviousTime, Cache.CurrentTime, bLooped, bReverse, DeltaTime);
 }
 
 bool UAnimGraphInstance::EvaluateNode(int32 NodeId, FPoseContext& OutPoseContext)
