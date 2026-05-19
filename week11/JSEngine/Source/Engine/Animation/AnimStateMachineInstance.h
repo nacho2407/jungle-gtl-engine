@@ -1,0 +1,71 @@
+﻿#pragma once
+
+#include "Animation/AnimInstance.h"
+#include "Animation/AnimStateMachineTypes.h"
+#include "Animation/AnimationTypes.h"
+
+class UAnimSequenceBase;
+class UAnimStateMachine;
+
+class UAnimStateMachineInstance : public UAnimInstance
+{
+public:
+    DECLARE_CLASS(UAnimStateMachineInstance, UAnimInstance)
+
+    UAnimStateMachineInstance() = default;
+    ~UAnimStateMachineInstance() override = default;
+
+    bool SetStateMachine(UAnimStateMachine* InStateMachine);
+    bool LoadStateMachine(const FString& Path);
+
+    void NativeInitializeAnimation() override;
+    void NativeUninitializeAnimation() override;
+    void NativeUpdateAnimation(float DeltaSeconds) override;
+    bool EvaluateAnimation(TArray<FTransform>& OutLocalPose) override;
+
+    FName GetCurrentStateName() const;
+    FName GetPreviousStateName() const;
+    FName GetTargetStateName() const;
+    float GetTransitionAlpha() const;
+    bool IsTransitioning() const;
+
+private:
+    struct FAnimStateRuntime
+    {
+        const FAnimStateDesc* Desc = nullptr;
+        UAnimSequenceBase* Sequence = nullptr;
+        float PreviousTime = 0.0f;
+        float CurrentTime = 0.0f;
+        TArray<FActiveAnimNotifyState> ActiveNotifyStates;
+    };
+
+    struct FAnimTransitionRuntime
+    {
+        bool bActive = false;
+        int32 FromStateIndex = -1;
+        int32 ToStateIndex = -1;
+        float ElapsedTime = 0.0f;
+        float BlendTime = 0.0f;
+        int32 Priority = 0;
+        bool bUseSourcePoseSnapshot = false;
+        TArray<FTransform> SourcePoseSnapshot;
+    };
+
+    void ResetRuntime();
+    bool IsValidStateIndex(int32 StateIndex) const;
+    int32 FindRuntimeStateIndexByName(const FName& StateName) const;
+    const FAnimStateRuntime* GetRuntimeState(int32 StateIndex) const;
+    FAnimStateRuntime* GetRuntimeState(int32 StateIndex);
+
+    UAnimStateMachine* StateMachineAsset = nullptr;
+    FAnimStateMachineDesc Desc;
+    TArray<FAnimStateRuntime> RuntimeStates;
+    TArray<const FAnimTransitionDesc*> RuntimeTransitions;
+
+    int32 CurrentStateIndex = -1;
+    int32 PreviousStateIndex = -1;
+    int32 TargetStateIndex = -1;
+    FAnimTransitionRuntime ActiveTransition;
+
+    float NotifyTriggerWeightThreshold = 0.5f;
+};
