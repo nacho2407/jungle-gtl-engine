@@ -649,6 +649,7 @@ class CustomParser
         int generatedUnchangedCount = 0;
         List<string> generatedCppFiles = new List<string>();
         List<string> allParsedClasses = new List<string>();         //마스터 파일에서 BindLua_XXX 를 줄줄이 호출하기 위해 클래스 이름을 모아둘 리스트
+        List<string> luaBindableClasses = new List<string>();
 
         Dictionary<string, string> parentMap = new Dictionary<string, string>(); 
         
@@ -955,11 +956,12 @@ static FAutoRegister_{enumName} AutoRegister_{enumName}_Instance;
                 cppContent.AppendLine($"void BindLua_{className}(sol::state& Lua)");
                 cppContent.AppendLine("{");
                 string luaTypeName = GetLuaTypeName(className);
-                cppContent.AppendLine($"    sol::table UserType = Lua[\"{luaTypeName}\"];");
-                cppContent.AppendLine("    if (!UserType.valid())");
+                cppContent.AppendLine($"    sol::object UserTypeObject = Lua[\"{luaTypeName}\"];");
+                cppContent.AppendLine("    if (!UserTypeObject.valid() || UserTypeObject == sol::nil || UserTypeObject.get_type() != sol::type::table)");
                 cppContent.AppendLine("    {");
                 cppContent.AppendLine("        return;");
                 cppContent.AppendLine("    }");
+                cppContent.AppendLine("    sol::table UserType = UserTypeObject.as<sol::table>();");
                 cppContent.AppendLine();
 
                 foreach (var bind in scriptCallableFunctions)
@@ -989,6 +991,11 @@ static FAutoRegister_{enumName} AutoRegister_{enumName}_Instance;
                 }
                 cppContent.AppendLine("}");
                 cppContent.AppendLine();
+
+                if (scriptCallableFunctions.Count > 0)
+                {
+                    luaBindableClasses.Add(className);
+                }
             }
             if (bHasReflectionData)
             {
@@ -1020,11 +1027,12 @@ static FAutoRegister_{enumName} AutoRegister_{enumName}_Instance;
         masterContent.AppendLine();
         masterContent.AppendLine("void BindGeneratedLuaCasts(sol::state& Lua)");
         masterContent.AppendLine("{");
-        masterContent.AppendLine("    sol::table ActorComponentType = Lua[\"ActorComponent\"];");
-        masterContent.AppendLine("    if (!ActorComponentType.valid())");
+        masterContent.AppendLine("    sol::object ActorComponentObject = Lua[\"ActorComponent\"];");
+        masterContent.AppendLine("    if (!ActorComponentObject.valid() || ActorComponentObject == sol::nil || ActorComponentObject.get_type() != sol::type::table)");
         masterContent.AppendLine("    {");
         masterContent.AppendLine("        return;");
         masterContent.AppendLine("    }");
+        masterContent.AppendLine("    sol::table ActorComponentType = ActorComponentObject.as<sol::table>();");
         masterContent.AppendLine();
 
         foreach (string className in allParsedClasses)
@@ -1047,7 +1055,7 @@ static FAutoRegister_{enumName} AutoRegister_{enumName}_Instance;
         masterContent.AppendLine("void BindGeneratedLuaFunctions(sol::state& Lua)");
         masterContent.AppendLine("{");
         masterContent.AppendLine("    BindGeneratedLuaCasts(Lua);");
-        foreach (string className in allParsedClasses)
+        foreach (string className in luaBindableClasses)
         {
             masterContent.AppendLine($"    BindLua_{className}(Lua);");
         }

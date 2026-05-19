@@ -48,11 +48,12 @@ static FAutoRegister_UStaticMeshComponent AutoRegister_UStaticMeshComponent_Inst
 
 void BindLua_UStaticMeshComponent(sol::state& Lua)
 {
-    sol::table UserType = Lua["StaticMeshComponent"];
-    if (!UserType.valid())
+    sol::object UserTypeObject = Lua["StaticMeshComponent"];
+    if (!UserTypeObject.valid() || UserTypeObject == sol::nil || UserTypeObject.get_type() != sol::type::table)
     {
         return;
     }
+    sol::table UserType = UserTypeObject.as<sol::table>();
 
 }
 

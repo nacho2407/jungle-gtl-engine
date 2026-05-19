@@ -1,40 +1,62 @@
 // [UHT generated master source - do not edit]
 #include "ThirdParty/sol/sol.hpp"
 
-#include "EditorEngine.gen.cpp"
-#include "ActorSequence.gen.cpp"
-#include "CurveFloatAsset.gen.cpp"
-#include "SkeletalMesh.gen.cpp"
-#include "StaticMesh.gen.cpp"
-#include "CameraModifier.gen.cpp"
-#include "CameraModifier_CameraShake.gen.cpp"
-#include "CameraShakeBase.gen.cpp"
-#include "PlayerCameraManager.gen.cpp"
-#include "SequenceCameraShakePattern.gen.cpp"
-#include "SinusoidalCameraShakePattern.gen.cpp"
+#include "AActor.gen.cpp"
 #include "ActorComponent.gen.cpp"
+#include "ActorSequence.gen.cpp"
 #include "ActorSequenceComponent.gen.cpp"
+#include "AmbientLightComponent.gen.cpp"
 #include "BillboardComponent.gen.cpp"
 #include "BoxComponent.gen.cpp"
 #include "CameraComponent.gen.cpp"
+#include "CameraModifier.gen.cpp"
+#include "CameraModifier_CameraShake.gen.cpp"
+#include "CameraShakeBase.gen.cpp"
 #include "CapsuleComponent.gen.cpp"
 #include "Color.gen.cpp"
 #include "CurveFloatAsset.gen.cpp"
 #include "DecalComponent.gen.cpp"
+#include "DefaultPawn.gen.cpp"
+#include "DirectionalLightComponent.gen.cpp"
+#include "EditorEngine.gen.cpp"
+#include "Engine.gen.cpp"
 #include "FireballComponent.gen.cpp"
+#include "GameEngine.gen.cpp"
+#include "GameModeBase.gen.cpp"
 #include "GizmoComponent.gen.cpp"
 #include "HeightFogComponent.gen.cpp"
+#include "InterpToMovementComponent.gen.cpp"
+#include "Level.gen.cpp"
+#include "LightComponent.gen.cpp"
+#include "LightComponentBase.gen.cpp"
 #include "LineBatchComponent.gen.cpp"
+#include "Material.gen.cpp"
 #include "MeshComponent.gen.cpp"
+#include "MovementComponent.gen.cpp"
+#include "Pawn.gen.cpp"
+#include "PlayerCameraManager.gen.cpp"
+#include "PlayerController.gen.cpp"
+#include "PointLightComponent.gen.cpp"
+#include "PrimitiveActors.gen.cpp"
 #include "PrimitiveComponent.gen.cpp"
 #include "ProceduralMeshComponent.gen.cpp"
+#include "ProjectileMovementComponent.gen.cpp"
+#include "PursuitMovementComponent.gen.cpp"
+#include "RotatingMovementComponent.gen.cpp"
 #include "SceneComponent.gen.cpp"
+#include "ScriptComponent.gen.cpp"
+#include "SequenceCameraShakePattern.gen.cpp"
+#include "ShadowTypes.gen.cpp"
 #include "ShapeComponent.gen.cpp"
+#include "SinusoidalCameraShakePattern.gen.cpp"
+#include "SkeletalMesh.gen.cpp"
 #include "SkeletalMeshComponent.gen.cpp"
 #include "SkinnedMeshComponent.gen.cpp"
 #include "SoundComponent.gen.cpp"
 #include "SphereComponent.gen.cpp"
+#include "SpotlightComponent.gen.cpp"
 #include "SpringArmComponent.gen.cpp"
+#include "StaticMesh.gen.cpp"
 #include "StaticMeshComponent.gen.cpp"
 #include "SubUVComponent.gen.cpp"
 #include "TextRenderComponent.gen.cpp"
@@ -46,11 +68,12 @@
 
 void BindGeneratedLuaCasts(sol::state& Lua)
 {
-    sol::table ActorComponentType = Lua["ActorComponent"];
-    if (!ActorComponentType.valid())
+    sol::object ActorComponentObject = Lua["ActorComponent"];
+    if (!ActorComponentObject.valid() || ActorComponentObject == sol::nil || ActorComponentObject.get_type() != sol::type::table)
     {
         return;
     }
+    sol::table ActorComponentType = ActorComponentObject.as<sol::table>();
 
     ActorComponentType["AsActorSequenceComponent"] =
         [](UActorComponent& Self) -> UActorSequenceComponent*
@@ -237,93 +260,5 @@ void BindGeneratedLuaCasts(sol::state& Lua)
 void BindGeneratedLuaFunctions(sol::state& Lua)
 {
     BindGeneratedLuaCasts(Lua);
-    BindLua_UEditorEngine(Lua);
-    BindLua_UActorSequence(Lua);
-    BindLua_UActorSequencePlayer(Lua);
-    BindLua_UCurveFloatAsset(Lua);
-    BindLua_USkeletalMesh(Lua);
-    BindLua_UStaticMesh(Lua);
-    BindLua_UCameraModifier(Lua);
-    BindLua_UCameraModifier_CameraShake(Lua);
-    BindLua_UCameraShakePattern(Lua);
-    BindLua_UPerlinCameraShakePattern(Lua);
-    BindLua_UCameraShakeBase(Lua);
-    BindLua_APlayerCameraManager(Lua);
-    BindLua_USequenceCameraShakePattern(Lua);
-    BindLua_USinusoidalCameraShakePattern(Lua);
-    BindLua_UActorComponent(Lua);
-    BindLua_UActorSequenceComponent(Lua);
-    BindLua_UBillboardComponent(Lua);
-    BindLua_UBoxComponent(Lua);
-    BindLua_UCameraComponent(Lua);
-    BindLua_UCapsuleComponent(Lua);
-    BindLua_UDecalComponent(Lua);
-    BindLua_UFireballComponent(Lua);
-    BindLua_UGizmoComponent(Lua);
-    BindLua_UHeightFogComponent(Lua);
-    BindLua_ULineBatchComponent(Lua);
-    BindLua_UMeshComponent(Lua);
-    BindLua_UInterpToMovementComponent(Lua);
-    BindLua_UMovementComponent(Lua);
-    BindLua_UProjectileMovementComponent(Lua);
-    BindLua_UPursuitMovementComponent(Lua);
-    BindLua_URotatingMovementComponent(Lua);
-    BindLua_UAmbientLightComponent(Lua);
-    BindLua_UDirectionalLightComponent(Lua);
-    BindLua_ULightComponent(Lua);
-    BindLua_ULightComponentBase(Lua);
-    BindLua_UPointLightComponent(Lua);
-    BindLua_USpotlightComponent(Lua);
-    BindLua_UPrimitiveComponent(Lua);
-    BindLua_UProceduralMeshComponent(Lua);
-    BindLua_USceneComponent(Lua);
-    BindLua_UShapeComponent(Lua);
-    BindLua_USkeletalMeshComponent(Lua);
-    BindLua_USkinnedMeshComponent(Lua);
-    BindLua_USoundComponent(Lua);
-    BindLua_USphereComponent(Lua);
-    BindLua_USpringArmComponent(Lua);
-    BindLua_UStaticMeshComponent(Lua);
     BindLua_USubUVComponent(Lua);
-    BindLua_UTextRenderComponent(Lua);
-    BindLua_AActor(Lua);
-    BindLua_ADefaultPawn(Lua);
-    BindLua_AGameModeBase(Lua);
-    BindLua_ULevel(Lua);
-    BindLua_APawn(Lua);
-    BindLua_APlayerController(Lua);
-    BindLua_ACubeActor(Lua);
-    BindLua_ASphereActor(Lua);
-    BindLua_APlaneActor(Lua);
-    BindLua_AAttachTestActor(Lua);
-    BindLua_ASceneActor(Lua);
-    BindLua_APlayerStart(Lua);
-    BindLua_AFogActor(Lua);
-    BindLua_AStaticMeshActor(Lua);
-    BindLua_ASkeletalMeshActor(Lua);
-    BindLua_ASubUVActor(Lua);
-    BindLua_ATextRenderActor(Lua);
-    BindLua_ABillboardActor(Lua);
-    BindLua_ADecalActor(Lua);
-    BindLua_AFireballActor(Lua);
-    BindLua_ADecalSpotLightActor(Lua);
-    BindLua_ALightActor(Lua);
-    BindLua_AAmbientLightActor(Lua);
-    BindLua_ADirectionalLightActor(Lua);
-    BindLua_APointLightActor(Lua);
-    BindLua_ASpotlightActor(Lua);
-    BindLua_ABullet(Lua);
-    BindLua_ABladeSlash(Lua);
-    BindLua_ADestructibleActor(Lua);
-    BindLua_ABoundsBoxActor(Lua);
-    BindLua_UMainSceneDestructibleComponent(Lua);
-    BindLua_AMainSceneDestructibleActor(Lua);
-    BindLua_UWorld(Lua);
-    BindLua_UMaterialInterface(Lua);
-    BindLua_UMaterial(Lua);
-    BindLua_UMaterialInstance(Lua);
-    BindLua_UTexture(Lua);
-    BindLua_UEngine(Lua);
-    BindLua_UGameEngine(Lua);
-    BindLua_UScriptComponent(Lua);
 }
