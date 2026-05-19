@@ -91,12 +91,18 @@ void ULuaAnimInstance::NativeInitializeAnimation()
 		GraphRoot = &FSM->GetNode();
 	}
 
-	// DefaultSlot 으로 wrap — RootNode 경로의 montage 처리는 트리 안 Slot 노드 책임.
-	// Slot.InputPose = lua 가 build 한 GraphRoot. 평소엔 pass-through, montage 활성 시 lerp.
-	FAnimNode_Slot* DefaultSlot = MakeNode<FAnimNode_Slot>();
-	DefaultSlot->SlotName  = DefaultMontageSlot;
-	DefaultSlot->InputPose = GraphRoot;
-	SetRootNode(DefaultSlot);   // 두 번째 호출 — Initialize 가 트리 전체 재귀, 안전.
+	// 자동 DefaultSlot wrap — RootNode 경로의 montage 처리를 트리 안 Slot 에서 한다.
+	// 단 lua 가 이미 Anim.create_slot 으로 명시 wrap 했으면 (root 가 Slot) skip — 이중 wrap 방지.
+	// 이중이라도 한쪽이 같은 SlotName 이면 pass-through 라 안전하지만, 트리 표현 깔끔성 우선.
+	const bool bAlreadyWrapped =
+		(std::strcmp(GraphRoot->GetDebugName(), "Slot") == 0);
+	if (!bAlreadyWrapped)
+	{
+		FAnimNode_Slot* DefaultSlot = MakeNode<FAnimNode_Slot>();
+		DefaultSlot->SlotName  = DefaultMontageSlot;
+		DefaultSlot->InputPose = GraphRoot;
+		SetRootNode(DefaultSlot);   // 두 번째 호출 — Initialize 가 트리 전체 재귀, 안전.
+	}
 
 	// Hot-reload 등록 — .lua 파일 변경 시 FLuaScriptManager 가 ReloadScript 호출.
 	// 이미 등록된 경우 set-like 보장 (manager 측).
@@ -395,6 +401,19 @@ void ULuaAnimInstance::InstallBindings()
 		[this](FAnimNode_Base* Root)
 		{
 			SetRootNode(Root);
+		});
+
+	// Slot 노드 생성 — Montage 진입점. SlotName 이 빈 문자열이면 DefaultSlot 사용.
+	// 트리 안에 박아 사용. 예: local slot = Anim.create_slot("UpperBody", base_pose).
+	// 보통 자동 wrap (NativeInitializeAnimation 끝) 만으로도 DefaultSlot 은 트리에 박힘 —
+	// 명시 호출은 추가 slot (UpperBody 등) 또는 트리 위치 명시할 때 사용.
+	Anim.set_function("create_slot",
+		[this](std::string Name, FAnimNode_Base* Input) -> FAnimNode_Slot*
+		{
+			FAnimNode_Slot* Slot = MakeNode<FAnimNode_Slot>();
+			Slot->SlotName  = Name.empty() ? DefaultMontageSlot : FName(Name.c_str());
+			Slot->InputPose = Input;
+			return Slot;
 		});
 }
 
