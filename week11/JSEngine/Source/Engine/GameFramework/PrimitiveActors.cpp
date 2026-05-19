@@ -426,9 +426,8 @@ void AStaticMeshActor::InitDefaultComponents()
 void ASkeletalMeshActor::InitDefaultComponents()
 {
     SkeletalMeshComp = AddComponent<USkeletalMeshComponent>();
-    SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/SimpleCharacter.fbx"));
 	//Test Code
-    const FString SkeletalMeshPath = "Asset/SkeletalMesh/Dragon_Baked_Actions_fbx_6.1_ASCII.fbx";
+    const FString SkeletalMeshPath = "Asset/SkeletalMesh/SimpleCharacter.fbx";
     USkeletalMesh* LoadedSkeletalMesh = FResourceManager::Get().LoadSkeletalMesh(SkeletalMeshPath);
 
     SkeletalMeshComp->SetSkeletalMesh(LoadedSkeletalMesh);
