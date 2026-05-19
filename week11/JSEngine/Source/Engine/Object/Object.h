@@ -6,7 +6,8 @@
 #include "Core/PropertyTypes.h"
 #include "Serialization/Archive.h"
 #include "Object/Object.h"
-#include "Core/ReflectionTypeInfo.h"
+#include "ReflectionSystem/ReflectionTypeInfo.h"
+#include "ReflectionSystem/ReflectedProperty.h"
 
 #define DECLARE_CLASS(ClassName, ParentClass)                          \
 	using ThisClass = ClassName;									   \
@@ -122,6 +123,10 @@ public:
     FClassInfo* MyClassInfo = nullptr; // 내 설계도 정보
 
 	virtual struct FClassInfo* GetStaticClass() { return nullptr; }
+
+	//GC?
+	virtual void AddReferencedObjects(FReferenceCollector& Collector) {}
+    void CollectReflectedReferences(FReferenceCollector& Collector);
 
 
 protected:

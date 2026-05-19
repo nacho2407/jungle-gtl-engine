@@ -8,7 +8,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string>
-#include "Core/ReflectionDatabase.h"
+#include "ReflectionSystem/ReflectionDatabase.h"
 
 // Helper function to send formatted strings to Visual Studio Output window
 void DebugLog(const char* format, ...)

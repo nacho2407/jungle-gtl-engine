@@ -191,6 +191,8 @@ void FScriptManager::BindComponentTypes()
             { return Cast<UActorSequenceComponent>(&Self); });
     LUA_SET(AsSkeletalMeshComponent, [](UActorComponent& Self) -> USkeletalMeshComponent*
             { return Cast<USkeletalMeshComponent>(&Self); });
+    //LUA_SET(AsSubUVComponent, [](UActorComponent& Self) -> USubUVComponent*
+    //        { return Cast<USubUVComponent>(&Self); });
     LUA_METHOD(IsActive, IsActive);
     LUA_METHOD(SetActive, SetActive);
     LUA_METHOD(IsAutoActivate, IsAutoActivate);

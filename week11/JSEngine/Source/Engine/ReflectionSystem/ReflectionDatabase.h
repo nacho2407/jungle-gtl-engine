@@ -10,7 +10,7 @@
 //    ReflectionDatabase.h  ← 여기서 DB 클래스 정의
 // ============================================================
 
-#include "CoreMinimal.h"
+#include "Core/CoreMinimal.h"
 #include "Object/Object.h"
 #include "ReflectedProperty.h"   // FProperty + FClassInfo + FStructInfo + FEnumInfo 전부 확보
 

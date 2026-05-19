@@ -1,5 +1,5 @@
 ﻿#include "SubUVComponent.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 #include <cmath>
 #include <cstring>
@@ -52,15 +52,22 @@ const FParticleResource* USubUVComponent::GetParticle() const
 	return FResourceManager::Get().FindParticle(ParticleName);
 }
 
+void USubUVComponent::Play()
+{
+    FrameIndex = 0;
+    TimeAccumulator = 0.0f;
+    bIsExecute = false;
+} 
+
 void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
 	OutProps.push_back({ "Particle", EPropertyType::Name, &ParticleName });
 	//OutProps.push_back({ "Width", EPropertyType::Float, &Width, 0.1f, 100.0f, 0.1f });
 	//OutProps.push_back({ "Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Play Rate", EPropertyType::Float, &PlayRate, 1.0f, 120.0f, 1.0f });
+	//OutProps.push_back({ "Play Rate", EPropertyType::Float, &PlayRate, 1.0f, 120.0f, 1.0f });
 	//OutProps.push_back({ "bLoop", EPropertyType::Bool, &bLoop });
-	OutProps.push_back({ "Inherit Owner Scale", EPropertyType::Bool, &bInheritOwnerScale });
+	//OutProps.push_back({ "Inherit Owner Scale", EPropertyType::Bool, &bInheritOwnerScale });
 }
 
 void USubUVComponent::PostEditProperty(const char* PropertyName)

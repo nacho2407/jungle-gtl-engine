@@ -3,7 +3,7 @@
 #include "Object/FName.h"
 #include "Object/ObjectFactory.h"
 #include "Math/Vector.h"
-
+#include "ReflectionSystem/ReflectedProperty.h"
 #include <cstring>
 
 TArray<UObject*> GUObjectArray;
@@ -126,4 +126,18 @@ void UObject::Serialize(FArchive& Ar)
 {
 	Ar << "Type" << GetTypeInfo()->name;
     Ar << "ObjectName" << ObjectName;
+}
+
+void UObject::CollectReflectedReferences(FReferenceCollector& Collector)
+{
+    for (FClassInfo* Info = GetStaticClass(); Info; Info = Info->ParentClass)
+    {
+        for (FProperty* Prop : Info->ReflectedProperties)
+        {
+            if (Prop)
+                Prop->CollectReferencesInContainer(Collector, this);
+        }
+    }
+
+    AddReferencedObjects(Collector);
 }

@@ -1,6 +1,6 @@
 ﻿#include "DirectionalLightComponent.h"
 #include "Object/ObjectFactory.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(UDirectionalLightComponent, ULightComponent)
 REGISTER_FACTORY(UDirectionalLightComponent)

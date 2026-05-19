@@ -1,5 +1,5 @@
 ﻿#include "SkinnedMeshComponent.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Material.h"

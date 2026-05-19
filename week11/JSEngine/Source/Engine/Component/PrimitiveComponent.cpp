@@ -3,7 +3,7 @@
 #include "Core/CollisionTypes.h"
 #include "GameFramework/World.h"
 #include "Math/Utils.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
 

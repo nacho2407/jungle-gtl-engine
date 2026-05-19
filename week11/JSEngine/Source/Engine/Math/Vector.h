@@ -3,7 +3,7 @@
 #include <cassert>
 
 #include "Core/CoreTypes.h"
-#include "Core/ReflectionTypeInfo.h"
+#include "ReflectionSystem/ReflectionTypeInfo.h"
 
 #include "Vector.generated.h"
 

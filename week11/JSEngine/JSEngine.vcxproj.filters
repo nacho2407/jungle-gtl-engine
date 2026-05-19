@@ -1451,7 +1451,7 @@
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Core\ReflectedProperty.h">
+    <ClInclude Include="Source\Engine\ReflectionSystem\ReflectedProperty.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\ResourceManager.h">
@@ -2066,12 +2066,17 @@
     <ClInclude Include="Source\Engine\Asset\FbxTransformUtils.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Core\ReflectionMacros.h" />
+    <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionMacros.h" />
     <ClInclude Include="Source\Engine\Component\TransformProxy.h" />
-    <ClInclude Include="Source\Engine\Core\ReflectionUtils.h" />
-    <ClInclude Include="Source\Engine\Core\ReflectionDatabase.h" />
-    <ClInclude Include="Source\Engine\Core\ReflectionFwd.h" />
-    <ClInclude Include="Source\Engine\Core\ReflectionTypeInfo.h" />
+    <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionUtils.h" />
+    <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionDatabase.h" />
+    <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionFwd.h" />
+    <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionTypeInfo.h" />
+    <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionClassInfo.h" />
+    <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionEnumInfo.h" />
+    <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionFunctionInfo.h" />
+    <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionPropertyFlags.h" />
+    <ClInclude Include="Source\Engine\ReflectionSystem\ReflectionStructInfo.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Source\Engine\Runtime\AppIcon.rc" />

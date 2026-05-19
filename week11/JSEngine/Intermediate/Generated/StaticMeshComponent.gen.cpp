@@ -1,7 +1,8 @@
 // [UHT generated source - do not edit]
 #include "Engine/Component/StaticMeshComponent.h"
-#include "Core/ReflectionDatabase.h"
-#include "Core/ReflectionUtils.h"
+#include "ReflectionSystem/ReflectionDatabase.h"
+#include "ReflectionSystem/ReflectionUtils.h"
+#include "ThirdParty/sol/sol.hpp"
 
 void Register_UStaticMeshComponent()
 {
@@ -9,6 +10,7 @@ void Register_UStaticMeshComponent()
     info.Properties.clear();
     info.ReflectedProperties.clear();
     info.GcPointerOffsets.clear();
+    info.Functions.clear();
     info.ClassName = "UStaticMeshComponent";
     info.ParentClassName = "UMeshComponent";
     {
@@ -43,4 +45,15 @@ struct FAutoRegister_UStaticMeshComponent
     FAutoRegister_UStaticMeshComponent() { Register_UStaticMeshComponent(); }
 };
 static FAutoRegister_UStaticMeshComponent AutoRegister_UStaticMeshComponent_Instance;
+
+void BindLua_UStaticMeshComponent(sol::state& Lua)
+{
+    sol::object UserTypeObject = Lua["StaticMeshComponent"];
+    if (!UserTypeObject.valid() || UserTypeObject == sol::nil || UserTypeObject.get_type() != sol::type::table)
+    {
+        return;
+    }
+    sol::table UserType = UserTypeObject.as<sol::table>();
+
+}
 
