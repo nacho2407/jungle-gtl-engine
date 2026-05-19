@@ -168,6 +168,27 @@ void UAnimSingleNodeInstance::SetPosition(float InPosition)
 	PreviousTime = InPosition;
 }
 
+void UAnimSingleNodeInstance::CopyPlaybackSettingsFrom(const UAnimSingleNodeInstance* SourceInstance)
+{
+	if (!SourceInstance)
+	{
+		return;
+	}
+
+	PlayRate = SourceInstance->PlayRate;
+	bLooping = SourceInstance->bLooping;
+	bAutoPlay = SourceInstance->bAutoPlay;
+
+	if (bAutoPlay && CurrentAnimation)
+	{
+		Play(bLooping);
+	}
+	else
+	{
+		bPlaying = false;
+	}
+}
+
 float UAnimSingleNodeInstance::GetLength() const
 {
 	return CurrentAnimation ? CurrentAnimation->GetPlayLength() : 0.0f;

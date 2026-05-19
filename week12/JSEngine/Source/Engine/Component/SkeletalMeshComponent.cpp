@@ -54,10 +54,15 @@ void USkeletalMeshComponent::PostDuplicate(UObject* Original)
 	AnimGraphAssetPath = SourceComponent->AnimGraphAssetPath;
 	AnimationToPlay = SourceComponent->AnimationToPlay;
 	AnimationMode = SourceComponent->AnimationMode;
+	UAnimSingleNodeInstance* SourceSingleNode = Cast<UAnimSingleNodeInstance>(SourceComponent->AnimInstance);
 
 	if (AnimationMode == EAnimationMode::AnimationSingleNode)
 	{
 		ApplyAnimationFromAssetPath();
+		if (UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+		{
+			SingleNode->CopyPlaybackSettingsFrom(SourceSingleNode);
+		}
 	}
 	else if (AnimationMode == EAnimationMode::AnimationGraph)
 	{

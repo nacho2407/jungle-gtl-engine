@@ -29,6 +29,7 @@ public:
 	void SetPlayRate(float InPlayRate) { PlayRate = InPlayRate; }
 	void SetLooping(bool bInLooping) { bLooping = bInLooping; }
 	void SetPosition(float InPosition);
+	void CopyPlaybackSettingsFrom(const UAnimSingleNodeInstance* SourceInstance);
 
 	bool IsPlaying() const { return bPlaying; }
 	bool IsLooping() const { return bLooping; }
