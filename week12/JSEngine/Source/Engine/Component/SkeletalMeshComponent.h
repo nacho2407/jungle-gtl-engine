@@ -20,7 +20,7 @@ enum class EAnimationMode
 	AnimationBlueprint UMETA(DisplayName = "Animation Blueprint"),
 	AnimationSingleNode UMETA(DisplayName = "Animation Single Node"),
 	AnimationGraph UMETA(DisplayName = "Animation Graph"),
-	AnimationCustomMode UMETA(DisplayName = "Animation Custom Mode")
+	AnimationStateMachine UMETA(DisplayName = "Animation StateMachine")
 };
 
 /**
@@ -117,7 +117,7 @@ private:
 	TSoftObjectPtr<UAnimationAsset> AnimationAssetPath;
 
 	UPROPERTY(DisplayName = "Animation Mode")
-	EAnimationMode AnimationMode = EAnimationMode::AnimationBlueprint;
+	EAnimationMode AnimationMode = EAnimationMode::AnimationSingleNode;
 
 	UPROPERTY(DisplayName = "Anim Graph")
 	TSoftObjectPtr<UAnimGraphAsset> AnimGraphAssetPath;
