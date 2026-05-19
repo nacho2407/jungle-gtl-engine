@@ -692,6 +692,9 @@
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_SequencePlayer.cpp">
       <Filter>Source\Engine\Animation\Nodes</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_Slot.cpp">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_StateMachine.cpp">
       <Filter>Source\Engine\Animation\Nodes</Filter>
     </ClCompile>
@@ -1689,6 +1692,9 @@
       <Filter>Source\Engine\Animation\Nodes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_SequencePlayer.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Slot.h">
       <Filter>Source\Engine\Animation\Nodes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_StateMachine.h">
