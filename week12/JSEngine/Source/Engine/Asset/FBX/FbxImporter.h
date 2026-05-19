@@ -58,7 +58,6 @@ public:
     UAnimSequence* LoadAnimSequence(const FString& Path);
     UAnimSequence* LoadAnimSequence(const FString& Path, const FFbxAnimImportOptions& ImportOptions);
     TArray<FFbxAnimStackImportResult> LoadAnimSequences(const FString& Path, const FFbxAnimImportOptions& ImportOptions = FFbxAnimImportOptions());
-    TArray<FString> GetAnimationStackNames(const FString& Path);
 
 	FFbxMeshContentInfo InspectMeshContent(const FString& Path);
 
