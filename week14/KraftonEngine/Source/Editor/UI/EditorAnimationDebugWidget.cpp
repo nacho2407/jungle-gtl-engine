@@ -120,15 +120,18 @@ void FEditorAnimationDebugWidget::RenderFSMSection(UAnimInstance* AnimInst)
 		ImGui::TextDisabled("  No current state.");
 	}
 
-	UAnimState* From = FSM->GetFromState();
-	if (From)
+	// Multi-blend 시각화 — BlendingFroms 의 모든 진행중 from 항목 표시.
+	// oldest=[0] → latest=back 순서. latest 가 CurrentState 와 직접 blend 중인 from.
+	const TArray<FBlendingFrom>& BlendingFroms = FSM->GetBlendingFroms();
+	for (size_t i = 0; i < BlendingFroms.size(); ++i)
 	{
-		const float Alpha = FSM->GetBlendAlpha();
-		const float Dur   = FSM->GetBlendDuration();
-		ImGui::Text("  Blending from: %s  (alpha=%.2f, %.2fs / %.2fs)",
-			From->StateName.ToString().c_str(),
-			Alpha, Alpha * Dur, Dur);
-		ImGui::ProgressBar(Alpha, ImVec2(-1.0f, 6.0f), "");
+		const FBlendingFrom& BF = BlendingFroms[i];
+		if (!BF.State) continue;
+		ImGui::Text("  Blending from [%zu]: %s  (alpha=%.2f, %.2fs / %.2fs)",
+			i,
+			BF.State->StateName.ToString().c_str(),
+			BF.Alpha, BF.Alpha * BF.Duration, BF.Duration);
+		ImGui::ProgressBar(BF.Alpha, ImVec2(-1.0f, 6.0f), "");
 	}
 
 	const TArray<UAnimState*>& States = FSM->GetStates();
