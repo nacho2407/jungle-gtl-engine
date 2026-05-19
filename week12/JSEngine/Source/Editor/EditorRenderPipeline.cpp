@@ -70,8 +70,8 @@ FEditorRenderPipeline::~FEditorRenderPipeline() { Collector.Release(); }
 void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 {
     const auto PipelineStart = std::chrono::steady_clock::now();
-    const bool bCollectSkinningGPUStats = FSkinningStats::Get().ShouldCollectGPUStats();
-    if (bCollectSkinningGPUStats)
+    const bool bCollectGPUStats = FGPUProfiler::Get().IsCollectionEnabled();
+    if (bCollectGPUStats)
     {
         FGPUProfiler::Get().TakeSnapshot();
 
@@ -92,6 +92,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 #if STATS
     FStatManager::Get().TakeSnapshot();
 
+    if (bCollectGPUStats)
     {
         const TArray<FStatEntry>& GpuSnapshot = FGPUProfiler::Get().GetGPUSnapshot();
         double GpuTotalMs = 0.0;
@@ -184,7 +185,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
     std::chrono::steady_clock::time_point UIStart;
     std::chrono::steady_clock::time_point UIEnd;
     {
-        const uint32 EditorFrameGPUStatIndex = bCollectSkinningGPUStats
+        const uint32 EditorFrameGPUStatIndex = bCollectGPUStats
             ? FGPUProfiler::Get().BeginTimestamp("EditorFrameGPU")
             : UINT32_MAX;
 
@@ -207,7 +208,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
         Editor->RenderUI(DeltaTime);
         UIEnd = std::chrono::steady_clock::now();
 
-        if (bCollectSkinningGPUStats)
+        if (bCollectGPUStats)
         {
             FGPUProfiler::Get().EndTimestamp(EditorFrameGPUStatIndex);
         }

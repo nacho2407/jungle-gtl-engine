@@ -1,6 +1,7 @@
 ﻿#include "Editor/UI/EditorViewportOverlayWidget.h"
 
 #include "Core/ResourceManager.h"
+#include "Core/Logging/GPUProfiler.h"
 #include "Core/Logging/SkinningStats.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/EditorRenderPipeline.h"
@@ -829,7 +830,7 @@ void FEditorViewportOverlayWidget::RenderGroupedStatOverlay(float DeltaTime)
             ImGui::Separator();
             ImGui::TextUnformatted("[ Frame ]");
             ImGui::Text("CPU             : %.3f ms", SkinStats.CPUFrameTimeMs);
-            if (FSkinningStats::Get().ShouldCollectGPUStats())
+            if (FGPUProfiler::Get().IsCollectionEnabled())
             {
                 ImGui::Text("GPU             : %.3f ms", SkinStats.GPUFrameTimeMs);
             }

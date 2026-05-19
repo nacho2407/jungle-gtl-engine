@@ -31,7 +31,7 @@ namespace
 {
 	bool ShouldRunGPUProfiler()
 	{
-		return FSkinningStats::Get().ShouldCollectGPUStats();
+		return FGPUProfiler::Get().IsCollectionEnabled();
 	}
 }
 

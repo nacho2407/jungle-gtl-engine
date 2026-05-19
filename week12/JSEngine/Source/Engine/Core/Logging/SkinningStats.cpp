@@ -19,15 +19,6 @@ void FSkinningStats::TakeSnapshot()
 	Current = FSkinningStatsFrame();
 }
 
-bool FSkinningStats::ShouldCollectGPUStats() const
-{
-#if STATS
-	return true;
-#else
-	return bGPUStatsEnabled;
-#endif
-}
-
 void FSkinningStats::AddCPUSkinnedVertexBufferUpload(double Ms, uint64 Bytes)
 {
 	Current.CPUSkinnedVertexBufferUploadMs += Ms;
