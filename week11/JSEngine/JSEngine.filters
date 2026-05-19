@@ -605,6 +605,9 @@
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\ReflectedProperty.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\RayTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>

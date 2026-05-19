@@ -1,4 +1,4 @@
-#include "PrimitiveComponent.h"
+﻿#include "PrimitiveComponent.h"
 #include "Engine/Geometry/Ray.h"
 #include "Core/CollisionTypes.h"
 #include "GameFramework/World.h"
@@ -57,14 +57,27 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 
 void UPrimitiveComponent::Serialize(FArchive& Ar)
 {
-	USceneComponent::Serialize(Ar);
-	Ar << "Visible" << bIsVisible;
-	Ar << "Enable Cull" << bEnableCull;
-    if (Ar.IsSaving() || Ar.HasKey("Cast Decal"))
+    USceneComponent::Serialize(Ar);
+
+    ReflectionUtils::SerializeGeneratedPropertiesLocal(
+        this,
+        &UPrimitiveComponent::StaticClassInfo,
+        Ar);
+
+    if (Ar.IsLoading())
     {
-        Ar << "Cast Decal" << bCastDecal;
+        if (!Ar.HasKey("bIsVisible") && Ar.HasKey("Visible"))
+            Ar << "Visible" << bIsVisible;
+
+        if (!Ar.HasKey("bEnableCull") && Ar.HasKey("Enable Cull"))
+            Ar << "Enable Cull" << bEnableCull;
+
+        if (!Ar.HasKey("bCastDecal") && Ar.HasKey("Cast Decal"))
+            Ar << "Cast Decal" << bCastDecal;
+
+        if (!Ar.HasKey("bGenerateOverlapEvents") && Ar.HasKey("GenerateOverlapEvents"))
+            Ar << "GenerateOverlapEvents" << bGenerateOverlapEvents;
     }
-    Ar << "GenerateOverlapEvents" << bGenerateOverlapEvents;
 }
 
 void UPrimitiveComponent::SetVisibility(bool bVisible)

@@ -1,4 +1,4 @@
-#include "ActorComponent.h"
+﻿#include "ActorComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Core/ReflectionUtils.h"
 
@@ -188,7 +188,8 @@ void UActorComponent::PostEditProperty(const char* PropertyName)
 
 void UActorComponent::Serialize(FArchive& Ar)
 {
-	UObject::Serialize(Ar);
+    UObject::Serialize(Ar);
+
     EnsurePersistentGuid();
     FString PersistentGuidText = PersistentGuid.ToString();
     Ar << "PersistentGuid" << PersistentGuidText;
@@ -197,7 +198,11 @@ void UActorComponent::Serialize(FArchive& Ar)
         PersistentGuid = FGuid::FromString(PersistentGuidText);
         EnsurePersistentGuid();
     }
-	Ar << "Enable Tick" << bCanEverTick;
-	Ar << "Editor Only" << bIsEditorOnly;
-	Ar << "Tags" << Tags;
+
+    ReflectionUtils::SerializeGeneratedPropertiesLocal(
+        this,
+        &UActorComponent::StaticClassInfo,
+        Ar);
+
+    Ar << "Tags" << Tags;
 }

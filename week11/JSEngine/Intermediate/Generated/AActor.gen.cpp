@@ -7,22 +7,142 @@ void Register_AActor()
 {
     FClassInfo& info = AActor::StaticClassInfo;
     info.Properties.clear();
+    info.ReflectedProperties.clear();
     info.GcPointerOffsets.clear();
     info.ClassName = "AActor";
     info.ParentClassName = "UObject";
-    info.Properties.push_back({ "RootComponent", "USceneComponent*", offsetof(AActor, RootComponent), PF_EditAnywhere, "Actor", "Root Component" });
-    info.GcPointerOffsets.push_back(offsetof(AActor, RootComponent));
-    info.Properties.push_back({ "OwningWorld", "UWorld*", offsetof(AActor, OwningWorld), PF_None, "Default", "OwningWorld" });
-    info.GcPointerOffsets.push_back(offsetof(AActor, OwningWorld));
-    info.Properties.push_back({ "PendingActorLocation", "FVector", offsetof(AActor, PendingActorLocation), PF_EditAnywhere, "Transform", "Location" });
-    info.Properties.push_back({ "PendingActorRotation", "FVector", offsetof(AActor, PendingActorRotation), PF_EditAnywhere, "Transform", "Rotation" });
-    info.Properties.push_back({ "PendingActorScale", "FVector", offsetof(AActor, PendingActorScale), PF_EditAnywhere, "Transform", "Scale" });
-    info.Properties.push_back({ "bVisible", "bool", offsetof(AActor, bVisible), PF_EditAnywhere, "Actor", "Visible" });
-    info.Properties.push_back({ "bIsActive", "bool", offsetof(AActor, bIsActive), PF_EditAnywhere, "Actor", "Active" });
-    info.Properties.push_back({ "bTickInEditor", "bool", offsetof(AActor, bTickInEditor), PF_EditAnywhere, "Actor", "Tick In Editor" });
-    info.Properties.push_back({ "OwnedComponents", "TArray<UActorComponent*>", offsetof(AActor, OwnedComponents), PF_None, "Default", "OwnedComponents" });
-    info.GcPointerOffsets.push_back(offsetof(AActor, OwnedComponents));
-    info.Properties.push_back({ "Tags", "TArray<FString>", offsetof(AActor, Tags), PF_EditAnywhere, "Actor", "Tags" });
+    {
+        FObjectProperty* prop = new FObjectProperty();
+        prop->Name = FName("RootComponent");
+        prop->CPPType = "USceneComponent*";
+        prop->Offset = offsetof(AActor, RootComponent);
+        prop->ElementSize = sizeof(USceneComponent*);
+        prop->Flags = PF_EditAnywhere;
+        prop->Category = "Actor";
+        prop->DisplayName = "Root Component";
+        info.ReflectedProperties.push_back(prop);
+    }
+
+    {
+        FObjectProperty* prop = new FObjectProperty();
+        prop->Name = FName("OwningWorld");
+        prop->CPPType = "UWorld*";
+        prop->Offset = offsetof(AActor, OwningWorld);
+        prop->ElementSize = sizeof(UWorld*);
+        prop->Flags = PF_None;
+        prop->Category = "Default";
+        prop->DisplayName = "OwningWorld";
+        info.ReflectedProperties.push_back(prop);
+    }
+
+    {
+        FStructProperty* prop = new FStructProperty();
+        prop->Name = FName("PendingActorLocation");
+        prop->CPPType = "FVector";
+        prop->Offset = offsetof(AActor, PendingActorLocation);
+        prop->ElementSize = sizeof(FVector);
+        prop->Flags = PF_EditAnywhere;
+        prop->Category = "Transform";
+        prop->DisplayName = "Location";
+        info.ReflectedProperties.push_back(prop);
+    }
+
+    {
+        FStructProperty* prop = new FStructProperty();
+        prop->Name = FName("PendingActorRotation");
+        prop->CPPType = "FVector";
+        prop->Offset = offsetof(AActor, PendingActorRotation);
+        prop->ElementSize = sizeof(FVector);
+        prop->Flags = PF_EditAnywhere;
+        prop->Category = "Transform";
+        prop->DisplayName = "Rotation";
+        info.ReflectedProperties.push_back(prop);
+    }
+
+    {
+        FStructProperty* prop = new FStructProperty();
+        prop->Name = FName("PendingActorScale");
+        prop->CPPType = "FVector";
+        prop->Offset = offsetof(AActor, PendingActorScale);
+        prop->ElementSize = sizeof(FVector);
+        prop->Flags = PF_EditAnywhere;
+        prop->Category = "Transform";
+        prop->DisplayName = "Scale";
+        info.ReflectedProperties.push_back(prop);
+    }
+
+    {
+        FBoolProperty* prop = new FBoolProperty();
+        prop->Name = FName("bVisible");
+        prop->CPPType = "bool";
+        prop->Offset = offsetof(AActor, bVisible);
+        prop->ElementSize = sizeof(bool);
+        prop->Flags = PF_EditAnywhere;
+        prop->Category = "Actor";
+        prop->DisplayName = "Visible";
+        info.ReflectedProperties.push_back(prop);
+    }
+
+    {
+        FBoolProperty* prop = new FBoolProperty();
+        prop->Name = FName("bIsActive");
+        prop->CPPType = "bool";
+        prop->Offset = offsetof(AActor, bIsActive);
+        prop->ElementSize = sizeof(bool);
+        prop->Flags = PF_EditAnywhere;
+        prop->Category = "Actor";
+        prop->DisplayName = "Active";
+        info.ReflectedProperties.push_back(prop);
+    }
+
+    {
+        FBoolProperty* prop = new FBoolProperty();
+        prop->Name = FName("bTickInEditor");
+        prop->CPPType = "bool";
+        prop->Offset = offsetof(AActor, bTickInEditor);
+        prop->ElementSize = sizeof(bool);
+        prop->Flags = PF_EditAnywhere;
+        prop->Category = "Actor";
+        prop->DisplayName = "Tick In Editor";
+        info.ReflectedProperties.push_back(prop);
+    }
+
+    {
+        FArrayProperty* prop = new FArrayProperty();
+        prop->ArrayOps = TScriptArrayOps<UActorComponent*>::Make();
+        FObjectProperty* prop_Inner = new FObjectProperty();
+        prop_Inner->CPPType = "UActorComponent*";
+        prop_Inner->ElementSize = sizeof(UActorComponent*);
+        prop->Inner = prop_Inner;
+
+        prop->Name = FName("OwnedComponents");
+        prop->CPPType = "TArray<UActorComponent*>";
+        prop->Offset = offsetof(AActor, OwnedComponents);
+        prop->ElementSize = sizeof(TArray<UActorComponent*>);
+        prop->Flags = PF_None;
+        prop->Category = "Default";
+        prop->DisplayName = "OwnedComponents";
+        info.ReflectedProperties.push_back(prop);
+    }
+
+    {
+        FArrayProperty* prop = new FArrayProperty();
+        prop->ArrayOps = TScriptArrayOps<FString>::Make();
+        FStrProperty* prop_Inner = new FStrProperty();
+        prop_Inner->CPPType = "FString";
+        prop_Inner->ElementSize = sizeof(FString);
+        prop->Inner = prop_Inner;
+
+        prop->Name = FName("Tags");
+        prop->CPPType = "TArray<FString>";
+        prop->Offset = offsetof(AActor, Tags);
+        prop->ElementSize = sizeof(TArray<FString>);
+        prop->Flags = PF_EditAnywhere;
+        prop->Category = "Actor";
+        prop->DisplayName = "Tags";
+        info.ReflectedProperties.push_back(prop);
+    }
+
     ReflectionDatabase::AddClass("AActor", &info);
 }
 

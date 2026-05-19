@@ -12,7 +12,6 @@ public:
 	DECLARE_CLASS(URotatingMovementComponent, UMovementComponent)
 
 	virtual void TickComponent(float DeltaTime) override;
-
 	// RotationRate: X=X축 각속도, Y=Y축 각속도, Z=Z축 각속도 (deg/s)
 	void SetRotationSpeed(const FVector& InRotationRate) { RotationRate = InRotationRate; }
 	const FVector& GetRotationRate() const { return RotationRate; }

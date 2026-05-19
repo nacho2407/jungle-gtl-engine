@@ -1,9 +1,10 @@
 ﻿#pragma once
-#pragma once
 
+#include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
 #include "Math/Quat.h"
 #include "Math/Rotator.h"
+#include "Math/Vector.h"
 
 struct FTransform
 {

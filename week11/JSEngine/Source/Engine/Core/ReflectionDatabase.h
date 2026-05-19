@@ -1,64 +1,99 @@
 ﻿#pragma once
+
+// ============================================================
+//  ReflectionDatabase.h
+//
+//  include 순서 (단방향, 순환 없음):
+//    ReflectionFwd.h       (전방선언)
+//    ReflectionTypeInfo.h  (FClassInfo / FStructInfo / FEnumInfo)
+//    ReflectedProperty.h   (FProperty 계층 — 위 두 헤더를 이미 포함)
+//    ReflectionDatabase.h  ← 여기서 DB 클래스 정의
+// ============================================================
+
 #include "CoreMinimal.h"
 #include "Object/Object.h"
-
-// FClassInfo가 정의된 헤더를 인클루드하세요 (예: Object.h 또는 ClassInfo.h)
-struct FClassInfo;
+#include "ReflectedProperty.h"   // FProperty + FClassInfo + FStructInfo + FEnumInfo 전부 확보
 
 class ReflectionDatabase
 {
 private:
-    // "클래스 이름" -> "클래스 정보 포인터"를 매핑해두는 거대한 사전
-    inline static TMap<FString, FClassInfo*> ClassMap;
-
+    inline static TMap<FString, FClassInfo*>  ClassMap;
     inline static TMap<FString, FStructInfo*> StructMap;
-
-	inline static TMap<FString, FEnumInfo*> EnumMap;
-
+    inline static TMap<FString, FEnumInfo*>   EnumMap;
 
 public:
-    // 1. 파서가 생성한 코드가 이 함수를 통해 정보를 제출합니다.
+    static void ResolveStructEditorWidget(FStructInfo* StructInfo)
+    {
+        if (!StructInfo)
+            return;
+
+        FString Name = StructInfo->StructName.ToString();
+
+        if (Name == "FVector2")
+        {
+            StructInfo->EditorWidget = EStructEditorWidget::Vector2;
+        }
+        else if (Name == "FVector")
+        {
+            StructInfo->EditorWidget = EStructEditorWidget::Vector3;
+        }
+        else if (Name == "FVector4")
+        {
+            StructInfo->EditorWidget = EStructEditorWidget::Vector4;
+        }
+        else if (Name == "FRotator")
+        {
+            StructInfo->EditorWidget = EStructEditorWidget::Rotator;
+        }
+        else if (Name == "FColor")
+        {
+            StructInfo->EditorWidget = EStructEditorWidget::Color;
+        }
+        else if (Name == "FTransform")
+        {
+            StructInfo->EditorWidget = EStructEditorWidget::Transform;
+        }
+        else
+        {
+            StructInfo->EditorWidget = EStructEditorWidget::Default;
+        }
+    }
+    // ---------------------------------------------------------------
+    // Class
+    // ---------------------------------------------------------------
     static void AddClass(const FString& ClassName, FClassInfo* ClassInfo)
     {
         ClassMap[ClassName] = ClassInfo;
 
+        // 이미 등록된 클래스라면 바로 부모 연결 시도
         if (ClassInfo && ClassInfo->ParentClassName.IsValid())
-        {
             ClassInfo->ParentClass = GetClass(ClassInfo->ParentClassName.ToString());
-        }
 
+        // 나중에 등록된 클래스들 중 부모가 아직 안 붙은 것도 연결
         for (auto& Pair : ClassMap)
         {
-            FClassInfo* OtherClass = Pair.second;
-            if (!OtherClass || OtherClass->ParentClass)
-            {
+            FClassInfo* Other = Pair.second;
+            if (!Other || Other->ParentClass)
                 continue;
-            }
-
-            if (OtherClass->ParentClassName == FName(ClassName))
-            {
-                OtherClass->ParentClass = ClassInfo;
-            }
+            if (Other->ParentClassName == FName(ClassName))
+                Other->ParentClass = ClassInfo;
         }
     }
 
-    // 2. 나중에 에디터나 GC가 클래스 이름으로 정보를 찾을 때 사용합니다.
     static FClassInfo* GetClass(const FString& ClassName)
     {
-        auto it = ClassMap.find(ClassName);
-        if (it != ClassMap.end())
-        {
-            return it->second;
-        }
-        return nullptr; // 못 찾음
+        auto It = ClassMap.find(ClassName);
+        return It != ClassMap.end() ? It->second : nullptr;
     }
 
-    // 3. 에디터 UI에서 "모든 컴포넌트 목록"을 보여줄 때 사용합니다.
     static const TMap<FString, FClassInfo*>& GetAllClasses()
     {
         return ClassMap;
     }
 
+    // ---------------------------------------------------------------
+    // Struct
+    // ---------------------------------------------------------------
     static void AddStruct(const FString& StructName, FStructInfo* StructInfo)
     {
         StructMap[StructName] = StructInfo;
@@ -66,12 +101,8 @@ public:
 
     static FStructInfo* GetStruct(const FString& StructName)
     {
-        auto it = StructMap.find(StructName);
-        if (it != StructMap.end())
-        {
-            return it->second;
-        }
-        return nullptr; // 못 찾음
+        auto It = StructMap.find(StructName);
+        return It != StructMap.end() ? It->second : nullptr;
     }
 
     static const TMap<FString, FStructInfo*>& GetAllStructs()
@@ -79,31 +110,10 @@ public:
         return StructMap;
     }
 
-	//main()이 시작된 직후에 단 한 번 호출해서 부모자식 포인터를 싹 연결해줍니다.
-	static void ResolveDependencies()
-    {
-        // 1. 클래스 족보 연결
-        for (auto& Pair : ClassMap)
-        {
-            FClassInfo* Info = Pair.second;
-            if (Info->ParentClassName.IsValid())
-            {
-                Info->ParentClass = GetClass(Info->ParentClassName.ToString());
-            }
-        }
-
-        // 2. 구조체 족보 연결
-        for (auto& Pair : StructMap)
-        {
-            FStructInfo* Info = Pair.second;
-            if (Info->ParentStructName.IsValid())
-            {
-                Info->ParentStruct = GetStruct(Info->ParentStructName.ToString());
-            }
-        }
-    }
-
-	static void AddEnum(const FString& EnumName, FEnumInfo* EnumInfo)
+    // ---------------------------------------------------------------
+    // Enum
+    // ---------------------------------------------------------------
+    static void AddEnum(const FString& EnumName, FEnumInfo* EnumInfo)
     {
         EnumMap[EnumName] = EnumInfo;
     }
@@ -112,5 +122,98 @@ public:
     {
         auto It = EnumMap.find(EnumName);
         return It != EnumMap.end() ? It->second : nullptr;
+    }
+
+    // ---------------------------------------------------------------
+    // ResolveDependencies
+    // main() 시작 직후 단 한 번 호출해서 내부 포인터를 전부 연결합니다.
+    // ---------------------------------------------------------------
+    static void ResolveDependencies()
+    {
+        // 1. 클래스 족보 연결
+        for (auto& Pair : ClassMap)
+        {
+            FClassInfo* Info = Pair.second;
+            if (Info && Info->ParentClassName.IsValid())
+                Info->ParentClass = GetClass(Info->ParentClassName.ToString());
+
+            for (FProperty* Prop : Info->ReflectedProperties)
+            {
+                ResolvePropertyPointers(Prop);
+            }
+        }
+
+        // 2. 구조체 족보 연결
+        for (auto& Pair : StructMap)
+        {
+            FStructInfo* Info = Pair.second;
+            if (Info && Info->ParentStructName.IsValid())
+                Info->ParentStruct = GetStruct(Info->ParentStructName.ToString());
+            
+			ResolveStructEditorWidget(Info);
+
+            for (FProperty* Prop : Info->ReflectedProperties)
+            {
+                if (Prop)
+                {
+                    ResolvePropertyPointers(Prop);
+                }
+            }
+        }
+
+        // 3. 클래스 소속 프로퍼티들의 내부 포인터 연결
+        for (auto& Pair : ClassMap)
+        {
+            if (!Pair.second) continue;
+            for (FProperty* Prop : Pair.second->ReflectedProperties)
+            {
+                if (!Prop) continue;
+                ResolvePropertyPointers(Prop);
+            }
+        }
+
+        // 4. 구조체 소속 프로퍼티들의 내부 포인터 연결
+        for (auto& Pair : StructMap)
+        {
+            if (!Pair.second) continue;
+            for (FProperty* Prop : Pair.second->ReflectedProperties)
+            {
+                if (!Prop) continue;
+                ResolvePropertyPointers(Prop);
+            }
+        }
+    }
+
+private:
+    // Property 하나의 내부 포인터를 확정합니다.
+    static void ResolvePropertyPointers(FProperty* Prop)
+    {
+        switch (Prop->GetKind())
+        {
+        case EReflectedPropertyKind::Object:
+        {
+            // "AActor*" → '*' 제거 후 클래스 검색
+            FString BaseType = Prop->CPPType;
+            BaseType.erase(std::remove(BaseType.begin(), BaseType.end(), '*'), BaseType.end());
+            static_cast<FObjectProperty*>(Prop)->PropertyClass = GetClass(BaseType);
+            break;
+        }
+        case EReflectedPropertyKind::Struct:
+            static_cast<FStructProperty*>(Prop)->StructInfo = GetStruct(Prop->CPPType);
+            break;
+
+        case EReflectedPropertyKind::Enum:
+            static_cast<FEnumProperty*>(Prop)->EnumInfo = GetEnum(Prop->CPPType);
+            break;
+        case EReflectedPropertyKind::Array:
+        {
+            FArrayProperty* ArrayProp = static_cast<FArrayProperty*>(Prop);
+            if (ArrayProp->Inner)
+                ResolvePropertyPointers(ArrayProp->Inner);
+            break;
+        }
+        default:
+            break;
+        }
     }
 };

@@ -2,19 +2,36 @@
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector4.h"
+#include "Core/ReflectionTypeInfo.h"
 
+#include "Color.generated.h"
+
+USTRUCT()
 struct FColor
 {
+
+GENERATED_BODY_FColor()
+
 public:
 	union
 	{
 		struct
 		{
-			float r, g, b, a;
+            UPROPERTY(EditAnywhere, Category = "Color", DisplayName = "R")
+            float r;
+            UPROPERTY(EditAnywhere, Category = "Color", DisplayName = "G")
+            float g;
+            UPROPERTY(EditAnywhere, Category = "Color", DisplayName = "B")
+            float b;
+            UPROPERTY(EditAnywhere, Category = "Color", DisplayName = "A")
+            float a;
 		};
 		struct
 		{
-			float R, G, B, A;
+            float R;
+            float G;
+            float B;
+			float A;
 		};
 	};
 
