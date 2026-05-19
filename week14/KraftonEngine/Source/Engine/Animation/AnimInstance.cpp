@@ -8,6 +8,9 @@
 #include "Mesh/SkeletalMesh.h"
 #include "GameFramework/Pawn.h"
 
+// Static 멤버 정의 — slot 이름 미지정 시 fallback. 가독성 위해 cpp 상단에 둠.
+const FName UAnimInstance::DefaultMontageSlot = FName("DefaultSlot");
+
 void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 {
 	// Stale guard: 이전 frame 의 PendingRootMotion 이 남아있으면 누구도 consume 안 한 것 — drop.
@@ -121,12 +124,13 @@ USkeletalMesh* UAnimInstance::GetSkeletalMesh() const
 
 APawn* UAnimInstance::TryGetPawnOwner() const
 {
+	// OwningComponent 가 set 보장 안 되는 경로 (생성 직후 등) 에서 호출 시 NPE 방지.
 	USkeletalMeshComponent* OwnerComponent = GetOwningComponent();
+	if (!OwnerComponent) return nullptr;
 	if (AActor* OwnerActor = OwnerComponent->GetOwner())
 	{
 		return Cast<APawn>(OwnerActor);
 	}
-
 	return nullptr;
 }
 
@@ -157,8 +161,6 @@ void UAnimInstance::AddAnimNotifies(float PreviousTime, float CurrentTime, const
 		}
 	}
 }
-
-const FName UAnimInstance::DefaultMontageSlot = FName("DefaultSlot");
 
 UAnimMontageInstance* UAnimInstance::GetMontageInstanceForSlot(FName SlotName) const
 {

@@ -201,6 +201,18 @@ void ULuaAnimInstance::InstallBindings()
 			return Move ? Move->IsFalling() : false;
 		});
 
+	// Slot 인자는 sol::object — None/missing 이면 FName::None (→ 내부에서 DefaultMontageSlot resolve).
+	// play_montage / stop_montage / is_montage_playing / jump_to_section 모두 공통 사용.
+	auto ResolveSlot = [](const sol::object& SlotObj) -> FName
+	{
+		if (SlotObj.is<std::string>())
+		{
+			const std::string Str = SlotObj.as<std::string>();
+			if (!Str.empty()) return FName(Str);
+		}
+		return FName::None;
+	};
+
 	// ── Montage 트리거 (lua → AnimInstance) ──
 	//   Anim.play_montage(path)                              — DefaultSlot, default 옵션.
 	//   Anim.play_montage(path, "SectionName")               — section 지정.
@@ -208,8 +220,8 @@ void ULuaAnimInstance::InstallBindings()
 	//   Anim.play_montage(path, "SectionName", 1.0, 0.2)     — + blendIn.
 	//   Anim.play_montage(path, nil, nil, nil, "UpperBody")  — slot 만 명시.
 	Anim.set_function("play_montage",
-		[this](std::string Path, sol::object Section, sol::object Rate, sol::object BlendIn,
-		       sol::object SlotName)
+		[this, ResolveSlot](std::string Path, sol::object Section, sol::object Rate, sol::object BlendIn,
+		                    sol::object SlotName)
 		{
 			if (Path.empty()) return;
 			UAnimMontage* M = FAnimationManager::Get().LoadMontage(Path);
@@ -226,31 +238,13 @@ void ULuaAnimInstance::InstallBindings()
 			}
 			const float PlayRate    = Rate.is<float>()    ? Rate.as<float>()    : 1.0f;
 			const float BlendInTime = BlendIn.is<float>() ? BlendIn.as<float>() : -1.0f;
-
-			FName Slot = FName::None;   // None → 내부에서 DefaultMontageSlot resolve.
-			if (SlotName.is<std::string>())
-			{
-				const std::string Str = SlotName.as<std::string>();
-				if (!Str.empty()) Slot = FName(Str);
-			}
-			PlayMontage(M, SectionName, PlayRate, BlendInTime, Slot);
+			PlayMontage(M, SectionName, PlayRate, BlendInTime, ResolveSlot(SlotName));
 		});
 
-	// Slot 인자는 모든 montage API 의 마지막 sol::object — None/missing 이면 DefaultSlot.
-	// 시그니처:
+	// ── Montage 제어 API — slot 인자 (마지막 sol::object) ──
 	//   Anim.stop_montage(blendOut, slot)
 	//   Anim.is_montage_playing(slot)
 	//   Anim.jump_to_section(section_name, slot)
-	auto ResolveSlot = [](const sol::object& SlotObj) -> FName
-	{
-		if (SlotObj.is<std::string>())
-		{
-			const std::string Str = SlotObj.as<std::string>();
-			if (!Str.empty()) return FName(Str);
-		}
-		return FName::None;   // None → 내부에서 DefaultMontageSlot resolve.
-	};
-
 	Anim.set_function("stop_montage",
 		[this, ResolveSlot](sol::object BlendOut, sol::object SlotName)
 		{
