@@ -120,12 +120,27 @@ USkeletalMesh* FSkeletalMeshLoadService::FinalizeLoadedMesh(FSkeletalMesh* MeshD
 		ResourceManager.SkeletalMeshFilePaths.push_back(CacheKey);
 	}
 
-	UE_LOG("[SkeletalMeshLoad] Loaded | Path=%s | Vertices=%zu | Indices=%zu | Bones=%zu | Sections=%zu",
+	size_t MaxSectionBoneCount = 0;
+	size_t TotalSectionBoneCount = 0;
+	for (const FSkeletalMeshRenderSection& Section : LoadedMesh->GetRenderSections())
+	{
+		MaxSectionBoneCount = std::max(MaxSectionBoneCount, Section.BoneMap.size());
+		TotalSectionBoneCount += Section.BoneMap.size();
+	}
+
+	const size_t SectionCount = LoadedMesh->GetRenderSections().size();
+	const double AverageSectionBoneCount = SectionCount > 0
+		? static_cast<double>(TotalSectionBoneCount) / static_cast<double>(SectionCount)
+		: 0.0;
+
+	UE_LOG("[SkeletalMeshLoad] Loaded | Path=%s | Vertices=%zu | Indices=%zu | Bones=%zu | Sections=%zu | MaxSectionBones=%zu | AvgSectionBones=%.2f",
 	       CacheKey.c_str(),
 	       LoadedMesh->GetVertices().size(),
 	       LoadedMesh->GetIndices().size(),
 	       LoadedMesh->GetBones().size(),
-	       LoadedMesh->GetSections().size());
+	       SectionCount,
+	       MaxSectionBoneCount,
+	       AverageSectionBoneCount);
 
 	return LoadedMesh;
 }
