@@ -233,7 +233,7 @@ bool FFbxImporter::ImportAnimationOnly(
 		return false;
 	}
 
-	if (!FFbxAnimationImporter::ImportAnimations(SceneHandle.Scene, Context, nullptr, OutMessage))
+	if (!FFbxAnimationImporter::ImportAnimations(SceneHandle.Scene, Context, Options, OutMessage))
 	{
 		return false;
 	}
