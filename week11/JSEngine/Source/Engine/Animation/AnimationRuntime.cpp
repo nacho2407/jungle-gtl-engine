@@ -46,7 +46,7 @@ bool FAnimationRuntime::BlendLocalPoses(
         const FTransform& TransformA = PoseA[BoneIndex];
         const FTransform& TransformB = PoseB[BoneIndex];
 
-        // 위치와 스케일은 선형 보간하고, 회전은 quaternion shortest arc 기준으로 보간한다.
+        // 위치와 스케일은 lerp, 회전은 slerp
         const FVector BlendedTranslation = FVector::Lerp(
             TransformA.GetTranslation(),
             TransformB.GetTranslation(),

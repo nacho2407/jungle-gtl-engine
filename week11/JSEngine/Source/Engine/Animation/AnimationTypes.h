@@ -46,6 +46,13 @@ struct FAnimNotifyDispatchEvent
 {
     FAnimNotifyEvent Notify;
     EAnimNotifyPhase Phase = EAnimNotifyPhase::Instant;
+    FName SourceStateName;
+    FName SourceAnimationName;
+    float TriggerWeight = 1.0f;
+    float CurrentTime = 0.0f;
+    bool bFromStateMachine = false;
+    bool bFromTransitionSource = false;
+    bool bFromTransitionTarget = false;
 };
 
 enum class ERootMotionMode : uint8

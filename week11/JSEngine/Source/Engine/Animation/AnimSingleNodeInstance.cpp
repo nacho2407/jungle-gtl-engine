@@ -71,6 +71,25 @@ bool IsTimeInsideNotifyState(float Time, const FAnimNotifyEvent& Notify)
     return Time >= NotifyStart && Time <= NotifyEnd;
 }
 
+FName ResolveNotifySourceAnimationName(const UAnimationAsset* Asset)
+{
+    if (!Asset)
+    {
+        return FName();
+    }
+
+    // 실제 사용자가 보는 clip 이름에 가까운 이름을 사용하기 위해 FBX AnimStack 이름이 있으면 우선 사용
+    if (const UAnimSequence* Sequence = Cast<UAnimSequence>(Asset))
+    {
+        if (!Sequence->AnimStackName.empty())
+        {
+            return FName(Sequence->AnimStackName);
+        }
+    }
+
+    return Asset->GetFName();
+}
+
 int32 FindRootMotionBoneIndex(const USkeletalMesh* Mesh, int32 PoseBoneCount)
 {
     if (!Mesh || PoseBoneCount <= 0)
@@ -649,6 +668,9 @@ void UAnimSingleNodeInstance::DispatchAnimNotify(const FAnimNotifyEvent& Notify,
         FAnimNotifyDispatchEvent DispatchEvent;
         DispatchEvent.Notify = Notify;
         DispatchEvent.Phase = Phase;
+        DispatchEvent.SourceAnimationName = ResolveNotifySourceAnimationName(CurrentAsset);
+        DispatchEvent.TriggerWeight = 1.0f;
+        DispatchEvent.CurrentTime = CurrentTime;
         Component->HandleAnimNotify(DispatchEvent);
     }
 }
