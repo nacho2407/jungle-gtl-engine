@@ -85,6 +85,7 @@ INCLUDE_PATHS = [
     "Source",
     "ThirdParty",
     "ThirdParty\\ImGui",
+    "ThirdParty\\imgui-node-editor",
     "ThirdParty\\RmlUi\\Include",
     "Source\\Editor",
     "Source\\ObjViewer",
