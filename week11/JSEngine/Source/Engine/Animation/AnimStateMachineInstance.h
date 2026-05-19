@@ -90,11 +90,18 @@ private:
     bool EvaluateStructuredCondition(
         const FAnimTransitionConditionDesc& Condition,
         const FAnimTransitionDesc& Transition) const;
+    bool EvaluateLuaCondition(
+        const FAnimTransitionDesc& Transition,
+        const FAnimTransitionConditionDesc& Condition) const;
     static bool CompareFloat(float Lhs, EAnimCompareOperator Operator, float Rhs);
     static bool CompareBool(bool Lhs, EAnimCompareOperator Operator, bool Rhs);
     void WarnMissingConditionVariableOnce(
         const FAnimTransitionDesc& Transition,
         const FAnimTransitionConditionDesc& Condition) const;
+    void WarnLuaConditionOnce(
+        const FAnimTransitionDesc& Transition,
+        const FName& FunctionName,
+        const FString& Reason) const;
 
     UAnimStateMachine* StateMachineAsset = nullptr;
     FAnimStateMachineDesc Desc;
@@ -108,4 +115,5 @@ private:
 
     float NotifyTriggerWeightThreshold = 0.5f;
     mutable TSet<FString> MissingConditionWarningKeys;
+    mutable TSet<FString> LuaConditionWarningKeys;
 };

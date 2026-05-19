@@ -7,7 +7,9 @@
 #include "Component/SkeletalMeshComponent.h"
 #include "Core/Logging/Log.h"
 #include "Core/ResourceManager.h"
+#include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
+#include "Runtime/Script/ScriptComponent.h"
 
 #include <algorithm>
 #include <cmath>
@@ -312,6 +314,7 @@ void UAnimStateMachineInstance::ResetRuntime()
     TargetStateIndex = -1;
     ActiveTransition = FAnimTransitionRuntime();
     MissingConditionWarningKeys.clear();
+    LuaConditionWarningKeys.clear();
 }
 
 bool UAnimStateMachineInstance::IsValidStateIndex(int32 StateIndex) const
@@ -767,10 +770,92 @@ bool UAnimStateMachineInstance::EvaluateStructuredCondition(
         return CompareFloat(CurrentValue, Condition.Operator, Condition.FloatValue);
     }
     case EAnimConditionType::LuaFunction:
-        return false;
+        return EvaluateLuaCondition(Transition, Condition);
     default:
         return false;
     }
+}
+
+bool UAnimStateMachineInstance::EvaluateLuaCondition(
+    const FAnimTransitionDesc& Transition,
+    const FAnimTransitionConditionDesc& Condition) const
+{
+    const FName& FunctionName = Condition.LuaFunctionName;
+    if (!FunctionName.IsValid())
+    {
+        WarnLuaConditionOnce(Transition, FunctionName, "function name is empty");
+        return false;
+    }
+
+    USkeletalMeshComponent* Component = GetSkelMeshComponent();
+    AActor* OwnerActor = Component ? Component->GetOwner() : nullptr;
+    if (!OwnerActor)
+    {
+        WarnLuaConditionOnce(Transition, FunctionName, "owner actor was not found");
+        return false;
+    }
+
+    const FString FunctionNameString = FunctionName.ToString();
+    TArray<UScriptComponent*> MatchingScriptComponents;
+    bool bHasScriptComponent = false;
+    bool bHasUnloadedScriptComponent = false;
+
+    for (UActorComponent* ActorComponent : OwnerActor->GetComponents())
+    {
+        UScriptComponent* ScriptComponent = Cast<UScriptComponent>(ActorComponent);
+        if (!ScriptComponent)
+        {
+            continue;
+        }
+
+        bHasScriptComponent = true;
+        if (!ScriptComponent->IsScriptLoaded())
+        {
+            bHasUnloadedScriptComponent = true;
+            continue;
+        }
+
+        if (ScriptComponent->HasScriptFunction(FunctionNameString))
+        {
+            MatchingScriptComponents.push_back(ScriptComponent);
+        }
+    }
+
+    if (!bHasScriptComponent)
+    {
+        WarnLuaConditionOnce(Transition, FunctionName, "owner actor has no script component");
+        return false;
+    }
+
+    if (MatchingScriptComponents.empty())
+    {
+        const FString Reason = bHasUnloadedScriptComponent
+            ? "function was not found in loaded script components; at least one script component is not loaded"
+            : "function was not found in script components";
+        WarnLuaConditionOnce(Transition, FunctionName, Reason);
+        return false;
+    }
+
+    if (MatchingScriptComponents.size() > 1)
+    {
+        WarnLuaConditionOnce(
+            Transition,
+            FunctionName,
+            "multiple script components define the function; using first match");
+    }
+
+    bool bLuaResult = false;
+    FString FailureReason;
+    if (!MatchingScriptComponents.front()->CallBoolFunction(FunctionNameString, bLuaResult, &FailureReason))
+    {
+        WarnLuaConditionOnce(
+            Transition,
+            FunctionName,
+            FailureReason.empty() ? "function call failed" : FailureReason);
+        return false;
+    }
+
+    return bLuaResult;
 }
 
 bool UAnimStateMachineInstance::CompareFloat(float Lhs, EAnimCompareOperator Operator, float Rhs)
@@ -829,4 +914,29 @@ void UAnimStateMachineInstance::WarnMissingConditionVariableOnce(
         Transition.ToState.ToString().c_str(),
         ToConditionTypeDebugName(Condition.Type),
         Condition.VariableName.ToString().c_str());
+}
+
+void UAnimStateMachineInstance::WarnLuaConditionOnce(
+    const FAnimTransitionDesc& Transition,
+    const FName& FunctionName,
+    const FString& Reason) const
+{
+    const FString WarningKey =
+        std::to_string(Transition.Id) + "|LuaFunction|" +
+        FunctionName.ToString() + "|" +
+        Reason;
+
+    if (LuaConditionWarningKeys.find(WarningKey) != LuaConditionWarningKeys.end())
+    {
+        return;
+    }
+
+    LuaConditionWarningKeys.insert(WarningKey);
+    UE_LOG_WARNING(
+        "[AnimStateMachineInstance] Lua condition warning. TransitionId=%d From=%s To=%s Function=%s Reason=%s",
+        Transition.Id,
+        Transition.FromState.ToString().c_str(),
+        Transition.ToState.ToString().c_str(),
+        FunctionName.ToString().c_str(),
+        Reason.c_str());
 }

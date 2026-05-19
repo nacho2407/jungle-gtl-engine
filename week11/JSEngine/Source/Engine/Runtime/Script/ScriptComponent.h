@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Animation/TimelinePlayer.h"
 #include "Component/ActorComponent.h"
 #include "Core/Logging/Log.h"
@@ -93,6 +93,9 @@ public:
     bool HotReloadScript();
     void ClearScript();
     void ReleaseLuaStateReferences();
+    bool IsScriptLoaded() const { return bScriptLoaded && ScriptInstance.valid(); }
+    bool HasScriptFunction(const FString& FunctionName) const;
+    bool CallBoolFunction(const FString& FunctionName, bool& OutResult, FString* OutFailureReason = nullptr) const;
     USequenceCameraShakePattern* CreateSequenceCameraShakePattern();
     USinusoidalCameraShakePattern* CreateSinusoidalCameraShakePattern();
     UCameraShakeBase* StartCameraShakePattern(

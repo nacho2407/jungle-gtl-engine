@@ -797,6 +797,73 @@ bool UScriptComponent::LoadScript()
     return true;
 }
 
+bool UScriptComponent::HasScriptFunction(const FString& FunctionName) const
+{
+    if (!IsScriptLoaded() || FunctionName.empty())
+    {
+        return false;
+    }
+
+    const sol::object FuncObj = ScriptInstance[FunctionName];
+    return FuncObj.valid() && FuncObj.get_type() == sol::type::function;
+}
+
+bool UScriptComponent::CallBoolFunction(
+    const FString& FunctionName,
+    bool& OutResult,
+    FString* OutFailureReason) const
+{
+    OutResult = false;
+
+    auto SetFailureReason = [OutFailureReason](const FString& Reason)
+    {
+        if (OutFailureReason)
+        {
+            *OutFailureReason = Reason;
+        }
+    };
+
+    if (!IsScriptLoaded())
+    {
+        SetFailureReason("script is not loaded");
+        return false;
+    }
+
+    if (FunctionName.empty())
+    {
+        SetFailureReason("function name is empty");
+        return false;
+    }
+
+    sol::object FuncObj = ScriptInstance[FunctionName];
+    if (!FuncObj.valid() || FuncObj.get_type() != sol::type::function)
+    {
+        SetFailureReason("function was not found");
+        return false;
+    }
+
+    sol::protected_function Func = FuncObj.as<sol::protected_function>();
+
+    // runtime error가 엔진 crash로 이어지지 않게 보호 호출
+    sol::protected_function_result Result = Func(ScriptInstance);
+    if (!Result.valid())
+    {
+        sol::error Err = Result;
+        SetFailureReason(FString("runtime error: ") + Err.what());
+        return false;
+    }
+
+    sol::object ReturnObj = Result;
+    if (!ReturnObj.valid() || ReturnObj.get_type() != sol::type::boolean)
+    {
+        SetFailureReason("function did not return bool");
+        return false;
+    }
+
+    OutResult = ReturnObj.as<bool>();
+    return true;
+}
+
 bool UScriptComponent::HotReloadScript()
 {
     if (ScriptName.empty())
