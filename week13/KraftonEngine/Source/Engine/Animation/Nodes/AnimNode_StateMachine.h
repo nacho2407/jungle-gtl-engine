@@ -29,14 +29,15 @@ struct FBlendingFrom
 	float       Duration = 0.0f;
 };
 
-// FSM 노드 — 기존 UAnimationStateMachine 의 본체. transition 평가 / multi-blend stack /
-// root motion sequential lerp / N-pose evaluate 까지 단일 노드 안에서.
-// AnimGraph 트리에 박혀 sub-state-machine 도 자연 표현 (state 의 SubGraph 가 또 다른
-// FAnimNode_StateMachine — phase 1.5 에서 활용).
+// FSM 노드 — transition 평가 / multi-blend stack / root motion sequential lerp /
+// N-pose evaluate 까지 단일 노드 안에서. AnimGraph 트리에 박혀 sub-state-machine 도 자연
+// 표현 (state 의 SubGraphOverride 가 또 다른 FAnimNode_StateMachine).
+// Initialize/OnBecomeRelevant 가 CurrentState.OnEnter, OnDormant 가 BlendingFroms / CurrentState
+// OnExit 로 transient state 정리.
 class FAnimNode_StateMachine : public FAnimNode_Base
 {
 public:
-	// Build API — wrapper (UAnimationStateMachine) 또는 자식 AnimInstance 가 호출.
+	// Build API — 자식 AnimInstance 가 호출.
 	void RegisterState(UAnimState* State);
 	void RegisterTransition(const FStateTransition& T);
 	void SetInitialState(FName StateName);
