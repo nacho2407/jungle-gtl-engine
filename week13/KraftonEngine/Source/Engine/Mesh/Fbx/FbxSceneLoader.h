@@ -6,10 +6,14 @@
 
 struct FFbxSceneHandle
 {
+	// Non-owning pointer to the process-lifetime FBX SDK manager.
+	// The imported scene is owned by this handle and must be destroyed explicitly.
 	FbxManager* Manager = nullptr;
 	FbxScene* Scene = nullptr;
 
 	~FFbxSceneHandle();
+
+	void Reset();
 
 	FFbxSceneHandle() = default;
 	FFbxSceneHandle(const FFbxSceneHandle&) = delete;

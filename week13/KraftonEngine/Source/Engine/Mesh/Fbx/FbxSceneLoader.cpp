@@ -2,14 +2,82 @@
 #include "Platform/Paths.h"
 #include "Core/Log.h"
 
+#include <chrono>
+
+namespace
+{
+	using FFbxClock = std::chrono::steady_clock;
+
+	static double GetElapsedSeconds(const FFbxClock::time_point& Start)
+	{
+		return std::chrono::duration<double>(FFbxClock::now() - Start).count();
+	}
+
+	struct FFbxSharedSdkContext
+	{
+		FbxManager* Manager = nullptr;
+		FbxIOSettings* IoSettings = nullptr;
+
+		FFbxSharedSdkContext()
+		{
+			Manager = FbxManager::Create();
+			if (!Manager)
+			{
+				return;
+			}
+
+			IoSettings = FbxIOSettings::Create(Manager, IOSROOT);
+			if (!IoSettings)
+			{
+				Manager->Destroy();
+				Manager = nullptr;
+				return;
+			}
+
+			Manager->SetIOSettings(IoSettings);
+		}
+
+		~FFbxSharedSdkContext()
+		{
+			if (Manager)
+			{
+				Manager->Destroy();
+				Manager = nullptr;
+				IoSettings = nullptr;
+			}
+		}
+
+		bool IsValid() const
+		{
+			return Manager != nullptr && IoSettings != nullptr;
+		}
+	};
+
+	static FFbxSharedSdkContext& GetSharedSdkContext()
+	{
+		static FFbxSharedSdkContext Context;
+		return Context;
+	}
+}
+
 FFbxSceneHandle::~FFbxSceneHandle()
 {
-	if (Manager)
+	Reset();
+}
+
+void FFbxSceneHandle::Reset()
+{
+	if (Scene)
 	{
-		Manager->Destroy();
-		Manager = nullptr;
+		const auto Start = FFbxClock::now();
+		Scene->Destroy(true);
 		Scene = nullptr;
+
+		UE_LOG("FBX scene cleanup timing: SceneDestroy=%.3fs", GetElapsedSeconds(Start));
 	}
+
+	// Manager is a shared process-lifetime SDK context owned by FbxSceneLoader.cpp.
+	Manager = nullptr;
 }
 
 namespace
@@ -61,28 +129,17 @@ bool FFbxSceneLoader::Load(
 	FString*                    OutMessage
 	)
 {
-	if (OutScene.Manager)
-	{
-		OutScene.Manager->Destroy();
-	}
-	OutScene.Manager = nullptr;
-	OutScene.Scene = nullptr;
+	OutScene.Reset();
 
-	FbxManager* SdkManager = FbxManager::Create();
-	if (!SdkManager)
+	FFbxSharedSdkContext& SdkContext = GetSharedSdkContext();
+	if (!SdkContext.IsValid())
 	{
 		if (OutMessage) *OutMessage = "FBX SDK manager creation failed.";
 		return false;
 	}
 
-	FbxIOSettings* IoSettings = FbxIOSettings::Create(SdkManager, IOSROOT);
-	if (!IoSettings)
-	{
-		SdkManager->Destroy();
-		if (OutMessage) *OutMessage = "FBX IO settings creation failed.";
-		return false;
-	}
-	SdkManager->SetIOSettings(IoSettings);
+	FbxManager* SdkManager = SdkContext.Manager;
+	FbxIOSettings* IoSettings = SdkContext.IoSettings;
 	ApplyFbxImportOptions(IoSettings, Options);
 
 	FbxScene* Scene = FbxScene::Create(SdkManager, "FBX Scene");
@@ -90,7 +147,7 @@ bool FFbxSceneLoader::Load(
 	if (!Scene || !Importer)
 	{
 		if (Importer) Importer->Destroy();
-		SdkManager->Destroy();
+		if (Scene) Scene->Destroy(true);
 		if (OutMessage) *OutMessage = "FBX scene/importer creation failed.";
 		return false;
 	}
@@ -99,7 +156,7 @@ bool FFbxSceneLoader::Load(
 	if (!Importer->Initialize(FullPath.c_str(), -1, SdkManager->GetIOSettings()))
 	{
 		Importer->Destroy();
-		SdkManager->Destroy();
+		Scene->Destroy(true);
 		if (OutMessage) *OutMessage = FString("FBX importer initialize failed: ") + SourcePath;
 		return false;
 	}
@@ -109,7 +166,7 @@ bool FFbxSceneLoader::Load(
 	if (!Importer->Import(Scene))
 	{
 		Importer->Destroy();
-		SdkManager->Destroy();
+		Scene->Destroy(true);
 		if (OutMessage) *OutMessage = FString("FBX scene import failed: ") + SourcePath;
 		return false;
 	}
