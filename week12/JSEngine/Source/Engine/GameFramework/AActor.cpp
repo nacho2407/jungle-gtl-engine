@@ -1,7 +1,6 @@
 ﻿#include "GameFramework/AActor.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
-#include "Component/Movement/MovementComponent.h"
 #include "GameFramework/World.h"
 #include "Core/Delegates/Delegate.h"
 #include <Runtime/Script/ScriptComponent.h>
@@ -189,7 +188,7 @@ static USceneComponent* DuplicateSubTree(
 	DuplicatedComp->SetOwner(NewActor);
 	OwnedComponents.push_back(DuplicatedComp);
 
-	// 원본 → 복제본 매핑 등록 (MovementComponent의 UpdatedComponent 연결에 사용)
+	// 원본 → 복제본 매핑 등록
 	OutCompMap[OriginalComp] = DuplicatedComp;
 
 	// 자식들을 재귀적으로 순회하며 방금 복제된 자신(DuplicatedComp)에게 바로 Attach
@@ -240,7 +239,7 @@ void AActor::PostDuplicate(UObject* Original)
 	OwnedComponents.clear();
 	Tags = OrigActor->Tags;
 
-	// MovementComponent 등 일반 컴포넌트들의 참조를 복원하기 위한 맵을 선언합니다.
+	// 일반 컴포넌트의 ObjectPtr 프로퍼티를 복제본으로 remap하기 위한 맵을 선언합니다.
 	TMap<USceneComponent*, USceneComponent*> ComponentMap;
 
 	// 1. RootComponent부터 씬 컴포넌트 트리 전체를 복제하여 조립합니다.
@@ -273,21 +272,6 @@ void AActor::PostDuplicate(UObject* Original)
 		DuplicatedComp->SetOwner(this);
 		OwnedComponents.push_back(DuplicatedComp);
 
-		// MovementComponent도 기존에 제어하던 컴포넌트를 제어하도록 연결해줍니다.
-		if (UMovementComponent* OriginalMoveComp = Cast<UMovementComponent>(OriginalComp))
-		{
-			UMovementComponent* DuplicatedMoveComp = Cast<UMovementComponent>(DuplicatedComp);
-			USceneComponent* OldTarget = OriginalMoveComp->GetUpdatedComponent();
-
-			if (OldTarget && ComponentMap.find(OldTarget) != ComponentMap.end())
-			{
-				DuplicatedMoveComp->SetUpdatedComponent(ComponentMap[OldTarget]);
-			}
-			else
-			{
-				DuplicatedMoveComp->SetUpdatedComponent(GetRootComponent());
-			}
-		}
 	}
 
 	bPrimitiveCacheDirty = true;

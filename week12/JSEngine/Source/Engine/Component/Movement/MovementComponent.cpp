@@ -84,7 +84,10 @@ FVector UMovementComponent::ConstrainLocationToPlane(const FVector& Location) co
 void UMovementComponent::OnRegister()
 {
 	UActorComponent::OnRegister();
-	UpdatedComponent = GetOwner()->GetRootComponent();
+	if (UpdatedComponent == nullptr && GetOwner())
+	{
+		UpdatedComponent = GetOwner()->GetRootComponent();
+	}
 }
 
 void UMovementComponent::OnUnregister()
