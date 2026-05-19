@@ -34,10 +34,11 @@ namespace
 			Parent = Parent->GetParent();
 		}
 
-		FMatrix GlobalMatrix = FFbxTransformUtils::ToEngineMatrix(Node->EvaluateGlobalTransform());
+		const FbxAMatrix GlobalFbxMatrix = Node->EvaluateGlobalTransform();
+		FMatrix GlobalMatrix = FFbxTransformUtils::ToEngineMatrix(GlobalFbxMatrix);
 		Bone.LocalMatrix = FFbxTransformUtils::ToEngineMatrix(Node->EvaluateLocalTransform());
 		Bone.GlobalMatrix = GlobalMatrix;
-		Bone.InverseBindPoseMatrix = GlobalMatrix.GetInverse();
+		Bone.InverseBindPoseMatrix = FFbxTransformUtils::ToEngineInverseMatrix(GlobalFbxMatrix);
 
 		const int32 NewBoneIndex = static_cast<int32>(Context.Bones.size());
 		Context.Bones.push_back(Bone);
@@ -87,8 +88,10 @@ bool FFbxSkeletonImporter::ImportSkeleton(FbxScene* Scene, FFbxImportContext& Co
 			Bone.ParentIndex = AddSyntheticRootBoneIfNeeded(ParentNode, Context);
 		}
 
+		const FbxAMatrix GlobalFbxMatrix = Node->EvaluateGlobalTransform();
 		Bone.LocalMatrix = FFbxTransformUtils::ToEngineMatrix(Node->EvaluateLocalTransform());
-		Bone.GlobalMatrix = FFbxTransformUtils::ToEngineMatrix(Node->EvaluateGlobalTransform());
+		Bone.GlobalMatrix = FFbxTransformUtils::ToEngineMatrix(GlobalFbxMatrix);
+		Bone.InverseBindPoseMatrix = FFbxTransformUtils::ToEngineInverseMatrix(GlobalFbxMatrix);
 
 		const int32 NewBoneIndex = static_cast<int32>(Context.Bones.size());
 		Context.Bones.push_back(Bone);
