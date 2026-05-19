@@ -3,6 +3,7 @@
 #include "Component/CapsuleComponent.h"
 #include "Component/SceneComponent.h"
 #include "Core/PropertyTypes.h"
+#include "Core/TickFunction.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Math/Quat.h"
@@ -13,6 +14,17 @@
 
 #include <algorithm>
 #include <cmath>
+
+UCharacterMovementComponent::UCharacterMovementComponent()
+{
+	// USkeletalMeshComponent::TickComponent (TG_PrePhysics, default) 가 UpdateAnimation 으로
+	// AnimInstance->PendingRootMotion 을 채운 다음에 CMC 가 그 값을 가져가야 같은 frame 데이터를
+	// 쓸 수 있다. Prerequisite API 가 우리 엔진에 없으므로 TickGroup 분리로 순서 보장.
+	// FTickManager 가 group 순서대로 실행하므로 PrePhysics 가 모두 끝난 뒤 DuringPhysics 가 돈다.
+	PrimaryComponentTick.SetTickGroup(TG_DuringPhysics);
+	PrimaryComponentTick.SetEndTickGroup(TG_DuringPhysics);
+}
+
 void UCharacterMovementComponent::AddInputVector(const FVector& WorldDirection, float ScaleValue)
 {
 	AccumulatedInput = AccumulatedInput + WorldDirection * ScaleValue;

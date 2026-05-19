@@ -29,7 +29,7 @@ class UCharacterMovementComponent : public UMovementComponent
 {
 public:
 	GENERATED_BODY()
-	UCharacterMovementComponent() = default;
+	UCharacterMovementComponent();
 	~UCharacterMovementComponent() override = default;
 
 	// Controller 등 외부에서 매 frame 누적. TickComponent 가 ConsumeInputVector 로 비움.
