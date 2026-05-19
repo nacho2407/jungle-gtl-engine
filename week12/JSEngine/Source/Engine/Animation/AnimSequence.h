@@ -97,6 +97,8 @@ public:
 	void AddNotify(float InTriggerTime, const FName& InNotifyName);
 	void ClearNotifies();
 	bool RemoveNotifyAt(int32 NotifyIndex);
+	bool SetNotifyTriggerTime(int32 NotifyIndex, float InTriggerTime);
+	bool MoveNotifyAt(int32 NotifyIndex, float InTriggerTime, int32* OutNewIndex = nullptr);
 
 	void SetPreviewMeshPath(const FString& InPreviewMeshPath) { PreviewMeshPath = InPreviewMeshPath; }
 	const FString& GetPreviewMeshPath() const { return PreviewMeshPath; }
