@@ -8,7 +8,7 @@
 #include "Engine/Core/Reflection/ReflectionMacros.h"
 #include <type_traits>
 
-struct FAnimNotifyEvent;
+struct FAnimNotifyStateEvent;
 class USkeletalMeshComponent;
 class UWorld;
 class UPrimitiveComponent;
@@ -167,7 +167,10 @@ public:
 	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-	virtual void OnAnimNotify(USkeletalMeshComponent* MeshComponent, const FAnimNotifyEvent& Notify);
+	virtual void OnAnimNotify(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Notify);
+	virtual void OnAnimNotifyBegin(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Notify);
+	virtual void OnAnimNotifyTick(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Notify, float DeltaTime);
+	virtual void OnAnimNotifyEnd(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Notify);
 
 	void MarkPendingKill() { bPendingKill = true; }
 	bool IsPendingKill() const { return bPendingKill; }

@@ -17,6 +17,7 @@
 #include "Core/CollisionTypes.h"
 #include "Core/ResourceManager.h"
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 
 #ifdef GetCurrentTime
@@ -76,6 +77,46 @@ namespace
 		return Value.valid() && Value.get_type() == sol::type::string
 			? Value.as<FString>()
 			: DefaultValue;
+	}
+
+
+	FString MakeAnimNotifyFunctionSuffix(const FName& NotifyName)
+	{
+		FString Source = NotifyName.ToString();
+		FString Result;
+		Result.reserve(Source.size());
+
+		for (char Ch : Source)
+		{
+			const unsigned char C = static_cast<unsigned char>(Ch);
+			if (std::isalnum(C) || Ch == '_')
+			{
+				Result.push_back(Ch);
+			}
+			else
+			{
+				Result.push_back('_');
+			}
+		}
+
+		return Result.empty() ? FString("AnimNotify") : Result;
+	}
+
+	sol::table MakeAnimNotifyInfoTable(const sol::table& ScriptInstance, const FAnimNotifyStateEvent& Notify)
+	{
+		sol::state_view Lua(ScriptInstance.lua_state());
+		sol::table NotifyInfo = Lua.create_table();
+		const FString NotifyName = Notify.NotifyName.ToString();
+
+		NotifyInfo["NotifyName"] = NotifyName;
+		NotifyInfo["Name"] = NotifyName;
+		NotifyInfo["TriggerTime"] = Notify.TriggerTime;
+		NotifyInfo["StartTime"] = Notify.TriggerTime;
+		NotifyInfo["Time"] = Notify.TriggerTime;
+		NotifyInfo["Duration"] = Notify.Duration;
+		NotifyInfo["EndTime"] = Notify.GetEndTime();
+		NotifyInfo["IsState"] = Notify.IsState();
+		return NotifyInfo;
 	}
 
 	ECurveTimeMappingMode GetLuaTimeMappingMode(const sol::table& Table)
@@ -1208,26 +1249,75 @@ void UScriptComponent::OnEndOverlap(
 
 void UScriptComponent::OnAnimNotify(
 	USkeletalMeshComponent* MeshComponent,
-	const FAnimNotifyEvent& Notify)
+	const FAnimNotifyStateEvent& Notify)
 {
+	(void)MeshComponent;
 	if (!ScriptInstance.valid())
 	{
 		return;
 	}
 
 	const FString NotifyName = Notify.NotifyName.ToString();
+	sol::table NotifyInfo = MakeAnimNotifyInfoTable(ScriptInstance, Notify);
 
-	sol::state_view Lua(ScriptInstance.lua_state());
-	sol::table NotifyInfo = Lua.create_table();
-	NotifyInfo["NotifyName"] = NotifyName;
-	NotifyInfo["Name"] = NotifyName;
-	NotifyInfo["TriggerTime"] = Notify.TriggerTime;
-	NotifyInfo["Time"] = Notify.TriggerTime;
+	CallScriptFunction("OnAnimNotify", NotifyName, Notify.TriggerTime, NotifyInfo);
+	CallScriptFunction(FString("AnimNotify_") + MakeAnimNotifyFunctionSuffix(Notify.NotifyName), Notify.TriggerTime, NotifyInfo);
+}
 
-	CallScriptFunction(
-		"OnAnimNotify",
-		MeshComponent,
-		NotifyName,
-		Notify.TriggerTime,
-		NotifyInfo);
+void UScriptComponent::OnAnimNotifyBegin(
+	USkeletalMeshComponent* MeshComponent,
+	const FAnimNotifyStateEvent& Notify)
+{
+	(void)MeshComponent;
+	if (!ScriptInstance.valid())
+	{
+		return;
+	}
+
+	const FString NotifyName = Notify.NotifyName.ToString();
+	sol::table NotifyInfo = MakeAnimNotifyInfoTable(ScriptInstance, Notify);
+	const FString Suffix = MakeAnimNotifyFunctionSuffix(Notify.NotifyName);
+
+	CallScriptFunction("OnAnimNotifyBegin", NotifyName, Notify.TriggerTime, NotifyInfo);
+	CallScriptFunction(FString("AnimNotifyBegin_") + Suffix, Notify.TriggerTime, NotifyInfo);
+	CallScriptFunction(FString("AnimNotify_") + Suffix + "_Begin", Notify.TriggerTime, NotifyInfo);
+}
+
+void UScriptComponent::OnAnimNotifyTick(
+	USkeletalMeshComponent* MeshComponent,
+	const FAnimNotifyStateEvent& Notify,
+	float DeltaTime)
+{
+	(void)MeshComponent;
+	if (!ScriptInstance.valid())
+	{
+		return;
+	}
+
+	const FString NotifyName = Notify.NotifyName.ToString();
+	sol::table NotifyInfo = MakeAnimNotifyInfoTable(ScriptInstance, Notify);
+	const FString Suffix = MakeAnimNotifyFunctionSuffix(Notify.NotifyName);
+
+	CallScriptFunction("OnAnimNotifyTick", NotifyName, DeltaTime, NotifyInfo);
+	CallScriptFunction(FString("AnimNotifyTick_") + Suffix, DeltaTime, NotifyInfo);
+	CallScriptFunction(FString("AnimNotify_") + Suffix + "_Tick", DeltaTime, NotifyInfo);
+}
+
+void UScriptComponent::OnAnimNotifyEnd(
+	USkeletalMeshComponent* MeshComponent,
+	const FAnimNotifyStateEvent& Notify)
+{
+	(void)MeshComponent;
+	if (!ScriptInstance.valid())
+	{
+		return;
+	}
+
+	const FString NotifyName = Notify.NotifyName.ToString();
+	sol::table NotifyInfo = MakeAnimNotifyInfoTable(ScriptInstance, Notify);
+	const FString Suffix = MakeAnimNotifyFunctionSuffix(Notify.NotifyName);
+
+	CallScriptFunction("OnAnimNotifyEnd", NotifyName, Notify.GetEndTime(), NotifyInfo);
+	CallScriptFunction(FString("AnimNotifyEnd_") + Suffix, Notify.GetEndTime(), NotifyInfo);
+	CallScriptFunction(FString("AnimNotify_") + Suffix + "_End", Notify.GetEndTime(), NotifyInfo);
 }

@@ -54,10 +54,15 @@ void USkeletalMeshComponent::PostDuplicate(UObject* Original)
 	AnimGraphAssetPath = SourceComponent->AnimGraphAssetPath;
 	AnimationToPlay = SourceComponent->AnimationToPlay;
 	AnimationMode = SourceComponent->AnimationMode;
+	UAnimSingleNodeInstance* SourceSingleNode = Cast<UAnimSingleNodeInstance>(SourceComponent->AnimInstance);
 
 	if (AnimationMode == EAnimationMode::AnimationSingleNode)
 	{
 		ApplyAnimationFromAssetPath();
+		if (UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+		{
+			SingleNode->CopyPlaybackSettingsFrom(SourceSingleNode);
+		}
 	}
 	else if (AnimationMode == EAnimationMode::AnimationGraph)
 	{
@@ -591,7 +596,7 @@ void USkeletalMeshComponent::SetAnimationPosition(float InTime)
 	}
 }
 
-void USkeletalMeshComponent::HandleAnimNotify(const FAnimNotifyEvent& Notify)
+void USkeletalMeshComponent::HandleAnimNotify(const FAnimNotifyStateEvent& Notify)
 {
 	UE_LOG("[AnimNotify] %s triggered at %.3f", Notify.NotifyName.ToString().c_str(), Notify.TriggerTime);
 	OnAnimNotifyDelegate.Broadcast(this, Notify);
@@ -599,5 +604,37 @@ void USkeletalMeshComponent::HandleAnimNotify(const FAnimNotifyEvent& Notify)
 	if (AActor* OwnerActor = GetOwner())
 	{
 		OwnerActor->OnAnimNotify(this, Notify);
+	}
+}
+
+void USkeletalMeshComponent::HandleAnimNotifyBegin(const FAnimNotifyStateEvent& Notify)
+{
+	UE_LOG("[AnimNotifyBegin] %s begin at %.3f duration %.3f", Notify.NotifyName.ToString().c_str(), Notify.TriggerTime, Notify.Duration);
+	OnAnimNotifyBeginDelegate.Broadcast(this, Notify);
+
+	if (AActor* OwnerActor = GetOwner())
+	{
+		OwnerActor->OnAnimNotifyBegin(this, Notify);
+	}
+}
+
+void USkeletalMeshComponent::HandleAnimNotifyTick(const FAnimNotifyStateEvent& Notify, float DeltaTime)
+{
+	OnAnimNotifyTickDelegate.Broadcast(this, Notify, DeltaTime);
+
+	if (AActor* OwnerActor = GetOwner())
+	{
+		OwnerActor->OnAnimNotifyTick(this, Notify, DeltaTime);
+	}
+}
+
+void USkeletalMeshComponent::HandleAnimNotifyEnd(const FAnimNotifyStateEvent& Notify)
+{
+	UE_LOG("[AnimNotifyEnd] %s end at %.3f", Notify.NotifyName.ToString().c_str(), Notify.GetEndTime());
+	OnAnimNotifyEndDelegate.Broadcast(this, Notify);
+
+	if (AActor* OwnerActor = GetOwner())
+	{
+		OwnerActor->OnAnimNotifyEnd(this, Notify);
 	}
 }

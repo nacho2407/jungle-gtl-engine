@@ -168,6 +168,27 @@ void UAnimSingleNodeInstance::SetPosition(float InPosition)
 	PreviousTime = InPosition;
 }
 
+void UAnimSingleNodeInstance::CopyPlaybackSettingsFrom(const UAnimSingleNodeInstance* SourceInstance)
+{
+	if (!SourceInstance)
+	{
+		return;
+	}
+
+	PlayRate = SourceInstance->PlayRate;
+	bLooping = SourceInstance->bLooping;
+	bAutoPlay = SourceInstance->bAutoPlay;
+
+	if (bAutoPlay && CurrentAnimation)
+	{
+		Play(bLooping);
+	}
+	else
+	{
+		bPlaying = false;
+	}
+}
+
 float UAnimSingleNodeInstance::GetLength() const
 {
 	return CurrentAnimation ? CurrentAnimation->GetPlayLength() : 0.0f;
@@ -240,7 +261,7 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaTime)
 	{
 		CurrentTime = 0.0f;
 		bPlaying = false;
-		TriggerAnimNotifies(CurrentAnimation, PreviousTime, CurrentTime, bLooped, bReverse);
+		TriggerAnimNotifies(CurrentAnimation, PreviousTime, CurrentTime, bLooped, bReverse, DeltaTime);
 		return;
 	}
 
@@ -281,7 +302,7 @@ void UAnimSingleNodeInstance::NativeUpdateAnimation(float DeltaTime)
 		}
 	}
 
-	TriggerAnimNotifies(CurrentAnimation, PreviousTime, CurrentTime, bLooped, bReverse);
+	TriggerAnimNotifies(CurrentAnimation, PreviousTime, CurrentTime, bLooped, bReverse, DeltaTime);
 }
 
 bool UAnimSingleNodeInstance::EvaluatePose(FPoseContext& OutPoseContext)
