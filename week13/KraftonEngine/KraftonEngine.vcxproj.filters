@@ -70,6 +70,9 @@
     <Filter Include="Source\Engine\Animation">
       <UniqueIdentifier>{883a27c1-1a16-4122-ba2c-ce4f747faae7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Animation\Nodes">
+      <UniqueIdentifier>{68040e01-fc9d-9309-de2d-a5e599d58c79}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Asset">
       <UniqueIdentifier>{5425e5c6-8625-eb75-03f5-e74a5efa2fc3}</UniqueIdentifier>
     </Filter>
@@ -1672,6 +1675,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\SkeletonTypes.h">
       <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNodeContexts.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Base.h">
+      <Filter>Source\Engine\Animation\Nodes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\AssetPackage.h">
       <Filter>Source\Engine\Asset</Filter>
