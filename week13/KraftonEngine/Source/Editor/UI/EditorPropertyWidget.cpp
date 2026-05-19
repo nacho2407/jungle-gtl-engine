@@ -1062,12 +1062,14 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 					bAnyChanged = true;
 					PropagatePropertyChange(Props[i].GetName(), SelectedActors);
 
-					if (Props[i].Property && Props[i].GetType() == EPropertyType::SoftObjectRef)
-					{
-						bPropsInvalidated = true;
-						ImGui::PopID();
-						break;
-					}
+					// 모든 변경 후 props 재수집 — 같은 frame 의 후속 prop 들이 dangling pointer 를
+					// 참조하는 케이스 방지. 예: SkeletalMeshComponent 의 AnimationMode/AnimInstanceClass
+					// 변경 시 InitializeAnimation 이 AnimInstance 를 swap 하므로, forward 됐던
+					// AnimInstance 의 prop 들의 ContainerPtr 가 destroyed 인스턴스를 가리키게 된다.
+					// 사용자는 frame 당 1 prop 변경이 일반적이라 UX 영향 거의 없음.
+					bPropsInvalidated = true;
+					ImGui::PopID();
+					break;
 				}
 				ImGui::PopID();
 			}
