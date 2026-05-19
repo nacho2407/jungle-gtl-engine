@@ -6,18 +6,26 @@
 #include "ImGui/imgui.h"
 
 #include "Animation/AnimInstance.h"
+#include "Animation/AnimMontage.h"
+#include "Animation/AnimMontageInstance.h"
 #include "Animation/AnimNotify.h"
 #include "Animation/AnimSequenceBase.h"
 #include "Animation/AnimState.h"
 #include "Animation/AnimationMode.h"
 #include "Animation/AnimationStateMachine.h"
 #include "Animation/CharacterAnimInstance.h"
+#include "Animation/Nodes/AnimNode_Base.h"
+#include "Animation/Nodes/AnimNode_LayeredBlendPerBone.h"
+#include "Animation/Nodes/AnimNode_SequencePlayer.h"
+#include "Animation/Nodes/AnimNode_Slot.h"
+#include "Animation/Nodes/AnimNode_StateMachine.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Core/PropertyTypes.h"
 #include "GameFramework/AActor.h"
 #include "Object/UClass.h"
 
 #include <cstring>
+#include <string>
 
 namespace
 {
@@ -30,6 +38,101 @@ namespace
 			return Char->GetFSM();
 		}
 		return nullptr;
+	}
+
+	// AnimGraph 트리 재귀 시각화 — RootNode 부터 자식까지 들여쓰기 + 노드별 추가 정보.
+	// dynamic_cast 로 노드 타입 분기, 자식 노드 enumerate 후 재귀.
+	void DrawAnimNode(FAnimNode_Base* Node, int Indent, UAnimInstance* AnimInst)
+	{
+		if (!Node) return;
+
+		const std::string IndentStr(static_cast<size_t>(Indent) * 2, ' ');
+		const char* TypeName = Node->GetDebugName();
+
+		if (auto* SM = dynamic_cast<FAnimNode_StateMachine*>(Node))
+		{
+			const FName CurrentName = SM->GetCurrentStateName();
+			UAnimState*  CurrentState = SM->GetCurrentState();
+			const FString CurrentSeqName = (CurrentState && CurrentState->Sequence)
+				? CurrentState->Sequence->GetName()
+				: FString("(no seq)");
+			ImGui::Text("%s[%s] current=%s  (%s)",
+				IndentStr.c_str(), TypeName,
+				CurrentName.ToString().c_str(),
+				CurrentSeqName.c_str());
+
+			// Multi-blend stack — 진행중 from 들 표시.
+			const TArray<FBlendingFrom>& BlendingFroms = SM->GetBlendingFroms();
+			for (size_t i = 0; i < BlendingFroms.size(); ++i)
+			{
+				const FBlendingFrom& BF = BlendingFroms[i];
+				if (!BF.State) continue;
+				ImGui::Text("%s  ↳ blending from [%zu]: %s  α=%.2f (%.2fs/%.2fs)",
+					IndentStr.c_str(), i,
+					BF.State->StateName.ToString().c_str(),
+					BF.Alpha, BF.Alpha * BF.Duration, BF.Duration);
+			}
+
+			// CurrentState 의 SubGraphOverride 가 있으면 sub-SM 재귀 — sub-state-machine 표현.
+			if (CurrentState && CurrentState->SubGraphOverride)
+			{
+				DrawAnimNode(CurrentState->SubGraphOverride, Indent + 1, AnimInst);
+			}
+		}
+		else if (auto* Slot = dynamic_cast<FAnimNode_Slot*>(Node))
+		{
+			const float Effective = Slot->GetEffectiveBlendWeight();
+			ImGui::Text("%s[%s] name=%s  effective=%.2f",
+				IndentStr.c_str(), TypeName,
+				Slot->SlotName.ToString().c_str(),
+				Effective);
+
+			// Active montage 정보.
+			if (AnimInst)
+			{
+				if (UAnimMontageInstance* MI = AnimInst->GetMontageInstanceForSlot(Slot->SlotName))
+				{
+					if (MI->IsActive())
+					{
+						UAnimMontage* M = MI->GetCurrentMontage();
+						ImGui::Text("%s  ↳ montage: %s  section=%s  W=%.2f",
+							IndentStr.c_str(),
+							M ? M->GetName().c_str() : "(?)",
+							MI->GetCurrentSectionName().ToString().c_str(),
+							MI->GetBlendWeight());
+					}
+				}
+			}
+
+			if (Slot->InputPose) DrawAnimNode(Slot->InputPose, Indent + 1, AnimInst);
+		}
+		else if (auto* Layer = dynamic_cast<FAnimNode_LayeredBlendPerBone*>(Node))
+		{
+			int32 MaskCount = 0;
+			for (bool b : Layer->PerBoneMask) if (b) ++MaskCount;
+			ImGui::Text("%s[%s] weight=%.2f  mask=%d/%zu bones",
+				IndentStr.c_str(), TypeName,
+				Layer->BlendWeight,
+				MaskCount, Layer->PerBoneMask.size());
+			ImGui::Text("%s  base:", IndentStr.c_str());
+			DrawAnimNode(Layer->BasePose, Indent + 2, AnimInst);
+			ImGui::Text("%s  blend:", IndentStr.c_str());
+			DrawAnimNode(Layer->BlendPose, Indent + 2, AnimInst);
+		}
+		else if (auto* Seq = dynamic_cast<FAnimNode_SequencePlayer*>(Node))
+		{
+			const float Len = Seq->Sequence ? Seq->Sequence->GetPlayLength() : 0.0f;
+			const FString SeqName = Seq->Sequence ? Seq->Sequence->GetName() : FString("(no seq)");
+			ImGui::Text("%s[%s] %s  t=%.2f/%.2fs  ×%.2f  %s",
+				IndentStr.c_str(), TypeName,
+				SeqName.c_str(),
+				Seq->LocalTime, Len, Seq->PlayRate,
+				Seq->bLooping ? "loop" : "once");
+		}
+		else
+		{
+			ImGui::Text("%s[%s]", IndentStr.c_str(), TypeName);
+		}
 	}
 }
 
@@ -83,7 +186,16 @@ void FEditorAnimationDebugWidget::Render(float /*DeltaTime*/)
 		return;
 	}
 
-	RenderFSMSection(AnimInst);
+	// RootNode 있으면 AnimGraph 트리 시각화 — sub-SM / Slot / LayeredBlend / SequencePlayer 재귀.
+	// 없으면 legacy wrapper FSM 표시.
+	if (AnimInst->GetRootNode())
+	{
+		RenderAnimGraphSection(AnimInst);
+	}
+	else
+	{
+		RenderFSMSection(AnimInst);
+	}
 	ImGui::Separator();
 
 	RenderVariablesSection(AnimInst);
@@ -92,6 +204,20 @@ void FEditorAnimationDebugWidget::Render(float /*DeltaTime*/)
 	RenderRecentNotifiesSection(AnimInst);
 
 	ImGui::End();
+}
+
+void FEditorAnimationDebugWidget::RenderAnimGraphSection(UAnimInstance* AnimInst)
+{
+	ImGui::Text("Anim Graph");
+
+	FAnimNode_Base* Root = AnimInst->GetRootNode();
+	if (!Root)
+	{
+		ImGui::TextDisabled("  (no root node)");
+		return;
+	}
+
+	DrawAnimNode(Root, 0, AnimInst);
 }
 
 void FEditorAnimationDebugWidget::RenderFSMSection(UAnimInstance* AnimInst)
