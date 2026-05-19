@@ -164,7 +164,27 @@ void UAnimationStateMachine::BeginBlend(UAnimInstance* Owner, FName NewState, fl
 	UAnimState* Target = FindState(NewState);
 	if (!Target || Target == CurrentState) return;
 
-	// 이전 블렌드가 끝나기 전 새 전이 — 진행중 From 은 버리고 현재 상태를 새 From 으로.
+	// 진행중 from 이 있으면 BlendingFroms 에 push — 폐기하지 않고 multi-blend stack 으로 보존.
+	// 그 항목의 Alpha 는 현재 BlendAlpha 그대로 (의미: "FromState → 그 다음 단계 state 로의 진행도"
+	// 가 multi 화 후엔 "FromState → 새 BlendingFroms.back() (= 직전 CurrentState) 로의 진행도"
+	// 가 되는데, 직전 CurrentState 가 곧 새 from 으로 들어가므로 alpha 값은 그대로 valid).
+	// Step 3 에서 Tick/Evaluate 가 이 stack 을 N-pose blend 로 소비. 이 커밋은 push 만 함.
+	if (FromState)
+	{
+		// 상한 초과 시 oldest 강제 정리 — OnExit 후 erase. 일반 게임플레이는 거의 도달 안 함.
+		if (BlendingFroms.size() >= static_cast<size_t>(MaxBlendingFroms))
+		{
+			if (UAnimState* Oldest = BlendingFroms[0].State)
+			{
+				Oldest->OnExit(Owner);
+			}
+			BlendingFroms.erase(BlendingFroms.begin());
+		}
+		BlendingFroms.push_back({ FromState, BlendAlpha, BlendDuration });
+	}
+
+	// 이전 블렌드가 끝나기 전 새 전이 — 진행중 From 은 위에서 stack 으로 옮겼고,
+	// 현재 상태를 새 From 으로 박는다.
 	FromState        = CurrentState;
 	BlendAlpha       = 0.0f;
 	BlendDuration    = Duration;
