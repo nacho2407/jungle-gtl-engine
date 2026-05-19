@@ -250,18 +250,7 @@ void FMeshEditorWidget::Tick(float DeltaTime)
 		Out.Pose.resize(Asset->Bones.size());
 		Out.ResetToRefPose();
 
-		// Root bone을 bind pose에 고정하기 위해 ref pose값을 미리 보관.
-		// AnimViewer는 in-place 재생이 기본이며, root motion을 적용하면
-		// 캐릭터가 뷰포트 밖으로 이동/회전해 버린다.
-		const FTransform RootRefPose = Out.Pose.empty() ? FTransform {} : Out.Pose[0];
-
 		NodeInst->EvaluatePose(Out);
-
-		// root motion 억제: 루트 본을 ref pose로 복원
-		if (!Out.Pose.empty())
-		{
-			Out.Pose[0] = RootRefPose;
-		}
 
 		Comp->SetBoneLocalTransforms(Out.Pose);
 	}
