@@ -13,7 +13,7 @@ namespace FAnimSequenceBinaryConstants
 {
     constexpr uint32 Magic = 0x4D494E41; // 'ANIM'
     constexpr uint32 BinaryVersion = 7;  // v7: stores separate import version
-    constexpr uint32 ImportVersion = 1;  // v1: FBX evaluated T/Q/S sampling
+    constexpr uint32 ImportVersion = 2;  // v2: only authored FBX scale curves produce animated scale keys
 }
 
 /*

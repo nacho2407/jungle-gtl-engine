@@ -289,6 +289,46 @@ static float GetMaxScaleDelta(const TArray<FVector>& ScaleKeys)
     return MaxDelta;
 }
 
+static bool HasCurveKeys(fbxsdk::FbxAnimCurve* Curve)
+{
+    return Curve && Curve->KeyGetCount() > 0;
+}
+
+static bool HasAuthoredScaleCurve(fbxsdk::FbxNode* Node, fbxsdk::FbxAnimStack* Stack)
+{
+    if (!Node || !Stack)
+    {
+        return false;
+    }
+
+    const int32 LayerCount = Stack->GetMemberCount<fbxsdk::FbxAnimLayer>();
+    for (int32 LayerIndex = 0; LayerIndex < LayerCount; ++LayerIndex)
+    {
+        fbxsdk::FbxAnimLayer* Layer = Stack->GetMember<fbxsdk::FbxAnimLayer>(LayerIndex);
+        if (!Layer)
+        {
+            continue;
+        }
+
+        if (HasCurveKeys(Node->LclScaling.GetCurve(Layer, FBXSDK_CURVENODE_COMPONENT_X)) ||
+            HasCurveKeys(Node->LclScaling.GetCurve(Layer, FBXSDK_CURVENODE_COMPONENT_Y)) ||
+            HasCurveKeys(Node->LclScaling.GetCurve(Layer, FBXSDK_CURVENODE_COMPONENT_Z)))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static void SetConstantScaleTrack(FRawAnimSequenceTrack& Raw, const FVector& Scale)
+{
+    Raw.ScaleKeys.clear();
+    Raw.ScaleKeyTimes.clear();
+    Raw.ScaleKeys.push_back(Scale);
+    Raw.ScaleKeyTimes.push_back(0.0f);
+}
+
 static FTransform ToEngineTransform(const fbxsdk::FbxAMatrix& Matrix)
 {
     FQuat Rotation = FFbxTransformUtils::ToFQuat(Matrix.GetQ());
@@ -475,6 +515,9 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
 
     TArray<FAnimationTrack> Tracks;
     Tracks.reserve(Bones.size());
+    int32 AuthoredScaleCurveTrackCount = 0;
+    int32 CurvelessScaleTrackCount = 0;
+    int32 CollapsedConstantScaleTrackCount = 0;
     int32 AnimatedScaleTrackCount = 0;
     float MaxScaleDelta = 0.0f;
     FString MaxScaleDeltaBoneName;
@@ -509,11 +552,23 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
 
         Raw.PosKeys.reserve(NumberOfFrames);
         Raw.RotKeys.reserve(NumberOfFrames);
-        Raw.ScaleKeys.reserve(NumberOfFrames);
 
         Raw.PosKeyTimes.reserve(NumberOfFrames);
         Raw.RotKeyTimes.reserve(NumberOfFrames);
-        Raw.ScaleKeyTimes.reserve(NumberOfFrames);
+
+        const FTransform BindTransform(Bone.LocalBindTransform);
+        const FVector BindScale = BindTransform.GetScale3D();
+        const bool bHasAuthoredScaleCurve = HasAuthoredScaleCurve(BoneNode, Stack);
+        if (bHasAuthoredScaleCurve)
+        {
+            ++AuthoredScaleCurveTrackCount;
+            Raw.ScaleKeys.reserve(NumberOfFrames);
+            Raw.ScaleKeyTimes.reserve(NumberOfFrames);
+        }
+        else
+        {
+            ++CurvelessScaleTrackCount;
+        }
 
         for (int32 FrameIndex = 0; FrameIndex < NumberOfFrames; ++FrameIndex)
         {
@@ -543,11 +598,26 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
 
             Raw.PosKeys.push_back(Translation);
             Raw.RotKeys.push_back(Rotation);
-            Raw.ScaleKeys.push_back(Scale);
 
             Raw.PosKeyTimes.push_back(LocalSeconds);
             Raw.RotKeyTimes.push_back(LocalSeconds);
-            Raw.ScaleKeyTimes.push_back(LocalSeconds);
+
+            if (bHasAuthoredScaleCurve)
+            {
+                Raw.ScaleKeys.push_back(Scale);
+                Raw.ScaleKeyTimes.push_back(LocalSeconds);
+            }
+        }
+
+        if (!bHasAuthoredScaleCurve)
+        {
+            SetConstantScaleTrack(Raw, BindScale);
+        }
+        else if (GetMaxScaleDelta(Raw.ScaleKeys) <= 1.0e-4f)
+        {
+            const FVector ConstantScale = Raw.ScaleKeys.empty() ? BindScale : Raw.ScaleKeys.front();
+            SetConstantScaleTrack(Raw, ConstantScale);
+            ++CollapsedConstantScaleTrackCount;
         }
 
         const float ScaleDelta = GetMaxScaleDelta(Raw.ScaleKeys);
@@ -565,9 +635,12 @@ UAnimSequence* FFbxAnimSequenceImporter::LoadAnimSequence(const FString& Path, c
         Tracks.push_back(Track);
     }
 
-    UE_LOG("[FbxAnimSequenceImporter] ScaleTrackSummary Fbx=%s Stack=%s AnimatedScaleTracks=%d MaxScaleDelta=%.6f MaxScaleBone=%s",
+    UE_LOG("[FbxAnimSequenceImporter] ScaleTrackSummary Fbx=%s Stack=%s AuthoredScaleCurves=%d CurvelessConstantScaleTracks=%d CollapsedConstantScaleTracks=%d AnimatedScaleTracks=%d MaxScaleDelta=%.6f MaxScaleBone=%s",
            Path.c_str(),
            Stack->GetName(),
+           AuthoredScaleCurveTrackCount,
+           CurvelessScaleTrackCount,
+           CollapsedConstantScaleTrackCount,
            AnimatedScaleTrackCount,
            MaxScaleDelta,
            MaxScaleDeltaBoneName.c_str());
