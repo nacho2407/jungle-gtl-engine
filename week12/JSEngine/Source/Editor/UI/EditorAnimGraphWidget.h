@@ -26,11 +26,14 @@ private:
 	void RenderCanvas();
 	void RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& CanvasOrigin, int32 NodeIndex);
 	void RenderLinks(const ImVec2& CanvasOrigin);
+	void RenderPendingLink(const ImVec2& CanvasOrigin);
 	void RenderDetails();
 	void RenderOutputPoseDetails(FAnimGraphNodeDesc& Node);
 	void RenderSequencePlayerDetails(FAnimGraphNodeDesc& Node);
 	void RenderStateMachineDetails(FAnimGraphNodeDesc& Node);
-	bool RenderAnimationPathCombo(const char* Label, FString& Path);
+	bool RenderOutputPoseSourceCombo(const char* Label, FAnimGraphNodeDesc& Node);
+	bool RenderAnimationPathCombo(const char* Label, FString& Path, bool bShowPathInput = true);
+	bool RenderStateMachineEntryCombo(const char* Label, FAnimStateMachineDesc& StateMachine);
 
 	FAnimGraphNodeDesc* FindSelectedNode();
 	const FAnimGraphNodeDesc* FindSelectedNode() const;
@@ -48,6 +51,7 @@ private:
 	int32 GenerateNodeId() const;
 	int32 GenerateStateId(const FAnimStateMachineDesc& StateMachine) const;
 	FString GetStateDisplayName(const FAnimStateMachineDesc& StateMachine, int32 StateId) const;
+	void AddStateToStateMachine(FAnimStateMachineDesc& StateMachine);
 	bool NormalizeGraphNodeIds();
 	void NormalizeRootNode();
 	void AddSequencePlayerNode();
@@ -58,6 +62,7 @@ private:
 	FString EditingPath;
 	UAnimGraphAsset* EditingAsset = nullptr;
 	int32 SelectedNodeId = -1;
+	int32 DraggingOutputNodeId = -1;
 	bool bOpen = false;
 	bool bDirty = false;
 };

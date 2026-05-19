@@ -35,19 +35,49 @@ namespace
 		return SlashIndex == FString::npos ? Path : Path.substr(SlashIndex + 1);
 	}
 
-	constexpr float AnimGraphNodeWidth = 210.0f;
-	constexpr float AnimGraphNodeHeight = 88.0f;
+	constexpr float AnimGraphNodeWidth = 280.0f;
+	constexpr float AnimGraphNodeDefaultHeight = 108.0f;
+	constexpr float AnimGraphNodeSequenceHeight = 142.0f;
+	constexpr float AnimGraphNodeStateMachineHeight = 154.0f;
 	constexpr float AnimGraphNodeHeaderHeight = 26.0f;
 	constexpr float AnimGraphPinRadius = 5.0f;
+	constexpr float AnimGraphPinHitRadius = 13.0f;
+
+	float GetAnimGraphNodeHeight(const FAnimGraphNodeDesc& Node)
+	{
+		switch (Node.Type)
+		{
+		case EAnimGraphNodeType::SequencePlayer:
+			return AnimGraphNodeSequenceHeight;
+		case EAnimGraphNodeType::StateMachine:
+			return AnimGraphNodeStateMachineHeight;
+		case EAnimGraphNodeType::OutputPose:
+		default:
+			return AnimGraphNodeDefaultHeight;
+		}
+	}
+
+	ImVec2 GetAnimGraphNodeSize(const FAnimGraphNodeDesc& Node)
+	{
+		return ImVec2(AnimGraphNodeWidth, GetAnimGraphNodeHeight(Node));
+	}
+
+	bool IsMouseNear(const ImVec2& Position, float Radius)
+	{
+		const ImVec2 Mouse = ImGui::GetIO().MousePos;
+		const float Dx = Mouse.x - Position.x;
+		const float Dy = Mouse.y - Position.y;
+		return Dx * Dx + Dy * Dy <= Radius * Radius;
+	}
 
 	ImVec2 GetAnimGraphNodeInputPinPos(const FAnimGraphNodeDesc& Node, const ImVec2& CanvasOrigin)
 	{
-		return Add(CanvasOrigin, ImVec2(Node.Position.X, Node.Position.Y + AnimGraphNodeHeight * 0.5f));
+		return Add(CanvasOrigin, ImVec2(Node.Position.X, Node.Position.Y + GetAnimGraphNodeHeight(Node) * 0.5f));
 	}
 
 	ImVec2 GetAnimGraphNodeOutputPinPos(const FAnimGraphNodeDesc& Node, const ImVec2& CanvasOrigin)
 	{
-		return Add(CanvasOrigin, ImVec2(Node.Position.X + AnimGraphNodeWidth, Node.Position.Y + AnimGraphNodeHeight * 0.5f));
+		return Add(CanvasOrigin, ImVec2(Node.Position.X + AnimGraphNodeWidth, Node.Position.Y + GetAnimGraphNodeHeight(Node) * 0.5f));
 	}
 }
 
@@ -270,32 +300,16 @@ void FEditorAnimGraphWidget::RenderCanvas()
 	{
 		RenderNode(EditingAsset->Nodes[NodeIndex], CanvasOrigin, NodeIndex);
 	}
+
+	RenderPendingLink(CanvasOrigin);
 }
 
 void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& CanvasOrigin, int32 NodeIndex)
 {
 	const ImVec2 NodePos = Add(CanvasOrigin, ToImVec2(Node.Position));
-	const ImVec2 NodeSize(AnimGraphNodeWidth, AnimGraphNodeHeight);
+	const ImVec2 NodeSize = GetAnimGraphNodeSize(Node);
 	const ImVec2 NodeMax = Add(NodePos, NodeSize);
 	const bool bSelected = SelectedNodeId == Node.NodeId;
-
-	ImGui::SetCursorScreenPos(NodePos);
-	char Id[96];
-	std::snprintf(Id, sizeof(Id), "##AnimGraphNode_%d_%d", Node.NodeId, NodeIndex);
-	ImGui::InvisibleButton(Id, NodeSize);
-
-	if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
-	{
-		SelectedNodeId = Node.NodeId;
-	}
-
-	if (bSelected && ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
-	{
-		const ImVec2 Delta = ImGui::GetIO().MouseDelta;
-		Node.Position.X += Delta.x;
-		Node.Position.Y += Delta.y;
-		bDirty = true;
-	}
 
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 	const ImU32 BodyColor = ImGui::GetColorU32(
@@ -311,6 +325,29 @@ void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& 
 	DrawList->AddRectFilled(NodePos, ImVec2(NodeMax.x, NodePos.y + AnimGraphNodeHeaderHeight), HeaderColor, 6.0f);
 	DrawList->AddRect(NodePos, NodeMax, ImGui::GetColorU32(ImVec4(0.48f, 0.55f, 0.68f, 1.0f)), 6.0f);
 
+	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsMouseHoveringRect(NodePos, NodeMax, true))
+	{
+		SelectedNodeId = Node.NodeId;
+	}
+
+	ImGui::SetCursorScreenPos(NodePos);
+	char HeaderId[96];
+	std::snprintf(HeaderId, sizeof(HeaderId), "##AnimGraphNodeHeader_%d_%d", Node.NodeId, NodeIndex);
+	ImGui::InvisibleButton(HeaderId, ImVec2(NodeSize.x, AnimGraphNodeHeaderHeight));
+
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+	{
+		SelectedNodeId = Node.NodeId;
+	}
+
+	if (bSelected && ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+	{
+		const ImVec2 Delta = ImGui::GetIO().MouseDelta;
+		Node.Position.X += Delta.x;
+		Node.Position.Y += Delta.y;
+		bDirty = true;
+	}
+
 	const FString TypeText = AnimGraphNodeTypeToString(Node.Type);
 	const FString NameText = GetNodeDisplayName(Node);
 	DrawList->AddText(Add(NodePos, ImVec2(10.0f, 6.0f)), ImGui::GetColorU32(ImGuiCol_Text), NameText.c_str());
@@ -322,44 +359,108 @@ void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& 
 		ImGui::GetColorU32(ImGuiCol_TextDisabled),
 		NodeIdText.c_str());
 
-	DrawList->AddText(Add(NodePos, ImVec2(10.0f, 36.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), TypeText.c_str());
+	DrawList->AddText(Add(NodePos, ImVec2(10.0f, 31.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), TypeText.c_str());
 
-	if (Node.Type == EAnimGraphNodeType::SequencePlayer && !Node.AnimationPath.empty())
+	ImGui::PushID(Node.NodeId);
+	ImGui::SetCursorScreenPos(Add(NodePos, ImVec2(10.0f, 50.0f)));
+	// 노드 내부 Combo는 오른쪽에 표시되는 라벨이 핀/노드 경계를 침범하지 않도록
+	// Details 패널보다 좁게 잡습니다.
+	ImGui::PushItemWidth(AnimGraphNodeWidth - 90.0f);
+
+	if (Node.Type == EAnimGraphNodeType::OutputPose)
 	{
-		const FString FileName = GetFileName(Node.AnimationPath);
-		DrawList->AddText(Add(NodePos, ImVec2(10.0f, 58.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), FileName.c_str());
+		if (RenderOutputPoseSourceCombo("Source", Node))
+		{
+			bDirty = true;
+		}
+	}
+	else if (Node.Type == EAnimGraphNodeType::SequencePlayer)
+	{
+		if (RenderAnimationPathCombo("Animation", Node.AnimationPath, false))
+		{
+			bDirty = true;
+		}
+
+		ImGui::SetCursorScreenPos(Add(NodePos, ImVec2(10.0f, 80.0f)));
+		ImGui::SetNextItemWidth(96.0f);
+		if (ImGui::DragFloat("Play Rate", &Node.PlayRate, 0.01f, 0.0f, 10.0f))
+		{
+			bDirty = true;
+		}
+
+		ImGui::SetCursorScreenPos(Add(NodePos, ImVec2(10.0f, 110.0f)));
+		if (ImGui::Checkbox("Loop", &Node.bLoop))
+		{
+			bDirty = true;
+		}
 	}
 	else if (Node.Type == EAnimGraphNodeType::StateMachine)
 	{
-		const FString Summary = std::to_string(Node.StateMachine.States.size()) + " states, "
-			+ std::to_string(Node.StateMachine.Transitions.size()) + " transitions";
-		DrawList->AddText(Add(NodePos, ImVec2(10.0f, 58.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), Summary.c_str());
-	}
-	else if (Node.Type == EAnimGraphNodeType::OutputPose)
-	{
-		FString InputText = "Input: None";
-		if (const FAnimGraphNodeDesc* InputNode = EditingAsset ? EditingAsset->FindNode(Node.InputPoseNodeId) : nullptr)
+		if (RenderStateMachineEntryCombo("Entry", Node.StateMachine))
 		{
-			InputText = "Input: " + GetNodeComboLabel(*InputNode);
+			bDirty = true;
 		}
-		DrawList->AddText(Add(NodePos, ImVec2(10.0f, 58.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), InputText.c_str());
+
+		ImGui::SetCursorScreenPos(Add(NodePos, ImVec2(10.0f, 80.0f)));
+		if (ImGui::SmallButton("+ State"))
+		{
+			AddStateToStateMachine(Node.StateMachine);
+			bDirty = true;
+		}
+
+		ImGui::SameLine();
+		ImGui::TextDisabled(
+			"States: %d  Transitions: %d",
+			static_cast<int32>(Node.StateMachine.States.size()),
+			static_cast<int32>(Node.StateMachine.Transitions.size()));
+
+		const float SummaryY = 110.0f;
+		FString Summary = "Entry: " + GetStateDisplayName(Node.StateMachine, Node.StateMachine.EntryStateId);
+		DrawList->AddText(Add(NodePos, ImVec2(10.0f, SummaryY)), ImGui::GetColorU32(ImGuiCol_TextDisabled), Summary.c_str());
+
+		if (!Node.StateMachine.Transitions.empty())
+		{
+			const FAnimStateTransitionDesc& Transition = Node.StateMachine.Transitions.front();
+			FString TransitionSummary = GetStateDisplayName(Node.StateMachine, Transition.FromStateId)
+				+ " -> "
+				+ GetStateDisplayName(Node.StateMachine, Transition.ToStateId);
+			if (Node.StateMachine.Transitions.size() > 1)
+			{
+				TransitionSummary += " ...";
+			}
+			DrawList->AddText(Add(NodePos, ImVec2(10.0f, SummaryY + 20.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), TransitionSummary.c_str());
+		}
 	}
 
-	const ImU32 PinColor = ImGui::GetColorU32(ImVec4(0.72f, 0.82f, 1.0f, 1.0f));
+	ImGui::PopItemWidth();
+	ImGui::PopID();
+
 	const ImU32 PinOutlineColor = ImGui::GetColorU32(ImVec4(0.12f, 0.15f, 0.20f, 1.0f));
+	const ImU32 PinColor = ImGui::GetColorU32(ImVec4(0.72f, 0.82f, 1.0f, 1.0f));
+	const ImU32 PinHoverColor = ImGui::GetColorU32(ImVec4(1.0f, 0.82f, 0.35f, 1.0f));
+
 	if (Node.Type == EAnimGraphNodeType::OutputPose)
 	{
 		const ImVec2 InputPin = GetAnimGraphNodeInputPinPos(Node, CanvasOrigin);
-		DrawList->AddCircleFilled(InputPin, AnimGraphPinRadius, PinColor);
+		const bool bHoveredInputPin = DraggingOutputNodeId >= 0 && IsMouseNear(InputPin, AnimGraphPinHitRadius);
+		DrawList->AddCircleFilled(InputPin, AnimGraphPinRadius + (bHoveredInputPin ? 2.0f : 0.0f), bHoveredInputPin ? PinHoverColor : PinColor);
 		DrawList->AddCircle(InputPin, AnimGraphPinRadius + 1.0f, PinOutlineColor, 12, 1.5f);
 		DrawList->AddText(Add(InputPin, ImVec2(8.0f, -7.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "In");
 	}
 	else
 	{
 		const ImVec2 OutputPin = GetAnimGraphNodeOutputPinPos(Node, CanvasOrigin);
-		DrawList->AddCircleFilled(OutputPin, AnimGraphPinRadius, PinColor);
+		const bool bHoveredOutputPin = IsMouseNear(OutputPin, AnimGraphPinHitRadius);
+		const bool bDraggingThisPin = DraggingOutputNodeId == Node.NodeId;
+		DrawList->AddCircleFilled(OutputPin, AnimGraphPinRadius + ((bHoveredOutputPin || bDraggingThisPin) ? 2.0f : 0.0f), (bHoveredOutputPin || bDraggingThisPin) ? PinHoverColor : PinColor);
 		DrawList->AddCircle(OutputPin, AnimGraphPinRadius + 1.0f, PinOutlineColor, 12, 1.5f);
 		DrawList->AddText(Sub(OutputPin, ImVec2(30.0f, 7.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "Out");
+
+		if (bHoveredOutputPin && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			SelectedNodeId = Node.NodeId;
+			DraggingOutputNodeId = Node.NodeId;
+		}
 	}
 }
 
@@ -397,6 +498,61 @@ void FEditorAnimGraphWidget::RenderLinks(const ImVec2& CanvasOrigin)
 		DrawList->AddCircleFilled(From, AnimGraphPinRadius + 1.0f, LinkColor);
 		DrawList->AddCircleFilled(To, AnimGraphPinRadius + 1.0f, LinkColor);
 	}
+}
+
+void FEditorAnimGraphWidget::RenderPendingLink(const ImVec2& CanvasOrigin)
+{
+	if (!EditingAsset || DraggingOutputNodeId < 0)
+	{
+		return;
+	}
+
+	const FAnimGraphNodeDesc* SourceNode = EditingAsset->FindNode(DraggingOutputNodeId);
+	if (!SourceNode || SourceNode->Type == EAnimGraphNodeType::OutputPose)
+	{
+		DraggingOutputNodeId = -1;
+		return;
+	}
+
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	const ImVec2 From = GetAnimGraphNodeOutputPinPos(*SourceNode, CanvasOrigin);
+	const ImVec2 To = ImGui::GetIO().MousePos;
+	const ImU32 LinkColor = ImGui::GetColorU32(ImVec4(1.0f, 0.82f, 0.35f, 1.0f));
+	DrawList->AddBezierCubic(
+		From,
+		Add(From, ImVec2(90.0f, 0.0f)),
+		Sub(To, ImVec2(90.0f, 0.0f)),
+		To,
+		LinkColor,
+		3.0f);
+
+	if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+	{
+		return;
+	}
+
+	for (FAnimGraphNodeDesc& Candidate : EditingAsset->Nodes)
+	{
+		if (Candidate.Type != EAnimGraphNodeType::OutputPose)
+		{
+			continue;
+		}
+
+		const ImVec2 InputPin = GetAnimGraphNodeInputPinPos(Candidate, CanvasOrigin);
+		if (!IsMouseNear(InputPin, AnimGraphPinHitRadius))
+		{
+			continue;
+		}
+
+		SelectedNodeId = Candidate.NodeId;
+		if (SetOutputPoseInput(Candidate, SourceNode->NodeId))
+		{
+			bDirty = true;
+		}
+		break;
+	}
+
+	DraggingOutputNodeId = -1;
 }
 
 void FEditorAnimGraphWidget::RenderDetails()
@@ -461,42 +617,9 @@ void FEditorAnimGraphWidget::RenderOutputPoseDetails(FAnimGraphNodeDesc& Node)
 	ImGui::SeparatorText("Input Pose");
 	ImGui::TextDisabled("This combo is the source of the visible canvas link.");
 
-	FString CurrentLabel = "None";
-	if (const FAnimGraphNodeDesc* InputNode = EditingAsset->FindNode(Node.InputPoseNodeId))
+	if (RenderOutputPoseSourceCombo("Source", Node))
 	{
-		CurrentLabel = GetNodeComboLabel(*InputNode);
-	}
-
-	if (ImGui::BeginCombo("Source", CurrentLabel.c_str()))
-	{
-		const bool bNoneSelected = Node.InputPoseNodeId < 0;
-		if (ImGui::Selectable("None", bNoneSelected))
-		{
-			if (SetOutputPoseInput(Node, -1))
-			{
-				bDirty = true;
-			}
-		}
-
-		for (const FAnimGraphNodeDesc& Candidate : EditingAsset->Nodes)
-		{
-			if (Candidate.NodeId == Node.NodeId || Candidate.Type == EAnimGraphNodeType::OutputPose)
-			{
-				continue;
-			}
-
-			const FString Label = GetNodeComboLabel(Candidate);
-			const bool bSelected = Node.InputPoseNodeId == Candidate.NodeId;
-			if (ImGui::Selectable(Label.c_str(), bSelected))
-			{
-				if (SetOutputPoseInput(Node, Candidate.NodeId))
-				{
-					bDirty = true;
-				}
-			}
-		}
-
-		ImGui::EndCombo();
+		bDirty = true;
 	}
 
 	ImGui::BeginDisabled(Node.InputPoseNodeId < 0);
@@ -557,13 +680,60 @@ void FEditorAnimGraphWidget::RenderSequencePlayerDetails(FAnimGraphNodeDesc& Nod
 	}
 }
 
-bool FEditorAnimGraphWidget::RenderAnimationPathCombo(const char* Label, FString& Path)
+bool FEditorAnimGraphWidget::RenderOutputPoseSourceCombo(const char* Label, FAnimGraphNodeDesc& Node)
+{
+	if (!EditingAsset || Node.Type != EAnimGraphNodeType::OutputPose)
+	{
+		return false;
+	}
+
+	bool bChanged = false;
+	FString CurrentLabel = "None";
+	if (const FAnimGraphNodeDesc* InputNode = EditingAsset->FindNode(Node.InputPoseNodeId))
+	{
+		CurrentLabel = GetNodeComboLabel(*InputNode);
+	}
+
+	if (ImGui::BeginCombo(Label, CurrentLabel.c_str()))
+	{
+		const bool bNoneSelected = Node.InputPoseNodeId < 0;
+		if (ImGui::Selectable("None", bNoneSelected))
+		{
+			bChanged = SetOutputPoseInput(Node, -1) || bChanged;
+		}
+
+		for (const FAnimGraphNodeDesc& Candidate : EditingAsset->Nodes)
+		{
+			if (Candidate.NodeId == Node.NodeId || Candidate.Type == EAnimGraphNodeType::OutputPose)
+			{
+				continue;
+			}
+
+			const FString CandidateLabel = GetNodeComboLabel(Candidate);
+			const bool bSelected = Node.InputPoseNodeId == Candidate.NodeId;
+			if (ImGui::Selectable(CandidateLabel.c_str(), bSelected))
+			{
+				bChanged = SetOutputPoseInput(Node, Candidate.NodeId) || bChanged;
+			}
+			if (bSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+
+		ImGui::EndCombo();
+	}
+
+	return bChanged;
+}
+
+bool FEditorAnimGraphWidget::RenderAnimationPathCombo(const char* Label, FString& Path, bool bShowPathInput)
 {
 	bool bChanged = false;
 	TArray<FString> AnimPaths = FResourceManager::Get().GetAnimSequencePaths();
-	const char* Preview = Path.empty() ? "<None>" : Path.c_str();
+	const FString PreviewText = Path.empty() ? FString("<None>") : (bShowPathInput ? Path : GetFileName(Path));
 	FString SelectedPath = Path;
-	if (ImGui::BeginCombo(Label, Preview))
+	if (ImGui::BeginCombo(Label, PreviewText.c_str()))
 	{
 		if (ImGui::Selectable("<None>", Path.empty()))
 		{
@@ -608,12 +778,54 @@ bool FEditorAnimGraphWidget::RenderAnimationPathCombo(const char* Label, FString
 		ImGui::EndDragDropTarget();
 	}
 
-	char PathBuffer[512] = {};
-	std::strncpy(PathBuffer, Path.c_str(), sizeof(PathBuffer) - 1);
-	if (ImGui::InputText("Path", PathBuffer, sizeof(PathBuffer)))
+	if (bShowPathInput)
 	{
-		Path = PathBuffer;
-		bChanged = true;
+		char PathBuffer[512] = {};
+		std::strncpy(PathBuffer, Path.c_str(), sizeof(PathBuffer) - 1);
+		if (ImGui::InputText("Path", PathBuffer, sizeof(PathBuffer)))
+		{
+			Path = PathBuffer;
+			bChanged = true;
+		}
+	}
+
+	return bChanged;
+}
+
+bool FEditorAnimGraphWidget::RenderStateMachineEntryCombo(const char* Label, FAnimStateMachineDesc& StateMachine)
+{
+	bool bChanged = false;
+	const FString EntryLabel = GetStateDisplayName(StateMachine, StateMachine.EntryStateId);
+	if (ImGui::BeginCombo(Label, EntryLabel.c_str()))
+	{
+		const bool bNoneSelected = StateMachine.EntryStateId < 0;
+		if (ImGui::Selectable("<None>", bNoneSelected))
+		{
+			if (StateMachine.EntryStateId != -1)
+			{
+				StateMachine.EntryStateId = -1;
+				bChanged = true;
+			}
+		}
+
+		for (const FAnimStateDesc& State : StateMachine.States)
+		{
+			const FString StateLabel = GetStateDisplayName(StateMachine, State.StateId);
+			const bool bSelected = StateMachine.EntryStateId == State.StateId;
+			if (ImGui::Selectable(StateLabel.c_str(), bSelected))
+			{
+				if (StateMachine.EntryStateId != State.StateId)
+				{
+					StateMachine.EntryStateId = State.StateId;
+					bChanged = true;
+				}
+			}
+			if (bSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
 	}
 
 	return bChanged;
@@ -650,41 +862,15 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 		ImGui::TextDisabled("No OutputPose node exists.");
 	}
 
-	FString EntryLabel = GetStateDisplayName(Machine, Machine.EntryStateId);
-	if (ImGui::BeginCombo("Entry State", EntryLabel.c_str()))
+	if (RenderStateMachineEntryCombo("Entry State", Machine))
 	{
-		const bool bNoneSelected = Machine.EntryStateId < 0;
-		if (ImGui::Selectable("<None>", bNoneSelected))
-		{
-			Machine.EntryStateId = -1;
-			bDirty = true;
-		}
-
-		for (const FAnimStateDesc& State : Machine.States)
-		{
-			const FString Label = GetStateDisplayName(Machine, State.StateId);
-			const bool bSelected = Machine.EntryStateId == State.StateId;
-			if (ImGui::Selectable(Label.c_str(), bSelected))
-			{
-				Machine.EntryStateId = State.StateId;
-				bDirty = true;
-			}
-		}
-		ImGui::EndCombo();
+		bDirty = true;
 	}
 
 	ImGui::SeparatorText("States");
 	if (ImGui::Button("Add State"))
 	{
-		FAnimStateDesc State;
-		State.StateId = GenerateStateId(Machine);
-		State.Name = "State " + std::to_string(State.StateId);
-		State.Position = FVector2(80.0f + static_cast<float>(Machine.States.size()) * 40.0f, 80.0f);
-		Machine.States.push_back(State);
-		if (Machine.EntryStateId < 0)
-		{
-			Machine.EntryStateId = State.StateId;
-		}
+		AddStateToStateMachine(Machine);
 		bDirty = true;
 	}
 
@@ -694,7 +880,7 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 		FAnimStateDesc& State = Machine.States[StateIndex];
 		ImGui::PushID(State.StateId);
 
-		const FString Header = GetStateDisplayName(Machine, State.StateId);
+		const FString Header = GetStateDisplayName(Machine, State.StateId) + "##State";
 		if (ImGui::TreeNodeEx(Header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			char StateNameBuffer[128] = {};
@@ -789,7 +975,8 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 
 		FString Header = GetStateDisplayName(Machine, Transition.FromStateId)
 			+ " -> "
-			+ GetStateDisplayName(Machine, Transition.ToStateId);
+			+ GetStateDisplayName(Machine, Transition.ToStateId)
+			+ "##Transition";
 		if (ImGui::TreeNodeEx(Header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			if (ImGui::BeginCombo("From", GetStateDisplayName(Machine, Transition.FromStateId).c_str()))
@@ -1116,6 +1303,19 @@ FString FEditorAnimGraphWidget::GetStateDisplayName(const FAnimStateMachineDesc&
 	}
 
 	return StateId < 0 ? FString("<None>") : FString("Missing (") + std::to_string(StateId) + ")";
+}
+
+void FEditorAnimGraphWidget::AddStateToStateMachine(FAnimStateMachineDesc& StateMachine)
+{
+	FAnimStateDesc State;
+	State.StateId = GenerateStateId(StateMachine);
+	State.Name = "State " + std::to_string(State.StateId);
+	State.Position = FVector2(80.0f + static_cast<float>(StateMachine.States.size()) * 40.0f, 80.0f);
+	StateMachine.States.push_back(State);
+	if (StateMachine.EntryStateId < 0)
+	{
+		StateMachine.EntryStateId = State.StateId;
+	}
 }
 
 bool FEditorAnimGraphWidget::NormalizeGraphNodeIds()
