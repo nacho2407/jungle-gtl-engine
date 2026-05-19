@@ -343,6 +343,9 @@
     <Filter Include="ThirdParty\fmod\include">
       <UniqueIdentifier>{caff592a-3ac4-8555-af6c-51cad0db929a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty\imgui-node-editor">
+      <UniqueIdentifier>{ef397d32-e7db-ece8-f331-e86a091bdb1d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ThirdParty\lua">
       <UniqueIdentifier>{32805c5f-f28a-ba2b-e982-3383e5ffc164}</UniqueIdentifier>
     </Filter>
@@ -1453,6 +1456,18 @@
     </ClCompile>
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp">
       <Filter>ThirdParty\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-node-editor\crude_json.cpp">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-node-editor\imgui_canvas.cpp">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-node-editor\imgui_node_editor.cpp">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-node-editor\imgui_node_editor_api.cpp">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp">
@@ -3499,6 +3514,33 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h">
       <Filter>ThirdParty\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\crude_json.h">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_bezier_math.h">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_bezier_math.inl">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_canvas.h">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_extra_math.h">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_extra_math.inl">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_node_editor.h">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_node_editor_internal.h">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_node_editor_internal.inl">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\lua\include\lauxlib.h">
       <Filter>ThirdParty\lua\include</Filter>
