@@ -168,9 +168,10 @@ namespace
 		}
 
 		// Rigid child meshes still pass through the bone skin matrix at runtime.
-		// Store them in pre-skinned space so bind pose output matches their FBX mesh transform.
-		const FMatrix SkinBindMatrix = Bones[RigidBoneIndex].GetInverseBindPose() * Bones[RigidBoneIndex].GetSkinBindGlobalPose();
-		return SkinBindMatrix.IsIdentity() ? FMatrix::Identity : SkinBindMatrix.GetInverse();
+		// Store them in pre-skinned space so reference-pose skinning preserves their FBX mesh transform.
+		const FMatrix ReferenceSkinMatrix =
+			Bones[RigidBoneIndex].GetInverseBindPose() * Bones[RigidBoneIndex].GetReferenceGlobalPose();
+		return ReferenceSkinMatrix.IsIdentity() ? FMatrix::Identity : ReferenceSkinMatrix.GetInverse();
 	}
 
 	static void NormalizeWeights(float* Weights, int32 Count)
