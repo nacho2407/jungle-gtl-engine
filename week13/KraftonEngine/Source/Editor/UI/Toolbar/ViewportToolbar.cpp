@@ -1,5 +1,5 @@
-﻿#include "ViewportToolbar.h"
-#include "Component/GizmoComponent.h"
+#include "ViewportToolbar.h"
+#include "Component/Debug/GizmoComponent.h"
 #include "Editor/UI/EditorTextureManager.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Platform/Paths.h"

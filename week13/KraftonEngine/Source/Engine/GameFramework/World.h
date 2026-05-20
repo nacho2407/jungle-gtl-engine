@@ -6,7 +6,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/PlayerCameraManager.h"
 #include "GameFramework/Level.h"
-#include "Component/CameraComponent.h"
+#include "Component/Camera/CameraComponent.h"
 #include "GameFramework/WorldContext.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/LODContext.h"

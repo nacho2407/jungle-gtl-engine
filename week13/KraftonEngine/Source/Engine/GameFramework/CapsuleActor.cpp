@@ -1,5 +1,5 @@
 #include "GameFramework/CapsuleActor.h"
-#include "Component/CapsuleComponent.h"
+#include "Component/Shape/CapsuleComponent.h"
 
 void ACapsuleActor::InitDefaultComponents()
 {

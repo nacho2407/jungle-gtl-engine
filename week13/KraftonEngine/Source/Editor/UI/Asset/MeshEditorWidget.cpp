@@ -3,7 +3,7 @@
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
 #include "Runtime/Engine.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Viewport/Viewport.h"
 #include "GameFramework/Light/DirectionalLightActor.h"

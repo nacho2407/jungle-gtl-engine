@@ -1,5 +1,5 @@
 #include "GameFramework/PawnStaticMesh.h"
-#include "Component/StaticMeshComponent.h"
+#include "Component/Primitive/StaticMeshComponent.h"
 #include "Engine/Runtime/Engine.h"
 #include "Mesh/MeshManager.h"
 

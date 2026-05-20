@@ -1,7 +1,7 @@
-﻿#include "CharacterAnimGraphInstance.h"
+#include "CharacterAnimGraphInstance.h"
 
 #include "Component/Movement/CharacterMovementComponent.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
 #include "Serialization/Archive.h"

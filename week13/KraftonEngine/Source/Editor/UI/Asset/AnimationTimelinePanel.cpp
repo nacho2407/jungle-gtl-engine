@@ -7,7 +7,7 @@
 #include "Animation/Notify/AnimNotify.h"
 #include "Animation/Notify/AnimNotifyState.h"
 #include "Animation/AnimationManager.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Object/UClass.h"

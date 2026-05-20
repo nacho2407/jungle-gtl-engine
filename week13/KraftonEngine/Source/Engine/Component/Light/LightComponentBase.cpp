@@ -2,7 +2,7 @@
 #include "Serialization/Archive.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
-#include "Component/BillboardComponent.h"
+#include "Component/Primitive/BillboardComponent.h"
 #include "Materials/MaterialManager.h"
 
 HIDE_FROM_COMPONENT_LIST(ULightComponentBase)

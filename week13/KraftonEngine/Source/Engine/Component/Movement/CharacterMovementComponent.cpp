@@ -1,9 +1,9 @@
 #include "CharacterMovementComponent.h"
 
 #include "Animation/AnimInstance.h"
-#include "Component/CapsuleComponent.h"
+#include "Component/Shape/CapsuleComponent.h"
 #include "Component/SceneComponent.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/TickFunction.h"
 #include "GameFramework/AActor.h"

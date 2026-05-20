@@ -12,7 +12,7 @@
 #include "Animation/Nodes/AnimNode_StateMachine.h"
 #include "Animation/Nodes/AnimNode_SequencePlayer.h"
 #include "Component/Movement/CharacterMovementComponent.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Core/Log.h"
 #include "Core/PropertyTypes.h"
 #include "GameFramework/AActor.h"

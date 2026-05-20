@@ -1,5 +1,5 @@
-﻿#include "FrameContext.h"
-#include "Component/CameraComponent.h"
+#include "FrameContext.h"
+#include "Component/Camera/CameraComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "Viewport/Viewport.h"
 

@@ -1,9 +1,9 @@
 #include "GameFramework/Character.h"
 
-#include "Component/CapsuleComponent.h"
-#include "Component/InputComponent.h"
+#include "Component/Shape/CapsuleComponent.h"
+#include "Component/Input/InputComponent.h"
 #include "Component/Movement/CharacterMovementComponent.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Input/InputSystem.h"
 #include "Math/Rotator.h"
 #include "Mesh/MeshManager.h"

@@ -1,7 +1,7 @@
 #include "PlayerCameraManager.h"
 #include "CameraShake/CameraShakeAsset.h"
 #include "CameraShake/CameraShakeManager.h"
-#include "Component/CameraComponent.h"
+#include "Component/Camera/CameraComponent.h"
 #include "GameFramework/CameraShakeBase.h"
 #include "GameFramework/CameraModifier.h"
 #include "GameFramework/CameraShakeCameraModifier.h"
