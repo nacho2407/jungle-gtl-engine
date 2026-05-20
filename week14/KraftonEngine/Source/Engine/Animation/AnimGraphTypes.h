@@ -60,6 +60,42 @@ struct FAnimGraphLink
 	friend FArchive& operator<<(FArchive& Ar, FAnimGraphLink& Link);
 };
 
+// ── StateMachine 노드 보조 자료구조 ──
+// 평면 그래프에 별도 노드로 표현하지 않고 StateMachine 노드 안에 nested 보유.
+// 후속 단계에서 sub-graph view (UE 더블클릭 진입) 도입 시 동일 자료가 재사용됨.
+
+enum class ETransitionOp : uint8
+{
+	Greater,       // var >  threshold
+	GreaterEqual,  // var >= threshold
+	Less,          // var <  threshold
+	LessEqual,     // var <= threshold
+	Equal,         // |var - threshold| < eps
+	NotEqual
+};
+
+struct FAnimGraphState
+{
+	FName    StateName;
+	FString  SequencePath; // 이 state 가 재생할 sequence (디스크 path). LoadAnimation 으로 해상.
+	float    PlayRate    = 1.0f;
+	bool     bLooping    = true;
+
+	friend FArchive& operator<<(FArchive& Ar, FAnimGraphState& State);
+};
+
+struct FAnimGraphTransition
+{
+	FName         FromStateName; // FName::None == AnyState
+	FName         ToStateName;
+	FName         VariableName;  // OwnerClass 의 UPROPERTY 이름 (Float/Int/Bool 등)
+	ETransitionOp Op            = ETransitionOp::Greater;
+	float         Threshold     = 0.0f;
+	float         BlendTime     = 0.2f;
+
+	friend FArchive& operator<<(FArchive& Ar, FAnimGraphTransition& T);
+};
+
 struct FAnimGraphNode
 {
 	uint32                 NodeId = 0;
@@ -94,6 +130,13 @@ struct FAnimGraphNode
 	// 컴파일러는 이 노드를 별도 런타임 노드로 만들지 않고, consumer 노드 (BlendListByEnum 등) 의
 	// 람다로 inline — 그래프 시각화 ↔ 런타임 트리 디커플.
 	FName                  VariableName;
+
+	// StateMachine 노드 — states / transitions / initial state 를 nested 보유.
+	// 평면 그래프에선 state 별 노드 표현 없음 (inspector form 에서 정의). 후속에서 sub-graph
+	// 더블클릭 진입 시 동일 자료가 재사용됨.
+	TArray<FAnimGraphState>      States;
+	TArray<FAnimGraphTransition> Transitions;
+	FName                        InitialStateName;
 
 	friend FArchive& operator<<(FArchive& Ar, FAnimGraphNode& Node);
 };

@@ -27,6 +27,26 @@ FArchive& operator<<(FArchive& Ar, FAnimGraphLink& Link)
 	return Ar;
 }
 
+FArchive& operator<<(FArchive& Ar, FAnimGraphState& State)
+{
+	Ar << State.StateName;
+	Ar << State.SequencePath;
+	Ar << State.PlayRate;
+	Ar << State.bLooping;
+	return Ar;
+}
+
+FArchive& operator<<(FArchive& Ar, FAnimGraphTransition& T)
+{
+	Ar << T.FromStateName;
+	Ar << T.ToStateName;
+	Ar << T.VariableName;
+	Ar << T.Op;
+	Ar << T.Threshold;
+	Ar << T.BlendTime;
+	return Ar;
+}
+
 FArchive& operator<<(FArchive& Ar, FAnimGraphNode& Node)
 {
 	Ar << Node.NodeId;
@@ -41,6 +61,9 @@ FArchive& operator<<(FArchive& Ar, FAnimGraphNode& Node)
 	Ar << Node.SlotName;
 	Ar << Node.BlendWeight;
 	Ar << Node.VariableName;
+	Ar << Node.States;
+	Ar << Node.Transitions;
+	Ar << Node.InitialStateName;
 	return Ar;
 }
 
