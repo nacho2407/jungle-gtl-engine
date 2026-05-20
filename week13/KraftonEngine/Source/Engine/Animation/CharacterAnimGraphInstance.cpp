@@ -1,5 +1,8 @@
 ﻿#include "CharacterAnimGraphInstance.h"
 
+#include "Component/Movement/CharacterMovementComponent.h"
+#include "Component/SkeletalMeshComponent.h"
+#include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
 #include "Serialization/Archive.h"
 
@@ -10,12 +13,18 @@ void UCharacterAnimGraphInstance::NativeUpdateAnimation(float DeltaSeconds)
 	// 부모 (UAnimGraphInstance) 가 자산 Version polling + 재컴파일 처리.
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
-	// Speed 자동 변동 — UCharacterAnimInstance 와 동일 패턴.
-	if (bAutoDriveSpeed && AutoPeriodSec > 0.0f)
+	Speed      = 0.0f;
+	bIsFalling = false;
+	if (USkeletalMeshComponent* Comp = GetOwningComponent())
 	{
-		ElapsedTime += DeltaSeconds;
-		const float Omega = 2.0f * FMath::Pi / AutoPeriodSec;
-		Speed = AutoSpeedAmp + AutoSpeedAmp * std::sin(ElapsedTime * Omega);
+		if (AActor* Owner = Comp->GetOwner())
+		{
+			if (UCharacterMovementComponent* Move = Owner->GetComponentByClass<UCharacterMovementComponent>())
+			{
+				Speed      = Move->GetSpeed();
+				bIsFalling = Move->IsFalling();
+			}
+		}
 	}
 }
 
@@ -23,8 +32,4 @@ void UCharacterAnimGraphInstance::Serialize(FArchive& Ar)
 {
 	// 부모 직렬화 — GraphAssetPath / DefaultSequencePath 라운드트립.
 	Super::Serialize(Ar);
-
-	Ar << bAutoDriveSpeed;
-	Ar << AutoPeriodSec;
-	Ar << AutoSpeedAmp;
 }
