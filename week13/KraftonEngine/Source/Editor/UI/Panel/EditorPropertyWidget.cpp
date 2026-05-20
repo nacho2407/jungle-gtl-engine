@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorPropertyWidget.h"
+#include "Editor/UI/Panel/EditorPropertyWidget.h"
 
 #include "Editor/EditorEngine.h"
 

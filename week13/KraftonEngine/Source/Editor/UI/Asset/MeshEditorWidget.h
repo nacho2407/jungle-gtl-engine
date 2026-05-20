@@ -1,7 +1,7 @@
 #pragma once
 #include "AssetEditorWidget.h"
 #include "Editor/Viewport/MeshEditorViewportClient.h"
-#include "Editor/UI/FbxImportOptionsDialog.h"
+#include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 #include "Asset/AssetRegistry.h"
 
 struct FSkeletalMesh;

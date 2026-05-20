@@ -21,7 +21,7 @@
 #include "Animation/Skeleton/Skeleton.h"
 #include "Animation/Skeleton/SkeletonManager.h"
 #include "Asset/AssetRegistry.h"
-#include "Editor/UI/FbxImportOptionsDialog.h"
+#include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 #include "Editor/UI/Asset/MeshEditorWidget.h"
 
 #include <algorithm>

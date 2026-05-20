@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorAnimationDebugWidget.h"
+#include "Editor/UI/Debug/EditorAnimationDebugWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Selection/SelectionManager.h"

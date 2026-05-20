@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Editor/UI/EditorPlayToolbarWidget.h"
+#include "Editor/UI/Panel/EditorPlayToolbarWidget.h"
 #include "Slate/SWindow.h"
 #include <d3d11.h>
 

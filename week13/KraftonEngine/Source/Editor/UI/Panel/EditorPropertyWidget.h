@@ -3,7 +3,7 @@
 #include "Editor/UI/EditorWidget.h"
 #include "Object/Object.h"
 #include "Asset/AssetRegistry.h"
-#include "Editor/UI/FbxImportOptionsDialog.h"
+#include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 
 class UActorComponent;
 class AActor;
