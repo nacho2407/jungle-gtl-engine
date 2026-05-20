@@ -7,6 +7,7 @@
 #include "GameFramework/Level.h"
 #include "GameFramework/World.h"
 #include "Serialization/Archive.h"
+#include "Serialization/DuplicateArchive.h"
 
 #include <algorithm>
 
@@ -384,11 +385,12 @@ static USceneComponent* DuplicateSceneSubtree(
 	const USceneComponent* Src,
 	AActor* DupOwner,
 	USceneComponent* DupParent,
-	TSet<const UActorComponent*>& Visited)
+	TSet<const UActorComponent*>& Visited,
+	FDuplicateArchiveContext& DuplicateContext)
 {
 	if (!Src) return nullptr;
 
-	USceneComponent* DupNode = Cast<USceneComponent>(Src->Duplicate(DupOwner));
+	USceneComponent* DupNode = Cast<USceneComponent>(Src->DuplicateWithArchiveContext(DupOwner, DuplicateContext));
 	if (!DupNode) return nullptr;
 
 	DupNode->SetOwner(DupOwner);
@@ -401,16 +403,17 @@ static USceneComponent* DuplicateSceneSubtree(
 
 	for (USceneComponent* Child : Src->GetChildren())
 	{
-		DuplicateSceneSubtree(Child, DupOwner, DupNode, Visited);
+		DuplicateSceneSubtree(Child, DupOwner, DupNode, Visited, DuplicateContext);
 	}
 	return DupNode;
 }
 
 UObject* AActor::Duplicate(UObject* NewOuter) const
 {
-	// 1) 같은 타입 액터를 팩토리로 생성 (UObject::Duplicate 경유: Serialize 왕복까지 수행)
+	// 1) 같은 타입 액터를 팩토리로 생성 (공유 DuplicateContext로 Serialize 왕복)
 	//    NewOuter 미지정 시 원본의 Outer(World)를 승계 → 이후 AddActor가 다시 보강.
-	UObject* DupBase = UObject::Duplicate(NewOuter);
+	FDuplicateArchiveContext DuplicateContext;
+	UObject* DupBase = UObject::DuplicateWithArchiveContext(NewOuter, DuplicateContext);
 	AActor* Dup = static_cast<AActor*>(DupBase);
 	if (!Dup)
 	{
@@ -427,7 +430,7 @@ UObject* AActor::Duplicate(UObject* NewOuter) const
 	// 3a) Root 서브트리 재귀 복제 — 도달 가능한 모든 SceneComponent를 처리
 	if (RootComponent)
 	{
-		USceneComponent* DupRoot = DuplicateSceneSubtree(RootComponent, Dup, nullptr, Visited);
+		USceneComponent* DupRoot = DuplicateSceneSubtree(RootComponent, Dup, nullptr, Visited, DuplicateContext);
 		if (DupRoot)
 		{
 			Dup->SetRootComponent(DupRoot);
@@ -439,12 +442,21 @@ UObject* AActor::Duplicate(UObject* NewOuter) const
 	{
 		if (!Comp || Visited.count(Comp)) continue;
 
-		UActorComponent* DupComp = Cast<UActorComponent>(Comp->Duplicate(Dup));
+		UActorComponent* DupComp = Cast<UActorComponent>(Comp->DuplicateWithArchiveContext(Dup, DuplicateContext));
 		if (!DupComp) continue;
 
 		DupComp->SetOwner(Dup);
 		Dup->RegisterComponent(DupComp);
 		Visited.insert(Comp);
+	}
+	DuplicateContext.ResolveObjectReferenceFixups();
+
+	for (UActorComponent* DupComp : Dup->OwnedComponents)
+	{
+		if (DupComp)
+		{
+			DupComp->PostDuplicate();
+		}
 	}
 
 	Dup->bPrimitiveCacheDirty = true;

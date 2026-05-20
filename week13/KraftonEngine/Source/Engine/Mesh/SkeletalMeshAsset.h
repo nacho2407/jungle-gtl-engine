@@ -21,17 +21,50 @@ struct FBone
 	FString Name;
 	int32 ParentIndex = -1;
 
+	// Runtime pose semantics. The legacy LocalMatrix/GlobalMatrix slots are kept
+	// for existing package layout, but code should use these named poses.
+	FMatrix ReferenceLocalPose = FMatrix::Identity;
+	FMatrix ReferenceGlobalPose = FMatrix::Identity;
+	FMatrix SkinBindGlobalPose = FMatrix::Identity;
 	FMatrix LocalMatrix = FMatrix::Identity;
 	FMatrix GlobalMatrix = FMatrix::Identity;
 	FMatrix InverseBindPoseMatrix = FMatrix::Identity;
 
+	void SyncSeparatedPoseDataFromLegacy()
+	{
+		ReferenceLocalPose = LocalMatrix;
+		ReferenceGlobalPose = GlobalMatrix;
+		SkinBindGlobalPose = GlobalMatrix;
+	}
+
+	void SyncLegacyPoseDataFromSeparated()
+	{
+		LocalMatrix = ReferenceLocalPose;
+		GlobalMatrix = SkinBindGlobalPose;
+	}
+
+	const FMatrix& GetReferenceLocalPose() const { return ReferenceLocalPose; }
+	const FMatrix& GetReferenceGlobalPose() const { return ReferenceGlobalPose; }
+	const FMatrix& GetSkinBindGlobalPose() const { return SkinBindGlobalPose; }
+	const FMatrix& GetInverseBindPose() const { return InverseBindPoseMatrix; }
+
 	friend FArchive& operator<<(FArchive& Ar, FBone& Bone)
 	{
+		if (Ar.IsSaving())
+		{
+			Bone.SyncLegacyPoseDataFromSeparated();
+		}
+
 		Ar << Bone.Name;
 		Ar << Bone.ParentIndex;
 		SerializeSkeletalMatrix(Ar, Bone.LocalMatrix);
 		SerializeSkeletalMatrix(Ar, Bone.GlobalMatrix);
 		SerializeSkeletalMatrix(Ar, Bone.InverseBindPoseMatrix);
+
+		if (Ar.IsLoading())
+		{
+			Bone.SyncSeparatedPoseDataFromLegacy();
+		}
 		return Ar;
 	}
 };
@@ -92,6 +125,7 @@ struct FSkeletalMeshRange
 	uint32 VertexEnd = 0;
 	uint32 FirstIndex = 0;
 	uint32 IndexCount = 0;
+	// Legacy serialization slot. New imports bake mesh bind transforms into vertices.
 	FMatrix MeshBindGlobal = FMatrix::Identity;
 
 	friend FArchive& operator<<(FArchive& Ar, FSkeletalMeshRange& Range)
@@ -125,6 +159,23 @@ struct FSkeletalMesh
 	FVector BoundsCenter = FVector(0, 0, 0);
 	FVector BoundsExtent = FVector(0, 0, 0);
 	bool    bBoundsValid = false;
+
+	void NormalizeBonePoseData()
+	{
+		for (FBone& Bone : Bones)
+		{
+			Bone.ReferenceLocalPose = Bone.LocalMatrix;
+			Bone.SkinBindGlobalPose = Bone.GlobalMatrix;
+		}
+
+		for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
+		{
+			FBone& Bone = Bones[BoneIndex];
+			Bone.ReferenceGlobalPose = (Bone.ParentIndex >= 0 && Bone.ParentIndex < BoneIndex)
+				? Bone.ReferenceLocalPose * Bones[Bone.ParentIndex].ReferenceGlobalPose
+				: Bone.ReferenceLocalPose;
+		}
+	}
 
 	void CacheBounds()
 	{

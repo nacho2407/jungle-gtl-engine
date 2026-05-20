@@ -4,6 +4,9 @@
 #include "Object/FName.h"
 #include <type_traits>
 #include <string>
+#include <functional>
+
+class UObject;
 
 // 언리얼 엔진의 핵심 직렬화 베이스 클래스
 class FArchive
@@ -17,6 +20,9 @@ public:
 
 	inline bool IsLoading() const { return bIsLoading; }
 	inline bool IsSaving() const { return bIsSaving; }
+	virtual bool IsObjectReferenceRemapping() const { return false; }
+	virtual UObject* ResolveObjectReference(uint32 /*SourceUUID*/) const { return nullptr; }
+	virtual void AddObjectReferenceFixup(uint32 /*SourceUUID*/, std::function<void(UObject*)> /*Fixup*/) {}
 
 	// 핵심 순수 가상 함수: 파생 클래스(Writer/Reader)가 구현해야 할 실제 입출력 로직
 	// Data 포인터부터 Num 바이트만큼을 읽거나 씁니다.

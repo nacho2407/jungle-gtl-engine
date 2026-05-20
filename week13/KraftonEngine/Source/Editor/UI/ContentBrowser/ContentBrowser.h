@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Editor/UI/EditorWidget.h"
 #include "ContentItem.h"
 #include <d3d11.h>
@@ -25,8 +25,9 @@ public:
 private:
 	void LoadFromSettings();
 	void RefreshContent();
-	void DrawDirNode(FDirNode InNode);
+	void DrawDirNode(const FDirNode& InNode);
 	void DrawContents();
+	void RenderFbxImportOptionsPopup();
 
 	TArray<FContentItem> ReadDirectory(std::wstring Path);
 	FDirNode BuildDirectoryTree(const std::filesystem::path& DirPath);

@@ -29,6 +29,7 @@
 #include <imgui.h>
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 
 // Paths.h가 끌어오는 Windows.h는 GetCurrentTime을 GetTickCount로 치환한다.
 #ifdef GetCurrentTime
@@ -54,6 +55,32 @@ namespace
 		return Result;
 	}
 
+	FString FormatMeshStatSeconds(double Seconds)
+	{
+		char Buffer[64] = {};
+		std::snprintf(Buffer, sizeof(Buffer), "%.3f sec", Seconds);
+		return FString(Buffer);
+	}
+
+	TMap<FString, double> GMeshImportDurationsByAssetPath;
+
+	double GetRecordedImportDurationSeconds(const USkeletalMesh* Mesh)
+	{
+		if (!Mesh)
+		{
+			return -1.0;
+		}
+
+		const FString& AssetPath = Mesh->GetAssetPathFileName();
+		if (AssetPath.empty() || AssetPath == "None")
+		{
+			return -1.0;
+		}
+
+		auto It = GMeshImportDurationsByAssetPath.find(AssetPath);
+		return It != GMeshImportDurationsByAssetPath.end() ? It->second : -1.0;
+	}
+
 	EUberLitDefines::ELightingModel GetLightingModelForViewMode(EViewMode ViewMode)
 	{
 		switch (ViewMode)
@@ -69,6 +96,26 @@ namespace
 }
 
 static uint32 GNextMeshEditorInstanceId = 0;
+
+void FMeshEditorWidget::RecordImportDurationForAsset(const FString& AssetPath, double Seconds)
+{
+	if (AssetPath.empty() || AssetPath == "None" || Seconds < 0.0)
+	{
+		return;
+	}
+
+	GMeshImportDurationsByAssetPath[AssetPath] = Seconds;
+}
+
+void FMeshEditorWidget::ClearImportDurationForAsset(const FString& AssetPath)
+{
+	if (AssetPath.empty() || AssetPath == "None")
+	{
+		return;
+	}
+
+	GMeshImportDurationsByAssetPath.erase(AssetPath);
+}
 
 FMeshEditorWidget::FMeshEditorWidget()
 	: InstanceId(GNextMeshEditorInstanceId++)
@@ -203,18 +250,7 @@ void FMeshEditorWidget::Tick(float DeltaTime)
 		Out.Pose.resize(Asset->Bones.size());
 		Out.ResetToRefPose();
 
-		// Root bone을 bind pose에 고정하기 위해 ref pose값을 미리 보관.
-		// AnimViewer는 in-place 재생이 기본이며, root motion을 적용하면
-		// 캐릭터가 뷰포트 밖으로 이동/회전해 버린다.
-		const FTransform RootRefPose = Out.Pose.empty() ? FTransform {} : Out.Pose[0];
-
 		NodeInst->EvaluatePose(Out);
-
-		// root motion 억제: 루트 본을 ref pose로 복원
-		if (!Out.Pose.empty())
-		{
-			Out.Pose[0] = RootRefPose;
-		}
 
 		Comp->SetBoneLocalTransforms(Out.Pose);
 	}
@@ -344,7 +380,15 @@ void FMeshEditorWidget::RenderTabBar()
 		const bool bHovered = ImGui::IsItemHovered();
 		if (ImGui::IsItemClicked())
 		{
+			const EMeshEditorTab PreviousTab = ActiveTab;
 			ActiveTab = Tab;
+			if (PreviousTab != ActiveTab && ActiveTab == EMeshEditorTab::Skeleton)
+			{
+				if (USkeletalMeshComponent* Comp = ViewportClient.GetPreviewMeshComponent())
+				{
+					Comp->ApplyBoneEditBasePose();
+				}
+			}
 		}
 
 		if (bActive || bHovered)
@@ -542,16 +586,21 @@ void FMeshEditorWidget::RenderSkeletonLayout()
 		ImGui::Dummy(ImVec2(0, 10));
 
 		USkeletalMeshComponent* PreviewMeshComponent = ViewportClient.GetPreviewMeshComponent();
-		FTransform LocalTransform = PreviewMeshComponent ? PreviewMeshComponent->GetBoneLocalTransformByIndex(SelectedBoneIndex) : FTransform(Bone.LocalMatrix);
+		FTransform LocalTransform = PreviewMeshComponent
+			? PreviewMeshComponent->GetBoneEditBaseLocalTransformByIndex(SelectedBoneIndex)
+			: FTransform(Bone.GetReferenceLocalPose());
 
 		FVector Location = LocalTransform.Location;
 		if (ImGui::DragFloat3("Location", &Location.X, 0.1f))
 		{
 			LocalTransform.Location = Location;
 			if (PreviewMeshComponent)
-				PreviewMeshComponent->SetBoneLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
+				PreviewMeshComponent->SetBoneEditBaseLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
 			else
-				Bone.LocalMatrix = LocalTransform.ToMatrix();
+			{
+				Bone.ReferenceLocalPose = LocalTransform.ToMatrix();
+				Bone.SyncLegacyPoseDataFromSeparated();
+			}
 		}
 
 		FVector Rotation = LocalTransform.GetRotator().ToVector();
@@ -559,9 +608,12 @@ void FMeshEditorWidget::RenderSkeletonLayout()
 		{
 			LocalTransform.SetRotation(FRotator(Rotation));
 			if (PreviewMeshComponent)
-				PreviewMeshComponent->SetBoneLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
+				PreviewMeshComponent->SetBoneEditBaseLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
 			else
-				Bone.LocalMatrix = LocalTransform.ToMatrix();
+			{
+				Bone.ReferenceLocalPose = LocalTransform.ToMatrix();
+				Bone.SyncLegacyPoseDataFromSeparated();
+			}
 		}
 
 		FVector Scale = LocalTransform.Scale;
@@ -569,9 +621,12 @@ void FMeshEditorWidget::RenderSkeletonLayout()
 		{
 			LocalTransform.Scale = Scale;
 			if (PreviewMeshComponent)
-				PreviewMeshComponent->SetBoneLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
+				PreviewMeshComponent->SetBoneEditBaseLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
 			else
-				Bone.LocalMatrix = LocalTransform.ToMatrix();
+			{
+				Bone.ReferenceLocalPose = LocalTransform.ToMatrix();
+				Bone.SyncLegacyPoseDataFromSeparated();
+			}
 		}
 	}
 	else
@@ -746,21 +801,36 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 		FString Path                      = FEditorFileUtils::OpenFileDialog(Opts);
 		if (!Path.empty())
 		{
-			FAnimationImportRequest Request;
-			Request.SourceFbxPath      = Path;
-			Request.TargetSkeletonPath = SkeletalMesh->GetSkeletonBinding().SkeletonPath;
+			FFbxImportOptionsDialog::BeginAnimationImport(AnimTabState.AnimationImportDialog, Path);
+		}
+	}
 
-			TArray<UAnimSequence*> ImportedSequences;
-			FAnimationManager::Get().ImportAnimationForSkeleton(Request, &ImportedSequences);
-			// 임포트 성공/스킵(이미 존재) 무관하게 디스크를 다시 스캔해 목록 갱신.
-			FAnimationManager::Get().RefreshAvailableAnimations();
-			if (!ImportedSequences.empty())
-			{
-				AnimTabState.CurrentSequence     = ImportedSequences[0];
-				AnimTabState.SelectedAnimIndex   = -1;
-				AnimTabState.SelectedNotifyIndex = -1;
-				ApplyAnimationToComponent();
-			}
+	FAnimationImportRequest      AnimationImportRequest;
+	const EFbxImportDialogResult AnimationImportDialogResult = FFbxImportOptionsDialog::RenderAnimationImportPopup(
+		"Import Animation FBX Options",
+		AnimTabState.AnimationImportDialog,
+		SkeletalMesh ? SkeletalMesh->GetSkeletonBinding().SkeletonPath : FString("None"),
+		AnimationImportRequest
+	);
+
+	if (AnimationImportDialogResult == EFbxImportDialogResult::Submitted)
+	{
+		TArray<UAnimSequence*> ImportedSequences;
+		FAnimationManager::Get().ImportAnimationForSkeleton(AnimationImportRequest, &ImportedSequences);
+		// 임포트 성공/스킵(이미 존재) 무관하게 디스크를 다시 스캔해 목록 갱신.
+		FAnimationManager::Get().RefreshAvailableAnimations();
+		if (!ImportedSequences.empty())
+		{
+			AnimTabState.CurrentSequence     = ImportedSequences[0];
+			AnimTabState.SelectedAnimIndex   = -1;
+			AnimTabState.SelectedNotifyIndex = -1;
+			ApplyAnimationToComponent();
+			FFbxImportOptionsDialog::RequestClose(AnimTabState.AnimationImportDialog);
+		}
+		else
+		{
+			AnimTabState.AnimationImportDialog.Error =
+			"No animation was imported. Existing assets may have been skipped.";
 		}
 	}
 
@@ -918,18 +988,29 @@ void FMeshEditorWidget::RenderMeshStatsOverlay(ImDrawList* DrawList, const ImVec
 
 	size_t VertexCount   = 0;
 	size_t TriangleCount = 0;
+	size_t IndexCount    = 0;
+	double ImportSeconds = -1.0;
 
 	if (const USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
 	{
 		if (const FSkeletalMesh* Asset = SkeletalMesh->GetSkeletalMeshAsset())
 		{
 			VertexCount   = Asset->Vertices.size();
+			IndexCount    = Asset->Indices.size();
 			TriangleCount = Asset->Indices.size() / 3;
 		}
+		ImportSeconds = GetRecordedImportDurationSeconds(SkeletalMesh);
 	}
 
-	const FString Text =
-		"Triangles: " + FormatMeshStatCount(TriangleCount) + "\n" + "Vertices: " + FormatMeshStatCount(VertexCount);
+	FString Text =
+		"Triangles: " + FormatMeshStatCount(TriangleCount) + "\n" +
+		"Vertices: " + FormatMeshStatCount(VertexCount) + "\n" +
+		"Indices: " + FormatMeshStatCount(IndexCount);
+
+	if (ImportSeconds >= 0.0)
+	{
+		Text += "\nImport Time: " + FormatMeshStatSeconds(ImportSeconds);
+	}
 
 	const ImVec2 TextPos(ViewportPos.x + 8.0f, ViewportPos.y + 36.0f);
 	DrawList->AddText(ImVec2(TextPos.x + 1.0f, TextPos.y + 1.0f), IM_COL32(0, 0, 0, 220), Text.c_str());

@@ -61,6 +61,107 @@ namespace SceneKeys
 	static constexpr const char* Properties = "Properties";
 	static constexpr const char* Children = "Children";
 	static constexpr const char* HiddenInComponentTree = "bHiddenInComponentTree";
+	static constexpr const char* ObjectId = "ObjectId";
+}
+
+uint32 FSceneSaveManager::FSceneSaveContext::RegisterSceneObject(const UObject* Object)
+{
+	if (!Object)
+	{
+		return 0;
+	}
+
+	auto It = ObjectToId.find(Object);
+	if (It != ObjectToId.end())
+	{
+		return It->second;
+	}
+
+	const uint32 ObjectId = NextObjectId++;
+	ObjectToId.emplace(Object, ObjectId);
+	return ObjectId;
+}
+
+uint32 FSceneSaveManager::FSceneSaveContext::FindObjectId(const UObject* Object) const
+{
+	if (!Object)
+	{
+		return 0;
+	}
+
+	auto It = ObjectToId.find(Object);
+	return It != ObjectToId.end() ? It->second : 0;
+}
+
+bool FSceneSaveManager::FSceneSaveContext::SerializeObjectReference(const UObject* Object, json::JSON& OutValue) const
+{
+	using namespace json;
+
+	if (!Object)
+	{
+		OutValue = JSON();
+		return true;
+	}
+
+	const uint32 ObjectId = FindObjectId(Object);
+	if (ObjectId == 0)
+	{
+		OutValue = JSON();
+		return true;
+	}
+
+	JSON Ref = json::Object();
+	Ref[SceneKeys::ObjectId] = static_cast<int>(ObjectId);
+	OutValue = Ref;
+	return true;
+}
+
+void FSceneSaveManager::FSceneLoadContext::RegisterLoadedObject(json::JSON& Node, UObject* Object)
+{
+	if (!Object || !Node.hasKey(SceneKeys::ObjectId))
+	{
+		return;
+	}
+
+	const uint32 ObjectId = static_cast<uint32>(Node[SceneKeys::ObjectId].ToInt());
+	if (ObjectId != 0)
+	{
+		ObjectById[ObjectId] = Object;
+	}
+}
+
+UObject* FSceneSaveManager::FSceneLoadContext::FindObjectById(uint32 ObjectId) const
+{
+	auto It = ObjectById.find(ObjectId);
+	return It != ObjectById.end() ? It->second : nullptr;
+}
+
+void FSceneSaveManager::FSceneLoadContext::QueueProperties(UObject* Object, json::JSON& Properties)
+{
+	if (!Object)
+	{
+		return;
+	}
+
+	PendingProperties.push_back({ Object, &Properties });
+}
+
+bool FSceneSaveManager::FSceneLoadContext::DeserializeObjectReference(json::JSON& Value, UObject*& OutObject) const
+{
+	OutObject = nullptr;
+	if (Value.IsNull())
+	{
+		return true;
+	}
+
+	if (Value.JSONType() != json::JSON::Class::Object || !Value.hasKey(SceneKeys::ObjectId))
+	{
+		return false;
+	}
+
+	const uint32 ObjectId = static_cast<uint32>(Value[SceneKeys::ObjectId].ToInt());
+	OutObject = ObjectId != 0 ? FindObjectById(ObjectId) : nullptr;
+	return true;
 }
 
 static void SerializeComponentEditorMetadata(json::JSON& Node, const UActorComponent* Comp)
@@ -139,7 +240,10 @@ void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext
 	std::filesystem::path FileDestination = std::filesystem::path(SceneDir) / (FPaths::ToWide(FinalName) + SceneExtension);
 	std::filesystem::create_directories(SceneDir);
 
-	JSON Root = SerializeWorld(WorldContext.World, WorldContext, PerspectivePOV);
+	FSceneSaveContext SaveContext;
+	CollectWorldObjectIds(WorldContext.World, SaveContext);
+
+	JSON Root = SerializeWorld(WorldContext.World, WorldContext, PerspectivePOV, SaveContext);
 	Root[SceneKeys::Version] = 2;
 	Root[SceneKeys::Name] = FinalName;
 
@@ -151,11 +255,64 @@ void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext
 	}
 }
 
-json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext& Ctx, const FMinimalViewInfo* PerspectivePOV)
+void FSceneSaveManager::CollectWorldObjectIds(UWorld* World, FSceneSaveContext& Context)
+{
+	if (!World)
+	{
+		return;
+	}
+
+	Context.RegisterSceneObject(World);
+	for (AActor* Actor : World->GetActors())
+	{
+		CollectActorObjectIds(Actor, Context);
+	}
+}
+
+void FSceneSaveManager::CollectActorObjectIds(AActor* Actor, FSceneSaveContext& Context)
+{
+	if (!Actor)
+	{
+		return;
+	}
+
+	Context.RegisterSceneObject(Actor);
+	if (Actor->GetRootComponent())
+	{
+		CollectSceneComponentObjectIds(Actor->GetRootComponent(), Context);
+	}
+
+	for (UActorComponent* Comp : Actor->GetComponents())
+	{
+		if (!Comp)
+		{
+			continue;
+		}
+
+		Context.RegisterSceneObject(Comp);
+	}
+}
+
+void FSceneSaveManager::CollectSceneComponentObjectIds(USceneComponent* Comp, FSceneSaveContext& Context)
+{
+	if (!Comp)
+	{
+		return;
+	}
+
+	Context.RegisterSceneObject(Comp);
+	for (USceneComponent* Child : Comp->GetChildren())
+	{
+		CollectSceneComponentObjectIds(Child, Context);
+	}
+}
+
+json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext& Ctx, const FMinimalViewInfo* PerspectivePOV, FSceneSaveContext& Context)
 {
 	using namespace json;
 	JSON w = json::Object();
 	w[SceneKeys::ClassName] = World->GetClass()->GetName();
+	w[SceneKeys::ObjectId] = static_cast<int>(Context.RegisterSceneObject(World));
 	w[SceneKeys::WorldType] = WorldTypeToString(Ctx.WorldType);
 	w[SceneKeys::ContextName] = Ctx.ContextName;
 	w[SceneKeys::ContextHandle] = Ctx.ContextHandle.ToString();
@@ -172,7 +329,7 @@ json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext&
 	JSON Actors = json::Array();
 	for (AActor* Actor : World->GetActors()) {
 		if (!Actor) continue;
-		Actors.append(SerializeActor(Actor));
+		Actors.append(SerializeActor(Actor, Context));
 	}
 	w[SceneKeys::Actors] = Actors;
 
@@ -185,17 +342,18 @@ json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext&
 	return w;
 }
 
-json::JSON FSceneSaveManager::SerializeActor(AActor* Actor)
+json::JSON FSceneSaveManager::SerializeActor(AActor* Actor, FSceneSaveContext& Context)
 {
 	using namespace json;
 	JSON a = json::Object();
 	a[SceneKeys::ClassName] = Actor->GetClass()->GetName();
+	a[SceneKeys::ObjectId] = static_cast<int>(Context.RegisterSceneObject(Actor));
 	a[SceneKeys::Name] = Actor->GetFName().ToString();
-	a[SceneKeys::Properties] = SerializeProperties(Actor);
+	a[SceneKeys::Properties] = SerializeProperties(Actor, Context);
 
 	// RootComponent 트리 직렬화
 	if (Actor->GetRootComponent()) {
-		a[SceneKeys::RootComponent] = SerializeSceneComponentTree(Actor->GetRootComponent());
+		a[SceneKeys::RootComponent] = SerializeSceneComponentTree(Actor->GetRootComponent(), Context);
 	}
 
 	// Non-scene components
@@ -206,7 +364,8 @@ json::JSON FSceneSaveManager::SerializeActor(AActor* Actor)
 
 		JSON c = json::Object();
 		c[SceneKeys::ClassName] = Comp->GetClass()->GetName();
-		c[SceneKeys::Properties] = SerializeProperties(Comp);
+		c[SceneKeys::ObjectId] = static_cast<int>(Context.RegisterSceneObject(Comp));
+		c[SceneKeys::Properties] = SerializeProperties(Comp, Context);
 		SerializeComponentEditorMetadata(c, Comp);
 		NonScene.append(c);
 	}
@@ -215,25 +374,26 @@ json::JSON FSceneSaveManager::SerializeActor(AActor* Actor)
 	return a;
 }
 
-json::JSON FSceneSaveManager::SerializeSceneComponentTree(USceneComponent* Comp)
+json::JSON FSceneSaveManager::SerializeSceneComponentTree(USceneComponent* Comp, FSceneSaveContext& Context)
 {
 	using namespace json;
 	JSON c = json::Object();
 	c[SceneKeys::ClassName] = Comp->GetClass()->GetName();
-	c[SceneKeys::Properties] = SerializeProperties(Comp);
+	c[SceneKeys::ObjectId] = static_cast<int>(Context.RegisterSceneObject(Comp));
+	c[SceneKeys::Properties] = SerializeProperties(Comp, Context);
 	SerializeComponentEditorMetadata(c, Comp);
 
 	JSON Children = json::Array();
 	for (USceneComponent* Child : Comp->GetChildren()) {
 		if (!Child) continue;
-		Children.append(SerializeSceneComponentTree(Child));
+		Children.append(SerializeSceneComponentTree(Child, Context));
 	}
 	c[SceneKeys::Children] = Children;
 
 	return c;
 }
 
-json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj)
+json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj, FSceneSaveContext& Context)
 {
 	using namespace json;
 	JSON Props = json::Object();
@@ -258,7 +418,7 @@ json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj)
 			continue;
 		}
 
-		Props[Prop->Name] = Prop->Serialize(Obj);
+		Props[Prop->Name] = Prop->Serialize(Obj, &Context);
 	}
 	return Props;
 }
@@ -331,6 +491,8 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 	if (!WorldObj || !WorldObj->IsA<UWorld>()) return;
 
 	UWorld* World = static_cast<UWorld*>(WorldObj);
+	FSceneLoadContext LoadContextState;
+	LoadContextState.RegisterLoadedObject(root, World);
 
 	EWorldType WorldType = OverrideWorldType
 		? *OverrideWorldType
@@ -386,6 +548,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 			UObject* ActorObj = FObjectFactory::Get().Create(ActorClass, World);
 			if (!ActorObj || !ActorObj->IsA<AActor>()) continue;
 			AActor* Actor = static_cast<AActor*>(ActorObj);
+			LoadContextState.RegisterLoadedObject(ActorJSON, Actor);
 			World->AddActor(Actor);
 
 			if (ActorJSON.hasKey(SceneKeys::Name)) {
@@ -395,14 +558,14 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 			// RootComponent 트리 복원
 			if (ActorJSON.hasKey(SceneKeys::RootComponent)) {
 				JSON& RootJSON = ActorJSON[SceneKeys::RootComponent];
-				USceneComponent* Root = DeserializeSceneComponentTree(RootJSON, Actor);
+				USceneComponent* Root = DeserializeSceneComponentTree(RootJSON, Actor, LoadContextState);
 				if (Root) Actor->SetRootComponent(Root);
 			}
 
 			// Actor 프로퍼티(Location/Rotation/Scale/Visible 및 서브클래스 추가 항목)
 			// 복원 — RootComponent 복원 뒤여야 SetActorLocation 등이 적용됨.
 			if (ActorJSON.hasKey(SceneKeys::Properties)) {
-				DeserializeProperties(Actor, ActorJSON[SceneKeys::Properties]);
+				LoadContextState.QueueProperties(Actor, ActorJSON[SceneKeys::Properties]);
 			}
 
 			// Non-scene components 복원
@@ -413,19 +576,36 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 					if (!CompObj || !CompObj->IsA<UActorComponent>()) continue;
 
 					UActorComponent* Comp = static_cast<UActorComponent*>(CompObj);
+					LoadContextState.RegisterLoadedObject(CompJSON, Comp);
 					Actor->RegisterComponent(Comp);
 
 					if (CompJSON.hasKey(SceneKeys::Properties)) {
 						JSON& PropsJSON = CompJSON[SceneKeys::Properties];
-						DeserializeProperties(Comp, PropsJSON);
+						LoadContextState.QueueProperties(Comp, PropsJSON);
 					}
 					DeserializeComponentEditorMetadata(Comp, CompJSON);
 				}
 			}
-
-			World->RemoveActorToOctree(Actor);
-			World->InsertActorToOctree(Actor);
 		}
+	}
+
+	for (FPendingPropertyLoad& Pending : LoadContextState.PendingProperties)
+	{
+		if (Pending.Object && Pending.Properties)
+		{
+			DeserializeProperties(Pending.Object, *Pending.Properties, LoadContextState);
+		}
+	}
+
+	for (AActor* Actor : World->GetActors())
+	{
+		if (!Actor)
+		{
+			continue;
+		}
+
+		World->RemoveActorToOctree(Actor);
+		World->InsertActorToOctree(Actor);
 	}
 
 	OutWorldContext.WorldType = WorldType;
@@ -434,19 +614,20 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 	OutWorldContext.ContextHandle = FName(ContextHandle);
 }
 
-USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner)
+USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner, FSceneLoadContext& Context)
 {
 	string ClassName = Node[SceneKeys::ClassName].ToString();
 	UObject* Obj = FObjectFactory::Get().Create(ClassName, Owner);
 	if (!Obj || !Obj->IsA<USceneComponent>()) return nullptr;
 
 	USceneComponent* Comp = static_cast<USceneComponent*>(Obj);
+	Context.RegisterLoadedObject(Node, Comp);
 	Owner->RegisterComponent(Comp);
 
 	// Restore properties
 	if (Node.hasKey(SceneKeys::Properties)) {
 		json::JSON& PropsJSON = Node[SceneKeys::Properties];
-		DeserializeProperties(Comp, PropsJSON);
+		Context.QueueProperties(Comp, PropsJSON);
 	}
 	DeserializeComponentEditorMetadata(Comp, Node);
 	Comp->MarkTransformDirty();
@@ -454,7 +635,7 @@ USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& No
 	// Restore children recursively
 	if (Node.hasKey(SceneKeys::Children)) {
 		for (auto& ChildJSON : Node[SceneKeys::Children].ArrayRange()) {
-			USceneComponent* Child = DeserializeSceneComponentTree(ChildJSON, Owner);
+			USceneComponent* Child = DeserializeSceneComponentTree(ChildJSON, Owner, Context);
 			if (Child) {
 				Child->AttachToComponent(Comp);
 			}
@@ -466,7 +647,7 @@ USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& No
 	return Comp;
 }
 
-void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSON)
+void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSON, FSceneLoadContext& Context)
 {
 	if (!Obj) return;
 
@@ -496,13 +677,14 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 		}
 
 		json::JSON& Value = PropsJSON[PropertyKey];
-		Property->Deserialize(Obj, Value);
+		Property->Deserialize(Obj, Value, &Context);
 
 		FPropertyChangedEvent Event;
 		Event.Object = Obj;
 		Event.Property = Property;
 		Event.PropertyName = Property->Name;
 		Event.DisplayName = Property->DisplayName ? Property->DisplayName : Property->Name;
+		Event.PropertyPath = Property->Name;
 		Event.Type = Property->GetType();
 		Event.ChangeType = EPropertyChangeType::Load;
 		Obj->PostEditChangeProperty(Event);

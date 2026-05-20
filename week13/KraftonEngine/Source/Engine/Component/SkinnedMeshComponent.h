@@ -52,17 +52,21 @@ public:
 	FQuat GetBoneQuatByIndex(int32 BoneIndex) const;
 	FVector GetBoneScaleByIndex(int32 BoneIndex) const;
 	FTransform GetBoneLocalTransformByIndex(int32 BoneIndex) const;
+	FTransform GetBoneEditBaseLocalTransformByIndex(int32 BoneIndex) const;
 
 	void SetBoneLocationByIndex(int32 BoneIndex, const FVector& NewLocation);
 	void SetBoneRotationByIndex(int32 BoneIndex, const FRotator& NewRotation);
 	void SetBoneRotationByIndex(int32 BoneIndex, const FQuat& NewQuat);
 	void SetBoneScaleByIndex(int32 BoneIndex, const FVector& NewScale);
 	void SetBoneLocalTransformByIndex(int32 BoneIndex, const FTransform& NewLocalTransform);
+	void SetBoneEditBaseLocalTransformByIndex(int32 BoneIndex, const FTransform& NewLocalTransform);
 
 	void SetBoneLocalTransforms(const TArray<FTransform>& LocalPose);
+	void ApplyBoneEditBasePose();
 
 	void GetCurrentBoneGlobalTransforms(TArray<FTransform>& OutGlobals) const;
 	void GetCurrentBoneGlobalMatrices(TArray<FMatrix>& OutGlobals) const;
+	void BuildSkinMatrices(TArray<FMatrix>& OutSkinMatrices) const;
 	const TArray<FVertexPNCTT>& GetSkinnedVertices() const { return SkinnedVertices; }
 	uint64 GetSkinnedRevision() const { return SkinnedRevision; }
 	FMeshBuffer* GetMeshBuffer() const override;
@@ -75,22 +79,25 @@ protected:
 	void InitSkinningCache();
 	void UpdateCPUSkinning();
 	void RefreshSkinningAfterPoseChanged();
+	void EnsureBoneEditBasePose();
 	void BuildBoneEditGlobalTransforms(TArray<FTransform>& OutGlobals) const;
 	void BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlobals) const;
 
 protected:
 	// Mesh/material state는 SetSkeletalMesh와 PostEditProperty가 같은 경로를 쓰도록 여기서 소유한다.
-	UPROPERTY(Edit, Category="Mesh", DisplayName="Skeletal Mesh")
 	TObjectPtr<USkeletalMesh> SkeletalMesh;
-	UPROPERTY(Save, Category="Mesh", DisplayName="Skeletal Mesh Path", AssetType="SkeletalMesh")
+	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Skeletal Mesh", AssetType="SkeletalMesh")
 	FSoftObjectPtr SkeletalMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
-	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", AssetType="Material")
+	UPROPERTY(Edit, Save, EditFixedSize, Category="Materials", DisplayName="Materials", AssetType="Material")
 	TArray<FSoftObjectPtr> MaterialSlots;
 
-	// Bone edit pose는 asset 원본 bone을 직접 바꾸지 않고 component-local override로만 유지한다.
+	// BoneEditLocalMatrices is the current evaluated pose. BoneEditBaseLocalMatrices is the
+	// edited animation base pose that survives animation evaluation and is not used as skin bind.
 	TArray<FMatrix> BoneEditLocalMatrices;
 	bool bUseBoneEditPose = false;
+	TArray<FMatrix> BoneEditBaseLocalMatrices;
+	bool bUseBoneEditBasePose = false;
 
 	// SceneProxy는 이 결과와 revision만 보고 dynamic vertex buffer를 갱신한다.
 	TArray<FVertexPNCTT> SkinnedVertices;

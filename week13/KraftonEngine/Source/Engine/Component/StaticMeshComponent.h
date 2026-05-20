@@ -50,12 +50,11 @@ public:
 private:
 	void CacheLocalBounds();
 
-	UPROPERTY(Edit, Category="Mesh", DisplayName="Static Mesh")
 	TObjectPtr<UStaticMesh> StaticMesh;
-	UPROPERTY(Save, Category="Mesh", DisplayName="Static Mesh Path", AssetType="StaticMesh")
+	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Static Mesh", AssetType="StaticMesh")
 	FSoftObjectPtr StaticMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
-	UPROPERTY(Edit, Save, Category="Materials", DisplayName="Materials", AssetType="Material")
+	UPROPERTY(Edit, Save, EditFixedSize, Category="Materials", DisplayName="Materials", AssetType="Material")
 	TArray<FSoftObjectPtr> MaterialSlots;
 
 	FVector CachedLocalCenter = { 0, 0, 0 };

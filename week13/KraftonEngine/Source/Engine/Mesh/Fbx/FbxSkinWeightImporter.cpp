@@ -1,8 +1,7 @@
-#include "Mesh/Fbx/FbxSkinWeightImporter.h"
+﻿#include "Mesh/Fbx/FbxSkinWeightImporter.h"
 #include "Mesh/Fbx/FbxSceneQuery.h"
 #include "Mesh/Fbx/FbxTransformUtils.h"
 #include "Mesh/Fbx/FbxMaterialImporter.h"
-#include "Mesh/Fbx/FbxSkeletonImporter.h"
 #include "Mesh/Fbx/FbxTangentBuilder.h"
 #include "Core/Log.h"
 
@@ -54,6 +53,127 @@ struct hash<FFbxSkeletalVertexKey>
 
 namespace
 {
+	static void SetBoneInverseBindPose(FBone& Bone, const FMatrix& InverseBindPose)
+	{
+		Bone.InverseBindPoseMatrix = InverseBindPose;
+		Bone.SkinBindGlobalPose = InverseBindPose.GetInverse();
+		Bone.GlobalMatrix = Bone.SkinBindGlobalPose;
+	}
+
+	static int32 FindMappedBoneIndex(FbxNode* Node, const TMap<FbxNode*, int32>& BoneNodeToIndex)
+	{
+		auto It = BoneNodeToIndex.find(Node);
+		return It != BoneNodeToIndex.end() ? It->second : -1;
+	}
+
+	static int32 FindFirstDescendantBoneIndex(FbxNode* Node, const TMap<FbxNode*, int32>& BoneNodeToIndex)
+	{
+		if (!Node)
+		{
+			return -1;
+		}
+
+		for (int32 ChildIndex = 0; ChildIndex < Node->GetChildCount(); ++ChildIndex)
+		{
+			FbxNode* Child = Node->GetChild(ChildIndex);
+			const int32 DirectBoneIndex = FindMappedBoneIndex(Child, BoneNodeToIndex);
+			if (DirectBoneIndex >= 0)
+			{
+				return DirectBoneIndex;
+			}
+
+			const int32 DescendantBoneIndex = FindFirstDescendantBoneIndex(Child, BoneNodeToIndex);
+			if (DescendantBoneIndex >= 0)
+			{
+				return DescendantBoneIndex;
+			}
+		}
+
+		return -1;
+	}
+
+	static int32 FindFirstAncestorBoneIndex(FbxNode* Node, const TMap<FbxNode*, int32>& BoneNodeToIndex)
+	{
+		for (FbxNode* Parent = Node ? Node->GetParent() : nullptr; Parent; Parent = Parent->GetParent())
+		{
+			const int32 BoneIndex = FindMappedBoneIndex(Parent, BoneNodeToIndex);
+			if (BoneIndex >= 0)
+			{
+				return BoneIndex;
+			}
+		}
+
+		return -1;
+	}
+
+	static int32 ResolveRigidAttachmentBoneIndex(FbxNode* Node, const TMap<FbxNode*, int32>& BoneNodeToIndex)
+	{
+		const int32 DirectBoneIndex = FindMappedBoneIndex(Node, BoneNodeToIndex);
+		if (DirectBoneIndex >= 0)
+		{
+			return DirectBoneIndex;
+		}
+
+		const int32 DescendantBoneIndex = FindFirstDescendantBoneIndex(Node, BoneNodeToIndex);
+		if (DescendantBoneIndex >= 0)
+		{
+			return DescendantBoneIndex;
+		}
+
+		return FindFirstAncestorBoneIndex(Node, BoneNodeToIndex);
+	}
+
+	static void ImportClusterInverseBindPoses(FFbxImportContext& Context)
+	{
+		for (FbxNode* Node : Context.AllNodes)
+		{
+			FbxMesh* Mesh = Node ? Node->GetMesh() : nullptr;
+			if (!Mesh)
+			{
+				continue;
+			}
+
+			const int32 DeformerCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
+			for (int32 DeformerIndex = 0; DeformerIndex < DeformerCount; ++DeformerIndex)
+			{
+				FbxSkin* Skin = static_cast<FbxSkin*>(Mesh->GetDeformer(DeformerIndex, FbxDeformer::eSkin));
+				if (!Skin)
+				{
+					continue;
+				}
+
+				for (int32 ClusterIndex = 0; ClusterIndex < Skin->GetClusterCount(); ++ClusterIndex)
+				{
+					FbxCluster* Cluster = Skin->GetCluster(ClusterIndex);
+					FbxNode* LinkNode = Cluster ? Cluster->GetLink() : nullptr;
+					auto BoneIt = Context.BoneNodeToIndex.find(LinkNode);
+					if (BoneIt == Context.BoneNodeToIndex.end())
+					{
+						continue;
+					}
+
+					FbxAMatrix LinkBindMatrix;
+					Cluster->GetTransformLinkMatrix(LinkBindMatrix);
+					SetBoneInverseBindPose(Context.Bones[BoneIt->second], FFbxTransformUtils::ToEngineInverseMatrix(LinkBindMatrix));
+				}
+			}
+		}
+	}
+
+	static FMatrix BuildRigidBindCorrection(int32 RigidBoneIndex, const TArray<FBone>& Bones)
+	{
+		if (RigidBoneIndex < 0 || RigidBoneIndex >= static_cast<int32>(Bones.size()))
+		{
+			return FMatrix::Identity;
+		}
+
+		// Rigid child meshes still pass through the bone skin matrix at runtime.
+		// Store them in pre-skinned space so reference-pose skinning preserves their FBX mesh transform.
+		const FMatrix ReferenceSkinMatrix =
+			Bones[RigidBoneIndex].GetInverseBindPose() * Bones[RigidBoneIndex].GetReferenceGlobalPose();
+		return ReferenceSkinMatrix.IsIdentity() ? FMatrix::Identity : ReferenceSkinMatrix.GetInverse();
+	}
+
 	static void NormalizeWeights(float* Weights, int32 Count)
 	{
 		float TotalWeight = 0.0f;
@@ -82,6 +202,8 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 	Context.TangentSums.clear();
 	Context.BitangentSums.clear();
 
+	ImportClusterInverseBindPoses(Context);
+
 	for (FbxNode* Node : Context.AllNodes)
 	{
 		FbxMesh* Mesh = Node ? Node->GetMesh() : nullptr;
@@ -94,7 +216,10 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 		FbxSkin* Skin = DeformerCount > 0 ? static_cast<FbxSkin*>(Mesh->GetDeformer(0, FbxDeformer::eSkin)) : nullptr;
 		const int32 ClusterCount = Skin ? Skin->GetClusterCount() : 0;
 		const bool bHasSkin = Skin && ClusterCount > 0;
-		const int32 RigidBoneIndex = bHasSkin ? -1 : FFbxSkeletonImporter::FindNearestParentBoneIndex(Node, Context.BoneNodeToIndex);
+		const int32 RigidBoneIndex = bHasSkin ? -1 : ResolveRigidAttachmentBoneIndex(Node, Context.BoneNodeToIndex);
+		const FMatrix RigidBindCorrection = (!bHasSkin && RigidBoneIndex >= 0)
+			? BuildRigidBindCorrection(RigidBoneIndex, Context.Bones)
+			: FMatrix::Identity;
 
 		struct WeightData
 		{
@@ -131,7 +256,7 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 			Cluster->GetTransformLinkMatrix(LinkBindMatrix);
 
 			const int32 BoneIndex = BoneIt->second;
-			Context.Bones[BoneIndex].InverseBindPoseMatrix = FFbxTransformUtils::ToEngineMatrix(LinkBindMatrix).GetInverse();
+			SetBoneInverseBindPose(Context.Bones[BoneIndex], FFbxTransformUtils::ToEngineInverseMatrix(LinkBindMatrix));
 
 			if (!bHasClusterMeshBindGlobal)
 			{
@@ -169,8 +294,9 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 
 		for (TArray<WeightData>& Weights : TempWeights)
 		{
-			if (Weights.empty() && RigidBoneIndex >= 0)
+			if (!bHasSkin && RigidBoneIndex >= 0)
 			{
+				Weights.clear();
 				Weights.push_back({ RigidBoneIndex, 1.0f });
 			}
 
@@ -193,6 +319,7 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 		FbxStringList UVSetNames;
 		Mesh->GetUVSetNames(UVSetNames);
 		const char* UVName = (UVSetNames.GetCount() > 0) ? UVSetNames.GetStringAt(0) : nullptr;
+		const bool bReverseWinding = FFbxTransformUtils::HasNegativeBasisDeterminant(MeshBindGlobal);
 
 		TArray<int32> LocalToGlobalMaterialIndex;
 		LocalToGlobalMaterialIndex.resize(Node->GetMaterialCount());
@@ -237,7 +364,12 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 				}
 
 				FbxVector4 CP = Mesh->GetControlPointAt(CPIndex);
-				Vertex.Position = FVector(static_cast<float>(CP[0]), static_cast<float>(CP[1]), static_cast<float>(CP[2]));
+				const FVector LocalPosition(static_cast<float>(CP[0]), static_cast<float>(CP[1]), static_cast<float>(CP[2]));
+				Vertex.Position = MeshBindGlobal.TransformPositionWithW(LocalPosition);
+				if (!bHasSkin && RigidBoneIndex >= 0)
+				{
+					Vertex.Position = RigidBindCorrection.TransformPositionWithW(Vertex.Position);
+				}
 
 				const TArray<WeightData>& Weights = TempWeights[CPIndex];
 
@@ -253,6 +385,11 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 				Mesh->GetPolygonVertexNormal(PolygonIndex, CornerIndex, Normal);
 				Normal.Normalize();
 				FVector N = FVector(static_cast<float>(Normal[0]), static_cast<float>(Normal[1]), static_cast<float>(Normal[2]));
+				N = MeshBindGlobal.TransformVector(N);
+				if (!bHasSkin && RigidBoneIndex >= 0)
+				{
+					N = RigidBindCorrection.TransformVector(N);
+				}
 				N.Normalize();
 				Vertex.Normal = N;
 
@@ -301,6 +438,12 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 				continue;
 			}
 
+			if (bReverseWinding)
+			{
+				std::swap(TriIndices[1], TriIndices[2]);
+				std::swap(PendingSectionIndices[1], PendingSectionIndices[2]);
+			}
+
 			for (uint32 VertexIndex : PendingSectionIndices)
 			{
 				SectionIndicesMap[GlobalMaterialIndex].push_back(VertexIndex);
@@ -340,7 +483,7 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 		MeshRange.VertexEnd = static_cast<uint32>(Context.SkeletalVertices.size());
 		MeshRange.FirstIndex = FirstIndex;
 		MeshRange.IndexCount = static_cast<uint32>(Context.SkeletalIndices.size()) - FirstIndex;
-		MeshRange.MeshBindGlobal = MeshBindGlobal;
+		MeshRange.MeshBindGlobal = FMatrix::Identity;
 		if (MeshRange.VertexStart < MeshRange.VertexEnd && MeshRange.IndexCount > 0)
 		{
 			Context.SkeletalMeshRanges.push_back(MeshRange);

@@ -578,6 +578,9 @@
     <ClCompile Include="Source\Editor\UI\EditorWorldSettingsWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\FbxImportOptionsDialog.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\ImGuiSetting.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -912,6 +915,9 @@
       <Filter>Source\Engine\Core\Property</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Property\BoolProperty.cpp">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Property\ClassProperty.cpp">
       <Filter>Source\Engine\Core\Property</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Property\EnumProperty.cpp">
@@ -1586,6 +1592,9 @@
     <ClInclude Include="Source\Editor\UI\EditorWorldSettingsWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\FbxImportOptionsDialog.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\ImGuiSetting.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
@@ -1992,6 +2001,9 @@
       <Filter>Source\Engine\Core\Property</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Property\BoolProperty.h">
+      <Filter>Source\Engine\Core\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Property\ClassProperty.h">
       <Filter>Source\Engine\Core\Property</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Property\EnumProperty.h">
@@ -2568,6 +2580,9 @@
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Archive.h">
+      <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\DuplicateArchive.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\MemoryArchive.h">

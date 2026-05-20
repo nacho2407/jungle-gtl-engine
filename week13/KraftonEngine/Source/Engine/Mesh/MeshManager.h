@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Object/ObjectIterator.h"
@@ -17,6 +17,8 @@ struct FSkeletalMaterial;
 struct FImportOptions;
 class UStaticMesh;
 class USkeletalMesh;
+class USkeleton;
+class UAnimSequence;
 
 struct FSkeletalMeshImportRequest
 {
@@ -25,6 +27,27 @@ struct FSkeletalMeshImportRequest
 	FString DestinationPackagePath;
 	bool    bAllowTargetExtraBones   = false;
 	bool    bOverwriteExistingAssets = true;
+};
+
+struct FFbxSceneImportRequest
+{
+	FString     SourceFbxPath;
+	FString     TargetSkeletonPath = "None";
+	FString     DestinationPackagePath;
+	FString     DestinationAnimationDirectory;
+	bool        bImportSkeleton          = true;
+	bool        bImportSkin              = true;
+	bool        bImportAnimations        = true;
+	bool        bAllowTargetExtraBones   = false;
+	bool        bOverwriteExistingAssets = true;
+	TSet<int32> SelectedAnimationStackIndices;
+};
+
+struct FFbxSceneImportResult
+{
+	USkeleton*             Skeleton     = nullptr;
+	USkeletalMesh*         SkeletalMesh = nullptr;
+	TArray<UAnimSequence*> AnimSequences;
 };
 
 
@@ -37,9 +60,14 @@ public:
 
 	static USkeletalMesh* LoadSkeletalMesh(const FString& PathFileName , ID3D11Device* InDevice);
 	static bool           ImportSkeletalMeshAsNew(const FString& SourceFbxPath, ID3D11Device* Device, USkeletalMesh*& OutSkeletalMesh);
+	static bool ImportSkeletonAsNew(const FString& SourceFbxPath, USkeleton*& OutSkeleton);
 	static bool           ImportSkeletalMesh(const FSkeletalMeshImportRequest& Request, ID3D11Device* Device, USkeletalMesh*& OutSkeletalMesh);
+	static bool ImportFbxScene(
+		const FFbxSceneImportRequest& Request,
+		ID3D11Device*                 Device,
+		FFbxSceneImportResult&        OutResult
+		);
 	static bool           ReadSkeletalMeshBinding(const FString& PackagePath, FSkeletonBinding& OutBinding);
-
 	static void ScanMeshSourceFiles();
 	static void ScanFbxSourceFiles();
 

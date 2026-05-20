@@ -86,11 +86,6 @@ protected:
     FSingleAnimationPlayData   AnimationData;
     UPROPERTY(Edit, Save, Category="Animation", DisplayName="Anim Instance Class", Type=ClassRef, AllowedClass=UAnimInstance)
     TSubclassOf<UAnimInstance> AnimInstanceClass;
+    UPROPERTY(Save, Instanced, Category="Animation", DisplayName="Anim Instance", Type=ObjectRef, AllowedClass=UAnimInstance)
     UAnimInstance*             AnimInstance  = nullptr;
-
-    // AnimInstance 의 Editor-set 데이터 (예: ULuaAnimInstance::ScriptFile) 라운드트립 buffer.
-    // Serialize Save 시 live AnimInstance 에서 추출, InitializeAnimation 에서 새 AnimInstance 로 주입.
-    // PIE Duplicate (UObject::Duplicate = Serialize 왕복) 가 이걸 통해 자동 전파.
-    // 내용은 AnimInstance::Serialize (자식이 override) 가 결정 — 컴포넌트에 opaque.
-    TArray<uint8>              AnimInstanceData;
 };

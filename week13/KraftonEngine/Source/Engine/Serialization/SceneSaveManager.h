@@ -53,19 +53,49 @@ public:
 	static TArray<FString> GetSceneFileList();
 
 private:
+	struct FSceneSaveContext : FJsonObjectReferenceContext
+	{
+		TMap<const UObject*, uint32> ObjectToId;
+		uint32 NextObjectId = 1;
+
+		uint32 RegisterSceneObject(const UObject* Object);
+		uint32 FindObjectId(const UObject* Object) const;
+		bool SerializeObjectReference(const UObject* Object, json::JSON& OutValue) const override;
+	};
+
+	struct FPendingPropertyLoad
+	{
+		UObject* Object = nullptr;
+		json::JSON* Properties = nullptr;
+	};
+
+	struct FSceneLoadContext : FJsonObjectReferenceContext
+	{
+		TMap<uint32, UObject*> ObjectById;
+		TArray<FPendingPropertyLoad> PendingProperties;
+
+		void RegisterLoadedObject(json::JSON& Node, UObject* Object);
+		UObject* FindObjectById(uint32 ObjectId) const;
+		void QueueProperties(UObject* Object, json::JSON& Properties);
+		bool DeserializeObjectReference(json::JSON& Value, UObject*& OutObject) const override;
+	};
+
 	// ---- Serialization ----
-	static json::JSON SerializeWorld(UWorld* World, const FWorldContext& Ctx, const FMinimalViewInfo* PerspectivePOV);
-	static json::JSON SerializeActor(AActor* Actor);
-	static json::JSON SerializeSceneComponentTree(USceneComponent* Comp);
-	static json::JSON SerializeProperties(UObject* Obj);
+	static void CollectWorldObjectIds(UWorld* World, FSceneSaveContext& Context);
+	static void CollectActorObjectIds(AActor* Actor, FSceneSaveContext& Context);
+	static void CollectSceneComponentObjectIds(USceneComponent* Comp, FSceneSaveContext& Context);
+	static json::JSON SerializeWorld(UWorld* World, const FWorldContext& Ctx, const FMinimalViewInfo* PerspectivePOV, FSceneSaveContext& Context);
+	static json::JSON SerializeActor(AActor* Actor, FSceneSaveContext& Context);
+	static json::JSON SerializeSceneComponentTree(USceneComponent* Comp, FSceneSaveContext& Context);
+	static json::JSON SerializeProperties(UObject* Obj, FSceneSaveContext& Context);
 
 	// ---- Camera ----
 	static json::JSON SerializeCamera(const FMinimalViewInfo* POV);
 	static void DeserializeCamera(json::JSON& CamJSON, FPerspectiveCameraData& OutCam);
 
 	// ---- Deserialization helpers ----
-	static USceneComponent* DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner);
-	static void DeserializeProperties(UObject* Obj, json::JSON& PropsJSON);
+	static USceneComponent* DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner, FSceneLoadContext& Context);
+	static void DeserializeProperties(UObject* Obj, json::JSON& PropsJSON, FSceneLoadContext& Context);
 
 	static string GetCurrentTimeStamp();
 };

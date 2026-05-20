@@ -10,6 +10,7 @@
 #include "Source/Engine/Object/Object.generated.h"
 
 class FArchive;
+class FDuplicateArchiveContext;
 
 // Forward — IsValid 의 실제 정의는 GUObjectSet 선언 뒤. UObject::GetTypedOuter 가
 // non-dependent name lookup 으로 IsValid 를 찾을 수 있게 미리 알려둠.
@@ -53,6 +54,7 @@ public:
 	}
 
 	virtual UObject* Duplicate(UObject* NewOuter = nullptr) const;
+	UObject* DuplicateWithArchiveContext(UObject* NewOuter, FDuplicateArchiveContext& DuplicateContext) const;
 	virtual void Serialize(FArchive& Ar);
 	void SerializeProperties(FArchive& Ar, uint32 RequiredFlags);
 	virtual void PostDuplicate() {}

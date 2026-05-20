@@ -335,6 +335,7 @@ static bool RemapSkeletalMeshToSkeleton(
 			Bone.LocalMatrix              = RefBone.LocalBindPose;
 			Bone.GlobalMatrix             = RefBone.GlobalBindPose;
 			Bone.InverseBindPoseMatrix    = RefBone.InverseBindPose;
+			Bone.SyncSeparatedPoseDataFromLegacy();
 		}
 
 		Bone.Name                  = TargetRef.Bones[TargetIndex].Name;
@@ -808,6 +809,77 @@ void FMeshManager::ReleaseAllGPU()
 	SkeletalMeshCache.clear();
 }
 
+static bool SaveImportedSkeletonAsset(
+	const FString&       SourceFbxPath,
+	FReferenceSkeleton&& ImportedReferenceSkeleton,
+	USkeleton*&          OutSkeleton
+	)
+{
+	OutSkeleton = nullptr;
+
+	if (ImportedReferenceSkeleton.GetNumBones() <= 0)
+	{
+		UE_LOG("Skeleton import failed: imported reference skeleton has no bones. Source=%s", SourceFbxPath.c_str());
+		return false;
+	}
+
+	const FString SkeletonPath           = FSkeletonManager::GetSkeletonPackagePath(SourceFbxPath);
+	const FString CompatibilitySignature = FSkeletonManager::BuildCompatibilitySignature(ImportedReferenceSkeleton);
+
+	USkeleton* ExistingSkeleton = nullptr;
+	if (std::filesystem::exists(ResolveProjectPath(SkeletonPath)))
+	{
+		ExistingSkeleton = FSkeletonManager::Get().LoadSkeleton(SkeletonPath);
+	}
+
+	USkeleton* Skeleton = UObjectManager::Get().CreateObject<USkeleton>();
+	Skeleton->SetAssetPathFileName(SkeletonPath);
+	Skeleton->GetMutableReferenceSkeleton() = std::move(ImportedReferenceSkeleton);
+	Skeleton->SetCompatibilitySignature(CompatibilitySignature);
+
+	if (ExistingSkeleton)
+	{
+		FSkeletonCompatibilityReport ExistingReport;
+		const bool                   bSameStructure = FSkeletonManager::AreSkeletonsSameStructure(
+			ExistingSkeleton->GetReferenceSkeleton(),
+			Skeleton->GetReferenceSkeleton(),
+			&ExistingReport
+		);
+
+		if (bSameStructure)
+		{
+			Skeleton->SetSkeletonAssetGuid(ExistingSkeleton->GetSkeletonAssetGuid());
+		}
+		else
+		{
+			UE_LOG(
+				"Skeleton import: skeleton structure changed, issuing new SkeletonAssetGuid. Path=%s Reason=%s",
+				SkeletonPath.c_str(),
+				ExistingReport.Reason.c_str()
+			);
+			Skeleton->SetSkeletonAssetGuid(
+				FSkeletonManager::MakeSkeletonAssetGuid(SkeletonPath + "#changed", CompatibilitySignature)
+			);
+		}
+	}
+	else
+	{
+		Skeleton->SetSkeletonAssetGuid(FSkeletonManager::MakeSkeletonAssetGuid(SkeletonPath, CompatibilitySignature));
+	}
+
+	Skeleton->RebuildBoneNameCache();
+
+	if (!FSkeletonManager::Get().SaveSkeleton(Skeleton, SkeletonPath, SourceFbxPath))
+	{
+		UE_LOG("Skeleton import failed: skeleton save failed. Path=%s", SourceFbxPath.c_str());
+		return false;
+	}
+
+	FSkeletonManager::Get().ScanSkeletonAssets();
+	OutSkeleton = Skeleton;
+	return true;
+}
+
 USkeletalMesh* FMeshManager::LoadSkeletalMesh(const FString& PathFileName, ID3D11Device* InDevice)
 {
 	const std::wstring Ext = GetLowerExtension(PathFileName);
@@ -890,50 +962,14 @@ bool FMeshManager::ImportSkeletalMeshAsNew(const FString& SourceFbxPath, ID3D11D
 		return false;
 	}
 
-	const FString SkeletonPath           = FSkeletonManager::GetSkeletonPackagePath(SourceFbxPath);
-	const FString CompatibilitySignature = FSkeletonManager::BuildCompatibilitySignature(ImportResult.Skeleton);
-
-	USkeleton* ExistingSkeleton = nullptr;
-	if (std::filesystem::exists(ResolveProjectPath(SkeletonPath)))
-	{
-		ExistingSkeleton = FSkeletonManager::Get().LoadSkeleton(SkeletonPath);
-	}
-
-	USkeleton* Skeleton = UObjectManager::Get().CreateObject<USkeleton>();
-	Skeleton->SetAssetPathFileName(SkeletonPath);
-	Skeleton->GetMutableReferenceSkeleton() = std::move(ImportResult.Skeleton);
-	Skeleton->SetCompatibilitySignature(CompatibilitySignature);
-
-	if (ExistingSkeleton)
-	{
-		FSkeletonCompatibilityReport ExistingReport;
-		const bool                   bSameStructure = FSkeletonManager::AreSkeletonsSameStructure(
-			ExistingSkeleton->GetReferenceSkeleton(),
-			Skeleton->GetReferenceSkeleton(),
-			&ExistingReport);
-
-		if (bSameStructure)
-		{
-			Skeleton->SetSkeletonAssetGuid(ExistingSkeleton->GetSkeletonAssetGuid());
-		}
-		else
-		{
-			UE_LOG("SkeletalMesh import: skeleton structure changed, issuing new SkeletonAssetGuid. Path=%s Reason=%s", SkeletonPath.c_str(), ExistingReport.Reason.c_str());
-			Skeleton->SetSkeletonAssetGuid(FSkeletonManager::MakeSkeletonAssetGuid(SkeletonPath + "#changed", CompatibilitySignature));
-		}
-	}
-	else
-	{
-		Skeleton->SetSkeletonAssetGuid(FSkeletonManager::MakeSkeletonAssetGuid(SkeletonPath, CompatibilitySignature));
-	}
-	Skeleton->RebuildBoneNameCache();
-
-	if (!FSkeletonManager::Get().SaveSkeleton(Skeleton, SkeletonPath, SourceFbxPath))
+	USkeleton* Skeleton = nullptr;
+	if (!SaveImportedSkeletonAsset(SourceFbxPath, std::move(ImportResult.Skeleton), Skeleton))
 	{
 		UE_LOG("SkeletalMesh import failed: skeleton save failed. Path=%s", SourceFbxPath.c_str());
 		return false;
 	}
 
+	const FString          SkeletonPath    = Skeleton->GetAssetPathFileName();
 	const FSkeletonBinding SkeletonBinding = Skeleton->GetSkeletonBinding();
 
 	for (UAnimSequence* Sequence : ImportResult.AnimSequences)
@@ -979,6 +1015,25 @@ bool FMeshManager::ImportSkeletalMeshAsNew(const FString& SourceFbxPath, ID3D11D
 	ScanMeshAssets();
 	FMaterialManager::Get().ScanMaterialAssets();
 	return true;
+}
+
+bool FMeshManager::ImportSkeletonAsNew(const FString& SourceFbxPath, USkeleton*& OutSkeleton)
+{
+	OutSkeleton = nullptr;
+
+	if (!IsSupportedSkeletalMeshSourcePath(SourceFbxPath))
+	{
+		UE_LOG("Skeleton import failed: only source FBX paths can be imported. Path=%s", SourceFbxPath.c_str());
+		return false;
+	}
+
+	FFbxSkeletonImportResult ImportResult;
+	if (!FFbxImporter::ImportSkeletonOnly(SourceFbxPath, ImportResult))
+	{
+		return false;
+	}
+
+	return SaveImportedSkeletonAsset(SourceFbxPath, std::move(ImportResult.SourceSkeleton), OutSkeleton);
 }
 
 bool FMeshManager::ImportSkeletalMesh(const FSkeletalMeshImportRequest& Request, ID3D11Device* Device, USkeletalMesh*& OutSkeletalMesh)
@@ -1069,5 +1124,192 @@ bool FMeshManager::ImportSkeletalMesh(const FSkeletalMeshImportRequest& Request,
 
 	ScanMeshAssets();
 	FMaterialManager::Get().ScanMaterialAssets();
+	return true;
+}
+
+bool FMeshManager::ImportFbxScene(
+	const FFbxSceneImportRequest& Request,
+	ID3D11Device*                 Device,
+	FFbxSceneImportResult&        OutResult
+	)
+{
+	OutResult = FFbxSceneImportResult();
+
+	if (!IsSupportedSkeletalMeshSourcePath(Request.SourceFbxPath))
+	{
+		UE_LOG("FBX import failed: only source FBX paths can be imported. Path=%s", Request.SourceFbxPath.c_str());
+		return false;
+	}
+
+	if (!Request.bImportSkeleton && !Request.bImportSkin && !Request.bImportAnimations)
+	{
+		UE_LOG("FBX import failed: no import part was selected. Source=%s", Request.SourceFbxPath.c_str());
+		return false;
+	}
+
+	FFbxSkeletalSceneImportOptions ImportOptions;
+	ImportOptions.bImportSkeleton                       = Request.bImportSkeleton;
+	ImportOptions.bImportSkin                           = Request.bImportSkin;
+	ImportOptions.bImportAnimations                     = Request.bImportAnimations;
+	ImportOptions.AnimationOptions.SelectedStackIndices = Request.SelectedAnimationStackIndices;
+
+	FFbxSkeletalSceneImportResult ImportResult;
+	FString                       ImportMessage;
+	if (!FFbxImporter::ImportSkeletalScene(Request.SourceFbxPath, ImportOptions, ImportResult, &ImportMessage))
+	{
+		UE_LOG(
+			"FBX import failed: skeletal scene import failed. Source=%s Reason=%s",
+			Request.SourceFbxPath.c_str(),
+			ImportMessage.c_str()
+		);
+		return false;
+	}
+
+	FReferenceSkeleton SourceSkeleton = ImportResult.SourceSkeleton;
+	if (SourceSkeleton.GetNumBones() <= 0)
+	{
+		UE_LOG("FBX import failed: source skeleton is empty. Source=%s", Request.SourceFbxPath.c_str());
+		return false;
+	}
+
+	FString    EffectiveSkeletonPath = Request.TargetSkeletonPath;
+	USkeleton* EffectiveSkeleton     = nullptr;
+
+	if (Request.bImportSkeleton)
+	{
+		FReferenceSkeleton SkeletonToSave   = SourceSkeleton;
+		USkeleton*         ImportedSkeleton = nullptr;
+		if (!SaveImportedSkeletonAsset(Request.SourceFbxPath, std::move(SkeletonToSave), ImportedSkeleton))
+		{
+			UE_LOG("FBX import failed: skeleton save failed. Source=%s", Request.SourceFbxPath.c_str());
+			return false;
+		}
+
+		OutResult.Skeleton = ImportedSkeleton;
+		EffectiveSkeleton  = ImportedSkeleton;
+		if (ImportedSkeleton)
+		{
+			EffectiveSkeletonPath = ImportedSkeleton->GetAssetPathFileName();
+		}
+	}
+
+	const bool bNeedsTargetSkeleton = Request.bImportSkin || Request.bImportAnimations;
+	if (bNeedsTargetSkeleton && (EffectiveSkeletonPath.empty() || EffectiveSkeletonPath == "None"))
+	{
+		UE_LOG(
+			"FBX import failed: skin or animation import requires an imported or target skeleton. Source=%s",
+			Request.SourceFbxPath.c_str()
+		);
+		return false;
+	}
+
+	if (bNeedsTargetSkeleton && !EffectiveSkeleton)
+	{
+		EffectiveSkeleton = FSkeletonManager::Get().LoadSkeleton(EffectiveSkeletonPath);
+	}
+
+	if (bNeedsTargetSkeleton && !EffectiveSkeleton)
+	{
+		UE_LOG("FBX import failed: target skeleton not found. Path=%s", EffectiveSkeletonPath.c_str());
+		return false;
+	}
+
+	if (Request.bImportSkin)
+	{
+		FSkeletonBoneRemap           Remap;
+		FSkeletonCompatibilityReport Report;
+		if (!FSkeletonManager::BuildBoneRemapByName(
+			SourceSkeleton,
+			EffectiveSkeleton->GetReferenceSkeleton(),
+			Remap,
+			&Report,
+			!Request.bAllowTargetExtraBones
+		))
+		{
+			UE_LOG(
+				"FBX import failed: skeletal mesh remap failed. Source=%s Target=%s Reason=%s",
+				Request.SourceFbxPath.c_str(),
+				EffectiveSkeletonPath.c_str(),
+				Report.Reason.c_str()
+			);
+			return false;
+		}
+
+		if (!RemapSkeletalMeshToSkeleton(ImportResult.Mesh, SourceSkeleton, EffectiveSkeleton, Remap, &Report))
+		{
+			UE_LOG(
+				"FBX import failed: skeletal mesh remap failed. Source=%s Target=%s Reason=%s",
+				Request.SourceFbxPath.c_str(),
+				EffectiveSkeletonPath.c_str(),
+				Report.Reason.c_str()
+			);
+			return false;
+		}
+
+		const FString PackagePath = Request.DestinationPackagePath.empty()
+		? GetSkeletalMeshBinaryFilePath(Request.SourceFbxPath) : NormalizeProjectPath(Request.DestinationPackagePath);
+
+		if (!Request.bOverwriteExistingAssets && std::filesystem::exists(ResolveProjectPath(PackagePath)))
+		{
+			UE_LOG("FBX skeletal mesh import skipped: destination exists. Path=%s", PackagePath.c_str());
+		}
+		else
+		{
+			ImportResult.Mesh.PathFileName = NormalizeProjectPath(Request.SourceFbxPath);
+
+			SkeletalMeshCache.erase(PackagePath);
+			USkeletalMesh* SkeletalMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
+			SkeletalMesh->SetSkeletalMaterials(std::move(ImportResult.Materials));
+			SkeletalMesh->SetSkeletalMeshAsset(new FSkeletalMesh(std::move(ImportResult.Mesh)));
+			SkeletalMesh->SetSkeleton(EffectiveSkeleton);
+
+			if (!SaveSkeletalMeshBinary(SkeletalMesh, PackagePath, Request.SourceFbxPath))
+			{
+				return false;
+			}
+
+			SkeletalMesh->InitResources(Device);
+			SkeletalMesh->SetAssetPathFileName(PackagePath);
+			SkeletalMeshCache[PackagePath] = SkeletalMesh;
+			OutResult.SkeletalMesh         = SkeletalMesh;
+		}
+	}
+
+	if (Request.bImportAnimations)
+	{
+		if (!FAnimationManager::Get().SaveImportedAnimationsForSkeleton(
+			Request.SourceFbxPath,
+			SourceSkeleton,
+			EffectiveSkeletonPath,
+			Request.DestinationAnimationDirectory,
+			Request.bAllowTargetExtraBones,
+			Request.bOverwriteExistingAssets,
+			ImportResult.AnimSequences,
+			&OutResult.AnimSequences
+		))
+		{
+			UE_LOG(
+				"FBX import failed: animation save failed. Source=%s Target=%s",
+				Request.SourceFbxPath.c_str(),
+				EffectiveSkeletonPath.c_str()
+			);
+			return false;
+		}
+	}
+
+	if (Request.bImportSkin)
+	{
+		ScanMeshAssets();
+		FMaterialManager::Get().ScanMaterialAssets();
+	}
+	if (Request.bImportSkeleton)
+	{
+		FSkeletonManager::Get().ScanSkeletonAssets();
+	}
+	if (Request.bImportAnimations)
+	{
+		FAnimationManager::Get().RefreshAvailableAnimations();
+	}
+
 	return true;
 }
