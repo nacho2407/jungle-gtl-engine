@@ -11,7 +11,7 @@ class ReflectionUtils
 public:
     static const char* GetStablePropertyName(const FName& Name)
     {
-        static std::unordered_map<FString, FString> NameCache;
+        std::unordered_map<FString, FString>& NameCache = GetStablePropertyNameCache();
 
         FString NameString = Name.ToString();
         auto It = NameCache.find(NameString);
@@ -21,6 +21,11 @@ public:
         }
 
         return It->second.c_str();
+    }
+
+    static void ClearStablePropertyNameCache()
+    {
+        std::unordered_map<FString, FString>().swap(GetStablePropertyNameCache());
     }
 
     static const char* GetStablePropertyLabel(const FPropertyInfo& Prop)
@@ -37,6 +42,15 @@ public:
     {
         return GetStablePropertyName(FName(Prop.Category.empty() ? "Default" : Prop.Category));
     }
+
+private:
+    static std::unordered_map<FString, FString>& GetStablePropertyNameCache()
+    {
+        static std::unordered_map<FString, FString> NameCache;
+        return NameCache;
+    }
+
+public:
 
     // 1. 값 쓰기 (Set)
     template <typename T>
