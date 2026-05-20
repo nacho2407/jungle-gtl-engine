@@ -231,12 +231,17 @@ namespace
 					LB->BlendPose = CompileInputPose(Graph, Owner, BlendIn->PinId);
 				}
 
-				// PerBoneMask — F-1 한정 full blend (모든 본 true). 후속에 root bone 기반 부분 mask.
+				// PerBoneMask — RootBoneName 비어있으면 모든 본 true (full blend), 있으면
+				// 그 본 + 자손 트리만 true (BuildBoneMaskFromRoot).
 				if (USkeletalMeshComponent* Comp = Owner.GetOwningComponent())
 				{
 					if (USkeletalMesh* Mesh = Comp->GetSkeletalMesh())
 					{
-						if (FSkeletalMesh* MeshAsset = Mesh->GetSkeletalMeshAsset())
+						if (!Node.RootBoneName.empty())
+						{
+							LB->PerBoneMask = BuildBoneMaskFromRoot(Mesh, Node.RootBoneName);
+						}
+						else if (FSkeletalMesh* MeshAsset = Mesh->GetSkeletalMeshAsset())
 						{
 							LB->PerBoneMask.assign(MeshAsset->Bones.size(), true);
 						}
