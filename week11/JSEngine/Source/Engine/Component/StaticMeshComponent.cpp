@@ -25,37 +25,37 @@ void UStaticMeshComponent::PostDuplicate(UObject* Original)
     bBoundsDirty = true;
     bRenderStateDirty = true;
 
-	Materials = TArray<UMaterialInterface*>(Orig->Materials.size());
-	for (int32 i = 0; i < static_cast<int32>(Orig->Materials.size()); ++i)
-	{
-		if (UMaterialInstance* OrigMatInst = Cast<UMaterialInstance>(Orig->Materials[i]))
-		{
-			UMaterialInstance* MatInst = UMaterialInstance::Create(OrigMatInst->Parent);
-			MatInst->OverridedParams = OrigMatInst->OverridedParams;
-			Materials[i] = MatInst;
-		}
-		else
-		{
-			Materials[i] = Orig->Materials[i]; // 얕은 복사 — ResourceManager 가 소유
-		}
-	}
+    Materials = TArray<UMaterialInterface*>(Orig->Materials.size());
+    for (int32 i = 0; i < static_cast<int32>(Orig->Materials.size()); ++i)
+    {
+        if (UMaterialInstance* OrigMatInst = Cast<UMaterialInstance>(Orig->Materials[i]))
+        {
+            UMaterialInstance* MatInst = UMaterialInstance::Create(OrigMatInst->Parent);
+            MatInst->OverridedParams = OrigMatInst->OverridedParams;
+            Materials[i] = MatInst;
+        }
+        else
+        {
+            Materials[i] = Orig->Materials[i]; // 얕은 복사 — ResourceManager 가 소유
+        }
+    }
 }
 
 void UStaticMeshComponent::Serialize(FArchive& Ar)
 {
-	if (Ar.IsLoading())
-	{
-		Ar << "ObjStaticMeshAsset" << StaticMeshAssetPath;
-		if (!StaticMeshAssetPath.empty())
-		{
-			SetStaticMesh(FResourceManager::Get().LoadStaticMesh(StaticMeshAssetPath));
-		}
-		UMeshComponent::Serialize(Ar);
-		return;
-	}
+    if (Ar.IsLoading())
+    {
+        Ar << "ObjStaticMeshAsset" << StaticMeshAssetPath;
+        if (!StaticMeshAssetPath.empty())
+        {
+            SetStaticMesh(FResourceManager::Get().LoadStaticMesh(StaticMeshAssetPath));
+        }
+        UMeshComponent::Serialize(Ar);
+        return;
+    }
 
-	UMeshComponent::Serialize(Ar);
-	Ar << "ObjStaticMeshAsset" << StaticMeshAssetPath;
+    UMeshComponent::Serialize(Ar);
+    Ar << "ObjStaticMeshAsset" << StaticMeshAssetPath;
 }
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
@@ -72,7 +72,7 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
     {
         StaticMeshAssetPath = StaticMeshAsset->GetAssetPathFileName();
 
-		const auto& Slots = StaticMeshAsset->GetMaterialSlots();
+        const auto& Slots = StaticMeshAsset->GetMaterialSlots();
         const auto& Sections = StaticMeshAsset->GetSections();
         Materials.reserve(Sections.size());
 
@@ -105,34 +105,60 @@ void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Ou
 {
     ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     OutProps.push_back({ "StaticMesh", EPropertyType::String, &StaticMeshAssetPath });
-	OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
+    OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 }
 
 void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 {
+    //   UMeshComponent::PostEditProperty(PropertyName);
+
+    //   //	추후에 FNAme으로 바꿔도 될 듯 싶긴한데 보류
+    //   if (std::strcmp(PropertyName, "StaticMesh") == 0)
+    //   {
+    //	if (StaticMeshAssetPath.empty())
+    //	{
+    //		SetStaticMesh(nullptr);
+    //		return;
+    //	}
+
+    //	UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh(StaticMeshAssetPath);
+
+    //	SetStaticMesh(Mesh);
+    //   }
+    // else if (std::strcmp(PropertyName, "Materials") == 0)
+    //{
+    //	for (int32 i = 0; i < static_cast<int32>(Materials.size()); ++i)
+    //	{
+    //		SetMaterial(i, Materials[i]);
+    //	}
+    //	MarkRenderStateDirty();
+    //}
+
     UMeshComponent::PostEditProperty(PropertyName);
 
-    //	추후에 FNAme으로 바꿔도 될 듯 싶긴한데 보류
+    if (std::strcmp(PropertyName, "StaticMeshAsset") == 0)
+    {
+        SetStaticMesh(StaticMeshAsset);
+        return;
+    }
+
     if (std::strcmp(PropertyName, "StaticMesh") == 0)
     {
-		if (StaticMeshAssetPath.empty())
-		{
-			SetStaticMesh(nullptr);
-			return;
-		}
+        if (StaticMeshAssetPath.empty())
+        {
+            SetStaticMesh(nullptr);
+            return;
+        }
 
-		UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh(StaticMeshAssetPath);
-
-		SetStaticMesh(Mesh);
+        SetStaticMesh(FResourceManager::Get().LoadStaticMesh(StaticMeshAssetPath));
+        return;
     }
-	else if (std::strcmp(PropertyName, "Materials") == 0)
-	{
-		for (int32 i = 0; i < static_cast<int32>(Materials.size()); ++i)
-		{
-			SetMaterial(i, Materials[i]);
-		}
-		MarkRenderStateDirty();
-	}
+
+    if (std::strcmp(PropertyName, "Materials") == 0)
+    {
+        for (int32 i = 0; i < static_cast<int32>(Materials.size()); ++i)
+            SetMaterial(i, Materials[i]);
+    }
 }
 
 void UStaticMeshComponent::UpdateWorldAABB() const
@@ -283,14 +309,14 @@ bool UStaticMeshComponent::ConsumeRenderStateDirty()
 void UStaticMeshComponent::GetMeshData(TArray<FNormalVertex>& OutVertices, TArray<uint32>& OutIndices) const
 {
     for (const FNormalVertex& Vertex : StaticMeshAsset->GetVertices())
-	{
+    {
         OutVertices.push_back(Vertex);
-	}
+    }
 
-	for (uint32 Index : StaticMeshAsset->GetIndices())
-	{
+    for (uint32 Index : StaticMeshAsset->GetIndices())
+    {
         OutIndices.push_back(Index);
-	}
+    }
 }
 
 void UStaticMeshComponent::MarkBoundsDirty()

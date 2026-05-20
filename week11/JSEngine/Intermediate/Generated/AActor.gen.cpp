@@ -15,18 +15,20 @@ void Register_AActor()
     info.ParentClassName = "UObject";
     {
         FObjectProperty* prop = new FObjectProperty();
+        prop->ReferenceKind = EObjectReferenceKind::ObjectId;
         prop->Name = FName("RootComponent");
         prop->CPPType = "USceneComponent*";
         prop->Offset = offsetof(AActor, RootComponent);
         prop->ElementSize = sizeof(USceneComponent*);
-        prop->Flags = PF_EditAnywhere;
-        prop->Category = "Actor";
-        prop->DisplayName = "Root Component";
+        prop->Flags = PF_Transient;
+        prop->Category = "Default";
+        prop->DisplayName = "RootComponent";
         info.ReflectedProperties.push_back(prop);
     }
 
     {
         FObjectProperty* prop = new FObjectProperty();
+        prop->ReferenceKind = EObjectReferenceKind::ObjectId;
         prop->Name = FName("OwningWorld");
         prop->CPPType = "UWorld*";
         prop->Offset = offsetof(AActor, OwningWorld);
@@ -113,6 +115,7 @@ void Register_AActor()
         FArrayProperty* prop = new FArrayProperty();
         prop->ArrayOps = TScriptArrayOps<UActorComponent*>::Make();
         FObjectProperty* prop_Inner = new FObjectProperty();
+        prop_Inner->ReferenceKind = EObjectReferenceKind::ObjectId;
         prop_Inner->CPPType = "UActorComponent*";
         prop_Inner->ElementSize = sizeof(UActorComponent*);
         prop->Inner = prop_Inner;

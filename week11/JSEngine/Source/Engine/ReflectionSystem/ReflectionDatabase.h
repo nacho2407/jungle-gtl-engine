@@ -14,6 +14,9 @@
 #include "Object/Object.h"
 #include "ReflectedProperty.h"   // FProperty + FClassInfo + FStructInfo + FEnumInfo 전부 확보
 
+#include <Windows.h>
+#include <cstdio>
+
 class ReflectionDatabase
 {
 private:
@@ -21,7 +24,19 @@ private:
     inline static TMap<FString, FStructInfo*> StructMap;
     inline static TMap<FString, FEnumInfo*>   EnumMap;
 
+	inline static bool bDependenciesResolved = false;
+
 public:
+
+	static void EnsureDependenciesResolved()
+    {
+        if (bDependenciesResolved)
+            return;
+
+        ResolveDependencies();
+        bDependenciesResolved = true;
+    }
+
     static void ResolveStructEditorWidget(FStructInfo* StructInfo)
     {
         if (!StructInfo)
@@ -185,6 +200,17 @@ public:
     }
 
 private:
+
+	static bool IsAssetObjectType(const FString& Type)
+    {
+        return Type == "UStaticMesh" ||
+               Type == "UTexture" ||
+               Type == "UMaterialInterface" ||
+               Type == "UMaterial" ||
+               Type == "UMaterialInstance" ||
+               Type == "USkeletalMesh";
+    }
+
     // Property 하나의 내부 포인터를 확정합니다.
     static void ResolvePropertyPointers(FProperty* Prop)
     {
@@ -192,10 +218,31 @@ private:
         {
         case EReflectedPropertyKind::Object:
         {
-            // "AActor*" → '*' 제거 후 클래스 검색
             FString BaseType = Prop->CPPType;
             BaseType.erase(std::remove(BaseType.begin(), BaseType.end(), '*'), BaseType.end());
-            static_cast<FObjectProperty*>(Prop)->PropertyClass = GetClass(BaseType);
+            BaseType.erase(std::remove(BaseType.begin(), BaseType.end(), ' '), BaseType.end());
+
+            FObjectProperty* ObjectProp = static_cast<FObjectProperty*>(Prop);
+            ObjectProp->PropertyClass = GetClass(BaseType);
+
+			char DebugMsg[512];
+            snprintf(DebugMsg, sizeof(DebugMsg), "[Reflection] ObjectProp %s type=%s class=%s ref=%s\n",
+                     Prop->Name.ToString().c_str(),
+                     Prop->CPPType.c_str(),
+                     ObjectProp->PropertyClass ? ObjectProp->PropertyClass->ClassName.ToString().c_str() : "null",
+                     ObjectProp->ReferenceKind == EObjectReferenceKind::AssetPath ? "AssetPath" : "ObjectId");
+
+            OutputDebugStringA(DebugMsg);
+
+            if (IsAssetObjectType(BaseType))
+            {
+                ObjectProp->ReferenceKind = EObjectReferenceKind::AssetPath;
+            }
+            else
+            {
+                ObjectProp->ReferenceKind = EObjectReferenceKind::ObjectId;
+            }
+
             break;
         }
         case EReflectedPropertyKind::Struct:

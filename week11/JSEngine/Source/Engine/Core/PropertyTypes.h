@@ -20,6 +20,10 @@ enum class EPropertyType : uint8_t
     SceneComponentRef, // USceneComponent* 변수의 주소 (MovementComponent를 위한 Enum값
     Vec3Array,         // TArray<FVector>* - variable-length array of FVector
                        // 필요 시 Enum, Color 등 추가
+
+	 Object,  
+
+
 	Enum,
 	Color,
 

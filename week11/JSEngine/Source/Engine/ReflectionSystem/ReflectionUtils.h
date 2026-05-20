@@ -143,7 +143,18 @@ public:
         {
             for (FProperty* Prop : ClassInfo->ReflectedProperties)
             {
+                if (!Prop)
+                    continue;
+
+                const FString Key = Prop->Name.ToString();
+                const bool bWasLoaded = Ar.IsLoading() && Ar.HasKey(Key);
+
                 Prop->SerializeInContainer(Ar, Object);
+
+                if (bWasLoaded)
+                {
+                    Object->PostEditChangeProperty({ Key.c_str(), EPropertyChangeType::ValueSet });
+                }
             }
             return;
         }
@@ -453,9 +464,12 @@ public:
             }
             else if (FObjectProperty* ObjectProp = dynamic_cast<FObjectProperty*>(Prop))
             {
-                // 지금 기존 UI에서 UObject* 일반 picker가 없다면 일단 skip.
-                // 나중에 Asset/Object picker 생기면 여기서 EPropertyType::Object 같은 걸로 연결.
-                (void)ObjectProp;
+                if (ObjectProp->ReferenceKind == EObjectReferenceKind::AssetPath)
+                {
+                    Desc.Type = EPropertyType::Object;
+                    Desc.ExtraData = ObjectProp;
+                    OutProps.push_back(Desc);
+                }
             }
             else if (FSoftObjectProperty* SoftObjectProp = dynamic_cast<FSoftObjectProperty*>(Prop))
             {
