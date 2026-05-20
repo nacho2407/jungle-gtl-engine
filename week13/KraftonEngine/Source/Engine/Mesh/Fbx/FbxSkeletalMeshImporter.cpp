@@ -53,7 +53,7 @@ namespace
 			RefBone.Name            = Bone.Name;
 			RefBone.ParentIndex     = Bone.ParentIndex;
 			RefBone.LocalBindPose   = Bone.GetReferenceLocalPose();
-			RefBone.GlobalBindPose  = Bone.GetSkinBindGlobalPose();
+			RefBone.GlobalBindPose  = Bone.GetReferenceGlobalPose();
 			RefBone.InverseBindPose = Bone.GetInverseBindPose();
 			Context.ReferenceSkeleton.Bones.push_back(RefBone);
 		}
