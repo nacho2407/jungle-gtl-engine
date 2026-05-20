@@ -24,6 +24,17 @@
 
 namespace
 {
+	// 컴파일 재귀 깊이 가드 — sub-state-machine 가 서로 가리키는 cycle 또는 의도치 않은
+	// 깊은 nesting 으로 stack overflow 가는 것을 방지. V1 nesting 의도는 1~2 단계.
+	constexpr int32 kMaxCompileDepth = 16;
+	thread_local int32 g_CompileDepth = 0;
+
+	struct FDepthScope
+	{
+		FDepthScope()  { ++g_CompileDepth; }
+		~FDepthScope() { --g_CompileDepth; }
+	};
+
 	// graph 의 한 노드 → FAnimNode_* 인스턴스. 재귀 — 입력 핀의 source 를 따라 자식 build.
 	// nullptr 반환은 컴파일 실패 (호출 chain 어디선가 미지원 / dangling).
 	FAnimNode_Base* CompileNode(const UAnimGraphAsset& Graph, UAnimInstance& Owner, const FAnimGraphNode& Node);
@@ -153,6 +164,13 @@ namespace
 
 	FAnimNode_Base* CompileNode(const UAnimGraphAsset& Graph, UAnimInstance& Owner, const FAnimGraphNode& Node)
 	{
+		if (g_CompileDepth >= kMaxCompileDepth)
+		{
+			UE_LOG("AnimGraphCompiler: 재귀 깊이 한도 초과 (id=%u) — cycle 의심, RefPose fallback.", Node.NodeId);
+			return Owner.MakeNode<FAnimNode_RefPose>();
+		}
+		FDepthScope DepthScope;
+
 		switch (Node.Type)
 		{
 			case EAnimGraphNodeType::OutputPose:
@@ -275,14 +293,30 @@ namespace
 			{
 				FAnimNode_StateMachine* SM = Owner.MakeNode<FAnimNode_StateMachine>();
 
-				// 각 state — UAnimState UObject 생성. Sequence 는 path 로 로드.
+				// 각 state — UAnimState UObject 생성.
+				// SubGraphNodeId > 0 이면 그 노드 (StateMachine 가정) 를 재귀 컴파일해 SubGraphOverride.
+				// 일반 sequence state 면 SequencePath 로드해 Sequence 박음.
 				for (const FAnimGraphState& Def : Node.States)
 				{
 					UAnimState* S = UObjectManager::Get().CreateObject<UAnimState>(&Owner);
 					S->StateName = Def.StateName;
 					S->PlayRate  = Def.PlayRate;
 					S->bLooping  = Def.bLooping;
-					if (!Def.SequencePath.empty() && Def.SequencePath != "None")
+
+					if (Def.SubGraphNodeId != 0 && Def.SubGraphNodeId != Node.NodeId)
+					{
+						const FAnimGraphNode* SubNode = Graph.FindNode(Def.SubGraphNodeId);
+						if (SubNode && SubNode->Type == EAnimGraphNodeType::StateMachine)
+						{
+							S->SubGraphOverride = CompileNode(Graph, Owner, *SubNode);
+						}
+						else
+						{
+							UE_LOG("AnimGraphCompiler: State '%s' 의 SubGraphNodeId=%u 가 StateMachine 노드 아님.",
+								Def.StateName.ToString().c_str(), Def.SubGraphNodeId);
+						}
+					}
+					else if (!Def.SequencePath.empty() && Def.SequencePath != "None")
 					{
 						S->Sequence = FAnimationManager::Get().LoadAnimation(Def.SequencePath);
 						if (!S->Sequence)

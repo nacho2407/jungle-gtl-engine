@@ -151,7 +151,9 @@ namespace
 	}
 
 	// State 한 개의 form. true 반환 — 변경 발생.
-	bool RenderStateRow(FAnimGraphState& State, int32 Index)
+	// OwnerNode (이 state 를 보유한 StateMachine 노드) 의 NodeId 는 sub-graph dropdown 의
+	// 자기 자신 제외용. AllNodes 는 sub-graph 후보 (그래프 안의 다른 StateMachine 노드) list.
+	bool RenderStateRow(FAnimGraphState& State, int32 Index, uint32 OwnerNodeId, const TArray<FAnimGraphNode>& AllNodes)
 	{
 		ImGui::PushID(Index);
 		bool bChanged = false;
@@ -168,7 +170,52 @@ namespace
 			bChanged = true;
 		}
 
-		// Sequence dropdown
+		// Sub-Graph dropdown — 그래프 안의 다른 StateMachine 노드 (자기 자신 제외).
+		// 선택되면 sequence 무시되고 sub-tree 컴파일됨.
+		ImGui::TextUnformatted("Sub-Graph");
+		FString SubPreview = "(none)";
+		if (State.SubGraphNodeId != 0)
+		{
+			for (const FAnimGraphNode& N : AllNodes)
+			{
+				if (N.NodeId == State.SubGraphNodeId)
+				{
+					char Buf[64];
+					std::snprintf(Buf, sizeof(Buf), "%s #%u", N.DisplayName.ToString().c_str(), N.NodeId);
+					SubPreview = Buf;
+					break;
+				}
+			}
+		}
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::BeginCombo("##SubGraph", SubPreview.c_str()))
+		{
+			if (ImGui::Selectable("(none)", State.SubGraphNodeId == 0))
+			{
+				if (State.SubGraphNodeId != 0) bChanged = true;
+				State.SubGraphNodeId = 0;
+			}
+			for (const FAnimGraphNode& N : AllNodes)
+			{
+				if (N.Type != EAnimGraphNodeType::StateMachine) continue;
+				if (N.NodeId == OwnerNodeId) continue; // 자기 자신 제외 (직접 self-ref 금지)
+				char Buf[64];
+				std::snprintf(Buf, sizeof(Buf), "%s #%u", N.DisplayName.ToString().c_str(), N.NodeId);
+				const bool bSel = (State.SubGraphNodeId == N.NodeId);
+				if (ImGui::Selectable(Buf, bSel))
+				{
+					if (State.SubGraphNodeId != N.NodeId) bChanged = true;
+					State.SubGraphNodeId = N.NodeId;
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		// Sub-Graph 가 선택된 경우 sequence/playrate/looping 은 무시되지만 form 자체는 그대로 노출 —
+		// 사용자가 (none) 으로 되돌렸을 때 직전 sequence 값 보존.
+		const bool bSubActive = (State.SubGraphNodeId != 0);
+		if (bSubActive) ImGui::BeginDisabled();
+
 		ImGui::TextUnformatted("Sequence");
 		const FString PreviewStem = State.SequencePath.empty() ? FString("None") : GetStemFromPath(State.SequencePath);
 		ImGui::SetNextItemWidth(-1.0f);
@@ -202,6 +249,8 @@ namespace
 		{
 			bChanged = true;
 		}
+
+		if (bSubActive) ImGui::EndDisabled();
 
 		ImGui::PopID();
 		return bChanged;
@@ -378,7 +427,7 @@ namespace
 					{
 						ImGui::PushID(i);
 						ImGui::Separator();
-						if (RenderStateRow(Node.States[i], i)) bChanged = true;
+						if (RenderStateRow(Node.States[i], i, Node.NodeId, Asset.GetNodes())) bChanged = true;
 						if (ImGui::Button("Delete##State")) PendingDeleteIdx = i;
 						ImGui::PopID();
 					}

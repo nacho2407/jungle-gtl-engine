@@ -81,6 +81,12 @@ struct FAnimGraphState
 	float    PlayRate    = 1.0f;
 	bool     bLooping    = true;
 
+	// Sub-state-machine — 그래프 안의 다른 StateMachine 노드를 가리킴. 0 == 없음 (일반 sequence state).
+	// 컴파일러가 그 노드를 컴파일해 UAnimState::SubGraphOverride 에 박음 → state Enter 시 sub-tree
+	// OnBecomeRelevant. UE 의 nested state machine 동등.
+	// SubGraphNodeId 가 있으면 SequencePath 는 무시.
+	uint32   SubGraphNodeId = 0;
+
 	friend FArchive& operator<<(FArchive& Ar, FAnimGraphState& State);
 };
 
