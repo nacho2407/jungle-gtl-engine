@@ -303,7 +303,8 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 					CamProj,
 					CascadeSplits[CascadeIndex].SplitNearRatio,
 					CascadeSplits[CascadeIndex].SplitFarRatio,
-					&VisibleBounds);
+					&VisibleBounds,
+					static_cast<float>(CascadeShadowResolution));
 
 				FShadowConstants ShadowData = {};
 				ShadowData.VirtualViewProj = CamView * CamProj;
