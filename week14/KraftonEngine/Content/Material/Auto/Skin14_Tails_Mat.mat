@@ -7,11 +7,11 @@
     "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
     "_pad" : [0.000000, 0.000000, 0.000000]
   },
-  "PathFileName" : "Asset/Materials/Auto/KON001_Hirasawa_Yui.003.mat",
+  "PathFileName" : "Content/Material/Auto/Skin14_Tails_Mat.mat",
   "RasterizerState" : "",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "Textures" : {
-    "DiffuseTexture" : "Content/Data/hirasawa-yui/yui.fbm/KON001_Hirasawa_Yui.png"
+    "DiffuseTexture" : "Content/Texture/Auto/Ahri/Skin14_Tail_All_Mat.png"
   }
 }

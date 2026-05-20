@@ -30,7 +30,7 @@
               "Location" : [0.000000, 0.000000, 0.000000],
               "Mass (kg)" : 1.000000,
               "Material" : {
-                "Path" : "Asset/Materials/Editor/AmbientLight.mat"
+                "Path" : "Content/Material/Editor/AmbientLight.mat"
               },
               "Object Type" : 0,
               "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -93,7 +93,7 @@
               "Location" : [0.000000, 0.000000, 0.000000],
               "Mass (kg)" : 1.000000,
               "Material" : {
-                "Path" : "Asset/Materials/Editor/DirectionalLight.mat"
+                "Path" : "Content/Material/Editor/DirectionalLight.mat"
               },
               "Object Type" : 0,
               "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -151,7 +151,7 @@
             "WorldStatic" : 2
           },
           "Element 0" : {
-            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+            "Path" : "Content/Material/Auto/BasicShapeMaterial.mat"
           },
           "Generate Overlap Events" : false,
           "Location" : [-1.776060, 8.760371, 0.000000],

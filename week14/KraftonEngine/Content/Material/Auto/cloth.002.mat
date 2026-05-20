@@ -7,7 +7,7 @@
     "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
     "_pad" : [0.000000, 0.000000, 0.000000]
   },
-  "PathFileName" : "Asset/Materials/Auto/cloth.002.mat",
+  "PathFileName" : "Content/Material/Auto/cloth.002.mat",
   "RasterizerState" : "",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
