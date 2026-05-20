@@ -264,6 +264,44 @@ uint64 HashMatrix(uint64 Seed, const FMatrix& Matrix)
 {
     return HashBytes(Seed, Matrix.M, sizeof(Matrix.M));
 }
+
+bool DrawTimelineIconButton(
+    const char* Id,
+    ID3D11ShaderResourceView* Icon,
+    const char* FallbackLabel,
+    const char* Tooltip,
+    const ImVec2& ButtonSize)
+{
+    bool bPressed = false;
+    if (!Icon)
+    {
+        bPressed = ImGui::Button(FallbackLabel, ButtonSize);
+    }
+    else
+    {
+        bPressed = ImGui::InvisibleButton(Id, ButtonSize);
+        const ImVec2 Min = ImGui::GetItemRectMin();
+        const ImVec2 Max = ImGui::GetItemRectMax();
+        const bool bHovered = ImGui::IsItemHovered();
+        const bool bHeld = ImGui::IsItemActive();
+        const ImU32 BgColor = ImGui::GetColorU32(
+            bHeld ? ImGuiCol_ButtonActive : (bHovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button));
+        constexpr ImVec2 IconSize(16.0f, 16.0f);
+        const ImVec2 IconMin(
+            Min.x + (ButtonSize.x - IconSize.x) * 0.5f,
+            Min.y + (ButtonSize.y - IconSize.y) * 0.5f);
+        const ImVec2 IconMax(IconMin.x + IconSize.x, IconMin.y + IconSize.y);
+
+        ImGui::GetWindowDrawList()->AddRectFilled(Min, Max, BgColor, ImGui::GetStyle().FrameRounding);
+        ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(Icon), IconMin, IconMax);
+    }
+
+    if (Tooltip && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+    {
+        ImGui::SetTooltip("%s", Tooltip);
+    }
+    return bPressed;
+}
 } // namespace
 
 void FEditorViewerWindowWidget::Initialize(UEditorEngine* InEditorEngine)
@@ -759,7 +797,6 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentToolbar(bool& bDockRequest
     }
 
     constexpr ImGuiWindowFlags ToolbarFlags =
-        ImGuiWindowFlags_NoScrollbar |
         ImGuiWindowFlags_NoScrollWithMouse;
     ImGui::BeginChild("##DetachedViewerToolbar", ImVec2(0.0f, 40.0f), false, ToolbarFlags);
     ImGui::SetCursorPos(ImVec2(8.0f, 6.0f));
@@ -1044,7 +1081,13 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
         ImGui::BeginChild("TimelineLeftPanel", ImVec2(TimelineLeftPanelWidth, 0), false, ImGuiWindowFlags_NoScrollbar);
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 4.0f));
-        float BtnW = (TimelineLeftPanelWidth - (6.0f * 2.0f)) / 7.0f;
+        constexpr int32 PlaybackButtonCount = 9;
+        const float BtnW = (TimelineLeftPanelWidth - (2.0f * (PlaybackButtonCount - 1))) / PlaybackButtonCount;
+        const ImVec2 PlaybackButtonSize(BtnW, 24.0f);
+        auto PlayControlIcon = [&](EEditorMainPanelPlayControlIcon Icon)
+        {
+            return EditorEngine ? EditorEngine->GetMainPanel().GetPlayControlIconResource(Icon) : nullptr;
+        };
 
         const int32 SafeTotalFramesForStep = std::max(AnimationTotalFrames, 1);
         const float FrameStepSeconds = AnimationMaxTime > 0.0f
@@ -1070,153 +1113,56 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
                 return;
             }
             CachedSkComp->Pause();
-        }
-    }
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
-    if (ImGui::Button("(O)", ImVec2(BtnW, 24)))
-    { /* 특수 액션/녹음 */
-    }
-    ImGui::SameLine();
-    ImGui::PopStyleColor();
-
-    if (ImGui::Button(">", ImVec2(BtnW, 24)))
-    {
-        if (CachedSkComp)
-        {
-            CachedSkComp->SetLooping(bAnimationLoop);
-            CachedSkComp->Play();
-        }
-    }
-    ImGui::SameLine();
-    if (ImGui::Button(">>", ImVec2(BtnW, 24)))
-    {
-        SeekAnimation(std::min(AnimationMaxTime, AnimationCurrentTime + FrameStepSeconds));
-    }
-    ImGui::SameLine();
-    if (ImGui::Button(">|", ImVec2(BtnW, 24)))
-    {
-        SeekAnimation(AnimationMaxTime);
-    }
-    if (ImGui::Checkbox("Loop Playback", &bAnimationLoop))
-    {
-        if (CachedSkComp)
-        {
-            CachedSkComp->SetLooping(bAnimationLoop);
-        }
-    }
-    ImGui::PopStyleVar();
-    ImGui::Spacing();
-
-    FString FbxPath;
-    TArray<FString> StackNames;
-    if (CachedSkComp && CachedSkComp->GetSkeletalMesh())
-    {
-        FbxPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
-        StackNames = FResourceManager::Get().ListAnimStacks(FbxPath);
-    }
-
-    TArray<const char*> AnimItems;
-    AnimItems.reserve(StackNames.size());
-
-    for (const FString& StackName : StackNames)
-    {
-        AnimItems.push_back(StackName.c_str());
-    }
-    if (SelectedAnimationStackIndex >= static_cast<int32>(AnimItems.size()))
-    {
-        SelectedAnimationStackIndex = 0;
-    }
-    ImGui::SetNextItemWidth(-1.0f);
-    bool bAnimSelectionChanged = false;
-    if (AnimItems.empty())
-    {
-        ImGui::TextDisabled("No animation stacks");
-    }
-    else
-    {
-        int SelectedAnimItem = static_cast<int>(SelectedAnimationStackIndex);
-        bAnimSelectionChanged = ImGui::Combo(
-            "Animation List",
-            &SelectedAnimItem,
-            AnimItems.data(),
-            static_cast<int>(AnimItems.size()));
-        SelectedAnimationStackIndex = static_cast<int32>(SelectedAnimItem);
-    }
-
-    const bool bHasSelectedAnimationStack =
-        CachedSkComp
-        && !StackNames.empty()
-        && SelectedAnimationStackIndex >= 0
-        && SelectedAnimationStackIndex < static_cast<int32>(StackNames.size());
-    FString SelectedAnimationStackName;
-    if (bHasSelectedAnimationStack)
-    {
-        SelectedAnimationStackName = StackNames[SelectedAnimationStackIndex];
-        const FString AnimKey = FbxPath + "|" + SelectedAnimationStackName;
-
-        if (bAnimSelectionChanged || LastRequestedAnimationKey != AnimKey)
-        {
-            // 뷰어 인스턴스별 요청 키로 0번 stack 자동 로드와 선택 변경을 처리
-            LastRequestedAnimationKey = AnimKey;
-            if (CachedSkComp->SetAnimSequence(FbxPath, SelectedAnimationStackName))
-
-        }
-    }
-
-    const bool bCanSaveAnimSequenceAsset =
-        bHasSelectedAnimationStack
-        && CachedSkComp
-        && CachedSkComp->GetSkeletalMesh()
-        && !FbxPath.empty();
-    ImGui::BeginDisabled(!bCanSaveAnimSequenceAsset);
-    if (ImGui::Button("Save AnimSequence Asset"))
-    {
-        const FString TargetMeshPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
-        const FString AssetPath = MakeUniqueAnimSequenceAssetPath(FbxPath, SelectedAnimationStackName);
-        if (FResourceManager::Get().SaveAnimSequenceAsset(
-            AssetPath,
-            FbxPath,
-            TargetMeshPath,
-            SelectedAnimationStackName))
-        {
-            if (EditorEngine)
-            {
-                EditorEngine->GetNotificationService().Info("Anim sequence asset saved: " + AssetPath);
-            }
-        }
-        else if (EditorEngine)
-        {
-            EditorEngine->GetNotificationService().Error("Anim sequence asset save failed");
-        }
-    }
-    ImGui::EndDisabled();
-    if (!bCanSaveAnimSequenceAsset && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-    {
-        ImGui::SetTooltip("Select an animation stack first.");
-    }
-    ImGui::Spacing();
-
             CachedSkComp->SetPosition(NewTime, false);
             CachedSkComp->RefreshAnimationPose();
             AnimationCurrentTime = CachedSkComp->GetPosition();
         };
 
-        if (ImGui::Button("|<", ImVec2(BtnW, 24)))
+        if (DrawTimelineIconButton(
+                "##TimelineToFront",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::ToFront),
+                "|<",
+                "To Front",
+                PlaybackButtonSize))
         {
             SeekAnimation(0.0f);
         }
         ImGui::SameLine();
-        if (ImGui::Button("<<", ImVec2(BtnW, 24)))
+        if (DrawTimelineIconButton(
+                "##TimelineToPrevious",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::ToPrevious),
+                "<<",
+                "Previous Frame",
+                PlaybackButtonSize))
         {
             SeekAnimation(std::max(0.0f, AnimationCurrentTime - FrameStepSeconds));
         }
         ImGui::SameLine();
-        if (ImGui::Button("<", ImVec2(BtnW, 24)))
+        if (DrawTimelineIconButton(
+                "##TimelinePlayReverse",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::PlayReverse),
+                "<",
+                "Play Reverse",
+                PlaybackButtonSize))
         { /* 역재생 */
         }
         ImGui::SameLine();
-        if (ImGui::Button("||", ImVec2(BtnW, 24)))
+        if (DrawTimelineIconButton(
+                "##TimelineStop",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::Stop),
+                "[]",
+                "Stop",
+                PlaybackButtonSize))
+        {
+            SeekAnimation(0.0f);
+        }
+        ImGui::SameLine();
+        if (DrawTimelineIconButton(
+                "##TimelinePause",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::Pause),
+                "||",
+                "Pause",
+                PlaybackButtonSize))
         {
             if (CachedSkComp)
             {
@@ -1224,14 +1170,22 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
             }
         }
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
-        if (ImGui::Button("(O)", ImVec2(BtnW, 24)))
+        if (DrawTimelineIconButton(
+                "##TimelineRecord",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::Record),
+                "(O)",
+                "Record",
+                PlaybackButtonSize))
         { /* 특수 액션/녹음 */
         }
         ImGui::SameLine();
-        ImGui::PopStyleColor();
 
-        if (ImGui::Button(">", ImVec2(BtnW, 24)))
+        if (DrawTimelineIconButton(
+                "##TimelinePlayForward",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::PlayForward),
+                ">",
+                "Play Forward",
+                PlaybackButtonSize))
         {
             if (CachedSkComp)
             {
@@ -1240,12 +1194,22 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
             }
         }
         ImGui::SameLine();
-        if (ImGui::Button(">>", ImVec2(BtnW, 24)))
+        if (DrawTimelineIconButton(
+                "##TimelineToNext",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::ToNext),
+                ">>",
+                "Next Frame",
+                PlaybackButtonSize))
         {
             SeekAnimation(std::min(AnimationMaxTime, AnimationCurrentTime + FrameStepSeconds));
         }
         ImGui::SameLine();
-        if (ImGui::Button(">|", ImVec2(BtnW, 24)))
+        if (DrawTimelineIconButton(
+                "##TimelineToEnd",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::ToEnd),
+                ">|",
+                "To End",
+                PlaybackButtonSize))
         {
             SeekAnimation(AnimationMaxTime);
         }
@@ -1324,8 +1288,49 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
                     CachedSkComp->SetPlayRate(AnimationPlayRate);
                     SeekAnimation(0.0f);
                     RefreshAnimationTimelineState();
+                    Sequence = CachedSkComp ? Cast<UAnimSequenceBase>(CachedSkComp->GetAnimation()) : nullptr;
                 }
             }
+        }
+
+        const bool bHasSelectedAnimationStack =
+            CachedSkComp &&
+            !StackNames.empty() &&
+            SelectedAnimationStackIndex >= 0 &&
+            SelectedAnimationStackIndex < static_cast<int32>(StackNames.size());
+        const FString SelectedAnimationStackName = bHasSelectedAnimationStack
+                                                       ? StackNames[SelectedAnimationStackIndex]
+                                                       : FString();
+        const bool bCanSaveAnimSequenceAsset =
+            bHasSelectedAnimationStack &&
+            CachedSkComp &&
+            CachedSkComp->GetSkeletalMesh() &&
+            !FbxPath.empty();
+        ImGui::BeginDisabled(!bCanSaveAnimSequenceAsset);
+        if (ImGui::Button("Save AnimSequence Asset"))
+        {
+            const FString TargetMeshPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
+            const FString AssetPath = MakeUniqueAnimSequenceAssetPath(FbxPath, SelectedAnimationStackName);
+            if (FResourceManager::Get().SaveAnimSequenceAsset(
+                    AssetPath,
+                    FbxPath,
+                    TargetMeshPath,
+                    SelectedAnimationStackName))
+            {
+                if (EditorEngine)
+                {
+                    EditorEngine->GetNotificationService().Info("Anim sequence asset saved: " + AssetPath);
+                }
+            }
+            else if (EditorEngine)
+            {
+                EditorEngine->GetNotificationService().Error("Anim sequence asset save failed");
+            }
+        }
+        ImGui::EndDisabled();
+        if (!bCanSaveAnimSequenceAsset && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        {
+            ImGui::SetTooltip("Select an animation stack first.");
         }
         ImGui::Spacing();
 
