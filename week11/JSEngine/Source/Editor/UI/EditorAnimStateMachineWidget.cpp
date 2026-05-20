@@ -20,7 +20,10 @@ namespace ed = ax::NodeEditor;
 namespace
 {
     constexpr int32 InvalidSelectionId = -1;
+    constexpr int32 AnyStateNodeId = 200000000;
+    constexpr int32 AnyStateOutputPinId = 200000001;
     constexpr const char* StateAssetPopupName = "##AnimStateMachineStateAssetPopup";
+    const FName AnyStateName("Any");
 
     void CopyToBuffer(const FString& Value, char* Buffer, size_t BufferSize)
     {
@@ -120,12 +123,27 @@ namespace
         }
     }
 
-    bool DrawStateNameCombo(const char* Label, const FAnimStateMachineDesc& Desc, FName& Value)
+    bool DrawStateNameCombo(const char* Label, const FAnimStateMachineDesc& Desc, FName& Value, bool bAllowAnyState = false)
     {
         bool bChanged = false;
         const FString Preview = Value.ToString();
         if (ImGui::BeginCombo(Label, Preview.empty() ? "<None>" : Preview.c_str()))
         {
+            if (bAllowAnyState)
+            {
+                const bool bAnySelected = FAnimStateMachineDesc::IsAnyStateName(Value);
+                if (ImGui::Selectable("Any", bAnySelected))
+                {
+                    Value = AnyStateName;
+                    bChanged = true;
+                }
+                if (bAnySelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+                ImGui::Separator();
+            }
+
             for (const FAnimStateDesc& State : Desc.States)
             {
                 const FString StateName = State.Name.ToString();
@@ -207,11 +225,30 @@ bool FEditorAnimStateMachineWidget::OpenAsset(const FString& Path)
 
     CurrentPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
     CopyToBuffer(CurrentPath, SaveAsPathBuffer, sizeof(SaveAsPathBuffer));
+    CopyToBuffer(CurrentPath, LoadPathBuffer, sizeof(LoadPathBuffer));
     ResetSelection();
     bNeedsInitialNodePlacement = true;
+    bShowAnyStateNode = HasAnyTransitions();
+    bNeedsAnyStateNodePlacement = bShowAnyStateNode;
     bAssetListsDirty = true;
     SetStatus("Loaded .animsm asset.");
     return true;
+}
+
+void FEditorAnimStateMachineWidget::NewDraft()
+{
+    Desc = MakeDefaultStateMachineDesc();
+    CurrentPath.clear();
+    StatusMessage.clear();
+    CopyToBuffer("Asset/Animation/StateMachine/New Animation State Machine.animsm", SaveAsPathBuffer, sizeof(SaveAsPathBuffer));
+    CopyToBuffer("Asset/Animation/StateMachine/New Animation State Machine.animsm", LoadPathBuffer, sizeof(LoadPathBuffer));
+    ResetSelection();
+    bNeedsInitialNodePlacement = true;
+    bShowAnyStateNode = false;
+    bNeedsAnyStateNodePlacement = false;
+    bAssetListsDirty = true;
+    bDirty = true;
+    SetStatus("New .animsm draft. Use Save As to create an asset file.");
 }
 
 bool FEditorAnimStateMachineWidget::NewAsset(const FString& Path)
@@ -219,8 +256,11 @@ bool FEditorAnimStateMachineWidget::NewAsset(const FString& Path)
     Desc = MakeDefaultStateMachineDesc();
     CurrentPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
     CopyToBuffer(CurrentPath, SaveAsPathBuffer, sizeof(SaveAsPathBuffer));
+    CopyToBuffer(CurrentPath, LoadPathBuffer, sizeof(LoadPathBuffer));
     ResetSelection();
     bNeedsInitialNodePlacement = true;
+    bShowAnyStateNode = false;
+    bNeedsAnyStateNodePlacement = false;
     bAssetListsDirty = true;
     bDirty = true;
     return SaveAsset();
@@ -264,8 +304,20 @@ bool FEditorAnimStateMachineWidget::SaveAssetAs(const FString& Path)
 
 void FEditorAnimStateMachineWidget::RequestSaveAs()
 {
-    CopyToBuffer(CurrentPath, SaveAsPathBuffer, sizeof(SaveAsPathBuffer));
+    const FString DefaultPath = CurrentPath.empty()
+        ? FString("Asset/Animation/StateMachine/New Animation State Machine.animsm")
+        : CurrentPath;
+    CopyToBuffer(DefaultPath, SaveAsPathBuffer, sizeof(SaveAsPathBuffer));
     bSaveAsPopupRequested = true;
+}
+
+void FEditorAnimStateMachineWidget::RequestLoad()
+{
+    const FString DefaultPath = CurrentPath.empty()
+        ? FString("Asset/Animation/StateMachine/New Animation State Machine.animsm")
+        : CurrentPath;
+    CopyToBuffer(DefaultPath, LoadPathBuffer, sizeof(LoadPathBuffer));
+    bLoadPopupRequested = true;
 }
 
 bool FEditorAnimStateMachineWidget::ValidateAsset()
@@ -303,11 +355,23 @@ void FEditorAnimStateMachineWidget::DrawContent(float DeltaTime)
         ImGui::EndTable();
     }
 
+    DrawLoadPopup();
     DrawSaveAsPopup();
 }
 
 void FEditorAnimStateMachineWidget::DrawToolbar()
 {
+    if (ImGui::Button("New"))
+    {
+        NewDraft();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Load"))
+    {
+        RequestLoad();
+    }
+    ImGui::SameLine(0.0f, 16.0f);
+
     ImGui::TextDisabled("Asset");
     ImGui::SameLine();
     ImGui::TextUnformatted(CurrentPath.empty() ? "<unsaved>" : CurrentPath.c_str());
@@ -359,10 +423,24 @@ void FEditorAnimStateMachineWidget::DrawGraph()
         AddState();
     }
     ImGui::SameLine();
-    ImGui::BeginDisabled(SelectedStateId == InvalidSelectionId || Desc.States.size() <= 1);
+    ImGui::BeginDisabled(bShowAnyStateNode);
+    if (ImGui::Button("Add Any State"))
+    {
+        ShowAnyStateNode();
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    ImGui::BeginDisabled(SelectedStateId == InvalidSelectionId || (!IsAnyStateNodeId(SelectedStateId) && Desc.States.size() <= 1));
     if (ImGui::Button("Delete State"))
     {
-        DeleteSelectedState();
+        if (IsAnyStateNodeId(SelectedStateId))
+        {
+            DeleteAnyStateNode();
+        }
+        else
+        {
+            DeleteSelectedState();
+        }
     }
     ImGui::EndDisabled();
     ImGui::SameLine();
@@ -381,6 +459,22 @@ void FEditorAnimStateMachineWidget::DrawGraph()
 
     ed::SetCurrentEditor(NodeEditorContext);
     ed::Begin("AnimStateMachineGraph", ImVec2(0.0f, 0.0f));
+
+    if (bShowAnyStateNode || HasAnyTransitions())
+    {
+        bShowAnyStateNode = true;
+
+        ed::BeginNode(ed::NodeId(static_cast<uintptr_t>(AnyStateNodeId)));
+        ImGui::PushID(AnyStateNodeId);
+        ImGui::TextColored(ImVec4(0.78f, 0.62f, 0.98f, 1.0f), "Any State");
+        ImGui::TextDisabled("Global transition source");
+        ImGui::Spacing();
+        ed::BeginPin(ed::PinId(static_cast<uintptr_t>(AnyStateOutputPinId)), ed::PinKind::Output);
+        ImGui::TextUnformatted("Out");
+        ed::EndPin();
+        ImGui::PopID();
+        ed::EndNode();
+    }
 
     for (FAnimStateDesc& State : Desc.States)
     {
@@ -408,14 +502,10 @@ void FEditorAnimStateMachineWidget::DrawGraph()
 
     for (const FAnimTransitionDesc& Transition : Desc.Transitions)
     {
-        if (FAnimStateMachineDesc::IsAnyStateName(Transition.FromState))
-        {
-            continue;
-        }
-
-        const FAnimStateDesc* FromState = Desc.FindStateByName(Transition.FromState);
+        const bool bAnyTransition = FAnimStateMachineDesc::IsAnyStateName(Transition.FromState);
+        const FAnimStateDesc* FromState = bAnyTransition ? nullptr : Desc.FindStateByName(Transition.FromState);
         const FAnimStateDesc* ToState = Desc.FindStateByName(Transition.ToState);
-        if (!FromState || !ToState)
+        if ((!bAnyTransition && !FromState) || !ToState)
         {
             continue;
         }
@@ -425,7 +515,7 @@ void FEditorAnimStateMachineWidget::DrawGraph()
             : ImVec4(0.95f, 0.67f, 0.28f, 1.0f);
         ed::Link(
             ed::LinkId(static_cast<uintptr_t>(Transition.Id)),
-            ed::PinId(static_cast<uintptr_t>(MakeOutputPinId(FromState->Id))),
+            ed::PinId(static_cast<uintptr_t>(bAnyTransition ? AnyStateOutputPinId : MakeOutputPinId(FromState->Id))),
             ed::PinId(static_cast<uintptr_t>(MakeInputPinId(ToState->Id))),
             LinkColor,
             2.0f);
@@ -445,6 +535,7 @@ void FEditorAnimStateMachineWidget::DrawGraph()
             const FAnimStateDesc* EndState = FindStateByPinId(EndId);
             const FAnimStateDesc* FromState = nullptr;
             const FAnimStateDesc* ToState = nullptr;
+            bool bFromAnyState = false;
 
             // node-editor는 드래그 방향을 보장하지 않으므로 input->output 드래그도 같은 transition으로 해석합니다.
             if (StartState && EndState && StartId == MakeOutputPinId(StartState->Id) && EndId == MakeInputPinId(EndState->Id))
@@ -452,21 +543,31 @@ void FEditorAnimStateMachineWidget::DrawGraph()
                 FromState = StartState;
                 ToState = EndState;
             }
+            else if (IsAnyOutputPinId(StartId) && EndState && EndId == MakeInputPinId(EndState->Id))
+            {
+                bFromAnyState = true;
+                ToState = EndState;
+            }
             else if (StartState && EndState && StartId == MakeInputPinId(StartState->Id) && EndId == MakeOutputPinId(EndState->Id))
             {
                 FromState = EndState;
                 ToState = StartState;
             }
+            else if (StartState && StartId == MakeInputPinId(StartState->Id) && IsAnyOutputPinId(EndId))
+            {
+                bFromAnyState = true;
+                ToState = StartState;
+            }
 
             const bool bCanCreate =
-                FromState &&
+                (FromState || bFromAnyState) &&
                 ToState &&
-                FromState != ToState;
+                (!FromState || FromState != ToState);
             if (bCanCreate)
             {
                 if (ed::AcceptNewItem(ImVec4(0.46f, 0.84f, 0.54f, 1.0f), 3.0f))
                 {
-                    AddTransition(FromState->Name, ToState->Name);
+                    AddTransition(bFromAnyState ? AnyStateName : FromState->Name, ToState->Name);
                 }
             }
             else
@@ -495,7 +596,14 @@ void FEditorAnimStateMachineWidget::DrawGraph()
             if (ed::AcceptDeletedItem(false))
             {
                 SelectedStateId = static_cast<int32>(NodeId.Get());
-                DeleteSelectedState();
+                if (IsAnyStateNodeId(SelectedStateId))
+                {
+                    DeleteAnyStateNode();
+                }
+                else
+                {
+                    DeleteSelectedState();
+                }
             }
         }
     }
@@ -718,7 +826,7 @@ void FEditorAnimStateMachineWidget::DrawTransitionInspector(FAnimTransitionDesc&
     ImGui::TextUnformatted("Transition");
     ImGui::Separator();
 
-    if (DrawStateNameCombo("From", Desc, Transition.FromState))
+    if (DrawStateNameCombo("From", Desc, Transition.FromState, true))
     {
         MarkDirty();
     }
@@ -828,6 +936,40 @@ void FEditorAnimStateMachineWidget::DrawTransitionInspector(FAnimTransitionDesc&
     }
 }
 
+void FEditorAnimStateMachineWidget::DrawLoadPopup()
+{
+    if (bLoadPopupRequested)
+    {
+        ImGui::OpenPopup("Load Animation State Machine");
+        bLoadPopupRequested = false;
+    }
+
+    if (ImGui::BeginPopupModal("Load Animation State Machine", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted("Project-relative .animsm path");
+        ImGui::SetNextItemWidth(420.0f);
+        const bool bEnter = ImGui::InputText(
+            "##AnimStateMachineLoadPath",
+            LoadPathBuffer,
+            IM_ARRAYSIZE(LoadPathBuffer),
+            ImGuiInputTextFlags_EnterReturnsTrue);
+
+        if (ImGui::Button("Load") || bEnter)
+        {
+            if (OpenAsset(LoadPathBuffer))
+            {
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
 void FEditorAnimStateMachineWidget::DrawSaveAsPopup()
 {
     if (bSaveAsPopupRequested)
@@ -892,6 +1034,8 @@ void FEditorAnimStateMachineWidget::DrawGraphContextMenus()
     ed::Suspend();
     if (ImGui::BeginPopup("AnimStateMachineNodeContext"))
     {
+        const bool bAnyNodeSelected = IsAnyStateNodeId(SelectedStateId);
+        ImGui::BeginDisabled(bAnyNodeSelected);
         if (ImGui::MenuItem("Set Entry State"))
         {
             if (FAnimStateDesc* State = GetSelectedState())
@@ -900,10 +1044,18 @@ void FEditorAnimStateMachineWidget::DrawGraphContextMenus()
                 MarkDirty();
             }
         }
-        ImGui::BeginDisabled(Desc.States.size() <= 1);
+        ImGui::EndDisabled();
+        ImGui::BeginDisabled(!bAnyNodeSelected && Desc.States.size() <= 1);
         if (ImGui::MenuItem("Delete State"))
         {
-            DeleteSelectedState();
+            if (bAnyNodeSelected)
+            {
+                DeleteAnyStateNode();
+            }
+            else
+            {
+                DeleteSelectedState();
+            }
         }
         ImGui::EndDisabled();
         ImGui::EndPopup();
@@ -993,18 +1145,29 @@ void FEditorAnimStateMachineWidget::SyncNodePositionsFromEditor()
 
 void FEditorAnimStateMachineWidget::ApplyInitialNodePositions()
 {
-    if (!bNeedsInitialNodePlacement)
+    if (!bNeedsInitialNodePlacement && !bNeedsAnyStateNodePlacement)
     {
         return;
     }
 
-    for (const FAnimStateDesc& State : Desc.States)
+    if (bNeedsInitialNodePlacement)
+    {
+        for (const FAnimStateDesc& State : Desc.States)
+        {
+            ed::SetNodePosition(
+                ed::NodeId(static_cast<uintptr_t>(State.Id)),
+                ImVec2(State.EditorPosition.X, State.EditorPosition.Y));
+        }
+        bNeedsInitialNodePlacement = false;
+    }
+
+    if (bNeedsAnyStateNodePlacement && bShowAnyStateNode)
     {
         ed::SetNodePosition(
-            ed::NodeId(static_cast<uintptr_t>(State.Id)),
-            ImVec2(State.EditorPosition.X, State.EditorPosition.Y));
+            ed::NodeId(static_cast<uintptr_t>(AnyStateNodeId)),
+            ImVec2(40.0f, 40.0f));
+        bNeedsAnyStateNodePlacement = false;
     }
-    bNeedsInitialNodePlacement = false;
 }
 
 FAnimStateDesc* FEditorAnimStateMachineWidget::GetSelectedState()
@@ -1073,6 +1236,70 @@ void FEditorAnimStateMachineWidget::RequestOpenStateAssetPopup(
     StateAssetPopupY = StateAssetPopupAnchorY;
     StateAssetPopupWidth = 360.0f;
     bOpenStateAssetPopupRequested = true;
+}
+
+bool FEditorAnimStateMachineWidget::HasAnyTransitions() const
+{
+    for (const FAnimTransitionDesc& Transition : Desc.Transitions)
+    {
+        if (FAnimStateMachineDesc::IsAnyStateName(Transition.FromState))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool FEditorAnimStateMachineWidget::IsAnyStateNodeId(int32 NodeId) const
+{
+    return NodeId == AnyStateNodeId;
+}
+
+bool FEditorAnimStateMachineWidget::IsAnyOutputPinId(int32 PinId) const
+{
+    return PinId == AnyStateOutputPinId;
+}
+
+bool FEditorAnimStateMachineWidget::ShowAnyStateNode()
+{
+    if (bShowAnyStateNode)
+    {
+        return false;
+    }
+
+    bShowAnyStateNode = true;
+    bNeedsAnyStateNodePlacement = true;
+    SelectedStateId = AnyStateNodeId;
+    SelectedTransitionId = InvalidSelectionId;
+    return true;
+}
+
+bool FEditorAnimStateMachineWidget::DeleteAnyStateNode()
+{
+    if (!bShowAnyStateNode && !HasAnyTransitions())
+    {
+        return false;
+    }
+
+    const size_t OldTransitionCount = Desc.Transitions.size();
+    Desc.Transitions.erase(
+        std::remove_if(
+            Desc.Transitions.begin(),
+            Desc.Transitions.end(),
+            [](const FAnimTransitionDesc& Transition)
+            {
+                return FAnimStateMachineDesc::IsAnyStateName(Transition.FromState);
+            }),
+        Desc.Transitions.end());
+
+    bShowAnyStateNode = false;
+    bNeedsAnyStateNodePlacement = false;
+    ResetSelection();
+    if (Desc.Transitions.size() != OldTransitionCount)
+    {
+        MarkDirty();
+    }
+    return true;
 }
 
 const FAnimStateDesc* FEditorAnimStateMachineWidget::FindStateByPinId(int32 PinId) const
@@ -1181,14 +1408,17 @@ bool FEditorAnimStateMachineWidget::DeleteSelectedState()
 
 bool FEditorAnimStateMachineWidget::AddTransition(const FName& FromState, const FName& ToState)
 {
-    if (!Desc.FindStateByName(FromState) || !Desc.FindStateByName(ToState) || NamesEqual(FromState, ToState))
+    const bool bAnyFromState = FAnimStateMachineDesc::IsAnyStateName(FromState);
+    if ((!bAnyFromState && !Desc.FindStateByName(FromState)) ||
+        !Desc.FindStateByName(ToState) ||
+        NamesEqual(FromState, ToState))
     {
         return false;
     }
 
     FAnimTransitionDesc Transition;
     Transition.Id = AllocateTransitionId();
-    Transition.FromState = FromState;
+    Transition.FromState = bAnyFromState ? AnyStateName : FromState;
     Transition.ToState = ToState;
     Desc.Transitions.push_back(Transition);
 

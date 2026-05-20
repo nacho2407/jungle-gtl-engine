@@ -66,6 +66,17 @@ void FEditorMainPanel::OpenAnimStateMachineAsset(const FString& AnimStateMachine
     ActivateEditorTab(TabId);
 }
 
+void FEditorMainPanel::OpenAnimStateMachineEditor()
+{
+    Widgets.AnimStateMachineWidget.NewDraft();
+
+    const FEditorTabId TabId = MakeAnimStateMachineEditorTabId("");
+    const FString TabLabel = MakeAnimStateMachineEditorTabLabel("");
+    EditorTabs.OpenOrFocusTab(TabId, TabLabel);
+    EditorTabs.SetTabLabel(TabId, TabLabel);
+    ActivateEditorTab(TabId);
+}
+
 void FEditorMainPanel::OpenViewer(FEditorViewer* Viewer)
 {
     FEditorTabId ViewerTabId;
@@ -184,6 +195,7 @@ void FEditorMainPanel::BindEditorWidgetCallbacks()
     Widgets.ToolbarWidget.SetPIEViewportFullscreenCallback([this](bool bEnabled) { SetPIEViewportFullscreenEnabled(bEnabled); });
     Widgets.ToolbarWidget.SetBuildGameCallback([this]() { RequestBuildGame(); });
     Widgets.ToolbarWidget.SetRuntimeUIPreviewOpenCallback([this]() { OpenRuntimeUIPreviewAsset(); });
+    Widgets.ToolbarWidget.SetAnimStateMachineOpenCallback([this]() { OpenAnimStateMachineEditor(); });
     Widgets.ToolbarWidget.SetActiveCommandHandlers(
         [this](const FEditorShortcut& Shortcut)
         {

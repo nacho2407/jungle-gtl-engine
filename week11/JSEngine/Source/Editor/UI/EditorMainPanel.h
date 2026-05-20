@@ -51,6 +51,7 @@ public:
 	void OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex);
 	void OpenCurveAsset(const FString& CurvePath);
 	void OpenRuntimeUIPreviewAsset(const FString& RmlPath = "");
+	void OpenAnimStateMachineEditor();
 	void OpenAnimStateMachineAsset(const FString& AnimStateMachinePath);
 	void OpenViewer(FEditorViewer* Viewer);
 	void RequestDockViewer(FEditorViewer* Viewer);

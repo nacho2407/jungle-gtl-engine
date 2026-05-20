@@ -20,9 +20,11 @@ public:
     void Shutdown();
 
     bool OpenAsset(const FString& Path);
+    void NewDraft();
     bool NewAsset(const FString& Path);
     bool SaveAsset();
     bool SaveAssetAs(const FString& Path);
+    void RequestLoad();
     void RequestSaveAs();
     bool ValidateAsset();
 
@@ -45,6 +47,7 @@ private:
     void DrawStateNodeControls(FAnimStateDesc& State);
     void DrawStateAssetPopup();
     void DrawTransitionInspector(FAnimTransitionDesc& Transition);
+    void DrawLoadPopup();
     void DrawSaveAsPopup();
     void DrawGraphContextMenus();
 
@@ -62,6 +65,11 @@ private:
     const TArray<FString>& GetFbxAssetList();
     const TArray<FString>& GetAnimStacksForFbx(const FString& FbxPath);
     void RequestOpenStateAssetPopup(int32 StateId, EStateAssetPopupKind Kind);
+    bool HasAnyTransitions() const;
+    bool IsAnyStateNodeId(int32 NodeId) const;
+    bool IsAnyOutputPinId(int32 PinId) const;
+    bool ShowAnyStateNode();
+    bool DeleteAnyStateNode();
     const FAnimStateDesc* FindStateByPinId(int32 PinId) const;
     int32 MakeInputPinId(int32 StateId) const;
     int32 MakeOutputPinId(int32 StateId) const;
@@ -82,6 +90,7 @@ private:
     FString StatusMessage;
     int32 SelectedStateId = -1;
     int32 SelectedTransitionId = -1;
+    char LoadPathBuffer[260] = {};
     char SaveAsPathBuffer[260] = {};
     TArray<FString> CachedFbxPaths;
     TMap<FString, TArray<FString>> CachedAnimStacksByFbx;
@@ -95,6 +104,9 @@ private:
     bool bOpenStateAssetPopupRequested = false;
     bool bDirty = false;
     bool bNeedsInitialNodePlacement = false;
+    bool bShowAnyStateNode = false;
+    bool bNeedsAnyStateNodePlacement = false;
     bool bSaveAsPopupRequested = false;
+    bool bLoadPopupRequested = false;
     bool bAssetListsDirty = true;
 };
