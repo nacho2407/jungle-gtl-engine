@@ -5,7 +5,7 @@
       "Components" : [{
           "AttachSocketName" : "Name_None",
           "CSMMaxDistance" : 300.000000,
-          "CSMPractialLambda" : 0.250000,
+          "CSMPractialLambda" : 0.050000,
           "ClassName" : "UDirectionalLightComponent",
           "ConstantBias" : 0.003000,
           "Intensity" : 1.000000,
@@ -23,9 +23,9 @@
             "Z" : 13.000000
           },
           "RelativeRotation" : {
-            "X" : -0.000000,
-            "Y" : 44.000000,
-            "Z" : -0.000000
+            "X" : -179.999893,
+            "Y" : 60.000000,
+            "Z" : 135.657104
           },
           "RelativeScale3D" : {
             "X" : 1.000000,
@@ -34,7 +34,7 @@
           },
           "ShadowMapType" : 0,
           "ShadowResolutionScale" : 2048,
-          "ShadowSharpen" : 0.500000,
+          "ShadowSharpen" : 2.100000,
           "SlopeScaledBias" : 0.120000,
           "Tags" : [],
           "Type" : "UDirectionalLightComponent",
@@ -282,7 +282,7 @@
           "RelativeLocation" : {
             "X" : -67.807137,
             "Y" : 37.492970,
-            "Z" : 26.803827
+            "Z" : 26.759739
           },
           "RelativeRotation" : {
             "X" : -0.000000,
@@ -508,13 +508,13 @@
     }],
   "ClassName" : "UWorld",
   "Name" : "Demonstrate",
-  "NextUUID" : 850,
+  "NextUUID" : 1271,
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,
-    "Location" : [-59.758419, 43.638939, 33.834137],
+    "Location" : [-70.625435, 40.108215, 30.816813],
     "NearClip" : 0.100000,
-    "Rotation" : [40.764904, -25.395721, -116.448654]
+    "Rotation" : [30.761484, 19.772175, -60.388672]
   },
   "Version" : 6,
   "WorldSettings" : {
