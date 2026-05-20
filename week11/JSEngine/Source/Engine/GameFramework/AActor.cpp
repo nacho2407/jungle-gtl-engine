@@ -741,10 +741,10 @@ void AActor::HandleAnimNotify(USkeletalMeshComponent* SourceComponent, const FAn
             const FString FootstepDecalMaterialPath = NotifyEvent.Notify.Payload.empty()
                                                           ? FString("Asset/Material/DecalMat.mat")
                                                           : NotifyEvent.Notify.Payload;
-            const FVector FootstepLocationOffset(0.0f, 0.0f, -0.05f);
-            const FVector FootstepRotationOffset(0.0f, 90.0f, 0.0f);
-            const FVector FootstepScale(0.35f, 0.65f, 0.35f);
-            const FVector FootstepDecalSize(0.45f, 0.75f, 0.12f);
+            const FVector FootstepLocationOffset(0.0f, 0.0f, -0.00f);
+            const FVector FootstepRotationOffset(90.f, 0.0f, 90.f);
+            const FVector FootstepScale(	5.f, 5.f, 5.f);
+            const FVector FootstepDecalSize(1.f, 1.f, 1.f);
 
             AActor* SourceActor = SourceComponent ? SourceComponent->GetOwner() : this;
             UWorld* World = SourceActor ? SourceActor->GetFocusedWorld() : GetFocusedWorld();
