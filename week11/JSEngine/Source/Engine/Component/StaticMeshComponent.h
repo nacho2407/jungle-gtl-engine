@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "MeshComponent.h"
 #include "Asset/StaticMesh.h"
 #include "Render/Resource/Material.h"
@@ -40,7 +40,7 @@ private:
     void MarkRenderStateDirty();
 
 private:
-    UPROPERTY(EditAnywhere, Category="Asset", DisplayName="Static Mesh")
+    UPROPERTY( Category="Asset", DisplayName="Static Mesh")
     UStaticMesh* StaticMeshAsset = nullptr;
 
     UPROPERTY(EditAnywhere, Category="Asset", DisplayName="Static Mesh Path")

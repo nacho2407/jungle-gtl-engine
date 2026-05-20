@@ -19,7 +19,7 @@ void Register_UStaticMeshComponent()
         prop->CPPType = "UStaticMesh*";
         prop->Offset = offsetof(UStaticMeshComponent, StaticMeshAsset);
         prop->ElementSize = sizeof(UStaticMesh*);
-        prop->Flags = PF_EditAnywhere;
+        prop->Flags = PF_None;
         prop->Category = "Asset";
         prop->DisplayName = "Static Mesh";
         info.ReflectedProperties.push_back(prop);
