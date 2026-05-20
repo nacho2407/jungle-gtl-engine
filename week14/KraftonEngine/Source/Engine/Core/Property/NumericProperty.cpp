@@ -1,8 +1,8 @@
-﻿#include "NumericProperty.h"
+#include "NumericProperty.h"
 
 #include <cstring>
 #include "SimpleJSON/json.hpp"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Serialization/Archive.h"
 
 json::JSON FIntProperty::SerializeValue(void* ValuePtr) const

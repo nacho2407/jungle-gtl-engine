@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Archive.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include <cstring>
 
 // 메모리 버퍼 백엔드 FArchive.

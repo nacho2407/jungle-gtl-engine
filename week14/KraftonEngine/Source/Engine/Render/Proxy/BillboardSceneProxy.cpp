@@ -1,5 +1,5 @@
 #include "Render/Proxy/BillboardSceneProxy.h"
-#include "Component/BillboardComponent.h"
+#include "Component/Primitive/BillboardComponent.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Types/FrameContext.h"
 #include "GameFramework/AActor.h"

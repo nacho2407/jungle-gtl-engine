@@ -1,6 +1,6 @@
 #pragma once
 #include "Object/Object.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Core/TickFunction.h"
 

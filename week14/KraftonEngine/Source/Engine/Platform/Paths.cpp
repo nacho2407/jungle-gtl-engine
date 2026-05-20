@@ -30,11 +30,11 @@ std::wstring FPaths::RootDir()
 }
 
 std::wstring FPaths::ShaderDir()		{ return RootDir() + L"Shaders/"; }
-std::wstring FPaths::AssetDir()			{ return RootDir() + L"Asset/"; }
-std::wstring FPaths::AudioDir()			{ return RootDir() + L"Asset/Audio/"; }
-std::wstring FPaths::SceneDir()			{ return RootDir() + L"Asset/Scene/"; }
-std::wstring FPaths::ScriptDir()		{ return RootDir() + L"Asset/Script/"; }
-std::wstring FPaths::DataDir()			{ return RootDir() + L"Data/"; }
+std::wstring FPaths::AssetDir()			{ return RootDir() + L"Content/"; }
+std::wstring FPaths::AudioDir()			{ return RootDir() + L"Content/Audio/"; }
+std::wstring FPaths::SceneDir()			{ return RootDir() + L"Content/Scene/"; }
+std::wstring FPaths::ScriptDir()		{ return RootDir() + L"Content/Script/"; }
+std::wstring FPaths::DataDir()			{ return RootDir() + L"Content/Data/"; }
 std::wstring FPaths::SaveDir()			{ return RootDir() + L"Saves/"; }
 std::wstring FPaths::DumpDir()			{ return RootDir() + L"Saves/Dump/"; }
 std::wstring FPaths::LogDir()			{ return RootDir() + L"Saves/Logs/"; }

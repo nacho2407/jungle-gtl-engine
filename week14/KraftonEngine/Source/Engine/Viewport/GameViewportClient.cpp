@@ -1,10 +1,10 @@
 #include "Viewport/GameViewportClient.h"
 
-#include "Component/CameraComponent.h"
+#include "Component/Camera/CameraComponent.h"
 #include "Engine/Input/InputSystem.h"
 #include "Math/MathUtils.h"
 #include "UI/UIManager.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 #include <windows.h>
 

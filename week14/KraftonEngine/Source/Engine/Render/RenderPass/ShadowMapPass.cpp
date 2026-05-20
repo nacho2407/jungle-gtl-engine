@@ -1,4 +1,4 @@
-﻿#include "ShadowMapPass.h"
+#include "ShadowMapPass.h"
 #include "RenderPassRegistry.h"
 
 #include "Render/Device/D3DDevice.h"
@@ -14,9 +14,9 @@
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Types/LightFrustumUtils.h"
-#include "Profiling/ShadowStats.h"
+#include "Profiling/Stats/ShadowStats.h"
 #include "Core/ProjectSettings.h"
-#include "Collision/SpatialPartition.h"
+#include "Collision/Octree/SpatialPartition.h"
 #include "Runtime/Engine.h"
 #include "GameFramework/World.h"
 #include <algorithm>

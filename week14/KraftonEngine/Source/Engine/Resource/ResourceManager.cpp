@@ -1,4 +1,4 @@
-﻿#include "Resource/ResourceManager.h"
+#include "Resource/ResourceManager.h"
 #include "Platform/Paths.h"
 #include "SimpleJSON/json.hpp"
 
@@ -7,8 +7,8 @@
 #include <d3d11.h>
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
-#include "Core/Log.h"
-#include "Profiling/MemoryStats.h"
+#include "Core/Logging/Log.h"
+#include "Profiling/Stats/MemoryStats.h"
 #include "Engine/Texture/Texture2D.h"
 
 

@@ -1,12 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include <string>
 #include <filesystem>
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Platform/Paths.h"
 #include "GameFramework/WorldContext.h"
 #include "Math/Vector.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Types/PropertyTypes.h"
 
 // Forward declarations
 class UObject;

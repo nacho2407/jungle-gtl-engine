@@ -1,13 +1,13 @@
-﻿#include "Editor/UI/EditorMainPanel.h"
+#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
-#include "Editor/Viewport/LevelEditorViewportClient.h"
+#include "Editor/Viewport/Level/LevelEditorViewportClient.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Object/Object.h"
-#include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Platform/WindowsWindow.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -17,14 +17,14 @@
 #include "Engine/Input/InputSystem.h"
 
 #include "Editor/Slate/SlateApplication.h"
-#include "Editor/UI/ImGuiSetting.h"
-#include "Editor/UI/NotificationToast.h"
+#include "Editor/UI/Util/ImGuiSetting.h"
+#include "Editor/UI/Util/NotificationToast.h"
 
-#include "Editor/UI/Asset/FloatCurveEditorWidget.h"
-#include "Editor/UI/Asset/CameraShakeEditorWidget.h"
-#include "Editor/UI/Asset/MeshEditorWidget.h"
-#include "Editor/UI/Asset/StaticMeshEditorWidget.h"
-#include "Editor/UI/Asset/AnimGraphEditorWidget.h"
+#include "Editor/UI/Asset/Curve/FloatCurveEditorWidget.h"
+#include "Editor/UI/Asset/CameraShake/CameraShakeEditorWidget.h"
+#include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
+#include "Editor/UI/Asset/Mesh/StaticMeshEditorWidget.h"
+#include "Editor/UI/Asset/Animation/AnimGraphEditorWidget.h"
 
 #include <algorithm>
 #include <cstdio>

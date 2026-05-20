@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Physics/IPhysicsScene.h"
-#include "Core/CollisionTypes.h"
+#include "Core/Types/CollisionTypes.h"
 #include "Math/Vector.h"
 #include <unordered_set>
 #include <unordered_map>

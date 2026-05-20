@@ -1,6 +1,6 @@
 #include "Texture/Texture2D.h"
-#include "Object/ObjectFactory.h"
-#include "Core/Log.h"
+#include "Object/Reflection/ObjectFactory.h"
+#include "Core/Logging/Log.h"
 #include "Platform/Paths.h"
 #include "WICTextureLoader.h"
 

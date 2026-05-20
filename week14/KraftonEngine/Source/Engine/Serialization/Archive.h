@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h" // TArray가 정의된 곳
+#include "Core/Types/CoreTypes.h" // TArray가 정의된 곳
 #include "Object/FName.h"
 #include <type_traits>
 #include <string>

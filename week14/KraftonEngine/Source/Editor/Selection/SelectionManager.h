@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 class AActor;
 class USceneComponent;

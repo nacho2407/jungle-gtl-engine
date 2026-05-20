@@ -3,7 +3,7 @@
 #include "Component/SceneComponent.h"
 #include "Math/MathUtils.h"
 
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 
 #include <cmath>

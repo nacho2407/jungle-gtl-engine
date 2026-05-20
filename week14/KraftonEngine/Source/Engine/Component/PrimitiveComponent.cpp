@@ -1,16 +1,16 @@
 #include "PrimitiveComponent.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
-#include "Core/RayTypes.h"
-#include "Collision/RayUtils.h"
-#include "Collision/SpatialPartition.h"
+#include "Core/Types/RayTypes.h"
+#include "Collision/Ray/RayUtils.h"
+#include "Collision/Octree/SpatialPartition.h"
 #include "Physics/IPhysicsScene.h"
 #include "Render/Resource/MeshBufferManager.h"
-#include "Core/CollisionTypes.h"
+#include "Core/Types/CollisionTypes.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "GameFramework/World.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 
 #include <cmath>
 #include <cstring>

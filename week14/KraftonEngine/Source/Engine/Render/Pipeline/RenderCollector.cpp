@@ -1,18 +1,18 @@
-﻿#include "RenderCollector.h"
+#include "RenderCollector.h"
 
 #include "Component/ActorComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-#include "Profiling/Stats.h"
-#include "Collision/ConvexVolume.h"
+#include "Profiling/Stats/Stats.h"
+#include "Collision/Math/ConvexVolume.h"
 #include "Render/Culling/GPUOcclusionCulling.h"
 #include "Debug/DebugDrawQueue.h"
 #include "Render/Types/LODContext.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Scene/FScene.h"
 
-#include <Collision/Octree.h>
-#include <Collision/SpatialPartition.h>
+#include <Collision/Octree/Octree.h>
+#include <Collision/Octree/SpatialPartition.h>
 
 // ============================================================
 // UpdateProxyLOD — LOD 갱신 공통 헬퍼 (Collector + Builder 공유)

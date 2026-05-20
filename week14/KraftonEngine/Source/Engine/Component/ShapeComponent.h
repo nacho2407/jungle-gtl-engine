@@ -1,8 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 #pragma once
 
-#include "PrimitiveComponent.h"
-#include "Core/EngineTypes.h"
+#include "Component/PrimitiveComponent.h"
+#include "Core/Types/EngineTypes.h"
 
 
 #include "Source/Engine/Component/ShapeComponent.generated.h"

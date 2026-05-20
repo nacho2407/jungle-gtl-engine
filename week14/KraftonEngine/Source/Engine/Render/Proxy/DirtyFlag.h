@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 // ============================================================
 // EDirtyFlag — 프록시 필드별 변경 추적 비트마스크

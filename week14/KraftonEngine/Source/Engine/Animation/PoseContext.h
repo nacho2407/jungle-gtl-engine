@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Math/Transform.h"
 
 class USkeletalMesh;
@@ -14,6 +14,7 @@ struct FPoseContext
 {
 	USkeletalMesh*     SkeletalMesh = nullptr;
 	TArray<FTransform> Pose;
+	TArray<float>      MorphWeights;
 
 	int32 GetNumBones() const { return static_cast<int32>(Pose.size()); }
 	bool  IsValid()     const { return SkeletalMesh != nullptr && !Pose.empty(); }

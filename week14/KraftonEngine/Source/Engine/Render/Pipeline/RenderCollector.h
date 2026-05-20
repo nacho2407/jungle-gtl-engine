@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 #include "Render/Types/FrameContext.h"
-#include "Engine/Collision/Octree.h"
+#include "Engine/Collision/Octree/Octree.h"
 
 class AActor;
 class UWorld;

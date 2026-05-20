@@ -1,13 +1,13 @@
-﻿#include "RenderResources.h"
+#include "RenderResources.h"
 #include "Render/Device/D3DDevice.h"
 #include "Materials/MaterialManager.h"
 #include "Render/Types/ForwardLightData.h"
 #include "Render/Types/FrameContext.h"
 #include "Render/Scene/FScene.h"
 #include "Engine/Runtime/Engine.h"
-#include "Profiling/Timer.h"
+#include "Profiling/Time/Timer.h"
 #include "GameFramework/World.h"
-#include "Core/Notification.h"
+#include "Core/Logging/Notification.h"
 
 void FTileCullingResource::Create(ID3D11Device* Dev, uint32 InTileCountX, uint32 InTileCountY)
 {

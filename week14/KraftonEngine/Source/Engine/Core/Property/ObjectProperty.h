@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "ObjectPropertyBase.h"
-#include "Object/ObjectPtr.h"
+#include "Object/Ptr/ObjectPtr.h"
 
 struct FObjectProperty : FObjectPropertyBase
 {

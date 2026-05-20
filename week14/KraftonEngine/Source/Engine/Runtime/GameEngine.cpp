@@ -2,18 +2,18 @@
 
 #include "Engine/Runtime/GameRenderPipeline.h"
 #include "Engine/Runtime/EngineInitHooks.h"
-#include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Platform/WindowsWindow.h"
 #include "Lua/LuaScriptManager.h"
-#include "Profiling/Timer.h"
+#include "Profiling/Time/Timer.h"
 #include <windows.h>  // VK_ESCAPE
 #include "Viewport/Viewport.h"
 #include "Viewport/GameViewportClient.h"
 #include "Serialization/SceneSaveManager.h"
 #include "GameFramework/World.h"
-#include "GameFramework/GameModeBase.h"
-#include "Object/UClass.h"
+#include "GameFramework/GameMode/GameModeBase.h"
+#include "Object/Reflection/UClass.h"
 #include "Core/ProjectSettings.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 void UGameEngine::Init(FWindowsWindow* InWindow)
 {

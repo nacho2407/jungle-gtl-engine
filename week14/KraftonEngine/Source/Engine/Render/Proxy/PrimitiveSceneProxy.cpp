@@ -1,10 +1,10 @@
-﻿#include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/AActor.h"
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Command/DrawCommand.h"
 #include "Materials/Material.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 
 // ============================================================
 // FPrimitiveSceneProxy — 기본 구현
