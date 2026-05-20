@@ -15,6 +15,12 @@ struct FSkeletalViewerShowFlags
     bool bShowOutline = false;
 };
 
+enum class ESkeletalMeshViewerMode
+{
+    BindPose,
+    Animation
+};
+
 class FSkeletalMeshViewportClient : public FEditorViewportClient
 {
 public:
@@ -23,6 +29,8 @@ public:
 	FSkeletalViewerShowFlags&       GetShowFlags()       { return ShowFlags; }
 	const FSkeletalViewerShowFlags& GetShowFlags() const { return ShowFlags; }
 	void SetBonePickHandler(FBonePickHandler InHandler);
+	void SetBonePickingEnabled(bool bEnabled) { bBonePickingEnabled = bEnabled; }
+	bool IsBonePickingEnabled() const { return bBonePickingEnabled; }
 
 	bool ProcessInput(FViewportInputContext& Context) override;
 
@@ -32,4 +40,5 @@ private:
 
 	FSkeletalViewerShowFlags ShowFlags;
 	FBonePickHandler BonePickHandler;
+	bool bBonePickingEnabled = true;
 };

@@ -208,6 +208,28 @@ void FEditorViewer::Tick(float DeltaTime)
     Client.Tick(DeltaTime);
 }
 
+void FEditorViewer::SetViewerMode(ESkeletalMeshViewerMode InMode)
+{
+    ViewerMode = InMode;
+    Client.SetBonePickingEnabled(ViewerMode == ESkeletalMeshViewerMode::BindPose);
+
+    USkeletalMeshComponent* SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+    if (!SkelComp)
+    {
+        return;
+    }
+
+    if (ViewerMode == ESkeletalMeshViewerMode::BindPose)
+    {
+        SkelComp->SetAnimationMode(EAnimationMode::None);
+        SkelComp->ResetToBindPose();
+        Client.GetShowFlags().bShowBones = true;
+        return;
+    }
+
+    ClearSelection();
+}
+
 void FEditorViewer::SelectBone(int32 BoneIndex)
 {
     if (!ViewTarget)
@@ -307,6 +329,11 @@ void FEditorViewer::NotifySocketDeleted(int32 SocketIndex)
 
 bool FEditorViewer::HandleBonePick(float LocalX, float LocalY)
 {
+    if (ViewerMode != ESkeletalMeshViewerMode::BindPose)
+    {
+        return false;
+    }
+
     int32 PickedBoneIndex = -1;
     if (!TryPickBone(LocalX, LocalY, PickedBoneIndex))
     {
@@ -511,4 +538,5 @@ void FEditorViewer::ChangeTarget(const FString& InFileName)
     USkeletalMesh* SkelMesh = FResourceManager::Get().LoadSkeletalMesh(InFileName.c_str());
     if (SkelMesh)
 	    ViewTarget->GetSkeletalMeshComponent()->SetSkeletalMesh(SkelMesh);
+    SetViewerMode(ESkeletalMeshViewerMode::BindPose);
 }

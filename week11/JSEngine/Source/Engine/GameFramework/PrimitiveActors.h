@@ -18,49 +18,6 @@ class UProceduralMeshComponent;
 class UStaticMesh;
 class USkeletalMeshComponent;
 
-UCLASS()
-class ACubeActor : public AActor
-{
-    GENERATED_BODY_ACubeActor()
-public:
-	DECLARE_CLASS(ACubeActor, AActor)
-	ACubeActor() = default;
-
-	void InitDefaultComponents();
-};
-
-UCLASS()
-class ASphereActor : public AActor
-{
-    GENERATED_BODY_ASphereActor()
-public:
-	DECLARE_CLASS(ASphereActor, AActor)
-	ASphereActor() = default;
-
-	void InitDefaultComponents();
-};
-
-UCLASS()
-class APlaneActor : public AActor
-{
-    GENERATED_BODY_APlaneActor()
-public:
-	DECLARE_CLASS(APlaneActor, AActor)
-	APlaneActor() = default;
-
-	void InitDefaultComponents();
-};
-
-UCLASS()
-class AAttachTestActor : public AActor
-{
-    GENERATED_BODY_AAttachTestActor()
-public:
-	DECLARE_CLASS(AAttachTestActor, AActor)
-	AAttachTestActor() = default;
-
-	void InitDefaultComponents();
-};
 
 UCLASS()
 class ASceneActor : public AActor
