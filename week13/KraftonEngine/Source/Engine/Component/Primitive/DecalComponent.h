@@ -1,7 +1,7 @@
 #pragma once
 #include "Component/PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
-#include "Collision/ConvexVolume.h"
+#include "Collision/Math/ConvexVolume.h"
 #include "Object/SoftObjectPtr.h"
 
 class UStaticMeshComponent;

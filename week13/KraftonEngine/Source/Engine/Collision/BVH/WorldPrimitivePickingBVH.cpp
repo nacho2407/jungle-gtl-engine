@@ -1,7 +1,7 @@
-#include "Collision/WorldPrimitivePickingBVH.h"
+#include "Collision/BVH/WorldPrimitivePickingBVH.h"
 
-#include "Collision/RayUtils.h"
-#include "Collision/RayUtilsSIMD.h"
+#include "Collision/Ray/RayUtils.h"
+#include "Collision/Ray/RayUtilsSIMD.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "GameFramework/AActor.h"

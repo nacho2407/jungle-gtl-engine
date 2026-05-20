@@ -1,7 +1,7 @@
-﻿#include "Collision/MeshTriangleBVH.h"
+#include "Collision/BVH/MeshTriangleBVH.h"
 
-#include "Collision/RayUtils.h"
-#include "Collision/RayUtilsSIMD.h"
+#include "Collision/Ray/RayUtils.h"
+#include "Collision/Ray/RayUtilsSIMD.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Core/EngineTypes.h"
 
