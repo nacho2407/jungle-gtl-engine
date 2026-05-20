@@ -1081,7 +1081,7 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
         ImGui::BeginChild("TimelineLeftPanel", ImVec2(TimelineLeftPanelWidth, 0), false, ImGuiWindowFlags_NoScrollbar);
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 4.0f));
-        constexpr int32 PlaybackButtonCount = 9;
+        constexpr int32 PlaybackButtonCount = 8;
         const float BtnW = (TimelineLeftPanelWidth - (2.0f * (PlaybackButtonCount - 1))) / PlaybackButtonCount;
         const ImVec2 PlaybackButtonSize(BtnW, 24.0f);
         auto PlayControlIcon = [&](EEditorMainPanelPlayControlIcon Icon)
@@ -1144,7 +1144,20 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
                 "<",
                 "Play Reverse",
                 PlaybackButtonSize))
-        { /* 역재생 */
+        {
+            if (CachedSkComp)
+            {
+                AnimationPlayRate = -1.0f;
+                CachedSkComp->SetLooping(bAnimationLoop);
+                CachedSkComp->SetPlayRate(AnimationPlayRate);
+                if (CachedSkComp->GetPosition() <= 0.0f && AnimationMaxTime > 0.0f)
+                {
+                    CachedSkComp->SetPosition(AnimationMaxTime, false);
+                    CachedSkComp->RefreshAnimationPose();
+                    AnimationCurrentTime = CachedSkComp->GetPosition();
+                }
+                CachedSkComp->Play();
+            }
         }
         ImGui::SameLine();
         if (DrawTimelineIconButton(
@@ -1171,16 +1184,6 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
         }
         ImGui::SameLine();
         if (DrawTimelineIconButton(
-                "##TimelineRecord",
-                PlayControlIcon(EEditorMainPanelPlayControlIcon::Record),
-                "(O)",
-                "Record",
-                PlaybackButtonSize))
-        { /* 특수 액션/녹음 */
-        }
-        ImGui::SameLine();
-
-        if (DrawTimelineIconButton(
                 "##TimelinePlayForward",
                 PlayControlIcon(EEditorMainPanelPlayControlIcon::PlayForward),
                 ">",
@@ -1189,7 +1192,9 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
         {
             if (CachedSkComp)
             {
+                AnimationPlayRate = 1.0f;
                 CachedSkComp->SetLooping(bAnimationLoop);
+                CachedSkComp->SetPlayRate(AnimationPlayRate);
                 CachedSkComp->Play();
             }
         }
