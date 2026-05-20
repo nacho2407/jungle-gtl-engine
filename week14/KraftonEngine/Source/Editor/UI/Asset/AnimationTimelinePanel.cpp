@@ -14,11 +14,13 @@
 #include "Object/ObjectFactory.h"
 #include "Object/UClass.h"
 #include "Core/PropertyTypes.h"
+#include "Editor/UI/Asset/MorphCurveEditObject.h"
 
 #include <imgui.h>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <utility>
 
@@ -240,6 +242,38 @@ namespace
 						{
 							*N = FName(FString(Buf));
 							bChanged = true;
+						}
+					}
+					break;
+				}
+				case EPropertyType::Enum:
+				{
+					const FEnum* EnumType = Prop.GetEnumType();
+					if (EnumType && EnumType->GetNames() && EnumType->GetCount() > 0 && Prop.GetValuePtr())
+					{
+						const char** EnumNames = EnumType->GetNames();
+						const uint32 EnumCount = EnumType->GetCount();
+						const uint32 EnumSize = EnumType->GetSize();
+						int32 Val = 0;
+						std::memcpy(&Val, Prop.GetValuePtr(), EnumSize);
+						const char* Preview = ((uint32)Val < EnumCount) ? EnumNames[Val] : "Unknown";
+						if (ImGui::BeginCombo("##v", Preview))
+						{
+							for (uint32 EnumIndex = 0; EnumIndex < EnumCount; ++EnumIndex)
+							{
+								const bool bSelected = Val == static_cast<int32>(EnumIndex);
+								if (ImGui::Selectable(EnumNames[EnumIndex], bSelected))
+								{
+									int32 NewVal = static_cast<int32>(EnumIndex);
+									std::memcpy(Prop.GetValuePtr(), &NewVal, EnumSize);
+									bChanged = true;
+								}
+								if (bSelected)
+								{
+									ImGui::SetItemDefaultFocus();
+								}
+							}
+							ImGui::EndCombo();
 						}
 					}
 					break;
@@ -1560,122 +1594,60 @@ bool FAnimationTimelinePanel::RenderMorphDetails(
 		ImGui::TextDisabled("No morph targets on current mesh.");
 	}
 
-	ImGui::TextUnformatted("Enabled");
-	ImGui::SetNextItemWidth(-FLT_MIN);
-	if (ImGui::Checkbox("##morphEnabled", &Curve.bEnabled))
-	{
-		bChanged       = true;
-		bImmediateSave = true;
-	}
-
-	ImGui::TextUnformatted("Weight Scale");
-	ImGui::SetNextItemWidth(-FLT_MIN);
-	if (ImGui::DragFloat("##morphScale", &Curve.WeightScale, 0.01f, -10.0f, 10.0f, "%.3f"))
-	{
-		bChanged                 = true;
-		sMorphDetailsPendingSave = true;
-	}
-
-	ImGui::TextUnformatted("Weight Bias");
-	ImGui::SetNextItemWidth(-FLT_MIN);
-	if (ImGui::DragFloat("##morphBias", &Curve.WeightBias, 0.01f, -10.0f, 10.0f, "%.3f"))
-	{
-		bChanged                 = true;
-		sMorphDetailsPendingSave = true;
-	}
-
+	FRawFloatCurveKey* SelectedKey = nullptr;
 	if (InOutSelectedMorphKeyIndex >= 0 && InOutSelectedMorphKeyIndex < static_cast<int32>(Curve.Curve.Keys.size()))
 	{
-		FRawFloatCurveKey& Key = Curve.Curve.Keys[InOutSelectedMorphKeyIndex];
+		SelectedKey = &Curve.Curve.Keys[InOutSelectedMorphKeyIndex];
+	}
+
+	static UMorphCurveEditObject* sMorphEditObject = nullptr;
+	if (!IsValid(sMorphEditObject))
+	{
+		sMorphEditObject = UObjectManager::Get().CreateObject<UMorphCurveEditObject>();
+	}
+
+	if (sMorphEditObject)
+	{
+		sMorphEditObject->LoadFrom(Curve, SelectedKey, Seq->GetPlayLength());
+
 		ImGui::Dummy(ImVec2(0, 6));
 		ImGui::Separator();
-		ImGui::TextUnformatted("Selected Key");
-		ImGui::TextUnformatted("Time");
-		ImGui::SetNextItemWidth(-FLT_MIN);
-		if (ImGui::DragFloat("##morphKeyTime", &Key.TimeSeconds, 0.01f, 0.0f, Seq->GetPlayLength(), "%.3f"))
+		ImGui::TextUnformatted(SelectedKey ? "Reflected Morph Curve / Key Properties" : "Reflected Morph Curve Properties");
+		ImGui::Separator();
+
+		if (RenderObjectPropertiesInline(sMorphEditObject))
 		{
-			bChanged                 = true;
+			sMorphEditObject->ApplyTo(Curve, SelectedKey);
+			if (SelectedKey)
+			{
+				SelectedKey->Value = ClampMorphCurveValue(SelectedKey->Value);
+			}
+			bChanged = true;
 			sMorphDetailsPendingSave = true;
 		}
-		ImGui::TextUnformatted("Value");
-		ImGui::SetNextItemWidth(-FLT_MIN);
-		if (ImGui::DragFloat("##morphKeyValue", &Key.Value, 0.01f, MorphValueMin, MorphValueMax, "%.3f"))
-		{
-			Key.Value = ClampMorphCurveValue(Key.Value);
-			bChanged                 = true;
-			sMorphDetailsPendingSave = true;
-		}
+	}
 
-		ImGui::TextUnformatted("Interpolation");
-		ImGui::SetNextItemWidth(-FLT_MIN);
-		if (ImGui::BeginCombo("##morphInterp", InterpLabel(Key.Interpolation)))
+	if (SelectedKey && ((SelectedKey->Interpolation & 4) == 4))
+	{
+		ImGui::Dummy(ImVec2(0, 4));
+		if (ImGui::SmallButton("Flatten"))
 		{
-			if (ImGui::Selectable("Constant", (Key.Interpolation & 1) == 1))
-			{
-				Key.Interpolation = 1;
-				bChanged          = true;
-				bImmediateSave    = true;
-			}
-			if (ImGui::Selectable("Linear", (Key.Interpolation & 2) == 2))
-			{
-				Key.Interpolation = 2;
-				bChanged          = true;
-				bImmediateSave    = true;
-			}
-			if (ImGui::Selectable("Bezier", (Key.Interpolation & 4) == 4))
-			{
-				Key.Interpolation = 4;
-				bChanged          = true;
-				bImmediateSave    = true;
-			}
-			ImGui::EndCombo();
+			SelectedKey->ArriveTangent = 0.0f;
+			SelectedKey->LeaveTangent  = 0.0f;
+			SelectedKey->TangentMode   = 1;
+			bChanged                  = true;
+			bImmediateSave            = true;
 		}
-
-		if ((Key.Interpolation & 4) == 4)
+		ImGui::SameLine();
+		if (ImGui::SmallButton("Auto Handles"))
 		{
-			ImGui::TextUnformatted("Handle Mode");
-			ImGui::SetNextItemWidth(-FLT_MIN);
-			if (ImGui::BeginCombo("##morphTangentMode", TangentModeLabel(Key.TangentMode)))
-			{
-				if (ImGui::Selectable("Auto", Key.TangentMode == 0))
-				{
-					Key.TangentMode = 0;
-					bChanged        = true;
-					bImmediateSave  = true;
-				}
-				if (ImGui::Selectable("Aligned", Key.TangentMode == 1))
-				{
-					Key.TangentMode = 1;
-					bChanged        = true;
-					bImmediateSave  = true;
-				}
-				if (ImGui::Selectable("Free", Key.TangentMode == 2))
-				{
-					Key.TangentMode = 2;
-					bChanged        = true;
-					bImmediateSave  = true;
-				}
-				ImGui::EndCombo();
-			}
-			if (ImGui::SmallButton("Flatten"))
-			{
-				Key.ArriveTangent = 0.0f;
-				Key.LeaveTangent  = 0.0f;
-				Key.TangentMode   = 1;
-				bChanged          = true;
-				bImmediateSave    = true;
-			}
-			ImGui::SameLine();
-			if (ImGui::SmallButton("Auto Handles"))
-			{
-				Key.TangentMode            = 0;
-				Key.bArriveTangentWeighted = false;
-				Key.bLeaveTangentWeighted  = false;
-				bChanged                   = true;
-				bImmediateSave             = true;
-			}
-			ImGui::TextDisabled("Bezier uses stored handles. Numeric tangent fields are hidden by design.");
+			SelectedKey->TangentMode             = 0;
+			SelectedKey->bArriveTangentWeighted = false;
+			SelectedKey->bLeaveTangentWeighted  = false;
+			bChanged                            = true;
+			bImmediateSave                      = true;
 		}
+		ImGui::TextDisabled("Bezier handles are edited in the timeline graph. The properties above are reflected UPROPERTY fields.");
 	}
 
 	if (bChanged)

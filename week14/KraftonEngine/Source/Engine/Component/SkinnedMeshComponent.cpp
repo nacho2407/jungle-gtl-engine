@@ -143,6 +143,7 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 
 	// SceneProxy가 즉시 그릴 수 있도록 SetSkeletalMesh 종료 전에 skinned vertex buffer를 준비한다.
 	InitSkinningCache();
+	InitMorphTargetWeights();
 
 	if (SkeletalMesh && SkeletalMesh->GetSkeletalMeshAsset())
 	{

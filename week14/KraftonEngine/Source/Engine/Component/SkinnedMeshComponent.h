@@ -123,7 +123,9 @@ protected:
 	TArray<FMatrix> BoneEditBaseLocalMatrices;
 	bool bUseBoneEditBasePose = false;
 
-	// Component-local morph runtime state. This is intentionally not saved as actor data.
+	// Component-local morph runtime state.
+	// 메인 Actor/Component Details에는 노출하지 않는다.
+	// Mesh Editor preview, Animation curve, Lua override가 public API를 통해서만 제어한다.
 	TArray<float> MorphTargetWeights;
 
 	// SceneProxy는 이 결과와 revision만 보고 dynamic vertex buffer를 갱신한다.
