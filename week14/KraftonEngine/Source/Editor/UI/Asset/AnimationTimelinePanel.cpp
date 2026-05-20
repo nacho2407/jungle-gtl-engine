@@ -8,6 +8,8 @@
 #include "Animation/AnimNotifyState.h"
 #include "Animation/AnimationManager.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Mesh/SkeletalMesh.h"
+#include "Mesh/SkeletalMeshAsset.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Object/UClass.h"
@@ -16,7 +18,9 @@
 #include <imgui.h>
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <string>
+#include <utility>
 
 // 일부 헤더가 Windows.h 를 끌어오면 GetCurrentTime 매크로가 호출을 가로챈다.
 #ifdef GetCurrentTime
@@ -25,11 +29,12 @@
 
 namespace
 {
-	constexpr float HeaderW    = 190.0f; // 좌측 트랙 헤더 컬럼 폭
-	constexpr float RulerH     = 22.0f;  // 프레임 눈금 행 높이
+	constexpr float HeaderW     = 190.0f; // 좌측 트랙 헤더 컬럼 폭
+	constexpr float RulerH      = 22.0f;  // 프레임 눈금 행 높이
 	constexpr float RowH        = 22.0f;  // 트랙 헤더 행 높이
-	constexpr float NotifyLaneH = 28.0f;  // Notifies 펼침 시 레인 높이
-	constexpr float TransportH  = 36.0f;  // 하단 트랜스포트 행 높이
+	constexpr float NotifyLaneH = 28.0f;
+	constexpr float MorphLaneH  = 28.0f; // Notifies 펼침 시 레인 높이
+	constexpr float TransportH  = 36.0f; // 하단 트랜스포트 행 높이
 
 	constexpr ImU32 ColPanelBg   = IM_COL32(26, 26, 26, 255);
 	constexpr ImU32 ColHeaderBg  = IM_COL32(38, 38, 38, 255);
@@ -256,6 +261,68 @@ namespace
 		return bAnyChanged;
 	}
 
+	static FMorphTargetCurve& FindOrAddMorphCurve(UAnimSequence* Seq, const FString& MorphTargetName)
+	{
+		TArray<FMorphTargetCurve>& Curves = Seq->GetMutableMorphTargetCurves();
+		for (FMorphTargetCurve& Curve : Curves)
+		{
+			if (Curve.MorphTargetName == MorphTargetName)
+			{
+				return Curve;
+			}
+		}
+		FMorphTargetCurve NewCurve;
+		NewCurve.MorphTargetName = MorphTargetName;
+		Curves.push_back(std::move(NewCurve));
+		return Curves.back();
+	}
+
+	static void AddOrUpdateMorphCurveKey(FMorphTargetCurve& Curve, float TimeSeconds, float Value)
+	{
+		constexpr float TimeTolerance = 1.0e-4f;
+		for (FRawFloatCurveKey& Key : Curve.Curve.Keys)
+		{
+			if (std::fabs(Key.TimeSeconds - TimeSeconds) <= TimeTolerance)
+			{
+				Key.Value = Value;
+				return;
+			}
+		}
+		FRawFloatCurveKey NewKey;
+		NewKey.TimeSeconds   = TimeSeconds;
+		NewKey.Value         = Value;
+		NewKey.Interpolation = 2;
+		Curve.Curve.Keys.push_back(NewKey);
+		std::sort(
+			Curve.Curve.Keys.begin(),
+			Curve.Curve.Keys.end(),
+			[](const FRawFloatCurveKey& A, const FRawFloatCurveKey& B)
+			{
+				return A.TimeSeconds < B.TimeSeconds;
+			}
+		);
+	}
+
+	static const char* InterpLabel(int32 Interp)
+	{
+		if ((Interp & 4) == 4) return "Bezier";
+		if ((Interp & 1) == 1) return "Constant";
+		return "Linear";
+	}
+
+	static const char* TangentModeLabel(int32 Mode)
+	{
+		switch (Mode)
+		{
+		case 1:
+			return "Aligned";
+		case 2:
+			return "Free";
+		case 0: default:
+			return "Auto";
+		}
+	}
+
 	int NiceFrameStep(int Raw)
 	{
 		static const int Steps[] = { 1, 2, 5, 10, 15, 20, 30, 60, 120, 240, 600 };
@@ -302,10 +369,13 @@ namespace
 }
 
 void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
-                                     USkeletalMeshComponent* Comp,
-                                     UAnimSequence* Seq,
-                                     float PanelHeight,
-                                     int32& InOutSelectedNotifyIndex)
+	USkeletalMeshComponent*                                   Comp,
+	UAnimSequence*                                            Seq,
+	float                                                     PanelHeight,
+	int32&                                                    InOutSelectedNotifyIndex,
+	int32&                                                    InOutSelectedMorphCurveIndex,
+	int32&                                                    InOutSelectedMorphKeyIndex
+	)
 {
 	// 변경 누적 플래그 — drag/resize 등 연속 이벤트는 매 프레임 commit 하지 않고
 	// 마우스 release 시점에 일괄 save (디스크 thrash 방지). 인스턴트 이벤트는 즉시 save.
@@ -320,6 +390,12 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 	{
 		const int32 NotifyCount = static_cast<int32>(Seq->GetNotifies().size());
 		if (InOutSelectedNotifyIndex >= NotifyCount) InOutSelectedNotifyIndex = -1;
+		const int32 MorphCurveCount = static_cast<int32>(Seq->GetMorphTargetCurves().size());
+		if (InOutSelectedMorphCurveIndex >= MorphCurveCount)
+		{
+			InOutSelectedMorphCurveIndex = -1;
+			InOutSelectedMorphKeyIndex   = -1;
+		}
 	}
 
 	ImGui::BeginChild("##AnimTimelinePanel", ImVec2(0.0f, PanelHeight), false,
@@ -340,7 +416,8 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 		return;
 	}
 
-	static bool bNotifiesExpanded = true;
+	static bool bNotifiesExpanded    = true;
+	static bool bMorphCurvesExpanded = true;
 
 	const float PlayLength = Seq->GetPlayLength();
 	const float FrameRate  = Seq->GetFrameRate() > 0.0f ? Seq->GetFrameRate() : 30.0f;
@@ -379,7 +456,9 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 	// scrub.IsItemActivated 가 트리거되었다는 것은 배지 hit 가 아니라는 뜻.
 	if (ImGui::IsItemActivated())
 	{
-		InOutSelectedNotifyIndex = -1;
+		InOutSelectedNotifyIndex     = -1;
+		InOutSelectedMorphCurveIndex = -1;
+		InOutSelectedMorphKeyIndex   = -1;
 	}
 
 	// ── 노티파이 레인 우클릭 → "Add Notify" 팝업 ──
@@ -762,9 +841,167 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 		            ImVec2(CanvasX + CanvasW, RowY + RowH - 1.0f), ColSeparator);
 	};
 
-	// Curves: 시퀀스에 내장 네임드 플로트 커브가 없으므로 0 (에셋 내장 데이터 읽기 전용)
-	DrawSimpleHeaderRow("Curves (0)", false, false);
-	RowY += RowH;
+	// Morph Curves
+	{
+		TArray<FMorphTargetCurve>& Curves = Seq->GetMutableMorphTargetCurves();
+		char                       HeaderLabel[64];
+		std::snprintf(HeaderLabel, sizeof(HeaderLabel), "Morph Curves (%zu)", Curves.size());
+
+		const ImVec2 MorphHeaderPos(Origin.x, RowY);
+		ImGui::SetCursorScreenPos(ImVec2(Origin.x, RowY));
+		ImGui::InvisibleButton("##morphCurveToggle", ImVec2(HeaderW, RowH));
+		if (ImGui::IsItemClicked())
+		{
+			bMorphCurvesExpanded = !bMorphCurvesExpanded;
+		}
+		DrawTrackHeaderRow(DL, MorphHeaderPos, HeaderW, RowH, HeaderLabel, true, bMorphCurvesExpanded);
+		if (DrawAddButton("##addMorphCurve", RowY, RowH))
+		{
+			USkeletalMesh* MeshForMorphTargets = Comp ? Comp->GetSkeletalMesh() : nullptr;
+			FSkeletalMesh* MeshAsset = MeshForMorphTargets ? MeshForMorphTargets->GetSkeletalMeshAsset() : nullptr;
+			if (MeshAsset && !MeshAsset->MorphTargets.empty())
+			{
+				for (const FMorphTarget& Target : MeshAsset->MorphTargets)
+				{
+					if (Seq->GetMorphTargetCurves().end() == std::find_if(
+						Seq->GetMorphTargetCurves().begin(),
+						Seq->GetMorphTargetCurves().end(),
+						[&](const FMorphTargetCurve& C)
+						{
+							return C.MorphTargetName == Target.Name;
+						}
+					))
+					{
+						FindOrAddMorphCurve(Seq, Target.Name);
+						InOutSelectedMorphCurveIndex = static_cast<int32>(Seq->GetMorphTargetCurves().size()) - 1;
+						InOutSelectedMorphKeyIndex   = -1;
+						InOutSelectedNotifyIndex     = -1;
+						SaveSeqNow();
+						break;
+					}
+				}
+			}
+		}
+		DL->AddRectFilled(ImVec2(CanvasX, RowY), ImVec2(CanvasX + CanvasW, RowY + RowH), IM_COL32(30, 30, 30, 255));
+		DL->AddLine(ImVec2(CanvasX, RowY + RowH - 1.0f), ImVec2(CanvasX + CanvasW, RowY + RowH - 1.0f), ColSeparator);
+		RowY += RowH;
+
+		if (bMorphCurvesExpanded)
+		{
+			for (int32 CurveIndex = 0; CurveIndex < static_cast<int32>(Curves.size()); ++CurveIndex)
+			{
+				FMorphTargetCurve& Curve = Curves[CurveIndex];
+				const float        LaneY = RowY;
+				ImGui::PushID(CurveIndex);
+				DL->AddRectFilled(ImVec2(Origin.x, LaneY), ImVec2(Origin.x + HeaderW, LaneY + MorphLaneH), ColHeaderBg);
+				const std::string Nm = Curve.MorphTargetName.empty() ? "(Unnamed)" : Curve.MorphTargetName;
+				DL->AddText(
+					ImVec2(Origin.x + 26.0f, LaneY + MorphLaneH * 0.5f - 7.0f),
+					ColRowText,
+					TruncateWithEllipsis(Nm, HeaderW - 60.0f).c_str()
+				);
+				if (DrawAddButton("##addMorphKey", LaneY, MorphLaneH))
+				{
+					float NewValue = 0.0f;
+					if (Comp)
+					{
+						NewValue = Comp->GetMorphTargetWeight(Curve.MorphTargetName);
+					}
+					AddOrUpdateMorphCurveKey(Curve, CurrentTime, NewValue);
+					InOutSelectedMorphCurveIndex = CurveIndex;
+					InOutSelectedMorphKeyIndex   = -1;
+					for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(Curve.Curve.Keys.size()); ++KeyIndex)
+					{
+						if (std::fabs(Curve.Curve.Keys[KeyIndex].TimeSeconds - CurrentTime) <= 1.0e-4f)
+						{
+							InOutSelectedMorphKeyIndex = KeyIndex;
+							break;
+						}
+					}
+					InOutSelectedNotifyIndex = -1;
+					SaveSeqNow();
+				}
+
+				DL->AddRectFilled(
+					ImVec2(CanvasX, LaneY),
+					ImVec2(CanvasX + CanvasW, LaneY + MorphLaneH),
+					IM_COL32(24, 24, 24, 255)
+				);
+				for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(Curve.Curve.Keys.size()); ++KeyIndex)
+				{
+					ImGui::PushID(KeyIndex);
+
+					FRawFloatCurveKey& Key        = Curve.Curve.Keys[KeyIndex];
+					const float        X          = TimeToX(Key.TimeSeconds);
+					const float        Y          = LaneY + MorphLaneH * 0.5f;
+					bool               bDeleteKey = false;
+
+					ImGui::SetCursorScreenPos(ImVec2(X - 6.0f, Y - 6.0f));
+					ImGui::InvisibleButton("##morphKey", ImVec2(12.0f, 12.0f));
+					if (ImGui::IsItemActivated())
+					{
+						InOutSelectedMorphCurveIndex = CurveIndex;
+						InOutSelectedMorphKeyIndex   = KeyIndex;
+						InOutSelectedNotifyIndex     = -1;
+					}
+					if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, -1.0f))
+					{
+						const float Frac = std::clamp((ImGui::GetIO().MousePos.x - CanvasX) / CanvasW, 0.0f, 1.0f);
+						Key.TimeSeconds  = Frac * PlayLength;
+						std::sort(
+							Curve.Curve.Keys.begin(),
+							Curve.Curve.Keys.end(),
+							[](const FRawFloatCurveKey& A, const FRawFloatCurveKey& B)
+							{
+								return A.TimeSeconds < B.TimeSeconds;
+							}
+						);
+						sPendingSave = true;
+					}
+					if (ImGui::BeginPopupContextItem("##morphKeyCtx"))
+					{
+						InOutSelectedMorphCurveIndex = CurveIndex;
+						InOutSelectedMorphKeyIndex   = KeyIndex;
+						InOutSelectedNotifyIndex     = -1;
+						if (ImGui::MenuItem("Delete Key"))
+						{
+							bDeleteKey = true;
+						}
+						ImGui::EndPopup();
+					}
+
+					if (bDeleteKey)
+					{
+						Curve.Curve.Keys.erase(Curve.Curve.Keys.begin() + KeyIndex);
+						InOutSelectedMorphKeyIndex = -1;
+						SaveSeqNow();
+						ImGui::PopID();
+						break;
+					}
+
+					const bool bSelected = CurveIndex == InOutSelectedMorphCurveIndex && KeyIndex ==
+					InOutSelectedMorphKeyIndex;
+					const ImU32 Fill = bSelected ? IM_COL32(255, 200, 60, 255) : IM_COL32(180, 110, 230, 255);
+					DL->AddQuadFilled(
+						ImVec2(X - 5.0f, Y),
+						ImVec2(X, Y - 5.0f),
+						ImVec2(X + 5.0f, Y),
+						ImVec2(X, Y + 5.0f),
+						Fill
+					);
+
+					ImGui::PopID();
+				}
+				DL->AddLine(
+					ImVec2(CanvasX, LaneY + MorphLaneH - 1.0f),
+					ImVec2(CanvasX + CanvasW, LaneY + MorphLaneH - 1.0f),
+					ColSeparator
+				);
+				ImGui::PopID();
+				RowY += MorphLaneH;
+			}
+		}
+	}
 
 	// Additive Layer Tracks: 언리얼에서는 에디터 내 비파괴 보정(저작) 기능이며,
 	// 이 엔진에는 해당 저작 데이터 모델이 없으므로 빈 헤더만 표시 (읽기 전용).
@@ -918,5 +1155,179 @@ bool FAnimationTimelinePanel::RenderNotifyDetails(UAnimSequence* Seq, int32 Sele
 		Seq->RefreshRuntimeNotifies();
 		FAnimationManager::Get().SaveAnimationPreservingMetadata(Seq);
 	}
+	return bChanged;
+}
+
+bool FAnimationTimelinePanel::RenderMorphDetails(
+	UAnimSequence* Seq,
+	int32&         InOutSelectedMorphCurveIndex,
+	int32&         InOutSelectedMorphKeyIndex
+	)
+{
+	if (!Seq) return false;
+	TArray<FMorphTargetCurve>& Curves = Seq->GetMutableMorphTargetCurves();
+	if (InOutSelectedMorphCurveIndex < 0 || InOutSelectedMorphCurveIndex >= static_cast<int32>(Curves.size()))
+	{
+		return false;
+	}
+
+	FMorphTargetCurve& Curve                    = Curves[InOutSelectedMorphCurveIndex];
+	bool               bChanged                 = false;
+	bool               bImmediateSave           = false;
+	static bool        sMorphDetailsPendingSave = false;
+
+	ImGui::TextUnformatted("Morph Curve Details");
+	ImGui::Separator();
+	char NameBuffer[256];
+	strncpy_s(NameBuffer, sizeof(NameBuffer), Curve.MorphTargetName.c_str(), _TRUNCATE);
+	ImGui::TextUnformatted("Target");
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	if (ImGui::InputText("##morphTargetName", NameBuffer, sizeof(NameBuffer)))
+	{
+		Curve.MorphTargetName    = NameBuffer;
+		bChanged                 = true;
+		sMorphDetailsPendingSave = true;
+	}
+
+	ImGui::TextUnformatted("Enabled");
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	if (ImGui::Checkbox("##morphEnabled", &Curve.bEnabled))
+	{
+		bChanged       = true;
+		bImmediateSave = true;
+	}
+
+	ImGui::TextUnformatted("Weight Scale");
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	if (ImGui::DragFloat("##morphScale", &Curve.WeightScale, 0.01f, -10.0f, 10.0f, "%.3f"))
+	{
+		bChanged                 = true;
+		sMorphDetailsPendingSave = true;
+	}
+
+	ImGui::TextUnformatted("Weight Bias");
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	if (ImGui::DragFloat("##morphBias", &Curve.WeightBias, 0.01f, -10.0f, 10.0f, "%.3f"))
+	{
+		bChanged                 = true;
+		sMorphDetailsPendingSave = true;
+	}
+
+	if (InOutSelectedMorphKeyIndex >= 0 && InOutSelectedMorphKeyIndex < static_cast<int32>(Curve.Curve.Keys.size()))
+	{
+		FRawFloatCurveKey& Key = Curve.Curve.Keys[InOutSelectedMorphKeyIndex];
+		ImGui::Dummy(ImVec2(0, 6));
+		ImGui::Separator();
+		ImGui::TextUnformatted("Selected Key");
+		ImGui::TextUnformatted("Time");
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		if (ImGui::DragFloat("##morphKeyTime", &Key.TimeSeconds, 0.01f, 0.0f, Seq->GetPlayLength(), "%.3f"))
+		{
+			bChanged                 = true;
+			sMorphDetailsPendingSave = true;
+		}
+		ImGui::TextUnformatted("Value");
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		if (ImGui::DragFloat("##morphKeyValue", &Key.Value, 0.01f, -2.0f, 2.0f, "%.3f"))
+		{
+			bChanged                 = true;
+			sMorphDetailsPendingSave = true;
+		}
+
+		ImGui::TextUnformatted("Interpolation");
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		if (ImGui::BeginCombo("##morphInterp", InterpLabel(Key.Interpolation)))
+		{
+			if (ImGui::Selectable("Constant", (Key.Interpolation & 1) == 1))
+			{
+				Key.Interpolation = 1;
+				bChanged          = true;
+				bImmediateSave    = true;
+			}
+			if (ImGui::Selectable("Linear", (Key.Interpolation & 2) == 2))
+			{
+				Key.Interpolation = 2;
+				bChanged          = true;
+				bImmediateSave    = true;
+			}
+			if (ImGui::Selectable("Bezier", (Key.Interpolation & 4) == 4))
+			{
+				Key.Interpolation = 4;
+				bChanged          = true;
+				bImmediateSave    = true;
+			}
+			ImGui::EndCombo();
+		}
+
+		if ((Key.Interpolation & 4) == 4)
+		{
+			ImGui::TextUnformatted("Handle Mode");
+			ImGui::SetNextItemWidth(-FLT_MIN);
+			if (ImGui::BeginCombo("##morphTangentMode", TangentModeLabel(Key.TangentMode)))
+			{
+				if (ImGui::Selectable("Auto", Key.TangentMode == 0))
+				{
+					Key.TangentMode = 0;
+					bChanged        = true;
+					bImmediateSave  = true;
+				}
+				if (ImGui::Selectable("Aligned", Key.TangentMode == 1))
+				{
+					Key.TangentMode = 1;
+					bChanged        = true;
+					bImmediateSave  = true;
+				}
+				if (ImGui::Selectable("Free", Key.TangentMode == 2))
+				{
+					Key.TangentMode = 2;
+					bChanged        = true;
+					bImmediateSave  = true;
+				}
+				ImGui::EndCombo();
+			}
+			if (ImGui::SmallButton("Flatten"))
+			{
+				Key.ArriveTangent = 0.0f;
+				Key.LeaveTangent  = 0.0f;
+				Key.TangentMode   = 1;
+				bChanged          = true;
+				bImmediateSave    = true;
+			}
+			ImGui::SameLine();
+			if (ImGui::SmallButton("Auto Handles"))
+			{
+				Key.TangentMode            = 0;
+				Key.bArriveTangentWeighted = false;
+				Key.bLeaveTangentWeighted  = false;
+				bChanged                   = true;
+				bImmediateSave             = true;
+			}
+			ImGui::TextDisabled("Bezier uses stored handles. Numeric tangent fields are hidden by design.");
+		}
+	}
+
+	if (bChanged)
+	{
+		std::sort(
+			Curve.Curve.Keys.begin(),
+			Curve.Curve.Keys.end(),
+			[](const FRawFloatCurveKey& A, const FRawFloatCurveKey& B)
+			{
+				return A.TimeSeconds < B.TimeSeconds;
+			}
+		);
+	}
+
+	if (bImmediateSave)
+	{
+		FAnimationManager::Get().SaveAnimationPreservingMetadata(Seq);
+		sMorphDetailsPendingSave = false;
+	}
+	else if (sMorphDetailsPendingSave && !ImGui::IsMouseDown(ImGuiMouseButton_Left) && !ImGui::IsAnyItemActive())
+	{
+		FAnimationManager::Get().SaveAnimationPreservingMetadata(Seq);
+		sMorphDetailsPendingSave = false;
+	}
+
 	return bChanged;
 }

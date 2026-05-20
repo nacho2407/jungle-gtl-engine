@@ -3,6 +3,7 @@
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace
@@ -70,6 +71,9 @@ void FPoseContext::ResetToRefPose()
 	{
 		Pose[i] = FAnimationRuntime::DecomposeMatrix(Bones[i].GetReferenceLocalPose());
 	}
+
+	MorphWeights.clear();
+	MorphWeights.assign(Asset->MorphTargets.size(), 0.0f);
 }
 
 void FAnimationRuntime::BlendTwoPosesTogether(
@@ -92,5 +96,14 @@ void FAnimationRuntime::BlendTwoPosesTogether(
 		Result.Rotation = FQuat::Slerp(Ta.Rotation.GetNormalized(), Tb.Rotation.GetNormalized(), Alpha).GetNormalized();
 		Result.Scale    = Ta.Scale    + (Tb.Scale    - Ta.Scale)    * Alpha;
 		Out.Pose[i] = Result;
+	}
+
+	const size_t MorphCount = std::max(A.MorphWeights.size(), B.MorphWeights.size());
+	Out.MorphWeights.resize(MorphCount, 0.0f);
+	for (size_t MorphIndex = 0; MorphIndex < MorphCount; ++MorphIndex)
+	{
+		const float AV               = MorphIndex < A.MorphWeights.size() ? A.MorphWeights[MorphIndex] : 0.0f;
+		const float BV               = MorphIndex < B.MorphWeights.size() ? B.MorphWeights[MorphIndex] : 0.0f;
+		Out.MorphWeights[MorphIndex] = AV + (BV - AV) * Alpha;
 	}
 }

@@ -40,6 +40,16 @@ public:
     const TArray<FBoneAnimationTrack>& GetBoneTracks() const;
     TArray<FBoneAnimationTrack>& GetMutableBoneTracks();
 
+    const TArray<FMorphTargetCurve>& GetMorphTargetCurves() const;
+    TArray<FMorphTargetCurve>&       GetMutableMorphTargetCurves();
+
+    void EvaluateMorphTargetCurves(
+        float          TimeSeconds,
+        bool           bLooping,
+        USkeletalMesh* InSkeletalMesh,
+        TArray<float>& OutWeights
+        ) const;
+
     // 에디터 편집용: 직렬화 소스(DataModel->Notifies)에 직접 접근.
     // 편집 후 RefreshRuntimeNotifies() 로 dispatch 캐시(base Notifies)를 동기화한다.
     TArray<FAnimNotifyEvent>& GetMutableModelNotifies();

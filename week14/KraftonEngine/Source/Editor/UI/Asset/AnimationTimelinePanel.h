@@ -15,12 +15,16 @@ class UAnimSequence;
 namespace FAnimationTimelinePanel
 {
 	void Render(UAnimSingleNodeInstance* NodeInst,
-	            USkeletalMeshComponent* Comp,
-	            UAnimSequence* Seq,
-	            float PanelHeight,
-	            int32& InOutSelectedNotifyIndex);
-
+	            USkeletalMeshComponent*  Comp,
+	            UAnimSequence*           Seq,
+	            float                    PanelHeight,
+	            int32&                   InOutSelectedNotifyIndex,
+	            int32&                   InOutSelectedMorphCurveIndex,
+	            int32&                   InOutSelectedMorphKeyIndex
+	            );
+ 
 	// 선택된 Notify entry 의 UPROPERTY(Edit) 편집 UI — 좌상단 AssetDetails 패널에서 호출.
 	// Seq 또는 인덱스가 유효하지 않으면 안내 텍스트만 그림 (false 반환). 편집 발생 시 true.
 	bool RenderNotifyDetails(UAnimSequence* Seq, int32 SelectedNotifyIndex);
+	bool RenderMorphDetails(UAnimSequence* Seq, int32& InOutSelectedMorphCurveIndex, int32& InOutSelectedMorphKeyIndex);
 }

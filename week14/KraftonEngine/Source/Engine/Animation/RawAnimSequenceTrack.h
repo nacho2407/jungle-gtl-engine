@@ -55,6 +55,25 @@ struct FRawFloatCurve
     }
 };
 
+struct FMorphTargetCurve
+{
+    FString        MorphTargetName;
+    FRawFloatCurve Curve;
+    float          WeightScale = 1.0f;
+    float          WeightBias  = 0.0f;
+    bool           bEnabled    = true;
+
+    friend FArchive& operator<<(FArchive& Ar, FMorphTargetCurve& MorphCurve)
+    {
+        Ar << MorphCurve.MorphTargetName;
+        Ar << MorphCurve.Curve;
+        Ar << MorphCurve.WeightScale;
+        Ar << MorphCurve.WeightBias;
+        Ar << MorphCurve.bEnabled;
+        return Ar;
+    }
+};
+
 struct FRawVectorCurve
 {
     FRawFloatCurve X;

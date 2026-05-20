@@ -1,4 +1,4 @@
-﻿#include "Mesh/Fbx/FbxSkinWeightImporter.h"
+#include "Mesh/Fbx/FbxSkinWeightImporter.h"
 #include "Mesh/Fbx/FbxSceneQuery.h"
 #include "Mesh/Fbx/FbxTransformUtils.h"
 #include "Mesh/Fbx/FbxMaterialImporter.h"
@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 struct FFbxSkeletalVertexKey
 {
@@ -123,6 +124,134 @@ namespace
 		return FindFirstAncestorBoneIndex(Node, BoneNodeToIndex);
 	}
 
+	static FString GetFbxObjectName(const FbxObject* Object, const FString& Fallback)
+	{
+		const char* RawName = Object ? Object->GetName() : nullptr;
+		return (RawName && RawName[0] != '\0') ? FString(RawName) : Fallback;
+	}
+
+	static FMorphTarget& FindOrAddMorphTarget(FFbxImportContext& Context, const FString& TargetName)
+	{
+		for (FMorphTarget& Target : Context.SkeletalMorphTargets)
+		{
+			if (Target.Name == TargetName)
+			{
+				return Target;
+			}
+		}
+
+		FMorphTarget NewTarget;
+		NewTarget.Name = TargetName.empty() ? FString("MorphTarget") : TargetName;
+		Context.SkeletalMorphTargets.push_back(std::move(NewTarget));
+		return Context.SkeletalMorphTargets.back();
+	}
+
+	static void AddOrReplaceMorphDelta(FMorphTarget& Target, uint32 VertexIndex, const FVector& PositionDelta)
+	{
+		if (PositionDelta.IsNearlyZero())
+		{
+			return;
+		}
+
+		for (FMorphTargetDelta& Delta : Target.Deltas)
+		{
+			if (Delta.VertexIndex == VertexIndex)
+			{
+				Delta.PositionDelta = PositionDelta;
+				return;
+			}
+		}
+
+		FMorphTargetDelta Delta;
+		Delta.VertexIndex   = VertexIndex;
+		Delta.PositionDelta = PositionDelta;
+		Target.Deltas.push_back(Delta);
+	}
+
+	static void ImportMorphTargetsForMesh(
+		FbxMesh*           Mesh,
+		FFbxImportContext& Context,
+		uint32             VertexStart,
+		uint32             VertexEnd
+		)
+	{
+		if (!Mesh || VertexStart >= VertexEnd)
+		{
+			return;
+		}
+
+		const int32 BlendShapeCount = Mesh->GetDeformerCount(FbxDeformer::eBlendShape);
+		if (BlendShapeCount <= 0)
+		{
+			return;
+		}
+
+		VertexEnd = std::min<uint32>(VertexEnd, static_cast<uint32>(Context.SkeletalVertices.size()));
+
+		for (int32 BlendShapeIndex = 0; BlendShapeIndex < BlendShapeCount; ++BlendShapeIndex)
+		{
+			FbxBlendShape* BlendShape = static_cast<FbxBlendShape*>(Mesh->GetDeformer(
+				BlendShapeIndex,
+				FbxDeformer::eBlendShape
+			));
+			if (!BlendShape)
+			{
+				continue;
+			}
+
+			const int32 ChannelCount = BlendShape->GetBlendShapeChannelCount();
+			for (int32 ChannelIndex = 0; ChannelIndex < ChannelCount; ++ChannelIndex)
+			{
+				FbxBlendShapeChannel* Channel = BlendShape->GetBlendShapeChannel(ChannelIndex);
+				if (!Channel || Channel->GetTargetShapeCount() <= 0)
+				{
+					continue;
+				}
+
+				FbxShape* Shape = Channel->GetTargetShape(Channel->GetTargetShapeCount() - 1);
+				if (!Shape || Shape->GetControlPointsCount() != Mesh->GetControlPointsCount())
+				{
+					continue;
+				}
+
+				const FString TargetName = GetFbxObjectName(Channel, GetFbxObjectName(Shape, "MorphTarget"));
+				FMorphTarget& Target     = FindOrAddMorphTarget(Context, TargetName);
+
+				for (uint32 VertexIndex = VertexStart; VertexIndex < VertexEnd; ++VertexIndex)
+				{
+					if (VertexIndex >= Context.SkeletalMorphVertexSources.size())
+					{
+						continue;
+					}
+
+					const FFbxMorphVertexSource& Source = Context.SkeletalMorphVertexSources[VertexIndex];
+					if (Source.Mesh != Mesh || !FFbxSceneQuery::IsValidControlPointIndex(
+						Mesh,
+						Source.ControlPointIndex
+					))
+					{
+						continue;
+					}
+
+					const FbxVector4 ShapeCP = Shape->GetControlPointAt(Source.ControlPointIndex);
+					FVector          TargetPosition(
+						static_cast<float>(ShapeCP[0]),
+						static_cast<float>(ShapeCP[1]),
+						static_cast<float>(ShapeCP[2])
+					);
+					TargetPosition = Source.MeshBindGlobal.TransformPositionWithW(TargetPosition);
+					if (Source.bUseRigidBindCorrection)
+					{
+						TargetPosition = Source.RigidBindCorrection.TransformPositionWithW(TargetPosition);
+					}
+
+					const FVector PositionDelta = TargetPosition - Context.SkeletalVertices[VertexIndex].Position;
+					AddOrReplaceMorphDelta(Target, VertexIndex, PositionDelta);
+				}
+			}
+		}
+	}
+
 	static void ImportClusterInverseBindPoses(FFbxImportContext& Context)
 	{
 		for (FbxNode* Node : Context.AllNodes)
@@ -199,6 +328,8 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 	Context.SkeletalIndices.clear();
 	Context.SkeletalSections.clear();
 	Context.SkeletalMeshRanges.clear();
+	Context.SkeletalMorphTargets.clear();
+	Context.SkeletalMorphVertexSources.clear();
 	Context.TangentSums.clear();
 	Context.BitangentSums.clear();
 
@@ -424,6 +555,15 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 				{
 					VertexIndex = static_cast<uint32>(Context.SkeletalVertices.size());
 					Context.SkeletalVertices.push_back(Vertex);
+
+					FFbxMorphVertexSource MorphSource;
+					MorphSource.Mesh                    = Mesh;
+					MorphSource.ControlPointIndex       = CPIndex;
+					MorphSource.MeshBindGlobal          = MeshBindGlobal;
+					MorphSource.RigidBindCorrection     = RigidBindCorrection;
+					MorphSource.bUseRigidBindCorrection = (!bHasSkin && RigidBoneIndex >= 0);
+					Context.SkeletalMorphVertexSources.push_back(MorphSource);
+
 					Context.TangentSums.push_back(FVector::ZeroVector);
 					Context.BitangentSums.push_back(FVector::ZeroVector);
 					VertexMap[Key] = VertexIndex;
@@ -487,8 +627,21 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 		if (MeshRange.VertexStart < MeshRange.VertexEnd && MeshRange.IndexCount > 0)
 		{
 			Context.SkeletalMeshRanges.push_back(MeshRange);
+			ImportMorphTargetsForMesh(Mesh, Context, MeshRange.VertexStart, MeshRange.VertexEnd);
 		}
 	}
+
+	Context.SkeletalMorphTargets.erase(
+		std::remove_if(
+			Context.SkeletalMorphTargets.begin(),
+			Context.SkeletalMorphTargets.end(),
+			[](const FMorphTarget& Target)
+			{
+				return Target.Deltas.empty();
+			}
+		),
+		Context.SkeletalMorphTargets.end()
+	);
 
 	const bool bImportedAnyGeometry = !Context.SkeletalVertices.empty() && !Context.SkeletalIndices.empty();
 	if (!bImportedAnyGeometry && OutMessage)
