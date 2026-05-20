@@ -13,6 +13,8 @@
 
 namespace
 {
+    constexpr int32 MaxAnimNotifyActionType = static_cast<int32>(EAnimNotifyActionType::PlayEffect);
+
     FString NormalizeAnimSequenceAssetPath(const FString& Path)
     {
         return FPaths::Normalize(Path);
@@ -31,6 +33,141 @@ namespace
             });
 
         return std::filesystem::path(FPaths::ToWide(LowerPath)).extension() == L".animsequence";
+    }
+
+    bool IsJsonObject(const json::JSON& Node)
+    {
+        return Node.JSONType() == json::JSON::Class::Object;
+    }
+
+    bool IsJsonArray(const json::JSON& Node)
+    {
+        return Node.JSONType() == json::JSON::Class::Array;
+    }
+
+    bool ReadFloatValue(json::JSON& Node, float& OutValue)
+    {
+        if (Node.JSONType() == json::JSON::Class::Floating)
+        {
+            OutValue = static_cast<float>(Node.ToFloat());
+            return true;
+        }
+
+        if (Node.JSONType() == json::JSON::Class::Integral)
+        {
+            OutValue = static_cast<float>(Node.ToInt());
+            return true;
+        }
+
+        return false;
+    }
+
+    bool ReadIntValue(json::JSON& Node, int32& OutValue)
+    {
+        if (Node.JSONType() != json::JSON::Class::Integral)
+        {
+            return false;
+        }
+
+        OutValue = static_cast<int32>(Node.ToInt());
+        return true;
+    }
+
+    bool ReadStringValue(json::JSON& Node, FString& OutValue)
+    {
+        if (Node.JSONType() != json::JSON::Class::String)
+        {
+            return false;
+        }
+
+        OutValue = Node.ToString();
+        return true;
+    }
+
+    bool ReadNotifyValue(json::JSON& Node, FAnimNotifyEvent& OutNotify)
+    {
+        if (!IsJsonObject(Node))
+        {
+            return false;
+        }
+
+        FString NotifyName;
+        FString EventId;
+        int32 ActionType = 0;
+
+        if (!Node.hasKey("TriggerTime") || !ReadFloatValue(Node["TriggerTime"], OutNotify.TriggerTime) ||
+            !Node.hasKey("Duration") || !ReadFloatValue(Node["Duration"], OutNotify.Duration) ||
+            !Node.hasKey("NotifyName") || !ReadStringValue(Node["NotifyName"], NotifyName) ||
+            !Node.hasKey("ActionType") || !ReadIntValue(Node["ActionType"], ActionType) ||
+            !Node.hasKey("EventId") || !ReadStringValue(Node["EventId"], EventId))
+        {
+            return false;
+        }
+
+        if (Node.hasKey("Payload") && !ReadStringValue(Node["Payload"], OutNotify.Payload))
+        {
+            return false;
+        }
+
+        OutNotify.NotifyName = FName(NotifyName);
+        OutNotify.ActionType = static_cast<EAnimNotifyActionType>(std::clamp(ActionType, 0, MaxAnimNotifyActionType));
+        OutNotify.EventId = FName(EventId);
+        return true;
+    }
+
+    bool ReadNotifies(json::JSON& Root, const FString& Path, TArray<FAnimNotifyEvent>& OutNotifies, bool& bOutHasAuthoredNotifies)
+    {
+        bOutHasAuthoredNotifies = false;
+        OutNotifies.clear();
+
+        if (!Root.hasKey("Notifies"))
+        {
+            return true;
+        }
+
+        bOutHasAuthoredNotifies = true;
+        json::JSON& NotifiesNode = Root["Notifies"];
+        if (!IsJsonArray(NotifiesNode))
+        {
+            UE_LOG_ERROR("[AnimSequenceAssetLoader] Notifies must be an array: %s", Path.c_str());
+            return false;
+        }
+
+        OutNotifies.reserve(NotifiesNode.length() > 0 ? static_cast<size_t>(NotifiesNode.length()) : 0);
+        for (int32 NotifyIndex = 0; NotifyIndex < NotifiesNode.length(); ++NotifyIndex)
+        {
+            FAnimNotifyEvent Notify;
+            if (!ReadNotifyValue(NotifiesNode[static_cast<unsigned>(NotifyIndex)], Notify))
+            {
+                UE_LOG_ERROR(
+                    "[AnimSequenceAssetLoader] Invalid notify entry. Path=%s NotifyIndex=%d",
+                    Path.c_str(),
+                    NotifyIndex);
+                return false;
+            }
+
+            OutNotifies.push_back(Notify);
+        }
+
+        return true;
+    }
+
+    void WriteNotifies(json::JSON& Root, const TArray<FAnimNotifyEvent>& Notifies)
+    {
+        json::JSON NotifiesNode = json::JSON::Make(json::JSON::Class::Array);
+        for (const FAnimNotifyEvent& Notify : Notifies)
+        {
+            json::JSON NotifyNode = json::JSON::Make(json::JSON::Class::Object);
+            NotifyNode["TriggerTime"] = Notify.TriggerTime;
+            NotifyNode["Duration"] = Notify.Duration;
+            NotifyNode["NotifyName"] = Notify.NotifyName.ToString();
+            NotifyNode["ActionType"] = static_cast<int32>(Notify.ActionType);
+            NotifyNode["EventId"] = Notify.EventId.ToString();
+            NotifyNode["Payload"] = Notify.Payload;
+            NotifiesNode.append(NotifyNode);
+        }
+
+        Root["Notifies"] = NotifiesNode;
     }
 }
 
@@ -73,6 +210,11 @@ bool FAnimSequenceAssetLoader::Load(const FString& Path, FAnimSequenceAssetDescr
     FJsonReader Reader(Root);
     OutDescriptor = {};
     OutDescriptor.Serialize(Reader);
+    if (!ReadNotifies(Root, NormalizedPath, OutDescriptor.Notifies, OutDescriptor.bHasAuthoredNotifies))
+    {
+        return false;
+    }
+
     if (OutDescriptor.AssetPath.empty())
     {
         OutDescriptor.AssetPath = NormalizedPath;
@@ -101,6 +243,10 @@ bool FAnimSequenceAssetLoader::Save(const FString& Path, const FAnimSequenceAsse
     json::JSON Root = json::JSON::Make(json::JSON::Class::Object);
     FJsonWriter Writer(Root);
     WritableDescriptor.Serialize(Writer);
+    if (WritableDescriptor.bHasAuthoredNotifies)
+    {
+        WriteNotifies(Root, WritableDescriptor.Notifies);
+    }
 
     std::error_code ErrorCode;
     std::filesystem::path FilePath(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)));

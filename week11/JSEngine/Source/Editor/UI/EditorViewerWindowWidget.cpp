@@ -1314,14 +1314,21 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
         ImGui::BeginDisabled(!bCanSaveAnimSequenceAsset);
         if (ImGui::Button("Save AnimSequence Asset"))
         {
+            UAnimSequence* CurrentSequence = ResolveCurrentAnimSequence();
             const FString TargetMeshPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
             const FString AssetPath = MakeUniqueAnimSequenceAssetPath(FbxPath, SelectedAnimationStackName);
             if (FResourceManager::Get().SaveAnimSequenceAsset(
                     AssetPath,
                     FbxPath,
                     TargetMeshPath,
-                    SelectedAnimationStackName))
+                    SelectedAnimationStackName,
+                    CurrentSequence ? &CurrentSequence->GetNotifies() : nullptr))
             {
+                if (CurrentSequence)
+                {
+                    CurrentSequence->AssetPath = AssetPath;
+                }
+
                 if (EditorEngine)
                 {
                     EditorEngine->GetNotificationService().Info("Anim sequence asset saved: " + AssetPath);

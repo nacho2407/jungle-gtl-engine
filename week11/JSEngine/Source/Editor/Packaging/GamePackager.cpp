@@ -1602,6 +1602,10 @@ namespace
         {
             return false;
         }
+        if (!AddRuntimeFilesByExtension(Context, "Asset/Animation/Sequence", { ".bin" }, OutMessage))
+        {
+            return false;
+        }
         if (!AddPrefabDependencies(Context, OutMessage))
         {
             return false;

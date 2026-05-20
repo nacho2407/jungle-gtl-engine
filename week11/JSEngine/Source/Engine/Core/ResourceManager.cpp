@@ -172,6 +172,133 @@ namespace
 			Paths.push_back(Path);
 		}
 	}
+
+	void ClearAnimSequenceNotifies(UAnimSequence* AnimSequence)
+	{
+		if (!AnimSequence)
+		{
+			return;
+		}
+
+		while (AnimSequence->RemoveNotifyAt(0))
+		{
+		}
+	}
+
+	void CollectAnimSequenceAssetPathCandidates(
+		TArray<FString>& RegisteredAssetPaths,
+		TArray<FString>& OutCandidatePaths)
+	{
+		OutCandidatePaths = RegisteredAssetPaths;
+
+		const std::filesystem::path ProjectRoot(FPaths::RootDir());
+		const std::filesystem::path AnimSequenceRoot = ProjectRoot / "Asset" / "AnimSequence";
+		std::error_code Ec;
+		if (!std::filesystem::exists(AnimSequenceRoot, Ec) || !std::filesystem::is_directory(AnimSequenceRoot, Ec))
+		{
+			return;
+		}
+
+		for (const auto& Entry : std::filesystem::recursive_directory_iterator(
+				 AnimSequenceRoot,
+				 std::filesystem::directory_options::skip_permission_denied,
+				 Ec))
+		{
+			if (Ec || !Entry.is_regular_file())
+			{
+				continue;
+			}
+
+			std::wstring Extension = Entry.path().extension().wstring();
+			std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
+			if (Extension != L".animsequence")
+			{
+				continue;
+			}
+
+			std::error_code RelativeError;
+			const std::filesystem::path RelativePath = std::filesystem::relative(Entry.path(), ProjectRoot, RelativeError);
+			if (RelativeError || RelativePath.empty())
+			{
+				continue;
+			}
+
+			const FString NormalizedPath = FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
+			AddUniqueResourcePath(RegisteredAssetPaths, NormalizedPath);
+			AddUniqueResourcePath(OutCandidatePaths, NormalizedPath);
+		}
+	}
+
+	bool TryLoadMatchingAnimSequenceAssetDescriptor(
+		TArray<FString>& RegisteredAssetPaths,
+		const FString& SourceFbxPath,
+		const FString& TargetSkeletalMeshPath,
+		const FString& AnimStackName,
+		FAnimSequenceAssetDescriptor& OutDescriptor)
+	{
+		const FString NormalizedSource = FPaths::Normalize(SourceFbxPath);
+		const FString NormalizedTarget = FPaths::Normalize(TargetSkeletalMeshPath);
+
+		TArray<FString> CandidatePaths;
+		CollectAnimSequenceAssetPathCandidates(RegisteredAssetPaths, CandidatePaths);
+
+		FAnimSequenceAssetLoader Loader;
+		for (const FString& CandidatePath : CandidatePaths)
+		{
+			FAnimSequenceAssetDescriptor Descriptor;
+			if (!Loader.Load(CandidatePath, Descriptor))
+			{
+				continue;
+			}
+
+			if (FPaths::Normalize(Descriptor.SourceFbxPath) == NormalizedSource &&
+				FPaths::Normalize(Descriptor.TargetSkeletalMeshPath) == NormalizedTarget &&
+				Descriptor.AnimStackName == AnimStackName)
+			{
+				OutDescriptor = Descriptor;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool ApplyJsonAuthoredNotifiesOnly(
+		UAnimSequence* AnimSequence,
+		TArray<FString>& RegisteredAssetPaths,
+		const FString& SourceFbxPath,
+		const FString& TargetSkeletalMeshPath,
+		const FString& AnimStackName)
+	{
+		if (!AnimSequence)
+		{
+			return false;
+		}
+
+		ClearAnimSequenceNotifies(AnimSequence);
+
+		FAnimSequenceAssetDescriptor Descriptor;
+		if (!TryLoadMatchingAnimSequenceAssetDescriptor(
+				RegisteredAssetPaths,
+				SourceFbxPath,
+				TargetSkeletalMeshPath,
+				AnimStackName,
+				Descriptor))
+		{
+			return false;
+		}
+
+		AnimSequence->AssetPath = Descriptor.AssetPath;
+		if (Descriptor.bHasAuthoredNotifies)
+		{
+			for (const FAnimNotifyEvent& Notify : Descriptor.Notifies)
+			{
+				AnimSequence->AddNotify(Notify);
+			}
+		}
+
+		return true;
+	}
 }
 
 #pragma region __BINARY__
@@ -1127,6 +1254,7 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, 
 
 	if (UAnimSequence* Found = FindAnimSequence(Key))
 	{
+		ApplyJsonAuthoredNotifiesOnly(Found, AnimSequenceAssetFilePaths, NormalizedSource, NormalizedTarget, AnimStackName);
 		return Found;
 	}
 
@@ -1155,6 +1283,7 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, 
 	if (bAnimBinaryValid && BinarySerializer.LoadAnimSequence(BinaryPath, *Anim))
 	{
 		Anim->Skeleton = TargetMesh->GetSkeleton();
+		ApplyJsonAuthoredNotifiesOnly(Anim, AnimSequenceAssetFilePaths, NormalizedSource, NormalizedTarget, AnimStackName);
 
 		AnimSequenceMap[Key] = Anim;
 		if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), Key) == AnimSequenceFilePaths.end())
@@ -1196,6 +1325,7 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, 
 	Anim->Skeleton = TargetMesh->GetSkeleton();
 
 	const bool bSaved = BinarySerializer.SaveAnimSequence(BinaryPath, NormalizedSource, *Anim);
+	ApplyJsonAuthoredNotifiesOnly(Anim, AnimSequenceAssetFilePaths, NormalizedSource, NormalizedTarget, AnimStackName);
 
 	UE_LOG("[AnimSequenceLoad] Source=FBX | Path=%s | Stack=%s | BinarySave=%s | BinaryPath=%s",
 	       NormalizedSource.c_str(), AnimStackName.c_str(), bSaved ? "OK" : "FAIL", BinaryPath.c_str());
@@ -1244,6 +1374,18 @@ UAnimSequence* FResourceManager::LoadAnimSequenceAsset(const FString& AssetPath)
 	}
 
 	AnimSequence->AssetPath = NormalizedPath;
+	while (AnimSequence->RemoveNotifyAt(0))
+	{
+	}
+
+	if (Descriptor.bHasAuthoredNotifies)
+	{
+		for (const FAnimNotifyEvent& Notify : Descriptor.Notifies)
+		{
+			AnimSequence->AddNotify(Notify);
+		}
+	}
+
 	if (std::find(AnimSequenceAssetFilePaths.begin(), AnimSequenceAssetFilePaths.end(), NormalizedPath) == AnimSequenceAssetFilePaths.end())
 	{
 		AnimSequenceAssetFilePaths.push_back(NormalizedPath);
@@ -1256,7 +1398,8 @@ bool FResourceManager::SaveAnimSequenceAsset(
 	const FString& AssetPath,
 	const FString& SourceFbxPath,
 	const FString& TargetSkeletalMeshPath,
-	const FString& AnimStackName)
+	const FString& AnimStackName,
+	const TArray<FAnimNotifyEvent>* AuthoredNotifies)
 {
 	const FString NormalizedPath = FPaths::Normalize(AssetPath);
 	FAnimSequenceAssetDescriptor Descriptor;
@@ -1266,6 +1409,25 @@ bool FResourceManager::SaveAnimSequenceAsset(
 	Descriptor.AnimStackName = AnimStackName;
 
 	FAnimSequenceAssetLoader Loader;
+	if (AuthoredNotifies)
+	{
+		Descriptor.Notifies = *AuthoredNotifies;
+		Descriptor.bHasAuthoredNotifies = true;
+	}
+	else
+	{
+		FAnimSequenceAssetDescriptor ExistingDescriptor;
+		std::error_code ExistingAssetError;
+		const std::filesystem::path ExistingAssetPath(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)));
+		if (std::filesystem::exists(ExistingAssetPath, ExistingAssetError) &&
+			Loader.Load(NormalizedPath, ExistingDescriptor) &&
+			ExistingDescriptor.bHasAuthoredNotifies)
+		{
+			Descriptor.Notifies = ExistingDescriptor.Notifies;
+			Descriptor.bHasAuthoredNotifies = true;
+		}
+	}
+
 	if (!Loader.Save(NormalizedPath, Descriptor))
 	{
 		return false;
@@ -1304,6 +1466,15 @@ bool FResourceManager::SaveAnimSequence(UAnimSequence* AnimSequence)
 
 	const FString BinaryPath = FAssetPathPolicy::MakeWritableAnimSequenceCacheBinaryPath(SourcePath, TargetPath, StackName);
 	const bool bSaved = BinarySerializer.SaveAnimSequence(BinaryPath, SourcePath, *AnimSequence);
+	if (bSaved && FAssetPathPolicy::IsAnimSequenceAssetPath(AnimSequence->AssetPath))
+	{
+		SaveAnimSequenceAsset(
+			AnimSequence->AssetPath,
+			SourcePath,
+			TargetPath,
+			StackName,
+			&AnimSequence->GetNotifies());
+	}
 
 	UE_LOG("[AnimSequenceSave] Path=%s | Target=%s | Stack=%s | BinarySave=%s | BinaryPath=%s",
 	       SourcePath.c_str(),

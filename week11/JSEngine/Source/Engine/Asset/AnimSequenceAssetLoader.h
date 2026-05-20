@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Animation/AnimationTypes.h"
 #include "Asset/IAssetLoader.h"
 #include "Serialization/Archive.h"
 
@@ -9,6 +10,8 @@ struct FAnimSequenceAssetDescriptor
     FString SourceFbxPath;
     FString TargetSkeletalMeshPath;
     FString AnimStackName;
+    TArray<FAnimNotifyEvent> Notifies;
+    bool bHasAuthoredNotifies = false;
 
     bool IsValid() const;
     void Serialize(FArchive& Ar);
