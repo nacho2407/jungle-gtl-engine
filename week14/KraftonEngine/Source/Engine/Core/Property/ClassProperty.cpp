@@ -2,7 +2,6 @@
 
 #include "Object/UClass.h"
 #include "Serialization/Archive.h"
-#include "SimpleJSON/json.hpp"
 
 UClass* FClassProperty::GetClassValue(void* Container) const
 {
@@ -33,23 +32,6 @@ void FClassProperty::SetClassValueFromValuePtr(void* ValuePtr, UClass* Class) co
 	}
 
 	Ops->SetClass(ValuePtr, Class);
-}
-
-json::JSON FClassProperty::SerializeValue(void* ValuePtr) const
-{
-	using namespace json;
-
-	UClass* Class = GetClassValueFromValuePtr(ValuePtr);
-	return Class ? JSON(FString(Class->GetName())) : JSON(FString("None"));
-}
-
-void FClassProperty::DeserializeValue(void* ValuePtr, json::JSON& Value) const
-{
-	FString ClassName = Value.ToString();
-	UClass* Class = (ClassName.empty() || ClassName == "None")
-		? nullptr
-		: UClass::FindByName(ClassName.c_str());
-	SetClassValueFromValuePtr(ValuePtr, Class);
 }
 
 void FClassProperty::SerializeValue(void* ValuePtr, FArchive& Ar) const

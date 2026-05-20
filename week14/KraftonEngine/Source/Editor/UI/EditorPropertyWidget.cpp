@@ -36,7 +36,7 @@
 #include "Mesh/SkeletalMesh.h"
 #include "Editor/UI/Asset/MeshEditorWidget.h"
 #include "Platform/Paths.h"
-#include "SimpleJSON/json.hpp"
+#include "Serialization/MemoryArchive.h"
 
 #include <Windows.h>
 #include <commdlg.h>
@@ -303,11 +303,13 @@ namespace
 		{
 			FPropertySerializeContext SrcContext;
 			SrcContext.Owner = SrcValue.Object;
-			json::JSON JsonValue = SrcValue.Property->SerializeValue(SrcPtr, SrcContext);
+			FMemoryArchive Writer(/*bInIsSaving=*/true);
+			SrcValue.Property->SerializeValue(SrcPtr, Writer, SrcContext);
 
 			FPropertySerializeContext DstContext;
 			DstContext.Owner = DstValue.Object;
-			DstValue.Property->DeserializeValue(DstPtr, JsonValue, DstContext);
+			FMemoryArchive Reader(Writer.GetBuffer(), /*bInIsSaving=*/false);
+			DstValue.Property->SerializeValue(DstPtr, Reader, DstContext);
 			return true;
 		}
 		case EPropertyType::Struct:

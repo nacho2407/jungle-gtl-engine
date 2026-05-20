@@ -6,8 +6,6 @@
 #include <string>
 #include "Core/CoreTypes.h"
 
-namespace json { class JSON; }
-
 class FArchive;
 class UStruct;
 class UClass;
@@ -26,18 +24,9 @@ struct FStructProperty;
 struct FArrayProperty;
 class UObject;
 
-struct FJsonObjectReferenceContext
-{
-	virtual ~FJsonObjectReferenceContext() = default;
-
-	virtual bool SerializeObjectReference(const UObject* Object, json::JSON& OutValue) const;
-	virtual bool DeserializeObjectReference(json::JSON& Value, UObject*& OutObject) const;
-};
-
 struct FPropertySerializeContext
 {
 	UObject* Owner = nullptr;
-	const FJsonObjectReferenceContext* RefContext = nullptr;
 };
 
 // 에디터에서 자동 위젯 매핑에 사용되는 프로퍼티 타입
@@ -223,22 +212,10 @@ struct FProperty
 	virtual const FStructProperty* AsStructProperty() const { return nullptr; }
 	virtual const FArrayProperty* AsArrayProperty() const { return nullptr; }
 
-	virtual json::JSON Serialize(void* Container) const;
-	virtual void	   Deserialize(void* Container, json::JSON& Value) const;
-	virtual json::JSON Serialize(void* Container, const FJsonObjectReferenceContext* RefContext) const;
-	virtual void	   Deserialize(void* Container, json::JSON& Value, const FJsonObjectReferenceContext* RefContext) const;
 	virtual void	   Serialize(void* Container, FArchive& Ar) const;
-	virtual json::JSON SerializeValue(void* ValuePtr) const = 0;
-	virtual void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const = 0;
 	virtual void	   SerializeValue(void* ValuePtr, FArchive& Ar) const = 0;
-	virtual json::JSON SerializeValue(void* ValuePtr, const FPropertySerializeContext& Context) const;
-	virtual void	   DeserializeValue(void* ValuePtr, json::JSON& Value, const FPropertySerializeContext& Context) const;
 	virtual void	   SerializeValue(void* ValuePtr, FArchive& Ar, const FPropertySerializeContext& Context) const;
 
-	virtual json::JSON Serialize(UObject* Object) const;
-	virtual void	   Deserialize(UObject* Object, json::JSON& Value) const;
-	virtual json::JSON Serialize(UObject* Object, const FJsonObjectReferenceContext* RefContext) const;
-	virtual void	   Deserialize(UObject* Object, json::JSON& Value, const FJsonObjectReferenceContext* RefContext) const;
 	virtual void	   Serialize(UObject* Object, FArchive& Ar) const;
 };
 
@@ -276,8 +253,6 @@ struct FGenericProperty : FProperty
 	float GetMax() const override { return Max; }
 	float GetSpeed() const override { return Speed; }
 
-	json::JSON SerializeValue(void* ValuePtr) const override;
-	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 };
 
