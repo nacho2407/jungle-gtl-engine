@@ -76,6 +76,8 @@ public:
     FName GetRootMotionBoneName() const;
 
     bool SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName = FString());
+    bool SetAnimSequenceAsset(const FString& AssetPath);
+    const FString& GetAnimSequenceAssetPath() const { return AnimSequenceAssetPath; }
     const FString& GetAnimSequenceSourceFbxPath() const { return AnimSequenceSourceFbxPath; }
     const FString& GetAnimSequenceStackName() const { return AnimSequenceStackName; }
     void SetAnimationTime(float Time);
@@ -105,6 +107,7 @@ private:
 private:
     EAnimationMode AnimationMode = EAnimationMode::None;
     FString AnimInstanceClassName;
+    FString AnimSequenceAssetPath;
     FString AnimSequenceSourceFbxPath;
     FString AnimSequenceStackName;
     UAnimInstance* AnimInstance = nullptr;

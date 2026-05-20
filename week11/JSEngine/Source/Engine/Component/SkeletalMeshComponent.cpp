@@ -26,18 +26,27 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
 {
     USkinnedMeshComponent::Serialize(Ar);
 
+    Ar << "AnimSequenceAsset" << AnimSequenceAssetPath;
     Ar << "AnimSequenceSourceFbx" << AnimSequenceSourceFbxPath;
     Ar << "AnimSequenceStack" << AnimSequenceStackName;
 
-    if (Ar.IsLoading() && !AnimSequenceSourceFbxPath.empty())
+    if (Ar.IsLoading())
     {
-        SetAnimSequence(AnimSequenceSourceFbxPath, AnimSequenceStackName);
+        if (!AnimSequenceAssetPath.empty())
+        {
+            SetAnimSequenceAsset(AnimSequenceAssetPath);
+        }
+        else if (!AnimSequenceSourceFbxPath.empty())
+        {
+            SetAnimSequence(AnimSequenceSourceFbxPath, AnimSequenceStackName);
+        }
     }
 }
 
 void USkeletalMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     USkinnedMeshComponent::GetEditableProperties(OutProps);
+    OutProps.push_back({ "AnimSequenceAsset", EPropertyType::String, &AnimSequenceAssetPath });
     OutProps.push_back({ "AnimSequenceSourceFbx", EPropertyType::String, &AnimSequenceSourceFbxPath });
     OutProps.push_back({ "AnimSequenceStack", EPropertyType::String, &AnimSequenceStackName });
 }
@@ -46,24 +55,49 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
 {
     USkinnedMeshComponent::PostEditProperty(PropertyName);
 
+    const bool bAnimAssetPropertyChanged = std::strcmp(PropertyName, "AnimSequenceAsset") == 0;
     const bool bAnimPropertyChanged =
         std::strcmp(PropertyName, "AnimSequenceSourceFbx") == 0 ||
         std::strcmp(PropertyName, "AnimSequenceStack") == 0;
     const bool bMeshChanged = std::strcmp(PropertyName, "SkeletalMesh") == 0;
 
-    if (bAnimPropertyChanged || bMeshChanged)
+    if (bAnimAssetPropertyChanged)
     {
-        if (AnimSequenceSourceFbxPath.empty())
+        if (AnimSequenceAssetPath.empty())
         {
-            if (bAnimPropertyChanged)
-            {
-                AnimSequenceStackName.clear();
-                SetAnimation(nullptr);
-            }
+            SetAnimation(nullptr);
             return;
         }
 
+        SetAnimSequenceAsset(AnimSequenceAssetPath);
+        return;
+    }
+
+    if (bAnimPropertyChanged)
+    {
+        if (AnimSequenceSourceFbxPath.empty())
+        {
+            AnimSequenceAssetPath.clear();
+            AnimSequenceStackName.clear();
+            SetAnimation(nullptr);
+            return;
+        }
+
+        AnimSequenceAssetPath.clear();
         SetAnimSequence(AnimSequenceSourceFbxPath, AnimSequenceStackName);
+        return;
+    }
+
+    if (bMeshChanged)
+    {
+        if (!AnimSequenceAssetPath.empty())
+        {
+            SetAnimSequenceAsset(AnimSequenceAssetPath);
+        }
+        else if (!AnimSequenceSourceFbxPath.empty())
+        {
+            SetAnimSequence(AnimSequenceSourceFbxPath, AnimSequenceStackName);
+        }
     }
 }
 
@@ -388,12 +422,43 @@ bool USkeletalMeshComponent::SetAnimSequence(const FString& SourceFbxPath, const
     }
 
     SetAnimation(LoadedSequence);
+    AnimSequenceAssetPath.clear();
     AnimSequenceSourceFbxPath = SourceFbxPath;
     AnimSequenceStackName = LoadedSequence->AnimStackName;
 
     UE_LOG("[SkeletalMeshComponent] SetAnimSequence succeeded. AnimPath=%s Target=%s Stack=%s Length=%.3f",
            SourceFbxPath.c_str(),
            TargetSkeletalMeshPath.c_str(),
+           LoadedSequence->AnimStackName.c_str(),
+           LoadedSequence->GetPlayLength());
+    return true;
+}
+
+bool USkeletalMeshComponent::SetAnimSequenceAsset(const FString& AssetPath)
+{
+    if (AssetPath.empty())
+    {
+        AnimSequenceAssetPath.clear();
+        SetAnimation(nullptr);
+        return true;
+    }
+
+    UAnimSequence* LoadedSequence = FResourceManager::Get().LoadAnimSequenceAsset(AssetPath);
+    if (!LoadedSequence)
+    {
+        UE_LOG_WARNING("[SkeletalMeshComponent] SetAnimSequenceAsset failed to load sequence asset. Asset=%s",
+                       AssetPath.c_str());
+        return false;
+    }
+
+    SetAnimation(LoadedSequence);
+    AnimSequenceAssetPath = AssetPath;
+    AnimSequenceSourceFbxPath = LoadedSequence->SourceFbxPath;
+    AnimSequenceStackName = LoadedSequence->AnimStackName;
+
+    UE_LOG("[SkeletalMeshComponent] SetAnimSequenceAsset succeeded. Asset=%s Source=%s Stack=%s Length=%.3f",
+           AssetPath.c_str(),
+           LoadedSequence->SourceFbxPath.c_str(),
            LoadedSequence->AnimStackName.c_str(),
            LoadedSequence->GetPlayLength());
     return true;
