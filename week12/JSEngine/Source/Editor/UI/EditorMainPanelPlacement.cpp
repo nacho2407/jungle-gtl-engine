@@ -209,17 +209,25 @@ bool FEditorMainPanel::SpawnSkeletalMeshFromContentPath(
 
     FResourceManager& ResourceManager = FResourceManager::Get();
     const FFbxMeshContentInfo ContentInfo = ResourceManager.InspectFbxMeshContent(InspectPath);
+    USkeletalMesh* Mesh = nullptr;
 	if (!ContentInfo.bHasSkeletalMesh)
     {
-        return false;
+        Mesh = ResourceManager.LoadSkeletalMesh(MeshLoadPath);
+        if (!Mesh || !Mesh->HasValidMeshData())
+        {
+            return false;
+        }
     }
-
-    const TArray<FString> ImportedAnimSequencePaths = ResourceManager.ImportAnimationStacksFromFbx(InspectPath);
-    if (!ImportedAnimSequencePaths.empty())
+    else
     {
-        Widgets.ContentBrowserWidget.Refresh();
+        const TArray<FString> ImportedAnimSequencePaths = ResourceManager.ImportAnimationStacksFromFbx(InspectPath);
+        if (!ImportedAnimSequencePaths.empty())
+        {
+            Widgets.ContentBrowserWidget.Refresh();
+        }
+        Mesh = ResourceManager.LoadSkeletalMesh(MeshLoadPath);
 	}
-    USkeletalMesh* Mesh = ResourceManager.LoadSkeletalMesh(MeshLoadPath);
+
 	if (!Mesh || !Mesh->HasValidMeshData())
     {
         PushFooterLog("Failed to load dropped skeletal mesh");

@@ -8,6 +8,17 @@
 #include <algorithm>
 #include <chrono>
 
+namespace
+{
+bool HasUsableSkeletalMeshData(const FSkeletalMesh* MeshData)
+{
+	return MeshData != nullptr &&
+		!MeshData->Vertices.empty() &&
+		!MeshData->Indices.empty() &&
+		!MeshData->Bones.empty();
+}
+}
+
 FSkeletalMeshLoadService::FSkeletalMeshLoadService(FResourceManager& InResourceManager)
 	: ResourceManager(InResourceManager)
 {
@@ -39,17 +50,7 @@ USkeletalMesh* FSkeletalMeshLoadService::LoadSourceOrCachedBinary(const FString&
 	// 1) Binary 캐시가 소스보다 신선하면 그걸 우선 시도.
 	if (ResourceManager.IsSkeletalMeshBinaryValid(NormalizedPath, BinaryPath))
 	{
-		const auto BinaryStart = std::chrono::steady_clock::now();
-
-		LoadedMeshData = new FSkeletalMesh();
-		if (!ResourceManager.BinarySerializer.LoadSkeletalMesh(BinaryPath, *LoadedMeshData))
-		{
-			delete LoadedMeshData;
-			LoadedMeshData = nullptr;
-		}
-
-		const auto BinaryEnd = std::chrono::steady_clock::now();
-		BinaryLoadSec = std::chrono::duration<double>(BinaryEnd - BinaryStart).count();
+		LoadedMeshData = TryLoadBinary(BinaryPath, BinaryLoadSec);
 	}
 
 	// 2) Binary 실패/누락이면 FBX에서 import 후 캐시 굽기.
@@ -60,8 +61,19 @@ USkeletalMesh* FSkeletalMeshLoadService::LoadSourceOrCachedBinary(const FString&
 		const auto SourceEnd = std::chrono::steady_clock::now();
 		SourceLoadSec = std::chrono::duration<double>(SourceEnd - SourceStart).count();
 
-		if (!LoadedMeshData)
+		if (!HasUsableSkeletalMeshData(LoadedMeshData))
 		{
+			delete LoadedMeshData;
+			LoadedMeshData = nullptr;
+
+			LoadedMeshData = TryLoadBinary(BinaryPath, BinaryLoadSec);
+			if (LoadedMeshData)
+			{
+				UE_LOG_WARNING("[SkeletalMeshLoad] Source=StaleBinaryFallback | Path=%s | BinarySec=%.6f | FbxSec=%.6f | BinaryPath=%s",
+					NormalizedPath.c_str(), BinaryLoadSec, SourceLoadSec, BinaryPath.c_str());
+				return FinalizeLoadedMesh(LoadedMeshData, NormalizedPath, NormalizedPath);
+			}
+
 			UE_LOG_ERROR("[SkeletalMeshLoad] Failed | Path=%s | BinarySec=%.6f | FbxSec=%.6f",
 				NormalizedPath.c_str(), BinaryLoadSec, SourceLoadSec);
 			return nullptr;
@@ -87,6 +99,27 @@ USkeletalMesh* FSkeletalMeshLoadService::LoadSourceOrCachedBinary(const FString&
 	}
 
 	return FinalizeLoadedMesh(LoadedMeshData, NormalizedPath, NormalizedPath);
+}
+
+FSkeletalMesh* FSkeletalMeshLoadService::TryLoadBinary(const FString& BinaryPath, double& OutBinaryLoadSec)
+{
+	const auto BinaryStart = std::chrono::steady_clock::now();
+
+	FSkeletalMesh* LoadedMeshData = new FSkeletalMesh();
+	if (!ResourceManager.BinarySerializer.LoadSkeletalMesh(BinaryPath, *LoadedMeshData))
+	{
+		delete LoadedMeshData;
+		LoadedMeshData = nullptr;
+	}
+	else if (!HasUsableSkeletalMeshData(LoadedMeshData))
+	{
+		delete LoadedMeshData;
+		LoadedMeshData = nullptr;
+	}
+
+	const auto BinaryEnd = std::chrono::steady_clock::now();
+	OutBinaryLoadSec = std::chrono::duration<double>(BinaryEnd - BinaryStart).count();
+	return LoadedMeshData;
 }
 
 USkeletalMesh* FSkeletalMeshLoadService::FinalizeLoadedMesh(FSkeletalMesh* MeshData, const FString& ResolvePath, const FString& CacheKey)
