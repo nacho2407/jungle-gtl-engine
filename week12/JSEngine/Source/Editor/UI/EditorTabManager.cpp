@@ -174,6 +174,19 @@ bool FEditorTabManager::SetActiveTab(const FEditorTabId& Id)
 	return true;
 }
 
+bool FEditorTabManager::ReplaceTab(const FEditorTabId& OldId, const FEditorTabId& NewId, const FString& Label)
+{
+	const int32 Index = FindTabIndex(OldId);
+	if (Index < 0)
+	{
+		return false;
+	}
+
+	Tabs[Index].Id = NewId;
+	Tabs[Index].Label = Label;
+	return true;
+}
+
 bool FEditorTabManager::SetTabLabel(const FEditorTabId& Id, const FString& Label)
 {
 	const int32 Index = FindTabIndex(Id);

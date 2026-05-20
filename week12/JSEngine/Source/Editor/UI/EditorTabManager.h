@@ -47,6 +47,7 @@ public:
 	const FEditorTabEntry& OpenOrFocusTab(const FEditorTabId& Id, const FString& Label, bool bCanClose = true);
 	bool CloseTab(const FEditorTabId& Id);
 	bool SetActiveTab(const FEditorTabId& Id);
+	bool ReplaceTab(const FEditorTabId& OldId, const FEditorTabId& NewId, const FString& Label);
 	bool SetTabLabel(const FEditorTabId& Id, const FString& Label);
 	bool SetTabDirty(const FEditorTabId& Id, bool bDirty);
 

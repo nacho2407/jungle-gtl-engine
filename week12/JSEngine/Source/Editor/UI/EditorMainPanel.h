@@ -53,6 +53,7 @@ public:
 	void OpenAnimGraphAsset(const FString& AnimGraphPath);
 	void OpenRuntimeUIPreviewAsset(const FString& RmlPath = "");
 	void OpenViewer(FEditorViewer* Viewer);
+	bool ChangeViewerTarget(FEditorViewer* Viewer, const FString& NewFileName);
 	void RequestDockViewer(FEditorViewer* Viewer);
 	void RenderViewerToolbarControls(FEditorViewer* Viewer);
 	ID3D11ShaderResourceView* GetHomeIconResource() const { return IconResources.HomeIcon; }

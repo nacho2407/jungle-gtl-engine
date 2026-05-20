@@ -1550,7 +1550,13 @@ void FEditorViewerWindowWidget::RenderAnimSequenceList(UAnimSequence* Sequence)
 			}
 
 			const FString Name = GetBaseFileNameWithoutExtension(Path);
-			ImGui::TextUnformatted(Name.c_str());
+			if (ImGui::Selectable(Name.c_str(), false))
+			{
+				if (EditorEngine && Viewer)
+				{
+					EditorEngine->GetMainPanel().ChangeViewerTarget(Viewer, NormalizedPath);
+				}
+			}
 			++VisibleCount;
 		}
 

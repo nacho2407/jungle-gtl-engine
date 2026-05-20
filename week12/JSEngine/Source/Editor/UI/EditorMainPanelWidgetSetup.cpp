@@ -102,6 +102,26 @@ void FEditorMainPanel::OpenViewer(FEditorViewer* Viewer)
     PendingOpenViewers.push_back(Viewer);
 }
 
+bool FEditorMainPanel::ChangeViewerTarget(FEditorViewer* Viewer, const FString& NewFileName)
+{
+	if (!Viewer || NewFileName.empty())
+	{
+		return false;
+	}
+
+	const FEditorTabId OldTabId = MakeEditorViewerTabId(Viewer->GetFileName(), Viewer);
+	Viewer->ChangeTarget(NewFileName);
+
+	const FEditorTabId NewTabId = MakeEditorViewerTabId(Viewer->GetFileName(), Viewer);
+	const FString NewLabel = MakeEditorViewerTabLabel(Viewer->GetFileName());
+	if (!EditorTabs.ReplaceTab(OldTabId, NewTabId, NewLabel))
+	{
+		EditorTabs.OpenOrFocusTab(NewTabId, NewLabel);
+	}
+	EditorTabs.SetActiveTab(NewTabId);
+	return true;
+}
+
 void FEditorMainPanel::FlushOpenViewerWidgets()
 {
     auto& V = Widgets.ViewerWindowWidgets;
