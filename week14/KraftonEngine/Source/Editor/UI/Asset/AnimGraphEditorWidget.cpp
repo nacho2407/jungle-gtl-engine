@@ -58,58 +58,91 @@ namespace
 		return std::filesystem::path(P).stem().string();
 	}
 
-	// SequencePlayer 노드의 properties — Sequence/PlayRate/bLooping. 다른 노드 타입은 placeholder.
-	// 변경 발생 시 Asset.BumpVersion() — UAnimGraphInstance 가 다음 frame 에 재컴파일하여
-	// in-editor live preview 가 즉시 반영되도록.
+	// 노드 타입별 properties. 변경 시 Asset.BumpVersion() — UAnimGraphInstance 가 다음 frame 에
+	// 재컴파일하여 in-editor live preview 가 즉시 반영되도록.
 	void RenderNodeInspector(UAnimGraphAsset& Asset, FAnimGraphNode& Node)
 	{
 		ImGui::Text("%s", NodeTypeLabel(Node.Type));
 		ImGui::TextDisabled("id=%u", Node.NodeId);
 		ImGui::Separator();
 
-		if (Node.Type != EAnimGraphNodeType::SequencePlayer)
-		{
-			ImGui::TextDisabled("(no editable properties yet)");
-			return;
-		}
-
 		bool bChanged = false;
 
-		ImGui::TextUnformatted("Sequence");
-		const FString PreviewStem = Node.SequencePath.empty() ? FString("None") : GetStemFromPath(Node.SequencePath);
-		ImGui::SetNextItemWidth(-1.0f);
-		if (ImGui::BeginCombo("##NodeSequence", PreviewStem.c_str()))
+		switch (Node.Type)
 		{
-			const bool bSelectedNone = Node.SequencePath.empty();
-			if (ImGui::Selectable("None", bSelectedNone))
+			case EAnimGraphNodeType::SequencePlayer:
 			{
-				if (!Node.SequencePath.empty()) bChanged = true;
-				Node.SequencePath.clear();
-			}
-			if (bSelectedNone) ImGui::SetItemDefaultFocus();
-
-			const TArray<FAssetListItem>& AnimFiles = FAssetRegistry::ListByTypeName("UAnimSequence");
-			for (const FAssetListItem& Item : AnimFiles)
-			{
-				const bool bSelected = (Node.SequencePath == Item.FullPath);
-				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				ImGui::TextUnformatted("Sequence");
+				const FString PreviewStem = Node.SequencePath.empty() ? FString("None") : GetStemFromPath(Node.SequencePath);
+				ImGui::SetNextItemWidth(-1.0f);
+				if (ImGui::BeginCombo("##NodeSequence", PreviewStem.c_str()))
 				{
-					if (Node.SequencePath != Item.FullPath) bChanged = true;
-					Node.SequencePath = Item.FullPath;
-				}
-				if (bSelected) ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
-		}
+					const bool bSelectedNone = Node.SequencePath.empty();
+					if (ImGui::Selectable("None", bSelectedNone))
+					{
+						if (!Node.SequencePath.empty()) bChanged = true;
+						Node.SequencePath.clear();
+					}
+					if (bSelectedNone) ImGui::SetItemDefaultFocus();
 
-		ImGui::SetNextItemWidth(-1.0f);
-		if (ImGui::DragFloat("##PlayRate", &Node.PlayRate, 0.05f, -4.0f, 4.0f, "PlayRate %.2f"))
-		{
-			bChanged = true;
-		}
-		if (ImGui::Checkbox("Looping", &Node.bLooping))
-		{
-			bChanged = true;
+					const TArray<FAssetListItem>& AnimFiles = FAssetRegistry::ListByTypeName("UAnimSequence");
+					for (const FAssetListItem& Item : AnimFiles)
+					{
+						const bool bSelected = (Node.SequencePath == Item.FullPath);
+						if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+						{
+							if (Node.SequencePath != Item.FullPath) bChanged = true;
+							Node.SequencePath = Item.FullPath;
+						}
+						if (bSelected) ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+
+				ImGui::SetNextItemWidth(-1.0f);
+				if (ImGui::DragFloat("##PlayRate", &Node.PlayRate, 0.05f, -4.0f, 4.0f, "PlayRate %.2f"))
+				{
+					bChanged = true;
+				}
+				if (ImGui::Checkbox("Looping", &Node.bLooping))
+				{
+					bChanged = true;
+				}
+				break;
+			}
+
+			case EAnimGraphNodeType::Slot:
+			{
+				// SlotName 편집 — 비어있으면 컴파일러가 DefaultMontageSlot 으로 fallback.
+				char Buf[64];
+				const FString Cur = (Node.SlotName == FName::None) ? FString() : Node.SlotName.ToString();
+				std::snprintf(Buf, sizeof(Buf), "%s", Cur.c_str());
+				ImGui::TextUnformatted("Slot Name");
+				ImGui::SetNextItemWidth(-1.0f);
+				if (ImGui::InputText("##SlotName", Buf, sizeof(Buf)))
+				{
+					Node.SlotName = (Buf[0] == '\0') ? FName::None : FName(Buf);
+					bChanged = true;
+				}
+				ImGui::TextDisabled("(empty → DefaultSlot)");
+				break;
+			}
+
+			case EAnimGraphNodeType::LayeredBlendPerBone:
+			{
+				ImGui::TextUnformatted("Blend Weight");
+				ImGui::SetNextItemWidth(-1.0f);
+				if (ImGui::SliderFloat("##BlendWeight", &Node.BlendWeight, 0.0f, 1.0f, "%.2f"))
+				{
+					bChanged = true;
+				}
+				ImGui::TextDisabled("(per-bone mask: full blend — 후속 단계)");
+				break;
+			}
+
+			default:
+				ImGui::TextDisabled("(no editable properties yet)");
+				break;
 		}
 
 		if (bChanged) Asset.BumpVersion();

@@ -78,9 +78,16 @@ struct FAnimGraphNode
 	// empty / "None" 이면 UAnimGraphInstance::DefaultSequencePath 가 fallback.
 	FString                SequencePath;
 
-	// SequencePlayer 옵션. PlayRate / bLooping — 노드 inspector 도입 시 편집 (단계 E).
+	// SequencePlayer 옵션. PlayRate / bLooping — 노드 inspector 에서 편집.
 	float                  PlayRate    = 1.0f;
 	bool                   bLooping    = true;
+
+	// Slot 노드의 montage slot name (비어있으면 컴파일러가 UAnimInstance::DefaultMontageSlot 으로 fallback).
+	FName                  SlotName;
+
+	// LayeredBlendPerBone 의 BlendPose 전체 contribution. F-1 한정 — PerBoneMask 는 컴파일 시점에
+	// mesh 의 모든 본 true 로 채움 (full blend). 후속 단계에서 root bone name 기반 부분 mask 추가.
+	float                  BlendWeight = 1.0f;
 
 	friend FArchive& operator<<(FArchive& Ar, FAnimGraphNode& Node);
 };
