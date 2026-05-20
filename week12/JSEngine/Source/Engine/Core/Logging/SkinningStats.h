@@ -12,6 +12,7 @@ struct FSkinningStatsFrame
 	double CPUPoseBuildMs = 0.0;
 	double CPUSkinningMs = 0.0;
 	double CPUSkinnedVertexBufferUploadMs = 0.0;
+	uint64 CPUSkinnedVertexBufferUploadCallCount = 0;
 	uint64 CPUSkinnedVertexBufferUploadBytes = 0;
 
 	uint32 VisibleSkinnedMeshCount = 0;
@@ -23,6 +24,8 @@ struct FSkinningStatsFrame
 	uint64 BoneInfluenceVertexCount = 0;
 
 	uint64 GPUBoneMatrixUploadCount = 0;
+	double GPUBoneMatrixUploadMs = 0.0;
+	uint64 GPUBoneMatrixUploadCallCount = 0;
 	// Actual byte width written into GPU bone matrix constant buffers this frame.
 	uint64 GPUBoneMatrixUploadBytes = 0;
 	uint32 GPUSkinnedDrawPassCount = 0;
@@ -55,7 +58,7 @@ public:
 		uint32 BoneCount,
 		double AvgInfluence,
 		bool bUsesGPUSkinning);
-	void AddGPUBoneMatrixUpload(uint32 UploadedBoneMatrixCount, uint64 UploadedBytes);
+	void AddGPUBoneMatrixUpload(double Ms, uint32 UploadedBoneMatrixCount, uint64 UploadedBytes);
 	void AddGPUSkinnedDraw(uint64 WorkVertexCount, double AvgInfluence);
 
 private:

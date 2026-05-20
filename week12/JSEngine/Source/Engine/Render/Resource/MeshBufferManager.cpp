@@ -297,8 +297,13 @@ FConstantBuffer* FMeshBufferManager::GetGPUSkeletalBoneMatrixBuffer(
 		if (DeviceContext)
 		{
 			constexpr uint64 UploadBytes = sizeof(FBoneMatrixConstants);
+			const auto UploadStart = std::chrono::steady_clock::now();
 			BoneMatrixBuffer.Update(DeviceContext, &Constants, static_cast<uint32>(UploadBytes));
-			FSkinningStats::Get().AddGPUBoneMatrixUpload(Constants.BoneCount, UploadBytes);
+			const auto UploadEnd = std::chrono::steady_clock::now();
+			FSkinningStats::Get().AddGPUBoneMatrixUpload(
+				std::chrono::duration<double, std::milli>(UploadEnd - UploadStart).count(),
+				Constants.BoneCount,
+				UploadBytes);
 			DeviceContext->Release();
 		}
 	}

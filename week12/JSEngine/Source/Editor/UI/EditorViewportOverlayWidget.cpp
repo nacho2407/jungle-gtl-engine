@@ -845,9 +845,13 @@ void FEditorViewportOverlayWidget::RenderGroupedStatOverlay(float DeltaTime)
             ImGui::TextUnformatted("[ Skinning ]");
             ImGui::Text("CPU Anim/Pose   : %.3f / %.3f ms", SkinStats.CPUAnimationUpdateMs, SkinStats.CPUPoseBuildMs);
             ImGui::Text("CPU Skin/Upload : %.3f / %.3f ms", SkinStats.CPUSkinningMs, SkinStats.CPUSkinnedVertexBufferUploadMs);
-            ImGui::Text("CPU Upload      : %.2f KB",
+            ImGui::Text("CPU VB Upload   : %llu calls / %.2f KB",
+                static_cast<unsigned long long>(SkinStats.CPUSkinnedVertexBufferUploadCallCount),
                 SkinStats.CPUSkinnedVertexBufferUploadBytes / 1024.0f);
-            ImGui::Text("GPU Bone Upload : %llu mats / %.2f KB",
+            ImGui::Text("GPU Bone CB     : %.3f ms / %llu calls",
+                SkinStats.GPUBoneMatrixUploadMs,
+                static_cast<unsigned long long>(SkinStats.GPUBoneMatrixUploadCallCount));
+            ImGui::Text("GPU Bone Data   : %llu mats / %.2f KB",
                 static_cast<unsigned long long>(SkinStats.GPUBoneMatrixUploadCount),
                 SkinStats.GPUBoneMatrixUploadBytes / 1024.0f);
             ImGui::Text("Meshes CPU/GPU  : %u / %u",

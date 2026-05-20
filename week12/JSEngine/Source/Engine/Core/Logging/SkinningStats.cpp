@@ -24,6 +24,7 @@ void FSkinningStats::TakeSnapshot()
 void FSkinningStats::AddCPUSkinnedVertexBufferUpload(double Ms, uint64 Bytes)
 {
 	Current.CPUSkinnedVertexBufferUploadMs += Ms;
+	Current.CPUSkinnedVertexBufferUploadCallCount++;
 	Current.CPUSkinnedVertexBufferUploadBytes += Bytes;
 }
 
@@ -49,8 +50,10 @@ void FSkinningStats::AddVisibleSkinnedMesh(
 	}
 }
 
-void FSkinningStats::AddGPUBoneMatrixUpload(uint32 UploadedBoneMatrixCount, uint64 UploadedBytes)
+void FSkinningStats::AddGPUBoneMatrixUpload(double Ms, uint32 UploadedBoneMatrixCount, uint64 UploadedBytes)
 {
+	Current.GPUBoneMatrixUploadMs += Ms;
+	Current.GPUBoneMatrixUploadCallCount++;
 	Current.GPUBoneMatrixUploadCount += UploadedBoneMatrixCount;
 	Current.GPUBoneMatrixUploadBytes += UploadedBytes;
 }

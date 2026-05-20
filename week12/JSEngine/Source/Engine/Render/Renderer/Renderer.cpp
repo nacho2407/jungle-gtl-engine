@@ -3,6 +3,7 @@
 #include <array>
 #include <iostream>
 #include <algorithm>
+#include <chrono>
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Render/Common/RenderTypes.h"
@@ -60,16 +61,16 @@ void BindVertexFactoryResources(
 				? BoneMatrixConstants
 				: &EmptyBoneMatrixConstants;
 
+			const auto UploadStart = std::chrono::steady_clock::now();
 			RenderResources->BoneMatrixConstantBuffer.Update(
 				Context,
 				ConstantsToBind,
 				sizeof(FBoneMatrixConstants));
-			if (ConstantsToBind->BoneCount > 0)
-			{
-				FSkinningStats::Get().AddGPUBoneMatrixUpload(
-					ConstantsToBind->BoneCount,
-					sizeof(FBoneMatrixConstants));
-			}
+			const auto UploadEnd = std::chrono::steady_clock::now();
+			FSkinningStats::Get().AddGPUBoneMatrixUpload(
+				std::chrono::duration<double, std::milli>(UploadEnd - UploadStart).count(),
+				ConstantsToBind->BoneCount,
+				sizeof(FBoneMatrixConstants));
 
 			BoneBuffer = RenderResources->BoneMatrixConstantBuffer.GetBuffer();
 		}
