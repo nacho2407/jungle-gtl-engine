@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorControlWidget.h"
+﻿#include "Editor/UI/EditorControlWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Camera/ViewportCamera.h"
@@ -220,10 +220,7 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 		}
 		case 14:
 		{
-			ACubeActor* Actor = World->SpawnActor<ACubeActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
+
 		}
 		case 15:
         {
