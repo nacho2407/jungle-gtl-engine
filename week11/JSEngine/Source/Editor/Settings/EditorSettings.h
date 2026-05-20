@@ -62,7 +62,7 @@ public:
 	int32 SpatialRotationDirtyPercentThreshold = 30;
 
 	EShadowFilter ShadowFilterMode = EShadowFilter::PCF;
-	ESkinningMode SkinningMode = ESkinningMode::CPU;
+	ESkinningMode SkinningMode = ESkinningMode::GPU;
 
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());

@@ -737,7 +737,7 @@ void FEditorContentBrowserWidget::DrawToolbar()
 	}
 	ImGui::SameLine();
 	ImGui::BeginDisabled(BackHistory.empty());
-	if (ImGui::SmallButton("?"))
+	if (ImGui::SmallButton("◀"))
 	{
 		NavigateBack();
 	}
@@ -747,7 +747,7 @@ void FEditorContentBrowserWidget::DrawToolbar()
 		ImGui::SetTooltip("Back");
 	}
 	ImGui::SameLine();
-	if (ImGui::SmallButton("??))
+	if (ImGui::SmallButton("▲"))
 	{
 		const std::filesystem::path Parent = CurrentPath.parent_path();
 		if (!Parent.empty() && Parent != CurrentPath)

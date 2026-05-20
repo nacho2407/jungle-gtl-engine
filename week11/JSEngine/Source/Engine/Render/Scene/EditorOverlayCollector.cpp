@@ -381,7 +381,6 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
             {
                 BaseCmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
             }
-
         }
         else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Text)
         {

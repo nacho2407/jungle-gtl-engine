@@ -122,7 +122,7 @@ private:
 	EViewMode		ViewMode		= EViewMode::Lit_BlinnPhong;
 	ELightCullMode	LightCullMode	= ELightCullMode::Clustered;
 	EShadowFilter	ShadowFilterMode = EShadowFilter::PCF;
-	ESkinningMode 	SkinningMode = ESkinningMode::CPU;
+	ESkinningMode 	SkinningMode = ESkinningMode::GPU;
 	FShowFlags		ShowFlags;
 	FVector			WireframeColor	= FVector(1.0f, 1.0f, 1.0f);
 	bool			bFXAAEnabled	= true;
