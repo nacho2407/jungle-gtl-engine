@@ -361,50 +361,46 @@ float USkeletalMeshComponent::GetPlayLength() const
 
 void USkeletalMeshComponent::SetRootMotionMode(ERootMotionMode InMode)
 {
-    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    if (AnimInstance)
     {
-        SingleNodeInstance->SetRootMotionMode(InMode);
+        AnimInstance->SetRootMotionMode(InMode);
     }
 }
 
 ERootMotionMode USkeletalMeshComponent::GetRootMotionMode() const
 {
-    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
-    return SingleNodeInstance ? SingleNodeInstance->GetRootMotionMode() : ERootMotionMode::Ignore;
+    return AnimInstance ? AnimInstance->GetRootMotionMode() : ERootMotionMode::Ignore;
 }
 
 FRootMotionDelta USkeletalMeshComponent::GetLastExtractedRootMotion() const
 {
-    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
-    return SingleNodeInstance ? SingleNodeInstance->GetLastExtractedRootMotion() : FRootMotionDelta();
+    return AnimInstance ? AnimInstance->GetLastExtractedRootMotion() : FRootMotionDelta();
 }
 
 void USkeletalMeshComponent::SetRootMotionBoneIndex(int32 InBoneIndex)
 {
-    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    if (AnimInstance)
     {
-        SingleNodeInstance->SetRootMotionBoneIndex(InBoneIndex);
+        AnimInstance->SetRootMotionBoneIndex(InBoneIndex);
     }
 }
 
 int32 USkeletalMeshComponent::GetRootMotionBoneIndex() const
 {
-    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
-    return SingleNodeInstance ? SingleNodeInstance->GetRootMotionBoneIndex() : -1;
+    return AnimInstance ? AnimInstance->GetRootMotionBoneIndex() : -1;
 }
 
 void USkeletalMeshComponent::SetRootMotionBoneName(const FName& InBoneName)
 {
-    if (UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance())
+    if (AnimInstance)
     {
-        SingleNodeInstance->SetRootMotionBoneName(InBoneName);
+        AnimInstance->SetRootMotionBoneName(InBoneName);
     }
 }
 
 FName USkeletalMeshComponent::GetRootMotionBoneName() const
 {
-    const UAnimSingleNodeInstance* SingleNodeInstance = GetSingleNodeInstance();
-    return SingleNodeInstance ? SingleNodeInstance->GetRootMotionBoneName() : FName();
+    return AnimInstance ? AnimInstance->GetRootMotionBoneName() : FName();
 }
 
 bool USkeletalMeshComponent::SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName)
@@ -543,6 +539,40 @@ void USkeletalMeshComponent::SetAnimVariableBool(const FName& Name, bool Value)
 bool USkeletalMeshComponent::GetAnimVariableBool(const FName& Name, bool DefaultValue) const
 {
     return AnimInstance ? AnimInstance->GetAnimVariableBoolOrDefault(Name, DefaultValue) : DefaultValue;
+}
+
+void USkeletalMeshComponent::SetAnimTrigger(const FName& Name)
+{
+    if (AnimInstance)
+    {
+        AnimInstance->SetAnimTrigger(Name);
+    }
+}
+
+void USkeletalMeshComponent::ResetAnimTrigger(const FName& Name)
+{
+    if (AnimInstance)
+    {
+        AnimInstance->ResetAnimTrigger(Name);
+    }
+}
+
+bool USkeletalMeshComponent::IsAnimTriggerSet(const FName& Name) const
+{
+    return AnimInstance && AnimInstance->IsAnimTriggerSet(Name);
+}
+
+bool USkeletalMeshComponent::ConsumeAnimTrigger(const FName& Name)
+{
+    return AnimInstance && AnimInstance->ConsumeAnimTrigger(Name);
+}
+
+void USkeletalMeshComponent::ClearAnimTriggers()
+{
+    if (AnimInstance)
+    {
+        AnimInstance->ClearAnimTriggers();
+    }
 }
 
 FName USkeletalMeshComponent::GetCurrentAnimStateName() const

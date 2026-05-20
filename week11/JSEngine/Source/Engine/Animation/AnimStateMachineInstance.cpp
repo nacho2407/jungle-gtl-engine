@@ -31,6 +31,8 @@ const char* ToConditionTypeDebugName(EAnimConditionType Type)
         return "Bool";
     case EAnimConditionType::Float:
         return "Float";
+    case EAnimConditionType::Trigger:
+        return "Trigger";
     case EAnimConditionType::LuaFunction:
         return "LuaFunction";
     case EAnimConditionType::None:
@@ -186,7 +188,9 @@ void UAnimStateMachineInstance::NativeUpdateAnimation(float DeltaSeconds)
         if (const FAnimTransitionDesc* InterruptTransition = FindBestInterruptTransition())
         {
             TArray<FTransform> CurrentBlendedPose;
-            if (EvaluateAnimation(CurrentBlendedPose))
+            USkeletalMeshComponent* Component = GetSkelMeshComponent();
+            const USkeletalMesh* Mesh = Component ? Component->GetSkeletalMesh() : nullptr;
+            if (EvaluateCurrentPose(Mesh, CurrentBlendedPose))
             {
                 StartTransitionFromSnapshot(*InterruptTransition, CurrentBlendedPose);
                 return;
@@ -245,28 +249,13 @@ bool UAnimStateMachineInstance::EvaluateAnimation(TArray<FTransform>& OutLocalPo
         return false;
     }
 
-    if (!ActiveTransition.bActive)
-    {
-        return EvaluateStatePose(CurrentStateIndex, Mesh, OutLocalPose);
-    }
-
-    TArray<FTransform> SourcePose;
-    if (ActiveTransition.bUseSourcePoseSnapshot)
-    {
-        SourcePose = ActiveTransition.SourcePoseSnapshot;
-    }
-    else if (!EvaluateStatePose(ActiveTransition.FromStateIndex, Mesh, SourcePose))
+    if (!EvaluateCurrentPose(Mesh, OutLocalPose))
     {
         return false;
     }
 
-    TArray<FTransform> TargetPose;
-    if (!EvaluateStatePose(ActiveTransition.ToStateIndex, Mesh, TargetPose))
-    {
-        return false;
-    }
-
-    return FAnimationRuntime::BlendLocalPoses(SourcePose, TargetPose, GetTransitionAlpha(), OutLocalPose);
+    ProcessRootMotion(OutLocalPose, ShouldResetRootMotionForCurrentPose());
+    return true;
 }
 
 FName UAnimStateMachineInstance::GetCurrentStateName() const
@@ -320,6 +309,7 @@ void UAnimStateMachineInstance::ResetRuntime()
     ActiveTransition = FAnimTransitionRuntime();
     MissingConditionWarningKeys.clear();
     LuaConditionWarningKeys.clear();
+    ClearRootMotionState();
 }
 
 bool UAnimStateMachineInstance::IsValidStateIndex(int32 StateIndex) const
@@ -512,6 +502,9 @@ void UAnimStateMachineInstance::StartTransition(const FAnimTransitionDesc& Trans
     PreviousStateIndex = CurrentStateIndex;
     TargetStateIndex = ToStateIndex;
 
+    ConsumeTransitionTriggerIfNeeded(Transition);
+    ClearRootMotionState();
+
     // target state는 transition에 진입하는 순간부터 시간 0.0으로 재생
     ClearStateNotifyStates(ToStateIndex, true);
     TargetState->PreviousTime = 0.0f;
@@ -525,6 +518,8 @@ void UAnimStateMachineInstance::StartTransition(const FAnimTransitionDesc& Trans
     ActiveTransition.ElapsedTime = 0.0f;
     ActiveTransition.BlendTime = Transition.BlendTime;
     ActiveTransition.Priority = Transition.Priority;
+    ActiveTransition.bCanInterrupt = Transition.bCanInterrupt;
+    ActiveTransition.bCanBeInterrupted = Transition.bCanBeInterrupted;
 
     if (ActiveTransition.BlendTime <= AnimationTimeEpsilon)
     {
@@ -560,6 +555,9 @@ void UAnimStateMachineInstance::StartTransitionFromSnapshot(
     PreviousStateIndex = ActiveTransition.ToStateIndex;
     TargetStateIndex = ToStateIndex;
 
+    ConsumeTransitionTriggerIfNeeded(Transition);
+    ClearRootMotionState();
+
     // 현재 화면에 보이던 blended pose를 새 transition의 source로 고정
     ClearStateNotifyStates(ToStateIndex, true);
     TargetState->PreviousTime = 0.0f;
@@ -574,6 +572,8 @@ void UAnimStateMachineInstance::StartTransitionFromSnapshot(
     ActiveTransition.ElapsedTime = 0.0f;
     ActiveTransition.BlendTime = Transition.BlendTime;
     ActiveTransition.Priority = Transition.Priority;
+    ActiveTransition.bCanInterrupt = Transition.bCanInterrupt;
+    ActiveTransition.bCanBeInterrupted = Transition.bCanBeInterrupted;
     ActiveTransition.bUseSourcePoseSnapshot = true;
     ActiveTransition.SourcePoseSnapshot = SourcePoseSnapshot;
 
@@ -601,6 +601,7 @@ void UAnimStateMachineInstance::FinishTransition()
 
     TargetStateIndex = -1;
     ActiveTransition = FAnimTransitionRuntime();
+    ClearRootMotionState();
 
     TSet<int32> ActiveStateIndices;
     if (IsValidStateIndex(CurrentStateIndex))
@@ -608,6 +609,52 @@ void UAnimStateMachineInstance::FinishTransition()
         ActiveStateIndices.insert(CurrentStateIndex);
     }
     ClearInactiveNotifyStates(ActiveStateIndices);
+}
+
+bool UAnimStateMachineInstance::EvaluateCurrentPose(const USkeletalMesh* Mesh, TArray<FTransform>& OutPose) const
+{
+    if (!Mesh)
+    {
+        return false;
+    }
+
+    if (!ActiveTransition.bActive)
+    {
+        return EvaluateStatePose(CurrentStateIndex, Mesh, OutPose);
+    }
+
+    TArray<FTransform> SourcePose;
+    if (ActiveTransition.bUseSourcePoseSnapshot)
+    {
+        SourcePose = ActiveTransition.SourcePoseSnapshot;
+    }
+    else if (!EvaluateStatePose(ActiveTransition.FromStateIndex, Mesh, SourcePose))
+    {
+        return false;
+    }
+
+    TArray<FTransform> TargetPose;
+    if (!EvaluateStatePose(ActiveTransition.ToStateIndex, Mesh, TargetPose))
+    {
+        return false;
+    }
+
+    return FAnimationRuntime::BlendLocalPoses(SourcePose, TargetPose, GetTransitionAlpha(), OutPose);
+}
+
+bool UAnimStateMachineInstance::ShouldResetRootMotionForCurrentPose() const
+{
+    if (!ActiveTransition.bActive)
+    {
+        const FAnimStateRuntime* State = GetRuntimeState(CurrentStateIndex);
+        return State && State->bLoopedThisFrame;
+    }
+
+    const FAnimStateRuntime* SourceState = ActiveTransition.bUseSourcePoseSnapshot
+        ? nullptr
+        : GetRuntimeState(ActiveTransition.FromStateIndex);
+    const FAnimStateRuntime* TargetState = GetRuntimeState(ActiveTransition.ToStateIndex);
+    return (SourceState && SourceState->bLoopedThisFrame) || (TargetState && TargetState->bLoopedThisFrame);
 }
 
 bool UAnimStateMachineInstance::EvaluateStatePose(
@@ -705,7 +752,9 @@ const FAnimTransitionDesc* UAnimStateMachineInstance::FindBestInterruptTransitio
 {
     SCOPE_STAT("Anim.StateMachine.Interrupt");
 
-    if (!ActiveTransition.bActive || !IsValidStateIndex(ActiveTransition.ToStateIndex))
+    if (!ActiveTransition.bActive ||
+        !ActiveTransition.bCanBeInterrupted ||
+        !IsValidStateIndex(ActiveTransition.ToStateIndex))
     {
         return nullptr;
     }
@@ -730,7 +779,8 @@ const FAnimTransitionDesc* UAnimStateMachineInstance::FindBestInterruptTransitio
             continue;
         }
 
-        if (Transition->Priority <= ActiveTransition.Priority ||
+        if (!Transition->bCanInterrupt ||
+            Transition->Priority <= ActiveTransition.Priority ||
             !CanUseTransitionTarget(*Transition, BlockedStateIndex) ||
             !EvaluateTransitionCondition(*Transition))
         {
@@ -748,6 +798,14 @@ bool UAnimStateMachineInstance::EvaluateTransitionCondition(const FAnimTransitio
     SCOPE_STAT("Anim.StateMachine.Condition");
 
     return EvaluateStructuredCondition(Transition.Condition, Transition);
+}
+
+void UAnimStateMachineInstance::ConsumeTransitionTriggerIfNeeded(const FAnimTransitionDesc& Transition)
+{
+    if (Transition.Condition.Type == EAnimConditionType::Trigger)
+    {
+        ConsumeAnimTrigger(Transition.Condition.VariableName);
+    }
 }
 
 bool UAnimStateMachineInstance::EvaluateStructuredCondition(
@@ -780,6 +838,8 @@ bool UAnimStateMachineInstance::EvaluateStructuredCondition(
 
         return CompareFloat(CurrentValue, Condition.Operator, Condition.FloatValue);
     }
+    case EAnimConditionType::Trigger:
+        return IsAnimTriggerSet(Condition.VariableName);
     case EAnimConditionType::LuaFunction:
         return EvaluateLuaCondition(Transition, Condition);
     default:

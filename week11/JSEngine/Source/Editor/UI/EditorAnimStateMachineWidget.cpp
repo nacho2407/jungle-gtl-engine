@@ -94,6 +94,8 @@ namespace
             return "Bool";
         case EAnimConditionType::Float:
             return "Float";
+        case EAnimConditionType::Trigger:
+            return "Trigger";
         case EAnimConditionType::LuaFunction:
             return "Lua Function";
         case EAnimConditionType::None:
@@ -858,6 +860,7 @@ void FEditorAnimStateMachineWidget::DrawTransitionInspector(FAnimTransitionDesc&
         EAnimConditionType::None,
         EAnimConditionType::Bool,
         EAnimConditionType::Float,
+        EAnimConditionType::Trigger,
         EAnimConditionType::LuaFunction,
     };
     if (ImGui::BeginCombo("Type", GetConditionTypeLabel(Transition.Condition.Type)))
@@ -923,6 +926,13 @@ void FEditorAnimStateMachineWidget::DrawTransitionInspector(FAnimTransitionDesc&
         }
 
         if (ImGui::DragFloat("Value", &Transition.Condition.FloatValue, 0.01f))
+        {
+            MarkDirty();
+        }
+    }
+    else if (Transition.Condition.Type == EAnimConditionType::Trigger)
+    {
+        if (InputFName("Variable", Transition.Condition.VariableName))
         {
             MarkDirty();
         }

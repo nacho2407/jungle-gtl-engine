@@ -436,6 +436,12 @@ void FScriptManager::BindStaticMeshTypes()
             { Self.SetAnimVariableBool(FName(Name), Value); });
     LUA_SET(GetAnimVariableBool, [](USkeletalMeshComponent& Self, const FString& Name, sol::optional<bool> DefaultValue)
             { return Self.GetAnimVariableBool(FName(Name), DefaultValue.value_or(false)); });
+    LUA_SET(SetAnimTrigger, [](USkeletalMeshComponent& Self, const FString& Name)
+            { Self.SetAnimTrigger(FName(Name)); });
+    LUA_SET(ResetAnimTrigger, [](USkeletalMeshComponent& Self, const FString& Name)
+            { Self.ResetAnimTrigger(FName(Name)); });
+    LUA_SET(IsAnimTriggerSet, [](USkeletalMeshComponent& Self, const FString& Name)
+            { return Self.IsAnimTriggerSet(FName(Name)); });
     LUA_SET(GetCurrentAnimStateName, [](USkeletalMeshComponent& Self)
             { return Self.GetCurrentAnimStateName().ToString(); });
     LUA_SET(GetPreviousAnimStateName, [](USkeletalMeshComponent& Self)

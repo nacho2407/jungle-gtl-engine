@@ -50,6 +50,8 @@ private:
         float ElapsedTime = 0.0f;
         float BlendTime = 0.0f;
         int32 Priority = 0;
+        bool bCanInterrupt = true;
+        bool bCanBeInterrupted = true;
         bool bUseSourcePoseSnapshot = false;
         TArray<FTransform> SourcePoseSnapshot;
     };
@@ -80,6 +82,8 @@ private:
         const FAnimTransitionDesc& Transition,
         const TArray<FTransform>& SourcePoseSnapshot);
     void FinishTransition();
+    bool EvaluateCurrentPose(const USkeletalMesh* Mesh, TArray<FTransform>& OutPose) const;
+    bool ShouldResetRootMotionForCurrentPose() const;
     bool EvaluateStatePose(int32 StateIndex, const USkeletalMesh* Mesh, TArray<FTransform>& OutPose) const;
     bool IsAnyTransition(const FAnimTransitionDesc& Transition) const;
     bool CanUseTransitionTarget(const FAnimTransitionDesc& Transition, int32 BlockedStateIndex) const;
@@ -87,6 +91,7 @@ private:
     const FAnimTransitionDesc* FindBestAnyTransition(int32 BlockedStateIndex) const;
     const FAnimTransitionDesc* FindBestInterruptTransition() const;
     bool EvaluateTransitionCondition(const FAnimTransitionDesc& Transition) const;
+    void ConsumeTransitionTriggerIfNeeded(const FAnimTransitionDesc& Transition);
     bool EvaluateStructuredCondition(
         const FAnimTransitionConditionDesc& Condition,
         const FAnimTransitionDesc& Transition) const;
