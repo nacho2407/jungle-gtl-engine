@@ -3,7 +3,7 @@
 #include "Engine/Runtime/Engine.h"
 
 
-#include "Source/Game/GameEngine.generated.h"
+#include "Source/Engine/Runtime/GameEngine.generated.h"
 
 UCLASS()
 class UGameEngine : public UEngine

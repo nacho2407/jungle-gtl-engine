@@ -1,11 +1,9 @@
-#include "Game/GameEngine.h"
+#include "Engine/Runtime/GameEngine.h"
 
-#include "Game/GameRenderPipeline.h"
-#include "Game/GameMode/GameModeCarGame.h"
+#include "Engine/Runtime/GameRenderPipeline.h"
 #include "Engine/Runtime/EngineInitHooks.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Lua/LuaScriptManager.h"
-#include "Mesh/MeshManager.h"
 #include "Profiling/Timer.h"
 #include <windows.h>  // VK_ESCAPE
 #include "Viewport/Viewport.h"
@@ -16,44 +14,12 @@
 #include "Object/UClass.h"
 #include "Core/ProjectSettings.h"
 #include "Core/Log.h"
-#include "Lua/GameLuaBindings.h"
-
-#include <chrono>
-
-namespace
-{
-	// 첫 SpawnActor<APoliceCar> 시 19MB OBJ 를 동기 로딩하면서 프레임 hitch 가 생겨,
-	// 그 사이 PhysX 가 큰 dt 한 번에 적분 → 차량이 지면을 뚫는 가설 검증용 prewarm.
-	// LoadObjStaticMesh 는 path 별 캐시를 가지므로, 여기서 미리 한 번 로드해 두면
-	// 런타임 SpawnActor 경로의 mesh 로딩이 캐시 hit 으로 즉시 반환된다.
-	void PreloadGameMeshes(ID3D11Device* Device)
-	{
-		if (!Device) return;
-
-		const char* MeshPaths[] = {
-			"Data/Map/PoliceCar/PoliceCar.obj",  // 19MB — 첫 spawn 시 가장 큰 hitch 의심
-			"Data/Map/Person/model_mesh.obj",    // WalkingPerson
-			"Data/Truck/TruckBody.obj",
-			"Data/Truck/TruckHandle.obj",
-			"Data/Truck/TruckTire.obj",
-		};
-
-		for (const char* Path : MeshPaths)
-		{
-			const auto T0 = std::chrono::steady_clock::now();
-			UStaticMesh* Mesh = FMeshManager::LoadStaticMesh(std::string(Path), Device);
-			const auto T1 = std::chrono::steady_clock::now();
-			const double Ms = std::chrono::duration<double, std::milli>(T1 - T0).count();
-			UE_LOG("[Preload] %s -> %s (%.1f ms)", Path, Mesh ? "OK" : "FAILED", Ms);
-		}
-	}
-}
 
 void UGameEngine::Init(FWindowsWindow* InWindow)
 {
 	UEngine::Init(InWindow);
 
-	// Game 모듈 .cpp 들이 static initializer 로 등록해 둔 init 함수들 일괄 실행.
+	// 모듈 .cpp 들이 static initializer 로 등록해 둔 init 함수들 일괄 실행.
 	// (Lua 바인딩, ActorPlacement 등록 등) — EditorEngine::Init 와 동일 경로.
 	FEngineInitHooks::RunAll();
 
@@ -72,10 +38,6 @@ void UGameEngine::Init(FWindowsWindow* InWindow)
 	GameViewportClient->SetCursorClipRect(ViewportRect);
 	GameViewportClient->BeginGameSession(StandaloneViewport);
 	GameViewportClient->SetInputPossessed(true);
-
-	// 런타임 동적 spawn 액터 (APoliceCar 등) 의 mesh 를 미리 로드해 첫 spawn 시 frame
-	// hitch 를 제거. LoadStartLevel 전에 호출 — 인트로 화면 프레임에는 영향 미미.
-	PreloadGameMeshes(Renderer.GetFD3DDevice().GetDevice());
 
 	LoadStartLevel();
 
@@ -132,7 +94,7 @@ void UGameEngine::OnWindowResized(uint32 Width, uint32 Height)
 	if (StandaloneViewport)
 	{
 		StandaloneViewport->RequestResize(Width, Height);
-	
+
 		FRect ViewportRect{ 0, 0, static_cast<float>(Width), static_cast<float>(Height) };
 		GameViewportClient->SetCursorClipRect(ViewportRect);
 	}
@@ -198,8 +160,7 @@ void UGameEngine::ProcessPendingTransition()
 	DestroyWorldContext(OldHandle);
 
 	// require 캐시된 lua 모듈 (CoroutineManager / ObjRegistry) 이 보유한 죽은-월드 참조 정리.
-	// 안 하면 옛 WalkingPerson 의 Wait(30) 코루틴이 새 월드 Tick 에서 만료되며 freed actor
-	// 를 deref → FQuat::ToRotator 크래시.
+	// 안 하면 옛 actor 의 Wait(N) 코루틴이 새 월드 Tick 에서 만료되며 freed actor 를 deref → 크래시.
 	FLuaScriptManager::FireWorldReset();
 
 	// 새 scene 로드 — World/Level/PhysicsScene 새로 만들고 WorldList push + SetActiveWorld 까지.
@@ -220,8 +181,7 @@ void UGameEngine::ProcessPendingTransition()
 
 	// Timer 리셋 — destroy + load + BeginPlay 가 한 frame 안에서 통째로 일어나면 다음
 	// Tick 의 dt 가 그 로드 시간만큼 부풀어 PhysX 가 거대한 step (예: 2~3 초) 을 한 번에
-	// integrate → 차량이 바닥을 뚫고 추락 등 tunneling 발생. LastTime 을 지금으로 맞춰
-	// 다음 frame 의 dt 를 정상 frame 간격으로 회귀시킨다.
+	// integrate → tunneling 발생. LastTime 을 지금으로 맞춰 다음 frame 의 dt 를 정상 회귀.
 	if (FTimer* T = GetTimer())
 	{
 		T->Initialize();
@@ -251,8 +211,7 @@ bool UGameEngine::LoadSceneFromPath(const FString& InScenePath)
 
 	// GameMode 주입 — World::BeginPlay 가 이걸 보고 GameMode/GameState/PC 를 spawn 한다.
 	// 우선순위: World->WorldSettings.GameModeClassName (scene 파일이 지정) →
-	// ProjectSettings.GameModeClassName → AGameModeCarGame fallback. Scene 별로 다른
-	// GameMode 적용 가능 (Intro.Scene 의 AGameModeIntro vs Map.Scene 의 AGameModeCarGame).
+	// ProjectSettings.GameModeClassName → AGameModeBase fallback (game-specific 기본 클래스 없음).
 	UClass* GMClass = nullptr;
 	const FString& SceneGMName = LoadContext.World->GetWorldSettings().GameModeClassName;
 	if (!SceneGMName.empty())
@@ -270,7 +229,7 @@ bool UGameEngine::LoadSceneFromPath(const FString& InScenePath)
 	}
 	if (!GMClass)
 	{
-		GMClass = AGameModeBase::ResolveClassFromProjectSettings(AGameModeCarGame::StaticClass());
+		GMClass = AGameModeBase::ResolveClassFromProjectSettings(AGameModeBase::StaticClass());
 	}
 	LoadContext.World->SetGameModeClass(GMClass);
 
