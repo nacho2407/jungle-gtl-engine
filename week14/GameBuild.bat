@@ -47,11 +47,10 @@ echo [3/3] Copying files...
 copy "%BUILD_OUTPUT%\KraftonEngine.exe" "%GAME_BIN%\" >nul
 xcopy "%BUILD_OUTPUT%\*.dll" "%GAME_BIN%\" /y /q >nul
 
-:: 리소스는 루트에 (engine 의 FPaths 가 CWD 기준으로 Asset/Shaders/Data/Settings 를 찾음).
+:: 리소스는 루트에 (engine 의 FPaths 가 CWD 기준으로 Shaders/Content/Settings 를 찾음).
 xcopy "%PROJECT_DIR%\Shaders" "%GAME_DIR%\Shaders\" /e /i /q >nul
-xcopy "%PROJECT_DIR%\Asset" "%GAME_DIR%\Asset\" /e /i /q >nul
+xcopy "%PROJECT_DIR%\Content" "%GAME_DIR%\Content\" /e /i /q >nul
 xcopy "%PROJECT_DIR%\Settings" "%GAME_DIR%\Settings\" /e /i /q >nul
-xcopy "%PROJECT_DIR%\Data" "%GAME_DIR%\Data\" /e /i /q >nul
 
 :: 런처 — 더블클릭으로 게임 실행. CWD 를 GameBuild 루트로 맞춰서 FPaths 가 리소스
 :: 폴더를 정확히 찾게 하고, exe 는 Bin\ 서브폴더에서 (옆의 DLL 들과 함께) 실행.
@@ -71,8 +70,7 @@ echo    Play.bat        (실행)
 echo    Bin/
 echo      KraftonEngine.exe + *.dll
 echo    Shaders/
-echo    Asset/
-echo    Data/
+echo    Content/
 echo    Settings/
 echo.
 pause

@@ -95,7 +95,10 @@ FString FSkeletonManager::GetSkeletonPackagePath(const FString& SourcePath)
 {
     std::filesystem::path ProjectRelative = std::filesystem::path(FPaths::ToWide(FPaths::MakeProjectRelative(SourcePath))).lexically_normal();
 
-    std::filesystem::path AssetPath = std::filesystem::path(L"Content") / ProjectRelative;
+    // SourcePath 가 이미 Content/ 하위면 그대로 — 그렇지 않으면 (구 Data/ root 호환) prefix.
+    std::filesystem::path AssetPath = (!ProjectRelative.empty() && ProjectRelative.begin()->wstring() == L"Content")
+        ? ProjectRelative
+        : (std::filesystem::path(L"Content") / ProjectRelative);
     AssetPath.replace_filename(AssetPath.stem().wstring() + L"_Skeleton.uasset");
 
     std::filesystem::path FullAssetPath = std::filesystem::path(FPaths::RootDir()) / AssetPath;
