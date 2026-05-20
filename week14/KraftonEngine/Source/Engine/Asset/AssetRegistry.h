@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Animation/SkeletonTypes.h"
+#include "Animation/Skeleton/SkeletonTypes.h"
 
 class USkeleton;
 class USkeletalMesh;

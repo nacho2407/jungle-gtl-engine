@@ -1,7 +1,7 @@
 #include "SkeletalMesh.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
-#include "Animation/Skeleton.h"
+#include "Animation/Skeleton/Skeleton.h"
 
 void USkeletalMesh::Serialize(FArchive& Ar)
 {

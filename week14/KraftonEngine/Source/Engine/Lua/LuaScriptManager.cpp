@@ -1,4 +1,4 @@
-﻿#include "LuaScriptManager.h"
+#include "LuaScriptManager.h"
 
 #include "Core/Log.h"
 #include "Core/Notification.h"
@@ -6,7 +6,7 @@
 #include "Component/ActionComponent.h"
 #include "Component/LuaScriptComponent.h"
 #include "Component/InputComponent.h"
-#include "Animation/LuaAnimInstance.h"
+#include "Animation/Instance/LuaAnimInstance.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"

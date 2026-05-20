@@ -1,4 +1,4 @@
-﻿#include "MeshEditorWidget.h"
+#include "MeshEditorWidget.h"
 
 #ifdef GetCurrentTime
 #undef GetCurrentTime
@@ -16,12 +16,12 @@
 #include "UI/Toolbar/ViewportToolbar.h"
 #include "Slate/SlateApplication.h"
 #include "Render/Shader/ShaderManager.h"
-#include "Animation/AnimSequence.h"
-#include "Animation/AnimDataModel.h"
-#include "Animation/AnimMontage.h"
+#include "Animation/Sequence/AnimSequence.h"
+#include "Animation/Montage/AnimMontage.h"
 #include "Animation/AnimInstance.h"
-#include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/Instance/AnimSingleNodeInstance.h"
 #include "Animation/AnimationManager.h"
+#include "Animation/Sequence/AnimDataModel.h"
 #include "Asset/AssetRegistry.h"
 #include "UI/Asset/AnimationTransportBar.h"
 #include "UI/Asset/AnimationTimelinePanel.h"
@@ -230,7 +230,7 @@ void FMeshEditorWidget::Open(UObject* Object)
 	LightComp->PushToScene();
 
 	AStaticMeshActor* FloorActor = WorldContext.World->SpawnActor<AStaticMeshActor>();
-	FloorActor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
+	FloorActor->InitDefaultComponents("Content/Data/BasicShape/Cube.OBJ");
 	FloorActor->SetActorLocation(FVector(0.0f, 0.0f, -0.05f));
 	FloorActor->SetActorScale(FVector(10.0f, 10.0f, 0.02f));
 

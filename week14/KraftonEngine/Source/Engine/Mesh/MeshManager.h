@@ -4,7 +4,7 @@
 #include "Object/ObjectIterator.h"
 #include "Render/Types/RenderTypes.h"
 #include "Asset/AssetRegistry.h"
-#include "Animation/SkeletonTypes.h"
+#include "Animation/Skeleton/SkeletonTypes.h"
 
 #include <map>
 #include <string>

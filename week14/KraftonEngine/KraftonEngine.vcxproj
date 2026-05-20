@@ -198,7 +198,7 @@
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -221,7 +221,7 @@
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -250,7 +250,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -281,7 +281,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">
@@ -304,7 +304,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|x64'">
@@ -335,7 +335,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
@@ -366,7 +366,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
@@ -397,7 +397,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -450,37 +450,37 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\Viewport\MeshEditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\StaticMeshEditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\ViewportCameraTransform.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimDataModel.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimGraphAsset.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimGraphCompiler.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimGraphInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimGraphManager.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimMontage.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimMontageInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimNotify.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimNotifyEvent.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimNotifyState.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimNotifyState_LogDuration.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimNotify_LogMessage.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimNotify_PlaySound.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimSequenceBase.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimState.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimationManager.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimationRuntime.cpp" />
-    <ClCompile Include="Source\Engine\Animation\CharacterAnimGraphInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\CharacterAnimInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\LuaAnimInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\Skeleton.cpp" />
-    <ClCompile Include="Source\Engine\Animation\SkeletonManager.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Graph\AnimGraphAsset.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Graph\AnimGraphCompiler.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Graph\AnimGraphInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Graph\AnimGraphManager.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Instance\AnimSingleNodeInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Instance\CharacterAnimGraphInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Instance\CharacterAnimInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Instance\LuaAnimInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Montage\AnimMontage.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Montage\AnimMontageInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_BlendListByEnum.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_LayeredBlendPerBone.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_Root.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_SequencePlayer.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_Slot.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_StateMachine.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotify.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotifyEvent.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotifyState.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotifyState_LogDuration.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotify_LogMessage.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotify_PlaySound.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Sequence\AnimDataModel.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Sequence\AnimSequence.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Sequence\AnimSequenceBase.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Skeleton\Skeleton.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Skeleton\SkeletonManager.cpp" />
+    <ClCompile Include="Source\Engine\Animation\StateMachine\AnimState.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetPackage.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetRegistry.cpp" />
     <ClCompile Include="Source\Engine\Audio\AudioManager.cpp" />
@@ -689,6 +689,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />
     <ClCompile Include="Source\Engine\Runtime\EngineInitHooks.cpp" />
     <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\GameEngine.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\GameRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
@@ -700,23 +702,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Viewport\Viewport.cpp" />
     <ClCompile Include="Source\Engine\Viewport\ViewportClient.cpp" />
     <ClCompile Include="Source\Game\GameActorPlacements.cpp" />
-    <ClCompile Include="Source\Game\GameEngine.cpp" />
-    <ClCompile Include="Source\Game\GameRenderPipeline.cpp" />
-    <ClCompile Include="Source\Game\GameScoreboard.cpp" />
-    <ClCompile Include="Source\Game\Component\CarDirtComponent.cpp" />
-    <ClCompile Include="Source\Game\Component\CarGasComponent.cpp" />
-    <ClCompile Include="Source\Game\Component\CompletionOutlineComponent.cpp" />
-    <ClCompile Include="Source\Game\Component\DirtComponent.cpp" />
-    <ClCompile Include="Source\Game\Component\Movement\CarMovementComponent.cpp" />
-    <ClCompile Include="Source\Game\GameMode\GameModeCarGame.cpp" />
-    <ClCompile Include="Source\Game\GameMode\GameModeIntro.cpp" />
-    <ClCompile Include="Source\Game\GameState\GameStateCarGame.cpp" />
     <ClCompile Include="Source\Game\Lua\GameLuaBindings.cpp" />
-    <ClCompile Include="Source\Game\Meteor\Meteor.cpp" />
-    <ClCompile Include="Source\Game\Pawn\CarPawn.cpp" />
-    <ClCompile Include="Source\Game\Pawn\PoliceCar.cpp" />
-    <ClCompile Include="Source\Game\Pawn\WalkingPersonActor.cpp" />
-    <ClCompile Include="Source\Game\PlayerController\PlayerControllerCarGame.cpp" />
     <ClCompile Include="Source\ObjViewer\ObjViewerEngine.cpp" />
     <ClCompile Include="Source\ObjViewer\ObjViewerPanel.cpp" />
     <ClCompile Include="Source\ObjViewer\ObjViewerRenderPipeline.cpp" />
@@ -796,38 +782,23 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\Viewport\MeshEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\StaticMeshEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportCameraTransform.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimDataModel.h" />
     <ClInclude Include="Source\Engine\Animation\AnimExtractContext.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimGraphAsset.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimGraphCompiler.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimGraphInstance.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimGraphManager.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimGraphTypes.h" />
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimMontage.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimMontageInstance.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimNotify.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimNotifyEvent.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimNotifyState.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimNotifyState_LogDuration.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimNotify_LogMessage.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimNotify_PlaySound.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimSequence.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimSequenceBase.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimState.h" />
     <ClInclude Include="Source\Engine\Animation\AnimationManager.h" />
     <ClInclude Include="Source\Engine\Animation\AnimationMode.h" />
     <ClInclude Include="Source\Engine\Animation\AnimationRuntime.h" />
-    <ClInclude Include="Source\Engine\Animation\BoneAnimationTrack.h" />
-    <ClInclude Include="Source\Engine\Animation\CharacterAnimGraphInstance.h" />
-    <ClInclude Include="Source\Engine\Animation\CharacterAnimInstance.h" />
-    <ClInclude Include="Source\Engine\Animation\LuaAnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\PoseContext.h" />
-    <ClInclude Include="Source\Engine\Animation\RawAnimSequenceTrack.h" />
-    <ClInclude Include="Source\Engine\Animation\Skeleton.h" />
-    <ClInclude Include="Source\Engine\Animation\SkeletonManager.h" />
-    <ClInclude Include="Source\Engine\Animation\SkeletonTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphAsset.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphCompiler.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphManager.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\Instance\AnimSingleNodeInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Instance\CharacterAnimGraphInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Instance\CharacterAnimInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Instance\LuaAnimInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Montage\AnimMontage.h" />
+    <ClInclude Include="Source\Engine\Animation\Montage\AnimMontageInstance.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNodeContexts.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Base.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_BlendListByEnum.h" />
@@ -837,6 +808,21 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_SequencePlayer.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Slot.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_StateMachine.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotify.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotifyEvent.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotifyState.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotifyState_LogDuration.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotify_LogMessage.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotify_PlaySound.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\AnimDataModel.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\AnimSequence.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\AnimSequenceBase.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\BoneAnimationTrack.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\RawAnimSequenceTrack.h" />
+    <ClInclude Include="Source\Engine\Animation\Skeleton\Skeleton.h" />
+    <ClInclude Include="Source\Engine\Animation\Skeleton\SkeletonManager.h" />
+    <ClInclude Include="Source\Engine\Animation\Skeleton\SkeletonTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\StateMachine\AnimState.h" />
     <ClInclude Include="Source\Engine\Asset\AssetPackage.h" />
     <ClInclude Include="Source\Engine\Asset\AssetRegistry.h" />
     <ClInclude Include="Source\Engine\Audio\AudioManager.h" />
@@ -1093,6 +1079,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Runtime\Engine.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineInitHooks.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
+    <ClInclude Include="Source\Engine\Runtime\GameEngine.h" />
+    <ClInclude Include="Source\Engine\Runtime\GameRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Runtime\Launch.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowsApplication.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h" />
@@ -1109,23 +1097,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Viewport\Viewport.h" />
     <ClInclude Include="Source\Engine\Viewport\ViewportClient.h" />
     <ClInclude Include="Source\Game\GameActorPlacements.h" />
-    <ClInclude Include="Source\Game\GameEngine.h" />
-    <ClInclude Include="Source\Game\GameRenderPipeline.h" />
-    <ClInclude Include="Source\Game\GameScoreboard.h" />
-    <ClInclude Include="Source\Game\Component\CarDirtComponent.h" />
-    <ClInclude Include="Source\Game\Component\CarGasComponent.h" />
-    <ClInclude Include="Source\Game\Component\CompletionOutlineComponent.h" />
-    <ClInclude Include="Source\Game\Component\DirtComponent.h" />
-    <ClInclude Include="Source\Game\Component\Movement\CarMovementComponent.h" />
-    <ClInclude Include="Source\Game\GameMode\GameModeCarGame.h" />
-    <ClInclude Include="Source\Game\GameMode\GameModeIntro.h" />
-    <ClInclude Include="Source\Game\GameState\GameStateCarGame.h" />
     <ClInclude Include="Source\Game\Lua\GameLuaBindings.h" />
-    <ClInclude Include="Source\Game\Meteor\Meteor.h" />
-    <ClInclude Include="Source\Game\Pawn\CarPawn.h" />
-    <ClInclude Include="Source\Game\Pawn\PoliceCar.h" />
-    <ClInclude Include="Source\Game\Pawn\WalkingPersonActor.h" />
-    <ClInclude Include="Source\Game\PlayerController\PlayerControllerCarGame.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerEngine.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerPanel.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerRenderPipeline.h" />
@@ -1988,7 +1960,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <PythonExe Condition="'$(PythonExe)'==''">python</PythonExe>
   </PropertyGroup>
   <Target Name="GenerateReflectionHeaders" BeforeTargets="ClCompile">
-    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(MSBuildProjectDirectory)\Tools\GenerateHeaders.py&quot; --root &quot;$(MSBuildProjectDirectory)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
+    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(MSBuildProjectDirectory)\..\Scripts\GenerateHeaders.py&quot; --root &quot;$(MSBuildProjectDirectory)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
   </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

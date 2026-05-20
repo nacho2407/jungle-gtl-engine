@@ -1,8 +1,8 @@
 #include "Editor/UI/Asset/AnimGraphEditorWidget.h"
 
-#include "Animation/AnimGraphAsset.h"
-#include "Animation/AnimGraphManager.h"
-#include "Animation/AnimGraphTypes.h"
+#include "Animation/Graph/AnimGraphAsset.h"
+#include "Animation/Graph/AnimGraphManager.h"
+#include "Animation/Graph/AnimGraphTypes.h"
 #include "Animation/AnimInstance.h"
 #include "Asset/AssetRegistry.h"
 #include "Core/PropertyTypes.h"

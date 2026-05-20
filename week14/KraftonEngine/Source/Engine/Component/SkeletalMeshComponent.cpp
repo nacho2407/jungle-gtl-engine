@@ -3,9 +3,9 @@
 
 #include "Animation/AnimationManager.h"
 #include "Animation/AnimInstance.h"
-#include "Animation/AnimSequence.h"
-#include "Animation/AnimSequenceBase.h"
-#include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/Sequence/AnimSequence.h"
+#include "Animation/Sequence/AnimSequenceBase.h"
+#include "Animation/Instance/AnimSingleNodeInstance.h"
 #include "Animation/PoseContext.h"
 #include "Asset/AssetRegistry.h"
 #include "Core/Log.h"

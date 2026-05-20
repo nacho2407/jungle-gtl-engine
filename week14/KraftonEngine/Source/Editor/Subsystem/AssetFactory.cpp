@@ -1,7 +1,7 @@
-﻿#include "Editor/Subsystem/AssetFactory.h"
+#include "Editor/Subsystem/AssetFactory.h"
 
-#include "Animation/AnimGraphAsset.h"
-#include "Animation/AnimGraphManager.h"
+#include "Animation/Graph/AnimGraphAsset.h"
+#include "Animation/Graph/AnimGraphManager.h"
 #include "CameraShake/CameraShakeAsset.h"
 #include "CameraShake/CameraShakeManager.h"
 #include "FloatCurve/FloatCurveManager.h"

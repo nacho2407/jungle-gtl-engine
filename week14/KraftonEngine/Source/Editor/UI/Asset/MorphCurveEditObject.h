@@ -2,7 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Object/Object.h"
-#include "Animation/RawAnimSequenceTrack.h"
+#include "Animation/Sequence/RawAnimSequenceTrack.h"
 
 #include <algorithm>
 #include <cstring>

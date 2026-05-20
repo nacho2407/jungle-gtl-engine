@@ -1,7 +1,7 @@
 #include "Editor/UI/FbxImportOptionsDialog.h"
 
 #include "Animation/AnimationManager.h"
-#include "Animation/SkeletonManager.h"
+#include "Animation/Skeleton/SkeletonManager.h"
 #include "Core/Log.h"
 #include "Mesh/FbxImporter.h"
 #include "Mesh/MeshManager.h"
