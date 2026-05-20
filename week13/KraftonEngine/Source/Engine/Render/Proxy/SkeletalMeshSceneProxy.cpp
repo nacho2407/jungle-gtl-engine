@@ -3,8 +3,8 @@
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Render/Command/DrawCommand.h"
 #include "Runtime/Engine.h"
-#include "Profiling/Timer.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Time/Timer.h"
+#include "Profiling/Stats/Stats.h"
 
 #include <algorithm>
 #include <cstring>

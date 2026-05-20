@@ -5,7 +5,7 @@
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Stats/Stats.h"
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Resource/ResourceManager.h"
 #include "Mesh/MeshManager.h"

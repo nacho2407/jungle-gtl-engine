@@ -259,6 +259,12 @@
     <Filter Include="Source\Engine\Profiling">
       <UniqueIdentifier>{5383532c-a400-5456-f688-3437e29a15f3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Profiling\Stats">
+      <UniqueIdentifier>{4c092137-2c3b-6bbe-8e84-145d97b15ce9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Profiling\Time">
+      <UniqueIdentifier>{a59230fc-77ae-9192-8494-4e2c60e764e8}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render">
       <UniqueIdentifier>{16ec6128-166d-ab0f-2135-c0c61f984faf}</UniqueIdentifier>
     </Filter>
@@ -1256,20 +1262,20 @@
     <ClCompile Include="Source\Engine\Profiling\GPUProfiler.cpp">
       <Filter>Source\Engine\Profiling</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Profiling\MemoryStats.cpp">
-      <Filter>Source\Engine\Profiling</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Profiling\ShadowStats.cpp">
-      <Filter>Source\Engine\Profiling</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Profiling\StartupProfiler.cpp">
       <Filter>Source\Engine\Profiling</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Profiling\Stats.cpp">
-      <Filter>Source\Engine\Profiling</Filter>
+    <ClCompile Include="Source\Engine\Profiling\Stats\MemoryStats.cpp">
+      <Filter>Source\Engine\Profiling\Stats</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Profiling\Timer.cpp">
-      <Filter>Source\Engine\Profiling</Filter>
+    <ClCompile Include="Source\Engine\Profiling\Stats\ShadowStats.cpp">
+      <Filter>Source\Engine\Profiling\Stats</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Profiling\Stats\Stats.cpp">
+      <Filter>Source\Engine\Profiling\Stats</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Profiling\Time\Timer.cpp">
+      <Filter>Source\Engine\Profiling\Time</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Command\DrawCommandBuilder.cpp">
       <Filter>Source\Engine\Render\Command</Filter>
@@ -2369,23 +2375,23 @@
     <ClInclude Include="Source\Engine\Profiling\GPUProfiler.h">
       <Filter>Source\Engine\Profiling</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Profiling\MemoryStats.h">
-      <Filter>Source\Engine\Profiling</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Profiling\PlatformTime.h">
-      <Filter>Source\Engine\Profiling</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Profiling\ShadowStats.h">
-      <Filter>Source\Engine\Profiling</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\StartupProfiler.h">
       <Filter>Source\Engine\Profiling</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Profiling\Stats.h">
-      <Filter>Source\Engine\Profiling</Filter>
+    <ClInclude Include="Source\Engine\Profiling\Stats\MemoryStats.h">
+      <Filter>Source\Engine\Profiling\Stats</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Profiling\Timer.h">
-      <Filter>Source\Engine\Profiling</Filter>
+    <ClInclude Include="Source\Engine\Profiling\Stats\ShadowStats.h">
+      <Filter>Source\Engine\Profiling\Stats</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Profiling\Stats\Stats.h">
+      <Filter>Source\Engine\Profiling\Stats</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Profiling\Time\PlatformTime.h">
+      <Filter>Source\Engine\Profiling\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Profiling\Time\Timer.h">
+      <Filter>Source\Engine\Profiling\Time</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Command\DrawCommand.h">
       <Filter>Source\Engine\Render\Command</Filter>

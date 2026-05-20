@@ -5,7 +5,7 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Slate/SlateApplication.h"
 #include "Engine/Input/InputSystem.h"
-#include "Engine/Profiling/PlatformTime.h"
+#include "Engine/Profiling/Time/PlatformTime.h"
 #include "Engine/Platform/WindowsWindow.h"
 
 #include "Render/Types/MinimalViewInfo.h"

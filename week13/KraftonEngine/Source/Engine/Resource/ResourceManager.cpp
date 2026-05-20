@@ -8,7 +8,7 @@
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
 #include "Core/Logging/Log.h"
-#include "Profiling/MemoryStats.h"
+#include "Profiling/Stats/MemoryStats.h"
 #include "Engine/Texture/Texture2D.h"
 
 

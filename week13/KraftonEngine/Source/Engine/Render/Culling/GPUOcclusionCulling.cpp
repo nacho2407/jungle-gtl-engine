@@ -1,7 +1,7 @@
-﻿#include "GPUOcclusionCulling.h"
+#include "GPUOcclusionCulling.h"
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Stats/Stats.h"
 
 #include <cstring>
 

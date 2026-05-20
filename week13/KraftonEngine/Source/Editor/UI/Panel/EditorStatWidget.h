@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Editor/UI/EditorWidget.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Stats/Stats.h"
 
 class FEditorStatWidget : public FEditorWidget
 {

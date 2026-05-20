@@ -3,7 +3,7 @@
 #include "Editor/EditorEngine.h"
 
 #include "ImGui/imgui.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Stats/Stats.h"
 
 void FEditorSceneWidget::Initialize(UEditorEngine* InEditorEngine)
 {

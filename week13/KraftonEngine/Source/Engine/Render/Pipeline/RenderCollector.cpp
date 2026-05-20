@@ -3,7 +3,7 @@
 #include "Component/ActorComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Stats/Stats.h"
 #include "Collision/Math/ConvexVolume.h"
 #include "Render/Culling/GPUOcclusionCulling.h"
 #include "Debug/DebugDrawQueue.h"

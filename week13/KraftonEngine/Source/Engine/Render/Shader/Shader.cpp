@@ -1,7 +1,7 @@
 #include "Shader.h"
 #include "ShaderCache.h"
 #include "ShaderInclude.h"
-#include "Profiling/MemoryStats.h"
+#include "Profiling/Stats/MemoryStats.h"
 #include "Materials/Material.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Notification.h"

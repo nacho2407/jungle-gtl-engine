@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Types/CoreTypes.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Stats/Stats.h"
 
 #if STATS
 struct FShadowStats

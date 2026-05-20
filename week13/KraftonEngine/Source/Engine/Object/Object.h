@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Profiling/MemoryStats.h"
+#include "Profiling/Stats/MemoryStats.h"
 #include "Object/FName.h"
 #include "Core/Singleton.h"
 #include "Core/Types/PropertyTypes.h"

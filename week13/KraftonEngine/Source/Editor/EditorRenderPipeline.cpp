@@ -10,7 +10,7 @@
 #include "Component/Camera/CineCameraComponent.h"
 #include "GameFramework/World.h"
 #include "GameFramework/GameMode/PlayerController.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Stats/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "Engine/Render/Types/ForwardLightData.h"
 #include "Engine/Render/Types/MinimalViewInfo.h"

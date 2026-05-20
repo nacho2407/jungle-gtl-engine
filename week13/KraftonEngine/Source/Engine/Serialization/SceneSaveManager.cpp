@@ -17,7 +17,7 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "Core/Types/PropertyTypes.h"
 #include "Object/FName.h"
-#include "Profiling/PlatformTime.h"
+#include "Profiling/Time/PlatformTime.h"
 
 // ---- JSON vector helpers ---------------------------------------------------
 

@@ -1,8 +1,8 @@
-﻿#include "RenderPassPipeline.h"
+#include "RenderPassPipeline.h"
 
 #include "Render/RenderPass/RenderPassRegistry.h"
 #include "Render/Types/RenderTypes.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Stats/Stats.h"
 #include "Profiling/GPUProfiler.h"
 
 void FRenderPassPipeline::Initialize()
