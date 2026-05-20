@@ -198,7 +198,7 @@
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -221,7 +221,7 @@
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -250,7 +250,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -281,7 +281,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">
@@ -304,7 +304,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|x64'">
@@ -335,7 +335,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
@@ -366,7 +366,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
@@ -397,7 +397,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -410,117 +410,104 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\Slate\SlateApplication.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\AssetFactory.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorAnimationDebugWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorDragSource.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorFileUtils.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorMaterialInspector.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorPlayToolbarWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorProjectSettingsWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorSceneWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorShadowMapDebugWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorStatWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorTextureManager.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorViewportWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorWorldSettingsWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\FbxImportOptionsDialog.cpp" />
-    <ClCompile Include="Source\Editor\UI\ImGuiSetting.cpp" />
-    <ClCompile Include="Source\Editor\UI\NotificationToast.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\AnimGraphEditorWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\AnimMontagePropertyPanel.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\AnimSequencePropertyPanel.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\AnimationTimelinePanel.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\AnimationTransportBar.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\MeshEditorWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\StaticMeshEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimGraphEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimMontagePropertyPanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimSequencePropertyPanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimationTimelinePanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimationTransportBar.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\CameraShake\CameraShakeEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Debug\EditorAnimationDebugWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Debug\EditorShadowMapDebugWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Dialog\FbxImportOptionsDialog.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorConsoleWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorControlWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorMaterialInspector.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorSceneWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorStatWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorViewportWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorWorldSettingsWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Toolbar\ViewportToolbar.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorDragSource.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorFileUtils.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\NotificationToast.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
-    <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp" />
-    <ClCompile Include="Source\Editor\Viewport\MeshEditorViewportClient.cpp" />
-    <ClCompile Include="Source\Editor\Viewport\StaticMeshEditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\ViewportCameraTransform.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimDataModel.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimGraphAsset.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimGraphCompiler.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimGraphInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimGraphManager.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\Level\FLevelViewportLayout.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimMontage.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimMontageInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimNotify.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimNotifyEvent.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimNotifyState.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimNotifyState_AttackHitWindow.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimNotifyState_LogDuration.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimNotify_LogMessage.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimNotify_PlaySound.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimSequenceBase.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\AnimState.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimationManager.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimationRuntime.cpp" />
-    <ClCompile Include="Source\Engine\Animation\CharacterAnimGraphInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\CharacterAnimInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\LuaAnimInstance.cpp" />
-    <ClCompile Include="Source\Engine\Animation\Skeleton.cpp" />
-    <ClCompile Include="Source\Engine\Animation\SkeletonManager.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Graph\AnimGraphAsset.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Graph\AnimGraphCompiler.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Graph\AnimGraphInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Graph\AnimGraphManager.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Instance\AnimSingleNodeInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Instance\CharacterAnimGraphInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Instance\CharacterAnimInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Instance\LuaAnimInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Montage\AnimMontage.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Montage\AnimMontageInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_BlendListByEnum.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_LayeredBlendPerBone.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_Root.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_SequencePlayer.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_Slot.cpp" />
     <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_StateMachine.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotify.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotifyEvent.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotifyState.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotifyState_AttackHitWindow.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotifyState_LogDuration.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotify_LogMessage.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotify_PlaySound.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Sequence\AnimDataModel.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Sequence\AnimSequence.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Sequence\AnimSequenceBase.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Skeleton\Skeleton.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Skeleton\SkeletonManager.cpp" />
+    <ClCompile Include="Source\Engine\Animation\StateMachine\AnimState.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetPackage.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetRegistry.cpp" />
     <ClCompile Include="Source\Engine\Audio\AudioManager.cpp" />
     <ClCompile Include="Source\Engine\CameraShake\CameraShakeAsset.cpp" />
     <ClCompile Include="Source\Engine\CameraShake\CameraShakeManager.cpp" />
-    <ClCompile Include="Source\Engine\Collision\CollisionMath.cpp" />
-    <ClCompile Include="Source\Engine\Collision\ConvexVolume.cpp" />
-    <ClCompile Include="Source\Engine\Collision\MeshTriangleBVH.cpp" />
-    <ClCompile Include="Source\Engine\Collision\Octree.cpp" />
-    <ClCompile Include="Source\Engine\Collision\RayUtils.cpp" />
-    <ClCompile Include="Source\Engine\Collision\RayUtilsSIMD.cpp" />
-    <ClCompile Include="Source\Engine\Collision\SpatialPartition.cpp" />
-    <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp" />
-    <ClCompile Include="Source\Engine\Component\ActionComponent.cpp" />
+    <ClCompile Include="Source\Engine\Collision\BVH\MeshTriangleBVH.cpp" />
+    <ClCompile Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Math\CollisionMath.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Math\ConvexVolume.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Octree\Octree.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Octree\SpatialPartition.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Ray\RayUtils.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Ray\RayUtilsSIMD.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\BoneDebugComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\BoxComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\CapsuleComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\CineCameraComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\CylindricalBillboardComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\DecalComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\InputComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\LuaScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\SkeletalMeshComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\SkinnedMeshComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\SphereComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\SpringArmComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\SubUVComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\TemporaryBoneAnimatorComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Camera\CameraComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Camera\CineCameraComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Camera\SpringArmComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Debug\BoneDebugComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Debug\GizmoComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Debug\TemporaryBoneAnimatorComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Input\ActionComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Input\InputComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Light\AmbientLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Light\DirectionalLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Light\LightComponent.cpp" />
@@ -533,12 +520,23 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Component\Movement\PendulumMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\ProjectileMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp" />
-    <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
-    <ClCompile Include="Source\Engine\Core\Log.cpp" />
-    <ClCompile Include="Source\Engine\Core\Notification.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\BillboardComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\DecalComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\HeightFogComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\SkeletalMeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\SkinnedMeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\StaticMeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\SubUVComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\TextRenderComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Script\LuaScriptComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Shape\BoxComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Shape\CapsuleComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Shape\SphereComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\ProjectSettings.cpp" />
-    <ClCompile Include="Source\Engine\Core\PropertyTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp" />
+    <ClCompile Include="Source\Engine\Core\Logging\Log.cpp" />
+    <ClCompile Include="Source\Engine\Core\Logging\Notification.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\ArrayProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\BoolProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\ClassProperty.cpp" />
@@ -551,39 +549,41 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Core\Property\SoftObjectProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\StringProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\StructProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Types\EngineTypes.cpp" />
+    <ClCompile Include="Source\Engine\Core\Types\PropertyTypes.cpp" />
     <ClCompile Include="Source\Engine\Debug\DebugDrawQueue.cpp" />
     <ClCompile Include="Source\Engine\Debug\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Engine\FloatCurve\FloatCurveAsset.cpp" />
     <ClCompile Include="Source\Engine\FloatCurve\FloatCurveManager.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\BoxActor.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\CameraModifier.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\CameraShakeBase.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\CameraShakeCameraModifier.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\CapsuleActor.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\Character.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\GameModeBase.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\GameStateBase.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\GameplayStatics.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\HeightFogActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\LuaCharacter.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\Pawn.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\PawnStaticMesh.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\PlayerCameraManager.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\SequenceCameraShake.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\SkeletalMeshActor.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\SphereActor.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\TriggerVolumeBase.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\WaveOscillatorCameraShake.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\BoxActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\CapsuleActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\DecalActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\HeightFogActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\SphereActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\StaticMeshActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraModifier.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraShakeBase.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraShakeCameraModifier.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\SequenceCameraShake.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\GameModeBase.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\GameStateBase.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\GameplayStatics.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\PlayerController.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\AmbientLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\DirectionalLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\PointLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\SpotLightActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Pawn\Character.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Pawn\LuaCharacter.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Pawn\Pawn.cpp" />
     <ClCompile Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.cpp" />
     <ClCompile Include="Source\Engine\Gizmo\ComponentGizmoTarget.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
@@ -596,22 +596,22 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Math\Rotator.cpp" />
     <ClCompile Include="Source\Engine\Math\Transform.cpp" />
     <ClCompile Include="Source\Engine\Math\Vector.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\FbxImporter.cpp" />
     <ClCompile Include="Source\Engine\Mesh\MeshManager.cpp" />
     <ClCompile Include="Source\Engine\Mesh\MeshSimplifier.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\ObjImporter.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\SkeletalMesh.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\StaticMesh.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\Fbx\FbxAnimationImporter.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\Fbx\FbxMaterialImporter.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\Fbx\FbxSceneLoader.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\Fbx\FbxSceneQuery.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\Fbx\FbxSkeletalMeshImporter.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\Fbx\FbxSkeletonImporter.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\Fbx\FbxSkinWeightImporter.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\Fbx\FbxStaticMeshImporter.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\Fbx\FbxTangentBuilder.cpp" />
-    <ClCompile Include="Source\Engine\Mesh\Fbx\FbxTransformUtils.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\FbxImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\ObjImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxAnimationImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxMaterialImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxSceneLoader.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxSceneQuery.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxSkeletalMeshImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxSkeletonImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxSkinWeightImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxStaticMeshImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxTangentBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxTransformUtils.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Skeletal\SkeletalMesh.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Static\StaticMesh.cpp" />
     <ClCompile Include="Source\Engine\Object\FName.cpp" />
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Object\UUIDGenerator.cpp" />
@@ -620,12 +620,14 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Platform\DirectoryWatcher.cpp" />
     <ClCompile Include="Source\Engine\Platform\Paths.cpp" />
+    <ClCompile Include="Source\Engine\Platform\WindowsApplication.cpp" />
+    <ClCompile Include="Source\Engine\Platform\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Profiling\GPUProfiler.cpp" />
-    <ClCompile Include="Source\Engine\Profiling\MemoryStats.cpp" />
-    <ClCompile Include="Source\Engine\Profiling\ShadowStats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\StartupProfiler.cpp" />
-    <ClCompile Include="Source\Engine\Profiling\Stats.cpp" />
-    <ClCompile Include="Source\Engine\Profiling\Timer.cpp" />
+    <ClCompile Include="Source\Engine\Profiling\Stats\MemoryStats.cpp" />
+    <ClCompile Include="Source\Engine\Profiling\Stats\ShadowStats.cpp" />
+    <ClCompile Include="Source\Engine\Profiling\Stats\Stats.cpp" />
+    <ClCompile Include="Source\Engine\Profiling\Time\Timer.cpp" />
     <ClCompile Include="Source\Engine\Render\Command\DrawCommandBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Command\DrawCommandList.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\ClusteredLightCuller.cpp" />
@@ -693,8 +695,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Runtime\GameEngine.cpp" />
     <ClCompile Include="Source\Engine\Runtime\GameRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
-    <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
-    <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
     <ClCompile Include="Source\Engine\Texture\Texture2D.cpp" />
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
@@ -737,84 +737,69 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\Slate\SlateApplication.h" />
     <ClInclude Include="Source\Editor\Subsystem\AssetFactory.h" />
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
-    <ClInclude Include="Source\Editor\UI\EditorAnimationDebugWidget.h" />
-    <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h" />
-    <ClInclude Include="Source\Editor\UI\EditorControlWidget.h" />
-    <ClInclude Include="Source\Editor\UI\EditorDragSource.h" />
-    <ClInclude Include="Source\Editor\UI\EditorFileUtils.h" />
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
-    <ClInclude Include="Source\Editor\UI\EditorMaterialInspector.h" />
-    <ClInclude Include="Source\Editor\UI\EditorPlayToolbarWidget.h" />
-    <ClInclude Include="Source\Editor\UI\EditorProjectSettingsWidget.h" />
-    <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h" />
-    <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h" />
-    <ClInclude Include="Source\Editor\UI\EditorShadowMapDebugWidget.h" />
-    <ClInclude Include="Source\Editor\UI\EditorStatWidget.h" />
-    <ClInclude Include="Source\Editor\UI\EditorTextureManager.h" />
-    <ClInclude Include="Source\Editor\UI\EditorViewportWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
-    <ClInclude Include="Source\Editor\UI\EditorWorldSettingsWidget.h" />
-    <ClInclude Include="Source\Editor\UI\FbxImportOptionsDialog.h" />
-    <ClInclude Include="Source\Editor\UI\ImGuiSetting.h" />
-    <ClInclude Include="Source\Editor\UI\NotificationToast.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\AnimGraphEditorWidget.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\AnimMontagePropertyPanel.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\AnimSequencePropertyPanel.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\AnimationTimelinePanel.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\AnimationTransportBar.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorWidget.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\MeshEditorWidget.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\StaticMeshEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimGraphEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimMontagePropertyPanel.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimSequencePropertyPanel.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimationTimelinePanel.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimationTransportBar.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\MorphCurveEditObject.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\CameraShake\CameraShakeEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentItem.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Debug\EditorAnimationDebugWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Debug\EditorShadowMapDebugWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Dialog\FbxImportOptionsDialog.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorConsoleWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorControlWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorMaterialInspector.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorSceneWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorStatWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorViewportWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorWorldSettingsWidget.h" />
     <ClInclude Include="Source\Editor\UI\Toolbar\ViewportToolbar.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorDragSource.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorFileUtils.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h" />
+    <ClInclude Include="Source\Editor\UI\Util\ImGuiSetting.h" />
+    <ClInclude Include="Source\Editor\UI\Util\NotificationToast.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorPreviewViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h" />
-    <ClInclude Include="Source\Editor\Viewport\FLevelViewportLayout.h" />
-    <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h" />
-    <ClInclude Include="Source\Editor\Viewport\MeshEditorViewportClient.h" />
-    <ClInclude Include="Source\Editor\Viewport\StaticMeshEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportCameraTransform.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimDataModel.h" />
+    <ClInclude Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\Level\FLevelViewportLayout.h" />
+    <ClInclude Include="Source\Editor\Viewport\Level\LevelEditorViewportClient.h" />
     <ClInclude Include="Source\Engine\Animation\AnimExtractContext.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimGraphAsset.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimGraphCompiler.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimGraphInstance.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimGraphManager.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimGraphTypes.h" />
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimMontage.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimMontageInstance.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimNotify.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimNotifyEvent.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimNotifyState.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimNotifyState_AttackHitWindow.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimNotifyState_LogDuration.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimNotify_LogMessage.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimNotify_PlaySound.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimSequence.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimSequenceBase.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h" />
-    <ClInclude Include="Source\Engine\Animation\AnimState.h" />
     <ClInclude Include="Source\Engine\Animation\AnimationManager.h" />
     <ClInclude Include="Source\Engine\Animation\AnimationMode.h" />
     <ClInclude Include="Source\Engine\Animation\AnimationRuntime.h" />
-    <ClInclude Include="Source\Engine\Animation\BoneAnimationTrack.h" />
-    <ClInclude Include="Source\Engine\Animation\CharacterAnimGraphInstance.h" />
-    <ClInclude Include="Source\Engine\Animation\CharacterAnimInstance.h" />
-    <ClInclude Include="Source\Engine\Animation\LuaAnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\PoseContext.h" />
-    <ClInclude Include="Source\Engine\Animation\RawAnimSequenceTrack.h" />
-    <ClInclude Include="Source\Engine\Animation\Skeleton.h" />
-    <ClInclude Include="Source\Engine\Animation\SkeletonManager.h" />
-    <ClInclude Include="Source\Engine\Animation\SkeletonTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphAsset.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphCompiler.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphManager.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\Instance\AnimSingleNodeInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Instance\CharacterAnimGraphInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Instance\CharacterAnimInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Instance\LuaAnimInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Montage\AnimMontage.h" />
+    <ClInclude Include="Source\Engine\Animation\Montage\AnimMontageInstance.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNodeContexts.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Base.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_BlendListByEnum.h" />
@@ -824,46 +809,49 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_SequencePlayer.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Slot.h" />
     <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_StateMachine.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotify.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotifyEvent.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotifyState.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotifyState_AttackHitWindow.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotifyState_LogDuration.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotify_LogMessage.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotify_PlaySound.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\AnimDataModel.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\AnimSequence.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\AnimSequenceBase.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\BoneAnimationTrack.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\RawAnimSequenceTrack.h" />
+    <ClInclude Include="Source\Engine\Animation\Skeleton\Skeleton.h" />
+    <ClInclude Include="Source\Engine\Animation\Skeleton\SkeletonManager.h" />
+    <ClInclude Include="Source\Engine\Animation\Skeleton\SkeletonTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\StateMachine\AnimState.h" />
     <ClInclude Include="Source\Engine\Asset\AssetPackage.h" />
     <ClInclude Include="Source\Engine\Asset\AssetRegistry.h" />
     <ClInclude Include="Source\Engine\Audio\AudioManager.h" />
     <ClInclude Include="Source\Engine\CameraShake\CameraShakeAsset.h" />
     <ClInclude Include="Source\Engine\CameraShake\CameraShakeManager.h" />
-    <ClInclude Include="Source\Engine\Collision\CollisionMath.h" />
-    <ClInclude Include="Source\Engine\Collision\ConvexVolume.h" />
-    <ClInclude Include="Source\Engine\Collision\MeshTriangleBVH.h" />
-    <ClInclude Include="Source\Engine\Collision\OBB.h" />
-    <ClInclude Include="Source\Engine\Collision\Octree.h" />
-    <ClInclude Include="Source\Engine\Collision\RayUtils.h" />
-    <ClInclude Include="Source\Engine\Collision\RayUtilsSIMD.h" />
-    <ClInclude Include="Source\Engine\Collision\SpatialPartition.h" />
-    <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h" />
-    <ClInclude Include="Source\Engine\Component\ActionComponent.h" />
+    <ClInclude Include="Source\Engine\Collision\BVH\MeshTriangleBVH.h" />
+    <ClInclude Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.h" />
+    <ClInclude Include="Source\Engine\Collision\Math\CollisionMath.h" />
+    <ClInclude Include="Source\Engine\Collision\Math\ConvexVolume.h" />
+    <ClInclude Include="Source\Engine\Collision\Math\OBB.h" />
+    <ClInclude Include="Source\Engine\Collision\Octree\Octree.h" />
+    <ClInclude Include="Source\Engine\Collision\Octree\SpatialPartition.h" />
+    <ClInclude Include="Source\Engine\Collision\Ray\RayUtils.h" />
+    <ClInclude Include="Source\Engine\Collision\Ray\RayUtilsSIMD.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
-    <ClInclude Include="Source\Engine\Component\BillboardComponent.h" />
-    <ClInclude Include="Source\Engine\Component\BoneDebugComponent.h" />
-    <ClInclude Include="Source\Engine\Component\BoxComponent.h" />
-    <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
-    <ClInclude Include="Source\Engine\Component\CapsuleComponent.h" />
-    <ClInclude Include="Source\Engine\Component\CineCameraComponent.h" />
-    <ClInclude Include="Source\Engine\Component\CylindricalBillboardComponent.h" />
-    <ClInclude Include="Source\Engine\Component\DecalComponent.h" />
-    <ClInclude Include="Source\Engine\Component\GizmoComponent.h" />
-    <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
-    <ClInclude Include="Source\Engine\Component\InputComponent.h" />
-    <ClInclude Include="Source\Engine\Component\LuaScriptComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\Component\ShapeComponent.h" />
-    <ClInclude Include="Source\Engine\Component\SkeletalMeshComponent.h" />
-    <ClInclude Include="Source\Engine\Component\SkinnedMeshComponent.h" />
-    <ClInclude Include="Source\Engine\Component\SphereComponent.h" />
-    <ClInclude Include="Source\Engine\Component\SpringArmComponent.h" />
-    <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h" />
-    <ClInclude Include="Source\Engine\Component\SubUVComponent.h" />
-    <ClInclude Include="Source\Engine\Component\TemporaryBoneAnimatorComponent.h" />
-    <ClInclude Include="Source\Engine\Component\TextRenderComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Camera\CameraComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Camera\CineCameraComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Camera\SpringArmComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Debug\BoneDebugComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Debug\GizmoComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Debug\TemporaryBoneAnimatorComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Input\ActionComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Input\InputComponent.h" />
     <ClInclude Include="Source\Engine\Component\Light\AmbientLightComponent.h" />
     <ClInclude Include="Source\Engine\Component\Light\DirectionalLightComponent.h" />
     <ClInclude Include="Source\Engine\Component\Light\LightComponent.h" />
@@ -876,20 +864,26 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Component\Movement\PendulumMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\ProjectileMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h" />
-    <ClInclude Include="Source\Engine\Core\ClassTypes.h" />
-    <ClInclude Include="Source\Engine\Core\CollisionTypes.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\BillboardComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\DecalComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\HeightFogComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\SkeletalMeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\SkinnedMeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\StaticMeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\SubUVComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\TextRenderComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Script\LuaScriptComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Shape\BoxComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Shape\CapsuleComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Shape\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Core\Common.h" />
-    <ClInclude Include="Source\Engine\Core\CoreTypes.h" />
     <ClInclude Include="Source\Engine\Core\Delegate.h" />
-    <ClInclude Include="Source\Engine\Core\EngineTypes.h" />
-    <ClInclude Include="Source\Engine\Core\Log.h" />
-    <ClInclude Include="Source\Engine\Core\Notification.h" />
     <ClInclude Include="Source\Engine\Core\ProjectSettings.h" />
-    <ClInclude Include="Source\Engine\Core\PropertyTypes.h" />
-    <ClInclude Include="Source\Engine\Core\RayTypes.h" />
-    <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Core\Singleton.h" />
     <ClInclude Include="Source\Engine\Core\TickFunction.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\Log.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\Notification.h" />
     <ClInclude Include="Source\Engine\Core\Property\ArrayProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\BoolProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\ClassProperty.h" />
@@ -902,42 +896,49 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Core\Property\SoftObjectProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\StringProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\StructProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Types\ClassTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Types\CollisionTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Types\CoreTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Types\EngineTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Types\PropertyTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Types\RayTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Types\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Debug\DebugDrawQueue.h" />
     <ClInclude Include="Source\Engine\Debug\DrawDebugHelpers.h" />
     <ClInclude Include="Source\Engine\FloatCurve\FloatCurveAsset.h" />
     <ClInclude Include="Source\Engine\FloatCurve\FloatCurveManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
-    <ClInclude Include="Source\Engine\GameFramework\BoxActor.h" />
-    <ClInclude Include="Source\Engine\GameFramework\CameraModifier.h" />
-    <ClInclude Include="Source\Engine\GameFramework\CameraShakeBase.h" />
-    <ClInclude Include="Source\Engine\GameFramework\CameraShakeCameraModifier.h" />
-    <ClInclude Include="Source\Engine\GameFramework\CameraTypes.h" />
-    <ClInclude Include="Source\Engine\GameFramework\CapsuleActor.h" />
-    <ClInclude Include="Source\Engine\GameFramework\Character.h" />
-    <ClInclude Include="Source\Engine\GameFramework\DecalActor.h" />
-    <ClInclude Include="Source\Engine\GameFramework\GameModeBase.h" />
-    <ClInclude Include="Source\Engine\GameFramework\GameStateBase.h" />
-    <ClInclude Include="Source\Engine\GameFramework\GameplayStatics.h" />
-    <ClInclude Include="Source\Engine\GameFramework\HeightFogActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Level.h" />
-    <ClInclude Include="Source\Engine\GameFramework\LuaCharacter.h" />
-    <ClInclude Include="Source\Engine\GameFramework\Pawn.h" />
-    <ClInclude Include="Source\Engine\GameFramework\PawnStaticMesh.h" />
-    <ClInclude Include="Source\Engine\GameFramework\PlayerCameraManager.h" />
-    <ClInclude Include="Source\Engine\GameFramework\PlayerController.h" />
-    <ClInclude Include="Source\Engine\GameFramework\SequenceCameraShake.h" />
-    <ClInclude Include="Source\Engine\GameFramework\SkeletalMeshActor.h" />
-    <ClInclude Include="Source\Engine\GameFramework\SphereActor.h" />
-    <ClInclude Include="Source\Engine\GameFramework\StaticMeshActor.h" />
-    <ClInclude Include="Source\Engine\GameFramework\TriggerVolumeBase.h" />
-    <ClInclude Include="Source\Engine\GameFramework\WaveOscillatorCameraShake.h" />
     <ClInclude Include="Source\Engine\GameFramework\World.h" />
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />
     <ClInclude Include="Source\Engine\GameFramework\WorldSettings.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\BoxActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\CapsuleActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\DecalActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\HeightFogActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\SphereActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\StaticMeshActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraModifier.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraShakeBase.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraShakeCameraModifier.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraTypes.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\SequenceCameraShake.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.h" />
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\GameModeBase.h" />
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\GameStateBase.h" />
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\GameplayStatics.h" />
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\PlayerController.h" />
     <ClInclude Include="Source\Engine\GameFramework\Light\AmbientLightActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Light\DirectionalLightActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Light\PointLightActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Light\SpotLightActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Pawn\Character.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Pawn\LuaCharacter.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Pawn\Pawn.h" />
     <ClInclude Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.h" />
     <ClInclude Include="Source\Engine\Gizmo\ComponentGizmoTarget.h" />
     <ClInclude Include="Source\Engine\Gizmo\GizmoTransformTarget.h" />
@@ -952,39 +953,39 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Math\Rotator.h" />
     <ClInclude Include="Source\Engine\Math\Transform.h" />
     <ClInclude Include="Source\Engine\Math\Vector.h" />
-    <ClInclude Include="Source\Engine\Mesh\FbxImporter.h" />
     <ClInclude Include="Source\Engine\Mesh\MeshBinary.h" />
-    <ClInclude Include="Source\Engine\Mesh\MeshImportOptions.h" />
     <ClInclude Include="Source\Engine\Mesh\MeshManager.h" />
     <ClInclude Include="Source\Engine\Mesh\MeshSimplifier.h" />
-    <ClInclude Include="Source\Engine\Mesh\ObjImporter.h" />
-    <ClInclude Include="Source\Engine\Mesh\SkeletalMesh.h" />
-    <ClInclude Include="Source\Engine\Mesh\SkeletalMeshAsset.h" />
-    <ClInclude Include="Source\Engine\Mesh\StaticMesh.h" />
-    <ClInclude Include="Source\Engine\Mesh\StaticMeshAsset.h" />
-    <ClInclude Include="Source\Engine\Mesh\Fbx\FbxAnimationImporter.h" />
-    <ClInclude Include="Source\Engine\Mesh\Fbx\FbxImportContext.h" />
-    <ClInclude Include="Source\Engine\Mesh\Fbx\FbxImportTypes.h" />
-    <ClInclude Include="Source\Engine\Mesh\Fbx\FbxMaterialImporter.h" />
-    <ClInclude Include="Source\Engine\Mesh\Fbx\FbxSceneLoader.h" />
-    <ClInclude Include="Source\Engine\Mesh\Fbx\FbxSceneQuery.h" />
-    <ClInclude Include="Source\Engine\Mesh\Fbx\FbxSkeletalMeshImporter.h" />
-    <ClInclude Include="Source\Engine\Mesh\Fbx\FbxSkeletonImporter.h" />
-    <ClInclude Include="Source\Engine\Mesh\Fbx\FbxSkinWeightImporter.h" />
-    <ClInclude Include="Source\Engine\Mesh\Fbx\FbxStaticMeshImporter.h" />
-    <ClInclude Include="Source\Engine\Mesh\Fbx\FbxTangentBuilder.h" />
-    <ClInclude Include="Source\Engine\Mesh\Fbx\FbxTransformUtils.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\FbxImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\MeshImportOptions.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\ObjImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxAnimationImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxImportContext.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxImportTypes.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxMaterialImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxSceneLoader.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxSceneQuery.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxSkeletalMeshImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxSkeletonImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxSkinWeightImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxStaticMeshImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxTangentBuilder.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxTransformUtils.h" />
+    <ClInclude Include="Source\Engine\Mesh\Skeletal\SkeletalMesh.h" />
+    <ClInclude Include="Source\Engine\Mesh\Skeletal\SkeletalMeshAsset.h" />
+    <ClInclude Include="Source\Engine\Mesh\Static\StaticMesh.h" />
+    <ClInclude Include="Source\Engine\Mesh\Static\StaticMeshAsset.h" />
     <ClInclude Include="Source\Engine\Object\FName.h" />
     <ClInclude Include="Source\Engine\Object\Object.h" />
-    <ClInclude Include="Source\Engine\Object\ObjectFactory.h" />
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
-    <ClInclude Include="Source\Engine\Object\ObjectMacros.h" />
-    <ClInclude Include="Source\Engine\Object\ObjectPtr.h" />
-    <ClInclude Include="Source\Engine\Object\SoftObjectPtr.h" />
-    <ClInclude Include="Source\Engine\Object\SubclassOf.h" />
-    <ClInclude Include="Source\Engine\Object\UClass.h" />
-    <ClInclude Include="Source\Engine\Object\UStruct.h" />
     <ClInclude Include="Source\Engine\Object\UUIDGenerator.h" />
+    <ClInclude Include="Source\Engine\Object\Ptr\ObjectPtr.h" />
+    <ClInclude Include="Source\Engine\Object\Ptr\SoftObjectPtr.h" />
+    <ClInclude Include="Source\Engine\Object\Ptr\SubclassOf.h" />
+    <ClInclude Include="Source\Engine\Object\Reflection\ObjectFactory.h" />
+    <ClInclude Include="Source\Engine\Object\Reflection\ObjectMacros.h" />
+    <ClInclude Include="Source\Engine\Object\Reflection\UClass.h" />
+    <ClInclude Include="Source\Engine\Object\Reflection\UStruct.h" />
     <ClInclude Include="Source\Engine\Physics\IPhysicsScene.h" />
     <ClInclude Include="Source\Engine\Physics\NativePhysicsScene.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXPhysicsScene.h" />
@@ -992,13 +993,16 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Platform\CrashDump.h" />
     <ClInclude Include="Source\Engine\Platform\DirectoryWatcher.h" />
     <ClInclude Include="Source\Engine\Platform\Paths.h" />
+    <ClInclude Include="Source\Engine\Platform\WindowsApplication.h" />
+    <ClInclude Include="Source\Engine\Platform\WindowsWindow.h" />
+    <ClInclude Include="Source\Engine\Platform\resource.h" />
     <ClInclude Include="Source\Engine\Profiling\GPUProfiler.h" />
-    <ClInclude Include="Source\Engine\Profiling\MemoryStats.h" />
-    <ClInclude Include="Source\Engine\Profiling\PlatformTime.h" />
-    <ClInclude Include="Source\Engine\Profiling\ShadowStats.h" />
     <ClInclude Include="Source\Engine\Profiling\StartupProfiler.h" />
-    <ClInclude Include="Source\Engine\Profiling\Stats.h" />
-    <ClInclude Include="Source\Engine\Profiling\Timer.h" />
+    <ClInclude Include="Source\Engine\Profiling\Stats\MemoryStats.h" />
+    <ClInclude Include="Source\Engine\Profiling\Stats\ShadowStats.h" />
+    <ClInclude Include="Source\Engine\Profiling\Stats\Stats.h" />
+    <ClInclude Include="Source\Engine\Profiling\Time\PlatformTime.h" />
+    <ClInclude Include="Source\Engine\Profiling\Time\Timer.h" />
     <ClInclude Include="Source\Engine\Render\Command\DrawCommand.h" />
     <ClInclude Include="Source\Engine\Render\Command\DrawCommandBuilder.h" />
     <ClInclude Include="Source\Engine\Render\Command\DrawCommandList.h" />
@@ -1083,9 +1087,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Runtime\GameEngine.h" />
     <ClInclude Include="Source\Engine\Runtime\GameRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Runtime\Launch.h" />
-    <ClInclude Include="Source\Engine\Runtime\WindowsApplication.h" />
-    <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h" />
-    <ClInclude Include="Source\Engine\Runtime\resource.h" />
     <ClInclude Include="Source\Engine\Serialization\Archive.h" />
     <ClInclude Include="Source\Engine\Serialization\DuplicateArchive.h" />
     <ClInclude Include="Source\Engine\Serialization\MemoryArchive.h" />
@@ -1961,7 +1962,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <PythonExe Condition="'$(PythonExe)'==''">python</PythonExe>
   </PropertyGroup>
   <Target Name="GenerateReflectionHeaders" BeforeTargets="ClCompile">
-    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(MSBuildProjectDirectory)\Tools\GenerateHeaders.py&quot; --root &quot;$(MSBuildProjectDirectory)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
+    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(MSBuildProjectDirectory)\..\Scripts\GenerateHeaders.py&quot; --root &quot;$(MSBuildProjectDirectory)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
   </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

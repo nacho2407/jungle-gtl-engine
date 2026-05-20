@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "AnimNotifyState.h"
-#include "Core/CollisionTypes.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CollisionTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
 
-#include "Source/Engine/Animation/AnimNotifyState_AttackHitWindow.generated.h"
+#include "Source/Engine/Animation/Notify/AnimNotifyState_AttackHitWindow.generated.h"
 
 class AActor;
 class USkeletalMeshComponent;
