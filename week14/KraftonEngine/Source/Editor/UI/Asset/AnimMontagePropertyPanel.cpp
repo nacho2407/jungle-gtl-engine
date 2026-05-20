@@ -1,8 +1,8 @@
 #include "AnimMontagePropertyPanel.h"
 
-#include "Animation/AnimMontage.h"
-#include "Animation/AnimMontageInstance.h"
-#include "Animation/AnimSequence.h"
+#include "Animation/Montage/AnimMontage.h"
+#include "Animation/Montage/AnimMontageInstance.h"
+#include "Animation/Sequence/AnimSequence.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimationManager.h"
 #include "Component/SkeletalMeshComponent.h"

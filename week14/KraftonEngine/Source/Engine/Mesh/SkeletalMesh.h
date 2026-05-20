@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "SkeletalMeshAsset.h"
-#include "Animation/SkeletonTypes.h"
+#include "Animation/Skeleton/SkeletonTypes.h"
 
 class USkeleton;
 

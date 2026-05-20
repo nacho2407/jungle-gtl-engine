@@ -1,7 +1,7 @@
 #include "AnimNode_StateMachine.h"
 
 #include "Animation/AnimInstance.h"
-#include "Animation/AnimState.h"
+#include "Animation/StateMachine/AnimState.h"
 #include "Animation/AnimationRuntime.h"
 #include "Animation/PoseContext.h"
 #include "Math/Quat.h"

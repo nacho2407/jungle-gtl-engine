@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Mesh/SkeletalMeshAsset.h"
-#include "Animation/SkeletonTypes.h"
+#include "Animation/Skeleton/SkeletonTypes.h"
 
 class UAnimSequence;
 

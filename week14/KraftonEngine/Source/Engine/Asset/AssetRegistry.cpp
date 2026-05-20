@@ -1,11 +1,11 @@
-﻿#include "AssetRegistry.h"
+#include "AssetRegistry.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Animation/AnimationManager.h"
-#include "Animation/AnimGraphManager.h"
-#include "Animation/AnimSequence.h"
-#include "Animation/Skeleton.h"
-#include "Animation/SkeletonManager.h"
+#include "Animation/Graph/AnimGraphManager.h"
+#include "Animation/Sequence/AnimSequence.h"
+#include "Animation/Skeleton/Skeleton.h"
+#include "Animation/Skeleton/SkeletonManager.h"
 #include "Platform/Paths.h"
 
 #include <cstring>
