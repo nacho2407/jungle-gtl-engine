@@ -330,6 +330,21 @@
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimInstance.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotifyState.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotifyState_NamedEvent.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_LogEvent.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_NamedEvent.gen.cpp">
+      <Filter>Intermediate\Reflection\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequence.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
@@ -343,9 +358,6 @@
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimationStateMachine.gen.cpp">
-      <Filter>Intermediate\Reflection\Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\Animation\UDebugAnimSequence.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Animation\UStateMachineAnimInstance.gen.cpp">
@@ -835,6 +847,9 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimNotify.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimSequence.cpp">
@@ -1775,6 +1790,9 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimNotify.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimSequence.h">

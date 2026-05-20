@@ -1,4 +1,5 @@
 ﻿#include "Animation/AnimSequence.h"
+#include "Animation/AnimNotify.h"
 #include "Geometry/Transform.h"
 
 #include <algorithm>
@@ -20,7 +21,7 @@ const TArray<FBoneAnimationTrack>& UAnimSequenceBase::GetBoneAnimationTracks() c
 	return DataModel ? DataModel->GetBoneAnimationTracks() : EmptyTracks;
 }
 
-void UAnimSequenceBase::AddNotify(float InTriggerTime, const FName& InNotifyName, float InDuration)
+void UAnimSequenceBase::AddNotify(float InTriggerTime, const FName& InNotifyName, float InDuration, const FString& InNotifyClassName)
 {
 	FAnimNotifyStateEvent NewNotify;
 
@@ -28,6 +29,9 @@ void UAnimSequenceBase::AddNotify(float InTriggerTime, const FName& InNotifyName
 	NewNotify.TriggerTime = std::clamp(InTriggerTime, 0.0f, Length);
 	NewNotify.Duration = std::clamp(InDuration, 0.0f, std::max(0.0f, Length - NewNotify.TriggerTime));
 	NewNotify.NotifyName = InNotifyName;
+	NewNotify.NotifyClassName = InNotifyClassName.empty()
+		? UAnimNotify::GetDefaultNotifyClassName(NewNotify.IsState())
+		: InNotifyClassName;
 
 	Notifies.push_back(NewNotify);
 
@@ -64,6 +68,22 @@ bool UAnimSequenceBase::SetNotifyName(int32 NotifyIndex, const FName& InNotifyNa
 	}
 
 	Notifies[NotifyIndex].NotifyName = InNotifyName;
+	return true;
+}
+
+bool UAnimSequenceBase::SetNotifyClassName(int32 NotifyIndex, const FString& InNotifyClassName)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	if (InNotifyClassName.empty())
+	{
+		return false;
+	}
+
+	Notifies[NotifyIndex].NotifyClassName = InNotifyClassName;
 	return true;
 }
 

@@ -1,5 +1,6 @@
 ﻿#include "Asset/AnimSequenceAssetLoader.h"
 
+#include "Animation/AnimNotify.h"
 #include "Animation/AnimSequence.h"
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
@@ -26,8 +27,9 @@ namespace
 	// Companion cache format for .animseq. The JSON file remains the editable descriptor,
 	// but fresh binary cache now contains all runtime data needed for playback.
 	// v2 adds AnimNotify data so Load() can skip JSON parsing on cache hit.
+	// v3 adds AnimNotify class names.
 	constexpr uint32 AnimSequenceBinaryMagic = 0x51455341; // 'ASEQ'
-	constexpr uint32 AnimSequenceBinaryVersion = 2;
+	constexpr uint32 AnimSequenceBinaryVersion = 3;
 
 	constexpr uint32 MaxAnimSequenceTrackCount = 65'536;
 	constexpr uint32 MaxAnimSequenceKeyCount = 1'000'000;
@@ -400,17 +402,28 @@ namespace
 	{
 		WriteFloatLE(Out, Notify.TriggerTime);
 		WriteStringBinary(Out, Notify.NotifyName.ToString());
+		WriteFloatLE(Out, Notify.Duration);
+		WriteStringBinary(Out, Notify.NotifyClassName);
 	}
 
 	bool ReadNotifyBinary(std::ifstream& In, FAnimNotifyEvent& OutNotify)
 	{
 		FString NotifyName;
+		FString NotifyClassName;
 		if (!ReadFloatLE(In, OutNotify.TriggerTime) || !ReadStringBinary(In, NotifyName))
 		{
 			return false;
 		}
 
+		if (!ReadFloatLE(In, OutNotify.Duration) || !ReadStringBinary(In, NotifyClassName))
+		{
+			return false;
+		}
+
 		OutNotify.NotifyName = FName(NotifyName);
+		OutNotify.NotifyClassName = NotifyClassName.empty()
+			? UAnimNotify::GetDefaultNotifyClassName(OutNotify.IsState())
+			: NotifyClassName;
 		return true;
 	}
 
@@ -622,7 +635,7 @@ namespace
 
 		for (const FAnimNotifyEvent& Notify : Notifies)
 		{
-			Sequence->AddNotify(Notify.TriggerTime, Notify.NotifyName);
+			Sequence->AddNotify(Notify.TriggerTime, Notify.NotifyName, Notify.Duration, Notify.NotifyClassName);
 		}
 
 		UE_LOG("[AnimSequenceAssetLoader] Loaded binary anim sequence cache: %s", BinaryPath.c_str());
@@ -935,7 +948,17 @@ namespace
 				Duration = GetFloatOrDefault(NotifyJson, "EndTime", TriggerTime) - TriggerTime;
 			}
 
-			Sequence->AddNotify(TriggerTime, FName(NotifyName), Duration);
+			FString NotifyClassName = GetStringOrDefault(NotifyJson, "NotifyClassName");
+			if (NotifyClassName.empty())
+			{
+				NotifyClassName = GetStringOrDefault(NotifyJson, "NotifyClass");
+			}
+			if (NotifyClassName.empty())
+			{
+				NotifyClassName = UAnimNotify::GetDefaultNotifyClassName(Duration > 0.0f);
+			}
+
+			Sequence->AddNotify(TriggerTime, FName(NotifyName), Duration, NotifyClassName);
 		}
 	}
 
@@ -1183,6 +1206,7 @@ bool FAnimSequenceAssetLoader::Save(const FString& Path, const UAnimSequence* Se
 	{
 		JSON NotifyJson = JSON::Make(JSON::Class::Object);
 		NotifyJson["NotifyName"] = Notify.NotifyName.ToString();
+		NotifyJson["NotifyClassName"] = Notify.NotifyClassName;
 		NotifyJson["TriggerTime"] = Notify.TriggerTime;
 		NotifyJson["Duration"] = Notify.Duration;
 		NotifyJson["EndTime"] = Notify.GetEndTime();

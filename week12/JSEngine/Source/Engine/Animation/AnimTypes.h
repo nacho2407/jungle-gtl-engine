@@ -9,6 +9,7 @@ struct FAnimNotifyStateEvent
     float TriggerTime = 0.0f;
     float Duration = 0.0f;
     FName NotifyName;
+    FString NotifyClassName;
 
     float GetEndTime() const
     {
@@ -18,6 +19,11 @@ struct FAnimNotifyStateEvent
     bool IsState() const
     {
         return Duration > 0.0f;
+    }
+
+    FString GetDisplayName() const
+    {
+        return NotifyName.IsValid() ? NotifyName.ToString() : NotifyClassName;
     }
 };
 

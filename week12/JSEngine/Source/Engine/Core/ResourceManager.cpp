@@ -93,7 +93,7 @@ namespace
 		Destination->ClearNotifies();
 		for (const FAnimNotifyStateEvent& Notify : Source->GetNotifies())
 		{
-			Destination->AddNotify(Notify.TriggerTime, Notify.NotifyName, Notify.Duration);
+			Destination->AddNotify(Notify.TriggerTime, Notify.NotifyName, Notify.Duration, Notify.NotifyClassName);
 		}
 	}
 
