@@ -8,7 +8,25 @@
 #include <cmath>
 #include <algorithm>
 
+#include "Core/Paths.h"
 #include "Core/ResourceManager.h"
+
+namespace
+{
+	constexpr const char* StatesKey = "States";
+	constexpr const char* StateNameKey = "Name";
+	constexpr const char* AnimationPathKey = "AnimationPath";
+	constexpr const char* PlayRateKey = "PlayRate";
+	constexpr const char* LoopKey = "Loop";
+	constexpr const char* AutoAdvanceOnEndKey = "AutoAdvanceOnEnd";
+	constexpr const char* CurrentStateKey = "CurrentState";
+	constexpr const char* NextStateKey = "NextState";
+	constexpr const char* BlendingKey = "Blending";
+	constexpr const char* BlendElapsedKey = "BlendElapsed";
+	constexpr const char* BlendDurationKey = "BlendDuration";
+
+	FString GetPersistentAnimationAssetPath(UAnimSequenceBase* Animation);
+}
 
 void FAnimSequencePoseSource::Update(float DeltaTime)
 {
@@ -129,6 +147,148 @@ void UAnimationStateMachine::Initialize(USkeletalMeshComponent* Owner)
 {
 	OwnerComponent = Owner;
 	OwnerPawn = OwnerComponent ? Cast<APawn>(OwnerComponent->GetOwner()) : nullptr;
+
+	for (auto& Pair : States)
+	{
+		if (Pair.second.PoseSource)
+		{
+			Pair.second.PoseSource->SetOwnerComponent(OwnerComponent);
+		}
+	}
+}
+
+void UAnimationStateMachine::Serialize(FArchive& Ar)
+{
+	UObject::Serialize(Ar);
+
+	int32 StateCount = static_cast<int32>(StateOrder.size());
+	Ar.BeginArray(StatesKey, StateCount);
+
+	if (Ar.IsSaving())
+	{
+		for (const FName& StateName : StateOrder)
+		{
+			auto It = States.find(StateName);
+			if (It == States.end())
+			{
+				continue;
+			}
+
+			FAnimStateNode& State = It->second;
+			FName SerializedName = State.Name;
+			FString AnimationPath = State.AnimationPath;
+			float PlayRate = State.PlayRate;
+			bool bLoop = State.bLoop;
+			bool bAutoAdvanceOnEnd = State.bAutoAdvanceOnEnd;
+
+			Ar.BeginObject("");
+			Ar << StateNameKey << SerializedName;
+			Ar << AnimationPathKey << AnimationPath;
+			Ar << PlayRateKey << PlayRate;
+			Ar << LoopKey << bLoop;
+			Ar << AutoAdvanceOnEndKey << bAutoAdvanceOnEnd;
+			Ar.EndObject();
+		}
+	}
+	else if (Ar.IsLoading())
+	{
+		States.clear();
+		StateOrder.clear();
+
+		for (int32 Index = 0; Index < StateCount; ++Index)
+		{
+			FName StateName;
+			FString AnimationPath;
+			float PlayRate = 1.0f;
+			bool bLoop = true;
+			bool bAutoAdvanceOnEnd = true;
+
+			Ar.BeginObject(Index);
+			if (Ar.HasKey(StateNameKey))
+			{
+				Ar << StateNameKey << StateName;
+			}
+			if (Ar.HasKey(AnimationPathKey))
+			{
+				Ar << AnimationPathKey << AnimationPath;
+			}
+			if (Ar.HasKey(PlayRateKey))
+			{
+				Ar << PlayRateKey << PlayRate;
+			}
+			if (Ar.HasKey(LoopKey))
+			{
+				Ar << LoopKey << bLoop;
+			}
+			if (Ar.HasKey(AutoAdvanceOnEndKey))
+			{
+				Ar << AutoAdvanceOnEndKey << bAutoAdvanceOnEnd;
+			}
+			Ar.EndObject();
+
+			if (StateName != FName() && !AnimationPath.empty())
+			{
+				AddStateFromPathWithPlayback(StateName.ToString(), AnimationPath, PlayRate, bLoop, bAutoAdvanceOnEnd);
+			}
+		}
+	}
+
+	Ar.EndArray();
+
+	if (!Ar.IsLoading() || Ar.HasKey(CurrentStateKey))
+	{
+		Ar << CurrentStateKey << CurrentState;
+	}
+	if (!Ar.IsLoading() || Ar.HasKey(NextStateKey))
+	{
+		Ar << NextStateKey << NextState;
+	}
+	if (!Ar.IsLoading() || Ar.HasKey(BlendingKey))
+	{
+		Ar << BlendingKey << bBlending;
+	}
+	if (!Ar.IsLoading() || Ar.HasKey(BlendElapsedKey))
+	{
+		Ar << BlendElapsedKey << BlendElapsed;
+	}
+	if (!Ar.IsLoading() || Ar.HasKey(BlendDurationKey))
+	{
+		Ar << BlendDurationKey << BlendDuration;
+	}
+}
+
+void UAnimationStateMachine::CopyRuntimeStateFrom(const UAnimationStateMachine* SourceMachine)
+{
+	if (!SourceMachine)
+	{
+		return;
+	}
+
+	States.clear();
+	StateOrder.clear();
+	CurrentState = SourceMachine->CurrentState;
+	NextState = SourceMachine->NextState;
+	bBlending = SourceMachine->bBlending;
+	BlendElapsed = SourceMachine->BlendElapsed;
+	BlendDuration = SourceMachine->BlendDuration;
+
+	for (const FName& SourceStateName : SourceMachine->StateOrder)
+	{
+		auto SourceIt = SourceMachine->States.find(SourceStateName);
+		if (SourceIt == SourceMachine->States.end())
+		{
+			continue;
+		}
+
+		const FAnimStateNode& SourceState = SourceIt->second;
+		AddStateFromPathWithPlayback(SourceState.Name.ToString(), SourceState.AnimationPath, SourceState.PlayRate, SourceState.bLoop, SourceState.bAutoAdvanceOnEnd);
+
+		auto DstIt = States.find(SourceState.Name);
+		if (DstIt != States.end())
+		{
+			DstIt->second.Transitions = SourceState.Transitions;
+		}
+	}
 }
 
 void UAnimationStateMachine::AddState(FName StateName, UAnimSequenceBase* Sequence, float PlayRate, bool bLoop, bool bAutoAdvanceOnEnd)
@@ -138,6 +298,9 @@ void UAnimationStateMachine::AddState(FName StateName, UAnimSequenceBase* Sequen
 	FAnimStateNode NewState;
 	NewState.Name = StateName;
 	NewState.PoseSource = std::make_shared<FAnimSequencePoseSource>(OwnerComponent, Sequence, PlayRate, bLoop);
+	NewState.AnimationPath = GetPersistentAnimationAssetPath(Sequence);
+	NewState.PlayRate = PlayRate;
+	NewState.bLoop = bLoop;
 	NewState.bAutoAdvanceOnEnd = bAutoAdvanceOnEnd;
 	States[StateName] = NewState;
 
@@ -349,7 +512,13 @@ void UAnimationStateMachine::AddStateFromPathWithPlayback(const FString& StateNa
 
 	if (Sequence)
 	{
-		AddState(FName(StateName.c_str()), Sequence, PlayRate, bLoop, bAutoAdvanceOnEnd);
+		const FName StateFName(StateName.c_str());
+		AddState(StateFName, Sequence, PlayRate, bLoop, bAutoAdvanceOnEnd);
+		auto It = States.find(StateFName);
+		if (It != States.end())
+		{
+			It->second.AnimationPath = FPaths::Normalize(AnimPath);
+		}
 	}
 }
 
@@ -402,4 +571,28 @@ float UAnimationStateMachine::GetBlendAlpha() const
 	}
 
 	return std::clamp(BlendElapsed / BlendDuration, 0.0f, 1.0f);
+}
+
+namespace
+{
+	FString GetPersistentAnimationAssetPath(UAnimSequenceBase* Animation)
+	{
+		UAnimSequence* Sequence = Cast<UAnimSequence>(Animation);
+		if (!Sequence)
+		{
+			return "";
+		}
+
+		if (!Sequence->GetAssetPath().empty())
+		{
+			return FPaths::Normalize(Sequence->GetAssetPath());
+		}
+
+		if (!Sequence->GetSourceFilePath().empty())
+		{
+			return FPaths::Normalize(Sequence->GetSourceFilePath());
+		}
+
+		return "";
+	}
 }
