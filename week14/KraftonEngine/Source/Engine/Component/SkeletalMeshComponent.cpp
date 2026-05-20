@@ -202,11 +202,16 @@ void USkeletalMeshComponent::LoadAnimationFromPath()
 
 void USkeletalMeshComponent::InitializeAnimation()
 {
-    // AnimInstance 는 항상 재생성. (이미 있는 경우라도 SkeletalMesh/Mode/Class 가 바뀌었을 수 있음)
-    ClearAnimInstance();
-
-    if (!GetSkeletalMesh()) return;
-    if (AnimationMode == EAnimationMode::None) return;
+    if (!GetSkeletalMesh())
+    {
+        ClearAnimInstance();
+        return;
+    }
+    if (AnimationMode == EAnimationMode::None)
+    {
+        ClearAnimInstance();
+        return;
+    }
 
     if (AnimationMode == EAnimationMode::AnimationSingleNode &&
         !AnimationData.AnimToPlay &&
@@ -226,6 +231,8 @@ void USkeletalMeshComponent::InitializeAnimation()
     {
     case EAnimationMode::AnimationSingleNode:
     {
+        ClearAnimInstance();
+
         UAnimSingleNodeInstance* Single =
             UObjectManager::Get().CreateObject<UAnimSingleNodeInstance>(this);
         AnimInstance = Single;
@@ -239,8 +246,24 @@ void USkeletalMeshComponent::InitializeAnimation()
     }
     case EAnimationMode::AnimationCustom:
     {
-        if (!AnimInstanceClass) return;
-        UObject* Obj = FObjectFactory::Get().Create(AnimInstanceClass->GetName(), this);
+        UClass* DesiredClass = AnimInstanceClass.Get();
+        if (!DesiredClass)
+        {
+            ClearAnimInstance();
+            return;
+        }
+
+        if (AnimInstance && AnimInstance->GetClass() == DesiredClass)
+        {
+            AnimInstance->SetOuter(this);
+            AnimInstance->SetOwningComponent(this);
+            AnimInstance->NativeInitializeAnimation();
+            break;
+        }
+
+        ClearAnimInstance();
+
+        UObject* Obj = FObjectFactory::Get().Create(DesiredClass->GetName(), this);
         AnimInstance = Cast<UAnimInstance>(Obj);
 		if (!AnimInstance)
         {
