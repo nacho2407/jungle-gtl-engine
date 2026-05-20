@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Engine/Runtime/Engine.h"
-#include "Engine/Runtime/WindowsApplication.h"
+#include "Engine/Platform/WindowsApplication.h"
 #include "Engine/Profiling/Timer.h"
 
 class FEngineLoop

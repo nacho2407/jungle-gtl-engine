@@ -6,7 +6,7 @@
 #include "Editor/UI/Util/EditorTextureManager.h"
 #include "Core/ProjectSettings.h"
 #include "Editor/Selection/SelectionManager.h"
-#include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Platform/WindowsWindow.h"
 #include "Engine/Input/InputSystem.h"
 #include "GameFramework/Actor/DecalActor.h"
 #include "GameFramework/Actor/HeightFogActor.h"

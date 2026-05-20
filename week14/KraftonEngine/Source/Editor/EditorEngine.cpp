@@ -2,7 +2,7 @@
 
 #include "Profiling/StartupProfiler.h"
 #include "Core/Notification.h"
-#include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Platform/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
 #include "Engine/Platform/DirectoryWatcher.h"
 #include "Engine/Runtime/EngineInitHooks.h"

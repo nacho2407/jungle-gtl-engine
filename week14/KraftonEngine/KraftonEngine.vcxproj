@@ -619,6 +619,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Platform\DirectoryWatcher.cpp" />
     <ClCompile Include="Source\Engine\Platform\Paths.cpp" />
+    <ClCompile Include="Source\Engine\Platform\WindowsApplication.cpp" />
+    <ClCompile Include="Source\Engine\Platform\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Profiling\GPUProfiler.cpp" />
     <ClCompile Include="Source\Engine\Profiling\MemoryStats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\ShadowStats.cpp" />
@@ -692,8 +694,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Runtime\GameEngine.cpp" />
     <ClCompile Include="Source\Engine\Runtime\GameRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
-    <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
-    <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
     <ClCompile Include="Source\Engine\Texture\Texture2D.cpp" />
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
@@ -991,6 +991,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Platform\CrashDump.h" />
     <ClInclude Include="Source\Engine\Platform\DirectoryWatcher.h" />
     <ClInclude Include="Source\Engine\Platform\Paths.h" />
+    <ClInclude Include="Source\Engine\Platform\WindowsApplication.h" />
+    <ClInclude Include="Source\Engine\Platform\WindowsWindow.h" />
+    <ClInclude Include="Source\Engine\Platform\resource.h" />
     <ClInclude Include="Source\Engine\Profiling\GPUProfiler.h" />
     <ClInclude Include="Source\Engine\Profiling\MemoryStats.h" />
     <ClInclude Include="Source\Engine\Profiling\PlatformTime.h" />
@@ -1082,9 +1085,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Runtime\GameEngine.h" />
     <ClInclude Include="Source\Engine\Runtime\GameRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Runtime\Launch.h" />
-    <ClInclude Include="Source\Engine\Runtime\WindowsApplication.h" />
-    <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h" />
-    <ClInclude Include="Source\Engine\Runtime\resource.h" />
     <ClInclude Include="Source\Engine\Serialization\Archive.h" />
     <ClInclude Include="Source\Engine\Serialization\DuplicateArchive.h" />
     <ClInclude Include="Source\Engine\Serialization\MemoryArchive.h" />

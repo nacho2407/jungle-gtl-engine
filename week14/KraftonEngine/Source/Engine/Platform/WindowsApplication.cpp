@@ -1,5 +1,5 @@
-#include "Engine/Runtime/WindowsApplication.h"
-#include "Engine/Runtime/resource.h"
+#include "Engine/Platform/WindowsApplication.h"
+#include "Engine/Platform/resource.h"
 
 #include <windowsx.h>
 #include <vector>

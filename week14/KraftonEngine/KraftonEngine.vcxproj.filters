@@ -1223,6 +1223,12 @@
     <ClCompile Include="Source\Engine\Platform\Paths.cpp">
       <Filter>Source\Engine\Platform</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Platform\WindowsApplication.cpp">
+      <Filter>Source\Engine\Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Platform\WindowsWindow.cpp">
+      <Filter>Source\Engine\Platform</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Profiling\GPUProfiler.cpp">
       <Filter>Source\Engine\Profiling</Filter>
     </ClCompile>
@@ -1440,12 +1446,6 @@
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp">
-      <Filter>Source\Engine\Runtime</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp">
-      <Filter>Source\Engine\Runtime</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp">
@@ -2333,6 +2333,15 @@
     <ClInclude Include="Source\Engine\Platform\Paths.h">
       <Filter>Source\Engine\Platform</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\WindowsApplication.h">
+      <Filter>Source\Engine\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\WindowsWindow.h">
+      <Filter>Source\Engine\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\resource.h">
+      <Filter>Source\Engine\Platform</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\GPUProfiler.h">
       <Filter>Source\Engine\Profiling</Filter>
     </ClInclude>
@@ -2604,15 +2613,6 @@
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Runtime\Launch.h">
-      <Filter>Source\Engine\Runtime</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Runtime\WindowsApplication.h">
-      <Filter>Source\Engine\Runtime</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h">
-      <Filter>Source\Engine\Runtime</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Runtime\resource.h">
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Archive.h">

@@ -1,4 +1,4 @@
-﻿#include "Engine/Runtime/Engine.h"
+#include "Engine/Runtime/Engine.h"
 
 #include "Platform/Paths.h"
 #include "Core/Log.h"
@@ -7,7 +7,7 @@
 #include "Profiling/Stats.h"
 #include "Profiling/StartupProfiler.h"
 #include "Engine/Input/InputSystem.h"
-#include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Platform/WindowsWindow.h"
 #include "Resource/ResourceManager.h"
 #include "Render/Pipeline/DefaultRenderPipeline.h"
 #include "Render/Resource/MeshBufferManager.h"
