@@ -549,33 +549,42 @@ namespace
 	// - FbxAnimCurve: node의 LclTranslation/Rotation/Scaling 성분별 X/Y/Z curve.
 	// importer는 curve 자체를 저장하지 않고, 일정한 sample rate로 EvaluateGlobalTransform()을 호출해서
 	// 엔진 런타임이 바로 사용할 수 있는 FBoneAnimationTrack / FRawAnimSequenceTrack으로 bake한다.
-	TMap<FbxNode*, FMatrix> BuildSampleGlobalTransformCache(
+	void BuildSampleGlobalTransformCache(
 		const TArray<FbxNode*>& TrackNodes,
-		const FbxTime& SampleTime)
+		const FbxTime& SampleTime,
+		TArray<FMatrix>& OutGlobalTransforms)
 	{
-		TMap<FbxNode*, FMatrix> GlobalTransformByNode;
-		GlobalTransformByNode.reserve(TrackNodes.size());
+		OutGlobalTransforms.clear();
+		OutGlobalTransforms.reserve(TrackNodes.size());
 
 		for (FbxNode* Node : TrackNodes)
 		{
-			GlobalTransformByNode[Node] = ToFMatrix(Node->EvaluateGlobalTransform(SampleTime));
+			OutGlobalTransforms.push_back(ToFMatrix(Node->EvaluateGlobalTransform(SampleTime)));
 		}
-
-		return GlobalTransformByNode;
 	}
 
-	FMatrix GetCachedGlobalTransform(
-		FbxNode* Node,
-		const TMap<FbxNode*, FMatrix>& GlobalTransformByNode)
+	int32 FindTrackNodeIndex(const TArray<FbxNode*>& TrackNodes, FbxNode* Node)
 	{
-		auto It = GlobalTransformByNode.find(Node);
-		return It != GlobalTransformByNode.end() ? It->second : FMatrix::Identity;
+		if (!Node)
+		{
+			return -1;
+		}
+
+		for (int32 Index = 0; Index < static_cast<int32>(TrackNodes.size()); ++Index)
+		{
+			if (TrackNodes[Index] == Node)
+			{
+				return Index;
+			}
+		}
+		return -1;
 	}
 
 	void AppendSampledRuntimeLocalTransform(
 		FbxNode* Node,
-		FbxNode* RuntimeParentNode,
-		const TMap<FbxNode*, FMatrix>& GlobalTransformByNode,
+		int32 TrackIndex,
+		int32 RuntimeParentTrackIndex,
+		const TArray<FMatrix>& GlobalTransforms,
 		FRawAnimSequenceTrack& OutTrack,
 		FAnimationTrackSamplingState& SamplingState)
 	{
@@ -585,9 +594,9 @@ namespace
 		// 그 결과를 엔진의 runtime parent 기준 local transform으로 다시 바꾼다.
 		// 이렇게 해야 FBX 중간 노드가 animation track에는 없지만 transform 계층에는 있는 경우에도
 		// 그 중간 transform이 key 안에 bake되어 런타임 bone 계층과 맞는다.
-		const FMatrix EngineGlobalTransform = GetCachedGlobalTransform(Node, GlobalTransformByNode);
-		const FMatrix RuntimeLocalTransform = RuntimeParentNode
-			? EngineGlobalTransform * GetCachedGlobalTransform(RuntimeParentNode, GlobalTransformByNode).GetInverse()
+		const FMatrix EngineGlobalTransform = GlobalTransforms[TrackIndex];
+		const FMatrix RuntimeLocalTransform = RuntimeParentTrackIndex >= 0
+			? EngineGlobalTransform * GlobalTransforms[RuntimeParentTrackIndex].GetInverse()
 			: EngineGlobalTransform;
 
 		const FTransform EngineTransform = DecomposeRuntimeLocalForAnimation(
@@ -696,8 +705,8 @@ namespace
 		ImportedTrackNodes.reserve(TrackNodes.size());
 		TArray<FAnimationTrackSamplingState> SamplingStates;
 		SamplingStates.reserve(TrackNodes.size());
-		TArray<FbxNode*> RuntimeParentNodes;
-		RuntimeParentNodes.reserve(TrackNodes.size());
+		TArray<int32> RuntimeParentTrackIndices;
+		RuntimeParentTrackIndices.reserve(TrackNodes.size());
 
 		for (FbxNode* Node : TrackNodes)
 		{
@@ -714,25 +723,28 @@ namespace
 				RuntimeParentNode = ParentIt->second;
 			}
 
-			RuntimeParentNodes.push_back(RuntimeParentNode);
+			RuntimeParentTrackIndices.push_back(FindTrackNodeIndex(TrackNodes, RuntimeParentNode));
 			SamplingStates.push_back(FAnimationTrackSamplingState());
 			ImportedTrackNodes.push_back(Node);
 			Tracks.push_back(std::move(Track));
 		}
 
+		TArray<FMatrix> GlobalTransforms;
+		GlobalTransforms.reserve(ImportedTrackNodes.size());
+
 		for (int32 KeyIndex = 0; KeyIndex < KeyCount; ++KeyIndex)
 		{
 			const FbxTime SampleTime = MakeSampleTime(TimeSpan, KeyIndex, KeyCount);
-			const TMap<FbxNode*, FMatrix> GlobalTransformByNode =
-				BuildSampleGlobalTransformCache(ImportedTrackNodes, SampleTime);
+			BuildSampleGlobalTransformCache(ImportedTrackNodes, SampleTime, GlobalTransforms);
 
 			for (int32 TrackIndex = 0; TrackIndex < static_cast<int32>(Tracks.size()); ++TrackIndex)
 			{
 				FbxNode* Node = ImportedTrackNodes[TrackIndex];
 				AppendSampledRuntimeLocalTransform(
 					Node,
-					RuntimeParentNodes[TrackIndex],
-					GlobalTransformByNode,
+					TrackIndex,
+					RuntimeParentTrackIndices[TrackIndex],
+					GlobalTransforms,
 					Tracks[TrackIndex].InternalTrack,
 					SamplingStates[TrackIndex]);
 			}
