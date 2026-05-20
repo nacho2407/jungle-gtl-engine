@@ -280,6 +280,12 @@ const FAABB& USkinnedMeshComponent::GetWorldAABB() const
     return WorldAABB;
 }
 
+void USkinnedMeshComponent::OnTransformDirty()
+{
+    MarkBoundsDirty();
+    UPrimitiveComponent::OnTransformDirty();
+}
+
 bool USkinnedMeshComponent::ConsumeRenderStateDirty()
 {
     const bool bWasDirty = bRenderStateDirty;

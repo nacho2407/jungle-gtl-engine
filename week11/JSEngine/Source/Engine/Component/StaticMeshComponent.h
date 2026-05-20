@@ -35,6 +35,9 @@ public:
 
     void GetMeshData(TArray<FNormalVertex>& OutVertices, TArray<uint32>& OutIndices) const;
 
+protected:
+    void OnTransformDirty() override;
+
 private:
     void MarkBoundsDirty();
     void MarkRenderStateDirty();

@@ -690,6 +690,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp" />
+    <ClCompile Include="Source\Engine\Asset\AnimStateMachineLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\CurveAssetLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\CurveFloatAsset.cpp" />
     <ClCompile Include="Source\Engine\Asset\FileUtils.cpp" />
@@ -704,6 +705,9 @@
     <ClCompile Include="Source\Engine\Animation\AnimationRuntime.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimStateMachine.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimStateMachineInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimStateMachineTypes.cpp" />
     <ClCompile Include="Source\Engine\Collision\Collision.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayCollision\RayCollision.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
@@ -1027,6 +1031,7 @@
     <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h" />
     <ClInclude Include="Source\Engine\Camera\ViewportCamera.h" />
     <ClInclude Include="Source\Engine\Asset\BinarySerializer.h" />
+    <ClInclude Include="Source\Engine\Asset\AnimStateMachineLoader.h" />
     <ClInclude Include="Source\Engine\Asset\AssetQueryService.h" />
     <ClInclude Include="Source\Engine\Asset\CurveAssetLoader.h" />
     <ClInclude Include="Source\Engine\Asset\CurveFloatAsset.h" />
@@ -1045,6 +1050,9 @@
     <ClInclude Include="Source\Engine\Animation\AnimationTypes.h" />
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimStateMachine.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimStateMachineInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimStateMachineTypes.h" />
     <ClInclude Include="Source\Engine\Collision\Collision.h" />
     <ClInclude Include="Source\Engine\Collision\RayCollision\RayCollision.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />

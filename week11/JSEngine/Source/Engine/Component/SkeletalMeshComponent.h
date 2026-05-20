@@ -3,11 +3,13 @@
 #include "SkeletalMeshComponent.generated.h"
 
 #include "Animation/AnimationTypes.h"
+#include "Core/Containers/Set.h"
 #include "Core/Delegates/Delegate.h"
 #include "Component/SkinnedMeshComponent.h"
 
 class UAnimInstance;
 class UAnimSingleNodeInstance;
+class UAnimStateMachineInstance;
 class UAnimationAsset;
 class USkeletalMeshComponent;
 struct FTransform;
@@ -73,6 +75,17 @@ public:
     FName GetRootMotionBoneName() const;
 
     bool SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName = FString());
+    bool SetAnimStateMachine(const FString& Path);
+    UAnimStateMachineInstance* GetStateMachineInstance() const;
+    void SetAnimVariableFloat(const FName& Name, float Value);
+    float GetAnimVariableFloat(const FName& Name, float DefaultValue = 0.0f) const;
+    void SetAnimVariableBool(const FName& Name, bool Value);
+    bool GetAnimVariableBool(const FName& Name, bool DefaultValue = false) const;
+    FName GetCurrentAnimStateName() const;
+    FName GetPreviousAnimStateName() const;
+    FName GetTargetAnimStateName() const;
+    float GetAnimTransitionAlpha() const;
+    bool IsAnimTransitioning() const;
     void SetAnimationTime(float Time);
     void TickAnimation(float DeltaTime);
     void PlayAnim(bool bLoop);
@@ -96,6 +109,7 @@ private:
     void DestroyAnimInstance();
     UAnimSingleNodeInstance* GetSingleNodeInstance() const;
     UAnimSingleNodeInstance* EnsureSingleNodeInstance();
+    void WarnPoseBoneCountMismatchOnce(int32 MeshBoneCount, int32 PoseBoneCount);
 
 private:
     EAnimationMode AnimationMode = EAnimationMode::None;
@@ -105,4 +119,5 @@ private:
 	// for stat / debug
     FAnimNotifyDispatchEvent LastAnimNotifyEvent;
     bool bHasLastAnimNotifyEvent = false;
+    TSet<FString> PoseBoneCountMismatchWarningKeys;
 };

@@ -4,6 +4,7 @@
 #include "Component/Movement/MovementComponent.h"
 #include "GameFramework/World.h"
 #include "Core/Delegates/Delegate.h"
+#include "Animation/AnimationTypes.h"
 #include <Runtime/Script/ScriptComponent.h>
 #include "ReflectionSystem/ReflectionUtils.h"
 
@@ -716,7 +717,11 @@ void AActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Othe
 
 void AActor::HandleAnimNotify(USkeletalMeshComponent* SourceComponent, const FAnimNotifyDispatchEvent& NotifyEvent)
 {
-	// 기본 구현은 no-op
-    (void)SourceComponent;
-    (void)NotifyEvent;
+    for (UActorComponent* Component : GetComponents())
+    {
+        if (UScriptComponent* ScriptComponent = Cast<UScriptComponent>(Component))
+        {
+            ScriptComponent->OnAnimNotify(SourceComponent, NotifyEvent);
+        }
+    }
 }
