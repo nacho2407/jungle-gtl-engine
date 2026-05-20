@@ -87,7 +87,10 @@ FString FAnimationManager::GetAnimationPath(const FString& SourcePath, const FSt
 
     const FString SafeAnimName = SanitizeAssetName(AnimationName);
 
-    std::filesystem::path AssetPath = std::filesystem::path(L"Content") / ProjectRelative;
+    // SourcePath 가 이미 Content/ 하위면 그대로 — 그렇지 않으면 (구 Data/ root 호환) prefix.
+    std::filesystem::path AssetPath = (!ProjectRelative.empty() && ProjectRelative.begin()->wstring() == L"Content")
+        ? ProjectRelative
+        : (std::filesystem::path(L"Content") / ProjectRelative);
     AssetPath.replace_filename(AssetPath.stem().wstring() + L"_" + FPaths::ToWide(SafeAnimName) + L".uasset");
 
     std::filesystem::path FullAssetPath = std::filesystem::path(FPaths::RootDir()) / AssetPath;
