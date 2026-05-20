@@ -18,8 +18,9 @@ public:
 	void Render3DWorld(FRenderer& Renderer);
 	void Render2DOverlay(float DeltaTime, FRenderer& Renderer);
 	const FRenderCollector::FCullingStats& GetViewportCullingStats(int32 ViewportIndex) const;
-	const FRenderCollector::FDecalStats& GetViewportDecalStats(int32 ViewportIndex) const;
     const FRenderCollector::FLightStats& GetViewportLightStats(int32 ViewportIndex) const;
+	uint64 GetCPUSkinnedVertexBufferMemoryBytes() const;
+	uint64 GetGPUSourceVertexBufferMemoryBytes() const;
 	ID3D11ShaderResourceView* RenderMaterialPreview(FRenderer& Renderer, UStaticMesh* Mesh, UMaterialInterface* Material,
 	                                                uint32 Width, uint32 Height, float YawRad, float PitchRad,
 	                                                float Distance);
@@ -40,6 +41,5 @@ private:
 	FRenderBus Bus;
 	ESkinningMode LastSkinningMode = ESkinningMode::GPU;
 	TArray<FRenderCollector::FCullingStats> ViewportCullingStats;
-	TArray<FRenderCollector::FDecalStats> ViewportDecalStats;
 	TArray<FRenderCollector::FLightStats> ViewportLightStats;
 };

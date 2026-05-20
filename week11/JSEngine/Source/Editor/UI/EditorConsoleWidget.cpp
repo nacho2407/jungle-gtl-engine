@@ -156,7 +156,7 @@ FEditorConsoleWidget::FEditorConsoleWidget()
 	RegisterCommand("suggest", "Show recommended commands. Usage: suggest [prefix]", [this](const TArray<FString>& Args) { CmdSuggest(Args); });
 	RegisterCommand("recommend", "Alias for suggest.", [this](const TArray<FString>& Args) { CmdSuggest(Args); });
 	RegisterCommand("recommendations", "Alias for suggest.", [this](const TArray<FString>& Args) { CmdSuggest(Args); });
-	RegisterCommand("stat", "Viewport and editor stats. Usage: stat <fps|memory|history|nametable|cascadevis|none>", [this](const TArray<FString>& Args) { CmdStat(Args); });
+	RegisterCommand("stat", "Viewport and editor stats. Usage: stat <fps|memory|skinning|history|nametable|cascadevis|none>", [this](const TArray<FString>& Args) { CmdStat(Args); });
 
 	RegisterCommand("shadow", "Set shadow options. Usage: shadow filter <pcf|vsm>", [this](const TArray<FString>& Args){ CmdShadow(Args); });
 	RegisterCommand("skinning", "Set skinning mode. Usage: skinning <cpu|gpu>", [this](const TArray<FString>& Args) { CmdSkinning(Args); });
@@ -556,6 +556,7 @@ void FEditorConsoleWidget::CmdSuggest(const TArray<FString>& Args)
 	{
 		AddLog("  stat fps              Toggle FPS stat on focused viewport\n");
 		AddLog("  stat memory           Toggle memory stat on focused viewport\n");
+		AddLog("  stat skinning         Toggle skinning stat on focused viewport\n");
 		AddLog("  stat history          Print Undo/Redo history memory use\n");
 		AddLog("  stat none             Disable viewport stats\n");
 		bPrinted = true;
@@ -643,6 +644,7 @@ TArray<FString> FEditorConsoleWidget::BuildCommandSuggestions(const FString& Que
 		"stat fps",
 		"stat history",
 		"stat memory",
+		"stat skinning",
 		"stat cascadevis",
 		"stat nametable list",
 		"stat none",
@@ -753,7 +755,7 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 {
 	if (Args.size() < 2)
 	{
-		AddLog("[WARN] Usage: stat <fps|memory|nametable|none>\n");
+		AddLog("[WARN] Usage: stat <fps|memory|skinning|nametable|none>\n");
 		AddLog("[WARN]        stat history         -- print Undo/Redo history memory use\n");
 		AddLog("[WARN]        stat nametable list  -- dump all entries\n");
 		return;
@@ -778,6 +780,12 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 		bool& bFlag = Layout.GetViewportState(FocusedIdx).bShowStatMemory;
 		bFlag = !bFlag;
 		AddLog("Stat Memory %s (viewport %d)\n", bFlag ? "Enabled" : "Disabled", FocusedIdx);
+	}
+	else if (Target == "skinning")
+	{
+		bool& bFlag = Layout.GetViewportState(FocusedIdx).bShowStatSkinning;
+		bFlag = !bFlag;
+		AddLog("Stat Skinning %s (viewport %d)\n", bFlag ? "Enabled" : "Disabled", FocusedIdx);
 	}
 	else if (Target == "history")
 	{
@@ -817,6 +825,7 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 			Layout.GetViewportState(i).bShowStatFPS       = false;
 			Layout.GetViewportState(i).bShowStatMemory    = false;
 			Layout.GetViewportState(i).bShowStatNameTable = false;
+			Layout.GetViewportState(i).bShowStatSkinning  = false;
 			Layout.GetViewportState(i).bShowCascadeVis    = false;
 		}
 		AddLog("All Stats Disabled\n");

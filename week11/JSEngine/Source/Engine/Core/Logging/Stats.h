@@ -24,6 +24,26 @@ struct FStatEntry
 	double GetAvgTime() const { return CallCount > 0 ? TotalTime / CallCount : 0.0; }
 };
 
+struct FSkinningStatsSnapshot
+{
+	double PoseUpdateTimeSeconds = 0.0;
+	double CPUSkinningTimeSeconds = 0.0;
+
+	uint32 TotalSkeletalCount = 0;
+	uint64 TotalVertexCount = 0;
+	uint64 TotalIndexCount = 0;
+
+	uint64 GPUSkinningCBUploadBytes = 0;
+	uint32 GPUSkinningCBUpdateCount = 0;
+};
+
+class FSkinningStats
+{
+public:
+	static FSkinningStatsSnapshot& Get();
+	static void Reset();
+};
+
 // --- Stat Manager (싱글턴) ---
 class FStatManager : public TSingleton<FStatManager>
 {

@@ -60,7 +60,6 @@ FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer&
 {
     Collector.Initialize(InRenderer.GetFD3DDevice().GetDevice());
     ViewportCullingStats.resize(FEditorViewportLayout::MaxViewports);
-	ViewportDecalStats.resize(FEditorViewportLayout::MaxViewports);
 	ViewportLightStats.resize(FEditorViewportLayout::MaxViewports);
 }
 
@@ -138,9 +137,9 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 #endif
     const auto StatsEnd = std::chrono::steady_clock::now();
 
-    for (FRenderCollector::FCullingStats& Stats : ViewportCullingStats)
+    for (FRenderCollector::FCullingStats& CullingStats : ViewportCullingStats)
     {
-        Stats = {};
+        CullingStats = {};
     }
     const auto ResetStatsEnd = std::chrono::steady_clock::now();
 
@@ -309,7 +308,6 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 	const bool bDrawEditorViewportHelpers = VC->AllowsEditorWorldControl();
 	Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum, bDrawEditorViewportHelpers);
     ViewportCullingStats[ViewportIndex] = Collector.GetLastCullingStats();
-    ViewportDecalStats[ViewportIndex] = Collector.GetLastDecalStats();
     ViewportLightStats[ViewportIndex] = Collector.GetLastLightStats();
 
 	// 순수 편집 뷰포트와 PIE Eject는 모두 Editor viewport setting을 따릅니다.
@@ -619,18 +617,6 @@ const FRenderCollector::FCullingStats& FEditorRenderPipeline::GetViewportCulling
     return ViewportCullingStats[ViewportIndex];
 }
 
-const FRenderCollector::FDecalStats& FEditorRenderPipeline::GetViewportDecalStats(int32 ViewportIndex) const
-{
-	static const FRenderCollector::FDecalStats EmptyStats{};
-
-	if (ViewportIndex < 0 || ViewportIndex >= static_cast<int32>(ViewportDecalStats.size()))
-	{
-		return EmptyStats;
-	}
-
-	return ViewportDecalStats[ViewportIndex];
-}
-
 const FRenderCollector::FLightStats& FEditorRenderPipeline::GetViewportLightStats(int32 ViewportIndex) const
 {
 	static const FRenderCollector::FLightStats EmptyStats{};
@@ -641,6 +627,16 @@ const FRenderCollector::FLightStats& FEditorRenderPipeline::GetViewportLightStat
 	}
 
 	return ViewportLightStats[ViewportIndex];
+}
+
+uint64 FEditorRenderPipeline::GetCPUSkinnedVertexBufferMemoryBytes() const
+{
+	return Collector.GetCPUSkinnedVertexBufferMemoryBytes();
+}
+
+uint64 FEditorRenderPipeline::GetGPUSourceVertexBufferMemoryBytes() const
+{
+	return Collector.GetGPUSourceVertexBufferMemoryBytes();
 }
 
 ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(

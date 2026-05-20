@@ -8,6 +8,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
+#include "Core/Logging/Stats.h"
 #include "Engine/Asset/StaticMesh.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Scene/RenderBus.h"
@@ -177,6 +178,14 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
         const FSkeletalMeshLODRenderData* LODData = SkeletalMesh->GetLODRenderData(0);
         const TArray<FSkeletalMeshRenderSection>& Sections = LODData ? LODData->RenderSections : TArray<FSkeletalMeshRenderSection>();
+        if (LODData)
+        {
+            FSkinningStatsSnapshot& SkinningStats = FSkinningStats::Get();
+            SkinningStats.TotalSkeletalCount += 1;
+            SkinningStats.TotalVertexCount += static_cast<uint64>(LODData->StaticVertices.size());
+            SkinningStats.TotalIndexCount += static_cast<uint64>(SkeletalMesh->GetIndices().size());
+        }
+
         if (Sections.empty()) // fallback
         {
             FRenderCommand Cmd = {};

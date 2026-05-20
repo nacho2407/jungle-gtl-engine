@@ -1,10 +1,12 @@
 ﻿#include "SkinnedMeshComponent.h"
 #include "ReflectionSystem/ReflectionUtils.h"
 
+#include "Core/Logging/Stats.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Material.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cfloat>
 #include <cstring>
 
@@ -300,8 +302,13 @@ void USkinnedMeshComponent::EnsurePoseUpdated()
         return;
     }
 
+    const auto PoseUpdateStart = std::chrono::steady_clock::now();
+
     UpdateCurrentGlobalPose();
     UpdateSkinningMatrices();
+
+    FSkinningStats::Get().PoseUpdateTimeSeconds +=
+        std::chrono::duration<double>(std::chrono::steady_clock::now() - PoseUpdateStart).count();
 
     bPoseDirty = false;
     MarkBoundsDirty();
@@ -455,6 +462,8 @@ void USkinnedMeshComponent::UpdateSkinningMatrices()
 
 void USkinnedMeshComponent::SkinVerticesCPU()
 {
+    const auto SkinningStart = std::chrono::steady_clock::now();
+
     if (!HasValidMesh())
     {
         SkinnedVertices.clear();
@@ -578,6 +587,9 @@ void USkinnedMeshComponent::SkinVerticesCPU()
         Dst.Tangent = FVector4(SkinnedTangent.X, SkinnedTangent.Y, SkinnedTangent.Z, Src.Tangent.W);
         }
     }
+
+    FSkinningStats::Get().CPUSkinningTimeSeconds +=
+        std::chrono::duration<double>(std::chrono::steady_clock::now() - SkinningStart).count();
 }
 
 

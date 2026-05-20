@@ -408,6 +408,7 @@ PSOutput PS(PSInput input) : SV_TARGET
     float3 accumulatedLight = float3(1, 1, 1);
 
 #if LIGHT_HEATMAP
+    float weight = 0.0f;
     #if CULLING_MODEL_CLUSTERED
             uint2 tileCoord  = uint2(input.ClipPos.xy) / TILE_SIZE;
             uint  numTilesX  = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
@@ -416,12 +417,12 @@ PSOutput PS(PSInput input) : SV_TARGET
 
             uint  sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
             uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
-            float weight = saturate(float(clusterData.y) / 64.0); // MAX_LIGHTS_PER_TILE 기준
+            weight = saturate(float(clusterData.y) / 64.0); // MAX_LIGHTS_PER_TILE 기준
     #elif CULLING_MODEL_TILED
             uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
             uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
             uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
-            float weight = saturate((float)tileData.y / 64.0f); // MAX_LIGHTS_PER_TILE 기준
+            weight = saturate((float)tileData.y / 64.0f); // MAX_LIGHTS_PER_TILE 기준
     #endif
     float3 heatmapColor = GetHeatmapColor(weight);
 

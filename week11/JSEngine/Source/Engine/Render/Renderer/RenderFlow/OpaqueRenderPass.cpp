@@ -6,6 +6,7 @@
 #include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/ShadowAtlasManager.h"
 #include "Render/Resource/VertexFactoryTypes.h"
+#include "Core/Logging/Stats.h"
 #include "Core/ResourceManager.h"
 #include "Component/PostProcess/Light/LightComponent.h"
 
@@ -78,6 +79,8 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
             RenderBus->GetSkinningMode() == ESkinningMode::GPU)
         {
             Context->RenderResources->SkinningBuffer.Update(Context->DeviceContext, &Cmd.Constants.Skinning, sizeof(FSkinningConstants));
+            FSkinningStats::Get().GPUSkinningCBUploadBytes += sizeof(FSkinningConstants);
+            FSkinningStats::Get().GPUSkinningCBUpdateCount += 1;
             ID3D11Buffer* cb5 = Context->RenderResources->SkinningBuffer.GetBuffer();
             Context->DeviceContext->VSSetConstantBuffers(5, 1, &cb5);
 
