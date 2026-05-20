@@ -380,7 +380,15 @@ void FMeshEditorWidget::RenderTabBar()
 		const bool bHovered = ImGui::IsItemHovered();
 		if (ImGui::IsItemClicked())
 		{
+			const EMeshEditorTab PreviousTab = ActiveTab;
 			ActiveTab = Tab;
+			if (PreviousTab != ActiveTab && ActiveTab == EMeshEditorTab::Skeleton)
+			{
+				if (USkeletalMeshComponent* Comp = ViewportClient.GetPreviewMeshComponent())
+				{
+					Comp->ApplyBoneEditBasePose();
+				}
+			}
 		}
 
 		if (bActive || bHovered)
@@ -578,16 +586,21 @@ void FMeshEditorWidget::RenderSkeletonLayout()
 		ImGui::Dummy(ImVec2(0, 10));
 
 		USkeletalMeshComponent* PreviewMeshComponent = ViewportClient.GetPreviewMeshComponent();
-		FTransform LocalTransform = PreviewMeshComponent ? PreviewMeshComponent->GetBoneLocalTransformByIndex(SelectedBoneIndex) : FTransform(Bone.LocalMatrix);
+		FTransform LocalTransform = PreviewMeshComponent
+			? PreviewMeshComponent->GetBoneEditBaseLocalTransformByIndex(SelectedBoneIndex)
+			: FTransform(Bone.GetReferenceLocalPose());
 
 		FVector Location = LocalTransform.Location;
 		if (ImGui::DragFloat3("Location", &Location.X, 0.1f))
 		{
 			LocalTransform.Location = Location;
 			if (PreviewMeshComponent)
-				PreviewMeshComponent->SetBoneLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
+				PreviewMeshComponent->SetBoneEditBaseLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
 			else
-				Bone.LocalMatrix = LocalTransform.ToMatrix();
+			{
+				Bone.ReferenceLocalPose = LocalTransform.ToMatrix();
+				Bone.SyncLegacyPoseDataFromSeparated();
+			}
 		}
 
 		FVector Rotation = LocalTransform.GetRotator().ToVector();
@@ -595,9 +608,12 @@ void FMeshEditorWidget::RenderSkeletonLayout()
 		{
 			LocalTransform.SetRotation(FRotator(Rotation));
 			if (PreviewMeshComponent)
-				PreviewMeshComponent->SetBoneLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
+				PreviewMeshComponent->SetBoneEditBaseLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
 			else
-				Bone.LocalMatrix = LocalTransform.ToMatrix();
+			{
+				Bone.ReferenceLocalPose = LocalTransform.ToMatrix();
+				Bone.SyncLegacyPoseDataFromSeparated();
+			}
 		}
 
 		FVector Scale = LocalTransform.Scale;
@@ -605,9 +621,12 @@ void FMeshEditorWidget::RenderSkeletonLayout()
 		{
 			LocalTransform.Scale = Scale;
 			if (PreviewMeshComponent)
-				PreviewMeshComponent->SetBoneLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
+				PreviewMeshComponent->SetBoneEditBaseLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
 			else
-				Bone.LocalMatrix = LocalTransform.ToMatrix();
+			{
+				Bone.ReferenceLocalPose = LocalTransform.ToMatrix();
+				Bone.SyncLegacyPoseDataFromSeparated();
+			}
 		}
 	}
 	else

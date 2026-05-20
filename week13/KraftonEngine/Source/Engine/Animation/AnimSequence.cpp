@@ -802,7 +802,7 @@ UAnimSequence* UAnimSequence::CreateMockSwaySequence(
     if (!Asset) return nullptr;
     if (BoneIdx < 0 || BoneIdx >= static_cast<int32>(Asset->Bones.size())) return nullptr;
 
-    const FTransform Base = FAnimationRuntime::DecomposeMatrix(Asset->Bones[BoneIdx].LocalMatrix);
+    const FTransform Base = FAnimationRuntime::DecomposeMatrix(Asset->Bones[BoneIdx].GetReferenceLocalPose());
 
     const float Rad   = AmplitudeDeg * FMath::DegToRad;
     const FQuat RotP  = FQuat::FromAxisAngle(FVector(0.0f, 0.0f, 1.0f),  Rad);
@@ -851,7 +851,7 @@ UAnimSequence* UAnimSequence::CreateMockWaveSequence(
 
     for (int32 b = 0; b < BoneCount; ++b)
     {
-        const FTransform Base = FAnimationRuntime::DecomposeMatrix(Asset->Bones[b].LocalMatrix);
+        const FTransform Base = FAnimationRuntime::DecomposeMatrix(Asset->Bones[b].GetReferenceLocalPose());
 
         // 본 인덱스 별로 위상 차를 줘서 chain 처럼 진행. 한 사이클이 전체 본을 한 바퀴.
         const float PhaseOffset = (static_cast<float>(b) * 2.0f * FMath::Pi)

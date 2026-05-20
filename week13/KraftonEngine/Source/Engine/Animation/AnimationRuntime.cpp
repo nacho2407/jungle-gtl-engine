@@ -68,7 +68,7 @@ void FPoseContext::ResetToRefPose()
 	Pose.resize(Bones.size());
 	for (size_t i = 0; i < Bones.size(); ++i)
 	{
-		Pose[i] = FAnimationRuntime::DecomposeMatrix(Bones[i].LocalMatrix);
+		Pose[i] = FAnimationRuntime::DecomposeMatrix(Bones[i].GetReferenceLocalPose());
 	}
 }
 

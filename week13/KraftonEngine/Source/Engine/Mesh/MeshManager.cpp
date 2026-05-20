@@ -335,6 +335,7 @@ static bool RemapSkeletalMeshToSkeleton(
 			Bone.LocalMatrix              = RefBone.LocalBindPose;
 			Bone.GlobalMatrix             = RefBone.GlobalBindPose;
 			Bone.InverseBindPoseMatrix    = RefBone.InverseBindPose;
+			Bone.SyncSeparatedPoseDataFromLegacy();
 		}
 
 		Bone.Name                  = TargetRef.Bones[TargetIndex].Name;
