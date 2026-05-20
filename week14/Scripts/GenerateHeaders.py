@@ -504,7 +504,7 @@ def build_array_inner_property(
             else "FSoftObjectProperty::GetStringOps()"
         )
         return (
-            f"\tstatic const FSoftObjectProperty {inner_symbol}(\n"
+            f"\tnew FSoftObjectProperty(\n"
             f"\t\t{cpp_string_literal(inner_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\tPF_None,\n"
@@ -516,12 +516,12 @@ def build_array_inner_property(
             f"\t\t{cpp_string_literal(prop.owner)},\n"
             f"\t\t{cpp_optional_string_literal(prop.asset_type)},\n"
             f"\t\t{cpp_optional_string_literal(prop.allowed_class)}\n"
-            "\t);\n"
+            "\t)"
         )
 
     if element_property_type == "String":
         return (
-            f"\tstatic const FStringProperty {inner_symbol}(\n"
+            f"\tnew FStringProperty(\n"
             f"\t\t{cpp_string_literal(inner_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\tPF_None,\n"
@@ -530,12 +530,12 @@ def build_array_inner_property(
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t);\n"
+            "\t)"
         )
 
     if element_property_type == "Name":
         return (
-            f"\tstatic const FNameProperty {inner_symbol}(\n"
+            f"\tnew FNameProperty(\n"
             f"\t\t{cpp_string_literal(inner_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\tPF_None,\n"
@@ -544,12 +544,12 @@ def build_array_inner_property(
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t);\n"
+            "\t)"
         )
 
     if element_property_type == "ClassRef":
         return (
-            f"\tstatic const FClassProperty {inner_symbol}(\n"
+            f"\tnew FClassProperty(\n"
             f"\t\t{cpp_string_literal(inner_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\tPF_None,\n"
@@ -560,12 +560,12 @@ def build_array_inner_property(
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)},\n"
             f"\t\t{cpp_optional_string_literal(prop.allowed_class or get_class_property_class_for_type(element_cpp_type))}\n"
-            "\t);\n"
+            "\t)"
         )
 
     if element_property_type == "ObjectRef":
         return (
-            f"\tstatic const FObjectProperty {inner_symbol}(\n"
+            f"\tnew FObjectProperty(\n"
             f"\t\t{cpp_string_literal(inner_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\tPF_None,\n"
@@ -576,13 +576,13 @@ def build_array_inner_property(
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)},\n"
             f"\t\t{cpp_optional_string_literal(prop.allowed_class or get_object_property_class_for_type(element_cpp_type))}\n"
-            "\t);\n"
+            "\t)"
         )
 
     if element_property_type == "Struct":
         struct_type = prop.struct_type or f"{element_cpp_type}::StaticStruct()"
         return (
-            f"\tstatic const FStructProperty {inner_symbol}(\n"
+            f"\tnew FStructProperty(\n"
             f"\t\t{cpp_string_literal(inner_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\tPF_None,\n"
@@ -592,12 +592,12 @@ def build_array_inner_property(
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t);\n"
+            "\t)"
         )
 
     if element_property_type == "Bool":
         return (
-            f"\tstatic const FBoolProperty {inner_symbol}(\n"
+            f"\tnew FBoolProperty(\n"
             f"\t\t{cpp_string_literal(inner_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\tPF_None,\n"
@@ -606,13 +606,13 @@ def build_array_inner_property(
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t);\n"
+            "\t)"
         )
 
     if element_property_type in {"Int", "Float"}:
         property_class = "FIntProperty" if element_property_type == "Int" else "FFloatProperty"
         return (
-            f"\tstatic const {property_class} {inner_symbol}(\n"
+            f"\tnew {property_class}(\n"
             f"\t\t{cpp_string_literal(inner_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\tPF_None,\n"
@@ -624,11 +624,11 @@ def build_array_inner_property(
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t);\n"
+            "\t)"
         )
 
     return (
-        f"\tstatic const FGenericProperty {inner_symbol}(\n"
+        f"\tnew FGenericProperty(\n"
         f"\t\t{cpp_string_literal(inner_name)},\n"
         f"\t\tEPropertyType::{element_property_type},\n"
         f"\t\t{cpp_string_literal(prop.category)},\n"
@@ -641,7 +641,7 @@ def build_array_inner_property(
         f"\t\t{cpp_string_literal(prop.display_name)},\n"
         f"\t\t{{{metadata_entries}}},\n"
         f"\t\t{cpp_string_literal(prop.owner)}\n"
-        "\t);\n"
+        "\t)"
     )
 
 
@@ -1043,7 +1043,7 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
 
     if property_class == "FEnumProperty":
         return (
-            f"\tstatic const FEnumProperty {property_symbol}(\n"
+            f"\tStruct->AddProperty(new FEnumProperty(\n"
             f"\t\t{cpp_string_literal(prop.member_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
@@ -1053,13 +1053,12 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t);\n"
-            f"\tStruct->AddProperty(&{property_symbol});\n"
+            "\t));\n"
         )
 
     if property_class == "FObjectProperty":
         return (
-            f"\tstatic const FObjectProperty {property_symbol}(\n"
+            f"\tStruct->AddProperty(new FObjectProperty(\n"
             f"\t\t{cpp_string_literal(prop.member_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
@@ -1070,13 +1069,12 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)},\n"
             f"\t\t{cpp_optional_string_literal(get_object_property_class(prop))}\n"
-            "\t);\n"
-            f"\tStruct->AddProperty(&{property_symbol});\n"
+            "\t));\n"
         )
 
     if property_class == "FClassProperty":
         return (
-            f"\tstatic const FClassProperty {property_symbol}(\n"
+            f"\tStruct->AddProperty(new FClassProperty(\n"
             f"\t\t{cpp_string_literal(prop.member_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
@@ -1087,13 +1085,12 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)},\n"
             f"\t\t{cpp_optional_string_literal(get_class_property_class(prop))}\n"
-            "\t);\n"
-            f"\tStruct->AddProperty(&{property_symbol});\n"
+            "\t));\n"
         )
 
     if property_class == "FSoftObjectProperty":
         return (
-            f"\tstatic const FSoftObjectProperty {property_symbol}(\n"
+            f"\tStruct->AddProperty(new FSoftObjectProperty(\n"
             f"\t\t{cpp_string_literal(prop.member_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
@@ -1105,13 +1102,12 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\t\t{cpp_string_literal(prop.owner)},\n"
             f"\t\t{cpp_optional_string_literal(prop.asset_type)},\n"
             f"\t\t{cpp_optional_string_literal(prop.allowed_class)}\n"
-            "\t);\n"
-            f"\tStruct->AddProperty(&{property_symbol});\n"
+            "\t));\n"
         )
 
     if property_class == "FStructProperty":
         return (
-            f"\tstatic const FStructProperty {property_symbol}(\n"
+            f"\tStruct->AddProperty(new FStructProperty(\n"
             f"\t\t{cpp_string_literal(prop.member_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
@@ -1121,13 +1117,12 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t);\n"
-            f"\tStruct->AddProperty(&{property_symbol});\n"
+            "\t));\n"
         )
 
     if property_class in {"FIntProperty", "FFloatProperty"}:
         return (
-            f"\tstatic const {property_class} {property_symbol}(\n"
+            f"\tStruct->AddProperty(new {property_class}(\n"
             f"\t\t{cpp_string_literal(prop.member_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
@@ -1139,13 +1134,12 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t);\n"
-            f"\tStruct->AddProperty(&{property_symbol});\n"
+            "\t));\n"
         )
 
     if property_class in {"FBoolProperty", "FStringProperty", "FNameProperty"}:
         return (
-            f"\tstatic const {property_class} {property_symbol}(\n"
+            f"\tStruct->AddProperty(new {property_class}(\n"
             f"\t\t{cpp_string_literal(prop.member_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
@@ -1154,8 +1148,7 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t);\n"
-            f"\tStruct->AddProperty(&{property_symbol});\n"
+            "\t));\n"
         )
 
     if property_class == "FArrayProperty":
@@ -1173,13 +1166,12 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             metadata_entries,
         )
         return (
-            inner_property_source +
-            f"\tstatic const FArrayProperty {property_symbol}(\n"
+            f"\tStruct->AddProperty(new FArrayProperty(\n"
             f"\t\t{cpp_string_literal(prop.member_name)},\n"
             f"\t\tEPropertyType::{prop.property_type},\n"
             f"\t\tEPropertyType::{element_property_type},\n"
             f"\t\tFArrayProperty::GetArrayOps<{element_cpp_type}>(),\n"
-            f"\t\t&{inner_property_symbol},\n"
+            f"\t\t{inner_property_source},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
             f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
@@ -1187,12 +1179,11 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t);\n"
-            f"\tStruct->AddProperty(&{property_symbol});\n"
+            "\t));\n"
         )
 
     return (
-        f"\tstatic const FGenericProperty {property_symbol}(\n"
+        f"\tStruct->AddProperty(new FGenericProperty(\n"
         f"\t\t{cpp_string_literal(prop.member_name)},\n"
         f"\t\tEPropertyType::{prop.property_type},\n"
         f"\t\t{cpp_string_literal(prop.category)},\n"
@@ -1205,8 +1196,7 @@ def render_property(prop: ReflectedProperty, index: int) -> str:
         f"\t\t{cpp_string_literal(prop.display_name)},\n"
         f"\t\t{{{metadata_entries}}},\n"
         f"\t\t{cpp_string_literal(prop.owner)}\n"
-        "\t);\n"
-        f"\tStruct->AddProperty(&{property_symbol});\n"
+        "\t));\n"
     )
 
 

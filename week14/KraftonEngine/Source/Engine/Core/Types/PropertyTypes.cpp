@@ -1,21 +1,6 @@
-#include "Core/Types/PropertyTypes.h"
+﻿#include "Core/Types/PropertyTypes.h"
 
-#include "SimpleJSON/json.hpp"
 #include "Object/Reflection/UStruct.h"
-
-bool FJsonObjectReferenceContext::SerializeObjectReference(const UObject* Object, json::JSON& OutValue) const
-{
-	(void)Object;
-	(void)OutValue;
-	return false;
-}
-
-bool FJsonObjectReferenceContext::DeserializeObjectReference(json::JSON& Value, UObject*& OutObject) const
-{
-	(void)Value;
-	OutObject = nullptr;
-	return false;
-}
 
 const char* FPropertyValue::GetName() const
 {
@@ -96,78 +81,16 @@ void FPropertyValue::GetStructChildren(TArray<FPropertyValue>& OutProps) const
 	}
 }
 
-json::JSON FProperty::Serialize(UObject* Object) const
-{
-	return SerializeValue(GetValuePtrFor(Object), Object, nullptr);
-}
-
-void FProperty::Deserialize(UObject* Object, json::JSON& JsonValue) const
-{
-	DeserializeValue(GetValuePtrFor(Object), JsonValue, Object, nullptr);
-}
-
-json::JSON FProperty::Serialize(UObject* Object, const FJsonObjectReferenceContext* RefContext) const
-{
-	return SerializeValue(GetValuePtrFor(Object), Object, RefContext);
-}
-
-void FProperty::Deserialize(UObject* Object, json::JSON& JsonValue, const FJsonObjectReferenceContext* RefContext) const
-{
-	DeserializeValue(GetValuePtrFor(Object), JsonValue, Object, RefContext);
-}
-
 void FProperty::Serialize(UObject* Object, FArchive& Ar) const
 {
-	SerializeValue(GetValuePtrFor(Object), Object, Ar);
+	FPropertySerializeContext Context;
+	Context.Owner = Object;
+	SerializeValue(GetValuePtrFor(Object), Ar, Context);
 }
 
-json::JSON FProperty::Serialize(void* Container) const
+void FProperty::SerializeValue(void* ValuePtr, FArchive& Ar, const FPropertySerializeContext& Context) const
 {
-	return SerializeValue(GetValuePtrFor(Container));
-}
-
-void FProperty::Deserialize(void* Container, json::JSON& JsonValue) const
-{
-	DeserializeValue(GetValuePtrFor(Container), JsonValue);
-}
-
-json::JSON FProperty::Serialize(void* Container, const FJsonObjectReferenceContext* RefContext) const
-{
-	return SerializeValue(GetValuePtrFor(Container), RefContext);
-}
-
-void FProperty::Deserialize(void* Container, json::JSON& JsonValue, const FJsonObjectReferenceContext* RefContext) const
-{
-	DeserializeValue(GetValuePtrFor(Container), JsonValue, RefContext);
-}
-
-json::JSON FProperty::SerializeValue(void* ValuePtr, const FJsonObjectReferenceContext* RefContext) const
-{
-	(void)RefContext;
-	return SerializeValue(ValuePtr);
-}
-
-void FProperty::DeserializeValue(void* ValuePtr, json::JSON& JsonValue, const FJsonObjectReferenceContext* RefContext) const
-{
-	(void)RefContext;
-	DeserializeValue(ValuePtr, JsonValue);
-}
-
-json::JSON FProperty::SerializeValue(void* ValuePtr, UObject* Owner, const FJsonObjectReferenceContext* RefContext) const
-{
-	(void)Owner;
-	return SerializeValue(ValuePtr, RefContext);
-}
-
-void FProperty::DeserializeValue(void* ValuePtr, json::JSON& JsonValue, UObject* Owner, const FJsonObjectReferenceContext* RefContext) const
-{
-	(void)Owner;
-	DeserializeValue(ValuePtr, JsonValue, RefContext);
-}
-
-void FProperty::SerializeValue(void* ValuePtr, UObject* Owner, FArchive& Ar) const
-{
-	(void)Owner;
+	(void)Context;
 	SerializeValue(ValuePtr, Ar);
 }
 
