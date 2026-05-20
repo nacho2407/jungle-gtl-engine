@@ -9,7 +9,7 @@
 
 namespace
 {
-	// 실제 파일을 찾아 프로젝트 Asset/Textures/Auto/<FBX이름>/ 아래로 복사하고
+	// 실제 파일을 찾아 프로젝트 Content/Texture/Auto/<FBX이름>/ 아래로 복사하고
 	// 프로젝트 상대경로를 돌려준다. 못 찾으면 기존 동작(경로 정리)만 수행한다.
 	FString ImportTextureToProject(const FString& RawTexturePath, const FString& FbxSourcePath)
 	{
@@ -58,7 +58,7 @@ namespace
 		}
 
 		const std::wstring SubFolder = FbxPath.stem().wstring();
-		const fs::path DestRelDir = fs::path(L"Asset") / L"Textures" / L"Auto" / SubFolder;
+		const fs::path DestRelDir = fs::path(L"Content") / L"Texture" / L"Auto" / SubFolder;
 		const fs::path DestAbsDir = fs::path(FPaths::RootDir()) / DestRelDir;
 
 		std::error_code Ec;
@@ -236,14 +236,14 @@ void FFbxMaterialImporter::BuildSkeletalMaterials(const FFbxImportContext& Conte
 
 FString FFbxMaterialImporter::CreateOrUpdateMaterialAsset(const FFbxImportedMaterialInfo& MaterialInfo)
 {
-	const FString MatPath = "Asset/Materials/Auto/" + MaterialInfo.Name + ".mat";
+	const FString MatPath = "Content/Material/Auto/" + MaterialInfo.Name + ".mat";
 
 	if (std::filesystem::exists(FPaths::ToWide(MatPath)))
 	{
 		return MatPath;
 	}
 
-	std::filesystem::create_directories(FPaths::ToWide("Asset/Materials/Auto"));
+	std::filesystem::create_directories(FPaths::ToWide("Content/Material/Auto"));
 
 	json::JSON JsonData;
 	JsonData["PathFileName"] = MatPath;

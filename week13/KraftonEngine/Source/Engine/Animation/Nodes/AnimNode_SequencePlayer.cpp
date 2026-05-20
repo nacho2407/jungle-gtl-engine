@@ -1,8 +1,8 @@
 #include "AnimNode_SequencePlayer.h"
 
 #include "Animation/AnimInstance.h"
-#include "Animation/AnimSequenceBase.h"
-#include "Animation/AnimSequence.h"
+#include "Animation/Sequence/AnimSequenceBase.h"
+#include "Animation/Sequence/AnimSequence.h"
 #include "Animation/AnimExtractContext.h"
 #include "Animation/PoseContext.h"
 #include "Object/Object.h"   // Cast<>

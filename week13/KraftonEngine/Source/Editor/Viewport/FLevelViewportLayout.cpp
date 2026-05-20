@@ -1,4 +1,4 @@
-﻿#include "Editor/Viewport/FLevelViewportLayout.h"
+#include "Editor/Viewport/FLevelViewportLayout.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
@@ -1832,7 +1832,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
 		if (Actor)
 		{
-			Actor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
+			Actor->InitDefaultComponents("Content/Data/BasicShape/Cube.OBJ");
 			SpawnedActor = Actor;
 		}
 		break;
@@ -1842,7 +1842,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
 		if (Actor)
 		{
-			Actor->InitDefaultComponents("Data/BasicShape/Sphere.OBJ");
+			Actor->InitDefaultComponents("Content/Data/BasicShape/Sphere.OBJ");
 			SpawnedActor = Actor;
 		}
 		break;
@@ -1852,7 +1852,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
 		if (Actor)
 		{
-			Actor->InitDefaultComponents("Data/BasicShape/Cylinder.obj");
+			Actor->InitDefaultComponents("Content/Data/BasicShape/Cylinder.obj");
 			SpawnedActor = Actor;
 		}
 		break;
@@ -1969,7 +1969,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		ASkeletalMeshActor* Actor = World->SpawnActor<ASkeletalMeshActor>();
 		if (Actor)
 		{
-			Actor->InitDefaultComponents("Data/Samba Dancing (10).fbx");
+			Actor->InitDefaultComponents("Content/Data/Samba Dancing (10).fbx");
 			SpawnedActor = Actor;
 		}
 		break;
@@ -1980,7 +1980,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		if (Actor)
 		{
 			// SkeletalMeshActor 와 동일 default mesh — 검증된 fbx.
-			Actor->InitDefaultComponents("Data/Samba Dancing (10).fbx");
+			Actor->InitDefaultComponents("Content/Data/Samba Dancing (10).fbx");
 			SpawnedActor = Actor;
 		}
 		break;
@@ -1991,8 +1991,8 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		if (Actor)
 		{
 			// Mesh 는 default. ULuaScriptComponent 의 ScriptFile 은 사용자가
-			// PropertyWidget 에서 콤보로 지정 (Asset/Script/*.lua).
-			Actor->InitDefaultComponents("Data/Samba Dancing (10).fbx", FString());
+			// PropertyWidget 에서 콤보로 지정 (Content/Script/*.lua).
+			Actor->InitDefaultComponents("Content/Data/Samba Dancing (10).fbx", FString());
 			SpawnedActor = Actor;
 		}
 		break;

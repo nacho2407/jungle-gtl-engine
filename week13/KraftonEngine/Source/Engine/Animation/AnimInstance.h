@@ -1,12 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
-#include "PoseContext.h"
-#include "AnimNotifyEvent.h"
+#include "Animation/PoseContext.h"
+#include "Animation/Notify/AnimNotifyEvent.h"
 #include "Math/Transform.h"
 #include "Object/FName.h"
-#include "AnimationMode.h"
-#include "Nodes/AnimNode_Base.h"
+#include "Animation/AnimationMode.h"
+#include "Animation/Nodes/AnimNode_Base.h"
 
 #include <memory>
 #include <utility>

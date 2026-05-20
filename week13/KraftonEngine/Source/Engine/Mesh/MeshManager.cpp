@@ -1,4 +1,4 @@
-﻿#include "MeshManager.h"
+#include "MeshManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/ObjImporter.h"
@@ -19,10 +19,10 @@
 #include <utility>
 
 #include "Animation/AnimationManager.h"
-#include "Animation/AnimSequence.h"
-#include "Animation/Skeleton.h"
-#include "Animation/SkeletonManager.h"
-#include "Animation/SkeletonTypes.h"
+#include "Animation/Sequence/AnimSequence.h"
+#include "Animation/Skeleton/Skeleton.h"
+#include "Animation/Skeleton/SkeletonManager.h"
+#include "Animation/Skeleton/SkeletonTypes.h"
 
 TMap<FString, UStaticMesh*> FMeshManager::StaticMeshCache;
 TMap<FString, USkeletalMesh*> FMeshManager::SkeletalMeshCache;
@@ -42,7 +42,7 @@ static void EnsureMeshCacheDirExists()
 	static bool bCreated = false;
 	if (!bCreated)
 	{
-		std::wstring CacheDir = FPaths::RootDir() + L"Asset/MeshCache/";
+		std::wstring CacheDir = FPaths::RootDir() + L"Content/MeshCache/";
 		FPaths::CreateDir(CacheDir);
 		bCreated = true;
 	}
@@ -587,7 +587,7 @@ void FMeshManager::ScanMeshSourceFiles()
 {
 	AvailableStaticMeshSourceFiles.clear();
 
-	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data/";
+	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Content/Data/";
 
 	if (!std::filesystem::exists(DataRoot))
 	{
@@ -741,7 +741,7 @@ void FMeshManager::ScanFbxSourceFiles()
 {
 	AvailableFbxSourceFiles.clear();
 
-	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data/";
+	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Content/Data/";
 
 	if (!std::filesystem::exists(DataRoot))
 	{

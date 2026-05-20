@@ -13,11 +13,11 @@ public:
 
 	// 주요 디렉터리
 	static std::wstring ShaderDir();      // Shaders/
-	static std::wstring AssetDir();       // Asset/
-	static std::wstring AudioDir();       // Asset/Audio/
-	static std::wstring SceneDir();       // Asset/Scene/
-	static std::wstring ScriptDir();	  // Asset/Script/
-	static std::wstring DataDir();        // Data/
+	static std::wstring AssetDir();       // Content/  (legacy 이름 — UE 의 ContentDir 와 의미 동일)
+	static std::wstring AudioDir();       // Content/Audio/
+	static std::wstring SceneDir();       // Content/Scene/
+	static std::wstring ScriptDir();	  // Content/Script/
+	static std::wstring DataDir();        // Content/Data/
 	static std::wstring SaveDir();        // Saves/
 	static std::wstring DumpDir();        // Saves/Dump/
 	static std::wstring LogDir();         // Saves/Logs/
@@ -29,7 +29,7 @@ public:
 	static std::wstring ResourceFilePath();         // Settings/Resource.ini
 	static std::wstring ProjectSettingsFilePath();  // Settings/ProjectSettings.ini
 
-	// 경로 결합: FPaths::Combine(L"Asset/Scene", L"Default.Scene")
+	// 경로 결합: FPaths::Combine(L"Content/Scene", L"Default.Scene")
 	static std::wstring Combine(const std::wstring& Base, const std::wstring& Child);
 
 	template<typename... Rest>

@@ -23,5 +23,5 @@ private:
 	UBillboardComponent* BillboardComponent = nullptr;
 	UTextRenderComponent* TextRenderComponent = nullptr;
 	
-	const FString DefaultDecalMaterialPath = "Asset/Materials/Editor/DefaultDecal.mat";
+	const FString DefaultDecalMaterialPath = "Content/Material/Editor/DefaultDecal.mat";
 };

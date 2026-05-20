@@ -1,8 +1,8 @@
 #include "AnimSequencePropertyPanel.h"
 
-#include "Animation/AnimSequence.h"
+#include "Animation/Sequence/AnimSequence.h"
 #include "Animation/AnimationManager.h"
-#include "Animation/BoneAnimationTrack.h"
+#include "Animation/Sequence/BoneAnimationTrack.h"
 
 #include <imgui.h>
 
