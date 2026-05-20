@@ -76,8 +76,6 @@ struct FClassProperty : FObjectPropertyBase
 	UClass* GetClassValueFromValuePtr(void* ValuePtr) const;
 	void SetClassValueFromValuePtr(void* ValuePtr, UClass* Class) const;
 
-	json::JSON SerializeValue(void* ValuePtr) const override;
-	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 
 private:

@@ -97,11 +97,7 @@ struct FArrayProperty : FProperty
 	const FArrayOps* GetArrayOps() const { return ArrayOps; }
 	const FArrayProperty* AsArrayProperty() const override { return this; }
 
-	json::JSON SerializeValue(void* ValuePtr) const override;
-	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
-	json::JSON SerializeValue(void* ValuePtr, const FPropertySerializeContext& Context) const override;
-	void	   DeserializeValue(void* ValuePtr, json::JSON& Value, const FPropertySerializeContext& Context) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar, const FPropertySerializeContext& Context) const override;
 
 private:

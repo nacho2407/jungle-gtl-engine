@@ -73,6 +73,8 @@ void UObject::Serialize(FArchive& Ar)
 
 void UObject::SerializeProperties(FArchive& Ar, uint32 RequiredFlags)
 {
+	Ar.BeginObject();
+
 	TArray<const FProperty*> Properties;
 	GetClass()->GetPropertyRefs(Properties);
 
@@ -88,8 +90,17 @@ void UObject::SerializeProperties(FArchive& Ar, uint32 RequiredFlags)
 			continue;
 		}
 
+		if (!Ar.HasProperty(Property->Name))
+		{
+			continue;
+		}
+
+		Ar.BeginProperty(Property->Name);
 		Property->Serialize(this, Ar);
+		Ar.EndProperty();
 	}
+
+	Ar.EndObject();
 }
 
 void UObject::GetEditableProperties(TArray<FPropertyValue>& OutProps)

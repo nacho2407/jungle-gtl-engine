@@ -345,7 +345,7 @@ return Container ? reinterpret_cast<uint8*>(Container) + Offset : nullptr;
 
 ## Save/Load 흐름
 
-scene 저장 시스템은 property 목록 중 `PF_Save`가 있는 항목을 대상으로 serialize한다. 각 property는 virtual `SerializeValue`/`DeserializeValue`를 통해 자신의 타입에 맞게 JSON 또는 archive 값을 처리한다.
+scene 저장 시스템은 property 목록 중 `PF_Save`가 있는 항목을 대상으로 serialize한다. 각 property는 `FArchive`만 상대하며, JSON scene 포맷은 `FJsonArchive`가 `FArchive` 훅을 구현해서 변환한다. 따라서 property layer는 저장 대상이 바이너리인지 JSON인지 알지 않는다.
 
 중요한 구분:
 
@@ -402,6 +402,6 @@ generated 파일은 수동으로 수정하지 않는다. 수정해야 할 내용
 2. `Source/Engine/Core/Property/...`: 새 property class 구현.
 3. `Tools/GenerateHeaders.py`: C++ 타입 또는 `Type=...`이 새 property class로 생성되도록 매핑.
 4. `Source/Editor/UI/EditorPropertyWidget.cpp`: Details 패널에서 새 타입 위젯 렌더링.
-5. scene save/load가 필요한 경우 해당 property의 `SerializeValue`/`DeserializeValue`.
+5. scene save/load가 필요한 경우 해당 property의 `SerializeValue(FArchive&)`.
 
 다만 모든 타입을 무조건 파생 property로 만들 필요는 없다. `Vec3`, `Vec4`, `Color4`, `Rotator`처럼 단순 값 타입이고 serialize/UI 차이만 작으면 `FGenericProperty` + `EPropertyType`으로 두는 편이 현재 구조에서는 더 단순하다.

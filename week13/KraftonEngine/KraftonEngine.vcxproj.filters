@@ -2531,6 +2531,9 @@
     <ClInclude Include="Source\Engine\Serialization\DuplicateArchive.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\JsonArchive.h">
+      <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\MemoryArchive.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>

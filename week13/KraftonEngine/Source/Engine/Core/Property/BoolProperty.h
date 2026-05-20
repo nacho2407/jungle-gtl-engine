@@ -21,7 +21,5 @@ struct FBoolProperty : FProperty
 	EPropertyType GetType() const override { return EPropertyType::Bool; }
 	const FBoolProperty* AsBoolProperty() const override { return this; }
 
-	json::JSON SerializeValue(void* ValuePtr) const override;
-	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 };

@@ -76,14 +76,8 @@ struct FObjectProperty : FObjectPropertyBase
 	UObject* GetObjectValueFromValuePtr(void* ValuePtr) const;
 	void SetObjectValueFromValuePtr(void* ValuePtr, UObject* Object) const;
 
-	json::JSON SerializeValue(void* ValuePtr) const override;
-	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
-	json::JSON Serialize(UObject* Object, const FJsonObjectReferenceContext* RefContext) const override;
-	void	   Deserialize(UObject* Object, json::JSON& Value, const FJsonObjectReferenceContext* RefContext) const override;
 	void	   Serialize(UObject* Object, FArchive& Ar) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
-	json::JSON SerializeValue(void* ValuePtr, const FPropertySerializeContext& Context) const override;
-	void	   DeserializeValue(void* ValuePtr, json::JSON& Value, const FPropertySerializeContext& Context) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar, const FPropertySerializeContext& Context) const override;
 
 private:

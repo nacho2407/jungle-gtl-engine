@@ -18,6 +18,7 @@
 #include "Core/PropertyTypes.h"
 #include "Object/FName.h"
 #include "Profiling/PlatformTime.h"
+#include "Serialization/JsonArchive.h"
 
 // ---- JSON vector helpers ---------------------------------------------------
 
@@ -64,6 +65,44 @@ namespace SceneKeys
 	static constexpr const char* ObjectId = "ObjectId";
 }
 
+class FSceneJsonSaveArchive : public FJsonArchive
+{
+public:
+	FSceneJsonSaveArchive(json::JSON& Root, const FSceneSaveManager::FSceneSaveContext& InContext)
+		: FJsonArchive(Root, /*bInIsSaving=*/true)
+		, Context(InContext)
+	{
+	}
+
+protected:
+	uint32 ResolveJsonObjectId(const UObject* Object) const override
+	{
+		return Context.FindObjectId(Object);
+	}
+
+private:
+	const FSceneSaveManager::FSceneSaveContext& Context;
+};
+
+class FSceneJsonLoadArchive : public FJsonArchive
+{
+public:
+	FSceneJsonLoadArchive(json::JSON& Root, const FSceneSaveManager::FSceneLoadContext& InContext)
+		: FJsonArchive(Root, /*bInIsSaving=*/false)
+		, Context(InContext)
+	{
+	}
+
+protected:
+	UObject* ResolveJsonObjectReference(uint32 ObjectId) const override
+	{
+		return ObjectId != 0 ? Context.FindObjectById(ObjectId) : nullptr;
+	}
+
+private:
+	const FSceneSaveManager::FSceneLoadContext& Context;
+};
+
 uint32 FSceneSaveManager::FSceneSaveContext::RegisterSceneObject(const UObject* Object)
 {
 	if (!Object)
@@ -91,29 +130,6 @@ uint32 FSceneSaveManager::FSceneSaveContext::FindObjectId(const UObject* Object)
 
 	auto It = ObjectToId.find(Object);
 	return It != ObjectToId.end() ? It->second : 0;
-}
-
-bool FSceneSaveManager::FSceneSaveContext::SerializeObjectReference(const UObject* Object, json::JSON& OutValue) const
-{
-	using namespace json;
-
-	if (!Object)
-	{
-		OutValue = JSON();
-		return true;
-	}
-
-	const uint32 ObjectId = FindObjectId(Object);
-	if (ObjectId == 0)
-	{
-		OutValue = JSON();
-		return true;
-	}
-
-	JSON Ref = json::Object();
-	Ref[SceneKeys::ObjectId] = static_cast<int>(ObjectId);
-	OutValue = Ref;
-	return true;
 }
 
 void FSceneSaveManager::FSceneLoadContext::RegisterLoadedObject(json::JSON& Node, UObject* Object)
@@ -144,24 +160,6 @@ void FSceneSaveManager::FSceneLoadContext::QueueProperties(UObject* Object, json
 	}
 
 	PendingProperties.push_back({ Object, &Properties });
-}
-
-bool FSceneSaveManager::FSceneLoadContext::DeserializeObjectReference(json::JSON& Value, UObject*& OutObject) const
-{
-	OutObject = nullptr;
-	if (Value.IsNull())
-	{
-		return true;
-	}
-
-	if (Value.JSONType() != json::JSON::Class::Object || !Value.hasKey(SceneKeys::ObjectId))
-	{
-		return false;
-	}
-
-	const uint32 ObjectId = static_cast<uint32>(Value[SceneKeys::ObjectId].ToInt());
-	OutObject = ObjectId != 0 ? FindObjectById(ObjectId) : nullptr;
-	return true;
 }
 
 static void SerializeComponentEditorMetadata(json::JSON& Node, const UActorComponent* Comp)
@@ -399,27 +397,8 @@ json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj, FSceneSaveContex
 	JSON Props = json::Object();
 	if (!Obj) return Props;
 
-	TArray<const FProperty*> Properties;
-	Obj->GetClass()->GetPropertyRefs(Properties);
-	for (const FProperty* Prop : Properties)
-	{
-		if (!Prop || (Prop->Flags & PF_Save) == 0)
-		{
-			continue;
-		}
-
-		if (!Prop->GetValuePtrFor(Obj))
-		{
-			continue;
-		}
-
-		if (!Prop->Name || Prop->Name[0] == '\0')
-		{
-			continue;
-		}
-
-		Props[Prop->Name] = Prop->Serialize(Obj, &Context);
-	}
+	FSceneJsonSaveArchive Ar(Props, Context);
+	Obj->SerializeProperties(Ar, PF_Save);
 	return Props;
 }
 
@@ -671,13 +650,32 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 			continue;
 		}
 
+		if (PropertyKey != Property->Name)
+		{
+			PropsJSON[Property->Name] = PropsJSON[PropertyKey];
+		}
+	}
+
+	for (const FProperty* Property : Properties)
+	{
+		if(!Property || (Property->Flags & PF_Save) == 0)
+		{
+			continue;
+		}
+
+		const char* PropertyKey = Property->Name;
+		if (!PropsJSON.hasKey(PropertyKey))
+		{
+			continue;
+		}
+
 		if(!Property->GetValuePtrFor(Obj))
 		{
 			continue;
 		}
 
-		json::JSON& Value = PropsJSON[PropertyKey];
-		Property->Deserialize(Obj, Value, &Context);
+		FSceneJsonLoadArchive Ar(PropsJSON[PropertyKey], Context);
+		Property->Serialize(Obj, Ar);
 
 		FPropertyChangedEvent Event;
 		Event.Object = Obj;
