@@ -1297,6 +1297,7 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
 	ImGui::Text("Actor: %s", PrimaryActor->GetTypeInfo()->name);
+	ImGui::TextDisabled("UUID: %u", PrimaryActor->GetUUID());
 	RenderEditableName("Name##Actor", PrimaryActor, &bFocusActorNameNextFrame); // 편집 가능한 UI
 	RenderActorTags(PrimaryActor, SelectedActors);
 
@@ -1613,6 +1614,7 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	const FDetailsPerfClock::time_point TotalStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
 
 	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
+	ImGui::TextDisabled("UUID: %u", SelectedComponent->GetUUID());
 	RenderEditableName("Name##Component", SelectedComponent, &bFocusComponentNameNextFrame); // 편집 가능한 UI
 	RenderComponentTags(SelectedComponent);
 	RenderCallInEditorFunctions(SelectedComponent);
