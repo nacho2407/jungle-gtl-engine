@@ -21,8 +21,13 @@ class FAnimNode_BlendListByEnum : public FAnimNode_Base
 public:
 	// Build-side — lua/C++ 가 채움.
 	TArray<FAnimNode_Base*> InputPoses;
-	int32                   ActiveChildIndex = 0;   // 외부에서 매 update 갱신.
+	int32                   ActiveChildIndex = 0;   // 외부에서 매 update 갱신 (SelectorFn 미설정 시).
 	float                   BlendTime        = 0.2f;
+
+	// 선택사항 — 설정되어 있으면 매 Update 시작 시 호출해 ActiveChildIndex 자동 갱신.
+	// AnimGraph 컴파일러가 Selector input 의 source (VariableGet 노드) 를 reflection 람다로
+	// inline. 비어있으면 기존 동작 (외부가 ActiveChildIndex 박음) 유지 — UCharacterAnimInstance 호환.
+	TFunction<int32(UAnimInstance*)> SelectorFn;
 
 	void Initialize(const FAnimationInitializeContext& Context) override;
 	void OnBecomeRelevant(const FAnimationInitializeContext& Context) override;
