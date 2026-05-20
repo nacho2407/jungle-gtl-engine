@@ -21,6 +21,65 @@ namespace
 		return EditorEngine && EditorEngine->GetEditorState() == EViewportPlayState::Editing;
 	}
 
+	int GetImGuiMouseButtonVirtualKey(int Button)
+	{
+		switch (Button)
+		{
+		case 0: return VK_LBUTTON;
+		case 1: return VK_RBUTTON;
+		case 2: return VK_MBUTTON;
+		case 3: return VK_XBUTTON1;
+		case 4: return VK_XBUTTON2;
+		default: return 0;
+		}
+	}
+
+	bool IsAsyncKeyDown(int VK)
+	{
+		return VK != 0 && (::GetAsyncKeyState(VK) & 0x8000) != 0;
+	}
+
+	void SyncImGuiMouseDragToHardware(ImGuiIO& IO, FWindowsWindow* Window)
+	{
+		bool bAnyImGuiButtonDown = false;
+		bool bAnyHardwareButtonDown = false;
+		for (int Button = 0; Button < IM_ARRAYSIZE(IO.MouseDown); ++Button)
+		{
+			const int VK = GetImGuiMouseButtonVirtualKey(Button);
+			if (VK == 0 || !IO.MouseDown[Button])
+			{
+				continue;
+			}
+
+			bAnyImGuiButtonDown = true;
+			if (IsAsyncKeyDown(VK))
+			{
+				bAnyHardwareButtonDown = true;
+				continue;
+			}
+
+			IO.AddMouseButtonEvent(Button, false);
+		}
+
+		if (!bAnyImGuiButtonDown || !bAnyHardwareButtonDown)
+		{
+			return;
+		}
+
+		POINT CursorScreenPos = {};
+		if (!::GetCursorPos(&CursorScreenPos))
+		{
+			return;
+		}
+
+		POINT ImGuiMousePos = CursorScreenPos;
+		if ((IO.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) == 0 && Window)
+		{
+			ImGuiMousePos = Window->ScreenToClientPoint(CursorScreenPos);
+		}
+		IO.AddMousePosEvent(static_cast<float>(ImGuiMousePos.x), static_cast<float>(ImGuiMousePos.y));
+	}
+
 	bool HasActiveViewerViewportOperation(UEditorEngine* EditorEngine)
 	{
 		if (!EditorEngine)
@@ -127,6 +186,7 @@ bool FEditorMainPanel::ExecuteActiveEditorCommand(EEditorCommandId CommandId)
 void FEditorMainPanel::Update()
 {
     ImGuiIO& IO = ImGui::GetIO();
+	SyncImGuiMouseDragToHardware(IO, Window);
 
     FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
     const bool bMouseOverContentBrowser = Widgets.ContentBrowserWidget.IsMouseOverBrowser();

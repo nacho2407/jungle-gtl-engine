@@ -2,6 +2,14 @@
 #include "Engine/Input/InputWindowFocus.h"
 #include <cmath>
 
+namespace
+{
+bool IsAsyncKeyDown(int VK)
+{
+    return (::GetAsyncKeyState(VK) & 0x8000) != 0;
+}
+}
+
 void InputSystem::Tick()
 {
 	// 메인 창 또는 ImGui platform window 등 현재 프로세스 창에 포커스가 없으면 입력 상태 해제.
@@ -212,6 +220,14 @@ void InputSystem::SampleKeyStates()
             CurrentStates[i] = (KeyState[i] & 0x80) != 0;
         }
     }
+
+    // Mouse-up can happen outside our client area if OS capture is lost.
+    // Keep mouse buttons synced to the global hardware state so drags cannot stick.
+    CurrentStates[VK_LBUTTON] = IsAsyncKeyDown(VK_LBUTTON);
+    CurrentStates[VK_RBUTTON] = IsAsyncKeyDown(VK_RBUTTON);
+    CurrentStates[VK_MBUTTON] = IsAsyncKeyDown(VK_MBUTTON);
+    CurrentStates[VK_XBUTTON1] = IsAsyncKeyDown(VK_XBUTTON1);
+    CurrentStates[VK_XBUTTON2] = IsAsyncKeyDown(VK_XBUTTON2);
 }
 
 void InputSystem::SampleMouseDelta()

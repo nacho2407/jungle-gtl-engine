@@ -94,9 +94,9 @@ void APlayerCameraManager::SetViewTargetWithBlend(AActor* NewTarget, float Blend
     Transition.BlendType = BlendType;
     Transition.bActive = Transition.TotalTime > 0.f;
 	
-	UE_LOG("[PlayerCameraManager] SetViewTarget. Target=%s Camera=%s",
+	/*UE_LOG("[PlayerCameraManager] SetViewTarget. Target=%s Camera=%s",
            ViewTarget.Target ? ViewTarget.Target->GetFName().ToString().c_str() : "None",
-           ViewTarget.CameraComp ? ViewTarget.CameraComp->GetName().c_str() : "None");
+           ViewTarget.CameraComp ? ViewTarget.CameraComp->GetName().c_str() : "None");*/
 }
 
 void APlayerCameraManager::SetDefaultViewTargetBlend(float BlendTime, ECameraBlendType BlendType)
