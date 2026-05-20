@@ -124,6 +124,7 @@ public:
 
 	TArray<FString> ListAnimStacks(const FString& SourceFbxPath);
 	UAnimSequence* LoadAnimSequence(const FString& SourceFbxPath,const FString& TargetSkeletalMeshPath,const FString& AnimStackName);
+	UAnimSequence* LoadAnimSequenceByKey(const FString& Key);
 	UAnimSequence* FindAnimSequence(const FString& Key) const;
 	TArray<FString> GetAnimSequencePaths() const;
 	

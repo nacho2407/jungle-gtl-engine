@@ -140,6 +140,26 @@ namespace
 	{
 		return FPaths::Normalize(SourceFbxPath) + "|" + FPaths::Normalize(TargetSkeletalMeshPath) + "|" + AnimStackName;
 	}
+
+	bool SplitAnimSequenceCacheKey(const FString& Key, FString& OutSourceFbxPath, FString& OutTargetSkeletalMeshPath, FString& OutAnimStackName)
+	{
+		const size_t FirstSeparator = Key.find('|');
+		if (FirstSeparator == FString::npos)
+		{
+			return false;
+		}
+
+		const size_t SecondSeparator = Key.find('|', FirstSeparator + 1);
+		if (SecondSeparator == FString::npos)
+		{
+			return false;
+		}
+
+		OutSourceFbxPath = Key.substr(0, FirstSeparator);
+		OutTargetSkeletalMeshPath = Key.substr(FirstSeparator + 1, SecondSeparator - FirstSeparator - 1);
+		OutAnimStackName = Key.substr(SecondSeparator + 1);
+		return !OutSourceFbxPath.empty() && !OutTargetSkeletalMeshPath.empty() && !OutAnimStackName.empty();
+	}
 }
 
 #pragma region __BINARY__
@@ -1153,6 +1173,20 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, 
 	}
 
 	return Anim;
+}
+
+UAnimSequence* FResourceManager::LoadAnimSequenceByKey(const FString& Key)
+{
+	FString SourceFbxPath;
+	FString TargetSkeletalMeshPath;
+	FString AnimStackName;
+	if (!SplitAnimSequenceCacheKey(Key, SourceFbxPath, TargetSkeletalMeshPath, AnimStackName))
+	{
+		UE_LOG_WARNING("[AnimSequenceLoad] Invalid anim sequence key: %s", Key.c_str());
+		return nullptr;
+	}
+
+	return LoadAnimSequence(SourceFbxPath, TargetSkeletalMeshPath, AnimStackName);
 }
 
 UAnimSequence* FResourceManager::FindAnimSequence(const FString& Key) const
