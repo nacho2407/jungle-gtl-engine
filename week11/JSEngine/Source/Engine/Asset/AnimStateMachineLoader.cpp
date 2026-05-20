@@ -352,6 +352,11 @@ namespace
             OutType = EAnimConditionType::Float;
             return true;
         }
+        if (LowerText == "trigger")
+        {
+            OutType = EAnimConditionType::Trigger;
+            return true;
+        }
         if (LowerText == "luafunction" || LowerText == "lua_function")
         {
             OutType = EAnimConditionType::LuaFunction;
@@ -369,6 +374,8 @@ namespace
             return "Bool";
         case EAnimConditionType::Float:
             return "Float";
+        case EAnimConditionType::Trigger:
+            return "Trigger";
         case EAnimConditionType::LuaFunction:
             return "LuaFunction";
         case EAnimConditionType::None:
@@ -480,6 +487,11 @@ namespace
         if (OutCondition.Type == EAnimConditionType::Bool)
         {
             return ReadRequiredBool(ConditionNode, "Value", Path, Context, OutCondition.BoolValue);
+        }
+
+        if (OutCondition.Type == EAnimConditionType::Trigger)
+        {
+            return true;
         }
 
         return false;
@@ -654,6 +666,16 @@ namespace
             {
                 UE_LOG_ERROR(
                     "[AnimStateMachineLoader] Float condition is invalid. Path=%s Context=%s",
+                    Path.c_str(),
+                    Context.c_str());
+                return false;
+            }
+            return true;
+        case EAnimConditionType::Trigger:
+            if (!IsValidAnimStateName(Condition.VariableName))
+            {
+                UE_LOG_ERROR(
+                    "[AnimStateMachineLoader] Trigger condition variable is invalid. Path=%s Context=%s",
                     Path.c_str(),
                     Context.c_str());
                 return false;
@@ -880,6 +902,9 @@ namespace
             ConditionNode["Variable"] = Condition.VariableName.ToString();
             ConditionNode["Operator"] = ToCompareOperatorString(Condition.Operator);
             ConditionNode["Value"] = Condition.FloatValue;
+            break;
+        case EAnimConditionType::Trigger:
+            ConditionNode["Variable"] = Condition.VariableName.ToString();
             break;
         case EAnimConditionType::LuaFunction:
             ConditionNode["Function"] = Condition.LuaFunctionName.ToString();

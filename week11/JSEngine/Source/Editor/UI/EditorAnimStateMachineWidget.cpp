@@ -3,11 +3,16 @@
 #include "Asset/AnimStateMachineLoader.h"
 #include "Asset/AssetQueryService.h"
 #include "Asset/FbxImporter.h"
+#include "Animation/AnimStateMachine.h"
+#include "Animation/AnimStateMachineInstance.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Core/AssetPathPolicy.h"
 #include "Core/Paths.h"
+#include "Core/ResourceManager.h"
 #include "Editor/EditorEngine.h"
 #include "ImGui/imgui.h"
 #include "imgui-node-editor/imgui_node_editor.h"
+#include "Object/Object.h"
 
 #include <algorithm>
 #include <cmath>
@@ -94,6 +99,8 @@ namespace
             return "Bool";
         case EAnimConditionType::Float:
             return "Float";
+        case EAnimConditionType::Trigger:
+            return "Trigger";
         case EAnimConditionType::LuaFunction:
             return "Lua Function";
         case EAnimConditionType::None:
@@ -161,6 +168,54 @@ namespace
             ImGui::EndCombo();
         }
         return bChanged;
+    }
+
+    int32 ReapplyAnimStateMachineToLiveInstances(const FString& Path, UAnimStateMachine* StateMachine)
+    {
+        if (!StateMachine)
+        {
+            return 0;
+        }
+
+        const FString NormalizedPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
+        if (NormalizedPath.empty())
+        {
+            return 0;
+        }
+
+        // 재적용 과정에서 animation sequence가 새로 로드되면 UObject 배열이 바뀔 수 있으므로 스냅샷을 순회합니다.
+        const TArray<UObject*> ObjectSnapshot = GUObjectArray;
+        int32 ReloadedCount = 0;
+        for (UObject* Object : ObjectSnapshot)
+        {
+            if (!UObjectManager::Get().ContainsObject(Object))
+            {
+                continue;
+            }
+
+            USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(Object);
+            if (!SkeletalMeshComponent)
+            {
+                continue;
+            }
+
+            UAnimStateMachineInstance* StateMachineInstance = SkeletalMeshComponent->GetStateMachineInstance();
+            if (!StateMachineInstance || !StateMachineInstance->UsesStateMachinePath(NormalizedPath))
+            {
+                continue;
+            }
+
+            // hot reload 전에 소비되지 못한 one-shot trigger가 새 graph에서 갑자기 발동하지 않도록 비웁니다.
+            StateMachineInstance->ClearAnimTriggers();
+
+            if (StateMachineInstance->SetStateMachine(StateMachine))
+            {
+                SkeletalMeshComponent->RefreshAnimationPose();
+                ++ReloadedCount;
+            }
+        }
+
+        return ReloadedCount;
     }
 }
 
@@ -283,8 +338,19 @@ bool FEditorAnimStateMachineWidget::SaveAsset()
         return false;
     }
 
+    UAnimStateMachine* ReloadedStateMachine = FResourceManager::Get().ReloadAnimStateMachine(CurrentPath);
+    const int32 ReloadedInstanceCount =
+        ReapplyAnimStateMachineToLiveInstances(CurrentPath, ReloadedStateMachine);
+
     bDirty = false;
-    SetStatus("Saved .animsm asset.");
+    if (ReloadedStateMachine)
+    {
+        SetStatus("Saved .animsm asset. Hot reloaded " + std::to_string(ReloadedInstanceCount) + " instance(s).");
+    }
+    else
+    {
+        SetStatus("Saved .animsm asset. Runtime hot reload skipped because the asset is not runtime-valid.");
+    }
     return true;
 }
 
@@ -858,6 +924,7 @@ void FEditorAnimStateMachineWidget::DrawTransitionInspector(FAnimTransitionDesc&
         EAnimConditionType::None,
         EAnimConditionType::Bool,
         EAnimConditionType::Float,
+        EAnimConditionType::Trigger,
         EAnimConditionType::LuaFunction,
     };
     if (ImGui::BeginCombo("Type", GetConditionTypeLabel(Transition.Condition.Type)))
@@ -923,6 +990,13 @@ void FEditorAnimStateMachineWidget::DrawTransitionInspector(FAnimTransitionDesc&
         }
 
         if (ImGui::DragFloat("Value", &Transition.Condition.FloatValue, 0.01f))
+        {
+            MarkDirty();
+        }
+    }
+    else if (Transition.Condition.Type == EAnimConditionType::Trigger)
+    {
+        if (InputFName("Variable", Transition.Condition.VariableName))
         {
             MarkDirty();
         }

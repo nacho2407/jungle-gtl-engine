@@ -14,6 +14,7 @@ enum class EAnimConditionType : uint8
     None,
     Bool,
     Float,
+    Trigger,
     LuaFunction,
 };
 

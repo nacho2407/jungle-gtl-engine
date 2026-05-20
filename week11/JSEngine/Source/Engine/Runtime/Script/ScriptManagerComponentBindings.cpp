@@ -2,6 +2,7 @@
 
 #include "Animation/AnimSequence.h"
 #include "Asset/CurveFloatAsset.h"
+#include "Asset/SkeletalMesh.h"
 #include "Asset/StaticMesh.h"
 #include "Camera/CameraShakeBase.h"
 #include "Camera/ShakePattern/SequenceCameraShakePattern.h"
@@ -191,6 +192,8 @@ void FScriptManager::BindComponentTypes()
             { return Cast<UActorSequenceComponent>(&Self); });
     LUA_SET(AsSkeletalMeshComponent, [](UActorComponent& Self) -> USkeletalMeshComponent*
             { return Cast<USkeletalMeshComponent>(&Self); });
+    LUA_SET(AsStaticMeshComponent, [](UActorComponent& Self) -> UStaticMeshComponent*
+            { return Cast<UStaticMeshComponent>(&Self); });
     //LUA_SET(AsSubUVComponent, [](UActorComponent& Self) -> USubUVComponent*
     //        { return Cast<USubUVComponent>(&Self); });
     LUA_METHOD(IsActive, IsActive);
@@ -404,6 +407,13 @@ void FScriptManager::BindStaticMeshTypes()
     LUA_METHOD(HasValidMesh, HasValidMeshData);
     LUA_END_TYPE();
 
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USkeletalMesh, "SkeletalMesh", UObject)
+    LUA_METHOD(GetAssetPath, GetAssetPathFileName);
+    LUA_METHOD(HasValidMesh, HasValidMeshData);
+    LUA_SET(GetBoneCount, [](const USkeletalMesh& Self) -> int32
+            { return static_cast<int32>(Self.GetBones().size()); });
+    LUA_END_TYPE();
+
     LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UMeshComponent, "MeshComponent", UPrimitiveComponent, USceneComponent, UActorComponent, UObject)
     LUA_METHOD(GetNumMaterials, GetNumMaterials);
     LUA_END_TYPE();
@@ -436,6 +446,12 @@ void FScriptManager::BindStaticMeshTypes()
             { Self.SetAnimVariableBool(FName(Name), Value); });
     LUA_SET(GetAnimVariableBool, [](USkeletalMeshComponent& Self, const FString& Name, sol::optional<bool> DefaultValue)
             { return Self.GetAnimVariableBool(FName(Name), DefaultValue.value_or(false)); });
+    LUA_SET(SetAnimTrigger, [](USkeletalMeshComponent& Self, const FString& Name)
+            { Self.SetAnimTrigger(FName(Name)); });
+    LUA_SET(ResetAnimTrigger, [](USkeletalMeshComponent& Self, const FString& Name)
+            { Self.ResetAnimTrigger(FName(Name)); });
+    LUA_SET(IsAnimTriggerSet, [](USkeletalMeshComponent& Self, const FString& Name)
+            { return Self.IsAnimTriggerSet(FName(Name)); });
     LUA_SET(GetCurrentAnimStateName, [](USkeletalMeshComponent& Self)
             { return Self.GetCurrentAnimStateName().ToString(); });
     LUA_SET(GetPreviousAnimStateName, [](USkeletalMeshComponent& Self)

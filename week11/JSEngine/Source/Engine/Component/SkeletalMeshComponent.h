@@ -88,6 +88,11 @@ public:
     float GetAnimVariableFloat(const FName& Name, float DefaultValue = 0.0f) const;
     void SetAnimVariableBool(const FName& Name, bool Value);
     bool GetAnimVariableBool(const FName& Name, bool DefaultValue = false) const;
+    void SetAnimTrigger(const FName& Name);
+    void ResetAnimTrigger(const FName& Name);
+    bool IsAnimTriggerSet(const FName& Name) const;
+    bool ConsumeAnimTrigger(const FName& Name);
+    void ClearAnimTriggers();
     FName GetCurrentAnimStateName() const;
     FName GetPreviousAnimStateName() const;
     FName GetTargetAnimStateName() const;

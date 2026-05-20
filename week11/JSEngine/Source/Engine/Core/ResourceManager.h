@@ -137,6 +137,7 @@ public:
 	TArray<FString> GetAnimSequenceAssetPaths() const;
 
 	UAnimStateMachine* LoadAnimStateMachine(const FString& Path);
+	UAnimStateMachine* ReloadAnimStateMachine(const FString& Path);
 	UAnimStateMachine* FindAnimStateMachine(const FString& Path) const;
 	bool SaveAnimStateMachine(const FString& Path, const UAnimStateMachine* StateMachine);
 	TArray<FString> GetAnimStateMachinePaths() const;

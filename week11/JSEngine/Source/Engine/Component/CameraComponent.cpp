@@ -21,28 +21,24 @@ FMatrix UCameraComponent::GetViewMatrix() const
 
 FMatrix UCameraComponent::GetProjectionMatrix() const
 {
-	float Cot = 1.0f / tanf(CameraState.FOV * 0.5f);
-	float Denom = CameraState.FarZ - CameraState.NearZ;
-
 	if (!CameraState.bIsOrthogonal)
 	{
-		return FMatrix(
-			Cot / CameraState.AspectRatio, 0, 0, 0,
-			0, Cot, 0, 0,
-			0, 0, CameraState.FarZ / Denom, 1,
-			0, 0, -(CameraState.FarZ * CameraState.NearZ) / Denom, 0
-		);
+		return FMatrix::MakePerspectiveFovLH(
+			CameraState.FOV,
+			CameraState.AspectRatio,
+			CameraState.NearZ,
+			CameraState.FarZ);
 	}
 	else
 	{
-		float HalfW = CameraState.OrthoWidth * 0.5f;
-		float HalfH = HalfW / CameraState.AspectRatio;
-		return FMatrix(
-			1.0f / HalfW, 0, 0, 0,
-			0, 1.0f / HalfH, 0, 0,
-			0, 0, 1.0f / Denom, 0,
-			0, 0, -CameraState.NearZ / Denom, 1
-		);
+		const float OrthoHeight = CameraState.AspectRatio != 0.0f
+			? CameraState.OrthoWidth / CameraState.AspectRatio
+			: CameraState.OrthoWidth;
+		return FMatrix::MakeOrthographicLH(
+			CameraState.OrthoWidth,
+			OrthoHeight,
+			CameraState.NearZ,
+			CameraState.FarZ);
 	}
 }
 

@@ -952,9 +952,9 @@ struct FMatrix
         const float XScale = YScale / AspectRatio;
 
         return FMatrix(
-			0.f, 0.f, FarZ / (FarZ - NearZ), 1.f, 
-			XScale, 0.f, 0.f, 0.f, 
-			0.f, YScale, 0.f, 0.f, 
+			0.f, 0.f, FarZ / (FarZ - NearZ), 1.f,
+			XScale, 0.f, 0.f, 0.f,
+			0.f, YScale, 0.f, 0.f,
 			0.f, 0.f, -NearZ * FarZ / (FarZ - NearZ), 0.f);
     }
 
@@ -967,9 +967,9 @@ struct FMatrix
         assert(FarZ != NearZ);
 
         return FMatrix(
-			0.f, 0.f, 1.f / (FarZ - NearZ), 0.f, 
-			2.f / ViewWidth, 0.f, 0.f, 0.f, 
-			0.f, 2.f / ViewHeight, 0.f, 0.f, 
+			0.f, 0.f, 1.f / (FarZ - NearZ), 0.f,
+			2.f / ViewWidth, 0.f, 0.f, 0.f,
+			0.f, 2.f / ViewHeight, 0.f, 0.f,
 			0.f, 0.f, -NearZ / (FarZ - NearZ), 1.f);
     }
 
