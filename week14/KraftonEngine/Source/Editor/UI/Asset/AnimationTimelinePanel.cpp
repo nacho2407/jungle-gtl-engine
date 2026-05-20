@@ -8,15 +8,21 @@
 #include "Animation/Notify/AnimNotifyState.h"
 #include "Animation/AnimationManager.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Mesh/SkeletalMesh.h"
+#include "Mesh/SkeletalMeshAsset.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Object/UClass.h"
 #include "Core/PropertyTypes.h"
+#include "Editor/UI/Asset/MorphCurveEditObject.h"
 
 #include <imgui.h>
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <cstring>
 #include <string>
+#include <utility>
 
 // 일부 헤더가 Windows.h 를 끌어오면 GetCurrentTime 매크로가 호출을 가로챈다.
 #ifdef GetCurrentTime
@@ -25,11 +31,17 @@
 
 namespace
 {
-	constexpr float HeaderW    = 190.0f; // 좌측 트랙 헤더 컬럼 폭
-	constexpr float RulerH     = 22.0f;  // 프레임 눈금 행 높이
+	constexpr float HeaderW     = 190.0f; // 좌측 트랙 헤더 컬럼 폭
+	constexpr float RulerH      = 22.0f;  // 프레임 눈금 행 높이
 	constexpr float RowH        = 22.0f;  // 트랙 헤더 행 높이
-	constexpr float NotifyLaneH = 28.0f;  // Notifies 펼침 시 레인 높이
-	constexpr float TransportH  = 36.0f;  // 하단 트랜스포트 행 높이
+	constexpr float NotifyLaneH = 28.0f;
+	constexpr float MorphLaneH  = 28.0f; // Notifies 펼침 시 레인 높이
+	constexpr float TransportH  = 36.0f; // 하단 트랜스포트 행 높이
+
+	// Morph weight 편집 범위. 그래프 범위를 key 값으로 매 프레임 재계산하면
+	// 마우스가 그래프 밖으로 나간 상태에서 값/스케일이 계속 확장되어 value가 폭주한다.
+	constexpr float MorphValueMin = -1.0f;
+	constexpr float MorphValueMax =  1.0f;
 
 	constexpr ImU32 ColPanelBg   = IM_COL32(26, 26, 26, 255);
 	constexpr ImU32 ColHeaderBg  = IM_COL32(38, 38, 38, 255);
@@ -234,6 +246,38 @@ namespace
 					}
 					break;
 				}
+				case EPropertyType::Enum:
+				{
+					const FEnum* EnumType = Prop.GetEnumType();
+					if (EnumType && EnumType->GetNames() && EnumType->GetCount() > 0 && Prop.GetValuePtr())
+					{
+						const char** EnumNames = EnumType->GetNames();
+						const uint32 EnumCount = EnumType->GetCount();
+						const uint32 EnumSize = EnumType->GetSize();
+						int32 Val = 0;
+						std::memcpy(&Val, Prop.GetValuePtr(), EnumSize);
+						const char* Preview = ((uint32)Val < EnumCount) ? EnumNames[Val] : "Unknown";
+						if (ImGui::BeginCombo("##v", Preview))
+						{
+							for (uint32 EnumIndex = 0; EnumIndex < EnumCount; ++EnumIndex)
+							{
+								const bool bSelected = Val == static_cast<int32>(EnumIndex);
+								if (ImGui::Selectable(EnumNames[EnumIndex], bSelected))
+								{
+									int32 NewVal = static_cast<int32>(EnumIndex);
+									std::memcpy(Prop.GetValuePtr(), &NewVal, EnumSize);
+									bChanged = true;
+								}
+								if (bSelected)
+								{
+									ImGui::SetItemDefaultFocus();
+								}
+							}
+							ImGui::EndCombo();
+						}
+					}
+					break;
+				}
 				default:
 					ImGui::TextDisabled("(unsupported type)");
 					break;
@@ -255,6 +299,266 @@ namespace
 		}
 		return bAnyChanged;
 	}
+
+	static float ClampMorphCurveValue(float Value)
+	{
+		return std::clamp(Value, MorphValueMin, MorphValueMax);
+	}
+
+	static FMorphTargetCurve& FindOrAddMorphCurve(UAnimSequence* Seq, const FString& MorphTargetName)
+	{
+		TArray<FMorphTargetCurve>& Curves = Seq->GetMutableMorphTargetCurves();
+		for (FMorphTargetCurve& Curve : Curves)
+		{
+			if (Curve.MorphTargetName == MorphTargetName)
+			{
+				return Curve;
+			}
+		}
+		FMorphTargetCurve NewCurve;
+		NewCurve.MorphTargetName = MorphTargetName;
+		Curves.push_back(std::move(NewCurve));
+		return Curves.back();
+	}
+
+	static void AddOrUpdateMorphCurveKey(FMorphTargetCurve& Curve, float TimeSeconds, float Value)
+	{
+		Value = ClampMorphCurveValue(Value);
+		constexpr float TimeTolerance = 1.0e-4f;
+		for (FRawFloatCurveKey& Key : Curve.Curve.Keys)
+		{
+			if (std::fabs(Key.TimeSeconds - TimeSeconds) <= TimeTolerance)
+			{
+				Key.Value = Value;
+				return;
+			}
+		}
+		FRawFloatCurveKey NewKey;
+		NewKey.TimeSeconds   = TimeSeconds;
+		NewKey.Value         = Value;
+		NewKey.Interpolation = 2;
+		Curve.Curve.Keys.push_back(NewKey);
+		std::sort(
+			Curve.Curve.Keys.begin(),
+			Curve.Curve.Keys.end(),
+			[](const FRawFloatCurveKey& A, const FRawFloatCurveKey& B)
+			{
+				return A.TimeSeconds < B.TimeSeconds;
+			}
+		);
+	}
+
+	static const char* InterpLabel(int32 Interp)
+	{
+		if ((Interp & 4) == 4) return "Bezier";
+		if ((Interp & 1) == 1) return "Constant";
+		return "Linear";
+	}
+
+	static const char* TangentModeLabel(int32 Mode)
+	{
+		switch (Mode)
+		{
+		case 1:
+			return "Aligned";
+		case 2:
+			return "Free";
+		case 0: default:
+			return "Auto";
+		}
+	}
+
+	static float EstimateTimelineCurveTangent(const FRawFloatCurve& Curve, int32 KeyIndex)
+	{
+		const int32 NumKeys = static_cast<int32>(Curve.Keys.size());
+		if (NumKeys <= 1 || KeyIndex < 0 || KeyIndex >= NumKeys)
+		{
+			return 0.0f;
+		}
+
+		const int32 PrevIndex = std::max(0, KeyIndex - 1);
+		const int32 NextIndex = std::min(NumKeys - 1, KeyIndex + 1);
+		const FRawFloatCurveKey& Prev = Curve.Keys[PrevIndex];
+		const FRawFloatCurveKey& Next = Curve.Keys[NextIndex];
+		const float DeltaTime = Next.TimeSeconds - Prev.TimeSeconds;
+		return std::fabs(DeltaTime) > 1.0e-6f ? (Next.Value - Prev.Value) / DeltaTime : 0.0f;
+	}
+
+	static float TimelineCubicBezier(float A, float B, float C, float D, float T)
+	{
+		const float U = 1.0f - T;
+		return U * U * U * A + 3.0f * U * U * T * B + 3.0f * U * T * T * C + T * T * T * D;
+	}
+
+	static float TimelineCubicBezierDerivative(float A, float B, float C, float D, float T)
+	{
+		const float U = 1.0f - T;
+		return 3.0f * U * U * (B - A) + 6.0f * U * T * (C - B) + 3.0f * T * T * (D - C);
+	}
+
+	static float SolveTimelineBezierTime(float TargetTime, float X0, float X1, float X2, float X3)
+	{
+		float T = 0.5f;
+		const float Denom = X3 - X0;
+		if (std::fabs(Denom) > 1.0e-6f)
+		{
+			T = std::clamp((TargetTime - X0) / Denom, 0.0f, 1.0f);
+		}
+
+		for (int32 Iter = 0; Iter < 8; ++Iter)
+		{
+			const float X = TimelineCubicBezier(X0, X1, X2, X3, T);
+			const float DX = TimelineCubicBezierDerivative(X0, X1, X2, X3, T);
+			if (std::fabs(DX) < 1.0e-6f)
+			{
+				break;
+			}
+			T = std::clamp(T - (X - TargetTime) / DX, 0.0f, 1.0f);
+		}
+		return T;
+	}
+
+	static float EvaluateTimelineMorphCurveSegment(const FRawFloatCurve& Curve, int32 KeyIndex, float TimeSeconds)
+	{
+		const FRawFloatCurveKey& A = Curve.Keys[KeyIndex];
+		const FRawFloatCurveKey& B = Curve.Keys[KeyIndex + 1];
+		const float DeltaTime = B.TimeSeconds - A.TimeSeconds;
+		if (std::fabs(DeltaTime) < 1.0e-6f)
+		{
+			return B.Value;
+		}
+
+		if ((A.Interpolation & 1) == 1)
+		{
+			return A.Value;
+		}
+
+		if ((A.Interpolation & 4) != 4)
+		{
+			const float Alpha = std::clamp((TimeSeconds - A.TimeSeconds) / DeltaTime, 0.0f, 1.0f);
+			return A.Value + (B.Value - A.Value) * Alpha;
+		}
+
+		float LeaveWeight = A.bLeaveTangentWeighted ? A.LeaveTangentWeight : DeltaTime / 3.0f;
+		float ArriveWeight = B.bArriveTangentWeighted ? B.ArriveTangentWeight : DeltaTime / 3.0f;
+		LeaveWeight = std::clamp(LeaveWeight, 1.0e-5f, DeltaTime);
+		ArriveWeight = std::clamp(ArriveWeight, 1.0e-5f, DeltaTime);
+
+		const float LeaveTangent = A.TangentMode == 0 ? EstimateTimelineCurveTangent(Curve, KeyIndex) : A.LeaveTangent;
+		const float ArriveTangent = B.TangentMode == 0 ? EstimateTimelineCurveTangent(Curve, KeyIndex + 1) : B.ArriveTangent;
+
+		const float X0 = A.TimeSeconds;
+		const float Y0 = A.Value;
+		const float X1 = A.TimeSeconds + LeaveWeight;
+		const float Y1 = A.Value + LeaveTangent * LeaveWeight;
+		const float X2 = B.TimeSeconds - ArriveWeight;
+		const float Y2 = B.Value - ArriveTangent * ArriveWeight;
+		const float X3 = B.TimeSeconds;
+		const float Y3 = B.Value;
+
+		const float BezierT = SolveTimelineBezierTime(TimeSeconds, X0, X1, X2, X3);
+		return TimelineCubicBezier(Y0, Y1, Y2, Y3, BezierT);
+	}
+
+	static float EvaluateTimelineMorphCurve(const FRawFloatCurve& Curve, float TimeSeconds, float DefaultValue)
+	{
+		const int32 NumKeys = static_cast<int32>(Curve.Keys.size());
+		if (NumKeys <= 0)
+		{
+			return DefaultValue;
+		}
+		if (NumKeys == 1 || TimeSeconds <= Curve.Keys.front().TimeSeconds)
+		{
+			return Curve.Keys.front().Value;
+		}
+		if (TimeSeconds >= Curve.Keys.back().TimeSeconds)
+		{
+			return Curve.Keys.back().Value;
+		}
+		for (int32 KeyIndex = 0; KeyIndex + 1 < NumKeys; ++KeyIndex)
+		{
+			if (TimeSeconds >= Curve.Keys[KeyIndex].TimeSeconds && TimeSeconds <= Curve.Keys[KeyIndex + 1].TimeSeconds)
+			{
+				return EvaluateTimelineMorphCurveSegment(Curve, KeyIndex, TimeSeconds);
+			}
+		}
+		return Curve.Keys.back().Value;
+	}
+
+	static void GetMorphCurveValueRange(const FRawFloatCurve& Curve, float& OutMin, float& OutMax)
+	{
+		(void)Curve;
+		// 고정 편집 범위. key 값 기반 자동 범위는 드래그 중 스케일이 바뀌어 value 폭주를 만든다.
+		OutMin = MorphValueMin;
+		OutMax = MorphValueMax;
+	}
+
+	static float MorphValueToY(float Value, float GraphTop, float GraphH, float MinValue, float MaxValue)
+	{
+		const float Alpha = std::clamp((Value - MinValue) / std::max(MaxValue - MinValue, 1.0e-6f), 0.0f, 1.0f);
+		return GraphTop + (1.0f - Alpha) * GraphH;
+	}
+
+	static float MorphYToValue(float Y, float GraphTop, float GraphH, float MinValue, float MaxValue)
+	{
+		const float Alpha = 1.0f - std::clamp((Y - GraphTop) / std::max(GraphH, 1.0f), 0.0f, 1.0f);
+		return MinValue + Alpha * (MaxValue - MinValue);
+	}
+
+	static float GetLeaveHandleTime(const FRawFloatCurveKey& Key, const FRawFloatCurveKey& Next)
+	{
+		const float Segment = std::max(Next.TimeSeconds - Key.TimeSeconds, 1.0e-5f);
+		const float Weight = Key.bLeaveTangentWeighted ? Key.LeaveTangentWeight : Segment / 3.0f;
+		return Key.TimeSeconds + std::clamp(Weight, 1.0e-5f, Segment);
+	}
+
+	static float GetArriveHandleTime(const FRawFloatCurveKey& Prev, const FRawFloatCurveKey& Key)
+	{
+		const float Segment = std::max(Key.TimeSeconds - Prev.TimeSeconds, 1.0e-5f);
+		const float Weight = Key.bArriveTangentWeighted ? Key.ArriveTangentWeight : Segment / 3.0f;
+		return Key.TimeSeconds - std::clamp(Weight, 1.0e-5f, Segment);
+	}
+
+	static void SetLeaveHandleFromPoint(FRawFloatCurveKey& Key, const FRawFloatCurveKey& Next, float HandleTime, float HandleValue)
+	{
+		HandleValue = ClampMorphCurveValue(HandleValue);
+		if (Key.TangentMode == 0)
+		{
+			Key.TangentMode = 2;
+		}
+		const float Segment = std::max(Next.TimeSeconds - Key.TimeSeconds, 1.0e-5f);
+		const float Weight = std::clamp(HandleTime - Key.TimeSeconds, 1.0e-5f, Segment);
+		Key.LeaveTangentWeight = Weight;
+		Key.bLeaveTangentWeighted = true;
+		Key.LeaveTangent = (HandleValue - Key.Value) / Weight;
+		if (Key.TangentMode == 1)
+		{
+			Key.ArriveTangent = Key.LeaveTangent;
+			Key.ArriveTangentWeight = Key.LeaveTangentWeight;
+			Key.bArriveTangentWeighted = Key.bLeaveTangentWeighted;
+		}
+	}
+
+	static void SetArriveHandleFromPoint(const FRawFloatCurveKey& Prev, FRawFloatCurveKey& Key, float HandleTime, float HandleValue)
+	{
+		HandleValue = ClampMorphCurveValue(HandleValue);
+		if (Key.TangentMode == 0)
+		{
+			Key.TangentMode = 2;
+		}
+		const float Segment = std::max(Key.TimeSeconds - Prev.TimeSeconds, 1.0e-5f);
+		const float Weight = std::clamp(Key.TimeSeconds - HandleTime, 1.0e-5f, Segment);
+		Key.ArriveTangentWeight = Weight;
+		Key.bArriveTangentWeighted = true;
+		Key.ArriveTangent = (Key.Value - HandleValue) / Weight;
+		if (Key.TangentMode == 1)
+		{
+			Key.LeaveTangent = Key.ArriveTangent;
+			Key.LeaveTangentWeight = Key.ArriveTangentWeight;
+			Key.bLeaveTangentWeighted = Key.bArriveTangentWeighted;
+		}
+	}
+
 
 	int NiceFrameStep(int Raw)
 	{
@@ -302,10 +606,13 @@ namespace
 }
 
 void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
-                                     USkeletalMeshComponent* Comp,
-                                     UAnimSequence* Seq,
-                                     float PanelHeight,
-                                     int32& InOutSelectedNotifyIndex)
+	USkeletalMeshComponent*                                   Comp,
+	UAnimSequence*                                            Seq,
+	float                                                     PanelHeight,
+	int32&                                                    InOutSelectedNotifyIndex,
+	int32&                                                    InOutSelectedMorphCurveIndex,
+	int32&                                                    InOutSelectedMorphKeyIndex
+	)
 {
 	// 변경 누적 플래그 — drag/resize 등 연속 이벤트는 매 프레임 commit 하지 않고
 	// 마우스 release 시점에 일괄 save (디스크 thrash 방지). 인스턴트 이벤트는 즉시 save.
@@ -320,10 +627,20 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 	{
 		const int32 NotifyCount = static_cast<int32>(Seq->GetNotifies().size());
 		if (InOutSelectedNotifyIndex >= NotifyCount) InOutSelectedNotifyIndex = -1;
+		const int32 MorphCurveCount = static_cast<int32>(Seq->GetMorphTargetCurves().size());
+		if (InOutSelectedMorphCurveIndex >= MorphCurveCount)
+		{
+			InOutSelectedMorphCurveIndex = -1;
+			InOutSelectedMorphKeyIndex   = -1;
+		}
 	}
 
 	ImGui::BeginChild("##AnimTimelinePanel", ImVec2(0.0f, PanelHeight), false,
 	                  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+	const float TrackViewportH = std::max(PanelHeight - TransportH, RulerH + RowH);
+	ImGui::BeginChild("##AnimTimelineTrackScroll", ImVec2(0.0f, TrackViewportH), false,
+	                  ImGuiWindowFlags_HorizontalScrollbar);
 
 	ImDrawList*  DL     = ImGui::GetWindowDrawList();
 	const ImVec2 Origin = ImGui::GetCursorScreenPos();
@@ -337,17 +654,19 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 		DL->AddText(ImVec2(Origin.x + (FullW - TS.x) * 0.5f, Origin.y + PanelHeight * 0.5f - TS.y),
 		            ColLabel, Msg);
 		ImGui::EndChild();
+		ImGui::EndChild();
 		return;
 	}
 
-	static bool bNotifiesExpanded = true;
+	static bool bNotifiesExpanded    = true;
+	static bool bMorphCurvesExpanded = true;
 
 	const float PlayLength = Seq->GetPlayLength();
 	const float FrameRate  = Seq->GetFrameRate() > 0.0f ? Seq->GetFrameRate() : 30.0f;
 	const int   NumFrames  = std::max(Seq->GetNumberOfFrames(), 1);
 	const int   EndFrame   = std::max(NumFrames - 1, 0);
 
-	const float TrackAreaH = PanelHeight - TransportH;
+	float TrackAreaH = std::max(TrackViewportH, RulerH + RowH);
 	const float CanvasX    = Origin.x + HeaderW;
 	const float CanvasW    = std::max(FullW - HeaderW, 1.0f);
 
@@ -379,7 +698,9 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 	// scrub.IsItemActivated 가 트리거되었다는 것은 배지 hit 가 아니라는 뜻.
 	if (ImGui::IsItemActivated())
 	{
-		InOutSelectedNotifyIndex = -1;
+		InOutSelectedNotifyIndex     = -1;
+		InOutSelectedMorphCurveIndex = -1;
+		InOutSelectedMorphKeyIndex   = -1;
 	}
 
 	// ── 노티파이 레인 우클릭 → "Add Notify" 팝업 ──
@@ -762,9 +1083,280 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 		            ImVec2(CanvasX + CanvasW, RowY + RowH - 1.0f), ColSeparator);
 	};
 
-	// Curves: 시퀀스에 내장 네임드 플로트 커브가 없으므로 0 (에셋 내장 데이터 읽기 전용)
-	DrawSimpleHeaderRow("Curves (0)", false, false);
-	RowY += RowH;
+	// Morph Curves
+	{
+		TArray<FMorphTargetCurve>& Curves = Seq->GetMutableMorphTargetCurves();
+		char                       HeaderLabel[64];
+		std::snprintf(HeaderLabel, sizeof(HeaderLabel), "Morph Curves (%zu)", Curves.size());
+
+		const ImVec2 MorphHeaderPos(Origin.x, RowY);
+		ImGui::SetCursorScreenPos(ImVec2(Origin.x, RowY));
+		ImGui::InvisibleButton("##morphCurveToggle", ImVec2(HeaderW, RowH));
+		if (ImGui::IsItemClicked())
+		{
+			bMorphCurvesExpanded = !bMorphCurvesExpanded;
+		}
+		DrawTrackHeaderRow(DL, MorphHeaderPos, HeaderW, RowH, HeaderLabel, true, bMorphCurvesExpanded);
+		if (DrawAddButton("##addMorphCurve", RowY, RowH))
+		{
+			USkeletalMesh* MeshForMorphTargets = Comp ? Comp->GetSkeletalMesh() : nullptr;
+			FSkeletalMesh* MeshAsset = MeshForMorphTargets ? MeshForMorphTargets->GetSkeletalMeshAsset() : nullptr;
+			if (MeshAsset && !MeshAsset->MorphTargets.empty())
+			{
+				for (const FMorphTarget& Target : MeshAsset->MorphTargets)
+				{
+					if (Seq->GetMorphTargetCurves().end() == std::find_if(
+						Seq->GetMorphTargetCurves().begin(),
+						Seq->GetMorphTargetCurves().end(),
+						[&](const FMorphTargetCurve& C)
+						{
+							return C.MorphTargetName == Target.Name;
+						}
+					))
+					{
+						FindOrAddMorphCurve(Seq, Target.Name);
+						InOutSelectedMorphCurveIndex = static_cast<int32>(Seq->GetMorphTargetCurves().size()) - 1;
+						InOutSelectedMorphKeyIndex   = -1;
+						InOutSelectedNotifyIndex     = -1;
+						SaveSeqNow();
+						break;
+					}
+				}
+			}
+		}
+		DL->AddRectFilled(ImVec2(CanvasX, RowY), ImVec2(CanvasX + CanvasW, RowY + RowH), IM_COL32(30, 30, 30, 255));
+		DL->AddLine(ImVec2(CanvasX, RowY + RowH - 1.0f), ImVec2(CanvasX + CanvasW, RowY + RowH - 1.0f), ColSeparator);
+		RowY += RowH;
+
+		if (bMorphCurvesExpanded)
+		{
+			for (int32 CurveIndex = 0; CurveIndex < static_cast<int32>(Curves.size()); ++CurveIndex)
+			{
+				FMorphTargetCurve& Curve = Curves[CurveIndex];
+				const bool bCurveSelected = (CurveIndex == InOutSelectedMorphCurveIndex);
+				const float LaneH = bCurveSelected ? 118.0f : MorphLaneH;
+				const float LaneY = RowY;
+				ImGui::PushID(CurveIndex);
+
+				DL->AddRectFilled(ImVec2(Origin.x, LaneY), ImVec2(Origin.x + HeaderW, LaneY + LaneH), ColHeaderBg);
+				const std::string Nm = Curve.MorphTargetName.empty() ? "(Unnamed)" : Curve.MorphTargetName;
+				DL->AddText(
+					ImVec2(Origin.x + 26.0f, LaneY + 7.0f),
+					ColRowText,
+					TruncateWithEllipsis(Nm, HeaderW - 60.0f).c_str()
+				);
+				if (bCurveSelected)
+				{
+					DL->AddText(ImVec2(Origin.x + 26.0f, LaneY + 27.0f), ColLabel, "Bezier graph");
+				}
+
+				if (DrawAddButton("##addMorphKey", LaneY, MorphLaneH))
+				{
+					float NewValue = 0.0f;
+					if (Comp)
+					{
+						NewValue = Comp->GetMorphTargetWeight(Curve.MorphTargetName);
+					}
+					AddOrUpdateMorphCurveKey(Curve, CurrentTime, NewValue);
+					InOutSelectedMorphCurveIndex = CurveIndex;
+					InOutSelectedMorphKeyIndex   = -1;
+					for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(Curve.Curve.Keys.size()); ++KeyIndex)
+					{
+						if (std::fabs(Curve.Curve.Keys[KeyIndex].TimeSeconds - CurrentTime) <= 1.0e-4f)
+						{
+							InOutSelectedMorphKeyIndex = KeyIndex;
+							break;
+						}
+					}
+					InOutSelectedNotifyIndex = -1;
+					SaveSeqNow();
+				}
+
+				DL->AddRectFilled(
+					ImVec2(CanvasX, LaneY),
+					ImVec2(CanvasX + CanvasW, LaneY + LaneH),
+					IM_COL32(24, 24, 24, 255)
+				);
+
+				float MinValue = 0.0f;
+				float MaxValue = 1.0f;
+				GetMorphCurveValueRange(Curve.Curve, MinValue, MaxValue);
+
+				const float GraphTop = bCurveSelected ? LaneY + 10.0f : LaneY;
+				const float GraphH = bCurveSelected ? LaneH - 20.0f : LaneH;
+				auto XToTime = [&](float X) -> float
+				{
+					return std::clamp((X - CanvasX) / CanvasW, 0.0f, 1.0f) * PlayLength;
+				};
+				auto TimeToScreen = [&](float Time) -> float
+				{
+					return TimeToX(std::clamp(Time, 0.0f, PlayLength));
+				};
+				auto ValueToScreen = [&](float Value) -> float
+				{
+					return MorphValueToY(Value, GraphTop, GraphH, MinValue, MaxValue);
+				};
+				auto ScreenToValue = [&](float Y) -> float
+				{
+					return MorphYToValue(Y, GraphTop, GraphH, MinValue, MaxValue);
+				};
+
+				if (bCurveSelected)
+				{
+					for (int Grid = 0; Grid <= 4; ++Grid)
+					{
+						const float Gy = GraphTop + GraphH * (static_cast<float>(Grid) / 4.0f);
+						DL->AddLine(ImVec2(CanvasX, Gy), ImVec2(CanvasX + CanvasW, Gy), IM_COL32(45, 45, 45, 255));
+					}
+
+					if (Curve.Curve.Keys.size() >= 2)
+					{
+						ImVec2 PrevPoint;
+						bool bHasPrevPoint = false;
+						const int32 SampleCount = std::max(32, static_cast<int32>(CanvasW / 8.0f));
+						for (int32 Sample = 0; Sample <= SampleCount; ++Sample)
+						{
+							const float T = (static_cast<float>(Sample) / static_cast<float>(SampleCount)) * PlayLength;
+							const float V = EvaluateTimelineMorphCurve(Curve.Curve, T, 0.0f);
+							const ImVec2 P(TimeToScreen(T), ValueToScreen(V));
+							if (bHasPrevPoint)
+							{
+								DL->AddLine(PrevPoint, P, IM_COL32(125, 190, 255, 255), 2.0f);
+							}
+							PrevPoint = P;
+							bHasPrevPoint = true;
+						}
+					}
+				}
+
+				bool bBreakKeyLoop = false;
+				for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(Curve.Curve.Keys.size()); ++KeyIndex)
+				{
+					ImGui::PushID(KeyIndex);
+
+					FRawFloatCurveKey& Key = Curve.Curve.Keys[KeyIndex];
+					const float X = TimeToScreen(Key.TimeSeconds);
+					const float Y = bCurveSelected ? ValueToScreen(Key.Value) : (LaneY + LaneH * 0.5f);
+					bool bDeleteKey = false;
+
+					ImGui::SetCursorScreenPos(ImVec2(X - 6.0f, Y - 6.0f));
+					ImGui::InvisibleButton("##morphKey", ImVec2(12.0f, 12.0f));
+					if (ImGui::IsItemActivated())
+					{
+						InOutSelectedMorphCurveIndex = CurveIndex;
+						InOutSelectedMorphKeyIndex   = KeyIndex;
+						InOutSelectedNotifyIndex     = -1;
+					}
+					if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, -1.0f))
+					{
+						const float MinTime = KeyIndex > 0 ? Curve.Curve.Keys[KeyIndex - 1].TimeSeconds + 1.0e-4f : 0.0f;
+						const float MaxTime = KeyIndex + 1 < static_cast<int32>(Curve.Curve.Keys.size()) ? Curve.Curve.Keys[KeyIndex + 1].TimeSeconds - 1.0e-4f : PlayLength;
+						Key.TimeSeconds = std::clamp(XToTime(ImGui::GetIO().MousePos.x), MinTime, MaxTime);
+						if (bCurveSelected)
+						{
+							Key.Value = ClampMorphCurveValue(ScreenToValue(ImGui::GetIO().MousePos.y));
+						}
+						sPendingSave = true;
+					}
+					if (ImGui::BeginPopupContextItem("##morphKeyCtx"))
+					{
+						InOutSelectedMorphCurveIndex = CurveIndex;
+						InOutSelectedMorphKeyIndex   = KeyIndex;
+						InOutSelectedNotifyIndex     = -1;
+						if (ImGui::MenuItem("Delete Key"))
+						{
+							bDeleteKey = true;
+						}
+						ImGui::EndPopup();
+					}
+
+					if (bDeleteKey)
+					{
+						Curve.Curve.Keys.erase(Curve.Curve.Keys.begin() + KeyIndex);
+						InOutSelectedMorphKeyIndex = -1;
+						InOutSelectedNotifyIndex = -1;
+						SaveSeqNow();
+						ImGui::PopID();
+						bBreakKeyLoop = true;
+						break;
+					}
+
+					const bool bSelected = CurveIndex == InOutSelectedMorphCurveIndex && KeyIndex == InOutSelectedMorphKeyIndex;
+					const ImU32 Fill = bSelected ? IM_COL32(255, 200, 60, 255) : IM_COL32(180, 110, 230, 255);
+					DL->AddQuadFilled(
+						ImVec2(X - 5.0f, Y),
+						ImVec2(X, Y - 5.0f),
+						ImVec2(X + 5.0f, Y),
+						ImVec2(X, Y + 5.0f),
+						Fill
+					);
+
+					ImGui::PopID();
+				}
+
+				if (!bBreakKeyLoop && bCurveSelected && InOutSelectedMorphKeyIndex >= 0 && InOutSelectedMorphKeyIndex < static_cast<int32>(Curve.Curve.Keys.size()))
+				{
+					const int32 SelectedKeyIndex = InOutSelectedMorphKeyIndex;
+					FRawFloatCurveKey& SelectedKey = Curve.Curve.Keys[SelectedKeyIndex];
+					const ImVec2 KeyPoint(TimeToScreen(SelectedKey.TimeSeconds), ValueToScreen(SelectedKey.Value));
+
+					const bool bHasArriveBezierSegment = SelectedKeyIndex > 0
+						&& (Curve.Curve.Keys[SelectedKeyIndex - 1].Interpolation & 4) == 4;
+					const bool bHasLeaveBezierSegment = SelectedKeyIndex + 1 < static_cast<int32>(Curve.Curve.Keys.size())
+						&& (SelectedKey.Interpolation & 4) == 4;
+
+					ImGui::PushID("BezierHandles");
+					if (bHasArriveBezierSegment)
+					{
+						const FRawFloatCurveKey& PrevKey = Curve.Curve.Keys[SelectedKeyIndex - 1];
+						const float HandleTime = GetArriveHandleTime(PrevKey, SelectedKey);
+						const float Tangent = SelectedKey.TangentMode == 0 ? EstimateTimelineCurveTangent(Curve.Curve, SelectedKeyIndex) : SelectedKey.ArriveTangent;
+						const float HandleValue = SelectedKey.Value - Tangent * (SelectedKey.TimeSeconds - HandleTime);
+						ImVec2 HandlePoint(TimeToScreen(HandleTime), ValueToScreen(HandleValue));
+						DL->AddLine(KeyPoint, HandlePoint, IM_COL32(255, 170, 90, 180), 1.5f);
+						DL->AddCircleFilled(HandlePoint, 4.0f, IM_COL32(255, 170, 90, 255));
+
+						ImGui::SetCursorScreenPos(ImVec2(HandlePoint.x - 6.0f, HandlePoint.y - 6.0f));
+						ImGui::InvisibleButton("##arriveHandle", ImVec2(12.0f, 12.0f));
+						if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, -1.0f))
+						{
+							SetArriveHandleFromPoint(PrevKey, SelectedKey, XToTime(ImGui::GetIO().MousePos.x), ScreenToValue(ImGui::GetIO().MousePos.y));
+							sPendingSave = true;
+						}
+					}
+
+					if (bHasLeaveBezierSegment)
+					{
+						const FRawFloatCurveKey& NextKey = Curve.Curve.Keys[SelectedKeyIndex + 1];
+						const float HandleTime = GetLeaveHandleTime(SelectedKey, NextKey);
+						const float Tangent = SelectedKey.TangentMode == 0 ? EstimateTimelineCurveTangent(Curve.Curve, SelectedKeyIndex) : SelectedKey.LeaveTangent;
+						const float HandleValue = SelectedKey.Value + Tangent * (HandleTime - SelectedKey.TimeSeconds);
+						ImVec2 HandlePoint(TimeToScreen(HandleTime), ValueToScreen(HandleValue));
+						DL->AddLine(KeyPoint, HandlePoint, IM_COL32(255, 170, 90, 180), 1.5f);
+						DL->AddCircleFilled(HandlePoint, 4.0f, IM_COL32(255, 170, 90, 255));
+
+						ImGui::SetCursorScreenPos(ImVec2(HandlePoint.x - 6.0f, HandlePoint.y - 6.0f));
+						ImGui::InvisibleButton("##leaveHandle", ImVec2(12.0f, 12.0f));
+						if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, -1.0f))
+						{
+							SetLeaveHandleFromPoint(SelectedKey, NextKey, XToTime(ImGui::GetIO().MousePos.x), ScreenToValue(ImGui::GetIO().MousePos.y));
+							sPendingSave = true;
+						}
+					}
+					ImGui::PopID();
+				}
+
+				DL->AddLine(
+					ImVec2(CanvasX, LaneY + LaneH - 1.0f),
+					ImVec2(CanvasX + CanvasW, LaneY + LaneH - 1.0f),
+					ColSeparator
+				);
+				ImGui::PopID();
+				RowY += LaneH;
+			}
+		}
+	}
+
 
 	// Additive Layer Tracks: 언리얼에서는 에디터 내 비파괴 보정(저작) 기능이며,
 	// 이 엔진에는 해당 저작 데이터 모델이 없으므로 빈 헤더만 표시 (읽기 전용).
@@ -774,6 +1366,10 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 	// Attributes: 엔진에 커스텀 본 어트리뷰트 데이터가 없어 비어있음 (읽기 전용)
 	DrawSimpleHeaderRow("Attributes", false, false);
 	RowY += RowH;
+
+	// 실제 트랙 행 높이가 viewport보다 커져도 transport는 고정하고,
+	// 위쪽 track child만 스크롤되도록 content height만 확장한다.
+	TrackAreaH = std::max(TrackAreaH, RowY - Origin.y);
 
 	// 남은 캔버스 빈 영역
 	if (RowY < Origin.y + TrackAreaH)
@@ -794,9 +1390,22 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 	DL->AddLine(ImVec2(CanvasX, Origin.y), ImVec2(CanvasX, Origin.y + TrackAreaH), ColSeparator);
 	DL->AddRect(Origin, ImVec2(Origin.x + FullW, Origin.y + TrackAreaH), ColSeparator);
 
+	// 레이아웃 영역 확정: track child 안에서는 실제 트랙 content height만 잡는다.
+	ImGui::SetCursorScreenPos(Origin);
+	ImGui::Dummy(ImVec2(FullW, TrackAreaH));
+
+	ImGui::EndChild();
+
 	// ── 하단 트랜스포트 행 ──
-	const float TransportY = Origin.y + TrackAreaH + 4.0f;
-	ImGui::SetCursorScreenPos(ImVec2(Origin.x + 6.0f, TransportY + 6.0f));
+	// transport는 outer child에 고정하고, 위쪽 timeline track만 별도 child에서 스크롤한다.
+	DL = ImGui::GetWindowDrawList();
+	const ImVec2 TransportOrigin = ImGui::GetCursorScreenPos();
+	const float  TransportW      = ImGui::GetContentRegionAvail().x;
+	DL->AddRectFilled(TransportOrigin,
+	                  ImVec2(TransportOrigin.x + TransportW, TransportOrigin.y + TransportH),
+	                  ColPanelBg);
+
+	ImGui::SetCursorScreenPos(ImVec2(TransportOrigin.x + 6.0f, TransportOrigin.y + 6.0f));
 	ImGui::AlignTextToFramePadding();
 	ImGui::Text("%d", 0);                 // 범위 시작 프레임
 	ImGui::SameLine(0.0f, 14.0f);
@@ -817,9 +1426,8 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 	ImGui::AlignTextToFramePadding();
 	ImGui::Text("/ %d", EndFrame);
 
-	// 레이아웃 영역 확정
-	ImGui::SetCursorScreenPos(Origin);
-	ImGui::Dummy(ImVec2(FullW, PanelHeight));
+	ImGui::SetCursorScreenPos(TransportOrigin);
+	ImGui::Dummy(ImVec2(TransportW, TransportH));
 
 	// Drag/Resize 의 누적 dirty 를 마우스 release 에 일괄 save (frame 별 디스크 thrash 방지).
 	if (sPendingSave && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
@@ -918,5 +1526,152 @@ bool FAnimationTimelinePanel::RenderNotifyDetails(UAnimSequence* Seq, int32 Sele
 		Seq->RefreshRuntimeNotifies();
 		FAnimationManager::Get().SaveAnimationPreservingMetadata(Seq);
 	}
+	return bChanged;
+}
+
+bool FAnimationTimelinePanel::RenderMorphDetails(
+	UAnimSequence* Seq,
+	USkeletalMesh* SkeletalMesh,
+	int32&         InOutSelectedMorphCurveIndex,
+	int32&         InOutSelectedMorphKeyIndex
+	)
+{
+	if (!Seq) return false;
+	TArray<FMorphTargetCurve>& Curves = Seq->GetMutableMorphTargetCurves();
+	if (InOutSelectedMorphCurveIndex < 0 || InOutSelectedMorphCurveIndex >= static_cast<int32>(Curves.size()))
+	{
+		return false;
+	}
+
+	FMorphTargetCurve& Curve                    = Curves[InOutSelectedMorphCurveIndex];
+	bool               bChanged                 = false;
+	bool               bImmediateSave           = false;
+	static bool        sMorphDetailsPendingSave = false;
+
+	ImGui::TextUnformatted("Morph Curve Details");
+	ImGui::Separator();
+
+	FSkeletalMesh* MeshAsset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	ImGui::TextUnformatted("Target");
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	if (MeshAsset && !MeshAsset->MorphTargets.empty())
+	{
+		const int32 CurrentMorphIndex = MeshAsset->FindMorphTargetIndex(Curve.MorphTargetName);
+		const char* PreviewName = CurrentMorphIndex >= 0
+			? MeshAsset->MorphTargets[CurrentMorphIndex].Name.c_str()
+			: "<Invalid Morph Target>";
+
+		if (ImGui::BeginCombo("##morphTargetName", PreviewName))
+		{
+			for (int32 MorphIndex = 0; MorphIndex < static_cast<int32>(MeshAsset->MorphTargets.size()); ++MorphIndex)
+			{
+				const FMorphTarget& Target = MeshAsset->MorphTargets[MorphIndex];
+				const bool bSelected = (MorphIndex == CurrentMorphIndex);
+				const char* TargetName = Target.Name.empty() ? "Unnamed" : Target.Name.c_str();
+
+				if (ImGui::Selectable(TargetName, bSelected))
+				{
+					Curve.MorphTargetName = Target.Name;
+					bChanged = true;
+					bImmediateSave = true;
+				}
+
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		if (CurrentMorphIndex < 0 && !Curve.MorphTargetName.empty())
+		{
+			ImGui::TextDisabled("Current target does not exist on this skeletal mesh.");
+		}
+	}
+	else
+	{
+		ImGui::TextDisabled("No morph targets on current mesh.");
+	}
+
+	FRawFloatCurveKey* SelectedKey = nullptr;
+	if (InOutSelectedMorphKeyIndex >= 0 && InOutSelectedMorphKeyIndex < static_cast<int32>(Curve.Curve.Keys.size()))
+	{
+		SelectedKey = &Curve.Curve.Keys[InOutSelectedMorphKeyIndex];
+	}
+
+	static UMorphCurveEditObject* sMorphEditObject = nullptr;
+	if (!IsValid(sMorphEditObject))
+	{
+		sMorphEditObject = UObjectManager::Get().CreateObject<UMorphCurveEditObject>();
+	}
+
+	if (sMorphEditObject)
+	{
+		sMorphEditObject->LoadFrom(Curve, SelectedKey, Seq->GetPlayLength());
+
+		ImGui::Dummy(ImVec2(0, 6));
+		ImGui::Separator();
+		ImGui::TextUnformatted(SelectedKey ? "Reflected Morph Curve / Key Properties" : "Reflected Morph Curve Properties");
+		ImGui::Separator();
+
+		if (RenderObjectPropertiesInline(sMorphEditObject))
+		{
+			sMorphEditObject->ApplyTo(Curve, SelectedKey);
+			if (SelectedKey)
+			{
+				SelectedKey->Value = ClampMorphCurveValue(SelectedKey->Value);
+			}
+			bChanged = true;
+			sMorphDetailsPendingSave = true;
+		}
+	}
+
+	if (SelectedKey && ((SelectedKey->Interpolation & 4) == 4))
+	{
+		ImGui::Dummy(ImVec2(0, 4));
+		if (ImGui::SmallButton("Flatten"))
+		{
+			SelectedKey->ArriveTangent = 0.0f;
+			SelectedKey->LeaveTangent  = 0.0f;
+			SelectedKey->TangentMode   = 1;
+			bChanged                  = true;
+			bImmediateSave            = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::SmallButton("Auto Handles"))
+		{
+			SelectedKey->TangentMode             = 0;
+			SelectedKey->bArriveTangentWeighted = false;
+			SelectedKey->bLeaveTangentWeighted  = false;
+			bChanged                            = true;
+			bImmediateSave                      = true;
+		}
+		ImGui::TextDisabled("Bezier handles are edited in the timeline graph. The properties above are reflected UPROPERTY fields.");
+	}
+
+	if (bChanged)
+	{
+		std::sort(
+			Curve.Curve.Keys.begin(),
+			Curve.Curve.Keys.end(),
+			[](const FRawFloatCurveKey& A, const FRawFloatCurveKey& B)
+			{
+				return A.TimeSeconds < B.TimeSeconds;
+			}
+		);
+	}
+
+	if (bImmediateSave)
+	{
+		FAnimationManager::Get().SaveAnimationPreservingMetadata(Seq);
+		sMorphDetailsPendingSave = false;
+	}
+	else if (sMorphDetailsPendingSave && !ImGui::IsMouseDown(ImGuiMouseButton_Left) && !ImGui::IsAnyItemActive())
+	{
+		FAnimationManager::Get().SaveAnimationPreservingMetadata(Seq);
+		sMorphDetailsPendingSave = false;
+	}
+
 	return bChanged;
 }

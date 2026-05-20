@@ -1,4 +1,4 @@
-#include "LuaAnimInstance.h"
+﻿#include "LuaAnimInstance.h"
 
 #include "Animation/AnimationManager.h"
 #include "Animation/Sequence/AnimSequence.h"
@@ -19,6 +19,7 @@
 #include "Input/InputSystem.h"
 #include "Lua/LuaScriptManager.h"
 #include "Mesh/SkeletalMesh.h"
+#include "Mesh/SkeletalMeshAsset.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -26,6 +27,7 @@
 #include <Windows.h>
 
 #include <cstring>
+#include <cmath>
 ULuaAnimInstance::~ULuaAnimInstance()
 {
 	FLuaScriptManager::UnregisterAnimInstance(this);
@@ -125,6 +127,51 @@ void ULuaAnimInstance::HandleAnimNotify(const FAnimNotifyEvent& Notify)
 	}
 }
 
+
+void ULuaAnimInstance::PostEvaluatePose(FPoseContext& Output)
+{
+	ApplyLuaMorphOverrides(Output);
+}
+
+void ULuaAnimInstance::EnsureLuaMorphWeightStorage()
+{
+	USkeletalMesh* Mesh = GetSkeletalMesh();
+	FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+	const size_t MorphCount = Asset ? Asset->MorphTargets.size() : 0;
+
+	if (LuaMorphWeights.size() != MorphCount)
+	{
+		LuaMorphWeights.assign(MorphCount, 0.0f);
+	}
+
+	if (LuaMorphOverrideMask.size() != MorphCount)
+	{
+		LuaMorphOverrideMask.assign(MorphCount, 0);
+		bLuaMorphOverrideEnabled = false;
+	}
+}
+
+void ULuaAnimInstance::ApplyLuaMorphOverrides(FPoseContext& Output) const
+{
+	if (!bLuaMorphOverrideEnabled || LuaMorphWeights.empty() || LuaMorphWeights.size() != LuaMorphOverrideMask.size())
+	{
+		return;
+	}
+
+	if (Output.MorphWeights.size() < LuaMorphWeights.size())
+	{
+		Output.MorphWeights.resize(LuaMorphWeights.size(), 0.0f);
+	}
+
+	for (size_t Index = 0; Index < LuaMorphWeights.size(); ++Index)
+	{
+		if (LuaMorphOverrideMask[Index] != 0)
+		{
+			Output.MorphWeights[Index] = LuaMorphWeights[Index];
+		}
+	}
+}
+
 void ULuaAnimInstance::ReloadScript()
 {
 	ClearGraph();
@@ -145,6 +192,10 @@ void ULuaAnimInstance::ClearGraph()
 	LuaOnNotify = sol::nil;
 	LuaSelf     = sol::lua_nil;
 	Env         = sol::environment();
+
+	LuaMorphWeights.clear();
+	LuaMorphOverrideMask.clear();
+	bLuaMorphOverrideEnabled = false;
 }
 
 void ULuaAnimInstance::DispatchLuaInit()
@@ -264,6 +315,122 @@ void ULuaAnimInstance::InstallBindings()
 		[this, ResolveSlot](std::string Name, sol::object SlotName)
 		{
 			if (!Name.empty()) Montage_JumpToSection(FName(Name), ResolveSlot(SlotName));
+		});
+
+	// ── Morph override API ──
+	// Sequence 안에 저장된 morph curve 위에 Lua 값이 override 된다.
+	// Anim.set_morph_weight("Smile", 1.0)
+	// Anim.clear_morph_weight("Smile")
+	// Anim.clear_morph_weights()
+	Anim.set_function("set_morph_weight",
+		[this](std::string Name, float Weight)
+		{
+			EnsureLuaMorphWeightStorage();
+
+			USkeletalMesh* Mesh = GetSkeletalMesh();
+			FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+			if (!Asset || Name.empty())
+			{
+				return;
+			}
+
+			const int32 MorphIndex = Asset->FindMorphTargetIndex(FString(Name));
+			if (MorphIndex < 0 || MorphIndex >= static_cast<int32>(LuaMorphWeights.size()))
+			{
+				UE_LOG("[LuaAnim] set_morph_weight — unknown morph target: %s", Name.c_str());
+				return;
+			}
+
+			if (!std::isfinite(Weight))
+			{
+				Weight = 0.0f;
+			}
+
+			LuaMorphWeights[MorphIndex] = Weight;
+			LuaMorphOverrideMask[MorphIndex] = 1;
+			bLuaMorphOverrideEnabled = true;
+		});
+
+	Anim.set_function("set_morph_weight_by_index",
+		[this](int32 MorphIndex, float Weight)
+		{
+			EnsureLuaMorphWeightStorage();
+			if (MorphIndex < 0 || MorphIndex >= static_cast<int32>(LuaMorphWeights.size()))
+			{
+				return;
+			}
+
+			if (!std::isfinite(Weight))
+			{
+				Weight = 0.0f;
+			}
+
+			LuaMorphWeights[MorphIndex] = Weight;
+			LuaMorphOverrideMask[MorphIndex] = 1;
+			bLuaMorphOverrideEnabled = true;
+		});
+
+	Anim.set_function("get_morph_weight",
+		[this](std::string Name) -> float
+		{
+			EnsureLuaMorphWeightStorage();
+			USkeletalMesh* Mesh = GetSkeletalMesh();
+			FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+			if (!Asset || Name.empty())
+			{
+				return 0.0f;
+			}
+
+			const int32 MorphIndex = Asset->FindMorphTargetIndex(FString(Name));
+			if (MorphIndex < 0 || MorphIndex >= static_cast<int32>(LuaMorphWeights.size()))
+			{
+				return 0.0f;
+			}
+
+			if (LuaMorphOverrideMask[MorphIndex] != 0)
+			{
+				return LuaMorphWeights[MorphIndex];
+			}
+
+			return OwningComponent ? OwningComponent->GetMorphTargetWeightByIndex(MorphIndex) : 0.0f;
+		});
+
+	Anim.set_function("clear_morph_weight",
+		[this](std::string Name)
+		{
+			EnsureLuaMorphWeightStorage();
+			USkeletalMesh* Mesh = GetSkeletalMesh();
+			FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+			if (!Asset || Name.empty())
+			{
+				return;
+			}
+
+			const int32 MorphIndex = Asset->FindMorphTargetIndex(FString(Name));
+			if (MorphIndex < 0 || MorphIndex >= static_cast<int32>(LuaMorphOverrideMask.size()))
+			{
+				return;
+			}
+
+			LuaMorphOverrideMask[MorphIndex] = 0;
+
+			bLuaMorphOverrideEnabled = false;
+			for (uint8 Mask : LuaMorphOverrideMask)
+			{
+				if (Mask != 0)
+				{
+					bLuaMorphOverrideEnabled = true;
+					break;
+				}
+			}
+		});
+
+	Anim.set_function("clear_morph_weights",
+		[this]()
+		{
+			LuaMorphWeights.clear();
+			LuaMorphOverrideMask.clear();
+			bLuaMorphOverrideEnabled = false;
 		});
 
 	// ── Input edge detection — lua FSM/montage trigger 용 ──

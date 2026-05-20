@@ -1,5 +1,9 @@
 #include "MeshEditorWidget.h"
 
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
+
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
 #include "Runtime/Engine.h"
@@ -17,6 +21,7 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/Instance/AnimSingleNodeInstance.h"
 #include "Animation/AnimationManager.h"
+#include "Animation/Sequence/AnimDataModel.h"
 #include "Asset/AssetRegistry.h"
 #include "UI/Asset/AnimationTransportBar.h"
 #include "UI/Asset/AnimationTimelinePanel.h"
@@ -25,6 +30,7 @@
 #include "UI/EditorFileUtils.h"
 #include "Editor/UI/EditorTextureManager.h"
 #include "Platform/Paths.h"
+#include "Object/Object.h"
 
 #include <imgui.h>
 #include <algorithm>
@@ -62,6 +68,13 @@ namespace
 		return FString(Buffer);
 	}
 
+	bool IsSameSkeletonBindingForAnimationList(const FSkeletonBinding& A, const FSkeletonBinding& B)
+	{
+		return A.SkeletonPath == B.SkeletonPath
+			&& A.SkeletonAssetGuid == B.SkeletonAssetGuid
+			&& A.CompatibilitySignature == B.CompatibilitySignature;
+	}
+
 	TMap<FString, double> GMeshImportDurationsByAssetPath;
 
 	double GetRecordedImportDurationSeconds(const USkeletalMesh* Mesh)
@@ -79,6 +92,48 @@ namespace
 
 		auto It = GMeshImportDurationsByAssetPath.find(AssetPath);
 		return It != GMeshImportDurationsByAssetPath.end() ? It->second : -1.0;
+	}
+
+	FMorphTargetCurve& FindOrAddMorphCurve(UAnimSequence* Seq, const FString& MorphTargetName)
+	{
+		TArray<FMorphTargetCurve>& Curves = Seq->GetMutableMorphTargetCurves();
+		for (FMorphTargetCurve& Curve : Curves)
+		{
+			if (Curve.MorphTargetName == MorphTargetName)
+			{
+				return Curve;
+			}
+		}
+		FMorphTargetCurve NewCurve;
+		NewCurve.MorphTargetName = MorphTargetName;
+		Curves.push_back(std::move(NewCurve));
+		return Curves.back();
+	}
+
+	void AddOrUpdateMorphCurveKey(FMorphTargetCurve& Curve, float TimeSeconds, float Value)
+	{
+		constexpr float TimeTolerance = 1.0e-4f;
+		for (FRawFloatCurveKey& Key : Curve.Curve.Keys)
+		{
+			if (std::fabs(Key.TimeSeconds - TimeSeconds) <= TimeTolerance)
+			{
+				Key.Value = Value;
+				return;
+			}
+		}
+		FRawFloatCurveKey NewKey;
+		NewKey.TimeSeconds   = TimeSeconds;
+		NewKey.Value         = Value;
+		NewKey.Interpolation = 2;
+		Curve.Curve.Keys.push_back(NewKey);
+		std::sort(
+			Curve.Curve.Keys.begin(),
+			Curve.Curve.Keys.end(),
+			[](const FRawFloatCurveKey& A, const FRawFloatCurveKey& B)
+			{
+				return A.TimeSeconds < B.TimeSeconds;
+			}
+		);
 	}
 
 	EUberLitDefines::ELightingModel GetLightingModelForViewMode(EViewMode ViewMode)
@@ -251,8 +306,9 @@ void FMeshEditorWidget::Tick(float DeltaTime)
 		Out.ResetToRefPose();
 
 		NodeInst->EvaluatePose(Out);
+		ApplyMorphPreviewOverrides(Out.MorphWeights);
 
-		Comp->SetBoneLocalTransforms(Out.Pose);
+		Comp->SetAnimationPose(Out.Pose, Out.MorphWeights);
 	}
 }
 
@@ -658,6 +714,34 @@ void FMeshEditorWidget::RenderMeshLayout()
 			ImGui::Text("Vertices:  %s", FormatMeshStatCount(Asset->Vertices.size()).c_str());
 			ImGui::Text("Triangles: %s", FormatMeshStatCount(Asset->Indices.size() / 3).c_str());
 			ImGui::Text("Bones:     %zu", Asset->Bones.size());
+			ImGui::Text("Morphs:    %zu", Asset->MorphTargets.size());
+			USkeletalMeshComponent* PreviewMeshComponent = ViewportClient.GetPreviewMeshComponent();
+			if (!Asset->MorphTargets.empty() && PreviewMeshComponent)
+			{
+				ImGui::Dummy(ImVec2(0, 8));
+				ImGui::Separator();
+				ImGui::TextUnformatted("Morph Preview");
+				if (ImGui::SmallButton("Reset Morphs"))
+				{
+					PreviewMeshComponent->ClearMorphTargetWeights();
+				}
+				for (int32 MorphIndex = 0; MorphIndex < static_cast<int32>(Asset->MorphTargets.size()); ++MorphIndex)
+				{
+					const FMorphTarget& MorphTarget = Asset->MorphTargets[MorphIndex];
+					float               Weight      = PreviewMeshComponent->GetMorphTargetWeightByIndex(MorphIndex);
+					ImGui::PushID(MorphIndex);
+					const char* Label = MorphTarget.Name.empty() ? "Unnamed" : MorphTarget.Name.c_str();
+					if (ImGui::SliderFloat(Label, &Weight, -1.0f, 1.0f, "%.3f"))
+					{
+						PreviewMeshComponent->SetMorphTargetWeightByIndex(MorphIndex, Weight);
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("%zu vertex deltas", MorphTarget.Deltas.size());
+					}
+					ImGui::PopID();
+				}
+			}
 			ImGui::Dummy(ImVec2(0, 8));
 			const FString& Path = SkeletalMesh->GetAssetPathFileName();
 			if (!Path.empty() && Path != "None")
@@ -693,6 +777,109 @@ void FMeshEditorWidget::ApplyAnimationToComponent()
 	Comp->PlayAnimation(AnimTabState.CurrentSequence, /*bLooping=*/true);
 	Comp->SetPlaying(false);
 	Comp->SetPlayRate(1.0f);
+	ResetMorphPreviewOverrides();
+}
+
+void FMeshEditorWidget::EnsureMorphPreviewOverrideSize()
+{
+	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
+	FSkeletalMesh* MeshAsset    = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	const size_t   MorphCount   = MeshAsset ? MeshAsset->MorphTargets.size() : 0;
+	if (AnimTabState.MorphPreviewWeights.size() != MorphCount)
+	{
+		AnimTabState.MorphPreviewWeights.assign(MorphCount, 0.0f);
+	}
+	if (AnimTabState.MorphPreviewOverrideMask.size() != MorphCount)
+	{
+		AnimTabState.MorphPreviewOverrideMask.assign(MorphCount, 0);
+	}
+}
+
+void FMeshEditorWidget::ResetMorphPreviewOverrides()
+{
+	AnimTabState.MorphPreviewWeights.clear();
+	AnimTabState.MorphPreviewOverrideMask.clear();
+	AnimTabState.bMorphPreviewOverrideEnabled = false;
+}
+
+void FMeshEditorWidget::ApplyMorphPreviewOverrides(TArray<float>& InOutMorphWeights) const
+{
+	if (!AnimTabState.bMorphPreviewOverrideEnabled)
+	{
+		return;
+	}
+	const size_t Count = AnimTabState.MorphPreviewWeights.size();
+	if (Count == 0 || AnimTabState.MorphPreviewOverrideMask.size() != Count)
+	{
+		return;
+	}
+	if (InOutMorphWeights.size() < Count)
+	{
+		InOutMorphWeights.resize(Count, 0.0f);
+	}
+	for (size_t Index = 0; Index < Count; ++Index)
+	{
+		if (AnimTabState.MorphPreviewOverrideMask[Index] != 0)
+		{
+			InOutMorphWeights[Index] = AnimTabState.MorphPreviewWeights[Index];
+		}
+	}
+}
+
+void FMeshEditorWidget::RefreshAnimationPreviewPose()
+{
+	USkeletalMeshComponent* Comp = ViewportClient.GetPreviewMeshComponent();
+	if (!Comp) return;
+	UAnimSingleNodeInstance* NodeInst = Comp->GetAnimNodeInstance(FName::None);
+	if (!NodeInst) return;
+	USkeletalMesh* Mesh = Comp->GetSkeletalMesh();
+	if (!Mesh) return;
+	FSkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset();
+	if (!Asset || Asset->Bones.empty()) return;
+
+	FPoseContext Out;
+	Out.SkeletalMesh = Mesh;
+	Out.Pose.resize(Asset->Bones.size());
+	Out.ResetToRefPose();
+	NodeInst->EvaluatePose(Out);
+	ApplyMorphPreviewOverrides(Out.MorphWeights);
+	Comp->SetAnimationPose(Out.Pose, Out.MorphWeights);
+}
+
+void FMeshEditorWidget::MarkAnimationListDirty()
+{
+	AnimTabState.bAnimationListDirty = true;
+}
+
+const TArray<FAssetListItem>& FMeshEditorWidget::GetCachedAnimationFilesForCurrentSkeleton()
+{
+	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
+	FSkeletonBinding CurrentBinding;
+
+	if (SkeletalMesh)
+	{
+		CurrentBinding = SkeletalMesh->GetSkeletonBinding();
+	}
+	else
+	{
+		CurrentBinding.Reset();
+	}
+
+	if (AnimTabState.bAnimationListDirty ||
+		!IsSameSkeletonBindingForAnimationList(AnimTabState.CachedAnimationListBinding, CurrentBinding))
+	{
+		AnimTabState.CachedAnimationFiles.clear();
+		AnimTabState.CachedAnimationListBinding = CurrentBinding;
+
+		if (SkeletalMesh)
+		{
+			AnimTabState.CachedAnimationFiles = FAssetRegistry::ListAnimationsForSkeleton(CurrentBinding, false);
+		}
+
+		AnimTabState.bAnimationListDirty = false;
+	}
+
+	return AnimTabState.CachedAnimationFiles;
 }
 
 void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
@@ -721,10 +908,24 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 		const bool bShowNotifyDetails =
 			AnimTabState.SelectedNotifyIndex >= 0 &&
 			AnimTabState.SelectedNotifyIndex < NotifyCount;
+		const bool bShowMorphDetails = AnimTabState.SelectedMorphCurveIndex >= 0 && AnimTabState.SelectedMorphCurveIndex
+		< static_cast<int32>(Seq->GetMorphTargetCurves().size());
 
 		if (bShowNotifyDetails)
 		{
 			FAnimationTimelinePanel::RenderNotifyDetails(Seq, AnimTabState.SelectedNotifyIndex);
+		}
+		else if (bShowMorphDetails)
+		{
+			if (FAnimationTimelinePanel::RenderMorphDetails(
+				Seq,
+				SkeletalMesh,
+				AnimTabState.SelectedMorphCurveIndex,
+				AnimTabState.SelectedMorphKeyIndex
+			))
+			{
+				RefreshAnimationPreviewPose();
+			}
 		}
 		else
 		{
@@ -744,6 +945,72 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 			// AnimSequence property 패널 — root motion 등 편집 가능한 항목.
 			ImGui::Dummy(ImVec2(0, 12));
 			FAnimSequencePropertyPanel::Render(Seq);
+
+			USkeletalMeshComponent* PreviewMeshComponent = ViewportClient.GetPreviewMeshComponent();
+			USkeletalMesh* PreviewMesh = PreviewMeshComponent ? PreviewMeshComponent->GetSkeletalMesh() : SkeletalMesh;
+			FSkeletalMesh* MeshAsset = PreviewMesh ? PreviewMesh->GetSkeletalMeshAsset() : nullptr;
+			if (MeshAsset && !MeshAsset->MorphTargets.empty())
+			{
+				ImGui::Dummy(ImVec2(0, 12));
+				ImGui::Separator();
+				ImGui::TextUnformatted("Morph Preview / Keys");
+				EnsureMorphPreviewOverrideSize();
+				if (ImGui::SmallButton("Clear Morph Preview"))
+				{
+					ResetMorphPreviewOverrides();
+					RefreshAnimationPreviewPose();
+				}
+				for (int32 MorphIndex = 0; MorphIndex < static_cast<int32>(MeshAsset->MorphTargets.size()); ++
+				     MorphIndex)
+				{
+					const FMorphTarget& MorphTarget   = MeshAsset->MorphTargets[MorphIndex];
+					float               CurrentWeight = 0.0f;
+					if (MorphIndex < static_cast<int32>(AnimTabState.MorphPreviewWeights.size()) && AnimTabState.
+						MorphPreviewOverrideMask[MorphIndex] != 0)
+					{
+						CurrentWeight = AnimTabState.MorphPreviewWeights[MorphIndex];
+					}
+					else if (PreviewMeshComponent)
+					{
+						CurrentWeight = PreviewMeshComponent->GetMorphTargetWeightByIndex(MorphIndex);
+					}
+
+					ImGui::PushID(MorphIndex);
+					const char* Label = MorphTarget.Name.empty() ? "Unnamed" : MorphTarget.Name.c_str();
+					if (ImGui::SliderFloat(Label, &CurrentWeight, -1.0f, 1.0f, "%.3f"))
+					{
+						AnimTabState.MorphPreviewWeights[MorphIndex]      = CurrentWeight;
+						AnimTabState.MorphPreviewOverrideMask[MorphIndex] = 1;
+						AnimTabState.bMorphPreviewOverrideEnabled         = true;
+						RefreshAnimationPreviewPose();
+					}
+					ImGui::SameLine();
+					if (ImGui::SmallButton("Key"))
+					{
+						FMorphTargetCurve& Curve = FindOrAddMorphCurve(Seq, MorphTarget.Name);
+						AddOrUpdateMorphCurveKey(
+							Curve,
+							PreviewMeshComponent && PreviewMeshComponent->GetAnimNodeInstance(FName::None)
+							? PreviewMeshComponent->GetAnimNodeInstance(FName::None)->GetCurrentTime() : 0.0f,
+							CurrentWeight
+						);
+						AnimTabState.MorphPreviewOverrideMask[MorphIndex] = 0;
+						bool bAnyOverride                                 = false;
+						for (uint8 Mask : AnimTabState.MorphPreviewOverrideMask)
+						{
+							if (Mask != 0)
+							{
+								bAnyOverride = true;
+								break;
+							}
+						}
+						AnimTabState.bMorphPreviewOverrideEnabled = bAnyOverride;
+						FAnimationManager::Get().SaveAnimationPreservingMetadata(Seq);
+						RefreshAnimationPreviewPose();
+					}
+					ImGui::PopID();
+				}
+			}
 		}
 	}
 	else
@@ -784,9 +1051,11 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 			UAnimSequence* Seq = FAnimationManager::Get().LoadAnimation(Path);
 			if (Seq && Seq->IsCompatibleWith(SkeletalMesh))
 			{
-				AnimTabState.CurrentSequence     = Seq;
-				AnimTabState.SelectedAnimIndex   = -1;
-				AnimTabState.SelectedNotifyIndex = -1;
+				AnimTabState.CurrentSequence         = Seq;
+				AnimTabState.SelectedAnimIndex       = -1;
+				AnimTabState.SelectedNotifyIndex     = -1;
+				AnimTabState.SelectedMorphCurveIndex = -1;
+				AnimTabState.SelectedMorphKeyIndex   = -1;
 				ApplyAnimationToComponent();
 			}
 		}
@@ -805,6 +1074,32 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 		}
 	}
 
+	if (ImGui::Button("+ New Morph Animation", ImVec2(-1.0f, 0.0f)) && SkeletalMesh)
+	{
+		UAnimSequence*  Seq       = UObjectManager::Get().CreateObject<UAnimSequence>();
+		UAnimDataModel* DataModel = UObjectManager::Get().CreateObject<UAnimDataModel>(Seq);
+		DataModel->SetTiming(1.0f, 30.0f, 0);
+		Seq->SetDataModel(DataModel);
+		Seq->SetSkeletonBinding(SkeletalMesh->GetSkeletonBinding());
+		Seq->SetFName(FName("MorphAnimation"));
+		const FString AnimPath = FAnimationManager::GetAnimationPathForSkeleton(
+			SkeletalMesh->GetAssetPathFileName(),
+			"MorphAnimation",
+			SkeletalMesh->GetSkeletonBinding().SkeletonPath
+		);
+		if (FAnimationManager::Get().SaveAnimation(Seq, AnimPath, SkeletalMesh->GetAssetPathFileName()))
+		{
+			AnimTabState.CurrentSequence         = Seq;
+			AnimTabState.SelectedAnimIndex       = -1;
+			AnimTabState.SelectedNotifyIndex     = -1;
+			AnimTabState.SelectedMorphCurveIndex = -1;
+			AnimTabState.SelectedMorphKeyIndex   = -1;
+			ApplyAnimationToComponent();
+			FAnimationManager::Get().RefreshAvailableAnimations();
+			MarkAnimationListDirty();
+		}
+	}
+
 	FAnimationImportRequest      AnimationImportRequest;
 	const EFbxImportDialogResult AnimationImportDialogResult = FFbxImportOptionsDialog::RenderAnimationImportPopup(
 		"Import Animation FBX Options",
@@ -819,11 +1114,14 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 		FAnimationManager::Get().ImportAnimationForSkeleton(AnimationImportRequest, &ImportedSequences);
 		// 임포트 성공/스킵(이미 존재) 무관하게 디스크를 다시 스캔해 목록 갱신.
 		FAnimationManager::Get().RefreshAvailableAnimations();
+		MarkAnimationListDirty();
 		if (!ImportedSequences.empty())
 		{
-			AnimTabState.CurrentSequence     = ImportedSequences[0];
-			AnimTabState.SelectedAnimIndex   = -1;
-			AnimTabState.SelectedNotifyIndex = -1;
+			AnimTabState.CurrentSequence         = ImportedSequences[0];
+			AnimTabState.SelectedAnimIndex       = -1;
+			AnimTabState.SelectedNotifyIndex     = -1;
+			AnimTabState.SelectedMorphCurveIndex = -1;
+			AnimTabState.SelectedMorphKeyIndex   = -1;
 			ApplyAnimationToComponent();
 			FFbxImportOptionsDialog::RequestClose(AnimTabState.AnimationImportDialog);
 		}
@@ -836,6 +1134,13 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 
 	ImGui::Separator();
 
+	if (ImGui::SmallButton("Refresh Animation List"))
+	{
+		FAnimationManager::Get().RefreshAvailableAnimations();
+		FAnimationManager::Get().RefreshAvailableMontages();
+		MarkAnimationListDirty();
+	}
+
 	// 디스크 스캔 — montage 목록 초기화 (최초 1회 + Refresh 시).
 	static bool sMontagesScanned = false;
 	if (!sMontagesScanned)
@@ -844,7 +1149,7 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 		sMontagesScanned = true;
 	}
 
-	const TArray<FAssetListItem> AnimFiles      = FAssetRegistry::ListAnimationsForSkeleton(SkeletalMesh->GetSkeletonBinding(), false);
+	const TArray<FAssetListItem>& AnimFiles     = GetCachedAnimationFilesForCurrentSkeleton();
 	const TArray<FAssetListItem>& MontageFiles  = FAnimationManager::Get().GetAvailableMontageFiles();
 
 	// asset 경로의 stem (확장자/디렉토리 제거) — 자동 montage 이름의 source 식별자.
@@ -922,9 +1227,12 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 		{
 			if (E.bIsMontage)
 			{
-				AnimTabState.SelectedMontageIndex = E.OriginalIndex;
-				AnimTabState.bMontageSelected     = true;
-				AnimTabState.SelectedNotifyIndex  = -1;
+				AnimTabState.SelectedMontageIndex    = E.OriginalIndex;
+				AnimTabState.bMontageSelected        = true;
+				AnimTabState.SelectedNotifyIndex     = -1;
+				AnimTabState.SelectedMorphCurveIndex = -1;
+				AnimTabState.SelectedMorphKeyIndex   = -1;
+				ResetMorphPreviewOverrides();
 				if (UAnimMontage* M = FAnimationManager::Get().LoadMontage(E.FullPath))
 				{
 					AnimTabState.CurrentMontage = M;
@@ -932,9 +1240,11 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 			}
 			else
 			{
-				AnimTabState.SelectedAnimIndex   = E.OriginalIndex;
-				AnimTabState.bMontageSelected    = false;
-				AnimTabState.SelectedNotifyIndex = -1;
+				AnimTabState.SelectedAnimIndex       = E.OriginalIndex;
+				AnimTabState.bMontageSelected        = false;
+				AnimTabState.SelectedNotifyIndex     = -1;
+				AnimTabState.SelectedMorphCurveIndex = -1;
+				AnimTabState.SelectedMorphKeyIndex   = -1;
 				if (UAnimSequence* Seq = FAnimationManager::Get().LoadAnimation(E.FullPath))
 				{
 					if (Seq->IsCompatibleWith(SkeletalMesh))
@@ -972,7 +1282,10 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 	}
 
 	FAnimationTimelinePanel::Render(NodeInst, Comp, AnimTabState.CurrentSequence, TimelineHeight,
-	                                AnimTabState.SelectedNotifyIndex);
+		AnimTabState.SelectedNotifyIndex,
+		AnimTabState.SelectedMorphCurveIndex,
+		AnimTabState.SelectedMorphKeyIndex
+	);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

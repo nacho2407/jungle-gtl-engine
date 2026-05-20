@@ -25,6 +25,7 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 	Ar << SkeletalMeshAsset->MeshRanges;
 	Ar << SkeletalMeshAsset->Bones;
 	Ar << SkeletalMaterials;
+	Ar << SkeletalMeshAsset->MorphTargets;
 
 	if (Ar.IsLoading())
 	{

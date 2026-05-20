@@ -5,6 +5,15 @@
 
 #include <fbxsdk.h>
 
+struct FFbxMorphVertexSource
+{
+	FbxMesh* Mesh                    = nullptr;
+	int32    ControlPointIndex       = -1;
+	FMatrix  MeshBindGlobal          = FMatrix::Identity;
+	FMatrix  RigidBindCorrection     = FMatrix::Identity;
+	bool     bUseRigidBindCorrection = false;
+};
+
 struct FFbxImportContext
 {
 	FString SourcePath;
@@ -19,10 +28,12 @@ struct FFbxImportContext
 	TMap<FbxNode*, int32> BoneNodeToIndex;
 	FReferenceSkeleton ReferenceSkeleton;
 
-	TArray<FVertexPNCTBW> SkeletalVertices;
-	TArray<uint32> SkeletalIndices;
-	TArray<FSkeletalMeshSection> SkeletalSections;
-	TArray<FSkeletalMeshRange> SkeletalMeshRanges;
+	TArray<FVertexPNCTBW>         SkeletalVertices;
+	TArray<uint32>                SkeletalIndices;
+	TArray<FSkeletalMeshSection>  SkeletalSections;
+	TArray<FSkeletalMeshRange>    SkeletalMeshRanges;
+	TArray<FMorphTarget>          SkeletalMorphTargets;
+	TArray<FFbxMorphVertexSource> SkeletalMorphVertexSources;
 
 	TArray<FVector> TangentSums;
 	TArray<FVector> BitangentSums;

@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 namespace
 {
@@ -403,6 +404,113 @@ namespace
 		CopyFbxFloatCurve(CurveX, StartSeconds, OutCurve.X);
 		CopyFbxFloatCurve(CurveY, StartSeconds, OutCurve.Y);
 		CopyFbxFloatCurve(CurveZ, StartSeconds, OutCurve.Z);
+	}
+
+	static float NormalizeFbxMorphPercent(float RawValue)
+	{
+		return std::fabs(RawValue) > 1.0f ? RawValue / 100.0f : RawValue;
+	}
+
+	static void CopyFbxMorphCurve(FbxAnimCurve* SourceCurve, double StartSeconds, FRawFloatCurve& OutCurve)
+	{
+		CopyFbxFloatCurve(SourceCurve, StartSeconds, OutCurve);
+		for (FRawFloatCurveKey& Key : OutCurve.Keys)
+		{
+			Key.Value = NormalizeFbxMorphPercent(Key.Value);
+		}
+	}
+
+	static FMorphTargetCurve& FindOrAddAnimMorphCurve(UAnimDataModel* DataModel, const FString& MorphTargetName)
+	{
+		for (FMorphTargetCurve& Curve : DataModel->MorphTargetCurves)
+		{
+			if (Curve.MorphTargetName == MorphTargetName)
+			{
+				return Curve;
+			}
+		}
+
+		FMorphTargetCurve NewCurve;
+		NewCurve.MorphTargetName = MorphTargetName;
+		DataModel->MorphTargetCurves.push_back(std::move(NewCurve));
+		return DataModel->MorphTargetCurves.back();
+	}
+
+	static void ImportMorphTargetAnimationCurves(
+		FbxScene*       Scene,
+		FbxAnimStack*   AnimStack,
+		double          StartSeconds,
+		UAnimDataModel* DataModel
+		)
+	{
+		if (!Scene || !AnimStack || !DataModel)
+		{
+			return;
+		}
+
+		FbxNode* RootNode = Scene->GetRootNode();
+		if (!RootNode)
+		{
+			return;
+		}
+
+		TArray<FbxNode*> MeshNodes;
+		FFbxSceneQuery::CollectMeshNodes(RootNode, MeshNodes);
+		const int32 LayerCount = AnimStack->GetMemberCount<FbxAnimLayer>();
+
+		for (FbxNode* Node : MeshNodes)
+		{
+			FbxMesh* Mesh = Node ? Node->GetMesh() : nullptr;
+			if (!Mesh)
+			{
+				continue;
+			}
+
+			const int32 BlendShapeCount = Mesh->GetDeformerCount(FbxDeformer::eBlendShape);
+			for (int32 BlendShapeIndex = 0; BlendShapeIndex < BlendShapeCount; ++BlendShapeIndex)
+			{
+				FbxBlendShape* BlendShape = static_cast<FbxBlendShape*>(Mesh->GetDeformer(
+					BlendShapeIndex,
+					FbxDeformer::eBlendShape
+				));
+				if (!BlendShape)
+				{
+					continue;
+				}
+
+				const int32 ChannelCount = BlendShape->GetBlendShapeChannelCount();
+				for (int32 ChannelIndex = 0; ChannelIndex < ChannelCount; ++ChannelIndex)
+				{
+					FbxBlendShapeChannel* Channel = BlendShape->GetBlendShapeChannel(ChannelIndex);
+					if (!Channel)
+					{
+						continue;
+					}
+
+					const char*   RawName         = Channel->GetName();
+					const FString MorphTargetName = (RawName && RawName[0] != '\0') ? FString(RawName)
+					: FString("MorphTarget");
+
+					for (int32 LayerIndex = 0; LayerIndex < LayerCount; ++LayerIndex)
+					{
+						FbxAnimLayer* Layer = AnimStack->GetMember<FbxAnimLayer>(LayerIndex);
+						if (!Layer)
+						{
+							continue;
+						}
+
+						FbxAnimCurve* Curve = Channel->DeformPercent.GetCurve(Layer);
+						if (!Curve || Curve->KeyGetCount() <= 0)
+						{
+							continue;
+						}
+
+						FMorphTargetCurve& OutCurve = FindOrAddAnimMorphCurve(DataModel, MorphTargetName);
+						CopyFbxMorphCurve(Curve, StartSeconds, OutCurve.Curve);
+					}
+				}
+			}
+		}
 	}
 
 	static float NormalizeFbxLayerWeight(double RawWeight)
@@ -1245,6 +1353,7 @@ bool FFbxAnimationImporter::ImportAnimations(
 		UAnimDataModel* DataModel = UObjectManager::Get().CreateObject<UAnimDataModel>();
 		DataModel->SetTiming(static_cast<float>(DurationSeconds), SampleRate, NumFrames);
 		DataModel->BoneAnimationTracks.resize(Context.Bones.size());
+		ImportMorphTargetAnimationCurves(Scene, AnimStack, StartSeconds, DataModel);
 
 		TArray<bool> BoneHasAnimatedCurves;
 		BoneHasAnimatedCurves.resize(Context.Bones.size(), false);
