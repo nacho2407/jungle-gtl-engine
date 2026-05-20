@@ -70,7 +70,6 @@ void USkinnedMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& O
 {
     ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     OutProps.push_back({ "SkeletalMesh", EPropertyType::String, &SkeletalMeshPath });
-    OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 }
 
 void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
@@ -116,13 +115,13 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
     {
         SkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
 
-        const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();
+        const TArray<FSkeletalMeshRenderSection>& Sections = SkeletalMesh->GetRenderSections();
         const TArray<FStaticMeshMaterialSlot>& Slots = SkeletalMesh->GetMaterialSlots();
 
         Materials.reserve(Sections.size());
         for (int32 SectionIndex = 0; SectionIndex < static_cast<int32>(Sections.size()); SectionIndex++)
         {
-            const int32 SlotIndex = Sections[SectionIndex].MaterialSlotIndex;
+            const int32 SlotIndex = Sections[SectionIndex].MaterialIndex;
             if (SlotIndex >= 0 && SlotIndex < static_cast<int32>(Slots.size()))
             {
                 Materials.push_back(Slots[SlotIndex].Material);
@@ -457,8 +456,15 @@ void USkinnedMeshComponent::SkinVerticesCPU()
     }
 
 	// 아직 변형되지 않은 bind pose 기준 정점 목록
-	// index buffer는 당연히 재사용!
-    const TArray<FSkeletalMeshVertex>& SourceVertices = SkeletalMesh->GetVertices();
+	// BoneIndices는 section-local palette index이므로 section BoneMap을 통해 global bone으로 역매핑한다.
+    const FSkeletalMeshLODRenderData* LOD = SkeletalMesh->GetLODRenderData(0);
+    if (!LOD)
+    {
+        SkinnedVertices.clear();
+        return;
+    }
+
+    const TArray<FSkeletalMeshVertex>& SourceVertices = LOD->StaticVertices;
     const TArray<FBoneInfo>& Bones = SkeletalMesh->GetBones();
     const int32 BoneCount = static_cast<int32>(Bones.size());
 
@@ -467,30 +473,47 @@ void USkinnedMeshComponent::SkinVerticesCPU()
     for (int32 VertexIndex = 0; VertexIndex < static_cast<int32>(SourceVertices.size()); ++VertexIndex)
     {
         const FSkeletalMeshVertex& Src = SourceVertices[VertexIndex];
+        FNormalVertex& Dst = SkinnedVertices[VertexIndex];
+        Dst.Position = Src.Position;
+        Dst.Color = Src.Color;
+        Dst.Normal = Src.Normal;
+        Dst.UVs = Src.UVs;
+        Dst.Tangent = Src.Tangent;
+    }
+
+    for (const FSkeletalMeshRenderSection& Section : LOD->RenderSections)
+    {
+        const uint32 SectionVertexEnd = Section.BaseVertexIndex + Section.NumVertices;
+        for (uint32 VertexIndex = Section.BaseVertexIndex; VertexIndex < SectionVertexEnd; ++VertexIndex)
+        {
+            if (VertexIndex >= SourceVertices.size())
+            {
+                continue;
+            }
+
+            const FSkeletalMeshVertex& Src = SourceVertices[VertexIndex];
 
 		// 유효한 weight들의 합 구하기
 		// vertex는 최대 4개의 bone influence를 가질 수 있음을 가정
         float ValidWeightSum = 0.0f;
         for (int32 InfluenceIndex = 0; InfluenceIndex < 4; ++InfluenceIndex)
         {
-            const int32 BoneIndex = Src.BoneIndices[InfluenceIndex];
+            const int32 LocalBoneIndex = Src.BoneIndices[InfluenceIndex];
             const float Weight = Src.BoneWeights[InfluenceIndex];
 
-            if (BoneIndex < BoneCount && Weight > 0.0f)
+            if (LocalBoneIndex < static_cast<int32>(Section.BoneMap.size()))
             {
-                ValidWeightSum += Weight;
+                const int32 GlobalBoneIndex = Section.BoneMap[LocalBoneIndex];
+                if (GlobalBoneIndex >= 0 && GlobalBoneIndex < BoneCount && Weight > 0.0f)
+                {
+                    ValidWeightSum += Weight;
+                }
             }
         }
 
 		// weight가 하나도 없으면 원본 그대로 복사(아주 작은 오차값 허용)
         if (ValidWeightSum <= 1e-6f)
         {
-            FNormalVertex& Dst = SkinnedVertices[VertexIndex];
-            Dst.Position = Src.Position;
-            Dst.Color = Src.Color;
-            Dst.Normal = Src.Normal;
-            Dst.UVs = Src.UVs;
-            Dst.Tangent = Src.Tangent;
             continue;
         }
 
@@ -503,17 +526,24 @@ void USkinnedMeshComponent::SkinVerticesCPU()
 		// 실제 skinning 계산 루프
         for (int32 InfluenceIndex = 0; InfluenceIndex < 4; ++InfluenceIndex)
         {
-            const int32 BoneIndex = Src.BoneIndices[InfluenceIndex];
+            const int32 LocalBoneIndex = Src.BoneIndices[InfluenceIndex];
             const float RawWeight = Src.BoneWeights[InfluenceIndex];
 
-            if (BoneIndex >= BoneCount || RawWeight <= 0.0f)
+            if (LocalBoneIndex >= static_cast<int32>(Section.BoneMap.size()) || RawWeight <= 0.0f)
+            {
+                continue;
+            }
+
+            const int32 GlobalBoneIndex = Section.BoneMap[LocalBoneIndex];
+            if (GlobalBoneIndex < 0 || GlobalBoneIndex >= BoneCount ||
+                GlobalBoneIndex >= static_cast<int32>(SkinningMatrices.size()))
             {
                 continue;
             }
 
 			// bone weight의 합은 보통 1이어야 하므로 여기서 한 번 정규화
             const float Weight = RawWeight / ValidWeightSum;
-            const FMatrix& SkinMatrix = SkinningMatrices[BoneIndex];
+            const FMatrix& SkinMatrix = SkinningMatrices[GlobalBoneIndex];
 
             SkinnedPosition += SkinMatrix.TransformPosition(Src.Position) * Weight;
             SkinnedNormal += SkinMatrix.TransformVector(Src.Normal) * Weight;
@@ -540,6 +570,7 @@ void USkinnedMeshComponent::SkinVerticesCPU()
         Dst.Normal = SkinnedNormal;
         Dst.UVs = Src.UVs;
         Dst.Tangent = FVector4(SkinnedTangent.X, SkinnedTangent.Y, SkinnedTangent.Z, Src.Tangent.W);
+        }
     }
 }
 

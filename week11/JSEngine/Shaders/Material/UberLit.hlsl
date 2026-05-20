@@ -100,7 +100,7 @@ VSInput Skinning(VSInput input)
 
     for (uint i = 0; i < 4; i++)
     {
-        row_major matrix BoneMatrix = BoneMatrices[input.BoneIndices[i]];
+        row_major matrix BoneMatrix = BonePalette[input.BoneIndices[i]];
         float BoneWeight = input.BoneWeights[i];
         output.Position += BoneWeight * mul(float4(input.Position, 1.0), BoneMatrix).xyz;
         output.Normal += BoneWeight * mul(float4(input.Normal, 0.0), BoneMatrix).xyz;

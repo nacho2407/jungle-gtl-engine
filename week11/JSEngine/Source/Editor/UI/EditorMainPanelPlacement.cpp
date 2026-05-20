@@ -10,6 +10,7 @@
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Core/Paths.h"
+#include "Core/AssetPathPolicy.h"
 #include "Core/ResourceManager.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
@@ -94,30 +95,15 @@ FString ResolveSkeletalMeshDropLoadPath(const FString& PayloadPath)
         return {};
     }
 
-    if (GetLowerExtension(Path) != L".fbx")
+    const FString RelativeFbxPath = FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
+    if (!FAssetPathPolicy::IsSkeletalMeshSourcePath(RelativeFbxPath))
     {
         return {};
     }
 
-    return FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
+    return RelativeFbxPath;
 }
 
-FString ResolveFbxDropInspectPath(const FString& PayloadPath)
-{
-    std::filesystem::path Path;
-    std::filesystem::path RelativePath;
-    if (!ResolveProjectDropPath(PayloadPath, Path, RelativePath))
-    {
-        return {};
-    }
-
-    if (GetLowerExtension(Path) != L".fbx")
-    {
-        return {};
-    }
-
-    return FPaths::Normalize(FPaths::ToUtf8(Path.generic_wstring()));
-}
 }
 
 bool FEditorMainPanel::SpawnStaticMeshFromContentPath(
@@ -201,14 +187,7 @@ bool FEditorMainPanel::SpawnSkeletalMeshFromContentPath(
     }
 
     const FString MeshLoadPath = ResolveSkeletalMeshDropLoadPath(PayloadPath);
-    const FString InspectPath = ResolveFbxDropInspectPath(PayloadPath);
-    if (MeshLoadPath.empty() || InspectPath.empty())
-    {
-        return false;
-    }
-
-    const FFbxMeshContentInfo ContentInfo = FResourceManager::Get().InspectFbxMeshContent(InspectPath);
-    if (!ContentInfo.bHasSkeletalMesh)
+    if (MeshLoadPath.empty())
     {
         return false;
     }

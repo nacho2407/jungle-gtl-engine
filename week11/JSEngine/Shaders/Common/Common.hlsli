@@ -44,7 +44,7 @@ cbuffer ShadowBuffer : register(b4)
 
 cbuffer SkinningBuffer : register(b5)
 {
-    row_major matrix BoneMatrices[MAX_BONES];
+    row_major matrix BonePalette[MAX_BONES];
 }
 
 cbuffer SelectedBoneBuffer : register(b6)

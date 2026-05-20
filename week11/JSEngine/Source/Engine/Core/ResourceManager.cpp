@@ -294,23 +294,21 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 	}
 	else if (Extension == L".obj" || Extension == L".fbx")
 	{
-		ObjFilePaths.push_back(RelativePath);
-
-		FStaticMeshResource Resource;
-		Resource.Name = RelativePath;
-		Resource.Path = RelativePath;
-		Resource.bPreload = false;
-		Resource.bNormalizeToUnitCube = false;
-		StaticMeshCache.RegisterResource(Resource);
-
-		if (Extension == L".fbx")
+		if (FAssetPathPolicy::IsStaticMeshSourcePath(RelativePath))
 		{
-			const FString AbsolutePath = FPaths::Normalize(FPaths::ToUtf8(FilePath.wstring()));
-			const FFbxMeshContentInfo ContentInfo = FbxImporter.InspectMeshContent(AbsolutePath);
-			if (ContentInfo.bHasSkeletalMesh)
-			{
-				SkeletalMeshFilePaths.push_back(RelativePath);
-			}
+			ObjFilePaths.push_back(RelativePath);
+
+			FStaticMeshResource Resource;
+			Resource.Name = RelativePath;
+			Resource.Path = RelativePath;
+			Resource.bPreload = false;
+			Resource.bNormalizeToUnitCube = false;
+			StaticMeshCache.RegisterResource(Resource);
+		}
+
+		if (FAssetPathPolicy::IsSkeletalMeshSourcePath(RelativePath))
+		{
+			SkeletalMeshFilePaths.push_back(RelativePath);
 		}
 	}
 	else if (Extension == L".mtl" || Extension == L".mat" || Extension == L".matinst")
@@ -705,9 +703,13 @@ UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Name, const FStr
 	return Material;
 }
 
-bool FResourceManager::LoadMaterial(const FString& MtlFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device)
+bool FResourceManager::LoadMaterial(
+	const FString& MtlFilePath,
+	EMaterialShaderType ShaderType,
+	ID3D11Device* Device,
+	bool bAllowSourceImport)
 {
-	return FMaterialLoadService(*this).Load(MtlFilePath, ShaderType, Device);
+	return FMaterialLoadService(*this).Load(MtlFilePath, ShaderType, Device, bAllowSourceImport);
 }
 
 void FResourceManager::RegisterObjMaterialSlotAliases(const FString& ObjPath, const FString& MtlPath)
@@ -970,6 +972,63 @@ TArray<FString> FResourceManager::ListAnimStacks(const FString& SourceFbxPath)
 	}
 
 	TArray<FString> StackNames = FbxImporter.ListAnimStacks(NormalizedSource);
+	if (!StackNames.empty())
+	{
+		AnimStackNamesMap[NormalizedSource] = StackNames;
+		UE_LOG("[AnimSequenceLoad] Source=FBXMetadata | Path=%s | Stacks=%zu",
+		       NormalizedSource.c_str(),
+		       StackNames.size());
+		return StackNames;
+	}
+
+	TArray<FString> CachedStackNames;
+	const fs::path AnimBinDir = fs::path(FPaths::RootDir()) / "Asset" / "AnimSequence" / "Bin";
+	if (fs::exists(AnimBinDir) && fs::is_directory(AnimBinDir))
+	{
+		const uint64 SourceWriteTime = GetFileWriteTimeTicks(NormalizedSource);
+		const uint64 SourceSize = GetFileSizeBytes(NormalizedSource);
+
+		for (const auto& Entry : fs::directory_iterator(AnimBinDir))
+		{
+			if (!Entry.is_regular_file())
+			{
+				continue;
+			}
+
+			FAnimSequenceBinaryHeader Header;
+			FString CachedSource;
+			FString CachedTarget;
+			FString CachedStackName;
+			const FString BinaryPath = FPaths::Normalize(FPaths::ToUtf8(Entry.path().generic_wstring()));
+			if (!BinarySerializer.ReadAnimSequenceIdentity(BinaryPath, Header, CachedSource, CachedTarget, CachedStackName))
+			{
+				continue;
+			}
+
+			if (FPaths::Normalize(CachedSource) != NormalizedSource ||
+				Header.SourceFileWriteTime != SourceWriteTime ||
+				Header.SourceFileSize != SourceSize)
+			{
+				continue;
+			}
+
+			if (std::find(CachedStackNames.begin(), CachedStackNames.end(), CachedStackName) == CachedStackNames.end())
+			{
+				CachedStackNames.push_back(CachedStackName);
+			}
+		}
+	}
+
+	if (!CachedStackNames.empty())
+	{
+		std::sort(CachedStackNames.begin(), CachedStackNames.end());
+		AnimStackNamesMap[NormalizedSource] = CachedStackNames;
+		UE_LOG("[AnimSequenceLoad] Source=BinaryMetadata | Path=%s | Stacks=%zu",
+		       NormalizedSource.c_str(),
+		       CachedStackNames.size());
+		return CachedStackNames;
+	}
+
 	AnimStackNamesMap[NormalizedSource] = StackNames;
 	return StackNames;
 }

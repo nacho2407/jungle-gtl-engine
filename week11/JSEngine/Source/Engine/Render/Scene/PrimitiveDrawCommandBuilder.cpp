@@ -12,6 +12,7 @@
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Scene/RenderBus.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace
@@ -57,6 +58,30 @@ namespace
         }
 
         return MaxLOD;
+    }
+
+    void FillSkinningBonePalette(
+        FSkinningConstants& OutConstants,
+        const FSkeletalMeshRenderSection& Section,
+        const TArray<FMatrix>& SkinningMatrices)
+    {
+        for (FMatrix& BoneMatrix : OutConstants.BonePalette)
+        {
+            BoneMatrix = FMatrix::Identity;
+        }
+
+        const int32 PaletteCount = std::min(
+            static_cast<int32>(Section.BoneMap.size()),
+            MAX_GPUSKIN_BONES_PER_SECTION);
+
+        for (int32 LocalBoneIndex = 0; LocalBoneIndex < PaletteCount; ++LocalBoneIndex)
+        {
+            const int32 GlobalBoneIndex = Section.BoneMap[LocalBoneIndex];
+            if (GlobalBoneIndex >= 0 && GlobalBoneIndex < static_cast<int32>(SkinningMatrices.size()))
+            {
+                OutConstants.BonePalette[LocalBoneIndex] = SkinningMatrices[GlobalBoneIndex];
+            }
+        }
     }
 }
 
@@ -150,7 +175,8 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             CmdVertexFactoryType = EVertexFactoryType::SkeletalMesh;
         }
 
-        const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();
+        const FSkeletalMeshLODRenderData* LODData = SkeletalMesh->GetLODRenderData(0);
+        const TArray<FSkeletalMeshRenderSection>& Sections = LODData ? LODData->RenderSections : TArray<FSkeletalMeshRenderSection>();
         if (Sections.empty()) // fallback
         {
             FRenderCommand Cmd = {};
@@ -170,7 +196,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
         for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
         {
-            const FStaticMeshSection& Section = Sections[SectionIdx];
+            const FSkeletalMeshRenderSection& Section = Sections[SectionIdx];
             if (Section.IndexCount == 0)
             {
                 continue;
@@ -188,18 +214,13 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             // Bone weight visualization 은 GPU skinning으로만 동작
             if (RenderBus.GetSkinningMode() == ESkinningMode::GPU)
             {
-                uint64 Size = SkeletalMeshComp->GetSkinningMatrices().size();
-                // TODO: Bone 개수는 256개 이상일 수 있음. StrcturedBuffer 고려..
-				if (Size > 256)
-				{
-                    Size = 256;
-				}
-                std::memcpy(Cmd.Constants.Skinning.BoneMatrices,
-                    SkeletalMeshComp->GetSkinningMatrices().data(),
-                    Size * sizeof(FMatrix));
+                FillSkinningBonePalette(
+                    Cmd.Constants.Skinning,
+                    Section,
+                    SkeletalMeshComp->GetSkinningMatrices());
             }
 
-            Cmd.SectionIndexStart = Section.StartIndex;
+            Cmd.SectionIndexStart = Section.BaseIndex;
             Cmd.SectionIndexCount = Section.IndexCount;
             Cmd.Material = Material;
 

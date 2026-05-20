@@ -24,8 +24,6 @@ USkeletalMesh* FSkeletalMeshLoadService::Load(const FString& Path)
 		return FoundMesh;
 	}
 
-	ResourceManager.LoadMaterial(NormalizedPath, EMaterialShaderType::SurfaceLit);
-
 	return LoadSourceOrCachedBinary(NormalizedPath);
 }
 
@@ -79,6 +77,8 @@ USkeletalMesh* FSkeletalMeshLoadService::LoadSourceOrCachedBinary(const FString&
 		}
 
 		// Material 포인터는 직렬화 대상이 아니므로 이 시점에 그대로 굽고, resolve는 Finalize에서 한 번만.
+		ResourceManager.LoadMaterial(NormalizedPath, EMaterialShaderType::SurfaceLit, nullptr, /*bAllowSourceImport=*/ true);
+
 		const bool bSaveBinaryOk = ResourceManager.BinarySerializer.SaveSkeletalMesh(BinaryPath, NormalizedPath, *LoadedMeshData, LoadedReferenceSkeleton);
 		if (bSaveBinaryOk)
 		{
@@ -93,6 +93,8 @@ USkeletalMesh* FSkeletalMeshLoadService::LoadSourceOrCachedBinary(const FString&
 	}
 	else
 	{
+		ResourceManager.LoadMaterial(NormalizedPath, EMaterialShaderType::SurfaceLit, nullptr, /*bAllowSourceImport=*/ false);
+
 		UE_LOG("[SkeletalMeshLoad] Source=Binary | Path=%s | BinarySec=%.6f | BinaryPath=%s",
 		       NormalizedPath.c_str(), BinaryLoadSec, BinaryPath.c_str());
 	}
@@ -118,12 +120,27 @@ USkeletalMesh* FSkeletalMeshLoadService::FinalizeLoadedMesh(FSkeletalMesh* MeshD
 		ResourceManager.SkeletalMeshFilePaths.push_back(CacheKey);
 	}
 
-	UE_LOG("[SkeletalMeshLoad] Loaded | Path=%s | Vertices=%zu | Indices=%zu | Bones=%zu | Sections=%zu",
+	size_t MaxSectionBoneCount = 0;
+	size_t TotalSectionBoneCount = 0;
+	for (const FSkeletalMeshRenderSection& Section : LoadedMesh->GetRenderSections())
+	{
+		MaxSectionBoneCount = std::max(MaxSectionBoneCount, Section.BoneMap.size());
+		TotalSectionBoneCount += Section.BoneMap.size();
+	}
+
+	const size_t SectionCount = LoadedMesh->GetRenderSections().size();
+	const double AverageSectionBoneCount = SectionCount > 0
+		? static_cast<double>(TotalSectionBoneCount) / static_cast<double>(SectionCount)
+		: 0.0;
+
+	UE_LOG("[SkeletalMeshLoad] Loaded | Path=%s | Vertices=%zu | Indices=%zu | Bones=%zu | Sections=%zu | MaxSectionBones=%zu | AvgSectionBones=%.2f",
 	       CacheKey.c_str(),
 	       LoadedMesh->GetVertices().size(),
 	       LoadedMesh->GetIndices().size(),
 	       LoadedMesh->GetBones().size(),
-	       LoadedMesh->GetSections().size());
+	       SectionCount,
+	       MaxSectionBoneCount,
+	       AverageSectionBoneCount);
 
 	return LoadedMesh;
 }

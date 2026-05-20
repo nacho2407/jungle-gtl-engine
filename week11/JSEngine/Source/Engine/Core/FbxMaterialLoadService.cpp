@@ -29,7 +29,7 @@ FFbxMaterialLoadService::FFbxMaterialLoadService(FResourceManager& InResourceMan
 {
 }
 
-bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device)
+bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device, bool bAllowSourceImport)
 {
     const FString NormalizedFbxPath = FPaths::Normalize(FbxFilePath);
     if (NormalizedFbxPath.empty())
@@ -80,6 +80,12 @@ bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, EMaterialShaderTy
             UE_LOG("[FbxMaterialLoadService] Loaded %d materials from disk cache: %s", LoadedCount, NormalizedFbxPath.c_str());
             return true;
         }
+    }
+
+    if (!bAllowSourceImport)
+    {
+        UE_LOG("[FbxMaterialLoadService] Skipped source FBX material import; no disk cache: %s", NormalizedFbxPath.c_str());
+        return false;
     }
 
     TMap<FString, UMaterial*> Parsed;

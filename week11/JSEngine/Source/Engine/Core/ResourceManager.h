@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Asset/BinarySerializer.h"
 #include "Asset/CurveFloatAsset.h"
@@ -85,7 +85,11 @@ public:
 	UMaterial* GetMaterial(const FString& Path) const;
 	UMaterial* GetOrCreateMaterial(const FString& Path, EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit);
 	UMaterial* GetOrCreateMaterial(const FString& Name, const FString& Path, EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit);
-	bool LoadMaterial(const FString& Path, EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit, ID3D11Device* Device = nullptr);
+	bool LoadMaterial(
+		const FString& Path,
+		EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit,
+		ID3D11Device* Device = nullptr,
+		bool bAllowSourceImport = true);
 
 	bool SerializeMaterial(const FString& Path, const UMaterial* Material);
 	bool SerializeMaterialInstance(const FString& Path, const UMaterialInstance* MaterialInstance);

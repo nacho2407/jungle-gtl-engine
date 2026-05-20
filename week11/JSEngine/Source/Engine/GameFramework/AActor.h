@@ -186,7 +186,7 @@ protected:
 
     // ★ 추가 4: 변수들에 UPROPERTY 부착 (에디터 노출 및 가비지 컬렉터 추적 목적)
 
-    UPROPERTY(EditAnywhere, Category="Actor", DisplayName="Root Component")
+    UPROPERTY(Transient)
     USceneComponent* RootComponent = nullptr;
 
     UPROPERTY() // 에디터엔 안 보이지만 GC가 추적해야 하는 포인터

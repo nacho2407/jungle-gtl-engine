@@ -397,6 +397,7 @@
     <ClCompile Include="Source\Engine\Component\SkinnedMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\Random\EngineRandom.cpp" />
     <ClCompile Include="Source\Engine\ReflectionSystem\ReflectionLuaUtils.cpp" />
+    <ClCompile Include="Source\Engine\ReflectionSystem\ReflectedProperty.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\CoroutineScheduler.cpp" />

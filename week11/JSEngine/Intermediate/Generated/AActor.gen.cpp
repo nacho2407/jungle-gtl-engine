@@ -19,9 +19,9 @@ void Register_AActor()
         prop->CPPType = "USceneComponent*";
         prop->Offset = offsetof(AActor, RootComponent);
         prop->ElementSize = sizeof(USceneComponent*);
-        prop->Flags = PF_EditAnywhere;
-        prop->Category = "Actor";
-        prop->DisplayName = "Root Component";
+        prop->Flags = PF_Transient;
+        prop->Category = "Default";
+        prop->DisplayName = "RootComponent";
         info.ReflectedProperties.push_back(prop);
     }
 

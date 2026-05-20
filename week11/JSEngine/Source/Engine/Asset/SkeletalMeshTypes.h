@@ -4,6 +4,12 @@
 #include "Object/FName.h"
 #include "StaticMeshTypes.h"
 
+static constexpr int32 MAX_GPUSKIN_BONES_PER_SECTION = 256;
+static constexpr int32 MAX_BONE_INFLUENCES = 4;
+
+using FBoneIndexType = int32;
+using FSectionBoneIndexType = uint8;
+
 struct FBoneInfo
 {
     FName Name;
@@ -36,22 +42,51 @@ struct FReferenceSkeleton
     int32 FindBoneIndex(const FName& BoneName) const;
 };
 
+struct FSkeletalMeshRenderSection
+{
+    uint32 BaseIndex = 0;
+    uint32 IndexCount = 0;
+    uint32 BaseVertexIndex = 0;
+    uint32 NumVertices = 0;
+    uint32 NumTriangles = 0;
+
+    int32 MaterialIndex = -1;
+    int32 MaxBoneInfluences = MAX_BONE_INFLUENCES;
+
+    TArray<FBoneIndexType> BoneMap;
+};
+
+struct FSkeletalMeshLODRenderData
+{
+    TArray<FSkeletalMeshVertex> StaticVertices;
+    TArray<uint32> Indices;
+    TArray<FSkeletalMeshRenderSection> RenderSections;
+
+    TArray<FBoneIndexType> ActiveBoneIndices;
+    TArray<FBoneIndexType> RequiredBones;
+};
+
+struct FSkeletalMeshRenderData
+{
+    TArray<FSkeletalMeshLODRenderData> LODRenderData;
+};
+
 struct FSkeletalMesh
 {
     FString PathFileName;
-    TArray<FSkeletalMeshVertex> Vertices;
-    TArray<uint32> Indices;
+
+    FSkeletalMeshRenderData RenderData;
+
     // 본에 연결되는 명명된 attach point들. asset 영속 데이터.
     TArray<FSkeletalMeshSocket> Sockets;
 
     // Material
-	// StaticMeshSection 이긴 하나, StaticMesh 에 종속된 개념이 아니라 이름은 나중에 바꿔야할것으로 보임
-    TArray<FStaticMeshSection> Sections;
     TArray<FStaticMeshMaterialSlot> MaterialSlots;
 
     // Bounds
     FAABB LocalBounds;
 };
+
 struct FSkeletalMeshImportData
 {
     FSkeletalMesh* MeshData = nullptr;

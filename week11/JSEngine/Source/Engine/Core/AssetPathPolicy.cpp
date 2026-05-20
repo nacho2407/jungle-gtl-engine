@@ -40,17 +40,35 @@ namespace
 		return Token;
 	}
 
-	FString ToLowerString(FString Text)
+	FString ToLowerNormalizedPath(const FString& Path)
 	{
+		FString Result = FPaths::Normalize(Path);
+		std::replace(Result.begin(), Result.end(), '\\', '/');
 		std::transform(
-			Text.begin(),
-			Text.end(),
-			Text.begin(),
+			Result.begin(),
+			Result.end(),
+			Result.begin(),
 			[](unsigned char Ch)
 			{
 				return static_cast<char>(std::tolower(Ch));
 			});
-		return Text;
+		return Result;
+	}
+
+	bool HasAssetDirectory(const FString& Path, const FString& Directory)
+	{
+		const FString LowerPath = ToLowerNormalizedPath(Path);
+		const FString LowerDirectory = ToLowerNormalizedPath(Directory);
+		return LowerPath.rfind(LowerDirectory + "/", 0) == 0 ||
+			LowerPath.find("/" + LowerDirectory + "/") != FString::npos;
+	}
+
+	std::wstring GetLowerExtension(const FString& Path)
+	{
+		std::filesystem::path FsPath(FPaths::ToWide(FPaths::Normalize(Path)));
+		std::wstring Extension = FsPath.extension().wstring();
+		std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
+		return Extension;
 	}
 }
 
@@ -78,24 +96,17 @@ bool FAssetPathPolicy::IsCurveAssetPath(const FString& Path)
 
 bool FAssetPathPolicy::IsSequenceAssetPath(const FString& Path)
 {
-	std::filesystem::path FsPath(FPaths::ToWide(FPaths::Normalize(Path)));
-	std::wstring Extension = FsPath.extension().wstring();
-	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
-	return Extension == L".sequence";
+	return GetLowerExtension(Path) == L".sequence";
 }
 
 bool FAssetPathPolicy::IsAnimStateMachineAssetPath(const FString& Path)
 {
-	const FString LowerPath = ToLowerString(FPaths::Normalize(Path));
-	std::filesystem::path FsPath(FPaths::ToWide(LowerPath));
-	return FsPath.extension() == L".animsm";
+	return GetLowerExtension(Path) == L".animsm";
 }
 
 bool FAssetPathPolicy::IsSerializedMaterialAssetPath(const FString& Path)
 {
-	std::filesystem::path FsPath(FPaths::ToWide(FPaths::Normalize(Path)));
-	std::wstring Extension = FsPath.extension().wstring();
-	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
+	const std::wstring Extension = GetLowerExtension(Path);
 	return Extension == L".mat" || Extension == L".matinst";
 }
 
@@ -117,6 +128,22 @@ FString FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(const FString& Path
 	const std::filesystem::path DefaultPath =
 		std::filesystem::path(L"Asset") / L"Animation" / L"StateMachine" / FsPath.filename();
 	return FPaths::ToString(DefaultPath.generic_wstring());
+}
+
+bool FAssetPathPolicy::IsSkeletalMeshSourcePath(const FString& Path)
+{
+	return GetLowerExtension(Path) == L".fbx" && HasAssetDirectory(Path, "Asset/SkeletalMesh");
+}
+
+bool FAssetPathPolicy::IsStaticMeshSourcePath(const FString& Path)
+{
+	const std::wstring Extension = GetLowerExtension(Path);
+	if (Extension == L".obj")
+	{
+		return true;
+	}
+
+	return Extension == L".fbx" && !IsSkeletalMeshSourcePath(Path);
 }
 
 FString FAssetPathPolicy::MakeCookedStaticMeshBinaryPath(const FString& SourcePath)
