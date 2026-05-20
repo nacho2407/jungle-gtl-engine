@@ -1,8 +1,8 @@
 #include "Engine/Runtime/GameRenderPipeline.h"
 
 #include "Engine/Runtime/GameEngine.h"
-#include "GameFramework/PlayerController.h"
-#include "GameFramework/PlayerCameraManager.h"
+#include "GameFramework/GameMode/PlayerController.h"
+#include "GameFramework/Camera/PlayerCameraManager.h"
 #include "GameFramework/World.h"
 #include "Component/Camera/CameraComponent.h"
 #include "Component/Camera/CineCameraComponent.h"

@@ -9,7 +9,7 @@
 #include "Component/Camera/CameraComponent.h"
 #include "Component/Camera/CineCameraComponent.h"
 #include "GameFramework/World.h"
-#include "GameFramework/PlayerController.h"
+#include "GameFramework/GameMode/PlayerController.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "Engine/Render/Types/ForwardLightData.h"

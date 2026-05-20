@@ -4,7 +4,7 @@
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
-#include "GameFramework/StaticMeshActor.h"
+#include "GameFramework/Actor/StaticMeshActor.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Runtime/Engine.h"

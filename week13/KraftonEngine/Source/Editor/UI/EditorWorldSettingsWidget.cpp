@@ -2,7 +2,7 @@
 #include "Engine/Runtime/Engine.h"
 #include "GameFramework/World.h"
 #include "GameFramework/WorldSettings.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameMode/GameModeBase.h"
 #include "Object/UClass.h"
 #include "ImGui/imgui.h"
 

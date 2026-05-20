@@ -11,7 +11,7 @@
 #include "Render/Types/MinimalViewInfo.h"
 #include "Editor/Viewport/ViewportCameraTransform.h"
 #include "GameFramework/World.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameMode/GameModeBase.h"
 #include "Viewport/GameViewportClient.h"
 #include "UI/UIManager.h"
 #include "Editor/Slate/SlateApplication.h"

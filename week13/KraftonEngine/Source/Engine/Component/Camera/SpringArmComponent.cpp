@@ -2,7 +2,7 @@
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
-#include "GameFramework/Pawn.h"
+#include "GameFramework/Pawn/Pawn.h"
 #include "GameFramework/World.h"
 #include "Core/CollisionTypes.h"
 #include "Math/Rotator.h"
