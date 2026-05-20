@@ -294,7 +294,7 @@
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "Mass" : 1.000000,
-          "MaterialSlots" : ["Asset/Materials/Auto/acc.002.mat", "Asset/Materials/Auto/cloth.002.mat", "Asset/Materials/Auto/b0.002.mat", "Asset/Materials/Auto/m.002.mat", "Asset/Materials/Auto/e.002.mat"],
+          "MaterialSlots" : ["Content/Material/Auto/acc.002.mat", "Content/Material/Auto/cloth.002.mat", "Content/Material/Auto/b0.002.mat", "Content/Material/Auto/m.002.mat", "Content/Material/Auto/e.002.mat"],
           "ObjectType" : 0,
           "RelativeTransform.Location" : [1.177372, 2.269575, 0.930337],
           "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
