@@ -12,8 +12,8 @@
 #include "GameFramework/GameMode/PlayerController.h"
 #include "GameFramework/Camera/PlayerCameraManager.h"
 #include "Object/Reflection/UClass.h"
-#include "Profiling/Stats.h"
-#include "Profiling/Timer.h"
+#include "Profiling/Stats/Stats.h"
+#include "Profiling/Time/Timer.h"
 #include "Runtime/Engine.h"
 #include <algorithm>
 

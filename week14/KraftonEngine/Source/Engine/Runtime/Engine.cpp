@@ -4,7 +4,7 @@
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Notification.h"
 #include "Engine/Platform/DirectoryWatcher.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Stats/Stats.h"
 #include "Profiling/StartupProfiler.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Platform/WindowsWindow.h"

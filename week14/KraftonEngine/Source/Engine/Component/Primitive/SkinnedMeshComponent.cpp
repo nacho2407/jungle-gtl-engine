@@ -6,7 +6,7 @@
 #include "Collision/Ray/RayUtils.h"
 #include "Core/Logging/Log.h"
 #include "Render/Types/ViewTypes.h"
-#include "Engine/Profiling/Stats.h"
+#include "Engine/Profiling/Stats/Stats.h"
 
 HIDE_FROM_COMPONENT_LIST(USkinnedMeshComponent)
 

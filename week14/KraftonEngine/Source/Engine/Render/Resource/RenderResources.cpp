@@ -5,7 +5,7 @@
 #include "Render/Types/FrameContext.h"
 #include "Render/Scene/FScene.h"
 #include "Engine/Runtime/Engine.h"
-#include "Profiling/Timer.h"
+#include "Profiling/Time/Timer.h"
 #include "GameFramework/World.h"
 #include "Core/Logging/Notification.h"
 

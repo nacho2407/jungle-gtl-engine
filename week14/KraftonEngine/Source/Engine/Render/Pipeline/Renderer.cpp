@@ -5,7 +5,7 @@
 #include "Core/Logging/Log.h"
 #include "Render/Scene/FScene.h"
 #include "GameFramework/World.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Stats/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "Profiling/StartupProfiler.h"
 #include "Materials/MaterialManager.h"
