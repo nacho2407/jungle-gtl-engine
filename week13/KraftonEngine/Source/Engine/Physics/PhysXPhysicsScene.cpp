@@ -1039,3 +1039,74 @@ bool FPhysXPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float
 
 	return true;
 }
+
+bool FPhysXPhysicsScene::RaycastByObjectTypes(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
+	uint32 ObjectTypeMask, const AActor* IgnoreActor) const
+{
+	if (!Scene || ObjectTypeMask == 0) return false;
+
+	// SetupFilterData (line ~322) 에서 word0 = ObjectType (채널 enum 값) 으로 set.
+	// ObjectType 마스크 비트 검사로 hit 후보 필터.
+	// Trigger flag shape 는 PhysX 측 query 단계에서 자동 제외.
+	struct FObjectTypeRaycastFilter : PxQueryFilterCallback
+	{
+		const AActor* IgnoreActor = nullptr;
+		PxU32 ObjectTypeMask = 0;
+
+		FObjectTypeRaycastFilter(const AActor* InIgnoreActor, PxU32 InMask)
+			: IgnoreActor(InIgnoreActor)
+			, ObjectTypeMask(InMask)
+		{
+		}
+
+		PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape* Shape, const PxRigidActor* Actor, PxHitFlags&) override
+		{
+			if (IgnoreActor && Actor && Actor->userData == IgnoreActor)
+			{
+				return PxQueryHitType::eNONE;
+			}
+			if (Shape)
+			{
+				const PxFilterData ShapeData = Shape->getQueryFilterData();
+				const PxU32 ShapeObjectBit = 1u << ShapeData.word0;
+				if ((ShapeObjectBit & ObjectTypeMask) == 0)
+				{
+					return PxQueryHitType::eNONE;
+				}
+			}
+			return PxQueryHitType::eBLOCK;
+		}
+
+		PxQueryHitType::Enum postFilter(const PxFilterData&, const PxQueryHit&) override
+		{
+			return PxQueryHitType::eBLOCK;
+		}
+	};
+
+	PxRaycastBuffer Hit;
+	PxQueryFilterData FilterData;
+	FilterData.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
+	FObjectTypeRaycastFilter FilterCallback(IgnoreActor, ObjectTypeMask);
+
+	bool bStatus = Scene->raycast(ToPxVec3(Start), ToPxVec3(Dir), MaxDist, Hit, PxHitFlag::eDEFAULT, FilterData, &FilterCallback);
+	if (!bStatus || !Hit.hasBlock) return false;
+
+	const PxRaycastHit& Block = Hit.block;
+	OutHit.bHit = true;
+	OutHit.Distance = Block.distance;
+	OutHit.WorldHitLocation = ToFVector(Block.position);
+	OutHit.ImpactNormal = ToFVector(Block.normal);
+	OutHit.WorldNormal = OutHit.ImpactNormal;
+
+	if (Block.shape && Block.shape->userData)
+	{
+		OutHit.HitComponent = static_cast<UPrimitiveComponent*>(Block.shape->userData);
+		OutHit.HitActor = OutHit.HitComponent->GetOwner();
+	}
+	else if (Block.actor && Block.actor->userData)
+	{
+		OutHit.HitActor = static_cast<AActor*>(Block.actor->userData);
+	}
+
+	return true;
+}

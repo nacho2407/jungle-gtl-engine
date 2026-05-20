@@ -329,8 +329,12 @@ bool UCharacterMovementComponent::TraceFloor(FHitResult& OutHit) const
 	const FVector  Dir(0.0f, 0.0f, -1.0f);
 	const float    MaxDist = HalfHeight + FloorProbeDistance;
 
-	return World->PhysicsRaycast(Start, Dir, MaxDist, OutHit,
-		ECollisionChannel::WorldStatic, Owner);
+	// 바닥은 WorldStatic ObjectType 만 후보로 본다. 채널 raycast (응답=Block) 시맨틱으로 가면
+	// 다이내믹/폰도 기본 응답이 Block 이라 바닥으로 잘못 잡힌다. ObjectType 마스크는
+	// shape의 ObjectType 자체를 검사하므로 다이내믹 박스 위 / 다른 폰 머리 위에서도 바닥으로
+	// 인식되지 않는다.
+	return World->PhysicsRaycastByObjectTypes(Start, Dir, MaxDist, OutHit,
+		ObjectTypeBit(ECollisionChannel::WorldStatic), Owner);
 }
 
 float UCharacterMovementComponent::GetCapsuleHalfHeight() const

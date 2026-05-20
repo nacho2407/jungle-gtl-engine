@@ -903,6 +903,12 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			const bool bHovered = ImGui::IsItemHovered();
 			const bool bActive  = ImGui::IsItemActive();
 
+			// 본체 hit-rect 에 컨텍스트 메뉴 attach. State notify 는 본체 뒤에 resize 핸들이
+			// 또 그려지므로, 마지막 아이템에 자동 attach 하는 BeginPopupContextItem 을 그대로
+			// 두면 6px 핸들 위에서만 우클릭이 먹힌다. 본체를 마지막 아이템으로 잡은 이 시점에
+			// 명시적으로 attach.
+			ImGui::OpenPopupOnItemClick("##notifyCtx", ImGuiPopupFlags_MouseButtonRight);
+
 			auto MouseTime = [&]() {
 				return std::clamp((ImGui::GetIO().MousePos.x - CanvasX) / CanvasW,
 				                  0.0f, 1.0f) * PlayLength;
@@ -965,8 +971,9 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 			}
 
 			// 우클릭 컨텍스트 메뉴 — Rename / Delete. Properties 편집은 좌상단 AssetDetails 패널.
+			// 열기 자체는 위쪽 OpenPopupOnItemClick 가 본체 버튼에 명시 attach.
 			bool bOpenRename = false;
-			if (ImGui::BeginPopupContextItem("##notifyCtx"))
+			if (ImGui::BeginPopup("##notifyCtx"))
 			{
 				InOutSelectedNotifyIndex = i;
 				ImGui::TextDisabled("%s", Nm.c_str());
@@ -1054,6 +1061,20 @@ void FAnimationTimelinePanel::Render(UAnimSingleNodeInstance* NodeInst,
 		}
 		if (PendingDelete >= 0 && PendingDelete < static_cast<int>(Notifies.size()))
 		{
+			// Notify / NotifyState UObject 도 같이 정리. DataModel 을 Outer 로 둔 채
+			// FAnimNotifyEvent 엔트리만 erase 하면 UObjectManager 에 dangling 객체가 남는다.
+			// Notify 슬롯과 NotifyState 슬롯 모두 살아있을 수 있으니 둘 다 확인.
+			FAnimNotifyEvent& Doomed = Notifies[PendingDelete];
+			if (Doomed.Notify)
+			{
+				UObjectManager::Get().DestroyObject(Doomed.Notify);
+				Doomed.Notify = nullptr;
+			}
+			if (Doomed.NotifyState)
+			{
+				UObjectManager::Get().DestroyObject(Doomed.NotifyState);
+				Doomed.NotifyState = nullptr;
+			}
 			Notifies.erase(Notifies.begin() + PendingDelete);
 
 			// 선택 인덱스 stale 처리 — 삭제된 항목이 선택이면 해제, 뒤쪽이었으면 한 칸 당김.

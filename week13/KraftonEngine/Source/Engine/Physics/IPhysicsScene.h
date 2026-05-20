@@ -70,4 +70,14 @@ public:
 	virtual bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
 		const AActor* IgnoreActor = nullptr) const = 0;
+
+	// ObjectType 기반 Raycast — UE의 LineTraceSingleByObjectType 대응.
+	//   ObjectTypeMask: bit i = ECollisionChannel(i)의 shape를 hit 후보로 둘지.
+	//                   ObjectTypeBit(ECollisionChannel::WorldStatic) 처럼 헬퍼로 조합.
+	// 채널 Raycast 는 "응답이 Block 인 모든 shape" 를 잡지만, 응답은 동적 객체/폰도 기본
+	// Block 이라 의도와 어긋나기 쉽다. 본 함수는 shape의 ObjectType 자체를 마스크로 필터.
+	//   예: 바닥 detection 은 ObjectTypeBit(WorldStatic) 만 → 다이내믹/폰을 바닥으로 잘못 잡지 않음.
+	// Trigger flag shape 는 백엔드 별 정책에 따라 자동 제외 (PhysX 는 query 단계, Native 는 ObjectType 마스크에서 빠짐).
+	virtual bool RaycastByObjectTypes(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
+		uint32 ObjectTypeMask, const AActor* IgnoreActor = nullptr) const = 0;
 };

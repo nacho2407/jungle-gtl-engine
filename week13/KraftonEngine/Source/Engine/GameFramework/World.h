@@ -145,6 +145,13 @@ public:
 		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
 		const AActor* IgnoreActor = nullptr) const;
 
+	// ObjectType 기반 raycast convenience — delegates to IPhysicsScene::RaycastByObjectTypes.
+	// 채널-응답 시맨틱이 아니라 "이 ObjectType 의 shape 만" 잡고 싶을 때 (예: 바닥은 WorldStatic 만).
+	// ObjectTypeMask 는 ObjectTypeBit(ECollisionChannel::WorldStatic) 처럼 헬퍼로 조합.
+	bool PhysicsRaycastByObjectTypes(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
+		uint32 ObjectTypeMask,
+		const AActor* IgnoreActor = nullptr) const;
+
 	// --- Game flow ---
 	// BeginPlay 이전에 호출. WorldType이 Editor면 무시된다.
 	void SetGameModeClass(UClass* InClass) { GameModeClass = InClass; }

@@ -43,6 +43,9 @@ public:
 		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
 		const AActor* IgnoreActor = nullptr) const override;
 
+	bool RaycastByObjectTypes(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
+		uint32 ObjectTypeMask, const AActor* IgnoreActor = nullptr) const override;
+
 private:
 	UWorld* World = nullptr;
 	std::vector<UPrimitiveComponent*> RegisteredComponents;

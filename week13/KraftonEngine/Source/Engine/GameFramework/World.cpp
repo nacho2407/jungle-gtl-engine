@@ -227,6 +227,14 @@ bool UWorld::PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxD
 	return false;
 }
 
+bool UWorld::PhysicsRaycastByObjectTypes(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
+	uint32 ObjectTypeMask, const AActor* IgnoreActor) const
+{
+	if (PhysicsScene)
+		return PhysicsScene->RaycastByObjectTypes(Start, Dir, MaxDist, OutHit, ObjectTypeMask, IgnoreActor);
+	return false;
+}
+
 
 void UWorld::InsertActorToOctree(AActor* Actor)
 {
