@@ -302,6 +302,7 @@ void FEditorMainPanel::RenderMainMenuBar()
 		if (ImGui::MenuItem("Open AnimGraph Editor (Empty)"))
 		{
 			UAnimGraphAsset* Asset = UObjectManager::Get().CreateObject<UAnimGraphAsset>();
+			Asset->InitializeDefault();
 			OpenAssetEditorForObject(Asset);
 		}
 		ImGui::EndMenu();
