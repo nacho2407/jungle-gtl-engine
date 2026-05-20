@@ -76,6 +76,7 @@ private:
 	bool CreateLuaScriptFile();
 	bool CreateMaterialAsset();
 	bool CreateCurveAsset();
+	bool CreateAnimStateMachineAsset();
 	bool CreateSceneAsset();
 	bool DeleteSelectedItem();
 	void RequestRenameSelectedItem();
@@ -101,6 +102,7 @@ private:
 	bool IsMaterialAsset(const FString& Extension) const;
 	bool IsCurveAsset(const std::filesystem::path& Path) const;
 	bool IsAnimSequenceAsset(const FString& Extension) const;
+	bool IsAnimStateMachineAsset(const FString& Extension) const;
 	bool IsSequenceAsset(const FString& Extension) const;
 	bool IsPrefabAsset(const FString& Extension) const;
 	std::filesystem::path ResolveLuaScriptCreateDirectory() const;

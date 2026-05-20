@@ -51,6 +51,7 @@ public:
 	void OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex);
 	void OpenCurveAsset(const FString& CurvePath);
 	void OpenRuntimeUIPreviewAsset(const FString& RmlPath = "");
+	void OpenAnimStateMachineAsset(const FString& AnimStateMachinePath);
 	void OpenViewer(FEditorViewer* Viewer);
 	void RequestDockViewer(FEditorViewer* Viewer);
 	void RenderViewerToolbarControls(FEditorViewer* Viewer);
@@ -107,6 +108,7 @@ private:
 	FEditorViewerWindowWidget* FindViewerWidgetForTab(const FEditorTabId& TabId) const;
 	void RenderActiveViewerDocument(float DeltaTime);
 	void RenderRuntimeUIPreviewDocument(float DeltaTime);
+	void RenderAnimStateMachineDocument(float DeltaTime);
 	void UpdateConsoleDrawerAnimation(float EffectiveDeltaTime);
 	void RenderLateFrameOverlays(float DeltaTime, float EffectiveDeltaTime, bool bDrawEditorPanels);
 	void EndImGuiFrame();

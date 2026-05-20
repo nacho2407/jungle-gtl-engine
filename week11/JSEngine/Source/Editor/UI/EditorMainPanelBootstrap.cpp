@@ -60,6 +60,7 @@ void FEditorMainPanel::InitializeImGuiBackend(FWindowsWindow* InWindow, FRendere
 
 void FEditorMainPanel::Release()
 {
+    Widgets.AnimStateMachineWidget.Shutdown();
     ReleaseViewportToolIcons();
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
