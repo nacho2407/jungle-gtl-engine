@@ -3,8 +3,8 @@
 
 #include "Math/Rotator.h"
 #include "Math/Transform.h"
-#include "Object/ObjectPtr.h"
-#include "Object/SoftObjectPtr.h"
+#include "Object/Ptr/ObjectPtr.h"
+#include "Object/Ptr/SoftObjectPtr.h"
 
 #include "Source/Engine/Component/Primitive/SkinnedMeshComponent.generated.h"
 struct FSkeletalMesh;

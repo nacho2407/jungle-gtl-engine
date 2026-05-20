@@ -3,7 +3,7 @@
 #include "GameFramework/World.h"
 #include "GameFramework/WorldSettings.h"
 #include "GameFramework/GameMode/GameModeBase.h"
-#include "Object/UClass.h"
+#include "Object/Reflection/UClass.h"
 #include "ImGui/imgui.h"
 
 void EditorWorldSettingsWidget::Render()

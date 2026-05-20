@@ -1,7 +1,7 @@
 #include "Component/Primitive/StaticMeshComponent.h"
 #include <algorithm>
 #include <cmath>
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Core/Types/PropertyTypes.h"
 #include "Engine/Platform/Paths.h"
 #include "Collision/Ray/RayUtils.h"

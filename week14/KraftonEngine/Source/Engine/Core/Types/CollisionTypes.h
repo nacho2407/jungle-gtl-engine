@@ -2,8 +2,8 @@
 #include "Math/Vector.h"
 #include "Core/Types/CoreTypes.h"
 #include "Core/Types/PropertyTypes.h"
-#include "Object/ObjectMacros.h"
-#include "Object/UStruct.h"
+#include "Object/Reflection/ObjectMacros.h"
+#include "Object/Reflection/UStruct.h"
 
 #include "Source/Engine/Core/Types/CollisionTypes.generated.h"
 

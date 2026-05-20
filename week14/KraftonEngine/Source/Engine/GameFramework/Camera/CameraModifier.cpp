@@ -1,5 +1,5 @@
 #include "GameFramework/Camera/CameraModifier.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include <algorithm>
 
 void UCameraModifier::AddedToCamera(APlayerCameraManager* InCameraOwner)

@@ -1,5 +1,5 @@
-﻿#pragma once
-#include "UStruct.h"
+#pragma once
+#include "Object/Reflection/UStruct.h"
 
 
 enum EClassFlags : uint32

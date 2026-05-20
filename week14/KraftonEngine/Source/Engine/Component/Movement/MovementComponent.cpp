@@ -1,8 +1,8 @@
-﻿#include "Component/Movement/MovementComponent.h"
+#include "Component/Movement/MovementComponent.h"
 
 #include "Component/SceneComponent.h"
 #include "GameFramework/AActor.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 
 #include <cstring>

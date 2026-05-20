@@ -1,5 +1,5 @@
 #include "GameFramework/Camera/CameraShakeBase.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 
 void UCameraShakeBase::StartShake(
 	APlayerCameraManager* Camera,

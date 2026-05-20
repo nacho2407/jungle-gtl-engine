@@ -4,7 +4,7 @@
 #include "SimpleJSON/json.hpp"
 #include "Core/Types/CoreTypes.h"
 #include "Serialization/Archive.h"
-#include "Object/UStruct.h"
+#include "Object/Reflection/UStruct.h"
 
 
 json::JSON FStructProperty::SerializeValue(void* ValuePtr) const

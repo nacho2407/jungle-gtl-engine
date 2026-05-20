@@ -3,7 +3,7 @@
 #include "Render/Resource/MeshBufferManager.h"
 #include "Core/Types/ResourceTypes.h"
 #include "Object/FName.h"
-#include "Object/SoftObjectPtr.h"
+#include "Object/Ptr/SoftObjectPtr.h"
 
 #include "Source/Engine/Component/Primitive/BillboardComponent.generated.h"
 

@@ -3,7 +3,7 @@
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Types/FrameContext.h"
 #include "Materials/Material.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 
 // ============================================================
 // FGizmoSceneProxy

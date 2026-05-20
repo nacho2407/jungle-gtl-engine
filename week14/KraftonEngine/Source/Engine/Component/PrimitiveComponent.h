@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Render/Types/RenderTypes.h"
 #include "Core/Types/RayTypes.h"

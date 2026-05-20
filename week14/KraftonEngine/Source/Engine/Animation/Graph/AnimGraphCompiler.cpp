@@ -18,7 +18,7 @@
 #include "Core/Types/PropertyTypes.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
-#include "Object/UClass.h"
+#include "Object/Reflection/UClass.h"
 
 #include <cmath>
 

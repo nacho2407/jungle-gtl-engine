@@ -3,7 +3,7 @@
 #include "Component/Camera/CameraComponent.h"
 #include "Render/Proxy/BillboardSceneProxy.h"
 #include "Serialization/Archive.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"

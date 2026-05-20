@@ -6,7 +6,7 @@
 
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 
 namespace
 {

@@ -2,8 +2,8 @@
 #include "GameFramework/Camera/CameraShakeBase.h"
 #include "GameFramework/Camera/PlayerCameraManager.h"
 #include "Math/Quat.h"
-#include "Object/ObjectFactory.h"
-#include "Object/UClass.h"
+#include "Object/Reflection/ObjectFactory.h"
+#include "Object/Reflection/UClass.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include <algorithm>
 

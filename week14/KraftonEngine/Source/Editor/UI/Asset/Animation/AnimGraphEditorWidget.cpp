@@ -7,7 +7,7 @@
 #include "Asset/AssetRegistry.h"
 #include "Core/Types/PropertyTypes.h"
 #include "Object/Object.h"
-#include "Object/UClass.h"
+#include "Object/Reflection/UClass.h"
 
 #include "imgui.h"
 #include "imgui_node_editor.h"

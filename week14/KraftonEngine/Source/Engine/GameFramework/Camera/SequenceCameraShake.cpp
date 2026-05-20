@@ -1,7 +1,7 @@
 #include "SequenceCameraShake.h"
 
 #include "CameraShake/CameraShakeAsset.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "GameFramework/Camera/PlayerCameraManager.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
