@@ -32,6 +32,9 @@ namespace FAssetRegistry
         }
 		if (std::strcmp(AssetTypeName, "UAnimSequence") == 0)
 		{
+			// 콤보 열 때마다 재스캔 — 기존엔 MeshEditor 열 때만 Refresh 가 호출돼 PropertyWidget
+			// 의 AnimSequence 콤보가 비어 있는 경우가 잦았음 (특히 새 PIE / 새 SkeletalMesh).
+			FAnimationManager::Get().RefreshAvailableAnimations();
 			return FAnimationManager::Get().GetAvailableAnimationFiles();
 		}
 		if (std::strcmp(AssetTypeName, "UAnimGraphAsset") == 0)
