@@ -2393,7 +2393,7 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 
 		const auto ComboGetter = [](void* Data, int Index) -> const char*
 		{
-			const FEnumMetaData* EnumMeta = static_cast<const FEnumMetaData*>(Data);
+			const UEnum* EnumMeta = static_cast<const UEnum*>(Data);
 			if (!EnumMeta || Index < 0 || static_cast<uint32>(Index) >= EnumMeta->Count)
 			{
 				return "";
@@ -2402,7 +2402,7 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 			return (ValueMeta.DisplayName && ValueMeta.DisplayName[0] != '\0') ? ValueMeta.DisplayName : ValueMeta.Name;
 		};
 
-		if (ImGui::Combo(Label, &CurrentIndex, ComboGetter, const_cast<FEnumMetaData*>(Property.EnumMeta), static_cast<int>(Property.EnumMeta->Count)))
+		if (ImGui::Combo(Label, &CurrentIndex, ComboGetter, const_cast<UEnum*>(Property.EnumMeta), static_cast<int>(Property.EnumMeta->Count)))
 		{
 			const int64 NewValue = Property.EnumMeta->Values[CurrentIndex].Value;
 			switch (Property.EnumMeta->Size)
