@@ -6,7 +6,7 @@
 #include <windows.h>
 #include <functional>
 
-#include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Platform/WindowsWindow.h"
 
 using FOnSizingCallback = std::function<void()>;
 using FOnResizedCallback = std::function<void(unsigned int, unsigned int)>;

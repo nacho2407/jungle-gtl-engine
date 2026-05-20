@@ -6,7 +6,7 @@
 #include "Editor/Slate/SlateApplication.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Profiling/PlatformTime.h"
-#include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Platform/WindowsWindow.h"
 
 #include "Render/Types/MinimalViewInfo.h"
 #include "Viewport/Viewport.h"
