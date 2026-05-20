@@ -57,6 +57,9 @@ public:
 	FAnimGraphPin*        FindPin(uint32 PinId);
 	const FAnimGraphPin*  FindPin(uint32 PinId) const;
 
+	// 자산을 코드에서 외부 데이터 (e.g. mock sequence) 로 채울 때 노드 타입별 첫 인스턴스 접근용.
+	FAnimGraphNode*       FindFirstNodeOfType(EAnimGraphNodeType Type);
+
 	void Serialize(FArchive& Ar) override;
 
 private:

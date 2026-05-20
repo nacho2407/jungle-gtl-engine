@@ -4,6 +4,7 @@
 #include "Object/FName.h"
 
 class FArchive;
+class UAnimSequenceBase;
 
 // AnimGraph 자산의 정적 데이터 모델 — 런타임 FAnimNode_* 트리와는 분리.
 // 컴파일 단계에서 이 그래프를 위상정렬 → MakeNode<T> → SetRootNode 트리를 build.
@@ -67,6 +68,14 @@ struct FAnimGraphNode
 	float                  PosX   = 0.0f;
 	float                  PosY   = 0.0f;
 	TArray<FAnimGraphPin>  Pins;
+
+	// SequencePlayer 노드의 입력 시퀀스 — 컴파일러가 FAnimNode_SequencePlayer::Sequence 로 박음.
+	// 다른 노드 타입에선 미사용. raw pointer + transient — 자산 직렬화는 path 기반 (후속 단계 B).
+	UAnimSequenceBase*     SequenceRef = nullptr;
+
+	// SequencePlayer 옵션. PlayRate / bLooping — 노드 inspector 도입 시 편집 (단계 E).
+	float                  PlayRate    = 1.0f;
+	bool                   bLooping    = true;
 
 	friend FArchive& operator<<(FArchive& Ar, FAnimGraphNode& Node);
 };
