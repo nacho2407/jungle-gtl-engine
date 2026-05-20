@@ -28,6 +28,7 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 
 	if (Ar.IsLoading())
 	{
+		SkeletalMeshAsset->NormalizeBonePoseData();
         SyncSkeletonBindingFromAsset();
 		CacheSectionMaterialIndices();
 		SkeletalMeshAsset->bBoundsValid = false;
@@ -37,6 +38,10 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 void USkeletalMesh::SetSkeletalMeshAsset(FSkeletalMesh* InMesh)
 {
 	SkeletalMeshAsset = InMesh;
+	if (SkeletalMeshAsset)
+	{
+		SkeletalMeshAsset->NormalizeBonePoseData();
+	}
     SyncSkeletonBindingFromAsset();
 	CacheSectionMaterialIndices();
 }

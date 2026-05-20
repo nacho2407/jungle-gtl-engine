@@ -138,6 +138,8 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 	// Mesh가 바뀌면 이전 bone edit pose는 새 skeleton과 index 호환을 보장할 수 없다.
 	BoneEditLocalMatrices.clear();
 	bUseBoneEditPose = false;
+	BoneEditBaseLocalMatrices.clear();
+	bUseBoneEditBasePose = false;
 
 	// SceneProxy가 즉시 그릴 수 있도록 SetSkeletalMesh 종료 전에 skinned vertex buffer를 준비한다.
 	InitSkinningCache();
@@ -225,10 +227,31 @@ void USkinnedMeshComponent::EnsureBoneEditPose()
 
 	for (const FBone& Bone : Asset->Bones)
 	{
-		BoneEditLocalMatrices.push_back(Bone.LocalMatrix);
+		BoneEditLocalMatrices.push_back(Bone.GetReferenceLocalPose());
 	}
 
 	bUseBoneEditPose = true;
+}
+
+void USkinnedMeshComponent::EnsureBoneEditBasePose()
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset)
+	{
+		BoneEditBaseLocalMatrices.clear();
+		bUseBoneEditBasePose = false;
+		return;
+	}
+
+	if (BoneEditBaseLocalMatrices.size() == Asset->Bones.size()) return;
+
+	BoneEditBaseLocalMatrices.clear();
+	BoneEditBaseLocalMatrices.reserve(Asset->Bones.size());
+
+	for (const FBone& Bone : Asset->Bones)
+	{
+		BoneEditBaseLocalMatrices.push_back(Bone.GetReferenceLocalPose());
+	}
 }
 
 // Reset은 mesh 교체 직후 asset의 기본 pose를 기준으로 CPU skinning을 안정적으로 시작하기 위한 경로다.
@@ -236,6 +259,8 @@ void USkinnedMeshComponent::ResetBoneEditPose()
 {
 	BoneEditLocalMatrices.clear();
 	bUseBoneEditPose = false;
+	BoneEditBaseLocalMatrices.clear();
+	bUseBoneEditBasePose = false;
 
 	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Asset) return;
@@ -243,7 +268,7 @@ void USkinnedMeshComponent::ResetBoneEditPose()
 	BoneEditLocalMatrices.reserve(Asset->Bones.size());
 	for (const FBone& Bone : Asset->Bones)
 	{
-		BoneEditLocalMatrices.push_back(Bone.LocalMatrix);
+		BoneEditLocalMatrices.push_back(Bone.GetReferenceLocalPose());
 	}
 }
 
@@ -310,7 +335,20 @@ FTransform USkinnedMeshComponent::GetBoneLocalTransformByIndex(int32 BoneIndex) 
 		return MatrixToEditorTransform(BoneEditLocalMatrices[BoneIndex]);
 	}
 
-	return Asset->Bones[BoneIndex].LocalMatrix;
+	return MatrixToEditorTransform(Asset->Bones[BoneIndex].GetReferenceLocalPose());
+}
+
+FTransform USkinnedMeshComponent::GetBoneEditBaseLocalTransformByIndex(int32 BoneIndex) const
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) return FMatrix::Identity;
+
+	if (bUseBoneEditBasePose && BoneEditBaseLocalMatrices.size() == Asset->Bones.size())
+	{
+		return MatrixToEditorTransform(BoneEditBaseLocalMatrices[BoneIndex]);
+	}
+
+	return MatrixToEditorTransform(Asset->Bones[BoneIndex].GetReferenceLocalPose());
 }
 
 void USkinnedMeshComponent::SetBoneLocationByIndex(int32 BoneIndex, const FVector& NewLocation)
@@ -339,6 +377,13 @@ void USkinnedMeshComponent::SetBoneLocationByIndex(int32 BoneIndex, const FVecto
 	else
 	{
 		BoneEditLocalMatrices[BoneIndex] = DesiredGlobalMatrix;
+	}
+
+	EnsureBoneEditBasePose();
+	if (BoneEditBaseLocalMatrices.size() == Asset->Bones.size())
+	{
+		BoneEditBaseLocalMatrices[BoneIndex] = BoneEditLocalMatrices[BoneIndex];
+		bUseBoneEditBasePose = true;
 	}
 
 	bUseBoneEditPose = true;
@@ -378,6 +423,13 @@ void USkinnedMeshComponent::SetBoneRotationByIndex(int32 BoneIndex, const FRotat
 		BoneEditLocalMatrices[BoneIndex] = DesiredGlobalMatrix;
 	}
 
+	EnsureBoneEditBasePose();
+	if (BoneEditBaseLocalMatrices.size() == Asset->Bones.size())
+	{
+		BoneEditBaseLocalMatrices[BoneIndex] = BoneEditLocalMatrices[BoneIndex];
+		bUseBoneEditBasePose = true;
+	}
+
 	bUseBoneEditPose = true;
 	RefreshSkinningAfterPoseChanged();
 	MarkWorldBoundsDirty();
@@ -415,6 +467,13 @@ void USkinnedMeshComponent::SetBoneRotationByIndex(int32 BoneIndex, const FQuat&
 		BoneEditLocalMatrices[BoneIndex] = DesiredGlobalMatrix;
 	}
 
+	EnsureBoneEditBasePose();
+	if (BoneEditBaseLocalMatrices.size() == Asset->Bones.size())
+	{
+		BoneEditBaseLocalMatrices[BoneIndex] = BoneEditLocalMatrices[BoneIndex];
+		bUseBoneEditBasePose = true;
+	}
+
 	bUseBoneEditPose = true;
 	RefreshSkinningAfterPoseChanged();
 	MarkWorldBoundsDirty();
@@ -449,6 +508,13 @@ void USkinnedMeshComponent::SetBoneScaleByIndex(int32 BoneIndex, const FVector& 
 		BoneEditLocalMatrices[BoneIndex] = DesiredGlobalMatrix;
 	}
 
+	EnsureBoneEditBasePose();
+	if (BoneEditBaseLocalMatrices.size() == Asset->Bones.size())
+	{
+		BoneEditBaseLocalMatrices[BoneIndex] = BoneEditLocalMatrices[BoneIndex];
+		bUseBoneEditBasePose = true;
+	}
+
 	bUseBoneEditPose = true;
 	RefreshSkinningAfterPoseChanged();
 	MarkWorldBoundsDirty();
@@ -468,6 +534,27 @@ void USkinnedMeshComponent::SetBoneLocalTransformByIndex(int32 BoneIndex, const 
 	MarkWorldBoundsDirty();
 }
 
+void USkinnedMeshComponent::SetBoneEditBaseLocalTransformByIndex(int32 BoneIndex, const FTransform& NewLocalTransform)
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) return;
+
+	EnsureBoneEditPose();
+	EnsureBoneEditBasePose();
+
+	const FMatrix NewLocalMatrix = NewLocalTransform.ToMatrix();
+	BoneEditLocalMatrices[BoneIndex] = NewLocalMatrix;
+	if (BoneEditBaseLocalMatrices.size() == Asset->Bones.size())
+	{
+		BoneEditBaseLocalMatrices[BoneIndex] = NewLocalMatrix;
+		bUseBoneEditBasePose = true;
+	}
+
+	bUseBoneEditPose = true;
+	RefreshSkinningAfterPoseChanged();
+	MarkWorldBoundsDirty();
+}
+
 void USkinnedMeshComponent::SetBoneLocalTransforms(const TArray<FTransform>& LocalPose)
 {
 	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
@@ -476,10 +563,44 @@ void USkinnedMeshComponent::SetBoneLocalTransforms(const TArray<FTransform>& Loc
 	EnsureBoneEditPose();
 
 	const int32 BoneCount = std::min(static_cast<int32>(Asset->Bones.size()), static_cast<int32>(LocalPose.size()));
+	const bool bApplyEditBasePose =
+		bUseBoneEditBasePose &&
+		BoneEditBaseLocalMatrices.size() == Asset->Bones.size();
 
 	for (int32 i = 0; i < BoneCount; ++i)
 	{
-		BoneEditLocalMatrices[i] = LocalPose[i].ToMatrix();
+		FMatrix LocalMatrix = LocalPose[i].ToMatrix();
+		if (bApplyEditBasePose)
+		{
+			const FMatrix AnimDeltaFromReference =
+				LocalMatrix * GetAffineInverseForBoneEdit(Asset->Bones[i].GetReferenceLocalPose());
+			LocalMatrix = AnimDeltaFromReference * BoneEditBaseLocalMatrices[i];
+		}
+
+		BoneEditLocalMatrices[i] = LocalMatrix;
+	}
+
+	bUseBoneEditPose = true;
+	RefreshSkinningAfterPoseChanged();
+	MarkWorldBoundsDirty();
+}
+
+void USkinnedMeshComponent::ApplyBoneEditBasePose()
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset) return;
+
+	EnsureBoneEditPose();
+
+	const bool bHasEditBase =
+		bUseBoneEditBasePose &&
+		BoneEditBaseLocalMatrices.size() == Asset->Bones.size();
+
+	for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Asset->Bones.size()); ++BoneIndex)
+	{
+		BoneEditLocalMatrices[BoneIndex] = bHasEditBase
+			? BoneEditBaseLocalMatrices[BoneIndex]
+			: Asset->Bones[BoneIndex].GetReferenceLocalPose();
 	}
 
 	bUseBoneEditPose = true;
@@ -533,7 +654,7 @@ void USkinnedMeshComponent::BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlob
 	{
 		// edit pose가 skeleton 크기와 맞을 때만 override를 사용해 stale cache를 방지한다.
 		const FMatrix LocalMatrix = (bUseBoneEditPose && BoneEditLocalMatrices.size() == BoneCount)
-			? BoneEditLocalMatrices[i] : Asset->Bones[i].LocalMatrix;
+			? BoneEditLocalMatrices[i] : Asset->Bones[i].GetReferenceLocalPose();
 
 		// asset bone order가 parent-first라는 전제에 맞춰 부모 global을 누적한다.
 		const int32 ParentIndex = Asset->Bones[i].ParentIndex;
@@ -914,7 +1035,7 @@ void USkinnedMeshComponent::BuildSkinMatrices(TArray<FMatrix>& OutSkinMatrices) 
 		if (BoneIndex < static_cast<int32>(BoneGlobals.size()))
 		{
 			OutSkinMatrices[BoneIndex] =
-				Asset->Bones[BoneIndex].InverseBindPoseMatrix * BoneGlobals[BoneIndex];
+				Asset->Bones[BoneIndex].GetInverseBindPose() * BoneGlobals[BoneIndex];
 		}
 	}
 }

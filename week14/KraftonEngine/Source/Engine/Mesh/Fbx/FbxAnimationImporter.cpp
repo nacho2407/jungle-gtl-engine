@@ -1314,7 +1314,7 @@ bool FFbxAnimationImporter::ImportAnimations(
 		BindLocalTransforms.resize(Context.Bones.size());
 		for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Context.Bones.size()); ++BoneIndex)
 		{
-			BindLocalTransforms[BoneIndex] = FAnimationRuntime::DecomposeMatrix(Context.Bones[BoneIndex].LocalMatrix);
+			BindLocalTransforms[BoneIndex] = FAnimationRuntime::DecomposeMatrix(Context.Bones[BoneIndex].GetReferenceLocalPose());
 
 			if (!BoneHasAnimatedCurves[BoneIndex])
 			{

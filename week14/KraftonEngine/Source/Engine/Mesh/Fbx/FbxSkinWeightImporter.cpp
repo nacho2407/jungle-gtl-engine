@@ -53,6 +53,13 @@ struct hash<FFbxSkeletalVertexKey>
 
 namespace
 {
+	static void SetBoneInverseBindPose(FBone& Bone, const FMatrix& InverseBindPose)
+	{
+		Bone.InverseBindPoseMatrix = InverseBindPose;
+		Bone.SkinBindGlobalPose = InverseBindPose.GetInverse();
+		Bone.GlobalMatrix = Bone.SkinBindGlobalPose;
+	}
+
 	static int32 FindMappedBoneIndex(FbxNode* Node, const TMap<FbxNode*, int32>& BoneNodeToIndex)
 	{
 		auto It = BoneNodeToIndex.find(Node);
@@ -147,7 +154,7 @@ namespace
 
 					FbxAMatrix LinkBindMatrix;
 					Cluster->GetTransformLinkMatrix(LinkBindMatrix);
-					Context.Bones[BoneIt->second].InverseBindPoseMatrix = FFbxTransformUtils::ToEngineInverseMatrix(LinkBindMatrix);
+					SetBoneInverseBindPose(Context.Bones[BoneIt->second], FFbxTransformUtils::ToEngineInverseMatrix(LinkBindMatrix));
 				}
 			}
 		}
@@ -162,7 +169,7 @@ namespace
 
 		// Rigid child meshes still pass through the bone skin matrix at runtime.
 		// Store them in pre-skinned space so bind pose output matches their FBX mesh transform.
-		const FMatrix SkinBindMatrix = Bones[RigidBoneIndex].InverseBindPoseMatrix * Bones[RigidBoneIndex].GlobalMatrix;
+		const FMatrix SkinBindMatrix = Bones[RigidBoneIndex].GetInverseBindPose() * Bones[RigidBoneIndex].GetSkinBindGlobalPose();
 		return SkinBindMatrix.IsIdentity() ? FMatrix::Identity : SkinBindMatrix.GetInverse();
 	}
 
@@ -248,7 +255,7 @@ bool FFbxSkinWeightImporter::ImportSkin(FbxScene* Scene, FFbxImportContext& Cont
 			Cluster->GetTransformLinkMatrix(LinkBindMatrix);
 
 			const int32 BoneIndex = BoneIt->second;
-			Context.Bones[BoneIndex].InverseBindPoseMatrix = FFbxTransformUtils::ToEngineInverseMatrix(LinkBindMatrix);
+			SetBoneInverseBindPose(Context.Bones[BoneIndex], FFbxTransformUtils::ToEngineInverseMatrix(LinkBindMatrix));
 
 			if (!bHasClusterMeshBindGlobal)
 			{

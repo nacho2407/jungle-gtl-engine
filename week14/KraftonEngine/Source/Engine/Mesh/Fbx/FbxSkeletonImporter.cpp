@@ -14,9 +14,9 @@ namespace
 			FReferenceBone RefBone;
 			RefBone.Name = Bone.Name;
 			RefBone.ParentIndex = Bone.ParentIndex;
-			RefBone.LocalBindPose = Bone.LocalMatrix;
-			RefBone.GlobalBindPose = Bone.GlobalMatrix;
-			RefBone.InverseBindPose = Bone.InverseBindPoseMatrix;
+			RefBone.LocalBindPose = Bone.GetReferenceLocalPose();
+			RefBone.GlobalBindPose = Bone.GetSkinBindGlobalPose();
+			RefBone.InverseBindPose = Bone.GetInverseBindPose();
 			Context.ReferenceSkeleton.Bones.push_back(RefBone);
 		}
 	}
@@ -49,6 +49,7 @@ bool FFbxSkeletonImporter::ImportSkeleton(FbxScene* Scene, FFbxImportContext& Co
 		Bone.LocalMatrix = FFbxTransformUtils::ToEngineMatrix(LocalFbxMatrix);
 		Bone.GlobalMatrix = FFbxTransformUtils::ToEngineMatrix(GlobalFbxMatrix);
 		Bone.InverseBindPoseMatrix = FFbxTransformUtils::ToEngineInverseMatrix(GlobalFbxMatrix);
+		Bone.SyncSeparatedPoseDataFromLegacy();
 
 		const int32 NewBoneIndex = static_cast<int32>(Context.Bones.size());
 		Context.Bones.push_back(Bone);
