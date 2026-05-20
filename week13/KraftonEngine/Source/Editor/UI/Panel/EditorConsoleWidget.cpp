@@ -1,6 +1,6 @@
 #include "Editor/UI/Panel/EditorConsoleWidget.h"
 #include "Editor/EditorEngine.h"
-#include "Editor/Viewport/LevelEditorViewportClient.h"
+#include "Editor/Viewport/Level/LevelEditorViewportClient.h"
 #include "Editor/Viewport/EditorPreviewViewportClient.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Object/Object.h"

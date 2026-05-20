@@ -1,7 +1,7 @@
 #include "Editor/UI/Panel/EditorViewportWidget.h"
 
 #include "Editor/EditorEngine.h"
-#include "Editor/Viewport/LevelEditorViewportClient.h"
+#include "Editor/Viewport/Level/LevelEditorViewportClient.h"
 #include "Viewport/Viewport.h"
 #include "ImGui/imgui.h"
 

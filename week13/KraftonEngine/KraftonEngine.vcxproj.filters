@@ -88,6 +88,12 @@
     <Filter Include="Source\Editor\Viewport">
       <UniqueIdentifier>{42b90bf1-e993-e912-0e50-58d7095d5e8c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Viewport\Asset">
+      <UniqueIdentifier>{444b4822-9835-d483-c4f0-4ad5d6e17940}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\Viewport\Level">
+      <UniqueIdentifier>{185b60fe-4d3f-2ee8-188b-f47f31c06bf9}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine">
       <UniqueIdentifier>{d0b56061-5521-9f21-3d03-1e11f47e99a7}</UniqueIdentifier>
     </Filter>
@@ -719,17 +725,17 @@
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp">
-      <Filter>Source\Editor\Viewport</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Viewport\MeshEditorViewportClient.cpp">
-      <Filter>Source\Editor\Viewport</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Viewport\StaticMeshEditorViewportClient.cpp">
-      <Filter>Source\Editor\Viewport</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\ViewportCameraTransform.cpp">
       <Filter>Source\Editor\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.cpp">
+      <Filter>Source\Editor\Viewport\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.cpp">
+      <Filter>Source\Editor\Viewport\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\Level\FLevelViewportLayout.cpp">
+      <Filter>Source\Editor\Viewport\Level</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
@@ -1706,20 +1712,20 @@
     <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Viewport\FLevelViewportLayout.h">
-      <Filter>Source\Editor\Viewport</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h">
-      <Filter>Source\Editor\Viewport</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Viewport\MeshEditorViewportClient.h">
-      <Filter>Source\Editor\Viewport</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Viewport\StaticMeshEditorViewportClient.h">
-      <Filter>Source\Editor\Viewport</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\ViewportCameraTransform.h">
       <Filter>Source\Editor\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.h">
+      <Filter>Source\Editor\Viewport\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.h">
+      <Filter>Source\Editor\Viewport\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\Level\FLevelViewportLayout.h">
+      <Filter>Source\Editor\Viewport\Level</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\Level\LevelEditorViewportClient.h">
+      <Filter>Source\Editor\Viewport\Level</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimExtractContext.h">
       <Filter>Source\Engine\Animation</Filter>

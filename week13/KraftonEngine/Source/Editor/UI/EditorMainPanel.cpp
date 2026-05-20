@@ -2,7 +2,7 @@
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
-#include "Editor/Viewport/LevelEditorViewportClient.h"
+#include "Editor/Viewport/Level/LevelEditorViewportClient.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"

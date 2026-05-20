@@ -1,7 +1,7 @@
-#include "Editor/Viewport/FLevelViewportLayout.h"
+#include "Editor/Viewport/Level/FLevelViewportLayout.h"
 
 #include "Editor/EditorEngine.h"
-#include "Editor/Viewport/LevelEditorViewportClient.h"
+#include "Editor/Viewport/Level/LevelEditorViewportClient.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/UI/Util/EditorTextureManager.h"
 #include "Core/ProjectSettings.h"
