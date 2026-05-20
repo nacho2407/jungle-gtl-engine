@@ -117,6 +117,7 @@ bool FFbxStaticMeshImporter::Import(FbxScene* Scene, const FString& SourcePath, 
 		FbxStringList UVSetNames;
 		Mesh->GetUVSetNames(UVSetNames);
 		const char* UVName = (UVSetNames.GetCount() > 0) ? UVSetNames.GetStringAt(0) : nullptr;
+		const bool bReverseWinding = FFbxTransformUtils::HasNegativeBasisDeterminant(MeshToWorld);
 
 		TArray<int32> LocalToGlobalMaterialIndex;
 		LocalToGlobalMaterialIndex.resize(Node->GetMaterialCount());
@@ -213,6 +214,12 @@ bool FFbxStaticMeshImporter::Import(FbxScene* Scene, const FString& SourcePath, 
 			if (!bValidTriangle)
 			{
 				continue;
+			}
+
+			if (bReverseWinding)
+			{
+				std::swap(TriIndices[1], TriIndices[2]);
+				std::swap(PendingSectionIndices[1], PendingSectionIndices[2]);
 			}
 
 			for (uint32 VertexIndex : PendingSectionIndices)

@@ -4,47 +4,6 @@
 
 namespace
 {
-	static int32 AddSyntheticRootBoneIfNeeded(FbxNode* Node, FFbxImportContext& Context)
-	{
-		if (!Node || !Node->GetParent() || FFbxSceneQuery::IsSkeletonNode(Node))
-		{
-			return -1;
-		}
-
-		auto Existing = Context.BoneNodeToIndex.find(Node);
-		if (Existing != Context.BoneNodeToIndex.end())
-		{
-			return Existing->second;
-		}
-
-		FBone Bone;
-		Bone.Name = Node->GetName();
-		Bone.ParentIndex = -1;
-
-		FbxNode* Parent = Node->GetParent();
-		while (Parent)
-		{
-			auto It = Context.BoneNodeToIndex.find(Parent);
-			if (It != Context.BoneNodeToIndex.end())
-			{
-				Bone.ParentIndex = It->second;
-				break;
-			}
-
-			Parent = Parent->GetParent();
-		}
-
-		FMatrix GlobalMatrix = FFbxTransformUtils::ToEngineMatrix(Node->EvaluateGlobalTransform());
-		Bone.LocalMatrix = FFbxTransformUtils::ToEngineMatrix(Node->EvaluateLocalTransform());
-		Bone.GlobalMatrix = GlobalMatrix;
-		Bone.InverseBindPoseMatrix = GlobalMatrix.GetInverse();
-
-		const int32 NewBoneIndex = static_cast<int32>(Context.Bones.size());
-		Context.Bones.push_back(Bone);
-		Context.BoneNodeToIndex[Node] = NewBoneIndex;
-		return NewBoneIndex;
-	}
-
 	static void BuildReferenceSkeleton(FFbxImportContext& Context)
 	{
 		Context.ReferenceSkeleton.Bones.clear();
@@ -55,9 +14,9 @@ namespace
 			FReferenceBone RefBone;
 			RefBone.Name = Bone.Name;
 			RefBone.ParentIndex = Bone.ParentIndex;
-			RefBone.LocalBindPose = Bone.LocalMatrix;
-			RefBone.GlobalBindPose = Bone.GlobalMatrix;
-			RefBone.InverseBindPose = Bone.InverseBindPoseMatrix;
+			RefBone.LocalBindPose = Bone.GetReferenceLocalPose();
+			RefBone.GlobalBindPose = Bone.GetReferenceGlobalPose();
+			RefBone.InverseBindPose = Bone.GetInverseBindPose();
 			Context.ReferenceSkeleton.Bones.push_back(RefBone);
 		}
 	}
@@ -80,15 +39,17 @@ bool FFbxSkeletonImporter::ImportSkeleton(FbxScene* Scene, FFbxImportContext& Co
 		FBone Bone;
 		Bone.Name = Node->GetName();
 
-		FbxNode* ParentNode = Node->GetParent();
 		Bone.ParentIndex = FindNearestParentBoneIndex(Node, Context.BoneNodeToIndex);
-		if (Bone.ParentIndex < 0)
-		{
-			Bone.ParentIndex = AddSyntheticRootBoneIfNeeded(ParentNode, Context);
-		}
 
-		Bone.LocalMatrix = FFbxTransformUtils::ToEngineMatrix(Node->EvaluateLocalTransform());
-		Bone.GlobalMatrix = FFbxTransformUtils::ToEngineMatrix(Node->EvaluateGlobalTransform());
+		const FbxAMatrix GlobalFbxMatrix = Node->EvaluateGlobalTransform();
+		const bool bAbsorbWrapperTransform = Bone.ParentIndex < 0 && FFbxSceneQuery::HasNonSkeletonWrapperParent(Node);
+		const FbxAMatrix LocalFbxMatrix = bAbsorbWrapperTransform
+			? GlobalFbxMatrix
+			: Node->EvaluateLocalTransform();
+		Bone.LocalMatrix = FFbxTransformUtils::ToEngineMatrix(LocalFbxMatrix);
+		Bone.GlobalMatrix = FFbxTransformUtils::ToEngineMatrix(GlobalFbxMatrix);
+		Bone.InverseBindPoseMatrix = FFbxTransformUtils::ToEngineInverseMatrix(GlobalFbxMatrix);
+		Bone.SyncSeparatedPoseDataFromLegacy();
 
 		const int32 NewBoneIndex = static_cast<int32>(Context.Bones.size());
 		Context.Bones.push_back(Bone);

@@ -1,7 +1,7 @@
 ﻿#include "Object.h"
 #include "UUIDGenerator.h"
 #include "Serialization/Archive.h"
-#include "Serialization/MemoryArchive.h"
+#include "Serialization/DuplicateArchive.h"
 #include "Object/ObjectFactory.h"
 
 TArray<UObject*> GUObjectArray;
@@ -33,7 +33,19 @@ UObject::~UObject()
 
 UObject* UObject::Duplicate(UObject* NewOuter) const
 {
-	// FObjectFactory 기반 같은 타입 인스턴스 생성 → Serialize 왕복 → PostDuplicate.
+	FDuplicateArchiveContext DuplicateContext;
+	UObject* Dup = DuplicateWithArchiveContext(NewOuter, DuplicateContext);
+	DuplicateContext.ResolveObjectReferenceFixups();
+	if (Dup)
+	{
+		Dup->PostDuplicate();
+	}
+	return Dup;
+}
+
+UObject* UObject::DuplicateWithArchiveContext(UObject* NewOuter, FDuplicateArchiveContext& DuplicateContext) const
+{
+	// FObjectFactory 기반 같은 타입 인스턴스 생성 → Serialize 왕복.
 	// UUID/Name은 생성자에서 새로 발급되며, Serialize에서 덮어쓰지 않는 것이 규칙이다.
 	// NewOuter가 nullptr이면 원본의 Outer를 그대로 승계.
 	UObject* EffectiveOuter = NewOuter ? NewOuter : Outer;
@@ -42,14 +54,13 @@ UObject* UObject::Duplicate(UObject* NewOuter) const
 	{
 		return nullptr;
 	}
+	DuplicateContext.AddObjectMapping(GetUUID(), Dup);
 
-	FMemoryArchive Writer(/*bIsSaving=*/true);
+	FDuplicateDataWriter Writer;
 	const_cast<UObject*>(this)->Serialize(Writer);
 
-	FMemoryArchive Reader(Writer.GetBuffer(), /*bIsSaving=*/false);
+	FDuplicateDataReader Reader(Writer.GetBuffer(), DuplicateContext);
 	Dup->Serialize(Reader);
-
-	Dup->PostDuplicate();
 	return Dup;
 }
 

@@ -427,6 +427,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\UI\EditorViewportWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorWorldSettingsWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\FbxImportOptionsDialog.cpp" />
     <ClCompile Include="Source\Editor\UI\ImGuiSetting.cpp" />
     <ClCompile Include="Source\Editor\UI\NotificationToast.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AnimGraphEditorWidget.cpp" />
@@ -539,6 +540,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\ArrayProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\BoolProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\ClassProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\EnumProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\GenericProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\NameProperty.cpp" />
@@ -765,6 +767,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\UI\EditorViewportWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorWorldSettingsWidget.h" />
+    <ClInclude Include="Source\Editor\UI\FbxImportOptionsDialog.h" />
     <ClInclude Include="Source\Editor\UI\ImGuiSetting.h" />
     <ClInclude Include="Source\Editor\UI\NotificationToast.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AnimGraphEditorWidget.h" />
@@ -901,6 +904,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Core\TickFunction.h" />
     <ClInclude Include="Source\Engine\Core\Property\ArrayProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\BoolProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\ClassProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\EnumProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\GenericProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\NameProperty.h" />
@@ -1093,6 +1097,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h" />
     <ClInclude Include="Source\Engine\Runtime\resource.h" />
     <ClInclude Include="Source\Engine\Serialization\Archive.h" />
+    <ClInclude Include="Source\Engine\Serialization\DuplicateArchive.h" />
     <ClInclude Include="Source\Engine\Serialization\MemoryArchive.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
     <ClInclude Include="Source\Engine\Serialization\WindowsArchive.h" />
@@ -1978,12 +1983,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <Import Project="packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets" Condition="Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" />
     <Import Project="packages\NVIDIA.PhysX.4.1.2\build\native\NVIDIA.PhysX.targets" Condition="Exists('packages\NVIDIA.PhysX.4.1.2\build\native\NVIDIA.PhysX.targets')" />
   </ImportGroup>
-  <PropertyGroup>
-    <PythonExe Condition="'$(PythonExe)'==''">python</PythonExe>
-  </PropertyGroup>
-  <Target Name="GenerateReflectionHeaders" BeforeTargets="ClCompile">
-    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(MSBuildProjectDirectory)\Tools\GenerateHeaders.py&quot; --root &quot;$(MSBuildProjectDirectory)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
-  </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>

@@ -3,6 +3,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_0",
       "NonSceneComponents" : [],
+      "ObjectId" : 2,
       "Properties" : {
         "PendingActorLocation" : [0.000000, 0.000000, -3.039449],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -15,8 +16,9 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "UStaticMeshComponent",
+            "ObjectId" : 4,
             "Properties" : {
-              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : 0,
               "Mass" : 1.000000,
@@ -45,9 +47,10 @@
             }
           }],
         "ClassName" : "UBoxComponent",
+        "ObjectId" : 3,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
-          "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
+          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 3,
           "Mass" : 1.000000,
@@ -80,6 +83,7 @@
       "Name" : "ALuaCharacter_0",
       "NonSceneComponents" : [{
           "ClassName" : "UCharacterMovementComponent",
+          "ObjectId" : 10,
           "Properties" : {
             "BrakingFriction" : 8.000000,
             "FloorProbeDistance" : 0.100000,
@@ -88,7 +92,9 @@
             "MaxAcceleration" : 20.000000,
             "MaxWalkSpeed" : 6.000000,
             "RotationYawRate" : 540.000000,
-            "UpdatedComponentPath" : "Root",
+            "UpdatedComponent" : {
+              "ObjectId" : 6
+            },
             "bAutoActivate" : true,
             "bAutoRegisterUpdatedComponent" : false,
             "bEditorOnly" : false,
@@ -99,6 +105,7 @@
           }
         }, {
           "ClassName" : "ULuaScriptComponent",
+          "ObjectId" : 11,
           "Properties" : {
             "ScriptFile" : "ULevel_2_ALuaCharacter_0.lua",
             "bAutoActivate" : true,
@@ -108,6 +115,7 @@
             "bTickEnable" : true
           }
         }],
+      "ObjectId" : 5,
       "Properties" : {
         "PendingActorLocation" : [-3.050979, 0.983401, 1.331516],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -124,8 +132,16 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "USkeletalMeshComponent",
+            "ObjectId" : 7,
             "Properties" : {
-              "AnimInstanceClass" : null,
+              "AnimInstance" : {
+                "ClassName" : "ULuaAnimInstance",
+                "Properties" : {
+                  "RootMotionMode" : 1,
+                  "ScriptFile" : "Anim/yui_character.lua"
+                }
+              },
+              "AnimInstanceClass" : "ULuaAnimInstance",
               "AnimationData" : {
                 "AnimToPlayPath" : "None",
                 "PlayRate" : 1.000000,
@@ -133,7 +149,7 @@
                 "bPlaying" : true
               },
               "AnimationMode" : 2,
-              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : 0,
               "Mass" : 1.000000,
@@ -164,8 +180,9 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UCameraComponent",
+                "ObjectId" : 9,
                 "Properties" : {
-                  "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
+                  "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
                   "CameraState.FOV" : 1.047198,
                   "CameraState.FarZ" : 1000.000000,
                   "CameraState.NearZ" : 0.100000,
@@ -181,8 +198,9 @@
                 }
               }],
             "ClassName" : "USpringArmComponent",
+            "ObjectId" : 8,
             "Properties" : {
-              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "CameraLagMaxDistance" : 0.000000,
               "CameraLagSpeed" : 10.000000,
               "CameraRotationLagSpeed" : 10.000000,
@@ -204,8 +222,9 @@
             }
           }],
         "ClassName" : "UCapsuleComponent",
+        "ObjectId" : 6,
         "Properties" : {
-          "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
+          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CapsuleHalfHeight" : 3.000000,
           "CapsuleRadius" : 1.800000,
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
@@ -240,12 +259,13 @@
   "ContextHandle" : "NewScene",
   "ContextName" : "New Scene",
   "Name" : "CharacterTest",
+  "ObjectId" : 1,
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [14.343850, -3.078533, 4.529216],
+    "Location" : [7.279079, -3.227498, 4.359841],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 12.915127, 166.349808]
+    "Rotation" : [0.000000, 10.665116, 162.899811]
   },
   "Version" : 2,
   "WorldSettings" : {

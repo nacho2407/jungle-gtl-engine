@@ -1032,7 +1032,7 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		return Actor.GetComponentByClass<UPrimitiveComponent>();
 	},
 
-		"GetPrimitiveComponentByName", [](AActor& Actor, const FString& ComponentName) -> UPrimitiveComponent*
+	"GetPrimitiveComponentByName", [](AActor& Actor, const FString& ComponentName) -> UPrimitiveComponent*
 	{
 		for (UActorComponent* Component : Actor.GetComponents())
 		{
@@ -1056,38 +1056,6 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 			}
 		}
 		return nullptr;
-	},
-
-		// 메시 에셋 경로로 첫 매칭 컴포넌트 반환. 자동 생성된 FName 의존성을 피하기 위한
-		// deterministic 방식 — 핸들 / 점멸등 처럼 한 액터에 1개뿐인 메시 컴포넌트용.
-		"FindFirstMeshComponentByPath", [](AActor& Actor, const FString& MeshPath) -> UStaticMeshComponent*
-	{
-		for (UActorComponent* Component : Actor.GetComponents())
-		{
-			UStaticMeshComponent* Mesh = Cast<UStaticMeshComponent>(Component);
-			if (Mesh && Mesh->GetStaticMeshPath() == MeshPath)
-			{
-				return Mesh;
-			}
-		}
-		return nullptr;
-	},
-
-		// 같은 메시를 여러 번 사용하는 경우(타이어 4개 등) 전부 모아서 반환. 호출 측에서 추가
-		// 필터링(RelativeLocation 의 X 부호로 앞/뒤 구분 등) 하면 된다.
-		"FindMeshComponentsByPath", [](AActor& Actor, const FString& MeshPath) -> sol::table
-	{
-		sol::table Result = FLuaScriptManager::GetState().create_table();
-		int32 Idx = 1; // Lua arrays are 1-indexed
-		for (UActorComponent* Component : Actor.GetComponents())
-		{
-			UStaticMeshComponent* Mesh = Cast<UStaticMeshComponent>(Component);
-			if (Mesh && Mesh->GetStaticMeshPath() == MeshPath)
-			{
-				Result[Idx++] = Mesh;
-			}
-		}
-		return Result;
 	},
 
 		"UUID", sol::property([](AActor& Actor)

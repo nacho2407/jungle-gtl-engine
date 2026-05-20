@@ -1,4 +1,4 @@
-﻿#include "AnimationManager.h"
+#include "AnimationManager.h"
 
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimMontage.h"
@@ -174,108 +174,6 @@ namespace
     }
 }
 
-bool FAnimationManager::ImportAnimationForSkeleton(const FAnimationImportRequest& Request, TArray<UAnimSequence*>* OutSequences)
-{
-    if (OutSequences)
-    {
-        OutSequences->clear();
-    }
-
-    if (Request.SourceFbxPath.empty() || Request.TargetSkeletonPath.empty() || Request.TargetSkeletonPath == "None")
-    {
-        UE_LOG(
-            "Animation import failed: source FBX and target skeleton are required. Source=%s Target=%s",
-            Request.SourceFbxPath.c_str(),
-            Request.TargetSkeletonPath.c_str()
-        );
-        return false;
-    }
-
-    USkeleton* TargetSkeleton = FSkeletonManager::Get().LoadSkeleton(Request.TargetSkeletonPath);
-    if (!TargetSkeleton)
-    {
-        UE_LOG("Animation import failed: target skeleton not found. Path=%s", Request.TargetSkeletonPath.c_str());
-        return false;
-    }
-
-    FFbxAnimationImportResult ImportResult;
-    if (!FFbxImporter::ImportAnimationOnly(Request.SourceFbxPath, ImportResult))
-    {
-        UE_LOG("Animation import failed: FBX animation-only import failed. Source=%s", Request.SourceFbxPath.c_str());
-        return false;
-    }
-
-    FSkeletonBoneRemap           Remap;
-    FSkeletonCompatibilityReport Report;
-    if (!FSkeletonManager::BuildBoneRemapByName(
-        ImportResult.SourceSkeleton,
-        TargetSkeleton->GetReferenceSkeleton(),
-        Remap,
-        &Report,
-        !Request.bAllowTargetExtraBones
-    ))
-    {
-        UE_LOG(
-            "Animation import failed: skeleton remap failed. Source=%s Target=%s Reason=%s",
-            Request.SourceFbxPath.c_str(),
-            Request.TargetSkeletonPath.c_str(),
-            Report.Reason.c_str()
-        );
-        return false;
-    }
-
-    bool bSavedAny = false;
-    for (UAnimSequence* Sequence : ImportResult.AnimSequences)
-    {
-        if (!Sequence)
-        {
-            continue;
-        }
-
-        if (!RemapAnimSequenceToTargetSkeleton(Sequence, TargetSkeleton, Remap, &Report))
-        {
-            UE_LOG("Animation import failed: sequence remap failed. Anim=%s Reason=%s", Sequence->GetName().c_str(), Report.Reason.c_str());
-            return false;
-        }
-
-        FString AnimPath;
-        if (!Request.DestinationDirectory.empty())
-        {
-            std::filesystem::path Dir(FPaths::ToWide(FPaths::MakeProjectRelative(Request.DestinationDirectory)));
-            std::filesystem::path SourceRel(FPaths::ToWide(FPaths::MakeProjectRelative(Request.SourceFbxPath)));
-            FString               SafeAnimName  = SanitizeAssetName(Sequence->GetName());
-            std::filesystem::path AssetPath     = Dir / (SourceRel.stem().wstring() + L"_" + FPaths::ToWide(SafeAnimName) + L".uasset");
-            std::filesystem::path FullAssetPath = std::filesystem::path(FPaths::RootDir()) / AssetPath;
-            FPaths::CreateDir(FullAssetPath.parent_path().wstring());
-            AnimPath = FPaths::ToUtf8(AssetPath.generic_wstring());
-        }
-        else
-        {
-            AnimPath = GetAnimationPathForSkeleton(Request.SourceFbxPath, Sequence->GetName(), Request.TargetSkeletonPath);
-        }
-
-        if (!Request.bOverwriteExistingAssets && std::filesystem::exists(ResolveProjectPath(AnimPath)))
-        {
-            UE_LOG("Animation import skipped: destination exists. Path=%s", AnimPath.c_str());
-            continue;
-        }
-
-        if (!SaveAnimation(Sequence, AnimPath, Request.SourceFbxPath))
-        {
-            UE_LOG("Animation import failed: save failed. Path=%s", AnimPath.c_str());
-            return false;
-        }
-
-        bSavedAny = true;
-        if (OutSequences)
-        {
-            OutSequences->push_back(Sequence);
-        }
-    }
-
-    return bSavedAny;
-}
-
 UAnimSequence* FAnimationManager::LoadAnimation(const FString& PackagePath)
 {
     const FString NormalizedPath = FPaths::MakeProjectRelative(PackagePath);
@@ -331,7 +229,7 @@ UAnimSequence* FAnimationManager::LoadAnimation(const FString& PackagePath)
     {
         FAssetListItem Item;
         Item.DisplayName = Sequence->GetName();
-        Item.FullPath = NormalizedPath;
+        Item.FullPath    = NormalizedPath;
         AvailableAnimationFiles.push_back(Item);
     }
 
@@ -371,8 +269,6 @@ bool FAnimationManager::SaveAnimation(UAnimSequence* Sequence, const FString& Pa
         return false;
     }
 
-
-
     auto ListIt = std::find_if(
         AvailableAnimationFiles.begin(),
         AvailableAnimationFiles.end(),
@@ -386,7 +282,7 @@ bool FAnimationManager::SaveAnimation(UAnimSequence* Sequence, const FString& Pa
     {
         FAssetListItem Item;
         Item.DisplayName = Sequence->GetName();
-        Item.FullPath = NormalizedPath;
+        Item.FullPath    = NormalizedPath;
         AvailableAnimationFiles.push_back(Item);
     }
 
@@ -415,6 +311,149 @@ bool FAnimationManager::SaveAnimationPreservingMetadata(UAnimSequence* Sequence)
     return SaveAnimation(Sequence, AssetPath, ExistingMeta.SourcePath);
 }
 
+bool FAnimationManager::ImportAnimationForSkeleton(const FAnimationImportRequest& Request, TArray<UAnimSequence*>* OutSequences)
+{
+    if (OutSequences)
+    {
+        OutSequences->clear();
+    }
+
+    if (Request.SourceFbxPath.empty() || Request.TargetSkeletonPath.empty() || Request.TargetSkeletonPath == "None")
+    { 
+        UE_LOG(
+            "Animation import failed: source FBX and target skeleton are required. Source=%s Target=%s",
+            Request.SourceFbxPath.c_str(),
+            Request.TargetSkeletonPath.c_str()
+        );
+        return false;
+    }
+
+    FFbxAnimationImportOptions ImportOptions;
+    ImportOptions.SelectedStackIndices = Request.SelectedAnimationStackIndices;
+
+    FFbxAnimationImportResult ImportResult;
+    if (!FFbxImporter::ImportAnimationOnly(Request.SourceFbxPath, ImportResult, &ImportOptions))
+    {
+        UE_LOG("Animation import failed: FBX animation-only import failed. Source=%s", Request.SourceFbxPath.c_str());
+        return false;
+    }
+
+    return SaveImportedAnimationsForSkeleton(
+        Request.SourceFbxPath,
+        ImportResult.SourceSkeleton,
+        Request.TargetSkeletonPath,
+        Request.DestinationDirectory,
+        Request.bAllowTargetExtraBones,
+        Request.bOverwriteExistingAssets,
+        ImportResult.AnimSequences,
+        OutSequences
+    );
+}
+
+bool FAnimationManager::SaveImportedAnimationsForSkeleton(
+    const FString&            SourceFbxPath,
+    const FReferenceSkeleton& SourceSkeleton,
+    const FString&            TargetSkeletonPath,
+    const FString&            DestinationDirectory,
+    bool                      bAllowTargetExtraBones,
+    bool                      bOverwriteExistingAssets,
+    TArray<UAnimSequence*>&   ImportedSequences,
+    TArray<UAnimSequence*>*   OutSequences
+    )
+{
+    if (OutSequences)
+    {
+        OutSequences->clear();
+    }
+
+    if (SourceFbxPath.empty() || TargetSkeletonPath.empty() || TargetSkeletonPath == "None")
+    {
+        UE_LOG(
+            "Animation save failed: source FBX and target skeleton are required. Source=%s Target=%s",
+            SourceFbxPath.c_str(),
+            TargetSkeletonPath.c_str()
+        );
+        return false;
+    }
+
+    USkeleton* TargetSkeleton = FSkeletonManager::Get().LoadSkeleton(TargetSkeletonPath);
+    if (!TargetSkeleton)
+    {
+        UE_LOG("Animation save failed: target skeleton not found. Path=%s", TargetSkeletonPath.c_str());
+        return false;
+    }
+
+    FSkeletonBoneRemap           Remap;
+    FSkeletonCompatibilityReport Report;
+    if (!FSkeletonManager::BuildBoneRemapByName(
+        SourceSkeleton,
+        TargetSkeleton->GetReferenceSkeleton(),
+        Remap,
+        &Report,
+        !bAllowTargetExtraBones
+    ))
+    {
+        UE_LOG(
+            "Animation save failed: skeleton remap failed. Source=%s Target=%s Reason=%s",
+            SourceFbxPath.c_str(),
+            TargetSkeletonPath.c_str(),
+            Report.Reason.c_str()
+        );
+        return false;
+    }
+
+    bool bSavedAny = false;
+    for (UAnimSequence* Sequence : ImportedSequences)
+    {
+        if (!Sequence)
+        {
+            continue;
+        }
+
+        if (!RemapAnimSequenceToTargetSkeleton(Sequence, TargetSkeleton, Remap, &Report))
+        {
+            UE_LOG("Animation save failed: sequence remap failed. Anim=%s Reason=%s", Sequence->GetName().c_str(), Report.Reason.c_str());
+            return false;
+        }
+
+        FString AnimPath;
+        if (!DestinationDirectory.empty())
+        {
+            std::filesystem::path Dir(FPaths::ToWide(FPaths::MakeProjectRelative(DestinationDirectory)));
+            std::filesystem::path SourceRel(FPaths::ToWide(FPaths::MakeProjectRelative(SourceFbxPath)));
+            FString               SafeAnimName  = SanitizeAssetName(Sequence->GetName());
+            std::filesystem::path AssetPath     = Dir / (SourceRel.stem().wstring() + L"_" + FPaths::ToWide(SafeAnimName) + L".uasset");
+            std::filesystem::path FullAssetPath = std::filesystem::path(FPaths::RootDir()) / AssetPath;
+            FPaths::CreateDir(FullAssetPath.parent_path().wstring());
+            AnimPath = FPaths::ToUtf8(AssetPath.generic_wstring());
+        }
+        else
+        {
+            AnimPath = GetAnimationPathForSkeleton(SourceFbxPath, Sequence->GetName(), TargetSkeletonPath);
+        }
+
+        if (!bOverwriteExistingAssets && std::filesystem::exists(ResolveProjectPath(AnimPath)))
+        {
+            UE_LOG("Animation import skipped: destination exists. Path=%s", AnimPath.c_str());
+            continue;
+        }
+
+        if (!SaveAnimation(Sequence, AnimPath, SourceFbxPath))
+        {
+            UE_LOG("Animation save failed: save failed. Path=%s", AnimPath.c_str());
+            return false;
+        }
+
+        bSavedAny = true;
+        if (OutSequences)
+        {
+            OutSequences->push_back(Sequence);
+        }
+    }
+
+    return bSavedAny;
+}
+
 void FAnimationManager::RefreshAvailableAnimations()
 {
     const std::filesystem::path ContentRoot = std::filesystem::path(FPaths::RootDir()) / L"Content";
@@ -436,7 +475,7 @@ void FAnimationManager::RefreshAvailableAnimations()
         if (Ext != L".uasset") continue;
 
         const FString RelPath =
-            FPaths::ToUtf8(Entry.path().lexically_relative(ProjectRoot).generic_wstring());
+        FPaths::ToUtf8(Entry.path().lexically_relative(ProjectRoot).generic_wstring());
 
         FAssetImportMetadata Metadata;
         if (!FAssetPackage::ReadMetadata(RelPath, EAssetPackageType::AnimSequence, Metadata))

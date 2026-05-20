@@ -27,5 +27,10 @@ struct FStructProperty : FProperty
 
 	json::JSON SerializeValue(void* ValuePtr) const override;
 	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
+	json::JSON SerializeValue(void* ValuePtr, const FJsonObjectReferenceContext* RefContext) const override;
+	void	   DeserializeValue(void* ValuePtr, json::JSON& Value, const FJsonObjectReferenceContext* RefContext) const override;
+	json::JSON SerializeValue(void* ValuePtr, UObject* Owner, const FJsonObjectReferenceContext* RefContext) const override;
+	void	   DeserializeValue(void* ValuePtr, json::JSON& Value, UObject* Owner, const FJsonObjectReferenceContext* RefContext) const override;
+	void	   SerializeValue(void* ValuePtr, UObject* Owner, FArchive& Ar) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 };

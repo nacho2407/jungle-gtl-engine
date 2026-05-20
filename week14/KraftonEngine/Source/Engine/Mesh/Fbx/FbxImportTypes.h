@@ -39,8 +39,55 @@ struct FFbxSkeletalMeshOnlyImportResult
 	TArray<FFbxImportedMaterialInfo> SourceMaterials;
 };
 
+struct FFbxSkeletonImportResult
+{
+	FReferenceSkeleton SourceSkeleton;
+};
+
+struct FFbxAnimationStackInfo
+{
+	int32   StackIndex = -1;
+	FString Name;
+	double  StartSecond    = 0.0;
+	double  EndSecond      = 0.0;
+	double  DurationSecond = 0.0;
+	int32   LayerCount     = 0;
+};
+
+struct FFbxAnimationImportOptions
+{
+	// Empty means import every stack. Filled means import only matching FBX AnimStack indices.
+	TSet<int32> SelectedStackIndices;
+
+	bool ShouldImportStack(int32 StackIndex) const
+	{
+		return SelectedStackIndices.empty() || SelectedStackIndices.find(StackIndex) != SelectedStackIndices.end();
+	}
+};
+
 struct FFbxAnimationImportResult
 {
 	FReferenceSkeleton     SourceSkeleton;
 	TArray<UAnimSequence*> AnimSequences;
+};
+
+struct FFbxSkeletalSceneImportOptions
+{
+	bool bImportSkeleton   = true;
+	bool bImportSkin       = true;
+	bool bImportAnimations = true;
+
+	FFbxAnimationImportOptions AnimationOptions;
+};
+
+struct FFbxSkeletalSceneImportResult
+{
+	FReferenceSkeleton               SourceSkeleton;
+	FSkeletalMesh                    Mesh;
+	TArray<FSkeletalMaterial>        Materials;
+	TArray<UAnimSequence*>           AnimSequences;
+	TArray<FFbxImportedMaterialInfo> SourceMaterials;
+
+	bool bHasSkeleton = false;
+	bool bHasMesh     = false;
 };

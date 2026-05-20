@@ -7,7 +7,7 @@
 // 메모리 버퍼 백엔드 FArchive.
 // - Save 모드: 내부 버퍼에 append.
 // - Load 모드: 외부 버퍼 참조, 순차 read.
-// Duplicate(직렬화 왕복)용. 파일 IO 없음.
+// 파일 IO 없이 메모리 버퍼로 직렬화 왕복.
 class FMemoryArchive : public FArchive
 {
 public:

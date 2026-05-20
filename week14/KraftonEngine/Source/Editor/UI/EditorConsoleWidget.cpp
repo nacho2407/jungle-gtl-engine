@@ -8,6 +8,7 @@
 #include "Render/Types/LightFrustumUtils.h"
 #include "Render/Types/RenderConstants.h"
 #include "Render/Types/MinimalViewInfo.h"
+#include "Engine/Platform/CrashDump.h"
 #include "GameFramework/World.h"
 #include "Render/Scene/FScene.h"
 
@@ -242,6 +243,8 @@ void FEditorConsoleWidget::RegisterDiagnosticsCommands()
 		"Diagnostics", "stat skinning", "Shows the skinning CPU overlay stat.");
 	RegisterCommand("stat none", [this](const TArray<FString>& Args) { HandleStatNone(Args); },
 		"Diagnostics", "stat none", "Hides all overlay stats.");
+	RegisterCommand("cause crash", [this](const TArray<FString>& Args) { HandleCauseCrash(Args); },
+		"Diagnostics", "cause crash", "Immediately raises an intentional crash for minidump testing.");
 }
 
 void FEditorConsoleWidget::RegisterRenderCommands()
@@ -871,6 +874,12 @@ void FEditorConsoleWidget::HandleStatNone(const TArray<FString>& Args)
 	}
 	EditorEngine->GetOverlayStatSystem().HideAll();
 	AddLog("Overlay stat disabled: all\n");
+}
+
+void FEditorConsoleWidget::HandleCauseCrash(const TArray<FString>& Args)
+{
+	(void)Args;
+	CauseCrash();
 }
 
 void FEditorConsoleWidget::HandleCSMResolution(const TArray<FString>& Args)

@@ -1,6 +1,7 @@
 #pragma once
 #include "AssetEditorWidget.h"
 #include "Editor/Viewport/MeshEditorViewportClient.h"
+#include "Editor/UI/FbxImportOptionsDialog.h"
 
 struct FSkeletalMesh;
 struct ImDrawList;
@@ -24,6 +25,8 @@ struct FAnimationTabState
 	int32          SelectedNotifyIndex   = -1;
 	float          AnimListWidth         = 200.0f;
 	float          AnimDetailsWidth      = 280.0f;
+
+	FFbxAnimationImportDialogState AnimationImportDialog;
 };
 
 class FMeshEditorWidget : public FAssetEditorWidget
@@ -47,6 +50,9 @@ public:
 	bool IsMouseOverViewport() const { return IsOpen() && ViewportClient.IsMouseOverViewport(); }
 
 	FMeshEditorViewportClient* GetViewportClient() { return &ViewportClient; }
+
+	static void RecordImportDurationForAsset(const FString& AssetPath, double Seconds);
+	static void ClearImportDurationForAsset(const FString& AssetPath);
 
 private:
 	// Tab bar

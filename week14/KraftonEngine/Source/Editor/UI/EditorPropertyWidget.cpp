@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorPropertyWidget.h"
+#include "Editor/UI/EditorPropertyWidget.h"
 
 #include "Editor/EditorEngine.h"
 
@@ -9,15 +9,19 @@
 #include "Component/Movement/MovementComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/StaticMeshComponent.h"
-#include "Component/SkeletalMeshComponent.h"
 #include "Component/SceneComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/Light/LightComponentBase.h"
 #include "Component/DecalComponent.h"
 #include "Component/HeightFogComponent.h"
+#include "GameFramework/AActor.h"
 #include "Asset/AssetRegistry.h"
+#include "Core/Property/ClassProperty.h"
+#include "Core/Property/ArrayProperty.h"
 #include "Core/Property/NumericProperty.h"
+#include "Core/Property/ObjectProperty.h"
+#include "Core/Property/StructProperty.h"
+#include "Core/Property/SoftObjectProperty.h"
 #include "Core/ClassTypes.h"
 #include "Math/FloatCurve.h"
 #include "Lua/LuaScriptManager.h"
@@ -30,15 +34,20 @@
 #include "Mesh/MeshManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/SkeletalMesh.h"
+#include "Editor/UI/Asset/MeshEditorWidget.h"
 #include "Platform/Paths.h"
+#include "SimpleJSON/json.hpp"
 
 #include <Windows.h>
 #include <commdlg.h>
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cfloat>
 #include <cstring>
 #include <filesystem>
+#include <cstdio>
+#include <utility>
 
 #include "Materials/MaterialManager.h"
 
@@ -53,6 +62,8 @@ namespace
 		std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
 		return Extension == L".fbx";
 	}
+
+
 
 	bool ShouldHideInComponentTree(const UActorComponent* Component, bool bShowEditorOnlyComponents)
 	{
@@ -92,6 +103,20 @@ namespace
 		return It != Metadata.end() ? &It->second : nullptr;
 	}
 
+	bool IsTruthyMetadataValue(const FString& Value)
+	{
+		return Value.empty() || Value == "true" || Value == "1" || Value == "yes";
+	}
+
+	bool HasTruthyPropertyMetadata(const FPropertyValue& Prop, const FString& Key)
+	{
+		if (const FString* Value = FindPropertyMetadata(Prop, Key))
+		{
+			return IsTruthyMetadataValue(*Value);
+		}
+		return false;
+	}
+
 	FString GetAssetTypeMetadata(const FPropertyValue& Prop)
 	{
 		if (const FString* AssetType = FindPropertyMetadata(Prop, "assettype"))
@@ -114,7 +139,89 @@ namespace
 		return nullptr;
 	}
 
-	void DispatchPostEditChange(const FPropertyValue& Prop, EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet, int32 ArrayIndex = -1)
+	FString MakePropertyPath(const FString& ParentPath, const char* PropertyName)
+	{
+		if (!PropertyName || PropertyName[0] == '\0')
+		{
+			return ParentPath;
+		}
+		if (ParentPath.empty())
+		{
+			return PropertyName;
+		}
+		return ParentPath + "." + PropertyName;
+	}
+
+	FString MakeArrayElementPath(const FString& ArrayPath, int32 ArrayIndex)
+	{
+		return ArrayPath + "[" + std::to_string(ArrayIndex) + "]";
+	}
+
+	AActor* GetPropertyOwnerActor(const FPropertyValue& Prop)
+	{
+		if (AActor* Actor = Cast<AActor>(Prop.Object))
+		{
+			return Actor;
+		}
+		if (UActorComponent* Component = Cast<UActorComponent>(Prop.Object))
+		{
+			return Component->GetOwner();
+		}
+		return nullptr;
+	}
+
+	TArray<UObject*> GetOwnerObjectReferenceChoices(const FPropertyValue& Prop, UClass* AllowedClass)
+	{
+		TArray<UObject*> Choices;
+		if (!AllowedClass)
+		{
+			return Choices;
+		}
+
+		AActor* OwnerActor = GetPropertyOwnerActor(Prop);
+		if (!OwnerActor)
+		{
+			return Choices;
+		}
+
+		if (OwnerActor->GetClass()->IsA(AllowedClass))
+		{
+			Choices.push_back(OwnerActor);
+		}
+
+		for (UActorComponent* Component : OwnerActor->GetComponents())
+		{
+			if (Component && Component->GetClass()->IsA(AllowedClass))
+			{
+				Choices.push_back(Component);
+			}
+		}
+
+		return Choices;
+	}
+
+	FString GetObjectReferenceChoiceLabel(const UObject* Object)
+	{
+		if (!Object)
+		{
+			return "None";
+		}
+
+		FString Label = Object->GetFName().ToString();
+		if (Label.empty())
+		{
+			Label = Object->GetClass()->GetName();
+		}
+		return Label;
+	}
+
+	void DispatchPostEditChange(
+		const FPropertyValue& Prop,
+		EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet,
+		int32 ArrayIndex = -1,
+		const FString& PropertyPath = {},
+		const char* OverridePropertyName = nullptr,
+		const char* OverrideDisplayName = nullptr)
 	{
 		if (!Prop.Object)
 		{
@@ -124,8 +231,9 @@ namespace
 		FPropertyChangedEvent Event;
 		Event.Object = Prop.Object;
 		Event.Property = Prop.Property;
-		Event.PropertyName = Prop.GetName();
-		Event.DisplayName = GetPropertyDisplayName(Prop);
+		Event.PropertyName = OverridePropertyName ? OverridePropertyName : Prop.GetName();
+		Event.DisplayName = OverrideDisplayName ? OverrideDisplayName : GetPropertyDisplayName(Prop);
+		Event.PropertyPath = PropertyPath.empty() ? Prop.GetName() : PropertyPath;
 		Event.Type = Prop.GetType();
 		Event.ChangeType = ChangeType;
 		Event.ArrayIndex = ArrayIndex;
@@ -172,21 +280,31 @@ namespace
 		case EPropertyType::Color4:        Size = sizeof(float) * 4; break;
 		case EPropertyType::Enum:          Size = SrcValue.GetEnumType() ? SrcValue.GetEnumType()->GetSize() : sizeof(int32); break;
 		case EPropertyType::String:
-		case EPropertyType::SceneComponentRef:
 			*static_cast<FString*>(DstPtr) = *static_cast<FString*>(SrcPtr);
 			return true;
 		case EPropertyType::ObjectRef:
 			*static_cast<UObject**>(DstPtr) = *static_cast<UObject**>(SrcPtr);
 			return true;
 		case EPropertyType::ClassRef:
-			*static_cast<UClass**>(DstPtr) = *static_cast<UClass**>(SrcPtr);
+		{
+			const FClassProperty* SrcClassProperty = SrcValue.Property ? SrcValue.Property->AsClassProperty() : nullptr;
+			const FClassProperty* DstClassProperty = DstValue.Property ? DstValue.Property->AsClassProperty() : nullptr;
+			if (!SrcClassProperty || !DstClassProperty)
+			{
+				return false;
+			}
+			DstClassProperty->SetClassValue(DstValue.ContainerPtr, SrcClassProperty->GetClassValue(SrcValue.ContainerPtr));
 			return true;
+		}
 		case EPropertyType::Name:
 			*static_cast<FName*>(DstPtr) = *static_cast<FName*>(SrcPtr);
 			return true;
-		case EPropertyType::SoftObjectRefArray:
-			*static_cast<TArray<FSoftObjectPtr>*>(DstPtr) = *static_cast<TArray<FSoftObjectPtr>*>(SrcPtr);
+		case EPropertyType::Array:
+		{
+			json::JSON JsonValue = SrcValue.Property->SerializeValue(SrcPtr, SrcValue.Object, nullptr);
+			DstValue.Property->DeserializeValue(DstPtr, JsonValue, DstValue.Object, nullptr);
 			return true;
+		}
 		case EPropertyType::Struct:
 		{
 			if (!SrcValue.GetStructType() || !DstValue.GetStructType())
@@ -252,14 +370,14 @@ namespace
 
 	bool RenderClassPropertyWidget(FPropertyValue& Prop)
 	{
-		UClass** Value = static_cast<UClass**>(Prop.GetValuePtr());
-		if (!Value)
+		const FClassProperty* ClassProperty = Prop.Property ? Prop.Property->AsClassProperty() : nullptr;
+		if (!ClassProperty || !Prop.GetValuePtr())
 		{
 			return false;
 		}
 
 		UClass* AllowedClass = GetAllowedClassMetadata(Prop);
-		UClass* CurrentClass = *Value;
+		UClass* CurrentClass = ClassProperty->GetClassValue(Prop.ContainerPtr);
 		FString Preview = CurrentClass ? CurrentClass->GetName() : FString("None");
 		bool bChanged = false;
 
@@ -268,7 +386,7 @@ namespace
 			const bool bSelectedNone = CurrentClass == nullptr;
 			if (ImGui::Selectable("None", bSelectedNone))
 			{
-				*Value = nullptr;
+				ClassProperty->SetClassValue(Prop.ContainerPtr, nullptr);
 				bChanged = true;
 			}
 			if (bSelectedNone)
@@ -291,7 +409,7 @@ namespace
 				const bool bSelected = Candidate == CurrentClass;
 				if (ImGui::Selectable(Candidate->GetName(), bSelected))
 				{
-					*Value = Candidate;
+					ClassProperty->SetClassValue(Prop.ContainerPtr, Candidate);
 					bChanged = true;
 				}
 				if (bSelected)
@@ -1300,15 +1418,41 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 			FString FbxPath = OpenFbxFileDialog();
 			if (!FbxPath.empty())
 			{
-				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-				USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(FbxPath, Device);
-				if (Loaded)
-				{
-					SetPath(FMeshManager::GetSkeletalMeshBinaryFilePath(FbxPath));
-					bChanged = true;
-				}
+				FFbxImportOptionsDialog::BeginSceneImport(SkeletalFbxImportDialog, FbxPath);
 			}
 		}
+
+		FFbxSceneImportRequest       Request;
+		const EFbxImportDialogResult DialogResult = FFbxImportOptionsDialog::RenderSceneImportPopup(
+			"Skeletal FBX Import Options",
+			SkeletalFbxImportDialog,
+			Request
+		);
+		if (DialogResult == EFbxImportDialogResult::Submitted)
+		{
+			FFbxSceneImportResult Result;
+			const auto ImportStart = std::chrono::steady_clock::now();
+			if (FMeshManager::ImportFbxScene(Request, GEngine->GetRenderer().GetFD3DDevice().GetDevice(), Result))
+			{
+				if (Result.SkeletalMesh)
+				{
+					const std::chrono::duration<double> Elapsed = std::chrono::steady_clock::now() - ImportStart;
+					FMeshEditorWidget::RecordImportDurationForAsset(
+						Result.SkeletalMesh->GetAssetPathFileName(),
+						Elapsed.count()
+					);
+					SetPath(Result.SkeletalMesh->GetAssetPathFileName());
+					bChanged = true;
+				}
+				FMeshManager::ScanMeshAssets();
+				FFbxImportOptionsDialog::RequestClose(SkeletalFbxImportDialog);
+			}
+			else
+			{
+				SkeletalFbxImportDialog.Error = "FBX import failed. See the engine log for details.";
+			}
+		}
+
 		return bChanged;
 	}
 
@@ -1565,7 +1709,7 @@ bool FEditorPropertyWidget::RenderEnumPropertyWidget(FPropertyValue& Prop)
 	return bChanged;
 }
 
-bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop, bool bDispatchChange)
+bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop, bool bDispatchChange, const FString& PropertyPath)
 {
 	const FStructProperty* StructProperty = Prop.Property ? Prop.Property->AsStructProperty() : nullptr;
 	if (!StructProperty || !StructProperty->GetStructType() || !Prop.GetValuePtr())
@@ -1595,14 +1739,11 @@ bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop, boo
 			ImGui::SameLine(120.0f);
 			ImGui::SetNextItemWidth(-1);
 
+			const FString ChildPath = MakePropertyPath(PropertyPath, ChildProp.GetName());
 			int32 ChildIdx = ci;
-			if (RenderPropertyWidget(ChildProps, ChildIdx, false))
+			if (RenderPropertyWidget(ChildProps, ChildIdx, bDispatchChange, ChildPath))
 			{
 				bChanged = true;
-				if (bDispatchChange)
-				{
-					DispatchPostEditChange(ChildProp);
-				}
 			}
 			ImGui::PopID();
 		}
@@ -1614,11 +1755,100 @@ bool FEditorPropertyWidget::RenderStructPropertyWidget(FPropertyValue& Prop, boo
 	return bChanged;
 }
 
-bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, int32& Index, bool bDispatchChange)
+bool FEditorPropertyWidget::RenderArrayPropertyWidget(FPropertyValue& Prop, bool bDispatchChange, const FString& PropertyPath)
+{
+	const FArrayProperty* ArrayProperty = Prop.Property ? Prop.Property->AsArrayProperty() : nullptr;
+	void* ArrayPtr = Prop.GetValuePtr();
+	if (!ArrayProperty || !ArrayPtr || !ArrayProperty->GetArrayOps() || !ArrayProperty->GetInnerProperty())
+	{
+		return false;
+	}
+
+	const FArrayProperty::FArrayOps* Ops = ArrayProperty->GetArrayOps();
+	const FProperty* InnerProperty = ArrayProperty->GetInnerProperty();
+	if (!Ops->GetNum || !Ops->GetElementPtr)
+	{
+		return false;
+	}
+
+	bool bChanged = false;
+	size_t Num = Ops->GetNum(ArrayPtr);
+	const bool bEditFixedSize = HasTruthyPropertyMetadata(Prop, "editfixedsize") || HasTruthyPropertyMetadata(Prop, "fixedsize");
+
+	if (!bEditFixedSize && Ops->InsertDefault && ImGui::Button("+"))
+	{
+		Ops->InsertDefault(ArrayPtr, Num);
+		bChanged = true;
+		if (bDispatchChange)
+		{
+			DispatchPostEditChange(Prop, EPropertyChangeType::ArrayAdd, static_cast<int32>(Num), MakeArrayElementPath(PropertyPath, static_cast<int32>(Num)));
+		}
+		Num = Ops->GetNum(ArrayPtr);
+	}
+
+	for (int32 ElemIdx = 0; ElemIdx < static_cast<int32>(Num); ++ElemIdx)
+	{
+		void* ElementPtr = Ops->GetElementPtr(ArrayPtr, static_cast<size_t>(ElemIdx));
+		if (!ElementPtr)
+		{
+			continue;
+		}
+
+		ImGui::PushID(ElemIdx);
+
+		FString ElementName = "Element " + std::to_string(ElemIdx);
+		const FString ElementPath = MakeArrayElementPath(PropertyPath, ElemIdx);
+
+		if (!bEditFixedSize && Ops->RemoveAt && ImGui::Button("-"))
+		{
+			Ops->RemoveAt(ArrayPtr, static_cast<size_t>(ElemIdx));
+			bChanged = true;
+			if (bDispatchChange)
+			{
+				DispatchPostEditChange(Prop, EPropertyChangeType::ArrayRemove, ElemIdx, ElementPath, ElementName.c_str(), ElementName.c_str());
+			}
+			ImGui::PopID();
+			break;
+		}
+
+		if (!bEditFixedSize && Ops->RemoveAt)
+		{
+			ImGui::SameLine();
+		}
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(ElementName.c_str());
+		ImGui::SameLine(120.0f);
+		ImGui::SetNextItemWidth(-1);
+
+		FPropertyValue ElementValue;
+		ElementValue.Object = Prop.Object;
+		ElementValue.Property = InnerProperty;
+		ElementValue.ContainerPtr = ElementPtr;
+
+		TArray<FPropertyValue> ElementProps;
+		ElementProps.push_back(ElementValue);
+		int32 ElementPropIndex = 0;
+		if (RenderPropertyWidget(ElementProps, ElementPropIndex, false, ElementPath))
+		{
+			bChanged = true;
+			if (bDispatchChange)
+			{
+				DispatchPostEditChange(Prop, EPropertyChangeType::ValueSet, ElemIdx, ElementPath, ElementName.c_str(), ElementName.c_str());
+			}
+		}
+
+		ImGui::PopID();
+	}
+
+	return bChanged;
+}
+
+bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, int32& Index, bool bDispatchChange, const FString& PropertyPath)
 {
 	ImGui::PushID(Index);
 	FPropertyValue& Prop = Props[Index];
 	bool bChanged = false;
+	const FString EffectivePropertyPath = PropertyPath.empty() ? FString(Prop.GetName()) : PropertyPath;
 	const bool bReadOnly = Prop.Property && (Prop.Property->Flags & PF_ReadOnly) != 0;
 	if (bReadOnly)
 	{
@@ -1747,62 +1977,6 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	case EPropertyType::ClassRef:
 	{
 		bChanged = RenderClassPropertyWidget(Prop);
-		break;
-	}
-	case EPropertyType::SceneComponentRef:
-	{
-		FString* Val = static_cast<FString*>(Prop.GetValuePtr());
-		UMovementComponent* MovementComp = SelectedComponent ? Cast<UMovementComponent>(SelectedComponent) : nullptr;
-		FString Preview = MovementComp ? MovementComp->GetUpdatedComponentDisplayName() : FString("None");
-
-		if (ImGui::BeginCombo("##Value", Preview.c_str()))
-		{
-			bool bSelectedAuto = Val->empty();
-			if (ImGui::Selectable("Auto (Root)", bSelectedAuto))
-			{
-				Val->clear();
-				bChanged = true;
-			}
-			if (bSelectedAuto)
-			{
-				ImGui::SetItemDefaultFocus();
-			}
-
-			if (MovementComp)
-			{
-				for (USceneComponent* Candidate : MovementComp->GetOwnerSceneComponents())
-				{
-					if (!Candidate)
-					{
-						continue;
-					}
-
-					FString CandidatePath = MovementComp->BuildUpdatedComponentPath(Candidate);
-					FString CandidateName = Candidate->GetFName().ToString();
-					if (CandidateName.empty())
-					{
-						CandidateName = Candidate->GetClass()->GetName();
-					}
-					if (!CandidatePath.empty())
-					{
-						CandidateName += " (" + CandidatePath + ")";
-					}
-
-					bool bSelected = (*Val == CandidatePath);
-					if (ImGui::Selectable(CandidateName.c_str(), bSelected))
-					{
-						*Val = CandidatePath;
-						bChanged = true;
-					}
-					if (bSelected)
-					{
-						ImGui::SetItemDefaultFocus();
-					}
-				}
-			}
-
-			ImGui::EndCombo();
-		}
 		break;
 	}
 	case EPropertyType::ObjectRef:
@@ -1950,13 +2124,74 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 				FString FbxPath = OpenFbxFileDialog();
 				if (!FbxPath.empty())
 				{
-					ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-					USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(FbxPath, Device);
-					if (Loaded)
+					FFbxImportOptionsDialog::BeginSceneImport(SkeletalFbxImportDialog, FbxPath);
+				}
+			}
+
+			FFbxSceneImportRequest       Request;
+			const EFbxImportDialogResult DialogResult = FFbxImportOptionsDialog::RenderSceneImportPopup(
+				"Object Skeletal FBX Import Options",
+				SkeletalFbxImportDialog,
+				Request
+			);
+			if (DialogResult == EFbxImportDialogResult::Submitted)
+			{
+				FFbxSceneImportResult Result;
+				const auto ImportStart = std::chrono::steady_clock::now();
+				if (FMeshManager::ImportFbxScene(Request, GEngine->GetRenderer().GetFD3DDevice().GetDevice(), Result))
+				{
+					if (Result.SkeletalMesh)
 					{
-						SetObjectValue(Loaded);
+						const std::chrono::duration<double> Elapsed = std::chrono::steady_clock::now() - ImportStart;
+						FMeshEditorWidget::RecordImportDurationForAsset(
+							Result.SkeletalMesh->GetAssetPathFileName(),
+							Elapsed.count()
+						);
+						SetObjectValue(Result.SkeletalMesh);
+					}
+					FMeshManager::ScanMeshAssets();
+					FFbxImportOptionsDialog::RequestClose(SkeletalFbxImportDialog);
+				}
+				else
+				{
+					SkeletalFbxImportDialog.Error = "FBX import failed. See the engine log for details.";
+				}
+			}
+
+			break;
+		}
+
+		if (AllowedClass && AllowedClass->IsA(UActorComponent::StaticClass()))
+		{
+			Preview = GetObjectReferenceChoiceLabel(Current);
+
+			if (ImGui::BeginCombo("##OwnerObjectRef", Preview.c_str()))
+			{
+				const bool bSelectedNone = Current == nullptr;
+				if (ImGui::Selectable("None", bSelectedNone))
+				{
+					SetObjectValue(nullptr);
+				}
+				if (bSelectedNone)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+
+				for (UObject* Candidate : GetOwnerObjectReferenceChoices(Prop, AllowedClass))
+				{
+					const FString CandidateName = GetObjectReferenceChoiceLabel(Candidate);
+					const bool bSelected = Current == Candidate;
+					if (ImGui::Selectable(CandidateName.c_str(), bSelected))
+					{
+						SetObjectValue(Candidate);
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
 					}
 				}
+
+				ImGui::EndCombo();
 			}
 			break;
 		}
@@ -2011,90 +2246,10 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 		bChanged = RenderSoftObjectPropertyWidget(Prop);
 		break;
 	}
-	case EPropertyType::SoftObjectRefArray:
+	case EPropertyType::Array:
 	{
-		TArray<FSoftObjectPtr>* Slots = static_cast<TArray<FSoftObjectPtr>*>(Prop.GetValuePtr());
-		if (!Slots)
-		{
-			break;
-		}
-
-		for (int32 ElemIdx = 0; ElemIdx < (int32)Slots->size(); ++ElemIdx)
-		{
-			FSoftObjectPtr& Slot = (*Slots)[ElemIdx];
-			FString SlotPath = Slot.ToString();
-			ImGui::PushID(ElemIdx);
-
-			FString SlotName = "Element " + std::to_string(ElemIdx);
-			if (SelectedComponent)
-			{
-				if (SelectedComponent->IsA<UStaticMeshComponent>())
-				{
-					UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(SelectedComponent);
-					if (SMC->GetStaticMesh() && ElemIdx < (int32)SMC->GetStaticMesh()->GetStaticMaterials().size())
-					{
-						SlotName = "Element " + std::to_string(ElemIdx) + " - "
-							+ SMC->GetStaticMesh()->GetStaticMaterials()[ElemIdx].MaterialSlotName;
-					}
-				}
-				else if (SelectedComponent->IsA<USkeletalMeshComponent>())
-				{
-					USkeletalMeshComponent* SMC = static_cast<USkeletalMeshComponent*>(SelectedComponent);
-					if (SMC->GetSkeletalMesh() && ElemIdx < (int32)SMC->GetSkeletalMesh()->GetSkeletalMaterials().size())
-					{
-						SlotName = "Element " + std::to_string(ElemIdx) + " - "
-							+ SMC->GetSkeletalMesh()->GetSkeletalMaterials()[ElemIdx].MaterialSlotName;
-					}
-				}
-			}
-
-			ImGui::AlignTextToFramePadding();
-			ImGui::TextUnformatted(SlotName.c_str());
-			ImGui::SameLine(120.0f);
-			ImGui::SetNextItemWidth(-1);
-
-			FString Preview = (SlotPath.empty() || SlotPath == "None") ? "None" : SlotPath;
-			if (ImGui::BeginCombo("##Mat", Preview.c_str()))
-			{
-				bool bSelectedNone = (SlotPath == "None" || SlotPath.empty());
-				if (ImGui::Selectable("None", bSelectedNone))
-				{
-					Slot.SetPath("None");
-					SlotPath = "None";
-					bChanged = true;
-				}
-				if (bSelectedNone) ImGui::SetItemDefaultFocus();
-
-				const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
-				for (const FMaterialAssetListItem& Item : MatFiles)
-				{
-					bool bSelected = (SlotPath == Item.FullPath);
-					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
-					{
-						Slot.SetPath(Item.FullPath);
-						SlotPath = Item.FullPath;
-						bChanged = true;
-					}
-					if (bSelected) ImGui::SetItemDefaultFocus();
-				}
-				ImGui::EndCombo();
-			}
-
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MaterialContentItem"))
-				{
-					FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
-					Slot.SetPath(FPaths::ToUtf8(
-						ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
-					));
-					bChanged = true;
-				}
-				ImGui::EndDragDropTarget();
-			}
-
-			ImGui::PopID();
-		}
+		bChanged = RenderArrayPropertyWidget(Prop, bDispatchChange, EffectivePropertyPath);
+		bDispatchChange = false;
 		break;
 	}
 	case EPropertyType::Name:
@@ -2154,7 +2309,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 	}
 	case EPropertyType::Struct:
 	{
-		bChanged = RenderStructPropertyWidget(Prop, bDispatchChange);
+		bChanged = RenderStructPropertyWidget(Prop, bDispatchChange, EffectivePropertyPath);
 		bDispatchChange = false;
 		break;
 	}
@@ -2168,7 +2323,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 
 	if (bDispatchChange && bChanged)
 	{
-		DispatchPostEditChange(Prop);
+		DispatchPostEditChange(Prop, EPropertyChangeType::ValueSet, -1, EffectivePropertyPath);
 	}
 
 	ImGui::PopID();
