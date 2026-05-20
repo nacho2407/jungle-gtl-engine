@@ -336,13 +336,10 @@
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotifyState.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotifyState_NamedEvent.gen.cpp">
-      <Filter>Intermediate\Reflection\Animation</Filter>
-    </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_LogEvent.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_NamedEvent.gen.cpp">
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_FootstepSound.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequence.gen.cpp">

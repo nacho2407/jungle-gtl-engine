@@ -449,7 +449,8 @@ UAnimationStateMachine* UAnimGraphInstance::BuildStateMachineRuntime(const FAnim
 			FName(ToIt->second.c_str()),
 			Transition.BlendTime,
 			BuildConditionFunction(Transition.Condition),
-			Transition.Priority);
+			Transition.Priority,
+			Transition.Condition.Type == EAnimTransitionConditionType::AlwaysTrue);
 	}
 
 	return Machine;

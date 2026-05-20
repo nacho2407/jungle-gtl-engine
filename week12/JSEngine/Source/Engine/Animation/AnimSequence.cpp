@@ -12,7 +12,43 @@ namespace
 {
 	FString GetDefaultAnimNotifyClassName(bool bIsState)
 	{
-		return bIsState ? FString("UAnimNotifyState_NamedEvent") : FString("UAnimNotify_NamedEvent");
+		UClass* DesiredBaseClass = bIsState ? UAnimNotifyState::StaticClass() : UAnimNotify::StaticClass();
+
+		TArray<UClass*> NotifyClasses;
+		FReflectionRegistry::Get().GetClassesDerivedFrom(DesiredBaseClass, NotifyClasses);
+
+		NotifyClasses.erase(
+			std::remove_if(
+				NotifyClasses.begin(),
+				NotifyClasses.end(),
+				[bIsState](UClass* Class)
+				{
+					if (!Class ||
+						Class == UAnimNotify::StaticClass() ||
+						Class == UAnimNotifyState::StaticClass() ||
+						Class->HasAnyClassFlags(CF_Abstract))
+					{
+						return true;
+					}
+
+					return !bIsState && Class->IsChildOf(UAnimNotifyState::StaticClass());
+				}),
+			NotifyClasses.end());
+
+		if (NotifyClasses.empty())
+		{
+			return {};
+		}
+
+		std::sort(
+			NotifyClasses.begin(),
+			NotifyClasses.end(),
+			[](const UClass* A, const UClass* B)
+			{
+				return FString(A->GetDisplayName()) < FString(B->GetDisplayName());
+			});
+
+		return NotifyClasses.front()->GetName();
 	}
 
 	UAnimNotify* CreateAnimNotifyObject(const FString& NotifyClassName)
