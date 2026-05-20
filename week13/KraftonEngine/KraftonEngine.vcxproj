@@ -791,6 +791,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Animation\AnimDataModel.h" />
     <ClInclude Include="Source\Engine\Animation\AnimExtractContext.h" />
     <ClInclude Include="Source\Engine\Animation\AnimGraphAsset.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimGraphTypes.h" />
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\AnimMontage.h" />
     <ClInclude Include="Source\Engine\Animation\AnimMontageInstance.h" />

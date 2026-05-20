@@ -1,6 +1,7 @@
 #include "Editor/UI/Asset/AnimGraphEditorWidget.h"
 
 #include "Animation/AnimGraphAsset.h"
+#include "Animation/AnimGraphTypes.h"
 #include "Object/Object.h"
 
 #include "imgui.h"
@@ -9,6 +10,30 @@
 #include <cstdio>
 
 namespace ed = ax::NodeEditor;
+
+namespace
+{
+	// 데이터 모델의 동일 namespace id 공간을 그대로 imgui-node-editor 의 NodeId/PinId/LinkId 로 캐스팅.
+	// 0 == invalid 를 양쪽이 공유하므로 안전.
+	inline ed::NodeId ToNodeId(uint32 Id) { return static_cast<ed::NodeId>(Id); }
+	inline ed::PinId  ToPinId (uint32 Id) { return static_cast<ed::PinId >(Id); }
+	inline ed::LinkId ToLinkId(uint32 Id) { return static_cast<ed::LinkId>(Id); }
+
+	const char* NodeTypeLabel(EAnimGraphNodeType Type)
+	{
+		switch (Type)
+		{
+			case EAnimGraphNodeType::OutputPose:          return "Output Pose";
+			case EAnimGraphNodeType::SequencePlayer:      return "Sequence Player";
+			case EAnimGraphNodeType::StateMachine:        return "State Machine";
+			case EAnimGraphNodeType::Slot:                return "Slot";
+			case EAnimGraphNodeType::LayeredBlendPerBone: return "Layered Blend";
+			case EAnimGraphNodeType::BlendListByEnum:     return "Blend List By Enum";
+			case EAnimGraphNodeType::VariableGet:         return "Variable Get";
+		}
+		return "Node";
+	}
+}
 
 FAnimGraphEditorWidget::~FAnimGraphEditorWidget()
 {
@@ -29,6 +54,7 @@ void FAnimGraphEditorWidget::Open(UObject* Object)
 
 	FAssetEditorWidget::Open(Object);
 	EnsureContext();
+	bPositionsPushed = false; // 새 자산 → 첫 프레임에 다시 push.
 }
 
 void FAnimGraphEditorWidget::Close()
@@ -86,22 +112,46 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 	ed::SetCurrentEditor(NodeEditorContext);
 	ed::Begin("AnimGraphCanvas");
 
-	// Placeholder 노드 — 데이터 모델 정의 전까지 캔버스가 비어있지 않도록.
-	ed::BeginNode(1);
-		ImGui::Text("Input Pose");
-		ed::BeginPin(101, ed::PinKind::Output);
-			ImGui::Text("Pose ->");
-		ed::EndPin();
-	ed::EndNode();
+	// 첫 프레임: 데이터 모델의 좌표를 node-editor 컨텍스트에 한 번 push.
+	// 이후엔 컨텍스트가 사용자 드래그를 관리 — 모델로의 역동기화는 편집 단계 도입 시 추가.
+	if (!bPositionsPushed)
+	{
+		for (const FAnimGraphNode& Node : Asset->GetNodes())
+		{
+			ed::SetNodePosition(ToNodeId(Node.NodeId), ImVec2(Node.PosX, Node.PosY));
+		}
+		bPositionsPushed = true;
+	}
 
-	ed::BeginNode(2);
-		ImGui::Text("Output Pose");
-		ed::BeginPin(102, ed::PinKind::Input);
-			ImGui::Text("-> Pose");
-		ed::EndPin();
-	ed::EndNode();
+	for (const FAnimGraphNode& Node : Asset->GetNodes())
+	{
+		ed::BeginNode(ToNodeId(Node.NodeId));
+			ImGui::Text("%s", NodeTypeLabel(Node.Type));
+			ImGui::Separator();
 
-	ed::Link(1001, 101, 102);
+			for (const FAnimGraphPin& Pin : Node.Pins)
+			{
+				ed::BeginPin(ToPinId(Pin.PinId), Pin.Kind == EAnimGraphPinKind::Input
+					? ed::PinKind::Input : ed::PinKind::Output);
+
+				if (Pin.Kind == EAnimGraphPinKind::Input)
+				{
+					ImGui::Text("-> %s", Pin.DisplayName.ToString().c_str());
+				}
+				else
+				{
+					ImGui::Text("%s ->", Pin.DisplayName.ToString().c_str());
+				}
+
+				ed::EndPin();
+			}
+		ed::EndNode();
+	}
+
+	for (const FAnimGraphLink& Link : Asset->GetLinks())
+	{
+		ed::Link(ToLinkId(Link.LinkId), ToPinId(Link.FromPinId), ToPinId(Link.ToPinId));
+	}
 
 	ed::End();
 	ed::SetCurrentEditor(nullptr);

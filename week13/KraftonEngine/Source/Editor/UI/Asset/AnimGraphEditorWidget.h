@@ -23,4 +23,8 @@ private:
 	void DestroyContext();
 
 	ax::NodeEditor::EditorContext* NodeEditorContext = nullptr;
+
+	// 첫 프레임에 데이터 모델의 좌표를 ed::SetNodePosition 으로 push 했는지.
+	// Open 마다 false 로 리셋 — 같은 위젯 인스턴스가 다른 자산을 받았을 때 재초기화.
+	bool bPositionsPushed = false;
 };
