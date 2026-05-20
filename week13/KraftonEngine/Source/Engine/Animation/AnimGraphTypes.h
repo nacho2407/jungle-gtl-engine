@@ -89,5 +89,11 @@ struct FAnimGraphNode
 	// mesh 의 모든 본 true 로 채움 (full blend). 후속 단계에서 root bone name 기반 부분 mask 추가.
 	float                  BlendWeight = 1.0f;
 
+	// VariableGet 노드 — UAnimInstance 자식 클래스의 어떤 UPROPERTY 를 매 frame 읽을지.
+	// inspector 에서 asset 의 OwnerClassName 기반 dropdown 으로 선택.
+	// 컴파일러는 이 노드를 별도 런타임 노드로 만들지 않고, consumer 노드 (BlendListByEnum 등) 의
+	// 람다로 inline — 그래프 시각화 ↔ 런타임 트리 디커플.
+	FName                  VariableName;
+
 	friend FArchive& operator<<(FArchive& Ar, FAnimGraphNode& Node);
 };

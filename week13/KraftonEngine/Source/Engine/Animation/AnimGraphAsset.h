@@ -24,6 +24,12 @@ public:
 	void           SetSourcePath(const FString& InPath) { SourcePath = InPath; }
 	const FString& GetSourcePath() const                { return SourcePath; }
 
+	// 이 그래프가 어떤 AnimInstance 자식 클래스용인지 — VariableGet 노드의 변수 dropdown 이
+	// 이 클래스의 UPROPERTY 목록을 보여줌. 기본값 "UAnimInstance" — Speed 같은 자식 변수는
+	// 못 보이지만 RootMotionMode 같은 base 변수는 가능.
+	void           SetOwnerClassName(const FString& InName) { OwnerClassName = InName; }
+	const FString& GetOwnerClassName() const                { return OwnerClassName; }
+
 	// ── Build API (low-level) ──
 	FAnimGraphNode*  AddNode(EAnimGraphNodeType Type, const FName& DisplayName, float X, float Y);
 	FAnimGraphPin*   AddPin(FAnimGraphNode& Node, EAnimGraphPinKind Kind, EAnimGraphPinType PinType, const FName& DisplayName);
@@ -78,4 +84,5 @@ private:
 	uint32                 NextId = 1; // 0 은 invalid sentinel
 	uint32                 Version = 0;
 	FString                SourcePath;
+	FString                OwnerClassName = "UAnimInstance";
 };

@@ -40,6 +40,7 @@ FArchive& operator<<(FArchive& Ar, FAnimGraphNode& Node)
 	Ar << Node.SequencePath; // SequenceRef 는 transient — Initialize 시 path 로 재해상.
 	Ar << Node.SlotName;
 	Ar << Node.BlendWeight;
+	Ar << Node.VariableName;
 	return Ar;
 }
 
@@ -123,15 +124,18 @@ FAnimGraphNode* UAnimGraphAsset::AddNodeOfType(EAnimGraphNodeType Type, float X,
 		}
 		case EAnimGraphNodeType::BlendListByEnum:
 		{
-			FAnimGraphNode* N = AddNode(Type, FName("Blend List By Enum"), X, Y);
-			AddPin(*N, EAnimGraphPinKind::Input,  EAnimGraphPinType::Int,  FName("Selector"));
-			AddPin(*N, EAnimGraphPinKind::Input,  EAnimGraphPinType::Pose, FName("A"));
-			AddPin(*N, EAnimGraphPinKind::Input,  EAnimGraphPinType::Pose, FName("B"));
-			AddPin(*N, EAnimGraphPinKind::Output, EAnimGraphPinType::Pose, FName("Result"));
+			// V1 — Selector 는 Float (Speed 같은 변수 직결 위해). 노드 안에서 (int)floor + clamp
+			// 로 InputPose 인덱스 결정. 실제 enum-driven UE 동작과는 차이.
+			FAnimGraphNode* N = AddNode(Type, FName("Blend List"), X, Y);
+			AddPin(*N, EAnimGraphPinKind::Input,  EAnimGraphPinType::Float, FName("Selector"));
+			AddPin(*N, EAnimGraphPinKind::Input,  EAnimGraphPinType::Pose,  FName("A"));
+			AddPin(*N, EAnimGraphPinKind::Input,  EAnimGraphPinType::Pose,  FName("B"));
+			AddPin(*N, EAnimGraphPinKind::Output, EAnimGraphPinType::Pose,  FName("Result"));
 			return N;
 		}
 		case EAnimGraphNodeType::VariableGet:
 		{
+			// V1 — output 타입 항상 Float. Bool/Int 변수 선택 시 컴파일러가 0/1 또는 (float)int 로 cast.
 			FAnimGraphNode* N = AddNode(Type, FName("Variable"), X, Y);
 			AddPin(*N, EAnimGraphPinKind::Output, EAnimGraphPinType::Float, FName("Value"));
 			return N;
@@ -319,4 +323,5 @@ void UAnimGraphAsset::Serialize(FArchive& Ar)
 	Ar << NextId;
 	Ar << Nodes;
 	Ar << Links;
+	Ar << OwnerClassName;
 }

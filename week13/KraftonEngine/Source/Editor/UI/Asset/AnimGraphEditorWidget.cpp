@@ -3,8 +3,11 @@
 #include "Animation/AnimGraphAsset.h"
 #include "Animation/AnimGraphManager.h"
 #include "Animation/AnimGraphTypes.h"
+#include "Animation/AnimInstance.h"
 #include "Asset/AssetRegistry.h"
+#include "Core/PropertyTypes.h"
 #include "Object/Object.h"
+#include "Object/UClass.h"
 
 #include "imgui.h"
 #include "imgui_node_editor.h"
@@ -140,6 +143,48 @@ namespace
 				break;
 			}
 
+			case EAnimGraphNodeType::VariableGet:
+			{
+				// Asset.OwnerClassName 의 UPROPERTY 중 Float/Int/Bool/ByteBool 타입 dropdown.
+				UClass* OwnerCls = UClass::FindByName(Asset.GetOwnerClassName().c_str());
+				const char* Preview = (Node.VariableName == FName::None)
+					? "(none)" : Node.VariableName.ToString().c_str();
+
+				ImGui::TextUnformatted("Variable");
+				ImGui::SetNextItemWidth(-1.0f);
+				if (ImGui::BeginCombo("##VariableName", Preview))
+				{
+					if (!OwnerCls)
+					{
+						ImGui::TextDisabled("Owner class not found");
+					}
+					else
+					{
+						TArray<const FProperty*> Props;
+						OwnerCls->GetPropertyRefs(Props);
+						for (const FProperty* Prop : Props)
+						{
+							if (!Prop) continue;
+							const EPropertyType T = Prop->GetType();
+							const bool bScalar = (T == EPropertyType::Float || T == EPropertyType::Int
+								|| T == EPropertyType::Bool || T == EPropertyType::ByteBool);
+							if (!bScalar) continue;
+
+							const bool bSelected = (Node.VariableName.ToString() == Prop->Name);
+							if (ImGui::Selectable(Prop->Name, bSelected))
+							{
+								Node.VariableName = FName(Prop->Name);
+								bChanged = true;
+							}
+							if (bSelected) ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+				ImGui::TextDisabled("(output: float — bool/int 는 자동 cast)");
+				break;
+			}
+
 			default:
 				ImGui::TextDisabled("(no editable properties yet)");
 				break;
@@ -241,6 +286,30 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 		{
 			ImGui::TextDisabled("(transient — Save 불가. ContentBrowser 에서 생성하세요)");
 		}
+
+		// OwnerClass dropdown — VariableGet 노드 inspector 의 변수 dropdown 이 이 클래스의
+		// UPROPERTY 만 보여줌. UAnimInstance 자손만 list.
+		ImGui::SameLine();
+		ImGui::TextUnformatted("Owner:");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(220.0f);
+		if (ImGui::BeginCombo("##OwnerClass", Asset->GetOwnerClassName().c_str()))
+		{
+			UClass* AnimInstanceCls = UClass::FindByName("UAnimInstance");
+			for (UClass* C : UClass::GetAllClasses())
+			{
+				if (!C || !AnimInstanceCls || !C->IsA(AnimInstanceCls)) continue;
+				const bool bSelected = (Asset->GetOwnerClassName() == C->GetName());
+				if (ImGui::Selectable(C->GetName(), bSelected))
+				{
+					Asset->SetOwnerClassName(C->GetName());
+					Asset->BumpVersion();
+				}
+				if (bSelected) ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+
 		ImGui::Separator();
 	}
 
