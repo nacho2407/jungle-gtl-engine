@@ -27,16 +27,34 @@ TopDownCharacterController.Properties = {
         Category = "Movement"
     },
 
-    CameraHeight = {
+    CameraDistance = {
         Type = "Float",
         Default = 8.0,
         Min = 0.1,
         Category = "Camera"
     },
 
-    CameraYawZ = {
+    CameraOffsetX = {
         Type = "Float",
-        Default = 90.0,
+        Default = -0.85,
+        Category = "Camera"
+    },
+
+    CameraOffsetY = {
+        Type = "Float",
+        Default = -0.15,
+        Category = "Camera"
+    },
+
+    CameraOffsetZ = {
+        Type = "Float",
+        Default = 1.0,
+        Category = "Camera"
+    },
+
+    CameraLookAtHeight = {
+        Type = "Float",
+        Default = 0.0,
         Category = "Camera"
     },
 
@@ -67,7 +85,7 @@ TopDownCharacterController.Properties = {
     -- 실제 Q 애니메이션 길이에 맞춰 0.8~1.2 정도로 조절하면 됨.
     AttackLockDuration = {
         Type = "Float",
-        Default = 1.0,
+        Default = 1.2,
         Min = 0.01,
         Category = "Attack"
     },
@@ -263,13 +281,22 @@ function TopDownCharacterController:UpdateCamera()
         return nil
     end
 
+    local p = self.Properties
     local actorLocation = self.Actor.Location
-
-    local cameraLocation = actorLocation + Vector(
-        0.0,
-        0.0,
-        10.0
+    local cameraDistance = p.CameraDistance or 8.0
+    local cameraOffsetDir = Vector(
+        p.CameraOffsetX or -0.55,
+        p.CameraOffsetY or -0.45,
+        p.CameraOffsetZ or 0.70
     )
+
+    if cameraOffsetDir:SizeSquared() <= 0.0001 then
+        cameraOffsetDir = Vector(-0.55, -0.45, 0.70)
+    end
+
+    cameraOffsetDir = cameraOffsetDir:GetSafeNormal()
+
+    local cameraLocation = actorLocation + cameraOffsetDir * cameraDistance
 
     pcall(function()
         pawn.Location = cameraLocation
@@ -288,6 +315,35 @@ function TopDownCharacterController:UpdateCamera()
     if controller and controller.SetViewTargetWithBlend then
         pcall(function()
             controller:SetViewTargetWithBlend(pawn, 0.0, 0)
+        end)
+    end
+
+    local camera = nil
+
+    if controller and controller.GetViewTargetCamera then
+        local ok, result = pcall(function()
+            return controller:GetViewTargetCamera()
+        end)
+
+        if ok then
+            camera = result
+        end
+    end
+
+    if not camera and pawn.GetComponent then
+        local ok, result = pcall(function()
+            return pawn:GetComponent("CameraComponent")
+        end)
+
+        if ok then
+            camera = result
+        end
+    end
+
+    if camera and camera.look_at then
+        local lookTarget = actorLocation + Vector(0.0, 0.0, p.CameraLookAtHeight or 0.0)
+        pcall(function()
+            camera:look_at(lookTarget)
         end)
     end
 

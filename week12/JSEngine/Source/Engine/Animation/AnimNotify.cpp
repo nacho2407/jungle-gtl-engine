@@ -1,6 +1,7 @@
-#include "Animation/AnimNotify.h"
+﻿#include "Animation/AnimNotify.h"
 
 #include "Core/Logging/Log.h"
+#include "Runtime/Engine.h"
 
 void UAnimNotify_LogEvent::Notify(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Event)
 {
@@ -37,4 +38,15 @@ void UAnimNotify_LogEvent::NotifyEnd(USkeletalMeshComponent* MeshComponent, cons
 		Event.NotifyClassName.c_str(),
 		Event.GetEndTime(),
 		MeshComponent);
+}
+
+void UAnimNotify_FootstepSound::Notify(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Event)
+{
+	if (!GEngine)
+	{
+		return;
+	}
+
+	constexpr const char* FootstepSoundPath = "Asset/Sound/FootStep.mp3";
+	const FAudioHandle Handle = GEngine->GetAudioSystem().PlaySFX(FootstepSoundPath, 1.0f);
 }

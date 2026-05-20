@@ -1,0 +1,58 @@
+{
+        "ImportedName" : "periph_west_d24",
+        "Name" : "Untitled_Mat_117",
+        "Params" : [{
+            "Name" : "AmbientColor",
+            "Type" : "Vector3",
+            "Value" : [1.000000, 1.000000, 1.000000]
+          }, {
+            "Name" : "DiffuseColor",
+            "Type" : "Vector3",
+            "Value" : [0.800000, 0.800000, 0.800000]
+          }, {
+            "Name" : "SpecularColor",
+            "Type" : "Vector3",
+            "Value" : [0.000000, 0.000000, 0.000000]
+          }, {
+            "Name" : "ScrollUV",
+            "Type" : "Vector2",
+            "Value" : [0.000000, 0.000000]
+          }, {
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Mesh/LoL/periph_west_d3.png"
+          }, {
+            "Name" : "EmissiveColor",
+            "Type" : "Vector3",
+            "Value" : [0.000000, 0.000000, 0.000000]
+          }, {
+            "Name" : "Shininess",
+            "Type" : "Float",
+            "Value" : 1.960786
+          }, {
+            "Name" : "Opacity",
+            "Type" : "Float",
+            "Value" : 1.000000
+          }, {
+            "Name" : "bHasDiffuseMap",
+            "Type" : "Bool",
+            "Value" : true
+          }, {
+            "Name" : "bHasSpecularMap",
+            "Type" : "Bool",
+            "Value" : false
+          }, {
+            "Name" : "bHasAmbientMap",
+            "Type" : "Bool",
+            "Value" : false
+          }, {
+            "Name" : "bHasEmissiveMap",
+            "Type" : "Bool",
+            "Value" : false
+          }, {
+            "Name" : "bHasBumpMap",
+            "Type" : "Bool",
+            "Value" : false
+          }],
+        "ShaderType" : "SurfaceLit"
+      }

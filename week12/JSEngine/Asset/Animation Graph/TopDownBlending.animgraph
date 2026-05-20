@@ -1,0 +1,159 @@
+{
+        "Nodes" : [{
+            "AnimationPath" : "",
+            "InputPoseNodeId" : 3,
+            "Name" : "Output Pose",
+            "NodeId" : 2,
+            "PlayRate" : 1.000000,
+            "Position" : {
+              "X" : 712.000000,
+              "Y" : 109.000000
+            },
+            "StateMachine" : {
+              "EntryPosition" : {
+                "X" : 36.000000,
+                "Y" : 84.000000
+              },
+              "EntryStateId" : -1,
+              "States" : [],
+              "Transitions" : []
+            },
+            "Type" : 0,
+            "bLoop" : true
+          }, {
+            "AnimationPath" : "",
+            "InputPoseNodeId" : -1,
+            "Name" : "State Machine",
+            "NodeId" : 3,
+            "PlayRate" : 1.000000,
+            "Position" : {
+              "X" : 311.000000,
+              "Y" : 97.000000
+            },
+            "StateMachine" : {
+              "EntryPosition" : {
+                "X" : 36.000000,
+                "Y" : 84.000000
+              },
+              "EntryStateId" : 1,
+              "States" : [{
+                  "AnimationPath" : "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_Idle1_Base.animseq",
+                  "Name" : "Idle",
+                  "PlayRate" : 1.000000,
+                  "Position" : {
+                    "X" : 375.000000,
+                    "Y" : 75.000000
+                  },
+                  "StateId" : 1,
+                  "bAutoAdvanceOnEnd" : true,
+                  "bLoop" : true
+                }, {
+                  "AnimationPath" : "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_Run_Boost.animseq",
+                  "Name" : "Run",
+                  "PlayRate" : 1.000000,
+                  "Position" : {
+                    "X" : 712.000000,
+                    "Y" : 78.000000
+                  },
+                  "StateId" : 2,
+                  "bAutoAdvanceOnEnd" : true,
+                  "bLoop" : true
+                }, {
+                  "AnimationPath" : "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_Spell1.animseq",
+                  "Name" : "AttackQ",
+                  "PlayRate" : 1.000000,
+                  "Position" : {
+                    "X" : 540.000000,
+                    "Y" : 263.000000
+                  },
+                  "StateId" : 3,
+                  "bAutoAdvanceOnEnd" : true,
+                  "bLoop" : false
+                }],
+              "Transitions" : [{
+                  "BlendTime" : 0.500000,
+                  "Condition" : {
+                    "BoolValue" : true,
+                    "IntValue" : 0,
+                    "LuaFunctionName" : "",
+                    "ParameterName" : "IsMoving",
+                    "Threshold" : 0.000000,
+                    "Type" : 1
+                  },
+                  "FromStateId" : 1,
+                  "Priority" : 0,
+                  "ToStateId" : 2
+                }, {
+                  "BlendTime" : 0.500000,
+                  "Condition" : {
+                    "BoolValue" : false,
+                    "IntValue" : 0,
+                    "LuaFunctionName" : "",
+                    "ParameterName" : "IsMoving",
+                    "Threshold" : 0.000000,
+                    "Type" : 1
+                  },
+                  "FromStateId" : 2,
+                  "Priority" : 0,
+                  "ToStateId" : 1
+                }, {
+                  "BlendTime" : 0.500000,
+                  "Condition" : {
+                    "BoolValue" : true,
+                    "IntValue" : 0,
+                    "LuaFunctionName" : "",
+                    "ParameterName" : "AttackQ",
+                    "Threshold" : 0.000000,
+                    "Type" : 1
+                  },
+                  "FromStateId" : 1,
+                  "Priority" : 0,
+                  "ToStateId" : 3
+                }, {
+                  "BlendTime" : 0.500000,
+                  "Condition" : {
+                    "BoolValue" : true,
+                    "IntValue" : 0,
+                    "LuaFunctionName" : "",
+                    "ParameterName" : "AttackQ",
+                    "Threshold" : 0.000000,
+                    "Type" : 1
+                  },
+                  "FromStateId" : 2,
+                  "Priority" : 0,
+                  "ToStateId" : 3
+                }, {
+                  "BlendTime" : 0.500000,
+                  "Condition" : {
+                    "BoolValue" : true,
+                    "IntValue" : 0,
+                    "LuaFunctionName" : "",
+                    "ParameterName" : "",
+                    "Threshold" : 0.000000,
+                    "Type" : 0
+                  },
+                  "FromStateId" : 3,
+                  "Priority" : 0,
+                  "ToStateId" : 1
+                }, {
+                  "BlendTime" : 0.500000,
+                  "Condition" : {
+                    "BoolValue" : true,
+                    "IntValue" : 0,
+                    "LuaFunctionName" : "",
+                    "ParameterName" : "",
+                    "Threshold" : 0.000000,
+                    "Type" : 0
+                  },
+                  "FromStateId" : 3,
+                  "Priority" : 0,
+                  "ToStateId" : 2
+                }]
+            },
+            "Type" : 2,
+            "bLoop" : true
+          }],
+        "ObjectName" : "UAnimGraphAsset_0",
+        "RootNodeId" : 2,
+        "Type" : "UAnimGraphAsset"
+      }
