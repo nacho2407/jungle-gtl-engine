@@ -157,6 +157,7 @@ FEditorConsoleWidget::FEditorConsoleWidget()
 	RegisterCommand("recommend", "Alias for suggest.", [this](const TArray<FString>& Args) { CmdSuggest(Args); });
 	RegisterCommand("recommendations", "Alias for suggest.", [this](const TArray<FString>& Args) { CmdSuggest(Args); });
 	RegisterCommand("stat", "Viewport and editor stats. Usage: stat <fps|memory|skinning|history|nametable|cascadevis|none>", [this](const TArray<FString>& Args) { CmdStat(Args); });
+	RegisterCommand("causecrash", "Crash the engine.", [this](const TArray<FString>& Args) { CmdCauseCrash(Args); });
 
 	RegisterCommand("shadow", "Set shadow options. Usage: shadow filter <pcf|vsm>", [this](const TArray<FString>& Args){ CmdShadow(Args); });
 	RegisterCommand("skinning", "Set skinning mode. Usage: skinning <cpu|gpu>", [this](const TArray<FString>& Args) { CmdSkinning(Args); });
@@ -573,6 +574,11 @@ void FEditorConsoleWidget::CmdSuggest(const TArray<FString>& Args)
 		AddLog("  skinning gpu          Use GPU skinning\n");
 		bPrinted = true;
 	}
+	if (Prefix.empty() || FString("causecrash").find(Prefix) == 0)
+	{
+		AddLog("  causecrash            Crash the engine\n");
+		bPrinted = true;
+	}
 	if (Prefix.empty() || FString("help").find(Prefix) == 0 || FString("commands").find(Prefix) == 0)
 	{
 		AddLog("  commands              List every command\n");
@@ -641,6 +647,7 @@ TArray<FString> FEditorConsoleWidget::BuildCommandSuggestions(const FString& Que
 		"commands",
 		"clear",
 		"suggest",
+		"causecrash",
 		"stat fps",
 		"stat history",
 		"stat memory",
@@ -852,6 +859,12 @@ void FEditorConsoleWidget::PrintHistoryStats()
 	AddLog("  Entry Storage: %s\n", FormatBytes(Stats.EntryOverheadBytes).c_str());
 	AddLog("  Approx Total : %s\n", FormatBytes(Stats.ApproxTotalBytes).c_str());
 	AddLog("--------------------------\n");
+}
+
+void FEditorConsoleWidget::CmdCauseCrash(const TArray<FString>& Args)
+{
+	volatile int32 Zero = 0;
+    volatile int32 Boom = 2026'08'24 / Zero;
 }
 
 void FEditorConsoleWidget::CmdShadow(const TArray<FString>& Args)
