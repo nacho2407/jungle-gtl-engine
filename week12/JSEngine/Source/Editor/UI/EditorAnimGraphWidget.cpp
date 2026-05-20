@@ -932,11 +932,6 @@ void FEditorAnimGraphWidget::RenderSelectedStateMachineStateEditor(FAnimGraphNod
 		}
 		ImGui::EndDisabled();
 
-		if (ImGui::DragFloat2("Position", &State.Position.X, 1.0f))
-		{
-			bDirty = true;
-		}
-
 		const bool bIsEntry = Machine.EntryStateId == State.StateId;
 		if (bIsEntry)
 		{
@@ -1369,7 +1364,6 @@ void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& 
 		bDirty = true;
 	}
 
-	const FString TypeText = AnimGraphNodeTypeToString(Node.Type);
 	const FString NameText = GetNodeDisplayName(Node);
 	DrawList->AddText(Add(NodePos, ImVec2(10.0f, 6.0f)), ImGui::GetColorU32(ImGuiCol_Text), NameText.c_str());
 
@@ -1380,6 +1374,7 @@ void FEditorAnimGraphWidget::RenderNode(FAnimGraphNodeDesc& Node, const ImVec2& 
 		ImGui::GetColorU32(ImGuiCol_TextDisabled),
 		NodeIdText.c_str());
 
+	const FString TypeText = AnimGraphNodeTypeToString(Node.Type);
 	DrawList->AddText(Add(NodePos, ImVec2(10.0f, 31.0f)), ImGui::GetColorU32(ImGuiCol_TextDisabled), TypeText.c_str());
 
 	ImGui::PushID(Node.NodeId);
@@ -2028,75 +2023,72 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 		bDirty = true;
 	}
 
-	ImGui::SeparatorText("States");
-	if (ImGui::Button("Add State"))
-	{
-		AddStateToStateMachine(Machine);
-		bDirty = true;
-	}
-
 	int32 StateToDelete = -1;
-	for (int32 StateIndex = 0; StateIndex < static_cast<int32>(Machine.States.size()); ++StateIndex)
+	if (ImGui::CollapsingHeader("States", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		FAnimStateDesc& State = Machine.States[StateIndex];
-		ImGui::PushID(State.StateId);
-
-		const FString Header = GetStateDisplayName(Machine, State.StateId) + "##State";
-		if (ImGui::TreeNodeEx(Header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+		if (ImGui::Button("Add State"))
 		{
-			if (RenderStateNameInput("Name", Node.NodeId, State))
-			{
-				bDirty = true;
-			}
-
-			if (RenderAnimationPathCombo("Animation", State.AnimationPath))
-			{
-				bDirty = true;
-			}
-
-			if (ImGui::DragFloat("Play Rate", &State.PlayRate, 0.01f, -10.0f, 10.0f))
-			{
-				bDirty = true;
-			}
-
-			if (ImGui::Checkbox("Loop", &State.bLoop))
-			{
-				bDirty = true;
-			}
-
-			ImGui::BeginDisabled(State.bLoop);
-			if (ImGui::Checkbox("Auto Next On End", &State.bAutoAdvanceOnEnd))
-			{
-				bDirty = true;
-			}
-			ImGui::EndDisabled();
-
-			if (ImGui::DragFloat2("Position", &State.Position.X, 1.0f))
-			{
-				bDirty = true;
-			}
-
-			const bool bIsEntry = Machine.EntryStateId == State.StateId;
-			if (!bIsEntry && ImGui::Button("Set Entry"))
-			{
-				Machine.EntryStateId = State.StateId;
-				bDirty = true;
-			}
-			if (bIsEntry)
-			{
-				ImGui::TextDisabled("Entry State");
-			}
-
-			ImGui::SameLine();
-			if (ImGui::Button("Delete State"))
-			{
-				StateToDelete = State.StateId;
-			}
-
-			ImGui::TreePop();
+			AddStateToStateMachine(Machine);
+			bDirty = true;
 		}
 
-		ImGui::PopID();
+		for (int32 StateIndex = 0; StateIndex < static_cast<int32>(Machine.States.size()); ++StateIndex)
+		{
+			FAnimStateDesc& State = Machine.States[StateIndex];
+			ImGui::PushID(State.StateId);
+
+			const FString Header = GetStateDisplayName(Machine, State.StateId) + "##State";
+			if (ImGui::TreeNodeEx(Header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				if (RenderStateNameInput("Name", Node.NodeId, State))
+				{
+					bDirty = true;
+				}
+
+				if (RenderAnimationPathCombo("Animation", State.AnimationPath))
+				{
+					bDirty = true;
+				}
+
+				if (ImGui::DragFloat("Play Rate", &State.PlayRate, 0.01f, -10.0f, 10.0f))
+				{
+					bDirty = true;
+				}
+
+				if (ImGui::Checkbox("Loop", &State.bLoop))
+				{
+					bDirty = true;
+				}
+
+				ImGui::BeginDisabled(State.bLoop);
+				if (ImGui::Checkbox("Auto Next On End", &State.bAutoAdvanceOnEnd))
+				{
+					bDirty = true;
+				}
+				ImGui::EndDisabled();
+
+				const bool bIsEntry = Machine.EntryStateId == State.StateId;
+				if (!bIsEntry && ImGui::Button("Set Entry"))
+				{
+					Machine.EntryStateId = State.StateId;
+					bDirty = true;
+				}
+				if (bIsEntry)
+				{
+					ImGui::TextDisabled("Entry State");
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("Delete State"))
+				{
+					StateToDelete = State.StateId;
+				}
+
+				ImGui::TreePop();
+			}
+
+			ImGui::PopID();
+		}
 	}
 
 	if (StateToDelete >= 0)
@@ -2133,99 +2125,100 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 		bDirty = true;
 	}
 
-	ImGui::SeparatorText("Transitions");
-	ImGui::BeginDisabled(Machine.States.size() < 2);
-	if (ImGui::Button("Add Transition"))
+	if (ImGui::CollapsingHeader("Transitions", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		const int32 FromStateId = Machine.States[0].StateId;
-		const int32 ToStateId = Machine.States.size() > 1 ? Machine.States[1].StateId : Machine.States[0].StateId;
-		if (AddTransitionToStateMachine(Machine, FromStateId, ToStateId))
+		ImGui::BeginDisabled(Machine.States.size() < 2);
+		if (ImGui::Button("Add Transition"))
 		{
-			SelectedNodeId = Node.NodeId;
-			SelectedStateId = -1;
-			SelectedTransitionIndex = static_cast<int32>(Machine.Transitions.size()) - 1;
-			bDirty = true;
+			const int32 FromStateId = Machine.States[0].StateId;
+			const int32 ToStateId = Machine.States.size() > 1 ? Machine.States[1].StateId : Machine.States[0].StateId;
+			if (AddTransitionToStateMachine(Machine, FromStateId, ToStateId))
+			{
+				SelectedNodeId = Node.NodeId;
+				SelectedStateId = -1;
+				SelectedTransitionIndex = static_cast<int32>(Machine.Transitions.size()) - 1;
+				bDirty = true;
+			}
 		}
-	}
-	ImGui::EndDisabled();
+		ImGui::EndDisabled();
 
-	int32 TransitionToDelete = -1;
-	for (int32 TransitionIndex = 0; TransitionIndex < static_cast<int32>(Machine.Transitions.size()); ++TransitionIndex)
-	{
-		FAnimStateTransitionDesc& Transition = Machine.Transitions[TransitionIndex];
-		ImGui::PushID(TransitionIndex);
-
-		FString Header = GetStateDisplayName(Machine, Transition.FromStateId)
-			+ " -> "
-			+ GetStateDisplayName(Machine, Transition.ToStateId)
-			+ "##Transition";
-		const bool bSelectedTransitionInDetails = SelectedTransitionIndex == TransitionIndex;
-		if (bSelectedTransitionInDetails)
+		int32 TransitionToDelete = -1;
+		for (int32 TransitionIndex = 0; TransitionIndex < static_cast<int32>(Machine.Transitions.size()); ++TransitionIndex)
 		{
-			ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-		}
-		if (ImGui::TreeNodeEx(Header.c_str(), bSelectedTransitionInDetails ? ImGuiTreeNodeFlags_DefaultOpen : 0))
-		{
-			if (ImGui::BeginCombo("From", GetStateDisplayName(Machine, Transition.FromStateId).c_str()))
+			FAnimStateTransitionDesc& Transition = Machine.Transitions[TransitionIndex];
+			ImGui::PushID(TransitionIndex);
+
+			FString Header = GetStateDisplayName(Machine, Transition.FromStateId)
+				+ " -> "
+				+ GetStateDisplayName(Machine, Transition.ToStateId)
+				+ "##Transition";
+			const bool bSelectedTransitionInDetails = SelectedTransitionIndex == TransitionIndex;
+			if (bSelectedTransitionInDetails)
 			{
-				for (const FAnimStateDesc& State : Machine.States)
+				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			}
+			if (ImGui::TreeNodeEx(Header.c_str(), bSelectedTransitionInDetails ? ImGuiTreeNodeFlags_DefaultOpen : 0))
+			{
+				if (ImGui::BeginCombo("From", GetStateDisplayName(Machine, Transition.FromStateId).c_str()))
 				{
-					const FString Label = GetStateDisplayName(Machine, State.StateId);
-					const bool bSelected = Transition.FromStateId == State.StateId;
-					if (ImGui::Selectable(Label.c_str(), bSelected))
+					for (const FAnimStateDesc& State : Machine.States)
 					{
-						Transition.FromStateId = State.StateId;
-						bDirty = true;
+						const FString Label = GetStateDisplayName(Machine, State.StateId);
+						const bool bSelected = Transition.FromStateId == State.StateId;
+						if (ImGui::Selectable(Label.c_str(), bSelected))
+						{
+							Transition.FromStateId = State.StateId;
+							bDirty = true;
+						}
 					}
+					ImGui::EndCombo();
 				}
-				ImGui::EndCombo();
-			}
 
-			if (ImGui::BeginCombo("To", GetStateDisplayName(Machine, Transition.ToStateId).c_str()))
-			{
-				for (const FAnimStateDesc& State : Machine.States)
+				if (ImGui::BeginCombo("To", GetStateDisplayName(Machine, Transition.ToStateId).c_str()))
 				{
-					const FString Label = GetStateDisplayName(Machine, State.StateId);
-					const bool bSelected = Transition.ToStateId == State.StateId;
-					if (ImGui::Selectable(Label.c_str(), bSelected))
+					for (const FAnimStateDesc& State : Machine.States)
 					{
-						Transition.ToStateId = State.StateId;
-						bDirty = true;
+						const FString Label = GetStateDisplayName(Machine, State.StateId);
+						const bool bSelected = Transition.ToStateId == State.StateId;
+						if (ImGui::Selectable(Label.c_str(), bSelected))
+						{
+							Transition.ToStateId = State.StateId;
+							bDirty = true;
+						}
 					}
+					ImGui::EndCombo();
 				}
-				ImGui::EndCombo();
-			}
 
-			if (ImGui::DragFloat("Blend Time", &Transition.BlendTime, 0.01f, 0.0f, 5.0f))
-			{
-				bDirty = true;
-			}
+				if (ImGui::DragFloat("Blend Time", &Transition.BlendTime, 0.01f, 0.0f, 5.0f))
+				{
+					bDirty = true;
+				}
 
-			if (ImGui::InputInt("Priority", &Transition.Priority))
-			{
-				bDirty = true;
-			}
+				if (ImGui::InputInt("Priority", &Transition.Priority))
+				{
+					bDirty = true;
+				}
 
-			const char* ConditionLabels[] = {
-				"AlwaysTrue",
-				"BoolParameter",
-				"FloatGreater",
-				"FloatLess",
-				"LuaFunction",
-				"IntEquals",
-				"IntGreater",
-				"IntLess"
-			};
-			int32 ConditionIndex = static_cast<int32>(Transition.Condition.Type);
-			if (ConditionIndex < 0 || ConditionIndex >= static_cast<int32>(std::size(ConditionLabels)))
-			{
-				ConditionIndex = 0;
-			}
-			if (ImGui::Combo("Condition", &ConditionIndex, ConditionLabels, static_cast<int32>(std::size(ConditionLabels))))
-			{
-				Transition.Condition.Type = static_cast<EAnimTransitionConditionType>(ConditionIndex);
-				bDirty = true;
-			}
+				const char* ConditionLabels[] = {
+					"AlwaysTrue",
+					"BoolParameter",
+					"FloatGreater",
+					"FloatLess",
+					"LuaFunction",
+					"IntEquals",
+					"IntGreater",
+					"IntLess"
+				};
+				int32 ConditionIndex = static_cast<int32>(Transition.Condition.Type);
+				if (ConditionIndex < 0 || ConditionIndex >= static_cast<int32>(std::size(ConditionLabels)))
+				{
+					ConditionIndex = 0;
+				}
+				if (ImGui::Combo("Condition", &ConditionIndex, ConditionLabels, static_cast<int32>(std::size(ConditionLabels))))
+				{
+					Transition.Condition.Type = static_cast<EAnimTransitionConditionType>(ConditionIndex);
+					bDirty = true;
+				}
 
 			if (Transition.Condition.Type == EAnimTransitionConditionType::BoolParameter
 				|| Transition.Condition.Type == EAnimTransitionConditionType::FloatGreater
@@ -2296,6 +2289,7 @@ void FEditorAnimGraphWidget::RenderStateMachineDetails(FAnimGraphNodeDesc& Node)
 		SelectedTransitionIndex = -1;
 		bDirty = true;
 	}
+}
 }
 
 FAnimGraphNodeDesc* FEditorAnimGraphWidget::FindSelectedNode()
