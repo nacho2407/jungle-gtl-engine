@@ -8,7 +8,7 @@
 #include "Animation/Instance/AnimSingleNodeInstance.h"
 #include "Animation/PoseContext.h"
 #include "Asset/AssetRegistry.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "GameFramework/AActor.h"
 #include "Math/Quat.h"
 #include "Math/Vector.h"

@@ -1,8 +1,8 @@
 #include "Engine/Runtime/Engine.h"
 
 #include "Platform/Paths.h"
-#include "Core/Log.h"
-#include "Core/Notification.h"
+#include "Core/Logging/Log.h"
+#include "Core/Logging/Notification.h"
 #include "Engine/Platform/DirectoryWatcher.h"
 #include "Profiling/Stats.h"
 #include "Profiling/StartupProfiler.h"

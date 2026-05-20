@@ -1,4 +1,4 @@
-﻿#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "Platform/Paths.h"
 
 #include <Windows.h>

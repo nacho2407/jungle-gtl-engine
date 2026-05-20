@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Types/CoreTypes.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include <cstdarg>
 #include <functional>
 #include <sstream>

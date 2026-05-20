@@ -1,6 +1,6 @@
-﻿#include "UI/UIManager.h"
+#include "UI/UIManager.h"
 
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "Input/InputSystem.h"
 #include "Object/Object.h"
 #include "Platform/Paths.h"

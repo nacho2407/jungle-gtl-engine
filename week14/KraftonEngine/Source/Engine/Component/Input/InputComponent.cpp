@@ -1,6 +1,6 @@
 #include "InputComponent.h"
 
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "Input/InputSystem.h"
 #include "Object/Reflection/ObjectFactory.h"
 void UInputComponent::AddAxisMapping(const FString& Name, int VKey, float Scale)

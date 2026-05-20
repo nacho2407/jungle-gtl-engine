@@ -3,7 +3,7 @@
 #include "Animation/Sequence/AnimSequence.h"
 #include "Animation/AnimExtractContext.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 #include <cmath>
 void UAnimSingleNodeInstance::SetAnimationAsset(UAnimSequenceBase* InAsset)

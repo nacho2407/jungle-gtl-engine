@@ -4,7 +4,7 @@
 #include "Engine/Input/InputSystem.h"
 #include "Math/MathUtils.h"
 #include "UI/UIManager.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 #include <windows.h>
 

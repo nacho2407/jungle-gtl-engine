@@ -532,10 +532,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Component\Shape\BoxComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Shape\CapsuleComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Shape\SphereComponent.cpp" />
-    <ClCompile Include="Source\Engine\Core\Log.cpp" />
-    <ClCompile Include="Source\Engine\Core\Notification.cpp" />
     <ClCompile Include="Source\Engine\Core\ProjectSettings.cpp" />
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp" />
+    <ClCompile Include="Source\Engine\Core\Logging\Log.cpp" />
+    <ClCompile Include="Source\Engine\Core\Logging\Notification.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\ArrayProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\BoolProperty.cpp" />
     <ClCompile Include="Source\Engine\Core\Property\ClassProperty.cpp" />
@@ -877,11 +877,11 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Component\Shape\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Core\Common.h" />
     <ClInclude Include="Source\Engine\Core\Delegate.h" />
-    <ClInclude Include="Source\Engine\Core\Log.h" />
-    <ClInclude Include="Source\Engine\Core\Notification.h" />
     <ClInclude Include="Source\Engine\Core\ProjectSettings.h" />
     <ClInclude Include="Source\Engine\Core\Singleton.h" />
     <ClInclude Include="Source\Engine\Core\TickFunction.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\Log.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\Notification.h" />
     <ClInclude Include="Source\Engine\Core\Property\ArrayProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\BoolProperty.h" />
     <ClInclude Include="Source\Engine\Core\Property\ClassProperty.h" />

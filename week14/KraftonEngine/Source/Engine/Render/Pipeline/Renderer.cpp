@@ -1,8 +1,8 @@
-﻿#include "Renderer.h"
+#include "Renderer.h"
 
 #include "Render/Types/RenderTypes.h"
 #include "Render/Shader/ShaderManager.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "Render/Scene/FScene.h"
 #include "GameFramework/World.h"
 #include "Profiling/Stats.h"

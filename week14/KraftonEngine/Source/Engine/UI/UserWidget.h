@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Object/Object.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "Source/Engine/UI/UserWidget.generated.h"
 #include <sol/sol.hpp>
 #include <utility>

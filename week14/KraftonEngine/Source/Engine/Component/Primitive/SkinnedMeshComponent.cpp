@@ -4,7 +4,7 @@
 #include "Runtime/Engine.h"
 #include "Mesh/MeshManager.h"
 #include "Collision/Ray/RayUtils.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "Render/Types/ViewTypes.h"
 #include "Engine/Profiling/Stats.h"
 
