@@ -1,4 +1,4 @@
-﻿#include "MaterialManager.h"
+#include "MaterialManager.h"
 #include <filesystem>
 #include <fstream>
 #include "Materials/Material.h"
@@ -13,7 +13,7 @@ void FMaterialManager::ScanMaterialAssets()
 {
 	AvailableMaterialFiles.clear();
 
-	const std::filesystem::path MaterialRoot = FPaths::RootDir() + L"Asset/Materials/";
+	const std::filesystem::path MaterialRoot = FPaths::RootDir() + L"Content/Material/";
 
 	if (!std::filesystem::exists(MaterialRoot))
 	{

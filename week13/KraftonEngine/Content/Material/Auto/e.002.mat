@@ -7,11 +7,11 @@
     "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
     "_pad" : [0.000000, 0.000000, 0.000000]
   },
-  "PathFileName" : "Asset/Materials/Auto/KON001_Hirasawa_Yui_face.003.mat",
+  "PathFileName" : "Content/Material/Auto/e.002.mat",
   "RasterizerState" : "",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "Textures" : {
-    "DiffuseTexture" : "Content/Data/hirasawa-yui/yui.fbm/KON001_Hirasawa_Yui.png"
+    "DiffuseTexture" : "Content/Data/Samba Dancing/textures/e.0.png"
   }
 }

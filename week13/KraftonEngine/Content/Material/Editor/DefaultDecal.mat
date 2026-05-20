@@ -27,7 +27,7 @@
       0.0
     ]
   },
-  "PathFileName": "Asset/Materials/Editor/DefaultDecal.mat",
+  "PathFileName": "Content/Material/Editor/DefaultDecal.mat",
   "RasterizerState": "",
   "RenderPass": "Decal",
   "ShaderPath": "Shaders/Geometry/Decal.hlsl",

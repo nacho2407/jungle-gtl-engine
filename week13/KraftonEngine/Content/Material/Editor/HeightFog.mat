@@ -1,5 +1,5 @@
 {
-  "PathFileName": "Asset/Materials/Editor/HeightFog.mat",
+  "PathFileName": "Content/Material/Editor/HeightFog.mat",
   "ShaderPath": "Shaders/UI/Billboard.hlsl",
   "RenderPass": "AlphaBlend",
   "Textures": {

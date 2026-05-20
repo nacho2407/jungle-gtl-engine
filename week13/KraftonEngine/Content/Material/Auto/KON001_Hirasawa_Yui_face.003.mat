@@ -3,15 +3,15 @@
   "DepthStencilState" : "",
   "Origin" : "FbxImport",
   "Parameters" : {
-    "HasNormalMap" : 1.000000,
-    "SectionColor" : [0.800000, 0.800000, 0.800000, 1.000000],
+    "HasNormalMap" : 0.000000,
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
     "_pad" : [0.000000, 0.000000, 0.000000]
   },
-  "PathFileName" : "Asset/Materials/Auto/MI_Manny_02_New.mat",
+  "PathFileName" : "Content/Material/Auto/KON001_Hirasawa_Yui_face.003.mat",
   "RasterizerState" : "",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "Textures" : {
-    "NormalTexture" : "C:/Program Files/Epic Games/temp/render/ttt/M_tex/Baked/T_Manny_02_BN.TGA"
+    "DiffuseTexture" : "Content/Data/hirasawa-yui/yui.fbm/KON001_Hirasawa_Yui.png"
   }
 }
