@@ -62,11 +62,20 @@ public:
 
 	void Serialize(FArchive& Ar) override;
 
+	// ── Live preview / 재컴파일 트리거 ──
+	// UAnimGraphInstance 가 매 frame 비교 → 다르면 자기 RootNode 재컴파일.
+	// Add/Remove/Set 류 build·edit API 가 자동 호출. 노드 inspector 가 노드 멤버를 직접 수정한
+	// 후엔 외부에서 BumpVersion() 명시 호출 필요 (Asset 은 그 변경을 모름).
+	// transient — 디스크에서 load 한 자산은 0 으로 시작. 호환성 영향 0.
+	uint32 GetVersion() const { return Version; }
+	void   BumpVersion()      { ++Version; }
+
 private:
 	uint32 AllocateId() { return NextId++; }
 
 	TArray<FAnimGraphNode> Nodes;
 	TArray<FAnimGraphLink> Links;
 	uint32                 NextId = 1; // 0 은 invalid sentinel
+	uint32                 Version = 0;
 	FString                SourcePath;
 };
