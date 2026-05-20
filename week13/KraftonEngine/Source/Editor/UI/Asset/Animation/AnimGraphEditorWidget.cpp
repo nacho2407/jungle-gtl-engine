@@ -1,4 +1,4 @@
-#include "Editor/UI/Asset/AnimGraphEditorWidget.h"
+#include "Editor/UI/Asset/Animation/AnimGraphEditorWidget.h"
 
 #include "Animation/Graph/AnimGraphAsset.h"
 #include "Animation/Graph/AnimGraphManager.h"

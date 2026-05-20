@@ -55,6 +55,18 @@
     <Filter Include="Source\Editor\UI\Asset">
       <UniqueIdentifier>{d344f4cc-4bcb-0c8d-e15c-1006350dcba6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\UI\Asset\Animation">
+      <UniqueIdentifier>{6f6ec3f7-5356-0f05-e9a8-97b2d4dceab7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\UI\Asset\CameraShake">
+      <UniqueIdentifier>{e92a4d79-885d-3fed-53fc-d67b7fb36d18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\UI\Asset\Curve">
+      <UniqueIdentifier>{a9a5d4ee-210d-8455-10fc-cd6653ca56e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\UI\Asset\Mesh">
+      <UniqueIdentifier>{5084842c-4071-bc7f-36a2-4a3bf67026e8}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\UI\ContentBrowser">
       <UniqueIdentifier>{09a2ea7f-e891-b580-bef0-471bcd9b5d4b}</UniqueIdentifier>
     </Filter>
@@ -587,38 +599,38 @@
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Asset\AnimGraphEditorWidget.cpp">
-      <Filter>Source\Editor\UI\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Asset\AnimMontagePropertyPanel.cpp">
-      <Filter>Source\Editor\UI\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Asset\AnimSequencePropertyPanel.cpp">
-      <Filter>Source\Editor\UI\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Asset\AnimationTimelinePanel.cpp">
-      <Filter>Source\Editor\UI\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Asset\AnimationTransportBar.cpp">
-      <Filter>Source\Editor\UI\Asset</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.cpp">
-      <Filter>Source\Editor\UI\Asset</Filter>
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimGraphEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.cpp">
-      <Filter>Source\Editor\UI\Asset</Filter>
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimMontagePropertyPanel.cpp">
+      <Filter>Source\Editor\UI\Asset\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Asset\MeshEditorWidget.cpp">
-      <Filter>Source\Editor\UI\Asset</Filter>
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimSequencePropertyPanel.cpp">
+      <Filter>Source\Editor\UI\Asset\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Asset\StaticMeshEditorWidget.cpp">
-      <Filter>Source\Editor\UI\Asset</Filter>
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimationTimelinePanel.cpp">
+      <Filter>Source\Editor\UI\Asset\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimationTransportBar.cpp">
+      <Filter>Source\Editor\UI\Asset\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\CameraShake\CameraShakeEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\CameraShake</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\Curve</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\Mesh</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
@@ -1559,41 +1571,41 @@
     <ClInclude Include="Source\Editor\UI\EditorWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Asset\AnimGraphEditorWidget.h">
-      <Filter>Source\Editor\UI\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Asset\AnimMontagePropertyPanel.h">
-      <Filter>Source\Editor\UI\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Asset\AnimSequencePropertyPanel.h">
-      <Filter>Source\Editor\UI\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Asset\AnimationTimelinePanel.h">
-      <Filter>Source\Editor\UI\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Asset\AnimationTransportBar.h">
-      <Filter>Source\Editor\UI\Asset</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorWidget.h">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.h">
-      <Filter>Source\Editor\UI\Asset</Filter>
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimGraphEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset\Animation</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.h">
-      <Filter>Source\Editor\UI\Asset</Filter>
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimMontagePropertyPanel.h">
+      <Filter>Source\Editor\UI\Asset\Animation</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Asset\MeshEditorWidget.h">
-      <Filter>Source\Editor\UI\Asset</Filter>
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimSequencePropertyPanel.h">
+      <Filter>Source\Editor\UI\Asset\Animation</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Asset\MorphCurveEditObject.h">
-      <Filter>Source\Editor\UI\Asset</Filter>
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimationTimelinePanel.h">
+      <Filter>Source\Editor\UI\Asset\Animation</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Asset\StaticMeshEditorWidget.h">
-      <Filter>Source\Editor\UI\Asset</Filter>
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimationTransportBar.h">
+      <Filter>Source\Editor\UI\Asset\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\MorphCurveEditObject.h">
+      <Filter>Source\Editor\UI\Asset\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\CameraShake\CameraShakeEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset\CameraShake</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset\Curve</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>

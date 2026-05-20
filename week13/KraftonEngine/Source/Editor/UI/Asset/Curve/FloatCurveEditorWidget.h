@@ -1,5 +1,5 @@
-﻿#pragma once
-#include "AssetEditorWidget.h"
+#pragma once
+#include "Editor/UI/Asset/AssetEditorWidget.h"
 
 class FFloatCurveEditorWidget : public FAssetEditorWidget
 {
