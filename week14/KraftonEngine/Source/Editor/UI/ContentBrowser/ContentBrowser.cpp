@@ -1,6 +1,8 @@
 ﻿#include "ContentBrowser.h"
 
 #include "Asset/AssetPackage.h"
+#include "Animation/AnimGraphAsset.h"
+#include "Animation/AnimGraphManager.h"
 #include "CameraShake/CameraShakeAsset.h"
 #include "CameraShake/CameraShakeManager.h"
 #include "ContentBrowserElement.h"
@@ -352,6 +354,9 @@ void FEditorContentBrowserWidget::RefreshContent()
 				case EAssetPackageType::AnimSequence:
 					Element = std::make_shared<ObjectElement>();
 					break;
+				case EAssetPackageType::AnimGraph:
+					Element = std::make_shared<AnimGraphElement>();
+					break;
 				default:
 					Element = std::make_shared<ContentBrowserElement>();
 					break;
@@ -486,6 +491,21 @@ void FEditorContentBrowserWidget::DrawContents()
 						if (UCameraShakeAsset* ShakeAsset = FCameraShakeManager::Get().Load(CreatedPath))
 						{
 							BrowserContext.EditorEngine->OpenAssetEditorForObject(ShakeAsset);
+						}
+					}
+				}
+			}
+			if (ImGui::MenuItem("Anim Graph"))
+			{
+				FString CreatedPath;
+				if (FAssetFactory::CreateAnimGraph(FPaths::ToUtf8(BrowserContext.CurrentPath), "NewAnimGraph", CreatedPath))
+				{
+					Refresh();
+					if (BrowserContext.EditorEngine)
+					{
+						if (UAnimGraphAsset* GraphAsset = FAnimGraphManager::Get().Load(CreatedPath))
+						{
+							BrowserContext.EditorEngine->OpenAssetEditorForObject(GraphAsset);
 						}
 					}
 				}

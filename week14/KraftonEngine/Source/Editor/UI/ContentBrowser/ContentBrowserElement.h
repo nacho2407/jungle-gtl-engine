@@ -94,6 +94,16 @@ protected:
 	uint32 GetAccentColor() const override { return IM_COL32(230, 150, 75, 255); }
 };
 
+class AnimGraphElement final : public ContentBrowserElement
+{
+public:
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
+
+protected:
+	const char* GetTypeLabel() const override { return "Anim Graph"; }
+	uint32 GetAccentColor() const override { return IM_COL32(200, 110, 200, 255); }
+};
+
 class MeshElement final : public ContentBrowserElement
 {
 public:

@@ -453,6 +453,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Animation\AnimGraphAsset.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimGraphCompiler.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimGraphInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimGraphManager.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimMontage.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimMontageInstance.cpp" />
@@ -795,6 +796,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Animation\AnimGraphAsset.h" />
     <ClInclude Include="Source\Engine\Animation\AnimGraphCompiler.h" />
     <ClInclude Include="Source\Engine\Animation\AnimGraphInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimGraphManager.h" />
     <ClInclude Include="Source\Engine\Animation\AnimGraphTypes.h" />
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\AnimMontage.h" />

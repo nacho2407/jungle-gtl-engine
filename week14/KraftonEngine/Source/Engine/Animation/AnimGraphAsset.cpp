@@ -37,7 +37,7 @@ FArchive& operator<<(FArchive& Ar, FAnimGraphNode& Node)
 	Ar << Node.Pins;
 	Ar << Node.PlayRate;
 	Ar << Node.bLooping;
-	// Node.SequenceRef 는 transient — 직렬화 skip (path 기반 ref 는 후속 단계).
+	Ar << Node.SequencePath; // SequenceRef 는 transient — Initialize 시 path 로 재해상.
 	return Ar;
 }
 

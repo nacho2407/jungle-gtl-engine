@@ -1349,6 +1349,43 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 		return bChanged;
 	}
 
+	if (AssetType == "UAnimGraphAsset")
+	{
+		FString Preview = CurrentPath.empty() ? "None" : GetStemFromPath(CurrentPath);
+		if (CurrentPath == "None") Preview = "None";
+
+		if (ImGui::BeginCombo("##AnimGraphAsset", Preview.c_str()))
+		{
+			bool bSelectedNone = (CurrentPath == "None" || CurrentPath.empty());
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				SetPath("None");
+				bChanged = true;
+			}
+			if (bSelectedNone)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
+			const TArray<FAssetListItem>& GraphFiles = FAssetRegistry::ListByTypeName("UAnimGraphAsset");
+			for (const FAssetListItem& Item : GraphFiles)
+			{
+				bool bSelected = (CurrentPath == Item.FullPath);
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				{
+					SetPath(Item.FullPath);
+					bChanged = true;
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+		return bChanged;
+	}
+
 	if (AssetType == "LuaAnimScript")
 	{
 		// 콤보 + "Edit Script" 버튼 하이브리드 — Asset/Script/Anim 하위 .lua 선택 + 즉시 편집.

@@ -3,6 +3,7 @@
 #include "Animation/AnimGraphAsset.h"
 #include "Animation/AnimGraphCompiler.h"
 #include "Animation/AnimGraphTypes.h"
+#include "Animation/AnimGraphManager.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimationManager.h"
 #include "Animation/Nodes/AnimNode_Base.h"
@@ -20,29 +21,48 @@ void UAnimGraphInstance::NativeInitializeAnimation()
 	FSkeletalMesh* MeshAsset = Mesh->GetSkeletalMeshAsset();
 	if (!MeshAsset || MeshAsset->Bones.empty()) return;
 
-	// 자산 자동 생성 — 외부에서 SetGraphAsset 한 경우 그것을 사용.
+	// GraphAsset resolve 우선순위: 외부 SetGraphAsset > GraphAssetPath 로 디스크 로드 > 자동 transient.
+	if (!GraphAsset)
+	{
+		const FString GraphPathStr = GraphAssetPath.ToString();
+		if (!GraphPathStr.empty() && GraphPathStr != "None")
+		{
+			GraphAsset = FAnimGraphManager::Get().Load(GraphPathStr);
+			if (!GraphAsset)
+			{
+				UE_LOG("UAnimGraphInstance: AnimGraph 로드 실패 → transient fallback. Path=%s", GraphPathStr.c_str());
+			}
+		}
+	}
 	if (!GraphAsset)
 	{
 		GraphAsset = UObjectManager::Get().CreateObject<UAnimGraphAsset>(this);
 		GraphAsset->InitializeDefault();
 	}
 
-	// Sequence resolve — DefaultSequencePath 로 LoadAnimation. 비어있거나 실패 시 nullptr.
-	// SequencePlayer 는 Sequence==nullptr 일 때 ref pose 유지 — fallback 분기 별도 불필요.
-	UAnimSequenceBase* Seq = nullptr;
-	const FString PathStr = DefaultSequencePath.ToString();
-	if (!PathStr.empty() && PathStr != "None")
+	// Sequence resolve 우선순위 (per-node):
+	//   1) 노드의 SequencePath (자산에 박힘 — 그래프 편집 결과)
+	//   2) UAnimGraphInstance::DefaultSequencePath (instance fallback)
+	//   3) nullptr → SequencePlayer 가 ref pose 유지
+	auto LoadByPath = [](const FString& Path) -> UAnimSequenceBase*
 	{
-		Seq = FAnimationManager::Get().LoadAnimation(PathStr);
-		if (!Seq)
+		if (Path.empty() || Path == "None") return nullptr;
+		UAnimSequenceBase* Loaded = FAnimationManager::Get().LoadAnimation(Path);
+		if (!Loaded)
 		{
-			UE_LOG("UAnimGraphInstance: 시퀀스 로드 실패. Path=%s", PathStr.c_str());
+			UE_LOG("UAnimGraphInstance: 시퀀스 로드 실패. Path=%s", Path.c_str());
 		}
-	}
+		return Loaded;
+	};
 
-	if (FAnimGraphNode* SP = GraphAsset->FindFirstNodeOfType(EAnimGraphNodeType::SequencePlayer))
+	const FString DefaultPathStr = DefaultSequencePath.ToString();
+	for (FAnimGraphNode& Node : const_cast<TArray<FAnimGraphNode>&>(GraphAsset->GetNodes()))
 	{
-		SP->SequenceRef = Seq;
+		if (Node.Type != EAnimGraphNodeType::SequencePlayer) continue;
+
+		UAnimSequenceBase* Seq = LoadByPath(Node.SequencePath);
+		if (!Seq) Seq = LoadByPath(DefaultPathStr);
+		Node.SequenceRef = Seq;
 	}
 
 	FAnimNode_Base* Root = FAnimGraphCompiler::Compile(*GraphAsset, *this);
@@ -56,13 +76,16 @@ void UAnimGraphInstance::NativeInitializeAnimation()
 
 void UAnimGraphInstance::Serialize(FArchive& Ar)
 {
-	// Editor-set 데모 파라미터만 — 자산(GraphAsset) 자체는 transient.
-	// PIE Duplicate (UObject::Duplicate = Serialize 왕복) 가 path 만 라운드트립.
+	// Editor-set 데모 파라미터만 — 런타임 GraphAsset 포인터는 transient (다음 InitializeAnimation
+	// 에서 path 로 재해상). PIE Duplicate (UObject::Duplicate = Serialize 왕복) 가 path 들만 라운드트립.
 	// UCharacterAnimInstance 와 동일하게 Super::Serialize 호출 안 함 (ObjectName 직렬화 skip).
-	FString PathStr = Ar.IsSaving() ? DefaultSequencePath.ToString() : FString();
-	Ar << PathStr;
+	FString SeqPathStr   = Ar.IsSaving() ? DefaultSequencePath.ToString() : FString();
+	FString GraphPathStr = Ar.IsSaving() ? GraphAssetPath.ToString()      : FString();
+	Ar << SeqPathStr;
+	Ar << GraphPathStr;
 	if (Ar.IsLoading())
 	{
-		DefaultSequencePath = FSoftObjectPtr(PathStr);
+		DefaultSequencePath = FSoftObjectPtr(SeqPathStr);
+		GraphAssetPath      = FSoftObjectPtr(GraphPathStr);
 	}
 }

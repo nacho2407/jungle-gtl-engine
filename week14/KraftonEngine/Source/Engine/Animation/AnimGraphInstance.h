@@ -41,7 +41,13 @@ public:
 	UPROPERTY(Edit, Save, Category="AnimGraph", DisplayName="Default Sequence", AssetType="UAnimSequence")
 	FSoftObjectPtr DefaultSequencePath = "Content/Data/hirasawa-yui/IdleWithSkin_mixamo_com.uasset";
 
+	// 디스크의 UAnimGraphAsset 패키지. 비어있으면 NativeInitialize 가 transient 자산을 생성 +
+	// InitializeDefault 호출 (기존 데모 흐름 유지). path 가 있으면 FAnimGraphManager 로 로드 후
+	// 그 자산을 컴파일러에 넘긴다 — Editor 에서 만든 그래프가 실제 캐릭터 평가에 박힘.
+	UPROPERTY(Edit, Save, Category="AnimGraph", DisplayName="Graph Asset", AssetType="UAnimGraphAsset")
+	FSoftObjectPtr GraphAssetPath = "None";
+
 private:
-	// 자산 슬롯. 단계 D1 에선 NativeInitialize 에서 자동 생성 / 자체 보유 — 직렬화는 후속 단계.
+	// 자산 슬롯. GraphAssetPath 로 로드된 디스크 자산 또는 자동 생성된 transient 자산.
 	UAnimGraphAsset* GraphAsset = nullptr;
 };

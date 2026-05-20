@@ -1,13 +1,16 @@
 #include "Editor/UI/Asset/AnimGraphEditorWidget.h"
 
 #include "Animation/AnimGraphAsset.h"
+#include "Animation/AnimGraphManager.h"
 #include "Animation/AnimGraphTypes.h"
+#include "Asset/AssetRegistry.h"
 #include "Object/Object.h"
 
 #include "imgui.h"
 #include "imgui_node_editor.h"
 
 #include <cstdio>
+#include <filesystem>
 
 namespace ed = ax::NodeEditor;
 
@@ -47,6 +50,56 @@ namespace
 		EAnimGraphNodeType::BlendListByEnum,
 		EAnimGraphNodeType::VariableGet,
 	};
+
+	FString GetStemFromPath(const FString& Path)
+	{
+		if (Path.empty()) return FString();
+		const std::filesystem::path P(Path);
+		return std::filesystem::path(P).stem().string();
+	}
+
+	// SequencePlayer 노드의 properties — Sequence/PlayRate/bLooping. 다른 노드 타입은 placeholder.
+	void RenderNodeInspector(FAnimGraphNode& Node)
+	{
+		ImGui::Text("%s", NodeTypeLabel(Node.Type));
+		ImGui::TextDisabled("id=%u", Node.NodeId);
+		ImGui::Separator();
+
+		if (Node.Type != EAnimGraphNodeType::SequencePlayer)
+		{
+			ImGui::TextDisabled("(no editable properties yet)");
+			return;
+		}
+
+		ImGui::TextUnformatted("Sequence");
+		const FString PreviewStem = Node.SequencePath.empty() ? FString("None") : GetStemFromPath(Node.SequencePath);
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::BeginCombo("##NodeSequence", PreviewStem.c_str()))
+		{
+			const bool bSelectedNone = Node.SequencePath.empty();
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				Node.SequencePath.clear();
+			}
+			if (bSelectedNone) ImGui::SetItemDefaultFocus();
+
+			const TArray<FAssetListItem>& AnimFiles = FAssetRegistry::ListByTypeName("UAnimSequence");
+			for (const FAssetListItem& Item : AnimFiles)
+			{
+				const bool bSelected = (Node.SequencePath == Item.FullPath);
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				{
+					Node.SequencePath = Item.FullPath;
+				}
+				if (bSelected) ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::SetNextItemWidth(-1.0f);
+		ImGui::DragFloat("##PlayRate", &Node.PlayRate, 0.05f, -4.0f, 4.0f, "PlayRate %.2f");
+		ImGui::Checkbox("Looping", &Node.bLooping);
+	}
 }
 
 FAnimGraphEditorWidget::~FAnimGraphEditorWidget()
@@ -122,6 +175,39 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 		if (!bOpenFlag) Close();
 		return;
 	}
+
+	// Toolbar — transient 자산(SourcePath empty)은 Save 비활성. ContentBrowser 에서 만든 자산만 저장.
+	{
+		const bool bHasPath = !Asset->GetSourcePath().empty();
+		if (!bHasPath) ImGui::BeginDisabled();
+		if (ImGui::Button("Save"))
+		{
+			FAnimGraphManager::Get().Save(Asset);
+		}
+		if (!bHasPath) ImGui::EndDisabled();
+		ImGui::SameLine();
+		if (bHasPath)
+		{
+			ImGui::TextDisabled("%s", Asset->GetSourcePath().c_str());
+		}
+		else
+		{
+			ImGui::TextDisabled("(transient — Save 불가. ContentBrowser 에서 생성하세요)");
+		}
+		ImGui::Separator();
+	}
+
+	// ── 좌(canvas) / 우(inspector) split ──
+	constexpr float InspectorWidth = 280.0f;
+	const float Spacing            = ImGui::GetStyle().ItemSpacing.x;
+	const float TotalWidth         = ImGui::GetContentRegionAvail().x;
+	const float CanvasWidth        = (TotalWidth > InspectorWidth + Spacing + 100.0f)
+		? TotalWidth - InspectorWidth - Spacing
+		: TotalWidth;
+
+	uint32 SelectedNodeId = 0;
+
+	ImGui::BeginChild("##AnimGraphCanvasChild", ImVec2(CanvasWidth, 0), ImGuiChildFlags_None);
 
 	ed::SetCurrentEditor(NodeEditorContext);
 	ed::Begin("AnimGraphCanvas");
@@ -217,7 +303,6 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 	ed::EndDelete();
 
 	// ── 위치 동기화 (ed → model) ──
-	// 사용자 드래그가 매 프레임 모델에 반영되어, Close 후 다음 Open 시에도 위치 유지.
 	for (FAnimGraphNode& Node : const_cast<TArray<FAnimGraphNode>&>(Asset->GetNodes()))
 	{
 		const ImVec2 P = ed::GetNodePosition(ToNodeId(Node.NodeId));
@@ -226,11 +311,9 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 	}
 
 	// ── 컨텍스트 메뉴 ──
-	// ed::ShowXxxContextMenu 는 ed::End 호출 전, ed::Suspend() 상태에서만 popup 호출 가능.
 	ed::NodeId   ContextNodeId   = 0;
 	ed::PinId    ContextPinId    = 0;
 	ed::LinkId   ContextLinkId   = 0;
-	ImVec2       NewNodePosition = ImVec2(0, 0);
 
 	ed::Suspend();
 	if (ed::ShowNodeContextMenu(&ContextNodeId))
@@ -247,9 +330,7 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 	}
 	else if (ed::ShowBackgroundContextMenu())
 	{
-		// 마우스 위치를 캔버스 좌표로 캡쳐 — popup 안에서 노드 추가 시 거기에 spawn.
-		NewNodePosition = ed::ScreenToCanvas(ImGui::GetMousePos());
-		PendingNewNodePosition = NewNodePosition;
+		PendingNewNodePosition = ed::ScreenToCanvas(ImGui::GetMousePos());
 		ImGui::OpenPopup("AnimGraphBackgroundMenu");
 	}
 
@@ -257,9 +338,6 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 	{
 		if (ImGui::MenuItem("Delete"))
 		{
-			// ed::DeleteNode 는 내부적으로 Add(object) 호출하지만 ContextMenuAction 이
-			// active 인 동안엔 GetCurrentAction() != nullptr 로 거부 → 모델에 반영 안 됨.
-			// 컨텍스트 메뉴 경로는 ed 의 modal action 을 우회해 모델 직접 수정.
 			Asset->RemoveNode(NodeIdToU32(ContextNodeId));
 		}
 		ImGui::EndPopup();
@@ -269,7 +347,6 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 	{
 		if (ImGui::MenuItem("Delete"))
 		{
-			// 노드 메뉴와 동일 사유 — modal action 우회.
 			Asset->RemoveLink(LinkIdToU32(ContextLinkId));
 		}
 		ImGui::EndPopup();
@@ -277,7 +354,6 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 
 	if (ImGui::BeginPopup("AnimGraphPinMenu"))
 	{
-		// 단계 C 에선 핀 단위 액션 없음 — 빈 메뉴.
 		ImGui::TextDisabled("(no actions)");
 		ImGui::EndPopup();
 	}
@@ -304,8 +380,42 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 	}
 	ed::Resume();
 
+	// ed::End 직전에 선택된 노드 캡쳐 (inspector pane 이 ed 컨텍스트 외부에서 참조).
+	{
+		ed::NodeId SelBuf[4];
+		const int SelCount = ed::GetSelectedNodes(SelBuf, 4);
+		if (SelCount > 0) SelectedNodeId = NodeIdToU32(SelBuf[0]);
+	}
+
 	ed::End();
 	ed::SetCurrentEditor(nullptr);
+
+	ImGui::EndChild();
+
+	// ── 우측 inspector pane ──
+	if (CanvasWidth < TotalWidth)
+	{
+		ImGui::SameLine();
+		ImGui::BeginChild("##AnimGraphInspector", ImVec2(0, 0), ImGuiChildFlags_Borders);
+
+		if (SelectedNodeId != 0)
+		{
+			if (FAnimGraphNode* SelNode = Asset->FindNode(SelectedNodeId))
+			{
+				RenderNodeInspector(*SelNode);
+			}
+			else
+			{
+				ImGui::TextDisabled("(stale selection)");
+			}
+		}
+		else
+		{
+			ImGui::TextDisabled("Select a node to edit properties.");
+		}
+
+		ImGui::EndChild();
+	}
 
 	ImGui::End();
 

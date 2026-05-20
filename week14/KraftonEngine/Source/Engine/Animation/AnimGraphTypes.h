@@ -70,8 +70,13 @@ struct FAnimGraphNode
 	TArray<FAnimGraphPin>  Pins;
 
 	// SequencePlayer 노드의 입력 시퀀스 — 컴파일러가 FAnimNode_SequencePlayer::Sequence 로 박음.
-	// 다른 노드 타입에선 미사용. raw pointer + transient — 자산 직렬화는 path 기반 (후속 단계 B).
+	// 다른 노드 타입에선 미사용. raw pointer + transient — 자산은 SequencePath 만 보유.
 	UAnimSequenceBase*     SequenceRef = nullptr;
+
+	// 직렬화 가능한 sequence 식별자. UAnimGraphInstance::NativeInitializeAnimation 가
+	// FAnimationManager::LoadAnimation 으로 해상해 SequenceRef 에 박는다.
+	// empty / "None" 이면 UAnimGraphInstance::DefaultSequencePath 가 fallback.
+	FString                SequencePath;
 
 	// SequencePlayer 옵션. PlayRate / bLooping — 노드 inspector 도입 시 편집 (단계 E).
 	float                  PlayRate    = 1.0f;
