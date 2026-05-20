@@ -390,12 +390,6 @@ function TopDownCharacterController:UpdateCamera()
         end)
     end
 
-    if controller and controller.SetInputModeGameOnly then
-        pcall(function()
-            controller:SetInputModeGameOnly()
-        end)
-    end
-
     return pawn
 end
 
