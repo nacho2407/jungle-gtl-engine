@@ -135,6 +135,11 @@ namespace
 		}
 		return false;
 	}
+
+	FString MakeAnimSequenceCacheKey(const FString& SourceFbxPath, const FString& TargetSkeletalMeshPath, const FString& AnimStackName)
+	{
+		return FPaths::Normalize(SourceFbxPath) + "|" + FPaths::Normalize(TargetSkeletalMeshPath) + "|" + AnimStackName;
+	}
 }
 
 #pragma region __BINARY__
@@ -320,6 +325,58 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 	}
 }
 
+void FResourceManager::RegisterCachedAnimSequenceBinaries()
+{
+	const fs::path AnimBinDir = fs::path(FPaths::RootDir()) / "Asset" / "AnimSequence" / "Bin";
+	if (!fs::exists(AnimBinDir) || !fs::is_directory(AnimBinDir))
+	{
+		return;
+	}
+
+	int32 RegisteredCount = 0;
+	for (const auto& Entry : fs::recursive_directory_iterator(AnimBinDir, fs::directory_options::skip_permission_denied))
+	{
+		if (!Entry.is_regular_file() || Entry.path().extension() != L".bin")
+		{
+			continue;
+		}
+
+		FAnimSequenceBinaryHeader Header;
+		FString CachedSource;
+		FString CachedTarget;
+		FString CachedStackName;
+		const FString BinaryPath = FPaths::Normalize(FPaths::ToUtf8(Entry.path().generic_wstring()));
+		if (!BinarySerializer.ReadAnimSequenceIdentity(BinaryPath, Header, CachedSource, CachedTarget, CachedStackName))
+		{
+			continue;
+		}
+
+		const FString NormalizedSource = FPaths::Normalize(CachedSource);
+		const FString NormalizedTarget = FPaths::Normalize(CachedTarget);
+		const uint64 SourceWriteTime = GetFileWriteTimeTicks(NormalizedSource);
+		const uint64 TargetWriteTime = GetFileWriteTimeTicks(NormalizedTarget);
+		if (SourceWriteTime == 0 ||
+			TargetWriteTime == 0 ||
+			Header.SourceFileWriteTime != SourceWriteTime ||
+			Header.SourceFileSize != GetFileSizeBytes(NormalizedSource))
+		{
+			continue;
+		}
+
+		const FString Key = MakeAnimSequenceCacheKey(NormalizedSource, NormalizedTarget, CachedStackName);
+		if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), Key) == AnimSequenceFilePaths.end())
+		{
+			AnimSequenceFilePaths.push_back(Key);
+			++RegisteredCount;
+		}
+	}
+
+	if (RegisteredCount > 0)
+	{
+		UE_LOG("[AnimSequenceLoad] Registered cached anim sequence binaries. Count=%d", RegisteredCount);
+	}
+}
+
 void FResourceManager::InitializeDefaultWhiteTexture(ID3D11Device* Device)
 {
 	D3D11_TEXTURE2D_DESC Desc = {};
@@ -430,6 +487,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 		RegisterDiscoveredAssetFile(Entry.path(), ProjectRootPath);
 	}
 
+	RegisterCachedAnimSequenceBinaries();
 	PreloadStaticMeshes();
 
 	if (LoadGPUResources(CachedDevice.Get()))
@@ -473,6 +531,8 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 	{
 		UE_LOG_ERROR("[ResourceManager] Refresh Exception: %s", Ex.what());
 	}
+
+	RegisterCachedAnimSequenceBinaries();
 
 	if (CachedDevice && !LoadGPUResources(CachedDevice.Get()))
 	{
@@ -1003,11 +1063,6 @@ TArray<FString> FResourceManager::ListAnimStacks(const FString& SourceFbxPath)
 
 	AnimStackNamesMap[NormalizedSource] = StackNames;
 	return StackNames;
-}
-
-static FString MakeAnimSequenceCacheKey(const FString& SourceFbxPath, const FString& TargetSkeletalMeshPath, const FString& AnimStackName)
-{
-	return FPaths::Normalize(SourceFbxPath) + "|" + FPaths::Normalize(TargetSkeletalMeshPath) + "|" + AnimStackName;
 }
 
 UAnimSequence* FResourceManager::LoadAnimSequence(const FString& SourceFbxPath, const FString& TargetSkeletalMeshPath, const FString& AnimStackName)

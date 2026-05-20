@@ -154,6 +154,7 @@ public:
 private:
 	void ClearDiscoveredResourceLists(bool bClearAtlasCache);
 	void RegisterDiscoveredAssetFile(const std::filesystem::path& FilePath, const std::filesystem::path& ProjectRootPath);
+	void RegisterCachedAnimSequenceBinaries();
 	void InitializeDefaultWhiteTexture(ID3D11Device* Device);
 	void InitializeDefaultMaterial(ID3D11Device* Device);
 	void InitializeOutlineMaterial();
