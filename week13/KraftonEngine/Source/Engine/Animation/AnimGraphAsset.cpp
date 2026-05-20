@@ -38,6 +38,8 @@ FArchive& operator<<(FArchive& Ar, FAnimGraphNode& Node)
 	Ar << Node.PlayRate;
 	Ar << Node.bLooping;
 	Ar << Node.SequencePath; // SequenceRef 는 transient — Initialize 시 path 로 재해상.
+	Ar << Node.SlotName;
+	Ar << Node.BlendWeight;
 	return Ar;
 }
 
