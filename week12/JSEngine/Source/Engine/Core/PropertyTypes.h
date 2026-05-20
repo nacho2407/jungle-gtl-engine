@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -13,12 +13,9 @@ enum class EPropertyType : uint8_t
 	Bool,
 	Int,
 	Float,
-
 	String,
 	Name,
-
 	Enum,
-
 	ObjectPtr,
 	SoftObjectPtr,
 	Array,
@@ -52,15 +49,3 @@ constexpr bool HasPropertyUsage(EPropertyUsageFlags Value, EPropertyUsageFlags F
 }
 
 class UEnum;
-using FEnumMetaData = UEnum;
-
-inline size_t GetPropertySize(EPropertyType Type)
-{
-	switch (Type)
-	{
-	case EPropertyType::Bool:  return sizeof(bool);
-	case EPropertyType::Int:   return sizeof(int32);
-	case EPropertyType::Float: return sizeof(float);
-	default: return 0;
-	}
-}

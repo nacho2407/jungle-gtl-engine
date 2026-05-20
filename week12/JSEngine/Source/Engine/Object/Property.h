@@ -108,7 +108,7 @@ struct FProperty
 	float Max = 0.0f;
 	float Speed = 0.1f;
 
-	const FEnumMetaData* EnumMeta = nullptr;
+	const UEnum* EnumMeta = nullptr;
 	UClass* ObjectClass = nullptr;
 	EObjectReferenceKind ReferenceKind = EObjectReferenceKind::None;
 	const FProperty* InnerProperty = nullptr;
@@ -229,7 +229,7 @@ struct FPropertyParams
 	float Max = 0.0f;
 	float Speed = 0.1f;
 
-	const FEnumMetaData* EnumMeta = nullptr;
+	const UEnum* EnumMeta = nullptr;
 	UClass* ObjectClass = nullptr;
 	EObjectReferenceKind ReferenceKind = EObjectReferenceKind::None;
 	const FProperty* InnerProperty = nullptr;

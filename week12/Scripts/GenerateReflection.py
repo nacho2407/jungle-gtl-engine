@@ -896,7 +896,7 @@ def make_enum_values_array_name(enum_name):
 	return f'Z_Enum_{sanitize_cpp_identifier(enum_name)}_Values'
 
 
-# UEnum(또는 FEnumMetaData)에 사용할 정적 변수 이름을 생성합니다.
+# UEnum(또는 UEnum)에 사용할 정적 변수 이름을 생성합니다.
 def make_enum_meta_name(enum_name):
 	return f'Z_Enum_{sanitize_cpp_identifier(enum_name)}_Meta'
 

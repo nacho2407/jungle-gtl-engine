@@ -102,14 +102,14 @@ public:
 	void ToggleViewportSplit();
 
 	// Viewport Get Set
-    FEditorViewportClient* GetViewportClient(int32 Index) { return SceneViewports[Index].GetClient(); }
-    const FEditorViewportClient* GetViewportClient(int32 Index) const { return SceneViewports[Index].GetClient(); }
+	FEditorViewportClient* GetViewportClient(int32 Index) { return SceneViewports[Index].GetClient(); }
+	const FEditorViewportClient* GetViewportClient(int32 Index) const { return SceneViewports[Index].GetClient(); }
 
 	FSceneViewport& GetSceneViewport(int32 Index) { return SceneViewports[Index]; }
 	const FSceneViewport& GetSceneViewport(int32 Index) const { return SceneViewports[Index]; }
 
 	FEditorViewportState& GetViewportState(int32 Index) { return SceneViewports[Index].GetState(); }
-    const FEditorViewportState& GetViewportState(int32 Index) const { return SceneViewports[Index].GetState(); }
+	const FEditorViewportState& GetViewportState(int32 Index) const { return SceneViewports[Index].GetState(); }
 
 	// Window 크기 기준으로 4개 뷰포트 영역을 계산 및 초기화 합니다.
 	void InitViewportRect(uint32 Width, uint32 Height);
@@ -124,10 +124,7 @@ public:
 	// 스플리터 위젯 소유권 (new → BuildViewportLayout, delete → DestroyViewportLayout)
 	void DestroyViewportLayout();
 
-	bool HasActiveOperationViewport() const
-	{
-		return ActiveOperationViewportIndex >= 0 && ActiveOperationViewportIndex < MaxViewports;
-    }
+	bool HasActiveOperationViewport() const;
 
 private:
 	void SetViewportRect(int32 Index, const FViewportRect& Rect);
@@ -170,7 +167,7 @@ private:
 	// Viewport 구조 재편 중 다형성 임시 제거
 	SViewport ViewportWidgets[MaxViewports] = {};
 	FSceneViewport SceneViewports[MaxViewports] = {};
-    FEditorViewportClient ViewportClients[MaxViewports] = {};
+	FEditorViewportClient ViewportClients[MaxViewports] = {};
 	int32 ViewportChromeTopInsets[MaxViewports] =
 	{
 		DefaultViewportToolbarHeight,
@@ -185,6 +182,6 @@ private:
 	UEditorEngine* Editor = nullptr;
 
 private:
-    int32 FindViewportIndexAt(int32 MouseX, int32 MouseY) const;
+	int32 FindViewportIndexAt(int32 MouseX, int32 MouseY) const;
 };
 

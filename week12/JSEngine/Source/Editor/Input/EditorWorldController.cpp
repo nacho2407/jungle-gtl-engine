@@ -222,6 +222,13 @@ void FEditorWorldController::OnLeftMouseButtonUp(float X, float Y)
 {
 	(void)X;
 	(void)Y;
+	if (Gizmo && Gizmo->IsHolding())
+	{
+		Gizmo->DragEnd();
+		ClearPendingSelectionPress();
+		return;
+	}
+
 	if (bHasPendingSelectionPress && Camera)
 	{
 		SelectActorAt(PendingSelectionPressX, PendingSelectionPressY);
