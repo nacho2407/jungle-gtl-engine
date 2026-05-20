@@ -2,8 +2,8 @@
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-#include "GameFramework/PlayerController.h"
-#include "GameFramework/PlayerCameraManager.h"
+#include "GameFramework/GameMode/PlayerController.h"
+#include "GameFramework/Camera/PlayerCameraManager.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include <cmath>
 

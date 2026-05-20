@@ -8,7 +8,7 @@
 #include "Animation/Nodes/AnimNode_Root.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Mesh/SkeletalMesh.h"
-#include "GameFramework/Pawn.h"
+#include "GameFramework/Pawn/Pawn.h"
 
 #include <algorithm>
 

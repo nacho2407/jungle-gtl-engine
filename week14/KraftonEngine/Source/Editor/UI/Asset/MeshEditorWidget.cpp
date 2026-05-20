@@ -7,7 +7,7 @@
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Viewport/Viewport.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
-#include "GameFramework/StaticMeshActor.h"
+#include "GameFramework/Actor/StaticMeshActor.h"
 #include "Settings/EditorSettings.h"
 #include "UI/Toolbar/ViewportToolbar.h"
 #include "Slate/SlateApplication.h"

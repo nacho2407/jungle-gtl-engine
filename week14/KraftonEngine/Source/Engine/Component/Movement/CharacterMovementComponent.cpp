@@ -7,7 +7,7 @@
 #include "Core/PropertyTypes.h"
 #include "Core/TickFunction.h"
 #include "GameFramework/AActor.h"
-#include "GameFramework/Character.h"
+#include "GameFramework/Pawn/Character.h"
 #include "GameFramework/World.h"
 #include "Math/Quat.h"
 #include "Math/Rotator.h"

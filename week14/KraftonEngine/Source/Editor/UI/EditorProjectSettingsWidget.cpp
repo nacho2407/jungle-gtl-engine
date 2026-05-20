@@ -1,7 +1,7 @@
-﻿#include "Editor/UI/EditorProjectSettingsWidget.h"
+#include "Editor/UI/EditorProjectSettingsWidget.h"
 #include "Core/ProjectSettings.h"
 #include "Serialization/SceneSaveManager.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameMode/GameModeBase.h"
 #include "Object/UClass.h"
 #include "ImGui/imgui.h"
 
