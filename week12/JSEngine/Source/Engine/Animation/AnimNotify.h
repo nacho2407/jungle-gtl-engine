@@ -27,22 +27,6 @@ public:
 	~UAnimNotifyState() override = default;
 };
 
-UCLASS(DisplayName = "Named Notify", Category = "Animation")
-class UAnimNotify_NamedEvent : public UAnimNotify
-{
-public:
-	GENERATED_BODY(UAnimNotify_NamedEvent, UAnimNotify)
-	~UAnimNotify_NamedEvent() override = default;
-};
-
-UCLASS(DisplayName = "Named Notify State", Category = "Animation")
-class UAnimNotifyState_NamedEvent : public UAnimNotifyState
-{
-public:
-	GENERATED_BODY(UAnimNotifyState_NamedEvent, UAnimNotifyState)
-	~UAnimNotifyState_NamedEvent() override = default;
-};
-
 UCLASS(DisplayName = "Log Notify", Category = "Animation")
 class UAnimNotify_LogEvent : public UAnimNotify
 {
@@ -54,4 +38,14 @@ public:
 	void NotifyBegin(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Event) override;
 	void NotifyTick(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Event, float DeltaTime) override;
 	void NotifyEnd(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Event) override;
+};
+
+UCLASS(DisplayName = "Footstep Sound Notify", Category = "Animation")
+class UAnimNotify_FootstepSound : public UAnimNotify
+{
+public:
+	GENERATED_BODY(UAnimNotify_FootstepSound, UAnimNotify)
+	~UAnimNotify_FootstepSound() override = default;
+
+	void Notify(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Event) override;
 };

@@ -27,16 +27,34 @@ TopDownCharacterController.Properties = {
         Category = "Movement"
     },
 
-    CameraHeight = {
+    CameraDistance = {
         Type = "Float",
         Default = 8.0,
         Min = 0.1,
         Category = "Camera"
     },
 
-    CameraYawZ = {
+    CameraOffsetX = {
         Type = "Float",
-        Default = 90.0,
+        Default = -0.85,
+        Category = "Camera"
+    },
+
+    CameraOffsetY = {
+        Type = "Float",
+        Default = -0.15,
+        Category = "Camera"
+    },
+
+    CameraOffsetZ = {
+        Type = "Float",
+        Default = 1.0,
+        Category = "Camera"
+    },
+
+    CameraLookAtHeight = {
+        Type = "Float",
+        Default = 0.0,
         Category = "Camera"
     },
 
@@ -67,7 +85,7 @@ TopDownCharacterController.Properties = {
     -- 실제 Q 애니메이션 길이에 맞춰 0.8~1.2 정도로 조절하면 됨.
     AttackLockDuration = {
         Type = "Float",
-        Default = 1.0,
+        Default = 1.2,
         Min = 0.01,
         Category = "Attack"
     },
@@ -148,7 +166,6 @@ function TopDownCharacterController:Initialize()
 
     local owner = self.Actor or Actor or Owner
     if not owner then
-        TopDownSupport.Log("[TopDownCharacterController] Owner actor is missing.")
         return false
     end
 
@@ -156,12 +173,10 @@ function TopDownCharacterController:Initialize()
     self.Mesh = TopDownSupport.FindSkeletalMesh(owner)
 
     if not self.Mesh and not self.bLoggedNoMesh then
-        TopDownSupport.Log("[TopDownCharacterController] SkeletalMeshComponent not found. Movement works, but AnimGraph parameter will not update.")
         self.bLoggedNoMesh = true
     end
 
     self.bInitialized = true
-    TopDownSupport.Log("[TopDownCharacterController] Initialized.")
 
     return true
 end
@@ -191,7 +206,6 @@ function TopDownCharacterController:StartAttackQ()
     self.AttackLockRemaining = p.AttackLockDuration or 1.0
     self.AttackTriggerRemaining = p.AttackTriggerHoldTime or 0.45
 
-    TopDownSupport.Log("[TopDownCharacterController] AttackQ started.")
 end
 
 function TopDownCharacterController:UpdateAttackState(dt)
@@ -267,13 +281,22 @@ function TopDownCharacterController:UpdateCamera()
         return nil
     end
 
+    local p = self.Properties
     local actorLocation = self.Actor.Location
-
-    local cameraLocation = actorLocation + Vector(
-        0.0,
-        0.0,
-        10.0
+    local cameraDistance = p.CameraDistance or 8.0
+    local cameraOffsetDir = Vector(
+        p.CameraOffsetX or -0.55,
+        p.CameraOffsetY or -0.45,
+        p.CameraOffsetZ or 0.70
     )
+
+    if cameraOffsetDir:SizeSquared() <= 0.0001 then
+        cameraOffsetDir = Vector(-0.55, -0.45, 0.70)
+    end
+
+    cameraOffsetDir = cameraOffsetDir:GetSafeNormal()
+
+    local cameraLocation = actorLocation + cameraOffsetDir * cameraDistance
 
     pcall(function()
         pawn.Location = cameraLocation
@@ -287,21 +310,40 @@ function TopDownCharacterController:UpdateCamera()
         pawn.Rotation = Vector(0.0, 90.0, testYawZ)
     end)
 
-    TopDownSupport.Log(
-        "[TopDownCharacterController][CameraTest] Set Camera Rotation = " ..
-        TopDownSupport.VectorToString(Vector(0.0, 90.0, testYawZ))
-    )
-
-    TopDownSupport.Log(
-        "[TopDownCharacterController][CameraTest] Actual Pawn Rotation = " ..
-        TopDownSupport.VectorToString(pawn.Rotation)
-    )
-
     local controller = TopDownSupport.GetPlayerController()
 
     if controller and controller.SetViewTargetWithBlend then
         pcall(function()
             controller:SetViewTargetWithBlend(pawn, 0.0, 0)
+        end)
+    end
+
+    local camera = nil
+
+    if controller and controller.GetViewTargetCamera then
+        local ok, result = pcall(function()
+            return controller:GetViewTargetCamera()
+        end)
+
+        if ok then
+            camera = result
+        end
+    end
+
+    if not camera and pawn.GetComponent then
+        local ok, result = pcall(function()
+            return pawn:GetComponent("CameraComponent")
+        end)
+
+        if ok then
+            camera = result
+        end
+    end
+
+    if camera and camera.look_at then
+        local lookTarget = actorLocation + Vector(0.0, 0.0, p.CameraLookAtHeight or 0.0)
+        pcall(function()
+            camera:look_at(lookTarget)
         end)
     end
 
@@ -333,18 +375,8 @@ function TopDownCharacterController:UpdateDebug(dt, dir, isMoving)
     local pawnLocation = self.CameraPawn and self.CameraPawn.Location or nil
     local pawnRotation = self.CameraPawn and self.CameraPawn.Rotation or nil
 
-    TopDownSupport.Log("[TopDownCharacterController][Debug] IsMoving = " .. tostring(isMoving))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] IsAttackLocked = " .. tostring(self:IsAttackLocked()))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] AttackTrigger = " .. tostring(self:IsAttackTriggerActive()))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] Move Dir = " .. TopDownSupport.VectorToString(dir))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] Actor Location = " .. TopDownSupport.VectorToString(actorLocation))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] Actor Rotation = " .. TopDownSupport.VectorToString(actorRotation))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] Camera Pawn Location = " .. TopDownSupport.VectorToString(pawnLocation))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] Camera Pawn Rotation = " .. TopDownSupport.VectorToString(pawnRotation))
-
     if actorLocation and pawnLocation then
         local diff = actorLocation - pawnLocation
-        TopDownSupport.Log("[TopDownCharacterController][Debug] Actor - Camera Diff = " .. TopDownSupport.VectorToString(diff))
     end
 end
 
@@ -379,7 +411,6 @@ function TopDownCharacterController:Tick(deltaTime)
     self.CameraPawn = self:UpdateCamera()
 
     if not self.CameraPawn and not self.bLoggedNoPawn then
-        TopDownSupport.Log("[TopDownCharacterController] Possessed camera pawn not found yet.")
         self.bLoggedNoPawn = true
     end
 

@@ -63,37 +63,15 @@
                   "Name" : "AttackQ",
                   "PlayRate" : 1.000000,
                   "Position" : {
-                    "X" : 374.000000,
-                    "Y" : 226.000000
+                    "X" : 540.000000,
+                    "Y" : 263.000000
                   },
                   "StateId" : 3,
                   "bAutoAdvanceOnEnd" : true,
                   "bLoop" : false
-                }, {
-                  "AnimationPath" : "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_Spell1_To_Idle.animseq",
-                  "Name" : "QToIdle",
-                  "PlayRate" : 1.000000,
-                  "Position" : {
-                    "X" : 103.000000,
-                    "Y" : 225.000000
-                  },
-                  "StateId" : 4,
-                  "bAutoAdvanceOnEnd" : true,
-                  "bLoop" : false
-                }, {
-                  "AnimationPath" : "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_Spell1_To_Run.animseq",
-                  "Name" : "QToRun",
-                  "PlayRate" : 1.000000,
-                  "Position" : {
-                    "X" : 711.000000,
-                    "Y" : 229.000000
-                  },
-                  "StateId" : 5,
-                  "bAutoAdvanceOnEnd" : true,
-                  "bLoop" : false
                 }],
               "Transitions" : [{
-                  "BlendTime" : 0.300000,
+                  "BlendTime" : 0.200000,
                   "Condition" : {
                     "BoolValue" : true,
                     "IntValue" : 0,
@@ -106,7 +84,7 @@
                   "Priority" : 0,
                   "ToStateId" : 2
                 }, {
-                  "BlendTime" : 0.300000,
+                  "BlendTime" : 0.200000,
                   "Condition" : {
                     "BoolValue" : false,
                     "IntValue" : 0,
@@ -134,58 +112,6 @@
                 }, {
                   "BlendTime" : 0.200000,
                   "Condition" : {
-                    "BoolValue" : false,
-                    "IntValue" : 0,
-                    "LuaFunctionName" : "",
-                    "ParameterName" : "IsMoving",
-                    "Threshold" : 0.000000,
-                    "Type" : 1
-                  },
-                  "FromStateId" : 3,
-                  "Priority" : 0,
-                  "ToStateId" : 4
-                }, {
-                  "BlendTime" : 0.200000,
-                  "Condition" : {
-                    "BoolValue" : true,
-                    "IntValue" : 0,
-                    "LuaFunctionName" : "",
-                    "ParameterName" : "",
-                    "Threshold" : 0.000000,
-                    "Type" : 0
-                  },
-                  "FromStateId" : 4,
-                  "Priority" : 0,
-                  "ToStateId" : 1
-                }, {
-                  "BlendTime" : 0.200000,
-                  "Condition" : {
-                    "BoolValue" : true,
-                    "IntValue" : 0,
-                    "LuaFunctionName" : "",
-                    "ParameterName" : "IsMoving",
-                    "Threshold" : 0.000000,
-                    "Type" : 1
-                  },
-                  "FromStateId" : 3,
-                  "Priority" : 0,
-                  "ToStateId" : 5
-                }, {
-                  "BlendTime" : 0.200000,
-                  "Condition" : {
-                    "BoolValue" : true,
-                    "IntValue" : 0,
-                    "LuaFunctionName" : "",
-                    "ParameterName" : "",
-                    "Threshold" : 0.000000,
-                    "Type" : 0
-                  },
-                  "FromStateId" : 5,
-                  "Priority" : 0,
-                  "ToStateId" : 2
-                }, {
-                  "BlendTime" : 0.200000,
-                  "Condition" : {
                     "BoolValue" : true,
                     "IntValue" : 0,
                     "LuaFunctionName" : "",
@@ -202,11 +128,24 @@
                     "BoolValue" : true,
                     "IntValue" : 0,
                     "LuaFunctionName" : "",
-                    "ParameterName" : "IsMoving",
+                    "ParameterName" : "",
                     "Threshold" : 0.000000,
-                    "Type" : 1
+                    "Type" : 0
                   },
-                  "FromStateId" : 4,
+                  "FromStateId" : 3,
+                  "Priority" : 0,
+                  "ToStateId" : 1
+                }, {
+                  "BlendTime" : 0.200000,
+                  "Condition" : {
+                    "BoolValue" : true,
+                    "IntValue" : 0,
+                    "LuaFunctionName" : "",
+                    "ParameterName" : "",
+                    "Threshold" : 0.000000,
+                    "Type" : 0
+                  },
+                  "FromStateId" : 3,
                   "Priority" : 0,
                   "ToStateId" : 2
                 }]

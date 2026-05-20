@@ -844,15 +844,12 @@ void FEditorViewportOverlayWidget::RenderGroupedStatOverlay(float DeltaTime)
             ImGui::Separator();
             ImGui::TextUnformatted("[ Skinning ]");
             ImGui::Text("CPU Anim/Pose   : %.3f / %.3f ms", SkinStats.CPUAnimationUpdateMs, SkinStats.CPUPoseBuildMs);
-            ImGui::Text("CPU Skin/Upload : %.3f / %.3f ms", SkinStats.CPUSkinningMs, SkinStats.CPUSkinnedVertexBufferUploadMs);
-            ImGui::Text("CPU VB Upload   : %llu calls / %.2f KB",
-                static_cast<unsigned long long>(SkinStats.CPUSkinnedVertexBufferUploadCallCount),
+            ImGui::Text("CPU Skin        : %.3f ms", SkinStats.CPUSkinningMs);
+            ImGui::Text("CPU VB Upload   : %.3f ms / %.2f KB",
+                SkinStats.CPUSkinnedVertexBufferUploadMs,
                 SkinStats.CPUSkinnedVertexBufferUploadBytes / 1024.0f);
-            ImGui::Text("GPU Bone CB     : %.3f ms / %llu calls",
+            ImGui::Text("GPU Bone CB     : %.3f ms / %.2f KB",
                 SkinStats.GPUBoneMatrixUploadMs,
-                static_cast<unsigned long long>(SkinStats.GPUBoneMatrixUploadCallCount));
-            ImGui::Text("GPU Bone Data   : %llu mats / %.2f KB",
-                static_cast<unsigned long long>(SkinStats.GPUBoneMatrixUploadCount),
                 SkinStats.GPUBoneMatrixUploadBytes / 1024.0f);
             ImGui::Text("Meshes CPU/GPU  : %u / %u",
                 SkinStats.VisibleCPUSkinnedMeshCount,
@@ -863,9 +860,7 @@ void FEditorViewportOverlayWidget::RenderGroupedStatOverlay(float DeltaTime)
             ImGui::Text("Bones/Influence : %llu / %.2f",
                 static_cast<unsigned long long>(SkinStats.TotalBoneCount),
                 SkinStats.GetAvgBoneInfluencePerVertex());
-            ImGui::Text("GPU Draw/Work   : %u / %.0f",
-                SkinStats.GPUSkinnedDrawPassCount,
-                SkinStats.EstimatedGPUSkinningInfluenceWork);
+            ImGui::Text("GPU Skin Work   : %.0f", SkinStats.EstimatedGPUSkinningInfluenceWork);
         }
 
         FShadowAtlasManager& ShadowAtlasManager = FShadowAtlasManager::Get();

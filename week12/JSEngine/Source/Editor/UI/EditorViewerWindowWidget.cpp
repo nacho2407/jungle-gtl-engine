@@ -97,8 +97,6 @@ void GetSelectableAnimNotifyClasses(TArray<UClass*>& OutClasses)
                 return !Class ||
                     Class == UAnimNotify::StaticClass() ||
                     Class == UAnimNotifyState::StaticClass() ||
-                    Class == UAnimNotify_NamedEvent::StaticClass() ||
-                    Class == UAnimNotifyState_NamedEvent::StaticClass() ||
                     Class->HasAnyClassFlags(CF_Abstract);
             }),
         OutClasses.end());

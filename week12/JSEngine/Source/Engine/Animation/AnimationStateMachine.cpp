@@ -310,7 +310,7 @@ void UAnimationStateMachine::AddState(FName StateName, UAnimSequenceBase* Sequen
 	}
 }
 
-void UAnimationStateMachine::AddTransition(FName FromState, FName ToState, float BlendTime, FAnimTransitionCondition Condition, int32 Priority)
+void UAnimationStateMachine::AddTransition(FName FromState, FName ToState, float BlendTime, FAnimTransitionCondition Condition, int32 Priority, bool bWaitForSourceStateEnd)
 {
 	if (!States.contains(FromState) || !States.contains(ToState))
 	{
@@ -321,6 +321,7 @@ void UAnimationStateMachine::AddTransition(FName FromState, FName ToState, float
 	Transition.ToState = ToState;
 	Transition.BlendTime = std::max(0.0f, BlendTime);
 	Transition.Priority = Priority;
+	Transition.bWaitForSourceStateEnd = bWaitForSourceStateEnd;
 	Transition.Condition = Condition;
 
 	States[FromState].Transitions.push_back(Transition);
@@ -381,15 +382,15 @@ bool UAnimationStateMachine::TryStartTransitionFromCurrentState()
 		return false;
 	}
 
-	const bool bWaitForEnd = CurrentNode.bAutoAdvanceOnEnd && !CurrentNode.PoseSource->IsLooping();
-	if (bWaitForEnd && !CurrentNode.PoseSource->IsFinished())
-	{
-		return false;
-	}
-
 	const FAnimTransition* BestTransition = nullptr;
 	for (const FAnimTransition& Transition : CurrentNode.Transitions)
 	{
+		const bool bWaitForEnd = Transition.bWaitForSourceStateEnd && CurrentNode.bAutoAdvanceOnEnd && !CurrentNode.PoseSource->IsLooping();
+		if (bWaitForEnd && !CurrentNode.PoseSource->IsFinished())
+		{
+			continue;
+		}
+
 		if (!Transition.Condition || !Transition.Condition() || !States.contains(Transition.ToState))
 		{
 			continue;

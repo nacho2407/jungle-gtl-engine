@@ -463,7 +463,6 @@ Builds/
 !JSEngine/Asset/**/*.meta
 
 JSEngine/Asset/Mesh/Bin/**
-JSEngine/Asset/Scene/**
 
 # Reflection
 *.gen.cpp
