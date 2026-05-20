@@ -689,6 +689,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />
     <ClCompile Include="Source\Engine\Runtime\EngineInitHooks.cpp" />
     <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\GameEngine.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\GameRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
@@ -700,23 +702,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Viewport\Viewport.cpp" />
     <ClCompile Include="Source\Engine\Viewport\ViewportClient.cpp" />
     <ClCompile Include="Source\Game\GameActorPlacements.cpp" />
-    <ClCompile Include="Source\Game\GameEngine.cpp" />
-    <ClCompile Include="Source\Game\GameRenderPipeline.cpp" />
-    <ClCompile Include="Source\Game\GameScoreboard.cpp" />
-    <ClCompile Include="Source\Game\Component\CarDirtComponent.cpp" />
-    <ClCompile Include="Source\Game\Component\CarGasComponent.cpp" />
-    <ClCompile Include="Source\Game\Component\CompletionOutlineComponent.cpp" />
-    <ClCompile Include="Source\Game\Component\DirtComponent.cpp" />
-    <ClCompile Include="Source\Game\Component\Movement\CarMovementComponent.cpp" />
-    <ClCompile Include="Source\Game\GameMode\GameModeCarGame.cpp" />
-    <ClCompile Include="Source\Game\GameMode\GameModeIntro.cpp" />
-    <ClCompile Include="Source\Game\GameState\GameStateCarGame.cpp" />
     <ClCompile Include="Source\Game\Lua\GameLuaBindings.cpp" />
-    <ClCompile Include="Source\Game\Meteor\Meteor.cpp" />
-    <ClCompile Include="Source\Game\Pawn\CarPawn.cpp" />
-    <ClCompile Include="Source\Game\Pawn\PoliceCar.cpp" />
-    <ClCompile Include="Source\Game\Pawn\WalkingPersonActor.cpp" />
-    <ClCompile Include="Source\Game\PlayerController\PlayerControllerCarGame.cpp" />
     <ClCompile Include="Source\ObjViewer\ObjViewerEngine.cpp" />
     <ClCompile Include="Source\ObjViewer\ObjViewerPanel.cpp" />
     <ClCompile Include="Source\ObjViewer\ObjViewerRenderPipeline.cpp" />
@@ -1092,6 +1078,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Runtime\Engine.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineInitHooks.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
+    <ClInclude Include="Source\Engine\Runtime\GameEngine.h" />
+    <ClInclude Include="Source\Engine\Runtime\GameRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Runtime\Launch.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowsApplication.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h" />
@@ -1108,23 +1096,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Viewport\Viewport.h" />
     <ClInclude Include="Source\Engine\Viewport\ViewportClient.h" />
     <ClInclude Include="Source\Game\GameActorPlacements.h" />
-    <ClInclude Include="Source\Game\GameEngine.h" />
-    <ClInclude Include="Source\Game\GameRenderPipeline.h" />
-    <ClInclude Include="Source\Game\GameScoreboard.h" />
-    <ClInclude Include="Source\Game\Component\CarDirtComponent.h" />
-    <ClInclude Include="Source\Game\Component\CarGasComponent.h" />
-    <ClInclude Include="Source\Game\Component\CompletionOutlineComponent.h" />
-    <ClInclude Include="Source\Game\Component\DirtComponent.h" />
-    <ClInclude Include="Source\Game\Component\Movement\CarMovementComponent.h" />
-    <ClInclude Include="Source\Game\GameMode\GameModeCarGame.h" />
-    <ClInclude Include="Source\Game\GameMode\GameModeIntro.h" />
-    <ClInclude Include="Source\Game\GameState\GameStateCarGame.h" />
     <ClInclude Include="Source\Game\Lua\GameLuaBindings.h" />
-    <ClInclude Include="Source\Game\Meteor\Meteor.h" />
-    <ClInclude Include="Source\Game\Pawn\CarPawn.h" />
-    <ClInclude Include="Source\Game\Pawn\PoliceCar.h" />
-    <ClInclude Include="Source\Game\Pawn\WalkingPersonActor.h" />
-    <ClInclude Include="Source\Game\PlayerController\PlayerControllerCarGame.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerEngine.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerPanel.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerRenderPipeline.h" />
@@ -1983,6 +1955,12 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <Import Project="packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets" Condition="Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" />
     <Import Project="packages\NVIDIA.PhysX.4.1.2\build\native\NVIDIA.PhysX.targets" Condition="Exists('packages\NVIDIA.PhysX.4.1.2\build\native\NVIDIA.PhysX.targets')" />
   </ImportGroup>
+  <PropertyGroup>
+    <PythonExe Condition="'$(PythonExe)'==''">python</PythonExe>
+  </PropertyGroup>
+  <Target Name="GenerateReflectionHeaders" BeforeTargets="ClCompile">
+    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(MSBuildProjectDirectory)\Tools\GenerateHeaders.py&quot; --root &quot;$(MSBuildProjectDirectory)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
