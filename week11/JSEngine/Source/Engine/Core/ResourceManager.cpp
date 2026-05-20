@@ -1106,6 +1106,36 @@ UAnimSequence* FResourceManager::FindAnimSequence(const FString& Key) const
 	return It != AnimSequenceMap.end() ? It->second : nullptr;
 }
 
+bool FResourceManager::SaveAnimSequence(UAnimSequence* AnimSequence)
+{
+	if (!AnimSequence || !AnimSequence->DataModel)
+	{
+		return false;
+	}
+
+	const FString SourcePath = FPaths::Normalize(
+		AnimSequence->SourceFbxPath.empty() ? AnimSequence->AssetPath : AnimSequence->SourceFbxPath);
+	const FString TargetPath = FPaths::Normalize(AnimSequence->TargetSkeletonPath);
+	const FString StackName = AnimSequence->AnimStackName;
+
+	if (SourcePath.empty() || TargetPath.empty() || StackName.empty())
+	{
+		return false;
+	}
+
+	const FString BinaryPath = FAssetPathPolicy::MakeWritableAnimSequenceCacheBinaryPath(SourcePath, TargetPath, StackName);
+	const bool bSaved = BinarySerializer.SaveAnimSequence(BinaryPath, SourcePath, *AnimSequence);
+
+	UE_LOG("[AnimSequenceSave] Path=%s | Target=%s | Stack=%s | BinarySave=%s | BinaryPath=%s",
+	       SourcePath.c_str(),
+	       TargetPath.c_str(),
+	       StackName.c_str(),
+	       bSaved ? "OK" : "FAIL",
+	       BinaryPath.c_str());
+
+	return bSaved;
+}
+
 TArray<FString> FResourceManager::GetAnimSequencePaths() const
 {
 	return AnimSequenceFilePaths;

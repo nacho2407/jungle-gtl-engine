@@ -1,4 +1,4 @@
-#include "BinarySerializer.h"
+﻿#include "BinarySerializer.h"
 
 #include "Asset/StaticMeshTypes.h"
 #include "Asset/SkeletalMeshTypes.h"
@@ -60,6 +60,7 @@ constexpr uint32 MAX_SKELETAL_MESH_SOCKET_COUNT   = 1024;
 
 constexpr uint32 MAX_ANIM_SEQUENCE_TRACK_COUNT = 65'536;
 constexpr uint32 MAX_ANIM_SEQUENCE_KEY_COUNT = 1'000'000;
+constexpr uint32 MAX_ANIM_NOTIFY_COUNT = 100'000;
 
 static bool IsValidStaticMeshHeader(const FStaticMeshBinaryHeader& Header)
 {
@@ -1353,6 +1354,48 @@ bool FBinarySerializer::ReadAnimSequenceHeader(std::ifstream& In, FAnimSequenceB
         && ReadInt32LE(In, OutHeader.TrackCount);
 }
 
+void FBinarySerializer::WriteAnimNotifies(std::ofstream& Out, const TArray<FAnimNotifyEvent>& Notifies)
+{
+    WriteUInt32LE(Out, static_cast<uint32>(Notifies.size()));
+
+    for (const FAnimNotifyEvent& Notify : Notifies)
+    {
+        WriteFloatLE(Out, Notify.TriggerTime);
+        WriteFloatLE(Out, Notify.Duration);
+        WriteString(Out, Notify.NotifyName.ToString());
+    }
+}
+
+bool FBinarySerializer::ReadAnimNotifies(std::ifstream& In, TArray<FAnimNotifyEvent>& OutNotifies) const
+{
+    uint32 NotifyCount = 0;
+    if (!ReadUInt32LE(In, NotifyCount) || NotifyCount > MAX_ANIM_NOTIFY_COUNT)
+    {
+        return false;
+    }
+
+    OutNotifies.clear();
+    OutNotifies.reserve(NotifyCount);
+
+    for (uint32 NotifyIndex = 0; NotifyIndex < NotifyCount; ++NotifyIndex)
+    {
+        FAnimNotifyEvent Notify;
+        FString NotifyName;
+
+        if (!ReadFloatLE(In, Notify.TriggerTime) ||
+            !ReadFloatLE(In, Notify.Duration) ||
+            !ReadString(In, NotifyName))
+        {
+            return false;
+        }
+
+        Notify.NotifyName = FName(NotifyName);
+        OutNotifies.push_back(Notify);
+    }
+
+    return In.good();
+}
+
 void FBinarySerializer::WriteVector3(std::ofstream& Out, const FVector& V)
 {
     WriteFloatLE(Out, V.X);
@@ -1695,6 +1738,8 @@ bool FBinarySerializer::SaveAnimSequence(const FString& BinaryPath, const FStrin
         WriteFloatArray(Out, Raw.ScaleKeyTimes);
     }
 
+    WriteAnimNotifies(Out, AnimSequence.GetNotifies());
+
     return Out.good();
 
 }
@@ -1767,6 +1812,13 @@ bool FBinarySerializer::LoadAnimSequence(const FString& BinaryPath, UAnimSequenc
         }
     }
 
+    TArray<FAnimNotifyEvent> LoadedNotifies;
+    if (!ReadAnimNotifies(In, LoadedNotifies))
+    {
+        delete NewDataModel;
+        return false;
+    }
+
     if (!In.good())
     {
         delete NewDataModel;
@@ -1784,6 +1836,15 @@ bool FBinarySerializer::LoadAnimSequence(const FString& BinaryPath, UAnimSequenc
     OutAnimSequence.TargetSkeletonPath = TargetSkeletonPath;
     OutAnimSequence.AnimStackName = AnimStackName;
     OutAnimSequence.DataModel = NewDataModel;
+
+    while (OutAnimSequence.RemoveNotifyAt(0))
+    {
+    }
+
+    for (const FAnimNotifyEvent& Notify : LoadedNotifies)
+    {
+        OutAnimSequence.AddNotify(Notify);
+    }
 
     return true;
 }

@@ -221,6 +221,8 @@ void FEditorViewerWindowWidget::Shutdown()
     bMeshDirty = false;
     CleanMeshEditSignature = 0;
     bHasCleanMeshEditSignature = false;
+    bAnimSequenceDirty = false;
+    DirtyTrackedAnimSequence = nullptr;
 
     Viewer = nullptr;
     bOpen = false;
@@ -250,6 +252,33 @@ bool FEditorViewerWindowWidget::IsMeshDirty() const
     return HasMeshAssetEdits();
 }
 
+UAnimSequence* FEditorViewerWindowWidget::ResolveCurrentAnimSequence() const
+{
+    USkeletalMeshComponent* SkelComp = CachedSkComp;
+    if (!SkelComp && Viewer)
+    {
+        ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+        SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+    }
+
+    return SkelComp ? Cast<UAnimSequence>(SkelComp->GetAnimation()) : nullptr;
+}
+
+bool FEditorViewerWindowWidget::CanSaveAnimSequence() const
+{
+    UAnimSequence* Sequence = ResolveCurrentAnimSequence();
+    return Sequence &&
+           Sequence->DataModel &&
+           !Sequence->SourceFbxPath.empty() &&
+           !Sequence->TargetSkeletonPath.empty() &&
+           !Sequence->AnimStackName.empty();
+}
+
+bool FEditorViewerWindowWidget::IsAnimSequenceDirty() const
+{
+    return bAnimSequenceDirty && DirtyTrackedAnimSequence == ResolveCurrentAnimSequence();
+}
+
 void FEditorViewerWindowWidget::RequestSaveMesh()
 {
     if (!Viewer)
@@ -268,6 +297,21 @@ void FEditorViewerWindowWidget::RequestSaveMesh()
     if (FResourceManager::Get().SaveSkeletalMesh(Mesh))
     {
         ResetMeshDirtyBaseline();
+    }
+}
+
+void FEditorViewerWindowWidget::RequestSaveAnimSequence()
+{
+    UAnimSequence* Sequence = ResolveCurrentAnimSequence();
+    if (!Sequence)
+    {
+        return;
+    }
+
+    if (FResourceManager::Get().SaveAnimSequence(Sequence))
+    {
+        bAnimSequenceDirty = false;
+        DirtyTrackedAnimSequence = Sequence;
     }
 }
 
@@ -491,12 +535,18 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentChrome(bool& bDockRequeste
 
     const bool bCanSaveMesh = CanSaveMesh();
     const char* SaveMeshLabel = IsMeshDirty() ? "Save Mesh *" : "Save Mesh";
+    const bool bCanSaveAnim = CanSaveAnimSequence();
+    const char* SaveAnimLabel = IsAnimSequenceDirty() ? "Save Anim *" : "Save Anim";
 
     if (ImGui::BeginMenu("File"))
     {
         if (ImGui::MenuItem(SaveMeshLabel, "Ctrl+S", false, bCanSaveMesh))
         {
             RequestSaveMesh();
+        }
+        if (ImGui::MenuItem(SaveAnimLabel, nullptr, false, bCanSaveAnim))
+        {
+            RequestSaveAnimSequence();
         }
         ImGui::Separator();
         if (ImGui::MenuItem("Close"))
@@ -516,6 +566,10 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentChrome(bool& bDockRequeste
         if (ImGui::MenuItem(SaveMeshLabel, nullptr, false, bCanSaveMesh))
         {
             RequestSaveMesh();
+        }
+        if (ImGui::MenuItem(SaveAnimLabel, nullptr, false, bCanSaveAnim))
+        {
+            RequestSaveAnimSequence();
         }
         ImGui::MenuItem("Reimport Mesh", nullptr, false, false);
         ImGui::EndMenu();
@@ -650,6 +704,21 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentToolbar(bool& bDockRequest
         RequestSaveMesh();
     }
     if (!bCanSaveMesh)
+    {
+        ImGui::EndDisabled();
+    }
+
+    ImGui::SameLine();
+    const bool bCanSaveAnim = CanSaveAnimSequence();
+    if (!bCanSaveAnim)
+    {
+        ImGui::BeginDisabled();
+    }
+    if (ImGui::Button(IsAnimSequenceDirty() ? "Save Anim *" : "Save Anim"))
+    {
+        RequestSaveAnimSequence();
+    }
+    if (!bCanSaveAnim)
     {
         ImGui::EndDisabled();
     }
@@ -913,6 +982,15 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
         UAnimSequenceBase* Sequence = CachedSkComp
                                           ? Cast<UAnimSequenceBase>(CachedSkComp->GetAnimation())
                                           : nullptr;
+        UAnimSequence* CurrentAnimSequence = ResolveCurrentAnimSequence();
+        if (DirtyTrackedAnimSequence != CurrentAnimSequence)
+        {
+            DirtyTrackedAnimSequence = CurrentAnimSequence;
+            bAnimSequenceDirty = false;
+            EditingNotifyIndex = -1;
+            SelectedNotifyIndex = -1;
+            PendingOpenNotifyIndex = -1;
+        }
 
         auto SeekAnimation = [&](float NewTime)
         {
@@ -1041,6 +1119,20 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 
         ImGui::Separator();
         ImGui::Text("Notify Events");
+        ImGui::SameLine();
+        const bool bCanSaveNotifyAnim = CanSaveAnimSequence();
+        if (!bCanSaveNotifyAnim)
+        {
+            ImGui::BeginDisabled();
+        }
+        if (ImGui::SmallButton(IsAnimSequenceDirty() ? "Save Anim *" : "Save Anim"))
+        {
+            RequestSaveAnimSequence();
+        }
+        if (!bCanSaveNotifyAnim)
+        {
+            ImGui::EndDisabled();
+        }
 
         if (!Sequence)
         {
@@ -1120,6 +1212,8 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
                         Edited.Duration = EditingNotifyDuration;
 
                         Sequence->UpdateNotifyAt(NotifyIndex, Edited);
+                        bAnimSequenceDirty = true;
+                        DirtyTrackedAnimSequence = ResolveCurrentAnimSequence();
                         EditingNotifyIndex = -1;
                     }
 
@@ -1128,6 +1222,8 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
                     if (ImGui::Button("Delete"))
                     {
                         Sequence->RemoveNotifyAt(NotifyIndex);
+                        bAnimSequenceDirty = true;
+                        DirtyTrackedAnimSequence = ResolveCurrentAnimSequence();
                         EditingNotifyIndex = -1;
                         SelectedNotifyIndex = -1;
                         ImGui::PopID();
@@ -1336,6 +1432,8 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
                     Notify.NotifyName = FName(NotifyNameBuffer);
 
                     Sequence->AddNotify(Notify);
+                    bAnimSequenceDirty = true;
+                    DirtyTrackedAnimSequence = ResolveCurrentAnimSequence();
                 }
 
                 ImGui::CloseCurrentPopup();

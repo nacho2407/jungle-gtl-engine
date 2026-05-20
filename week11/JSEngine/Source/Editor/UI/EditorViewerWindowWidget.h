@@ -3,6 +3,7 @@
 #include "Asset/SkeletalMeshTypes.h"
 
 class USkeletalMeshComponent;
+class UAnimSequence;
 class FEditorViewer;
 
 class FEditorViewerWindowWidget : public FEditorWidget
@@ -29,6 +30,9 @@ public:
 	void RequestSaveMesh();
 	bool CanSaveMesh() const;
 	bool IsMeshDirty() const;
+	void RequestSaveAnimSequence();
+	bool CanSaveAnimSequence() const;
+	bool IsAnimSequenceDirty() const;
 
 private:
     // bone tree 캐시들. CachedMesh가 바뀌면 둘 다 재빌드.
@@ -62,6 +66,7 @@ private:
 	void RenderDetachedDocumentToolbar(bool& bDockRequested);
 	void Shutdown();
 	FSkeletalMesh* ResolveCurrentMeshData() const;
+	UAnimSequence* ResolveCurrentAnimSequence() const;
 	const TArray<FBoneInfo>& ResolveCurrentBones() const;
 	uint64 ComputeEditableMeshSignature(const FSkeletalMesh* MeshData) const;
 	void ResetMeshDirtyBaseline();
@@ -87,6 +92,8 @@ private:
     bool  bMeshDirty = false;         // socket 등 mesh asset 데이터 변경 후 Save 트리거용
 	uint64 CleanMeshEditSignature = 0;
 	bool bHasCleanMeshEditSignature = false;
+	bool bAnimSequenceDirty = false;
+	UAnimSequence* DirtyTrackedAnimSequence = nullptr;
 
 	FEditorViewer* Viewer = nullptr;
     bool bOpen = false;

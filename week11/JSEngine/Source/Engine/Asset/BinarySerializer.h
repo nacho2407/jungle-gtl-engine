@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Animation/AnimationTypes.h"
 #include "Core/CoreMinimal.h"
 
 #include <fstream>
@@ -14,7 +15,7 @@ struct FMatrix;
 namespace FAnimSequenceBinaryConstants
 {
     constexpr uint32 Magic = 0x4D494E41; // 'ANIM'
-    constexpr uint32 BinaryVersion = 7;  // v7: stores separate import version
+    constexpr uint32 BinaryVersion = 8;  // v8: stores animation notifies
     constexpr uint32 DerivedDataVersion = 2;  // v2: only authored FBX scale curves produce animated scale keys
 }
 
@@ -135,6 +136,8 @@ private:
 
     void WriteAnimSequenceHeader(std::ofstream& Out, const FAnimSequenceBinaryHeader& Header);
     bool ReadAnimSequenceHeader(std::ifstream& In, FAnimSequenceBinaryHeader& OutHeader) const;
+    void WriteAnimNotifies(std::ofstream& Out, const TArray<FAnimNotifyEvent>& Notifies);
+    bool ReadAnimNotifies(std::ifstream& In, TArray<FAnimNotifyEvent>& OutNotifies) const;
 
     void WriteVector3(std::ofstream& Out, const FVector& V);
     bool ReadVector3(std::ifstream& In, FVector& OutV) const;
