@@ -431,6 +431,11 @@ void FEditorContentBrowserWidget::RefreshContent()
 					break;
 				}
 			}
+			else
+			{
+				// 손상/미완성된 .uasset 도 generic element 로 fallback 해서 SetIcon 단계에서 null deref 를 막는다.
+				Element = std::make_shared<ContentBrowserElement>();
+			}
 		}
 		else
 		{
