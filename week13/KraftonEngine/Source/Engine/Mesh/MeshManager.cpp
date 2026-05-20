@@ -1,4 +1,4 @@
-﻿#include "MeshManager.h"
+#include "MeshManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/ObjImporter.h"
@@ -19,10 +19,10 @@
 #include <utility>
 
 #include "Animation/AnimationManager.h"
-#include "Animation/AnimSequence.h"
-#include "Animation/Skeleton.h"
-#include "Animation/SkeletonManager.h"
-#include "Animation/SkeletonTypes.h"
+#include "Animation/Sequence/AnimSequence.h"
+#include "Animation/Skeleton/Skeleton.h"
+#include "Animation/Skeleton/SkeletonManager.h"
+#include "Animation/Skeleton/SkeletonTypes.h"
 
 TMap<FString, UStaticMesh*> FMeshManager::StaticMeshCache;
 TMap<FString, USkeletalMesh*> FMeshManager::SkeletalMeshCache;

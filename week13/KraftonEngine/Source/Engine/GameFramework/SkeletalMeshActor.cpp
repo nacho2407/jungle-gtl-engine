@@ -3,7 +3,7 @@
 #include "Component/SkeletalMeshComponent.h"
 #include "Mesh/MeshManager.h"
 #include "Animation/AnimationMode.h"
-#include "Animation/CharacterAnimInstance.h"
+#include "Animation/Instance/CharacterAnimInstance.h"
 
 void ASkeletalMeshActor::BeginPlay()
 {

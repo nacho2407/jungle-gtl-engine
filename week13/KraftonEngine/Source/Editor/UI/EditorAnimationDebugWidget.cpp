@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorAnimationDebugWidget.h"
+#include "Editor/UI/EditorAnimationDebugWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Selection/SelectionManager.h"
@@ -6,11 +6,11 @@
 #include "ImGui/imgui.h"
 
 #include "Animation/AnimInstance.h"
-#include "Animation/AnimMontage.h"
-#include "Animation/AnimMontageInstance.h"
-#include "Animation/AnimNotify.h"
-#include "Animation/AnimSequenceBase.h"
-#include "Animation/AnimState.h"
+#include "Animation/Montage/AnimMontage.h"
+#include "Animation/Montage/AnimMontageInstance.h"
+#include "Animation/Notify/AnimNotify.h"
+#include "Animation/Sequence/AnimSequenceBase.h"
+#include "Animation/StateMachine/AnimState.h"
 #include "Animation/AnimationMode.h"
 #include "Animation/Nodes/AnimNode_Base.h"
 #include "Animation/Nodes/AnimNode_BlendListByEnum.h"
