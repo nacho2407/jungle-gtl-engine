@@ -25,8 +25,7 @@ enum class EAnimGraphPinType : uint8
 	Name
 };
 
-// FAnimNode_* 와 1:1 매핑되는 enum. 단계 1 은 OutputPose / SequencePlayer 만 실질 사용,
-// 나머지는 후속 단계에서 노드 팩토리가 핀 레이아웃 생성 시 분기 키로 사용.
+// FAnimNode_* 와 1:1 매핑되는 enum.
 enum class EAnimGraphNodeType : uint8
 {
 	OutputPose,           // FAnimNode_Root 와 매핑 — 그래프 종착점
@@ -35,7 +34,8 @@ enum class EAnimGraphNodeType : uint8
 	Slot,
 	LayeredBlendPerBone,
 	BlendListByEnum,
-	VariableGet,          // UAnimInstance UPROPERTY 참조 — 미구현
+	VariableGet,          // UAnimInstance UPROPERTY 참조
+	RefPose,              // FAnimNode_RefPose — mesh ref pose 출력. 보통 Slot/LayeredBlend 의 fallback 입력으로.
 };
 
 struct FAnimGraphPin

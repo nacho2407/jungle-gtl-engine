@@ -289,6 +289,13 @@ namespace
 				return Owner.MakeNode<FAnimNode_RefPose>();
 			}
 
+			case EAnimGraphNodeType::RefPose:
+			{
+				// 단순 leaf — mesh ref pose 출력. 보통 Slot/LayeredBlend 의 BlendPose 입력으로 사용
+				// (montage 없는 UpperBody slot 패턴 등).
+				return Owner.MakeNode<FAnimNode_RefPose>();
+			}
+
 			case EAnimGraphNodeType::StateMachine:
 			{
 				FAnimNode_StateMachine* SM = Owner.MakeNode<FAnimNode_StateMachine>();
