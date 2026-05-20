@@ -35,7 +35,7 @@ public:
 	ULuaAnimInstance() = default;
 	~ULuaAnimInstance() override;
 
-	// Editor 노출 — Asset/Script/Anim 하위 .lua 파일 (FAssetRegistry "LuaAnimScript" 콤보).
+	// Editor 노출 — Content/Script/Anim 하위 .lua 파일 (FAssetRegistry "LuaAnimScript" 콤보).
 	UPROPERTY(Edit, Save, Category="Animation|Lua", DisplayName="Script File", AssetType="LuaAnimScript")
 	FString ScriptFile;
 
