@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Core/Types/CoreTypes.h"
-#include "Mesh/Fbx/FbxImportContext.h"
-#include "Mesh/StaticMeshAsset.h"
+#include "Mesh/Importer/Fbx/FbxImportContext.h"
+#include "Mesh/Static/StaticMeshAsset.h"
 
 class FFbxTangentBuilder
 {

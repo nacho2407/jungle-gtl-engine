@@ -3,7 +3,7 @@
 #include "Component/MeshComponent.h"
 #include "Core/Types/PropertyTypes.h"
 #include "Mesh/MeshManager.h"
-#include "Mesh/StaticMesh.h"
+#include "Mesh/Static/StaticMesh.h"
 #include "Object/ObjectPtr.h"
 #include "Object/SoftObjectPtr.h"
 

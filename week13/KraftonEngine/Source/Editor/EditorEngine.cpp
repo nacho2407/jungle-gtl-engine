@@ -29,7 +29,7 @@
 #include "Lua/LuaScriptManager.h"
 #include <filesystem>
 
-#include "Mesh/SkeletalMesh.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
 
 namespace
 {

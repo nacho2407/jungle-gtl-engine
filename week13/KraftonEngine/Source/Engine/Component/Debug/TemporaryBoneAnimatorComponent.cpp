@@ -5,8 +5,8 @@
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
-#include "Mesh/SkeletalMesh.h"
-#include "Mesh/SkeletalMeshAsset.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
+#include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Serialization/Archive.h"
 
 #include <cmath>

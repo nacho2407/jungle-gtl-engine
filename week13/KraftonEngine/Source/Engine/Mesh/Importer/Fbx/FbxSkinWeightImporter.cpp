@@ -1,8 +1,8 @@
-#include "Mesh/Fbx/FbxSkinWeightImporter.h"
-#include "Mesh/Fbx/FbxSceneQuery.h"
-#include "Mesh/Fbx/FbxTransformUtils.h"
-#include "Mesh/Fbx/FbxMaterialImporter.h"
-#include "Mesh/Fbx/FbxTangentBuilder.h"
+#include "Mesh/Importer/Fbx/FbxSkinWeightImporter.h"
+#include "Mesh/Importer/Fbx/FbxSceneQuery.h"
+#include "Mesh/Importer/Fbx/FbxTransformUtils.h"
+#include "Mesh/Importer/Fbx/FbxMaterialImporter.h"
+#include "Mesh/Importer/Fbx/FbxTangentBuilder.h"
 #include "Core/Log.h"
 
 #include <algorithm>

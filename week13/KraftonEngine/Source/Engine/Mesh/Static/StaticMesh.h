@@ -2,10 +2,10 @@
 
 #include "Object/Object.h"
 #include "Collision/BVH/MeshTriangleBVH.h"
-#include "Mesh/StaticMeshAsset.h"
+#include "Mesh/Static/StaticMeshAsset.h"
 #include "Serialization/Archive.h"
 
-#include "Source/Engine/Mesh/StaticMesh.generated.h"
+#include "Source/Engine/Mesh/Static/StaticMesh.generated.h"
 #include <memory>
 
 struct ID3D11Device;

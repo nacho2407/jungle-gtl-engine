@@ -1,7 +1,7 @@
 #include "Render/Proxy/StaticMeshSceneProxy.h"
 #include "Component/Primitive/StaticMeshComponent.h"
-#include "Mesh/StaticMesh.h"
-#include "Mesh/StaticMeshAsset.h"
+#include "Mesh/Static/StaticMesh.h"
+#include "Mesh/Static/StaticMeshAsset.h"
 #include "Materials/Material.h"
 
 #include <algorithm>

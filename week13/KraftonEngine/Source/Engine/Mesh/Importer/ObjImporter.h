@@ -2,7 +2,7 @@
 
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
-#include "MeshImportOptions.h"
+#include "Mesh/Importer/MeshImportOptions.h"
 
 struct FStaticMesh;
 struct FStaticMeshSection;

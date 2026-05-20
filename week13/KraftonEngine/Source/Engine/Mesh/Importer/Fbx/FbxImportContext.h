@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Mesh/Fbx/FbxImportTypes.h"
+#include "Mesh/Importer/Fbx/FbxImportTypes.h"
 #include "Render/Types/VertexTypes.h"
 
 #include <fbxsdk.h>

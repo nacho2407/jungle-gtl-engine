@@ -5,7 +5,7 @@
 #include "Core/Types/PropertyTypes.h"
 #include "Engine/Platform/Paths.h"
 #include "Collision/Ray/RayUtils.h"
-#include "Mesh/StaticMeshAsset.h"
+#include "Mesh/Static/StaticMeshAsset.h"
 #include "Engine/Runtime/Engine.h"
 #include "Render/Shader/ShaderManager.h"
 #include "Texture/Texture2D.h"

@@ -1,4 +1,4 @@
-#include "Mesh/Fbx/FbxSceneQuery.h"
+#include "Mesh/Importer/Fbx/FbxSceneQuery.h"
 
 void FFbxSceneQuery::CollectAllNodes(FbxNode* RootNode, TArray<FbxNode*>& OutNodes)
 {

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Core/Types/CoreTypes.h"
-#include "Mesh/StaticMeshAsset.h"
-#include "Mesh/SkeletalMeshAsset.h"
+#include "Mesh/Static/StaticMeshAsset.h"
+#include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Animation/Skeleton/SkeletonTypes.h"
 
 class UAnimSequence;

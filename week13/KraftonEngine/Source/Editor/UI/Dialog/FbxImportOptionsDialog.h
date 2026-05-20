@@ -2,7 +2,7 @@
 
 #include "Core/Types/CoreTypes.h"
 #include "Asset/AssetRegistry.h"
-#include "Mesh/Fbx/FbxImportTypes.h"
+#include "Mesh/Importer/Fbx/FbxImportTypes.h"
 
 struct FFbxSceneImportRequest;
 struct FAnimationImportRequest;

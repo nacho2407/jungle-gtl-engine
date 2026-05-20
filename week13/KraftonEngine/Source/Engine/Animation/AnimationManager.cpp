@@ -2,7 +2,7 @@
 
 #include "Animation/Sequence/AnimSequence.h"
 #include "Animation/Montage/AnimMontage.h"
-#include "Mesh/FbxImporter.h"
+#include "Mesh/Importer/FbxImporter.h"
 #include "Animation/Skeleton/SkeletonManager.h"
 #include "Animation/Skeleton/Skeleton.h"
 #include "Animation/Sequence/AnimDataModel.h"

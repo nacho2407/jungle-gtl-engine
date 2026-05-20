@@ -1,6 +1,6 @@
-#include "Mesh/Fbx/FbxSkeletonImporter.h"
-#include "Mesh/Fbx/FbxSceneQuery.h"
-#include "Mesh/Fbx/FbxTransformUtils.h"
+#include "Mesh/Importer/Fbx/FbxSkeletonImporter.h"
+#include "Mesh/Importer/Fbx/FbxSceneQuery.h"
+#include "Mesh/Importer/Fbx/FbxTransformUtils.h"
 
 namespace
 {

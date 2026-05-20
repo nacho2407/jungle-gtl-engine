@@ -1,9 +1,9 @@
-#include "Mesh/Fbx/FbxSkeletalMeshImporter.h"
-#include "Mesh/Fbx/FbxSceneQuery.h"
-#include "Mesh/Fbx/FbxMaterialImporter.h"
-#include "Mesh/Fbx/FbxSkeletonImporter.h"
-#include "Mesh/Fbx/FbxSkinWeightImporter.h"
-#include "Mesh/Fbx/FbxAnimationImporter.h"
+#include "Mesh/Importer/Fbx/FbxSkeletalMeshImporter.h"
+#include "Mesh/Importer/Fbx/FbxSceneQuery.h"
+#include "Mesh/Importer/Fbx/FbxMaterialImporter.h"
+#include "Mesh/Importer/Fbx/FbxSkeletonImporter.h"
+#include "Mesh/Importer/Fbx/FbxSkinWeightImporter.h"
+#include "Mesh/Importer/Fbx/FbxAnimationImporter.h"
 
 #include <utility>
 

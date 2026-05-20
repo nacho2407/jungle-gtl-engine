@@ -1,7 +1,7 @@
 #include "AnimationRuntime.h"
 #include "Animation/PoseContext.h"
-#include "Mesh/SkeletalMesh.h"
-#include "Mesh/SkeletalMeshAsset.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
+#include "Mesh/Skeletal/SkeletalMeshAsset.h"
 
 #include <algorithm>
 #include <cmath>
