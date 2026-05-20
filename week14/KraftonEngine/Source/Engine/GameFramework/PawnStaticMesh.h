@@ -21,7 +21,7 @@ public:
 	APawnStaticMesh() = default;
 	~APawnStaticMesh() override = default;
 
-	void InitDefaultComponents(const FString& StaticMeshFileName = "Data/BasicShape/Cube.obj");
+	void InitDefaultComponents(const FString& StaticMeshFileName = "Content/Data/BasicShape/Cube.obj");
 	void PostDuplicate() override;
 
 	UStaticMeshComponent* GetStaticMeshComponent() const { return StaticMeshComponent; }

@@ -88,7 +88,7 @@ void FStaticMeshEditorWidget::Open(UObject* Object)
 	LightComp->PushToScene();
 
 	AStaticMeshActor* FloorActor = WorldContext.World->SpawnActor<AStaticMeshActor>();
-	FloorActor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
+	FloorActor->InitDefaultComponents("Content/Data/BasicShape/Cube.OBJ");
 	FloorActor->SetActorLocation(FVector(0.0f, 0.0f, -0.05f));
 	FloorActor->SetActorScale(FVector(10.0f, 10.0f, 0.02f));
 

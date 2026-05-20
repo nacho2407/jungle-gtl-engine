@@ -12,6 +12,6 @@
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "Textures" : {
-    "DiffuseTexture" : "Data/BasicShape/BasicShape.png"
+    "DiffuseTexture" : "Content/Data/BasicShape/BasicShape.png"
   }
 }

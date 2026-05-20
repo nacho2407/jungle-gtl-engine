@@ -587,7 +587,7 @@ void FMeshManager::ScanMeshSourceFiles()
 {
 	AvailableStaticMeshSourceFiles.clear();
 
-	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data/";
+	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Content/Data/";
 
 	if (!std::filesystem::exists(DataRoot))
 	{
@@ -741,7 +741,7 @@ void FMeshManager::ScanFbxSourceFiles()
 {
 	AvailableFbxSourceFiles.clear();
 
-	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data/";
+	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Content/Data/";
 
 	if (!std::filesystem::exists(DataRoot))
 	{

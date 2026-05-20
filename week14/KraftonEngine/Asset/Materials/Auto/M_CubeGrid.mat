@@ -12,6 +12,6 @@
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "Textures" : {
-    "DiffuseTexture" : "Data/CubeGrid/uvgrid.png"
+    "DiffuseTexture" : "Content/Data/CubeGrid/uvgrid.png"
   }
 }
