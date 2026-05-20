@@ -43,6 +43,8 @@ public:
 
 	FSkeletalMeshViewportClient&       GetClient()       { return Client; }
 	const FSkeletalMeshViewportClient& GetClient() const { return Client; }
+    ESkeletalMeshViewerMode GetViewerMode() const { return ViewerMode; }
+    void SetViewerMode(ESkeletalMeshViewerMode InMode);
 
 	ASkeletalMeshActor* GetViewTarget() const { return ViewTarget; }
     void ClearViewTarget() { ViewTarget = nullptr; }
@@ -81,4 +83,5 @@ private:
     int32 SelectedBoneIndex = -1;
     int32 SelectedSocketIndex = -1;
     FVector CachedRotation;
+    ESkeletalMeshViewerMode ViewerMode = ESkeletalMeshViewerMode::BindPose;
 };

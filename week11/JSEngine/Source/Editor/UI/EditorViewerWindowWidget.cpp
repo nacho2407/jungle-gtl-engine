@@ -882,6 +882,19 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
     // [CENTER - 3] 타임라인 영역 (좌: 컨트롤, 우: 스크러버)
     ImGui::BeginChild("AnimationTimelineZone", ImVec2(CenterAvailableSize.x, TimelineHeight), true, ImGuiWindowFlags_NoScrollbar);
 
+    const bool bAnimationMode = Viewer && Viewer->GetViewerMode() == ESkeletalMeshViewerMode::Animation;
+    if (!bAnimationMode)
+    {
+        ImGui::TextDisabled("Bind Pose Mode");
+        ImGui::Separator();
+        ImGui::TextWrapped("Select bones or sockets, then edit them with the transform gizmo or the Details panel.");
+        if (CachedSkComp && ImGui::Button("Reset To Bind Pose"))
+        {
+            CachedSkComp->ResetToBindPose();
+        }
+    }
+    else
+    {
     RefreshAnimationTimelineState();
 
     float TimelineFullWidth = ImGui::GetContentRegionAvail().x;
@@ -1109,6 +1122,7 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
     TimelineDrawList->AddLine(ImVec2(PlayheadX, HeadMin.y), ImVec2(PlayheadX, HeadMax.y), IM_COL32(255, 150, 150, 100));
 
     ImGui::EndChild(); // TimelineRightPanel
+    }
     ImGui::EndChild(); // AnimationTimelineZone
 
     ImGui::EndChild(); // ViewportPanel 종료
@@ -1122,7 +1136,13 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
     ImGui::BeginChild("BoneDetailsPanel", ImVec2(RightPanelWidth, 0), true);
     ImGui::Text("Details");
     ImGui::Separator();
-    if (Viewer->GetSelectedBoneIndex() != -1 && SkelMeshComp)
+    if (bAnimationMode)
+    {
+        ImGui::TextDisabled("Animation mode");
+        ImGui::Separator();
+        ImGui::TextWrapped("Use the animation list and playback controls in the timeline.");
+    }
+    else if (Viewer->GetSelectedBoneIndex() != -1 && SkelMeshComp)
     {
         RenderBoneDetails(SkelMeshComp);
     }
@@ -1239,7 +1259,7 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
         Bone.Name.ToString().c_str());
 
     // 클릭 → bone 선택. socket 선택은 해제 (상호 배타).
-    if (ImGui::IsItemClicked())
+    if (ImGui::IsItemClicked() && Viewer && Viewer->GetViewerMode() == ESkeletalMeshViewerMode::BindPose)
     {
         Viewer->SelectBone(BoneIndex);
     }
@@ -1247,10 +1267,13 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
     // 우클릭 컨텍스트
     if (ImGui::BeginPopupContextItem())
     {
+        const bool bCanEditBindPose = Viewer && Viewer->GetViewerMode() == ESkeletalMeshViewerMode::BindPose;
+        if (!bCanEditBindPose) ImGui::BeginDisabled();
         if (ImGui::MenuItem("Add Socket"))
         {
             AddSocketOnBone(BoneIndex);
         }
+        if (!bCanEditBindPose) ImGui::EndDisabled();
         ImGui::Separator();
 
         const bool bCanToggleChildren = bHasBoneChildren || bHasSocketChildren;
@@ -1370,17 +1393,16 @@ void FEditorViewerWindowWidget::DrawSocketNode(int32 SocketIdx)
     ImGui::PopStyleColor();
 
     // 클릭 → socket 선택. bone 선택은 해제.
-    if (ImGui::IsItemClicked())
+    if (ImGui::IsItemClicked() && Viewer && Viewer->GetViewerMode() == ESkeletalMeshViewerMode::BindPose)
     {
-        if (Viewer)
-        {
-            Viewer->SelectSocket(SocketIdx);
-        }
+        Viewer->SelectSocket(SocketIdx);
     }
 
     // 우클릭 컨텍스트
     if (ImGui::BeginPopupContextItem())
     {
+        const bool bCanEditBindPose = Viewer && Viewer->GetViewerMode() == ESkeletalMeshViewerMode::BindPose;
+        if (!bCanEditBindPose) ImGui::BeginDisabled();
         if (ImGui::MenuItem("Add Preview Mesh..."))
         {
             // 모달은 popup 바깥에서 OpenPopup해야 안정적 — 여기선 트리거 idx만 기록.
@@ -1409,6 +1431,7 @@ void FEditorViewerWindowWidget::DrawSocketNode(int32 SocketIdx)
         {
             DeleteSocket(SocketIdx);
         }
+        if (!bCanEditBindPose) ImGui::EndDisabled();
 
         ImGui::EndPopup();
     }
