@@ -39,6 +39,8 @@ namespace
 			return { ImVec4(0.36f, 0.52f, 0.94f, 1.0f), "Actor Sequencer" };
 		case EEditorTabKind::RuntimeUIPreview:
 			return { ImVec4(0.86f, 0.58f, 0.22f, 1.0f), "Runtime UI Preview" };
+		case EEditorTabKind::AnimStateMachineEditor:
+			return { ImVec4(0.30f, 0.78f, 0.78f, 1.0f), "Animation State Machine" };
 		default:
 			return { ImVec4(0.58f, 0.62f, 0.70f, 1.0f), "Editor Tab" };
 		}
@@ -62,6 +64,8 @@ namespace
 			return "Sequencer";
 		case EEditorTabKind::RuntimeUIPreview:
 			return "RuntimeUI";
+		case EEditorTabKind::AnimStateMachineEditor:
+			return "AnimStateMachine";
 		default:
 			return "Tab";
 		}

@@ -18,6 +18,7 @@ public:
 	void SetPIEViewportFullscreenCallback(std::function<void(bool)> InCallback);
 	void SetBuildGameCallback(std::function<void()> InCallback);
 	void SetRuntimeUIPreviewOpenCallback(std::function<void()> InCallback);
+	void SetAnimStateMachineOpenCallback(std::function<void()> InCallback);
 	void SetActiveCommandHandlers(
 		std::function<bool(const FEditorShortcut&)> InShortcutHandler,
 		std::function<bool(EEditorCommandId)> InCommandHandler);
@@ -69,6 +70,7 @@ private:
 	std::function<void(bool)> PIEViewportFullscreenCallback;
 	std::function<void()> BuildGameCallback;
 	std::function<void()> RuntimeUIPreviewOpenCallback;
+	std::function<void()> AnimStateMachineOpenCallback;
 	std::function<bool(const FEditorShortcut&)> ActiveShortcutHandler;
 	std::function<bool(EEditorCommandId)> ActiveCommandHandler;
 	std::function<bool()> ActiveMenuRenderer;

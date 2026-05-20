@@ -142,6 +142,11 @@ void FEditorToolbarWidget::SetRuntimeUIPreviewOpenCallback(std::function<void()>
 	RuntimeUIPreviewOpenCallback = std::move(InCallback);
 }
 
+void FEditorToolbarWidget::SetAnimStateMachineOpenCallback(std::function<void()> InCallback)
+{
+	AnimStateMachineOpenCallback = std::move(InCallback);
+}
+
 void FEditorToolbarWidget::SetActiveCommandHandlers(
 	std::function<bool(const FEditorShortcut&)> InShortcutHandler,
 	std::function<bool(EEditorCommandId)> InCommandHandler)
@@ -414,6 +419,13 @@ void FEditorToolbarWidget::RenderWindowMenu()
 	else if (bShowRuntimeUIPreview)
 	{
 		ImGui::MenuItem("Runtime UI Preview", nullptr, bShowRuntimeUIPreview);
+	}
+	if (AnimStateMachineOpenCallback)
+	{
+		if (ImGui::MenuItem("Animation State Machine Visual Editor"))
+		{
+			AnimStateMachineOpenCallback();
+		}
 	}
 	if (bShowProjectSettings) ImGui::MenuItem("Project Settings", nullptr, bShowProjectSettings);
 	if (bShowWorldSettings) ImGui::MenuItem("World Settings", nullptr, bShowWorldSettings);

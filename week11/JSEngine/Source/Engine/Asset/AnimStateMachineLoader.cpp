@@ -177,6 +177,31 @@ namespace
         return true;
     }
 
+    bool ReadOptionalString(
+        json::JSON& Object,
+        const char* Key,
+        const FString& Path,
+        const char* Context,
+        FString& OutValue)
+    {
+        if (!Object.hasKey(Key))
+        {
+            return true;
+        }
+
+        if (!ReadStringValue(Object[Key], OutValue))
+        {
+            UE_LOG_ERROR(
+                "[AnimStateMachineLoader] Invalid string. Path=%s Context=%s Key=%s",
+                Path.c_str(),
+                Context,
+                Key);
+            return false;
+        }
+
+        return true;
+    }
+
     bool ReadOptionalInt(
         json::JSON& Object,
         const char* Key,
@@ -500,7 +525,8 @@ namespace
         json::JSON& StateNode,
         FAnimStateDesc& OutState,
         const FString& Path,
-        int32 StateIndex)
+        int32 StateIndex,
+        bool bAllowDraft)
     {
         const FString Context = "State[" + std::to_string(StateIndex) + "]";
         if (!IsJsonObject(StateNode))
@@ -522,6 +548,19 @@ namespace
 
         if (!StateNode.hasKey("Animation") || !IsJsonObject(StateNode["Animation"]))
         {
+            if (bAllowDraft)
+            {
+                OutState.Animation.SourceFbxPath.clear();
+                OutState.Animation.AnimStackName.clear();
+                if (!ReadOptionalBool(StateNode, "Loop", Path, Context.c_str(), OutState.bLooping) ||
+                    !ReadOptionalFloat(StateNode, "PlayRate", Path, Context.c_str(), OutState.PlayRate) ||
+                    !ParseEditorPosition(StateNode, OutState, Path, Context.c_str()))
+                {
+                    return false;
+                }
+                return true;
+            }
+
             UE_LOG_ERROR(
                 "[AnimStateMachineLoader] Missing or invalid animation reference. Path=%s Context=%s",
                 Path.c_str(),
@@ -530,8 +569,12 @@ namespace
         }
 
         json::JSON& AnimationNode = StateNode["Animation"];
-        if (!ReadRequiredString(AnimationNode, "SourceFbx", Path, Context.c_str(), OutState.Animation.SourceFbxPath) ||
-            !ReadRequiredString(AnimationNode, "AnimStack", Path, Context.c_str(), OutState.Animation.AnimStackName))
+        const bool bReadAnimation = bAllowDraft
+            ? (ReadOptionalString(AnimationNode, "SourceFbx", Path, Context.c_str(), OutState.Animation.SourceFbxPath) &&
+                ReadOptionalString(AnimationNode, "AnimStack", Path, Context.c_str(), OutState.Animation.AnimStackName))
+            : (ReadRequiredString(AnimationNode, "SourceFbx", Path, Context.c_str(), OutState.Animation.SourceFbxPath) &&
+                ReadRequiredString(AnimationNode, "AnimStack", Path, Context.c_str(), OutState.Animation.AnimStackName));
+        if (!bReadAnimation)
         {
             return false;
         }
@@ -848,6 +891,56 @@ namespace
 
         return ConditionNode;
     }
+
+    json::JSON MakeDescJson(const FAnimStateMachineDesc& Desc)
+    {
+        json::JSON Root = json::JSON::Make(json::JSON::Class::Object);
+        Root["AssetType"] = Desc.AssetType;
+        Root["Version"] = Desc.Version;
+        Root["EntryState"] = Desc.EntryState.ToString();
+
+        json::JSON StatesNode = json::JSON::Make(json::JSON::Class::Array);
+        for (const FAnimStateDesc& State : Desc.States)
+        {
+            json::JSON StateNode = json::JSON::Make(json::JSON::Class::Object);
+            StateNode["Id"] = State.Id;
+            StateNode["Name"] = State.Name.ToString();
+
+            json::JSON AnimationNode = json::JSON::Make(json::JSON::Class::Object);
+            AnimationNode["SourceFbx"] = State.Animation.SourceFbxPath;
+            AnimationNode["AnimStack"] = State.Animation.AnimStackName;
+            StateNode["Animation"] = AnimationNode;
+
+            StateNode["Loop"] = State.bLooping;
+            StateNode["PlayRate"] = State.PlayRate;
+
+            json::JSON PositionNode = json::JSON::Make(json::JSON::Class::Array);
+            PositionNode.append(State.EditorPosition.X);
+            PositionNode.append(State.EditorPosition.Y);
+            StateNode["Position"] = PositionNode;
+
+            StatesNode.append(StateNode);
+        }
+        Root["States"] = StatesNode;
+
+        json::JSON TransitionsNode = json::JSON::Make(json::JSON::Class::Array);
+        for (const FAnimTransitionDesc& Transition : Desc.Transitions)
+        {
+            json::JSON TransitionNode = json::JSON::Make(json::JSON::Class::Object);
+            TransitionNode["Id"] = Transition.Id;
+            TransitionNode["From"] = Transition.FromState.ToString();
+            TransitionNode["To"] = Transition.ToState.ToString();
+            TransitionNode["BlendTime"] = Transition.BlendTime;
+            TransitionNode["Priority"] = Transition.Priority;
+            TransitionNode["CanInterrupt"] = Transition.bCanInterrupt;
+            TransitionNode["CanBeInterrupted"] = Transition.bCanBeInterrupted;
+            TransitionNode["Condition"] = MakeConditionJson(Transition.Condition);
+            TransitionsNode.append(TransitionNode);
+        }
+        Root["Transitions"] = TransitionsNode;
+
+        return Root;
+    }
 }
 
 UAnimStateMachine* FAnimStateMachineLoader::Load(const FString& Path) const
@@ -886,7 +979,36 @@ FString FAnimStateMachineLoader::GetLoaderName() const
     return "FAnimStateMachineLoader";
 }
 
+bool FAnimStateMachineLoader::LoadDescForEditor(const FString& Path, FAnimStateMachineDesc& OutDesc) const
+{
+    return ReadDescInternal(Path, OutDesc, false, true);
+}
+
+bool FAnimStateMachineLoader::SaveDescForEditor(const FString& Path, const FAnimStateMachineDesc& Desc) const
+{
+    return WriteDescInternal(Path, Desc, false);
+}
+
+bool FAnimStateMachineLoader::ValidateDescForRuntime(const FAnimStateMachineDesc& Desc, const FString& Path) const
+{
+    return ValidateDesc(Desc, Path.empty() ? FString("<editor>") : Path);
+}
+
+FString FAnimStateMachineLoader::BuildDescJsonForEditor(const FAnimStateMachineDesc& Desc) const
+{
+    return MakeDescJson(Desc).dump(4);
+}
+
 bool FAnimStateMachineLoader::ReadDesc(const FString& Path, FAnimStateMachineDesc& OutDesc) const
+{
+    return ReadDescInternal(Path, OutDesc, true, false);
+}
+
+bool FAnimStateMachineLoader::ReadDescInternal(
+    const FString& Path,
+    FAnimStateMachineDesc& OutDesc,
+    bool bValidateRuntime,
+    bool bAllowDraft) const
 {
     const FString NormalizedPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
     if (NormalizedPath.empty())
@@ -931,8 +1053,15 @@ bool FAnimStateMachineLoader::ReadDesc(const FString& Path, FAnimStateMachineDes
     FAnimStateMachineDesc Desc;
     FString EntryStateName;
     if (!ReadRequiredString(Root, "AssetType", NormalizedPath, "Root", Desc.AssetType) ||
-        !ReadRequiredInt(Root, "Version", NormalizedPath, "Root", Desc.Version) ||
-        !ReadRequiredString(Root, "EntryState", NormalizedPath, "Root", EntryStateName))
+        !ReadRequiredInt(Root, "Version", NormalizedPath, "Root", Desc.Version))
+    {
+        return false;
+    }
+
+    const bool bReadEntryState = bAllowDraft
+        ? ReadOptionalString(Root, "EntryState", NormalizedPath, "Root", EntryStateName)
+        : ReadRequiredString(Root, "EntryState", NormalizedPath, "Root", EntryStateName);
+    if (!bReadEntryState)
     {
         return false;
     }
@@ -940,6 +1069,12 @@ bool FAnimStateMachineLoader::ReadDesc(const FString& Path, FAnimStateMachineDes
 
     if (!Root.hasKey("States") || !IsJsonArray(Root["States"]))
     {
+        if (bAllowDraft && !Root.hasKey("States"))
+        {
+            OutDesc = Desc;
+            return true;
+        }
+
         UE_LOG_ERROR("[AnimStateMachineLoader] States must be an array. Path=%s", NormalizedPath.c_str());
         return false;
     }
@@ -949,7 +1084,7 @@ bool FAnimStateMachineLoader::ReadDesc(const FString& Path, FAnimStateMachineDes
     for (int32 StateIndex = 0; StateIndex < StatesNode.length(); ++StateIndex)
     {
         FAnimStateDesc State;
-        if (!ParseState(StatesNode[static_cast<unsigned>(StateIndex)], State, NormalizedPath, StateIndex))
+        if (!ParseState(StatesNode[static_cast<unsigned>(StateIndex)], State, NormalizedPath, StateIndex, bAllowDraft))
         {
             return false;
         }
@@ -981,7 +1116,7 @@ bool FAnimStateMachineLoader::ReadDesc(const FString& Path, FAnimStateMachineDes
         }
     }
 
-    if (!ValidateDesc(Desc, NormalizedPath))
+    if (bValidateRuntime && !ValidateDesc(Desc, NormalizedPath))
     {
         return false;
     }
@@ -992,61 +1127,26 @@ bool FAnimStateMachineLoader::ReadDesc(const FString& Path, FAnimStateMachineDes
 
 bool FAnimStateMachineLoader::WriteDesc(const FString& Path, const FAnimStateMachineDesc& Desc) const
 {
+    return WriteDescInternal(Path, Desc, true);
+}
+
+bool FAnimStateMachineLoader::WriteDescInternal(
+    const FString& Path,
+    const FAnimStateMachineDesc& Desc,
+    bool bValidateRuntime) const
+{
     const FString NormalizedPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
     if (NormalizedPath.empty())
     {
         return false;
     }
 
-    if (!ValidateDesc(Desc, NormalizedPath))
+    if (bValidateRuntime && !ValidateDesc(Desc, NormalizedPath))
     {
         return false;
     }
 
-    json::JSON Root = json::JSON::Make(json::JSON::Class::Object);
-    Root["AssetType"] = Desc.AssetType;
-    Root["Version"] = Desc.Version;
-    Root["EntryState"] = Desc.EntryState.ToString();
-
-    json::JSON StatesNode = json::JSON::Make(json::JSON::Class::Array);
-    for (const FAnimStateDesc& State : Desc.States)
-    {
-        json::JSON StateNode = json::JSON::Make(json::JSON::Class::Object);
-        StateNode["Id"] = State.Id;
-        StateNode["Name"] = State.Name.ToString();
-
-        json::JSON AnimationNode = json::JSON::Make(json::JSON::Class::Object);
-        AnimationNode["SourceFbx"] = State.Animation.SourceFbxPath;
-        AnimationNode["AnimStack"] = State.Animation.AnimStackName;
-        StateNode["Animation"] = AnimationNode;
-
-        StateNode["Loop"] = State.bLooping;
-        StateNode["PlayRate"] = State.PlayRate;
-
-        json::JSON PositionNode = json::JSON::Make(json::JSON::Class::Array);
-        PositionNode.append(State.EditorPosition.X);
-        PositionNode.append(State.EditorPosition.Y);
-        StateNode["Position"] = PositionNode;
-
-        StatesNode.append(StateNode);
-    }
-    Root["States"] = StatesNode;
-
-    json::JSON TransitionsNode = json::JSON::Make(json::JSON::Class::Array);
-    for (const FAnimTransitionDesc& Transition : Desc.Transitions)
-    {
-        json::JSON TransitionNode = json::JSON::Make(json::JSON::Class::Object);
-        TransitionNode["Id"] = Transition.Id;
-        TransitionNode["From"] = Transition.FromState.ToString();
-        TransitionNode["To"] = Transition.ToState.ToString();
-        TransitionNode["BlendTime"] = Transition.BlendTime;
-        TransitionNode["Priority"] = Transition.Priority;
-        TransitionNode["CanInterrupt"] = Transition.bCanInterrupt;
-        TransitionNode["CanBeInterrupted"] = Transition.bCanBeInterrupted;
-        TransitionNode["Condition"] = MakeConditionJson(Transition.Condition);
-        TransitionsNode.append(TransitionNode);
-    }
-    Root["Transitions"] = TransitionsNode;
+    const json::JSON Root = MakeDescJson(Desc);
 
     std::error_code ErrorCode;
     std::filesystem::path FilePath(FPaths::ToWide(NormalizedPath));

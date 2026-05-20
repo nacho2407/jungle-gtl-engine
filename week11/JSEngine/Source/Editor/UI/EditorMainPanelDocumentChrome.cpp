@@ -55,6 +55,10 @@ void FEditorMainPanel::RenderActiveDocumentToolbar()
 			ImGui::SameLine();
 			ImGui::TextUnformatted(Widgets.RuntimeUIPreviewWidget.GetPreviewDocumentPath().c_str());
 		}
+		else if (ActiveTab && ActiveTab->Id.Kind == EEditorTabKind::AnimStateMachineEditor)
+		{
+			ImGui::TextDisabled("Animation State Machine Visual Editor");
+		}
 		else
 		{
 			ImGui::TextDisabled("No active document");
@@ -390,6 +394,50 @@ bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 		return true;
 	}
 
+	if (ActiveTab->Id.Kind == EEditorTabKind::AnimStateMachineEditor)
+	{
+		const char* SaveLabel = Widgets.AnimStateMachineWidget.IsDirty() ? "Save Asset *" : "Save Asset";
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem(SaveLabel, "Ctrl+S"))
+			{
+				Widgets.AnimStateMachineWidget.SaveAsset();
+			}
+			if (ImGui::MenuItem("Save Asset As"))
+			{
+				Widgets.AnimStateMachineWidget.RequestSaveAs();
+			}
+			ImGui::Separator();
+			if (ActiveTab->bCanClose && ImGui::MenuItem("Close Tab"))
+			{
+				RequestCloseEditorTab(ActiveTab->Id);
+			}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Edit"))
+		{
+			ImGui::MenuItem("Undo", "Ctrl+Z", false, false);
+			ImGui::MenuItem("Redo", "Ctrl+Shift+Z", false, false);
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Asset"))
+		{
+			if (ImGui::MenuItem("Validate Runtime Asset"))
+			{
+				Widgets.AnimStateMachineWidget.ValidateAsset();
+			}
+			ImGui::Separator();
+			ImGui::TextDisabled("%s", Widgets.AnimStateMachineWidget.GetAssetPath().c_str());
+			ImGui::EndMenu();
+		}
+
+		RenderCommonDocumentWindowMenu();
+		RenderDocumentHelpMenu();
+		return true;
+	}
+
 	if (ImGui::BeginMenu("File"))
 	{
 		ImGui::MenuItem("Save Asset", "Ctrl+S", false, false);
@@ -423,6 +471,9 @@ bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 			break;
 		case EEditorTabKind::RuntimeUIPreview:
 			ImGui::TextDisabled("Runtime UI Preview");
+			break;
+		case EEditorTabKind::AnimStateMachineEditor:
+			ImGui::TextDisabled("Animation State Machine");
 			break;
 		default:
 			ImGui::TextDisabled("Document");

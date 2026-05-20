@@ -159,6 +159,26 @@ void FEditorMainPanel::RenderRuntimeUIPreviewDocument(float DeltaTime)
 	ImGui::End();
 }
 
+void FEditorMainPanel::RenderAnimStateMachineDocument(float DeltaTime)
+{
+	const FEditorTabEntry* ActiveTab = EditorTabs.GetActiveTab();
+	if (!ActiveTab || ActiveTab->Id.Kind != EEditorTabKind::AnimStateMachineEditor)
+	{
+		return;
+	}
+
+	constexpr ImGuiWindowFlags WindowFlags = 0;
+	if (!ImGui::Begin("Viewport", nullptr, WindowFlags))
+	{
+		ImGui::End();
+		return;
+	}
+
+	Widgets.AnimStateMachineWidget.RenderEmbedded(DeltaTime);
+	EditorTabs.SetTabDirty(ActiveTab->Id, Widgets.AnimStateMachineWidget.IsDirty());
+	ImGui::End();
+}
+
 void FEditorMainPanel::RequestDockViewer(FEditorViewer* Viewer)
 {
 	if (!Viewer)
