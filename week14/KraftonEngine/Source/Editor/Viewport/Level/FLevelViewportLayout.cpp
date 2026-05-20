@@ -1579,6 +1579,19 @@ void FLevelViewportLayout::HandleViewportContextMenuInput(const FPoint& MousePos
 		return;
 	}
 
+	// PIE 중에는 우클릭이 카메라 조작/게임 입력으로 가야 한다. Place Actor popup 트래킹 자체를 꺼서
+	// 우클릭 떼는 순간 메뉴가 뜨는 일이 없게 하고, 진입 시점에 남아있던 추적 상태도 초기화.
+	if (Editor && Editor->IsPlayingInEditor())
+	{
+		for (int32 i = 0; i < MaxViewportSlots; ++i)
+		{
+			ContextMenuState.bTrackingRightClick[i] = false;
+			ContextMenuState.RightClickTravelSq[i] = 0.0f;
+		}
+		ContextMenuState.PendingPopupSlot = -1;
+		return;
+	}
+
 	constexpr float RightClickPopupThresholdSq = 16.0f;
 	auto IsSlotVisibleEnough = [&](int32 SlotIndex) -> bool
 	{
@@ -1656,6 +1669,15 @@ void FLevelViewportLayout::HandleViewportContextMenuInput(const FPoint& MousePos
 void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 {
 	constexpr const char* PopupId = "##ViewportPlaceActorPopup";
+
+	// PIE 중엔 popup 자체를 열지도, 이전에 열려있던 것을 그리지도 않는다.
+	// (HandleViewportContextMenuInput 가 PendingPopupSlot 입력을 막아주지만 PIE 진입 직전
+	// 프레임에 이미 PendingPopupSlot 이 세팅돼 있던 케이스를 여기서 한 번 더 확실히 차단.)
+	if (Editor && Editor->IsPlayingInEditor())
+	{
+		ContextMenuState.PendingPopupSlot = -1;
+		return;
+	}
 
 	if (ContextMenuState.PendingPopupSlot >= 0)
 	{

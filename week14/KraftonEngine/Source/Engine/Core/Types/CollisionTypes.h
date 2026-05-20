@@ -27,6 +27,14 @@ enum class ECollisionChannel : uint8
 	MAX = 16         // 응답 테이블 최대 슬롯 수
 };
 
+// ObjectType 트레이스용 비트마스크 헬퍼 — UE 의 FCollisionObjectQueryParams 대응.
+// 채널-응답 시맨틱이 아니라 "이 ObjectType 의 shape 만 hit 후보" 가 필요한 곳에서 사용.
+// 사용 예: ObjectTypeBit(ECollisionChannel::WorldStatic) | ObjectTypeBit(ECollisionChannel::WorldDynamic)
+constexpr uint32 ObjectTypeBit(ECollisionChannel Channel)
+{
+	return 1u << static_cast<uint32>(Channel);
+}
+
 // ============================================================
 // ECollisionResponse — 채널 간 응답 방식
 // ============================================================
