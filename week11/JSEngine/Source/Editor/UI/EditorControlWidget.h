@@ -14,7 +14,7 @@ public:
 	int32 GetPrimitiveTypeCount() const { return PrimitiveTypeCount; }
 
 private:
-	static constexpr int32 PrimitiveTypeCount = 19;
+	static constexpr int32 PrimitiveTypeCount = 20;
     const char* PrimitiveTypes[PrimitiveTypeCount] = { "Scene",
                                                        "StaticMesh",
                                                        "TextRender",
@@ -33,7 +33,8 @@ private:
                                                        "Destructible",
                                                        "BoundingBox",
                                                        "MainSceneDestructible",
-                                                       "SkeletalMesh"};
+                                                       "SkeletalMesh",
+                                                       "Pawn"};
 	int32 SelectedPrimitiveType = 0;
 	int32 NumberOfSpawnedActors = 1;
 	FVector CurSpawnPoint = { 0.f, 0.f, 0.f };

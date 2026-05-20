@@ -6,11 +6,14 @@
 
 #include "ImGui/imgui.h"
 #include "Component/GizmoComponent.h"
+#include "Component/BillboardComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Core/EditorResourcePaths.h"
 #include "Core/ResourceManager.h"
 
+#include "GameFramework/Pawn.h"
 #include "GameFramework/PrimitiveActors.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
@@ -67,6 +70,7 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
 	};
 
 	DrawSpawnItem(0, "Empty Actor");
+	DrawSpawnItem(19, "Pawn");
 	ImGui::Separator();
 	DrawSpawnItem(1, "Static Mesh");
 	DrawSpawnItem(18, "Skeletal Mesh");
@@ -250,6 +254,20 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 		{
 			ASkeletalMeshActor* Actor = World->SpawnActor<ASkeletalMeshActor>();
 			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 19:
+		{
+			APawn* Actor = World->SpawnActor<APawn>();
+			USceneComponent* SceneRoot = Actor->AddComponent<USceneComponent>();
+			Actor->SetRootComponent(SceneRoot);
+
+			UBillboardComponent* Billboard = Actor->AddComponent<UBillboardComponent>();
+			Billboard->AttachToComponent(SceneRoot);
+			Billboard->SetEditorOnly(true);
+			Billboard->SetTextureName(FEditorResourcePaths::Icon("Pawn_64x.png"));
+
 			Actor->SetActorLocation(SpawnPoint);
 			break;
 		}
