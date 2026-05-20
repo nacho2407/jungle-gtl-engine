@@ -1,5 +1,5 @@
-﻿#pragma once
-#include "Core/CoreTypes.h"
+#pragma once
+#include "Core/Types/CoreTypes.h"
 #include <Windows.h>
 
 //5주차 경연을 위해 추가하는 picking time 측정용 코드입니다.

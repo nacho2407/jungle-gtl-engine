@@ -1,5 +1,5 @@
-﻿#pragma once
-#include "Core/PropertyTypes.h"
+#pragma once
+#include "Core/Types/PropertyTypes.h"
 
 struct FStructProperty : FProperty
 {

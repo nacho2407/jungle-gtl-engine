@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Mesh/Fbx/FbxImportContext.h"
 #include "Mesh/Fbx/FbxImportTypes.h"
 

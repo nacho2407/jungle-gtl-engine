@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component/SceneComponent.h"
-#include "Core/CollisionTypes.h"
+#include "Core/Types/CollisionTypes.h"
 #include "Math/Vector.h"
 #include "Math/Quat.h"
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component/Camera/CameraComponent.h"
-#include "Core/EngineTypes.h"
+#include "Core/Types/EngineTypes.h"
 
 #include "Source/Engine/Component/Camera/CineCameraComponent.generated.h"
 struct FCineLetterboxSettings

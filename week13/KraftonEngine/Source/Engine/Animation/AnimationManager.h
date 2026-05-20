@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Asset/AssetRegistry.h"
 #include "Animation/Skeleton/SkeletonTypes.h"
 

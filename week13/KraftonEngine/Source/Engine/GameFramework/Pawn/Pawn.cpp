@@ -4,7 +4,7 @@
 #include "Component/Camera/CameraComponent.h"
 #include "Component/Input/InputComponent.h"
 #include "Component/SceneComponent.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Types/PropertyTypes.h"
 #include "Serialization/Archive.h"
 
 

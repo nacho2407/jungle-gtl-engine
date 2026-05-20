@@ -1,10 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <string>
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 namespace json { class JSON; }
 

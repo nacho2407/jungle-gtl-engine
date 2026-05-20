@@ -22,7 +22,7 @@
 #include "Animation/Skeleton/SkeletonManager.h"
 #include "Asset/AssetRegistry.h"
 #include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
-#include "Editor/UI/Asset/MeshEditorWidget.h"
+#include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 
 #include <algorithm>
 #include <chrono>

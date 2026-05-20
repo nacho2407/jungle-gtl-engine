@@ -2,7 +2,7 @@
 
 #include "AnimNode_Base.h"
 #include "Math/Transform.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 // Enum 값으로 N 개의 입력 pose 중 하나를 선택하는 노드.
 // StateMachine 의 단순화 버전 — transitions 없음, multi-blend stack 없음.

@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Render/Proxy/DirtyFlag.h"
 #include "Render/Types/RenderConstants.h"
 #include "Render/Types/RenderTypes.h"

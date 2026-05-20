@@ -22,7 +22,7 @@
 #include "Core/Property/ObjectProperty.h"
 #include "Core/Property/StructProperty.h"
 #include "Core/Property/SoftObjectProperty.h"
-#include "Core/ClassTypes.h"
+#include "Core/Types/ClassTypes.h"
 #include "Math/FloatCurve.h"
 #include "Lua/LuaScriptManager.h"
 #include "Resource/ResourceManager.h"
@@ -34,7 +34,7 @@
 #include "Mesh/MeshManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/SkeletalMesh.h"
-#include "Editor/UI/Asset/MeshEditorWidget.h"
+#include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "Platform/Paths.h"
 #include "SimpleJSON/json.hpp"
 

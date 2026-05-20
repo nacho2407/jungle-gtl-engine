@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Viewport/ViewportClient.h"
 #include "Render/Types/RenderTypes.h"
@@ -8,8 +8,8 @@
 
 #include "Slate/SWindow.h"
 #include <string>
-#include "Core/RayTypes.h"
-#include "Core/CollisionTypes.h"
+#include "Core/Types/RayTypes.h"
+#include "Core/Types/CollisionTypes.h"
 #include "Math/Rotator.h"
 #include "imgui.h"
 

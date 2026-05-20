@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Math/Vector.h"
-#include "Core/CollisionTypes.h"
+#include "Core/Types/CollisionTypes.h"
 
 class UPrimitiveComponent;
 

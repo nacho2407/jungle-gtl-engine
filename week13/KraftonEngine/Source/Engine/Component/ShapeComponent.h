@@ -2,7 +2,7 @@
 #pragma once
 
 #include "Component/PrimitiveComponent.h"
-#include "Core/EngineTypes.h"
+#include "Core/Types/EngineTypes.h"
 
 
 #include "Source/Engine/Component/ShapeComponent.generated.h"

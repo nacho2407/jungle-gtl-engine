@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/Singleton.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Render/Types/RenderTypes.h"
 #include "SimpleJSON/json.hpp"
 #include <memory>

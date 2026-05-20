@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Collision/Math/OBB.h"
-#include "Core/CoreTypes.h"
-#include "Core/CollisionTypes.h"
-#include "Core/EngineTypes.h"
+#include "Core/Types/CoreTypes.h"
+#include "Core/Types/CollisionTypes.h"
+#include "Core/Types/EngineTypes.h"
 #include "Math/Vector.h"
 
 struct FStaticMesh;

@@ -1,6 +1,6 @@
-﻿#include "ImGuiSetting.h"
+#include "ImGuiSetting.h"
 #include "imgui.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Platform/Paths.h"
 #include "Math/Vector.h"
 #include "SimpleJSON/json.hpp"

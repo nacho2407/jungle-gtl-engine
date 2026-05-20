@@ -175,6 +175,9 @@
     <Filter Include="Source\Engine\Core\Property">
       <UniqueIdentifier>{25647ff2-6251-d6c8-4f33-105c96cacd0f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Core\Types">
+      <UniqueIdentifier>{fd9ae9f0-ee47-6505-d42f-edcee345ecb8}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Debug">
       <UniqueIdentifier>{94a820a1-1cf9-b142-f9b6-735eff25a3ee}</UniqueIdentifier>
     </Filter>
@@ -959,9 +962,6 @@
     <ClCompile Include="Source\Engine\Component\Shape\SphereComponent.cpp">
       <Filter>Source\Engine\Component\Shape</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Core\EngineTypes.cpp">
-      <Filter>Source\Engine\Core</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Core\Log.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
@@ -969,9 +969,6 @@
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\ProjectSettings.cpp">
-      <Filter>Source\Engine\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Core\PropertyTypes.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp">
@@ -1012,6 +1009,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Property\StructProperty.cpp">
       <Filter>Source\Engine\Core\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Types\EngineTypes.cpp">
+      <Filter>Source\Engine\Core\Types</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Types\PropertyTypes.cpp">
+      <Filter>Source\Engine\Core\Types</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Debug\DebugDrawQueue.cpp">
       <Filter>Source\Engine\Debug</Filter>
@@ -1982,22 +1985,10 @@
     <ClInclude Include="Source\Engine\Component\Shape\SphereComponent.h">
       <Filter>Source\Engine\Component\Shape</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Core\ClassTypes.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Core\CollisionTypes.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Common.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Core\CoreTypes.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Delegate.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Core\EngineTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Log.h">
@@ -2007,15 +1998,6 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\ProjectSettings.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Core\PropertyTypes.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Core\RayTypes.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Core\ResourceTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Singleton.h">
@@ -2059,6 +2041,27 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Property\StructProperty.h">
       <Filter>Source\Engine\Core\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Types\ClassTypes.h">
+      <Filter>Source\Engine\Core\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Types\CollisionTypes.h">
+      <Filter>Source\Engine\Core\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Types\CoreTypes.h">
+      <Filter>Source\Engine\Core\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Types\EngineTypes.h">
+      <Filter>Source\Engine\Core\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Types\PropertyTypes.h">
+      <Filter>Source\Engine\Core\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Types\RayTypes.h">
+      <Filter>Source\Engine\Core\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Types\ResourceTypes.h">
+      <Filter>Source\Engine\Core\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Debug\DebugDrawQueue.h">
       <Filter>Source\Engine\Debug</Filter>

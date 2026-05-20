@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/EngineTypes.h"
+#include "Core/Types/EngineTypes.h"
 #include "Math/Rotator.h"
 #include "Math/Vector.h"
 #include "Object/FName.h"

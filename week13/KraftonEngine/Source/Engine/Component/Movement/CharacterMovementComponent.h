@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MovementComponent.h"
-#include "Core/CollisionTypes.h"   // FHitResult
+#include "Core/Types/CollisionTypes.h"   // FHitResult
 #include "Math/Vector.h"
 #include "Math/Transform.h"
 

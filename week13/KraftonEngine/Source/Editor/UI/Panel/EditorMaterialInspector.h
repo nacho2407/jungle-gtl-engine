@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 #include "imgui.h" 
 #include "Platform/Paths.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include <fstream>
 #include <filesystem>
 #include "SimpleJSON/json.hpp"

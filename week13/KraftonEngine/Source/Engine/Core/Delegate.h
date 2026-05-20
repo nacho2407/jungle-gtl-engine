@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include <functional>
 #include <utility>
-#include "CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 // ============================================================
 // FDelegateHandle — 핸들 기반 델리게이트 식별/제거용

@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/ClassTypes.h"
+#include "Core/Types/ClassTypes.h"
 #include "Editor/UI/ContentBrowser/ContentBrowserContext.h"
 #include "ContentItem.h"
 #include <d3d11.h>

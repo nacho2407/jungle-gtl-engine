@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Animation/Notify/AnimNotifyState.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 // Phase A 데모용 구체 NotifyState — Begin/Tick/End 호출 시 콘솔에 로깅.
 //   Begin/End 는 1 회씩, Tick 은 활성 구간 매 프레임 호출.

@@ -4,7 +4,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/Pawn/Pawn.h"
 #include "GameFramework/World.h"
-#include "Core/CollisionTypes.h"
+#include "Core/Types/CollisionTypes.h"
 #include "Math/Rotator.h"
 #include <algorithm>
 #include <cmath>

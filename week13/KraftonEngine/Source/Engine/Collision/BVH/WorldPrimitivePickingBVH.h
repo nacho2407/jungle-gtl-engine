@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
-#include "Engine/Core/CoreTypes.h"
-#include "Core/RayTypes.h"
-#include "Core/CollisionTypes.h"
-#include "Core/EngineTypes.h"
+#include "Engine/Core/Types/CoreTypes.h"
+#include "Core/Types/RayTypes.h"
+#include "Core/Types/CollisionTypes.h"
+#include "Core/Types/EngineTypes.h"
 
 class AActor;
 class UPrimitiveComponent;
