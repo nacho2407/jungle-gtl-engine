@@ -1631,6 +1631,9 @@
     <ClInclude Include="Source\Editor\UI\Asset\MeshEditorWidget.h">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\MorphCurveEditObject.h">
+      <Filter>Source\Editor\UI\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\StaticMeshEditorWidget.h">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClInclude>

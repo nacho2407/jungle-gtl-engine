@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/Types/VertexTypes.h"
@@ -139,6 +139,32 @@ struct FSkeletalMeshRange
 	}
 };
 
+struct FMorphTargetDelta
+{
+	uint32  VertexIndex   = 0;
+	FVector PositionDelta = FVector::ZeroVector;
+
+	friend FArchive& operator<<(FArchive& Ar, FMorphTargetDelta& Delta)
+	{
+		Ar << Delta.VertexIndex;
+		Ar << Delta.PositionDelta;
+		return Ar;
+	}
+};
+
+struct FMorphTarget
+{
+	FString                   Name;
+	TArray<FMorphTargetDelta> Deltas;
+
+	friend FArchive& operator<<(FArchive& Ar, FMorphTarget& Target)
+	{
+		Ar << Target.Name;
+		Ar << Target.Deltas;
+		return Ar;
+	}
+};
+
 struct FSkeletalMesh
 {
 	FString PathFileName;
@@ -152,13 +178,32 @@ struct FSkeletalMesh
 	TArray<FSkeletalMeshSection> Sections;
 	TArray<FSkeletalMeshRange> MeshRanges;
 
-	TArray<FBone> Bones;
+	TArray<FBone>        Bones;
+	TArray<FMorphTarget> MorphTargets;
 
 	std::unique_ptr<FMeshBuffer> RenderBuffer;
 
 	FVector BoundsCenter = FVector(0, 0, 0);
 	FVector BoundsExtent = FVector(0, 0, 0);
 	bool    bBoundsValid = false;
+
+	int32 FindMorphTargetIndex(const FString& TargetName) const
+	{
+		for (int32 Index = 0; Index < static_cast<int32>(MorphTargets.size()); ++Index)
+		{
+			if (MorphTargets[Index].Name == TargetName)
+			{
+				return Index;
+			}
+		}
+		return -1;
+	}
+
+	const FMorphTarget* FindMorphTarget(const FString& TargetName) const
+	{
+		const int32 Index = FindMorphTargetIndex(TargetName);
+		return Index >= 0 ? &MorphTargets[Index] : nullptr;
+	}
 
 	void NormalizeBonePoseData()
 	{

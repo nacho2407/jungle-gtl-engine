@@ -766,6 +766,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\MeshEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\MorphCurveEditObject.h" />
     <ClInclude Include="Source\Editor\UI\Asset\StaticMeshEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h" />

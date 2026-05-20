@@ -7,6 +7,7 @@
 #include "Object/SoftObjectPtr.h"
 
 #include "Source/Engine/Component/Primitive/SkinnedMeshComponent.generated.h"
+struct FSkeletalMesh;
 class USkeletalMesh;
 class UMaterial;
 
@@ -62,7 +63,22 @@ public:
 	void SetBoneEditBaseLocalTransformByIndex(int32 BoneIndex, const FTransform& NewLocalTransform);
 
 	void SetBoneLocalTransforms(const TArray<FTransform>& LocalPose);
+	void SetAnimationPose(const TArray<FTransform>& LocalPose, const TArray<float>& InMorphTargetWeights);
 	void ApplyBoneEditBasePose();
+
+	int32 FindMorphTargetIndex(const FString& TargetName) const;
+	void  SetMorphTargetWeight(const FString& TargetName, float Weight);
+	void  SetMorphTargetWeightByIndex(int32 TargetIndex, float Weight);
+	void  SetMorphTargetWeights(const TArray<float>& Weights);
+	void  ClearMorphTargetWeights();
+	float GetMorphTargetWeight(const FString& TargetName) const;
+	float GetMorphTargetWeightByIndex(int32 TargetIndex) const;
+	bool  HasActiveMorphTargets() const;
+
+	const TArray<float>& GetMorphTargetWeights() const
+	{
+		return MorphTargetWeights;
+	}
 
 	void GetCurrentBoneGlobalTransforms(TArray<FTransform>& OutGlobals) const;
 	void GetCurrentBoneGlobalMatrices(TArray<FMatrix>& OutGlobals) const;
@@ -79,6 +95,14 @@ protected:
 	void InitSkinningCache();
 	void UpdateCPUSkinning();
 	void RefreshSkinningAfterPoseChanged();
+	void RefreshSkinningAfterMorphChanged();
+	void InitMorphTargetWeights();
+	void ApplyMorphTargetWeightsNoRefresh(const TArray<float>& Weights);
+	void BuildMorphedVertexData(
+		const FSkeletalMesh& Asset,
+		TArray<FVector>&     OutPositions,
+		TArray<FVector>&     OutNormals
+		) const;
 	void EnsureBoneEditBasePose();
 	void BuildBoneEditGlobalTransforms(TArray<FTransform>& OutGlobals) const;
 	void BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlobals) const;
@@ -98,6 +122,11 @@ protected:
 	bool bUseBoneEditPose = false;
 	TArray<FMatrix> BoneEditBaseLocalMatrices;
 	bool bUseBoneEditBasePose = false;
+
+	// Component-local morph runtime state.
+	// 메인 Actor/Component Details에는 노출하지 않는다.
+	// Mesh Editor preview, Animation curve, Lua override가 public API를 통해서만 제어한다.
+	TArray<float> MorphTargetWeights;
 
 	// SceneProxy는 이 결과와 revision만 보고 dynamic vertex buffer를 갱신한다.
 	TArray<FVertexPNCTT> SkinnedVertices;

@@ -143,6 +143,7 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 
 	// SceneProxy가 즉시 그릴 수 있도록 SetSkeletalMesh 종료 전에 skinned vertex buffer를 준비한다.
 	InitSkinningCache();
+	InitMorphTargetWeights();
 
 	if (SkeletalMesh && SkeletalMesh->GetSkeletalMeshAsset())
 	{
@@ -585,6 +586,253 @@ void USkinnedMeshComponent::SetBoneLocalTransforms(const TArray<FTransform>& Loc
 	MarkWorldBoundsDirty();
 }
 
+void USkinnedMeshComponent::SetAnimationPose(
+	const TArray<FTransform>& LocalPose,
+	const TArray<float>&      InMorphTargetWeights
+	)
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset) return;
+
+	EnsureBoneEditPose();
+
+	const int32 BoneCount = std::min(static_cast<int32>(Asset->Bones.size()), static_cast<int32>(LocalPose.size()));
+	const bool  bApplyEditBasePose = bUseBoneEditBasePose && BoneEditBaseLocalMatrices.size() == Asset->Bones.size();
+
+	for (int32 i = 0; i < BoneCount; ++i)
+	{
+		FMatrix LocalMatrix = LocalPose[i].ToMatrix();
+		if (bApplyEditBasePose)
+		{
+			const FMatrix AnimDeltaFromReference = LocalMatrix * GetAffineInverseForBoneEdit(
+				Asset->Bones[i].GetReferenceLocalPose()
+			);
+			LocalMatrix = AnimDeltaFromReference * BoneEditBaseLocalMatrices[i];
+		}
+		BoneEditLocalMatrices[i] = LocalMatrix;
+	}
+
+	bUseBoneEditPose = true;
+	ApplyMorphTargetWeightsNoRefresh(InMorphTargetWeights);
+	RefreshSkinningAfterPoseChanged();
+	MarkWorldBoundsDirty();
+}
+
+int32 USkinnedMeshComponent::FindMorphTargetIndex(const FString& TargetName) const
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	return Asset ? Asset->FindMorphTargetIndex(TargetName) : -1;
+}
+
+void USkinnedMeshComponent::SetMorphTargetWeight(const FString& TargetName, float Weight)
+{
+	SetMorphTargetWeightByIndex(FindMorphTargetIndex(TargetName), Weight);
+}
+
+void USkinnedMeshComponent::SetMorphTargetWeightByIndex(int32 TargetIndex, float Weight)
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || TargetIndex < 0 || TargetIndex >= static_cast<int32>(Asset->MorphTargets.size()))
+	{
+		return;
+	}
+
+	if (MorphTargetWeights.size() != Asset->MorphTargets.size())
+	{
+		InitMorphTargetWeights();
+	}
+
+	if (!std::isfinite(Weight))
+	{
+		Weight = 0.0f;
+	}
+
+	if (std::fabs(MorphTargetWeights[TargetIndex] - Weight) <= 1.0e-6f)
+	{
+		return;
+	}
+
+	MorphTargetWeights[TargetIndex] = Weight;
+	RefreshSkinningAfterMorphChanged();
+	MarkWorldBoundsDirty();
+}
+
+void USkinnedMeshComponent::SetMorphTargetWeights(const TArray<float>& Weights)
+{
+	ApplyMorphTargetWeightsNoRefresh(Weights);
+	RefreshSkinningAfterMorphChanged();
+	MarkWorldBoundsDirty();
+}
+
+void USkinnedMeshComponent::ClearMorphTargetWeights()
+{
+	bool bChanged = false;
+	for (float& Weight : MorphTargetWeights)
+	{
+		if (std::fabs(Weight) > 1.0e-6f)
+		{
+			Weight   = 0.0f;
+			bChanged = true;
+		}
+	}
+	if (bChanged)
+	{
+		RefreshSkinningAfterMorphChanged();
+		MarkWorldBoundsDirty();
+	}
+}
+
+float USkinnedMeshComponent::GetMorphTargetWeight(const FString& TargetName) const
+{
+	return GetMorphTargetWeightByIndex(FindMorphTargetIndex(TargetName));
+}
+
+float USkinnedMeshComponent::GetMorphTargetWeightByIndex(int32 TargetIndex) const
+{
+	return (TargetIndex >= 0 && TargetIndex < static_cast<int32>(MorphTargetWeights.size()))
+	? MorphTargetWeights[TargetIndex] : 0.0f;
+}
+
+bool USkinnedMeshComponent::HasActiveMorphTargets() const
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || Asset->MorphTargets.empty() || MorphTargetWeights.empty())
+	{
+		return false;
+	}
+	const int32 Count = std::min(
+		static_cast<int32>(Asset->MorphTargets.size()),
+		static_cast<int32>(MorphTargetWeights.size())
+	);
+	for (int32 Index = 0; Index < Count; ++Index)
+	{
+		if (!Asset->MorphTargets[Index].Deltas.empty() && std::fabs(MorphTargetWeights[Index]) > 1.0e-6f)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void USkinnedMeshComponent::InitMorphTargetWeights()
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || Asset->MorphTargets.empty())
+	{
+		MorphTargetWeights.clear();
+		return;
+	}
+	MorphTargetWeights.assign(Asset->MorphTargets.size(), 0.0f);
+}
+
+void USkinnedMeshComponent::ApplyMorphTargetWeightsNoRefresh(const TArray<float>& Weights)
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset)
+	{
+		MorphTargetWeights.clear();
+		return;
+	}
+
+	if (MorphTargetWeights.size() != Asset->MorphTargets.size())
+	{
+		InitMorphTargetWeights();
+	}
+
+	const int32 Count = std::min(static_cast<int32>(MorphTargetWeights.size()), static_cast<int32>(Weights.size()));
+	for (int32 Index = 0; Index < Count; ++Index)
+	{
+		float NewWeight = Weights[Index];
+		if (!std::isfinite(NewWeight))
+		{
+			NewWeight = 0.0f;
+		}
+		MorphTargetWeights[Index] = NewWeight;
+	}
+	for (int32 Index = Count; Index < static_cast<int32>(MorphTargetWeights.size()); ++Index)
+	{
+		MorphTargetWeights[Index] = 0.0f;
+	}
+}
+
+void USkinnedMeshComponent::BuildMorphedVertexData(
+	const FSkeletalMesh& Asset,
+	TArray<FVector>&     OutPositions,
+	TArray<FVector>&     OutNormals
+	) const
+{
+	OutPositions.clear();
+	OutNormals.clear();
+
+	const uint32 VertexCount = static_cast<uint32>(Asset.Vertices.size());
+	if (VertexCount == 0 || !HasActiveMorphTargets())
+	{
+		return;
+	}
+
+	OutPositions.resize(VertexCount);
+	OutNormals.resize(VertexCount, FVector::ZeroVector);
+
+	for (uint32 VertexIndex = 0; VertexIndex < VertexCount; ++VertexIndex)
+	{
+		OutPositions[VertexIndex] = Asset.Vertices[VertexIndex].Position;
+	}
+
+	const int32 MorphCount = std::min(
+		static_cast<int32>(Asset.MorphTargets.size()),
+		static_cast<int32>(MorphTargetWeights.size())
+	);
+	for (int32 MorphIndex = 0; MorphIndex < MorphCount; ++MorphIndex)
+	{
+		const float Weight = MorphTargetWeights[MorphIndex];
+		if (std::fabs(Weight) <= 1.0e-6f)
+		{
+			continue;
+		}
+
+		const FMorphTarget& Target = Asset.MorphTargets[MorphIndex];
+		for (const FMorphTargetDelta& Delta : Target.Deltas)
+		{
+			if (Delta.VertexIndex < VertexCount)
+			{
+				OutPositions[Delta.VertexIndex] += Delta.PositionDelta * Weight;
+			}
+		}
+	}
+
+	for (uint32 IndexOffset = 0; IndexOffset + 2 < static_cast<uint32>(Asset.Indices.size()); IndexOffset += 3)
+	{
+		const uint32 I0 = Asset.Indices[IndexOffset];
+		const uint32 I1 = Asset.Indices[IndexOffset + 1];
+		const uint32 I2 = Asset.Indices[IndexOffset + 2];
+		if (I0 >= VertexCount || I1 >= VertexCount || I2 >= VertexCount)
+		{
+			continue;
+		}
+
+		FVector FaceNormal = (OutPositions[I1] - OutPositions[I0]).Cross(OutPositions[I2] - OutPositions[I0]);
+		if (FaceNormal.IsNearlyZero())
+		{
+			continue;
+		}
+		OutNormals[I0] += FaceNormal;
+		OutNormals[I1] += FaceNormal;
+		OutNormals[I2] += FaceNormal;
+	}
+
+	for (uint32 VertexIndex = 0; VertexIndex < VertexCount; ++VertexIndex)
+	{
+		if (OutNormals[VertexIndex].IsNearlyZero())
+		{
+			OutNormals[VertexIndex] = Asset.Vertices[VertexIndex].Normal;
+		}
+		else
+		{
+			OutNormals[VertexIndex].Normalize();
+		}
+	}
+}
+
 void USkinnedMeshComponent::ApplyBoneEditBasePose()
 {
 	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
@@ -703,13 +951,20 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 	TArray<FMatrix> SkinMatrices;
 	BuildSkinMatrices(SkinMatrices);
 
+	TArray<FVector> MorphedPositions;
+	TArray<FVector> MorphedNormals;
+	BuildMorphedVertexData(*Asset, MorphedPositions, MorphedNormals);
+	const bool bUseMorphedVertexData = MorphedPositions.size() == Asset->Vertices.size();
+
 	auto SkinVertexRange = [&](uint32 VertexStart, uint32 VertexEnd)
 		{
 			VertexEnd = std::min<uint32>(VertexEnd, (uint32)Asset->Vertices.size());
 			for (uint32 i = VertexStart; i < VertexEnd; ++i)
 			{
-				const FVertexPNCTBW& Src = Asset->Vertices[i];
-				FVertexPNCTT& Dst = SkinnedVertices[i];
+				const FVertexPNCTBW& Src            = Asset->Vertices[i];
+				const FVector        SourcePosition = bUseMorphedVertexData ? MorphedPositions[i] : Src.Position;
+				const FVector        SourceNormal   = bUseMorphedVertexData ? MorphedNormals[i] : Src.Normal;
+				FVertexPNCTT&        Dst            = SkinnedVertices[i];
 
 				FVector SkinnedPos = FVector::ZeroVector;
 				FVector SkinnedNormal = FVector::ZeroVector;
@@ -727,17 +982,17 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 
 					const FMatrix& M = SkinMatrices[BoneIndex];
 
-					SkinnedPos += M.TransformPositionWithW(Src.Position) * Weight;
-					SkinnedNormal += M.TransformVector(Src.Normal) * Weight;
+					SkinnedPos     += M.TransformPositionWithW(SourcePosition) * Weight;
+					SkinnedNormal  += M.TransformVector(SourceNormal) * Weight;
 					SkinnedTangent += M.TransformVector(FVector(Src.Tangent.X, Src.Tangent.Y, Src.Tangent.Z)) * Weight;
-					AccumWeight += Weight;
+					AccumWeight    += Weight;
 				}
 
 				if (AccumWeight <= 0.0f)
 				{
 					// weight가 없는 vertex도 사라지지 않게 bind-space 원본을 그대로 사용한다.
-					SkinnedPos = Src.Position;
-					SkinnedNormal = Src.Normal;
+					SkinnedPos     = SourcePosition;
+					SkinnedNormal  = SourceNormal;
 					SkinnedTangent = FVector(Src.Tangent.X, Src.Tangent.Y, Src.Tangent.Z);
 					if (!SkinnedNormal.IsNearlyZero())
 					{
@@ -798,7 +1053,7 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 
 void USkinnedMeshComponent::RefreshSkinningAfterPoseChanged()
 {
-	if (SkinningModeRuntime::Get() == ESkinningMode::CPU)
+	if (SkinningModeRuntime::Get() == ESkinningMode::CPU || HasActiveMorphTargets())
 	{
 		UpdateCPUSkinning();
 		return;
@@ -806,6 +1061,11 @@ void USkinnedMeshComponent::RefreshSkinningAfterPoseChanged()
 
 	// GPU skinning은 같은 revision을 matrix SRV 갱신 신호로 사용한다.
 	++SkinnedRevision;
+}
+
+void USkinnedMeshComponent::RefreshSkinningAfterMorphChanged()
+{
+	UpdateCPUSkinning();
 }
 
 void USkinnedMeshComponent::BuildBoneEditGlobalTransforms(TArray<FTransform>& OutGlobals) const
@@ -1002,9 +1262,8 @@ bool USkinnedMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutH
 void USkinnedMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
 	UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	if (SkinningModeRuntime::Get() == ESkinningMode::CPU)
+	if (SkinningModeRuntime::Get() == ESkinningMode::CPU || HasActiveMorphTargets())
 	{
-		// animation system이 없는 현재 구조에서는 edit pose 변경분을 CPU skinned vertices로 계속 반영한다.
 		UpdateCPUSkinning();
 	}
 }

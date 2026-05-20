@@ -24,6 +24,7 @@ public:
     int32 NumFrames  = 0;
 
     TArray<FBoneAnimationTrack> BoneAnimationTracks;
+    TArray<FMorphTargetCurve>   MorphTargetCurves;
     TArray<FAnimNotifyEvent>    Notifies;
 
     const TArray<FBoneAnimationTrack>& GetBoneAnimationTracks() const
@@ -34,6 +35,16 @@ public:
     TArray<FBoneAnimationTrack>& GetMutableBoneAnimationTracks()
     {
         return BoneAnimationTracks;
+    }
+
+    const TArray<FMorphTargetCurve>& GetMorphTargetCurves() const
+    {
+        return MorphTargetCurves;
+    }
+
+    TArray<FMorphTargetCurve>& GetMutableMorphTargetCurves()
+    {
+        return MorphTargetCurves;
     }
 
     int32 GetNumberOfFrames() const
