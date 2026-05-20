@@ -142,6 +142,12 @@ namespace
     {
         if (!MoveComp) return "None";
 
+        FString ComponentName = MoveComp->GetFName().ToString();
+        if (ComponentName.empty())
+        {
+            ComponentName = MoveComp->GetTypeInfo()->name;
+        }
+
         USceneComponent* UpdatedComp = MoveComp->GetUpdatedComponent();
         if (UpdatedComp)
         {
@@ -150,30 +156,10 @@ namespace
             {
                 TargetName = UpdatedComp->GetTypeInfo()->name;
             }
-            return FString("MC_") + TargetName;
+            return ComponentName + " -> " + TargetName;
         }
 
-        // 대상이 없는 경우
-        FString DefaultName = MoveComp->GetFName().ToString();
-        if (DefaultName.empty())
-        {
-            DefaultName = MoveComp->GetTypeInfo()->name;
-        }
-        return DefaultName;
-    }
-
-	static FString MakeDefaultScriptName(const FString& SceneName, AActor* Actor)
-    {
-        FString ActorName = "Actor";
-        FString ValidSceneName = SceneName.empty() ? "Default" : SceneName;
-
-        if (Actor)
-        {
-            const FTypeInfo* TypeInfo = Actor->GetTypeInfo();
-            ActorName = TypeInfo ? TypeInfo->name : "Actor";
-        }
-
-        return ValidSceneName + "_" + ActorName;
+        return ComponentName;
     }
 
 	static bool IsBlankString(const FString& Value)
@@ -2603,19 +2589,6 @@ void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UA
 	else if (UMovementComponent* MoveComp = Cast<UMovementComponent>(NewComp))
 	{
 		if (AttachTarget) MoveComp->SetUpdatedComponent(AttachTarget);
-	}
-
-	if (UScriptComponent* ScriptComp = Cast<UScriptComponent>(NewComp))
-	{
-        if (ScriptComp->GetScriptName().empty())
-		{
-			FString SceneName = "Default";
-			if (EditorEngine)
-			{
-				SceneName = EditorEngine->GetSceneService().GetSceneName();
-			}
-            ScriptComp->SetScriptName(MakeDefaultScriptName(SceneName, PrimaryActor));
-		}
 	}
 
 	SelectComponentForDetails(NewComp);

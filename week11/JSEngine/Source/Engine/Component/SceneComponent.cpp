@@ -35,7 +35,45 @@ void USceneComponent::Serialize(FArchive& Ar)
 		}
 	}
 
-	ReflectionUtils::SerializeGeneratedPropertiesLocal(this, &USceneComponent::StaticClassInfo, Ar);
+	if (Ar.IsLoading())
+	{
+		if (Ar.HasKey("Location"))
+		{
+			Ar << "Location" << RelativeLocation;
+		}
+		else
+		{
+			Ar << "RelativeLocation" << RelativeLocation;
+		}
+
+		if (Ar.HasKey("Rotation"))
+		{
+			Ar << "Rotation" << RelativeRotation;
+		}
+		else
+		{
+			Ar << "RelativeRotation" << RelativeRotation;
+		}
+
+		if (Ar.HasKey("Scale"))
+		{
+			Ar << "Scale" << RelativeScale3D;
+		}
+		else
+		{
+			Ar << "RelativeScale3D" << RelativeScale3D;
+		}
+
+		// JSON에서 읽은 Euler 값을 실제 회전 권위 소스인 쿼터니언에도 반영한다.
+		RelativeRotationQuat = FQuat::MakeFromEuler(RelativeRotation);
+		RelativeRotationQuat.Normalize();
+		MarkTransformDirty();
+		return;
+	}
+
+	Ar << "Location" << RelativeLocation;
+	Ar << "Rotation" << RelativeRotation;
+	Ar << "Scale" << RelativeScale3D;
 }
 USceneComponent::USceneComponent()
 {
