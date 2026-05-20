@@ -107,9 +107,6 @@ struct FViewportRenderOptions
 	float HeatMapMax = 20.0f;
 	bool Enable25DCulling = true;
 
-	// Animaton Skinning 모드 설정
-	ESkinningMode SkinningMode = ESkinningMode::GPU;
-
 	// Mesh editor bone weight visualization
 	bool bWeightBoneHeatMap = false;
 	int32 WeightBoneHeatMapBoneIndex = -1;

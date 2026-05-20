@@ -1252,23 +1252,6 @@ void FEditorConsoleWidget::HandleSkinningMode(const TArray<FString>& Args)
 
 	SkinningModeRuntime::Set(NewMode);
 
-	if (EditorEngine)
-	{
-		for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
-		{
-			if (!VC) continue;
-			VC->GetRenderOptions().SkinningMode = NewMode;
-		}
-
-		TArray<IEditorPreviewViewportClient*> PreviewClients;
-		EditorEngine->CollectAssetEditorPreviewViewportClients(PreviewClients);
-		for (IEditorPreviewViewportClient* VC : PreviewClients)
-		{
-			if (!VC) continue;
-			VC->GetRenderOptions().SkinningMode = NewMode;
-		}
-	}
-
 	AddLog("Skinning mode set to %s.\n", NewMode == ESkinningMode::GPU ? "GPU" : "CPU");
 }
 

@@ -83,7 +83,6 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 {
 	DrawCommandList.Reset();
 	CollectViewMode = Frame.RenderOptions.ViewMode;
-	CollectSkinningMode = Frame.RenderOptions.SkinningMode;
 	bCollectWeightBoneHeatMap = Frame.RenderOptions.bWeightBoneHeatMap;
 	CollectWeightBoneHeatMapBoneIndex = Frame.RenderOptions.WeightBoneHeatMapBoneIndex;
 
@@ -151,7 +150,7 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 
 	const bool bSkeletal = Proxy.HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh);
 	const bool bWeightBoneHeatMap = bSkeletal && bCollectWeightBoneHeatMap && CollectWeightBoneHeatMapBoneIndex >= 0;
-	const bool bGPUSkinning = bSkeletal && (CollectSkinningMode == ESkinningMode::GPU || bWeightBoneHeatMap);
+	const bool bGPUSkinning = bSkeletal && (SkinningModeRuntime::Get() == ESkinningMode::GPU || bWeightBoneHeatMap);
 	const FSkeletalMeshSceneProxy* SkeletalProxy = bSkeletal
 		? static_cast<const FSkeletalMeshSceneProxy*>(&Proxy)
 		: nullptr;

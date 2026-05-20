@@ -777,7 +777,7 @@ void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVol
 {
 	UWorld* World = Ctx.World;
 	FSpatialPartition* Partition = World ? &World->GetPartition() : nullptr;
-	const bool bUseGpuSkinning = Ctx.Frame.RenderOptions.SkinningMode == ESkinningMode::GPU;
+	const bool bUseGpuSkinning = SkinningModeRuntime::Get() == ESkinningMode::GPU;
 	DrawShadowCasters(Ctx.Device.GetDeviceContext(), *Ctx.Scene, Ctx.Resources, LightFrustum, bUseGpuSkinning, Partition);
 }
 
