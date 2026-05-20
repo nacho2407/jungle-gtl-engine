@@ -1,11 +1,11 @@
-﻿#include "MeshManager.h"
-#include "Mesh/StaticMesh.h"
-#include "Mesh/SkeletalMesh.h"
-#include "Mesh/ObjImporter.h"
-#include "Mesh/FbxImporter.h"
+#include "MeshManager.h"
+#include "Mesh/Static/StaticMesh.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
+#include "Mesh/Importer/ObjImporter.h"
+#include "Mesh/Importer/FbxImporter.h"
 #include "Mesh/MeshBinary.h"
 #include "Materials/Material.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "Serialization/WindowsArchive.h"
 #include "Engine/Platform/Paths.h"
 #include "Materials/MaterialManager.h"
@@ -19,10 +19,10 @@
 #include <utility>
 
 #include "Animation/AnimationManager.h"
-#include "Animation/AnimSequence.h"
-#include "Animation/Skeleton.h"
-#include "Animation/SkeletonManager.h"
-#include "Animation/SkeletonTypes.h"
+#include "Animation/Sequence/AnimSequence.h"
+#include "Animation/Skeleton/Skeleton.h"
+#include "Animation/Skeleton/SkeletonManager.h"
+#include "Animation/Skeleton/SkeletonTypes.h"
 
 TMap<FString, UStaticMesh*> FMeshManager::StaticMeshCache;
 TMap<FString, USkeletalMesh*> FMeshManager::SkeletalMeshCache;
@@ -42,7 +42,7 @@ static void EnsureMeshCacheDirExists()
 	static bool bCreated = false;
 	if (!bCreated)
 	{
-		std::wstring CacheDir = FPaths::RootDir() + L"Asset/MeshCache/";
+		std::wstring CacheDir = FPaths::RootDir() + L"Content/MeshCache/";
 		FPaths::CreateDir(CacheDir);
 		bCreated = true;
 	}
@@ -73,9 +73,19 @@ static FString GetMeshPackageFilePath(const FString& SourcePath, EAssetPackageTy
 	}
 
 	// 경로는 동일하지만, 확장자를 나눠서 Mesh 타입을 알 수 있게 한다.
+	// SourcePath 가 이미 Content/ 하위면 (cleanup 이후 모든 source) 그대로 사용 — 그렇지
+	// 않으면 (구 Data/ root 호환) Content/ prefix 박음. prefix 이중 적용 방지.
 	std::filesystem::path ProjectRelative = std::filesystem::path(FPaths::ToWide(FPaths::MakeProjectRelative(SourcePath))).lexically_normal();
 
-	std::filesystem::path AssetPath = std::filesystem::path(L"Content") / ProjectRelative;
+	std::filesystem::path AssetPath;
+	if (!ProjectRelative.empty() && ProjectRelative.begin()->wstring() == L"Content")
+	{
+		AssetPath = ProjectRelative;
+	}
+	else
+	{
+		AssetPath = std::filesystem::path(L"Content") / ProjectRelative;
+	}
 
 	if (Type == EAssetPackageType::StaticMesh)
 	{
@@ -587,7 +597,7 @@ void FMeshManager::ScanMeshSourceFiles()
 {
 	AvailableStaticMeshSourceFiles.clear();
 
-	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data/";
+	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Content/Data/";
 
 	if (!std::filesystem::exists(DataRoot))
 	{
@@ -741,7 +751,7 @@ void FMeshManager::ScanFbxSourceFiles()
 {
 	AvailableFbxSourceFiles.clear();
 
-	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data/";
+	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Content/Data/";
 
 	if (!std::filesystem::exists(DataRoot))
 	{

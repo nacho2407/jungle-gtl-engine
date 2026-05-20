@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Core/Singleton.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/VertexTypes.h"

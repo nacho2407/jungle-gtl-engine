@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 // AnimSequence 에서 특정 시점의 포즈를 뽑을 때 전달되는 입력.
 struct FAnimExtractContext

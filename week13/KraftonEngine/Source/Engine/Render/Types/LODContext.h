@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Engine/Math/Vector.h"
-#include "Engine/Core/CoreTypes.h"
+#include "Engine/Core/Types/CoreTypes.h"
 
 // ── LOD 거리 임계값 (제곱) ──
 static constexpr float LOD1_DIST_SQ = 15.0f * 15.0f;

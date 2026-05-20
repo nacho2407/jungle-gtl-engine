@@ -1,6 +1,6 @@
 #include "RotatingMovementComponent.h"
 
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Serialization/Archive.h"
 #include "Math/Matrix.h"

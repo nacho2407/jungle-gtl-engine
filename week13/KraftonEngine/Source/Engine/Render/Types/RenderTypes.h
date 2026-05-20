@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 //	Windows API Include
 #define NOMINMAX
@@ -15,7 +15,7 @@
 #include <dxgi1_5.h>
 
 #pragma comment(lib, "dxgi")
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Render/Types/RenderStateTypes.h"
 
 //	Mesh Shape Enum — MeshBufferManager 조회용 (순수 기하 형상)

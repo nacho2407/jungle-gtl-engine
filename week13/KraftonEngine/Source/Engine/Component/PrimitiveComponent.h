@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 
-#include "Object/ObjectFactory.h"
-#include "SceneComponent.h"
+#include "Object/Reflection/ObjectFactory.h"
+#include "Component/SceneComponent.h"
 #include "Render/Types/RenderTypes.h"
-#include "Core/RayTypes.h"
-#include "Core/CollisionTypes.h"
-#include "Core/EngineTypes.h"
+#include "Core/Types/RayTypes.h"
+#include "Core/Types/CollisionTypes.h"
+#include "Core/Types/EngineTypes.h"
 #include "Core/Delegate.h"
 #include "Render/Types/VertexTypes.h"
 #include "Render/Proxy/DirtyFlag.h"

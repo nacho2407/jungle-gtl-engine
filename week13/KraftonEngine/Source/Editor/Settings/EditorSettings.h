@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include "EditorViewportSettings.h"
 #include "GizmoToolSettings.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Platform/Paths.h"
 #include "Core/Singleton.h"
 #include "Math/Vector.h"

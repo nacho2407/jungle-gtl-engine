@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 // ============================================================
 // FEngineInitHooks — 모듈 init 함수 셀프-등록 레지스트리.

@@ -1,12 +1,12 @@
-﻿#include "Editor/Viewport/EditorViewportClient.h"
+#include "Editor/Viewport/EditorViewportClient.h"
 
-#include "Editor/UI/EditorConsoleWidget.h"
+#include "Editor/UI/Panel/EditorConsoleWidget.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Slate/SlateApplication.h"
 #include "Engine/Input/InputSystem.h"
-#include "Engine/Profiling/PlatformTime.h"
-#include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Profiling/Time/PlatformTime.h"
+#include "Engine/Platform/WindowsWindow.h"
 
 #include "Render/Types/MinimalViewInfo.h"
 #include "Viewport/Viewport.h"
@@ -19,9 +19,9 @@ UWorld* FEditorViewportClient::GetWorld() const
 {
 	return GEngine ? GEngine->GetWorld() : nullptr;
 }
-#include "Component/GizmoComponent.h"
+#include "Component/Debug/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
-#include "Collision/RayUtils.h"
+#include "Collision/Ray/RayUtils.h"
 #include "Object/Object.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/EditorEngine.h"

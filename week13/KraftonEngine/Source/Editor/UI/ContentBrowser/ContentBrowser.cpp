@@ -1,21 +1,21 @@
 #include "ContentBrowser.h"
 
 #include "Asset/AssetPackage.h"
-#include "Animation/AnimGraphAsset.h"
-#include "Animation/AnimGraphManager.h"
+#include "Animation/Graph/AnimGraphAsset.h"
+#include "Animation/Graph/AnimGraphManager.h"
 #include "CameraShake/CameraShakeAsset.h"
 #include "CameraShake/CameraShakeManager.h"
 #include "ContentBrowserElement.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Subsystem/AssetFactory.h"
-#include "Editor/UI/EditorTextureManager.h"
+#include "Editor/UI/Util/EditorTextureManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "Mesh/MeshManager.h"
-#include "Mesh/SkeletalMesh.h"
-#include "Editor/UI/Asset/MeshEditorWidget.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
+#include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "EditorEngine.h"
-#include "Editor/UI/FbxImportOptionsDialog.h"
+#include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 
 #include <algorithm>
 #include <chrono>
@@ -430,6 +430,11 @@ void FEditorContentBrowserWidget::RefreshContent()
 					Element = std::make_shared<ContentBrowserElement>();
 					break;
 				}
+			}
+			else
+			{
+				// 손상/미완성된 .uasset 도 generic element 로 fallback 해서 SetIcon 단계에서 null deref 를 막는다.
+				Element = std::make_shared<ContentBrowserElement>();
 			}
 		}
 		else

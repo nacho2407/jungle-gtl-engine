@@ -1,10 +1,10 @@
-﻿#include "Shader.h"
+#include "Shader.h"
 #include "ShaderCache.h"
 #include "ShaderInclude.h"
-#include "Profiling/MemoryStats.h"
+#include "Profiling/Stats/MemoryStats.h"
 #include "Materials/Material.h"
-#include "Core/Log.h"
-#include "Core/Notification.h"
+#include "Core/Logging/Log.h"
+#include "Core/Logging/Notification.h"
 #include <iostream>
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")

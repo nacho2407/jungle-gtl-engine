@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Asset/AssetRegistry.h"
-#include "Animation/SkeletonTypes.h"
+#include "Animation/Skeleton/SkeletonTypes.h"
 
 class UAnimSequence;
 class UAnimMontage;

@@ -2,7 +2,7 @@
 
 #include "Render/Proxy/BillboardSceneProxy.h"
 #include "Render/Resource/Buffer.h"
-#include "Core/ResourceTypes.h"
+#include "Core/Types/ResourceTypes.h"
 
 class USubUVComponent;
 

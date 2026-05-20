@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 #include "Math/Vector.h"
-#include "Core/ClassTypes.h"
+#include "Core/Types/ClassTypes.h"
 #include "Render/Types/GlobalLightParams.h"
 
 struct Node {

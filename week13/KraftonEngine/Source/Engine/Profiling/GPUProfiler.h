@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Core/Singleton.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Stats/Stats.h"
 
 #include <d3d11.h>
 

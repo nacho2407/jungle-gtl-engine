@@ -1,5 +1,5 @@
 #include "ActorComponent.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
 

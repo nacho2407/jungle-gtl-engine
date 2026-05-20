@@ -1,10 +1,10 @@
-﻿#include "StructProperty.h"
+#include "StructProperty.h"
 
 #include <cstring>
 #include "SimpleJSON/json.hpp"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Serialization/Archive.h"
-#include "Object/UStruct.h"
+#include "Object/Reflection/UStruct.h"
 
 
 json::JSON FStructProperty::SerializeValue(void* ValuePtr) const

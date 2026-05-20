@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include <functional>
 #include <memory>
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Render/RenderPass/RenderPassBase.h"
 
 /*

@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 #include "Math/Vector.h"
-#include "Core/EngineTypes.h"
+#include "Core/Types/EngineTypes.h"
 
 /*
 	Forward Shading 라이팅 GPU 구조체

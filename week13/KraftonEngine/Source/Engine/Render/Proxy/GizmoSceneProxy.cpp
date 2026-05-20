@@ -1,9 +1,9 @@
-﻿#include "Render/Proxy/GizmoSceneProxy.h"
-#include "Component/GizmoComponent.h"
+#include "Render/Proxy/GizmoSceneProxy.h"
+#include "Component/Debug/GizmoComponent.h"
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Types/FrameContext.h"
 #include "Materials/Material.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 
 // ============================================================
 // FGizmoSceneProxy

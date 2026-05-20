@@ -1,8 +1,8 @@
-﻿#include "ObjViewer/ObjViewerViewportClient.h"
+#include "ObjViewer/ObjViewerViewportClient.h"
 
 #include "Engine/Input/InputSystem.h"
-#include "Engine/Runtime/WindowsWindow.h"
-#include "Component/CameraComponent.h"
+#include "Engine/Platform/WindowsWindow.h"
+#include "Component/Camera/CameraComponent.h"
 #include "Viewport/Viewport.h"
 #include "Math/MathUtils.h"
 #include "ImGui/imgui.h"

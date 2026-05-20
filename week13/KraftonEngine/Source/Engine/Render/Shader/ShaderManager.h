@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/Singleton.h"
 #include "Render/Shader/Shader.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Engine/Platform/DirectoryWatcher.h"
 #include <memory>
 #include <string_view>

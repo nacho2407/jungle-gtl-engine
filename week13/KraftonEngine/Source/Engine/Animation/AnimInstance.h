@@ -1,12 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
-#include "PoseContext.h"
-#include "AnimNotifyEvent.h"
+#include "Animation/PoseContext.h"
+#include "Animation/Notify/AnimNotifyEvent.h"
 #include "Math/Transform.h"
 #include "Object/FName.h"
-#include "AnimationMode.h"
-#include "Nodes/AnimNode_Base.h"
+#include "Animation/AnimationMode.h"
+#include "Animation/Nodes/AnimNode_Base.h"
 
 #include <memory>
 #include <utility>
@@ -66,6 +66,7 @@ public:
 	virtual void NativeInitializeAnimation() {}
 	virtual void NativeUpdateAnimation(float DeltaSeconds) { (void)DeltaSeconds; }
 	virtual void EvaluateAnimation(FPoseContext& Output) { (void)Output; }
+	virtual void PostEvaluatePose(FPoseContext& Output) { (void)Output; }
 
 	// ── 외부 진입점 ──
 	// 매 프레임 호출. NativeUpdate → DispatchQueuedAnimEvents → (호출자가) EvaluatePose.
