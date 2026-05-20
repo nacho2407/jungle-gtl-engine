@@ -190,6 +190,9 @@
     <Filter Include="ThirdParty\ImGui">
       <UniqueIdentifier>{5326d6e3-f339-0d51-b7d9-34f630792b9e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty\imgui-node-editor">
+      <UniqueIdentifier>{32c2195d-d20c-4dc8-9d7e-84ef4f5ad23b}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ThirdParty\SimpleJSON">
       <UniqueIdentifier>{60f3c5d4-2dd4-3746-7c69-104344277d07}</UniqueIdentifier>
     </Filter>
@@ -253,6 +256,9 @@
       <Filter>Source\Editor\Settings</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorAnimStateMachineWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorContentBrowserWidget.cpp">
@@ -414,7 +420,13 @@
     <ClCompile Include="Source\Editor\Viewport\ViewportLayout.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\AnimSequenceAssetLoader.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\AnimStateMachineLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\CurveAssetLoader.cpp">
@@ -457,6 +469,15 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimStateMachine.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimStateMachineInstance.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimStateMachineTypes.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\RayCollision\RayCollision.cpp">
@@ -984,6 +1005,18 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp">
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-node-editor\crude_json.cpp">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-node-editor\imgui_canvas.cpp">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-node-editor\imgui_node_editor.cpp">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-node-editor\imgui_node_editor_api.cpp">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ShaderCompiler.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ShaderHelper.cpp" />
@@ -1120,6 +1153,9 @@
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorAnimStateMachineWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorContentBrowserWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
@@ -1228,6 +1264,9 @@
     <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\AnimSequenceAssetLoader.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Asset\BinarySerializer.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
@@ -1235,6 +1274,9 @@
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\CurveAssetLoader.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\AnimStateMachineLoader.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\CurveFloatAsset.h">
@@ -1283,6 +1325,15 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimStateMachine.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimStateMachineInstance.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimStateMachineTypes.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\RayCollision\RayCollision.h">
@@ -1986,6 +2037,33 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h">
       <Filter>ThirdParty\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\crude_json.h">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_bezier_math.h">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_bezier_math.inl">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_canvas.h">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_extra_math.h">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_extra_math.inl">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_node_editor.h">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_node_editor_internal.h">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_node_editor_internal.inl">
+      <Filter>ThirdParty\imgui-node-editor</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>

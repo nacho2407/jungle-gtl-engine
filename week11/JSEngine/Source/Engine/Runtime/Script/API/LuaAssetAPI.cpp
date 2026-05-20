@@ -76,9 +76,42 @@ namespace FLuaEngineAPI
                 AnimStackName.value_or(FString()));
         };
 
+        Asset["LoadAnimSequenceByKey"] = [](const FString& Key) -> UAnimSequence*
+        {
+            return FResourceManager::Get().LoadAnimSequenceByKey(Key);
+        };
+
+        Asset["LoadAnimSequenceAsset"] = [](const FString& AssetPath) -> UAnimSequence*
+        {
+            return FResourceManager::Get().LoadAnimSequenceAsset(AssetPath);
+        };
+
+        Asset["SaveAnimSequenceAsset"] = [](
+            const FString& AssetPath,
+            const FString& SourceFbxPath,
+            const FString& TargetSkeletalMeshPath,
+            sol::optional<FString> AnimStackName) -> bool
+        {
+            return FResourceManager::Get().SaveAnimSequenceAsset(
+                AssetPath,
+                SourceFbxPath,
+                TargetSkeletalMeshPath,
+                AnimStackName.value_or(FString()));
+        };
+
+        Asset["ListAnimStacks"] = [](sol::this_state State, const FString& SourceFbxPath)
+        {
+            return StringsToLuaTable(State, FResourceManager::Get().ListAnimStacks(SourceFbxPath));
+        };
+
         Asset["GetAnimSequencePaths"] = [](sol::this_state State)
         {
             return StringsToLuaTable(State, FResourceManager::Get().GetAnimSequencePaths());
+        };
+
+        Asset["GetAnimSequenceAssetPaths"] = [](sol::this_state State)
+        {
+            return StringsToLuaTable(State, FResourceManager::Get().GetAnimSequenceAssetPaths());
         };
 
         Asset["GetScenePaths"] = [](sol::this_state State)

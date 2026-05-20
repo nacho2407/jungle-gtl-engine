@@ -16,6 +16,7 @@
 
 #include <Windows.h>
 #include <cstdio>
+#include <unordered_set>
 
 class ReflectionDatabase
 {
@@ -35,6 +36,48 @@ public:
 
         ResolveDependencies();
         bDependenciesResolved = true;
+    }
+
+    static void Shutdown()
+    {
+        std::unordered_set<FProperty*> ReleasedProperties;
+
+        for (auto& Pair : ClassMap)
+        {
+            ReleaseClassInfo(Pair.second, ReleasedProperties);
+        }
+
+        for (auto& Pair : StructMap)
+        {
+            ReleaseStructInfo(Pair.second, ReleasedProperties);
+        }
+
+        for (auto& Pair : EnumMap)
+        {
+            ReleaseEnumInfo(Pair.second);
+        }
+
+        TMap<FString, FClassInfo*>().swap(ClassMap);
+        TMap<FString, FStructInfo*>().swap(StructMap);
+        TMap<FString, FEnumInfo*>().swap(EnumMap);
+        bDependenciesResolved = false;
+    }
+
+    static void ResetClassInfo(FClassInfo& Info)
+    {
+        std::unordered_set<FProperty*> ReleasedProperties;
+        ReleaseClassInfo(&Info, ReleasedProperties);
+    }
+
+    static void ResetStructInfo(FStructInfo& Info)
+    {
+        std::unordered_set<FProperty*> ReleasedProperties;
+        ReleaseStructInfo(&Info, ReleasedProperties);
+    }
+
+    static void ResetEnumInfo(FEnumInfo& Info)
+    {
+        ReleaseEnumInfo(&Info);
     }
 
     static void ResolveStructEditorWidget(FStructInfo* StructInfo)
@@ -200,6 +243,107 @@ public:
     }
 
 private:
+
+    template <typename T>
+    static void ReleaseArrayStorage(TArray<T>& Array)
+    {
+        TArray<T>().swap(Array);
+    }
+
+    static void ReleasePropertyTree(FProperty* Prop, std::unordered_set<FProperty*>& ReleasedProperties)
+    {
+        if (!Prop || !ReleasedProperties.insert(Prop).second)
+        {
+            return;
+        }
+
+        switch (Prop->GetKind())
+        {
+        case EReflectedPropertyKind::Array:
+        {
+            FArrayProperty* ArrayProp = static_cast<FArrayProperty*>(Prop);
+            ReleasePropertyTree(ArrayProp->Inner, ReleasedProperties);
+            ArrayProp->Inner = nullptr;
+            break;
+        }
+        case EReflectedPropertyKind::Map:
+        {
+            FMapProperty* MapProp = static_cast<FMapProperty*>(Prop);
+            ReleasePropertyTree(MapProp->KeyProp, ReleasedProperties);
+            ReleasePropertyTree(MapProp->ValueProp, ReleasedProperties);
+            MapProp->KeyProp = nullptr;
+            MapProp->ValueProp = nullptr;
+            break;
+        }
+        case EReflectedPropertyKind::Set:
+        {
+            FSetProperty* SetProp = static_cast<FSetProperty*>(Prop);
+            ReleasePropertyTree(SetProp->ElementProp, ReleasedProperties);
+            SetProp->ElementProp = nullptr;
+            break;
+        }
+        case EReflectedPropertyKind::Enum:
+        {
+            FEnumProperty* EnumProp = static_cast<FEnumProperty*>(Prop);
+            ReleasePropertyTree(EnumProp->UnderlyingProp, ReleasedProperties);
+            EnumProp->UnderlyingProp = nullptr;
+            break;
+        }
+        default:
+            break;
+        }
+
+        delete Prop;
+    }
+
+    static void ReleaseClassInfo(FClassInfo* Info, std::unordered_set<FProperty*>& ReleasedProperties)
+    {
+        if (!Info)
+        {
+            return;
+        }
+
+        for (FProperty* Prop : Info->ReflectedProperties)
+        {
+            ReleasePropertyTree(Prop, ReleasedProperties);
+        }
+
+        ReleaseArrayStorage(Info->Properties);
+        ReleaseArrayStorage(Info->ReflectedProperties);
+        ReleaseArrayStorage(Info->GcPointerOffsets);
+        ReleaseArrayStorage(Info->Functions);
+        Info->ParentClass = nullptr;
+    }
+
+    static void ReleaseStructInfo(FStructInfo* Info, std::unordered_set<FProperty*>& ReleasedProperties)
+    {
+        if (!Info)
+        {
+            return;
+        }
+
+        for (FProperty* Prop : Info->ReflectedProperties)
+        {
+            ReleasePropertyTree(Prop, ReleasedProperties);
+        }
+
+        ReleaseArrayStorage(Info->Properties);
+        ReleaseArrayStorage(Info->ReflectedProperties);
+        ReleaseArrayStorage(Info->GcPointerOffsets);
+        Info->ParentStruct = nullptr;
+        Info->EditorWidget = EStructEditorWidget::Default;
+    }
+
+    static void ReleaseEnumInfo(FEnumInfo* Info)
+    {
+        if (!Info)
+        {
+            return;
+        }
+
+        ReleaseArrayStorage(Info->Values);
+        ReleaseArrayStorage(Info->CachedNames);
+    }
 
 	static bool IsAssetObjectType(const FString& Type)
     {

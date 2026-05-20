@@ -10,7 +10,9 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Asset/CurveFloatAsset.h"
+#include "Animation/AnimationTypes.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Core/Paths.h"
 #include "Core/CollisionTypes.h"
 #include "Core/ResourceManager.h"
@@ -389,6 +391,23 @@ bool SetLuaTableProperty(sol::table& Table, const FLuaScriptProperty& Prop)
         }
 
         return Cast<UCameraShakePattern>(Source->Duplicate());
+    }
+
+    const char* AnimNotifyPhaseToString(EAnimNotifyPhase Phase)
+    {
+        switch (Phase)
+        {
+        case EAnimNotifyPhase::Instant:
+            return "Instant";
+        case EAnimNotifyPhase::Begin:
+            return "Begin";
+        case EAnimNotifyPhase::Tick:
+            return "Tick";
+        case EAnimNotifyPhase::End:
+            return "End";
+        default:
+            return "Unknown";
+        }
     }
 }
 
@@ -794,6 +813,73 @@ bool UScriptComponent::LoadScript()
     bScriptLoaded = true;
     RegisterScript();
 
+    return true;
+}
+
+bool UScriptComponent::HasScriptFunction(const FString& FunctionName) const
+{
+    if (!IsScriptLoaded() || FunctionName.empty())
+    {
+        return false;
+    }
+
+    const sol::object FuncObj = ScriptInstance[FunctionName];
+    return FuncObj.valid() && FuncObj.get_type() == sol::type::function;
+}
+
+bool UScriptComponent::CallBoolFunction(
+    const FString& FunctionName,
+    bool& OutResult,
+    FString* OutFailureReason) const
+{
+    OutResult = false;
+
+    auto SetFailureReason = [OutFailureReason](const FString& Reason)
+    {
+        if (OutFailureReason)
+        {
+            *OutFailureReason = Reason;
+        }
+    };
+
+    if (!IsScriptLoaded())
+    {
+        SetFailureReason("script is not loaded");
+        return false;
+    }
+
+    if (FunctionName.empty())
+    {
+        SetFailureReason("function name is empty");
+        return false;
+    }
+
+    sol::object FuncObj = ScriptInstance[FunctionName];
+    if (!FuncObj.valid() || FuncObj.get_type() != sol::type::function)
+    {
+        SetFailureReason("function was not found");
+        return false;
+    }
+
+    sol::protected_function Func = FuncObj.as<sol::protected_function>();
+
+    // runtime error가 엔진 crash로 이어지지 않게 보호 호출
+    sol::protected_function_result Result = Func(ScriptInstance);
+    if (!Result.valid())
+    {
+        sol::error Err = Result;
+        SetFailureReason(FString("runtime error: ") + Err.what());
+        return false;
+    }
+
+    sol::object ReturnObj = Result;
+    if (!ReturnObj.valid() || ReturnObj.get_type() != sol::type::boolean)
+    {
+        SetFailureReason("function did not return bool");
+        return false;
+    }
+
+    OutResult = ReturnObj.as<bool>();
     return true;
 }
 
@@ -1278,4 +1364,19 @@ void UScriptComponent::OnEndOverlap(
         OtherBodyIndex,
         bFromSweep,
         SweepResult);
+}
+
+void UScriptComponent::OnAnimNotify(
+    USkeletalMeshComponent* SourceComponent,
+    const FAnimNotifyDispatchEvent& NotifyEvent)
+{
+    (void)SourceComponent;
+
+    // Lua 쪽 gameplay callback은 자주 쓰는 값만 간단한 타입으로 전달
+    CallScriptFunction(
+        "OnAnimNotify",
+        NotifyEvent.Notify.NotifyName.ToString(),
+        FString(AnimNotifyPhaseToString(NotifyEvent.Phase)),
+        NotifyEvent.SourceStateName.ToString(),
+        NotifyEvent.TriggerWeight);
 }

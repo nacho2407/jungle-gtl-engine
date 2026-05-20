@@ -1,10 +1,13 @@
 ﻿#include "SkeletalMeshComponent.h"
 
+#include <cstring>
+#include <string>
 #include <utility>
 
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/AnimStateMachineInstance.h"
 #include "Animation/AnimationAsset.h"
 #include "Animation/AnimationRuntime.h"
 #include "Core/Logging/Log.h"
@@ -19,6 +22,85 @@ REGISTER_FACTORY(USkeletalMeshComponent)
 USkeletalMeshComponent::~USkeletalMeshComponent()
 {
     DestroyAnimInstance();
+}
+
+void USkeletalMeshComponent::Serialize(FArchive& Ar)
+{
+    USkinnedMeshComponent::Serialize(Ar);
+
+    Ar << "AnimSequenceAsset" << AnimSequenceAssetPath;
+    Ar << "AnimSequenceSourceFbx" << AnimSequenceSourceFbxPath;
+    Ar << "AnimSequenceStack" << AnimSequenceStackName;
+
+    if (Ar.IsLoading())
+    {
+        if (!AnimSequenceAssetPath.empty())
+        {
+            SetAnimSequenceAsset(AnimSequenceAssetPath);
+        }
+        else if (!AnimSequenceSourceFbxPath.empty())
+        {
+            SetAnimSequence(AnimSequenceSourceFbxPath, AnimSequenceStackName);
+        }
+    }
+}
+
+void USkeletalMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+    USkinnedMeshComponent::GetEditableProperties(OutProps);
+    OutProps.push_back({ "AnimSequenceAsset", EPropertyType::String, &AnimSequenceAssetPath });
+    OutProps.push_back({ "AnimSequenceSourceFbx", EPropertyType::String, &AnimSequenceSourceFbxPath });
+    OutProps.push_back({ "AnimSequenceStack", EPropertyType::String, &AnimSequenceStackName });
+}
+
+void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
+{
+    USkinnedMeshComponent::PostEditProperty(PropertyName);
+
+    const bool bAnimAssetPropertyChanged = std::strcmp(PropertyName, "AnimSequenceAsset") == 0;
+    const bool bAnimPropertyChanged =
+        std::strcmp(PropertyName, "AnimSequenceSourceFbx") == 0 ||
+        std::strcmp(PropertyName, "AnimSequenceStack") == 0;
+    const bool bMeshChanged = std::strcmp(PropertyName, "SkeletalMesh") == 0;
+
+    if (bAnimAssetPropertyChanged)
+    {
+        if (AnimSequenceAssetPath.empty())
+        {
+            SetAnimation(nullptr);
+            return;
+        }
+
+        SetAnimSequenceAsset(AnimSequenceAssetPath);
+        return;
+    }
+
+    if (bAnimPropertyChanged)
+    {
+        if (AnimSequenceSourceFbxPath.empty())
+        {
+            AnimSequenceAssetPath.clear();
+            AnimSequenceStackName.clear();
+            SetAnimation(nullptr);
+            return;
+        }
+
+        AnimSequenceAssetPath.clear();
+        SetAnimSequence(AnimSequenceSourceFbxPath, AnimSequenceStackName);
+        return;
+    }
+
+    if (bMeshChanged)
+    {
+        if (!AnimSequenceAssetPath.empty())
+        {
+            SetAnimSequenceAsset(AnimSequenceAssetPath);
+        }
+        else if (!AnimSequenceSourceFbxPath.empty())
+        {
+            SetAnimSequence(AnimSequenceSourceFbxPath, AnimSequenceStackName);
+        }
+    }
 }
 
 void USkeletalMeshComponent::TickComponent(float DeltaTime)
@@ -73,8 +155,7 @@ bool USkeletalMeshComponent::ApplyAnimationLocalPose(const TArray<FTransform>& L
 
     if (!FAnimationRuntime::HasMatchingBoneCount(SkeletalMesh, LocalPose))
     {
-        UE_LOG_WARNING(
-            "[SkeletalMeshComponent] Animation local pose bone count mismatch. MeshBones=%d, PoseBones=%d",
+        WarnPoseBoneCountMismatchOnce(
             static_cast<int32>(SkeletalMesh->GetBones().size()),
             static_cast<int32>(LocalPose.size()));
         return false;
@@ -91,6 +172,24 @@ bool USkeletalMeshComponent::ApplyAnimationLocalPose(const TArray<FTransform>& L
     CurrentLocalPose = std::move(LocalMatrices);
     MarkPoseDirty();
     return true;
+}
+
+void USkeletalMeshComponent::WarnPoseBoneCountMismatchOnce(int32 MeshBoneCount, int32 PoseBoneCount)
+{
+    const FString MeshPath = SkeletalMesh ? SkeletalMesh->GetAssetPathFileName() : FString();
+    const FString WarningKey =
+        MeshPath + "|" + std::to_string(MeshBoneCount) + "|" + std::to_string(PoseBoneCount);
+    if (PoseBoneCountMismatchWarningKeys.find(WarningKey) != PoseBoneCountMismatchWarningKeys.end())
+    {
+        return;
+    }
+
+    PoseBoneCountMismatchWarningKeys.insert(WarningKey);
+    UE_LOG_WARNING(
+        "[SkeletalMeshComponent] Animation local pose bone count mismatch. Mesh=%s MeshBones=%d PoseBones=%d",
+        MeshPath.c_str(),
+        MeshBoneCount,
+        PoseBoneCount);
 }
 
 bool USkeletalMeshComponent::RefreshAnimationPose()
@@ -342,12 +441,138 @@ bool USkeletalMeshComponent::SetAnimSequence(const FString& SourceFbxPath, const
     }
 
     SetAnimation(LoadedSequence);
+    AnimSequenceAssetPath.clear();
+    AnimSequenceSourceFbxPath = SourceFbxPath;
+    AnimSequenceStackName = LoadedSequence->AnimStackName;
+
     UE_LOG("[SkeletalMeshComponent] SetAnimSequence succeeded. AnimPath=%s Target=%s Stack=%s Length=%.3f",
            SourceFbxPath.c_str(),
            TargetSkeletalMeshPath.c_str(),
            LoadedSequence->AnimStackName.c_str(),
            LoadedSequence->GetPlayLength());
     return true;
+}
+
+bool USkeletalMeshComponent::SetAnimSequenceAsset(const FString& AssetPath)
+{
+    if (AssetPath.empty())
+    {
+        AnimSequenceAssetPath.clear();
+        SetAnimation(nullptr);
+        return true;
+    }
+
+    UAnimSequence* LoadedSequence = FResourceManager::Get().LoadAnimSequenceAsset(AssetPath);
+    if (!LoadedSequence)
+    {
+        UE_LOG_WARNING("[SkeletalMeshComponent] SetAnimSequenceAsset failed to load sequence asset. Asset=%s",
+                       AssetPath.c_str());
+        return false;
+    }
+
+    SetAnimation(LoadedSequence);
+    AnimSequenceAssetPath = AssetPath;
+    AnimSequenceSourceFbxPath = LoadedSequence->SourceFbxPath;
+    AnimSequenceStackName = LoadedSequence->AnimStackName;
+
+    UE_LOG("[SkeletalMeshComponent] SetAnimSequenceAsset succeeded. Asset=%s Source=%s Stack=%s Length=%.3f",
+           AssetPath.c_str(),
+           LoadedSequence->SourceFbxPath.c_str(),
+           LoadedSequence->AnimStackName.c_str(),
+           LoadedSequence->GetPlayLength());
+    return true;
+}
+
+bool USkeletalMeshComponent::SetAnimStateMachine(const FString& Path)
+{
+    AnimInstanceClassName = "UAnimStateMachineInstance";
+
+    if (AnimationMode != EAnimationMode::AnimInstance)
+    {
+        SetAnimationMode(EAnimationMode::AnimInstance);
+    }
+    else if (!GetStateMachineInstance())
+    {
+        RecreateAnimInstance();
+    }
+
+    UAnimStateMachineInstance* StateMachineInstance = GetStateMachineInstance();
+    if (!StateMachineInstance)
+    {
+        UE_LOG_WARNING("[SkeletalMeshComponent] Failed to create AnimStateMachineInstance.");
+        return false;
+    }
+
+    if (!StateMachineInstance->LoadStateMachine(Path))
+    {
+        UE_LOG_WARNING("[SkeletalMeshComponent] Failed to load anim state machine. Path=%s", Path.c_str());
+        return false;
+    }
+
+    // entry state pose가 화면에 바로 반영되도록 한 번 평가
+    RefreshAnimationPose();
+    return true;
+}
+
+UAnimStateMachineInstance* USkeletalMeshComponent::GetStateMachineInstance() const
+{
+    return Cast<UAnimStateMachineInstance>(AnimInstance);
+}
+
+void USkeletalMeshComponent::SetAnimVariableFloat(const FName& Name, float Value)
+{
+    if (AnimInstance)
+    {
+        AnimInstance->SetAnimVariableFloat(Name, Value);
+    }
+}
+
+float USkeletalMeshComponent::GetAnimVariableFloat(const FName& Name, float DefaultValue) const
+{
+    return AnimInstance ? AnimInstance->GetAnimVariableFloatOrDefault(Name, DefaultValue) : DefaultValue;
+}
+
+void USkeletalMeshComponent::SetAnimVariableBool(const FName& Name, bool Value)
+{
+    if (AnimInstance)
+    {
+        AnimInstance->SetAnimVariableBool(Name, Value);
+    }
+}
+
+bool USkeletalMeshComponent::GetAnimVariableBool(const FName& Name, bool DefaultValue) const
+{
+    return AnimInstance ? AnimInstance->GetAnimVariableBoolOrDefault(Name, DefaultValue) : DefaultValue;
+}
+
+FName USkeletalMeshComponent::GetCurrentAnimStateName() const
+{
+    const UAnimStateMachineInstance* StateMachineInstance = GetStateMachineInstance();
+    return StateMachineInstance ? StateMachineInstance->GetCurrentStateName() : FName();
+}
+
+FName USkeletalMeshComponent::GetPreviousAnimStateName() const
+{
+    const UAnimStateMachineInstance* StateMachineInstance = GetStateMachineInstance();
+    return StateMachineInstance ? StateMachineInstance->GetPreviousStateName() : FName();
+}
+
+FName USkeletalMeshComponent::GetTargetAnimStateName() const
+{
+    const UAnimStateMachineInstance* StateMachineInstance = GetStateMachineInstance();
+    return StateMachineInstance ? StateMachineInstance->GetTargetStateName() : FName();
+}
+
+float USkeletalMeshComponent::GetAnimTransitionAlpha() const
+{
+    const UAnimStateMachineInstance* StateMachineInstance = GetStateMachineInstance();
+    return StateMachineInstance ? StateMachineInstance->GetTransitionAlpha() : 0.0f;
+}
+
+bool USkeletalMeshComponent::IsAnimTransitioning() const
+{
+    const UAnimStateMachineInstance* StateMachineInstance = GetStateMachineInstance();
+    return StateMachineInstance ? StateMachineInstance->IsTransitioning() : false;
 }
 
 void USkeletalMeshComponent::SetAnimationTime(float Time)

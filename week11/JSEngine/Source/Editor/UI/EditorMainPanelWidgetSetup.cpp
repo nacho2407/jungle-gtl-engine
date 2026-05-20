@@ -31,6 +31,7 @@ void FEditorMainPanel::InitializeEditorWidgets(UEditorEngine* InEditorEngine)
 {
     Widgets.ConsoleWidget.Initialize(InEditorEngine);
     Widgets.ContentBrowserWidget.Initialize(InEditorEngine);
+    Widgets.AnimStateMachineWidget.Initialize(InEditorEngine);
     Widgets.ActorSequencerWidget.Initialize(InEditorEngine);
     Widgets.ControlWidget.Initialize(InEditorEngine);
     Widgets.CurveEditorWidget.Initialize(InEditorEngine);
@@ -47,6 +48,33 @@ void FEditorMainPanel::InitializeEditorWidgets(UEditorEngine* InEditorEngine)
 void FEditorMainPanel::OpenCurveAsset(const FString& CurvePath)
 {
     Widgets.CurveEditorWidget.OpenCurveAsset(CurvePath);
+}
+
+void FEditorMainPanel::OpenAnimStateMachineAsset(const FString& AnimStateMachinePath)
+{
+    if (!Widgets.AnimStateMachineWidget.OpenAsset(AnimStateMachinePath))
+    {
+        PushFooterLog("Failed to open animation state machine asset.");
+        return;
+    }
+
+    const FString AssetPath = Widgets.AnimStateMachineWidget.GetAssetPath();
+    const FEditorTabId TabId = MakeAnimStateMachineEditorTabId(AssetPath);
+    const FString TabLabel = MakeAnimStateMachineEditorTabLabel(AssetPath);
+    EditorTabs.OpenOrFocusTab(TabId, TabLabel);
+    EditorTabs.SetTabLabel(TabId, TabLabel);
+    ActivateEditorTab(TabId);
+}
+
+void FEditorMainPanel::OpenAnimStateMachineEditor()
+{
+    Widgets.AnimStateMachineWidget.NewDraft();
+
+    const FEditorTabId TabId = MakeAnimStateMachineEditorTabId("");
+    const FString TabLabel = MakeAnimStateMachineEditorTabLabel("");
+    EditorTabs.OpenOrFocusTab(TabId, TabLabel);
+    EditorTabs.SetTabLabel(TabId, TabLabel);
+    ActivateEditorTab(TabId);
 }
 
 void FEditorMainPanel::OpenViewer(FEditorViewer* Viewer)
@@ -167,6 +195,7 @@ void FEditorMainPanel::BindEditorWidgetCallbacks()
     Widgets.ToolbarWidget.SetPIEViewportFullscreenCallback([this](bool bEnabled) { SetPIEViewportFullscreenEnabled(bEnabled); });
     Widgets.ToolbarWidget.SetBuildGameCallback([this]() { RequestBuildGame(); });
     Widgets.ToolbarWidget.SetRuntimeUIPreviewOpenCallback([this]() { OpenRuntimeUIPreviewAsset(); });
+    Widgets.ToolbarWidget.SetAnimStateMachineOpenCallback([this]() { OpenAnimStateMachineEditor(); });
     Widgets.ToolbarWidget.SetActiveCommandHandlers(
         [this](const FEditorShortcut& Shortcut)
         {

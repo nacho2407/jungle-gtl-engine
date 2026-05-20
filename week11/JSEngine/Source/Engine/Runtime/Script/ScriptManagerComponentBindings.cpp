@@ -426,6 +426,24 @@ void FScriptManager::BindStaticMeshTypes()
     LUA_METHOD(SetAnimation, SetAnimation);
     LUA_SET(SetAnimSequence, [](USkeletalMeshComponent& Self, const FString& Path, sol::optional<FString> StackName)
             { return Self.SetAnimSequence(Path, StackName.value_or(FString())); });
+    LUA_METHOD(SetAnimSequenceAsset, SetAnimSequenceAsset);
+    LUA_METHOD(SetAnimStateMachine, SetAnimStateMachine);
+    LUA_SET(SetAnimVariableFloat, [](USkeletalMeshComponent& Self, const FString& Name, float Value)
+            { Self.SetAnimVariableFloat(FName(Name), Value); });
+    LUA_SET(GetAnimVariableFloat, [](USkeletalMeshComponent& Self, const FString& Name, sol::optional<float> DefaultValue)
+            { return Self.GetAnimVariableFloat(FName(Name), DefaultValue.value_or(0.0f)); });
+    LUA_SET(SetAnimVariableBool, [](USkeletalMeshComponent& Self, const FString& Name, bool Value)
+            { Self.SetAnimVariableBool(FName(Name), Value); });
+    LUA_SET(GetAnimVariableBool, [](USkeletalMeshComponent& Self, const FString& Name, sol::optional<bool> DefaultValue)
+            { return Self.GetAnimVariableBool(FName(Name), DefaultValue.value_or(false)); });
+    LUA_SET(GetCurrentAnimStateName, [](USkeletalMeshComponent& Self)
+            { return Self.GetCurrentAnimStateName().ToString(); });
+    LUA_SET(GetPreviousAnimStateName, [](USkeletalMeshComponent& Self)
+            { return Self.GetPreviousAnimStateName().ToString(); });
+    LUA_SET(GetTargetAnimStateName, [](USkeletalMeshComponent& Self)
+            { return Self.GetTargetAnimStateName().ToString(); });
+    LUA_METHOD(GetAnimTransitionAlpha, GetAnimTransitionAlpha);
+    LUA_METHOD(IsAnimTransitioning, IsAnimTransitioning);
     LUA_METHOD(PlayAnim, PlayAnim);
     LUA_METHOD(StopAnim, StopAnim);
     LUA_METHOD(SetAnimTime, SetAnimationTime);

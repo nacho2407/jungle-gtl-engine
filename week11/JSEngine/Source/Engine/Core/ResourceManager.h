@@ -26,6 +26,7 @@
 #include <d3d11.h>
 
 class UAnimSequence;
+class UAnimStateMachine;
 class FMaterialLoadService;
 class FMaterialSerializationService;
 class FStaticMeshLoadService;
@@ -124,8 +125,21 @@ public:
 
 	TArray<FString> ListAnimStacks(const FString& SourceFbxPath);
 	UAnimSequence* LoadAnimSequence(const FString& SourceFbxPath,const FString& TargetSkeletalMeshPath,const FString& AnimStackName);
+	UAnimSequence* LoadAnimSequenceByKey(const FString& Key);
+	UAnimSequence* LoadAnimSequenceAsset(const FString& AssetPath);
+	bool SaveAnimSequenceAsset(
+		const FString& AssetPath,
+		const FString& SourceFbxPath,
+		const FString& TargetSkeletalMeshPath,
+		const FString& AnimStackName);
 	UAnimSequence* FindAnimSequence(const FString& Key) const;
 	TArray<FString> GetAnimSequencePaths() const;
+	TArray<FString> GetAnimSequenceAssetPaths() const;
+
+	UAnimStateMachine* LoadAnimStateMachine(const FString& Path);
+	UAnimStateMachine* FindAnimStateMachine(const FString& Path) const;
+	bool SaveAnimStateMachine(const FString& Path, const UAnimStateMachine* StateMachine);
+	TArray<FString> GetAnimStateMachinePaths() const;
 	
 	bool IsAnimSequenceBinaryValid(
 		const FString& SourcePath,
@@ -155,6 +169,7 @@ public:
 private:
 	void ClearDiscoveredResourceLists(bool bClearAtlasCache);
 	void RegisterDiscoveredAssetFile(const std::filesystem::path& FilePath, const std::filesystem::path& ProjectRootPath);
+	void RegisterCachedAnimSequenceBinaries();
 	void InitializeDefaultWhiteTexture(ID3D11Device* Device);
 	void InitializeDefaultMaterial(ID3D11Device* Device);
 	void InitializeOutlineMaterial();
@@ -193,8 +208,11 @@ private:
 	TMap<FString, USkeletalMesh*> SkeletalMeshMap;
 	TMap<FString, TArray<FString>> AnimStackNamesMap;
 	TMap<FString, UAnimSequence*> AnimSequenceMap;
+    TMap<FString, UAnimStateMachine*> AnimStateMachineMap;
+    /* Paths */
 	TArray<FString> AnimSequenceFilePaths;
-	/* Paths */
+	TArray<FString> AnimSequenceAssetFilePaths;
+	TArray<FString> AnimStateMachineFilePaths;
 	TArray<FString> ObjFilePaths;
 	TArray<FString> MaterialFilePaths;
 	TArray<FString> ParticleFilePaths;

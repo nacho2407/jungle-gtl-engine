@@ -28,6 +28,12 @@ const FString& FNamePool::Resolve(uint32 Index) const
 	return Empty;
 }
 
+void FNamePool::Clear()
+{
+	TArray<FString>().swap(Entries);
+	TMap<FString, uint32>().swap(LookupMap);
+}
+
 // ============================================================
 // FName
 // ============================================================

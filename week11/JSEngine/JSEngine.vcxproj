@@ -480,6 +480,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorAnimStateMachineWidget.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorContentBrowserWidget.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
@@ -689,7 +693,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\AnimSequenceAssetLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp" />
+    <ClCompile Include="Source\Engine\Asset\AnimStateMachineLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\CurveAssetLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\CurveFloatAsset.cpp" />
     <ClCompile Include="Source\Engine\Asset\FileUtils.cpp" />
@@ -704,6 +710,9 @@
     <ClCompile Include="Source\Engine\Animation\AnimationRuntime.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimSingleNodeInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimStateMachine.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimStateMachineInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimStateMachineTypes.cpp" />
     <ClCompile Include="Source\Engine\Collision\Collision.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayCollision\RayCollision.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
@@ -923,6 +932,10 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="ThirdParty\imgui-node-editor\crude_json.cpp" />
+    <ClCompile Include="ThirdParty\imgui-node-editor\imgui_canvas.cpp" />
+    <ClCompile Include="ThirdParty\imgui-node-editor\imgui_node_editor.cpp" />
+    <ClCompile Include="ThirdParty\imgui-node-editor\imgui_node_editor_api.cpp" />
     <ClCompile Include="main.cpp" />
     <None Include="Tools\PropertySystem\CustomParser.cs" />
   </ItemGroup>
@@ -990,6 +1003,7 @@
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
     <ClInclude Include="Source\Editor\Settings\ProjectSettings.h" />
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h" />
+    <ClInclude Include="Source\Editor\UI\EditorAnimStateMachineWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorContentBrowserWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorControlWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorCurveEditorWidget.h" />
@@ -1026,7 +1040,9 @@
     <ClInclude Include="Source\Editor\Viewport\SEditorViewport.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h" />
     <ClInclude Include="Source\Engine\Camera\ViewportCamera.h" />
+    <ClInclude Include="Source\Engine\Asset\AnimSequenceAssetLoader.h" />
     <ClInclude Include="Source\Engine\Asset\BinarySerializer.h" />
+    <ClInclude Include="Source\Engine\Asset\AnimStateMachineLoader.h" />
     <ClInclude Include="Source\Engine\Asset\AssetQueryService.h" />
     <ClInclude Include="Source\Engine\Asset\CurveAssetLoader.h" />
     <ClInclude Include="Source\Engine\Asset\CurveFloatAsset.h" />
@@ -1045,6 +1061,9 @@
     <ClInclude Include="Source\Engine\Animation\AnimationTypes.h" />
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\AnimSingleNodeInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimStateMachine.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimStateMachineInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimStateMachineTypes.h" />
     <ClInclude Include="Source\Engine\Collision\Collision.h" />
     <ClInclude Include="Source\Engine\Collision\RayCollision\RayCollision.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
@@ -1289,6 +1308,15 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_rectpack.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\crude_json.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_bezier_math.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_bezier_math.inl" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_canvas.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_extra_math.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_extra_math.inl" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_node_editor.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_node_editor_internal.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_node_editor_internal.inl" />
     <ClInclude Include="ThirdParty\luajit\src\lua.h" />
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
   </ItemGroup>

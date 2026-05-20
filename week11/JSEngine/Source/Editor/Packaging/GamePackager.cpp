@@ -983,6 +983,7 @@ namespace
             || Extension == ".lua"
             || Extension == ".prefab"
             || Extension == ".curve"
+            || Extension == ".animsequence"
             || Extension == ".sequence"
             || Extension == ".rml"
             || Extension == ".rcss"
@@ -1594,6 +1595,10 @@ namespace
             return false;
         }
         if (!AddRuntimeFilesByExtension(Context, "Asset/Sequence", { ".sequence" }, OutMessage))
+        {
+            return false;
+        }
+        if (!AddRuntimeFilesByExtension(Context, "Asset/AnimSequence", { ".animsequence", ".bin" }, OutMessage))
         {
             return false;
         }

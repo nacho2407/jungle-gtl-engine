@@ -1,4 +1,5 @@
 #include "ShadowPass.h"
+#include "Core/Logging/Stats.h"
 
 #include "Core/ResourceManager.h"
 #include "Render/Resource/ShaderHelper.h"
@@ -130,6 +131,8 @@ void FShadowPass::RenderShadowDepth(
 			Context->RenderBus->GetSkinningMode() == ESkinningMode::GPU)
 		{
 			Context->RenderResources->SkinningBuffer.Update(DeviceContext, &Cmd.Constants.Skinning, sizeof(FSkinningConstants));
+			FSkinningStats::Get().GPUSkinningCBUploadBytes += sizeof(FSkinningConstants);
+			FSkinningStats::Get().GPUSkinningCBUpdateCount += 1;
 			ID3D11Buffer* cb5 = Context->RenderResources->SkinningBuffer.GetBuffer();
 			DeviceContext->VSSetConstantBuffers(5, 1, &cb5);
 		}

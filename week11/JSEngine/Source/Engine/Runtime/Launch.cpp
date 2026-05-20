@@ -2,7 +2,9 @@
 
 #include "Engine/Runtime/EngineLoop.h"
 #include "Engine/Core/CrashDump.h"
+#include "Object/FName.h"
 #include "ReflectionSystem/ReflectionDatabase.h"
+#include "ReflectionSystem/ReflectionUtils.h"
 
 namespace
 {
@@ -82,6 +84,9 @@ int GuardedMain(HINSTANCE hInstance, int nShowCmd)
 
     const int ExitCode = EngineLoop.Run();
     EngineLoop.Shutdown();
+    ReflectionDatabase::Shutdown();
+    ReflectionUtils::ClearStablePropertyNameCache();
+    FNamePool::Get().Clear();
     return ExitCode;
 }
 } // namespace

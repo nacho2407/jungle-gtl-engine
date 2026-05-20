@@ -54,6 +54,26 @@ FString MakeRuntimeUIPreviewTabLabel(const FString& DocumentPath)
 	return FileName.empty() ? "Runtime UI Preview" : FileName;
 }
 
+FEditorTabId MakeAnimStateMachineEditorTabId(const FString& AssetPath)
+{
+	FEditorTabId TabId;
+	TabId.Kind = EEditorTabKind::AnimStateMachineEditor;
+	TabId.PayloadId = AssetPath.empty() ? "__AnimStateMachineEditor" : AssetPath;
+	return TabId;
+}
+
+FString MakeAnimStateMachineEditorTabLabel(const FString& AssetPath)
+{
+	if (AssetPath.empty())
+	{
+		return "Animation State Machine";
+	}
+
+	const size_t SlashIndex = AssetPath.find_last_of("/\\");
+	const FString FileName = SlashIndex == FString::npos ? AssetPath : AssetPath.substr(SlashIndex + 1);
+	return FileName.empty() ? "Animation State Machine" : FileName;
+}
+
 void FEditorTabManager::ResetToLevelEditor()
 {
 	Tabs.clear();
@@ -134,6 +154,18 @@ bool FEditorTabManager::SetTabLabel(const FEditorTabId& Id, const FString& Label
 	}
 
 	Tabs[Index].Label = Label;
+	return true;
+}
+
+bool FEditorTabManager::SetTabDirty(const FEditorTabId& Id, bool bDirty)
+{
+	const int32 Index = FindTabIndex(Id);
+	if (Index < 0)
+	{
+		return false;
+	}
+
+	Tabs[Index].bDirty = bDirty;
 	return true;
 }
 

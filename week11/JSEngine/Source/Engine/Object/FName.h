@@ -68,6 +68,8 @@ public:
 	// 풀에 등록된 모든 엔트리 목록 반환
 	const TArray<FString>& GetEntries() const { return Entries; }
 
+	void Clear();
+
 	// 풀이 차지하는 총 문자열 바이트 크기 반환 (각 FString의 문자 데이터 합산)
 	size_t GetTotalBytes() const
 	{

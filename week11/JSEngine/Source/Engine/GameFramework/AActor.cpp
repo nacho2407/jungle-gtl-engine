@@ -8,6 +8,7 @@
 #include "Core/Delegates/Delegate.h"
 #include "Core/ResourceManager.h"
 #include "Component/DecalComponent.h"
+#include "Animation/AnimationTypes.h"
 #include <Runtime/Script/ScriptComponent.h>
 #include "ReflectionSystem/ReflectionUtils.h"
 #include "Animation/AnimationTypes.h"
@@ -788,4 +789,11 @@ void AActor::HandleAnimNotify(USkeletalMeshComponent* SourceComponent, const FAn
 	// 기본 구현은 no-op
     (void)SourceComponent;
     (void)NotifyEvent;
+    for (UActorComponent* Component : GetComponents())
+    {
+        if (UScriptComponent* ScriptComponent = Cast<UScriptComponent>(Component))
+        {
+            ScriptComponent->OnAnimNotify(SourceComponent, NotifyEvent);
+        }
+    }
 }

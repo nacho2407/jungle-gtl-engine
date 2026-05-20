@@ -182,6 +182,12 @@ namespace
     {
         if (!MoveComp) return "None";
 
+        FString ComponentName = MoveComp->GetFName().ToString();
+        if (ComponentName.empty())
+        {
+            ComponentName = MoveComp->GetTypeInfo()->name;
+        }
+
         USceneComponent* UpdatedComp = MoveComp->GetUpdatedComponent();
         if (UpdatedComp)
         {
@@ -190,30 +196,10 @@ namespace
             {
                 TargetName = UpdatedComp->GetTypeInfo()->name;
             }
-            return FString("MC_") + TargetName;
+            return ComponentName + " -> " + TargetName;
         }
 
-        // 대상이 없는 경우
-        FString DefaultName = MoveComp->GetFName().ToString();
-        if (DefaultName.empty())
-        {
-            DefaultName = MoveComp->GetTypeInfo()->name;
-        }
-        return DefaultName;
-    }
-
-	static FString MakeDefaultScriptName(const FString& SceneName, AActor* Actor)
-    {
-        FString ActorName = "Actor";
-        FString ValidSceneName = SceneName.empty() ? "Default" : SceneName;
-
-        if (Actor)
-        {
-            const FTypeInfo* TypeInfo = Actor->GetTypeInfo();
-            ActorName = TypeInfo ? TypeInfo->name : "Actor";
-        }
-
-        return ValidSceneName + "_" + ActorName;
+        return ComponentName;
     }
 
 	static bool IsBlankString(const FString& Value)
@@ -240,6 +226,29 @@ namespace
 			return FPaths::ToRelativeString(ScriptPath.lexically_normal().wstring());
 		}
 		return FPaths::Normalize(PathText);
+	}
+
+	static FString MakeProjectAssetReferenceFromPath(const FString& PathText)
+	{
+		if (PathText.empty())
+		{
+			return {};
+		}
+
+		std::filesystem::path AssetPath(FPaths::ToWide(PathText));
+		if (!AssetPath.is_absolute())
+		{
+			return FPaths::Normalize(PathText);
+		}
+
+		std::error_code Ec;
+		const std::filesystem::path RootPath = std::filesystem::path(FPaths::RootDir()).lexically_normal();
+		std::filesystem::path Relative = std::filesystem::relative(AssetPath.lexically_normal(), RootPath, Ec);
+		if (Ec || Relative.empty())
+		{
+			return FPaths::Normalize(PathText);
+		}
+		return FPaths::Normalize(FPaths::ToUtf8(Relative.generic_wstring()));
 	}
 
 	static bool PromptCreateScriptAs(UEditorEngine* EditorEngine, const FString& ScriptPathHint, FString& OutFilePath)
@@ -1297,6 +1306,7 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
 	ImGui::Text("Actor: %s", PrimaryActor->GetTypeInfo()->name);
+	ImGui::TextDisabled("UUID: %u", PrimaryActor->GetUUID());
 	RenderEditableName("Name##Actor", PrimaryActor, &bFocusActorNameNextFrame); // 편집 가능한 UI
 	RenderActorTags(PrimaryActor, SelectedActors);
 
@@ -1613,6 +1623,7 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	const FDetailsPerfClock::time_point TotalStart = bDetailsPerfTraceFrame ? FDetailsPerfClock::now() : FDetailsPerfClock::time_point{};
 
 	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
+	ImGui::TextDisabled("UUID: %u", SelectedComponent->GetUUID());
 	RenderEditableName("Name##Component", SelectedComponent, &bFocusComponentNameNextFrame); // 편집 가능한 UI
 	RenderComponentTags(SelectedComponent);
 	RenderCallInEditorFunctions(SelectedComponent);
@@ -2055,6 +2066,59 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 					bChanged = true;
 				}
 			}
+		}
+		else if (strcmp(Prop.Name, "AnimSequenceAsset") == 0)
+		{
+			const TArray<FString> AnimSequenceAssetPaths = FResourceManager::Get().GetAnimSequenceAssetPaths();
+
+			ImGui::PushID(Val);
+			char Buf[512] = {};
+			strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
+			if (ImGui::InputText("##AnimSequenceAssetPath", Buf, sizeof(Buf)))
+			{
+				*Val = Buf;
+				bChanged = true;
+			}
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("AnimSequenceContentItem"))
+				{
+					const char* PayloadPath = static_cast<const char*>(Payload->Data);
+					if (PayloadPath && PayloadPath[0] != '\0')
+					{
+						*Val = MakeProjectAssetReferenceFromPath(PayloadPath);
+						bChanged = true;
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			ImGui::SameLine();
+			const FString Current = *Val;
+			if (ImGui::BeginCombo("AnimSequenceAsset", Current.empty() ? "<None>" : Current.c_str()))
+			{
+				if (ImGui::Selectable("<None>", Current.empty()))
+				{
+					Val->clear();
+					bChanged = true;
+				}
+				for (const FString& Path : AnimSequenceAssetPaths)
+				{
+					const bool bSelected = (Current == Path);
+					if (ImGui::Selectable(Path.c_str(), bSelected))
+					{
+						*Val = Path;
+						bChanged = true;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::PopID();
 		}
         else if (strcmp(Prop.Name, "ScriptName") == 0)
         {
@@ -2802,19 +2866,6 @@ void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UA
 	else if (UMovementComponent* MoveComp = Cast<UMovementComponent>(NewComp))
 	{
 		if (AttachTarget) MoveComp->SetUpdatedComponent(AttachTarget);
-	}
-
-	if (UScriptComponent* ScriptComp = Cast<UScriptComponent>(NewComp))
-	{
-        if (ScriptComp->GetScriptName().empty())
-		{
-			FString SceneName = "Default";
-			if (EditorEngine)
-			{
-				SceneName = EditorEngine->GetSceneService().GetSceneName();
-			}
-            ScriptComp->SetScriptName(MakeDefaultScriptName(SceneName, PrimaryActor));
-		}
 	}
 
 	SelectComponentForDetails(NewComp);

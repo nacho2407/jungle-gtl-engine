@@ -8,6 +8,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
+#include "Core/Logging/Stats.h"
 #include "Engine/Asset/StaticMesh.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Scene/RenderBus.h"
@@ -177,6 +178,14 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
         const FSkeletalMeshLODRenderData* LODData = SkeletalMesh->GetLODRenderData(0);
         const TArray<FSkeletalMeshRenderSection>& Sections = LODData ? LODData->RenderSections : TArray<FSkeletalMeshRenderSection>();
+        if (LODData)
+        {
+            FSkinningStatsSnapshot& SkinningStats = FSkinningStats::Get();
+            SkinningStats.TotalSkeletalCount += 1;
+            SkinningStats.TotalVertexCount += static_cast<uint64>(LODData->StaticVertices.size());
+            SkinningStats.TotalIndexCount += static_cast<uint64>(SkeletalMesh->GetIndices().size());
+        }
+
         if (Sections.empty()) // fallback
         {
             FRenderCommand Cmd = {};
@@ -202,7 +211,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
                 continue;
             }
 
-            UMaterialInterface* Material = Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(SectionIdx));
+            UMaterialInterface* Material = Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(Section.MaterialIndex));
 
             FRenderCommand Cmd = {};
             Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
@@ -210,6 +219,19 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.Type = ERenderCommandType::SkeletalMesh;
             Cmd.VertexFactoryType = CmdVertexFactoryType;
             Cmd.MeshBuffer = MeshBuffer;
+
+            Cmd.SelectedBoneLocalIndex = 0xFFFFFFFFu;
+            if (RenderBus.SelectedBoneIndex != 0xFFFFFFFFu)
+            {
+                for (uint32 LocalBoneIndex = 0; LocalBoneIndex < Section.BoneMap.size(); ++LocalBoneIndex)
+                {
+                    if (Section.BoneMap[LocalBoneIndex] == static_cast<int32>(RenderBus.SelectedBoneIndex))
+                    {
+                        Cmd.SelectedBoneLocalIndex = LocalBoneIndex;
+                        break;
+                    }
+                }
+            }
 
             // Bone weight visualization 은 GPU skinning으로만 동작
             if (RenderBus.GetSkinningMode() == ESkinningMode::GPU)

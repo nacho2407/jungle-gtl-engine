@@ -46,11 +46,6 @@ namespace
     }
 }
 
-void FDecalCommandBuilder::Reset()
-{
-    LastStats = {};
-}
-
 void FDecalCommandBuilder::CollectDecal(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, FRenderBus& RenderBus,
                                         FMeshBufferManager& MeshBufferManager,
                                         FWorldSpatialIndex::FPrimitiveOBBQueryScratch& OBBQueryScratch)
@@ -121,7 +116,5 @@ void FDecalCommandBuilder::CollectDecal(UPrimitiveComponent* Primitive, const FS
             RenderBus.AddCommand(ERenderPass::Decal, Cmd);
         }
     }
-
-    LastStats.TotalDecalCount += 1;
-    LastStats.CollectTimeMS += static_cast<int32>(RenderDecalScope.Finish());
+    RenderDecalScope.Finish();
 }

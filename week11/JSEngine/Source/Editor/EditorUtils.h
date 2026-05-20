@@ -24,6 +24,7 @@ struct FEditorViewportState
 	bool bShowStatFPS       = false;
 	bool bShowStatMemory    = false;
 	bool bShowStatNameTable = false;
+	bool bShowStatSkinning  = false;
 	bool bShowCascadeVis    = false;
 	bool bShowLight   = false;
 	bool bShowShadow  = false;

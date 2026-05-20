@@ -8,6 +8,7 @@
 #include "Component/SkeletalMeshComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
+#include "Core/Paths.h"
 #include "Component/GizmoComponent.h"
 #include "Component/TransformProxy.h"
 #include "Editor/Viewport/EditorViewportClient.h"
@@ -18,6 +19,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cmath>
+#include <filesystem>
 #include <functional>
 
 namespace
@@ -93,6 +95,53 @@ FString GetBaseFileNameWithoutExtension(const FString& Path)
 FString GetViewerAssetLabel(FEditorViewer* Viewer)
 {
     return Viewer ? GetBaseFileNameWithoutExtension(Viewer->GetFileName()) : FString("Viewer");
+}
+
+bool IsSafeAnimSequenceAssetChar(char Ch)
+{
+    return (Ch >= 'a' && Ch <= 'z')
+        || (Ch >= 'A' && Ch <= 'Z')
+        || (Ch >= '0' && Ch <= '9')
+        || Ch == '_'
+        || Ch == '-';
+}
+
+FString SanitizeAnimSequenceAssetToken(FString Value)
+{
+    if (Value.empty())
+    {
+        return "Anim";
+    }
+
+    for (char& Ch : Value)
+    {
+        if (!IsSafeAnimSequenceAssetChar(Ch))
+        {
+            Ch = '_';
+        }
+    }
+    return Value;
+}
+
+FString MakeUniqueAnimSequenceAssetPath(const FString& SourceFbxPath, const FString& StackName)
+{
+    const FString MeshToken = SanitizeAnimSequenceAssetToken(GetBaseFileNameWithoutExtension(SourceFbxPath));
+    const FString StackToken = SanitizeAnimSequenceAssetToken(StackName.empty() ? FString("Default") : StackName);
+    const FString Stem = MeshToken + "_" + StackToken;
+
+    for (int32 Index = 0; Index < 10000; ++Index)
+    {
+        const FString Suffix = Index == 0 ? FString() : FString("_") + std::to_string(Index);
+        const FString Candidate = FString("Asset/AnimSequence/") + Stem + Suffix + ".animsequence";
+        const std::filesystem::path CandidatePath(FPaths::ToAbsolute(FPaths::ToWide(Candidate)));
+        std::error_code Ec;
+        if (!std::filesystem::exists(CandidatePath, Ec))
+        {
+            return FPaths::Normalize(Candidate);
+        }
+    }
+
+    return FPaths::Normalize(FString("Asset/AnimSequence/") + Stem + ".animsequence");
 }
 
 void ApplyDetachedDocumentWindowClass()
@@ -1020,6 +1069,133 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
             {
                 return;
             }
+            CachedSkComp->Pause();
+        }
+    }
+    ImGui::SameLine();
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+    if (ImGui::Button("(O)", ImVec2(BtnW, 24)))
+    { /* 특수 액션/녹음 */
+    }
+    ImGui::SameLine();
+    ImGui::PopStyleColor();
+
+    if (ImGui::Button(">", ImVec2(BtnW, 24)))
+    {
+        if (CachedSkComp)
+        {
+            CachedSkComp->SetLooping(bAnimationLoop);
+            CachedSkComp->Play();
+        }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(">>", ImVec2(BtnW, 24)))
+    {
+        SeekAnimation(std::min(AnimationMaxTime, AnimationCurrentTime + FrameStepSeconds));
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(">|", ImVec2(BtnW, 24)))
+    {
+        SeekAnimation(AnimationMaxTime);
+    }
+    if (ImGui::Checkbox("Loop Playback", &bAnimationLoop))
+    {
+        if (CachedSkComp)
+        {
+            CachedSkComp->SetLooping(bAnimationLoop);
+        }
+    }
+    ImGui::PopStyleVar();
+    ImGui::Spacing();
+
+    FString FbxPath;
+    TArray<FString> StackNames;
+    if (CachedSkComp && CachedSkComp->GetSkeletalMesh())
+    {
+        FbxPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
+        StackNames = FResourceManager::Get().ListAnimStacks(FbxPath);
+    }
+
+    TArray<const char*> AnimItems;
+    AnimItems.reserve(StackNames.size());
+
+    for (const FString& StackName : StackNames)
+    {
+        AnimItems.push_back(StackName.c_str());
+    }
+    if (SelectedAnimationStackIndex >= static_cast<int32>(AnimItems.size()))
+    {
+        SelectedAnimationStackIndex = 0;
+    }
+    ImGui::SetNextItemWidth(-1.0f);
+    bool bAnimSelectionChanged = false;
+    if (AnimItems.empty())
+    {
+        ImGui::TextDisabled("No animation stacks");
+    }
+    else
+    {
+        int SelectedAnimItem = static_cast<int>(SelectedAnimationStackIndex);
+        bAnimSelectionChanged = ImGui::Combo(
+            "Animation List",
+            &SelectedAnimItem,
+            AnimItems.data(),
+            static_cast<int>(AnimItems.size()));
+        SelectedAnimationStackIndex = static_cast<int32>(SelectedAnimItem);
+    }
+
+    const bool bHasSelectedAnimationStack =
+        CachedSkComp
+        && !StackNames.empty()
+        && SelectedAnimationStackIndex >= 0
+        && SelectedAnimationStackIndex < static_cast<int32>(StackNames.size());
+    FString SelectedAnimationStackName;
+    if (bHasSelectedAnimationStack)
+    {
+        SelectedAnimationStackName = StackNames[SelectedAnimationStackIndex];
+        const FString AnimKey = FbxPath + "|" + SelectedAnimationStackName;
+
+        if (bAnimSelectionChanged || LastRequestedAnimationKey != AnimKey)
+        {
+            // 뷰어 인스턴스별 요청 키로 0번 stack 자동 로드와 선택 변경을 처리
+            LastRequestedAnimationKey = AnimKey;
+            if (CachedSkComp->SetAnimSequence(FbxPath, SelectedAnimationStackName))
+
+        }
+    }
+
+    const bool bCanSaveAnimSequenceAsset =
+        bHasSelectedAnimationStack
+        && CachedSkComp
+        && CachedSkComp->GetSkeletalMesh()
+        && !FbxPath.empty();
+    ImGui::BeginDisabled(!bCanSaveAnimSequenceAsset);
+    if (ImGui::Button("Save AnimSequence Asset"))
+    {
+        const FString TargetMeshPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
+        const FString AssetPath = MakeUniqueAnimSequenceAssetPath(FbxPath, SelectedAnimationStackName);
+        if (FResourceManager::Get().SaveAnimSequenceAsset(
+            AssetPath,
+            FbxPath,
+            TargetMeshPath,
+            SelectedAnimationStackName))
+        {
+            if (EditorEngine)
+            {
+                EditorEngine->GetNotificationService().Info("Anim sequence asset saved: " + AssetPath);
+            }
+        }
+        else if (EditorEngine)
+        {
+            EditorEngine->GetNotificationService().Error("Anim sequence asset save failed");
+        }
+    }
+    ImGui::EndDisabled();
+    if (!bCanSaveAnimSequenceAsset && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+    {
+        ImGui::SetTooltip("Select an animation stack first.");
+    }
+    ImGui::Spacing();
 
             CachedSkComp->SetPosition(NewTime, false);
             CachedSkComp->RefreshAnimationPose();

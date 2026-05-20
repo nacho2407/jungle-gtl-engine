@@ -7,6 +7,17 @@ FStatManager::FStatManager()
 	QueryPerformanceFrequency(&Frequency);
 }
 
+FSkinningStatsSnapshot& FSkinningStats::Get()
+{
+	static FSkinningStatsSnapshot Stats;
+	return Stats;
+}
+
+void FSkinningStats::Reset()
+{
+	Get() = FSkinningStatsSnapshot();
+}
+
 void FStatManager::RecordTime(const char* Name, double ElapsedSeconds)
 {
 	auto it = Stats.find(Name);

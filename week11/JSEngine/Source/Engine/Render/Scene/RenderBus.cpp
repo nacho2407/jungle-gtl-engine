@@ -11,6 +11,7 @@ void FRenderBus::Clear()
 	AmbientLightInfo	 = {};
 	DirectionalLightInfo = {};
 	ShadowLightRequests.clear();
+    SelectedBoneIndex = 0xFFFFFFFFu;
     VignetteIntensity = 0.0f;
     VignetteRadius = 0.75f;
     VignetteSmoothness = 0.35f;

@@ -6,6 +6,7 @@
 #include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/ShadowAtlasManager.h"
 #include "Render/Resource/VertexFactoryTypes.h"
+#include "Core/Logging/Stats.h"
 #include "Core/ResourceManager.h"
 #include "Component/PostProcess/Light/LightComponent.h"
 
@@ -78,13 +79,15 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
             RenderBus->GetSkinningMode() == ESkinningMode::GPU)
         {
             Context->RenderResources->SkinningBuffer.Update(Context->DeviceContext, &Cmd.Constants.Skinning, sizeof(FSkinningConstants));
+            FSkinningStats::Get().GPUSkinningCBUploadBytes += sizeof(FSkinningConstants);
+            FSkinningStats::Get().GPUSkinningCBUpdateCount += 1;
             ID3D11Buffer* cb5 = Context->RenderResources->SkinningBuffer.GetBuffer();
             Context->DeviceContext->VSSetConstantBuffers(5, 1, &cb5);
 
             if (RenderBus->GetShowFlags().bSelectedBoneWeight)
             {
                 FSelectedBoneConstants SelectedBoneConstants = {};
-                SelectedBoneConstants.SelectedBoneIndex = RenderBus->SelectedBoneIndex;
+                SelectedBoneConstants.SelectedBoneIndex = Cmd.SelectedBoneLocalIndex;
                 Context->RenderResources->SelectedBoneBuffer.Update(Context->DeviceContext, &SelectedBoneConstants, sizeof(FSelectedBoneConstants));
                 ID3D11Buffer* cb6 = Context->RenderResources->SelectedBoneBuffer.GetBuffer();
                 Context->DeviceContext->VSSetConstantBuffers(6, 1, &cb6);

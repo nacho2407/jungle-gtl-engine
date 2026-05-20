@@ -1,0 +1,17 @@
+{
+        "AssetType" : "AnimationStateMachine",
+        "EntryState" : "Idle",
+        "States" : [{
+            "Animation" : {
+              "AnimStack" : "CHARACTER|spike_idle",
+              "SourceFbx" : "Asset/SkeletalMesh/spike/spike.fbx"
+            },
+            "Id" : 1,
+            "Loop" : true,
+            "Name" : "Idle",
+            "PlayRate" : 1.000000,
+            "Position" : [0.000000, 0.000000]
+          }],
+        "Transitions" : [],
+        "Version" : 1
+      }

@@ -199,6 +199,11 @@ TArray<FString> FAssetQueryService::GetStaticMeshPaths()
     return ListAssetFiles(L"Mesh", { ".obj", ".bin" });
 }
 
+TArray<FString> FAssetQueryService::GetFbxSourcePaths()
+{
+    return ListAssetFiles(L"", { ".fbx" });
+}
+
 TArray<FString> FAssetQueryService::GetMaterialPaths()
 {
     return ListAssetFiles(L"Material", { ".mat", ".matinst" });

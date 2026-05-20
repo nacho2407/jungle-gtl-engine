@@ -298,6 +298,12 @@ const FAABB& UStaticMeshComponent::GetWorldAABB() const
     return WorldAABB;
 }
 
+void UStaticMeshComponent::OnTransformDirty()
+{
+    MarkBoundsDirty();
+    UPrimitiveComponent::OnTransformDirty();
+}
+
 bool UStaticMeshComponent::ConsumeRenderStateDirty()
 {
     const bool bWasDirty = bRenderStateDirty;
