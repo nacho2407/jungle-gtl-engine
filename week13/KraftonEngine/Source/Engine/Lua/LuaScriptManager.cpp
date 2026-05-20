@@ -1,7 +1,7 @@
 #include "LuaScriptManager.h"
 
-#include "Core/Log.h"
-#include "Core/Notification.h"
+#include "Core/Logging/Log.h"
+#include "Core/Logging/Notification.h"
 #include "Audio/AudioManager.h"
 #include "Component/Input/ActionComponent.h"
 #include "Component/Script/LuaScriptComponent.h"

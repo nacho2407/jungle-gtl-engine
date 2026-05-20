@@ -1,7 +1,7 @@
 #include "Mesh/Importer/ObjImporter.h"
 #include "Mesh/Static/StaticMeshAsset.h"
 #include "Materials/Material.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "Engine/Platform/Paths.h"
 #include "Mesh/MeshManager.h"
 #include "SimpleJSON/json.hpp"

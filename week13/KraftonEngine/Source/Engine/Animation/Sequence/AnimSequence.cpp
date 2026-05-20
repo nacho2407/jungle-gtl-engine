@@ -11,7 +11,7 @@
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Object/Object.h"
 #include "Math/MathUtils.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 #include <algorithm>
 #include <cmath>

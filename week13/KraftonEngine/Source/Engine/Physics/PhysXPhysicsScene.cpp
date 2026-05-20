@@ -7,7 +7,7 @@
 #include "GameFramework/AActor.h"
 #include "Math/Quat.h"
 #include "Object/Object.h"  // IsAliveObject
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 // PhysX headers
 #include <PxPhysicsAPI.h>

@@ -5,7 +5,7 @@
 #include "Component/Primitive/TextRenderComponent.h"
 #include "Component/Primitive/SubUVComponent.h"
 #include "Component/Shape/SphereComponent.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "Core/Types/CollisionTypes.h"
 
 void AStaticMeshActor::BeginPlay()

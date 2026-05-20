@@ -1,6 +1,6 @@
 #include "AnimNotifyState_LogDuration.h"
 
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 void UAnimNotifyState_LogDuration::NotifyBegin(USkeletalMeshComponent* /*MeshComp*/, UAnimSequenceBase* /*Anim*/, float TotalDuration)
 {

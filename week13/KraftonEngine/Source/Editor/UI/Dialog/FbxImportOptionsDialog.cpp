@@ -2,7 +2,7 @@
 
 #include "Animation/AnimationManager.h"
 #include "Animation/Skeleton/SkeletonManager.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "Mesh/Importer/FbxImporter.h"
 #include "Mesh/MeshManager.h"
 #include "Platform/Paths.h"

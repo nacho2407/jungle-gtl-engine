@@ -1,7 +1,7 @@
 #include "Octree.h"
 #include <Collision/Ray/RayUtils.h>
 #include <algorithm>
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 
 namespace {

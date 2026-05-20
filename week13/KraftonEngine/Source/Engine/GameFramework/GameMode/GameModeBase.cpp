@@ -4,7 +4,7 @@
 #include "GameFramework/Pawn/Pawn.h"
 #include "GameFramework/World.h"
 #include "Object/Reflection/UClass.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "Core/ProjectSettings.h"
 
 AGameModeBase::AGameModeBase()

@@ -13,7 +13,7 @@
 #include "GameFramework/GameMode/GameModeBase.h"
 #include "Object/Reflection/UClass.h"
 #include "Core/ProjectSettings.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 void UGameEngine::Init(FWindowsWindow* InWindow)
 {

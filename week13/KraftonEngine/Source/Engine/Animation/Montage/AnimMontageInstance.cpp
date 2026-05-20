@@ -5,7 +5,7 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimExtractContext.h"
 #include "Animation/PoseContext.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 #include <algorithm>
 

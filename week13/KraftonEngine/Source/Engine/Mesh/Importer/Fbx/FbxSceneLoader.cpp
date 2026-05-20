@@ -1,6 +1,6 @@
 #include "Mesh/Importer/Fbx/FbxSceneLoader.h"
 #include "Platform/Paths.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 #include <chrono>
 

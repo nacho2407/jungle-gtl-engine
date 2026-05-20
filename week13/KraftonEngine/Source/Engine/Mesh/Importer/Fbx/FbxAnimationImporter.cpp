@@ -8,7 +8,7 @@
 #include "Math/Transform.h"
 #include "Math/Rotator.h"
 #include "Object/Object.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 #include <algorithm>
 #include <cmath>

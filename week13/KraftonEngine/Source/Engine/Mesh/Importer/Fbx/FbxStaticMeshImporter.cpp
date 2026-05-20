@@ -5,7 +5,7 @@
 #include "Mesh/Importer/Fbx/FbxTangentBuilder.h"
 #include "Mesh/Importer/MeshImportOptions.h"
 #include "Materials/MaterialManager.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 #include <algorithm>
 #include <cmath>

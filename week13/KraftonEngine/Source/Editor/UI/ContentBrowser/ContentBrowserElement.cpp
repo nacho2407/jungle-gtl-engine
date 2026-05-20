@@ -2,7 +2,7 @@
 
 #include "Asset/AssetPackage.h"
 #include "Editor/EditorEngine.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "CameraShake/CameraShakeAsset.h"

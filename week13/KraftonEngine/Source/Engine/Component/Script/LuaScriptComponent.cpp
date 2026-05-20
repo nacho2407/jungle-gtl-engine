@@ -1,7 +1,7 @@
 #include "LuaScriptComponent.h"
 
 #include "Component/PrimitiveComponent.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/Level.h"
 #include "Lua/LuaScriptManager.h"

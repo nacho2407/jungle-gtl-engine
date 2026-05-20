@@ -1,5 +1,5 @@
 #include "NotificationToast.h"
-#include "Core/Notification.h"
+#include "Core/Logging/Notification.h"
 #include "ImGui/imgui.h"
 #include <algorithm>
 

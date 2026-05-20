@@ -5,7 +5,7 @@
 #include "Object/Object.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Object/Reflection/UClass.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 namespace
 {

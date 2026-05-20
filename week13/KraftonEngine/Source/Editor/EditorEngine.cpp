@@ -1,7 +1,7 @@
 #include "Editor/EditorEngine.h"
 
 #include "Profiling/StartupProfiler.h"
-#include "Core/Notification.h"
+#include "Core/Logging/Notification.h"
 #include "Engine/Platform/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
 #include "Engine/Platform/DirectoryWatcher.h"

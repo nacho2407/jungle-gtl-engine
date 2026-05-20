@@ -5,7 +5,7 @@
 #include "Mesh/Importer/FbxImporter.h"
 #include "Mesh/MeshBinary.h"
 #include "Materials/Material.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "Serialization/WindowsArchive.h"
 #include "Engine/Platform/Paths.h"
 #include "Materials/MaterialManager.h"
