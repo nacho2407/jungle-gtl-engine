@@ -93,6 +93,38 @@ namespace
 			Action->LocalHitStop(Duration);
 		}
 	}
+
+	FVector ResolveKnockbackDirection(AActor* Attacker, AActor* Target, EAttackKnockbackMode Mode)
+	{
+		switch (Mode)
+		{
+		case EAttackKnockbackMode::Up:
+			return FVector::UpVector;
+		case EAttackKnockbackMode::AwayFromAttacker:
+		{
+			if (!Attacker || !Target) return FVector::ForwardVector;
+			FVector Delta = Target->GetActorLocation() - Attacker->GetActorLocation();
+			Delta.Z = 0.0f; // 수평 성분만 — 높낮이 차이로 위/아래로 날아가는 일 방지.
+			if (Delta.IsNearlyZero()) return Attacker->GetActorForward();
+			return Delta.Normalized();
+		}
+		case EAttackKnockbackMode::Forward:
+		default:
+			return Attacker ? Attacker->GetActorForward() : FVector::ForwardVector;
+		}
+	}
+
+	void ApplyKnockback(AActor* Attacker, AActor* Target, EAttackKnockbackMode Mode,
+		float Distance, float Duration, bool bAutoAddActionComponent)
+	{
+		if (Distance <= 0.0f || !Target) return;
+
+		UActionComponent* Action = GetOrCreateActionComponent(Target, bAutoAddActionComponent);
+		if (!Action) return;
+
+		const FVector Dir = ResolveKnockbackDirection(Attacker, Target, Mode);
+		Action->Knockback(Dir, Distance, Duration);
+	}
 }
 
 void UAnimNotifyState_AttackHitWindow::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* /*Anim*/, float /*TotalDuration*/)
@@ -237,6 +269,10 @@ void UAnimNotifyState_AttackHitWindow::NotifyTick(USkeletalMeshComponent* MeshCo
 		HitActors.insert(Candidate);
 		ApplyHitStop(Owner, HitStopDuration, bAutoAddActionComponent);
 		ApplyHitStop(Candidate, HitStopDuration, bAutoAddActionComponent);
+		if (bApplyKnockback)
+		{
+			ApplyKnockback(Owner, Candidate, KnockbackMode, KnockbackDistance, KnockbackDuration, bAutoAddActionComponent);
+		}
 		if (bDrawDebugHitWindow)
 		{
 			DrawDebugSphere(World, Center, Radius, DebugDrawSegments, FColor(255, 40, 40), DebugDrawDuration);

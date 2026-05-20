@@ -21,7 +21,8 @@
 
 local IDLE_PATH = "Content/Data/hirasawa-yui/IdleWithSkin_mixamo_com.uasset"
 local WALK_PATH = "Content/Data/hirasawa-yui/Walking_mixamo_com.uasset"
-local JUMP_PATH = "Content/Data/hirasawa-yui/Jump_mixamo_com.uasset"
+--local JUMP_PATH = "Content/Data/hirasawa-yui/Jump_mixamo_com.uasset"
+local JUMP_PATH = "Content/Data/hirasawa-yui/Falling Idle_mixamo_com.uasset"
 local BENCAO_PATH = "Content/Data/hirasawa-yui/bencao_mixamo_com.uasset"
 local ESQUIVA_1_PATH = "Content/Data/hirasawa-yui/esquiva 1_mixamo_com.uasset"
 
