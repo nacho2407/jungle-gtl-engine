@@ -1991,7 +1991,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		if (Actor)
 		{
 			// Mesh 는 default. ULuaScriptComponent 의 ScriptFile 은 사용자가
-			// PropertyWidget 에서 콤보로 지정 (Asset/Script/*.lua).
+			// PropertyWidget 에서 콤보로 지정 (Content/Script/*.lua).
 			Actor->InitDefaultComponents("Content/Data/Samba Dancing (10).fbx", FString());
 			SpawnedActor = Actor;
 		}

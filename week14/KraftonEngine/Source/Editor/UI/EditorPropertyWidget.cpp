@@ -1532,7 +1532,7 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 
 	if (AssetType == "LuaAnimScript")
 	{
-		// 콤보 + "Edit Script" 버튼 하이브리드 — Asset/Script/Anim 하위 .lua 선택 + 즉시 편집.
+		// 콤보 + "Edit Script" 버튼 하이브리드 — Content/Script/Anim 하위 .lua 선택 + 즉시 편집.
 		// 리스트는 FAssetRegistry::ListByTypeName 가 매 호출 시 디렉토리 스캔 (콤보 열 때만).
 		FString Preview = (CurrentPath.empty() || CurrentPath == "None") ? "None" : GetStemFromPath(CurrentPath);
 
