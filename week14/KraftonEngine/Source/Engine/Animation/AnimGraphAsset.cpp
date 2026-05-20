@@ -33,6 +33,7 @@ FArchive& operator<<(FArchive& Ar, FAnimGraphState& State)
 	Ar << State.SequencePath;
 	Ar << State.PlayRate;
 	Ar << State.bLooping;
+	Ar << State.SubGraphNodeId;
 	return Ar;
 }
 
