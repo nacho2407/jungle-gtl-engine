@@ -164,7 +164,7 @@
                 "Responses[3]" : 2,
                 "Responses[4]" : 2
               },
-              "SkeletalMeshPath" : "Content/Data/hirasawa-yui/JumpWithSkin_SkeletalMesh.uasset",
+              "SkeletalMeshPath" : "Content/Data/hirasawa-yui/IdleWithSkin_SkeletalMesh.uasset",
               "bAutoActivate" : true,
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
@@ -263,9 +263,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [3.927586, -2.158668, 3.643493],
+    "Location" : [7.279079, -3.227498, 4.359841],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 28.065113, 143.399841]
+    "Rotation" : [0.000000, 10.665116, 162.899811]
   },
   "Version" : 2,
   "WorldSettings" : {

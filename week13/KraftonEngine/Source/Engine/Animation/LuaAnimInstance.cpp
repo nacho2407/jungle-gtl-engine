@@ -38,6 +38,7 @@ ULuaAnimInstance::~ULuaAnimInstance()
 void ULuaAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
+	ClearGraph();
 
 	if (ScriptFile.empty() || ScriptFile == "None")
 	{
