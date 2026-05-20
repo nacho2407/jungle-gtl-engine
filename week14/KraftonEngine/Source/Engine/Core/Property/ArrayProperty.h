@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/PropertyTypes.h"
 
@@ -64,7 +64,7 @@ struct FArrayProperty : FProperty
 		EPropertyType InType,
 		EPropertyType InElementType,
 		const FArrayOps* InArrayOps,
-		const FProperty* InInnerProperty,
+		FProperty* InInnerProperty,
 		const char* InCategory,
 		uint32 InFlags,
 		size_t InOffset,
@@ -78,6 +78,17 @@ struct FArrayProperty : FProperty
 		, ArrayOps(InArrayOps)
 		, InnerProperty(InInnerProperty)
 	{
+	}
+
+	FArrayProperty(const FArrayProperty&) = delete;
+	FArrayProperty& operator=(const FArrayProperty&) = delete;
+	FArrayProperty(FArrayProperty&&) = delete;
+	FArrayProperty& operator=(FArrayProperty&&) = delete;
+
+	~FArrayProperty() override
+	{
+		delete InnerProperty;
+		InnerProperty = nullptr;
 	}
 
 	EPropertyType GetType() const override { return Type; }
@@ -95,5 +106,5 @@ struct FArrayProperty : FProperty
 
 private:
 	const FArrayOps* ArrayOps = nullptr;
-	const FProperty* InnerProperty = nullptr;
+	FProperty* InnerProperty = nullptr;
 };
