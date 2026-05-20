@@ -106,6 +106,18 @@
     <Filter Include="Source\Engine\Collision">
       <UniqueIdentifier>{0a1ac0a6-fa86-45a3-c38e-91b60c7ce3cf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Collision\BVH">
+      <UniqueIdentifier>{81a4a864-1a3f-ad99-7891-a5ad99d45939}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Collision\Math">
+      <UniqueIdentifier>{02450c8d-bb83-0d70-c1b3-136f1470cca6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Collision\Octree">
+      <UniqueIdentifier>{233ac900-ac67-e8b2-8a5e-1aa1035f3cca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Collision\Ray">
+      <UniqueIdentifier>{7e47da66-3e86-e18d-8021-d9b6cd37750b}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Component">
       <UniqueIdentifier>{22bbd7c0-73bc-1bc4-992f-be08238b1609}</UniqueIdentifier>
     </Filter>
@@ -785,29 +797,29 @@
     <ClCompile Include="Source\Engine\CameraShake\CameraShakeManager.cpp">
       <Filter>Source\Engine\CameraShake</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\CollisionMath.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\BVH\MeshTriangleBVH.cpp">
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\ConvexVolume.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.cpp">
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\MeshTriangleBVH.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\Math\CollisionMath.cpp">
+      <Filter>Source\Engine\Collision\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\Octree.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\Math\ConvexVolume.cpp">
+      <Filter>Source\Engine\Collision\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\RayUtils.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\Octree\Octree.cpp">
+      <Filter>Source\Engine\Collision\Octree</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\RayUtilsSIMD.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\Octree\SpatialPartition.cpp">
+      <Filter>Source\Engine\Collision\Octree</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\SpatialPartition.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\Ray\RayUtils.cpp">
+      <Filter>Source\Engine\Collision\Ray</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\Ray\RayUtilsSIMD.cpp">
+      <Filter>Source\Engine\Collision\Ray</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
@@ -1802,32 +1814,32 @@
     <ClInclude Include="Source\Engine\CameraShake\CameraShakeManager.h">
       <Filter>Source\Engine\CameraShake</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\CollisionMath.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\BVH\MeshTriangleBVH.h">
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\ConvexVolume.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.h">
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\MeshTriangleBVH.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\Math\CollisionMath.h">
+      <Filter>Source\Engine\Collision\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\OBB.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\Math\ConvexVolume.h">
+      <Filter>Source\Engine\Collision\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\Octree.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\Math\OBB.h">
+      <Filter>Source\Engine\Collision\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\RayUtils.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\Octree\Octree.h">
+      <Filter>Source\Engine\Collision\Octree</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\RayUtilsSIMD.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\Octree\SpatialPartition.h">
+      <Filter>Source\Engine\Collision\Octree</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\SpatialPartition.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\Ray\RayUtils.h">
+      <Filter>Source\Engine\Collision\Ray</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\Ray\RayUtilsSIMD.h">
+      <Filter>Source\Engine\Collision\Ray</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
       <Filter>Source\Engine\Component</Filter>

@@ -5,7 +5,7 @@
 #include "Math/Vector.h"
 #include "Render/Types/ViewTypes.h"
 #include "Render/Types/LODContext.h"
-#include "Collision/ConvexVolume.h"
+#include "Collision/Math/ConvexVolume.h"
 #include "GameFramework/WorldContext.h"
 #include "GameFramework/Camera/CameraTypes.h"
 

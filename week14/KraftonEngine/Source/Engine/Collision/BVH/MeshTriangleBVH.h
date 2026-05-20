@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "OBB.h"
+#include "Collision/Math/OBB.h"
 #include "Core/CoreTypes.h"
 #include "Core/CollisionTypes.h"
 #include "Core/EngineTypes.h"

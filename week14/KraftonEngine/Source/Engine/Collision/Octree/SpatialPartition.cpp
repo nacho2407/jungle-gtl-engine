@@ -1,7 +1,7 @@
-﻿#include "SpatialPartition.h"
+#include "SpatialPartition.h"
 
-#include "Collision/Octree.h"
-#include "Collision/RayUtils.h"
+#include "Collision/Octree/Octree.h"
+#include "Collision/Ray/RayUtils.h"
 #include "Core/RayTypes.h"
 #include "Component/PrimitiveComponent.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"

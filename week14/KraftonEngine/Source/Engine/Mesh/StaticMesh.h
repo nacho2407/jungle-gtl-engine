@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Object/Object.h"
-#include "Collision/MeshTriangleBVH.h"
+#include "Collision/BVH/MeshTriangleBVH.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Serialization/Archive.h"
 

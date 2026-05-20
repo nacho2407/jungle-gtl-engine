@@ -11,7 +11,7 @@
 #include "Component/Debug/GizmoComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Debug/BoneDebugComponent.h"
-#include "Collision/RayUtils.h"
+#include "Collision/Ray/RayUtils.h"
 #include "Settings/EditorSettings.h"
 #include "Slate/SlateApplication.h"
 

@@ -2,7 +2,7 @@
 #include "Object/Object.h"
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
-#include "Collision/WorldPrimitivePickingBVH.h"
+#include "Collision/BVH/WorldPrimitivePickingBVH.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/Camera/PlayerCameraManager.h"
 #include "GameFramework/Level.h"
@@ -12,8 +12,8 @@
 #include "Render/Types/LODContext.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "Render/Types/POVProvider.h"
-#include <Collision/Octree.h>
-#include <Collision/SpatialPartition.h>
+#include <Collision/Octree/Octree.h>
+#include <Collision/Octree/SpatialPartition.h>
 #include "GameFramework/WorldSettings.h"
 #include "Physics/IPhysicsScene.h"
 #include "Source/Engine/GameFramework/World.generated.h"

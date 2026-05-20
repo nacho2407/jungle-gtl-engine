@@ -21,7 +21,7 @@ UWorld* FEditorViewportClient::GetWorld() const
 }
 #include "Component/Debug/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
-#include "Collision/RayUtils.h"
+#include "Collision/Ray/RayUtils.h"
 #include "Object/Object.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/EditorEngine.h"

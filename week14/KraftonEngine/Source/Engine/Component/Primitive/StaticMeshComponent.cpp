@@ -4,7 +4,7 @@
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
 #include "Engine/Platform/Paths.h"
-#include "Collision/RayUtils.h"
+#include "Collision/Ray/RayUtils.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Engine/Runtime/Engine.h"
 #include "Render/Shader/ShaderManager.h"
