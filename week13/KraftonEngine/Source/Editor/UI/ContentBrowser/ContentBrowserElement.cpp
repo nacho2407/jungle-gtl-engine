@@ -7,6 +7,8 @@
 #include "FloatCurve/FloatCurveManager.h"
 #include "CameraShake/CameraShakeAsset.h"
 #include "CameraShake/CameraShakeManager.h"
+#include "Animation/AnimGraphAsset.h"
+#include "Animation/AnimGraphManager.h"
 #include "Platform/Paths.h"
 #include "Serialization/SceneSaveManager.h"
 #include "Mesh/StaticMesh.h"
@@ -430,6 +432,19 @@ void CameraShakeElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	if (UCameraShakeAsset* ShakeAsset = FCameraShakeManager::Get().Load(FilePath))
 	{
 		Context.EditorEngine->OpenAssetEditorForObject(ShakeAsset);
+	}
+}
+
+void AnimGraphElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
+	const FString FilePath = FPaths::ToUtf8(ContentItem.Path.wstring());
+	if (UAnimGraphAsset* GraphAsset = FAnimGraphManager::Get().Load(FilePath))
+	{
+		Context.EditorEngine->OpenAssetEditorForObject(GraphAsset);
 	}
 }
 

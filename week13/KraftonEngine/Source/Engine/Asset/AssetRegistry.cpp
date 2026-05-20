@@ -2,6 +2,7 @@
 #include "Mesh/MeshManager.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Animation/AnimationManager.h"
+#include "Animation/AnimGraphManager.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/Skeleton.h"
 #include "Animation/SkeletonManager.h"
@@ -32,6 +33,12 @@ namespace FAssetRegistry
 		if (std::strcmp(AssetTypeName, "UAnimSequence") == 0)
 		{
 			return FAnimationManager::Get().GetAvailableAnimationFiles();
+		}
+		if (std::strcmp(AssetTypeName, "UAnimGraphAsset") == 0)
+		{
+			// 콤보 열 때마다 재스캔 — 방금 ContentBrowser 에서 만든 자산이 즉시 노출되도록.
+			FAnimGraphManager::Get().RefreshAvailableGraphs();
+			return FAnimGraphManager::Get().GetAvailableGraphFiles();
 		}
 		if (std::strcmp(AssetTypeName, "LuaAnimScript") == 0)
 		{
