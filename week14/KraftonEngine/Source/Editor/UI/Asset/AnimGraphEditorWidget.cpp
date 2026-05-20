@@ -40,6 +40,7 @@ namespace
 			case EAnimGraphNodeType::LayeredBlendPerBone: return "Layered Blend";
 			case EAnimGraphNodeType::BlendListByEnum:     return "Blend List By Enum";
 			case EAnimGraphNodeType::VariableGet:         return "Variable Get";
+			case EAnimGraphNodeType::RefPose:             return "Ref Pose";
 		}
 		return "Node";
 	}
@@ -56,6 +57,7 @@ namespace
 			case EAnimGraphNodeType::BlendListByEnum:     return ImVec4(0.70f, 0.70f, 0.95f, 1.0f); // 연보라
 			case EAnimGraphNodeType::StateMachine:        return ImVec4(0.90f, 0.55f, 0.95f, 1.0f); // 보라 — FSM
 			case EAnimGraphNodeType::VariableGet:         return ImVec4(0.95f, 0.85f, 0.40f, 1.0f); // 노랑 — data
+			case EAnimGraphNodeType::RefPose:             return ImVec4(0.70f, 0.70f, 0.70f, 1.0f); // 회색 — neutral leaf
 		}
 		return ImVec4(1, 1, 1, 1);
 	}
@@ -783,6 +785,7 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 		if (ImGui::BeginMenu("Pose"))
 		{
 			AddItem(EAnimGraphNodeType::SequencePlayer);
+			AddItem(EAnimGraphNodeType::RefPose);
 			AddItem(EAnimGraphNodeType::Slot);
 			AddItem(EAnimGraphNodeType::LayeredBlendPerBone);
 			AddItem(EAnimGraphNodeType::BlendListByEnum);

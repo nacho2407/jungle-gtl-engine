@@ -164,6 +164,12 @@ FAnimGraphNode* UAnimGraphAsset::AddNodeOfType(EAnimGraphNodeType Type, float X,
 			AddPin(*N, EAnimGraphPinKind::Output, EAnimGraphPinType::Float, FName("Value"));
 			return N;
 		}
+		case EAnimGraphNodeType::RefPose:
+		{
+			FAnimGraphNode* N = AddNode(Type, FName("Ref Pose"), X, Y);
+			AddPin(*N, EAnimGraphPinKind::Output, EAnimGraphPinType::Pose, FName("Pose"));
+			return N;
+		}
 	}
 	return nullptr;
 }
