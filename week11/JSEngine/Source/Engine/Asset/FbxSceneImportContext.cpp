@@ -2,11 +2,54 @@
 #include "Core/Logging/Log.h"
 
 #include <fbxsdk.h>
+
+namespace
+{
+    class FScopedFbxImporter
+    {
+    public:
+        explicit FScopedFbxImporter(fbxsdk::FbxImporter* InImporter)
+            : Importer(InImporter)
+        {
+        }
+
+        ~FScopedFbxImporter()
+        {
+            Reset();
+        }
+
+        FScopedFbxImporter(const FScopedFbxImporter&) = delete;
+        FScopedFbxImporter& operator=(const FScopedFbxImporter&) = delete;
+
+        fbxsdk::FbxImporter* Get() const
+        {
+            return Importer;
+        }
+
+        fbxsdk::FbxImporter* operator->() const
+        {
+            return Importer;
+        }
+
+        void Reset()
+        {
+            if (Importer)
+            {
+                Importer->Destroy();
+                Importer = nullptr;
+            }
+        }
+
+    private:
+        fbxsdk::FbxImporter* Importer = nullptr;
+    };
+}
+
 FFbxSceneImportContext::~FFbxSceneImportContext()
 {
     Destroy();
 }
-bool FFbxSceneImportContext::Import(const FString& Path)
+bool FFbxSceneImportContext::Import(const FString& Path, const FString& AnimStackName)
 {
     Destroy();
 
@@ -29,14 +72,55 @@ bool FFbxSceneImportContext::Import(const FString& Path)
         return false;
     }
 
-    fbxsdk::FbxImporter* Importer = fbxsdk::FbxImporter::Create(Manager, "");
+    FScopedFbxImporter Importer(fbxsdk::FbxImporter::Create(Manager, ""));
+    if (!Importer.Get())
+    {
+        UE_LOG_ERROR("[FbxSceneImportContext] Failed to create FbxImporter: %s", Path.c_str());
+        Destroy();
+        return false;
+    }
+
     if (!Importer->Initialize(Path.c_str(), -1, Manager->GetIOSettings()))
     {
         UE_LOG_ERROR("[FbxSceneImportContext] Initialize failed: %s (%s)", Path.c_str(), Importer->GetStatus().GetErrorString());
 
-        Importer->Destroy();
         Destroy();
         return false;
+    }
+
+    if (!AnimStackName.empty())
+    {
+        bool bFoundRequestedTake = false;
+        const int32 StackCount = Importer->GetAnimStackCount();
+        for (int32 StackIndex = 0; StackIndex < StackCount; ++StackIndex)
+        {
+            fbxsdk::FbxTakeInfo* TakeInfo = Importer->GetTakeInfo(StackIndex);
+            if (!TakeInfo)
+            {
+                continue;
+            }
+
+            const FString TakeName(TakeInfo->mName.Buffer());
+            const FString ImportName(TakeInfo->mImportName.Buffer());
+            const bool bMatches = TakeName == AnimStackName || ImportName == AnimStackName;
+            TakeInfo->mSelect = bMatches;
+
+            if (bMatches)
+            {
+                TakeInfo->mImportName = AnimStackName.c_str();
+                bFoundRequestedTake = true;
+            }
+        }
+
+        bRequestedAnimStackFound = bFoundRequestedTake;
+        Manager->GetIOSettings()->SetStringProp(IMP_FBX_CURRENT_TAKE_NAME, AnimStackName.c_str());
+
+        if (!bFoundRequestedTake)
+        {
+            UE_LOG_WARNING("[FbxSceneImportContext] Requested anim stack was not found in take info. Fbx=%s Stack=%s",
+                           Path.c_str(),
+                           AnimStackName.c_str());
+        }
     }
 
     const bool bImported = Importer->Import(Scene);
@@ -44,12 +128,11 @@ bool FFbxSceneImportContext::Import(const FString& Path)
     {
         UE_LOG_ERROR("[FbxSceneImportContext] Import failed: %s (%s)", Path.c_str(), Importer->GetStatus().GetErrorString());
 
-        Importer->Destroy();
         Destroy();
         return false;
     }
 
-    Importer->Destroy();
+    Importer.Reset();
 
     const fbxsdk::FbxAxisSystem TargetAxis(fbxsdk::FbxAxisSystem::eZAxis, fbxsdk::FbxAxisSystem::eParityOdd, fbxsdk::FbxAxisSystem::eLeftHanded);
 
@@ -61,6 +144,8 @@ bool FFbxSceneImportContext::Import(const FString& Path)
 
 void FFbxSceneImportContext::Destroy()
 {
+    bRequestedAnimStackFound = false;
+
     if (Manager)
     {
         Manager->Destroy();

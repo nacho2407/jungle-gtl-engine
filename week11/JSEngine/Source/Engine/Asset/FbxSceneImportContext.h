@@ -13,7 +13,8 @@ struct FFbxSceneImportContext
     fbxsdk::FbxManager* Manager = nullptr;
     fbxsdk::FbxScene* Scene = nullptr;
     FString SourcePath;
+    bool bRequestedAnimStackFound = false;
     ~FFbxSceneImportContext();
-    bool Import(const FString& Path);
+    bool Import(const FString& Path, const FString& AnimStackName = FString());
     void Destroy();
 };

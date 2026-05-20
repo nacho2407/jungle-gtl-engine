@@ -7,11 +7,12 @@
 // Viewer-local display options. These do not inherit the Level Editor show flags.
 struct FSkeletalViewerShowFlags
 {
-	bool bShowSkeletalMesh     = true;
-	bool bShowBones            = false;
-	bool bShowOnlySelectedBone = false;
-	bool bShowBoundingBox      = false;
-	bool bShowOutline          = false;
+    bool bShowSkeletalMesh = true;
+    bool bShowBones = false;
+    bool bShowOnlySelectedBone = false;
+    bool bShowSelectedBoneWeight = false;
+    bool bShowBoundingBox = false;
+    bool bShowOutline = false;
 };
 
 class FSkeletalMeshViewportClient : public FEditorViewportClient

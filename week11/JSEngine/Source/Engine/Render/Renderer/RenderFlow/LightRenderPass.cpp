@@ -8,11 +8,13 @@ namespace
     {
         FShaderStageKey VSKey;
         VSKey.FilePath = FShaderPaths::PostProcessLight;
-        VSKey.EntryPoint = "mainVS";
+        VSKey.EntryPoint = "VS";
+        VSKey.Target = "vs_5_0";
 
         FShaderStageKey PSKey;
         PSKey.FilePath = FShaderPaths::PostProcessLight;
-        PSKey.EntryPoint = "mainPS";
+        PSKey.EntryPoint = "PS";
+        PSKey.Target = "ps_5_0";
 
         return FResourceManager::Get().GetOrCreateShaderProgram(VSKey, PSKey);
     }

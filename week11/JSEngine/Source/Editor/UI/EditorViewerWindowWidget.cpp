@@ -533,14 +533,6 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentChrome(bool& bDockRequeste
         }
         ImGui::EndMenu();
     }
-    if (ImGui::BeginMenu("Tools"))
-    {
-        FSkeletalViewerShowFlags& ShowFlags = Viewer->GetClient().GetShowFlags();
-        ImGui::MenuItem("Bones", nullptr, &ShowFlags.bShowBones);
-        ImGui::MenuItem("Bounding Box", nullptr, &ShowFlags.bShowBoundingBox);
-        ImGui::MenuItem("Outline", nullptr, &ShowFlags.bShowOutline);
-        ImGui::EndMenu();
-    }
     if (ImGui::BeginMenu("Help"))
     {
         ImGui::TextDisabled("Skeletal Mesh Previewer");

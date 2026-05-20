@@ -8,7 +8,7 @@ struct VS_OUTPUT
     float2 TexCoord : TEXCOORD0;
 };
 
-VS_OUTPUT VSMShadowVS(uint VertexID : SV_VertexID)
+VS_OUTPUT VS(uint VertexID : SV_VertexID)
 {
     VS_OUTPUT Output;
     
@@ -22,7 +22,7 @@ VS_OUTPUT VSMShadowVS(uint VertexID : SV_VertexID)
     return Output;
 }
 // pixelshader가 float2를 반환하면 어떻게 되는가?
-float2 VSMShadowPS(VS_OUTPUT input) : SV_Target
+float2 PS(VS_OUTPUT input) : SV_Target
 {   
     float depth = ShadowMap.Sample(PointSampler, input.TexCoord).r;
     return float2(depth, depth * depth);

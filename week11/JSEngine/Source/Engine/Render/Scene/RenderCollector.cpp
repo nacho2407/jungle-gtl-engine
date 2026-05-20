@@ -25,8 +25,6 @@ namespace
 		case EPrimitiveType::EPT_Billboard:
 		case EPrimitiveType::EPT_Text:
 		case EPrimitiveType::EPT_SubUV:
-		// FIXME: 일단 컬링에서 제외하였음. BoundingBox 계산이 확립된다면 수정 필요
-		case EPrimitiveType::EPT_SkeletalMesh:
 			return true;
 		default:
 			return false;

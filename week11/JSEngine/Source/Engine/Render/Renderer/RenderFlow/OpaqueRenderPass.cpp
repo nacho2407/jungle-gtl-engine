@@ -80,6 +80,15 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
             Context->RenderResources->SkinningBuffer.Update(Context->DeviceContext, &Cmd.Constants.Skinning, sizeof(FSkinningConstants));
             ID3D11Buffer* cb5 = Context->RenderResources->SkinningBuffer.GetBuffer();
             Context->DeviceContext->VSSetConstantBuffers(5, 1, &cb5);
+
+            if (RenderBus->GetShowFlags().bSelectedBoneWeight)
+            {
+                FSelectedBoneConstants SelectedBoneConstants = {};
+                SelectedBoneConstants.SelectedBoneIndex = RenderBus->SelectedBoneIndex;
+                Context->RenderResources->SelectedBoneBuffer.Update(Context->DeviceContext, &SelectedBoneConstants, sizeof(FSelectedBoneConstants));
+                ID3D11Buffer* cb6 = Context->RenderResources->SelectedBoneBuffer.GetBuffer();
+                Context->DeviceContext->VSSetConstantBuffers(6, 1, &cb6);
+            }
         }
 
 	   ID3D11ShaderResourceView *ShadowSRV = FShadowAtlasManager::Get().GetSRV();
@@ -133,11 +142,13 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
        else if (RenderBus->GetLightCullMode() == ELightCullMode::Tiled)
            PermutationKey |= (uint32)EShaderFeature::TileCull;
 
-        if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh)
+        if (Cmd.VertexFactoryType == EVertexFactoryType::SkeletalMesh &&
+            RenderBus->GetSkinningMode() == ESkinningMode::GPU)
         {
-            if (RenderBus->GetSkinningMode() == ESkinningMode::GPU)
+            PermutationKey |= (uint32)EShaderFeature::GpuSkinning;
+            if (RenderBus->GetShowFlags().bSelectedBoneWeight)
             {
-                PermutationKey |= (uint32)EShaderFeature::GpuSkinning;
+                PermutationKey |= (uint32)EShaderFeature::SelectedBoneWeight;
             }
         }
 

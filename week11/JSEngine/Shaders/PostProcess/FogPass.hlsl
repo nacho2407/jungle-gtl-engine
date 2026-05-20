@@ -14,7 +14,7 @@ struct VSOutput
     float4 ClipPos : SV_POSITION;
 };
 
-VSOutput mainVS(uint vertexID : SV_VertexID)
+VSOutput VS(uint vertexID : SV_VertexID)
 {
     VSOutput output;
     float2 pos;
@@ -45,7 +45,7 @@ float ComputeFogTransmittance(FogLayerData fog, float rawDepth, float worldZ, fl
     return saturate(1.0f - layerOpacity);
 }
 
-float4 mainPS(VSOutput input) : SV_TARGET
+float4 PS(VSOutput input) : SV_TARGET
 {
     int2 ip = int2(input.ClipPos.xy);
     float rawDepth = SceneDepth.Load(int3(ip, 0)).r;

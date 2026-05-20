@@ -39,6 +39,37 @@ namespace
 
 		return Token;
 	}
+
+	FString ToLowerNormalizedPath(const FString& Path)
+	{
+		FString Result = FPaths::Normalize(Path);
+		std::replace(Result.begin(), Result.end(), '\\', '/');
+		std::transform(
+			Result.begin(),
+			Result.end(),
+			Result.begin(),
+			[](unsigned char Ch)
+			{
+				return static_cast<char>(std::tolower(Ch));
+			});
+		return Result;
+	}
+
+	bool HasAssetDirectory(const FString& Path, const FString& Directory)
+	{
+		const FString LowerPath = ToLowerNormalizedPath(Path);
+		const FString LowerDirectory = ToLowerNormalizedPath(Directory);
+		return LowerPath.rfind(LowerDirectory + "/", 0) == 0 ||
+			LowerPath.find("/" + LowerDirectory + "/") != FString::npos;
+	}
+
+	std::wstring GetLowerExtension(const FString& Path)
+	{
+		std::filesystem::path FsPath(FPaths::ToWide(FPaths::Normalize(Path)));
+		std::wstring Extension = FsPath.extension().wstring();
+		std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
+		return Extension;
+	}
 }
 
 bool FAssetPathPolicy::FileExists(const FString& Path)
@@ -77,6 +108,22 @@ bool FAssetPathPolicy::IsSerializedMaterialAssetPath(const FString& Path)
 	std::wstring Extension = FsPath.extension().wstring();
 	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
 	return Extension == L".mat" || Extension == L".matinst";
+}
+
+bool FAssetPathPolicy::IsSkeletalMeshSourcePath(const FString& Path)
+{
+	return GetLowerExtension(Path) == L".fbx" && HasAssetDirectory(Path, "Asset/SkeletalMesh");
+}
+
+bool FAssetPathPolicy::IsStaticMeshSourcePath(const FString& Path)
+{
+	const std::wstring Extension = GetLowerExtension(Path);
+	if (Extension == L".obj")
+	{
+		return true;
+	}
+
+	return Extension == L".fbx" && !IsSkeletalMeshSourcePath(Path);
 }
 
 FString FAssetPathPolicy::MakeCookedStaticMeshBinaryPath(const FString& SourcePath)

@@ -187,7 +187,13 @@ struct FShadowAtlasConstants
 
 struct FSkinningConstants
 {
-	FMatrix BoneMatrices[256]; // MAX_BONES in .hlsl
+	FMatrix BonePalette[256]; // MAX_BONES in .hlsl
+};
+
+struct FSelectedBoneConstants
+{
+	uint32 SelectedBoneIndex;
+	float Padding[3] = { 0.0f, 0.0f, 0.0f };
 };
 
 struct FUberConstants

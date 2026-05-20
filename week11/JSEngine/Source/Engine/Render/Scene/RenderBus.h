@@ -93,6 +93,7 @@ public:
 	FDirectionalLightInfo	DirectionalLightInfo;
 	TArray<FLightInfo>		LightInfos;
 
+	uint32 SelectedBoneIndex;
 	TArray<FShadowLightRequest> ShadowLightRequests;
 
 private:

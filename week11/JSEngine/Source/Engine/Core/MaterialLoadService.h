@@ -11,7 +11,7 @@ class FMaterialLoadService
 public:
 	explicit FMaterialLoadService(FResourceManager& InResourceManager);
 
-	bool Load(const FString& MtlFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device);
+	bool Load(const FString& MtlFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device, bool bAllowSourceImport = true);
 
 private:
 	FResourceManager& ResourceManager;

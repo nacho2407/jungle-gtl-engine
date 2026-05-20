@@ -51,16 +51,33 @@ const FString& USkeletalMesh::GetAssetPathFileName() const
     return MeshData ? MeshData->PathFileName : Empty;
 }
 
-const TArray<FSkeletalMeshVertex>& USkeletalMesh::GetVertices() const
+const FSkeletalMeshRenderData* USkeletalMesh::GetResourceForRendering() const
 {
-    static const TArray<FSkeletalMeshVertex> Empty = {};
-    return MeshData ? MeshData->Vertices : Empty;
+    return MeshData ? &MeshData->RenderData : nullptr;
 }
 
-const TArray<uint32>& USkeletalMesh::GetIndices() const
+const FSkeletalMeshLODRenderData* USkeletalMesh::GetLODRenderData(int32 LODIndex) const
+{
+    if (!MeshData || LODIndex < 0 || LODIndex >= static_cast<int32>(MeshData->RenderData.LODRenderData.size()))
+    {
+        return nullptr;
+    }
+
+    return &MeshData->RenderData.LODRenderData[LODIndex];
+}
+
+const TArray<FSkeletalMeshVertex>& USkeletalMesh::GetVertices(int32 LODIndex) const
+{
+    static const TArray<FSkeletalMeshVertex> Empty = {};
+    const FSkeletalMeshLODRenderData* LODData = GetLODRenderData(LODIndex);
+    return LODData ? LODData->StaticVertices : Empty;
+}
+
+const TArray<uint32>& USkeletalMesh::GetIndices(int32 LODIndex) const
 {
     static const TArray<uint32> Empty = {};
-    return MeshData ? MeshData->Indices : Empty;
+    const FSkeletalMeshLODRenderData* LODData = GetLODRenderData(LODIndex);
+    return LODData ? LODData->Indices : Empty;
 }
 
 const TArray<FBoneInfo>& USkeletalMesh::GetBones() const
@@ -109,10 +126,16 @@ const FMatrix& USkeletalMesh::GetInverseBindPose(int32 BoneIndex) const
     return Bone ? Bone->InverseBindPose : Identity;
 }
 
-const TArray<FStaticMeshSection>& USkeletalMesh::GetSections() const
+const TArray<FSkeletalMeshRenderSection>& USkeletalMesh::GetRenderSections(int32 LODIndex) const
 {
-    static const TArray<FStaticMeshSection> Empty = {};
-    return MeshData ? MeshData->Sections : Empty;
+    static const TArray<FSkeletalMeshRenderSection> Empty = {};
+    const FSkeletalMeshLODRenderData* LODData = GetLODRenderData(LODIndex);
+    return LODData ? LODData->RenderSections : Empty;
+}
+
+const TArray<FSkeletalMeshRenderSection>& USkeletalMesh::GetSections(int32 LODIndex) const
+{
+    return GetRenderSections(LODIndex);
 }
 
 const TArray<FStaticMeshMaterialSlot>& USkeletalMesh::GetMaterialSlots() const
@@ -158,7 +181,13 @@ const FAABB& USkeletalMesh::GetLocalBounds() const
 
 bool USkeletalMesh::HasValidMeshData() const
 {
-	return MeshData != nullptr && !MeshData->Vertices.empty() && !MeshData->Indices.empty() && !GetBones().empty();
+    const FSkeletalMeshLODRenderData* LODData = GetLODRenderData(0);
+	return MeshData != nullptr &&
+        LODData != nullptr &&
+        !LODData->StaticVertices.empty() &&
+        !LODData->Indices.empty() &&
+        !LODData->RenderSections.empty() &&
+        !GetBones().empty();
 }
 
 void USkeletalMesh::SetSkeleton(USkeleton* InSkeleton, bool bTakeOwnership)
@@ -195,7 +224,13 @@ void USkeletalMesh::RebuildLocalBoundsFromMeshData()
 
     MeshData->LocalBounds.Reset();
 
-    for (const FSkeletalMeshVertex& Vertex : MeshData->Vertices)
+    const FSkeletalMeshLODRenderData* LODData = GetLODRenderData(0);
+    if (!LODData)
+    {
+        return;
+    }
+
+    for (const FSkeletalMeshVertex& Vertex : LODData->StaticVertices)
     {
         MeshData->LocalBounds.Expand(Vertex.Position);
     }
