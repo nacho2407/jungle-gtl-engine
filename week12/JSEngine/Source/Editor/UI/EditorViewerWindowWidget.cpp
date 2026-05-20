@@ -97,6 +97,8 @@ void GetSelectableAnimNotifyClasses(TArray<UClass*>& OutClasses)
                 return !Class ||
                     Class == UAnimNotify::StaticClass() ||
                     Class == UAnimNotifyState::StaticClass() ||
+                    Class == UAnimNotify_NamedEvent::StaticClass() ||
+                    Class == UAnimNotifyState_NamedEvent::StaticClass() ||
                     Class->HasAnyClassFlags(CF_Abstract);
             }),
         OutClasses.end());
@@ -121,7 +123,19 @@ FString GetAnimNotifyClassDisplayName(const FString& ClassName)
 
 FString GetDefaultEditorNotifyClassName(float Duration)
 {
-    return Duration > 0.0f ? FString("UAnimNotifyState_NamedEvent") : FString("UAnimNotify_NamedEvent");
+    TArray<UClass*> NotifyClasses;
+    GetSelectableAnimNotifyClasses(NotifyClasses);
+
+    UClass* DesiredBaseClass = Duration > 0.0f ? UAnimNotifyState::StaticClass() : UAnimNotify::StaticClass();
+    for (UClass* Class : NotifyClasses)
+    {
+        if (Class && Class->IsChildOf(DesiredBaseClass))
+        {
+            return Class->GetName();
+        }
+    }
+
+    return NotifyClasses.empty() ? FString() : NotifyClasses.front()->GetName();
 }
 
 bool DrawAnimNotifyClassCombo(const char* Label, FString& InOutClassName)
