@@ -426,6 +426,7 @@ void FScriptManager::BindStaticMeshTypes()
     LUA_METHOD(SetAnimation, SetAnimation);
     LUA_SET(SetAnimSequence, [](USkeletalMeshComponent& Self, const FString& Path, sol::optional<FString> StackName)
             { return Self.SetAnimSequence(Path, StackName.value_or(FString())); });
+    LUA_METHOD(SetAnimSequenceAsset, SetAnimSequenceAsset);
     LUA_METHOD(PlayAnim, PlayAnim);
     LUA_METHOD(StopAnim, StopAnim);
     LUA_METHOD(SetAnimTime, SetAnimationTime);
