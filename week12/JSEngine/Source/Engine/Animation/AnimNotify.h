@@ -17,9 +17,6 @@ public:
 	virtual void NotifyBegin(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Event) {}
 	virtual void NotifyTick(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Event, float DeltaTime) {}
 	virtual void NotifyEnd(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Event) {}
-
-	static UAnimNotify* GetNotifyObject(const FString& NotifyClassName);
-	static FString GetDefaultNotifyClassName(bool bIsState);
 };
 
 UCLASS(Abstract, DisplayName = "Anim Notify State")

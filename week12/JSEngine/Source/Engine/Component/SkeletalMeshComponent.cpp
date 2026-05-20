@@ -26,6 +26,11 @@ namespace
 
 	FString GetPersistentAnimationAssetPath(UAnimationAsset* Animation);
 	UAnimInstance* CreateAnimInstanceFromClassName(const FString& ClassName);
+
+	UAnimNotify* ResolveAnimNotifyObject(const FAnimNotifyStateEvent& Notify)
+	{
+		return Notify.NotifyObject;
+	}
 }
 
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
@@ -699,7 +704,7 @@ void USkeletalMeshComponent::SetAnimationPosition(float InTime)
 void USkeletalMeshComponent::HandleAnimNotify(const FAnimNotifyStateEvent& Notify)
 {
 	UE_LOG("[AnimNotify] %s triggered at %.3f", Notify.NotifyName.ToString().c_str(), Notify.TriggerTime);
-	if (UAnimNotify* NotifyObject = UAnimNotify::GetNotifyObject(Notify.NotifyClassName))
+	if (UAnimNotify* NotifyObject = ResolveAnimNotifyObject(Notify))
 	{
 		NotifyObject->Notify(this, Notify);
 	}
@@ -718,7 +723,7 @@ void USkeletalMeshComponent::HandleAnimNotify(const FAnimNotifyStateEvent& Notif
 void USkeletalMeshComponent::HandleAnimNotifyBegin(const FAnimNotifyStateEvent& Notify)
 {
 	UE_LOG("[AnimNotifyBegin] %s begin at %.3f duration %.3f", Notify.NotifyName.ToString().c_str(), Notify.TriggerTime, Notify.Duration);
-	if (UAnimNotify* NotifyObject = UAnimNotify::GetNotifyObject(Notify.NotifyClassName))
+	if (UAnimNotify* NotifyObject = ResolveAnimNotifyObject(Notify))
 	{
 		NotifyObject->NotifyBegin(this, Notify);
 	}
@@ -736,7 +741,7 @@ void USkeletalMeshComponent::HandleAnimNotifyBegin(const FAnimNotifyStateEvent& 
 
 void USkeletalMeshComponent::HandleAnimNotifyTick(const FAnimNotifyStateEvent& Notify, float DeltaTime)
 {
-	if (UAnimNotify* NotifyObject = UAnimNotify::GetNotifyObject(Notify.NotifyClassName))
+	if (UAnimNotify* NotifyObject = ResolveAnimNotifyObject(Notify))
 	{
 		NotifyObject->NotifyTick(this, Notify, DeltaTime);
 	}
@@ -755,7 +760,7 @@ void USkeletalMeshComponent::HandleAnimNotifyTick(const FAnimNotifyStateEvent& N
 void USkeletalMeshComponent::HandleAnimNotifyEnd(const FAnimNotifyStateEvent& Notify)
 {
 	UE_LOG("[AnimNotifyEnd] %s end at %.3f", Notify.NotifyName.ToString().c_str(), Notify.GetEndTime());
-	if (UAnimNotify* NotifyObject = UAnimNotify::GetNotifyObject(Notify.NotifyClassName))
+	if (UAnimNotify* NotifyObject = ResolveAnimNotifyObject(Notify))
 	{
 		NotifyObject->NotifyEnd(this, Notify);
 	}

@@ -1,9 +1,36 @@
 ﻿#include "Animation/AnimSequence.h"
 #include "Animation/AnimNotify.h"
+#include "Core/Reflection/ReflectionRegistry.h"
 #include "Geometry/Transform.h"
+#include "Object/Class.h"
+#include "Object/Object.h"
 
 #include <algorithm>
 #include <cmath>
+
+namespace
+{
+	FString GetDefaultAnimNotifyClassName(bool bIsState)
+	{
+		return bIsState ? FString("UAnimNotifyState_NamedEvent") : FString("UAnimNotify_NamedEvent");
+	}
+
+	UAnimNotify* CreateAnimNotifyObject(const FString& NotifyClassName)
+	{
+		if (NotifyClassName.empty())
+		{
+			return nullptr;
+		}
+
+		UClass* Class = FReflectionRegistry::Get().FindClass(NotifyClassName);
+		if (!Class || !Class->IsChildOf(UAnimNotify::StaticClass()) || Class->HasAnyClassFlags(CF_Abstract))
+		{
+			return nullptr;
+		}
+
+		return Cast<UAnimNotify>(NewObject(Class));
+	}
+}
 
 const TArray<FBoneAnimationTrack>& UAnimDataModel::GetBoneAnimationTracks() const
 {
@@ -30,8 +57,9 @@ void UAnimSequenceBase::AddNotify(float InTriggerTime, const FName& InNotifyName
 	NewNotify.Duration = std::clamp(InDuration, 0.0f, std::max(0.0f, Length - NewNotify.TriggerTime));
 	NewNotify.NotifyName = InNotifyName;
 	NewNotify.NotifyClassName = InNotifyClassName.empty()
-		? UAnimNotify::GetDefaultNotifyClassName(NewNotify.IsState())
+		? GetDefaultAnimNotifyClassName(NewNotify.IsState())
 		: InNotifyClassName;
+	NewNotify.NotifyObject = CreateAnimNotifyObject(NewNotify.NotifyClassName);
 
 	Notifies.push_back(NewNotify);
 
@@ -84,6 +112,7 @@ bool UAnimSequenceBase::SetNotifyClassName(int32 NotifyIndex, const FString& InN
 	}
 
 	Notifies[NotifyIndex].NotifyClassName = InNotifyClassName;
+	Notifies[NotifyIndex].NotifyObject = CreateAnimNotifyObject(InNotifyClassName);
 	return true;
 }
 

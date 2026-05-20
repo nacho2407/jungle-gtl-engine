@@ -4,12 +4,15 @@
 
 #include <algorithm>
 
+class UAnimNotify;
+
 struct FAnimNotifyStateEvent
 {
     float TriggerTime = 0.0f;
     float Duration = 0.0f;
     FName NotifyName;
     FString NotifyClassName;
+    UAnimNotify* NotifyObject = nullptr;
 
     float GetEndTime() const
     {

@@ -1,6 +1,5 @@
 ﻿#include "Asset/AnimSequenceAssetLoader.h"
 
-#include "Animation/AnimNotify.h"
 #include "Animation/AnimSequence.h"
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
@@ -421,9 +420,7 @@ namespace
 		}
 
 		OutNotify.NotifyName = FName(NotifyName);
-		OutNotify.NotifyClassName = NotifyClassName.empty()
-			? UAnimNotify::GetDefaultNotifyClassName(OutNotify.IsState())
-			: NotifyClassName;
+		OutNotify.NotifyClassName = NotifyClassName;
 		return true;
 	}
 
@@ -953,11 +950,6 @@ namespace
 			{
 				NotifyClassName = GetStringOrDefault(NotifyJson, "NotifyClass");
 			}
-			if (NotifyClassName.empty())
-			{
-				NotifyClassName = UAnimNotify::GetDefaultNotifyClassName(Duration > 0.0f);
-			}
-
 			Sequence->AddNotify(TriggerTime, FName(NotifyName), Duration, NotifyClassName);
 		}
 	}

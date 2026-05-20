@@ -121,7 +121,7 @@ FString GetAnimNotifyClassDisplayName(const FString& ClassName)
 
 FString GetDefaultEditorNotifyClassName(float Duration)
 {
-    return UAnimNotify::GetDefaultNotifyClassName(Duration > 0.0f);
+    return Duration > 0.0f ? FString("UAnimNotifyState_NamedEvent") : FString("UAnimNotify_NamedEvent");
 }
 
 bool DrawAnimNotifyClassCombo(const char* Label, FString& InOutClassName)
