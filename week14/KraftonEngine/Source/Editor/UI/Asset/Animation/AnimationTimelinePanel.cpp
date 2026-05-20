@@ -1,5 +1,5 @@
 #include "AnimationTimelinePanel.h"
-#include "AnimationTransportBar.h"
+#include "Editor/UI/Asset/Animation/AnimationTransportBar.h"
 
 #include "Animation/Sequence/AnimSequence.h"
 #include "Animation/Instance/AnimSingleNodeInstance.h"
@@ -14,7 +14,7 @@
 #include "Object/ObjectFactory.h"
 #include "Object/UClass.h"
 #include "Core/PropertyTypes.h"
-#include "Editor/UI/Asset/MorphCurveEditObject.h"
+#include "Editor/UI/Asset/Animation/MorphCurveEditObject.h"
 
 #include <imgui.h>
 #include <algorithm>

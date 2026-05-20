@@ -1,5 +1,5 @@
 #pragma once
-#include "AssetEditorWidget.h"
+#include "Editor/UI/Asset/AssetEditorWidget.h"
 #include "Editor/Viewport/MeshEditorViewportClient.h"
 #include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 #include "Asset/AssetRegistry.h"

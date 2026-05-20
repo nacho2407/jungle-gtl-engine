@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cstring>
 
-#include "Source/Editor/UI/Asset/MorphCurveEditObject.generated.h"
+#include "Source/Editor/UI/Asset/Animation/MorphCurveEditObject.generated.h"
 
 UENUM()
 enum class EMorphCurveEditInterpolation : uint8

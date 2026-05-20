@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "AssetEditorWidget.h"
+#include "Editor/UI/Asset/AssetEditorWidget.h"
 #include "Object/FName.h"
 #include "Editor/Viewport/StaticMeshEditorViewportClient.h"
 
