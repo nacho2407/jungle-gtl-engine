@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Engine/Runtime/Engine.h"
-#include "Mesh/ObjImporter.h"
+#include "Mesh/Importer/ObjImporter.h"
 #include "ObjViewer/ObjViewerPanel.h"
 #include "ObjViewer/ObjViewerViewportClient.h"
 

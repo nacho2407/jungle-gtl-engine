@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "ObjectPropertyBase.h"
-#include "Object/SoftObjectPtr.h"
+#include "Object/Ptr/SoftObjectPtr.h"
 #include "Serialization/Archive.h"
 
 struct FSoftObjectProperty : FObjectPropertyBase

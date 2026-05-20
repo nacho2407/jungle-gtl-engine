@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Object/Object.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 #include "Source/Engine/Texture/Texture2D.generated.h"
 #include <map>

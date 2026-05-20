@@ -1,5 +1,5 @@
-﻿#pragma once
-#include "Core/ClassTypes.h"
+#pragma once
+#include "Core/Types/ClassTypes.h"
 #include "Editor/UI/ContentBrowser/ContentBrowserContext.h"
 #include "ContentItem.h"
 #include <d3d11.h>
@@ -94,6 +94,16 @@ protected:
 	uint32 GetAccentColor() const override { return IM_COL32(230, 150, 75, 255); }
 };
 
+class AnimGraphElement final : public ContentBrowserElement
+{
+public:
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
+
+protected:
+	const char* GetTypeLabel() const override { return "Anim Graph"; }
+	uint32 GetAccentColor() const override { return IM_COL32(200, 110, 200, 255); }
+};
+
 class MeshElement final : public ContentBrowserElement
 {
 public:
@@ -132,7 +142,7 @@ public:
 	virtual const char* GetDragItemType() override { return "PNGElement"; }
 };
 
-#include "Editor/UI/EditorMaterialInspector.h"
+#include "Editor/UI/Panel/EditorMaterialInspector.h"
 class MaterialElement final : public ContentBrowserElement
 {
 public:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Mesh/StaticMeshAsset.h"
+#include "Mesh/Static/StaticMeshAsset.h"
 
 struct FSimplifiedMesh
 {

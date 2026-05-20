@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/RenderStateTypes.h"
 #include "Math/Vector.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Render/Types/MaterialTextureSlot.h"
 
 class FShader;

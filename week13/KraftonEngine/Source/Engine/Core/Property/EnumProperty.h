@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/PropertyTypes.h"
+#include "Core/Types/PropertyTypes.h"
 
 struct FEnumProperty : FProperty
 {

@@ -1,11 +1,11 @@
 #include "ObjViewer/ObjViewerEngine.h"
 
 #include "ObjViewer/ObjViewerRenderPipeline.h"
-#include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Platform/WindowsWindow.h"
 #include "GameFramework/World.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Mesh/MeshManager.h"
-#include "Component/StaticMeshComponent.h"
+#include "Component/Primitive/StaticMeshComponent.h"
 #include "GameFramework/AActor.h"
 #include "Viewport/Viewport.h"
 

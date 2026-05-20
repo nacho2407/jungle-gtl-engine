@@ -1,5 +1,5 @@
-﻿#pragma once
-#include "Core/CoreTypes.h"
+#pragma once
+#include "Core/Types/CoreTypes.h"
 #include "Render/Types/ViewTypes.h"
 #include "Settings/EditorViewportSettings.h"
 

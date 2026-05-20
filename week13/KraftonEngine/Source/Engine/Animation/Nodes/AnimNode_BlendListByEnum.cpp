@@ -52,6 +52,13 @@ void FAnimNode_BlendListByEnum::OnDormant()
 
 void FAnimNode_BlendListByEnum::Update(const FAnimationUpdateContext& Context)
 {
+	// AnimGraph 컴파일러가 박은 SelectorFn 이 있으면 매 frame ActiveChildIndex 갱신.
+	// UCharacterAnimInstance 처럼 외부가 ActiveChildIndex 직접 박는 흐름은 SelectorFn 미설정.
+	if (SelectorFn)
+	{
+		ActiveChildIndex = SelectorFn(Context.AnimInstance);
+	}
+
 	// ── 1) ActiveChildIndex 변경 감지 → 전이 시작 ──
 	// 진행중 전이가 있는 도중에 또 바뀌면 Previous 는 직전 Current 로 즉시 교체 (latest pair 만 유지).
 	if (ActiveChildIndex != CurrentChildIndex && IsValidIndex(ActiveChildIndex))

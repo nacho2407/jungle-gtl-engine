@@ -6,7 +6,7 @@
 #include "Render/Resource/RenderResources.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Types/RenderConstants.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Stats/Stats.h"
 #include "Profiling/GPUProfiler.h"
 
 // ============================================================

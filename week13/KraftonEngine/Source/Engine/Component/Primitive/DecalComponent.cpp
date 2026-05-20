@@ -1,0 +1,230 @@
+#include "DecalComponent.h"
+#include "Component/Primitive/BillboardComponent.h"
+#include "Materials/MaterialManager.h"
+#include "Collision/Math/OBB.h"
+#include "Component/Primitive/StaticMeshComponent.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
+#include "Profiling/Stats/Stats.h"
+#include "Render/Proxy/DecalSceneProxy.h"
+#include "Resource/ResourceManager.h"
+#include "Mesh/MeshManager.h"
+#include "Engine/Runtime/Engine.h"
+#include "Texture/Texture2D.h"
+#include "Materials/Material.h"
+#include <algorithm>
+
+void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
+{
+	if (TickType == ELevelTick::LEVELTICK_All)
+	{
+		HandleFade(DeltaTime);
+	}
+
+	UpdateReceivers();
+}
+
+FPrimitiveSceneProxy* UDecalComponent::CreateSceneProxy()
+{
+	return new FDecalSceneProxy(this);
+}
+
+void UDecalComponent::PostEditProperty(const char* PropertyName)
+{
+	UPrimitiveComponent::PostEditProperty(PropertyName);
+
+	if (strcmp(PropertyName, "MaterialSlot") == 0 || strcmp(PropertyName, "Material") == 0)
+	{
+		if (MaterialSlot == "None" || MaterialSlot.empty())
+		{
+			SetMaterial(nullptr);
+		}
+		else
+		{
+			UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot);
+			if (LoadedMat)
+			{
+				SetMaterial(LoadedMat);
+			}
+		}
+		MarkRenderStateDirty();
+	}
+	if (strcmp(PropertyName, "Color") == 0)
+	{
+		MarkProxyDirty(EDirtyFlag::Material);
+	}
+}
+
+void UDecalComponent::PostDuplicate()
+{
+	UPrimitiveComponent::PostDuplicate();
+
+	if (!MaterialSlot.empty() && MaterialSlot != "None")
+	{
+		UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot);
+		if (LoadedMat)
+		{
+			SetMaterial(LoadedMat);
+		}
+	}
+	MarkProxyDirty(EDirtyFlag::Material);
+}
+
+FVector4 UDecalComponent::GetColor() const
+{
+	FVector4 OutColor = Color;
+	OutColor.A *= Clamp(FadeOpacity, 0, 1);
+	return OutColor;
+}
+
+void UDecalComponent::SetMaterial(UMaterial* InMaterial)
+{
+	Material = InMaterial;
+	if (Material)
+	{
+		MaterialSlot = Material->GetAssetPathFileName();
+	}
+	else
+	{
+		MaterialSlot = "None";
+	}
+	MarkProxyDirty(EDirtyFlag::Material);
+}
+
+void UDecalComponent::UpdateDecalVolumeFromTransform()
+{
+	ConvexVolume.UpdateAsOBB(GetWorldMatrix());
+}
+
+void UDecalComponent::OnTransformDirty()
+{
+	UPrimitiveComponent::OnTransformDirty();
+	UpdateReceivers();
+}
+
+bool UDecalComponent::ShouldReceivePrimitive(UPrimitiveComponent* PrimitiveComp) const
+{
+	return PrimitiveComp && PrimitiveComp != this && PrimitiveComp->GetOwner() != GetOwner();
+}
+
+void UDecalComponent::HandleFade(float DeltaTime)
+{
+	FadeTimer += DeltaTime;
+
+	float Alpha = 1.0f;
+
+	if (FadeInDuration > 0.0f)
+	{
+		const float InStart = FadeInDelay;
+		const float InEnd = FadeInDelay + FadeInDuration;
+		if (FadeTimer < InStart)
+		{
+			Alpha = 0.0f;
+		}
+		else if (FadeTimer < InEnd)
+		{
+			Alpha = (FadeTimer - InStart) / FadeInDuration;
+		}
+	}
+
+	if (FadeOutDuration > 0.0f)
+	{
+		const float OutStart = FadeOutDelay;
+		const float OutEnd = FadeOutDelay + FadeOutDuration;
+		if (FadeTimer > OutEnd)
+		{
+			Alpha = 0.0f;
+		}
+		else if (FadeTimer > OutStart)
+		{
+			Alpha = std::min(Alpha, 1.0f - (FadeTimer - OutStart) / FadeOutDuration);
+		}
+	}
+
+	FadeOpacity = Alpha;
+	MarkProxyDirty(EDirtyFlag::Material);
+}
+
+void UDecalComponent::UpdateReceivers()
+{
+	SCOPE_STAT_CAT("UpdateDecalReceivers", "6_Decal");
+
+	UpdateDecalVolumeFromTransform();
+
+	UWorld* World = GetOwner() ? GetOwner()->GetWorld() : nullptr;
+	if (!World)
+	{
+		return;
+	}
+
+	TArray<UPrimitiveComponent*> OverlappingPrimitives;
+	World->GetPartition().QueryFrustumAllPrimitive(ConvexVolume, OverlappingPrimitives);
+
+	Receivers.clear();
+
+	FOBB DecalOBB;
+	DecalOBB.UpdateAsOBB(GetWorldMatrix());
+
+	for (UPrimitiveComponent* PrimitiveComp : OverlappingPrimitives)
+	{
+		if (!ShouldReceivePrimitive(PrimitiveComp))
+		{
+			continue;
+		}
+
+		UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(PrimitiveComp);
+		if (!StaticMeshComp || !StaticMeshComp->GetStaticMesh())
+		{
+			continue;
+		}
+
+		const FBoundingBox ReceiverBounds = StaticMeshComp->GetWorldBoundingBox();
+		if (!ReceiverBounds.IsValid())
+		{
+			continue;
+		}
+
+		if (!DecalOBB.IntersectOBBAABB(ReceiverBounds))
+		{
+			continue;
+		}
+
+		Receivers.push_back(StaticMeshComp);
+	}
+
+	MarkProxyDirty(EDirtyFlag::Mesh);
+}
+
+UBillboardComponent* UDecalComponent::EnsureEditorBillboard()
+{
+	if (!Owner)
+	{
+		return nullptr;
+	}
+
+	for (USceneComponent* Child : GetChildren())
+	{
+		UBillboardComponent* Billboard = Cast<UBillboardComponent>(Child);
+		if (Billboard && Billboard->IsEditorOnlyComponent())
+		{
+			// 에디터 아이콘 빌보드는 부모 스케일과 컴포넌트 트리 기본 표시에서 분리한다.
+			Billboard->SetAbsoluteScale(true);
+			Billboard->SetHiddenInComponentTree(true);
+			return Billboard;
+		}
+	}
+
+	UBillboardComponent* Billboard = Owner->AddComponent<UBillboardComponent>();
+	if (Billboard)
+	{
+		Billboard->AttachToComponent(this);
+		// 에디터 아이콘 빌보드는 부모 스케일과 컴포넌트 트리 기본 표시에서 분리한다.
+		Billboard->SetAbsoluteScale(true);
+		Billboard->SetEditorOnlyComponent(true);
+		Billboard->SetHiddenInComponentTree(true);
+		auto Material = FMaterialManager::Get().GetOrCreateMaterial("Content/Material/Editor/Decal.mat");
+		Billboard->SetMaterial(Material);
+	}
+
+	return Billboard;
+}

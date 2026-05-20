@@ -52,3 +52,4 @@ private:
 	float ViewportWidth = 800.0f;
 	float ViewportHeight = 600.0f;
 };
+	

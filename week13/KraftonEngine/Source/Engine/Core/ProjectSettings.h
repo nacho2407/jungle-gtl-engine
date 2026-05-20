@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Core/Singleton.h"
 #include "Platform/Paths.h"
 #include "Physics/IPhysicsScene.h"  // EPhysicsBackend

@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Device/D3DDevice.h"
-#include "Core/EngineTypes.h"
-#include "Core/ResourceTypes.h"
+#include "Core/Types/EngineTypes.h"
+#include "Core/Types/ResourceTypes.h"
 #include "Render/Types/MaterialTextureSlot.h"
 
 #include "Math/Matrix.h"

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Component/Movement/MovementComponent.h"
-#include "Core/CollisionTypes.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CollisionTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
 
 #include "Source/Engine/Component/Movement/ProjectileMovementComponent.generated.h"

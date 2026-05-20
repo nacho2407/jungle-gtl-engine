@@ -85,6 +85,7 @@ INCLUDE_PATHS = [
     "Source",
     "ThirdParty",
     "ThirdParty\\ImGui",
+    "ThirdParty\\imgui-node-editor",
     "ThirdParty\\RmlUi\\Include",
     "Source\\Editor",
     "Source\\ObjViewer",
@@ -122,7 +123,7 @@ PHYSX_RELEASE_BIN = "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\bin"
 # Reflection — UCLASS/UPROPERTY 매크로 → *.generated.h/.cpp 자동 생성.
 # 빌드 시작 직전(PreBuildEvent)과 ClCompile 직전(GenerateReflectionHeaders target)
 # 두 위치에 모두 박는다 — VS IDE / msbuild 호출 경로 모두 커버.
-GENERATE_HEADERS_TOOL = "Tools\\GenerateHeaders.py"
+GENERATE_HEADERS_TOOL = "..\\Scripts\\GenerateHeaders.py"
 
 # Lua (LuaJIT, 5.1 ABI) — lua51.dll 은 .gitignore 의 **/[Bb]in/* 에 걸려 있어
 # 팀원이 직접 ThirdParty\\lua\\bin\\lua51.dll 위치에 배치해야 한다 (LuaJIT 배포본).

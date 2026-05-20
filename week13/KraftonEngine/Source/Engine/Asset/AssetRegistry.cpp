@@ -1,10 +1,11 @@
-﻿#include "AssetRegistry.h"
+#include "AssetRegistry.h"
 #include "Mesh/MeshManager.h"
-#include "Mesh/SkeletalMesh.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Animation/AnimationManager.h"
-#include "Animation/AnimSequence.h"
-#include "Animation/Skeleton.h"
-#include "Animation/SkeletonManager.h"
+#include "Animation/Graph/AnimGraphManager.h"
+#include "Animation/Sequence/AnimSequence.h"
+#include "Animation/Skeleton/Skeleton.h"
+#include "Animation/Skeleton/SkeletonManager.h"
 #include "Platform/Paths.h"
 
 #include <cstring>
@@ -31,17 +32,26 @@ namespace FAssetRegistry
         }
 		if (std::strcmp(AssetTypeName, "UAnimSequence") == 0)
 		{
+			// 콤보 열 때마다 재스캔 — 기존엔 MeshEditor 열 때만 Refresh 가 호출돼 PropertyWidget
+			// 의 AnimSequence 콤보가 비어 있는 경우가 잦았음 (특히 새 PIE / 새 SkeletalMesh).
+			FAnimationManager::Get().RefreshAvailableAnimations();
 			return FAnimationManager::Get().GetAvailableAnimationFiles();
+		}
+		if (std::strcmp(AssetTypeName, "UAnimGraphAsset") == 0)
+		{
+			// 콤보 열 때마다 재스캔 — 방금 ContentBrowser 에서 만든 자산이 즉시 노출되도록.
+			FAnimGraphManager::Get().RefreshAvailableGraphs();
+			return FAnimGraphManager::Get().GetAvailableGraphFiles();
 		}
 		if (std::strcmp(AssetTypeName, "LuaAnimScript") == 0)
 		{
-			// Asset/Script/Anim/ 하위 .lua 파일 즉석 스캔. 콤보 열 때만 호출되므로 비용 무시.
+			// Content/Script/Anim/ 하위 .lua 파일 즉석 스캔. 콤보 열 때만 호출되므로 비용 무시.
 			// startup 캐싱 필요해지면 별도 매니저로 이관.
 			static TArray<FAssetListItem> Cache;
 			Cache.clear();
 
 			namespace fs = std::filesystem;
-			const fs::path Dir = fs::path(FPaths::RootDir()) / L"Asset" / L"Script" / L"Anim";
+			const fs::path Dir = fs::path(FPaths::RootDir()) / L"Content" / L"Script" / L"Anim";
 			if (fs::exists(Dir) && fs::is_directory(Dir))
 			{
 				for (const auto& Entry : fs::directory_iterator(Dir))

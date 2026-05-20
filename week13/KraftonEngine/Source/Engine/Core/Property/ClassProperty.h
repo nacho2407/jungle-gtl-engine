@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ObjectPropertyBase.h"
-#include "Object/SubclassOf.h"
+#include "Object/Ptr/SubclassOf.h"
 
 struct FClassProperty : FObjectPropertyBase
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Render/Types/FogParams.h"
 #include "Render/Types/GlobalLightParams.h"
 

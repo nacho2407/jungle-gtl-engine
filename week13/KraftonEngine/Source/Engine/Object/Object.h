@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 
-#include "Profiling/MemoryStats.h"
+#include "Profiling/Stats/MemoryStats.h"
 #include "Object/FName.h"
 #include "Core/Singleton.h"
-#include "Core/PropertyTypes.h"
-#include "Object/UClass.h"
-#include "Object/ObjectMacros.h"
+#include "Core/Types/PropertyTypes.h"
+#include "Object/Reflection/UClass.h"
+#include "Object/Reflection/ObjectMacros.h"
 
 #include "Source/Engine/Object/Object.generated.h"
 

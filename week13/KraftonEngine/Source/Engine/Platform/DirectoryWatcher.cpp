@@ -1,6 +1,6 @@
-﻿#include "Engine/Platform/DirectoryWatcher.h"
+#include "Engine/Platform/DirectoryWatcher.h"
 #include "Platform/Paths.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include <algorithm>
 
 // ============================================================

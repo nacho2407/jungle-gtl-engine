@@ -1,8 +1,8 @@
 #include "LightComponentBase.h"
 #include "Serialization/Archive.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "GameFramework/AActor.h"
-#include "Component/BillboardComponent.h"
+#include "Component/Primitive/BillboardComponent.h"
 #include "Materials/MaterialManager.h"
 
 HIDE_FROM_COMPONENT_LIST(ULightComponentBase)
@@ -18,16 +18,16 @@ UBillboardComponent* ULightComponentBase::EnsureEditorBillboard()
 	switch (GetLightType())
 	{
 	case ELightComponentType::Ambient:
-		IconMaterialPath = "Asset/Materials/Editor/AmbientLight.mat";
+		IconMaterialPath = "Content/Material/Editor/AmbientLight.mat";
 		break;
 	case ELightComponentType::Directional:
-		IconMaterialPath = "Asset/Materials/Editor/DirectionalLight.mat";
+		IconMaterialPath = "Content/Material/Editor/DirectionalLight.mat";
 		break;
 	case ELightComponentType::Point:
-		IconMaterialPath = "Asset/Materials/Editor/PointLight.mat";
+		IconMaterialPath = "Content/Material/Editor/PointLight.mat";
 		break;
 	case ELightComponentType::Spot:
-		IconMaterialPath = "Asset/Materials/Editor/SpotLight.mat";
+		IconMaterialPath = "Content/Material/Editor/SpotLight.mat";
 		break;
 	}
 

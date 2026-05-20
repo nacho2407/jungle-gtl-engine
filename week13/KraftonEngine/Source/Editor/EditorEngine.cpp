@@ -1,25 +1,25 @@
 #include "Editor/EditorEngine.h"
 
 #include "Profiling/StartupProfiler.h"
-#include "Core/Notification.h"
-#include "Engine/Runtime/WindowsWindow.h"
+#include "Core/Logging/Notification.h"
+#include "Engine/Platform/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
 #include "Engine/Platform/DirectoryWatcher.h"
 #include "Engine/Runtime/EngineInitHooks.h"
-#include "Component/CameraComponent.h"
-#include "Component/GizmoComponent.h"
+#include "Component/Camera/CameraComponent.h"
+#include "Component/Debug/GizmoComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "Editor/Viewport/ViewportCameraTransform.h"
 #include "GameFramework/World.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameMode/GameModeBase.h"
 #include "Viewport/GameViewportClient.h"
 #include "UI/UIManager.h"
 #include "Editor/Slate/SlateApplication.h"
 #include "Editor/EditorRenderPipeline.h"
-#include "Editor/UI/EditorFileUtils.h"
-#include "Editor/UI/EditorTextureManager.h"
-#include "Editor/Viewport/LevelEditorViewportClient.h"
-#include "Object/ObjectFactory.h"
+#include "Editor/UI/Util/EditorFileUtils.h"
+#include "Editor/UI/Util/EditorTextureManager.h"
+#include "Editor/Viewport/Level/LevelEditorViewportClient.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Mesh/MeshManager.h"
 #include "Core/ProjectSettings.h"
 #include "Input/InputSystem.h"
@@ -29,7 +29,7 @@
 #include "Lua/LuaScriptManager.h"
 #include <filesystem>
 
-#include "Mesh/SkeletalMesh.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
 
 namespace
 {

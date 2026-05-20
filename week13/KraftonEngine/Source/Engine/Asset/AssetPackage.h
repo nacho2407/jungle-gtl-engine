@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Serialization/Archive.h"
 
 enum class EAssetPackageType : uint32
@@ -13,7 +13,8 @@ enum class EAssetPackageType : uint32
 	Material,
 	Skeleton,
 	AnimSequence,
-	AnimMontage
+	AnimMontage,
+	AnimGraph
 };
 
 struct FAssetPackageHeader

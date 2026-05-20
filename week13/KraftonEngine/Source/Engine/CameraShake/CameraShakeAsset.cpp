@@ -1,5 +1,5 @@
 #include "CameraShakeAsset.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Platform/Paths.h"
 #include "Serialization/Archive.h"
 

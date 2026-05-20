@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Render/Types/RenderTypes.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Render/Types/VertexTypes.h"
 
 class FVertexBuffer

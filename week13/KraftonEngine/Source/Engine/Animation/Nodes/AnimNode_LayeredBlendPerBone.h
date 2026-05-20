@@ -1,7 +1,7 @@
 #pragma once
 
 #include "AnimNode_Base.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 class USkeletalMesh;
 

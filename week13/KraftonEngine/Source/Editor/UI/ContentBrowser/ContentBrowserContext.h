@@ -2,7 +2,7 @@
 #include "imgui.h" 
 #include "Platform/Paths.h"
 #include "Asset/AssetRegistry.h"
-#include "Editor/UI/FbxImportOptionsDialog.h"
+#include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 #include <memory>
 
 class ContentBrowserElement;

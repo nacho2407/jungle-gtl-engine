@@ -1,6 +1,6 @@
 #include "ObjectPropertyBase.h"
 
-#include "Object/UClass.h"
+#include "Object/Reflection/UClass.h"
 
 UClass* FObjectPropertyBase::GetAllowedClassType() const
 {
