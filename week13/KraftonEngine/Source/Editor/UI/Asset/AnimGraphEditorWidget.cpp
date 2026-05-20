@@ -61,6 +61,196 @@ namespace
 		return std::filesystem::path(P).stem().string();
 	}
 
+	const char* TransitionOpLabel(ETransitionOp Op)
+	{
+		switch (Op)
+		{
+			case ETransitionOp::Greater:      return ">";
+			case ETransitionOp::GreaterEqual: return ">=";
+			case ETransitionOp::Less:         return "<";
+			case ETransitionOp::LessEqual:    return "<=";
+			case ETransitionOp::Equal:        return "==";
+			case ETransitionOp::NotEqual:     return "!=";
+		}
+		return "?";
+	}
+
+	// State name dropdown — Node.States 의 이름을 list. "(any)" 항목은 FName::None 으로 (AnyState 전이).
+	// 반환: 변경 발생 여부.
+	bool StateNameCombo(const char* Label, const TArray<FAnimGraphState>& States, FName& InOutName, bool bAllowAny)
+	{
+		const FString CurStr = (InOutName == FName::None) ? FString(bAllowAny ? "(any)" : "(none)") : InOutName.ToString();
+		bool bChanged = false;
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::BeginCombo(Label, CurStr.c_str()))
+		{
+			if (bAllowAny)
+			{
+				const bool bSel = (InOutName == FName::None);
+				if (ImGui::Selectable("(any)", bSel))
+				{
+					if (InOutName != FName::None) bChanged = true;
+					InOutName = FName::None;
+				}
+			}
+			for (const FAnimGraphState& S : States)
+			{
+				const FString SName = S.StateName.ToString();
+				const bool bSel = (InOutName == S.StateName);
+				if (ImGui::Selectable(SName.c_str(), bSel))
+				{
+					if (InOutName != S.StateName) bChanged = true;
+					InOutName = S.StateName;
+				}
+			}
+			ImGui::EndCombo();
+		}
+		return bChanged;
+	}
+
+	// UClass 의 Float/Int/Bool/ByteBool UPROPERTY dropdown. VariableGet inspector 와 같은 패턴.
+	bool VariableNameCombo(const char* Label, UClass* OwnerCls, FName& InOutName)
+	{
+		const FString Preview = (InOutName == FName::None) ? FString("(none)") : InOutName.ToString();
+		bool bChanged = false;
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::BeginCombo(Label, Preview.c_str()))
+		{
+			if (!OwnerCls)
+			{
+				ImGui::TextDisabled("Owner class not found");
+			}
+			else
+			{
+				TArray<const FProperty*> Props;
+				OwnerCls->GetPropertyRefs(Props);
+				for (const FProperty* Prop : Props)
+				{
+					if (!Prop) continue;
+					const EPropertyType T = Prop->GetType();
+					const bool bScalar = (T == EPropertyType::Float || T == EPropertyType::Int
+						|| T == EPropertyType::Bool || T == EPropertyType::ByteBool);
+					if (!bScalar) continue;
+					const bool bSel = (InOutName.ToString() == Prop->Name);
+					if (ImGui::Selectable(Prop->Name, bSel))
+					{
+						InOutName = FName(Prop->Name);
+						bChanged = true;
+					}
+				}
+			}
+			ImGui::EndCombo();
+		}
+		return bChanged;
+	}
+
+	// State 한 개의 form. true 반환 — 변경 발생.
+	bool RenderStateRow(FAnimGraphState& State, int32 Index)
+	{
+		ImGui::PushID(Index);
+		bool bChanged = false;
+
+		// Name InputText
+		char NameBuf[64];
+		const FString Cur = State.StateName.ToString();
+		std::snprintf(NameBuf, sizeof(NameBuf), "%s", Cur.c_str());
+		ImGui::TextUnformatted("Name");
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::InputText("##Name", NameBuf, sizeof(NameBuf)))
+		{
+			State.StateName = (NameBuf[0] == '\0') ? FName::None : FName(NameBuf);
+			bChanged = true;
+		}
+
+		// Sequence dropdown
+		ImGui::TextUnformatted("Sequence");
+		const FString PreviewStem = State.SequencePath.empty() ? FString("None") : GetStemFromPath(State.SequencePath);
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::BeginCombo("##Seq", PreviewStem.c_str()))
+		{
+			const bool bSelNone = State.SequencePath.empty();
+			if (ImGui::Selectable("None", bSelNone))
+			{
+				if (!State.SequencePath.empty()) bChanged = true;
+				State.SequencePath.clear();
+			}
+			const TArray<FAssetListItem>& Anims = FAssetRegistry::ListByTypeName("UAnimSequence");
+			for (const FAssetListItem& Item : Anims)
+			{
+				const bool bSel = (State.SequencePath == Item.FullPath);
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSel))
+				{
+					if (State.SequencePath != Item.FullPath) bChanged = true;
+					State.SequencePath = Item.FullPath;
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::DragFloat("##PlayRate", &State.PlayRate, 0.05f, -4.0f, 4.0f, "PlayRate %.2f"))
+		{
+			bChanged = true;
+		}
+		if (ImGui::Checkbox("Looping", &State.bLooping))
+		{
+			bChanged = true;
+		}
+
+		ImGui::PopID();
+		return bChanged;
+	}
+
+	// Transition 한 개의 form. true 반환 — 변경 발생.
+	bool RenderTransitionRow(FAnimGraphTransition& T, const TArray<FAnimGraphState>& States, UClass* OwnerCls, int32 Index)
+	{
+		ImGui::PushID(Index);
+		bool bChanged = false;
+
+		ImGui::TextUnformatted("From");
+		bChanged |= StateNameCombo("##From", States, T.FromStateName, /*bAllowAny*/true);
+
+		ImGui::TextUnformatted("To");
+		bChanged |= StateNameCombo("##To", States, T.ToStateName, /*bAllowAny*/false);
+
+		ImGui::TextUnformatted("Variable");
+		bChanged |= VariableNameCombo("##Var", OwnerCls, T.VariableName);
+
+		// Op dropdown
+		ImGui::TextUnformatted("Op");
+		ImGui::SetNextItemWidth(60.0f);
+		if (ImGui::BeginCombo("##Op", TransitionOpLabel(T.Op)))
+		{
+			for (int i = 0; i <= static_cast<int>(ETransitionOp::NotEqual); ++i)
+			{
+				const ETransitionOp O = static_cast<ETransitionOp>(i);
+				const bool bSel = (T.Op == O);
+				if (ImGui::Selectable(TransitionOpLabel(O), bSel))
+				{
+					if (T.Op != O) bChanged = true;
+					T.Op = O;
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::DragFloat("##Threshold", &T.Threshold, 0.1f, -1000.0f, 1000.0f, "th %.2f"))
+		{
+			bChanged = true;
+		}
+
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::DragFloat("##BlendTime", &T.BlendTime, 0.01f, 0.0f, 5.0f, "blend %.2fs"))
+		{
+			bChanged = true;
+		}
+
+		ImGui::PopID();
+		return bChanged;
+	}
+
 	// 노드 타입별 properties. 변경 시 Asset.BumpVersion() — UAnimGraphInstance 가 다음 frame 에
 	// 재컴파일하여 in-editor live preview 가 즉시 반영되도록.
 	void RenderNodeInspector(UAnimGraphAsset& Asset, FAnimGraphNode& Node)
@@ -145,43 +335,81 @@ namespace
 
 			case EAnimGraphNodeType::VariableGet:
 			{
-				// Asset.OwnerClassName 의 UPROPERTY 중 Float/Int/Bool/ByteBool 타입 dropdown.
 				UClass* OwnerCls = UClass::FindByName(Asset.GetOwnerClassName().c_str());
-				const char* Preview = (Node.VariableName == FName::None)
-					? "(none)" : Node.VariableName.ToString().c_str();
-
 				ImGui::TextUnformatted("Variable");
-				ImGui::SetNextItemWidth(-1.0f);
-				if (ImGui::BeginCombo("##VariableName", Preview))
-				{
-					if (!OwnerCls)
-					{
-						ImGui::TextDisabled("Owner class not found");
-					}
-					else
-					{
-						TArray<const FProperty*> Props;
-						OwnerCls->GetPropertyRefs(Props);
-						for (const FProperty* Prop : Props)
-						{
-							if (!Prop) continue;
-							const EPropertyType T = Prop->GetType();
-							const bool bScalar = (T == EPropertyType::Float || T == EPropertyType::Int
-								|| T == EPropertyType::Bool || T == EPropertyType::ByteBool);
-							if (!bScalar) continue;
-
-							const bool bSelected = (Node.VariableName.ToString() == Prop->Name);
-							if (ImGui::Selectable(Prop->Name, bSelected))
-							{
-								Node.VariableName = FName(Prop->Name);
-								bChanged = true;
-							}
-							if (bSelected) ImGui::SetItemDefaultFocus();
-						}
-					}
-					ImGui::EndCombo();
-				}
+				if (VariableNameCombo("##VariableName", OwnerCls, Node.VariableName)) bChanged = true;
 				ImGui::TextDisabled("(output: float — bool/int 는 자동 cast)");
+				break;
+			}
+
+			case EAnimGraphNodeType::StateMachine:
+			{
+				UClass* OwnerCls = UClass::FindByName(Asset.GetOwnerClassName().c_str());
+
+				ImGui::TextUnformatted("Initial State");
+				if (StateNameCombo("##Initial", Node.States, Node.InitialStateName, /*bAllowAny*/false))
+				{
+					bChanged = true;
+				}
+
+				ImGui::Spacing();
+
+				// ── States ──
+				char Header[64];
+				std::snprintf(Header, sizeof(Header), "States (%zu)###States", Node.States.size());
+				if (ImGui::CollapsingHeader(Header, ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					if (ImGui::Button("Add State"))
+					{
+						FAnimGraphState S;
+						S.StateName = FName("NewState");
+						Node.States.push_back(std::move(S));
+						bChanged = true;
+					}
+
+					int32 PendingDeleteIdx = -1;
+					for (int32 i = 0; i < static_cast<int32>(Node.States.size()); ++i)
+					{
+						ImGui::PushID(i);
+						ImGui::Separator();
+						if (RenderStateRow(Node.States[i], i)) bChanged = true;
+						if (ImGui::Button("Delete##State")) PendingDeleteIdx = i;
+						ImGui::PopID();
+					}
+					if (PendingDeleteIdx >= 0)
+					{
+						Node.States.erase(Node.States.begin() + PendingDeleteIdx);
+						bChanged = true;
+					}
+				}
+
+				ImGui::Spacing();
+
+				// ── Transitions ──
+				std::snprintf(Header, sizeof(Header), "Transitions (%zu)###Transitions", Node.Transitions.size());
+				if (ImGui::CollapsingHeader(Header, ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					if (ImGui::Button("Add Transition"))
+					{
+						Node.Transitions.push_back(FAnimGraphTransition{});
+						bChanged = true;
+					}
+
+					int32 PendingDeleteIdx = -1;
+					for (int32 i = 0; i < static_cast<int32>(Node.Transitions.size()); ++i)
+					{
+						ImGui::PushID(i);
+						ImGui::Separator();
+						if (RenderTransitionRow(Node.Transitions[i], Node.States, OwnerCls, i)) bChanged = true;
+						if (ImGui::Button("Delete##Trans")) PendingDeleteIdx = i;
+						ImGui::PopID();
+					}
+					if (PendingDeleteIdx >= 0)
+					{
+						Node.Transitions.erase(Node.Transitions.begin() + PendingDeleteIdx);
+						bChanged = true;
+					}
+				}
 				break;
 			}
 
@@ -314,7 +542,7 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 	}
 
 	// ── 좌(canvas) / 우(inspector) split ──
-	constexpr float InspectorWidth = 280.0f;
+	constexpr float InspectorWidth = 380.0f;
 	const float Spacing            = ImGui::GetStyle().ItemSpacing.x;
 	const float TotalWidth         = ImGui::GetContentRegionAvail().x;
 	const float CanvasWidth        = (TotalWidth > InspectorWidth + Spacing + 100.0f)
