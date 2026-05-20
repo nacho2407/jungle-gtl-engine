@@ -63,6 +63,12 @@ private:
 	template<typename T>
 	void RenderEditableName(const char* Label, T* TargetObject, bool* bFocusNextFrame = nullptr);
 
+
+	//ObjectForProperty
+    bool RenderObjectAssetProperty(struct FPropertyDescriptor& Prop);
+    UObject* LoadAssetObjectForProperty(class FObjectProperty* ObjectProp, const FString& Path) const;
+    FString GetObjectAssetPreviewText(UObject* Object) const;
+
 	// 멤버 변수
 	UActorComponent* SelectedComponent = nullptr;
 	AActor* LastSelectedActor = nullptr;

@@ -44,6 +44,10 @@
 #include "Runtime/Script/ScriptManager.h"
 #include <Runtime/Script/ScriptComponent.h>
 #include <commdlg.h>
+#include "ReflectionSystem/ReflectedProperty.h"
+#include "ReflectionSystem/ReflectionDatabase.h"
+#include "Render/Resource/Texture.h"
+#include "Asset/SkeletalMesh.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -56,6 +60,42 @@ namespace UIConstants
 namespace
 {
 	using FDetailsPerfClock = std::chrono::steady_clock;
+
+	 bool IsReflectionClassOrChildOf(FClassInfo* ClassInfo, const char* BaseClassName)
+    {
+        for (FClassInfo* It = ClassInfo; It; It = It->ParentClass)
+        {
+            if (It->ClassName.ToString() == BaseClassName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    const char* GetAssetPayloadTypeForClass(FClassInfo* RequiredClass)
+    {
+        if (IsReflectionClassOrChildOf(RequiredClass, "UStaticMesh") ||
+            IsReflectionClassOrChildOf(RequiredClass, "USkeletalMesh"))
+        {
+            return "ObjectContentItem";
+        }
+
+        if (IsReflectionClassOrChildOf(RequiredClass, "UTexture"))
+        {
+            return "TextureContentItem";
+        }
+
+        if (IsReflectionClassOrChildOf(RequiredClass, "UMaterialInterface") ||
+            IsReflectionClassOrChildOf(RequiredClass, "UMaterial") ||
+            IsReflectionClassOrChildOf(RequiredClass, "UMaterialInstance"))
+        {
+            return "MaterialContentItem";
+        }
+
+        return nullptr;
+    }
 
 	double DetailsPerfMs(FDetailsPerfClock::time_point Start, FDetailsPerfClock::time_point End)
 	{
@@ -1082,6 +1122,160 @@ void FEditorPropertyWidget::DeleteSelectedComponent(AActor* Owner)
 	{
 		EditorEngine->GetSceneService().MarkDirty();
 	}
+}
+
+bool FEditorPropertyWidget::RenderObjectAssetProperty(FPropertyDescriptor& Prop)
+{
+    FObjectProperty* ObjectProp = static_cast<FObjectProperty*>(Prop.ExtraData);
+    UObject** Value = static_cast<UObject**>(Prop.ValuePtr);
+
+    if (!ObjectProp || !Value)
+    {
+        ImGui::TextDisabled("%s: <Invalid Object Property>", Prop.Name);
+        return false;
+    }
+
+    FClassInfo* RequiredClass = ObjectProp->PropertyClass;
+    const bool bEditable = HasPropertyUsage(Prop.UsageFlags, EPropertyUsageFlags::Editable);
+
+    FString Preview = GetObjectAssetPreviewText(*Value);
+
+    ImGui::PushID(Prop.InternalName ? Prop.InternalName : Prop.Name);
+
+    ImGui::TextUnformatted(Prop.Name);
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled(!bEditable);
+
+    bool bChanged = false;
+
+    if (ImGui::Button(Preview.empty() ? "<None>" : Preview.c_str(), ImVec2(-40.0f, 0.0f)))
+    {
+        // 지금은 버튼 클릭 동작 없음. 나중에 asset picker popup 붙일 자리.
+    }
+
+    if (ImGui::BeginDragDropTarget())
+    {
+        const char* PayloadType = GetAssetPayloadTypeForClass(RequiredClass);
+
+        if (PayloadType)
+        {
+            if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(PayloadType))
+            {
+                const char* PayloadPath = static_cast<const char*>(Payload->Data);
+
+                if (PayloadPath && PayloadPath[0] != '\0')
+                {
+                    UObject* LoadedObject = LoadAssetObjectForProperty(ObjectProp, PayloadPath);
+
+                    if (LoadedObject)
+                    {
+                        *Value = LoadedObject;
+                        bChanged = true;
+                    }
+                }
+            }
+
+            if (IsReflectionClassOrChildOf(RequiredClass, "UTexture"))
+            {
+                if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("PNGElement"))
+                {
+                    const char* PayloadPath = static_cast<const char*>(Payload->Data);
+
+                    if (PayloadPath && PayloadPath[0] != '\0')
+                    {
+                        UObject* LoadedObject = LoadAssetObjectForProperty(ObjectProp, PayloadPath);
+
+                        if (LoadedObject)
+                        {
+                            *Value = LoadedObject;
+                            bChanged = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        ImGui::EndDragDropTarget();
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("X"))
+    {
+        *Value = nullptr;
+        bChanged = true;
+    }
+
+    ImGui::EndDisabled();
+
+    ImGui::PopID();
+
+    return bChanged;
+}
+
+UObject* FEditorPropertyWidget::LoadAssetObjectForProperty(FObjectProperty* ObjectProp, const FString& Path) const
+{
+    if (!ObjectProp || !ObjectProp->PropertyClass || Path.empty())
+    {
+        return nullptr;
+    }
+
+    FClassInfo* RequiredClass = ObjectProp->PropertyClass;
+
+    if (IsReflectionClassOrChildOf(RequiredClass, "UStaticMesh"))
+    {
+        return FResourceManager::Get().LoadStaticMesh(Path);
+    }
+
+    if (IsReflectionClassOrChildOf(RequiredClass, "USkeletalMesh"))
+    {
+        return FResourceManager::Get().LoadSkeletalMesh(Path);
+    }
+
+    if (IsReflectionClassOrChildOf(RequiredClass, "UTexture"))
+    {
+        return FResourceManager::Get().LoadTexture(Path);
+    }
+
+    if (IsReflectionClassOrChildOf(RequiredClass, "UMaterialInterface") ||
+        IsReflectionClassOrChildOf(RequiredClass, "UMaterial") ||
+        IsReflectionClassOrChildOf(RequiredClass, "UMaterialInstance"))
+    {
+        return FResourceManager::Get().GetMaterialInterface(Path);
+    }
+
+    return nullptr;
+}
+
+FString FEditorPropertyWidget::GetObjectAssetPreviewText(UObject* Object) const
+{
+    if (!Object)
+    {
+        return "<None>";
+    }
+
+    if (UStaticMesh* Mesh = Cast<UStaticMesh>(Object))
+    {
+        return Mesh->GetAssetPathFileName();
+    }
+
+    if (USkeletalMesh* Mesh = Cast<USkeletalMesh>(Object))
+    {
+        return Mesh->GetAssetPathFileName();
+    }
+
+    if (UTexture* Texture = Cast<UTexture>(Object))
+    {
+        return Texture->GetFilePath();
+    }
+
+    if (UMaterialInterface* Material = Cast<UMaterialInterface>(Object))
+    {
+        return Material->GetFilePath();
+    }
+
+    return Object->GetName();
 }
 
 void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
@@ -2303,6 +2497,11 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
                 }
             }
         }
+        break;
+    }
+    case EPropertyType::Object:
+    {
+        bChanged = RenderObjectAssetProperty(Prop);
         break;
     }
 	}

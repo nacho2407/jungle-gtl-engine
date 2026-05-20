@@ -129,6 +129,46 @@ public:
         return false;
     }
 
+    static bool IsClassOrChildOf(FClassInfo* ClassInfo, const char* BaseClassName)
+    {
+        for (FClassInfo* Current = ClassInfo; Current; Current = Current->ParentClass)
+        {
+            if (Current->ClassName == FName(BaseClassName))
+                return true;
+        }
+        return false;
+    }
+
+    static FString GetObjectBaseType(FString TypeName)
+    {
+        TypeName.erase(std::remove(TypeName.begin(), TypeName.end(), '*'), TypeName.end());
+        TypeName.erase(std::remove(TypeName.begin(), TypeName.end(), '&'), TypeName.end());
+        TypeName.erase(
+            std::remove_if(TypeName.begin(), TypeName.end(), ::isspace),
+            TypeName.end());
+        return TypeName;
+    }
+
+    static bool IsMaterialInterfaceObjectProperty(FProperty* Prop)
+    {
+        FObjectProperty* ObjectProp = dynamic_cast<FObjectProperty*>(Prop);
+        if (!ObjectProp)
+            return false;
+
+        FClassInfo* PropertyClass = ObjectProp->PropertyClass;
+        if (!PropertyClass)
+        {
+            PropertyClass = ReflectionDatabase::GetClass(GetObjectBaseType(ObjectProp->CPPType));
+        }
+
+        return IsClassOrChildOf(PropertyClass, "UMaterialInterface");
+    }
+
+    static bool IsMaterialInterfaceArrayProperty(FArrayProperty* ArrayProp)
+    {
+        return ArrayProp && ArrayProp->Inner && IsMaterialInterfaceObjectProperty(ArrayProp->Inner);
+    }
+
     static void SerializeGeneratedPropertiesLocal(
         UObject* Object,
         FClassInfo* ClassInfo,
@@ -143,7 +183,18 @@ public:
         {
             for (FProperty* Prop : ClassInfo->ReflectedProperties)
             {
+                if (!Prop)
+                    continue;
+
+                const FString Key = Prop->Name.ToString();
+                const bool bWasLoaded = Ar.IsLoading() && Ar.HasKey(Key);
+
                 Prop->SerializeInContainer(Ar, Object);
+
+                if (bWasLoaded)
+                {
+                    Object->PostEditChangeProperty({ Key.c_str(), EPropertyChangeType::ValueSet });
+                }
             }
             return;
         }
@@ -332,6 +383,12 @@ public:
                     Desc.Type = EPropertyType::Vec3Array;
                     OutProps.push_back(Desc);
                 }
+                else if (IsMaterialInterfaceArrayProperty(ArrayProp))
+                {
+                    Desc.Type = EPropertyType::Material;
+                    Desc.ExtraData = ArrayProp->Inner;
+                    OutProps.push_back(Desc);
+                }
             }
         }
     }
@@ -444,18 +501,26 @@ public:
             }
             else if (FArrayProperty* ArrayProp = dynamic_cast<FArrayProperty*>(Prop))
             {
-                // 임시 bridge: 기존 UI가 Vec3Array만 지원하니까 그 경우만 연결
                 if (ArrayProp->Inner && ArrayProp->Inner->CPPType == "FVector")
                 {
                     Desc.Type = EPropertyType::Vec3Array;
                     OutProps.push_back(Desc);
                 }
+                else if (IsMaterialInterfaceArrayProperty(ArrayProp))
+                {
+                    Desc.Type = EPropertyType::Material;
+                    Desc.ExtraData = ArrayProp->Inner;
+                    OutProps.push_back(Desc);
+                }
             }
             else if (FObjectProperty* ObjectProp = dynamic_cast<FObjectProperty*>(Prop))
             {
-                // 지금 기존 UI에서 UObject* 일반 picker가 없다면 일단 skip.
-                // 나중에 Asset/Object picker 생기면 여기서 EPropertyType::Object 같은 걸로 연결.
-                (void)ObjectProp;
+                if (ObjectProp->ReferenceKind == EObjectReferenceKind::AssetPath)
+                {
+                    Desc.Type = EPropertyType::Object;
+                    Desc.ExtraData = ObjectProp;
+                    OutProps.push_back(Desc);
+                }
             }
             else if (FSoftObjectProperty* SoftObjectProp = dynamic_cast<FSoftObjectProperty*>(Prop))
             {

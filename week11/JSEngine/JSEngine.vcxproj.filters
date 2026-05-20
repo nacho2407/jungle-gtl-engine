@@ -1060,6 +1060,7 @@
     <ClCompile Include="Source\Engine\Asset\Skeleton.cpp" />
     <ClCompile Include="Intermediate\Generated\JSEngine.Reflection.gen.cpp" />
     <ClCompile Include="Source\Engine\ReflectionSystem\ReflectionLuaUtils.cpp" />
+    <ClCompile Include="Source\Engine\ReflectionSystem\ReflectedProperty.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Audio\AudioSystem.h">

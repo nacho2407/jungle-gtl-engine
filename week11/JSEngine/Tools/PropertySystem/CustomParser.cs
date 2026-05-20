@@ -91,7 +91,25 @@ class CustomParser
         if (type.StartsWith("TSet<")) return $"        FSetProperty* {varName} = new FSetProperty();";
 
         // 4. 포인터 및 특수 포인터 (UObject 기반)
-        if (type.EndsWith("*")) return $"        FObjectProperty* {varName} = new FObjectProperty();";
+        if (type.EndsWith("*"))
+        {
+            // '*'를 제거하고 순수 클래스 이름만 추출
+            string cleanType = type.Substring(0, type.Length - 1).Trim();
+
+            // 에셋 타입인지 판별
+            bool isAsset = cleanType == "UStaticMesh" ||
+                           cleanType == "UTexture" ||
+                           cleanType == "UMaterialInterface" ||
+                           cleanType == "UMaterial" ||
+                           cleanType == "UMaterialInstance" ||
+                           cleanType == "USkeletalMesh";
+
+            // 타입에 맞춰 Enum 값 결정
+            string kind = isAsset ? "EObjectReferenceKind::AssetPath" : "EObjectReferenceKind::ObjectId";
+
+            // 코드 생성 (개행을 포함해서 ReferenceKind 초기화 코드를 함께 넘겨줍니다)
+            return $"        FObjectProperty* {varName} = new FObjectProperty();\r\n        {varName}->ReferenceKind = {kind};";
+        }
         if (type.StartsWith("FSoftObjectPtr") || type.StartsWith("TSoftObjectPtr<")) return $"        FSoftObjectProperty* {varName} = new FSoftObjectProperty();";
         if (type.StartsWith("FSoftClassPtr") || type.StartsWith("TSoftClassPtr<")) return $"        FSoftClassProperty* {varName} = new FSoftClassProperty();";
         if (type.StartsWith("FWeakObjectPtr") || type.StartsWith("TWeakObjectPtr<")) return $"        FWeakObjectProperty* {varName} = new FWeakObjectProperty();";
