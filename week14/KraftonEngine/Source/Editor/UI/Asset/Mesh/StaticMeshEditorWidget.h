@@ -2,7 +2,7 @@
 
 #include "Editor/UI/Asset/AssetEditorWidget.h"
 #include "Object/FName.h"
-#include "Editor/Viewport/StaticMeshEditorViewportClient.h"
+#include "Editor/Viewport/Asset/StaticMeshEditorViewportClient.h"
 
 struct FStaticMesh;
 struct ImDrawList;
