@@ -121,38 +121,6 @@ void FObjectProperty::DeserializeValue(void* ValuePtr, json::JSON& Value) const
 	SetObjectValueFromValuePtr(ValuePtr, UUID != 0 ? UObjectManager::Get().FindByUUID(UUID) : nullptr);
 }
 
-json::JSON FObjectProperty::SerializeValue(void* ValuePtr, const FJsonObjectReferenceContext* RefContext) const
-{
-	using namespace json;
-
-	UObject* Object = GetObjectValueFromValuePtr(ValuePtr);
-	if (RefContext)
-	{
-		JSON RefValue;
-		if (RefContext->SerializeObjectReference(Object, RefValue))
-		{
-			return RefValue;
-		}
-	}
-
-	return SerializeValue(ValuePtr);
-}
-
-void FObjectProperty::DeserializeValue(void* ValuePtr, json::JSON& Value, const FJsonObjectReferenceContext* RefContext) const
-{
-	if (RefContext)
-	{
-		UObject* Object = nullptr;
-		if (RefContext->DeserializeObjectReference(Value, Object))
-		{
-			SetObjectValueFromValuePtr(ValuePtr, Object);
-			return;
-		}
-	}
-
-	DeserializeValue(ValuePtr, Value);
-}
-
 json::JSON FObjectProperty::Serialize(UObject* Object, const FJsonObjectReferenceContext* RefContext) const
 {
 	using namespace json;
@@ -222,14 +190,22 @@ void FObjectProperty::Deserialize(UObject* Object, json::JSON& Value, const FJso
 	}
 }
 
-json::JSON FObjectProperty::SerializeValue(void* ValuePtr, UObject* Owner, const FJsonObjectReferenceContext* RefContext) const
+json::JSON FObjectProperty::SerializeValue(void* ValuePtr, const FPropertySerializeContext& Context) const
 {
 	using namespace json;
 
-	(void)Owner;
 	if ((Flags & PF_InstancedReference) == 0)
 	{
-		return SerializeValue(ValuePtr, RefContext);
+		UObject* Object = GetObjectValueFromValuePtr(ValuePtr);
+		if (Context.RefContext)
+		{
+			JSON RefValue;
+			if (Context.RefContext->SerializeObjectReference(Object, RefValue))
+			{
+				return RefValue;
+			}
+		}
+		return SerializeValue(ValuePtr);
 	}
 
 	UObject* InstancedObject = GetObjectValueFromValuePtr(ValuePtr);
@@ -240,15 +216,24 @@ json::JSON FObjectProperty::SerializeValue(void* ValuePtr, UObject* Owner, const
 
 	JSON Result = json::Object();
 	Result[InstancedClassNameKey] = InstancedObject->GetClass()->GetName();
-	Result[InstancedPropertiesKey] = SerializeInstancedObjectProperties(InstancedObject, RefContext);
+	Result[InstancedPropertiesKey] = SerializeInstancedObjectProperties(InstancedObject, Context.RefContext);
 	return Result;
 }
 
-void FObjectProperty::DeserializeValue(void* ValuePtr, json::JSON& Value, UObject* Owner, const FJsonObjectReferenceContext* RefContext) const
+void FObjectProperty::DeserializeValue(void* ValuePtr, json::JSON& Value, const FPropertySerializeContext& Context) const
 {
 	if ((Flags & PF_InstancedReference) == 0)
 	{
-		DeserializeValue(ValuePtr, Value, RefContext);
+		if (Context.RefContext)
+		{
+			UObject* Object = nullptr;
+			if (Context.RefContext->DeserializeObjectReference(Value, Object))
+			{
+				SetObjectValueFromValuePtr(ValuePtr, Object);
+				return;
+			}
+		}
+		DeserializeValue(ValuePtr, Value);
 		return;
 	}
 
@@ -266,7 +251,7 @@ void FObjectProperty::DeserializeValue(void* ValuePtr, json::JSON& Value, UObjec
 	if (!ClassName.empty() &&
 		(!InstancedObject || std::strcmp(InstancedObject->GetClass()->GetName(), ClassName.c_str()) != 0))
 	{
-		UObject* NewObject = FObjectFactory::Get().Create(ClassName, Owner);
+		UObject* NewObject = FObjectFactory::Get().Create(ClassName, Context.Owner);
 		if (NewObject)
 		{
 			UClass* AllowedClass = GetAllowedClassType();
@@ -283,16 +268,16 @@ void FObjectProperty::DeserializeValue(void* ValuePtr, json::JSON& Value, UObjec
 	}
 	else if (InstancedObject)
 	{
-		InstancedObject->SetOuter(Owner);
+		InstancedObject->SetOuter(Context.Owner);
 	}
 
 	if (InstancedObject && Value.hasKey(InstancedPropertiesKey))
 	{
-		DeserializeInstancedObjectProperties(InstancedObject, Value[InstancedPropertiesKey], RefContext);
+		DeserializeInstancedObjectProperties(InstancedObject, Value[InstancedPropertiesKey], Context.RefContext);
 	}
 }
 
-void FObjectProperty::SerializeValue(void* ValuePtr, UObject* Owner, FArchive& Ar) const
+void FObjectProperty::SerializeValue(void* ValuePtr, FArchive& Ar, const FPropertySerializeContext& Context) const
 {
 	if ((Flags & PF_InstancedReference) == 0)
 	{
@@ -321,7 +306,7 @@ void FObjectProperty::SerializeValue(void* ValuePtr, UObject* Owner, FArchive& A
 		InstancedObject = GetObjectValueFromValuePtr(ValuePtr);
 		if (!InstancedObject || std::strcmp(InstancedObject->GetClass()->GetName(), ClassName.c_str()) != 0)
 		{
-			UObject* NewObject = FObjectFactory::Get().Create(ClassName, Owner);
+			UObject* NewObject = FObjectFactory::Get().Create(ClassName, Context.Owner);
 			if (NewObject)
 			{
 				UClass* AllowedClass = GetAllowedClassType();
@@ -337,10 +322,10 @@ void FObjectProperty::SerializeValue(void* ValuePtr, UObject* Owner, FArchive& A
 				}
 			}
 		}
-		else if (InstancedObject)
-		{
-			InstancedObject->SetOuter(Owner);
-		}
+	else if (InstancedObject)
+	{
+			InstancedObject->SetOuter(Context.Owner);
+	}
 	}
 
 	if (InstancedObject)

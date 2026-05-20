@@ -301,8 +301,13 @@ namespace
 			return true;
 		case EPropertyType::Array:
 		{
-			json::JSON JsonValue = SrcValue.Property->SerializeValue(SrcPtr, SrcValue.Object, nullptr);
-			DstValue.Property->DeserializeValue(DstPtr, JsonValue, DstValue.Object, nullptr);
+			FPropertySerializeContext SrcContext;
+			SrcContext.Owner = SrcValue.Object;
+			json::JSON JsonValue = SrcValue.Property->SerializeValue(SrcPtr, SrcContext);
+
+			FPropertySerializeContext DstContext;
+			DstContext.Owner = DstValue.Object;
+			DstValue.Property->DeserializeValue(DstPtr, JsonValue, DstContext);
 			return true;
 		}
 		case EPropertyType::Struct:
