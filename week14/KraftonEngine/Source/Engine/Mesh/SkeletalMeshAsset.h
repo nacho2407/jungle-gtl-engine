@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Render/Types/VertexTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Math/Matrix.h"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Animation/Notify/AnimNotify.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 // Phase 7 데모용 구체 Notify — 트리거 시 Console/VS Output 에 메시지 로깅.
 //   - Message 는 시퀀스/임포터가 채워 넣음.

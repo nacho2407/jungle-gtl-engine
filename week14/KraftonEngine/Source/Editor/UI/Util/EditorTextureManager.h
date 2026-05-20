@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Singleton.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include <d3d11.h>
 
 struct ID3D11ShaderResourceView;

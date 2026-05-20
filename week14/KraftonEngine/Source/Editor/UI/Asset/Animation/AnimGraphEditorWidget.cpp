@@ -5,7 +5,7 @@
 #include "Animation/Graph/AnimGraphTypes.h"
 #include "Animation/AnimInstance.h"
 #include "Asset/AssetRegistry.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Types/PropertyTypes.h"
 #include "Object/Object.h"
 #include "Object/UClass.h"
 

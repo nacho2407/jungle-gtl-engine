@@ -3,7 +3,7 @@
 #include "GameFramework/GameMode/GameModeBase.h"
 #include "GameFramework/World.h"
 #include "Component/Shape/BoxComponent.h"
-#include "Core/CollisionTypes.h"
+#include "Core/Types/CollisionTypes.h"
 #include "Serialization/Archive.h"
 
 void ATriggerVolumeBase::InitDefaultComponents(const FVector& Extent)

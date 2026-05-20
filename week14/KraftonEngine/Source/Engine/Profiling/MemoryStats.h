@@ -1,5 +1,5 @@
-﻿#pragma once
-#include "Core/CoreTypes.h"
+#pragma once
+#include "Core/Types/CoreTypes.h"
 
 struct ID3D11Resource;
 

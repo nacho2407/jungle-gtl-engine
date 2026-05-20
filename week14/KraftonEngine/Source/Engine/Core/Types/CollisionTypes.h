@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 #include "Math/Vector.h"
-#include "Core/CoreTypes.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Types/CoreTypes.h"
+#include "Core/Types/PropertyTypes.h"
 #include "Object/ObjectMacros.h"
 #include "Object/UStruct.h"
 
-#include "Source/Engine/Core/CollisionTypes.generated.h"
+#include "Source/Engine/Core/Types/CollisionTypes.generated.h"
 
 class AActor;
 class UPrimitiveComponent;

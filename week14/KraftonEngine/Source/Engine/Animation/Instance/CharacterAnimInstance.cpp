@@ -5,7 +5,7 @@
 #include "Animation/PoseContext.h"
 #include "Animation/Nodes/AnimNode_Slot.h"
 #include "Animation/Nodes/AnimNode_StateMachine.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Types/PropertyTypes.h"
 #include "Math/MathUtils.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"

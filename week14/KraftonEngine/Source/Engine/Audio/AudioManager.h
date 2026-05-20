@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/Singleton.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include <fmod.hpp>
 
 class FAudioManager : public TSingleton<FAudioManager>

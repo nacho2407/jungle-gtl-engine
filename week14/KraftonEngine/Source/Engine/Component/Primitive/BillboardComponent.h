@@ -1,7 +1,7 @@
 #pragma once
 #include "Component/PrimitiveComponent.h"
 #include "Render/Resource/MeshBufferManager.h"
-#include "Core/ResourceTypes.h"
+#include "Core/Types/ResourceTypes.h"
 #include "Object/FName.h"
 #include "Object/SoftObjectPtr.h"
 

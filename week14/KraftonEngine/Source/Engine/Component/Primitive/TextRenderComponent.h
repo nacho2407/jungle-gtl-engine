@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component/Primitive/BillboardComponent.h"
-#include "Core/ResourceTypes.h"
+#include "Core/Types/ResourceTypes.h"
 #include "Object/FName.h"
 
 #include "Source/Engine/Component/Primitive/TextRenderComponent.generated.h"

@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Object/ObjectPtr.h"
 #include "Object/ObjectMacros.h"
 #include "Object/SoftObjectPtr.h"

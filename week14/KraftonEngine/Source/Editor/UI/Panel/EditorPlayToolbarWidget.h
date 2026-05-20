@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 struct ID3D11Device;
 struct ID3D11ShaderResourceView;

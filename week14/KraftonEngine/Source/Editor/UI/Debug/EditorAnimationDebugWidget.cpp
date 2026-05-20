@@ -20,7 +20,7 @@
 #include "Animation/Nodes/AnimNode_Slot.h"
 #include "Animation/Nodes/AnimNode_StateMachine.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Types/PropertyTypes.h"
 #include "GameFramework/AActor.h"
 #include "Object/UClass.h"
 

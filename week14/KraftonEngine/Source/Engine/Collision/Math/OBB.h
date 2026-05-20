@@ -1,5 +1,5 @@
-﻿#pragma once
-#include "Core/EngineTypes.h"
+#pragma once
+#include "Core/Types/EngineTypes.h"
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 #include "Math/Rotator.h"

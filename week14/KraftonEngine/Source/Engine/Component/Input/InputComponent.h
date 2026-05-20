@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component/ActorComponent.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 // UE 의 EInputEvent 의 minimal subset — Repeat/DoubleClick 등은 후속.
 enum class EInputEvent : uint8

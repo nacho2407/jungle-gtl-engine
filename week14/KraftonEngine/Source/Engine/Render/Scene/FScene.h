@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Scene/SceneEnvironment.h"
 #include "Debug/DebugDrawQueue.h"

@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Core/CoreTypes.h"
+#include "Engine/Core/Types/CoreTypes.h"
 #include "Engine/Math/Vector.h"
 #include "Component/PrimitiveComponent.h"
 #include "Collision/Math/ConvexVolume.h"

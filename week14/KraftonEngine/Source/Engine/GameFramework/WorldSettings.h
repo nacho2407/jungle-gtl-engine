@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 // ============================================================
 // FWorldSettings — UWorld 단위 (= Scene 파일 단위) 의 게임 설정.

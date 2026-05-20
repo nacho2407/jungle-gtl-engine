@@ -1,5 +1,5 @@
 #include "Engine/Collision/Math/ConvexVolume.h"
-#include "Engine/Core/EngineTypes.h"
+#include "Engine/Core/Types/EngineTypes.h"
 
 void FConvexVolume::UpdateFromMatrix(const FMatrix& InViewProjectionMatrix)
 {

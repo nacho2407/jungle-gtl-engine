@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Object/FName.h"
 
 // COM 인터페이스 전방 선언 (d3d11.h 없이 포인터 사용 가능)

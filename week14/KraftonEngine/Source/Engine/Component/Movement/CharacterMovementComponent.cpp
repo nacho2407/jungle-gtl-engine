@@ -4,7 +4,7 @@
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/SceneComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Types/PropertyTypes.h"
 #include "Core/TickFunction.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/Pawn/Character.h"

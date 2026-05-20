@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
-#include "Core/EngineTypes.h"
+#include "Core/Types/CoreTypes.h"
+#include "Core/Types/EngineTypes.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/Camera/CameraTypes.h"
 #include "Render/Types/MinimalViewInfo.h"

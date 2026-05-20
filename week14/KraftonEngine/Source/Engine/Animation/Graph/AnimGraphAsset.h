@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Object/Object.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Animation/Graph/AnimGraphTypes.h"
 
 #include "Source/Engine/Animation/Graph/AnimGraphAsset.generated.h"

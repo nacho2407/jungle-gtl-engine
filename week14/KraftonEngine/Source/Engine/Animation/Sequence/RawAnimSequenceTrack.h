@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
 #include "Math/Quat.h"
 #include "Serialization/Archive.h"

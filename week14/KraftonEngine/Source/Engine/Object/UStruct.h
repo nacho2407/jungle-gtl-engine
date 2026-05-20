@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Types/CoreTypes.h"
+#include "Core/Types/PropertyTypes.h"
 #include <cstring>
 
 class UObject;

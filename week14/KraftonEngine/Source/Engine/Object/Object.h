@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include "Profiling/MemoryStats.h"
 #include "Object/FName.h"
 #include "Core/Singleton.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Types/PropertyTypes.h"
 #include "Object/UClass.h"
 #include "Object/ObjectMacros.h"
 

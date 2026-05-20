@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Animation/Notify/AnimNotify.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 // 사운드 1회 재생 instant notify. 발자국 / 무기 swing / impact 같은 단발성 트리거에 사용.
 //   - SoundPath 는 Content/Audio 하위 상대 경로 (예: "footstep_grass.wav").

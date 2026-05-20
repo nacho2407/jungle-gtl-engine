@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component/MeshComponent.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Types/PropertyTypes.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Object/ObjectPtr.h"

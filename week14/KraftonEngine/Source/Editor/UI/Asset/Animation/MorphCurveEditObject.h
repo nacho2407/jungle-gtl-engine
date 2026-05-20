@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Object/Object.h"
 #include "Animation/Sequence/RawAnimSequenceTrack.h"
 

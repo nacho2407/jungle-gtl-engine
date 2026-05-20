@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Core/Singleton.h"
-#include "Core/ResourceTypes.h"
+#include "Core/Types/ResourceTypes.h"
 #include "Object/FName.h"
 #include <wrl/client.h>
 

@@ -20,11 +20,11 @@
 #include "Editor/UI/Util/ImGuiSetting.h"
 #include "Editor/UI/Util/NotificationToast.h"
 
-#include "Editor/UI/Asset/FloatCurveEditorWidget.h"
-#include "Editor/UI/Asset/CameraShakeEditorWidget.h"
-#include "Editor/UI/Asset/MeshEditorWidget.h"
-#include "Editor/UI/Asset/StaticMeshEditorWidget.h"
-#include "Editor/UI/Asset/AnimGraphEditorWidget.h"
+#include "Editor/UI/Asset/Curve/FloatCurveEditorWidget.h"
+#include "Editor/UI/Asset/CameraShake/CameraShakeEditorWidget.h"
+#include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
+#include "Editor/UI/Asset/Mesh/StaticMeshEditorWidget.h"
+#include "Editor/UI/Asset/Animation/AnimGraphEditorWidget.h"
 
 #include <algorithm>
 #include <cstdio>

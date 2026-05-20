@@ -1,7 +1,7 @@
 #pragma once
 #include "Object/Object.h"
-#include "Core/RayTypes.h"
-#include "Core/CollisionTypes.h"
+#include "Core/Types/RayTypes.h"
+#include "Core/Types/CollisionTypes.h"
 #include "Collision/BVH/WorldPrimitivePickingBVH.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/Camera/PlayerCameraManager.h"

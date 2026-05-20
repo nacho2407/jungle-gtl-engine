@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component/PrimitiveComponent.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Math/Rotator.h"
 #include "Render/Types/ViewTypes.h"
 #include "Gizmo/GizmoTransformTarget.h"

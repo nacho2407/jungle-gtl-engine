@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
-#include "Core/RayTypes.h"
-#include "Core/CollisionTypes.h"
+#include "Core/Types/CoreTypes.h"
+#include "Core/Types/RayTypes.h"
+#include "Core/Types/CollisionTypes.h"
 #include "Math/Matrix.h"
 
 class UPrimitiveComponent;

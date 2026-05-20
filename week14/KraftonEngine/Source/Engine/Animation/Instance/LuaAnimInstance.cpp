@@ -1,4 +1,4 @@
-﻿#include "LuaAnimInstance.h"
+#include "LuaAnimInstance.h"
 
 #include "Animation/AnimationManager.h"
 #include "Animation/Sequence/AnimSequence.h"
@@ -14,7 +14,7 @@
 #include "Component/Movement/CharacterMovementComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Core/Log.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Types/PropertyTypes.h"
 #include "GameFramework/AActor.h"
 #include "Input/InputSystem.h"
 #include "Lua/LuaScriptManager.h"

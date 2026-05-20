@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Engine/Core/CoreTypes.h"
-#include "Engine/Core/EngineTypes.h"
+#include "Engine/Core/Types/CoreTypes.h"
+#include "Engine/Core/Types/EngineTypes.h"
 #include "Engine/Collision/Math/ConvexVolume.h"
 #include <memory>
 

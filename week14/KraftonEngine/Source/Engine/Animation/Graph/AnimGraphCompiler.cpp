@@ -15,7 +15,7 @@
 #include "Animation/Nodes/AnimNode_StateMachine.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Core/Log.h"
-#include "Core/PropertyTypes.h"
+#include "Core/Types/PropertyTypes.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
 #include "Object/UClass.h"

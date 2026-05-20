@@ -1,5 +1,5 @@
-﻿#pragma once
-#include "Core/CoreTypes.h"
+#pragma once
+#include "Core/Types/CoreTypes.h"
 // 블렌더 스타일 Forward 축 선택
 enum class EForwardAxis : uint8
 {
