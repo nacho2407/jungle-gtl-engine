@@ -1,5 +1,6 @@
 ﻿#include "SkeletalMeshComponent.h"
 
+#include <cstring>
 #include <utility>
 
 #include "Animation/AnimInstance.h"
@@ -19,6 +20,51 @@ REGISTER_FACTORY(USkeletalMeshComponent)
 USkeletalMeshComponent::~USkeletalMeshComponent()
 {
     DestroyAnimInstance();
+}
+
+void USkeletalMeshComponent::Serialize(FArchive& Ar)
+{
+    USkinnedMeshComponent::Serialize(Ar);
+
+    Ar << "AnimSequenceSourceFbx" << AnimSequenceSourceFbxPath;
+    Ar << "AnimSequenceStack" << AnimSequenceStackName;
+
+    if (Ar.IsLoading() && !AnimSequenceSourceFbxPath.empty())
+    {
+        SetAnimSequence(AnimSequenceSourceFbxPath, AnimSequenceStackName);
+    }
+}
+
+void USkeletalMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+    USkinnedMeshComponent::GetEditableProperties(OutProps);
+    OutProps.push_back({ "AnimSequenceSourceFbx", EPropertyType::String, &AnimSequenceSourceFbxPath });
+    OutProps.push_back({ "AnimSequenceStack", EPropertyType::String, &AnimSequenceStackName });
+}
+
+void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
+{
+    USkinnedMeshComponent::PostEditProperty(PropertyName);
+
+    const bool bAnimPropertyChanged =
+        std::strcmp(PropertyName, "AnimSequenceSourceFbx") == 0 ||
+        std::strcmp(PropertyName, "AnimSequenceStack") == 0;
+    const bool bMeshChanged = std::strcmp(PropertyName, "SkeletalMesh") == 0;
+
+    if (bAnimPropertyChanged || bMeshChanged)
+    {
+        if (AnimSequenceSourceFbxPath.empty())
+        {
+            if (bAnimPropertyChanged)
+            {
+                AnimSequenceStackName.clear();
+                SetAnimation(nullptr);
+            }
+            return;
+        }
+
+        SetAnimSequence(AnimSequenceSourceFbxPath, AnimSequenceStackName);
+    }
 }
 
 void USkeletalMeshComponent::TickComponent(float DeltaTime)
@@ -342,6 +388,9 @@ bool USkeletalMeshComponent::SetAnimSequence(const FString& SourceFbxPath, const
     }
 
     SetAnimation(LoadedSequence);
+    AnimSequenceSourceFbxPath = SourceFbxPath;
+    AnimSequenceStackName = LoadedSequence->AnimStackName;
+
     UE_LOG("[SkeletalMeshComponent] SetAnimSequence succeeded. AnimPath=%s Target=%s Stack=%s Length=%.3f",
            SourceFbxPath.c_str(),
            TargetSkeletalMeshPath.c_str(),

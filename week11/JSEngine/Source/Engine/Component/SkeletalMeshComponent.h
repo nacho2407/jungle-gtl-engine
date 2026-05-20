@@ -26,6 +26,9 @@ public:
 
     FOnAnimNotify OnAnimNotify;
 
+    void Serialize(FArchive& Ar) override;
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    void PostEditProperty(const char* PropertyName) override;
     void TickComponent(float DeltaTime) override;
 
     EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_SkeletalMesh; }
@@ -73,6 +76,8 @@ public:
     FName GetRootMotionBoneName() const;
 
     bool SetAnimSequence(const FString& SourceFbxPath, const FString& AnimStackName = FString());
+    const FString& GetAnimSequenceSourceFbxPath() const { return AnimSequenceSourceFbxPath; }
+    const FString& GetAnimSequenceStackName() const { return AnimSequenceStackName; }
     void SetAnimationTime(float Time);
     void TickAnimation(float DeltaTime);
     void PlayAnim(bool bLoop);
@@ -100,6 +105,8 @@ private:
 private:
     EAnimationMode AnimationMode = EAnimationMode::None;
     FString AnimInstanceClassName;
+    FString AnimSequenceSourceFbxPath;
+    FString AnimSequenceStackName;
     UAnimInstance* AnimInstance = nullptr;
 
 	// for stat / debug
