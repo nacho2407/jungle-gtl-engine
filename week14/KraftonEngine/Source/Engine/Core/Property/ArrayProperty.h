@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Core/PropertyTypes.h"
+#include "Core/Types/PropertyTypes.h"
 
 struct FArrayProperty : FProperty
 {

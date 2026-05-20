@@ -1,6 +1,6 @@
-﻿#include "AssetEditorManager.h"
+#include "AssetEditorManager.h"
 
-#include "AssetEditorWidget.h"
+#include "Editor/UI/Asset/AssetEditorWidget.h"
 #include "Viewport/EditorPreviewViewportClient.h"
 
 FAssetEditorManager::~FAssetEditorManager() = default;

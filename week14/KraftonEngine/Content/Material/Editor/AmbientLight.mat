@@ -1,0 +1,9 @@
+{
+  "PathFileName": "Content/Material/Editor/AmbientLight.mat",
+  "ShaderPath": "Shaders/UI/Billboard.hlsl",
+  "RenderPass": "AlphaBlend",
+  "Textures": {
+    "DiffuseTexture": "Content/Editor/Icons/S_AmbientLight_256x.png"
+  },
+  "Origin": "Editor"
+}

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Render/Proxy/BillboardSceneProxy.h"
-#include "Core/ResourceTypes.h"
+#include "Core/Types/ResourceTypes.h"
 
 class UTextRenderComponent;
 class UMaterial;

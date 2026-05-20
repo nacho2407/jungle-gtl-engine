@@ -1,7 +1,7 @@
-﻿#include "ShaderManager.h"
+#include "ShaderManager.h"
 #include "Platform/Paths.h"
-#include "Core/Log.h"
-#include "Core/Notification.h"
+#include "Core/Logging/Log.h"
+#include "Core/Logging/Notification.h"
 #include <algorithm>
 
 // ============================================================

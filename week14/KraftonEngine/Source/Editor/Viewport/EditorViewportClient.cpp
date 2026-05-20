@@ -1,12 +1,12 @@
-﻿#include "Editor/Viewport/EditorViewportClient.h"
+#include "Editor/Viewport/EditorViewportClient.h"
 
-#include "Editor/UI/EditorConsoleWidget.h"
+#include "Editor/UI/Panel/EditorConsoleWidget.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Slate/SlateApplication.h"
 #include "Engine/Input/InputSystem.h"
-#include "Engine/Profiling/PlatformTime.h"
-#include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Profiling/Time/PlatformTime.h"
+#include "Engine/Platform/WindowsWindow.h"
 
 #include "Render/Types/MinimalViewInfo.h"
 #include "Viewport/Viewport.h"
@@ -19,9 +19,9 @@ UWorld* FEditorViewportClient::GetWorld() const
 {
 	return GEngine ? GEngine->GetWorld() : nullptr;
 }
-#include "Component/GizmoComponent.h"
+#include "Component/Debug/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
-#include "Collision/RayUtils.h"
+#include "Collision/Ray/RayUtils.h"
 #include "Object/Object.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/EditorEngine.h"
@@ -29,6 +29,49 @@ UWorld* FEditorViewportClient::GetWorld() const
 #include "Viewport/GameViewportClient.h"
 #include "ImGui/imgui.h"
 #include "Component/Light/LightComponentBase.h"
+
+namespace
+{
+	bool IsActorNameInUse(UWorld* World, const FString& CandidateName)
+	{
+		if (!World)
+		{
+			return false;
+		}
+
+		const FName CandidateFName(CandidateName);
+		for (AActor* Actor : World->GetActors())
+		{
+			if (Actor && Actor->GetFName() == CandidateFName)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	FString MakeUniqueDuplicateActorName(UWorld* World, const AActor* SourceActor)
+	{
+		FString BaseName = SourceActor ? SourceActor->GetFName().ToString() : FString();
+		if (BaseName.empty() && SourceActor)
+		{
+			BaseName = SourceActor->GetClass()->GetName();
+		}
+		if (BaseName.empty())
+		{
+			BaseName = "Actor";
+		}
+
+		FString Candidate = BaseName + "_Copy";
+		int32 Suffix = 2;
+		while (IsActorNameInUse(World, Candidate))
+		{
+			Candidate = BaseName + "_Copy_" + std::to_string(Suffix++);
+		}
+		return Candidate;
+	}
+}
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
@@ -328,9 +371,12 @@ void FEditorViewportClient::TickEditorShortcuts()
 			for (AActor* Src : ToDuplicate)
 			{
 				if (!Src) continue;
+				UWorld* SourceWorld = Src->GetWorld();
+				const FString DuplicateName = MakeUniqueDuplicateActorName(SourceWorld, Src);
 				AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
 				if (Dup)
 				{
+					Dup->SetFName(FName(DuplicateName));
 					Dup->AddActorWorldOffset(DuplicateOffsetStep * static_cast<float>(DuplicateIndex + 1));
 					NewSelection.push_back(Dup);
 					++DuplicateIndex;

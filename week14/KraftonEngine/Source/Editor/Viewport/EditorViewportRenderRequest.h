@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 class FViewport;
 class UWorld;

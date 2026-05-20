@@ -1,7 +1,7 @@
 #include "AnimNode_Slot.h"
 
 #include "Animation/AnimInstance.h"
-#include "Animation/AnimMontageInstance.h"
+#include "Animation/Montage/AnimMontageInstance.h"
 #include "Animation/AnimationRuntime.h"
 #include "Animation/PoseContext.h"
 

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Render/Types/RenderTypes.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Math/Matrix.h"
-#include "Profiling/Stats.h"
+#include "Profiling/Stats/Stats.h"
 
 class FPrimitiveSceneProxy;
 class FComputeShader;

@@ -2,25 +2,27 @@
 
 #include "Asset/AssetPackage.h"
 #include "Editor/EditorEngine.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "CameraShake/CameraShakeAsset.h"
 #include "CameraShake/CameraShakeManager.h"
+#include "Animation/Graph/AnimGraphAsset.h"
+#include "Animation/Graph/AnimGraphManager.h"
 #include "Platform/Paths.h"
 #include "Serialization/SceneSaveManager.h"
-#include "Mesh/StaticMesh.h"
-#include "Mesh/SkeletalMesh.h"
+#include "Mesh/Static/StaticMesh.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/MeshManager.h"
-#include "Mesh/FbxImporter.h"
-#include "Animation/AnimSequence.h"
-#include "Animation/AnimMontage.h"
+#include "Mesh/Importer/FbxImporter.h"
+#include "Animation/Sequence/AnimSequence.h"
+#include "Animation/Montage/AnimMontage.h"
 #include "Animation/AnimationManager.h"
-#include "Animation/Skeleton.h"
-#include "Animation/SkeletonManager.h"
+#include "Animation/Skeleton/Skeleton.h"
+#include "Animation/Skeleton/SkeletonManager.h"
 #include "Asset/AssetRegistry.h"
-#include "Editor/UI/FbxImportOptionsDialog.h"
-#include "Editor/UI/Asset/MeshEditorWidget.h"
+#include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
+#include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 
 #include <algorithm>
 #include <chrono>
@@ -600,6 +602,19 @@ void CameraShakeElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	if (UCameraShakeAsset* ShakeAsset = FCameraShakeManager::Get().Load(FilePath))
 	{
 		Context.EditorEngine->OpenAssetEditorForObject(ShakeAsset);
+	}
+}
+
+void AnimGraphElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
+	const FString FilePath = FPaths::ToUtf8(ContentItem.Path.wstring());
+	if (UAnimGraphAsset* GraphAsset = FAnimGraphManager::Get().Load(FilePath))
+	{
+		Context.EditorEngine->OpenAssetEditorForObject(GraphAsset);
 	}
 }
 

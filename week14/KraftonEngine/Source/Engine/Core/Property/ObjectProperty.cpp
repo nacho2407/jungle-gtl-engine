@@ -1,8 +1,8 @@
-#include "ObjectProperty.h"
+﻿#include "ObjectProperty.h"
 
 #include "Object/Object.h"
-#include "Object/ObjectFactory.h"
-#include "Object/UClass.h"
+#include "Object/Reflection/ObjectFactory.h"
+#include "Object/Reflection/UClass.h"
 #include "Serialization/Archive.h"
 #include <cstring>
 

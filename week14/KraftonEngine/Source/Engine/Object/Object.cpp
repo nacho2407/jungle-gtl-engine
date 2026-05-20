@@ -1,8 +1,8 @@
-﻿#include "Object.h"
+#include "Object.h"
 #include "UUIDGenerator.h"
 #include "Serialization/Archive.h"
 #include "Serialization/DuplicateArchive.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 
 TArray<UObject*> GUObjectArray;
 TSet<UObject*> GUObjectSet;

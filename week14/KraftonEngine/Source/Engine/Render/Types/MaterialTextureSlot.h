@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 ////////////////////////////////////////////
 //JSon에 Enum + Texture만 적으면 자동으로 바인딩 될겁니다. 아마도....

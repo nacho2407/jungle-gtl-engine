@@ -1,5 +1,5 @@
 #include "SpotLightActor.h"
-#include "Component/BillboardComponent.h"
+#include "Component/Primitive/BillboardComponent.h"
 #include "Component/Light/SpotLightComponent.h"
 #include "Materials/MaterialManager.h"
 

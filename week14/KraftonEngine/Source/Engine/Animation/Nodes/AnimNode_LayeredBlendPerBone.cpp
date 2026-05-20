@@ -2,8 +2,8 @@
 
 #include "Animation/PoseContext.h"
 #include "Math/Quat.h"
-#include "Mesh/SkeletalMesh.h"
-#include "Mesh/SkeletalMeshAsset.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
+#include "Mesh/Skeletal/SkeletalMeshAsset.h"
 
 #include <algorithm>
 #include <queue>
@@ -74,6 +74,17 @@ void FAnimNode_LayeredBlendPerBone::Evaluate(FPoseContext& Output)
 		Out.Location = Out.Location + (Blend.Location - Out.Location) * W;
 		Out.Rotation = FQuat::Slerp(Out.Rotation.GetNormalized(), Blend.Rotation.GetNormalized(), W).GetNormalized();
 		Out.Scale    = Out.Scale    + (Blend.Scale    - Out.Scale)    * W;
+	}
+
+	// Morph targets are not bone-scoped in this engine, so the layered node blends the
+	// whole morph weight array by the layer weight.
+	const size_t MorphCount = std::max(Output.MorphWeights.size(), BlendCtx.MorphWeights.size());
+	Output.MorphWeights.resize(MorphCount, 0.0f);
+	for (size_t MorphIndex = 0; MorphIndex < MorphCount; ++MorphIndex)
+	{
+		const float BaseValue = MorphIndex < Output.MorphWeights.size() ? Output.MorphWeights[MorphIndex] : 0.0f;
+		const float BlendValue = MorphIndex < BlendCtx.MorphWeights.size() ? BlendCtx.MorphWeights[MorphIndex] : 0.0f;
+		Output.MorphWeights[MorphIndex] = BaseValue + (BlendValue - BaseValue) * W;
 	}
 }
 

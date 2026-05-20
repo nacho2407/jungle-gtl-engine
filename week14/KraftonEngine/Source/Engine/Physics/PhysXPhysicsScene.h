@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Physics/IPhysicsScene.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include <vector>
 
 class AActor;

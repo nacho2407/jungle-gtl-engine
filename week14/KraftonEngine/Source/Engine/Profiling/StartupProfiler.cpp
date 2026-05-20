@@ -1,5 +1,5 @@
 #include "Profiling/StartupProfiler.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 void FStartupProfiler::Finish()
 {

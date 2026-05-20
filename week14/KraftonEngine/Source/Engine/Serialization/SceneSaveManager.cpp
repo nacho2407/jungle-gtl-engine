@@ -10,15 +10,15 @@
 #include "Component/SceneComponent.h"
 #include "Component/ActorComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
-#include "Component/DecalComponent.h"
-#include "Component/HeightFogComponent.h"
+#include "Component/Primitive/DecalComponent.h"
+#include "Component/Primitive/HeightFogComponent.h"
 #include "Component/Light/LightComponentBase.h"
 #include "Object/Object.h"
-#include "Object/ObjectFactory.h"
-#include "Core/PropertyTypes.h"
+#include "Object/Reflection/ObjectFactory.h"
+#include "Core/Types/PropertyTypes.h"
 #include "Object/FName.h"
-#include "Profiling/PlatformTime.h"
 #include "Serialization/JsonArchive.h"
+#include "Profiling/Time/PlatformTime.h"
 
 // ---- JSON vector helpers ---------------------------------------------------
 

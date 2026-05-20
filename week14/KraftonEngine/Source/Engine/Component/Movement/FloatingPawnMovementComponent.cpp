@@ -4,7 +4,7 @@
 #include "Component/SceneComponent.h"
 #include "Math/Quat.h"
 #include "Math/Rotator.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 
 #include <algorithm>

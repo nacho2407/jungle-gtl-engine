@@ -1,5 +1,5 @@
-﻿#pragma once
-#include "Core/CoreTypes.h"
+#pragma once
+#include "Core/Types/CoreTypes.h"
 #include "Object/FName.h"
 
 class UWorld;

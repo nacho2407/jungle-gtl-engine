@@ -1,6 +1,6 @@
-﻿#include "Editor/Selection/SelectionManager.h"
+#include "Editor/Selection/SelectionManager.h"
 #include "Object/Object.h"
-#include "Component/GizmoComponent.h"
+#include "Component/Debug/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
 #include "GameFramework/AActor.h"
@@ -311,8 +311,8 @@ void FSelectionManager::SyncGizmo()
 	USceneComponent* Primary = SelectedComponent;
 	if (Primary)
 	{
-		Gizmo->SetTarget(Primary);
 		Gizmo->SetSelectedActors(&SelectedActors);
+		Gizmo->SetTarget(Primary);
 	}
 	else
 	{

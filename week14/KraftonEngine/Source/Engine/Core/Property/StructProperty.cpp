@@ -1,7 +1,7 @@
-#include "StructProperty.h"
+﻿#include "StructProperty.h"
 
 #include "Serialization/Archive.h"
-#include "Object/UStruct.h"
+#include "Object/Reflection/UStruct.h"
 
 void FStructProperty::SerializeValue(void* ValuePtr, FArchive& Ar, const FPropertySerializeContext& Context) const
 {

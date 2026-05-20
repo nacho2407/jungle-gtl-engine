@@ -1,13 +1,13 @@
-﻿#pragma once
+#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 #include "Render/Types/ViewTypes.h"
 #include "Render/Types/LODContext.h"
-#include "Collision/ConvexVolume.h"
+#include "Collision/Math/ConvexVolume.h"
 #include "GameFramework/WorldContext.h"
-#include "GameFramework/CameraTypes.h"
+#include "GameFramework/Camera/CameraTypes.h"
 
 #include <d3d11.h>
 

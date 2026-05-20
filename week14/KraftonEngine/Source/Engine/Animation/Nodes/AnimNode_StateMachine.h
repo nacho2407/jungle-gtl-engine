@@ -3,7 +3,7 @@
 #include "AnimNode_Base.h"
 #include "Math/Transform.h"
 #include "Object/FName.h"
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 
 class UAnimInstance;
 class UAnimState;

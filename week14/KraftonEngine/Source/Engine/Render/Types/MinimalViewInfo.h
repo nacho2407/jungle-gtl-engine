@@ -3,7 +3,7 @@
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 #include "Math/Matrix.h"
-#include "Engine/Core/RayTypes.h"
+#include "Engine/Core/Types/RayTypes.h"
 
 // ============================================================
 // FMinimalViewInfo — 카메라 POV "공통 통화"

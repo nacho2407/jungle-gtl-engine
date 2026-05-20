@@ -1,14 +1,14 @@
-﻿#include "AnimInstance.h"
-#include "AnimMontage.h"
-#include "AnimMontageInstance.h"
-#include "AnimNotify.h"
-#include "AnimNotifyState.h"
-#include "AnimSequenceBase.h"
-#include "AnimationRuntime.h"
-#include "Nodes/AnimNode_Root.h"
-#include "Component/SkeletalMeshComponent.h"
-#include "Mesh/SkeletalMesh.h"
-#include "GameFramework/Pawn.h"
+#include "AnimInstance.h"
+#include "Animation/Montage/AnimMontage.h"
+#include "Animation/Montage/AnimMontageInstance.h"
+#include "Animation/Notify/AnimNotify.h"
+#include "Animation/Notify/AnimNotifyState.h"
+#include "Animation/Sequence/AnimSequenceBase.h"
+#include "Animation/AnimationRuntime.h"
+#include "Animation/Nodes/AnimNode_Root.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
+#include "GameFramework/Pawn/Pawn.h"
 
 #include <algorithm>
 
@@ -89,6 +89,7 @@ void UAnimInstance::EvaluatePose(FPoseContext& Output)
 		// RootNode 경로 — 트리 안의 FAnimNode_Slot 이 montage 처리. EvaluatePose 가
 		// special-case 합성을 또 하면 이중 적용 위험. Slot 노드에 위임.
 		RootNode->Evaluate(Output);
+		PostEvaluatePose(Output);
 		return;
 	}
 
@@ -123,6 +124,8 @@ void UAnimInstance::EvaluatePose(FPoseContext& Output)
 			}
 		}
 	}
+
+	PostEvaluatePose(Output);
 }
 
 void UAnimInstance::SetRootNode(FAnimNode_Base* InRoot)

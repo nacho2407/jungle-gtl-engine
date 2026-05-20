@@ -1,13 +1,13 @@
-﻿#include "Physics/PhysXPhysicsScene.h"
+#include "Physics/PhysXPhysicsScene.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/BoxComponent.h"
-#include "Component/SphereComponent.h"
-#include "Component/CapsuleComponent.h"
+#include "Component/Shape/BoxComponent.h"
+#include "Component/Shape/SphereComponent.h"
+#include "Component/Shape/CapsuleComponent.h"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Math/Quat.h"
 #include "Object/Object.h"  // IsAliveObject
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 
 // PhysX headers
 #include <PxPhysicsAPI.h>

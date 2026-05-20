@@ -1,7 +1,7 @@
 ﻿#include "NumericProperty.h"
 
 #include <cstring>
-#include "Core/CoreTypes.h"
+#include "Core/Types/CoreTypes.h"
 #include "Serialization/Archive.h"
 
 void FIntProperty::SerializeValue(void* ValuePtr, FArchive& Ar) const

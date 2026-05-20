@@ -1,5 +1,5 @@
-﻿#include "Render/Proxy/CylindricalBillboardSceneProxy.h"
-#include "Component/CylindricalBillboardComponent.h"
+#include "Render/Proxy/CylindricalBillboardSceneProxy.h"
+#include "Component/Primitive/CylindricalBillboardComponent.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Types/FrameContext.h"
 #include "GameFramework/AActor.h"
