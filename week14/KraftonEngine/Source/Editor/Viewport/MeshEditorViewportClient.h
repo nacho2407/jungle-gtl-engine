@@ -3,7 +3,7 @@
 #include "Viewport/EditorPreviewViewportClient.h"
 #include "Viewport/ViewportClient.h"
 #include "Editor/Viewport/ViewportCameraTransform.h"
-#include "Mesh/SkeletalMeshAsset.h"
+#include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Editor/Slate/SWindow.h"
 #include "Core/Types/RayTypes.h"
 #include "Gizmo/BoneTransformGizmoTarget.h"

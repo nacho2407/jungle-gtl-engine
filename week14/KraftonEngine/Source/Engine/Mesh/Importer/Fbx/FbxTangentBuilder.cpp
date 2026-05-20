@@ -1,4 +1,4 @@
-#include "Mesh/Fbx/FbxTangentBuilder.h"
+#include "Mesh/Importer/Fbx/FbxTangentBuilder.h"
 #include "Math/MathUtils.h"
 
 #include <algorithm>

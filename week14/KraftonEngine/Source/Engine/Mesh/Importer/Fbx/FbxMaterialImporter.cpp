@@ -1,4 +1,4 @@
-#include "Mesh/Fbx/FbxMaterialImporter.h"
+#include "Mesh/Importer/Fbx/FbxMaterialImporter.h"
 #include "Materials/MaterialManager.h"
 #include "Materials/Material.h"
 #include "Platform/Paths.h"

@@ -2,7 +2,7 @@
 
 #include "Component/Debug/BoneDebugComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
-#include "Mesh/SkeletalMesh.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
 
 #pragma region Line Draw
 

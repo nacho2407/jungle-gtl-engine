@@ -8,8 +8,8 @@
 #include "Animation/AnimationManager.h"
 #include "Animation/Nodes/AnimNode_Base.h"
 #include "Core/Log.h"
-#include "Mesh/SkeletalMesh.h"
-#include "Mesh/SkeletalMeshAsset.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
+#include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Serialization/Archive.h"
 
 namespace

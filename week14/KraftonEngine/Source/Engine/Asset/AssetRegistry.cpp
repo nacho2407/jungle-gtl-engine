@@ -1,6 +1,6 @@
 #include "AssetRegistry.h"
 #include "Mesh/MeshManager.h"
-#include "Mesh/SkeletalMesh.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Animation/AnimationManager.h"
 #include "Animation/Graph/AnimGraphManager.h"
 #include "Animation/Sequence/AnimSequence.h"

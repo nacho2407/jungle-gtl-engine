@@ -1,4 +1,4 @@
-#include "Mesh/Fbx/FbxSceneLoader.h"
+#include "Mesh/Importer/Fbx/FbxSceneLoader.h"
 #include "Platform/Paths.h"
 #include "Core/Log.h"
 

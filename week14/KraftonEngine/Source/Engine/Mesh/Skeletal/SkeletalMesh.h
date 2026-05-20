@@ -1,13 +1,13 @@
 #pragma once
 
 #include "Object/Object.h"
-#include "SkeletalMeshAsset.h"
+#include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Animation/Skeleton/SkeletonTypes.h"
 
 class USkeleton;
 
 
-#include "Source/Engine/Mesh/SkeletalMesh.generated.h"
+#include "Source/Engine/Mesh/Skeletal/SkeletalMesh.generated.h"
 
 UCLASS()
 class USkeletalMesh : public UObject

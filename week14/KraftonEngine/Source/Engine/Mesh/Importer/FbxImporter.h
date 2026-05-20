@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Types/CoreTypes.h"
-#include "Mesh/Fbx/FbxImportTypes.h"
+#include "Mesh/Importer/Fbx/FbxImportTypes.h"
 
 struct FImportOptions;
 

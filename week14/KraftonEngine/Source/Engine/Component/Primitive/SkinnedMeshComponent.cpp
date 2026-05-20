@@ -1,5 +1,5 @@
 #include "SkinnedMeshComponent.h"
-#include "Mesh/SkeletalMesh.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Serialization/Archive.h"
 #include "Runtime/Engine.h"
 #include "Mesh/MeshManager.h"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Types/CoreTypes.h"
-#include "Mesh/Fbx/FbxImportContext.h"
+#include "Mesh/Importer/Fbx/FbxImportContext.h"
 
 #include <fbxsdk.h>
 

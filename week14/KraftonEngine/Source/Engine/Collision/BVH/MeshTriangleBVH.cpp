@@ -2,7 +2,7 @@
 
 #include "Collision/Ray/RayUtils.h"
 #include "Collision/Ray/RayUtilsSIMD.h"
-#include "Mesh/StaticMeshAsset.h"
+#include "Mesh/Static/StaticMeshAsset.h"
 #include "Core/Types/EngineTypes.h"
 
 #include <algorithm>
