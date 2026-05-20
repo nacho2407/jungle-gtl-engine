@@ -66,6 +66,7 @@ void FEditorSceneWidget::RenderActorOutliner()
 				: StoredName.c_str();
 
 			bool bIsSelected = Selection.IsSelected(Actor);
+			ImGui::PushID(Actor);
 			if (ImGui::Selectable(DisplayName, bIsSelected))
 			{
 				if (ImGui::GetIO().KeyShift)
@@ -81,6 +82,7 @@ void FEditorSceneWidget::RenderActorOutliner()
 					Selection.Select(Actor);
 				}
 			}
+			ImGui::PopID();
 		}
 	}
 
