@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/UI/EditorWidget.h"
 #include "Animation/AnimGraphAsset.h"
@@ -78,12 +78,13 @@ private:
 	bool HasTransition(const FAnimStateMachineDesc& StateMachine, int32 FromStateId, int32 ToStateId) const;
 	bool NormalizeGraphNodeIds();
 	void NormalizeRootNode();
-	void AddSequencePlayerNode();
-	void AddOutputPoseNode();
-	void AddStateMachineNode();
+	void AddSequencePlayerNode(const FVector2& SpawnPosition);
+	void AddOutputPoseNode(const FVector2& SpawnPosition);
+	void AddStateMachineNode(const FVector2& SpawnPosition);
 	void DeleteSelectedNode();
 	void EnterStateMachineView(int32 StateMachineNodeId);
 	void LeaveStateMachineView();
+	FVector2 GetToolbarSpawnPosition() const;
 private:
 	FString EditingPath;
 	UAnimGraphAsset* EditingAsset = nullptr;
@@ -100,5 +101,9 @@ private:
 	long long EditingStateNameKey = -1;
 	std::unordered_map<long long, std::array<char, 256>> StateNameEditBuffers;
 	bool bOpen = false;
+	ImVec2 LastAnimGraphCanvasOrigin = ImVec2(0.0f, 0.0f);
+	ImVec2 LastAnimGraphCanvasSize = ImVec2(0.0f, 0.0f);
+	ImVec2 LastStateMachineCanvasOrigin = ImVec2(0.0f, 0.0f);
+	ImVec2 LastStateMachineCanvasSize = ImVec2(0.0f, 0.0f);
 	bool bDirty = false;
 };

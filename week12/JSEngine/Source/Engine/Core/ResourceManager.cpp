@@ -1409,6 +1409,7 @@ namespace
 		Condition.ParameterName = GetJsonString(Object, "ParameterName");
 		Condition.BoolValue = GetJsonBool(Object, "BoolValue", true);
 		Condition.Threshold = GetJsonFloat(Object, "Threshold", 0.0f);
+		Condition.IntValue = GetJsonInt(Object, "IntValue", 0);
 		Condition.LuaFunctionName = GetJsonString(Object, "LuaFunctionName");
 		return Condition;
 	}
@@ -1434,6 +1435,9 @@ namespace
 		State.Name = GetJsonString(Object, "Name");
 		State.AnimationPath = GetJsonString(Object, "AnimationPath");
 		State.Position = GetJsonVector2(Object, "Position");
+		State.PlayRate = GetJsonFloat(Object, "PlayRate", 1.0f);
+		State.bLoop = GetJsonBool(Object, "bLoop", true);
+		State.bAutoAdvanceOnEnd = GetJsonBool(Object, "bAutoAdvanceOnEnd", true);
 		return State;
 	}
 

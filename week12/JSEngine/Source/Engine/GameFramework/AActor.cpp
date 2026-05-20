@@ -12,6 +12,7 @@
 
 namespace
 {
+    // 공백 제거
 	FString MakeAnimNotifyFunctionSuffix(const FName& NotifyName)
 	{
 		FString Source = NotifyName.ToString();
@@ -21,6 +22,7 @@ namespace
 		for (char Ch : Source)
 		{
 			const unsigned char C = static_cast<unsigned char>(Ch);
+			// 숫자, 알파벳만 허용
 			if (std::isalnum(C) || Ch == '_')
 			{
 				Result.push_back(Ch);

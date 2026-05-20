@@ -4,6 +4,9 @@
 #include "Component/SkeletalMeshComponent.h"
 #include "Core/Logging/Log.h"
 
+#include <algorithm>
+#include <cmath>
+
 void UAnimGraphInstance::SetGraphAsset(UAnimGraphAsset* InAsset)
 {
     GraphAsset = InAsset;
@@ -62,6 +65,11 @@ void UAnimGraphInstance::SetBoolParameter(const FString& Name, bool Value)
 	BoolParameters[Name] = Value;
 }
 
+void UAnimGraphInstance::SetIntParameter(const FString& Name, int32 Value)
+{
+	IntParameters[Name] = Value;
+}
+
 float UAnimGraphInstance::GetFloatParameter(const FString& Name) const
 {
     auto It = FloatParameters.find(Name);
@@ -80,6 +88,16 @@ bool UAnimGraphInstance::GetBoolParameter(const FString& Name) const
         return It->second;
     }
     return false;
+}
+
+int32 UAnimGraphInstance::GetIntParameter(const FString& Name) const
+{
+    auto It = IntParameters.find(Name);
+    if (It != IntParameters.end())
+    {
+        return It->second;
+    }
+    return 0;
 }
 
 void UAnimGraphInstance::UpdateNode(int32 NodeId, float DeltaTime)
@@ -366,7 +384,7 @@ UAnimationStateMachine* UAnimGraphInstance::BuildStateMachineRuntime(const FAnim
         }
 
         StateIdToName[State.StateId] = State.Name;
-        Machine->AddStateFromPath(State.Name, State.AnimationPath);
+        Machine->AddStateFromPathWithPlayback(State.Name, State.AnimationPath, State.PlayRate, State.bLoop, State.bAutoAdvanceOnEnd);
         ++AddedStateCount;
     }
 
@@ -391,7 +409,12 @@ UAnimationStateMachine* UAnimGraphInstance::BuildStateMachineRuntime(const FAnim
             continue;
         }
 
-        Machine->AddTransition(FName(FromIt->second.c_str()), FName(ToIt->second.c_str()), Transition.BlendTime, BuildConditionFunction(Transition.Condition));
+        Machine->AddTransition(
+            FName(FromIt->second.c_str()),
+            FName(ToIt->second.c_str()),
+            Transition.BlendTime,
+            BuildConditionFunction(Transition.Condition),
+            Transition.Priority);
     }
 
     return Machine;
@@ -419,6 +442,21 @@ FAnimTransitionCondition UAnimGraphInstance::BuildConditionFunction(const FAnimT
             return GetFloatParameter(Desc.ParameterName) < Desc.Threshold;
             };
 
+    case EAnimTransitionConditionType::IntEquals:
+        return [this, Desc]() {
+            return GetIntParameter(Desc.ParameterName) == Desc.IntValue;
+            };
+
+    case EAnimTransitionConditionType::IntGreater:
+        return [this, Desc]() {
+            return GetIntParameter(Desc.ParameterName) > Desc.IntValue;
+            };
+
+    case EAnimTransitionConditionType::IntLess:
+        return [this, Desc]() {
+            return GetIntParameter(Desc.ParameterName) < Desc.IntValue;
+            };
+
     case EAnimTransitionConditionType::LuaFunction:
         return []() { return false; };
     }
@@ -438,6 +476,12 @@ FString UAnimGraphInstance::BuildStateMachineSignature(const FAnimStateMachineDe
         Signature += State.Name;
         Signature += ",";
         Signature += State.AnimationPath;
+        Signature += ",";
+        Signature += std::to_string(State.PlayRate);
+        Signature += ",";
+        Signature += State.bLoop ? "loop" : "once";
+        Signature += ",";
+        Signature += State.bAutoAdvanceOnEnd ? "auto" : "manual";
     }
 
     for (const FAnimStateTransitionDesc& Transition : Desc.Transitions)
@@ -449,6 +493,8 @@ FString UAnimGraphInstance::BuildStateMachineSignature(const FAnimStateMachineDe
         Signature += ",";
         Signature += std::to_string(Transition.BlendTime);
         Signature += ",";
+        Signature += std::to_string(Transition.Priority);
+        Signature += ",";
         Signature += std::to_string(static_cast<int32>(Transition.Condition.Type));
         Signature += ",";
         Signature += Transition.Condition.ParameterName;
@@ -456,6 +502,8 @@ FString UAnimGraphInstance::BuildStateMachineSignature(const FAnimStateMachineDe
         Signature += Transition.Condition.BoolValue ? "true" : "false";
         Signature += ",";
         Signature += std::to_string(Transition.Condition.Threshold);
+        Signature += ",";
+        Signature += std::to_string(Transition.Condition.IntValue);
         Signature += ",";
         Signature += Transition.Condition.LuaFunctionName;
     }

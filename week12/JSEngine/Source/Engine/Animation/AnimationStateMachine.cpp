@@ -18,41 +18,66 @@ void FAnimSequencePoseSource::Update(float DeltaTime)
 	}
 
 	PreviousTime = CurrentTime;
-	CurrentTime += DeltaTime;
+	const float PlayDeltaTime = DeltaTime * PlayRate;
+	CurrentTime += PlayDeltaTime;
 
 	bool bLooped = false;
-	const bool bReverse = DeltaTime < 0.0f;
+	const bool bReverse = PlayDeltaTime < 0.0f;
 
 	const float Length = Sequence->GetPlayLength();
 	if (Length <= 0.0f)
 	{
 		CurrentTime = 0.0f;
 		PreviousTime = 0.0f;
+		bFinished = true;
 		return;
 	}
 
-	if (!bReverse)
+	if (bLoop)
 	{
-		if (CurrentTime > Length)
+		bFinished = false;
+		if (!bReverse)
 		{
-			CurrentTime = std::fmod(CurrentTime, Length);
-			bLooped = true;
+			if (CurrentTime > Length)
+			{
+				CurrentTime = std::fmod(CurrentTime, Length);
+				bLooped = true;
+			}
+		}
+		else
+		{
+			if (CurrentTime < 0.0f)
+			{
+				CurrentTime = std::fmod(CurrentTime, Length);
+				if (CurrentTime < 0.0f)
+				{
+					CurrentTime += Length;
+				}
+				bLooped = true;
+			}
 		}
 	}
 	else
 	{
-		if (CurrentTime < 0.0f)
+		if (!bReverse)
 		{
-			CurrentTime = std::fmod(CurrentTime, Length);
-			if (CurrentTime < 0.0f)
+			if (CurrentTime >= Length)
 			{
-				CurrentTime += Length;
+				CurrentTime = Length;
+				bFinished = true;
 			}
-			bLooped = true;
+		}
+		else
+		{
+			if (CurrentTime <= 0.0f)
+			{
+				CurrentTime = 0.0f;
+				bFinished = true;
+			}
 		}
 	}
 
-	UAnimInstance::DispatchAnimNotifies(OwnerComponent, Sequence, PreviousTime, CurrentTime, bLooped, bReverse, DeltaTime);
+	UAnimInstance::DispatchAnimNotifies(OwnerComponent, Sequence, PreviousTime, CurrentTime, bLooped, bReverse, PlayDeltaTime);
 }
 
 bool FAnimSequencePoseSource::EvaluatePose(FPoseContext& OutPose) const
@@ -97,6 +122,7 @@ void FAnimSequencePoseSource::ResetTime()
 {
 	CurrentTime = 0.0f;
 	PreviousTime = 0.0f;
+	bFinished = false;
 }
 
 void UAnimationStateMachine::Initialize(USkeletalMeshComponent* Owner)
@@ -105,13 +131,14 @@ void UAnimationStateMachine::Initialize(USkeletalMeshComponent* Owner)
 	OwnerPawn = OwnerComponent ? Cast<APawn>(OwnerComponent->GetOwner()) : nullptr;
 }
 
-void UAnimationStateMachine::AddState(FName StateName, UAnimSequenceBase* Sequence)
+void UAnimationStateMachine::AddState(FName StateName, UAnimSequenceBase* Sequence, float PlayRate, bool bLoop, bool bAutoAdvanceOnEnd)
 {
 	const bool bIsNewState = !States.contains(StateName);
 
 	FAnimStateNode NewState;
 	NewState.Name = StateName;
-	NewState.PoseSource = std::make_shared<FAnimSequencePoseSource>(OwnerComponent, Sequence);
+	NewState.PoseSource = std::make_shared<FAnimSequencePoseSource>(OwnerComponent, Sequence, PlayRate, bLoop);
+	NewState.bAutoAdvanceOnEnd = bAutoAdvanceOnEnd;
 	States[StateName] = NewState;
 
 	if (bIsNewState)
@@ -120,7 +147,7 @@ void UAnimationStateMachine::AddState(FName StateName, UAnimSequenceBase* Sequen
 	}
 }
 
-void UAnimationStateMachine::AddTransition(FName FromState, FName ToState, float BlendTime, FAnimTransitionCondition Condition)
+void UAnimationStateMachine::AddTransition(FName FromState, FName ToState, float BlendTime, FAnimTransitionCondition Condition, int32 Priority)
 {
 	if (!States.contains(FromState) || !States.contains(ToState))
 	{
@@ -130,6 +157,7 @@ void UAnimationStateMachine::AddTransition(FName FromState, FName ToState, float
 	FAnimTransition Transition;
 	Transition.ToState = ToState;
 	Transition.BlendTime = std::max(0.0f, BlendTime);
+	Transition.Priority = Priority;
 	Transition.Condition = Condition;
 
 	States[FromState].Transitions.push_back(Transition);
@@ -177,6 +205,62 @@ void UAnimationStateMachine::SetState(FName NewState, float BlendTime)
 	}
 }
 
+bool UAnimationStateMachine::TryStartTransitionFromCurrentState()
+{
+	if (!States.contains(CurrentState))
+	{
+		return false;
+	}
+
+	FAnimStateNode& CurrentNode = States[CurrentState];
+	if (!CurrentNode.PoseSource)
+	{
+		return false;
+	}
+
+	const bool bWaitForEnd = CurrentNode.bAutoAdvanceOnEnd && !CurrentNode.PoseSource->IsLooping();
+	if (bWaitForEnd && !CurrentNode.PoseSource->IsFinished())
+	{
+		return false;
+	}
+
+	const FAnimTransition* BestTransition = nullptr;
+	for (const FAnimTransition& Transition : CurrentNode.Transitions)
+	{
+		if (!Transition.Condition || !Transition.Condition() || !States.contains(Transition.ToState))
+		{
+			continue;
+		}
+
+		if (!BestTransition || Transition.Priority > BestTransition->Priority)
+		{
+			BestTransition = &Transition;
+		}
+	}
+
+	if (!BestTransition)
+	{
+		return false;
+	}
+
+	NextState = BestTransition->ToState;
+	BlendDuration = std::max(0.0f, BestTransition->BlendTime);
+	BlendElapsed = 0.0f;
+
+	States[NextState].PoseSource->ResetTime();
+
+	if (BlendDuration > 0.0f)
+	{
+		bBlending = true;
+	}
+	else
+	{
+		CurrentState = NextState;
+		bBlending = false;
+	}
+	return true;
+}
+
 void UAnimationStateMachine::Update(float DeltaTime)
 {
 	if (!States.contains(CurrentState)) return;
@@ -199,31 +283,7 @@ void UAnimationStateMachine::Update(float DeltaTime)
 	}
 	else
 	{
-		for (const FAnimTransition& Transition : States[CurrentState].Transitions)
-		{
-			if (Transition.Condition && Transition.Condition() && States.contains(Transition.ToState))
-			{
-				NextState = Transition.ToState;
-				BlendDuration = std::max(0.0f, Transition.BlendTime);
-				BlendElapsed = 0.0f;
-
-				if (States.contains(NextState))
-				{
-					States[NextState].PoseSource->ResetTime();
-				}
-
-				if (BlendDuration > 0.0f)
-				{
-					bBlending = true;
-				}
-				else
-				{
-					CurrentState = NextState;
-					bBlending = false;
-				}
-				break;
-			}
-		}
+		TryStartTransitionFromCurrentState();
 	}
 }
 
@@ -274,12 +334,22 @@ void UAnimationStateMachine::AddStateByName(const FString& StateName, UAnimSeque
 
 void UAnimationStateMachine::AddStateFromPath(const FString& StateName, const FString& AnimPath)
 {
+	AddStateFromPathWithPlayback(StateName, AnimPath, 1.0f, true, true);
+}
+
+void UAnimationStateMachine::AddStateByNameWithPlayback(const FString& StateName, UAnimSequenceBase* Sequence, float PlayRate, bool bLoop, bool bAutoAdvanceOnEnd)
+{
+	AddState(FName(StateName.c_str()), Sequence, PlayRate, bLoop, bAutoAdvanceOnEnd);
+}
+
+void UAnimationStateMachine::AddStateFromPathWithPlayback(const FString& StateName, const FString& AnimPath, float PlayRate, bool bLoop, bool bAutoAdvanceOnEnd)
+{
 	UAnimSequenceBase* Sequence = Cast<UAnimSequenceBase>(
 		FResourceManager::Get().LoadAnimSequence(AnimPath));
 
 	if (Sequence)
 	{
-		AddState(FName(StateName.c_str()), Sequence);
+		AddState(FName(StateName.c_str()), Sequence, PlayRate, bLoop, bAutoAdvanceOnEnd);
 	}
 }
 
@@ -313,34 +383,6 @@ TArray<FString> UAnimationStateMachine::GetStateNames() const
 		if (States.contains(StateName))
 		{
 			Result.push_back(StateName.ToString());
-		}
-	}
-
-	return Result;
-}
-
-TArray<FAnimTransitionDebugInfo> UAnimationStateMachine::GetTransitionDebugInfos() const
-{
-	TArray<FAnimTransitionDebugInfo> Result;
-
-	for (const FName& FromStateName : StateOrder)
-	{
-		auto It = States.find(FromStateName);
-		if (It == States.end())
-		{
-			continue;
-		}
-
-		const FString FromState = FromStateName.ToString();
-		const FAnimStateNode& State = It->second;
-
-		for (const FAnimTransition& Transition : State.Transitions)
-		{
-			FAnimTransitionDebugInfo Info;
-			Info.FromState = FromState;
-			Info.ToState = Transition.ToState.ToString();
-			Info.BlendTime = Transition.BlendTime;
-			Result.push_back(Info);
 		}
 	}
 

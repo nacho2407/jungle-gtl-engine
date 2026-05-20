@@ -39,8 +39,10 @@ public:
 
 	void SetFloatParameter(const FString& Name, float Value);
 	void SetBoolParameter(const FString& Name, bool Value);
+	void SetIntParameter(const FString& Name, int32 Value);
 	float GetFloatParameter(const FString& Name) const;
 	bool GetBoolParameter(const FString& Name) const;
+	int32 GetIntParameter(const FString& Name) const;
 
 
 private:
@@ -68,6 +70,7 @@ private:
 
 	TMap<FString, float> FloatParameters;
 	TMap<FString, bool> BoolParameters;
+	TMap<FString, int32> IntParameters;
 
 	bool bLoggedMissingGraph = false;
 	std::unordered_set<int32> LoggedNodeWarnings;

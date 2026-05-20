@@ -58,6 +58,8 @@ public:
 
 	void SetAnimInstance(UAnimInstance* InAnimInstance) { AnimInstance = InAnimInstance; }
 	UAnimInstance* GetAnimInstance() const { return AnimInstance; }
+	UAnimSingleNodeInstance* GetSingleNodeInstance() const;
+	UAnimSingleNodeInstance* GetOrCreateSingleNodeInstance();
 
 	void SetAnimationMode(EAnimationMode InAnimationMode);
 	EAnimationMode GetAnimationMode() const { return AnimationMode; }
@@ -68,20 +70,22 @@ public:
 	const FString& GetAnimGraphAssetPath() const { return AnimGraphAssetPath.GetPath(); }
 	void SetAnimGraphFloatParameter(const FString& Name, float Value);
 	void SetAnimGraphBoolParameter(const FString& Name, bool Value);
+	void SetAnimGraphIntParameter(const FString& Name, int32 Value);
 	float GetAnimGraphFloatParameter(const FString& Name) const;
 	bool GetAnimGraphBoolParameter(const FString& Name) const;
+	int32 GetAnimGraphIntParameter(const FString& Name) const;
 
-	// 애니메이션
+	// Single animation playback facade.
 	void PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping);
-
 	void SetAnimation(UAnimationAsset* NewAnimToPlay);
-	UAnimationAsset* GetAnimation() const { return AnimationToPlay; }
-
 	void Play(bool bLooping);
-
-	FString GetAnimationAssetPath() const;
 	void Stop();
 	void Pause();
+
+	// SingleNodeInstance compatibility helpers. Prefer GetSingleNodeInstance()
+	// or GetOrCreateSingleNodeInstance() for detailed playback control.
+	UAnimationAsset* GetAnimation() const { return AnimationToPlay; }
+	FString GetAnimationAssetPath() const;
 	float GetPlayRate() const;
 	void SetPlayRate(float InPlayRate);
 	float GetAnimationPosition() const;
@@ -114,7 +118,6 @@ public:
 	FOnAnimNotify OnAnimNotifyEndDelegate;
 
 private:
-	UAnimSingleNodeInstance* EnsureSingleNodeInstance();
 	void ApplyAnimationFromAssetPath();
 	void SyncAnimationAssetPathFromAnimation(UAnimationAsset* Animation);
 
