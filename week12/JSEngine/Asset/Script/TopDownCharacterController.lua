@@ -19,6 +19,13 @@ TopDownCharacterController.Properties = {
         Category = "Movement"
     },
 
+    VerticalMoveSpeed = {
+        Type = "Float",
+        Default = 3.0,
+        Min = 0.0,
+        Category = "Movement"
+    },
+
     -- 메쉬 방향만 이상하면 여기 조정.
     -- 현재는 MakeMovementConfig에서 강제로 -90.0 넣고 있음.
     ActorYawOffset = {
@@ -198,6 +205,42 @@ function TopDownCharacterController:IsAttackKeyDown()
     return TopDownSupport.IsKeyDown("Q")
         or TopDownSupport.IsKeyDown("q")
         or TopDownSupport.IsKeyDown("QKey")
+end
+
+function TopDownCharacterController:GetVerticalInput()
+    local vertical = 0.0
+
+    if TopDownSupport.IsKeyDown("C")
+        or TopDownSupport.IsKeyDown("c")
+        or TopDownSupport.IsKeyDown("CKey") then
+        vertical = vertical - 1.0
+    end
+
+    if TopDownSupport.IsKeyDown("Z")
+        or TopDownSupport.IsKeyDown("z")
+        or TopDownSupport.IsKeyDown("ZKey") then
+        vertical = vertical + 1.0
+    end
+
+    return vertical
+end
+
+function TopDownCharacterController:UpdateVerticalMovement(dt)
+    if not self.Actor then
+        return
+    end
+
+    local vertical = self:GetVerticalInput()
+    if vertical == 0.0 then
+        return
+    end
+
+    local speed = self.Properties.VerticalMoveSpeed or self.Properties.MoveSpeed or 3.0
+    local delta = Vector(0.0, 0.0, vertical * speed * dt)
+
+    pcall(function()
+        self.Actor.Location = self.Actor.Location + delta
+    end)
 end
 
 function TopDownCharacterController:StartAttackQ()
@@ -407,6 +450,8 @@ function TopDownCharacterController:Tick(deltaTime)
             self:MakeMovementConfig()
         )
     end
+
+    self:UpdateVerticalMovement(dt)
 
     self.CameraPawn = self:UpdateCamera()
 
