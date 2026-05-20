@@ -10,6 +10,8 @@ class UStateMachineAnimInstance : public UAnimInstance
 public:
 	GENERATED_BODY(UStateMachineAnimInstance, UAnimInstance)
 
+	void Serialize(FArchive& Ar) override;
+	void Initialize(USkeletalMeshComponent* InOwnerComponent) override;
 	void SetStateMachine(UAnimationStateMachine* InStateMachine);
 	UAnimationStateMachine* GetStateMachine() const { return StateMachine; }
 

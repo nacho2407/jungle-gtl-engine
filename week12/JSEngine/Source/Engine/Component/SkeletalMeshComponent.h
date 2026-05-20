@@ -121,7 +121,7 @@ private:
 	void ApplyAnimationFromAssetPath();
 	void SyncAnimationAssetPathFromAnimation(UAnimationAsset* Animation);
 
-	UPROPERTY(DisplayName = "Anim Instance", ReferenceKind = Asset)
+	UPROPERTY(DisplayName = "Anim Instance", NoEdit, Transient)
 	TObjectPtr<UAnimInstance> AnimInstance = nullptr;
 
 	UPROPERTY(DisplayName = "Animation")

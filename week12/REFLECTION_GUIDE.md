@@ -192,6 +192,7 @@ Actor:Call("SetActorLocation", Vector(0, 0, 100))
 bool / int / int32 / float / FString / FName
 UENUM()을 적은 모든 열거형
 USTRUCT() + GENERATED_STRUCT_BODY()를 적은 모든 구조체
+UCLASS()를 적은 모든 클래스
 
 TObjectPtr<T>
 TSoftObjectPtr<T>
@@ -251,7 +252,7 @@ GC 대상인가, 아니면 그냥 cache인가?
 
 Component 등 런타임에 존재하는 객체를 참조할 때 사용합니다. 
 
-`Get()`, `Set()`을 사용해 평소처럼 사용할 수 있습니다.  
+`Get()`, `Set()`을 사용해 평소처럼 사용할 수 있고, raw pointer처럼도 사용 가능합니다.
 
 ```cpp
 UPROPERTY(DisplayName = "Updated Component")
