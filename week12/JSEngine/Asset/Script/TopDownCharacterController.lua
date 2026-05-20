@@ -148,7 +148,6 @@ function TopDownCharacterController:Initialize()
 
     local owner = self.Actor or Actor or Owner
     if not owner then
-        TopDownSupport.Log("[TopDownCharacterController] Owner actor is missing.")
         return false
     end
 
@@ -156,12 +155,10 @@ function TopDownCharacterController:Initialize()
     self.Mesh = TopDownSupport.FindSkeletalMesh(owner)
 
     if not self.Mesh and not self.bLoggedNoMesh then
-        TopDownSupport.Log("[TopDownCharacterController] SkeletalMeshComponent not found. Movement works, but AnimGraph parameter will not update.")
         self.bLoggedNoMesh = true
     end
 
     self.bInitialized = true
-    TopDownSupport.Log("[TopDownCharacterController] Initialized.")
 
     return true
 end
@@ -191,7 +188,6 @@ function TopDownCharacterController:StartAttackQ()
     self.AttackLockRemaining = p.AttackLockDuration or 1.0
     self.AttackTriggerRemaining = p.AttackTriggerHoldTime or 0.45
 
-    TopDownSupport.Log("[TopDownCharacterController] AttackQ started.")
 end
 
 function TopDownCharacterController:UpdateAttackState(dt)
@@ -287,16 +283,6 @@ function TopDownCharacterController:UpdateCamera()
         pawn.Rotation = Vector(0.0, 90.0, testYawZ)
     end)
 
-    TopDownSupport.Log(
-        "[TopDownCharacterController][CameraTest] Set Camera Rotation = " ..
-        TopDownSupport.VectorToString(Vector(0.0, 90.0, testYawZ))
-    )
-
-    TopDownSupport.Log(
-        "[TopDownCharacterController][CameraTest] Actual Pawn Rotation = " ..
-        TopDownSupport.VectorToString(pawn.Rotation)
-    )
-
     local controller = TopDownSupport.GetPlayerController()
 
     if controller and controller.SetViewTargetWithBlend then
@@ -333,18 +319,8 @@ function TopDownCharacterController:UpdateDebug(dt, dir, isMoving)
     local pawnLocation = self.CameraPawn and self.CameraPawn.Location or nil
     local pawnRotation = self.CameraPawn and self.CameraPawn.Rotation or nil
 
-    TopDownSupport.Log("[TopDownCharacterController][Debug] IsMoving = " .. tostring(isMoving))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] IsAttackLocked = " .. tostring(self:IsAttackLocked()))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] AttackTrigger = " .. tostring(self:IsAttackTriggerActive()))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] Move Dir = " .. TopDownSupport.VectorToString(dir))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] Actor Location = " .. TopDownSupport.VectorToString(actorLocation))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] Actor Rotation = " .. TopDownSupport.VectorToString(actorRotation))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] Camera Pawn Location = " .. TopDownSupport.VectorToString(pawnLocation))
-    TopDownSupport.Log("[TopDownCharacterController][Debug] Camera Pawn Rotation = " .. TopDownSupport.VectorToString(pawnRotation))
-
     if actorLocation and pawnLocation then
         local diff = actorLocation - pawnLocation
-        TopDownSupport.Log("[TopDownCharacterController][Debug] Actor - Camera Diff = " .. TopDownSupport.VectorToString(diff))
     end
 end
 
@@ -379,7 +355,6 @@ function TopDownCharacterController:Tick(deltaTime)
     self.CameraPawn = self:UpdateCamera()
 
     if not self.CameraPawn and not self.bLoggedNoPawn then
-        TopDownSupport.Log("[TopDownCharacterController] Possessed camera pawn not found yet.")
         self.bLoggedNoPawn = true
     end
 
