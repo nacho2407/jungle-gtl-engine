@@ -15,7 +15,7 @@ struct FMatrix;
 namespace FAnimSequenceBinaryConstants
 {
     constexpr uint32 Magic = 0x4D494E41; // 'ANIM'
-    constexpr uint32 BinaryVersion = 8;  // v8: stores animation notifies
+    constexpr uint32 BinaryVersion = 9;  // v9: stores notify action payloads
     constexpr uint32 DerivedDataVersion = 2;  // v2: only authored FBX scale curves produce animated scale keys
 }
 

@@ -61,6 +61,7 @@ constexpr uint32 MAX_SKELETAL_MESH_SOCKET_COUNT   = 1024;
 constexpr uint32 MAX_ANIM_SEQUENCE_TRACK_COUNT = 65'536;
 constexpr uint32 MAX_ANIM_SEQUENCE_KEY_COUNT = 1'000'000;
 constexpr uint32 MAX_ANIM_NOTIFY_COUNT = 100'000;
+constexpr uint32 MAX_ANIM_NOTIFY_ACTION_TYPE = static_cast<uint32>(EAnimNotifyActionType::PlayEffect);
 
 static bool IsValidStaticMeshHeader(const FStaticMeshBinaryHeader& Header)
 {
@@ -1363,6 +1364,9 @@ void FBinarySerializer::WriteAnimNotifies(std::ofstream& Out, const TArray<FAnim
         WriteFloatLE(Out, Notify.TriggerTime);
         WriteFloatLE(Out, Notify.Duration);
         WriteString(Out, Notify.NotifyName.ToString());
+        WriteUInt32LE(Out, static_cast<uint32>(Notify.ActionType));
+        WriteString(Out, Notify.EventId.ToString());
+        WriteString(Out, Notify.Payload);
     }
 }
 
@@ -1381,15 +1385,29 @@ bool FBinarySerializer::ReadAnimNotifies(std::ifstream& In, TArray<FAnimNotifyEv
     {
         FAnimNotifyEvent Notify;
         FString NotifyName;
+        uint32 ActionType = 0;
+        FString EventId;
+        FString Payload;
 
         if (!ReadFloatLE(In, Notify.TriggerTime) ||
             !ReadFloatLE(In, Notify.Duration) ||
-            !ReadString(In, NotifyName))
+            !ReadString(In, NotifyName) ||
+            !ReadUInt32LE(In, ActionType) ||
+            !ReadString(In, EventId) ||
+            !ReadString(In, Payload))
+        {
+            return false;
+        }
+
+        if (ActionType > MAX_ANIM_NOTIFY_ACTION_TYPE)
         {
             return false;
         }
 
         Notify.NotifyName = FName(NotifyName);
+        Notify.ActionType = static_cast<EAnimNotifyActionType>(ActionType);
+        Notify.EventId = FName(EventId);
+        Notify.Payload = Payload;
         OutNotifies.push_back(Notify);
     }
 

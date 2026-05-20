@@ -27,11 +27,21 @@ struct FAnimExtractContext
     }
 };
 
+enum class EAnimNotifyActionType : uint8
+{
+    GameplayEvent,
+    PlaySound,
+    PlayEffect,
+};
+
 struct FAnimNotifyEvent
 {
     float TriggerTime = 0.0f;
     float Duration = 0.0f;
     FName NotifyName;
+    EAnimNotifyActionType ActionType = EAnimNotifyActionType::GameplayEvent;
+    FName EventId;
+    FString Payload;
 };
 
 enum class EAnimNotifyPhase : uint8
@@ -54,6 +64,7 @@ enum class ERootMotionMode : uint8
     ExtractOnly,
     ApplyToOwner,
 };
+
 
 struct FRootMotionDelta
 {

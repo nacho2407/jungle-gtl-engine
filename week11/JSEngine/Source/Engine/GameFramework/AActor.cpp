@@ -6,7 +6,7 @@
 #include "Core/Delegates/Delegate.h"
 #include <Runtime/Script/ScriptComponent.h>
 #include "ReflectionSystem/ReflectionUtils.h"
-
+#include "Animation/AnimationTypes.h"
 #include <algorithm>
 #include <cctype>
 
@@ -716,6 +716,26 @@ void AActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Othe
 
 void AActor::HandleAnimNotify(USkeletalMeshComponent* SourceComponent, const FAnimNotifyDispatchEvent& NotifyEvent)
 {
+
+	switch (NotifyEvent.Notify.ActionType)
+    {
+    case EAnimNotifyActionType::PlaySound:
+        // AudioSystem.Play(Notify.Notify.Payload)
+        break;
+
+    case EAnimNotifyActionType::PlayEffect:
+        // EffectSystem placeholder
+        break;
+
+    case EAnimNotifyActionType::GameplayEvent:
+        if (NotifyEvent.Notify.EventId == FName("Footstep"))
+        {
+            UE_LOG("[Notify Anim Event] : FootStep");
+            // 발자국 남기기
+        }
+        break;
+    }
+
 	// 기본 구현은 no-op
     (void)SourceComponent;
     (void)NotifyEvent;

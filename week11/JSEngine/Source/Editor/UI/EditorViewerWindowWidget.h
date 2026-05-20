@@ -81,6 +81,7 @@ private:
     float AnimationMaxTime = 0.0f;
     int32 AnimationTotalFrames = 1;
     bool bAnimationLoop = true;
+    float AnimationPlayRate = 1.0f;
     int32 SelectedAnimationStackIndex = 0;
     FString LastRequestedAnimationKey;
 
@@ -105,6 +106,9 @@ private:
     float PendingNotifyTime = 0.0f;
     bool bOpenAddNotifyPopup = false;
     char NotifyNameBuffer[128] = {};
+    int32 NotifyActionTypeIndex = 0;
+    char NotifyEventIdBuffer[128] = {};
+    char NotifyPayloadBuffer[256] = {};
     float NotifyDuration = 0.0f;
 
 	int32 SelectedNotifyIndex = -1;
@@ -115,6 +119,9 @@ private:
 
 	int32 EditingNotifyIndex = -1;
     char EditingNotifyNameBuffer[128] = {};
+    int32 EditingNotifyActionTypeIndex = 0;
+    char EditingNotifyEventIdBuffer[128] = {};
+    char EditingNotifyPayloadBuffer[256] = {};
     float EditingNotifyTime = 0.0f;
     float EditingNotifyDuration = 0.0f;
 

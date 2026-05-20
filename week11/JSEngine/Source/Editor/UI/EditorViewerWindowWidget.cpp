@@ -22,6 +22,26 @@
 
 namespace
 {
+constexpr const char* AnimNotifyActionTypeItems[] = {
+    "Gameplay Event",
+    "Play Sound",
+    "Play Effect",
+};
+constexpr int32 AnimNotifyActionTypeItemCount = static_cast<int32>(
+    sizeof(AnimNotifyActionTypeItems) / sizeof(AnimNotifyActionTypeItems[0]));
+
+int32 ToNotifyActionTypeIndex(EAnimNotifyActionType ActionType)
+{
+    const int32 Index = static_cast<int32>(ActionType);
+    return std::clamp(Index, 0, AnimNotifyActionTypeItemCount - 1);
+}
+
+EAnimNotifyActionType FromNotifyActionTypeIndex(int32 Index)
+{
+    return static_cast<EAnimNotifyActionType>(
+        std::clamp(Index, 0, AnimNotifyActionTypeItemCount - 1));
+}
+
 void SetOpaqueBlendStateCallback(const ImDrawList*, const ImDrawCmd* Cmd)
 {
     ID3D11DeviceContext* DeviceContext = static_cast<ID3D11DeviceContext*>(Cmd->UserCallbackData);
@@ -213,6 +233,7 @@ void FEditorViewerWindowWidget::Shutdown()
     AnimationMaxTime = 0.0f;
     AnimationTotalFrames = 1;
     bAnimationLoop = true;
+    AnimationPlayRate = 1.0f;
     SelectedAnimationStackIndex = 0;
     LastRequestedAnimationKey.clear();
 
@@ -783,6 +804,7 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
         AnimationMaxTime = 0.0f;
         AnimationTotalFrames = 1;
         bAnimationLoop = true;
+        AnimationPlayRate = 1.0f;
         SelectedAnimationStackIndex = 0;
         LastRequestedAnimationKey.clear();
     };
@@ -1058,6 +1080,19 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
                 CachedSkComp->SetLooping(bAnimationLoop);
             }
         }
+
+        float PlayRate = CachedSkComp ? CachedSkComp->GetPlayRate() : AnimationPlayRate;
+        PlayRate = std::clamp(PlayRate, -1.0f, 2.0f);
+        ImGui::SetNextItemWidth(-1.0f);
+        if (ImGui::SliderFloat("Play Rate", &PlayRate, -1.0f, 2.0f, "%.2fx"))
+        {
+            PlayRate = std::clamp(std::round(PlayRate / 0.25f) * 0.25f, -1.0f, 2.0f);
+            AnimationPlayRate = PlayRate;
+            if (CachedSkComp)
+            {
+                CachedSkComp->SetPlayRate(AnimationPlayRate);
+            }
+        }
         ImGui::PopStyleVar();
         ImGui::Spacing();
 
@@ -1110,6 +1145,7 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
                 {
                     // sequence 교체 직후에는 UI의 loop 기본값을 single node instance에 다시 반영
                     CachedSkComp->SetLooping(bAnimationLoop);
+                    CachedSkComp->SetPlayRate(AnimationPlayRate);
                     SeekAnimation(0.0f);
                     RefreshAnimationTimelineState();
                 }
@@ -1192,17 +1228,35 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
                         EditingNotifyIndex = SelectedNotifyIndex;
                         EditingNotifyTime = Notify.TriggerTime;
                         EditingNotifyDuration = Notify.Duration;
+                        EditingNotifyActionTypeIndex = ToNotifyActionTypeIndex(Notify.ActionType);
                         std::snprintf(
                             EditingNotifyNameBuffer,
                             sizeof(EditingNotifyNameBuffer),
                             "%s",
                             Notify.NotifyName.ToString().c_str());
+                        std::snprintf(
+                            EditingNotifyEventIdBuffer,
+                            sizeof(EditingNotifyEventIdBuffer),
+                            "%s",
+                            Notify.EventId.ToString().c_str());
+                        std::snprintf(
+                            EditingNotifyPayloadBuffer,
+                            sizeof(EditingNotifyPayloadBuffer),
+                            "%s",
+                            Notify.Payload.c_str());
                     }
 
                     ImGui::PushID(NotifyIndex);
                     ImGui::InputText("Event", EditingNotifyNameBuffer, sizeof(EditingNotifyNameBuffer));
                     ImGui::DragFloat("Time", &EditingNotifyTime, 0.01f, 0.0f, AnimationMaxTime);
                     ImGui::DragFloat("Duration", &EditingNotifyDuration, 0.01f, 0.0f, AnimationMaxTime);
+                    ImGui::Combo(
+                        "Action Type",
+                        &EditingNotifyActionTypeIndex,
+                        AnimNotifyActionTypeItems,
+                        AnimNotifyActionTypeItemCount);
+                    ImGui::InputText("Event Id", EditingNotifyEventIdBuffer, sizeof(EditingNotifyEventIdBuffer));
+                    ImGui::InputText("Payload", EditingNotifyPayloadBuffer, sizeof(EditingNotifyPayloadBuffer));
 
                     if (ImGui::Button("Apply"))
                     {
@@ -1210,6 +1264,9 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
                         Edited.NotifyName = FName(EditingNotifyNameBuffer);
                         Edited.TriggerTime = EditingNotifyTime;
                         Edited.Duration = EditingNotifyDuration;
+                        Edited.ActionType = FromNotifyActionTypeIndex(EditingNotifyActionTypeIndex);
+                        Edited.EventId = FName(EditingNotifyEventIdBuffer);
+                        Edited.Payload = EditingNotifyPayloadBuffer;
 
                         Sequence->UpdateNotifyAt(NotifyIndex, Edited);
                         bAnimSequenceDirty = true;
@@ -1277,7 +1334,10 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
             if (ImGui::MenuItem("Add Notify Event"))
             {
                 NotifyDuration = 0.0f;
-                std::snprintf(NotifyNameBuffer, sizeof(NotifyNameBuffer), "Notify");
+                NotifyActionTypeIndex = ToNotifyActionTypeIndex(EAnimNotifyActionType::GameplayEvent);
+                std::snprintf(NotifyNameBuffer, sizeof(NotifyNameBuffer), "Footstep");
+                std::snprintf(NotifyEventIdBuffer, sizeof(NotifyEventIdBuffer), "Footstep");
+                NotifyPayloadBuffer[0] = '\0';
                 bOpenAddNotifyPopup = true;
             }
 
@@ -1411,15 +1471,27 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
             ImGui::Text("Time: %.3f sec", PendingNotifyTime);
             ImGui::InputText("Name", NotifyNameBuffer, sizeof(NotifyNameBuffer));
             ImGui::DragFloat("Duration", &NotifyDuration, 0.01f, 0.0f, AnimationMaxTime);
+            ImGui::Combo(
+                "Action Type",
+                &NotifyActionTypeIndex,
+                AnimNotifyActionTypeItems,
+                AnimNotifyActionTypeItemCount);
+            ImGui::InputText("Event Id", NotifyEventIdBuffer, sizeof(NotifyEventIdBuffer));
+            ImGui::InputText("Payload", NotifyPayloadBuffer, sizeof(NotifyPayloadBuffer));
 
             const bool bValidName = NotifyNameBuffer[0] != '\0';
+            const bool bValidEventId = NotifyEventIdBuffer[0] != '\0';
 
             if (!bValidName)
             {
                 ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Name is required.");
             }
+            if (!bValidEventId)
+            {
+                ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Event Id is required.");
+            }
 
-            if (!bValidName)
+            if (!bValidName || !bValidEventId)
                 ImGui::BeginDisabled();
 
             if (ImGui::Button("Add"))
@@ -1430,6 +1502,9 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
                     Notify.TriggerTime = PendingNotifyTime;
                     Notify.Duration = NotifyDuration;
                     Notify.NotifyName = FName(NotifyNameBuffer);
+                    Notify.ActionType = FromNotifyActionTypeIndex(NotifyActionTypeIndex);
+                    Notify.EventId = FName(NotifyEventIdBuffer);
+                    Notify.Payload = NotifyPayloadBuffer;
 
                     Sequence->AddNotify(Notify);
                     bAnimSequenceDirty = true;
@@ -1439,7 +1514,7 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
                 ImGui::CloseCurrentPopup();
             }
 
-            if (!bValidName)
+            if (!bValidName || !bValidEventId)
                 ImGui::EndDisabled();
 
             ImGui::SameLine();
