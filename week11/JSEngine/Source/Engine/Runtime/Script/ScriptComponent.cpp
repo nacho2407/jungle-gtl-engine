@@ -1370,13 +1370,13 @@ void UScriptComponent::OnAnimNotify(
     USkeletalMeshComponent* SourceComponent,
     const FAnimNotifyDispatchEvent& NotifyEvent)
 {
-    (void)SourceComponent;
-
-    // Lua 쪽 gameplay callback은 자주 쓰는 값만 간단한 타입으로 전달
     CallScriptFunction(
         "OnAnimNotify",
         NotifyEvent.Notify.NotifyName.ToString(),
         FString(AnimNotifyPhaseToString(NotifyEvent.Phase)),
         NotifyEvent.SourceStateName.ToString(),
-        NotifyEvent.TriggerWeight);
+        NotifyEvent.TriggerWeight,
+        SourceComponent,
+        NotifyEvent.Notify.EventId.ToString(),
+        NotifyEvent.Notify.Payload);
 }
