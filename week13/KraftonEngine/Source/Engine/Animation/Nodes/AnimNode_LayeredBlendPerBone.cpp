@@ -75,6 +75,17 @@ void FAnimNode_LayeredBlendPerBone::Evaluate(FPoseContext& Output)
 		Out.Rotation = FQuat::Slerp(Out.Rotation.GetNormalized(), Blend.Rotation.GetNormalized(), W).GetNormalized();
 		Out.Scale    = Out.Scale    + (Blend.Scale    - Out.Scale)    * W;
 	}
+
+	// Morph targets are not bone-scoped in this engine, so the layered node blends the
+	// whole morph weight array by the layer weight.
+	const size_t MorphCount = std::max(Output.MorphWeights.size(), BlendCtx.MorphWeights.size());
+	Output.MorphWeights.resize(MorphCount, 0.0f);
+	for (size_t MorphIndex = 0; MorphIndex < MorphCount; ++MorphIndex)
+	{
+		const float BaseValue = MorphIndex < Output.MorphWeights.size() ? Output.MorphWeights[MorphIndex] : 0.0f;
+		const float BlendValue = MorphIndex < BlendCtx.MorphWeights.size() ? BlendCtx.MorphWeights[MorphIndex] : 0.0f;
+		Output.MorphWeights[MorphIndex] = BaseValue + (BlendValue - BaseValue) * W;
+	}
 }
 
 TArray<bool> BuildBoneMaskFromRoot(USkeletalMesh* Mesh, const FString& RootBoneName)

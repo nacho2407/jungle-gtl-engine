@@ -1,4 +1,4 @@
-﻿#include "Mesh/Fbx/FbxSkeletalMeshImporter.h"
+#include "Mesh/Fbx/FbxSkeletalMeshImporter.h"
 #include "Mesh/Fbx/FbxSceneQuery.h"
 #include "Mesh/Fbx/FbxMaterialImporter.h"
 #include "Mesh/Fbx/FbxSkeletonImporter.h"
@@ -62,6 +62,7 @@ namespace
 		OutMesh.Indices      = std::move(Context.SkeletalIndices);
 		OutMesh.Sections     = std::move(Context.SkeletalSections);
 		OutMesh.MeshRanges   = std::move(Context.SkeletalMeshRanges);
+		OutMesh.MorphTargets = std::move(Context.SkeletalMorphTargets);
 		OutMesh.Bones        = Context.Bones;
 		OutMesh.PathFileName = Context.SourcePath;
 

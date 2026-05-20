@@ -2,6 +2,7 @@
 #include "AssetEditorWidget.h"
 #include "Editor/Viewport/MeshEditorViewportClient.h"
 #include "Editor/UI/FbxImportOptionsDialog.h"
+#include "Asset/AssetRegistry.h"
 
 struct FSkeletalMesh;
 struct ImDrawList;
@@ -22,9 +23,21 @@ struct FAnimationTabState
 	// 타임라인에서 선택된 Notify entry 인덱스 (현재 시퀀스의 DataModel->Notifies 기준).
 	// -1 = 미선택. 시퀀스/몽타주 전환 시 -1 reset 필요.
 	// 유효 시 좌상단 AssetDetails 패널이 시퀀스 정보 대신 Notify 의 UPROPERTY 편집 UI 를 그림.
-	int32          SelectedNotifyIndex   = -1;
-	float          AnimListWidth         = 200.0f;
-	float          AnimDetailsWidth      = 280.0f;
+	int32         SelectedNotifyIndex     = -1;
+	int32         SelectedMorphCurveIndex = -1;
+	int32         SelectedMorphKeyIndex   = -1;
+	TArray<float> MorphPreviewWeights;
+	TArray<uint8> MorphPreviewOverrideMask;
+	bool          bMorphPreviewOverrideEnabled = false;
+
+	// Animation tab asset browser cache.
+	// Render 중 매 프레임 ListAnimationsForSkeleton() -> LoadAnimation() -> Serialize() 되는 것을 막는다.
+	TArray<FAssetListItem> CachedAnimationFiles;
+	FSkeletonBinding       CachedAnimationListBinding;
+	bool                   bAnimationListDirty = true;
+
+	float         AnimListWidth                = 200.0f;
+	float         AnimDetailsWidth             = 280.0f;
 
 	FFbxAnimationImportDialogState AnimationImportDialog;
 };
@@ -70,6 +83,12 @@ private:
 
 	// Animation tab helpers
 	void ApplyAnimationToComponent();
+	void ResetMorphPreviewOverrides();
+	void EnsureMorphPreviewOverrideSize();
+	void ApplyMorphPreviewOverrides(TArray<float>& InOutMorphWeights) const;
+	void RefreshAnimationPreviewPose();
+	void MarkAnimationListDirty();
+	const TArray<FAssetListItem>& GetCachedAnimationFilesForCurrentSkeleton();
 
 private:
 	FMeshEditorViewportClient ViewportClient;

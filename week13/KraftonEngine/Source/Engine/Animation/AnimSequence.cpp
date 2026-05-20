@@ -145,6 +145,40 @@ namespace
         return (Next.Value - Prev.Value) / DeltaTime;
     }
 
+    static float CubicBezier(float A, float B, float C, float D, float T)
+    {
+        const float U = 1.0f - T;
+        return U * U * U * A + 3.0f * U * U * T * B + 3.0f * U * T * T * C + T * T * T * D;
+    }
+
+    static float CubicBezierDerivative(float A, float B, float C, float D, float T)
+    {
+        const float U = 1.0f - T;
+        return 3.0f * U * U * (B - A) + 6.0f * U * T * (C - B) + 3.0f * T * T * (D - C);
+    }
+
+    static float SolveBezierTime(float TargetTime, float X0, float X1, float X2, float X3)
+    {
+        float       T     = 0.5f;
+        const float Denom = X3 - X0;
+        if (std::abs(Denom) > 1.0e-6f)
+        {
+            T = std::clamp((TargetTime - X0) / Denom, 0.0f, 1.0f);
+        }
+
+        for (int32 Iter = 0; Iter < 8; ++Iter)
+        {
+            const float X  = CubicBezier(X0, X1, X2, X3, T);
+            const float DX = CubicBezierDerivative(X0, X1, X2, X3, T);
+            if (std::abs(DX) < 1.0e-6f)
+            {
+                break;
+            }
+            T = std::clamp(T - (X - TargetTime) / DX, 0.0f, 1.0f);
+        }
+        return T;
+    }
+
     static float EvaluateRawCurveSegment(const FRawFloatCurve& Curve, int32 KeyIndex, float TimeSeconds)
     {
         const FRawFloatCurveKey& A = Curve.Keys[KeyIndex];
@@ -165,20 +199,33 @@ namespace
 
         case RawCurveInterpCubic:
         {
-            // 현재 저장 포맷은 FBX tangent 값을 아직 보존하지 않으므로, 키 주변 기울기로 Hermite tangent를 복원한다.
-            const float M0 = EstimateRawCurveTangent(Curve, KeyIndex);
-            const float M1 = EstimateRawCurveTangent(Curve, KeyIndex + 1);
+            float LeaveWeight  = A.bLeaveTangentWeighted ? A.LeaveTangentWeight : DeltaTime / 3.0f;
+            float ArriveWeight = B.bArriveTangentWeighted ? B.ArriveTangentWeight : DeltaTime / 3.0f;
+            LeaveWeight        = std::clamp(LeaveWeight, 1.0e-5f, DeltaTime);
+            ArriveWeight       = std::clamp(ArriveWeight, 1.0e-5f, DeltaTime);
 
-            const float T  = Alpha;
-            const float T2 = T * T;
-            const float T3 = T2 * T;
+            float LeaveTangent  = A.LeaveTangent;
+            float ArriveTangent = B.ArriveTangent;
+            if (A.TangentMode == 0)
+            {
+                LeaveTangent = EstimateRawCurveTangent(Curve, KeyIndex);
+            }
+            if (B.TangentMode == 0)
+            {
+                ArriveTangent = EstimateRawCurveTangent(Curve, KeyIndex + 1);
+            }
 
-            const float H00 =  2.0f * T3 - 3.0f * T2 + 1.0f;
-            const float H10 =         T3 - 2.0f * T2 + T;
-            const float H01 = -2.0f * T3 + 3.0f * T2;
-            const float H11 =         T3 -        T2;
+            const float X0 = A.TimeSeconds;
+            const float Y0 = A.Value;
+            const float X1 = A.TimeSeconds + LeaveWeight;
+            const float Y1 = A.Value + LeaveTangent * LeaveWeight;
+            const float X2 = B.TimeSeconds - ArriveWeight;
+            const float Y2 = B.Value - ArriveTangent * ArriveWeight;
+            const float X3 = B.TimeSeconds;
+            const float Y3 = B.Value;
 
-            return H00 * A.Value + H10 * DeltaTime * M0 + H01 * B.Value + H11 * DeltaTime * M1;
+            const float BezierT = SolveBezierTime(TimeSeconds, X0, X1, X2, X3);
+            return CubicBezier(Y0, Y1, Y2, Y3, BezierT);
         }
 
         case RawCurveInterpLinear:
@@ -381,6 +428,68 @@ TArray<FBoneAnimationTrack>& UAnimSequence::GetMutableBoneTracks()
     return DataModel ? DataModel->BoneAnimationTracks : EmptyTracks;
 }
 
+const TArray<FMorphTargetCurve>& UAnimSequence::GetMorphTargetCurves() const
+{
+    static const TArray<FMorphTargetCurve> EmptyCurves;
+    return DataModel ? DataModel->MorphTargetCurves : EmptyCurves;
+}
+
+TArray<FMorphTargetCurve>& UAnimSequence::GetMutableMorphTargetCurves()
+{
+    static TArray<FMorphTargetCurve> EmptyCurves;
+
+    if (!DataModel)
+    {
+        DataModel  = UObjectManager::Get().CreateObject<UAnimDataModel>(this);
+        PlayLength = DataModel->PlayLength;
+        FrameRate  = DataModel->FrameRate;
+        Notifies   = DataModel->Notifies;
+    }
+
+    return DataModel ? DataModel->MorphTargetCurves : EmptyCurves;
+}
+
+void UAnimSequence::EvaluateMorphTargetCurves(
+    float          TimeSeconds,
+    bool           bLooping,
+    USkeletalMesh* InSkeletalMesh,
+    TArray<float>& OutWeights
+    ) const
+{
+    OutWeights.clear();
+
+    if (!DataModel || !InSkeletalMesh)
+    {
+        return;
+    }
+
+    FSkeletalMesh* Asset = InSkeletalMesh->GetSkeletalMeshAsset();
+    if (!Asset || Asset->MorphTargets.empty())
+    {
+        return;
+    }
+
+    OutWeights.assign(Asset->MorphTargets.size(), 0.0f);
+    const float EvalTime = NormalizeTime(TimeSeconds, DataModel->PlayLength, bLooping);
+
+    for (const FMorphTargetCurve& MorphCurve : DataModel->MorphTargetCurves)
+    {
+        if (!MorphCurve.bEnabled || MorphCurve.MorphTargetName.empty())
+        {
+            continue;
+        }
+
+        const int32 MorphIndex = Asset->FindMorphTargetIndex(MorphCurve.MorphTargetName);
+        if (MorphIndex < 0 || MorphIndex >= static_cast<int32>(OutWeights.size()))
+        {
+            continue;
+        }
+
+        const float CurveValue = EvaluateRawFloatCurve(MorphCurve.Curve, EvalTime, 0.0f);
+        OutWeights[MorphIndex] = CurveValue * MorphCurve.WeightScale + MorphCurve.WeightBias;
+    }
+}
+
 TArray<FAnimNotifyEvent>& UAnimSequence::GetMutableModelNotifies()
 {
     if (!DataModel)
@@ -464,6 +573,9 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
         Output.ResetToRefPose();
     }
 
+    const float EvalTime = NormalizeTime(Ctx.CurrentTime, DataModel->PlayLength, Ctx.bLooping);
+    EvaluateMorphTargetCurves(EvalTime, Ctx.bLooping, Output.SkeletalMesh, Output.MorphWeights);
+
     const TArray<FBoneAnimationTrack>& Tracks = DataModel->BoneAnimationTracks;
     if (Tracks.empty())
     {
@@ -477,8 +589,6 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
     {
         return;
     }
-
-    const float EvalTime = NormalizeTime(Ctx.CurrentTime, DataModel->PlayLength, Ctx.bLooping);
 
     int32 Frame0 = 0;
     int32 Frame1 = 0;

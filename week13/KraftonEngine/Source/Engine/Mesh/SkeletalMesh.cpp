@@ -1,4 +1,4 @@
-﻿#include "SkeletalMesh.h"
+#include "SkeletalMesh.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Animation/Skeleton.h"
@@ -25,6 +25,7 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 	Ar << SkeletalMeshAsset->MeshRanges;
 	Ar << SkeletalMeshAsset->Bones;
 	Ar << SkeletalMaterials;
+	Ar << SkeletalMeshAsset->MorphTargets;
 
 	if (Ar.IsLoading())
 	{

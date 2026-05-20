@@ -1,4 +1,4 @@
-﻿#include "SkeletalMeshComponent.h"
+#include "SkeletalMeshComponent.h"
 #include "Render/Proxy/SkeletalMeshSceneProxy.h"
 
 #include "Animation/AnimationManager.h"
@@ -438,6 +438,6 @@ bool USkeletalMeshComponent::EvaluateAnimInstance(float DeltaTime)
     Out.ResetToRefPose();
     AnimInstance->EvaluatePose(Out);
 
-    SetBoneLocalTransforms(Out.Pose);
+    SetAnimationPose(Out.Pose, Out.MorphWeights);
     return true;
 }
