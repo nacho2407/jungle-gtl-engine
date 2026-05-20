@@ -26,7 +26,5 @@ struct FEnumProperty : FProperty
 	const FEnum* GetEnumType() const override { return EnumType; }
 	const FEnumProperty* AsEnumProperty() const override { return this; }
 
-	json::JSON SerializeValue(void* ValuePtr) const override;
-	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 };

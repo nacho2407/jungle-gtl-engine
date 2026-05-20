@@ -1,5 +1,4 @@
-#include "Editor/UI/Panel/EditorPropertyWidget.h"
-
+﻿#include "Editor/UI/Panel/EditorPropertyWidget.h"
 #include "Editor/EditorEngine.h"
 
 #include "ImGui/imgui.h"
@@ -36,7 +35,7 @@
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "Platform/Paths.h"
-#include "SimpleJSON/json.hpp"
+#include "Serialization/MemoryArchive.h"
 
 #include <Windows.h>
 #include <commdlg.h>
@@ -301,8 +300,15 @@ namespace
 			return true;
 		case EPropertyType::Array:
 		{
-			json::JSON JsonValue = SrcValue.Property->SerializeValue(SrcPtr, SrcValue.Object, nullptr);
-			DstValue.Property->DeserializeValue(DstPtr, JsonValue, DstValue.Object, nullptr);
+			FPropertySerializeContext SrcContext;
+			SrcContext.Owner = SrcValue.Object;
+			FMemoryArchive Writer(/*bInIsSaving=*/true);
+			SrcValue.Property->SerializeValue(SrcPtr, Writer, SrcContext);
+
+			FPropertySerializeContext DstContext;
+			DstContext.Owner = DstValue.Object;
+			FMemoryArchive Reader(Writer.GetBuffer(), /*bInIsSaving=*/false);
+			DstValue.Property->SerializeValue(DstPtr, Reader, DstContext);
 			return true;
 		}
 		case EPropertyType::Struct:

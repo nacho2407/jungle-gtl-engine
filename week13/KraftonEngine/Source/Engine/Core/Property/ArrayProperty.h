@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/PropertyTypes.h"
 
@@ -64,7 +64,7 @@ struct FArrayProperty : FProperty
 		EPropertyType InType,
 		EPropertyType InElementType,
 		const FArrayOps* InArrayOps,
-		const FProperty* InInnerProperty,
+		FProperty* InInnerProperty,
 		const char* InCategory,
 		uint32 InFlags,
 		size_t InOffset,
@@ -80,22 +80,27 @@ struct FArrayProperty : FProperty
 	{
 	}
 
+	FArrayProperty(const FArrayProperty&) = delete;
+	FArrayProperty& operator=(const FArrayProperty&) = delete;
+	FArrayProperty(FArrayProperty&&) = delete;
+	FArrayProperty& operator=(FArrayProperty&&) = delete;
+
+	~FArrayProperty() override
+	{
+		delete InnerProperty;
+		InnerProperty = nullptr;
+	}
+
 	EPropertyType GetType() const override { return Type; }
 	EPropertyType GetElementType() const { return ElementType; }
 	const FProperty* GetInnerProperty() const { return InnerProperty; }
 	const FArrayOps* GetArrayOps() const { return ArrayOps; }
 	const FArrayProperty* AsArrayProperty() const override { return this; }
 
-	json::JSON SerializeValue(void* ValuePtr) const override;
-	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
-	json::JSON SerializeValue(void* ValuePtr, const FJsonObjectReferenceContext* RefContext) const override;
-	void	   DeserializeValue(void* ValuePtr, json::JSON& Value, const FJsonObjectReferenceContext* RefContext) const override;
-	json::JSON SerializeValue(void* ValuePtr, UObject* Owner, const FJsonObjectReferenceContext* RefContext) const override;
-	void	   DeserializeValue(void* ValuePtr, json::JSON& Value, UObject* Owner, const FJsonObjectReferenceContext* RefContext) const override;
-	void	   SerializeValue(void* ValuePtr, UObject* Owner, FArchive& Ar) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
+	void	   SerializeValue(void* ValuePtr, FArchive& Ar, const FPropertySerializeContext& Context) const override;
 
 private:
 	const FArrayOps* ArrayOps = nullptr;
-	const FProperty* InnerProperty = nullptr;
+	FProperty* InnerProperty = nullptr;
 };

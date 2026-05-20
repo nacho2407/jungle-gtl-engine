@@ -14,6 +14,20 @@ public:
 	{
 	}
 
+	UStruct(const UStruct&) = delete;
+	UStruct& operator=(const UStruct&) = delete;
+	UStruct(UStruct&&) = delete;
+	UStruct& operator=(UStruct&&) = delete;
+
+	virtual ~UStruct()
+	{
+		for (FProperty* Property : Properties)
+		{
+			delete Property;
+		}
+		Properties.clear();
+	}
+
 	const char* GetName() const { return Name; }
 	UStruct* GetSuperStruct() const { return SuperStruct; }
 	size_t      GetSize() const { return Size; }
@@ -30,14 +44,14 @@ public:
 		return false;
 	}
 
-	void AddProperty(const FProperty* Property)
+	void AddProperty(FProperty* Property)
 	{
 		if (!Property)
 		{
 			return;
 		}
 
-		for (const FProperty*& Existing : Properties)
+		for (FProperty*& Existing : Properties)
 		{
 			const bool bSameName =
 				Existing && Existing->Name && Property->Name && std::strcmp(Existing->Name, Property->Name) == 0;
@@ -47,6 +61,10 @@ public:
 
 			if (bSameName && bSameOwner)
 			{
+				if (Existing != Property)
+				{
+					delete Existing;
+				}
 				Existing = Property;
 				return;
 			}
@@ -94,7 +112,7 @@ private:
 	const char* Name = nullptr;
 	UStruct* SuperStruct = nullptr;
 	size_t Size = 0;
-	TArray<const FProperty*> Properties;
+	TArray<FProperty*> Properties;
 };
 
 // static initializer 에서 UStruct를 전역 레지스트리에 등록

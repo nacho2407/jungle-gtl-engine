@@ -21,7 +21,5 @@ struct FNameProperty : FProperty
 	EPropertyType GetType() const override { return EPropertyType::Name; }
 	const FNameProperty* AsNameProperty() const override { return this; }
 
-	json::JSON SerializeValue(void* ValuePtr) const override;
-	void	   DeserializeValue(void* ValuePtr, json::JSON& Value) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 };
