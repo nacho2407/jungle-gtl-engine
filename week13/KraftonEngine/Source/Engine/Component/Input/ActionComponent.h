@@ -19,11 +19,13 @@ public:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 
 	void HitStop(float Duration, float TimeDilation);
+	void LocalHitStop(float Duration);
 	void HitSquash(const FVector& SquashedScale, float SquashInDuration, float RecoverDuration);
 	void Knockback(const FVector& Direction, float Distance, float Duration);
 	void Slomo(float Duration, float TimeDilation);
 
 	void StopHitStop();
+	void StopLocalHitStop();
 	void StopHitSquash();
 	void StopKnockback();
 	void StopSlomo();
@@ -55,6 +57,15 @@ private:
 		FVector SquashedScale = FVector::OneVector;
 	};
 
+	struct FLocalHitStopAction
+	{
+		bool bActive = false;
+		float Duration = 0.0f;
+		float RemainingTime = 0.0f;
+		bool bActorTickWasEnabled = true;
+		TArray<TPair<UActorComponent*, bool>> ComponentTickStates;
+	};
+
 	struct FKnockbackAction
 	{
 		bool bActive = false;
@@ -69,6 +80,7 @@ private:
 	FTimedDilationAction HitStopAction;
 	FTimedDilationAction SlomoAction;
 	FHitSquashAction HitSquashAction;
+	FLocalHitStopAction LocalHitStopAction;
 	FKnockbackAction KnockbackAction;
 
 	static TArray<UActionComponent*> TimeDilationComponents;

@@ -251,13 +251,80 @@ void UGizmoComponent::ResetSnapAccumulation()
 	LastAppliedSnappedDragAmount = 0.0f;
 }
 
+bool UGizmoComponent::HasMultipleSelectedActorTargets() const
+{
+	if (!AllSelectedActors)
+	{
+		return false;
+	}
+
+	int32 ValidActorCount = 0;
+	for (AActor* Actor : *AllSelectedActors)
+	{
+		if (Actor && Actor->GetRootComponent())
+		{
+			++ValidActorCount;
+			if (ValidActorCount > 1)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+FVector UGizmoComponent::GetTargetPivotLocation() const
+{
+	if (!HasMultipleSelectedActorTargets())
+	{
+		return Target ? Target->GetWorldLocation() : GetWorldLocation();
+	}
+
+	FVector Sum = FVector::ZeroVector;
+	int32 ValidActorCount = 0;
+	for (AActor* Actor : *AllSelectedActors)
+	{
+		if (Actor && Actor->GetRootComponent())
+		{
+			Sum += Actor->GetActorLocation();
+			++ValidActorCount;
+		}
+	}
+
+	return ValidActorCount > 0
+		? Sum / static_cast<float>(ValidActorCount)
+		: (Target ? Target->GetWorldLocation() : GetWorldLocation());
+}
+
+bool UGizmoComponent::TranslateSelectedActorTargets(const FVector& Delta)
+{
+	if (!HasMultipleSelectedActorTargets())
+	{
+		return false;
+	}
+
+	for (AActor* Actor : *AllSelectedActors)
+	{
+		if (Actor && Actor->GetRootComponent())
+		{
+			Actor->AddActorWorldOffset(Delta);
+		}
+	}
+
+	return true;
+}
+
 void UGizmoComponent::TranslateTarget(float DragAmount)
 {
 	if (!Target) return;
 
 	FVector Delta = GetVectorForAxis(SelectedAxis) * DragAmount;
 	AddWorldOffset(Delta);
-	Target->AddWorldOffset(Delta);
+	if (!TranslateSelectedActorTargets(Delta))
+	{
+		Target->AddWorldOffset(Delta);
+	}
 }
 
 void UGizmoComponent::RotateTarget(float DragAmount)
@@ -527,7 +594,8 @@ void UGizmoComponent::UpdateGizmoTransform()
 {
 	if (!Target) return;
 
-	SetWorldLocation(Target->GetWorldLocation());
+	const FVector PivotLocation = GetTargetPivotLocation();
+	SetWorldLocation(PivotLocation);
 
 	if (bIsWorldSpace && CurMode != EGizmoMode::Scale)
 	{
@@ -558,9 +626,9 @@ void UGizmoComponent::UpdateGizmoTransform()
 		break;
 	}
 
-	if (FVector::DistSquared(GetWorldLocation(), Target->GetWorldLocation()) > FMath::Epsilon * FMath::Epsilon)
+	if (FVector::DistSquared(GetWorldLocation(), PivotLocation) > FMath::Epsilon * FMath::Epsilon)
 	{
-		SetWorldLocation(Target->GetWorldLocation());
+		SetWorldLocation(PivotLocation);
 	}
 
 	if (MeshData != DesiredMeshData && DesiredMeshData)

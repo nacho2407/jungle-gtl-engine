@@ -27,12 +27,14 @@ local ESQUIVA_1_PATH = "Content/Data/hirasawa-yui/esquiva 1_mixamo_com.uasset"
 
 local ATTACK_MONTAGE_PATH = "Content/Montages/AM_MagicAttack.uasset"
 local DEFAULT_SLOT = "DefaultSlot"
+local ACTION_PLAY_RATE = 1.5
+local KEY_Z = string.byte("Z")
 local KEY_X = string.byte("X")
 local KEY_C = string.byte("C")
-local BENCAO_DURATION = 1.366667
+local BENCAO_DURATION = 1.366667 / ACTION_PLAY_RATE
 local BENCAO_BLEND_IN = 0.35
 local BENCAO_BLEND_OUT = 0.35
-local ESQUIVA_1_DURATION = 4.066667
+local ESQUIVA_1_DURATION = 4.066667 / ACTION_PLAY_RATE
 local ESQUIVA_1_BLEND_IN = 0.35
 local ESQUIVA_1_BLEND_OUT = 0.35
 
@@ -64,8 +66,8 @@ function init(self)
     local top = Anim.create_state_machine("Top")
     Anim.sm_add_state(top, "Locomotion", loco)
     Anim.sm_add_state(top, "Jump", Anim.create_sequence_player(JUMP_PATH, 1.0, false))
-    Anim.sm_add_state(top, "Bencao", Anim.create_sequence_player(BENCAO_PATH, 1.0, false))
-    Anim.sm_add_state(top, "Esquiva1", Anim.create_sequence_player(ESQUIVA_1_PATH, 1.0, false))
+    Anim.sm_add_state(top, "Bencao", Anim.create_sequence_player(BENCAO_PATH, ACTION_PLAY_RATE, false))
+    Anim.sm_add_state(top, "Esquiva1", Anim.create_sequence_player(ESQUIVA_1_PATH, ACTION_PLAY_RATE, false))
     Anim.sm_add_transition(top, "AnyState", "Jump",
         function()
             if Anim.is_owner_falling() then
@@ -151,6 +153,10 @@ function update(self, dt)
     end
     if Anim.is_key_pressed(KEY_C) and not self.Esquiva1Playing and not Anim.is_owner_falling() then
         self.Esquiva1Requested = true
+    end
+
+    if Anim.is_key_pressed(KEY_Z) then
+        Anim.play_montage(ATTACK_MONTAGE_PATH, nil, ACTION_PLAY_RATE)
     end
 
     -- 좌클릭 → 풀바디 attack (DefaultSlot 기본).
