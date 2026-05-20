@@ -13,8 +13,8 @@ public:
 
 	// 주요 디렉터리
 	static std::wstring ShaderDir();      // Shaders/
-	static std::wstring AssetDir();       // Asset/
-	static std::wstring AudioDir();       // Asset/Audio/
+	static std::wstring AssetDir();       // Content/  (legacy 이름 — UE 의 ContentDir 와 의미 동일)
+	static std::wstring AudioDir();       // Content/Audio/
 	static std::wstring SceneDir();       // Content/Scene/
 	static std::wstring ScriptDir();	  // Content/Script/
 	static std::wstring DataDir();        // Content/Data/

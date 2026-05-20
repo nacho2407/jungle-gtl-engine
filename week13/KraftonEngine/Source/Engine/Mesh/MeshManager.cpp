@@ -42,7 +42,7 @@ static void EnsureMeshCacheDirExists()
 	static bool bCreated = false;
 	if (!bCreated)
 	{
-		std::wstring CacheDir = FPaths::RootDir() + L"Asset/MeshCache/";
+		std::wstring CacheDir = FPaths::RootDir() + L"Content/MeshCache/";
 		FPaths::CreateDir(CacheDir);
 		bCreated = true;
 	}
