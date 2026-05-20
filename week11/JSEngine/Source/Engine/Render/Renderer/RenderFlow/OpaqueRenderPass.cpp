@@ -84,7 +84,7 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
             if (RenderBus->GetShowFlags().bSelectedBoneWeight)
             {
                 FSelectedBoneConstants SelectedBoneConstants = {};
-                SelectedBoneConstants.SelectedBoneIndex = RenderBus->SelectedBoneIndex;
+                SelectedBoneConstants.SelectedBoneIndex = Cmd.SelectedBoneLocalIndex;
                 Context->RenderResources->SelectedBoneBuffer.Update(Context->DeviceContext, &SelectedBoneConstants, sizeof(FSelectedBoneConstants));
                 ID3D11Buffer* cb6 = Context->RenderResources->SelectedBoneBuffer.GetBuffer();
                 Context->DeviceContext->VSSetConstantBuffers(6, 1, &cb6);

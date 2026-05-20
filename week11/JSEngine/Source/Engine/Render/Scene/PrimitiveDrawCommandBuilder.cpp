@@ -202,7 +202,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
                 continue;
             }
 
-            UMaterialInterface* Material = Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(SectionIdx));
+            UMaterialInterface* Material = Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(Section.MaterialIndex));
 
             FRenderCommand Cmd = {};
             Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
@@ -210,6 +210,19 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.Type = ERenderCommandType::SkeletalMesh;
             Cmd.VertexFactoryType = CmdVertexFactoryType;
             Cmd.MeshBuffer = MeshBuffer;
+
+            Cmd.SelectedBoneLocalIndex = 0xFFFFFFFFu;
+            if (RenderBus.SelectedBoneIndex != 0xFFFFFFFFu)
+            {
+                for (uint32 LocalBoneIndex = 0; LocalBoneIndex < Section.BoneMap.size(); ++LocalBoneIndex)
+                {
+                    if (Section.BoneMap[LocalBoneIndex] == static_cast<int32>(RenderBus.SelectedBoneIndex))
+                    {
+                        Cmd.SelectedBoneLocalIndex = LocalBoneIndex;
+                        break;
+                    }
+                }
+            }
 
             // Bone weight visualization 은 GPU skinning으로만 동작
             if (RenderBus.GetSkinningMode() == ESkinningMode::GPU)
