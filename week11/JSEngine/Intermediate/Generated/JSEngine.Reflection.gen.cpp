@@ -30,6 +30,7 @@
 #include "LightComponent.gen.cpp"
 #include "LightComponentBase.gen.cpp"
 #include "LineBatchComponent.gen.cpp"
+#include "LocomotionTestMovementComponent.gen.cpp"
 #include "Material.gen.cpp"
 #include "MeshComponent.gen.cpp"
 #include "MovementComponent.gen.cpp"
@@ -134,6 +135,11 @@ void BindGeneratedLuaCasts(sol::state& Lua)
         [](UActorComponent& Self) -> UInterpToMovementComponent*
         {
             return Cast<UInterpToMovementComponent>(&Self);
+        };
+    ActorComponentType["AsLocomotionTestMovementComponent"] =
+        [](UActorComponent& Self) -> ULocomotionTestMovementComponent*
+        {
+            return Cast<ULocomotionTestMovementComponent>(&Self);
         };
     ActorComponentType["AsMovementComponent"] =
         [](UActorComponent& Self) -> UMovementComponent*
