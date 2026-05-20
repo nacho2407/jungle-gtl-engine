@@ -52,6 +52,7 @@ public:
     FTransform GetSocketTransform(const FName& SocketName) const override;
 
 protected:
+    void OnTransformDirty() override;
     void InitializePoseFromBindPose();
     void UpdateCurrentGlobalPose();
     void UpdateSkinningMatrices();

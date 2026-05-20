@@ -11,14 +11,17 @@
 
 #include "Asset/AnimSequenceAssetLoader.h"
 #include <algorithm>
-#include <filesystem>
 #include <chrono>
 #include <cwctype>
 #include <cstring>
-#include "Asset/FileUtils.h"
+#include <filesystem>
+#include <unordered_set>
 
+#include "Asset/FileUtils.h"
+#include "Asset/AnimStateMachineLoader.h"
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
+#include "Animation/AnimStateMachine.h"
 #include "Core/Logging/Log.h"
 #include "Engine/Animation/AnimSequence.h"
 
@@ -161,6 +164,14 @@ namespace
 		OutAnimStackName = Key.substr(SecondSeparator + 1);
 		return !OutSourceFbxPath.empty() && !OutTargetSkeletalMeshPath.empty() && !OutAnimStackName.empty();
 	}
+
+	void AddUniqueResourcePath(TArray<FString>& Paths, const FString& Path)
+	{
+		if (std::find(Paths.begin(), Paths.end(), Path) == Paths.end())
+		{
+			Paths.push_back(Path);
+		}
+	}
 }
 
 #pragma region __BINARY__
@@ -278,6 +289,7 @@ void FResourceManager::ClearDiscoveredResourceLists(bool bClearAtlasCache)
 	SkeletalMeshFilePaths.clear();
 	AnimSequenceFilePaths.clear();
 	AnimSequenceAssetFilePaths.clear();
+	AnimStateMachineFilePaths.clear();
 	AnimStackNamesMap.clear();
 	StaticMeshCache.ClearRegistry();
 
@@ -306,6 +318,10 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 	else if (FAssetPathPolicy::IsAnimSequenceAssetPath(RelativePath))
 	{
 		AnimSequenceAssetFilePaths.push_back(RelativePath);
+	}
+	else if (Extension == L".animsm")
+	{
+		AddUniqueResourcePath(AnimStateMachineFilePaths, RelativePath);
 	}
 	else if (Extension == L".obj" || Extension == L".fbx")
 	{
@@ -575,7 +591,7 @@ void FResourceManager::DeleteAllCacheFiles()
 	const TArray<fs::path> BinRootPaths = {
 		fs::path(FPaths::RootDir()) / "Asset" / "Mesh" / "Bin",
 		fs::path(FPaths::RootDir()) / "Asset" / "SkeletalMesh" / "Bin",
-		fs::path(FPaths::RootDir()) / "Asset" / "AnimSequence" / "Bin"
+		fs::path(FPaths::RootDir()) / "Asset" / "Animation" / "Sequence" / "Bin"
 	};
 
 	for (const fs::path& BinRootPath : BinRootPaths)
@@ -649,6 +665,18 @@ void FResourceManager::ReleaseGPUResources()
 	CurveCache.Release();
 
 	RenderStateCache.Release();
+
+	// Save 경로에 따라 같은 asset pointer가 여러 key로 들어갈 수 있기 때문에 중복 파괴를 막음
+	std::unordered_set<UAnimStateMachine*> DestroyedStateMachines;
+	for (auto& [Path, StateMachine] : AnimStateMachineMap)
+	{
+		if (StateMachine && DestroyedStateMachines.insert(StateMachine).second)
+		{
+			UObjectManager::Get().DestroyObject(StateMachine);
+		}
+	}
+	AnimStateMachineMap.clear();
+	AnimStateMachineFilePaths.clear();
 
 	for (auto& [Path, Anim] : AnimSequenceMap)
 	{
@@ -1265,6 +1293,70 @@ TArray<FString> FResourceManager::GetAnimSequencePaths() const
 TArray<FString> FResourceManager::GetAnimSequenceAssetPaths() const
 {
 	return AnimSequenceAssetFilePaths;
+}
+
+UAnimStateMachine* FResourceManager::LoadAnimStateMachine(const FString& Path)
+{
+	const FString NormalizedPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
+	if (NormalizedPath.empty())
+	{
+		UE_LOG_WARNING("[ResourceManager] Invalid anim state machine path. Path=%s", Path.c_str());
+		return nullptr;
+	}
+
+	if (UAnimStateMachine* Found = FindAnimStateMachine(NormalizedPath))
+	{
+		AddUniqueResourcePath(AnimStateMachineFilePaths, NormalizedPath);
+		return Found;
+	}
+
+	FAnimStateMachineLoader Loader;
+	UAnimStateMachine* StateMachine = Loader.Load(NormalizedPath);
+	if (!StateMachine)
+	{
+		UE_LOG_WARNING("[ResourceManager] Failed to load anim state machine. Path=%s", NormalizedPath.c_str());
+		return nullptr;
+	}
+
+	AnimStateMachineMap[NormalizedPath] = StateMachine;
+	AddUniqueResourcePath(AnimStateMachineFilePaths, NormalizedPath);
+	return StateMachine;
+}
+
+UAnimStateMachine* FResourceManager::FindAnimStateMachine(const FString& Path) const
+{
+	const FString NormalizedPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
+	if (NormalizedPath.empty())
+	{
+		return nullptr;
+	}
+
+	auto It = AnimStateMachineMap.find(NormalizedPath);
+	return It != AnimStateMachineMap.end() ? It->second : nullptr;
+}
+
+bool FResourceManager::SaveAnimStateMachine(const FString& Path, const UAnimStateMachine* StateMachine)
+{
+	const FString NormalizedPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
+	if (NormalizedPath.empty() || !StateMachine)
+	{
+		return false;
+	}
+
+	FAnimStateMachineLoader Loader;
+	if (!Loader.Save(NormalizedPath, StateMachine))
+	{
+		return false;
+	}
+
+	AnimStateMachineMap[NormalizedPath] = const_cast<UAnimStateMachine*>(StateMachine);
+	AddUniqueResourcePath(AnimStateMachineFilePaths, NormalizedPath);
+	return true;
+}
+
+TArray<FString> FResourceManager::GetAnimStateMachinePaths() const
+{
+	return AnimStateMachineFilePaths;
 }
 
 bool FResourceManager::IsAnimSequenceBinaryValid(
