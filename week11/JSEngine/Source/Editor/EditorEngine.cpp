@@ -15,6 +15,7 @@
 #include "Editor/EditorRenderPipeline.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Stats.h"
+#include "Engine/Core/CrashDump.h"
 #include "Runtime/Script/ScriptManager.h"
 #include "Slate/SSplitterV.h"
 #include "Slate/SSplitterH.h"
@@ -136,6 +137,12 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 
     MainPanel.Create(Window, Renderer, this);
+    FCrashReportInfo LatestCrash;
+    if (LoadLatestCrashReportInfo(LatestCrash) && std::filesystem::exists(LatestCrash.DumpPath))
+    {
+        NotificationService.Warning("Previous crash report detected: " + LatestCrash.TimeString);
+    }
+
     bool bCreatedStartupWorld = false;
     if (WorldList.empty())
     {

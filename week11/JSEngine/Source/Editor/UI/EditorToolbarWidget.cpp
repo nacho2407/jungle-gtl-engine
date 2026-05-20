@@ -6,6 +6,7 @@
 #include "Editor/UI/EditorPlayStreamWidget.h"
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
+#include "Engine/Core/CrashDump.h"
 #include "Serialization/SceneSaveManager.h"
 #include "ImGui/imgui.h"
 
@@ -29,6 +30,20 @@ namespace
 		std::error_code Ec;
 		std::filesystem::create_directories(SceneDir, Ec);
 		return SceneDir.wstring();
+	}
+
+	bool DoesPathExist(const std::wstring& Path)
+	{
+		std::error_code Ec;
+		return !Path.empty() && std::filesystem::exists(Path, Ec);
+	}
+
+	void OpenPathWithShell(const std::wstring& Path)
+	{
+		if (!Path.empty())
+		{
+			ShellExecuteW(nullptr, L"open", Path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+		}
 	}
 }
 
@@ -475,6 +490,48 @@ void FEditorToolbarWidget::RenderHelpMenu()
 	else
 	{
 		ImGui::MenuItem("Shortcuts", nullptr, false, false);
+	}
+
+	ImGui::Separator();
+
+	FCrashReportInfo LatestCrash;
+	const bool bHasLatestCrash = LoadLatestCrashReportInfo(LatestCrash);
+	const bool bHasDump = bHasLatestCrash && DoesPathExist(LatestCrash.DumpPath);
+	const bool bHasLog = bHasLatestCrash && DoesPathExist(LatestCrash.LogPath);
+	const bool bHasMeta = bHasLatestCrash && DoesPathExist(LatestCrash.MetaPath);
+
+	if (ImGui::BeginMenu("Crash Reports"))
+	{
+		if (bHasLatestCrash)
+		{
+			ImGui::TextDisabled("%s", LatestCrash.TimeString.c_str());
+			ImGui::TextDisabled("%s", LatestCrash.ExceptionCodeString.c_str());
+			ImGui::Separator();
+		}
+		else
+		{
+			ImGui::TextDisabled("No crash report found");
+			ImGui::Separator();
+		}
+
+		if (ImGui::MenuItem("Open Latest Dump", nullptr, false, bHasDump))
+		{
+			OpenPathWithShell(LatestCrash.DumpPath);
+		}
+		if (ImGui::MenuItem("Open Latest Log", nullptr, false, bHasLog))
+		{
+			OpenPathWithShell(LatestCrash.LogPath);
+		}
+		if (ImGui::MenuItem("Open Latest Metadata", nullptr, false, bHasMeta))
+		{
+			OpenPathWithShell(LatestCrash.MetaPath);
+		}
+		if (ImGui::MenuItem("Open Crash Report Folder"))
+		{
+			OpenPathWithShell(FPaths::DumpDir());
+		}
+
+		ImGui::EndMenu();
 	}
 
 	ImGui::EndMenu();
