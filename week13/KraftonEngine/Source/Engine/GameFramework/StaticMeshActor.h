@@ -16,7 +16,7 @@ public:
 
 	void BeginPlay() override;
 
-	void InitDefaultComponents(const FString& UStaticMeshFileName = "Data/BasicShape/Cylinder.obj");
+	void InitDefaultComponents(const FString& UStaticMeshFileName = "Content/Data/BasicShape/Cylinder.obj");
 
 private:
 	UStaticMeshComponent* StaticMeshComponent = nullptr;

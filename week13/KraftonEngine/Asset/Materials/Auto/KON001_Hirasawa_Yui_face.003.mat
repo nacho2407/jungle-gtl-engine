@@ -12,6 +12,6 @@
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "Textures" : {
-    "DiffuseTexture" : "Data/hirasawa-yui/yui.fbm/KON001_Hirasawa_Yui.png"
+    "DiffuseTexture" : "Content/Data/hirasawa-yui/yui.fbm/KON001_Hirasawa_Yui.png"
   }
 }

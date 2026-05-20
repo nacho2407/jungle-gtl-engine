@@ -12,6 +12,6 @@
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "Textures" : {
-    "DiffuseTexture" : "Data/Samba Dancing/textures/b0.png"
+    "DiffuseTexture" : "Content/Data/Samba Dancing/textures/b0.png"
   }
 }
