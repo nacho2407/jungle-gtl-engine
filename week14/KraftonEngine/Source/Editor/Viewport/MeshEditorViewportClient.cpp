@@ -1,4 +1,4 @@
-﻿#include "MeshEditorViewportClient.h"
+#include "MeshEditorViewportClient.h"
 
 #include "Render/Types/MinimalViewInfo.h"
 #include "Viewport/Viewport.h"
@@ -8,9 +8,9 @@
 #include "Mesh/SkeletalMeshAsset.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-#include "Component/GizmoComponent.h"
-#include "Component/SkeletalMeshComponent.h"
-#include "Component/BoneDebugComponent.h"
+#include "Component/Debug/GizmoComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Component/Debug/BoneDebugComponent.h"
 #include "Collision/RayUtils.h"
 #include "Settings/EditorSettings.h"
 #include "Slate/SlateApplication.h"

@@ -1,7 +1,7 @@
 #include "DecalActor.h"
-#include "Component/DecalComponent.h"
-#include "Component/BillboardComponent.h"
-#include "Component/TextRenderComponent.h"
+#include "Component/Primitive/DecalComponent.h"
+#include "Component/Primitive/BillboardComponent.h"
+#include "Component/Primitive/TextRenderComponent.h"
 #include "Materials/MaterialManager.h"
 
 ADecalActor::ADecalActor()

@@ -3,7 +3,7 @@
 #include "GameFramework/World.h"
 #include "GameFramework/PlayerCameraManager.h"
 #include "Component/ActorComponent.h"
-#include "Component/CameraComponent.h"
+#include "Component/Camera/CameraComponent.h"
 
 void APlayerController::BeginPlay()
 {

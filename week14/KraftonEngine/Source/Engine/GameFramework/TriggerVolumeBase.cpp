@@ -2,7 +2,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/World.h"
-#include "Component/BoxComponent.h"
+#include "Component/Shape/BoxComponent.h"
 #include "Core/CollisionTypes.h"
 #include "Serialization/Archive.h"
 

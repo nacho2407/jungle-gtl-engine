@@ -1,4 +1,4 @@
-﻿#include "Editor/Viewport/EditorViewportClient.h"
+#include "Editor/Viewport/EditorViewportClient.h"
 
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
@@ -19,7 +19,7 @@ UWorld* FEditorViewportClient::GetWorld() const
 {
 	return GEngine ? GEngine->GetWorld() : nullptr;
 }
-#include "Component/GizmoComponent.h"
+#include "Component/Debug/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Collision/RayUtils.h"
 #include "Object/Object.h"

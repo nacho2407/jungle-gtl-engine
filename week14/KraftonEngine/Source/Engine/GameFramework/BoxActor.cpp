@@ -1,5 +1,5 @@
 #include "GameFramework/BoxActor.h"
-#include "Component/BoxComponent.h"
+#include "Component/Shape/BoxComponent.h"
 
 void ABoxActor::InitDefaultComponents()
 {

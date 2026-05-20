@@ -1,9 +1,9 @@
 #include "GameFramework/LuaCharacter.h"
 
-#include "Component/CameraComponent.h"
-#include "Component/CapsuleComponent.h"
-#include "Component/LuaScriptComponent.h"
-#include "Component/SpringArmComponent.h"
+#include "Component/Camera/CameraComponent.h"
+#include "Component/Shape/CapsuleComponent.h"
+#include "Component/Script/LuaScriptComponent.h"
+#include "Component/Camera/SpringArmComponent.h"
 void ALuaCharacter::InitDefaultComponents(const FString& SkeletalMeshFileName, const FString& ScriptFile)
 {
 	Super::InitDefaultComponents(SkeletalMeshFileName);

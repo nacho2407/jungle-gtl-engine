@@ -1,6 +1,6 @@
 #include "SkeletalMeshActor.h"
 #include "Runtime/Engine.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Mesh/MeshManager.h"
 #include "Animation/AnimationMode.h"
 #include "Animation/Instance/CharacterAnimInstance.h"

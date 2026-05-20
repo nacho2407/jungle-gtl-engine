@@ -1,5 +1,5 @@
 #include "GameFramework/SphereActor.h"
-#include "Component/SphereComponent.h"
+#include "Component/Shape/SphereComponent.h"
 #include "Core/Log.h"
 
 void ASphereActor::InitDefaultComponents()

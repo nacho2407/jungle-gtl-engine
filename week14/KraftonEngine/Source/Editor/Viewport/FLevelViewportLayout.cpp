@@ -26,9 +26,9 @@
 #include "Math/MathUtils.h"
 #include "Platform/Paths.h"
 #include "ImGui/imgui.h"
-#include "Component/CameraComponent.h"
+#include "Component/Camera/CameraComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
-#include "Component/GizmoComponent.h"
+#include "Component/Debug/GizmoComponent.h"
 #include "Component/Light/LightComponentBase.h"
 #include "UI/Toolbar/ViewportToolbar.h"
 

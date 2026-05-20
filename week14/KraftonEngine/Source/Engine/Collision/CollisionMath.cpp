@@ -1,8 +1,8 @@
 #include "Collision/CollisionMath.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/BoxComponent.h"
-#include "Component/SphereComponent.h"
-#include "Component/CapsuleComponent.h"
+#include "Component/Shape/BoxComponent.h"
+#include "Component/Shape/SphereComponent.h"
+#include "Component/Shape/CapsuleComponent.h"
 
 #include <cmath>
 #include <algorithm>

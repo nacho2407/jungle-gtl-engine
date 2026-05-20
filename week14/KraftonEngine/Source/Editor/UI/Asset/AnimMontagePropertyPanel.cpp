@@ -5,7 +5,7 @@
 #include "Animation/Sequence/AnimSequence.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimationManager.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 
 #include <imgui.h>
 #include <cstdio>
