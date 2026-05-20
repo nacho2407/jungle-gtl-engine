@@ -23,8 +23,10 @@ void USpotlightComponent::PostDuplicate(UObject* Original)
 
 
 FMatrix USpotlightComponent::ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
-	float SplitNearT, float SplitFarT) const
+	float SplitNearT, float SplitFarT, float ShadowMapResolution) const
 {
+	(void)ShadowMapResolution;
+
 	const FVector LightPos = GetWorldLocation();
 	const FVector LightDir = GetForwardVector().GetSafeNormal();
 	const FVector UpVector = GetSpotLightUpVector(LightDir);
