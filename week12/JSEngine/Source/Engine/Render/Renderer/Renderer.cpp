@@ -56,23 +56,28 @@ void BindVertexFactoryResources(
 
 		if (!BoneBuffer)
 		{
-			static const FBoneMatrixConstants EmptyBoneMatrixConstants = {};
 			const FBoneMatrixConstants* ConstantsToBind = BoneMatrixConstants
 				? BoneMatrixConstants
-				: &EmptyBoneMatrixConstants;
+				: nullptr;
 
-			const auto UploadStart = std::chrono::steady_clock::now();
-			RenderResources->BoneMatrixConstantBuffer.Update(
-				Context,
-				ConstantsToBind,
-				sizeof(FBoneMatrixConstants));
-			const auto UploadEnd = std::chrono::steady_clock::now();
-			FSkinningStats::Get().AddGPUBoneMatrixUpload(
-				std::chrono::duration<double, std::milli>(UploadEnd - UploadStart).count(),
-				ConstantsToBind->BoneCount,
-				sizeof(FBoneMatrixConstants));
-
-			BoneBuffer = RenderResources->BoneMatrixConstantBuffer.GetBuffer();
+			if (ConstantsToBind && ConstantsToBind->BoneCount > 0)
+			{
+				const auto UploadStart = std::chrono::steady_clock::now();
+				RenderResources->BoneMatrixConstantBuffer.Update(
+					Context,
+					ConstantsToBind,
+					sizeof(FBoneMatrixConstants));
+				const auto UploadEnd = std::chrono::steady_clock::now();
+				FSkinningStats::Get().AddGPUBoneMatrixUpload(
+					std::chrono::duration<double, std::milli>(UploadEnd - UploadStart).count(),
+					ConstantsToBind->BoneCount,
+					sizeof(FBoneMatrixConstants));
+				BoneBuffer = RenderResources->BoneMatrixConstantBuffer.GetBuffer();
+			}
+			else
+			{
+				BoneBuffer = RenderResources->EmptyBoneMatrixConstantBuffer.GetBuffer();
+			}
 		}
 
 		Context->VSSetConstantBuffers(5, 1, &BoneBuffer);
@@ -334,6 +339,14 @@ void FRenderer::CreateResources()
 	Resources.ShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowConstants));
 	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FUberConstants));
 	Resources.BoneMatrixConstantBuffer.Create(Device.GetDevice(), sizeof(FBoneMatrixConstants));
+	Resources.EmptyBoneMatrixConstantBuffer.Create(Device.GetDevice(), sizeof(FBoneMatrixConstants));
+	{
+		FBoneMatrixConstants EmptyBoneMatrixConstants = {};
+		Resources.EmptyBoneMatrixConstantBuffer.Update(
+			Device.GetDeviceContext(),
+			&EmptyBoneMatrixConstants,
+			sizeof(FBoneMatrixConstants));
+	}
 	Resources.BoneWeightHeatmapConstantBuffer.Create(Device.GetDevice(), sizeof(FBoneWeightHeatmapConstants));
 	Resources.LightShadowIndexBuffer.Create(Device.GetDevice(), sizeof(FLightShadowIndices), 1024);
 	Resources.AtlasShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowAtlasConstants), 1024);
@@ -404,6 +417,7 @@ void FRenderer::Release()
 	Resources.FrameBuffer.Release();
 	Resources.ShadowBuffer.Release();
 	Resources.BoneMatrixConstantBuffer.Release();
+	Resources.EmptyBoneMatrixConstantBuffer.Release();
 	Resources.BoneWeightHeatmapConstantBuffer.Release();
 	Resources.LightBuffer.Release();
 	Resources.LightShadowIndexBuffer.Release();
