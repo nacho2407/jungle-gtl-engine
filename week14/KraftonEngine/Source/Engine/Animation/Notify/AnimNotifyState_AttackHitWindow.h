@@ -10,6 +10,22 @@
 class AActor;
 class USkeletalMeshComponent;
 
+// 히트 시 대상에게 줄 충격 방향. UActionComponent::Knockback 의 Direction 인자로 사용.
+UENUM()
+enum class EAttackKnockbackMode : uint8
+{
+	Forward,            // 공격자(attacker) 의 forward 방향 — "앞으로 밀기"
+	Up,                 // world up — "위로 띄우기" (launcher)
+	AwayFromAttacker,   // attacker→target 의 수평 방향 (다양한 위치에서 자연스럽게 멀어짐)
+};
+
+inline const char* GAttackKnockbackModeNames[] = {
+	"Forward",
+	"Up",
+	"AwayFromAttacker",
+};
+inline constexpr uint32 GAttackKnockbackModeCount = sizeof(GAttackKnockbackModeNames) / sizeof(GAttackKnockbackModeNames[0]);
+
 UCLASS()
 class UAnimNotifyState_AttackHitWindow : public UAnimNotifyState
 {
@@ -29,6 +45,18 @@ public:
 
 	UPROPERTY(Edit, Save, Category="AttackHitWindow", DisplayName="Hit Stop Duration", Min=0.0f, Max=1.0f, Speed=0.01f)
 	float HitStopDuration = 0.08f;
+
+	UPROPERTY(Edit, Save, Category="AttackHitWindow", DisplayName="Apply Knockback")
+	bool bApplyKnockback = false;
+
+	UPROPERTY(Edit, Save, Category="AttackHitWindow", DisplayName="Knockback Mode", Enum=EAttackKnockbackMode)
+	EAttackKnockbackMode KnockbackMode = EAttackKnockbackMode::Forward;
+
+	UPROPERTY(Edit, Save, Category="AttackHitWindow", DisplayName="Knockback Distance", Min=0.0f, Max=100.0f, Speed=0.1f)
+	float KnockbackDistance = 5.0f;
+
+	UPROPERTY(Edit, Save, Category="AttackHitWindow", DisplayName="Knockback Duration", Min=0.0f, Max=2.0f, Speed=0.01f)
+	float KnockbackDuration = 0.25f;
 
 	UPROPERTY(Edit, Save, Category="AttackHitWindow", DisplayName="Draw Debug Hit Window")
 	bool bDrawDebugHitWindow = true;
