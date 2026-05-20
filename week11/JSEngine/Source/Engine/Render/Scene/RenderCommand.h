@@ -442,6 +442,9 @@ struct FRenderCommand
 	uint32 SectionIndexStart = 0;
 	uint32 SectionIndexCount = 0;
 
+	// Global selected bone index converted through Section.BoneMap for this draw.
+	uint32 SelectedBoneLocalIndex = 0xFFFFFFFFu;
+
 	FBoundingBox WorldAABB;
 
 	union
