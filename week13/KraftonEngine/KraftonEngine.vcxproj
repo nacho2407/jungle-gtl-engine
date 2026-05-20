@@ -198,7 +198,7 @@
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -221,7 +221,7 @@
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -250,7 +250,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -281,7 +281,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">
@@ -304,7 +304,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|x64'">
@@ -335,7 +335,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
@@ -366,7 +366,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
@@ -397,7 +397,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)Tools\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -1959,7 +1959,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <PythonExe Condition="'$(PythonExe)'==''">python</PythonExe>
   </PropertyGroup>
   <Target Name="GenerateReflectionHeaders" BeforeTargets="ClCompile">
-    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(MSBuildProjectDirectory)\Tools\GenerateHeaders.py&quot; --root &quot;$(MSBuildProjectDirectory)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
+    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(MSBuildProjectDirectory)\..\Scripts\GenerateHeaders.py&quot; --root &quot;$(MSBuildProjectDirectory)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
   </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

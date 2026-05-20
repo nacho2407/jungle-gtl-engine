@@ -5,11 +5,11 @@
 ## 빠른 체크리스트
 
 1. 리플렉션 대상 헤더에 `Object/ObjectMacros.h` 또는 이를 포함하는 상위 헤더가 포함되어 있어야 한다.
-2. 리플렉션 대상 타입이 있는 헤더에는 자기 자신의 generated header가 포함되어야 한다. 이 include는 pre-build의 `Tools/GenerateHeaders.py`가 자동으로 삽입/수정한다.
+2. 리플렉션 대상 타입이 있는 헤더에는 자기 자신의 generated header가 포함되어야 한다. 이 include는 pre-build의 `Scripts/GenerateHeaders.py`가 자동으로 삽입/수정한다.
 3. `UCLASS()`, `USTRUCT()`, `UENUM()`을 타입 선언 바로 앞에 붙인다.
 4. `UCLASS()`와 `USTRUCT()` 내부에는 `GENERATED_BODY()`를 넣는다.
 5. 에디터나 저장 시스템에 노출할 필드에는 `UPROPERTY(...)`를 붙인다.
-6. 빌드 전에 `Tools/GenerateHeaders.py`가 실행되어 `Intermediate/Generated` 아래의 generated 파일을 갱신한다. 일반 빌드에서는 프로젝트 pre-build 단계가 이를 수행한다.
+6. 빌드 전에 `Scripts/GenerateHeaders.py`가 실행되어 `Intermediate/Generated` 아래의 generated 파일을 갱신한다. 일반 빌드에서는 프로젝트 pre-build 단계가 이를 수행한다.
 
 ## 새 클래스 작성
 
@@ -243,7 +243,7 @@ TArray<FSoftObjectPtr> MaterialSlots;
 ## 전체 흐름
 
 1. 헤더에 `UCLASS`, `USTRUCT`, `UENUM`, `UPROPERTY`, `GENERATED_BODY`를 작성한다.
-2. `Tools/GenerateHeaders.py`가 `Source/` 아래 헤더를 스캔하고 generated header include를 먼저 자동 정리한다.
+2. `Scripts/GenerateHeaders.py`가 `Source/` 아래 헤더를 스캔하고 generated header include를 먼저 자동 정리한다.
 3. 생성기는 `Intermediate/Generated/.../*.generated.h`와 `*.generated.cpp`를 만든다.
 4. generated header는 `GENERATED_BODY()`가 확장될 macro를 정의한다.
 5. generated cpp는 `UClass`, `UStruct`, `FEnum`, `FProperty` 정적 객체를 만들고 등록한다.
@@ -400,7 +400,7 @@ generated 파일은 수동으로 수정하지 않는다. 수정해야 할 내용
 
 1. `Source/Engine/Core/PropertyTypes.h`: `EPropertyType`, forward declaration, include 연결.
 2. `Source/Engine/Core/Property/...`: 새 property class 구현.
-3. `Tools/GenerateHeaders.py`: C++ 타입 또는 `Type=...`이 새 property class로 생성되도록 매핑.
+3. `Scripts/GenerateHeaders.py`: C++ 타입 또는 `Type=...`이 새 property class로 생성되도록 매핑.
 4. `Source/Editor/UI/EditorPropertyWidget.cpp`: Details 패널에서 새 타입 위젯 렌더링.
 5. scene save/load가 필요한 경우 해당 property의 `SerializeValue`/`DeserializeValue`.
 
