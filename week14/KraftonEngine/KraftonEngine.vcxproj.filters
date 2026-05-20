@@ -650,6 +650,12 @@
     <ClCompile Include="Source\Engine\Animation\AnimGraphAsset.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimGraphCompiler.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimGraphInstance.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
@@ -1662,6 +1668,12 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimGraphAsset.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimGraphCompiler.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimGraphInstance.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimGraphTypes.h">

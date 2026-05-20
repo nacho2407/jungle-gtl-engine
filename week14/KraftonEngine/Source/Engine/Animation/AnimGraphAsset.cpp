@@ -35,6 +35,9 @@ FArchive& operator<<(FArchive& Ar, FAnimGraphNode& Node)
 	Ar << Node.PosX;
 	Ar << Node.PosY;
 	Ar << Node.Pins;
+	Ar << Node.PlayRate;
+	Ar << Node.bLooping;
+	// Node.SequenceRef 는 transient — 직렬화 skip (path 기반 ref 는 후속 단계).
 	return Ar;
 }
 
@@ -226,13 +229,23 @@ void UAnimGraphAsset::InitializeDefault()
 	Links.clear();
 	NextId = 1;
 
-	FAnimGraphNode* Source = AddNodeOfType(EAnimGraphNodeType::SequencePlayer, -240.0f, 0.0f);
-	FAnimGraphNode* Sink   = AddNodeOfType(EAnimGraphNodeType::OutputPose,        0.0f, 0.0f);
-
-	// 양쪽 모두 Pose 핀 1개씩 — 첫 핀끼리 연결.
-	if (Source && Sink && !Source->Pins.empty() && !Sink->Pins.empty())
+	// ⚠ Nodes 가 std::vector — 후속 AddNode 호출이 reallocation 을 일으키면 이전에 받은
+	// raw pointer 가 invalidate 됨. id 만 즉시 캡쳐하고 pointer 는 버린다.
+	uint32 SourceOutId = 0;
+	if (FAnimGraphNode* Source = AddNodeOfType(EAnimGraphNodeType::SequencePlayer, -240.0f, 0.0f))
 	{
-		AddLink(Source->Pins.front().PinId, Sink->Pins.front().PinId);
+		if (!Source->Pins.empty()) SourceOutId = Source->Pins.front().PinId;
+	}
+
+	uint32 SinkInId = 0;
+	if (FAnimGraphNode* Sink = AddNodeOfType(EAnimGraphNodeType::OutputPose, 0.0f, 0.0f))
+	{
+		if (!Sink->Pins.empty()) SinkInId = Sink->Pins.front().PinId;
+	}
+
+	if (SourceOutId && SinkInId)
+	{
+		AddLink(SourceOutId, SinkInId);
 	}
 }
 
@@ -252,6 +265,15 @@ const FAnimGraphNode* UAnimGraphAsset::FindNode(uint32 NodeId) const
 	for (const FAnimGraphNode& Node : Nodes)
 	{
 		if (Node.NodeId == NodeId) return &Node;
+	}
+	return nullptr;
+}
+
+FAnimGraphNode* UAnimGraphAsset::FindFirstNodeOfType(EAnimGraphNodeType Type)
+{
+	for (FAnimGraphNode& Node : Nodes)
+	{
+		if (Node.Type == Type) return &Node;
 	}
 	return nullptr;
 }

@@ -255,12 +255,13 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 
 	if (ImGui::BeginPopup("AnimGraphNodeMenu"))
 	{
-		const uint32 NodeU = NodeIdToU32(ContextNodeId);
 		if (ImGui::MenuItem("Delete"))
 		{
-			ed::DeleteNode(ContextNodeId);
+			// ed::DeleteNode 는 내부적으로 Add(object) 호출하지만 ContextMenuAction 이
+			// active 인 동안엔 GetCurrentAction() != nullptr 로 거부 → 모델에 반영 안 됨.
+			// 컨텍스트 메뉴 경로는 ed 의 modal action 을 우회해 모델 직접 수정.
+			Asset->RemoveNode(NodeIdToU32(ContextNodeId));
 		}
-		(void)NodeU;
 		ImGui::EndPopup();
 	}
 
@@ -268,7 +269,8 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 	{
 		if (ImGui::MenuItem("Delete"))
 		{
-			ed::DeleteLink(ContextLinkId);
+			// 노드 메뉴와 동일 사유 — modal action 우회.
+			Asset->RemoveLink(LinkIdToU32(ContextLinkId));
 		}
 		ImGui::EndPopup();
 	}
