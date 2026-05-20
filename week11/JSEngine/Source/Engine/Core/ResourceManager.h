@@ -147,6 +147,7 @@ public:
 		const FString& AnimStackName,
 		const FReferenceSkeleton* TargetReferenceSkeleton,
 		FString* OutInvalidReason = nullptr) const;
+		bool SaveAnimSequence(UAnimSequence* AnimSequence);
 	// 에디터에서 socket 등 mesh data 변경 후 writable cache(.bin)에 저장.
 	bool SaveSkeletalMesh(USkeletalMesh* Mesh);
 

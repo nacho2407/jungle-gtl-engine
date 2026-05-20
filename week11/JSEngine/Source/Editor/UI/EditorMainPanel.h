@@ -57,6 +57,7 @@ public:
 	void RequestDockViewer(FEditorViewer* Viewer);
 	void RenderViewerToolbarControls(FEditorViewer* Viewer);
 	ID3D11ShaderResourceView* GetHomeIconResource() const { return IconResources.HomeIcon; }
+	ID3D11ShaderResourceView* GetPlayControlIconResource(EEditorMainPanelPlayControlIcon Icon) const;
     void FlushOpenViewerWidgets();
     void CloseViewer(FEditorViewer* Viewer);
     void FlushClosedViewerWidgets();

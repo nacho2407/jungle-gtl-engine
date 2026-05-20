@@ -35,6 +35,13 @@ struct FAnimExtractContext
     }
 };
 
+enum class EAnimNotifyActionType : uint8
+{
+    GameplayEvent,
+    PlaySound,
+    PlayEffect,
+};
+
 /**
  * @brief animation asset timeline에 저장되는 notify 원본 이벤트
  * 
@@ -45,6 +52,9 @@ struct FAnimNotifyEvent
     float TriggerTime = 0.0f;
     float Duration = 0.0f;
     FName NotifyName;
+    EAnimNotifyActionType ActionType = EAnimNotifyActionType::GameplayEvent;
+    FName EventId;
+    FString Payload;
 };
 
 /**
@@ -123,6 +133,7 @@ enum class ERootMotionMode: uint8
     ExtractOnly,
     ApplyToOwner,
 };
+
 
 /**
  * @brief 한 frame 동안 animation root bone에서 추출한 root motion delta

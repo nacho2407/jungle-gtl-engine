@@ -33,6 +33,20 @@ enum class EEditorMainPanelViewportToolIcon : int32
 	Count,
 };
 
+enum class EEditorMainPanelPlayControlIcon : int32
+{
+	Pause,
+	PlayForward,
+	PlayReverse,
+	Record,
+	Stop,
+	ToEnd,
+	ToFront,
+	ToNext,
+	ToPrevious,
+	Count,
+};
+
 struct FEditorMainPanelViewportContextMenuState
 {
 	bool bRightClickTracking = false;
@@ -103,6 +117,7 @@ struct FEditorMainPanelRuntimeUIDrawCallbackState
 struct FEditorMainPanelViewportIconResources
 {
 	ID3D11ShaderResourceView* ToolIcons[static_cast<int32>(EEditorMainPanelViewportToolIcon::Count)] = {};
+	ID3D11ShaderResourceView* PlayControlIcons[static_cast<int32>(EEditorMainPanelPlayControlIcon::Count)] = {};
 	ID3D11ShaderResourceView* LayoutIcons[static_cast<int32>(EEditorViewportLayoutMode::Max)] = {};
 	ID3D11ShaderResourceView* SaveIcon = nullptr;
 	ID3D11ShaderResourceView* AddActorIcon = nullptr;

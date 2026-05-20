@@ -1,0 +1,9 @@
+{
+        "Name" : "Asset/Material/Auto/VillageDemo_Mat_62_Inst_0.matinst",
+        "OverridedParams" : [{
+            "Name" : "Shininess",
+            "Type" : "Float",
+            "Value" : 10.808000
+          }],
+        "Parent" : "Asset/Material/Auto/VillageDemo_Mat_62.mat"
+      }

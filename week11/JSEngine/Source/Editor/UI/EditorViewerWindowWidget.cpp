@@ -24,6 +24,26 @@
 
 namespace
 {
+constexpr const char* AnimNotifyActionTypeItems[] = {
+    "Gameplay Event",
+    "Play Sound",
+    "Play Effect",
+};
+constexpr int32 AnimNotifyActionTypeItemCount = static_cast<int32>(
+    sizeof(AnimNotifyActionTypeItems) / sizeof(AnimNotifyActionTypeItems[0]));
+
+int32 ToNotifyActionTypeIndex(EAnimNotifyActionType ActionType)
+{
+    const int32 Index = static_cast<int32>(ActionType);
+    return std::clamp(Index, 0, AnimNotifyActionTypeItemCount - 1);
+}
+
+EAnimNotifyActionType FromNotifyActionTypeIndex(int32 Index)
+{
+    return static_cast<EAnimNotifyActionType>(
+        std::clamp(Index, 0, AnimNotifyActionTypeItemCount - 1));
+}
+
 void SetOpaqueBlendStateCallback(const ImDrawList*, const ImDrawCmd* Cmd)
 {
     ID3D11DeviceContext* DeviceContext = static_cast<ID3D11DeviceContext*>(Cmd->UserCallbackData);
@@ -41,8 +61,7 @@ bool UsesAbsoluteImGuiCoordinates()
 
 POINT ImGuiScreenToClientPoint(FWindowsWindow* Window, const ImVec2& Point)
 {
-    POINT Result =
-    {
+    POINT Result = {
         static_cast<LONG>(std::lround(Point.x)),
         static_cast<LONG>(std::lround(Point.y))
     };
@@ -245,7 +264,45 @@ uint64 HashMatrix(uint64 Seed, const FMatrix& Matrix)
 {
     return HashBytes(Seed, Matrix.M, sizeof(Matrix.M));
 }
+
+bool DrawTimelineIconButton(
+    const char* Id,
+    ID3D11ShaderResourceView* Icon,
+    const char* FallbackLabel,
+    const char* Tooltip,
+    const ImVec2& ButtonSize)
+{
+    bool bPressed = false;
+    if (!Icon)
+    {
+        bPressed = ImGui::Button(FallbackLabel, ButtonSize);
+    }
+    else
+    {
+        bPressed = ImGui::InvisibleButton(Id, ButtonSize);
+        const ImVec2 Min = ImGui::GetItemRectMin();
+        const ImVec2 Max = ImGui::GetItemRectMax();
+        const bool bHovered = ImGui::IsItemHovered();
+        const bool bHeld = ImGui::IsItemActive();
+        const ImU32 BgColor = ImGui::GetColorU32(
+            bHeld ? ImGuiCol_ButtonActive : (bHovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button));
+        constexpr ImVec2 IconSize(16.0f, 16.0f);
+        const ImVec2 IconMin(
+            Min.x + (ButtonSize.x - IconSize.x) * 0.5f,
+            Min.y + (ButtonSize.y - IconSize.y) * 0.5f);
+        const ImVec2 IconMax(IconMin.x + IconSize.x, IconMin.y + IconSize.y);
+
+        ImGui::GetWindowDrawList()->AddRectFilled(Min, Max, BgColor, ImGui::GetStyle().FrameRounding);
+        ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(Icon), IconMin, IconMax);
+    }
+
+    if (Tooltip && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+    {
+        ImGui::SetTooltip("%s", Tooltip);
+    }
+    return bPressed;
 }
+} // namespace
 
 void FEditorViewerWindowWidget::Initialize(UEditorEngine* InEditorEngine)
 {
@@ -257,20 +314,23 @@ void FEditorViewerWindowWidget::Shutdown()
     Children.clear();
     BoneToSocketIndices.clear();
     CachedMesh = nullptr;
-    CachedSkComp = nullptr; 
+    CachedSkComp = nullptr;
     TimelineHeight = 140.0f;
     AnimationCurrentTime = 0.0f;
     AnimationMaxTime = 0.0f;
     AnimationTotalFrames = 1;
     bAnimationLoop = true;
+    AnimationPlayRate = 1.0f;
     SelectedAnimationStackIndex = 0;
     LastRequestedAnimationKey.clear();
 
-    PendingPreviewPickerSocketIdx = -1; 
-    RenameSocketIdx = -1;               
-    bMeshDirty = false; 
+    PendingPreviewPickerSocketIdx = -1;
+    RenameSocketIdx = -1;
+    bMeshDirty = false;
     CleanMeshEditSignature = 0;
     bHasCleanMeshEditSignature = false;
+    bAnimSequenceDirty = false;
+    DirtyTrackedAnimSequence = nullptr;
 
     Viewer = nullptr;
     bOpen = false;
@@ -285,144 +345,186 @@ FString FEditorViewerWindowWidget::GetWindowName() const
 
 bool FEditorViewerWindowWidget::CanSaveMesh() const
 {
-	if (!Viewer)
-	{
-		return false;
-	}
+    if (!Viewer)
+    {
+        return false;
+    }
 
-	ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
-	USkeletalMeshComponent* SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
-	return SkelComp && SkelComp->GetSkeletalMesh() && HasMeshAssetEdits();
+    ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+    USkeletalMeshComponent* SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+    return SkelComp && SkelComp->GetSkeletalMesh() && HasMeshAssetEdits();
 }
 
 bool FEditorViewerWindowWidget::IsMeshDirty() const
 {
-	return HasMeshAssetEdits();
+    return HasMeshAssetEdits();
+}
+
+UAnimSequence* FEditorViewerWindowWidget::ResolveCurrentAnimSequence() const
+{
+    USkeletalMeshComponent* SkelComp = CachedSkComp;
+    if (!SkelComp && Viewer)
+    {
+        ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+        SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+    }
+
+    return SkelComp ? Cast<UAnimSequence>(SkelComp->GetAnimation()) : nullptr;
+}
+
+bool FEditorViewerWindowWidget::CanSaveAnimSequence() const
+{
+    UAnimSequence* Sequence = ResolveCurrentAnimSequence();
+    return Sequence &&
+           Sequence->DataModel &&
+           !Sequence->SourceFbxPath.empty() &&
+           !Sequence->TargetSkeletonPath.empty() &&
+           !Sequence->AnimStackName.empty();
+}
+
+bool FEditorViewerWindowWidget::IsAnimSequenceDirty() const
+{
+    return bAnimSequenceDirty && DirtyTrackedAnimSequence == ResolveCurrentAnimSequence();
 }
 
 void FEditorViewerWindowWidget::RequestSaveMesh()
 {
-	if (!Viewer)
-	{
-		return;
-	}
+    if (!Viewer)
+    {
+        return;
+    }
 
-	ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
-	USkeletalMeshComponent* SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
-	USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
-	if (!Mesh)
-	{
-		return;
-	}
+    ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+    USkeletalMeshComponent* SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+    USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
+    if (!Mesh)
+    {
+        return;
+    }
 
-	if (FResourceManager::Get().SaveSkeletalMesh(Mesh))
-	{
-		ResetMeshDirtyBaseline();
-	}
+    if (FResourceManager::Get().SaveSkeletalMesh(Mesh))
+    {
+        ResetMeshDirtyBaseline();
+    }
+}
+
+void FEditorViewerWindowWidget::RequestSaveAnimSequence()
+{
+    UAnimSequence* Sequence = ResolveCurrentAnimSequence();
+    if (!Sequence)
+    {
+        return;
+    }
+
+    if (FResourceManager::Get().SaveAnimSequence(Sequence))
+    {
+        bAnimSequenceDirty = false;
+        DirtyTrackedAnimSequence = Sequence;
+    }
 }
 
 FSkeletalMesh* FEditorViewerWindowWidget::ResolveCurrentMeshData() const
 {
-	if (CachedMesh)
-	{
-		return CachedMesh;
-	}
+    if (CachedMesh)
+    {
+        return CachedMesh;
+    }
 
-	if (!Viewer)
-	{
-		return nullptr;
-	}
+    if (!Viewer)
+    {
+        return nullptr;
+    }
 
-	ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
-	USkeletalMeshComponent* SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
-	USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
-	return Mesh ? Mesh->GetMeshData() : nullptr;
+    ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+    USkeletalMeshComponent* SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+    USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
+    return Mesh ? Mesh->GetMeshData() : nullptr;
 }
 
 const TArray<FBoneInfo>& FEditorViewerWindowWidget::ResolveCurrentBones() const
 {
-	static const TArray<FBoneInfo> Empty = {};
+    static const TArray<FBoneInfo> Empty = {};
 
-	USkeletalMeshComponent* SkelComp = CachedSkComp;
-	if (!SkelComp && Viewer)
-	{
-		ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
-		SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
-	}
+    USkeletalMeshComponent* SkelComp = CachedSkComp;
+    if (!SkelComp && Viewer)
+    {
+        ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+        SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+    }
 
-	const USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
-	return Mesh ? Mesh->GetBones() : Empty;
+    const USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
+    return Mesh ? Mesh->GetBones() : Empty;
 }
 
 uint64 FEditorViewerWindowWidget::ComputeEditableMeshSignature(const FSkeletalMesh* MeshData) const
 {
-	if (!MeshData)
-	{
-		return 0;
-	}
+    if (!MeshData)
+    {
+        return 0;
+    }
 
-	uint64 Hash = MeshEditHashOffset;
+    uint64 Hash = MeshEditHashOffset;
 
-	const TArray<FBoneInfo>& Bones = ResolveCurrentBones();
-	Hash = HashValue(Hash, static_cast<uint64>(Bones.size()));
-	for (const FBoneInfo& Bone : Bones)
-	{
-		Hash = HashString(Hash, Bone.Name.ToString());
-		Hash = HashValue(Hash, Bone.ParentIndex);
-		Hash = HashMatrix(Hash, Bone.LocalBindTransform);
-		Hash = HashMatrix(Hash, Bone.GlobalBindTransform);
-		Hash = HashMatrix(Hash, Bone.InverseBindPose);
-	}
+    const TArray<FBoneInfo>& Bones = ResolveCurrentBones();
+    Hash = HashValue(Hash, static_cast<uint64>(Bones.size()));
+    for (const FBoneInfo& Bone : Bones)
+    {
+        Hash = HashString(Hash, Bone.Name.ToString());
+        Hash = HashValue(Hash, Bone.ParentIndex);
+        Hash = HashMatrix(Hash, Bone.LocalBindTransform);
+        Hash = HashMatrix(Hash, Bone.GlobalBindTransform);
+        Hash = HashMatrix(Hash, Bone.InverseBindPose);
+    }
 
-	Hash = HashValue(Hash, static_cast<uint64>(MeshData->Sockets.size()));
-	for (const FSkeletalMeshSocket& Socket : MeshData->Sockets)
-	{
-		Hash = HashString(Hash, Socket.Name.ToString());
-		Hash = HashValue(Hash, Socket.BoneIndex);
-		Hash = HashValue(Hash, Socket.RelativeLocation.X);
-		Hash = HashValue(Hash, Socket.RelativeLocation.Y);
-		Hash = HashValue(Hash, Socket.RelativeLocation.Z);
-		Hash = HashValue(Hash, Socket.RelativeRotation.Pitch);
-		Hash = HashValue(Hash, Socket.RelativeRotation.Yaw);
-		Hash = HashValue(Hash, Socket.RelativeRotation.Roll);
-		Hash = HashValue(Hash, Socket.RelativeScale.X);
-		Hash = HashValue(Hash, Socket.RelativeScale.Y);
-		Hash = HashValue(Hash, Socket.RelativeScale.Z);
-	}
+    Hash = HashValue(Hash, static_cast<uint64>(MeshData->Sockets.size()));
+    for (const FSkeletalMeshSocket& Socket : MeshData->Sockets)
+    {
+        Hash = HashString(Hash, Socket.Name.ToString());
+        Hash = HashValue(Hash, Socket.BoneIndex);
+        Hash = HashValue(Hash, Socket.RelativeLocation.X);
+        Hash = HashValue(Hash, Socket.RelativeLocation.Y);
+        Hash = HashValue(Hash, Socket.RelativeLocation.Z);
+        Hash = HashValue(Hash, Socket.RelativeRotation.Pitch);
+        Hash = HashValue(Hash, Socket.RelativeRotation.Yaw);
+        Hash = HashValue(Hash, Socket.RelativeRotation.Roll);
+        Hash = HashValue(Hash, Socket.RelativeScale.X);
+        Hash = HashValue(Hash, Socket.RelativeScale.Y);
+        Hash = HashValue(Hash, Socket.RelativeScale.Z);
+    }
 
-	return Hash;
+    return Hash;
 }
 
 void FEditorViewerWindowWidget::ResetMeshDirtyBaseline()
 {
-	FSkeletalMesh* MeshData = ResolveCurrentMeshData();
-	if (!MeshData)
-	{
-		CleanMeshEditSignature = 0;
-		bHasCleanMeshEditSignature = false;
-		bMeshDirty = false;
-		return;
-	}
+    FSkeletalMesh* MeshData = ResolveCurrentMeshData();
+    if (!MeshData)
+    {
+        CleanMeshEditSignature = 0;
+        bHasCleanMeshEditSignature = false;
+        bMeshDirty = false;
+        return;
+    }
 
-	CleanMeshEditSignature = ComputeEditableMeshSignature(MeshData);
-	bHasCleanMeshEditSignature = true;
-	bMeshDirty = false;
+    CleanMeshEditSignature = ComputeEditableMeshSignature(MeshData);
+    bHasCleanMeshEditSignature = true;
+    bMeshDirty = false;
 }
 
 bool FEditorViewerWindowWidget::HasMeshAssetEdits() const
 {
-	FSkeletalMesh* MeshData = ResolveCurrentMeshData();
-	if (!MeshData)
-	{
-		return false;
-	}
+    FSkeletalMesh* MeshData = ResolveCurrentMeshData();
+    if (!MeshData)
+    {
+        return false;
+    }
 
-	if (bMeshDirty)
-	{
-		return true;
-	}
+    if (bMeshDirty)
+    {
+        return true;
+    }
 
-	return bHasCleanMeshEditSignature && ComputeEditableMeshSignature(MeshData) != CleanMeshEditSignature;
+    return bHasCleanMeshEditSignature && ComputeEditableMeshSignature(MeshData) != CleanMeshEditSignature;
 }
 
 void FEditorViewerWindowWidget::Render(float DeltaTime)
@@ -433,7 +535,7 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
     if (!EditorEngine)
         return;
 
-	if (!Viewer)
+    if (!Viewer)
         return;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -446,47 +548,47 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.18f, 0.20f, 0.25f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.15f, 0.17f, 0.22f, 1.0f));
 
-	FString WindowName = GetWindowName();
-	bool bDockRequested = false;
-	bool bCloseRequested = false;
+    FString WindowName = GetWindowName();
+    bool bDockRequested = false;
+    bool bCloseRequested = false;
 
     // Detached document는 borderless secondary viewport로 띄우고,
     // Win32 backend에 titlebar hit-test 정보를 넘겨 native window처럼 움직이게 한다.
     ApplyDetachedDocumentWindowClass();
-	// Make the viewer window reasonably large on first creation.
-	ImGui::SetNextWindowSize(ImVec2(900, 600), ImGuiCond_FirstUseEver);
+    // Make the viewer window reasonably large on first creation.
+    ImGui::SetNextWindowSize(ImVec2(900, 600), ImGuiCond_FirstUseEver);
     if (const ImGuiViewport* MainViewport = ImGui::GetMainViewport())
     {
         ImGui::SetNextWindowPos(
             ImVec2(MainViewport->Pos.x + 120.0f, MainViewport->Pos.y + 90.0f),
             ImGuiCond_FirstUseEver);
     }
-	constexpr ImGuiWindowFlags WindowFlags =
-		ImGuiWindowFlags_MenuBar |
+    constexpr ImGuiWindowFlags WindowFlags =
+        ImGuiWindowFlags_MenuBar |
         ImGuiWindowFlags_NoTitleBar |
         ImGuiWindowFlags_NoCollapse;
-	if (ImGui::Begin(WindowName.c_str(), &bOpen, WindowFlags))
-	{
+    if (ImGui::Begin(WindowName.c_str(), &bOpen, WindowFlags))
+    {
         RenderDetachedDocumentChrome(bDockRequested, bCloseRequested);
         RenderDetachedDocumentToolbar(bDockRequested);
-		RenderContent(DeltaTime);
-	}
-	ImGui::End();
+        RenderContent(DeltaTime);
+    }
+    ImGui::End();
 
     ImGui::PopStyleColor(4);
     ImGui::PopStyleVar(5);
 
-	if (bDockRequested)
-	{
-		EditorEngine->GetMainPanel().RequestDockViewer(Viewer);
-		return;
-	}
-	if (bCloseRequested)
-	{
-		bOpen = false;
-	}
+    if (bDockRequested)
+    {
+        EditorEngine->GetMainPanel().RequestDockViewer(Viewer);
+        return;
+    }
+    if (bCloseRequested)
+    {
+        bOpen = false;
+    }
 
-	if (!bOpen)
+    if (!bOpen)
     {
         EditorEngine->RemoveViewer(Viewer);
         Shutdown();
@@ -541,12 +643,18 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentChrome(bool& bDockRequeste
 
     const bool bCanSaveMesh = CanSaveMesh();
     const char* SaveMeshLabel = IsMeshDirty() ? "Save Mesh *" : "Save Mesh";
+    const bool bCanSaveAnim = CanSaveAnimSequence();
+    const char* SaveAnimLabel = IsAnimSequenceDirty() ? "Save Anim *" : "Save Anim";
 
     if (ImGui::BeginMenu("File"))
     {
         if (ImGui::MenuItem(SaveMeshLabel, "Ctrl+S", false, bCanSaveMesh))
         {
             RequestSaveMesh();
+        }
+        if (ImGui::MenuItem(SaveAnimLabel, nullptr, false, bCanSaveAnim))
+        {
+            RequestSaveAnimSequence();
         }
         ImGui::Separator();
         if (ImGui::MenuItem("Close"))
@@ -566,6 +674,10 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentChrome(bool& bDockRequeste
         if (ImGui::MenuItem(SaveMeshLabel, nullptr, false, bCanSaveMesh))
         {
             RequestSaveMesh();
+        }
+        if (ImGui::MenuItem(SaveAnimLabel, nullptr, false, bCanSaveAnim))
+        {
+            RequestSaveAnimSequence();
         }
         ImGui::MenuItem("Reimport Mesh", nullptr, false, false);
         ImGui::EndMenu();
@@ -610,16 +722,16 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentChrome(bool& bDockRequeste
     const ImVec2 ButtonSize(WindowButtonWidth, TitleBarHeight);
     ImGui::SetCursorPos(ImVec2(ButtonStartX, 0.0f));
     if (DrawDetachedWindowButton(
-        "DetachedMinimize",
-        "Minimize",
-        ButtonSize,
-        ImVec4(0.14f, 0.16f, 0.20f, 1.0f),
-        ImVec4(0.18f, 0.20f, 0.25f, 1.0f),
-        [](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
-        {
-            const float Y = (Min.y + Max.y) * 0.5f + 4.0f;
-            InDrawList->AddLine(ImVec2(Min.x + 17.0f, Y), ImVec2(Max.x - 17.0f, Y), Color, 1.6f);
-        }))
+            "DetachedMinimize",
+            "Minimize",
+            ButtonSize,
+            ImVec4(0.14f, 0.16f, 0.20f, 1.0f),
+            ImVec4(0.18f, 0.20f, 0.25f, 1.0f),
+            [](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
+            {
+                const float Y = (Min.y + Max.y) * 0.5f + 4.0f;
+                InDrawList->AddLine(ImVec2(Min.x + 17.0f, Y), ImVec2(Max.x - 17.0f, Y), Color, 1.6f);
+            }))
     {
         if (ViewportHwnd)
         {
@@ -630,26 +742,26 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentChrome(bool& bDockRequeste
 
     ImGui::SameLine(0.0f, 0.0f);
     if (DrawDetachedWindowButton(
-        "DetachedMaximize",
-        IsViewportMaximized(ViewportHwnd) ? "Restore" : "Maximize",
-        ButtonSize,
-        ImVec4(0.14f, 0.16f, 0.20f, 1.0f),
-        ImVec4(0.18f, 0.20f, 0.25f, 1.0f),
-        [ViewportHwnd](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
-        {
-            const bool bMaximized = IsViewportMaximized(ViewportHwnd);
-            const ImVec2 A(Min.x + 17.0f, Min.y + 12.0f);
-            const ImVec2 B(Max.x - 17.0f, Max.y - 12.0f);
-            if (bMaximized)
+            "DetachedMaximize",
+            IsViewportMaximized(ViewportHwnd) ? "Restore" : "Maximize",
+            ButtonSize,
+            ImVec4(0.14f, 0.16f, 0.20f, 1.0f),
+            ImVec4(0.18f, 0.20f, 0.25f, 1.0f),
+            [ViewportHwnd](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
             {
-                InDrawList->AddRect(ImVec2(A.x + 3.0f, A.y), ImVec2(B.x + 3.0f, B.y - 3.0f), Color, 0.0f, 0, 1.4f);
-                InDrawList->AddRect(ImVec2(A.x, A.y + 3.0f), ImVec2(B.x, B.y), Color, 0.0f, 0, 1.4f);
-            }
-            else
-            {
-                InDrawList->AddRect(A, B, Color, 0.0f, 0, 1.4f);
-            }
-        }))
+                const bool bMaximized = IsViewportMaximized(ViewportHwnd);
+                const ImVec2 A(Min.x + 17.0f, Min.y + 12.0f);
+                const ImVec2 B(Max.x - 17.0f, Max.y - 12.0f);
+                if (bMaximized)
+                {
+                    InDrawList->AddRect(ImVec2(A.x + 3.0f, A.y), ImVec2(B.x + 3.0f, B.y - 3.0f), Color, 0.0f, 0, 1.4f);
+                    InDrawList->AddRect(ImVec2(A.x, A.y + 3.0f), ImVec2(B.x, B.y), Color, 0.0f, 0, 1.4f);
+                }
+                else
+                {
+                    InDrawList->AddRect(A, B, Color, 0.0f, 0, 1.4f);
+                }
+            }))
     {
         ToggleViewportMaximize(ViewportHwnd);
     }
@@ -657,16 +769,16 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentChrome(bool& bDockRequeste
 
     ImGui::SameLine(0.0f, 0.0f);
     if (DrawDetachedWindowButton(
-        "DetachedClose",
-        "Close",
-        ButtonSize,
-        ImVec4(0.62f, 0.18f, 0.20f, 1.0f),
-        ImVec4(0.46f, 0.10f, 0.13f, 1.0f),
-        [](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
-        {
-            InDrawList->AddLine(ImVec2(Min.x + 17.0f, Min.y + 12.0f), ImVec2(Max.x - 17.0f, Max.y - 12.0f), Color, 1.6f);
-            InDrawList->AddLine(ImVec2(Max.x - 17.0f, Min.y + 12.0f), ImVec2(Min.x + 17.0f, Max.y - 12.0f), Color, 1.6f);
-        }))
+            "DetachedClose",
+            "Close",
+            ButtonSize,
+            ImVec4(0.62f, 0.18f, 0.20f, 1.0f),
+            ImVec4(0.46f, 0.10f, 0.13f, 1.0f),
+            [](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
+            {
+                InDrawList->AddLine(ImVec2(Min.x + 17.0f, Min.y + 12.0f), ImVec2(Max.x - 17.0f, Max.y - 12.0f), Color, 1.6f);
+                InDrawList->AddLine(ImVec2(Max.x - 17.0f, Min.y + 12.0f), ImVec2(Min.x + 17.0f, Max.y - 12.0f), Color, 1.6f);
+            }))
     {
         bCloseRequested = true;
     }
@@ -685,7 +797,6 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentToolbar(bool& bDockRequest
     }
 
     constexpr ImGuiWindowFlags ToolbarFlags =
-        ImGuiWindowFlags_NoScrollbar |
         ImGuiWindowFlags_NoScrollWithMouse;
     ImGui::BeginChild("##DetachedViewerToolbar", ImVec2(0.0f, 40.0f), false, ToolbarFlags);
     ImGui::SetCursorPos(ImVec2(8.0f, 6.0f));
@@ -705,6 +816,21 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentToolbar(bool& bDockRequest
     }
 
     ImGui::SameLine();
+    const bool bCanSaveAnim = CanSaveAnimSequence();
+    if (!bCanSaveAnim)
+    {
+        ImGui::BeginDisabled();
+    }
+    if (ImGui::Button(IsAnimSequenceDirty() ? "Save Anim *" : "Save Anim"))
+    {
+        RequestSaveAnimSequence();
+    }
+    if (!bCanSaveAnim)
+    {
+        ImGui::EndDisabled();
+    }
+
+    ImGui::SameLine();
     if (ImGui::Button("Dock"))
     {
         bDockRequested = true;
@@ -716,12 +842,12 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentToolbar(bool& bDockRequest
 
 void FEditorViewerWindowWidget::RenderEmbedded(float DeltaTime)
 {
-	if (!bOpen || !EditorEngine || !Viewer)
-	{
-		return;
-	}
+    if (!bOpen || !EditorEngine || !Viewer)
+    {
+        return;
+    }
 
-	RenderContent(DeltaTime);
+    RenderContent(DeltaTime);
 }
 
 void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
@@ -764,6 +890,7 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
         AnimationMaxTime = 0.0f;
         AnimationTotalFrames = 1;
         bAnimationLoop = true;
+        AnimationPlayRate = 1.0f;
         SelectedAnimationStackIndex = 0;
         LastRequestedAnimationKey.clear();
     };
@@ -775,14 +902,14 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 
         // asset에서 frame metadata 직접 조회
         const UAnimSequenceBase* Sequence = CachedSkComp
-            ? Cast<UAnimSequenceBase>(CachedSkComp->GetAnimation())
-            : nullptr;
+                                                ? Cast<UAnimSequenceBase>(CachedSkComp->GetAnimation())
+                                                : nullptr;
         const int32 ImportedFrameCount = Sequence ? Sequence->GetNumberOfFrames() : 0;
         const float ImportedFrameRate = Sequence ? Sequence->GetFrameRate() : 0.0f;
         const float FallbackFrameRate = ImportedFrameRate > 0.0f ? ImportedFrameRate : 30.0f;
         AnimationTotalFrames = ImportedFrameCount > 0
-            ? ImportedFrameCount
-            : std::max(1, static_cast<int32>(std::round(AnimationMaxTime * FallbackFrameRate)));
+                                   ? ImportedFrameCount
+                                   : std::max(1, static_cast<int32>(std::round(AnimationMaxTime * FallbackFrameRate)));
     };
 
     if (!MeshData)
@@ -944,268 +1071,644 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
     }
     else
     {
-    RefreshAnimationTimelineState();
+        RefreshAnimationTimelineState();
 
-    float TimelineFullWidth = ImGui::GetContentRegionAvail().x;
-    float TimelineLeftPanelWidth = std::max(220.0f, TimelineFullWidth * 0.25f);
-    float TimelineRightPanelWidth = TimelineFullWidth - TimelineLeftPanelWidth - ImGui::GetStyle().ItemSpacing.x;
+        float TimelineFullWidth = ImGui::GetContentRegionAvail().x;
+        float TimelineLeftPanelWidth = std::max(220.0f, TimelineFullWidth * 0.25f);
+        float TimelineRightPanelWidth = TimelineFullWidth - TimelineLeftPanelWidth - ImGui::GetStyle().ItemSpacing.x;
 
-    // --- 하단 좌측 패널 (컨트롤) ---
-    ImGui::BeginChild("TimelineLeftPanel", ImVec2(TimelineLeftPanelWidth, 0), false, ImGuiWindowFlags_NoScrollbar);
+        // --- 하단 좌측 패널 (컨트롤) ---
+        ImGui::BeginChild("TimelineLeftPanel", ImVec2(TimelineLeftPanelWidth, 0), false, ImGuiWindowFlags_NoScrollbar);
 
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 4.0f));
-    float BtnW = (TimelineLeftPanelWidth - (6.0f * 2.0f)) / 7.0f;
-
-    const int32 SafeTotalFramesForStep = std::max(AnimationTotalFrames, 1);
-    const float FrameStepSeconds = AnimationMaxTime > 0.0f
-        ? AnimationMaxTime / static_cast<float>(SafeTotalFramesForStep)
-        : 0.0f;
-
-    auto SeekAnimation = [&](float NewTime)
-    {
-        if (!CachedSkComp)
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 4.0f));
+        constexpr int32 PlaybackButtonCount = 9;
+        const float BtnW = (TimelineLeftPanelWidth - (2.0f * (PlaybackButtonCount - 1))) / PlaybackButtonCount;
+        const ImVec2 PlaybackButtonSize(BtnW, 24.0f);
+        auto PlayControlIcon = [&](EEditorMainPanelPlayControlIcon Icon)
         {
-            return;
+            return EditorEngine ? EditorEngine->GetMainPanel().GetPlayControlIconResource(Icon) : nullptr;
+        };
+
+        const int32 SafeTotalFramesForStep = std::max(AnimationTotalFrames, 1);
+        const float FrameStepSeconds = AnimationMaxTime > 0.0f
+                                           ? AnimationMaxTime / static_cast<float>(SafeTotalFramesForStep)
+                                           : 0.0f;
+        UAnimSequenceBase* Sequence = CachedSkComp
+                                          ? Cast<UAnimSequenceBase>(CachedSkComp->GetAnimation())
+                                          : nullptr;
+        UAnimSequence* CurrentAnimSequence = ResolveCurrentAnimSequence();
+        if (DirtyTrackedAnimSequence != CurrentAnimSequence)
+        {
+            DirtyTrackedAnimSequence = CurrentAnimSequence;
+            bAnimSequenceDirty = false;
+            EditingNotifyIndex = -1;
+            SelectedNotifyIndex = -1;
+            PendingOpenNotifyIndex = -1;
         }
 
-        CachedSkComp->SetPosition(NewTime, false);
-        CachedSkComp->RefreshAnimationPose();
-        AnimationCurrentTime = CachedSkComp->GetPosition();
-    };
-
-    if (ImGui::Button("|<", ImVec2(BtnW, 24)))
-    {
-        SeekAnimation(0.0f);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("<<", ImVec2(BtnW, 24)))
-    {
-        SeekAnimation(std::max(0.0f, AnimationCurrentTime - FrameStepSeconds));
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("<", ImVec2(BtnW, 24)))
-    { /* 역재생 */
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("||", ImVec2(BtnW, 24)))
-    {
-        if (CachedSkComp)
+        auto SeekAnimation = [&](float NewTime)
         {
+            if (!CachedSkComp)
+            {
+                return;
+            }
             CachedSkComp->Pause();
-        }
-    }
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
-    if (ImGui::Button("(O)", ImVec2(BtnW, 24)))
-    { /* 특수 액션/녹음 */
-    }
-    ImGui::SameLine();
-    ImGui::PopStyleColor();
-
-    if (ImGui::Button(">", ImVec2(BtnW, 24)))
-    {
-        if (CachedSkComp)
-        {
-            CachedSkComp->SetLooping(bAnimationLoop);
-            CachedSkComp->Play();
-        }
-    }
-    ImGui::SameLine();
-    if (ImGui::Button(">>", ImVec2(BtnW, 24)))
-    {
-        SeekAnimation(std::min(AnimationMaxTime, AnimationCurrentTime + FrameStepSeconds));
-    }
-    ImGui::SameLine();
-    if (ImGui::Button(">|", ImVec2(BtnW, 24)))
-    {
-        SeekAnimation(AnimationMaxTime);
-    }
-    if (ImGui::Checkbox("Loop Playback", &bAnimationLoop))
-    {
-        if (CachedSkComp)
-        {
-            CachedSkComp->SetLooping(bAnimationLoop);
-        }
-    }
-    ImGui::PopStyleVar();
-    ImGui::Spacing();
-
-    FString FbxPath;
-    TArray<FString> StackNames;
-    if (CachedSkComp && CachedSkComp->GetSkeletalMesh())
-    {
-        FbxPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
-        StackNames = FResourceManager::Get().ListAnimStacks(FbxPath);
-    }
-
-    TArray<const char*> AnimItems;
-    AnimItems.reserve(StackNames.size());
-
-    for (const FString& StackName : StackNames)
-    {
-        AnimItems.push_back(StackName.c_str());
-    }
-    if (SelectedAnimationStackIndex >= static_cast<int32>(AnimItems.size()))
-    {
-        SelectedAnimationStackIndex = 0;
-    }
-    ImGui::SetNextItemWidth(-1.0f);
-    bool bAnimSelectionChanged = false;
-    if (AnimItems.empty())
-    {
-        ImGui::TextDisabled("No animation stacks");
-    }
-    else
-    {
-        int SelectedAnimItem = static_cast<int>(SelectedAnimationStackIndex);
-        bAnimSelectionChanged = ImGui::Combo(
-            "Animation List",
-            &SelectedAnimItem,
-            AnimItems.data(),
-            static_cast<int>(AnimItems.size()));
-        SelectedAnimationStackIndex = static_cast<int32>(SelectedAnimItem);
-    }
-
-    const bool bHasSelectedAnimationStack =
-        CachedSkComp
-        && !StackNames.empty()
-        && SelectedAnimationStackIndex >= 0
-        && SelectedAnimationStackIndex < static_cast<int32>(StackNames.size());
-    FString SelectedAnimationStackName;
-    if (bHasSelectedAnimationStack)
-    {
-        SelectedAnimationStackName = StackNames[SelectedAnimationStackIndex];
-        const FString AnimKey = FbxPath + "|" + SelectedAnimationStackName;
-
-        if (bAnimSelectionChanged || LastRequestedAnimationKey != AnimKey)
-        {
-            // 뷰어 인스턴스별 요청 키로 0번 stack 자동 로드와 선택 변경을 처리
-            LastRequestedAnimationKey = AnimKey;
-            if (CachedSkComp->SetAnimSequence(FbxPath, SelectedAnimationStackName))
-            {
-                // sequence 교체 직후에는 UI의 loop 기본값을 single node instance에 다시 반영
-                CachedSkComp->SetLooping(bAnimationLoop);
-                SeekAnimation(0.0f);
-                RefreshAnimationTimelineState();
-            }
-        }
-    }
-
-    const bool bCanSaveAnimSequenceAsset =
-        bHasSelectedAnimationStack
-        && CachedSkComp
-        && CachedSkComp->GetSkeletalMesh()
-        && !FbxPath.empty();
-    ImGui::BeginDisabled(!bCanSaveAnimSequenceAsset);
-    if (ImGui::Button("Save AnimSequence Asset"))
-    {
-        const FString TargetMeshPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
-        const FString AssetPath = MakeUniqueAnimSequenceAssetPath(FbxPath, SelectedAnimationStackName);
-        if (FResourceManager::Get().SaveAnimSequenceAsset(
-            AssetPath,
-            FbxPath,
-            TargetMeshPath,
-            SelectedAnimationStackName))
-        {
-            if (EditorEngine)
-            {
-                EditorEngine->GetNotificationService().Info("Anim sequence asset saved: " + AssetPath);
-            }
-        }
-        else if (EditorEngine)
-        {
-            EditorEngine->GetNotificationService().Error("Anim sequence asset save failed");
-        }
-    }
-    ImGui::EndDisabled();
-    if (!bCanSaveAnimSequenceAsset && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-    {
-        ImGui::SetTooltip("Select an animation stack first.");
-    }
-    ImGui::Spacing();
-
-    ImGui::TextDisabled("[Notify List Area]");
-
-    ImGui::EndChild(); // TimelineLeftPanel
-
-    ImGui::SameLine(); // 타임라인 좌/우 분할
-
-    // --- 하단 우측 패널 (스크러버) ---
-    ImGui::BeginChild("TimelineRightPanel", ImVec2(TimelineRightPanelWidth, 0), false, ImGuiWindowFlags_NoScrollbar);
-
-    RefreshAnimationTimelineState();
-    const float SafeMaxTime = std::max(AnimationMaxTime, 0.001f);
-    const int32 SafeTotalFrames = std::max(AnimationTotalFrames, 1);
-    float CurrentFrameF = (AnimationCurrentTime / SafeMaxTime) * SafeTotalFrames;
-    float Percentage = (AnimationCurrentTime / SafeMaxTime) * 100.0f;
-
-    ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
-                       "Ani Percentage: %5.2f%%   CurrentTime: %.3f / %.3f (sec)   Frame: %.2f / %d",
-                       Percentage, AnimationCurrentTime, AnimationMaxTime, CurrentFrameF, AnimationTotalFrames);
-    ImGui::Separator();
-
-    float ScrubberWidth = ImGui::GetContentRegionAvail().x;
-    float ScrubberHeight = std::max(30.0f, ImGui::GetContentRegionAvail().y - 4.0f);
-
-    ImVec2 ScrubberPos = ImGui::GetCursorScreenPos();
-    ImDrawList* TimelineDrawList = ImGui::GetWindowDrawList();
-
-    ImGui::InvisibleButton("##CustomScrubber", ImVec2(ScrubberWidth, ScrubberHeight));
-
-    bool bScrubberActive = ImGui::IsItemActive();
-    bool bScrubberHovered = ImGui::IsItemHovered();
-
-    ImVec2 TrackMin = ScrubberPos;
-    ImVec2 TrackMax = ImVec2(ScrubberPos.x + ScrubberWidth, ScrubberPos.y + ScrubberHeight);
-
-    TimelineDrawList->AddRectFilled(TrackMin, TrackMax, IM_COL32(60, 60, 60, 255));
-    TimelineDrawList->AddRect(TrackMin, TrackMax, IM_COL32(100, 100, 100, 255));
-
-    int FrameStep = 10;
-    for (int i = 0; i <= AnimationTotalFrames; i += FrameStep)
-    {
-        float ratio = (float)i / SafeTotalFrames;
-        float tickX = TrackMin.x + (ratio * ScrubberWidth);
-
-        TimelineDrawList->AddLine(
-            ImVec2(tickX, TrackMin.y + ScrubberHeight * 0.4f),
-            ImVec2(tickX, TrackMax.y - 2.0f),
-            IM_COL32(180, 180, 180, 255));
-
-        char frameText[16];
-        sprintf_s(frameText, "%d", i);
-        TimelineDrawList->AddText(ImVec2(tickX + 4.0f, TrackMin.y + 2.0f), IM_COL32(200, 200, 200, 255), frameText);
-    }
-
-    float PlayheadRatio = std::clamp(AnimationCurrentTime / SafeMaxTime, 0.0f, 1.0f);
-    float PlayheadX = TrackMin.x + (PlayheadRatio * ScrubberWidth);
-    float PlayheadWidth = 14.0f;
-
-    ImVec2 HeadMin = ImVec2(PlayheadX - PlayheadWidth * 0.5f, TrackMin.y + 2.0f);
-    ImVec2 HeadMax = ImVec2(PlayheadX + PlayheadWidth * 0.5f, TrackMax.y - 2.0f);
-
-    if (bScrubberActive)
-    {
-        float mouseX = ImGui::GetIO().MousePos.x;
-        float newRatio = (mouseX - TrackMin.x) / ScrubberWidth;
-        newRatio = std::clamp(newRatio, 0.0f, 1.0f);
-
-        AnimationCurrentTime = newRatio * AnimationMaxTime;
-
-        if (CachedSkComp)
-        {
-            CachedSkComp->SetPosition(AnimationCurrentTime, false);
+            CachedSkComp->SetPosition(NewTime, false);
             CachedSkComp->RefreshAnimationPose();
             AnimationCurrentTime = CachedSkComp->GetPosition();
+        };
+
+        if (DrawTimelineIconButton(
+                "##TimelineToFront",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::ToFront),
+                "|<",
+                "To Front",
+                PlaybackButtonSize))
+        {
+            SeekAnimation(0.0f);
         }
-    }
+        ImGui::SameLine();
+        if (DrawTimelineIconButton(
+                "##TimelineToPrevious",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::ToPrevious),
+                "<<",
+                "Previous Frame",
+                PlaybackButtonSize))
+        {
+            SeekAnimation(std::max(0.0f, AnimationCurrentTime - FrameStepSeconds));
+        }
+        ImGui::SameLine();
+        if (DrawTimelineIconButton(
+                "##TimelinePlayReverse",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::PlayReverse),
+                "<",
+                "Play Reverse",
+                PlaybackButtonSize))
+        { /* 역재생 */
+        }
+        ImGui::SameLine();
+        if (DrawTimelineIconButton(
+                "##TimelineStop",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::Stop),
+                "[]",
+                "Stop",
+                PlaybackButtonSize))
+        {
+            SeekAnimation(0.0f);
+        }
+        ImGui::SameLine();
+        if (DrawTimelineIconButton(
+                "##TimelinePause",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::Pause),
+                "||",
+                "Pause",
+                PlaybackButtonSize))
+        {
+            if (CachedSkComp)
+            {
+                CachedSkComp->Pause();
+            }
+        }
+        ImGui::SameLine();
+        if (DrawTimelineIconButton(
+                "##TimelineRecord",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::Record),
+                "(O)",
+                "Record",
+                PlaybackButtonSize))
+        { /* 특수 액션/녹음 */
+        }
+        ImGui::SameLine();
 
-    ImU32 HeadColor = bScrubberHovered || bScrubberActive ? IM_COL32(180, 80, 80, 255) : IM_COL32(150, 70, 70, 255);
-    TimelineDrawList->AddRectFilled(HeadMin, HeadMax, HeadColor, 2.0f);
-    TimelineDrawList->AddRect(HeadMin, HeadMax, IM_COL32(50, 20, 20, 255), 2.0f);
-    TimelineDrawList->AddLine(ImVec2(PlayheadX, HeadMin.y), ImVec2(PlayheadX, HeadMax.y), IM_COL32(255, 150, 150, 100));
+        if (DrawTimelineIconButton(
+                "##TimelinePlayForward",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::PlayForward),
+                ">",
+                "Play Forward",
+                PlaybackButtonSize))
+        {
+            if (CachedSkComp)
+            {
+                CachedSkComp->SetLooping(bAnimationLoop);
+                CachedSkComp->Play();
+            }
+        }
+        ImGui::SameLine();
+        if (DrawTimelineIconButton(
+                "##TimelineToNext",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::ToNext),
+                ">>",
+                "Next Frame",
+                PlaybackButtonSize))
+        {
+            SeekAnimation(std::min(AnimationMaxTime, AnimationCurrentTime + FrameStepSeconds));
+        }
+        ImGui::SameLine();
+        if (DrawTimelineIconButton(
+                "##TimelineToEnd",
+                PlayControlIcon(EEditorMainPanelPlayControlIcon::ToEnd),
+                ">|",
+                "To End",
+                PlaybackButtonSize))
+        {
+            SeekAnimation(AnimationMaxTime);
+        }
+        if (ImGui::Checkbox("Loop Playback", &bAnimationLoop))
+        {
+            if (CachedSkComp)
+            {
+                CachedSkComp->SetLooping(bAnimationLoop);
+            }
+        }
 
-    ImGui::EndChild(); // TimelineRightPanel
+        float PlayRate = CachedSkComp ? CachedSkComp->GetPlayRate() : AnimationPlayRate;
+        PlayRate = std::clamp(PlayRate, -1.0f, 2.0f);
+        ImGui::SetNextItemWidth(-1.0f);
+        if (ImGui::SliderFloat("Play Rate", &PlayRate, -1.0f, 2.0f, "%.2fx"))
+        {
+            PlayRate = std::clamp(std::round(PlayRate / 0.25f) * 0.25f, -1.0f, 2.0f);
+            AnimationPlayRate = PlayRate;
+            if (CachedSkComp)
+            {
+                CachedSkComp->SetPlayRate(AnimationPlayRate);
+            }
+        }
+        ImGui::PopStyleVar();
+        ImGui::Spacing();
+
+        FString FbxPath;
+        TArray<FString> StackNames;
+        if (CachedSkComp && CachedSkComp->GetSkeletalMesh())
+        {
+            FbxPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
+            StackNames = FResourceManager::Get().ListAnimStacks(FbxPath);
+        }
+
+        TArray<const char*> AnimItems;
+        AnimItems.reserve(StackNames.size());
+
+        for (const FString& StackName : StackNames)
+        {
+            AnimItems.push_back(StackName.c_str());
+        }
+        if (SelectedAnimationStackIndex >= static_cast<int32>(AnimItems.size()))
+        {
+            SelectedAnimationStackIndex = 0;
+        }
+        ImGui::SetNextItemWidth(-1.0f);
+        bool bAnimSelectionChanged = false;
+        if (AnimItems.empty())
+        {
+            ImGui::TextDisabled("No animation stacks");
+        }
+        else
+        {
+            int SelectedAnimItem = static_cast<int>(SelectedAnimationStackIndex);
+            bAnimSelectionChanged = ImGui::Combo(
+                "Animation List",
+                &SelectedAnimItem,
+                AnimItems.data(),
+                static_cast<int>(AnimItems.size()));
+            SelectedAnimationStackIndex = static_cast<int32>(SelectedAnimItem);
+        }
+
+        if (CachedSkComp && !StackNames.empty() && SelectedAnimationStackIndex >= 0 && SelectedAnimationStackIndex < static_cast<int32>(StackNames.size()))
+        {
+            const FString StackName = StackNames[SelectedAnimationStackIndex];
+            const FString AnimKey = FbxPath + "|" + StackName;
+
+            if (bAnimSelectionChanged || LastRequestedAnimationKey != AnimKey)
+            {
+                // 뷰어 인스턴스별 요청 키로 0번 stack 자동 로드와 선택 변경을 처리
+                LastRequestedAnimationKey = AnimKey;
+                if (CachedSkComp->SetAnimSequence(FbxPath, StackName))
+                {
+                    // sequence 교체 직후에는 UI의 loop 기본값을 single node instance에 다시 반영
+                    CachedSkComp->SetLooping(bAnimationLoop);
+                    CachedSkComp->SetPlayRate(AnimationPlayRate);
+                    SeekAnimation(0.0f);
+                    RefreshAnimationTimelineState();
+                    Sequence = CachedSkComp ? Cast<UAnimSequenceBase>(CachedSkComp->GetAnimation()) : nullptr;
+                }
+            }
+        }
+
+        const bool bHasSelectedAnimationStack =
+            CachedSkComp &&
+            !StackNames.empty() &&
+            SelectedAnimationStackIndex >= 0 &&
+            SelectedAnimationStackIndex < static_cast<int32>(StackNames.size());
+        const FString SelectedAnimationStackName = bHasSelectedAnimationStack
+                                                       ? StackNames[SelectedAnimationStackIndex]
+                                                       : FString();
+        const bool bCanSaveAnimSequenceAsset =
+            bHasSelectedAnimationStack &&
+            CachedSkComp &&
+            CachedSkComp->GetSkeletalMesh() &&
+            !FbxPath.empty();
+        ImGui::BeginDisabled(!bCanSaveAnimSequenceAsset);
+        if (ImGui::Button("Save AnimSequence Asset"))
+        {
+            const FString TargetMeshPath = CachedSkComp->GetSkeletalMesh()->GetAssetPathFileName();
+            const FString AssetPath = MakeUniqueAnimSequenceAssetPath(FbxPath, SelectedAnimationStackName);
+            if (FResourceManager::Get().SaveAnimSequenceAsset(
+                    AssetPath,
+                    FbxPath,
+                    TargetMeshPath,
+                    SelectedAnimationStackName))
+            {
+                if (EditorEngine)
+                {
+                    EditorEngine->GetNotificationService().Info("Anim sequence asset saved: " + AssetPath);
+                }
+            }
+            else if (EditorEngine)
+            {
+                EditorEngine->GetNotificationService().Error("Anim sequence asset save failed");
+            }
+        }
+        ImGui::EndDisabled();
+        if (!bCanSaveAnimSequenceAsset && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        {
+            ImGui::SetTooltip("Select an animation stack first.");
+        }
+        ImGui::Spacing();
+
+        ImGui::Separator();
+        ImGui::Text("Notify Events");
+        ImGui::SameLine();
+        const bool bCanSaveNotifyAnim = CanSaveAnimSequence();
+        if (!bCanSaveNotifyAnim)
+        {
+            ImGui::BeginDisabled();
+        }
+        if (ImGui::SmallButton(IsAnimSequenceDirty() ? "Save Anim *" : "Save Anim"))
+        {
+            RequestSaveAnimSequence();
+        }
+        if (!bCanSaveNotifyAnim)
+        {
+            ImGui::EndDisabled();
+        }
+
+        if (!Sequence)
+        {
+            ImGui::TextDisabled("No animation sequence");
+        }
+        else
+        {
+            const TArray<FAnimNotifyEvent>& Notifies = Sequence->GetNotifies();
+
+            for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(Notifies.size()); ++NotifyIndex)
+            {
+                const FAnimNotifyEvent& Notify = Notifies[NotifyIndex];
+
+				if (PendingOpenNotifyIndex == NotifyIndex)
+                {
+                    ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+                    PendingOpenNotifyIndex = -1;
+                }
+
+                char Header[256];
+                sprintf_s(
+                    Header,
+                    "%03d  %.3fs  %s",
+                    NotifyIndex,
+                    Notify.TriggerTime,
+                    Notify.NotifyName.ToString().c_str());
+
+                ImGuiTreeNodeFlags Flags =
+                    ImGuiTreeNodeFlags_SpanAvailWidth |
+                    (SelectedNotifyIndex == NotifyIndex ? ImGuiTreeNodeFlags_Selected : 0);
+
+                const bool bOpen = ImGui::TreeNodeEx(
+                    reinterpret_cast<void*>(static_cast<intptr_t>(NotifyIndex)),
+                    Flags,
+                    "%s",
+                    Header);
+
+				if (ImGui::IsItemClicked())
+                {
+                    SelectedNotifyIndex = NotifyIndex;
+                    EditingNotifyIndex = -1;
+                }
+
+
+                if (bOpen)
+                {
+                    ImGui::TextDisabled("Notify Detail");
+                    if (SelectedNotifyIndex != NotifyIndex)
+                    {
+                        ImGui::TextDisabled("Select this notify to edit.");
+                        ImGui::TreePop();
+                        continue;
+                    }
+
+                    if (EditingNotifyIndex != SelectedNotifyIndex)
+                    {
+                        EditingNotifyIndex = SelectedNotifyIndex;
+                        EditingNotifyTime = Notify.TriggerTime;
+                        EditingNotifyDuration = Notify.Duration;
+                        EditingNotifyActionTypeIndex = ToNotifyActionTypeIndex(Notify.ActionType);
+                        std::snprintf(
+                            EditingNotifyNameBuffer,
+                            sizeof(EditingNotifyNameBuffer),
+                            "%s",
+                            Notify.NotifyName.ToString().c_str());
+                        std::snprintf(
+                            EditingNotifyEventIdBuffer,
+                            sizeof(EditingNotifyEventIdBuffer),
+                            "%s",
+                            Notify.EventId.ToString().c_str());
+                        std::snprintf(
+                            EditingNotifyPayloadBuffer,
+                            sizeof(EditingNotifyPayloadBuffer),
+                            "%s",
+                            Notify.Payload.c_str());
+                    }
+
+                    ImGui::PushID(NotifyIndex);
+                    ImGui::InputText("Event", EditingNotifyNameBuffer, sizeof(EditingNotifyNameBuffer));
+                    ImGui::DragFloat("Time", &EditingNotifyTime, 0.01f, 0.0f, AnimationMaxTime);
+                    ImGui::DragFloat("Duration", &EditingNotifyDuration, 0.01f, 0.0f, AnimationMaxTime);
+                    ImGui::Combo(
+                        "Action Type",
+                        &EditingNotifyActionTypeIndex,
+                        AnimNotifyActionTypeItems,
+                        AnimNotifyActionTypeItemCount);
+                    ImGui::InputText("Event Id", EditingNotifyEventIdBuffer, sizeof(EditingNotifyEventIdBuffer));
+                    ImGui::InputText("Payload", EditingNotifyPayloadBuffer, sizeof(EditingNotifyPayloadBuffer));
+
+                    if (ImGui::Button("Apply"))
+                    {
+                        FAnimNotifyEvent Edited;
+                        Edited.NotifyName = FName(EditingNotifyNameBuffer);
+                        Edited.TriggerTime = EditingNotifyTime;
+                        Edited.Duration = EditingNotifyDuration;
+                        Edited.ActionType = FromNotifyActionTypeIndex(EditingNotifyActionTypeIndex);
+                        Edited.EventId = FName(EditingNotifyEventIdBuffer);
+                        Edited.Payload = EditingNotifyPayloadBuffer;
+
+                        Sequence->UpdateNotifyAt(NotifyIndex, Edited);
+                        bAnimSequenceDirty = true;
+                        DirtyTrackedAnimSequence = ResolveCurrentAnimSequence();
+                        EditingNotifyIndex = -1;
+                    }
+
+                    ImGui::SameLine();
+
+                    if (ImGui::Button("Delete"))
+                    {
+                        Sequence->RemoveNotifyAt(NotifyIndex);
+                        bAnimSequenceDirty = true;
+                        DirtyTrackedAnimSequence = ResolveCurrentAnimSequence();
+                        EditingNotifyIndex = -1;
+                        SelectedNotifyIndex = -1;
+                        ImGui::PopID();
+                        ImGui::TreePop();
+                        break;
+                    }
+
+                    ImGui::PopID();
+					 ImGui::TreePop();
+                }
+            }
+        }
+        ImGui::EndChild(); // TimelineLeftPanel
+
+        ImGui::SameLine(); // 타임라인 좌/우 분할
+
+        // --- 하단 우측 패널 (스크러버) ---
+        ImGui::BeginChild("TimelineRightPanel", ImVec2(TimelineRightPanelWidth, 0), false, ImGuiWindowFlags_NoScrollbar);
+
+        RefreshAnimationTimelineState();
+        const float SafeMaxTime = std::max(AnimationMaxTime, 0.001f);
+        const int32 SafeTotalFrames = std::max(AnimationTotalFrames, 1);
+        float CurrentFrameF = (AnimationCurrentTime / SafeMaxTime) * SafeTotalFrames;
+        float Percentage = (AnimationCurrentTime / SafeMaxTime) * 100.0f;
+
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
+                           "Ani Percentage: %5.2f%%   CurrentTime: %.3f / %.3f (sec)   Frame: %.2f / %d",
+                           Percentage, AnimationCurrentTime, AnimationMaxTime, CurrentFrameF, AnimationTotalFrames);
+        ImGui::Separator();
+
+        float ScrubberWidth = ImGui::GetContentRegionAvail().x;
+        float ScrubberHeight = std::max(30.0f, ImGui::GetContentRegionAvail().y - 4.0f);
+        ImVec2 ScrubberPos = ImGui::GetCursorScreenPos();
+        ImVec2 TrackMin = ScrubberPos;
+        ImVec2 TrackMax = ImVec2(ScrubberPos.x + ScrubberWidth, ScrubberPos.y + ScrubberHeight);
+        ImDrawList* TimelineDrawList = ImGui::GetWindowDrawList();
+
+        ImGui::InvisibleButton("##CustomScrubber", ImVec2(ScrubberWidth, ScrubberHeight));
+        bool bScrubberActive = ImGui::IsItemActive();
+        bool bScrubberHovered = ImGui::IsItemHovered();
+
+        if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+        {
+            const float MouseX = ImGui::GetIO().MousePos.x;
+            const float Ratio = std::clamp((MouseX - TrackMin.x) / ScrubberWidth, 0.0f, 1.0f);
+            PendingNotifyTime = Ratio * AnimationMaxTime;
+        }
+
+        if (ImGui::BeginPopupContextItem("##ScrubberContext"))
+        {
+            if (ImGui::MenuItem("Add Notify Event"))
+            {
+                NotifyDuration = 0.0f;
+                NotifyActionTypeIndex = ToNotifyActionTypeIndex(EAnimNotifyActionType::GameplayEvent);
+                std::snprintf(NotifyNameBuffer, sizeof(NotifyNameBuffer), "Footstep");
+                std::snprintf(NotifyEventIdBuffer, sizeof(NotifyEventIdBuffer), "Footstep");
+                NotifyPayloadBuffer[0] = '\0';
+                bOpenAddNotifyPopup = true;
+            }
+
+            ImGui::EndPopup();
+        }
+        if (bOpenAddNotifyPopup)
+        {
+            ImGui::OpenPopup("AddNotifyEvent");
+            bOpenAddNotifyPopup = false;
+        }
+
+        TimelineDrawList->AddRectFilled(TrackMin, TrackMax, IM_COL32(60, 60, 60, 255));
+        TimelineDrawList->AddRect(TrackMin, TrackMax, IM_COL32(100, 100, 100, 255));
+
+        int FrameStep = 10;
+        for (int i = 0; i <= AnimationTotalFrames; i += FrameStep)
+        {
+            float ratio = (float)i / SafeTotalFrames;
+            float tickX = TrackMin.x + (ratio * ScrubberWidth);
+
+            TimelineDrawList->AddLine(
+                ImVec2(tickX, TrackMin.y + ScrubberHeight * 0.4f),
+                ImVec2(tickX, TrackMax.y - 2.0f),
+                IM_COL32(180, 180, 180, 255));
+
+            char frameText[16];
+            sprintf_s(frameText, "%d", i);
+            TimelineDrawList->AddText(ImVec2(tickX + 4.0f, TrackMin.y + 2.0f), IM_COL32(200, 200, 200, 255), frameText);
+        }
+
+        // Notify event rects are an overlay layer: they never push tick labels, tick lines, or the playhead.
+        const float NotifyRowHeight = 22.0f;
+        const float NotifyRowsTopPadding = 4.0f;
+        bool bNotifyClickedThisFrame = false;
+        if (Sequence)
+        {
+            const TArray<FAnimNotifyEvent>& Notifies = Sequence->GetNotifies();
+            ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+            const ImVec2 RowsOrigin(TrackMin.x, TrackMin.y + NotifyRowsTopPadding);
+            const float RowWidth = ScrubberWidth;
+            const float NotifyRectW = std::min(90.0f, std::max(24.0f, RowWidth - 4.0f));
+            const float NotifyRectH = 18.0f;
+            const float NotifyRectRightPadding = 4.0f;
+            const float MaxNotifyY = TrackMax.y - NotifyRectH - 4.0f;
+
+            for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(Notifies.size()); ++NotifyIndex)
+            {
+                const FAnimNotifyEvent& Notify = Notifies[NotifyIndex];
+
+                const float Y = RowsOrigin.y + NotifyIndex * NotifyRowHeight;
+                if (Y > MaxNotifyY)
+                {
+                    continue;
+                }
+
+                const float Ratio = std::clamp(Notify.TriggerTime / SafeMaxTime, 0.0f, 1.0f);
+                const float RawX = RowsOrigin.x + Ratio * RowWidth;
+                const float MaxX = RowsOrigin.x + std::max(0.0f, RowWidth - NotifyRectW - NotifyRectRightPadding);
+                const float X = std::clamp(RawX, RowsOrigin.x, MaxX);
+
+                ImVec2 RectMin(X, Y + 2.0f);
+                ImVec2 RectMax(X + NotifyRectW, Y + 2.0f + NotifyRectH);
+
+                if (ImGui::IsMouseHoveringRect(RectMin, RectMax) &&
+                    ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+                {
+                    SelectedNotifyIndex = NotifyIndex;
+                    PendingOpenNotifyIndex = NotifyIndex;
+                    EditingNotifyIndex = -1;
+                    bNotifyClickedThisFrame = true;
+                }
+
+                const bool bSelected = SelectedNotifyIndex == NotifyIndex;
+                const ImU32 FillColor = bSelected
+                                            ? IM_COL32(40, 155, 255, 255)
+                                            : IM_COL32(25, 130, 215, 255);
+
+                DrawList->AddRectFilled(RectMin, RectMax, FillColor, 2.0f);
+                DrawList->AddRect(RectMin, RectMax, IM_COL32(0, 65, 120, 255), 2.0f);
+
+                const float DiamondSize = 7.0f;
+                const ImVec2 DiamondCenter(RectMin.x, (RectMin.y + RectMax.y) * 0.5f);
+
+                DrawList->AddQuadFilled(
+                    ImVec2(DiamondCenter.x, DiamondCenter.y - DiamondSize),
+                    ImVec2(DiamondCenter.x + DiamondSize, DiamondCenter.y),
+                    ImVec2(DiamondCenter.x, DiamondCenter.y + DiamondSize),
+                    ImVec2(DiamondCenter.x - DiamondSize, DiamondCenter.y),
+                    IM_COL32(70, 95, 235, 255));
+
+                DrawList->AddText(
+                    ImVec2(RectMin.x + 8.0f, RectMin.y + 2.0f),
+                    IM_COL32(0, 0, 0, 255),
+                    Notify.NotifyName.ToString().c_str());
+            }
+        }
+
+        ImGui::SetCursorScreenPos(ImVec2(TrackMin.x, TrackMax.y));
+
+        float PlayheadRatio = std::clamp(AnimationCurrentTime / SafeMaxTime, 0.0f, 1.0f);
+        float PlayheadX = TrackMin.x + (PlayheadRatio * ScrubberWidth);
+        float PlayheadWidth = 14.0f;
+
+        ImVec2 HeadMin = ImVec2(PlayheadX - PlayheadWidth * 0.5f, TrackMin.y + 2.0f);
+        ImVec2 HeadMax = ImVec2(PlayheadX + PlayheadWidth * 0.5f, TrackMax.y - 2.0f);
+
+        if (bScrubberActive && !bNotifyClickedThisFrame)
+        {
+            float mouseX = ImGui::GetIO().MousePos.x;
+            float newRatio = (mouseX - TrackMin.x) / ScrubberWidth;
+            newRatio = std::clamp(newRatio, 0.0f, 1.0f);
+
+            AnimationCurrentTime = newRatio * AnimationMaxTime;
+
+            if (CachedSkComp)
+            {
+                CachedSkComp->SetPosition(AnimationCurrentTime, false);
+                CachedSkComp->RefreshAnimationPose();
+                AnimationCurrentTime = CachedSkComp->GetPosition();
+            }
+        }
+
+        ImU32 HeadColor = bScrubberHovered || bScrubberActive ? IM_COL32(180, 80, 80, 255) : IM_COL32(150, 70, 70, 255);
+        TimelineDrawList->AddRectFilled(HeadMin, HeadMax, HeadColor, 2.0f);
+        TimelineDrawList->AddRect(HeadMin, HeadMax, IM_COL32(50, 20, 20, 255), 2.0f);
+        TimelineDrawList->AddLine(ImVec2(PlayheadX, HeadMin.y), ImVec2(PlayheadX, HeadMax.y), IM_COL32(255, 150, 150, 100));
+
+        if (ImGui::BeginPopupModal("AddNotifyEvent", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("Time: %.3f sec", PendingNotifyTime);
+            ImGui::InputText("Name", NotifyNameBuffer, sizeof(NotifyNameBuffer));
+            ImGui::DragFloat("Duration", &NotifyDuration, 0.01f, 0.0f, AnimationMaxTime);
+            ImGui::Combo(
+                "Action Type",
+                &NotifyActionTypeIndex,
+                AnimNotifyActionTypeItems,
+                AnimNotifyActionTypeItemCount);
+            ImGui::InputText("Event Id", NotifyEventIdBuffer, sizeof(NotifyEventIdBuffer));
+            ImGui::InputText("Payload", NotifyPayloadBuffer, sizeof(NotifyPayloadBuffer));
+
+            const bool bValidName = NotifyNameBuffer[0] != '\0';
+            const bool bValidEventId = NotifyEventIdBuffer[0] != '\0';
+
+            if (!bValidName)
+            {
+                ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Name is required.");
+            }
+            if (!bValidEventId)
+            {
+                ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Event Id is required.");
+            }
+
+            if (!bValidName || !bValidEventId)
+                ImGui::BeginDisabled();
+
+            if (ImGui::Button("Add"))
+            {
+                if (Sequence)
+                {
+                    FAnimNotifyEvent Notify;
+                    Notify.TriggerTime = PendingNotifyTime;
+                    Notify.Duration = NotifyDuration;
+                    Notify.NotifyName = FName(NotifyNameBuffer);
+                    Notify.ActionType = FromNotifyActionTypeIndex(NotifyActionTypeIndex);
+                    Notify.EventId = FName(NotifyEventIdBuffer);
+                    Notify.Payload = NotifyPayloadBuffer;
+
+                    Sequence->AddNotify(Notify);
+                    bAnimSequenceDirty = true;
+                    DirtyTrackedAnimSequence = ResolveCurrentAnimSequence();
+                }
+
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (!bValidName || !bValidEventId)
+                ImGui::EndDisabled();
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Cancel"))
+            {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+
+        ImGui::EndChild(); // TimelineRightPanel
     }
     ImGui::EndChild(); // AnimationTimelineZone
 
@@ -1249,7 +1752,8 @@ void FEditorViewerWindowWidget::RenderContent(float DeltaTime)
 void FEditorViewerWindowWidget::RenderBoneDetails(USkeletalMeshComponent* SkelComp)
 {
     const int32 SelectedBoneIndex = Viewer ? Viewer->GetSelectedBoneIndex() : -1;
-    if (!SkelComp || SelectedBoneIndex == -1) return;
+    if (!SkelComp || SelectedBoneIndex == -1)
+        return;
 
     USkeletalMesh* SkeletalMesh = SkelComp->GetSkeletalMesh();
     if (!SkeletalMesh)
@@ -1276,14 +1780,15 @@ void FEditorViewerWindowWidget::RenderBoneDetails(USkeletalMeshComponent* SkelCo
     FVector CurrentEuler = RotationMatrix.GetEuler();
     FVector& CachedRotation = Viewer->GetCachedBoneRotation();
 
-	if ((CurrentEuler - FMatrix::MakeRotationEuler(CachedRotation).GetEuler()).Size() > 0.01f)
+    if ((CurrentEuler - FMatrix::MakeRotationEuler(CachedRotation).GetEuler()).Size() > 0.01f)
     {
         CachedRotation = CurrentEuler;
     }
 
     bool bEdited = false;
 
-    auto DrawTransformField = [&](const char* Label, FVector& Value, float Speed) {
+    auto DrawTransformField = [&](const char* Label, FVector& Value, float Speed)
+    {
         float Arr[3] = { Value.X, Value.Y, Value.Z };
         if (ImGui::DragFloat3(Label, Arr, Speed))
         {
@@ -1294,9 +1799,12 @@ void FEditorViewerWindowWidget::RenderBoneDetails(USkeletalMeshComponent* SkelCo
     };
 
     ImGui::Text("Transform (Local)");
-    if (DrawTransformField("Location", Location, 0.1f)) bEdited = true;
-    if (DrawTransformField("Rotation", CachedRotation, 0.1f)) bEdited = true;
-    if (DrawTransformField("Scale", Scale, 0.01f)) bEdited = true;
+    if (DrawTransformField("Location", Location, 0.1f))
+        bEdited = true;
+    if (DrawTransformField("Rotation", CachedRotation, 0.1f))
+        bEdited = true;
+    if (DrawTransformField("Scale", Scale, 0.01f))
+        bEdited = true;
 
     if (bEdited)
     {
@@ -1318,9 +1826,8 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
     const FBoneInfo& Bone = Bones[BoneIndex];
 
     // socket까지 자식으로 그리므로 "자식 없음"은 bone-children + socket-children 모두 비어야 성립.
-    const bool bHasBoneChildren   = Children[BoneIndex].size() > 0;
-    const bool bHasSocketChildren = BoneIndex < static_cast<int32>(BoneToSocketIndices.size())
-                                    && BoneToSocketIndices[BoneIndex].size() > 0;
+    const bool bHasBoneChildren = Children[BoneIndex].size() > 0;
+    const bool bHasSocketChildren = BoneIndex < static_cast<int32>(BoneToSocketIndices.size()) && BoneToSocketIndices[BoneIndex].size() > 0;
 
     ImGuiTreeNodeFlags Flags =
         ImGuiTreeNodeFlags_OpenOnArrow |
@@ -1352,12 +1859,14 @@ void FEditorViewerWindowWidget::DrawBoneNode(int32 BoneIndex, const TArray<FBone
     if (ImGui::BeginPopupContextItem())
     {
         const bool bCanEditBindPose = Viewer && Viewer->GetViewerMode() == ESkeletalMeshViewerMode::BindPose;
-        if (!bCanEditBindPose) ImGui::BeginDisabled();
+        if (!bCanEditBindPose)
+            ImGui::BeginDisabled();
         if (ImGui::MenuItem("Add Socket"))
         {
             AddSocketOnBone(BoneIndex);
         }
-        if (!bCanEditBindPose) ImGui::EndDisabled();
+        if (!bCanEditBindPose)
+            ImGui::EndDisabled();
         ImGui::Separator();
 
         const bool bCanToggleChildren = bHasBoneChildren || bHasSocketChildren;
@@ -1452,15 +1961,17 @@ void FEditorViewerWindowWidget::SetBoneSubtreeOpenState(
 
 void FEditorViewerWindowWidget::DrawSocketNode(int32 SocketIdx)
 {
-    if (!CachedMesh) return;
-    if (SocketIdx < 0 || SocketIdx >= static_cast<int32>(CachedMesh->Sockets.size())) return;
+    if (!CachedMesh)
+        return;
+    if (SocketIdx < 0 || SocketIdx >= static_cast<int32>(CachedMesh->Sockets.size()))
+        return;
 
     const FSkeletalMeshSocket& Socket = CachedMesh->Sockets[SocketIdx];
 
     ImGuiTreeNodeFlags Flags =
         ImGuiTreeNodeFlags_Leaf |
         ImGuiTreeNodeFlags_SpanAvailWidth |
-        ImGuiTreeNodeFlags_NoTreePushOnOpen;   // leaf니까 자식 push 불필요
+        ImGuiTreeNodeFlags_NoTreePushOnOpen; // leaf니까 자식 push 불필요
 
     if (Viewer && Viewer->GetSelectedSocketIndex() == SocketIdx)
     {
@@ -1473,7 +1984,7 @@ void FEditorViewerWindowWidget::DrawSocketNode(int32 SocketIdx)
 
     // socket을 시각적으로 구분 — cyan-ish, "◇" prefix
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.85f, 1.0f, 1.0f));
-    ImGui::TreeNodeEx(NodeId, Flags, "\xe2\x97\x87 %s", Socket.Name.ToString().c_str());   // ◇
+    ImGui::TreeNodeEx(NodeId, Flags, "\xe2\x97\x87 %s", Socket.Name.ToString().c_str()); // ◇
     ImGui::PopStyleColor();
 
     // 클릭 → socket 선택. bone 선택은 해제.
@@ -1486,7 +1997,8 @@ void FEditorViewerWindowWidget::DrawSocketNode(int32 SocketIdx)
     if (ImGui::BeginPopupContextItem())
     {
         const bool bCanEditBindPose = Viewer && Viewer->GetViewerMode() == ESkeletalMeshViewerMode::BindPose;
-        if (!bCanEditBindPose) ImGui::BeginDisabled();
+        if (!bCanEditBindPose)
+            ImGui::BeginDisabled();
         if (ImGui::MenuItem("Add Preview Mesh..."))
         {
             // 모달은 popup 바깥에서 OpenPopup해야 안정적 — 여기선 트리거 idx만 기록.
@@ -1515,7 +2027,8 @@ void FEditorViewerWindowWidget::DrawSocketNode(int32 SocketIdx)
         {
             DeleteSocket(SocketIdx);
         }
-        if (!bCanEditBindPose) ImGui::EndDisabled();
+        if (!bCanEditBindPose)
+            ImGui::EndDisabled();
 
         ImGui::EndPopup();
     }
@@ -1525,7 +2038,8 @@ void FEditorViewerWindowWidget::RebuildBoneTreeCaches(const FSkeletalMesh* MeshD
 {
     Children.clear();
     BoneToSocketIndices.clear();
-    if (!MeshData) return;
+    if (!MeshData)
+        return;
 
     const TArray<FBoneInfo>& Bones = ResolveCurrentBones();
     const int32 BoneCount = static_cast<int32>(Bones.size());
@@ -1546,7 +2060,8 @@ void FEditorViewerWindowWidget::RebuildBoneTreeCaches(const FSkeletalMesh* MeshD
 void FEditorViewerWindowWidget::RebuildBoneToSocketIndices(const FSkeletalMesh* MeshData)
 {
     BoneToSocketIndices.clear();
-    if (!MeshData) return;
+    if (!MeshData)
+        return;
 
     const int32 BoneCount = static_cast<int32>(ResolveCurrentBones().size());
     BoneToSocketIndices.resize(BoneCount);
@@ -1563,8 +2078,10 @@ void FEditorViewerWindowWidget::RebuildBoneToSocketIndices(const FSkeletalMesh* 
 
 void FEditorViewerWindowWidget::AddSocketOnBone(int32 BoneIdx)
 {
-    if (!CachedMesh) return;
-    if (BoneIdx < 0 || BoneIdx >= static_cast<int32>(ResolveCurrentBones().size())) return;
+    if (!CachedMesh)
+        return;
+    if (BoneIdx < 0 || BoneIdx >= static_cast<int32>(ResolveCurrentBones().size()))
+        return;
 
     FSkeletalMeshSocket NewSocket;
     NewSocket.Name = FName(GenerateUniqueSocketName());
@@ -1591,32 +2108,39 @@ void FEditorViewerWindowWidget::AddSocketOnBone(int32 BoneIdx)
 
 FString FEditorViewerWindowWidget::GenerateUniqueSocketName(const char* Base) const
 {
-    if (!CachedMesh) return FString(Base);
+    if (!CachedMesh)
+        return FString(Base);
 
-    auto Exists = [&](const FString& Candidate) -> bool {
+    auto Exists = [&](const FString& Candidate) -> bool
+    {
         const FName CandidateName(Candidate);
         for (const FSkeletalMeshSocket& S : CachedMesh->Sockets)
         {
-            if (S.Name == CandidateName) return true;
+            if (S.Name == CandidateName)
+                return true;
         }
         return false;
     };
 
     FString Candidate = Base;
-    if (!Exists(Candidate)) return Candidate;
+    if (!Exists(Candidate))
+        return Candidate;
 
     for (int32 i = 1; i < 10000; ++i)
     {
         Candidate = FString(Base) + "_" + std::to_string(i);
-        if (!Exists(Candidate)) return Candidate;
+        if (!Exists(Candidate))
+            return Candidate;
     }
-    return Candidate;   // 폴백 — 거의 도달 불가
+    return Candidate; // 폴백 — 거의 도달 불가
 }
 
 void FEditorViewerWindowWidget::DeleteSocket(int32 SocketIdx)
 {
-    if (!CachedMesh) return;
-    if (SocketIdx < 0 || SocketIdx >= static_cast<int32>(CachedMesh->Sockets.size())) return;
+    if (!CachedMesh)
+        return;
+    if (SocketIdx < 0 || SocketIdx >= static_cast<int32>(CachedMesh->Sockets.size()))
+        return;
 
     // (1) 해당 socket에 매달린 preview mesh 먼저 정리
     const FName SocketName = CachedMesh->Sockets[SocketIdx].Name;
@@ -1647,22 +2171,26 @@ void FEditorViewerWindowWidget::DeleteSocket(int32 SocketIdx)
 
 bool FEditorViewerWindowWidget::HasPreview(const FName& SocketName) const
 {
-    if (!EditorEngine || !Viewer) return false;
+    if (!EditorEngine || !Viewer)
+        return false;
     return Viewer->FindPreviewMesh(SocketName) != nullptr;
 }
 
 void FEditorViewerWindowWidget::DrawSocketInspector()
 {
     // Save 상태는 socket 선택 여부와 무관하게 항상 보이는 게 편함.
-    auto DrawSaveButton = [&]() {
+    auto DrawSaveButton = [&]()
+    {
         const bool bCanSave = CanSaveMesh();
-        if (!bCanSave) ImGui::BeginDisabled();
+        if (!bCanSave)
+            ImGui::BeginDisabled();
         const char* Label = IsMeshDirty() ? "Save Mesh *" : "Save Mesh";
         if (ImGui::Button(Label))
         {
             TriggerSaveMesh();
         }
-        if (!bCanSave) ImGui::EndDisabled();
+        if (!bCanSave)
+            ImGui::EndDisabled();
     };
 
     const int32 SelectedSocketIndex = Viewer ? Viewer->GetSelectedSocketIndex() : -1;
@@ -1681,8 +2209,8 @@ void FEditorViewerWindowWidget::DrawSocketInspector()
     // Bone 콤보
     const TArray<FBoneInfo>& Bones = ResolveCurrentBones();
     const FString CurrentBoneName = (Socket.BoneIndex >= 0 && Socket.BoneIndex < (int32)Bones.size())
-        ? Bones[Socket.BoneIndex].Name.ToString()
-        : FString("<invalid>");
+                                        ? Bones[Socket.BoneIndex].Name.ToString()
+                                        : FString("<invalid>");
 
     if (ImGui::BeginCombo("Bone", CurrentBoneName.c_str()))
     {
@@ -1695,12 +2223,14 @@ void FEditorViewerWindowWidget::DrawSocketInspector()
                 if (Socket.BoneIndex != i)
                 {
                     Socket.BoneIndex = i;
-                    RebuildBoneToSocketIndices(CachedMesh);   // 트리에서 새 본 밑으로 이동
+                    RebuildBoneToSocketIndices(CachedMesh); // 트리에서 새 본 밑으로 이동
                     bMeshDirty = true;
-                    if (CachedSkComp) CachedSkComp->MarkPoseDirty();
+                    if (CachedSkComp)
+                        CachedSkComp->MarkPoseDirty();
                 }
             }
-            if (bSelected) ImGui::SetItemDefaultFocus();
+            if (bSelected)
+                ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
     }
@@ -1715,7 +2245,8 @@ void FEditorViewerWindowWidget::DrawSocketInspector()
     if (bChanged)
     {
         bMeshDirty = true;
-        if (CachedSkComp) CachedSkComp->MarkPoseDirty();
+        if (CachedSkComp)
+            CachedSkComp->MarkPoseDirty();
     }
 
     ImGui::Separator();
@@ -1724,17 +2255,20 @@ void FEditorViewerWindowWidget::DrawSocketInspector()
 
 void FEditorViewerWindowWidget::TriggerSaveMesh()
 {
-	RequestSaveMesh();
+    RequestSaveMesh();
 }
 
 bool FEditorViewerWindowWidget::IsSocketNameUnique(const FString& Candidate, int32 IgnoreIdx) const
 {
-    if (!CachedMesh) return false;
+    if (!CachedMesh)
+        return false;
     const FName CandidateName(Candidate);
     for (int32 i = 0; i < static_cast<int32>(CachedMesh->Sockets.size()); ++i)
     {
-        if (i == IgnoreIdx) continue;
-        if (CachedMesh->Sockets[i].Name == CandidateName) return false;
+        if (i == IgnoreIdx)
+            continue;
+        if (CachedMesh->Sockets[i].Name == CandidateName)
+            return false;
     }
     return true;
 }
@@ -1760,9 +2294,9 @@ void FEditorViewerWindowWidget::DrawRenameModal()
     ImGui::InputText("##rename", RenameBuffer, sizeof(RenameBuffer));
 
     const FString Candidate(RenameBuffer);
-    const bool bEmpty  = Candidate.empty();
+    const bool bEmpty = Candidate.empty();
     const bool bUnique = !bEmpty && IsSocketNameUnique(Candidate, RenameSocketIdx);
-    const bool bValid  = !bEmpty && bUnique;
+    const bool bValid = !bEmpty && bUnique;
 
     if (bEmpty)
     {
@@ -1773,7 +2307,8 @@ void FEditorViewerWindowWidget::DrawRenameModal()
         ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Name already in use");
     }
 
-    if (!bValid) ImGui::BeginDisabled();
+    if (!bValid)
+        ImGui::BeginDisabled();
     if (ImGui::Button("OK"))
     {
         // Preview mesh가 이 socket에 attach되어 있다면 key가 socket name이므로,
@@ -1805,11 +2340,13 @@ void FEditorViewerWindowWidget::DrawRenameModal()
         }
 
         bMeshDirty = true;
-        if (CachedSkComp) CachedSkComp->MarkPoseDirty();
+        if (CachedSkComp)
+            CachedSkComp->MarkPoseDirty();
         RenameSocketIdx = -1;
         ImGui::CloseCurrentPopup();
     }
-    if (!bValid) ImGui::EndDisabled();
+    if (!bValid)
+        ImGui::EndDisabled();
 
     ImGui::SameLine();
 
