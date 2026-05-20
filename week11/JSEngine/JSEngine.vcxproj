@@ -734,6 +734,7 @@
     <ClCompile Include="Source\Engine\Component\SubUVComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\InterpToMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\LocomotionTestMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\MovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\ProjectileMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\PursuitMovementComponent.cpp" />
@@ -1085,6 +1086,7 @@
     <ClInclude Include="Source\Engine\Component\SubUVComponent.h" />
     <ClInclude Include="Source\Engine\Component\TextRenderComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\InterpToMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\LocomotionTestMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\MovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\ProjectileMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\PursuitMovementComponent.h" />
