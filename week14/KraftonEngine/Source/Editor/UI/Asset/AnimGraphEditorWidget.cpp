@@ -44,15 +44,21 @@ namespace
 		return "Node";
 	}
 
-	// 노드 팔레트 — 배경 우클릭 메뉴에 노출되는 항목. OutputPose 는 메뉴 항목에서 제외 (1개만 허용).
-	constexpr EAnimGraphNodeType PaletteTypes[] = {
-		EAnimGraphNodeType::SequencePlayer,
-		EAnimGraphNodeType::StateMachine,
-		EAnimGraphNodeType::Slot,
-		EAnimGraphNodeType::LayeredBlendPerBone,
-		EAnimGraphNodeType::BlendListByEnum,
-		EAnimGraphNodeType::VariableGet,
-	};
+	// 노드 헤더 텍스트 색상 — 노드 종류 한눈에 구분. UE Blueprint 의 카테고리 컬러 컨벤션 차용.
+	ImVec4 NodeHeaderColor(EAnimGraphNodeType Type)
+	{
+		switch (Type)
+		{
+			case EAnimGraphNodeType::OutputPose:          return ImVec4(0.95f, 0.45f, 0.45f, 1.0f); // 빨강 — 종착점
+			case EAnimGraphNodeType::SequencePlayer:      return ImVec4(0.40f, 0.75f, 1.00f, 1.0f); // 파랑 — leaf pose
+			case EAnimGraphNodeType::Slot:                return ImVec4(0.60f, 0.95f, 0.65f, 1.0f); // 녹색 — montage 진입점
+			case EAnimGraphNodeType::LayeredBlendPerBone: return ImVec4(0.75f, 0.60f, 0.95f, 1.0f); // 연보라 — blender
+			case EAnimGraphNodeType::BlendListByEnum:     return ImVec4(0.70f, 0.70f, 0.95f, 1.0f); // 연보라
+			case EAnimGraphNodeType::StateMachine:        return ImVec4(0.90f, 0.55f, 0.95f, 1.0f); // 보라 — FSM
+			case EAnimGraphNodeType::VariableGet:         return ImVec4(0.95f, 0.85f, 0.40f, 1.0f); // 노랑 — data
+		}
+		return ImVec4(1, 1, 1, 1);
+	}
 
 	FString GetStemFromPath(const FString& Path)
 	{
@@ -255,7 +261,7 @@ namespace
 	// 재컴파일하여 in-editor live preview 가 즉시 반영되도록.
 	void RenderNodeInspector(UAnimGraphAsset& Asset, FAnimGraphNode& Node)
 	{
-		ImGui::Text("%s", NodeTypeLabel(Node.Type));
+		ImGui::TextColored(NodeHeaderColor(Node.Type), "%s", NodeTypeLabel(Node.Type));
 		ImGui::TextDisabled("id=%u", Node.NodeId);
 		ImGui::Separator();
 
@@ -570,7 +576,7 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 	for (const FAnimGraphNode& Node : Asset->GetNodes())
 	{
 		ed::BeginNode(ToNodeId(Node.NodeId));
-			ImGui::Text("%s", NodeTypeLabel(Node.Type));
+			ImGui::TextColored(NodeHeaderColor(Node.Type), "%s", NodeTypeLabel(Node.Type));
 			ImGui::Separator();
 
 			for (const FAnimGraphPin& Pin : Node.Pins)
@@ -706,11 +712,15 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 	{
 		ImGui::TextDisabled("Add Node");
 		ImGui::Separator();
-		for (EAnimGraphNodeType Type : PaletteTypes)
+
+		auto AddItem = [&](EAnimGraphNodeType Type)
 		{
 			const bool bDisabled = (Type == EAnimGraphNodeType::OutputPose) && Asset->HasOutputPoseNode();
 			if (bDisabled) ImGui::BeginDisabled();
-			if (ImGui::MenuItem(NodeTypeLabel(Type)))
+			ImGui::PushStyleColor(ImGuiCol_Text, NodeHeaderColor(Type));
+			const bool bClicked = ImGui::MenuItem(NodeTypeLabel(Type));
+			ImGui::PopStyleColor();
+			if (bClicked)
 			{
 				FAnimGraphNode* NewNode = Asset->AddNodeOfType(Type, PendingNewNodePosition.x, PendingNewNodePosition.y);
 				if (NewNode)
@@ -719,7 +729,25 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 				}
 			}
 			if (bDisabled) ImGui::EndDisabled();
+		};
+
+		if (ImGui::BeginMenu("Pose"))
+		{
+			AddItem(EAnimGraphNodeType::SequencePlayer);
+			AddItem(EAnimGraphNodeType::Slot);
+			AddItem(EAnimGraphNodeType::LayeredBlendPerBone);
+			AddItem(EAnimGraphNodeType::BlendListByEnum);
+			AddItem(EAnimGraphNodeType::StateMachine);
+			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Data"))
+		{
+			AddItem(EAnimGraphNodeType::VariableGet);
+			ImGui::EndMenu();
+		}
+		ImGui::Separator();
+		AddItem(EAnimGraphNodeType::OutputPose); // 단독 — 이미 있으면 disable.
+
 		ImGui::EndPopup();
 	}
 	ed::Resume();
