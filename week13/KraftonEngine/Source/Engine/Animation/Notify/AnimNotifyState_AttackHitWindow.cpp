@@ -1,16 +1,16 @@
-#include "AnimNotifyState_AttackHitWindow.h"
+﻿#include "AnimNotifyState_AttackHitWindow.h"
 
-#include "Component/ActionComponent.h"
+#include "Component/Input/ActionComponent.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/SkeletalMeshComponent.h"
-#include "Core/CollisionTypes.h"
-#include "Core/EngineTypes.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Core/Types/CollisionTypes.h"
+#include "Core/Types/EngineTypes.h"
 #include "Debug/DrawDebugHelpers.h"
-#include "Core/Log.h"
+#include "Core/Logging/Log.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-#include "Mesh/SkeletalMesh.h"
-#include "Mesh/SkeletalMeshAsset.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
+#include "Mesh/Skeletal/SkeletalMeshAsset.h"
 
 #include <cfloat>
 
