@@ -153,6 +153,7 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
     {
         ImGui::MenuItem("FPS", nullptr, &State.bShowStatFPS);
         ImGui::MenuItem("Memory", nullptr, &State.bShowStatMemory);
+        ImGui::MenuItem("Skinning", nullptr, &State.bShowStatSkinning);
         ImGui::MenuItem("Cascade Vis", nullptr, &State.bShowCascadeVis);
         ImGui::MenuItem("Light", nullptr, &State.bShowLight);
         ImGui::MenuItem("Shadow", nullptr, &State.bShowShadow);

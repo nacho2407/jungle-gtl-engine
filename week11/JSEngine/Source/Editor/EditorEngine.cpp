@@ -252,6 +252,9 @@ void UEditorEngine::Tick(float DeltaTime)
         InputSystem::Get().SetGuiViewportMouseFocusAllowed(true);
         PIESession.ConsumeViewportInputFocusFrame();
     }
+
+    FSkinningStats::Reset();
+
 #if STATS
     const auto InputSetupEnd = std::chrono::steady_clock::now();
 

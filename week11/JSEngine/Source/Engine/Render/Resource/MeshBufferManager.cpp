@@ -3,6 +3,7 @@
 #include "Asset/SkeletalMesh.h"
 #include "Asset/StaticMesh.h"
 #include "Component/ProceduralMeshComponent.h"
+#include "Core/Logging/Stats.h"
 #include "Object/Object.h"
 
 namespace
@@ -217,7 +218,6 @@ FMeshBuffer* FMeshBufferManager::GetCPUSkinnedMeshBuffer(uint32 SkeletalMeshComp
 	NewBuffer.CreateDynamicVertices<FNormalVertex>(Device, static_cast<uint32>(Vertices.size()), Indices);
 	UpdateSkinnedVerticesBuffer(Device, NewBuffer, Vertices);
 	CPUSkeletalMeshSourceMap[SkeletalMeshCompUUID] = SkeletalMeshAsset;
-
 	return NewBuffer.IsValid() ? &NewBuffer : nullptr;
 }
 
@@ -237,14 +237,43 @@ FMeshBuffer* FMeshBufferManager::GetGPUSkinningSourceBuffer(const USkeletalMesh*
 	FMeshBuffer& NewBuffer = GPUSkeletalMeshBufferMap[SkeletalMeshAsset];
 	NewBuffer.CreateImmutableVertices(Device, SkeletalMeshAsset->GetVertices(), SkeletalMeshAsset->GetIndices());
 
-	if (NewBuffer.IsValid())
+	return NewBuffer.IsValid() ? &NewBuffer : nullptr;
+}
+
+uint64 FMeshBufferManager::GetCPUSkinnedVertexBufferMemoryBytes() const
+{
+	uint64 TotalBytes = 0;
+	for (const auto& Pair : CPUSkeletalMeshBufferMap)
 	{
-		return &NewBuffer;
+		const FMeshBuffer& Buffer = Pair.second;
+		if (!Buffer.IsValid())
+		{
+			continue;
+		}
+
+		TotalBytes += static_cast<uint64>(Buffer.GetVertexBuffer().GetVertexCapacity()) *
+			static_cast<uint64>(Buffer.GetVertexBuffer().GetStride());
 	}
-	else
+
+	return TotalBytes;
+}
+
+uint64 FMeshBufferManager::GetGPUSourceVertexBufferMemoryBytes() const
+{
+	uint64 TotalBytes = 0;
+	for (const auto& Pair : GPUSkeletalMeshBufferMap)
 	{
-		return nullptr;
+		const FMeshBuffer& Buffer = Pair.second;
+		if (!Buffer.IsValid())
+		{
+			continue;
+		}
+
+		TotalBytes += static_cast<uint64>(Buffer.GetVertexBuffer().GetVertexCapacity()) *
+			static_cast<uint64>(Buffer.GetVertexBuffer().GetStride());
 	}
+
+	return TotalBytes;
 }
 
 void FMeshBufferManager::ReleaseCPUSkeletalMeshBuffers()

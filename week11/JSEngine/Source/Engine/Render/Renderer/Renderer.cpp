@@ -708,6 +708,8 @@ void FRenderer::RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewpor
                 InRenderBus.GetSkinningMode() == ESkinningMode::GPU)
             {
                 Resources.SkinningBuffer.Update(Context, &Command.Constants.Skinning, sizeof(FSkinningConstants));
+                FSkinningStats::Get().GPUSkinningCBUploadBytes += sizeof(FSkinningConstants);
+                FSkinningStats::Get().GPUSkinningCBUpdateCount += 1;
                 ID3D11Buffer* cb5 = Resources.SkinningBuffer.GetBuffer();
                 Context->VSSetConstantBuffers(5, 1, &cb5);
             }

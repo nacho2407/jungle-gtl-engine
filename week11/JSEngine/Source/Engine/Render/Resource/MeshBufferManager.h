@@ -41,6 +41,8 @@ public:
 	FMeshBuffer* GetProcMeshBuffer(uint32 ProcMeshCompUUID, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices);
 	FMeshBuffer* GetCPUSkinnedMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload);
 	FMeshBuffer* GetGPUSkinningSourceBuffer(const USkeletalMesh* SkeletalMeshAsset);
+	uint64 GetCPUSkinnedVertexBufferMemoryBytes() const;
+	uint64 GetGPUSourceVertexBufferMemoryBytes() const;
 	void ReleaseCPUSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID);
 	void ReleaseStaleCPUSkeletalMeshBuffers();
 	void ReleaseCPUSkeletalMeshBuffers();

@@ -108,7 +108,6 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
                                     const FFrustum* ViewFrustum, bool bIncludeEditorOnlyPrimitives)
 {
 	ResetCullingStats();
-	ResetDecalStats();
 	ResetLightStats();
 	ReleaseStaleCPUSkeletalMeshBuffers();
 
@@ -142,11 +141,6 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 void FRenderCollector::ResetCullingStats()
 {
 	LastCullingStats = {};
-}
-
-void FRenderCollector::ResetDecalStats()
-{
-	DecalCommandBuilder.Reset();
 }
 
 void FRenderCollector::ResetLightStats()

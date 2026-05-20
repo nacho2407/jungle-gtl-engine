@@ -26,7 +26,6 @@ public:
 		int32 FallbackPassedPrimitiveCount{0};
 	};
 
-	using FDecalStats = FRenderDecalStats;
 	using FLightStats = FRenderLightStats;
 
 private:
@@ -59,13 +58,13 @@ public:
 	{
 		return MeshBufferManager.GetStaticMeshBuffer(StaticMeshAsset, LODLevel);
 	}
+	uint64 GetCPUSkinnedVertexBufferMemoryBytes() const { return MeshBufferManager.GetCPUSkinnedVertexBufferMemoryBytes(); }
+	uint64 GetGPUSourceVertexBufferMemoryBytes() const { return MeshBufferManager.GetGPUSourceVertexBufferMemoryBytes(); }
 	const FCullingStats& GetLastCullingStats() const { return LastCullingStats; }
-	const FDecalStats& GetLastDecalStats() const { return DecalCommandBuilder.GetLastStats(); }
     const FLightStats& GetLastLightStats() const { return LightRenderCollector.GetLastStats(); }
 
 private:
 	void ResetCullingStats();
-	void ResetDecalStats();
 	void ResetLightStats();
 
 	void CollectWorldWithFrustum(UWorld* World, const FFrustum& ViewFrustum, const FShowFlags& ShowFlags, EViewMode ViewMode,

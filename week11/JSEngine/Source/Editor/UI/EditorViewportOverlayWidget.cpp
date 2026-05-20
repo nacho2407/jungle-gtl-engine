@@ -4,6 +4,7 @@
 #include "Editor/EditorEngine.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/Settings/EditorSettings.h"
+#include "Core/Logging/Stats.h"
 #include "Engine/Slate/SlateApplication.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "ImGui/imgui.h"
@@ -27,6 +28,7 @@ namespace
 {
 	constexpr float AtlasGridCellPixels = 256.0f;
 	constexpr float AtlasZoomRegionUv = 1.0f / 16.0f;
+	constexpr float BytesPerKB = 1024.0f;
 
 	float ClampFloat(float Value, float MinValue, float MaxValue)
 	{
@@ -550,7 +552,7 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 		const FEditorViewportState& VS = Layout.GetViewportState(i);
         FViewportRect ViewportRect = Layout.GetSceneViewport(i).GetRect();
 
-		if (!VS.bShowStatFPS && !VS.bShowStatMemory && !VS.bShowStatNameTable && !VS.bShowLight&& !VS.bShowShadow) continue;
+		if (!VS.bShowStatFPS && !VS.bShowStatMemory && !VS.bShowStatNameTable && !VS.bShowStatSkinning && !VS.bShowLight && !VS.bShowShadow) continue;
         if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
             continue; // 비활성 뷰포트 스킵
 
@@ -599,21 +601,6 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 					ImVec4(0.25f, 0.9f, 1.0f, 1.0f), "- Fallback Passed: %d",
 					CullingStats->FallbackPassedPrimitiveCount);
 				ImGui::TextColored(ImVec4(0.25f, 0.9f, 1.0f, 1.0f), "- Culled: %d", CulledPrimitiveCount);
-			}
-
-			const FRenderCollector::FDecalStats* DecalStats =
-				(RenderPipeline != nullptr) ? &RenderPipeline->GetViewportDecalStats(i) : nullptr;
-
-			if (DecalStats != nullptr)
-			{
-				if (CullingStats != nullptr || VS.bShowStatFPS)
-				{
-					ImGui::Separator();
-				}
-
-				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.f, 1.f), "Decal");
-				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.f, 1.f), "- Total Decals: %d", DecalStats->TotalDecalCount);
-				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.f, 1.f), "- Decal Time: %.4f ms", DecalStats->CollectTimeMS / 1000.f);
 			}
 
             const FRenderCollector::FLightStats* LightStats =
@@ -675,13 +662,51 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
                 ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Atlas Resolution: %u x %u", AtlasResolution, AtlasResolution);
                 ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Used 2D Tiles: %d", UsedShadowTiles);
                 ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Atlas Usage: %.2f%%", AtlasUsagePercent);
-                ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Atlas Memory: %.2f / %.2f MB",
-                                   UsedAtlasBytes / (1024.0f * 1024.0f),
-                                   AtlasBytes / (1024.0f * 1024.0f));
+                ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Atlas Memory: %.2f / %.2f KB",
+                                   UsedAtlasBytes / BytesPerKB,
+                                   AtlasBytes / BytesPerKB);
                 ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Point Cubes: %u / %d", AllocatedCubeCount, MAX_SHADOW_CUBES);
-                ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Cube Memory: %.2f / %.2f MB",
-                                   UsedCubeBytes / (1024.0f * 1024.0f),
-                                   MaxCubeBytes / (1024.0f * 1024.0f));
+                ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Cube Memory: %.2f / %.2f KB",
+                                   UsedCubeBytes / BytesPerKB,
+                                   MaxCubeBytes / BytesPerKB);
+            }
+
+            if (VS.bShowStatSkinning)
+            {
+                if (CullingStats != nullptr || VS.bShowStatFPS || VS.bShowStatMemory || VS.bShowShadow)
+                {
+                    ImGui::Separator();
+                }
+
+                const FSkinningStatsSnapshot& SkinningStats = FSkinningStats::Get();
+                const uint64 CPUSkinnedVBMemoryBytes = RenderPipeline != nullptr ? RenderPipeline->GetCPUSkinnedVertexBufferMemoryBytes() : 0;
+                const uint64 GPUSourceVBMemoryBytes = RenderPipeline != nullptr ? RenderPipeline->GetGPUSourceVertexBufferMemoryBytes() : 0;
+                const char* SkinningModeName = FEditorSettings::Get().SkinningMode == ESkinningMode::CPU ? "CPU" : "GPU";
+                const auto& Viewers = EditorEngine->GetViewers();
+
+                if (!Viewers.empty() && Viewers[0])
+				{
+					if (Viewers[0]->GetClient().GetShowFlags().bShowSelectedBoneWeight)
+					{
+                        SkinningModeName = "GPU";
+					}
+				}
+                constexpr ImVec4 StatColor = ImVec4(1.0f, 0.85f, 1.0f, 1.f);
+                ImGui::TextColored(StatColor, "Skinning (Mode: %s)", SkinningModeName);
+                ImGui::TextColored(StatColor, "Common");
+                ImGui::TextColored(StatColor, "- Pose Time: %.3f ms", SkinningStats.PoseUpdateTimeSeconds * 1000.0);
+                ImGui::TextColored(StatColor, "- Total Skeletals: %u", SkinningStats.TotalSkeletalCount);
+                ImGui::TextColored(StatColor, "- Total Vertices: %llu", static_cast<unsigned long long>(SkinningStats.TotalVertexCount));
+                ImGui::TextColored(StatColor, "- Total Indices: %llu", static_cast<unsigned long long>(SkinningStats.TotalIndexCount));
+
+                ImGui::TextColored(StatColor, "CPU");
+                ImGui::TextColored(StatColor, "- Skinning Time: %.3f ms", SkinningStats.CPUSkinningTimeSeconds * 1000.0);
+                ImGui::TextColored(StatColor, "- Skinned VB Memory: %.2f KB", CPUSkinnedVBMemoryBytes / BytesPerKB);
+
+                ImGui::TextColored(StatColor, "GPU");
+                ImGui::TextColored(StatColor, "- Skinning CB Upload: %.2f KB", SkinningStats.GPUSkinningCBUploadBytes / BytesPerKB);
+                ImGui::TextColored(StatColor, "- Skinning CB Updates: %u", SkinningStats.GPUSkinningCBUpdateCount);
+                ImGui::TextColored(StatColor, "- Source VB Memory: %.2f KB", GPUSourceVBMemoryBytes / BytesPerKB);
             }
 
 			// Memory 출력 (노란색 텍스트)
@@ -709,19 +734,19 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 				const size_t TotalMemoryBytes = MeshMemoryBytes + MatMemoryBytes;
 
 				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "Memory Stat");
-				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Mesh: %.2f KB",     MeshMemoryBytes / 1024.f);
-				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Material: %.2f KB", MatMemoryBytes  / 1024.f);
+				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Mesh: %.2f KB",     MeshMemoryBytes / BytesPerKB);
+				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Material: %.2f KB", MatMemoryBytes  / BytesPerKB);
 				ImGui::Separator();
 
 				FNamePool& Pool = FNamePool::Get();
 				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.5f, 1.f), "FName Stat");
 				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.5f, 1.f), "- Entries: %u",   Pool.GetEntryCount());
-				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.5f, 1.f), "- Size: %.2f KB", Pool.GetTotalBytes() / 1024.f);
+				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.5f, 1.f), "- Size: %.2f KB", Pool.GetTotalBytes() / BytesPerKB);
 
 				ImGui::Separator();
 
 				ImGui::TextColored(ImVec4(1.f, 1.f, 1.f, 1.f), "- Total Allocated Counts: %d", EngineStatics::GetTotalAllocationCount());
-				ImGui::TextColored(ImVec4(1.f, 1.f, 1.f, 1.f), "- Total Allocated Bytes: %.2f KB", EngineStatics::GetTotalAllocationBytes() / 1024.f);
+				ImGui::TextColored(ImVec4(1.f, 1.f, 1.f, 1.f), "- Total Allocated: %.2f KB", EngineStatics::GetTotalAllocationBytes() / BytesPerKB);
 			}
 		}
 
@@ -747,8 +772,6 @@ void FEditorViewportOverlayWidget::RenderGroupedStatOverlay(float DeltaTime)
     const FEditorRenderPipeline* RenderPipeline = EditorEngine->GetEditorRenderPipeline();
     const FRenderCollector::FCullingStats* CullingStats =
         RenderPipeline != nullptr ? &RenderPipeline->GetViewportCullingStats(FocusedIdx) : nullptr;
-    const FRenderCollector::FDecalStats* DecalStats =
-        RenderPipeline != nullptr ? &RenderPipeline->GetViewportDecalStats(FocusedIdx) : nullptr;
     const FRenderCollector::FLightStats* LightStats =
         RenderPipeline != nullptr ? &RenderPipeline->GetViewportLightStats(FocusedIdx) : nullptr;
 
@@ -799,15 +822,6 @@ void FEditorViewportOverlayWidget::RenderGroupedStatOverlay(float DeltaTime)
             ImGui::Text("BVH Passed    : %d", CullingStats->BVHPassedPrimitiveCount);
             ImGui::Text("Fallback      : %d", CullingStats->FallbackPassedPrimitiveCount);
             ImGui::Text("Culled        : %d", CulledPrimitiveCount);
-        }
-
-        if (DecalStats != nullptr)
-        {
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::TextUnformatted("[ Decal ]");
-            ImGui::Text("Total Decals : %d", DecalStats->TotalDecalCount);
-            ImGui::Text("Collect Time : %.4f ms", DecalStats->CollectTimeMS / 1000.0f);
         }
 
         if (LightStats != nullptr)
