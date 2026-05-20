@@ -22,8 +22,19 @@
 local IDLE_PATH = "Content/Data/hirasawa-yui/IdleWithSkin_mixamo_com.uasset"
 local WALK_PATH = "Content/Data/hirasawa-yui/Walking_mixamo_com.uasset"
 local JUMP_PATH = "Content/Data/hirasawa-yui/Jump_mixamo_com.uasset"
+local BENCAO_PATH = "Content/Data/hirasawa-yui/bencao_mixamo_com.uasset"
+local ESQUIVA_1_PATH = "Content/Data/hirasawa-yui/esquiva 1_mixamo_com.uasset"
 
 local ATTACK_MONTAGE_PATH = "Content/Montages/AM_MagicAttack.uasset"
+local DEFAULT_SLOT = "DefaultSlot"
+local KEY_X = string.byte("X")
+local KEY_C = string.byte("C")
+local BENCAO_DURATION = 1.366667
+local BENCAO_BLEND_IN = 0.35
+local BENCAO_BLEND_OUT = 0.35
+local ESQUIVA_1_DURATION = 4.066667
+local ESQUIVA_1_BLEND_IN = 0.35
+local ESQUIVA_1_BLEND_OUT = 0.35
 
 -- UpperBody mask 의 root 본 — Spine 부터 자손 (팔/머리/손) 까지 자동 mask BFS.
 -- mixamo rig 의 본 이름은 보통 "mixamorig:Spine" 류. 본 못 찾으면 mask 가 전부 false → base 100%.
@@ -32,6 +43,12 @@ local UPPER_BODY_ROOT_BONE = "Bip001 Spine"
 function init(self)
     self.Speed          = 0
     self.SpeedThreshold = 0.5
+    self.BencaoRequested = false
+    self.BencaoPlaying = false
+    self.BencaoElapsed = 0.0
+    self.Esquiva1Requested = false
+    self.Esquiva1Playing = false
+    self.Esquiva1Elapsed = 0.0
 
     -- ── Locomotion sub-SM (Idle ↔ Walk) ──
     local loco = Anim.create_state_machine("Locomotion")
@@ -47,10 +64,63 @@ function init(self)
     local top = Anim.create_state_machine("Top")
     Anim.sm_add_state(top, "Locomotion", loco)
     Anim.sm_add_state(top, "Jump", Anim.create_sequence_player(JUMP_PATH, 1.0, false))
+    Anim.sm_add_state(top, "Bencao", Anim.create_sequence_player(BENCAO_PATH, 1.0, false))
+    Anim.sm_add_state(top, "Esquiva1", Anim.create_sequence_player(ESQUIVA_1_PATH, 1.0, false))
     Anim.sm_add_transition(top, "AnyState", "Jump",
-        function() return Anim.is_owner_falling() end, 0.1)
+        function()
+            if Anim.is_owner_falling() then
+                self.BencaoRequested = false
+                self.BencaoPlaying = false
+                self.Esquiva1Requested = false
+                self.Esquiva1Playing = false
+                return true
+            end
+            return false
+        end, 0.1)
+    Anim.sm_add_transition(top, "AnyState", "Bencao",
+        function()
+            if self.BencaoRequested
+                and not Anim.is_owner_falling()
+                and not Anim.is_montage_playing(DEFAULT_SLOT)
+                and not self.Esquiva1Playing then
+                self.BencaoRequested = false
+                self.BencaoPlaying = true
+                self.BencaoElapsed = 0.0
+                return true
+            end
+            return false
+        end, BENCAO_BLEND_IN)
+    Anim.sm_add_transition(top, "AnyState", "Esquiva1",
+        function()
+            if self.Esquiva1Requested
+                and not Anim.is_owner_falling()
+                and not Anim.is_montage_playing(DEFAULT_SLOT)
+                and not self.BencaoPlaying then
+                self.Esquiva1Requested = false
+                self.Esquiva1Playing = true
+                self.Esquiva1Elapsed = 0.0
+                return true
+            end
+            return false
+        end, ESQUIVA_1_BLEND_IN)
     Anim.sm_add_transition(top, "Jump", "Locomotion",
         function() return not Anim.is_owner_falling() end, 0.5)
+    Anim.sm_add_transition(top, "Bencao", "Locomotion",
+        function()
+            if self.BencaoPlaying and self.BencaoElapsed >= BENCAO_DURATION then
+                self.BencaoPlaying = false
+                return true
+            end
+            return false
+        end, BENCAO_BLEND_OUT)
+    Anim.sm_add_transition(top, "Esquiva1", "Locomotion",
+        function()
+            if self.Esquiva1Playing and self.Esquiva1Elapsed >= ESQUIVA_1_DURATION then
+                self.Esquiva1Playing = false
+                return true
+            end
+            return false
+        end, ESQUIVA_1_BLEND_OUT)
     Anim.sm_set_initial_state(top, "Locomotion")
 
     -- ── DefaultSlot — 풀바디 montage 진입점. InputPose = TopSM ──
@@ -68,6 +138,20 @@ end
 
 function update(self, dt)
     self.Speed = Anim.get_owner_speed()
+
+    if self.BencaoPlaying then
+        self.BencaoElapsed = self.BencaoElapsed + dt
+    end
+    if self.Esquiva1Playing then
+        self.Esquiva1Elapsed = self.Esquiva1Elapsed + dt
+    end
+
+    if Anim.is_key_pressed(KEY_X) and not self.BencaoPlaying and not Anim.is_owner_falling() then
+        self.BencaoRequested = true
+    end
+    if Anim.is_key_pressed(KEY_C) and not self.Esquiva1Playing and not Anim.is_owner_falling() then
+        self.Esquiva1Requested = true
+    end
 
     -- 좌클릭 → 풀바디 attack (DefaultSlot 기본).
     if Anim.is_left_mouse_pressed() then
