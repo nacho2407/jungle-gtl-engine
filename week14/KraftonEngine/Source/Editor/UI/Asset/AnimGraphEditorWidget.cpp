@@ -12,6 +12,7 @@
 #include "imgui.h"
 #include "imgui_node_editor.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <filesystem>
 
@@ -432,6 +433,12 @@ namespace
 						FAnimGraphState S;
 						S.StateName = FName("NewState");
 						Node.States.push_back(std::move(S));
+						// 첫 state 면 InitialStateName 자동 박기 — SM 컴파일 시 SetInitialState 가
+						// None 이면 SM 자체가 동작 안 함.
+						if (Node.InitialStateName == FName::None)
+						{
+							Node.InitialStateName = Node.States.back().StateName;
+						}
 						bChanged = true;
 					}
 
@@ -440,13 +447,51 @@ namespace
 					{
 						ImGui::PushID(i);
 						ImGui::Separator();
-						if (RenderStateRow(Node.States[i], i, Node.NodeId, Asset.GetNodes())) bChanged = true;
+
+						// rename cascade — RenderStateRow 가 state.StateName 직접 수정하므로
+						// 호출 전 이전 이름 캡쳐, 호출 후 비교해 InitialStateName / Transitions 의
+						// stale ref 자동 갱신.
+						const FName PrevName = Node.States[i].StateName;
+						if (RenderStateRow(Node.States[i], i, Node.NodeId, Asset.GetNodes()))
+						{
+							bChanged = true;
+							const FName NewName = Node.States[i].StateName;
+							if (PrevName != NewName)
+							{
+								if (Node.InitialStateName == PrevName)
+								{
+									Node.InitialStateName = NewName;
+								}
+								for (FAnimGraphTransition& T : Node.Transitions)
+								{
+									if (T.FromStateName == PrevName) T.FromStateName = NewName;
+									if (T.ToStateName   == PrevName) T.ToStateName   = NewName;
+								}
+							}
+						}
 						if (ImGui::Button("Delete##State")) PendingDeleteIdx = i;
 						ImGui::PopID();
 					}
 					if (PendingDeleteIdx >= 0)
 					{
+						const FName DeletedName = Node.States[PendingDeleteIdx].StateName;
 						Node.States.erase(Node.States.begin() + PendingDeleteIdx);
+
+						// InitialStateName 이 삭제된 state 면 남은 첫 state 로 교체 (없으면 None).
+						if (Node.InitialStateName == DeletedName)
+						{
+							Node.InitialStateName = Node.States.empty()
+								? FName::None
+								: Node.States.front().StateName;
+						}
+
+						// 그 state 를 가리키는 transitions 제거 — stale ref 방지.
+						Node.Transitions.erase(std::remove_if(Node.Transitions.begin(), Node.Transitions.end(),
+							[&DeletedName](const FAnimGraphTransition& T)
+							{
+								return T.FromStateName == DeletedName || T.ToStateName == DeletedName;
+							}), Node.Transitions.end());
+
 						bChanged = true;
 					}
 				}
