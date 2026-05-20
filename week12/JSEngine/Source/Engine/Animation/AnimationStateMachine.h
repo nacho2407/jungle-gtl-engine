@@ -12,6 +12,7 @@ class IAnimPoseSource
 {
 public:
 	virtual ~IAnimPoseSource() = default;
+	virtual void SetOwnerComponent(USkeletalMeshComponent* InOwnerComponent) = 0;
 	virtual void Update(float DeltaTime) = 0;
 	virtual bool EvaluatePose(FPoseContext& OutPose) const = 0;
 	virtual void ResetTime() = 0;
@@ -43,6 +44,7 @@ public:
 	{
 	}
 
+	virtual void SetOwnerComponent(USkeletalMeshComponent* InOwnerComponent) override { OwnerComponent = InOwnerComponent; }
 	virtual void Update(float DeltaTime) override;
 	virtual bool EvaluatePose(FPoseContext& OutPose) const override;
 	virtual void ResetTime() override;
@@ -67,6 +69,9 @@ struct FAnimStateNode
 	FName Name;
 	std::shared_ptr<IAnimPoseSource> PoseSource;
 	TArray<FAnimTransition> Transitions;
+	FString AnimationPath;
+	float PlayRate = 1.0f;
+	bool bLoop = true;
 	bool bAutoAdvanceOnEnd = true;
 };
 
@@ -76,7 +81,9 @@ class UAnimationStateMachine : public UObject
 public:
 	GENERATED_BODY(UAnimationStateMachine, UObject)
 
+	void Serialize(FArchive& Ar) override;
 	void Initialize(USkeletalMeshComponent* Owner);
+	void CopyRuntimeStateFrom(const UAnimationStateMachine* SourceMachine);
 
 	void AddState(FName StateName, UAnimSequenceBase* Sequence, float PlayRate = 1.0f, bool bLoop = true, bool bAutoAdvanceOnEnd = true);
 	void AddTransition(FName FromState, FName ToState, float BlendTime, FAnimTransitionCondition Condition, int32 Priority = 0);

@@ -32,7 +32,9 @@ class UAnimGraphInstance : public UAnimInstance
 public:
 	GENERATED_BODY(UAnimGraphInstance, UAnimInstance)
 
+	void Serialize(FArchive& Ar) override;
 	void SetGraphAsset(UAnimGraphAsset* InAsset);
+	void CopyRuntimeParametersFrom(const UAnimGraphInstance* SourceInstance);
 
 	virtual void NativeUpdateAnimation(float DeltaTime) override;
 	virtual bool EvaluatePose(FPoseContext& OutPoseContext) override;
@@ -55,7 +57,7 @@ private:
 	FAnimGraphSequenceCache& GetOrCreateSequenceCache(int32 NodeId, const FString& AnimationPath);
 	void BuildBoneMapping(FAnimGraphSequenceCache& Cache);
 
-    bool EvaluateStateMachine(const FAnimGraphNodeDesc& Node, FPoseContext& OutPoseContext);
+	bool EvaluateStateMachine(const FAnimGraphNodeDesc& Node, FPoseContext& OutPoseContext);
 
 	FAnimGraphStateMachineCache& GetOrCreateStateMachineCache(const FAnimGraphNodeDesc& Node);
 	UAnimationStateMachine* BuildStateMachineRuntime(const FAnimStateMachineDesc& Desc);

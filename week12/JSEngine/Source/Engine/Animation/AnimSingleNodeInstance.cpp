@@ -36,15 +36,24 @@ void UAnimSingleNodeInstance::Serialize(FArchive& Ar)
 {
 	UAnimInstance::Serialize(Ar);
 
+	bool bSerializedPlaying = Ar.IsLoading() ? bAutoPlay : bPlaying;
+	if (!Ar.IsLoading() || Ar.HasKey("Playing"))
+	{
+		Ar << "Playing" << bSerializedPlaying;
+	}
+
 	if (Ar.IsLoading())
 	{
+		const float RestoredCurrentTime = CurrentTime;
+		const float RestoredPreviousTime = PreviousTime;
+
 		ApplyAnimationFromAssetPath();
 		SetPlayRate(PlayRate);
 		SetLooping(bLooping);
-		if (bAutoPlay && CurrentAnimation)
-		{
-			Play(bLooping);
-		}
+		CurrentTime = RestoredCurrentTime;
+		PreviousTime = RestoredPreviousTime;
+		bPlaying = CurrentAnimation && bSerializedPlaying;
+		bPoseDirty = true;
 	}
 }
 
@@ -183,15 +192,10 @@ void UAnimSingleNodeInstance::CopyPlaybackSettingsFrom(const UAnimSingleNodeInst
 	PlayRate = SourceInstance->PlayRate;
 	bLooping = SourceInstance->bLooping;
 	bAutoPlay = SourceInstance->bAutoPlay;
-
-	if (bAutoPlay && CurrentAnimation)
-	{
-		Play(bLooping);
-	}
-	else
-	{
-		bPlaying = false;
-	}
+	CurrentTime = SourceInstance->CurrentTime;
+	PreviousTime = SourceInstance->PreviousTime;
+	bPlaying = CurrentAnimation && SourceInstance->bPlaying;
+	bPoseDirty = true;
 }
 
 float UAnimSingleNodeInstance::GetLength() const

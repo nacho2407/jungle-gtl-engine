@@ -26,11 +26,7 @@ namespace
 
 	FString GetPersistentAnimationAssetPath(UAnimationAsset* Animation);
 	UAnimInstance* CreateAnimInstanceFromClassName(const FString& ClassName);
-
-	UAnimNotify* ResolveAnimNotifyObject(const FAnimNotifyStateEvent& Notify)
-	{
-		return Notify.NotifyObject;
-	}
+	UAnimNotify* ResolveAnimNotifyObject(const FAnimNotifyStateEvent& Notify) { return Notify.NotifyObject; }
 }
 
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
@@ -66,6 +62,16 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
 		UAnimInstance* LoadedAnimInstance = CreateAnimInstanceFromClassName(AnimInstanceClassName);
 		if (LoadedAnimInstance)
 		{
+			if (UAnimGraphInstance* GraphInstance = Cast<UAnimGraphInstance>(LoadedAnimInstance))
+			{
+				if (!AnimGraphAssetPath.IsNull())
+				{
+					const FString GraphPath = FPaths::Normalize(AnimGraphAssetPath.GetPath());
+					AnimGraphAssetPath.SetPath(GraphPath);
+					GraphInstance->SetGraphAsset(FResourceManager::Get().LoadAnimGraph(GraphPath));
+				}
+			}
+
 			LoadedAnimInstance->Serialize(Ar);
 			LoadedAnimInstance->Initialize(this);
 			AnimInstance = LoadedAnimInstance;
@@ -83,8 +89,7 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
 			{
 				if (!AnimGraphAssetPath.IsNull())
 				{
-					UAnimGraphAsset* Graph = FResourceManager::Get().LoadAnimGraph(FPaths::Normalize(AnimGraphAssetPath.GetPath()));
-					GraphInstance->SetGraphAsset(Graph);
+					AnimGraphAssetPath.SetPath(FPaths::Normalize(AnimGraphAssetPath.GetPath()));
 				}
 			}
 		}
@@ -145,6 +150,29 @@ void USkeletalMeshComponent::PostDuplicate(UObject* Original)
 	else if (AnimationMode == EAnimationMode::AnimationGraph)
 	{
 		ApplyAnimGraphFromAssetPath();
+		if (UAnimGraphInstance* GraphInstance = Cast<UAnimGraphInstance>(AnimInstance))
+		{
+			GraphInstance->CopyRuntimeParametersFrom(Cast<UAnimGraphInstance>(SourceComponent->AnimInstance));
+		}
+	}
+	else if (AnimationMode == EAnimationMode::AnimationStateMachine)
+	{
+		const UStateMachineAnimInstance* SourceStateMachineInstance = Cast<UStateMachineAnimInstance>(SourceComponent->AnimInstance);
+		const UAnimationStateMachine* SourceStateMachine = SourceStateMachineInstance ? SourceStateMachineInstance->GetStateMachine() : nullptr;
+		if (SourceStateMachine)
+		{
+			UAnimationStateMachine* NewStateMachine = UObjectManager::Get().CreateObject<UAnimationStateMachine>();
+			if (NewStateMachine)
+			{
+				NewStateMachine->Initialize(this);
+				NewStateMachine->CopyRuntimeStateFrom(SourceStateMachine);
+				SetAnimationStateMachine(NewStateMachine);
+			}
+		}
+		else
+		{
+			CreateAnimationStateMachine();
+		}
 	}
 }
 
@@ -484,6 +512,10 @@ void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InAnimationMode)
 	else if (AnimationMode == EAnimationMode::AnimationGraph)
 	{
 		ApplyAnimGraphFromAssetPath();
+	}
+	else if (AnimationMode == EAnimationMode::AnimationStateMachine)
+	{
+		CreateAnimationStateMachine();
 	}
 	else
 	{
