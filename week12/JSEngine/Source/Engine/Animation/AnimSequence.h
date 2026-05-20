@@ -94,11 +94,12 @@ public:
 	virtual const TArray<FAnimNotifyStateEvent>& GetNotifies() const { return Notifies; }
 	virtual const TArray<FBoneAnimationTrack>& GetBoneAnimationTracks() const;
 	virtual bool GetAnimationPose(float Time, FPoseContext& OutPose) const { return false; }
-	void AddNotify(float InTriggerTime, const FName& InNotifyName, float InDuration = 0.0f);
-	void AddNotifyState(float InTriggerTime, float InDuration, const FName& InNotifyName) { AddNotify(InTriggerTime, InNotifyName, InDuration); }
+	void AddNotify(float InTriggerTime, const FName& InNotifyName, float InDuration = 0.0f, const FString& InNotifyClassName = "");
+	void AddNotifyState(float InTriggerTime, float InDuration, const FName& InNotifyName, const FString& InNotifyClassName = "") { AddNotify(InTriggerTime, InNotifyName, InDuration, InNotifyClassName); }
 	void ClearNotifies();
 	bool RemoveNotifyAt(int32 NotifyIndex);
 	bool SetNotifyName(int32 NotifyIndex, const FName& InNotifyName);
+	bool SetNotifyClassName(int32 NotifyIndex, const FString& InNotifyClassName);
 	bool SetNotifyTriggerTime(int32 NotifyIndex, float InTriggerTime);
 	bool SetNotifyDuration(int32 NotifyIndex, float InDuration);
 	bool SetNotifyTimeRange(int32 NotifyIndex, float InTriggerTime, float InDuration);

@@ -72,7 +72,6 @@ private:
     void RenderAnimSequenceToolbar(UAnimSequence* Sequence);
     void RenderAnimSequenceTimeline(UAnimSequence* Sequence);
     void RenderAnimSequenceDetails(UAnimSequence* Sequence, USkeletalMesh* PreviewMesh);
-    void DrawAddAnimNotifyPopup(UAnimSequence* Sequence);
     bool SaveAnimSequenceAsset(UAnimSequence* Sequence);
     void RenderAnimSequenceList(UAnimSequence* Sequence);
     void SyncPreviewMeshPathBuffer();
@@ -111,7 +110,7 @@ private:
     float AnimNotifyDragGrabOffset = 0.0f;
     bool bAnimNotifyDragDirty = false;
     UAnimSequence* CachedAnimSequence = nullptr;
-    char AnimNotifyNameBuffer[128] = "AnimNotify";
+    float PendingAnimNotifyTimeToAdd = 0.0f;
     char SelectedAnimNotifyNameBuffer[128] = {};
     int32 SelectedAnimNotifyNameBufferIndex = -1;
     float AnimNotifyDurationToAdd = 0.0f;

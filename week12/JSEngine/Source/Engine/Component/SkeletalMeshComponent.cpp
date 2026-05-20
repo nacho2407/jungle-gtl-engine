@@ -1,6 +1,7 @@
 ﻿#include "SkeletalMeshComponent.h"
 
 #include "Animation/AnimInstance.h"
+#include "Animation/AnimNotify.h"
 #include "Animation/AnimGraphAsset.h"
 #include "Animation/AnimGraphInstance.h"
 #include "Animation/AnimSequence.h"
@@ -21,9 +22,15 @@ namespace
 {
 	constexpr const char* AnimInstanceDataKey = "AnimInstanceData";
 	constexpr const char* SerializedObjectTypeKey = "Type";
+	constexpr bool bDispatchLegacyAnimNotifyCallbacks = false;
 
 	FString GetPersistentAnimationAssetPath(UAnimationAsset* Animation);
 	UAnimInstance* CreateAnimInstanceFromClassName(const FString& ClassName);
+
+	UAnimNotify* ResolveAnimNotifyObject(const FAnimNotifyStateEvent& Notify)
+	{
+		return Notify.NotifyObject;
+	}
 }
 
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
@@ -697,43 +704,75 @@ void USkeletalMeshComponent::SetAnimationPosition(float InTime)
 void USkeletalMeshComponent::HandleAnimNotify(const FAnimNotifyStateEvent& Notify)
 {
 	UE_LOG("[AnimNotify] %s triggered at %.3f", Notify.NotifyName.ToString().c_str(), Notify.TriggerTime);
-	OnAnimNotifyDelegate.Broadcast(this, Notify);
-
-	if (AActor* OwnerActor = GetOwner())
+	if (UAnimNotify* NotifyObject = ResolveAnimNotifyObject(Notify))
 	{
-		OwnerActor->OnAnimNotify(this, Notify);
+		NotifyObject->Notify(this, Notify);
+	}
+
+	if (bDispatchLegacyAnimNotifyCallbacks)
+	{
+		OnAnimNotifyDelegate.Broadcast(this, Notify);
+
+		if (AActor* OwnerActor = GetOwner())
+		{
+			OwnerActor->OnAnimNotify(this, Notify);
+		}
 	}
 }
 
 void USkeletalMeshComponent::HandleAnimNotifyBegin(const FAnimNotifyStateEvent& Notify)
 {
 	UE_LOG("[AnimNotifyBegin] %s begin at %.3f duration %.3f", Notify.NotifyName.ToString().c_str(), Notify.TriggerTime, Notify.Duration);
-	OnAnimNotifyBeginDelegate.Broadcast(this, Notify);
-
-	if (AActor* OwnerActor = GetOwner())
+	if (UAnimNotify* NotifyObject = ResolveAnimNotifyObject(Notify))
 	{
-		OwnerActor->OnAnimNotifyBegin(this, Notify);
+		NotifyObject->NotifyBegin(this, Notify);
+	}
+
+	if (bDispatchLegacyAnimNotifyCallbacks)
+	{
+		OnAnimNotifyBeginDelegate.Broadcast(this, Notify);
+
+		if (AActor* OwnerActor = GetOwner())
+		{
+			OwnerActor->OnAnimNotifyBegin(this, Notify);
+		}
 	}
 }
 
 void USkeletalMeshComponent::HandleAnimNotifyTick(const FAnimNotifyStateEvent& Notify, float DeltaTime)
 {
-	OnAnimNotifyTickDelegate.Broadcast(this, Notify, DeltaTime);
-
-	if (AActor* OwnerActor = GetOwner())
+	if (UAnimNotify* NotifyObject = ResolveAnimNotifyObject(Notify))
 	{
-		OwnerActor->OnAnimNotifyTick(this, Notify, DeltaTime);
+		NotifyObject->NotifyTick(this, Notify, DeltaTime);
+	}
+
+	if (bDispatchLegacyAnimNotifyCallbacks)
+	{
+		OnAnimNotifyTickDelegate.Broadcast(this, Notify, DeltaTime);
+
+		if (AActor* OwnerActor = GetOwner())
+		{
+			OwnerActor->OnAnimNotifyTick(this, Notify, DeltaTime);
+		}
 	}
 }
 
 void USkeletalMeshComponent::HandleAnimNotifyEnd(const FAnimNotifyStateEvent& Notify)
 {
 	UE_LOG("[AnimNotifyEnd] %s end at %.3f", Notify.NotifyName.ToString().c_str(), Notify.GetEndTime());
-	OnAnimNotifyEndDelegate.Broadcast(this, Notify);
-
-	if (AActor* OwnerActor = GetOwner())
+	if (UAnimNotify* NotifyObject = ResolveAnimNotifyObject(Notify))
 	{
-		OwnerActor->OnAnimNotifyEnd(this, Notify);
+		NotifyObject->NotifyEnd(this, Notify);
+	}
+
+	if (bDispatchLegacyAnimNotifyCallbacks)
+	{
+		OnAnimNotifyEndDelegate.Broadcast(this, Notify);
+
+		if (AActor* OwnerActor = GetOwner())
+		{
+			OwnerActor->OnAnimNotifyEnd(this, Notify);
+		}
 	}
 }
 
