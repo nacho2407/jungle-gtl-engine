@@ -6,8 +6,36 @@
 
 // ── AnimGraphTypes operator<< ──
 //
-// 각 struct 가 FName / TArray 같은 non-trivially-copyable 멤버를 보유 — FArchive 의 default
-// trivially_copyable 경로를 못 타므로 element-wise 직렬화를 직접 작성.
+// 주의 — FAnimGraphPin / FAnimGraphTransition 은 멤버가 모두 trivially_copyable
+// (FName 2*uint32 / enum class / float / uint32) → struct 자체도 trivially_copyable.
+// 그래서 TArray<T> 의 generic operator<< 가 sizeof(T) raw memcpy 분기 (Archive.h:75) 로 빠지고
+// 우리 element-wise operator<< 가 호출되지 않는다 — FName 의 풀 인덱스가 raw bytes 로 저장되어
+// 다음 세션의 풀 build 결과와 mismatch → "From/To 사라짐" 류 버그.
+//
+// 해결: 해당 두 TArray 타입에 대한 non-template overload 를 정의 → ADL 이 generic template
+// 보다 우선 선택하여 element-wise 경로 강제. FAnimGraphNode/FAnimGraphState 는 nested TArray /
+// FString 보유로 자연스럽게 non-trivially-copyable → 영향 없음.
+
+FArchive& operator<<(FArchive& Ar, FAnimGraphPin&        Pin);
+FArchive& operator<<(FArchive& Ar, FAnimGraphTransition& T);
+
+inline FArchive& operator<<(FArchive& Ar, TArray<FAnimGraphPin>& Array)
+{
+	uint32 N = static_cast<uint32>(Array.size());
+	Ar << N;
+	if (Ar.IsLoading()) Array.resize(N);
+	for (auto& Item : Array) Ar << Item;
+	return Ar;
+}
+
+inline FArchive& operator<<(FArchive& Ar, TArray<FAnimGraphTransition>& Array)
+{
+	uint32 N = static_cast<uint32>(Array.size());
+	Ar << N;
+	if (Ar.IsLoading()) Array.resize(N);
+	for (auto& Item : Array) Ar << Item;
+	return Ar;
+}
 
 FArchive& operator<<(FArchive& Ar, FAnimGraphPin& Pin)
 {
