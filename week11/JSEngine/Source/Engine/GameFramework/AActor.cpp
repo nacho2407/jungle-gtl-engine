@@ -1,9 +1,13 @@
 ﻿#include "GameFramework/AActor.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Component/Movement/MovementComponent.h"
 #include "GameFramework/World.h"
+#include "GameFramework/PrimitiveActors.h"
 #include "Core/Delegates/Delegate.h"
+#include "Core/ResourceManager.h"
+#include "Component/DecalComponent.h"
 #include <Runtime/Script/ScriptComponent.h>
 #include "ReflectionSystem/ReflectionUtils.h"
 #include "Animation/AnimationTypes.h"
@@ -716,6 +720,7 @@ void AActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Othe
 
 void AActor::HandleAnimNotify(USkeletalMeshComponent* SourceComponent, const FAnimNotifyDispatchEvent& NotifyEvent)
 {
+    UE_LOG("[Notify Anim Event] : HandleAnimNotify");
 
 	switch (NotifyEvent.Notify.ActionType)
     {
@@ -731,7 +736,51 @@ void AActor::HandleAnimNotify(USkeletalMeshComponent* SourceComponent, const FAn
         if (NotifyEvent.Notify.EventId == FName("Footstep"))
         {
             UE_LOG("[Notify Anim Event] : FootStep");
-            // 발자국 남기기
+
+            const FString FootstepDecalMaterialPath = NotifyEvent.Notify.Payload.empty()
+                                                          ? FString("Asset/Material/DecalMat.mat")
+                                                          : NotifyEvent.Notify.Payload;
+            const FVector FootstepLocationOffset(0.0f, 0.0f, -0.05f);
+            const FVector FootstepRotationOffset(0.0f, 90.0f, 0.0f);
+            const FVector FootstepScale(0.35f, 0.65f, 0.35f);
+            const FVector FootstepDecalSize(0.45f, 0.75f, 0.12f);
+
+            AActor* SourceActor = SourceComponent ? SourceComponent->GetOwner() : this;
+            UWorld* World = SourceActor ? SourceActor->GetFocusedWorld() : GetFocusedWorld();
+            if (!World || !SourceActor)
+            {
+                break;
+            }
+
+            FVector FootstepLocation = SourceActor->GetActorLocation() + FootstepLocationOffset;
+            if (SourceComponent)
+            {
+                const FAABB& SourceBounds = SourceComponent->GetWorldAABB();
+                if (SourceBounds.IsValid())
+                {
+                    const FVector BoundsCenter = SourceBounds.GetCenter();
+                    FootstepLocation = FVector(BoundsCenter.X, BoundsCenter.Y, SourceBounds.Min.Z) + FootstepLocationOffset;
+                }
+            }
+
+            const FVector FootstepRotation = SourceActor->GetActorRotation() + FootstepRotationOffset;
+
+            ADecalActor* FootstepDecal = World->SpawnActor<ADecalActor>();
+            if (!FootstepDecal)
+            {
+                break;
+            }
+
+            FootstepDecal->InitDefaultComponents();
+            FootstepDecal->SetActorLocation(FootstepLocation);
+            FootstepDecal->SetActorRotation(FootstepRotation);
+            FootstepDecal->SetActorScale(FootstepScale);
+
+            if (UDecalComponent* DecalComponent = FootstepDecal->FindComponent<UDecalComponent>())
+            {
+                DecalComponent->SetSize(FootstepDecalSize);
+                DecalComponent->SetMaterial(0, FResourceManager::Get().GetMaterialInterface(FootstepDecalMaterialPath));
+            }
         }
         break;
     }
