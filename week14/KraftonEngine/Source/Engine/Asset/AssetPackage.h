@@ -13,7 +13,8 @@ enum class EAssetPackageType : uint32
 	Material,
 	Skeleton,
 	AnimSequence,
-	AnimMontage
+	AnimMontage,
+	AnimGraph
 };
 
 struct FAssetPackageHeader

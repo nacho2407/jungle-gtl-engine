@@ -584,6 +584,9 @@
     <ClCompile Include="Source\Editor\UI\NotificationToast.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\AnimGraphEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\AnimMontagePropertyPanel.cpp">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClCompile>
@@ -642,6 +645,9 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimDataModel.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\AnimGraphAsset.cpp">
       <Filter>Source\Engine\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp">
@@ -1574,6 +1580,9 @@
     <ClInclude Include="Source\Editor\UI\NotificationToast.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\AnimGraphEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\AnimMontagePropertyPanel.h">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClInclude>
@@ -1650,6 +1659,9 @@
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimExtractContext.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\AnimGraphAsset.h">
       <Filter>Source\Engine\Animation</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h">
