@@ -121,6 +121,28 @@ void LoadCameraControls(json::JSON Obj, FViewportCameraControlSettings& Camera)
 		Camera.ZoomSpeed = static_cast<float>(Obj[Key::CameraZoomSpeed].ToFloat());
 }
 
+bool TryLoadSkinningMode(json::JSON Obj, ESkinningMode& OutMode)
+{
+	if (!Obj.hasKey(Key::SkinningMode))
+	{
+		return false;
+	}
+
+	const int32 RawMode = Obj[Key::SkinningMode].ToInt();
+	if (RawMode == static_cast<int32>(ESkinningMode::CPU))
+	{
+		OutMode = ESkinningMode::CPU;
+		return true;
+	}
+	if (RawMode == static_cast<int32>(ESkinningMode::GPU))
+	{
+		OutMode = ESkinningMode::GPU;
+		return true;
+	}
+
+	return false;
+}
+
 json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 {
 	using namespace json;
@@ -158,7 +180,6 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::LightCullingMode] = static_cast<int32>(Opts.LightCullingMode);
 	Obj[Key::HeatMapMax] = Opts.HeatMapMax;
 	Obj[Key::Enable25DCulling] = Opts.Enable25DCulling;
-	Obj[Key::SkinningMode] = static_cast<int32>(Opts.SkinningMode);
 	return Obj;
 }
 
@@ -228,11 +249,6 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.HeatMapMax = static_cast<float>(Obj[Key::HeatMapMax].ToFloat());
 	if (Obj.hasKey(Key::Enable25DCulling))
 		Opts.Enable25DCulling = Obj[Key::Enable25DCulling].ToBool();
-	if (Obj.hasKey(Key::SkinningMode))
-	{
-		Opts.SkinningMode = static_cast<ESkinningMode>(Obj[Key::SkinningMode].ToInt());
-		SkinningModeRuntime::Set(Opts.SkinningMode);
-	}
 }
 
 json::JSON SaveGizmoSettings(const FGizmoToolSettings& Gizmo)
@@ -274,6 +290,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	using namespace json;
 
 	JSON Root = Object();
+	Root[Key::SkinningMode] = static_cast<int32>(SkinningModeRuntime::Get());
 
 	// Viewport
 	JSON Viewport = SaveCameraControls(LevelViewportCameraControls);
@@ -376,6 +393,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		std::istreambuf_iterator<char>());
 
 	JSON Root = JSON::Load(Content);
+	ESkinningMode LoadedSkinningMode = SkinningModeRuntime::Get();
+	bool bLoadedSkinningMode = TryLoadSkinningMode(Root, LoadedSkinningMode);
 
 	// Viewport
 	if (Root.hasKey(Key::Viewport))
@@ -425,6 +444,11 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		if (LayoutObj.hasKey(Key::Slots))
 		{
 			JSON SlotsArr = LayoutObj[Key::Slots];
+			if (!bLoadedSkinningMode && SlotsArr.length() > 0)
+			{
+				bLoadedSkinningMode = TryLoadSkinningMode(SlotsArr[0], LoadedSkinningMode);
+			}
+
 			for (int32 i = 0; i < static_cast<int32>(SlotsArr.length()) && i < 4; ++i)
 			{
 				JSON S = SlotsArr[i];
@@ -499,6 +523,10 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 	if (Root.hasKey(Key::MeshEditorViewport))
 	{
 		JSON MeshEditorViewportObj = Root[Key::MeshEditorViewport];
+		if (!bLoadedSkinningMode)
+		{
+			bLoadedSkinningMode = TryLoadSkinningMode(MeshEditorViewportObj, LoadedSkinningMode);
+		}
 		LoadRenderOptions(MeshEditorViewportObj, MeshEditorViewportSettings.RenderOptions);
 		LoadCameraControls(MeshEditorViewportObj, MeshEditorViewportSettings.CameraControls);
 	}
@@ -507,5 +535,10 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 	{
 		JSON MeshEditorTransformObj = Root[Key::MeshEditorTransformTools];
 		LoadGizmoSettings(MeshEditorTransformObj, MeshEditorViewportSettings.Gizmo);
+	}
+
+	if (bLoadedSkinningMode)
+	{
+		SkinningModeRuntime::Set(LoadedSkinningMode);
 	}
 }
