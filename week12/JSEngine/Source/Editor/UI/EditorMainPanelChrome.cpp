@@ -18,9 +18,6 @@
 namespace
 {
 constexpr float WindowButtonWidth = 48.0f;
-constexpr float LogoSize = 28.0f;
-constexpr float LogoPaddingX = 4.0f;
-constexpr float MenuLogoGap = 8.0f;
 
 std::string WideToUtf8(const wchar_t* Text)
 {
@@ -107,6 +104,9 @@ void FEditorMainPanel::RenderApplicationChrome(float DeltaTime)
 	InteractiveRects.reserve(6);
 
 	constexpr float TitleBarHeight = FEditorChromeMetrics::ApplicationTitleBarHeight;
+	const float TitleBarFramePaddingY = std::max(
+		0.0f,
+		(TitleBarHeight - ImGui::GetFontSize()) * 0.5f);
 	const ImVec2 WindowPos = Viewport->Pos;
 	const ImVec2 WindowSize(Viewport->Size.x, TitleBarHeight);
 
@@ -128,7 +128,7 @@ void FEditorMainPanel::RenderApplicationChrome(float DeltaTime)
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(13.0f, 8.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(13.0f, TitleBarFramePaddingY));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(9.0f, 4.0f));
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.055f, 0.060f, 0.072f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.055f, 0.060f, 0.072f, 1.0f));
@@ -140,28 +140,15 @@ void FEditorMainPanel::RenderApplicationChrome(float DeltaTime)
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 		const float ButtonStartX = std::max(0.0f, WindowSize.x - WindowButtonWidth * 3.0f);
 
-		if (IconResources.HomeIcon)
-		{
-			DrawList->AddImage(
-				reinterpret_cast<ImTextureID>(IconResources.HomeIcon),
-				ImVec2(WindowPos.x + LogoPaddingX, WindowPos.y + (TitleBarHeight - LogoSize) * 0.5f),
-				ImVec2(WindowPos.x + LogoPaddingX + LogoSize, WindowPos.y + (TitleBarHeight + LogoSize) * 0.5f));
-		}
-		else
-		{
-			const ImVec2 Center(WindowPos.x + LogoPaddingX + LogoSize * 0.5f, WindowPos.y + TitleBarHeight * 0.5f);
-			DrawList->AddCircleFilled(Center, LogoSize * 0.48f, ImGui::GetColorU32(ImVec4(0.30f, 0.55f, 1.0f, 1.0f)), 24);
-		}
-
-		float MenuEndX = LogoPaddingX + LogoSize + MenuLogoGap;
+		float MenuEndX = 0.0f;
 		const ImVec2 ButtonSize(WindowButtonWidth, TitleBarHeight);
 		if (ImGui::BeginMenuBar())
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.0f, 12.0f));
-			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(14.0f, 8.0f));
-			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(18.0f, TitleBarFramePaddingY));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(12.0f, 8.0f));
 
-			ImGui::SetCursorPosX(MenuEndX);
+			ImGui::SetCursorPos(ImVec2(MenuEndX, 0.0f));
 			Widgets.ToolbarWidget.RenderMenuContents();
 			MenuEndX = std::min(ButtonStartX, ImGui::GetCursorScreenPos().x - WindowPos.x + 8.0f);
 
@@ -241,7 +228,7 @@ void FEditorMainPanel::RenderApplicationChrome(float DeltaTime)
 		InteractiveRects.push_back(FWindowHitTestRect{
 			0,
 			0,
-			static_cast<int32>(std::max(MenuEndX, LogoPaddingX + LogoSize + 4.0f)),
+			static_cast<int32>(MenuEndX),
 			static_cast<int32>(TitleBarHeight)
 		});
 

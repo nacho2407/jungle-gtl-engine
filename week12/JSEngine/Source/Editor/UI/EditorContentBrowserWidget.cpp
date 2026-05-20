@@ -346,7 +346,10 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 	++PushedStyleVarCount;
 	if (!bDrawerMode)
 	{
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(13.0f, 8.0f));
+		const float TitleBarFramePaddingY = std::max(
+			0.0f,
+			(FEditorChromeMetrics::ApplicationTitleBarHeight - ImGui::GetFontSize()) * 0.5f);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(13.0f, TitleBarFramePaddingY));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(9.0f, 4.0f));
 		PushedStyleVarCount += 2;
 	}
@@ -449,11 +452,19 @@ void FEditorContentBrowserWidget::DrawBrowserContents()
 	ImGui::Separator();
 
 	const ImGuiIO& IO = ImGui::GetIO();
-	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
+	const bool bBrowserFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+	if (bBrowserFocused
 		&& !IO.WantTextInput
 		&& ImGui::IsKeyPressed(ImGuiKey_F2, false))
 	{
 		RequestRenameSelectedItem();
+	}
+	if (bBrowserFocused
+		&& !IO.WantTextInput
+		&& !SelectedPath.empty()
+		&& ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+	{
+		DeleteSelectedItem();
 	}
 
 	if (ImGui::BeginTable("##ContentBrowserLayout", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
@@ -499,10 +510,7 @@ void FEditorContentBrowserWidget::DrawFloatingWindowChrome(bool& bOpen)
 
 	constexpr float WindowButtonWidth = 48.0f;
 	constexpr float TitleBarHeight = FEditorChromeMetrics::ApplicationTitleBarHeight;
-	constexpr float LogoSize = 28.0f;
-	constexpr float LogoPaddingX = 4.0f;
-	constexpr float MenuLogoGap = 8.0f;
-	constexpr float MenuStartX = LogoPaddingX + LogoSize + MenuLogoGap;
+	constexpr float MenuStartX = 0.0f;
 
 	HWND ViewportHwnd = GetCurrentViewportHwnd();
 	const ImVec2 WindowPos = ImGui::GetWindowPos();
@@ -513,28 +521,14 @@ void FEditorContentBrowserWidget::DrawFloatingWindowChrome(bool& bOpen)
 	int ChromeRectCount = 0;
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
-	ID3D11ShaderResourceView* HomeIcon = EditorEngine ? EditorEngine->GetMainPanel().GetHomeIconResource() : nullptr;
-	const ImVec2 LogoMin(WindowPos.x + LogoPaddingX, WindowPos.y + (TitleBarHeight - LogoSize) * 0.5f);
-	const ImVec2 LogoMax(LogoMin.x + LogoSize, LogoMin.y + LogoSize);
-	if (HomeIcon)
-	{
-		DrawList->AddImage(reinterpret_cast<ImTextureID>(HomeIcon), LogoMin, LogoMax);
-	}
-	else
-	{
-		DrawList->AddRectFilled(LogoMin, LogoMax, ImGui::GetColorU32(ImVec4(0.95f, 0.78f, 0.12f, 1.0f)), 0.0f);
-		DrawList->AddText(
-			ImVec2(LogoMin.x + 4.0f, LogoMin.y + 5.0f),
-			ImGui::GetColorU32(ImVec4(0.08f, 0.09f, 0.11f, 1.0f)),
-			"JS");
-	}
-	AddChromeRect(ChromeRects, ChromeRectCount, LogoMin, LogoMax, WindowPos);
-
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.0f, 12.0f));
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(14.0f, 8.0f));
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
+	const float TitleBarFramePaddingY = std::max(
+		0.0f,
+		(TitleBarHeight - ImGui::GetFontSize()) * 0.5f);
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(18.0f, TitleBarFramePaddingY));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(12.0f, 8.0f));
 
-	ImGui::SetCursorPosX(MenuStartX);
+	ImGui::SetCursorPos(ImVec2(MenuStartX, 0.0f));
 	if (ImGui::BeginMenu("File"))
 	{
 		if (ImGui::MenuItem("Close"))

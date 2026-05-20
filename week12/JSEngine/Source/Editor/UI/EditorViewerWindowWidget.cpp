@@ -472,10 +472,14 @@ void FEditorViewerWindowWidget::Render(float DeltaTime)
 	if (!Viewer)
         return;
 
+    const float TitleBarFramePaddingY = std::max(
+        0.0f,
+        (FEditorChromeMetrics::ApplicationTitleBarHeight - ImGui::GetFontSize()) * 0.5f);
+
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(13.0f, 8.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(13.0f, TitleBarFramePaddingY));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(9.0f, 4.0f));
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.055f, 0.060f, 0.072f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.055f, 0.060f, 0.072f, 1.0f));
@@ -538,10 +542,7 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentChrome(bool& bDockRequeste
 
     constexpr float WindowButtonWidth = 48.0f;
     constexpr float TitleBarHeight = FEditorChromeMetrics::ApplicationTitleBarHeight;
-    constexpr float LogoSize = 28.0f;
-    constexpr float LogoPaddingX = 4.0f;
-    constexpr float MenuLogoGap = 8.0f;
-    constexpr float MenuStartX = LogoPaddingX + LogoSize + MenuLogoGap;
+    constexpr float MenuStartX = 0.0f;
 
     HWND ViewportHwnd = GetCurrentViewportHwnd();
     const ImVec2 WindowPos = ImGui::GetWindowPos();
@@ -552,28 +553,15 @@ void FEditorViewerWindowWidget::RenderDetachedDocumentChrome(bool& bDockRequeste
     int ChromeRectCount = 0;
 
     ImDrawList* DrawList = ImGui::GetWindowDrawList();
-    ID3D11ShaderResourceView* HomeIcon = EditorEngine ? EditorEngine->GetMainPanel().GetHomeIconResource() : nullptr;
-    const ImVec2 LogoMin(WindowPos.x + LogoPaddingX, WindowPos.y + (TitleBarHeight - LogoSize) * 0.5f);
-    const ImVec2 LogoMax(LogoMin.x + LogoSize, LogoMin.y + LogoSize);
-    if (HomeIcon)
-    {
-        DrawList->AddImage(reinterpret_cast<ImTextureID>(HomeIcon), LogoMin, LogoMax);
-    }
-    else
-    {
-        DrawList->AddRectFilled(LogoMin, LogoMax, ImGui::GetColorU32(ImVec4(0.95f, 0.78f, 0.12f, 1.0f)), 0.0f);
-        DrawList->AddText(
-            ImVec2(LogoMin.x + 4.0f, LogoMin.y + 5.0f),
-            ImGui::GetColorU32(ImVec4(0.08f, 0.09f, 0.11f, 1.0f)),
-            "JS");
-    }
-    AddChromeRect(ChromeRects, ChromeRectCount, LogoMin, LogoMax, WindowPos);
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.0f, 12.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(14.0f, 8.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
+    const float TitleBarFramePaddingY = std::max(
+        0.0f,
+        (TitleBarHeight - ImGui::GetFontSize()) * 0.5f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(18.0f, TitleBarFramePaddingY));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(12.0f, 8.0f));
 
-    ImGui::SetCursorPosX(MenuStartX);
+    ImGui::SetCursorPos(ImVec2(MenuStartX, 0.0f));
 
     const bool bCanSaveMesh = CanSaveMesh();
     const char* SaveMeshLabel = IsMeshDirty() ? "Save Mesh *" : "Save Mesh";

@@ -14,6 +14,9 @@ namespace
 {
 	constexpr float HomeTabWidth = 44.0f;
 	constexpr float HomeIconSize = 28.0f;
+	constexpr float MaxDocumentTabWidth = 180.0f;
+	constexpr float MinDocumentTabWidth = 48.0f;
+	constexpr float TabStripRightPadding = 8.0f;
 
 	struct FEditorTabVisual
 	{
@@ -139,6 +142,18 @@ void FEditorMainPanel::RenderEditorTabStrip()
 		static bool bDraggingTab = false;
 		static bool bDraggingTabStarted = false;
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		int32 VisibleDocumentTabCount = 0;
+		for (const FEditorTabEntry& Tab : Tabs)
+		{
+			if (!Tab.bDetached)
+			{
+				++VisibleDocumentTabCount;
+			}
+		}
+		const float AvailableDocumentTabWidth = std::max(0.0f, TabStripSize.x - HomeTabWidth - TabStripRightPadding);
+		const float DocumentTabWidth = VisibleDocumentTabCount > 0
+			? std::clamp(AvailableDocumentTabWidth / static_cast<float>(VisibleDocumentTabCount), MinDocumentTabWidth, MaxDocumentTabWidth)
+			: MaxDocumentTabWidth;
 
 		ImGui::PushID("HomeTab");
 		const ImVec2 HomeMin = ImGui::GetCursorScreenPos();
@@ -198,7 +213,7 @@ void FEditorMainPanel::RenderEditorTabStrip()
 				Label += "*";
 			}
 			const FEditorTabVisual Visual = GetTabVisual(Tab.Id.Kind);
-			constexpr float TabWidth = 180.0f;
+			const float TabWidth = DocumentTabWidth;
 			const float TabHeight = TabStripHeight;
 
 			ImGui::PushID(Index);
@@ -271,16 +286,19 @@ void FEditorMainPanel::RenderEditorTabStrip()
 			const ImVec2 TextMax(
 				Tab.bCanClose ? CloseMin.x - 5.0f : TabMax.x - 10.0f,
 				TabMax.y - 5.0f);
-			ImGui::PushStyleColor(ImGuiCol_Text, TextColor);
-			ImGui::RenderTextEllipsis(
-				DrawList,
-				TextMin,
-				TextMax,
-				TextMax.x,
-				Label.c_str(),
-				nullptr,
-				nullptr);
-			ImGui::PopStyleColor();
+			if (TextMax.x > TextMin.x + 6.0f)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, TextColor);
+				ImGui::RenderTextEllipsis(
+					DrawList,
+					TextMin,
+					TextMax,
+					TextMax.x,
+					Label.c_str(),
+					nullptr,
+					nullptr);
+				ImGui::PopStyleColor();
+			}
 
 			if (Tab.bCanClose)
 			{
