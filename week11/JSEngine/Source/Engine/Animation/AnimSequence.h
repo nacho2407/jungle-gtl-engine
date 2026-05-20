@@ -29,6 +29,8 @@ public:
         TArray<FTransform>& OutLocalPose,
         const USkeletalMesh* TargetMesh,
         const FAnimExtractContext& ExtractContext) const;
+    bool RemoveNotifyAt(int32 NotifyIndex);
+    bool UpdateNotifyAt(int32 NotifyIndex, const FAnimNotifyEvent& Notify);
 
 protected:
     float PlayLength = 0.0f;

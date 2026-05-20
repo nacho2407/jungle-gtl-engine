@@ -295,3 +295,28 @@ FQuat UAnimSequence::EvalQuatKeys(
 
     return Keys.back().GetNormalized();
 }
+bool UAnimSequenceBase::RemoveNotifyAt(int32 NotifyIndex)
+{
+    // std::vector의 size()를 사용하여 유효한 인덱스인지 검사합니다.
+    if (NotifyIndex >= 0 && NotifyIndex < static_cast<int32>(Notifies.size()))
+    {
+        // std::vector의 erase()와 반복자(iterator)를 사용하여 해당 위치의 요소를 삭제합니다.
+        Notifies.erase(Notifies.begin() + NotifyIndex);
+        return true;
+    }
+
+    return false; // 범위를 벗어난 인덱스
+}
+
+bool UAnimSequenceBase::UpdateNotifyAt(int32 NotifyIndex, const FAnimNotifyEvent& Notify)
+{
+    // 유효한 인덱스인지 검사합니다.
+    if (NotifyIndex >= 0 && NotifyIndex < static_cast<int32>(Notifies.size()))
+    {
+        // 배열 연산자를 사용하여 데이터를 덮어씁니다.
+        Notifies[NotifyIndex] = Notify;
+        return true;
+    }
+
+    return false; // 범위를 벗어난 인덱스
+}

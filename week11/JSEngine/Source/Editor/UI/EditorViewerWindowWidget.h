@@ -3,6 +3,7 @@
 #include "Asset/SkeletalMeshTypes.h"
 
 class USkeletalMeshComponent;
+class UAnimSequence;
 class FEditorViewer;
 
 class FEditorViewerWindowWidget : public FEditorWidget
@@ -29,6 +30,9 @@ public:
 	void RequestSaveMesh();
 	bool CanSaveMesh() const;
 	bool IsMeshDirty() const;
+	void RequestSaveAnimSequence();
+	bool CanSaveAnimSequence() const;
+	bool IsAnimSequenceDirty() const;
 
 private:
     // bone tree 캐시들. CachedMesh가 바뀌면 둘 다 재빌드.
@@ -62,6 +66,7 @@ private:
 	void RenderDetachedDocumentToolbar(bool& bDockRequested);
 	void Shutdown();
 	FSkeletalMesh* ResolveCurrentMeshData() const;
+	UAnimSequence* ResolveCurrentAnimSequence() const;
 	const TArray<FBoneInfo>& ResolveCurrentBones() const;
 	uint64 ComputeEditableMeshSignature(const FSkeletalMesh* MeshData) const;
 	void ResetMeshDirtyBaseline();
@@ -76,6 +81,7 @@ private:
     float AnimationMaxTime = 0.0f;
     int32 AnimationTotalFrames = 1;
     bool bAnimationLoop = true;
+    float AnimationPlayRate = 1.0f;
     int32 SelectedAnimationStackIndex = 0;
     FString LastRequestedAnimationKey;
 
@@ -87,10 +93,38 @@ private:
     bool  bMeshDirty = false;         // socket 등 mesh asset 데이터 변경 후 Save 트리거용
 	uint64 CleanMeshEditSignature = 0;
 	bool bHasCleanMeshEditSignature = false;
+	bool bAnimSequenceDirty = false;
+	UAnimSequence* DirtyTrackedAnimSequence = nullptr;
 
 	FEditorViewer* Viewer = nullptr;
     bool bOpen = false;
 
     float LeftPanelWidth = 250.0f;
     float RightPanelWidth = 250.0f;
+
+	//notify event
+    float PendingNotifyTime = 0.0f;
+    bool bOpenAddNotifyPopup = false;
+    char NotifyNameBuffer[128] = {};
+    int32 NotifyActionTypeIndex = 0;
+    char NotifyEventIdBuffer[128] = {};
+    char NotifyPayloadBuffer[256] = {};
+    float NotifyDuration = 0.0f;
+
+	int32 SelectedNotifyIndex = -1;
+    bool bShowNotifyDetails = true;
+    char NotifyNameEditBuffer[128] = {};
+    float NotifyTimeEdit = 0.0f;
+    float NotifyDurationEdit = 0.0f;
+
+	int32 EditingNotifyIndex = -1;
+    char EditingNotifyNameBuffer[128] = {};
+    int32 EditingNotifyActionTypeIndex = 0;
+    char EditingNotifyEventIdBuffer[128] = {};
+    char EditingNotifyPayloadBuffer[256] = {};
+    float EditingNotifyTime = 0.0f;
+    float EditingNotifyDuration = 0.0f;
+
+    int32 PendingOpenNotifyIndex = -1;
+
 };

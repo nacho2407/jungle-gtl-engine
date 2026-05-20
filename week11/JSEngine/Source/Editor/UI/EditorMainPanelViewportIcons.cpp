@@ -27,6 +27,23 @@ const wchar_t* GetViewportToolIconFileName(EEditorMainPanelViewportToolIcon Icon
     }
 }
 
+const wchar_t* GetPlayControlIconFileName(EEditorMainPanelPlayControlIcon Icon)
+{
+    switch (Icon)
+    {
+    case EEditorMainPanelPlayControlIcon::Pause: return L"PlayControlsPause.png";
+    case EEditorMainPanelPlayControlIcon::PlayForward: return L"PlayControlsPlayForward.png";
+    case EEditorMainPanelPlayControlIcon::PlayReverse: return L"PlayControlsPlayReverse.png";
+    case EEditorMainPanelPlayControlIcon::Record: return L"PlayControlsRecord.png";
+    case EEditorMainPanelPlayControlIcon::Stop: return L"PlayControlsStop.png";
+    case EEditorMainPanelPlayControlIcon::ToEnd: return L"PlayControlsToEnd.png";
+    case EEditorMainPanelPlayControlIcon::ToFront: return L"PlayControlsToFront.png";
+    case EEditorMainPanelPlayControlIcon::ToNext: return L"PlayControlsToNext.png";
+    case EEditorMainPanelPlayControlIcon::ToPrevious: return L"PlayControlsToPrevious.png";
+    default: return L"";
+    }
+}
+
 const wchar_t* GetViewportLayoutIconFileName(EEditorViewportLayoutMode Mode)
 {
     switch (Mode)
@@ -48,6 +65,16 @@ const wchar_t* GetViewportLayoutIconFileName(EEditorViewportLayoutMode Mode)
 }
 } // namespace
 
+ID3D11ShaderResourceView* FEditorMainPanel::GetPlayControlIconResource(EEditorMainPanelPlayControlIcon Icon) const
+{
+    const int32 Index = static_cast<int32>(Icon);
+    if (Index < 0 || Index >= static_cast<int32>(EEditorMainPanelPlayControlIcon::Count))
+    {
+        return nullptr;
+    }
+    return IconResources.PlayControlIcons[Index];
+}
+
 void FEditorMainPanel::LoadViewportToolIcons(ID3D11Device* Device)
 {
     if (!Device)
@@ -66,6 +93,19 @@ void FEditorMainPanel::LoadViewportToolIcons(ID3D11Device* Device)
 
         const std::wstring IconPath =
             IconDir + GetViewportToolIconFileName(static_cast<EEditorMainPanelViewportToolIcon>(i));
+        DirectX::CreateWICTextureFromFile(Device, IconPath.c_str(), nullptr, &SRV);
+    }
+
+    for (int32 i = 0; i < static_cast<int32>(EEditorMainPanelPlayControlIcon::Count); ++i)
+    {
+        ID3D11ShaderResourceView*& SRV = IconResources.PlayControlIcons[i];
+        if (SRV)
+        {
+            continue;
+        }
+
+        const std::wstring IconPath =
+            IconDir + GetPlayControlIconFileName(static_cast<EEditorMainPanelPlayControlIcon>(i));
         DirectX::CreateWICTextureFromFile(Device, IconPath.c_str(), nullptr, &SRV);
     }
 
@@ -107,6 +147,14 @@ void FEditorMainPanel::ReleaseViewportToolIcons()
         {
             IconResources.ToolIcons[i]->Release();
             IconResources.ToolIcons[i] = nullptr;
+        }
+    }
+    for (int32 i = 0; i < static_cast<int32>(EEditorMainPanelPlayControlIcon::Count); ++i)
+    {
+        if (IconResources.PlayControlIcons[i])
+        {
+            IconResources.PlayControlIcons[i]->Release();
+            IconResources.PlayControlIcons[i] = nullptr;
         }
     }
     for (int32 i = 0; i < static_cast<int32>(EEditorViewportLayoutMode::Max); ++i)
