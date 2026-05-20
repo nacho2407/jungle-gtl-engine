@@ -127,9 +127,13 @@ struct FAnimGraphNode
 	// Slot 노드의 montage slot name (비어있으면 컴파일러가 UAnimInstance::DefaultMontageSlot 으로 fallback).
 	FName                  SlotName;
 
-	// LayeredBlendPerBone 의 BlendPose 전체 contribution. F-1 한정 — PerBoneMask 는 컴파일 시점에
-	// mesh 의 모든 본 true 로 채움 (full blend). 후속 단계에서 root bone name 기반 부분 mask 추가.
+	// LayeredBlendPerBone 의 BlendPose 전체 contribution.
 	float                  BlendWeight = 1.0f;
+
+	// LayeredBlendPerBone 의 부분 mask root. 비어있으면 모든 본 true (full blend).
+	// 컴파일러가 BuildBoneMaskFromRoot 로 이 본 + 자손 트리만 BlendPose 적용 — UpperBody 데모
+	// 의 "Bip001 Spine" 같은 본 이름. 본 못 찾으면 mask 전부 false (= BlendPose 무효 → base 100%).
+	FString                RootBoneName;
 
 	// VariableGet 노드 — UAnimInstance 자식 클래스의 어떤 UPROPERTY 를 매 frame 읽을지.
 	// inspector 에서 asset 의 OwnerClassName 기반 dropdown 으로 선택.

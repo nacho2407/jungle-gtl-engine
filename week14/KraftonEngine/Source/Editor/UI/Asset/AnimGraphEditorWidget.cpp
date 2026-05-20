@@ -386,7 +386,18 @@ namespace
 				{
 					bChanged = true;
 				}
-				ImGui::TextDisabled("(per-bone mask: full blend — 후속 단계)");
+
+				// Root bone — 비어있으면 full blend, 있으면 해당 본 + 자손만 BlendPose 적용.
+				ImGui::TextUnformatted("Root Bone");
+				char Buf[96];
+				std::snprintf(Buf, sizeof(Buf), "%s", Node.RootBoneName.c_str());
+				ImGui::SetNextItemWidth(-1.0f);
+				if (ImGui::InputText("##RootBone", Buf, sizeof(Buf)))
+				{
+					Node.RootBoneName = Buf;
+					bChanged = true;
+				}
+				ImGui::TextDisabled("(empty → 모든 본 blend)");
 				break;
 			}
 
