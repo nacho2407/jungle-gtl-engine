@@ -124,6 +124,20 @@ void FEditorMainPanel::RenderViewerToolbarControls(FEditorViewer* Viewer)
 	}
 
 	ImGui::SameLine(0.0f, 10.0f);
+	ImGui::TextDisabled("Mode");
+	ImGui::SameLine();
+	ESkeletalMeshViewerMode ViewerMode = Viewer->GetViewerMode();
+	if (ImGui::RadioButton("Bind Pose", ViewerMode == ESkeletalMeshViewerMode::BindPose))
+	{
+		Viewer->SetViewerMode(ESkeletalMeshViewerMode::BindPose);
+	}
+	ImGui::SameLine();
+	if (ImGui::RadioButton("Animation", ViewerMode == ESkeletalMeshViewerMode::Animation))
+	{
+		Viewer->SetViewerMode(ESkeletalMeshViewerMode::Animation);
+	}
+
+	ImGui::SameLine(0.0f, 10.0f);
 	char TypeButtonLabel[64];
 	snprintf(
 		TypeButtonLabel,

@@ -27,7 +27,7 @@ bool FSkeletalMeshViewportClient::ProcessInput(FViewportInputContext& Context)
 
 bool FSkeletalMeshViewportClient::ShouldTryBonePick(const FViewportInputContext& Context) const
 {
-	if (!ShowFlags.bShowBones || !BonePickHandler)
+	if (!bBonePickingEnabled || !ShowFlags.bShowBones || !BonePickHandler)
 	{
 		return false;
 	}
