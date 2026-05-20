@@ -1,4 +1,4 @@
-#include "AnimSequence.h"
+﻿#include "AnimSequence.h"
 
 #include "AnimDataModel.h"
 #include "AnimNotify_LogMessage.h"
@@ -321,6 +321,110 @@ namespace
 
         return Result;
     }
+
+    static void BuildComponentSpaceMatricesFromLocalPose(
+        const FSkeletalMesh*      Asset,
+        const TArray<FTransform>& LocalPose,
+        TArray<FMatrix>&          OutGlobals)
+    {
+        OutGlobals.clear();
+
+        if (!Asset)
+        {
+            return;
+        }
+
+        const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
+        OutGlobals.resize(BoneCount, FMatrix::Identity);
+
+        for (int32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
+        {
+            const FMatrix LocalMatrix = BoneIndex < static_cast<int32>(LocalPose.size())
+                ? LocalPose[BoneIndex].ToMatrix()
+                : Asset->Bones[BoneIndex].GetReferenceLocalPose();
+
+            const int32 ParentIndex = Asset->Bones[BoneIndex].ParentIndex;
+            OutGlobals[BoneIndex] =
+                ParentIndex >= 0 && ParentIndex < static_cast<int32>(OutGlobals.size())
+                    ? LocalMatrix * OutGlobals[ParentIndex]
+                    : LocalMatrix;
+        }
+    }
+
+    static void BuildReferenceComponentSpaceMatrices(const FSkeletalMesh* Asset, TArray<FMatrix>& OutGlobals)
+    {
+        OutGlobals.clear();
+
+        if (!Asset)
+        {
+            return;
+        }
+
+        const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
+        OutGlobals.resize(BoneCount, FMatrix::Identity);
+
+        for (int32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
+        {
+            const FMatrix LocalMatrix = Asset->Bones[BoneIndex].GetReferenceLocalPose();
+            const int32   ParentIndex = Asset->Bones[BoneIndex].ParentIndex;
+
+            OutGlobals[BoneIndex] =
+                ParentIndex >= 0 && ParentIndex < static_cast<int32>(OutGlobals.size())
+                    ? LocalMatrix * OutGlobals[ParentIndex]
+                    : LocalMatrix;
+        }
+    }
+
+    static void ApplyRootLockInComponentSpace(
+        FPoseContext&       Output,
+        const FSkeletalMesh* Asset,
+        int32               RootBoneIndex,
+        bool                bForceRootLock,
+        bool                bEnableRootMotion)
+    {
+        if ((!bForceRootLock && !bEnableRootMotion) || !Asset)
+        {
+            return;
+        }
+
+        if (RootBoneIndex < 0 || RootBoneIndex >= static_cast<int32>(Output.Pose.size()))
+        {
+            return;
+        }
+
+        TArray<FMatrix> AnimGlobals;
+        TArray<FMatrix> BindGlobals;
+        BuildComponentSpaceMatricesFromLocalPose(Asset, Output.Pose, AnimGlobals);
+        BuildReferenceComponentSpaceMatrices(Asset, BindGlobals);
+
+        if (RootBoneIndex >= static_cast<int32>(AnimGlobals.size()) ||
+            RootBoneIndex >= static_cast<int32>(BindGlobals.size()))
+        {
+            return;
+        }
+
+        FMatrix DesiredGlobal = AnimGlobals[RootBoneIndex];
+
+        FVector DesiredLocation = DesiredGlobal.GetLocation();
+        const FVector BindLocation = BindGlobals[RootBoneIndex].GetLocation();
+
+        DesiredLocation.X = BindLocation.X;
+        DesiredLocation.Y = BindLocation.Y;
+        if (bEnableRootMotion)
+        {
+            DesiredLocation.Z = BindLocation.Z;
+        }
+        DesiredGlobal.SetLocation(DesiredLocation);
+
+        FMatrix DesiredLocal = DesiredGlobal;
+        const int32 ParentIndex = Asset->Bones[RootBoneIndex].ParentIndex;
+        if (ParentIndex >= 0 && ParentIndex < static_cast<int32>(AnimGlobals.size()))
+        {
+            DesiredLocal = DesiredGlobal * AnimGlobals[ParentIndex].GetInverse();
+        }
+
+        Output.Pose[RootBoneIndex] = FAnimationRuntime::DecomposeMatrix(DesiredLocal);
+    }
 }
 
 void UAnimSequence::Serialize(FArchive& Ar)
@@ -500,6 +604,8 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
             : std::clamp(FrameFloat - static_cast<float>(Frame0), 0.0f, 1.0f);
     }
 
+    int32 RootMotionLockBoneIndex = -1;
+
     for (const FBoneAnimationTrack& Track : Tracks)
     {
         int32 BoneIndex = Track.BoneTreeIndex;
@@ -534,20 +640,16 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
             continue;
         }
 
-        const FRawAnimSequenceTrack& Raw = Track.InternalTrackData;
-        FTransform Result = Output.Pose[BoneIndex];
-        const FVector BindLocation = Result.Location;   // pre-anim local (ResetToRefPose 결과)
-
-        // Root 본 motion 의 본 pose 적용 제어:
-        //   - Force Root Lock: horizontal (X/Y) translation 만 bind 로 고정 (Z 는 anim 유지).
-        //   - Enable Root Motion: 전체 translation (X/Y/Z) 을 bind 로 고정 → actor 가 delta 받아 이동.
-        //   둘 다 켜진 경우는 SetEnableRootMotion 에서 Force Root Lock 자동 해제됨.
-        const bool bIsRootMotionBone =
+        if (RootMotionLockBoneIndex < 0 &&
             !RootMotionBoneName.empty() &&
             !Track.BoneName.empty() &&
-            Track.BoneName == RootMotionBoneName;
-        const bool bSuppressHorizontalTranslation = bIsRootMotionBone && bForceRootLock;
-        const bool bSuppressAllTranslation        = bIsRootMotionBone && bEnableRootMotion;
+            Track.BoneName == RootMotionBoneName)
+        {
+            RootMotionLockBoneIndex = BoneIndex;
+        }
+
+        const FRawAnimSequenceTrack& Raw = Track.InternalTrackData;
+        FTransform Result = Output.Pose[BoneIndex];
 
         if (!Raw.PosKeys.empty())
         {
@@ -557,17 +659,6 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
             if (P0 && P1)
             {
                 Result.Location = *P0 + (*P1 - *P0) * Alpha;
-                if (bSuppressAllTranslation)
-                {
-                    // Root Motion: 전체 translation 을 bind 로 → 본은 정지, actor 가 delta 로 이동.
-                    Result.Location = BindLocation;
-                }
-                else if (bSuppressHorizontalTranslation)
-                {
-                    // Force Root Lock: X/Y bind, Z anim → in-place 걷기 + bobbing.
-                    Result.Location.X = BindLocation.X;
-                    Result.Location.Y = BindLocation.Y;
-                }
             }
         }
 
@@ -599,6 +690,8 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
 
         Output.Pose[BoneIndex] = Result;
     }
+
+    ApplyRootLockInComponentSpace(Output, Asset, RootMotionLockBoneIndex, bForceRootLock, bEnableRootMotion);
 }
 
 bool UAnimSequence::GetAnimationPose(float TimeSeconds, USkeletalMesh* InSkeletalMesh, TArray<FTransform>& OutLocalPose, bool bLooping) const
