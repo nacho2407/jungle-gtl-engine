@@ -70,7 +70,6 @@ private:
 	// Collect 페이즈 상태
 	const FPassRenderStateTable* PassRenderStateTable = nullptr;
 	EViewMode CollectViewMode = EViewMode::Lit_Phong;
-	ESkinningMode CollectSkinningMode = ESkinningMode::GPU;
 	bool bCollectWeightBoneHeatMap = false;
 	int32 CollectWeightBoneHeatMapBoneIndex = -1;
 
