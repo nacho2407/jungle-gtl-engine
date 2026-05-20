@@ -42,6 +42,8 @@ public:
 private:
 	static FString MakeCacheKey(const FString& FilePath, ETextureColorSpace ColorSpace);
 	bool LoadInternal(const FString& FilePath, ID3D11Device* Device, ETextureColorSpace ColorSpace);
+	// WIC 가 지원 안 하는 포맷 (.tga 등) 을 stb_image 로 디코딩.
+	bool LoadInternal_STB(const FString& FilePath, ID3D11Device* Device, ETextureColorSpace ColorSpace);
 
 	FString SourceFilePath;
 	ID3D11ShaderResourceView* SRV = nullptr;
