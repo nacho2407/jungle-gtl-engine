@@ -254,6 +254,70 @@
           "bTickEnable" : true
         }
       }
+    }, {
+      "ClassName" : "ASkeletalMeshActor",
+      "Name" : "ASkeletalMeshActor_6",
+      "NonSceneComponents" : [],
+      "ObjectId" : 12,
+      "Properties" : {
+        "PendingActorLocation" : [1.177372, 2.269575, 0.930337],
+        "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
+        "PendingActorScale" : [1.000000, 1.000000, 1.000000],
+        "PendingActorVisible" : true,
+        "PendingTagsString" : "HitTarget",
+        "bNeedsTick" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "USkeletalMeshComponent",
+        "ObjectId" : 13,
+        "Properties" : {
+          "AnimInstance" : {
+            "ClassName" : "UCharacterAnimInstance",
+            "Properties" : {
+              "AutoPeriodSec" : 6.000000,
+              "AutoSpeedAmp" : 15.000000,
+              "RootMotionMode" : 1,
+              "SpeedThreshold" : 10.000000,
+              "bAutoDriveSpeed" : true
+            }
+          },
+          "AnimInstanceClass" : "UCharacterAnimInstance",
+          "AnimationData" : {
+            "AnimToPlayPath" : "None",
+            "PlayRate" : 1.000000,
+            "bLooping" : true,
+            "bPlaying" : true
+          },
+          "AnimationMode" : 2,
+          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+          "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
+          "CollisionEnabled" : 0,
+          "Mass" : 1.000000,
+          "MaterialSlots" : ["Asset/Materials/Auto/acc.002.mat", "Asset/Materials/Auto/cloth.002.mat", "Asset/Materials/Auto/b0.002.mat", "Asset/Materials/Auto/m.002.mat", "Asset/Materials/Auto/e.002.mat"],
+          "ObjectType" : 0,
+          "RelativeTransform.Location" : [1.177372, 2.269575, 0.930337],
+          "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+          "ResponseContainer" : {
+            "Responses[0]" : 2,
+            "Responses[1]" : 2,
+            "Responses[2]" : 2,
+            "Responses[3]" : 2,
+            "Responses[4]" : 2
+          },
+          "SkeletalMeshPath" : "Content/Data/Samba Dancing/Samba Dancing (10)_SkeletalMesh.uasset",
+          "bAutoActivate" : true,
+          "bCastShadow" : true,
+          "bCastShadowAsTwoSided" : false,
+          "bEditorOnly" : false,
+          "bGenerateOverlapEvents" : false,
+          "bHiddenInComponentTree" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnable" : true
+        }
+      }
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "NewScene",
@@ -263,9 +327,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [7.279079, -3.227498, 4.359841],
+    "Location" : [3.279154, -4.579690, 4.578134],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 10.665116, 162.899811]
+    "Rotation" : [0.000000, 13.065107, 107.100151]
   },
   "Version" : 2,
   "WorldSettings" : {
