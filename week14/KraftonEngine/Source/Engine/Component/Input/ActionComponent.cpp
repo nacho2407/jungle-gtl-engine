@@ -61,6 +61,15 @@ void UActionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		}
 	}
 
+	if (LocalHitStopAction.bActive)
+	{
+		LocalHitStopAction.RemainingTime -= RawDeltaTime;
+		if (LocalHitStopAction.RemainingTime <= 0.0f)
+		{
+			StopLocalHitStop();
+		}
+	}
+
 	if (HitSquashAction.bActive)
 	{
 		USceneComponent* TargetComponent = GetTargetSceneComponent();
@@ -141,6 +150,46 @@ void UActionComponent::HitStop(float Duration, float TimeDilation)
 	UpdateTimeDilationRegistration();
 }
 
+void UActionComponent::LocalHitStop(float Duration)
+{
+	if (Duration <= 0.0f)
+	{
+		return;
+	}
+
+	AActor* OwnerActor = GetOwner();
+	if (!OwnerActor)
+	{
+		return;
+	}
+
+	if (LocalHitStopAction.bActive)
+	{
+		LocalHitStopAction.RemainingTime = (std::max)(LocalHitStopAction.RemainingTime, Duration);
+		LocalHitStopAction.Duration = (std::max)(LocalHitStopAction.Duration, Duration);
+		return;
+	}
+
+	LocalHitStopAction.bActive = true;
+	LocalHitStopAction.Duration = Duration;
+	LocalHitStopAction.RemainingTime = Duration;
+	LocalHitStopAction.bActorTickWasEnabled = OwnerActor->PrimaryActorTick.bTickEnabled;
+	LocalHitStopAction.ComponentTickStates.clear();
+
+	OwnerActor->PrimaryActorTick.SetTickEnabled(false);
+
+	for (UActorComponent* Component : OwnerActor->GetComponents())
+	{
+		if (!Component || Component == this)
+		{
+			continue;
+		}
+
+		LocalHitStopAction.ComponentTickStates.push_back({ Component, Component->PrimaryComponentTick.bTickEnabled });
+		Component->SetComponentTickEnabled(false);
+	}
+}
+
 void UActionComponent::HitSquash(const FVector& SquashedScale, float SquashInDuration, float RecoverDuration)
 {
 	USceneComponent* TargetComponent = GetTargetSceneComponent();
@@ -209,6 +258,30 @@ void UActionComponent::StopHitStop()
 	UpdateTimeDilationRegistration();
 }
 
+void UActionComponent::StopLocalHitStop()
+{
+	if (!LocalHitStopAction.bActive)
+	{
+		return;
+	}
+
+	if (AActor* OwnerActor = GetOwner())
+	{
+		OwnerActor->PrimaryActorTick.SetTickEnabled(LocalHitStopAction.bActorTickWasEnabled);
+	}
+
+	for (const TPair<UActorComponent*, bool>& State : LocalHitStopAction.ComponentTickStates)
+	{
+		UActorComponent* Component = State.first;
+		if (IsAliveObject(Component))
+		{
+			Component->SetComponentTickEnabled(State.second);
+		}
+	}
+
+	LocalHitStopAction = FLocalHitStopAction();
+}
+
 void UActionComponent::StopHitSquash()
 {
 	if (HitSquashAction.bActive)
@@ -234,6 +307,7 @@ void UActionComponent::StopSlomo()
 
 void UActionComponent::StopAllActions()
 {
+	StopLocalHitStop();
 	StopHitSquash();
 	StopKnockback();
 	HitStopAction = FTimedDilationAction();
