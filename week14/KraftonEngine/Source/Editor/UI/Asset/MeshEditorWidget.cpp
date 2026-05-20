@@ -1,4 +1,4 @@
-#include "MeshEditorWidget.h"
+﻿#include "MeshEditorWidget.h"
 
 #ifdef GetCurrentTime
 #undef GetCurrentTime
@@ -919,6 +919,7 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 		{
 			if (FAnimationTimelinePanel::RenderMorphDetails(
 				Seq,
+				SkeletalMesh,
 				AnimTabState.SelectedMorphCurveIndex,
 				AnimTabState.SelectedMorphKeyIndex
 			))
