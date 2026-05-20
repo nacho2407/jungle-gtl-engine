@@ -5,6 +5,7 @@
 #include "Animation/AnimStateMachine.h"
 #include "Asset/SkeletalMesh.h"
 #include "Component/SkeletalMeshComponent.h"
+#include "Core/AssetPathPolicy.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Stats.h"
 #include "Core/ResourceManager.h"
@@ -100,6 +101,17 @@ bool UAnimStateMachineInstance::LoadStateMachine(const FString& Path)
     return SetStateMachine(LoadedStateMachine);
 }
 
+const FString& UAnimStateMachineInstance::GetStateMachinePath() const
+{
+    return StateMachinePath;
+}
+
+bool UAnimStateMachineInstance::UsesStateMachinePath(const FString& Path) const
+{
+    const FString NormalizedPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
+    return !NormalizedPath.empty() && StateMachinePath == NormalizedPath;
+}
+
 bool UAnimStateMachineInstance::SetStateMachine(UAnimStateMachine* InStateMachine)
 {
     ResetRuntime();
@@ -125,6 +137,7 @@ bool UAnimStateMachineInstance::SetStateMachine(UAnimStateMachine* InStateMachin
     }
 
     StateMachineAsset = InStateMachine;
+    StateMachinePath = InStateMachine->GetAssetPath();
     Desc = InStateMachine->GetDesc();
 
     RuntimeStates.reserve(Desc.States.size());
@@ -300,6 +313,7 @@ void UAnimStateMachineInstance::ResetRuntime()
     }
 
     StateMachineAsset = nullptr;
+    StateMachinePath.clear();
     Desc = FAnimStateMachineDesc();
     RuntimeStates.clear();
     RuntimeTransitions.clear();

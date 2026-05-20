@@ -19,6 +19,8 @@ public:
 
     bool SetStateMachine(UAnimStateMachine* InStateMachine);
     bool LoadStateMachine(const FString& Path);
+    const FString& GetStateMachinePath() const;
+    bool UsesStateMachinePath(const FString& Path) const;
 
     void NativeInitializeAnimation() override;
     void NativeUninitializeAnimation() override;
@@ -109,6 +111,7 @@ private:
         const FString& Reason) const;
 
     UAnimStateMachine* StateMachineAsset = nullptr;
+    FString StateMachinePath;
     FAnimStateMachineDesc Desc;
     TArray<FAnimStateRuntime> RuntimeStates;
     TArray<const FAnimTransitionDesc*> RuntimeTransitions;

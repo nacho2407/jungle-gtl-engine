@@ -71,21 +71,21 @@ Script.Properties = {
     },
     ProjectileSpawnForwardOffset = {
         Type = "Float",
-        Default = 70.0,
+        Default = 35.0,
         Min = -500.0,
         Max = 500.0,
         Category = "Attack"
     },
     ProjectileSpawnUpOffset = {
         Type = "Float",
-        Default = 55.0,
+        Default = 10.0,
         Min = -500.0,
         Max = 500.0,
         Category = "Attack"
     },
     ProjectileScale = {
         Type = "Float",
-        Default = 1.0,
+        Default = 8.0,
         Min = 0.01,
         Max = 10.0,
         Category = "Attack"
@@ -118,6 +118,11 @@ Script.Properties = {
     AttackDoneVariableName = {
         Type = "String",
         Default = "AttackDone",
+        Category = "Animation"
+    },
+    AttackFireNotifyName = {
+        Type = "String",
+        Default = "AttackFire",
         Category = "Animation"
     }
 }
@@ -210,6 +215,7 @@ function Script.new(component, properties)
     self.facingYaw = 0.0
     self.attackCooldownRemaining = 0.0
     self.attackLockRemaining = 0.0
+    self.attackProjectilePending = false
     self.projectiles = {}
 
     applyProperties(self, properties)
@@ -243,13 +249,32 @@ function Script:SetAttackDone(value)
     end
 end
 
+function Script:SetLocomotionVariables(isMoving, moveSpeed)
+    local mesh = self.mesh or self:ResolveMesh()
+    if mesh ~= nil then
+        mesh:SetAnimVariableBool(self.IsMovingVariableName, isMoving)
+        mesh:SetAnimVariableFloat(self.MoveSpeedVariableName, moveSpeed)
+    end
+end
+
+function Script:IsAttackLocked()
+    return self.attackLockRemaining > 0.0
+end
+
 function Script:BeginPlay()
     self:ResolveMesh()
     self:ApplyMeshFacing()
+    self:SetLocomotionVariables(false, 0.0)
     self:SetAttackDone(true)
 end
 
 function Script:UpdateMovement(deltaTime)
+    if self:IsAttackLocked() then
+        -- 공격 모션 중에는 위치 이동과 매시 회전을 모두 막고, 블렌딩 입력도 정지 상태로 고정합니다.
+        self:SetLocomotionVariables(false, 0.0)
+        return
+    end
+
     local moveAxis = readAxis("W", "S")
     local turnAxis = readAxis("D", "A")
 
@@ -274,11 +299,7 @@ function Script:UpdateMovement(deltaTime)
         currentMoveSpeed = math.abs(self.MoveSpeed * moveAxis)
     end
 
-    local mesh = self.mesh or self:ResolveMesh()
-    if mesh ~= nil then
-        mesh:SetAnimVariableBool(self.IsMovingVariableName, isMoving)
-        mesh:SetAnimVariableFloat(self.MoveSpeedVariableName, currentMoveSpeed)
-    end
+    self:SetLocomotionVariables(isMoving, currentMoveSpeed)
 end
 
 function Script:SpawnProjectile()
@@ -339,11 +360,38 @@ function Script:StartAttack()
 
     self.attackLockRemaining = self.AttackLockSeconds
     self.attackCooldownRemaining = self.AttackCooldown
-    self:SpawnProjectile()
+    self.attackProjectilePending = true
+    self:SetLocomotionVariables(false, 0.0)
 
     if self.attackLockRemaining <= 0.0 then
         self:SetAttackDone(true)
     end
+end
+
+function Script:FireAttackProjectile()
+    if not self.attackProjectilePending then
+        return
+    end
+
+    self.attackProjectilePending = false
+    self:SpawnProjectile()
+end
+
+function Script:OnAnimNotify(notifyName, phase, sourceStateName, triggerWeight)
+    if sourceStateName ~= "Attack" then
+        return
+    end
+
+    if notifyName ~= self.AttackFireNotifyName then
+        return
+    end
+
+    if phase ~= "Instant" and phase ~= "Begin" then
+        return
+    end
+
+    -- 같은 공격 애니메이션에서 notify가 여러 번 들어와도 투사체는 한 번만 생성합니다.
+    self:FireAttackProjectile()
 end
 
 function Script:UpdateAttack(deltaTime)
@@ -399,8 +447,8 @@ function Script:Tick(deltaTime)
         return
     end
 
-    self:UpdateMovement(deltaTime)
     self:UpdateAttack(deltaTime)
+    self:UpdateMovement(deltaTime)
     self:UpdateProjectiles(deltaTime)
 end
 

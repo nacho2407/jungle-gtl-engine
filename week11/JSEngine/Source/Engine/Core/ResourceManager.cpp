@@ -1353,6 +1353,37 @@ UAnimStateMachine* FResourceManager::LoadAnimStateMachine(const FString& Path)
 	return StateMachine;
 }
 
+UAnimStateMachine* FResourceManager::ReloadAnimStateMachine(const FString& Path)
+{
+	const FString NormalizedPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
+	if (NormalizedPath.empty())
+	{
+		UE_LOG_WARNING("[ResourceManager] Invalid anim state machine reload path. Path=%s", Path.c_str());
+		return nullptr;
+	}
+
+	FAnimStateMachineLoader Loader;
+	UAnimStateMachine* ReloadedStateMachine = Loader.Load(NormalizedPath);
+	if (!ReloadedStateMachine)
+	{
+		UE_LOG_WARNING("[ResourceManager] Failed to reload anim state machine. Path=%s", NormalizedPath.c_str());
+		return nullptr;
+	}
+
+	if (UAnimStateMachine* ExistingStateMachine = FindAnimStateMachine(NormalizedPath))
+	{
+		ExistingStateMachine->SetDesc(ReloadedStateMachine->GetDesc());
+		ExistingStateMachine->SetAssetPath(NormalizedPath);
+		UObjectManager::Get().DestroyObject(ReloadedStateMachine);
+		AddUniqueResourcePath(AnimStateMachineFilePaths, NormalizedPath);
+		return ExistingStateMachine;
+	}
+
+	AnimStateMachineMap[NormalizedPath] = ReloadedStateMachine;
+	AddUniqueResourcePath(AnimStateMachineFilePaths, NormalizedPath);
+	return ReloadedStateMachine;
+}
+
 UAnimStateMachine* FResourceManager::FindAnimStateMachine(const FString& Path) const
 {
 	const FString NormalizedPath = FAssetPathPolicy::NormalizeAnimStateMachineAssetPath(Path);
