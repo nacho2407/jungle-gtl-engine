@@ -311,8 +311,8 @@ void FSelectionManager::SyncGizmo()
 	USceneComponent* Primary = SelectedComponent;
 	if (Primary)
 	{
-		Gizmo->SetTarget(Primary);
 		Gizmo->SetSelectedActors(&SelectedActors);
+		Gizmo->SetTarget(Primary);
 	}
 	else
 	{

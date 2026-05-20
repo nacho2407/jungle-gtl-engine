@@ -97,6 +97,9 @@ private:
 	void HandleDrag(float DragAmount);
 	float ApplySnapToDragAmount(float DragAmount);
 	void ResetSnapAccumulation();
+	bool HasMultipleSelectedActorTargets() const;
+	FVector GetTargetPivotLocation() const;
+	bool TranslateSelectedActorTargets(const FVector& Delta);
 	void TranslateTarget(float DragAmount);
 	void RotateTarget(float DragAmount);
 	void ScaleTarget(float DragAmount);
