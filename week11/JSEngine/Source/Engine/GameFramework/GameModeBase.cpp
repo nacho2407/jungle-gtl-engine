@@ -226,6 +226,12 @@ void AGameModeBase::ApplyPlayerStartTransform(APawn* Pawn, const FVector& SpawnL
         {
             Camera->SetRelativeRotation(FVector(0.0f, SpawnRotation.Y, SpawnRotation.Z));
         }
+        else if (Camera->GetParent() && Camera->GetParent() != Pawn->GetRootComponent())
+        {
+            // SpringArm 같은 중간 컴포넌트가 카메라 구도를 소유하는 경우에는
+            // PlayerStart pitch로 카메라 로컬 회전을 덮어쓰면 prefab에서 잡은 구도가 사라진다.
+            Pawn->SetActorRotation(FVector(0.0f, 0.0f, SpawnRotation.Z));
+        }
         else
         {
             Pawn->SetActorRotation(FVector(0.0f, 0.0f, SpawnRotation.Z));
