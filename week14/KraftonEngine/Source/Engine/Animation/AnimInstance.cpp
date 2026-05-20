@@ -6,9 +6,9 @@
 #include "Animation/Sequence/AnimSequenceBase.h"
 #include "Animation/AnimationRuntime.h"
 #include "Animation/Nodes/AnimNode_Root.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Mesh/SkeletalMesh.h"
-#include "GameFramework/Pawn.h"
+#include "GameFramework/Pawn/Pawn.h"
 
 #include <algorithm>
 

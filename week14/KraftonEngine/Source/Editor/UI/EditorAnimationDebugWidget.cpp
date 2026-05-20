@@ -19,7 +19,7 @@
 #include "Animation/Nodes/AnimNode_SequencePlayer.h"
 #include "Animation/Nodes/AnimNode_Slot.h"
 #include "Animation/Nodes/AnimNode_StateMachine.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Core/PropertyTypes.h"
 #include "GameFramework/AActor.h"
 #include "Object/UClass.h"

@@ -1,7 +1,7 @@
-﻿#include "BoneDebugSceneProxy.h"
+#include "BoneDebugSceneProxy.h"
 
-#include "Component/BoneDebugComponent.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Debug/BoneDebugComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Mesh/SkeletalMesh.h"
 
 #pragma region Line Draw

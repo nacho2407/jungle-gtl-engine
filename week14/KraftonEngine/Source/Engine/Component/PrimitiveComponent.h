@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/ObjectFactory.h"
-#include "SceneComponent.h"
+#include "Component/SceneComponent.h"
 #include "Render/Types/RenderTypes.h"
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"

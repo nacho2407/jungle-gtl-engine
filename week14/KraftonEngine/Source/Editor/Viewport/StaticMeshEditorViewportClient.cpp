@@ -1,6 +1,6 @@
 #include "StaticMeshEditorViewportClient.h"
 
-#include "Component/StaticMeshComponent.h"
+#include "Component/Primitive/StaticMeshComponent.h"
 #include "Input/InputSystem.h"
 #include "Math/MathUtils.h"
 #include "Render/Types/MinimalViewInfo.h"

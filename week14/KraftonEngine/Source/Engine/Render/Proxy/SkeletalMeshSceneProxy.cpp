@@ -1,5 +1,5 @@
-﻿#include "SkeletalMeshSceneProxy.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "SkeletalMeshSceneProxy.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Render/Command/DrawCommand.h"
 #include "Runtime/Engine.h"

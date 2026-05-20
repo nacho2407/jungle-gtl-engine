@@ -10,7 +10,7 @@
 #include "Viewport/GameViewportClient.h"
 #include "Serialization/SceneSaveManager.h"
 #include "GameFramework/World.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameMode/GameModeBase.h"
 #include "Object/UClass.h"
 #include "Core/ProjectSettings.h"
 #include "Core/Log.h"

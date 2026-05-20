@@ -2,7 +2,7 @@
 #include "Animation/Sequence/AnimSequenceBase.h"
 #include "Animation/Sequence/AnimSequence.h"
 #include "Animation/AnimExtractContext.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Core/Log.h"
 
 #include <cmath>
