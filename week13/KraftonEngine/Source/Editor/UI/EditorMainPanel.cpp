@@ -24,6 +24,9 @@
 #include "Editor/UI/Asset/CameraShakeEditorWidget.h"
 #include "Editor/UI/Asset/MeshEditorWidget.h"
 #include "Editor/UI/Asset/StaticMeshEditorWidget.h"
+#include "Editor/UI/Asset/AnimGraphEditorWidget.h"
+#include "Animation/AnimGraphAsset.h"
+#include "Object/ObjectFactory.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -95,6 +98,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	AssetEditorManager.RegisterEditor<FCameraShakeEditorWidget>();
 	AssetEditorManager.RegisterEditor<FMeshEditorWidget>();
 	AssetEditorManager.RegisterEditor<FStaticMeshEditorWidget>();
+	AssetEditorManager.RegisterEditor<FAnimGraphEditorWidget>();
 }
 
 void FEditorMainPanel::Release()
@@ -289,6 +293,18 @@ void FEditorMainPanel::RenderMainMenuBar()
 	if (ImGui::MenuItem("Shortcut"))
 	{
 		bShowShortcutOverlay = !bShowShortcutOverlay;
+	}
+
+	// Animation — AnimGraph 자산이 ContentBrowser 에서 더블클릭으로 열리기 전까지의 임시 진입점.
+	// 매번 transient UAnimGraphAsset 을 만들어 OpenEditorForObject 로 띄운다 (저장 흐름 미구현).
+	if (ImGui::BeginMenu("Animation"))
+	{
+		if (ImGui::MenuItem("Open AnimGraph Editor (Empty)"))
+		{
+			UAnimGraphAsset* Asset = UObjectManager::Get().CreateObject<UAnimGraphAsset>();
+			OpenAssetEditorForObject(Asset);
+		}
+		ImGui::EndMenu();
 	}
 
 	ImGui::EndMainMenuBar();

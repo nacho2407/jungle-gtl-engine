@@ -429,6 +429,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\UI\EditorWorldSettingsWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\ImGuiSetting.cpp" />
     <ClCompile Include="Source\Editor\UI\NotificationToast.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\AnimGraphEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AnimMontagePropertyPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AnimSequencePropertyPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AnimationTimelinePanel.cpp" />
@@ -449,6 +450,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\Viewport\StaticMeshEditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\ViewportCameraTransform.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimDataModel.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimGraphAsset.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimMontage.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimMontageInstance.cpp" />
@@ -761,6 +763,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\UI\EditorWorldSettingsWidget.h" />
     <ClInclude Include="Source\Editor\UI\ImGuiSetting.h" />
     <ClInclude Include="Source\Editor\UI\NotificationToast.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\AnimGraphEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AnimMontagePropertyPanel.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AnimSequencePropertyPanel.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AnimationTimelinePanel.h" />
@@ -787,6 +790,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\Viewport\ViewportCameraTransform.h" />
     <ClInclude Include="Source\Engine\Animation\AnimDataModel.h" />
     <ClInclude Include="Source\Engine\Animation\AnimExtractContext.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimGraphAsset.h" />
     <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
     <ClInclude Include="Source\Engine\Animation\AnimMontage.h" />
     <ClInclude Include="Source\Engine\Animation\AnimMontageInstance.h" />
