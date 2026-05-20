@@ -124,6 +124,58 @@ Script.Properties = {
         Type = "String",
         Default = "AttackFire",
         Category = "Animation"
+    },
+    FootstepEventId = {
+        Type = "String",
+        Default = "Footstep",
+        Category = "Footstep"
+    },
+    FootstepNotifyName = {
+        Type = "String",
+        Default = "Footstep",
+        Category = "Footstep"
+    },
+    LeftFootstepNotifyName = {
+        Type = "String",
+        Default = "LeftFootstep",
+        Category = "Footstep"
+    },
+    RightFootstepNotifyName = {
+        Type = "String",
+        Default = "RightFootstep",
+        Category = "Footstep"
+    },
+    FootstepDecalMaterialPath = {
+        Type = "String",
+        Default = "Asset/Material/DecalMat_Inst_4.matinst",
+        Category = "Footstep"
+    },
+    FootstepSideOffset = {
+        Type = "Float",
+        Default = 1.5,
+        Min = 0.0,
+        Max = 100.0,
+        Category = "Footstep"
+    },
+    FootstepLocationOffset = {
+        Type = "Vector",
+        Default = { X = 0.0, Y = 0.0, Z = 0.0 },
+        Category = "Footstep"
+    },
+    FootstepRotationOffset = {
+        Type = "Vector",
+        Default = { X = 90.0, Y = 0.0, Z = 90.0 },
+        Category = "Footstep"
+    },
+    FootstepScale = {
+        Type = "Vector",
+        Default = { X = 3.5, Y = 3.5, Z = 3.5 },
+        Category = "Footstep"
+    },
+    FootstepDecalSize = {
+        Type = "Vector",
+        Default = { X = 1.0, Y = 1.0, Z = 1.0 },
+        Category = "Footstep"
     }
 }
 
@@ -131,16 +183,28 @@ local function applyProperties(target, properties)
     properties = properties or {}
 
     for key, desc in pairs(Script.Properties) do
-        if properties[key] ~= nil then
-            target[key] = properties[key]
-        else
-            target[key] = desc.Default
+        local value = properties[key]
+        if value == nil then
+            value = desc.Default
         end
+
+        if desc.Type == "Vector" and type(value) == "table" then
+            value = Vector(
+                value.X or value.x or value[1] or 0.0,
+                value.Y or value.y or value[2] or 0.0,
+                value.Z or value.z or value[3] or 0.0)
+        end
+
+        target[key] = value
     end
 end
 
 local function isBlank(value)
     return value == nil or value == ""
+end
+
+local function matchesName(value, expected)
+    return not isBlank(value) and not isBlank(expected) and value == expected
 end
 
 local function asSkeletalMeshComponent(component)
@@ -149,6 +213,16 @@ local function asSkeletalMeshComponent(component)
     end
     if component.AsSkeletalMeshComponent ~= nil then
         return component:AsSkeletalMeshComponent()
+    end
+    return component
+end
+
+local function asDecalComponent(component)
+    if component == nil then
+        return nil
+    end
+    if component.AsDecalComponent ~= nil then
+        return component:AsDecalComponent()
     end
     return component
 end
@@ -190,6 +264,18 @@ end
 local function yawToDirection(yawDegrees)
     local radians = math.rad(yawDegrees)
     return Vector(math.cos(radians), math.sin(radians), 0.0)
+end
+
+local function getFlatActorRightVector(actor)
+    if actor ~= nil and actor.GetActorRightVector ~= nil then
+        local right = actor:GetActorRightVector()
+        right.Z = 0.0
+        if right:Normalize() then
+            return right
+        end
+    end
+
+    return Vector(0.0, 1.0, 0.0)
 end
 
 local function readAxis(positiveKey, negativeKey)
@@ -377,7 +463,76 @@ function Script:FireAttackProjectile()
     self:SpawnProjectile()
 end
 
-function Script:OnAnimNotify(notifyName, phase, sourceStateName, triggerWeight)
+function Script:SpawnFootstepDecal(payload, sourceComponent, sideOffset)
+    if Engine == nil or Engine.API == nil then
+        return
+    end
+
+    local world = Engine.API.World
+    if world == nil or self.owner == nil then
+        return
+    end
+
+    local materialPath = self.FootstepDecalMaterialPath
+
+    local actor = world.SpawnActor("ASceneActor")
+    if actor == nil then
+        return
+    end
+
+    local component = actor:AddComponent("DecalComponent", true)
+    local decal = asDecalComponent(component)
+    if decal == nil then
+        world.DestroyActor(actor)
+        return
+    end
+
+    local footstepLocation = self.owner.Location + self.FootstepLocationOffset
+    if sourceComponent ~= nil and sourceComponent.AsPrimitiveComponent ~= nil then
+        local primitive = sourceComponent:AsPrimitiveComponent()
+        if primitive ~= nil and
+            primitive.IsWorldAABBValid ~= nil and
+            primitive:IsWorldAABBValid() and
+            primitive.GetWorldAABBCenter ~= nil and
+            primitive.GetWorldAABBMin ~= nil then
+            local center = primitive:GetWorldAABBCenter()
+            local min = primitive:GetWorldAABBMin()
+            footstepLocation = Vector(center.X, center.Y, min.Z) + self.FootstepLocationOffset
+        end
+    end
+
+    sideOffset = sideOffset or 0.0
+    if sideOffset ~= 0.0 then
+        footstepLocation = footstepLocation + getFlatActorRightVector(self.owner) * sideOffset
+    end
+
+    actor.Location = footstepLocation
+    actor.Rotation = self.FootstepRotationOffset
+    actor.Scale = self.FootstepScale
+
+    decal:SetSize(self.FootstepDecalSize)
+
+    if decal.SetMaterialByPath ~= nil then
+        if not decal:SetMaterialByPath(materialPath) then
+            LogWarning("[SpikeTopDownController] Failed to load footstep decal material: " .. materialPath)
+        end
+    end
+end
+
+function Script:OnAnimNotify(notifyName, phase, sourceStateName, triggerWeight, sourceComponent, eventId, payload)
+    local footstepSideOffset = nil
+
+    if matchesName(eventId, self.LeftFootstepNotifyName) or matchesName(notifyName, self.LeftFootstepNotifyName) then
+        footstepSideOffset = -self.FootstepSideOffset
+    elseif matchesName(eventId, self.RightFootstepNotifyName) or matchesName(notifyName, self.RightFootstepNotifyName) then
+        footstepSideOffset = self.FootstepSideOffset
+    end
+
+    if footstepSideOffset ~= nil and (phase == "Instant" or phase == "Begin") then
+        self:SpawnFootstepDecal(payload, sourceComponent, footstepSideOffset)
+        return
+    end
+
     if sourceStateName ~= "Attack" then
         return
     end

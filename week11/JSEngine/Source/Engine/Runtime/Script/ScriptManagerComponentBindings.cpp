@@ -7,6 +7,7 @@
 #include "Camera/CameraShakeBase.h"
 #include "Camera/ShakePattern/SequenceCameraShakePattern.h"
 #include "Camera/ShakePattern/SinusoidalCameraShakePattern.h"
+#include "Core/ResourceManager.h"
 #include "Component/ActorComponent.h"
 #include "Component/ActorSequenceComponent.h"
 #include "Component/BillboardComponent.h"
@@ -526,6 +527,18 @@ void FScriptManager::BindPrimitiveTypes()
     LUA_RO_PROPERTY(SupportsOutline, SupportsOutline);
     LUA_METHOD(is_overlapping_actor, IsOverlappingActor);
     LUA_METHOD(clear_overlaps, ClearOverlaps);
+    LUA_SET(IsWorldAABBValid, [](UPrimitiveComponent& Self) -> bool
+            { return Self.GetWorldAABB().IsValid(); });
+    LUA_SET(GetWorldAABBCenter, [](UPrimitiveComponent& Self) -> FVector
+            {
+                const FAABB& Bounds = Self.GetWorldAABB();
+                return Bounds.IsValid() ? Bounds.GetCenter() : FVector();
+            });
+    LUA_SET(GetWorldAABBMin, [](UPrimitiveComponent& Self) -> FVector
+            {
+                const FAABB& Bounds = Self.GetWorldAABB();
+                return Bounds.IsValid() ? Bounds.Min : FVector();
+            });
     LUA_END_TYPE();
 
     LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UShapeComponent, "ShapeComponent",
@@ -644,6 +657,17 @@ void FScriptManager::BindDecalTypes()
             { return Self.GetMaterial(0); });
     LUA_SET(SetMaterial, [](UDecalComponent& Self, UMaterialInterface* Material)
             { Self.SetMaterial(0, Material); });
+    LUA_SET(SetMaterialByPath, [](UDecalComponent& Self, const FString& MaterialPath) -> bool
+            {
+                UMaterialInterface* Material = FResourceManager::Get().GetMaterialInterface(MaterialPath);
+                if (!Material)
+                {
+                    return false;
+                }
+
+                Self.SetMaterial(0, Material);
+                return true;
+            });
     LUA_RO_PROPERTY(DecalMatrix, GetDecalMatrix);
     LUA_RO_PROPERTY(DecalColor, GetDecalColor);
     LUA_RO_PROPERTY(NumMaterials, GetNumMaterials);

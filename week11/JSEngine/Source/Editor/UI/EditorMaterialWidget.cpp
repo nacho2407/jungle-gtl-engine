@@ -537,6 +537,20 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 						if (bSelected) ImGui::SetItemDefaultFocus();
 					}
 				}
+
+				const FString FootStepPath = "Asset/Texture/FootStep.png";
+				const bool bFootStepSelected = (FootStepPath == CurrentPath);
+				if (ImGui::Selectable(FootStepPath.c_str(), bFootStepSelected))
+				{
+					if (UTexture* FootStepTexture = FResourceManager::Get().LoadTexture(FootStepPath))
+					{
+						ParamValue.Value = FootStepTexture;
+						SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+						SaveSelectedMaterialInstance();
+					}
+				}
+				if (bFootStepSelected) ImGui::SetItemDefaultFocus();
+
 				ImGui::EndCombo();
 			}
 			ImGui::EndGroup();
