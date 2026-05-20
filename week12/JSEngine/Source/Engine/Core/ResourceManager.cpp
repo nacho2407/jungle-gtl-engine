@@ -328,23 +328,15 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 
 		if (Extension == L".fbx")
 		{
-			const FString AbsolutePath = FPaths::Normalize(FPaths::ToUtf8(FilePath.wstring()));
-			const FFbxMeshContentInfo ContentInfo = FbxImporter.InspectMeshContent(AbsolutePath);
-			if (ContentInfo.bHasSkeletalMesh)
+			std::wstring RelativeGenericPath = std::filesystem::path(FPaths::ToWide(RelativePath)).generic_wstring();
+			std::transform(RelativeGenericPath.begin(), RelativeGenericPath.end(), RelativeGenericPath.begin(), ::towlower);
+
+			const bool bUnderSkeletalMeshRoot = RelativeGenericPath.rfind(L"asset/skeletalmesh/", 0) == 0;
+			const FString SkeletalBinaryPath = FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(RelativePath);
+			const bool bHasValidSkeletalBinary = IsSkeletalMeshBinaryValid(RelativePath, SkeletalBinaryPath);
+			if (bUnderSkeletalMeshRoot || bHasValidSkeletalBinary)
 			{
 				SkeletalMeshFilePaths.push_back(RelativePath);
-			}
-			if (ContentInfo.bHasAnimation)
-			{
-				if (std::find(AnimationFbxSourceFilePaths.begin(), AnimationFbxSourceFilePaths.end(), RelativePath)
-					== AnimationFbxSourceFilePaths.end())
-				{
-					AnimationFbxSourceFilePaths.push_back(RelativePath);
-				}
-				if (std::find(AnimSequenceFilePaths.begin(), AnimSequenceFilePaths.end(), RelativePath) == AnimSequenceFilePaths.end())
-				{
-					AnimSequenceFilePaths.push_back(RelativePath);
-				}
 			}
 		}
 	}
@@ -484,7 +476,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 	}
 
 	// Startup should only discover assets. FBX animation import/binary cache generation
-    // is intentionally deferred until an animation asset is explicitly opened or requested.
+	// is intentionally deferred until an animation asset is explicitly opened or requested.
 	
 	PreloadStaticMeshes();
 
@@ -1142,7 +1134,7 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 			}
 		}
 	}
-    
+	
 	// 이미 에셋과 바이너리 캐시가 모두 존재한다면 즉시 반환한다.
 	// descriptor만 있고 Bin/*.bin이 삭제된 제출 상태라면 아래 batch import로 한 번에 재생성한다.
 	if (!ImportedAssetPaths.empty() && bAllExistingCachesFresh)
@@ -1154,7 +1146,7 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 		}
 		return ImportedAssetPaths;
 	}
-    
+	
 	// 2. 임포트된 에셋이 하나도 없는 경우에만 FBX 파싱 (최초 1회)
 	FFbxAnimImportOptions ImportOptions;
 	ImportOptions.PreviewMeshPath = NormalizedPath;

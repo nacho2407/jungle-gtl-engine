@@ -1,4 +1,4 @@
-#include "UI/RmlUi/RmlUiRuntimeModule.h"
+﻿#include "UI/RmlUi/RmlUiRuntimeModule.h"
 
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
@@ -810,8 +810,8 @@ bool FRmlUiRuntimeModule::Initialize()
     }
 
     Rml::LoadFontFace("C:/Windows/Fonts/malgun.ttf", "Malgun Gothic", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Normal, true);
-    Rml::LoadFontFace("Asset/UIFont/Nexon/NEXONLv1GothicRegular.ttf", "Nexon Lv1 Gothic", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Normal, true);
-    Rml::LoadFontFace("Asset/UIFont/Nexon/NEXONLv1GothicBold.ttf", "Nexon Lv1 Gothic", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Bold, false);
+    // Rml::LoadFontFace("Asset/UIFont/Nexon/NEXONLv1GothicRegular.ttf", "Nexon Lv1 Gothic", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Normal, true);
+    // Rml::LoadFontFace("Asset/UIFont/Nexon/NEXONLv1GothicBold.ttf", "Nexon Lv1 Gothic", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Bold, false);
     UE_LOG("[RmlUi] Initialized RmlUi core: %s", Rml::GetVersion().c_str());
     return true;
 }
