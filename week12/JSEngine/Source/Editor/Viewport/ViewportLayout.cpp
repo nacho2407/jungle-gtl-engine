@@ -27,12 +27,12 @@ void FEditorViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelec
 	Window = InWindow;
 	Editor = EditorEngine;
 
-    // Client 포인터 소유/생성 주체는 Layout입니다.
-    // 각 SceneViewport는 Layout이 소유한 Client 인스턴스를 참조만 합니다.
-    for (int32 i = 0; i < MaxViewports; ++i)
-    {
-        SceneViewports[i].SetClient(&ViewportClients[i]);
-    }
+	// Client 포인터 소유/생성 주체는 Layout입니다.
+	// 각 SceneViewport는 Layout이 소유한 Client 인스턴스를 참조만 합니다.
+	for (int32 i = 0; i < MaxViewports; ++i)
+	{
+		SceneViewports[i].SetClient(&ViewportClients[i]);
+	}
 
 	// Settings 에서 레이아웃 상태 복원
 	const FEditorSettings& S = FEditorSettings::Get();
@@ -63,8 +63,8 @@ void FEditorViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelec
 		Client->SetSelectionManager(SelectionManager);
 		
 		// 상호 참조 연결
-        Client->SetViewport(&SceneViewport);
-        Client->SetState(&SceneViewport.GetState());
+		Client->SetViewport(&SceneViewport);
+		Client->SetState(&SceneViewport.GetState());
 
 		// 뷰포트 타입 설정 후 카메라 생성
 		Client->SetViewportType(kViewportTypes[i]);
@@ -80,146 +80,146 @@ void FEditorViewportLayout::Shutdown()
 
 void FEditorViewportLayout::UpdateHoverStates()
 {
-    // 1. 이번 프레임의 우클릭/중클릭 조작 상태를 먼저 읽습니다.
-    const InputSystem& IS = InputSystem::Get();
+	// 1. 이번 프레임의 우클릭/중클릭 조작 상태를 먼저 읽습니다.
+	const InputSystem& IS = InputSystem::Get();
 
-    const bool bOperationPressed =
-        IS.GetKeyDown(VK_RBUTTON) || IS.GetKeyDown(VK_MBUTTON);
+	const bool bOperationPressed =
+		IS.GetKeyDown(VK_RBUTTON) || IS.GetKeyDown(VK_MBUTTON);
 
-    const bool bOperationDragging =
-        IS.GetRightDragging() || IS.GetMiddleDragging();
+	const bool bOperationDragging =
+		IS.GetRightDragging() || IS.GetMiddleDragging();
 
-    const bool bOperationReleased =
-        IS.GetKeyUp(VK_RBUTTON) || IS.GetKeyUp(VK_MBUTTON);
+	const bool bOperationReleased =
+		IS.GetKeyUp(VK_RBUTTON) || IS.GetKeyUp(VK_MBUTTON);
 
-    // 2. 우클릭/중클릭 조작이 끝나면 뷰포트 독점 조작 상태와 차단 상태를 함께 해제합니다.
-    if (bOperationReleased)
-    {
-        ActiveOperationViewportIndex = -1;
-        bBlockViewportOperationUntilRelease = false;
-    }
+	// 2. 우클릭/중클릭 조작이 끝나면 뷰포트 독점 조작 상태와 차단 상태를 함께 해제합니다.
+	if (bOperationReleased)
+	{
+		ActiveOperationViewportIndex = -1;
+		bBlockViewportOperationUntilRelease = false;
+	}
 
-    // 3. 스플리터 드래그로 바뀐 뷰포트 Rect를 먼저 동기화합니다.
-    //    이후 hover 계산은 항상 최신 Rect 기준으로 수행되어야 합니다.
-    if (GetRootSplitterV())
-    {
-        SyncViewportRects();
-    }
+	// 3. 스플리터 드래그로 바뀐 뷰포트 Rect를 먼저 동기화합니다.
+	//    이후 hover 계산은 항상 최신 Rect 기준으로 수행되어야 합니다.
+	if (GetRootSplitterV())
+	{
+		SyncViewportRects();
+	}
 
-    // 4. 기즈모를 드래그 중이면 현재 조작을 유지하고 hover 갱신을 건너뜁니다.
-    for (int i = 0; i < MaxViewports; ++i)
-    {
-        if (SceneViewports[i].GetClient()->GetGizmo()->IsHolding())
-            return;
-    }
+	// 4. 기즈모를 드래그 중이면 현재 조작을 유지하고 hover 갱신을 건너뜁니다.
+	for (int i = 0; i < MaxViewports; ++i)
+	{
+		if (SceneViewports[i].GetClient()->GetGizmo()->IsHolding())
+			return;
+	}
 
-    // 5. 마우스 좌표를 윈도우 client 기준으로 가져옵니다.
-    if (!Window)
-        return;
+	// 5. 마우스 좌표를 윈도우 client 기준으로 가져옵니다.
+	if (!Window)
+		return;
 	
-    POINT MousePt = InputSystem::Get().GetMousePos();
+	POINT MousePt = InputSystem::Get().GetMousePos();
 	MousePt = Window->ScreenToClientPoint(MousePt);
 	const int32 MouseX = static_cast<int32>(MousePt.x);
 	const int32 MouseY = static_cast<int32>(MousePt.y);
 
 	// 6. 현재 마우스가 viewport host 안에 있는지 확인합니다.
 	const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
-    const bool bInViewportHost = GuiState.IsInViewportHost(MouseX, MouseY);
-    const bool bViewportMouseBlockedByUI = GuiState.bBlockViewportMouse && !GuiState.bAllowViewportMouseFocus;
+	const bool bInViewportHost = GuiState.IsInViewportHost(MouseX, MouseY);
+	const bool bViewportMouseBlockedByUI = GuiState.bBlockViewportMouse && !GuiState.bAllowViewportMouseFocus;
 
-    if (bViewportMouseBlockedByUI)
-    {
-        ActiveOperationViewportIndex = -1;
-        if (bOperationPressed)
-        {
-            bBlockViewportOperationUntilRelease = true;
-        }
-        for (int32 i = 0; i < MaxViewports; ++i)
-        {
-            GetViewportState(i).bHovered = false;
-        }
-        return;
-    }
+	if (bViewportMouseBlockedByUI)
+	{
+		ActiveOperationViewportIndex = -1;
+		if (bOperationPressed)
+		{
+			bBlockViewportOperationUntilRelease = true;
+		}
+		for (int32 i = 0; i < MaxViewports; ++i)
+		{
+			GetViewportState(i).bHovered = false;
+		}
+		return;
+	}
 
-    // 7. 우클릭/중클릭이 눌린 순간의 시작 위치를 먼저 기록합니다.
-    //    뷰포트 위에서 시작한 조작이면 해당 뷰포트를 고정하고,
-    //    뷰포트 밖에서 시작한 조작이면 버튼이 올라갈 때까지 뷰포트 입력을 차단합니다.
-    if (bOperationPressed)
-    {
-        if (bInViewportHost)
-        {
-            const int32 PressedViewport = FindViewportIndexAt(MouseX, MouseY);
-            if (PressedViewport >= 0)
-            {
-                ActiveOperationViewportIndex = PressedViewport;
-                bBlockViewportOperationUntilRelease = false;
-                SetLastFocusedViewportIndex(PressedViewport);
-            }
-            else
-            {
-                ActiveOperationViewportIndex = -1;
-                bBlockViewportOperationUntilRelease = true;
-            }
-        }
-        else
-        {
-            ActiveOperationViewportIndex = -1;
-            bBlockViewportOperationUntilRelease = true;
-        }
-    }
+	// 7. 우클릭/중클릭이 눌린 순간의 시작 위치를 먼저 기록합니다.
+	//    뷰포트 위에서 시작한 조작이면 해당 뷰포트를 고정하고,
+	//    뷰포트 밖에서 시작한 조작이면 버튼이 올라갈 때까지 뷰포트 입력을 차단합니다.
+	if (bOperationPressed)
+	{
+		if (bInViewportHost)
+		{
+			const int32 PressedViewport = FindViewportIndexAt(MouseX, MouseY);
+			if (PressedViewport >= 0)
+			{
+				ActiveOperationViewportIndex = PressedViewport;
+				bBlockViewportOperationUntilRelease = false;
+				SetLastFocusedViewportIndex(PressedViewport);
+			}
+			else
+			{
+				ActiveOperationViewportIndex = -1;
+				bBlockViewportOperationUntilRelease = true;
+			}
+		}
+		else
+		{
+			ActiveOperationViewportIndex = -1;
+			bBlockViewportOperationUntilRelease = true;
+		}
+	}
 
 	// 8. Viewport host 밖이면 모든 hover를 해제합니다.
-    //    현재 구현에서는 host 밖으로 나간 순간 뷰포트 독점 조작 대상도 함께 초기화합니다.
+	//    현재 구현에서는 host 밖으로 나간 순간 뷰포트 독점 조작 대상도 함께 초기화합니다.
 	if (!bInViewportHost)
 	{
 		for (int32 i = 0; i < MaxViewports; ++i)
 		{
 			GetViewportState(i).bHovered = false;
 		}
-        if (!bBlockViewportOperationUntilRelease)
-        {
-            ActiveOperationViewportIndex = -1;
-        }
+		if (!bBlockViewportOperationUntilRelease)
+		{
+			ActiveOperationViewportIndex = -1;
+		}
 
 		return;
 	}
 
 	// 9. ImGui 패널 등 뷰포트 밖에서 조작이 시작된 경우,
-    //    버튼이 올라갈 때까지 어떤 뷰포트도 hovered 상태가 되지 않도록 막습니다.
+	//    버튼이 올라갈 때까지 어떤 뷰포트도 hovered 상태가 되지 않도록 막습니다.
 	if (bBlockViewportOperationUntilRelease)
-    {
-        for (int32 i = 0; i < MaxViewports; ++i)
-        {
-            GetViewportState(i).bHovered = false;
-        }
-        return;
-    }
+	{
+		for (int32 i = 0; i < MaxViewports; ++i)
+		{
+			GetViewportState(i).bHovered = false;
+		}
+		return;
+	}
 
-    // 10. 독점 조작 중이면 해당 뷰포트만 hovered 상태로 유지합니다.
-    //     조작 중 마우스가 다른 뷰포트로 이동해도 입력이 누수되지 않도록 막습니다.
-    if (ActiveOperationViewportIndex >= 0 && bOperationDragging)
-    {
-        for (int32 i = 0; i < MaxViewports; ++i)
-        {
-            GetViewportState(i).bHovered = (i == ActiveOperationViewportIndex);
-        }
+	// 10. 독점 조작 중이면 해당 뷰포트만 hovered 상태로 유지합니다.
+	//     조작 중 마우스가 다른 뷰포트로 이동해도 입력이 누수되지 않도록 막습니다.
+	if (ActiveOperationViewportIndex >= 0 && bOperationDragging)
+	{
+		for (int32 i = 0; i < MaxViewports; ++i)
+		{
+			GetViewportState(i).bHovered = (i == ActiveOperationViewportIndex);
+		}
 
-        SetLastFocusedViewportIndex(ActiveOperationViewportIndex);
-        return;
-    }
+		SetLastFocusedViewportIndex(ActiveOperationViewportIndex);
+		return;
+	}
 
-    // 11. 평상시에는 현재 마우스가 위치한 뷰포트만 hovered 상태로 갱신합니다.
-    const int32 HoveredViewport = FindViewportIndexAt(MouseX, MouseY);
-    for (int32 i = 0; i < MaxViewports; ++i)
-    {
-        GetViewportState(i).bHovered = (i == HoveredViewport);
-    }
+	// 11. 평상시에는 현재 마우스가 위치한 뷰포트만 hovered 상태로 갱신합니다.
+	const int32 HoveredViewport = FindViewportIndexAt(MouseX, MouseY);
+	for (int32 i = 0; i < MaxViewports; ++i)
+	{
+		GetViewportState(i).bHovered = (i == HoveredViewport);
+	}
 
-    // 12. 좌클릭으로 상호작용을 시작한 뷰포트를 마지막 포커스 대상으로 기록합니다.
-    if (HoveredViewport >= 0 && IS.GetKeyDown(VK_LBUTTON))
-    {
-        SetLastFocusedViewportIndex(HoveredViewport);
-    }
+	// 12. 좌클릭으로 상호작용을 시작한 뷰포트를 마지막 포커스 대상으로 기록합니다.
+	if (HoveredViewport >= 0 && IS.GetKeyDown(VK_LBUTTON))
+	{
+		SetLastFocusedViewportIndex(HoveredViewport);
+	}
 }
 
 void FEditorViewportLayout::Tick(float DeltaTime)
@@ -282,18 +282,18 @@ void FEditorViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
 	// 50:50 초기 분할 (이후 BuildViewportLayout → SyncViewportRects 에서 최종 반영)
 	const int32 HalfW = W / 2;
 	const int32 HalfH = H / 2;
-    
+	
 	FViewportRect Rects[4] = {
-        { 0, 0, HalfW, HalfH },
-        { HalfW, 0, W - HalfW, HalfH },
-        { 0, HalfH, HalfW, H - HalfH },
-        { HalfW, HalfH, W - HalfW, H - HalfH }
-    };
+		{ 0, 0, HalfW, HalfH },
+		{ HalfW, 0, W - HalfW, HalfH },
+		{ 0, HalfH, HalfW, H - HalfH },
+		{ HalfW, HalfH, W - HalfW, H - HalfH }
+	};
 	
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
 		const FViewportRect SceneRect = MakeSceneViewportRect(i, Rects[i]);
-        SceneViewports[i].SetRect(SceneRect);
+		SceneViewports[i].SetRect(SceneRect);
 		SceneViewports[i].GetClient()->SetViewportSize(
 			static_cast<float>(SceneRect.Width),
 			static_cast<float>(SceneRect.Height));
@@ -308,18 +308,18 @@ void FEditorViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	// 4개 SViewport 생성 + ISlateViewport(FSceneViewport) 연결
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-        FSceneViewport& VP = SceneViewports[i];
-        // Build 시 DestroyViewportLayout()에서 끊어진 Client-Viewport-State 연결을 복구한다.
-        VP.SetClient(&ViewportClients[i]);
-        if (FEditorViewportClient* VC = VP.GetClient())
-        {
-            VC->SetViewport(&VP);
-            VC->SetState(&VP.GetState());
-        }
+		FSceneViewport& VP = SceneViewports[i];
+		// Build 시 DestroyViewportLayout()에서 끊어진 Client-Viewport-State 연결을 복구한다.
+		VP.SetClient(&ViewportClients[i]);
+		if (FEditorViewportClient* VC = VP.GetClient())
+		{
+			VC->SetViewport(&VP);
+			VC->SetState(&VP.GetState());
+		}
 
 		FViewportRenderResource& RenderResource = Editor->GetRenderer().AcquireViewportResource(VP.GetRect().Width, VP.GetRect().Height, i);
-        VP.SetRenderTargetSet(&RenderResource.GetView());
-        ViewportWidgets[i].SetViewportInterface(&VP);
+		VP.SetRenderTargetSet(&RenderResource.GetView());
+		ViewportWidgets[i].SetViewportInterface(&VP);
 	}
 
 	// 스플리터 트리 구성
@@ -520,6 +520,26 @@ void FEditorViewportLayout::SetLastFocusedViewportIndex(int32 Index)
 	LastFocusedViewportIndex = Index;
 
 	FEditorViewportClient* MainViewport = GetViewportClient(LastFocusedViewportIndex);
+}
+
+bool FEditorViewportLayout::HasActiveOperationViewport() const
+{
+	if (ActiveOperationViewportIndex >= 0 && ActiveOperationViewportIndex < MaxViewports)
+	{
+		return true;
+	}
+
+	for (int32 Index = 0; Index < MaxViewports; ++Index)
+	{
+		const FEditorViewportClient* Client = GetViewportClient(Index);
+		const UGizmoComponent* Gizmo = Client ? Client->GetGizmo() : nullptr;
+		if (Gizmo && (Gizmo->IsHolding() || Gizmo->IsPressedOnHandle()))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void FEditorViewportLayout::SyncViewportRects()
@@ -851,16 +871,16 @@ void FEditorViewportLayout::DestroyViewportLayout()
 	{
 		// delete ViewportWidgets[i];
 		// ViewportWidgets[i] = nullptr;
-        FSceneViewport& VP = SceneViewports[i];
-        if (FEditorViewportClient* VC = VP.GetClient())
-        {
-            VC->SetViewport(nullptr);
-            VC->SetState(nullptr);
-        }
+		FSceneViewport& VP = SceneViewports[i];
+		if (FEditorViewportClient* VC = VP.GetClient())
+		{
+			VC->SetViewport(nullptr);
+			VC->SetState(nullptr);
+		}
 
-        VP.SetRenderTargetSet(nullptr);
-        Editor->GetRenderer().ReleaseViewportResource(i);
-        VP.SetClient(nullptr);
+		VP.SetRenderTargetSet(nullptr);
+		Editor->GetRenderer().ReleaseViewportResource(i);
+		VP.SetClient(nullptr);
 
 	}
 	delete TopSplitterH; TopSplitterH = nullptr;
@@ -878,5 +898,5 @@ int32 FEditorViewportLayout::FindViewportIndexAt(int32 MouseX, int32 MouseY) con
 			return i;
 		}
 	}
-    return -1;
+	return -1;
 }

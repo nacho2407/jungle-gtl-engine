@@ -58,13 +58,13 @@ class FEditorViewportClient : public FViewportClient, public IPIESessionShellCom
 	friend class FEditorViewportNavigationTool;
 
 public:
-    enum class ETransformMode
-    {
-        Select,
-        Translate,
-        Rotate,
-        Scale,
-    };
+	enum class ETransformMode
+	{
+		Select,
+		Translate,
+		Rotate,
+		Scale,
+	};
 
 	void Initialize(FWindowsWindow* InWindow, UEditorEngine* InEditor);
 	UWorld* GetFocusedWorld() const { return World; }
@@ -91,6 +91,7 @@ public:
 	FSelectionManager* GetSelectionManager() const { return SelectionManager; }
 
 	UGizmoComponent* GetGizmo() { return Gizmo; }
+	const UGizmoComponent* GetGizmo() const { return Gizmo; }
 
 	/** Override to also resize the camera. */
 	void SetViewportSize(float InWidth, float InHeight) override;

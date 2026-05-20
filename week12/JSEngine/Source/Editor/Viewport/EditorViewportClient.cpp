@@ -568,6 +568,10 @@ bool FEditorViewportClient::WantsAbsoluteMouseClip(const FViewportInputContext& 
 	{
 		return false;
 	}
+	if (TransformMode == ETransformMode::Translate)
+	{
+		return false;
+	}
 
 	const FViewportRect& ViewportRect = Viewport->GetRect();
 	if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
@@ -1011,7 +1015,8 @@ bool FEditorViewportClient::HandleGizmoInput(const FViewportInputContext& Contex
 		return false;
 	}
 
-	if (IsPointerInViewportInputDeadZone(Context)
+	const bool bGizmoDragArmed = Gizmo && (Gizmo->IsPressedOnHandle() || Gizmo->IsHolding());
+	if ((IsPointerInViewportInputDeadZone(Context) && !bGizmoDragArmed)
 		|| !Gizmo
 		|| !Gizmo->IsVisible()
 		|| TransformMode == ETransformMode::Select
@@ -1030,13 +1035,13 @@ bool FEditorViewportClient::HandleGizmoInput(const FViewportInputContext& Contex
 		return Camera.DeprojectScreenToWorld(LocalX, LocalY, ViewportWidth, ViewportHeight);
 	};
 
-	bool bGizmoDragArmed = Gizmo->IsPressedOnHandle() || Gizmo->IsHolding();
+	bool bMutableGizmoDragArmed = bGizmoDragArmed;
 	const bool bLeftPressOrDragStart =
 		Context.WasPressed(VK_LBUTTON) ||
 		Context.WasPointerDragStarted(EPointerButton::Left) ||
-		(Context.Frame.bLeftDragging && !bGizmoDragArmed && Gizmo->IsHovered());
+		(Context.Frame.bLeftDragging && !bMutableGizmoDragArmed && Gizmo->IsHovered());
 
-	if (bLeftPressOrDragStart && !bGizmoDragArmed)
+	if (bLeftPressOrDragStart && !bMutableGizmoDragArmed)
 	{
 		FHitResult HitResult{};
 		if (Gizmo->RaycastMesh(BuildMouseRay(), HitResult))
@@ -1046,11 +1051,11 @@ bool FEditorViewportClient::HandleGizmoInput(const FViewportInputContext& Contex
 				InputRouter.RouteMouseInput(EMouseInputType::E_LeftMouseClicked, LocalX, LocalY);
 			}
 			Gizmo->SetPressedOnHandle(true);
-			bGizmoDragArmed = true;
+			bMutableGizmoDragArmed = true;
 		}
 	}
 
-	if (Context.Frame.bLeftDragging && bGizmoDragArmed)
+	if (Context.Frame.bLeftDragging && bMutableGizmoDragArmed)
 	{
 		if (!bGizmoDragUndoCaptured && Editor && bSceneEditingShortcutsEnabled)
 		{
@@ -1079,7 +1084,7 @@ bool FEditorViewportClient::HandleGizmoInput(const FViewportInputContext& Contex
 		bGizmoDragUndoCaptured = false;
 	}
 
-	if (bGizmoDragArmed)
+	if (bMutableGizmoDragArmed)
 	{
 		return true;
 	}
