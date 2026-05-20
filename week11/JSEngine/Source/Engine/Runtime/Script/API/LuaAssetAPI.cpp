@@ -3,6 +3,8 @@
 #include "Animation/AnimSequence.h"
 #include "Asset/AssetQueryService.h"
 #include "Asset/CurveFloatAsset.h"
+#include "Asset/SkeletalMesh.h"
+#include "Asset/StaticMesh.h"
 #include "Core/ResourceManager.h"
 
 namespace
@@ -53,6 +55,11 @@ namespace FLuaEngineAPI
             return StringsToLuaTable(State, FAssetQueryService::GetStaticMeshPaths());
         };
 
+        Asset["GetSkeletalMeshPaths"] = [](sol::this_state State)
+        {
+            return StringsToLuaTable(State, FResourceManager::Get().GetSkeletalMeshPaths());
+        };
+
         Asset["GetMaterialPaths"] = [](sol::this_state State)
         {
             return StringsToLuaTable(State, FAssetQueryService::GetMaterialPaths());
@@ -66,6 +73,16 @@ namespace FLuaEngineAPI
         Asset["LoadCurve"] = [](const FString& Path) -> UCurveFloatAsset*
         {
             return FResourceManager::Get().LoadCurve(Path);
+        };
+
+        Asset["LoadStaticMesh"] = [](const FString& Path) -> UStaticMesh*
+        {
+            return FResourceManager::Get().LoadStaticMesh(Path);
+        };
+
+        Asset["LoadSkeletalMesh"] = [](const FString& Path) -> USkeletalMesh*
+        {
+            return FResourceManager::Get().LoadSkeletalMesh(Path);
         };
 
         Asset["LoadAnimSequence"] = [](const FString& SourceFbxPath, const FString& TargetSkeletalMeshPath, sol::optional<FString> AnimStackName) -> UAnimSequence*

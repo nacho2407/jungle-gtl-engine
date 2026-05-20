@@ -161,8 +161,6 @@ void ULevel::TickGame(float DeltaTime)
         if (Actor && Actor->IsActive())
         {
             Actor->Tick(DeltaTime);
-            if (Actor->GetActorLocation().Z < -5)
-                Actor->MarkPendingKill();
         }
     }
     bIteratingActors = false;

@@ -1,0 +1,87 @@
+{
+        "AssetType" : "AnimationStateMachine",
+        "EntryState" : "Idle",
+        "States" : [{
+            "Animation" : {
+              "AnimStack" : "CHARACTER|spike_idle",
+              "SourceFbx" : "Asset/SkeletalMesh/spike/spike.fbx"
+            },
+            "Id" : 1,
+            "Loop" : true,
+            "Name" : "Idle",
+            "PlayRate" : 1.000000,
+            "Position" : [226.000000, -132.000000]
+          }, {
+            "Animation" : {
+              "AnimStack" : "CHARACTER|spike_walk",
+              "SourceFbx" : "Asset/SkeletalMesh/spike/spike.fbx"
+            },
+            "Id" : 2,
+            "Loop" : true,
+            "Name" : "Walk",
+            "PlayRate" : 1.000000,
+            "Position" : [565.000000, 128.000000]
+          }, {
+            "Animation" : {
+              "AnimStack" : "CHARACTER|spike_attack",
+              "SourceFbx" : "Asset/SkeletalMesh/spike/spike.fbx"
+            },
+            "Id" : 3,
+            "Loop" : false,
+            "Name" : "Attack",
+            "PlayRate" : 1.000000,
+            "Position" : [162.000000, 288.000000]
+          }],
+        "Transitions" : [{
+            "BlendTime" : 0.120000,
+            "CanBeInterrupted" : true,
+            "CanInterrupt" : true,
+            "Condition" : {
+              "Type" : "Bool",
+              "Value" : true,
+              "Variable" : "IsMoving"
+            },
+            "From" : "Idle",
+            "Id" : 1,
+            "Priority" : 0,
+            "To" : "Walk"
+          }, {
+            "BlendTime" : 0.120000,
+            "CanBeInterrupted" : true,
+            "CanInterrupt" : true,
+            "Condition" : {
+              "Type" : "Bool",
+              "Value" : false,
+              "Variable" : "IsMoving"
+            },
+            "From" : "Walk",
+            "Id" : 2,
+            "Priority" : 0,
+            "To" : "Idle"
+          }, {
+            "BlendTime" : 0.050000,
+            "CanBeInterrupted" : false,
+            "CanInterrupt" : true,
+            "Condition" : {
+              "Type" : "Trigger",
+              "Variable" : "Attack"
+            },
+            "From" : "Any",
+            "Id" : 3,
+            "Priority" : 10,
+            "To" : "Attack"
+          }, {
+            "BlendTime" : 0.120000,
+            "CanBeInterrupted" : true,
+            "CanInterrupt" : true,
+            "Condition" : {
+              "Function" : "CanExitAttack",
+              "Type" : "LuaFunction"
+            },
+            "From" : "Attack",
+            "Id" : 4,
+            "Priority" : 1,
+            "To" : "Idle"
+          }],
+        "Version" : 1
+      }
