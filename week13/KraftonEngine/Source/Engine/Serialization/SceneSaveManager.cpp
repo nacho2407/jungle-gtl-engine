@@ -1,4 +1,4 @@
-﻿#include "SceneSaveManager.h"
+#include "SceneSaveManager.h"
 
 #include <iostream>
 #include <fstream>
@@ -10,8 +10,8 @@
 #include "Component/SceneComponent.h"
 #include "Component/ActorComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
-#include "Component/DecalComponent.h"
-#include "Component/HeightFogComponent.h"
+#include "Component/Primitive/DecalComponent.h"
+#include "Component/Primitive/HeightFogComponent.h"
 #include "Component/Light/LightComponentBase.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"

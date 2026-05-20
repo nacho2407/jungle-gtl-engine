@@ -106,14 +106,44 @@
     <Filter Include="Source\Engine\Collision">
       <UniqueIdentifier>{0a1ac0a6-fa86-45a3-c38e-91b60c7ce3cf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Collision\BVH">
+      <UniqueIdentifier>{81a4a864-1a3f-ad99-7891-a5ad99d45939}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Collision\Math">
+      <UniqueIdentifier>{02450c8d-bb83-0d70-c1b3-136f1470cca6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Collision\Octree">
+      <UniqueIdentifier>{233ac900-ac67-e8b2-8a5e-1aa1035f3cca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Collision\Ray">
+      <UniqueIdentifier>{7e47da66-3e86-e18d-8021-d9b6cd37750b}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Component">
       <UniqueIdentifier>{22bbd7c0-73bc-1bc4-992f-be08238b1609}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\Camera">
+      <UniqueIdentifier>{ac700b73-d302-a951-b230-7f47ae1a3f19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\Debug">
+      <UniqueIdentifier>{2872cca9-e20a-a7f4-7251-8819c7443392}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\Input">
+      <UniqueIdentifier>{358e161e-2bd5-5db1-9e14-9bfb5d4671f1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Component\Light">
       <UniqueIdentifier>{68733902-62c6-6992-604b-99f4fd185b46}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Component\Movement">
       <UniqueIdentifier>{9d062af4-b676-61f1-319e-efb1ba670c12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\Primitive">
+      <UniqueIdentifier>{57bc4de3-ad9b-789f-c9a3-f7282f3fe720}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\Script">
+      <UniqueIdentifier>{b17c02e8-fa1d-b877-30dd-94123cc6c2aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\Shape">
+      <UniqueIdentifier>{fb6d80ca-96e4-ce1e-ac4b-8daf51627459}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Core">
       <UniqueIdentifier>{aaeb2f3f-eff4-9d0e-a471-82c1372b9aed}</UniqueIdentifier>
@@ -130,8 +160,20 @@
     <Filter Include="Source\Engine\GameFramework">
       <UniqueIdentifier>{743ddc11-5d76-490b-ec9f-e2fb16e32a8c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\GameFramework\Actor">
+      <UniqueIdentifier>{9d2695d6-45a3-6e67-0263-ca8af7464349}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GameFramework\Camera">
+      <UniqueIdentifier>{72b41fe4-6926-0c2c-9073-b1547b3ba1b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GameFramework\GameMode">
+      <UniqueIdentifier>{5dad4861-14c8-9475-5500-063e7861367c}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\GameFramework\Light">
       <UniqueIdentifier>{b016779b-d84f-ba95-e8ed-4e352a91130a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GameFramework\Pawn">
+      <UniqueIdentifier>{4e601b62-823f-6151-6713-7ab59b1b65ed}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Gizmo">
       <UniqueIdentifier>{24f30b08-5c20-56df-6842-11e96f15d80c}</UniqueIdentifier>
@@ -755,70 +797,31 @@
     <ClCompile Include="Source\Engine\CameraShake\CameraShakeManager.cpp">
       <Filter>Source\Engine\CameraShake</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\CollisionMath.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\BVH\MeshTriangleBVH.cpp">
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\ConvexVolume.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.cpp">
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\MeshTriangleBVH.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\Math\CollisionMath.cpp">
+      <Filter>Source\Engine\Collision\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\Octree.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\Math\ConvexVolume.cpp">
+      <Filter>Source\Engine\Collision\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\RayUtils.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\Octree\Octree.cpp">
+      <Filter>Source\Engine\Collision\Octree</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\RayUtilsSIMD.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\Octree\SpatialPartition.cpp">
+      <Filter>Source\Engine\Collision\Octree</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\SpatialPartition.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClCompile Include="Source\Engine\Collision\Ray\RayUtils.cpp">
+      <Filter>Source\Engine\Collision\Ray</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp">
-      <Filter>Source\Engine\Collision</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\ActionComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
+    <ClCompile Include="Source\Engine\Collision\Ray\RayUtilsSIMD.cpp">
+      <Filter>Source\Engine\Collision\Ray</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\BoneDebugComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\BoxComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\CameraComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\CapsuleComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\CineCameraComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\CylindricalBillboardComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\DecalComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\InputComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\LuaScriptComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp">
@@ -833,29 +836,29 @@
     <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\SkeletalMeshComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
+    <ClCompile Include="Source\Engine\Component\Camera\CameraComponent.cpp">
+      <Filter>Source\Engine\Component\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\SkinnedMeshComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
+    <ClCompile Include="Source\Engine\Component\Camera\CineCameraComponent.cpp">
+      <Filter>Source\Engine\Component\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\SphereComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
+    <ClCompile Include="Source\Engine\Component\Camera\SpringArmComponent.cpp">
+      <Filter>Source\Engine\Component\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\SpringArmComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
+    <ClCompile Include="Source\Engine\Component\Debug\BoneDebugComponent.cpp">
+      <Filter>Source\Engine\Component\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
+    <ClCompile Include="Source\Engine\Component\Debug\GizmoComponent.cpp">
+      <Filter>Source\Engine\Component\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\SubUVComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
+    <ClCompile Include="Source\Engine\Component\Debug\TemporaryBoneAnimatorComponent.cpp">
+      <Filter>Source\Engine\Component\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\TemporaryBoneAnimatorComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
+    <ClCompile Include="Source\Engine\Component\Input\ActionComponent.cpp">
+      <Filter>Source\Engine\Component\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
+    <ClCompile Include="Source\Engine\Component\Input\InputComponent.cpp">
+      <Filter>Source\Engine\Component\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Light\AmbientLightComponent.cpp">
       <Filter>Source\Engine\Component\Light</Filter>
@@ -892,6 +895,45 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Primitive\BillboardComponent.cpp">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.cpp">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Primitive\DecalComponent.cpp">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Primitive\HeightFogComponent.cpp">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Primitive\SkeletalMeshComponent.cpp">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Primitive\SkinnedMeshComponent.cpp">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Primitive\StaticMeshComponent.cpp">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Primitive\SubUVComponent.cpp">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Primitive\TextRenderComponent.cpp">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Script\LuaScriptComponent.cpp">
+      <Filter>Source\Engine\Component\Script</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Shape\BoxComponent.cpp">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Shape\CapsuleComponent.cpp">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Shape\SphereComponent.cpp">
+      <Filter>Source\Engine\Component\Shape</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp">
       <Filter>Source\Engine\Core</Filter>
@@ -962,77 +1004,68 @@
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\BoxActor.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\CameraModifier.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\CameraShakeBase.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\CameraShakeCameraModifier.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\CapsuleActor.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\Character.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\GameModeBase.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\GameStateBase.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\GameplayStatics.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\HeightFogActor.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\LuaCharacter.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\Pawn.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\PawnStaticMesh.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\PlayerCameraManager.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\SequenceCameraShake.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\SkeletalMeshActor.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\SphereActor.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\TriggerVolumeBase.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\WaveOscillatorCameraShake.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\World.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\BoxActor.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\CapsuleActor.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\DecalActor.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\HeightFogActor.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\SphereActor.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\StaticMeshActor.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraModifier.cpp">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraShakeBase.cpp">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraShakeCameraModifier.cpp">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.cpp">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Camera\SequenceCameraShake.cpp">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.cpp">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\GameModeBase.cpp">
+      <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\GameStateBase.cpp">
+      <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\GameplayStatics.cpp">
+      <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\PlayerController.cpp">
+      <Filter>Source\Engine\GameFramework\GameMode</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Light\AmbientLightActor.cpp">
       <Filter>Source\Engine\GameFramework\Light</Filter>
@@ -1045,6 +1078,15 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Light\SpotLightActor.cpp">
       <Filter>Source\Engine\GameFramework\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Pawn\Character.cpp">
+      <Filter>Source\Engine\GameFramework\Pawn</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Pawn\LuaCharacter.cpp">
+      <Filter>Source\Engine\GameFramework\Pawn</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Pawn\Pawn.cpp">
+      <Filter>Source\Engine\GameFramework\Pawn</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.cpp">
       <Filter>Source\Engine\Gizmo</Filter>
@@ -1775,73 +1817,34 @@
     <ClInclude Include="Source\Engine\CameraShake\CameraShakeManager.h">
       <Filter>Source\Engine\CameraShake</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\CollisionMath.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\BVH\MeshTriangleBVH.h">
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\ConvexVolume.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.h">
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\MeshTriangleBVH.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\Math\CollisionMath.h">
+      <Filter>Source\Engine\Collision\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\OBB.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\Math\ConvexVolume.h">
+      <Filter>Source\Engine\Collision\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\Octree.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\Math\OBB.h">
+      <Filter>Source\Engine\Collision\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\RayUtils.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\Octree\Octree.h">
+      <Filter>Source\Engine\Collision\Octree</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\RayUtilsSIMD.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\Octree\SpatialPartition.h">
+      <Filter>Source\Engine\Collision\Octree</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\SpatialPartition.h">
-      <Filter>Source\Engine\Collision</Filter>
+    <ClInclude Include="Source\Engine\Collision\Ray\RayUtils.h">
+      <Filter>Source\Engine\Collision\Ray</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h">
-      <Filter>Source\Engine\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\ActionComponent.h">
-      <Filter>Source\Engine\Component</Filter>
+    <ClInclude Include="Source\Engine\Collision\Ray\RayUtilsSIMD.h">
+      <Filter>Source\Engine\Collision\Ray</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\BillboardComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\BoneDebugComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\BoxComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\CameraComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\CapsuleComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\CineCameraComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\CylindricalBillboardComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\DecalComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\GizmoComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\HeightFogComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\InputComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\LuaScriptComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\MeshComponent.h">
@@ -1856,29 +1859,29 @@
     <ClInclude Include="Source\Engine\Component\ShapeComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\SkeletalMeshComponent.h">
-      <Filter>Source\Engine\Component</Filter>
+    <ClInclude Include="Source\Engine\Component\Camera\CameraComponent.h">
+      <Filter>Source\Engine\Component\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\SkinnedMeshComponent.h">
-      <Filter>Source\Engine\Component</Filter>
+    <ClInclude Include="Source\Engine\Component\Camera\CineCameraComponent.h">
+      <Filter>Source\Engine\Component\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\SphereComponent.h">
-      <Filter>Source\Engine\Component</Filter>
+    <ClInclude Include="Source\Engine\Component\Camera\SpringArmComponent.h">
+      <Filter>Source\Engine\Component\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\SpringArmComponent.h">
-      <Filter>Source\Engine\Component</Filter>
+    <ClInclude Include="Source\Engine\Component\Debug\BoneDebugComponent.h">
+      <Filter>Source\Engine\Component\Debug</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h">
-      <Filter>Source\Engine\Component</Filter>
+    <ClInclude Include="Source\Engine\Component\Debug\GizmoComponent.h">
+      <Filter>Source\Engine\Component\Debug</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\SubUVComponent.h">
-      <Filter>Source\Engine\Component</Filter>
+    <ClInclude Include="Source\Engine\Component\Debug\TemporaryBoneAnimatorComponent.h">
+      <Filter>Source\Engine\Component\Debug</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\TemporaryBoneAnimatorComponent.h">
-      <Filter>Source\Engine\Component</Filter>
+    <ClInclude Include="Source\Engine\Component\Input\ActionComponent.h">
+      <Filter>Source\Engine\Component\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\TextRenderComponent.h">
-      <Filter>Source\Engine\Component</Filter>
+    <ClInclude Include="Source\Engine\Component\Input\InputComponent.h">
+      <Filter>Source\Engine\Component\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Light\AmbientLightComponent.h">
       <Filter>Source\Engine\Component\Light</Filter>
@@ -1915,6 +1918,45 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Primitive\BillboardComponent.h">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.h">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Primitive\DecalComponent.h">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Primitive\HeightFogComponent.h">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Primitive\SkeletalMeshComponent.h">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Primitive\SkinnedMeshComponent.h">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Primitive\StaticMeshComponent.h">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Primitive\SubUVComponent.h">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Primitive\TextRenderComponent.h">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Script\LuaScriptComponent.h">
+      <Filter>Source\Engine\Component\Script</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Shape\BoxComponent.h">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Shape\CapsuleComponent.h">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Shape\SphereComponent.h">
+      <Filter>Source\Engine\Component\Shape</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\ClassTypes.h">
       <Filter>Source\Engine\Core</Filter>
@@ -2009,76 +2051,7 @@
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\BoxActor.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\CameraModifier.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\CameraShakeBase.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\CameraShakeCameraModifier.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\CameraTypes.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\CapsuleActor.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\Character.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\DecalActor.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\GameModeBase.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\GameStateBase.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\GameplayStatics.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\HeightFogActor.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Level.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\LuaCharacter.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\Pawn.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\PawnStaticMesh.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\PlayerCameraManager.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\PlayerController.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\SequenceCameraShake.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\SkeletalMeshActor.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\SphereActor.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\StaticMeshActor.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\TriggerVolumeBase.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\WaveOscillatorCameraShake.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\World.h">
@@ -2089,6 +2062,66 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\WorldSettings.h">
       <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\BoxActor.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\CapsuleActor.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\DecalActor.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\HeightFogActor.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\SphereActor.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\StaticMeshActor.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraModifier.h">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraShakeBase.h">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraShakeCameraModifier.h">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraTypes.h">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.h">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Camera\SequenceCameraShake.h">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.h">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\GameModeBase.h">
+      <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\GameStateBase.h">
+      <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\GameplayStatics.h">
+      <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\PlayerController.h">
+      <Filter>Source\Engine\GameFramework\GameMode</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Light\AmbientLightActor.h">
       <Filter>Source\Engine\GameFramework\Light</Filter>
@@ -2101,6 +2134,15 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Light\SpotLightActor.h">
       <Filter>Source\Engine\GameFramework\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Pawn\Character.h">
+      <Filter>Source\Engine\GameFramework\Pawn</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Pawn\LuaCharacter.h">
+      <Filter>Source\Engine\GameFramework\Pawn</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Pawn\Pawn.h">
+      <Filter>Source\Engine\GameFramework\Pawn</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.h">
       <Filter>Source\Engine\Gizmo</Filter>

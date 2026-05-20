@@ -1,7 +1,7 @@
 #include "AnimationTransportBar.h"
 
 #include "Animation/Instance/AnimSingleNodeInstance.h"
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Editor/UI/EditorTextureManager.h"
 #include "Platform/Paths.h"
 

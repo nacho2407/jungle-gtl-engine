@@ -1,6 +1,6 @@
-﻿#include "BoneTransformGizmoTarget.h"
+#include "BoneTransformGizmoTarget.h"
 
-#include "Component/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 
 FBoneTransformGizmoTarget::FBoneTransformGizmoTarget()
 	: MeshComponent(nullptr), BoneIndex(-1)

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Viewport/EditorPreviewViewportClient.h"
 #include "Viewport/ViewportClient.h"
@@ -7,7 +7,7 @@
 #include "Editor/Slate/SWindow.h"
 #include "Core/RayTypes.h"
 #include "Gizmo/BoneTransformGizmoTarget.h"
-#include "Component/BoneDebugComponent.h"
+#include "Component/Debug/BoneDebugComponent.h"
 
 #include <d3d11.h>
 
