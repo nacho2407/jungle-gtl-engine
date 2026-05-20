@@ -94,6 +94,14 @@ bool FAssetPathPolicy::IsCurveAssetPath(const FString& Path)
 	return EndsWith(FileName, ".curve");
 }
 
+bool FAssetPathPolicy::IsAnimSequenceAssetPath(const FString& Path)
+{
+	std::filesystem::path FsPath(FPaths::ToWide(FPaths::Normalize(Path)));
+	std::wstring Extension = FsPath.extension().wstring();
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
+	return Extension == L".animsequence";
+}
+
 bool FAssetPathPolicy::IsSequenceAssetPath(const FString& Path)
 {
 	std::filesystem::path FsPath(FPaths::ToWide(FPaths::Normalize(Path)));

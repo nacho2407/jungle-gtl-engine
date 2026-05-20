@@ -9,6 +9,7 @@
 #include "Core/SkeletalMeshLoadService.h"
 #include "Core/StaticMeshLoadService.h"
 
+#include "Asset/AnimSequenceAssetLoader.h"
 #include <algorithm>
 #include <filesystem>
 #include <chrono>
@@ -276,6 +277,7 @@ void FResourceManager::ClearDiscoveredResourceLists(bool bClearAtlasCache)
 	CurveFilePaths.clear();
 	SkeletalMeshFilePaths.clear();
 	AnimSequenceFilePaths.clear();
+	AnimSequenceAssetFilePaths.clear();
 	AnimStackNamesMap.clear();
 	StaticMeshCache.ClearRegistry();
 
@@ -300,6 +302,10 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 	if (FAssetPathPolicy::IsCurveAssetPath(FPaths::ToUtf8(FilePath.generic_wstring())))
 	{
 		CurveFilePaths.push_back(RelativePath);
+	}
+	else if (FAssetPathPolicy::IsAnimSequenceAssetPath(RelativePath))
+	{
+		AnimSequenceAssetFilePaths.push_back(RelativePath);
 	}
 	else if (Extension == L".obj" || Extension == L".fbx")
 	{
@@ -1189,6 +1195,62 @@ UAnimSequence* FResourceManager::LoadAnimSequenceByKey(const FString& Key)
 	return LoadAnimSequence(SourceFbxPath, TargetSkeletalMeshPath, AnimStackName);
 }
 
+UAnimSequence* FResourceManager::LoadAnimSequenceAsset(const FString& AssetPath)
+{
+	const FString NormalizedPath = FPaths::Normalize(AssetPath);
+	FAnimSequenceAssetDescriptor Descriptor;
+	FAnimSequenceAssetLoader Loader;
+	if (!Loader.Load(NormalizedPath, Descriptor))
+	{
+		return nullptr;
+	}
+
+	UAnimSequence* AnimSequence = LoadAnimSequence(
+		Descriptor.SourceFbxPath,
+		Descriptor.TargetSkeletalMeshPath,
+		Descriptor.AnimStackName);
+
+	if (!AnimSequence)
+	{
+		return nullptr;
+	}
+
+	AnimSequence->AssetPath = NormalizedPath;
+	if (std::find(AnimSequenceAssetFilePaths.begin(), AnimSequenceAssetFilePaths.end(), NormalizedPath) == AnimSequenceAssetFilePaths.end())
+	{
+		AnimSequenceAssetFilePaths.push_back(NormalizedPath);
+	}
+
+	return AnimSequence;
+}
+
+bool FResourceManager::SaveAnimSequenceAsset(
+	const FString& AssetPath,
+	const FString& SourceFbxPath,
+	const FString& TargetSkeletalMeshPath,
+	const FString& AnimStackName)
+{
+	const FString NormalizedPath = FPaths::Normalize(AssetPath);
+	FAnimSequenceAssetDescriptor Descriptor;
+	Descriptor.AssetPath = NormalizedPath;
+	Descriptor.SourceFbxPath = FPaths::Normalize(SourceFbxPath);
+	Descriptor.TargetSkeletalMeshPath = FPaths::Normalize(TargetSkeletalMeshPath);
+	Descriptor.AnimStackName = AnimStackName;
+
+	FAnimSequenceAssetLoader Loader;
+	if (!Loader.Save(NormalizedPath, Descriptor))
+	{
+		return false;
+	}
+
+	if (std::find(AnimSequenceAssetFilePaths.begin(), AnimSequenceAssetFilePaths.end(), NormalizedPath) == AnimSequenceAssetFilePaths.end())
+	{
+		AnimSequenceAssetFilePaths.push_back(NormalizedPath);
+	}
+
+	return true;
+}
+
 UAnimSequence* FResourceManager::FindAnimSequence(const FString& Key) const
 {
 	auto It = AnimSequenceMap.find(Key);
@@ -1198,6 +1260,11 @@ UAnimSequence* FResourceManager::FindAnimSequence(const FString& Key) const
 TArray<FString> FResourceManager::GetAnimSequencePaths() const
 {
 	return AnimSequenceFilePaths;
+}
+
+TArray<FString> FResourceManager::GetAnimSequenceAssetPaths() const
+{
+	return AnimSequenceAssetFilePaths;
 }
 
 bool FResourceManager::IsAnimSequenceBinaryValid(

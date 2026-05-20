@@ -125,8 +125,15 @@ public:
 	TArray<FString> ListAnimStacks(const FString& SourceFbxPath);
 	UAnimSequence* LoadAnimSequence(const FString& SourceFbxPath,const FString& TargetSkeletalMeshPath,const FString& AnimStackName);
 	UAnimSequence* LoadAnimSequenceByKey(const FString& Key);
+	UAnimSequence* LoadAnimSequenceAsset(const FString& AssetPath);
+	bool SaveAnimSequenceAsset(
+		const FString& AssetPath,
+		const FString& SourceFbxPath,
+		const FString& TargetSkeletalMeshPath,
+		const FString& AnimStackName);
 	UAnimSequence* FindAnimSequence(const FString& Key) const;
 	TArray<FString> GetAnimSequencePaths() const;
+	TArray<FString> GetAnimSequenceAssetPaths() const;
 	
 	bool IsAnimSequenceBinaryValid(
 		const FString& SourcePath,
@@ -195,6 +202,7 @@ private:
 	TMap<FString, TArray<FString>> AnimStackNamesMap;
 	TMap<FString, UAnimSequence*> AnimSequenceMap;
 	TArray<FString> AnimSequenceFilePaths;
+	TArray<FString> AnimSequenceAssetFilePaths;
 	/* Paths */
 	TArray<FString> ObjFilePaths;
 	TArray<FString> MaterialFilePaths;
