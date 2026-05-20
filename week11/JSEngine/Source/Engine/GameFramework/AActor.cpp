@@ -717,7 +717,6 @@ void AActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Othe
 
 void AActor::HandleAnimNotify(USkeletalMeshComponent* SourceComponent, const FAnimNotifyDispatchEvent& NotifyEvent)
 {
-    UE_LOG("[Notify Anim Event] : HandleAnimNotify");
 
 	switch (NotifyEvent.Notify.ActionType)
     {

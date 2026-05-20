@@ -131,7 +131,8 @@ public:
 		const FString& AssetPath,
 		const FString& SourceFbxPath,
 		const FString& TargetSkeletalMeshPath,
-		const FString& AnimStackName);
+		const FString& AnimStackName,
+		const TArray<FAnimNotifyEvent>* AuthoredNotifies = nullptr);
 	UAnimSequence* FindAnimSequence(const FString& Key) const;
 	TArray<FString> GetAnimSequencePaths() const;
 	TArray<FString> GetAnimSequenceAssetPaths() const;
