@@ -73,9 +73,19 @@ static FString GetMeshPackageFilePath(const FString& SourcePath, EAssetPackageTy
 	}
 
 	// 경로는 동일하지만, 확장자를 나눠서 Mesh 타입을 알 수 있게 한다.
+	// SourcePath 가 이미 Content/ 하위면 (cleanup 이후 모든 source) 그대로 사용 — 그렇지
+	// 않으면 (구 Data/ root 호환) Content/ prefix 박음. prefix 이중 적용 방지.
 	std::filesystem::path ProjectRelative = std::filesystem::path(FPaths::ToWide(FPaths::MakeProjectRelative(SourcePath))).lexically_normal();
 
-	std::filesystem::path AssetPath = std::filesystem::path(L"Content") / ProjectRelative;
+	std::filesystem::path AssetPath;
+	if (!ProjectRelative.empty() && ProjectRelative.begin()->wstring() == L"Content")
+	{
+		AssetPath = ProjectRelative;
+	}
+	else
+	{
+		AssetPath = std::filesystem::path(L"Content") / ProjectRelative;
+	}
 
 	if (Type == EAssetPackageType::StaticMesh)
 	{
