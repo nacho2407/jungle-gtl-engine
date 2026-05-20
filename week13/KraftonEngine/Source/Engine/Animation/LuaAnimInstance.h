@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Animation/AnimInstance.h"
 
@@ -43,6 +43,7 @@ public:
 	void NativeInitializeAnimation() override;
 	void NativeUpdateAnimation(float DeltaSeconds) override;
 	void HandleAnimNotify(const FAnimNotifyEvent& Notify) override;
+	void PostEvaluatePose(FPoseContext& Output) override;
 
 	void PostEditProperty(const char* PropertyName) override;
 	void Serialize(FArchive& Ar) override;
@@ -55,9 +56,16 @@ private:
 	void InstallBindings();
 	void DispatchLuaInit();
 
+	void EnsureLuaMorphWeightStorage();
+	void ApplyLuaMorphOverrides(FPoseContext& Output) const;
+
 	sol::environment              Env;
 	sol::protected_function       LuaInit;
 	sol::protected_function       LuaUpdate;
 	sol::protected_function       LuaOnNotify;
 	sol::table                    LuaSelf;        // self table — lua 가 변수 저장 (self.Speed 등)
+
+	TArray<float>                 LuaMorphWeights;
+	TArray<uint8>                 LuaMorphOverrideMask;
+	bool                          bLuaMorphOverrideEnabled = false;
 };

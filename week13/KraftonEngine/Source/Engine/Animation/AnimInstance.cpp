@@ -89,6 +89,7 @@ void UAnimInstance::EvaluatePose(FPoseContext& Output)
 		// RootNode 경로 — 트리 안의 FAnimNode_Slot 이 montage 처리. EvaluatePose 가
 		// special-case 합성을 또 하면 이중 적용 위험. Slot 노드에 위임.
 		RootNode->Evaluate(Output);
+		PostEvaluatePose(Output);
 		return;
 	}
 
@@ -123,6 +124,8 @@ void UAnimInstance::EvaluatePose(FPoseContext& Output)
 			}
 		}
 	}
+
+	PostEvaluatePose(Output);
 }
 
 void UAnimInstance::SetRootNode(FAnimNode_Base* InRoot)

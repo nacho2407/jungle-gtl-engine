@@ -66,6 +66,7 @@ public:
 	virtual void NativeInitializeAnimation() {}
 	virtual void NativeUpdateAnimation(float DeltaSeconds) { (void)DeltaSeconds; }
 	virtual void EvaluateAnimation(FPoseContext& Output) { (void)Output; }
+	virtual void PostEvaluatePose(FPoseContext& Output) { (void)Output; }
 
 	// ── 외부 진입점 ──
 	// 매 프레임 호출. NativeUpdate → DispatchQueuedAnimEvents → (호출자가) EvaluatePose.
