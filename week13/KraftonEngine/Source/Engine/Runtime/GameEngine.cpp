@@ -11,7 +11,7 @@
 #include "Serialization/SceneSaveManager.h"
 #include "GameFramework/World.h"
 #include "GameFramework/GameMode/GameModeBase.h"
-#include "Object/UClass.h"
+#include "Object/Reflection/UClass.h"
 #include "Core/ProjectSettings.h"
 #include "Core/Log.h"
 

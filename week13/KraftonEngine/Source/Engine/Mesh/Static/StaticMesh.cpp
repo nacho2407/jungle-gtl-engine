@@ -1,5 +1,5 @@
 #include "Mesh/Static/StaticMesh.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Mesh/MeshManager.h"
 #include "Serialization/WindowsArchive.h"
 #include "Mesh/Importer/ObjImporter.h"

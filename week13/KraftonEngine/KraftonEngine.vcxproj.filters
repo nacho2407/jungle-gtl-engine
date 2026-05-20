@@ -235,6 +235,12 @@
     <Filter Include="Source\Engine\Object">
       <UniqueIdentifier>{f6219ff0-0046-2f35-71f3-ad6383da3d2c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Object\Ptr">
+      <UniqueIdentifier>{5c68447c-a70d-8104-b81c-990790021942}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Object\Reflection">
+      <UniqueIdentifier>{469de7df-5ecb-d3cb-8cf2-aff37b3c7c25}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Physics">
       <UniqueIdentifier>{c1985821-1144-9a46-639a-f7de31f4a1fa}</UniqueIdentifier>
     </Filter>
@@ -2294,32 +2300,32 @@
     <ClInclude Include="Source\Engine\Object\Object.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Object\ObjectFactory.h">
-      <Filter>Source\Engine\Object</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h">
-      <Filter>Source\Engine\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Object\ObjectMacros.h">
-      <Filter>Source\Engine\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Object\ObjectPtr.h">
-      <Filter>Source\Engine\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Object\SoftObjectPtr.h">
-      <Filter>Source\Engine\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Object\SubclassOf.h">
-      <Filter>Source\Engine\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Object\UClass.h">
-      <Filter>Source\Engine\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Object\UStruct.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\UUIDGenerator.h">
       <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\Ptr\ObjectPtr.h">
+      <Filter>Source\Engine\Object\Ptr</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\Ptr\SoftObjectPtr.h">
+      <Filter>Source\Engine\Object\Ptr</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\Ptr\SubclassOf.h">
+      <Filter>Source\Engine\Object\Ptr</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\Reflection\ObjectFactory.h">
+      <Filter>Source\Engine\Object\Reflection</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\Reflection\ObjectMacros.h">
+      <Filter>Source\Engine\Object\Reflection</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\Reflection\UClass.h">
+      <Filter>Source\Engine\Object\Reflection</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\Reflection\UStruct.h">
+      <Filter>Source\Engine\Object\Reflection</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\IPhysicsScene.h">
       <Filter>Source\Engine\Physics</Filter>

@@ -1,6 +1,6 @@
 #include "ClassProperty.h"
 
-#include "Object/UClass.h"
+#include "Object/Reflection/UClass.h"
 #include "Serialization/Archive.h"
 #include "SimpleJSON/json.hpp"
 

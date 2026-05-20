@@ -19,7 +19,7 @@
 #include "Editor/UI/Util/EditorFileUtils.h"
 #include "Editor/UI/Util/EditorTextureManager.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Mesh/MeshManager.h"
 #include "Core/ProjectSettings.h"
 #include "Input/InputSystem.h"

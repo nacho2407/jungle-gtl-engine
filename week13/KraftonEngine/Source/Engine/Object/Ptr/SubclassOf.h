@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "UClass.h"
+#include "Object/Reflection/UClass.h"
 
 #include <cstddef>
 

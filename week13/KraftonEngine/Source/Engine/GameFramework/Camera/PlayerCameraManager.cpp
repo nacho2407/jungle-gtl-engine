@@ -8,8 +8,8 @@
 #include "GameFramework/Camera/SequenceCameraShake.h"
 #include "GameFramework/Camera/WaveOscillatorCameraShake.h"
 #include "Math/Quat.h"
-#include "Object/ObjectFactory.h"
-#include "Object/UClass.h"
+#include "Object/Reflection/ObjectFactory.h"
+#include "Object/Reflection/UClass.h"
 #include <algorithm>
 
 void APlayerCameraManager::RegisterCamera(UCameraComponent* Camera)

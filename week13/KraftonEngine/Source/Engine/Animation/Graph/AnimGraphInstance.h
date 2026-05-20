@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Animation/AnimInstance.h"
-#include "Object/SoftObjectPtr.h"
+#include "Object/Ptr/SoftObjectPtr.h"
 
 class UAnimGraphAsset;
 

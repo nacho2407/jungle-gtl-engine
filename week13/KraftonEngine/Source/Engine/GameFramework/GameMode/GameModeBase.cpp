@@ -3,7 +3,7 @@
 #include "GameFramework/GameMode/PlayerController.h"
 #include "GameFramework/Pawn/Pawn.h"
 #include "GameFramework/World.h"
-#include "Object/UClass.h"
+#include "Object/Reflection/UClass.h"
 #include "Core/Log.h"
 #include "Core/ProjectSettings.h"
 

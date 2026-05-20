@@ -2,7 +2,7 @@
 #include "Core/ProjectSettings.h"
 #include "Serialization/SceneSaveManager.h"
 #include "GameFramework/GameMode/GameModeBase.h"
-#include "Object/UClass.h"
+#include "Object/Reflection/UClass.h"
 #include "ImGui/imgui.h"
 
 void EditorProjectSettingsWidget::Render()

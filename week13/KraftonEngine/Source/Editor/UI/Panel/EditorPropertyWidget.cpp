@@ -28,7 +28,7 @@
 #include "Resource/ResourceManager.h"
 #include "Object/FName.h"
 #include "Object/ObjectIterator.h"
-#include "Object/SoftObjectPtr.h"
+#include "Object/Ptr/SoftObjectPtr.h"
 #include "Materials/Material.h"
 #include "Mesh/Importer/MeshImportOptions.h"
 #include "Mesh/MeshManager.h"

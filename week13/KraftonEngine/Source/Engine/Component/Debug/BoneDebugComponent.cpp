@@ -1,6 +1,6 @@
 #include "BoneDebugComponent.h"
 
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Render/Proxy/BoneDebugSceneProxy.h"
 

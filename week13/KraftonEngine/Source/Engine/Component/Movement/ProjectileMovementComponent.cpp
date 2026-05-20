@@ -3,7 +3,7 @@
 #include "Component/SceneComponent.h"
 #include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Render/Scene/FScene.h"
 #include "Serialization/Archive.h"
 

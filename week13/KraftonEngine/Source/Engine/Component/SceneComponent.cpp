@@ -1,5 +1,5 @@
 #include "SceneComponent.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include <GameFramework/World.h>
 #include "Serialization/Archive.h"
 

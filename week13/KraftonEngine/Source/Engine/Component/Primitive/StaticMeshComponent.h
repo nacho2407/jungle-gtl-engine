@@ -4,8 +4,8 @@
 #include "Core/Types/PropertyTypes.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/Static/StaticMesh.h"
-#include "Object/ObjectPtr.h"
-#include "Object/SoftObjectPtr.h"
+#include "Object/Ptr/ObjectPtr.h"
+#include "Object/Ptr/SoftObjectPtr.h"
 
 class UMaterial;
 class FPrimitiveSceneProxy;

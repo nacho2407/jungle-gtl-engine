@@ -4,7 +4,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Resource/ResourceManager.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"

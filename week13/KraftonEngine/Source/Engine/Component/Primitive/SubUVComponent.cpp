@@ -1,5 +1,5 @@
 #include "SubUVComponent.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 
 #include <cstring>
 #include "Render/Resource/MeshBufferManager.h"

@@ -3,7 +3,7 @@
 #include "Render/Types/FrameContext.h"
 #include "Render/Shader/ShaderManager.h"
 #include "Materials/Material.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 
 // ============================================================
 // FTextRenderSceneProxy

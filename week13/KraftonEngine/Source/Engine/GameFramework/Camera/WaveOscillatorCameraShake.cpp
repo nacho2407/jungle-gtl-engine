@@ -1,6 +1,6 @@
 #include "GameFramework/Camera/WaveOscillatorCameraShake.h"
 #include "CameraShake/CameraShakeAsset.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include <cmath>
 #include <cstdlib>
 

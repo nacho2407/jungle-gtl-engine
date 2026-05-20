@@ -1,7 +1,7 @@
 #include "Core/Types/PropertyTypes.h"
 
 #include "SimpleJSON/json.hpp"
-#include "Object/UStruct.h"
+#include "Object/Reflection/UStruct.h"
 
 bool FJsonObjectReferenceContext::SerializeObjectReference(const UObject* Object, json::JSON& OutValue) const
 {

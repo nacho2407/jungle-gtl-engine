@@ -1,5 +1,5 @@
 #include "PrimitiveComponent.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Core/Types/RayTypes.h"
 #include "Collision/Ray/RayUtils.h"
@@ -10,7 +10,7 @@
 #include "Render/Scene/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "GameFramework/World.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 
 #include <cmath>
 #include <cstring>

@@ -1,6 +1,6 @@
 #include "FloatCurveAsset.h"
 #include "Platform/Paths.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 
 #include "Serialization/Archive.h"
 

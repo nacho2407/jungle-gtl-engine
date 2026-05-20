@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Core/Types/CoreTypes.h"
-#include "Object/ObjectPtr.h"
-#include "Object/ObjectMacros.h"
-#include "Object/SoftObjectPtr.h"
-#include "Object/UStruct.h"
+#include "Object/Ptr/ObjectPtr.h"
+#include "Object/Reflection/ObjectMacros.h"
+#include "Object/Ptr/SoftObjectPtr.h"
+#include "Object/Reflection/UStruct.h"
 
 #include "Source/Engine/Animation/AnimationMode.generated.h"
 

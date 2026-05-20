@@ -2,7 +2,7 @@
 
 #include "Component/Primitive/SkinnedMeshComponent.h"
 #include "Animation/AnimationMode.h"
-#include "Object/SubclassOf.h"
+#include "Object/Ptr/SubclassOf.h"
 
 #include "Source/Engine/Component/Primitive/SkeletalMeshComponent.generated.h"
 

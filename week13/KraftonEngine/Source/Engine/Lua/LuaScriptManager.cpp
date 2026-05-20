@@ -24,7 +24,7 @@
 #include "GameFramework/Camera/SequenceCameraShake.h"
 #include "GameFramework/GameMode/GameplayStatics.h"
 #include "GameFramework/World.h"
-#include "Object/UClass.h"
+#include "Object/Reflection/UClass.h"
 #include "Platform/Paths.h"
 #include "Math/Vector.h"
 #include "Platform/WindowsWindow.h"

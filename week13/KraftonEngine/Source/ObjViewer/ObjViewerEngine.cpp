@@ -3,7 +3,7 @@
 #include "ObjViewer/ObjViewerRenderPipeline.h"
 #include "Engine/Platform/WindowsWindow.h"
 #include "GameFramework/World.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Mesh/MeshManager.h"
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "GameFramework/AActor.h"

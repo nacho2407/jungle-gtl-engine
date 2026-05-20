@@ -5,7 +5,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/Level.h"
 #include "Lua/LuaScriptManager.h"
-#include "Object/ObjectFactory.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 
 ULuaScriptComponent::ULuaScriptComponent()

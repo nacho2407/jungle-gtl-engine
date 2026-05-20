@@ -2,7 +2,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Core/Types/ResourceTypes.h"
 #include "Collision/Math/ConvexVolume.h"
-#include "Object/SoftObjectPtr.h"
+#include "Object/Ptr/SoftObjectPtr.h"
 
 class UStaticMeshComponent;
 

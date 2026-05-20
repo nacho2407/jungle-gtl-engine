@@ -22,7 +22,7 @@
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Core/Types/PropertyTypes.h"
 #include "GameFramework/AActor.h"
-#include "Object/UClass.h"
+#include "Object/Reflection/UClass.h"
 
 #include <cstring>
 #include <string>
