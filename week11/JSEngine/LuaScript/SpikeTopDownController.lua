@@ -157,9 +157,16 @@ Script.Properties = {
         Max = 100.0,
         Category = "Footstep"
     },
+   FootstepDefaultOffset = {
+        Type = "Float",
+        Default = 0.5,
+        Min = 0.0,
+        Max = 100.0,
+        Category = "Footstep"
+    },
     FootstepLocationOffset = {
         Type = "Vector",
-        Default = { X = 0.0, Y = 0.0, Z = 0.0 },
+        Default = { X = 0.0, Y = 0.0, Z = -1.5 },
         Category = "Footstep"
     },
     FootstepRotationOffset = {
@@ -266,16 +273,8 @@ local function yawToDirection(yawDegrees)
     return Vector(math.cos(radians), math.sin(radians), 0.0)
 end
 
-local function getFlatActorRightVector(actor)
-    if actor ~= nil and actor.GetActorRightVector ~= nil then
-        local right = actor:GetActorRightVector()
-        right.Z = 0.0
-        if right:Normalize() then
-            return right
-        end
-    end
-
-    return Vector(0.0, 1.0, 0.0)
+local function yawToRightDirection(yawDegrees)
+    return yawToDirection(yawDegrees + 90.0)
 end
 
 local function readAxis(positiveKey, negativeKey)
@@ -503,7 +502,7 @@ function Script:SpawnFootstepDecal(payload, sourceComponent, sideOffset)
 
     sideOffset = sideOffset or 0.0
     if sideOffset ~= 0.0 then
-        footstepLocation = footstepLocation + getFlatActorRightVector(self.owner) * sideOffset
+        footstepLocation = footstepLocation + yawToRightDirection(self.facingYaw) * sideOffset
     end
 
     actor.Location = footstepLocation
@@ -523,9 +522,9 @@ function Script:OnAnimNotify(notifyName, phase, sourceStateName, triggerWeight, 
     local footstepSideOffset = nil
 
     if matchesName(eventId, self.LeftFootstepNotifyName) or matchesName(notifyName, self.LeftFootstepNotifyName) then
-        footstepSideOffset = -self.FootstepSideOffset
+        footstepSideOffset = -self.FootstepSideOffset - self.FootstepDefaultOffset*2
     elseif matchesName(eventId, self.RightFootstepNotifyName) or matchesName(notifyName, self.RightFootstepNotifyName) then
-        footstepSideOffset = self.FootstepSideOffset
+        footstepSideOffset = self.FootstepSideOffset - self.FootstepDefaultOffset*2
     end
 
     if footstepSideOffset ~= nil and (phase == "Instant" or phase == "Begin") then
