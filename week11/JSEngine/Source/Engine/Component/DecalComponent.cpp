@@ -94,7 +94,6 @@ void UDecalComponent::BeginPlay()
 void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
-	OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 	OutProps.push_back({ "Size", EPropertyType::Vec3, &DecalSize });
 	OutProps.push_back({ "Color", EPropertyType::Vec4, &DecalColor });
 	OutProps.push_back({ "Fade Start Delay", EPropertyType::Float, &FadeStartDelay });

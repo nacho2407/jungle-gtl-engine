@@ -70,7 +70,6 @@ void USkinnedMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& O
 {
     ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     OutProps.push_back({ "SkeletalMesh", EPropertyType::String, &SkeletalMeshPath });
-    OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 }
 
 void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)

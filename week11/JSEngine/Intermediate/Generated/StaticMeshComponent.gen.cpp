@@ -15,7 +15,6 @@ void Register_UStaticMeshComponent()
     info.ParentClassName = "UMeshComponent";
     {
         FObjectProperty* prop = new FObjectProperty();
-        prop->ReferenceKind = EObjectReferenceKind::AssetPath;
         prop->Name = FName("StaticMeshAsset");
         prop->CPPType = "UStaticMesh*";
         prop->Offset = offsetof(UStaticMeshComponent, StaticMeshAsset);

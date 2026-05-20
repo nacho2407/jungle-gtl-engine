@@ -105,7 +105,6 @@ void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Ou
 {
     ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
     OutProps.push_back({ "StaticMesh", EPropertyType::String, &StaticMeshAssetPath });
-    OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 }
 
 void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
