@@ -78,7 +78,7 @@ static FString GetShaderDependencyFingerprint(const std::filesystem::path& Sourc
 			continue;
 		}
 
-		AppendHashString(Hash, Dependency.lexically_normal().string());
+		AppendHashString(Hash, FPaths::ToUtf8(Dependency.lexically_normal().generic_wstring()));
 		AppendHashString(Hash, std::to_string(FileSize));
 		AppendHashString(Hash, std::to_string(WriteTime.time_since_epoch().count()));
 	}
