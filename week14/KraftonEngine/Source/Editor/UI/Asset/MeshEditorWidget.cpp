@@ -27,8 +27,8 @@
 #include "UI/Asset/AnimationTimelinePanel.h"
 #include "UI/Asset/AnimSequencePropertyPanel.h"
 #include "UI/Asset/AnimMontagePropertyPanel.h"
-#include "UI/EditorFileUtils.h"
-#include "Editor/UI/EditorTextureManager.h"
+#include "UI/Util/EditorFileUtils.h"
+#include "Editor/UI/Util/EditorTextureManager.h"
 #include "Platform/Paths.h"
 #include "Object/Object.h"
 

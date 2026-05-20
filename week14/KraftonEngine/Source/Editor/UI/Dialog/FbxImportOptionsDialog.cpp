@@ -1,4 +1,4 @@
-#include "Editor/UI/FbxImportOptionsDialog.h"
+#include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 
 #include "Animation/AnimationManager.h"
 #include "Animation/Skeleton/SkeletonManager.h"

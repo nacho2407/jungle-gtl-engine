@@ -58,8 +58,20 @@
     <Filter Include="Source\Editor\UI\ContentBrowser">
       <UniqueIdentifier>{09a2ea7f-e891-b580-bef0-471bcd9b5d4b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\UI\Debug">
+      <UniqueIdentifier>{6ca21b76-c22a-eedf-4dd2-0b684eb52ec7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\UI\Dialog">
+      <UniqueIdentifier>{79ff2a4f-8516-42b3-d810-50395aafc932}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\UI\Panel">
+      <UniqueIdentifier>{f7c7f053-501b-35ef-b615-97f5586f017d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\UI\Toolbar">
       <UniqueIdentifier>{61313b38-6393-84ff-b1c1-0ce7ae5ce397}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\UI\Util">
+      <UniqueIdentifier>{5e482c7a-c7f9-9f9a-0119-c73c233f67d3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\Viewport">
       <UniqueIdentifier>{42b90bf1-e993-e912-0e50-58d7095d5e8c}</UniqueIdentifier>
@@ -569,64 +581,10 @@
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp">
       <Filter>Source\Editor\Subsystem</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorAnimationDebugWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorDragSource.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorFileUtils.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorMaterialInspector.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorPlayToolbarWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorProjectSettingsWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorSceneWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorShadowMapDebugWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorStatWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorTextureManager.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorViewportWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorWorldSettingsWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\FbxImportOptionsDialog.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\ImGuiSetting.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\NotificationToast.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\AnimGraphEditorWidget.cpp">
@@ -671,8 +629,62 @@
     <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Debug\EditorAnimationDebugWidget.cpp">
+      <Filter>Source\Editor\UI\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Debug\EditorShadowMapDebugWidget.cpp">
+      <Filter>Source\Editor\UI\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Dialog\FbxImportOptionsDialog.cpp">
+      <Filter>Source\Editor\UI\Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorConsoleWidget.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorControlWidget.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorMaterialInspector.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyWidget.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorSceneWidget.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorStatWidget.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorViewportWidget.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorWorldSettingsWidget.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Toolbar\ViewportToolbar.cpp">
       <Filter>Source\Editor\UI\Toolbar</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Util\EditorDragSource.cpp">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Util\EditorFileUtils.cpp">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Util\NotificationToast.cpp">
+      <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp">
       <Filter>Source\Editor\Viewport</Filter>
@@ -1541,64 +1553,10 @@
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h">
       <Filter>Source\Editor\Subsystem</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorAnimationDebugWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorControlWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorDragSource.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorFileUtils.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorMaterialInspector.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorPlayToolbarWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorProjectSettingsWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorShadowMapDebugWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorStatWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorTextureManager.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorViewportWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorWorldSettingsWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\FbxImportOptionsDialog.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\ImGuiSetting.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\NotificationToast.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\AnimGraphEditorWidget.h">
@@ -1652,8 +1610,62 @@
     <ClInclude Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.h">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Debug\EditorAnimationDebugWidget.h">
+      <Filter>Source\Editor\UI\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Debug\EditorShadowMapDebugWidget.h">
+      <Filter>Source\Editor\UI\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Dialog\FbxImportOptionsDialog.h">
+      <Filter>Source\Editor\UI\Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorConsoleWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorControlWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorMaterialInspector.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorSceneWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorStatWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorViewportWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorWorldSettingsWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\Toolbar\ViewportToolbar.h">
       <Filter>Source\Editor\UI\Toolbar</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Util\EditorDragSource.h">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Util\EditorFileUtils.h">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Util\ImGuiSetting.h">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Util\NotificationToast.h">
+      <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\EditorPreviewViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Core/ClassTypes.h"
 #include "Editor/UI/ContentBrowser/ContentBrowserContext.h"
 #include "ContentItem.h"
@@ -142,7 +142,7 @@ public:
 	virtual const char* GetDragItemType() override { return "PNGElement"; }
 };
 
-#include "Editor/UI/EditorMaterialInspector.h"
+#include "Editor/UI/Panel/EditorMaterialInspector.h"
 class MaterialElement final : public ContentBrowserElement
 {
 public:

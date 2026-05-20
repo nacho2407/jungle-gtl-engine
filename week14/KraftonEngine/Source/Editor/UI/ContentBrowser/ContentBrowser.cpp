@@ -8,14 +8,14 @@
 #include "ContentBrowserElement.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Subsystem/AssetFactory.h"
-#include "Editor/UI/EditorTextureManager.h"
+#include "Editor/UI/Util/EditorTextureManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/SkeletalMesh.h"
 #include "Editor/UI/Asset/MeshEditorWidget.h"
 #include "EditorEngine.h"
-#include "Editor/UI/FbxImportOptionsDialog.h"
+#include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 
 #include <algorithm>
 #include <chrono>

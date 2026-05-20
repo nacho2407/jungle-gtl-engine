@@ -1,8 +1,8 @@
-﻿#include "Editor/UI/EditorPlayToolbarWidget.h"
+#include "Editor/UI/Panel/EditorPlayToolbarWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/PIE/PIETypes.h"
-#include "Editor/UI/EditorTextureManager.h"
+#include "Editor/UI/Util/EditorTextureManager.h"
 #include "Platform/Paths.h"
 #include "ImGui/imgui.h"
 

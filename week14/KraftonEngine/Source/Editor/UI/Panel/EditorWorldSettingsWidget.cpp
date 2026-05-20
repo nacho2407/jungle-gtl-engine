@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorWorldSettingsWidget.h"
+#include "Editor/UI/Panel/EditorWorldSettingsWidget.h"
 #include "Engine/Runtime/Engine.h"
 #include "GameFramework/World.h"
 #include "GameFramework/WorldSettings.h"

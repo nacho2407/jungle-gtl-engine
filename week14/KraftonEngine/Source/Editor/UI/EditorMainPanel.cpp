@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorMainPanel.h"
+#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
@@ -17,8 +17,8 @@
 #include "Engine/Input/InputSystem.h"
 
 #include "Editor/Slate/SlateApplication.h"
-#include "Editor/UI/ImGuiSetting.h"
-#include "Editor/UI/NotificationToast.h"
+#include "Editor/UI/Util/ImGuiSetting.h"
+#include "Editor/UI/Util/NotificationToast.h"
 
 #include "Editor/UI/Asset/FloatCurveEditorWidget.h"
 #include "Editor/UI/Asset/CameraShakeEditorWidget.h"
