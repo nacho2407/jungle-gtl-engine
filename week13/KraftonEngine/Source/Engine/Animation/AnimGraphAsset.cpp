@@ -2,6 +2,8 @@
 
 #include "Serialization/Archive.h"
 
+#include <algorithm>
+
 // ── AnimGraphTypes operator<< ──
 //
 // 각 struct 가 FName / TArray 같은 non-trivially-copyable 멤버를 보유 — FArchive 의 default
@@ -72,27 +74,182 @@ FAnimGraphLink* UAnimGraphAsset::AddLink(uint32 FromPinId, uint32 ToPinId)
 	return &Links.back();
 }
 
+FAnimGraphNode* UAnimGraphAsset::AddNodeOfType(EAnimGraphNodeType Type, float X, float Y)
+{
+	// 타입별 default display 이름 + 핀 레이아웃. 후속 단계의 컴파일러가 같은 핀 이름을
+	// 키로 트리 build 에 사용하므로 핀 명세는 stable.
+	switch (Type)
+	{
+		case EAnimGraphNodeType::OutputPose:
+		{
+			FAnimGraphNode* N = AddNode(Type, FName("Output Pose"), X, Y);
+			AddPin(*N, EAnimGraphPinKind::Input, EAnimGraphPinType::Pose, FName("Result"));
+			return N;
+		}
+		case EAnimGraphNodeType::SequencePlayer:
+		{
+			FAnimGraphNode* N = AddNode(Type, FName("Sequence Player"), X, Y);
+			AddPin(*N, EAnimGraphPinKind::Output, EAnimGraphPinType::Pose, FName("Pose"));
+			return N;
+		}
+		case EAnimGraphNodeType::StateMachine:
+		{
+			FAnimGraphNode* N = AddNode(Type, FName("State Machine"), X, Y);
+			AddPin(*N, EAnimGraphPinKind::Output, EAnimGraphPinType::Pose, FName("Pose"));
+			return N;
+		}
+		case EAnimGraphNodeType::Slot:
+		{
+			FAnimGraphNode* N = AddNode(Type, FName("Slot"), X, Y);
+			AddPin(*N, EAnimGraphPinKind::Input,  EAnimGraphPinType::Pose, FName("Source"));
+			AddPin(*N, EAnimGraphPinKind::Output, EAnimGraphPinType::Pose, FName("Result"));
+			return N;
+		}
+		case EAnimGraphNodeType::LayeredBlendPerBone:
+		{
+			FAnimGraphNode* N = AddNode(Type, FName("Layered Blend"), X, Y);
+			AddPin(*N, EAnimGraphPinKind::Input,  EAnimGraphPinType::Pose, FName("Base"));
+			AddPin(*N, EAnimGraphPinKind::Input,  EAnimGraphPinType::Pose, FName("Blend"));
+			AddPin(*N, EAnimGraphPinKind::Output, EAnimGraphPinType::Pose, FName("Result"));
+			return N;
+		}
+		case EAnimGraphNodeType::BlendListByEnum:
+		{
+			FAnimGraphNode* N = AddNode(Type, FName("Blend List By Enum"), X, Y);
+			AddPin(*N, EAnimGraphPinKind::Input,  EAnimGraphPinType::Int,  FName("Selector"));
+			AddPin(*N, EAnimGraphPinKind::Input,  EAnimGraphPinType::Pose, FName("A"));
+			AddPin(*N, EAnimGraphPinKind::Input,  EAnimGraphPinType::Pose, FName("B"));
+			AddPin(*N, EAnimGraphPinKind::Output, EAnimGraphPinType::Pose, FName("Result"));
+			return N;
+		}
+		case EAnimGraphNodeType::VariableGet:
+		{
+			FAnimGraphNode* N = AddNode(Type, FName("Variable"), X, Y);
+			AddPin(*N, EAnimGraphPinKind::Output, EAnimGraphPinType::Float, FName("Value"));
+			return N;
+		}
+	}
+	return nullptr;
+}
+
+bool UAnimGraphAsset::RemoveNode(uint32 NodeId)
+{
+	if (NodeId == 0) return false;
+
+	// 노드의 핀 id 들을 먼저 수집 → 그 핀이 from/to 에 사용된 모든 링크 cascade 제거.
+	TArray<uint32> PinIds;
+	for (const FAnimGraphNode& Node : Nodes)
+	{
+		if (Node.NodeId != NodeId) continue;
+		PinIds.reserve(Node.Pins.size());
+		for (const FAnimGraphPin& Pin : Node.Pins) PinIds.push_back(Pin.PinId);
+		break;
+	}
+
+	if (PinIds.empty())
+	{
+		// 노드를 못 찾았으면 아무것도 안 함.
+		const bool bFound = std::any_of(Nodes.begin(), Nodes.end(),
+			[NodeId](const FAnimGraphNode& N) { return N.NodeId == NodeId; });
+		if (!bFound) return false;
+	}
+
+	Links.erase(std::remove_if(Links.begin(), Links.end(),
+		[&PinIds](const FAnimGraphLink& L)
+		{
+			for (uint32 P : PinIds)
+			{
+				if (L.FromPinId == P || L.ToPinId == P) return true;
+			}
+			return false;
+		}), Links.end());
+
+	Nodes.erase(std::remove_if(Nodes.begin(), Nodes.end(),
+		[NodeId](const FAnimGraphNode& N) { return N.NodeId == NodeId; }), Nodes.end());
+
+	return true;
+}
+
+bool UAnimGraphAsset::RemoveLink(uint32 LinkId)
+{
+	if (LinkId == 0) return false;
+	const size_t Before = Links.size();
+	Links.erase(std::remove_if(Links.begin(), Links.end(),
+		[LinkId](const FAnimGraphLink& L) { return L.LinkId == LinkId; }), Links.end());
+	return Links.size() != Before;
+}
+
+bool UAnimGraphAsset::CanLinkPins(uint32 PinAId, uint32 PinBId, uint32* OutFromPinId, uint32* OutToPinId) const
+{
+	if (PinAId == 0 || PinBId == 0 || PinAId == PinBId) return false;
+
+	const FAnimGraphPin* A = FindPin(PinAId);
+	const FAnimGraphPin* B = FindPin(PinBId);
+	if (!A || !B) return false;
+
+	// 같은 노드 내 핀 끼리 연결 금지.
+	if (A->OwningNodeId == B->OwningNodeId) return false;
+
+	// Kind 가 반대여야 함 — 양쪽 다 input 또는 양쪽 다 output 이면 거부.
+	if (A->Kind == B->Kind) return false;
+
+	// 타입 일치 — Pose-Pose, Float-Float 등.
+	if (A->Type != B->Type) return false;
+
+	// 방향 정규화 — 드래그 방향에 무관하게 from=Output, to=Input.
+	const FAnimGraphPin* From = (A->Kind == EAnimGraphPinKind::Output) ? A : B;
+	const FAnimGraphPin* To   = (From == A) ? B : A;
+
+	// 중복 링크 거부 — UE 도 동일 (1 input 에 1 output 의 multi-fanout 은 허용, 같은 from→to 중복은 금지).
+	for (const FAnimGraphLink& L : Links)
+	{
+		if (L.FromPinId == From->PinId && L.ToPinId == To->PinId) return false;
+	}
+
+	if (OutFromPinId) *OutFromPinId = From->PinId;
+	if (OutToPinId)   *OutToPinId   = To->PinId;
+	return true;
+}
+
+bool UAnimGraphAsset::HasOutputPoseNode() const
+{
+	for (const FAnimGraphNode& N : Nodes)
+	{
+		if (N.Type == EAnimGraphNodeType::OutputPose) return true;
+	}
+	return false;
+}
+
 void UAnimGraphAsset::InitializeDefault()
 {
 	Nodes.clear();
 	Links.clear();
 	NextId = 1;
 
-	// SequencePlayer (좌측) — output pose 1.
-	FAnimGraphNode* Source = AddNode(EAnimGraphNodeType::SequencePlayer, FName("Sequence Player"), -240.0f, 0.0f);
-	const uint32 SourceOut = AddPin(*Source, EAnimGraphPinKind::Output, EAnimGraphPinType::Pose, FName("Pose"))->PinId;
+	FAnimGraphNode* Source = AddNodeOfType(EAnimGraphNodeType::SequencePlayer, -240.0f, 0.0f);
+	FAnimGraphNode* Sink   = AddNodeOfType(EAnimGraphNodeType::OutputPose,        0.0f, 0.0f);
 
-	// OutputPose (우측) — input pose 1. 그래프 종착점.
-	FAnimGraphNode* Sink = AddNode(EAnimGraphNodeType::OutputPose, FName("Output Pose"), 0.0f, 0.0f);
-	const uint32 SinkIn = AddPin(*Sink, EAnimGraphPinKind::Input, EAnimGraphPinType::Pose, FName("Result"))->PinId;
-
-	AddLink(SourceOut, SinkIn);
+	// 양쪽 모두 Pose 핀 1개씩 — 첫 핀끼리 연결.
+	if (Source && Sink && !Source->Pins.empty() && !Sink->Pins.empty())
+	{
+		AddLink(Source->Pins.front().PinId, Sink->Pins.front().PinId);
+	}
 }
 
 FAnimGraphNode* UAnimGraphAsset::FindNode(uint32 NodeId)
 {
 	if (NodeId == 0) return nullptr;
 	for (FAnimGraphNode& Node : Nodes)
+	{
+		if (Node.NodeId == NodeId) return &Node;
+	}
+	return nullptr;
+}
+
+const FAnimGraphNode* UAnimGraphAsset::FindNode(uint32 NodeId) const
+{
+	if (NodeId == 0) return nullptr;
+	for (const FAnimGraphNode& Node : Nodes)
 	{
 		if (Node.NodeId == NodeId) return &Node;
 	}
