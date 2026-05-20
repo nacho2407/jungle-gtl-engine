@@ -93,4 +93,24 @@ private:
 
     float LeftPanelWidth = 250.0f;
     float RightPanelWidth = 250.0f;
+
+	//notify event
+    float PendingNotifyTime = 0.0f;
+    bool bOpenAddNotifyPopup = false;
+    char NotifyNameBuffer[128] = {};
+    float NotifyDuration = 0.0f;
+
+	int32 SelectedNotifyIndex = -1;
+    bool bShowNotifyDetails = true;
+    char NotifyNameEditBuffer[128] = {};
+    float NotifyTimeEdit = 0.0f;
+    float NotifyDurationEdit = 0.0f;
+
+	int32 EditingNotifyIndex = -1;
+    char EditingNotifyNameBuffer[128] = {};
+    float EditingNotifyTime = 0.0f;
+    float EditingNotifyDuration = 0.0f;
+
+    int32 PendingOpenNotifyIndex = -1;
+
 };
