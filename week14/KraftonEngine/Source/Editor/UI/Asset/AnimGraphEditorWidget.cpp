@@ -59,7 +59,9 @@ namespace
 	}
 
 	// SequencePlayer 노드의 properties — Sequence/PlayRate/bLooping. 다른 노드 타입은 placeholder.
-	void RenderNodeInspector(FAnimGraphNode& Node)
+	// 변경 발생 시 Asset.BumpVersion() — UAnimGraphInstance 가 다음 frame 에 재컴파일하여
+	// in-editor live preview 가 즉시 반영되도록.
+	void RenderNodeInspector(UAnimGraphAsset& Asset, FAnimGraphNode& Node)
 	{
 		ImGui::Text("%s", NodeTypeLabel(Node.Type));
 		ImGui::TextDisabled("id=%u", Node.NodeId);
@@ -71,6 +73,8 @@ namespace
 			return;
 		}
 
+		bool bChanged = false;
+
 		ImGui::TextUnformatted("Sequence");
 		const FString PreviewStem = Node.SequencePath.empty() ? FString("None") : GetStemFromPath(Node.SequencePath);
 		ImGui::SetNextItemWidth(-1.0f);
@@ -79,6 +83,7 @@ namespace
 			const bool bSelectedNone = Node.SequencePath.empty();
 			if (ImGui::Selectable("None", bSelectedNone))
 			{
+				if (!Node.SequencePath.empty()) bChanged = true;
 				Node.SequencePath.clear();
 			}
 			if (bSelectedNone) ImGui::SetItemDefaultFocus();
@@ -89,6 +94,7 @@ namespace
 				const bool bSelected = (Node.SequencePath == Item.FullPath);
 				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
 				{
+					if (Node.SequencePath != Item.FullPath) bChanged = true;
 					Node.SequencePath = Item.FullPath;
 				}
 				if (bSelected) ImGui::SetItemDefaultFocus();
@@ -97,8 +103,16 @@ namespace
 		}
 
 		ImGui::SetNextItemWidth(-1.0f);
-		ImGui::DragFloat("##PlayRate", &Node.PlayRate, 0.05f, -4.0f, 4.0f, "PlayRate %.2f");
-		ImGui::Checkbox("Looping", &Node.bLooping);
+		if (ImGui::DragFloat("##PlayRate", &Node.PlayRate, 0.05f, -4.0f, 4.0f, "PlayRate %.2f"))
+		{
+			bChanged = true;
+		}
+		if (ImGui::Checkbox("Looping", &Node.bLooping))
+		{
+			bChanged = true;
+		}
+
+		if (bChanged) Asset.BumpVersion();
 	}
 }
 
@@ -402,7 +416,7 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 		{
 			if (FAnimGraphNode* SelNode = Asset->FindNode(SelectedNodeId))
 			{
-				RenderNodeInspector(*SelNode);
+				RenderNodeInspector(*Asset, *SelNode);
 			}
 			else
 			{

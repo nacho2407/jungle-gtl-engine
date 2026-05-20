@@ -12,6 +12,20 @@
 #include "Mesh/SkeletalMeshAsset.h"
 #include "Serialization/Archive.h"
 
+namespace
+{
+	UAnimSequenceBase* LoadByPath(const FString& Path)
+	{
+		if (Path.empty() || Path == "None") return nullptr;
+		UAnimSequenceBase* Loaded = FAnimationManager::Get().LoadAnimation(Path);
+		if (!Loaded)
+		{
+			UE_LOG("UAnimGraphInstance: 시퀀스 로드 실패. Path=%s", Path.c_str());
+		}
+		return Loaded;
+	}
+}
+
 void UAnimGraphInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
@@ -40,21 +54,27 @@ void UAnimGraphInstance::NativeInitializeAnimation()
 		GraphAsset->InitializeDefault();
 	}
 
-	// Sequence resolve 우선순위 (per-node):
-	//   1) 노드의 SequencePath (자산에 박힘 — 그래프 편집 결과)
-	//   2) UAnimGraphInstance::DefaultSequencePath (instance fallback)
-	//   3) nullptr → SequencePlayer 가 ref pose 유지
-	auto LoadByPath = [](const FString& Path) -> UAnimSequenceBase*
-	{
-		if (Path.empty() || Path == "None") return nullptr;
-		UAnimSequenceBase* Loaded = FAnimationManager::Get().LoadAnimation(Path);
-		if (!Loaded)
-		{
-			UE_LOG("UAnimGraphInstance: 시퀀스 로드 실패. Path=%s", Path.c_str());
-		}
-		return Loaded;
-	};
+	// Version 강제 mismatch 로 첫 컴파일 트리거. (자산이 fresh load 라면 Version 이 0 이지만,
+	// 다른 인스턴스가 이미 변경해 Version > 0 인 캐시 자산일 수도 있음 — 안전하게 강제.)
+	CompiledAssetVersion = GraphAsset->GetVersion() - 1;
+	RecompileTreeIfDirty();
+}
 
+void UAnimGraphInstance::NativeUpdateAnimation(float DeltaSeconds)
+{
+	Super::NativeUpdateAnimation(DeltaSeconds);
+
+	// in-editor live preview: 자산이 변경되면 다음 frame UpdateAnimation 의 RootNode->Update
+	// 호출 전에 트리 재생성. 새 트리는 즉시 그 frame 부터 평가.
+	RecompileTreeIfDirty();
+}
+
+void UAnimGraphInstance::RecompileTreeIfDirty()
+{
+	if (!GraphAsset) return;
+	if (GraphAsset->GetVersion() == CompiledAssetVersion) return;
+
+	// 노드별 SequenceRef 재해상 (per-node SequencePath > Instance.DefaultSequencePath > nullptr).
 	const FString DefaultPathStr = DefaultSequencePath.ToString();
 	for (FAnimGraphNode& Node : const_cast<TArray<FAnimGraphNode>&>(GraphAsset->GetNodes()))
 	{
@@ -65,13 +85,20 @@ void UAnimGraphInstance::NativeInitializeAnimation()
 		Node.SequenceRef = Seq;
 	}
 
+	// 기존 트리 폐기 — RootNode 먼저 nullptr 로 끊은 뒤 OwnedNodes clear.
+	// (Update 호출 chain 이 다음 줄에 들어가므로 dangling 노출 위험 없음.)
+	RootNode = nullptr;
+	OwnedNodes.clear();
+
 	FAnimNode_Base* Root = FAnimGraphCompiler::Compile(*GraphAsset, *this);
 	if (!Root)
 	{
 		UE_LOG("UAnimGraphInstance: 컴파일 실패 — 트리 미설정, ref pose 유지.");
+		CompiledAssetVersion = GraphAsset->GetVersion();
 		return;
 	}
 	SetRootNode(Root);
+	CompiledAssetVersion = GraphAsset->GetVersion();
 }
 
 void UAnimGraphInstance::Serialize(FArchive& Ar)

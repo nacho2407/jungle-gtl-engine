@@ -52,6 +52,7 @@ FAnimGraphNode* UAnimGraphAsset::AddNode(EAnimGraphNodeType Type, const FName& D
 	Node.PosX        = X;
 	Node.PosY        = Y;
 	Nodes.push_back(std::move(Node));
+	BumpVersion();
 	return &Nodes.back();
 }
 
@@ -64,6 +65,7 @@ FAnimGraphPin* UAnimGraphAsset::AddPin(FAnimGraphNode& Node, EAnimGraphPinKind K
 	Pin.Type         = PinType;
 	Pin.DisplayName  = DisplayName;
 	Node.Pins.push_back(std::move(Pin));
+	BumpVersion();
 	return &Node.Pins.back();
 }
 
@@ -74,6 +76,7 @@ FAnimGraphLink* UAnimGraphAsset::AddLink(uint32 FromPinId, uint32 ToPinId)
 	Link.FromPinId = FromPinId;
 	Link.ToPinId   = ToPinId;
 	Links.push_back(std::move(Link));
+	BumpVersion();
 	return &Links.back();
 }
 
@@ -170,6 +173,7 @@ bool UAnimGraphAsset::RemoveNode(uint32 NodeId)
 	Nodes.erase(std::remove_if(Nodes.begin(), Nodes.end(),
 		[NodeId](const FAnimGraphNode& N) { return N.NodeId == NodeId; }), Nodes.end());
 
+	BumpVersion();
 	return true;
 }
 
@@ -179,7 +183,9 @@ bool UAnimGraphAsset::RemoveLink(uint32 LinkId)
 	const size_t Before = Links.size();
 	Links.erase(std::remove_if(Links.begin(), Links.end(),
 		[LinkId](const FAnimGraphLink& L) { return L.LinkId == LinkId; }), Links.end());
-	return Links.size() != Before;
+	const bool bRemoved = Links.size() != Before;
+	if (bRemoved) BumpVersion();
+	return bRemoved;
 }
 
 bool UAnimGraphAsset::CanLinkPins(uint32 PinAId, uint32 PinBId, uint32* OutFromPinId, uint32* OutToPinId) const
