@@ -58,7 +58,7 @@ namespace
 		}
 
 		const std::wstring SubFolder = FbxPath.stem().wstring();
-		const fs::path DestRelDir = fs::path(L"Asset") / L"Textures" / L"Auto" / SubFolder;
+		const fs::path DestRelDir = fs::path(L"Content") / L"Texture" / L"Auto" / SubFolder;
 		const fs::path DestAbsDir = fs::path(FPaths::RootDir()) / DestRelDir;
 
 		std::error_code Ec;

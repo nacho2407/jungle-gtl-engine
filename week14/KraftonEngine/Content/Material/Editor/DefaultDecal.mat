@@ -32,7 +32,7 @@
   "RenderPass": "Decal",
   "ShaderPath": "Shaders/Geometry/Decal.hlsl",
   "Textures": {
-    "DiffuseTexture": "Asset/Editor/Icons/Pawn_64x.png"
+    "DiffuseTexture": "Content/Editor/Icons/Pawn_64x.png"
   },
   "Origin": "Editor"
 }

@@ -4,7 +4,7 @@
   "RenderPass": "AlphaBlend",
   "BlendState": "Additive",
   "Textures": {
-    "DiffuseTexture": "Asset/Editor/Icons/PointLight_64x.png"
+    "DiffuseTexture": "Content/Editor/Icons/PointLight_64x.png"
   },
   "Origin": "Editor"
 }
