@@ -242,6 +242,29 @@ namespace
 		return FPaths::Normalize(PathText);
 	}
 
+	static FString MakeProjectAssetReferenceFromPath(const FString& PathText)
+	{
+		if (PathText.empty())
+		{
+			return {};
+		}
+
+		std::filesystem::path AssetPath(FPaths::ToWide(PathText));
+		if (!AssetPath.is_absolute())
+		{
+			return FPaths::Normalize(PathText);
+		}
+
+		std::error_code Ec;
+		const std::filesystem::path RootPath = std::filesystem::path(FPaths::RootDir()).lexically_normal();
+		std::filesystem::path Relative = std::filesystem::relative(AssetPath.lexically_normal(), RootPath, Ec);
+		if (Ec || Relative.empty())
+		{
+			return FPaths::Normalize(PathText);
+		}
+		return FPaths::Normalize(FPaths::ToUtf8(Relative.generic_wstring()));
+	}
+
 	static bool PromptCreateScriptAs(UEditorEngine* EditorEngine, const FString& ScriptPathHint, FString& OutFilePath)
 	{
 		OutFilePath.clear();
@@ -2055,6 +2078,59 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 					bChanged = true;
 				}
 			}
+		}
+		else if (strcmp(Prop.Name, "AnimSequenceAsset") == 0)
+		{
+			const TArray<FString> AnimSequenceAssetPaths = FResourceManager::Get().GetAnimSequenceAssetPaths();
+
+			ImGui::PushID(Val);
+			char Buf[512] = {};
+			strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
+			if (ImGui::InputText("##AnimSequenceAssetPath", Buf, sizeof(Buf)))
+			{
+				*Val = Buf;
+				bChanged = true;
+			}
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("AnimSequenceContentItem"))
+				{
+					const char* PayloadPath = static_cast<const char*>(Payload->Data);
+					if (PayloadPath && PayloadPath[0] != '\0')
+					{
+						*Val = MakeProjectAssetReferenceFromPath(PayloadPath);
+						bChanged = true;
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			ImGui::SameLine();
+			const FString Current = *Val;
+			if (ImGui::BeginCombo("AnimSequenceAsset", Current.empty() ? "<None>" : Current.c_str()))
+			{
+				if (ImGui::Selectable("<None>", Current.empty()))
+				{
+					Val->clear();
+					bChanged = true;
+				}
+				for (const FString& Path : AnimSequenceAssetPaths)
+				{
+					const bool bSelected = (Current == Path);
+					if (ImGui::Selectable(Path.c_str(), bSelected))
+					{
+						*Val = Path;
+						bChanged = true;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::PopID();
 		}
         else if (strcmp(Prop.Name, "ScriptName") == 0)
         {

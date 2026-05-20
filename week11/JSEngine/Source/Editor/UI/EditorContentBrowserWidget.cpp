@@ -5,6 +5,7 @@
 #include "Editor/UI/EditorChromeConstants.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
+#include "Asset/AnimSequenceAssetLoader.h"
 #include "Asset/CurveFloatAsset.h"
 #include "Asset/StaticMesh.h"
 #include "Core/AssetPathPolicy.h"
@@ -1078,6 +1079,28 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 			DrawList->AddText(ImVec2((IconMin.x + IconMax.x - TextSize.x) * 0.5f, IconMax.y - 22.0f),
 				ImGui::GetColorU32(ImVec4(0.96f, 0.97f, 0.99f, 1.0f)), Kind);
 		}
+		else if (IsAnimSequenceAsset(Item.Extension))
+		{
+			const float Width = IconMax.x - IconMin.x;
+			const float Height = IconMax.y - IconMin.y;
+			const ImU32 LineColor = ImGui::GetColorU32(ImVec4(0.98f, 0.90f, 0.42f, 1.0f));
+			const ImU32 JointColor = ImGui::GetColorU32(ImVec4(0.15f, 0.17f, 0.21f, 0.92f));
+			const ImVec2 A(IconMin.x + Width * 0.22f, IconMin.y + Height * 0.24f);
+			const ImVec2 B(IconMin.x + Width * 0.46f, IconMin.y + Height * 0.42f);
+			const ImVec2 C(IconMin.x + Width * 0.72f, IconMin.y + Height * 0.30f);
+			const ImVec2 D(IconMin.x + Width * 0.56f, IconMin.y + Height * 0.68f);
+			DrawList->AddLine(A, B, LineColor, 3.0f);
+			DrawList->AddLine(B, C, LineColor, 3.0f);
+			DrawList->AddLine(B, D, LineColor, 3.0f);
+			DrawList->AddCircleFilled(A, 4.0f, JointColor, 16);
+			DrawList->AddCircleFilled(B, 5.0f, JointColor, 16);
+			DrawList->AddCircleFilled(C, 4.0f, JointColor, 16);
+			DrawList->AddCircleFilled(D, 4.0f, JointColor, 16);
+			const char* Kind = "ANIM";
+			const ImVec2 TextSize = ImGui::CalcTextSize(Kind);
+			DrawList->AddText(ImVec2((IconMin.x + IconMax.x - TextSize.x) * 0.5f, IconMax.y - 22.0f),
+				ImGui::GetColorU32(ImVec4(0.96f, 0.97f, 0.99f, 1.0f)), Kind);
+		}
 	}
 
 	FString Label = Item.Name;
@@ -1139,6 +1162,10 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		else if (IsPrefabAsset(Item.Extension))
 		{
 			EditorEngine->GetNotificationService().Info("Prefab selected. Drag to viewport or right-click to spawn.");
+		}
+		else if (IsAnimSequenceAsset(Item.Extension))
+		{
+			EditorEngine->GetNotificationService().Info("Anim sequence asset selected. Drag it onto AnimSequenceAsset in Details.");
 		}
 		else if (Item.Extension == ".fbx" && FAssetPathPolicy::IsSkeletalMeshSourcePath(MakeRelativeProjectPath(Item.Path)))
 		{
@@ -1704,6 +1731,27 @@ void FEditorContentBrowserWidget::DrawAssetPreview()
 		return;
 	}
 
+	if (IsAnimSequenceAsset(Extension))
+	{
+		FAnimSequenceAssetDescriptor Descriptor;
+		FAnimSequenceAssetLoader Loader;
+		ImGui::Spacing();
+		ImGui::TextDisabled("Anim Sequence");
+		if (!Loader.Load(RelativePath, Descriptor))
+		{
+			ImGui::TextWrapped("Invalid anim sequence asset descriptor.");
+			return;
+		}
+
+		ImGui::TextDisabled("Source FBX");
+		ImGui::TextWrapped("%s", Descriptor.SourceFbxPath.c_str());
+		ImGui::TextDisabled("Target Mesh");
+		ImGui::TextWrapped("%s", Descriptor.TargetSkeletalMeshPath.c_str());
+		ImGui::TextDisabled("Stack");
+		ImGui::TextWrapped("%s", Descriptor.AnimStackName.c_str());
+		return;
+	}
+
 	if (IsSequenceAsset(Extension))
 	{
 		ImGui::Spacing();
@@ -1955,6 +2003,10 @@ FString FEditorContentBrowserWidget::GetPayloadType(const FContentItem& Item) co
 	{
 		return "CurveContentItem";
 	}
+	if (IsAnimSequenceAsset(Item.Extension))
+	{
+		return "AnimSequenceContentItem";
+	}
 	if (Item.Extension == ".prefab")
 	{
 		return "PrefabContentItem";
@@ -1999,6 +2051,10 @@ ImU32 FEditorContentBrowserWidget::GetItemColor(const FContentItem& Item) const
 	if (IsCurveAsset(Item.Path))
 	{
 		return ImGui::GetColorU32(ImVec4(0.42f, 0.50f, 0.78f, 1.0f));
+	}
+	if (IsAnimSequenceAsset(Item.Extension))
+	{
+		return ImGui::GetColorU32(ImVec4(0.66f, 0.50f, 0.24f, 1.0f));
 	}
 	if (IsSequenceAsset(Item.Extension))
 	{
@@ -2060,6 +2116,11 @@ bool FEditorContentBrowserWidget::IsCurveAsset(const std::filesystem::path& Path
 {
 	const FString Extension = ToLower(FPaths::ToUtf8(Path.extension().wstring()));
 	return Extension == ".curve";
+}
+
+bool FEditorContentBrowserWidget::IsAnimSequenceAsset(const FString& Extension) const
+{
+	return Extension == ".animsequence";
 }
 
 bool FEditorContentBrowserWidget::IsSequenceAsset(const FString& Extension) const
