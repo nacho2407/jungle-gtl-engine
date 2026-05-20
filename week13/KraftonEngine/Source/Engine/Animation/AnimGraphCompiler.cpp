@@ -4,11 +4,15 @@
 #include "Animation/AnimGraphTypes.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/Nodes/AnimNode_Base.h"
+#include "Animation/AnimSequence.h"
+#include "Animation/AnimState.h"
+#include "Animation/AnimationManager.h"
 #include "Animation/Nodes/AnimNode_BlendListByEnum.h"
 #include "Animation/Nodes/AnimNode_LayeredBlendPerBone.h"
 #include "Animation/Nodes/AnimNode_RefPose.h"
 #include "Animation/Nodes/AnimNode_SequencePlayer.h"
 #include "Animation/Nodes/AnimNode_Slot.h"
+#include "Animation/Nodes/AnimNode_StateMachine.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Core/Log.h"
 #include "Core/PropertyTypes.h"
@@ -83,6 +87,28 @@ namespace
 				}
 			}
 			return 0.0f;
+		};
+	}
+
+	// Transition rule — 단일 비교식 (Var Op Threshold) 을 bool 람다로 빌드.
+	// F-3 단순화 — 미니 그래프 / 다중 조건 / && || 는 후속 단계.
+	TFunction<bool(UAnimInstance*)> MakeTransitionCondition(FName VarName, ETransitionOp Op, float Threshold)
+	{
+		auto Reader = MakeFloatReader(VarName);
+		return [Reader, Op, Threshold](UAnimInstance* AI) -> bool
+		{
+			const float V = Reader(AI);
+			constexpr float Eps = 1e-4f;
+			switch (Op)
+			{
+				case ETransitionOp::Greater:      return V >  Threshold;
+				case ETransitionOp::GreaterEqual: return V >= Threshold;
+				case ETransitionOp::Less:         return V <  Threshold;
+				case ETransitionOp::LessEqual:    return V <= Threshold;
+				case ETransitionOp::Equal:        return std::fabs(V - Threshold) < Eps;
+				case ETransitionOp::NotEqual:     return std::fabs(V - Threshold) >= Eps;
+			}
+			return false;
 		};
 	}
 
@@ -245,8 +271,44 @@ namespace
 				return Owner.MakeNode<FAnimNode_RefPose>();
 			}
 
-			// 후속 sub-step (F-3) 에서 추가.
 			case EAnimGraphNodeType::StateMachine:
+			{
+				FAnimNode_StateMachine* SM = Owner.MakeNode<FAnimNode_StateMachine>();
+
+				// 각 state — UAnimState UObject 생성. Sequence 는 path 로 로드.
+				for (const FAnimGraphState& Def : Node.States)
+				{
+					UAnimState* S = UObjectManager::Get().CreateObject<UAnimState>(&Owner);
+					S->StateName = Def.StateName;
+					S->PlayRate  = Def.PlayRate;
+					S->bLooping  = Def.bLooping;
+					if (!Def.SequencePath.empty() && Def.SequencePath != "None")
+					{
+						S->Sequence = FAnimationManager::Get().LoadAnimation(Def.SequencePath);
+						if (!S->Sequence)
+						{
+							UE_LOG("AnimGraphCompiler: State '%s' 의 sequence 로드 실패. Path=%s",
+								Def.StateName.ToString().c_str(), Def.SequencePath.c_str());
+						}
+					}
+					SM->RegisterState(S);
+				}
+
+				// transitions — Var/Op/Threshold 비교식을 람다로 빌드.
+				for (const FAnimGraphTransition& T : Node.Transitions)
+				{
+					FStateTransition Trans;
+					Trans.From      = T.FromStateName;
+					Trans.To        = T.ToStateName;
+					Trans.BlendTime = T.BlendTime;
+					Trans.Condition = MakeTransitionCondition(T.VariableName, T.Op, T.Threshold);
+					SM->RegisterTransition(Trans);
+				}
+
+				SM->SetInitialState(Node.InitialStateName);
+				return SM;
+			}
+
 			default:
 				UE_LOG("AnimGraphCompiler: 미지원 노드 타입 (id=%u) → RefPose fallback.", Node.NodeId);
 				return Owner.MakeNode<FAnimNode_RefPose>();
