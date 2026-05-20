@@ -1484,6 +1484,9 @@
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp">
       <Filter>Source\Engine\Serialization</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Texture\stb_image_impl.cpp">
+      <Filter>Source\Engine\Texture</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Texture\Texture2D.cpp">
       <Filter>Source\Engine\Texture</Filter>
     </ClCompile>
