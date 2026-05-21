@@ -4,6 +4,7 @@
 #include "Animation/AnimationManager.h"
 #include "Animation/Graph/AnimGraphManager.h"
 #include "Animation/Sequence/AnimSequence.h"
+#include "Animation/Montage/AnimMontage.h"
 #include "Animation/Skeleton/Skeleton.h"
 #include "Animation/Skeleton/SkeletonManager.h"
 #include "Platform/Paths.h"
@@ -112,6 +113,36 @@ namespace FAssetRegistry
             }
 
             if (ValidateAssetBinding(Sequence->GetSkeletonBinding(), Skeleton, bAllowSameStructure))
+            {
+                Result.push_back(Item);
+            }
+        }
+
+        return Result;
+    }
+
+    TArray<FAssetListItem> ListMontagesForSkeleton(const FSkeletonBinding& Skeleton, bool bAllowSameStructure)
+    {
+        TArray<FAssetListItem> Result;
+
+        const TArray<FAssetListItem>& MontageFiles = FAnimationManager::Get().GetAvailableMontageFiles();
+        for (const FAssetListItem& Item : MontageFiles)
+        {
+            UAnimMontage* Montage = FAnimationManager::Get().LoadMontage(Item.FullPath);
+            if (!Montage)
+            {
+                continue;
+            }
+
+            // Montage 자체는 skeleton 메타데이터가 없음 — source sequence 의 binding 으로 판정.
+            // Source 가 비어 있으면 어떤 skeleton 에도 매칭할 수 없으니 스킵.
+            const UAnimSequence* Src = Montage->GetSourceSequence();
+            if (!Src)
+            {
+                continue;
+            }
+
+            if (ValidateAssetBinding(Src->GetSkeletonBinding(), Skeleton, bAllowSameStructure))
             {
                 Result.push_back(Item);
             }

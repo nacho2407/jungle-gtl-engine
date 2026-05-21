@@ -869,17 +869,26 @@ const TArray<FAssetListItem>& FMeshEditorWidget::GetCachedAnimationFilesForCurre
 		!IsSameSkeletonBindingForAnimationList(AnimTabState.CachedAnimationListBinding, CurrentBinding))
 	{
 		AnimTabState.CachedAnimationFiles.clear();
+		AnimTabState.CachedMontageFiles.clear();
 		AnimTabState.CachedAnimationListBinding = CurrentBinding;
 
 		if (SkeletalMesh)
 		{
 			AnimTabState.CachedAnimationFiles = FAssetRegistry::ListAnimationsForSkeleton(CurrentBinding, false);
+			AnimTabState.CachedMontageFiles   = FAssetRegistry::ListMontagesForSkeleton(CurrentBinding, false);
 		}
 
 		AnimTabState.bAnimationListDirty = false;
 	}
 
 	return AnimTabState.CachedAnimationFiles;
+}
+
+const TArray<FAssetListItem>& FMeshEditorWidget::GetCachedMontageFilesForCurrentSkeleton()
+{
+	// Animation 캐시와 같은 dirty/binding key 를 공유. 호출 순서는 animation → montage 가정.
+	GetCachedAnimationFilesForCurrentSkeleton();
+	return AnimTabState.CachedMontageFiles;
 }
 
 void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
@@ -1150,7 +1159,7 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 	}
 
 	const TArray<FAssetListItem>& AnimFiles     = GetCachedAnimationFilesForCurrentSkeleton();
-	const TArray<FAssetListItem>& MontageFiles  = FAnimationManager::Get().GetAvailableMontageFiles();
+	const TArray<FAssetListItem>& MontageFiles  = GetCachedMontageFilesForCurrentSkeleton();
 
 	// asset 경로의 stem (확장자/디렉토리 제거) — 자동 montage 이름의 source 식별자.
 	auto ExtractStem = [](const FString& Path) -> FString
@@ -1176,11 +1185,13 @@ void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
 		{
 			FAnimationManager::Get().SaveMontage(Montage, PackagePath);
 			FAnimationManager::Get().RefreshAvailableMontages();
+			MarkAnimationListDirty();
 			AnimTabState.CurrentMontage    = Montage;
 			AnimTabState.bMontageSelected  = true;
 
 			// 새 montage 의 인덱스 즉시 매핑 — list 의 hilight + 다음 클릭의 일관 동작 보장.
-			const TArray<FAssetListItem>& Updated = FAnimationManager::Get().GetAvailableMontageFiles();
+			// skeleton 필터링된 캐시 기준으로 인덱스를 잡아야 selectable 비교가 맞는다.
+			const TArray<FAssetListItem>& Updated = GetCachedMontageFilesForCurrentSkeleton();
 			AnimTabState.SelectedMontageIndex = -1;
 			for (int32 j = 0; j < static_cast<int32>(Updated.size()); ++j)
 			{

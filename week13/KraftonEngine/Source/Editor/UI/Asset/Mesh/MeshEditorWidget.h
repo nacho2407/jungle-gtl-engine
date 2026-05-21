@@ -33,6 +33,7 @@ struct FAnimationTabState
 	// Animation tab asset browser cache.
 	// Render 중 매 프레임 ListAnimationsForSkeleton() -> LoadAnimation() -> Serialize() 되는 것을 막는다.
 	TArray<FAssetListItem> CachedAnimationFiles;
+	TArray<FAssetListItem> CachedMontageFiles;
 	FSkeletonBinding       CachedAnimationListBinding;
 	bool                   bAnimationListDirty = true;
 
@@ -89,6 +90,7 @@ private:
 	void RefreshAnimationPreviewPose();
 	void MarkAnimationListDirty();
 	const TArray<FAssetListItem>& GetCachedAnimationFilesForCurrentSkeleton();
+	const TArray<FAssetListItem>& GetCachedMontageFilesForCurrentSkeleton();
 
 private:
 	FMeshEditorViewportClient ViewportClient;
