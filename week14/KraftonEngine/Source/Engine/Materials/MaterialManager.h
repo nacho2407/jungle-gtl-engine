@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Singleton.h"
 #include "Core/Types/CoreTypes.h"
@@ -18,11 +18,13 @@ namespace MatKeys
 	static constexpr const char* RasterizerState = "RasterizerState";
 	static constexpr const char* Parameters = "Parameters";
 	static constexpr const char* Textures = "Textures";
+	static constexpr const char* ShadowMode = "ShadowMode";	
 }
 
 class FMaterialTemplate;
 class UMaterial;
 struct FMaterialConstantBuffer;
+enum class EMaterialShadowMode : uint8;
 
 struct FMaterialAssetListItem
 {
@@ -70,6 +72,9 @@ private:
 	EBlendState StringToBlendState(const FString& Str, ERenderPass Pass) const;
 	EDepthStencilState StringToDepthStencilState(const FString& Str, ERenderPass Pass) const;
 	ERasterizerState StringToRasterizerState(const FString& Str, ERenderPass Pass) const;
+
+	EMaterialShadowMode StringToShadowMode(const FString& Str) const;
+	const char* ShadowModeToString(EMaterialShadowMode Mode) const;
 
 	void SaveToJSON(json::JSON& JsonData, const FString& MatFilePath);
 	

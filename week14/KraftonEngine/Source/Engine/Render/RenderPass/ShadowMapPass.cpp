@@ -1,6 +1,7 @@
-#include "ShadowMapPass.h"
+﻿#include "ShadowMapPass.h"
 #include "RenderPassRegistry.h"
 
+#include "Materials/Material.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Types/FrameContext.h"
 #include "Render/Types/RenderConstants.h"
@@ -756,6 +757,8 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, F
 		for (const FMeshSectionDraw& Section : Proxy->GetSectionDraws())
 		{
 			if (Section.IndexCount == 0) continue;
+			if (Section.Material && Section.Material->GetShadowMode() == EMaterialShadowMode::None) continue;
+
 			DC->DrawIndexed(Section.IndexCount, Section.FirstIndex, 0);
 			SHADOW_STATS_ADD_DRAW_CALL();
 		}

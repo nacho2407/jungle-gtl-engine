@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Mesh/Static/StaticMeshAsset.h"
@@ -13,6 +13,8 @@ struct FFbxImportedMaterialInfo
 	FVector DiffuseColor = FVector(1.0f, 1.0f, 1.0f);
 	FString DiffuseTexturePath;
 	FString NormalTexturePath;
+	float Opacity = 1.0f;
+	bool bIsTransparent = false;
 };
 
 struct FFbxStaticMeshImportResult
