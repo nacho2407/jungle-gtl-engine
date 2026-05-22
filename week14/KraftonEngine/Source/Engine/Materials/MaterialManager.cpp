@@ -162,6 +162,33 @@ UMaterialInstance* FMaterialManager::GetOrCreateMaterialInstance(const FString& 
 	return MaterialInstance;
 }
 
+UMaterialInterface* FMaterialManager::GetOrCreateMaterialInterface(const FString& AssetPath)
+{
+	if (AssetPath.empty() || AssetPath == "None")
+	{
+		return nullptr;
+	}
+
+	std::filesystem::path Path(FPaths::ToWide(AssetPath));
+	FString GenericPath = FPaths::ToUtf8(Path.generic_wstring());
+
+	FString Extension = FPaths::ToUtf8(Path.extension().wstring());
+
+	if (Extension == ".mat")
+	{
+		return GetOrCreateMaterial(GenericPath);
+	}
+
+	if (Extension == ".matinst")
+	{
+		return GetOrCreateMaterialInstance(GenericPath);
+	}
+
+	// 확장자가 없거나 legacy path면 우선 기존 material로 처리
+	// 필요하면 여기서 .mat -> .matinst fallback 탐색도 가능
+	return GetOrCreateMaterial(GenericPath);
+}
+
 json::JSON FMaterialManager::ReadJsonFile(const FString& FilePath) const
 {
 	std::ifstream File(FPaths::ToWide(FilePath).c_str());

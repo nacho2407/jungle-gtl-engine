@@ -253,6 +253,9 @@ protected:
 	TMap<FString, UTexture2D*> TextureOverrides;
 
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap;
+	ID3D11ShaderResourceView* CachedOverrideSRVs[(int)EMaterialTextureSlot::Max] = {};	//빠른 조회를 위한 테이블
+	bool bHasTextureOverride[(int)EMaterialTextureSlot::Max] = {};
+
 	bool bConstantBufferDirty = true;
 };
 

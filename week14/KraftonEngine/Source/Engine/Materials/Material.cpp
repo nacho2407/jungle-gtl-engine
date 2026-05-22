@@ -514,6 +514,10 @@ bool UMaterialInstance::SetTextureParameter(const FString& ParamName, UTexture2D
 	{
 		return false;
 	}
+	int SlotIndex = (int)MaterialTextureSlot::FromParameterName(ParamName);
+
+	bHasTextureOverride[SlotIndex] = true;
+	CachedOverrideSRVs[SlotIndex] = Texture ? Texture->GetSRV() : nullptr;
 
 	TextureOverrides[ParamName] = Texture;
 	bConstantBufferDirty = true;
@@ -632,6 +636,12 @@ FConstantBuffer* UMaterialInstance::GetGPUBufferBySlot(uint32 InSlot) const
 
 ID3D11ShaderResourceView* UMaterialInstance::GetSRV(EMaterialTextureSlot Slot) const
 {
+	//1. cached override SRV가 있으면 반환
+	int Index = (int)Slot;
+	if (bHasTextureOverride[Index])
+		return CachedOverrideSRVs[Index];
+
+	//2. cached가 없으면 override map에서 조회
 	FString SlotName = MaterialTextureSlot::ToString((int)Slot) + "Texture";
 	auto It = TextureOverrides.find(SlotName);
 	if (It != TextureOverrides.end())
@@ -639,6 +649,7 @@ ID3D11ShaderResourceView* UMaterialInstance::GetSRV(EMaterialTextureSlot Slot) c
 		return (It->second && It->second->GetSRV()) ? It->second->GetSRV() : nullptr;
 	}
 
+	//3. override가 없으면 부모에서 조회
 	return Parent ? Parent->GetSRV(Slot) : nullptr;
 }
 

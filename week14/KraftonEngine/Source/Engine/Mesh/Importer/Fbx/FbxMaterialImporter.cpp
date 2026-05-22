@@ -1,4 +1,4 @@
-#include "Mesh/Importer/Fbx/FbxMaterialImporter.h"
+﻿#include "Mesh/Importer/Fbx/FbxMaterialImporter.h"
 #include "Materials/MaterialManager.h"
 #include "Materials/Material.h"
 #include "Platform/Paths.h"
@@ -181,7 +181,7 @@ void FFbxMaterialImporter::BuildStaticMaterials(const FFbxImportContext& Context
 	{
 		FStaticMaterial NewMaterial;
 		NewMaterial.MaterialSlotName = MaterialInfo.Name;
-		NewMaterial.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial(CreateOrUpdateMaterialAsset(MaterialInfo));
+		NewMaterial.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterialInterface(CreateOrUpdateMaterialAsset(MaterialInfo));
 		OutMaterials.push_back(NewMaterial);
 	}
 }
@@ -216,7 +216,7 @@ void FFbxMaterialImporter::BuildSkeletalMaterials(const FFbxImportContext& Conte
 	if (bNeedsNoneSlot)
 	{
 		FSkeletalMaterial DefaultMaterial;
-		DefaultMaterial.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial("None");
+		DefaultMaterial.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterialInterface("None");
 		DefaultMaterial.MaterialSlotName = "None";
 		DefaultMaterial.MaterialPath = DefaultMaterial.MaterialInterface
 			? DefaultMaterial.MaterialInterface->GetAssetPathFileName()

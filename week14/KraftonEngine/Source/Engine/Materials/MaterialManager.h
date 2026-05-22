@@ -56,6 +56,8 @@ public:
 	UMaterial* GetOrCreateMaterial(const FString& MatFilePath);
 	UMaterialInstance* GetOrCreateMaterialInstance(const FString& MatInstFilePath);
 
+	UMaterialInterface* GetOrCreateMaterialInterface(const FString& AssetPath);
+
 	void ScanMaterialAssets();
 	const TArray<FMaterialAssetListItem>& GetAvailableMaterialFiles() const { return AvailableMaterialFiles; }
 

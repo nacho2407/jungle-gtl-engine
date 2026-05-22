@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
@@ -60,7 +60,7 @@ struct FStaticMaterial
 		{
 			if (!Mat.MaterialPath.empty())
 			{
-				Mat.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial(Mat.MaterialPath);
+				Mat.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterialInterface(Mat.MaterialPath);
 			}
 			else
 			{

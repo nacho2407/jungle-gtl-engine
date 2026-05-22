@@ -15,7 +15,7 @@ ADecalActor::ADecalActor()
 void ADecalActor::InitDefaultComponents()
 {
 	DecalComponent = AddComponent<UDecalComponent>();
-	auto Material = FMaterialManager::Get().GetOrCreateMaterial(DefaultDecalMaterialPath);
+	auto Material = FMaterialManager::Get().GetOrCreateMaterialInterface(DefaultDecalMaterialPath);
 	DecalComponent->SetMaterial(Material);
 	SetRootComponent(DecalComponent);
 
