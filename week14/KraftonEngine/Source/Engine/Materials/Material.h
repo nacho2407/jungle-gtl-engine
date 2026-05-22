@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Reflection/ObjectFactory.h"
 #include "Math/Vector.h"
@@ -69,6 +69,14 @@ struct FMaterialConstantBuffer
 	FConstantBuffer* GetConstantBuffer() { return &GPUBuffer; }
 };
 
+UENUM()
+enum class EMaterialShadowMode : uint8
+{
+	Opaque,
+	Masked,
+	None,
+};
+
 //파라미터 값 + 텍스처 (런타임 데이터)
 //JSON으로 직렬화되는 데이터
 UCLASS()
@@ -95,6 +103,8 @@ private:
 
 	// SRV 캐시 — SetTextureParameter 시 갱신, BuildCommandForProxy에서 map lookup 회피
 	ID3D11ShaderResourceView* CachedSRVs[(int)EMaterialTextureSlot::Max] = {};
+
+	EMaterialShadowMode ShadowMode = EMaterialShadowMode::Opaque;
 
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);
 
@@ -126,6 +136,11 @@ public:
 	bool GetMatrixParameter(const FString& ParamName, FMatrix& Value) const;
 
 	TMap<FString, UTexture2D*>* GetTexture() { return &TextureParameters; }
+
+	EMaterialShadowMode GetShadowMode() const { return ShadowMode; }
+	void SetShadowMode(EMaterialShadowMode InMode) { ShadowMode = InMode; }
+
+	bool CastsShadow() const { return ShadowMode != EMaterialShadowMode::None; }
 
 	void Bind(ID3D11DeviceContext* Context);
 

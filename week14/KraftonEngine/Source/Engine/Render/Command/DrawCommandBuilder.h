@@ -8,8 +8,20 @@
 
 class FPassRenderStateTable;
 class FTextRenderSceneProxy;
+class FSkeletalMeshSceneProxy;
 class FScene;
 struct FCollectOutput;
+
+struct FProxyCommandBuildContext
+{
+	FDrawCommandBuffer ProxyBuffer;
+	FConstantBuffer* PerObjCB = nullptr;
+	const FSkeletalMeshSceneProxy* SkeletalProxy = nullptr;
+
+	bool bSkeletal = false;
+	bool bGPUSkinning = false;
+	bool bWeightBoneHeatMap = false;
+};
 
 /*
 	FDrawCommandBuilder — Collect 페이즈에서 Proxy/Scene 데이터를 FDrawCommand로 변환합니다.
@@ -44,6 +56,10 @@ private:
 	void BuildDecalCommands(FScene& Scene, FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, const FCollectOutput& Output);
 	void BuildMeshCommands(FScene& Scene, const FPrimitiveSceneProxy* Proxy);
 	void BuildSelectionCommands(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume, FScene& Scene);
+
+	bool PrepareProxyCommandBuildContext(FScene& Scene, const FPrimitiveSceneProxy& Proxy, FProxyCommandBuildContext& OutBuildCtx);
+	void BuildCommandForSection(FScene& Scene, const FPrimitiveSceneProxy& Proxy, const FMeshSectionDraw& Section,
+		ERenderPass Pass, const FProxyCommandBuildContext& BuildCtx);
 
 	// Scene 경량 데이터 → 동적 지오메트리 → FDrawCommand
 	void BuildDynamicCommands(const FFrameContext& Frame, const FScene* Scene);

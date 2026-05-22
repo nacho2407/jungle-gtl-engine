@@ -1,4 +1,4 @@
-#include "Mesh/Importer/Fbx/FbxMaterialImporter.h"
+﻿#include "Mesh/Importer/Fbx/FbxMaterialImporter.h"
 #include "Materials/MaterialManager.h"
 #include "Materials/Material.h"
 #include "Platform/Paths.h"
@@ -114,6 +114,18 @@ void FFbxMaterialImporter::CollectMaterials(FbxScene* Scene, FFbxImportContext& 
 				{
 					MaterialInfo.DiffuseTexturePath = ImportTextureToProject(Texture->GetFileName(), Context.SourcePath);
 				}
+			}
+		}
+		
+		FbxProperty Opacity = Material->FindProperty(FbxSurfaceMaterial::sTransparencyFactor);
+		if (Opacity.IsValid())
+		{
+			FbxDouble OpacityValue = Opacity.Get<FbxDouble>();
+			MaterialInfo.Opacity = 1.0f - OpacityValue;
+
+			if (MaterialInfo.Opacity < 1.0f)
+			{
+				MaterialInfo.bIsTransparent = true;
 			}
 		}
 
@@ -249,7 +261,17 @@ FString FFbxMaterialImporter::CreateOrUpdateMaterialAsset(const FFbxImportedMate
 	JsonData["PathFileName"] = MatPath;
 	JsonData["Origin"] = "FbxImport";
 	JsonData["ShaderPath"] = "Shaders/Geometry/UberLit.hlsl";
-	JsonData["RenderPass"] = "Opaque";
+
+	if (MaterialInfo.bIsTransparent)
+	{
+		JsonData["RenderPass"] = "AlphaBlend";
+		JsonData["BlendState"] = "AlphaBlend";
+		JsonData["DepthStencilState"] = "DepthReadOnly";
+	}
+	else
+	{
+		JsonData["RenderPass"] = "Opaque";
+	}
 
 	if (!MaterialInfo.DiffuseTexturePath.empty())
 	{
@@ -257,14 +279,14 @@ FString FFbxMaterialImporter::CreateOrUpdateMaterialAsset(const FFbxImportedMate
 		JsonData["Parameters"]["SectionColor"][0] = 1.0f;
 		JsonData["Parameters"]["SectionColor"][1] = 1.0f;
 		JsonData["Parameters"]["SectionColor"][2] = 1.0f;
-		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][3] = MaterialInfo.Opacity;
 	}
 	else
 	{
 		JsonData["Parameters"]["SectionColor"][0] = MaterialInfo.DiffuseColor.X;
 		JsonData["Parameters"]["SectionColor"][1] = MaterialInfo.DiffuseColor.Y;
 		JsonData["Parameters"]["SectionColor"][2] = MaterialInfo.DiffuseColor.Z;
-		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][3] = MaterialInfo.Opacity;
 	}
 
 	if (!MaterialInfo.NormalTexturePath.empty())
