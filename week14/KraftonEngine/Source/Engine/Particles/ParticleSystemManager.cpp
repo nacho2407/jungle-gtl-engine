@@ -1,4 +1,4 @@
-#include "Particles/ParticleSystemManager.h"
+﻿#include "Particles/ParticleSystemManager.h"
 
 #include "Asset/AssetPackage.h"
 #include "Particles/ParticleSystem.h"
@@ -102,7 +102,6 @@ bool FParticleSystemManager::Save(UParticleSystem* System)
 
 	if (Ar.IsValid())
 	{
-		Register(Path, System);
 		RefreshAvailableParticleSystems();
 	}
 

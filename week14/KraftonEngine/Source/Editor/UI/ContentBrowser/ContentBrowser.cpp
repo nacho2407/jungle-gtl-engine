@@ -1,4 +1,4 @@
-#include "ContentBrowser.h"
+﻿#include "ContentBrowser.h"
 
 #include "Asset/AssetPackage.h"
 #include "Animation/Graph/AnimGraphAsset.h"
@@ -11,6 +11,8 @@
 #include "Editor/UI/Util/EditorTextureManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemManager.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
@@ -580,6 +582,21 @@ void FEditorContentBrowserWidget::DrawContents()
 						if (UAnimGraphAsset* GraphAsset = FAnimGraphManager::Get().Load(CreatedPath))
 						{
 							BrowserContext.EditorEngine->OpenAssetEditorForObject(GraphAsset);
+						}
+					}
+				}
+			}
+			if (ImGui::MenuItem("Particle System"))
+			{
+				FString CreatedPath;
+				if (FAssetFactory::CreateParticleSystem(FPaths::ToUtf8(BrowserContext.CurrentPath), "NewParticleSystem", CreatedPath))
+				{
+					Refresh();
+					if (BrowserContext.EditorEngine)
+					{
+						if (UParticleSystem* ParticleAsset = FParticleSystemManager::Get().Load(CreatedPath))
+						{
+							BrowserContext.EditorEngine->OpenAssetEditorForObject(ParticleAsset);
 						}
 					}
 				}

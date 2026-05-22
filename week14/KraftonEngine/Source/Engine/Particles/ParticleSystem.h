@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 
@@ -78,6 +78,8 @@ class UParticleSystem : public UObject
 {
 public:
 	~UParticleSystem() override;
+
+	void InitializeDefaultEmitters();
 
 	const TArray<UParticleEmitter*>& GetEmitters() const { return Emitters; }
 	TArray<UParticleEmitter*>& GetMutableEmitters() { return Emitters; }

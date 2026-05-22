@@ -1,4 +1,4 @@
-#include "Editor/Subsystem/AssetFactory.h"
+﻿#include "Editor/Subsystem/AssetFactory.h"
 
 #include "Animation/Graph/AnimGraphAsset.h"
 #include "Animation/Graph/AnimGraphManager.h"
@@ -6,6 +6,8 @@
 #include "CameraShake/CameraShakeManager.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
+#include "Particles/ParticleSystemManager.h"
+#include "Particles/ParticleSystem.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Platform/Paths.h"
 
@@ -116,6 +118,32 @@ bool FAssetFactory::CreateAnimGraph(const FString& DirectoryPath, const FString&
 	NewAsset->InitializeDefault(); // SequencePlayer → OutputPose 기본 그래프.
 
 	bool bSaved = FAnimGraphManager::Get().Save(NewAsset);
+	UObjectManager::Get().DestroyObject(NewAsset);
+
+	if (!bSaved)
+	{
+		return false;
+	}
+
+	OutCreatedPath = FPaths::ToUtf8(AssetPath.wstring());
+	return true;
+}
+
+bool FAssetFactory::CreateParticleSystem(const FString& DirectoryPath, const FString& AssetName, FString& OutCreatedPath)
+{
+	const std::filesystem::path Directory(FPaths::ToWide(DirectoryPath));
+	if (!std::filesystem::exists(Directory) || !std::filesystem::is_directory(Directory))
+	{
+		return false;
+	}
+
+	const std::filesystem::path AssetPath = BuildUniqueAssetPath(Directory, AssetName, L".uasset");
+
+	UParticleSystem* NewAsset = UObjectManager::Get().CreateObject<UParticleSystem>();
+	NewAsset->InitializeDefaultEmitters();
+	NewAsset->SetAssetPathFileName(FPaths::ToUtf8(AssetPath.wstring()));
+
+	bool bSaved = FParticleSystemManager::Get().Save(NewAsset);
 	UObjectManager::Get().DestroyObject(NewAsset);
 
 	if (!bSaved)
