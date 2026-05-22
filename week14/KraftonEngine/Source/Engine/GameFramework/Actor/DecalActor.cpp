@@ -1,8 +1,9 @@
-#include "DecalActor.h"
+﻿#include "DecalActor.h"
 #include "Component/Primitive/DecalComponent.h"
 #include "Component/Primitive/BillboardComponent.h"
 #include "Component/Primitive/TextRenderComponent.h"
 #include "Materials/MaterialManager.h"
+#include "Materials/Material.h"
 
 ADecalActor::ADecalActor()
 	: DecalComponent(nullptr)

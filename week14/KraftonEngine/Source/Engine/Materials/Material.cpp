@@ -630,6 +630,18 @@ FConstantBuffer* UMaterialInstance::GetGPUBufferBySlot(uint32 InSlot) const
 	return nullptr;
 }
 
+ID3D11ShaderResourceView* UMaterialInstance::GetSRV(EMaterialTextureSlot Slot) const
+{
+	FString SlotName = MaterialTextureSlot::ToString((int)Slot) + "Texture";
+	auto It = TextureOverrides.find(SlotName);
+	if (It != TextureOverrides.end())
+	{
+		return (It->second && It->second->GetSRV()) ? It->second->GetSRV() : nullptr;
+	}
+
+	return Parent ? Parent->GetSRV(Slot) : nullptr;
+}
+
 void UMaterialInstance::FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx)
 {
 	if (!Parent)

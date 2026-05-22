@@ -87,7 +87,7 @@ struct FSkeletalMeshSection
 
 struct FSkeletalMaterial
 {
-	UMaterial* MaterialInterface = nullptr;
+	UMaterialInterface* MaterialInterface = nullptr;
 	FString MaterialSlotName = "None";
 	FString MaterialPath;
 

@@ -132,7 +132,7 @@ FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewM
 // ============================================================
 // ApplyMaterialRenderState — Material 렌더 상태 오버라이드 (Wireframe 우선)
 // ============================================================
-void FDrawCommandBuilder::ApplyMaterialRenderState(FDrawCommandRenderState& OutState, const UMaterial* Mat, const FDrawCommandRenderState& BaseState)
+void FDrawCommandBuilder::ApplyMaterialRenderState(FDrawCommandRenderState& OutState, const UMaterialInterface* Mat, const FDrawCommandRenderState& BaseState)
 {
 	OutState.Blend = Mat->GetBlendState();
 	OutState.DepthStencil = Mat->GetDepthStencilState();
@@ -219,7 +219,7 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 	
 		if (!bDepthOnly && Section.Material)
 		{
-			UMaterial* Mat = Section.Material;
+			UMaterialInterface* Mat = Section.Material;
 
 			// dirty CB 업로드 (ConstantBufferMap + PerShaderOverride)
 			Mat->FlushDirtyBuffers(CachedDevice, Ctx);
@@ -227,10 +227,8 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 			Cmd.Bindings.PerShaderCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
 			Cmd.Bindings.PerShaderCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
 
-			// CachedSRVs에서 직접 복사 (map lookup 회피)
-			const ID3D11ShaderResourceView* const* MatSRVs = Mat->GetCachedSRVs();
 			for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
-				Cmd.Bindings.SRVs[s] = const_cast<ID3D11ShaderResourceView*>(MatSRVs[s]);
+				Cmd.Bindings.SRVs[s] = Mat->GetSRV(static_cast<EMaterialTextureSlot>(s));
 
 			// 섹션별 Material의 RenderPass가 현재 Pass와 일치할 때만 렌더 상태 오버라이드
 			if (Pass == Mat->GetRenderPass())
@@ -249,7 +247,7 @@ void FDrawCommandBuilder::BuildDecalCommandForReceiver(FScene& Scene, const FPri
 	if (!ReceiverProxy.GetMeshBuffer() || !ReceiverProxy.GetMeshBuffer()->IsValid()) return;
 
 	// Decal Material은 SectionDraws[0]에 저장됨
-	UMaterial* DecalMat = DecalProxy.GetSectionDraws().empty() ? nullptr : DecalProxy.GetSectionDraws()[0].Material;
+	UMaterialInterface* DecalMat = DecalProxy.GetSectionDraws().empty() ? nullptr : DecalProxy.GetSectionDraws()[0].Material;
 	if (!DecalMat || !DecalMat->GetShader()) return;
 
 	ID3D11DeviceContext* Ctx = CachedContext;
@@ -289,10 +287,8 @@ void FDrawCommandBuilder::BuildDecalCommandForReceiver(FScene& Scene, const FPri
 			Cmd.PerObjectCB = ReceiverPerObjCB;
 			Cmd.Bindings.PerShaderCB[0] = DecalMat->GetGPUBufferBySlot(ECBSlot::PerShader0);
 
-			// Material의 CachedSRVs에서 텍스처 바인딩
-			const ID3D11ShaderResourceView* const* MatSRVs = DecalMat->GetCachedSRVs();
 			for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
-				Cmd.Bindings.SRVs[s] = const_cast<ID3D11ShaderResourceView*>(MatSRVs[s]);
+				Cmd.Bindings.SRVs[s] = DecalMat->GetSRV(static_cast<EMaterialTextureSlot>(s));
 
 			Cmd.BuildSortKey();
 		};

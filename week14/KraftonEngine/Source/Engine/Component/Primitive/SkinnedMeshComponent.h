@@ -9,7 +9,7 @@
 #include "Source/Engine/Component/Primitive/SkinnedMeshComponent.generated.h"
 struct FSkeletalMesh;
 class USkeletalMesh;
-class UMaterial;
+class UMaterialInterface;
 
 // ==================================================================================
 // SkeletalMesh의 런타임 상태를 소유하는 기본 컴포넌트.
@@ -32,9 +32,9 @@ public:
 	void UpdateWorldAABB() const override;
 
 	// Material 섹션: editor slot 경로와 runtime override 포인터를 같이 유지한다.
-	void SetMaterial(int32 ElementIndex, UMaterial* InMaterial);
-	UMaterial* GetMaterial(int32 ElementIndex) const;
-	const TArray<UMaterial*>& GetOverrideMaterials() const { return OverrideMaterials; }
+	void SetMaterial(int32 ElementIndex, UMaterialInterface* InMaterial);
+	UMaterialInterface* GetMaterial(int32 ElementIndex) const;
+	const TArray<UMaterialInterface*>& GetOverrideMaterials() const { return OverrideMaterials; }
 
 	// Serialization/editor 섹션: asset pointer는 저장하지 않고 path를 저장한 뒤 로드 후 SetSkeletalMesh 흐름으로 복원한다.
 	void PostDuplicate() override;
@@ -112,7 +112,7 @@ protected:
 	TObjectPtr<USkeletalMesh> SkeletalMesh;
 	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Skeletal Mesh", AssetType="SkeletalMesh")
 	FSoftObjectPtr SkeletalMeshPath = "None";
-	TArray<UMaterial*> OverrideMaterials;
+	TArray<UMaterialInterface*> OverrideMaterials;
 	UPROPERTY(Edit, Save, EditFixedSize, Category="Materials", DisplayName="Materials", AssetType="Material")
 	TArray<FSoftObjectPtr> MaterialSlots;
 

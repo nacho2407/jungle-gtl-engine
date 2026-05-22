@@ -43,6 +43,12 @@ public:
 	virtual ERasterizerState GetRasterizerState() const { return ERasterizerState::SolidBackCull; }
 	virtual FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const { return nullptr; }
 	virtual void FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx) {}
+	virtual ID3D11ShaderResourceView* GetSRV(EMaterialTextureSlot Slot) const { return nullptr; }
+	virtual const FString& GetAssetPathFileName() const
+	{
+		static const FString EmptyString;
+		return EmptyString;
+	}
 };
 
 //파라미터 값 + 텍스처 (런타임 데이터)
@@ -132,7 +138,7 @@ public:
 
 	const FString& GetTexturePathFileName(const FString& TextureName)const;
 
-	const FString& GetAssetPathFileName() const { return PathFileName; }
+	const FString& GetAssetPathFileName() const override { return PathFileName; }
 	void SetAssetPathFileName(const FString& InPath) { PathFileName = InPath; }
 	void Serialize(FArchive& Ar);//>>>>>Manager가 위임
 
@@ -169,6 +175,7 @@ public:
 
 	// 캐시된 SRV 배열 직접 접근 (map lookup 회피)
 	const ID3D11ShaderResourceView* const* GetCachedSRVs() const { return CachedSRVs; }
+	ID3D11ShaderResourceView* GetSRV(EMaterialTextureSlot Slot) const override { return CachedSRVs[(int)Slot]; }
 
 	// SRV 캐시 재구축 — Material 생성/텍스처 로드 후 호출
 	void RebuildCachedSRVs();
@@ -207,6 +214,7 @@ public:
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
 
 	UMaterial* GetParent() const { return Parent; }
+	const FString& GetAssetPathFileName() const override { return PathFileName; }
 	void Serialize(FArchive& Ar) override;
 
 	bool SetScalarParameter(const FString& ParamName, float Value) override;
@@ -228,6 +236,7 @@ public:
 	ERasterizerState GetRasterizerState() const override;
 	FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const override;
 	void FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx) override;
+	ID3D11ShaderResourceView* GetSRV(EMaterialTextureSlot Slot) const override;
 
 protected:
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);

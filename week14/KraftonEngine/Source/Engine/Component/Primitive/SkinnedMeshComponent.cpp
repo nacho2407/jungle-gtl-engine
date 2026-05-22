@@ -1082,7 +1082,7 @@ void USkinnedMeshComponent::BuildBoneEditGlobalTransforms(TArray<FTransform>& Ou
 }
 
 // Material 섹션: material override 변경은 geometry 재생성 없이 proxy material만 dirty 처리한다.
-void USkinnedMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
+void USkinnedMeshComponent::SetMaterial(int32 ElementIndex, UMaterialInterface* InMaterial)
 {
 	if (ElementIndex < 0 || ElementIndex >= static_cast<int32>(OverrideMaterials.size()))
 	{
@@ -1101,7 +1101,7 @@ void USkinnedMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMateria
 	MarkProxyDirty(EDirtyFlag::Material);
 }
 
-UMaterial* USkinnedMeshComponent::GetMaterial(int32 ElementIndex) const
+UMaterialInterface* USkinnedMeshComponent::GetMaterial(int32 ElementIndex) const
 {
 	if (ElementIndex >= 0 && ElementIndex < static_cast<int32>(OverrideMaterials.size()))
 	{

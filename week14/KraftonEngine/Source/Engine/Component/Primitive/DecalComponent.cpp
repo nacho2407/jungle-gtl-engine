@@ -77,7 +77,7 @@ FVector4 UDecalComponent::GetColor() const
 	return OutColor;
 }
 
-void UDecalComponent::SetMaterial(UMaterial* InMaterial)
+void UDecalComponent::SetMaterial(UMaterialInterface* InMaterial)
 {
 	Material = InMaterial;
 	if (Material)
