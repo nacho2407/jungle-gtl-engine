@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Reflection/ObjectFactory.h"
 #include "Component/SceneComponent.h"
@@ -77,6 +77,8 @@ public:
 	bool GetCastShadow() const { return bCastShadow; }
 
 	bool GetCastShadowAsTwoSided() const { return bCastShadowAsTwoSided; }
+
+	bool GetTranslucentSortPriority() const { return TranslucentSortPriority; }
 
 	// 월드 공간 AABB를 FBoundingBox로 반환
 	FBoundingBox GetWorldBoundingBox() const;
@@ -224,6 +226,8 @@ protected:
 	bool bCastShadow = true;
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Two Sided Shadow")
 	bool bCastShadowAsTwoSided = false;
+	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Translucent Sort Priority")
+	int32 TranslucentSortPriority = 0;
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Simulate Physics")
 	bool bSimulatePhysics = false;
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Generate Overlap Events")

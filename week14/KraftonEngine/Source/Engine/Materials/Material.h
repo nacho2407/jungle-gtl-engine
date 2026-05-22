@@ -18,6 +18,15 @@ class FArchive;
 class FShader;
 class UMaterialInstanceDynamic;
 
+
+UENUM()
+enum class EMaterialShadowMode : uint8
+{
+	Opaque,
+	Masked,
+	None,
+};
+
 UCLASS()
 class UMaterialInterface : public UObject
 {
@@ -49,7 +58,18 @@ public:
 		static const FString EmptyString;
 		return EmptyString;
 	}
+	// UMaterialInterface
+	virtual EMaterialShadowMode GetShadowMode() const
+	{
+		return EMaterialShadowMode::Opaque;
+	}
+
+	virtual bool CastsShadow() const
+	{
+		return GetShadowMode() != EMaterialShadowMode::None;
+	}
 };
+
 
 //파라미터 값 + 텍스처 (런타임 데이터)
 //JSON으로 직렬화되는 데이터
@@ -80,6 +100,8 @@ protected:
 
 	// SRV 캐시 — SetTextureParameter 시 갱신, BuildCommandForProxy에서 map lookup 회피
 	ID3D11ShaderResourceView* CachedSRVs[(int)EMaterialTextureSlot::Max] = {};
+
+	EMaterialShadowMode ShadowMode = EMaterialShadowMode::Opaque;
 
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> CloneConstantBuffers(ID3D11Device* Device) const;
@@ -114,6 +136,11 @@ public:
 	bool GetMatrixParameter(const FString& ParamName, FMatrix& Value) const override;
 
 	TMap<FString, UTexture2D*>* GetTexture() { return &TextureParameters; }
+
+	EMaterialShadowMode GetShadowMode()const override  { return ShadowMode; }
+	void SetShadowMode(EMaterialShadowMode InMode) { ShadowMode = InMode; }
+
+	bool CastsShadow() const override { return ShadowMode != EMaterialShadowMode::None; }
 
 	void Bind(ID3D11DeviceContext* Context);
 
@@ -237,6 +264,9 @@ public:
 	FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const override;
 	void FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx) override;
 	ID3D11ShaderResourceView* GetSRV(EMaterialTextureSlot Slot) const override;
+
+	EMaterialShadowMode GetShadowMode()  const override { return Parent->GetShadowMode(); }
+	bool CastsShadow() const override { return GetShadowMode() != EMaterialShadowMode::None; }
 
 protected:
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);

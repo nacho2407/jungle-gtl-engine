@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Singleton.h"
 #include "Render/Shader/Shader.h"
@@ -90,6 +90,7 @@ namespace EShaderPath
 	inline constexpr const char* Primitive = "Shaders/Geometry/Primitive.hlsl";
 	inline constexpr const char* UberLit = "Shaders/Geometry/UberLit.hlsl";
 	inline constexpr const char* Decal = "Shaders/Geometry/Decal.hlsl";
+	inline constexpr const char* Particle = "Shaders/Geometry/Particle.hlsl";
 
 	inline constexpr const char* Editor = "Shaders/Editor/Editor.hlsl";
 	inline constexpr const char* Gizmo = "Shaders/Editor/Gizmo.hlsl";

@@ -1,4 +1,4 @@
-#include "Mesh/Importer/ObjImporter.h"
+﻿#include "Mesh/Importer/ObjImporter.h"
 #include "Mesh/Static/StaticMeshAsset.h"
 #include "Materials/Material.h"
 #include "Core/Logging/Log.h"
@@ -447,6 +447,20 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 				}
 			}
 		}
+		else if (Prefix == "d")
+		{
+			if (OutMtlInfos.empty()) continue;
+
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), OutMtlInfos.back().Opacity);
+		}
+		else if (Prefix == "Tr")
+		{
+			if (OutMtlInfos.empty()) continue;
+
+			float Transparency = 0.0f;
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), Transparency);
+			OutMtlInfos.back().Opacity = 1.0f - Transparency;
+		}
 	}
 
 	return true;
@@ -474,7 +488,17 @@ FString FObjImporter::ConvertMtlInfoToMat(const FObjMaterialInfo* MtlInfo)
 	JsonData["PathFileName"] = MatPath;
 	JsonData["Origin"] = "ObjImport";
 	JsonData["ShaderPath"] = "Shaders/Geometry/UberLit.hlsl";
-	JsonData["RenderPass"] = "Opaque";
+
+	if (MtlInfo->Opacity < 1.0f)
+	{
+		JsonData["RenderPass"] = "AlphaBlend";
+		JsonData["BlendState"] = "AlphaBlend";
+		JsonData["DepthStencilState"] = "DepthReadOnly";
+	}
+	else
+	{
+		JsonData["RenderPass"] = "Opaque";
+	}
 
 	if (!MtlInfo->map_Kd.empty())
 	{
@@ -483,7 +507,7 @@ FString FObjImporter::ConvertMtlInfoToMat(const FObjMaterialInfo* MtlInfo)
 		JsonData["Parameters"]["SectionColor"][0] = 1.0f;
 		JsonData["Parameters"]["SectionColor"][1] = 1.0f;
 		JsonData["Parameters"]["SectionColor"][2] = 1.0f;
-		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][3] = MtlInfo->Opacity;
 	}
 	else
 	{
@@ -491,7 +515,7 @@ FString FObjImporter::ConvertMtlInfoToMat(const FObjMaterialInfo* MtlInfo)
 		JsonData["Parameters"]["SectionColor"][0] = MtlInfo->Kd.X;
 		JsonData["Parameters"]["SectionColor"][1] = MtlInfo->Kd.Y;
 		JsonData["Parameters"]["SectionColor"][2] = MtlInfo->Kd.Z;
-		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][3] = MtlInfo->Opacity;
 	}
 
 	if (!MtlInfo->map_Bump.empty())

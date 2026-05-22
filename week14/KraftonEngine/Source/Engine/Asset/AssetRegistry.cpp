@@ -1,4 +1,4 @@
-#include "AssetRegistry.h"
+﻿#include "AssetRegistry.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Animation/AnimationManager.h"
@@ -7,6 +7,7 @@
 #include "Animation/Skeleton/Skeleton.h"
 #include "Animation/Skeleton/SkeletonManager.h"
 #include "Platform/Paths.h"
+#include "Particles/ParticleSystemManager.h"
 
 #include <cstring>
 #include <filesystem>
@@ -42,6 +43,11 @@ namespace FAssetRegistry
 			// 콤보 열 때마다 재스캔 — 방금 ContentBrowser 에서 만든 자산이 즉시 노출되도록.
 			FAnimGraphManager::Get().RefreshAvailableGraphs();
 			return FAnimGraphManager::Get().GetAvailableGraphFiles();
+		}
+		if (std::strcmp(AssetTypeName, "UParticleSystem") == 0)
+		{
+			FParticleSystemManager::Get().RefreshAvailableParticleSystems();
+			return FParticleSystemManager::Get().GetAvailableParticleSystemFiles();
 		}
 		if (std::strcmp(AssetTypeName, "LuaAnimScript") == 0)
 		{

@@ -1,4 +1,4 @@
-#include "PrimitiveComponent.h"
+﻿#include "PrimitiveComponent.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Core/Types/RayTypes.h"
@@ -188,6 +188,10 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 		MarkRenderVisibilityDirty();
 	}
 	else if (strcmp(PropertyName, "bCastShadowAsTwoSided") == 0 || strcmp(PropertyName, "Two Sided Shadow") == 0)
+	{
+		MarkRenderVisibilityDirty();
+	}
+	else if (strcmp(PropertyName, "TranslucentSortPriority") == 0 || strcmp(PropertyName, "Translucent Sort Priority") == 0)
 	{
 		MarkRenderVisibilityDirty();
 	}

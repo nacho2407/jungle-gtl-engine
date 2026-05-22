@@ -7,6 +7,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Object/Object.h"
+#include "Particles/ParticleSystem.h"
 #include "Engine/Platform/WindowsWindow.h"
 
 #include "ImGui/imgui.h"
@@ -25,6 +26,7 @@
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "Editor/UI/Asset/Mesh/StaticMeshEditorWidget.h"
 #include "Editor/UI/Asset/Animation/AnimGraphEditorWidget.h"
+#include "Editor/UI/Asset/Particle/ParticleSystemEditorWidget.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -97,11 +99,14 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	AssetEditorManager.RegisterEditor<FMeshEditorWidget>();
 	AssetEditorManager.RegisterEditor<FStaticMeshEditorWidget>();
 	AssetEditorManager.RegisterEditor<FAnimGraphEditorWidget>();
+	AssetEditorManager.RegisterEditor<FParticleSystemEditorWidget>();
 }
 
 void FEditorMainPanel::Release()
 {
 	AssetEditorManager.CloseAll();
+	delete ParticleSystemEditorPreviewAsset;
+	ParticleSystemEditorPreviewAsset = nullptr;
 	ConsoleWidget.Shutdown();
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
@@ -270,6 +275,23 @@ void FEditorMainPanel::RenderMainMenuBar()
 		ImGui::Checkbox("Shadow Map Debug", &Settings.UI.bShadowMapDebug);
 		ImGui::Checkbox("Animation Debug", &Settings.UI.bAnimationDebug);
 		ImGui::Separator();
+		bool bParticleSystemEditorOpen = ParticleSystemEditorPreviewAsset && AssetEditorManager.IsEditorOpenForObject(ParticleSystemEditorPreviewAsset);
+		if (ImGui::Checkbox("Particle System Editor", &bParticleSystemEditorOpen))
+		{
+			if (bParticleSystemEditorOpen)
+			{
+				if (!ParticleSystemEditorPreviewAsset)
+				{
+					ParticleSystemEditorPreviewAsset = new UParticleSystem();
+					ParticleSystemEditorPreviewAsset->SetAssetPathFileName("NewParticleSystem*");
+				}
+				AssetEditorManager.OpenEditorForObject(ParticleSystemEditorPreviewAsset);
+			}
+			else if (ParticleSystemEditorPreviewAsset)
+			{
+				AssetEditorManager.CloseEditorForObject(ParticleSystemEditorPreviewAsset);
+			}
+		}
 		ImGui::Checkbox("IMGUI_Setting", &Settings.UI.bImGUISettings);
 		ImGui::EndPopup();
 	}

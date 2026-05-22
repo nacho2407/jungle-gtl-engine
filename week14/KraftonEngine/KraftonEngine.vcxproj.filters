@@ -67,6 +67,9 @@
     <Filter Include="Source\Editor\UI\Asset\Mesh">
       <UniqueIdentifier>{5084842c-4071-bc7f-36a2-4a3bf67026e8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\UI\Asset\Particle">
+      <UniqueIdentifier>{0ee6db7d-9b37-4a49-b356-6ecf8fc7e89a}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\UI\ContentBrowser">
       <UniqueIdentifier>{09a2ea7f-e891-b580-bef0-471bcd9b5d4b}</UniqueIdentifier>
     </Filter>
@@ -664,6 +667,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\Particle</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
@@ -1487,10 +1493,10 @@
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp">
       <Filter>Source\Engine\Serialization</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Texture\stb_image_impl.cpp">
+    <ClCompile Include="Source\Engine\Texture\Texture2D.cpp">
       <Filter>Source\Engine\Texture</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Texture\Texture2D.cpp">
+    <ClCompile Include="Source\Engine\Texture\stb_image_impl.cpp">
       <Filter>Source\Engine\Texture</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\UIManager.cpp">
@@ -1563,6 +1569,12 @@
     <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp">
       <Filter>Intermediate\Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\ParticleSystem.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleSystemManager.cpp" />
+    <ClCompile Include="Source\Engine\Component\Particle\ParticleSystemComponent.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
+    <ClCompile Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1648,6 +1660,9 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
@@ -2713,6 +2728,9 @@
     </ClInclude>
     <ClInclude Include="Source\ObjViewer\ObjViewerViewportClient.h">
       <Filter>Source\ObjViewer</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\stb_image.h">
+      <Filter>ThirdParty</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\fbx\include\fbxsdk.h">
       <Filter>ThirdParty\fbx\include</Filter>
@@ -4403,6 +4421,14 @@
     <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp">
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleHelper.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleSystem.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleSystemManager.h" />
+    <ClInclude Include="Source\Engine\Component\Particle\ParticleSystemComponent.h" />
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.h" />
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleRuntimeTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
