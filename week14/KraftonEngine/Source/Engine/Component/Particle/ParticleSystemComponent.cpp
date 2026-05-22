@@ -1,14 +1,137 @@
 ﻿#include "ParticleSystemComponent.h"
 
-void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
-{
+#include "Particles/ParticleRuntimeTypes.h"
+#include "Particles/ParticleSystem.h"
 
+UParticleSystemComponent::~UParticleSystemComponent()
+{
+	ClearEmitterRenderData();
+	ClearEmitterInstances();
 }
 
 void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 {
+	if (ParticleSystemTemplate == InTemplate)
+	{
+		return;
+	}
+
+	ParticleSystemTemplate = InTemplate;
+	ResetSystem();
+	MarkRenderStateDirty();
 }
 
 void UParticleSystemComponent::ResetSystem()
 {
+	ClearEmitterRenderData();
+	ClearEmitterInstances();
+	InitializeEmitterInstances();
+}
+
+void UParticleSystemComponent::Activate()
+{
+	UPrimitiveComponent::Activate();
+
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance)
+		{
+			Instance->SetActive(true);
+		}
+	}
+}
+
+void UParticleSystemComponent::Deactivate()
+{
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance)
+		{
+			Instance->SetActive(false);
+		}
+	}
+
+	UPrimitiveComponent::Deactivate();
+}
+
+void UParticleSystemComponent::EndPlay()
+{
+	ClearEmitterRenderData();
+	ClearEmitterInstances();
+	UPrimitiveComponent::EndPlay();
+}
+
+void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
+{
+	UPrimitiveComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (!IsActive())
+	{
+		return;
+	}
+
+	ClearEmitterRenderData();
+
+	bool bAnyEmitterTicked = false;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (!Instance || !Instance->IsActive())
+		{
+			continue;
+		}
+
+		Instance->Tick(DeltaTime);
+		if (FDynamicEmitterDataBase* RenderData = Instance->BuildRenderData())
+		{
+			EmitterRenderData.push_back(RenderData);
+		}
+		bAnyEmitterTicked = true;
+	}
+
+	if (bAnyEmitterTicked)
+	{
+		MarkProxyDirty(EDirtyFlag::Mesh);
+	}
+}
+
+void UParticleSystemComponent::InitializeEmitterInstances()
+{
+	if (!ParticleSystemTemplate)
+	{
+		return;
+	}
+
+	const TArray<UParticleEmitter*>& Emitters = ParticleSystemTemplate->GetEmitters();
+	EmitterInstances.reserve(Emitters.size());
+
+	for (UParticleEmitter* Emitter : Emitters)
+	{
+		if (!Emitter)
+		{
+			continue;
+		}
+
+		if (FParticleEmitterInstance* Instance = Emitter->CreateInstance(this))
+		{
+			EmitterInstances.push_back(Instance);
+		}
+	}
+}
+
+void UParticleSystemComponent::ClearEmitterInstances()
+{
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		delete Instance;
+	}
+	EmitterInstances.clear();
+}
+
+void UParticleSystemComponent::ClearEmitterRenderData()
+{
+	for (FDynamicEmitterDataBase* RenderData : EmitterRenderData)
+	{
+		delete RenderData;
+	}
+	EmitterRenderData.clear();
 }

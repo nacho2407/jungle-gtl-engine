@@ -1,8 +1,10 @@
 ﻿#pragma once
-#include "ParticleHelper.h"
-#include "Core/Types/CoreTypes.h
-#include "ParticleSystem.h"
 
+#include "Core/Types/CoreTypes.h"
+#include "Math/Vector.h"
+
+class UParticleEmitter;
+class UParticleLODLevel;
 class UParticleSystemComponent;
 
 struct FBaseParticle
@@ -17,7 +19,7 @@ struct FBaseParticle
 
 	FVector4 Color = { 1, 1, 1, 1 };
 
-	float RelativeTime = 0.0f; // 0~1 normalized age
+	float RelativeTime = 0.0f;
 	float OneOverMaxLifetime = 1.0f;
 	float Lifetime = 1.0f;
 	float Age = 0.0f;
@@ -26,43 +28,41 @@ struct FBaseParticle
 	bool bAlive = false;
 };
 
+//나 데이터베이스 아임다 데이터 Base 임다
+struct FDynamicEmitterDataBase
+{
+	virtual ~FDynamicEmitterDataBase() = default;
+};
+
 struct FParticleEmitterInstance
 {
-	UParticleEmitter* SpriteTemplate;
+	virtual ~FParticleEmitterInstance() = default;
 
-	// Owner
-	UParticleSystemComponent* Component;
+	virtual void Init(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent);
+	virtual void Tick(float DeltaTime);
+	virtual void Reset();
+	virtual FDynamicEmitterDataBase* BuildRenderData() { return nullptr; }
 
-	int32 CurrentLODLevelIndex;
-	UParticleLODLevel* CurrentLODLevel;
+	bool IsActive() const { return bActive; }
+	void SetActive(bool bInActive) { bActive = bInActive; }
 
-	uint8* ParticleData;
-	uint16* ParticleIndices;
-	uint8* InstanceData;
-	int32 InstancePayloadSize;
-	int32 PayloadOffset;
-	int32 ParticleSize;
-	int32 ParticleStride;
-	int32 ActiveParticles;
-	uint32 ParticleCounter;
-	int32 MaxActiveParticles;
+	UParticleEmitter* GetTemplate() const { return SpriteTemplate; }
+	UParticleSystemComponent* GetComponent() const { return Component; }
+	UParticleLODLevel* GetCurrentLODLevel() const { return CurrentLODLevel; }
 
-	void SpawnParticles(int32 Count, float StartTime, float Increment, const FVector& InitialLocation, const FVector& InitialVelocity, struct FParticleEventInstancePayload* EventPayload)
-	{
-		for (int32 i = 0; i < Count; i++)
-		{
-			DECLARE_PARTICLE_PTR
-			PreSpawn(Particle, InitialLocation, InitialVelocity);
+	int32 GetActiveParticleCount() const { return ActiveParticles; }
+	float GetEmitterTime() const { return EmitterTime; }
 
-			for (int32 ModuleIndex = 0; ModuleIndex < LODLevel->SpawnModules.Num(); ModuleIndex++)
-			{
-				...
-			}
+protected:
+	UParticleEmitter* SpriteTemplate = nullptr;
+	UParticleSystemComponent* Component = nullptr;
 
-			PostSpawn(Particle, Interp, SpawnTime);
-		}
-	}
+	int32 CurrentLODLevelIndex = 0;
+	UParticleLODLevel* CurrentLODLevel = nullptr;
 
-	void KillParticle(int32 Index);
-
+	int32 ActiveParticles = 0;
+	uint32 ParticleCounter = 0;
+	int32 MaxActiveParticles = 0;
+	float EmitterTime = 0.0f;
+	bool bActive = true;
 };
