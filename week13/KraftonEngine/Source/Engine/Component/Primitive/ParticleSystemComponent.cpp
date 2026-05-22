@@ -98,7 +98,7 @@ void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
 
     if (strcmp(PropertyName, "Template") == 0 || strcmp(PropertyName, "TemplatePath") == 0)
     {
-        if (TemplatePath.empty() || TemplatePath == "None")
+        if (TemplatePath.IsNull())
         {
             SetTemplate(nullptr);
         }
@@ -114,9 +114,9 @@ void UParticleSystemComponent::PostDuplicate()
 {
     UPrimitiveComponent::PostDuplicate();
 
-    if (!TemplatePath.empty() && TemplatePath != "None")
+    if (!TemplatePath.IsNull())
     {
-        UParticleSystem* Loaded = FParticleSystemManager::Get().Load(TemplatePath);
+        UParticleSystem* Loaded = FParticleSystemManager::Get().Load(TemplatePath.ToString());
         SetTemplate(Loaded);
     }
 }
