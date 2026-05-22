@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Editor/UI/Asset/AssetEditorWidget.h"
@@ -28,6 +28,8 @@ public:
 
 	void CloseAll();
 	bool OpenEditorForObject(UObject* Object);
+
+	// 임시
 	void CloseEditorForObject(UObject* Object);
 	bool IsEditorOpenForObject(UObject* Object) const;
 

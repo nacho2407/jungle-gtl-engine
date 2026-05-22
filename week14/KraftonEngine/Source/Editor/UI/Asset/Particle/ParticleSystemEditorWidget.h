@@ -17,8 +17,43 @@ public:
 	void Render(float DeltaTime) override;
 
 private:
+	enum class ESelectionKind
+	{
+		ParticleSystem,
+		Emitter,
+		LOD,
+		Module,
+	};
+
+	struct FEditorLayoutSizes;
+	struct FEditorSelectionState
+	{
+		ESelectionKind Kind = ESelectionKind::ParticleSystem;
+		int32 EmitterIndex = -1;
+		int32 LODIndex = 0;
+		int32 ModuleIndex = -1;
+	};
+
+	struct FEditorViewState
+	{
+		FEditorSelectionState Selection;
+		bool bShowCurveEditor = true;
+		bool bPreviewPlaying = true;
+		bool bRestartPreviewRequested = false;
+		float PreviewTime = 0.0f;
+	};
+
 	UParticleSystem* GetParticleSystem() const;
 	void ResetEditorState();
+	void ValidateSelectionState(const UParticleSystem* ParticleSystem);
+	void SelectParticleSystem();
+	void SelectEmitter(int32 EmitterIndex);
+	void SelectLOD(int32 EmitterIndex, int32 LODIndex);
+	void SelectModule(int32 EmitterIndex, int32 ModuleIndex);
+	bool IsEmitterSelected(int32 EmitterIndex) const;
+	bool IsModuleSelected(int32 EmitterIndex, int32 ModuleIndex) const;
+	const char* GetSelectionKindLabel() const;
+	FEditorLayoutSizes CalculateLayoutSizes(const ImVec2& Available) const;
 	void RenderToolbar();
 	void RenderViewportPanel(const ImVec2& Size) const;
 	void RenderDetailsPanel(const ImVec2& Size) const;
@@ -26,9 +61,5 @@ private:
 	void RenderCurveEditorPanel(const ImVec2& Size) const;
 
 private:
-	int32 SelectedEmitterIndex = -1;
-	int32 SelectedLODIndex = 0;
-	int32 SelectedModuleIndex = -1;
-	bool bPreviewPlaying = true;
-	float PreviewTime = 0.0f;
+	FEditorViewState ViewState;
 };
