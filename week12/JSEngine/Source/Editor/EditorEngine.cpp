@@ -13,6 +13,11 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/World.h"
 #include "Editor/EditorRenderPipeline.h"
+#include "Editor/Viewer/AnimationEditorViewer.h"
+#include "Editor/Viewer/ParticleEditorViewer.h"
+#include "Editor/Viewer/SkeletalMeshEditorViewer.h"
+#include "Core/AssetPathPolicy.h"
+#include "Core/Paths.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Stats.h"
 #include "Runtime/Script/ScriptManager.h"
@@ -33,6 +38,29 @@
 
 namespace
 {
+	bool IsParticleViewerAssetPath(const FString& FileName)
+	{
+		const FString NormalizedFileName = FPaths::Normalize(FileName);
+		return NormalizedFileName.find("/Particle/") != FString::npos ||
+			NormalizedFileName.find("\\Particle\\") != FString::npos;
+	}
+
+	std::unique_ptr<FEditorViewer> CreateEditorViewerForFile(const FString& FileName)
+	{
+		const FString NormalizedFileName = FPaths::Normalize(FileName);
+		if (FAssetPathPolicy::IsAnimSequenceAssetPath(NormalizedFileName))
+		{
+			return std::make_unique<FAnimationEditorViewer>();
+		}
+
+		if (IsParticleViewerAssetPath(NormalizedFileName))
+		{
+			return std::make_unique<FParticleEditorViewer>();
+		}
+
+		return std::make_unique<FSkeletalMeshEditorViewer>();
+	}
+
 	const char* EditorPlayStateName(EViewportPlayState State)
 	{
 		switch (State)
@@ -624,7 +652,7 @@ FEditorViewer* UEditorEngine::CreateViewer(FString InFileName)
 	FWorldContext& ViewerCtx = CreateWorldContext(EWorldType::ViewerPreview, Handle, "Viewer Preview");
 	ApplySpatialIndexMaintenanceSettings(ViewerCtx.World);
 
-	auto NewViewer = std::make_unique<FEditorViewer>();
+	auto NewViewer = CreateEditorViewerForFile(InFileName);
 	NewViewer->Init(Window, this, ViewerCtx.World, ViewerCtx.SelectionManager);
 	NewViewer->ChangeTarget(InFileName);
 	MainPanel.OpenViewer(NewViewer.get());
@@ -1538,3 +1566,4 @@ void UEditorEngine::UnbindActorDestroyedListener(UWorld* World)
 	ActorDestroyedListenerId = 0;
 	ActorDestroyedListenerWorld = nullptr;
 }
+

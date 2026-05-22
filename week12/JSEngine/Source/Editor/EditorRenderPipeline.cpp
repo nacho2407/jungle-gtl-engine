@@ -1,6 +1,7 @@
 ﻿#include "EditorRenderPipeline.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Viewer/SkeletalMeshEditorViewer.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Camera/ViewportCamera.h"
 #include "Render/Renderer/Renderer.h"
@@ -471,7 +472,10 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
         if (ViewMode == EViewMode::BoneWeightHeatmap)
         {
             BoneWeightHeatmapState.bEnabled = true;
-            BoneWeightHeatmapState.SelectedBoneIndex = Viewers[i]->GetSelectedBoneIndex();
+            const FSkeletalMeshEditorViewer* SkeletalViewer = Viewers[i]->GetTabKind() == EEditorTabKind::SkeletalMeshViewer
+                ? static_cast<const FSkeletalMeshEditorViewer*>(Viewers[i].get())
+                : nullptr;
+            BoneWeightHeatmapState.SelectedBoneIndex = SkeletalViewer ? SkeletalViewer->GetSelectedBoneIndex() : -1;
         }
         Bus.SetBoneWeightHeatmapViewState(BoneWeightHeatmapState);
 
@@ -546,7 +550,10 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
                         SkComp->EnsureSkinningUpdated();   // 본 자세 최신화 보장
                         if (VFlags.bShowOnlySelectedBone)
                         {
-                            const int32 BoneIdx = Viewers[i]->GetSelectedBoneIndex();
+                            const FSkeletalMeshEditorViewer* SkeletalViewer = Viewers[i]->GetTabKind() == EEditorTabKind::SkeletalMeshViewer
+                                ? static_cast<const FSkeletalMeshEditorViewer*>(Viewers[i].get())
+                                : nullptr;
+                            const int32 BoneIdx = SkeletalViewer ? SkeletalViewer->GetSelectedBoneIndex() : -1;
                             if (BoneIdx >= 0)
                             {
                                 Collector.CollectSingleBone(SkComp, BoneIdx, Bus);
@@ -747,3 +754,4 @@ ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(
 	Renderer.UseBackBufferRenderTargets();
 	return PreviewSRV;
 }
+

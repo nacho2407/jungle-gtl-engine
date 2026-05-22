@@ -1,114 +1,58 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Core/Containers/Map.h"
 #include "Editor/Viewport/FSceneViewport.h"
-#include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/Viewport/SkeletalMeshViewportClient.h"
-#include "Object/FName.h"
+#include "Editor/UI/EditorTabManager.h"
 
 class UEditorEngine;
 class UWorld;
 class FSelectionManager;
 class FWindowsWindow;
-struct ID3D11ShaderResourceView;
 class ASkeletalMeshActor;
-class UStaticMeshComponent;
-class UAnimSequence;
-class UAnimSingleNodeInstance;
-
-enum class EEditorViewerAssetType : uint8
-{
-    SkeletalMesh,
-    AnimSequence
-};
+class USkeletalMeshComponent;
+struct ID3D11ShaderResourceView;
 
 class FEditorViewer
 {
 public:
-    void Init(
-        FWindowsWindow* InWindow,
-        UEditorEngine* InEditor,
-        UWorld* InWorld,
-        FSelectionManager* InSelectionManager);
+	virtual ~FEditorViewer() = default;
 
-    void Shutdown();
+	// Lifecycle
+	virtual void Init(FWindowsWindow* InWindow, UEditorEngine* InEditor, UWorld* InWorld, FSelectionManager* InSelectionManager);
+	virtual void Shutdown();
+	virtual void Tick(float DeltaTime);
 
-    void Tick(float DeltaTime);
+	// Base Interface
+	virtual bool ChangeTarget(const FString& InFileName) = 0;
+	virtual EEditorTabKind GetTabKind() const = 0;
+	virtual const char* GetViewerLabel() const = 0;
 
-    void SetRect(const FViewportRect& InRect) 
-    { 
-        Viewport.SetRect(InRect); 
-        Client.SetViewportSize((float)InRect.Width, (float)InRect.Height);
-    }
-
-	ID3D11ShaderResourceView* GetSRV() const
-    {
-        return Viewport.GetOutSRV();
-    }
-
+	// Getter & Setter
+	void SetRect(const FViewportRect& InRect);
+	ID3D11ShaderResourceView* GetSRV() const { return Viewport.GetOutSRV(); }
+	
 	FSceneViewport& GetViewport() { return Viewport; }
+	const FSceneViewport& GetViewport() const { return Viewport; }
 
-	FSkeletalMeshViewportClient&       GetClient()       { return Client; }
+	FSkeletalMeshViewportClient& GetClient() { return Client; }
 	const FSkeletalMeshViewportClient& GetClient() const { return Client; }
-
-	ASkeletalMeshActor* GetViewTarget() const { return ViewTarget; }
+	
+	ASkeletalMeshActor* GetViewTarget() const { return ViewTarget;}
     void ClearViewTarget() { ViewTarget = nullptr; }
+	
+	const FString& GetFileName() const { return FileName; }
+	void SetFileName(const FString& InFileName) { FileName = InFileName; }
 
-    // Socket Preview Mesh API (Phase 4) — 휘발성. transient + editorOnly로
-    // scene 저장과 게임 빌드 양쪽에서 자동으로 빠짐.
-    void SetSocketPreviewMesh(const FName& SocketName, const FString& StaticMeshPath);
-    void ClearSocketPreview(const FName& SocketName);
-    void ClearAllSocketPreviews();
-    UStaticMeshComponent* FindPreviewMesh(const FName& SocketName) const;
+protected:
+	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr; }
+	void ClearBaseSelection();
 
-	void ChangeTarget(const FString& InFileName);
-
-    EEditorViewerAssetType GetAssetType() const { return AssetType; }
-    bool IsAnimationSequenceViewer() const { return AssetType == EEditorViewerAssetType::AnimSequence; }
-    UAnimSequence* GetAnimSequence() const { return AnimSequence; }
-    const FString& GetPreviewMeshPath() const { return PreviewMeshPath; }
-    bool SetAnimationSequencePreviewMesh(const FString& InPreviewMeshPath);
-    void RestartAnimation();
-    void SetAnimationPlaying(bool bInPlaying);
-    void SetAnimationLooping(bool bInLooping);
-    void SetAnimationPlayRate(float InPlayRate);
-    void SetAnimationTime(float InTime);
-    float GetAnimationCurrentTime() const;
-    float GetAnimationLength() const;
-    float GetAnimationPlayRate() const;
-    bool IsAnimationPlaying() const;
-    bool IsAnimationLooping() const;
-
-    const FString& GetFileName() const { return FileName; }
-    void SelectBone(int32 BoneIndex);
-    void SelectSocket(int32 SocketIndex);
-    void ClearSelection();
-    void NotifySocketDeleted(int32 SocketIndex);
-    bool HandleBonePick(float LocalX, float LocalY);
-    bool TryPickBone(float LocalX, float LocalY, int32& OutBoneIndex) const;
-
-    int32 GetSelectedBoneIndex() const { return SelectedBoneIndex; }
-    int32 GetSelectedSocketIndex() const { return SelectedSocketIndex; }
-    FVector& GetCachedBoneRotation() { return CachedRotation; }
-    const FVector& GetCachedBoneRotation() const { return CachedRotation; }
+	virtual bool HandleViewportBonePick(float LocalX, float LocalY);
 
 private:
-    FSceneViewport Viewport;
-    FSkeletalMeshViewportClient Client;
+	FSceneViewport Viewport;
+	FSkeletalMeshViewportClient Client;
 	ASkeletalMeshActor* ViewTarget = nullptr;
-
-    UAnimSingleNodeInstance* GetSingleNodeInstance() const;
-    bool ApplyAnimationSequenceToComponent(bool bAutoPlay);
-
-    FString FileName;
-    EEditorViewerAssetType AssetType = EEditorViewerAssetType::SkeletalMesh;
-    UAnimSequence* AnimSequence = nullptr;
-    FString PreviewMeshPath;
-
-    TMap<FName, UStaticMeshComponent*, FName::Hash> SocketPreviewMeshes;
-
-    int32 SelectedBoneIndex = -1;
-    int32 SelectedSocketIndex = -1;
-    FVector CachedRotation;
+	FString FileName;
 };

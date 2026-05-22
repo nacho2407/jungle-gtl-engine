@@ -42,7 +42,7 @@ void FEditorMainPanel::RenderActiveDocumentToolbar()
 	if (ImGui::Begin("##EditorDocumentToolbar", nullptr, Flags))
 	{
 		const FEditorTabEntry* ActiveTab = EditorTabs.GetActiveTab();
-		FEditorViewerWindowWidget* ViewerWidget = ActiveTab ? FindViewerWidgetForTab(ActiveTab->Id) : nullptr;
+		FEditorViewerWidget* ViewerWidget = ActiveTab ? FindViewerWidgetForTab(ActiveTab->Id) : nullptr;
 		FEditorViewer* Viewer = ViewerWidget ? ViewerWidget->GetViewer() : nullptr;
 
 		if (Viewer)
@@ -289,7 +289,7 @@ bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 		ActiveTab->Id.Kind == EEditorTabKind::StaticMeshViewer ||
 		ActiveTab->Id.Kind == EEditorTabKind::AnimSequenceViewer)
 	{
-		FEditorViewerWindowWidget* ViewerWidget = FindViewerWidgetForTab(ActiveTab->Id);
+		FEditorViewerWidget* ViewerWidget = FindViewerWidgetForTab(ActiveTab->Id);
 		FEditorViewer* Viewer = ViewerWidget ? ViewerWidget->GetViewer() : nullptr;
 		const bool bCanSaveMesh = ViewerWidget && ViewerWidget->CanSaveMesh();
 		const char* SaveLabel = ViewerWidget && ViewerWidget->IsMeshDirty() ? "Save Mesh *" : "Save Mesh";
@@ -439,3 +439,4 @@ bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 	RenderDocumentHelpMenu();
 	return true;
 }
+

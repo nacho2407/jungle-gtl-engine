@@ -127,6 +127,9 @@
     <Filter Include="Source\Editor\UI">
       <UniqueIdentifier>{c46a2efe-64db-4a90-e9d0-dc20e9a91a49}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\UI\Viewer">
+      <UniqueIdentifier>{88202be4-9ad1-53b6-93c7-37e8970f9a7a}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\Undo">
       <UniqueIdentifier>{ae6dfe99-a8b5-0f07-5bf0-f9fc55f2de09}</UniqueIdentifier>
     </Filter>
@@ -336,10 +339,10 @@
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotifyState.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_LogEvent.gen.cpp">
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_FootstepSound.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_FootstepSound.gen.cpp">
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_LogEvent.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequence.gen.cpp">
@@ -789,19 +792,37 @@
     <ClCompile Include="Source\Editor\UI\EditorToolbarWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorViewerWindowWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorViewportOverlayWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\AnimationEditorViewerWidget.cpp">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\EditorViewerWidget.cpp">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorViewerWidget.cpp">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\SkeletalMeshEditorViewerWidget.cpp">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Undo\EditorUndoSystem.cpp">
       <Filter>Source\Editor\Undo</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Viewer\AnimationEditorViewer.cpp">
+      <Filter>Source\Editor\Viewer</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Viewer\EditorViewer.cpp">
+      <Filter>Source\Editor\Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewer\ParticleEditorViewer.cpp">
+      <Filter>Source\Editor\Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewer\SkeletalMeshEditorViewer.cpp">
       <Filter>Source\Editor\Viewer</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\EditorBoxSelectionService.cpp">
@@ -1726,19 +1747,37 @@
     <ClInclude Include="Source\Editor\UI\EditorToolbarWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorViewerWindowWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorViewportOverlayWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Viewer\AnimationEditorViewerWidget.h">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Viewer\EditorViewerWidget.h">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorViewerWidget.h">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Viewer\SkeletalMeshEditorViewerWidget.h">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Undo\EditorUndoSystem.h">
       <Filter>Source\Editor\Undo</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Viewer\AnimationEditorViewer.h">
+      <Filter>Source\Editor\Viewer</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Viewer\EditorViewer.h">
+      <Filter>Source\Editor\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewer\ParticleEditorViewer.h">
+      <Filter>Source\Editor\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewer\SkeletalMeshEditorViewer.h">
       <Filter>Source\Editor\Viewer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\CursorOverlayState.h">

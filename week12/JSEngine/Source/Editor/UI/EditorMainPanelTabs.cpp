@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/UI/EditorChromeConstants.h"
@@ -412,7 +412,7 @@ void FEditorMainPanel::ActivateEditorTab(const FEditorTabId& TabId)
 				EditorEngine->FocusViewportInput(Client->GetViewport());
 			}
 		}
-		else if (FEditorViewerWindowWidget* ViewerWidget = FindViewerWidgetForTab(TabId))
+		else if (FEditorViewerWidget* ViewerWidget = FindViewerWidgetForTab(TabId))
 		{
 			if (FEditorViewer* Viewer = ViewerWidget->GetViewer())
 			{
@@ -452,7 +452,7 @@ void FEditorMainPanel::RequestDetachEditorTab(const FEditorTabId& TabId, bool bD
 	const FEditorTabEntry* ActiveBefore = EditorTabs.GetActiveTab();
 	const bool bWasActive = ActiveBefore && ActiveBefore->Id.Matches(TabId);
 
-	FEditorViewerWindowWidget* ViewerWidget = FindViewerWidgetForTab(TabId);
+	FEditorViewerWidget* ViewerWidget = FindViewerWidgetForTab(TabId);
 	if (!ViewerWidget)
 	{
 		return;
@@ -484,3 +484,4 @@ void FEditorMainPanel::RequestDetachEditorTab(const FEditorTabId& TabId, bool bD
 		}
 	}
 }
+

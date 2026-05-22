@@ -1,7 +1,7 @@
 ﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
-#include "Editor/UI/EditorViewerWindowWidget.h"
+#include "Editor/UI/Viewer/EditorViewerWidget.h"
 #include "Editor/Viewer/EditorViewer.h"
 #include "Editor/Viewport/ViewportLayout.h"
 #include "Component/GizmoComponent.h"
@@ -118,7 +118,7 @@ void FEditorMainPanel::BuildActiveEditorCommandList(FEditorCommandList& OutComma
 		RoutingTabId.Kind == EEditorTabKind::StaticMeshViewer ||
 		RoutingTabId.Kind == EEditorTabKind::AnimSequenceViewer)
 	{
-		FEditorViewerWindowWidget* ViewerWidget = FindViewerWidgetForTab(RoutingTabId);
+		FEditorViewerWidget* ViewerWidget = FindViewerWidgetForTab(RoutingTabId);
 		if (!ViewerWidget)
 		{
 			return;
@@ -185,38 +185,38 @@ bool FEditorMainPanel::ExecuteActiveEditorCommand(EEditorCommandId CommandId)
 
 void FEditorMainPanel::Update()
 {
-    ImGuiIO& IO = ImGui::GetIO();
+	ImGuiIO& IO = ImGui::GetIO();
 	SyncImGuiMouseDragToHardware(IO, Window);
 
-    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
-    const bool bMouseOverContentBrowser = Widgets.ContentBrowserWidget.IsMouseOverBrowser();
-    bool bViewportOperationActive =
-        (Layout.HasActiveOperationViewport() || HasActiveViewerViewportOperation(EditorEngine)) &&
-        !bMouseOverContentBrowser;
+	FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+	const bool bMouseOverContentBrowser = Widgets.ContentBrowserWidget.IsMouseOverBrowser();
+	bool bViewportOperationActive =
+		(Layout.HasActiveOperationViewport() || HasActiveViewerViewportOperation(EditorEngine)) &&
+		!bMouseOverContentBrowser;
 
-    if (bViewportOperationActive)
-    {
-        IO.ConfigFlags |= ImGuiConfigFlags_NoMouse;
-    }
-    else
-    {
-        IO.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
-    }
+	if (bViewportOperationActive)
+	{
+		IO.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+	}
+	else
+	{
+		IO.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+	}
 
-    bool bWantMouse = bViewportOperationActive ? false : IO.WantCaptureMouse;
-    bool bWantKeyboard = IO.WantCaptureKeyboard;
-    const bool bWantTextInput = IO.WantTextInput;
-    const bool bAnyUIItemActive = ImGui::IsAnyItemActive();
-    const bool bAnyUIItemHovered = ImGui::IsAnyItemHovered();
-    const bool bAnyPopupOpen = ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId);
-    const bool bAnyDragDropActive = ImGui::GetDragDropPayload() != nullptr;
-    const bool bAnyWindowHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow);
-    const bool bAnyWindowFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow);
+	bool bWantMouse = bViewportOperationActive ? false : IO.WantCaptureMouse;
+	bool bWantKeyboard = IO.WantCaptureKeyboard;
+	const bool bWantTextInput = IO.WantTextInput;
+	const bool bAnyUIItemActive = ImGui::IsAnyItemActive();
+	const bool bAnyUIItemHovered = ImGui::IsAnyItemHovered();
+	const bool bAnyPopupOpen = ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId);
+	const bool bAnyDragDropActive = ImGui::GetDragDropPayload() != nullptr;
+	const bool bAnyWindowHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow);
+	const bool bAnyWindowFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow);
 
-    bool bMouseOverViewportRect = false;
-    if (Window)
-    {
-        POINT MouseClientPos = Window->ScreenToClientPoint(InputSystem::Get().GetMousePos());
+	bool bMouseOverViewportRect = false;
+	if (Window)
+	{
+		POINT MouseClientPos = Window->ScreenToClientPoint(InputSystem::Get().GetMousePos());
 		if (ShouldRouteLevelViewportInput())
 		{
 			for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
@@ -238,125 +238,126 @@ void FEditorMainPanel::Update()
 				continue;
 			}
 
-            const FViewportRect& ViewportRect = Viewers[i]->GetViewport().GetRect();
-            if (ViewportRect.Width > 0 && ViewportRect.Height > 0 && ViewportRect.Contains(MouseClientPos.x, MouseClientPos.y))
-            {
-                bMouseOverViewportRect = true;
-                break;
-            }
+			const FViewportRect& ViewportRect = Viewers[i]->GetViewport().GetRect();
+			if (ViewportRect.Width > 0 && ViewportRect.Height > 0 && ViewportRect.Contains(MouseClientPos.x, MouseClientPos.y))
+			{
+				bMouseOverViewportRect = true;
+				break;
+			}
 		}
-    }
+	}
 
-    bool bHoveredViewportContentWindow = false;
-    bool bHoveredNonViewportWindow = false;
-    if (ImGuiContext* Context = ImGui::GetCurrentContext())
-    {
-        if (ImGuiWindow* HoveredWindow = Context->HoveredWindow)
-        {
-            const char* HoveredName = HoveredWindow->Name ? HoveredWindow->Name : "";
-            bHoveredViewportContentWindow =
-                (std::strcmp(HoveredName, "Viewport") == 0) 
+	bool bHoveredViewportContentWindow = false;
+	bool bHoveredNonViewportWindow = false;
+	if (ImGuiContext* Context = ImGui::GetCurrentContext())
+	{
+		if (ImGuiWindow* HoveredWindow = Context->HoveredWindow)
+		{
+			const char* HoveredName = HoveredWindow->Name ? HoveredWindow->Name : "";
+			bHoveredViewportContentWindow =
+				(std::strcmp(HoveredName, "Viewport") == 0) 
 				|| (std::strncmp(HoveredName, "Viewport###", 11) == 0) 
 				|| (std::strncmp(HoveredName, "Viewer##", 8) == 0) 
 				|| (std::strcmp(HoveredName, "ViewportPanel") == 0);
-            bHoveredNonViewportWindow = !bHoveredViewportContentWindow;
-        }
-    }
+			bHoveredNonViewportWindow = !bHoveredViewportContentWindow;
+		}
+	}
 
-    // Viewport input ownership is decided by the routed viewport rect first.
-    // ImGui child window names differ between embedded and detached documents, so
-    // name-based hover checks are only a hint.
-    if (bMouseOverViewportRect
-        && !bMouseOverContentBrowser
-        && !bAnyUIItemActive
-        && !bAnyPopupOpen
-        && !bAnyDragDropActive)
-    {
-        bHoveredViewportContentWindow = true;
-        bHoveredNonViewportWindow = false;
-    }
+	// Viewport input ownership is decided by the routed viewport rect first.
+	// ImGui child window names differ between embedded and detached documents, so
+	// name-based hover checks are only a hint.
+	if (bMouseOverViewportRect
+		&& !bMouseOverContentBrowser
+		&& !bAnyUIItemActive
+		&& !bAnyPopupOpen
+		&& !bAnyDragDropActive)
+	{
+		bHoveredViewportContentWindow = true;
+		bHoveredNonViewportWindow = false;
+	}
 
-    if (bMouseOverContentBrowser)
-    {
-        bHoveredViewportContentWindow = false;
-        bHoveredNonViewportWindow = true;
-    }
+	if (bMouseOverContentBrowser)
+	{
+		bHoveredViewportContentWindow = false;
+		bHoveredNonViewportWindow = true;
+	}
 
-    const bool bForcePIEViewportInputFocus =
-        PIEViewportState.PendingInputFocusFrames > 0
-        && EditorEngine
-        && EditorEngine->GetEditorState() == EViewportPlayState::Playing;
+	const bool bForcePIEViewportInputFocus =
+		PIEViewportState.PendingInputFocusFrames > 0
+		&& EditorEngine
+		&& EditorEngine->GetEditorState() == EViewportPlayState::Playing;
 
-    const bool bReleaseMouseToViewport =
-        bMouseOverViewportRect
-        && !bHoveredNonViewportWindow
-        && !bAnyUIItemActive
-        && !bAnyDragDropActive
-        && !bAnyPopupOpen;
-    const bool bNonViewportImGuiInteraction =
-        bMouseOverContentBrowser
-        ||
-        (bHoveredNonViewportWindow && (bAnyWindowHovered || bAnyWindowFocused || bAnyUIItemActive || bAnyUIItemHovered || bAnyPopupOpen || bWantTextInput || bWantKeyboard))
-        || bAnyUIItemActive
-        || bAnyDragDropActive
-        || bAnyPopupOpen;
+	const bool bReleaseMouseToViewport =
+		bMouseOverViewportRect
+		&& !bHoveredNonViewportWindow
+		&& !bAnyUIItemActive
+		&& !bAnyDragDropActive
+		&& !bAnyPopupOpen;
+	const bool bNonViewportImGuiInteraction =
+		bMouseOverContentBrowser
+		||
+		(bHoveredNonViewportWindow && (bAnyWindowHovered || bAnyWindowFocused || bAnyUIItemActive || bAnyUIItemHovered || bAnyPopupOpen || bWantTextInput || bWantKeyboard))
+		|| bAnyUIItemActive
+		|| bAnyDragDropActive
+		|| bAnyPopupOpen;
 
-    if (bNonViewportImGuiInteraction)
-    {
-        bWantMouse = true;
-    }
-    else if (EditorEngine && bReleaseMouseToViewport)
-    {
-        bWantMouse = false;
-        bWantKeyboard = false;
-    }
+	if (bNonViewportImGuiInteraction)
+	{
+		bWantMouse = true;
+	}
+	else if (EditorEngine && bReleaseMouseToViewport)
+	{
+		bWantMouse = false;
+		bWantKeyboard = false;
+	}
 
-    if (bForcePIEViewportInputFocus)
-    {
-        bWantMouse = false;
-        bWantKeyboard = false;
-    }
+	if (bForcePIEViewportInputFocus)
+	{
+		bWantMouse = false;
+		bWantKeyboard = false;
+	}
 
-    InputSystem::Get().SetGuiMouseCapture(bWantMouse);
-    InputSystem::Get().SetGuiKeyboardCapture(bWantKeyboard);
-    InputSystem::Get().SetGuiTextInputCapture(bForcePIEViewportInputFocus ? false : bWantTextInput);
-    const bool bAllowViewportMouseFocus =
-        (bForcePIEViewportInputFocus || bMouseOverViewportRect) &&
-        !bHoveredNonViewportWindow &&
-        !bAnyPopupOpen &&
-        !bAnyDragDropActive &&
-        !bWantTextInput;
-    InputSystem::Get().SetGuiViewportMouseBlock(
-        bForcePIEViewportInputFocus
-            ? false
-            : (bAnyDragDropActive ||
-               bAnyPopupOpen ||
-               bMouseOverContentBrowser ||
-               bHoveredNonViewportWindow));
-    InputSystem::Get().SetGuiViewportMouseFocusAllowed(bAllowViewportMouseFocus);
+	InputSystem::Get().SetGuiMouseCapture(bWantMouse);
+	InputSystem::Get().SetGuiKeyboardCapture(bWantKeyboard);
+	InputSystem::Get().SetGuiTextInputCapture(bForcePIEViewportInputFocus ? false : bWantTextInput);
+	const bool bAllowViewportMouseFocus =
+		(bForcePIEViewportInputFocus || bMouseOverViewportRect) &&
+		!bHoveredNonViewportWindow &&
+		!bAnyPopupOpen &&
+		!bAnyDragDropActive &&
+		!bWantTextInput;
+	InputSystem::Get().SetGuiViewportMouseBlock(
+		bForcePIEViewportInputFocus
+			? false
+			: (bAnyDragDropActive ||
+			   bAnyPopupOpen ||
+			   bMouseOverContentBrowser ||
+			   bHoveredNonViewportWindow));
+	InputSystem::Get().SetGuiViewportMouseFocusAllowed(bAllowViewportMouseFocus);
 
-    if (bForcePIEViewportInputFocus)
-    {
-        --PIEViewportState.PendingInputFocusFrames;
-    }
+	if (bForcePIEViewportInputFocus)
+	{
+		--PIEViewportState.PendingInputFocusFrames;
+	}
 
-    if (EditorEngine && InputSystem::Get().GetKeyUp('F') && !IO.WantTextInput)
-    {
-        FEditorViewportLayout& FocusLayout = EditorEngine->GetViewportLayout();
-        const int32 FocusedIdx = FocusLayout.GetLastFocusedViewportIndex();
-        FocusLayout.GetViewportClient(FocusedIdx)->FocusSelection();
-    }
+	if (EditorEngine && InputSystem::Get().GetKeyUp('F') && !IO.WantTextInput)
+	{
+		FEditorViewportLayout& FocusLayout = EditorEngine->GetViewportLayout();
+		const int32 FocusedIdx = FocusLayout.GetLastFocusedViewportIndex();
+		FocusLayout.GetViewportClient(FocusedIdx)->FocusSelection();
+	}
 
-    if (Window)
-    {
-        HWND hWnd = Window->GetHWND();
-        if (IO.WantTextInput)
-        {
-            ImmAssociateContextEx(hWnd, NULL, IACE_DEFAULT);
-        }
-        else
-        {
-            ImmAssociateContext(hWnd, NULL);
-        }
-    }
+	if (Window)
+	{
+		HWND hWnd = Window->GetHWND();
+		if (IO.WantTextInput)
+		{
+			ImmAssociateContextEx(hWnd, NULL, IACE_DEFAULT);
+		}
+		else
+		{
+			ImmAssociateContext(hWnd, NULL);
+		}
+	}
 }
+

@@ -14,7 +14,7 @@
 #include "Editor/UI/EditorStatWidget.h"
 #include "Editor/UI/EditorToolbarWidget.h"
 #include "Editor/UI/EditorViewportOverlayWidget.h"
-#include "Editor/UI/EditorViewerWindowWidget.h"
+#include "Editor/UI/Viewer/EditorViewerWidget.h"
 
 struct FEditorMainPanelWidgetSet
 {
@@ -32,5 +32,6 @@ struct FEditorMainPanelWidgetSet
 	FEditorToolbarWidget ToolbarWidget;
 	FEditorPlayStreamWidget PlayStreamWidget;
 	FEditorRuntimeUIPreviewWidget RuntimeUIPreviewWidget;
-    TArray<std::unique_ptr<FEditorViewerWindowWidget>> ViewerWindowWidgets;
+	TArray<std::unique_ptr<FEditorViewerWidget>> ViewerWindowWidgets;
 };
+

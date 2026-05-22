@@ -57,9 +57,9 @@ public:
 	void RequestDockViewer(FEditorViewer* Viewer);
 	void RenderViewerToolbarControls(FEditorViewer* Viewer);
 	ID3D11ShaderResourceView* GetHomeIconResource() const { return IconResources.HomeIcon; }
-    void FlushOpenViewerWidgets();
-    void CloseViewer(FEditorViewer* Viewer);
-    void FlushClosedViewerWidgets();
+	void FlushOpenViewerWidgets();
+	void CloseViewer(FEditorViewer* Viewer);
+	void FlushClosedViewerWidgets();
 	void OpenCurveFromActorSequence(
 		UCurveFloatAsset* Curve,
 		UActorSequenceComponent* SequenceComp,
@@ -106,7 +106,7 @@ private:
 	void RenderEditorPanelWindows(float DeltaTime, bool bDrawEditorPanels);
 	float ResolveEffectiveDeltaTime(float DeltaTime) const;
 	bool IsLevelEditorTabActive() const;
-	FEditorViewerWindowWidget* FindViewerWidgetForTab(const FEditorTabId& TabId) const;
+	FEditorViewerWidget* FindViewerWidgetForTab(const FEditorTabId& TabId) const;
 	void RenderActiveViewerDocument(float DeltaTime);
 	void RenderRuntimeUIPreviewDocument(float DeltaTime);
 	void RenderAnimGraphEditorDocument(float DeltaTime);
@@ -174,7 +174,7 @@ private:
 	ImVector<ImWchar> FontGlyphRanges; // Keep alive until the font atlas is built.
 	FEditorMainPanelWidgetSet Widgets;
 	FEditorTabManager EditorTabs;
-    TArray<FEditorViewer*> PendingOpenViewers;
+	TArray<FEditorViewer*> PendingOpenViewers;
 
 	FEditorMainPanelVisibilityState PanelVisibility;
 	FEditorMainPanelBuildGameModalState BuildGameState;
@@ -187,5 +187,4 @@ private:
 	FEditorMainPanelRuntimeUIDrawCallbackState RuntimeUIDrawState;
 	FEditorFooterLogSystem FooterLogSystem;
 	FEditorMainPanelViewportIconResources IconResources;
-
 };

@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/Viewer/EditorViewer.h"
 
@@ -84,7 +84,7 @@ bool FEditorMainPanel::IsLevelEditorViewportVisible() const
 	return IsLevelEditorTabActive();
 }
 
-FEditorViewerWindowWidget* FEditorMainPanel::FindViewerWidgetForTab(const FEditorTabId& TabId) const
+FEditorViewerWidget* FEditorMainPanel::FindViewerWidgetForTab(const FEditorTabId& TabId) const
 {
 	if (TabId.Kind != EEditorTabKind::SkeletalMeshViewer &&
 		TabId.Kind != EEditorTabKind::StaticMeshViewer &&
@@ -120,7 +120,7 @@ void FEditorMainPanel::RenderActiveViewerDocument(float DeltaTime)
 		return;
 	}
 
-	FEditorViewerWindowWidget* ViewerWidget = FindViewerWidgetForTab(ActiveTab->Id);
+	FEditorViewerWidget* ViewerWidget = FindViewerWidgetForTab(ActiveTab->Id);
 	if (ActiveTab->bDetached)
 	{
 		ImGui::TextDisabled("This viewer tab is detached.");
@@ -302,3 +302,4 @@ int32 FEditorMainPanel::GetViewerViewportZOrder(FEditorViewer* Viewer) const
 	}
 	return 0;
 }
+

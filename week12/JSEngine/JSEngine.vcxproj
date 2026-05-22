@@ -359,8 +359,8 @@
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimInstance.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotifyState.gen.cpp" />
-    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_LogEvent.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_FootstepSound.gen.cpp" />
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_LogEvent.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequence.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequenceBase.gen.cpp" />
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSingleNodeInstance.gen.cpp" />
@@ -690,10 +690,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorViewerWindowWidget.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorViewportOverlayWidget.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
@@ -702,11 +698,39 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\AnimationEditorViewerWidget.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\EditorViewerWidget.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorViewerWidget.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\SkeletalMeshEditorViewerWidget.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Undo\EditorUndoSystem.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Viewer\AnimationEditorViewer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Viewer\EditorViewer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewer\ParticleEditorViewer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewer\SkeletalMeshEditorViewer.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -1073,11 +1097,17 @@
     <ClInclude Include="Source\Editor\UI\EditorStatWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorTabManager.h" />
     <ClInclude Include="Source\Editor\UI\EditorToolbarWidget.h" />
-    <ClInclude Include="Source\Editor\UI\EditorViewerWindowWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorViewportOverlayWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Viewer\AnimationEditorViewerWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Viewer\EditorViewerWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorViewerWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Viewer\SkeletalMeshEditorViewerWidget.h" />
     <ClInclude Include="Source\Editor\Undo\EditorUndoSystem.h" />
+    <ClInclude Include="Source\Editor\Viewer\AnimationEditorViewer.h" />
     <ClInclude Include="Source\Editor\Viewer\EditorViewer.h" />
+    <ClInclude Include="Source\Editor\Viewer\ParticleEditorViewer.h" />
+    <ClInclude Include="Source\Editor\Viewer\SkeletalMeshEditorViewer.h" />
     <ClInclude Include="Source\Editor\Viewport\CursorOverlayState.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorBoxSelectionService.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorPickingService.h" />
