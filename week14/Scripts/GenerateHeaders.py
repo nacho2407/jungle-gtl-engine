@@ -564,11 +564,12 @@ def build_array_inner_property(
         )
 
     if element_property_type == "ObjectRef":
+        inner_flags = "PF_InstancedReference" if "PF_InstancedReference" in prop.flags else "PF_None"
         return (
             f"\tnew FObjectProperty(\n"
             f"\t\t{cpp_string_literal(inner_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
-            f"\t\tPF_None,\n"
+            f"\t\t{inner_flags},\n"
             f"\t\t0,\n"
             f"\t\tsizeof({element_cpp_type}),\n"
             f"\t\t{get_object_property_ops_for_type(element_cpp_type)},\n"

@@ -1169,6 +1169,9 @@
     <ClCompile Include="Source\Engine\Materials\Material.cpp">
       <Filter>Source\Engine\Materials</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Materials\MaterialCore.cpp">
+      <Filter>Source\Engine\Materials</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp">
       <Filter>Source\Engine\Materials</Filter>
     </ClCompile>
@@ -2241,6 +2244,9 @@
       <Filter>Source\Engine\Lua</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Materials\Material.h">
+      <Filter>Source\Engine\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Materials\MaterialCore.h">
       <Filter>Source\Engine\Materials</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Materials\MaterialManager.h">

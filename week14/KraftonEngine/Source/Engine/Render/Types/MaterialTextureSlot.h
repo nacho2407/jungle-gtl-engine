@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 
@@ -51,5 +51,34 @@ namespace MaterialTextureSlot
 		default:
 			throw "How";
 		}
+	}
+
+	inline EMaterialTextureSlot FromParameterName(const FString& ParameterName)
+	{
+		if (ParameterName == FString("Diffuse") || ParameterName == FString("DiffuseTexture"))
+			return EMaterialTextureSlot::Diffuse;
+
+		if (ParameterName == FString("Normal") || ParameterName == FString("NormalTexture"))
+			return EMaterialTextureSlot::Normal;
+
+		if (ParameterName == FString("Roughness") || ParameterName == FString("RoughnessTexture"))
+			return EMaterialTextureSlot::Roughness;
+
+		if (ParameterName == FString("Metallic") || ParameterName == FString("MetallicTexture"))
+			return EMaterialTextureSlot::Metallic;
+
+		if (ParameterName == FString("Emissive") || ParameterName == FString("EmissiveTexture"))
+			return EMaterialTextureSlot::Emissive;
+
+		if (ParameterName == FString("AO") || ParameterName == FString("AOTexture"))
+			return EMaterialTextureSlot::AO;
+
+		if (ParameterName == FString("Custom0") || ParameterName == FString("Custom0Texture"))
+			return EMaterialTextureSlot::Custom0;
+
+		if (ParameterName == FString("Custom1") || ParameterName == FString("Custom1Texture"))
+			return EMaterialTextureSlot::Custom1;
+
+		throw "Unknown Parameter Name";
 	}
 }

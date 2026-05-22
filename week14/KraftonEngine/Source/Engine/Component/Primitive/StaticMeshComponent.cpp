@@ -75,7 +75,7 @@ UStaticMesh* UStaticMeshComponent::GetStaticMesh() const
 	return StaticMesh;
 }
 
-void UStaticMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
+void UStaticMeshComponent::SetMaterial(int32 ElementIndex, UMaterialInterface* InMaterial)
 {
 	if (ElementIndex >= 0 && ElementIndex < static_cast<int32>(OverrideMaterials.size()))
 	{
@@ -94,7 +94,7 @@ void UStaticMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial
 	}
 }
 
-UMaterial* UStaticMeshComponent::GetMaterial(int32 ElementIndex) const
+UMaterialInterface* UStaticMeshComponent::GetMaterial(int32 ElementIndex) const
 {
 	if (ElementIndex >= 0 && ElementIndex < OverrideMaterials.size())
 	{

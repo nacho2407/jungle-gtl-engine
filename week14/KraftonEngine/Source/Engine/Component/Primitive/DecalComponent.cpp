@@ -1,4 +1,4 @@
-#include "DecalComponent.h"
+﻿#include "DecalComponent.h"
 #include "Component/Primitive/BillboardComponent.h"
 #include "Materials/MaterialManager.h"
 #include "Collision/Math/OBB.h"
@@ -41,7 +41,7 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 		}
 		else
 		{
-			UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot);
+			UMaterialInterface* LoadedMat = FMaterialManager::Get().GetOrCreateMaterialInterface(MaterialSlot);
 			if (LoadedMat)
 			{
 				SetMaterial(LoadedMat);
@@ -61,7 +61,7 @@ void UDecalComponent::PostDuplicate()
 
 	if (!MaterialSlot.empty() && MaterialSlot != "None")
 	{
-		UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot);
+		UMaterialInterface* LoadedMat = FMaterialManager::Get().GetOrCreateMaterialInterface(MaterialSlot);
 		if (LoadedMat)
 		{
 			SetMaterial(LoadedMat);
@@ -77,7 +77,7 @@ FVector4 UDecalComponent::GetColor() const
 	return OutColor;
 }
 
-void UDecalComponent::SetMaterial(UMaterial* InMaterial)
+void UDecalComponent::SetMaterial(UMaterialInterface* InMaterial)
 {
 	Material = InMaterial;
 	if (Material)

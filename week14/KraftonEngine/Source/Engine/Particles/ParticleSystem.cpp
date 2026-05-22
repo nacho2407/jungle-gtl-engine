@@ -1,5 +1,6 @@
 ﻿#include "ParticleSystem.h"
 
+#include "Particles/Module/ParticleModule.h"
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Serialization/Archive.h"
 
@@ -15,25 +16,7 @@ UParticleLODLevel::~UParticleLODLevel()
 void UParticleLODLevel::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
-
-	Ar << Level;
-	Ar << bEnabled;
-
-	uint32 ModuleCount = 0;
-	Ar << ModuleCount;
-
-	if (Ar.IsLoading())
-	{
-		for (UParticleModule* Module : Modules)
-		{
-			delete Module;
-		}
-		Modules.clear();
-
-		// Module subclasses are not serialized yet. Consume the count now so the
-		// package format can grow without changing the LOD header layout.
-		Modules.reserve(ModuleCount);
-	}
+	SerializeProperties(Ar, PF_Save);
 }
 
 UParticleEmitter::~UParticleEmitter()
@@ -124,6 +107,13 @@ void UParticleSystem::InitializeDefaultEmitters()
 	UParticleLODLevel* DefaultLOD = UObjectManager::Get().CreateObject<UParticleLODLevel>();
 	DefaultLOD->SetLevel(0);
 	DefaultLOD->SetEnabled(true);
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleRequired>());
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleSpawn>());
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleLifetime>());
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleLocation>());
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleVelocity>());
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleColor>());
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleSize>());
 
 	DefaultEmitter->AddLODLevel(DefaultLOD);
 

@@ -595,6 +595,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
     <ClCompile Include="Source\Engine\Lua\LuaScriptManager.cpp" />
     <ClCompile Include="Source\Engine\Materials\Material.cpp" />
+    <ClCompile Include="Source\Engine\Materials\MaterialCore.cpp" />
     <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp" />
     <ClCompile Include="Source\Engine\Math\FloatCurve.cpp" />
     <ClCompile Include="Source\Engine\Math\Matrix.cpp" />
@@ -733,6 +734,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Component\Particle\ParticleSystemComponent.h" />
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleHelper.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleSystem.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleSystemManager.h" />
@@ -961,6 +963,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Input\InputSystem.h" />
     <ClInclude Include="Source\Engine\Lua\LuaScriptManager.h" />
     <ClInclude Include="Source\Engine\Materials\Material.h" />
+    <ClInclude Include="Source\Engine\Materials\MaterialCore.h" />
     <ClInclude Include="Source\Engine\Materials\MaterialManager.h" />
     <ClInclude Include="Source\Engine\Math\FloatCurve.h" />
     <ClInclude Include="Source\Engine\Math\MathUtils.h" />

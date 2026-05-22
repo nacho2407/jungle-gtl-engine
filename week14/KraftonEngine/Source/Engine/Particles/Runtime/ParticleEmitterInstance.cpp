@@ -2,6 +2,7 @@
 
 #include "Component/Particle/ParticleSystemComponent.h"
 #include "Particles/ParticleSystem.h"
+#include "Particles/Module/ParticleModule.h"
 
 FParticleEmitterInstance::~FParticleEmitterInstance()
 {
@@ -70,7 +71,8 @@ int32 FParticleEmitterInstance::SpawnParticles(float DeltaTime)
 		return 0;
 	}
 
-	SpawnFraction += SpawnRate * DeltaTime;
+	const float EffectiveSpawnRate = GetSpawnModule() ? GetSpawnModule()->SpawnRate : SpawnRate;
+	SpawnFraction += EffectiveSpawnRate * DeltaTime;
 	const int32 SpawnCount = static_cast<int32>(SpawnFraction);
 	if (SpawnCount <= 0)
 	{
@@ -112,6 +114,8 @@ void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle)
 	Particle.OneOverMaxLifetime = DefaultLifetime > 0.0f ? 1.0f / DefaultLifetime : 1.0f;
 	Particle.FrameIndex = ParticleCounter;
 	Particle.bAlive = true;
+
+	RunSpawnModules(Particle, EmitterTime);
 }
 
 void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
@@ -131,6 +135,7 @@ void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 		Particle.Position += Particle.Velocity * DeltaTime;
 		Particle.Rotation += Particle.RotationRate * DeltaTime;
 		Particle.RelativeTime = Particle.Age * Particle.OneOverMaxLifetime;
+		RunUpdateModules(Particle, DeltaTime);
 		++ParticleIndex;
 	}
 }
@@ -221,4 +226,46 @@ FBaseParticle& FParticleEmitterInstance::GetParticle(int32 ParticleIndex)
 const FBaseParticle& FParticleEmitterInstance::GetParticle(int32 ParticleIndex) const
 {
 	return *reinterpret_cast<const FBaseParticle*>(ParticleData + ParticleIndex * ParticleStride);
+}
+
+UParticleModuleRequired* FParticleEmitterInstance::GetRequiredModule() const
+{
+	return CurrentLODLevel ? CurrentLODLevel->FindModule<UParticleModuleRequired>() : nullptr;
+}
+
+UParticleModuleSpawn* FParticleEmitterInstance::GetSpawnModule() const
+{
+	return CurrentLODLevel ? CurrentLODLevel->FindModule<UParticleModuleSpawn>() : nullptr;
+
+}
+
+void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float SpawnTime)
+{
+	if (!CurrentLODLevel)
+	{
+		return;
+	}
+
+	for (UParticleModule* Module : CurrentLODLevel->GetModules())
+	{
+		if (Module && Module->IsSpawnModule())
+		{
+			Module->Spawn(this, PayloadOffset, SpawnTime, Particle);
+		}
+	}
+}
+
+void FParticleEmitterInstance::RunUpdateModules(FBaseParticle& Particle, float DeltaTime)
+{
+	if (!CurrentLODLevel)
+	{
+		return;
+	}
+	for(UParticleModule* Module : CurrentLODLevel->GetModules())
+	{
+		if (Module && Module->IsUpdateModule())
+		{
+			Module->Update(this, PayloadOffset, DeltaTime, Particle);
+		}
+	}
 }

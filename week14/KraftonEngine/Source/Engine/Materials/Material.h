@@ -5,69 +5,19 @@
 #include "Math/Matrix.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/RenderStateTypes.h"
-#include "Render/Resource/Buffer.h"
 #include "Render/Types/MaterialTextureSlot.h"
 #include "Render/Types/RenderConstants.h"
-#include "Source/Engine/Materials/Material.generated.h"
+#include "Materials/MaterialCore.h"
 #include <memory>
+
+#include "Source/Engine/Materials/Material.generated.h"
+
 
 class UTexture2D;
 class FArchive;
 class FShader;
+class UMaterialInstanceDynamic;
 
-// 파라미터 이름 → 상수 버퍼 내 위치 매핑
-struct FMaterialParameterInfo
-{
-	FString BufferName;  // ConstantBuffers 이름 "PerMaterial""PerFrame"
-	uint32 SlotIndex;    // ConstantBuffers 슬롯 인덱스 
-
-	uint32 Offset;      // 버퍼 내 바이트 오프셋
-	uint32 Size;        // 바이트 크기
-
-	uint32 BufferSize;   //이 변수가 속한 상수 버퍼의 전체 크기 (16의 배수)
-};
-
-
-//셰이더 + 레이아웃 (불변, 공유)
-//Template은 셰이더 파일이 있으면 언제든 재생성 가능
-class FMaterialTemplate
-{
-private:
-	uint32 MaterialTemplateID; // 고유 ID
-	FShader* Shader; // 어떤 셰이더를 사용하는지
-	TMap<FString, FMaterialParameterInfo*> ParameterLayout; // 리플렉션 결과 : 쉐이더 constant buffer 레이아웃 정보
-
-public:
-	const TMap<FString, FMaterialParameterInfo*>& GetParameterInfo() const { return ParameterLayout; }
-	void Create(FShader* InShader);
-
-	FShader* GetShader() const { return Shader; }
-	bool GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const;
-};
-
-
-// 실제 데이터가 올라가는 버퍼
-struct FMaterialConstantBuffer
-{
-	uint8* CPUData;   // CPU 메모리의 실제 값
-	FConstantBuffer GPUBuffer;
-	uint32 Size = 0;
-	UINT SlotIndex = 0;	//cbuffer 바인딩 슬롯 (b0, b1 등)
-	bool bDirty = false;
-
-	FMaterialConstantBuffer() = default;
-	~FMaterialConstantBuffer();
-
-	FMaterialConstantBuffer(const FMaterialConstantBuffer&) = delete;
-	FMaterialConstantBuffer& operator=(const FMaterialConstantBuffer&) = delete;
-
-	void Init(ID3D11Device* InDevice, uint32 InSize, uint32 InSlot);
-	void SetData(const void* Data, uint32 InSize, uint32 Offset = 0);
-	void Upload(ID3D11DeviceContext* DeviceContext);
-	void Release();
-
-	FConstantBuffer* GetConstantBuffer() { return &GPUBuffer; }
-};
 
 UENUM()
 enum class EMaterialShadowMode : uint8
@@ -77,12 +27,59 @@ enum class EMaterialShadowMode : uint8
 	None,
 };
 
+UCLASS()
+class UMaterialInterface : public UObject
+{
+public:
+	GENERATED_BODY()
+
+	virtual bool SetScalarParameter(const FString& ParamName, float Value) { return false; }
+	virtual bool SetVector3Parameter(const FString& ParamName, const FVector& Value) { return false; }
+	virtual bool SetVector4Parameter(const FString& ParamName, const FVector4& Value) { return false; }
+	virtual bool SetTextureParameter(const FString& ParamName, UTexture2D* Texture) { return false; }
+	virtual bool SetMatrixParameter(const FString& ParamName, const FMatrix& Value) { return false; }
+
+	virtual bool GetScalarParameter(const FString& ParamName, float& OutValue) const { return false; }
+	virtual bool GetVector3Parameter(const FString& ParamName, FVector& OutValue) const { return false; }
+	virtual bool GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const { return false; }
+	virtual bool GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const { return false; }
+	virtual bool GetMatrixParameter(const FString& ParamName, FMatrix& Value) const { return false; }
+
+	virtual FShader* GetShader() const { return nullptr; }
+	virtual ERenderPass GetRenderPass() const { return ERenderPass::Opaque; }
+	virtual EBlendState GetBlendState() const { return EBlendState::Opaque; }
+	virtual EDepthStencilState GetDepthStencilState() const { return EDepthStencilState::Default; }
+	virtual ERasterizerState GetRasterizerState() const { return ERasterizerState::SolidBackCull; }
+	virtual FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const { return nullptr; }
+	virtual void FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx) {}
+	virtual ID3D11ShaderResourceView* GetSRV(EMaterialTextureSlot Slot) const { return nullptr; }
+	virtual const FString& GetAssetPathFileName() const
+	{
+		static const FString EmptyString;
+		return EmptyString;
+	}
+	// UMaterialInterface
+	virtual EMaterialShadowMode GetShadowMode() const
+	{
+		return EMaterialShadowMode::Opaque;
+	}
+
+	virtual bool CastsShadow() const
+	{
+		return GetShadowMode() != EMaterialShadowMode::None;
+	}
+};
+
+
 //파라미터 값 + 텍스처 (런타임 데이터)
 //JSON으로 직렬화되는 데이터
 UCLASS()
-class UMaterial : public UObject
+class UMaterial : public UMaterialInterface
 {
-private:
+	friend class UMaterialInstanceDynamic;
+
+protected:
+
 	FString PathFileName;// 어떤 Material인지 판별하는 고유 이름
 	uint32 MaterialInstanceID; // 고유 ID
 	FMaterialTemplate* Template; // 공유
@@ -107,6 +104,8 @@ private:
 	EMaterialShadowMode ShadowMode = EMaterialShadowMode::Opaque;
 
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);
+	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> CloneConstantBuffers(ID3D11Device* Device) const;
+	void CopyTextureParametersFrom(const UMaterial& Other);
 
 public:
 	GENERATED_BODY()
@@ -121,34 +120,35 @@ public:
 
 	const uint8* GetRawPtr(const FString& BufferName, uint32 Offset) const;
 
-	const TMap<FString, FMaterialParameterInfo*> GetParameterInfo() const { return Template->GetParameterInfo(); }
+	const TMap<FString, FMaterialParameterInfo*>& GetParameterInfo() const;
+	FMaterialTemplate* GetTemplate() const { return Template; }
 
-	bool SetScalarParameter(const FString& ParamName, float Value);
-	bool SetVector3Parameter(const FString& ParamName, const FVector& Value);
-	bool SetVector4Parameter(const FString& ParamName, const FVector4& Value);
-	bool SetTextureParameter(const FString& ParamName, UTexture2D* Texture);
-	bool SetMatrixParameter(const FString& ParamName, const FMatrix& Value);
+	bool SetScalarParameter(const FString& ParamName, float Value) override;
+	bool SetVector3Parameter(const FString& ParamName, const FVector& Value) override;
+	bool SetVector4Parameter(const FString& ParamName, const FVector4& Value) override;
+	bool SetTextureParameter(const FString& ParamName, UTexture2D* Texture) override;
+	bool SetMatrixParameter(const FString& ParamName, const FMatrix& Value) override;
 
-	bool GetScalarParameter(const FString& ParamName, float& OutValue) const;
-	bool GetVector3Parameter(const FString& ParamName, FVector& OutValue) const;
-	bool GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const;
-	bool GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const;
-	bool GetMatrixParameter(const FString& ParamName, FMatrix& Value) const;
+	bool GetScalarParameter(const FString& ParamName, float& OutValue) const override;
+	bool GetVector3Parameter(const FString& ParamName, FVector& OutValue) const override;
+	bool GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const override;
+	bool GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const override;
+	bool GetMatrixParameter(const FString& ParamName, FMatrix& Value) const override;
 
 	TMap<FString, UTexture2D*>* GetTexture() { return &TextureParameters; }
 
-	EMaterialShadowMode GetShadowMode() const { return ShadowMode; }
+	EMaterialShadowMode GetShadowMode()const override  { return ShadowMode; }
 	void SetShadowMode(EMaterialShadowMode InMode) { ShadowMode = InMode; }
 
-	bool CastsShadow() const { return ShadowMode != EMaterialShadowMode::None; }
+	bool CastsShadow() const override { return ShadowMode != EMaterialShadowMode::None; }
 
 	void Bind(ID3D11DeviceContext* Context);
 
-	FShader* GetShader() const { return Template ? Template->GetShader() : TransientShader; }
-	ERenderPass GetRenderPass() const { return RenderPass; }
-	EBlendState GetBlendState() const { return BlendState; }
-	EDepthStencilState GetDepthStencilState() const { return DepthStencilState; }
-	ERasterizerState GetRasterizerState() const { return RasterizerState; }
+	FShader* GetShader() const override  { return Template ? Template->GetShader() : TransientShader; }
+	ERenderPass GetRenderPass() const override { return RenderPass; }
+	EBlendState GetBlendState() const override { return BlendState; }
+	EDepthStencilState GetDepthStencilState() const override { return DepthStencilState; }
+	ERasterizerState GetRasterizerState() const override { return RasterizerState; }
 
 	// Per-shader CB 오버라이드 — transient Material에서 Gizmo/SubUV/Decal 등이 사용
 	template<typename T>
@@ -165,11 +165,11 @@ public:
 
 	const FString& GetTexturePathFileName(const FString& TextureName)const;
 
-	const FString& GetAssetPathFileName() const { return PathFileName; }
+	const FString& GetAssetPathFileName() const override { return PathFileName; }
 	void SetAssetPathFileName(const FString& InPath) { PathFileName = InPath; }
 	void Serialize(FArchive& Ar);//>>>>>Manager가 위임
 
-	FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const
+	FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const override
 	{
 		// Per-shader override (transient Material의 외부 CB)
 		if (PerShaderOverride.Buffer && PerShaderOverride.Slot == InSlot)
@@ -184,7 +184,7 @@ public:
 	}
 
 	// dirty CB를 GPU에 업로드 — BuildCommandForProxy 전에 호출
-	void FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx)
+	void FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx) override
 	{
 		for (auto& Pair : ConstantBufferMap)
 		{
@@ -202,6 +202,7 @@ public:
 
 	// 캐시된 SRV 배열 직접 접근 (map lookup 회피)
 	const ID3D11ShaderResourceView* const* GetCachedSRVs() const { return CachedSRVs; }
+	ID3D11ShaderResourceView* GetSRV(EMaterialTextureSlot Slot) const override { return CachedSRVs[(int)Slot]; }
 
 	// SRV 캐시 재구축 — Material 생성/텍스처 로드 후 호출
 	void RebuildCachedSRVs();
@@ -224,4 +225,79 @@ public:
 		EDepthStencilState InDepth = EDepthStencilState::Default,
 		ERasterizerState InRaster = ERasterizerState::SolidBackCull,
 		FShader* InShader = nullptr);
+};
+
+
+UCLASS()
+class UMaterialInstance : public UMaterialInterface
+{
+public:
+	GENERATED_BODY()
+
+	static UMaterialInstance* Create(UMaterial* InParent);
+	static UMaterialInstance* Create(UMaterial* InParent,
+		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
+	void Create(const FString& InPathFileName, UMaterial* InParent,
+		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
+
+	UMaterial* GetParent() const { return Parent; }
+	const FString& GetAssetPathFileName() const override { return PathFileName; }
+	void Serialize(FArchive& Ar) override;
+
+	bool SetScalarParameter(const FString& ParamName, float Value) override;
+	bool SetVector3Parameter(const FString& ParamName, const FVector& Value) override;
+	bool SetVector4Parameter(const FString& ParamName, const FVector4& Value) override;
+	bool SetTextureParameter(const FString& ParamName, UTexture2D* Texture) override;
+	bool SetMatrixParameter(const FString& ParamName, const FMatrix& Value) override;
+
+	bool GetScalarParameter(const FString& ParamName, float& OutValue) const override;
+	bool GetVector3Parameter(const FString& ParamName, FVector& OutValue) const override;
+	bool GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const override;
+	bool GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const override;
+	bool GetMatrixParameter(const FString& ParamName, FMatrix& Value) const override;
+
+	FShader* GetShader() const override;
+	ERenderPass GetRenderPass() const override;
+	EBlendState GetBlendState() const override;
+	EDepthStencilState GetDepthStencilState() const override;
+	ERasterizerState GetRasterizerState() const override;
+	FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const override;
+	void FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx) override;
+	ID3D11ShaderResourceView* GetSRV(EMaterialTextureSlot Slot) const override;
+
+	EMaterialShadowMode GetShadowMode()  const override { return Parent->GetShadowMode(); }
+	bool CastsShadow() const override { return GetShadowMode() != EMaterialShadowMode::None; }
+
+protected:
+	bool SetParameter(const FString& Name, const void* Data, uint32 Size);
+	void CopyParentConstantBuffers();
+
+	FString PathFileName;
+	UMaterial* Parent = nullptr;
+	FString ParentPathFileName;
+
+	TMap<FString, float> ScalarOverrides;
+	TMap<FString, FVector> Vector3Overrides;
+	TMap<FString, FVector4> Vector4Overrides;
+	TMap<FString, FMatrix> MatrixOverrides;
+	TMap<FString, UTexture2D*> TextureOverrides;
+
+	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap;
+	ID3D11ShaderResourceView* CachedOverrideSRVs[(int)EMaterialTextureSlot::Max] = {};	//빠른 조회를 위한 테이블
+	bool bHasTextureOverride[(int)EMaterialTextureSlot::Max] = {};
+
+	bool bConstantBufferDirty = true;
+};
+
+
+UCLASS()
+class UMaterialInstanceDynamic : public UMaterialInstance
+{
+public:
+	GENERATED_BODY()
+
+	static UMaterialInstanceDynamic* Create(UMaterial* InParent);
+	static UMaterialInstanceDynamic* Create(UMaterial* InParent,
+		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
+
 };

@@ -7,7 +7,7 @@
 #include "Object/Ptr/ObjectPtr.h"
 #include "Object/Ptr/SoftObjectPtr.h"
 
-class UMaterial;
+class UMaterialInterface;
 class FPrimitiveSceneProxy;
 
 namespace json { class JSON; }
@@ -36,9 +36,9 @@ public:
 	void SetStaticMesh(UStaticMesh* InMesh);
 	UStaticMesh* GetStaticMesh() const;
 
-	void SetMaterial(int32 ElementIndex, UMaterial* InMaterial);
-	UMaterial* GetMaterial(int32 ElementIndex) const;
-	const TArray<UMaterial*>& GetOverrideMaterials() const { return OverrideMaterials; }
+	void SetMaterial(int32 ElementIndex, UMaterialInterface* InMaterial);
+	UMaterialInterface* GetMaterial(int32 ElementIndex) const;
+	const TArray<UMaterialInterface*>& GetOverrideMaterials() const { return OverrideMaterials; }
 
 	void PostDuplicate() override;
 
@@ -53,7 +53,7 @@ private:
 	TObjectPtr<UStaticMesh> StaticMesh;
 	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Static Mesh", AssetType="StaticMesh")
 	FSoftObjectPtr StaticMeshPath = "None";
-	TArray<UMaterial*> OverrideMaterials;
+	TArray<UMaterialInterface*> OverrideMaterials;
 	UPROPERTY(Edit, Save, EditFixedSize, Category="Materials", DisplayName="Materials", AssetType="Material")
 	TArray<FSoftObjectPtr> MaterialSlots;
 

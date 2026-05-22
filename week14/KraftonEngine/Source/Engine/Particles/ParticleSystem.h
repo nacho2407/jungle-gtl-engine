@@ -4,25 +4,17 @@
 
 struct FParticleEmitterInstance;
 class FArchive;
+class UParticleModule;
 class UParticleSystemComponent;
+class UParticleModuleRequired;
 
-class UParticleModule : public UObject
-{
-public:
-	/* 추가해야할 모듈들
-	UParticleModuleRequired: Emitter에 필수적인 설정을 포함하며, 파티클의 기본 속성들을 정의합니다.
-	UParticleModuleSpawn: 파티클의 생성 빈도와 수량을 제어합니다.
-	UParticleModuleLifetime: 파티클의 수명을 설정합니다.
-	UParticleModuleLocation: 파티클의 초기 위치를 결정합니다.
-	UParticleModuleVelocity: 파티클의 초기 속도와 방향을 설정합니다.
-	UParticleModuleColor: 파티클의 색상을 정의하며, 시간에 따른 색상 변화를 설정할 수 있습니다.
-	UParticleModuleSize: 파티클의 크기를 설정합니다.
-	*/
-};
+#include "Source/Engine/Particles/ParticleSystem.generated.h"
 
+UCLASS()
 class UParticleLODLevel : public UObject
 {
 public:
+	GENERATED_BODY()
 	~UParticleLODLevel() override;
 
 	int32 GetLevel() const { return Level; }
@@ -35,12 +27,28 @@ public:
 
 	void Serialize(FArchive& Ar) override;
 
+	template<typename T>
+	T* FindModule() const
+	{
+		for (UParticleModule* Module : Modules)
+		{
+			if (T* TypedModule = dynamic_cast<T*>(Module))
+			{
+				return TypedModule;
+			}
+		}
+		return nullptr;
+	}
+
 private:
+	UPROPERTY(Edit, Save, Category="Particle|LOD", DisplayName="Level")
 	int32 Level = 0;
+	UPROPERTY(Edit, Save, Category="Particle|LOD", DisplayName="Enabled")
 	bool bEnabled = true;
 
-	//UParticleModuleRequired* RequiredModule;
+	UParticleModuleRequired* RequiredModule;
 	//UParticleModuleTypeDataBase* TypeDataModule;
+	UPROPERTY(Edit, Save, Instanced, Category="Particle|LOD", DisplayName="Modules", AllowedClass=UParticleModule)
 	TArray<UParticleModule*> Modules;
 };
 

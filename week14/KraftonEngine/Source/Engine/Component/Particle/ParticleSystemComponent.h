@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/PrimitiveComponent.h"
 #include "Object/Ptr/ObjectPtr.h"
@@ -18,7 +18,7 @@ public:
 	~UParticleSystemComponent() override;
 
 	void SetTemplate(UParticleSystem* InTemplate);
-	UParticleSystem* GetTemplate() const { return ParticleSystemTemplate.Get(); }
+	UParticleSystem* GetTemplate() const { return ParticleSystem.Get(); }
 
 	void ResetSystem();
 	void Activate() override;
@@ -39,8 +39,8 @@ private:
 	void LoadTemplateFromPath();
 
 	TArray<FParticleEmitterInstance*> EmitterInstances;
-	TObjectPtr<UParticleSystem> ParticleSystemTemplate;
+	TObjectPtr<UParticleSystem> ParticleSystem;
 
 	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Particle System", AssetType="UParticleSystem")
-	FSoftObjectPtr ParticleSystemTemplatePath = "None";
+	FSoftObjectPtr ParticleSystemPath = "None";
 };
