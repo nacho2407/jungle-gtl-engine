@@ -27,9 +27,13 @@ public:
 
     UParticleLODLevel* GetLODLevel(int32 LODIndex) const;
 
+    bool IsEnabled() const { return bEnabled; }
+    void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
+
 private:
     TArray<UParticleLODLevel*> LODLevels;
 
     int32 ParticleSize   = 0;
     int32 ParticleStride = 0;
+    bool  bEnabled       = true;
 };

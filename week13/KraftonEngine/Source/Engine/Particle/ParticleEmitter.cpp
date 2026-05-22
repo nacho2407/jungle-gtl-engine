@@ -11,6 +11,7 @@ void UParticleEmitter::Serialize(FArchive& Ar)
 {
     int32 Version = 0;
     Ar << Version;
+    Ar << bEnabled;
 }
 
 UParticleLODLevel* UParticleEmitter::GetLODLevel(int32 LODIndex) const

@@ -1,8 +1,11 @@
 #pragma once
 
 #include "Editor/UI/Asset/AssetEditorWidget.h"
+#include "Object/FName.h"
+#include "Editor/Viewport/Asset/ParticleSystemEditorViewportClient.h"
 
 class UParticleSystem;
+class UParticleSystemComponent;
 
 class FParticleSystemEditorWidget : public FAssetEditorWidget
 {
@@ -19,6 +22,8 @@ public:
     void Render(float DeltaTime) override;
 
     bool AllowsMultipleInstances() const override { return true; }
+
+    void CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const override;
 
 private:
     UParticleSystem* GetParticleSystem() const;
@@ -38,6 +43,8 @@ private:
     void RenderEmittersPanel(float Width, float Height);
     void RenderPropertiesPanel(float Width, float Height);
     void RenderCurveEditorPanel(float Width, float Height);
+
+    void ResetPreviewComponent();
 
 private:
     FString WindowTitle    = "Particle System Editor";
@@ -71,4 +78,8 @@ private:
     bool CurveTrackVisible[4] = { true, true, true, true };
 
     char PropertySearch[128] = {};
+
+    FParticleSystemEditorViewportClient ViewportClient;
+    FName                               PreviewWorldHandle = FName::None;
+    UParticleSystemComponent*           PreviewPSC         = nullptr;
 };

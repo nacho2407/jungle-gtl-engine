@@ -9,6 +9,15 @@
 #include <algorithm>
 #include <cstdio>
 
+#include "Component/Light/DirectionalLightComponent.h"
+#include "Component/Primitive/ParticleSystemComponent.h"
+#include "GameFramework/WorldContext.h"
+#include "GameFramework/Light/DirectionalLightActor.h"
+#include "Runtime/Engine.h"
+#include "Slate/SlateApplication.h"
+#include "Object/Reflection/ObjectFactory.h"
+#include "Viewport/Viewport.h"
+
 namespace
 {
     // ── 팔레트 ───────────────────────────────────────────────────────────────
@@ -178,7 +187,10 @@ static uint32 GNextParticleSystemEditorInstanceId = 0;
 FParticleSystemEditorWidget::FParticleSystemEditorWidget()
     : InstanceId(GNextParticleSystemEditorInstanceId++)
 {
-    WindowIdSuffix = "###ParticleSystemEditor_" + std::to_string(InstanceId);
+    const FString Id = std::to_string(InstanceId);
+
+    WindowIdSuffix     = "###ParticleSystemEditor_" + std::to_string(InstanceId);
+    PreviewWorldHandle = FName("ParticleSystemEditorPreview_" + Id);
 }
 
 bool FParticleSystemEditorWidget::CanEdit(UObject* Object) const
@@ -200,20 +212,77 @@ void FParticleSystemEditorWidget::Open(UObject* Object)
     bSimulating          = false;
     PreviewTime          = 0.0f;
     PropertySearch[0]    = '\0';
+    PreviewPSC           = nullptr;
     EmitterEnabled.clear();
 
-    if (UParticleSystem* ParticleSystem = GetParticleSystem())
+    UParticleSystem* ParticleSystem = GetParticleSystem();
+    if (ParticleSystem)
     {
         WindowTitle = "Particle System Editor - ";
         WindowTitle += ParticleSystem->GetSourcePath();
-
-        SyncEmitterUIState();
     }
+    SyncEmitterUIState();
+
+    FWorldContext& WorldContext = GEngine->CreateWorldContext(EWorldType::EditorPreview, PreviewWorldHandle);
+
+    WorldContext.World->SetWorldType(EWorldType::EditorPreview);
+    WorldContext.World->InitWorld();
+
+    AActor* Actor        = WorldContext.World->SpawnActor<AActor>();
+    Actor->bTickInEditor = true;
+
+    if (ParticleSystem)
+    {
+        UParticleSystemComponent* Comp = Actor->AddComponent<UParticleSystemComponent>();
+        Comp->SetTemplate(ParticleSystem);
+        Actor->SetRootComponent(Comp);
+        PreviewPSC = Comp;
+    }
+
+    Actor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+
+    ADirectionalLightActor* LightActor = WorldContext.World->SpawnActor<ADirectionalLightActor>();
+
+    LightActor->InitDefaultComponents();
+    LightActor->SetActorRotation(FVector(0.0f, 45.0f, -45.0f));
+
+    if (UDirectionalLightComponent* LightComp = LightActor->GetComponentByClass<UDirectionalLightComponent>())
+    {
+        LightComp->SetShadowBias(0.0f);
+        LightComp->PushToScene();
+    }
+
+    ViewportClient.Initialize(GEngine->GetRenderer().GetFD3DDevice().GetDevice(), 64, 64);
+
+    ViewportClient.SetPreviewWorld(WorldContext.World);
+    ViewportClient.SetPreviewActor(Actor);
+    ViewportClient.SetPreviewParticleSystemComponent(PreviewPSC);
+    ViewportClient.ResetCameraToPreviewBounds();
+
+    WorldContext.World->SetEditorPOVProvider(&ViewportClient);
+    FSlateApplication::Get().RegisterViewport(&ViewportClient);
 }
 
 void FParticleSystemEditorWidget::Close()
 {
     FAssetEditorWidget::Close();
+
+    if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
+    {
+        FScene& PreviewScene = PreviewWorld->GetScene();
+        GEngine->GetRenderer().GetResources().ReleaseShadowResourcesForScene(&PreviewScene);
+
+        if (PreviewWorldHandle.IsValid())
+        {
+            GEngine->DestroyWorldContext(PreviewWorldHandle);
+        }
+    }
+
+    PreviewPSC           = nullptr;
+    PreviewTextureHandle = nullptr;
+
+    FSlateApplication::Get().UnregisterViewport(&ViewportClient);
+    ViewportClient.Release();
 }
 
 void FParticleSystemEditorWidget::Tick(float DeltaTime)
@@ -221,6 +290,11 @@ void FParticleSystemEditorWidget::Tick(float DeltaTime)
     if (bSimulating)
     {
         PreviewTime += DeltaTime;
+    }
+
+    if (ViewportClient.IsRenderable())
+    {
+        ViewportClient.Tick(DeltaTime);
     }
 }
 
@@ -249,7 +323,12 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
     }
 
     ImGui::PushStyleColor(ImGuiCol_WindowBg, PSE::WindowBg);
-    const bool bVisible = ImGui::Begin(FullTitle.c_str(), &bWindowOpen, ImGuiWindowFlags_MenuBar);
+    ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_MenuBar;
+    if (ViewportClient.IsMouseOverViewport())
+    {
+        WindowFlags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
+    }
+    const bool bVisible = ImGui::Begin(FullTitle.c_str(), &bWindowOpen, WindowFlags);
     ImGui::PopStyleColor();
 
     if (!bVisible)
@@ -260,6 +339,11 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
             Close();
         }
         return;
+    }
+
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+    {
+        FSlateApplication::Get().BringViewportToFront(&ViewportClient);
     }
 
     SyncEmitterUIState();
@@ -315,6 +399,14 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
     }
 }
 
+void FParticleSystemEditorWidget::CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const
+{
+    if (IsOpen())
+    {
+        OutClients.push_back(const_cast<FParticleSystemEditorViewportClient*>(&ViewportClient));
+    }
+}
+
 UParticleSystem* FParticleSystemEditorWidget::GetParticleSystem() const
 {
     return Cast<UParticleSystem>(EditedObject);
@@ -360,7 +452,7 @@ void FParticleSystemEditorWidget::AddEmitter()
 
     NewEmitter->CacheEmitterModuleInfo();
 
-    TArray<UParticleEmitter*> Emitters = ParticleSystem->GetEmitters();
+    TArray<UParticleEmitter*>& Emitters = ParticleSystem->GetEmitters();
     Emitters.push_back(NewEmitter);
 
     SyncEmitterUIState();
@@ -411,15 +503,17 @@ void FParticleSystemEditorWidget::SyncEmitterUIState()
 
     const int32 EmitterCount = ParticleSystem ? static_cast<int32>(ParticleSystem->GetEmitters().size()) : 0;
 
-    const int32 OldCount = static_cast<int32>(EmitterEnabled.size());
+    EmitterEnabled.resize(EmitterCount);
 
-    if (OldCount < EmitterCount)
+    if (ParticleSystem)
     {
-        EmitterEnabled.resize(EmitterCount, true);
-    }
-    else if (OldCount > EmitterCount)
-    {
-        EmitterEnabled.resize(EmitterCount);
+        const TArray<UParticleEmitter*>& Emitters = ParticleSystem->GetEmitters();
+
+        for (int32 Index = 0; Index < EmitterCount; ++Index)
+        {
+            UParticleEmitter* Emitter = Emitters[Index];
+            EmitterEnabled[Index]     = Emitter ? Emitter->IsEnabled() : true;
+        }
     }
 
     if (EmitterCount <= 0)
@@ -440,11 +534,15 @@ void FParticleSystemEditorWidget::RestartPreviewSimulation()
     bSimulating = true;
     PreviewTime = 0.0f;
 
-    // TODO
-    // if (PreviewPSC)
-    // {
-    //     PreviewPSC->ResetSystem();
-    // }
+    if (PreviewPSC)
+    {
+        PreviewPSC->ResetSystem();
+    }
+
+    if (ViewportClient.IsRenderable())
+    {
+        ViewportClient.ResetCameraToPreviewBounds();
+    }
 }
 
 // ── 메뉴 바 (패널 1) ─────────────────────────────────────────────────────────
@@ -627,10 +725,25 @@ void FParticleSystemEditorWidget::RenderViewportPanel(float Width, float Height)
 
         ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
-        if (PreviewTextureHandle)
+        FViewport* VP = ViewportClient.GetViewport();
+
+        if (VP && CanvasSize.x > 0.0f && CanvasSize.y > 0.0f)
         {
-            // 뷰포트 클라이언트가 연결되면 실시간 프리뷰가 그대로 표시된다.
-            ImGui::Image(reinterpret_cast<ImTextureID>(PreviewTextureHandle), CanvasSize);
+            ViewportClient.SetViewportRect(CanvasMin.x, CanvasMin.y, CanvasSize.x, CanvasSize.y);
+
+            VP->RequestResize(static_cast<uint32>(CanvasSize.x), static_cast<uint32>(CanvasSize.y));
+
+            if (VP->GetSRV())
+            {
+                ImGui::Image(reinterpret_cast<ImTextureID>(VP->GetSRV()), CanvasSize);
+                FSlateApplication::Get().SetViewportImGuiHovered(&ViewportClient, ImGui::IsItemHovered());
+            }
+            else
+            {
+                ImGui::Dummy(CanvasSize);
+                DrawList->AddRectFilled(CanvasMin, CanvasMax, PSE::ViewportBg, 4.0f);
+                CanvasHint(DrawList, CanvasMin, CanvasMax, "Preview viewport is initializing.");
+            }
         }
         else
         {
@@ -667,6 +780,18 @@ void FParticleSystemEditorWidget::RenderViewportPanel(float Width, float Height)
         if (ImGui::Button(bSimulating ? "Pause" : "Play", ImVec2(72.0f, 0.0f)))
         {
             bSimulating = !bSimulating;
+
+            if (PreviewPSC)
+            {
+                if (bSimulating)
+                {
+                    PreviewPSC->Activate();
+                }
+                else
+                {
+                    PreviewPSC->Deactivate();
+                }
+            }
         }
         ImGui::SameLine();
         if (ImGui::Button("Restart", ImVec2(72.0f, 0.0f)))
@@ -693,6 +818,8 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
         if (ImGui::Button("+ Add Emitter"))
         {
             AddEmitter();
+            EndPanel();
+            return;
         }
 
         if (EmitterCount == 0)
@@ -734,7 +861,9 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         SelectEmitter(EmitterIndex, -1);
                     }
 
-                    bool bEnabled = EmitterEnabled.empty() ? true : EmitterEnabled[EmitterIndex];
+                    UParticleEmitter* Emitter = ParticleSystem->GetEmitters()[EmitterIndex];
+
+                    bool bEnabled = Emitter ? Emitter->IsEnabled() : true;
                     if (ImGui::Checkbox("Enabled", &bEnabled))
                     {
                         if (!EmitterEnabled.empty())
@@ -841,7 +970,8 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
                 ImGui::TableNextColumn();
                 ImGui::TextUnformatted("Enabled");
                 ImGui::TableNextColumn();
-                bool bEnabled = EmitterEnabled.empty() ? true : EmitterEnabled[SelectedEmitterIndex];
+                UParticleEmitter* Emitter  = ParticleSystem->GetEmitters()[SelectedEmitterIndex];
+                bool              bEnabled = Emitter ? Emitter->IsEnabled() : true;
                 if (ImGui::Checkbox("##EnabledProp", &bEnabled))
                 {
                     if (!EmitterEnabled.empty())
