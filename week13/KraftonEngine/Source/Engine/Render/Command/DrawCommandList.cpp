@@ -1,4 +1,4 @@
-#include "DrawCommandList.h"
+﻿#include "DrawCommandList.h"
 
 #include <algorithm>
 #include <cstring>
@@ -279,7 +279,16 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd,
 	Cache.bForceAll = false;
 
 	// --- Draw ---
-	if (Cmd.Buffer.IndexCount > 0)
+	if (Cmd.Buffer.InstanceVB && Cmd.Buffer.InstanceCount > 0)
+	{
+		// 슬롯 1에 인스턴스 VB 바인딩
+		uint32 Offset = 0;
+		Ctx->IASetVertexBuffers(1, 1, &Cmd.Buffer.InstanceVB,
+			&Cmd.Buffer.InstanceStride, &Offset);
+		Ctx->DrawIndexedInstanced(Cmd.Buffer.IndexCount,
+			Cmd.Buffer.InstanceCount, 0, 0, 0);
+	}
+	else if(Cmd.Buffer.IndexCount > 0)
 	{
 		Ctx->DrawIndexed(Cmd.Buffer.IndexCount, Cmd.Buffer.FirstIndex, Cmd.Buffer.BaseVertex);
 	}
