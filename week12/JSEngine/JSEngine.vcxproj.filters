@@ -906,7 +906,7 @@
     <ClCompile Include="Source\Engine\Asset\ObjLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Asset\ParticleAtlasLoader.cpp">
+    <ClCompile Include="Source\Engine\Asset\SubUVAtlasLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\SkeletalMesh.cpp">
@@ -1852,7 +1852,7 @@
     <ClInclude Include="Source\Engine\Asset\ObjRawTypes.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\ParticleAtlasLoader.h">
+    <ClInclude Include="Source\Engine\Asset\SubUVAtlasLoader.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\SkeletalMesh.h">

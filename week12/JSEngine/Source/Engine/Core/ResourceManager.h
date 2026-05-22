@@ -105,10 +105,10 @@ public:
 	void RegisterFont(const FName& FontName, const FString& InPath, uint32 Columns = 16, uint32 Rows = 16);
 	TArray<FString> GetFontNames() const;
 
-	FParticleResource* FindParticle(const FName& ParticleName);
-	const FParticleResource* FindParticle(const FName& ParticleName) const;
-	void RegisterParticle(const FName& ParticleName, const FString& InPath, uint32 Columns = 1, uint32 Rows = 1);
-	TArray<FString> GetParticleNames() const;
+	FSubUVResource* FindSubUV(const FName& SubUVName);
+	const FSubUVResource* FindSubUV(const FName& SubUVName) const;
+	void RegisterSubUV(const FName& SubUVName, const FString& InPath, uint32 Columns = 1, uint32 Rows = 1);
+	TArray<FString> GetSubUVNames() const;
 
 	UStaticMesh* LoadStaticMesh(const FString& Path);
 	UStaticMesh* FindStaticMesh(const FString& Path) const;
@@ -200,7 +200,7 @@ private:
 	/* Paths */
 	TArray<FString> ObjFilePaths;
 	TArray<FString> MaterialFilePaths;
-	TArray<FString> ParticleFilePaths;
+	TArray<FString> SubUVFilePaths;
 	TArray<FString> FontFilePaths;
 	TArray<FString> TextureFilePaths;
 	TArray<FString> SkeletalMeshFilePaths;

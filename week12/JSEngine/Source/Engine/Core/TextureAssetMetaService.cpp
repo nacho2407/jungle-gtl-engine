@@ -1,4 +1,4 @@
-#include "Core/TextureAssetMetaService.h"
+﻿#include "Core/TextureAssetMetaService.h"
 
 #include "SimpleJSON/json.hpp"
 
@@ -18,9 +18,9 @@ namespace
 		{
 			return EAssetMetaType::Font;
 		}
-		if (ParentDir == L"Particle")
+		if (ParentDir == L"SubUV")
 		{
-			return EAssetMetaType::Particle;
+			return EAssetMetaType::SubUV;
 		}
 		if (ParentDir == L"Texture")
 		{

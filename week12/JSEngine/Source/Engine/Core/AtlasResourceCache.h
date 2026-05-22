@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "Asset/FontAtlasLoader.h"
-#include "Asset/ParticleAtlasLoader.h"
+#include "Asset/SubUVAtlasLoader.h"
 #include "Core/CoreTypes.h"
 #include "Core/ResourceTypes.h"
 
@@ -16,17 +16,17 @@ public:
 	const FFontResource* FindFont(const FName& FontName) const;
 	void RegisterFont(const FName& FontName, const FString& InPath, uint32 Columns, uint32 Rows);
 
-	FParticleResource* FindParticle(const FName& ParticleName);
-	const FParticleResource* FindParticle(const FName& ParticleName) const;
-	void RegisterParticle(const FName& ParticleName, const FString& InPath, uint32 Columns, uint32 Rows);
+	FSubUVResource* FindSubUV(const FName& SubUVName);
+	const FSubUVResource* FindSubUV(const FName& SubUVName) const;
+	void RegisterSubUV(const FName& SubUVName, const FString& InPath, uint32 Columns, uint32 Rows);
 
 	void Clear();
 	void Release();
 
 private:
 	FFontAtlasLoader FontLoader;
-	FParticleAtlasLoader ParticleLoader;
+	FSubUVAtlasLoader SubUVLoader;
 
 	TMap<FString, FFontResource> FontResources;
-	TMap<FString, FParticleResource> ParticleResources;
+	TMap<FString, FSubUVResource> SubUVResources;
 };

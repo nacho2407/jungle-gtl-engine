@@ -1,4 +1,4 @@
-#include "SelectionMaskRenderPass.h"
+﻿#include "SelectionMaskRenderPass.h"
 #include "Core/ResourceManager.h"
 #include "Component/PrimitiveComponent.h"
 #include "Render/Scene/RenderBus.h"
@@ -145,17 +145,17 @@ static void BuildSelectionMaskConstants(
     }
     else if (PrimitiveType == EPrimitiveType::EPT_SubUV)
     {
-        const FParticleResource* Particle = Cmd.Constants.SubUV.Particle;
-        if (Particle && Particle->Texture && Particle->Texture->GetSRV())
+        const FSubUVResource* SubUV = Cmd.Constants.SubUV.SubUV;
+        if (SubUV && SubUV->Texture && SubUV->Texture->GetSRV())
         {
-            OutTextureSRV = Particle->Texture->GetSRV();
+            OutTextureSRV = SubUV->Texture->GetSRV();
             OutConstants.bUseAlphaTest = 1u;
         }
 
-        if (Particle && Particle->Columns > 0 && Particle->Rows > 0)
+        if (SubUV && SubUV->Columns > 0 && SubUV->Rows > 0)
         {
-            const uint32 Columns = Particle->Columns;
-            const uint32 Rows = Particle->Rows;
+            const uint32 Columns = SubUV->Columns;
+            const uint32 Rows = SubUV->Rows;
             const uint32 FrameIndex = Cmd.Constants.SubUV.FrameIndex;
             const uint32 Col = FrameIndex % Columns;
             const uint32 Row = FrameIndex / Columns;

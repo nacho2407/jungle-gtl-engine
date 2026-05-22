@@ -22,7 +22,7 @@
         "Location" : [0.000000, 0.000000, 0.000000],
         "ObjectName" : "UBillboardComponent_12",
         "ParentUUID" : 801,
-        "Particle" : "Asset/Texture/EmptyActor.png",
+        "TextureName" : "Asset/Texture/EmptyActor.png",
         "PlayRate" : 30.000000,
         "Rotation" : [0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],

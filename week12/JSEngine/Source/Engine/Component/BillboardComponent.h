@@ -56,7 +56,7 @@ public:
 	///////////////////////////////////////////////////////////
 
 private:
-	UPROPERTY(DisplayName = "Particle")
+	UPROPERTY(DisplayName = "Texture")
 	FName TextureName;
 
 	UTexture* Texture = nullptr; // ResourceManager 소유, 여기선 참조만

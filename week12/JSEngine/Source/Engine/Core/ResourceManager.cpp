@@ -281,7 +281,7 @@ void FResourceManager::ClearDiscoveredResourceLists(bool bClearAtlasCache)
 	FontFilePaths.clear();
 	TextureFilePaths.clear();
 	MaterialFilePaths.clear();
-	ParticleFilePaths.clear();
+	SubUVFilePaths.clear();
 	CurveFilePaths.clear();
 	SkeletalMeshFilePaths.clear();
 	AnimSequenceFilePaths.clear();
@@ -353,10 +353,10 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 			FontFilePaths.push_back(RelativePath);
 			RegisterFont(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
 		}
-		else if (Meta.Type == EAssetMetaType::Particle)
+		else if (Meta.Type == EAssetMetaType::SubUV)
 		{
-			ParticleFilePaths.push_back(RelativePath);
-			RegisterParticle(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
+			SubUVFilePaths.push_back(RelativePath);
+			RegisterSubUV(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
 		}
 		else if (Meta.Type == EAssetMetaType::Texture)
 		{
@@ -894,20 +894,20 @@ void FResourceManager::RegisterFont(const FName& FontName, const FString& InPath
 	AtlasCache.RegisterFont(FontName, InPath, Columns, Rows);
 }
 
-// --- Particle ---
-FParticleResource* FResourceManager::FindParticle(const FName& ParticleName)
+// --- SubUV ---
+FSubUVResource* FResourceManager::FindSubUV(const FName& SubUVName)
 {
-	return AtlasCache.FindParticle(ParticleName);
+	return AtlasCache.FindSubUV(SubUVName);
 }
 
-const FParticleResource* FResourceManager::FindParticle(const FName& ParticleName) const
+const FSubUVResource* FResourceManager::FindSubUV(const FName& SubUVName) const
 {
-	return AtlasCache.FindParticle(ParticleName);
+	return AtlasCache.FindSubUV(SubUVName);
 }
 
-void FResourceManager::RegisterParticle(const FName& ParticleName, const FString& InPath, uint32 Columns, uint32 Rows)
+void FResourceManager::RegisterSubUV(const FName& SubUVName, const FString& InPath, uint32 Columns, uint32 Rows)
 {
-	AtlasCache.RegisterParticle(ParticleName, InPath, Columns, Rows);
+	AtlasCache.RegisterSubUV(SubUVName, InPath, Columns, Rows);
 }
 
 TArray<FString> FResourceManager::GetFontNames() const
@@ -915,9 +915,9 @@ TArray<FString> FResourceManager::GetFontNames() const
 	return FontFilePaths;
 }
 
-TArray<FString> FResourceManager::GetParticleNames() const
+TArray<FString> FResourceManager::GetSubUVNames() const
 {
-	return ParticleFilePaths;
+	return SubUVFilePaths;
 }
 
 UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)

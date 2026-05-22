@@ -1,0 +1,15 @@
+﻿#pragma once
+
+#include "Asset/IAssetLoader.h"
+#include "Core/ResourceTypes.h"
+
+struct ID3D11Device;
+
+class FSubUVAtlasLoader : public IAssetLoader
+{
+public:
+	bool Load(const FName& SubUVName, const FString& Path, uint32 Columns, uint32 Rows,
+		ID3D11Device* Device, FSubUVResource& OutResource) const;
+
+	bool SupportsExtension(const FString& Extension) const override;
+};

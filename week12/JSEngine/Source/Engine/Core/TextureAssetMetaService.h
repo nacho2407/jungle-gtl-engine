@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 
@@ -13,7 +13,7 @@ enum class EAssetMetaType
 {
 	None,
 	Font,
-	Particle,
+	SubUV,
 	Texture
 };
 
@@ -29,7 +29,7 @@ inline const char* ToString(EAssetMetaType Type)
 	switch (Type)
 	{
 	case EAssetMetaType::Font: return "Font";
-	case EAssetMetaType::Particle: return "Particle";
+	case EAssetMetaType::SubUV: return "SubUV";
 	case EAssetMetaType::Texture: return "Texture";
 	default: return "None";
 	}
@@ -41,9 +41,9 @@ inline EAssetMetaType ToAssetMetaType(const std::string& Value)
 	{
 		return EAssetMetaType::Font;
 	}
-	if (Value == "Particle")
+	if (Value == "SubUV")
 	{
-		return EAssetMetaType::Particle;
+		return EAssetMetaType::SubUV;
 	}
 	if (Value == "Texture")
 	{

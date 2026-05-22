@@ -529,9 +529,9 @@ void FScriptManager::BindPrimitiveTypes()
 								USceneComponent,
 								UActorComponent,
 								UObject)
-	LUA_SET(SetParticle, [](USubUVComponent& Self, const FString& ParticleName)
-			{ Self.SetParticle(FName(ParticleName)); });
-	LUA_METHOD(GetParticleName, GetParticleName);
+	LUA_SET(SetSubUV, [](USubUVComponent& Self, const FString& SubUVName)
+			{ Self.SetSubUV(FName(SubUVName)); });
+	LUA_METHOD(GetSubUVName, GetSubUVName);
 	LUA_RW_PROPERTY(FrameIndex, GetFrameIndex, SetFrameIndex);
 	LUA_METHOD(SetFrameRate, SetFrameRate);
 	LUA_METHOD(IsFinished, IsFinished);

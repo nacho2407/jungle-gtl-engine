@@ -26,16 +26,16 @@ bool FAtlasResourceCache::LoadGPUResources(ID3D11Device* Device)
 		}
 	}
 
-	for (auto& [Key, Resource] : ParticleResources)
+	for (auto& [Key, Resource] : SubUVResources)
 	{
 		if (Resource.Texture != nullptr && Resource.Texture->GetSRV() != nullptr)
 		{
 			continue;
 		}
 
-		if (!ParticleLoader.Load(Resource.Name, Resource.Path, Resource.Columns, Resource.Rows, Device, Resource))
+		if (!SubUVLoader.Load(Resource.Name, Resource.Path, Resource.Columns, Resource.Rows, Device, Resource))
 		{
-			UE_LOG_WARNING("Failed to load Particle atlas: %s", Resource.Path.c_str());
+			UE_LOG_WARNING("Failed to load SubUV atlas: %s", Resource.Path.c_str());
 			return false;
 		}
 	}
@@ -76,37 +76,37 @@ void FAtlasResourceCache::RegisterFont(const FName& FontName, const FString& InP
 	FontResources[FontName.ToString()] = Resource;
 }
 
-FParticleResource* FAtlasResourceCache::FindParticle(const FName& ParticleName)
+FSubUVResource* FAtlasResourceCache::FindSubUV(const FName& SubUVName)
 {
-	if (ParticleResources.empty())
+	if (SubUVResources.empty())
 	{
 		return nullptr;
 	}
 
-	auto It = ParticleResources.find(ParticleName.ToString());
-	return (It != ParticleResources.end()) ? &It->second : &ParticleResources.begin()->second;
+	auto It = SubUVResources.find(SubUVName.ToString());
+	return (It != SubUVResources.end()) ? &It->second : &SubUVResources.begin()->second;
 }
 
-const FParticleResource* FAtlasResourceCache::FindParticle(const FName& ParticleName) const
+const FSubUVResource* FAtlasResourceCache::FindSubUV(const FName& SubUVName) const
 {
-	if (ParticleResources.empty())
+	if (SubUVResources.empty())
 	{
 		return nullptr;
 	}
 
-	auto It = ParticleResources.find(ParticleName.ToString());
-	return (It != ParticleResources.end()) ? &It->second : &ParticleResources.begin()->second;
+	auto It = SubUVResources.find(SubUVName.ToString());
+	return (It != SubUVResources.end()) ? &It->second : &SubUVResources.begin()->second;
 }
 
-void FAtlasResourceCache::RegisterParticle(const FName& ParticleName, const FString& InPath, uint32 Columns, uint32 Rows)
+void FAtlasResourceCache::RegisterSubUV(const FName& SubUVName, const FString& InPath, uint32 Columns, uint32 Rows)
 {
-	FParticleResource Resource;
-	Resource.Name = ParticleName;
+	FSubUVResource Resource;
+	Resource.Name = SubUVName;
 	Resource.Path = FPaths::Normalize(InPath);
 	Resource.Columns = Columns;
 	Resource.Rows = Rows;
 	Resource.Texture = UObjectManager::Get().CreateObject<UTexture>();
-	ParticleResources[ParticleName.ToString()] = Resource;
+	SubUVResources[SubUVName.ToString()] = Resource;
 }
 
 void FAtlasResourceCache::Clear()
@@ -131,9 +131,9 @@ void FAtlasResourceCache::Release()
 	}
 	FontResources.clear();
 
-	for (auto& [Key, Particle] : ParticleResources)
+	for (auto& [Key, SubUV] : SubUVResources)
 	{
-		DestroyUniqueObject(Particle.Texture);
+		DestroyUniqueObject(SubUV.Texture);
 	}
-	ParticleResources.clear();
+	SubUVResources.clear();
 }

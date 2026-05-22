@@ -17,7 +17,7 @@ struct FTextureResource
 };
 
 
-// Font/Particle 공통 텍스처 아틀라스 리소스.
+// Font/SubUV 공통 텍스처 아틀라스 리소스.
 // ResourceManager가 소유하며, 컴포넌트는 포인터로 참조만 합니다.
 // Columns × Rows 그리드 정보를 함께 보유해 Batcher에서 UV 계산에 활용합니다.
 struct FTextureAtlasResource 
@@ -52,6 +52,6 @@ struct FStaticMeshLoadOptions
 
 // 의미론적 별칭 — 타입은 동일하지만 용도를 명시합니다.
 using FFontResource     = FTextureAtlasResource;
-using FParticleResource = FTextureAtlasResource;
+using FSubUVResource = FTextureAtlasResource;
 using FMaterialResource = FTextureResource;
 
