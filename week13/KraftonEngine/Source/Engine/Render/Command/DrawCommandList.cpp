@@ -297,5 +297,11 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd,
 		Ctx->Draw(Cmd.Buffer.VertexCount, 0);
 	}
 
+	if (Cmd.Buffer.InstanceVB)
+	{
+		ID3D11Buffer* NullVB = nullptr; uint32 Zero = 0;
+		Ctx->IASetVertexBuffers(1, 1, &NullVB, &Zero, &Zero);
+	}
+
 	FDrawCallStats::Increment();
 }

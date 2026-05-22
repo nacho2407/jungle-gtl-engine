@@ -58,6 +58,25 @@ struct VS_Input_P
     float3 position : POSITION;
 };
 
+struct VS_Input_ParticleQuad
+{
+    float2 cornerUV : TEXCOORD0;
+};
+
+struct VS_Input_ParticleInstance
+{
+    float3 position : POSITION;
+    float size : SIZE;
+    float4 color : COLOR;
+    float rotation : ROTATION;
+};
+
+struct VS_Input_MeshParticleInstance
+{
+    matrix transform : TRANSFORM;
+    float4 color : COLOR;
+};
+
 // ============================================================
 // PS Input (VS -> PS 전달 구조체)
 // ============================================================

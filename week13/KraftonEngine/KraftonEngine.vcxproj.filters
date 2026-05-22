@@ -475,6 +475,12 @@
     <Filter Include="ThirdParty\sol2\include\sol\utility">
       <UniqueIdentifier>{9665cc4b-2b87-76ba-7eb3-a148e4c5a694}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Particle">
+      <UniqueIdentifier>{51925093-79a3-4ae5-88b5-27691cbe59e1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Particle">
+      <UniqueIdentifier>{899bbf3f-cb45-4c51-a929-c6c75c6fbd94}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\ConstantBuffers.hlsli">
@@ -596,6 +602,9 @@
     </FxCompile>
     <FxCompile Include="Shaders\UI\SubUV.hlsl">
       <Filter>Shaders\UI</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Particle\Sprite.hlsl">
+      <Filter>Shaders\Particle</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1559,6 +1568,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp">
       <Filter>Intermediate\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particle\DynamicEmitterData.cpp">
+      <Filter>Source\Engine\Particle</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -4396,6 +4408,9 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp">
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particle\DynamicEmitterData.h">
+      <Filter>Source\Engine\Particle</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
