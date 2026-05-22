@@ -1,7 +1,9 @@
-﻿#include "ParticleSystemComponent.h"
+#include "ParticleSystemComponent.h"
 
-#include "Particles/ParticleRuntimeTypes.h"
 #include "Particles/ParticleSystem.h"
+#include "Particles/Render/ParticleSystemSceneProxy.h"
+#include "Particles/Runtime/ParticleEmitterInstance.h"
+#include "Particles/Runtime/ParticleRuntimeTypes.h"
 
 UParticleSystemComponent::~UParticleSystemComponent()
 {
@@ -59,6 +61,11 @@ void UParticleSystemComponent::EndPlay()
 	ClearEmitterRenderData();
 	ClearEmitterInstances();
 	UPrimitiveComponent::EndPlay();
+}
+
+FPrimitiveSceneProxy* UParticleSystemComponent::CreateSceneProxy()
+{
+	return new FParticleSystemSceneProxy(this);
 }
 
 void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)

@@ -1,4 +1,4 @@
-#include "Particles/ParticleRuntimeTypes.h"
+#include "Particles/Runtime/ParticleEmitterInstance.h"
 
 #include "Particles/ParticleSystem.h"
 

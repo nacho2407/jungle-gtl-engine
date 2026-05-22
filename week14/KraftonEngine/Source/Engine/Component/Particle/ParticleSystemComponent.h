@@ -23,6 +23,9 @@ public:
 	void Activate() override;
 	void Deactivate() override;
 	void EndPlay() override;
+	FPrimitiveSceneProxy* CreateSceneProxy() override;
+
+	const TArray<FDynamicEmitterDataBase*>& GetEmitterRenderData() const { return EmitterRenderData; }
 
 protected:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;

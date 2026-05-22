@@ -1,6 +1,6 @@
 #include "ParticleSystem.h"
 
-#include "Particles/ParticleRuntimeTypes.h"
+#include "Particles/Runtime/ParticleEmitterInstance.h"
 
 FParticleEmitterInstance* UParticleEmitter::CreateInstance(UParticleSystemComponent* Component)
 {
