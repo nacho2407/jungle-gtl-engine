@@ -10,11 +10,14 @@
 #include "Core/Paths.h"
 #include "Engine/Geometry/Ray.h"
 #include "GameFramework/PrimitiveActors.h"
+#include "GameFramework/World.h"
 #include "Math/Vector4.h"
 
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <cwctype>
+#include <filesystem>
 
 namespace
 {
@@ -25,6 +28,7 @@ namespace
 		float ViewportWidth, float ViewportHeight, 
 		float& OutViewportX, float& OutViewportY, 
 		float& OutDepth);
+	void FrameSkeletalMeshPreview(FSkeletalMeshEditorViewer& Viewer, USkeletalMeshComponent* SkelComp);
 }
 
 void FSkeletalMeshEditorViewer::SelectBone(int32 BoneIndex)
@@ -337,8 +341,27 @@ bool FSkeletalMeshEditorViewer::ChangeTarget(const FString& InFileName)
     }
 
     SkelComp->Stop();
+    const FString NormalizedFileName = FPaths::Normalize(InFileName);
+    USkeletalMesh* Mesh = FResourceManager::Get().LoadSkeletalMesh(NormalizedFileName);
+    std::filesystem::path TargetPath(FPaths::ToWide(NormalizedFileName));
+    std::wstring TargetExtension = TargetPath.extension().wstring();
+    std::transform(TargetExtension.begin(), TargetExtension.end(), TargetExtension.begin(), ::towlower);
+    if (!Mesh && TargetExtension == L".fbx")
+    {
+        Mesh = FResourceManager::Get().ImportSkeletalMeshFromFbx(NormalizedFileName);
+    }
+
     SkelComp->SetAnimation(nullptr);
-    SkelComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh(FPaths::Normalize(InFileName)));
+    SkelComp->SetSkeletalMesh(Mesh);
+    if (SkelComp->GetSkeletalMesh())
+    {
+        SkelComp->EnsureSkinningUpdated();
+        if (UWorld* World = GetClient().GetFocusedWorld())
+        {
+            World->SyncSpatialIndex();
+        }
+        FrameSkeletalMeshPreview(*this, SkelComp);
+    }
     return SkelComp->GetSkeletalMesh() != nullptr;
 }
 
@@ -465,5 +488,36 @@ namespace
 		OutViewportY = (1.0f - (NdcY * 0.5f + 0.5f)) * ViewportHeight;
 		OutDepth = NdcZ;
 		return true;
+	}
+
+	void FrameSkeletalMeshPreview(FSkeletalMeshEditorViewer& Viewer, USkeletalMeshComponent* SkelComp)
+	{
+		if (!SkelComp)
+		{
+			return;
+		}
+
+		FViewportCamera* Camera = Viewer.GetClient().GetCamera();
+		if (!Camera || Camera->IsOrthographic())
+		{
+			return;
+		}
+
+		const FAABB& Bounds = SkelComp->GetWorldAABB();
+		if (!Bounds.IsValid())
+		{
+			return;
+		}
+
+		const FVector Center = Bounds.GetCenter();
+		const float Radius = std::max(Bounds.GetExtent().Size(), 1.0f);
+		const float HalfFov = std::max(Camera->GetFOV() * 0.5f, 0.01f);
+		const float Distance = std::max(Radius / std::tan(HalfFov), Radius * 2.0f) * 1.35f;
+		const FVector Forward = Camera->GetForwardVector().GetSafeNormal();
+		const FVector ViewDir = Forward.IsNearlyZero() ? FVector(-1.0f, -0.6f, -0.8f).GetSafeNormal() : Forward;
+
+		Camera->SetLocation(Center - ViewDir * Distance);
+		Camera->SetLookAt(Center);
+		Camera->SetFarPlane(std::max(Camera->GetFarPlane(), Distance + Radius * 4.0f));
 	}
 }

@@ -89,6 +89,7 @@ public:
 	UMaterial* GetOrCreateMaterial(const FString& Path, EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit);
 	UMaterial* GetOrCreateMaterial(const FString& Name, const FString& Path, EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit);
 	bool LoadMaterial(const FString& Path, EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit, ID3D11Device* Device = nullptr);
+	bool ImportMaterialFromFbx(const FString& Path, EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit, ID3D11Device* Device = nullptr);
 
 	bool SerializeMaterial(const FString& Path, const UMaterial* Material);
 	bool SerializeMaterialInstance(const FString& Path, const UMaterialInstance* MaterialInstance);
@@ -111,6 +112,7 @@ public:
 	TArray<FString> GetSubUVNames() const;
 
 	UStaticMesh* LoadStaticMesh(const FString& Path);
+	UStaticMesh* ImportStaticMeshFromFbx(const FString& Path);
 	UStaticMesh* FindStaticMesh(const FString& Path) const;
 	TArray<FString> GetStaticMeshPaths() const;
 
@@ -118,6 +120,7 @@ public:
 	 * note: 병합하면서 충돌이 발생하거나 동일한 로직의 함수가 있다면 날려버리셔도 됩니다
 	 */
 	USkeletalMesh* LoadSkeletalMesh(const FString& Path);
+	USkeletalMesh* ImportSkeletalMeshFromFbx(const FString& Path);
 	USkeletalMesh* FindSkeletalMesh(const FString& Path) const;
 	TArray<FString> GetSkeletalMeshPaths() const;
 	FFbxMeshContentInfo InspectFbxMeshContent(const FString& Path);
@@ -161,6 +164,8 @@ private:
 	uint64 GetFileSizeBytes(const FString& Path) const;
 	FString ComputeFileContentHashString(const FString& Path) const;
 	FString GetCachedFileContentHashString(const FString& Path, uint64 WriteTimeTicks, uint64 FileSizeBytes);
+	bool IsImportedStaticMeshAssetFresh(const FString& SourcePath, const FString& BinaryPath) const;
+	bool IsImportedSkeletalMeshAssetFresh(const FString& SourcePath, const FString& BinaryPath) const;
 	bool IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	bool IsSkeletalMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	void PreloadStaticMeshes();

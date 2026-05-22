@@ -126,7 +126,7 @@ FString FAssetPathPolicy::MakeStaticMeshCacheBinaryPath(const FString& SourcePat
 	return FPaths::ToUtf8((std::filesystem::path(L"Asset") / L"Mesh" / L"Bin" / BinaryFileName).generic_wstring());
 }
 
-FString FAssetPathPolicy::MakeWritableStaticMeshCacheBinaryPath(const FString& SourcePath)
+FString FAssetPathPolicy::MakeImportedStaticMeshAssetPath(const FString& SourcePath)
 {
 	const FString NormalizedSourcePath = FPaths::Normalize(SourcePath);
 	std::filesystem::path SourceFsPath(FPaths::ToWide(NormalizedSourcePath));
@@ -145,7 +145,12 @@ FString FAssetPathPolicy::MakeWritableStaticMeshCacheBinaryPath(const FString& S
 	return FPaths::ToString(BinaryPath.wstring());
 }
 
-FString FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(const FString& SourcePath)
+FString FAssetPathPolicy::MakeWritableStaticMeshCacheBinaryPath(const FString& SourcePath)
+{
+	return MakeImportedStaticMeshAssetPath(SourcePath);
+}
+
+FString FAssetPathPolicy::MakeImportedSkeletalMeshAssetPath(const FString& SourcePath)
 {
 	// StaticMesh와 stem 이 겹칠 수 있어 SkeletalMesh 전용 루트로 분리.
 	const FString NormalizedSourcePath = FPaths::Normalize(SourcePath);
@@ -163,4 +168,9 @@ FString FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(const FString&
 
 	std::filesystem::path BinaryPath = BinDir / BinaryFileName;
 	return FPaths::ToString(BinaryPath.wstring());
+}
+
+FString FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(const FString& SourcePath)
+{
+	return MakeImportedSkeletalMeshAssetPath(SourcePath);
 }

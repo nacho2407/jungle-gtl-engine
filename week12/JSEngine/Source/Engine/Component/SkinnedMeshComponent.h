@@ -82,7 +82,7 @@ protected:
 	 */
 	void SkinVerticesCPU();
 
-	void MarkBoundsDirty() { bBoundsDirty = true; }
+	void MarkBoundsDirty();
 	void MarkRenderStateDirty() { bRenderStateDirty = true; }
 	void EnsureBoundsUpdated() const;
 

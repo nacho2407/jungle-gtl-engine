@@ -30,6 +30,9 @@ FFbxMaterialLoadService::FFbxMaterialLoadService(FResourceManager& InResourceMan
 
 bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device)
 {
+    (void)ShaderType;
+    (void)Device;
+
     const FString NormalizedFbxPath = FPaths::Normalize(FbxFilePath);
     if (NormalizedFbxPath.empty())
     {
@@ -40,7 +43,7 @@ bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, EMaterialShaderTy
     const FString FirstMaterialKey = MakeFbxMaterialAssetPath(NormalizedFbxPath, 0);
     if (ResourceManager.MaterialCache.ContainsMaterialKey(FirstMaterialKey))
     {
-        UE_LOG("[FbxMaterialLoadService] Skipped (already cached): %s", NormalizedFbxPath.c_str());
+        UE_LOG("[FbxMaterialLoadService] MaterialSource=MemoryCache | Path=%s", NormalizedFbxPath.c_str());
         return true;
     }
 
@@ -76,9 +79,24 @@ bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, EMaterialShaderTy
         }
         if (LoadedCount > 0)
         {
-            UE_LOG("[FbxMaterialLoadService] Loaded %d materials from disk cache: %s", LoadedCount, NormalizedFbxPath.c_str());
+            UE_LOG("[FbxMaterialLoadService] MaterialSource=DiskAsset | Count=%d | Path=%s", LoadedCount, NormalizedFbxPath.c_str());
             return true;
         }
+
+        UE_LOG_WARNING("[FbxMaterialLoadService] MaterialSource=CorruptAsset | Path=%s", NormalizedFbxPath.c_str());
+        return false;
+    }
+
+    UE_LOG_WARNING("[FbxMaterialLoadService] MaterialSource=MissingAsset | Path=%s", NormalizedFbxPath.c_str());
+    return false;
+}
+
+bool FFbxMaterialLoadService::ImportFromFbx(const FString& FbxFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device)
+{
+    const FString NormalizedFbxPath = FPaths::Normalize(FbxFilePath);
+    if (NormalizedFbxPath.empty())
+    {
+        return false;
     }
 
     TMap<FString, UMaterial*> Parsed;
@@ -93,6 +111,8 @@ bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, EMaterialShaderTy
     {
         // FBX??surface material 0媛쒖뿬???몄텧 ?먯껜???깃났 (resolve ?④퀎媛 DefaultWhite fallback).
         UE_LOG("[FbxMaterialLoadService] No materials in FBX: %s", NormalizedFbxPath.c_str());
+        UE_LOG("[FbxMaterialLoadService] MaterialSource=ExplicitFbxImport | Count=0 | Path=%s",
+            NormalizedFbxPath.c_str());
         return true;
     }
 
@@ -124,6 +144,11 @@ bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, EMaterialShaderTy
         {
             if (ExistingMaterial != Mat)
             {
+                ExistingMaterial->Name = Mat->Name;
+                ExistingMaterial->ImportedName = Mat->ImportedName;
+                ExistingMaterial->FilePath = Mat->FilePath;
+                ExistingMaterial->MaterialData = Mat->MaterialData;
+                ExistingMaterial->SetShaderType(ShaderType);
                 UObjectManager::Get().DestroyObject(Mat);
                 Mat = ExistingMaterial;
             }
@@ -159,6 +184,8 @@ bool FFbxMaterialLoadService::Load(const FString& FbxFilePath, EMaterialShaderTy
     }
 
     UE_LOG("[FbxMaterialLoadService] Loaded %zu materials from %s",
+        MaterialOrder.size(), NormalizedFbxPath.c_str());
+    UE_LOG("[FbxMaterialLoadService] MaterialSource=ExplicitFbxImport | Count=%zu | Path=%s",
         MaterialOrder.size(), NormalizedFbxPath.c_str());
 
     return true;

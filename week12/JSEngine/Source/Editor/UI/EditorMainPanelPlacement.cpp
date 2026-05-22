@@ -146,7 +146,10 @@ bool FEditorMainPanel::SpawnStaticMeshFromContentPath(
         return false;
     }
 
-    UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh(MeshLoadPath);
+    const std::wstring MeshExtension = GetLowerExtension(std::filesystem::path(FPaths::ToWide(MeshLoadPath)));
+    UStaticMesh* Mesh = (MeshExtension == L".fbx")
+        ? FResourceManager::Get().ImportStaticMeshFromFbx(MeshLoadPath)
+        : FResourceManager::Get().LoadStaticMesh(MeshLoadPath);
     if (!Mesh || !Mesh->HasValidMeshData())
     {
         PushFooterLog("Failed to load dropped static mesh");
@@ -225,7 +228,7 @@ bool FEditorMainPanel::SpawnSkeletalMeshFromContentPath(
         {
             Widgets.ContentBrowserWidget.Refresh();
         }
-        Mesh = ResourceManager.LoadSkeletalMesh(MeshLoadPath);
+        Mesh = ResourceManager.ImportSkeletalMeshFromFbx(MeshLoadPath);
 	}
 
 	if (!Mesh || !Mesh->HasValidMeshData())

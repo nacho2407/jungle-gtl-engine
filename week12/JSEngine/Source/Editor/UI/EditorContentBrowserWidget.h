@@ -58,6 +58,12 @@ private:
 		uint32 Height = 0;
 	};
 
+	enum class EFbxImportAction : uint8
+	{
+		OpenViewer,
+		Reimport,
+	};
+
 	void LoadFromSettings();
 	void SaveToSettings() const;
 	void RefreshContent();
@@ -71,6 +77,9 @@ private:
 	void DrawContentGrid();
 	void DrawContentTile(const FContentItem& Item, const ImVec2& TileSize);
 	void DrawContentContextMenu(bool bHasSelectedItem);
+	void RequestFbxImportOptions(const FString& SourceFbxPath, EFbxImportAction Action);
+	void DrawFbxImportOptionsPopup();
+	bool ExecutePendingFbxImport();
 	bool CreateFolder();
 	bool CreateTextFile();
 	bool CreateLuaScriptFile();
@@ -140,4 +149,8 @@ private:
 	std::filesystem::path RenameSourcePath;
 	FString ActiveDragPayloadType;
 	FString ActiveDragPayloadPath;
+	FString PendingFbxImportPath;
+	EFbxImportAction PendingFbxImportAction = EFbxImportAction::OpenViewer;
+	bool bPendingFbxImportIncludeAnimations = true;
+	bool bOpenFbxImportOptionsPopup = false;
 };

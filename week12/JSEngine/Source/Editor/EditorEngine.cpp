@@ -640,6 +640,7 @@ FEditorViewer* UEditorEngine::CreateViewer(FString InFileName)
 	{
 		if (Viewer->GetFileName() == InFileName)
 		{
+			Viewer->ChangeTarget(InFileName);
 			MainPanel.OpenViewer(Viewer.get());
 			return Viewer.get();
 		}

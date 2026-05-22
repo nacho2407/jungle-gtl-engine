@@ -2,6 +2,7 @@
 
 #include "Core/Paths.h"
 #include "Core/AssetPathPolicy.h"
+#include "Core/FbxMaterialLoadService.h"
 #include "Core/ImportedMaterialPolicy.h"
 #include "Core/MaterialLoadService.h"
 #include "Core/MaterialSerializationService.h"
@@ -216,6 +217,86 @@ FString FResourceManager::GetCachedFileContentHashString(const FString& Path, ui
 	return Hash;
 }
 
+bool FResourceManager::IsImportedStaticMeshAssetFresh(const FString& SourcePath, const FString& BinaryPath) const
+{
+	FStaticMeshBinaryHeader Header;
+	const FString NormalizedBinaryPath = FPaths::Normalize(BinaryPath);
+	if (!FAssetPathPolicy::FileExists(NormalizedBinaryPath))
+	{
+		UE_LOG_WARNING("[StaticMeshLoad] MeshSource=MissingImportedAsset | Source=%s | Asset=%s",
+			SourcePath.c_str(),
+			NormalizedBinaryPath.c_str());
+		return false;
+	}
+
+	if (!BinarySerializer.ReadStaticMeshHeader(NormalizedBinaryPath, Header))
+	{
+		UE_LOG_WARNING("[StaticMeshLoad] MeshSource=OutdatedImportedAsset | Source=%s | Asset=%s",
+			SourcePath.c_str(),
+			NormalizedBinaryPath.c_str());
+		return false;
+	}
+
+	const uint64 SourceWriteTime = GetFileWriteTimeTicks(FPaths::Normalize(SourcePath));
+	if (SourceWriteTime == 0)
+	{
+		UE_LOG_WARNING("[StaticMeshLoad] MeshSource=MissingImportedAsset | Source=%s | Asset=%s",
+			SourcePath.c_str(),
+			NormalizedBinaryPath.c_str());
+		return false;
+	}
+
+	if (Header.SourceFileWriteTime != SourceWriteTime)
+	{
+		UE_LOG_WARNING("[StaticMeshLoad] MeshSource=OutdatedImportedAsset | Source=%s | Asset=%s",
+			SourcePath.c_str(),
+			NormalizedBinaryPath.c_str());
+		return false;
+	}
+
+	return true;
+}
+
+bool FResourceManager::IsImportedSkeletalMeshAssetFresh(const FString& SourcePath, const FString& BinaryPath) const
+{
+	FSkeletalMeshBinaryHeader Header;
+	const FString NormalizedBinaryPath = FPaths::Normalize(BinaryPath);
+	if (!FAssetPathPolicy::FileExists(NormalizedBinaryPath))
+	{
+		UE_LOG_WARNING("[SkeletalMeshLoad] MeshSource=MissingImportedAsset | Source=%s | Asset=%s",
+			SourcePath.c_str(),
+			NormalizedBinaryPath.c_str());
+		return false;
+	}
+
+	if (!BinarySerializer.ReadSkeletalMeshHeader(NormalizedBinaryPath, Header))
+	{
+		UE_LOG_WARNING("[SkeletalMeshLoad] MeshSource=OutdatedImportedAsset | Source=%s | Asset=%s",
+			SourcePath.c_str(),
+			NormalizedBinaryPath.c_str());
+		return false;
+	}
+
+	const uint64 SourceWriteTime = GetFileWriteTimeTicks(FPaths::Normalize(SourcePath));
+	if (SourceWriteTime == 0)
+	{
+		UE_LOG_WARNING("[SkeletalMeshLoad] MeshSource=MissingImportedAsset | Source=%s | Asset=%s",
+			SourcePath.c_str(),
+			NormalizedBinaryPath.c_str());
+		return false;
+	}
+
+	if (Header.SourceFileWriteTime != SourceWriteTime)
+	{
+		UE_LOG_WARNING("[SkeletalMeshLoad] MeshSource=OutdatedImportedAsset | Source=%s | Asset=%s",
+			SourcePath.c_str(),
+			NormalizedBinaryPath.c_str());
+		return false;
+	}
+
+	return true;
+}
+
 bool FResourceManager::IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const
 {
 	FStaticMeshBinaryHeader Header;
@@ -357,7 +438,7 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 			std::transform(RelativeGenericPath.begin(), RelativeGenericPath.end(), RelativeGenericPath.begin(), ::towlower);
 
 			const bool bUnderSkeletalMeshRoot = RelativeGenericPath.rfind(L"asset/skeletalmesh/", 0) == 0;
-			const FString SkeletalBinaryPath = FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(RelativePath);
+			const FString SkeletalBinaryPath = FAssetPathPolicy::MakeImportedSkeletalMeshAssetPath(RelativePath);
 			const bool bHasValidSkeletalBinary = IsSkeletalMeshBinaryValid(RelativePath, SkeletalBinaryPath);
 			if (bUnderSkeletalMeshRoot || bHasValidSkeletalBinary)
 			{
@@ -749,6 +830,16 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, EMaterialShaderT
 	return FMaterialLoadService(*this).Load(MtlFilePath, ShaderType, Device);
 }
 
+bool FResourceManager::ImportMaterialFromFbx(const FString& FbxFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device)
+{
+	if (Device == nullptr)
+	{
+		Device = CachedDevice.Get();
+	}
+
+	return FFbxMaterialLoadService(*this).ImportFromFbx(FbxFilePath, ShaderType, Device);
+}
+
 void FResourceManager::RegisterObjMaterialSlotAliases(const FString& ObjPath, const FString& MtlPath)
 {
 	const FString NormalizedObjPath = FPaths::Normalize(ObjPath);
@@ -960,6 +1051,11 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 	return FStaticMeshLoadService(*this).Load(Path);
 }
 
+UStaticMesh* FResourceManager::ImportStaticMeshFromFbx(const FString& Path)
+{
+	return FStaticMeshLoadService(*this).ImportFbxSource(Path);
+}
+
 UStaticMesh* FResourceManager::FindStaticMesh(const FString& Path) const
 {
 	const FString NormalizedPath = FPaths::Normalize(Path);
@@ -979,6 +1075,11 @@ USkeletalMesh* FResourceManager::LoadSkeletalMesh(const FString& Path)
 	//일단 최적화를 위해 anime stack 훑어보는 과정은 LoadAnimSequence(FBX 경로) 에서만...
 	//단순히 fbx 내부를 보는 것만으로도 오래 걸림.
 	return Mesh;
+}
+
+USkeletalMesh* FResourceManager::ImportSkeletalMeshFromFbx(const FString& Path)
+{
+	return FSkeletalMeshLoadService(*this).ImportFbxSource(Path);
 }
 
 USkeletalMesh* FResourceManager::FindSkeletalMesh(const FString& Path) const
@@ -1013,7 +1114,7 @@ bool FResourceManager::SaveSkeletalMesh(USkeletalMesh* Mesh)
 	const FString FbxPath = Mesh->GetAssetPathFileName();
 	if (FbxPath.empty()) return false;
 
-	const FString BinPath = FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(FbxPath);
+	const FString BinPath = FAssetPathPolicy::MakeImportedSkeletalMeshAssetPath(FbxPath);
 	return BinarySerializer.SaveSkeletalMesh(BinPath, FbxPath, *Data);
 }
 
@@ -1119,21 +1220,15 @@ bool FResourceManager::EnsureSkeletalMeshCacheForAnimationPreview(const FString&
 		return true;
 	}
 
-	const FString BinaryPath = FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(NormalizedPreviewMeshPath);
+	const FString BinaryPath = FAssetPathPolicy::MakeImportedSkeletalMeshAssetPath(NormalizedPreviewMeshPath);
 	if (IsSkeletalMeshBinaryValid(NormalizedPreviewMeshPath, BinaryPath))
 	{
 		return true;
 	}
 
-	const FFbxMeshContentInfo ContentInfo = InspectFbxMeshContent(NormalizedPreviewMeshPath);
-	if (!ContentInfo.bHasSkeletalMesh)
-	{
-		UE_LOG_WARNING("[AnimSequenceStartupImport] Preview mesh is not a skeletal FBX: %s",
-			NormalizedPreviewMeshPath.c_str());
-		return false;
-	}
-
-	return LoadSkeletalMesh(NormalizedPreviewMeshPath) != nullptr;
+	UE_LOG_WARNING("[AnimSequenceStartupImport] Missing imported preview mesh asset: %s",
+		NormalizedPreviewMeshPath.c_str());
+	return false;
 }
 
 TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Path)

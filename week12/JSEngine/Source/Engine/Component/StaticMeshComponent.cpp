@@ -296,6 +296,7 @@ void UStaticMeshComponent::GetMeshData(TArray<FNormalVertex>& OutVertices, TArra
 void UStaticMeshComponent::MarkBoundsDirty()
 {
 	bBoundsDirty = true;
+	NotifySpatialIndexDirty();
 }
 
 void UStaticMeshComponent::MarkRenderStateDirty()
