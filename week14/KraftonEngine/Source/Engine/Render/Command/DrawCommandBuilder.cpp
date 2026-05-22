@@ -86,6 +86,9 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 	bCollectWeightBoneHeatMap = Frame.RenderOptions.bWeightBoneHeatMap;
 	CollectWeightBoneHeatMapBoneIndex = Frame.RenderOptions.WeightBoneHeatMapBoneIndex;
 
+	CollectCameraPosition = Frame.CameraPosition;
+	CollectCameraForward = Frame.CameraForward;
+
 	bHasSelectionMaskCommands = false;
 
 	// 동적 지오메트리 초기화
@@ -166,9 +169,6 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 	}
 	if (!ProxyBuffer.HasBuffers()) return;
 
-	// PassState → RenderState 변환 (Wireframe 오버라이드 포함)
-	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(Pass, CollectViewMode);
-
 	// PerObjectCB 업데이트
 	FConstantBuffer* PerObjCB = GetPerObjectCBForProxy(&Scene, Proxy);
 	if (PerObjCB && Proxy.NeedsPerObjectCBUpload())
@@ -176,6 +176,14 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 		PerObjCB->Update(Ctx, &Proxy.GetPerObjectConstants(), sizeof(FPerObjectConstants));
 		Proxy.ClearPerObjectCBDirty();
 	}
+
+	FProxyCommandBuildContext BuildCtx;
+	BuildCtx.ProxyBuffer = ProxyBuffer;
+	BuildCtx.PerObjCB = PerObjCB;
+	BuildCtx.SkeletalProxy = SkeletalProxy;
+	BuildCtx.bSkeletal = bSkeletal;
+	BuildCtx.bGPUSkinning = bGPUSkinning;
+	BuildCtx.bWeightBoneHeatMap = bWeightBoneHeatMap;
 
 	if (bWeightBoneHeatMap)
 	{
@@ -188,56 +196,10 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 	if (Pass == ERenderPass::SelectionMask)
 		bHasSelectionMaskCommands = true;
 
-	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
-
 	// 섹션당 1개 커맨드 (per-section 셰이더)
  	for (const FMeshSectionDraw& Section : Proxy.GetSectionDraws())
 	{
-		if (Section.IndexCount == 0) continue;
-		if (!ProxyBuffer.IB) continue;
-
-		// Section Material이 셰이더를 가지면 사용, 없으면 Proxy 폴백
-		FShader* SectionShader = (Section.Material && Section.Material->GetShader())
-			? Section.Material->GetShader()
-			: Proxy.GetShader();
-		FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, bGPUSkinning, bWeightBoneHeatMap);
-
-		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		Cmd.Pass = Pass;
-		Cmd.Shader = EffectiveShader;
-		Cmd.RenderState = BaseRenderState;
-		Cmd.Buffer = ProxyBuffer;
-		Cmd.PerObjectCB = PerObjCB;
-		Cmd.bIsSkeletal = bSkeletal;
-		Cmd.bIsGpuSkinned = bGPUSkinning;
-		Cmd.Buffer.FirstIndex = Section.FirstIndex;
-		Cmd.Buffer.IndexCount = Section.IndexCount;
-		Cmd.Bindings.SkinMatrixSRV = bGPUSkinning && SkeletalProxy
-			? SkeletalProxy->GetSkinMatrixSRV(CachedDevice, Ctx)
-			: nullptr;
-		Cmd.Bindings.BoneHeatMapCB = bWeightBoneHeatMap ? &BoneHeatMapCB : nullptr;
-	
-		if (!bDepthOnly && Section.Material)
-		{
-			UMaterial* Mat = Section.Material;
-
-			// dirty CB 업로드 (ConstantBufferMap + PerShaderOverride)
-			Mat->FlushDirtyBuffers(CachedDevice, Ctx);
-
-			Cmd.Bindings.PerShaderCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
-			Cmd.Bindings.PerShaderCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
-
-			// CachedSRVs에서 직접 복사 (map lookup 회피)
-			const ID3D11ShaderResourceView* const* MatSRVs = Mat->GetCachedSRVs();
-			for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
-				Cmd.Bindings.SRVs[s] = const_cast<ID3D11ShaderResourceView*>(MatSRVs[s]);
-
-			// 섹션별 Material의 RenderPass가 현재 Pass와 일치할 때만 렌더 상태 오버라이드
-			if (Pass == Mat->GetRenderPass())
-				ApplyMaterialRenderState(Cmd.RenderState, Mat, BaseRenderState);
-		}
-
-		Cmd.BuildSortKey();
+		BuildCommandForSection(Scene, Proxy, Section, Pass, BuildCtx);
 	}
 }
 
@@ -418,10 +380,26 @@ void FDrawCommandBuilder::BuildDecalCommands(FScene& Scene, FPrimitiveSceneProxy
 // ============================================================
 void FDrawCommandBuilder::BuildMeshCommands(FScene& Scene, const FPrimitiveSceneProxy* Proxy)
 {
-	if (Proxy->GetRenderPass() == ERenderPass::Opaque)
-		BuildCommandForProxy(Scene, *Proxy, ERenderPass::PreDepth);
+	FProxyCommandBuildContext BuildCtx;
+	if (!PrepareProxyCommandBuildContext(Scene, *Proxy, BuildCtx))
+		return;
 
-	BuildCommandForProxy(Scene, *Proxy, Proxy->GetRenderPass());
+	for (const FMeshSectionDraw& Section : Proxy->GetSectionDraws())
+	{
+		ERenderPass SectionPass = ERenderPass::Opaque;
+
+		if (Section.Material)
+		{
+			SectionPass = Section.Material->GetRenderPass();
+		}
+
+		if (SectionPass == ERenderPass::Opaque)
+		{
+			BuildCommandForSection(Scene, *Proxy, Section, ERenderPass::PreDepth, BuildCtx);
+		}
+
+		BuildCommandForSection(Scene, *Proxy, Section, SectionPass, BuildCtx);
+	}
 }
 
 // ============================================================
@@ -434,6 +412,105 @@ void FDrawCommandBuilder::BuildSelectionCommands(FPrimitiveSceneProxy* Proxy, bo
 
 	if (bShowBoundingVolume && Proxy->HasProxyFlag(EPrimitiveProxyFlags::ShowAABB))
 		Scene.AddDebugAABB(Proxy->GetCachedBounds().Min, Proxy->GetCachedBounds().Max, FColor::White());
+}
+
+bool FDrawCommandBuilder::PrepareProxyCommandBuildContext(FScene& Scene, const FPrimitiveSceneProxy& Proxy, FProxyCommandBuildContext& OutBuildCtx)
+{
+	const bool bSkeletal = Proxy.HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh);
+	const bool bWeightBoneHeatMap = bSkeletal && bCollectWeightBoneHeatMap && CollectWeightBoneHeatMapBoneIndex >= 0;
+	const bool bGPUSkinning = bSkeletal && (SkinningModeRuntime::Get() == ESkinningMode::GPU || bWeightBoneHeatMap);
+	const FSkeletalMeshSceneProxy* SkeletalProxy = bSkeletal
+		? static_cast<const FSkeletalMeshSceneProxy*>(&Proxy)
+		: nullptr;
+	FDrawCommandBuffer ProxyBuffer;
+	if (bGPUSkinning)
+	{
+		if (!SkeletalProxy || !SkeletalProxy->PrepareGpuSkinningDrawBuffer(CachedDevice, CachedContext, ProxyBuffer)) return false;
+	}
+	else if (!Proxy.PrepareDrawBuffer(CachedDevice, CachedContext, ProxyBuffer))
+	{
+		return false;
+	}
+	if (!ProxyBuffer.HasBuffers()) return false;
+	FConstantBuffer* PerObjCB = GetPerObjectCBForProxy(&Scene, Proxy);
+	if (PerObjCB && Proxy.NeedsPerObjectCBUpload())
+	{
+		PerObjCB->Update(CachedContext, &Proxy.GetPerObjectConstants(), sizeof(FPerObjectConstants));
+		Proxy.ClearPerObjectCBDirty();
+	}
+	OutBuildCtx.ProxyBuffer = ProxyBuffer;
+	OutBuildCtx.PerObjCB = PerObjCB;
+	OutBuildCtx.SkeletalProxy = SkeletalProxy;
+	OutBuildCtx.bSkeletal = bSkeletal;
+	OutBuildCtx.bGPUSkinning = bGPUSkinning;
+	OutBuildCtx.bWeightBoneHeatMap = bWeightBoneHeatMap;
+	if (bWeightBoneHeatMap)
+	{
+		FBoneHeatMapConstants BoneHeatMapConstants = {};
+		BoneHeatMapConstants.SelectedBoneIndex = CollectWeightBoneHeatMapBoneIndex;
+		BoneHeatMapCB.Update(CachedContext, &BoneHeatMapConstants, sizeof(FBoneHeatMapConstants));
+	}
+	return true;
+}
+
+void FDrawCommandBuilder::BuildCommandForSection(FScene& Scene, const FPrimitiveSceneProxy& Proxy, const FMeshSectionDraw& Section,
+	ERenderPass Pass, const FProxyCommandBuildContext& BuildCtx)
+{
+	if (Section.IndexCount == 0) return;
+	if (!BuildCtx.ProxyBuffer.IB) return;
+
+	// Section Material이 셰이더를 가지면 사용, 없으면 Proxy 폴백
+	FShader* SectionShader = (Section.Material && Section.Material->GetShader())
+		? Section.Material->GetShader()
+		: Proxy.GetShader();
+	FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, BuildCtx.bGPUSkinning, BuildCtx.bWeightBoneHeatMap);
+
+	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(Pass, CollectViewMode);
+
+	FDrawCommand& Cmd = DrawCommandList.AddCommand();
+	Cmd.Pass = Pass;
+	Cmd.Shader = EffectiveShader;
+	Cmd.RenderState = BaseRenderState;
+	Cmd.Buffer = BuildCtx.ProxyBuffer;
+	Cmd.PerObjectCB = BuildCtx.PerObjCB;
+	Cmd.bIsSkeletal = BuildCtx.bSkeletal;
+	Cmd.bIsGpuSkinned = BuildCtx.bGPUSkinning;
+	Cmd.Buffer.FirstIndex = Section.FirstIndex;
+	Cmd.Buffer.IndexCount = Section.IndexCount;
+	Cmd.Bindings.SkinMatrixSRV = BuildCtx.bGPUSkinning && BuildCtx.SkeletalProxy
+		? BuildCtx.SkeletalProxy->GetSkinMatrixSRV(CachedDevice, CachedContext)
+		: nullptr;
+	Cmd.Bindings.BoneHeatMapCB = BuildCtx.bWeightBoneHeatMap ? &BoneHeatMapCB : nullptr;
+
+	if (Pass == ERenderPass::AlphaBlend)
+	{
+		const FVector ToObject = Proxy.GetCachedWorldPos() - CollectCameraPosition;
+		Cmd.SortDepth = ToObject.Dot(CollectCameraForward);
+	}
+
+	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
+
+	if (!bDepthOnly && Section.Material)
+	{
+		UMaterial* Mat = Section.Material;
+
+		// dirty CB 업로드 (ConstantBufferMap + PerShaderOverride)
+		Mat->FlushDirtyBuffers(CachedDevice, CachedContext);
+
+		Cmd.Bindings.PerShaderCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
+		Cmd.Bindings.PerShaderCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
+
+		// CachedSRVs에서 직접 복사 (map lookup 회피)
+		const ID3D11ShaderResourceView* const* MatSRVs = Mat->GetCachedSRVs();
+		for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
+			Cmd.Bindings.SRVs[s] = const_cast<ID3D11ShaderResourceView*>(MatSRVs[s]);
+
+		// 섹션별 Material의 RenderPass가 현재 Pass와 일치할 때만 렌더 상태 오버라이드
+		if (Pass == Mat->GetRenderPass())
+			ApplyMaterialRenderState(Cmd.RenderState, Mat, BaseRenderState);
+	}
+
+	Cmd.BuildSortKey();
 }
 
 // ============================================================

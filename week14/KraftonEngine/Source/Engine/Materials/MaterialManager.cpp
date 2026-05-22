@@ -1,4 +1,4 @@
-#include "MaterialManager.h"
+﻿#include "MaterialManager.h"
 #include <filesystem>
 #include <fstream>
 #include "Materials/Material.h"
@@ -79,6 +79,9 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	EDepthStencilState DepthState = StringToDepthStencilState(DepthStr, RenderPass);
 	ERasterizerState RasterState = StringToRasterizerState(RasterStr, RenderPass);
 
+	FString ShadowModeStr = JsonData.hasKey(MatKeys::ShadowMode) ? JsonData[MatKeys::ShadowMode].ToString().c_str() : "Opaque";
+	EMaterialShadowMode ShadowMode = StringToShadowMode(ShadowModeStr);
+
 	// 4. 템플릿 확보 (없으면 리플렉션을 통해 생성됨)
 	FMaterialTemplate* Template = GetOrCreateTemplate(ShaderPath);
 	if (!Template) return nullptr;
@@ -89,6 +92,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	// 6. UMaterial 인스턴스 생성 및 초기화 (RenderPass는 인스턴스별)
 	UMaterial* Material = UObjectManager::Get().CreateObject<UMaterial>();
 	Material->Create(PathFileName, Template, RenderPass, BlendState, DepthState, RasterState, std::move(InjectedBuffers));
+	Material->SetShadowMode(ShadowMode);
 	MaterialCache.emplace(GenericPath, Material);
 
 	//템플릿을 통해 material에 넣기
@@ -106,6 +110,9 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	JsonData[MatKeys::BlendState] = BlendStr.empty() ? "" : BlendStr.c_str();
 	JsonData[MatKeys::DepthStencilState] = DepthStr.empty() ? "" : DepthStr.c_str();
 	JsonData[MatKeys::RasterizerState] = RasterStr.empty() ? "" : RasterStr.c_str();
+	JsonData[MatKeys::ShadowMode] = ShadowModeToString(ShadowMode);
+
+	JsonData[MatKeys::ShadowMode] = "Opaque";
 
 	//최종적으로 material 저장
 	if (bInjected || bPurged)
@@ -278,6 +285,42 @@ ERasterizerState FMaterialManager::StringToRasterizerState(const FString& Str, E
 	default:
 		return ERasterizerState::SolidBackCull;
 	}
+}
+
+EMaterialShadowMode FMaterialManager::StringToShadowMode(const FString& Str) const
+{
+	const FEnum* EnumType = FEnum::FindEnumByName("EMaterialShadowMode");
+	if (!EnumType || !EnumType->GetNames())
+	{
+		return EMaterialShadowMode::Opaque;
+	}
+
+	for (uint32 Index = 0; Index < EnumType->GetCount(); ++Index)
+	{
+		if (Str == EnumType->GetNames()[Index])
+		{
+			return static_cast<EMaterialShadowMode>(Index);
+		}
+	}
+
+	return EMaterialShadowMode::Opaque;
+}
+
+const char* FMaterialManager::ShadowModeToString(EMaterialShadowMode Mode) const
+{
+	const FEnum* EnumType = FEnum::FindEnumByName("EMaterialShadowMode");
+	if (!EnumType || !EnumType->GetNames())
+	{
+		return "Opaque";
+	}
+
+	uint32 Index = static_cast<uint32>(Mode);
+	if (Index < EnumType->GetCount())
+	{
+		return EnumType->GetNames()[Index];
+	}
+
+	return "Opaque";
 }
 
 void FMaterialManager::SaveToJSON(json::JSON& JsonData, const FString& MatFilePath)

@@ -43,10 +43,59 @@ void FEditorMaterialInspector::Render()
 	MatMap[MatKeys::PathFileName] = JsonData.hasKey(MatKeys::PathFileName) ? JsonData[MatKeys::PathFileName].ToString().c_str() : "";
 	ImGui::Selectable(MatMap[MatKeys::PathFileName].c_str());
 
+	RenderMaterialSettings();
 	RenderShaderParameter();
 	RenderTextureSection();
 
 	ImGui::End();
+}
+
+void FEditorMaterialInspector::RenderMaterialSettings()
+{
+	ImGui::SeparatorText("Material Settings");
+
+	EMaterialShadowMode CurrentMode = CachedMaterial->GetShadowMode();
+	int CurrentIndex = static_cast<int>(CurrentMode);
+
+	const FEnum* ShadowModeEnum = FEnum::FindEnumByName("EMaterialShadowMode");
+	if (!ShadowModeEnum || !ShadowModeEnum->GetNames())
+	{
+		return;
+	}
+
+	const char** Names = ShadowModeEnum->GetNames();
+	const uint32 Count = ShadowModeEnum->GetCount();
+
+	const char* Preview =
+		CurrentIndex >= 0 && static_cast<uint32>(CurrentIndex) < Count
+		? Names[CurrentIndex]
+		: "Unknown";
+
+	if (ImGui::BeginCombo("Shadow Mode", Preview))
+	{
+		for (uint32 Index = 0; Index < Count; ++Index)
+		{
+			bool bSelected = CurrentIndex == static_cast<int>(Index);
+
+			if (ImGui::Selectable(Names[Index], bSelected))
+			{
+				EMaterialShadowMode NewMode =
+					static_cast<EMaterialShadowMode>(Index);
+
+				CachedMaterial->SetShadowMode(NewMode);
+				CachedJson[MatKeys::ShadowMode] = Names[Index];
+
+				SaveMaterialJson();
+			}
+
+			if (bSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+
+		ImGui::EndCombo();
+	}
 }
 
 void FEditorMaterialInspector::RenderShaderParameter()
@@ -145,4 +194,12 @@ void FEditorMaterialInspector::RenderTextureSection()
 
 		}
 	}
+}
+
+void FEditorMaterialInspector::SaveMaterialJson()
+{
+	std::ofstream File(MaterialPath);
+	if (!File.is_open()) return;
+
+	File << CachedJson.dump();
 }

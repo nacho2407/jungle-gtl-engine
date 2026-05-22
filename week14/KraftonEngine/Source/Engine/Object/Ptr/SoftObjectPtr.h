@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 
@@ -25,6 +25,10 @@ public:
 	FSoftObjectPtr() = default;
 	FSoftObjectPtr(const FString& InPath)
 		: ObjectPath(InPath)
+	{
+	}
+	FSoftObjectPtr(const char* InPath)
+		: ObjectPath(InPath ? FString(InPath) : FString("None"))
 	{
 	}
 	FSoftObjectPtr(const FSoftObjectPath& InPath)

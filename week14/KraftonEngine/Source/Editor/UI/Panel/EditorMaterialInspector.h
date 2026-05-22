@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "imgui.h" 
 #include "Platform/Paths.h"
 #include "Core/Types/CoreTypes.h"
@@ -18,8 +18,11 @@ public:
 	void Render();
 
 private:
+	void RenderMaterialSettings();
 	void RenderShaderParameter();
 	void RenderTextureSection();
+
+	void SaveMaterialJson();
 
 private:
 	std::filesystem::path MaterialPath;
