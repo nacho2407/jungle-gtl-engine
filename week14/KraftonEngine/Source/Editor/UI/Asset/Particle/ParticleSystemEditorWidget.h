@@ -17,8 +17,11 @@ public:
 	void Render(float DeltaTime) override;
 
 private:
+	struct FEditorLayoutSizes;
+
 	UParticleSystem* GetParticleSystem() const;
 	void ResetEditorState();
+	FEditorLayoutSizes CalculateLayoutSizes(const ImVec2& Available) const;
 	void RenderToolbar();
 	void RenderViewportPanel(const ImVec2& Size) const;
 	void RenderDetailsPanel(const ImVec2& Size) const;
