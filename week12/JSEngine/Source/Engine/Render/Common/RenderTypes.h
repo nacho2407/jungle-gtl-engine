@@ -41,6 +41,7 @@ enum class EPrimitiveType
 	EPT_Sphere,
 	EPT_Capsule,
 	EPT_ProceduralMesh,
+	EPT_ParticleSystem,
     MAX
 };
 

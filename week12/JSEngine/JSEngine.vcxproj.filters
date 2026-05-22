@@ -49,6 +49,9 @@
     <Filter Include="Intermediate\Reflection\Misc\ObjViewer">
       <UniqueIdentifier>{a496c0a5-d894-7d75-556a-b8081c497abf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Intermediate\Reflection\Particle">
+      <UniqueIdentifier>{8978ab8d-af23-ba31-2634-c80c6cf0ba93}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Intermediate\Reflection\Render">
       <UniqueIdentifier>{c04b0367-0590-f8c6-ed00-22a8f6ad163f}</UniqueIdentifier>
     </Filter>
@@ -208,6 +211,9 @@
     <Filter Include="Source\Engine\Object">
       <UniqueIdentifier>{d0175e9b-5731-01b5-20be-98a0c5fbb66d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Particle">
+      <UniqueIdentifier>{cd0a162f-d645-2eb1-7656-2f1f7a5af818}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render">
       <UniqueIdentifier>{52cb0a69-bb16-204e-50c6-8cc0246c07f8}</UniqueIdentifier>
     </Filter>
@@ -336,10 +342,10 @@
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotifyState.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_LogEvent.gen.cpp">
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_FootstepSound.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_FootstepSound.gen.cpp">
+    <ClCompile Include="Intermediate\Reflection\Animation\UAnimNotify_LogEvent.gen.cpp">
       <Filter>Intermediate\Reflection\Animation</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Animation\UAnimSequence.gen.cpp">
@@ -584,6 +590,60 @@
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Misc\ObjViewer\UObjViewerEngine.gen.cpp">
       <Filter>Intermediate\Reflection\Misc\ObjViewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\AParticleEventManager.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleEmitter.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleLODLevel.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleModule.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleModuleCollision.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleModuleColor.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleModuleLifetime.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleModuleLocation.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleModuleRequired.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleModuleSize.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleModuleSpawn.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleModuleTypeDataBase.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleModuleTypeDataBeam.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleModuleTypeDataMesh.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleModuleTypeDataRibbon.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleModuleVelocity.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleSystem.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Intermediate\Reflection\Particle\UParticleSystemComponent.gen.cpp">
+      <Filter>Intermediate\Reflection\Particle</Filter>
     </ClCompile>
     <ClCompile Include="Intermediate\Reflection\Render\Resource\UMaterial.gen.cpp">
       <Filter>Intermediate\Reflection\Render\Resource</Filter>
@@ -906,9 +966,6 @@
     <ClCompile Include="Source\Engine\Asset\ObjLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Asset\SubUVAtlasLoader.cpp">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Asset\SkeletalMesh.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
@@ -916,6 +973,9 @@
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\StaticMeshSimplifier.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\SubUVAtlasLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp">
@@ -1226,6 +1286,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Object\Property.cpp">
       <Filter>Source\Engine\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particle\ParticleSystemComponent.cpp">
+      <Filter>Source\Engine\Particle</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp">
       <Filter>Source\Engine\Render\Device</Filter>
@@ -1852,9 +1915,6 @@
     <ClInclude Include="Source\Engine\Asset\ObjRawTypes.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\SubUVAtlasLoader.h">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Asset\SkeletalMesh.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
@@ -1868,6 +1928,9 @@
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\StaticMeshTypes.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\SubUVAtlasLoader.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Audio\AudioSystem.h">
@@ -2286,6 +2349,18 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\Property.h">
       <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particle\ParticleAsset.h">
+      <Filter>Source\Engine\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particle\ParticleModules.h">
+      <Filter>Source\Engine\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particle\ParticleSystemComponent.h">
+      <Filter>Source\Engine\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particle\ParticleTypes.h">
+      <Filter>Source\Engine\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Common\ComPtr.h">
       <Filter>Source\Engine\Render\Common</Filter>
