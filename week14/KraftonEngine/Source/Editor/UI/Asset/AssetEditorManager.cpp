@@ -73,6 +73,42 @@ bool FAssetEditorManager::OpenEditorForObject(UObject* Object)
 	return false;
 }
 
+void FAssetEditorManager::CloseEditorForObject(UObject* Object)
+{
+	if (!Object)
+	{
+		return;
+	}
+
+	for (const auto& Editor : OpenEditors)
+	{
+		if (Editor && Editor->IsEditingObject(Object))
+		{
+			Editor->Close();
+		}
+	}
+
+	RemoveClosedEditors();
+}
+
+bool FAssetEditorManager::IsEditorOpenForObject(UObject* Object) const
+{
+	if (!Object)
+	{
+		return false;
+	}
+
+	for (const auto& Editor : OpenEditors)
+	{
+		if (Editor && Editor->IsEditingObject(Object))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void FAssetEditorManager::CollectPreviewViewportClients(TArray<IEditorPreviewViewportClient*>& OutClients) const
 {
 	for (const auto& Editor : OpenEditors)
