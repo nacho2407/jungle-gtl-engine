@@ -16,6 +16,11 @@ namespace
 	constexpr float EmitterColumnWidth = 176.0f;
 	constexpr float EmitterHeaderHeight = 58.0f;
 	constexpr float ModuleRowHeight = 24.0f;
+	constexpr int32 RequiredModuleIndex = -1;
+	constexpr int32 SpawnModuleIndex = -2;
+	constexpr int32 LifetimeModuleIndex = -3;
+	constexpr int32 InitialSizeModuleIndex = -4;
+	constexpr int32 InitialColorModuleIndex = -5;
 
 	void DrawPanelHeader(const char* Label)
 	{
@@ -97,12 +102,18 @@ void FParticleSystemEditorWidget::Close()
 
 void FParticleSystemEditorWidget::Tick(float DeltaTime)
 {
-	if (!IsOpen() || !bPreviewPlaying)
+	if (!IsOpen() || !ViewState.bPreviewPlaying)
 	{
 		return;
 	}
 
-	PreviewTime += DeltaTime;
+	if (ViewState.bRestartPreviewRequested)
+	{
+		ViewState.PreviewTime = 0.0f;
+		ViewState.bRestartPreviewRequested = false;
+	}
+
+	ViewState.PreviewTime += DeltaTime;
 }
 
 void FParticleSystemEditorWidget::Render(float DeltaTime)
@@ -114,6 +125,7 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
 	{
 		return;
 	}
+	ValidateSelectionState(ParticleSystem);
 
 	bool bWindowOpen = true;
 	FString VisibleTitle = GetParticleSystemTitle(ParticleSystem, IsDirty());
@@ -151,9 +163,16 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
 	ImGui::SameLine();
 
 	ImGui::BeginChild("##ParticleEditorRightColumn", ImVec2(Layout.RightWidth, 0.0f), ImGuiChildFlags_None);
-	RenderEmittersPanel(ImVec2(0.0f, Layout.TopHeight));
-	ImGui::Dummy(ImVec2(0.0f, Style.ItemSpacing.y));
-	RenderCurveEditorPanel(ImVec2(0.0f, Layout.BottomHeight));
+	if (ViewState.bShowCurveEditor)
+	{
+		RenderEmittersPanel(ImVec2(0.0f, Layout.TopHeight));
+		ImGui::Dummy(ImVec2(0.0f, Style.ItemSpacing.y));
+		RenderCurveEditorPanel(ImVec2(0.0f, Layout.BottomHeight));
+	}
+	else
+	{
+		RenderEmittersPanel(ImVec2(0.0f, 0.0f));
+	}
 	ImGui::EndChild();
 
 	ImGui::End();
@@ -176,11 +195,113 @@ UParticleSystem* FParticleSystemEditorWidget::GetParticleSystem() const
 
 void FParticleSystemEditorWidget::ResetEditorState()
 {
-	SelectedEmitterIndex = -1;
-	SelectedLODIndex = 0;
-	SelectedModuleIndex = -1;
-	bPreviewPlaying = true;
-	PreviewTime = 0.0f;
+	ViewState = FEditorViewState{};
+}
+
+void FParticleSystemEditorWidget::ValidateSelectionState(const UParticleSystem* ParticleSystem)
+{
+	if (!ParticleSystem)
+	{
+		SelectParticleSystem();
+		return;
+	}
+
+	const TArray<UParticleEmitter*>& Emitters = ParticleSystem->GetEmitters();
+	if (Emitters.empty())
+	{
+		SelectParticleSystem();
+		return;
+	}
+
+	FEditorSelectionState& Selection = ViewState.Selection;
+	if (Selection.EmitterIndex < 0 || Selection.EmitterIndex >= static_cast<int32>(Emitters.size()))
+	{
+		if (Selection.Kind == ESelectionKind::ParticleSystem)
+		{
+			return;
+		}
+		SelectEmitter(0);
+		return;
+	}
+
+	const UParticleEmitter* Emitter = Emitters[Selection.EmitterIndex];
+	const int32 LODCount = Emitter ? static_cast<int32>(Emitter->GetLODLevels().size()) : 0;
+	if (LODCount <= 0)
+	{
+		Selection.LODIndex = 0;
+		if (Selection.Kind == ESelectionKind::LOD || Selection.Kind == ESelectionKind::Module)
+		{
+			SelectEmitter(Selection.EmitterIndex);
+		}
+		return;
+	}
+
+	if (Selection.LODIndex < 0 || Selection.LODIndex >= LODCount)
+	{
+		Selection.LODIndex = 0;
+	}
+
+	const UParticleLODLevel* LODLevel = Emitter->GetLODLevel(Selection.LODIndex);
+	const int32 ModuleCount = LODLevel ? static_cast<int32>(LODLevel->GetModules().size()) : 0;
+	if (Selection.Kind == ESelectionKind::Module && Selection.ModuleIndex >= ModuleCount)
+	{
+		SelectModule(Selection.EmitterIndex, RequiredModuleIndex);
+	}
+}
+
+void FParticleSystemEditorWidget::SelectParticleSystem()
+{
+	ViewState.Selection = FEditorSelectionState{};
+}
+
+void FParticleSystemEditorWidget::SelectEmitter(int32 EmitterIndex)
+{
+	ViewState.Selection.Kind = ESelectionKind::Emitter;
+	ViewState.Selection.EmitterIndex = EmitterIndex;
+	ViewState.Selection.LODIndex = 0;
+	ViewState.Selection.ModuleIndex = RequiredModuleIndex;
+}
+
+void FParticleSystemEditorWidget::SelectLOD(int32 EmitterIndex, int32 LODIndex)
+{
+	ViewState.Selection.Kind = ESelectionKind::LOD;
+	ViewState.Selection.EmitterIndex = EmitterIndex;
+	ViewState.Selection.LODIndex = LODIndex;
+	ViewState.Selection.ModuleIndex = RequiredModuleIndex;
+}
+
+void FParticleSystemEditorWidget::SelectModule(int32 EmitterIndex, int32 ModuleIndex)
+{
+	ViewState.Selection.Kind = ESelectionKind::Module;
+	ViewState.Selection.EmitterIndex = EmitterIndex;
+	ViewState.Selection.ModuleIndex = ModuleIndex;
+}
+
+bool FParticleSystemEditorWidget::IsEmitterSelected(int32 EmitterIndex) const
+{
+	const FEditorSelectionState& Selection = ViewState.Selection;
+	return Selection.EmitterIndex == EmitterIndex &&
+		(Selection.Kind == ESelectionKind::Emitter || Selection.Kind == ESelectionKind::LOD || Selection.Kind == ESelectionKind::Module);
+}
+
+bool FParticleSystemEditorWidget::IsModuleSelected(int32 EmitterIndex, int32 ModuleIndex) const
+{
+	const FEditorSelectionState& Selection = ViewState.Selection;
+	return Selection.Kind == ESelectionKind::Module &&
+		Selection.EmitterIndex == EmitterIndex &&
+		Selection.ModuleIndex == ModuleIndex;
+}
+
+const char* FParticleSystemEditorWidget::GetSelectionKindLabel() const
+{
+	switch (ViewState.Selection.Kind)
+	{
+	case ESelectionKind::ParticleSystem: return "Particle System";
+	case ESelectionKind::Emitter: return "Emitter";
+	case ESelectionKind::LOD: return "LOD";
+	case ESelectionKind::Module: return "Module";
+	default: return "Unknown";
+	}
 }
 
 FParticleSystemEditorWidget::FEditorLayoutSizes FParticleSystemEditorWidget::CalculateLayoutSizes(const ImVec2& Available) const
@@ -228,17 +349,20 @@ void FParticleSystemEditorWidget::RenderToolbar()
 	ImGui::TextDisabled("Particle System");
 	ImGui::SameLine(0.0f, 14.0f);
 
-	if (ImGui::Button(bPreviewPlaying ? "Pause" : "Play", ImVec2(68.0f, 0.0f)))
+	if (ImGui::Button(ViewState.bPreviewPlaying ? "Pause" : "Play", ImVec2(68.0f, 0.0f)))
 	{
-		bPreviewPlaying = !bPreviewPlaying;
+		ViewState.bPreviewPlaying = !ViewState.bPreviewPlaying;
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Restart Sim", ImVec2(92.0f, 0.0f)))
 	{
-		PreviewTime = 0.0f;
+		ViewState.bRestartPreviewRequested = true;
+		ViewState.PreviewTime = 0.0f;
 	}
 	ImGui::SameLine();
-	ImGui::Text("Preview %.2fs", PreviewTime);
+	ImGui::Text("Preview %.2fs", ViewState.PreviewTime);
+	ImGui::SameLine(0.0f, 18.0f);
+	ImGui::Checkbox("Curve", &ViewState.bShowCurveEditor);
 	ImGui::SameLine(0.0f, 18.0f);
 	ImGui::BeginDisabled();
 	ImGui::Button("Save", ImVec2(62.0f, 0.0f));
@@ -315,15 +439,19 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size) const
 	}
 	if (ImGui::CollapsingHeader("Selection", ImGuiTreeNodeFlags_DefaultOpen))
 	{
+		const FEditorSelectionState& Selection = ViewState.Selection;
 		ImGui::Text("Selected Emitter");
 		ImGui::SameLine(180.0f);
-		ImGui::TextDisabled("%d", SelectedEmitterIndex);
+		ImGui::TextDisabled("%d", Selection.EmitterIndex);
 		ImGui::Text("Selected LOD");
 		ImGui::SameLine(180.0f);
-		ImGui::TextDisabled("%d", SelectedLODIndex);
+		ImGui::TextDisabled("%d", Selection.LODIndex);
 		ImGui::Text("Selected Module");
 		ImGui::SameLine(180.0f);
-		ImGui::TextDisabled("%d", SelectedModuleIndex);
+		ImGui::TextDisabled("%d", Selection.ModuleIndex);
+		ImGui::Text("Selection Type");
+		ImGui::SameLine(180.0f);
+		ImGui::TextDisabled("%s", GetSelectionKindLabel());
 	}
 	ImGui::EndChild();
 }
@@ -358,7 +486,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		const ImVec2 HeaderMin = ImGui::GetCursorScreenPos();
 		const ImVec2 HeaderMax(HeaderMin.x + ImGui::GetContentRegionAvail().x, HeaderMin.y + EmitterHeaderHeight);
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
-		DrawList->AddRectFilled(HeaderMin, HeaderMax, SelectedEmitterIndex == EmitterIndex ? IM_COL32(74, 76, 83, 255) : IM_COL32(55, 56, 61, 255));
+		DrawList->AddRectFilled(HeaderMin, HeaderMax, IsEmitterSelected(EmitterIndex) ? IM_COL32(74, 76, 83, 255) : IM_COL32(55, 56, 61, 255));
 		char Header[64];
 		std::snprintf(Header, sizeof(Header), "Emitter %d", EmitterIndex);
 		DrawList->AddText(ImVec2(HeaderMin.x + 8.0f, HeaderMin.y + 7.0f), IM_COL32(240, 242, 245, 255), Header);
@@ -372,36 +500,45 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 		if (ImGui::InvisibleButton("##EmitterHeader", ImVec2(ImGui::GetContentRegionAvail().x, EmitterHeaderHeight)))
 		{
-			SelectedEmitterIndex = EmitterIndex;
-			SelectedModuleIndex = -1;
+			SelectEmitter(EmitterIndex);
 		}
 
 		if (Emitter)
 		{
-			const UParticleLODLevel* LODLevel = Emitter->GetLODLevel(SelectedLODIndex);
+			const UParticleLODLevel* LODLevel = Emitter->GetLODLevel(ViewState.Selection.LODIndex);
 			if (LODLevel)
 			{
-				SelectableModuleRow("Required", SelectedEmitterIndex == EmitterIndex && SelectedModuleIndex == -1, IM_COL32(190, 190, 92, 255));
+				SelectableModuleRow("Required", IsModuleSelected(EmitterIndex, RequiredModuleIndex), IM_COL32(190, 190, 92, 255));
 				if (ImGui::IsItemClicked())
 				{
-					SelectedEmitterIndex = EmitterIndex;
-					SelectedModuleIndex = -1;
+					SelectModule(EmitterIndex, RequiredModuleIndex);
 				}
 
-				SelectableModuleRow("Spawn", false, IM_COL32(200, 92, 92, 255));
-				SelectableModuleRow("Lifetime", false, IM_COL32(88, 92, 105, 255));
-				SelectableModuleRow("Initial Size", false, IM_COL32(88, 92, 105, 255));
-				SelectableModuleRow("Initial Color", false, IM_COL32(88, 140, 88, 255));
+				if (SelectableModuleRow("Spawn", IsModuleSelected(EmitterIndex, SpawnModuleIndex), IM_COL32(200, 92, 92, 255)))
+				{
+					SelectModule(EmitterIndex, SpawnModuleIndex);
+				}
+				if (SelectableModuleRow("Lifetime", IsModuleSelected(EmitterIndex, LifetimeModuleIndex), IM_COL32(88, 92, 105, 255)))
+				{
+					SelectModule(EmitterIndex, LifetimeModuleIndex);
+				}
+				if (SelectableModuleRow("Initial Size", IsModuleSelected(EmitterIndex, InitialSizeModuleIndex), IM_COL32(88, 92, 105, 255)))
+				{
+					SelectModule(EmitterIndex, InitialSizeModuleIndex);
+				}
+				if (SelectableModuleRow("Initial Color", IsModuleSelected(EmitterIndex, InitialColorModuleIndex), IM_COL32(88, 140, 88, 255)))
+				{
+					SelectModule(EmitterIndex, InitialColorModuleIndex);
+				}
 
 				const TArray<UParticleModule*>& Modules = LODLevel->GetModules();
 				for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
 				{
 					char ModuleLabel[64];
 					std::snprintf(ModuleLabel, sizeof(ModuleLabel), "Module %d", ModuleIndex);
-					if (SelectableModuleRow(ModuleLabel, SelectedEmitterIndex == EmitterIndex && SelectedModuleIndex == ModuleIndex, IM_COL32(92, 120, 180, 255)))
+					if (SelectableModuleRow(ModuleLabel, IsModuleSelected(EmitterIndex, ModuleIndex), IM_COL32(92, 120, 180, 255)))
 					{
-						SelectedEmitterIndex = EmitterIndex;
-						SelectedModuleIndex = ModuleIndex;
+						SelectModule(EmitterIndex, ModuleIndex);
 					}
 				}
 			}
