@@ -5,6 +5,8 @@
 class UParticleEmitter;
 class UParticleLODLevel;
 class UParticleSystemComponent;
+class UParticleModuleRequired;
+class UParticleModuleSpawn;
 
 struct FParticleEmitterInstance
 {
@@ -59,6 +61,12 @@ protected:
 	FBaseParticle* SpawnParticle();
 	FBaseParticle& GetParticle(int32 ParticleIndex);
 	const FBaseParticle& GetParticle(int32 ParticleIndex) const;
+
+	UParticleModuleRequired* GetRequiredModule() const;
+	UParticleModuleSpawn* GetSpawnModule() const;
+
+	void RunSpawnModules(FBaseParticle& Particle, float SpawnTime);
+	void RunUpdateModules(FBaseParticle& Particle, float DeltaTime);
 
 	int32 MemBlockSize = 0;
 	int32 ParticleDataNumBytes = 0;

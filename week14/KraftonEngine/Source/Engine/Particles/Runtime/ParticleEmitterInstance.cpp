@@ -2,6 +2,7 @@
 
 #include "Component/Particle/ParticleSystemComponent.h"
 #include "Particles/ParticleSystem.h"
+#include "Particles/Module/ParticleModule.h"
 
 FParticleEmitterInstance::~FParticleEmitterInstance()
 {
@@ -221,4 +222,46 @@ FBaseParticle& FParticleEmitterInstance::GetParticle(int32 ParticleIndex)
 const FBaseParticle& FParticleEmitterInstance::GetParticle(int32 ParticleIndex) const
 {
 	return *reinterpret_cast<const FBaseParticle*>(ParticleData + ParticleIndex * ParticleStride);
+}
+
+UParticleModuleRequired* FParticleEmitterInstance::GetRequiredModule() const
+{
+	return CurrentLODLevel ? CurrentLODLevel->FindModule<UParticleModuleRequired>() : nullptr;
+}
+
+UParticleModuleSpawn* FParticleEmitterInstance::GetSpawnModule() const
+{
+	return CurrentLODLevel ? CurrentLODLevel->FindModule<UParticleModuleSpawn>() : nullptr;
+
+}
+
+void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float SpawnTime)
+{
+	if (!CurrentLODLevel)
+	{
+		return;
+	}
+
+	for (UParticleModule* Module : CurrentLODLevel->GetModules())
+	{
+		if (Module && Module->IsSpawnModule())
+		{
+			Module->Spawn(this, PayloadOffset, SpawnTime, Particle);
+		}
+	}
+}
+
+void FParticleEmitterInstance::RunUpdateModules(FBaseParticle& Particle, float DeltaTime)
+{
+	if (!CurrentLODLevel)
+	{
+		return;
+	}
+	for(UParticleModule* Module : CurrentLODLevel->GetModules())
+	{
+		if (Module && Module->IsUpdateModule())
+		{
+			Module->Update(this, PayloadOffset, DeltaTime, Particle);
+		}
+	}
 }

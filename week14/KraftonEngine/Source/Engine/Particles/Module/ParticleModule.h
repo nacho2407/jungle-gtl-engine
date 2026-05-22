@@ -3,7 +3,7 @@
 #include "Object/Object.h"
 #include "Particles/Runtime/ParticleRuntimeTypes.h"
 
-class FParticleEmitterInstance;
+struct FParticleEmitterInstance;
 
 class UParticleModule : public UObject
 {
@@ -24,12 +24,20 @@ public:
 	bool bLooping = true;
 };
 
+class UParticleModuleSpawn : public UParticleModule
+{
+	public:
+	float SpawnRate = 10.0f;
+
+	virtual bool IsSpawnModule() const override { return true; }
+};
+
 class UParticleModuleLifeTime : public UParticleModule
 {
 public:
 	bool IsSpawnModule() const override { return true; }
 
-	void Spawn(FParticleDataContainer* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
 		Particle.Lifetime = Lifetime;
 		Particle.OneOverMaxLifetime = Lifetime > 0.0f ? 1.0f / Lifetime : 0.0f;
@@ -47,7 +55,7 @@ public:
 
 	bool IsSpawnModule() const override { return true; }
 
-	void Spawn(FParticleDataContainer* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
 		Particle.Position += StartLocation;
 		Particle.OldPosition = Particle.Position;
@@ -61,7 +69,7 @@ public:
 	bool IsSpawnModule() const override { return true; }
 
 	FVector StartVelocity = FVector(0.0f, 0.0f, 100.0f);
-	void Spawn(FParticleDataContainer* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
 		Particle.Velocity += StartVelocity;
 	}
