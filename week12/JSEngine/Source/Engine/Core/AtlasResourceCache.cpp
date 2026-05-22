@@ -3,7 +3,77 @@
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
 
+#include <algorithm>
+#include <filesystem>
 #include <unordered_set>
+
+namespace
+{
+	FString NormalizeLookupKey(const FName& Name)
+	{
+		return FPaths::Normalize(Name.ToString());
+	}
+
+	FString GetStem(const FString& Path)
+	{
+		const std::filesystem::path FsPath(FPaths::ToWide(Path));
+		return FPaths::ToUtf8(FsPath.stem().wstring());
+	}
+
+	template <typename ResourceType>
+	ResourceType* FindAtlasResource(TMap<FString, ResourceType>& Resources, const FName& Name)
+	{
+		if (Resources.empty())
+		{
+			return nullptr;
+		}
+
+		const FString Key = NormalizeLookupKey(Name);
+		auto It = Resources.find(Key);
+		if (It != Resources.end())
+		{
+			return &It->second;
+		}
+
+		const FString Stem = GetStem(Key);
+		for (auto& [ResourceKey, Resource] : Resources)
+		{
+			if (GetStem(ResourceKey) == Stem || GetStem(Resource.Path) == Stem)
+			{
+				return &Resource;
+			}
+		}
+
+		return &Resources.begin()->second;
+	}
+
+	template <typename ResourceType>
+	const ResourceType* FindAtlasResource(const TMap<FString, ResourceType>& Resources, const FName& Name)
+	{
+		if (Resources.empty())
+		{
+			return nullptr;
+		}
+
+		const FString Key = NormalizeLookupKey(Name);
+		auto It = Resources.find(Key);
+		if (It != Resources.end())
+		{
+			return &It->second;
+		}
+
+		const FString Stem = GetStem(Key);
+		for (const auto& [ResourceKey, Resource] : Resources)
+		{
+			if (GetStem(ResourceKey) == Stem || GetStem(Resource.Path) == Stem)
+			{
+				return &Resource;
+			}
+		}
+
+		return &Resources.begin()->second;
+	}
+}
 
 bool FAtlasResourceCache::LoadGPUResources(ID3D11Device* Device)
 {
@@ -45,24 +115,12 @@ bool FAtlasResourceCache::LoadGPUResources(ID3D11Device* Device)
 
 FFontResource* FAtlasResourceCache::FindFont(const FName& FontName)
 {
-	if (FontResources.empty())
-	{
-		return nullptr;
-	}
-
-	auto It = FontResources.find(FontName.ToString());
-	return (It != FontResources.end()) ? &It->second : &FontResources.begin()->second;
+	return FindAtlasResource(FontResources, FontName);
 }
 
 const FFontResource* FAtlasResourceCache::FindFont(const FName& FontName) const
 {
-	if (FontResources.empty())
-	{
-		return nullptr;
-	}
-
-	auto It = FontResources.find(FontName.ToString());
-	return (It != FontResources.end()) ? &It->second : &FontResources.begin()->second;
+	return FindAtlasResource(FontResources, FontName);
 }
 
 void FAtlasResourceCache::RegisterFont(const FName& FontName, const FString& InPath, uint32 Columns, uint32 Rows)
@@ -73,29 +131,17 @@ void FAtlasResourceCache::RegisterFont(const FName& FontName, const FString& InP
 	Resource.Columns = Columns;
 	Resource.Rows = Rows;
 	Resource.Texture = UObjectManager::Get().CreateObject<UTexture>();
-	FontResources[FontName.ToString()] = Resource;
+	FontResources[FPaths::Normalize(FontName.ToString())] = Resource;
 }
 
 FSubUVResource* FAtlasResourceCache::FindSubUV(const FName& SubUVName)
 {
-	if (SubUVResources.empty())
-	{
-		return nullptr;
-	}
-
-	auto It = SubUVResources.find(SubUVName.ToString());
-	return (It != SubUVResources.end()) ? &It->second : &SubUVResources.begin()->second;
+	return FindAtlasResource(SubUVResources, SubUVName);
 }
 
 const FSubUVResource* FAtlasResourceCache::FindSubUV(const FName& SubUVName) const
 {
-	if (SubUVResources.empty())
-	{
-		return nullptr;
-	}
-
-	auto It = SubUVResources.find(SubUVName.ToString());
-	return (It != SubUVResources.end()) ? &It->second : &SubUVResources.begin()->second;
+	return FindAtlasResource(SubUVResources, SubUVName);
 }
 
 void FAtlasResourceCache::RegisterSubUV(const FName& SubUVName, const FString& InPath, uint32 Columns, uint32 Rows)
@@ -106,7 +152,7 @@ void FAtlasResourceCache::RegisterSubUV(const FName& SubUVName, const FString& I
 	Resource.Columns = Columns;
 	Resource.Rows = Rows;
 	Resource.Texture = UObjectManager::Get().CreateObject<UTexture>();
-	SubUVResources[SubUVName.ToString()] = Resource;
+	SubUVResources[FPaths::Normalize(SubUVName.ToString())] = Resource;
 }
 
 void FAtlasResourceCache::Clear()

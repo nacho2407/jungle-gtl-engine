@@ -789,7 +789,7 @@
     <ClCompile Include="Source\Engine\Core\StaticMeshResourceCache.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Core\TextureAssetMetaService.cpp">
+    <ClCompile Include="Source\Engine\Core\TextureAtlasAssetService.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\TextureResourceCache.cpp">
@@ -1831,7 +1831,7 @@
     <ClInclude Include="Source\Engine\Core\StringUtils.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Core\TextureAssetMetaService.h">
+    <ClInclude Include="Source\Engine\Core\TextureAtlasAssetService.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\TextureResourceCache.h">

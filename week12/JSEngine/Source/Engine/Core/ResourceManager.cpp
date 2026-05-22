@@ -83,6 +83,31 @@ namespace
 		return FPaths::Normalize(FPaths::ToUtf8(RelativeText));
 	}
 
+	bool IsImageExtension(const std::wstring& Extension)
+	{
+		return Extension == L".png"
+			|| Extension == L".dds"
+			|| Extension == L".jpg"
+			|| Extension == L".jpeg"
+			|| Extension == L".bmp"
+			|| Extension == L".tga";
+	}
+
+	bool IsUnderAssetDirectory(const FString& RelativePath, const FString& DirectoryName)
+	{
+		std::filesystem::path RelativeFsPath(FPaths::ToWide(FPaths::Normalize(RelativePath)));
+		std::wstring GenericPath = RelativeFsPath.generic_wstring();
+		std::transform(GenericPath.begin(), GenericPath.end(), GenericPath.begin(), ::towlower);
+
+		std::wstring Prefix = L"asset/";
+		Prefix += FPaths::ToWide(DirectoryName);
+		std::transform(Prefix.begin(), Prefix.end(), Prefix.begin(), ::towlower);
+		Prefix += L"/";
+
+		return GenericPath == Prefix.substr(0, Prefix.size() - 1)
+			|| GenericPath.rfind(Prefix, 0) == 0;
+	}
+
 	void CopyAnimSequenceNotifies(const UAnimSequence* Source, UAnimSequence* Destination)
 	{
 		if (!Source || !Destination)
@@ -344,24 +369,30 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 	{
 		MaterialFilePaths.push_back(RelativePath);
 	}
-	else if (Extension == L".png" || Extension == L".dds" || Extension == L".jpg" || Extension == L".jpeg")
+	else if (Extension == L".font")
 	{
-		const FTextureAssetMeta Meta = LoadOrCreateTextureMeta(FilePath);
-
-		if (Meta.Type == EAssetMetaType::Font)
+		FTextureAtlasAsset Asset;
+		if (LoadTextureAtlasAsset(FilePath, ETextureAtlasAssetType::Font, ProjectRootPath, Asset))
 		{
 			FontFilePaths.push_back(RelativePath);
-			RegisterFont(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
+			RegisterFont(FName(RelativePath.c_str()), Asset.ImagePath, Asset.Columns, Asset.Rows);
 		}
-		else if (Meta.Type == EAssetMetaType::SubUV)
+	}
+	else if (Extension == L".subuv")
+	{
+		FTextureAtlasAsset Asset;
+		if (LoadTextureAtlasAsset(FilePath, ETextureAtlasAssetType::SubUV, ProjectRootPath, Asset))
 		{
 			SubUVFilePaths.push_back(RelativePath);
-			RegisterSubUV(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
+			RegisterSubUV(FName(RelativePath.c_str()), Asset.ImagePath, Asset.Columns, Asset.Rows);
 		}
-		else if (Meta.Type == EAssetMetaType::Texture)
-		{
-			TextureFilePaths.push_back(RelativePath);
-		}
+	}
+	else if (IsImageExtension(Extension)
+		&& (IsUnderAssetDirectory(RelativePath, "Texture")
+			|| IsUnderAssetDirectory(RelativePath, "Font")
+			|| IsUnderAssetDirectory(RelativePath, "SubUV")))
+	{
+		TextureFilePaths.push_back(RelativePath);
 	}
 }
 
@@ -571,9 +602,13 @@ void FResourceManager::DeleteAllCacheFiles()
 	UE_LOG("[ResourceManager] All mesh cache files removed");
 }
 
-FTextureAssetMeta FResourceManager::LoadOrCreateTextureMeta(const std::filesystem::path& FilePath) const
+bool FResourceManager::LoadTextureAtlasAsset(
+	const std::filesystem::path& AssetFilePath,
+	ETextureAtlasAssetType Type,
+	const std::filesystem::path& ProjectRootPath,
+	FTextureAtlasAsset& OutAsset) const
 {
-	return FTextureAssetMetaService::LoadOrCreate(FilePath);
+	return FTextureAtlasAssetService::Load(AssetFilePath, Type, ProjectRootPath, OutAsset);
 }
 
 bool FResourceManager::LoadGPUResources(ID3D11Device* Device)

@@ -16,7 +16,7 @@
 #include "Core/ResourceTypes.h"
 #include "Core/ShaderResourceCache.h"
 #include "Core/StaticMeshResourceCache.h"
-#include "Core/TextureAssetMetaService.h"
+#include "Core/TextureAtlasAssetService.h"
 #include "Core/TextureResourceCache.h"
 #include "Object/FName.h"
 #include "Render/Resource/ComputeShader.h"
@@ -166,7 +166,11 @@ private:
 	void PreloadStaticMeshes();
 	UStaticMesh* CreateStaticMeshFromLoadedData(FStaticMesh* LoadedMeshData, const FString& LogPath, bool bLogLodTiming, bool bLogLodSkipped) const;
 	
-	FTextureAssetMeta LoadOrCreateTextureMeta(const std::filesystem::path& FilePath) const;
+	bool LoadTextureAtlasAsset(
+		const std::filesystem::path& AssetFilePath,
+		ETextureAtlasAssetType Type,
+		const std::filesystem::path& ProjectRootPath,
+		FTextureAtlasAsset& OutAsset) const;
 	void RegisterObjMaterialSlotAliases(const FString& ObjPath, const FString& MtlPath);
 	UMaterial* GetMaterialForStaticMeshSlot(const FString& SourcePath, const FString& SlotName) const;
 	void ResolveStaticMeshMaterialSlots(const FString& SourcePath, FStaticMesh* StaticMesh) const;

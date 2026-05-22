@@ -771,7 +771,7 @@
     <ClCompile Include="Source\Engine\Core\SkeletalMeshLoadService.cpp" />
     <ClCompile Include="Source\Engine\Core\StaticMeshLoadService.cpp" />
     <ClCompile Include="Source\Engine\Core\StaticMeshResourceCache.cpp" />
-    <ClCompile Include="Source\Engine\Core\TextureAssetMetaService.cpp" />
+    <ClCompile Include="Source\Engine\Core\TextureAtlasAssetService.cpp" />
     <ClCompile Include="Source\Engine\Core\TextureResourceCache.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\DefaultPawn.cpp" />
@@ -1147,7 +1147,7 @@
     <ClInclude Include="Source\Engine\Core\StaticMeshLoadService.h" />
     <ClInclude Include="Source\Engine\Core\StaticMeshResourceCache.h" />
     <ClInclude Include="Source\Engine\Core\StringUtils.h" />
-    <ClInclude Include="Source\Engine\Core\TextureAssetMetaService.h" />
+    <ClInclude Include="Source\Engine\Core\TextureAtlasAssetService.h" />
     <ClInclude Include="Source\Engine\Core\TextureResourceCache.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\DefaultPawn.h" />
