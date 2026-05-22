@@ -12,6 +12,8 @@
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "Mesh/MeshManager.h"
+#include "Particle/ParticleSystem.h"
+#include "Particle/ParticleSystemManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "EditorEngine.h"
@@ -426,6 +428,9 @@ void FEditorContentBrowserWidget::RefreshContent()
 				case EAssetPackageType::AnimGraph:
 					Element = std::make_shared<AnimGraphElement>();
 					break;
+				case EAssetPackageType::ParticleSystem:
+					Element = std::make_shared<ParticleSystemElement>();
+					break;
 				default:
 					Element = std::make_shared<ContentBrowserElement>();
 					break;
@@ -580,6 +585,25 @@ void FEditorContentBrowserWidget::DrawContents()
 						if (UAnimGraphAsset* GraphAsset = FAnimGraphManager::Get().Load(CreatedPath))
 						{
 							BrowserContext.EditorEngine->OpenAssetEditorForObject(GraphAsset);
+						}
+					}
+				}
+			}
+			if (ImGui::MenuItem("Particle System"))
+			{
+				FString CreatedPath;
+				if (FAssetFactory::CreateParticleSystem(
+					FPaths::ToUtf8(BrowserContext.CurrentPath),
+					"NewParticleSystem",
+					CreatedPath
+				))
+				{
+					Refresh();
+					if (BrowserContext.EditorEngine)
+					{
+						if (UParticleSystem* ParticleSystemAsset = FParticleSystemManager::Get().Load(CreatedPath))
+						{
+							BrowserContext.EditorEngine->OpenAssetEditorForObject(ParticleSystemAsset);
 						}
 					}
 				}

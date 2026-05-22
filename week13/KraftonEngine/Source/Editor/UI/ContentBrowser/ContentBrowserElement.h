@@ -153,3 +153,13 @@ public:
 private:
 	FEditorMaterialInspector MaterialInspector;
 };
+
+class ParticleSystemElement final : public ContentBrowserElement
+{
+public:
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
+
+protected:
+	const char* GetTypeLabel() const override { return "Particle System"; }
+	uint32      GetAccentColor() const override { return IM_COL32(120, 200, 255, 255); }
+};

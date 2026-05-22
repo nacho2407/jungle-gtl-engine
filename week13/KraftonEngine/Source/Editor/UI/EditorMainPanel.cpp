@@ -31,6 +31,8 @@
 #include <random>
 #include <utility>
 
+#include "Asset/Particle/ParticleSystemEditorWidget.h"
+
 namespace
 {
 struct FDebugPlaceActorOption
@@ -97,6 +99,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	AssetEditorManager.RegisterEditor<FMeshEditorWidget>();
 	AssetEditorManager.RegisterEditor<FStaticMeshEditorWidget>();
 	AssetEditorManager.RegisterEditor<FAnimGraphEditorWidget>();
+	AssetEditorManager.RegisterEditor<FParticleSystemEditorWidget>();
 }
 
 void FEditorMainPanel::Release()

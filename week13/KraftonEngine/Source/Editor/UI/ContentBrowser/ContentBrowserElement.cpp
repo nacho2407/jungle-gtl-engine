@@ -30,6 +30,9 @@
 #include <filesystem>
 #include <utility>
 
+#include "Particle/ParticleSystem.h"
+#include "Particle/ParticleSystemManager.h"
+
 static FString FormatBytes(uint64 Bytes)
 {
 	char Buffer[64];
@@ -801,4 +804,19 @@ void MaterialElement::OnLeftClicked(ContentBrowserContext& Context)
 void MaterialElement::RenderDetail()
 {
 	MaterialInspector.Render();
+}
+
+void ParticleSystemElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
+
+	const FString FilePath = FPaths::ToUtf8(ContentItem.Path.wstring());
+
+	if (UParticleSystem* ParticleSystem = FParticleSystemManager::Get().Load(FilePath))
+	{
+		Context.EditorEngine->OpenAssetEditorForObject(ParticleSystem);
+	}
 }
