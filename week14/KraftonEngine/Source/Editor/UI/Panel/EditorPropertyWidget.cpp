@@ -1581,6 +1581,46 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 		return bChanged;
 	}
 
+	if (!AssetType.empty())
+	{
+		const TArray<FAssetListItem>& AssetFiles = FAssetRegistry::ListByTypeName(AssetType.c_str());
+		if (!AssetFiles.empty() || AssetType[0] == 'U')
+		{
+			FString Preview = CurrentPath.empty() ? "None" : GetStemFromPath(CurrentPath);
+			if (CurrentPath == "None") Preview = "None";
+
+			if (ImGui::BeginCombo("##Asset", Preview.c_str()))
+			{
+				bool bSelectedNone = (CurrentPath == "None" || CurrentPath.empty());
+				if (ImGui::Selectable("None", bSelectedNone))
+				{
+					SetPath("None");
+					bChanged = true;
+				}
+				if (bSelectedNone)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+
+				for (const FAssetListItem& Item : AssetFiles)
+				{
+					bool bSelected = (CurrentPath == Item.FullPath);
+					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+					{
+						SetPath(Item.FullPath);
+						bChanged = true;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+			return bChanged;
+		}
+	}
+
 	FString Preview = CurrentPath.empty() ? "None" : GetStemFromPath(CurrentPath);
 	if (CurrentPath == "None") Preview = "None";
 
