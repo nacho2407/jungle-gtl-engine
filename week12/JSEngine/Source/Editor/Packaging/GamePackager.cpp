@@ -1191,7 +1191,7 @@ namespace
         }
 
         const FString Text((std::istreambuf_iterator<char>(In)), std::istreambuf_iterator<char>());
-        constexpr const char* Prefixes[] = { "Asset/", "LuaScript/", "Shaders/" };
+        constexpr const char* Prefixes[] = { "Asset/", "Shaders/" };
         for (const char* Prefix : Prefixes)
         {
             size_t SearchPos = 0;
@@ -2147,8 +2147,6 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
     EmitBuildLog("Copied Asset/Script directory");
     if (!CopyDirectoryIfExists(EngineRoot / L"Asset" / L"Prefab", OutputRoot / L"Asset" / L"Prefab", OutMessage)) return false;
     EmitBuildLog("Copied Asset/Prefab directory");
-    if (!CopyDirectoryIfExists(EngineRoot / L"LuaScript", OutputRoot / L"LuaScript", OutMessage)) return false;
-    EmitBuildLog("Copied LuaScript directory");
     if (!CopyDirectoryIfExists(EngineRoot / L"Asset" / L"Audio", OutputRoot / L"Asset" / L"Audio", OutMessage)) return false;
     EmitBuildLog("Copied Asset/Audio directory");
 
