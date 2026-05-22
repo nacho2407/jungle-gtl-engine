@@ -89,6 +89,26 @@ def make_generated_file_path(header_path, class_name):
 	return REFLECTION_OUTPUT_DIR / rel_header_path.with_name(f'{class_name}.gen.cpp')
 
 
+def get_generated_compile_condition(header_path):
+	rel_header_path = header_path.relative_to(SOURCE_DIR)
+	parts = [part.lower() for part in rel_header_path.parts]
+	if parts and parts[0] == 'editor':
+		return 'WITH_EDITOR'
+	if len(parts) >= 2 and parts[0] == 'misc' and parts[1] == 'objviewer':
+		return 'WITH_EDITOR || IS_OBJ_VIEWER'
+	return None
+
+
+def wrap_generated_code(header_path, gen_code):
+	condition = get_generated_compile_condition(header_path)
+	if not condition:
+		return gen_code
+	return f"""#if {condition}
+{gen_code}
+#endif // {condition}
+"""
+
+
 # C++ 타입 문자열의 공백, const, 포인터/참조 표기를 정규화하여 타입 맵과 비교하기 쉽게 만듭니다.
 def normalize_cpp_type(cpp_type):
 	normalized = re.sub(r'\bconst\b', '', cpp_type or '')
@@ -1729,6 +1749,7 @@ static Z_AutoRegister_UClass_{class_name} Z_AutoRegister_UClass_{class_name}_Var
 	gen_filepath = make_generated_file_path(header_path, class_name)
 	record_generated_file(gen_filepath)
 	gen_filepath.parent.mkdir(parents=True, exist_ok=True)
+	gen_code = wrap_generated_code(header_path, gen_code)
 	with open(gen_filepath, 'w', encoding='utf-8', newline='\n') as f:
 		f.write(gen_code)
 	print(f'Generated: {gen_filepath.relative_to(ROOT)}')
@@ -1855,6 +1876,7 @@ static Z_AutoRegister_UScriptStruct_{struct_name} Z_AutoRegister_UScriptStruct_{
 	gen_filepath = make_generated_file_path(header_path, struct_name)
 	record_generated_file(gen_filepath)
 	gen_filepath.parent.mkdir(parents=True, exist_ok=True)
+	gen_code = wrap_generated_code(header_path, gen_code)
 	with open(gen_filepath, 'w', encoding='utf-8', newline='\n') as f:
 		f.write(gen_code)
 	print(f'Generated: {gen_filepath.relative_to(ROOT)}')

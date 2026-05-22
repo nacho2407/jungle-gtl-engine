@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#if WITH_EDITOR
+
 #include "Engine/Runtime/Engine.h"
 
 #include "Engine/Input/InputRouter.h"
@@ -149,3 +151,5 @@ private:
 	void BindActorDestroyedListener(UWorld* World);
 	void UnbindActorDestroyedListener(UWorld* World);
 };
+
+#endif // WITH_EDITOR
