@@ -1679,6 +1679,36 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 		ImGui::EndPopup();
 	}
 
+	if (AssetType == "UParticleSystem")
+	{
+		FString Preview = (CurrentPath.empty() || CurrentPath == "None") ? "None" : GetStemFromPath(CurrentPath);
+		if (CurrentPath == "None") Preview = "None";
+
+		if (ImGui::BeginCombo("##ParticleSystem", Preview.c_str()))
+		{
+			bool bSelectedNone = (CurrentPath == "None" || CurrentPath.empty());
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				SetPath("None");
+				bChanged = true;
+			}
+			if (bSelectedNone) ImGui::SetItemDefaultFocus();
+
+			const TArray<FAssetListItem>& ParticleFiles = FAssetRegistry::ListByTypeName("UParticleSystem");
+			for (const FAssetListItem& Item : ParticleFiles)
+			{
+				bool bSelected = (CurrentPath == Item.FullPath);
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				{
+					SetPath(Item.FullPath);
+					bChanged = true;
+				}
+				if (bSelected) ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+	
 	return bChanged;
 }
 

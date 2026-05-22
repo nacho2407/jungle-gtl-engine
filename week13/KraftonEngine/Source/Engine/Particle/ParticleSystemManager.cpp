@@ -1,11 +1,13 @@
 ﻿#include "ParticleSystemManager.h"
 
+#include <algorithm>
 #include <filesystem>
 
-#include "ParticleSystem.h"
+#include "Particle/ParticleSystem.h"
 #include "Asset/AssetPackage.h"
 #include "Platform/Paths.h"
 #include "Serialization/WindowsArchive.h"
+#include "Object/Reflection/ObjectFactory.h"
 
 UParticleSystem* FParticleSystemManager::Load(const FString& Path)
 {
@@ -80,6 +82,8 @@ bool FParticleSystemManager::Save(UParticleSystem* Asset)
 
 void FParticleSystemManager::RefreshAvailableParticleSystems()
 {
+    AvailableParticleSystemFiles.clear();
+    
     const std::filesystem::path ContentRoot = std::filesystem::path(FPaths::RootDir()) / L"Content";
 
     if (!std::filesystem::exists(ContentRoot)) return;

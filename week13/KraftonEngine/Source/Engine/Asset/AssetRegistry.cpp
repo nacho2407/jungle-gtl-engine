@@ -7,6 +7,7 @@
 #include "Animation/Montage/AnimMontage.h"
 #include "Animation/Skeleton/Skeleton.h"
 #include "Animation/Skeleton/SkeletonManager.h"
+#include "Particle/ParticleSystemManager.h"
 #include "Platform/Paths.h"
 
 #include <cstring>
@@ -69,6 +70,11 @@ namespace FAssetRegistry
 				}
 			}
 			return Cache;
+		}
+		if (std::strcmp(AssetTypeName, "UParticleSystem") == 0)
+		{
+			FParticleSystemManager::Get().RefreshAvailableParticleSystems();
+			return FParticleSystemManager::Get().GetAvailableParticleSystemFiles();
 		}
 
 		return Empty;

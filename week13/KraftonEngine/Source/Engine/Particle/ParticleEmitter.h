@@ -9,7 +9,8 @@ class UParticleLODLevel;
 class UParticleModuleRequired;
 class UParticleModuleTypeDataBase;
 
-UCLASS()class UParticleEmitter : public UObject
+UCLASS()
+class UParticleEmitter : public UObject
 {
 public:
     GENERATED_BODY()
@@ -19,7 +20,7 @@ public:
 
     void CacheEmitterModuleInfo();
 
-    TArray<UParticleLODLevel*>        GetLODLevels() { return LODLevels; }
+    TArray<UParticleLODLevel*>&       GetLODLevels() { return LODLevels; }
     const TArray<UParticleLODLevel*>& GetLODLevels() const { return LODLevels; }
 
     UParticleLODLevel* GetLODLevel(int32 LODIndex) const;

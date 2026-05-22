@@ -7,5 +7,10 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 
 UParticleLODLevel* UParticleEmitter::GetLODLevel(int32 LODIndex) const
 {
-    return LODLevels.empty() ? nullptr : LODLevels[LODIndex];
+    if (LODIndex < 0 || LODIndex >= static_cast<int32>(LODLevels.size()))
+    {
+        return nullptr;
+    }
+
+    return LODLevels[LODIndex];
 }
