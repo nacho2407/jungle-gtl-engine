@@ -90,7 +90,7 @@ public:
 		ERasterizerState InRaster,
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
 
-	const uint8* GetRawPtr(const FString& BufferName, uint32 Offset) const { return 0; }
+	const uint8* GetRawPtr(const FString& BufferName, uint32 Offset) const;
 
 	const TMap<FString, FMaterialParameterInfo*>& GetParameterInfo() const;
 	FMaterialTemplate* GetTemplate() const { return Template; }
@@ -201,6 +201,10 @@ public:
 	GENERATED_BODY()
 
 	static UMaterialInstance* Create(UMaterial* InParent);
+	static UMaterialInstance* Create(UMaterial* InParent,
+		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
+	void Create(const FString& InPathFileName, UMaterial* InParent,
+		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
 
 	UMaterial* GetParent() const { return Parent; }
 	void Serialize(FArchive& Ar) override;
@@ -226,6 +230,10 @@ public:
 	void FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx) override;
 
 protected:
+	bool SetParameter(const FString& Name, const void* Data, uint32 Size);
+	void CopyParentConstantBuffers();
+
+	FString PathFileName;
 	UMaterial* Parent = nullptr;
 	FString ParentPathFileName;
 
@@ -234,6 +242,9 @@ protected:
 	TMap<FString, FVector4> Vector4Overrides;
 	TMap<FString, FMatrix> MatrixOverrides;
 	TMap<FString, UTexture2D*> TextureOverrides;
+
+	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap;
+	bool bConstantBufferDirty = true;
 };
 
 
@@ -244,4 +255,7 @@ public:
 	GENERATED_BODY()
 
 	static UMaterialInstanceDynamic* Create(UMaterial* InParent);
+	static UMaterialInstanceDynamic* Create(UMaterial* InParent,
+		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
+
 };

@@ -44,6 +44,17 @@ const TMap<FString, FMaterialParameterInfo*>& UMaterial::GetParameterInfo() cons
 	return Template ? Template->GetParameterInfo() : EmptyLayout;
 }
 
+const uint8* UMaterial::GetRawPtr(const FString& BufferName, uint32 Offset) const
+{
+	auto It = ConstantBufferMap.find(BufferName);
+	if (It == ConstantBufferMap.end() || !It->second || !It->second->CPUData || Offset >= It->second->Size)
+	{
+		return nullptr;
+	}
+
+	return It->second->CPUData + Offset;
+}
+
 TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> UMaterial::CloneConstantBuffers(ID3D11Device* Device) const
 {
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ClonedBuffers;
@@ -350,6 +361,8 @@ UMaterial* UMaterial::CreateTransient(ERenderPass InPass, EBlendState InBlend,
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> EmptyBuffers;
 	Mat->Create(FString("__transient__"), nullptr, InPass, InBlend, InDepth, InRaster, std::move(EmptyBuffers));
 	Mat->TransientShader = InShader;
+
+
 	return Mat;
 }
 
@@ -361,21 +374,99 @@ UMaterialInstance* UMaterialInstance::Create(UMaterial* InParent)
 	}
 
 	UMaterialInstance* Instance = UObjectManager::Get().CreateObject<UMaterialInstance>();
-	Instance->Parent = InParent;
-	Instance->ParentPathFileName = InParent->GetAssetPathFileName();
+	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> EmptyBuffers;
+	Instance->Create(InParent->GetAssetPathFileName(), InParent, std::move(EmptyBuffers));
 
 	return Instance;
 }
 
+UMaterialInstance* UMaterialInstance::Create(UMaterial* InParent,
+	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers)
+{
+	if (!InParent)
+	{
+		return nullptr;
+	}
+
+	UMaterialInstance* Instance = UObjectManager::Get().CreateObject<UMaterialInstance>();
+	Instance->Create(InParent->GetAssetPathFileName(), InParent, std::move(InBuffers));
+	return Instance;
+}
+
+void UMaterialInstance::Create(const FString& InPathFileName, UMaterial* InParent,
+	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers)
+{
+	PathFileName = InPathFileName;
+	Parent = InParent;
+	ParentPathFileName = Parent ? Parent->GetAssetPathFileName() : FString();
+	ConstantBufferMap = std::move(InBuffers);
+	CopyParentConstantBuffers();
+	bConstantBufferDirty = true;
+}
+
 void UMaterialInstance::Serialize(FArchive& Ar)
 {
-	Parent->Serialize(Ar);
 	Ar << ParentPathFileName;
 	//Ar << ScalarOverrides;
 	//Ar << Vector3Overrides;
 	//Ar << Vector4Overrides;
 	//Ar << MatrixOverrides;
 	//Ar << TextureOverrides;
+}
+
+void UMaterialInstance::CopyParentConstantBuffers()
+{
+	if (!Parent)
+	{
+		return;
+	}
+
+	for (auto& Pair : ConstantBufferMap)
+	{
+		if (!Pair.second || !Pair.second->CPUData)
+		{
+			continue;
+		}
+
+		const uint8* ParentData = Parent->GetRawPtr(Pair.first, 0);
+		if (!ParentData)
+		{
+			continue;
+		}
+
+		memcpy(Pair.second->CPUData, ParentData, Pair.second->Size);
+		Pair.second->bDirty = true;
+	}
+}
+
+bool UMaterialInstance::SetParameter(const FString& Name, const void* Data, uint32 Size)
+{
+	if (!Parent || !Data)
+	{
+		return false;
+	}
+
+	FMaterialTemplate* Template = Parent->GetTemplate();
+	if (!Template)
+	{
+		return false;
+	}
+
+	FMaterialParameterInfo Info;
+	if (!Template->GetParameterInfo(Name, Info))
+	{
+		return false;
+	}
+
+	auto It = ConstantBufferMap.find(Info.BufferName);
+	if (It == ConstantBufferMap.end() || !It->second)
+	{
+		return false;
+	}
+
+	It->second->SetData(Data, Size, Info.Offset);
+	bConstantBufferDirty = true;
+	return true;
 }
 
 bool UMaterialInstance::SetScalarParameter(const FString& ParamName, float Value)
@@ -387,7 +478,7 @@ bool UMaterialInstance::SetScalarParameter(const FString& ParamName, float Value
 	}
 
 	ScalarOverrides[ParamName] = Value;
-	return true;
+	return SetParameter(ParamName, &Value, sizeof(float));
 }
 
 bool UMaterialInstance::SetVector3Parameter(const FString& ParamName, const FVector& Value)
@@ -399,7 +490,8 @@ bool UMaterialInstance::SetVector3Parameter(const FString& ParamName, const FVec
 	}
 
 	Vector3Overrides[ParamName] = Value;
-	return true;
+	float Data[3] = { Value.X, Value.Y, Value.Z };
+	return SetParameter(ParamName, Data, sizeof(Data));
 }
 
 bool UMaterialInstance::SetVector4Parameter(const FString& ParamName, const FVector4& Value)
@@ -411,7 +503,8 @@ bool UMaterialInstance::SetVector4Parameter(const FString& ParamName, const FVec
 	}
 
 	Vector4Overrides[ParamName] = Value;
-	return true;
+	float Data[4] = { Value.X, Value.Y, Value.Z, Value.W };
+	return SetParameter(ParamName, Data, sizeof(Data));
 }
 
 bool UMaterialInstance::SetTextureParameter(const FString& ParamName, UTexture2D* Texture)
@@ -423,6 +516,7 @@ bool UMaterialInstance::SetTextureParameter(const FString& ParamName, UTexture2D
 	}
 
 	TextureOverrides[ParamName] = Texture;
+	bConstantBufferDirty = true;
 	return true;
 }
 
@@ -435,7 +529,7 @@ bool UMaterialInstance::SetMatrixParameter(const FString& ParamName, const FMatr
 	}
 
 	MatrixOverrides[ParamName] = Value;
-	return true;
+	return SetParameter(ParamName, Value.Data, sizeof(float) * 16);
 }
 
 bool UMaterialInstance::GetScalarParameter(const FString& ParamName, float& OutValue) const
@@ -525,15 +619,57 @@ ERasterizerState UMaterialInstance::GetRasterizerState() const
 
 FConstantBuffer* UMaterialInstance::GetGPUBufferBySlot(uint32 InSlot) const
 {
-	return Parent ? Parent->GetGPUBufferBySlot(InSlot) : nullptr;
+	for (const auto& Pair : ConstantBufferMap)
+	{
+		if (Pair.second && Pair.second->SlotIndex == InSlot)
+		{
+			return Pair.second->GetConstantBuffer();
+		}
+	}
+
+	return nullptr;
 }
 
 void UMaterialInstance::FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx)
 {
-	if (Parent)
+	if (!Parent)
 	{
-		Parent->FlushDirtyBuffers(Device, Ctx);
+		return;
 	}
+
+	if (bConstantBufferDirty)
+	{
+		CopyParentConstantBuffers();
+
+		for (const auto& Pair : ScalarOverrides)
+		{
+			SetParameter(Pair.first, &Pair.second, sizeof(float));
+		}
+		for (const auto& Pair : Vector3Overrides)
+		{
+			float Data[3] = { Pair.second.X, Pair.second.Y, Pair.second.Z };
+			SetParameter(Pair.first, Data, sizeof(Data));
+		}
+		for (const auto& Pair : Vector4Overrides)
+		{
+			float Data[4] = { Pair.second.X, Pair.second.Y, Pair.second.Z, Pair.second.W };
+			SetParameter(Pair.first, Data, sizeof(Data));
+		}
+		for (const auto& Pair : MatrixOverrides)
+		{
+			SetParameter(Pair.first, Pair.second.Data, sizeof(float) * 16);
+		}
+	}
+
+	for (auto& Pair : ConstantBufferMap)
+	{
+		if (Pair.second && Pair.second->bDirty)
+		{
+			Pair.second->Upload(Ctx);
+		}
+	}
+
+	bConstantBufferDirty = false;
 }
 
 UMaterialInstanceDynamic* UMaterialInstanceDynamic::Create(UMaterial* InParent)
@@ -544,8 +680,21 @@ UMaterialInstanceDynamic* UMaterialInstanceDynamic::Create(UMaterial* InParent)
 	}
 
 	UMaterialInstanceDynamic* Instance = UObjectManager::Get().CreateObject<UMaterialInstanceDynamic>();
-	Instance->Parent = InParent;
-	Instance->ParentPathFileName = InParent->GetAssetPathFileName();
+	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> EmptyBuffers;
+	Instance->UMaterialInstance::Create(InParent->GetAssetPathFileName(), InParent, std::move(EmptyBuffers));
 
+	return Instance;
+}
+
+UMaterialInstanceDynamic* UMaterialInstanceDynamic::Create(UMaterial* InParent,
+	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers)
+{
+	if (!InParent)
+	{
+		return nullptr;
+	}
+
+	UMaterialInstanceDynamic* Instance = UObjectManager::Get().CreateObject<UMaterialInstanceDynamic>();
+	Instance->UMaterialInstance::Create(InParent->GetAssetPathFileName(), InParent, std::move(InBuffers));
 	return Instance;
 }
