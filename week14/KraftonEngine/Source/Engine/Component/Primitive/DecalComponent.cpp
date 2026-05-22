@@ -41,7 +41,7 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 		}
 		else
 		{
-			UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot);
+			UMaterialInterface* LoadedMat = FMaterialManager::Get().GetOrCreateMaterialInterface(MaterialSlot);
 			if (LoadedMat)
 			{
 				SetMaterial(LoadedMat);
@@ -61,7 +61,7 @@ void UDecalComponent::PostDuplicate()
 
 	if (!MaterialSlot.empty() && MaterialSlot != "None")
 	{
-		UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot);
+		UMaterialInterface* LoadedMat = FMaterialManager::Get().GetOrCreateMaterialInterface(MaterialSlot);
 		if (LoadedMat)
 		{
 			SetMaterial(LoadedMat);
