@@ -25,6 +25,7 @@
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "Editor/UI/Asset/Mesh/StaticMeshEditorWidget.h"
 #include "Editor/UI/Asset/Animation/AnimGraphEditorWidget.h"
+#include "Editor/UI/Asset/Particle/ParticleSystemEditorWidget.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -97,6 +98,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	AssetEditorManager.RegisterEditor<FMeshEditorWidget>();
 	AssetEditorManager.RegisterEditor<FStaticMeshEditorWidget>();
 	AssetEditorManager.RegisterEditor<FAnimGraphEditorWidget>();
+	AssetEditorManager.RegisterEditor<FParticleSystemEditorWidget>();
 }
 
 void FEditorMainPanel::Release()

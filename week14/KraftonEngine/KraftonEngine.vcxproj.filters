@@ -67,6 +67,9 @@
     <Filter Include="Source\Editor\UI\Asset\Mesh">
       <UniqueIdentifier>{5084842c-4071-bc7f-36a2-4a3bf67026e8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\UI\Asset\Particle">
+      <UniqueIdentifier>{0ee6db7d-9b37-4a49-b356-6ecf8fc7e89a}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\UI\ContentBrowser">
       <UniqueIdentifier>{09a2ea7f-e891-b580-bef0-471bcd9b5d4b}</UniqueIdentifier>
     </Filter>
@@ -664,6 +667,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\Particle</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
@@ -1650,6 +1656,9 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
