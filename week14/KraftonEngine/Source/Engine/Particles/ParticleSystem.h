@@ -3,6 +3,7 @@
 #include "Object/Object.h"
 
 struct FParticleEmitterInstance;
+class FArchive;
 class UParticleSystemComponent;
 
 class UParticleModule : public UObject
@@ -22,6 +23,8 @@ public:
 class UParticleLODLevel : public UObject
 {
 public:
+	~UParticleLODLevel() override;
+
 	int32 GetLevel() const { return Level; }
 	bool IsEnabled() const { return bEnabled; }
 	const TArray<UParticleModule*>& GetModules() const { return Modules; }
@@ -29,6 +32,8 @@ public:
 
 	void SetLevel(int32 InLevel) { Level = InLevel; }
 	void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
+
+	void Serialize(FArchive& Ar) override;
 
 private:
 	int32 Level = 0;
@@ -42,6 +47,8 @@ private:
 class UParticleEmitter : public UObject
 {
 public:
+	~UParticleEmitter() override;
+
 	FParticleEmitterInstance* CreateInstance(UParticleSystemComponent* Component);
 
 	const TArray<UParticleLODLevel*>& GetLODLevels() const { return LODLevels; }
@@ -55,6 +62,9 @@ public:
 	void SetMaxActiveParticles(int32 InMaxActiveParticles) { MaxActiveParticles = InMaxActiveParticles; }
 	void SetEmitterDuration(float InEmitterDuration) { EmitterDuration = InEmitterDuration; }
 	void SetLooping(bool bInLooping) { bLooping = bInLooping; }
+	void AddLODLevel(UParticleLODLevel* LODLevel);
+
+	void Serialize(FArchive& Ar) override;
 
 private:
 	TArray<UParticleLODLevel*> LODLevels;
@@ -67,10 +77,18 @@ private:
 class UParticleSystem : public UObject
 {
 public:
+	~UParticleSystem() override;
+
 	const TArray<UParticleEmitter*>& GetEmitters() const { return Emitters; }
 	TArray<UParticleEmitter*>& GetMutableEmitters() { return Emitters; }
 	void AddEmitter(UParticleEmitter* Emitter);
 
+	void SetAssetPathFileName(const FString& InPathFileName) { AssetPathFileName = InPathFileName; }
+	const FString& GetAssetPathFileName() const { return AssetPathFileName; }
+
+	void Serialize(FArchive& Ar) override;
+
 private:
 	TArray<UParticleEmitter*> Emitters;
+	FString AssetPathFileName = "None";
 };
