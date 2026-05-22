@@ -470,7 +470,7 @@ JSEngine/Asset/Mesh/Bin/**
 # FBX SDK runtime libs - re-include (gitignore의 [Dd]ebug/, [Rr]elease/ 패턴으로 인해 무시되는 것을 복구)
 !JSEngine/ThirdParty/FBX/lib/**
 !JSEngine/ThirdParty/RmlUi/Lib/**/
-!JSEngine/ThirdParty/RmlUi/Lib/**/*.lib
+JSEngine/ThirdParty/RmlUi/Lib/**/*.lib
 JSEngine/ThirdParty/RmlUi/Lib/**/*.manifest
 !JSEngine/ThirdParty/SoLoud/Lib/**/
 !JSEngine/ThirdParty/SoLoud/Lib/**/*.lib
