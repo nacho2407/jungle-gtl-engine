@@ -81,6 +81,11 @@ void FEditorViewer::Tick(float DeltaTime)
 	Client.Tick(DeltaTime);
 }
 
+USkeletalMeshComponent* FEditorViewer::GetSkeletalMeshComponent() const
+{
+	return ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+}
+
 void FEditorViewer::SetRect(const FViewportRect& InRect)
 {
 	Viewport.SetRect(InRect);

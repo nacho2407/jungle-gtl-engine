@@ -9,6 +9,7 @@ class UStateMachineAnimInstance : public UAnimInstance
 {
 public:
 	GENERATED_BODY(UStateMachineAnimInstance, UAnimInstance)
+	~UStateMachineAnimInstance() override;
 
 	void Serialize(FArchive& Ar) override;
 	void Initialize(USkeletalMeshComponent* InOwnerComponent) override;

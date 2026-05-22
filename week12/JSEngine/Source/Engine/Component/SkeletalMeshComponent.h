@@ -38,7 +38,7 @@ public:
 	GENERATED_BODY(USkeletalMeshComponent, USkinnedMeshComponent)
 
 	USkeletalMeshComponent() = default;
-	~USkeletalMeshComponent() override = default;
+	~USkeletalMeshComponent() override;
 
 	virtual void Serialize(FArchive& Ar) override;
 	virtual void PostDuplicate(UObject* Original) override;
@@ -56,7 +56,7 @@ public:
 	FMatrix GetBoneGlobalTransform(int32 BoneIndex) const;
 	void SetBoneGlobalTransform(int32 BoneIndex, const FMatrix& NewGlobalTransform);
 
-	void SetAnimInstance(UAnimInstance* InAnimInstance) { AnimInstance = InAnimInstance; }
+	void SetAnimInstance(UAnimInstance* InAnimInstance);
 	UAnimInstance* GetAnimInstance() const { return AnimInstance; }
 	UAnimSingleNodeInstance* GetSingleNodeInstance() const;
 	UAnimSingleNodeInstance* GetOrCreateSingleNodeInstance();
@@ -118,6 +118,8 @@ public:
 	FOnAnimNotify OnAnimNotifyEndDelegate;
 
 private:
+	void ClearAnimInstance();
+	void ReplaceAnimInstance(UAnimInstance* InAnimInstance);
 	void ApplyAnimationFromAssetPath();
 	void SyncAnimationAssetPathFromAnimation(UAnimationAsset* Animation);
 

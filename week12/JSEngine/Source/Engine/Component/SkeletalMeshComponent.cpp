@@ -29,6 +29,47 @@ namespace
 	UAnimNotify* ResolveAnimNotifyObject(const FAnimNotifyStateEvent& Notify) { return Notify.NotifyObject; }
 }
 
+USkeletalMeshComponent::~USkeletalMeshComponent()
+{
+	ClearAnimInstance();
+}
+
+void USkeletalMeshComponent::SetAnimInstance(UAnimInstance* InAnimInstance)
+{
+	ReplaceAnimInstance(InAnimInstance);
+	if (AnimInstance)
+	{
+		AnimInstance->Initialize(this);
+	}
+}
+
+void USkeletalMeshComponent::ClearAnimInstance()
+{
+	UAnimInstance* OldInstance = AnimInstance;
+	AnimInstance = nullptr;
+
+	if (OldInstance)
+	{
+		UObjectManager::Get().DestroyObject(OldInstance);
+	}
+}
+
+void USkeletalMeshComponent::ReplaceAnimInstance(UAnimInstance* InAnimInstance)
+{
+	if (AnimInstance == InAnimInstance)
+	{
+		return;
+	}
+
+	UAnimInstance* OldInstance = AnimInstance;
+	AnimInstance = InAnimInstance;
+
+	if (OldInstance)
+	{
+		UObjectManager::Get().DestroyObject(OldInstance);
+	}
+}
+
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
 {
 	USkinnedMeshComponent::Serialize(Ar);
@@ -74,7 +115,7 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
 
 			LoadedAnimInstance->Serialize(Ar);
 			LoadedAnimInstance->Initialize(this);
-			AnimInstance = LoadedAnimInstance;
+			ReplaceAnimInstance(LoadedAnimInstance);
 
 			if (UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
 			{
@@ -265,6 +306,13 @@ void USkeletalMeshComponent::SetAnimationStateMachine(UAnimationStateMachine* In
 		return;
 	}
 
+	if (GetAnimationStateMachine() == InStateMachine)
+	{
+		InStateMachine->Initialize(this);
+		AnimationMode = EAnimationMode::AnimationStateMachine;
+		return;
+	}
+
 	InStateMachine->Initialize(this);
 
 	UStateMachineAnimInstance* Instance = UObjectManager::Get().CreateObject<UStateMachineAnimInstance>();
@@ -272,7 +320,7 @@ void USkeletalMeshComponent::SetAnimationStateMachine(UAnimationStateMachine* In
 	Instance->Initialize(this);
 	Instance->SetStateMachine(InStateMachine);
 
-	AnimInstance = Instance;
+	ReplaceAnimInstance(Instance);
 	AnimationMode = EAnimationMode::AnimationStateMachine;
 }
 
@@ -300,7 +348,7 @@ void USkeletalMeshComponent::SetAnimGraph(UAnimGraphAsset* Graph)
 	{
 		if (AnimationMode == EAnimationMode::AnimationGraph)
 		{
-			AnimInstance = nullptr;
+			ClearAnimInstance();
 			ResetToBindPose();
 		}
 		return;
@@ -310,7 +358,7 @@ void USkeletalMeshComponent::SetAnimGraph(UAnimGraphAsset* Graph)
 	Instance->Initialize(this);
 	Instance->SetGraphAsset(Graph);
 
-	AnimInstance = Instance;
+	ReplaceAnimInstance(Instance);
 	AnimationMode = EAnimationMode::AnimationGraph;
 }
 
@@ -327,7 +375,7 @@ void USkeletalMeshComponent::ApplyAnimGraphFromAssetPath()
 		if (AnimationMode == EAnimationMode::AnimationGraph)
 		{
 			UE_LOG_WARNING("[SkeletalMeshComponent] AnimationGraph mode selected, but AnimGraphAssetPath is empty.");
-			AnimInstance = nullptr;
+			ClearAnimInstance();
 			ResetToBindPose();
 		}
 		return;
@@ -342,7 +390,7 @@ void USkeletalMeshComponent::ApplyAnimGraphFromAssetPath()
 		UE_LOG_WARNING("[SkeletalMeshComponent] Failed to load anim graph: %s", GraphPath.c_str());
 		if (AnimationMode == EAnimationMode::AnimationGraph)
 		{
-			AnimInstance = nullptr;
+			ClearAnimInstance();
 			ResetToBindPose();
 		}
 		return;
@@ -519,7 +567,7 @@ void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InAnimationMode)
 	}
 	else
 	{
-		AnimInstance = nullptr;
+		ClearAnimInstance();
 	}
 }
 
@@ -552,7 +600,7 @@ UAnimSingleNodeInstance* USkeletalMeshComponent::GetOrCreateSingleNodeInstance()
 	{
 		SingleNode = UObjectManager::Get().CreateObject<UAnimSingleNodeInstance>();
 		SingleNode->Initialize(this);
-		AnimInstance = SingleNode;
+		ReplaceAnimInstance(SingleNode);
 	}
 	return SingleNode;
 }

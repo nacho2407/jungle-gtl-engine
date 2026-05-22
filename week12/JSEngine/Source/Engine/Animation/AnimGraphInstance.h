@@ -31,6 +31,7 @@ class UAnimGraphInstance : public UAnimInstance
 {
 public:
 	GENERATED_BODY(UAnimGraphInstance, UAnimInstance)
+	~UAnimGraphInstance() override;
 
 	void Serialize(FArchive& Ar) override;
 	void SetGraphAsset(UAnimGraphAsset* InAsset);

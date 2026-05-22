@@ -19,6 +19,19 @@ namespace
 	void SerializeParameterMap(FArchive& Ar, const char* Key, TMap<FString, TValue>& Parameters);
 }
 
+UAnimGraphInstance::~UAnimGraphInstance()
+{
+	for (auto& Pair : StateMachineCacheMap)
+	{
+		if (Pair.second.RuntimeMachine)
+		{
+			UObjectManager::Get().DestroyObject(Pair.second.RuntimeMachine);
+			Pair.second.RuntimeMachine = nullptr;
+		}
+	}
+	StateMachineCacheMap.clear();
+}
+
 void UAnimGraphInstance::Serialize(FArchive& Ar)
 {
 	UAnimInstance::Serialize(Ar);
@@ -30,6 +43,15 @@ void UAnimGraphInstance::Serialize(FArchive& Ar)
 
 void UAnimGraphInstance::SetGraphAsset(UAnimGraphAsset* InAsset)
 {
+	for (auto& Pair : StateMachineCacheMap)
+	{
+		if (Pair.second.RuntimeMachine)
+		{
+			UObjectManager::Get().DestroyObject(Pair.second.RuntimeMachine);
+			Pair.second.RuntimeMachine = nullptr;
+		}
+	}
+
 	GraphAsset = InAsset;
 	CurrentTime = 0.0f;
 	PreviousTime = 0.0f;
@@ -391,6 +413,11 @@ FAnimGraphStateMachineCache& UAnimGraphInstance::GetOrCreateStateMachineCache(co
 	const FString Signature = BuildStateMachineSignature(Node.StateMachine);
 	if (!Cache.RuntimeMachine || Cache.Signature != Signature)
 	{
+		if (Cache.RuntimeMachine)
+		{
+			UObjectManager::Get().DestroyObject(Cache.RuntimeMachine);
+			Cache.RuntimeMachine = nullptr;
+		}
 		Cache.RuntimeMachine = BuildStateMachineRuntime(Node.StateMachine);
 		Cache.Signature = Signature;
 	}

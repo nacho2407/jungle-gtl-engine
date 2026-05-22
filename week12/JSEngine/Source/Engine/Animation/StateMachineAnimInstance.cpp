@@ -6,6 +6,15 @@ namespace
 	constexpr const char* StateMachineDataKey = "StateMachineData";
 }
 
+UStateMachineAnimInstance::~UStateMachineAnimInstance()
+{
+	if (StateMachine)
+	{
+		UObjectManager::Get().DestroyObject(StateMachine);
+		StateMachine = nullptr;
+	}
+}
+
 void UStateMachineAnimInstance::Serialize(FArchive& Ar)
 {
 	UAnimInstance::Serialize(Ar);
@@ -28,7 +37,7 @@ void UStateMachineAnimInstance::Serialize(FArchive& Ar)
 		if (LoadedStateMachine)
 		{
 			LoadedStateMachine->Serialize(Ar);
-			StateMachine = LoadedStateMachine;
+			SetStateMachine(LoadedStateMachine);
 		}
 		Ar.EndObject();
 	}
@@ -45,6 +54,10 @@ void UStateMachineAnimInstance::Initialize(USkeletalMeshComponent* InOwnerCompon
 
 void UStateMachineAnimInstance::SetStateMachine(UAnimationStateMachine* InStateMachine)
 {
+	if (StateMachine && StateMachine != InStateMachine)
+	{
+		UObjectManager::Get().DestroyObject(StateMachine);
+	}
 	StateMachine = InStateMachine;
 }
 

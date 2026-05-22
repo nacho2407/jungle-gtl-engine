@@ -39,13 +39,13 @@ public:
 	const FSkeletalMeshViewportClient& GetClient() const { return Client; }
 	
 	ASkeletalMeshActor* GetViewTarget() const { return ViewTarget;}
-    void ClearViewTarget() { ViewTarget = nullptr; }
+	void ClearViewTarget() { ViewTarget = nullptr; }
 	
 	const FString& GetFileName() const { return FileName; }
 	void SetFileName(const FString& InFileName) { FileName = InFileName; }
 
 protected:
-	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr; }
+	USkeletalMeshComponent* GetSkeletalMeshComponent() const;
 	void ClearBaseSelection();
 
 	virtual bool HandleViewportBonePick(float LocalX, float LocalY);
