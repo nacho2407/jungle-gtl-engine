@@ -8,10 +8,13 @@ class UParticleModule;
 class UParticleSystemComponent;
 class UParticleModuleRequired;
 
+#include "Source/Engine/Particles/ParticleSystem.generated.h"
 
+UCLASS()
 class UParticleLODLevel : public UObject
 {
 public:
+	GENERATED_BODY()
 	~UParticleLODLevel() override;
 
 	int32 GetLevel() const { return Level; }
@@ -38,11 +41,14 @@ public:
 	}
 
 private:
+	UPROPERTY(Edit, Save, Category="Particle|LOD", DisplayName="Level")
 	int32 Level = 0;
+	UPROPERTY(Edit, Save, Category="Particle|LOD", DisplayName="Enabled")
 	bool bEnabled = true;
 
 	UParticleModuleRequired* RequiredModule;
 	//UParticleModuleTypeDataBase* TypeDataModule;
+	UPROPERTY(Edit, Save, Instanced, Category="Particle|LOD", DisplayName="Modules", AllowedClass=UParticleModule)
 	TArray<UParticleModule*> Modules;
 };
 

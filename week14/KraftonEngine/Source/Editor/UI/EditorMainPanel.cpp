@@ -283,6 +283,7 @@ void FEditorMainPanel::RenderMainMenuBar()
 				if (!ParticleSystemEditorPreviewAsset)
 				{
 					ParticleSystemEditorPreviewAsset = new UParticleSystem();
+					ParticleSystemEditorPreviewAsset->InitializeDefaultEmitters();
 					ParticleSystemEditorPreviewAsset->SetAssetPathFileName("NewParticleSystem*");
 				}
 				AssetEditorManager.OpenEditorForObject(ParticleSystemEditorPreviewAsset);

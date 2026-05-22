@@ -16,25 +16,7 @@ UParticleLODLevel::~UParticleLODLevel()
 void UParticleLODLevel::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
-
-	Ar << Level;
-	Ar << bEnabled;
-
-	uint32 ModuleCount = 0;
-	Ar << ModuleCount;
-
-	if (Ar.IsLoading())
-	{
-		for (UParticleModule* Module : Modules)
-		{
-			delete Module;
-		}
-		Modules.clear();
-
-		// Module subclasses are not serialized yet. Consume the count now so the
-		// package format can grow without changing the LOD header layout.
-		Modules.reserve(ModuleCount);
-	}
+	SerializeProperties(Ar, PF_Save);
 }
 
 UParticleEmitter::~UParticleEmitter()
