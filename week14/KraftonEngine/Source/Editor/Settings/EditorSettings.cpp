@@ -1,4 +1,4 @@
-#include "Editor/Settings/EditorSettings.h"
+﻿#include "Editor/Settings/EditorSettings.h"
 #include "Editor/Viewport/Level/FLevelViewportLayout.h"
 #include "SimpleJSON/json.hpp"
 
@@ -38,6 +38,7 @@ namespace Key
 	constexpr const char* bShowShadowFrustum = "bShowShadowFrustum";
 	constexpr const char* bCollision = "bCollision";
 	constexpr const char* bShowCollisionShape = "bShowCollisionShape";
+	constexpr const char* bParticle = "bParticle";
 	constexpr const char* GridSpacing = "GridSpacing";
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
 	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
@@ -167,6 +168,7 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::bShowShadowFrustum] = Opts.ShowFlags.bShowShadowFrustum;
 	Obj[Key::bCollision] = Opts.ShowFlags.bCollision;
 	Obj[Key::bShowCollisionShape] = Opts.ShowFlags.bShowCollisionShape;
+	Obj[Key::bParticle] = Opts.ShowFlags.bParticle;
 	Obj[Key::GridSpacing] = Opts.GridSpacing;
 	Obj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
 	Obj[Key::CameraMoveSensitivity] = Opts.CameraMoveSensitivity;
@@ -223,6 +225,8 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.ShowFlags.bCollision = Obj[Key::bCollision].ToBool();
 	if (Obj.hasKey(Key::bShowCollisionShape))
 		Opts.ShowFlags.bShowCollisionShape = Obj[Key::bShowCollisionShape].ToBool();
+	if (Obj.hasKey(Key::bParticle))
+		Opts.ShowFlags.bParticle = Obj[Key::bParticle].ToBool();
 	if (Obj.hasKey(Key::GridSpacing))
 		Opts.GridSpacing = static_cast<float>(Obj[Key::GridSpacing].ToFloat());
 	if (Obj.hasKey(Key::GridHalfLineCount))
