@@ -123,6 +123,79 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	return Material;
 }
 
+UMaterialInstance* FMaterialManager::GetOrCreateMaterialInstance(const FString& MatInstFilePath)
+{
+	std::filesystem::path Path(FPaths::ToWide(MatInstFilePath));
+	FString GenericPath = FPaths::ToUtf8(Path.generic_wstring());
+
+	// 1. 캐시 반환
+	auto It = MaterialInstanceCache.find(GenericPath);
+	if (It != MaterialInstanceCache.end())
+	{
+		return It->second;
+	}
+
+	json::JSON JsonData = ReadJsonFile(GenericPath);
+	if (JsonData.IsNull())
+	{
+		return nullptr;
+	}
+
+	FString ParentMaterialPath = JsonData[MatKeys::ParentMaterial].ToString().c_str();
+	if (ParentMaterialPath.empty())
+	{
+		return nullptr;
+	}
+
+	UMaterial* ParentMaterial = GetOrCreateMaterial(ParentMaterialPath);
+	if (!ParentMaterial)
+	{
+		return nullptr;
+	}
+
+	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> Buffers;
+	if (ParentMaterial->GetTemplate())
+	{
+		Buffers = CreateConstantBuffers(ParentMaterial->GetTemplate());
+	}
+
+	UMaterialInstance* MaterialInstance = UObjectManager::Get().CreateObject<UMaterialInstance>();
+	MaterialInstance->Create(GenericPath, ParentMaterial, std::move(Buffers));
+	MaterialInstanceCache.emplace(GenericPath, MaterialInstance);
+
+	ApplyParameters(MaterialInstance, JsonData);
+	ApplyTextures(MaterialInstance, JsonData);
+
+	return MaterialInstance;
+}
+
+UMaterialInterface* FMaterialManager::GetOrCreateMaterialInterface(const FString& AssetPath)
+{
+	if (AssetPath.empty() || AssetPath == "None")
+	{
+		return nullptr;
+	}
+
+	std::filesystem::path Path(FPaths::ToWide(AssetPath));
+	FString GenericPath = FPaths::ToUtf8(Path.generic_wstring());
+
+	FString Extension = FPaths::ToUtf8(Path.extension().wstring());
+
+	if (Extension == ".mat")
+	{
+		return GetOrCreateMaterial(GenericPath);
+	}
+
+	if (Extension == ".matinst")
+	{
+		return GetOrCreateMaterialInstance(GenericPath);
+	}
+
+	// 확장자가 없거나 legacy path면 우선 기존 material로 처리
+	// 필요하면 여기서 .mat -> .matinst fallback 탐색도 가능
+	return GetOrCreateMaterial(GenericPath);
+}
+
 json::JSON FMaterialManager::ReadJsonFile(const FString& FilePath) const
 {
 	std::ifstream File(FPaths::ToWide(FilePath).c_str());
@@ -158,9 +231,9 @@ TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> FMaterialManager::Create
 	return InjectedBuffers;
 }
 
-void FMaterialManager::ApplyParameters(UMaterial* Material, json::JSON& JsonData)
+void FMaterialManager::ApplyParameters(UMaterialInterface* Material, json::JSON& JsonData)
 {
-	if (!JsonData.hasKey(MatKeys::Parameters)) return;
+	if (!Material || !JsonData.hasKey(MatKeys::Parameters)) return;
 
 	for (auto& Pair : JsonData[MatKeys::Parameters].ObjectRange())
 	{
@@ -185,9 +258,9 @@ void FMaterialManager::ApplyParameters(UMaterial* Material, json::JSON& JsonData
 	}
 }
 
-void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData)
+void FMaterialManager::ApplyTextures(UMaterialInterface* Material, json::JSON& JsonData)
 {
-	if (!JsonData.hasKey(MatKeys::Textures)) return;
+	if (!Material || !JsonData.hasKey(MatKeys::Textures)) return;
 
 	for (auto& Pair : JsonData[MatKeys::Textures].ObjectRange())
 	{
@@ -480,6 +553,7 @@ void FMaterialManager::Release()
 		if (Mat) Mat->ReleaseGPUBuffers();
 	}
 	MaterialCache.clear();
+	MaterialInstanceCache.clear();
 
 	// 3. Device 참조 해제
 	// 외부에서 주입받은 리소스이므로 포인터만 초기화합니다.

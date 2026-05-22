@@ -16,6 +16,7 @@ namespace MatKeys
 	static constexpr const char* BlendState = "BlendState";
 	static constexpr const char* DepthStencilState = "DepthStencilState";
 	static constexpr const char* RasterizerState = "RasterizerState";
+	static constexpr const char* ParentMaterial = "ParentMaterial";
 	static constexpr const char* Parameters = "Parameters";
 	static constexpr const char* Textures = "Textures";
 	static constexpr const char* ShadowMode = "ShadowMode";	
@@ -23,6 +24,8 @@ namespace MatKeys
 
 class FMaterialTemplate;
 class UMaterial;
+class UMaterialInterface;
+class UMaterialInstance;
 struct FMaterialConstantBuffer;
 enum class EMaterialShadowMode : uint8;
 
@@ -38,6 +41,7 @@ class FMaterialManager : public TSingleton<FMaterialManager>
 
     TMap<FString, FMaterialTemplate*> TemplateCache;    // 셰이더 경로 → Template (공유)
 	TMap<FString, UMaterial*> MaterialCache;	//MatFilePath
+	TMap<FString, UMaterialInstance*> MaterialInstanceCache;
 	TArray<FMaterialAssetListItem> AvailableMaterialFiles;
 
 	ID3D11Device* Device = nullptr;
@@ -50,8 +54,11 @@ public:
 	// 지정된 디렉토리 내의 모든 머티리얼을 미리 로드
 	void LoadAllMaterials(ID3D11Device* Device);
 
-    // UMaterial 생성
+	// UMaterial 생성
 	UMaterial* GetOrCreateMaterial(const FString& MatFilePath);
+	UMaterialInstance* GetOrCreateMaterialInstance(const FString& MatInstFilePath);
+
+	UMaterialInterface* GetOrCreateMaterialInterface(const FString& AssetPath);
 
 	void ScanMaterialAssets();
 	const TArray<FMaterialAssetListItem>& GetAvailableMaterialFiles() const { return AvailableMaterialFiles; }
@@ -65,8 +72,8 @@ private:
 
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> CreateConstantBuffers(FMaterialTemplate* Template);
 
-	void ApplyParameters(UMaterial* Material, json::JSON& JsonData);
-	void ApplyTextures(UMaterial* Material, json::JSON& JsonData);
+	void ApplyParameters(UMaterialInterface* Material, json::JSON& JsonData);
+	void ApplyTextures(UMaterialInterface* Material, json::JSON& JsonData);
 
 	ERenderPass StringToRenderPass(const FString& Str) const;
 	EBlendState StringToBlendState(const FString& Str, ERenderPass Pass) const;

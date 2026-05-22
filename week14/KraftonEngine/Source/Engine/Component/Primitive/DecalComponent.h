@@ -5,6 +5,7 @@
 #include "Object/Ptr/SoftObjectPtr.h"
 
 class UStaticMeshComponent;
+class UMaterialInterface;
 
 // class DecalProxy;
 
@@ -36,8 +37,8 @@ public:
 	FVector4 GetColor() const;
 
 	// --- Material ---
-	void SetMaterial(class UMaterial* InMaterial);
-	class UMaterial* GetMaterial() const { return Material; }
+	void SetMaterial(UMaterialInterface* InMaterial);
+	UMaterialInterface* GetMaterial() const { return Material; }
 
 	const FConvexVolume GetDecalVolume() { return ConvexVolume; }
 	void UpdateDecalVolumeFromTransform();
@@ -59,7 +60,7 @@ private:
 	TArray<UStaticMeshComponent*> Receivers;
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material", AssetType="Material")
 	FSoftObjectPtr MaterialSlot = "None";
-	UMaterial* Material = nullptr;
+	UMaterialInterface* Material = nullptr;
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Color", Type=Vec4)
 	FVector4 Color = {1,1,1,1};
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="FadeInDelay")

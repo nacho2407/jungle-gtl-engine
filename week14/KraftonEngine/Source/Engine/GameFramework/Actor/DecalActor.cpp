@@ -1,8 +1,9 @@
-#include "DecalActor.h"
+﻿#include "DecalActor.h"
 #include "Component/Primitive/DecalComponent.h"
 #include "Component/Primitive/BillboardComponent.h"
 #include "Component/Primitive/TextRenderComponent.h"
 #include "Materials/MaterialManager.h"
+#include "Materials/Material.h"
 
 ADecalActor::ADecalActor()
 	: DecalComponent(nullptr)
@@ -14,7 +15,7 @@ ADecalActor::ADecalActor()
 void ADecalActor::InitDefaultComponents()
 {
 	DecalComponent = AddComponent<UDecalComponent>();
-	auto Material = FMaterialManager::Get().GetOrCreateMaterial(DefaultDecalMaterialPath);
+	auto Material = FMaterialManager::Get().GetOrCreateMaterialInterface(DefaultDecalMaterialPath);
 	DecalComponent->SetMaterial(Material);
 	SetRootComponent(DecalComponent);
 

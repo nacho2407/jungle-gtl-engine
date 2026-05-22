@@ -1,4 +1,4 @@
-#include "Render/Proxy/DecalSceneProxy.h"
+﻿#include "Render/Proxy/DecalSceneProxy.h"
 
 #include "Component/Primitive/DecalComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
@@ -71,10 +71,11 @@ void FDecalSceneProxy::UpdateMaterial()
 	// SRV 동기화 (DecalMaterial의 텍스처를 래퍼에 복사)
 	if (DecalMaterial)
 	{
-		const ID3D11ShaderResourceView* const* SRVs = DecalMaterial->GetCachedSRVs();
 		for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
+		{
 			DecalProxyMaterial->SetCachedSRV(static_cast<EMaterialTextureSlot>(s),
-				const_cast<ID3D11ShaderResourceView*>(SRVs[s]));
+				DecalMaterial->GetSRV(static_cast<EMaterialTextureSlot>(s)));
+		}
 	}
 
 	// Per-shader CB (WorldToDecal, Color) 바인딩

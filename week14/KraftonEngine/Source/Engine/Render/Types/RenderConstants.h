@@ -329,12 +329,12 @@ struct FConstantBufferBinding
 	}
 };
 
-class UMaterial;
+class UMaterialInterface;
 
 // 섹션별 드로우 정보 — 머티리얼 포인터 + 인덱스 범위만 보관
 struct FMeshSectionDraw
 {
-	UMaterial* Material = nullptr;
+	UMaterialInterface* Material = nullptr;
 	uint32 FirstIndex = 0;
 	uint32 IndexCount = 0;
 };

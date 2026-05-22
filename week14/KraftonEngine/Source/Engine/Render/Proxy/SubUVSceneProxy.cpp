@@ -1,4 +1,4 @@
-#include "Render/Proxy/SubUVSceneProxy.h"
+﻿#include "Render/Proxy/SubUVSceneProxy.h"
 #include "Component/Primitive/SubUVComponent.h"
 #include "Render/Types/FrameContext.h"
 #include "Render/Resource/MeshBufferManager.h"
@@ -91,7 +91,7 @@ void FSubUVSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		const uint32 Col = CachedFrameIndex % Cols;
 		const uint32 Row = CachedFrameIndex / Cols;
 
-		UMaterial* SubUVMat = SectionDraws.empty() ? nullptr : SectionDraws[0].Material;
+		UMaterial* SubUVMat = GetSubUVComponent()->GetSubUVMaterial();
 		if (!SubUVMat) return;
 		FSubUVRegionConstants& Region = SubUVMat->GetPerShaderAs<FSubUVRegionConstants>();
 		Region.U = Col * FrameW;

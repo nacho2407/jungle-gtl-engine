@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
@@ -38,7 +38,7 @@ struct FStaticMeshSection
 struct FStaticMaterial
 {
 	// std::shared_ptr<class UMaterialInterface> MaterialInterface;
-	UMaterial* MaterialInterface = nullptr;
+	UMaterialInterface* MaterialInterface = nullptr;
 	FString MaterialSlotName = "None";	// "None"은 특별한 슬롯 이름으로, OBJ 파일에서 머티리얼이 지정되지 않은 섹션에 할당됩니다.
 	FString MaterialPath;				// .mat 경로
 
@@ -60,7 +60,7 @@ struct FStaticMaterial
 		{
 			if (!Mat.MaterialPath.empty())
 			{
-				Mat.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial(Mat.MaterialPath);
+				Mat.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterialInterface(Mat.MaterialPath);
 			}
 			else
 			{
