@@ -73,7 +73,9 @@ struct FDrawCommand
 
 	// ===== Sort =====
 	uint64 SortKey = 0;                              // 정렬 키 (Pass → Shader → MeshBuffer → SRV)
-	float SortDepth = 0.0f;                          // 투명 오브젝트용 깊이값 (카메라로부터의 거리)
+
+	int32 TranslucentSortPriority = 0;				// Translucent 패스에서의 추가 정렬 우선순위 (같은 SortKey 내에서) 
+	float TranslucentSortDepth = 0.0f;				// 투명 오브젝트용 깊이값 (카메라로부터의 거리)
 
 	// ===== Profiling =====
 	bool bIsSkeletal = false;

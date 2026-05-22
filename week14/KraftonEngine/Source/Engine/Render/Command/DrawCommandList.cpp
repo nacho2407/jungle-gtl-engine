@@ -72,9 +72,14 @@ void FDrawCommandList::Sort()
 
 			if (A.Pass == ERenderPass::AlphaBlend)
 			{
-				if (A.SortDepth != B.SortDepth)
+				if (A.TranslucentSortPriority != B.TranslucentSortPriority)
 				{
-					return A.SortDepth > B.SortDepth;
+					return A.TranslucentSortPriority < B.TranslucentSortPriority;
+				}
+
+				if (A.TranslucentSortDepth != B.TranslucentSortDepth)
+				{
+					return A.TranslucentSortDepth > B.TranslucentSortDepth;
 				}
 			}
 
