@@ -1,11 +1,15 @@
 ﻿#include "ParticleSystem.h"
 
 #include "Particles/Module/ParticleModule.h"
+#include "Particles/Module/ParticleModuleTypeDataBase.h"
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Serialization/Archive.h"
 
 UParticleLODLevel::~UParticleLODLevel()
 {
+	delete TypeDataModule;
+	TypeDataModule = nullptr;
+
 	for (UParticleModule* Module : Modules)
 	{
 		delete Module;
@@ -30,6 +34,15 @@ UParticleEmitter::~UParticleEmitter()
 
 FParticleEmitterInstance* UParticleEmitter::CreateInstance(UParticleSystemComponent* Component)
 {
+	UParticleLODLevel* LODLevel = GetLODLevel(0);
+	if (LODLevel && LODLevel->GetTypeDataModule())
+	{
+		if (FParticleEmitterInstance* Instance = LODLevel->GetTypeDataModule()->CreateInstance(this, Component))
+		{
+			return Instance;
+		}
+	}
+
 	FParticleEmitterInstance* Instance = new FParticleEmitterInstance();
 	Instance->Init(this, Component);
 	return Instance;
@@ -107,8 +120,8 @@ void UParticleSystem::InitializeDefaultEmitters()
 	UParticleLODLevel* DefaultLOD = UObjectManager::Get().CreateObject<UParticleLODLevel>();
 	DefaultLOD->SetLevel(0);
 	DefaultLOD->SetEnabled(true);
-	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleRequired>());
-	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleSpawn>());
+
+	//모듈 확인용 임시 코드
 	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleLifetime>());
 	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleLocation>());
 	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleVelocity>());

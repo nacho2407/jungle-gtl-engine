@@ -2,11 +2,12 @@
 
 #include "Object/Object.h"
 #include "Particles/Runtime/ParticleRuntimeTypes.h"
+#include "Core/Property/SoftObjectProperty.h"
 
 #include "Source/Engine/Particles/Module/ParticleModule.generated.h"
 
 struct FParticleEmitterInstance;
-
+class UMaterialInterface;
 
 UCLASS()
 class UParticleModule : public UObject
@@ -27,6 +28,12 @@ class UParticleModuleRequired : public UParticleModule
 {
 public:
 	GENERATED_BODY()
+	
+	UMaterialInterface* Material = nullptr;
+
+	UPROPERTY(Edit, Save, Category = "Particle|Required", DisplayName = "Material", AssetType = "Material")
+	FSoftObjectPtr MaterialPath = "None";
+
 	UPROPERTY(Edit, Save, Category="Particle|Required", DisplayName="Emitter Duration", Min=0.0f, Speed=0.1f)
 	float EmitterDuration = 1.0f;
 	UPROPERTY(Edit, Save, Category="Particle|Required", DisplayName="Looping")

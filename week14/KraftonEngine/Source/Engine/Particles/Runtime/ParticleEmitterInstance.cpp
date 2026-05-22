@@ -163,7 +163,9 @@ void FParticleEmitterInstance::KillParticle(int32 ParticleIndex)
 
 void FParticleEmitterInstance::AllocateParticleData(int32 InMaxActiveParticles)
 {
+	const int32 RequestedInstancePayloadSize = InstancePayloadSize;
 	ReleaseParticleData();
+	InstancePayloadSize = RequestedInstancePayloadSize;
 
 	MaxActiveParticles = InMaxActiveParticles > 0 ? InMaxActiveParticles : 0;
 	if (MaxActiveParticles > 65535)

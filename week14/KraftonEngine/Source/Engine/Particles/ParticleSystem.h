@@ -7,6 +7,7 @@ class FArchive;
 class UParticleModule;
 class UParticleSystemComponent;
 class UParticleModuleRequired;
+class UParticleModuleTypeDataBase;
 
 #include "Source/Engine/Particles/ParticleSystem.generated.h"
 
@@ -21,9 +22,11 @@ public:
 	bool IsEnabled() const { return bEnabled; }
 	const TArray<UParticleModule*>& GetModules() const { return Modules; }
 	TArray<UParticleModule*>& GetMutableModules() { return Modules; }
+	UParticleModuleTypeDataBase* GetTypeDataModule() const { return TypeDataModule; }
 
 	void SetLevel(int32 InLevel) { Level = InLevel; }
 	void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
+	void SetTypeDataModule(UParticleModuleTypeDataBase* InTypeDataModule) { TypeDataModule = InTypeDataModule; }
 
 	void Serialize(FArchive& Ar) override;
 
@@ -46,8 +49,9 @@ private:
 	UPROPERTY(Edit, Save, Category="Particle|LOD", DisplayName="Enabled")
 	bool bEnabled = true;
 
-	UParticleModuleRequired* RequiredModule;
-	//UParticleModuleTypeDataBase* TypeDataModule;
+	UParticleModuleRequired* RequiredModule = nullptr;
+	UPROPERTY(Edit, Save, Instanced, Category="Particle|LOD", DisplayName="Type Data", AllowedClass=UParticleModuleTypeDataBase)
+	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
 	UPROPERTY(Edit, Save, Instanced, Category="Particle|LOD", DisplayName="Modules", AllowedClass=UParticleModule)
 	TArray<UParticleModule*> Modules;
 };

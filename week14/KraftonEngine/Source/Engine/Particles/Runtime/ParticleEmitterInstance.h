@@ -32,6 +32,26 @@ struct FParticleEmitterInstance
 	int32 GetMaxParticleCount() const { return MaxActiveParticles; }
 	float GetEmitterTime() const { return EmitterTime; }
 
+	template<typename T>
+	T* GetParticlePayload(int32 ParticleIndex)
+	{
+		if (!ParticleData || ParticleIndex < 0 || ParticleIndex >= ActiveParticles)
+		{
+			return nullptr;
+		}
+		return reinterpret_cast<T*>(ParticleData + ParticleIndex * ParticleStride + PayloadOffset);
+	}
+
+	template<typename T>
+	const T* GetParticlePayload(int32 ParticleIndex) const
+	{
+		if (!ParticleData || ParticleIndex < 0 || ParticleIndex >= ActiveParticles)
+		{
+			return nullptr;
+		}
+		return reinterpret_cast<const T*>(ParticleData + ParticleIndex * ParticleStride + PayloadOffset);
+	}
+
 	UParticleEmitter* SpriteTemplate = nullptr;
 	UParticleSystemComponent* Component = nullptr;
 
