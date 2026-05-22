@@ -114,4 +114,8 @@ private:
 	// D3D 디바이스 캐시 (Create 시 설정, 변하지 않음)
 	ID3D11Device*        CachedDevice  = nullptr;
 	ID3D11DeviceContext* CachedContext = nullptr;
+
+	// 프레임마다 Camera 정보 캐시
+	FVector CollectCameraPosition;
+	FVector CollectCameraForward;
 };

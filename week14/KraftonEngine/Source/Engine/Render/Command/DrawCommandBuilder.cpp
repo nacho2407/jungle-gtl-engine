@@ -86,6 +86,9 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 	bCollectWeightBoneHeatMap = Frame.RenderOptions.bWeightBoneHeatMap;
 	CollectWeightBoneHeatMapBoneIndex = Frame.RenderOptions.WeightBoneHeatMapBoneIndex;
 
+	CollectCameraPosition = Frame.CameraPosition;
+	CollectCameraForward = Frame.CameraForward;
+
 	bHasSelectionMaskCommands = false;
 
 	// 동적 지오메트리 초기화
@@ -478,6 +481,12 @@ void FDrawCommandBuilder::BuildCommandForSection(FScene& Scene, const FPrimitive
 		? BuildCtx.SkeletalProxy->GetSkinMatrixSRV(CachedDevice, CachedContext)
 		: nullptr;
 	Cmd.Bindings.BoneHeatMapCB = BuildCtx.bWeightBoneHeatMap ? &BoneHeatMapCB : nullptr;
+
+	if (Pass == ERenderPass::AlphaBlend)
+	{
+		const FVector ToObject = Proxy.GetCachedWorldPos() - CollectCameraPosition;
+		Cmd.SortDepth = ToObject.Dot(CollectCameraForward);
+	}
 
 	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
 
