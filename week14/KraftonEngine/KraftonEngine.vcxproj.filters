@@ -1560,6 +1560,11 @@
     <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp">
       <Filter>Intermediate\Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\ParticleSystem.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleSystemManager.cpp" />
+    <ClCompile Include="Source\Engine\Component\Particle\ParticleSystemComponent.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Render\ParticleSystemSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -4400,6 +4405,13 @@
     <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp">
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleHelper.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleSystem.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleSystemManager.h" />
+    <ClInclude Include="Source\Engine\Component\Particle\ParticleSystemComponent.h" />
+    <ClInclude Include="Source\Engine\Particles\Render\ParticleSystemSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.h" />
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleRuntimeTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

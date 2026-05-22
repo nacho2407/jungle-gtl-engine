@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Render/Proxy/DirtyFlag.h"
@@ -65,6 +65,9 @@ public:
 	bool CastsShadow()  const { return bCastShadow; }
 	bool CastsShadowAsTwoSided() const { return bCastShadowAsTwoSided; }
 
+	// --- Translucent Sort Priority ---
+	int32 GetTranslucentSortPriority() const { return TranslucentSortPriority; }
+
 	// --- 렌더 데이터 (DrawCommandBuilder가 읽음) ---
 	ERenderPass        GetRenderPass()  const;
 	FShader*           GetShader()      const;
@@ -127,6 +130,9 @@ protected:
 	bool bVisible = true;
 	bool bCastShadow = true;
 	bool bCastShadowAsTwoSided = false;
+
+	// Translucent 렌더링 우선순위
+	int32 TranslucentSortPriority = 0;
 
 	// LOD (서브클래스 UpdateLOD에서 변경)
 	uint32 CurrentLOD = 0;

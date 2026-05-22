@@ -484,8 +484,10 @@ void FDrawCommandBuilder::BuildCommandForSection(FScene& Scene, const FPrimitive
 
 	if (Pass == ERenderPass::AlphaBlend)
 	{
+		Cmd.TranslucentSortPriority = Proxy.GetTranslucentSortPriority();
+
 		const FVector ToObject = Proxy.GetCachedWorldPos() - CollectCameraPosition;
-		Cmd.SortDepth = ToObject.Dot(CollectCameraForward);
+		Cmd.TranslucentSortDepth = ToObject.Dot(CollectCameraForward);
 	}
 
 	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);

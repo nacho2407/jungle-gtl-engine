@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
@@ -37,6 +37,8 @@ struct FObjMaterialInfo
 	float Ns; // specular exponent
 	float Ni; // optical density
 	int32 illum; // illumination model
+
+	float Opacity = 1.0f; // Dissolve (1.0 = fully opaque, 0.0 = fully transparent)
 };
 
 
