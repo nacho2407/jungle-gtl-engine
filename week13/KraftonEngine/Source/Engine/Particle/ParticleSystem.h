@@ -14,8 +14,9 @@ class UParticleSystem : public UObject
 {
 public:
     GENERATED_BODY()
-    UParticleSystem() = default;
-    ~UParticleSystem() override        = default;
+
+    UParticleSystem()           = default;
+    ~UParticleSystem() override = default;
 
     void SetSourcePath(const FString& InPath) { SourcePath = InPath; }
 

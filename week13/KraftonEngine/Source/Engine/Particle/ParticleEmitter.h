@@ -8,6 +8,7 @@
 class UParticleLODLevel;
 class UParticleModuleRequired;
 class UParticleModuleTypeDataBase;
+class FArchive;
 
 UCLASS()
 class UParticleEmitter : public UObject
@@ -19,6 +20,7 @@ public:
     ~UParticleEmitter() override = default;
 
     void CacheEmitterModuleInfo();
+    void Serialize(FArchive& Ar) override;
 
     TArray<UParticleLODLevel*>&       GetLODLevels() { return LODLevels; }
     const TArray<UParticleLODLevel*>& GetLODLevels() const { return LODLevels; }

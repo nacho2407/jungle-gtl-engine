@@ -26,6 +26,11 @@ private:
     void SaveAsset();
     void SelectEmitter(int32 EmitterIndex, int32 ModuleIndex);
 
+    void AddEmitter();
+    void DeleteSelectedEmitter();
+    void SyncEmitterUIState();
+    void RestartPreviewSimulation();
+
     void RenderMenuBar();
     void RenderToolbar();
     void RenderStatusBar();

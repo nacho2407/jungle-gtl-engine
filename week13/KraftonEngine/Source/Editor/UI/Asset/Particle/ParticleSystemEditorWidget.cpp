@@ -207,11 +207,7 @@ void FParticleSystemEditorWidget::Open(UObject* Object)
         WindowTitle = "Particle System Editor - ";
         WindowTitle += ParticleSystem->GetSourcePath();
 
-        EmitterEnabled.assign(ParticleSystem->GetEmitters().size(), true);
-        if (!ParticleSystem->GetEmitters().empty())
-        {
-            SelectEmitter(0, -1);
-        }
+        SyncEmitterUIState();
     }
 }
 
@@ -265,6 +261,8 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
         }
         return;
     }
+
+    SyncEmitterUIState();
 
     RenderMenuBar();
     RenderToolbar();
@@ -326,6 +324,7 @@ void FParticleSystemEditorWidget::SaveAsset()
 {
     if (UParticleSystem* ParticleSystem = GetParticleSystem())
     {
+        SyncEmitterUIState();
         if (FParticleSystemManager::Get().Save(ParticleSystem))
         {
             ClearDirty();
@@ -343,6 +342,109 @@ void FParticleSystemEditorWidget::SelectEmitter(int32 EmitterIndex, int32 Module
     {
         Visible = true;
     }
+}
+
+void FParticleSystemEditorWidget::AddEmitter()
+{
+    UParticleSystem* ParticleSystem = GetParticleSystem();
+    if (!ParticleSystem)
+    {
+        return;
+    }
+
+    UParticleEmitter* NewEmitter = UObjectManager::Get().CreateObject<UParticleEmitter>(ParticleSystem);
+    if (!NewEmitter)
+    {
+        return;
+    }
+
+    NewEmitter->CacheEmitterModuleInfo();
+
+    TArray<UParticleEmitter*> Emitters = ParticleSystem->GetEmitters();
+    Emitters.push_back(NewEmitter);
+
+    SyncEmitterUIState();
+
+    const int32 NewEmitterIndex = static_cast<int32>(Emitters.size()) - 1;
+    SelectEmitter(NewEmitterIndex, -1);
+
+    MarkDirty();
+    RestartPreviewSimulation();
+}
+
+void FParticleSystemEditorWidget::DeleteSelectedEmitter()
+{
+    UParticleSystem* ParticleSystem = GetParticleSystem();
+    if (!ParticleSystem)
+    {
+        return;
+    }
+
+    TArray<UParticleEmitter*>& Emitters = ParticleSystem->GetEmitters();
+
+    if (SelectedEmitterIndex < 0 || SelectedEmitterIndex >= static_cast<int32>(Emitters.size()))
+    {
+        return;
+    }
+
+    UParticleEmitter* RemovedEmitter = Emitters[SelectedEmitterIndex];
+
+    Emitters.erase(Emitters.begin() + SelectedEmitterIndex);
+
+    if (RemovedEmitter)
+    {
+        UObjectManager::Get().DestroyObject(RemovedEmitter);
+    }
+
+    SelectedEmitterIndex = -1;
+    SelectedModuleIndex  = -1;
+
+    SyncEmitterUIState();
+
+    MarkDirty();
+    RestartPreviewSimulation();
+}
+
+void FParticleSystemEditorWidget::SyncEmitterUIState()
+{
+    UParticleSystem* ParticleSystem = GetParticleSystem();
+
+    const int32 EmitterCount = ParticleSystem ? static_cast<int32>(ParticleSystem->GetEmitters().size()) : 0;
+
+    const int32 OldCount = static_cast<int32>(EmitterEnabled.size());
+
+    if (OldCount < EmitterCount)
+    {
+        EmitterEnabled.resize(EmitterCount, true);
+    }
+    else if (OldCount > EmitterCount)
+    {
+        EmitterEnabled.resize(EmitterCount);
+    }
+
+    if (EmitterCount <= 0)
+    {
+        SelectedEmitterIndex = -1;
+        SelectedModuleIndex  = -1;
+        return;
+    }
+
+    if (SelectedEmitterIndex < 0 || SelectedEmitterIndex >= EmitterCount)
+    {
+        SelectEmitter(0, -1);
+    }
+}
+
+void FParticleSystemEditorWidget::RestartPreviewSimulation()
+{
+    bSimulating = true;
+    PreviewTime = 0.0f;
+
+    // TODO
+    // if (PreviewPSC)
+    // {
+    //     PreviewPSC->ResetSystem();
+    // }
 }
 
 // ── 메뉴 바 (패널 1) ─────────────────────────────────────────────────────────
@@ -443,8 +545,7 @@ void FParticleSystemEditorWidget::RenderToolbar()
 
     if (Tool("Restart Sim", "Restart the preview simulation"))
     {
-        PreviewTime = 0.0f;
-        bSimulating = true;
+        RestartPreviewSimulation();
     }
     Tool("Restart Level", "Restart all level instances of this system"); // TODO
     Group();
@@ -570,8 +671,7 @@ void FParticleSystemEditorWidget::RenderViewportPanel(float Width, float Height)
         ImGui::SameLine();
         if (ImGui::Button("Restart", ImVec2(72.0f, 0.0f)))
         {
-            PreviewTime = 0.0f;
-            bSimulating = true;
+            RestartPreviewSimulation();
         }
         ImGui::SameLine();
         ImGui::TextColored(PSE::DimTextV, "Sim Time  %.2fs   %s", PreviewTime, bSimulating ? "(playing)" : "(paused)");
@@ -592,7 +692,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
     {
         if (ImGui::Button("+ Add Emitter"))
         {
-            // TODO: 새 UParticleEmitter 를 생성해 파티클 시스템에 추가.
+            AddEmitter();
         }
 
         if (EmitterCount == 0)

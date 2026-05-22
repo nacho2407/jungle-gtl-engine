@@ -1,8 +1,16 @@
 ﻿#include "ParticleEmitter.h"
 
+#include "Serialization/Archive.h"
+
 void UParticleEmitter::CacheEmitterModuleInfo()
 {
     // TODO: LODLevel/ParticleModule 들어오면 작업
+}
+
+void UParticleEmitter::Serialize(FArchive& Ar)
+{
+    int32 Version = 0;
+    Ar << Version;
 }
 
 UParticleLODLevel* UParticleEmitter::GetLODLevel(int32 LODIndex) const
