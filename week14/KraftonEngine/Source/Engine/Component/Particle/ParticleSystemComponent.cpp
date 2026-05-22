@@ -15,14 +15,14 @@ UParticleSystemComponent::~UParticleSystemComponent()
 
 void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 {
-	if (ParticleSystemTemplate.Get() == InTemplate)
+	if (ParticleSystem.Get() == InTemplate)
 	{
 		return;
 	}
 
-	ParticleSystemTemplate = InTemplate;
-	ParticleSystemTemplatePath = InTemplate ? InTemplate->GetAssetPathFileName() : "None";
-	ParticleSystemTemplatePath.SetCachedObject(InTemplate);
+	ParticleSystem = InTemplate;
+	ParticleSystemPath = InTemplate ? InTemplate->GetAssetPathFileName() : "None";
+	ParticleSystemPath.SetCachedObject(InTemplate);
 	ResetSystem();
 	MarkRenderStateDirty();
 }
@@ -73,16 +73,34 @@ FPrimitiveSceneProxy* UParticleSystemComponent::CreateSceneProxy()
 void UParticleSystemComponent::PostDuplicate()
 {
 	UPrimitiveComponent::PostDuplicate();
-	LoadTemplateFromPath();
+
+	if (!ParticleSystemPath.IsNull())
+	{
+		LoadTemplateFromPath();
+	}
+
+	if (ParticleSystem)
+	{
+		ParticleSystemPath.SetCachedObject(ParticleSystem.Get());
+		ResetSystem();
+		MarkRenderStateDirty();
+	}
 }
 
 void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "ParticleSystemTemplatePath") == 0 || strcmp(PropertyName, "Particle System") == 0)
+	if (strcmp(PropertyName, "ParticleSystemPath") == 0 || strcmp(PropertyName, "Particle System") == 0)
 	{
-		LoadTemplateFromPath();
+		if (ParticleSystemPath.IsNull())
+		{
+			SetTemplate(nullptr);
+		}
+		else
+		{
+			LoadTemplateFromPath();
+		}
 	}
 }
 
@@ -115,12 +133,12 @@ void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 void UParticleSystemComponent::InitializeEmitterInstances()
 {
-	if (!ParticleSystemTemplate)
+	if (!ParticleSystem)
 	{
 		return;
 	}
 
-	const TArray<UParticleEmitter*>& Emitters = ParticleSystemTemplate->GetEmitters();
+	const TArray<UParticleEmitter*>& Emitters = ParticleSystem->GetEmitters();
 	EmitterInstances.reserve(Emitters.size());
 
 	for (UParticleEmitter* Emitter : Emitters)
@@ -139,21 +157,25 @@ void UParticleSystemComponent::InitializeEmitterInstances()
 
 void UParticleSystemComponent::LoadTemplateFromPath()
 {
-	if (ParticleSystemTemplatePath.IsNull())
+	if (ParticleSystemPath.IsNull())
 	{
-		SetTemplate(nullptr);
 		return;
 	}
 
-	UParticleSystem* LoadedTemplate = FParticleSystemManager::Get().Load(ParticleSystemTemplatePath.ToString());
-	if (ParticleSystemTemplate.Get() == LoadedTemplate)
+	UParticleSystem* LoadedTemplate = FParticleSystemManager::Get().Load(ParticleSystemPath.ToString());
+	if (!LoadedTemplate)
 	{
-		ParticleSystemTemplatePath.SetCachedObject(LoadedTemplate);
 		return;
 	}
 
-	ParticleSystemTemplate = LoadedTemplate;
-	ParticleSystemTemplatePath.SetCachedObject(LoadedTemplate);
+	if (ParticleSystem.Get() == LoadedTemplate)
+	{
+		ParticleSystemPath.SetCachedObject(LoadedTemplate);
+		return;
+	}
+
+	ParticleSystem = LoadedTemplate;
+	ParticleSystemPath.SetCachedObject(LoadedTemplate);
 	ResetSystem();
 	MarkRenderStateDirty();
 }

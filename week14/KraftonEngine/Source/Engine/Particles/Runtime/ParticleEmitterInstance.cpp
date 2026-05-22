@@ -71,7 +71,8 @@ int32 FParticleEmitterInstance::SpawnParticles(float DeltaTime)
 		return 0;
 	}
 
-	SpawnFraction += SpawnRate * DeltaTime;
+	const float EffectiveSpawnRate = GetSpawnModule() ? GetSpawnModule()->SpawnRate : SpawnRate;
+	SpawnFraction += EffectiveSpawnRate * DeltaTime;
 	const int32 SpawnCount = static_cast<int32>(SpawnFraction);
 	if (SpawnCount <= 0)
 	{
@@ -113,6 +114,8 @@ void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle)
 	Particle.OneOverMaxLifetime = DefaultLifetime > 0.0f ? 1.0f / DefaultLifetime : 1.0f;
 	Particle.FrameIndex = ParticleCounter;
 	Particle.bAlive = true;
+
+	RunSpawnModules(Particle, EmitterTime);
 }
 
 void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
@@ -132,6 +135,7 @@ void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 		Particle.Position += Particle.Velocity * DeltaTime;
 		Particle.Rotation += Particle.RotationRate * DeltaTime;
 		Particle.RelativeTime = Particle.Age * Particle.OneOverMaxLifetime;
+		RunUpdateModules(Particle, DeltaTime);
 		++ParticleIndex;
 	}
 }

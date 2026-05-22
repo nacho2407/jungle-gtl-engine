@@ -26,13 +26,13 @@ public:
 
 class UParticleModuleSpawn : public UParticleModule
 {
-	public:
+public:
 	float SpawnRate = 10.0f;
 
 	virtual bool IsSpawnModule() const override { return true; }
 };
 
-class UParticleModuleLifeTime : public UParticleModule
+class UParticleModuleLifetime : public UParticleModule
 {
 public:
 	bool IsSpawnModule() const override { return true; }
@@ -68,10 +68,10 @@ class UParticleModuleVelocity : public UParticleModule
 public:
 	bool IsSpawnModule() const override { return true; }
 
-	FVector StartVelocity = FVector(0.0f, 0.0f, 100.0f);
+	FVector StartVelocity = FVector(0.0f, 100.0f, 0.0f);
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
-		Particle.Velocity += StartVelocity;
+		Particle.Velocity = StartVelocity;
 	}
 };
 
@@ -96,7 +96,7 @@ public:
 	}
 };
 
-class UPartticleModuleSize : public UParticleModule
+class UParticleModuleSize : public UParticleModule
 {
 public:
 	bool IsSpawnModule() const override { return true; }

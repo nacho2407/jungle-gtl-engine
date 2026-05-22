@@ -1,5 +1,6 @@
 ﻿#include "ParticleSystem.h"
 
+#include "Particles/Module/ParticleModule.h"
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Serialization/Archive.h"
 
@@ -124,6 +125,13 @@ void UParticleSystem::InitializeDefaultEmitters()
 	UParticleLODLevel* DefaultLOD = UObjectManager::Get().CreateObject<UParticleLODLevel>();
 	DefaultLOD->SetLevel(0);
 	DefaultLOD->SetEnabled(true);
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleRequired>());
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleSpawn>());
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleLifetime>());
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleLocation>());
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleVelocity>());
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleColor>());
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleSize>());
 
 	DefaultEmitter->AddLODLevel(DefaultLOD);
 
