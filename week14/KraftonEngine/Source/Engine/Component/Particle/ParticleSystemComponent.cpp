@@ -2,9 +2,9 @@
 
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemManager.h"
-#include "Particles/Render/ParticleSystemSceneProxy.h"
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Particles/Runtime/ParticleRuntimeTypes.h"
+#include "Render/Proxy/ParticleSystemSceneProxy.h"
 
 #include <cstring>
 

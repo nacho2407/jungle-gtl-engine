@@ -1,4 +1,4 @@
-#include "ParticleSystem.h"
+﻿#include "ParticleSystem.h"
 
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Serialization/Archive.h"
@@ -112,6 +112,22 @@ UParticleSystem::~UParticleSystem()
 		delete Emitter;
 	}
 	Emitters.clear();
+}
+
+void UParticleSystem::InitializeDefaultEmitters()
+{
+	UParticleEmitter* DefaultEmitter = UObjectManager::Get().CreateObject<UParticleEmitter>();
+	DefaultEmitter->SetMaxActiveParticles(100);
+	DefaultEmitter->SetEmitterDuration(1.0f);
+	DefaultEmitter->SetLooping(true);
+
+	UParticleLODLevel* DefaultLOD = UObjectManager::Get().CreateObject<UParticleLODLevel>();
+	DefaultLOD->SetLevel(0);
+	DefaultLOD->SetEnabled(true);
+
+	DefaultEmitter->AddLODLevel(DefaultLOD);
+
+	AddEmitter(DefaultEmitter);
 }
 
 void UParticleSystem::AddEmitter(UParticleEmitter* Emitter)

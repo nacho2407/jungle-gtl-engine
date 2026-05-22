@@ -67,8 +67,8 @@ protected:
 
 	float SpawnRate = 10.0f;
 	float DefaultLifetime = 1.0f;
-	FVector DefaultVelocity = FVector(0.0f, 0.0f, 100.0f);
-	FVector DefaultSize = FVector(10.0f, 10.0f, 1.0f);
+	FVector DefaultVelocity = FVector(0.0f, 0.0f, 5.0f);
+	FVector DefaultSize = FVector(1.0f, 1.0f, 1.0f);
 	FVector4 DefaultColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	float EmitterTime = 0.0f;
 	bool bActive = true;
