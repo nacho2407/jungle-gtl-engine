@@ -10,7 +10,6 @@
 
 UParticleSystemComponent::~UParticleSystemComponent()
 {
-	ClearEmitterRenderData();
 	ClearEmitterInstances();
 }
 
@@ -30,7 +29,6 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 
 void UParticleSystemComponent::ResetSystem()
 {
-	ClearEmitterRenderData();
 	ClearEmitterInstances();
 	InitializeEmitterInstances();
 }
@@ -63,7 +61,6 @@ void UParticleSystemComponent::Deactivate()
 
 void UParticleSystemComponent::EndPlay()
 {
-	ClearEmitterRenderData();
 	ClearEmitterInstances();
 	UPrimitiveComponent::EndPlay();
 }
@@ -98,8 +95,6 @@ void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 		return;
 	}
 
-	ClearEmitterRenderData();
-
 	bool bAnyEmitterTicked = false;
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
@@ -109,10 +104,6 @@ void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 		}
 
 		Instance->Tick(DeltaTime);
-		if (FDynamicEmitterDataBase* RenderData = Instance->BuildRenderData())
-		{
-			EmitterRenderData.push_back(RenderData);
-		}
 		bAnyEmitterTicked = true;
 	}
 
@@ -174,13 +165,4 @@ void UParticleSystemComponent::ClearEmitterInstances()
 		delete Instance;
 	}
 	EmitterInstances.clear();
-}
-
-void UParticleSystemComponent::ClearEmitterRenderData()
-{
-	for (FDynamicEmitterDataBase* RenderData : EmitterRenderData)
-	{
-		delete RenderData;
-	}
-	EmitterRenderData.clear();
 }

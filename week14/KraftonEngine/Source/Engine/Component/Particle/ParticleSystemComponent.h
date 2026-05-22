@@ -6,7 +6,6 @@
 
 #include "Source/Engine/Component/Particle/ParticleSystemComponent.generated.h"
 
-struct FDynamicEmitterDataBase;
 struct FParticleEmitterInstance;
 class UParticleSystem;
 
@@ -29,7 +28,7 @@ public:
 	void PostDuplicate() override;
 	void PostEditProperty(const char* PropertyName) override;
 
-	const TArray<FDynamicEmitterDataBase*>& GetEmitterRenderData() const { return EmitterRenderData; }
+	const TArray<FParticleEmitterInstance*>& GetEmitterInstances() const { return EmitterInstances; }
 
 protected:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
@@ -37,7 +36,6 @@ protected:
 private:
 	void InitializeEmitterInstances();
 	void ClearEmitterInstances();
-	void ClearEmitterRenderData();
 	void LoadTemplateFromPath();
 
 	TArray<FParticleEmitterInstance*> EmitterInstances;
@@ -45,6 +43,4 @@ private:
 
 	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Particle System", AssetType="UParticleSystem")
 	FSoftObjectPtr ParticleSystemTemplatePath = "None";
-
-	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
 };
