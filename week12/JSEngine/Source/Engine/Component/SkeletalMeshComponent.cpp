@@ -744,11 +744,11 @@ void USkeletalMeshComponent::HandleAnimNotify(const FAnimNotifyStateEvent& Notif
 	if (bDispatchLegacyAnimNotifyCallbacks)
 	{
 		OnAnimNotifyDelegate.Broadcast(this, Notify);
+	}
 
-		if (AActor* OwnerActor = GetOwner())
-		{
-			OwnerActor->OnAnimNotify(this, Notify);
-		}
+	if (AActor* OwnerActor = GetOwner())
+	{
+		OwnerActor->OnAnimNotify(this, Notify);
 	}
 }
 
@@ -763,11 +763,11 @@ void USkeletalMeshComponent::HandleAnimNotifyBegin(const FAnimNotifyStateEvent& 
 	if (bDispatchLegacyAnimNotifyCallbacks)
 	{
 		OnAnimNotifyBeginDelegate.Broadcast(this, Notify);
+	}
 
-		if (AActor* OwnerActor = GetOwner())
-		{
-			OwnerActor->OnAnimNotifyBegin(this, Notify);
-		}
+	if (AActor* OwnerActor = GetOwner())
+	{
+		OwnerActor->OnAnimNotifyBegin(this, Notify);
 	}
 }
 
@@ -781,11 +781,11 @@ void USkeletalMeshComponent::HandleAnimNotifyTick(const FAnimNotifyStateEvent& N
 	if (bDispatchLegacyAnimNotifyCallbacks)
 	{
 		OnAnimNotifyTickDelegate.Broadcast(this, Notify, DeltaTime);
+	}
 
-		if (AActor* OwnerActor = GetOwner())
-		{
-			OwnerActor->OnAnimNotifyTick(this, Notify, DeltaTime);
-		}
+	if (AActor* OwnerActor = GetOwner())
+	{
+		OwnerActor->OnAnimNotifyTick(this, Notify, DeltaTime);
 	}
 }
 
@@ -800,11 +800,11 @@ void USkeletalMeshComponent::HandleAnimNotifyEnd(const FAnimNotifyStateEvent& No
 	if (bDispatchLegacyAnimNotifyCallbacks)
 	{
 		OnAnimNotifyEndDelegate.Broadcast(this, Notify);
+	}
 
-		if (AActor* OwnerActor = GetOwner())
-		{
-			OwnerActor->OnAnimNotifyEnd(this, Notify);
-		}
+	if (AActor* OwnerActor = GetOwner())
+	{
+		OwnerActor->OnAnimNotifyEnd(this, Notify);
 	}
 }
 

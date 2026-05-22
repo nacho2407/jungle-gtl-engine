@@ -116,46 +116,35 @@ FString GetAnimNotifyClassDisplayName(const FString& ClassName)
     {
         return Class->GetDisplayName();
     }
-    return ClassName.empty() ? FString("None") : ClassName;
-}
-
-FString GetDefaultEditorNotifyClassName(float Duration)
-{
-    TArray<UClass*> NotifyClasses;
-    GetSelectableAnimNotifyClasses(NotifyClasses);
-
-    UClass* DesiredBaseClass = Duration > 0.0f ? UAnimNotifyState::StaticClass() : UAnimNotify::StaticClass();
-    for (UClass* Class : NotifyClasses)
-    {
-        if (Class && Class->IsChildOf(DesiredBaseClass))
-        {
-            return Class->GetName();
-        }
-    }
-
-    return NotifyClasses.empty() ? FString() : NotifyClasses.front()->GetName();
+    return ClassName.empty() ? FString("None / Name Only") : ClassName;
 }
 
 bool DrawAnimNotifyClassCombo(const char* Label, FString& InOutClassName)
 {
     TArray<UClass*> NotifyClasses;
     GetSelectableAnimNotifyClasses(NotifyClasses);
-    if (NotifyClasses.empty())
-    {
-        ImGui::TextDisabled("No AnimNotify classes are registered.");
-        return false;
-    }
-
-    if (InOutClassName.empty())
-    {
-        InOutClassName = NotifyClasses.front()->GetName();
-    }
 
     bool bChanged = false;
     const FString Preview = GetAnimNotifyClassDisplayName(InOutClassName);
     ImGui::SetNextItemWidth(220.0f);
     if (ImGui::BeginCombo(Label, Preview.c_str()))
     {
+        const bool bNoneSelected = InOutClassName.empty();
+        if (ImGui::Selectable("None / Name Only", bNoneSelected))
+        {
+            InOutClassName.clear();
+            bChanged = true;
+        }
+        if (bNoneSelected)
+        {
+            ImGui::SetItemDefaultFocus();
+        }
+
+        if (!NotifyClasses.empty())
+        {
+            ImGui::Separator();
+        }
+
         for (UClass* Class : NotifyClasses)
         {
             const FString ClassName = Class->GetName();
@@ -1272,14 +1261,64 @@ void FEditorViewerWindowWidget::RenderAnimSequenceTimeline(UAnimSequence* Sequen
 		ImGui::Text("Add Notify at %.3f sec", PendingAnimNotifyTimeToAdd);
 		ImGui::Separator();
 
+		if (ImGui::Selectable("Name Only Notify##AddAnimNotify_NameOnly"))
+		{
+			Sequence->AddNotify(PendingAnimNotifyTimeToAdd, FName("AnimNotify"), 0.0f, "");
+			SaveAnimSequenceAsset(Sequence);
+
+			const TArray<FAnimNotifyStateEvent>& AddedNotifies = Sequence->GetNotifies();
+			for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(AddedNotifies.size()); ++NotifyIndex)
+			{
+				const FAnimNotifyStateEvent& AddedNotify = AddedNotifies[NotifyIndex];
+				if (AddedNotify.NotifyClassName.empty() &&
+					std::abs(AddedNotify.TriggerTime - PendingAnimNotifyTimeToAdd) <= 0.001f)
+				{
+					SelectedAnimNotifyIndex = NotifyIndex;
+				}
+			}
+
+			if (Viewer)
+			{
+				Viewer->SetAnimationTime(PendingAnimNotifyTimeToAdd);
+			}
+		}
+
+		if (ImGui::Selectable("Name Only Notify State##AddAnimNotifyState_NameOnly"))
+		{
+			const float Duration = std::clamp(
+				AnimNotifyDurationToAdd,
+				0.01f,
+				std::max(0.01f, Length - PendingAnimNotifyTimeToAdd));
+			Sequence->AddNotify(PendingAnimNotifyTimeToAdd, FName("AnimNotifyState"), Duration, "");
+			SaveAnimSequenceAsset(Sequence);
+
+			const TArray<FAnimNotifyStateEvent>& AddedNotifies = Sequence->GetNotifies();
+			for (int32 NotifyIndex = 0; NotifyIndex < static_cast<int32>(AddedNotifies.size()); ++NotifyIndex)
+			{
+				const FAnimNotifyStateEvent& AddedNotify = AddedNotifies[NotifyIndex];
+				if (AddedNotify.NotifyClassName.empty() &&
+					std::abs(AddedNotify.TriggerTime - PendingAnimNotifyTimeToAdd) <= 0.001f)
+				{
+					SelectedAnimNotifyIndex = NotifyIndex;
+				}
+			}
+
+			if (Viewer)
+			{
+				Viewer->SetAnimationTime(PendingAnimNotifyTimeToAdd);
+			}
+		}
+
 		TArray<UClass*> NotifyClasses;
 		GetSelectableAnimNotifyClasses(NotifyClasses);
 		if (NotifyClasses.empty())
 		{
+			ImGui::Separator();
 			ImGui::TextDisabled("No AnimNotify classes are registered.");
 		}
 		else
 		{
+			ImGui::Separator();
 			for (UClass* Class : NotifyClasses)
 			{
 				const FString ClassName = Class->GetName();
@@ -1696,9 +1735,7 @@ void FEditorViewerWindowWidget::RenderAnimSequenceDetails(UAnimSequence* Sequenc
 			ImGui::Separator();
 			const FAnimNotifyStateEvent& SelectedNotify = CurrentNotifies[SelectedAnimNotifyIndex];
 			ImGui::Text("Selected: %s", SelectedNotify.NotifyName.ToString().c_str());
-			FString SelectedNotifyClassName = SelectedNotify.NotifyClassName.empty()
-				? GetDefaultEditorNotifyClassName(SelectedNotify.Duration)
-				: SelectedNotify.NotifyClassName;
+			FString SelectedNotifyClassName = SelectedNotify.NotifyClassName;
 			if (DrawAnimNotifyClassCombo("Class", SelectedNotifyClassName))
 			{
 				if (Sequence->SetNotifyClassName(SelectedAnimNotifyIndex, SelectedNotifyClassName))

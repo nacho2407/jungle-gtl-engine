@@ -74,28 +74,28 @@ function AhriAttack2NotifyTest:OnAnimNotifyEnd(notifyName, endTime, info)
         describe(info)))
 end
 
-function AhriAttack2NotifyTest:AnimNotify_AnimNotify(triggerTime, info)
+function AhriAttack2NotifyTest:AnimNotify_test1(triggerTime, info)
     log(string.format(
         "[AhriAttack2NotifyTest] AnimNotify_AnimNotify trigger=%.3f%s",
         numberOrZero(triggerTime),
         describe(info)))
 end
 
-function AhriAttack2NotifyTest:AnimNotifyBegin_AnimNotify(triggerTime, info)
+function AhriAttack2NotifyTest:AnimNotifyBegin_test1(triggerTime, info)
     log(string.format(
         "[AhriAttack2NotifyTest] AnimNotifyBegin_AnimNotify trigger=%.3f%s",
         numberOrZero(triggerTime),
         describe(info)))
 end
 
-function AhriAttack2NotifyTest:AnimNotifyTick_AnimNotify(deltaTime, info)
+function AhriAttack2NotifyTest:AnimNotifyTick_test1(deltaTime, info)
     log(string.format(
         "[AhriAttack2NotifyTest] AnimNotifyTick_AnimNotify dt=%.3f%s",
         numberOrZero(deltaTime),
         describe(info)))
 end
 
-function AhriAttack2NotifyTest:AnimNotifyEnd_AnimNotify(endTime, info)
+function AhriAttack2NotifyTest:AnimNotifyEnd_test1(endTime, info)
     log(string.format(
         "[AhriAttack2NotifyTest] AnimNotifyEnd_AnimNotify end=%.3f%s",
         numberOrZero(endTime),
