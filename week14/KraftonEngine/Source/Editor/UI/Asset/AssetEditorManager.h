@@ -28,6 +28,8 @@ public:
 
 	void CloseAll();
 	bool OpenEditorForObject(UObject* Object);
+	void CloseEditorForObject(UObject* Object);
+	bool IsEditorOpenForObject(UObject* Object) const;
 
 	void CollectPreviewViewportClients(TArray<IEditorPreviewViewportClient*>& OutClients) const;
 

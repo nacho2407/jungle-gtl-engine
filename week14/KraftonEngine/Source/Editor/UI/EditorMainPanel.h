@@ -19,6 +19,7 @@ class FRenderer;
 class UEditorEngine;
 class FWindowsWindow;
 class IEditorPreviewViewportClient;
+class UParticleSystem;
 
 class FEditorMainPanel
 {
@@ -68,6 +69,7 @@ private:
 	EditorProjectSettingsWidget ProjectSettingsWidget;
 	EditorWorldSettingsWidget WorldSettingsWidget;
 	FAssetEditorManager AssetEditorManager;
+	UParticleSystem* ParticleSystemEditorPreviewAsset = nullptr;
 
 	bool bShowWidgetList = false;
 	bool bShowShortcutOverlay = false;
