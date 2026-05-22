@@ -1,4 +1,4 @@
-#include "ViewportToolbar.h"
+﻿#include "ViewportToolbar.h"
 #include "Component/Debug/GizmoComponent.h"
 #include "Editor/UI/Util/EditorTextureManager.h"
 #include "Render/Pipeline/Renderer.h"
@@ -608,6 +608,7 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 		ImGui::Checkbox("Show Shadow Frustum", &RenderOptions.ShowFlags.bShowShadowFrustum);
 		ImGui::Checkbox("Collision", &RenderOptions.ShowFlags.bCollision);
 		ImGui::Checkbox("Show Collision Shape", &RenderOptions.ShowFlags.bShowCollisionShape);
+		ImGui::Checkbox("Particle", &RenderOptions.ShowFlags.bParticle);
 
 		ImGui::EndPopup();
 	}
