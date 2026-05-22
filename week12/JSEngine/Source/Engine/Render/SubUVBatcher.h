@@ -39,7 +39,7 @@ struct FSRVBatch
 //   2) Clear()       — 매 프레임 시작 시 이전 스프라이트 제거
 //   3) AddSprite()   — 프레임 인덱스 기반 스프라이트 쿼드 누적
 //   4) Flush()       — Dynamic VB/IB 업로드 + DrawIndexed 1회 호출
-//                      SRV는 ResourceManager가 소유하는 FParticleResource에서 전달받습니다.
+//                      SRV는 ResourceManager가 소유하는 FSubUVResource에서 전달받습니다.
 //   5) Release()     — DX 리소스 해제
 class FSubUVBatcher
 {
@@ -53,7 +53,7 @@ public:
     void Release();
 
     // 월드 좌표 위에 빌보드 스프라이트 쿼드 추가 (배치에 누적).
-    // Columns / Rows — 호출 시 FParticleResource에서 전달받은 아틀라스 그리드 크기
+    // Columns / Rows — 호출 시 FSubUVResource에서 전달받은 아틀라스 그리드 크기
     void AddSprite(UTexture* Texture,
                    const FVector& WorldPos,
                    const FVector& CamRight,
@@ -70,7 +70,7 @@ public:
     void Clear();
 
     // Dynamic VB/IB 업로드 + DrawIndexed 1회 호출
-    // SRV — ResourceManager 소유 FParticleResource의 SRV를 전달
+    // SRV — ResourceManager 소유 FSubUVResource의 SRV를 전달
     void Flush(ID3D11DeviceContext* Context, bool bWireframe = false);
 
     uint32 GetSpriteCount() const { return static_cast<uint32>(Vertices.size() / 4); }

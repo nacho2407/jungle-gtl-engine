@@ -324,7 +324,7 @@ struct FFontConstants
 
 struct FSubUVConstants
 {
-	const FParticleResource* Particle = nullptr;
+	const FSubUVResource* SubUV = nullptr;
 	uint32 FrameIndex = 0;
 	float Width  = 1.0f;
 	float Height = 1.0f;

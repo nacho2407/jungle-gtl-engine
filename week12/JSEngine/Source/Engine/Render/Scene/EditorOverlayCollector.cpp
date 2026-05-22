@@ -480,13 +480,13 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
         else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SubUV)
         {
             USubUVComponent* SubUVComp = static_cast<USubUVComponent*>(primitiveComponent);
-            const FParticleResource* Particle = SubUVComp->GetParticle();
-            if (!Particle || !Particle->IsLoaded()) continue;
+            const FSubUVResource* SubUV = SubUVComp->GetSubUV();
+            if (!SubUV || !SubUV->IsLoaded()) continue;
 
             BaseCmd.PerObjectConstants.Model = MakeViewSubUVSelectionMatrix(
                 SubUVComp,
                 RenderBus);
-            BaseCmd.Constants.SubUV.Particle = Particle;
+            BaseCmd.Constants.SubUV.SubUV = SubUV;
             BaseCmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
             BaseCmd.Constants.SubUV.Width = SubUVComp->GetWidth();
             BaseCmd.Constants.SubUV.Height = SubUVComp->GetHeight();

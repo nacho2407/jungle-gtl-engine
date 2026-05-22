@@ -9,7 +9,6 @@ exclusion rules.
 
 import hashlib
 import os
-import runpy
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -50,7 +49,6 @@ SOLUTION_CONFIGURATIONS = [
 ]
 
 SOURCE_SCAN_DIRS = ["Source"]
-REFLECTION_SCAN_DIRS = ["Intermediate\\Reflection"]
 THIRD_PARTY_SCAN_DIRS = [
 	"ThirdParty\\ImGui",
 	"ThirdParty\\SimpleJSON",
@@ -115,13 +113,6 @@ def add_text(parent, tag, text=None, **attrs):
 	return elem
 
 
-def run_reflection_generation():
-	script = ROOT / "Scripts" / "GenerateReflection.py"
-	if script.exists():
-		print("Generating reflection code...")
-		runpy.run_path(str(script), run_name="__main__")
-
-
 def add_file(files, kind, rel_path):
 	rel = rel_path.replace("/", "\\")
 	if rel not in files[kind]:
@@ -181,9 +172,6 @@ def scan_files(project_dir):
 	}
 
 	for scan_dir in SOURCE_SCAN_DIRS:
-		scan_tree(files, project_dir, scan_dir)
-
-	for scan_dir in REFLECTION_SCAN_DIRS:
 		scan_tree(files, project_dir, scan_dir)
 
 	for scan_dir in THIRD_PARTY_SCAN_DIRS:
@@ -506,6 +494,12 @@ def add_build_targets(proj):
 		"Exec",
 		Command='"$(MSBuildProjectDirectory)\\..\\Scripts\\python\\python.exe" "$(MSBuildProjectDirectory)\\..\\Scripts\\GenerateReflection.py"',
 	)
+	dynamic_generated_items = add_text(reflection, "ItemGroup")
+	add_text(
+		dynamic_generated_items,
+		"ClCompile",
+		Include="$(MSBuildProjectDirectory)\\Intermediate\\Reflection\\**\\*.gen.cpp",
+	)
 
 
 def add_item_groups(proj, files):
@@ -698,7 +692,6 @@ def generate_sln():
 def main():
 	print(f"Scanning project files in {PROJECT_DIR}...")
 
-	run_reflection_generation()
 	files = scan_files(PROJECT_DIR)
 
 	print(f"  ClCompile:        {len(files['ClCompile'])} files")

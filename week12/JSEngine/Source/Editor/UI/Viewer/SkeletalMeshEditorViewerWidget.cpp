@@ -16,51 +16,16 @@
 
 namespace
 {
-	FSkeletalMeshEditorViewer* AsSkeletalMeshViewer(FEditorViewer* Viewer)
-	{
-		return Viewer && Viewer->GetTabKind() == EEditorTabKind::SkeletalMeshViewer
-			? static_cast<FSkeletalMeshEditorViewer*>(Viewer)
-			: nullptr;
-	}
-
-	const FSkeletalMeshEditorViewer* AsSkeletalMeshViewer(const FEditorViewer* Viewer)
-	{
-		return Viewer && Viewer->GetTabKind() == EEditorTabKind::SkeletalMeshViewer
-			? static_cast<const FSkeletalMeshEditorViewer*>(Viewer)
-			: nullptr;
-	}
+	FSkeletalMeshEditorViewer* AsSkeletalMeshViewer(FEditorViewer* Viewer);
+	const FSkeletalMeshEditorViewer* AsSkeletalMeshViewer(const FEditorViewer* Viewer);
 
 	constexpr uint64 MeshEditHashOffset = 14695981039346656037ull;
 	constexpr uint64 MeshEditHashPrime = 1099511628211ull;
 
-	uint64 HashBytes(uint64 Seed, const void* Data, size_t Size)
-	{
-		const unsigned char* Bytes = static_cast<const unsigned char*>(Data);
-		for (size_t Index = 0; Index < Size; ++Index)
-		{
-			Seed ^= static_cast<uint64>(Bytes[Index]);
-			Seed *= MeshEditHashPrime;
-		}
-		return Seed;
-	}
-
-	template <typename T>
-	uint64 HashValue(uint64 Seed, const T& Value)
-	{
-		return HashBytes(Seed, &Value, sizeof(T));
-	}
-
-	uint64 HashString(uint64 Seed, const FString& Value)
-	{
-		const uint64 Length = static_cast<uint64>(Value.size());
-		Seed = HashValue(Seed, Length);
-		return Value.empty() ? Seed : HashBytes(Seed, Value.data(), Value.size());
-	}
-
-	uint64 HashMatrix(uint64 Seed, const FMatrix& Matrix)
-	{
-		return HashBytes(Seed, Matrix.M, sizeof(Matrix.M));
-	}
+	uint64 HashBytes(uint64 Seed, const void* Data, size_t Size);
+	template <typename T> uint64 HashValue(uint64 Seed, const T& Value);
+	uint64 HashString(uint64 Seed, const FString& Value);
+	uint64 HashMatrix(uint64 Seed, const FMatrix& Matrix);
 }
 
 void FSkeletalMeshEditorViewerWidget::RenderContent(float DeltaTime)
@@ -954,4 +919,50 @@ void FSkeletalMeshEditorViewerWidget::DrawPreviewPickerModal()
 	}
 
 	ImGui::EndPopup();
+}
+
+namespace
+{
+	FSkeletalMeshEditorViewer* AsSkeletalMeshViewer(FEditorViewer* Viewer)
+	{
+		return Viewer && Viewer->GetTabKind() == EEditorTabKind::SkeletalMeshViewer
+			? static_cast<FSkeletalMeshEditorViewer*>(Viewer)
+			: nullptr;
+	}
+
+	const FSkeletalMeshEditorViewer* AsSkeletalMeshViewer(const FEditorViewer* Viewer)
+	{
+		return Viewer && Viewer->GetTabKind() == EEditorTabKind::SkeletalMeshViewer
+			? static_cast<const FSkeletalMeshEditorViewer*>(Viewer)
+			: nullptr;
+	}
+
+	uint64 HashBytes(uint64 Seed, const void* Data, size_t Size)
+	{
+		const unsigned char* Bytes = static_cast<const unsigned char*>(Data);
+		for (size_t Index = 0; Index < Size; ++Index)
+		{
+			Seed ^= static_cast<uint64>(Bytes[Index]);
+			Seed *= MeshEditHashPrime;
+		}
+		return Seed;
+	}
+
+	template <typename T>
+	uint64 HashValue(uint64 Seed, const T& Value)
+	{
+		return HashBytes(Seed, &Value, sizeof(T));
+	}
+
+	uint64 HashString(uint64 Seed, const FString& Value)
+	{
+		const uint64 Length = static_cast<uint64>(Value.size());
+		Seed = HashValue(Seed, Length);
+		return Value.empty() ? Seed : HashBytes(Seed, Value.data(), Value.size());
+	}
+
+	uint64 HashMatrix(uint64 Seed, const FMatrix& Matrix)
+	{
+		return HashBytes(Seed, Matrix.M, sizeof(Matrix.M));
+	}
 }

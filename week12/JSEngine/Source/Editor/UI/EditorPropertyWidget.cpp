@@ -492,7 +492,7 @@ namespace
 	{
 		if (USubUVComponent* SubUV = Cast<USubUVComponent>(Component))
 		{
-			SubUV->SetParticle(FName("Explosion"));
+			SubUV->SetSubUV(FName("Explosion"));
 			SubUV->SetSpriteSize(2.0f, 2.0f);
 			SubUV->SetFrameRate(30.f);
 		}
@@ -2327,9 +2327,9 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 		{
 			Names = EditorEngine ? EditorEngine->GetAssetService().GetFontNames() : EmptyAssetNames();
 		}
-		else if (Property.Name && strcmp(Property.Name, "Particle") == 0)
+		else if (Property.Name && strcmp(Property.Name, "SubUVName") == 0)
 		{
-			Names = EditorEngine ? EditorEngine->GetAssetService().GetParticleNames() : EmptyAssetNames();
+			Names = EditorEngine ? EditorEngine->GetAssetService().GetSubUVNames() : EmptyAssetNames();
 		}
 
 		if (!Names.empty())
