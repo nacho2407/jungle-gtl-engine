@@ -105,7 +105,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 void FEditorMainPanel::Release()
 {
 	AssetEditorManager.CloseAll();
-	delete ParticleSystemEditorPreviewAsset;
+	UObjectManager::Get().DestroyObject(ParticleSystemEditorPreviewAsset);
 	ParticleSystemEditorPreviewAsset = nullptr;
 	ConsoleWidget.Shutdown();
 	ImGui_ImplDX11_Shutdown();
@@ -116,6 +116,22 @@ void FEditorMainPanel::Release()
 void FEditorMainPanel::SaveToSettings() const
 {
 	ContentBrowserWidget.SaveToSettings();
+}
+
+UParticleSystem* FEditorMainPanel::GetOrCreateParticleSystemEditorPreviewAsset()
+{
+	if (!ParticleSystemEditorPreviewAsset)
+	{
+		ParticleSystemEditorPreviewAsset = UObjectManager::Get().CreateObject<UParticleSystem>();
+		ParticleSystemEditorPreviewAsset->SetAssetPathFileName("NewParticleSystem*");
+	}
+
+	if (ParticleSystemEditorPreviewAsset->GetEmitters().empty())
+	{
+		ParticleSystemEditorPreviewAsset->InitializeDefaultEmitters();
+	}
+
+	return ParticleSystemEditorPreviewAsset;
 }
 
 void FEditorMainPanel::TickAssetEditors(float DeltaTime)
@@ -280,12 +296,7 @@ void FEditorMainPanel::RenderMainMenuBar()
 		{
 			if (bParticleSystemEditorOpen)
 			{
-				if (!ParticleSystemEditorPreviewAsset)
-				{
-					ParticleSystemEditorPreviewAsset = new UParticleSystem();
-					ParticleSystemEditorPreviewAsset->SetAssetPathFileName("NewParticleSystem*");
-				}
-				AssetEditorManager.OpenEditorForObject(ParticleSystemEditorPreviewAsset);
+				AssetEditorManager.OpenEditorForObject(GetOrCreateParticleSystemEditorPreviewAsset());
 			}
 			else if (ParticleSystemEditorPreviewAsset)
 			{
