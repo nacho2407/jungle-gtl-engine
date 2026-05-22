@@ -1,79 +1,9 @@
-#include "Materials/Material.h"
+﻿#include "Materials/Material.h"
 #include "Serialization/Archive.h"
-#include "Render/Shader/Shader.h"
 #include "Texture/Texture2D.h"
 #include "Engine/Runtime/Engine.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Render/Types/MaterialTextureSlot.h"
-
-// ─── FMaterialTemplate ───
-
-void FMaterialTemplate::Create(FShader* InShader)
-{
-	ParameterLayout = InShader->GetParameterLayout(); // 셰이더에서 리플렉션된 파라미터 레이아웃 정보 확보
-	Shader = InShader;
-}
-
-bool FMaterialTemplate::GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const
-{
-	auto it = ParameterLayout.find(Name);
-	if (it != ParameterLayout.end())
-	{
-		OutInfo = *(it->second);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-// ─── FMaterialConstantBuffer ───
-
-FMaterialConstantBuffer::~FMaterialConstantBuffer()
-{
-	Release();
-}
-
-void FMaterialConstantBuffer::Init(ID3D11Device* InDevice, uint32 InSize, uint32 InSlot)
-{
-	Release();
-
-	uint32 AlignedSize = (InSize + 15) & ~15;
-	GPUBuffer.Create(InDevice, AlignedSize, "MaterialGPUBuffer");
-	CPUData = new uint8[AlignedSize]();
-	Size = AlignedSize;
-	SlotIndex = InSlot;
-	bDirty = true;
-}
-
-void FMaterialConstantBuffer::SetData(const void* Data, uint32 InSize, uint32 Offset)
-{
-	if (!CPUData || Offset + InSize > Size)
-	{
-		return;
-	}
-	memcpy(CPUData + Offset, Data, InSize);
-	bDirty = true;
-}
-
-void FMaterialConstantBuffer::Upload(ID3D11DeviceContext* DeviceContext)
-{
-	if (!bDirty)
-		return;
-
-	GPUBuffer.Update(DeviceContext, CPUData, Size);
-	bDirty = false;
-}
-
-void FMaterialConstantBuffer::Release()
-{
-	GPUBuffer.Release();
-	delete[] CPUData;
-	CPUData = nullptr;
-	Size = 0;
-	bDirty = false;
-}
 
 // ─── UMaterial ───
 
@@ -108,8 +38,49 @@ void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTempl
 	ConstantBufferMap = std::move(InBuffers);
 }
 
+const TMap<FString, FMaterialParameterInfo*>& UMaterial::GetParameterInfo() const
+{
+	static const TMap<FString, FMaterialParameterInfo*> EmptyLayout;
+	return Template ? Template->GetParameterInfo() : EmptyLayout;
+}
+
+TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> UMaterial::CloneConstantBuffers(ID3D11Device* Device) const
+{
+	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ClonedBuffers;
+
+	for (const auto& Pair : ConstantBufferMap)
+	{
+		if (!Pair.second)
+		{
+			continue;
+		}
+
+		auto NewBuffer = std::make_unique<FMaterialConstantBuffer>();
+		NewBuffer->Init(Device, Pair.second->Size, Pair.second->SlotIndex);
+		if (Pair.second->CPUData && NewBuffer->CPUData)
+		{
+			memcpy(NewBuffer->CPUData, Pair.second->CPUData, Pair.second->Size);
+		}
+		NewBuffer->bDirty = true;
+		ClonedBuffers.emplace(Pair.first, std::move(NewBuffer));
+	}
+
+	return ClonedBuffers;
+}
+
+void UMaterial::CopyTextureParametersFrom(const UMaterial& Other)
+{
+	TextureParameters = Other.TextureParameters;
+	RebuildCachedSRVs();
+}
+
 bool UMaterial::SetParameter(const FString& Name, const void* Data, uint32 Size)
 {
+	if (!Template || !Data)
+	{
+		return false;
+	}
+
 	FMaterialParameterInfo Info;
 	if (!Template->GetParameterInfo(Name, Info)) {
 		return false;
@@ -120,7 +91,10 @@ bool UMaterial::SetParameter(const FString& Name, const void* Data, uint32 Size)
 	It->second->SetData(Data, Size, Info.Offset);
 	It->second->bDirty = true;
 
-	It->second->Upload(GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext());
+	if (GEngine)
+	{
+		It->second->Upload(GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext());
+	}
 	return true;
 }
 
@@ -167,6 +141,11 @@ bool UMaterial::SetMatrixParameter(const FString& ParamName, const FMatrix& Valu
 
 bool UMaterial::GetScalarParameter(const FString& ParamName, float& OutValue) const
 {
+	if (!Template)
+	{
+		return false;
+	}
+
 	FMaterialParameterInfo Info;
 	if (!Template->GetParameterInfo(ParamName, Info)) return false;
 
@@ -180,6 +159,11 @@ bool UMaterial::GetScalarParameter(const FString& ParamName, float& OutValue) co
 
 bool UMaterial::GetVector3Parameter(const FString& ParamName, FVector& OutValue) const
 {
+	if (!Template)
+	{
+		return false;
+	}
+
 	FMaterialParameterInfo Info;
 	if (!Template->GetParameterInfo(ParamName, Info)) return false;
 
@@ -193,6 +177,11 @@ bool UMaterial::GetVector3Parameter(const FString& ParamName, FVector& OutValue)
 
 bool UMaterial::GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const
 {
+	if (!Template)
+	{
+		return false;
+	}
+
 	FMaterialParameterInfo Info;
 	if (!Template->GetParameterInfo(ParamName, Info)) return false;
 
@@ -215,6 +204,11 @@ bool UMaterial::GetTextureParameter(const FString& ParamName, UTexture2D*& OutTe
 
 bool UMaterial::GetMatrixParameter(const FString& ParamName, FMatrix& Value) const
 {
+	if (!Template)
+	{
+		return false;
+	}
+
 	FMaterialParameterInfo Info;
 	if (!Template->GetParameterInfo(ParamName, Info)) return false;
 
@@ -357,4 +351,201 @@ UMaterial* UMaterial::CreateTransient(ERenderPass InPass, EBlendState InBlend,
 	Mat->Create(FString("__transient__"), nullptr, InPass, InBlend, InDepth, InRaster, std::move(EmptyBuffers));
 	Mat->TransientShader = InShader;
 	return Mat;
+}
+
+UMaterialInstance* UMaterialInstance::Create(UMaterial* InParent)
+{
+	if (!InParent)
+	{
+		return nullptr;
+	}
+
+	UMaterialInstance* Instance = UObjectManager::Get().CreateObject<UMaterialInstance>();
+	Instance->Parent = InParent;
+	Instance->ParentPathFileName = InParent->GetAssetPathFileName();
+
+	return Instance;
+}
+
+void UMaterialInstance::Serialize(FArchive& Ar)
+{
+	Parent->Serialize(Ar);
+	Ar << ParentPathFileName;
+	//Ar << ScalarOverrides;
+	//Ar << Vector3Overrides;
+	//Ar << Vector4Overrides;
+	//Ar << MatrixOverrides;
+	//Ar << TextureOverrides;
+}
+
+bool UMaterialInstance::SetScalarParameter(const FString& ParamName, float Value)
+{
+	float ParentValue = 0.0f;
+	if (!Parent || !Parent->GetScalarParameter(ParamName, ParentValue))
+	{
+		return false;
+	}
+
+	ScalarOverrides[ParamName] = Value;
+	return true;
+}
+
+bool UMaterialInstance::SetVector3Parameter(const FString& ParamName, const FVector& Value)
+{
+	FVector ParentValue;
+	if (!Parent || !Parent->GetVector3Parameter(ParamName, ParentValue))
+	{
+		return false;
+	}
+
+	Vector3Overrides[ParamName] = Value;
+	return true;
+}
+
+bool UMaterialInstance::SetVector4Parameter(const FString& ParamName, const FVector4& Value)
+{
+	FVector4 ParentValue;
+	if (!Parent || !Parent->GetVector4Parameter(ParamName, ParentValue))
+	{
+		return false;
+	}
+
+	Vector4Overrides[ParamName] = Value;
+	return true;
+}
+
+bool UMaterialInstance::SetTextureParameter(const FString& ParamName, UTexture2D* Texture)
+{
+	UTexture2D* ParentTexture = nullptr;
+	if (!Parent || !Parent->GetTextureParameter(ParamName, ParentTexture))
+	{
+		return false;
+	}
+
+	TextureOverrides[ParamName] = Texture;
+	return true;
+}
+
+bool UMaterialInstance::SetMatrixParameter(const FString& ParamName, const FMatrix& Value)
+{
+	FMatrix ParentValue;
+	if (!Parent || !Parent->GetMatrixParameter(ParamName, ParentValue))
+	{
+		return false;
+	}
+
+	MatrixOverrides[ParamName] = Value;
+	return true;
+}
+
+bool UMaterialInstance::GetScalarParameter(const FString& ParamName, float& OutValue) const
+{
+	auto It = ScalarOverrides.find(ParamName);
+	if (It != ScalarOverrides.end())
+	{
+		OutValue = It->second;
+		return true;
+	}
+
+	return Parent ? Parent->GetScalarParameter(ParamName, OutValue) : false;
+}
+
+bool UMaterialInstance::GetVector3Parameter(const FString& ParamName, FVector& OutValue) const
+{
+	auto It = Vector3Overrides.find(ParamName);
+	if (It != Vector3Overrides.end())
+	{
+		OutValue = It->second;
+		return true;
+	}
+
+	return Parent ? Parent->GetVector3Parameter(ParamName, OutValue) : false;
+}
+
+bool UMaterialInstance::GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const
+{
+	auto It = Vector4Overrides.find(ParamName);
+	if (It != Vector4Overrides.end())
+	{
+		OutValue = It->second;
+		return true;
+	}
+
+	return Parent ? Parent->GetVector4Parameter(ParamName, OutValue) : false;
+}
+
+bool UMaterialInstance::GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const
+{
+	auto It = TextureOverrides.find(ParamName);
+	if (It != TextureOverrides.end())
+	{
+		OutTexture = It->second;
+		return true;
+	}
+
+	return Parent ? Parent->GetTextureParameter(ParamName, OutTexture) : false;
+}
+
+bool UMaterialInstance::GetMatrixParameter(const FString& ParamName, FMatrix& Value) const
+{
+	auto It = MatrixOverrides.find(ParamName);
+	if (It != MatrixOverrides.end())
+	{
+		Value = It->second;
+		return true;
+	}
+
+	return Parent ? Parent->GetMatrixParameter(ParamName, Value) : false;
+}
+
+FShader* UMaterialInstance::GetShader() const
+{
+	return Parent ? Parent->GetShader() : nullptr;
+}
+
+ERenderPass UMaterialInstance::GetRenderPass() const
+{
+	return Parent ? Parent->GetRenderPass() : ERenderPass::Opaque;
+}
+
+EBlendState UMaterialInstance::GetBlendState() const
+{
+	return Parent ? Parent->GetBlendState() : EBlendState::Opaque;
+}
+
+EDepthStencilState UMaterialInstance::GetDepthStencilState() const
+{
+	return Parent ? Parent->GetDepthStencilState() : EDepthStencilState::Default;
+}
+
+ERasterizerState UMaterialInstance::GetRasterizerState() const
+{
+	return Parent ? Parent->GetRasterizerState() : ERasterizerState::SolidBackCull;
+}
+
+FConstantBuffer* UMaterialInstance::GetGPUBufferBySlot(uint32 InSlot) const
+{
+	return Parent ? Parent->GetGPUBufferBySlot(InSlot) : nullptr;
+}
+
+void UMaterialInstance::FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx)
+{
+	if (Parent)
+	{
+		Parent->FlushDirtyBuffers(Device, Ctx);
+	}
+}
+
+UMaterialInstanceDynamic* UMaterialInstanceDynamic::Create(UMaterial* InParent)
+{
+	if (!InParent)
+	{
+		return nullptr;
+	}
+
+	UMaterialInstanceDynamic* Instance = UObjectManager::Get().CreateObject<UMaterialInstanceDynamic>();
+	Instance->Parent = InParent;
+	Instance->ParentPathFileName = InParent->GetAssetPathFileName();
+
+	return Instance;
 }
