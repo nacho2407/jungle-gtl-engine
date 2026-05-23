@@ -358,6 +358,10 @@ void FParticleEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 	if (bEnabled)
 	{
 		KillParticles();
+
+		if (bUseParticlePrefetch)
+			ParticlePrefetch();
+
 		ResetParticleParameters(DeltaTime);
 
 		LODLevel->RequiredModule->ResolveMaterialFromSlot();
@@ -370,6 +374,9 @@ void FParticleEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 
 		if (ActiveParticles > 0)
 		{
+			if (bUseParticlePrefetch)
+				ParticlePrefetch();
+
 			UpdateOrbitData(DeltaTime);
 			UpdateBoundingBox(DeltaTime);
 		}
