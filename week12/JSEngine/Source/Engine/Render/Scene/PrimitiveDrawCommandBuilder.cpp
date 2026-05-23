@@ -89,9 +89,16 @@ namespace
 		return Material ? Material : FResourceManager::Get().GetMaterial("DefaultWhite");
 	}
 
-	void AddSurfaceCommandByMaterial(FRenderBus& RenderBus, FRenderCommand& Cmd)
+	bool IsMeshDebugViewMode(EViewMode ViewMode)
 	{
-		RenderBus.AddCommand(ResolveMaterialRenderPass(Cmd.Material), Cmd);
+		return ViewMode == EViewMode::Normal ||
+			ViewMode == EViewMode::Heatmap ||
+			ViewMode == EViewMode::BoneWeightHeatmap;
+	}
+
+	void AddSurfaceCommandByMaterial(FRenderBus& RenderBus, EViewMode ViewMode, FRenderCommand& Cmd)
+	{
+		RenderBus.AddCommand(IsMeshDebugViewMode(ViewMode) ? ERenderPass::ViewModeMesh : ResolveMaterialRenderPass(Cmd.Material), Cmd);
 	}
 
 	double CalculateAverageBoneInfluence(const TArray<FSkeletalMeshVertex>& Vertices)
@@ -200,8 +207,6 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 													EViewMode ViewMode, FRenderBus& RenderBus,
 													FMeshBufferManager& MeshBufferManager) const
 {
-	(void)ViewMode;
-
 	if (Primitive == nullptr || !Primitive->IsVisible()) return true;
 
 	switch (Primitive->GetPrimitiveType())
@@ -250,7 +255,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
 			Cmd.WorldAABB = StaticMeshComp->GetWorldAABB();
 
-			AddSurfaceCommandByMaterial(RenderBus, Cmd);
+			AddSurfaceCommandByMaterial(RenderBus, ViewMode, Cmd);
 		}
 
 		return true;
@@ -338,7 +343,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 			Cmd.Material = ResolveDrawMaterial(Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(0)));
 			Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
 
-			AddSurfaceCommandByMaterial(RenderBus, Cmd);
+			AddSurfaceCommandByMaterial(RenderBus, ViewMode, Cmd);
 			return true;
 		}
 
@@ -377,7 +382,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
 			Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
 
-			AddSurfaceCommandByMaterial(RenderBus, Cmd);
+			AddSurfaceCommandByMaterial(RenderBus, ViewMode, Cmd);
 		}
 
 		return true;
@@ -529,7 +534,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
 			Cmd.WorldAABB = ProcMeshComp->GetWorldAABB();
 
-			AddSurfaceCommandByMaterial(RenderBus, Cmd);
+			AddSurfaceCommandByMaterial(RenderBus, ViewMode, Cmd);
 		}
 		return true;
 	}

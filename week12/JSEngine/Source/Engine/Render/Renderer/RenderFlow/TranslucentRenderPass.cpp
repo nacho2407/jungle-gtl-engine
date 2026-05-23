@@ -11,6 +11,14 @@
 
 namespace
 {
+    bool IsDebugViewMode(EViewMode ViewMode)
+    {
+        return ViewMode == EViewMode::Normal ||
+            ViewMode == EViewMode::Heatmap ||
+            ViewMode == EViewMode::BoneWeightHeatmap ||
+            ViewMode == EViewMode::Depth;
+    }
+
     uint32 BuildTranslucentPermutationKey(const FRenderPassContext* Context, const UMaterialInterface* Material)
     {
         uint32 PermutationKey = (uint32)ELightingModel::Unlit;
@@ -188,6 +196,13 @@ bool FTranslucentRenderPass::Release()
 
 bool FTranslucentRenderPass::Begin(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        OutSRV = PrevPassSRV;
+        OutRTV = PrevPassRTV;
+        return true;
+    }
+
     ID3D11RenderTargetView* RTV = PrevPassRTV;
     ID3D11DepthStencilView* DSV = Context->RenderTargets->DepthStencilView;
     Context->DeviceContext->OMSetRenderTargets(1, &RTV, DSV);
@@ -201,6 +216,11 @@ bool FTranslucentRenderPass::Begin(const FRenderPassContext* Context)
 
 bool FTranslucentRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        return true;
+    }
+
     return DrawMeshCommandsForPass(Context, ERenderPass::Translucent);
 }
 

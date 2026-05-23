@@ -1,10 +1,19 @@
 #include "FXAARenderPass.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/ShaderPaths.h"
+#include "Render/Scene/RenderBus.h"
 #include <algorithm>
 
 namespace
 {
+    bool IsDebugViewMode(EViewMode ViewMode)
+    {
+        return ViewMode == EViewMode::Normal ||
+            ViewMode == EViewMode::Heatmap ||
+            ViewMode == EViewMode::BoneWeightHeatmap ||
+            ViewMode == EViewMode::Depth;
+    }
+
     FShaderProgram* GetFXAAProgram()
     {
         FShaderStageKey VSKey;
@@ -31,6 +40,13 @@ bool FFXAARenderPass::Release()
 
 bool FFXAARenderPass::Begin(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        OutSRV = PrevPassSRV;
+        OutRTV = PrevPassRTV;
+        return true;
+    }
+
     const FRenderTargetSet* RenderTargets = Context->RenderTargets;
     ID3D11RenderTargetView* RTVs[1] = {
         RenderTargets->SceneColorRTV
@@ -76,12 +92,22 @@ bool FFXAARenderPass::Begin(const FRenderPassContext* Context)
 
 bool FFXAARenderPass::DrawCommand(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        return true;
+    }
+
     Context->DeviceContext->Draw(3, 0);
     return true;
 }
 
 bool FFXAARenderPass::End(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        return true;
+    }
+
     ID3D11ShaderResourceView* nullSRVs[] = { nullptr };
     Context->DeviceContext->PSSetShaderResources(0, 1, nullSRVs);
     return true;

@@ -40,9 +40,6 @@ struct PSInput
     float3 WorldPos : TEXCOORD0;
     float3 WorldNormal : TEXCOORD1;
     float2 UV : TEXCOORD2;
-#if BONE_WEIGHT_HEATMAP
-    float BoneWeightHeat : TEXCOORD6;
-#endif
 #if LIGHTING_MODEL_GOURAUD
     float3 LitColor : TEXCOORD3;
 #elif HAS_NORMAL_MAP

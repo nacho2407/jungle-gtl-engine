@@ -8,13 +8,11 @@ class FRenderTargetFactory
 {
   public:
     static FRenderTarget CreateSceneColor(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
-    static FRenderTarget CreateSceneNormal(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
     static FRenderTarget CreateSelectionMask(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
-    static FRenderTarget CreateSceneViewMode(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
+    static FRenderTarget CreateDebugViewMode(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
     static FRenderTarget CreateSceneFog(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
     static FRenderTarget CreateSceneSandervistan(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
     static FRenderTarget CreateScenePostProcess(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
-    static FRenderTarget CreateSceneWorldPos(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
     static FRenderTarget CreateSceneFXAA(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
     static FRenderTarget CreateEditorIdPick(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
     static FRenderTarget CreateEditorIdPickDebug(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);

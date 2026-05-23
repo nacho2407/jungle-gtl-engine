@@ -942,7 +942,10 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeResolvePass.cpp">
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DebugViewModeResolvePass.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeMeshRenderPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.cpp">
@@ -2059,7 +2062,10 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeResolvePass.h">
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DebugViewModeResolvePass.h">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeMeshRenderPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h">
@@ -2449,7 +2455,10 @@
     <None Include="Shaders\PostProcess\FogPass.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </None>
-    <None Include="Shaders\PostProcess\ViewModeResolve.hlsl">
+    <None Include="Shaders\EditorDebug\ViewModeMesh.hlsl">
+      <Filter>Shaders\EditorDebug</Filter>
+    </None>
+    <None Include="Shaders\PostProcess\DebugViewModeResolve.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </None>
     <None Include="Shaders\PostProcess\Outline.hlsl">

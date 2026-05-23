@@ -30,13 +30,9 @@ struct FViewportRenderResource
     TComPtr<ID3D11RenderTargetView> ColorRTV;
     TComPtr<ID3D11ShaderResourceView> ColorSRV;
 
-    TComPtr<ID3D11Texture2D> NormalTex;
-    TComPtr<ID3D11RenderTargetView> NormalRTV;
-    TComPtr<ID3D11ShaderResourceView> NormalSRV;
-
-    TComPtr<ID3D11Texture2D> ViewModeTex;
-    TComPtr<ID3D11RenderTargetView> ViewModeRTV;
-    TComPtr<ID3D11ShaderResourceView> ViewModeSRV;
+    TComPtr<ID3D11Texture2D> DebugViewModeTex;
+    TComPtr<ID3D11RenderTargetView> DebugViewModeRTV;
+    TComPtr<ID3D11ShaderResourceView> DebugViewModeSRV;
 
     TComPtr<ID3D11Texture2D> FogTex;
     TComPtr<ID3D11RenderTargetView> FogRTV;
@@ -49,10 +45,6 @@ struct FViewportRenderResource
     TComPtr<ID3D11Texture2D> PostProcessTex;
     TComPtr<ID3D11RenderTargetView> PostProcessRTV;
     TComPtr<ID3D11ShaderResourceView> PostProcessSRV;
-
-    TComPtr<ID3D11Texture2D> WorldPosTex;
-    TComPtr<ID3D11RenderTargetView> WorldPosRTV;
-    TComPtr<ID3D11ShaderResourceView> WorldPosSRV;
 
     TComPtr<ID3D11Texture2D> FXAATex;
     TComPtr<ID3D11RenderTargetView> FXAARTV;
@@ -88,11 +80,8 @@ struct FViewportRenderResource
         RenderTargetSet.SceneColorRTV = ColorRTV.Get();
         RenderTargetSet.SceneColorSRV = ColorSRV.Get();
 
-        RenderTargetSet.SceneNormalRTV = NormalRTV.Get();
-        RenderTargetSet.SceneNormalSRV = NormalSRV.Get();
-
-        RenderTargetSet.SceneViewModeRTV = ViewModeRTV.Get();
-        RenderTargetSet.SceneViewModeSRV = ViewModeSRV.Get();
+        RenderTargetSet.DebugViewModeRTV = DebugViewModeRTV.Get();
+        RenderTargetSet.DebugViewModeSRV = DebugViewModeSRV.Get();
 
         RenderTargetSet.SceneFogRTV = FogRTV.Get();
         RenderTargetSet.SceneFogSRV = FogSRV.Get();
@@ -102,9 +91,6 @@ struct FViewportRenderResource
 
 		RenderTargetSet.ScenePostProcessRTV = PostProcessRTV.Get();
         RenderTargetSet.ScenePostProcessSRV = PostProcessSRV.Get();
-
-        RenderTargetSet.SceneWorldPosRTV = WorldPosRTV.Get();
-        RenderTargetSet.SceneWorldPosSRV = WorldPosSRV.Get();
 
         RenderTargetSet.SceneFXAARTV = FXAARTV.Get();
         RenderTargetSet.SceneFXAASRV = FXAASRV.Get();

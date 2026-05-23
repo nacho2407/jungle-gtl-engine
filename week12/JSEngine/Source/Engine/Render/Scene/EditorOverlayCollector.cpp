@@ -53,7 +53,7 @@ namespace
 		}
 
 		bool bAdded = false;
-		const ERenderPass SourcePasses[] = { ERenderPass::Opaque, ERenderPass::Translucent };
+		const ERenderPass SourcePasses[] = { ERenderPass::Opaque, ERenderPass::Translucent, ERenderPass::ViewModeMesh };
 		for (ERenderPass SourcePass : SourcePasses)
 		{
 			const TArray<FRenderCommand>& SurfaceCommands = RenderBus.GetCommands(SourcePass);

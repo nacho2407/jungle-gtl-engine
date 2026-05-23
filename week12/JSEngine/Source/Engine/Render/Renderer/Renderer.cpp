@@ -363,7 +363,7 @@ void FRenderer::CreateResources()
 	Resources.SandevistanCB.Create(Device.GetDevice(), sizeof(FSandevistanConstants));
 	Resources.PostProcessCB.Create(Device.GetDevice(), sizeof(FPostProcessConstants));
 	Resources.ScreenOverlayCB.Create(Device.GetDevice(), sizeof(FScreenOverlayConstants));
-	Resources.ViewModeResolveConstantBuffer.Create(Device.GetDevice(), sizeof(FViewModeResolveConstants));
+	Resources.DebugViewModeResolveConstantBuffer.Create(Device.GetDevice(), sizeof(FDebugViewModeResolveConstants));
 	Resources.ProjectionDecalConstantBuffer.Create(Device.GetDevice(), sizeof(FProjectionDecalConstants));
 	Resources.MPLightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 256);
 
@@ -434,7 +434,7 @@ void FRenderer::Release()
 	Resources.FXAAConstantBuffer.Release();
 	Resources.EditorPickingConstantBuffer.Release();
 	Resources.SelectionMaskConstantBuffer.Release();
-	Resources.ViewModeResolveConstantBuffer.Release();
+	Resources.DebugViewModeResolveConstantBuffer.Release();
 	Resources.ProjectionDecalConstantBuffer.Release();
 	Resources.VSMConstantBuffer.Release();
 	FGPUProfiler::Get().Shutdown();
@@ -530,10 +530,8 @@ FRenderTargetSet FRenderer::BeginGameFrame(uint32 Width, uint32 Height)
 	const bool bSameSize = (Res.Width == Width) && (Res.Height == Height);
 	const bool bResourcesValid =
 		(Res.ColorRTV != nullptr) &&
-		(Res.NormalRTV != nullptr) &&
-		(Res.ViewModeRTV != nullptr) &&
+		(Res.DebugViewModeRTV != nullptr) &&
 		(Res.FogRTV != nullptr) &&
-		(Res.WorldPosRTV != nullptr) &&
 		(Res.FXAARTV != nullptr) &&
 		(Res.SelectionMaskRTV != nullptr) &&
 		(Res.DepthStencilView != nullptr);
@@ -553,7 +551,7 @@ FRenderTargetSet FRenderer::BeginGameFrame(uint32 Width, uint32 Height)
 		UE_LOG("[GameRender] Game frame targets ready. Size=%ux%u Color=%d Light=%d Fog=%d FXAA=%d DepthSRV=%d, Sandervistan=%d, PostProcess=%d",
 			   Width, Height,
 			   Targets.SceneColorRTV != nullptr,
-			   Targets.SceneViewModeRTV != nullptr,
+			   Targets.DebugViewModeRTV != nullptr,
 			   Targets.SceneFogRTV != nullptr,
 			   Targets.SceneFXAARTV != nullptr,
 			   Targets.SceneDepthSRV != nullptr,
@@ -670,6 +668,7 @@ void FRenderer::RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewpor
 	{
 		ERenderPass::Opaque,
 		ERenderPass::Translucent,
+		ERenderPass::ViewModeMesh,
 		ERenderPass::SubUV
 	};
 
@@ -1068,20 +1067,15 @@ void FRenderer::InitializeRenderResource(FViewportRenderResource& Res, uint32 Wi
 	Res.ColorRTV = RT.RTV;
 	Res.ColorSRV = RT.SRV;
 
-	RT = FRenderTargetFactory::CreateSceneNormal(Device.GetDevice(), Width, Height);
-	Res.NormalTex = RT.Texture;
-	Res.NormalRTV = RT.RTV;
-	Res.NormalSRV = RT.SRV;
-
 	RT = FRenderTargetFactory::CreateSelectionMask(Device.GetDevice(), Width, Height);
 	Res.SelectionMaskTex = RT.Texture;
 	Res.SelectionMaskRTV = RT.RTV;
 	Res.SelectionMaskSRV = RT.SRV;
 
-	RT = FRenderTargetFactory::CreateSceneViewMode(Device.GetDevice(), Width, Height);
-	Res.ViewModeTex = RT.Texture;
-	Res.ViewModeRTV = RT.RTV;
-	Res.ViewModeSRV = RT.SRV;
+	RT = FRenderTargetFactory::CreateDebugViewMode(Device.GetDevice(), Width, Height);
+	Res.DebugViewModeTex = RT.Texture;
+	Res.DebugViewModeRTV = RT.RTV;
+	Res.DebugViewModeSRV = RT.SRV;
 
 	RT = FRenderTargetFactory::CreateSceneFog(Device.GetDevice(), Width, Height);
 	Res.FogTex = RT.Texture;
@@ -1097,11 +1091,6 @@ void FRenderer::InitializeRenderResource(FViewportRenderResource& Res, uint32 Wi
 	Res.PostProcessTex = RT.Texture;
 	Res.PostProcessRTV = RT.RTV;
 	Res.PostProcessSRV = RT.SRV;
-
-	RT = FRenderTargetFactory::CreateSceneWorldPos(Device.GetDevice(), Width, Height);
-	Res.WorldPosTex = RT.Texture;
-	Res.WorldPosRTV = RT.RTV;
-	Res.WorldPosSRV = RT.SRV;
 
 	RT = FRenderTargetFactory::CreateSceneFXAA(Device.GetDevice(), Width, Height);
 	Res.FXAATex = RT.Texture;
@@ -1153,13 +1142,9 @@ void FRenderer::ReleaseRenderResource(FViewportRenderResource& Res)
 	Res.ColorRTV.Reset();
 	Res.ColorTex.Reset();
 
-	Res.NormalRTV.Reset();
-	Res.NormalSRV.Reset();
-	Res.NormalTex.Reset();
-
-	Res.ViewModeRTV.Reset();
-	Res.ViewModeSRV.Reset();
-	Res.ViewModeTex.Reset();
+	Res.DebugViewModeRTV.Reset();
+	Res.DebugViewModeSRV.Reset();
+	Res.DebugViewModeTex.Reset();
 
 	Res.DepthStencilView.Reset();
 	Res.DepthTex.Reset();
@@ -1172,10 +1157,6 @@ void FRenderer::ReleaseRenderResource(FViewportRenderResource& Res)
 	Res.FogTex.Reset();
 	Res.FogRTV.Reset();
 	Res.FogSRV.Reset();
-
-	Res.WorldPosRTV.Reset();
-	Res.WorldPosSRV.Reset();
-	Res.WorldPosTex.Reset();
 
 	Res.FXAARTV.Reset();
 	Res.FXAASRV.Reset();
@@ -1215,7 +1196,8 @@ void FRenderer::InitializePassRenderStates()
 
 	S[(uint32)E::Opaque] = { false };
 	S[(uint32)E::Decal] = { false };
-	S[(uint32)E::ViewModeResolve] = { false };
+	S[(uint32)E::ViewModeMesh] = { false };
+	S[(uint32)E::DebugViewModeResolve] = { false };
 	S[(uint32)E::Translucent] = { false };
 	S[(uint32)E::Fog] = { false };
 	S[(uint32)E::FXAA] = { false };
@@ -1439,18 +1421,15 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 		*/
 		case ERenderPass::Opaque:
 			RTVs[0] = CurrentRenderTargets.SceneColorRTV;
-			RTVs[1] = CurrentRenderTargets.SceneNormalRTV;
-			RTVs[2] = CurrentRenderTargets.SceneWorldPosRTV;
 			break;
 		case ERenderPass::Decal:
 			RTVs[0] = CurrentRenderTargets.SceneColorRTV;
-			RTVs[1] = CurrentRenderTargets.SceneNormalRTV;
-			RTVs[2] = CurrentRenderTargets.SceneWorldPosRTV;
 			break;
-		case ERenderPass::ViewModeResolve:
-			RTVs[0] = CurrentRenderTargets.SceneViewModeRTV;
-			SceneFinalRTV = CurrentRenderTargets.SceneViewModeRTV;
-			SceneFinalSRV = CurrentRenderTargets.SceneViewModeSRV;
+		case ERenderPass::ViewModeMesh:
+		case ERenderPass::DebugViewModeResolve:
+			RTVs[0] = CurrentRenderTargets.DebugViewModeRTV;
+			SceneFinalRTV = CurrentRenderTargets.DebugViewModeRTV;
+			SceneFinalSRV = CurrentRenderTargets.DebugViewModeSRV;
 			break;
 		case ERenderPass::Fog:
 			RTVs[0] = CurrentRenderTargets.SceneFogRTV;
@@ -1479,7 +1458,7 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 	/** Pass 별 DSV 설정 */
 	switch (Pass)
 	{
-		case ERenderPass::ViewModeResolve:
+		case ERenderPass::DebugViewModeResolve:
 			DSV = nullptr;
 			break;
 		case ERenderPass::Fog:

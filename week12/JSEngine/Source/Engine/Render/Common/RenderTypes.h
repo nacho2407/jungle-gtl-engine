@@ -51,7 +51,8 @@ enum class ERenderPass : uint32
 {
 	Opaque,
 	Decal,
-	ViewModeResolve,
+	ViewModeMesh,
+	DebugViewModeResolve,
 	Fog,
 	Sandervistan,
 	FXAA,

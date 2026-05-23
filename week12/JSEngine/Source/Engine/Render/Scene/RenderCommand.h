@@ -86,7 +86,8 @@ struct FPerObjectConstants
 struct FFrameConstants
 {
 	FMatrix View;          
-	FMatrix Projection;    
+	FMatrix Projection;
+	FMatrix InvViewProjection;
 	FVector CameraPosition;
 	float bIsOrthographic = 0.0f; // 0: Perspective, 1: Orthographic
 	FVector WireframeColor;
@@ -400,7 +401,7 @@ struct FLightData
 	float	Padding[3];
 };
 
-struct FViewModeResolveConstants
+struct FDebugViewModeResolveConstants
 {
 	uint32	ViewMode = 0;
 	float	Padding[3] = { 0.0f, 0.0f, 0.0f };
@@ -465,7 +466,7 @@ struct FRenderCommand
 		FBillboardConstants Billboard;  // ← 추가
 		FFogConstants Fog;
 		FFXAAConstants FXAA;
-		FViewModeResolveConstants ViewModeResolve;
+		FDebugViewModeResolveConstants DebugViewModeResolve;
 		FProjectionDecalConstants Decal;
 	} Constants;
 

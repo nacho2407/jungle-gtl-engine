@@ -1,5 +1,17 @@
 #include "GridRenderPass.h"
 #include "Render/LineBatcher.h"
+#include "Render/Scene/RenderBus.h"
+
+namespace
+{
+    bool IsDebugViewMode(EViewMode ViewMode)
+    {
+        return ViewMode == EViewMode::Normal ||
+            ViewMode == EViewMode::Heatmap ||
+            ViewMode == EViewMode::BoneWeightHeatmap ||
+            ViewMode == EViewMode::Depth;
+    }
+}
 
 bool FGridRenderPass::Initialize()
 {
@@ -13,6 +25,13 @@ bool FGridRenderPass::Release()
 
 bool FGridRenderPass::Begin(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        OutSRV = PrevPassSRV;
+        OutRTV = PrevPassRTV;
+        return true;
+    }
+
     ID3D11RenderTargetView* RTV = PrevPassRTV;
     ID3D11DepthStencilView* DSV = Context->RenderTargets->DepthStencilView;
     Context->DeviceContext->OMSetRenderTargets(1, &RTV, DSV);
@@ -24,6 +43,11 @@ bool FGridRenderPass::Begin(const FRenderPassContext* Context)
 
 bool FGridRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        return true;
+    }
+
     if (Context->GridLineBatcher == nullptr)
     {
         return true;

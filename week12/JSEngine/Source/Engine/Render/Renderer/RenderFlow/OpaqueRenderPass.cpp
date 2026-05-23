@@ -10,20 +10,6 @@
 #include "Core/ResourceManager.h"
 #include "Component/PostProcess/Light/LightComponent.h"
 
-static void UpdateFrameBufferWireframeOverride(const FRenderPassContext* Context, bool bWireframe)
-{
-	FFrameConstants FrameConstantData = Context->RenderBus->BuildFrameConstants(bWireframe);
-
-	Context->RenderResources->FrameBuffer.Update(
-		Context->DeviceContext,
-		&FrameConstantData,
-		sizeof(FFrameConstants));
-
-	ID3D11Buffer* FrameBuffer = Context->RenderResources->FrameBuffer.GetBuffer();
-	Context->DeviceContext->VSSetConstantBuffers(0, 1, &FrameBuffer);
-	Context->DeviceContext->PSSetConstantBuffers(0, 1, &FrameBuffer);
-}
-
 static void DrawBoundMesh(
 	ID3D11DeviceContext* DeviceContext,
 	ID3D11Buffer* IndexBuffer,
@@ -42,6 +28,14 @@ static void DrawBoundMesh(
 	}
 }
 
+static bool IsDebugViewMode(EViewMode ViewMode)
+{
+	return ViewMode == EViewMode::Normal ||
+		ViewMode == EViewMode::Heatmap ||
+		ViewMode == EViewMode::BoneWeightHeatmap ||
+		ViewMode == EViewMode::Depth;
+}
+
 bool FOpaqueRenderPass::Initialize()
 {
 	return true;
@@ -50,11 +44,16 @@ bool FOpaqueRenderPass::Initialize()
 bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 {
 
+	if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+	{
+		OutSRV = PrevPassSRV;
+		OutRTV = PrevPassRTV;
+		return true;
+	}
+
 	const FRenderTargetSet* RenderTargets = Context->RenderTargets;
-	ID3D11RenderTargetView* RTVs[3] = { 
-		RenderTargets->SceneColorRTV, 
-		RenderTargets->SceneNormalRTV,
-		RenderTargets->SceneWorldPosRTV
+	ID3D11RenderTargetView* RTVs[1] = {
+		RenderTargets->SceneColorRTV
 	};
 	ID3D11DepthStencilView* DSV = RenderTargets->DepthStencilView;
 
@@ -96,12 +95,13 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 {  
    const FRenderBus* RenderBus = Context->RenderBus;  
    const TArray<FRenderCommand>& Commands = RenderBus->GetCommands(ERenderPass::Opaque);  
+   if (IsDebugViewMode(RenderBus->GetViewMode()))
+	   return true;
 
    if (Commands.empty())  
 	   return true;  
 
    const EViewMode ViewMode = RenderBus->GetViewMode();
-   const bool bBoneWeightHeatmapMode = ViewMode == EViewMode::BoneWeightHeatmap;
 
    for (const FRenderCommand& Cmd : Commands)  
    {  
@@ -150,12 +150,6 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 		   break;
 	   case EViewMode::Lit_BlinnPhong:
 		   PermutationKey = (uint32)ELightingModel::BlinnPhong;
-		   break;
-	   case EViewMode::Heatmap:
-		   PermutationKey = (uint32)ELightingModel::Heatmap;
-		   break;
-	   case EViewMode::BoneWeightHeatmap:
-		   PermutationKey = (uint32)ELightingModel::BoneWeightHeatmap;
 		   break;
 	   }
 
@@ -251,21 +245,6 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 			   Context->RenderBus->GetBoneMatrixConstants(Cmd),
 			   Context->RenderResources,
 			   Cmd.BoneMatrixConstantBuffer);
-
-		   if (bBoneWeightHeatmapMode)
-		   {
-			   FBoneWeightHeatmapConstants BoneWeightHeatmapConstants = {};
-			   BoneWeightHeatmapConstants.SelectedBoneIndex = Cmd.BoneWeightHeatmapBoneIndex;
-			   BoneWeightHeatmapConstants.bEnabled = Cmd.bUseBoneWeightHeatmap ? 1u : 0u;
-			   Context->RenderResources->BoneWeightHeatmapConstantBuffer.Update(
-				   Context->DeviceContext,
-				   &BoneWeightHeatmapConstants,
-				   sizeof(FBoneWeightHeatmapConstants));
-			   ID3D11Buffer* BoneWeightHeatmapBuffer =
-				   Context->RenderResources->BoneWeightHeatmapConstantBuffer.GetBuffer();
-			   Context->DeviceContext->VSSetConstantBuffers(6, 1, &BoneWeightHeatmapBuffer);
-			   Context->DeviceContext->PSSetConstantBuffers(6, 1, &BoneWeightHeatmapBuffer);
-		   }
 	   }
 
 	   auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
@@ -287,34 +266,6 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 			   Cmd.AvgBoneInfluencePerVertex);
 	   }
 	   DrawBoundMesh(Context->DeviceContext, indexBuffer, indexStart, indexCount, vertexCount);
-
-	   const bool bDrawBoneWeightWireOverlay =
-		   bBoneWeightHeatmapMode && Cmd.Type == ERenderCommandType::SkeletalMesh;
-	   if (bDrawBoneWeightWireOverlay)
-	   {
-		   UpdateFrameBufferWireframeOverride(Context, true);
-
-		   ID3D11RasterizerState* PrevRasterizerState = nullptr;
-		   Context->DeviceContext->RSGetState(&PrevRasterizerState);
-
-		   ID3D11RasterizerState* WireRS =
-			   FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::WireFrame);
-		   Context->DeviceContext->RSSetState(WireRS);
-
-		   ID3D11DepthStencilState* DepthReadOnlyState =
-			   FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::DepthReadOnly);
-		   Context->DeviceContext->OMSetDepthStencilState(DepthReadOnlyState, 0);
-
-		   DrawBoundMesh(Context->DeviceContext, indexBuffer, indexStart, indexCount, vertexCount);
-
-		   UpdateFrameBufferWireframeOverride(Context, false);
-		   Context->DeviceContext->RSSetState(PrevRasterizerState);
-		   if (PrevRasterizerState != nullptr)
-		   {
-			   PrevRasterizerState->Release();
-		   }
-		   Context->DeviceContext->OMSetDepthStencilState(DSState, 0);
-	   }
    }  
 
    return true;  

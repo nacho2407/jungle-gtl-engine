@@ -16,18 +16,14 @@ struct FRenderTargetSet
 {
 	ID3D11RenderTargetView* SceneColorRTV = nullptr;
     ID3D11ShaderResourceView* SceneColorSRV = nullptr;
-    ID3D11RenderTargetView*   SceneNormalRTV = nullptr;
-    ID3D11ShaderResourceView*     SceneNormalSRV = nullptr;
-    ID3D11RenderTargetView*     SceneViewModeRTV = nullptr;
-    ID3D11ShaderResourceView*     SceneViewModeSRV = nullptr;
+    ID3D11RenderTargetView* DebugViewModeRTV = nullptr;
+    ID3D11ShaderResourceView* DebugViewModeSRV = nullptr;
     ID3D11RenderTargetView*       SceneFogRTV = nullptr;
     ID3D11ShaderResourceView* SceneFogSRV = nullptr;
     ID3D11RenderTargetView* SceneSandervistanRTV = nullptr;
     ID3D11ShaderResourceView* SceneSandervistanSRV = nullptr;
     ID3D11RenderTargetView* ScenePostProcessRTV = nullptr;
     ID3D11ShaderResourceView* ScenePostProcessSRV = nullptr;
-    ID3D11RenderTargetView*       SceneWorldPosRTV = nullptr;
-    ID3D11ShaderResourceView*     SceneWorldPosSRV = nullptr;
     ID3D11RenderTargetView*       SceneFXAARTV = nullptr;
     ID3D11ShaderResourceView*     SceneFXAASRV = nullptr;
 	ID3D11RenderTargetView* SelectionMaskRTV = nullptr;
@@ -72,8 +68,6 @@ private:
 	D3D11_VIEWPORT ViewportInfo = {};
 
 	const float ClearColor[4] = { 0.f, 0.f, 0.f, 1.0f };
-	const float ClearNormal[4] = { 0.25f, 0.25f, 0.25f, 0.f };
-
 	ID3D11RasterizerState* CurrentRasterizerState = nullptr;
 	ID3D11DepthStencilState* CurrentDepthStencilState = nullptr;
 	ID3D11BlendState* CurrentBlendState = nullptr;

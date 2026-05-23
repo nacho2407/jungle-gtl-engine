@@ -21,13 +21,6 @@ cbuffer StaticMeshBuffer : register(b2)
     float padding3;
 };
 
-cbuffer BoneWeightHeatmapBuffer : register(b6)
-{
-    int SelectedBoneIndex;
-    uint bBoneWeightHeatmapEnabled;
-    float2 BoneWeightHeatmapPadding;
-};
-
 #if HAS_DIFFUSE_MAP
 Texture2D DiffuseMap  : register(t0);
 #endif
@@ -75,9 +68,6 @@ struct PSInput
     float3 WorldPos : TEXCOORD0;
     float3 WorldNormal : TEXCOORD1;
     float2 UV : TEXCOORD2;
-#if BONE_WEIGHT_HEATMAP
-    float BoneWeightHeat : TEXCOORD6;
-#endif
 #if LIGHTING_MODEL_GOURAUD
     float3 LitColor     : TEXCOORD3;
 #elif HAS_NORMAL_MAP
@@ -85,18 +75,11 @@ struct PSInput
 #endif
 };
 
-struct PSOutput
-{
-    float4 Color : SV_TARGET0;
-    float4 Normal : SV_TARGET1;
-    float4 WorldPos : SV_TARGET2;
-};
-
-void ApplyWireframeColor(inout PSOutput output)
+void ApplyWireframeColor(inout float4 color)
 {
     if (bIsWireframe > 0.5f)
     {
-        output.Color = float4(WireframeRGB, 1.0f);
+        color = float4(WireframeRGB, 1.0f);
     }
 }
 
@@ -108,10 +91,6 @@ PSInput mainVS(VSInput input)
     output.ClipPos = ApplyMVP(input.Position);
     output.UV = input.UV + ScrollUV;
     output.WorldNormal = normalize(mul(input.Normal, (float3x3) WorldInvTrans));
-#if BONE_WEIGHT_HEATMAP
-    output.BoneWeightHeat = 0.0f;
-#endif
-    
 #if HAS_NORMAL_MAP && !LIGHTING_MODEL_GOURAUD
     output.WorldTangent = float4(normalize(mul(input.Tangent.xyz, (float3x3)WorldInvTrans)), input.Tangent.w);
 #endif
@@ -141,28 +120,6 @@ PSInput mainVS(VSInput input)
     return output;
 }
 
-#if BONE_WEIGHT_HEATMAP
-float GetSelectedBoneWeight(uint4 BoneIndices, float4 BoneWeights)
-{
-    if (bBoneWeightHeatmapEnabled == 0 || SelectedBoneIndex < 0)
-    {
-        return 0.0f;
-    }
-
-    float SelectedWeight = 0.0f;
-    [unroll]
-    for (int i = 0; i < 4; ++i)
-    {
-        if ((int)BoneIndices[i] == SelectedBoneIndex)
-        {
-            SelectedWeight += BoneWeights[i];
-        }
-    }
-
-    return saturate(SelectedWeight);
-}
-#endif
-
 PSInput SkeletalMeshVS(SkeletalVSInput input)
 {
     FSkinningResult Skinned = ApplyLinearBlendSkinning(
@@ -179,11 +136,7 @@ PSInput SkeletalMeshVS(SkeletalVSInput input)
     passThrough.UV = input.UV;
     passThrough.Tangent = float4(Skinned.Tangent, input.Tangent.w);
 
-    PSInput output = mainVS(passThrough);
-#if BONE_WEIGHT_HEATMAP
-    output.BoneWeightHeat = GetSelectedBoneWeight(input.BoneIndices, input.BoneWeights);
-#endif
-    return output;
+    return mainVS(passThrough);
 }
 
 #if HAS_NORMAL_MAP
@@ -195,44 +148,6 @@ float3 PerturbNormal(float3 worldNormal, float4 worldTangent, float2 uv)
     float3x3 TBN = float3x3(T, B, N);
     float3 tn = BumpMap.Sample(SampleState, uv).rgb * 2.0f - 1.0f;
     return normalize(mul(tn, TBN));
-}
-#endif
-
-#if LIGHT_HEATMAP
-float3 GetHeatmapColor(float weight)
-{
-    float3 color;
-    color.r = smoothstep(0.4f, 0.7f, weight);
-    color.g = smoothstep(0.0f, 0.4f, weight) - smoothstep(0.7f, 1.0f, weight);
-    color.b = 1.0f - smoothstep(0.0f, 0.4f, weight);
-    return color;
-}
-#endif
-
-#if BONE_WEIGHT_HEATMAP
-float3 GetBoneWeightHeatmapColor(float weight)
-{
-    weight = saturate(weight);
-
-    const float3 noneColor = float3(1.0f, 0.0f, 1.0f);
-    const float3 lowColor = float3(0.0f, 0.25f, 1.0f);
-    const float3 midColor = float3(0.0f, 0.9f, 0.35f);
-    const float3 highColor = float3(1.0f, 0.85f, 0.0f);
-    const float3 maxColor = float3(1.0f, 0.05f, 0.0f);
-
-    if (weight < 0.25f)
-    {
-        return lerp(noneColor, lowColor, weight / 0.25f);
-    }
-    if (weight < 0.5f)
-    {
-        return lerp(lowColor, midColor, (weight - 0.25f) / 0.25f);
-    }
-    if (weight < 0.75f)
-    {
-        return lerp(midColor, highColor, (weight - 0.5f) / 0.25f);
-    }
-    return lerp(highColor, maxColor, (weight - 0.75f) / 0.25f);
 }
 #endif
 
@@ -398,26 +313,14 @@ float CalculateShadow(float4 worldPos)
     }
 #endif
 
-PSOutput mainPS(PSInput input) : SV_TARGET
+float4 mainPS(PSInput input) : SV_TARGET0
 {
-    PSOutput output;
-    
     float4 DiffuseTex = float4(1.f, 1.f, 1.f, 1.f);
 #if HAS_DIFFUSE_MAP
         DiffuseTex = DiffuseMap.Sample(SampleState, input.UV);
         clip(DiffuseTex.a - 0.001f);
 #endif
 
-#if BONE_WEIGHT_HEATMAP
-    float Weight = bBoneWeightHeatmapEnabled != 0 ? input.BoneWeightHeat : 0.0f;
-    float3 HeatColor = GetBoneWeightHeatmapColor(Weight);
-    output.Color = float4(HeatColor, 1.0f);
-    output.Normal = float4(normalize(input.WorldNormal) * 0.5f + 0.5f, 1.f);
-    output.WorldPos = float4(input.WorldPos, 1.f);
-    ApplyWireframeColor(output);
-    return output;
-#endif
-    
     float4 FinalColor = float4(DiffuseColor * DiffuseTex.rgb, 1);
     float3 SpecularFactor = SpecularColor;
 #if HAS_SPECULAR_MAP
@@ -431,11 +334,9 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 
     if (any(abs(Emissive) > 0.0001f))
     {
-        // Emissive surface: keep base color visible, add glow color, and mark normal.a = 2.
-        output.Color = float4(FinalColor.rgb + Emissive * DiffuseTex.rgb, 1.f);
-        output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 2.f);
-        output.WorldPos = float4(input.WorldPos, 1.f);
-        return output;
+        float4 emissiveColor = float4(FinalColor.rgb + Emissive * DiffuseTex.rgb, 1.f);
+        ApplyWireframeColor(emissiveColor);
+        return emissiveColor;
     }
 
     float3 N = normalize(input.WorldNormal);
@@ -445,37 +346,6 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     
     float3 accumulatedLight = float3(1, 1, 1);
     
-#if LIGHT_HEATMAP
-#if CULLING_MODEL_CLUSTERED
-        uint2 tileCoord  = uint2(input.ClipPos.xy) / TILE_SIZE;
-        uint  numTilesX  = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
-        uint  numTilesY  = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
-        float z          = (IsOrthographic) ? NearZ + input.ClipPos.z * (FarZ - NearZ) : abs(Projection[3][2] / (input.ClipPos.z - Projection[0][2]));
-    
-        uint  sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
-        uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
-        float weight = saturate(float(clusterData.y) / 64.0); // MAX_LIGHTS_PER_TILE 湲곗?
-#elif CULLING_MODEL_TILED
-        uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
-        uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
-        uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
-        float weight = saturate((float)tileData.y / 64.0f); // MAX_LIGHTS_PER_TILE 湲곗?
-#endif
-    float3 heatmapColor = GetHeatmapColor(weight);
-    
-    // ???寃쎄퀎???쒓컖??(?좏깮 ?ы빆: ??쇱쓽 媛?μ옄由?1?쎌????대몼寃?泥섎━)
-    uint2 pixelInTile = uint2(input.ClipPos.xy) % TILE_SIZE;
-    if (pixelInTile.x == 0 || pixelInTile.y == 0)
-    {
-        heatmapColor *= 0.5f; 
-    }
-
-    output.Color = float4(heatmapColor, 1.0f);
-    output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
-    output.WorldPos = float4(input.WorldPos, 1.f);
-    return output;
-#endif
-            
 #if LIGHTING_MODEL_GOURAUD
     accumulatedLight = input.LitColor;
     
@@ -542,11 +412,8 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     }
 #endif
     
-    output.Color = float4(FinalColor.xyz * accumulatedLight, 1.0f);
-    output.WorldPos = float4(input.WorldPos, 1.f);
-    output.Normal = float4(N * 0.5f + 0.5f, 1.f);
-
-    ApplyWireframeColor(output);
+    float4 outputColor = float4(FinalColor.xyz * accumulatedLight, 1.0f);
+    ApplyWireframeColor(outputColor);
 
 #ifdef CASCADE_VIS
     if (DirectionalCascadeCount > 0)
@@ -561,11 +428,11 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         else                        cascadeColor = float3(1.0f, 1.0f, 0.0f);
 
         if (CascadeIndex < MAX_DIRECTIONAL_CASCADE_COUNT)
-            output.Color.rgb = lerp(output.Color.rgb, cascadeColor, 0.5f);
+            outputColor.rgb = lerp(outputColor.rgb, cascadeColor, 0.5f);
     }
 #endif
  
    
       
-    return output;
+    return outputColor;
 }
