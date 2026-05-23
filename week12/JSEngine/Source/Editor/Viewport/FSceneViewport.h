@@ -72,6 +72,10 @@ public:
         {
             return RenderTargetSet->DebugViewModeSRV;
         }
+        if (RenderTargetSet->SceneFXAASRV)
+        {
+            return RenderTargetSet->SceneFXAASRV;
+        }
 		return RenderTargetSet->SceneColorSRV;
 	}
 

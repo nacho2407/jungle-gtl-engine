@@ -49,13 +49,13 @@ bool FFXAARenderPass::Begin(const FRenderPassContext* Context)
 
     const FRenderTargetSet* RenderTargets = Context->RenderTargets;
     ID3D11RenderTargetView* RTVs[1] = {
-        RenderTargets->SceneColorRTV
+        RenderTargets->SceneFXAARTV
     };
     ID3D11DepthStencilView* DSV = nullptr;
 
     Context->DeviceContext->OMSetRenderTargets(ARRAYSIZE(RTVs), RTVs, DSV);
-    OutSRV = RenderTargets->SceneColorSRV;
-    OutRTV = RenderTargets->SceneColorRTV;
+    OutSRV = RenderTargets->SceneFXAASRV;
+    OutRTV = RenderTargets->SceneFXAARTV;
 
     Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
