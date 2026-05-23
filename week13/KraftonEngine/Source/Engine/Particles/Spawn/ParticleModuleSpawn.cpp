@@ -2,12 +2,15 @@
 
 bool UParticleModuleSpawn::GetSpawnAmount(const FSpawnContext& Context, int32 Offset, float OldLeftover, float DeltaTime, int32& OutNumber, float& OutRate)
 {
-	return false;
+	OutRate = SpawnRate * SpawnRateScale;
+	OutNumber = static_cast<int32>(DeltaTime * OutRate + OldLeftover);
+	return true;
 }
 
 bool UParticleModuleSpawn::GetBurstCount(const FSpawnContext& Context, int32 Offset, float OldLeftover, float DeltaTime, int32& OutBurstCount)
 {
-	return false;
+	OutBurstCount = 0;
+	return true;
 }
 
 float UParticleModuleSpawn::GetMaximumSpawnRate()
@@ -25,6 +28,11 @@ float UParticleModuleSpawn::GetEstimatedSpawnRate()
 int32 UParticleModuleSpawn::GetMaximumBurstCount()
 {
 	int32 MaxBurst = 0;
+	for (int32 i = 0; i < BurstList.size(); i++)
+	{
+		MaxBurst += BurstList[i].Count;
+	}
+
 	return MaxBurst;
 }
 

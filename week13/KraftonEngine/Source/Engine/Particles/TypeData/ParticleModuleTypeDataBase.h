@@ -20,4 +20,6 @@ public:
 	virtual EModuleType	GetModuleType() const override { return EPMT_TypeData; }
 
 	virtual bool		IsAMeshEmitter() const { return false; }
+
+	virtual void Spawn(const FSpawnContext& Context) override;
 };
