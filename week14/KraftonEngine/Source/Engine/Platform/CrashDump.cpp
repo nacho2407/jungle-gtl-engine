@@ -87,6 +87,30 @@ namespace
 		return ComputerName;
 	}
 
+	bool CopyIfExists(const std::filesystem::path& SourcePath, const std::filesystem::path& TargetPath)
+	{
+		std::error_code Error;
+		if (!std::filesystem::exists(SourcePath, Error) || Error)
+		{
+			return false;
+		}
+
+		std::filesystem::copy_file(SourcePath, TargetPath, std::filesystem::copy_options::overwrite_existing, Error);
+		return !Error;
+	}
+
+	std::filesystem::path GetExecutablePath()
+	{
+		WCHAR ExecutablePath[MAX_PATH] = {};
+		const DWORD Length = GetModuleFileNameW(nullptr, ExecutablePath, MAX_PATH);
+		if (Length == 0 || Length >= MAX_PATH)
+		{
+			return {};
+		}
+
+		return std::filesystem::path(ExecutablePath);
+	}
+
 	bool TryCopyDumpToSharedFolder(const std::wstring& LocalDumpPath, const WCHAR* FileName, std::wstring& OutSharedPath)
 	{
 		std::wstring SharedCrashDumpRoot = GetCrashDumpShareDir();
@@ -97,7 +121,10 @@ namespace
 
 		try
 		{
-			std::filesystem::path SharedDir = std::filesystem::path(SharedCrashDumpRoot) / GetComputerNameForPath();
+			std::filesystem::path SharedDir =
+				std::filesystem::path(SharedCrashDumpRoot) /
+				GetComputerNameForPath() /
+				std::filesystem::path(FileName).stem();
 			std::error_code Error;
 			std::filesystem::create_directories(SharedDir, Error);
 			if (Error)
@@ -110,6 +137,16 @@ namespace
 			if (Error)
 			{
 				return false;
+			}
+
+			const std::filesystem::path ExecutablePath = GetExecutablePath();
+			if (!ExecutablePath.empty())
+			{
+				CopyIfExists(ExecutablePath, SharedDir / ExecutablePath.filename());
+
+				std::filesystem::path PdbPath = ExecutablePath;
+				PdbPath.replace_extension(L".pdb");
+				CopyIfExists(PdbPath, SharedDir / PdbPath.filename());
 			}
 
 			OutSharedPath = SharedPath.wstring();
