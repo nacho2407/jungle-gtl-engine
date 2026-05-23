@@ -44,6 +44,8 @@ void UParticleLODLevel::UpdateModuleLists()
 		SpawnModules.push_back(SpawnModule);
 	}
 
+	// 각 모듈이 자신의 bSpawnModule/bUpdateModule 플래그로 어느 단계에 들어갈지 결정한다.
+	// 같은 모듈이 두 리스트에 모두 들어갈 수 있다 (예: Velocity, Size, Color).
 	for (UParticleModule* Module : Modules)
 	{
 		if (!Module)
@@ -51,14 +53,13 @@ void UParticleLODLevel::UpdateModuleLists()
 			continue;
 		}
 
-		if (Cast<UParticleModuleLifetime>(Module) || Cast<UParticleModuleLocation>(Module) || Cast<
-			UParticleModuleVelocity>(Module) || Cast<UParticleModuleSize>(Module) || Cast<UParticleModuleColor>(Module))
+		if (Module->bSpawnModule)
 		{
 			SpawnModules.push_back(Module);
 		}
-
-		// TODO: Add module list classification when these modules are implemented:
-		// UParticleModuleColor, UParticleModuleSize, UParticleModuleCameraOffset,
-		// UParticleModuleOrbit, UParticleModuleSizeScaleBySpeed.
+		if (Module->bUpdateModule)
+		{
+			UpdateModules.push_back(Module);
+		}
 	}
 }

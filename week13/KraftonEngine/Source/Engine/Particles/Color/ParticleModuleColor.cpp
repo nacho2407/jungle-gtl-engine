@@ -12,7 +12,9 @@ void UParticleModuleColor::Spawn(const FSpawnContext& Context)
 	Particle.Color = Particle.BaseColor;
 }
 
+#if WITH_EDITOR
 void UParticleModuleColor::PostEditChangeProperty(const FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
+#endif

@@ -9,7 +9,9 @@ void UParticleModuleSize::Spawn(const FSpawnContext& Context)
 	Particle.Size = StartSize;
 }
 
+#if WITH_EDITOR
 void UParticleModuleSize::PostEditChangeProperty(const FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
+#endif

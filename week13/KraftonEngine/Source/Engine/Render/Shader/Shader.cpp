@@ -5,6 +5,7 @@
 #include "Materials/Material.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Notification.h"
+#include <cstring>
 #include <iostream>
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -275,6 +276,11 @@ void FShader::CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* 
 	Reflector->GetDesc(&ShaderDesc);
 
 	TArray<D3D11_INPUT_ELEMENT_DESC> Elements;
+	TArray<D3D11_SIGNATURE_PARAMETER_DESC> Params;
+	Params.reserve(ShaderDesc.InputParameters);
+
+	bool bUsesSpriteInstanceData = false;
+	bool bUsesMeshInstanceData = false;
 
 	for (UINT i = 0; i < ShaderDesc.InputParameters; ++i)
 	{
@@ -285,14 +291,41 @@ void FShader::CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* 
 		if (ParamDesc.SystemValueType != D3D_NAME_UNDEFINED)
 			continue;
 
+		Params.push_back(ParamDesc);
+		bUsesSpriteInstanceData |=
+			std::strcmp(ParamDesc.SemanticName, "SIZE") == 0 ||
+			std::strcmp(ParamDesc.SemanticName, "ROTATION") == 0;
+		bUsesMeshInstanceData |=
+			std::strcmp(ParamDesc.SemanticName, "TRANSFORM") == 0;
+	}
+
+	bool bSeenMeshVertexColor = false;
+	for (const D3D11_SIGNATURE_PARAMETER_DESC& ParamDesc : Params)
+	{
+		const bool bSpriteInstanceElement = bUsesSpriteInstanceData &&
+			(std::strcmp(ParamDesc.SemanticName, "POSITION") == 0 ||
+			 std::strcmp(ParamDesc.SemanticName, "SIZE") == 0 ||
+			 std::strcmp(ParamDesc.SemanticName, "COLOR") == 0 ||
+			 std::strcmp(ParamDesc.SemanticName, "ROTATION") == 0);
+
+		bool bMeshInstanceElement = bUsesMeshInstanceData &&
+			std::strcmp(ParamDesc.SemanticName, "TRANSFORM") == 0;
+		if (bUsesMeshInstanceData && std::strcmp(ParamDesc.SemanticName, "COLOR") == 0)
+		{
+			bMeshInstanceElement = bSeenMeshVertexColor;
+			bSeenMeshVertexColor = true;
+		}
+
 		D3D11_INPUT_ELEMENT_DESC Elem = {};
 		Elem.SemanticName = ParamDesc.SemanticName;
 		Elem.SemanticIndex = ParamDesc.SemanticIndex;
 		Elem.Format = MaskToFormat(ParamDesc.ComponentType, ParamDesc.Mask);
-		Elem.InputSlot = 0;
+		Elem.InputSlot = (bSpriteInstanceElement || bMeshInstanceElement) ? 1 : 0;
 		Elem.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-		Elem.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-		Elem.InstanceDataStepRate = 0;
+		Elem.InputSlotClass = (Elem.InputSlot == 1)
+			? D3D11_INPUT_PER_INSTANCE_DATA
+			: D3D11_INPUT_PER_VERTEX_DATA;
+		Elem.InstanceDataStepRate = (Elem.InputSlot == 1) ? 1 : 0;
 
 		Elements.push_back(Elem);
 	}

@@ -15,6 +15,8 @@
 #include "Particles/Spawn/ParticleModuleSpawn.h"
 #include "Particles/TypeData/ParticleModuleTypeDataBase.h"
 #include "Particles/Velocity/ParticleModuleVelocity.h"
+#include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -1095,6 +1097,55 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
 
     if (UParticleModuleRequired* Required = Cast<UParticleModuleRequired>(Module))
     {
+        const FString CurrentSlot = Required->MaterialSlot.ToString();
+        const bool    bSlotNone   = (CurrentSlot.empty() || CurrentSlot == "None");
+        const FString Preview     = bSlotNone ? FString("None") : CurrentSlot;
+
+        bool bMaterialPicked = false;
+
+        if (ImGui::BeginCombo("Material", Preview.c_str()))
+        {
+            if (ImGui::Selectable("None", bSlotNone))
+            {
+                Required->MaterialSlot = "None";
+                Required->ResolveMaterialFromSlot();
+                bChanged         = true;
+                bMaterialPicked  = true;
+            }
+            if (bSlotNone)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+
+            const TArray<FMaterialAssetListItem>& MatFiles =
+                FMaterialManager::Get().GetAvailableMaterialFiles();
+            for (const FMaterialAssetListItem& Item : MatFiles)
+            {
+                const bool bSelected = (CurrentSlot == Item.FullPath);
+                if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+                {
+                    // SetMaterial은 MaterialSlot을 머티리얼 JSON 내부의 PathFileName으로 덮어쓰는데,
+                    // 그 값이 실제 파일 경로와 다르면 다음 Tick의 ResolveMaterialFromSlot에서
+                    // 폴백 머티리얼로 떨어진다. 파일 경로를 그대로 슬롯에 저장해 자기참조 일관성을 유지한다.
+                    Required->MaterialSlot = Item.FullPath;
+                    Required->ResolveMaterialFromSlot();
+                    bChanged         = true;
+                    bMaterialPicked  = true;
+                }
+                if (bSelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        if (bMaterialPicked)
+        {
+            // 인스턴스가 Init 시점에 캐싱한 머티리얼/렌더상태를 다시 잡도록 시뮬레이션을 재시작.
+            RestartPreviewSimulation();
+        }
+
         bChanged |= ImGui::DragFloat("SpawnRate", &Required->SpawnRate, 0.1f, 0.0f, 10000.0f);
         bChanged |= ImGui::DragFloat("Emitter Duration", &Required->EmitterDuration, 0.05f, 0.0f, 10000.0f);
         bChanged |= ImGui::DragFloat("Emitter Delay", &Required->EmitterDelay, 0.05f, 0.0f, 10000.0f);

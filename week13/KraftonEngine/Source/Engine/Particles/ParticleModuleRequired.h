@@ -1,8 +1,9 @@
 ﻿#pragma once
 #include "ParticleModule.h"
 #include "Particles/ParticleEmitter.h"
+#include "Object/Ptr/SoftObjectPtr.h"
 
-class UMaterialInterface; 
+class UMaterial;
 
 /**
  *	The screen alignment to utilize for the emitter at this LOD level.
@@ -45,7 +46,15 @@ class UParticleModuleRequired : public UParticleModule
 {
 public:
 	GENERATED_BODY()
-	UMaterialInterface* Material = nullptr;
+
+	void SetMaterial(UMaterial* InMaterial);
+	void ResolveMaterialFromSlot();
+	void PostEditProperty(const char* PropertyName) override;
+
+	UPROPERTY(Edit, Save, Category = "Rendering", DisplayName = "Material", AssetType = "Material")
+	FSoftObjectPtr MaterialSlot = "None";
+
+	UMaterial* Material = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = "Emitter")
 	FVector EmitterOrigin;
