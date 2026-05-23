@@ -2,8 +2,8 @@
 
 #include "Particles/ParticleEmitter.h"
 #include "Particles/ParticleEmitterInstances.h"
-#include "Particle/ParticleSystem.h"
-#include "Particle/ParticleSystemManager.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemManager.h"
 #include "Render/Proxy/ParticleSystemSceneProxy.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
@@ -319,6 +319,16 @@ void UParticleSystemComponent::BuildEmitterInstances()
         if (!Emitter)
         {
             continue;
+        }
+
+        if (!Emitter->HasValidLOD0())
+        {
+            Emitter->InitializeDefaultSpriteEmitter();
+        }
+
+        if (!Emitter->HasValidLOD0())
+        {
+            return;
         }
 
         Emitter->CacheEmitterModuleInfo();

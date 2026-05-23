@@ -7,7 +7,7 @@
 #include "Animation/Montage/AnimMontage.h"
 #include "Animation/Skeleton/Skeleton.h"
 #include "Animation/Skeleton/SkeletonManager.h"
-#include "Particle/ParticleSystemManager.h"
+#include "Particles/ParticleSystemManager.h"
 #include "Platform/Paths.h"
 
 #include <cstring>

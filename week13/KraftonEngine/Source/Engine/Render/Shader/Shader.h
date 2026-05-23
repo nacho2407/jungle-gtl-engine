@@ -3,6 +3,14 @@
 
 struct FMaterialParameterInfo;
 
+struct FShaderInputLayoutDesc
+{
+	const D3D11_INPUT_ELEMENT_DESC* Elements = nullptr;
+	uint32 ElementCount = 0;
+
+	bool IsValid() const { return Elements != nullptr && ElementCount > 0; }
+};
+
 // 셰이더 컴파일 실패 시 에러 처리 방식
 enum class EShaderErrorMode
 {
@@ -66,7 +74,8 @@ public:
 
 	void Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char* InVSEntryPoint, const char* InPSEntryPoint,
 		const D3D_SHADER_MACRO* InDefines = nullptr, TArray<FString>* OutIncludes = nullptr,
-		EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
+		EShaderErrorMode ErrorMode = EShaderErrorMode::Notification,
+		const FShaderInputLayoutDesc* InInputLayoutDesc = nullptr);
 	void Release();
 
 	void Bind(ID3D11DeviceContext* InDeviceContext) const;
@@ -83,6 +92,7 @@ private:
 	size_t CachedPixelShaderSize = 0;
 
 	void CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* VSBlob);
+	void CreateInputLayoutFromDesc(ID3D11Device* InDevice, ID3DBlob* VSBlob, const FShaderInputLayoutDesc& Desc);
 	void ExtractCBufferInfo(ID3DBlob* ShaderBlob, TMap<FString, FMaterialParameterInfo*>& OutLayout);
 	TMap<FString, FMaterialParameterInfo*> ShaderParameterLayout;
 };

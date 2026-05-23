@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "ParticleModuleSpawnBase.h"
-#include "Particle/ParticleEmitter.h"
+#include "Particles/ParticleEmitter.h"
 
 
 #include "Source/Engine/Particles/Spawn/ParticleModuleSpawn.generated.h"

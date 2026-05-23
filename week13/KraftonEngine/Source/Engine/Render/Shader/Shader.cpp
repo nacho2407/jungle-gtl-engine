@@ -91,7 +91,8 @@ FShader& FShader::operator=(FShader&& Other) noexcept
 }
 
 void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char* InVSEntryPoint, const char* InPSEntryPoint,
-	const D3D_SHADER_MACRO* InDefines, TArray<FString>* OutIncludes, EShaderErrorMode ErrorMode)
+	const D3D_SHADER_MACRO* InDefines, TArray<FString>* OutIncludes, EShaderErrorMode ErrorMode,
+	const FShaderInputLayoutDesc* InInputLayoutDesc)
 {
 	Release();
 
@@ -176,8 +177,14 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	CachedPixelShaderSize = pixelShaderCSO->GetBufferSize();
 	MemoryStats::AddPixelShaderMemory(static_cast<uint32>(CachedPixelShaderSize));
 
-	// Input Layout 생성 (VS input signature로부터 자동 추출)
-	CreateInputLayoutFromReflection(InDevice, vertexShaderCSO);
+	if (InInputLayoutDesc && InInputLayoutDesc->IsValid())
+	{
+		CreateInputLayoutFromDesc(InDevice, vertexShaderCSO, *InInputLayoutDesc);
+	}
+	else
+	{
+		CreateInputLayoutFromReflection(InDevice, vertexShaderCSO);
+	}
 
 	ExtractCBufferInfo(vertexShaderCSO, ShaderParameterLayout);
 	ExtractCBufferInfo(pixelShaderCSO, ShaderParameterLayout);
@@ -312,6 +319,16 @@ void FShader::CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* 
 	}
 
 	Reflector->Release();
+}
+
+void FShader::CreateInputLayoutFromDesc(ID3D11Device* InDevice, ID3DBlob* VSBlob, const FShaderInputLayoutDesc& Desc)
+{
+	HRESULT hr = InDevice->CreateInputLayout(Desc.Elements, Desc.ElementCount,
+		VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), &InputLayout);
+	if (FAILED(hr))
+	{
+		std::cerr << "Failed to create explicit Input Layout (HRESULT: " << hr << ")" << std::endl;
+	}
 }
 
 //셰이더 컴파일 후 호출. 셰이더 코드의 cbuffer, 텍스처 샘플러 선언을 분석해서 outlayout에 채워넣음. 이 정보는 머티리얼 템플릿이 생성될 때 참조되어야 하므로 셰이더 내부에서 제공하는 형태로 존재해야 함.

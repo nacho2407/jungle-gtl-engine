@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Proxy/PrimitiveSceneProxy.h"
-#include "Engine/Particle/DynamicEmitterData.h"
+#include "Engine/Particles/DynamicEmitterData.h"
 #include "Render/Resource/Buffer.h"
 #include <memory>
 
