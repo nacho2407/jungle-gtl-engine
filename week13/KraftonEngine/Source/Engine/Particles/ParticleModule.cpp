@@ -55,6 +55,7 @@ EModuleType UParticleModule::GetModuleType() const
 	return EModuleType();
 }
 
+#if WITH_EDITOR
 void UParticleModule::PostEditChangeProperty(const FPropertyChangedEvent& Event)
 {
 	Super::PostEditChangeProperty(Event);
@@ -64,3 +65,4 @@ bool UParticleModule::IsValidForLODLevel(UParticleLODLevel* LODLevel, FString& O
 {
 	return false;
 }
+#endif

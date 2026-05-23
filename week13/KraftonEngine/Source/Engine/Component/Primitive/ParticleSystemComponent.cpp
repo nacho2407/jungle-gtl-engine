@@ -1,5 +1,7 @@
 ﻿#include "ParticleSystemComponent.h"
 
+#include "Particles/ParticleEmitter.h"
+#include "Particles/ParticleEmitterInstances.h"
 #include "Particle/ParticleSystem.h"
 #include "Particle/ParticleSystemManager.h"
 #include "Render/Proxy/ParticleSystemSceneProxy.h"
@@ -146,7 +148,10 @@ void UParticleSystemComponent::TickComponent(
 
     for (FParticleEmitterInstance* Instance : EmitterInstances)
     {
-        // Instance->Tick(DeltaTime);
+        if (Instance)
+        {
+            Instance->Tick(DeltaTime, false);
+        }
     }
 
     BuildDynamicData();
@@ -158,8 +163,7 @@ void UParticleSystemComponent::ClearEmitterInstances()
 {
     for (FParticleEmitterInstance* Instance : EmitterInstances)
     {
-        // TODO: 나중에 Delete 할지말지 고민 
-        (void)Instance;
+        delete Instance;
     }
 
     EmitterInstances.clear();
@@ -169,15 +173,69 @@ void UParticleSystemComponent::ClearRenderData()
 {
     for (FDynamicEmitterDataBase* Data : EmitterRenderData)
     {
-        // TODO: 나중에 Delete 할지말지 고민 
-        (void)Data;
+        delete Data;
     }
 
     EmitterRenderData.clear();
 }
 
 void UParticleSystemComponent::BuildEmitterInstances()
-{}
+{
+    UParticleSystem* ParticleTemplate = Template.Get();
+    if (!ParticleTemplate)
+    {
+        return;
+    }
+
+    for (UParticleEmitter* Emitter : ParticleTemplate->GetEmitters())
+    {
+        if (!Emitter)
+        {
+            continue;
+        }
+
+        Emitter->CacheEmitterModuleInfo();
+
+        FParticleEmitterInstance* Instance = nullptr;
+        if (Emitter->bUseMeshInstance)
+        {
+            Instance = new FParticleMeshEmitterInstance();
+        }
+        else
+        {
+            Instance = new FParticleSpriteEmitterInstance();
+        }
+
+        Instance->InitParameters(Emitter, this);
+        Instance->Init();
+
+        if (UParticleLODLevel* LODLevel = Emitter->GetLODLevel(0))
+        {
+            Instance->Resize(LODLevel->CalculateMaxActiveParticleCount());
+        }
+        else
+        {
+            Instance->Resize(32);
+        }
+
+        EmitterInstances.push_back(Instance);
+    }
+}
 
 void UParticleSystemComponent::BuildDynamicData()
-{}
+{
+    ClearRenderData();
+
+    for (FParticleEmitterInstance* Instance : EmitterInstances)
+    {
+        if (!Instance)
+        {
+            continue;
+        }
+
+        if (FDynamicEmitterDataBase* DynamicData = Instance->GetDynamicData(false))
+        {
+            EmitterRenderData.push_back(DynamicData);
+        }
+    }
+}

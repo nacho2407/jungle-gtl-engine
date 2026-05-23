@@ -58,6 +58,10 @@ struct FVector {
 	float Length() const;
 	void  Normalize();
 	FVector Normalized() const;
+	FVector GetSafeNormal(float Tolerance = 1.0e-6f) const;
+	FVector GetSafeNormal(float Tolerance, const FVector& ResultIfZero) const;
+	bool ContainsNaN() const;
+	float GetAbsMax() const;
 
 	float   Dot(const FVector& Other) const;
 	FVector Cross(const FVector& Other) const;
@@ -72,6 +76,7 @@ struct FVector {
 	FVector operator-(const FVector& Other) const;
 	FVector operator+(float Scalar) const;
 	FVector operator-(float Scalar) const;
+	FVector operator*(const FVector& Other) const;
 	FVector operator*(float Scalar) const;
 	FVector operator/(float Scalar) const;
 
@@ -79,6 +84,7 @@ struct FVector {
 	FVector& operator-=(const FVector& Other);
 	FVector& operator+=(float Scalar);
 	FVector& operator-=(float Scalar);
+	FVector& operator*=(const FVector& Other);
 	FVector& operator*=(float Scalar);
 	FVector& operator/=(float Scalar);
 

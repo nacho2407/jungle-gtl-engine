@@ -250,6 +250,27 @@
     <Filter Include="Source\Engine\Object\Reflection">
       <UniqueIdentifier>{469de7df-5ecb-d3cb-8cf2-aff37b3c7c25}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Particle">
+      <UniqueIdentifier>{0c79d1df-b2a0-4f7c-b2cf-5a97432e1201}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Particles">
+      <UniqueIdentifier>{5bd34612-0d04-46f7-a4b1-f5ad09f1a2cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Particles\Lifetime">
+      <UniqueIdentifier>{d4f9c7b4-e9f2-4f2b-8554-2c1972b0cf89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Particles\Location">
+      <UniqueIdentifier>{8269386d-a9fe-4f95-86a5-b1cc3f56830c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Particles\Spawn">
+      <UniqueIdentifier>{2bbd3dfa-1375-4058-9045-40e25a21800c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Particles\TypeData">
+      <UniqueIdentifier>{24f2708a-c803-4ad4-90d7-56bb8d0dcb6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Particles\Velocity">
+      <UniqueIdentifier>{0885f0c1-0c86-4c99-aefb-f9bbab7a8920}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Physics">
       <UniqueIdentifier>{c1985821-1144-9a46-639a-f7de31f4a1fa}</UniqueIdentifier>
     </Filter>
@@ -1578,13 +1599,48 @@
     <ClCompile Include="ParticleSystemComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Particles\ParticleModule.cpp" />
-    <ClCompile Include="Source\Engine\Particles\ParticleLODLevel.cpp" />
-    <ClCompile Include="Source\Engine\Particles\ParticleModuleRequired.cpp" />
-    <ClCompile Include="Source\Engine\Particles\Spawn\ParticleModuleSpawnBase.cpp" />
-    <ClCompile Include="Source\Engine\Particles\Spawn\ParticleModuleSpawn.cpp" />
-    <ClCompile Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.cpp" />
-    <ClCompile Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.cpp" />
+    <ClCompile Include="Source\Engine\Particle\ParticleSystem.cpp">
+      <Filter>Source\Engine\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particle\ParticleSystemManager.cpp">
+      <Filter>Source\Engine\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\ParticleEmitter.cpp">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\ParticleEmitterInstances.cpp">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\ParticleHelper.cpp">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\ParticleLODLevel.cpp">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\ParticleMemory.cpp">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\ParticleModule.cpp">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\ParticleModuleRequired.cpp">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataBase.cpp">
+      <Filter>Source\Engine\Particles\TypeData</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Spawn\ParticleModuleSpawn.cpp">
+      <Filter>Source\Engine\Particles\Spawn</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.cpp">
+      <Filter>Source\Engine\Particles\Lifetime</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Location\ParticleModuleLocation.cpp">
+      <Filter>Source\Engine\Particles\Location</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.cpp">
+      <Filter>Source\Engine\Particles\Velocity</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -4431,15 +4487,72 @@
     <ClInclude Include="ParticleSystemComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Particles\ParticleModule.h" />
-    <ClInclude Include="Source\Engine\Particles\ParticleLODLevel.h" />
-    <ClInclude Include="Source\Engine\Particles\ParticleModuleRequired.h" />
-    <ClInclude Include="Source\Engine\Particles\Spawn\ParticleModuleSpawnBase.h" />
-    <ClInclude Include="Source\Engine\Particles\Spawn\ParticleModuleSpawn.h" />
-    <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetimeBase.h" />
-    <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.h" />
-    <ClInclude Include="Source\Engine\Particles\Velocity\ParticleModuleVelocityBase.h" />
-    <ClInclude Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleSystem.h">
+      <Filter>Source\Engine\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particle\ParticleSystemManager.h">
+      <Filter>Source\Engine\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleDynamicData.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleEmitter.generated.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleEmitter.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleEmitterInstances.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleHelper.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleLODLevel.generated.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleLODLevel.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleMemory.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleModule.generated.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleModule.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleModuleRequired.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataBase.h">
+      <Filter>Source\Engine\Particles\TypeData</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Spawn\ParticleModuleSpawnBase.h">
+      <Filter>Source\Engine\Particles\Spawn</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Spawn\ParticleModuleSpawn.h">
+      <Filter>Source\Engine\Particles\Spawn</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetimeBase.h">
+      <Filter>Source\Engine\Particles\Lifetime</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.h">
+      <Filter>Source\Engine\Particles\Lifetime</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Location\ParticleModuleLocationBase.h">
+      <Filter>Source\Engine\Particles\Location</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Location\ParticleModuleLocation.h">
+      <Filter>Source\Engine\Particles\Location</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Velocity\ParticleModuleVelocityBase.h">
+      <Filter>Source\Engine\Particles\Velocity</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.h">
+      <Filter>Source\Engine\Particles\Velocity</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

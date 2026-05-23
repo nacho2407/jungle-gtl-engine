@@ -4,3 +4,7 @@ FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(UParticleE
 {
 	return nullptr;
 }
+
+void UParticleModuleTypeDataBase::Spawn(const FSpawnContext& Context)
+{
+}

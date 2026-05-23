@@ -1,4 +1,5 @@
 ﻿#include "Vector.h"
+#include <algorithm>
 #include <DirectXMath.h>
 
 #pragma region __FVECTOR__
@@ -22,6 +23,32 @@ FVector FVector::Normalized() const {
 	FVector copy = *this;
 	copy.Normalize();
 	return copy;
+}
+
+FVector FVector::GetSafeNormal(float Tolerance) const
+{
+	return GetSafeNormal(Tolerance, FVector::ZeroVector);
+}
+
+FVector FVector::GetSafeNormal(float Tolerance, const FVector& ResultIfZero) const
+{
+	const float length = Length();
+	if (length <= Tolerance)
+	{
+		return ResultIfZero;
+	}
+
+	return *this / length;
+}
+
+bool FVector::ContainsNaN() const
+{
+	return !std::isfinite(X) || !std::isfinite(Y) || !std::isfinite(Z);
+}
+
+float FVector::GetAbsMax() const
+{
+	return std::max(std::max(std::abs(X), std::abs(Y)), std::abs(Z));
 }
 
 float FVector::Dot(const FVector& Other) const {
@@ -120,6 +147,14 @@ FVector FVector::operator-(float Scalar) const {
 	return ret;
 }
 
+FVector FVector::operator*(const FVector& Other) const {
+	FVector ret;
+	ret.X = X * Other.X;
+	ret.Y = Y * Other.Y;
+	ret.Z = Z * Other.Z;
+	return ret;
+}
+
 FVector FVector::operator*(float Scalar) const {
 	FVector ret;
 	ret.X = X * Scalar;
@@ -153,6 +188,11 @@ FVector& FVector::operator+=(float Scalar) {
 
 FVector& FVector::operator-=(float Scalar) {
 	*this = *this - Scalar;
+	return *this;
+}
+
+FVector& FVector::operator*=(const FVector& Other) {
+	*this = *this * Other;
 	return *this;
 }
 

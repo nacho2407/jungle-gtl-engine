@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "ParticleModuleVelocityBase.h"
 
 #include "Source/Engine/Particles/Velocity/ParticleModuleVelocity.generated.h"
@@ -13,10 +13,6 @@ public:
 	FVector MinVelocity;
 	UPROPERTY(EditAnywhere, Category = "Velocity")
 	FVector MaxVelocity;
-	/*
-	Spawn
-		Particle->Velocity = RandomVector(MinVelocity, MaxVelocity);
-	*/
 	virtual void Spawn(const FSpawnContext& Context) override;
 
 #if WITH_EDITOR

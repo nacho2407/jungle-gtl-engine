@@ -1,0 +1,4 @@
+#pragma once
+#define CURRENT_FILE_ID Source_Engine_Particles_ParticleLODLevel_h
+#define Source_Engine_Particles_ParticleLODLevel_h_15_GENERATED_BODY
+#undef CURRENT_FILE_ID
