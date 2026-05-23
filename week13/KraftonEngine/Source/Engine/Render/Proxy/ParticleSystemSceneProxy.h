@@ -14,6 +14,7 @@ class FParticleSystemSceneProxy : public FPrimitiveSceneProxy
 {
 public:
 	FParticleSystemSceneProxy(UParticleSystemComponent* InComponent);
+	~FParticleSystemSceneProxy() override;
 
 	void UpdateLOD(uint32 LODLevel) override;
 	void UpdatePerViewport(const FFrameContext& Frame) override;

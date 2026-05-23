@@ -1,4 +1,4 @@
-#include "ParticleSystemEditorWidget.h"
+﻿#include "ParticleSystemEditorWidget.h"
 
 #include "imgui.h"
 #include "Object/Object.h"
@@ -237,7 +237,6 @@ void FParticleSystemEditorWidget::Open(UObject* Object)
     PreviewTime          = 0.0f;
     PropertySearch[0]    = '\0';
     PreviewPSC           = nullptr;
-    EmitterEnabled.clear();
 
     UParticleSystem* ParticleSystem = GetParticleSystem();
     if (ParticleSystem)
@@ -291,6 +290,11 @@ void FParticleSystemEditorWidget::Close()
 {
     FAssetEditorWidget::Close();
 
+    FSlateApplication::Get().UnregisterViewport(&ViewportClient);
+
+    PreviewPSC           = nullptr;
+    PreviewTextureHandle = nullptr;
+
     if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
     {
         FScene& PreviewScene = PreviewWorld->GetScene();
@@ -302,12 +306,12 @@ void FParticleSystemEditorWidget::Close()
         }
     }
 
-    PreviewPSC           = nullptr;
-    PreviewTextureHandle = nullptr;
-
-    FSlateApplication::Get().UnregisterViewport(&ViewportClient);
+    ViewportClient.SetPreviewParticleSystemComponent(nullptr);
+    ViewportClient.SetPreviewActor(nullptr);
+    ViewportClient.SetPreviewWorld(nullptr);
     ViewportClient.Release();
 }
+
 
 void FParticleSystemEditorWidget::Tick(float DeltaTime)
 {
@@ -527,19 +531,6 @@ void FParticleSystemEditorWidget::SyncEmitterUIState()
 
     const int32 EmitterCount = ParticleSystem ? static_cast<int32>(ParticleSystem->GetEmitters().size()) : 0;
 
-    EmitterEnabled.resize(EmitterCount);
-
-    if (ParticleSystem)
-    {
-        const TArray<UParticleEmitter*>& Emitters = ParticleSystem->GetEmitters();
-
-        for (int32 Index = 0; Index < EmitterCount; ++Index)
-        {
-            UParticleEmitter* Emitter = Emitters[Index];
-            EmitterEnabled[Index]     = Emitter ? Emitter->IsEnabled() : true;
-        }
-    }
-
     if (EmitterCount <= 0)
     {
         SelectedEmitterIndex = -1;
@@ -552,6 +543,7 @@ void FParticleSystemEditorWidget::SyncEmitterUIState()
         SelectEmitter(0, -1);
     }
 }
+
 
 void FParticleSystemEditorWidget::RestartPreviewSimulation()
 {
@@ -910,11 +902,6 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                             Emitter->SetEnabled(bEnabled);
                         }
 
-                        if (EmitterIndex >= 0 && EmitterIndex < static_cast<int32>(EmitterEnabled.size()))
-                        {
-                            EmitterEnabled[EmitterIndex] = bEnabled;
-                        }
-                        
                         MarkDirty();
                         RestartPreviewSimulation();
                     }
@@ -1041,11 +1028,6 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
                     if (Emitter)
                     {
                         Emitter->SetEnabled(bEnabled);
-                    }
-                    
-                    if (SelectedEmitterIndex >= 0 && SelectedEmitterIndex < static_cast<int32>(EmitterEnabled.size()))
-                    {
-                        EmitterEnabled[SelectedEmitterIndex] = bEnabled;
                     }
                     
                     MarkDirty();
