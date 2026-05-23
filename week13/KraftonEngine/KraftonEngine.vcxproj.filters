@@ -1565,6 +1565,8 @@
     <ClCompile Include="Source\Engine\Particles\ParticleModuleRequired.cpp" />
     <ClCompile Include="Source\Engine\Particles\Spawn\ParticleModuleSpawnBase.cpp" />
     <ClCompile Include="Source\Engine\Particles\Spawn\ParticleModuleSpawn.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -4407,6 +4409,10 @@
     <ClInclude Include="Source\Engine\Particles\ParticleModuleRequired.h" />
     <ClInclude Include="Source\Engine\Particles\Spawn\ParticleModuleSpawnBase.h" />
     <ClInclude Include="Source\Engine\Particles\Spawn\ParticleModuleSpawn.h" />
+    <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetimeBase.h" />
+    <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.h" />
+    <ClInclude Include="Source\Engine\Particles\Velocity\ParticleModuleVelocityBase.h" />
+    <ClInclude Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

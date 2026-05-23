@@ -3,6 +3,7 @@
 
 class UParticleModuleLifetimeBase : public UParticleModule
 {
+public:
 	virtual float	GetMaxLifetime()
 	{
 		return 0.0f;

@@ -13,10 +13,6 @@ public:
 		Particle->Lifetime =
 		RandomRange(LifetimeMin, LifetimeMax);
 		Particle->RelativeTime = 0.0f;
-
-	Update
-		Particle->Age += DeltaTime;
-		Particle->RelativeTime = Particle->Age / Particle->Lifetime;
 	*/
 
 	virtual void Spawn(const FSpawnContext& Context) override;
