@@ -7,7 +7,7 @@
 
 #include "Particles/ParticleHelper.h"
 #include "Particles/ParticleEmitter.h"
-#include "Particle/DynamicEmitterData.h"
+#include "Particles/DynamicEmitterData.h"
 #include "Particles/ParticleModule.h"
 
 class UParticleSystemComponent;

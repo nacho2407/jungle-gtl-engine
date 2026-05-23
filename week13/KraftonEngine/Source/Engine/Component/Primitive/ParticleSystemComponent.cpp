@@ -2,8 +2,8 @@
 
 #include "Particles/ParticleEmitter.h"
 #include "Particles/ParticleEmitterInstances.h"
-#include "Particle/ParticleSystem.h"
-#include "Particle/ParticleSystemManager.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemManager.h"
 #include "Render/Proxy/ParticleSystemSceneProxy.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
@@ -143,7 +143,7 @@ FPrimitiveSceneProxy* UParticleSystemComponent::CreateSceneProxy()
 
 void UParticleSystemComponent::UpdateWorldAABB() const
 {
-    const FVector Extent(1.0f, 1.0f, 1.0f);
+    const FVector Extent(100.0f, 100.0f, 100.0f);
     const FVector Center = GetWorldLocation();
 
     WorldAABBMinLocation = Center - Extent;
@@ -317,6 +317,16 @@ void UParticleSystemComponent::BuildEmitterInstances()
     for (UParticleEmitter* Emitter : ParticleTemplate->GetEmitters())
     {
         if (!Emitter)
+        {
+            continue;
+        }
+
+        if (!Emitter->HasValidLOD0())
+        {
+            Emitter->InitializeDefaultSpriteEmitter();
+        }
+
+        if (!Emitter->HasValidLOD0())
         {
             continue;
         }

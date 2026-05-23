@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 
-#include "Particle/ParticleSystem.h"
+#include "Particles/ParticleSystem.h"
 #include "Asset/AssetPackage.h"
 #include "Platform/Paths.h"
 #include "Serialization/WindowsArchive.h"

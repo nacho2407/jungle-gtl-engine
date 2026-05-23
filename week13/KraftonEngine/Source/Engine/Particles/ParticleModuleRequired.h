@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "ParticleModule.h"
-#include "Particle/ParticleEmitter.h"
+#include "Particles/ParticleEmitter.h"
 #include "Object/Ptr/SoftObjectPtr.h"
 
 class UMaterial;
