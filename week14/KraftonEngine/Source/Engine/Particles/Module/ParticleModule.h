@@ -1,12 +1,13 @@
 ﻿#pragma once
 
 #include "Object/Object.h"
+#include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Particles/Runtime/ParticleRuntimeTypes.h"
+#include "Particles/ParticleHelper.h"
 #include "Core/Property/SoftObjectProperty.h"
 
 #include "Source/Engine/Particles/Module/ParticleModule.generated.h"
 
-struct FParticleEmitterInstance;
 class UMaterialInterface;
 
 UCLASS()
@@ -20,7 +21,7 @@ public:
 	virtual bool IsUpdateModule() const { return false; }
 
 	virtual void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) {}
-	virtual void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime, FBaseParticle& Particle) {}
+	virtual void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) {}
 };
 
 UCLASS()
@@ -121,10 +122,16 @@ public:
 		Particle.Color = StartColor;
 	}
 
-	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime, FBaseParticle& Particle) override
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override
 	{
-		const float T = Particle.RelativeTime;
-		Particle.Color = StartColor * (1.0f - T) + EndColor * T;
+		uint8* ParticleData = Owner->ParticleData;
+		const int32 ParticleStride = Owner->ParticleStride;
+		const int32 ActiveParticles = Owner->ActiveParticles;
+
+		BEGIN_UPDATE_LOOP
+			const float T = Particle.RelativeTime;
+			Particle.Color = StartColor * (1.0f - T) + EndColor * T;
+		END_UPDATE_LOOP
 	}
 };
 

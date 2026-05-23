@@ -86,7 +86,7 @@ protected:
 	UParticleModuleSpawn* GetSpawnModule() const;
 
 	void RunSpawnModules(FBaseParticle& Particle, float SpawnTime);
-	void RunUpdateModules(FBaseParticle& Particle, float DeltaTime);
+	void RunUpdateModules(float DeltaTime);
 
 	int32 MemBlockSize = 0;
 	int32 ParticleDataNumBytes = 0;

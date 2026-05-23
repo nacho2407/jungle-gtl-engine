@@ -2,6 +2,7 @@
 
 #include "Component/Particle/ParticleSystemComponent.h"
 #include "Particles/ParticleSystem.h"
+#include "Particles/ParticleHelper.h"
 #include "Particles/Module/ParticleModule.h"
 
 FParticleEmitterInstance::~FParticleEmitterInstance()
@@ -82,11 +83,20 @@ int32 FParticleEmitterInstance::SpawnParticles(float DeltaTime)
 	int32 SpawnedCount = 0;
 	for (int32 Index = 0; Index < SpawnCount; ++Index)
 	{
-		FBaseParticle* Particle = SpawnParticle();
-		if (!Particle)
+		if (!ParticleData || ActiveParticles >= MaxActiveParticles)
 		{
 			break;
 		}
+
+		const int32 ParticleIndex = ActiveParticles++;
+		ParticleIndices[ParticleIndex] = static_cast<uint16>(ParticleIndex);
+
+		uint8* ParticleData = this->ParticleData + ParticleIndex * ParticleStride;
+		const int32 Offset = 0;
+		DECLARE_PARTICLE_PTR(FBaseParticle, Particle)
+
+		*Particle = FBaseParticle();
+		Particle->bAlive = true;
 
 		InitializeParticle(*Particle);
 		++ParticleCounter;
@@ -120,24 +130,40 @@ void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle)
 
 void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 {
-	for (int32 ParticleIndex = 0; ParticleIndex < ActiveParticles;)
-	{
-		FBaseParticle& Particle = GetParticle(ParticleIndex);
+	uint8* ParticleData = this->ParticleData;
+	const int32 ParticleStride = this->ParticleStride;
+	const int32 ActiveParticles = this->ActiveParticles;
+
+	BEGIN_UPDATE_LOOP
 		Particle.Age += DeltaTime;
 
 		if (Particle.Age >= Particle.Lifetime)
+		{
+			Particle.bAlive = false;
+		}
+
+		if (Particle.bAlive)
+		{
+			Particle.OldPosition = Particle.Position;
+			Particle.Position += Particle.Velocity * DeltaTime;
+			Particle.Rotation += Particle.RotationRate * DeltaTime;
+			Particle.RelativeTime = Particle.Age * Particle.OneOverMaxLifetime;
+		}
+	END_UPDATE_LOOP
+
+	for (int32 ParticleIndex = 0; ParticleIndex < this->ActiveParticles;)
+	{
+		FBaseParticle& Particle = GetParticle(ParticleIndex);
+		if (!Particle.bAlive)
 		{
 			KillParticle(ParticleIndex);
 			continue;
 		}
 
-		Particle.OldPosition = Particle.Position;
-		Particle.Position += Particle.Velocity * DeltaTime;
-		Particle.Rotation += Particle.RotationRate * DeltaTime;
-		Particle.RelativeTime = Particle.Age * Particle.OneOverMaxLifetime;
-		RunUpdateModules(Particle, DeltaTime);
 		++ParticleIndex;
 	}
+
+	RunUpdateModules(DeltaTime);
 }
 
 void FParticleEmitterInstance::KillParticle(int32 ParticleIndex)
@@ -257,7 +283,7 @@ void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float Sp
 	}
 }
 
-void FParticleEmitterInstance::RunUpdateModules(FBaseParticle& Particle, float DeltaTime)
+void FParticleEmitterInstance::RunUpdateModules(float DeltaTime)
 {
 	if (!CurrentLODLevel)
 	{
@@ -267,7 +293,7 @@ void FParticleEmitterInstance::RunUpdateModules(FBaseParticle& Particle, float D
 	{
 		if (Module && Module->IsUpdateModule())
 		{
-			Module->Update(this, PayloadOffset, DeltaTime, Particle);
+			Module->Update(this, PayloadOffset, DeltaTime);
 		}
 	}
 }
