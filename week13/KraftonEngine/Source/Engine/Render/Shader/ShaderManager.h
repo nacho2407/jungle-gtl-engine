@@ -116,6 +116,7 @@ namespace EShaderPath
 	inline constexpr const char* CameraLetterbox = "Shaders/PostProcess/CameraLetterbox.hlsl";
 
 	inline constexpr const char* ParticleSprite = "Shaders/Particle/Sprite.hlsl";
+	inline constexpr const char* ParticleMesh  = "Shaders/Particle/Mesh.hlsl";
 }
 
 namespace EShadowDepthDefines

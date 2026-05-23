@@ -6,6 +6,7 @@
 #include "Render/Types/FrameContext.h"
 #include "Render/Types/VertexTypes.h"
 #include "Materials/Material.h"
+#include "Core/Logging/Log.h"
 
 
 struct FParticleFrameConstants
@@ -31,7 +32,11 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 
 	UParticleSystemComponent* Comp =
 		static_cast<UParticleSystemComponent*>(GetOwner());
-	if (!Comp) return;
+	if (!Comp)
+	{
+		UE_LOG("[ParticleProxy] UpdatePerViewport: Owner component is null");
+		return;
+	}
 
 	// GetEmitterRenderData(): 컴포넌트가 매 틱 갱신한 동적 에미터 데이터
 	const TArray<FDynamicEmitterDataBase*>& EmitterList = Comp->GetEmitterRenderData();
@@ -41,6 +46,11 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 
 	for (int32 i = 0; i < CachedEmitterCount; ++i)
 	{
+		if (!CachedEmitterData[i])
+		{
+			UE_LOG("[ParticleProxy] UpdatePerViewport: EmitterData[%d] is null, skip", i);
+			continue;
+		}
 		if (i < static_cast<int32>(EmitterBuffers.size()) && EmitterBuffers[i])
 			FillStagingBuffer(*CachedEmitterData[i], *EmitterBuffers[i]);
 	}
@@ -68,10 +78,17 @@ void FParticleSystemSceneProxy::BuildParticleCommands(
 	}
 
 	// GPU 업로드 + 드로우 커맨드 생성
+	int32 SubmittedCount = 0;
 	for (auto& BufferPtr : EmitterBuffers)
 	{
 		if (!BufferPtr || BufferPtr->ActiveParticleCount <= 0) continue;
 		SubmitEmitter(*BufferPtr, Device, Context, Frame, OutCmdList);
+		++SubmittedCount;
+	}
+
+	if (SubmittedCount == 0)
+	{
+		UE_LOG("[ParticleProxy] BuildParticleCommands: %d emitter(s) cached but none had active particles", CachedEmitterCount);
 	}
 }
 
@@ -88,6 +105,9 @@ void FParticleSystemSceneProxy::BuildQuadGeometry(ID3D11Device* Device)
 
 	uint32 Indices[6] = { 0, 1, 2, 2, 1, 3 };
 	QuadIB.Create(Device, Indices, 6, sizeof(Indices));
+
+	if (!QuadVB.GetBuffer() || !QuadIB.GetBuffer())
+		UE_LOG("[ParticleProxy] BuildQuadGeometry: Failed to create quad VB or IB");
 }
 
 
@@ -125,14 +145,26 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 			static_cast<const FDynamicSpriteEmitterReplayDataBase&>(Source);
 		OutBuffer.Material = SpriteSource.Material;
 
+		if (!OutBuffer.Material)
+			UE_LOG("[ParticleProxy] FillStagingBuffer: Material is null (emitter type=%d)", (int)Source.eEmitterType);
+
 		if (Source.eEmitterType == EDynamicEmitterType::Mesh)
 		{
 			OutBuffer.EmitterMeshBuffer =
 				static_cast<const FDynamicMeshEmitterData&>(EmitterData).MeshBuffer;
+
+			if (!OutBuffer.EmitterMeshBuffer)
+				UE_LOG("[ParticleProxy] FillStagingBuffer: MeshBuffer is null on Mesh emitter");
 		}
 	}
 
-	if (Count == 0 || !Source.DataContainer.ParticleData) return;
+	if (Count == 0) return;
+
+	if (!Source.DataContainer.ParticleData)
+	{
+		UE_LOG("[ParticleProxy] FillStagingBuffer: ParticleData is null but ActiveParticleCount=%d", Count);
+		return;
+	}
 
 	if (Source.eEmitterType == EDynamicEmitterType::Sprite)
 	{
@@ -201,11 +233,20 @@ void FParticleSystemSceneProxy::SubmitSpriteEmitter(
 	ID3D11Device* Device, ID3D11DeviceContext* Context,
 	const FFrameContext& Frame, FDrawCommandList& OutCmdList)
 {
-	if (!QuadVB.GetBuffer() || !QuadIB.GetBuffer()) return;
+	if (!QuadVB.GetBuffer() || !QuadIB.GetBuffer())
+	{
+		UE_LOG("[ParticleProxy] SubmitSpriteEmitter: QuadVB or QuadIB is null");
+		return;
+	}
 
 	Buffer.InstanceVB.EnsureCapacity(Device, static_cast<uint32>(Buffer.ActiveParticleCount));
-	Buffer.InstanceVB.Update(Context, Buffer.StagingBuffer.data(),
-		static_cast<uint32>(Buffer.ActiveParticleCount));
+
+	if (!Buffer.InstanceVB.Update(Context, Buffer.StagingBuffer.data(),
+		static_cast<uint32>(Buffer.ActiveParticleCount)))
+	{
+		UE_LOG("[ParticleProxy] SubmitSpriteEmitter: InstanceVB upload failed (count=%d)", Buffer.ActiveParticleCount);
+		return;
+	}
 
 	FParticleFrameConstants FrameCB;
 	FrameCB.CameraRight = Frame.CameraRight; FrameCB._pad0 = 0.0f;
@@ -213,7 +254,11 @@ void FParticleSystemSceneProxy::SubmitSpriteEmitter(
 	Buffer.ParticleFrameCB.Update(Context, &FrameCB, sizeof(FParticleFrameConstants));
 
 	FShader* Shader = FShaderManager::Get().GetOrCreate(EShaderPath::ParticleSprite);
-	if (!Shader) return;
+	if (!Shader)
+	{
+		UE_LOG("[ParticleProxy] SubmitSpriteEmitter: ParticleSprite shader not found (%s)", EShaderPath::ParticleSprite);
+		return;
+	}
 
 	FDrawCommand& Cmd     = OutCmdList.AddCommand();
 	Cmd.Shader            = Shader;
@@ -244,14 +289,32 @@ void FParticleSystemSceneProxy::SubmitMeshEmitter(
 	ID3D11Device* Device, ID3D11DeviceContext* Context,
 	const FFrameContext& Frame, FDrawCommandList& OutCmdList)
 {
-	if (!Buffer.EmitterMeshBuffer || !Buffer.EmitterMeshBuffer->IsValid()) return;
+	if (!Buffer.EmitterMeshBuffer)
+	{
+		UE_LOG("[ParticleProxy] SubmitMeshEmitter: EmitterMeshBuffer is null");
+		return;
+	}
+	if (!Buffer.EmitterMeshBuffer->IsValid())
+	{
+		UE_LOG("[ParticleProxy] SubmitMeshEmitter: EmitterMeshBuffer is invalid (VB may not be created)");
+		return;
+	}
 
 	Buffer.InstanceVB.EnsureCapacity(Device, static_cast<uint32>(Buffer.ActiveParticleCount));
-	Buffer.InstanceVB.Update(Context, Buffer.StagingBuffer.data(),
-		static_cast<uint32>(Buffer.ActiveParticleCount));
 
-	FShader* Shader = FShaderManager::Get().GetOrCreate(EShaderPath::ParticleSprite);
-	if (!Shader) return;
+	if (!Buffer.InstanceVB.Update(Context, Buffer.StagingBuffer.data(),
+		static_cast<uint32>(Buffer.ActiveParticleCount)))
+	{
+		UE_LOG("[ParticleProxy] SubmitMeshEmitter: InstanceVB upload failed (count=%d)", Buffer.ActiveParticleCount);
+		return;
+	}
+
+	FShader* Shader = FShaderManager::Get().GetOrCreate(EShaderPath::ParticleMesh);
+	if (!Shader)
+	{
+		UE_LOG("[ParticleProxy] SubmitMeshEmitter: ParticleMesh shader not found (%s)", EShaderPath::ParticleMesh);
+		return;
+	}
 
 	FDrawCommand& Cmd     = OutCmdList.AddCommand();
 	Cmd.Shader            = Shader;
