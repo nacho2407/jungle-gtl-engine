@@ -1,4 +1,4 @@
-#include "ParticleSystemEditorViewportClient.h"
+﻿#include "ParticleSystemEditorViewportClient.h"
 
 #include "Component/Particle/ParticleSystemComponent.h"
 #include "Core/Types/EngineTypes.h"
@@ -53,19 +53,19 @@ void FParticleSystemEditorViewportClient::ResetCameraToPreviewBounds()
 {
 	FBoundingBox Bounds = PreviewParticleComponent
 		? PreviewParticleComponent->GetWorldBoundingBox()
-		: FBoundingBox(FVector(-64.0f, -64.0f, -32.0f), FVector(64.0f, 64.0f, 96.0f));
+		: FBoundingBox(FVector(-32.0f, -32.0f, -32.0f), FVector(32.0f, 32.0f, 32.0f));
 
 	FVector Center = Bounds.GetCenter();
 	float Radius = Bounds.GetExtent().Length();
-	if (Radius < 80.0f)
+	if (Radius < 55.0f)
 	{
 		Center = FVector(0.0f, 0.0f, 32.0f);
-		Radius = 140.0f;
+		Radius = 56.0f;
 	}
 
 	const float FovRadians = ViewTransform.FOV;
 	const float Distance = Radius / std::tan(FovRadians * 0.5f) * 1.15f;
-	const FVector ViewDir = FVector(-1.0f, -1.0f, -0.45f).Normalized();
+	const FVector ViewDir = FVector(0.0f, 1.0f, 0.0f).Normalized();
 
 	ViewTransform.ViewLocation = Center - ViewDir * Distance;
 	ViewTransform.LookAt(Center);

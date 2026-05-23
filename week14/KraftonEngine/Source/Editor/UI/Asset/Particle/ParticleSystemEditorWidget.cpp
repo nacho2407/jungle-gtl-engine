@@ -1,4 +1,4 @@
-#include "ParticleSystemEditorWidget.h"
+﻿#include "ParticleSystemEditorWidget.h"
 
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Component/Particle/ParticleSystemComponent.h"
@@ -11,6 +11,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemManager.h"
 #include "Render/Scene/FScene.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include "Runtime/Engine.h"
 #include "Slate/SlateApplication.h"
 #include "Viewport/Viewport.h"
@@ -99,6 +100,69 @@ namespace
 		}
 
 		return bActive;
+	}
+
+	ImVec2 ProjectWorldAxisToViewport(const FVector& Axis, const FMinimalViewInfo& POV)
+	{
+		const FVector CameraRight = POV.Rotation.GetRightVector();
+		const FVector CameraUp = POV.Rotation.GetUpVector();
+		return ImVec2(Axis.Dot(CameraRight), -Axis.Dot(CameraUp));
+	}
+
+	void DrawViewportAxisGizmo(ImDrawList* DrawList, const ImVec2& ViewportPos, const ImVec2& ViewportSize, FParticleSystemEditorViewportClient& ViewportClient)
+	{
+		FMinimalViewInfo POV;
+		if (!ViewportClient.GetCameraView(POV))
+		{
+			return;
+		}
+
+		const float AxisLength = (std::max)(20.0f, (std::min)(30.0f, (std::min)(ViewportSize.x, ViewportSize.y) * 0.01f));
+		const float Padding = AxisLength + 25.0f;
+		const ImVec2 Origin(ViewportPos.x + Padding, ViewportPos.y + ViewportSize.y - Padding);
+		const FVector CameraForward = POV.Rotation.GetForwardVector();
+
+		struct FAxisDrawInfo
+		{
+			const char* Label = "";
+			FVector Direction;
+			ImU32 Color = 0;
+			ImVec2 End;
+			float Depth = 0.0f;
+		};
+
+		FAxisDrawInfo Axes[3] =
+		{
+			{ "X", FVector::XAxisVector, IM_COL32(255, 70, 55, 255), ImVec2(), 0.0f },
+			{ "Y", FVector::YAxisVector, IM_COL32(105, 220, 70, 255), ImVec2(), 0.0f },
+			{ "Z", FVector::ZAxisVector, IM_COL32(70, 135, 255, 255), ImVec2(), 0.0f },
+		};
+
+		for (FAxisDrawInfo& Axis : Axes)
+		{
+			const ImVec2 Projected = ProjectWorldAxisToViewport(Axis.Direction, POV);
+			Axis.End = ImVec2(Origin.x + Projected.x * AxisLength, Origin.y + Projected.y * AxisLength);
+			Axis.Depth = Axis.Direction.Dot(CameraForward);
+		}
+
+		std::sort(Axes, Axes + 3, [](const FAxisDrawInfo& A, const FAxisDrawInfo& B)
+		{
+			return A.Depth > B.Depth;
+		});
+
+		DrawList->AddCircleFilled(Origin, 3.0f, IM_COL32(22, 24, 26, 255));
+		for (const FAxisDrawInfo& Axis : Axes)
+		{
+			DrawList->AddLine(Origin, Axis.End, Axis.Color, 2.0f);
+			DrawList->AddCircleFilled(Axis.End, 2.5f, Axis.Color);
+
+			const ImVec2 LabelDir(Axis.End.x - Origin.x, Axis.End.y - Origin.y);
+			const float LabelLen = std::sqrt(LabelDir.x * LabelDir.x + LabelDir.y * LabelDir.y);
+			const ImVec2 LabelOffset = LabelLen > 1.0f
+				? ImVec2((LabelDir.x / LabelLen) * 15.0f, (LabelDir.y / LabelLen) * 15.0f)
+				: ImVec2(4.0f, -10.0f);
+			DrawList->AddText(ImVec2(Axis.End.x + LabelOffset.x - 4.0f, Axis.End.y + LabelOffset.y - 6.0f), Axis.Color, Axis.Label);
+		}
 	}
 
 	void DrawPanelHeader(const char* Label)
@@ -803,14 +867,11 @@ void FParticleSystemEditorWidget::RenderViewportPanel(const ImVec2& Size)
 		DrawList->AddRectFilled(ViewportPos, CanvasMax, IM_COL32(75, 77, 77, 255));
 	}
 
-	const ImVec2 CanvasMax(ViewportPos.x + ViewportSize.x, ViewportPos.y + ViewportSize.y);
 	DrawList->AddRectFilled(ImVec2(ViewportPos.x + 8.0f, ViewportPos.y + 8.0f), ImVec2(ViewportPos.x + 50.0f, ViewportPos.y + 30.0f), IM_COL32(26, 27, 30, 190), 8.0f);
 	DrawList->AddText(ImVec2(ViewportPos.x + 18.0f, ViewportPos.y + 11.0f), IM_COL32(230, 234, 240, 255), "View");
 	DrawList->AddRectFilled(ImVec2(ViewportPos.x + 58.0f, ViewportPos.y + 8.0f), ImVec2(ViewportPos.x + 100.0f, ViewportPos.y + 30.0f), IM_COL32(26, 27, 30, 190), 8.0f);
 	DrawList->AddText(ImVec2(ViewportPos.x + 68.0f, ViewportPos.y + 11.0f), IM_COL32(230, 234, 240, 255), "Time");
-	DrawList->AddText(ImVec2(ViewportPos.x + 12.0f, CanvasMax.y - 28.0f), IM_COL32(255, 80, 50, 255), "X");
-	DrawList->AddText(ImVec2(ViewportPos.x + 42.0f, CanvasMax.y - 28.0f), IM_COL32(90, 220, 90, 255), "Y");
-	DrawList->AddText(ImVec2(ViewportPos.x + 28.0f, CanvasMax.y - 54.0f), IM_COL32(80, 130, 255, 255), "Z");
+	DrawViewportAxisGizmo(DrawList, ViewportPos, ViewportSize, ViewportClient);
 
 	ImGui::EndChild();
 }
