@@ -28,16 +28,6 @@ cbuffer BoneWeightHeatmapBuffer : register(b6)
     float2 BoneWeightHeatmapPadding;
 };
 
-struct FDecalInfo
-{
-    row_major matrix InvDecalWorld;
-    float4 DecalColorTint;
-    uint TextureIndex;
-    float3 Padding;
-};
-StructuredBuffer<FDecalInfo> Decals : register(t8);
-Texture2DArray DecalDiffuseTexture : register(t9);
-
 #if HAS_DIFFUSE_MAP
 Texture2D DiffuseMap  : register(t0);
 #endif
@@ -552,21 +542,6 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     }
 #endif
     
-    float4 DecalColor = float4(0, 0, 0, 0);
-    for (uint i = 0; i < DecalCount; i++)
-    {
-        float4 DecalWorldPos = mul(float4(input.WorldPos, 1.0f), Decals[i].InvDecalWorld);
-        if (any(abs(DecalWorldPos.xyz) > 0.5f))
-            continue;
-
-        float2 decalUV;
-        decalUV.xy = DecalWorldPos.yz + 0.5f;
-        decalUV.y = 1.0f - decalUV.y;
-
-        float4 decalTex = DecalDiffuseTexture.SampleLevel(SampleState, float3(decalUV, Decals[i].TextureIndex), 0);
-        DecalColor = (decalTex.a > 0.001) ? decalTex * Decals[i].DecalColorTint : DecalColor;
-    }
-    FinalColor = (DecalColor.a > 0.001) ? DecalColor : FinalColor;
     output.Color = float4(FinalColor.xyz * accumulatedLight, 1.0f);
     output.WorldPos = float4(input.WorldPos, 1.f);
     output.Normal = float4(N * 0.5f + 0.5f, 1.f);

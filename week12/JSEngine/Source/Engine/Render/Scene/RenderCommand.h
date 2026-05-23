@@ -204,16 +204,13 @@ struct FUberConstants
 	FAmbientLightInfo AmbientLight;
 	FDirectionalLightInfo DirectionalLight;
 	uint32 LightCount;
-	uint32 DecalCount;
-	float Padding[2];
+	float Padding[3];
 };
 
-struct FDecalInfo
+struct FProjectionDecalConstants
 {
 	FMatrix InvDecalWorld;
 	FVector4 ColorTint;
-	uint32 TextureIndex;
-	float Padding[3];
 };
 
 struct FGizmoConstants
@@ -469,7 +466,7 @@ struct FRenderCommand
 		FFogConstants Fog;
 		FFXAAConstants FXAA;
 		FViewModeResolveConstants ViewModeResolve;
-		FDecalInfo Decal;
+		FProjectionDecalConstants Decal;
 	} Constants;
 
 	ERenderCommandType Type = ERenderCommandType::Primitive;

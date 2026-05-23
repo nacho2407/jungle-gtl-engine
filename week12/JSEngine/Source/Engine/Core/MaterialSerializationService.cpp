@@ -565,9 +565,13 @@ bool FMaterialSerializationService::DeserializeMaterial(const FString& MatFilePa
 		TryParseMaterialBlendMode(Root["BlendMode"].ToString(), BlendMode);
 	}
 	Material->SetBlendMode(BlendMode);
+	const FMaterialBlendStateDesc DefaultBlendState =
+		(ShaderType == EMaterialShaderType::Decal || BlendMode == EMaterialBlendMode::Translucent)
+		? MakeAlphaBlendStateDesc()
+		: MakeOpaqueBlendStateDesc();
 	Material->SetBlendStateDesc(Root.hasKey("BlendState")
 		? DeserializeBlendStateDesc(Root["BlendState"], BlendMode)
-		: (BlendMode == EMaterialBlendMode::Translucent ? MakeAlphaBlendStateDesc() : MakeOpaqueBlendStateDesc()));
+		: DefaultBlendState);
 	if (Root.hasKey("ImportedName"))
 	{
 		Material->ImportedName = Root["ImportedName"].ToString();

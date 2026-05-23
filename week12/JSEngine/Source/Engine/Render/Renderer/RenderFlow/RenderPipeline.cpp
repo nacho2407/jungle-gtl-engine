@@ -34,6 +34,7 @@ namespace
             "RenderPass.Shadow",
             "RenderPass.VSMConversion",
             "RenderPass.Opaque",
+            "RenderPass.Decal",
             "RenderPass.ViewModeResolve",
             "RenderPass.Fog",
             "RenderPass.Translucent",
@@ -67,6 +68,9 @@ bool FRenderPipeline::Initialize()
 
     OpaqueRenderPass = std::make_shared<FOpaqueRenderPass>();
     OpaqueRenderPass->Initialize();
+
+	DecalRenderPass = std::make_shared<FDecalRenderPass>();
+	DecalRenderPass->Initialize();
 
 	ViewModeResolvePass = std::make_shared<FViewModeResolvePass>();
     ViewModeResolvePass->Initialize();
@@ -128,6 +132,7 @@ bool FRenderPipeline::Initialize()
 	RenderPasses.push_back(ShadowPass);
     RenderPasses.push_back(VSMConversionRenderPass); // VSM 추가
 	RenderPasses.push_back(OpaqueRenderPass);
+	RenderPasses.push_back(DecalRenderPass);
     RenderPasses.push_back(ViewModeResolvePass);
 
     RenderPasses.push_back(FogRenderPass);
@@ -191,6 +196,12 @@ void FRenderPipeline::Release()
     {
         OpaqueRenderPass->Release();
         OpaqueRenderPass.reset();
+	}
+
+	if (DecalRenderPass)
+	{
+		DecalRenderPass->Release();
+		DecalRenderPass.reset();
 	}
 
 	if (ViewModeResolvePass)

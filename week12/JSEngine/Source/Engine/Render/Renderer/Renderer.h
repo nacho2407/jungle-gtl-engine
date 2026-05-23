@@ -225,9 +225,6 @@ private:
 	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];
 	FPassBatcherBinding PassBatchers[(uint32)ERenderPass::MAX];
 	UTexture* SubUVCachedTexture = nullptr;
-    TArray<UTexture*> CachedDecalTextures;
-    TComPtr<ID3D11Texture2D> DecalTextureArray;
-    TComPtr<ID3D11ShaderResourceView> DecalTextureArraySRV;
 	bool bGPUProfilerFrameActive = false;
 
 	// FinalRTV 는 Render Pass 구성에 따라 달라지므로 Renderer 내에서 보관
