@@ -1,4 +1,4 @@
-#include "ParticleSystemEditorWidget.h"
+﻿#include "ParticleSystemEditorWidget.h"
 
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Component/Particle/ParticleSystemComponent.h"
@@ -11,6 +11,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemManager.h"
 #include "Render/Scene/FScene.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include "Runtime/Engine.h"
 #include "Slate/SlateApplication.h"
 #include "Viewport/Viewport.h"
@@ -27,6 +28,9 @@ namespace
 	constexpr float MinColumnWidth = 360.0f;
 	constexpr float MinViewportHeight = 220.0f;
 	constexpr float MinDetailsHeight = 160.0f;
+	constexpr float MinEmittersHeight = 180.0f;
+	constexpr float MinCurveEditorHeight = 140.0f;
+	constexpr float SplitterThickness = 6.0f;
 	constexpr float ToolbarHeight = 34.0f;
 	constexpr float EmitterColumnWidth = 176.0f;
 	constexpr float EmitterHeaderHeight = 58.0f;
@@ -42,10 +46,129 @@ namespace
 		bool bDelete = false;
 	};
 
-	void DrawPanelHeader(const char* Label)
+	float ClampFloat(float Value, float MinValue, float MaxValue)
+	{
+		return (std::max)(MinValue, (std::min)(Value, MaxValue));
+	}
+
+	float CalculateSplitLeadingSize(float TotalSize, float Ratio, float MinLeadingSize, float MinTrailingSize)
+	{
+		TotalSize = (std::max)(TotalSize, 1.0f);
+		if (TotalSize >= MinLeadingSize + MinTrailingSize)
+		{
+			return ClampFloat(TotalSize * Ratio, MinLeadingSize, TotalSize - MinTrailingSize);
+		}
+
+		if (TotalSize > 2.0f)
+		{
+			return ClampFloat(TotalSize * Ratio, 1.0f, TotalSize - 1.0f);
+		}
+
+		return (std::max)(1.0f, TotalSize * 0.5f);
+	}
+
+	float CalculateSplitRatio(float LeadingSize, float TotalSize, float MinLeadingSize, float MinTrailingSize)
+	{
+		TotalSize = (std::max)(TotalSize, 1.0f);
+		const float ClampedLeadingSize = CalculateSplitLeadingSize(TotalSize, LeadingSize / TotalSize, MinLeadingSize, MinTrailingSize);
+		return ClampedLeadingSize / TotalSize;
+	}
+
+	bool DrawSplitterHandle(const char* Id, const ImVec2& Size, bool bVertical)
+	{
+		ImGui::InvisibleButton(Id, Size);
+		const bool bHovered = ImGui::IsItemHovered();
+		const bool bActive = ImGui::IsItemActive();
+		if (bHovered || bActive)
+		{
+			ImGui::SetMouseCursor(bVertical ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS);
+		}
+
+		const ImVec2 Min = ImGui::GetItemRectMin();
+		const ImVec2 Max = ImGui::GetItemRectMax();
+		const ImU32 Color = ImGui::GetColorU32(bActive ? ImGuiCol_SeparatorActive : (bHovered ? ImGuiCol_SeparatorHovered : ImGuiCol_Separator));
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		if (bVertical)
+		{
+			const float X = (Min.x + Max.x) * 0.5f;
+			DrawList->AddLine(ImVec2(X, Min.y), ImVec2(X, Max.y), Color, 2.0f);
+		}
+		else
+		{
+			const float Y = (Min.y + Max.y) * 0.5f;
+			DrawList->AddLine(ImVec2(Min.x, Y), ImVec2(Max.x, Y), Color, 2.0f);
+		}
+
+		return bActive;
+	}
+
+	ImVec2 ProjectWorldAxisToViewport(const FVector& Axis, const FMinimalViewInfo& POV)
+	{
+		const FVector CameraRight = POV.Rotation.GetRightVector();
+		const FVector CameraUp = POV.Rotation.GetUpVector();
+		return ImVec2(Axis.Dot(CameraRight), -Axis.Dot(CameraUp));
+	}
+
+	void DrawViewportAxisGizmo(ImDrawList* DrawList, const ImVec2& ViewportPos, const ImVec2& ViewportSize, FParticleSystemEditorViewportClient& ViewportClient)
+	{
+		FMinimalViewInfo POV;
+		if (!ViewportClient.GetCameraView(POV))
+		{
+			return;
+		}
+
+		const float AxisLength = (std::max)(20.0f, (std::min)(30.0f, (std::min)(ViewportSize.x, ViewportSize.y) * 0.01f));
+		const float Padding = AxisLength + 25.0f;
+		const ImVec2 Origin(ViewportPos.x + Padding, ViewportPos.y + ViewportSize.y - Padding);
+		const FVector CameraForward = POV.Rotation.GetForwardVector();
+
+		struct FAxisDrawInfo
+		{
+			const char* Label = "";
+			FVector Direction;
+			ImU32 Color = 0;
+			ImVec2 End;
+			float Depth = 0.0f;
+		};
+
+		FAxisDrawInfo Axes[3] =
+		{
+			{ "X", FVector::XAxisVector, IM_COL32(255, 70, 55, 255), ImVec2(), 0.0f },
+			{ "Y", FVector::YAxisVector, IM_COL32(105, 220, 70, 255), ImVec2(), 0.0f },
+			{ "Z", FVector::ZAxisVector, IM_COL32(70, 135, 255, 255), ImVec2(), 0.0f },
+		};
+
+		for (FAxisDrawInfo& Axis : Axes)
+		{
+			const ImVec2 Projected = ProjectWorldAxisToViewport(Axis.Direction, POV);
+			Axis.End = ImVec2(Origin.x + Projected.x * AxisLength, Origin.y + Projected.y * AxisLength);
+			Axis.Depth = Axis.Direction.Dot(CameraForward);
+		}
+
+		std::sort(Axes, Axes + 3, [](const FAxisDrawInfo& A, const FAxisDrawInfo& B)
+		{
+			return A.Depth > B.Depth;
+		});
+
+		DrawList->AddCircleFilled(Origin, 3.0f, IM_COL32(22, 24, 26, 255));
+		for (const FAxisDrawInfo& Axis : Axes)
+		{
+			DrawList->AddLine(Origin, Axis.End, Axis.Color, 2.0f);
+			DrawList->AddCircleFilled(Axis.End, 2.5f, Axis.Color);
+
+			const ImVec2 LabelDir(Axis.End.x - Origin.x, Axis.End.y - Origin.y);
+			const float LabelLen = std::sqrt(LabelDir.x * LabelDir.x + LabelDir.y * LabelDir.y);
+			const ImVec2 LabelOffset = LabelLen > 1.0f
+				? ImVec2((LabelDir.x / LabelLen) * 15.0f, (LabelDir.y / LabelLen) * 15.0f)
+				: ImVec2(4.0f, -10.0f);
+			DrawList->AddText(ImVec2(Axis.End.x + LabelOffset.x - 4.0f, Axis.End.y + LabelOffset.y - 6.0f), Axis.Color, Axis.Label);
+		}
+	}
+
+	void DrawPanelHeader(const char* Label, float MinWidth = 0.0f)
 	{
 		const ImVec2 Pos = ImGui::GetCursorScreenPos();
-		const float Width = ImGui::GetContentRegionAvail().x;
+		const float Width = (std::max)(ImGui::GetContentRegionAvail().x, MinWidth);
 		const float Height = 24.0f;
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 		DrawList->AddRectFilled(Pos, ImVec2(Pos.x + Width, Pos.y + Height), IM_COL32(34, 34, 36, 255));
@@ -53,20 +176,47 @@ namespace
 		ImGui::Dummy(ImVec2(Width, Height + 4.0f));
 	}
 
-	void DrawModuleRow(const char* Label, bool bSelected, ImU32 AccentColor)
+	bool IsModuleOrderLocked(const UParticleModule* Module)
+	{
+		return Cast<UParticleModuleRequired>(Module) || Cast<UParticleModuleSpawn>(Module);
+	}
+
+	ImU32 GetModuleRowBackgroundColor(const UParticleModule* Module, bool bSelected)
+	{
+		if (Cast<UParticleModuleRequired>(Module))
+		{
+			return bSelected ? IM_COL32(205, 205, 112, 255) : IM_COL32(188, 190, 88, 255);
+		}
+		if (Cast<UParticleModuleSpawn>(Module))
+		{
+			return bSelected ? IM_COL32(210, 112, 112, 255) : IM_COL32(188, 92, 92, 255);
+		}
+		return bSelected ? IM_COL32(78, 82, 92, 255) : IM_COL32(29, 30, 35, 255);
+	}
+
+	ImU32 GetModuleRowTextColor(const UParticleModule* Module)
+	{
+		if (Cast<UParticleModuleRequired>(Module))
+		{
+			return IM_COL32(24, 25, 26, 255);
+		}
+		return IM_COL32(235, 238, 242, 255);
+	}
+
+	void DrawModuleRow(const char* Label, bool bSelected, const UParticleModule* Module)
 	{
 		const ImVec2 Pos = ImGui::GetCursorScreenPos();
 		const float Width = ImGui::GetContentRegionAvail().x;
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
-		const ImU32 BackgroundColor = bSelected ? IM_COL32(78, 82, 92, 255) : IM_COL32(29, 30, 35, 255);
+		const ImU32 BackgroundColor = GetModuleRowBackgroundColor(Module, bSelected);
+		const ImU32 TextColor = GetModuleRowTextColor(Module);
 		DrawList->AddRectFilled(Pos, ImVec2(Pos.x + Width, Pos.y + ModuleRowHeight), BackgroundColor);
-		DrawList->AddRectFilled(Pos, ImVec2(Pos.x + 4.0f, Pos.y + ModuleRowHeight), AccentColor);
-		DrawList->AddText(ImVec2(Pos.x + 10.0f, Pos.y + 4.0f), IM_COL32(235, 238, 242, 255), Label);
+		DrawList->AddText(ImVec2(Pos.x + 8.0f, Pos.y + 4.0f), TextColor, Label);
 	}
 
-	bool SelectableModuleRow(const char* Label, bool bSelected, ImU32 AccentColor)
+	bool SelectableModuleRow(const char* Label, bool bSelected, const UParticleModule* Module = nullptr)
 	{
-		DrawModuleRow(Label, bSelected, AccentColor);
+		DrawModuleRow(Label, bSelected, Module);
 		return ImGui::InvisibleButton("##ModuleRow", ImVec2(ImGui::GetContentRegionAvail().x, ModuleRowHeight));
 	}
 
@@ -75,7 +225,7 @@ namespace
 		return Cast<UParticleModuleRequired>(Module) || Cast<UParticleModuleSpawn>(Module);
 	}
 
-	FModuleRowAction EditableModuleRow(const char* Label, bool bSelected, ImU32 AccentColor, bool bCanMoveUp, bool bCanMoveDown, bool bCanDelete)
+	FModuleRowAction EditableModuleRow(const char* Label, const UParticleModule* Module, bool bSelected, bool bCanMoveUp, bool bCanMoveDown, bool bCanDelete)
 	{
 		FModuleRowAction Action;
 
@@ -86,7 +236,7 @@ namespace
 		const float ControlsWidth = ButtonWidth * 3.0f + ButtonGap * 2.0f + 4.0f;
 		const float SelectWidth = (std::max)(1.0f, Width - ControlsWidth);
 
-		DrawModuleRow(Label, bSelected, AccentColor);
+		DrawModuleRow(Label, bSelected, Module);
 		ImGui::SetCursorScreenPos(Pos);
 		Action.bSelect = ImGui::InvisibleButton("##SelectModuleRow", ImVec2(SelectWidth, ModuleRowHeight));
 
@@ -168,16 +318,16 @@ namespace
 	{
 		if (!TypeDataModule)
 		{
-			return "Sprite Data";
+			return "";
 		}
 
 		switch (TypeDataModule->GetRenderType())
 		{
+		case EParticleRenderType::Sprite: return "";
 		case EParticleRenderType::Mesh: return "Mesh Data";
 		case EParticleRenderType::Ribbon: return "Ribbon Data";
 		case EParticleRenderType::Beam: return "Beam Data";
 		case EParticleRenderType::GPU: return "GPU Sprites";
-		case EParticleRenderType::Sprite: return "Sprite Data";
 		default: return TypeDataModule->GetClass()->GetName();
 		}
 	}
@@ -196,28 +346,6 @@ namespace
 		if (Cast<UParticleModuleColor>(Module)) return "Initial Color";
 		if (Cast<UParticleModuleSize>(Module)) return "Initial Size";
 		return Module->GetClass()->GetName();
-	}
-
-	ImU32 GetModuleAccentColor(const UParticleModule* Module)
-	{
-		if (Cast<UParticleModuleRequired>(Module)) return IM_COL32(190, 190, 92, 255);
-		if (Cast<UParticleModuleSpawn>(Module)) return IM_COL32(200, 92, 92, 255);
-		if (Cast<UParticleModuleColor>(Module)) return IM_COL32(88, 140, 88, 255);
-		if (Module && Module->IsSpawnModule()) return IM_COL32(92, 120, 180, 255);
-		if (Module && Module->IsUpdateModule()) return IM_COL32(150, 95, 185, 255);
-		return IM_COL32(88, 92, 105, 255);
-	}
-
-	ImU32 GetTypeDataAccentColor(EParticleRenderType RenderType)
-	{
-		switch (RenderType)
-		{
-		case EParticleRenderType::Mesh: return IM_COL32(125, 178, 105, 255);
-		case EParticleRenderType::Ribbon: return IM_COL32(95, 160, 190, 255);
-		case EParticleRenderType::Beam: return IM_COL32(180, 110, 185, 255);
-		case EParticleRenderType::GPU: return IM_COL32(110, 135, 210, 255);
-		case EParticleRenderType::Sprite: default: return IM_COL32(120, 125, 135, 255);
-		}
 	}
 
 	FString GetParticleSystemTitle(const UParticleSystem* ParticleSystem, bool bDirty)
@@ -246,8 +374,10 @@ struct FParticleSystemEditorWidget::FEditorLayoutSizes
 {
 	float LeftWidth = 0.0f;
 	float RightWidth = 0.0f;
-	float TopHeight = 0.0f;
-	float BottomHeight = 0.0f;
+	float ViewportHeight = 0.0f;
+	float DetailsHeight = 0.0f;
+	float EmittersHeight = 0.0f;
+	float CurveEditorHeight = 0.0f;
 };
 
 FParticleSystemEditorWidget::FParticleSystemEditorWidget()
@@ -366,24 +496,49 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
 	RenderToolbar();
 	ImGui::Separator();
 
-	const ImGuiStyle& Style = ImGui::GetStyle();
 	const ImVec2 Available = ImGui::GetContentRegionAvail();
 	const FEditorLayoutSizes Layout = CalculateLayoutSizes(Available);
 
 	ImGui::BeginChild("##ParticleEditorLeftColumn", ImVec2(Layout.LeftWidth, 0.0f), ImGuiChildFlags_None);
-	RenderViewportPanel(ImVec2(0.0f, Layout.TopHeight));
-	ImGui::Dummy(ImVec2(0.0f, Style.ItemSpacing.y));
-	RenderDetailsPanel(ImVec2(0.0f, Layout.BottomHeight));
+	RenderViewportPanel(ImVec2(0.0f, Layout.ViewportHeight));
+	const float LeftSplitTotalHeight = Layout.ViewportHeight + Layout.DetailsHeight;
+	if (DrawSplitterHandle("##ParticleViewportDetailsSplitter", ImVec2(ImGui::GetContentRegionAvail().x, SplitterThickness), false))
+	{
+		ViewState.ViewportDetailsSplitRatio = CalculateSplitRatio(
+			Layout.ViewportHeight + ImGui::GetIO().MouseDelta.y,
+			LeftSplitTotalHeight,
+			MinViewportHeight,
+			MinDetailsHeight);
+	}
+	RenderDetailsPanel(ImVec2(0.0f, Layout.DetailsHeight));
 	ImGui::EndChild();
 
-	ImGui::SameLine();
+	ImGui::SameLine(0.0f, 0.0f);
+	const float MainSplitTotalWidth = Layout.LeftWidth + Layout.RightWidth;
+	if (DrawSplitterHandle("##ParticleEditorMainSplitter", ImVec2(SplitterThickness, ImGui::GetContentRegionAvail().y), true))
+	{
+		ViewState.MainSplitRatio = CalculateSplitRatio(
+			Layout.LeftWidth + ImGui::GetIO().MouseDelta.x,
+			MainSplitTotalWidth,
+			MinColumnWidth,
+			MinColumnWidth);
+	}
 
+	ImGui::SameLine(0.0f, 0.0f);
 	ImGui::BeginChild("##ParticleEditorRightColumn", ImVec2(Layout.RightWidth, 0.0f), ImGuiChildFlags_None);
 	if (ViewState.bShowCurveEditor)
 	{
-		RenderEmittersPanel(ImVec2(0.0f, Layout.TopHeight));
-		ImGui::Dummy(ImVec2(0.0f, Style.ItemSpacing.y));
-		RenderCurveEditorPanel(ImVec2(0.0f, Layout.BottomHeight));
+		RenderEmittersPanel(ImVec2(0.0f, Layout.EmittersHeight));
+		const float RightSplitTotalHeight = Layout.EmittersHeight + Layout.CurveEditorHeight;
+		if (DrawSplitterHandle("##ParticleEmittersCurveSplitter", ImVec2(ImGui::GetContentRegionAvail().x, SplitterThickness), false))
+		{
+			ViewState.EmittersCurveSplitRatio = CalculateSplitRatio(
+				Layout.EmittersHeight + ImGui::GetIO().MouseDelta.y,
+				RightSplitTotalHeight,
+				MinEmittersHeight,
+				MinCurveEditorHeight);
+		}
+		RenderCurveEditorPanel(ImVec2(0.0f, Layout.CurveEditorHeight));
 	}
 	else
 	{
@@ -605,37 +760,31 @@ const UParticleModule* FParticleSystemEditorWidget::GetSelectedModule(const UPar
 FParticleSystemEditorWidget::FEditorLayoutSizes FParticleSystemEditorWidget::CalculateLayoutSizes(const ImVec2& Available) const
 {
 	const ImGuiStyle& Style = ImGui::GetStyle();
-	const float Gap = Style.ItemSpacing.x;
 	const float AvailableWidth = (std::max)(Available.x, 1.0f);
 	const float AvailableHeight = (std::max)(Available.y, 1.0f);
 
 	FEditorLayoutSizes Layout;
-	if (AvailableWidth >= MinColumnWidth * 2.0f + Gap)
+
+	const float HorizontalSplitTotal = (std::max)(1.0f, AvailableWidth - SplitterThickness);
+	Layout.LeftWidth = CalculateSplitLeadingSize(HorizontalSplitTotal, ViewState.MainSplitRatio, MinColumnWidth, MinColumnWidth);
+	Layout.RightWidth = (std::max)(1.0f, HorizontalSplitTotal - Layout.LeftWidth);
+
+	const float VerticalSplitterGap = SplitterThickness + Style.ItemSpacing.y * 2.0f;
+	const float LeftSplitTotalHeight = (std::max)(1.0f, AvailableHeight - VerticalSplitterGap);
+	Layout.ViewportHeight = CalculateSplitLeadingSize(LeftSplitTotalHeight, ViewState.ViewportDetailsSplitRatio, MinViewportHeight, MinDetailsHeight);
+	Layout.DetailsHeight = (std::max)(1.0f, LeftSplitTotalHeight - Layout.ViewportHeight);
+
+	if (ViewState.bShowCurveEditor)
 	{
-		Layout.LeftWidth = AvailableWidth * 0.52f;
-		const float MaxLeftWidth = AvailableWidth - MinColumnWidth - Gap;
-		Layout.LeftWidth = (std::max)(MinColumnWidth, (std::min)(Layout.LeftWidth, MaxLeftWidth));
+		const float RightSplitTotalHeight = (std::max)(1.0f, AvailableHeight - VerticalSplitterGap);
+		Layout.EmittersHeight = CalculateSplitLeadingSize(RightSplitTotalHeight, ViewState.EmittersCurveSplitRatio, MinEmittersHeight, MinCurveEditorHeight);
+		Layout.CurveEditorHeight = (std::max)(1.0f, RightSplitTotalHeight - Layout.EmittersHeight);
 	}
 	else
 	{
-		Layout.LeftWidth = (std::max)(1.0f, (AvailableWidth - Gap) * 0.5f);
+		Layout.EmittersHeight = AvailableHeight;
+		Layout.CurveEditorHeight = 0.0f;
 	}
-
-	Layout.RightWidth = (std::max)(1.0f, AvailableWidth - Layout.LeftWidth - Gap);
-
-	const float VerticalGap = Style.ItemSpacing.y * 2.0f;
-	const float UsableHeight = (std::max)(1.0f, AvailableHeight - VerticalGap);
-	if (UsableHeight >= MinViewportHeight + MinDetailsHeight)
-	{
-		Layout.TopHeight = UsableHeight * 0.58f;
-		const float MaxTopHeight = UsableHeight - MinDetailsHeight;
-		Layout.TopHeight = (std::max)(MinViewportHeight, (std::min)(Layout.TopHeight, MaxTopHeight));
-	}
-	else
-	{
-		Layout.TopHeight = (std::max)(1.0f, UsableHeight * 0.58f);
-	}
-	Layout.BottomHeight = (std::max)(1.0f, UsableHeight - Layout.TopHeight);
 
 	return Layout;
 }
@@ -671,12 +820,22 @@ void FParticleSystemEditorWidget::RenderToolbar()
 			ClearDirty();
 		}
 	}
+	ImGui::SameLine();
+
+	if (ImGui::Button("Add Emitter", ImVec2(96.0f, 0.0f)))
+	{
+		if (ParticleSystem->AddDefaultEmitter())
+		{
+			const int32 NewEmitterIndex = static_cast<int32>(ParticleSystem->GetEmitters().size()) - 1;
+			SelectEmitter(NewEmitterIndex);
+			MarkDirty();
+			RestartPreviewSimulation();
+		}
+	}
 	ImGui::EndDisabled();
 	ImGui::SameLine();
 
 	ImGui::BeginDisabled();
-	ImGui::Button("Add Emitter", ImVec2(96.0f, 0.0f));
-	ImGui::SameLine();
 	ImGui::Button("Add LOD", ImVec2(76.0f, 0.0f));
 	ImGui::SameLine();
 	ImGui::Button("Bounds", ImVec2(72.0f, 0.0f));
@@ -723,14 +882,11 @@ void FParticleSystemEditorWidget::RenderViewportPanel(const ImVec2& Size)
 		DrawList->AddRectFilled(ViewportPos, CanvasMax, IM_COL32(75, 77, 77, 255));
 	}
 
-	const ImVec2 CanvasMax(ViewportPos.x + ViewportSize.x, ViewportPos.y + ViewportSize.y);
 	DrawList->AddRectFilled(ImVec2(ViewportPos.x + 8.0f, ViewportPos.y + 8.0f), ImVec2(ViewportPos.x + 50.0f, ViewportPos.y + 30.0f), IM_COL32(26, 27, 30, 190), 8.0f);
 	DrawList->AddText(ImVec2(ViewportPos.x + 18.0f, ViewportPos.y + 11.0f), IM_COL32(230, 234, 240, 255), "View");
 	DrawList->AddRectFilled(ImVec2(ViewportPos.x + 58.0f, ViewportPos.y + 8.0f), ImVec2(ViewportPos.x + 100.0f, ViewportPos.y + 30.0f), IM_COL32(26, 27, 30, 190), 8.0f);
 	DrawList->AddText(ImVec2(ViewportPos.x + 68.0f, ViewportPos.y + 11.0f), IM_COL32(230, 234, 240, 255), "Time");
-	DrawList->AddText(ImVec2(ViewportPos.x + 12.0f, CanvasMax.y - 28.0f), IM_COL32(255, 80, 50, 255), "X");
-	DrawList->AddText(ImVec2(ViewportPos.x + 42.0f, CanvasMax.y - 28.0f), IM_COL32(90, 220, 90, 255), "Y");
-	DrawList->AddText(ImVec2(ViewportPos.x + 28.0f, CanvasMax.y - 54.0f), IM_COL32(80, 130, 255, 255), "Z");
+	DrawViewportAxisGizmo(DrawList, ViewportPos, ViewportSize, ViewportClient);
 
 	ImGui::EndChild();
 }
@@ -1140,9 +1296,16 @@ void FParticleSystemEditorWidget::ApplyEditedObjectSideEffects(UObject* Object)
 void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 {
 	ImGui::BeginChild("##ParticleEmittersPanel", Size, ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
-	DrawPanelHeader("Emitters");
 
 	UParticleSystem* ParticleSystem = GetParticleSystem();
+	const ImGuiStyle& Style = ImGui::GetStyle();
+	const TArray<UParticleEmitter*>* EmittersPtr = ParticleSystem ? &ParticleSystem->GetEmitters() : nullptr;
+	const int32 EmitterCount = EmittersPtr ? static_cast<int32>(EmittersPtr->size()) : 0;
+	const float EmitterColumnsWidth = EmitterCount > 0
+		? EmitterColumnWidth * static_cast<float>(EmitterCount) + Style.ItemSpacing.x * static_cast<float>((std::max)(0, EmitterCount - 1))
+		: 0.0f;
+	DrawPanelHeader("Emitters", EmitterColumnsWidth);
+
 	if (!ParticleSystem)
 	{
 		ImGui::TextDisabled("No particle system selected.");
@@ -1158,6 +1321,38 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		return;
 	}
 
+	auto CalculateEmitterColumnHeight = [&](UParticleEmitter* Emitter)
+	{
+		float Height = Style.WindowPadding.y * 2.0f + EmitterHeaderHeight + Style.ItemSpacing.y;
+		if (!Emitter)
+		{
+			return Height + ImGui::GetTextLineHeightWithSpacing();
+		}
+
+		const TArray<UParticleLODLevel*>& LODLevels = Emitter->GetLODLevels();
+		Height += LODLevels.empty() ? ImGui::GetTextLineHeightWithSpacing() : ImGui::GetFrameHeightWithSpacing();
+		Height += 3.0f + Style.ItemSpacing.y;
+
+		UParticleLODLevel* LODLevel = Emitter->GetLODLevel(GetDisplayLODIndex(Emitter));
+		if (LODLevel)
+		{
+			Height += ImGui::GetFrameHeightWithSpacing();
+			Height += 3.0f + Style.ItemSpacing.y;
+			Height += ModuleRowHeight + Style.ItemSpacing.y;
+			Height += static_cast<float>(LODLevel->GetModules().size()) * ModuleRowHeight;
+		}
+
+		return Height + Style.ItemSpacing.y;
+	};
+
+	const bool bNeedsHorizontalScroll = EmitterColumnsWidth > ImGui::GetContentRegionAvail().x;
+	const float VisibleColumnHeight = (std::max)(1.0f, ImGui::GetContentRegionAvail().y - Style.ItemSpacing.y - (bNeedsHorizontalScroll ? Style.ScrollbarSize : 0.0f));
+	float EmitterColumnHeight = VisibleColumnHeight;
+	for (UParticleEmitter* Emitter : Emitters)
+	{
+		EmitterColumnHeight = (std::max)(EmitterColumnHeight, CalculateEmitterColumnHeight(Emitter));
+	}
+
 	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(Emitters.size()); ++EmitterIndex)
 	{
 		UParticleEmitter* Emitter = Emitters[EmitterIndex];
@@ -1165,7 +1360,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		UParticleLODLevel* LODLevel = Emitter ? Emitter->GetLODLevel(DisplayLODIndex) : nullptr;
 		const EParticleRenderType RenderType = GetLODRenderType(LODLevel);
 		ImGui::PushID(EmitterIndex);
-		ImGui::BeginChild("##EmitterColumn", ImVec2(EmitterColumnWidth, 0.0f), true);
+		ImGui::BeginChild("##EmitterColumn", ImVec2(EmitterColumnWidth, EmitterColumnHeight), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
 		const ImVec2 HeaderMin = ImGui::GetCursorScreenPos();
 		const ImVec2 HeaderMax(HeaderMin.x + ImGui::GetContentRegionAvail().x, HeaderMin.y + EmitterHeaderHeight);
@@ -1271,12 +1466,22 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				ImGui::Dummy(ImVec2(0.0f, 3.0f));
 
 				const UParticleModuleTypeDataBase* TypeDataModule = LODLevel->GetTypeDataModule();
+				const char* TypeDataLabel = TypeDataModule ? GetTypeDataDisplayName(TypeDataModule) : GetRenderTypeLabel(RenderType);
 				if (TypeDataModule)
 				{
 					ImGui::PushID(TypeDataModuleIndex);
-					if (SelectableModuleRow(GetTypeDataDisplayName(TypeDataModule), IsModuleSelected(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex), GetTypeDataAccentColor(RenderType)))
+					if (SelectableModuleRow(TypeDataLabel, IsModuleSelected(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex), TypeDataModule))
 					{
 						SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
+					}
+					ImGui::PopID();
+				}
+				else
+				{
+					ImGui::PushID(TypeDataModuleIndex);
+					if (SelectableModuleRow(TypeDataLabel, IsLODSelected(EmitterIndex, DisplayLODIndex)))
+					{
+						SelectLOD(EmitterIndex, DisplayLODIndex);
 					}
 					ImGui::PopID();
 				}
@@ -1287,13 +1492,18 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				{
 					UParticleModule* Module = Modules[ModuleIndex];
 					const bool bDeleteLocked = IsModuleDeleteLocked(Module);
+					const bool bOrderLocked = IsModuleOrderLocked(Module);
+					const UParticleModule* PreviousModule = ModuleIndex > 0 ? Modules[ModuleIndex - 1] : nullptr;
+					const UParticleModule* NextModule = ModuleIndex + 1 < static_cast<int32>(Modules.size()) ? Modules[ModuleIndex + 1] : nullptr;
+					const bool bCanMoveUp = !bOrderLocked && ModuleIndex > 0 && !IsModuleOrderLocked(PreviousModule);
+					const bool bCanMoveDown = !bOrderLocked && ModuleIndex + 1 < static_cast<int32>(Modules.size()) && !IsModuleOrderLocked(NextModule);
 					ImGui::PushID(ModuleIndex);
 					const FModuleRowAction Action = EditableModuleRow(
 						GetModuleDisplayName(Module),
+						Module,
 						IsModuleSelected(EmitterIndex, DisplayLODIndex, ModuleIndex),
-						GetModuleAccentColor(Module),
-						ModuleIndex > 0,
-						ModuleIndex + 1 < static_cast<int32>(Modules.size()),
+						bCanMoveUp,
+						bCanMoveDown,
 						!bDeleteLocked);
 					if (Action.bSelect)
 					{
@@ -1301,7 +1511,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 					}
 					ImGui::PopID();
 
-					if (Action.bMoveUp && ModuleIndex > 0)
+					if (Action.bMoveUp && bCanMoveUp)
 					{
 						std::swap(Modules[ModuleIndex], Modules[ModuleIndex - 1]);
 						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex - 1);
@@ -1309,7 +1519,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 						RestartPreviewSimulation();
 						bModuleListMutated = true;
 					}
-					else if (Action.bMoveDown && ModuleIndex + 1 < static_cast<int32>(Modules.size()))
+					else if (Action.bMoveDown && bCanMoveDown)
 					{
 						std::swap(Modules[ModuleIndex], Modules[ModuleIndex + 1]);
 						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex + 1);
@@ -1346,10 +1556,12 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 		ImGui::EndChild();
 		ImGui::PopID();
-		ImGui::SameLine();
+		if (EmitterIndex + 1 < static_cast<int32>(Emitters.size()))
+		{
+			ImGui::SameLine();
+		}
 	}
 
-	ImGui::NewLine();
 	ImGui::EndChild();
 }
 
