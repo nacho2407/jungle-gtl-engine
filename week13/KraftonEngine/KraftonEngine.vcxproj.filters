@@ -1388,6 +1388,9 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\EditorLinesPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\FogPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\FXAAPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
@@ -2568,6 +2571,9 @@
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\EditorLinesPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\FogPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\FXAAPass.h">

@@ -581,7 +581,8 @@ void FDrawCommandBuilder::BuildEditorLineCommands(EViewMode ViewMode)
 }
 
 // ============================================================
-// BuildPostProcessCommands — HeightFog, Outline, SceneDepth, WorldNormal, FXAA
+// BuildPostProcessCommands — Outline, SceneDepth, WorldNormal, FXAA
+// HeightFog는 FogPass(ERenderPass::Fog)로 분리 — AlphaBlend 이전에 실행됨
 // ============================================================
 void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, const FScene* CollectScene)
 {
@@ -589,7 +590,7 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 	EViewMode ViewMode = Frame.RenderOptions.ViewMode;
 	const FDrawCommandRenderState PPRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::PostProcess, ViewMode);
 
-	// HeightFog (UserBits=0 → Outline보다 먼저)
+	// HeightFog — ERenderPass::Fog 패스로 제출 (FogPass::BeginPass에서 depth copy/bind 처리)
 	if (Frame.RenderOptions.ShowFlags.bFog && CollectScene && CollectScene->GetEnvironment().HasFog())
 	{
 		FShader* FogShader = FShaderManager::Get().GetOrCreate(EShaderPath::HeightFog);
@@ -606,14 +607,15 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 			fogData.MaxOpacity = FogParams.MaxOpacity;
 			FogCB.Update(Ctx, &fogData, sizeof(FFogConstants));
 
+			const FDrawCommandRenderState FogRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::Fog, ViewMode);
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			Cmd.InitFullscreenTriangle(FogShader, ERenderPass::PostProcess, PPRS);
+			Cmd.InitFullscreenTriangle(FogShader, ERenderPass::Fog, FogRS);
 			Cmd.Bindings.PerShaderCB[0] = &FogCB;
 			Cmd.BuildSortKey(0);
 		}
 	}
 
-	// Outline (UserBits=1 → HeightFog 뒤)
+	// Outline (UserBits=1)
 	if (bHasSelectionMaskCommands)
 	{
 		FShader* PPShader = FShaderManager::Get().GetOrCreate(EShaderPath::Outline);
