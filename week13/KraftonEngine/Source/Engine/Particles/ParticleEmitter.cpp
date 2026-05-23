@@ -267,7 +267,7 @@ void UParticleEmitter::InitializeDefaultSpriteEmitter()
 
 	Location->bEnabled           = true;
 	Location->bSpawnModule       = true;
-	Location->bUpdateModule      = true;
+	Location->bUpdateModule      = false;
 	Location->bFinalUpdateModule = false;
 	Location->StartLocation      = FVector::ZeroVector;
 
@@ -277,7 +277,7 @@ void UParticleEmitter::InitializeDefaultSpriteEmitter()
 
 	Velocity->bEnabled           = true;
 	Velocity->bSpawnModule       = true;
-	Velocity->bUpdateModule      = true;
+	Velocity->bUpdateModule      = false;
 	Velocity->bFinalUpdateModule = false;
 	Velocity->MinVelocity        = FVector(0.0f, 0.f, 20.0f);
 	Velocity->MaxVelocity        = FVector(0.0f, 0.f, 80.0f);
@@ -288,9 +288,9 @@ void UParticleEmitter::InitializeDefaultSpriteEmitter()
 
 	Size->bEnabled           = true;
 	Size->bSpawnModule       = true;
-	Size->bUpdateModule      = true;
+	Size->bUpdateModule      = false;
 	Size->bFinalUpdateModule = false;
-	Size->StartSize          = FVector(1.0f, 1.0f, 1.0f);
+	Size->StartSize          = FVector(10.0f, 10.0f, 10.0f);
 
 	LOD->Modules.push_back(Size);
 
@@ -298,7 +298,7 @@ void UParticleEmitter::InitializeDefaultSpriteEmitter()
 
 	Color->bEnabled           = true;
 	Color->bSpawnModule       = true;
-	Color->bUpdateModule      = true;
+	Color->bUpdateModule      = false;
 	Color->bFinalUpdateModule = false;
 	Color->StartColor         = FColor::White();
 	Color->StartAlpha         = 1.0f;
