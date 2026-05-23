@@ -42,6 +42,12 @@ namespace
 		OutData.ParticleStride = Instance.ParticleStride;
 		OutData.SortMode = static_cast<EParticleSortMode>(Instance.SortMode);
 		OutData.Scale = Instance.Component->GetWorldScale();
+		OutData.MaxDrawCount = -1;
+		UParticleModuleRequired* RequiredModule = Instance.GetCurrentLODLevelChecked()->RequiredModule;
+		if (RequiredModule->bUseMaxDrawCount)
+		{
+			OutData.MaxDrawCount = RequiredModule->MaxDrawCount;
+		}
 
 		const int32 ParticleDataBytes =
 			Instance.ParticleStride * Instance.MaxActiveParticles;
@@ -2022,11 +2028,11 @@ bool FParticleEmitterInstance::IsDynamicDataRequired() const
 		return false;
 	}
 
-	//if (LODLevel->RequiredModule->bUseMaxDrawCount &&
-	//	LODLevel->RequiredModule->MaxDrawCount == 0)
-	//{
-	//	return false;
-	//}
+	if (LODLevel->RequiredModule->bUseMaxDrawCount &&
+		LODLevel->RequiredModule->MaxDrawCount == 0)
+	{
+		return false;
+	}
 
 	return true;
 }

@@ -78,6 +78,9 @@ public:
 	float SpawnRate = 10.0f;
 	TArray<FParticleBurst> BurstList;
 
+	bool bUseMaxDrawCount = false;
+	int32 MaxDrawCount = 0;
+
 	float EmitterDelay = 0.1f;
 	float EmitterDurationLow = 0.1f;
 	bool bDelayFirstLoopOnly = false;

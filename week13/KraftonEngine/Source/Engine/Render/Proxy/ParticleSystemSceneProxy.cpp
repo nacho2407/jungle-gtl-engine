@@ -218,7 +218,11 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 {
 	const FDynamicEmitterReplayDataBase& Source = EmitterData.GetSource();
 	const int32 Stride = EmitterData.GetDynamicVertexStride();
-	const int32 Count  = Source.ActiveParticleCount;
+	int32 Count = Source.ActiveParticleCount;
+	if (Source.MaxDrawCount >= 0 && Source.MaxDrawCount < Count)
+	{
+		Count = Source.MaxDrawCount;
+	}
 
 	OutBuffer.ActiveParticleCount = Count;
 	OutBuffer.EmitterType         = Source.eEmitterType;
