@@ -1,0 +1,71 @@
+﻿#pragma once
+#include "PrimitiveSceneProxy.h"
+#include "Engine/Particle/DynamicEmitterData.h"
+#include <memory>
+
+class UParticleSystemComponent;
+class FDrawCommandList;
+class UMaterial;
+class FMeshBuffer;
+
+class FParticleSystemSceneProxy : public FPrimitiveSceneProxy
+{
+public:
+	FParticleSystemSceneProxy(UParticleSystemComponent* InComponent);
+
+	void UpdatePerViewport(const FFrameContext& Frame) override;
+
+	// DrawCommandBuilder에서 호출 — GPU 업로드 + FDrawCommand 생성
+	// DrawCommandBuilder::BuildProxyCommands에 Particle 분기 추가 필요
+	void BuildParticleCommands(ID3D11Device* Device, ID3D11DeviceContext* Context,
+		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
+
+private:
+	FVertexBuffer QuadVB;
+	FIndexBuffer  QuadIB;
+
+	// ── 에미터별 동적 버퍼 (에미터 수만큼) ──
+	struct FEmitterRenderBuffer
+	{
+		FEmitterRenderBuffer() = default;
+
+		FDynamicVertexBuffer InstanceVB;
+		FConstantBuffer      ParticleFrameCB;
+		TArray<uint8>        StagingBuffer;
+
+		// UpdatePerViewport에서 채워지고 BuildParticleCommands에서 읽힘
+		int32               ActiveParticleCount = 0;
+		EDynamicEmitterType EmitterType         = EDynamicEmitterType::Sprite;
+		UMaterial*          Material            = nullptr;
+		FMeshBuffer*        EmitterMeshBuffer   = nullptr;  // Mesh 에미터 전용
+	};
+	TArray<std::unique_ptr<FEmitterRenderBuffer>> EmitterBuffers;
+
+	// UpdatePerViewport에서 컴포넌트로부터 받아온 데이터 (포인터만 빌림, 소유권 없음)
+	TArray<FDynamicEmitterDataBase*> CachedEmitterData;
+	int32 CachedEmitterCount = 0;
+
+	void BuildQuadGeometry(ID3D11Device* Device);
+	void EnsureEmitterBuffers(ID3D11Device* Device, int32 EmitterCount);
+
+	// 파티클 데이터 → 인스턴스 버퍼 포맷 변환 (CPU 전용)
+	void FillStagingBuffer(const FDynamicEmitterDataBase& EmitterData,
+		FEmitterRenderBuffer& OutBuffer);
+
+	// 타입별 GPU 업로드 + FDrawCommand 생성
+	void SubmitEmitter(FEmitterRenderBuffer& Buffer,
+		ID3D11Device* Device, ID3D11DeviceContext* Context,
+		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
+
+	void SubmitSpriteEmitter(FEmitterRenderBuffer& Buffer,
+		ID3D11Device* Device, ID3D11DeviceContext* Context,
+		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
+
+	void SubmitMeshEmitter(FEmitterRenderBuffer& Buffer,
+		ID3D11Device* Device, ID3D11DeviceContext* Context,
+		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
+
+	// Ribbon / Beam — 추후 추가
+	// void SubmitRibbonEmitter(...);
+	// void SubmitBeamEmitter(...);
+};

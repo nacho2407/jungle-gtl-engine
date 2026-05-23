@@ -1572,6 +1572,12 @@
     <ClCompile Include="Source\Engine\Particle\DynamicEmitterData.cpp">
       <Filter>Source\Engine\Particle</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleSystemComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -4411,6 +4417,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Particle\DynamicEmitterData.h">
       <Filter>Source\Engine\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleSystemComponent.h">
+      <Filter>Source\Engine\Component</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
