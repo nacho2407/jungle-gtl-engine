@@ -600,6 +600,7 @@
     <FxCompile Include="Shaders\UI\SubUV.hlsl">
       <Filter>Shaders\UI</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Geometry\Particle.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
@@ -1578,6 +1579,7 @@
     <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Geometry\MeshParticleGeometry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -4435,6 +4437,9 @@
     <ClInclude Include="Source\Engine\Particles\Runtime\ParticleRuntimeTypes.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h" />
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleTypeDataBase.h" />
+    <ClInclude Include="Source\Engine\Render\Geometry\MeshParticleGeometry.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

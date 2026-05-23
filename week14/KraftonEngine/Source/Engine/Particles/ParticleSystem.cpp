@@ -11,7 +11,7 @@ namespace
 	UParticleModuleRequired* CreateDefaultRequiredModule(float EmitterDuration, bool bLooping)
 	{
 		UParticleModuleRequired* RequiredModule = UObjectManager::Get().CreateObject<UParticleModuleRequired>();
-		UMaterialInterface* Material = FMaterialManager::Get().GetOrCreateMaterialInterface("Content/Material/Editor/DefualtParticleSprite.mat");
+		UMaterialInterface* Material = FMaterialManager::Get().GetOrCreateMaterialInterface("Content/Material/Editor/DefaultParticleSprite.mat");
 		RequiredModule->Material = Material;
 		RequiredModule->MaterialPath = "Content/Material/Editor/DefaultParticleSprite.mat";
 		RequiredModule->EmitterDuration = EmitterDuration;
@@ -93,7 +93,7 @@ namespace
 			FVector4(0.10f, 0.16f, 0.24f, 0.0f));
 
 		UParticleModuleTypeDataMesh* MeshTypeData = UObjectManager::Get().CreateObject<UParticleModuleTypeDataMesh>();
-		MeshTypeData->MeshPath = "None";
+		MeshTypeData->MeshPath = "Content/Data/BasicShape/Cylinder_StaticMesh.uasset";
 		LODLevel->SetTypeDataModule(MeshTypeData);
 
 		Emitter->AddLODLevel(LODLevel);
