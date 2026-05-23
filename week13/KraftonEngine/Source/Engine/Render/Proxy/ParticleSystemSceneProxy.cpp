@@ -9,6 +9,7 @@
 #include "Core/Logging/Log.h"
 #include "Particles/ParticleHelper.h"
 #include "Engine/Profiling/Stats/ParticleStats.h"
+#include "Object/Object.h"
 
 
 struct FParticleFrameConstants
@@ -52,6 +53,14 @@ FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* I
 }
 
 
+FParticleSystemSceneProxy::~FParticleSystemSceneProxy()
+{
+	CachedEmitterData.clear();
+	CachedEmitterCount = 0;
+	EmitterBuffers.clear();
+}
+
+
 void FParticleSystemSceneProxy::UpdateLOD(uint32 LODLevel)
 {
 	// 엔진이 계산한 LOD를 저장만 함
@@ -61,13 +70,20 @@ void FParticleSystemSceneProxy::UpdateLOD(uint32 LODLevel)
 
 void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
-	if (!bVisible) return;
+	if (!bVisible)
+	{
+		CachedEmitterData.clear();
+		CachedEmitterCount = 0;
+		return;
+	}
 
 	UParticleSystemComponent* Comp =
 		static_cast<UParticleSystemComponent*>(GetOwner());
-	if (!Comp)
+	if (!IsValid(Comp))
 	{
-		UE_LOG("[ParticleProxy] UpdatePerViewport: Owner component is null");
+		CachedEmitterData.clear();
+		CachedEmitterCount = 0;
+		bVisible = false;
 		return;
 	}
 
@@ -86,14 +102,33 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 	// }
 
 	const TArray<FDynamicEmitterDataBase*>& EmitterList = Comp->GetEmitterRenderData();
-	CachedEmitterCount = static_cast<int32>(EmitterList.size());
-	CachedEmitterData  = EmitterList;
+	CachedEmitterData.clear();
+	CachedEmitterData.reserve(EmitterList.size());
+
+	for (FDynamicEmitterDataBase* EmitterData : EmitterList)
+	{
+		if (EmitterData)
+		{
+			CachedEmitterData.push_back(EmitterData);
+		}
+	}
+
+	CachedEmitterCount = static_cast<int32>(CachedEmitterData.size());
 
 	const FParticleSortContext SortCtx { Frame.CameraPosition, Frame.CameraForward };
 	for (FDynamicEmitterDataBase* EmitterData : CachedEmitterData)
 	{
-		if (EmitterData)
+		if (!EmitterData)
+		{
+			continue;
+		}
+
+		const FDynamicEmitterReplayDataBase& Source = EmitterData->GetSource();
+		if (Source.eEmitterType == EDynamicEmitterType::Sprite ||
+			Source.eEmitterType == EDynamicEmitterType::Mesh)
+		{
 			static_cast<FDynamicSpriteEmitterDataBase*>(EmitterData)->SortSpriteParticles(SortCtx);
+		}
 	}
 }
 

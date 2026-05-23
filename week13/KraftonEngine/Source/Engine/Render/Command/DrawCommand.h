@@ -100,7 +100,7 @@ struct FDrawCommand
 	}
 
 	// ===== SortKey 생성 유틸리티 (정적) =====
-	// Pass(4bit) | ShaderHash(16bit) | MeshHash(16bit) | SRVHash(16bit) | UserBits(12bit)
+	// Pass(5bit) | ShaderHash(16bit) | MeshHash(16bit) | SRVHash(16bit) | UserBits(11bit)
 	static uint64 ComputeSortKey(ERenderPass InPass, const FShader* InShader,
 		const void* InMeshId, const ID3D11ShaderResourceView* InSRV,
 		uint16 UserBits = 0)
@@ -113,11 +113,11 @@ struct FDrawCommand
 		};
 
 		uint64 Key = 0;
-		Key |= (static_cast<uint64>(InPass) & 0xF) << 60;           // [63:60] Pass
-		Key |= (static_cast<uint64>(PtrHash16(InShader))) << 44;     // [59:44] Shader
-		Key |= (static_cast<uint64>(PtrHash16(InMeshId))) << 28;      // [43:28] MeshBuffer
-		Key |= (static_cast<uint64>(PtrHash16(InSRV))) << 12;        // [27:12] SRV
-		Key |= (static_cast<uint64>(UserBits) & 0xFFF);              // [11:0]  User
+		Key |= (static_cast<uint64>(InPass) & 0x1F) << 59;          // [63:59] Pass (5bit)
+		Key |= (static_cast<uint64>(PtrHash16(InShader))) << 43;     // [58:43] Shader
+		Key |= (static_cast<uint64>(PtrHash16(InMeshId))) << 27;     // [42:27] MeshBuffer
+		Key |= (static_cast<uint64>(PtrHash16(InSRV))) << 11;        // [26:11] SRV
+		Key |= (static_cast<uint64>(UserBits) & 0x7FF);              // [10:0]  User (11bit)
 		return Key;
 	}
 };
