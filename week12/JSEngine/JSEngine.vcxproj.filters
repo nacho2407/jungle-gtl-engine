@@ -2404,7 +2404,13 @@
     <None Include="Shaders\Common\Common.hlsli">
       <Filter>Shaders\Common</Filter>
     </None>
+    <None Include="Shaders\Common\LightCulling.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </None>
     <None Include="Shaders\Common\Lighting.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </None>
+    <None Include="Shaders\Common\NormalMapping.hlsli">
       <Filter>Shaders\Common</Filter>
     </None>
     <None Include="Shaders\Common\ShadowFunction.hlsli">

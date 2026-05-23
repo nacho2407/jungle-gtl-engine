@@ -1343,7 +1343,9 @@
   <ItemGroup>
     <None Include="Shaders\Atmosphere\HeightFogPixelShader.hlsl" />
     <None Include="Shaders\Common\Common.hlsli" />
+    <None Include="Shaders\Common\LightCulling.hlsli" />
     <None Include="Shaders\Common\Lighting.hlsli" />
+    <None Include="Shaders\Common\NormalMapping.hlsli" />
     <None Include="Shaders\Common\ShadowFunction.hlsli" />
     <None Include="Shaders\Common\SkeletalSkinning.hlsli" />
     <None Include="Shaders\Compute\HiZDownsample.hlsl" />

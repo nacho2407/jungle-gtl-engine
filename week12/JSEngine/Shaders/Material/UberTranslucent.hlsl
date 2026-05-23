@@ -1,5 +1,7 @@
 #include "../Common/Common.hlsli"
 #include "../Common/Lighting.hlsli"
+#include "../Common/LightCulling.hlsli"
+#include "../Common/NormalMapping.hlsli"
 
 cbuffer StaticMeshBuffer : register(b2)
 {
@@ -47,18 +49,6 @@ struct PSInput
 #endif
 };
 
-#if HAS_NORMAL_MAP
-float3 PerturbNormal(float3 worldNormal, float4 worldTangent, float2 uv)
-{
-    float3 N = normalize(worldNormal);
-    float3 T = normalize(worldTangent.xyz - dot(worldTangent.xyz, N) * N);
-    float3 B = cross(N, T) * worldTangent.w;
-    float3x3 TBN = float3x3(T, B, N);
-    float3 tn = BumpMap.Sample(SampleState, uv).rgb * 2.0f - 1.0f;
-    return normalize(mul(tn, TBN));
-}
-#endif
-
 float3 AccumulateSurfaceLight(PSInput input, float3 normal, float3 specularFactor)
 {
 #if LIGHTING_MODEL_GOURAUD
@@ -77,32 +67,11 @@ float3 AccumulateSurfaceLight(PSInput input, float3 normal, float3 specularFacto
     accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), normal, input.WorldPos, V, Shininess, specularFactor);
 #endif
 
-    uint LightsToIterate = LightCount;
-    uint LightOffset = 0;
-#if CULLING_MODEL_CLUSTERED
-    uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
-    uint numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
-    uint numTilesY = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
-    float z = (IsOrthographic) ? NearZ + input.ClipPos.z * (FarZ - NearZ) : abs(Projection[3][2] / (input.ClipPos.z - Projection[0][2]));
-    uint sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
-    uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
-    LightOffset = clusterData.x;
-    LightsToIterate = clusterData.y;
-#elif CULLING_MODEL_TILED
-    uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
-    uint numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
-    uint2 tileData = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
-    LightOffset = tileData.x;
-    LightsToIterate = tileData.y;
-#endif
+    FVisibleLightList VisibleLights = GetVisibleLightList(input.ClipPos);
 
-    for (uint i = 0; i < LightsToIterate; ++i)
+    for (uint i = 0; i < VisibleLights.Count; ++i)
     {
-#if CULLING_MODEL_CLUSTERED || CULLING_MODEL_TILED
-        uint lightIndex = CulledIndexBuffer[LightOffset + i];
-#else
-        uint lightIndex = i;
-#endif
+        uint lightIndex = GetVisibleLightIndex(VisibleLights, i);
         LightInfo light = Lights[lightIndex];
 #if LIGHTING_MODEL_LAMBERT
         accumulatedLight += light.Type == 0
@@ -139,7 +108,7 @@ float4 mainPS(PSInput input) : SV_TARGET0
 
     float3 N = normalize(input.WorldNormal);
 #if HAS_NORMAL_MAP && !LIGHTING_MODEL_GOURAUD
-    N = PerturbNormal(input.WorldNormal, input.WorldTangent, input.UV);
+    N = PerturbNormal(BumpMap, SampleState, input.WorldNormal, input.WorldTangent, input.UV);
 #endif
 
     float3 Lit = AccumulateSurfaceLight(input, N, SpecularFactor);
