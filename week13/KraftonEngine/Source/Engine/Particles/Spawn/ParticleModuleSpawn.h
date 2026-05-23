@@ -3,13 +3,22 @@
 
 struct FParticleBurst;
 
+#include "Source/Engine/Particles/Spawn/ParticleModuleSpawn.generated.h"
+
+UCLASS()
 class UParticleModuleSpawn : public UParticleModuleSpawnBase
 {
 public:
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, Category = "Spawn")
 	float SpawnRate = 10.0f;
+	UPROPERTY(EditAnywhere, Category = "Spawn")
 	float SpawnRateScale = 1.0f;
 
+	UPROPERTY(EditAnywhere, Category = "Burst")
 	TArray<FParticleBurst> BurstList;
+	UPROPERTY(EditAnywhere, Category = "Burst")
 	float BurstScale = 1.0f;
 
 	virtual bool GetSpawnAmount(

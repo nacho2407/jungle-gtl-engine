@@ -16,5 +16,5 @@ float UParticleModuleLifetime::GetLifetimeValue(const FContext& Context, float I
 
 void UParticleModuleLifetime::PostEditChangeProperty(const FPropertyChangedEvent& PropertyChangedEvent)
 {
-	UParticleModuleLifetimeBase::PostEditChangeProperty(PropertyChangedEvent);
+	Super::PostEditChangeProperty(PropertyChangedEvent);
 }

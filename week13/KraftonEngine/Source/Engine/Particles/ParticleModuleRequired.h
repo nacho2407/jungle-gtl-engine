@@ -2,7 +2,7 @@
 #include "ParticleModule.h"
 
 class UMaterialInterface; 
-struct FParticleBurst;
+struct FParticleBurst {};
 
 /**
  *	The screen alignment to utilize for the emitter at this LOD level.
@@ -38,12 +38,19 @@ enum EParticleSortMode : int
 	PSORTMODE_MAX,
 };
 
+#include "Source/Engine/Particles/ParticleModuleRequired.generated.h"
+
+UCLASS()
 class UParticleModuleRequired : public UParticleModule
 {
 public:
+	GENERATED_BODY()
 	UMaterialInterface* Material = nullptr;
 
+	UPROPERTY(EditAnywhere, Category = "Emitter")
 	FVector EmitterOrigin;
+
+	UPROPERTY(EditAnywhere, Category = "Emitter")
 	FRotator EmitterRotation;
 
 	uint8 bUseLocalSpace : 1;

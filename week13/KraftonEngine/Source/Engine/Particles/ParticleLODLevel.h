@@ -1,13 +1,18 @@
-﻿#pragma once
+#pragma once
 #include "Object/Object.h"
 
 class UParticleModuleRequired;
 class UParticleModule;
 class UParticleModuleTypeDataBase;
 
+#include "Source/Engine/Particles/ParticleLODLevel.generated.h"
+
+UCLASS()
 class UParticleLODLevel : public UObject
 {
 public:
+	GENERATED_BODY()
+
 	int32 Level;
 	uint32 bEnabled : 1;
 

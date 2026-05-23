@@ -1,9 +1,14 @@
-﻿#pragma once
+#pragma once
 #include "Particles/ParticleModule.h"
 
+#include "Source/Engine/Particles/Spawn/ParticleModuleSpawnBase.generated.h"
+
+UCLASS()
 class UParticleModuleSpawnBase : public UParticleModule
 {
 public:
+	GENERATED_BODY()
+
 	uint8 bProcessSpawnRate : 1;
 	uint8 bProcessBurstList : 1;
 

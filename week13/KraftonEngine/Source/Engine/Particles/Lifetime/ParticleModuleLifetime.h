@@ -1,11 +1,18 @@
-﻿#pragma once
+#pragma once
 #include "ParticleModuleLifetimeBase.h"
 
+#include "Source/Engine/Particles/Lifetime/ParticleModuleLifetime.generated.h"
+
+UCLASS()
 class UParticleModuleLifetime : public UParticleModuleLifetimeBase
 {
 public:
+	GENERATED_BODY()
 	// FRawDistributionFloat 는 나중에 추가
+
+	UPROPERTY(EditAnywhere, Category = "Lifetime")
 	float LifetimeMin = 1.0f;
+	UPROPERTY(EditAnywhere, Category = "Lifetime")
 	float LifetimeMax = 1.0f;
 
 	/*

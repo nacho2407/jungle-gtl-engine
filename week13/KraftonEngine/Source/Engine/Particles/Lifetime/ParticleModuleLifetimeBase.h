@@ -1,9 +1,14 @@
 ﻿#pragma once
 #include "Particles/ParticleModule.h"
 
+#include "Source/Engine/Particles/Lifetime/ParticleModuleLifetimeBase.generated.h"
+
+UCLASS()
 class UParticleModuleLifetimeBase : public UParticleModule
 {
 public:
+	GENERATED_BODY()
+
 	virtual float	GetMaxLifetime()
 	{
 		return 0.0f;
@@ -18,5 +23,5 @@ public:
 	 *
 	 *	@return	float		The Lifetime value
 	 */
-	virtual float GetLifetimeValue(const FContext& Context, float InTime, UObject* Data = NULL) = 0;
+	virtual float GetLifetimeValue(const FContext& Context, float InTime, UObject* Data = NULL) { return 0.0f;  };
 };

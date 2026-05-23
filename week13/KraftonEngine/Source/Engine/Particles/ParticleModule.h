@@ -42,9 +42,14 @@ struct FParticleCurvePair
 	}
 };
 
+#include "Source/Engine/Particles/ParticleModule.generated.h"
+
+UCLASS()
 class UParticleModule : public UObject
 {
 public:
+	GENERATED_BODY()
+
 	// uint8 이지만 실제로는 1 bit 만 사용하도록 유도
 	uint8 bEnabled : 1;
 	uint8 bSpawnModule : 1;

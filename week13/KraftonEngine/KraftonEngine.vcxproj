@@ -616,11 +616,11 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Object\UUIDGenerator.cpp" />
     <ClCompile Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Location\ParticleModuleLocation.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleLODLevel.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleModule.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleModuleRequired.cpp" />
     <ClCompile Include="Source\Engine\Particles\Spawn\ParticleModuleSpawn.cpp" />
-    <ClCompile Include="Source\Engine\Particles\Spawn\ParticleModuleSpawnBase.cpp" />
     <ClCompile Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.cpp" />
     <ClCompile Include="Source\Engine\Physics\NativePhysicsScene.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXPhysicsScene.cpp" />
@@ -996,6 +996,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Object\Reflection\UStruct.h" />
     <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.h" />
     <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetimeBase.h" />
+    <ClInclude Include="Source\Engine\Particles\Location\ParticleModuleLocation.h" />
+    <ClInclude Include="Source\Engine\Particles\Location\ParticleModuleLocationBase.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleLODLevel.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleModule.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleModuleRequired.h" />

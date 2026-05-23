@@ -27,5 +27,5 @@ int32 UParticleModuleSpawn::GetMaximumBurstCount()
 
 void UParticleModuleSpawn::PostEditChangeProperty(const FPropertyChangedEvent& PropertyChangedEvent)
 {
-	UParticleModuleSpawnBase::PostEditChangeProperty(PropertyChangedEvent);
+	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
