@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "Particle/ParticleTypes.h"
@@ -119,7 +119,7 @@ public:
 	virtual void Build();
 	virtual FParticleEmitterInstance* CreateInstance(
 		UParticleEmitter* InEmitterTemplate,
-		IParticleEmitterInstanceOwner& InComponent);
+		IParticleEmitterInstanceOwner& InOwner);
 	virtual FDynamicEmitterDataBase* GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance);
 	virtual int32 GetRequiredPayloadSize() const;
 };

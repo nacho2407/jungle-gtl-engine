@@ -1,4 +1,4 @@
-#include "Particle/ParticleSystemComponent.h"
+﻿#include "Particle/ParticleSystemComponent.h"
 
 #include "GameFramework/World.h"
 
@@ -109,11 +109,10 @@ void UParticleModuleTypeDataBase::Build()
 
 FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(
 	UParticleEmitter* InEmitterTemplate,
-	IParticleEmitterInstanceOwner& InComponent)
+	IParticleEmitterInstanceOwner& InOwner)
 {
-	FParticleEmitterInstance* Instance = new FParticleEmitterInstance();
+    FParticleEmitterInstance* Instance = new FParticleEmitterInstance(InOwner);
 	Instance->SpriteTemplate = InEmitterTemplate;
-	Instance->Component = InComponent.GetParticleSystemComponent();
 	return Instance;
 }
 
@@ -170,9 +169,64 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	}
 }
 
+class UParticleSystemComponent::FInstanceOwner : public IParticleEmitterInstanceOwner
+{
+public:
+	explicit FInstanceOwner(UParticleSystemComponent* InComponent)
+		: Component(InComponent)
+	{
+	}
+
+	UWorld* GetWorld() const override 
+	{
+		return Component != nullptr ? Component->GetWorld() : nullptr;
+	}
+	FVector GetWorldLocation() const override
+	{
+		return Component != nullptr ? Component->GetWorldLocation() : FVector::ZeroVector;
+	}
+	FMatrix GetComponentToWorld() const override
+	{
+		return Component != nullptr ? Component->GetWorldMatrix() : FMatrix::Identity;
+	}
+
+	void AddSpawnEvent(const FParticleEventSpawnData& Event) override
+	{
+		if (Component != nullptr)
+		{
+			Component->SpawnEvents.push_back(Event);
+		}
+	}
+	void AddDeathEvent(const FParticleEventDeathData& Event) override
+	{
+		if (Component != nullptr)
+		{
+			Component->DeathEvents.push_back(Event);
+		}
+	}
+	void AddCollisionEvent(const FParticleEventCollideData& Event) override
+	{
+		if (Component != nullptr)
+		{
+			Component->CollisionEvents.push_back(Event);
+		}
+	}
+	void AddBurstEvent(const FParticleEventBurstData& Event) override
+	{
+		if (Component != nullptr)
+		{
+			Component->BurstEvents.push_back(Event);
+		}
+	}
+
+private:
+	UParticleSystemComponent* Component = nullptr;
+};
+
 UParticleSystemComponent::UParticleSystemComponent()
 {
 	bEnableCull = false;
+	InstanceOwner = std::make_unique<FInstanceOwner>(this);
 }
 
 UParticleSystemComponent::~UParticleSystemComponent()
@@ -303,13 +357,12 @@ void UParticleSystemComponent::CreateEmitterInstances()
 		UParticleModuleTypeDataBase* TypeData = LODLevel != nullptr ? LODLevel->TypeDataModule : nullptr;
 
 		FParticleEmitterInstance* Instance = TypeData != nullptr
-			? TypeData->CreateInstance(EmitterTemplate, *this)
-			: new FParticleEmitterInstance();
+			? TypeData->CreateInstance(EmitterTemplate, *InstanceOwner)
+			: new FParticleEmitterInstance(*InstanceOwner);
 
 		if (Instance != nullptr)
 		{
 			Instance->SpriteTemplate = EmitterTemplate;
-			Instance->Component = this;
 			Instance->CurrentLODLevelIndex = 0;
 			Instance->CurrentLODLevel = LODLevel;
 			Instance->ParticleStride = EmitterTemplate->ParticleSize.empty() ? static_cast<int32>(sizeof(FBaseParticle)) : EmitterTemplate->ParticleSize[0];
