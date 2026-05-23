@@ -20,6 +20,7 @@ struct FDynamicEmitterReplayDataBase
 {
 	EDynamicEmitterType  eEmitterType;
 	int32 ActiveParticleCount = 0;
+	int32 MaxDrawCount = -1;
 	int32 ParticleStride = 0;
 	FParticleDataContainer DataContainer;
 	FVector Scale = FVector(1, 1, 1);

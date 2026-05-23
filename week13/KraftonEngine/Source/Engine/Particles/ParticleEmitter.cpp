@@ -235,6 +235,8 @@ void UParticleEmitter::InitializeDefaultSpriteEmitter()
 	Required->SubImages_Horizontal = 1;
 	Required->SubImages_Vertical   = 1;
 	Required->SpawnRate            = 10.0f;
+	Required->bUseMaxDrawCount     = false;
+	Required->MaxDrawCount         = 0;
 
 	LOD->RequiredModule = Required;
 

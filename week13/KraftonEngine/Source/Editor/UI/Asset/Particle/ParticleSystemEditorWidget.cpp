@@ -1132,6 +1132,13 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         bChanged |= ImGui::DragFloat("Emitter Duration", &Required->EmitterDuration, 0.05f, 0.0f, 10000.0f);
         bChanged |= ImGui::DragFloat("Emitter Delay", &Required->EmitterDelay, 0.05f, 0.0f, 10000.0f);
         bChanged |= ImGui::DragInt("Emitter Loops", &Required->EmitterLoops, 1.0f, 0, 10000);
+        bChanged |= ImGui::Checkbox("Use Max Draw Count", &Required->bUseMaxDrawCount);
+        bChanged |= ImGui::DragInt("Max Draw Count", &Required->MaxDrawCount, 1.0f, 0, 100000);
+        if (Required->MaxDrawCount < 0)
+        {
+            Required->MaxDrawCount = 0;
+            bChanged = true;
+        }
         bChanged |= ImGui::DragInt("SubImages H", &Required->SubImages_Horizontal, 1.0f, 1, 64);
         bChanged |= ImGui::DragInt("SubImages V", &Required->SubImages_Vertical, 1.0f, 1, 64);
         bChanged |= ImGui::DragFloat3("Emitter Origin", Required->EmitterOrigin.Data, 0.1f);
