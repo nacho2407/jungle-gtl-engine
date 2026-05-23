@@ -15,6 +15,7 @@ class FParticleSystemSceneProxy : public FPrimitiveSceneProxy
 public:
 	FParticleSystemSceneProxy(UParticleSystemComponent* InComponent);
 
+	void UpdateLOD(uint32 LODLevel) override;
 	void UpdatePerViewport(const FFrameContext& Frame) override;
 
 	// DrawCommandBuilder::BuildProxyCommands에서 Particle 분기로 호출
@@ -37,6 +38,7 @@ private:
 		// UpdatePerViewport에서 채워지고 BuildParticleCommands에서 읽힘
 		int32               ActiveParticleCount = 0;
 		EDynamicEmitterType EmitterType         = EDynamicEmitterType::Sprite;
+		EParticleBlendMode  BlendMode           = EParticleBlendMode::AlphaBlend;
 		UMaterial*          Material            = nullptr;
 		FMeshBuffer*        EmitterMeshBuffer   = nullptr;  // Mesh 에미터 전용
 	};

@@ -2,14 +2,8 @@
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
 #include "Render/Types/VertexTypes.h"
+#include "Particles/ParticleHelper.h"
 
-// 빌드 오류를 방지하기 위한 더미
-struct FParticleDataContainer
-{
-	const uint8* ParticleData = nullptr;
-	const uint32* ParticleIndices = nullptr;
-	int32         AllocationCount = 0;
-};
 class UParticleModuleRequired;
 
 class UMaterial;
@@ -26,7 +20,8 @@ struct FDynamicEmitterReplayDataBase
 	int32 ParticleStride = 0;
 	FParticleDataContainer DataContainer;
 	FVector Scale = FVector(1, 1, 1);
-	EParticleSortMode SortMode = EParticleSortMode::None;
+	EParticleSortMode  SortMode  = EParticleSortMode::None;
+	EParticleBlendMode BlendMode = EParticleBlendMode::AlphaBlend;
 };
 
 struct FDynamicSpriteEmitterReplayDataBase : FDynamicEmitterReplayDataBase

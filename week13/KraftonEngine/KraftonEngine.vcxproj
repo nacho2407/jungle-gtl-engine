@@ -410,7 +410,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\Slate\SlateApplication.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\AssetFactory.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
-      <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp"/>
+    <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp" />
@@ -446,7 +446,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\NotificationToast.cpp" />
-    <ClCompile Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.cpp"/>
+    <ClCompile Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\ViewportCameraTransform.cpp" />
     <ClCompile Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.cpp" />
@@ -618,9 +618,12 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Object\FName.cpp" />
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Object\UUIDGenerator.cpp" />
-      <ClCompile Include="Source\Engine\Particle\ParticleEmitter.cpp"/>
-      <ClCompile Include="Source\Engine\Particle\ParticleSystem.cpp"/>
-      <ClCompile Include="Source\Engine\Particle\ParticleSystemManager.cpp"/>
+    <ClCompile Include="Source\Engine\Particles\ParticleHelper.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleMemory.cpp" />
+    <ClCompile Include="Source\Engine\Particle\DynamicEmitterData.cpp" />
+    <ClCompile Include="Source\Engine\Particle\ParticleEmitter.cpp" />
+    <ClCompile Include="Source\Engine\Particle\ParticleSystem.cpp" />
+    <ClCompile Include="Source\Engine\Particle\ParticleSystemManager.cpp" />
     <ClCompile Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.cpp" />
     <ClCompile Include="Source\Engine\Particles\Location\ParticleModuleLocation.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleLODLevel.cpp" />
@@ -657,7 +660,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\DecalSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\GizmoSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp"/>
+    <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\ShapeSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.cpp" />
@@ -752,7 +755,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\Slate\SlateApplication.h" />
     <ClInclude Include="Source\Editor\Subsystem\AssetFactory.h" />
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
-      <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h"/>
+    <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h" />
@@ -791,7 +794,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h" />
     <ClInclude Include="Source\Editor\UI\Util\ImGuiSetting.h" />
     <ClInclude Include="Source\Editor\UI\Util\NotificationToast.h" />
-    <ClInclude Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.h"/>
+    <ClInclude Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorPreviewViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h" />
@@ -1004,9 +1007,12 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Object\Reflection\ObjectMacros.h" />
     <ClInclude Include="Source\Engine\Object\Reflection\UClass.h" />
     <ClInclude Include="Source\Engine\Object\Reflection\UStruct.h" />
-      <ClInclude Include="Source\Engine\Particle\ParticleEmitter.h"/>
-      <ClInclude Include="Source\Engine\Particle\ParticleSystem.h"/>
-      <ClInclude Include="Source\Engine\Particle\ParticleSystemManager.h"/>
+    <ClInclude Include="Source\Engine\Particles\ParticleHelper.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleMemory.h" />
+    <ClInclude Include="Source\Engine\Particle\DynamicEmitterData.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleEmitter.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleSystem.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleSystemManager.h" />
     <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.h" />
     <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetimeBase.h" />
     <ClInclude Include="Source\Engine\Particles\Location\ParticleModuleLocation.h" />
@@ -1054,7 +1060,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Render\Proxy\DecalSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\DirtyFlag.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\GizmoSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h"/>
+    <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\ShapeSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.h" />

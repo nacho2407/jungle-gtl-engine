@@ -7,6 +7,7 @@
 #include "Render/Types/VertexTypes.h"
 #include "Materials/Material.h"
 #include "Core/Logging/Log.h"
+#include "Particles/ParticleHelper.h"
 
 
 struct FParticleFrameConstants
@@ -14,6 +15,30 @@ struct FParticleFrameConstants
 	FVector CameraRight; float _pad0;
 	FVector CameraUp;    float _pad1;
 };
+
+// EParticleBlendMode → Pass / BlendState / DepthStencil 결정
+struct FParticleRenderState
+{
+	ERenderPass         Pass;
+	EBlendState         Blend;
+	EDepthStencilState  DepthStencil;
+};
+
+static FParticleRenderState ResolveParticleRenderState(EParticleBlendMode BlendMode)
+{
+	switch (BlendMode)
+	{
+	case EParticleBlendMode::Additive:
+		// 가산 합성 — 뒤 색상에 더해지므로 소팅 불필요, 뎁스 쓰기 금지
+		return { ERenderPass::AlphaBlend, EBlendState::Additive, EDepthStencilState::DepthReadOnly };
+
+	case EParticleBlendMode::AlphaBlend:
+	case EParticleBlendMode::Translucent:
+	default:
+		// 반투명 — 뎁스 쓰기 금지, back-to-front 소팅 필요
+		return { ERenderPass::AlphaBlend, EBlendState::AlphaBlend, EDepthStencilState::DepthReadOnly };
+	}
+}
 
 
 FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* InComponent)
@@ -23,6 +48,18 @@ FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* I
 	            | EPrimitiveProxyFlags::Particle;
 	ProxyFlags &= ~(EPrimitiveProxyFlags::SupportsOutline
 	              | EPrimitiveProxyFlags::ShowAABB);
+}
+
+
+void FParticleSystemSceneProxy::UpdateLOD(uint32 LODLevel)
+{
+	// 엔진이 계산한 LOD를 저장 — UpdatePerViewport에서 최종 결정에 사용
+	CurrentLOD = LODLevel;
+
+	// TODO: 파티클 전용 LOD 거리(UParticleSystem::LODDistances)가 없을 때
+	//       여기서 컴포넌트에 직접 전달하는 경로 추가
+	// UParticleSystemComponent* Comp = static_cast<UParticleSystemComponent*>(GetOwner());
+	// if (Comp) Comp->SetCurrentLODLevel(static_cast<int32>(LODLevel));
 }
 
 
@@ -37,6 +74,26 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		UE_LOG("[ParticleProxy] UpdatePerViewport: Owner component is null");
 		return;
 	}
+
+	// TODO: 파티클 전용 LOD 최종 결정 (카메라 거리 기반)
+	// UParticleSystem* Template = Comp->GetTemplate();
+	// if (Template && !Template->LODDistances.empty())
+	// {
+	//     float DistSq = (CachedWorldPos - Frame.CameraPosition).LengthSquared();
+	//     int32 LODIndex = ComputeParticleLOD(DistSq, Template->LODDistances);
+	//     CurrentLOD = LODIndex;
+	//     Comp->SetCurrentLODLevel(LODIndex);
+	// }
+	// else
+	// {
+	//     Comp->SetCurrentLODLevel(static_cast<int32>(CurrentLOD));
+	// }
+
+	// TODO: 반투명 스프라이트 back-to-front 정렬 (카메라 위치 기준)
+	// for (FDynamicEmitterDataBase* EmitterData : CachedEmitterData)
+	// {
+	//     if (EmitterData) EmitterData->SortSpriteParticles(Frame.CameraPosition);
+	// }
 
 	// GetEmitterRenderData(): 컴포넌트가 매 틱 갱신한 동적 에미터 데이터
 	const TArray<FDynamicEmitterDataBase*>& EmitterList = Comp->GetEmitterRenderData();
@@ -135,6 +192,7 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 
 	OutBuffer.ActiveParticleCount = Count;
 	OutBuffer.EmitterType         = Source.eEmitterType;
+	OutBuffer.BlendMode           = Source.BlendMode;
 	OutBuffer.StagingBuffer.resize(Count * Stride);
 
 	// 메타 캐싱 (Material, MeshBuffer)
@@ -174,16 +232,14 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 				? Source.DataContainer.ParticleIndices[i]
 				: static_cast<uint32>(i);
 
-			// TODO: FBaseParticle 레이아웃 확정 후 주석 해제
-			// const FBaseParticle* P = reinterpret_cast<const FBaseParticle*>(
-			//     Source.DataContainer.ParticleData + Idx * Source.ParticleStride);
-			// FParticleSpriteInstance* Inst = reinterpret_cast<FParticleSpriteInstance*>(
-			//     OutBuffer.StagingBuffer.data() + i * Stride);
-			// Inst->Position = P->Location;
-			// Inst->Size     = P->Size.X * Source.Scale.X;
-			// Inst->Color    = P->Color;
-			// Inst->Rotation = P->Rotation;
-			(void)Idx;
+			const FBaseParticle* P = reinterpret_cast<const FBaseParticle*>(
+			    Source.DataContainer.ParticleData + Idx * Source.ParticleStride);
+			FParticleSpriteInstance* Inst = reinterpret_cast<FParticleSpriteInstance*>(
+			    OutBuffer.StagingBuffer.data() + i * Stride);
+			Inst->Position = P->Location;
+			Inst->Size     = P->Size.X * Source.Scale.X;
+			Inst->Color    = P->Color.ToVector4();
+			Inst->Rotation = P->Rotation;
 		}
 	}
 	else if (Source.eEmitterType == EDynamicEmitterType::Mesh)
@@ -260,10 +316,14 @@ void FParticleSystemSceneProxy::SubmitSpriteEmitter(
 		return;
 	}
 
-	FDrawCommand& Cmd     = OutCmdList.AddCommand();
-	Cmd.Shader            = Shader;
-	Cmd.Pass              = ERenderPass::AlphaBlend;
-	Cmd.RenderState.Blend = EBlendState::AlphaBlend;
+	const FParticleRenderState RS = ResolveParticleRenderState(Buffer.BlendMode);
+
+	FDrawCommand& Cmd                  = OutCmdList.AddCommand();
+	Cmd.Shader                         = Shader;
+	Cmd.Pass                           = RS.Pass;
+	Cmd.RenderState.Blend              = RS.Blend;
+	Cmd.RenderState.DepthStencil       = RS.DepthStencil;
+	Cmd.RenderState.Rasterizer         = ERasterizerState::SolidNoCull; // 빌보드는 항상 양면
 
 	Cmd.Buffer.VB             = QuadVB.GetBuffer();
 	Cmd.Buffer.VBStride       = sizeof(FParticleQuadVertex);
@@ -316,10 +376,14 @@ void FParticleSystemSceneProxy::SubmitMeshEmitter(
 		return;
 	}
 
-	FDrawCommand& Cmd     = OutCmdList.AddCommand();
-	Cmd.Shader            = Shader;
-	Cmd.Pass              = ERenderPass::AlphaBlend;
-	Cmd.RenderState.Blend = EBlendState::AlphaBlend;
+	const FParticleRenderState RS = ResolveParticleRenderState(Buffer.BlendMode);
+
+	FDrawCommand& Cmd                  = OutCmdList.AddCommand();
+	Cmd.Shader                         = Shader;
+	Cmd.Pass                           = RS.Pass;
+	Cmd.RenderState.Blend              = RS.Blend;
+	Cmd.RenderState.DepthStencil       = RS.DepthStencil;
+	Cmd.RenderState.Rasterizer         = ERasterizerState::SolidNoCull; // 메시 파티클도 양면
 
 	Cmd.Buffer.VB             = Buffer.EmitterMeshBuffer->GetVertexBuffer().GetBuffer();
 	Cmd.Buffer.VBStride       = Buffer.EmitterMeshBuffer->GetVertexBuffer().GetStride();
