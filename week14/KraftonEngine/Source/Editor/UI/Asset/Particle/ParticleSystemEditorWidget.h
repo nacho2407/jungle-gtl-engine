@@ -71,11 +71,12 @@ private:
 	FEditorLayoutSizes CalculateLayoutSizes(const ImVec2& Available) const;
 	void RenderToolbar();
 	void RenderViewportPanel(const ImVec2& Size);
-	void RenderDetailsPanel(const ImVec2& Size) const;
+	void RenderDetailsPanel(const ImVec2& Size);
 	void RenderEmittersPanel(const ImVec2& Size);
 	void RenderCurveEditorPanel(const ImVec2& Size) const;
-	void RenderObjectProperties(const UObject* Object) const;
-	void RenderPropertyValueReadOnly(const FPropertyValue& PropertyValue) const;
+	bool RenderObjectProperties(UObject* Object);
+	bool RenderPropertyValueEditor(FPropertyValue& PropertyValue);
+	void ApplyEditedObjectSideEffects(UObject* Object);
 	void CreatePreviewWorld();
 	void DestroyPreviewWorld();
 	void RestartPreviewSimulation();

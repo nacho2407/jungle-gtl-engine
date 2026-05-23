@@ -9,6 +9,7 @@
 #include "Particles/Module/ParticleModule.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
 #include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemManager.h"
 #include "Render/Scene/FScene.h"
 #include "Runtime/Engine.h"
 #include "Slate/SlateApplication.h"
@@ -129,6 +130,19 @@ namespace
 		std::vsnprintf(Buffer, sizeof(Buffer), Format, Args);
 		va_end(Args);
 		DrawDetailRow(Label, Buffer);
+	}
+
+	bool StringContains(const FString& Value, const char* Needle)
+	{
+		return Needle && Value.find(Needle) != FString::npos;
+	}
+
+	bool IsColorLikeProperty(const FPropertyValue& PropertyValue)
+	{
+		const FString Name = PropertyValue.GetName() ? PropertyValue.GetName() : "";
+		const FString DisplayName = PropertyValue.GetDisplayName() ? PropertyValue.GetDisplayName() : "";
+		const FString Category = PropertyValue.GetCategory() ? PropertyValue.GetCategory() : "";
+		return StringContains(Name, "Color") || StringContains(DisplayName, "Color") || StringContains(Category, "Color");
 	}
 
 	const char* GetRenderTypeLabel(EParticleRenderType RenderType)
@@ -648,9 +662,19 @@ void FParticleSystemEditorWidget::RenderToolbar()
 	ImGui::SameLine(0.0f, 18.0f);
 	ImGui::Checkbox("Curve", &ViewState.bShowCurveEditor);
 	ImGui::SameLine(0.0f, 18.0f);
-	ImGui::BeginDisabled();
-	ImGui::Button("Save", ImVec2(62.0f, 0.0f));
+	UParticleSystem* ParticleSystem = GetParticleSystem();
+	ImGui::BeginDisabled(ParticleSystem == nullptr);
+	if (ImGui::Button("Save", ImVec2(62.0f, 0.0f)))
+	{
+		if (FParticleSystemManager::Get().Save(ParticleSystem))
+		{
+			ClearDirty();
+		}
+	}
+	ImGui::EndDisabled();
 	ImGui::SameLine();
+
+	ImGui::BeginDisabled();
 	ImGui::Button("Add Emitter", ImVec2(96.0f, 0.0f));
 	ImGui::SameLine();
 	ImGui::Button("Add LOD", ImVec2(76.0f, 0.0f));
@@ -787,12 +811,12 @@ void FParticleSystemEditorWidget::RestartPreviewSimulation()
 	PreviewParticleComponent->MarkRenderStateDirty();
 }
 
-void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size) const
+void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 {
 	ImGui::BeginChild("##ParticleDetailsPanel", Size, ImGuiChildFlags_Borders);
 	DrawPanelHeader("Details");
 
-	const UParticleSystem* ParticleSystem = GetParticleSystem();
+	UParticleSystem* ParticleSystem = GetParticleSystem();
 	if (!ParticleSystem)
 	{
 		ImGui::TextDisabled("No particle system selected.");
@@ -835,7 +859,7 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size) const
 		DrawDetailRowF("Module Count", "%d", static_cast<int32>(SelectedLOD->GetModules().size()));
 	}
 
-	const UParticleModule* SelectedModule = GetSelectedModule(ParticleSystem);
+	UParticleModule* SelectedModule = const_cast<UParticleModule*>(GetSelectedModule(ParticleSystem));
 	if (SelectedModule && ImGui::CollapsingHeader("Module", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		const UParticleModuleTypeDataBase* TypeDataModule = Cast<UParticleModuleTypeDataBase>(SelectedModule);
@@ -845,121 +869,271 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size) const
 		DrawDetailRow("Update Module", SelectedModule->IsUpdateModule() ? "true" : "false");
 		DrawDetailRow("Source", ViewState.Selection.ModuleIndex == TypeDataModuleIndex ? "LOD TypeDataModule" : "LOD Modules[]");
 		ImGui::Separator();
-		RenderObjectProperties(SelectedModule);
+		if (RenderObjectProperties(SelectedModule))
+		{
+			ApplyEditedObjectSideEffects(SelectedModule);
+			MarkDirty();
+			RestartPreviewSimulation();
+		}
 	}
 	ImGui::EndChild();
 }
 
-void FParticleSystemEditorWidget::RenderObjectProperties(const UObject* Object) const
+bool FParticleSystemEditorWidget::RenderObjectProperties(UObject* Object)
 {
 	if (!Object)
 	{
 		ImGui::TextDisabled("No object properties.");
-		return;
+		return false;
 	}
 
 	TArray<FPropertyValue> Properties;
-	const_cast<UObject*>(Object)->GetEditableProperties(Properties);
+	Object->GetEditableProperties(Properties);
 	if (Properties.empty())
 	{
 		ImGui::TextDisabled("No editable properties.");
-		return;
+		return false;
 	}
 
-	for (int32 Index = 0; Index < static_cast<int32>(Properties.size()); ++Index)
+	bool bAnyChanged = false;
+	if (ImGui::BeginTable("##ParticleObjectProperties", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV))
 	{
-		ImGui::PushID(Index);
-		RenderPropertyValueReadOnly(Properties[Index]);
-		ImGui::PopID();
+		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 180.0f);
+		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+
+		for (int32 Index = 0; Index < static_cast<int32>(Properties.size()); ++Index)
+		{
+			FPropertyValue& PropertyValue = Properties[Index];
+			ImGui::PushID(Index);
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextUnformatted(PropertyValue.GetDisplayName());
+			ImGui::TableSetColumnIndex(1);
+			ImGui::SetNextItemWidth(-1.0f);
+
+			const bool bChanged = RenderPropertyValueEditor(PropertyValue);
+			if (bChanged)
+			{
+				bAnyChanged = true;
+				if (PropertyValue.Property)
+				{
+					Object->PostEditProperty(PropertyValue.Property->Name);
+				}
+			}
+			ImGui::PopID();
+		}
+		ImGui::EndTable();
 	}
+
+	return bAnyChanged;
 }
 
-void FParticleSystemEditorWidget::RenderPropertyValueReadOnly(const FPropertyValue& PropertyValue) const
+bool FParticleSystemEditorWidget::RenderPropertyValueEditor(FPropertyValue& PropertyValue)
 {
 	void* ValuePtr = PropertyValue.GetValuePtr();
 	if (!ValuePtr)
 	{
-		return;
+		return false;
+	}
+
+	bool bChanged = false;
+	const bool bReadOnly = PropertyValue.Property && (PropertyValue.Property->Flags & PF_ReadOnly) != 0;
+	if (bReadOnly)
+	{
+		ImGui::BeginDisabled();
 	}
 
 	switch (PropertyValue.GetType())
 	{
 	case EPropertyType::Bool:
-		DrawDetailRow(PropertyValue.GetDisplayName(), *static_cast<bool*>(ValuePtr) ? "true" : "false");
+		bChanged = ImGui::Checkbox("##Value", static_cast<bool*>(ValuePtr));
 		break;
 	case EPropertyType::ByteBool:
-		DrawDetailRow(PropertyValue.GetDisplayName(), *static_cast<uint8_t*>(ValuePtr) ? "true" : "false");
+	{
+		uint8* Value = static_cast<uint8*>(ValuePtr);
+		bool bValue = *Value != 0;
+		if (ImGui::Checkbox("##Value", &bValue))
+		{
+			*Value = bValue ? 1 : 0;
+			bChanged = true;
+		}
 		break;
+	}
 	case EPropertyType::Int:
-		DrawDetailRowF(PropertyValue.GetDisplayName(), "%d", *static_cast<int32*>(ValuePtr));
+	{
+		int32* Value = static_cast<int32*>(ValuePtr);
+		const float Min = PropertyValue.GetMin();
+		const float Max = PropertyValue.GetMax();
+		if (Min != 0.0f || Max != 0.0f)
+		{
+			bChanged = ImGui::DragInt("##Value", Value, PropertyValue.GetSpeed(), static_cast<int32>(Min), static_cast<int32>(Max));
+		}
+		else
+		{
+			bChanged = ImGui::DragInt("##Value", Value, PropertyValue.GetSpeed());
+		}
 		break;
+	}
 	case EPropertyType::Float:
-		DrawDetailRowF(PropertyValue.GetDisplayName(), "%.3f", *static_cast<float*>(ValuePtr));
+	{
+		float* Value = static_cast<float*>(ValuePtr);
+		const float Min = PropertyValue.GetMin();
+		const float Max = PropertyValue.GetMax();
+		if (Min != 0.0f || Max != 0.0f)
+		{
+			bChanged = ImGui::DragFloat("##Value", Value, PropertyValue.GetSpeed(), Min, Max, "%.4f");
+		}
+		else
+		{
+			bChanged = ImGui::DragFloat("##Value", Value, PropertyValue.GetSpeed());
+		}
 		break;
+	}
 	case EPropertyType::Vec3:
 	{
-		const FVector& Value = *static_cast<FVector*>(ValuePtr);
-		DrawDetailRowF(PropertyValue.GetDisplayName(), "%.3f, %.3f, %.3f", Value.X, Value.Y, Value.Z);
+		float* Value = static_cast<float*>(ValuePtr);
+		bChanged = ImGui::DragFloat3("##Value", Value, PropertyValue.GetSpeed());
 		break;
 	}
 	case EPropertyType::Vec4:
 	case EPropertyType::Color4:
 	{
-		const FVector4& Value = *static_cast<FVector4*>(ValuePtr);
-		DrawDetailRowF(PropertyValue.GetDisplayName(), "%.3f, %.3f, %.3f, %.3f", Value.X, Value.Y, Value.Z, Value.W);
+		float* Value = static_cast<float*>(ValuePtr);
+		if (PropertyValue.GetType() == EPropertyType::Color4 || IsColorLikeProperty(PropertyValue))
+		{
+			bChanged = ImGui::ColorEdit4("##Value", Value);
+		}
+		else
+		{
+			bChanged = ImGui::DragFloat4("##Value", Value, PropertyValue.GetSpeed());
+		}
 		break;
 	}
 	case EPropertyType::String:
-		DrawDetailRow(PropertyValue.GetDisplayName(), static_cast<FString*>(ValuePtr)->c_str());
+	{
+		FString* Value = static_cast<FString*>(ValuePtr);
+		char Buffer[256];
+		strncpy_s(Buffer, sizeof(Buffer), Value->c_str(), _TRUNCATE);
+		if (ImGui::InputText("##Value", Buffer, sizeof(Buffer)))
+		{
+			*Value = Buffer;
+			bChanged = true;
+		}
 		break;
+	}
 	case EPropertyType::Name:
 	{
-		const FString Value = static_cast<FName*>(ValuePtr)->ToString();
-		DrawDetailRow(PropertyValue.GetDisplayName(), Value.c_str());
+		FName* Value = static_cast<FName*>(ValuePtr);
+		const FString CurrentValue = Value->ToString();
+		char Buffer[256];
+		strncpy_s(Buffer, sizeof(Buffer), CurrentValue.c_str(), _TRUNCATE);
+		if (ImGui::InputText("##Value", Buffer, sizeof(Buffer)))
+		{
+			*Value = FName(FString(Buffer));
+			bChanged = true;
+		}
 		break;
 	}
 	case EPropertyType::Enum:
 	{
 		const FEnum* EnumType = PropertyValue.GetEnumType();
-		int32 Value = 0;
-		if (EnumType)
+		if (EnumType && EnumType->GetNames() && EnumType->GetCount() > 0)
 		{
+			int32 Value = 0;
 			std::memcpy(&Value, ValuePtr, EnumType->GetSize());
+			const char* Preview = (Value >= 0 && static_cast<uint32>(Value) < EnumType->GetCount())
+				? EnumType->GetNames()[Value]
+				: "Unknown";
+			if (ImGui::BeginCombo("##Value", Preview))
+			{
+				for (uint32 EnumIndex = 0; EnumIndex < EnumType->GetCount(); ++EnumIndex)
+				{
+					const bool bSelected = Value == static_cast<int32>(EnumIndex);
+					if (ImGui::Selectable(EnumType->GetNames()[EnumIndex], bSelected))
+					{
+						const int32 NewValue = static_cast<int32>(EnumIndex);
+						std::memcpy(ValuePtr, &NewValue, EnumType->GetSize());
+						bChanged = true;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
 		}
-		const char* Label = (EnumType && Value >= 0 && static_cast<uint32>(Value) < EnumType->GetCount())
-			? EnumType->GetNames()[Value]
-			: "(unknown)";
-		DrawDetailRow(PropertyValue.GetDisplayName(), Label);
+		else
+		{
+			ImGui::TextDisabled("(unknown enum)");
+		}
 		break;
 	}
 	case EPropertyType::SoftObjectRef:
 	{
 		const FSoftObjectProperty* SoftObjectProperty = PropertyValue.Property ? PropertyValue.Property->AsSoftObjectProperty() : nullptr;
 		const FString Path = SoftObjectProperty ? SoftObjectProperty->GetPathFromValuePtr(ValuePtr) : FString("None");
-		DrawDetailRow(PropertyValue.GetDisplayName(), Path.c_str());
+		char Buffer[512];
+		strncpy_s(Buffer, sizeof(Buffer), Path.c_str(), _TRUNCATE);
+		if (SoftObjectProperty && ImGui::InputText("##Value", Buffer, sizeof(Buffer)))
+		{
+			SoftObjectProperty->SetPathFromValuePtr(ValuePtr, FString(Buffer));
+			bChanged = true;
+		}
 		break;
 	}
 	case EPropertyType::ObjectRef:
 	{
 		UObject* ObjectValue = *static_cast<UObject**>(ValuePtr);
-		DrawDetailRow(PropertyValue.GetDisplayName(), ObjectValue ? ObjectValue->GetName().c_str() : "None");
+		ImGui::TextDisabled("%s", ObjectValue ? ObjectValue->GetName().c_str() : "None");
 		break;
 	}
 	case EPropertyType::Array:
-		DrawDetailRow(PropertyValue.GetDisplayName(), "(array)");
+		ImGui::TextDisabled("(array)");
 		break;
 	case EPropertyType::Struct:
-		DrawDetailRow(PropertyValue.GetDisplayName(), "(struct)");
+		ImGui::TextDisabled("(struct)");
 		break;
 	case EPropertyType::ClassRef:
-		DrawDetailRow(PropertyValue.GetDisplayName(), "(class)");
+		ImGui::TextDisabled("(class)");
 		break;
 	case EPropertyType::Rotator:
-		DrawDetailRow(PropertyValue.GetDisplayName(), "(rotator)");
+		ImGui::TextDisabled("(rotator)");
 		break;
 	default:
-		DrawDetailRow(PropertyValue.GetDisplayName(), "(unsupported)");
+		ImGui::TextDisabled("(unsupported)");
 		break;
+	}
+
+	if (bReadOnly)
+	{
+		ImGui::EndDisabled();
+	}
+
+	return bChanged && !bReadOnly;
+}
+
+void FParticleSystemEditorWidget::ApplyEditedObjectSideEffects(UObject* Object)
+{
+	if (!Object)
+	{
+		return;
+	}
+
+	if (UParticleModuleRequired* RequiredModule = Cast<UParticleModuleRequired>(Object))
+	{
+		RequiredModule->Material = nullptr;
+		if (UParticleEmitter* Emitter = const_cast<UParticleEmitter*>(GetSelectedEmitter(GetParticleSystem())))
+		{
+			Emitter->SetEmitterDuration(RequiredModule->EmitterDuration);
+			Emitter->SetLooping(RequiredModule->bLooping);
+		}
+	}
+
+	if (UParticleModuleTypeDataMesh* MeshTypeData = Cast<UParticleModuleTypeDataMesh>(Object))
+	{
+		MeshTypeData->Mesh = nullptr;
 	}
 }
 

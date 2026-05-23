@@ -6,8 +6,6 @@
 #include "Render/Types/MinimalViewInfo.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-#include "Object/Object.h"
-#include "Particles/ParticleSystem.h"
 #include "Engine/Platform/WindowsWindow.h"
 
 #include "ImGui/imgui.h"
@@ -105,8 +103,6 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 void FEditorMainPanel::Release()
 {
 	AssetEditorManager.CloseAll();
-	UObjectManager::Get().DestroyObject(ParticleSystemEditorPreviewAsset);
-	ParticleSystemEditorPreviewAsset = nullptr;
 	ConsoleWidget.Shutdown();
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
@@ -116,22 +112,6 @@ void FEditorMainPanel::Release()
 void FEditorMainPanel::SaveToSettings() const
 {
 	ContentBrowserWidget.SaveToSettings();
-}
-
-UParticleSystem* FEditorMainPanel::GetOrCreateParticleSystemEditorPreviewAsset()
-{
-	if (!ParticleSystemEditorPreviewAsset)
-	{
-		ParticleSystemEditorPreviewAsset = UObjectManager::Get().CreateObject<UParticleSystem>();
-		ParticleSystemEditorPreviewAsset->SetAssetPathFileName("NewParticleSystem*");
-	}
-
-	if (ParticleSystemEditorPreviewAsset->GetEmitters().empty())
-	{
-		ParticleSystemEditorPreviewAsset->InitializeDefaultEmitters();
-	}
-
-	return ParticleSystemEditorPreviewAsset;
 }
 
 void FEditorMainPanel::TickAssetEditors(float DeltaTime)
@@ -290,19 +270,6 @@ void FEditorMainPanel::RenderMainMenuBar()
 		ImGui::Checkbox("Editor Debug", &Settings.UI.bEditorDebug);
 		ImGui::Checkbox("Shadow Map Debug", &Settings.UI.bShadowMapDebug);
 		ImGui::Checkbox("Animation Debug", &Settings.UI.bAnimationDebug);
-		ImGui::Separator();
-		bool bParticleSystemEditorOpen = ParticleSystemEditorPreviewAsset && AssetEditorManager.IsEditorOpenForObject(ParticleSystemEditorPreviewAsset);
-		if (ImGui::Checkbox("Particle System Editor", &bParticleSystemEditorOpen))
-		{
-			if (bParticleSystemEditorOpen)
-			{
-				AssetEditorManager.OpenEditorForObject(GetOrCreateParticleSystemEditorPreviewAsset());
-			}
-			else if (ParticleSystemEditorPreviewAsset)
-			{
-				AssetEditorManager.CloseEditorForObject(ParticleSystemEditorPreviewAsset);
-			}
-		}
 		ImGui::Checkbox("IMGUI_Setting", &Settings.UI.bImGUISettings);
 		ImGui::EndPopup();
 	}
