@@ -62,6 +62,7 @@ public:
 
 private:
 	FDirectoryWatcher() = default;
+	~FDirectoryWatcher();
 
 	void WatchThreadFunc();
 	void BeginRead(FWatchEntry& Entry);

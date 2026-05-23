@@ -388,6 +388,11 @@ FParticleSystemEditorWidget::FParticleSystemEditorWidget()
 	WindowIdSuffix = "###ParticleSystemEditor_" + Id;
 }
 
+FParticleSystemEditorWidget::~FParticleSystemEditorWidget()
+{
+	DestroyPreviewWorld();
+}
+
 bool FParticleSystemEditorWidget::CanEdit(UObject* Object) const
 {
 	return Object && Object->IsA<UParticleSystem>();
@@ -932,9 +937,19 @@ void FParticleSystemEditorWidget::CreatePreviewWorld()
 
 void FParticleSystemEditorWidget::DestroyPreviewWorld()
 {
-	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
+	UWorld* PreviewWorld = ViewportClient.GetPreviewWorld();
+	if (PreviewWorld)
 	{
 		PreviewWorld->SetEditorPOVProvider(nullptr);
+	}
+
+	FSlateApplication::Get().UnregisterViewport(&ViewportClient);
+	ViewportClient.Release();
+	PreviewActor = nullptr;
+	PreviewParticleComponent = nullptr;
+
+	if (PreviewWorld)
+	{
 		FScene& PreviewScene = PreviewWorld->GetScene();
 		if (GEngine)
 		{
@@ -946,11 +961,6 @@ void FParticleSystemEditorWidget::DestroyPreviewWorld()
 			GEngine->DestroyWorldContext(PreviewWorldHandle);
 		}
 	}
-
-	FSlateApplication::Get().UnregisterViewport(&ViewportClient);
-	ViewportClient.Release();
-	PreviewActor = nullptr;
-	PreviewParticleComponent = nullptr;
 }
 
 void FParticleSystemEditorWidget::RestartPreviewSimulation()
@@ -1323,7 +1333,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 	auto CalculateEmitterColumnHeight = [&](UParticleEmitter* Emitter)
 	{
-		float Height = Style.WindowPadding.y * 2.0f + EmitterHeaderHeight + Style.ItemSpacing.y;
+		float Height = EmitterHeaderHeight + Style.ItemSpacing.y;
 		if (!Emitter)
 		{
 			return Height + ImGui::GetTextLineHeightWithSpacing();
@@ -1345,9 +1355,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		return Height + Style.ItemSpacing.y;
 	};
 
-	const bool bNeedsHorizontalScroll = EmitterColumnsWidth > ImGui::GetContentRegionAvail().x;
-	const float VisibleColumnHeight = (std::max)(1.0f, ImGui::GetContentRegionAvail().y - Style.ItemSpacing.y - (bNeedsHorizontalScroll ? Style.ScrollbarSize : 0.0f));
-	float EmitterColumnHeight = VisibleColumnHeight;
+	float EmitterColumnHeight = 1.0f;
 	for (UParticleEmitter* Emitter : Emitters)
 	{
 		EmitterColumnHeight = (std::max)(EmitterColumnHeight, CalculateEmitterColumnHeight(Emitter));
