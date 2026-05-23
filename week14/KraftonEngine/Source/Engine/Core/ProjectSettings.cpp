@@ -20,6 +20,9 @@ namespace PSKey
 	constexpr const char* GameSection = "Game";
 	constexpr const char* StartLevelName = "StartLevelName";
 	constexpr const char* GameModeClassName = "GameModeClassName";
+
+	constexpr const char* DiagnosticsSection = "Diagnostics";
+	constexpr const char* CrashDumpShareDir = "CrashDumpShareDir";
 }
 
 void FProjectSettings::SaveToFile(const FString& Path) const
@@ -45,6 +48,10 @@ void FProjectSettings::SaveToFile(const FString& Path) const
 	GameObj[PSKey::StartLevelName] = Game.StartLevelName;
 	GameObj[PSKey::GameModeClassName] = Game.GameModeClassName;
 	Root[PSKey::GameSection] = GameObj;
+
+	JSON DiagnosticsObj = Object();
+	DiagnosticsObj[PSKey::CrashDumpShareDir] = Diagnostics.CrashDumpShareDir;
+	Root[PSKey::DiagnosticsSection] = DiagnosticsObj;
 
 	std::filesystem::path FilePath(FPaths::ToWide(Path));
 	if (FilePath.has_parent_path())
@@ -88,6 +95,13 @@ void FProjectSettings::LoadFromFile(const FString& Path)
 			Game.StartLevelName = G[PSKey::StartLevelName].ToString();
 		if (G.hasKey(PSKey::GameModeClassName))
 			Game.GameModeClassName = G[PSKey::GameModeClassName].ToString();
+	}
+
+	if (Root.hasKey(PSKey::DiagnosticsSection))
+	{
+		JSON D = Root[PSKey::DiagnosticsSection];
+		if (D.hasKey(PSKey::CrashDumpShareDir))
+			Diagnostics.CrashDumpShareDir = D[PSKey::CrashDumpShareDir].ToString();
 	}
 
 	if (Root.hasKey(PSKey::Shadow))

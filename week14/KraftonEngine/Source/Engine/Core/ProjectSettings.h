@@ -39,10 +39,16 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 		                            // 잘못된 이름이거나 AGameModeBase 파생이 아니면 디폴트 fallback.
 	};
 
+	struct FDiagnosticsOption
+	{
+		FString CrashDumpShareDir;
+	};
+
 public:
 	FShadowOption Shadow;
 	FPhysicsOption Physics;
 	FGameOption Game;
+	FDiagnosticsOption Diagnostics;
 
 	// --- 직렬화 ---
 	void SaveToFile(const FString& Path) const;
