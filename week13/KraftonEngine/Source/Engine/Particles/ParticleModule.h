@@ -3,7 +3,7 @@
 #include "Math/Transform.h"
 #include "Core/Types/EngineTypes.h"
 
-class FParticleEmitterInstance;
+struct FParticleEmitterInstance;
 class FBaseParticle;
 class UParticleModuleTypeDataBase;
 class UParticleLODLevel;
