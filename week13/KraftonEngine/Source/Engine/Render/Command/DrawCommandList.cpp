@@ -80,6 +80,18 @@ void FDrawCommandList::Sort()
 			++Idx;
 	}
 	PassOffsets[(uint32)ERenderPass::MAX] = Total;
+
+	// AlphaBlend 구간만 카메라 거리 내림차순 재정렬 (뒤→앞 블렌딩 보장)
+	const uint32 ABStart = PassOffsets[(uint32)ERenderPass::AlphaBlend];
+	const uint32 ABEnd   = PassOffsets[(uint32)ERenderPass::AlphaBlend + 1];
+	if (ABEnd - ABStart > 1)
+	{
+		std::sort(Commands.begin() + ABStart, Commands.begin() + ABEnd,
+			[](const FDrawCommand& A, const FDrawCommand& B)
+			{
+				return A.SortDepth > B.SortDepth;
+			});
+	}
 }
 
 void FDrawCommandList::GetPassRange(ERenderPass Pass, uint32& OutStart, uint32& OutEnd) const

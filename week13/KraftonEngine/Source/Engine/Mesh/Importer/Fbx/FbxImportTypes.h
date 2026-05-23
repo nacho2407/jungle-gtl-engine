@@ -13,6 +13,7 @@ struct FFbxImportedMaterialInfo
 	FVector DiffuseColor = FVector(1.0f, 1.0f, 1.0f);
 	FString DiffuseTexturePath;
 	FString NormalTexturePath;
+	float   Opacity = 1.0f;
 };
 
 struct FFbxStaticMeshImportResult

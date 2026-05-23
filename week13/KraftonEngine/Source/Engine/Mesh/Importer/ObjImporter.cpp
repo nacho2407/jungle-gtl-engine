@@ -369,6 +369,20 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Kd.Y);
 			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Kd.Z);
 		}
+		else if (Prefix == "d")
+		{
+			if (OutMtlInfos.empty()) { continue; }
+			float Value = 1.0f;
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), Value);
+			OutMtlInfos.back().Dissolve = Value;
+		}
+		else if (Prefix == "Tr")
+		{
+			if (OutMtlInfos.empty()) { continue; }
+			float Value = 0.0f;
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), Value);
+			OutMtlInfos.back().Dissolve = 1.0f - Value;
+		}
 		else if (Prefix == "map_Kd" || Prefix == "map_Bump" || Prefix == "bump" || Prefix == "norm")
 		{
 			if (OutMtlInfos.empty())
@@ -474,7 +488,18 @@ FString FObjImporter::ConvertMtlInfoToMat(const FObjMaterialInfo* MtlInfo)
 	JsonData["PathFileName"] = MatPath;
 	JsonData["Origin"] = "ObjImport";
 	JsonData["ShaderPath"] = "Shaders/Geometry/UberLit.hlsl";
-	JsonData["RenderPass"] = "Opaque";
+
+	const bool bTransparent = MtlInfo->Dissolve < 1.0f;
+	if (bTransparent)
+	{
+		JsonData["RenderPass"] = "AlphaBlend";
+		JsonData["BlendState"] = "AlphaBlend";
+		JsonData["DepthStencilState"] = "DepthReadOnly";
+	}
+	else
+	{
+		JsonData["RenderPass"] = "Opaque";
+	}
 
 	if (!MtlInfo->map_Kd.empty())
 	{
@@ -483,15 +508,14 @@ FString FObjImporter::ConvertMtlInfoToMat(const FObjMaterialInfo* MtlInfo)
 		JsonData["Parameters"]["SectionColor"][0] = 1.0f;
 		JsonData["Parameters"]["SectionColor"][1] = 1.0f;
 		JsonData["Parameters"]["SectionColor"][2] = 1.0f;
-		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][3] = MtlInfo->Dissolve;
 	}
 	else
 	{
-
 		JsonData["Parameters"]["SectionColor"][0] = MtlInfo->Kd.X;
 		JsonData["Parameters"]["SectionColor"][1] = MtlInfo->Kd.Y;
 		JsonData["Parameters"]["SectionColor"][2] = MtlInfo->Kd.Z;
-		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][3] = MtlInfo->Dissolve;
 	}
 
 	if (!MtlInfo->map_Bump.empty())

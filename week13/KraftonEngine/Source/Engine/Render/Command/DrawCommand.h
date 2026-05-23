@@ -76,7 +76,8 @@ struct FDrawCommand
 	FDrawCommandBindings Bindings;                    // PerShaderCB + SRVs (per-material)
 
 	// ===== Sort =====
-	uint64 SortKey = 0;                              // 정렬 키 (Pass → Shader → MeshBuffer → SRV)
+	uint64 SortKey   = 0;                            // 정렬 키 (Pass → Shader → MeshBuffer → SRV)
+	float  SortDepth = 0.0f;                         // 카메라까지 거리 (AlphaBlend 깊이 정렬 전용)
 
 	// ===== Profiling =====
 	bool bIsSkeletal = false;

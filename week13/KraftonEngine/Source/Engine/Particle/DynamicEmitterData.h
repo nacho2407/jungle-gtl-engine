@@ -3,18 +3,12 @@
 #include "Math/Vector.h"
 #include "Render/Types/VertexTypes.h"
 
-// ================================================================
-// [컴포넌트 팀 구현 필요]
-// UParticleSystemComponent 틱에서 파티클 배열을 이 구조체에 채워넣을 것.
-// 프록시의 FillStagingBuffer가 이 필드들을 읽어 GPU 인스턴스 버퍼를 만듦.
-// ================================================================
+// 빌드 오류를 방지하기 위한 더미
 struct FParticleDataContainer
 {
-	const uint8*  ParticleData    = nullptr;  // FBaseParticle 파생 구조체의 raw 배열
-	                                          // 접근: ParticleData + Index * ParticleStride
-	const uint32* ParticleIndices = nullptr;  // 정렬된 인덱스 배열 (SortMode != None 시 사용)
-	                                          // nullptr이면 0,1,2,... 순서로 접근
-	int32         AllocationCount = 0;        // 할당된 슬롯 수 (>= ActiveParticleCount)
+	const uint8* ParticleData = nullptr;
+	const uint32* ParticleIndices = nullptr;
+	int32         AllocationCount = 0;
 };
 class UParticleModuleRequired;
 

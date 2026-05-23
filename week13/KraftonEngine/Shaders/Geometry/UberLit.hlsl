@@ -175,10 +175,9 @@ UberPS_Output PS(UberVS_Output input)
     UberPS_Output output;
 
     float4 texColor = DiffuseTexture.Sample(LinearWrapSampler, input.texcoord);
-    if (texColor.a < 0.001f)
-        texColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
-
-    float4 baseColor = texColor * input.color;
+    float4 baseColor = (texColor.a < 0.001f)
+        ? input.color           // 텍스처 없음: SectionColor(=input.color)만 사용
+        : texColor * input.color; // 텍스처 있음: 텍스처 색상 × SectionColor
 
 #if defined(WEIGHT_BONE_HEATMAP) && WEIGHT_BONE_HEATMAP
 float Heat = saturate(input.selectedBoneWeight);
