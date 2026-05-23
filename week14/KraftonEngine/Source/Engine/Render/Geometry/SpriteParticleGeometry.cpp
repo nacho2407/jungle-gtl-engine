@@ -32,10 +32,10 @@ void FSpriteParticleGeometry::AddParticleQuad(const FBaseParticle& Particle, con
 
 	const uint32 StartIndex = static_cast<uint32>(Vertices.size());
 
-	Vertices.push_back({ TopLeft, Particle.Color });
-	Vertices.push_back({ TopRight, Particle.Color });
-	Vertices.push_back({ BottomLeft, Particle.Color });
-	Vertices.push_back({ BottomRight, Particle.Color });
+	Vertices.push_back({ TopLeft, Particle.Color, FVector2(0.0f, 0.0f) });
+	Vertices.push_back({ TopRight, Particle.Color, FVector2(1.0f, 0.0f) });
+	Vertices.push_back({ BottomLeft, Particle.Color, FVector2(0.0f, 1.0f) });
+	Vertices.push_back({ BottomRight, Particle.Color, FVector2(1.0f, 1.0f) });
 	Indices.push_back(StartIndex + 0);
 	Indices.push_back(StartIndex + 1);
 	Indices.push_back(StartIndex + 2);

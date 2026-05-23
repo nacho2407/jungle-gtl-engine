@@ -1,0 +1,9 @@
+{
+  "PathFileName": "Content/Material/Editor/DefaultParticleSprite.mat",
+  "ShaderPath": "Shaders/Geometry/Particle.hlsl",
+  "RenderPass": "AlphaBlend",
+  "Textures": {
+    "DiffuseTexture": "Content/Texture/Particle.png"
+  },
+  "Origin": "Editor"
+}

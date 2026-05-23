@@ -1,5 +1,6 @@
 ﻿#include "ParticleSystem.h"
 
+#include "Materials/MaterialManager.h"
 #include "Particles/Module/ParticleModule.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
 #include "Particles/Runtime/ParticleEmitterInstance.h"
@@ -127,6 +128,13 @@ void UParticleSystem::InitializeDefaultEmitters()
 	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleVelocity>());
 	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleColor>());
 	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleSize>());
+
+	UParticleModuleRequired* RequiredModule = UObjectManager::Get().CreateObject<UParticleModuleRequired>();
+	UMaterialInterface* Material = FMaterialManager::Get().GetOrCreateMaterialInterface("Content/Material/Editor/DefualtParticleSprite.mat");
+	RequiredModule->Material = Material;
+	RequiredModule->MaterialPath = "Content/Material/Editor/DefaultParticleSprite.mat";
+
+	DefaultLOD->GetMutableModules().push_back(RequiredModule);
 
 	DefaultEmitter->AddLODLevel(DefaultLOD);
 

@@ -25,11 +25,11 @@ public:
 	uint32 GetIndexCount() const { return IndexCount; }
 
 private:
-	TArray<FVertex> Vertices;
+	TArray<FParticleSpriteVertex> Vertices;
 	TArray<uint32> Indices;
 
 	FDynamicVertexBuffer VertexBuffer;
 	FDynamicIndexBuffer IndexBuffer;
-	uint32 VertexStride = sizeof(FVertex);
+	uint32 VertexStride = sizeof(FParticleSpriteVertex);
 	uint32 IndexCount = 0;
 };

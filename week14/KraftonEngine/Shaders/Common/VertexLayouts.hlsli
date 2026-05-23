@@ -58,6 +58,14 @@ struct VS_Input_P
     float3 position : POSITION;
 };
 
+// Particle (Position + Normal + TexCoord)
+struct VS_Input_PCUV
+{
+    float3 position : POSITION;
+    float4 color : COLOR;
+    float2 texcoord : TEXCOORD;
+};
+
 // ============================================================
 // PS Input (VS -> PS 전달 구조체)
 // ============================================================
@@ -119,6 +127,13 @@ struct PS_Input_Shadow
 {
     float4 position : SV_POSITION;
     float  depth    : TEXCOORD0;    // VSM용 normalized depth
+};
+
+struct PS_Input_ColorTex
+{
+    float4 position : SV_POSITION;
+    float4 color : COLOR;
+    float2 texcoord : TEXCOORD;
 };
 
 #endif // VERTEX_LAYOUTS_HLSL

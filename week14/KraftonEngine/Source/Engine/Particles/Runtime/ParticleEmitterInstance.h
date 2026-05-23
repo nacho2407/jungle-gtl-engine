@@ -22,6 +22,7 @@ struct FParticleEmitterInstance
 	UParticleEmitter* GetTemplate() const { return SpriteTemplate; }
 	UParticleSystemComponent* GetComponent() const { return Component; }
 	UParticleLODLevel* GetCurrentLODLevel() const { return CurrentLODLevel; }
+	UParticleModuleRequired* GetRequiredModule() const;
 
 	const FParticleDataContainer& GetParticleData() const { return ParticleDataContainer; }
 	FParticleDataContainer& GetMutableParticleData() { return ParticleDataContainer; }
@@ -82,7 +83,6 @@ protected:
 	FBaseParticle& GetParticle(int32 ParticleIndex);
 	const FBaseParticle& GetParticle(int32 ParticleIndex) const;
 
-	UParticleModuleRequired* GetRequiredModule() const;
 	UParticleModuleSpawn* GetSpawnModule() const;
 
 	void RunSpawnModules(FBaseParticle& Particle, float SpawnTime);
