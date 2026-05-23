@@ -43,7 +43,7 @@ bool FFogRenderPass::Begin(const FRenderPassContext* Context)
         return true;
     }
 
-    if (!Context->RenderTargets->SceneLightRTV || !Context->RenderTargets->SceneLightSRV ||
+    if (!Context->RenderTargets->SceneViewModeRTV || !Context->RenderTargets->SceneViewModeSRV ||
         !Context->RenderTargets->SceneFogRTV || !Context->RenderTargets->SceneFogSRV)
     {
         return false;

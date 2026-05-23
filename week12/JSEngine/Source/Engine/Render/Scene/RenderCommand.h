@@ -403,13 +403,10 @@ struct FLightData
 	float	Padding[3];
 };
 
-struct FLightPassConstants 
+struct FViewModeResolveConstants
 {
-	FVector CameraWorldPos;
-	uint32	LightCount;
-	uint32	ViewMode;		// 4 bytes (필요시 더 압축해서 보냅니다.)
-	uint32	WorldLit;		// 4 bytes
-	float	Padding[2];		// 8 bytes
+	uint32	ViewMode = 0;
+	float	Padding[3] = { 0.0f, 0.0f, 0.0f };
 };
 
 struct FEditorPickingConstants
@@ -471,7 +468,7 @@ struct FRenderCommand
 		FBillboardConstants Billboard;  // ← 추가
 		FFogConstants Fog;
 		FFXAAConstants FXAA;
-		FLightPassConstants Light;
+		FViewModeResolveConstants ViewModeResolve;
 		FDecalInfo Decal;
 	} Constants;
 

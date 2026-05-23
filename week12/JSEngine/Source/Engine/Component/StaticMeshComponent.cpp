@@ -311,11 +311,5 @@ void UStaticMeshComponent::EnsureBoundsUpdated() const
 		return;
 	}
 
-	if (bTransformDirty)
-	{
-		(void)GetWorldMatrix();
-		return;
-	}
-
 	const_cast<UStaticMeshComponent*>(this)->UpdateWorldAABB();
 }

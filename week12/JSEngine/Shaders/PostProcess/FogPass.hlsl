@@ -4,7 +4,7 @@
 Texture2D SceneColor : register(t0);
 Texture2D SceneNormal : register(t1);
 Texture2D SceneDepth : register(t2);
-Texture2D SceneLightColor : register(t3);
+Texture2D SceneViewModeColor : register(t3);
 Texture2D SceneWorldPos : register(t4);
 
 SamplerState SampleState : register(s0);
@@ -49,7 +49,7 @@ float4 mainPS(VSOutput input) : SV_TARGET
 {
     int2 ip = int2(input.ClipPos.xy);
     float rawDepth = SceneDepth.Load(int3(ip, 0)).r;
-    float4 lightColor = SceneLightColor.Load(int3(ip, 0));
+    float4 viewModeColor = SceneViewModeColor.Load(int3(ip, 0));
     float3 worldPos = SceneWorldPos.Load(int3(ip, 0)).xyz;
     float dist = length(worldPos - CameraPosition.xyz);
 
@@ -72,10 +72,10 @@ float4 mainPS(VSOutput input) : SV_TARGET
     }
 
     if (totalOpticalDepth <= 0.0f)
-        return lightColor;
+        return viewModeColor;
 
     float totalTransmittance = exp(-totalOpticalDepth);
     float3 fogColor = weightedFogColor / totalOpticalDepth;
-    float3 outRgb = lightColor.rgb * totalTransmittance + fogColor * (1.0f - totalTransmittance);
-    return float4(outRgb, lightColor.a);
+    float3 outRgb = viewModeColor.rgb * totalTransmittance + fogColor * (1.0f - totalTransmittance);
+    return float4(outRgb, viewModeColor.a);
 }

@@ -1,5 +1,5 @@
-﻿{
-        "ImportedName" : "?뗥쪞",
+{
+        "ImportedName" : "手套",
         "Name" : "LumineModel_Mat_1",
         "Params" : [{
             "Name" : "AmbientColor",
@@ -10,21 +10,25 @@
             "Type" : "Vector3",
             "Value" : [0.800000, 0.800000, 0.800000]
           }, {
-            "Name" : "SpecularColor",
-            "Type" : "Vector3",
-            "Value" : [0.500000, 0.500000, 0.500000]
-          }, {
             "Name" : "ScrollUV",
             "Type" : "Vector2",
             "Value" : [0.000000, 0.000000]
           }, {
+            "Name" : "SpecularColor",
+            "Type" : "Vector3",
+            "Value" : [0.500000, 0.500000, 0.500000]
+          }, {
             "Name" : "DiffuseMap",
             "Type" : "Texture",
-            "Value" : "Asset/Mesh/Lumine/烏ｆ쐨.png"
+            "Value" : "Asset/Mesh/Lumine/衣服.png"
           }, {
             "Name" : "EmissiveColor",
             "Type" : "Vector3",
             "Value" : [0.000000, 0.000000, 0.000000]
+          }, {
+            "Name" : "AmbientMap",
+            "Type" : "Texture",
+            "Value" : ""
           }, {
             "Name" : "Shininess",
             "Type" : "Float",
@@ -33,6 +37,18 @@
             "Name" : "Opacity",
             "Type" : "Float",
             "Value" : 1.000000
+          }, {
+            "Name" : "SpecularMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
+            "Name" : "EmissiveMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
+            "Name" : "BumpMap",
+            "Type" : "Texture",
+            "Value" : ""
           }, {
             "Name" : "bHasDiffuseMap",
             "Type" : "Bool",
