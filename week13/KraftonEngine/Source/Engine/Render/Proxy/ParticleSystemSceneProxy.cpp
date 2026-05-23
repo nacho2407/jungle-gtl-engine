@@ -85,17 +85,16 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 	//     Comp->SetCurrentLODLevel(static_cast<int32>(CurrentLOD));
 	// }
 
-	// TODO: 반투명 스프라이트 back-to-front 정렬
-	// const FParticleSortContext SortCtx { Frame.CameraPosition, Frame.CameraForward };
-	// for (FDynamicEmitterDataBase* EmitterData : CachedEmitterData)
-	// {
-	//     auto* Sprite = static_cast<FDynamicSpriteEmitterDataBase*>(EmitterData);
-	//     if (Sprite) Sprite->SortSpriteParticles(SortCtx);
-	// }
-
 	const TArray<FDynamicEmitterDataBase*>& EmitterList = Comp->GetEmitterRenderData();
 	CachedEmitterCount = static_cast<int32>(EmitterList.size());
 	CachedEmitterData  = EmitterList;
+
+	const FParticleSortContext SortCtx { Frame.CameraPosition, Frame.CameraForward };
+	for (FDynamicEmitterDataBase* EmitterData : CachedEmitterData)
+	{
+		if (EmitterData)
+			static_cast<FDynamicSpriteEmitterDataBase*>(EmitterData)->SortSpriteParticles(SortCtx);
+	}
 }
 
 
@@ -165,8 +164,14 @@ void FParticleSystemSceneProxy::EnsureEmitterBuffers(ID3D11Device* Device, int32
 
 	for (int32 i = Current; i < EmitterCount; ++i)
 	{
+		const uint32 InstanceStride =
+			(i < static_cast<int32>(CachedEmitterData.size()) && CachedEmitterData[i] &&
+			 CachedEmitterData[i]->GetSource().eEmitterType == EDynamicEmitterType::Mesh)
+			? sizeof(FMeshParticleInstanceVertex)
+			: sizeof(FParticleSpriteInstance);
+
 		auto Buf = std::make_unique<FEmitterRenderBuffer>();
-		Buf->InstanceVB.Create(Device, 64, sizeof(FParticleSpriteInstance));
+		Buf->InstanceVB.Create(Device, 64, InstanceStride);
 		Buf->ParticleFrameCB.Create(Device, sizeof(FParticleFrameConstants), "ParticleFrameCB");
 		EmitterBuffers.push_back(std::move(Buf));
 	}
@@ -238,20 +243,44 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 	}
 	else if (Source.eEmitterType == EDynamicEmitterType::Mesh)
 	{
+		// FDynamicMeshEmitterReplayData에 있는 MeshRotationOffset을 꺼낸다.
+		const int32 MeshRotOffset =
+			static_cast<const FDynamicMeshEmitterReplayData&>(Source).MeshRotationOffset;
+
 		for (int32 i = 0; i < Count; ++i)
 		{
 			const uint32 Idx = Source.DataContainer.ParticleIndices
 				? Source.DataContainer.ParticleIndices[i]
 				: static_cast<uint32>(i);
 
-			// TODO: FBaseParticle 레이아웃 확정 후 주석 해제
-			// const FBaseParticle* P = reinterpret_cast<const FBaseParticle*>(
-			//     Source.DataContainer.ParticleData + Idx * Source.ParticleStride);
-			// FMeshParticleInstanceVertex* Inst = reinterpret_cast<FMeshParticleInstanceVertex*>(
-			//     OutBuffer.StagingBuffer.data() + i * Stride);
-			// Inst->Transform = ...;
-			// Inst->Color = P->Color;
-			(void)Idx;
+			const FBaseParticle* P = reinterpret_cast<const FBaseParticle*>(
+				Source.DataContainer.ParticleData + Idx * Source.ParticleStride);
+			FMeshParticleInstanceVertex* Inst = reinterpret_cast<FMeshParticleInstanceVertex*>(
+				OutBuffer.StagingBuffer.data() + i * Stride);
+
+			// 회전: MeshRotationOffset > 0이면 FMeshRotationPayloadData에서 읽고,
+			// 미설정(0)이면 회전 없이 스케일+위치만 적용.
+			FVector Euler = FVector::ZeroVector;
+			if (MeshRotOffset > 0)
+			{
+				const FMeshRotationPayloadData* RotPayload =
+					reinterpret_cast<const FMeshRotationPayloadData*>(
+						reinterpret_cast<const uint8*>(P) + MeshRotOffset);
+				Euler = RotPayload->Rotation;
+			}
+
+			// 스케일: 파티클 크기 × 에미터 스케일
+			const FVector Scale(
+				P->Size.X * Source.Scale.X,
+				P->Size.Y * Source.Scale.Y,
+				P->Size.Z * Source.Scale.Z);
+
+			// SRT 순서로 월드 트랜스폼 구성
+			FMatrix WorldTM = FMatrix::MakeScaleMatrix(Scale) * FMatrix::MakeRotationEuler(Euler);
+			WorldTM.SetLocation(P->Location);
+
+			Inst->Transform = WorldTM;
+			Inst->Color     = P->Color.ToVector4();
 		}
 	}
 }

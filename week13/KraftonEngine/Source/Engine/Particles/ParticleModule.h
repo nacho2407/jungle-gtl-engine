@@ -4,7 +4,7 @@
 #include "Core/Types/EngineTypes.h"
 
 struct FParticleEmitterInstance;
-class FBaseParticle;
+struct FBaseParticle;
 class UParticleModuleTypeDataBase;
 class UParticleLODLevel;
 

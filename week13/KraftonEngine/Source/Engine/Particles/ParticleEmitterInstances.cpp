@@ -26,7 +26,7 @@ namespace
 
 	bool IsReplayType(const FDynamicEmitterReplayDataBase& Data, EDynamicEmitterType ExpectedType)
 	{
-		return Data.EmitterType == ExpectedType;
+		return Data.eEmitterType == ExpectedType;
 	}
 
 	void CopyActiveParticlesToReplay(
@@ -39,7 +39,7 @@ namespace
 
 		OutData.ActiveParticleCount = Instance.ActiveParticles;
 		OutData.ParticleStride = Instance.ParticleStride;
-		OutData.SortMode = Instance.SortMode;
+		OutData.SortMode = static_cast<EParticleSortMode>(Instance.SortMode);
 		OutData.Scale = Instance.Component->GetWorldScale();
 
 		const int32 ParticleDataBytes =
@@ -2015,9 +2015,9 @@ FDynamicEmitterDataBase* FParticleSpriteEmitterInstance::GetDynamicData(bool bSe
 	}
 
 	FDynamicSpriteEmitterData* Data = new FDynamicSpriteEmitterData();
-	Data->bValid = FillReplayData(Data->Source);
+	const bool bValid = FillReplayData(Data->Source);
 
-	if (!Data->bValid)
+	if (!bValid)
 	{
 		delete Data;
 		return nullptr;
@@ -2028,7 +2028,7 @@ FDynamicEmitterDataBase* FParticleSpriteEmitterInstance::GetDynamicData(bool bSe
 
 bool FParticleSpriteEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& OutData)
 {
-	if (!IsReplayType(OutData, DET_Sprite))
+	if (!IsReplayType(OutData, EDynamicEmitterType::Sprite))
 	{
 		return false;
 	}
@@ -2038,21 +2038,18 @@ bool FParticleSpriteEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBas
 		return false;
 	}
 
-	FDynamicSpriteEmitterReplayData& SpriteData =
-		static_cast<FDynamicSpriteEmitterReplayData&>(OutData);
+	FDynamicSpriteEmitterReplayDataBase& SpriteData =
+		static_cast<FDynamicSpriteEmitterReplayDataBase&>(OutData);
 
-	SpriteData.EmitterType = DET_Sprite;
-	SpriteData.SubUVDataOffset = SubUVDataOffset;
+	SpriteData.Material                  = CurrentMaterial;
+	SpriteData.SubUVDataOffset            = SubUVDataOffset;
 	SpriteData.DynamicParameterDataOffset = DynamicParameterDataOffset;
-	SpriteData.LightDataOffset = LightDataOffset;
-	SpriteData.OrbitModuleOffset = OrbitModuleOffset;
-	SpriteData.CameraPayloadOffset = CameraPayloadOffset;
-	SpriteData.SortMode = SortMode;
-	SpriteData.Material = CurrentMaterial;
-	SpriteData.bLockAxis = bAxisLockEnabled;
-	SpriteData.PivotOffset = PivotOffset;
-
-	SpriteData.bUseLocalSpace = GetCurrentLODLevelChecked()->RequiredModule->bUseLocalSpace;
+	SpriteData.LightDataOffset            = LightDataOffset;
+	SpriteData.OrbitModuleOffset          = OrbitModuleOffset;
+	SpriteData.CameraPayloadOffset        = CameraPayloadOffset;
+	SpriteData.bLockAxis                  = bAxisLockEnabled;
+	SpriteData.PivotOffset                = PivotOffset;
+	SpriteData.bUseLocalSpace             = GetCurrentLODLevelChecked()->RequiredModule->bUseLocalSpace;
 
 	return true;
 }
@@ -2219,9 +2216,9 @@ FDynamicEmitterDataBase* FParticleMeshEmitterInstance::GetDynamicData(bool bSele
 	}
 
 	FDynamicMeshEmitterData* Data = new FDynamicMeshEmitterData();
-	Data->bValid = FillReplayData(Data->Source);
+	const bool bValid = FillReplayData(Data->Source);
 
-	if (!Data->bValid)
+	if (!bValid)
 	{
 		delete Data;
 		return nullptr;
@@ -2232,7 +2229,7 @@ FDynamicEmitterDataBase* FParticleMeshEmitterInstance::GetDynamicData(bool bSele
 
 bool FParticleMeshEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& OutData)
 {
-	if (!IsReplayType(OutData, DET_Mesh))
+	if (!IsReplayType(OutData, EDynamicEmitterType::Mesh))
 	{
 		return false;
 	}
@@ -2245,18 +2242,16 @@ bool FParticleMeshEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase&
 	FDynamicMeshEmitterReplayData& MeshData =
 		static_cast<FDynamicMeshEmitterReplayData&>(OutData);
 
-	MeshData.EmitterType = DET_Mesh;
-	MeshData.MeshRotationOffset = MeshRotationOffset;
-	MeshData.MeshMotionBlurOffset = MeshMotionBlurOffset;
+	MeshData.Material                  = CurrentMaterial;
+	MeshData.MeshRotationOffset        = MeshRotationOffset;
+	MeshData.MeshMotionBlurOffset      = MeshMotionBlurOffset;
+	MeshData.bEnableMotionBlur         = bMotionBlurEnabled;
+	MeshData.SubUVDataOffset            = SubUVDataOffset;
 	MeshData.DynamicParameterDataOffset = DynamicParameterDataOffset;
-	MeshData.LightDataOffset = LightDataOffset;
-	MeshData.OrbitModuleOffset = OrbitModuleOffset;
-	MeshData.CameraPayloadOffset = CameraPayloadOffset;
-	MeshData.bEnableMotionBlur = bMotionBlurEnabled;
-	MeshData.SortMode = SortMode;
-	MeshData.Material = CurrentMaterial;
-
-	MeshData.bUseLocalSpace = GetCurrentLODLevelChecked()->RequiredModule->bUseLocalSpace;
+	MeshData.LightDataOffset            = LightDataOffset;
+	MeshData.OrbitModuleOffset          = OrbitModuleOffset;
+	MeshData.CameraPayloadOffset        = CameraPayloadOffset;
+	MeshData.bUseLocalSpace             = GetCurrentLODLevelChecked()->RequiredModule->bUseLocalSpace;
 
 	return true;
 }
