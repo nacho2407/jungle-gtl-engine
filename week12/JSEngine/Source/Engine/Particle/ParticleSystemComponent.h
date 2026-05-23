@@ -1,14 +1,22 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/PrimitiveComponent.h"
-#include "Particle/ParticleAsset.h"
-#include "Particle/ParticleEmitterInstance.h"
 
-#include <memory>
-
-class AParticleEventManager;
 class UWorld;
+class UParticleSystem;
+class AParticleEventManager;
+class FParticleEmitterInstance;
 
+struct FParticleEventSpawnData;
+struct FParticleEventDeathData;
+struct FParticleEventBurstData;
+struct FDynamicEmitterDataBase;
+struct FParticleEventCollideData;
+
+/******************************************************
+* Particle System 런타임 객체 관리 컴포넌트
+* Particle System이 Asset이라면 PSC는 UParticleSystem을 복제해서 Runtime에
+******************************************************/
 UCLASS(SpawnableComponent, DisplayName = "Particle System Component", Category = "Effects")
 class UParticleSystemComponent : public UPrimitiveComponent
 {
@@ -17,15 +25,6 @@ public:
 
 	UParticleSystemComponent();
 	~UParticleSystemComponent() override;
-
-	UParticleSystem* Template = nullptr;
-	TArray<FParticleEmitterInstance*> EmitterInstances;
-	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
-
-	TArray<FParticleEventSpawnData> SpawnEvents;
-	TArray<FParticleEventDeathData> DeathEvents;
-	TArray<FParticleEventCollideData> CollisionEvents;
-	TArray<FParticleEventBurstData> BurstEvents;
 
 	void SetTemplate(UParticleSystem* InTemplate);
 	void SetEventManager(AParticleEventManager* InEventManager) { EventManager = InEventManager; }
@@ -37,7 +36,6 @@ public:
 
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
 	bool SupportsOutline() const override { return false; }
-	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_ParticleSystem;
 
 	void UpdateWorldAABB() const override;
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
@@ -45,12 +43,26 @@ public:
 	void ResetParticles();
 
 private:
+	void CreateEmitterInstances();
 	void ReleaseEmitterInstances();
 	void ReleaseRenderData();
-	void CreateEmitterInstances();
+
+	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_ParticleSystem;
+
+	// Asset / Runtime
+	UParticleSystem* Template = nullptr;
+	TArray<FParticleEmitterInstance*> EmitterInstances;
+	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
+
+	// Event Queue
+	TArray<FParticleEventSpawnData> SpawnEvents;
+	TArray<FParticleEventDeathData> DeathEvents;
+	TArray<FParticleEventCollideData> CollisionEvents;
+	TArray<FParticleEventBurstData> BurstEvents;
 
 	AParticleEventManager* EventManager = nullptr;
 
+	// CPP참고 -  EmitterInstance에게 넘겨주는 Component 정보
 	class FInstanceOwner;
 	std::unique_ptr<FInstanceOwner> InstanceOwner;
 };

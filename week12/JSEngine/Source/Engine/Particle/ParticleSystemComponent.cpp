@@ -1,9 +1,15 @@
-#include "Particle/ParticleSystemComponent.h"
+﻿#include "Particle/ParticleSystemComponent.h"
 
 #include "GameFramework/World.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
 #include "Particle/ParticleEventManager.h"
+#include "Particle/ParticleAsset.h"
+#include "Particle/ParticleEmitterInstance.h"
+#include <memory>
 
+// EmitterInstance에서 Component를 직접 참조해서 강하게 결합하는 문제를 해결하기 위해
+// Component의 일부 기능만 인터페이스로 제공하는 InstanceOwner를 EmitterInstance에 넘긴다
+// 위치를 보고 의문이 들 수 있지만 UE도 여기에 위치함
 class UParticleSystemComponent::FInstanceOwner : public IParticleEmitterInstanceOwner
 {
 public:
@@ -200,6 +206,8 @@ void UParticleSystemComponent::CreateEmitterInstances()
 
 		EmitterTemplate->CacheEmitterModuleInfo();
 
+		// TODO: 거리기반으로 LOD 선택가능한 로직으로 변경
+		// 현재는 무조건 0번 LOD 선택
 		UParticleLODLevel* LODLevel = EmitterTemplate->LODLevels.empty() ? nullptr : EmitterTemplate->LODLevels[0];
 		UParticleModuleTypeDataBase* TypeData = LODLevel != nullptr ? LODLevel->TypeDataModule : nullptr;
 
