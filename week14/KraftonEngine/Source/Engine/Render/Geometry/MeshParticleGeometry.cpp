@@ -1,5 +1,7 @@
 ﻿#include "Render/Geometry/MeshParticleGeometry.h"
 
+#include "Math/Matrix.h"
+
 void FMeshParticleGeometry::Create(ID3D11Device* InDevice)
 {
 	VertexBuffer.Create(InDevice, 1024, VertexStride);

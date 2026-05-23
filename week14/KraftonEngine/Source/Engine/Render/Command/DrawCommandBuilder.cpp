@@ -428,7 +428,7 @@ void FDrawCommandBuilder::BuildParticleCommands(FScene& Scene, const FParticleSy
 		if (Batch.Sections.empty()) continue;
 
 		FDrawCommandBuffer BatchBuffer;
-		if (!Proxy->PrepareParticleDrawBuffer(Batch.Type, CachedDevice, CachedContext, BatchBuffer)) continue;
+		if (!Proxy->PrepareParticleDrawBuffer(Batch, CachedDevice, CachedContext, BatchBuffer)) continue;
 
 		if (!BatchBuffer.HasBuffers()) continue;
 
@@ -572,6 +572,17 @@ void FDrawCommandBuilder::BuildParticleCommandForSection(FScene& Scene, const FP
 	FShader* SectionShader = (Section.Material && Section.Material->GetShader())
 		? Section.Material->GetShader()
 		: Proxy.GetShader();
+
+	if (Buffer.IsInstanced())
+	{
+		SectionShader = FShaderManager::Get().GetOrCreate(EShaderPath::MeshParticleInstanced);
+	}
+	else
+	{
+		SectionShader = (Section.Material && Section.Material->GetShader())
+			? Section.Material->GetShader()
+			: Proxy.GetShader();
+	}
 
 	FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, false, false);
 

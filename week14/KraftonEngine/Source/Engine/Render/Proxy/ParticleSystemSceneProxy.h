@@ -6,6 +6,7 @@
 #include "Render/Geometry/SpriteParticleGeometry.h"
 #include "Render/Geometry/MeshParticleGeometry.h"
 
+class UStaticMesh;
 class UParticleSystemComponent;
 struct FParticleEmitterInstance;
 
@@ -19,6 +20,11 @@ struct FParticleGeometrySection
 struct FParticleDrawBatch
 {
 	EParticleRenderType Type = EParticleRenderType::Sprite;
+
+	UStaticMesh* Mesh = nullptr;
+	uint32 FirstInstance = 0;
+	uint32 InstanceCount = 0;
+
 	TArray<FMeshSectionDraw> Sections;
 };
 
@@ -37,7 +43,7 @@ public:
 
 	const TArray<FParticleDrawBatch>& GetParticleDrawBatches() const { return DrawBatches; }
 
-	bool PrepareParticleDrawBuffer(EParticleRenderType Type, ID3D11Device* Device, ID3D11DeviceContext* Context,
+	bool PrepareParticleDrawBuffer(const FParticleDrawBatch& Batch, ID3D11Device* Device, ID3D11DeviceContext* Context,
 		FDrawCommandBuffer& OutBuffer) const;
 
 private:
@@ -51,6 +57,7 @@ private:
 	}
 
 	FParticleDrawBatch& FindOrAddDrawBatch(EParticleRenderType Type);
+	FParticleDrawBatch& FindOrAddMeshDrawBatch(UStaticMesh* Mesh);
 
 	UMaterialInterface* ResolveEmitterMaterial(const FParticleEmitterInstance* Instance) const;
 	UStaticMesh* ResolveTypeDataMesh(UParticleModuleTypeDataMesh* TypeData) const;
@@ -64,6 +71,10 @@ private:
 	mutable FMeshParticleGeometry MeshGeometry;
 	mutable bool bMeshGeometryCreated = false;
 	uint32 MeshIndexCount = 0;
+
+	mutable FDynamicVertexBuffer MeshInstanceBuffer;
+	mutable bool bMeshInstanceBufferCreated = false;
+	mutable TArray<FMeshParticleInstanceData> MeshInstances;
 
 	mutable TArray<FParticleDrawBatch> DrawBatches;
 };

@@ -27,6 +27,7 @@ FParticleSystemSceneProxy::~FParticleSystemSceneProxy()
 {
 	SpriteGeometry.Release();
 	MeshGeometry.Release();
+	MeshInstanceBuffer.Release();
 }
 
 void FParticleSystemSceneProxy::UpdateMesh()
@@ -45,6 +46,7 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 	if (!bVisible) return;
 
 	ClearDrawBatches();
+	MeshInstances.clear();
 
 	RebuildSpriteParticleGeometry(Frame);
 	RebuildMeshParticleGeometry();
@@ -53,30 +55,29 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 bool FParticleSystemSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context,
 	FDrawCommandBuffer& OutBuffer) const
 {
-	if (MeshIndexCount > 0)
+	for (const FParticleDrawBatch& Batch : DrawBatches)
 	{
-		return PrepareParticleDrawBuffer(EParticleRenderType::Mesh, Device, Context, OutBuffer);
-	}
-
-	if (SpriteIndexCount > 0)
-	{
-		return PrepareParticleDrawBuffer(EParticleRenderType::Sprite, Device, Context, OutBuffer);
+		if (!Batch.Sections.empty())
+		{
+			return PrepareParticleDrawBuffer(Batch, Device, Context, OutBuffer);
+		}
 	}
 
 	return false;
 }
 
-bool FParticleSystemSceneProxy::PrepareParticleDrawBuffer(EParticleRenderType Type, ID3D11Device* Device, ID3D11DeviceContext* Context,
+bool FParticleSystemSceneProxy::PrepareParticleDrawBuffer(const FParticleDrawBatch& Batch, ID3D11Device* Device, ID3D11DeviceContext* Context,
 	FDrawCommandBuffer& OutBuffer) const
 {
 	if (!Device || !Context) return false;
 
 	OutBuffer = {};
 	
-	switch (Type)
+	switch (Batch.Type)
 	{
 	case EParticleRenderType::Sprite:
-		if (SpriteIndexCount == 0) return false;
+	{
+		if (SpriteIndexCount == 0 || Batch.Sections.empty()) return false;
 
 		if (!bSpriteGeometryCreated)
 		{
@@ -90,22 +91,40 @@ bool FParticleSystemSceneProxy::PrepareParticleDrawBuffer(EParticleRenderType Ty
 		OutBuffer.VBStride = SpriteGeometry.GetVertexStride();
 		OutBuffer.IB = SpriteGeometry.GetIndexBuffer();
 		return OutBuffer.VB != nullptr && OutBuffer.IB != nullptr;
+	}
 
 	case EParticleRenderType::Mesh:
-		if (MeshIndexCount == 0) return false;
+	{
+		if (!Batch.Mesh || Batch.InstanceCount == 0 || Batch.Sections.empty()) return false;
 
-		if (!bMeshGeometryCreated)
+		FStaticMesh* MeshAsset = Batch.Mesh->GetStaticMeshAsset();
+		if (!MeshAsset || !MeshAsset->RenderBuffer) return false;
+
+		if (!bMeshInstanceBufferCreated)
 		{
-			MeshGeometry.Create(Device);
-			bMeshGeometryCreated = true;
+			MeshInstanceBuffer.Create(Device, 1024, sizeof(FMeshParticleInstanceData));
+			bMeshInstanceBufferCreated = true;
 		}
 
-		if (!MeshGeometry.Upload(Device, Context)) return false;
+		if (MeshInstances.empty()) return false;
 
-		OutBuffer.VB = MeshGeometry.GetVertexBuffer();
-		OutBuffer.VBStride = MeshGeometry.GetVertexStride();
-		OutBuffer.IB = MeshGeometry.GetIndexBuffer();
-		return OutBuffer.VB != nullptr && OutBuffer.IB != nullptr;
+		MeshInstanceBuffer.EnsureCapacity(Device, static_cast<uint32>(MeshInstances.size()));
+		if (!MeshInstanceBuffer.Update(Context, MeshInstances.data(), static_cast<uint32>(MeshInstances.size())))
+		{
+			return false;
+		}
+
+		OutBuffer.VB = MeshAsset->RenderBuffer->GetVertexBuffer().GetBuffer();
+		OutBuffer.VBStride = MeshAsset->RenderBuffer->GetVertexBuffer().GetStride();
+		OutBuffer.IB = MeshAsset->RenderBuffer->GetIndexBuffer().GetBuffer();
+
+		OutBuffer.InstanceVB = MeshInstanceBuffer.GetBuffer();
+		OutBuffer.InstanceStride = sizeof(FMeshParticleInstanceData);
+		OutBuffer.FirstInstance = Batch.FirstInstance;
+		OutBuffer.InstanceCount = Batch.InstanceCount;
+
+		return OutBuffer.VB != nullptr && OutBuffer.IB != nullptr && OutBuffer.InstanceVB != nullptr;
+	}
 
 	default:
 		return false;
@@ -162,11 +181,9 @@ void FParticleSystemSceneProxy::RebuildSpriteParticleGeometry(const FFrameContex
 void FParticleSystemSceneProxy::RebuildMeshParticleGeometry()
 {
 	MeshGeometry.Clear();
+	MeshInstances.clear();
 	MeshIndexCount = 0;
 
-	FParticleDrawBatch& Batch = FindOrAddDrawBatch(EParticleRenderType::Mesh);
-	Batch.Sections.clear();
-	
 	UParticleSystemComponent* Component = GetParticleSystemComponent();
 	if (!Component) return;
 
@@ -177,6 +194,7 @@ void FParticleSystemSceneProxy::RebuildMeshParticleGeometry()
 		if (!Instance) continue;
 
 		FParticleMeshEmitterInstance* MeshInstance = dynamic_cast<FParticleMeshEmitterInstance*>(Instance);
+
 		if (!MeshInstance || !MeshInstance->TypeDataModule) continue;
 
 		UParticleModuleTypeDataMesh* TypeData = MeshInstance->TypeDataModule;
@@ -185,41 +203,19 @@ void FParticleSystemSceneProxy::RebuildMeshParticleGeometry()
 		FStaticMesh* MeshAsset = Mesh ? Mesh->GetStaticMeshAsset() : nullptr;
 		if (!MeshAsset || MeshAsset->Vertices.empty() || MeshAsset->Indices.empty()) continue;
 
-		const TArray<FStaticMaterial>& StaticMaterials = Mesh->GetStaticMaterials();
+		FParticleDrawBatch& Batch = FindOrAddMeshDrawBatch(Mesh);
 
-		const int32 ActiveCount = Instance->GetActiveParticleCount();
-		const FParticleDataContainer& Data = Instance->GetParticleDataContainer();
-
-		for (int32 ParticleIndex = 0; ParticleIndex < ActiveCount; ++ParticleIndex)
+		if (Batch.Sections.empty())
 		{
-			const FBaseParticle& Particle = Data.GetParticle(Instance->ParticleIndices[ParticleIndex]);
-			if (!Particle.bAlive) continue;
+			const TArray<FStaticMaterial>& StaticMaterials = Mesh->GetStaticMaterials();
 
 			for (const FStaticMeshSection& MeshSection : MeshAsset->Sections)
 			{
-				const uint32 FirstIndex = MeshGeometry.GetIndexCount();
-
-				FMeshParticleTransform Transform;
-				Transform.Position = Particle.Position;
-				Transform.Scale = Particle.Size;
-				Transform.RotationEuler = FVector(0, 0, Particle.Rotation);
-
-				if (const FParticleMeshPayload* Payload = MeshInstance->GetParticlePayload<FParticleMeshPayload>(ParticleIndex))
-				{
-					Transform.Scale = FVector(
-						Transform.Scale.X * Payload->MeshScale.X,
-						Transform.Scale.Y * Payload->MeshScale.Y,
-						Transform.Scale.Z * Payload->MeshScale.Z);
-					Transform.RotationEuler += Payload->MeshRotation;
-				}
-
-				MeshGeometry.AddMeshParticle(Particle, Transform, MeshSection, MeshAsset->Vertices, MeshAsset->Indices);
-
-				const int32 IndexCount = MeshGeometry.GetIndexCount() - FirstIndex;
+				const uint32 IndexCount = MeshSection.NumTriangles * 3;
 				if (IndexCount == 0) continue;
 
 				UMaterialInterface* Material = nullptr;
-				if (MeshSection.MaterialIndex >= 0 && MeshSection.MaterialIndex < static_cast<int32>(StaticMaterials.size()))
+				if (MeshSection.MaterialIndex >= 0 && MeshSection.MaterialIndex < static_cast<uint32>(StaticMaterials.size()))
 				{
 					Material = StaticMaterials[MeshSection.MaterialIndex].MaterialInterface;
 				}
@@ -229,16 +225,55 @@ void FParticleSystemSceneProxy::RebuildMeshParticleGeometry()
 					Material = ResolveEmitterMaterial(Instance);
 				}
 
-				Batch.Sections.push_back({ Material, FirstIndex, static_cast<uint32>(IndexCount) });
+				Batch.Sections.push_back({
+					Material,
+					MeshSection.FirstIndex,
+					IndexCount
+				});
+
+				MeshIndexCount += IndexCount;
 			}
+		}
+
+		const int32 ActiveCount = Instance->GetActiveParticleCount();
+		const FParticleDataContainer& Data = Instance->GetParticleDataContainer();
+
+		for (int32 ParticleIndex = 0; ParticleIndex < ActiveCount; ++ParticleIndex)
+		{
+			const FBaseParticle& Particle = Data.GetParticle(Instance->ParticleIndices[ParticleIndex]);
+			if (!Particle.bAlive) continue;
+
+			FMeshParticleTransform Transform;
+			Transform.Position = Particle.Position;
+			Transform.Scale = Particle.Size;
+			Transform.RotationEuler = FVector(0, 0, Particle.Rotation);
+
+			if (const FParticleMeshPayload* Payload = MeshInstance->GetParticlePayload<FParticleMeshPayload>(ParticleIndex))
+			{
+				Transform.Scale = FVector(
+					Transform.Scale.X * Payload->MeshScale.X,
+					Transform.Scale.Y * Payload->MeshScale.Y,
+					Transform.Scale.Z * Payload->MeshScale.Z);
+				Transform.RotationEuler += Payload->MeshRotation;
+			}
+
+			MeshInstances.push_back(MakeMeshParticleInstanceData(Transform, Particle.Color));
+			++Batch.InstanceCount;
 		}
 	}
 
-	MeshIndexCount = MeshGeometry.GetIndexCount();
-
-	if (MeshIndexCount == 0)
+	if (MeshInstances.empty())
 	{
-		Batch.Sections.clear();
+		MeshIndexCount = 0;
+
+		for (FParticleDrawBatch& Batch : DrawBatches)
+		{
+			if (Batch.Type == EParticleRenderType::Mesh)
+			{
+				Batch.Sections.clear();
+				Batch.InstanceCount = 0;
+			}
+		}
 	}
 }
 
@@ -254,6 +289,26 @@ FParticleDrawBatch& FParticleSystemSceneProxy::FindOrAddDrawBatch(EParticleRende
 
 	FParticleDrawBatch NewBatch;
 	NewBatch.Type = Type;
+	DrawBatches.push_back(NewBatch);
+	return DrawBatches.back();
+}
+
+FParticleDrawBatch& FParticleSystemSceneProxy::FindOrAddMeshDrawBatch(UStaticMesh* Mesh)
+{
+	for (FParticleDrawBatch& Batch : DrawBatches)
+	{
+		if (Batch.Type == EParticleRenderType::Mesh && Batch.Mesh == Mesh)
+		{
+			return Batch;
+		}
+	}
+
+	FParticleDrawBatch NewBatch;
+	NewBatch.Type = EParticleRenderType::Mesh;
+	NewBatch.Mesh = Mesh;
+	NewBatch.FirstInstance = static_cast<uint32>(MeshInstances.size());
+	NewBatch.InstanceCount = 0;
+
 	DrawBatches.push_back(NewBatch);
 	return DrawBatches.back();
 }

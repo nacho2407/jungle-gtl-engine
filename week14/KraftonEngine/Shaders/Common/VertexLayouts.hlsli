@@ -32,6 +32,21 @@ struct VS_Input_PNCTT
     float4 tangent : TANGENT;
 };
 
+struct VS_Input_PNCTT_Instanced
+{
+    float3 position : POSITION;
+    float3 normal : NORMAL;
+    float4 color : COLOR;
+    float2 texcoord : TEXCOORD;
+    float4 tangent : TANGENT;
+    
+    float4 world0 : INSTANCEWORLD0;
+    float4 world1 : INSTANCEWORLD1;
+    float4 world2 : INSTANCEWORLD2;
+    float4 world3 : INSTANCEWORLD3;
+    float4 instanceColor : INSTANCECOLOR;
+};
+
 // 나도 이러고 싶지 않았다.
 struct VS_Input_PNCTTBB
 {

@@ -19,12 +19,18 @@ struct FDrawCommandBuffer
 	uint32        VBStride = 0;
 	ID3D11Buffer* IB       = nullptr;
 
+	ID3D11Buffer* InstanceVB = nullptr;
+	uint32 InstanceStride = 0;
+	uint32 InstanceCount = 0;
+	uint32 FirstInstance = 0;
+
 	uint32 FirstIndex  = 0;              // 인덱스 시작 오프셋
 	uint32 IndexCount  = 0;              // DrawIndexed 인덱스 수
 	uint32 VertexCount = 0;              // IB 없을 때 Draw(VertexCount, 0)
 	int32  BaseVertex  = 0;              // DrawIndexed BaseVertexLocation
 
 	bool HasBuffers() const { return VB != nullptr; }
+	bool IsInstanced() const { return InstanceVB != nullptr && InstanceCount > 0; }
 };
 
 // 렌더 상태 — DepthStencil / Blend / Rasterizer를 한 단위로 묶어 비교·복사

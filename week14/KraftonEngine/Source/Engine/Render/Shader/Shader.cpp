@@ -1,4 +1,4 @@
-#include "Shader.h"
+﻿#include "Shader.h"
 #include "ShaderCache.h"
 #include "ShaderInclude.h"
 #include "Profiling/Stats/MemoryStats.h"
@@ -289,10 +289,34 @@ void FShader::CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* 
 		Elem.SemanticName = ParamDesc.SemanticName;
 		Elem.SemanticIndex = ParamDesc.SemanticIndex;
 		Elem.Format = MaskToFormat(ParamDesc.ComponentType, ParamDesc.Mask);
-		Elem.InputSlot = 0;
-		Elem.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-		Elem.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-		Elem.InstanceDataStepRate = 0;
+
+		const FString SemanticName = ParamDesc.SemanticName;
+
+		const bool bInstanceWorld = SemanticName == "INSTANCEWORLD";
+		const bool bInstanceColor = SemanticName == "INSTANCECOLOR";
+
+		if (bInstanceWorld || bInstanceColor)
+		{
+			Elem.InputSlot = 1;
+			Elem.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
+			Elem.InstanceDataStepRate = 1;
+
+			if (bInstanceWorld)
+			{
+				Elem.AlignedByteOffset = ParamDesc.SemanticIndex * sizeof(FVector4);
+			}
+			else
+			{
+				Elem.AlignedByteOffset = 4 * sizeof(FVector4);
+			}
+		}
+		else
+		{
+			Elem.InputSlot = 0;
+			Elem.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+			Elem.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+			Elem.InstanceDataStepRate = 0;
+		}
 
 		Elements.push_back(Elem);
 	}
