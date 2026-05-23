@@ -143,7 +143,7 @@ FPrimitiveSceneProxy* UParticleSystemComponent::CreateSceneProxy()
 
 void UParticleSystemComponent::UpdateWorldAABB() const
 {
-    const FVector Extent(1.0f, 1.0f, 1.0f);
+    const FVector Extent(100.0f, 100.0f, 100.0f);
     const FVector Center = GetWorldLocation();
 
     WorldAABBMinLocation = Center - Extent;
@@ -328,7 +328,7 @@ void UParticleSystemComponent::BuildEmitterInstances()
 
         if (!Emitter->HasValidLOD0())
         {
-            return;
+            continue;
         }
 
         Emitter->CacheEmitterModuleInfo();

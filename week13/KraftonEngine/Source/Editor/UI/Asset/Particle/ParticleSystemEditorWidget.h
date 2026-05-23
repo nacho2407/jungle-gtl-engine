@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/UI/Asset/AssetEditorWidget.h"
 #include "Object/FName.h"
@@ -73,8 +73,6 @@ private:
     float LeftRowRatio  = 0.56f;   // 좌측에서 프리뷰 높이 비율
     float RightRowRatio = 0.58f;   // 우측에서 이미터 높이 비율
 
-    // 이미터별 활성 플래그 (UI 상태; 데이터 모델에 bEnabled 가 생기면 대체).
-    TArray<bool> EmitterEnabled;
 
     // 커브 트랙 가시성 (선택된 모듈의 커브 수만큼 사용).
     bool CurveTrackVisible[4] = { true, true, true, true };
