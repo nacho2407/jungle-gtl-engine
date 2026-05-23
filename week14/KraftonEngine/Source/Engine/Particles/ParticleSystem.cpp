@@ -123,6 +123,7 @@ void UParticleSystem::InitializeDefaultEmitters()
 	DefaultLOD->SetEnabled(true);
 
 	//모듈 확인용 임시 코드
+	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleSpawn>());
 	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleLifetime>());
 	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleLocation>());
 	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleVelocity>());

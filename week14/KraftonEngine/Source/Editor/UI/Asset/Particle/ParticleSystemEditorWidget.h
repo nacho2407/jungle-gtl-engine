@@ -3,6 +3,11 @@
 #include "Editor/UI/Asset/AssetEditorWidget.h"
 
 struct ImVec2;
+struct FPropertyValue;
+class UObject;
+class UParticleEmitter;
+class UParticleLODLevel;
+class UParticleModule;
 class UParticleSystem;
 
 class FParticleSystemEditorWidget : public FAssetEditorWidget
@@ -49,16 +54,23 @@ private:
 	void SelectParticleSystem();
 	void SelectEmitter(int32 EmitterIndex);
 	void SelectLOD(int32 EmitterIndex, int32 LODIndex);
-	void SelectModule(int32 EmitterIndex, int32 ModuleIndex);
+	void SelectModule(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex);
 	bool IsEmitterSelected(int32 EmitterIndex) const;
-	bool IsModuleSelected(int32 EmitterIndex, int32 ModuleIndex) const;
+	bool IsLODSelected(int32 EmitterIndex, int32 LODIndex) const;
+	bool IsModuleSelected(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex) const;
 	const char* GetSelectionKindLabel() const;
+	int32 GetDisplayLODIndex(const UParticleEmitter* Emitter) const;
+	const UParticleEmitter* GetSelectedEmitter(const UParticleSystem* ParticleSystem) const;
+	const UParticleLODLevel* GetSelectedLODLevel(const UParticleSystem* ParticleSystem) const;
+	const UParticleModule* GetSelectedModule(const UParticleSystem* ParticleSystem) const;
 	FEditorLayoutSizes CalculateLayoutSizes(const ImVec2& Available) const;
 	void RenderToolbar();
 	void RenderViewportPanel(const ImVec2& Size) const;
 	void RenderDetailsPanel(const ImVec2& Size) const;
 	void RenderEmittersPanel(const ImVec2& Size);
 	void RenderCurveEditorPanel(const ImVec2& Size) const;
+	void RenderObjectProperties(const UObject* Object) const;
+	void RenderPropertyValueReadOnly(const FPropertyValue& PropertyValue) const;
 
 private:
 	FEditorViewState ViewState;
