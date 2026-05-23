@@ -18,6 +18,135 @@ namespace
 {
 	using json::JSON;
 
+	const FString& ToString(EMaterialBlendMode Mode)
+	{
+		static const FString Opaque = "Opaque";
+		static const FString Translucent = "Translucent";
+		return Mode == EMaterialBlendMode::Translucent ? Translucent : Opaque;
+	}
+
+	bool TryParseMaterialBlendMode(const FString& Name, EMaterialBlendMode& OutMode)
+	{
+		if (Name == "Translucent")
+		{
+			OutMode = EMaterialBlendMode::Translucent;
+			return true;
+		}
+		if (Name == "Opaque" || Name.empty())
+		{
+			OutMode = EMaterialBlendMode::Opaque;
+			return true;
+		}
+		return false;
+	}
+
+	const FString& ToString(EBlendOption Option)
+	{
+		static const FString Zero = "Zero";
+		static const FString One = "One";
+		static const FString SrcColor = "SrcColor";
+		static const FString InvSrcColor = "InvSrcColor";
+		static const FString SrcAlpha = "SrcAlpha";
+		static const FString InvSrcAlpha = "InvSrcAlpha";
+		static const FString DestAlpha = "DestAlpha";
+		static const FString InvDestAlpha = "InvDestAlpha";
+		static const FString DestColor = "DestColor";
+		static const FString InvDestColor = "InvDestColor";
+		switch (Option)
+		{
+		case EBlendOption::Zero: return Zero;
+		case EBlendOption::One: return One;
+		case EBlendOption::SrcColor: return SrcColor;
+		case EBlendOption::InvSrcColor: return InvSrcColor;
+		case EBlendOption::SrcAlpha: return SrcAlpha;
+		case EBlendOption::InvSrcAlpha: return InvSrcAlpha;
+		case EBlendOption::DestAlpha: return DestAlpha;
+		case EBlendOption::InvDestAlpha: return InvDestAlpha;
+		case EBlendOption::DestColor: return DestColor;
+		case EBlendOption::InvDestColor: return InvDestColor;
+		default: return One;
+		}
+	}
+
+	bool TryParseBlendOption(const FString& Name, EBlendOption& OutOption)
+	{
+		if (Name == "Zero") { OutOption = EBlendOption::Zero; return true; }
+		if (Name == "One") { OutOption = EBlendOption::One; return true; }
+		if (Name == "SrcColor") { OutOption = EBlendOption::SrcColor; return true; }
+		if (Name == "InvSrcColor") { OutOption = EBlendOption::InvSrcColor; return true; }
+		if (Name == "SrcAlpha") { OutOption = EBlendOption::SrcAlpha; return true; }
+		if (Name == "InvSrcAlpha") { OutOption = EBlendOption::InvSrcAlpha; return true; }
+		if (Name == "DestAlpha") { OutOption = EBlendOption::DestAlpha; return true; }
+		if (Name == "InvDestAlpha") { OutOption = EBlendOption::InvDestAlpha; return true; }
+		if (Name == "DestColor") { OutOption = EBlendOption::DestColor; return true; }
+		if (Name == "InvDestColor") { OutOption = EBlendOption::InvDestColor; return true; }
+		return false;
+	}
+
+	const FString& ToString(EBlendOp Op)
+	{
+		static const FString Add = "Add";
+		static const FString Subtract = "Subtract";
+		static const FString RevSubtract = "RevSubtract";
+		static const FString Min = "Min";
+		static const FString Max = "Max";
+		switch (Op)
+		{
+		case EBlendOp::Subtract: return Subtract;
+		case EBlendOp::RevSubtract: return RevSubtract;
+		case EBlendOp::Min: return Min;
+		case EBlendOp::Max: return Max;
+		case EBlendOp::Add:
+		default:
+			return Add;
+		}
+	}
+
+	bool TryParseBlendOp(const FString& Name, EBlendOp& OutOp)
+	{
+		if (Name == "Add") { OutOp = EBlendOp::Add; return true; }
+		if (Name == "Subtract") { OutOp = EBlendOp::Subtract; return true; }
+		if (Name == "RevSubtract") { OutOp = EBlendOp::RevSubtract; return true; }
+		if (Name == "Min") { OutOp = EBlendOp::Min; return true; }
+		if (Name == "Max") { OutOp = EBlendOp::Max; return true; }
+		return false;
+	}
+
+	JSON SerializeBlendStateDesc(const FMaterialBlendStateDesc& Desc)
+	{
+		JSON BlendState = JSON::Make(JSON::Class::Object);
+		BlendState["BlendEnable"] = Desc.bBlendEnable;
+		BlendState["SrcColor"] = ToString(Desc.SrcColor);
+		BlendState["DestColor"] = ToString(Desc.DestColor);
+		BlendState["ColorOp"] = ToString(Desc.ColorOp);
+		BlendState["SrcAlpha"] = ToString(Desc.SrcAlpha);
+		BlendState["DestAlpha"] = ToString(Desc.DestAlpha);
+		BlendState["AlphaOp"] = ToString(Desc.AlphaOp);
+		BlendState["WriteMask"] = static_cast<int>(Desc.WriteMask);
+		return BlendState;
+	}
+
+	FMaterialBlendStateDesc DeserializeBlendStateDesc(JSON& BlendState, EMaterialBlendMode BlendMode)
+	{
+		FMaterialBlendStateDesc Desc = BlendMode == EMaterialBlendMode::Translucent
+			? MakeAlphaBlendStateDesc()
+			: MakeOpaqueBlendStateDesc();
+		if (BlendState.JSONType() != JSON::Class::Object)
+		{
+			return Desc;
+		}
+
+		Desc.bBlendEnable = BlendState.hasKey("BlendEnable") ? BlendState["BlendEnable"].ToBool() : Desc.bBlendEnable;
+		TryParseBlendOption(BlendState["SrcColor"].ToString(), Desc.SrcColor);
+		TryParseBlendOption(BlendState["DestColor"].ToString(), Desc.DestColor);
+		TryParseBlendOp(BlendState["ColorOp"].ToString(), Desc.ColorOp);
+		TryParseBlendOption(BlendState["SrcAlpha"].ToString(), Desc.SrcAlpha);
+		TryParseBlendOption(BlendState["DestAlpha"].ToString(), Desc.DestAlpha);
+		TryParseBlendOp(BlendState["AlphaOp"].ToString(), Desc.AlphaOp);
+		Desc.WriteMask = BlendState.hasKey("WriteMask") ? static_cast<uint8>(BlendState["WriteMask"].ToInt()) : Desc.WriteMask;
+		return Desc;
+	}
+
 	JSON SerializeMaterialParam(const FString& ParamName, const FMaterialParamValue& ParamValue)
 	{
 		JSON Param = JSON::Make(JSON::Class::Object);
@@ -293,6 +422,8 @@ bool FMaterialSerializationService::SerializeMaterial(const FString& MatFilePath
 		Root["ImportedName"] = Material->ImportedName;
 	}
 	Root["ShaderType"] = ToString(Material->GetShaderType());
+	Root["BlendMode"] = ToString(Material->GetBlendMode());
+	Root["BlendState"] = SerializeBlendStateDesc(Material->GetBlendStateDesc());
 
 	JSON Params = JSON::Make(JSON::Class::Array);
 	for (const auto& [ParamName, ParamValue] : Material->MaterialParams)
@@ -322,6 +453,14 @@ bool FMaterialSerializationService::SerializeMaterialInstance(const FString& Mat
 	Root["Parent"] = (MaterialInstance->Parent && !MaterialInstance->Parent->GetFilePath().empty())
 		? FPaths::Normalize(MaterialInstance->Parent->GetFilePath())
 		: (MaterialInstance->Parent ? MaterialInstance->Parent->Name : "");
+	if (MaterialInstance->bOverrideBlendMode)
+	{
+		Root["BlendMode"] = ToString(MaterialInstance->GetBlendMode());
+	}
+	if (MaterialInstance->bOverrideBlendState)
+	{
+		Root["BlendState"] = SerializeBlendStateDesc(MaterialInstance->GetBlendStateDesc());
+	}
 
 	JSON Params = JSON::Make(JSON::Class::Array);
 	for (const auto& [ParamName, ParamValue] : MaterialInstance->OverridedParams)
@@ -386,6 +525,18 @@ bool FMaterialSerializationService::DeserializeMaterial(const FString& MatFilePa
 		}
 
 		UMaterialInstance* MatInstance = ResourceManager.CreateMaterialInstance(InstancePath, ParentMat);
+		if (Root.hasKey("BlendMode"))
+		{
+			EMaterialBlendMode BlendMode = EMaterialBlendMode::Opaque;
+			if (TryParseMaterialBlendMode(Root["BlendMode"].ToString(), BlendMode))
+			{
+				MatInstance->SetBlendMode(BlendMode);
+			}
+		}
+		if (Root.hasKey("BlendState"))
+		{
+			MatInstance->SetBlendStateDesc(DeserializeBlendStateDesc(Root["BlendState"], MatInstance->GetBlendMode()));
+		}
 
 		for (auto& Param : Root["OverridedParams"].ArrayRange())
 		{
@@ -408,6 +559,15 @@ bool FMaterialSerializationService::DeserializeMaterial(const FString& MatFilePa
 
 	UMaterial* Material = ResourceManager.GetOrCreateMaterial(MatName, NormalizedMatFilePath, ShaderType);
 	Material->SetShaderType(ShaderType);
+	EMaterialBlendMode BlendMode = EMaterialBlendMode::Opaque;
+	if (Root.hasKey("BlendMode"))
+	{
+		TryParseMaterialBlendMode(Root["BlendMode"].ToString(), BlendMode);
+	}
+	Material->SetBlendMode(BlendMode);
+	Material->SetBlendStateDesc(Root.hasKey("BlendState")
+		? DeserializeBlendStateDesc(Root["BlendState"], BlendMode)
+		: (BlendMode == EMaterialBlendMode::Translucent ? MakeAlphaBlendStateDesc() : MakeOpaqueBlendStateDesc()));
 	if (Root.hasKey("ImportedName"))
 	{
 		Material->ImportedName = Root["ImportedName"].ToString();

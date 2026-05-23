@@ -3,8 +3,11 @@
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
 #include "Render/Resource/ShaderHelper.h"
+#include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/VertexFactoryTypes.h"
 #include "Core/ResourceManager.h"
+
+#include <algorithm>
 
 namespace
 {
@@ -55,8 +58,8 @@ namespace
         VSKey.PermutationKey = PermutationKey;
 
         FShaderStageKey PSKey;
-        PSKey.FilePath = Cmd.Material->GetPixelShaderPath();
-        PSKey.EntryPoint = Cmd.Material->GetPixelShaderEntryPoint();
+        PSKey.FilePath = FShaderPaths::MaterialUberTranslucent;
+        PSKey.EntryPoint = "mainPS";
         PSKey.Target = "ps_5_0";
         PSKey.PermutationKey = PermutationKey;
 
@@ -69,9 +72,38 @@ namespace
             &VertexFactoryDesc.VertexLayout);
     }
 
+    float CalculateTranslucentSortKey(
+        const FRenderCommand& Cmd,
+        const FVector& CameraPosition,
+        const FVector& CameraForward)
+    {
+        const FVector Center = Cmd.WorldAABB.IsValid()
+            ? Cmd.WorldAABB.GetCenter()
+            : Cmd.PerObjectConstants.Model.GetOrigin();
+        const FVector Delta = Center - CameraPosition;
+        return FVector::DotProduct(Delta, CameraForward);
+    }
+
+    TArray<FRenderCommand> SortTranslucentCommands(const FRenderPassContext* Context)
+    {
+        const TArray<FRenderCommand>& Commands = Context->RenderBus->GetCommands(ERenderPass::Translucent);
+        TArray<FRenderCommand> SortedCommands = Commands;
+        const FVector CameraPosition = Context->RenderBus->GetCameraPosition();
+        const FVector CameraForward = Context->RenderBus->GetCameraForward();
+        std::sort(SortedCommands.begin(), SortedCommands.end(),
+            [&CameraPosition, &CameraForward](const FRenderCommand& A, const FRenderCommand& B)
+            {
+                return CalculateTranslucentSortKey(A, CameraPosition, CameraForward) >
+                    CalculateTranslucentSortKey(B, CameraPosition, CameraForward);
+            });
+        return SortedCommands;
+    }
+
     bool DrawMeshCommandsForPass(const FRenderPassContext* Context, ERenderPass Pass)
     {
-        const TArray<FRenderCommand>& Commands = Context->RenderBus->GetCommands(Pass);
+        const TArray<FRenderCommand> Commands = Pass == ERenderPass::Translucent
+            ? SortTranslucentCommands(Context)
+            : Context->RenderBus->GetCommands(Pass);
         if (Commands.empty())
         {
             return true;

@@ -36,12 +36,12 @@ namespace
             "RenderPass.Opaque",
             "RenderPass.ViewModeResolve",
             "RenderPass.Fog",
+            "RenderPass.Translucent",
+            "RenderPass.SubUV",
             "RenderPass.Sandervistan",
             "RenderPass.PostProcess",
             "RenderPass.FXAA",
             "RenderPass.Font",
-            "RenderPass.SubUV",
-            "RenderPass.Translucent",
             "RenderPass.SelectionMask",
             "RenderPass.Grid",
             "RenderPass.Editor",
@@ -131,12 +131,12 @@ bool FRenderPipeline::Initialize()
     RenderPasses.push_back(ViewModeResolvePass);
 
     RenderPasses.push_back(FogRenderPass);
+    RenderPasses.push_back(TranslucentRenderPass);
+    RenderPasses.push_back(SubUVRenderPass);
     RenderPasses.push_back(SandevistanRenderPass);
     RenderPasses.push_back(PostProcessRenderPass);
     RenderPasses.push_back(FXAARenderPass);
 	RenderPasses.push_back(FontRenderPass);
-    RenderPasses.push_back(SubUVRenderPass);
-    RenderPasses.push_back(TranslucentRenderPass);
     RenderPasses.push_back(SelectionMaskRenderPass);
     RenderPasses.push_back(GridRenderPass);
     RenderPasses.push_back(EditorRenderPass);

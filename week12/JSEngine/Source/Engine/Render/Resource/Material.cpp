@@ -100,8 +100,13 @@ void UMaterial::BindRenderStates(ID3D11DeviceContext* Context) const
 		return;
 	}
 
-	auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(DepthStencilType);
-	auto BlendState = FResourceManager::Get().GetOrCreateBlendState(BlendType);
+	const EDepthStencilType DepthPolicy = BlendMode == EMaterialBlendMode::Translucent
+		? EDepthStencilType::DepthReadOnly
+		: DepthStencilType;
+	auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(DepthPolicy);
+	auto BlendState = (BlendMode == EMaterialBlendMode::Opaque && BlendStateDesc == MakeOpaqueBlendStateDesc())
+		? FResourceManager::Get().GetOrCreateBlendState(BlendType)
+		: FResourceManager::Get().GetOrCreateBlendState(BlendStateDesc);
 	auto RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(RasterizerType);
 	auto Sampler = FResourceManager::Get().GetOrCreateSamplerState(SamplerType);
 	
@@ -195,10 +200,31 @@ void UMaterial::ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FM
 
 void UMaterialInstance::BindRenderStates(ID3D11DeviceContext* Context) const
 {
-	if (Parent)
+	if (!Context)
 	{
-		Parent->BindRenderStates(Context);
+		return;
 	}
+
+	const EDepthStencilType DepthPolicy = GetBlendMode() == EMaterialBlendMode::Translucent
+		? EDepthStencilType::DepthReadOnly
+		: (Parent ? Parent->DepthStencilType : EDepthStencilType::Default);
+	auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(DepthPolicy);
+	ID3D11BlendState* BlendState = nullptr;
+	if (GetBlendMode() == EMaterialBlendMode::Opaque && GetBlendStateDesc() == MakeOpaqueBlendStateDesc())
+	{
+		BlendState = FResourceManager::Get().GetOrCreateBlendState(Parent ? Parent->BlendType : EBlendType::Opaque);
+	}
+	else
+	{
+		BlendState = FResourceManager::Get().GetOrCreateBlendState(GetBlendStateDesc());
+	}
+	auto RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(Parent ? Parent->RasterizerType : ERasterizerType::SolidBackCull);
+	auto Sampler = FResourceManager::Get().GetOrCreateSamplerState(Parent ? Parent->SamplerType : ESamplerType::EST_Linear);
+
+	Context->OMSetDepthStencilState(DSState, 0);
+	Context->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
+	Context->RSSetState(RasterizerState);
+	Context->PSSetSamplers(0, 1, &Sampler);
 }
 
 void UMaterialInstance::BindParameters(ID3D11DeviceContext* Context, const FPixelShader* PixelShader) const

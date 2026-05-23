@@ -89,6 +89,11 @@ namespace
 		return Material ? Material : FResourceManager::Get().GetMaterial("DefaultWhite");
 	}
 
+	void AddSurfaceCommandByMaterial(FRenderBus& RenderBus, FRenderCommand& Cmd)
+	{
+		RenderBus.AddCommand(ResolveMaterialRenderPass(Cmd.Material), Cmd);
+	}
+
 	double CalculateAverageBoneInfluence(const TArray<FSkeletalMeshVertex>& Vertices)
 	{
 		if (Vertices.empty())
@@ -245,7 +250,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
 			Cmd.WorldAABB = StaticMeshComp->GetWorldAABB();
 
-			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
+			AddSurfaceCommandByMaterial(RenderBus, Cmd);
 		}
 
 		return true;
@@ -333,7 +338,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 			Cmd.Material = ResolveDrawMaterial(Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(0)));
 			Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
 
-			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
+			AddSurfaceCommandByMaterial(RenderBus, Cmd);
 			return true;
 		}
 
@@ -372,7 +377,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
 			Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
 
-			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
+			AddSurfaceCommandByMaterial(RenderBus, Cmd);
 		}
 
 		return true;
@@ -509,7 +514,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 			if (!MeshBuffer)
 				break;
 
-			UMaterialInterface* Material = Cast<UMaterialInterface>(ProcMeshComp->GetMaterial(SectionIdx));
+			UMaterialInterface* Material = ResolveDrawMaterial(Cast<UMaterialInterface>(ProcMeshComp->GetMaterial(SectionIdx)));
 
 			FRenderCommand Cmd = {};
 			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
@@ -524,7 +529,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
 			Cmd.WorldAABB = ProcMeshComp->GetWorldAABB();
 
-			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
+			AddSurfaceCommandByMaterial(RenderBus, Cmd);
 		}
 		return true;
 	}

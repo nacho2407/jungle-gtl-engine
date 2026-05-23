@@ -7,6 +7,97 @@
 #include "RenderResources.h"
 #include <variant>
 
+enum class EMaterialBlendMode : uint8
+{
+	Opaque,
+	Translucent,
+};
+
+enum class EBlendOption : uint8
+{
+	Zero,
+	One,
+	SrcColor,
+	InvSrcColor,
+	SrcAlpha,
+	InvSrcAlpha,
+	DestAlpha,
+	InvDestAlpha,
+	DestColor,
+	InvDestColor,
+};
+
+enum class EBlendOp : uint8
+{
+	Add,
+	Subtract,
+	RevSubtract,
+	Min,
+	Max,
+};
+
+struct FMaterialBlendStateDesc
+{
+	bool bBlendEnable = false;
+	EBlendOption SrcColor = EBlendOption::One;
+	EBlendOption DestColor = EBlendOption::Zero;
+	EBlendOp ColorOp = EBlendOp::Add;
+	EBlendOption SrcAlpha = EBlendOption::One;
+	EBlendOption DestAlpha = EBlendOption::Zero;
+	EBlendOp AlphaOp = EBlendOp::Add;
+	uint8 WriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	bool operator==(const FMaterialBlendStateDesc& Other) const
+	{
+		return bBlendEnable == Other.bBlendEnable
+			&& SrcColor == Other.SrcColor
+			&& DestColor == Other.DestColor
+			&& ColorOp == Other.ColorOp
+			&& SrcAlpha == Other.SrcAlpha
+			&& DestAlpha == Other.DestAlpha
+			&& AlphaOp == Other.AlphaOp
+			&& WriteMask == Other.WriteMask;
+	}
+};
+
+inline FMaterialBlendStateDesc MakeOpaqueBlendStateDesc()
+{
+	return FMaterialBlendStateDesc{};
+}
+
+inline FMaterialBlendStateDesc MakeAlphaBlendStateDesc()
+{
+	FMaterialBlendStateDesc Desc;
+	Desc.bBlendEnable = true;
+	Desc.SrcColor = EBlendOption::SrcAlpha;
+	Desc.DestColor = EBlendOption::InvSrcAlpha;
+	Desc.ColorOp = EBlendOp::Add;
+	Desc.SrcAlpha = EBlendOption::One;
+	Desc.DestAlpha = EBlendOption::Zero;
+	Desc.AlphaOp = EBlendOp::Add;
+	Desc.WriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	return Desc;
+}
+
+inline FMaterialBlendStateDesc MakeAdditiveBlendStateDesc()
+{
+	FMaterialBlendStateDesc Desc = MakeAlphaBlendStateDesc();
+	Desc.SrcColor = EBlendOption::SrcAlpha;
+	Desc.DestColor = EBlendOption::One;
+	return Desc;
+}
+
+inline FMaterialBlendStateDesc MakeMultiplyBlendStateDesc()
+{
+	FMaterialBlendStateDesc Desc = MakeAlphaBlendStateDesc();
+	Desc.SrcColor = EBlendOption::DestColor;
+	Desc.DestColor = EBlendOption::Zero;
+	return Desc;
+}
+
+inline ERenderPass ResolveMaterialRenderPass(const class UMaterialInterface* Material);
+inline EDepthStencilType ResolveMaterialDepthPolicy(const class UMaterialInterface* Material);
+
 /**
  * @brief MTL 파일의 머테리얼 데이터를 표현하는 구조체.
  * Obj .mtl 포맷 기준으로 정의했습니다.
@@ -94,6 +185,10 @@ public:
 	virtual EMaterialShaderType GetShaderType() const = 0;
 	virtual const FString& GetPixelShaderPath() const = 0;
 	virtual const FString& GetPixelShaderEntryPoint() const = 0;
+	virtual EMaterialBlendMode GetBlendMode() const = 0;
+	virtual const FMaterialBlendStateDesc& GetBlendStateDesc() const = 0;
+	virtual void SetBlendMode(EMaterialBlendMode InBlendMode) = 0;
+	virtual void SetBlendStateDesc(const FMaterialBlendStateDesc& InDesc) = 0;
 	
 	// RenderPass는 Program을 먼저 바인딩하고, Material은 상태와 파라미터만 바인딩합니다.
 	virtual void BindRenderStates(ID3D11DeviceContext* Context) const = 0;
@@ -128,6 +223,8 @@ public:
 	// Material은 HLSL 파일 경로를 직접 저장하지 않고, 재질 셰이딩 타입만 저장합니다.
 	// Static/Skeletal 여부와 VS 선택은 RenderCommand의 VertexFactoryType이 결정합니다.
 	EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit;
+	EMaterialBlendMode BlendMode = EMaterialBlendMode::Opaque;
+	FMaterialBlendStateDesc BlendStateDesc = MakeOpaqueBlendStateDesc();
 
 	FMaterial MaterialData;
 	TMap<FString, FMaterialParamValue> MaterialParams;
@@ -205,6 +302,21 @@ public:
 	EMaterialShaderType GetShaderType() const override { return ShaderType; }
 	const FString& GetPixelShaderPath() const override { return GetMaterialPixelShaderPath(ShaderType); }
 	const FString& GetPixelShaderEntryPoint() const override { return GetMaterialPixelShaderEntryPoint(ShaderType); }
+	EMaterialBlendMode GetBlendMode() const override { return BlendMode; }
+	const FMaterialBlendStateDesc& GetBlendStateDesc() const override { return BlendStateDesc; }
+	void SetBlendMode(EMaterialBlendMode InBlendMode) override
+	{
+		BlendMode = InBlendMode;
+		if (BlendMode == EMaterialBlendMode::Opaque && BlendStateDesc == MakeAlphaBlendStateDesc())
+		{
+			BlendStateDesc = MakeOpaqueBlendStateDesc();
+		}
+		else if (BlendMode == EMaterialBlendMode::Translucent && !BlendStateDesc.bBlendEnable)
+		{
+			BlendStateDesc = MakeAlphaBlendStateDesc();
+		}
+	}
+	void SetBlendStateDesc(const FMaterialBlendStateDesc& InDesc) override { BlendStateDesc = InDesc; }
 
 	void SetShaderType(EMaterialShaderType InShaderType)
 	{
@@ -258,6 +370,10 @@ public:
 	UMaterial* Parent = nullptr;
 
 	TMap<FString, FMaterialParamValue> OverridedParams;
+	bool bOverrideBlendMode = false;
+	EMaterialBlendMode BlendModeOverride = EMaterialBlendMode::Opaque;
+	bool bOverrideBlendState = false;
+	FMaterialBlendStateDesc BlendStateDescOverride = MakeOpaqueBlendStateDesc();
 
 	const FString& GetName() const override { return Name; }
 	FString& GetNameRef() override { return Name; }
@@ -351,6 +467,29 @@ public:
 	{
 		return GetMaterialPixelShaderEntryPoint(GetShaderType());
 	}
+	EMaterialBlendMode GetBlendMode() const override
+	{
+		return bOverrideBlendMode ? BlendModeOverride : (Parent ? Parent->GetBlendMode() : EMaterialBlendMode::Opaque);
+	}
+	const FMaterialBlendStateDesc& GetBlendStateDesc() const override
+	{
+		static const FMaterialBlendStateDesc DefaultDesc = MakeOpaqueBlendStateDesc();
+		return bOverrideBlendState ? BlendStateDescOverride : (Parent ? Parent->GetBlendStateDesc() : DefaultDesc);
+	}
+	void SetBlendMode(EMaterialBlendMode InBlendMode) override
+	{
+		bOverrideBlendMode = true;
+		BlendModeOverride = InBlendMode;
+		if (InBlendMode == EMaterialBlendMode::Translucent && !GetBlendStateDesc().bBlendEnable)
+		{
+			SetBlendStateDesc(MakeAlphaBlendStateDesc());
+		}
+	}
+	void SetBlendStateDesc(const FMaterialBlendStateDesc& InDesc) override
+	{
+		bOverrideBlendState = true;
+		BlendStateDescOverride = InDesc;
+	}
 
 	static UMaterialInstance* Create(UMaterial* Material)
 	{
@@ -390,3 +529,17 @@ public:
 		}
 	}
 };
+
+inline ERenderPass ResolveMaterialRenderPass(const UMaterialInterface* Material)
+{
+	return Material && Material->GetBlendMode() == EMaterialBlendMode::Translucent
+		? ERenderPass::Translucent
+		: ERenderPass::Opaque;
+}
+
+inline EDepthStencilType ResolveMaterialDepthPolicy(const UMaterialInterface* Material)
+{
+	return Material && Material->GetBlendMode() == EMaterialBlendMode::Translucent
+		? EDepthStencilType::DepthReadOnly
+		: EDepthStencilType::Default;
+}

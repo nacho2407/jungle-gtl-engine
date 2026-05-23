@@ -53,22 +53,26 @@ namespace
 		}
 
 		bool bAdded = false;
-		const TArray<FRenderCommand>& OpaqueCommands = RenderBus.GetCommands(ERenderPass::Opaque);
-		for (const FRenderCommand& SourceCmd : OpaqueCommands)
+		const ERenderPass SourcePasses[] = { ERenderPass::Opaque, ERenderPass::Translucent };
+		for (ERenderPass SourcePass : SourcePasses)
 		{
-			if (SourceCmd.SourcePrimitive != PrimitiveComponent || !SourceCmd.MeshBuffer || SourceCmd.SectionIndexCount == 0)
+			const TArray<FRenderCommand>& SurfaceCommands = RenderBus.GetCommands(SourcePass);
+			for (const FRenderCommand& SourceCmd : SurfaceCommands)
 			{
-				continue;
-			}
+				if (SourceCmd.SourcePrimitive != PrimitiveComponent || !SourceCmd.MeshBuffer || SourceCmd.SectionIndexCount == 0)
+				{
+					continue;
+				}
 
-			FRenderCommand MaskCmd = SourceCmd;
-			MaskCmd.Type = ERenderCommandType::SelectionMask;
-			MaskCmd.bUseBoneWeightHeatmap = false;
-			MaskCmd.BoneWeightHeatmapBoneIndex = -1;
-			MaskCmd.AvgBoneInfluencePerVertex = 0.0f;
-			MaskCmd.SkinningWorkVertexCount = 0;
-			RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
-			bAdded = true;
+				FRenderCommand MaskCmd = SourceCmd;
+				MaskCmd.Type = ERenderCommandType::SelectionMask;
+				MaskCmd.bUseBoneWeightHeatmap = false;
+				MaskCmd.BoneWeightHeatmapBoneIndex = -1;
+				MaskCmd.AvgBoneInfluencePerVertex = 0.0f;
+				MaskCmd.SkinningWorkVertexCount = 0;
+				RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
+				bAdded = true;
+			}
 		}
 
 		return bAdded;

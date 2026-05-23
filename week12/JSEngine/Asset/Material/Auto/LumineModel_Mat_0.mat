@@ -1,4 +1,15 @@
 {
+        "BlendMode" : "Opaque",
+        "BlendState" : {
+          "AlphaOp" : "Add",
+          "BlendEnable" : false,
+          "ColorOp" : "Add",
+          "DestAlpha" : "Zero",
+          "DestColor" : "Zero",
+          "SrcAlpha" : "One",
+          "SrcColor" : "One",
+          "WriteMask" : 15
+        },
         "ImportedName" : "头发",
         "Name" : "LumineModel_Mat_0",
         "Params" : [{

@@ -1806,6 +1806,15 @@ ID3D11BlendState* FResourceManager::GetOrCreateBlendState(EBlendType Type, ID3D1
 	return RenderStateCache.GetOrCreateBlendState(Type, Device);
 }
 
+ID3D11BlendState* FResourceManager::GetOrCreateBlendState(const FMaterialBlendStateDesc& Desc, ID3D11Device* Device)
+{
+	if (Device == nullptr)
+	{
+		Device = CachedDevice.Get();
+	}
+	return RenderStateCache.GetOrCreateBlendState(Desc, Device);
+}
+
 ID3D11RasterizerState* FResourceManager::GetOrCreateRasterizerState(ERasterizerType Type, ID3D11Device* Device)
 {
 	if (Device == nullptr)

@@ -3,6 +3,7 @@
 namespace FShaderPaths
 {
 	inline constexpr const char* MaterialUberLit = "Shaders/Material/UberLit.hlsl";
+	inline constexpr const char* MaterialUberTranslucent = "Shaders/Material/UberTranslucent.hlsl";
 	inline constexpr const char* MaterialDecal = "Shaders/Material/Decal.hlsl";
 
 	inline constexpr const char* UIFont = "Shaders/UI/Font.hlsl";
