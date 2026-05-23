@@ -8,6 +8,13 @@
 #include "Particles/Runtime/ParticleRuntimeTypes.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
 
+struct FMeshParticleTransform
+{
+	FVector Position = FVector::ZeroVector;
+	FVector Scale = FVector::OneVector;
+	FVector RotationEuler = FVector::ZeroVector;
+};
+
 class FMeshParticleGeometry
 {
 public:
@@ -16,8 +23,8 @@ public:
 
 	void Clear();
 
-	void AddMeshParticle(const FBaseParticle& Particle, const FStaticMeshSection& Section,
-		const TArray<FNormalVertex>& SourceVertices, const TArray<uint32>& SourceIndices);
+	void AddMeshParticle(const FBaseParticle& Particle, const FMeshParticleTransform& Transform,
+		const FStaticMeshSection& Section, const TArray<FNormalVertex>& SourceVertices, const TArray<uint32>& SourceIndices);
 
 	bool Upload(ID3D11Device* Device, ID3D11DeviceContext* Context);
 

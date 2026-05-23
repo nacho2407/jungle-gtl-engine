@@ -19,8 +19,8 @@ void FMeshParticleGeometry::Clear()
 	IndexCount = 0;
 }
 
-void FMeshParticleGeometry::AddMeshParticle(const FBaseParticle& Particle, const FStaticMeshSection& Section,
-	const TArray<FNormalVertex>& SourceVertices, const TArray<uint32>& SourceIndices)
+void FMeshParticleGeometry::AddMeshParticle(const FBaseParticle& Particle, const FMeshParticleTransform& Transform,
+	const FStaticMeshSection& Section, const TArray<FNormalVertex>& SourceVertices, const TArray<uint32>& SourceIndices)
 {
 	const uint32 FirstIndex = Section.FirstIndex;
 	const uint32 SourceIndexCount = Section.NumTriangles * 3;
@@ -35,30 +35,31 @@ void FMeshParticleGeometry::AddMeshParticle(const FBaseParticle& Particle, const
 		return;
 	}
 
-	const uint32 VertexBase = static_cast<uint32>(Vertices.size());
+	const FMatrix RotationMatrix = FMatrix::MakeRotationEuler(Transform.RotationEuler);
 
 	for (uint32 i = 0; i < SourceIndexCount; ++i)
 	{
 		const uint32 SourceIndex = SourceIndices[FirstIndex + i];
-		if (SourceIndex >= static_cast<uint32>(SourceVertices.size()))
-		{
-			continue;
-		}
+		if (SourceIndex >= static_cast<uint32>(SourceVertices.size())) continue;
 
 		const FNormalVertex& Src = SourceVertices[SourceIndex];
+		FVector SourceTangent = FVector(Src.tangent.X, Src.tangent.Y, Src.tangent.Z);
+
+		const FVector ScaledPosition(
+			Src.pos.X * Transform.Scale.X,
+			Src.pos.Y * Transform.Scale.Y,
+			Src.pos.Z * Transform.Scale.Z);
 
 		FVertexPNCTT Dst;
-		Dst.Position = Particle.Position + FVector(
-			Src.pos.X * Particle.Size.X,
-			Src.pos.Y * Particle.Size.Y,
-			Src.pos.Z * Particle.Size.Z);
-		Dst.Normal = Src.normal;
+		Dst.Position = Transform.Position + RotationMatrix.TransformVector(ScaledPosition);
+		Dst.Normal = RotationMatrix.TransformVector(Src.normal).Normalized();
+		Dst.Tangent = RotationMatrix.TransformVector(SourceTangent).Normalized();
 		Dst.Color = Particle.Color;
 		Dst.UV = Src.tex;
-		Dst.Tangent = Src.tangent;
 
+		const uint32 NewVertexIndex = static_cast<uint32>(Vertices.size());
 		Vertices.push_back(Dst);
-		Indices.push_back(VertexBase + i);
+		Indices.push_back(NewVertexIndex);
 	}
 
 	IndexCount = static_cast<uint32>(Indices.size());
