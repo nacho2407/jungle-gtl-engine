@@ -643,6 +643,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\FontGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\LineGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Geometry\MeshParticleGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp" />
@@ -1032,6 +1033,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\FontGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\LineGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Geometry\MeshParticleGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h" />

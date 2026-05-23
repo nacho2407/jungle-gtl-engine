@@ -10,6 +10,7 @@
 #include "Render/Proxy/ShapeSceneProxy.h"
 #include "Render/Proxy/BoneDebugSceneProxy.h"
 #include "Render/Proxy/SkeletalMeshSceneProxy.h"
+#include "Render/Proxy/ParticleSystemSceneProxy.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/RenderConstants.h"
 #include "Render/RenderPass/PassRenderStateTable.h"
@@ -343,9 +344,17 @@ void FDrawCommandBuilder::BuildProxyCommands(const FFrameContext& Frame, FScene&
 				AddWorldText(TextProxy, Frame);
 		}
 		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::Decal))
+		{
 			BuildDecalCommands(Scene, Proxy, Frame, Output);
+		}
+		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::ParticleSystem))
+		{
+			BuildParticleCommands(Scene, static_cast<const FParticleSystemSceneProxy*>(Proxy));
+		}
 		else
+		{
 			BuildMeshCommands(Scene, Proxy);
+		}
 
 		if (Proxy->IsSelected())
 			BuildSelectionCommands(Proxy, bShowBoundingVolume, Scene);
@@ -397,6 +406,49 @@ void FDrawCommandBuilder::BuildMeshCommands(FScene& Scene, const FPrimitiveScene
 		}
 
 		BuildCommandForSection(Scene, *Proxy, Section, SectionPass, BuildCtx);
+	}
+}
+
+// ============================================================
+// BuildParticleCommands
+// ============================================================
+void FDrawCommandBuilder::BuildParticleCommands(FScene& Scene, const FParticleSystemSceneProxy* Proxy)
+{
+	if (!Proxy) return;
+
+	FConstantBuffer* PerObjCB = GetPerObjectCBForProxy(&Scene, *Proxy);
+	if (PerObjCB && Proxy->NeedsPerObjectCBUpload())
+	{
+		PerObjCB->Update(CachedContext, &Proxy->GetPerObjectConstants(), sizeof(FPerObjectConstants));
+		Proxy->ClearPerObjectCBDirty();
+	}
+
+	for (const FParticleDrawBatch& Batch : Proxy->GetParticleDrawBatches())
+	{
+		if (Batch.Sections.empty()) continue;
+
+		FDrawCommandBuffer BatchBuffer;
+		if (!Proxy->PrepareParticleDrawBuffer(Batch.Type, CachedDevice, CachedContext, BatchBuffer)) continue;
+
+		if (!BatchBuffer.HasBuffers()) continue;
+
+		for (const FMeshSectionDraw& Section : Batch.Sections)
+		{
+			if (Section.IndexCount == 0) continue;
+
+			ERenderPass SectionPass = ERenderPass::Opaque;
+			if (Section.Material)
+			{
+				SectionPass = Section.Material->GetRenderPass();
+			}
+
+			if (SectionPass == ERenderPass::Opaque)
+			{
+				BuildParticleCommandForSection(Scene, *Proxy, BatchBuffer, Section, ERenderPass::PreDepth, PerObjCB);
+			}
+
+			BuildParticleCommandForSection(Scene, *Proxy, BatchBuffer, Section, SectionPass, PerObjCB);
+		}
 	}
 }
 
@@ -479,6 +531,61 @@ void FDrawCommandBuilder::BuildCommandForSection(FScene& Scene, const FPrimitive
 		? BuildCtx.SkeletalProxy->GetSkinMatrixSRV(CachedDevice, CachedContext)
 		: nullptr;
 	Cmd.Bindings.BoneHeatMapCB = BuildCtx.bWeightBoneHeatMap ? &BoneHeatMapCB : nullptr;
+
+	if (Pass == ERenderPass::AlphaBlend)
+	{
+		Cmd.TranslucentSortPriority = Proxy.GetTranslucentSortPriority();
+
+		const FVector ToObject = Proxy.GetCachedWorldPos() - CollectCameraPosition;
+		Cmd.TranslucentSortDepth = ToObject.Dot(CollectCameraForward);
+	}
+
+	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
+
+	if (!bDepthOnly && Section.Material)
+	{
+		UMaterialInterface* Mat = Section.Material;
+
+		// dirty CB 업로드 (ConstantBufferMap + PerShaderOverride)
+		Mat->FlushDirtyBuffers(CachedDevice, CachedContext);
+
+		Cmd.Bindings.PerShaderCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
+		Cmd.Bindings.PerShaderCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
+
+		for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
+			Cmd.Bindings.SRVs[s] = Mat->GetSRV(static_cast<EMaterialTextureSlot>(s));
+
+		// 섹션별 Material의 RenderPass가 현재 Pass와 일치할 때만 렌더 상태 오버라이드
+		if (Pass == Mat->GetRenderPass())
+			ApplyMaterialRenderState(Cmd.RenderState, Mat, BaseRenderState);
+	}
+
+	Cmd.BuildSortKey();
+}
+
+void FDrawCommandBuilder::BuildParticleCommandForSection(FScene& Scene, const FParticleSystemSceneProxy& Proxy, const FDrawCommandBuffer& Buffer,
+	const FMeshSectionDraw& Section, ERenderPass Pass, FConstantBuffer* PerObjCB)
+{
+	if (Section.IndexCount == 0) return;
+	if (!Buffer.IB) return;
+
+	FShader* SectionShader = (Section.Material && Section.Material->GetShader())
+		? Section.Material->GetShader()
+		: Proxy.GetShader();
+
+	FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, false, false);
+
+	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(Pass, CollectViewMode);
+
+	FDrawCommand& Cmd = DrawCommandList.AddCommand();
+	Cmd.Pass = Pass;
+	Cmd.Shader = EffectiveShader;
+	Cmd.RenderState = BaseRenderState;
+	Cmd.Buffer = Buffer;
+	Cmd.PerObjectCB = PerObjCB;
+
+	Cmd.Buffer.FirstIndex = Section.FirstIndex;
+	Cmd.Buffer.IndexCount = Section.IndexCount;
 
 	if (Pass == ERenderPass::AlphaBlend)
 	{

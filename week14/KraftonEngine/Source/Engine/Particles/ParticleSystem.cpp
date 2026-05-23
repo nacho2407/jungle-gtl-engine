@@ -118,9 +118,13 @@ void UParticleSystem::InitializeDefaultEmitters()
 	DefaultEmitter->SetEmitterDuration(1.0f);
 	DefaultEmitter->SetLooping(true);
 
+	UParticleModuleTypeDataMesh* MeshTypeData = UObjectManager::Get().CreateObject<UParticleModuleTypeDataMesh>();
+	MeshTypeData->MeshPath = "Content/Data/BasicShape/Cylinder_StaticMesh.uasset";
+
 	UParticleLODLevel* DefaultLOD = UObjectManager::Get().CreateObject<UParticleLODLevel>();
 	DefaultLOD->SetLevel(0);
 	DefaultLOD->SetEnabled(true);
+	DefaultLOD->SetTypeDataModule(MeshTypeData);
 
 	//모듈 확인용 임시 코드
 	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleLifetime>());
