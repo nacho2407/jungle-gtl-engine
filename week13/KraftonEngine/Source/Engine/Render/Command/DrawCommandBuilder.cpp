@@ -10,6 +10,7 @@
 #include "Render/Proxy/ShapeSceneProxy.h"
 #include "Render/Proxy/BoneDebugSceneProxy.h"
 #include "Render/Proxy/SkeletalMeshSceneProxy.h"
+#include "Render/Proxy/ParticleSystemSceneProxy.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/RenderConstants.h"
 #include "Render/RenderPass/PassRenderStateTable.h"
@@ -395,6 +396,12 @@ void FDrawCommandBuilder::BuildProxyCommands(const FFrameContext& Frame, FScene&
 			const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
 			if (!TextProxy->CachedText.empty())
 				AddWorldText(TextProxy, Frame);
+		}
+		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::Particle))
+		{
+			FParticleSystemSceneProxy* ParticleProxy =
+				static_cast<FParticleSystemSceneProxy*>(Proxy);
+			ParticleProxy->BuildParticleCommands(CachedDevice, CachedContext, Frame, DrawCommandList);
 		}
 		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::Decal))
 			BuildDecalCommands(Scene, Proxy, Frame, Output);

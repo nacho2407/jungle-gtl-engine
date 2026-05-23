@@ -1,31 +1,275 @@
-﻿#include "ParticleSystemSceneProxy.h"
-
+#include "ParticleSystemSceneProxy.h"
 #include "Component/Primitive/ParticleSystemComponent.h"
+#include "Render/Command/DrawCommandList.h"
+#include "Render/Command/DrawCommand.h"
+#include "Render/Shader/ShaderManager.h"
+#include "Render/Types/FrameContext.h"
+#include "Render/Types/VertexTypes.h"
+#include "Materials/Material.h"
 
-FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* InComponent) : FPrimitiveSceneProxy(
-    InComponent
-)
+
+struct FParticleFrameConstants
 {
-    ProxyFlags |= EPrimitiveProxyFlags::Particle;
+	FVector CameraRight; float _pad0;
+	FVector CameraUp;    float _pad1;
+};
+
+
+FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* InComponent)
+	: FPrimitiveSceneProxy(InComponent)
+{
+	ProxyFlags |= EPrimitiveProxyFlags::PerViewportUpdate
+	            | EPrimitiveProxyFlags::Particle;
+	ProxyFlags &= ~(EPrimitiveProxyFlags::SupportsOutline
+	              | EPrimitiveProxyFlags::ShowAABB);
 }
 
-void FParticleSystemSceneProxy::UpdateTransform()
+
+void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
-    FPrimitiveSceneProxy::UpdateTransform();
+	if (!bVisible) return;
+
+	UParticleSystemComponent* Comp =
+		static_cast<UParticleSystemComponent*>(GetOwner());
+	if (!Comp) return;
+
+	// GetEmitterRenderData(): 컴포넌트가 매 틱 갱신한 동적 에미터 데이터
+	const TArray<FDynamicEmitterDataBase*>& EmitterList = Comp->GetEmitterRenderData();
+
+	CachedEmitterCount = static_cast<int32>(EmitterList.size());
+	CachedEmitterData  = EmitterList;  // 포인터 배열만 복사 (소유권은 컴포넌트)
+
+	for (int32 i = 0; i < CachedEmitterCount; ++i)
+	{
+		if (i < static_cast<int32>(EmitterBuffers.size()) && EmitterBuffers[i])
+			FillStagingBuffer(*CachedEmitterData[i], *EmitterBuffers[i]);
+	}
 }
 
-void FParticleSystemSceneProxy::UpdateMesh()
+
+void FParticleSystemSceneProxy::BuildParticleCommands(
+	ID3D11Device* Device, ID3D11DeviceContext* Context,
+	const FFrameContext& Frame, FDrawCommandList& OutCmdList)
 {
-    MeshBuffer = nullptr;
-    SectionDraws.clear();
+	if (CachedEmitterCount <= 0) return;
+
+	// QuadVB/IB 최초 1회 생성
+	if (!QuadVB.GetBuffer())
+		BuildQuadGeometry(Device);
+
+	// 에미터 수에 맞게 GPU 버퍼 확보
+	EnsureEmitterBuffers(Device, CachedEmitterCount);
+
+	// UpdatePerViewport 미실행 시 방어적으로 스테이징 채움
+	for (int32 i = 0; i < CachedEmitterCount; ++i)
+	{
+		if (CachedEmitterData[i] && EmitterBuffers[i])
+			FillStagingBuffer(*CachedEmitterData[i], *EmitterBuffers[i]);
+	}
+
+	// GPU 업로드 + 드로우 커맨드 생성
+	for (auto& BufferPtr : EmitterBuffers)
+	{
+		if (!BufferPtr || BufferPtr->ActiveParticleCount <= 0) continue;
+		SubmitEmitter(*BufferPtr, Device, Context, Frame, OutCmdList);
+	}
 }
 
-void FParticleSystemSceneProxy::UpdateMaterial()
+
+void FParticleSystemSceneProxy::BuildQuadGeometry(ID3D11Device* Device)
 {
-    SectionDraws.clear();
+	FParticleQuadVertex Verts[4] = {
+		{ FVector2(-0.5f, -0.5f) },
+		{ FVector2( 0.5f, -0.5f) },
+		{ FVector2(-0.5f,  0.5f) },
+		{ FVector2( 0.5f,  0.5f) },
+	};
+	QuadVB.Create(Device, Verts, 4, sizeof(Verts), sizeof(FParticleQuadVertex));
+
+	uint32 Indices[6] = { 0, 1, 2, 2, 1, 3 };
+	QuadIB.Create(Device, Indices, 6, sizeof(Indices));
 }
 
-UParticleSystemComponent* FParticleSystemSceneProxy::GetParticleSystemComponent() const
+
+void FParticleSystemSceneProxy::EnsureEmitterBuffers(ID3D11Device* Device, int32 EmitterCount)
 {
-    return static_cast<UParticleSystemComponent*>(GetOwner());
+	const int32 Current = static_cast<int32>(EmitterBuffers.size());
+	if (Current >= EmitterCount) return;
+
+	for (int32 i = Current; i < EmitterCount; ++i)
+	{
+		auto Buf = std::make_unique<FEmitterRenderBuffer>();
+		Buf->InstanceVB.Create(Device, 64, sizeof(FParticleSpriteInstance));
+		Buf->ParticleFrameCB.Create(Device, sizeof(FParticleFrameConstants), "ParticleFrameCB");
+		EmitterBuffers.push_back(std::move(Buf));
+	}
+}
+
+
+void FParticleSystemSceneProxy::FillStagingBuffer(
+	const FDynamicEmitterDataBase& EmitterData, FEmitterRenderBuffer& OutBuffer)
+{
+	const FDynamicEmitterReplayDataBase& Source = EmitterData.GetSource();
+	const int32 Stride = EmitterData.GetDynamicVertexStride();
+	const int32 Count  = Source.ActiveParticleCount;
+
+	OutBuffer.ActiveParticleCount = Count;
+	OutBuffer.EmitterType         = Source.eEmitterType;
+	OutBuffer.StagingBuffer.resize(Count * Stride);
+
+	// 메타 캐싱 (Material, MeshBuffer)
+	if (Source.eEmitterType == EDynamicEmitterType::Sprite
+	 || Source.eEmitterType == EDynamicEmitterType::Mesh)
+	{
+		const auto& SpriteSource =
+			static_cast<const FDynamicSpriteEmitterReplayDataBase&>(Source);
+		OutBuffer.Material = SpriteSource.Material;
+
+		if (Source.eEmitterType == EDynamicEmitterType::Mesh)
+		{
+			OutBuffer.EmitterMeshBuffer =
+				static_cast<const FDynamicMeshEmitterData&>(EmitterData).MeshBuffer;
+		}
+	}
+
+	if (Count == 0 || !Source.DataContainer.ParticleData) return;
+
+	if (Source.eEmitterType == EDynamicEmitterType::Sprite)
+	{
+		for (int32 i = 0; i < Count; ++i)
+		{
+			const uint32 Idx = Source.DataContainer.ParticleIndices
+				? Source.DataContainer.ParticleIndices[i]
+				: static_cast<uint32>(i);
+
+			// TODO: FBaseParticle 레이아웃 확정 후 주석 해제
+			// const FBaseParticle* P = reinterpret_cast<const FBaseParticle*>(
+			//     Source.DataContainer.ParticleData + Idx * Source.ParticleStride);
+			// FParticleSpriteInstance* Inst = reinterpret_cast<FParticleSpriteInstance*>(
+			//     OutBuffer.StagingBuffer.data() + i * Stride);
+			// Inst->Position = P->Location;
+			// Inst->Size     = P->Size.X * Source.Scale.X;
+			// Inst->Color    = P->Color;
+			// Inst->Rotation = P->Rotation;
+			(void)Idx;
+		}
+	}
+	else if (Source.eEmitterType == EDynamicEmitterType::Mesh)
+	{
+		for (int32 i = 0; i < Count; ++i)
+		{
+			const uint32 Idx = Source.DataContainer.ParticleIndices
+				? Source.DataContainer.ParticleIndices[i]
+				: static_cast<uint32>(i);
+
+			// TODO: FBaseParticle 레이아웃 확정 후 주석 해제
+			// const FBaseParticle* P = reinterpret_cast<const FBaseParticle*>(
+			//     Source.DataContainer.ParticleData + Idx * Source.ParticleStride);
+			// FMeshParticleInstanceVertex* Inst = reinterpret_cast<FMeshParticleInstanceVertex*>(
+			//     OutBuffer.StagingBuffer.data() + i * Stride);
+			// Inst->Transform = ...;
+			// Inst->Color = P->Color;
+			(void)Idx;
+		}
+	}
+}
+
+
+void FParticleSystemSceneProxy::SubmitEmitter(
+	FEmitterRenderBuffer& Buffer,
+	ID3D11Device* Device, ID3D11DeviceContext* Context,
+	const FFrameContext& Frame, FDrawCommandList& OutCmdList)
+{
+	switch (Buffer.EmitterType)
+	{
+	case EDynamicEmitterType::Sprite:
+		SubmitSpriteEmitter(Buffer, Device, Context, Frame, OutCmdList);
+		break;
+	case EDynamicEmitterType::Mesh:
+		SubmitMeshEmitter(Buffer, Device, Context, Frame, OutCmdList);
+		break;
+	case EDynamicEmitterType::Ribbon:
+	case EDynamicEmitterType::Beam:
+		// TODO: 구현 예정
+		break;
+	}
+}
+
+
+void FParticleSystemSceneProxy::SubmitSpriteEmitter(
+	FEmitterRenderBuffer& Buffer,
+	ID3D11Device* Device, ID3D11DeviceContext* Context,
+	const FFrameContext& Frame, FDrawCommandList& OutCmdList)
+{
+	if (!QuadVB.GetBuffer() || !QuadIB.GetBuffer()) return;
+
+	Buffer.InstanceVB.EnsureCapacity(Device, static_cast<uint32>(Buffer.ActiveParticleCount));
+	Buffer.InstanceVB.Update(Context, Buffer.StagingBuffer.data(),
+		static_cast<uint32>(Buffer.ActiveParticleCount));
+
+	FParticleFrameConstants FrameCB;
+	FrameCB.CameraRight = Frame.CameraRight; FrameCB._pad0 = 0.0f;
+	FrameCB.CameraUp    = Frame.CameraUp;    FrameCB._pad1 = 0.0f;
+	Buffer.ParticleFrameCB.Update(Context, &FrameCB, sizeof(FParticleFrameConstants));
+
+	FShader* Shader = FShaderManager::Get().GetOrCreate(EShaderPath::ParticleSprite);
+	if (!Shader) return;
+
+	FDrawCommand& Cmd     = OutCmdList.AddCommand();
+	Cmd.Shader            = Shader;
+	Cmd.Pass              = ERenderPass::AlphaBlend;
+	Cmd.RenderState.Blend = EBlendState::AlphaBlend;
+
+	Cmd.Buffer.VB             = QuadVB.GetBuffer();
+	Cmd.Buffer.VBStride       = sizeof(FParticleQuadVertex);
+	Cmd.Buffer.IB             = QuadIB.GetBuffer();
+	Cmd.Buffer.IndexCount     = 6;
+	Cmd.Buffer.InstanceVB     = Buffer.InstanceVB.GetBuffer();
+	Cmd.Buffer.InstanceStride = sizeof(FParticleSpriteInstance);
+	Cmd.Buffer.InstanceCount  = static_cast<uint32>(Buffer.ActiveParticleCount);
+
+	Cmd.Bindings.PerShaderCB[0] = &Buffer.ParticleFrameCB;
+
+	if (Buffer.Material)
+		Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] =
+			const_cast<ID3D11ShaderResourceView*>(
+				Buffer.Material->GetCachedSRVs()[(int)EMaterialTextureSlot::Diffuse]);
+
+	Cmd.BuildSortKey();
+}
+
+
+void FParticleSystemSceneProxy::SubmitMeshEmitter(
+	FEmitterRenderBuffer& Buffer,
+	ID3D11Device* Device, ID3D11DeviceContext* Context,
+	const FFrameContext& Frame, FDrawCommandList& OutCmdList)
+{
+	if (!Buffer.EmitterMeshBuffer || !Buffer.EmitterMeshBuffer->IsValid()) return;
+
+	Buffer.InstanceVB.EnsureCapacity(Device, static_cast<uint32>(Buffer.ActiveParticleCount));
+	Buffer.InstanceVB.Update(Context, Buffer.StagingBuffer.data(),
+		static_cast<uint32>(Buffer.ActiveParticleCount));
+
+	FShader* Shader = FShaderManager::Get().GetOrCreate(EShaderPath::ParticleSprite);
+	if (!Shader) return;
+
+	FDrawCommand& Cmd     = OutCmdList.AddCommand();
+	Cmd.Shader            = Shader;
+	Cmd.Pass              = ERenderPass::AlphaBlend;
+	Cmd.RenderState.Blend = EBlendState::AlphaBlend;
+
+	Cmd.Buffer.VB             = Buffer.EmitterMeshBuffer->GetVertexBuffer().GetBuffer();
+	Cmd.Buffer.VBStride       = Buffer.EmitterMeshBuffer->GetVertexBuffer().GetStride();
+	Cmd.Buffer.IB             = Buffer.EmitterMeshBuffer->GetIndexBuffer().GetBuffer();
+	Cmd.Buffer.IndexCount     = Buffer.EmitterMeshBuffer->GetIndexBuffer().GetIndexCount();
+	Cmd.Buffer.InstanceVB     = Buffer.InstanceVB.GetBuffer();
+	Cmd.Buffer.InstanceStride = sizeof(FMeshParticleInstanceVertex);
+	Cmd.Buffer.InstanceCount  = static_cast<uint32>(Buffer.ActiveParticleCount);
+
+	if (Buffer.Material)
+		Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] =
+			const_cast<ID3D11ShaderResourceView*>(
+				Buffer.Material->GetCachedSRVs()[(int)EMaterialTextureSlot::Diffuse]);
+
+	Cmd.BuildSortKey();
 }
