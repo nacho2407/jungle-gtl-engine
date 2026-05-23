@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "ParticleModuleSpawnBase.h"
+#include "Particle/ParticleEmitter.h"
 
-struct FParticleBurst;
 
 #include "Source/Engine/Particles/Spawn/ParticleModuleSpawn.generated.h"
 

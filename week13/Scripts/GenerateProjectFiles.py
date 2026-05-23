@@ -424,7 +424,8 @@ def generate_vcxproj(files: dict[str, list[str]]):
         # *.generated.h/.cpp 를 생성. 모든 구성에서 동일하게 1회 실행.
         pre_build = ET.SubElement(idg, "PreBuildEvent")
         ET.SubElement(pre_build, "Command").text = (
-            f'python "$(ProjectDir){GENERATE_HEADERS_TOOL}" --root "$(ProjectDir)."'
+            f'"$(ProjectDir)..\\Scripts\\python\\python.exe" '
+            f'"$(ProjectDir){GENERATE_HEADERS_TOOL}" --root "$(ProjectDir)."'
         )
 
     # ClCompile items
@@ -482,9 +483,11 @@ def generate_vcxproj(files: dict[str, list[str]]):
     # Reflection codegen — ClCompile 직전 한 번 더 보장.
     # PreBuildEvent 만으로는 IDE 의 IntelliSense 파싱 시점이나 incremental build 에서
     # 누락될 수 있어 BeforeTargets="ClCompile" 타깃을 별도로 둔다.
-    # $(PythonExe) 가 비어 있으면 "python" 폴백.
+    # $(PythonExe) 가 비어 있으면 repo-local Python을 사용한다.
     pg = ET.SubElement(proj, "PropertyGroup")
-    ET.SubElement(pg, "PythonExe", Condition="'$(PythonExe)'==''").text = "python"
+    ET.SubElement(pg, "PythonExe", Condition="'$(PythonExe)'==''").text = (
+        "$(MSBuildProjectDirectory)\\..\\Scripts\\python\\python.exe"
+    )
     refl = ET.SubElement(proj, "Target",
                          Name="GenerateReflectionHeaders",
                          BeforeTargets="ClCompile")

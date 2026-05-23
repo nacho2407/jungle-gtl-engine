@@ -1,8 +1,8 @@
 ﻿#pragma once
 #include "ParticleModule.h"
+#include "Particle/ParticleEmitter.h"
 
 class UMaterialInterface; 
-struct FParticleBurst {};
 
 /**
  *	The screen alignment to utilize for the emitter at this LOD level.
@@ -68,5 +68,9 @@ public:
 
 	float SpawnRate = 10.0f;
 	TArray<FParticleBurst> BurstList;
+
+	float EmitterDelay = 0.1f;
+	float EmitterDurationLow = 0.1f;
+	bool bDelayFirstLoopOnly = false;
 };
 

@@ -28,6 +28,9 @@ public:
 
     void Serialize(FArchive& Ar) override;
 
+    UPROPERTY(Edit, Save, Category="LOD", DisplayName="LOD Distances")
+    TArray<float> LODDistances;
+
 private:
     TArray<UParticleEmitter*> Emitters;
     FString                   SourcePath;

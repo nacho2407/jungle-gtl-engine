@@ -430,6 +430,11 @@ FVector FMatrix::TransformVector(const FVector& vector) const
 #endif
 }
 
+FVector FMatrix::TransformPosition(const FVector& V) const
+{
+	return TransformPositionWithW(V);
+}
+
 FVector FMatrix::TransformPositionWithW(const FVector& Vector) const
 {
 #if defined(_XM_SSE_INTRINSICS_) || defined(__SSE__)
@@ -503,6 +508,11 @@ FVector FMatrix::GetLocation() const
 	return FVector(M[3][0], M[3][1], M[3][2]);
 }
 
+FVector FMatrix::GetOrigin() const
+{
+	return GetLocation();
+}
+
 FVector FMatrix::GetScale() const
 {
 	float ScaleX = std::sqrt(M[0][0] * M[0][0] + M[0][1] * M[0][1] + M[0][2] * M[0][2]);
@@ -510,6 +520,34 @@ FVector FMatrix::GetScale() const
 	float ScaleZ = std::sqrt(M[2][0] * M[2][0] + M[2][1] * M[2][1] + M[2][2] * M[2][2]);
 
 	return FVector(ScaleX, ScaleY, ScaleZ);
+}
+
+bool FMatrix::ContainsNaN() const
+{
+	for (int Index = 0; Index < 16; ++Index)
+	{
+		if (!std::isfinite(Data[Index]))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void FMatrix::RemoveScaling(float Tolerance)
+{
+	const FVector XAxis(M[0][0], M[0][1], M[0][2]);
+	const FVector YAxis(M[1][0], M[1][1], M[1][2]);
+	const FVector ZAxis(M[2][0], M[2][1], M[2][2]);
+
+	const FVector SafeX = XAxis.GetSafeNormal(Tolerance, FVector::XAxisVector);
+	const FVector SafeY = YAxis.GetSafeNormal(Tolerance, FVector::YAxisVector);
+	const FVector SafeZ = ZAxis.GetSafeNormal(Tolerance, FVector::ZAxisVector);
+
+	M[0][0] = SafeX.X; M[0][1] = SafeX.Y; M[0][2] = SafeX.Z;
+	M[1][0] = SafeY.X; M[1][1] = SafeY.Y; M[1][2] = SafeY.Z;
+	M[2][0] = SafeZ.X; M[2][1] = SafeZ.Y; M[2][2] = SafeZ.Z;
 }
 
 void FMatrix::SetAxes(const FVector& Right, const FVector& Up, const FVector& Forward)
