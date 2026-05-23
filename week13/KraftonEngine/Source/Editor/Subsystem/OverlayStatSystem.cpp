@@ -4,6 +4,7 @@
 #include "Engine/Profiling/Time/Timer.h"
 #include "Engine/Profiling/Stats/MemoryStats.h"
 #include "Engine/Profiling/Stats/ShadowStats.h"
+#include "Engine/Profiling/Stats/ParticleStats.h"
 #include "Engine/Profiling/Stats/Stats.h"
 #include "Engine/Profiling/GPUProfiler.h"
 #include "Slate/SWindow.h"
@@ -298,6 +299,38 @@ void FOverlayStatSystem::BuildSkinningLines(TArray<FString>& OutLines) const
 #endif
 }
 
+void FOverlayStatSystem::BuildParticleLines(TArray<FString>& OutLines) const
+{
+#if STATS
+	char Buffer[128] = {};
+
+	OutLines.push_back(FString("--- Particle ---"));
+
+	const uint32 TotalParticles = FParticleStats::SpriteParticleCount + FParticleStats::MeshParticleCount;
+	snprintf(Buffer, sizeof(Buffer), "Active Particles : %u  (Sprite: %u  Mesh: %u)",
+		TotalParticles, FParticleStats::SpriteParticleCount, FParticleStats::MeshParticleCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Draw Calls : %u", FParticleStats::DrawCallCount);
+	OutLines.push_back(FString(Buffer));
+
+	const TArray<FStatEntry>& CPUSnapshot = FStatManager::Get().GetSnapshot();
+	for (const FStatEntry& Entry : CPUSnapshot)
+	{
+		if (Entry.CallCount == 0) continue;
+		if (!Entry.Category || strcmp(Entry.Category, "Particle") != 0) continue;
+		if (Entry.Name && strcmp(Entry.Name, "ParticleStagingFill") == 0)
+		{
+			snprintf(Buffer, sizeof(Buffer), "CPU Staging Fill : %.3f ms  avg %.3f ms",
+				Entry.LastTime * 1000.0, Entry.AvgTime * 1000.0);
+			OutLines.push_back(FString(Buffer));
+		}
+	}
+#else
+	OutLines.push_back(FString("Particle stats unavailable (STATS=0)"));
+#endif
+}
+
 void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlayStatLine>& OutLines) const
 {
 	OutLines.clear();
@@ -320,6 +353,10 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 		EstimatedLineCount += 8;
 	}
 	if (bShowSkinning)
+	{
+		EstimatedLineCount += 4;
+	}
+	if (bShowParticle)
 	{
 		EstimatedLineCount += 4;
 	}
@@ -365,6 +402,13 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 	{
 		Lines.clear();
 		BuildSkinningLines(Lines);
+		AppendGroup(Lines);
+	}
+
+	if (bShowParticle)
+	{
+		Lines.clear();
+		BuildParticleLines(Lines);
 		AppendGroup(Lines);
 	}
 }
@@ -472,5 +516,12 @@ void FOverlayStatSystem::RenderImGui(const UEditorEngine& Editor, const FRect& V
 		Lines.clear();
 		BuildSkinningLines(Lines);
 		RenderWindow("##StatSkinningOverlay", "Stat Skinning", ImVec4(0.05f, 0.10f, 0.08f, 0.62f), Lines);
+	}
+
+	if (bShowParticle)
+	{
+		Lines.clear();
+		BuildParticleLines(Lines);
+		RenderWindow("##StatParticleOverlay", "Stat Particle", ImVec4(0.04f, 0.08f, 0.14f, 0.62f), Lines);
 	}
 }

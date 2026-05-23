@@ -1,4 +1,4 @@
-#include "ParticleSystemSceneProxy.h"
+﻿#include "ParticleSystemSceneProxy.h"
 #include "Component/Primitive/ParticleSystemComponent.h"
 #include "Render/Command/DrawCommandList.h"
 #include "Render/Command/DrawCommand.h"
@@ -8,6 +8,7 @@
 #include "Materials/Material.h"
 #include "Core/Logging/Log.h"
 #include "Particles/ParticleHelper.h"
+#include "Engine/Profiling/Stats/ParticleStats.h"
 
 
 struct FParticleFrameConstants
@@ -53,13 +54,8 @@ FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* I
 
 void FParticleSystemSceneProxy::UpdateLOD(uint32 LODLevel)
 {
-	// 엔진이 계산한 LOD를 저장 — UpdatePerViewport에서 최종 결정에 사용
+	// 엔진이 계산한 LOD를 저장만 함
 	CurrentLOD = LODLevel;
-
-	// TODO: 파티클 전용 LOD 거리(UParticleSystem::LODDistances)가 없을 때
-	//       여기서 컴포넌트에 직접 전달하는 경로 추가
-	// UParticleSystemComponent* Comp = static_cast<UParticleSystemComponent*>(GetOwner());
-	// if (Comp) Comp->SetCurrentLODLevel(static_cast<int32>(LODLevel));
 }
 
 
@@ -79,7 +75,7 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 	// UParticleSystem* Template = Comp->GetTemplate();
 	// if (Template && !Template->LODDistances.empty())
 	// {
-	//     float DistSq = (CachedWorldPos - Frame.CameraPosition).LengthSquared();
+	//     float DistSq = FVector::DistSquared(CachedWorldPos, Frame.CameraPosition);
 	//     int32 LODIndex = ComputeParticleLOD(DistSq, Template->LODDistances);
 	//     CurrentLOD = LODIndex;
 	//     Comp->SetCurrentLODLevel(LODIndex);
@@ -89,28 +85,17 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 	//     Comp->SetCurrentLODLevel(static_cast<int32>(CurrentLOD));
 	// }
 
-	// TODO: 반투명 스프라이트 back-to-front 정렬 (카메라 위치 기준)
+	// TODO: 반투명 스프라이트 back-to-front 정렬
+	// const FParticleSortContext SortCtx { Frame.CameraPosition, Frame.CameraForward };
 	// for (FDynamicEmitterDataBase* EmitterData : CachedEmitterData)
 	// {
-	//     if (EmitterData) EmitterData->SortSpriteParticles(Frame.CameraPosition);
+	//     auto* Sprite = static_cast<FDynamicSpriteEmitterDataBase*>(EmitterData);
+	//     if (Sprite) Sprite->SortSpriteParticles(SortCtx);
 	// }
 
-	// GetEmitterRenderData(): 컴포넌트가 매 틱 갱신한 동적 에미터 데이터
 	const TArray<FDynamicEmitterDataBase*>& EmitterList = Comp->GetEmitterRenderData();
-
 	CachedEmitterCount = static_cast<int32>(EmitterList.size());
-	CachedEmitterData  = EmitterList;  // 포인터 배열만 복사 (소유권은 컴포넌트)
-
-	for (int32 i = 0; i < CachedEmitterCount; ++i)
-	{
-		if (!CachedEmitterData[i])
-		{
-			UE_LOG("[ParticleProxy] UpdatePerViewport: EmitterData[%d] is null, skip", i);
-			continue;
-		}
-		if (i < static_cast<int32>(EmitterBuffers.size()) && EmitterBuffers[i])
-			FillStagingBuffer(*CachedEmitterData[i], *EmitterBuffers[i]);
-	}
+	CachedEmitterData  = EmitterList;
 }
 
 
@@ -120,6 +105,8 @@ void FParticleSystemSceneProxy::BuildParticleCommands(
 {
 	if (CachedEmitterCount <= 0) return;
 
+	PARTICLE_STATS_RESET();
+
 	// QuadVB/IB 최초 1회 생성
 	if (!QuadVB.GetBuffer())
 		BuildQuadGeometry(Device);
@@ -127,11 +114,14 @@ void FParticleSystemSceneProxy::BuildParticleCommands(
 	// 에미터 수에 맞게 GPU 버퍼 확보
 	EnsureEmitterBuffers(Device, CachedEmitterCount);
 
-	// UpdatePerViewport 미실행 시 방어적으로 스테이징 채움
-	for (int32 i = 0; i < CachedEmitterCount; ++i)
+	// CPU 스테이징 채우기 — 매 프레임 여기서만 1회 실행
 	{
-		if (CachedEmitterData[i] && EmitterBuffers[i])
-			FillStagingBuffer(*CachedEmitterData[i], *EmitterBuffers[i]);
+		SCOPE_STAT_CAT("ParticleStagingFill", "Particle");
+		for (int32 i = 0; i < CachedEmitterCount; ++i)
+		{
+			if (CachedEmitterData[i] && EmitterBuffers[i])
+				FillStagingBuffer(*CachedEmitterData[i], *EmitterBuffers[i]);
+		}
 	}
 
 	// GPU 업로드 + 드로우 커맨드 생성
@@ -195,7 +185,6 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 	OutBuffer.BlendMode           = Source.BlendMode;
 	OutBuffer.StagingBuffer.resize(Count * Stride);
 
-	// 메타 캐싱 (Material, MeshBuffer)
 	if (Source.eEmitterType == EDynamicEmitterType::Sprite
 	 || Source.eEmitterType == EDynamicEmitterType::Mesh)
 	{
@@ -217,6 +206,11 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 	}
 
 	if (Count == 0) return;
+
+	if (Source.eEmitterType == EDynamicEmitterType::Sprite)
+		PARTICLE_STATS_ADD_SPRITE_PARTICLES(static_cast<uint32>(Count));
+	else if (Source.eEmitterType == EDynamicEmitterType::Mesh)
+		PARTICLE_STATS_ADD_MESH_PARTICLES(static_cast<uint32>(Count));
 
 	if (!Source.DataContainer.ParticleData)
 	{
@@ -341,6 +335,7 @@ void FParticleSystemSceneProxy::SubmitSpriteEmitter(
 				Buffer.Material->GetCachedSRVs()[(int)EMaterialTextureSlot::Diffuse]);
 
 	Cmd.BuildSortKey();
+	PARTICLE_STATS_ADD_DRAW_CALL();
 }
 
 
@@ -399,4 +394,5 @@ void FParticleSystemSceneProxy::SubmitMeshEmitter(
 				Buffer.Material->GetCachedSRVs()[(int)EMaterialTextureSlot::Diffuse]);
 
 	Cmd.BuildSortKey();
+	PARTICLE_STATS_ADD_DRAW_CALL();
 }

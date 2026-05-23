@@ -5,13 +5,16 @@
 #include "Particles/ParticleHelper.h"
 
 class UParticleModuleRequired;
-
 class UMaterial;
 class FMeshBuffer;
-
 enum class EDynamicEmitterType {Sprite, Mesh, Beam, Ribbon};
-enum class EParticleSortMode { None, ViewDepth, ViewProjectedDepth };
 enum class EParticleBlendMode { AlphaBlend, Additive, Translucent };
+
+struct FParticleSortContext
+{
+	FVector CameraPosition;
+	FVector CameraForward;
+};
 
 struct FDynamicEmitterReplayDataBase
 {
@@ -20,7 +23,7 @@ struct FDynamicEmitterReplayDataBase
 	int32 ParticleStride = 0;
 	FParticleDataContainer DataContainer;
 	FVector Scale = FVector(1, 1, 1);
-	EParticleSortMode  SortMode  = EParticleSortMode::None;
+	EParticleSortMode  SortMode  = PSORTMODE_None;
 	EParticleBlendMode BlendMode = EParticleBlendMode::AlphaBlend;
 };
 
@@ -41,11 +44,7 @@ struct FDynamicEmitterDataBase
 struct FDynamicSpriteEmitterDataBase : FDynamicEmitterDataBase
 {
 	// ParticleIndices를 카메라 거리 기준으로 정렬
-	void SortSpriteParticles(EParticleSortMode SortMode,
-		bool bSortReversed,
-		const FVector& CameraPos,
-		FParticleDataContainer& DataContainer,
-		int32 ParticleStride);
+	void SortSpriteParticles(const FParticleSortContext& SortCtx);
 };
 
 struct FDynamicSpriteEmitterData : FDynamicSpriteEmitterDataBase
