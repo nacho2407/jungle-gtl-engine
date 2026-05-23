@@ -9,6 +9,7 @@
 #include "Particles/TypeData/ParticleModuleTypeDataBase.h"
 
 #include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 #include "Profiling/Stats/Stats.h"
 
 #include <algorithm>
@@ -104,7 +105,8 @@ void FParticleEmitterInstance::Init()
 
 	assert(CurrentLODLevel != nullptr);
 
-	//CurrentMaterial = HighLODLevel->RequiredModule->Material;
+	HighLODLevel->RequiredModule->ResolveMaterialFromSlot();
+	CurrentMaterial = HighLODLevel->RequiredModule->Material;
 	bKillOnDeactivate = HighLODLevel->RequiredModule->bKillOnDeactivate;
 	bKillOnCompleted = HighLODLevel->RequiredModule->bKillOnCompleted;
 	SortMode = HighLODLevel->RequiredModule->SortMode;
@@ -358,7 +360,8 @@ void FParticleEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 		KillParticles();
 		ResetParticleParameters(DeltaTime);
 
-		//CurrentMaterial = LODLevel->RequiredModule->Material;
+		LODLevel->RequiredModule->ResolveMaterialFromSlot();
+		CurrentMaterial = LODLevel->RequiredModule->Material;
 		Tick_ModuleUpdate(DeltaTime, LODLevel);
 
 		SpawnFraction = Tick_SpawnParticles(DeltaTime, LODLevel, bSuppressSpawning, bFirstTime);
@@ -1944,9 +1947,23 @@ void FParticleEmitterInstance::ProcessParticleEvents(float DeltaTime, bool bSupp
 
 void FParticleEmitterInstance::Tick_MaterialOverrides(int32 EmitterIndex)
 {
-	// KraftonEngine has no UE named material slots or component emitter material override array yet.
-	(void)EmitterIndex;
-	CurrentMaterial = GetCurrentMaterial();
+	// KraftonEngine does not currently expose UE's NamedMaterialOverrides / NamedMaterialSlots.
+	// Keep the emitter-index override path equivalent to UE's fallback branch.
+	if (Component)
+	{
+		const TArray<UMaterial*>& EmitterMaterials = Component->GetEmitterMaterials();
+		if (EmitterIndex >= 0 &&
+			EmitterIndex < static_cast<int32>(EmitterMaterials.size()) &&
+			EmitterMaterials[EmitterIndex])
+		{
+			CurrentMaterial = EmitterMaterials[EmitterIndex];
+			return;
+		}
+	}
+
+	UParticleLODLevel* LODLevel = GetCurrentLODLevelChecked();
+	LODLevel->RequiredModule->ResolveMaterialFromSlot();
+	CurrentMaterial = LODLevel->RequiredModule->Material;
 }
 
 bool FParticleEmitterInstance::UseLocalSpace()
@@ -1964,9 +1981,16 @@ void FParticleEmitterInstance::GetScreenAlignmentAndScale(int32& OutScreenAlign,
 
 UMaterial* FParticleEmitterInstance::GetCurrentMaterial()
 {
-	// UE validates particle material usage and falls back to the engine default material.
-	// KraftonEngine's material system does not expose that usage check/default path yet.
-	return CurrentMaterial;
+	UMaterial* RenderMaterial = CurrentMaterial;
+	if (!RenderMaterial)
+	{
+		RenderMaterial = FMaterialManager::Get().GetOrCreateMaterial("None");
+	}
+
+	// UE also validates MATUSAGE_ParticleSprites / MATUSAGE_MeshParticles here.
+	// KraftonEngine's material system has no equivalent usage flag yet, so fallback only handles null.
+	CurrentMaterial = RenderMaterial;
+	return RenderMaterial;
 }
 
 bool FParticleEmitterInstance::IsDynamicDataRequired() const
@@ -2041,7 +2065,7 @@ bool FParticleSpriteEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBas
 	FDynamicSpriteEmitterReplayDataBase& SpriteData =
 		static_cast<FDynamicSpriteEmitterReplayDataBase&>(OutData);
 
-	SpriteData.Material                  = CurrentMaterial;
+	SpriteData.Material                  = GetCurrentMaterial();
 	SpriteData.SubUVDataOffset            = SubUVDataOffset;
 	SpriteData.DynamicParameterDataOffset = DynamicParameterDataOffset;
 	SpriteData.LightDataOffset            = LightDataOffset;
@@ -2242,7 +2266,7 @@ bool FParticleMeshEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase&
 	FDynamicMeshEmitterReplayData& MeshData =
 		static_cast<FDynamicMeshEmitterReplayData&>(OutData);
 
-	MeshData.Material                  = CurrentMaterial;
+	MeshData.Material                  = GetCurrentMaterial();
 	MeshData.MeshRotationOffset        = MeshRotationOffset;
 	MeshData.MeshMotionBlurOffset      = MeshMotionBlurOffset;
 	MeshData.bEnableMotionBlur         = bMotionBlurEnabled;
