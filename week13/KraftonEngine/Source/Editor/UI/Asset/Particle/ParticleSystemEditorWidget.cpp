@@ -2,9 +2,9 @@
 
 #include "imgui.h"
 #include "Object/Object.h"
-#include "Particle/ParticleEmitter.h"
-#include "Particle/ParticleSystem.h"
-#include "Particle/ParticleSystemManager.h"
+#include "Particles/ParticleEmitter.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemManager.h"
 
 #include <algorithm>
 #include <cstdio>

@@ -11,8 +11,8 @@
 
 #include <filesystem>
 
-#include "Particle/ParticleSystem.h"
-#include "Particle/ParticleSystemManager.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemManager.h"
 
 namespace
 {
