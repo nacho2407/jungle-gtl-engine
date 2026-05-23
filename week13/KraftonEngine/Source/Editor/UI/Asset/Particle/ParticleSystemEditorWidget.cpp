@@ -866,11 +866,18 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                     bool bEnabled = Emitter ? Emitter->IsEnabled() : true;
                     if (ImGui::Checkbox("Enabled", &bEnabled))
                     {
-                        if (!EmitterEnabled.empty())
+                        if (Emitter)
+                        {
+                            Emitter->SetEnabled(bEnabled);
+                        }
+
+                        if (EmitterIndex >= 0 && EmitterIndex < static_cast<int32>(EmitterEnabled.size()))
                         {
                             EmitterEnabled[EmitterIndex] = bEnabled;
                         }
+                        
                         MarkDirty();
+                        RestartPreviewSimulation();
                     }
                     ImGui::Separator();
 
@@ -970,15 +977,30 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
                 ImGui::TableNextColumn();
                 ImGui::TextUnformatted("Enabled");
                 ImGui::TableNextColumn();
-                UParticleEmitter* Emitter  = ParticleSystem->GetEmitters()[SelectedEmitterIndex];
-                bool              bEnabled = Emitter ? Emitter->IsEnabled() : true;
+                
+                UParticleEmitter* Emitter = nullptr;
+                
+                if (ParticleSystem && SelectedEmitterIndex >= 0 && SelectedEmitterIndex < static_cast<int32>(ParticleSystem->GetEmitters().size()))
+                {
+                    Emitter = ParticleSystem->GetEmitters()[SelectedEmitterIndex];
+                }
+                
+                bool bEnabled = Emitter ? Emitter->IsEnabled() : true;
+                
                 if (ImGui::Checkbox("##EnabledProp", &bEnabled))
                 {
-                    if (!EmitterEnabled.empty())
+                    if (Emitter)
+                    {
+                        Emitter->SetEnabled(bEnabled);
+                    }
+                    
+                    if (SelectedEmitterIndex >= 0 && SelectedEmitterIndex < static_cast<int32>(EmitterEnabled.size()))
                     {
                         EmitterEnabled[SelectedEmitterIndex] = bEnabled;
                     }
+                    
                     MarkDirty();
+                    RestartPreviewSimulation();
                 }
 
                 int32 LODCount = 0;
