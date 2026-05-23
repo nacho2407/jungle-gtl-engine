@@ -5,7 +5,6 @@
 #include "Materials/Material.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Notification.h"
-#include <cstring>
 #include <iostream>
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -92,7 +91,8 @@ FShader& FShader::operator=(FShader&& Other) noexcept
 }
 
 void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char* InVSEntryPoint, const char* InPSEntryPoint,
-	const D3D_SHADER_MACRO* InDefines, TArray<FString>* OutIncludes, EShaderErrorMode ErrorMode)
+	const D3D_SHADER_MACRO* InDefines, TArray<FString>* OutIncludes, EShaderErrorMode ErrorMode,
+	const FShaderInputLayoutDesc* InInputLayoutDesc)
 {
 	Release();
 
@@ -177,8 +177,14 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	CachedPixelShaderSize = pixelShaderCSO->GetBufferSize();
 	MemoryStats::AddPixelShaderMemory(static_cast<uint32>(CachedPixelShaderSize));
 
-	// Input Layout 생성 (VS input signature로부터 자동 추출)
-	CreateInputLayoutFromReflection(InDevice, vertexShaderCSO);
+	if (InInputLayoutDesc && InInputLayoutDesc->IsValid())
+	{
+		CreateInputLayoutFromDesc(InDevice, vertexShaderCSO, *InInputLayoutDesc);
+	}
+	else
+	{
+		CreateInputLayoutFromReflection(InDevice, vertexShaderCSO);
+	}
 
 	ExtractCBufferInfo(vertexShaderCSO, ShaderParameterLayout);
 	ExtractCBufferInfo(pixelShaderCSO, ShaderParameterLayout);
@@ -276,11 +282,6 @@ void FShader::CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* 
 	Reflector->GetDesc(&ShaderDesc);
 
 	TArray<D3D11_INPUT_ELEMENT_DESC> Elements;
-	TArray<D3D11_SIGNATURE_PARAMETER_DESC> Params;
-	Params.reserve(ShaderDesc.InputParameters);
-
-	bool bUsesSpriteInstanceData = false;
-	bool bUsesMeshInstanceData = false;
 
 	for (UINT i = 0; i < ShaderDesc.InputParameters; ++i)
 	{
@@ -291,41 +292,14 @@ void FShader::CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* 
 		if (ParamDesc.SystemValueType != D3D_NAME_UNDEFINED)
 			continue;
 
-		Params.push_back(ParamDesc);
-		bUsesSpriteInstanceData |=
-			std::strcmp(ParamDesc.SemanticName, "SIZE") == 0 ||
-			std::strcmp(ParamDesc.SemanticName, "ROTATION") == 0;
-		bUsesMeshInstanceData |=
-			std::strcmp(ParamDesc.SemanticName, "TRANSFORM") == 0;
-	}
-
-	bool bSeenMeshVertexColor = false;
-	for (const D3D11_SIGNATURE_PARAMETER_DESC& ParamDesc : Params)
-	{
-		const bool bSpriteInstanceElement = bUsesSpriteInstanceData &&
-			(std::strcmp(ParamDesc.SemanticName, "POSITION") == 0 ||
-			 std::strcmp(ParamDesc.SemanticName, "SIZE") == 0 ||
-			 std::strcmp(ParamDesc.SemanticName, "COLOR") == 0 ||
-			 std::strcmp(ParamDesc.SemanticName, "ROTATION") == 0);
-
-		bool bMeshInstanceElement = bUsesMeshInstanceData &&
-			std::strcmp(ParamDesc.SemanticName, "TRANSFORM") == 0;
-		if (bUsesMeshInstanceData && std::strcmp(ParamDesc.SemanticName, "COLOR") == 0)
-		{
-			bMeshInstanceElement = bSeenMeshVertexColor;
-			bSeenMeshVertexColor = true;
-		}
-
 		D3D11_INPUT_ELEMENT_DESC Elem = {};
 		Elem.SemanticName = ParamDesc.SemanticName;
 		Elem.SemanticIndex = ParamDesc.SemanticIndex;
 		Elem.Format = MaskToFormat(ParamDesc.ComponentType, ParamDesc.Mask);
-		Elem.InputSlot = (bSpriteInstanceElement || bMeshInstanceElement) ? 1 : 0;
+		Elem.InputSlot = 0;
 		Elem.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-		Elem.InputSlotClass = (Elem.InputSlot == 1)
-			? D3D11_INPUT_PER_INSTANCE_DATA
-			: D3D11_INPUT_PER_VERTEX_DATA;
-		Elem.InstanceDataStepRate = (Elem.InputSlot == 1) ? 1 : 0;
+		Elem.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		Elem.InstanceDataStepRate = 0;
 
 		Elements.push_back(Elem);
 	}
@@ -345,6 +319,16 @@ void FShader::CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* 
 	}
 
 	Reflector->Release();
+}
+
+void FShader::CreateInputLayoutFromDesc(ID3D11Device* InDevice, ID3DBlob* VSBlob, const FShaderInputLayoutDesc& Desc)
+{
+	HRESULT hr = InDevice->CreateInputLayout(Desc.Elements, Desc.ElementCount,
+		VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), &InputLayout);
+	if (FAILED(hr))
+	{
+		std::cerr << "Failed to create explicit Input Layout (HRESULT: " << hr << ")" << std::endl;
+	}
 }
 
 //셰이더 컴파일 후 호출. 셰이더 코드의 cbuffer, 텍스처 샘플러 선언을 분석해서 outlayout에 채워넣음. 이 정보는 머티리얼 템플릿이 생성될 때 참조되어야 하므로 셰이더 내부에서 제공하는 형태로 존재해야 함.

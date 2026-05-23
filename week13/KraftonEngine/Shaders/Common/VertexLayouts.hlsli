@@ -65,16 +65,16 @@ struct VS_Input_ParticleQuad
 
 struct VS_Input_ParticleInstance
 {
-    float3 position : POSITION;
-    float size : SIZE;
-    float4 color : COLOR;
-    float rotation : ROTATION;
+    float3 position : INSTANCE_POSITION;
+    float size : INSTANCE_SIZE;
+    float4 color : INSTANCE_COLOR;
+    float rotation : INSTANCE_ROTATION;
 };
 
 struct VS_Input_MeshParticleInstance
 {
-    matrix transform : TRANSFORM;
-    float4 color : COLOR;
+    matrix transform : INSTANCE_TRANSFORM;
+    float4 color : INSTANCE_COLOR;
 };
 
 // ============================================================
