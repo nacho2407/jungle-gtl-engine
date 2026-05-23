@@ -619,11 +619,13 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Object\FName.cpp" />
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Object\UUIDGenerator.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Color\ParticleModuleColor.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleEmitterInstances.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleHelper.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleMemory.cpp" />
     <ClCompile Include="Source\Engine\Particle\DynamicEmitterData.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleModule.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Size\ParticleModuleSize.cpp" />
     <ClCompile Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataBase.cpp" />
     <ClCompile Include="Source\Engine\Particle\ParticleEmitter.cpp" />
     <ClCompile Include="Source\Engine\Particle\ParticleSystem.cpp" />
@@ -1012,6 +1014,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Object\Reflection\ObjectMacros.h" />
     <ClInclude Include="Source\Engine\Object\Reflection\UClass.h" />
     <ClInclude Include="Source\Engine\Object\Reflection\UStruct.h" />
+    <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColor.h" />
+    <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColorBase.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleDynamicData.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleEmitter.generated.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleEmitter.h" />
@@ -1021,6 +1025,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Particle\DynamicEmitterData.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleModule.generated.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleModule.h" />
+    <ClInclude Include="Source\Engine\Particles\Size\ParticleModuleSize.h" />
+    <ClInclude Include="Source\Engine\Particles\Size\ParticleModuleSizeBase.h" />
     <ClInclude Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataBase.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleEmitter.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleSystem.h" />
