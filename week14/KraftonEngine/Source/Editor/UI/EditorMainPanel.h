@@ -19,7 +19,6 @@ class FRenderer;
 class UEditorEngine;
 class FWindowsWindow;
 class IEditorPreviewViewportClient;
-class UParticleSystem;
 
 class FEditorMainPanel
 {
@@ -55,7 +54,6 @@ private:
 	void HandleGlobalShortcuts();
 	void ToggleConsoleDrawer(bool bFocusInput);
 	void ProcessPendingDebugActions();
-	UParticleSystem* GetOrCreateParticleSystemEditorPreviewAsset();
 
 	FWindowsWindow* Window = nullptr;
 	UEditorEngine* EditorEngine = nullptr;
@@ -70,8 +68,6 @@ private:
 	EditorProjectSettingsWidget ProjectSettingsWidget;
 	EditorWorldSettingsWidget WorldSettingsWidget;
 	FAssetEditorManager AssetEditorManager;
-	// Temporary Window-menu entry point until ParticleSystem assets open from Content Browser double-click.
-	UParticleSystem* ParticleSystemEditorPreviewAsset = nullptr;
 
 	bool bShowWidgetList = false;
 	bool bShowShortcutOverlay = false;
