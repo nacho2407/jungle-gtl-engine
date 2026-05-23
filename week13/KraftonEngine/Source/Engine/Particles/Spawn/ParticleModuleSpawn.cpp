@@ -22,5 +22,10 @@ float UParticleModuleSpawn::GetEstimatedSpawnRate()
 
 int32 UParticleModuleSpawn::GetMaximumBurstCount()
 {
-	return int32();
+	return 0;
+}
+
+void UParticleModuleSpawn::PostEditChangeProperty(const FPropertyChangedEvent& PropertyChangedEvent)
+{
+	UParticleModuleSpawnBase::PostEditChangeProperty(PropertyChangedEvent);
 }

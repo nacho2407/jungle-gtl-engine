@@ -30,4 +30,8 @@ public:
 	virtual float GetMaximumSpawnRate() override;
 	virtual float GetEstimatedSpawnRate() override;
 	virtual int32 GetMaximumBurstCount() override;
+
+#if WITH_EDITOR
+	virtual void	PostEditChangeProperty(const FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
 };
