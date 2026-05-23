@@ -35,15 +35,34 @@ namespace
 	constexpr float EmitterColumnWidth = 176.0f;
 	constexpr float EmitterHeaderHeight = 58.0f;
 	constexpr float ModuleRowHeight = 24.0f;
+	constexpr float ModuleDropTargetHeight = 8.0f;
 	constexpr int32 NoModuleIndex = -1;
 	constexpr int32 TypeDataModuleIndex = -2;
+	constexpr const char* ParticleModuleDragPayloadType = "ParticleModuleDragPayload";
 
 	struct FModuleRowAction
 	{
 		bool bSelect = false;
-		bool bMoveUp = false;
-		bool bMoveDown = false;
 		bool bDelete = false;
+		bool bRefresh = false;
+		bool bContextMenuOpen = false;
+	};
+
+	struct FParticleModuleDragPayload
+	{
+		int32 EmitterIndex = -1;
+		int32 LODIndex = -1;
+		int32 ModuleIndex = -1;
+		UParticleModule* Module = nullptr;
+	};
+
+	struct FParticleModuleDropRequest
+	{
+		bool bRequested = false;
+		FParticleModuleDragPayload Payload;
+		int32 TargetEmitterIndex = -1;
+		int32 TargetLODIndex = -1;
+		int32 TargetInsertIndex = 0;
 	};
 
 	float ClampFloat(float Value, float MinValue, float MaxValue)
@@ -181,6 +200,26 @@ namespace
 		return Cast<UParticleModuleRequired>(Module) || Cast<UParticleModuleSpawn>(Module);
 	}
 
+	int32 GetFirstMovableModuleIndex(const TArray<UParticleModule*>& Modules)
+	{
+		int32 FirstMovableIndex = 0;
+		for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
+		{
+			if (IsModuleOrderLocked(Modules[ModuleIndex]))
+			{
+				FirstMovableIndex = (std::max)(FirstMovableIndex, ModuleIndex + 1);
+			}
+		}
+		return FirstMovableIndex;
+	}
+
+	int32 ClampModuleInsertIndex(const TArray<UParticleModule*>& Modules, int32 InsertIndex)
+	{
+		const int32 FirstMovableIndex = GetFirstMovableModuleIndex(Modules);
+		const int32 ModuleCount = static_cast<int32>(Modules.size());
+		return (std::max)(FirstMovableIndex, (std::min)(InsertIndex, ModuleCount));
+	}
+
 	ImU32 GetModuleRowBackgroundColor(const UParticleModule* Module, bool bSelected)
 	{
 		if (Cast<UParticleModuleRequired>(Module))
@@ -211,6 +250,85 @@ namespace
 		DrawList->AddText(ImVec2(Pos.x + 8.0f, Pos.y + 4.0f), TextColor, Label);
 	}
 
+	void StartModuleDragSource(const FParticleModuleDragPayload& DragPayload, const char* Label)
+	{
+		if (!DragPayload.Module || IsModuleOrderLocked(DragPayload.Module))
+		{
+			return;
+		}
+
+		if (ImGui::BeginDragDropSource())
+		{
+			ImGui::SetDragDropPayload(ParticleModuleDragPayloadType, &DragPayload, sizeof(DragPayload));
+			ImGui::TextUnformatted(Label);
+			ImGui::EndDragDropSource();
+		}
+	}
+
+	void AcceptModuleDropTarget(
+		FParticleModuleDropRequest& DropRequest,
+		int32 TargetEmitterIndex,
+		int32 TargetLODIndex,
+		int32 InsertBeforeIndex,
+		int32 InsertAfterIndex)
+	{
+		const ImVec2 TargetMin = ImGui::GetItemRectMin();
+		const ImVec2 TargetMax = ImGui::GetItemRectMax();
+		const bool bDropAfter = ImGui::GetIO().MousePos.y > (TargetMin.y + TargetMax.y) * 0.5f;
+		const int32 TargetInsertIndex = bDropAfter ? InsertAfterIndex : InsertBeforeIndex;
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(ParticleModuleDragPayloadType, ImGuiDragDropFlags_AcceptBeforeDelivery))
+			{
+				const float DropY = bDropAfter ? TargetMax.y : TargetMin.y;
+				ImGui::GetWindowDrawList()->AddLine(
+					ImVec2(TargetMin.x, DropY),
+					ImVec2(TargetMax.x, DropY),
+					IM_COL32(120, 180, 255, 255),
+					2.0f);
+
+				if (Payload->IsDelivery() && Payload->DataSize == sizeof(FParticleModuleDragPayload))
+				{
+					DropRequest.bRequested = true;
+					DropRequest.Payload = *static_cast<const FParticleModuleDragPayload*>(Payload->Data);
+					DropRequest.TargetEmitterIndex = TargetEmitterIndex;
+					DropRequest.TargetLODIndex = TargetLODIndex;
+					DropRequest.TargetInsertIndex = TargetInsertIndex;
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+	}
+
+	void RenderModuleContextMenu(FModuleRowAction& Action, bool bCanDelete, const ImVec2& RowMin, const ImVec2& RowMax)
+	{
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsMouseHoveringRect(RowMin, RowMax))
+		{
+			ImGui::OpenPopup("##ModuleContextMenu");
+			Action.bContextMenuOpen = true;
+		}
+
+		if (ImGui::BeginPopup("##ModuleContextMenu"))
+		{
+			Action.bContextMenuOpen = true;
+
+			ImGui::BeginDisabled(!bCanDelete);
+			if (ImGui::MenuItem("Delete Module"))
+			{
+				Action.bDelete = true;
+			}
+			ImGui::EndDisabled();
+
+			if (ImGui::MenuItem("Refresh Module"))
+			{
+				Action.bRefresh = true;
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+
 	bool SelectableModuleRow(const char* Label, bool bSelected, const UParticleModule* Module = nullptr)
 	{
 		DrawModuleRow(Label, bSelected, Module);
@@ -222,41 +340,35 @@ namespace
 		return Cast<UParticleModuleRequired>(Module) || Cast<UParticleModuleSpawn>(Module);
 	}
 
-	FModuleRowAction EditableModuleRow(const char* Label, const UParticleModule* Module, bool bSelected, bool bCanMoveUp, bool bCanMoveDown, bool bCanDelete)
+	FModuleRowAction EditableModuleRow(
+		const char* Label,
+		const UParticleModule* Module,
+		bool bSelected,
+		bool bCanDelete,
+		const FParticleModuleDragPayload* DragPayload,
+		FParticleModuleDropRequest* DropRequest,
+		int32 TargetEmitterIndex,
+		int32 TargetLODIndex,
+		int32 InsertBeforeIndex,
+		int32 InsertAfterIndex)
 	{
 		FModuleRowAction Action;
 
 		const ImVec2 Pos = ImGui::GetCursorScreenPos();
 		const float Width = ImGui::GetContentRegionAvail().x;
-		const float ButtonWidth = 25.0f;
-		const float ButtonGap = 2.0f;
-		const float ControlsWidth = ButtonWidth * 3.0f + ButtonGap * 2.0f + 4.0f;
-		const float SelectWidth = (std::max)(1.0f, Width - ControlsWidth);
 
 		DrawModuleRow(Label, bSelected, Module);
 		ImGui::SetCursorScreenPos(Pos);
-		Action.bSelect = ImGui::InvisibleButton("##SelectModuleRow", ImVec2(SelectWidth, ModuleRowHeight));
-
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
-		ImGui::SetCursorScreenPos(ImVec2(Pos.x + Width - ControlsWidth, Pos.y + 2.0f));
-		ImGui::BeginDisabled(!bCanMoveUp);
-		Action.bMoveUp = ImGui::SmallButton("Up");
-		ImGui::EndDisabled();
-
-		ImGui::SameLine(0.0f, ButtonGap);
-		ImGui::BeginDisabled(!bCanMoveDown);
-		Action.bMoveDown = ImGui::SmallButton("Dn");
-		ImGui::EndDisabled();
-
-		ImGui::SameLine(0.0f, ButtonGap);
-		ImGui::BeginDisabled(!bCanDelete);
-		Action.bDelete = ImGui::SmallButton("Del");
-		if (!bCanDelete && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		Action.bSelect = ImGui::InvisibleButton("##SelectModuleRow", ImVec2(Width, ModuleRowHeight));
+		RenderModuleContextMenu(Action, bCanDelete, Pos, ImVec2(Pos.x + Width, Pos.y + ModuleRowHeight));
+		if (DragPayload)
 		{
-			ImGui::SetTooltip("Required and Spawn modules cannot be deleted.");
+			StartModuleDragSource(*DragPayload, Label);
 		}
-		ImGui::EndDisabled();
-		ImGui::PopStyleVar();
+		if (DropRequest)
+		{
+			AcceptModuleDropTarget(*DropRequest, TargetEmitterIndex, TargetLODIndex, InsertBeforeIndex, InsertAfterIndex);
+		}
 
 		ImGui::SetCursorScreenPos(ImVec2(Pos.x, Pos.y + ModuleRowHeight));
 		return Action;
@@ -1347,6 +1459,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			Height += 3.0f + Style.ItemSpacing.y;
 			Height += ModuleRowHeight + Style.ItemSpacing.y;
 			Height += static_cast<float>(LODLevel->GetModules().size()) * ModuleRowHeight;
+			Height += ModuleDropTargetHeight;
 		}
 
 		return Height + Style.ItemSpacing.y;
@@ -1504,15 +1617,78 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			}
 		};
 
-		if (LODLevel && ImGui::IsWindowHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+		auto MoveDroppedModule = [&](const FParticleModuleDropRequest& DropRequest)
 		{
-			ImGui::OpenPopup("##ParticleEmitterContextMenu");
-		}
-		if (LODLevel && ImGui::BeginPopup("##ParticleEmitterContextMenu"))
-		{
-			RenderAddModuleMenu();
-			ImGui::EndPopup();
-		}
+			if (!DropRequest.bRequested)
+			{
+				return false;
+			}
+
+			const FParticleModuleDragPayload& Payload = DropRequest.Payload;
+			if (!Payload.Module || IsModuleOrderLocked(Payload.Module))
+			{
+				return false;
+			}
+
+			if (Payload.EmitterIndex < 0 || Payload.EmitterIndex >= static_cast<int32>(Emitters.size()) ||
+				DropRequest.TargetEmitterIndex < 0 || DropRequest.TargetEmitterIndex >= static_cast<int32>(Emitters.size()))
+			{
+				return false;
+			}
+
+			UParticleEmitter* SourceEmitter = Emitters[Payload.EmitterIndex];
+			UParticleEmitter* TargetEmitter = Emitters[DropRequest.TargetEmitterIndex];
+			if (!SourceEmitter || !TargetEmitter)
+			{
+				return false;
+			}
+
+			UParticleLODLevel* SourceLODLevel = SourceEmitter->GetLODLevel(Payload.LODIndex);
+			UParticleLODLevel* TargetLODLevel = TargetEmitter->GetLODLevel(DropRequest.TargetLODIndex);
+			if (!SourceLODLevel || !TargetLODLevel)
+			{
+				return false;
+			}
+
+			TArray<UParticleModule*>& SourceModules = SourceLODLevel->GetMutableModules();
+			TArray<UParticleModule*>& TargetModules = TargetLODLevel->GetMutableModules();
+			auto SourceIt = SourceModules.end();
+			if (Payload.ModuleIndex >= 0 && Payload.ModuleIndex < static_cast<int32>(SourceModules.size()) &&
+				SourceModules[Payload.ModuleIndex] == Payload.Module)
+			{
+				SourceIt = SourceModules.begin() + Payload.ModuleIndex;
+			}
+			else
+			{
+				SourceIt = std::find(SourceModules.begin(), SourceModules.end(), Payload.Module);
+			}
+			if (SourceIt == SourceModules.end() || IsModuleOrderLocked(*SourceIt))
+			{
+				return false;
+			}
+
+			const bool bSameLOD = SourceLODLevel == TargetLODLevel;
+			const int32 SourceModuleIndex = static_cast<int32>(SourceIt - SourceModules.begin());
+			int32 TargetInsertIndex = ClampModuleInsertIndex(TargetModules, DropRequest.TargetInsertIndex);
+			if (bSameLOD && (TargetInsertIndex == SourceModuleIndex || TargetInsertIndex == SourceModuleIndex + 1))
+			{
+				return false;
+			}
+
+			UParticleModule* MovedModule = *SourceIt;
+			SourceModules.erase(SourceIt);
+			if (bSameLOD && SourceModuleIndex < TargetInsertIndex)
+			{
+				--TargetInsertIndex;
+			}
+			TargetInsertIndex = ClampModuleInsertIndex(TargetModules, TargetInsertIndex);
+			TargetModules.insert(TargetModules.begin() + TargetInsertIndex, MovedModule);
+
+			SelectModule(DropRequest.TargetEmitterIndex, DropRequest.TargetLODIndex, TargetInsertIndex);
+			MarkDirty();
+			RestartPreviewSimulation();
+			return true;
+		};
 
 		const ImVec2 HeaderMin = ImGui::GetCursorScreenPos();
 		const ImVec2 HeaderMax(HeaderMin.x + ImGui::GetContentRegionAvail().x, HeaderMin.y + EmitterHeaderHeight);
@@ -1536,6 +1712,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 		if (Emitter)
 		{
+			bool bModuleContextMenuOpen = false;
 			const TArray<UParticleLODLevel*>& LODLevels = Emitter->GetLODLevels();
 			if (!LODLevels.empty())
 			{
@@ -1580,15 +1757,30 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				}
 				ImGui::Dummy(ImVec2(0.0f, 3.0f));
 
+				FParticleModuleDropRequest DropRequest;
+				TArray<UParticleModule*>& Modules = LODLevel->GetMutableModules();
 				const UParticleModuleTypeDataBase* TypeDataModule = LODLevel->GetTypeDataModule();
 				const char* TypeDataLabel = TypeDataModule ? GetTypeDataDisplayName(TypeDataModule) : GetRenderTypeLabel(RenderType);
 				if (TypeDataModule)
 				{
 					ImGui::PushID(TypeDataModuleIndex);
+					FModuleRowAction TypeDataAction;
 					if (SelectableModuleRow(TypeDataLabel, IsModuleSelected(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex), TypeDataModule))
 					{
 						SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
 					}
+					RenderModuleContextMenu(TypeDataAction, true, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+					bModuleContextMenuOpen |= TypeDataAction.bContextMenuOpen;
+					if (TypeDataAction.bDelete)
+					{
+						SetTypeDataModule(nullptr);
+					}
+					else if (TypeDataAction.bRefresh)
+					{
+						SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
+						RestartPreviewSimulation();
+					}
+					AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, 0, 0);
 					ImGui::PopID();
 				}
 				else
@@ -1598,51 +1790,37 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 					{
 						SelectLOD(EmitterIndex, DisplayLODIndex);
 					}
+					AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, 0, 0);
 					ImGui::PopID();
 				}
 
-				TArray<UParticleModule*>& Modules = LODLevel->GetMutableModules();
 				bool bModuleListMutated = false;
 				for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
 				{
 					UParticleModule* Module = Modules[ModuleIndex];
 					const bool bDeleteLocked = IsModuleDeleteLocked(Module);
 					const bool bOrderLocked = IsModuleOrderLocked(Module);
-					const UParticleModule* PreviousModule = ModuleIndex > 0 ? Modules[ModuleIndex - 1] : nullptr;
-					const UParticleModule* NextModule = ModuleIndex + 1 < static_cast<int32>(Modules.size()) ? Modules[ModuleIndex + 1] : nullptr;
-					const bool bCanMoveUp = !bOrderLocked && ModuleIndex > 0 && !IsModuleOrderLocked(PreviousModule);
-					const bool bCanMoveDown = !bOrderLocked && ModuleIndex + 1 < static_cast<int32>(Modules.size()) && !IsModuleOrderLocked(NextModule);
 					ImGui::PushID(ModuleIndex);
+					FParticleModuleDragPayload DragPayload{ EmitterIndex, DisplayLODIndex, ModuleIndex, Module };
 					const FModuleRowAction Action = EditableModuleRow(
 						GetModuleDisplayName(Module),
 						Module,
 						IsModuleSelected(EmitterIndex, DisplayLODIndex, ModuleIndex),
-						bCanMoveUp,
-						bCanMoveDown,
-						!bDeleteLocked);
+						!bDeleteLocked,
+						bOrderLocked ? nullptr : &DragPayload,
+						&DropRequest,
+						EmitterIndex,
+						DisplayLODIndex,
+						ModuleIndex,
+						ModuleIndex + 1);
 					if (Action.bSelect)
 					{
 						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex);
 					}
+					bModuleContextMenuOpen |= Action.bContextMenuOpen;
 					ImGui::PopID();
 
-					if (Action.bMoveUp && bCanMoveUp)
-					{
-						std::swap(Modules[ModuleIndex], Modules[ModuleIndex - 1]);
-						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex - 1);
-						MarkDirty();
-						RestartPreviewSimulation();
-						bModuleListMutated = true;
-					}
-					else if (Action.bMoveDown && bCanMoveDown)
-					{
-						std::swap(Modules[ModuleIndex], Modules[ModuleIndex + 1]);
-						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex + 1);
-						MarkDirty();
-						RestartPreviewSimulation();
-						bModuleListMutated = true;
-					}
-					else if (Action.bDelete && !bDeleteLocked)
+					if (Action.bDelete && !bDeleteLocked)
 					{
 						UParticleModule* RemovedModule = Modules[ModuleIndex];
 						Modules.erase(Modules.begin() + ModuleIndex);
@@ -1660,12 +1838,31 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 						RestartPreviewSimulation();
 						bModuleListMutated = true;
 					}
+					else if (Action.bRefresh)
+					{
+						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex);
+						RestartPreviewSimulation();
+					}
 
 					if (bModuleListMutated)
 					{
 						break;
 					}
 				}
+
+				ImGui::InvisibleButton("##ModuleDropTail", ImVec2(ImGui::GetContentRegionAvail().x, (std::max)(ModuleDropTargetHeight, ImGui::GetContentRegionAvail().y)));
+				AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, static_cast<int32>(Modules.size()), static_cast<int32>(Modules.size()));
+				MoveDroppedModule(DropRequest);
+			}
+
+			if (LODLevel && ImGui::IsWindowHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !bModuleContextMenuOpen)
+			{
+				ImGui::OpenPopup("##ParticleEmitterContextMenu");
+			}
+			if (LODLevel && ImGui::BeginPopup("##ParticleEmitterContextMenu"))
+			{
+				RenderAddModuleMenu();
+				ImGui::EndPopup();
 			}
 		}
 
