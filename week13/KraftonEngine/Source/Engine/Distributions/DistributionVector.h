@@ -1,0 +1,89 @@
+﻿#pragma once
+#include "Distributions.h"
+#include "Distribution.h"
+#include "Object/Reflection/ObjectMacros.h"
+#include "Core/Types/EngineTypes.h"
+
+#include "Source/Engine/Distributions/DistributionVector.generated.h"
+
+UCLASS(abstract)
+class UDistributionVector : public UDistribution
+{
+public:
+	GENERATED_BODY()
+
+	virtual FVector GetValue(float Time = 0.f, UObject* Data = NULL, struct FRandomStream* InRandomStream = NULL) const { return FVector::ZeroVector; }
+
+	virtual void GetRange(FVector& OutMin, FVector& OutMax) const override { OutMin = OutMax = FVector::ZeroVector; }
+};
+
+UCLASS()
+class UDistributionVectorConstant : public UDistributionVector
+{
+public:
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "DistributionVectorConstant")
+	FVector Constant;
+
+	virtual FVector GetValue(float Time = 0.f, UObject* Data = NULL, struct FRandomStream* InRandomStream = NULL) const override { return Constant; }
+	virtual void GetRange(FVector& OutMin, FVector& OutMax) const override { OutMin = OutMax = Constant; }
+
+	UDistributionVectorConstant() : Constant(FVector::ZeroVector) {}
+};
+
+UCLASS()
+class UDistributionVectorUniform : public UDistributionVector
+{
+public:
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "DistributionVectorUniform")
+	FVector Min;
+
+	UPROPERTY(EditAnywhere, Category = "DistributionVectorUniform")
+	FVector Max;
+
+	UPROPERTY(EditAnywhere, Category = "DistributionVectorUniform")
+	bool bLockAxes = false;
+
+	virtual FVector GetValue(float Time = 0.f, UObject* Data = NULL, struct FRandomStream* InRandomStream = NULL) const override;
+	virtual void GetRange(FVector& OutMin, FVector& OutMax) const override { OutMin = Min; OutMax = Max; }
+
+	UDistributionVectorUniform() : Min(FVector::ZeroVector), Max(FVector::ZeroVector) {}
+};
+
+USTRUCT()
+struct FRawDistributionVector : public FRawDistribution
+{
+	GENERATED_BODY()
+private:
+	UPROPERTY()
+	float MinValue;
+
+	UPROPERTY()
+	float MaxValue;
+
+	UPROPERTY()
+	FVector MinValueVec;
+
+	UPROPERTY()
+	FVector MaxValueVec;
+
+public:
+	UPROPERTY(EditAnywhere, Category = "RawDistributionVector")
+	UDistributionVector* Distribution;
+
+	/** Whether the distribution data has been cooked or the object itself is available */
+	bool IsCreated() const { return Distribution != nullptr; }
+
+	FVector GetValue(float Time = 0.0f, UObject* Data = nullptr, struct FRandomStream* InRandomStream = nullptr) const;
+
+	FRawDistributionVector()
+		: MinValue(0)
+		, MaxValue(0)
+		, MinValueVec(FVector::ZeroVector)
+		, MaxValueVec(FVector::ZeroVector)
+		, Distribution(NULL)
+	{}
+};
