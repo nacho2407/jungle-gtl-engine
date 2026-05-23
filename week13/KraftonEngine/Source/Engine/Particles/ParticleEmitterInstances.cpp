@@ -358,6 +358,10 @@ void FParticleEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 	if (bEnabled)
 	{
 		KillParticles();
+
+		if (bUseParticlePrefetch)
+			ParticlePrefetch();
+
 		ResetParticleParameters(DeltaTime);
 
 		LODLevel->RequiredModule->ResolveMaterialFromSlot();
@@ -370,6 +374,9 @@ void FParticleEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 
 		if (ActiveParticles > 0)
 		{
+			if (bUseParticlePrefetch)
+				ParticlePrefetch();
+
 			UpdateOrbitData(DeltaTime);
 			UpdateBoundingBox(DeltaTime);
 		}
@@ -1327,8 +1334,17 @@ void FParticleEmitterInstance::UpdateOrbitData(float DeltaTime)
 
 void FParticleEmitterInstance::ParticlePrefetch()
 {
-	// UE uses platform particle prefetch macros here. KraftonEngine has no equivalent
-	// platform abstraction yet, so this intentionally remains a no-op.
+	for (int32 ParticleIndex = 0; ParticleIndex < ActiveParticles; ParticleIndex++)
+	{
+		const std::uintptr_t Address =
+			reinterpret_cast<std::uintptr_t>(this->ParticleData) +
+			static_cast<std::uintptr_t>(this->ParticleStride) *
+			static_cast<std::uintptr_t>(this->ParticleIndices[ParticleIndex]);
+
+		_mm_prefetch(
+			reinterpret_cast<const char*>(Address),
+			_MM_HINT_T0);
+	}
 }
 
 void FParticleEmitterInstance::CheckSpawnCount(int32 InNewCount, int32 InMaxCount)
@@ -2065,15 +2081,15 @@ bool FParticleSpriteEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBas
 	FDynamicSpriteEmitterReplayDataBase& SpriteData =
 		static_cast<FDynamicSpriteEmitterReplayDataBase&>(OutData);
 
-	SpriteData.Material                  = GetCurrentMaterial();
-	SpriteData.SubUVDataOffset            = SubUVDataOffset;
+	SpriteData.Material = GetCurrentMaterial();
+	SpriteData.SubUVDataOffset = SubUVDataOffset;
 	SpriteData.DynamicParameterDataOffset = DynamicParameterDataOffset;
-	SpriteData.LightDataOffset            = LightDataOffset;
-	SpriteData.OrbitModuleOffset          = OrbitModuleOffset;
-	SpriteData.CameraPayloadOffset        = CameraPayloadOffset;
-	SpriteData.bLockAxis                  = bAxisLockEnabled;
-	SpriteData.PivotOffset                = PivotOffset;
-	SpriteData.bUseLocalSpace             = GetCurrentLODLevelChecked()->RequiredModule->bUseLocalSpace;
+	SpriteData.LightDataOffset = LightDataOffset;
+	SpriteData.OrbitModuleOffset = OrbitModuleOffset;
+	SpriteData.CameraPayloadOffset = CameraPayloadOffset;
+	SpriteData.bLockAxis = bAxisLockEnabled;
+	SpriteData.PivotOffset = PivotOffset;
+	SpriteData.bUseLocalSpace = GetCurrentLODLevelChecked()->RequiredModule->bUseLocalSpace;
 
 	return true;
 }
@@ -2266,16 +2282,16 @@ bool FParticleMeshEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase&
 	FDynamicMeshEmitterReplayData& MeshData =
 		static_cast<FDynamicMeshEmitterReplayData&>(OutData);
 
-	MeshData.Material                  = GetCurrentMaterial();
-	MeshData.MeshRotationOffset        = MeshRotationOffset;
-	MeshData.MeshMotionBlurOffset      = MeshMotionBlurOffset;
-	MeshData.bEnableMotionBlur         = bMotionBlurEnabled;
-	MeshData.SubUVDataOffset            = SubUVDataOffset;
+	MeshData.Material = GetCurrentMaterial();
+	MeshData.MeshRotationOffset = MeshRotationOffset;
+	MeshData.MeshMotionBlurOffset = MeshMotionBlurOffset;
+	MeshData.bEnableMotionBlur = bMotionBlurEnabled;
+	MeshData.SubUVDataOffset = SubUVDataOffset;
 	MeshData.DynamicParameterDataOffset = DynamicParameterDataOffset;
-	MeshData.LightDataOffset            = LightDataOffset;
-	MeshData.OrbitModuleOffset          = OrbitModuleOffset;
-	MeshData.CameraPayloadOffset        = CameraPayloadOffset;
-	MeshData.bUseLocalSpace             = GetCurrentLODLevelChecked()->RequiredModule->bUseLocalSpace;
+	MeshData.LightDataOffset = LightDataOffset;
+	MeshData.OrbitModuleOffset = OrbitModuleOffset;
+	MeshData.CameraPayloadOffset = CameraPayloadOffset;
+	MeshData.bUseLocalSpace = GetCurrentLODLevelChecked()->RequiredModule->bUseLocalSpace;
 
 	return true;
 }

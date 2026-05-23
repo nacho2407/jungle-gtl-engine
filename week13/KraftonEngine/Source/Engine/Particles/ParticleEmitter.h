@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "Object/FName.h"
@@ -7,8 +7,6 @@
 #include "Math/Vector.h"
 #include "Particles/ParticleHelper.h"
 #include "Particles/ParticleLODLevel.h"
-
-#include "Source/Engine/Particles/ParticleEmitter.generated.h"
 
 class FArchive;
 class UParticleModule;
@@ -32,6 +30,8 @@ class UParticleModuleVelocity;
 //	PSUVIM_Random,
 //	PSUVIM_Random_Blend
 //};
+
+#include "Source/Engine/Particles/ParticleEmitter.generated.h"
 
 USTRUCT()
 struct FParticleBurst

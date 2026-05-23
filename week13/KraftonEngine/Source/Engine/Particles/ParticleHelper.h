@@ -206,3 +206,4 @@ struct FParticleDataContainer
 #define PARTICLE_ELEMENT(Type, Name)                                          \
     Type& Name = *((Type*)((uint8*)ParticleBase + CurrentOffset));																\
 	CurrentOffset += sizeof(Type);
+
