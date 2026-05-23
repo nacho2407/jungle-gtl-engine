@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstring>
 #include <imgui.h>
+#include <utility>
 
 namespace
 {
@@ -23,6 +24,14 @@ namespace
 	constexpr float ModuleRowHeight = 24.0f;
 	constexpr int32 NoModuleIndex = -1;
 	constexpr int32 TypeDataModuleIndex = -2;
+
+	struct FModuleRowAction
+	{
+		bool bSelect = false;
+		bool bMoveUp = false;
+		bool bMoveDown = false;
+		bool bDelete = false;
+	};
 
 	void DrawPanelHeader(const char* Label)
 	{
@@ -50,6 +59,51 @@ namespace
 	{
 		DrawModuleRow(Label, bSelected, AccentColor);
 		return ImGui::InvisibleButton("##ModuleRow", ImVec2(ImGui::GetContentRegionAvail().x, ModuleRowHeight));
+	}
+
+	bool IsModuleDeleteLocked(const UParticleModule* Module)
+	{
+		return Cast<UParticleModuleRequired>(Module) || Cast<UParticleModuleSpawn>(Module);
+	}
+
+	FModuleRowAction EditableModuleRow(const char* Label, bool bSelected, ImU32 AccentColor, bool bCanMoveUp, bool bCanMoveDown, bool bCanDelete)
+	{
+		FModuleRowAction Action;
+
+		const ImVec2 Pos = ImGui::GetCursorScreenPos();
+		const float Width = ImGui::GetContentRegionAvail().x;
+		const float ButtonWidth = 25.0f;
+		const float ButtonGap = 2.0f;
+		const float ControlsWidth = ButtonWidth * 3.0f + ButtonGap * 2.0f + 4.0f;
+		const float SelectWidth = (std::max)(1.0f, Width - ControlsWidth);
+
+		DrawModuleRow(Label, bSelected, AccentColor);
+		ImGui::SetCursorScreenPos(Pos);
+		Action.bSelect = ImGui::InvisibleButton("##SelectModuleRow", ImVec2(SelectWidth, ModuleRowHeight));
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
+		ImGui::SetCursorScreenPos(ImVec2(Pos.x + Width - ControlsWidth, Pos.y + 2.0f));
+		ImGui::BeginDisabled(!bCanMoveUp);
+		Action.bMoveUp = ImGui::SmallButton("Up");
+		ImGui::EndDisabled();
+
+		ImGui::SameLine(0.0f, ButtonGap);
+		ImGui::BeginDisabled(!bCanMoveDown);
+		Action.bMoveDown = ImGui::SmallButton("Dn");
+		ImGui::EndDisabled();
+
+		ImGui::SameLine(0.0f, ButtonGap);
+		ImGui::BeginDisabled(!bCanDelete);
+		Action.bDelete = ImGui::SmallButton("Del");
+		if (!bCanDelete && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		{
+			ImGui::SetTooltip("Required and Spawn modules cannot be deleted.");
+		}
+		ImGui::EndDisabled();
+		ImGui::PopStyleVar();
+
+		ImGui::SetCursorScreenPos(ImVec2(Pos.x, Pos.y + ModuleRowHeight));
+		return Action;
 	}
 
 	void DrawDetailRow(const char* Label, const char* Value)
@@ -789,7 +843,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 	{
 		UParticleEmitter* Emitter = Emitters[EmitterIndex];
 		const int32 DisplayLODIndex = GetDisplayLODIndex(Emitter);
-		const UParticleLODLevel* LODLevel = Emitter ? Emitter->GetLODLevel(DisplayLODIndex) : nullptr;
+		UParticleLODLevel* LODLevel = Emitter ? Emitter->GetLODLevel(DisplayLODIndex) : nullptr;
 		const EParticleRenderType RenderType = GetLODRenderType(LODLevel);
 		ImGui::PushID(EmitterIndex);
 		ImGui::BeginChild("##EmitterColumn", ImVec2(EmitterColumnWidth, 0.0f), true);
@@ -849,6 +903,53 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 			if (LODLevel)
 			{
+				if (ImGui::SmallButton("+ Module"))
+				{
+					ImGui::OpenPopup("##AddParticleModulePopup");
+				}
+				if (ImGui::BeginPopup("##AddParticleModulePopup"))
+				{
+					auto AddModule = [&](UParticleModule* NewModule)
+					{
+						if (!NewModule)
+						{
+							return;
+						}
+						TArray<UParticleModule*>& MutableModules = LODLevel->GetMutableModules();
+						MutableModules.push_back(NewModule);
+						SelectModule(EmitterIndex, DisplayLODIndex, static_cast<int32>(MutableModules.size()) - 1);
+						MarkDirty();
+					};
+
+					if (ImGui::MenuItem("Lifetime"))
+					{
+						AddModule(UObjectManager::Get().CreateObject<UParticleModuleLifetime>());
+					}
+					if (ImGui::MenuItem("Initial Location"))
+					{
+						AddModule(UObjectManager::Get().CreateObject<UParticleModuleLocation>());
+					}
+					if (ImGui::MenuItem("Initial Velocity"))
+					{
+						AddModule(UObjectManager::Get().CreateObject<UParticleModuleVelocity>());
+					}
+					if (ImGui::MenuItem("Initial Color"))
+					{
+						AddModule(UObjectManager::Get().CreateObject<UParticleModuleColor>());
+					}
+					if (ImGui::MenuItem("Initial Size"))
+					{
+						AddModule(UObjectManager::Get().CreateObject<UParticleModuleSize>());
+					}
+					ImGui::Separator();
+					ImGui::BeginDisabled();
+					ImGui::MenuItem("Required", nullptr, false, false);
+					ImGui::MenuItem("Spawn", nullptr, false, false);
+					ImGui::EndDisabled();
+					ImGui::EndPopup();
+				}
+				ImGui::Dummy(ImVec2(0.0f, 3.0f));
+
 				const UParticleModuleTypeDataBase* TypeDataModule = LODLevel->GetTypeDataModule();
 				if (TypeDataModule)
 				{
@@ -860,16 +961,62 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 					ImGui::PopID();
 				}
 
-				const TArray<UParticleModule*>& Modules = LODLevel->GetModules();
+				TArray<UParticleModule*>& Modules = LODLevel->GetMutableModules();
+				bool bModuleListMutated = false;
 				for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
 				{
-					const UParticleModule* Module = Modules[ModuleIndex];
+					UParticleModule* Module = Modules[ModuleIndex];
+					const bool bDeleteLocked = IsModuleDeleteLocked(Module);
 					ImGui::PushID(ModuleIndex);
-					if (SelectableModuleRow(GetModuleDisplayName(Module), IsModuleSelected(EmitterIndex, DisplayLODIndex, ModuleIndex), GetModuleAccentColor(Module)))
+					const FModuleRowAction Action = EditableModuleRow(
+						GetModuleDisplayName(Module),
+						IsModuleSelected(EmitterIndex, DisplayLODIndex, ModuleIndex),
+						GetModuleAccentColor(Module),
+						ModuleIndex > 0,
+						ModuleIndex + 1 < static_cast<int32>(Modules.size()),
+						!bDeleteLocked);
+					if (Action.bSelect)
 					{
 						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex);
 					}
 					ImGui::PopID();
+
+					if (Action.bMoveUp && ModuleIndex > 0)
+					{
+						std::swap(Modules[ModuleIndex], Modules[ModuleIndex - 1]);
+						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex - 1);
+						MarkDirty();
+						bModuleListMutated = true;
+					}
+					else if (Action.bMoveDown && ModuleIndex + 1 < static_cast<int32>(Modules.size()))
+					{
+						std::swap(Modules[ModuleIndex], Modules[ModuleIndex + 1]);
+						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex + 1);
+						MarkDirty();
+						bModuleListMutated = true;
+					}
+					else if (Action.bDelete && !bDeleteLocked)
+					{
+						UParticleModule* RemovedModule = Modules[ModuleIndex];
+						Modules.erase(Modules.begin() + ModuleIndex);
+						UObjectManager::Get().DestroyObject(RemovedModule);
+						if (Modules.empty())
+						{
+							SelectLOD(EmitterIndex, DisplayLODIndex);
+						}
+						else
+						{
+							const int32 NewModuleIndex = (std::min)(ModuleIndex, static_cast<int32>(Modules.size()) - 1);
+							SelectModule(EmitterIndex, DisplayLODIndex, NewModuleIndex);
+						}
+						MarkDirty();
+						bModuleListMutated = true;
+					}
+
+					if (bModuleListMutated)
+					{
+						break;
+					}
 				}
 			}
 		}
