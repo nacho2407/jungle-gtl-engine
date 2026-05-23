@@ -32,7 +32,7 @@ FRenderTarget FRenderTargetFactory::CreateSelectionMask(ID3D11Device* Device, ui
         .Build(Device);
 }
 
-FRenderTarget FRenderTargetFactory::CreateSceneLight(ID3D11Device* Device, uint32 InWidth, uint32 InHeight)
+FRenderTarget FRenderTargetFactory::CreateSceneViewMode(ID3D11Device* Device, uint32 InWidth, uint32 InHeight)
 {
     return FRenderTargetBuilder()
         .SetSize(InWidth, InHeight)

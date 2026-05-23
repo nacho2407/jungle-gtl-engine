@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 namespace FShaderPaths
 {
@@ -22,7 +22,7 @@ namespace FShaderPaths
 	inline constexpr const char* VSMShadow = "Shaders/Shadow/VSMShadow.hlsl";
 	inline constexpr const char* VSMBlurCompute = "Shaders/Shadow/VSMBlurComputeShader.hlsl";
 
-	inline constexpr const char* PostProcessLight = "Shaders/PostProcess/LightPass.hlsl";
+	inline constexpr const char* PostProcessViewModeResolve = "Shaders/PostProcess/ViewModeResolve.hlsl";
 	inline constexpr const char* PostProcessFog = "Shaders/PostProcess/FogPass.hlsl";
 	inline constexpr const char* PostProcessSandervistan = "Shaders/PostProcess/SandervistanPass.hlsl";
 	inline constexpr const char* PostProcessFXAA = "Shaders/PostProcess/FXAAPass.hlsl";

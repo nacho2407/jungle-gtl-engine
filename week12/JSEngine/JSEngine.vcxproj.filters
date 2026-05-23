@@ -930,7 +930,7 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightRenderPass.cpp">
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeResolvePass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.cpp">
@@ -2035,7 +2035,7 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightRenderPass.h">
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeResolvePass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h">
@@ -2425,7 +2425,7 @@
     <None Include="Shaders\PostProcess\FogPass.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </None>
-    <None Include="Shaders\PostProcess\LightPass.hlsl">
+    <None Include="Shaders\PostProcess\ViewModeResolve.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </None>
     <None Include="Shaders\PostProcess\Outline.hlsl">

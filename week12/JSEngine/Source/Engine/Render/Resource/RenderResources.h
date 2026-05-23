@@ -16,7 +16,7 @@ struct FRenderResources
 	FConstantBuffer BoneMatrixConstantBuffer;       // b5 (GPU Skinning bone matrices)
 	FConstantBuffer EmptyBoneMatrixConstantBuffer;  // b5 fallback (BoneCount = 0)
 	FConstantBuffer BoneWeightHeatmapConstantBuffer; // b6
-    FConstantBuffer LightPassConstantBuffer;        // b7
+    FConstantBuffer ViewModeResolveConstantBuffer;        // b7
     FConstantBuffer FogPassConstantBuffer;          // b9
 	FConstantBuffer FXAAConstantBuffer;             // b10
 	FConstantBuffer VSMConstantBuffer;				// b11

@@ -34,9 +34,9 @@ struct FViewportRenderResource
     TComPtr<ID3D11RenderTargetView> NormalRTV;
     TComPtr<ID3D11ShaderResourceView> NormalSRV;
 
-    TComPtr<ID3D11Texture2D> LightTex;
-    TComPtr<ID3D11RenderTargetView> LightRTV;
-    TComPtr<ID3D11ShaderResourceView> LightSRV;
+    TComPtr<ID3D11Texture2D> ViewModeTex;
+    TComPtr<ID3D11RenderTargetView> ViewModeRTV;
+    TComPtr<ID3D11ShaderResourceView> ViewModeSRV;
 
     TComPtr<ID3D11Texture2D> FogTex;
     TComPtr<ID3D11RenderTargetView> FogRTV;
@@ -91,8 +91,8 @@ struct FViewportRenderResource
         RenderTargetSet.SceneNormalRTV = NormalRTV.Get();
         RenderTargetSet.SceneNormalSRV = NormalSRV.Get();
 
-        RenderTargetSet.SceneLightRTV = LightRTV.Get();
-        RenderTargetSet.SceneLightSRV = LightSRV.Get();
+        RenderTargetSet.SceneViewModeRTV = ViewModeRTV.Get();
+        RenderTargetSet.SceneViewModeSRV = ViewModeSRV.Get();
 
         RenderTargetSet.SceneFogRTV = FogRTV.Get();
         RenderTargetSet.SceneFogSRV = FogSRV.Get();

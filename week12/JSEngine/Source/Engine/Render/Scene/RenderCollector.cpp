@@ -274,21 +274,14 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 	EPrimitiveType PrimType = Primitive->GetPrimitiveType();
 
-	if (PrimType != EPrimitiveType::EPT_Decal)
-	{
-		PrimitiveDrawCommandBuilder.CollectPrimitive(Primitive, ShowFlags, ViewMode, RenderBus, MeshBufferManager);
-		return;
-	}
-
 	switch (PrimType)
 	{
 	case EPrimitiveType::EPT_Decal:
-	{
 		DecalCommandBuilder.CollectDecal(Primitive, ShowFlags, RenderBus, MeshBufferManager, OBBQueryScratch);
 		break;
-	}
 	default:
-		return;
+	    PrimitiveDrawCommandBuilder.CollectPrimitive(Primitive, ShowFlags, ViewMode, RenderBus, MeshBufferManager);
+	    break;
 	}
 }
 

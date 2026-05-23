@@ -818,7 +818,7 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeResolvePass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.cpp" />
@@ -1215,7 +1215,7 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeResolvePass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.h" />
@@ -1347,7 +1347,7 @@
     <None Include="Shaders\Material\UberLit.hlsl" />
     <None Include="Shaders\PostProcess\FXAAPass.hlsl" />
     <None Include="Shaders\PostProcess\FogPass.hlsl" />
-    <None Include="Shaders\PostProcess\LightPass.hlsl" />
+    <None Include="Shaders\PostProcess\ViewModeResolve.hlsl" />
     <None Include="Shaders\PostProcess\Outline.hlsl" />
     <None Include="Shaders\PostProcess\PostProcess.hlsl" />
     <None Include="Shaders\PostProcess\SandervistanPass.hlsl" />

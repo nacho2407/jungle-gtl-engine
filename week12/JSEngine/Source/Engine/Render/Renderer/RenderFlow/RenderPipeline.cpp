@@ -4,7 +4,7 @@
 #include "LightCullingPass.h"
 #include "OpaqueRenderPass.h"
 #include "DecalRenderPass.h"
-#include "LightRenderPass.h"
+#include "ViewModeResolvePass.h"
 #include "FogRenderPass.h"
 #include "FXAARenderPass.h"
 #include "FontRenderPass.h"
@@ -34,7 +34,7 @@ namespace
             "RenderPass.Shadow",
             "RenderPass.VSMConversion",
             "RenderPass.Opaque",
-            "RenderPass.Light",
+            "RenderPass.ViewModeResolve",
             "RenderPass.Fog",
             "RenderPass.Sandervistan",
             "RenderPass.PostProcess",
@@ -68,8 +68,8 @@ bool FRenderPipeline::Initialize()
     OpaqueRenderPass = std::make_shared<FOpaqueRenderPass>();
     OpaqueRenderPass->Initialize();
 
-	LightRenderPass = std::make_shared<FLightRenderPass>();
-    LightRenderPass->Initialize();
+	ViewModeResolvePass = std::make_shared<FViewModeResolvePass>();
+    ViewModeResolvePass->Initialize();
 
 	FogRenderPass = std::make_shared<FFogRenderPass>();
     FogRenderPass->Initialize();
@@ -113,13 +113,13 @@ bool FRenderPipeline::Initialize()
 	PostProcessRenderPass = std::make_shared<FPostProcessRenderPass>();
     PostProcessRenderPass->Initialize();
 
-	LightRenderPass->SetSkipWireframe(true);
+	ViewModeResolvePass->SetSkipWireframe(true);
     FogRenderPass->SetSkipWireframe(true);
     FXAARenderPass->SetSkipWireframe(true);
 
 	/**
 	 * 하나의 Render Pass 가 다음 Rneder Pass 에 넘기는 OutSRV 에 대해선 주의가 필요하다.
-	 * LightRenderPass -> FogRenderPass 로 갈 때 LightSRV 를 넘겨도 되지만
+	 * ViewModeResolvePass -> FogRenderPass 로 갈 때 SceneViewModeSRV 를 넘겨도 되지만
 	 * FXAARenderPass -> FontRenderPass 일 때 FXAASRV 가 아닌 ColorSRV 를 넘겨야 한다.
 	 * ColorSRV 가 최종 결과물 버퍼라고 생각하면 된다.
 	 */
@@ -128,7 +128,7 @@ bool FRenderPipeline::Initialize()
 	RenderPasses.push_back(ShadowPass);
     RenderPasses.push_back(VSMConversionRenderPass); // VSM 추가
 	RenderPasses.push_back(OpaqueRenderPass);
-    RenderPasses.push_back(LightRenderPass);
+    RenderPasses.push_back(ViewModeResolvePass);
 
     RenderPasses.push_back(FogRenderPass);
     RenderPasses.push_back(SandevistanRenderPass);
@@ -193,10 +193,10 @@ void FRenderPipeline::Release()
         OpaqueRenderPass.reset();
 	}
 
-	if (LightRenderPass)
+	if (ViewModeResolvePass)
 	{
-        LightRenderPass->Release();
-        LightRenderPass.reset();
+        ViewModeResolvePass->Release();
+        ViewModeResolvePass.reset();
 	}
 
 	if (FogRenderPass)

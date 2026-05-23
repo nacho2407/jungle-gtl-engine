@@ -18,8 +18,8 @@ struct FRenderTargetSet
     ID3D11ShaderResourceView* SceneColorSRV = nullptr;
     ID3D11RenderTargetView*   SceneNormalRTV = nullptr;
     ID3D11ShaderResourceView*     SceneNormalSRV = nullptr;
-    ID3D11RenderTargetView*     SceneLightRTV = nullptr;
-    ID3D11ShaderResourceView*     SceneLightSRV = nullptr;
+    ID3D11RenderTargetView*     SceneViewModeRTV = nullptr;
+    ID3D11ShaderResourceView*     SceneViewModeSRV = nullptr;
     ID3D11RenderTargetView*       SceneFogRTV = nullptr;
     ID3D11ShaderResourceView* SceneFogSRV = nullptr;
     ID3D11RenderTargetView* SceneSandervistanRTV = nullptr;
