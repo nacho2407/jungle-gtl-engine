@@ -10,6 +10,7 @@
 #include "Mesh/MeshManager.h"
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Particles/Module/ParticleModule.h"
+#include "Particles/Module/ParticleModuleTypeDataBase.h"
 
 FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
@@ -197,7 +198,17 @@ void FParticleSystemSceneProxy::RebuildMeshParticleGeometry()
 			{
 				const uint32 FirstIndex = MeshGeometry.GetIndexCount();
 
-				MeshGeometry.AddMeshParticle(Particle, MeshSection, MeshAsset->Vertices, MeshAsset->Indices);
+				FMeshParticleTransform Transform;
+				Transform.Position = Particle.Position;
+				Transform.Scale = Particle.Size;
+				Transform.RotationEuler = FVector(0, 0, Particle.Rotation);
+
+				if (const FParticleMeshPayload* Payload = MeshInstance->GetParticlePayload<FParticleMeshPayload>(ParticleIndex))
+				{
+					Transform.RotationEuler += Payload->MeshRotation;
+				}
+
+				MeshGeometry.AddMeshParticle(Particle, Transform, MeshSection, MeshAsset->Vertices, MeshAsset->Indices);
 
 				const int32 IndexCount = MeshGeometry.GetIndexCount() - FirstIndex;
 				if (IndexCount == 0) continue;
