@@ -6,6 +6,8 @@
 #include "Particles/ParticleModuleRequired.h"
 #include "Particles/Spawn/ParticleModuleSpawn.h"
 #include "Particles/Velocity/ParticleModuleVelocity.h"
+#include "Particles/Size/ParticleModuleSize.h"
+#include "Particles/Color/ParticleModuleColor.h"
 
 #include <algorithm>
 
@@ -49,9 +51,8 @@ void UParticleLODLevel::UpdateModuleLists()
 			continue;
 		}
 
-		if (Cast<UParticleModuleLifetime>(Module) ||
-			Cast<UParticleModuleLocation>(Module) ||
-			Cast<UParticleModuleVelocity>(Module))
+		if (Cast<UParticleModuleLifetime>(Module) || Cast<UParticleModuleLocation>(Module) || Cast<
+			UParticleModuleVelocity>(Module) || Cast<UParticleModuleSize>(Module) || Cast<UParticleModuleColor>(Module))
 		{
 			SpawnModules.push_back(Module);
 		}

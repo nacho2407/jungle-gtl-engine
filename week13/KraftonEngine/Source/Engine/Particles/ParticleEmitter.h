@@ -59,6 +59,9 @@ public:
 	void CacheEmitterModuleInfo();
 	void Serialize(FArchive& Ar) override;
 
+	void InitializeDefaultSpriteEmitter();
+	bool HasValidLOD0() const;
+	
 	TArray<UParticleLODLevel*>&       GetLODLevels() { return LODLevels; }
 	const TArray<UParticleLODLevel*>& GetLODLevels() const { return LODLevels; }
 

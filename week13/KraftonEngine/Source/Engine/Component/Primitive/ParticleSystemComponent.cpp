@@ -194,6 +194,16 @@ void UParticleSystemComponent::BuildEmitterInstances()
             continue;
         }
 
+        if (!Emitter->HasValidLOD0())
+        {
+            Emitter->InitializeDefaultSpriteEmitter();
+        }
+
+        if (!Emitter->HasValidLOD0())
+        {
+            return;
+        }
+
         Emitter->CacheEmitterModuleInfo();
 
         FParticleEmitterInstance* Instance = nullptr;

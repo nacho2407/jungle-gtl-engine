@@ -1,8 +1,15 @@
 ﻿#include "Particles/ParticleEmitter.h"
 
+#include "ParticleModuleRequired.h"
+#include "Color/ParticleModuleColor.h"
+#include "Lifetime/ParticleModuleLifetime.h"
+#include "Location/ParticleModuleLocation.h"
 #include "Particles/ParticleModule.h"
 #include "Serialization/Archive.h"
 #include "Particles/TypeData/ParticleModuleTypeDataBase.h"
+#include "Size/ParticleModuleSize.h"
+#include "Spawn/ParticleModuleSpawn.h"
+#include "Velocity/ParticleModuleVelocity.h"
 
 UParticleLODLevel* UParticleEmitter::GetLODLevel(int32 LODIndex) const
 {
@@ -153,5 +160,161 @@ void UParticleEmitter::Serialize(FArchive& Ar)
 {
 	int32 Version = 0;
 	Ar << Version;
-	Ar << bEnabled;
+
+	bool bSerializedEnabled         = bEnabled;
+	bool bSerializedUseMeshInstance = bUseMeshInstance;
+
+	Ar << bSerializedEnabled;
+	Ar << bSerializedUseMeshInstance;
+
+	if (Ar.IsLoading())
+	{
+		bUseMeshInstance = bSerializedUseMeshInstance;
+
+		if (!bUseMeshInstance)
+		{
+			InitializeDefaultSpriteEmitter();
+		}
+
+		SetEnabled(bSerializedEnabled);
+	}
+}
+
+void UParticleEmitter::InitializeDefaultSpriteEmitter()
+{
+	if (HasValidLOD0())
+	{
+		CacheEmitterModuleInfo();
+		return;
+	}
+
+	LODLevels.clear();
+
+	bUseMeshInstance = false;
+	bEnabled         = true;
+
+	ParticleSize               = sizeof(FBaseParticle);
+	ReqInstanceBytes           = 0;
+	TypeDataOffset             = 0;
+	TypeDataInstanceOffset     = -1;
+	DynamicParameterDataOffset = 0;
+	LightDataOffset            = 0;
+	CameraPayloadOffset        = 0;
+	OrbitModuleOffset          = 0;
+
+	InitialAllocationCount     = 32;
+	QualityLevelSpawnRateScale = 1.0f;
+	PivotOffset                = FVector::ZeroVector;
+
+	UParticleLODLevel* LOD = UObjectManager::Get().CreateObject<UParticleLODLevel>(this);
+
+	LOD->Level               = 0;
+	LOD->bEnabled            = true;
+	LOD->PeakActiveParticles = 0;
+
+	UParticleModuleRequired* Required = UObjectManager::Get().CreateObject<UParticleModuleRequired>(LOD);
+
+	Required->bEnabled           = true;
+	Required->bSpawnModule       = false;
+	Required->bUpdateModule      = false;
+	Required->bFinalUpdateModule = false;
+
+	Required->EmitterOrigin     = FVector::ZeroVector;
+	Required->EmitterRotation   = FRotator::ZeroRotator;
+	Required->bUseLocalSpace    = false;
+	Required->bKillOnCompleted  = false;
+	Required->bKillOnDeactivate = false;
+
+	Required->EmitterDuration    = 1.0f;
+	Required->EmitterDurationLow = 1.0f;
+	Required->EmitterDelay       = 0.0f;
+	Required->EmitterLoops       = 0;
+
+	Required->ScreenAlignment      = PSA_FacingCameraPosition;
+	Required->SortMode             = PSORTMODE_None;
+	Required->SubImages_Horizontal = 1;
+	Required->SubImages_Vertical   = 1;
+	Required->SpawnRate            = 10.0f;
+
+	LOD->RequiredModule = Required;
+
+	UParticleModuleSpawn* Spawn = UObjectManager::Get().CreateObject<UParticleModuleSpawn>(LOD);
+
+	Spawn->bEnabled           = true;
+	Spawn->bSpawnModule       = true;
+	Spawn->bUpdateModule      = false;
+	Spawn->bFinalUpdateModule = false;
+
+	Spawn->SpawnRate      = 20.0f;
+	Spawn->SpawnRateScale = 1.0f;
+	Spawn->BurstScale     = 1.0f;
+
+	LOD->SpawnModule = Spawn;
+
+	UParticleModuleLifetime* Lifetime = UObjectManager::Get().CreateObject<UParticleModuleLifetime>(LOD);
+
+	Lifetime->bEnabled           = true;
+	Lifetime->bSpawnModule       = true;
+	Lifetime->bUpdateModule      = false;
+	Lifetime->bFinalUpdateModule = false;
+
+	Lifetime->LifetimeMin = 1.0f;
+	Lifetime->LifetimeMax = 1.0f;
+
+	LOD->Modules.push_back(Lifetime);
+
+	UParticleModuleLocation* Location = UObjectManager::Get().CreateObject<UParticleModuleLocation>(LOD);
+
+	Location->bEnabled           = true;
+	Location->bSpawnModule       = true;
+	Location->bUpdateModule      = true;
+	Location->bFinalUpdateModule = false;
+	Location->StartLocation      = FVector::ZeroVector;
+
+	LOD->Modules.push_back(Location);
+
+	UParticleModuleVelocity* Velocity = UObjectManager::Get().CreateObject<UParticleModuleVelocity>(LOD);
+
+	Velocity->bEnabled           = true;
+	Velocity->bSpawnModule       = true;
+	Velocity->bUpdateModule      = true;
+	Velocity->bFinalUpdateModule = false;
+	Velocity->MinVelocity        = FVector(0.0f, 0.f, 20.0f);
+	Velocity->MaxVelocity        = FVector(0.0f, 0.f, 80.0f);
+
+	LOD->Modules.push_back(Velocity);
+
+	UParticleModuleSize* Size = UObjectManager::Get().CreateObject<UParticleModuleSize>(LOD);
+
+	Size->bEnabled           = true;
+	Size->bSpawnModule       = true;
+	Size->bUpdateModule      = true;
+	Size->bFinalUpdateModule = false;
+	Size->StartSize          = FVector(1.0f, 1.0f, 1.0f);
+
+	LOD->Modules.push_back(Size);
+
+	UParticleModuleColor* Color = UObjectManager::Get().CreateObject<UParticleModuleColor>(LOD);
+
+	Color->bEnabled           = true;
+	Color->bSpawnModule       = true;
+	Color->bUpdateModule      = true;
+	Color->bFinalUpdateModule = false;
+	Color->StartColor         = FColor::White();
+	Color->StartAlpha         = 1.0f;
+	Color->bClampAlpha        = true;
+
+	LOD->Modules.push_back(Color);
+
+	LOD->UpdateModuleLists();
+
+	LODLevels.push_back(LOD);
+
+	CacheEmitterModuleInfo();
+}
+
+bool UParticleEmitter::HasValidLOD0() const
+{
+	UParticleLODLevel* LOD0 = GetLODLevel(0);
+	return LOD0 && LOD0->RequiredModule && LOD0->SpawnModule;
 }
