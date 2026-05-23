@@ -27,10 +27,41 @@ set "ERR_FILE=%CACHE_DIR%\srcsrv_git_error.txt"
 >>"%LOG_FILE%" echo Target=%TARGET%
 
 if not exist "%GIT_EXE%" (
+    >>"%LOG_FILE%" echo Configured GitExe is missing. Trying PATH and default install locations.
+    for /f "delims=" %%G in ('where git.exe 2^>nul') do (
+        if exist "%%G" (
+            set "GIT_EXE=%%G"
+            goto :GitResolved
+        )
+    )
+
+    if exist "%ProgramFiles%\Git\cmd\git.exe" (
+        set "GIT_EXE=%ProgramFiles%\Git\cmd\git.exe"
+        goto :GitResolved
+    )
+
+    if exist "%ProgramFiles%\Git\bin\git.exe" (
+        set "GIT_EXE=%ProgramFiles%\Git\bin\git.exe"
+        goto :GitResolved
+    )
+
+    if exist "%LocalAppData%\Programs\Git\cmd\git.exe" (
+        set "GIT_EXE=%LocalAppData%\Programs\Git\cmd\git.exe"
+        goto :GitResolved
+    )
+
+    if exist "%LocalAppData%\Programs\Git\bin\git.exe" (
+        set "GIT_EXE=%LocalAppData%\Programs\Git\bin\git.exe"
+        goto :GitResolved
+    )
+
     >>"%LOG_FILE%" echo Missing git executable.
-    echo Missing git executable: %GIT_EXE%>"%ERR_FILE%"
+    echo Missing git executable. Tried configured path and default Git for Windows locations.>"%ERR_FILE%"
     exit /b 10
 )
+
+:GitResolved
+>>"%LOG_FILE%" echo ResolvedGitExe=%GIT_EXE%
 
 "%GIT_EXE%" --git-dir="%GIT_REPO%" show "%COMMIT%:%SOURCE_PATH%" > "%TARGET%" 2> "%ERR_FILE%"
 set "EXIT_CODE=%ERRORLEVEL%"
