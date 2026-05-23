@@ -51,6 +51,9 @@ private:
 		bool bPreviewPlaying = true;
 		bool bRestartPreviewRequested = false;
 		float PreviewTime = 0.0f;
+		float MainSplitRatio = 0.52f;
+		float ViewportDetailsSplitRatio = 0.58f;
+		float EmittersCurveSplitRatio = 0.58f;
 	};
 
 	UParticleSystem* GetParticleSystem() const;

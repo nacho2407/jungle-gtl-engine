@@ -27,6 +27,9 @@ namespace
 	constexpr float MinColumnWidth = 360.0f;
 	constexpr float MinViewportHeight = 220.0f;
 	constexpr float MinDetailsHeight = 160.0f;
+	constexpr float MinEmittersHeight = 180.0f;
+	constexpr float MinCurveEditorHeight = 140.0f;
+	constexpr float SplitterThickness = 6.0f;
 	constexpr float ToolbarHeight = 34.0f;
 	constexpr float EmitterColumnWidth = 176.0f;
 	constexpr float EmitterHeaderHeight = 58.0f;
@@ -41,6 +44,62 @@ namespace
 		bool bMoveDown = false;
 		bool bDelete = false;
 	};
+
+	float ClampFloat(float Value, float MinValue, float MaxValue)
+	{
+		return (std::max)(MinValue, (std::min)(Value, MaxValue));
+	}
+
+	float CalculateSplitLeadingSize(float TotalSize, float Ratio, float MinLeadingSize, float MinTrailingSize)
+	{
+		TotalSize = (std::max)(TotalSize, 1.0f);
+		if (TotalSize >= MinLeadingSize + MinTrailingSize)
+		{
+			return ClampFloat(TotalSize * Ratio, MinLeadingSize, TotalSize - MinTrailingSize);
+		}
+
+		if (TotalSize > 2.0f)
+		{
+			return ClampFloat(TotalSize * Ratio, 1.0f, TotalSize - 1.0f);
+		}
+
+		return (std::max)(1.0f, TotalSize * 0.5f);
+	}
+
+	float CalculateSplitRatio(float LeadingSize, float TotalSize, float MinLeadingSize, float MinTrailingSize)
+	{
+		TotalSize = (std::max)(TotalSize, 1.0f);
+		const float ClampedLeadingSize = CalculateSplitLeadingSize(TotalSize, LeadingSize / TotalSize, MinLeadingSize, MinTrailingSize);
+		return ClampedLeadingSize / TotalSize;
+	}
+
+	bool DrawSplitterHandle(const char* Id, const ImVec2& Size, bool bVertical)
+	{
+		ImGui::InvisibleButton(Id, Size);
+		const bool bHovered = ImGui::IsItemHovered();
+		const bool bActive = ImGui::IsItemActive();
+		if (bHovered || bActive)
+		{
+			ImGui::SetMouseCursor(bVertical ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS);
+		}
+
+		const ImVec2 Min = ImGui::GetItemRectMin();
+		const ImVec2 Max = ImGui::GetItemRectMax();
+		const ImU32 Color = ImGui::GetColorU32(bActive ? ImGuiCol_SeparatorActive : (bHovered ? ImGuiCol_SeparatorHovered : ImGuiCol_Separator));
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		if (bVertical)
+		{
+			const float X = (Min.x + Max.x) * 0.5f;
+			DrawList->AddLine(ImVec2(X, Min.y), ImVec2(X, Max.y), Color, 2.0f);
+		}
+		else
+		{
+			const float Y = (Min.y + Max.y) * 0.5f;
+			DrawList->AddLine(ImVec2(Min.x, Y), ImVec2(Max.x, Y), Color, 2.0f);
+		}
+
+		return bActive;
+	}
 
 	void DrawPanelHeader(const char* Label)
 	{
@@ -246,8 +305,10 @@ struct FParticleSystemEditorWidget::FEditorLayoutSizes
 {
 	float LeftWidth = 0.0f;
 	float RightWidth = 0.0f;
-	float TopHeight = 0.0f;
-	float BottomHeight = 0.0f;
+	float ViewportHeight = 0.0f;
+	float DetailsHeight = 0.0f;
+	float EmittersHeight = 0.0f;
+	float CurveEditorHeight = 0.0f;
 };
 
 FParticleSystemEditorWidget::FParticleSystemEditorWidget()
@@ -366,24 +427,49 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
 	RenderToolbar();
 	ImGui::Separator();
 
-	const ImGuiStyle& Style = ImGui::GetStyle();
 	const ImVec2 Available = ImGui::GetContentRegionAvail();
 	const FEditorLayoutSizes Layout = CalculateLayoutSizes(Available);
 
 	ImGui::BeginChild("##ParticleEditorLeftColumn", ImVec2(Layout.LeftWidth, 0.0f), ImGuiChildFlags_None);
-	RenderViewportPanel(ImVec2(0.0f, Layout.TopHeight));
-	ImGui::Dummy(ImVec2(0.0f, Style.ItemSpacing.y));
-	RenderDetailsPanel(ImVec2(0.0f, Layout.BottomHeight));
+	RenderViewportPanel(ImVec2(0.0f, Layout.ViewportHeight));
+	const float LeftSplitTotalHeight = Layout.ViewportHeight + Layout.DetailsHeight;
+	if (DrawSplitterHandle("##ParticleViewportDetailsSplitter", ImVec2(ImGui::GetContentRegionAvail().x, SplitterThickness), false))
+	{
+		ViewState.ViewportDetailsSplitRatio = CalculateSplitRatio(
+			Layout.ViewportHeight + ImGui::GetIO().MouseDelta.y,
+			LeftSplitTotalHeight,
+			MinViewportHeight,
+			MinDetailsHeight);
+	}
+	RenderDetailsPanel(ImVec2(0.0f, Layout.DetailsHeight));
 	ImGui::EndChild();
 
-	ImGui::SameLine();
+	ImGui::SameLine(0.0f, 0.0f);
+	const float MainSplitTotalWidth = Layout.LeftWidth + Layout.RightWidth;
+	if (DrawSplitterHandle("##ParticleEditorMainSplitter", ImVec2(SplitterThickness, ImGui::GetContentRegionAvail().y), true))
+	{
+		ViewState.MainSplitRatio = CalculateSplitRatio(
+			Layout.LeftWidth + ImGui::GetIO().MouseDelta.x,
+			MainSplitTotalWidth,
+			MinColumnWidth,
+			MinColumnWidth);
+	}
 
+	ImGui::SameLine(0.0f, 0.0f);
 	ImGui::BeginChild("##ParticleEditorRightColumn", ImVec2(Layout.RightWidth, 0.0f), ImGuiChildFlags_None);
 	if (ViewState.bShowCurveEditor)
 	{
-		RenderEmittersPanel(ImVec2(0.0f, Layout.TopHeight));
-		ImGui::Dummy(ImVec2(0.0f, Style.ItemSpacing.y));
-		RenderCurveEditorPanel(ImVec2(0.0f, Layout.BottomHeight));
+		RenderEmittersPanel(ImVec2(0.0f, Layout.EmittersHeight));
+		const float RightSplitTotalHeight = Layout.EmittersHeight + Layout.CurveEditorHeight;
+		if (DrawSplitterHandle("##ParticleEmittersCurveSplitter", ImVec2(ImGui::GetContentRegionAvail().x, SplitterThickness), false))
+		{
+			ViewState.EmittersCurveSplitRatio = CalculateSplitRatio(
+				Layout.EmittersHeight + ImGui::GetIO().MouseDelta.y,
+				RightSplitTotalHeight,
+				MinEmittersHeight,
+				MinCurveEditorHeight);
+		}
+		RenderCurveEditorPanel(ImVec2(0.0f, Layout.CurveEditorHeight));
 	}
 	else
 	{
@@ -605,37 +691,31 @@ const UParticleModule* FParticleSystemEditorWidget::GetSelectedModule(const UPar
 FParticleSystemEditorWidget::FEditorLayoutSizes FParticleSystemEditorWidget::CalculateLayoutSizes(const ImVec2& Available) const
 {
 	const ImGuiStyle& Style = ImGui::GetStyle();
-	const float Gap = Style.ItemSpacing.x;
 	const float AvailableWidth = (std::max)(Available.x, 1.0f);
 	const float AvailableHeight = (std::max)(Available.y, 1.0f);
 
 	FEditorLayoutSizes Layout;
-	if (AvailableWidth >= MinColumnWidth * 2.0f + Gap)
+
+	const float HorizontalSplitTotal = (std::max)(1.0f, AvailableWidth - SplitterThickness);
+	Layout.LeftWidth = CalculateSplitLeadingSize(HorizontalSplitTotal, ViewState.MainSplitRatio, MinColumnWidth, MinColumnWidth);
+	Layout.RightWidth = (std::max)(1.0f, HorizontalSplitTotal - Layout.LeftWidth);
+
+	const float VerticalSplitterGap = SplitterThickness + Style.ItemSpacing.y * 2.0f;
+	const float LeftSplitTotalHeight = (std::max)(1.0f, AvailableHeight - VerticalSplitterGap);
+	Layout.ViewportHeight = CalculateSplitLeadingSize(LeftSplitTotalHeight, ViewState.ViewportDetailsSplitRatio, MinViewportHeight, MinDetailsHeight);
+	Layout.DetailsHeight = (std::max)(1.0f, LeftSplitTotalHeight - Layout.ViewportHeight);
+
+	if (ViewState.bShowCurveEditor)
 	{
-		Layout.LeftWidth = AvailableWidth * 0.52f;
-		const float MaxLeftWidth = AvailableWidth - MinColumnWidth - Gap;
-		Layout.LeftWidth = (std::max)(MinColumnWidth, (std::min)(Layout.LeftWidth, MaxLeftWidth));
+		const float RightSplitTotalHeight = (std::max)(1.0f, AvailableHeight - VerticalSplitterGap);
+		Layout.EmittersHeight = CalculateSplitLeadingSize(RightSplitTotalHeight, ViewState.EmittersCurveSplitRatio, MinEmittersHeight, MinCurveEditorHeight);
+		Layout.CurveEditorHeight = (std::max)(1.0f, RightSplitTotalHeight - Layout.EmittersHeight);
 	}
 	else
 	{
-		Layout.LeftWidth = (std::max)(1.0f, (AvailableWidth - Gap) * 0.5f);
+		Layout.EmittersHeight = AvailableHeight;
+		Layout.CurveEditorHeight = 0.0f;
 	}
-
-	Layout.RightWidth = (std::max)(1.0f, AvailableWidth - Layout.LeftWidth - Gap);
-
-	const float VerticalGap = Style.ItemSpacing.y * 2.0f;
-	const float UsableHeight = (std::max)(1.0f, AvailableHeight - VerticalGap);
-	if (UsableHeight >= MinViewportHeight + MinDetailsHeight)
-	{
-		Layout.TopHeight = UsableHeight * 0.58f;
-		const float MaxTopHeight = UsableHeight - MinDetailsHeight;
-		Layout.TopHeight = (std::max)(MinViewportHeight, (std::min)(Layout.TopHeight, MaxTopHeight));
-	}
-	else
-	{
-		Layout.TopHeight = (std::max)(1.0f, UsableHeight * 0.58f);
-	}
-	Layout.BottomHeight = (std::max)(1.0f, UsableHeight - Layout.TopHeight);
 
 	return Layout;
 }
