@@ -4,6 +4,56 @@
 #include "Core/Logging/Notification.h"
 #include <algorithm>
 
+namespace
+{
+	const D3D11_INPUT_ELEMENT_DESC ParticleSpriteInputLayout[] =
+	{
+		{ "TEXCOORD",          0, DXGI_FORMAT_R32G32_FLOAT,       0, 0,                            D3D11_INPUT_PER_VERTEX_DATA,   0 },
+		{ "INSTANCE_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    1, 0,                            D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "INSTANCE_SIZE",     0, DXGI_FORMAT_R32_FLOAT,          1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "INSTANCE_COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "INSTANCE_ROTATION", 0, DXGI_FORMAT_R32_FLOAT,          1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+	};
+
+	const D3D11_INPUT_ELEMENT_DESC ParticleMeshInputLayout[] =
+	{
+		{ "POSITION",           0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,                            D3D11_INPUT_PER_VERTEX_DATA,   0 },
+		{ "NORMAL",             0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA,   0 },
+		{ "COLOR",              0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA,   0 },
+		{ "TEXTCOORD",          0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA,   0 },
+		{ "INSTANCE_TRANSFORM",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0,                            D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "INSTANCE_TRANSFORM",  1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "INSTANCE_TRANSFORM",  2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "INSTANCE_TRANSFORM",  3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "INSTANCE_COLOR",     0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+	};
+
+	const FShaderInputLayoutDesc ParticleSpriteLayoutDesc =
+	{
+		ParticleSpriteInputLayout,
+		static_cast<uint32>(sizeof(ParticleSpriteInputLayout) / sizeof(ParticleSpriteInputLayout[0]))
+	};
+
+	const FShaderInputLayoutDesc ParticleMeshLayoutDesc =
+	{
+		ParticleMeshInputLayout,
+		static_cast<uint32>(sizeof(ParticleMeshInputLayout) / sizeof(ParticleMeshInputLayout[0]))
+	};
+
+	const FShaderInputLayoutDesc* GetExplicitInputLayoutDesc(const FShaderKey& Key)
+	{
+		if (Key.Path == EShaderPath::ParticleSprite)
+		{
+			return &ParticleSpriteLayoutDesc;
+		}
+		if (Key.Path == EShaderPath::ParticleMesh)
+		{
+			return &ParticleMeshLayoutDesc;
+		}
+		return nullptr;
+	}
+}
+
 // ============================================================
 // CopyDefines — D3D_SHADER_MACRO 배열을 소유 가능한 형태로 복사
 // ============================================================
@@ -123,7 +173,8 @@ FShader* FShaderManager::GetOrCreate(const FShaderKey& Key, EShaderErrorMode Err
 	if (Key.DefinesHash == 0)
 	{
 		const D3D_SHADER_MACRO* Defines = nullptr;
-		CacheEntry.Shader->Create(CachedDevice, WidePath.c_str(), Key.VSEntryPoint.c_str(), Key.PSEntryPoint.c_str(), Defines, &CacheEntry.Includes, ErrorMode);
+		CacheEntry.Shader->Create(CachedDevice, WidePath.c_str(), Key.VSEntryPoint.c_str(), Key.PSEntryPoint.c_str(), Defines,
+			&CacheEntry.Includes, ErrorMode, GetExplicitInputLayoutDesc(Key));
 		CacheEntry.StoredDefines = CopyDefines(Defines);
 	}
 	else
@@ -153,7 +204,8 @@ FShader* FShaderManager::PreCompile(const FShaderKey& Key, const D3D_SHADER_MACR
 	FShaderCacheEntry CacheEntry;
 	CacheEntry.Shader = std::make_unique<FShader>();
 	std::wstring WidePath = FPaths::ToWide(Key.Path);
-	CacheEntry.Shader->Create(CachedDevice, WidePath.c_str(), Key.VSEntryPoint.c_str(), Key.PSEntryPoint.c_str(), Defines, &CacheEntry.Includes, ErrorMode);
+	CacheEntry.Shader->Create(CachedDevice, WidePath.c_str(), Key.VSEntryPoint.c_str(), Key.PSEntryPoint.c_str(), Defines,
+		&CacheEntry.Includes, ErrorMode, GetExplicitInputLayoutDesc(Key));
 	CacheEntry.StoredDefines = CopyDefines(Defines);
 
 	auto* RawPtr = CacheEntry.Shader.get();
@@ -308,7 +360,8 @@ void FShaderManager::OnShadersChanged(const TSet<FString>& ChangedFiles)
 		auto NewShader = std::make_unique<FShader>();
 		TArray<FString> NewIncludes;
 		const D3D_SHADER_MACRO* Defines = Entry.StoredDefines.empty() ? nullptr : Entry.StoredDefines.data();
-		NewShader->Create(CachedDevice, WidePath.c_str(), Key.VSEntryPoint.c_str(), Key.PSEntryPoint.c_str(), Defines, &NewIncludes);
+		NewShader->Create(CachedDevice, WidePath.c_str(), Key.VSEntryPoint.c_str(), Key.PSEntryPoint.c_str(), Defines,
+			&NewIncludes, EShaderErrorMode::Notification, GetExplicitInputLayoutDesc(Key));
 
 		if (NewShader->IsValid())
 		{

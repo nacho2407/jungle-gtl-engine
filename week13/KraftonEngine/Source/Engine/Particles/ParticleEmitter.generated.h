@@ -1,0 +1,6 @@
+#pragma once
+#define CURRENT_FILE_ID Source_Engine_Particles_ParticleEmitter_h
+#define Source_Engine_Particles_ParticleEmitter_h_37_GENERATED_BODY
+#define Source_Engine_Particles_ParticleEmitter_h_62_GENERATED_BODY
+#define Source_Engine_Particles_ParticleEmitter_h_107_GENERATED_BODY
+#undef CURRENT_FILE_ID

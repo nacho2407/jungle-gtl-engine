@@ -1,4 +1,4 @@
-#include "DrawCommandList.h"
+﻿#include "DrawCommandList.h"
 
 #include <algorithm>
 #include <cstring>
@@ -80,6 +80,18 @@ void FDrawCommandList::Sort()
 			++Idx;
 	}
 	PassOffsets[(uint32)ERenderPass::MAX] = Total;
+
+	// AlphaBlend 구간만 카메라 거리 내림차순 재정렬 (뒤→앞 블렌딩 보장)
+	const uint32 ABStart = PassOffsets[(uint32)ERenderPass::AlphaBlend];
+	const uint32 ABEnd   = PassOffsets[(uint32)ERenderPass::AlphaBlend + 1];
+	if (ABEnd - ABStart > 1)
+	{
+		std::sort(Commands.begin() + ABStart, Commands.begin() + ABEnd,
+			[](const FDrawCommand& A, const FDrawCommand& B)
+			{
+				return A.SortDepth > B.SortDepth;
+			});
+	}
 }
 
 void FDrawCommandList::GetPassRange(ERenderPass Pass, uint32& OutStart, uint32& OutEnd) const
@@ -279,13 +291,28 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd,
 	Cache.bForceAll = false;
 
 	// --- Draw ---
-	if (Cmd.Buffer.IndexCount > 0)
+	if (Cmd.Buffer.InstanceVB && Cmd.Buffer.InstanceCount > 0)
+	{
+		// 슬롯 1에 인스턴스 VB 바인딩
+		uint32 Offset = 0;
+		Ctx->IASetVertexBuffers(1, 1, &Cmd.Buffer.InstanceVB,
+			&Cmd.Buffer.InstanceStride, &Offset);
+		Ctx->DrawIndexedInstanced(Cmd.Buffer.IndexCount,
+			Cmd.Buffer.InstanceCount, 0, 0, 0);
+	}
+	else if(Cmd.Buffer.IndexCount > 0)
 	{
 		Ctx->DrawIndexed(Cmd.Buffer.IndexCount, Cmd.Buffer.FirstIndex, Cmd.Buffer.BaseVertex);
 	}
 	else if (Cmd.Buffer.VertexCount > 0)
 	{
 		Ctx->Draw(Cmd.Buffer.VertexCount, 0);
+	}
+
+	if (Cmd.Buffer.InstanceVB)
+	{
+		ID3D11Buffer* NullVB = nullptr; uint32 Zero = 0;
+		Ctx->IASetVertexBuffers(1, 1, &NullVB, &Zero, &Zero);
 	}
 
 	FDrawCallStats::Increment();

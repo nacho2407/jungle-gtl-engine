@@ -72,6 +72,7 @@ private:
 	EViewMode CollectViewMode = EViewMode::Lit_Phong;
 	bool bCollectWeightBoneHeatMap = false;
 	int32 CollectWeightBoneHeatMapBoneIndex = -1;
+	FVector CollectCameraPos = FVector(0.0f, 0.0f, 0.0f);
 
 	bool bHasSelectionMaskCommands = false;
 

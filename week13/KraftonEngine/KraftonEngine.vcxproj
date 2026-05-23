@@ -198,7 +198,7 @@
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(ProjectDir)..\Scripts\python\python.exe" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -221,7 +221,7 @@
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(ProjectDir)..\Scripts\python\python.exe" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -250,7 +250,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(ProjectDir)..\Scripts\python\python.exe" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -281,7 +281,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(ProjectDir)..\Scripts\python\python.exe" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">
@@ -304,7 +304,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(ProjectDir)..\Scripts\python\python.exe" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|x64'">
@@ -335,7 +335,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(ProjectDir)..\Scripts\python\python.exe" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
@@ -366,7 +366,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(ProjectDir)..\Scripts\python\python.exe" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
@@ -397,7 +397,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>python "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(ProjectDir)..\Scripts\python\python.exe" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -410,7 +410,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\Slate\SlateApplication.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\AssetFactory.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
-      <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp"/>
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp" />
@@ -424,6 +423,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp" />
@@ -446,10 +446,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\NotificationToast.cpp" />
-    <ClCompile Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.cpp"/>
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\ViewportCameraTransform.cpp" />
     <ClCompile Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\Level\FLevelViewportLayout.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
@@ -500,7 +500,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\Primitive\ParticleSystemComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Camera\CameraComponent.cpp" />
@@ -527,6 +526,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\DecalComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\HeightFogComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\ParticleSystemComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\SkeletalMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\SkinnedMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\StaticMeshComponent.cpp" />
@@ -596,6 +596,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Math\FloatCurve.cpp" />
     <ClCompile Include="Source\Engine\Math\Matrix.cpp" />
     <ClCompile Include="Source\Engine\Math\Quat.cpp" />
+    <ClCompile Include="Source\Engine\Math\RandomStream.cpp" />
     <ClCompile Include="Source\Engine\Math\Rotator.cpp" />
     <ClCompile Include="Source\Engine\Math\Transform.cpp" />
     <ClCompile Include="Source\Engine\Math\Vector.cpp" />
@@ -618,9 +619,23 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Object\FName.cpp" />
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Object\UUIDGenerator.cpp" />
-      <ClCompile Include="Source\Engine\Particle\ParticleEmitter.cpp"/>
-      <ClCompile Include="Source\Engine\Particle\ParticleSystem.cpp"/>
-      <ClCompile Include="Source\Engine\Particle\ParticleSystemManager.cpp"/>
+    <ClCompile Include="Source\Engine\Particles\DynamicEmitterData.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleEmitter.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleEmitterInstances.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleHelper.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleLODLevel.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleMemory.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleModule.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleModuleRequired.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleSystem.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleSystemManager.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Color\ParticleModuleColor.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Location\ParticleModuleLocation.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Size\ParticleModuleSize.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Spawn\ParticleModuleSpawn.cpp" />
+    <ClCompile Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataBase.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.cpp" />
     <ClCompile Include="Source\Engine\Physics\NativePhysicsScene.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXPhysicsScene.cpp" />
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp" />
@@ -631,6 +646,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Profiling\GPUProfiler.cpp" />
     <ClCompile Include="Source\Engine\Profiling\StartupProfiler.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Stats\MemoryStats.cpp" />
+    <ClCompile Include="Source\Engine\Profiling\Stats\ParticleStats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Stats\ShadowStats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Stats\Stats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Time\Timer.cpp" />
@@ -650,7 +666,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\DecalSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\GizmoSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp"/>
+    <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\ShapeSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.cpp" />
@@ -703,8 +719,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Runtime\GameRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
-    <ClCompile Include="Source\Engine\Texture\stb_image_impl.cpp" />
     <ClCompile Include="Source\Engine\Texture\Texture2D.cpp" />
+    <ClCompile Include="Source\Engine\Texture\stb_image_impl.cpp" />
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
     <ClCompile Include="Source\Engine\UI\UserWidget.cpp" />
     <ClCompile Include="Source\Engine\Viewport\GameViewportClient.cpp" />
@@ -745,7 +761,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\Slate\SlateApplication.h" />
     <ClInclude Include="Source\Editor\Subsystem\AssetFactory.h" />
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
-      <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h"/>
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h" />
@@ -760,6 +775,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h" />
@@ -784,12 +800,12 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h" />
     <ClInclude Include="Source\Editor\UI\Util\ImGuiSetting.h" />
     <ClInclude Include="Source\Editor\UI\Util\NotificationToast.h" />
-    <ClInclude Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.h"/>
     <ClInclude Include="Source\Editor\Viewport\EditorPreviewViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportCameraTransform.h" />
     <ClInclude Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\Level\FLevelViewportLayout.h" />
     <ClInclude Include="Source\Editor\Viewport\Level\LevelEditorViewportClient.h" />
@@ -852,7 +868,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Primitive\ParticleSystemComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\Component\ShapeComponent.h" />
     <ClInclude Include="Source\Engine\Component\Camera\CameraComponent.h" />
@@ -879,6 +894,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\DecalComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\HeightFogComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\ParticleSystemComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\SkeletalMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\SkinnedMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\StaticMeshComponent.h" />
@@ -961,6 +977,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Math\MathUtils.h" />
     <ClInclude Include="Source\Engine\Math\Matrix.h" />
     <ClInclude Include="Source\Engine\Math\Quat.h" />
+    <ClInclude Include="Source\Engine\Math\RandomStream.h" />
     <ClInclude Include="Source\Engine\Math\Rotator.h" />
     <ClInclude Include="Source\Engine\Math\Transform.h" />
     <ClInclude Include="Source\Engine\Math\Vector.h" />
@@ -997,9 +1014,33 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Object\Reflection\ObjectMacros.h" />
     <ClInclude Include="Source\Engine\Object\Reflection\UClass.h" />
     <ClInclude Include="Source\Engine\Object\Reflection\UStruct.h" />
-      <ClInclude Include="Source\Engine\Particle\ParticleEmitter.h"/>
-      <ClInclude Include="Source\Engine\Particle\ParticleSystem.h"/>
-      <ClInclude Include="Source\Engine\Particle\ParticleSystemManager.h"/>
+    <ClInclude Include="Source\Engine\Particles\DynamicEmitterData.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleDynamicData.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleEmitter.generated.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleEmitter.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleEmitterInstances.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleHelper.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleLODLevel.generated.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleLODLevel.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleMemory.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleModule.generated.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleModule.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleModuleRequired.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleSystem.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleSystemManager.h" />
+    <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColor.h" />
+    <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColorBase.h" />
+    <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.h" />
+    <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetimeBase.h" />
+    <ClInclude Include="Source\Engine\Particles\Location\ParticleModuleLocation.h" />
+    <ClInclude Include="Source\Engine\Particles\Location\ParticleModuleLocationBase.h" />
+    <ClInclude Include="Source\Engine\Particles\Size\ParticleModuleSize.h" />
+    <ClInclude Include="Source\Engine\Particles\Size\ParticleModuleSizeBase.h" />
+    <ClInclude Include="Source\Engine\Particles\Spawn\ParticleModuleSpawn.h" />
+    <ClInclude Include="Source\Engine\Particles\Spawn\ParticleModuleSpawnBase.h" />
+    <ClInclude Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataBase.h" />
+    <ClInclude Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.h" />
+    <ClInclude Include="Source\Engine\Particles\Velocity\ParticleModuleVelocityBase.h" />
     <ClInclude Include="Source\Engine\Physics\IPhysicsScene.h" />
     <ClInclude Include="Source\Engine\Physics\NativePhysicsScene.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXPhysicsScene.h" />
@@ -1013,6 +1054,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Profiling\GPUProfiler.h" />
     <ClInclude Include="Source\Engine\Profiling\StartupProfiler.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats\MemoryStats.h" />
+    <ClInclude Include="Source\Engine\Profiling\Stats\ParticleStats.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats\ShadowStats.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats\Stats.h" />
     <ClInclude Include="Source\Engine\Profiling\Time\PlatformTime.h" />
@@ -1036,7 +1078,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Render\Proxy\DecalSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\DirtyFlag.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\GizmoSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h"/>
+    <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\ShapeSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.h" />
@@ -1120,6 +1162,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\ObjViewer\ObjViewerPanel.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerRenderPipeline.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerViewportClient.h" />
+    <ClInclude Include="ThirdParty\stb_image.h" />
     <ClInclude Include="ThirdParty\fbx\include\fbxsdk.h" />
     <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fbxsdk_def.h" />
     <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fbxsdk_nsbegin.h" />
@@ -1839,6 +1882,20 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\Particle\Mesh.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Particle\Sprite.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\PostProcess\Blit.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -1975,7 +2032,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <Import Project="packages\NVIDIA.PhysX.4.1.2\build\native\NVIDIA.PhysX.targets" Condition="Exists('packages\NVIDIA.PhysX.4.1.2\build\native\NVIDIA.PhysX.targets')" />
   </ImportGroup>
   <PropertyGroup>
-    <PythonExe Condition="'$(PythonExe)'==''">python</PythonExe>
+    <PythonExe Condition="'$(PythonExe)'==''">$(MSBuildProjectDirectory)\..\Scripts\python\python.exe</PythonExe>
   </PropertyGroup>
   <Target Name="GenerateReflectionHeaders" BeforeTargets="ClCompile">
     <Exec Command="&quot;$(PythonExe)&quot; &quot;$(MSBuildProjectDirectory)\..\Scripts\GenerateHeaders.py&quot; --root &quot;$(MSBuildProjectDirectory)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />

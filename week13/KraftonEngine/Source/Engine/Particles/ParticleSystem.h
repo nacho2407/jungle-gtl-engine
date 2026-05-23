@@ -1,10 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
 
-#include "Source/Engine/Particle/ParticleSystem.generated.h"
+#include "Source/Engine/Particles/ParticleSystem.generated.h"
 
 class FArchive;
 class UParticleEmitter;
@@ -27,6 +27,9 @@ public:
     const TArray<UParticleEmitter*>& GetEmitters() const { return Emitters; }
 
     void Serialize(FArchive& Ar) override;
+
+    UPROPERTY(Edit, Save, Category="LOD", DisplayName="LOD Distances")
+    TArray<float> LODDistances;
 
 private:
     TArray<UParticleEmitter*> Emitters;

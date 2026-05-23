@@ -7,6 +7,7 @@
 #include "Source/Engine/Component/Primitive/ParticleSystemComponent.generated.h"
 
 class UParticleSystem;
+class UMaterial;
 struct FParticleEmitterInstance;
 struct FDynamicEmitterDataBase;
 
@@ -25,6 +26,12 @@ public:
     void InitializeSystem();
     void ResetSystem();
 
+	bool IsGameWorld() const { return true; }
+
+    void       SetMaterial(int32 ElementIndex, UMaterial* InMaterial);
+    UMaterial* GetMaterial(int32 ElementIndex) const;
+    const TArray<UMaterial*>& GetEmitterMaterials() const { return EmitterMaterials; }
+
     FPrimitiveSceneProxy* CreateSceneProxy() override;
     void                  UpdateWorldAABB() const override;
     void                  PostEditProperty(const char* PropertyName) override;
@@ -41,15 +48,20 @@ private:
     void ClearRenderData();
     void BuildEmitterInstances();
     void BuildDynamicData();
+    void ResolveEmitterMaterialsFromSlots();
 
 private:
     UPROPERTY(Edit, Save, Category="Particle", DisplayName="Template", AssetType="UParticleSystem")
     FSoftObjectPtr TemplatePath = "None";
 
+    UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Emitter Materials", AssetType="Material")
+    TArray<FSoftObjectPtr> EmitterMaterialSlots;
+
     TObjectPtr<UParticleSystem> Template = nullptr;
 
     TArray<FParticleEmitterInstance*> EmitterInstances;
     TArray<FDynamicEmitterDataBase*>  EmitterRenderData;
+    TArray<UMaterial*>                EmitterMaterials;
 
     bool bInitialized = false;
 };

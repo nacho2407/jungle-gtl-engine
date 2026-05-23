@@ -123,6 +123,10 @@ static bool ShouldCollectProxyForView(const FPrimitiveSceneProxy* Proxy, const F
 		Proxy->HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh))
 		return false;
 
+	if (!Frame.RenderOptions.ShowFlags.bParticle &&
+		Proxy->HasProxyFlag(EPrimitiveProxyFlags::Particle))
+		return false;
+
 	return true;
 }
 

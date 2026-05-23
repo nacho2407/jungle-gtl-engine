@@ -30,8 +30,8 @@
 #include <filesystem>
 #include <utility>
 
-#include "Particle/ParticleSystem.h"
-#include "Particle/ParticleSystemManager.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemManager.h"
 
 static FString FormatBytes(uint64 Bytes)
 {

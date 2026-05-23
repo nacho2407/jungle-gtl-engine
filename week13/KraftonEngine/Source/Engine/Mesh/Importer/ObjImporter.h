@@ -34,9 +34,10 @@ struct FObjMaterialInfo
 
 	FVector Ka; // ambient color
 	FVector Ks; // specular color
-	float Ns; // specular exponent
-	float Ni; // optical density
-	int32 illum; // illumination model
+	float Ns    = 0.0f; // specular exponent
+	float Ni    = 1.0f; // optical density
+	float Dissolve = 1.0f; // opacity (d / 1-Tr)
+	int32 illum = 2;   // illumination model
 };
 
 

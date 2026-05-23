@@ -10,6 +10,7 @@
 #include "Render/Proxy/ShapeSceneProxy.h"
 #include "Render/Proxy/BoneDebugSceneProxy.h"
 #include "Render/Proxy/SkeletalMeshSceneProxy.h"
+#include "Render/Proxy/ParticleSystemSceneProxy.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/RenderConstants.h"
 #include "Render/RenderPass/PassRenderStateTable.h"
@@ -87,6 +88,7 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 	CollectWeightBoneHeatMapBoneIndex = Frame.RenderOptions.WeightBoneHeatMapBoneIndex;
 
 	bHasSelectionMaskCommands = false;
+	CollectCameraPos = Frame.CameraPosition;
 
 	// 동적 지오메트리 초기화
 	EditorLines.Clear();
@@ -196,6 +198,13 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 		if (Section.IndexCount == 0) continue;
 		if (!ProxyBuffer.IB) continue;
 
+		// 현재 Pass와 섹션 Material의 패스가 다르면 스킵
+		ERenderPass SectionPass = Section.Material
+			? Section.Material->GetRenderPass() : ERenderPass::Opaque;
+		const bool bSectionIsTranslucent = (SectionPass == ERenderPass::AlphaBlend);
+		if ((Pass == ERenderPass::PreDepth || Pass == ERenderPass::Opaque) && bSectionIsTranslucent) continue;
+		if (Pass == ERenderPass::AlphaBlend && !bSectionIsTranslucent) continue;
+
 		// Section Material이 셰이더를 가지면 사용, 없으면 Proxy 폴백
 		FShader* SectionShader = (Section.Material && Section.Material->GetShader())
 			? Section.Material->GetShader()
@@ -235,6 +244,12 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 			// 섹션별 Material의 RenderPass가 현재 Pass와 일치할 때만 렌더 상태 오버라이드
 			if (Pass == Mat->GetRenderPass())
 				ApplyMaterialRenderState(Cmd.RenderState, Mat, BaseRenderState);
+		}
+
+		if (Pass == ERenderPass::AlphaBlend)
+		{
+			FVector Center = Proxy.GetCachedBounds().GetCenter();
+			Cmd.SortDepth = (Center - CollectCameraPos).Length();
 		}
 
 		Cmd.BuildSortKey();
@@ -382,6 +397,12 @@ void FDrawCommandBuilder::BuildProxyCommands(const FFrameContext& Frame, FScene&
 			if (!TextProxy->CachedText.empty())
 				AddWorldText(TextProxy, Frame);
 		}
+		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::Particle))
+		{
+			FParticleSystemSceneProxy* ParticleProxy =
+				static_cast<FParticleSystemSceneProxy*>(Proxy);
+			ParticleProxy->BuildParticleCommands(CachedDevice, CachedContext, Frame, DrawCommandList);
+		}
 		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::Decal))
 			BuildDecalCommands(Scene, Proxy, Frame, Output);
 		else
@@ -415,13 +436,26 @@ void FDrawCommandBuilder::BuildDecalCommands(FScene& Scene, FPrimitiveSceneProxy
 
 // ============================================================
 // BuildMeshCommands — 일반 메시 (PreDepth + 메인 패스)
+// 섹션별 Material RenderPass를 스캔해 불투명/반투명 패스를 분리 발행합니다.
 // ============================================================
 void FDrawCommandBuilder::BuildMeshCommands(FScene& Scene, const FPrimitiveSceneProxy* Proxy)
 {
-	if (Proxy->GetRenderPass() == ERenderPass::Opaque)
-		BuildCommandForProxy(Scene, *Proxy, ERenderPass::PreDepth);
+	bool bHasOpaque = false, bHasTranslucent = false;
+	for (const FMeshSectionDraw& S : Proxy->GetSectionDraws())
+	{
+		if (S.Material && S.Material->GetRenderPass() == ERenderPass::AlphaBlend)
+			bHasTranslucent = true;
+		else
+			bHasOpaque = true;
+	}
 
-	BuildCommandForProxy(Scene, *Proxy, Proxy->GetRenderPass());
+	if (bHasOpaque)
+	{
+		BuildCommandForProxy(Scene, *Proxy, ERenderPass::PreDepth);
+		BuildCommandForProxy(Scene, *Proxy, ERenderPass::Opaque);
+	}
+	if (bHasTranslucent)
+		BuildCommandForProxy(Scene, *Proxy, ERenderPass::AlphaBlend);
 }
 
 // ============================================================

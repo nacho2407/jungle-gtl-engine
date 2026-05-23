@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/RenderStateTypes.h"
@@ -18,6 +18,10 @@ struct FDrawCommandBuffer
 	ID3D11Buffer* VB       = nullptr;
 	uint32        VBStride = 0;
 	ID3D11Buffer* IB       = nullptr;
+
+	ID3D11Buffer* InstanceVB = nullptr;
+	uint32        InstanceStride = 0;
+	uint32        InstanceCount = 0;
 
 	uint32 FirstIndex  = 0;              // 인덱스 시작 오프셋
 	uint32 IndexCount  = 0;              // DrawIndexed 인덱스 수
@@ -72,7 +76,8 @@ struct FDrawCommand
 	FDrawCommandBindings Bindings;                    // PerShaderCB + SRVs (per-material)
 
 	// ===== Sort =====
-	uint64 SortKey = 0;                              // 정렬 키 (Pass → Shader → MeshBuffer → SRV)
+	uint64 SortKey   = 0;                            // 정렬 키 (Pass → Shader → MeshBuffer → SRV)
+	float  SortDepth = 0.0f;                         // 카메라까지 거리 (AlphaBlend 깊이 정렬 전용)
 
 	// ===== Profiling =====
 	bool bIsSkeletal = false;

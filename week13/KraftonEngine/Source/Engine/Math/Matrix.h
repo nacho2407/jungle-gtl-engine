@@ -82,6 +82,8 @@ struct FMatrix {
 
 	// Checks if the matrix is an approximate identity
 	bool IsIdentity() const;
+	bool ContainsNaN() const;
+	void RemoveScaling(float Tolerance = 1.0e-6f);
 
 	static FMatrix MakeTranslationMatrix(const FVector& Location);
 	static FMatrix MakeScaleMatrix(const FVector& Scale);
@@ -103,9 +105,11 @@ struct FMatrix {
 	void Print() const;
 
 	FVector TransformVector(const FVector& vector) const;
+	FVector TransformPosition(const FVector& V) const;
 	FVector TransformPositionWithW(const FVector& V) const;
 
 	FVector GetEuler() const;
+	FVector GetOrigin() const;
 	FVector GetLocation() const;
 	FVector GetScale() const;
 

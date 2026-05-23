@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Math/Vector.h"
+#include "Math/Matrix.h"
 #include "Render/Types/RenderTypes.h"
 #include <cassert>
 
@@ -53,6 +54,26 @@ struct FVertexPNCTBW
 
 	int32 BoneIndices[4] = { -1, -1, -1, -1 };
 	float BoneWeights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+};
+
+struct FParticleQuadVertex
+{
+	FVector2 CornerUV;
+};
+
+struct FParticleSpriteInstance
+{
+	FVector  Position;
+	float    Size;
+	FVector4 Color;
+	float    Rotation;
+	float    Pad[3];
+};
+
+struct FMeshParticleInstanceVertex
+{
+	FMatrix  Transform;
+	FVector4 Color;
 };
 
 template<typename VertexType>

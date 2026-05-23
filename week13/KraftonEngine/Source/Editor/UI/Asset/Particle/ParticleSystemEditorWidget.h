@@ -6,6 +6,7 @@
 
 class UParticleSystem;
 class UParticleSystemComponent;
+class UParticleModule;
 
 class FParticleSystemEditorWidget : public FAssetEditorWidget
 {
@@ -43,6 +44,7 @@ private:
     void RenderEmittersPanel(float Width, float Height);
     void RenderPropertiesPanel(float Width, float Height);
     void RenderCurveEditorPanel(float Width, float Height);
+    void RenderModuleProperties(UParticleModule* Module);
 
     void ResetPreviewComponent();
 

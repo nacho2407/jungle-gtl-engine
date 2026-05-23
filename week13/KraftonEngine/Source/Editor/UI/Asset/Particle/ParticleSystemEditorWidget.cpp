@@ -2,9 +2,21 @@
 
 #include "imgui.h"
 #include "Object/Object.h"
-#include "Particle/ParticleEmitter.h"
-#include "Particle/ParticleSystem.h"
-#include "Particle/ParticleSystemManager.h"
+#include "Particles/ParticleEmitter.h"
+#include "Particles/ParticleLODLevel.h"
+#include "Particles/ParticleModule.h"
+#include "Particles/ParticleModuleRequired.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemManager.h"
+#include "Particles/Color/ParticleModuleColor.h"
+#include "Particles/Lifetime/ParticleModuleLifetime.h"
+#include "Particles/Location/ParticleModuleLocation.h"
+#include "Particles/Size/ParticleModuleSize.h"
+#include "Particles/Spawn/ParticleModuleSpawn.h"
+#include "Particles/TypeData/ParticleModuleTypeDataBase.h"
+#include "Particles/Velocity/ParticleModuleVelocity.h"
+#include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -45,42 +57,54 @@ namespace
         return V < Lo ? Lo : (V > Hi ? Hi : V);
     }
 
-    // ── 모듈 / 커브 정의 ─────────────────────────────────────────────────────
-    // 각 이미터가 노출하는 표준 모듈과, 모듈이 보유하는 커브 트랙.
-    // 데이터 모델에 모듈 클래스가 생기면 이 표를 실제 모듈 목록으로 대체한다.
-    struct FCurveDef
-    {
-        const char* Name;
-        ImU32       Color;
-    };
-
-    struct FModuleDef
+    // ── 모듈 목록 헬퍼 ───────────────────────────────────────────────────────
+    // 이미터의 LOD0가 실제로 보유한 모듈을 표준 순서(Required → Spawn → 나머지 → TypeData)로
+    // 풀어, UI가 정적 표 대신 실제 데이터를 표시·편집하게 한다.
+    struct FEmitterModuleEntry
     {
         const char*      Name;
-        const FCurveDef* Curves;
-        int32            CurveCount;
+        UParticleModule* Module;
     };
 
-    const FCurveDef Curves_Spawn[] = { { "SpawnRate", IM_COL32(120, 200, 255, 255) } };
-    const FCurveDef Curves_Life[]  = { { "Lifetime", IM_COL32(150, 160, 175, 255) } };
-    const FCurveDef Curves_Color[] = { { "ColorOverLife", IM_COL32(235, 110, 110, 255) },
-                                       { "AlphaOverLife", IM_COL32(110, 205, 135, 255) }
-    };
-    const FCurveDef Curves_Size[]   = { { "SizeByLife", IM_COL32(235, 195, 110, 255) } };
-    const FCurveDef Curves_SubImg[] = { { "SubImageIndex", IM_COL32(190, 150, 235, 255) } };
+    const char* GetModuleDisplayName(const UParticleModule* Module)
+    {
+        if (!Module) return "Module";
+        if (Cast<UParticleModuleRequired>(Module)) return "Required";
+        if (Cast<UParticleModuleSpawn>(Module))    return "Spawn";
+        if (Cast<UParticleModuleLifetime>(Module)) return "Lifetime";
+        if (Cast<UParticleModuleLocation>(Module)) return "Location";
+        if (Cast<UParticleModuleVelocity>(Module)) return "Velocity";
+        if (Cast<UParticleModuleSize>(Module))     return "Size";
+        if (Cast<UParticleModuleColor>(Module))    return "Color";
+        return "Module";
+    }
 
-    const FModuleDef EmitterModules[] = { { "Required", nullptr, 0 },
-                                          { "Spawn", Curves_Spawn, 1 },
-                                          { "Lifetime", Curves_Life, 1 },
-                                          { "Initial Size", nullptr, 0 },
-                                          { "Initial Velocity", nullptr, 0 },
-                                          { "Color Over Life", Curves_Color, 2 },
-                                          { "Initial Rotation", nullptr, 0 },
-                                          { "Size By Life", Curves_Size, 1 },
-                                          { "SubImage Index", Curves_SubImg, 1 },
-                                          { "Initial Location", nullptr, 0 },
-    };
-    constexpr int32 EmitterModuleCount = IM_ARRAYSIZE(EmitterModules);
+    void BuildEmitterModuleList(UParticleEmitter* Emitter, TArray<FEmitterModuleEntry>& OutList)
+    {
+        OutList.clear();
+        if (!Emitter) return;
+
+        UParticleLODLevel* LOD0 = Emitter->GetLODLevel(0);
+        if (!LOD0) return;
+
+        if (LOD0->RequiredModule)
+        {
+            OutList.push_back({ "Required", LOD0->RequiredModule });
+        }
+        if (LOD0->SpawnModule)
+        {
+            OutList.push_back({ "Spawn", LOD0->SpawnModule });
+        }
+        for (UParticleModule* Module : LOD0->Modules)
+        {
+            if (!Module) continue;
+            OutList.push_back({ GetModuleDisplayName(Module), Module });
+        }
+        if (LOD0->TypeDataModule)
+        {
+            OutList.push_back({ "TypeData", static_cast<UParticleModule*>(LOD0->TypeDataModule) });
+        }
+    }
 
     // ── 공용 위젯 헬퍼 ───────────────────────────────────────────────────────
 
@@ -450,7 +474,7 @@ void FParticleSystemEditorWidget::AddEmitter()
         return;
     }
 
-    NewEmitter->CacheEmitterModuleInfo();
+    NewEmitter->InitializeDefaultSpriteEmitter();
 
     TArray<UParticleEmitter*>& Emitters = ParticleSystem->GetEmitters();
     Emitters.push_back(NewEmitter);
@@ -689,11 +713,26 @@ void FParticleSystemEditorWidget::RenderStatusBar()
         }
         else
         {
+            UParticleEmitter* StatusEmitter = nullptr;
+            if (ParticleSystem && SelectedEmitterIndex < static_cast<int32>(ParticleSystem->GetEmitters().size()))
+            {
+                StatusEmitter = ParticleSystem->GetEmitters()[SelectedEmitterIndex];
+            }
+
+            TArray<FEmitterModuleEntry> ModuleList;
+            BuildEmitterModuleList(StatusEmitter, ModuleList);
+
+            const char* ModuleName = "?";
+            if (SelectedModuleIndex < static_cast<int32>(ModuleList.size()))
+            {
+                ModuleName = ModuleList[SelectedModuleIndex].Name;
+            }
+
             ImGui::TextColored(
                 PSE::DimTextV,
                 "  |  Selection: Emitter %d > %s",
                 SelectedEmitterIndex,
-                EmitterModules[SelectedModuleIndex].Name
+                ModuleName
             );
         }
     }
@@ -881,27 +920,18 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                     }
                     ImGui::Separator();
 
-                    for (int32 ModuleIndex = 0; ModuleIndex < EmitterModuleCount; ++ModuleIndex)
+                    TArray<FEmitterModuleEntry> ModuleList;
+                    BuildEmitterModuleList(Emitter, ModuleList);
+
+                    for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(ModuleList.size()); ++ModuleIndex)
                     {
                         ImGui::PushID(ModuleIndex);
-                        const FModuleDef& Module    = EmitterModules[ModuleIndex];
-                        const bool        bSelected = bEmitterSelected && (SelectedModuleIndex == ModuleIndex);
+                        const FEmitterModuleEntry& Entry     = ModuleList[ModuleIndex];
+                        const bool                 bSelected = bEmitterSelected && (SelectedModuleIndex == ModuleIndex);
 
-                        if (ImGui::Selectable(Module.Name, bSelected))
+                        if (ImGui::Selectable(Entry.Name, bSelected))
                         {
                             SelectEmitter(EmitterIndex, ModuleIndex);
-                        }
-                        // 커브를 보유한 모듈은 우측에 점 표식을 둔다.
-                        if (Module.CurveCount > 0)
-                        {
-                            ImGui::SameLine();
-                            const ImVec2 Dot = ImGui::GetCursorScreenPos();
-                            ImGui::GetWindowDrawList()->AddCircleFilled(
-                                ImVec2(Dot.x - 8.0f, Dot.y + ImGui::GetTextLineHeight() * 0.5f),
-                                2.5f,
-                                PSE::Accent
-                            );
-                            ImGui::NewLine();
                         }
                         ImGui::PopID();
                     }
@@ -930,13 +960,32 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
 
     // 헤더 Context = 현재 검사 대상 (Emitters 패널 선택과 직접 연동).
     FString Context = "Particle System";
+
+    UParticleEmitter* SelectedEmitter = nullptr;
+    if (ParticleSystem && SelectedEmitterIndex >= 0 &&
+        SelectedEmitterIndex < static_cast<int32>(ParticleSystem->GetEmitters().size()))
+    {
+        SelectedEmitter = ParticleSystem->GetEmitters()[SelectedEmitterIndex];
+    }
+
+    TArray<FEmitterModuleEntry> ModuleList;
+    BuildEmitterModuleList(SelectedEmitter, ModuleList);
+
+    UParticleModule* SelectedModule = nullptr;
+    const char*      SelectedModuleName = nullptr;
+    if (SelectedModuleIndex >= 0 && SelectedModuleIndex < static_cast<int32>(ModuleList.size()))
+    {
+        SelectedModule     = ModuleList[SelectedModuleIndex].Module;
+        SelectedModuleName = ModuleList[SelectedModuleIndex].Name;
+    }
+
     if (SelectedEmitterIndex >= 0)
     {
         Context = "Emitter " + std::to_string(SelectedEmitterIndex);
-        if (SelectedModuleIndex >= 0 && SelectedModuleIndex < EmitterModuleCount)
+        if (SelectedModuleName)
         {
             Context += "  >  ";
-            Context += EmitterModules[SelectedModuleIndex].Name;
+            Context += SelectedModuleName;
         }
     }
 
@@ -1003,50 +1052,186 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
                     RestartPreviewSimulation();
                 }
 
-                int32 LODCount = 0;
-                if (ParticleSystem && SelectedEmitterIndex < static_cast<int32>(ParticleSystem->GetEmitters().size()))
-                {
-                    if (UParticleEmitter* Emitter = ParticleSystem->GetEmitters()[SelectedEmitterIndex])
-                    {
-                        LODCount = static_cast<int32>(Emitter->GetLODLevels().size());
-                    }
-                }
+                int32 LODCount = SelectedEmitter ? static_cast<int32>(SelectedEmitter->GetLODLevels().size()) : 0;
                 KeyValueRow("LOD Levels", std::to_string(LODCount));
+                KeyValueRow("Modules", std::to_string(ModuleList.size()));
 
-                if (SelectedModuleIndex >= 0 && SelectedModuleIndex < EmitterModuleCount)
+                if (SelectedModule)
                 {
-                    const FModuleDef& Module = EmitterModules[SelectedModuleIndex];
-                    KeyValueRow("Module", FString(Module.Name));
-                    KeyValueRow("Curve Tracks", std::to_string(Module.CurveCount));
+                    KeyValueRow("Module", FString(SelectedModuleName));
                 }
             }
 
             ImGui::EndTable();
         }
 
-        // 모듈 상세 프로퍼티는 모듈 클래스가 노출되면 이 영역에 표시된다.
-        if (SelectedModuleIndex >= 0)
-        { 
+        // 선택된 모듈의 실제 UPROPERTY 들을 편집한다.
+        if (SelectedModule)
+        {
             ImGui::Spacing();
-            ImGui::TextColored(PSE::DimTextV,
-                "Module property fields appear here once the module is bound.");
+            ImGui::Separator();
+            ImGui::TextColored(PSE::DimTextV, "%s", SelectedModuleName);
+            ImGui::Spacing();
+            RenderModuleProperties(SelectedModule);
         }
     }
     EndPanel();
 }
 
+// ── 모듈 프로퍼티 편집 ──────────────────────────────────────────────────────
+void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module)
+{
+    if (!Module)
+    {
+        return;
+    }
+
+    bool bChanged = false;
+
+    bool bModuleEnabled = Module->bEnabled != 0;
+    if (ImGui::Checkbox("Enabled##ModuleEnabled", &bModuleEnabled))
+    {
+        Module->bEnabled = bModuleEnabled ? 1 : 0;
+        bChanged         = true;
+    }
+
+    if (UParticleModuleRequired* Required = Cast<UParticleModuleRequired>(Module))
+    {
+        const FString CurrentSlot = Required->MaterialSlot.ToString();
+        const bool    bSlotNone   = (CurrentSlot.empty() || CurrentSlot == "None");
+        const FString Preview     = bSlotNone ? FString("None") : CurrentSlot;
+
+        bool bMaterialPicked = false;
+
+        if (ImGui::BeginCombo("Material", Preview.c_str()))
+        {
+            if (ImGui::Selectable("None", bSlotNone))
+            {
+                Required->MaterialSlot = "None";
+                Required->ResolveMaterialFromSlot();
+                bChanged         = true;
+                bMaterialPicked  = true;
+            }
+            if (bSlotNone)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+
+            const TArray<FMaterialAssetListItem>& MatFiles =
+                FMaterialManager::Get().GetAvailableMaterialFiles();
+            for (const FMaterialAssetListItem& Item : MatFiles)
+            {
+                const bool bSelected = (CurrentSlot == Item.FullPath);
+                if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+                {
+                    // SetMaterial은 MaterialSlot을 머티리얼 JSON 내부의 PathFileName으로 덮어쓰는데,
+                    // 그 값이 실제 파일 경로와 다르면 다음 Tick의 ResolveMaterialFromSlot에서
+                    // 폴백 머티리얼로 떨어진다. 파일 경로를 그대로 슬롯에 저장해 자기참조 일관성을 유지한다.
+                    Required->MaterialSlot = Item.FullPath;
+                    Required->ResolveMaterialFromSlot();
+                    bChanged         = true;
+                    bMaterialPicked  = true;
+                }
+                if (bSelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        if (bMaterialPicked)
+        {
+            // 인스턴스가 Init 시점에 캐싱한 머티리얼/렌더상태를 다시 잡도록 시뮬레이션을 재시작.
+            RestartPreviewSimulation();
+        }
+
+        bChanged |= ImGui::DragFloat("SpawnRate", &Required->SpawnRate, 0.1f, 0.0f, 10000.0f);
+        bChanged |= ImGui::DragFloat("Emitter Duration", &Required->EmitterDuration, 0.05f, 0.0f, 10000.0f);
+        bChanged |= ImGui::DragFloat("Emitter Delay", &Required->EmitterDelay, 0.05f, 0.0f, 10000.0f);
+        bChanged |= ImGui::DragInt("Emitter Loops", &Required->EmitterLoops, 1.0f, 0, 10000);
+        bChanged |= ImGui::DragInt("SubImages H", &Required->SubImages_Horizontal, 1.0f, 1, 64);
+        bChanged |= ImGui::DragInt("SubImages V", &Required->SubImages_Vertical, 1.0f, 1, 64);
+        bChanged |= ImGui::DragFloat3("Emitter Origin", Required->EmitterOrigin.Data, 0.1f);
+    }
+    else if (UParticleModuleSpawn* Spawn = Cast<UParticleModuleSpawn>(Module))
+    {
+        bChanged |= ImGui::DragFloat("SpawnRate", &Spawn->SpawnRate, 0.1f, 0.0f, 10000.0f);
+        bChanged |= ImGui::DragFloat("SpawnRate Scale", &Spawn->SpawnRateScale, 0.01f, 0.0f, 100.0f);
+        bChanged |= ImGui::DragFloat("Burst Scale", &Spawn->BurstScale, 0.01f, 0.0f, 100.0f);
+    }
+    else if (UParticleModuleLifetime* Lifetime = Cast<UParticleModuleLifetime>(Module))
+    {
+        bChanged |= ImGui::DragFloat("Lifetime Min", &Lifetime->LifetimeMin, 0.05f, 0.0f, 10000.0f);
+        bChanged |= ImGui::DragFloat("Lifetime Max", &Lifetime->LifetimeMax, 0.05f, 0.0f, 10000.0f);
+        if (Lifetime->LifetimeMax < Lifetime->LifetimeMin)
+        {
+            Lifetime->LifetimeMax = Lifetime->LifetimeMin;
+        }
+    }
+    else if (UParticleModuleLocation* Location = Cast<UParticleModuleLocation>(Module))
+    {
+        bChanged |= ImGui::DragFloat3("Start Location", Location->StartLocation.Data, 0.1f);
+    }
+    else if (UParticleModuleVelocity* Velocity = Cast<UParticleModuleVelocity>(Module))
+    {
+        bChanged |= ImGui::DragFloat3("Min Velocity", Velocity->MinVelocity.Data, 0.5f);
+        bChanged |= ImGui::DragFloat3("Max Velocity", Velocity->MaxVelocity.Data, 0.5f);
+    }
+    else if (UParticleModuleSize* Size = Cast<UParticleModuleSize>(Module))
+    {
+        bChanged |= ImGui::DragFloat3("Start Size", Size->StartSize.Data, 0.05f, 0.0f, 10000.0f);
+    }
+    else if (UParticleModuleColor* Color = Cast<UParticleModuleColor>(Module))
+    {
+        float ColorRGB[3] = {
+            Color->StartColor.R / 255.0f,
+            Color->StartColor.G / 255.0f,
+            Color->StartColor.B / 255.0f,
+        };
+        if (ImGui::ColorEdit3("Start Color", ColorRGB))
+        {
+            Color->StartColor.R = static_cast<uint32>(Clamp01(ColorRGB[0], 0.0f, 1.0f) * 255.0f);
+            Color->StartColor.G = static_cast<uint32>(Clamp01(ColorRGB[1], 0.0f, 1.0f) * 255.0f);
+            Color->StartColor.B = static_cast<uint32>(Clamp01(ColorRGB[2], 0.0f, 1.0f) * 255.0f);
+            bChanged            = true;
+        }
+        bChanged |= ImGui::DragFloat("Start Alpha", &Color->StartAlpha, 0.01f, 0.0f, 1.0f);
+    }
+    else
+    {
+        ImGui::TextColored(PSE::DimTextV, "No editable properties exposed for this module.");
+    }
+
+    if (bChanged)
+    {
+        MarkDirty();
+    }
+}
+
 // ── 커브 에디터 (패널 6) ─────────────────────────────────────────────────────
 void FParticleSystemEditorWidget::RenderCurveEditorPanel(float Width, float Height)
 {
-    // 선택된 모듈의 커브 정보 (Emitters 패널 선택과 직접 연동).
-    const FModuleDef* Module = nullptr;
-    if (SelectedEmitterIndex >= 0 && SelectedModuleIndex >= 0 &&
-        SelectedModuleIndex < EmitterModuleCount)
+    // 선택된 모듈 (Emitters 패널 선택과 직접 연동).
+    UParticleSystem* ParticleSystem = GetParticleSystem();
+
+    UParticleEmitter* SelectedEmitter = nullptr;
+    if (ParticleSystem && SelectedEmitterIndex >= 0 &&
+        SelectedEmitterIndex < static_cast<int32>(ParticleSystem->GetEmitters().size()))
     {
-        Module = &EmitterModules[SelectedModuleIndex];
+        SelectedEmitter = ParticleSystem->GetEmitters()[SelectedEmitterIndex];
     }
 
-    const char* Context = Module ? Module->Name : "no module selected";
+    TArray<FEmitterModuleEntry> ModuleList;
+    BuildEmitterModuleList(SelectedEmitter, ModuleList);
+
+    const FEmitterModuleEntry* SelectedEntry = nullptr;
+    if (SelectedModuleIndex >= 0 && SelectedModuleIndex < static_cast<int32>(ModuleList.size()))
+    {
+        SelectedEntry = &ModuleList[SelectedModuleIndex];
+    }
+
+    const char* Context = SelectedEntry ? SelectedEntry->Name : "no module selected";
 
     if (BeginPanel("##PSECurveEditor", "Curve Editor", Width, Height, Context))
     {
@@ -1064,33 +1249,11 @@ void FParticleSystemEditorWidget::RenderCurveEditorPanel(float Width, float Heig
 
         constexpr float TrackListWidth = 140.0f;
 
-        // 좌측 트랙 목록 — 선택된 모듈의 커브만 표시.
+        // 좌측 트랙 목록 — Distribution 커브가 모듈에 연결되면 여기 채워진다.
         if (ImGui::BeginChild("##PSECurveTracks", ImVec2(TrackListWidth, 0.0f), true))
         {
-            if (Module && Module->CurveCount > 0)
-            {
-                for (int32 i = 0; i < Module->CurveCount; ++i)
-                {
-                    ImGui::PushID(i);
-                    ImGui::Checkbox("##vis", &CurveTrackVisible[i]);
-                    ImGui::SameLine();
-
-                    const ImVec2 SwatchPos = ImGui::GetCursorScreenPos();
-                    ImGui::GetWindowDrawList()->AddRectFilled(
-                        ImVec2(SwatchPos.x, SwatchPos.y + 3.0f),
-                        ImVec2(SwatchPos.x + 11.0f, SwatchPos.y + 14.0f),
-                        Module->Curves[i].Color, 2.0f);
-                    ImGui::Dummy(ImVec2(15.0f, 0.0f));
-                    ImGui::SameLine();
-                    ImGui::TextUnformatted(Module->Curves[i].Name);
-                    ImGui::PopID();
-                }
-            }
-            else
-            {
-                ImGui::TextColored(PSE::DimTextV, "%s",
-                    Module ? "No curves" : "Select a\nmodule");
-            }
+            ImGui::TextColored(PSE::DimTextV, "%s",
+                SelectedEntry ? "No curves" : "Select a\nmodule");
         }
         ImGui::EndChild();
 
@@ -1120,13 +1283,9 @@ void FParticleSystemEditorWidget::RenderCurveEditorPanel(float Width, float Heig
 
         // TODO: 모듈의 Distribution 커브가 연결되면, 표시 중인 트랙별로
         //       키프레임을 폴리라인으로 그린다. 현재는 키 데이터가 없어 비어 있다.
-        if (!Module)
+        if (!SelectedEntry)
         {
             CanvasHint(DrawList, CanvasMin, CanvasMax, "Select a module to edit its curves");
-        }
-        else if (Module->CurveCount == 0)
-        {
-            CanvasHint(DrawList, CanvasMin, CanvasMax, "This module has no curves");
         }
         else
         {

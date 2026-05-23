@@ -107,6 +107,7 @@ private:
 	void HandleStatMemory(const TArray<FString>& Args);
 	void HandleStatShadow(const TArray<FString>& Args);
 	void HandleStatSkinning(const TArray<FString>& Args);
+	void HandleStatParticle(const TArray<FString>& Args);
 	void HandleStatNone(const TArray<FString>& Args);
 	void HandleCauseCrash(const TArray<FString>& Args);
 	void HandleCSMResolution(const TArray<FString>& Args);

@@ -1978,7 +1978,10 @@ void FLuaScriptManager::RegisterMathBindings(sol::state& Lua)
 		static_cast<FVector(FVector::*)(const FVector&) const>(&FVector::operator-),
 		static_cast<FVector(FVector::*)(float) const>(&FVector::operator-)
 	),
-		sol::meta_function::multiplication, &FVector::operator*,
+		sol::meta_function::multiplication, sol::overload(
+		static_cast<FVector(FVector::*)(const FVector&) const>(&FVector::operator*),
+		static_cast<FVector(FVector::*)(float) const>(&FVector::operator*)
+	),
 		sol::meta_function::division, &FVector::operator/,
 		"Zero", []() { return FVector::ZeroVector; },
 		"One", []() { return FVector::OneVector; },
