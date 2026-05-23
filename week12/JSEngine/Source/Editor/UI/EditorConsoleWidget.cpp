@@ -179,8 +179,7 @@ FEditorConsoleWidget::FEditorConsoleWidget()
 
 FEditorConsoleWidget::~FEditorConsoleWidget() 
 {
-	Clear();
-	ClearHistory();
+	ShutdownLogging();
 }
 
 void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
@@ -191,7 +190,7 @@ void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
 	va_end(args);
 
 	std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
-	Messages.push_back(_strdup(buf));
+	Messages.push_back(buf);
 	MessageLevels.push_back(InferLogVerbosity(buf));
 	if (AutoScroll) ScrollToBottom = true;
 }
@@ -205,7 +204,7 @@ void FEditorConsoleWidget::AddLog(ELogVerbosity Verbosity, const char* fmt, ...)
 	va_end(args);
 
 	std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
-	Messages.push_back(_strdup(buf));
+	Messages.push_back(buf);
 	MessageLevels.push_back(Verbosity == ELogVerbosity::Log ? InferLogVerbosity(buf) : Verbosity);
 	if (AutoScroll) ScrollToBottom = true;
 }
@@ -213,15 +212,21 @@ void FEditorConsoleWidget::AddLog(ELogVerbosity Verbosity, const char* fmt, ...)
 void FEditorConsoleWidget::Clear()
 {
 	std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
-	for (int32 i = 0; i < Messages.Size; i++) free(Messages[i]);
 	Messages.clear();
 	MessageLevels.clear();
 }
 
 void FEditorConsoleWidget::ClearHistory()
 {
-	for (int32 i = 0; i < History.Size; i++) free(History[i]);
+	std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
 	History.clear();
+}
+
+void FEditorConsoleWidget::ShutdownLogging()
+{
+	FLog::SetDetailedSink(nullptr);
+	Clear();
+	ClearHistory();
 }
 
 void FEditorConsoleWidget::Render(float DeltaTime)
@@ -274,8 +279,8 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 	const float FooterHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 	if (ImGui::BeginChild("ScrollingRegion", ImVec2(0, -FooterHeight), false, ImGuiWindowFlags_HorizontalScrollbar)) {
 		std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
-		for (int32 i = 0; i < Messages.Size; ++i) {
-			char* Item = Messages[i];
+		for (int32 i = 0; i < static_cast<int32>(Messages.size()); ++i) {
+			const char* Item = Messages[i].c_str();
 			const ELogVerbosity Verbosity = i < MessageLevels.Size ? MessageLevels[i] : InferLogVerbosity(Item);
 			if (!IsLogLevelVisible(Verbosity)) continue;
 			if (!Filter.PassFilter(Item)) continue;
@@ -355,9 +360,9 @@ void FEditorConsoleWidget::RenderLogContents(float Height)
 	if (ImGui::BeginChild("##ConsoleDrawerScrollingRegion", Size, false, ImGuiWindowFlags_HorizontalScrollbar))
 	{
 		std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
-		for (int32 i = 0; i < Messages.Size; ++i)
+		for (int32 i = 0; i < static_cast<int32>(Messages.size()); ++i)
 		{
-			char* Item = Messages[i];
+			const char* Item = Messages[i].c_str();
 			const ELogVerbosity Verbosity = i < MessageLevels.Size ? MessageLevels[i] : InferLogVerbosity(Item);
 			if (!IsLogLevelVisible(Verbosity))
 			{
@@ -477,7 +482,7 @@ void FEditorConsoleWidget::RegisterCommand(const FString& Name, const FString& D
 
 void FEditorConsoleWidget::ExecCommand(const char* CommandLine) {
 	AddLog("# %s\n", CommandLine);
-	History.push_back(_strdup(CommandLine));
+	History.push_back(CommandLine);
 	HistoryPos = -1;
 
 	TArray<FString> Tokens;
@@ -522,18 +527,18 @@ int32 FEditorConsoleWidget::TextEditCallback(ImGuiInputTextCallbackData* Data) {
 		const int32 PrevPos = Console->HistoryPos;
 		if (Data->EventKey == ImGuiKey_UpArrow) {
 			if (Console->HistoryPos == -1)
-				Console->HistoryPos = Console->History.Size - 1;
+				Console->HistoryPos = static_cast<int32>(Console->History.size()) - 1;
 			else if (Console->HistoryPos > 0)
 				Console->HistoryPos--;
 		}
 		else if (Data->EventKey == ImGuiKey_DownArrow) {
 			if (Console->HistoryPos != -1 &&
-				++Console->HistoryPos >= Console->History.Size)
+				++Console->HistoryPos >= static_cast<int32>(Console->History.size()))
 				Console->HistoryPos = -1;
 		}
 		if (PrevPos != Console->HistoryPos) {
 			const char* HistoryStr = (Console->HistoryPos >= 0)
-				? Console->History[Console->HistoryPos] : "";
+				? Console->History[Console->HistoryPos].c_str() : "";
 			Data->DeleteChars(0, Data->BufTextLen);
 			Data->InsertChars(0, HistoryStr);
 		}
@@ -1091,9 +1096,9 @@ void FEditorConsoleWidget::ClearPendingCrashCommand()
 	PendingCrashTarget = ECrashCommandTarget::None;
 }
 
-ImVector<char*> FEditorConsoleWidget::Messages;
+TArray<FString> FEditorConsoleWidget::Messages;
 ImVector<ELogVerbosity> FEditorConsoleWidget::MessageLevels;
-ImVector<char*> FEditorConsoleWidget::History;
+TArray<FString> FEditorConsoleWidget::History;
 
 bool FEditorConsoleWidget::AutoScroll = true;
 bool FEditorConsoleWidget::ScrollToBottom = true;

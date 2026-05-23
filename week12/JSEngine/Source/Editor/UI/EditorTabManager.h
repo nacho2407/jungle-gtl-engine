@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreMinimal.h"
 
@@ -8,6 +8,7 @@ enum class EEditorTabKind : uint8
 	StaticMeshViewer,
 	SkeletalMeshViewer,
 	AnimSequenceViewer,
+	ParticleViewer,
 	MaterialEditor,
 	CurveEditor,
 	ActorSequencer,

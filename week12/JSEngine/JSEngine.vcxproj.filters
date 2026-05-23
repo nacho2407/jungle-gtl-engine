@@ -456,6 +456,9 @@
     <ClCompile Include="Source\Editor\Viewer\ParticleEditorViewer.cpp">
       <Filter>Source\Editor\Viewer</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Viewer\SkeletalAssetEditorViewer.cpp">
+      <Filter>Source\Editor\Viewer</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Viewer\SkeletalMeshEditorViewer.cpp">
       <Filter>Source\Editor\Viewer</Filter>
     </ClCompile>
@@ -1412,6 +1415,9 @@
       <Filter>Source\Editor\Viewer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewer\ParticleEditorViewer.h">
+      <Filter>Source\Editor\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewer\SkeletalAssetEditorViewer.h">
       <Filter>Source\Editor\Viewer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewer\SkeletalMeshEditorViewer.h">

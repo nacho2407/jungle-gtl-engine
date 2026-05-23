@@ -50,7 +50,8 @@ void FSkeletalMeshEditorViewerWidget::RenderContent(float DeltaTime)
 		160.0f,
 		FullSize.x - LeftPanelWidth - RightPanelWidth - (ImGui::GetStyle().ItemSpacing.x * 2.0f));
 
-	ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+	FSkeletalMeshEditorViewer* SkeletalViewer = AsSkeletalMeshViewer(Viewer);
+	ASkeletalMeshActor* ViewTarget = SkeletalViewer ? SkeletalViewer->GetViewTarget() : nullptr;
 	USkeletalMeshComponent* SkelMeshComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
 	USkeletalMesh* SkeletalMesh = SkelMeshComp ? SkelMeshComp->GetSkeletalMesh() : nullptr;
 	FSkeletalMesh* MeshData = SkeletalMesh ? SkeletalMesh->GetMeshData() : nullptr;
@@ -114,7 +115,8 @@ bool FSkeletalMeshEditorViewerWidget::CanSaveMesh() const
 		return false;
 	}
 
-	ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+	FSkeletalMeshEditorViewer* SkeletalViewer = AsSkeletalMeshViewer(Viewer);
+	ASkeletalMeshActor* ViewTarget = SkeletalViewer ? SkeletalViewer->GetViewTarget() : nullptr;
 	USkeletalMeshComponent* SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
 	return SkelComp && SkelComp->GetSkeletalMesh() && HasMeshAssetEdits();
 }
@@ -131,7 +133,8 @@ void FSkeletalMeshEditorViewerWidget::RequestSaveMesh()
 		return;
 	}
 
-	ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+	FSkeletalMeshEditorViewer* SkeletalViewer = AsSkeletalMeshViewer(Viewer);
+	ASkeletalMeshActor* ViewTarget = SkeletalViewer ? SkeletalViewer->GetViewTarget() : nullptr;
 	USkeletalMeshComponent* SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
 	USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
 	if (!Mesh)
@@ -157,7 +160,8 @@ FSkeletalMesh* FSkeletalMeshEditorViewerWidget::ResolveCurrentMeshData() const
 		return nullptr;
 	}
 
-	ASkeletalMeshActor* ViewTarget = Viewer->GetViewTarget();
+	FSkeletalMeshEditorViewer* SkeletalViewer = AsSkeletalMeshViewer(Viewer);
+	ASkeletalMeshActor* ViewTarget = SkeletalViewer ? SkeletalViewer->GetViewTarget() : nullptr;
 	USkeletalMeshComponent* SkelComp = ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
 	USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
 	return Mesh ? Mesh->GetMeshData() : nullptr;

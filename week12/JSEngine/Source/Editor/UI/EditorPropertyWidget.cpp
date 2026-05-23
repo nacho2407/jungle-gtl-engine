@@ -518,19 +518,19 @@ namespace
 		}
 	}
 
-    static const FProperty* FindPropertyByName(const TArray<const FProperty*>& Properties, const char* Name)
+	static const FProperty* FindPropertyByName(const TArray<const FProperty*>& Properties, const char* Name)
 	{
-	    if (!Name)
-	    {
+		if (!Name)
+		{
 			return nullptr;
-	    }
+		}
 
 		for (const FProperty* Property : Properties)
 		{
-		    if (Property && Property->Name && std::strcmp(Property->Name, Name) == 0)
-		    {
+			if (Property && Property->Name && std::strcmp(Property->Name, Name) == 0)
+			{
 				return Property;
-		    }
+			}
 		}
 
 		return nullptr;

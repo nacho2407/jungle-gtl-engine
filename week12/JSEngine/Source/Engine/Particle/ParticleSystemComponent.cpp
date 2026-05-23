@@ -319,6 +319,13 @@ bool UParticleSystemComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitRe
 	return false;
 }
 
+void UParticleSystemComponent::ResetParticles()
+{
+	ReleaseRenderData();
+	ReleaseEmitterInstances();
+	CreateEmitterInstances();
+}
+
 void UParticleSystemComponent::ReleaseEmitterInstances()
 {
 	for (FParticleEmitterInstance* Instance : EmitterInstances)

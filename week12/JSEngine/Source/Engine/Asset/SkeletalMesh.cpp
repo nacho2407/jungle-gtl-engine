@@ -28,6 +28,7 @@ void USkeletalMesh::SetMeshData(FSkeletalMesh* InMeshData)
 
 	delete MeshData;
 	MeshData = InMeshData;
+	SourceFilePath = MeshData ? MeshData->PathFileName : "";
 
 	RebuildLocalBoundsFromMeshData();
 }
@@ -44,8 +45,26 @@ const FSkeletalMesh* USkeletalMesh::GetMeshData() const
 
 const FString& USkeletalMesh::GetAssetPathFileName() const
 {
-	static FString Empty = {};
-	return MeshData ? MeshData->PathFileName : Empty;
+	return AssetPathFileName;
+}
+
+void USkeletalMesh::SetAssetPathFileName(const FString& InAssetPathFileName)
+{
+	AssetPathFileName = InAssetPathFileName;
+}
+
+const FString& USkeletalMesh::GetSourceFilePath() const
+{
+	return SourceFilePath;
+}
+
+void USkeletalMesh::SetSourceFilePath(const FString& InSourceFilePath)
+{
+	SourceFilePath = InSourceFilePath;
+	if (MeshData)
+	{
+		MeshData->PathFileName = InSourceFilePath;
+	}
 }
 
 const TArray<FSkeletalMeshVertex>& USkeletalMesh::GetVertices() const

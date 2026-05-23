@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreMinimal.h"
 
@@ -8,7 +8,7 @@ namespace ERHIFeatureLevel
 {
 	enum Type
 	{
-		SM5
+		SM5, // DirectX 11 Shader Model 5.0
 	};
 }
 

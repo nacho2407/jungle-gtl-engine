@@ -2,6 +2,7 @@
 #include "Editor/EditorEngine.h"
 #include "Editor/UI/EditorChromeConstants.h"
 #include "Editor/Viewer/EditorViewer.h"
+#include "Editor/Viewer/SkeletalAssetEditorViewer.h"
 #include "Viewport/ViewportLayout.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "Component/SkeletalMeshComponent.h"
@@ -17,6 +18,10 @@
 
 namespace
 {
+constexpr float DetachedHomeAreaWidth = 82.0f;
+constexpr float DetachedHomeIconSize = 62.0f;
+constexpr float DetachedHomeCircleRadius = 34.0f;
+
 void SetOpaqueBlendStateCallback(const ImDrawList*, const ImDrawCmd* Cmd)
 {
 	ID3D11DeviceContext* DeviceContext = static_cast<ID3D11DeviceContext*>(Cmd->UserCallbackData);
@@ -71,6 +76,21 @@ FString GetViewerAssetLabel(FEditorViewer* Viewer)
 	return Viewer ? GetBaseFileNameWithoutExtension(Viewer->GetFileName()) : FString("Viewer");
 }
 
+FSkeletalAssetEditorViewer* AsSkeletalAssetViewer(FEditorViewer* Viewer)
+{
+	if (!Viewer)
+	{
+		return nullptr;
+	}
+
+	const EEditorTabKind TabKind = Viewer->GetTabKind();
+	if (TabKind == EEditorTabKind::SkeletalMeshViewer || TabKind == EEditorTabKind::AnimSequenceViewer)
+	{
+		return static_cast<FSkeletalAssetEditorViewer*>(Viewer);
+	}
+	return nullptr;
+}
+
 void ApplyDetachedDocumentWindowClass()
 {
 	ImGuiWindowClass WindowClass;
@@ -90,6 +110,47 @@ HWND GetCurrentViewportHwnd()
 		return nullptr;
 	}
 	return static_cast<HWND>(Viewport->PlatformHandleRaw ? Viewport->PlatformHandleRaw : Viewport->PlatformHandle);
+}
+
+void DrawHomeChromeIcon(
+	ImDrawList* DrawList,
+	ID3D11ShaderResourceView* HomeIcon,
+	const ImVec2& Min,
+	const ImVec2& Max,
+	bool bHovered)
+{
+	if (!DrawList)
+	{
+		return;
+	}
+
+	const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
+	DrawList->AddRectFilled(
+		Min,
+		Max,
+		ImGui::GetColorU32(bHovered ? ImVec4(0.095f, 0.102f, 0.125f, 1.0f) : ImVec4(0.055f, 0.060f, 0.072f, 1.0f)));
+	DrawList->AddCircleFilled(
+		Center,
+		DetachedHomeCircleRadius,
+		ImGui::GetColorU32(bHovered ? ImVec4(0.13f, 0.14f, 0.17f, 1.0f) : ImVec4(0.075f, 0.080f, 0.095f, 1.0f)),
+		68);
+	if (HomeIcon)
+	{
+		const ImVec2 IconMin(Center.x - DetachedHomeIconSize * 0.5f, Center.y - DetachedHomeIconSize * 0.5f);
+		const ImVec2 IconMax(IconMin.x + DetachedHomeIconSize, IconMin.y + DetachedHomeIconSize);
+		DrawList->AddImage(reinterpret_cast<ImTextureID>(HomeIcon), IconMin, IconMax);
+	}
+	else
+	{
+		const ImU32 HomeColor = ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f));
+		DrawList->AddText(ImVec2(Center.x - 7.0f, Center.y - 7.0f), HomeColor, "JS");
+	}
+	DrawList->AddCircle(
+		Center,
+		DetachedHomeCircleRadius,
+		ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f)),
+		68,
+		1.8f);
 }
 
 ImGui_ImplWin32_CustomChromeRect MakeChromeRect(const ImVec2& Min, const ImVec2& Max, const ImVec2& WindowPos)
@@ -275,7 +336,7 @@ void FEditorViewerWidget::RenderDetachedDocumentChrome(bool& bDockRequested, boo
 
 	constexpr float WindowButtonWidth = 48.0f;
 	constexpr float TitleBarHeight = FEditorChromeMetrics::ApplicationTitleBarHeight;
-	constexpr float MenuStartX = 0.0f;
+	constexpr float MenuStartX = DetachedHomeAreaWidth;
 
 	HWND ViewportHwnd = GetCurrentViewportHwnd();
 	const ImVec2 WindowPos = ImGui::GetWindowPos();
@@ -286,6 +347,25 @@ void FEditorViewerWidget::RenderDetachedDocumentChrome(bool& bDockRequested, boo
 	int ChromeRectCount = 0;
 
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	const ImVec2 HomeMin(WindowPos.x, WindowPos.y);
+	const ImVec2 HomeMax(
+		WindowPos.x + DetachedHomeAreaWidth,
+		WindowPos.y + TitleBarHeight + FEditorChromeMetrics::DocumentToolbarHeight);
+	const bool bHomeHovered = ImGui::IsMouseHoveringRect(HomeMin, HomeMax);
+	ID3D11ShaderResourceView* HomeIcon = EditorEngine
+		? EditorEngine->GetMainPanel().GetHomeIconResource()
+		: nullptr;
+	DrawHomeChromeIcon(ImGui::GetForegroundDrawList(), HomeIcon, HomeMin, HomeMax, bHomeHovered);
+	AddChromeRect(
+		ChromeRects,
+		ChromeRectCount,
+		HomeMin,
+		ImVec2(HomeMax.x, WindowPos.y + TitleBarHeight),
+		WindowPos);
+	if (bHomeHovered)
+	{
+		ImGui::SetTooltip("Level");
+	}
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.0f, 12.0f));
 	const float TitleBarFramePaddingY = std::max(
@@ -341,10 +421,13 @@ void FEditorViewerWidget::RenderDetachedDocumentChrome(bool& bDockRequested, boo
 	}
 	if (ImGui::BeginMenu("Tools"))
 	{
-		FSkeletalViewerShowFlags& ShowFlags = Viewer->GetClient().GetShowFlags();
-		ImGui::MenuItem("Bones", nullptr, &ShowFlags.bShowBones);
-		ImGui::MenuItem("Bounding Box", nullptr, &ShowFlags.bShowBoundingBox);
-		ImGui::MenuItem("Outline", nullptr, &ShowFlags.bShowOutline);
+		if (FSkeletalAssetEditorViewer* SkeletalViewer = AsSkeletalAssetViewer(Viewer))
+		{
+			FSkeletalViewerShowFlags& ShowFlags = SkeletalViewer->GetClient().GetShowFlags();
+			ImGui::MenuItem("Bones", nullptr, &ShowFlags.bShowBones);
+			ImGui::MenuItem("Bounding Box", nullptr, &ShowFlags.bShowBoundingBox);
+			ImGui::MenuItem("Outline", nullptr, &ShowFlags.bShowOutline);
+		}
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("Help"))
@@ -453,7 +536,7 @@ void FEditorViewerWidget::RenderDetachedDocumentToolbar(bool& bDockRequested)
 		ImGuiWindowFlags_NoScrollbar |
 		ImGuiWindowFlags_NoScrollWithMouse;
 	ImGui::BeginChild("##DetachedViewerToolbar", ImVec2(0.0f, 40.0f), false, ToolbarFlags);
-	ImGui::SetCursorPos(ImVec2(8.0f, 6.0f));
+	ImGui::SetCursorPos(ImVec2(DetachedHomeAreaWidth + 8.0f, 6.0f));
 
 	const bool bCanSaveMesh = CanSaveMesh();
 	if (!bCanSaveMesh)

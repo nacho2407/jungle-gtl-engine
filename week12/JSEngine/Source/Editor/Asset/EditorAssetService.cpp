@@ -121,7 +121,7 @@ void FEditorAssetService::RefreshAssetDatabase()
 		FEditorAssetService::AddUniquePath(StaticMeshPaths, Path);
 	}
 
-	ListAssetFiles(L"SkeletalMesh", { ".fbx" }, SkeletalMeshPaths);
+	ListAssetFiles(L"SkeletalMesh/Bin", { ".bin" }, SkeletalMeshPaths);
 	for (const FString& Path : FResourceManager::Get().GetSkeletalMeshPaths())
 	{
 		FEditorAssetService::AddUniquePath(SkeletalMeshPaths, Path);

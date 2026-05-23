@@ -21,515 +21,515 @@
 
 namespace
 {
-    void BuildBoneMatrixConstants(const USkeletalMeshComponent* SkeletalMeshComp, FBoneMatrixConstants& OutConstants)
-    {
-        OutConstants = {};
-        if (!SkeletalMeshComp)
-        {
-            return;
-        }
+	void BuildBoneMatrixConstants(const USkeletalMeshComponent* SkeletalMeshComp, FBoneMatrixConstants& OutConstants)
+	{
+		OutConstants = {};
+		if (!SkeletalMeshComp)
+		{
+			return;
+		}
 
-        const TArray<FMatrix>& SkinningMatrices = SkeletalMeshComp->GetSkinningMatrices();
-        const uint32 BoneCount = static_cast<uint32>((std::min)(
-            SkinningMatrices.size(),
-            static_cast<size_t>(MaxGPUSkinBones)));
+		const TArray<FMatrix>& SkinningMatrices = SkeletalMeshComp->GetSkinningMatrices();
+		const uint32 BoneCount = static_cast<uint32>((std::min)(
+			SkinningMatrices.size(),
+			static_cast<size_t>(MaxGPUSkinBones)));
 
-        OutConstants.BoneCount = BoneCount;
-        for (uint32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
-        {
-            OutConstants.BoneMatrices[BoneIndex] = SkinningMatrices[BoneIndex];
-        }
-    }
+		OutConstants.BoneCount = BoneCount;
+		for (uint32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
+		{
+			OutConstants.BoneMatrices[BoneIndex] = SkinningMatrices[BoneIndex];
+		}
+	}
 
-    FMatrix MakeViewBillboardMatrix(const UPrimitiveComponent* Primitive, const FRenderBus& RenderBus)
-    {
-        const FMatrix WorldMatrix = Primitive->GetWorldMatrix();
-        const UBillboardComponent* Billboard = static_cast<const UBillboardComponent*>(Primitive);
-        return UBillboardComponent::MakeBillboardWorldMatrix(
-            WorldMatrix.GetOrigin(),
-            Billboard->GetBillboardWorldScale(),
-            RenderBus.GetCameraForward(),
-            RenderBus.GetCameraRight(),
-            RenderBus.GetCameraUp());
-    }
+	FMatrix MakeViewBillboardMatrix(const UPrimitiveComponent* Primitive, const FRenderBus& RenderBus)
+	{
+		const FMatrix WorldMatrix = Primitive->GetWorldMatrix();
+		const UBillboardComponent* Billboard = static_cast<const UBillboardComponent*>(Primitive);
+		return UBillboardComponent::MakeBillboardWorldMatrix(
+			WorldMatrix.GetOrigin(),
+			Billboard->GetBillboardWorldScale(),
+			RenderBus.GetCameraForward(),
+			RenderBus.GetCameraRight(),
+			RenderBus.GetCameraUp());
+	}
 
-    int32 SelectLODLevel(const FVector& CameraPos, const FAABB& Bounds, const FMatrix& ProjMatrix, int32 ValidLODCount)
-    {
-        bool IsOrthoGraphic = (std::abs(ProjMatrix.M[3][3] - 1.0f) < 1e-4f);
-        if (ValidLODCount <= 1 || IsOrthoGraphic) return 0;
+	int32 SelectLODLevel(const FVector& CameraPos, const FAABB& Bounds, const FMatrix& ProjMatrix, int32 ValidLODCount)
+	{
+		bool IsOrthoGraphic = (std::abs(ProjMatrix.M[3][3] - 1.0f) < 1e-4f);
+		if (ValidLODCount <= 1 || IsOrthoGraphic) return 0;
 
-        const FVector Center = (Bounds.Min + Bounds.Max) * 0.5f;
-        const FVector Extent = (Bounds.Max - Bounds.Min) * 0.5f;
-        const float SphereRadius = std::sqrt(Extent.X * Extent.X + Extent.Y * Extent.Y + Extent.Z * Extent.Z);
+		const FVector Center = (Bounds.Min + Bounds.Max) * 0.5f;
+		const FVector Extent = (Bounds.Max - Bounds.Min) * 0.5f;
+		const float SphereRadius = std::sqrt(Extent.X * Extent.X + Extent.Y * Extent.Y + Extent.Z * Extent.Z);
 
-        const FVector Diff = Center - CameraPos;
-        const float Dist = std::sqrt(Diff.X * Diff.X + Diff.Y * Diff.Y + Diff.Z * Diff.Z);
+		const FVector Diff = Center - CameraPos;
+		const float Dist = std::sqrt(Diff.X * Diff.X + Diff.Y * Diff.Y + Diff.Z * Diff.Z);
 
-        if (Dist <= 1e-4f) return 0;
+		if (Dist <= 1e-4f) return 0;
 
-        const float ProjectedRadius = (SphereRadius / Dist) * ProjMatrix.M[2][1];
-        const float ScreenCoverage = ProjectedRadius;
+		const float ProjectedRadius = (SphereRadius / Dist) * ProjMatrix.M[2][1];
+		const float ScreenCoverage = ProjectedRadius;
 
-        static constexpr float Thresholds[] = { 0.15f, 0.08f, 0.05f, 0.02f };
-        static constexpr int32 ThresholdCount = static_cast<int32>(sizeof(Thresholds) / sizeof(Thresholds[0]));
+		static constexpr float Thresholds[] = { 0.15f, 0.08f, 0.05f, 0.02f };
+		static constexpr int32 ThresholdCount = static_cast<int32>(sizeof(Thresholds) / sizeof(Thresholds[0]));
 
-        const int32 MaxLOD = ValidLODCount - 1;
-        for (int32 LOD = 0; LOD < MaxLOD; ++LOD)
-        {
-            float Threshold = (LOD < ThresholdCount) ? Thresholds[LOD] : 0.0f;
-            if (ScreenCoverage >= Threshold)
-                return LOD;
-        }
+		const int32 MaxLOD = ValidLODCount - 1;
+		for (int32 LOD = 0; LOD < MaxLOD; ++LOD)
+		{
+			float Threshold = (LOD < ThresholdCount) ? Thresholds[LOD] : 0.0f;
+			if (ScreenCoverage >= Threshold)
+				return LOD;
+		}
 
-        return MaxLOD;
-    }
+		return MaxLOD;
+	}
 
-    UMaterialInterface* ResolveDrawMaterial(UMaterialInterface* Material)
-    {
-        return Material ? Material : FResourceManager::Get().GetMaterial("DefaultWhite");
-    }
+	UMaterialInterface* ResolveDrawMaterial(UMaterialInterface* Material)
+	{
+		return Material ? Material : FResourceManager::Get().GetMaterial("DefaultWhite");
+	}
 
-    double CalculateAverageBoneInfluence(const TArray<FSkeletalMeshVertex>& Vertices)
-    {
-        if (Vertices.empty())
-        {
-            return 0.0;
-        }
+	double CalculateAverageBoneInfluence(const TArray<FSkeletalMeshVertex>& Vertices)
+	{
+		if (Vertices.empty())
+		{
+			return 0.0;
+		}
 
-        uint64 InfluenceCount = 0;
-        for (const FSkeletalMeshVertex& Vertex : Vertices)
-        {
-            for (int32 InfluenceIndex = 0; InfluenceIndex < 4; ++InfluenceIndex)
-            {
-                if (Vertex.BoneWeights[InfluenceIndex] > 0.0f)
-                {
-                    ++InfluenceCount;
-                }
-            }
-        }
+		uint64 InfluenceCount = 0;
+		for (const FSkeletalMeshVertex& Vertex : Vertices)
+		{
+			for (int32 InfluenceIndex = 0; InfluenceIndex < 4; ++InfluenceIndex)
+			{
+				if (Vertex.BoneWeights[InfluenceIndex] > 0.0f)
+				{
+					++InfluenceCount;
+				}
+			}
+		}
 
-        return static_cast<double>(InfluenceCount) / static_cast<double>(Vertices.size());
-    }
+		return static_cast<double>(InfluenceCount) / static_cast<double>(Vertices.size());
+	}
 
-    uint64 CalculateUniqueSectionVertexCount(
-        const TArray<uint32>& Indices,
-        uint32 StartIndex,
-        uint32 IndexCount)
-    {
-        if (IndexCount == 0 || StartIndex >= Indices.size())
-        {
-            return 0;
-        }
+	uint64 CalculateUniqueSectionVertexCount(
+		const TArray<uint32>& Indices,
+		uint32 StartIndex,
+		uint32 IndexCount)
+	{
+		if (IndexCount == 0 || StartIndex >= Indices.size())
+		{
+			return 0;
+		}
 
-        const uint64 EndIndex = (std::min<uint64>)(
-            static_cast<uint64>(StartIndex) + static_cast<uint64>(IndexCount),
-            static_cast<uint64>(Indices.size()));
+		const uint64 EndIndex = (std::min<uint64>)(
+			static_cast<uint64>(StartIndex) + static_cast<uint64>(IndexCount),
+			static_cast<uint64>(Indices.size()));
 
-        std::unordered_set<uint32> UniqueVertexIndices;
-        UniqueVertexIndices.reserve(static_cast<size_t>(EndIndex - StartIndex));
+		std::unordered_set<uint32> UniqueVertexIndices;
+		UniqueVertexIndices.reserve(static_cast<size_t>(EndIndex - StartIndex));
 
-        for (uint64 IndexOffset = StartIndex; IndexOffset < EndIndex; ++IndexOffset)
-        {
-            UniqueVertexIndices.insert(Indices[static_cast<size_t>(IndexOffset)]);
-        }
+		for (uint64 IndexOffset = StartIndex; IndexOffset < EndIndex; ++IndexOffset)
+		{
+			UniqueVertexIndices.insert(Indices[static_cast<size_t>(IndexOffset)]);
+		}
 
-        return static_cast<uint64>(UniqueVertexIndices.size());
-    }
+		return static_cast<uint64>(UniqueVertexIndices.size());
+	}
 
-    struct FSkeletalMeshSkinningStatCache
-    {
-        uint64 VertexCount = 0;
-        uint64 IndexCount = 0;
-        uint64 SectionCount = 0;
-        uint64 BoneCount = 0;
-        double AvgBoneInfluence = 0.0;
-        TArray<uint64> SectionVertexCounts;
-    };
+	struct FSkeletalMeshSkinningStatCache
+	{
+		uint64 VertexCount = 0;
+		uint64 IndexCount = 0;
+		uint64 SectionCount = 0;
+		uint64 BoneCount = 0;
+		double AvgBoneInfluence = 0.0;
+		TArray<uint64> SectionVertexCounts;
+	};
 
-    const FSkeletalMeshSkinningStatCache& GetSkeletalMeshSkinningStatCache(const USkeletalMesh* Mesh)
-    {
-        static std::unordered_map<const FSkeletalMesh*, FSkeletalMeshSkinningStatCache> Cache;
+	const FSkeletalMeshSkinningStatCache& GetSkeletalMeshSkinningStatCache(const USkeletalMesh* Mesh)
+	{
+		static std::unordered_map<const FSkeletalMesh*, FSkeletalMeshSkinningStatCache> Cache;
 
-        const FSkeletalMesh* MeshData = Mesh->GetMeshData();
-        const TArray<FSkeletalMeshVertex>& Vertices = Mesh->GetVertices();
-        const TArray<uint32>& Indices = Mesh->GetIndices();
-        const TArray<FStaticMeshSection>& Sections = Mesh->GetSections();
-        const TArray<FBoneInfo>& Bones = Mesh->GetBones();
+		const FSkeletalMesh* MeshData = Mesh->GetMeshData();
+		const TArray<FSkeletalMeshVertex>& Vertices = Mesh->GetVertices();
+		const TArray<uint32>& Indices = Mesh->GetIndices();
+		const TArray<FStaticMeshSection>& Sections = Mesh->GetSections();
+		const TArray<FBoneInfo>& Bones = Mesh->GetBones();
 
-        const uint64 VertexCount = static_cast<uint64>(Vertices.size());
-        const uint64 IndexCount = static_cast<uint64>(Indices.size());
-        const uint64 SectionCount = static_cast<uint64>(Sections.size());
-        const uint64 BoneCount = static_cast<uint64>(Bones.size());
+		const uint64 VertexCount = static_cast<uint64>(Vertices.size());
+		const uint64 IndexCount = static_cast<uint64>(Indices.size());
+		const uint64 SectionCount = static_cast<uint64>(Sections.size());
+		const uint64 BoneCount = static_cast<uint64>(Bones.size());
 
-        auto It = Cache.find(MeshData);
-        if (It != Cache.end()
-            && It->second.VertexCount == VertexCount
-            && It->second.IndexCount == IndexCount
-            && It->second.SectionCount == SectionCount
-            && It->second.BoneCount == BoneCount)
-        {
-            return It->second;
-        }
+		auto It = Cache.find(MeshData);
+		if (It != Cache.end()
+			&& It->second.VertexCount == VertexCount
+			&& It->second.IndexCount == IndexCount
+			&& It->second.SectionCount == SectionCount
+			&& It->second.BoneCount == BoneCount)
+		{
+			return It->second;
+		}
 
-        FSkeletalMeshSkinningStatCache Entry;
-        Entry.VertexCount = VertexCount;
-        Entry.IndexCount = IndexCount;
-        Entry.SectionCount = SectionCount;
-        Entry.BoneCount = BoneCount;
-        Entry.AvgBoneInfluence = CalculateAverageBoneInfluence(Vertices);
-        Entry.SectionVertexCounts.resize(Sections.size());
+		FSkeletalMeshSkinningStatCache Entry;
+		Entry.VertexCount = VertexCount;
+		Entry.IndexCount = IndexCount;
+		Entry.SectionCount = SectionCount;
+		Entry.BoneCount = BoneCount;
+		Entry.AvgBoneInfluence = CalculateAverageBoneInfluence(Vertices);
+		Entry.SectionVertexCounts.resize(Sections.size());
 
-        for (uint64 SectionIndex = 0; SectionIndex < SectionCount; ++SectionIndex)
-        {
-            const FStaticMeshSection& Section = Sections[static_cast<size_t>(SectionIndex)];
-            Entry.SectionVertexCounts[static_cast<size_t>(SectionIndex)] =
-                CalculateUniqueSectionVertexCount(Indices, Section.StartIndex, Section.IndexCount);
-        }
+		for (uint64 SectionIndex = 0; SectionIndex < SectionCount; ++SectionIndex)
+		{
+			const FStaticMeshSection& Section = Sections[static_cast<size_t>(SectionIndex)];
+			Entry.SectionVertexCounts[static_cast<size_t>(SectionIndex)] =
+				CalculateUniqueSectionVertexCount(Indices, Section.StartIndex, Section.IndexCount);
+		}
 
-        auto Result = Cache.insert_or_assign(MeshData, Entry);
-        return Result.first->second;
-    }
+		auto Result = Cache.insert_or_assign(MeshData, Entry);
+		return Result.first->second;
+	}
 }
 
 bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags,
-                                                    EViewMode ViewMode, FRenderBus& RenderBus,
-                                                    FMeshBufferManager& MeshBufferManager) const
+													EViewMode ViewMode, FRenderBus& RenderBus,
+													FMeshBufferManager& MeshBufferManager) const
 {
-    (void)ViewMode;
+	(void)ViewMode;
 
-    if (Primitive == nullptr || !Primitive->IsVisible()) return true;
+	if (Primitive == nullptr || !Primitive->IsVisible()) return true;
 
-    switch (Primitive->GetPrimitiveType())
-    {
-    case EPrimitiveType::EPT_StaticMesh:
-    {
-        if (!ShowFlags.bPrimitives) return true;
+	switch (Primitive->GetPrimitiveType())
+	{
+	case EPrimitiveType::EPT_StaticMesh:
+	{
+		if (!ShowFlags.bPrimitives) return true;
 
-        UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(Primitive);
-        const UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
+		UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(Primitive);
+		const UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
 
-        if (!StaticMesh || !StaticMesh->HasValidMeshData()) return true;
+		if (!StaticMesh || !StaticMesh->HasValidMeshData()) return true;
 
-        FVector CameraPos = RenderBus.GetCameraPosition();
-        FMatrix ProjMatrix = RenderBus.GetProj();
-        FAABB Bounds = StaticMeshComp->GetWorldAABB();
-        const int32 ValidLODCount = StaticMesh->GetValidLODCount();
+		FVector CameraPos = RenderBus.GetCameraPosition();
+		FMatrix ProjMatrix = RenderBus.GetProj();
+		FAABB Bounds = StaticMeshComp->GetWorldAABB();
+		const int32 ValidLODCount = StaticMesh->GetValidLODCount();
 
-        int32 SelectedLOD = 0;
-        if (ShowFlags.bEnableLOD)
-        {
-            SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
-        }
+		int32 SelectedLOD = 0;
+		if (ShowFlags.bEnableLOD)
+		{
+			SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
+		}
 
-        FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
-        if (!MeshBuffer) return true;
+		FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
+		if (!MeshBuffer) return true;
 
-        const FStaticMesh* MeshData = StaticMesh->GetMeshData(SelectedLOD);
-        const TArray<FStaticMeshSection>& Sections = MeshData->Sections;
+		const FStaticMesh* MeshData = StaticMesh->GetMeshData(SelectedLOD);
+		const TArray<FStaticMeshSection>& Sections = MeshData->Sections;
 
-        for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
-        {
-            const FStaticMeshSection& Section = Sections[SectionIdx];
-            UMaterialInterface* Material = ResolveDrawMaterial(Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(SectionIdx)));
+		for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
+		{
+			const FStaticMeshSection& Section = Sections[SectionIdx];
+			UMaterialInterface* Material = ResolveDrawMaterial(Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(SectionIdx)));
 
-            FRenderCommand Cmd = {};
-            Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
-            Cmd.SourcePrimitive = Primitive;
-            Cmd.Type = ERenderCommandType::StaticMesh;
-            Cmd.VertexFactoryType = EVertexFactoryType::StaticMesh;
-            Cmd.MeshBuffer = MeshBuffer;
+			FRenderCommand Cmd = {};
+			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
+			Cmd.SourcePrimitive = Primitive;
+			Cmd.Type = ERenderCommandType::StaticMesh;
+			Cmd.VertexFactoryType = EVertexFactoryType::StaticMesh;
+			Cmd.MeshBuffer = MeshBuffer;
 
-            Cmd.SectionIndexStart = Section.StartIndex;
-            Cmd.SectionIndexCount = Section.IndexCount;
-            Cmd.Material = Material;
+			Cmd.SectionIndexStart = Section.StartIndex;
+			Cmd.SectionIndexCount = Section.IndexCount;
+			Cmd.Material = Material;
 
-            Cmd.WorldAABB = StaticMeshComp->GetWorldAABB();
+			Cmd.WorldAABB = StaticMeshComp->GetWorldAABB();
 
-            RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
-        }
+			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    case EPrimitiveType::EPT_SkeletalMesh:
-    {
-        if (!ShowFlags.bPrimitives || !ShowFlags.bSkeletalMesh) return true;
+	case EPrimitiveType::EPT_SkeletalMesh:
+	{
+		if (!ShowFlags.bPrimitives || !ShowFlags.bSkeletalMesh) return true;
 
-        USkeletalMeshComponent* SkeletalMeshComp = static_cast<USkeletalMeshComponent*>(Primitive);
-        USkeletalMesh* SkeletalMesh = SkeletalMeshComp->GetSkeletalMesh();
+		USkeletalMeshComponent* SkeletalMeshComp = static_cast<USkeletalMeshComponent*>(Primitive);
+		USkeletalMesh* SkeletalMesh = SkeletalMeshComp->GetSkeletalMesh();
 
-        if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData()) return true;
+		if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData()) return true;
 
-        SkeletalMeshComp->EnsureSkinningUpdated();
-        const bool bNeedsUpload = SkeletalMeshComp->ConsumeRenderStateDirty();
+		SkeletalMeshComp->EnsureSkinningUpdated();
+		const bool bNeedsUpload = SkeletalMeshComp->ConsumeRenderStateDirty();
 
-        const ESkinningMode SkinningMode = SkeletalMeshComp->GetResolvedSkinningMode();
-        const bool bUseGPUSkinning = SkinningMode == ESkinningMode::GPU;
-        const FBoneWeightHeatmapViewState& BoneWeightHeatmapState = RenderBus.GetBoneWeightHeatmapViewState();
-        const bool bUseBoneWeightHeatmap =
-            ViewMode == EViewMode::BoneWeightHeatmap &&
-            BoneWeightHeatmapState.bEnabled &&
-            BoneWeightHeatmapState.SelectedBoneIndex >= 0 &&
-            BoneWeightHeatmapState.SelectedBoneIndex < static_cast<int32>(SkeletalMesh->GetBones().size());
-        uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
-        FConstantBuffer* BoneMatrixConstantBuffer = nullptr;
-        if (bUseGPUSkinning)
-        {
-            FBoneMatrixConstants BoneMatrixConstants = {};
-            BuildBoneMatrixConstants(SkeletalMeshComp, BoneMatrixConstants);
+		const ESkinningMode SkinningMode = SkeletalMeshComp->GetResolvedSkinningMode();
+		const bool bUseGPUSkinning = SkinningMode == ESkinningMode::GPU;
+		const FBoneWeightHeatmapViewState& BoneWeightHeatmapState = RenderBus.GetBoneWeightHeatmapViewState();
+		const bool bUseBoneWeightHeatmap =
+			ViewMode == EViewMode::BoneWeightHeatmap &&
+			BoneWeightHeatmapState.bEnabled &&
+			BoneWeightHeatmapState.SelectedBoneIndex >= 0 &&
+			BoneWeightHeatmapState.SelectedBoneIndex < static_cast<int32>(SkeletalMesh->GetBones().size());
+		uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;
+		FConstantBuffer* BoneMatrixConstantBuffer = nullptr;
+		if (bUseGPUSkinning)
+		{
+			FBoneMatrixConstants BoneMatrixConstants = {};
+			BuildBoneMatrixConstants(SkeletalMeshComp, BoneMatrixConstants);
 
-            BoneMatrixConstantBuffer = MeshBufferManager.GetGPUSkeletalBoneMatrixBuffer(
-                SkeletalMeshComp->GetUUID(),
-                BoneMatrixConstants,
-                bNeedsUpload);
+			BoneMatrixConstantBuffer = MeshBufferManager.GetGPUSkeletalBoneMatrixBuffer(
+				SkeletalMeshComp->GetUUID(),
+				BoneMatrixConstants,
+				bNeedsUpload);
 
-            if (!BoneMatrixConstantBuffer)
-            {
-                BoneMatrixConstantsIndex = RenderBus.AllocateBoneMatrixConstants();
-                if (FBoneMatrixConstants* Constants = RenderBus.GetMutableBoneMatrixConstants(BoneMatrixConstantsIndex))
-                {
-                    *Constants = BoneMatrixConstants;
-                }
-            }
-        }
-        const TArray<uint32>& Indices = SkeletalMesh->GetIndices(); // 이건 immutable이라 걍 asset에서 들고와도 댐
-        const FSkeletalMeshSkinningStatCache& SkinningStatCache = GetSkeletalMeshSkinningStatCache(SkeletalMesh);
-        FSkinningStats::Get().AddVisibleSkinnedMesh(
-            SkinningStatCache.VertexCount,
-            static_cast<uint32>(SkinningStatCache.BoneCount),
-            SkinningStatCache.AvgBoneInfluence,
-            bUseGPUSkinning);
+			if (!BoneMatrixConstantBuffer)
+			{
+				BoneMatrixConstantsIndex = RenderBus.AllocateBoneMatrixConstants();
+				if (FBoneMatrixConstants* Constants = RenderBus.GetMutableBoneMatrixConstants(BoneMatrixConstantsIndex))
+				{
+					*Constants = BoneMatrixConstants;
+				}
+			}
+		}
+		const TArray<uint32>& Indices = SkeletalMesh->GetIndices(); // 이건 immutable이라 걍 asset에서 들고와도 댐
+		const FSkeletalMeshSkinningStatCache& SkinningStatCache = GetSkeletalMeshSkinningStatCache(SkeletalMesh);
+		FSkinningStats::Get().AddVisibleSkinnedMesh(
+			SkinningStatCache.VertexCount,
+			static_cast<uint32>(SkinningStatCache.BoneCount),
+			SkinningStatCache.AvgBoneInfluence,
+			bUseGPUSkinning);
 
-        FMeshBuffer* MeshBuffer = bUseGPUSkinning
-            ? MeshBufferManager.GetGPUSkeletalMeshBuffer(SkeletalMesh)
-            : MeshBufferManager.GetCPUSkeletalMeshBuffer(
-                SkeletalMeshComp->GetUUID(),
-                SkeletalMesh,
-                SkeletalMeshComp->GetSkinnedVertices(),
-                Indices,
-                SkeletalMeshComp->ConsumeCPUSkinnedVertexBufferDirty());
-        if (!MeshBuffer) return true;
+		FMeshBuffer* MeshBuffer = bUseGPUSkinning
+			? MeshBufferManager.GetGPUSkeletalMeshBuffer(SkeletalMesh)
+			: MeshBufferManager.GetCPUSkeletalMeshBuffer(
+				SkeletalMeshComp->GetUUID(),
+				SkeletalMesh,
+				SkeletalMeshComp->GetSkinnedVertices(),
+				Indices,
+				SkeletalMeshComp->ConsumeCPUSkinnedVertexBufferDirty());
+		if (!MeshBuffer) return true;
 
-        const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();
-        if (Sections.empty()) // fallback
-        {
-            FRenderCommand Cmd = {};
-            Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
-            Cmd.SourcePrimitive = Primitive;
-            Cmd.Type = ERenderCommandType::SkeletalMesh;
-            Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
-            Cmd.MeshBuffer = MeshBuffer;
-            Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
-            Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
-            Cmd.BoneMatrixConstantBuffer = BoneMatrixConstantBuffer;
-            Cmd.bUseBoneWeightHeatmap = bUseBoneWeightHeatmap;
-            Cmd.BoneWeightHeatmapBoneIndex = bUseBoneWeightHeatmap
-                ? BoneWeightHeatmapState.SelectedBoneIndex
-                : -1;
-            Cmd.AvgBoneInfluencePerVertex = static_cast<float>(SkinningStatCache.AvgBoneInfluence);
-            Cmd.SkinningWorkVertexCount = SkinningStatCache.VertexCount;
-            Cmd.SectionIndexStart = 0;
-            Cmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
-            Cmd.Material = ResolveDrawMaterial(Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(0)));
-            Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
+		const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();
+		if (Sections.empty()) // fallback
+		{
+			FRenderCommand Cmd = {};
+			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
+			Cmd.SourcePrimitive = Primitive;
+			Cmd.Type = ERenderCommandType::SkeletalMesh;
+			Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
+			Cmd.MeshBuffer = MeshBuffer;
+			Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
+			Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
+			Cmd.BoneMatrixConstantBuffer = BoneMatrixConstantBuffer;
+			Cmd.bUseBoneWeightHeatmap = bUseBoneWeightHeatmap;
+			Cmd.BoneWeightHeatmapBoneIndex = bUseBoneWeightHeatmap
+				? BoneWeightHeatmapState.SelectedBoneIndex
+				: -1;
+			Cmd.AvgBoneInfluencePerVertex = static_cast<float>(SkinningStatCache.AvgBoneInfluence);
+			Cmd.SkinningWorkVertexCount = SkinningStatCache.VertexCount;
+			Cmd.SectionIndexStart = 0;
+			Cmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
+			Cmd.Material = ResolveDrawMaterial(Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(0)));
+			Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
 
-            RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
-            return true;
-        }
+			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
+			return true;
+		}
 
-        for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
-        {
-            const FStaticMeshSection& Section = Sections[SectionIdx];
-            if (Section.IndexCount == 0)
-            {
-                continue;
-            }
+		for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
+		{
+			const FStaticMeshSection& Section = Sections[SectionIdx];
+			if (Section.IndexCount == 0)
+			{
+				continue;
+			}
 
-            UMaterialInterface* Material = ResolveDrawMaterial(Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(SectionIdx)));
+			UMaterialInterface* Material = ResolveDrawMaterial(Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(SectionIdx)));
 
-            FRenderCommand Cmd = {};
-            Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
-            Cmd.SourcePrimitive = Primitive;
-            Cmd.Type = ERenderCommandType::SkeletalMesh;
-            Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
-            Cmd.MeshBuffer = MeshBuffer;
-            Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
-            Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
-            Cmd.BoneMatrixConstantBuffer = BoneMatrixConstantBuffer;
-            Cmd.bUseBoneWeightHeatmap = bUseBoneWeightHeatmap;
-            Cmd.BoneWeightHeatmapBoneIndex = bUseBoneWeightHeatmap
-                ? BoneWeightHeatmapState.SelectedBoneIndex
-                : -1;
-            Cmd.AvgBoneInfluencePerVertex = static_cast<float>(SkinningStatCache.AvgBoneInfluence);
-            Cmd.SkinningWorkVertexCount =
-                SectionIdx < static_cast<int32>(SkinningStatCache.SectionVertexCounts.size())
-                    ? SkinningStatCache.SectionVertexCounts[SectionIdx]
-                    : 0;
+			FRenderCommand Cmd = {};
+			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
+			Cmd.SourcePrimitive = Primitive;
+			Cmd.Type = ERenderCommandType::SkeletalMesh;
+			Cmd.VertexFactoryType = EVertexFactoryType::SkeletalMesh;
+			Cmd.MeshBuffer = MeshBuffer;
+			Cmd.bUseBoneMatrixConstants = bUseGPUSkinning;
+			Cmd.BoneMatrixConstantsIndex = BoneMatrixConstantsIndex;
+			Cmd.BoneMatrixConstantBuffer = BoneMatrixConstantBuffer;
+			Cmd.bUseBoneWeightHeatmap = bUseBoneWeightHeatmap;
+			Cmd.BoneWeightHeatmapBoneIndex = bUseBoneWeightHeatmap
+				? BoneWeightHeatmapState.SelectedBoneIndex
+				: -1;
+			Cmd.AvgBoneInfluencePerVertex = static_cast<float>(SkinningStatCache.AvgBoneInfluence);
+			Cmd.SkinningWorkVertexCount =
+				SectionIdx < static_cast<int32>(SkinningStatCache.SectionVertexCounts.size())
+					? SkinningStatCache.SectionVertexCounts[SectionIdx]
+					: 0;
 
-            Cmd.SectionIndexStart = Section.StartIndex;
-            Cmd.SectionIndexCount = Section.IndexCount;
-            Cmd.Material = Material;
+			Cmd.SectionIndexStart = Section.StartIndex;
+			Cmd.SectionIndexCount = Section.IndexCount;
+			Cmd.Material = Material;
 
-            Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
+			Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
 
-            RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
-        }
+			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    case EPrimitiveType::EPT_Text:
-    {
-        if (!ShowFlags.bBillboardText) return true;
+	case EPrimitiveType::EPT_Text:
+	{
+		if (!ShowFlags.bBillboardText) return true;
 
-        UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(Primitive);
-        const FFontResource* Font = TextComp->GetFont();
-        if (!Font || !Font->IsLoaded()) return true;
+		UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(Primitive);
+		const FFontResource* Font = TextComp->GetFont();
+		if (!Font || !Font->IsLoaded()) return true;
 
-        const FString& Text = TextComp->GetText();
-        if (Text.empty()) return true;
+		const FString& Text = TextComp->GetText();
+		if (Text.empty()) return true;
 
-        FRenderCommand Cmd = {};
-        Cmd.Type = ERenderCommandType::Font;
-        Cmd.VertexFactoryType = EVertexFactoryType::Text;
-        Cmd.SourcePrimitive = Primitive;
-        Cmd.PerObjectConstants = FPerObjectConstants{ TextComp->GetWorldMatrix(), TextComp->GetColor() };
-        Cmd.Constants.Font.Text = &Text;
-        Cmd.Constants.Font.Font = Font;
-        Cmd.Constants.Font.Scale = TextComp->GetFontSize();
+		FRenderCommand Cmd = {};
+		Cmd.Type = ERenderCommandType::Font;
+		Cmd.VertexFactoryType = EVertexFactoryType::Text;
+		Cmd.SourcePrimitive = Primitive;
+		Cmd.PerObjectConstants = FPerObjectConstants{ TextComp->GetWorldMatrix(), TextComp->GetColor() };
+		Cmd.Constants.Font.Text = &Text;
+		Cmd.Constants.Font.Font = Font;
+		Cmd.Constants.Font.Scale = TextComp->GetFontSize();
 
-        RenderBus.AddCommand(ERenderPass::Font, Cmd);
-        return true;
-    }
+		RenderBus.AddCommand(ERenderPass::Font, Cmd);
+		return true;
+	}
 
-    case EPrimitiveType::EPT_SubUV:
-    {
-        USubUVComponent* SubUVComp = static_cast<USubUVComponent*>(Primitive);
-        const FSubUVResource* SubUV = SubUVComp->GetSubUV();
-        if (!SubUV || !SubUV->IsLoaded()) return true;
+	case EPrimitiveType::EPT_SubUV:
+	{
+		USubUVComponent* SubUVComp = static_cast<USubUVComponent*>(Primitive);
+		const FSubUVResource* SubUV = SubUVComp->GetSubUV();
+		if (!SubUV || !SubUV->IsLoaded()) return true;
 
-        FRenderCommand Cmd = {};
-        Cmd.PerObjectConstants = FPerObjectConstants{
-            MakeViewBillboardMatrix(Primitive, RenderBus),
-            FColor::White().ToVector4() };
-        Cmd.SourcePrimitive = Primitive;
-        Cmd.Type = ERenderCommandType::SubUV;
-        Cmd.VertexFactoryType = EVertexFactoryType::SubUV;
-        Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_SubUV);
-        Cmd.SectionIndexStart = 0;
-        Cmd.SectionIndexCount = Cmd.MeshBuffer->GetIndexBuffer().GetIndexCount();
-        Cmd.Constants.SubUV.SubUV = SubUV;
-        Cmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
-        Cmd.Constants.SubUV.Width = SubUVComp->GetWidth();
-        Cmd.Constants.SubUV.Height = SubUVComp->GetHeight();
+		FRenderCommand Cmd = {};
+		Cmd.PerObjectConstants = FPerObjectConstants{
+			MakeViewBillboardMatrix(Primitive, RenderBus),
+			FColor::White().ToVector4() };
+		Cmd.SourcePrimitive = Primitive;
+		Cmd.Type = ERenderCommandType::SubUV;
+		Cmd.VertexFactoryType = EVertexFactoryType::SubUV;
+		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_SubUV);
+		Cmd.SectionIndexStart = 0;
+		Cmd.SectionIndexCount = Cmd.MeshBuffer->GetIndexBuffer().GetIndexCount();
+		Cmd.Constants.SubUV.SubUV = SubUV;
+		Cmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
+		Cmd.Constants.SubUV.Width = SubUVComp->GetWidth();
+		Cmd.Constants.SubUV.Height = SubUVComp->GetHeight();
 
-        RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
-        return true;
-    }
+		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
+		return true;
+	}
 
-    case EPrimitiveType::EPT_Billboard:
-    {
-        UBillboardComponent* BillboardComp = static_cast<UBillboardComponent*>(Primitive);
-        UTexture* Texture = BillboardComp->GetTexture();
+	case EPrimitiveType::EPT_Billboard:
+	{
+		UBillboardComponent* BillboardComp = static_cast<UBillboardComponent*>(Primitive);
+		UTexture* Texture = BillboardComp->GetTexture();
 
-        FRenderCommand Cmd = {};
-        Cmd.Type = ERenderCommandType::Billboard;
-        Cmd.VertexFactoryType = EVertexFactoryType::Billboard;
-        Cmd.SourcePrimitive = Primitive;
-        Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Billboard);
-        Cmd.SectionIndexStart = 0;
-        Cmd.SectionIndexCount = Cmd.MeshBuffer->GetIndexBuffer().GetIndexCount();
-        Cmd.PerObjectConstants = FPerObjectConstants{
-            MakeViewBillboardMatrix(Primitive, RenderBus),
-            FColor::White().ToVector4() };
-        Cmd.Constants.Billboard.Texture = Texture;
-        Cmd.Constants.Billboard.Width = BillboardComp->GetWidth();
-        Cmd.Constants.Billboard.Height = BillboardComp->GetHeight();
-        Cmd.Constants.Billboard.Color = BillboardComp->GetColor();
+		FRenderCommand Cmd = {};
+		Cmd.Type = ERenderCommandType::Billboard;
+		Cmd.VertexFactoryType = EVertexFactoryType::Billboard;
+		Cmd.SourcePrimitive = Primitive;
+		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Billboard);
+		Cmd.SectionIndexStart = 0;
+		Cmd.SectionIndexCount = Cmd.MeshBuffer->GetIndexBuffer().GetIndexCount();
+		Cmd.PerObjectConstants = FPerObjectConstants{
+			MakeViewBillboardMatrix(Primitive, RenderBus),
+			FColor::White().ToVector4() };
+		Cmd.Constants.Billboard.Texture = Texture;
+		Cmd.Constants.Billboard.Width = BillboardComp->GetWidth();
+		Cmd.Constants.Billboard.Height = BillboardComp->GetHeight();
+		Cmd.Constants.Billboard.Color = BillboardComp->GetColor();
 
-        RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
-        return true;
-    }
+		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
+		return true;
+	}
 
-    case EPrimitiveType::EPT_FOG:
-    {
-        if (!ShowFlags.bFog)
-            return true;
-        UHeightFogComponent* HeightFogComp = static_cast<UHeightFogComponent*>(Primitive);
+	case EPrimitiveType::EPT_FOG:
+	{
+		if (!ShowFlags.bFog)
+			return true;
+		UHeightFogComponent* HeightFogComp = static_cast<UHeightFogComponent*>(Primitive);
 
-        FRenderCommand Cmd = {};
-        Cmd.Type = ERenderCommandType::Primitive;
-        Cmd.VertexFactoryType = EVertexFactoryType::Primitive;
-        Cmd.Constants.Fog.FogDensity = HeightFogComp->GetFogDensity();
-        Cmd.Constants.Fog.FogColor = HeightFogComp->GetFogInscatteringColor();
-        Cmd.Constants.Fog.HeightFalloff = HeightFogComp->GetHeightFalloff();
-        Cmd.Constants.Fog.FogHeight = HeightFogComp->GetFogHeight();
-        Cmd.Constants.Fog.FogStartDistance = HeightFogComp->GetFogStartDistance();
-        Cmd.Constants.Fog.FogMaxOpacity = HeightFogComp->GetFogMaxOpacity();
-        Cmd.Constants.Fog.FogCutoffDistance = HeightFogComp->GetFogCutoffDistance();
+		FRenderCommand Cmd = {};
+		Cmd.Type = ERenderCommandType::Primitive;
+		Cmd.VertexFactoryType = EVertexFactoryType::Primitive;
+		Cmd.Constants.Fog.FogDensity = HeightFogComp->GetFogDensity();
+		Cmd.Constants.Fog.FogColor = HeightFogComp->GetFogInscatteringColor();
+		Cmd.Constants.Fog.HeightFalloff = HeightFogComp->GetHeightFalloff();
+		Cmd.Constants.Fog.FogHeight = HeightFogComp->GetFogHeight();
+		Cmd.Constants.Fog.FogStartDistance = HeightFogComp->GetFogStartDistance();
+		Cmd.Constants.Fog.FogMaxOpacity = HeightFogComp->GetFogMaxOpacity();
+		Cmd.Constants.Fog.FogCutoffDistance = HeightFogComp->GetFogCutoffDistance();
 
-        RenderBus.AddCommand(ERenderPass::Fog, Cmd);
-        return true;
-    }
+		RenderBus.AddCommand(ERenderPass::Fog, Cmd);
+		return true;
+	}
 
-    case EPrimitiveType::EPT_Fireball:
-    {
-        UFireballComponent* FireballComp = static_cast<UFireballComponent*>(Primitive);
+	case EPrimitiveType::EPT_Fireball:
+	{
+		UFireballComponent* FireballComp = static_cast<UFireballComponent*>(Primitive);
 
-        FLightData LightData = {};
-        LightData.Intensity = FireballComp->GetIntensity();
-        LightData.Radius = FireballComp->GetRadius();
-        LightData.RadiusFalloff = FireballComp->GetRadiusFallOff();
-        LightData.WorldPos = FireballComp->GetWorldLocation();
+		FLightData LightData = {};
+		LightData.Intensity = FireballComp->GetIntensity();
+		LightData.Radius = FireballComp->GetRadius();
+		LightData.RadiusFalloff = FireballComp->GetRadiusFallOff();
+		LightData.WorldPos = FireballComp->GetWorldLocation();
 
-        FColor Color = FireballComp->GetLinearColor();
-        LightData.Color.X = Color.R;
-        LightData.Color.Y = Color.G;
-        LightData.Color.Z = Color.B;
-        return true;
-    }
+		FColor Color = FireballComp->GetLinearColor();
+		LightData.Color.X = Color.R;
+		LightData.Color.Y = Color.G;
+		LightData.Color.Z = Color.B;
+		return true;
+	}
 
-    case EPrimitiveType::EPT_ProceduralMesh:
-    {
-        if (!ShowFlags.bPrimitives)
-            return true;
+	case EPrimitiveType::EPT_ProceduralMesh:
+	{
+		if (!ShowFlags.bPrimitives)
+			return true;
 
-        UProceduralMeshComponent* ProcMeshComp = static_cast<UProceduralMeshComponent*>(Primitive);
-        const TArray<UProceduralMeshComponent::FMeshSection>& Sections = ProcMeshComp->GetSections();
+		UProceduralMeshComponent* ProcMeshComp = static_cast<UProceduralMeshComponent*>(Primitive);
+		const TArray<UProceduralMeshComponent::FMeshSection>& Sections = ProcMeshComp->GetSections();
 
-        if (!ProcMeshComp || Sections.empty())
-            return true;
+		if (!ProcMeshComp || Sections.empty())
+			return true;
 
-        for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
-        {
-            const UProceduralMeshComponent::FMeshSection& Section = Sections[SectionIdx];
-            FMeshBuffer* MeshBuffer = nullptr;
-            MeshBuffer = MeshBufferManager.GetProcMeshBuffer(ProcMeshComp->GetUUID(), Section.Vertices, Section.Indices);
+		for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
+		{
+			const UProceduralMeshComponent::FMeshSection& Section = Sections[SectionIdx];
+			FMeshBuffer* MeshBuffer = nullptr;
+			MeshBuffer = MeshBufferManager.GetProcMeshBuffer(ProcMeshComp->GetUUID(), Section.Vertices, Section.Indices);
 
-            if (!MeshBuffer)
-                break;
+			if (!MeshBuffer)
+				break;
 
-            UMaterialInterface* Material = Cast<UMaterialInterface>(ProcMeshComp->GetMaterial(SectionIdx));
+			UMaterialInterface* Material = Cast<UMaterialInterface>(ProcMeshComp->GetMaterial(SectionIdx));
 
-            FRenderCommand Cmd = {};
-            Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
-            Cmd.SourcePrimitive = Primitive;
-            Cmd.Type = ERenderCommandType::StaticMesh;
-            Cmd.VertexFactoryType = EVertexFactoryType::ProceduralMesh;
-            Cmd.MeshBuffer = MeshBuffer;
+			FRenderCommand Cmd = {};
+			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
+			Cmd.SourcePrimitive = Primitive;
+			Cmd.Type = ERenderCommandType::StaticMesh;
+			Cmd.VertexFactoryType = EVertexFactoryType::ProceduralMesh;
+			Cmd.MeshBuffer = MeshBuffer;
 
-            Cmd.SectionIndexStart = 0;
-            Cmd.SectionIndexCount = static_cast<uint32>(Section.Indices.size());
-            Cmd.Material = Material;
+			Cmd.SectionIndexStart = 0;
+			Cmd.SectionIndexCount = static_cast<uint32>(Section.Indices.size());
+			Cmd.Material = Material;
 
-            Cmd.WorldAABB = ProcMeshComp->GetWorldAABB();
+			Cmd.WorldAABB = ProcMeshComp->GetWorldAABB();
 
-            RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
-        }
-        return true;
-    }
+			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
+		}
+		return true;
+	}
 
-    default:
-        return false;
-    }
+	default:
+		return false;
+	}
 }

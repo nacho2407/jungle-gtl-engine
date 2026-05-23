@@ -410,8 +410,8 @@ void FBinarySerializer::WriteVertices(std::ofstream& Out, const FStaticMesh& Dat
 
 		// Tangent
 		WriteFloatLE(Out, Vertex.Tangent.X);
-        WriteFloatLE(Out, Vertex.Tangent.Y);
-        WriteFloatLE(Out, Vertex.Tangent.Z);
+		WriteFloatLE(Out, Vertex.Tangent.Y);
+		WriteFloatLE(Out, Vertex.Tangent.Z);
 	}
 }
 
@@ -1221,11 +1221,11 @@ bool FBinarySerializer::LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMes
 
 	//	Header ↔ Body 카운트 cross-check
 	if (!(OutData.Vertices.size()      == Header.VertexCount  &&
-	      OutData.Indices.size()       == Header.IndexCount   &&
-	      OutData.Sections.size()      == Header.SectionCount &&
-	      OutData.MaterialSlots.size() == Header.SlotCount    &&
-	      OutData.Bones.size()         == Header.BoneCount    &&
-	      OutData.Sockets.size()       == Header.SocketCount))
+		  OutData.Indices.size()       == Header.IndexCount   &&
+		  OutData.Sections.size()      == Header.SectionCount &&
+		  OutData.MaterialSlots.size() == Header.SlotCount    &&
+		  OutData.Bones.size()         == Header.BoneCount    &&
+		  OutData.Sockets.size()       == Header.SocketCount))
 	{
 		return false;
 	}

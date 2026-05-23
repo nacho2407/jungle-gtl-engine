@@ -1,11 +1,11 @@
 ﻿#pragma once
 
-#include "Editor/Viewer/EditorViewer.h"
+#include "Editor/Viewer/SkeletalAssetEditorViewer.h"
 
 class UAnimSequence;
 class UAnimSingleNodeInstance;
 
-class FAnimationEditorViewer : public FEditorViewer
+class FAnimationEditorViewer : public FSkeletalAssetEditorViewer
 {
 public:
 	bool ChangeTarget(const FString& InFileName) override;

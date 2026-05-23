@@ -3,11 +3,30 @@
 #include "Editor/UI/EditorChromeConstants.h"
 #include "Editor/UI/EditorMainPanelViewportToolbarHelpers.h"
 #include "Editor/Viewer/EditorViewer.h"
+#include "Editor/Viewer/SkeletalAssetEditorViewer.h"
 #include "Editor/Viewport/EditorViewportClient.h"
 
 #include "ImGui/imgui.h"
 
 #include <cstdio>
+
+namespace
+{
+	FSkeletalAssetEditorViewer* AsSkeletalAssetViewer(FEditorViewer* Viewer)
+	{
+		if (!Viewer)
+		{
+			return nullptr;
+		}
+
+		const EEditorTabKind TabKind = Viewer->GetTabKind();
+		if (TabKind == EEditorTabKind::SkeletalMeshViewer || TabKind == EEditorTabKind::AnimSequenceViewer)
+		{
+			return static_cast<FSkeletalAssetEditorViewer*>(Viewer);
+		}
+		return nullptr;
+	}
+}
 
 void FEditorMainPanel::RenderActiveDocumentToolbar()
 {
@@ -82,7 +101,8 @@ void FEditorMainPanel::RenderViewerToolbarControls(FEditorViewer* Viewer)
 
 	FEditorViewportClient* Client = &Viewer->GetClient();
 	FEditorViewportState* ViewportState = Client ? Client->GetViewportState() : nullptr;
-	FSkeletalViewerShowFlags& ShowFlags = Viewer->GetClient().GetShowFlags();
+	FSkeletalAssetEditorViewer* SkeletalViewer = AsSkeletalAssetViewer(Viewer);
+	FSkeletalViewerShowFlags* ShowFlags = SkeletalViewer ? &SkeletalViewer->GetClient().GetShowFlags() : nullptr;
 
 	ImGui::PushID(Viewer);
 	if (DrawViewportIconButton(
@@ -239,14 +259,17 @@ void FEditorMainPanel::RenderViewerToolbarControls(FEditorViewer* Viewer)
 	}
 	if (ImGui::BeginPopup("##ViewerShowFlagsPopupShared"))
 	{
-		ImGui::MenuItem("Skeletal Mesh", nullptr, &ShowFlags.bShowSkeletalMesh);
-		ImGui::MenuItem("Bones", nullptr, &ShowFlags.bShowBones);
-		ImGui::BeginDisabled(!ShowFlags.bShowBones);
-		ImGui::MenuItem("Selected Bone Only", nullptr, &ShowFlags.bShowOnlySelectedBone);
-		ImGui::EndDisabled();
-		ImGui::Separator();
-		ImGui::MenuItem("Bounding Box", nullptr, &ShowFlags.bShowBoundingBox);
-		ImGui::MenuItem("Outline", nullptr, &ShowFlags.bShowOutline);
+		if (ShowFlags)
+		{
+			ImGui::MenuItem("Skeletal Mesh", nullptr, &ShowFlags->bShowSkeletalMesh);
+			ImGui::MenuItem("Bones", nullptr, &ShowFlags->bShowBones);
+			ImGui::BeginDisabled(!ShowFlags->bShowBones);
+			ImGui::MenuItem("Selected Bone Only", nullptr, &ShowFlags->bShowOnlySelectedBone);
+			ImGui::EndDisabled();
+			ImGui::Separator();
+			ImGui::MenuItem("Bounding Box", nullptr, &ShowFlags->bShowBoundingBox);
+			ImGui::MenuItem("Outline", nullptr, &ShowFlags->bShowOutline);
+		}
 		ImGui::EndPopup();
 	}
 	ImGui::PopID();
@@ -336,8 +359,7 @@ bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 		{
 			if (Viewer)
 			{
-				FSkeletalMeshViewportClient& Client = Viewer->GetClient();
-				FSkeletalViewerShowFlags& ShowFlags = Client.GetShowFlags();
+				FEditorViewportClient& Client = Viewer->GetClient();
 				if (ImGui::MenuItem("Select", "Q / 1", Client.GetTransformMode() == FEditorViewportClient::ETransformMode::Select))
 				{
 					Client.RequestSetSelectMode();
@@ -361,13 +383,17 @@ bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 					Client.ApplyCameraMode();
 				}
 				ImGui::Separator();
-				ImGui::MenuItem("Skeletal Mesh", nullptr, &ShowFlags.bShowSkeletalMesh);
-				ImGui::MenuItem("Bones", nullptr, &ShowFlags.bShowBones);
-				ImGui::BeginDisabled(!ShowFlags.bShowBones);
-				ImGui::MenuItem("Selected Bone Only", nullptr, &ShowFlags.bShowOnlySelectedBone);
-				ImGui::EndDisabled();
-				ImGui::MenuItem("Bounding Box", nullptr, &ShowFlags.bShowBoundingBox);
-				ImGui::MenuItem("Outline", nullptr, &ShowFlags.bShowOutline);
+				if (FSkeletalAssetEditorViewer* SkeletalViewer = AsSkeletalAssetViewer(Viewer))
+				{
+					FSkeletalViewerShowFlags& ShowFlags = SkeletalViewer->GetClient().GetShowFlags();
+					ImGui::MenuItem("Skeletal Mesh", nullptr, &ShowFlags.bShowSkeletalMesh);
+					ImGui::MenuItem("Bones", nullptr, &ShowFlags.bShowBones);
+					ImGui::BeginDisabled(!ShowFlags.bShowBones);
+					ImGui::MenuItem("Selected Bone Only", nullptr, &ShowFlags.bShowOnlySelectedBone);
+					ImGui::EndDisabled();
+					ImGui::MenuItem("Bounding Box", nullptr, &ShowFlags.bShowBoundingBox);
+					ImGui::MenuItem("Outline", nullptr, &ShowFlags.bShowOutline);
+				}
 			}
 			else
 			{

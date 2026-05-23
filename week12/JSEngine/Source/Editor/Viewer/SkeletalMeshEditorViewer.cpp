@@ -33,351 +33,351 @@ namespace
 
 void FSkeletalMeshEditorViewer::SelectBone(int32 BoneIndex)
 {
-    if (!GetViewTarget())
-    {
-        return;
-    }
+	if (!GetViewTarget())
+	{
+		return;
+	}
 
-    USkeletalMeshComponent* SkelComp = GetViewTarget()->GetSkeletalMeshComponent();
-    USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
-    if (!SkelComp || !Mesh || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Mesh->GetBones().size()))
-    {
-        return;
-    }
+	USkeletalMeshComponent* SkelComp = GetViewTarget()->GetSkeletalMeshComponent();
+	USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
+	if (!SkelComp || !Mesh || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Mesh->GetBones().size()))
+	{
+		return;
+	}
 
-    SelectedBoneIndex = BoneIndex;
-    SelectedSocketIndex = -1;
+	SelectedBoneIndex = BoneIndex;
+	SelectedSocketIndex = -1;
 
-    if (FSelectionManager* SelectionManager = GetClient().GetSelectionManager())
-    {
-        SelectionManager->Select(GetViewTarget());
-    }
+	if (FSelectionManager* SelectionManager = GetClient().GetSelectionManager())
+	{
+		SelectionManager->Select(GetViewTarget());
+	}
 
-    if (UGizmoComponent* Gizmo = GetClient().GetGizmo())
-    {
-        Gizmo->SetProxy(std::make_shared<FBoneTransformProxy>(SkelComp, SelectedBoneIndex));
-        Gizmo->SetSelectedActors(nullptr);
+	if (UGizmoComponent* Gizmo = GetClient().GetGizmo())
+	{
+		Gizmo->SetProxy(std::make_shared<FBoneTransformProxy>(SkelComp, SelectedBoneIndex));
+		Gizmo->SetSelectedActors(nullptr);
 
-        FMatrix LocalTransform = SkelComp->GetBoneLocalTransform(SelectedBoneIndex);
-        FVector DummyLocation;
-        FVector DummyScale;
-        FMatrix RotationMatrix;
-        LocalTransform.Decompose(DummyLocation, RotationMatrix, DummyScale);
-        CachedRotation = RotationMatrix.GetEuler();
-    }
+		FMatrix LocalTransform = SkelComp->GetBoneLocalTransform(SelectedBoneIndex);
+		FVector DummyLocation;
+		FVector DummyScale;
+		FMatrix RotationMatrix;
+		LocalTransform.Decompose(DummyLocation, RotationMatrix, DummyScale);
+		CachedRotation = RotationMatrix.GetEuler();
+	}
 }
 
 void FSkeletalMeshEditorViewer::SelectSocket(int32 SocketIndex)
 {
-    if (!GetViewTarget())
-    {
-        return;
-    }
+	if (!GetViewTarget())
+	{
+		return;
+	}
 
-    USkeletalMeshComponent* SkelComp = GetViewTarget()->GetSkeletalMeshComponent();
-    USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
-    FSkeletalMesh* MeshData = Mesh ? Mesh->GetMeshData() : nullptr;
-    if (!SkelComp || !MeshData || SocketIndex < 0 || SocketIndex >= static_cast<int32>(MeshData->Sockets.size()))
-    {
-        return;
-    }
+	USkeletalMeshComponent* SkelComp = GetViewTarget()->GetSkeletalMeshComponent();
+	USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
+	FSkeletalMesh* MeshData = Mesh ? Mesh->GetMeshData() : nullptr;
+	if (!SkelComp || !MeshData || SocketIndex < 0 || SocketIndex >= static_cast<int32>(MeshData->Sockets.size()))
+	{
+		return;
+	}
 
-    const FName SocketName = MeshData->Sockets[SocketIndex].Name;
-    SelectedBoneIndex = -1;
-    SelectedSocketIndex = SocketIndex;
+	const FName SocketName = MeshData->Sockets[SocketIndex].Name;
+	SelectedBoneIndex = -1;
+	SelectedSocketIndex = SocketIndex;
 
-    if (FSelectionManager* SelectionManager = GetClient().GetSelectionManager())
-    {
-        SelectionManager->Select(GetViewTarget());
-    }
+	if (FSelectionManager* SelectionManager = GetClient().GetSelectionManager())
+	{
+		SelectionManager->Select(GetViewTarget());
+	}
 
-    if (UGizmoComponent* Gizmo = GetClient().GetGizmo())
-    {
-        Gizmo->SetProxy(std::make_shared<FSocketTransformProxy>(SkelComp, SocketName));
-        Gizmo->SetSelectedActors(nullptr);
-    }
+	if (UGizmoComponent* Gizmo = GetClient().GetGizmo())
+	{
+		Gizmo->SetProxy(std::make_shared<FSocketTransformProxy>(SkelComp, SocketName));
+		Gizmo->SetSelectedActors(nullptr);
+	}
 }
 
 void FSkeletalMeshEditorViewer::ClearSelection()
 {
-    SelectedBoneIndex = -1;
-    SelectedSocketIndex = -1;
-    CachedRotation = FVector::ZeroVector;
+	SelectedBoneIndex = -1;
+	SelectedSocketIndex = -1;
+	CachedRotation = FVector::ZeroVector;
 
-    if (FSelectionManager* SelectionManager = GetClient().GetSelectionManager())
-    {
-        SelectionManager->ClearSelection();
-        return;
-    }
+	if (FSelectionManager* SelectionManager = GetClient().GetSelectionManager())
+	{
+		SelectionManager->ClearSelection();
+		return;
+	}
 
-    if (UGizmoComponent* Gizmo = GetClient().GetGizmo())
-    {
-        Gizmo->Deactivate();
-    }
+	if (UGizmoComponent* Gizmo = GetClient().GetGizmo())
+	{
+		Gizmo->Deactivate();
+	}
 }
 
 void FSkeletalMeshEditorViewer::NotifySocketDeleted(int32 SocketIndex)
 {
-    if (SelectedSocketIndex == SocketIndex)
-    {
-        ClearSelection();
-    }
-    else if (SelectedSocketIndex > SocketIndex)
-    {
-        --SelectedSocketIndex;
-    }
+	if (SelectedSocketIndex == SocketIndex)
+	{
+		ClearSelection();
+	}
+	else if (SelectedSocketIndex > SocketIndex)
+	{
+		--SelectedSocketIndex;
+	}
 }
 
 bool FSkeletalMeshEditorViewer::HandleBonePick(float LocalX, float LocalY)
 {
-    int32 PickedBoneIndex = -1;
-    if (!TryPickBone(LocalX, LocalY, PickedBoneIndex))
-    {
-        ClearSelection();
-        return true;
-    }
+	int32 PickedBoneIndex = -1;
+	if (!TryPickBone(LocalX, LocalY, PickedBoneIndex))
+	{
+		ClearSelection();
+		return true;
+	}
 
-    SelectBone(PickedBoneIndex);
-    return true;
+	SelectBone(PickedBoneIndex);
+	return true;
 }
 
 bool FSkeletalMeshEditorViewer::TryPickBone(float LocalX, float LocalY, int32& OutBoneIndex) const
 {
-    OutBoneIndex = -1;
-    if (!GetViewTarget() || !GetClient().GetCamera())
-    {
-        return false;
-    }
+	OutBoneIndex = -1;
+	if (!GetViewTarget() || !GetClient().GetCamera())
+	{
+		return false;
+	}
 
-    USkeletalMeshComponent* SkelComp = GetViewTarget()->GetSkeletalMeshComponent();
-    USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
-    if (!SkelComp || !Mesh || !Mesh->HasValidMeshData())
-    {
-        return false;
-    }
+	USkeletalMeshComponent* SkelComp = GetViewTarget()->GetSkeletalMeshComponent();
+	USkeletalMesh* Mesh = SkelComp ? SkelComp->GetSkeletalMesh() : nullptr;
+	if (!SkelComp || !Mesh || !Mesh->HasValidMeshData())
+	{
+		return false;
+	}
 
-    const FViewportRect& Rect = GetViewport().GetRect();
-    if (Rect.Width <= 0 || Rect.Height <= 0)
-    {
-        return false;
-    }
+	const FViewportRect& Rect = GetViewport().GetRect();
+	if (Rect.Width <= 0 || Rect.Height <= 0)
+	{
+		return false;
+	}
 
-    SkelComp->EnsureSkinningUpdated();
+	SkelComp->EnsureSkinningUpdated();
 
-    const FViewportCamera& Camera = *GetClient().GetCamera();
-    const float ViewportWidth = static_cast<float>(Rect.Width);
-    const float ViewportHeight = static_cast<float>(Rect.Height);
+	const FViewportCamera& Camera = *GetClient().GetCamera();
+	const float ViewportWidth = static_cast<float>(Rect.Width);
+	const float ViewportHeight = static_cast<float>(Rect.Height);
 
-    const TArray<FBoneInfo>& Bones = Mesh->GetBones();
-    float BestScore = FLT_MAX;
-    int32 BestBoneIndex = -1;
+	const TArray<FBoneInfo>& Bones = Mesh->GetBones();
+	float BestScore = FLT_MAX;
+	int32 BestBoneIndex = -1;
 
-    constexpr float PickRadiusPixels = 12.0f;
-    constexpr float PickRadiusPixelsSq = PickRadiusPixels * PickRadiusPixels;
+	constexpr float PickRadiusPixels = 12.0f;
+	constexpr float PickRadiusPixelsSq = PickRadiusPixels * PickRadiusPixels;
 
-    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
-    {
-        const int32 ParentIndex = Bones[BoneIndex].ParentIndex;
-        if (ParentIndex < 0 || ParentIndex >= static_cast<int32>(Bones.size()))
-        {
-            continue;
-        }
+	for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
+	{
+		const int32 ParentIndex = Bones[BoneIndex].ParentIndex;
+		if (ParentIndex < 0 || ParentIndex >= static_cast<int32>(Bones.size()))
+		{
+			continue;
+		}
 
-        const FVector SegmentStart = SkelComp->GetBoneWorldMatrix(ParentIndex).GetTranslation();
-        const FVector SegmentEnd = SkelComp->GetBoneWorldMatrix(BoneIndex).GetTranslation();
-        const float SegmentLength = FVector::Dist(SegmentStart, SegmentEnd);
-        if (SegmentLength <= 1.0e-4f)
-        {
-            continue;
-        }
+		const FVector SegmentStart = SkelComp->GetBoneWorldMatrix(ParentIndex).GetTranslation();
+		const FVector SegmentEnd = SkelComp->GetBoneWorldMatrix(BoneIndex).GetTranslation();
+		const float SegmentLength = FVector::Dist(SegmentStart, SegmentEnd);
+		if (SegmentLength <= 1.0e-4f)
+		{
+			continue;
+		}
 
-        float StartX = 0.0f;
-        float StartY = 0.0f;
-        float StartDepth = 0.0f;
-        float EndX = 0.0f;
-        float EndY = 0.0f;
-        float EndDepth = 0.0f;
-        if (!ProjectWorldToViewport(Camera, SegmentStart, ViewportWidth, ViewportHeight, StartX, StartY, StartDepth) ||
-            !ProjectWorldToViewport(Camera, SegmentEnd, ViewportWidth, ViewportHeight, EndX, EndY, EndDepth))
-        {
-            continue;
-        }
+		float StartX = 0.0f;
+		float StartY = 0.0f;
+		float StartDepth = 0.0f;
+		float EndX = 0.0f;
+		float EndY = 0.0f;
+		float EndDepth = 0.0f;
+		if (!ProjectWorldToViewport(Camera, SegmentStart, ViewportWidth, ViewportHeight, StartX, StartY, StartDepth) ||
+			!ProjectWorldToViewport(Camera, SegmentEnd, ViewportWidth, ViewportHeight, EndX, EndY, EndDepth))
+		{
+			continue;
+		}
 
-        const float DistanceSq = DistanceSquaredPointSegment2D(LocalX, LocalY, StartX, StartY, EndX, EndY);
-        if (DistanceSq > PickRadiusPixelsSq)
-        {
-            continue;
-        }
+		const float DistanceSq = DistanceSquaredPointSegment2D(LocalX, LocalY, StartX, StartY, EndX, EndY);
+		if (DistanceSq > PickRadiusPixelsSq)
+		{
+			continue;
+		}
 
-        const float DepthScore = std::min(StartDepth, EndDepth);
-        const float Score = DistanceSq + DepthScore * 0.001f;
-        if (Score < BestScore)
-        {
-            BestScore = Score;
-            BestBoneIndex = BoneIndex;
-        }
-    }
+		const float DepthScore = std::min(StartDepth, EndDepth);
+		const float Score = DistanceSq + DepthScore * 0.001f;
+		if (Score < BestScore)
+		{
+			BestScore = Score;
+			BestBoneIndex = BoneIndex;
+		}
+	}
 
-    if (BestBoneIndex >= 0)
-    {
-        OutBoneIndex = BestBoneIndex;
-        return true;
-    }
+	if (BestBoneIndex >= 0)
+	{
+		OutBoneIndex = BestBoneIndex;
+		return true;
+	}
 
-    const FRay Ray = Camera.DeprojectScreenToWorld(LocalX, LocalY, ViewportWidth, ViewportHeight);
-    BestScore = FLT_MAX;
+	const FRay Ray = Camera.DeprojectScreenToWorld(LocalX, LocalY, ViewportWidth, ViewportHeight);
+	BestScore = FLT_MAX;
 
-    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
-    {
-        const int32 ParentIndex = Bones[BoneIndex].ParentIndex;
-        if (ParentIndex < 0 || ParentIndex >= static_cast<int32>(Bones.size()))
-        {
-            continue;
-        }
+	for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Bones.size()); ++BoneIndex)
+	{
+		const int32 ParentIndex = Bones[BoneIndex].ParentIndex;
+		if (ParentIndex < 0 || ParentIndex >= static_cast<int32>(Bones.size()))
+		{
+			continue;
+		}
 
-        const FVector SegmentStart = SkelComp->GetBoneWorldMatrix(ParentIndex).GetTranslation();
-        const FVector SegmentEnd = SkelComp->GetBoneWorldMatrix(BoneIndex).GetTranslation();
-        const float SegmentLength = FVector::Dist(SegmentStart, SegmentEnd);
-        if (SegmentLength <= 1.0e-4f)
-        {
-            continue;
-        }
+		const FVector SegmentStart = SkelComp->GetBoneWorldMatrix(ParentIndex).GetTranslation();
+		const FVector SegmentEnd = SkelComp->GetBoneWorldMatrix(BoneIndex).GetTranslation();
+		const float SegmentLength = FVector::Dist(SegmentStart, SegmentEnd);
+		if (SegmentLength <= 1.0e-4f)
+		{
+			continue;
+		}
 
-        float RayT = 0.0f;
-        const float DistanceSq = DistanceSquaredRaySegment(Ray, SegmentStart, SegmentEnd, RayT);
-        const float PickRadius = std::clamp(SegmentLength * 0.18f, 1.0f, 12.0f);
-        if (DistanceSq > PickRadius * PickRadius)
-        {
-            continue;
-        }
+		float RayT = 0.0f;
+		const float DistanceSq = DistanceSquaredRaySegment(Ray, SegmentStart, SegmentEnd, RayT);
+		const float PickRadius = std::clamp(SegmentLength * 0.18f, 1.0f, 12.0f);
+		if (DistanceSq > PickRadius * PickRadius)
+		{
+			continue;
+		}
 
-        const float Score = DistanceSq + RayT * 0.0001f;
-        if (Score < BestScore)
-        {
-            BestScore = Score;
-            BestBoneIndex = BoneIndex;
-        }
-    }
+		const float Score = DistanceSq + RayT * 0.0001f;
+		if (Score < BestScore)
+		{
+			BestScore = Score;
+			BestBoneIndex = BoneIndex;
+		}
+	}
 
-    if (BestBoneIndex < 0)
-    {
-        return false;
-    }
+	if (BestBoneIndex < 0)
+	{
+		return false;
+	}
 
-    OutBoneIndex = BestBoneIndex;
-    return true;
+	OutBoneIndex = BestBoneIndex;
+	return true;
 }
 
 void FSkeletalMeshEditorViewer::SetSocketPreviewMesh(const FName& SocketName, const FString& StaticMeshPath)
 {
-    if (!GetViewTarget()) return;
+	if (!GetViewTarget()) return;
 
-    // 같은 socket에 이미 preview가 있으면 먼저 제거 (덮어쓰기 동작)
-    ClearSocketPreview(SocketName);
+	// 같은 socket에 이미 preview가 있으면 먼저 제거 (덮어쓰기 동작)
+	ClearSocketPreview(SocketName);
 
-    UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh(StaticMeshPath);
-    if (!Mesh) return;
+	UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh(StaticMeshPath);
+	if (!Mesh) return;
 
-    UStaticMeshComponent* Preview = GetViewTarget()->AddComponent<UStaticMeshComponent>();
-    if (!Preview) return;
+	UStaticMeshComponent* Preview = GetViewTarget()->AddComponent<UStaticMeshComponent>();
+	if (!Preview) return;
 
-    // 휘발성 + 에디터 전용. Scene 저장에 안 들어가고, 게임 빌드 render에 안 잡힘.
-    Preview->SetTransient(true);
-    Preview->SetEditorOnly(true);
-    Preview->SetStaticMesh(Mesh);
+	// 휘발성 + 에디터 전용. Scene 저장에 안 들어가고, 게임 빌드 render에 안 잡힘.
+	Preview->SetTransient(true);
+	Preview->SetEditorOnly(true);
+	Preview->SetStaticMesh(Mesh);
 
-    if (USkeletalMeshComponent* SkComp = GetViewTarget()->GetSkeletalMeshComponent())
-    {
-        Preview->AttachToComponent(SkComp, SocketName);
-    }
+	if (USkeletalMeshComponent* SkComp = GetViewTarget()->GetSkeletalMeshComponent())
+	{
+		Preview->AttachToComponent(SkComp, SocketName);
+	}
 
-    SocketPreviewMeshes[SocketName] = Preview;
+	SocketPreviewMeshes[SocketName] = Preview;
 }
 
 void FSkeletalMeshEditorViewer::ClearSocketPreview(const FName& SocketName)
 {
-    auto It = SocketPreviewMeshes.find(SocketName);
-    if (It == SocketPreviewMeshes.end()) return;
+	auto It = SocketPreviewMeshes.find(SocketName);
+	if (It == SocketPreviewMeshes.end()) return;
 
-    if (GetViewTarget() && It->second)
-    {
-        GetViewTarget()->RemoveComponent(It->second);
-        // RemoveComponent가 UObjectManager::DestroyObject까지 호출 — 추가 cleanup 불필요.
-    }
-    SocketPreviewMeshes.erase(It);
+	if (GetViewTarget() && It->second)
+	{
+		GetViewTarget()->RemoveComponent(It->second);
+		// RemoveComponent가 UObjectManager::DestroyObject까지 호출 — 추가 cleanup 불필요.
+	}
+	SocketPreviewMeshes.erase(It);
 }
 
 void FSkeletalMeshEditorViewer::ClearAllSocketPreviews()
 {
-    if (GetViewTarget())
-    {
-        for (auto& [Name, Comp] : SocketPreviewMeshes)
-        {
-            if (Comp)
-            {
-                GetViewTarget()->RemoveComponent(Comp);
-            }
-        }
-    }
-    SocketPreviewMeshes.clear();
+	if (GetViewTarget())
+	{
+		for (auto& [Name, Comp] : SocketPreviewMeshes)
+		{
+			if (Comp)
+			{
+				GetViewTarget()->RemoveComponent(Comp);
+			}
+		}
+	}
+	SocketPreviewMeshes.clear();
 }
 
 UStaticMeshComponent* FSkeletalMeshEditorViewer::FindPreviewMesh(const FName& SocketName) const
 {
-    auto It = SocketPreviewMeshes.find(SocketName);
-    return It != SocketPreviewMeshes.end() ? It->second : nullptr;
+	auto It = SocketPreviewMeshes.find(SocketName);
+	return It != SocketPreviewMeshes.end() ? It->second : nullptr;
 }
 
 bool FSkeletalMeshEditorViewer::ChangeTarget(const FString& InFileName)
 {
-    SetFileName(InFileName);
-    ClearSelection();
-    ClearAllSocketPreviews();
+	ClearSelection();
+	ClearAllSocketPreviews();
 
-    USkeletalMeshComponent* SkelComp = GetSkeletalMeshComponent();
-    if (!SkelComp)
-    {
-        return false;
-    }
+	USkeletalMeshComponent* SkelComp = GetSkeletalMeshComponent();
+	if (!SkelComp)
+	{
+		return false;
+	}
 
-    SkelComp->Stop();
-    const FString NormalizedFileName = FPaths::Normalize(InFileName);
-    USkeletalMesh* Mesh = FResourceManager::Get().LoadSkeletalMesh(NormalizedFileName);
-    std::filesystem::path TargetPath(FPaths::ToWide(NormalizedFileName));
-    std::wstring TargetExtension = TargetPath.extension().wstring();
-    std::transform(TargetExtension.begin(), TargetExtension.end(), TargetExtension.begin(), ::towlower);
-    if (!Mesh && TargetExtension == L".fbx")
-    {
-        Mesh = FResourceManager::Get().ImportSkeletalMeshFromFbx(NormalizedFileName);
-    }
+	SkelComp->Stop();
+	const FString NormalizedFileName = FPaths::Normalize(InFileName);
+	USkeletalMesh* Mesh = FResourceManager::Get().LoadSkeletalMesh(NormalizedFileName);
+	std::filesystem::path TargetPath(FPaths::ToWide(NormalizedFileName));
+	std::wstring TargetExtension = TargetPath.extension().wstring();
+	std::transform(TargetExtension.begin(), TargetExtension.end(), TargetExtension.begin(), ::towlower);
+	if (!Mesh && TargetExtension == L".fbx")
+	{
+		Mesh = FResourceManager::Get().ImportSkeletalMeshFromFbx(NormalizedFileName);
+	}
 
-    SkelComp->SetAnimation(nullptr);
-    SkelComp->SetSkeletalMesh(Mesh);
-    if (SkelComp->GetSkeletalMesh())
-    {
-        SkelComp->EnsureSkinningUpdated();
-        if (UWorld* World = GetClient().GetFocusedWorld())
-        {
-            World->SyncSpatialIndex();
-        }
-        FrameSkeletalMeshPreview(*this, SkelComp);
-    }
-    return SkelComp->GetSkeletalMesh() != nullptr;
+	SkelComp->SetAnimation(nullptr);
+	SkelComp->SetSkeletalMesh(Mesh);
+	SetFileName(Mesh ? Mesh->GetAssetPathFileName() : InFileName);
+	if (SkelComp->GetSkeletalMesh())
+	{
+		SkelComp->EnsureSkinningUpdated();
+		if (UWorld* World = GetClient().GetFocusedWorld())
+		{
+			World->SyncSpatialIndex();
+		}
+		FrameSkeletalMeshPreview(*this, SkelComp);
+	}
+	return SkelComp->GetSkeletalMesh() != nullptr;
 }
 
 EEditorTabKind FSkeletalMeshEditorViewer::GetTabKind() const
 {
-    return EEditorTabKind::SkeletalMeshViewer;
+	return EEditorTabKind::SkeletalMeshViewer;
 }
 
 const char* FSkeletalMeshEditorViewer::GetViewerLabel() const
 {
-    return "Skeletal Mesh Viewer";
+	return "Skeletal Mesh Viewer";
 }
 
 bool FSkeletalMeshEditorViewer::HandleViewportBonePick(float LocalX, float LocalY)
 {
-    return HandleBonePick(LocalX, LocalY);
+	return HandleBonePick(LocalX, LocalY);
 }
 
 

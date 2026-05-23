@@ -33,12 +33,13 @@ public:
 
 	static void AddLog(const char* fmt, ...);
 	static void AddLog(ELogVerbosity Verbosity, const char* fmt, ...);
+	static void ShutdownLogging();
 
 	virtual void Render(float DeltaTime) override;
 	void RenderDrawerToolbar();
 	void RenderLogContents(float Height = 0.0f);
 	void RenderInputLine(const char* Id, float Width, bool bRequestFocus);
-	void Clear();
+	static void Clear();
 	static void ClearHistory();
 	void SetPresentationMode(EPresentationMode InMode) { PresentationMode = InMode; }
 	EPresentationMode GetPresentationMode() const { return PresentationMode; }
@@ -50,9 +51,9 @@ public:
 
 private:
 	char InputBuf[256]{};
-	static ImVector<char*> Messages;
+	static TArray<FString> Messages;
 	static ImVector<ELogVerbosity> MessageLevels;
-	static ImVector<char*> History;
+	static TArray<FString> History;
 	int32 HistoryPos = -1;
 	ImGuiTextFilter Filter;
 	static bool AutoScroll;

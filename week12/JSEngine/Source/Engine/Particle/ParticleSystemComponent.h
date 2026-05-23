@@ -124,6 +124,8 @@ public:
 	void UpdateWorldAABB() const override;
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
 
+	void ResetParticles();
+
 private:
 	void ReleaseEmitterInstances();
 	void ReleaseRenderData();
