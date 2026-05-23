@@ -60,6 +60,7 @@ struct FParticleEmitterInstance
     bool bAxisLockEnabled = false;
     bool bFakeBurstsWhenSpawningSupressed = false;
     bool bEmitterIsDone = false;
+	bool bUseParticlePrefetch = false;
 
     int32 SortMode = 0;
 
