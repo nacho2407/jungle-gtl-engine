@@ -134,10 +134,11 @@ void FParticleSystemSceneProxy::RebuildSpriteParticleGeometry(const FFrameContex
 
 		const int32 ActiveCount = Instance->GetActiveParticleCount();
 		const FParticleDataContainer& Data = Instance->GetParticleDataContainer();
+		const uint16* ParticleIndices = Instance->ParticleIndices;
 
 		for (int32 Index = 0; Index < ActiveCount; ++Index)
 		{
-			const FBaseParticle& Particle = Data.GetParticle(Index);
+			const FBaseParticle& Particle = Data.GetParticle(ParticleIndices[Index]);
 			if (!Particle.bAlive) continue;
 
 			SpriteGeometry.AddParticleQuad(Particle, Frame.CameraRight, Frame.CameraUp);

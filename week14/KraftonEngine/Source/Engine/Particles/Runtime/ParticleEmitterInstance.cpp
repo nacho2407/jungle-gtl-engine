@@ -52,10 +52,10 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 
 void FParticleEmitterInstance::Reset()
 {
-	for (int32 Index = 0; Index < ActiveParticles; ++Index)
+	for (int32 Index = 0; Index < MaxActiveParticles; ++Index)
 	{
-		GetParticle(Index).bAlive = false;
-		ParticleIndices[Index] = 0;
+		GetParticleBySlot(Index).bAlive = false;
+		ParticleIndices[Index] = static_cast<uint16>(Index);
 	}
 
 	ActiveParticles = 0;
@@ -88,12 +88,11 @@ int32 FParticleEmitterInstance::SpawnParticles(float DeltaTime)
 			break;
 		}
 
-		const int32 ParticleIndex = ActiveParticles++;
-		ParticleIndices[ParticleIndex] = static_cast<uint16>(ParticleIndex);
+		const int32 ParticleListIndex = ActiveParticles++;
+		const int32 ParticleSlot = ParticleIndices[ParticleListIndex];
 
-		uint8* ParticleData = this->ParticleData + ParticleIndex * ParticleStride;
-		const int32 Offset = 0;
-		DECLARE_PARTICLE_PTR(FBaseParticle, Particle)
+		uint8* ParticleData = this->ParticleData + ParticleSlot * ParticleStride;
+		FBaseParticle* Particle = reinterpret_cast<FBaseParticle*>(ParticleData);
 
 		*Particle = FBaseParticle();
 		Particle->bAlive = true;
@@ -130,24 +129,27 @@ void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle)
 
 void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 {
-	uint8* ParticleData = this->ParticleData;
-	const int32 ParticleStride = this->ParticleStride;
-	const int32 ActiveParticles = this->ActiveParticles;
+	struct
+	{
+		FParticleEmitterInstance& Owner;
+		int32 Offset;
+		float DeltaTime;
+	} Context{ *this, 0, DeltaTime };
 
 	BEGIN_UPDATE_LOOP
-		Particle.Age += DeltaTime;
+		Particle->Age += DeltaTime;
 
-		if (Particle.Age >= Particle.Lifetime)
+		if (Particle->Age >= Particle->Lifetime)
 		{
-			Particle.bAlive = false;
+			Particle->bAlive = false;
 		}
 
-		if (Particle.bAlive)
+		if (Particle->bAlive)
 		{
-			Particle.OldPosition = Particle.Position;
-			Particle.Position += Particle.Velocity * DeltaTime;
-			Particle.Rotation += Particle.RotationRate * DeltaTime;
-			Particle.RelativeTime = Particle.Age * Particle.OneOverMaxLifetime;
+			Particle->OldPosition = Particle->Position;
+			Particle->Position += Particle->Velocity * DeltaTime;
+			Particle->Rotation += Particle->RotationRate * DeltaTime;
+			Particle->RelativeTime = Particle->Age * Particle->OneOverMaxLifetime;
 		}
 	END_UPDATE_LOOP
 
@@ -173,18 +175,17 @@ void FParticleEmitterInstance::KillParticle(int32 ParticleIndex)
 		return;
 	}
 
+	const int32 ParticleSlot = ParticleIndices[ParticleIndex];
 	const int32 LastParticleIndex = ActiveParticles - 1;
-	GetParticle(ParticleIndex).bAlive = false;
+	GetParticleBySlot(ParticleSlot).bAlive = false;
 
 	if (ParticleIndex != LastParticleIndex)
 	{
-		GetParticle(ParticleIndex) = GetParticle(LastParticleIndex);
-		ParticleIndices[ParticleIndex] = static_cast<uint16>(ParticleIndex);
+		ParticleIndices[ParticleIndex] = ParticleIndices[LastParticleIndex];
 	}
 
-	GetParticle(LastParticleIndex).bAlive = false;
-	ParticleIndices[LastParticleIndex] = 0;
 	--ActiveParticles;
+	ParticleIndices[ActiveParticles] = static_cast<uint16>(ParticleSlot);
 }
 
 void FParticleEmitterInstance::AllocateParticleData(int32 InMaxActiveParticles)
@@ -237,10 +238,10 @@ FBaseParticle* FParticleEmitterInstance::SpawnParticle()
 		return nullptr;
 	}
 
-	const int32 ParticleIndex = ActiveParticles++;
-	ParticleIndices[ParticleIndex] = static_cast<uint16>(ParticleIndex);
+	const int32 ParticleListIndex = ActiveParticles++;
+	const int32 ParticleSlot = ParticleIndices[ParticleListIndex];
 
-	FBaseParticle& Particle = GetParticle(ParticleIndex);
+	FBaseParticle& Particle = GetParticleBySlot(ParticleSlot);
 	Particle = FBaseParticle();
 	Particle.bAlive = true;
 	return &Particle;
@@ -248,12 +249,22 @@ FBaseParticle* FParticleEmitterInstance::SpawnParticle()
 
 FBaseParticle& FParticleEmitterInstance::GetParticle(int32 ParticleIndex)
 {
-	return *reinterpret_cast<FBaseParticle*>(ParticleData + ParticleIndex * ParticleStride);
+	return GetParticleBySlot(ParticleIndices[ParticleIndex]);
 }
 
 const FBaseParticle& FParticleEmitterInstance::GetParticle(int32 ParticleIndex) const
 {
-	return *reinterpret_cast<const FBaseParticle*>(ParticleData + ParticleIndex * ParticleStride);
+	return GetParticleBySlot(ParticleIndices[ParticleIndex]);
+}
+
+FBaseParticle& FParticleEmitterInstance::GetParticleBySlot(int32 ParticleSlot)
+{
+	return *reinterpret_cast<FBaseParticle*>(ParticleData + ParticleSlot * ParticleStride);
+}
+
+const FBaseParticle& FParticleEmitterInstance::GetParticleBySlot(int32 ParticleSlot) const
+{
+	return *reinterpret_cast<const FBaseParticle*>(ParticleData + ParticleSlot * ParticleStride);
 }
 
 UParticleModuleRequired* FParticleEmitterInstance::GetRequiredModule() const

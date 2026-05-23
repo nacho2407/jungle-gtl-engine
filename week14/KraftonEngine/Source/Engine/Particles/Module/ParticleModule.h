@@ -124,13 +124,16 @@ public:
 
 	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override
 	{
-		uint8* ParticleData = Owner->ParticleData;
-		const int32 ParticleStride = Owner->ParticleStride;
-		const int32 ActiveParticles = Owner->ActiveParticles;
+		struct
+		{
+			FParticleEmitterInstance& Owner;
+			int32 Offset;
+			float DeltaTime;
+		} Context{ *Owner, Offset, DeltaTime };
 
 		BEGIN_UPDATE_LOOP
-			const float T = Particle.RelativeTime;
-			Particle.Color = StartColor * (1.0f - T) + EndColor * T;
+			const float T = Particle->RelativeTime;
+			Particle->Color = StartColor * (1.0f - T) + EndColor * T;
 		END_UPDATE_LOOP
 	}
 };

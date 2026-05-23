@@ -40,7 +40,8 @@ struct FParticleEmitterInstance
 		{
 			return nullptr;
 		}
-		return reinterpret_cast<T*>(ParticleData + ParticleIndex * ParticleStride + PayloadOffset);
+		const int32 ParticleSlot = ParticleIndices[ParticleIndex];
+		return reinterpret_cast<T*>(ParticleData + ParticleSlot * ParticleStride + PayloadOffset);
 	}
 
 	template<typename T>
@@ -50,7 +51,8 @@ struct FParticleEmitterInstance
 		{
 			return nullptr;
 		}
-		return reinterpret_cast<const T*>(ParticleData + ParticleIndex * ParticleStride + PayloadOffset);
+		const int32 ParticleSlot = ParticleIndices[ParticleIndex];
+		return reinterpret_cast<const T*>(ParticleData + ParticleSlot * ParticleStride + PayloadOffset);
 	}
 
 	UParticleEmitter* SpriteTemplate = nullptr;
@@ -82,6 +84,8 @@ protected:
 	FBaseParticle* SpawnParticle();
 	FBaseParticle& GetParticle(int32 ParticleIndex);
 	const FBaseParticle& GetParticle(int32 ParticleIndex) const;
+	FBaseParticle& GetParticleBySlot(int32 ParticleSlot);
+	const FBaseParticle& GetParticleBySlot(int32 ParticleSlot) const;
 
 	UParticleModuleSpawn* GetSpawnModule() const;
 
