@@ -934,18 +934,6 @@ void FParticleSystemEditorWidget::RenderToolbar()
 			ClearDirty();
 		}
 	}
-	ImGui::SameLine();
-
-	if (ImGui::Button("Add Emitter", ImVec2(96.0f, 0.0f)))
-	{
-		if (ParticleSystem->AddDefaultEmitter())
-		{
-			const int32 NewEmitterIndex = static_cast<int32>(ParticleSystem->GetEmitters().size()) - 1;
-			SelectEmitter(NewEmitterIndex);
-			MarkDirty();
-			RestartPreviewSimulation();
-		}
-	}
 	ImGui::EndDisabled();
 	ImGui::SameLine();
 
@@ -1448,15 +1436,9 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			return Height + ImGui::GetTextLineHeightWithSpacing();
 		}
 
-		const TArray<UParticleLODLevel*>& LODLevels = Emitter->GetLODLevels();
-		Height += LODLevels.empty() ? ImGui::GetTextLineHeightWithSpacing() : ImGui::GetFrameHeightWithSpacing();
-		Height += 3.0f + Style.ItemSpacing.y;
-
 		UParticleLODLevel* LODLevel = Emitter->GetLODLevel(GetDisplayLODIndex(Emitter));
 		if (LODLevel)
 		{
-			Height += ImGui::GetFrameHeightWithSpacing();
-			Height += 3.0f + Style.ItemSpacing.y;
 			Height += ModuleRowHeight + Style.ItemSpacing.y;
 			Height += static_cast<float>(LODLevel->GetModules().size()) * ModuleRowHeight;
 			Height += ModuleDropTargetHeight;
@@ -1470,6 +1452,9 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 	{
 		EmitterColumnHeight = (std::max)(EmitterColumnHeight, CalculateEmitterColumnHeight(Emitter));
 	}
+
+	bool bSelectParticleSystemRequested = false;
+	int32 DefaultEmitterInsertIndex = -1;
 
 	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(Emitters.size()); ++EmitterIndex)
 	{
@@ -1533,7 +1518,31 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		auto RenderAddModuleMenu = [&]()
 		{
 			RenderUnavailableCategory("Emitter");
-			RenderUnavailableCategory("Particle System");
+
+			if (ImGui::BeginMenu("Particle System"))
+			{
+				ImGui::TextDisabled("PARTICLE SYSTEM");
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Select Particle System"))
+				{
+					bSelectParticleSystemRequested = true;
+				}
+				if (ImGui::MenuItem("Add New Emitter Before"))
+				{
+					DefaultEmitterInsertIndex = EmitterIndex;
+				}
+				if (ImGui::MenuItem("Add New Emitter After"))
+				{
+					DefaultEmitterInsertIndex = EmitterIndex + 1;
+				}
+
+				ImGui::BeginDisabled();
+				ImGui::MenuItem("Remove Duplicate Modules");
+				ImGui::EndDisabled();
+
+				ImGui::EndMenu();
+			}
 
 			if (ImGui::BeginMenu("TypeData"))
 			{
@@ -1697,7 +1706,6 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		char Header[64];
 		std::snprintf(Header, sizeof(Header), "Emitter %d", EmitterIndex);
 		DrawList->AddText(ImVec2(HeaderMin.x + 8.0f, HeaderMin.y + 7.0f), IM_COL32(240, 242, 245, 255), Header);
-		DrawList->AddText(ImVec2(HeaderMin.x + 8.0f, HeaderMin.y + 30.0f), IM_COL32(160, 210, 255, 255), GetRenderTypeLabel(RenderType));
 		if (Emitter)
 		{
 			char CountLabel[32];
@@ -1713,50 +1721,8 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		if (Emitter)
 		{
 			bool bModuleContextMenuOpen = false;
-			const TArray<UParticleLODLevel*>& LODLevels = Emitter->GetLODLevels();
-			if (!LODLevels.empty())
-			{
-				for (int32 LODIndex = 0; LODIndex < static_cast<int32>(LODLevels.size()); ++LODIndex)
-				{
-					const UParticleLODLevel* LOD = LODLevels[LODIndex];
-					const bool bSelectedLOD = IsLODSelected(EmitterIndex, LODIndex);
-					const bool bEnabledLOD = LOD && LOD->IsEnabled();
-					char LODLabel[24];
-					std::snprintf(LODLabel, sizeof(LODLabel), "LOD %d", LOD ? LOD->GetLevel() : LODIndex);
-					ImGui::PushID(LODIndex);
-					ImGui::PushStyleColor(ImGuiCol_Button, bSelectedLOD ? ImVec4(0.38f, 0.42f, 0.52f, 1.0f) : ImVec4(0.20f, 0.21f, 0.24f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_Text, bEnabledLOD ? ImVec4(0.86f, 0.88f, 0.92f, 1.0f) : ImVec4(0.48f, 0.50f, 0.54f, 1.0f));
-					if (ImGui::SmallButton(LODLabel))
-					{
-						SelectLOD(EmitterIndex, LODIndex);
-					}
-					ImGui::PopStyleColor(2);
-					ImGui::PopID();
-					if (LODIndex + 1 < static_cast<int32>(LODLevels.size()))
-					{
-						ImGui::SameLine();
-					}
-				}
-				ImGui::Dummy(ImVec2(0.0f, 3.0f));
-			}
-			else
-			{
-				ImGui::TextDisabled("No LOD levels.");
-			}
-
 			if (LODLevel)
 			{
-				if (ImGui::SmallButton("+ Module"))
-				{
-					ImGui::OpenPopup("##AddParticleModulePopup");
-				}
-				if (ImGui::BeginPopup("##AddParticleModulePopup"))
-				{
-					RenderAddModuleMenu();
-					ImGui::EndPopup();
-				}
-				ImGui::Dummy(ImVec2(0.0f, 3.0f));
-
 				FParticleModuleDropRequest DropRequest;
 				TArray<UParticleModule*>& Modules = LODLevel->GetMutableModules();
 				const UParticleModuleTypeDataBase* TypeDataModule = LODLevel->GetTypeDataModule();
@@ -1872,6 +1838,31 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		{
 			ImGui::SameLine();
 		}
+	}
+
+	if (DefaultEmitterInsertIndex >= 0)
+	{
+		TArray<UParticleEmitter*>& MutableEmitters = ParticleSystem->GetMutableEmitters();
+		const int32 OldEmitterCount = static_cast<int32>(MutableEmitters.size());
+		UParticleEmitter* NewEmitter = ParticleSystem->AddDefaultEmitter();
+		if (NewEmitter && !MutableEmitters.empty())
+		{
+			const int32 AppendedIndex = static_cast<int32>(MutableEmitters.size()) - 1;
+			const int32 TargetIndex = (std::max)(0, (std::min)(DefaultEmitterInsertIndex, OldEmitterCount));
+			if (TargetIndex != AppendedIndex)
+			{
+				MutableEmitters.erase(MutableEmitters.begin() + AppendedIndex);
+				MutableEmitters.insert(MutableEmitters.begin() + TargetIndex, NewEmitter);
+			}
+
+			SelectLOD(TargetIndex, 0);
+			MarkDirty();
+			RestartPreviewSimulation();
+		}
+	}
+	else if (bSelectParticleSystemRequested)
+	{
+		SelectParticleSystem();
 	}
 
 	ImGui::EndChild();
