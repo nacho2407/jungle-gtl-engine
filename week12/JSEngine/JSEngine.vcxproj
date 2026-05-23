@@ -349,6 +349,7 @@
     </ItemGroup>
   </Target>
   <ItemGroup>
+    <ClCompile Include="ParticleSystemAssetLoader.cpp" />
     <ClCompile Include="Source\Editor\Asset\EditorAssetService.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
@@ -955,6 +956,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ParticleSystemAssetLoader.h" />
     <ClInclude Include="Source\Editor\Asset\EditorAssetService.h" />
     <ClInclude Include="Source\Editor\Command\EditorCommandSystem.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
