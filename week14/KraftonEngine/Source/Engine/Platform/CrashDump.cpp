@@ -234,7 +234,6 @@ namespace
 
 __declspec(noinline) void CauseCrash()
 {
-	//crash 시 commit dump 확인
 	ULONG_PTR ExceptionArguments[2] = { 1, 0 };
 	RaiseException(EXCEPTION_ACCESS_VIOLATION, EXCEPTION_NONCONTINUABLE, 2, ExceptionArguments);
 }
