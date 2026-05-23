@@ -1,0 +1,4 @@
+#pragma once
+#define CURRENT_FILE_ID Source_Engine_Particles_ParticleSystemComponent_h
+#define Source_Engine_Particles_ParticleSystemComponent_h_11_GENERATED_BODY
+#undef CURRENT_FILE_ID
