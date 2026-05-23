@@ -36,23 +36,43 @@ struct FParticleEmitterInstance
 	template<typename T>
 	T* GetParticlePayload(int32 ParticleIndex)
 	{
-		if (!ParticleData || ParticleIndex < 0 || ParticleIndex >= ActiveParticles)
-		{
-			return nullptr;
-		}
-		const int32 ParticleSlot = ParticleIndices[ParticleIndex];
-		return reinterpret_cast<T*>(ParticleData + ParticleSlot * ParticleStride + PayloadOffset);
+		return GetParticlePayload<T>(ParticleIndex, PayloadOffset);
 	}
 
 	template<typename T>
-	const T* GetParticlePayload(int32 ParticleIndex) const
+	T* GetParticlePayload(int32 ParticleIndex, int32 Offset)
 	{
 		if (!ParticleData || ParticleIndex < 0 || ParticleIndex >= ActiveParticles)
 		{
 			return nullptr;
 		}
+		if (Offset < 0 || Offset + static_cast<int32>(sizeof(T)) > ParticleStride)
+		{
+			return nullptr;
+		}
 		const int32 ParticleSlot = ParticleIndices[ParticleIndex];
-		return reinterpret_cast<const T*>(ParticleData + ParticleSlot * ParticleStride + PayloadOffset);
+		return reinterpret_cast<T*>(ParticleData + ParticleSlot * ParticleStride + Offset);
+	}
+
+	template<typename T>
+	const T* GetParticlePayload(int32 ParticleIndex) const
+	{
+		return GetParticlePayload<T>(ParticleIndex, PayloadOffset);
+	}
+
+	template<typename T>
+	const T* GetParticlePayload(int32 ParticleIndex, int32 Offset) const
+	{
+		if (!ParticleData || ParticleIndex < 0 || ParticleIndex >= ActiveParticles)
+		{
+			return nullptr;
+		}
+		if (Offset < 0 || Offset + static_cast<int32>(sizeof(T)) > ParticleStride)
+		{
+			return nullptr;
+		}
+		const int32 ParticleSlot = ParticleIndices[ParticleIndex];
+		return reinterpret_cast<const T*>(ParticleData + ParticleSlot * ParticleStride + Offset);
 	}
 
 	UParticleEmitter* SpriteTemplate = nullptr;
