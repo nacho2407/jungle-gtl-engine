@@ -524,6 +524,18 @@ def cpp_optional_string_literal(value: str | None) -> str:
     return cpp_string_literal(value) if value else "nullptr"
 
 
+def cpp_float_literal(value: str) -> str:
+    literal = value.strip()
+    if not literal:
+        return "0.0f"
+    if literal.endswith(("f", "F")):
+        return literal
+    # Preserve non-literal C++ expressions such as constants or function calls.
+    if not re.match(r"^[+-]?(?:(?:\d+\.\d*)|(?:\.\d+)|(?:\d+))(?:[eE][+-]?\d+)?$", literal):
+        return literal
+    return f"{literal}f"
+
+
 def infer_allowed_class(asset_type: str | None, explicit_allowed_class: str | None) -> str | None:
     if explicit_allowed_class:
         return explicit_allowed_class
@@ -646,7 +658,7 @@ def get_array_element_property_type(prop: ReflectedProperty) -> str | None:
             return "ClassRef"
         if get_tobjectptr_inner_type(element_cpp_type) or (element_cpp_type.endswith("*") and not element_cpp_type.endswith("char*")):
             return "ObjectRef"
-        if prop.metadata and any(key == "struct" or key == "structtype" for key, _ in prop.metadata):
+        if prop.struct_type or (prop.metadata and any(key == "struct" or key == "structtype" for key, _ in prop.metadata)):
             return "Struct"
         return TYPE_MAP.get(element_cpp_type)
     return None
@@ -802,9 +814,9 @@ def build_array_inner_property(
             f"\t\tPF_None,\n"
             f"\t\t0,\n"
             f"\t\tsizeof({element_cpp_type}),\n"
-            f"\t\t{prop.min_value},\n"
-            f"\t\t{prop.max_value},\n"
-            f"\t\t{prop.speed_value},\n"
+            f"\t\t{cpp_float_literal(prop.min_value)},\n"
+            f"\t\t{cpp_float_literal(prop.max_value)},\n"
+            f"\t\t{cpp_float_literal(prop.speed_value)},\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
@@ -819,9 +831,9 @@ def build_array_inner_property(
         f"\t\tPF_None,\n"
         f"\t\t0,\n"
         f"\t\tsizeof({element_cpp_type}),\n"
-        f"\t\t{prop.min_value},\n"
-        f"\t\t{prop.max_value},\n"
-        f"\t\t{prop.speed_value},\n"
+        f"\t\t{cpp_float_literal(prop.min_value)},\n"
+        f"\t\t{cpp_float_literal(prop.max_value)},\n"
+        f"\t\t{cpp_float_literal(prop.speed_value)},\n"
         f"\t\t{cpp_string_literal(prop.display_name)},\n"
         f"\t\t{{{metadata_entries}}},\n"
         f"\t\t{cpp_string_literal(prop.owner)}\n"
@@ -933,6 +945,9 @@ def make_reflected_property_for_type(
         return None, f"unsupported reflected type '{cpp_type}'"
 
     if property_type == "Array":
+        element_cpp_type = get_array_element_cpp_type(storage_cpp_type)
+        if element_cpp_type and not struct_type and element_cpp_type in known_structs:
+            struct_type = element_cpp_type
         temp_prop = ReflectedProperty(
             owner=owner,
             cpp_type=storage_cpp_type,
@@ -986,6 +1001,66 @@ def make_reflected_property_for_type(
         asset_type=asset_type,
         allowed_class=allowed_class,
     ), None
+
+def find_ufunction_declaration(body: str, statement_start: int) -> tuple[str, int] | None:
+    """Return the reflected member declaration and the cursor after it.
+
+    UFUNCTION may annotate either a plain declaration ending with ';' or an
+    inline definition ending with a matched function body. The reflection parser
+    must consume the declaration prefix only; otherwise the first ';' inside an
+    inline body such as `{ return Foo; }` is mistaken for the declaration end.
+    """
+    cursor = statement_start
+    while cursor < len(body) and body[cursor].isspace():
+        cursor += 1
+
+    depth_angle = 0
+    depth_paren = 0
+    depth_bracket = 0
+    in_string: str | None = None
+    escape = False
+
+    for index in range(cursor, len(body)):
+        ch = body[index]
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == in_string:
+                in_string = None
+            continue
+
+        if ch == '"' or ch == "'":
+            in_string = ch
+            continue
+
+        if ch == '<':
+            depth_angle += 1
+        elif ch == '>' and depth_angle > 0:
+            depth_angle -= 1
+        elif ch == '(':
+            depth_paren += 1
+        elif ch == ')' and depth_paren > 0:
+            depth_paren -= 1
+        elif ch == '[':
+            depth_bracket += 1
+        elif ch == ']' and depth_bracket > 0:
+            depth_bracket -= 1
+
+        if depth_angle == 0 and depth_paren == 0 and depth_bracket == 0:
+            if ch == ';':
+                declaration = body[cursor:index].strip()
+                return (declaration, index + 1) if declaration else None
+            if ch == '{':
+                body_end = find_matching(body, index, '{', '}')
+                if body_end < 0:
+                    return None
+                declaration = body[cursor:index].strip()
+                return (declaration, body_end + 1) if declaration else None
+
+    return None
+
 
 def parse_member_function_declaration(declaration: str) -> dict[str, object] | None:
     declaration = declaration.strip()
@@ -1076,18 +1151,19 @@ def parse_ufunctions(
                 break
 
             statement_start = paren_end + 1
-            semicolon = body.find(";", statement_start)
-            if semicolon < 0:
+            declaration_info = find_ufunction_declaration(body, statement_start)
+            if not declaration_info:
                 warnings.append(f"{class_name}: UFUNCTION without following member declaration")
                 break
+            declaration_text, declaration_end = declaration_info
 
             metadata, flag_tokens = parse_metadata(body[paren_start + 1:paren_end])
-            parsed = parse_member_function_declaration(body[statement_start:semicolon])
+            parsed = parse_member_function_declaration(declaration_text)
             if not parsed:
                 warnings.append(
-                    f"error: {class_name}: unsupported UFUNCTION declaration near {body[statement_start:semicolon].strip()!r}"
+                    f"error: {class_name}: unsupported UFUNCTION declaration near {declaration_text!r}"
                 )
-                cursor = semicolon + 1
+                cursor = declaration_end
                 continue
 
             function_name = str(parsed["name"])
@@ -1099,7 +1175,7 @@ def parse_ufunctions(
             signature = make_function_signature(function_name, param_types, is_const)
             if signature in seen_signatures:
                 warnings.append(f"error: {class_name}.{function_name}: duplicate reflected UFUNCTION signature '{signature}'")
-                cursor = semicolon + 1
+                cursor = declaration_end
                 continue
             seen_signatures.add(signature)
 
@@ -1157,7 +1233,7 @@ def parse_ufunctions(
                         warnings.append(
                             f"error: {class_name}.{function_name}: reflected return references are not supported; return by value or pointer"
                         )
-                        cursor = semicolon + 1
+                        cursor = declaration_end
                         continue
                     return_storage_type = strip_reference_for_storage(return_type)
                     return_property, error = make_reflected_property_for_type(
@@ -1174,7 +1250,7 @@ def parse_ufunctions(
                     )
                     if error or not return_property:
                         warnings.append(f"error: {class_name}.{function_name} return type: {error}")
-                        cursor = semicolon + 1
+                        cursor = declaration_end
                         continue
 
                 found.append(
@@ -1195,7 +1271,7 @@ def parse_ufunctions(
                         is_static=is_static,
                     )
                 )
-            cursor = semicolon + 1
+            cursor = declaration_end
 
         if found:
             functions_by_class[class_name] = tuple(found)
@@ -1263,6 +1339,9 @@ def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum], known_str
 
             if property_type == "Array":
                 element_cpp_type = get_array_element_cpp_type(cpp_type)
+                inferred_array_struct_type = metadata.get("structtype") or metadata.get("struct")
+                if element_cpp_type and not inferred_array_struct_type and element_cpp_type in known_structs:
+                    inferred_array_struct_type = element_cpp_type
                 element_property_type = get_array_element_property_type(
                     ReflectedProperty(
                         owner=class_name,
@@ -1277,7 +1356,7 @@ def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum], known_str
                         max_value="0.0f",
                         speed_value="0.1f",
                         enum_type_name=None,
-                        struct_type=metadata.get("structtype") or metadata.get("struct") or "",
+                        struct_type=inferred_array_struct_type or "",
                         asset_type=metadata.get("assettype"),
                         allowed_class=infer_allowed_class(metadata.get("assettype"), metadata.get("allowedclass")),
                     )
@@ -1306,6 +1385,10 @@ def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum], known_str
                 enum_info = enums[enum_key]
                 enum_type_name = enum_info.name
             struct_type = metadata.get("structtype") or metadata.get("struct")
+            if property_type == "Array":
+                element_cpp_type = get_array_element_cpp_type(cpp_type)
+                if element_cpp_type and not struct_type and element_cpp_type in known_structs:
+                    struct_type = element_cpp_type
             if property_type == "Struct" and not struct_type:
                 struct_type = normalized_cpp_type
             if property_type == "Struct" and struct_type not in known_structs:
@@ -1752,9 +1835,9 @@ def render_property_allocation(
             f"\t\t{prop.flags},\n"
             f"\t\t{offset_expr},\n"
             f"\t\t{size_expr},\n"
-            f"\t\t{prop.min_value},\n"
-            f"\t\t{prop.max_value},\n"
-            f"\t\t{prop.speed_value},\n"
+            f"\t\t{cpp_float_literal(prop.min_value)},\n"
+            f"\t\t{cpp_float_literal(prop.max_value)},\n"
+            f"\t\t{cpp_float_literal(prop.speed_value)},\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
@@ -1812,9 +1895,9 @@ def render_property_allocation(
         f"\t\t{prop.flags},\n"
         f"\t\t{offset_expr},\n"
         f"\t\t{size_expr},\n"
-        f"\t\t{prop.min_value},\n"
-        f"\t\t{prop.max_value},\n"
-        f"\t\t{prop.speed_value},\n"
+        f"\t\t{cpp_float_literal(prop.min_value)},\n"
+        f"\t\t{cpp_float_literal(prop.max_value)},\n"
+        f"\t\t{cpp_float_literal(prop.speed_value)},\n"
         f"\t\t{cpp_string_literal(prop.display_name)},\n"
         f"\t\t{{{metadata_entries}}},\n"
         f"\t\t{cpp_string_literal(prop.owner)}\n"

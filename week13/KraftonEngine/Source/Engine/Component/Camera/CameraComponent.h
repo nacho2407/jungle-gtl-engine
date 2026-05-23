@@ -30,6 +30,7 @@ public:
 	void EndPlay() override;
 
 
+	UFUNCTION(Callable, Category="Camera")
 	void LookAt(const FVector& Target);
 	void SetCameraState(const FCameraState& NewState);
 	const FCameraState& GetCameraState() const { return CameraState; }
@@ -39,16 +40,25 @@ public:
 	// DeltaTime 은 향후 카메라 lag / interpolation 에 쓰이도록 시그니처 보존.
 	void GetCameraView(float DeltaTime, FMinimalViewInfo& OutPOV) const;
 
+	UFUNCTION(Callable, Exec, Category="Camera")
 	void SetFOV(float InFOV) { CameraState.FOV = InFOV; }
+	UFUNCTION(Callable, Exec, Category="Camera")
 	void SetOrthoWidth(float InWidth) { CameraState.OrthoWidth = InWidth; }
+	UFUNCTION(Callable, Exec, Category="Camera")
 	void SetOrthographic(bool bOrtho) { CameraState.bIsOrthogonal = bOrtho; }
 
+	UFUNCTION(Callable, Exec, Category="Camera")
 	void OnResize(int32 Width, int32 Height);
 
+	UFUNCTION(Pure, Category="Camera")
 	float GetFOV() const { return CameraState.FOV; }
+	UFUNCTION(Pure, Category="Camera")
 	float GetNearPlane() const { return CameraState.NearZ; }
+	UFUNCTION(Pure, Category="Camera")
 	float GetFarPlane() const { return CameraState.FarZ; }
+	UFUNCTION(Pure, Category="Camera")
 	float GetOrthoWidth() const { return CameraState.OrthoWidth; }
+	UFUNCTION(Pure, Category="Camera")
 	bool IsOrthogonal() const { return CameraState.bIsOrthogonal; }
 
 private:

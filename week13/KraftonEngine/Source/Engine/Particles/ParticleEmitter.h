@@ -38,12 +38,15 @@ struct FParticleBurst
 {
 	GENERATED_BODY()
 
+	UPROPERTY(EditAnywhere, Category="Burst", DisplayName="Count")
 	int32 Count = 0;
 
 	/** If >= 0, use as a range [CountLow..Count] */
+	UPROPERTY(EditAnywhere, Category="Burst", DisplayName="Count Low")
 	int32 CountLow = -1;
 
 	/** The time at which to burst them (0..1: emitter lifetime) */
+	UPROPERTY(EditAnywhere, Category="Burst", DisplayName="Time", Min="0.0", Max="1.0", Speed="0.01")
 	float Time = 0.0f;
 };
 

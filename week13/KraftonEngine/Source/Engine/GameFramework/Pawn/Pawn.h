@@ -1,6 +1,8 @@
 #pragma once
 
 #include "GameFramework/AActor.h"
+#include "GameFramework/GameMode/PlayerController.h"
+#include "Component/Input/InputComponent.h"
 #include "Math/Rotator.h"
 
 #include "Source/Engine/GameFramework/Pawn/Pawn.generated.h"
@@ -39,26 +41,36 @@ public:
 
 	void BeginPlay() override;
 
+	UFUNCTION(Pure, Category="Pawn")
 	APlayerController* GetController() const { return Controller; }
+	UFUNCTION(Pure, Category="Pawn")
 	bool IsPossessed() const { return Controller != nullptr; }
 
+	UFUNCTION(Callable, Category="Pawn")
 	void SetAutoPossessPlayer(bool bIn) { bAutoPossessPlayer = bIn; }
+	UFUNCTION(Pure, Category="Pawn")
 	bool GetAutoPossessPlayer() const { return bAutoPossessPlayer; }
 
+	UFUNCTION(Pure, Category="Pawn|Input")
 	UInputComponent* GetInputComponent() const { return InputComponent; }
 
 	// Control rotation — UE 패턴. capsule rotation 과 분리된 "사용자가 보고 있는 방향".
 	// SpringArm/Camera 가 bUsePawnControlRotation 통해 이걸 사용 → mouse look 이 카메라만 회전.
 	// capsule yaw 가 이걸 따라가게 하려면 자식이 bUseControllerRotationYaw 등 옵션으로 toggle.
+	UFUNCTION(Pure, Category="Pawn|Control")
 	virtual FRotator GetControlRotation() const { return ControlRotation; }
+	UFUNCTION(Callable, Category="Pawn|Control")
 	void             SetControlRotation(const FRotator& NewRot) { ControlRotation = NewRot; }
 
 	// 누적 헬퍼 — ACharacter::Tick 등에서 mouse delta * sensitivity 호출.
+	UFUNCTION(Callable, Category="Pawn|Control")
 	void             AddYawInput  (float Value) { ControlRotation.Yaw   += Value; }
+	UFUNCTION(Callable, Category="Pawn|Control")
 	void             AddPitchInput(float Value) { ControlRotation.Pitch += Value; }
 
 	// RootComponent (Character 의 경우 Capsule) 의 rotation 을 ControlRotation 의 해당 axis 로
 	// 즉시 set. ACharacter::Tick 의 mouse handling 직후 호출 — 1 frame 지연 없이 반영.
+	UFUNCTION(Callable, Category="Pawn|Control")
 	void             ApplyControllerRotationToRoot();
 
 	void Serialize(FArchive& Ar) override;

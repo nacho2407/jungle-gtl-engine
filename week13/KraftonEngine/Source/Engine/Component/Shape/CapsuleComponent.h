@@ -11,10 +11,15 @@ class UCapsuleComponent : public UShapeComponent
 {
 public:
 	GENERATED_BODY()
+	UFUNCTION(Callable, Category="Shape")
 	void SetCapsuleSize(float InRadius, float InHalfHeight);
+	UFUNCTION(Pure, Category="Shape")
 	float GetScaledCapsuleRadius() const;
+	UFUNCTION(Pure, Category="Shape")
 	float GetScaledCapsuleHalfHeight() const;
+	UFUNCTION(Pure, Category="Shape")
 	float GetUnscaledCapsuleRadius() const { return CapsuleRadius; }
+	UFUNCTION(Pure, Category="Shape")
 	float GetUnscaledCapsuleHalfHeight() const { return CapsuleHalfHeight; }
 
 	void ContributeSelectedVisuals(FScene& Scene) const override;

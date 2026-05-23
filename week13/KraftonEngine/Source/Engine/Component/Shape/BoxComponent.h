@@ -11,8 +11,11 @@ class UBoxComponent : public UShapeComponent
 {
 public:
 	GENERATED_BODY()
+	UFUNCTION(Callable, Category="Shape")
 	void SetBoxExtent(const FVector& InExtent);
+	UFUNCTION(Pure, Category="Shape")
 	FVector GetScaledBoxExtent() const;
+	UFUNCTION(Pure, Category="Shape")
 	FVector GetUnscaledBoxExtent() const { return BoxExtent; }
 
 	void ContributeSelectedVisuals(FScene& Scene) const override;

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/ActorComponent.h"
 #include "Component/SceneComponent.h"
@@ -25,11 +25,16 @@ public:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 	void PostEditProperty(const char* PropertyName) override;
 
+	UFUNCTION(Callable, Category="Movement")
 	void SetUpdatedComponent(USceneComponent* NewUpdatedComponent);
+	UFUNCTION(Pure, Category="Movement")
 	USceneComponent* GetUpdatedComponent() const;
+	UFUNCTION(Pure, Category="Movement")
 	bool HasValidUpdatedComponent() const { return GetUpdatedComponent() != nullptr; }
+	UFUNCTION(Pure, Category="Movement")
 	FString GetUpdatedComponentDisplayName() const;
 	TArray<USceneComponent*> GetOwnerSceneComponents() const;
+	UFUNCTION(Callable, Category="Movement")
 	bool ResolveUpdatedComponent();
 	void ClearUpdatedComponentIfMatches(const USceneComponent* RemovedComponent);
 

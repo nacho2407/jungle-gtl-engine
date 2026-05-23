@@ -2,6 +2,10 @@
 
 #include "Animation/AnimInstance.h"
 
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
+
 class UAnimSequenceBase;
 
 // 시퀀스 1개를 재생하는 가장 단순한 인스턴스.

@@ -4,6 +4,7 @@
 #include "Core/Types/PropertyTypes.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/Static/StaticMesh.h"
+#include "Materials/Material.h"
 #include "Object/Ptr/ObjectPtr.h"
 #include "Object/Ptr/SoftObjectPtr.h"
 
@@ -33,10 +34,14 @@ public:
 	// 구체 프록시 생성 (FStaticMeshSceneProxy)
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
 
+	UFUNCTION(Callable, Category="Mesh")
 	void SetStaticMesh(UStaticMesh* InMesh);
+	UFUNCTION(Pure, Category="Mesh")
 	UStaticMesh* GetStaticMesh() const;
 
+	UFUNCTION(Callable, Category="Materials")
 	void SetMaterial(int32 ElementIndex, UMaterial* InMaterial);
+	UFUNCTION(Pure, Category="Materials")
 	UMaterial* GetMaterial(int32 ElementIndex) const;
 	const TArray<UMaterial*>& GetOverrideMaterials() const { return OverrideMaterials; }
 

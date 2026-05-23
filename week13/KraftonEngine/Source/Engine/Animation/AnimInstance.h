@@ -7,6 +7,11 @@
 #include "Object/FName.h"
 #include "Animation/AnimationMode.h"
 #include "Animation/Nodes/AnimNode_Base.h"
+#include "Animation/Montage/AnimMontage.h"
+#include "Animation/Montage/AnimMontageInstance.h"
+#include "Animation/Sequence/AnimSequenceBase.h"
+#include "GameFramework/Pawn/Pawn.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
 
 #include <memory>
 #include <utility>
@@ -76,8 +81,10 @@ public:
 	// ── 컴포넌트 접근 ──
 	void SetOwningComponent(USkeletalMeshComponent* InComp) { OwningComponent = InComp; }
 	USkeletalMeshComponent* GetOwningComponent() const { return OwningComponent; }
+	UFUNCTION(Pure, Category="Animation")
 	USkeletalMesh*          GetSkeletalMesh()    const;
 
+	UFUNCTION(Pure, Category="Animation")
 	APawn* TryGetPawnOwner() const;
 
 	// ── Notify ──
@@ -111,7 +118,9 @@ public:
 	void AccumulateRootMotion(const FTransform& Delta);
 	FTransform ConsumeRootMotion();
 
+	UFUNCTION(Pure, Category="Animation|RootMotion")
 	ERootMotionMode GetRootMotionMode() const { return RootMotionMode; }
+	UFUNCTION(Callable, Exec, Category="Animation|RootMotion")
 	void            SetRootMotionMode(ERootMotionMode InMode) { RootMotionMode = InMode; }
 
 	// ── Montage (Phase 2.1+: slot 별 보유) ──
@@ -120,18 +129,25 @@ public:
 	// Phase 2.2 에서 FAnimNode_Slot 이 GetMontageInstanceForSlot 으로 trees 안에서 조회.
 	static const FName DefaultMontageSlot;
 
+	UFUNCTION(Callable, Category="Animation|Montage")
 	void  PlayMontage(UAnimMontage* Montage, FName StartSection = FName::None,
 	                  float PlayRate = 1.0f, float BlendInTime = -1.0f,
 	                  FName SlotName = FName::None);
+	UFUNCTION(Callable, Exec, Category="Animation|Montage")
 	void  StopMontage(float BlendOutTime = -1.0f, FName SlotName = FName::None);
+	UFUNCTION(Callable, Exec, Category="Animation|Montage")
 	void  Montage_JumpToSection(FName SectionName, FName SlotName = FName::None);
+	UFUNCTION(Callable, Exec, Category="Animation|Montage")
 	void  Montage_SetNextSection(FName From, FName To, FName SlotName = FName::None);
+	UFUNCTION(Pure, Category="Animation|Montage")
 	bool  IsMontagePlaying(UAnimMontage* Montage = nullptr, FName SlotName = FName::None) const;
 
 	// Slot 별 montage instance 조회. 없으면 nullptr.
+	UFUNCTION(Pure, Category="Animation|Montage")
 	UAnimMontageInstance* GetMontageInstanceForSlot(FName SlotName) const;
 
 	// Legacy alias — DefaultSlot 의 instance. 새 코드는 GetMontageInstanceForSlot 권장.
+	UFUNCTION(Pure, Category="Animation|Montage")
 	UAnimMontageInstance* GetMontageInstance() const;
 
 	// ── AnimGraph (Phase 1.4+) ──

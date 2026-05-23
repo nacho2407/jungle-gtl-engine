@@ -11,8 +11,11 @@ class USphereComponent : public UShapeComponent
 {
 public:
 	GENERATED_BODY()
+	UFUNCTION(Callable, Category="Shape")
 	void SetSphereRadius(float InRadius);
+	UFUNCTION(Pure, Category="Shape")
 	float GetScaledSphereRadius() const;
+	UFUNCTION(Pure, Category="Shape")
 	float GetUnscaledSphereRadius() const { return SphereRadius; }
 
 	void ContributeSelectedVisuals(FScene& Scene) const override;

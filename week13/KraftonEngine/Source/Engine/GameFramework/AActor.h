@@ -52,14 +52,18 @@ public:
 	}
 
 	// UClass 기반 런타임 컴포넌트 생성
+	UFUNCTION(Callable, Category="Actor|Components")
 	UActorComponent* AddComponentByClass(UClass* Class);
 
+	UFUNCTION(Callable, Category="Actor|Components")
 	void RemoveComponent(UActorComponent* Component);
 
 	// 외부에서 생성된 컴포넌트를 등록 (역직렬화 등)
 	void RegisterComponent(UActorComponent* Comp);
 
+	UFUNCTION(Callable, Category="Actor|Components")
 	void SetRootComponent(USceneComponent* Comp);
+	UFUNCTION(Pure, Category="Actor|Components")
 	USceneComponent* GetRootComponent() const { return RootComponent; }
 
 	const TArray<UActorComponent*>& GetComponents() const { return OwnedComponents; }
@@ -78,34 +82,48 @@ public:
 	}
 
 	// Transform — Location
+	UFUNCTION(Pure, Category="Actor|Transform")
 	FVector GetActorLocation() const;
+	UFUNCTION(Callable, Category="Actor|Transform")
 	void SetActorLocation(const FVector& Location);
+	UFUNCTION(Callable, Category="Actor|Transform")
 	void AddActorWorldOffset(const FVector& Delta);
 
 	// Transform — Rotation
+	UFUNCTION(Pure, Category="Actor|Transform")
 	FRotator GetActorRotation() const;
+	UFUNCTION(Callable, Category="Actor|Transform")
 	void SetActorRotation(const FRotator& NewRotation);
 	void SetActorRotation(const FVector& EulerRotation);
 
 	// Transform — Scale
+	UFUNCTION(Pure, Category="Actor|Transform")
 	FVector GetActorScale() const;
+	UFUNCTION(Callable, Category="Actor|Transform")
 	void SetActorScale(const FVector& NewScale);
 
 	// Direction
+	UFUNCTION(Pure, Category="Actor|Transform")
 	FVector GetActorForward() const;
+	UFUNCTION(Pure, Category="Actor|Transform")
 	FVector GetActorRight() const;
 
 	UWorld* GetWorld() const;
 	ULevel* GetLevel() const;
 
+	UFUNCTION(Pure, Category="Actor|Visibility")
 	bool IsVisible() const { return bVisible; }
+	UFUNCTION(Callable, Exec, Category="Actor|Visibility")
 	void SetVisible(bool Visible);
 
 	// Tags — 게임 측에서 액터를 의미적으로 분류하는 FName 배열 (UE Actor::Tags 대응).
 	// Trigger volume 의 TriggerTag 같은 단일-태그 필드는 그대로 두고, 이건 범용 다중 태그.
 	// 에디터에서는 콤마 구분 문자열로 편집 — PostEditProperty 가 split 해서 반영.
+	UFUNCTION(Pure, Category="Actor|Tags")
 	bool HasTag(const FName& Tag) const;
+	UFUNCTION(Callable, Category="Actor|Tags")
 	void AddTag(const FName& Tag);
+	UFUNCTION(Callable, Category="Actor|Tags")
 	void RemoveTag(const FName& Tag);
 	const TArray<FName>& GetTags() const { return Tags; }
 	void SetTags(TArray<FName> InTags) { Tags = std::move(InTags); }

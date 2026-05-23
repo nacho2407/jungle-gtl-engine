@@ -19,8 +19,11 @@ public:
 	GENERATED_BODY()
 	UCineCameraComponent() = default;
 
+	UFUNCTION(Callable, Exec, Category="Cinematic")
 	void SetLetterboxEnabled(bool bEnabled) { Letterbox.bEnabled = bEnabled; }
+	UFUNCTION(Callable, Exec, Category="Cinematic")
 	void SetLetterboxAmount(float Amount) { Letterbox.Amount = Amount; }
+	UFUNCTION(Callable, Exec, Category="Cinematic")
 	void SetLetterboxThickness(float Thickness) { Letterbox.Thickness = Thickness; }
 	void SetLetterboxColor(FLinearColor Color) { Letterbox.Color = Color; }
 

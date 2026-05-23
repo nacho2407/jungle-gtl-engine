@@ -6,6 +6,7 @@
 #include "Math/Transform.h"
 
 // UE 의 EMovementMode minimal subset — 후속 단계에서 NavWalking/Swimming 등 확장.
+UENUM()
 enum class EMovementMode : uint8
 {
 	Walking,    // floor 위 — 평면 이동 + floor stick, Velocity.Z = 0.
@@ -33,6 +34,7 @@ public:
 	~UCharacterMovementComponent() override = default;
 
 	// Controller 등 외부에서 매 frame 누적. TickComponent 가 ConsumeInputVector 로 비움.
+	UFUNCTION(Callable, Category="CharacterMovement|Input")
 	void AddInputVector(const FVector& WorldDirection, float ScaleValue = 1.0f);
 	void ConsumeInputVector(FVector& OutAccumulated);
 
@@ -50,15 +52,23 @@ public:
 	bool HasYawDrivenByRootMotion() const { return bAppliedRootMotionYawThisFrame; }
 
 	const FVector& GetVelocity() const { return Velocity; }
+	UFUNCTION(Pure, Category="CharacterMovement")
+	FVector        GetVelocityValue() const { return Velocity; }
+	UFUNCTION(Pure, Category="CharacterMovement")
 	float          GetSpeed()    const { return Velocity.Length(); }
 
+	UFUNCTION(Pure, Category="CharacterMovement")
 	EMovementMode  GetMovementMode() const { return MovementMode; }
+	UFUNCTION(Callable, Exec, Category="CharacterMovement")
 	void           SetMovementMode(EMovementMode NewMode);
+	UFUNCTION(Pure, Category="CharacterMovement")
 	bool           IsWalking() const { return MovementMode == EMovementMode::Walking; }
+	UFUNCTION(Pure, Category="CharacterMovement")
 	bool           IsFalling() const { return MovementMode == EMovementMode::Falling; }
 
 	// Walking 중이면 다음 Tick 에 Velocity.Z = JumpZVelocity, Mode → Falling. 비-Walking 이면 무시.
 	// edge-triggered — input 측에서 Pressed 마다 호출.
+	UFUNCTION(Callable, Exec, Category="CharacterMovement")
 	void           Jump();
 
 	// UMovementComponent:

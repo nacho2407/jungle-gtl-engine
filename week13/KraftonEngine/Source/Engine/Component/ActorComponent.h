@@ -27,12 +27,16 @@ public:
 	// 컴포넌트 해제 시 호출 — PrimitiveComponent에서 SceneProxy 파괴
 	virtual void DestroyRenderState() {}
 
+	UFUNCTION(Callable, Category="Component|Activation")
 	virtual void Activate();
+	UFUNCTION(Callable, Category="Component|Activation")
 	virtual void Deactivate();
 
 	// --- Editor Only ---
 	// 에디터 전용 컴포넌트: PIE/Game 월드에서 렌더링 비활성화
+	UFUNCTION(Callable, Category="Component|Editor")
 	void SetEditorOnly(bool bInEditorOnly);
+	UFUNCTION(Pure, Category="Component|Editor")
 	bool IsEditorOnly() const { return bEditorOnly; }
 	bool IsEditorOnlyComponent() const { return IsEditorOnly(); }
 	void SetEditorOnlyComponent(bool bInEditorOnly) { SetEditorOnly(bInEditorOnly); }
@@ -40,13 +44,17 @@ public:
 	bool IsHiddenInComponentTree() const { return bHiddenInComponentTree; }
 	void SetHiddenInComponentTree(bool bHidden) { bHiddenInComponentTree = bHidden; }
 
+	UFUNCTION(Callable, Exec, Category="Component|Activation")
 	void SetActive(bool bNewActive);
+	UFUNCTION(Callable, Category="Component|Activation")
 	inline void SetAutoActivate(bool bNewAutoActivate) { bAutoActivate = bNewAutoActivate; }
+	UFUNCTION(Callable, Category="Component|Tick")
 	inline void SetComponentTickEnabled(bool bEnabled) {
 		PrimaryComponentTick.SetTickEnabled(bEnabled);
 	}
 	virtual void Serialize(FArchive& Ar) override;
 
+	UFUNCTION(Pure, Category="Component|Activation")
 	inline bool IsActive() { return bIsActive; }
 
 	void SetOwner(AActor* Actor);

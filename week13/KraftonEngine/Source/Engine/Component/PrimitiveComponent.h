@@ -70,12 +70,17 @@ public:
 	virtual FMeshBuffer* GetMeshBuffer() const { return nullptr; }
 	virtual FMeshDataView GetMeshDataView() const { return {}; }
 
+	UFUNCTION(Callable, Exec, Category="Rendering")
 	void SetVisibility(bool bNewVisible);
+	UFUNCTION(Pure, Category="Rendering")
 	inline bool IsVisible() const { return bIsVisible; }
 
+	UFUNCTION(Callable, Category="Rendering")
 	void SetCastShadow(bool bNewCastShadow);
+	UFUNCTION(Pure, Category="Rendering")
 	bool GetCastShadow() const { return bCastShadow; }
 
+	UFUNCTION(Pure, Category="Rendering")
 	bool GetCastShadowAsTwoSided() const { return bCastShadowAsTwoSided; }
 
 	// 월드 공간 AABB를 FBoundingBox로 반환
@@ -127,16 +132,25 @@ public:
 
 	// --- Collision Channel / Response ---
 
+	UFUNCTION(Callable, Exec, Category="Collision")
 	void SetCollisionEnabled(ECollisionEnabled InEnabled);
+	UFUNCTION(Pure, Category="Collision")
 	ECollisionEnabled GetCollisionEnabled() const { return CollisionEnabled; }
+	UFUNCTION(Pure, Category="Collision")
 	bool IsCollisionEnabled() const { return CollisionEnabled != ECollisionEnabled::NoCollision; }
+	UFUNCTION(Pure, Category="Collision")
 	bool IsQueryCollisionEnabled() const;
 
+	UFUNCTION(Callable, Exec, Category="Collision")
 	void SetCollisionObjectType(ECollisionChannel InChannel);
+	UFUNCTION(Pure, Category="Collision")
 	ECollisionChannel GetCollisionObjectType() const { return ObjectType; }
 
+	UFUNCTION(Callable, Exec, Category="Collision")
 	void SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response);
+	UFUNCTION(Callable, Exec, Category="Collision")
 	void SetCollisionResponseToAllChannels(ECollisionResponse Response);
+	UFUNCTION(Pure, Category="Collision")
 	ECollisionResponse GetCollisionResponseToChannel(ECollisionChannel Channel) const;
 	const FCollisionResponseContainer& GetCollisionResponseContainer() const { return ResponseContainer; }
 
@@ -145,27 +159,42 @@ public:
 
 	// --- Overlap / Hit ---
 
+	UFUNCTION(Callable, Exec, Category="Physics")
 	void SetSimulatePhysics(bool bInSimulate);
+	UFUNCTION(Pure, Category="Physics")
 	bool GetSimulatePhysics() const { return bSimulatePhysics; }
 
 	// --- Physics Force/Velocity API ---
+	UFUNCTION(Callable, Category="Physics")
 	void AddForce(const FVector& Force);
+	UFUNCTION(Callable, Category="Physics")
 	void AddForceAtLocation(const FVector& Force, const FVector& Location);
+	UFUNCTION(Callable, Category="Physics")
 	void AddTorque(const FVector& Torque);
+	UFUNCTION(Pure, Category="Physics")
 	FVector GetLinearVelocity() const;
+	UFUNCTION(Callable, Category="Physics")
 	void SetLinearVelocity(const FVector& Vel);
+	UFUNCTION(Pure, Category="Physics")
 	FVector GetAngularVelocity() const;
+	UFUNCTION(Callable, Category="Physics")
 	void SetAngularVelocity(const FVector& Vel);
 
 	// --- Mass / Center of Mass ---
 	// Compound shape에선 RootComponent의 값만 백엔드에 적용된다.
 	// 자식 컴포넌트의 Mass / CenterOfMassOffset은 직렬화는 되지만 무시.
+	UFUNCTION(Callable, Exec, Category="Physics")
 	void SetMass(float NewMass);
+	UFUNCTION(Pure, Category="Physics")
 	float GetMass() const;
+	UFUNCTION(Callable, Category="Physics")
 	void SetCenterOfMass(const FVector& LocalOffset);
+	UFUNCTION(Pure, Category="Physics")
 	FVector GetCenterOfMass() const;
 
+	UFUNCTION(Callable, Exec, Category="Collision")
 	void SetGenerateOverlapEvents(bool bInGenerateOverlapEvents);
+	UFUNCTION(Pure, Category="Collision")
 	bool GetGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
 
 	// 서브클래스가 오버라이드할 수 있는 가상 함수 — 델리게이트 브로드캐스트 전에 호출됨

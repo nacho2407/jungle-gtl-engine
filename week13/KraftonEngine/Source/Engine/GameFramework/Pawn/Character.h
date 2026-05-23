@@ -1,6 +1,9 @@
 #pragma once
 
 #include "GameFramework/Pawn/Pawn.h"
+#include "Component/Shape/CapsuleComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Component/Movement/CharacterMovementComponent.h"
 
 class UCapsuleComponent;
 class USkeletalMeshComponent;
@@ -32,13 +35,18 @@ public:
 	void PostDuplicate() override;
 
 	// CharacterMovement->AddInputVector 의 액터 레벨 wrapper. UE 의 APawn::AddMovementInput 대응.
+	UFUNCTION(Callable, Category="Character|Movement")
 	void AddMovementInput(const FVector& WorldDirection, float ScaleValue = 1.0f);
 
 	// CharacterMovement->Jump 의 액터 레벨 wrapper. Walking 중에만 effective.
+	UFUNCTION(Callable, Exec, Category="Character|Movement")
 	void Jump();
 
+	UFUNCTION(Pure, Category="Character|Components")
 	UCapsuleComponent*           GetCapsuleComponent()  const { return CapsuleComponent; }
+	UFUNCTION(Pure, Category="Character|Components")
 	USkeletalMeshComponent*      GetMesh()              const { return Mesh; }
+	UFUNCTION(Pure, Category="Character|Components")
 	UCharacterMovementComponent* GetCharacterMovement() const { return CharacterMovement; }
 
 	// 자동 WASD 매핑/binding — SetupInputComponent 가 InputComponent 에 등록.
