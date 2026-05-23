@@ -1166,9 +1166,9 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		else if (Item.Extension == ".fbx")
 		{
 			const FString FbxPath = MakeRelativeProjectPath(Item.Path);
-			if (FResourceManager::Get().LoadSkeletalMesh(FbxPath))
+			if (USkeletalMesh* Mesh = FResourceManager::Get().LoadSkeletalMesh(FbxPath))
 			{
-				EditorEngine->CreateViewer(FbxPath);
+				EditorEngine->CreateViewer(Mesh->GetAssetPathFileName());
 			}
 			else
 			{
@@ -1368,7 +1368,10 @@ bool FEditorContentBrowserWidget::ExecutePendingFbxImport()
 
 	if (PendingFbxImportAction == EFbxImportAction::OpenViewer && bImportedSkeletalMesh)
 	{
-		EditorEngine->CreateViewer(PendingFbxImportPath);
+		if (USkeletalMesh* Mesh = ResourceManager.LoadSkeletalMesh(PendingFbxImportPath))
+		{
+			EditorEngine->CreateViewer(Mesh->GetAssetPathFileName());
+		}
 	}
 	else if (PendingFbxImportAction == EFbxImportAction::OpenViewer && !bImportedSkeletalMesh)
 	{

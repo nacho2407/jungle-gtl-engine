@@ -406,7 +406,7 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 	std::wstring Extension = FilePath.extension().wstring();
 	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
 
-	if (Extension == L".meta" || Extension == L".bin")
+	if (Extension == L".meta")
 	{
 		return;
 	}
@@ -421,6 +421,13 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 	{
 		AnimSequenceFilePaths.push_back(RelativePath);
 	}
+	else if (Extension == L".bin")
+	{
+		if (IsUnderAssetDirectory(RelativePath, "SkeletalMesh/Bin"))
+		{
+			SkeletalMeshFilePaths.push_back(RelativePath);
+		}
+	}
 	else if (Extension == L".obj" || Extension == L".fbx")
 	{
 		ObjFilePaths.push_back(RelativePath);
@@ -431,20 +438,6 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 		Resource.bPreload = false;
 		Resource.bNormalizeToUnitCube = false;
 		StaticMeshCache.RegisterResource(Resource);
-
-		if (Extension == L".fbx")
-		{
-			std::wstring RelativeGenericPath = std::filesystem::path(FPaths::ToWide(RelativePath)).generic_wstring();
-			std::transform(RelativeGenericPath.begin(), RelativeGenericPath.end(), RelativeGenericPath.begin(), ::towlower);
-
-			const bool bUnderSkeletalMeshRoot = RelativeGenericPath.rfind(L"asset/skeletalmesh/", 0) == 0;
-			const FString SkeletalBinaryPath = FAssetPathPolicy::MakeImportedSkeletalMeshAssetPath(RelativePath);
-			const bool bHasValidSkeletalBinary = IsSkeletalMeshBinaryValid(RelativePath, SkeletalBinaryPath);
-			if (bUnderSkeletalMeshRoot || bHasValidSkeletalBinary)
-			{
-				SkeletalMeshFilePaths.push_back(RelativePath);
-			}
-		}
 	}
 	else if (Extension == L".mtl" || Extension == L".mat" || Extension == L".matinst")
 	{
@@ -724,7 +717,10 @@ void FResourceManager::ReleaseGPUResources()
 
 	for (auto& [Path, Mesh] : SkeletalMeshMap)
 	{
-		UObjectManager::Get().DestroyObject(Mesh);
+		if (Mesh)
+		{
+			UObjectManager::Get().DestroyObject(Mesh);
+		}
 	}
 	SkeletalMeshMap.clear();
 
@@ -1111,11 +1107,13 @@ bool FResourceManager::SaveSkeletalMesh(USkeletalMesh* Mesh)
 	FSkeletalMesh* Data = Mesh->GetMeshData();
 	if (!Data) return false;
 
-	const FString FbxPath = Mesh->GetAssetPathFileName();
-	if (FbxPath.empty()) return false;
+	const FString BinPath = FPaths::Normalize(Mesh->GetAssetPathFileName());
+	if (BinPath.empty()) return false;
 
-	const FString BinPath = FAssetPathPolicy::MakeImportedSkeletalMeshAssetPath(FbxPath);
-	return BinarySerializer.SaveSkeletalMesh(BinPath, FbxPath, *Data);
+	const FString SourcePath = FPaths::Normalize(Mesh->GetSourceFilePath());
+	if (SourcePath.empty()) return false;
+
+	return BinarySerializer.SaveSkeletalMesh(BinPath, SourcePath, *Data);
 }
 
 UCurveFloatAsset* FResourceManager::LoadCurve(const FString& Path)
@@ -1215,12 +1213,12 @@ bool FResourceManager::EnsureSkeletalMeshCacheForAnimationPreview(const FString&
 		return false;
 	}
 
-	if (FindSkeletalMesh(NormalizedPreviewMeshPath))
+	const FString BinaryPath = FAssetPathPolicy::MakeImportedSkeletalMeshAssetPath(NormalizedPreviewMeshPath);
+	if (FindSkeletalMesh(BinaryPath))
 	{
 		return true;
 	}
 
-	const FString BinaryPath = FAssetPathPolicy::MakeImportedSkeletalMeshAssetPath(NormalizedPreviewMeshPath);
 	if (IsSkeletalMeshBinaryValid(NormalizedPreviewMeshPath, BinaryPath))
 	{
 		return true;

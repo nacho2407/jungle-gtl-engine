@@ -94,12 +94,12 @@ FString ResolveSkeletalMeshDropLoadPath(const FString& PayloadPath)
         return {};
     }
 
-    if (GetLowerExtension(Path) != L".fbx")
+    const std::wstring Extension = GetLowerExtension(Path);
+    if (Extension == L".fbx" || Extension == L".bin")
     {
-        return {};
+        return FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
     }
-
-    return FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
+    return {};
 }
 
 FString ResolveFbxDropInspectPath(const FString& PayloadPath)
@@ -204,16 +204,15 @@ bool FEditorMainPanel::SpawnSkeletalMeshFromContentPath(
     }
 
     const FString MeshLoadPath = ResolveSkeletalMeshDropLoadPath(PayloadPath);
-    const FString InspectPath = ResolveFbxDropInspectPath(PayloadPath);
-    if (MeshLoadPath.empty() || InspectPath.empty())
+    if (MeshLoadPath.empty())
     {
         return false;
     }
 
     FResourceManager& ResourceManager = FResourceManager::Get();
-    const FFbxMeshContentInfo ContentInfo = ResourceManager.InspectFbxMeshContent(InspectPath);
     USkeletalMesh* Mesh = nullptr;
-	if (!ContentInfo.bHasSkeletalMesh)
+    const FString InspectPath = ResolveFbxDropInspectPath(PayloadPath);
+    if (InspectPath.empty())
     {
         Mesh = ResourceManager.LoadSkeletalMesh(MeshLoadPath);
         if (!Mesh || !Mesh->HasValidMeshData())
@@ -223,15 +222,21 @@ bool FEditorMainPanel::SpawnSkeletalMeshFromContentPath(
     }
     else
     {
+        const FFbxMeshContentInfo ContentInfo = ResourceManager.InspectFbxMeshContent(InspectPath);
+        if (!ContentInfo.bHasSkeletalMesh)
+        {
+            return false;
+        }
+
         const TArray<FString> ImportedAnimSequencePaths = ResourceManager.ImportAnimationStacksFromFbx(InspectPath);
         if (!ImportedAnimSequencePaths.empty())
         {
             Widgets.ContentBrowserWidget.Refresh();
         }
         Mesh = ResourceManager.ImportSkeletalMeshFromFbx(MeshLoadPath);
-	}
+    }
 
-	if (!Mesh || !Mesh->HasValidMeshData())
+    if (!Mesh || !Mesh->HasValidMeshData())
     {
         PushFooterLog("Failed to load dropped skeletal mesh");
         return false;

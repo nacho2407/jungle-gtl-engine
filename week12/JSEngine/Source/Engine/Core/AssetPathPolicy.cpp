@@ -166,8 +166,8 @@ FString FAssetPathPolicy::MakeImportedSkeletalMeshAssetPath(const FString& Sourc
 	std::filesystem::path BinaryFileName = SourceFsPath.stem();
 	BinaryFileName += ".bin";
 
-	std::filesystem::path BinaryPath = BinDir / BinaryFileName;
-	return FPaths::ToString(BinaryPath.wstring());
+	std::filesystem::path BinaryPath = std::filesystem::path(L"Asset") / L"SkeletalMesh" / L"Bin" / BinaryFileName;
+	return FPaths::ToUtf8(BinaryPath.generic_wstring());
 }
 
 FString FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(const FString& SourcePath)

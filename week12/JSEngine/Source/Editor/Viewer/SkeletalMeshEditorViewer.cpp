@@ -330,7 +330,6 @@ UStaticMeshComponent* FSkeletalMeshEditorViewer::FindPreviewMesh(const FName& So
 
 bool FSkeletalMeshEditorViewer::ChangeTarget(const FString& InFileName)
 {
-    SetFileName(InFileName);
     ClearSelection();
     ClearAllSocketPreviews();
 
@@ -353,6 +352,7 @@ bool FSkeletalMeshEditorViewer::ChangeTarget(const FString& InFileName)
 
     SkelComp->SetAnimation(nullptr);
     SkelComp->SetSkeletalMesh(Mesh);
+    SetFileName(Mesh ? Mesh->GetAssetPathFileName() : InFileName);
     if (SkelComp->GetSkeletalMesh())
     {
         SkelComp->EnsureSkinningUpdated();

@@ -49,6 +49,11 @@ USkeletalMesh* FSkeletalMeshLoadService::Load(const FString& Path)
 USkeletalMesh* FSkeletalMeshLoadService::LoadImportedFbxAsset(const FString& NormalizedPath)
 {
 	const FString BinaryPath = FAssetPathPolicy::MakeImportedSkeletalMeshAssetPath(NormalizedPath);
+	if (USkeletalMesh* FoundMesh = ResourceManager.FindSkeletalMesh(BinaryPath))
+	{
+		return FoundMesh;
+	}
+
 	double BinaryLoadSec = 0.0;
 	if (!ResourceManager.IsImportedSkeletalMeshAssetFresh(NormalizedPath, BinaryPath))
 	{
@@ -65,19 +70,11 @@ USkeletalMesh* FSkeletalMeshLoadService::LoadImportedFbxAsset(const FString& Nor
 	}
 
 	ResourceManager.LoadMaterial(NormalizedPath, EMaterialShaderType::SurfaceLit);
-	LoadedMeshData->PathFileName = BinaryPath;
 	UE_LOG("[SkeletalMeshLoad] MeshSource=ImportedAsset | Path=%s | BinarySec=%.6f | Asset=%s",
 		NormalizedPath.c_str(),
 		BinaryLoadSec,
 		BinaryPath.c_str());
-	USkeletalMesh* LoadedMesh = FinalizeLoadedMesh(LoadedMeshData, NormalizedPath, NormalizedPath);
-	ResourceManager.SkeletalMeshMap[BinaryPath] = LoadedMesh;
-	if (std::find(ResourceManager.SkeletalMeshFilePaths.begin(), ResourceManager.SkeletalMeshFilePaths.end(), BinaryPath)
-		== ResourceManager.SkeletalMeshFilePaths.end())
-	{
-		ResourceManager.SkeletalMeshFilePaths.push_back(BinaryPath);
-	}
-	return LoadedMesh;
+	return FinalizeLoadedMesh(LoadedMeshData, NormalizedPath, BinaryPath, NormalizedPath);
 }
 
 USkeletalMesh* FSkeletalMeshLoadService::LoadBinaryAsset(const FString& NormalizedPath)
@@ -95,36 +92,14 @@ USkeletalMesh* FSkeletalMeshLoadService::LoadBinaryAsset(const FString& Normaliz
 	const FString SourcePath = FPaths::Normalize(LoadedMeshData->PathFileName);
 	if (!SourcePath.empty())
 	{
-		if (USkeletalMesh* FoundSourceMesh = ResourceManager.FindSkeletalMesh(SourcePath))
-		{
-			delete LoadedMeshData;
-			ResourceManager.SkeletalMeshMap[NormalizedPath] = FoundSourceMesh;
-			if (std::find(ResourceManager.SkeletalMeshFilePaths.begin(), ResourceManager.SkeletalMeshFilePaths.end(), NormalizedPath)
-				== ResourceManager.SkeletalMeshFilePaths.end())
-			{
-				ResourceManager.SkeletalMeshFilePaths.push_back(NormalizedPath);
-			}
-			return FoundSourceMesh;
-		}
-
 		ResourceManager.LoadMaterial(SourcePath, EMaterialShaderType::SurfaceLit);
 	}
 
-	LoadedMeshData->PathFileName = NormalizedPath;
 	USkeletalMesh* LoadedMesh = FinalizeLoadedMesh(
 		LoadedMeshData,
 		SourcePath.empty() ? NormalizedPath : SourcePath,
-		NormalizedPath);
-
-	if (!SourcePath.empty() && SourcePath != NormalizedPath)
-	{
-		ResourceManager.SkeletalMeshMap[SourcePath] = LoadedMesh;
-		if (std::find(ResourceManager.SkeletalMeshFilePaths.begin(), ResourceManager.SkeletalMeshFilePaths.end(), SourcePath)
-			== ResourceManager.SkeletalMeshFilePaths.end())
-		{
-			ResourceManager.SkeletalMeshFilePaths.push_back(SourcePath);
-		}
-	}
+		NormalizedPath,
+		SourcePath);
 
 	UE_LOG("[SkeletalMeshLoad] MeshSource=ImportedAsset | Path=%s | BinarySec=%.6f | Asset=%s | Source=%s",
 		NormalizedPath.c_str(),
@@ -177,15 +152,7 @@ USkeletalMesh* FSkeletalMeshLoadService::ImportFbxSource(const FString& Path)
 			BinaryPath.c_str());
 	}
 
-	LoadedMeshData->PathFileName = BinaryPath;
-	USkeletalMesh* LoadedMesh = FinalizeLoadedMesh(LoadedMeshData, NormalizedPath, NormalizedPath);
-	ResourceManager.SkeletalMeshMap[BinaryPath] = LoadedMesh;
-	if (std::find(ResourceManager.SkeletalMeshFilePaths.begin(), ResourceManager.SkeletalMeshFilePaths.end(), BinaryPath)
-		== ResourceManager.SkeletalMeshFilePaths.end())
-	{
-		ResourceManager.SkeletalMeshFilePaths.push_back(BinaryPath);
-	}
-	return LoadedMesh;
+	return FinalizeLoadedMesh(LoadedMeshData, NormalizedPath, BinaryPath, NormalizedPath);
 }
 
 FSkeletalMesh* FSkeletalMeshLoadService::TryLoadBinary(const FString& BinaryPath, double& OutBinaryLoadSec)
@@ -209,22 +176,34 @@ FSkeletalMesh* FSkeletalMeshLoadService::TryLoadBinary(const FString& BinaryPath
 	return LoadedMeshData;
 }
 
-USkeletalMesh* FSkeletalMeshLoadService::FinalizeLoadedMesh(FSkeletalMesh* MeshData, const FString& ResolvePath, const FString& CacheKey)
+USkeletalMesh* FSkeletalMeshLoadService::FinalizeLoadedMesh(
+	FSkeletalMesh* MeshData,
+	const FString& ResolvePath,
+	const FString& AssetPath,
+	const FString& SourcePath)
 {
 	ResourceManager.ResolveSkeletalMeshMaterialSlots(ResolvePath, MeshData);
 
-	USkeletalMesh* LoadedMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
+	const FString NormalizedAssetPath = FPaths::Normalize(AssetPath);
+	const FString NormalizedSourcePath = FPaths::Normalize(SourcePath);
+	USkeletalMesh* LoadedMesh = ResourceManager.FindSkeletalMesh(NormalizedAssetPath);
+	if (!LoadedMesh)
+	{
+		LoadedMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
+	}
 	LoadedMesh->SetMeshData(MeshData);
+	LoadedMesh->SetAssetPathFileName(NormalizedAssetPath);
+	LoadedMesh->SetSourceFilePath(NormalizedSourcePath);
 
-	ResourceManager.SkeletalMeshMap[CacheKey] = LoadedMesh;
-	if (std::find(ResourceManager.SkeletalMeshFilePaths.begin(), ResourceManager.SkeletalMeshFilePaths.end(), CacheKey)
+	ResourceManager.SkeletalMeshMap[NormalizedAssetPath] = LoadedMesh;
+	if (std::find(ResourceManager.SkeletalMeshFilePaths.begin(), ResourceManager.SkeletalMeshFilePaths.end(), NormalizedAssetPath)
 		== ResourceManager.SkeletalMeshFilePaths.end())
 	{
-		ResourceManager.SkeletalMeshFilePaths.push_back(CacheKey);
+		ResourceManager.SkeletalMeshFilePaths.push_back(NormalizedAssetPath);
 	}
 
 	UE_LOG("[SkeletalMeshLoad] Loaded | Path=%s | Vertices=%zu | Indices=%zu | Bones=%zu | Sections=%zu",
-	       CacheKey.c_str(),
+	       NormalizedAssetPath.c_str(),
 	       LoadedMesh->GetVertices().size(),
 	       LoadedMesh->GetIndices().size(),
 	       LoadedMesh->GetBones().size(),
