@@ -1561,6 +1561,10 @@
       <Filter>Intermediate\Generated</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Particles\ParticleModule.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleLODLevel.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleModuleRequired.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Spawn\ParticleModuleSpawnBase.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Spawn\ParticleModuleSpawn.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -4399,6 +4403,10 @@
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Particles\ParticleModule.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleLODLevel.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleModuleRequired.h" />
+    <ClInclude Include="Source\Engine\Particles\Spawn\ParticleModuleSpawnBase.h" />
+    <ClInclude Include="Source\Engine\Particles\Spawn\ParticleModuleSpawn.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

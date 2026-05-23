@@ -7,6 +7,7 @@ class UParticleModuleTypeDataBase;
 
 class UParticleLODLevel : public UObject
 {
+public:
 	int32 Level;
 	uint32 bEnabled : 1;
 

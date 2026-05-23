@@ -40,6 +40,7 @@ enum EParticleSortMode : int
 
 class UParticleModuleRequired : public UParticleModule
 {
+public:
 	UMaterialInterface* Material = nullptr;
 
 	FVector EmitterOrigin;
@@ -61,3 +62,4 @@ class UParticleModuleRequired : public UParticleModule
 	float SpawnRate = 10.0f;
 	TArray<FParticleBurst> BurstList;
 };
+
