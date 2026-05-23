@@ -63,7 +63,7 @@ if not exist "%GIT_EXE%" (
 :GitResolved
 >>"%LOG_FILE%" echo ResolvedGitExe=%GIT_EXE%
 
-"%GIT_EXE%" --git-dir="%GIT_REPO%" show "%COMMIT%:%SOURCE_PATH%" > "%TARGET%" 2> "%ERR_FILE%"
+"%GIT_EXE%" -c "safe.directory=%GIT_REPO%" --git-dir="%GIT_REPO%" show "%COMMIT%:%SOURCE_PATH%" > "%TARGET%" 2> "%ERR_FILE%"
 set "EXIT_CODE=%ERRORLEVEL%"
 >>"%LOG_FILE%" echo GitExitCode=%EXIT_CODE%
 
