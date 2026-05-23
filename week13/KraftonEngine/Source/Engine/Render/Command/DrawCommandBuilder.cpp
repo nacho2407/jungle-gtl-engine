@@ -440,6 +440,14 @@ void FDrawCommandBuilder::BuildDecalCommands(FScene& Scene, FPrimitiveSceneProxy
 // ============================================================
 void FDrawCommandBuilder::BuildMeshCommands(FScene& Scene, const FPrimitiveSceneProxy* Proxy)
 {
+	// Gizmo 등 전용 패스를 가진 프록시는 해당 패스에 직접 제출
+	ERenderPass ProxyPass = Proxy->GetRenderPass();
+	if (ProxyPass != ERenderPass::Opaque && ProxyPass != ERenderPass::AlphaBlend)
+	{
+		BuildCommandForProxy(Scene, *Proxy, ProxyPass);
+		return;
+	}
+
 	bool bHasOpaque = false, bHasTranslucent = false;
 	for (const FMeshSectionDraw& S : Proxy->GetSectionDraws())
 	{
