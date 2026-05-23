@@ -11,6 +11,9 @@
 
 #include <filesystem>
 
+#include "Particle/ParticleSystem.h"
+#include "Particle/ParticleSystemManager.h"
+
 namespace
 {
 	FString SanitizeAssetStem(const FString& AssetName)
@@ -116,6 +119,36 @@ bool FAssetFactory::CreateAnimGraph(const FString& DirectoryPath, const FString&
 	NewAsset->InitializeDefault(); // SequencePlayer → OutputPose 기본 그래프.
 
 	bool bSaved = FAnimGraphManager::Get().Save(NewAsset);
+	UObjectManager::Get().DestroyObject(NewAsset);
+
+	if (!bSaved)
+	{
+		return false;
+	}
+
+	OutCreatedPath = FPaths::ToUtf8(AssetPath.wstring());
+	return true;
+}
+
+bool FAssetFactory::CreateParticleSystem(
+	const FString& DirectoryPath,
+	const FString& AssetName,
+	FString&       OutCreatedPath
+	)
+{
+	const std::filesystem::path Directory(FPaths::ToWide(DirectoryPath));
+	if (!std::filesystem::exists(Directory) || !std::filesystem::is_directory(Directory))
+	{
+		return false;
+	}
+
+	const std::filesystem::path AssetPath = BuildUniqueAssetPath(Directory, AssetName, L".uasset");
+
+	UParticleSystem* NewAsset = UObjectManager::Get().CreateObject<UParticleSystem>();
+
+	NewAsset->SetSourcePath(FPaths::ToUtf8(AssetPath.wstring()));
+
+	bool bSaved = FParticleSystemManager::Get().Save(NewAsset);
 	UObjectManager::Get().DestroyObject(NewAsset);
 
 	if (!bSaved)
