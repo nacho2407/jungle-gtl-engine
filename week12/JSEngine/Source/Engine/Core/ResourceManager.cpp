@@ -97,7 +97,57 @@ namespace
 		}
 	}
 
-	
+	void DestroyUniqueAnimSequences(TMap<FString, UAnimSequence*>& AnimSequences)
+	{
+		TArray<UAnimSequence*> UniqueSequences;
+		UniqueSequences.reserve(AnimSequences.size());
+
+		for (auto& [Path, Sequence] : AnimSequences)
+		{
+			if (!Sequence)
+			{
+				continue;
+			}
+
+			if (std::find(UniqueSequences.begin(), UniqueSequences.end(), Sequence) == UniqueSequences.end())
+			{
+				UniqueSequences.push_back(Sequence);
+			}
+		}
+
+		for (UAnimSequence* Sequence : UniqueSequences)
+		{
+			UObjectManager::Get().DestroyObject(Sequence);
+		}
+
+		AnimSequences.clear();
+	}
+
+	void DestroyUniqueSkeletalMeshes(TMap<FString, USkeletalMesh*>& SkeletalMeshes)
+	{
+		TArray<USkeletalMesh*> UniqueMeshes;
+		UniqueMeshes.reserve(SkeletalMeshes.size());
+
+		for (auto& [Path, Mesh] : SkeletalMeshes)
+		{
+			if (!Mesh)
+			{
+				continue;
+			}
+
+			if (std::find(UniqueMeshes.begin(), UniqueMeshes.end(), Mesh) == UniqueMeshes.end())
+			{
+				UniqueMeshes.push_back(Mesh);
+			}
+		}
+
+		for (USkeletalMesh* Mesh : UniqueMeshes)
+		{
+			UObjectManager::Get().DestroyObject(Mesh);
+		}
+
+		SkeletalMeshes.clear();
+	}
 }
 
 #pragma region __BINARY__
@@ -606,11 +656,8 @@ void FResourceManager::ReleaseGPUResources()
 
 	RenderStateCache.Release();
 
-	for (auto& [Path, Mesh] : SkeletalMeshMap)
-	{
-		UObjectManager::Get().DestroyObject(Mesh);
-	}
-	SkeletalMeshMap.clear();
+	DestroyUniqueSkeletalMeshes(SkeletalMeshMap);
+	DestroyUniqueAnimSequences(AnimSequenceMap);
 
 	DefaultWhiteTexture.Reset();
 	CachedDevice.Reset();
@@ -1178,6 +1225,7 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 			if (UAnimSequence* ExistingDescriptor = AnimSequenceAssetLoader.Load(ImportedAssetPath))
 			{
 				CopyAnimSequenceNotifies(ExistingDescriptor, Result.Sequence);
+				UObjectManager::Get().DestroyObject(ExistingDescriptor);
 			}
 		}
 
@@ -1205,6 +1253,7 @@ TArray<FString> FResourceManager::ImportAnimationStacksFromFbx(const FString& Pa
 			UE_LOG_WARNING("[AnimSequenceImport] Failed to save imported animation stack: %s -> %s",
 				NormalizedPath.c_str(),
 				ImportedAssetPath.c_str());
+			UObjectManager::Get().DestroyObject(Result.Sequence);
 		}
 	}
 
@@ -1259,6 +1308,10 @@ UAnimSequence* FResourceManager::LoadAnimSequence(const FString& Path)
 					RebuiltSequence->SetSourceFilePath(SourceFilePath);
 					RebuiltSequence->SetSourceStackName(SourceStackName);
 					RebuiltSequence->SetPreviewMeshPath(PreviewMeshPath);
+					if (LoadedSequence && LoadedSequence != RebuiltSequence)
+					{
+						UObjectManager::Get().DestroyObject(LoadedSequence);
+					}
 					LoadedSequence = RebuiltSequence;
 				}
 			}

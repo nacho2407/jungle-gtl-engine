@@ -17,35 +17,45 @@ protected:
 	void RenderContent(float DeltaTime) override;
 
 private:
+	// Mesh & Anim Sequence
+	void SyncPreviewMeshPathBuffer();
+	bool SaveAnimSequenceAsset(UAnimSequence* Sequence);
+
+	// Render Panels
 	void RenderAnimSequenceLeftPanel(UAnimSequence* Sequence, USkeletalMeshComponent* SkelMeshComp);
 	void RenderAnimSequenceRightPanel(UAnimSequence* Sequence, USkeletalMesh* PreviewMesh);
 	void RenderAnimSequenceToolbar(UAnimSequence* Sequence);
 	void RenderAnimSequenceTimeline(UAnimSequence* Sequence);
 	void RenderAnimSequenceDetails(UAnimSequence* Sequence, USkeletalMesh* PreviewMesh);
-	bool SaveAnimSequenceAsset(UAnimSequence* Sequence);
 	void RenderAnimSequenceList(UAnimSequence* Sequence);
-	void SyncPreviewMeshPathBuffer();
+
+	// Icons
 	void LoadAnimSequenceToolbarIcons();
-	bool DrawAnimSequenceIconButton(
-		const char* Id,
-		ID3D11ShaderResourceView* Icon,
-		const char* Tooltip,
-		const ImVec2& Size);
+	bool DrawAnimSequenceIconButton(const char* Id, ID3D11ShaderResourceView* Icon, const char* Tooltip, const ImVec2& Size);
+
+private:
+	// Cached Data
+	UAnimSequence* CachedAnimSequence = nullptr;
 
 	FString PreviewMeshPathBufferSource;
 	char PreviewMeshPathBuffer[1024] = {};
+
+	// Animation Editing State (Track, Notify, Dragging)
 	int32 SelectedAnimTrackIndex = -1;
 	int32 SelectedAnimNotifyIndex = -1;
 	int32 DraggingAnimNotifyIndex = -1;
+	
 	int32 AnimNotifyDragMode = 0;
 	float AnimNotifyDragGrabOffset = 0.0f;
 	bool bAnimNotifyDragDirty = false;
-	UAnimSequence* CachedAnimSequence = nullptr;
+	
 	float PendingAnimNotifyTimeToAdd = 0.0f;
 	char SelectedAnimNotifyNameBuffer[128] = {};
 	int32 SelectedAnimNotifyNameBufferIndex = -1;
 	float AnimNotifyDurationToAdd = 0.0f;
 
+private:
+	// Icons
 	bool bAnimSequenceToolbarIconsLoadAttempted = false;
 	TComPtr<ID3D11ShaderResourceView> AnimSequencePlayIcon;
 	TComPtr<ID3D11ShaderResourceView> AnimSequencePauseIcon;

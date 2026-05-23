@@ -2,15 +2,13 @@
 
 #include "Core/CoreTypes.h"
 #include "Editor/Viewport/FSceneViewport.h"
-#include "Editor/Viewport/SkeletalMeshViewportClient.h"
+#include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/UI/EditorTabManager.h"
 
 class UEditorEngine;
 class UWorld;
 class FSelectionManager;
 class FWindowsWindow;
-class ASkeletalMeshActor;
-class USkeletalMeshComponent;
 struct ID3D11ShaderResourceView;
 
 class FEditorViewer
@@ -35,24 +33,16 @@ public:
 	FSceneViewport& GetViewport() { return Viewport; }
 	const FSceneViewport& GetViewport() const { return Viewport; }
 
-	FSkeletalMeshViewportClient& GetClient() { return Client; }
-	const FSkeletalMeshViewportClient& GetClient() const { return Client; }
-	
-	ASkeletalMeshActor* GetViewTarget() const { return ViewTarget;}
-	void ClearViewTarget() { ViewTarget = nullptr; }
+	virtual FEditorViewportClient& GetClient() = 0;
+	virtual const FEditorViewportClient& GetClient() const = 0;
 	
 	const FString& GetFileName() const { return FileName; }
 	void SetFileName(const FString& InFileName) { FileName = InFileName; }
 
 protected:
-	USkeletalMeshComponent* GetSkeletalMeshComponent() const;
 	void ClearBaseSelection();
-
-	virtual bool HandleViewportBonePick(float LocalX, float LocalY);
 
 private:
 	FSceneViewport Viewport;
-	FSkeletalMeshViewportClient Client;
-	ASkeletalMeshActor* ViewTarget = nullptr;
 	FString FileName;
 };

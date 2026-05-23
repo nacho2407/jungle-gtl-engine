@@ -12,8 +12,9 @@
 
 namespace
 {
-	constexpr float HomeTabWidth = 44.0f;
-	constexpr float HomeIconSize = 28.0f;
+	constexpr float HomeTabWidth = 76.0f;
+	constexpr float HomeIconSize = 48.0f; // 36.0f
+	constexpr float HomeCircleRadius = 0.0f; // 25.0f
 	constexpr float MaxDocumentTabWidth = 180.0f;
 	constexpr float MinDocumentTabWidth = 48.0f;
 	constexpr float TabStripRightPadding = 8.0f;
@@ -93,6 +94,47 @@ namespace
 		return Label;
 	}
 
+	void DrawMainHomeIcon(
+		ImDrawList* DrawList,
+		ID3D11ShaderResourceView* HomeIcon,
+		const ImVec2& Min,
+		const ImVec2& Max,
+		bool bHovered)
+	{
+		if (!DrawList)
+		{
+			return;
+		}
+
+		const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
+		DrawList->AddRectFilled(
+			Min,
+			Max,
+			ImGui::GetColorU32(bHovered ? ImVec4(0.095f, 0.102f, 0.125f, 1.0f) : ImVec4(0.055f, 0.060f, 0.072f, 1.0f)));
+		DrawList->AddCircleFilled(
+			Center,
+			HomeCircleRadius,
+			ImGui::GetColorU32(bHovered ? ImVec4(0.13f, 0.14f, 0.17f, 1.0f) : ImVec4(0.075f, 0.080f, 0.095f, 1.0f)),
+			64);
+		if (HomeIcon)
+		{
+			const ImVec2 IconMin(Center.x - HomeIconSize * 0.5f, Center.y - HomeIconSize * 0.5f);
+			const ImVec2 IconMax(IconMin.x + HomeIconSize, IconMin.y + HomeIconSize);
+			DrawList->AddImage(reinterpret_cast<ImTextureID>(HomeIcon), IconMin, IconMax);
+		}
+		else
+		{
+			const ImU32 HomeColor = ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f));
+			DrawList->AddText(ImVec2(Center.x - 7.0f, Center.y - 7.0f), HomeColor, "JS");
+		}
+		DrawList->AddCircle(
+			Center,
+			HomeCircleRadius,
+			ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f)),
+			64,
+			1.8f);
+	}
+
 }
 
 void FEditorMainPanel::RenderEditorTabStrip()
@@ -160,31 +202,19 @@ void FEditorMainPanel::RenderEditorTabStrip()
 		const ImVec2 HomeMax(HomeMin.x + HomeTabWidth, HomeMin.y + TabStripHeight);
 		ImGui::InvisibleButton("##Home", ImVec2(HomeTabWidth, TabStripHeight));
 		const bool bHomeHovered = ImGui::IsItemHovered();
+		const ImVec2 HomeIconMin(MainViewport->WorkPos.x, MainViewport->WorkPos.y);
+		const ImVec2 HomeIconMax(
+			HomeIconMin.x + HomeTabWidth,
+			TabStripPos.y + TabStripHeight);
+		DrawMainHomeIcon(
+			ImGui::GetForegroundDrawList(),
+			IconResources.HomeIcon,
+			HomeIconMin,
+			HomeIconMax,
+			bHomeHovered || ImGui::IsMouseHoveringRect(HomeIconMin, HomeIconMax));
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !Tabs.empty())
 		{
 			ActivateEditorTab(Tabs[0].Id);
-		}
-		DrawList->AddRectFilled(
-			HomeMin,
-			HomeMax,
-			ImGui::GetColorU32(bHomeHovered ? ImVec4(0.095f, 0.102f, 0.125f, 1.0f) : ImVec4(0.065f, 0.070f, 0.085f, 1.0f)));
-		if (IconResources.HomeIcon)
-		{
-			const ImVec2 IconMin(
-				HomeMin.x + (HomeTabWidth - HomeIconSize) * 0.5f,
-				HomeMin.y + (TabStripHeight - HomeIconSize) * 0.5f);
-			const ImVec2 IconMax(IconMin.x + HomeIconSize, IconMin.y + HomeIconSize);
-			DrawList->AddImage(
-				reinterpret_cast<ImTextureID>(IconResources.HomeIcon),
-				IconMin,
-				IconMax);
-		}
-		else
-		{
-			const ImU32 HomeColor = ImGui::GetColorU32(ImVec4(0.60f, 0.65f, 0.74f, 1.0f));
-			const ImVec2 Center((HomeMin.x + HomeMax.x) * 0.5f, (HomeMin.y + HomeMax.y) * 0.5f);
-			DrawList->AddCircle(Center, 12.0f, HomeColor, 24, 1.5f);
-			DrawList->AddText(ImVec2(Center.x - 7.0f, Center.y - 7.0f), HomeColor, "JS");
 		}
 		if (bHomeHovered)
 		{

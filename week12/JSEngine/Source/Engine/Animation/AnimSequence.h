@@ -85,10 +85,10 @@ class UAnimSequenceBase : public UAnimationAsset
 {
 public:
 	GENERATED_BODY(UAnimSequenceBase, UAnimationAsset)
-	virtual ~UAnimSequenceBase() = default;
+	~UAnimSequenceBase() override;
 
 	UAnimDataModel* GetDataModel() const { return DataModel; }
-	void SetDataModel(UAnimDataModel* InDataModel) { DataModel = InDataModel; }
+	void SetDataModel(UAnimDataModel* InDataModel);
 
 	virtual float GetPlayLength() const { return PlayLength; }
 	virtual const TArray<FAnimNotifyStateEvent>& GetNotifies() const { return Notifies; }

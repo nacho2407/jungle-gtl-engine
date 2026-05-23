@@ -14,54 +14,55 @@
 
 void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
 {
-    InitializeImGuiContext();
+	InitializeImGuiContext();
 
-    Window = InWindow;
-    EditorEngine = InEditorEngine;
+	Window = InWindow;
+	EditorEngine = InEditorEngine;
 
-    LoadProjectSettings();
-    EditorTabs.ResetToLevelEditor();
-    InitializeImGuiBackend(InWindow, InRenderer);
-    InitializeEditorWidgets(InEditorEngine);
-    BindEditorWidgetCallbacks();
+	LoadProjectSettings();
+	EditorTabs.ResetToLevelEditor();
+	InitializeImGuiBackend(InWindow, InRenderer);
+	InitializeEditorWidgets(InEditorEngine);
+	BindEditorWidgetCallbacks();
 }
 
 void FEditorMainPanel::InitializeImGuiContext()
 {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
 
-    ImGuiIO& IO = ImGui::GetIO();
-    IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    IO.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-    IO.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-    IO.MouseDrawCursor = false;
-    ConfigureImGuiStyle();
+	ImGuiIO& IO = ImGui::GetIO();
+	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	IO.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+	IO.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+	IO.MouseDrawCursor = false;
+	ConfigureImGuiStyle();
 }
 
 void FEditorMainPanel::LoadProjectSettings()
 {
-    const FString ProjectSettingsPath = FProjectSettings::GetDefaultSettingsPath();
-    const bool bHadProjectSettings = std::filesystem::exists(std::filesystem::path(FPaths::ToWide(ProjectSettingsPath)));
-    FProjectSettings::Get().LoadFromFile(ProjectSettingsPath);
-    if (!bHadProjectSettings)
-    {
-        FProjectSettings::Get().SaveToFile(ProjectSettingsPath);
-    }
+	const FString ProjectSettingsPath = FProjectSettings::GetDefaultSettingsPath();
+	const bool bHadProjectSettings = std::filesystem::exists(std::filesystem::path(FPaths::ToWide(ProjectSettingsPath)));
+	FProjectSettings::Get().LoadFromFile(ProjectSettingsPath);
+	if (!bHadProjectSettings)
+	{
+		FProjectSettings::Get().SaveToFile(ProjectSettingsPath);
+	}
 }
 
 void FEditorMainPanel::InitializeImGuiBackend(FWindowsWindow* InWindow, FRenderer& InRenderer)
 {
-    LoadEditorFonts();
-    ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
-    ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
-    LoadViewportToolIcons(InRenderer.GetFD3DDevice().GetDevice());
+	LoadEditorFonts();
+	ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
+	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
+	LoadViewportToolIcons(InRenderer.GetFD3DDevice().GetDevice());
 }
 
 void FEditorMainPanel::Release()
 {
-    ReleaseViewportToolIcons();
-    ImGui_ImplDX11_Shutdown();
-    ImGui_ImplWin32_Shutdown();
-    ImGui::DestroyContext();
+	FEditorConsoleWidget::ShutdownLogging();
+	ReleaseViewportToolIcons();
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 }

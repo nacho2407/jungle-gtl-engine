@@ -25,6 +25,17 @@ namespace
 
 		return Cast<UAnimNotify>(NewObject(Class));
 	}
+
+	void DestroyAnimNotifyObject(FAnimNotifyStateEvent& Notify)
+	{
+		if (!Notify.NotifyObject)
+		{
+			return;
+		}
+
+		UObjectManager::Get().DestroyObject(Notify.NotifyObject);
+		Notify.NotifyObject = nullptr;
+	}
 }
 
 const TArray<FBoneAnimationTrack>& UAnimDataModel::GetBoneAnimationTracks() const
@@ -35,6 +46,27 @@ const TArray<FBoneAnimationTrack>& UAnimDataModel::GetBoneAnimationTracks() cons
 TArray<FBoneAnimationTrack>& UAnimDataModel::GetMutableBoneAnimationTracks()
 {
 	return BoneAnimationTracks;
+}
+
+UAnimSequenceBase::~UAnimSequenceBase()
+{
+	ClearNotifies();
+	SetDataModel(nullptr);
+}
+
+void UAnimSequenceBase::SetDataModel(UAnimDataModel* InDataModel)
+{
+	if (DataModel == InDataModel)
+	{
+		return;
+	}
+
+	if (DataModel)
+	{
+		UObjectManager::Get().DestroyObject(DataModel);
+	}
+
+	DataModel = InDataModel;
 }
 
 const TArray<FBoneAnimationTrack>& UAnimSequenceBase::GetBoneAnimationTracks() const
@@ -62,6 +94,11 @@ void UAnimSequenceBase::AddNotify(float InTriggerTime, const FName& InNotifyName
 
 void UAnimSequenceBase::ClearNotifies()
 {
+	for (FAnimNotifyStateEvent& Notify : Notifies)
+	{
+		DestroyAnimNotifyObject(Notify);
+	}
+
 	Notifies.clear();
 }
 
@@ -72,6 +109,7 @@ bool UAnimSequenceBase::RemoveNotifyAt(int32 NotifyIndex)
 		return false;
 	}
 
+	DestroyAnimNotifyObject(Notifies[NotifyIndex]);
 	Notifies.erase(Notifies.begin() + NotifyIndex);
 	return true;
 }
@@ -99,8 +137,10 @@ bool UAnimSequenceBase::SetNotifyClassName(int32 NotifyIndex, const FString& InN
 		return false;
 	}
 
-	Notifies[NotifyIndex].NotifyClassName = InNotifyClassName;
-	Notifies[NotifyIndex].NotifyObject = CreateAnimNotifyObject(InNotifyClassName);
+	FAnimNotifyStateEvent& Notify = Notifies[NotifyIndex];
+	DestroyAnimNotifyObject(Notify);
+	Notify.NotifyClassName = InNotifyClassName;
+	Notify.NotifyObject = CreateAnimNotifyObject(InNotifyClassName);
 	return true;
 }
 

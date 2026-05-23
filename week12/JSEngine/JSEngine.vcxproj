@@ -730,6 +730,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Viewer\SkeletalAssetEditorViewer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Viewer\SkeletalMeshEditorViewer.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
@@ -1107,6 +1111,7 @@
     <ClInclude Include="Source\Editor\Viewer\AnimationEditorViewer.h" />
     <ClInclude Include="Source\Editor\Viewer\EditorViewer.h" />
     <ClInclude Include="Source\Editor\Viewer\ParticleEditorViewer.h" />
+    <ClInclude Include="Source\Editor\Viewer\SkeletalAssetEditorViewer.h" />
     <ClInclude Include="Source\Editor\Viewer\SkeletalMeshEditorViewer.h" />
     <ClInclude Include="Source\Editor\Viewport\CursorOverlayState.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorBoxSelectionService.h" />

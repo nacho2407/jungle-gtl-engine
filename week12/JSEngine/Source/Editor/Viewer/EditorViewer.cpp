@@ -4,7 +4,6 @@
 #include "Editor/Selection/SelectionManager.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PostProcess/Light/AmbientLightComponent.h"
-#include "Component/SkeletalMeshComponent.h"
 #include "GameFramework/PrimitiveActors.h"
 
 void FEditorViewer::Init(
@@ -13,6 +12,8 @@ void FEditorViewer::Init(
 	UWorld* InWorld,
 	FSelectionManager* InSelectionManager)
 {
+	FEditorViewportClient& Client = GetClient();
+
 	Viewport.SetClient(&Client);
 
 	Client.Initialize(InWindow, InEditor);
@@ -23,11 +24,6 @@ void FEditorViewer::Init(
 
 	Client.SetViewport(&Viewport);
 	Client.SetState(&Viewport.GetState());
-	Client.SetBonePickHandler([this](float LocalX, float LocalY)
-	{
-		return HandleViewportBonePick(LocalX, LocalY);
-	});
-
 	Client.SetViewportType(EEditorViewportType::EVT_Perspective);
 	Client.CreateCamera();
 	Client.ApplyCameraMode();
@@ -36,11 +32,6 @@ void FEditorViewer::Init(
 
 	const FViewportRect Rect = { 0, 0, 300, 300 };
 	Viewport.SetRect(Rect);
-
-	ViewTarget = InWorld->SpawnActor<ASkeletalMeshActor>();
-	ViewTarget->InitDefaultComponents();
-	ViewTarget->SetFName(FName("ViewerActor"));
-	ViewTarget->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
 
 	ADirectionalLightActor* DirectionalLight = InWorld->SpawnActor<ADirectionalLightActor>();
 	if (DirectionalLight)
@@ -71,29 +62,24 @@ void FEditorViewer::Shutdown()
 {
 	// UEditorEngine::Shutdown can destroy the preview world before viewer shutdown.
 	// Keep this base cleanup limited to pointers owned by the viewport wrapper.
-	ViewTarget = nullptr;
-	Client.SetBonePickHandler(nullptr);
 	Viewport.SetClient(nullptr);
 }
 
 void FEditorViewer::Tick(float DeltaTime)
 {
-	Client.Tick(DeltaTime);
-}
-
-USkeletalMeshComponent* FEditorViewer::GetSkeletalMeshComponent() const
-{
-	return ViewTarget ? ViewTarget->GetSkeletalMeshComponent() : nullptr;
+	GetClient().Tick(DeltaTime);
 }
 
 void FEditorViewer::SetRect(const FViewportRect& InRect)
 {
 	Viewport.SetRect(InRect);
-	Client.SetViewportSize(static_cast<float>(InRect.Width), static_cast<float>(InRect.Height));
+	GetClient().SetViewportSize(static_cast<float>(InRect.Width), static_cast<float>(InRect.Height));
 }
 
 void FEditorViewer::ClearBaseSelection()
 {
+	FEditorViewportClient& Client = GetClient();
+
 	if (FSelectionManager* SelectionManager = Client.GetSelectionManager())
 	{
 		SelectionManager->ClearSelection();
@@ -104,11 +90,4 @@ void FEditorViewer::ClearBaseSelection()
 	{
 		Gizmo->Deactivate();
 	}
-}
-
-bool FEditorViewer::HandleViewportBonePick(float LocalX, float LocalY)
-{
-	(void)LocalX;
-	(void)LocalY;
-	return false;
 }

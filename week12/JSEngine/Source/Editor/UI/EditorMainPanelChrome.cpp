@@ -18,6 +18,7 @@
 namespace
 {
 constexpr float WindowButtonWidth = 48.0f;
+constexpr float HomeChromeWidth = 76.0f;
 
 std::string WideToUtf8(const wchar_t* Text)
 {
@@ -140,7 +141,7 @@ void FEditorMainPanel::RenderApplicationChrome(float DeltaTime)
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 		const float ButtonStartX = std::max(0.0f, WindowSize.x - WindowButtonWidth * 3.0f);
 
-		float MenuEndX = 0.0f;
+		float MenuEndX = HomeChromeWidth;
 		const ImVec2 ButtonSize(WindowButtonWidth, TitleBarHeight);
 		if (ImGui::BeginMenuBar())
 		{
@@ -148,7 +149,15 @@ void FEditorMainPanel::RenderApplicationChrome(float DeltaTime)
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(18.0f, TitleBarFramePaddingY));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(12.0f, 8.0f));
 
-			ImGui::SetCursorPos(ImVec2(MenuEndX, 0.0f));
+			ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
+			ImGui::InvisibleButton("##HomeChrome", ImVec2(HomeChromeWidth, TitleBarHeight));
+			if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !EditorTabs.GetTabs().empty())
+			{
+				ActivateEditorTab(EditorTabs.GetTabs()[0].Id);
+			}
+			AddItemHitRect(InteractiveRects, WindowPos);
+
+			ImGui::SetCursorPos(ImVec2(HomeChromeWidth, 0.0f));
 			Widgets.ToolbarWidget.RenderMenuContents();
 			MenuEndX = std::min(ButtonStartX, ImGui::GetCursorScreenPos().x - WindowPos.x + 8.0f);
 

@@ -27,41 +27,56 @@
 
 namespace
 {
-    void ApplyPIECameraViewEffectsToBus(APlayerController* PlayerController, FRenderBus& Bus)
-    {
-        APlayerCameraManager* CameraManager = PlayerController
-            ? PlayerController->GetPlayerCameraManager()
-            : nullptr;
-        if (!CameraManager)
-        {
-            return;
-        }
+	const FSkeletalAssetEditorViewer* AsSkeletalAssetViewer(const FEditorViewer* Viewer)
+	{
+		if (!Viewer)
+		{
+			return nullptr;
+		}
 
-        const FMinimalViewInfo& ViewInfo = CameraManager->GetCameraView();
-        const FCameraPostProcessSettings& PostProcess = ViewInfo.PostProcessSettings;
-        if (PostProcess.bVignetteEnabled)
-        {
-            Bus.SetVignette(
-                PostProcess.VignetteIntensity,
-                PostProcess.VignetteRadius,
-                PostProcess.VignetteSmoothness,
-                PostProcess.VignetteColor);
-        }
-        if (CameraManager->HasLetterbox())
-        {
-            Bus.SetLetterbox(CameraManager->GetLetterboxTargetAspect(), CameraManager->GetLetterboxAmount());
-        }
-        if (CameraManager->HasVisibleFade())
-        {
-            Bus.SetCameraFade(CameraManager->GetFadeColor().ToVector4(), CameraManager->GetFadeAlpha());
-        }
-    }
+		const EEditorTabKind TabKind = Viewer->GetTabKind();
+		if (TabKind == EEditorTabKind::SkeletalMeshViewer || TabKind == EEditorTabKind::AnimSequenceViewer)
+		{
+			return static_cast<const FSkeletalAssetEditorViewer*>(Viewer);
+		}
+		return nullptr;
+	}
+
+	void ApplyPIECameraViewEffectsToBus(APlayerController* PlayerController, FRenderBus& Bus)
+	{
+		APlayerCameraManager* CameraManager = PlayerController
+			? PlayerController->GetPlayerCameraManager()
+			: nullptr;
+		if (!CameraManager)
+		{
+			return;
+		}
+
+		const FMinimalViewInfo& ViewInfo = CameraManager->GetCameraView();
+		const FCameraPostProcessSettings& PostProcess = ViewInfo.PostProcessSettings;
+		if (PostProcess.bVignetteEnabled)
+		{
+			Bus.SetVignette(
+				PostProcess.VignetteIntensity,
+				PostProcess.VignetteRadius,
+				PostProcess.VignetteSmoothness,
+				PostProcess.VignetteColor);
+		}
+		if (CameraManager->HasLetterbox())
+		{
+			Bus.SetLetterbox(CameraManager->GetLetterboxTargetAspect(), CameraManager->GetLetterboxAmount());
+		}
+		if (CameraManager->HasVisibleFade())
+		{
+			Bus.SetCameraFade(CameraManager->GetFadeColor().ToVector4(), CameraManager->GetFadeAlpha());
+		}
+	}
 }
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer) : Editor(InEditor)
 {
-    Collector.Initialize(InRenderer.GetFD3DDevice().GetDevice());
-    ViewportCullingStats.resize(FEditorViewportLayout::MaxViewports);
+	Collector.Initialize(InRenderer.GetFD3DDevice().GetDevice());
+	ViewportCullingStats.resize(FEditorViewportLayout::MaxViewports);
 	ViewportDecalStats.resize(FEditorViewportLayout::MaxViewports);
 	ViewportLightStats.resize(FEditorViewportLayout::MaxViewports);
 }
@@ -70,559 +85,569 @@ FEditorRenderPipeline::~FEditorRenderPipeline() { Collector.Release(); }
 
 void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 {
-    const auto PipelineStart = std::chrono::steady_clock::now();
-    const bool bCollectGPUStats = FGPUProfiler::Get().IsCollectionEnabled();
-    if (bCollectGPUStats)
-    {
-        FGPUProfiler::Get().TakeSnapshot();
+	const auto PipelineStart = std::chrono::steady_clock::now();
+	const bool bCollectGPUStats = FGPUProfiler::Get().IsCollectionEnabled();
+	if (bCollectGPUStats)
+	{
+		FGPUProfiler::Get().TakeSnapshot();
 
-        {
-            const TArray<FStatEntry>& GpuSnapshot = FGPUProfiler::Get().GetGPUSnapshot();
-            for (const FStatEntry& Entry : GpuSnapshot)
-            {
-                const double EntryMs = Entry.TotalTime * 1000.0;
-                const char* EntryName = Entry.Name ? Entry.Name : "";
-                if (std::strcmp(EntryName, "EditorFrameGPU") == 0)
-                {
-                    FSkinningStats::Get().RecordGPUFrameTime(EntryMs);
-                }
-            }
-        }
-    }
+		{
+			const TArray<FStatEntry>& GpuSnapshot = FGPUProfiler::Get().GetGPUSnapshot();
+			for (const FStatEntry& Entry : GpuSnapshot)
+			{
+				const double EntryMs = Entry.TotalTime * 1000.0;
+				const char* EntryName = Entry.Name ? Entry.Name : "";
+				if (std::strcmp(EntryName, "EditorFrameGPU") == 0)
+				{
+					FSkinningStats::Get().RecordGPUFrameTime(EntryMs);
+				}
+			}
+		}
+	}
 
 #if STATS
-    FStatManager::Get().TakeSnapshot();
+	FStatManager::Get().TakeSnapshot();
 
-    if (bCollectGPUStats)
-    {
-        const TArray<FStatEntry>& GpuSnapshot = FGPUProfiler::Get().GetGPUSnapshot();
-        double GpuTotalMs = 0.0;
-        double GpuTopMs = 0.0;
-        const char* GpuTopName = "";
-        double GpuTopPassMs[3] = {};
-        const char* GpuTopPassName[3] = { "", "", "" };
-        for (const FStatEntry& Entry : GpuSnapshot)
-        {
-            const double EntryMs = Entry.TotalTime * 1000.0;
-            GpuTotalMs += EntryMs;
-            const char* EntryName = Entry.Name ? Entry.Name : "";
-            if (EntryMs > GpuTopMs)
-            {
-                GpuTopMs = EntryMs;
-                GpuTopName = Entry.Name ? Entry.Name : "";
-            }
+	if (bCollectGPUStats)
+	{
+		const TArray<FStatEntry>& GpuSnapshot = FGPUProfiler::Get().GetGPUSnapshot();
+		double GpuTotalMs = 0.0;
+		double GpuTopMs = 0.0;
+		const char* GpuTopName = "";
+		double GpuTopPassMs[3] = {};
+		const char* GpuTopPassName[3] = { "", "", "" };
+		for (const FStatEntry& Entry : GpuSnapshot)
+		{
+			const double EntryMs = Entry.TotalTime * 1000.0;
+			GpuTotalMs += EntryMs;
+			const char* EntryName = Entry.Name ? Entry.Name : "";
+			if (EntryMs > GpuTopMs)
+			{
+				GpuTopMs = EntryMs;
+				GpuTopName = Entry.Name ? Entry.Name : "";
+			}
 
-            const bool bIsFrameWrapper = std::strcmp(EntryName, "EditorFrameGPU") == 0;
-            if (!bIsFrameWrapper && EntryMs > 0.0)
-            {
-                for (int32 TopIndex = 0; TopIndex < 3; ++TopIndex)
-                {
-                    if (EntryMs > GpuTopPassMs[TopIndex])
-                    {
-                        for (int32 ShiftIndex = 2; ShiftIndex > TopIndex; --ShiftIndex)
-                        {
-                            GpuTopPassMs[ShiftIndex] = GpuTopPassMs[ShiftIndex - 1];
-                            GpuTopPassName[ShiftIndex] = GpuTopPassName[ShiftIndex - 1];
-                        }
+			const bool bIsFrameWrapper = std::strcmp(EntryName, "EditorFrameGPU") == 0;
+			if (!bIsFrameWrapper && EntryMs > 0.0)
+			{
+				for (int32 TopIndex = 0; TopIndex < 3; ++TopIndex)
+				{
+					if (EntryMs > GpuTopPassMs[TopIndex])
+					{
+						for (int32 ShiftIndex = 2; ShiftIndex > TopIndex; --ShiftIndex)
+						{
+							GpuTopPassMs[ShiftIndex] = GpuTopPassMs[ShiftIndex - 1];
+							GpuTopPassName[ShiftIndex] = GpuTopPassName[ShiftIndex - 1];
+						}
 
-                        GpuTopPassMs[TopIndex] = EntryMs;
-                        GpuTopPassName[TopIndex] = EntryName;
-                        break;
-                    }
-                }
-            }
-        }
+						GpuTopPassMs[TopIndex] = EntryMs;
+						GpuTopPassName[TopIndex] = EntryName;
+						break;
+					}
+				}
+			}
+		}
 
-        static std::chrono::steady_clock::time_point LastGpuPerfLogTime = {};
-        const auto GpuPerfNow = std::chrono::steady_clock::now();
-        const bool bCanLogGpu =
-            LastGpuPerfLogTime.time_since_epoch().count() == 0 ||
-            std::chrono::duration<double>(GpuPerfNow - LastGpuPerfLogTime).count() >= 0.5;
-        if (GpuSnapshot.size() > 0 && GpuTotalMs >= 2.0 && bCanLogGpu)
-        {
-            LastGpuPerfLogTime = GpuPerfNow;
-            UE_LOG("[GPUFramePerf] Total=%.2fms Top=%s TopMs=%.2f TopPass=%s %.2fms | %s %.2fms | %s %.2fms Samples=%zu State=%d FocusedWorld=%p",
-                GpuTotalMs,
-                GpuTopName,
-                GpuTopMs,
-                GpuTopPassName[0],
-                GpuTopPassMs[0],
-                GpuTopPassName[1],
-                GpuTopPassMs[1],
-                GpuTopPassName[2],
-                GpuTopPassMs[2],
-                GpuSnapshot.size(),
-                static_cast<int32>(Editor->GetEditorState()),
-                static_cast<void*>(Editor->GetFocusedWorld()));
-        }
-    }
+		static std::chrono::steady_clock::time_point LastGpuPerfLogTime = {};
+		const auto GpuPerfNow = std::chrono::steady_clock::now();
+		const bool bCanLogGpu =
+			LastGpuPerfLogTime.time_since_epoch().count() == 0 ||
+			std::chrono::duration<double>(GpuPerfNow - LastGpuPerfLogTime).count() >= 0.5;
+		if (GpuSnapshot.size() > 0 && GpuTotalMs >= 2.0 && bCanLogGpu)
+		{
+			LastGpuPerfLogTime = GpuPerfNow;
+			UE_LOG("[GPUFramePerf] Total=%.2fms Top=%s TopMs=%.2f TopPass=%s %.2fms | %s %.2fms | %s %.2fms Samples=%zu State=%d FocusedWorld=%p",
+				GpuTotalMs,
+				GpuTopName,
+				GpuTopMs,
+				GpuTopPassName[0],
+				GpuTopPassMs[0],
+				GpuTopPassName[1],
+				GpuTopPassMs[1],
+				GpuTopPassName[2],
+				GpuTopPassMs[2],
+				GpuSnapshot.size(),
+				static_cast<int32>(Editor->GetEditorState()),
+				static_cast<void*>(Editor->GetFocusedWorld()));
+		}
+	}
 #endif
-    const auto StatsEnd = std::chrono::steady_clock::now();
+	const auto StatsEnd = std::chrono::steady_clock::now();
 
-    for (FRenderCollector::FCullingStats& Stats : ViewportCullingStats)
-    {
-        Stats = {};
-    }
-    const auto ResetStatsEnd = std::chrono::steady_clock::now();
+	for (FRenderCollector::FCullingStats& Stats : ViewportCullingStats)
+	{
+		Stats = {};
+	}
+	const auto ResetStatsEnd = std::chrono::steady_clock::now();
 
-    if (!Editor->GetFocusedWorld())
-    {
-        const auto EarlyFrameEnd = std::chrono::steady_clock::now();
-        FSkinningStats::Get().RecordCPUFrameTime(
-            std::chrono::duration<double, std::milli>(EarlyFrameEnd - PipelineStart).count());
-        FSkinningStats::Get().TakeSnapshot();
-        return;
-    }
+	if (!Editor->GetFocusedWorld())
+	{
+		const auto EarlyFrameEnd = std::chrono::steady_clock::now();
+		FSkinningStats::Get().RecordCPUFrameTime(
+			std::chrono::duration<double, std::milli>(EarlyFrameEnd - PipelineStart).count());
+		FSkinningStats::Get().TakeSnapshot();
+		return;
+	}
 
-    // 1회: 전체 백버퍼 클리어 (색상 + 깊이/스텐실)
-    const auto BeginFrameStart = std::chrono::steady_clock::now();
-    Renderer.BeginFrame();
-    const auto BeginFrameEnd = std::chrono::steady_clock::now();
+	// 1회: 전체 백버퍼 클리어 (색상 + 깊이/스텐실)
+	const auto BeginFrameStart = std::chrono::steady_clock::now();
+	Renderer.BeginFrame();
+	const auto BeginFrameEnd = std::chrono::steady_clock::now();
 
-    std::chrono::steady_clock::time_point ViewportsStart;
-    std::chrono::steady_clock::time_point ViewportsEnd;
-    std::chrono::steady_clock::time_point BackBufferStart;
-    std::chrono::steady_clock::time_point BackBufferEnd;
-    std::chrono::steady_clock::time_point UIStart;
-    std::chrono::steady_clock::time_point UIEnd;
-    {
-        const uint32 EditorFrameGPUStatIndex = bCollectGPUStats
-            ? FGPUProfiler::Get().BeginTimestamp("EditorFrameGPU")
-            : UINT32_MAX;
+	std::chrono::steady_clock::time_point ViewportsStart;
+	std::chrono::steady_clock::time_point ViewportsEnd;
+	std::chrono::steady_clock::time_point BackBufferStart;
+	std::chrono::steady_clock::time_point BackBufferEnd;
+	std::chrono::steady_clock::time_point UIStart;
+	std::chrono::steady_clock::time_point UIEnd;
+	{
+		const uint32 EditorFrameGPUStatIndex = bCollectGPUStats
+			? FGPUProfiler::Get().BeginTimestamp("EditorFrameGPU")
+			: UINT32_MAX;
 
-        // 4개 뷰포트를 순서대로 렌더링
-        ViewportsStart = std::chrono::steady_clock::now();
-        for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
-        {
-            RenderViewport(Renderer, i);
-        }
+		// 4개 뷰포트를 순서대로 렌더링
+		ViewportsStart = std::chrono::steady_clock::now();
+		for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
+		{
+			RenderViewport(Renderer, i);
+		}
 
 		RenderViewerViewport(Renderer);
-        ViewportsEnd = std::chrono::steady_clock::now();
+		ViewportsEnd = std::chrono::steady_clock::now();
 
-        BackBufferStart = std::chrono::steady_clock::now();
-        Renderer.UseBackBufferRenderTargets();
-        BackBufferEnd = std::chrono::steady_clock::now();
+		BackBufferStart = std::chrono::steady_clock::now();
+		Renderer.UseBackBufferRenderTargets();
+		BackBufferEnd = std::chrono::steady_clock::now();
 
-        // ImGui UI 오버레이
-        UIStart = std::chrono::steady_clock::now();
-        Editor->RenderUI(DeltaTime);
-        UIEnd = std::chrono::steady_clock::now();
+		// ImGui UI 오버레이
+		UIStart = std::chrono::steady_clock::now();
+		Editor->RenderUI(DeltaTime);
+		UIEnd = std::chrono::steady_clock::now();
 
-        if (bCollectGPUStats)
-        {
-            FGPUProfiler::Get().EndTimestamp(EditorFrameGPUStatIndex);
-        }
-    }
+		if (bCollectGPUStats)
+		{
+			FGPUProfiler::Get().EndTimestamp(EditorFrameGPUStatIndex);
+		}
+	}
 
-    const auto EndFrameStart = std::chrono::steady_clock::now();
-    Renderer.EndFrame();
-    const auto EndFrameEnd = std::chrono::steady_clock::now();
-    const double SkinningCPUFrameMs = std::chrono::duration<double, std::milli>(EndFrameEnd - PipelineStart).count();
-    FSkinningStats::Get().RecordCPUFrameTime(SkinningCPUFrameMs);
-    FSkinningStats::Get().TakeSnapshot();
+	const auto EndFrameStart = std::chrono::steady_clock::now();
+	Renderer.EndFrame();
+	const auto EndFrameEnd = std::chrono::steady_clock::now();
+	const double SkinningCPUFrameMs = std::chrono::duration<double, std::milli>(EndFrameEnd - PipelineStart).count();
+	FSkinningStats::Get().RecordCPUFrameTime(SkinningCPUFrameMs);
+	FSkinningStats::Get().TakeSnapshot();
 
 #if STATS
-    static std::chrono::steady_clock::time_point LastPipelinePerfLogTime = {};
-    const double TotalMs = SkinningCPUFrameMs;
-    const auto Now = EndFrameEnd;
-    const bool bCanLog =
-        LastPipelinePerfLogTime.time_since_epoch().count() == 0 ||
-        std::chrono::duration<double>(Now - LastPipelinePerfLogTime).count() >= 0.25;
-    if (TotalMs >= 18.0 && bCanLog)
-    {
-        LastPipelinePerfLogTime = Now;
-        auto ToMs = [](std::chrono::steady_clock::duration Duration)
-        {
-            return std::chrono::duration<double, std::milli>(Duration).count();
-        };
-        UE_LOG("[EditorPipelinePerf] Total=%.2fms Stats=%.2fms Reset=%.2fms BeginFrame=%.2fms Viewports=%.2fms BackBuffer=%.2fms RenderUI=%.2fms EndFrame=%.2fms State=%d FocusedWorld=%p",
-               TotalMs,
-               ToMs(StatsEnd - PipelineStart),
-               ToMs(ResetStatsEnd - StatsEnd),
-               ToMs(BeginFrameEnd - BeginFrameStart),
-               ToMs(ViewportsEnd - ViewportsStart),
-               ToMs(BackBufferEnd - BackBufferStart),
-               ToMs(UIEnd - UIStart),
-               ToMs(EndFrameEnd - EndFrameStart),
-               static_cast<int32>(Editor->GetEditorState()),
-               static_cast<void*>(Editor->GetFocusedWorld()));
-    }
+	static std::chrono::steady_clock::time_point LastPipelinePerfLogTime = {};
+	const double TotalMs = SkinningCPUFrameMs;
+	const auto Now = EndFrameEnd;
+	const bool bCanLog =
+		LastPipelinePerfLogTime.time_since_epoch().count() == 0 ||
+		std::chrono::duration<double>(Now - LastPipelinePerfLogTime).count() >= 0.25;
+	if (TotalMs >= 18.0 && bCanLog)
+	{
+		LastPipelinePerfLogTime = Now;
+		auto ToMs = [](std::chrono::steady_clock::duration Duration)
+		{
+			return std::chrono::duration<double, std::milli>(Duration).count();
+		};
+		UE_LOG("[EditorPipelinePerf] Total=%.2fms Stats=%.2fms Reset=%.2fms BeginFrame=%.2fms Viewports=%.2fms BackBuffer=%.2fms RenderUI=%.2fms EndFrame=%.2fms State=%d FocusedWorld=%p",
+			   TotalMs,
+			   ToMs(StatsEnd - PipelineStart),
+			   ToMs(ResetStatsEnd - StatsEnd),
+			   ToMs(BeginFrameEnd - BeginFrameStart),
+			   ToMs(ViewportsEnd - ViewportsStart),
+			   ToMs(BackBufferEnd - BackBufferStart),
+			   ToMs(UIEnd - UIStart),
+			   ToMs(EndFrameEnd - EndFrameStart),
+			   static_cast<int32>(Editor->GetEditorState()),
+			   static_cast<void*>(Editor->GetFocusedWorld()));
+	}
 #endif
 }
 
 void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIndex)
 {
-    const auto ViewportRenderStart = std::chrono::steady_clock::now();
-    if (Editor->GetEditorState() != EViewportPlayState::Editing)
-    {
-        const int32 ActivePIEViewportIndex = Editor->GetPIESession().GetActiveViewportIndex();
-        if (ActivePIEViewportIndex >= 0 && ViewportIndex != ActivePIEViewportIndex)
-        {
-            return;
-        }
-    }
+	const auto ViewportRenderStart = std::chrono::steady_clock::now();
+	if (Editor->GetEditorState() != EViewportPlayState::Editing)
+	{
+		const int32 ActivePIEViewportIndex = Editor->GetPIESession().GetActiveViewportIndex();
+		if (ActivePIEViewportIndex >= 0 && ViewportIndex != ActivePIEViewportIndex)
+		{
+			return;
+		}
+	}
 
-    FEditorViewportClient* VC = Editor->GetViewportLayout().GetViewportClient(ViewportIndex);
+	FEditorViewportClient* VC = Editor->GetViewportLayout().GetViewportClient(ViewportIndex);
 
-    // 1. 이 뷰포트의 SceneView 빌드
-    //    - ViewRect : 화면 내 서브 영역 (BuildSceneView가 State->Rect에서 채움)
-    //    - ViewMode : 뷰포트별 독립 모드 (기본값 EViewMode::Lit)
-    FSceneView SceneView;
-    VC->BuildSceneView(SceneView);
+	// 1. 이 뷰포트의 SceneView 빌드
+	//    - ViewRect : 화면 내 서브 영역 (BuildSceneView가 State->Rect에서 채움)
+	//    - ViewMode : 뷰포트별 독립 모드 (기본값 EViewMode::Lit)
+	FSceneView SceneView;
+	VC->BuildSceneView(SceneView);
 
-    // 2. 렌더링 대상을 서브 영역으로 제한
-    const FViewportRect& Rect = SceneView.ViewRect;
-    if (Rect.Width <= 0 || Rect.Height <= 0)
-        return;
+	// 2. 렌더링 대상을 서브 영역으로 제한
+	const FViewportRect& Rect = SceneView.ViewRect;
+	if (Rect.Width <= 0 || Rect.Height <= 0)
+		return;
 
-    // Avoid recreating the full viewport render-target stack every frame while
-    // layout animation is resizing panes. The UI can scale the last SRV until
-    // the transition lands, then we render once at the final size.
-    if (Editor->GetViewportLayout().IsLayoutTransitionActive())
-        return;
+	// Avoid recreating the full viewport render-target stack every frame while
+	// layout animation is resizing panes. The UI can scale the last SRV until
+	// the transition lands, then we render once at the final size.
+	if (Editor->GetViewportLayout().IsLayoutTransitionActive())
+		return;
 
-    FSceneViewport& SceneViewport = Editor->GetViewportLayout().GetSceneViewport(ViewportIndex);
-    
+	FSceneViewport& SceneViewport = Editor->GetViewportLayout().GetSceneViewport(ViewportIndex);
+	
 	// Width, Height 변경 여부에 따라 Resource 버퍼 재생성
 	// 만약 최소화 등의 상황으로 (H, W) == (0, 0) 일 경우 Render 안함
 	FViewportRenderResource& ViewportResource = Editor->GetRenderer().AcquireViewportResource(Rect.Width, Rect.Height, ViewportIndex);
-    SceneViewport.SetRenderTargetSet(&ViewportResource.GetView());
+	SceneViewport.SetRenderTargetSet(&ViewportResource.GetView());
 
-    // Viewport 별 버퍼 클리어 및 Renderer 버퍼 세팅
-    Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets());
+	// Viewport 별 버퍼 클리어 및 Renderer 버퍼 세팅
+	Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets());
 
-    // 3. 이 뷰포트용 렌더 데이터 수집
-    Bus.Clear();
+	// 3. 이 뷰포트용 렌더 데이터 수집
+	Bus.Clear();
 
-    // 각 뷰포트는 자신이 참조하는 월드를 렌더링합니다.
-    UWorld*                World = VC->GetFocusedWorld();
-    const FEditorSettings& Settings = Editor->GetSettings();
-    const FShowFlags&      ShowFlags = Settings.ShowFlags;
-    const EViewMode        ViewMode = SceneView.ViewMode;
+	// 각 뷰포트는 자신이 참조하는 월드를 렌더링합니다.
+	UWorld*                World = VC->GetFocusedWorld();
+	const FEditorSettings& Settings = Editor->GetSettings();
+	const FShowFlags&      ShowFlags = Settings.ShowFlags;
+	const EViewMode        ViewMode = SceneView.ViewMode;
 
-    const FViewportCamera* Camera = VC->GetRenderCamera();
-    if (Camera == nullptr)
-        return;
+	const FViewportCamera* Camera = VC->GetRenderCamera();
+	if (Camera == nullptr)
+		return;
 
-    Bus.SetViewProjection(SceneView.ViewMatrix, SceneView.ProjectionMatrix, Camera->GetNearPlane(), Camera->GetFarPlane());
-    Bus.SetRenderSettings(ViewMode, ShowFlags);
-    Bus.SetLightCullMode(SceneView.LightCullMode);
-    Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
+	Bus.SetViewProjection(SceneView.ViewMatrix, SceneView.ProjectionMatrix, Camera->GetNearPlane(), Camera->GetFarPlane());
+	Bus.SetRenderSettings(ViewMode, ShowFlags);
+	Bus.SetLightCullMode(SceneView.LightCullMode);
+	Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
 	Bus.SetViewportSize(FVector2(static_cast<float>(Rect.Width), static_cast<float>(Rect.Height)));
-    Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
-    Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
-    Bus.SetCascadeVis(VC->GetViewportState()->bShowCascadeVis);
-    if (Editor->GetEditorState() != EViewportPlayState::Editing)
-    {
-        ApplyPIECameraViewEffectsToBus(VC->GetPIEPlayerController(), Bus);
-    }
+	Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
+	Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
+	Bus.SetCascadeVis(VC->GetViewportState()->bShowCascadeVis);
+	if (Editor->GetEditorState() != EViewportPlayState::Editing)
+	{
+		ApplyPIECameraViewEffectsToBus(VC->GetPIEPlayerController(), Bus);
+	}
 
 	if (World->IsSandervistanActivated())
 	{
-        Bus.bSandevistanEnabled = true;
-        Bus.SandevistanIntensity = 1.0f;
+		Bus.bSandevistanEnabled = true;
+		Bus.SandevistanIntensity = 1.0f;
 	}
 	else
 	{
-        Bus.bSandevistanEnabled = false;
-        Bus.SandevistanIntensity = 0.0f;
+		Bus.bSandevistanEnabled = false;
+		Bus.SandevistanIntensity = 0.0f;
 	}
 	
 	const FFrustum& ViewFrustum = SceneView.CameraFrustum;
 	const bool bDrawEditorViewportHelpers = VC->AllowsEditorWorldControl();
 	Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum, bDrawEditorViewportHelpers);
-    ViewportCullingStats[ViewportIndex] = Collector.GetLastCullingStats();
-    ViewportDecalStats[ViewportIndex] = Collector.GetLastDecalStats();
-    ViewportLightStats[ViewportIndex] = Collector.GetLastLightStats();
+	ViewportCullingStats[ViewportIndex] = Collector.GetLastCullingStats();
+	ViewportDecalStats[ViewportIndex] = Collector.GetLastDecalStats();
+	ViewportLightStats[ViewportIndex] = Collector.GetLastLightStats();
 
 	// 순수 편집 뷰포트와 PIE Eject는 모두 Editor viewport setting을 따릅니다.
 	if (bDrawEditorViewportHelpers)
-    {
-        Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, SceneView.bOrthographic);
-        const FWorldContext* Ctx = Editor->GetWorldContextFromWorld(World);
-        if (UGizmoComponent* Gizmo = Ctx->SelectionManager->GetGizmo())
-        {
-            if (SceneView.bOrthographic)
-                Gizmo->ApplyScreenSpaceScalingOrtho(SceneView.CameraOrthoHeight);
-            else
-                Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
-        }
+	{
+		Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, SceneView.bOrthographic);
+		const FWorldContext* Ctx = Editor->GetWorldContextFromWorld(World);
+		if (UGizmoComponent* Gizmo = Ctx->SelectionManager->GetGizmo())
+		{
+			if (SceneView.bOrthographic)
+				Gizmo->ApplyScreenSpaceScalingOrtho(SceneView.CameraOrthoHeight);
+			else
+				Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
+		}
 
-        Collector.CollectGizmo(Ctx->SelectionManager->GetGizmo(), ShowFlags, Bus, VC->GetViewportState()->bHovered);
-        Collector.CollectSelection(Ctx->SelectionManager->GetSelectedActors(), ShowFlags, ViewMode, Bus, bDrawEditorViewportHelpers);
-    }
+		Collector.CollectGizmo(Ctx->SelectionManager->GetGizmo(), ShowFlags, Bus, VC->GetViewportState()->bHovered);
+		Collector.CollectSelection(Ctx->SelectionManager->GetSelectedActors(), ShowFlags, ViewMode, Bus, bDrawEditorViewportHelpers);
+	}
 
-    // 4. CPU 배처 데이터 준비 → GPU 드로우 (SetSubViewport 영역에만 출력됨)
-    Renderer.PrepareBatchers(Bus);
-    Renderer.Render(Bus);
-    Renderer.RenderScreenOverlays(Bus, false);
+	// 4. CPU 배처 데이터 준비 → GPU 드로우 (SetSubViewport 영역에만 출력됨)
+	Renderer.PrepareBatchers(Bus);
+	Renderer.Render(Bus);
+	Renderer.RenderScreenOverlays(Bus, false);
 
-    TArray<AActor*> IdPickActors;
-    Renderer.RenderEditorIdPickBuffer(Bus, ViewportResource, IdPickActors);
-    SceneViewport.SetEditorIdPickActors(std::move(IdPickActors));
+	TArray<AActor*> IdPickActors;
+	Renderer.RenderEditorIdPickBuffer(Bus, ViewportResource, IdPickActors);
+	SceneViewport.SetEditorIdPickActors(std::move(IdPickActors));
 
 #if STATS
-    const double RenderSec = std::chrono::duration<double>(
-        std::chrono::steady_clock::now() - ViewportRenderStart).count();
-    static std::chrono::steady_clock::time_point LastPerfLogTimes[FEditorViewportLayout::MaxViewports] = {};
-    const auto Now = std::chrono::steady_clock::now();
-    const bool bCanLog =
-        ViewportIndex >= 0 &&
-        ViewportIndex < FEditorViewportLayout::MaxViewports &&
-        (LastPerfLogTimes[ViewportIndex].time_since_epoch().count() == 0 ||
-            std::chrono::duration<double>(Now - LastPerfLogTimes[ViewportIndex]).count() >= 1.0);
-    if (RenderSec >= 0.018 && bCanLog)
-    {
-        LastPerfLogTimes[ViewportIndex] = Now;
-        UE_LOG("[EditorRenderPerf] Viewport=%d Time=%.4fs Opaque=%zu Lights=%zu ShadowRequests=%zu VisiblePrimitives=%d",
-               ViewportIndex,
-               RenderSec,
-               Bus.GetCommands(ERenderPass::Opaque).size(),
-               Bus.LightInfos.size(),
-               Bus.ShadowLightRequests.size(),
-               ViewportCullingStats[ViewportIndex].TotalVisiblePrimitiveCount);
-    }
+	const double RenderSec = std::chrono::duration<double>(
+		std::chrono::steady_clock::now() - ViewportRenderStart).count();
+	static std::chrono::steady_clock::time_point LastPerfLogTimes[FEditorViewportLayout::MaxViewports] = {};
+	const auto Now = std::chrono::steady_clock::now();
+	const bool bCanLog =
+		ViewportIndex >= 0 &&
+		ViewportIndex < FEditorViewportLayout::MaxViewports &&
+		(LastPerfLogTimes[ViewportIndex].time_since_epoch().count() == 0 ||
+			std::chrono::duration<double>(Now - LastPerfLogTimes[ViewportIndex]).count() >= 1.0);
+	if (RenderSec >= 0.018 && bCanLog)
+	{
+		LastPerfLogTimes[ViewportIndex] = Now;
+		UE_LOG("[EditorRenderPerf] Viewport=%d Time=%.4fs Opaque=%zu Lights=%zu ShadowRequests=%zu VisiblePrimitives=%d",
+			   ViewportIndex,
+			   RenderSec,
+			   Bus.GetCommands(ERenderPass::Opaque).size(),
+			   Bus.LightInfos.size(),
+			   Bus.ShadowLightRequests.size(),
+			   ViewportCullingStats[ViewportIndex].TotalVisiblePrimitiveCount);
+	}
 #endif
 }
 
 void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
 {
-    TArray<std::unique_ptr<FEditorViewer>>& Viewers = Editor->GetViewers();
+	TArray<std::unique_ptr<FEditorViewer>>& Viewers = Editor->GetViewers();
 
 	for (size_t i = 0; i < Viewers.size(); i++)
 	{
-        const auto ViewportRenderStart = std::chrono::steady_clock::now();
+		const auto ViewportRenderStart = std::chrono::steady_clock::now();
 
-        FSceneViewport& SceneViewport = Viewers[i]->GetViewport();
-        FEditorViewportClient* VC = SceneViewport.GetClient();
+		FSceneViewport& SceneViewport = Viewers[i]->GetViewport();
+		FEditorViewportClient* VC = SceneViewport.GetClient();
 
-        if (!VC)
-            continue;
+		if (!VC)
+			continue;
 
-        // 1. SceneView 생성
-        FSceneView SceneView;
-        VC->BuildSceneView(SceneView);
+		// 1. SceneView 생성
+		FSceneView SceneView;
+		VC->BuildSceneView(SceneView);
 
-        const FViewportRect& Rect = SceneViewport.GetRect();
-        if (Rect.Width <= 0 || Rect.Height <= 0)
-            continue;
+		const FViewportRect& Rect = SceneViewport.GetRect();
+		if (Rect.Width <= 0 || Rect.Height <= 0)
+			continue;
 
-        // 2. RenderTarget 확보
-        FViewportRenderResource& ViewportResource =
-            Editor->GetRenderer().AcquireViewerViewportResource(
-                (uint32)i,
-                Rect.Width,
-                Rect.Height);
+		// 2. RenderTarget 확보
+		FViewportRenderResource& ViewportResource =
+			Editor->GetRenderer().AcquireViewerViewportResource(
+				(uint32)i,
+				Rect.Width,
+				Rect.Height);
 
-        SceneViewport.SetRenderTargetSet(&ViewportResource.GetView());
+		SceneViewport.SetRenderTargetSet(&ViewportResource.GetView());
 
-        // 3. Begin
-        Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets());
+		// 3. Begin
+		Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets());
 
-        // 4. Bus 세팅
-        Bus.Clear();
+		// 4. Bus 세팅
+		Bus.Clear();
 
-        UWorld* World = VC->GetFocusedWorld();
-        if (!World)
-            continue;
+		UWorld* World = VC->GetFocusedWorld();
+		if (!World)
+			continue;
 
-        const FEditorSettings& Settings = Editor->GetSettings();
-        const FSkeletalViewerShowFlags& VFlags = Viewers[i]->GetClient().GetShowFlags();
+		const FEditorSettings& Settings = Editor->GetSettings();
+		const FSkeletalAssetEditorViewer* SkeletalViewer = AsSkeletalAssetViewer(Viewers[i].get());
+		const FSkeletalViewerShowFlags DefaultSkeletalFlags = {};
+		const FSkeletalViewerShowFlags& VFlags = SkeletalViewer
+			? SkeletalViewer->GetClient().GetShowFlags()
+			: DefaultSkeletalFlags;
 
-        // ViewerPreview는 Level Editor의 전역 표시 상태를 상속하지 않는다.
-        // Asset 검사 도구로서 필요한 표면/오버레이만 명시적으로 켠다.
-        FShowFlags ShowFlags = {};
-        ShowFlags.bPrimitives = true;
-        ShowFlags.bSkeletalMesh = VFlags.bShowSkeletalMesh;
-        ShowFlags.bGrid = true;
-        ShowFlags.bAxis = true;
-        ShowFlags.bGizmo = true;
-        ShowFlags.bBillboardText = false;
-        ShowFlags.bBoundingVolume = VFlags.bShowBoundingBox;
-        ShowFlags.bBVHBoundingVolume = false;
-        ShowFlags.bEnableLOD = false;
-        ShowFlags.bDecals = false;
-        ShowFlags.bFog = false;
-        ShowFlags.bShadow = false;
-        ShowFlags.bGammaCorrection = false;
-        ShowFlags.GammaValue = Settings.ShowFlags.GammaValue;
-        const FEditorViewportState* ViewportState = VC->GetViewportState();
-        const EViewMode ViewMode = ViewportState ? ViewportState->ViewMode : EViewMode::Lit_BlinnPhong;
+		// ViewerPreview는 Level Editor의 전역 표시 상태를 상속하지 않는다.
+		// Asset 검사 도구로서 필요한 표면/오버레이만 명시적으로 켠다.
+		FShowFlags ShowFlags = {};
+		ShowFlags.bPrimitives = true;
+		ShowFlags.bSkeletalMesh = VFlags.bShowSkeletalMesh;
+		ShowFlags.bGrid = true;
+		ShowFlags.bAxis = true;
+		ShowFlags.bGizmo = true;
+		ShowFlags.bBillboardText = false;
+		ShowFlags.bBoundingVolume = VFlags.bShowBoundingBox;
+		ShowFlags.bBVHBoundingVolume = false;
+		ShowFlags.bEnableLOD = false;
+		ShowFlags.bDecals = false;
+		ShowFlags.bFog = false;
+		ShowFlags.bShadow = false;
+		ShowFlags.bGammaCorrection = false;
+		ShowFlags.GammaValue = Settings.ShowFlags.GammaValue;
+		const FEditorViewportState* ViewportState = VC->GetViewportState();
+		const EViewMode ViewMode = ViewportState ? ViewportState->ViewMode : EViewMode::Lit_BlinnPhong;
 
-        const FViewportCamera* Camera = VC->GetRenderCamera();
-        if (!Camera)
-            continue;
+		const FViewportCamera* Camera = VC->GetRenderCamera();
+		if (!Camera)
+			continue;
 
-        Bus.SetViewProjection(
-            SceneView.ViewMatrix,
-            SceneView.ProjectionMatrix,
-            Camera->GetNearPlane(),
-            Camera->GetFarPlane());
+		Bus.SetViewProjection(
+			SceneView.ViewMatrix,
+			SceneView.ProjectionMatrix,
+			Camera->GetNearPlane(),
+			Camera->GetFarPlane());
 
-        Bus.SetRenderSettings(ViewMode, ShowFlags);
-        Bus.SetLightCullMode(ViewportState ? ViewportState->LightCullMode : ELightCullMode::None);
-        Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
-        Bus.SetViewportSize(FVector2((float)Rect.Width, (float)Rect.Height));
-        Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
-        Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
-        Bus.SetCascadeVis(ViewportState ? ViewportState->bShowCascadeVis : false);
+		Bus.SetRenderSettings(ViewMode, ShowFlags);
+		Bus.SetLightCullMode(ViewportState ? ViewportState->LightCullMode : ELightCullMode::None);
+		Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
+		Bus.SetViewportSize(FVector2((float)Rect.Width, (float)Rect.Height));
+		Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
+		Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
+		Bus.SetCascadeVis(ViewportState ? ViewportState->bShowCascadeVis : false);
 
-        FBoneWeightHeatmapViewState BoneWeightHeatmapState = {};
-        if (ViewMode == EViewMode::BoneWeightHeatmap)
-        {
-            BoneWeightHeatmapState.bEnabled = true;
-            const FSkeletalMeshEditorViewer* SkeletalViewer = Viewers[i]->GetTabKind() == EEditorTabKind::SkeletalMeshViewer
-                ? static_cast<const FSkeletalMeshEditorViewer*>(Viewers[i].get())
-                : nullptr;
-            BoneWeightHeatmapState.SelectedBoneIndex = SkeletalViewer ? SkeletalViewer->GetSelectedBoneIndex() : -1;
-        }
-        Bus.SetBoneWeightHeatmapViewState(BoneWeightHeatmapState);
+		FBoneWeightHeatmapViewState BoneWeightHeatmapState = {};
+		if (ViewMode == EViewMode::BoneWeightHeatmap)
+		{
+			BoneWeightHeatmapState.bEnabled = true;
+			const FSkeletalMeshEditorViewer* SkeletalViewer = Viewers[i]->GetTabKind() == EEditorTabKind::SkeletalMeshViewer
+				? static_cast<const FSkeletalMeshEditorViewer*>(Viewers[i].get())
+				: nullptr;
+			BoneWeightHeatmapState.SelectedBoneIndex = SkeletalViewer ? SkeletalViewer->GetSelectedBoneIndex() : -1;
+		}
+		Bus.SetBoneWeightHeatmapViewState(BoneWeightHeatmapState);
 
-        // Sandevistan 유지
-        if (World->IsSandervistanActivated())
-        {
-            Bus.bSandevistanEnabled = true;
-            Bus.SandevistanIntensity = 1.0f;
-        }
-        else
-        {
-            Bus.bSandevistanEnabled = false;
-            Bus.SandevistanIntensity = 0.0f;
-        }
+		// Sandevistan 유지
+		if (World->IsSandervistanActivated())
+		{
+			Bus.bSandevistanEnabled = true;
+			Bus.SandevistanIntensity = 1.0f;
+		}
+		else
+		{
+			Bus.bSandevistanEnabled = false;
+			Bus.SandevistanIntensity = 0.0f;
+		}
 
-        // 5. Collect
-        const FFrustum& ViewFrustum = SceneView.CameraFrustum;
-        const bool bDrawEditorViewportHelpers =
-            VC->AllowsEditorWorldControl();
+		// 5. Collect
+		const FFrustum& ViewFrustum = SceneView.CameraFrustum;
+		const bool bDrawEditorViewportHelpers =
+			VC->AllowsEditorWorldControl();
 
-        Collector.CollectWorld(
-            World,
-            ShowFlags,
-            ViewMode,
-            Bus,
-            &ViewFrustum,
-            bDrawEditorViewportHelpers);
+		Collector.CollectWorld(
+			World,
+			ShowFlags,
+			ViewMode,
+			Bus,
+			&ViewFrustum,
+			bDrawEditorViewportHelpers);
 
-        // 🔹 Editor helper 그대로 유지
-        if (bDrawEditorViewportHelpers)
-        {
-            Collector.CollectGrid(
-                Settings.GridSpacing,
-                Settings.GridHalfLineCount,
-                Bus,
-                SceneView.bOrthographic);
+		// 🔹 Editor helper 그대로 유지
+		if (bDrawEditorViewportHelpers)
+		{
+			Collector.CollectGrid(
+				Settings.GridSpacing,
+				Settings.GridHalfLineCount,
+				Bus,
+				SceneView.bOrthographic);
 
-            const FWorldContext* Ctx = Editor->GetWorldContextFromWorld(World);
-            if (UGizmoComponent* Gizmo = Ctx->SelectionManager->GetGizmo())
-            {
-                if (SceneView.bOrthographic)
-                    Gizmo->ApplyScreenSpaceScalingOrtho(SceneView.CameraOrthoHeight);
-                else
-                    Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
-            }
+			const FWorldContext* Ctx = Editor->GetWorldContextFromWorld(World);
+			if (UGizmoComponent* Gizmo = Ctx->SelectionManager->GetGizmo())
+			{
+				if (SceneView.bOrthographic)
+					Gizmo->ApplyScreenSpaceScalingOrtho(SceneView.CameraOrthoHeight);
+				else
+					Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
+			}
 
-            Collector.CollectGizmo(
-                Ctx->SelectionManager->GetGizmo(),
-                ShowFlags,
-                Bus,
-                VC->GetViewportState()->bHovered);
+			Collector.CollectGizmo(
+				Ctx->SelectionManager->GetGizmo(),
+				ShowFlags,
+				Bus,
+				VC->GetViewportState()->bHovered);
 
-            if (VFlags.bShowOutline)
-            {
-                Collector.CollectSelection(
-                    Ctx->SelectionManager->GetSelectedActors(),
-                    ShowFlags,
-                    ViewMode,
-                    Bus,
-                    bDrawEditorViewportHelpers);
-            }
-        }
+			if (VFlags.bShowOutline)
+			{
+				Collector.CollectSelection(
+					Ctx->SelectionManager->GetSelectedActors(),
+					ShowFlags,
+					ViewMode,
+					Bus,
+					bDrawEditorViewportHelpers);
+			}
+		}
 
-        // Viewer 전용: 본 와이어 드로우 (skeleton mesh viewer 토글)
-        {
-            if (VFlags.bShowBones)
-            {
-                if (ASkeletalMeshActor* ViewTarget = Viewers[i]->GetViewTarget())
-                {
-                    if (USkeletalMeshComponent* SkComp = ViewTarget->GetSkeletalMeshComponent())
-                    {
-                        SkComp->EnsureSkinningUpdated();   // 본 자세 최신화 보장
-                        if (VFlags.bShowOnlySelectedBone)
-                        {
-                            const FSkeletalMeshEditorViewer* SkeletalViewer = Viewers[i]->GetTabKind() == EEditorTabKind::SkeletalMeshViewer
-                                ? static_cast<const FSkeletalMeshEditorViewer*>(Viewers[i].get())
-                                : nullptr;
-                            const int32 BoneIdx = SkeletalViewer ? SkeletalViewer->GetSelectedBoneIndex() : -1;
-                            if (BoneIdx >= 0)
-                            {
-                                Collector.CollectSingleBone(SkComp, BoneIdx, Bus);
-                            }
-                        }
-                        else
-                        {
-                            Collector.CollectSkeletonBones(SkComp, Bus);
-                        }
-                    }
-                }
-            }
-        }
+		// Viewer 전용: 본 와이어 드로우 (skeleton mesh viewer 토글)
+		{
+			if (VFlags.bShowBones)
+			{
+				if (SkeletalViewer)
+				{
+					if (ASkeletalMeshActor* ViewTarget = SkeletalViewer->GetViewTarget())
+					{
+						if (USkeletalMeshComponent* SkComp = ViewTarget->GetSkeletalMeshComponent())
+						{
+							SkComp->EnsureSkinningUpdated();   // 본 자세 최신화 보장
+							if (VFlags.bShowOnlySelectedBone)
+							{
+								const FSkeletalMeshEditorViewer* MeshViewer = Viewers[i]->GetTabKind() == EEditorTabKind::SkeletalMeshViewer
+								? static_cast<const FSkeletalMeshEditorViewer*>(Viewers[i].get())
+								: nullptr;
+								const int32 BoneIdx = MeshViewer ? MeshViewer->GetSelectedBoneIndex() : -1;
+								if (BoneIdx >= 0)
+								{
+									Collector.CollectSingleBone(SkComp, BoneIdx, Bus);
+								}
+							}
+							else
+							{
+								Collector.CollectSkeletonBones(SkComp, Bus);
+							}
+						}
+					}
+				}
+			}
+		}
 
-        if (VFlags.bShowBoundingBox)
-        {
-            if (ASkeletalMeshActor* ViewTarget = Viewers[i]->GetViewTarget())
-            {
-                if (USkeletalMeshComponent* SkComp = ViewTarget->GetSkeletalMeshComponent())
-                {
-                    FRenderCommand BoundsCmd = {};
-                    const FAABB& Bounds = SkComp->GetWorldAABB();
-                    BoundsCmd.Type = ERenderCommandType::DebugBox;
-                    BoundsCmd.Constants.AABB.Min = Bounds.Min;
-                    BoundsCmd.Constants.AABB.Max = Bounds.Max;
-                    BoundsCmd.Constants.AABB.Color = FColor::White();
-                    Bus.AddCommand(ERenderPass::Editor, BoundsCmd);
-                }
-            }
-        }
+		if (VFlags.bShowBoundingBox)
+		{
+			if (SkeletalViewer)
+			{
+				if (ASkeletalMeshActor* ViewTarget = SkeletalViewer->GetViewTarget())
+				{
+					if (USkeletalMeshComponent* SkComp = ViewTarget->GetSkeletalMeshComponent())
+					{
+						FRenderCommand BoundsCmd = {};
+						const FAABB& Bounds = SkComp->GetWorldAABB();
+						BoundsCmd.Type = ERenderCommandType::DebugBox;
+						BoundsCmd.Constants.AABB.Min = Bounds.Min;
+						BoundsCmd.Constants.AABB.Max = Bounds.Max;
+						BoundsCmd.Constants.AABB.Color = FColor::White();
+						Bus.AddCommand(ERenderPass::Editor, BoundsCmd);
+					}
+				}
+			}
+		}
 
-        // 6. Draw
-        Renderer.PrepareBatchers(Bus);
-        Renderer.Render(Bus);
-        Renderer.RenderScreenOverlays(Bus, false);
+		// 6. Draw
+		Renderer.PrepareBatchers(Bus);
+		Renderer.Render(Bus);
+		Renderer.RenderScreenOverlays(Bus, false);
 
-        // 7. ID Pick
-        TArray<AActor*> IdPickActors;
-        Renderer.RenderEditorIdPickBuffer(
-            Bus,
-            ViewportResource,
-            IdPickActors);
+		// 7. ID Pick
+		TArray<AActor*> IdPickActors;
+		Renderer.RenderEditorIdPickBuffer(
+			Bus,
+			ViewportResource,
+			IdPickActors);
 
-        SceneViewport.SetEditorIdPickActors(std::move(IdPickActors));
+		SceneViewport.SetEditorIdPickActors(std::move(IdPickActors));
 
 #if STATS
-        const double RenderSec =
-            std::chrono::duration<double>(
-                std::chrono::steady_clock::now() - ViewportRenderStart)
-                .count();
+		const double RenderSec =
+			std::chrono::duration<double>(
+				std::chrono::steady_clock::now() - ViewportRenderStart)
+				.count();
 
-        if (RenderSec >= 0.018)
-        {
-            UE_LOG("[ViewerRenderPerf] Time=%.4fs", RenderSec);
-        }
+		if (RenderSec >= 0.018)
+		{
+			UE_LOG("[ViewerRenderPerf] Time=%.4fs", RenderSec);
+		}
 #endif
 	}
 }
 
 const FRenderCollector::FCullingStats& FEditorRenderPipeline::GetViewportCullingStats(int32 ViewportIndex) const
 {
-    static const FRenderCollector::FCullingStats EmptyStats{};
+	static const FRenderCollector::FCullingStats EmptyStats{};
 
-    if (ViewportIndex < 0 || ViewportIndex >= static_cast<int32>(ViewportCullingStats.size()))
-    {
-        return EmptyStats;
-    }
+	if (ViewportIndex < 0 || ViewportIndex >= static_cast<int32>(ViewportCullingStats.size()))
+	{
+		return EmptyStats;
+	}
 
-    return ViewportCullingStats[ViewportIndex];
+	return ViewportCullingStats[ViewportIndex];
 }
 
 const FRenderCollector::FDecalStats& FEditorRenderPipeline::GetViewportDecalStats(int32 ViewportIndex) const
