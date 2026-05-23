@@ -621,6 +621,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Particles\ParticleHelper.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleMemory.cpp" />
     <ClCompile Include="Source\Engine\Particle\DynamicEmitterData.cpp" />
+    <ClCompile Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataBase.cpp" />
     <ClCompile Include="Source\Engine\Particle\ParticleEmitter.cpp" />
     <ClCompile Include="Source\Engine\Particle\ParticleSystem.cpp" />
     <ClCompile Include="Source\Engine\Particle\ParticleSystemManager.cpp" />
@@ -1010,6 +1011,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Particles\ParticleHelper.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleMemory.h" />
     <ClInclude Include="Source\Engine\Particle\DynamicEmitterData.h" />
+    <ClInclude Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataBase.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleEmitter.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleSystem.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleSystemManager.h" />

@@ -12,17 +12,20 @@ bool UParticleModuleSpawn::GetBurstCount(const FSpawnContext& Context, int32 Off
 
 float UParticleModuleSpawn::GetMaximumSpawnRate()
 {
-	return 0.0f;
+	return SpawnRate * SpawnRateScale;
 }
 
 float UParticleModuleSpawn::GetEstimatedSpawnRate()
 {
-	return 0.0f;
+	// 원래는 Distribution 데이터로 존재할 때 다른 계산 방식이 있는 거 같은데
+	// 지금은 단순하게 float 데이터로 지정했기에 GetMaximumSpawnRate 과 반환값 같음
+	return SpawnRate * SpawnRateScale;
 }
 
 int32 UParticleModuleSpawn::GetMaximumBurstCount()
 {
-	return 0;
+	int32 MaxBurst = 0;
+	return MaxBurst;
 }
 
 void UParticleModuleSpawn::PostEditChangeProperty(const FPropertyChangedEvent& PropertyChangedEvent)
