@@ -7,6 +7,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cwctype>
+#include <filesystem>
 
 namespace
 {
@@ -33,72 +35,124 @@ USkeletalMesh* FSkeletalMeshLoadService::Load(const FString& Path)
 		return FoundMesh;
 	}
 
-	ResourceManager.LoadMaterial(NormalizedPath, EMaterialShaderType::SurfaceLit);
-
-	return LoadSourceOrCachedBinary(NormalizedPath);
-}
-
-USkeletalMesh* FSkeletalMeshLoadService::LoadSourceOrCachedBinary(const FString& NormalizedPath)
-{
-	FStaticMeshLoadOptions LoadOptions;
-	const FString BinaryPath = FAssetPathPolicy::MakeWritableSkeletalMeshCacheBinaryPath(NormalizedPath);
-
-	FSkeletalMesh* LoadedMeshData = nullptr;
-	double BinaryLoadSec = 0.0;
-	double SourceLoadSec = 0.0;
-
-	// 1) Binary 캐시가 소스보다 신선하면 그걸 우선 시도.
-	if (ResourceManager.IsSkeletalMeshBinaryValid(NormalizedPath, BinaryPath))
+	std::filesystem::path RequestedPath(FPaths::ToWide(NormalizedPath));
+	std::wstring RequestedExtension = RequestedPath.extension().wstring();
+	std::transform(RequestedExtension.begin(), RequestedExtension.end(), RequestedExtension.begin(), ::towlower);
+	if (RequestedExtension == L".bin")
 	{
-		LoadedMeshData = TryLoadBinary(BinaryPath, BinaryLoadSec);
+		return LoadBinaryAsset(NormalizedPath);
 	}
 
-	// 2) Binary 실패/누락이면 FBX에서 import 후 캐시 굽기.
+	return LoadImportedFbxAsset(NormalizedPath);
+}
+
+USkeletalMesh* FSkeletalMeshLoadService::LoadImportedFbxAsset(const FString& NormalizedPath)
+{
+	const FString BinaryPath = FAssetPathPolicy::MakeImportedSkeletalMeshAssetPath(NormalizedPath);
+	if (USkeletalMesh* FoundMesh = ResourceManager.FindSkeletalMesh(BinaryPath))
+	{
+		return FoundMesh;
+	}
+
+	double BinaryLoadSec = 0.0;
+	if (!ResourceManager.IsImportedSkeletalMeshAssetFresh(NormalizedPath, BinaryPath))
+	{
+		return nullptr;
+	}
+
+	FSkeletalMesh* LoadedMeshData = TryLoadBinary(BinaryPath, BinaryLoadSec);
 	if (LoadedMeshData == nullptr)
 	{
-		const auto SourceStart = std::chrono::steady_clock::now();
-		LoadedMeshData = ResourceManager.FbxImporter.LoadSkeletalMesh(NormalizedPath, LoadOptions);
-		const auto SourceEnd = std::chrono::steady_clock::now();
-		SourceLoadSec = std::chrono::duration<double>(SourceEnd - SourceStart).count();
+		UE_LOG_WARNING("[SkeletalMeshLoad] MeshSource=OutdatedImportedAsset | Path=%s | Asset=%s",
+			NormalizedPath.c_str(),
+			BinaryPath.c_str());
+		return nullptr;
+	}
 
-		if (!HasUsableSkeletalMeshData(LoadedMeshData))
-		{
-			delete LoadedMeshData;
-			LoadedMeshData = nullptr;
+	ResourceManager.LoadMaterial(NormalizedPath, EMaterialShaderType::SurfaceLit);
+	UE_LOG("[SkeletalMeshLoad] MeshSource=ImportedAsset | Path=%s | BinarySec=%.6f | Asset=%s",
+		NormalizedPath.c_str(),
+		BinaryLoadSec,
+		BinaryPath.c_str());
+	return FinalizeLoadedMesh(LoadedMeshData, NormalizedPath, BinaryPath, NormalizedPath);
+}
 
-			LoadedMeshData = TryLoadBinary(BinaryPath, BinaryLoadSec);
-			if (LoadedMeshData)
-			{
-				UE_LOG_WARNING("[SkeletalMeshLoad] Source=StaleBinaryFallback | Path=%s | BinarySec=%.6f | FbxSec=%.6f | BinaryPath=%s",
-					NormalizedPath.c_str(), BinaryLoadSec, SourceLoadSec, BinaryPath.c_str());
-				return FinalizeLoadedMesh(LoadedMeshData, NormalizedPath, NormalizedPath);
-			}
+USkeletalMesh* FSkeletalMeshLoadService::LoadBinaryAsset(const FString& NormalizedPath)
+{
+	double BinaryLoadSec = 0.0;
+	FSkeletalMesh* LoadedMeshData = TryLoadBinary(NormalizedPath, BinaryLoadSec);
+	if (LoadedMeshData == nullptr)
+	{
+		UE_LOG_WARNING("[SkeletalMeshLoad] MeshSource=OutdatedImportedAsset | Path=%s | Asset=%s",
+			NormalizedPath.c_str(),
+			NormalizedPath.c_str());
+		return nullptr;
+	}
 
-			UE_LOG_ERROR("[SkeletalMeshLoad] Failed | Path=%s | BinarySec=%.6f | FbxSec=%.6f",
-				NormalizedPath.c_str(), BinaryLoadSec, SourceLoadSec);
-			return nullptr;
-		}
+	const FString SourcePath = FPaths::Normalize(LoadedMeshData->PathFileName);
+	if (!SourcePath.empty())
+	{
+		ResourceManager.LoadMaterial(SourcePath, EMaterialShaderType::SurfaceLit);
+	}
 
-		// Material 포인터는 직렬화 대상이 아니므로 이 시점에 그대로 굽고, resolve는 Finalize에서 한 번만.
-		const bool bSaveBinaryOk = ResourceManager.BinarySerializer.SaveSkeletalMesh(BinaryPath, NormalizedPath, *LoadedMeshData);
-		if (bSaveBinaryOk)
-		{
-			UE_LOG("[SkeletalMeshLoad] Source=FBX | Path=%s | FbxSec=%.6f | BinarySave=OK | BinaryPath=%s",
-			       NormalizedPath.c_str(), SourceLoadSec, BinaryPath.c_str());
-		}
-		else
-		{
-			UE_LOG_WARNING("[SkeletalMeshLoad] Source=FBX | Path=%s | FbxSec=%.6f | BinarySave=FAIL | BinaryPath=%s",
-			               NormalizedPath.c_str(), SourceLoadSec, BinaryPath.c_str());
-		}
+	USkeletalMesh* LoadedMesh = FinalizeLoadedMesh(
+		LoadedMeshData,
+		SourcePath.empty() ? NormalizedPath : SourcePath,
+		NormalizedPath,
+		SourcePath);
+
+	UE_LOG("[SkeletalMeshLoad] MeshSource=ImportedAsset | Path=%s | BinarySec=%.6f | Asset=%s | Source=%s",
+		NormalizedPath.c_str(),
+		BinaryLoadSec,
+		NormalizedPath.c_str(),
+		SourcePath.c_str());
+	return LoadedMesh;
+}
+
+USkeletalMesh* FSkeletalMeshLoadService::ImportFbxSource(const FString& Path)
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	if (NormalizedPath.empty())
+	{
+		return nullptr;
+	}
+
+	ResourceManager.ImportMaterialFromFbx(NormalizedPath, EMaterialShaderType::SurfaceLit);
+
+	FStaticMeshLoadOptions LoadOptions;
+	const FString BinaryPath = FAssetPathPolicy::MakeImportedSkeletalMeshAssetPath(NormalizedPath);
+
+	const auto SourceStart = std::chrono::steady_clock::now();
+	FSkeletalMesh* LoadedMeshData = ResourceManager.FbxImporter.LoadSkeletalMesh(NormalizedPath, LoadOptions);
+	const auto SourceEnd = std::chrono::steady_clock::now();
+	const double SourceLoadSec = std::chrono::duration<double>(SourceEnd - SourceStart).count();
+
+	if (!HasUsableSkeletalMeshData(LoadedMeshData))
+	{
+		delete LoadedMeshData;
+		UE_LOG_ERROR("[SkeletalMeshLoad] MeshSource=ExplicitFbxImport | Result=Failed | Path=%s | FbxSec=%.6f",
+			NormalizedPath.c_str(),
+			SourceLoadSec);
+		return nullptr;
+	}
+
+	const bool bSaveBinaryOk = ResourceManager.BinarySerializer.SaveSkeletalMesh(BinaryPath, NormalizedPath, *LoadedMeshData);
+	if (bSaveBinaryOk)
+	{
+		UE_LOG("[SkeletalMeshLoad] MeshSource=ExplicitFbxImport | Path=%s | FbxSec=%.6f | AssetSave=OK | Asset=%s",
+			NormalizedPath.c_str(),
+			SourceLoadSec,
+			BinaryPath.c_str());
 	}
 	else
 	{
-		UE_LOG("[SkeletalMeshLoad] Source=Binary | Path=%s | BinarySec=%.6f | BinaryPath=%s",
-		       NormalizedPath.c_str(), BinaryLoadSec, BinaryPath.c_str());
+		UE_LOG_WARNING("[SkeletalMeshLoad] MeshSource=ExplicitFbxImport | Path=%s | FbxSec=%.6f | AssetSave=FAIL | Asset=%s",
+			NormalizedPath.c_str(),
+			SourceLoadSec,
+			BinaryPath.c_str());
 	}
 
-	return FinalizeLoadedMesh(LoadedMeshData, NormalizedPath, NormalizedPath);
+	return FinalizeLoadedMesh(LoadedMeshData, NormalizedPath, BinaryPath, NormalizedPath);
 }
 
 FSkeletalMesh* FSkeletalMeshLoadService::TryLoadBinary(const FString& BinaryPath, double& OutBinaryLoadSec)
@@ -122,22 +176,34 @@ FSkeletalMesh* FSkeletalMeshLoadService::TryLoadBinary(const FString& BinaryPath
 	return LoadedMeshData;
 }
 
-USkeletalMesh* FSkeletalMeshLoadService::FinalizeLoadedMesh(FSkeletalMesh* MeshData, const FString& ResolvePath, const FString& CacheKey)
+USkeletalMesh* FSkeletalMeshLoadService::FinalizeLoadedMesh(
+	FSkeletalMesh* MeshData,
+	const FString& ResolvePath,
+	const FString& AssetPath,
+	const FString& SourcePath)
 {
 	ResourceManager.ResolveSkeletalMeshMaterialSlots(ResolvePath, MeshData);
 
-	USkeletalMesh* LoadedMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
+	const FString NormalizedAssetPath = FPaths::Normalize(AssetPath);
+	const FString NormalizedSourcePath = FPaths::Normalize(SourcePath);
+	USkeletalMesh* LoadedMesh = ResourceManager.FindSkeletalMesh(NormalizedAssetPath);
+	if (!LoadedMesh)
+	{
+		LoadedMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
+	}
 	LoadedMesh->SetMeshData(MeshData);
+	LoadedMesh->SetAssetPathFileName(NormalizedAssetPath);
+	LoadedMesh->SetSourceFilePath(NormalizedSourcePath);
 
-	ResourceManager.SkeletalMeshMap[CacheKey] = LoadedMesh;
-	if (std::find(ResourceManager.SkeletalMeshFilePaths.begin(), ResourceManager.SkeletalMeshFilePaths.end(), CacheKey)
+	ResourceManager.SkeletalMeshMap[NormalizedAssetPath] = LoadedMesh;
+	if (std::find(ResourceManager.SkeletalMeshFilePaths.begin(), ResourceManager.SkeletalMeshFilePaths.end(), NormalizedAssetPath)
 		== ResourceManager.SkeletalMeshFilePaths.end())
 	{
-		ResourceManager.SkeletalMeshFilePaths.push_back(CacheKey);
+		ResourceManager.SkeletalMeshFilePaths.push_back(NormalizedAssetPath);
 	}
 
 	UE_LOG("[SkeletalMeshLoad] Loaded | Path=%s | Vertices=%zu | Indices=%zu | Bones=%zu | Sections=%zu",
-	       CacheKey.c_str(),
+	       NormalizedAssetPath.c_str(),
 	       LoadedMesh->GetVertices().size(),
 	       LoadedMesh->GetIndices().size(),
 	       LoadedMesh->GetBones().size(),

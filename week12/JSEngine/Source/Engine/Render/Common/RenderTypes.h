@@ -41,7 +41,8 @@ enum class EPrimitiveType
 	EPT_Sphere,
 	EPT_Capsule,
 	EPT_ProceduralMesh,
-    MAX
+	EPT_ParticleSystem,
+	MAX
 };
 
 enum class ERenderPass : uint32
@@ -49,9 +50,9 @@ enum class ERenderPass : uint32
 	Opaque,
 	Decal,
 	Light,
-    Fog,
+	Fog,
 	Sandervistan,
-    FXAA,
+	FXAA,
 	Font, // TextRenderComponent → FontBatcher 경유
 	SubUV, // SubUVComponent     → SubUVBatcher 경유
 	Translucent,
@@ -60,6 +61,6 @@ enum class ERenderPass : uint32
 	Editor,
 	EditorOverlay,   // 깊이 무시 디버그 와이어 (본 등) — 항상 메시 위에 보임
 	DepthLess,
-    PostProcessOutline,
+	PostProcessOutline,
 	MAX
 };

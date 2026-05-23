@@ -452,6 +452,12 @@ bool USkinnedMeshComponent::ConsumeCPUSkinnedVertexBufferDirty()
 	return bWasDirty;
 }
 
+void USkinnedMeshComponent::MarkBoundsDirty()
+{
+	bBoundsDirty = true;
+	NotifySpatialIndexDirty();
+}
+
 void USkinnedMeshComponent::EnsureSkinningUpdated()
 {
 	const ESkinningMode ResolvedSkinningMode = GetResolvedSkinningMode();

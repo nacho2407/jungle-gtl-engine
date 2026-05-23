@@ -15,7 +15,9 @@ public:
 	static FString MakeCookedStaticMeshBinaryPath(const FString& SourcePath);
 	static FString MakeSiblingStaticMeshBinaryPath(const FString& SourcePath);
 	static FString MakeStaticMeshCacheBinaryPath(const FString& SourcePath);
+	static FString MakeImportedStaticMeshAssetPath(const FString& SourcePath);
 	static FString MakeWritableStaticMeshCacheBinaryPath(const FString& SourcePath);
 
+	static FString MakeImportedSkeletalMeshAssetPath(const FString& SourcePath);
 	static FString MakeWritableSkeletalMeshCacheBinaryPath(const FString& SourcePath);
 };

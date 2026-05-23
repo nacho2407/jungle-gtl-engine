@@ -16,6 +16,7 @@ public:
     explicit FFbxMaterialLoadService(FResourceManager& InResourceManager);
 
     bool Load(const FString& FbxFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device);
+    bool ImportFromFbx(const FString& FbxFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device);
 
 private:
     FResourceManager& ResourceManager;

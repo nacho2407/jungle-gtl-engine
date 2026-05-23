@@ -10,7 +10,7 @@
 //
 // 사용 예:
 //   USubUVComponent* Comp = Actor->AddComponent<USubUVComponent>();
-//   Comp->SetParticle(FName("Explosion"));
+//   Comp->SetSubUV(FName("Explosion"));
 //   Comp->SetFrameIndex(CurrentFrame);
 //   Comp->SetSpriteSize(2.0f, 2.0f);
 UCLASS(SpawnableComponent, DisplayName = "SubUV Component", Category = "Basic")
@@ -26,11 +26,11 @@ public:
 
 	virtual void Serialize(FArchive& Ar) override;
 
-	// --- Particle Resource ---
-	// FName 키로 ResourceManager에서 FParticleResource*를 찾아 캐싱
-	void SetParticle(const FName& InParticleName);
-	const FParticleResource* GetParticle() const;
-	const FName& GetParticleName() const { return ParticleName; }
+	// --- SubUV Resource ---
+	// FName 키로 ResourceManager에서 FSubUVResource*를 찾아 캐싱
+	void SetSubUV(const FName& InSubUVName);
+	const FSubUVResource* GetSubUV() const;
+	const FName& GetSubUVName() const { return SubUVName; }
 
 	// --- SubUV Frame ---
 	void SetFrameIndex(uint32 InIndex) { FrameIndex = InIndex; }
@@ -62,10 +62,10 @@ protected:
 	void TickComponent(float DeltaTime) override;
 
 private:
-	UPROPERTY(DisplayName = "Particle")
-	FName ParticleName;
+	UPROPERTY(DisplayName = "SubUV")
+	FName SubUVName;
 
-	FParticleResource* CachedParticle = nullptr; // ResourceManager 소유, 여기선 참조만
+	FSubUVResource* CachedSubUV = nullptr; // ResourceManager 소유, 여기선 참조만
 
 	bool bIsExecute = false;
 };

@@ -23,421 +23,429 @@ namespace
 {
 bool HasParentDirectoryReference(const std::filesystem::path& Path)
 {
-    for (const std::filesystem::path& Part : Path)
-    {
-        if (Part == L"..")
-        {
-            return true;
-        }
-    }
-    return false;
+	for (const std::filesystem::path& Part : Path)
+	{
+		if (Part == L"..")
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 std::wstring GetLowerExtension(const std::filesystem::path& Path)
 {
-    std::wstring Extension = Path.extension().wstring();
-    std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
-    return Extension;
+	std::wstring Extension = Path.extension().wstring();
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
+	return Extension;
 }
 
 bool ResolveProjectDropPath(
-    const FString& PayloadPath,
-    std::filesystem::path& OutAbsolutePath,
-    std::filesystem::path& OutRelativePath)
+	const FString& PayloadPath,
+	std::filesystem::path& OutAbsolutePath,
+	std::filesystem::path& OutRelativePath)
 {
-    std::filesystem::path Path(FPaths::ToWide(PayloadPath));
-    const std::filesystem::path RootPath = std::filesystem::path(FPaths::RootDir()).lexically_normal();
-    if (!Path.is_absolute())
-    {
-        Path = RootPath / Path;
-    }
-    Path = Path.lexically_normal();
+	std::filesystem::path Path(FPaths::ToWide(PayloadPath));
+	const std::filesystem::path RootPath = std::filesystem::path(FPaths::RootDir()).lexically_normal();
+	if (!Path.is_absolute())
+	{
+		Path = RootPath / Path;
+	}
+	Path = Path.lexically_normal();
 
-    const std::filesystem::path RelativePath = Path.lexically_relative(RootPath);
-    if (RelativePath.empty() || HasParentDirectoryReference(RelativePath))
-    {
-        return false;
-    }
+	const std::filesystem::path RelativePath = Path.lexically_relative(RootPath);
+	if (RelativePath.empty() || HasParentDirectoryReference(RelativePath))
+	{
+		return false;
+	}
 
-    OutAbsolutePath = Path;
-    OutRelativePath = RelativePath;
-    return true;
+	OutAbsolutePath = Path;
+	OutRelativePath = RelativePath;
+	return true;
 }
 
 FString ResolveStaticMeshDropLoadPath(const FString& PayloadPath)
 {
-    std::filesystem::path Path;
-    std::filesystem::path RelativePath;
-    if (!ResolveProjectDropPath(PayloadPath, Path, RelativePath))
-    {
-        return {};
-    }
+	std::filesystem::path Path;
+	std::filesystem::path RelativePath;
+	if (!ResolveProjectDropPath(PayloadPath, Path, RelativePath))
+	{
+		return {};
+	}
 
-    const std::wstring Extension = GetLowerExtension(Path);
-    if (Extension == L".obj" || Extension == L".fbx")
-    {
-        return FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
-    }
-    if (Extension == L".bin")
-    {
-        return FPaths::Normalize(FPaths::ToUtf8(Path.generic_wstring()));
-    }
-    return {};
+	const std::wstring Extension = GetLowerExtension(Path);
+	if (Extension == L".obj" || Extension == L".fbx")
+	{
+		return FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
+	}
+	if (Extension == L".bin")
+	{
+		return FPaths::Normalize(FPaths::ToUtf8(Path.generic_wstring()));
+	}
+	return {};
 }
 
 FString ResolveSkeletalMeshDropLoadPath(const FString& PayloadPath)
 {
-    std::filesystem::path Path;
-    std::filesystem::path RelativePath;
-    if (!ResolveProjectDropPath(PayloadPath, Path, RelativePath))
-    {
-        return {};
-    }
+	std::filesystem::path Path;
+	std::filesystem::path RelativePath;
+	if (!ResolveProjectDropPath(PayloadPath, Path, RelativePath))
+	{
+		return {};
+	}
 
-    if (GetLowerExtension(Path) != L".fbx")
-    {
-        return {};
-    }
-
-    return FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
+	const std::wstring Extension = GetLowerExtension(Path);
+	if (Extension == L".fbx" || Extension == L".bin")
+	{
+		return FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
+	}
+	return {};
 }
 
 FString ResolveFbxDropInspectPath(const FString& PayloadPath)
 {
-    std::filesystem::path Path;
-    std::filesystem::path RelativePath;
-    if (!ResolveProjectDropPath(PayloadPath, Path, RelativePath))
-    {
-        return {};
-    }
+	std::filesystem::path Path;
+	std::filesystem::path RelativePath;
+	if (!ResolveProjectDropPath(PayloadPath, Path, RelativePath))
+	{
+		return {};
+	}
 
-    if (GetLowerExtension(Path) != L".fbx")
-    {
-        return {};
-    }
+	if (GetLowerExtension(Path) != L".fbx")
+	{
+		return {};
+	}
 
-    return FPaths::Normalize(FPaths::ToUtf8(Path.generic_wstring()));
+	return FPaths::Normalize(FPaths::ToUtf8(Path.generic_wstring()));
 }
 }
 
 bool FEditorMainPanel::SpawnStaticMeshFromContentPath(
-    const FString& PayloadPath,
-    int32 ViewportIndex,
-    float LocalX,
-    float LocalY
+	const FString& PayloadPath,
+	int32 ViewportIndex,
+	float LocalX,
+	float LocalY
 )
 {
-    if (!EditorEngine)
-    {
-        return false;
-    }
+	if (!EditorEngine)
+	{
+		return false;
+	}
 
-    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
-    FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
-    if (!Client || !Client->AllowsEditorWorldControl())
-    {
-        return false;
-    }
+	FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+	FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
+	if (!Client || !Client->AllowsEditorWorldControl())
+	{
+		return false;
+	}
 
-    const FString MeshLoadPath = ResolveStaticMeshDropLoadPath(PayloadPath);
-    if (MeshLoadPath.empty())
-    {
-        PushFooterLog("Unsupported static mesh drop");
-        return false;
-    }
+	const FString MeshLoadPath = ResolveStaticMeshDropLoadPath(PayloadPath);
+	if (MeshLoadPath.empty())
+	{
+		PushFooterLog("Unsupported static mesh drop");
+		return false;
+	}
 
-    UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh(MeshLoadPath);
-    if (!Mesh || !Mesh->HasValidMeshData())
-    {
-        PushFooterLog("Failed to load dropped static mesh");
-        return false;
-    }
+	const std::wstring MeshExtension = GetLowerExtension(std::filesystem::path(FPaths::ToWide(MeshLoadPath)));
+	UStaticMesh* Mesh = (MeshExtension == L".fbx")
+		? FResourceManager::Get().ImportStaticMeshFromFbx(MeshLoadPath)
+		: FResourceManager::Get().LoadStaticMesh(MeshLoadPath);
+	if (!Mesh || !Mesh->HasValidMeshData())
+	{
+		PushFooterLog("Failed to load dropped static mesh");
+		return false;
+	}
 
-    UWorld* World = EditorEngine->GetFocusedWorld();
-    if (!World)
-    {
-        return false;
-    }
+	UWorld* World = EditorEngine->GetFocusedWorld();
+	if (!World)
+	{
+		return false;
+	}
 
-    EditorEngine->GetUndoSystem().CaptureSnapshot("Place Static Mesh");
-    AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
-    if (!Actor)
-    {
-        return false;
-    }
+	EditorEngine->GetUndoSystem().CaptureSnapshot("Place Static Mesh");
+	AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+	if (!Actor)
+	{
+		return false;
+	}
 
-    Actor->InitDefaultComponents();
-    Actor->SetActorLocation(FEditorMainPanelPlacementHelpers::ComputePlacementLocation(Client, LocalX, LocalY));
-    if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(Actor->GetRootComponent()))
-    {
-        StaticMeshComp->SetStaticMesh(Mesh);
-    }
+	Actor->InitDefaultComponents();
+	Actor->SetActorLocation(FEditorMainPanelPlacementHelpers::ComputePlacementLocation(Client, LocalX, LocalY));
+	if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(Actor->GetRootComponent()))
+	{
+		StaticMeshComp->SetStaticMesh(Mesh);
+	}
 
 	const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(Client->GetFocusedWorld());
-    Layout.SetLastFocusedViewportIndex(ViewportIndex);
-    Ctx->SelectionManager->Select(Actor);
-    EditorEngine->GetSceneService().MarkDirty();
-    PushFooterLog("StaticMesh actor placed from Content Browser");
-    return true;
+	Layout.SetLastFocusedViewportIndex(ViewportIndex);
+	Ctx->SelectionManager->Select(Actor);
+	EditorEngine->GetSceneService().MarkDirty();
+	PushFooterLog("StaticMesh actor placed from Content Browser");
+	return true;
 }
 
 bool FEditorMainPanel::SpawnSkeletalMeshFromContentPath(
-    const FString& PayloadPath,
-    int32 ViewportIndex,
-    float LocalX,
-    float LocalY
+	const FString& PayloadPath,
+	int32 ViewportIndex,
+	float LocalX,
+	float LocalY
 )
 {
-    if (!EditorEngine)
-    {
-        return false;
-    }
+	if (!EditorEngine)
+	{
+		return false;
+	}
 
-    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
-    FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
-    if (!Client || !Client->AllowsEditorWorldControl())
-    {
-        return false;
-    }
+	FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+	FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
+	if (!Client || !Client->AllowsEditorWorldControl())
+	{
+		return false;
+	}
 
-    const FString MeshLoadPath = ResolveSkeletalMeshDropLoadPath(PayloadPath);
-    const FString InspectPath = ResolveFbxDropInspectPath(PayloadPath);
-    if (MeshLoadPath.empty() || InspectPath.empty())
-    {
-        return false;
-    }
+	const FString MeshLoadPath = ResolveSkeletalMeshDropLoadPath(PayloadPath);
+	if (MeshLoadPath.empty())
+	{
+		return false;
+	}
 
-    FResourceManager& ResourceManager = FResourceManager::Get();
-    const FFbxMeshContentInfo ContentInfo = ResourceManager.InspectFbxMeshContent(InspectPath);
-    USkeletalMesh* Mesh = nullptr;
-	if (!ContentInfo.bHasSkeletalMesh)
-    {
-        Mesh = ResourceManager.LoadSkeletalMesh(MeshLoadPath);
-        if (!Mesh || !Mesh->HasValidMeshData())
-        {
-            return false;
-        }
-    }
-    else
-    {
-        const TArray<FString> ImportedAnimSequencePaths = ResourceManager.ImportAnimationStacksFromFbx(InspectPath);
-        if (!ImportedAnimSequencePaths.empty())
-        {
-            Widgets.ContentBrowserWidget.Refresh();
-        }
-        Mesh = ResourceManager.LoadSkeletalMesh(MeshLoadPath);
+	FResourceManager& ResourceManager = FResourceManager::Get();
+	USkeletalMesh* Mesh = nullptr;
+	const FString InspectPath = ResolveFbxDropInspectPath(PayloadPath);
+	if (InspectPath.empty())
+	{
+		Mesh = ResourceManager.LoadSkeletalMesh(MeshLoadPath);
+		if (!Mesh || !Mesh->HasValidMeshData())
+		{
+			return false;
+		}
+	}
+	else
+	{
+		const FFbxMeshContentInfo ContentInfo = ResourceManager.InspectFbxMeshContent(InspectPath);
+		if (!ContentInfo.bHasSkeletalMesh)
+		{
+			return false;
+		}
+
+		const TArray<FString> ImportedAnimSequencePaths = ResourceManager.ImportAnimationStacksFromFbx(InspectPath);
+		if (!ImportedAnimSequencePaths.empty())
+		{
+			Widgets.ContentBrowserWidget.Refresh();
+		}
+		Mesh = ResourceManager.ImportSkeletalMeshFromFbx(MeshLoadPath);
 	}
 
 	if (!Mesh || !Mesh->HasValidMeshData())
-    {
-        PushFooterLog("Failed to load dropped skeletal mesh");
-        return false;
-    }
+	{
+		PushFooterLog("Failed to load dropped skeletal mesh");
+		return false;
+	}
 
-    UWorld* World = EditorEngine->GetFocusedWorld();
-    if (!World)
-    {
-        return false;
-    }
+	UWorld* World = EditorEngine->GetFocusedWorld();
+	if (!World)
+	{
+		return false;
+	}
 
-    EditorEngine->GetUndoSystem().CaptureSnapshot("Place Skeletal Mesh");
-    ASkeletalMeshActor* Actor = World->SpawnActor<ASkeletalMeshActor>();
-    if (!Actor)
-    {
-        return false;
-    }
+	EditorEngine->GetUndoSystem().CaptureSnapshot("Place Skeletal Mesh");
+	ASkeletalMeshActor* Actor = World->SpawnActor<ASkeletalMeshActor>();
+	if (!Actor)
+	{
+		return false;
+	}
 
-    Actor->InitDefaultComponents();
-    Actor->SetActorLocation(FEditorMainPanelPlacementHelpers::ComputePlacementLocation(Client, LocalX, LocalY));
-    if (USkeletalMeshComponent* SkeletalMeshComp = Actor->GetSkeletalMeshComponent())
-    {
-        SkeletalMeshComp->SetSkeletalMesh(Mesh);
-    }
+	Actor->InitDefaultComponents();
+	Actor->SetActorLocation(FEditorMainPanelPlacementHelpers::ComputePlacementLocation(Client, LocalX, LocalY));
+	if (USkeletalMeshComponent* SkeletalMeshComp = Actor->GetSkeletalMeshComponent())
+	{
+		SkeletalMeshComp->SetSkeletalMesh(Mesh);
+	}
 
-    const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(Client->GetFocusedWorld());
-    Layout.SetLastFocusedViewportIndex(ViewportIndex);
-    if (Ctx && Ctx->SelectionManager)
-    {
-        Ctx->SelectionManager->Select(Actor);
-    }
-    EditorEngine->GetSceneService().MarkDirty();
-    PushFooterLog("SkeletalMesh actor placed from Content Browser");
-    return true;
+	const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(Client->GetFocusedWorld());
+	Layout.SetLastFocusedViewportIndex(ViewportIndex);
+	if (Ctx && Ctx->SelectionManager)
+	{
+		Ctx->SelectionManager->Select(Actor);
+	}
+	EditorEngine->GetSceneService().MarkDirty();
+	PushFooterLog("SkeletalMesh actor placed from Content Browser");
+	return true;
 }
 
 bool FEditorMainPanel::SpawnPrefabFromContentPath(
-    const FString& PayloadPath,
-    int32 ViewportIndex,
-    float LocalX,
-    float LocalY
+	const FString& PayloadPath,
+	int32 ViewportIndex,
+	float LocalX,
+	float LocalY
 )
 {
-    if (!EditorEngine)
-    {
-        return false;
-    }
+	if (!EditorEngine)
+	{
+		return false;
+	}
 
-    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
-    FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
-    if (!Client || !Client->AllowsEditorWorldControl())
-    {
-        return false;
-    }
+	FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+	FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
+	if (!Client || !Client->AllowsEditorWorldControl())
+	{
+		return false;
+	}
 
-    UWorld* World = EditorEngine->GetFocusedWorld();
-    if (!World)
-    {
-        return false;
-    }
+	UWorld* World = EditorEngine->GetFocusedWorld();
+	if (!World)
+	{
+		return false;
+	}
 
-    std::filesystem::path PrefabPath;
-    std::error_code PrefabEc;
-    if (!FPrefabManager::ResolvePrefabPath(PayloadPath, PrefabPath, false) ||
-        !std::filesystem::is_regular_file(PrefabPath, PrefabEc))
-    {
-        PushFooterLog("Failed to find prefab");
-        return false;
-    }
+	std::filesystem::path PrefabPath;
+	std::error_code PrefabEc;
+	if (!FPrefabManager::ResolvePrefabPath(PayloadPath, PrefabPath, false) ||
+		!std::filesystem::is_regular_file(PrefabPath, PrefabEc))
+	{
+		PushFooterLog("Failed to find prefab");
+		return false;
+	}
 
-    EditorEngine->GetUndoSystem().CaptureSnapshot("Place Prefab");
-    AActor* Actor = FPrefabManager::SpawnActorFromPrefab(World, PayloadPath);
-    if (!Actor)
-    {
-        PushFooterLog("Failed to spawn prefab");
-        return false;
-    }
+	EditorEngine->GetUndoSystem().CaptureSnapshot("Place Prefab");
+	AActor* Actor = FPrefabManager::SpawnActorFromPrefab(World, PayloadPath);
+	if (!Actor)
+	{
+		PushFooterLog("Failed to spawn prefab");
+		return false;
+	}
 
-    Actor->SetActorLocation(FEditorMainPanelPlacementHelpers::ComputePlacementLocation(Client, LocalX, LocalY));
-    World->SyncSpatialIndex();
-    Layout.SetLastFocusedViewportIndex(ViewportIndex);
-    const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(Client->GetFocusedWorld());
-    Ctx->SelectionManager->Select(Actor);
-    EditorEngine->GetSceneService().MarkDirty();
-    PushFooterLog("Prefab actor placed from Content Browser");
-    return true;
+	Actor->SetActorLocation(FEditorMainPanelPlacementHelpers::ComputePlacementLocation(Client, LocalX, LocalY));
+	World->SyncSpatialIndex();
+	Layout.SetLastFocusedViewportIndex(ViewportIndex);
+	const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(Client->GetFocusedWorld());
+	Ctx->SelectionManager->Select(Actor);
+	EditorEngine->GetSceneService().MarkDirty();
+	PushFooterLog("Prefab actor placed from Content Browser");
+	return true;
 }
 
 bool FEditorMainPanel::SpawnPrefabAtOrigin(const FString& PayloadPath)
 {
-    if (!EditorEngine)
-    {
-        return false;
-    }
+	if (!EditorEngine)
+	{
+		return false;
+	}
 
-    UWorld* World = EditorEngine->GetFocusedWorld();
-    if (!World)
-    {
-        return false;
-    }
+	UWorld* World = EditorEngine->GetFocusedWorld();
+	if (!World)
+	{
+		return false;
+	}
 
-    std::filesystem::path PrefabPath;
-    std::error_code PrefabEc;
-    if (!FPrefabManager::ResolvePrefabPath(PayloadPath, PrefabPath, false) ||
-        !std::filesystem::is_regular_file(PrefabPath, PrefabEc))
-    {
-        PushFooterLog("Failed to find prefab");
-        return false;
-    }
+	std::filesystem::path PrefabPath;
+	std::error_code PrefabEc;
+	if (!FPrefabManager::ResolvePrefabPath(PayloadPath, PrefabPath, false) ||
+		!std::filesystem::is_regular_file(PrefabPath, PrefabEc))
+	{
+		PushFooterLog("Failed to find prefab");
+		return false;
+	}
 
-    EditorEngine->GetUndoSystem().CaptureSnapshot("Place Prefab");
-    AActor* Actor = FPrefabManager::SpawnActorFromPrefab(World, PayloadPath);
-    if (!Actor)
-    {
-        PushFooterLog("Failed to spawn prefab");
-        return false;
-    }
+	EditorEngine->GetUndoSystem().CaptureSnapshot("Place Prefab");
+	AActor* Actor = FPrefabManager::SpawnActorFromPrefab(World, PayloadPath);
+	if (!Actor)
+	{
+		PushFooterLog("Failed to spawn prefab");
+		return false;
+	}
 
-    Actor->SetActorLocation(FVector::ZeroVector);
-    World->SyncSpatialIndex();
-    const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
-    Ctx->SelectionManager->Select(Actor);
-    EditorEngine->GetSceneService().MarkDirty();
-    PushFooterLog("Prefab actor placed at origin");
-    return true;
+	Actor->SetActorLocation(FVector::ZeroVector);
+	World->SyncSpatialIndex();
+	const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
+	Ctx->SelectionManager->Select(Actor);
+	EditorEngine->GetSceneService().MarkDirty();
+	PushFooterLog("Prefab actor placed at origin");
+	return true;
 }
 
 void FEditorMainPanel::HandleContentBrowserViewportDrop()
 {
-    FString PayloadType;
-    FString PayloadPath;
-    if (!Widgets.ContentBrowserWidget.ConsumeReleasedDragPayload(PayloadType, PayloadPath))
-    {
-        return;
-    }
-    if ((PayloadType != "ObjectContentItem" && PayloadType != "PrefabContentItem") ||
-        Widgets.ContentBrowserWidget.IsMouseOverBrowser())
-    {
-        return;
-    }
+	FString PayloadType;
+	FString PayloadPath;
+	if (!Widgets.ContentBrowserWidget.ConsumeReleasedDragPayload(PayloadType, PayloadPath))
+	{
+		return;
+	}
+	if ((PayloadType != "ObjectContentItem" && PayloadType != "PrefabContentItem") ||
+		Widgets.ContentBrowserWidget.IsMouseOverBrowser())
+	{
+		return;
+	}
 
-    POINT MouseClientPos = {};
-    if (Window)
-    {
-        MouseClientPos = Window->ScreenToClientPoint(InputSystem::Get().GetMousePos());
-    }
-    else
-    {
-        const ImVec2 MousePos = ImGui::GetIO().MousePos;
-        MouseClientPos = POINT{
-            static_cast<LONG>(MousePos.x),
-            static_cast<LONG>(MousePos.y)
-        };
-    }
-    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
-    const int32 FocusedViewportIndex = Layout.GetLastFocusedViewportIndex();
-    auto TryDropOnViewport = [&](int32 ViewportIndex) -> bool
-    {
-        FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
-        if (!Client || !Client->AllowsEditorWorldControl())
-        {
-            return false;
-        }
+	POINT MouseClientPos = {};
+	if (Window)
+	{
+		MouseClientPos = Window->ScreenToClientPoint(InputSystem::Get().GetMousePos());
+	}
+	else
+	{
+		const ImVec2 MousePos = ImGui::GetIO().MousePos;
+		MouseClientPos = POINT{
+			static_cast<LONG>(MousePos.x),
+			static_cast<LONG>(MousePos.y)
+		};
+	}
+	FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+	const int32 FocusedViewportIndex = Layout.GetLastFocusedViewportIndex();
+	auto TryDropOnViewport = [&](int32 ViewportIndex) -> bool
+	{
+		FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
+		if (!Client || !Client->AllowsEditorWorldControl())
+		{
+			return false;
+		}
 
-        const FViewportRect& Rect = Layout.GetSceneViewport(ViewportIndex).GetRect();
-        if (Rect.Width <= 0 || Rect.Height <= 0)
-        {
-            return false;
-        }
-        if (MouseClientPos.x < Rect.X ||
-            MouseClientPos.x >= Rect.X + Rect.Width ||
-            MouseClientPos.y < Rect.Y ||
-            MouseClientPos.y >= Rect.Y + Rect.Height)
-        {
-            return false;
-        }
+		const FViewportRect& Rect = Layout.GetSceneViewport(ViewportIndex).GetRect();
+		if (Rect.Width <= 0 || Rect.Height <= 0)
+		{
+			return false;
+		}
+		if (MouseClientPos.x < Rect.X ||
+			MouseClientPos.x >= Rect.X + Rect.Width ||
+			MouseClientPos.y < Rect.Y ||
+			MouseClientPos.y >= Rect.Y + Rect.Height)
+		{
+			return false;
+		}
 
-        const float LocalX = MathUtil::Clamp(
-            static_cast<float>(MouseClientPos.x - Rect.X),
-            0.0f,
-            std::max(0.0f, static_cast<float>(Rect.Width - 1))
-        );
-        const float LocalY = MathUtil::Clamp(
-            static_cast<float>(MouseClientPos.y - Rect.Y),
-            0.0f,
-            std::max(0.0f, static_cast<float>(Rect.Height - 1))
-        );
-        if (PayloadType == "PrefabContentItem")
-        {
-            return SpawnPrefabFromContentPath(PayloadPath, ViewportIndex, LocalX, LocalY);
-        }
-        if (SpawnSkeletalMeshFromContentPath(PayloadPath, ViewportIndex, LocalX, LocalY))
-        {
-            return true;
-        }
-        return SpawnStaticMeshFromContentPath(PayloadPath, ViewportIndex, LocalX, LocalY);
-    };
+		const float LocalX = MathUtil::Clamp(
+			static_cast<float>(MouseClientPos.x - Rect.X),
+			0.0f,
+			std::max(0.0f, static_cast<float>(Rect.Width - 1))
+		);
+		const float LocalY = MathUtil::Clamp(
+			static_cast<float>(MouseClientPos.y - Rect.Y),
+			0.0f,
+			std::max(0.0f, static_cast<float>(Rect.Height - 1))
+		);
+		if (PayloadType == "PrefabContentItem")
+		{
+			return SpawnPrefabFromContentPath(PayloadPath, ViewportIndex, LocalX, LocalY);
+		}
+		if (SpawnSkeletalMeshFromContentPath(PayloadPath, ViewportIndex, LocalX, LocalY))
+		{
+			return true;
+		}
+		return SpawnStaticMeshFromContentPath(PayloadPath, ViewportIndex, LocalX, LocalY);
+	};
 
-    if (FocusedViewportIndex >= 0 &&
-        FocusedViewportIndex < FEditorViewportLayout::MaxViewports &&
-        TryDropOnViewport(FocusedViewportIndex))
-    {
-        return;
-    }
-    for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
-    {
-        if (i != FocusedViewportIndex && TryDropOnViewport(i))
-        {
-            return;
-        }
-    }
+	if (FocusedViewportIndex >= 0 &&
+		FocusedViewportIndex < FEditorViewportLayout::MaxViewports &&
+		TryDropOnViewport(FocusedViewportIndex))
+	{
+		return;
+	}
+	for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
+	{
+		if (i != FocusedViewportIndex && TryDropOnViewport(i))
+		{
+			return;
+		}
+	}
 }

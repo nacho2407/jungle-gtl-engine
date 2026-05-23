@@ -16,7 +16,7 @@
 #include "Core/ResourceTypes.h"
 #include "Core/ShaderResourceCache.h"
 #include "Core/StaticMeshResourceCache.h"
-#include "Core/TextureAssetMetaService.h"
+#include "Core/TextureAtlasAssetService.h"
 #include "Core/TextureResourceCache.h"
 #include "Object/FName.h"
 #include "Render/Resource/ComputeShader.h"
@@ -89,6 +89,7 @@ public:
 	UMaterial* GetOrCreateMaterial(const FString& Path, EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit);
 	UMaterial* GetOrCreateMaterial(const FString& Name, const FString& Path, EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit);
 	bool LoadMaterial(const FString& Path, EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit, ID3D11Device* Device = nullptr);
+	bool ImportMaterialFromFbx(const FString& Path, EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit, ID3D11Device* Device = nullptr);
 
 	bool SerializeMaterial(const FString& Path, const UMaterial* Material);
 	bool SerializeMaterialInstance(const FString& Path, const UMaterialInstance* MaterialInstance);
@@ -105,12 +106,13 @@ public:
 	void RegisterFont(const FName& FontName, const FString& InPath, uint32 Columns = 16, uint32 Rows = 16);
 	TArray<FString> GetFontNames() const;
 
-	FParticleResource* FindParticle(const FName& ParticleName);
-	const FParticleResource* FindParticle(const FName& ParticleName) const;
-	void RegisterParticle(const FName& ParticleName, const FString& InPath, uint32 Columns = 1, uint32 Rows = 1);
-	TArray<FString> GetParticleNames() const;
+	FSubUVResource* FindSubUV(const FName& SubUVName);
+	const FSubUVResource* FindSubUV(const FName& SubUVName) const;
+	void RegisterSubUV(const FName& SubUVName, const FString& InPath, uint32 Columns = 1, uint32 Rows = 1);
+	TArray<FString> GetSubUVNames() const;
 
 	UStaticMesh* LoadStaticMesh(const FString& Path);
+	UStaticMesh* ImportStaticMeshFromFbx(const FString& Path);
 	UStaticMesh* FindStaticMesh(const FString& Path) const;
 	TArray<FString> GetStaticMeshPaths() const;
 
@@ -118,6 +120,7 @@ public:
 	 * note: 병합하면서 충돌이 발생하거나 동일한 로직의 함수가 있다면 날려버리셔도 됩니다
 	 */
 	USkeletalMesh* LoadSkeletalMesh(const FString& Path);
+	USkeletalMesh* ImportSkeletalMeshFromFbx(const FString& Path);
 	USkeletalMesh* FindSkeletalMesh(const FString& Path) const;
 	TArray<FString> GetSkeletalMeshPaths() const;
 	FFbxMeshContentInfo InspectFbxMeshContent(const FString& Path);
@@ -161,12 +164,18 @@ private:
 	uint64 GetFileSizeBytes(const FString& Path) const;
 	FString ComputeFileContentHashString(const FString& Path) const;
 	FString GetCachedFileContentHashString(const FString& Path, uint64 WriteTimeTicks, uint64 FileSizeBytes);
+	bool IsImportedStaticMeshAssetFresh(const FString& SourcePath, const FString& BinaryPath) const;
+	bool IsImportedSkeletalMeshAssetFresh(const FString& SourcePath, const FString& BinaryPath) const;
 	bool IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	bool IsSkeletalMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	void PreloadStaticMeshes();
 	UStaticMesh* CreateStaticMeshFromLoadedData(FStaticMesh* LoadedMeshData, const FString& LogPath, bool bLogLodTiming, bool bLogLodSkipped) const;
 	
-	FTextureAssetMeta LoadOrCreateTextureMeta(const std::filesystem::path& FilePath) const;
+	bool LoadTextureAtlasAsset(
+		const std::filesystem::path& AssetFilePath,
+		ETextureAtlasAssetType Type,
+		const std::filesystem::path& ProjectRootPath,
+		FTextureAtlasAsset& OutAsset) const;
 	void RegisterObjMaterialSlotAliases(const FString& ObjPath, const FString& MtlPath);
 	UMaterial* GetMaterialForStaticMeshSlot(const FString& SourcePath, const FString& SlotName) const;
 	void ResolveStaticMeshMaterialSlots(const FString& SourcePath, FStaticMesh* StaticMesh) const;
@@ -200,7 +209,7 @@ private:
 	/* Paths */
 	TArray<FString> ObjFilePaths;
 	TArray<FString> MaterialFilePaths;
-	TArray<FString> ParticleFilePaths;
+	TArray<FString> SubUVFilePaths;
 	TArray<FString> FontFilePaths;
 	TArray<FString> TextureFilePaths;
 	TArray<FString> SkeletalMeshFilePaths;

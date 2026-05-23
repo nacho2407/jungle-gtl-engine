@@ -1,4 +1,6 @@
 ﻿#pragma once
+#if WITH_EDITOR || IS_OBJ_VIEWER
+
 #include "Engine/Runtime/Engine.h"
 
 #include "Misc/ObjViewer/Viewport/ObjViewerViewportClient.h"
@@ -33,3 +35,5 @@ private:
 	FObjViewerViewportClient ViewportClient;
 	UStaticMeshComponent* PreviewMeshComponent = nullptr;
 };
+
+#endif // WITH_EDITOR || IS_OBJ_VIEWER

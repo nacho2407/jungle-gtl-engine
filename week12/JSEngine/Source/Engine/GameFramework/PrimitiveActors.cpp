@@ -102,7 +102,7 @@ void AStaticMeshActor::InitDefaultComponents()
 void ASkeletalMeshActor::InitDefaultComponents()
 {
 	SkeletalMeshComp = AddComponent<USkeletalMeshComponent>();
-	SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/LowPolyMaleHuman/LowPolyMaleHuman.fbx"));
+	SkeletalMeshComp->SetSkeletalMesh(FResourceManager::Get().LoadSkeletalMesh("Asset/SkeletalMesh/Bin/LowPolyMaleHuman.bin"));
 	SetRootComponent(SkeletalMeshComp);
 
 	// ─────────────────────────────────────────────────────────────────────
@@ -137,7 +137,7 @@ void ASubUVActor::InitDefaultComponents()
 
 	auto* SubUV = AddComponent<USubUVComponent>();
 	SetRootComponent(SubUV);
-	SubUV->SetParticle(FName("Explosion"));
+	SubUV->SetSubUV(FName("Explosion"));
 	SubUV->SetSpriteSize(2.0f, 2.0f);
 	SubUV->SetFrameRate(30.f);
 }

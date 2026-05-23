@@ -17,6 +17,9 @@ public:
 	const FSkeletalMesh* GetMeshData() const;
 
 	const FString& GetAssetPathFileName() const;
+	void SetAssetPathFileName(const FString& InAssetPathFileName);
+	const FString& GetSourceFilePath() const;
+	void SetSourceFilePath(const FString& InSourceFilePath);
 
 	const TArray<FSkeletalMeshVertex>& GetVertices() const;
 	const TArray<uint32>& GetIndices() const;
@@ -46,4 +49,6 @@ private:
 
 private:
 	FSkeletalMesh* MeshData = nullptr;
+	FString AssetPathFileName;
+	FString SourceFilePath;
 };

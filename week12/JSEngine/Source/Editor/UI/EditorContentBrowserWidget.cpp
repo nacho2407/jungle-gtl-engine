@@ -399,6 +399,7 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 	}
 
 	bVisible = bOpen;
+	DrawFbxImportOptionsPopup();
 	ImGui::End();
 	ImGui::PopStyleVar(PushedStyleVarCount);
 }
@@ -1164,10 +1165,27 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		}
 		else if (Item.Extension == ".fbx")
 		{
-			// FBX files can contain animation stacks, but opening the raw FBX from the
-			// Content Browser should always show the skeletal mesh viewer. Animation
-			// sequences remain available through their generated .sequence/.animseq assets.
-			EditorEngine->CreateViewer(MakeRelativeProjectPath(Item.Path));
+			const FString FbxPath = MakeRelativeProjectPath(Item.Path);
+			if (USkeletalMesh* Mesh = FResourceManager::Get().LoadSkeletalMesh(FbxPath))
+			{
+				EditorEngine->CreateViewer(Mesh->GetAssetPathFileName());
+			}
+			else
+			{
+				RequestFbxImportOptions(FbxPath, EFbxImportAction::OpenViewer);
+			}
+		}
+		else if (Item.Extension == ".bin")
+		{
+			const FString BinaryPath = MakeRelativeProjectPath(Item.Path);
+			if (FResourceManager::Get().LoadSkeletalMesh(BinaryPath))
+			{
+				EditorEngine->CreateViewer(BinaryPath);
+			}
+			else
+			{
+				EditorEngine->GetNotificationService().Error("Failed to open imported mesh asset.");
+			}
 		}
 		else if (Item.Extension == ".rml")
 		{
@@ -1246,6 +1264,11 @@ void FEditorContentBrowserWidget::DrawContentContextMenu(bool bHasSelectedItem)
 		EditorEngine->GetMainPanel().SpawnPrefabAtOrigin(FPaths::ToUtf8(SelectedPath.wstring()));
 		ImGui::CloseCurrentPopup();
 	}
+	if (bHasSelectedItem && !SelectedPath.empty() && SelectedExtension == ".fbx" && ImGui::MenuItem("Reimport FBX..."))
+	{
+		RequestFbxImportOptions(MakeRelativeProjectPath(SelectedPath), EFbxImportAction::Reimport);
+		ImGui::CloseCurrentPopup();
+	}
 	if (ImGui::MenuItem("Rename", "F2"))
 	{
 		RequestRenameSelectedItem();
@@ -1257,6 +1280,110 @@ void FEditorContentBrowserWidget::DrawContentContextMenu(bool bHasSelectedItem)
 		ImGui::CloseCurrentPopup();
 	}
 	ImGui::EndDisabled();
+}
+
+void FEditorContentBrowserWidget::RequestFbxImportOptions(const FString& SourceFbxPath, EFbxImportAction Action)
+{
+	PendingFbxImportPath = FPaths::Normalize(SourceFbxPath);
+	PendingFbxImportAction = Action;
+	bPendingFbxImportIncludeAnimations = true;
+	bOpenFbxImportOptionsPopup = true;
+}
+
+void FEditorContentBrowserWidget::DrawFbxImportOptionsPopup()
+{
+	if (bOpenFbxImportOptionsPopup)
+	{
+		ImGui::OpenPopup("FBX Import Options");
+		bOpenFbxImportOptionsPopup = false;
+	}
+
+	if (!ImGui::BeginPopupModal("FBX Import Options", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		return;
+	}
+
+	ImGui::TextUnformatted(PendingFbxImportAction == EFbxImportAction::Reimport ? "Reimport FBX" : "Import FBX");
+	ImGui::Separator();
+	ImGui::TextWrapped("%s", PendingFbxImportPath.c_str());
+	ImGui::Spacing();
+	ImGui::Checkbox("Import animations", &bPendingFbxImportIncludeAnimations);
+	ImGui::Spacing();
+
+	if (ImGui::Button("Import", ImVec2(96.0f, 0.0f)))
+	{
+		ExecutePendingFbxImport();
+		ImGui::CloseCurrentPopup();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Cancel", ImVec2(96.0f, 0.0f)))
+	{
+		PendingFbxImportPath.clear();
+		ImGui::CloseCurrentPopup();
+	}
+
+	ImGui::EndPopup();
+}
+
+bool FEditorContentBrowserWidget::ExecutePendingFbxImport()
+{
+	if (!EditorEngine || PendingFbxImportPath.empty())
+	{
+		return false;
+	}
+
+	FResourceManager& ResourceManager = FResourceManager::Get();
+	const FFbxMeshContentInfo ContentInfo = ResourceManager.InspectFbxMeshContent(PendingFbxImportPath);
+	bool bImportedMesh = false;
+	bool bImportedSkeletalMesh = false;
+
+	if (ContentInfo.bHasSkeletalMesh)
+	{
+		bImportedSkeletalMesh = ResourceManager.ImportSkeletalMeshFromFbx(PendingFbxImportPath) != nullptr;
+		bImportedMesh = bImportedSkeletalMesh;
+	}
+	else if (ContentInfo.bHasStaticMesh)
+	{
+		bImportedMesh = ResourceManager.ImportStaticMeshFromFbx(PendingFbxImportPath) != nullptr;
+	}
+
+	if (!bImportedMesh)
+	{
+		EditorEngine->GetNotificationService().Error("FBX import failed.");
+		PendingFbxImportPath.clear();
+		return false;
+	}
+
+	if (bPendingFbxImportIncludeAnimations && ContentInfo.bHasAnimation)
+	{
+		const TArray<FString> ImportedAnimSequencePaths = ResourceManager.ImportAnimationStacksFromFbx(PendingFbxImportPath);
+		if (!ImportedAnimSequencePaths.empty())
+		{
+			EditorEngine->GetNotificationService().Info("FBX animations imported.");
+		}
+	}
+
+	EditorEngine->GetAssetService().RefreshAssetDatabase();
+	Refresh();
+
+	if (PendingFbxImportAction == EFbxImportAction::OpenViewer && bImportedSkeletalMesh)
+	{
+		if (USkeletalMesh* Mesh = ResourceManager.LoadSkeletalMesh(PendingFbxImportPath))
+		{
+			EditorEngine->CreateViewer(Mesh->GetAssetPathFileName());
+		}
+	}
+	else if (PendingFbxImportAction == EFbxImportAction::OpenViewer && !bImportedSkeletalMesh)
+	{
+		EditorEngine->GetNotificationService().Info("Static FBX imported.");
+	}
+	else
+	{
+		EditorEngine->GetNotificationService().Info("FBX reimport complete.");
+	}
+
+	PendingFbxImportPath.clear();
+	return true;
 }
 
 bool FEditorContentBrowserWidget::CreateFolder()

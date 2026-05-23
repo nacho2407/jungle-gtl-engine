@@ -387,40 +387,40 @@ void FScriptManager::BindStaticMeshTypes()
 
 void FScriptManager::BindSkinnedMeshTypes()
 {
-    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USkinnedMeshComponent, "SkinnedMeshComponent",
-        UMeshComponent, UPrimitiveComponent, USceneComponent, UActorComponent, UObject)
-    LUA_METHOD(GetSkeletalMesh, GetSkeletalMesh);
-    LUA_METHOD(HasValidMesh, HasValidMesh);
-    LUA_END_TYPE();
+	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USkinnedMeshComponent, "SkinnedMeshComponent",
+		UMeshComponent, UPrimitiveComponent, USceneComponent, UActorComponent, UObject)
+	LUA_METHOD(GetSkeletalMesh, GetSkeletalMesh);
+	LUA_METHOD(HasValidMesh, HasValidMesh);
+	LUA_END_TYPE();
 }
 
 void FScriptManager::BindSkeletalMeshTypes()
 {
-    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USkeletalMeshComponent, "SkeletalMeshComponent",
-        USkinnedMeshComponent, UMeshComponent, UPrimitiveComponent, USceneComponent, UActorComponent, UObject)
-    LUA_METHOD(GetAnimInstance, GetAnimInstance);
-    LUA_METHOD(GetSingleNodeInstance, GetSingleNodeInstance);
-    LUA_METHOD(GetOrCreateSingleNodeInstance, GetOrCreateSingleNodeInstance);
-    LUA_METHOD(Play, Play);
-    LUA_METHOD(Stop, Stop);
-    LUA_METHOD(Pause, Pause);
-    LUA_METHOD(SetPlayRate, SetPlayRate);
-    LUA_METHOD(SetAnimationPosition, SetAnimationPosition);
-    LUA_METHOD(IsPlaying, IsPlaying);
-    LUA_METHOD(IsLooping, IsLooping);
-    LUA_METHOD(CreateAnimationStateMachine, CreateAnimationStateMachine);
-    LUA_METHOD(GetAnimationStateMachine, GetAnimationStateMachine);
-    LUA_METHOD(SetAnimationStateMachine, SetAnimationStateMachine);
-    LUA_METHOD(SetAnimStateByName, SetAnimStateByName);
-    LUA_METHOD(SetAnimGraphAssetPath, SetAnimGraphAssetPath);
-    LUA_METHOD(GetAnimGraphAssetPath, GetAnimGraphAssetPath);
-    LUA_METHOD(SetAnimGraphFloat, SetAnimGraphFloatParameter);
-    LUA_METHOD(SetAnimGraphBool, SetAnimGraphBoolParameter);
-    LUA_METHOD(SetAnimGraphInt, SetAnimGraphIntParameter);
-    LUA_METHOD(GetAnimGraphFloat, GetAnimGraphFloatParameter);
-    LUA_METHOD(GetAnimGraphBool, GetAnimGraphBoolParameter);
-    LUA_METHOD(GetAnimGraphInt, GetAnimGraphIntParameter);
-    LUA_END_TYPE();
+	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USkeletalMeshComponent, "SkeletalMeshComponent",
+		USkinnedMeshComponent, UMeshComponent, UPrimitiveComponent, USceneComponent, UActorComponent, UObject)
+	LUA_METHOD(GetAnimInstance, GetAnimInstance);
+	LUA_METHOD(GetSingleNodeInstance, GetSingleNodeInstance);
+	LUA_METHOD(GetOrCreateSingleNodeInstance, GetOrCreateSingleNodeInstance);
+	LUA_METHOD(Play, Play);
+	LUA_METHOD(Stop, Stop);
+	LUA_METHOD(Pause, Pause);
+	LUA_METHOD(SetPlayRate, SetPlayRate);
+	LUA_METHOD(SetAnimationPosition, SetAnimationPosition);
+	LUA_METHOD(IsPlaying, IsPlaying);
+	LUA_METHOD(IsLooping, IsLooping);
+	LUA_METHOD(CreateAnimationStateMachine, CreateAnimationStateMachine);
+	LUA_METHOD(GetAnimationStateMachine, GetAnimationStateMachine);
+	LUA_METHOD(SetAnimationStateMachine, SetAnimationStateMachine);
+	LUA_METHOD(SetAnimStateByName, SetAnimStateByName);
+	LUA_METHOD(SetAnimGraphAssetPath, SetAnimGraphAssetPath);
+	LUA_METHOD(GetAnimGraphAssetPath, GetAnimGraphAssetPath);
+	LUA_METHOD(SetAnimGraphFloat, SetAnimGraphFloatParameter);
+	LUA_METHOD(SetAnimGraphBool, SetAnimGraphBoolParameter);
+	LUA_METHOD(SetAnimGraphInt, SetAnimGraphIntParameter);
+	LUA_METHOD(GetAnimGraphFloat, GetAnimGraphFloatParameter);
+	LUA_METHOD(GetAnimGraphBool, GetAnimGraphBoolParameter);
+	LUA_METHOD(GetAnimGraphInt, GetAnimGraphIntParameter);
+	LUA_END_TYPE();
 }
 
 void FScriptManager::BindBillboardTypes()
@@ -529,9 +529,9 @@ void FScriptManager::BindPrimitiveTypes()
 								USceneComponent,
 								UActorComponent,
 								UObject)
-	LUA_SET(SetParticle, [](USubUVComponent& Self, const FString& ParticleName)
-			{ Self.SetParticle(FName(ParticleName)); });
-	LUA_METHOD(GetParticleName, GetParticleName);
+	LUA_SET(SetSubUV, [](USubUVComponent& Self, const FString& SubUVName)
+			{ Self.SetSubUV(FName(SubUVName)); });
+	LUA_METHOD(GetSubUVName, GetSubUVName);
 	LUA_RW_PROPERTY(FrameIndex, GetFrameIndex, SetFrameIndex);
 	LUA_METHOD(SetFrameRate, SetFrameRate);
 	LUA_METHOD(IsFinished, IsFinished);

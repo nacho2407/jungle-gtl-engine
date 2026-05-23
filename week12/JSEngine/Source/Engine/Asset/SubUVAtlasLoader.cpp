@@ -1,4 +1,4 @@
-﻿#include "ParticleAtlasLoader.h"
+﻿#include "SubUVAtlasLoader.h"
 
 #include "Core/Paths.h"
 #include "Render/Resource/Texture.h"
@@ -8,8 +8,8 @@
 
 #include <filesystem>
 
-bool FParticleAtlasLoader::Load(const FName& ParticleName, const FString& Path, uint32 Columns, uint32 Rows,
-	ID3D11Device* Device, FParticleResource& OutResource) const
+bool FSubUVAtlasLoader::Load(const FName& SubUVName, const FString& Path, uint32 Columns, uint32 Rows,
+	ID3D11Device* Device, FSubUVResource& OutResource) const
 {
 	if (!Device || Path.empty())
 	{
@@ -45,14 +45,14 @@ bool FParticleAtlasLoader::Load(const FName& ParticleName, const FString& Path, 
 		return false;
 	}
 
-	OutResource.Name = ParticleName;
+	OutResource.Name = SubUVName;
 	OutResource.Path = Path;
 	OutResource.Columns = Columns;
 	OutResource.Rows = Rows;
 	return true;
 }
 
-bool FParticleAtlasLoader::SupportsExtension(const FString& Extension) const
+bool FSubUVAtlasLoader::SupportsExtension(const FString& Extension) const
 {
 	return Extension == ".dds" || Extension == "dds"
 		|| Extension == ".png" || Extension == "png"

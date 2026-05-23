@@ -35,10 +35,10 @@
 
 /* Validation Check Constants */
 constexpr uint32 STATIC_MESH_BINARY_MAGIC = 0x4853454D; // 'MESH'
-constexpr uint32 STATIC_MESH_BINARY_VERSION = 1;
+constexpr uint32 STATIC_MESH_BINARY_VERSION = 2; // v2: explicit imported mesh asset generation
 
 constexpr uint32 SKELETAL_MESH_BINARY_MAGIC   = 0x534D4B53; // 'SKMS'
-constexpr uint32 SKELETAL_MESH_BINARY_VERSION = 3;          // v3: multi skeletal mesh import cache invalidation
+constexpr uint32 SKELETAL_MESH_BINARY_VERSION = 4;          // v4: explicit imported mesh asset generation
 
 //	Vailidation Checkers
 constexpr uint32 MAX_STATIC_MESH_VERTEX_COUNT   = 10'000'000;
@@ -96,7 +96,7 @@ static bool IsValidSkeletalMeshHeader(const FSkeletalMeshBinaryHeader& Header)
 		return false;
 	}
 
-	// Importer semantics changed in v3. Reject older skeletal mesh caches so FBX is re-imported once.
+	// Importer semantics changed in v4. Reject older imported mesh assets.
 	if (Header.Version != SKELETAL_MESH_BINARY_VERSION)
 	{
 		return false;
@@ -410,8 +410,8 @@ void FBinarySerializer::WriteVertices(std::ofstream& Out, const FStaticMesh& Dat
 
 		// Tangent
 		WriteFloatLE(Out, Vertex.Tangent.X);
-        WriteFloatLE(Out, Vertex.Tangent.Y);
-        WriteFloatLE(Out, Vertex.Tangent.Z);
+		WriteFloatLE(Out, Vertex.Tangent.Y);
+		WriteFloatLE(Out, Vertex.Tangent.Z);
 	}
 }
 
@@ -1221,11 +1221,11 @@ bool FBinarySerializer::LoadSkeletalMesh(const FString& BinaryPath, FSkeletalMes
 
 	//	Header ↔ Body 카운트 cross-check
 	if (!(OutData.Vertices.size()      == Header.VertexCount  &&
-	      OutData.Indices.size()       == Header.IndexCount   &&
-	      OutData.Sections.size()      == Header.SectionCount &&
-	      OutData.MaterialSlots.size() == Header.SlotCount    &&
-	      OutData.Bones.size()         == Header.BoneCount    &&
-	      OutData.Sockets.size()       == Header.SocketCount))
+		  OutData.Indices.size()       == Header.IndexCount   &&
+		  OutData.Sections.size()      == Header.SectionCount &&
+		  OutData.MaterialSlots.size() == Header.SlotCount    &&
+		  OutData.Bones.size()         == Header.BoneCount    &&
+		  OutData.Sockets.size()       == Header.SocketCount))
 	{
 		return false;
 	}

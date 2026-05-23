@@ -492,7 +492,7 @@ namespace
 	{
 		if (USubUVComponent* SubUV = Cast<USubUVComponent>(Component))
 		{
-			SubUV->SetParticle(FName("Explosion"));
+			SubUV->SetSubUV(FName("Explosion"));
 			SubUV->SetSpriteSize(2.0f, 2.0f);
 			SubUV->SetFrameRate(30.f);
 		}
@@ -518,19 +518,19 @@ namespace
 		}
 	}
 
-    static const FProperty* FindPropertyByName(const TArray<const FProperty*>& Properties, const char* Name)
+	static const FProperty* FindPropertyByName(const TArray<const FProperty*>& Properties, const char* Name)
 	{
-	    if (!Name)
-	    {
+		if (!Name)
+		{
 			return nullptr;
-	    }
+		}
 
 		for (const FProperty* Property : Properties)
 		{
-		    if (Property && Property->Name && std::strcmp(Property->Name, Name) == 0)
-		    {
+			if (Property && Property->Name && std::strcmp(Property->Name, Name) == 0)
+			{
 				return Property;
-		    }
+			}
 		}
 
 		return nullptr;
@@ -2327,9 +2327,9 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 		{
 			Names = EditorEngine ? EditorEngine->GetAssetService().GetFontNames() : EmptyAssetNames();
 		}
-		else if (Property.Name && strcmp(Property.Name, "Particle") == 0)
+		else if (Property.Name && strcmp(Property.Name, "SubUVName") == 0)
 		{
-			Names = EditorEngine ? EditorEngine->GetAssetService().GetParticleNames() : EmptyAssetNames();
+			Names = EditorEngine ? EditorEngine->GetAssetService().GetSubUVNames() : EmptyAssetNames();
 		}
 
 		if (!Names.empty())
