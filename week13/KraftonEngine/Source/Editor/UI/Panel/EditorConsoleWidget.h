@@ -85,6 +85,7 @@ private:
 	void RegisterEditorCommands();
 	void RegisterDiagnosticsCommands();
 	void RegisterRenderCommands();
+	void RegisterReflectionCommands();
 
 	void RenderCompletionCandidates();
 	void UpdateCompletionCandidates();
@@ -117,6 +118,8 @@ private:
 	void HandleShadowBias(const TArray<FString>& Args);
 	void HandleShadowFilter(const TArray<FString>& Args);
 	void HandleSkinningMode(const TArray<FString>& Args);
+	void HandleExecReflection(const TArray<FString>& Args);
+	bool TryExecReflectedShortcut(const FString& CommandLine);
 	void PrintCSMCascadeRanges();
 
 	static int32 TextEditCallback(ImGuiInputTextCallbackData* Data);

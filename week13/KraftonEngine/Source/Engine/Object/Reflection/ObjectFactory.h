@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <functional>
 #include "Object/Object.h"
@@ -9,7 +9,7 @@
 namespace {                                                            \
     struct ClassName##_HideFromComponentList {                         \
         ClassName##_HideFromComponentList() {                          \
-            ClassName::StaticClass()->AddClassFlags(CF_HiddenInComponentList); \
+            FClassFlagRegistry::AddClassFlags(#ClassName, CF_HiddenInComponentList); \
         }                                                              \
     };                                                                 \
     ClassName##_HideFromComponentList G##ClassName##_HideFromComponentList; \

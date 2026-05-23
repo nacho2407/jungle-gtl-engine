@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -71,12 +72,40 @@ class ReflectedProperty:
 
 
 @dataclass(frozen=True)
+class ReflectedFunctionParam:
+    cpp_type: str
+    storage_cpp_type: str
+    name: str
+    default_value: str | None
+    property: ReflectedProperty
+
+
+@dataclass(frozen=True)
+class ReflectedFunction:
+    owner: str
+    return_type: str
+    return_storage_cpp_type: str | None
+    return_property: ReflectedProperty | None
+    name: str
+    signature: str
+    identifier: str
+    flags: str
+    display_name: str
+    category: str
+    metadata: tuple[tuple[str, str], ...]
+    params: tuple[ReflectedFunctionParam, ...]
+    is_const: bool
+    is_static: bool
+
+
+@dataclass(frozen=True)
 class ReflectedType:
     kind: str
     name: str
     super_name: str | None
     generated_body_line: int | None
     properties: tuple[ReflectedProperty, ...]
+    functions: tuple[ReflectedFunction, ...]
 
 
 @dataclass(frozen=True)
@@ -110,6 +139,10 @@ ASSET_ALLOWED_CLASS_MAP = {
     "Texture": "UTexture2D",
     "AnimSequence": "UAnimSequence",
     "UAnimSequence": "UAnimSequence",
+    "AnimGraphAsset": "UAnimGraphAsset",
+    "UAnimGraphAsset": "UAnimGraphAsset",
+    "ParticleSystem": "UParticleSystem",
+    "UParticleSystem": "UParticleSystem",
     "Skeleton": "USkeleton",
     "USkeleton": "USkeleton",
 }
@@ -121,7 +154,51 @@ ASSET_OBJECT_CLASSES = {
     "UTexture2D",
     "UAnimSequence",
     "UAnimSequenceBase",
+    "UAnimGraphAsset",
+    "UParticleSystem",
     "USkeleton",
+}
+
+SUPPORTED_PROPERTY_TYPES = {
+    "Bool",
+    "ByteBool",
+    "Int",
+    "Float",
+    "Vec3",
+    "Vec4",
+    "Rotator",
+    "String",
+    "Name",
+    "ObjectRef",
+    "Color4",
+    "ClassRef",
+    "Enum",
+    "Struct",
+    "SoftObjectRef",
+    "Array",
+}
+
+FUNCTION_FLAG_MAP = {
+    "callable": ("FUNC_Callable",),
+    "blueprintcallable": ("FUNC_Callable",),
+    "pure": ("FUNC_Pure",),
+    "blueprintpure": ("FUNC_Pure",),
+    "exec": ("FUNC_Exec",),
+    "callineditor": ("FUNC_CallInEditor",),
+    "event": ("FUNC_Event",),
+    "luaevent": ("FUNC_Event",),
+    "implementableevent": ("FUNC_Event", "FUNC_ImplementableEvent"),
+    "luaimplementableevent": ("FUNC_Event", "FUNC_ImplementableEvent"),
+    "blueprintimplementableevent": ("FUNC_Event", "FUNC_ImplementableEvent"),
+    "nativeevent": ("FUNC_Event", "FUNC_NativeEvent"),
+    "luanativeevent": ("FUNC_Event", "FUNC_NativeEvent"),
+    "blueprintnativeevent": ("FUNC_Event", "FUNC_NativeEvent"),
+}
+
+ACCESS_FUNCTION_FLAG_MAP = {
+    "public": "FUNC_Public",
+    "protected": "FUNC_Protected",
+    "private": "FUNC_Private",
 }
 
 
@@ -272,6 +349,111 @@ def make_property_metadata(metadata: dict[str, str], flags: set[str], member_nam
     return tuple(sorted(values.items()))
 
 
+def make_function_metadata(metadata: dict[str, str], flags: set[str], function_name: str, display_name: str) -> tuple[tuple[str, str], ...]:
+    values = dict(metadata)
+    values.setdefault("displayname", display_name)
+    for flag in sorted(flags):
+        values.setdefault(flag, "true")
+    return tuple(sorted(values.items()))
+
+
+def canonicalize_cpp_type(cpp_type: str) -> str:
+    cpp_type = " ".join(cpp_type.replace("\n", " ").split())
+    cpp_type = cpp_type.replace(" *", "*").replace("* ", "*").replace(" &", "&").replace("& ", "&")
+    cpp_type = cpp_type.replace(" &&", "&&").replace("&& ", "&&")
+    return " ".join(cpp_type.split()).strip()
+
+
+def make_function_signature(function_name: str, param_types: tuple[str, ...], is_const: bool) -> str:
+    params = ",".join(canonicalize_cpp_type(param_type) for param_type in param_types)
+    suffix = " const" if is_const else ""
+    return f"{function_name}({params}){suffix}"
+
+
+def make_function_identifier(owner: str, signature: str) -> str:
+    digest = hashlib.sha1(signature.encode("utf-8")).hexdigest()[:10]
+    return f"{make_cpp_identifier(owner)}_{make_cpp_identifier(signature)}_{digest}"
+
+
+def make_function_flags_expr(flag_tokens: set[str], is_const: bool, is_static: bool, access: str) -> str:
+    values: list[str] = []
+    access_flag = ACCESS_FUNCTION_FLAG_MAP.get(access)
+    if access_flag:
+        values.append(access_flag)
+    if is_static:
+        values.append("FUNC_Static")
+    if is_const:
+        values.append("FUNC_Const")
+
+    for token in sorted(flag_tokens):
+        mapped_flags = FUNCTION_FLAG_MAP.get(token, tuple())
+        for mapped in mapped_flags:
+            if mapped and mapped not in values:
+                values.append(mapped)
+
+    if "FUNC_Callable" not in values and "FUNC_Event" not in values:
+        values.append("FUNC_Callable")
+
+    return " | ".join(values) if values else "FUNC_None"
+
+
+def split_default_argument(param: str) -> tuple[str, str | None]:
+    depth = 0
+    in_string: str | None = None
+    escape = False
+    for index, ch in enumerate(param):
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == in_string:
+                in_string = None
+            continue
+        if ch in {'"', "'"}:
+            in_string = ch
+        elif ch in "(<[{":
+            depth += 1
+        elif ch in ")>]}":
+            depth -= 1
+        elif ch == "=" and depth == 0:
+            default_value = param[index + 1:].strip()
+            return param[:index].strip(), default_value or None
+    return param.strip(), None
+
+
+def make_parameter_flags_expr(cpp_type: str, is_return: bool = False) -> str:
+    if is_return:
+        return "PF_ReturnParm"
+
+    canonical = canonicalize_cpp_type(cpp_type)
+    is_const = bool(re.search(r"(^|\W)const(\W|$)", canonical))
+    is_reference = canonical.endswith("&") and not canonical.endswith("&&")
+
+    values = ["PF_Parm"]
+    if is_const:
+        values.append("PF_ConstParm")
+    if is_reference:
+        values.append("PF_ReferenceParm")
+        if not is_const:
+            values.append("PF_OutParm")
+    return " | ".join(values)
+
+
+def get_access_at(body: str, position: int, default_access: str = "private") -> str:
+    access = default_access
+    for match in re.finditer(r"(^|[;{}])\s*(public|protected|private)\s*:", body[:position], re.MULTILINE):
+        access = match.group(2)
+    return access
+
+
+def get_reflected_default_access_by_name(scan_text: str) -> dict[str, str]:
+    defaults: dict[str, str] = {}
+    for match in REFLECTED_DECL_RE.finditer(scan_text):
+        defaults[match.group("name")] = "public" if match.group("decl") == "struct" else "private"
+    return defaults
+
+
 def normalize_cpp_type(cpp_type: str) -> str:
     cpp_type = " ".join(cpp_type.replace("\n", " ").split())
     cpp_type = cpp_type.replace(" *", "*").replace(" &", "&")
@@ -279,14 +461,14 @@ def normalize_cpp_type(cpp_type: str) -> str:
     return " ".join(cpp_type.split()).strip()
 
 
-def infer_property_type(cpp_type: str, metadata: dict[str, str]) -> str:
+def infer_property_type(cpp_type: str, metadata: dict[str, str]) -> str | None:
     explicit_type = metadata.get("type")
     if explicit_type:
         if explicit_type.startswith("EPropertyType::"):
-            return explicit_type.split("::", 1)[1]
-        if explicit_type == "Object":
-            return "ObjectRef"
-        return explicit_type
+            explicit_type = explicit_type.split("::", 1)[1]
+        elif explicit_type == "Object":
+            explicit_type = "ObjectRef"
+        return explicit_type if explicit_type in SUPPORTED_PROPERTY_TYPES else None
 
     enum_type = metadata.get("enumtype") or metadata.get("enum")
     if enum_type:
@@ -297,15 +479,17 @@ def infer_property_type(cpp_type: str, metadata: dict[str, str]) -> str:
         return "Struct"
 
     normalized = normalize_cpp_type(cpp_type)
+    if normalized in {"FString", "FSoftObjectPtr"} and (metadata.get("assettype") or metadata.get("allowedclass")):
+        return "SoftObjectRef"
     if normalized.startswith("TArray<"):
         return "Array"
-    if get_tsubclassof_inner_type(normalized):
+    if normalized == "UClass*" or get_tsubclassof_inner_type(normalized):
         return "ClassRef"
     if get_tobjectptr_inner_type(normalized):
         return "ObjectRef"
     if normalized.endswith("*") and not normalized.endswith("char*"):
         return "ObjectRef"
-    return TYPE_MAP.get(normalized, "String")
+    return TYPE_MAP.get(normalized)
 
 
 def make_flags_expr(flags: set[str]) -> str:
@@ -462,9 +646,9 @@ def get_array_element_property_type(prop: ReflectedProperty) -> str | None:
             return "ClassRef"
         if get_tobjectptr_inner_type(element_cpp_type) or (element_cpp_type.endswith("*") and not element_cpp_type.endswith("char*")):
             return "ObjectRef"
-        if prop.struct_type or prop.metadata and any(key == "struct" or key == "structtype" for key, _ in prop.metadata):
+        if prop.metadata and any(key == "struct" or key == "structtype" for key, _ in prop.metadata):
             return "Struct"
-        return TYPE_MAP.get(element_cpp_type, "String")
+        return TYPE_MAP.get(element_cpp_type)
     return None
 
 
@@ -679,7 +863,347 @@ def parse_member_declaration(declaration: str) -> tuple[str, str] | None:
     return normalize_cpp_type(match.group("type")), match.group("name")
 
 
-def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum]) -> tuple[dict[str, tuple[ReflectedProperty, ...]], list[str]]:
+
+def strip_reference_for_storage(cpp_type: str) -> str:
+    normalized = normalize_cpp_type(cpp_type)
+    while normalized.endswith("&"):
+        normalized = normalized[:-1].strip()
+    return normalized
+
+
+def split_function_params(params: str) -> list[str]:
+    params = params.strip()
+    if not params or params == "void":
+        return []
+    return split_metadata_args(params)
+
+
+def parse_function_parameter(param: str, index: int) -> dict[str, object] | None:
+    param, default_value = split_default_argument(param)
+    param = re.sub(r"\s+", " ", param).strip()
+    param = re.sub(r"\b(register|mutable)\b\s*", "", param).strip()
+    if not param or param == "void" or "..." in param:
+        return None
+    if "&&" in param:
+        return None
+
+    match = re.match(r"(?P<type>.+?[\s*&])(?P<name>[A-Za-z_][A-Za-z0-9_]*)$", param)
+    if match:
+        raw_type = canonicalize_cpp_type(match.group("type"))
+        name = match.group("name")
+    else:
+        raw_type = canonicalize_cpp_type(param)
+        name = f"Param{index}"
+
+    return {
+        "cpp_type": raw_type,
+        "storage_cpp_type": strip_reference_for_storage(raw_type),
+        "name": name,
+        "default_value": default_value,
+        "flags": make_parameter_flags_expr(raw_type),
+    }
+
+
+def make_reflected_property_for_type(
+    owner: str,
+    cpp_type: str,
+    member_name: str,
+    display_name: str,
+    category: str,
+    metadata: dict[str, str],
+    flag_tokens: set[str],
+    enums: dict[str, ReflectedEnum],
+    known_structs: set[str],
+    flags_expr: str = "PF_None",
+) -> tuple[ReflectedProperty | None, str | None]:
+    storage_cpp_type = strip_reference_for_storage(cpp_type)
+    property_type = infer_property_type(storage_cpp_type, metadata)
+    enum_type = metadata.get("enumtype") or metadata.get("enum")
+    struct_type = metadata.get("structtype") or metadata.get("struct")
+
+    if not property_type:
+        if storage_cpp_type in enums:
+            property_type = "Enum"
+            enum_type = storage_cpp_type
+        elif storage_cpp_type in known_structs:
+            property_type = "Struct"
+            struct_type = storage_cpp_type
+
+    if not property_type:
+        return None, f"unsupported reflected type '{cpp_type}'"
+
+    if property_type == "Array":
+        temp_prop = ReflectedProperty(
+            owner=owner,
+            cpp_type=storage_cpp_type,
+            member_name=member_name,
+            display_name=display_name,
+            category=category,
+            property_type=property_type,
+            flags=flags_expr,
+            metadata=tuple(sorted(metadata.items())),
+            min_value=metadata.get("min") or metadata.get("clampmin") or metadata.get("uimin") or "0.0f",
+            max_value=metadata.get("max") or metadata.get("clampmax") or metadata.get("uimax") or "0.0f",
+            speed_value=metadata.get("speed", "0.1f"),
+            enum_type_name=None,
+            struct_type=struct_type or "",
+            asset_type=metadata.get("assettype"),
+            allowed_class=infer_allowed_class(metadata.get("assettype"), metadata.get("allowedclass")),
+        )
+        if not get_array_element_cpp_type(storage_cpp_type) or not get_array_element_property_type(temp_prop):
+            return None, f"unsupported reflected TArray element type in '{cpp_type}'"
+
+    enum_type_name: str | None = None
+    if property_type == "Enum":
+        enum_key = enum_type or storage_cpp_type
+        if enum_key not in enums:
+            return None, f"unknown reflected enum '{enum_key}'"
+        enum_type_name = enums[enum_key].name
+
+    if property_type == "Struct" and not struct_type:
+        struct_type = storage_cpp_type
+    if property_type == "Struct" and struct_type not in known_structs:
+        return None, f"unknown reflected struct '{struct_type}'"
+
+    struct_type_expr = f"{struct_type}::StaticStruct()" if struct_type and struct_type != "Struct" else "nullptr"
+    asset_type = metadata.get("assettype")
+    allowed_class = infer_allowed_class(asset_type, metadata.get("allowedclass"))
+
+    return ReflectedProperty(
+        owner=owner,
+        cpp_type=storage_cpp_type,
+        member_name=member_name,
+        display_name=display_name,
+        category=category,
+        property_type=property_type,
+        flags=flags_expr,
+        metadata=make_property_metadata(metadata, flag_tokens, member_name, display_name),
+        min_value=metadata.get("min") or metadata.get("clampmin") or metadata.get("uimin") or "0.0f",
+        max_value=metadata.get("max") or metadata.get("clampmax") or metadata.get("uimax") or "0.0f",
+        speed_value=metadata.get("speed", "0.1f"),
+        enum_type_name=enum_type_name,
+        struct_type=struct_type_expr,
+        asset_type=asset_type,
+        allowed_class=allowed_class,
+    ), None
+
+def parse_member_function_declaration(declaration: str) -> dict[str, object] | None:
+    declaration = declaration.strip()
+    declaration = re.sub(r"\s+", " ", declaration)
+    declaration = re.sub(r"^(public|protected|private)\s*:\s*", "", declaration)
+    declaration = re.sub(r"\s*=\s*(0|default|delete)\s*$", "", declaration).strip()
+    declaration = re.sub(r"\b(override|final)\b", "", declaration).strip()
+
+    is_static = bool(re.search(r"\bstatic\b", declaration))
+    declaration = re.sub(r"\b(virtual|inline|friend|explicit|static)\b\s*", "", declaration).strip()
+
+    # C++ trailing return syntax: auto Foo(Args...) [const] [noexcept] [ref-qual] -> ReturnType
+    trailing = re.match(
+        r"auto\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\((?P<params>.*)\)\s*"
+        r"(?P<quals>(?:(?:const|noexcept(?:\s*\([^)]*\))?|&&|&)\s*)*)"
+        r"->\s*(?P<return>.+)$",
+        declaration,
+    )
+    if trailing:
+        quals = trailing.group("quals") or ""
+        if "&&" in quals:
+            return None
+        is_const = bool(re.search(r"\bconst\b", quals))
+        return_type = canonicalize_cpp_type(trailing.group("return"))
+        name = trailing.group("name")
+        params_text = trailing.group("params")
+    else:
+        # Normal syntax: ReturnType Foo(Args...) [const] [noexcept] [ref-qual]
+        match = re.match(
+            r"(?P<return>.+?)\s+"
+            r"(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\((?P<params>.*)\)\s*"
+            r"(?P<quals>(?:(?:const|noexcept(?:\s*\([^)]*\))?|&&|&)\s*)*)$",
+            declaration,
+        )
+        if not match:
+            return None
+        quals = match.group("quals") or ""
+        if "&&" in quals:
+            return None
+        is_const = bool(re.search(r"\bconst\b", quals))
+        return_type = canonicalize_cpp_type(match.group("return"))
+        name = match.group("name")
+        params_text = match.group("params")
+
+    params: list[dict[str, object]] = []
+    for index, param_text in enumerate(split_function_params(params_text)):
+        parsed_param = parse_function_parameter(param_text, index)
+        if not parsed_param:
+            return None
+        params.append(parsed_param)
+
+    return {
+        "return_type": return_type,
+        "name": name,
+        "params": tuple(params),
+        "is_const": is_const,
+        "is_static": is_static,
+    }
+
+
+def parse_ufunctions(
+    scan_text: str,
+    enums: dict[str, ReflectedEnum],
+    known_structs: set[str],
+) -> tuple[dict[str, tuple[ReflectedFunction, ...]], list[str]]:
+    functions_by_class: dict[str, tuple[ReflectedFunction, ...]] = {}
+    warnings: list[str] = []
+    default_access_by_name = get_reflected_default_access_by_name(scan_text)
+
+    for class_name, body_start, body_end in find_reflected_type_bodies(scan_text):
+        body = scan_text[body_start:body_end]
+        found: list[ReflectedFunction] = []
+        seen_signatures: set[str] = set()
+        cursor = 0
+
+        while True:
+            function_index = body.find("UFUNCTION", cursor)
+            if function_index < 0:
+                break
+
+            paren_start = body.find("(", function_index)
+            if paren_start < 0:
+                warnings.append(f"{class_name}: malformed UFUNCTION without metadata list")
+                break
+            paren_end = find_matching(body, paren_start, "(", ")")
+            if paren_end < 0:
+                warnings.append(f"{class_name}: malformed UFUNCTION metadata")
+                break
+
+            statement_start = paren_end + 1
+            semicolon = body.find(";", statement_start)
+            if semicolon < 0:
+                warnings.append(f"{class_name}: UFUNCTION without following member declaration")
+                break
+
+            metadata, flag_tokens = parse_metadata(body[paren_start + 1:paren_end])
+            parsed = parse_member_function_declaration(body[statement_start:semicolon])
+            if not parsed:
+                warnings.append(
+                    f"error: {class_name}: unsupported UFUNCTION declaration near {body[statement_start:semicolon].strip()!r}"
+                )
+                cursor = semicolon + 1
+                continue
+
+            function_name = str(parsed["name"])
+            return_type = str(parsed["return_type"])
+            parsed_params = tuple(parsed["params"])  # type: ignore[arg-type]
+            param_types = tuple(str(param["cpp_type"]) for param in parsed_params)  # type: ignore[index]
+            is_const = bool(parsed["is_const"])
+            is_static = bool(parsed["is_static"])
+            signature = make_function_signature(function_name, param_types, is_const)
+            if signature in seen_signatures:
+                warnings.append(f"error: {class_name}.{function_name}: duplicate reflected UFUNCTION signature '{signature}'")
+                cursor = semicolon + 1
+                continue
+            seen_signatures.add(signature)
+
+            identifier = make_function_identifier(class_name, signature)
+            display_name = metadata.get("displayname") or metadata.get("display") or function_name
+            category = metadata.get("category") or "Default"
+            owner_for_params = f"{identifier}_Params"
+            access = get_access_at(body, function_index, default_access_by_name.get(class_name, "private"))
+            function_flags = make_function_flags_expr(flag_tokens, is_const, is_static, access)
+
+            function_metadata = dict(metadata)
+            function_metadata.setdefault("signature", signature)
+            function_metadata.setdefault("access", access)
+            function_metadata.setdefault("static", "true" if is_static else "false")
+            function_metadata.setdefault("const", "true" if is_const else "false")
+
+            params: list[ReflectedFunctionParam] = []
+            for param in parsed_params:  # type: ignore[assignment]
+                param_cpp_type = str(param["cpp_type"])
+                param_storage_type = str(param["storage_cpp_type"])
+                param_name = str(param["name"])
+                default_value = param["default_value"]  # type: ignore[index]
+                param_metadata: dict[str, str] = {}
+                if default_value:
+                    param_metadata["defaultvalue"] = str(default_value)
+                param_property, error = make_reflected_property_for_type(
+                    owner_for_params,
+                    param_storage_type,
+                    param_name,
+                    param_name,
+                    category,
+                    param_metadata,
+                    set(),
+                    enums,
+                    known_structs,
+                    str(param["flags"]),
+                )
+                if error or not param_property:
+                    warnings.append(f"error: {class_name}.{function_name} parameter '{param_name}': {error}")
+                    break
+                params.append(
+                    ReflectedFunctionParam(
+                        cpp_type=param_cpp_type,
+                        storage_cpp_type=param_storage_type,
+                        name=param_name,
+                        default_value=str(default_value) if default_value else None,
+                        property=param_property,
+                    )
+                )
+            else:
+                return_property: ReflectedProperty | None = None
+                return_storage_type: str | None = None
+                if return_type != "void":
+                    if return_type.endswith("&"):
+                        warnings.append(
+                            f"error: {class_name}.{function_name}: reflected return references are not supported; return by value or pointer"
+                        )
+                        cursor = semicolon + 1
+                        continue
+                    return_storage_type = strip_reference_for_storage(return_type)
+                    return_property, error = make_reflected_property_for_type(
+                        owner_for_params,
+                        return_storage_type,
+                        "ReturnValue",
+                        "Return Value",
+                        category,
+                        {},
+                        set(),
+                        enums,
+                        known_structs,
+                        make_parameter_flags_expr(return_type, is_return=True),
+                    )
+                    if error or not return_property:
+                        warnings.append(f"error: {class_name}.{function_name} return type: {error}")
+                        cursor = semicolon + 1
+                        continue
+
+                found.append(
+                    ReflectedFunction(
+                        owner=class_name,
+                        return_type=return_type,
+                        return_storage_cpp_type=return_storage_type,
+                        return_property=return_property,
+                        name=function_name,
+                        signature=signature,
+                        identifier=identifier,
+                        flags=function_flags,
+                        display_name=display_name,
+                        category=category,
+                        metadata=make_function_metadata(function_metadata, flag_tokens, function_name, display_name),
+                        params=tuple(params),
+                        is_const=is_const,
+                        is_static=is_static,
+                    )
+                )
+            cursor = semicolon + 1
+
+        if found:
+            functions_by_class[class_name] = tuple(found)
+
+    return functions_by_class, warnings
+
+
+def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum], known_structs: set[str]) -> tuple[dict[str, tuple[ReflectedProperty, ...]], list[str]]:
     properties_by_class: dict[str, tuple[ReflectedProperty, ...]] = {}
     warnings: list[str] = []
 
@@ -723,6 +1247,48 @@ def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum]) -> tuple[
                 cpp_type, member_name = member
 
             property_type = infer_property_type(cpp_type, metadata)
+            normalized_cpp_type = strip_reference_for_storage(cpp_type)
+            if not property_type:
+                if normalized_cpp_type in enums:
+                    property_type = "Enum"
+                elif normalized_cpp_type in known_structs:
+                    property_type = "Struct"
+            if not property_type:
+                warnings.append(
+                    f"error: {class_name}.{member_name}: unsupported reflected property type '{cpp_type}'. "
+                    "Add an explicit supported Type=..., Struct=..., Enum=..., or extend TYPE_MAP."
+                )
+                cursor = semicolon + 1
+                continue
+
+            if property_type == "Array":
+                element_cpp_type = get_array_element_cpp_type(cpp_type)
+                element_property_type = get_array_element_property_type(
+                    ReflectedProperty(
+                        owner=class_name,
+                        cpp_type=cpp_type,
+                        member_name=member_name,
+                        display_name=member_name,
+                        category="Default",
+                        property_type=property_type,
+                        flags="PF_None",
+                        metadata=tuple(sorted(metadata.items())),
+                        min_value="0.0f",
+                        max_value="0.0f",
+                        speed_value="0.1f",
+                        enum_type_name=None,
+                        struct_type=metadata.get("structtype") or metadata.get("struct") or "",
+                        asset_type=metadata.get("assettype"),
+                        allowed_class=infer_allowed_class(metadata.get("assettype"), metadata.get("allowedclass")),
+                    )
+                )
+                if not element_cpp_type or not element_property_type:
+                    warnings.append(
+                        f"error: {class_name}.{member_name}: unsupported reflected TArray element type in '{cpp_type}'. "
+                        "Add an explicit supported element type or extend TYPE_MAP."
+                    )
+                    cursor = semicolon + 1
+                    continue
 
             display_name = metadata.get("displayname") or metadata.get("display") or member_name
             category = metadata.get("category") or "Default"
@@ -731,12 +1297,21 @@ def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum]) -> tuple[
             speed_value = metadata.get("speed", "0.1f")
             enum_type = metadata.get("enumtype") or metadata.get("enum")
             enum_type_name: str | None = None
-            if property_type == "Enum" and enum_type and enum_type in enums:
-                enum_info = enums[enum_type]
+            if property_type == "Enum":
+                enum_key = enum_type or cpp_type
+                if enum_key not in enums:
+                    warnings.append(f"error: {class_name}.{member_name}: unknown reflected enum '{enum_key}'")
+                    cursor = semicolon + 1
+                    continue
+                enum_info = enums[enum_key]
                 enum_type_name = enum_info.name
             struct_type = metadata.get("structtype") or metadata.get("struct")
             if property_type == "Struct" and not struct_type:
-                struct_type = cpp_type
+                struct_type = normalized_cpp_type
+            if property_type == "Struct" and struct_type not in known_structs:
+                warnings.append(f"error: {class_name}.{member_name}: unknown reflected struct '{struct_type}'")
+                cursor = semicolon + 1
+                continue
             struct_type_expr = f"{struct_type}::StaticStruct()" if struct_type and struct_type != "Struct" else "nullptr"
             asset_type = metadata.get("assettype")
             allowed_class = infer_allowed_class(asset_type, metadata.get("allowedclass"))
@@ -801,6 +1376,34 @@ GENERATED_INCLUDE_RE = re.compile(
 )
 
 
+def detect_newline_style(path: Path, default: str = "\n") -> str:
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return default
+
+    crlf = data.count(b"\r\n")
+    lf = data.count(b"\n") - crlf
+    cr = data.count(b"\r") - crlf
+
+    if crlf >= lf and crlf >= cr and crlf > 0:
+        return "\r\n"
+    if lf >= cr and lf > 0:
+        return "\n"
+    if cr > 0:
+        return "\r"
+    return default
+
+
+def normalize_newlines_for_write(text: str) -> str:
+    return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def write_text_preserving_newline(path: Path, content: str, default_newline: str = "\n") -> None:
+    newline = detect_newline_style(path, default_newline) if path.exists() else default_newline
+    path.write_text(normalize_newlines_for_write(content), encoding="utf-8", newline=newline)
+
+
 def get_line_start_index(text: str, line_number: int) -> int:
     if line_number <= 1:
         return 0
@@ -821,7 +1424,7 @@ def first_reflected_decl_line(scan_text: str) -> int | None:
     return first_line
 
 
-def ensure_generated_header_include(root: Path, header: Path, text: str, scan_text: str) -> tuple[str, bool]:
+def ensure_generated_header_include(root: Path, generated_root: Path, header: Path, text: str, scan_text: str) -> tuple[str, bool]:
     if not REFLECTED_DECL_RE.search(scan_text):
         return text, False
 
@@ -887,18 +1490,24 @@ def find_reflected_headers(
         text = header.read_text(encoding="utf-8-sig")
         scan_text = strip_comments(text)
         if fix_generated_includes:
-            fixed_text, include_changed = ensure_generated_header_include(root, header, text, scan_text)
+            fixed_text, include_changed = ensure_generated_header_include(root, generated_root, header, text, scan_text)
             if include_changed:
                 rel_header = header.relative_to(root)
                 if dry_run:
                     print(f"would update generated include in {rel_header}")
                 else:
-                    header.write_text(fixed_text, encoding="utf-8", newline="\n")
+                    write_text_preserving_newline(header, fixed_text)
                     print(f"updated generated include in {rel_header}")
                 text = fixed_text
                 scan_text = strip_comments(text)
         header_texts.append((header, text, scan_text))
         enums.update(parse_uenums(header, scan_text))
+
+    known_structs: set[str] = set()
+    for _, _, scan_text in header_texts:
+        for match in REFLECTED_DECL_RE.finditer(scan_text):
+            if match.group("kind") == "STRUCT":
+                known_structs.add(match.group("name"))
 
     for header, text, scan_text in header_texts:
         reflected_decls: list[tuple[str, str, str | None, int | None]] = []
@@ -913,7 +1522,8 @@ def find_reflected_headers(
             reflected_decls.append((match.group("kind"), class_name, match.group("super"), line))
 
         declarations = [name for _, name, _, _ in reflected_decls]
-        properties_by_class, property_warnings = parse_uproperties(scan_text, enums)
+        properties_by_class, property_warnings = parse_uproperties(scan_text, enums, known_structs)
+        functions_by_class, function_warnings = parse_ufunctions(scan_text, enums, known_structs)
 
         property_types = tuple(
             ReflectedType(
@@ -921,13 +1531,14 @@ def find_reflected_headers(
                 name=class_name,
                 super_name=None,
                 generated_body_line=None,
-                properties=properties_by_class[class_name],
+                properties=properties_by_class.get(class_name, tuple()),
+                functions=functions_by_class.get(class_name, tuple()),
             )
-            for class_name in sorted(properties_by_class)
+            for class_name in sorted(set(properties_by_class) | set(functions_by_class))
         )
 
         if not declarations:
-            for warning in property_warnings:
+            for warning in property_warnings + function_warnings:
                 warnings.append(f"{header.relative_to(root)}: {warning}")
             if property_types:
                 reflected.append(
@@ -945,7 +1556,7 @@ def find_reflected_headers(
             warnings.append(f"{header.relative_to(root)}: reflected declaration without GENERATED_BODY()")
             continue
 
-        for warning in property_warnings:
+        for warning in property_warnings + function_warnings:
             warnings.append(f"{header.relative_to(root)}: {warning}")
 
         reflected.append(
@@ -961,6 +1572,7 @@ def find_reflected_headers(
                         super_name=super_name,
                         generated_body_line=generated_body_line,
                         properties=properties_by_class.get(class_name, tuple()),
+                        functions=functions_by_class.get(class_name, tuple()),
                     )
                     for kind, class_name, super_name, generated_body_line in reflected_decls
                 ) + tuple(
@@ -1005,7 +1617,8 @@ def render_generated_header(item: ReflectedHeader, root: Path) -> str:
                     "    static FClassRegistrar s_Registrar; \\",
                     "    static UClass* StaticClass() { return &StaticClassInstance; } \\",
                     "    UClass* GetClass() const override { return StaticClass(); } \\",
-                    "    static void RegisterProperties(UStruct* Struct);",
+                    "    static void RegisterProperties(UStruct* Struct); \\",
+                    "    static void RegisterFunctions(UStruct* Struct);",
                     "",
                 ]
             )
@@ -1016,7 +1629,8 @@ def render_generated_header(item: ReflectedHeader, root: Path) -> str:
                     "    static UStruct StaticStructInstance; \\",
                     "    static FStructRegistrar s_StructRegistrar; \\",
                     "    static UStruct* StaticStruct() { return &StaticStructInstance; } \\",
-                    "    static void RegisterProperties(UStruct* Struct);",
+                    "    static void RegisterProperties(UStruct* Struct); \\",
+                    "    static void RegisterFunctions(UStruct* Struct);",
                     "",
                 ]
             )
@@ -1024,178 +1638,305 @@ def render_generated_header(item: ReflectedHeader, root: Path) -> str:
             lines.extend(
                 [
                     f"#define {macro_name} \\",
-                    "    static void RegisterProperties(UStruct* Struct);",
+                    "    static void RegisterProperties(UStruct* Struct); \\",
+                    "    static void RegisterFunctions(UStruct* Struct);",
                     "",
                 ]
             )
 
     return "\n".join(lines)
 
-
-def render_property(prop: ReflectedProperty, index: int) -> str:
+def render_property_allocation(
+    prop: ReflectedProperty,
+    index: int,
+    container_type: str | None = None,
+    member_name: str | None = None,
+    reflected_name: str | None = None,
+) -> str:
     metadata_entries = ", ".join(
         f"{{{cpp_string_literal(key)}, {cpp_string_literal(value)}}}"
         for key, value in prop.metadata
     )
     enum_type_expr = f"FEnum::FindEnumByName({cpp_string_literal(prop.enum_type_name)})" if prop.enum_type_name else "nullptr"
-    property_symbol = f"G{make_cpp_identifier(prop.owner)}_{make_cpp_identifier(prop.member_name)}_{index}_Property"
     property_class = get_property_class(prop)
+    owner_type = container_type or prop.owner
+    member_expr = member_name or prop.member_name
+    property_name = reflected_name or prop.member_name
+    offset_expr = f"offsetof({owner_type}, {member_expr})"
+    size_expr = f"sizeof(static_cast<{owner_type}*>(nullptr)->{member_expr})"
 
     if property_class == "FEnumProperty":
         return (
-            f"\tStruct->AddProperty(new FEnumProperty(\n"
-            f"\t\t{cpp_string_literal(prop.member_name)},\n"
+            f"new FEnumProperty(\n"
+            f"\t\t{cpp_string_literal(property_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
-            f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
-            f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+            f"\t\t{offset_expr},\n"
+            f"\t\t{size_expr},\n"
             f"\t\t{enum_type_expr},\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t));\n"
+            "\t)"
         )
 
     if property_class == "FObjectProperty":
         return (
-            f"\tStruct->AddProperty(new FObjectProperty(\n"
-            f"\t\t{cpp_string_literal(prop.member_name)},\n"
+            f"new FObjectProperty(\n"
+            f"\t\t{cpp_string_literal(property_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
-            f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
-            f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+            f"\t\t{offset_expr},\n"
+            f"\t\t{size_expr},\n"
             f"\t\t{get_object_property_ops(prop)},\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)},\n"
             f"\t\t{cpp_optional_string_literal(get_object_property_class(prop))}\n"
-            "\t));\n"
+            "\t)"
         )
 
     if property_class == "FClassProperty":
         return (
-            f"\tStruct->AddProperty(new FClassProperty(\n"
-            f"\t\t{cpp_string_literal(prop.member_name)},\n"
+            f"new FClassProperty(\n"
+            f"\t\t{cpp_string_literal(property_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
-            f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
-            f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+            f"\t\t{offset_expr},\n"
+            f"\t\t{size_expr},\n"
             f"\t\t{get_class_property_ops(prop)},\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)},\n"
             f"\t\t{cpp_optional_string_literal(get_class_property_class(prop))}\n"
-            "\t));\n"
+            "\t)"
         )
 
     if property_class == "FSoftObjectProperty":
         return (
-            f"\tStruct->AddProperty(new FSoftObjectProperty(\n"
-            f"\t\t{cpp_string_literal(prop.member_name)},\n"
+            f"new FSoftObjectProperty(\n"
+            f"\t\t{cpp_string_literal(property_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
-            f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
-            f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+            f"\t\t{offset_expr},\n"
+            f"\t\t{size_expr},\n"
             f"\t\t{get_soft_object_property_ops(prop)},\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)},\n"
             f"\t\t{cpp_optional_string_literal(prop.asset_type)},\n"
             f"\t\t{cpp_optional_string_literal(prop.allowed_class)}\n"
-            "\t));\n"
+            "\t)"
         )
 
     if property_class == "FStructProperty":
         return (
-            f"\tStruct->AddProperty(new FStructProperty(\n"
-            f"\t\t{cpp_string_literal(prop.member_name)},\n"
+            f"new FStructProperty(\n"
+            f"\t\t{cpp_string_literal(property_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
-            f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
-            f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+            f"\t\t{offset_expr},\n"
+            f"\t\t{size_expr},\n"
             f"\t\t{prop.struct_type},\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t));\n"
+            "\t)"
         )
 
     if property_class in {"FIntProperty", "FFloatProperty"}:
         return (
-            f"\tStruct->AddProperty(new {property_class}(\n"
-            f"\t\t{cpp_string_literal(prop.member_name)},\n"
+            f"new {property_class}(\n"
+            f"\t\t{cpp_string_literal(property_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
-            f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
-            f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+            f"\t\t{offset_expr},\n"
+            f"\t\t{size_expr},\n"
             f"\t\t{prop.min_value},\n"
             f"\t\t{prop.max_value},\n"
             f"\t\t{prop.speed_value},\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t));\n"
+            "\t)"
         )
 
     if property_class in {"FBoolProperty", "FStringProperty", "FNameProperty"}:
         return (
-            f"\tStruct->AddProperty(new {property_class}(\n"
-            f"\t\t{cpp_string_literal(prop.member_name)},\n"
+            f"new {property_class}(\n"
+            f"\t\t{cpp_string_literal(property_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
-            f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
-            f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+            f"\t\t{offset_expr},\n"
+            f"\t\t{size_expr},\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t));\n"
+            "\t)"
         )
 
     if property_class == "FArrayProperty":
         element_cpp_type = get_array_element_cpp_type(prop.cpp_type)
         element_property_type = get_array_element_property_type(prop)
         if not element_cpp_type or not element_property_type:
-            element_cpp_type = "FVector"
-            element_property_type = "Vec3"
-        inner_property_symbol = f"{property_symbol}_Inner"
+            raise RuntimeError(f"unsupported generated array property {prop.owner}.{prop.member_name}: {prop.cpp_type}")
         inner_property_source = build_array_inner_property(
             prop,
-            inner_property_symbol,
+            f"G{make_cpp_identifier(prop.owner)}_{make_cpp_identifier(prop.member_name)}_{index}_Property_Inner",
             element_cpp_type,
             element_property_type,
             metadata_entries,
         )
         return (
-            f"\tStruct->AddProperty(new FArrayProperty(\n"
-            f"\t\t{cpp_string_literal(prop.member_name)},\n"
+            f"new FArrayProperty(\n"
+            f"\t\t{cpp_string_literal(property_name)},\n"
             f"\t\tEPropertyType::{prop.property_type},\n"
             f"\t\tEPropertyType::{element_property_type},\n"
             f"\t\tFArrayProperty::GetArrayOps<{element_cpp_type}>(),\n"
             f"\t\t{inner_property_source},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
             f"\t\t{prop.flags},\n"
-            f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
-            f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+            f"\t\t{offset_expr},\n"
+            f"\t\t{size_expr},\n"
             f"\t\t{cpp_string_literal(prop.display_name)},\n"
             f"\t\t{{{metadata_entries}}},\n"
             f"\t\t{cpp_string_literal(prop.owner)}\n"
-            "\t));\n"
+            "\t)"
         )
 
     return (
-        f"\tStruct->AddProperty(new FGenericProperty(\n"
-        f"\t\t{cpp_string_literal(prop.member_name)},\n"
+        f"new FGenericProperty(\n"
+        f"\t\t{cpp_string_literal(property_name)},\n"
         f"\t\tEPropertyType::{prop.property_type},\n"
         f"\t\t{cpp_string_literal(prop.category)},\n"
         f"\t\t{prop.flags},\n"
-        f"\t\toffsetof({prop.owner}, {prop.member_name}),\n"
-        f"\t\tsizeof(static_cast<{prop.owner}*>(nullptr)->{prop.member_name}),\n"
+        f"\t\t{offset_expr},\n"
+        f"\t\t{size_expr},\n"
         f"\t\t{prop.min_value},\n"
         f"\t\t{prop.max_value},\n"
         f"\t\t{prop.speed_value},\n"
         f"\t\t{cpp_string_literal(prop.display_name)},\n"
         f"\t\t{{{metadata_entries}}},\n"
         f"\t\t{cpp_string_literal(prop.owner)}\n"
+        "\t)"
+    )
+
+
+def render_property(prop: ReflectedProperty, index: int) -> str:
+    return f"\tStruct->AddProperty({render_property_allocation(prop, index)});\n"
+
+
+def render_function(function: ReflectedFunction, index: int) -> str:
+    metadata_entries = ", ".join(
+        f"{{{cpp_string_literal(key)}, {cpp_string_literal(value)}}}"
+        for key, value in function.metadata
+    )
+    param_struct = f"{function.identifier}_Params"
+    fields: list[str] = []
+    for param in function.params:
+        if param.default_value:
+            fields.append(f"\t\t{param.storage_cpp_type} {param.name} = {param.default_value};")
+        else:
+            fields.append(f"\t\t{param.storage_cpp_type} {param.name}{{}};")
+    if function.return_storage_cpp_type:
+        fields.append(f"\t\t{function.return_storage_cpp_type} ReturnValue{{}};")
+    if not fields:
+        fields.append("\t\tuint8 __Dummy = 0;")
+
+    param_property_entries = []
+    for param_index, param in enumerate(function.params):
+        param_property_entries.append(
+            render_property_allocation(
+                param.property,
+                param_index,
+                param_struct,
+                param.name,
+                param.name,
+            )
+        )
+    param_properties_expr = "TArray<FProperty*>{"
+    if param_property_entries:
+        param_properties_expr += "\n\t\t\t" + ",\n\t\t\t".join(param_property_entries) + "\n\t\t"
+    param_properties_expr += "}"
+
+    return_property_expr = "nullptr"
+    if function.return_property:
+        return_property_expr = render_property_allocation(
+            function.return_property,
+            len(function.params),
+            param_struct,
+            "ReturnValue",
+            "ReturnValue",
+        )
+
+    call_args = ", ".join(f"Params->{param.name}" for param in function.params)
+    if function.is_static:
+        call_target = f"{function.owner}::{function.name}({call_args})"
+        instance_setup = ""
+    else:
+        instance_type = f"const {function.owner}" if function.is_const else function.owner
+        instance_setup = (
+            f"\t\t\t{instance_type}* TypedInstance = static_cast<{instance_type}*>(Instance);\n"
+            "\t\t\tif (!TypedInstance)\n"
+            "\t\t\t{\n"
+            "\t\t\t\treturn false;\n"
+            "\t\t\t}\n"
+        )
+        call_target = f"TypedInstance->{function.name}({call_args})"
+
+    is_implementable_event = "FUNC_ImplementableEvent" in function.flags and "FUNC_NativeEvent" not in function.flags
+    if is_implementable_event:
+        if function.return_storage_cpp_type:
+            invoke_body = (
+                f"{instance_setup}"
+                "\t\t\tif (Frame.ReturnValue)\n"
+                "\t\t\t{\n"
+                f"\t\t\t\t*static_cast<{function.return_storage_cpp_type}*>(Frame.ReturnValue) = Params->ReturnValue;\n"
+                "\t\t\t}\n"
+            )
+        else:
+            invoke_body = f"{instance_setup}"
+    elif function.return_storage_cpp_type:
+        invoke_body = (
+            f"{instance_setup}"
+            f"\t\t\t{function.return_storage_cpp_type} Result = {call_target};\n"
+            "\t\t\tif (Frame.ReturnValue)\n"
+            "\t\t\t{\n"
+            f"\t\t\t\t*static_cast<{function.return_storage_cpp_type}*>(Frame.ReturnValue) = Result;\n"
+            "\t\t\t}\n"
+            "\t\t\telse\n"
+            "\t\t\t{\n"
+            "\t\t\t\tParams->ReturnValue = Result;\n"
+            "\t\t\t}\n"
+        )
+    else:
+        invoke_body = f"{instance_setup}\t\t\t{call_target};\n"
+
+    return (
+        f"\tstruct {param_struct}\n"
+        "\t{\n"
+        + "\n".join(fields) + "\n"
+        "\t};\n"
+        f"\tStruct->AddFunction(new FFunction(\n"
+        f"\t\t{cpp_string_literal(function.name)},\n"
+        f"\t\t{cpp_string_literal(function.signature)},\n"
+        f"\t\t{cpp_string_literal(function.category)},\n"
+        f"\t\t{cpp_string_literal(function.display_name)},\n"
+        f"\t\t{function.flags},\n"
+        f"\t\t{{{metadata_entries}}},\n"
+        f"\t\t{cpp_string_literal(function.owner)},\n"
+        f"\t\t{param_properties_expr},\n"
+        f"\t\t{return_property_expr},\n"
+        f"\t\tsizeof({param_struct}),\n"
+        f"\t\t[](void* Instance, FFunctionFrame& Frame)->bool\n"
+        "\t\t{\n"
+        f"\t\t\t{param_struct} LocalParams{{}};\n"
+        f"\t\t\t{param_struct}* Params = Frame.Parameters ? static_cast<{param_struct}*>(Frame.Parameters) : &LocalParams;\n"
+        f"{invoke_body}"
+        "\t\t\treturn true;\n"
+        "\t\t},\n"
+        f"\t\t[]()->void* {{ return new {param_struct}(); }},\n"
+        f"\t\t[](void* Storage) {{ delete static_cast<{param_struct}*>(Storage); }}\n"
         "\t));\n"
     )
 
@@ -1270,7 +2011,8 @@ def get_array_inner_property_class(prop: ReflectedProperty) -> str | None:
 
 def get_property_includes(reflected_type: ReflectedType) -> list[str]:
     includes: set[str] = set()
-    for prop in reflected_type.properties:
+
+    def add_property_include(prop: ReflectedProperty) -> None:
         property_class = get_property_class(prop)
         include_path = PROPERTY_CLASS_INCLUDES.get(property_class)
         if include_path:
@@ -1282,8 +2024,32 @@ def get_property_includes(reflected_type: ReflectedType) -> list[str]:
             if inner_include_path:
                 includes.add(inner_include_path)
 
+    for prop in reflected_type.properties:
+        add_property_include(prop)
+
+    for function in reflected_type.functions:
+        for param in function.params:
+            add_property_include(param.property)
+        if function.return_property:
+            add_property_include(function.return_property)
+
     return sorted(includes)
 
+
+
+def get_class_flags_expr(reflected_type: ReflectedType) -> str:
+    flags: list[str] = []
+    class_name = reflected_type.name
+    super_name = reflected_type.super_name or ""
+
+    if class_name == "AActor" or super_name.startswith("A"):
+        flags.append("CF_Actor")
+    if class_name.endswith("Component") or super_name.endswith("Component"):
+        flags.append("CF_Component")
+    if "Camera" in class_name:
+        flags.append("CF_Camera")
+
+    return " | ".join(flags) if flags else "CF_None"
 
 def render_type_registration(reflected_type: ReflectedType) -> str:
     if reflected_type.kind == "STRUCT":
@@ -1297,12 +2063,13 @@ def render_type_registration(reflected_type: ReflectedType) -> str:
             f"FStructRegistrar {struct_name}::s_StructRegistrar(&{struct_name}::StaticStructInstance);\n"
             "\n"
             "namespace {\n"
-            f"\tstruct {struct_name}_PropertyRegistrar {{\n"
-            f"\t\t{struct_name}_PropertyRegistrar() {{\n"
+            f"\tstruct {struct_name}_ReflectionRegistrar {{\n"
+            f"\t\t{struct_name}_ReflectionRegistrar() {{\n"
             f"\t\t\t{struct_name}::RegisterProperties({struct_name}::StaticStruct());\n"
+            f"\t\t\t{struct_name}::RegisterFunctions({struct_name}::StaticStruct());\n"
             "\t\t}\n"
             "\t};\n"
-            f"\t{struct_name}_PropertyRegistrar G{struct_name}_PropertyRegistrar;\n"
+            f"\t{struct_name}_ReflectionRegistrar G{struct_name}_ReflectionRegistrar;\n"
             "}\n"
         )
 
@@ -1311,12 +2078,13 @@ def render_type_registration(reflected_type: ReflectedType) -> str:
 
     class_name = reflected_type.name
     super_name = reflected_type.super_name
+    class_flags_expr = get_class_flags_expr(reflected_type)
     return (
         f"UClass {class_name}::StaticClassInstance(\n"
         f"\t\"{class_name}\",\n"
         f"\t&{super_name}::StaticClassInstance,\n"
         f"\tsizeof({class_name}),\n"
-        "\tCF_None\n"
+        f"\t{class_flags_expr}\n"
         ");\n"
         f"FClassRegistrar {class_name}::s_Registrar(&{class_name}::StaticClassInstance);\n"
         "\n"
@@ -1333,15 +2101,15 @@ def render_type_registration(reflected_type: ReflectedType) -> str:
         "}\n"
         "\n"
         "namespace {\n"
-        f"\tstruct {class_name}_PropertyRegistrar {{\n"
-        f"\t\t{class_name}_PropertyRegistrar() {{\n"
+        f"\tstruct {class_name}_ReflectionRegistrar {{\n"
+        f"\t\t{class_name}_ReflectionRegistrar() {{\n"
         f"\t\t\t{class_name}::RegisterProperties({class_name}::StaticClass());\n"
+        f"\t\t\t{class_name}::RegisterFunctions({class_name}::StaticClass());\n"
         "\t\t}\n"
         "\t};\n"
-        f"\t{class_name}_PropertyRegistrar G{class_name}_PropertyRegistrar;\n"
+        f"\t{class_name}_ReflectionRegistrar G{class_name}_ReflectionRegistrar;\n"
         "}\n"
     )
-
 
 def collect_generated_types(reflected: list[ReflectedHeader]) -> list[tuple[ReflectedHeader, ReflectedType]]:
     generated_types: list[tuple[ReflectedHeader, ReflectedType]] = []
@@ -1382,12 +2150,15 @@ def render_enum_registry_cpp(enums: dict[str, ReflectedEnum], root: Path, enum_c
     for enum in sorted(enums.values(), key=lambda item: item.name):
         symbol = get_enum_symbol(enum.name)
         if enum.entries:
-            entries = ", ".join(cpp_string_literal(entry) for entry in enum.entries)
-            lines.append(f"static const char* {symbol}_Names[] = {{{entries}}};")
+            entries = ", ".join(
+                f"{{{cpp_string_literal(entry)}, static_cast<int64>({enum.name}::{entry})}}"
+                for entry in enum.entries
+            )
+            lines.append(f"static const FEnumEntry {symbol}_Entries[] = {{{entries}}};")
             lines.append(
                 f"static const FEnum {symbol}_Enum = "
-                f"{{{cpp_string_literal(enum.name)}, {symbol}_Names, "
-                f"static_cast<uint32>(sizeof({symbol}_Names) / sizeof({symbol}_Names[0])), "
+                f"{{{cpp_string_literal(enum.name)}, {symbol}_Entries, "
+                f"static_cast<uint32>(sizeof({symbol}_Entries) / sizeof({symbol}_Entries[0])), "
                 f"sizeof({enum.name})}};"
             )
         else:
@@ -1401,7 +2172,6 @@ def render_enum_registry_cpp(enums: dict[str, ReflectedEnum], root: Path, enum_c
     lines.append("}")
     lines.append("")
     return "\n".join(lines)
-
 
 def render_generated_type_cpp(item: ReflectedHeader, reflected_type: ReflectedType, root: Path) -> str:
     generated_cpp = get_generated_type_cpp_path(item, reflected_type)
@@ -1440,6 +2210,19 @@ def render_generated_type_cpp(item: ReflectedHeader, reflected_type: ReflectedTy
 
     lines.append("}")
     lines.append("")
+
+    lines.extend(
+        [
+            f"void {reflected_type.name}::RegisterFunctions(UStruct* Struct)",
+            "{",
+        ]
+    )
+
+    for index, function in enumerate(reflected_type.functions):
+        lines.append(render_function(function, index).rstrip())
+
+    lines.append("}")
+    lines.append("")
     return "\n".join(lines)
 
 
@@ -1470,13 +2253,14 @@ def render_generated_cpp(reflected: list[ReflectedHeader], enums: dict[str, Refl
     return "\n".join(lines)
 
 
-def write_if_changed(path: Path, content: str) -> bool:
+def write_if_changed(path: Path, content: str, default_newline: str = "\r\n") -> bool:
+    normalized_content = normalize_newlines_for_write(content)
     if path.exists():
         old = path.read_text(encoding="utf-8")
-        if old == content:
+        if normalize_newlines_for_write(old) == normalized_content:
             return False
 
-    path.write_text(content, encoding="utf-8", newline="\n")
+    write_text_preserving_newline(path, normalized_content, default_newline=default_newline)
     return True
 
 
@@ -1485,8 +2269,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--root",
         type=Path,
-        default=Path(__file__).resolve().parents[1],
-        help="Project root. Defaults to the parent directory of Tools/.",
+        default=None,
+        help="Project root. Defaults to the parent directory of Source/.",
     )
     parser.add_argument(
         "--source-dir",
@@ -1521,7 +2305,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    root = args.root.resolve()
+    root = args.root.resolve() if args.root else Path(__file__).resolve().parents[1]
     source_dir = (args.source_dir or root / "Source").resolve()
     generated_root = (args.generated_root or root / "Intermediate" / "Generated").resolve()
     generated_cpp = (args.generated_cpp or generated_root / "Reflection.generated.cpp").resolve()

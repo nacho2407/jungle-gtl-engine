@@ -11,6 +11,11 @@
 #include "Engine/Platform/CrashDump.h"
 #include "GameFramework/World.h"
 #include "Render/Scene/FScene.h"
+#include "Object/Reflection/UClass.h"
+#include "Core/Property/ClassProperty.h"
+#include "Core/Property/ObjectProperty.h"
+#include "Core/Property/SoftObjectProperty.h"
+#include "Core/Types/PropertyTypes.h"
 
 #include <algorithm>
 #include <cctype>
@@ -27,12 +32,22 @@ namespace
 		return Value;
 	}
 
-	TArray<FString> Tokenize(const FString& Text)
+	TArray<FString> TokenizePreserveCase(const FString& Text)
 	{
 		TArray<FString> Tokens;
 		std::istringstream Iss(Text);
 		FString Token;
 		while (Iss >> Token)
+		{
+			Tokens.push_back(Token);
+		}
+		return Tokens;
+	}
+
+	TArray<FString> Tokenize(const FString& Text)
+	{
+		TArray<FString> Tokens;
+		for (FString Token : TokenizePreserveCase(Text))
 		{
 			Tokens.push_back(ToLower(Token));
 		}
@@ -155,6 +170,331 @@ namespace
 		}
 		return Result;
 	}
+
+	bool IsNumericText(const FString& Text)
+	{
+		if (Text.empty())
+		{
+			return false;
+		}
+		char* End = nullptr;
+		std::strtod(Text.c_str(), &End);
+		return End && *End == '\0';
+	}
+
+	UObject* FindObjectForConsoleToken(const FString& Token)
+	{
+		if (Token.empty())
+		{
+			return nullptr;
+		}
+
+		if (IsNumericText(Token))
+		{
+			const uint32 UUID = static_cast<uint32>(std::strtoul(Token.c_str(), nullptr, 10));
+			if (UObject* Object = UObjectManager::Get().FindByUUID(UUID))
+			{
+				return Object;
+			}
+		}
+
+		for (UObject* Object : GUObjectArray)
+		{
+			if (Object && Object->GetName() == Token)
+			{
+				return Object;
+			}
+		}
+		return nullptr;
+	}
+
+	const FFunction* FindFunctionByNameOrSignature(UStruct* Struct, const FString& FunctionNameOrSignature)
+	{
+		if (!Struct || FunctionNameOrSignature.empty())
+		{
+			return nullptr;
+		}
+		return FunctionNameOrSignature.find('(') != FString::npos
+		? Struct->FindFunctionBySignature(FunctionNameOrSignature.c_str(), true)
+		: Struct->FindFunctionByName(FunctionNameOrSignature.c_str(), true);
+	}
+
+	bool ConsoleStringToValue(const FProperty& Property, void* ValuePtr, const FString& Text, FString& OutError)
+	{
+		if (!ValuePtr)
+		{
+			OutError = "null value storage";
+			return false;
+		}
+
+		switch (Property.GetType())
+		{
+		case EPropertyType::Bool:
+		{
+			const FString Lower = ToLower(Text);
+			if (Lower == "true" || Lower == "1" || Lower == "yes" || Lower == "on")
+			{
+				*static_cast<bool*>(ValuePtr) = true;
+				return true;
+			}
+			if (Lower == "false" || Lower == "0" || Lower == "no" || Lower == "off")
+			{
+				*static_cast<bool*>(ValuePtr) = false;
+				return true;
+			}
+			OutError = "expected bool";
+			return false;
+		}
+		case EPropertyType::ByteBool:
+		{
+			bool             bValue = false;
+			FGenericProperty Temp;
+			Temp.Type = EPropertyType::Bool;
+			if (!ConsoleStringToValue(Temp, &bValue, Text, OutError))
+			{
+				return false;
+			}
+			*static_cast<uint8*>(ValuePtr) = bValue ? 1 : 0;
+			return true;
+		}
+		case EPropertyType::Int:
+			if (!IsNumericText(Text))
+			{
+				OutError = "expected int";
+				return false;
+			}
+			*static_cast<int32*>(ValuePtr) = static_cast<int32>(std::atoi(Text.c_str()));
+			return true;
+		case EPropertyType::Float:
+			if (!IsNumericText(Text))
+			{
+				OutError = "expected float";
+				return false;
+			}
+			*static_cast<float*>(ValuePtr) = static_cast<float>(std::atof(Text.c_str()));
+			return true;
+		case EPropertyType::String:
+			*static_cast<FString*>(ValuePtr) = Text;
+			return true;
+		case EPropertyType::Name:
+			*static_cast<FName*>(ValuePtr) = FName(Text);
+			return true;
+		case EPropertyType::Enum:
+		{
+			int64        EnumValue = 0;
+			const FEnum* EnumType  = Property.GetEnumType();
+			if (IsNumericText(Text))
+			{
+				EnumValue = static_cast<int64>(std::strtoll(Text.c_str(), nullptr, 10));
+			}
+			else if (EnumType)
+			{
+				bool bFound = false;
+				for (uint32 Index = 0; Index < EnumType->GetCount(); ++Index)
+				{
+					if (Text == EnumType->GetNameAt(Index))
+					{
+						EnumValue = EnumType->GetValueAt(Index);
+						bFound    = true;
+						break;
+					}
+				}
+				if (!bFound)
+				{
+					OutError = "unknown enum entry";
+					return false;
+				}
+			}
+			else
+			{
+				OutError = "enum metadata missing";
+				return false;
+			}
+			std::memcpy(ValuePtr, &EnumValue, std::min<size_t>(Property.Size, sizeof(EnumValue)));
+			return true;
+		}
+		case EPropertyType::ObjectRef:
+		{
+			const FObjectProperty* ObjectProperty = Property.AsObjectProperty();
+			if (!ObjectProperty)
+			{
+				OutError = "object property ops missing";
+				return false;
+			}
+			UObject* Object = (ToLower(Text) == "none" || ToLower(Text) == "null") ? nullptr
+			: FindObjectForConsoleToken(Text);
+			if (!Object && ToLower(Text) != "none" && ToLower(Text) != "null")
+			{
+				OutError = "object not found";
+				return false;
+			}
+			if (UClass* AllowedClass = ObjectProperty->GetAllowedClassType())
+			{
+				if (Object && !Object->GetClass()->IsA(AllowedClass))
+				{
+					OutError = "object class mismatch";
+					return false;
+				}
+			}
+			ObjectProperty->SetObjectValueFromValuePtr(ValuePtr, Object);
+			return true;
+		}
+		case EPropertyType::ClassRef:
+		{
+			const FClassProperty* ClassProperty = Property.AsClassProperty();
+			if (!ClassProperty)
+			{
+				OutError = "class property ops missing";
+				return false;
+			}
+			UClass* Class = (ToLower(Text) == "none" || ToLower(Text) == "null") ? nullptr
+			: UClass::FindByName(Text.c_str());
+			if (!Class && ToLower(Text) != "none" && ToLower(Text) != "null")
+			{
+				OutError = "class not found";
+				return false;
+			}
+			if (UClass* AllowedClass = ClassProperty->GetAllowedClassType())
+			{
+				if (Class && !Class->IsA(AllowedClass))
+				{
+					OutError = "class mismatch";
+					return false;
+				}
+			}
+			ClassProperty->SetClassValueFromValuePtr(ValuePtr, Class);
+			return true;
+		}
+		case EPropertyType::SoftObjectRef:
+		{
+			const FSoftObjectProperty* SoftProperty = Property.AsSoftObjectProperty();
+			if (!SoftProperty)
+			{
+				OutError = "soft object property ops missing";
+				return false;
+			}
+			SoftProperty->SetPathFromValuePtr(ValuePtr, Text);
+			return true;
+		}
+		default:
+			OutError = "unsupported console argument type";
+			return false;
+		}
+	}
+
+	bool CanSkipConsoleArgument(const FProperty& Parameter)
+	{
+		if ((Parameter.Flags & PF_OutParm) != 0 && (Parameter.Flags & PF_ConstParm) == 0)
+		{
+			return true;
+		}
+		return Parameter.Metadata.find("defaultvalue") != Parameter.Metadata.end();
+	}
+
+	bool PrepareConsoleFunctionCall(
+		const FFunction&       Function,
+		const TArray<FString>& Args,
+		size_t                 BeginIndex,
+		void*                  Storage,
+		FString&               OutError
+		)
+	{
+		size_t ArgIndex = BeginIndex;
+		for (const FProperty* Parameter : Function.GetParameters())
+		{
+			if (!Parameter)
+			{
+				continue;
+			}
+
+			const bool bOutOnly = (Parameter->Flags & PF_OutParm) != 0 && (Parameter->Flags & PF_ConstParm) == 0;
+			if (bOutOnly && ArgIndex >= Args.size())
+			{
+				continue;
+			}
+
+			if (ArgIndex >= Args.size())
+			{
+				if (CanSkipConsoleArgument(*Parameter))
+				{
+					continue;
+				}
+				OutError = FString("missing argument: ") + (Parameter->Name ? Parameter->Name : "");
+				return false;
+			}
+
+			FString ConvertError;
+			if (!ConsoleStringToValue(*Parameter, Parameter->GetValuePtrFor(Storage), Args[ArgIndex], ConvertError))
+			{
+				OutError = FString("parameter '") + (Parameter->Name ? Parameter->Name : "") + "': " + ConvertError;
+				return false;
+			}
+			++ArgIndex;
+		}
+
+		if (ArgIndex < Args.size())
+		{
+			OutError = "too many arguments";
+			return false;
+		}
+		return true;
+	}
+
+	FString ConsoleValueToString(const FProperty& Property, void* ValuePtr)
+	{
+		if (!ValuePtr)
+		{
+			return "null";
+		}
+		switch (Property.GetType())
+		{
+		case EPropertyType::Bool:
+			return *static_cast<bool*>(ValuePtr) ? "true" : "false";
+		case EPropertyType::ByteBool:
+			return *static_cast<uint8*>(ValuePtr) != 0 ? "true" : "false";
+		case EPropertyType::Int:
+			return std::to_string(*static_cast<int32*>(ValuePtr));
+		case EPropertyType::Float:
+			return std::to_string(*static_cast<float*>(ValuePtr));
+		case EPropertyType::String:
+			return *static_cast<FString*>(ValuePtr);
+		case EPropertyType::Name:
+			return static_cast<FName*>(ValuePtr)->ToString();
+		case EPropertyType::Enum:
+		{
+			int64 EnumValue = 0;
+			std::memcpy(&EnumValue, ValuePtr, std::min<size_t>(Property.Size, sizeof(EnumValue)));
+			if (const FEnum* EnumType = Property.GetEnumType())
+			{
+				const char* Name = EnumType->GetNameByValue(EnumValue);
+				if (Name && std::strcmp(Name, "Unknown") != 0)
+				{
+					return Name;
+				}
+			}
+			return std::to_string(EnumValue);
+		}
+		case EPropertyType::ObjectRef:
+		{
+			const FObjectProperty* ObjectProperty = Property.AsObjectProperty();
+			UObject* Object = ObjectProperty ? ObjectProperty->GetObjectValueFromValuePtr(ValuePtr) : nullptr;
+			return Object ? Object->GetName() : "None";
+		}
+		case EPropertyType::ClassRef:
+		{
+			const FClassProperty* ClassProperty = Property.AsClassProperty();
+			UClass*               Class = ClassProperty ? ClassProperty->GetClassValueFromValuePtr(ValuePtr) : nullptr;
+			return Class ? Class->GetName() : "None";
+		}
+		case EPropertyType::SoftObjectRef:
+		{
+			const FSoftObjectProperty* SoftProperty = Property.AsSoftObjectProperty();
+			return SoftProperty ? SoftProperty->GetPathFromValuePtr(ValuePtr) : "";
+		}
+		default:
+			return "<complex>";
+		}
+	}
 }
 
 // ============================================================
@@ -201,6 +541,7 @@ void FEditorConsoleWidget::RegisterDefaultCommands()
 	RegisterEditorCommands();
 	RegisterDiagnosticsCommands();
 	RegisterRenderCommands();
+	RegisterReflectionCommands();
 }
 
 void FEditorConsoleWidget::RegisterSystemCommands()
@@ -245,6 +586,17 @@ void FEditorConsoleWidget::RegisterDiagnosticsCommands()
 		"Diagnostics", "stat none", "Hides all overlay stats.");
 	RegisterCommand("cause crash", [this](const TArray<FString>& Args) { HandleCauseCrash(Args); },
 		"Diagnostics", "cause crash", "Immediately raises an intentional crash for minidump testing.");
+}
+
+void FEditorConsoleWidget::RegisterReflectionCommands()
+{
+	RegisterCommand(
+		"exec",
+		[this](const TArray<FString>& Args) { HandleExecReflection(Args); },
+		"Reflection",
+		"exec list|selected <function|signature> [args...]|actor <name|uuid> <function|signature> [args...]|static <class> <function|signature> [args...]",
+		"Invokes reflected UFUNCTION(Exec) functions."
+	);
 }
 
 void FEditorConsoleWidget::RegisterRenderCommands()
@@ -591,13 +943,256 @@ bool FEditorConsoleWidget::PrintCompactHelp(const FString& CategoryFilter)
 	return true;
 }
 
+bool FEditorConsoleWidget::TryExecReflectedShortcut(const FString& CommandLine)
+{
+	TArray<FString> OriginalTokens = TokenizePreserveCase(CommandLine);
+	if (OriginalTokens.empty())
+	{
+		return false;
+	}
+
+	TArray<const FFunction*> Candidates;
+	UObject*                 TargetObject = nullptr;
+	if (EditorEngine)
+	{
+		const TArray<AActor*>& SelectedActors = EditorEngine->GetSelectionManager().GetSelectedActors();
+		if (!SelectedActors.empty())
+		{
+			TargetObject = SelectedActors[0];
+		}
+	}
+
+	if (TargetObject && TargetObject->GetClass())
+	{
+		if (const FFunction* Function = FindFunctionByNameOrSignature(TargetObject->GetClass(), OriginalTokens[0]))
+		{
+			if (Function->HasAnyFunctionFlags(FUNC_Exec) && !Function->IsStatic())
+			{
+				Candidates.push_back(Function);
+			}
+		}
+	}
+
+	for (UClass* Class : UClass::GetAllClasses())
+	{
+		if (!Class)
+		{
+			continue;
+		}
+		if (const FFunction* Function = FindFunctionByNameOrSignature(Class, OriginalTokens[0]))
+		{
+			if (Function->HasAnyFunctionFlags(FUNC_Exec) && Function->IsStatic())
+			{
+				Candidates.push_back(Function);
+			}
+		}
+	}
+
+	if (Candidates.size() != 1)
+	{
+		return false;
+	}
+
+	const FFunction* Function = Candidates[0];
+	UObject*         Instance = Function->IsStatic() ? nullptr : TargetObject;
+	void*            Storage  = Function->CreateParameterStorage();
+	if (!Storage)
+	{
+		AddLog("[ERROR] Exec failed: parameter storage allocation failed.\n");
+		return true;
+	}
+
+	FString Error;
+	if (!PrepareConsoleFunctionCall(*Function, OriginalTokens, 1, Storage, Error))
+	{
+		Function->DestroyParameterStorage(Storage);
+		AddLog("[ERROR] Exec failed: %s\n", Error.c_str());
+		return true;
+	}
+
+	const bool bOk = Function->Invoke(Instance, Storage, nullptr);
+	if (!bOk)
+	{
+		Function->DestroyParameterStorage(Storage);
+		AddLog("[ERROR] Exec failed: native invoke failed.\n");
+		return true;
+	}
+
+	if (const FProperty* ReturnProperty = Function->GetReturnProperty())
+	{
+		AddLog(
+			"ReturnValue = %s\n",
+			ConsoleValueToString(*ReturnProperty, ReturnProperty->GetValuePtrFor(Storage)).c_str()
+		);
+	}
+	for (const FProperty* Parameter : Function->GetParameters())
+	{
+		if (Parameter && (Parameter->Flags & PF_OutParm) != 0 && (Parameter->Flags & PF_ConstParm) == 0)
+		{
+			AddLog(
+				"%s = %s\n",
+				Parameter->Name ? Parameter->Name : "Out",
+				ConsoleValueToString(*Parameter, Parameter->GetValuePtrFor(Storage)).c_str()
+			);
+		}
+	}
+
+	Function->DestroyParameterStorage(Storage);
+	return true;
+}
+
+void FEditorConsoleWidget::HandleExecReflection(const TArray<FString>& Args)
+{
+	if (Args.empty() || ToLower(Args[0]) == "list")
+	{
+		AddLog("Reflected Exec functions:\n");
+		for (UClass* Class : UClass::GetAllClasses())
+		{
+			if (!Class)
+			{
+				continue;
+			}
+			TArray<const FFunction*> Functions;
+			Class->GetFunctionRefs(Functions, false);
+			for (const FFunction* Function : Functions)
+			{
+				if (Function && Function->HasAnyFunctionFlags(FUNC_Exec))
+				{
+					AddLog("  %s%s%s\n", Class->GetName(), Function->IsStatic() ? "::" : ".", Function->GetSignature());
+				}
+			}
+		}
+		AddLog("Usage: exec selected <function|signature> [args...]\n");
+		AddLog("       exec actor <name|uuid> <function|signature> [args...]\n");
+		AddLog("       exec static <class> <function|signature> [args...]\n");
+		return;
+	}
+
+	UObject*      Instance         = nullptr;
+	UClass*       StaticClass      = nullptr;
+	size_t        FunctionArgIndex = 1;
+	const FString Mode             = ToLower(Args[0]);
+
+	if (Mode == "selected")
+	{
+		if (!EditorEngine || EditorEngine->GetSelectionManager().GetSelectedActors().empty())
+		{
+			AddLog("[ERROR] No selected actor.\n");
+			return;
+		}
+		Instance         = EditorEngine->GetSelectionManager().GetSelectedActors()[0];
+		FunctionArgIndex = 1;
+	}
+	else if (Mode == "actor")
+	{
+		if (Args.size() < 3)
+		{
+			AddLog("[ERROR] Usage: exec actor <name|uuid> <function|signature> [args...]\n");
+			return;
+		}
+		Instance = FindObjectForConsoleToken(Args[1]);
+		if (!Instance)
+		{
+			AddLog("[ERROR] Object not found: %s\n", Args[1].c_str());
+			return;
+		}
+		FunctionArgIndex = 2;
+	}
+	else if (Mode == "static")
+	{
+		if (Args.size() < 3)
+		{
+			AddLog("[ERROR] Usage: exec static <class> <function|signature> [args...]\n");
+			return;
+		}
+		StaticClass = UClass::FindByName(Args[1].c_str());
+		if (!StaticClass)
+		{
+			AddLog("[ERROR] Class not found: %s\n", Args[1].c_str());
+			return;
+		}
+		FunctionArgIndex = 2;
+	}
+	else
+	{
+		AddLog("[ERROR] Unknown exec mode: %s\n", Args[0].c_str());
+		return;
+	}
+
+	if (FunctionArgIndex >= Args.size())
+	{
+		AddLog("[ERROR] Missing function name or signature.\n");
+		return;
+	}
+
+	UStruct*         TargetStruct  = Instance ? Instance->GetClass() : StaticClass;
+	const FString&   FunctionToken = Args[FunctionArgIndex];
+	const FFunction* Function      = FindFunctionByNameOrSignature(TargetStruct, FunctionToken);
+	if (!Function || !Function->HasAnyFunctionFlags(FUNC_Exec))
+	{
+		AddLog("[ERROR] Reflected Exec function not found: %s\n", FunctionToken.c_str());
+		return;
+	}
+	if (!Instance && !Function->IsStatic())
+	{
+		AddLog("[ERROR] Non-static Exec function requires an object instance.\n");
+		return;
+	}
+
+	void* Storage = Function->CreateParameterStorage();
+	if (!Storage)
+	{
+		AddLog("[ERROR] Exec failed: parameter storage allocation failed.\n");
+		return;
+	}
+
+	FString Error;
+	if (!PrepareConsoleFunctionCall(*Function, Args, FunctionArgIndex + 1, Storage, Error))
+	{
+		Function->DestroyParameterStorage(Storage);
+		AddLog("[ERROR] Exec failed: %s\n", Error.c_str());
+		return;
+	}
+
+	const bool bOk = Function->Invoke(Instance, Storage, nullptr);
+	if (!bOk)
+	{
+		Function->DestroyParameterStorage(Storage);
+		AddLog("[ERROR] Exec failed: native invoke failed.\n");
+		return;
+	}
+
+	AddLog("Exec invoked: %s\n", Function->GetSignature());
+	if (const FProperty* ReturnProperty = Function->GetReturnProperty())
+	{
+		AddLog(
+			"ReturnValue = %s\n",
+			ConsoleValueToString(*ReturnProperty, ReturnProperty->GetValuePtrFor(Storage)).c_str()
+		);
+	}
+	for (const FProperty* Parameter : Function->GetParameters())
+	{
+		if (Parameter && (Parameter->Flags & PF_OutParm) != 0 && (Parameter->Flags & PF_ConstParm) == 0)
+		{
+			AddLog(
+				"%s = %s\n",
+				Parameter->Name ? Parameter->Name : "Out",
+				ConsoleValueToString(*Parameter, Parameter->GetValuePtrFor(Storage)).c_str()
+			);
+		}
+	}
+
+	Function->DestroyParameterStorage(Storage);
+}
+
 void FEditorConsoleWidget::ExecCommand(const char* CommandLine)
 {
 	AddLog("# %s\n", CommandLine);
 	History.push_back(_strdup(CommandLine));
 	HistoryPos = -1;
 
-	TArray<FString> Tokens = Tokenize(CommandLine);
+	TArray<FString> Tokens         = Tokenize(CommandLine);
+	TArray<FString> OriginalTokens = TokenizePreserveCase(CommandLine);
 	if (Tokens.empty()) return;
 
 	FString CommandName;
@@ -605,14 +1200,16 @@ void FEditorConsoleWidget::ExecCommand(const char* CommandLine)
 	int32 ConsumedTokens = 0;
 	if (TryFindCommand(Tokens, CommandName, Command, ConsumedTokens))
 	{
-		TArray<FString> Args;
-		for (size_t i = static_cast<size_t>(ConsumedTokens); i < Tokens.size(); ++i)
+		const bool             bNeedsOriginalCaseArgs = CommandName == "exec";
+		const TArray<FString>& SourceTokens           = bNeedsOriginalCaseArgs ? OriginalTokens : Tokens;
+		TArray<FString>        Args;
+		for (size_t i = static_cast<size_t>(ConsumedTokens); i < SourceTokens.size(); ++i)
 		{
-			Args.push_back(Tokens[i]);
+			Args.push_back(SourceTokens[i]);
 		}
 		Command->Fn(Args);
 	}
-	else
+	else if (!TryExecReflectedShortcut(CommandLine))
 	{
 		AddLog("[ERROR] Unknown command: '%s'\n", JoinTokens(Tokens, 0).c_str());
 	}

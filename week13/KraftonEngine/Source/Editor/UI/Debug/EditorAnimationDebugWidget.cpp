@@ -24,6 +24,7 @@
 #include "GameFramework/AActor.h"
 #include "Object/Reflection/UClass.h"
 
+#include <algorithm>
 #include <cstring>
 #include <string>
 
@@ -286,10 +287,9 @@ void FEditorAnimationDebugWidget::RenderPropertyReadOnly(const FPropertyValue& P
 	case EPropertyType::Enum:
 		if (const FEnum* EnumType = P.GetEnumType())
 		{
-			int32 Val = 0;
-			std::memcpy(&Val, ValuePtr, EnumType->GetSize());
-			const char* Name = (Val >= 0 && static_cast<uint32>(Val) < EnumType->GetCount())
-				? EnumType->GetNames()[Val] : "(out of range)";
+			int64 Val = 0;
+			std::memcpy(&Val, ValuePtr, std::min<size_t>(EnumType->GetSize(), sizeof(Val)));
+			const char* Name = EnumType->GetNameByValue(Val);
 			ImGui::Text("  %s: %s", P.GetDisplayName(), Name);
 		}
 		break;

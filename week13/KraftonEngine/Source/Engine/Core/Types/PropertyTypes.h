@@ -11,6 +11,7 @@ class UStruct;
 class UClass;
 struct FPropertyValue;
 struct FProperty;
+struct FFunction;
 struct FNumericProperty;
 struct FBoolProperty;
 struct FStringProperty;
@@ -50,17 +51,51 @@ enum class EPropertyType : uint8_t
 	Array,
 };
 
+struct FEnumEntry
+{
+	const char* Name  = nullptr;
+	int64       Value = 0;
+};
+
 struct FEnum
 {
-	const char* Name = nullptr;
-	const char** Names = nullptr;
-	uint32 Count = 0;
-	uint32 Size = sizeof(int32);
+	const char*       Name    = nullptr;
+	const FEnumEntry* Entries = nullptr;
+	uint32            Count   = 0;
+	uint32            Size    = sizeof(int32);
 
-	const char* GetName() const { return Name ? Name : ""; }
-	const char** GetNames() const { return Names; }
-	uint32 GetCount() const { return Count; }
-	uint32 GetSize() const { return Size; }
+	const char*       GetName() const { return Name ? Name : ""; }
+	const FEnumEntry* GetEntries() const { return Entries; }
+	const char**      GetNames() const = delete;
+	uint32            GetCount() const { return Count; }
+	uint32            GetSize() const { return Size; }
+
+	const char* GetNameAt(uint32 Index) const
+	{
+		return Entries && Index < Count && Entries[Index].Name ? Entries[Index].Name : "Unknown";
+	}
+
+	int64 GetValueAt(uint32 Index) const
+	{
+		return Entries && Index < Count ? Entries[Index].Value : 0;
+	}
+
+	const char* GetNameByValue(int64 Value) const
+	{
+		if (!Entries)
+		{
+			return "Unknown";
+		}
+
+		for (uint32 Index = 0; Index < Count; ++Index)
+		{
+			if (Entries[Index].Value == Value)
+			{
+				return Entries[Index].Name ? Entries[Index].Name : "Unknown";
+			}
+		}
+		return "Unknown";
+	}
 
 	static TArray<const FEnum*>& GetAllEnums()
 	{
@@ -114,12 +149,34 @@ struct FPropertyValue
 
 enum EPropertyFlags : uint32
 {
-	PF_None = 0,
-	PF_Edit = 1 << 0,
-	PF_Save = 1 << 1,
-	PF_ReadOnly = 1 << 2,
-	PF_Transient = 1 << 3, //저장, 로드에서 제외
+	PF_None               = 0,
+	PF_Edit               = 1 << 0,
+	PF_Save               = 1 << 1,
+	PF_ReadOnly           = 1 << 2,
+	PF_Transient          = 1 << 3, //저장, 로드에서 제외
 	PF_InstancedReference = 1 << 4,
+	PF_Parm               = 1 << 5,
+	PF_OutParm            = 1 << 6,
+	PF_ReturnParm         = 1 << 7,
+	PF_ConstParm          = 1 << 8,
+	PF_ReferenceParm      = 1 << 9,
+};
+
+enum EFunctionFlags : uint32
+{
+	FUNC_None               = 0,
+	FUNC_Static             = 1 << 0,
+	FUNC_Const              = 1 << 1,
+	FUNC_Public             = 1 << 2,
+	FUNC_Protected          = 1 << 3,
+	FUNC_Private            = 1 << 4,
+	FUNC_Callable           = 1 << 5,
+	FUNC_Pure               = 1 << 6,
+	FUNC_Exec               = 1 << 7,
+	FUNC_CallInEditor       = 1 << 8,
+	FUNC_Event              = 1 << 9,
+	FUNC_ImplementableEvent = 1 << 10,
+	FUNC_NativeEvent        = 1 << 11,
 };
 
 enum class EPropertyChangeType : uint8
@@ -217,6 +274,142 @@ struct FProperty
 	virtual void	   SerializeValue(void* ValuePtr, FArchive& Ar, const FPropertySerializeContext& Context) const;
 
 	virtual void	   Serialize(UObject* Object, FArchive& Ar) const;
+};
+
+struct FFunctionFrame
+{
+	void* Parameters  = nullptr;
+	void* ReturnValue = nullptr;
+};
+
+struct FFunction
+{
+	using FNativeInvoker        = bool (*)(void*, FFunctionFrame&);
+	using FParameterConstructor = void* (*)();
+	using FParameterDestructor  = void (*)(void*);
+
+	const char*            Name        = nullptr;
+	const char*            Signature   = nullptr;
+	const char*            Category    = nullptr;
+	const char*            DisplayName = nullptr;
+	uint32                 Flags       = FUNC_None;
+	TMap<FString, FString> Metadata;
+	const char*            OwnerClassName = nullptr;
+	TArray<FProperty*>     Parameters;
+	FProperty*             ReturnProperty      = nullptr;
+	size_t                 ParameterStructSize = 0;
+	FNativeInvoker         Invoker             = nullptr;
+	FParameterConstructor  ConstructParameters = nullptr;
+	FParameterDestructor   DestroyParameters   = nullptr;
+
+	FFunction() = default;
+
+	FFunction(
+		const char*                   InName,
+		const char*                   InSignature,
+		const char*                   InCategory,
+		const char*                   InDisplayName,
+		uint32                        InFlags,
+		const TMap<FString, FString>& InMetadata,
+		const char*                   InOwnerClassName,
+		TArray<FProperty*>            InParameters,
+		FProperty*                    InReturnProperty,
+		size_t                        InParameterStructSize,
+		FNativeInvoker                InInvoker,
+		FParameterConstructor         InConstructParameters,
+		FParameterDestructor          InDestroyParameters
+		)
+		: Name(InName), Signature(InSignature), Category(InCategory), DisplayName(InDisplayName), Flags(InFlags),
+		  Metadata(InMetadata), OwnerClassName(InOwnerClassName), Parameters(std::move(InParameters)),
+		  ReturnProperty(InReturnProperty), ParameterStructSize(InParameterStructSize), Invoker(InInvoker),
+		  ConstructParameters(InConstructParameters), DestroyParameters(InDestroyParameters)
+	{}
+
+	FFunction(const FFunction&)            = delete;
+	FFunction& operator=(const FFunction&) = delete;
+	FFunction(FFunction&&)                 = delete;
+	FFunction& operator=(FFunction&&)      = delete;
+
+	~FFunction()
+	{
+		for (FProperty* Parameter : Parameters)
+		{
+			delete Parameter;
+		}
+		Parameters.clear();
+
+		delete ReturnProperty;
+		ReturnProperty = nullptr;
+	}
+
+	const char*                   GetName() const { return Name ? Name : ""; }
+	const char*                   GetSignature() const { return Signature ? Signature : GetName(); }
+	const char*                   GetCategory() const { return Category ? Category : "Default"; }
+	const char*                   GetDisplayName() const { return DisplayName ? DisplayName : GetName(); }
+	uint32                        GetFlags() const { return Flags; }
+	bool                          HasAnyFunctionFlags(uint32 InFlags) const { return (Flags & InFlags) != 0; }
+	const TMap<FString, FString>& GetMetadata() const { return Metadata; }
+	const TArray<FProperty*>&     GetParameters() const { return Parameters; }
+	uint32                        GetParameterCount() const { return static_cast<uint32>(Parameters.size()); }
+
+	const FProperty* GetParameter(uint32 Index) const
+	{
+		return Index < Parameters.size() ? Parameters[Index] : nullptr;
+	}
+
+	const FProperty* FindParameterByName(const char* InName) const
+	{
+		if (!InName)
+		{
+			return nullptr;
+		}
+
+		for (const FProperty* Parameter : Parameters)
+		{
+			if (Parameter && Parameter->Name && std::strcmp(Parameter->Name, InName) == 0)
+			{
+				return Parameter;
+			}
+		}
+		return nullptr;
+	}
+
+	const FProperty* GetReturnProperty() const { return ReturnProperty; }
+	size_t           GetParameterStructSize() const { return ParameterStructSize; }
+	bool             IsConst() const { return HasAnyFunctionFlags(FUNC_Const); }
+	bool             IsStatic() const { return HasAnyFunctionFlags(FUNC_Static); }
+	bool             HasReturnValue() const { return ReturnProperty != nullptr; }
+
+	void* CreateParameterStorage() const
+	{
+		return ConstructParameters ? ConstructParameters() : nullptr;
+	}
+
+	void DestroyParameterStorage(void* Storage) const
+	{
+		if (DestroyParameters)
+		{
+			DestroyParameters(Storage);
+		}
+	}
+
+	bool Invoke(void* Instance, void* ParametersStorage = nullptr, void* ReturnValueStorage = nullptr) const
+	{
+		if (!Invoker)
+		{
+			return false;
+		}
+
+		if (!IsStatic() && !Instance)
+		{
+			return false;
+		}
+
+		FFunctionFrame Frame;
+		Frame.Parameters  = ParametersStorage;
+		Frame.ReturnValue = ReturnValueStorage;
+		return Invoker(Instance, Frame);
+	}
 };
 
 struct FGenericProperty : FProperty

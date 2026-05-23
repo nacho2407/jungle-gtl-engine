@@ -148,4 +148,29 @@ void UObject::RegisterProperties(UStruct* Class)
 	(void)Class;
 }
 
+void UObject::RegisterFunctions(UStruct* Class)
+{
+	(void)Class;
+}
+
 UClass UObject::StaticClassInstance("UObject", nullptr, sizeof(UObject), CF_None);
+
+namespace
+{
+	FClassRegistrar GUObjectClassRegistrar(&UObject::StaticClassInstance);
+
+	struct FUObjectRootReflectionRegistrar
+	{
+		FUObjectRootReflectionRegistrar()
+		{
+			UObject::RegisterProperties(UObject::StaticClass());
+			UObject::RegisterFunctions(UObject::StaticClass());
+			FObjectFactory::Get().Register(
+				"UObject",
+				[](UObject* InOuter)-> UObject* { return UObjectManager::Get().CreateObject<UObject>(InOuter); }
+			);
+		}
+	};
+
+	FUObjectRootReflectionRegistrar GUObjectRootReflectionRegistrar;
+}

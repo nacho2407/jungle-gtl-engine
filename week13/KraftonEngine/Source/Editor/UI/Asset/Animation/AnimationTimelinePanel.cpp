@@ -249,23 +249,26 @@ namespace
 				case EPropertyType::Enum:
 				{
 					const FEnum* EnumType = Prop.GetEnumType();
-					if (EnumType && EnumType->GetNames() && EnumType->GetCount() > 0 && Prop.GetValuePtr())
+					if (EnumType && EnumType->GetEntries() && EnumType->GetCount() > 0 && Prop.GetValuePtr())
 					{
-						const char** EnumNames = EnumType->GetNames();
 						const uint32 EnumCount = EnumType->GetCount();
-						const uint32 EnumSize = EnumType->GetSize();
-						int32 Val = 0;
-						std::memcpy(&Val, Prop.GetValuePtr(), EnumSize);
-						const char* Preview = ((uint32)Val < EnumCount) ? EnumNames[Val] : "Unknown";
+						const uint32 EnumSize  = EnumType->GetSize();
+						int64        Val       = 0;
+						std::memcpy(&Val, Prop.GetValuePtr(), std::min<size_t>(EnumSize, sizeof(Val)));
+						const char* Preview = EnumType->GetNameByValue(Val);
 						if (ImGui::BeginCombo("##v", Preview))
 						{
 							for (uint32 EnumIndex = 0; EnumIndex < EnumCount; ++EnumIndex)
 							{
-								const bool bSelected = Val == static_cast<int32>(EnumIndex);
-								if (ImGui::Selectable(EnumNames[EnumIndex], bSelected))
+								const int64 EntryValue = EnumType->GetValueAt(EnumIndex);
+								const bool  bSelected  = Val == EntryValue;
+								if (ImGui::Selectable(EnumType->GetNameAt(EnumIndex), bSelected))
 								{
-									int32 NewVal = static_cast<int32>(EnumIndex);
-									std::memcpy(Prop.GetValuePtr(), &NewVal, EnumSize);
+									std::memcpy(
+										Prop.GetValuePtr(),
+										&EntryValue,
+										std::min<size_t>(EnumSize, sizeof(EntryValue))
+									);
 									bChanged = true;
 								}
 								if (bSelected)

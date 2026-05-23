@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/Panel/EditorPropertyWidget.h"
+#include "Editor/UI/Panel/EditorPropertyWidget.h"
 #include "Editor/EditorEngine.h"
 
 #include "ImGui/imgui.h"
@@ -36,6 +36,7 @@
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "Platform/Paths.h"
 #include "Serialization/MemoryArchive.h"
+#include "Core/Logging/Log.h"
 
 #include <Windows.h>
 #include <commdlg.h>
@@ -282,8 +283,22 @@ namespace
 			*static_cast<FString*>(DstPtr) = *static_cast<FString*>(SrcPtr);
 			return true;
 		case EPropertyType::ObjectRef:
-			*static_cast<UObject**>(DstPtr) = *static_cast<UObject**>(SrcPtr);
+		{
+			const FObjectProperty* SrcObjectProperty = SrcValue.Property ? SrcValue.Property->AsObjectProperty()
+			: nullptr;
+			const FObjectProperty* DstObjectProperty = DstValue.Property ? DstValue.Property->AsObjectProperty()
+			: nullptr;
+			if (!SrcObjectProperty || !DstObjectProperty)
+			{
+				return false;
+			}
+
+			DstObjectProperty->SetObjectValueFromValuePtr(
+				DstPtr,
+				SrcObjectProperty->GetObjectValueFromValuePtr(SrcPtr)
+			);
 			return true;
+		}
 		case EPropertyType::ClassRef:
 		{
 			const FClassProperty* SrcClassProperty = SrcValue.Property ? SrcValue.Property->AsClassProperty() : nullptr;
@@ -382,7 +397,11 @@ namespace
 			return false;
 		}
 
-		UClass* AllowedClass = GetAllowedClassMetadata(Prop);
+		UClass* AllowedClass = ClassProperty->GetAllowedClassType();
+		if (!AllowedClass)
+		{
+			AllowedClass = GetAllowedClassMetadata(Prop);
+		}
 		UClass* CurrentClass = ClassProperty->GetClassValue(Prop.ContainerPtr);
 		FString Preview = CurrentClass ? CurrentClass->GetName() : FString("None");
 		bool bChanged = false;
@@ -786,6 +805,105 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 			ImGui::EndTable();
 			ImGui::PopStyleColor(2);
 		}
+	}
+
+	RenderCallInEditorFunctions(PrimaryActor);
+}
+
+void FEditorPropertyWidget::RenderCallInEditorFunctions(UObject* Object)
+{
+	if (!Object || !Object->GetClass())
+	{
+		return;
+	}
+
+	TArray<const FFunction*> Functions;
+	Object->GetClass()->GetFunctionRefs(Functions);
+
+	TArray<const FFunction*> CallInEditorFunctions;
+	for (const FFunction* Function : Functions)
+	{
+		if (Function && Function->HasAnyFunctionFlags(FUNC_CallInEditor) && !Function->IsStatic())
+		{
+			CallInEditorFunctions.push_back(Function);
+		}
+	}
+
+	if (CallInEditorFunctions.empty())
+	{
+		return;
+	}
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	if (!ImGui::CollapsingHeader("Functions", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		return;
+	}
+
+	for (const FFunction* Function : CallInEditorFunctions)
+	{
+		if (!Function)
+		{
+			continue;
+		}
+
+		FString DisabledReason;
+		bool    bCallableWithoutInput = true;
+		for (const FProperty* Parameter : Function->GetParameters())
+		{
+			if (!Parameter)
+			{
+				continue;
+			}
+			const bool bOutOnly    = (Parameter->Flags & PF_OutParm) != 0 && (Parameter->Flags & PF_ConstParm) == 0;
+			const bool bHasDefault = Parameter->Metadata.find("defaultvalue") != Parameter->Metadata.end();
+			if (!bOutOnly && !bHasDefault)
+			{
+				bCallableWithoutInput = false;
+				DisabledReason        = FString("Requires parameter: ") + (Parameter->Name ? Parameter->Name : "");
+				break;
+			}
+		}
+
+		ImGui::PushID(Function->GetSignature());
+		if (!bCallableWithoutInput)
+		{
+			ImGui::BeginDisabled();
+		}
+
+		if (ImGui::Button(Function->GetDisplayName(), ImVec2(-1.0f, 0.0f)) && bCallableWithoutInput)
+		{
+			void* Storage = Function->CreateParameterStorage();
+			if (!Storage)
+			{
+				UE_LOG("[CallInEditor] Failed to allocate parameter storage: %s", Function->GetSignature());
+			}
+			else
+			{
+				const bool bOk = Function->Invoke(Object, Storage, nullptr);
+				if (!bOk)
+				{
+					UE_LOG("[CallInEditor] Native invoke failed: %s", Function->GetSignature());
+				}
+				Function->DestroyParameterStorage(Storage);
+			}
+		}
+
+		if (!bCallableWithoutInput)
+		{
+			ImGui::EndDisabled();
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("%s", DisabledReason.c_str());
+			}
+		}
+		else if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("%s", Function->GetSignature());
+		}
+
+		ImGui::PopID();
 	}
 }
 
@@ -1202,6 +1320,8 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 			ImGui::PopStyleColor(2);
 		}
 	}
+
+	RenderCallInEditorFunctions(SelectedComponent);
 
 	// 실제 변경이 있었을 때만 Transform dirty 마킹
 	if (bAnyChanged && SelectedComponent->IsA<USceneComponent>())
@@ -1728,27 +1848,26 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 bool FEditorPropertyWidget::RenderEnumPropertyWidget(FPropertyValue& Prop)
 {
 	const FEnum* EnumType = Prop.GetEnumType();
-	if (!EnumType || !EnumType->GetNames() || EnumType->GetCount() == 0 || !Prop.GetValuePtr())
+	if (!EnumType || !EnumType->GetEntries() || EnumType->GetCount() == 0 || !Prop.GetValuePtr())
 	{
 		return false;
 	}
 
-	bool bChanged = false;
-	const char** EnumNames = EnumType->GetNames();
+	bool         bChanged  = false;
 	const uint32 EnumCount = EnumType->GetCount();
-	const uint32 EnumSize = EnumType->GetSize();
-	int32 Val = 0;
-	memcpy(&Val, Prop.GetValuePtr(), EnumSize);
-	const char* Preview = ((uint32)Val < EnumCount) ? EnumNames[Val] : "Unknown";
+	const uint32 EnumSize  = EnumType->GetSize();
+	int64        Val       = 0;
+	memcpy(&Val, Prop.GetValuePtr(), std::min<size_t>(EnumSize, sizeof(Val)));
+	const char* Preview = EnumType->GetNameByValue(Val);
 	if (ImGui::BeginCombo("##Value", Preview))
 	{
 		for (uint32 i = 0; i < EnumCount; ++i)
 		{
-			bool bSelected = (Val == (int32)i);
-			if (ImGui::Selectable(EnumNames[i], bSelected))
+			const int64 EntryValue = EnumType->GetValueAt(i);
+			bool        bSelected  = (Val == EntryValue);
+			if (ImGui::Selectable(EnumType->GetNameAt(i), bSelected))
 			{
-				int32 NewVal = (int32)i;
-				memcpy(Prop.GetValuePtr(), &NewVal, EnumSize);
+				memcpy(Prop.GetValuePtr(), &EntryValue, std::min<size_t>(EnumSize, sizeof(EntryValue)));
 				bChanged = true;
 			}
 			if (bSelected) ImGui::SetItemDefaultFocus();
@@ -1933,6 +2052,13 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.055f, 0.525f, 1.0f, 1.0f));
 
 		uint8* Val = static_cast<uint8*>(Prop.GetValuePtr());
+		if (!Val)
+		{
+			ImGui::PopStyleColor(3);
+			ImGui::PopStyleVar();
+			break;
+		}
+
 		bool bVal = (*Val != 0);
 		if (ImGui::Checkbox("##Value", &bVal))
 		{

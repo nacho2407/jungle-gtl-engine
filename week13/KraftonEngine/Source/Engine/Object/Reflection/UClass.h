@@ -64,6 +64,58 @@ private:
 	uint32      ClassFlags  = CF_None;
 };
 
+struct FPendingClassFlags
+{
+	const char* ClassName = nullptr;
+	uint32      Flags     = CF_None;
+};
+
+class FClassFlagRegistry
+{
+public:
+	static void AddClassFlags(const char* ClassName, uint32 Flags)
+	{
+		if (!ClassName || !ClassName[0] || Flags == CF_None)
+		{
+			return;
+		}
+
+		for (UClass* Class : UClass::GetAllClasses())
+		{
+			if (Class && Class->GetName() && std::strcmp(Class->GetName(), ClassName) == 0)
+			{
+				Class->AddClassFlags(Flags);
+				return;
+			}
+		}
+
+		GetPendingFlags().push_back(FPendingClassFlags { ClassName, Flags });
+	}
+
+	static void ApplyPendingFlags(UClass* Class)
+	{
+		if (!Class || !Class->GetName())
+		{
+			return;
+		}
+
+		for (const FPendingClassFlags& Pending : GetPendingFlags())
+		{
+			if (Pending.ClassName && std::strcmp(Pending.ClassName, Class->GetName()) == 0)
+			{
+				Class->AddClassFlags(Pending.Flags);
+			}
+		}
+	}
+
+private:
+	static TArray<FPendingClassFlags>& GetPendingFlags()
+	{
+		static TArray<FPendingClassFlags> PendingFlags;
+		return PendingFlags;
+	}
+};
+
 
 // static initializer 에서 UClass를 전역 레지스트리에 등록
 struct FClassRegistrar
@@ -72,5 +124,6 @@ struct FClassRegistrar
 	{
 		UStruct::GetAllStructs().push_back(InClass);
 		UClass::GetAllClasses().push_back(InClass);
+		FClassFlagRegistry::ApplyPendingFlags(InClass);
 	}
 };
