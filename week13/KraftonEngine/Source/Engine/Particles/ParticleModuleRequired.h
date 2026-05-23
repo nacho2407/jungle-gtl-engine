@@ -78,7 +78,10 @@ public:
 	float SpawnRate = 10.0f;
 	TArray<FParticleBurst> BurstList;
 
+	UPROPERTY(Edit, Save, Category = "Rendering", DisplayName = "Use Max Draw Count")
 	bool bUseMaxDrawCount = false;
+
+	UPROPERTY(Edit, Save, Category = "Rendering", DisplayName = "Max Draw Count", Min = 0, Speed = 1)
 	int32 MaxDrawCount = 0;
 
 	float EmitterDelay = 0.1f;
