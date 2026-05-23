@@ -102,7 +102,7 @@ void FEditorMainPanel::RenderViewerToolbarControls(FEditorViewer* Viewer)
 	FEditorViewportClient* Client = &Viewer->GetClient();
 	FEditorViewportState* ViewportState = Client ? Client->GetViewportState() : nullptr;
 	FSkeletalAssetEditorViewer* SkeletalViewer = AsSkeletalAssetViewer(Viewer);
-	FSkeletalViewerShowFlags* ShowFlags = SkeletalViewer ? &SkeletalViewer->GetClient().GetShowFlags() : nullptr;
+	FSkeletalMeshViewerShowFlags* ShowFlags = SkeletalViewer ? &SkeletalViewer->GetClient().GetShowFlags() : nullptr;
 
 	ImGui::PushID(Viewer);
 	if (DrawViewportIconButton(
@@ -385,7 +385,7 @@ bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 				ImGui::Separator();
 				if (FSkeletalAssetEditorViewer* SkeletalViewer = AsSkeletalAssetViewer(Viewer))
 				{
-					FSkeletalViewerShowFlags& ShowFlags = SkeletalViewer->GetClient().GetShowFlags();
+					FSkeletalMeshViewerShowFlags& ShowFlags = SkeletalViewer->GetClient().GetShowFlags();
 					ImGui::MenuItem("Skeletal Mesh", nullptr, &ShowFlags.bShowSkeletalMesh);
 					ImGui::MenuItem("Bones", nullptr, &ShowFlags.bShowBones);
 					ImGui::BeginDisabled(!ShowFlags.bShowBones);

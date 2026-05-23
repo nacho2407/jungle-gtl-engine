@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include "Editor/Viewer/EditorViewer.h"
+#include "Editor/Viewport/Viewer/ParticleViewerViewportClient.h"
 
-#include "Math/Color.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleSystemComponent.h"
 
@@ -14,6 +14,7 @@ class UParticleLODLevel;
 class UParticleModule;
 class UParticleModuleRequired;
 class UParticleModuleTypeDataBase;
+class UWorld;
 
 enum class EParticleEditorSelectionType : uint8
 {
@@ -37,8 +38,8 @@ public:
 	void Shutdown() override;
 
 	// Client & Preview ──────────────────────────────────────────────────────────────
-	FEditorViewportClient& GetClient() override { return Client; }
-	const FEditorViewportClient& GetClient() const override { return Client; }
+	FParticleViewerViewportClient& GetClient() override { return Client; }
+	const FParticleViewerViewportClient& GetClient() const override { return Client; }
 
 	UParticleSystem* GetParticleSystem() const { return ParticleSystem; }
 	UParticleSystemComponent* GetPreviewComponent() const { return PreviewComponent; }
@@ -80,17 +81,17 @@ public:
 	bool IsLooping() const { return bLooping; }
 
 	void SetRealtime(bool bInRealtime);
-	bool IsRealtime() const { return bRealtime; }
+	bool IsRealtime() const { return Client.IsRealtime(); }
 
 	// View Mode & Display Options ─────────────────────────────────────────────────
-	void SetShowGrid(bool bInShowGrid) { bShowGrid = bInShowGrid; }
-	bool IsShowGrid() const { return bShowGrid; }
+	void SetShowGrid(bool bInShowGrid) { Client.SetShowGrid(bInShowGrid); }
+	bool IsShowGrid() const { return Client.IsShowGrid(); }
 
-	void SetShowBounds(bool bInShowBounds) { bShowBounds = bInShowBounds; }
-	bool IsShowBounds() const { return bShowBounds; }
+	void SetShowBounds(bool bInShowBounds) { Client.SetShowBounds(bInShowBounds); }
+	bool IsShowBounds() const { return Client.IsShowBounds(); }
 
-	void SetBackgroundColor(const FColor& InColor) { BackgroundColor = InColor; }
-	const FColor& GetBackgroundColor() const { return BackgroundColor; }
+	void SetBackgroundColor(const FColor& InColor) { Client.SetBackgroundColor(InColor); }
+	const FColor& GetBackgroundColor() const { return Client.GetBackgroundColor(); }
 
 	void SetViewMode(EViewMode InViewMode);
 	EViewMode GetViewMode() const;
@@ -129,11 +130,12 @@ private:
 	UParticleLODLevel* CreateDefaultLODLevel(int32 Level);
 
 private:
-	FEditorViewportClient Client;
+	FParticleViewerViewportClient Client;
 	UParticleSystem* ParticleSystem = nullptr;
 
 	UParticleSystemComponent* PreviewComponent = nullptr;
 	AActor* PreviewActor = nullptr;
+	UWorld* PreviewWorld = nullptr;
 	// AParticleSystemActor* PreviewActor = nullptr;
 	bool bOwnsParticleSystem = false; // 뷰어가 생성한 ParticleSystem인지, Asset을 참조한 것인지 구분
 
@@ -146,9 +148,5 @@ private:
 	// Simulation & View Options
 	bool bPlaying = true;
 	bool bLooping = true;
-	bool bRealtime = true;
-	bool bShowGrid = true;
-	bool bShowBounds = false;
 	bool bDirty = false;
-	FColor BackgroundColor = FColor(0.025f, 0.025f, 0.03f, 1.0f);
 };

@@ -423,7 +423,7 @@ void FEditorViewerWidget::RenderDetachedDocumentChrome(bool& bDockRequested, boo
 	{
 		if (FSkeletalAssetEditorViewer* SkeletalViewer = AsSkeletalAssetViewer(Viewer))
 		{
-			FSkeletalViewerShowFlags& ShowFlags = SkeletalViewer->GetClient().GetShowFlags();
+			FSkeletalMeshViewerShowFlags& ShowFlags = SkeletalViewer->GetClient().GetShowFlags();
 			ImGui::MenuItem("Bones", nullptr, &ShowFlags.bShowBones);
 			ImGui::MenuItem("Bounding Box", nullptr, &ShowFlags.bShowBoundingBox);
 			ImGui::MenuItem("Outline", nullptr, &ShowFlags.bShowOutline);

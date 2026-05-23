@@ -52,7 +52,7 @@ void FParticleEditorViewer::Tick(float DeltaTime)
 {
 	FEditorViewer::Tick(DeltaTime);
 
-	if (PreviewComponent && IsPlaying() && IsRealtime())
+	if (PreviewComponent && UObjectManager::Get().ContainsObject(PreviewComponent) && IsPlaying() && IsRealtime())
 	{
 		PreviewComponent->TickComponent(DeltaTime);
 	}
@@ -61,16 +61,6 @@ void FParticleEditorViewer::Tick(float DeltaTime)
 void FParticleEditorViewer::Shutdown()
 {
 	ClearParticlePreview();
-
-	if (PreviewActor)
-	{
-		if (UWorld* World = GetClient().GetFocusedWorld())
-		{
-			World->DestroyActor(PreviewActor);
-		}
-		PreviewActor = nullptr;
-		PreviewComponent = nullptr;
-	}
 
 	ClearParticleSelection();
 	if (bOwnsParticleSystem)
@@ -84,14 +74,14 @@ void FParticleEditorViewer::Shutdown()
 
 void FParticleEditorViewer::RestartSimulation()
 {
-	if (!PreviewComponent || !ParticleSystem)
-		return;
-
-	if (PreviewComponent)
+	if (!PreviewComponent || !UObjectManager::Get().ContainsObject(PreviewComponent) || !ParticleSystem)
 	{
-		PreviewComponent->SetTemplate(ParticleSystem);
-		PreviewComponent->ResetParticles();
+		PreviewComponent = nullptr;
+		return;
 	}
+
+	PreviewComponent->SetTemplate(ParticleSystem);
+	PreviewComponent->ResetParticles();
 }
 
 void FParticleEditorViewer::RestartLevel()
@@ -306,21 +296,17 @@ UObject* FParticleEditorViewer::GetSelectedObject() const
 
 void FParticleEditorViewer::SetRealtime(bool bInRealtime)
 {
-	bRealtime = bInRealtime;
+	Client.SetRealtime(bInRealtime);
 }
 
 void FParticleEditorViewer::SetViewMode(EViewMode InViewMode)
 {
-	if (FEditorViewportState* ViewportState = GetClient().GetViewportState())
-	{
-		ViewportState->ViewMode = InViewMode;
-	}
+	Client.SetViewMode(InViewMode);
 }
 
 EViewMode FParticleEditorViewer::GetViewMode() const
 {
-	const FEditorViewportState* ViewportState = GetClient().GetViewportState();
-	return ViewportState ? ViewportState->ViewMode : EViewMode::Lit_BlinnPhong;
+	return Client.GetViewMode();
 }
 
 // Emitter 추가 → 기본 LOD + RequiredModule 같이 세팅 → 시뮬레이션 재시작
@@ -385,6 +371,7 @@ void FParticleEditorViewer::DeleteSelectedEmitter()
 	RestartSimulation();
 }
 
+// 왼쪽 클릭 + 드래그로 Emitter 이동
 void FParticleEditorViewer::MoveEmitter(int32 FromIndex, int32 ToIndex)
 {
 	if (!ParticleSystem)
@@ -403,9 +390,7 @@ void FParticleEditorViewer::MoveEmitter(int32 FromIndex, int32 ToIndex)
 	ParticleSystem->Emitters.insert(ParticleSystem->Emitters.begin() + ToIndex, Emitter);
 
 	SelectedEmitterIndex = ToIndex;
-	SelectedLODIndex = GetSelectedEmitter() && !GetSelectedEmitter()->LODLevels.empty()
-						   ? std::clamp(SelectedLODIndex, 0, static_cast<int32>(GetSelectedEmitter()->LODLevels.size()) - 1)
-						   : -1;
+	SelectedLODIndex = GetSelectedEmitter() && !GetSelectedEmitter()->LODLevels.empty() ? std::clamp(SelectedLODIndex, 0, static_cast<int32>(GetSelectedEmitter()->LODLevels.size()) - 1) : -1;
 	SelectedModuleIndex = -1;
 	SelectionType = EParticleEditorSelectionType::Emitter;
 
@@ -413,6 +398,7 @@ void FParticleEditorViewer::MoveEmitter(int32 FromIndex, int32 ToIndex)
 	RestartSimulation();
 }
 
+// 오른쪽 클릭으로 Emitter Context Menu에 접근해 Module 추가
 void FParticleEditorViewer::AddModule(UClass* ModuleClass)
 {
 	UParticleLODLevel* LOD = GetSelectedLODLevel();
@@ -462,6 +448,7 @@ void FParticleEditorViewer::AddModule(UClass* ModuleClass)
 	RestartSimulation();
 }
 
+// 왼쪽 클릭 드래그로 Source Emitter에서 Target Emitter로 모듈 이동
 void FParticleEditorViewer::MoveModule(int32 FromIndex, int32 ToIndex)
 {
 	UParticleLODLevel* LOD = GetSelectedLODLevel();
@@ -492,6 +479,7 @@ void FParticleEditorViewer::MoveModule(int32 FromIndex, int32 ToIndex)
 	RestartSimulation();
 }
 
+// Ctrl + 드래그로 Source Emitter에서 Target Emitter로 모듈 복사
 void FParticleEditorViewer::CopyModuleToEmitter(int32 ModuleIndex, int32 TargetEmitterIndex)
 {
 	UParticleLODLevel* SourceLOD = GetSelectedLODLevel();
@@ -516,9 +504,7 @@ void FParticleEditorViewer::CopyModuleToEmitter(int32 ModuleIndex, int32 TargetE
 		return;
 	}
 
-	const int32 TargetLODIndex = SelectedLODIndex >= 0
-									? SelectedLODIndex
-									: 0;
+	const int32 TargetLODIndex = SelectedLODIndex >= 0 ? SelectedLODIndex : 0;
 	while (static_cast<int32>(TargetEmitter->LODLevels.size()) <= TargetLODIndex)
 	{
 		UParticleLODLevel* NewLOD = CreateDefaultLODLevel(static_cast<int32>(TargetEmitter->LODLevels.size()));
@@ -552,6 +538,7 @@ void FParticleEditorViewer::CopyModuleToEmitter(int32 ModuleIndex, int32 TargetE
 	RestartSimulation();
 }
 
+// Delete 키로 선택된 모듈 삭제
 void FParticleEditorViewer::DeleteSelectedModule()
 {
 	UParticleLODLevel* LOD = GetSelectedLODLevel();
@@ -708,21 +695,26 @@ void FParticleEditorViewer::SelectUpperLOD()
 
 void FParticleEditorViewer::ClearParticlePreview()
 {
-	if (PreviewComponent)
+	if (PreviewComponent && UObjectManager::Get().ContainsObject(PreviewComponent))
 	{
 		PreviewComponent->SetTemplate(nullptr);
 		PreviewComponent->ResetParticles();
 	}
 
-	if (PreviewActor)
+	PreviewComponent = nullptr;
+
+	if (PreviewActor && UObjectManager::Get().ContainsObject(PreviewActor))
 	{
-		if (UWorld* World = GetClient().GetFocusedWorld())
+		UWorld* World = PreviewWorld && UObjectManager::Get().ContainsObject(PreviewWorld) ? PreviewWorld : PreviewActor->GetFocusedWorld();
+		if (World && PreviewActor->GetFocusedWorld() == World)
 		{
 			World->DestroyActor(PreviewActor);
 			World->SyncSpatialIndex();
 		}
-		PreviewActor = nullptr;
 	}
+
+	PreviewActor = nullptr;
+	PreviewWorld = nullptr;
 }
 
 void FParticleEditorViewer::ClearParticleSelection()
@@ -735,11 +727,12 @@ void FParticleEditorViewer::ClearParticleSelection()
 
 bool FParticleEditorViewer::CreatePreviewComponent()
 {
-	if (PreviewComponent)
+	if (PreviewComponent && UObjectManager::Get().ContainsObject(PreviewComponent))
 	{
 		PreviewComponent->SetTemplate(ParticleSystem);
 		return true;
 	}
+	PreviewComponent = nullptr;
 
 	UWorld* World = GetClient().GetFocusedWorld();
 	if (!World)
@@ -753,12 +746,15 @@ bool FParticleEditorViewer::CreatePreviewComponent()
 		return false;
 	}
 
+	PreviewWorld = World;
+
 	PreviewActor->SetFName(FName("ParticleViewerActor"));
 	PreviewActor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
 
 	PreviewComponent = PreviewActor->AddComponent<UParticleSystemComponent>();
 	if (!PreviewComponent)
 	{
+		ClearParticlePreview();
 		return false;
 	}
 

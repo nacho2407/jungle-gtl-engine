@@ -25,5 +25,12 @@ private:
 
 	void DrawEmitterNode(FParticleEditorViewer* Viewer, int32 EmitterIndex);
 	void DrawLODNode(FParticleEditorViewer* Viewer, int32 EmitterIndex, int32 LODIndex);
-	void DrawModuleNode(FParticleEditorViewer* Viewer, int32 ModuleIndex);
+	void DrawModuleNode(FParticleEditorViewer* Viewer, int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex);
+
+private:
+	float EmitterPanelWidthRatio = 1.0f;
+	float BottomPanelHeightRatio = 0.4f;
+
+	int32 CurveSourceModuleIndex = -1;
+	bool bDockLayoutInitialized = false;
 };
