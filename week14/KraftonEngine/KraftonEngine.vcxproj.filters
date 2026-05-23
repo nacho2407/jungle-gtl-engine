@@ -4440,6 +4440,7 @@
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleTypeDataBase.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\MeshParticleGeometry.h" />
+    <ClInclude Include="Source\Engine\Math\Distribution.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

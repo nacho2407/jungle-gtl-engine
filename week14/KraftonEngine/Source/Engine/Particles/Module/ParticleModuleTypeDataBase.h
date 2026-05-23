@@ -2,6 +2,7 @@
 
 #include "ParticleModule.h"
 #include "Object/Ptr/SoftObjectPtr.h"
+#include "Math/Distribution.h"
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 
 #include "Source/Engine/Particles/Module/ParticleModuleTypeDataBase.generated.h"
@@ -125,14 +126,67 @@ class UParticleModuleTypeDataMesh : public UParticleModuleTypeDataBase
 {
 public:
 	GENERATED_BODY()
+	UParticleModuleTypeDataMesh()
+	{
+		StartMeshScale.Constant = FVector::OneVector;
+		StartMeshScale.MinValue = FVector::OneVector;
+		StartMeshScale.MaxValue = FVector::OneVector;
+	}
+
 	UStaticMesh* Mesh = nullptr;
 
 	UPROPERTY(Edit, Save, Category="Particle|TypeData|Mesh", DisplayName="Mesh", AssetType="StaticMesh")
 	FSoftObjectPtr MeshPath = "None";
 
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Mesh", DisplayName="Start Mesh Scale", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector StartMeshScale;
+
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Mesh", DisplayName="Start Mesh Rotation", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector StartMeshRotation;
+
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Mesh", DisplayName="Mesh Rotation Rate", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector MeshRotationRate;
+
+	bool IsSpawnModule() const override { return true; }
+	bool IsUpdateModule() const override { return true; }
+
 	FParticleEmitterInstance* CreateInstance(UParticleEmitter* Emitter, UParticleSystemComponent* Component) override
 	{
 		return new FParticleMeshEmitterInstance(Emitter, Component, this);
+	}
+
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
+	{
+		if (!Owner || Offset < 0 || Offset + static_cast<int32>(sizeof(FParticleMeshPayload)) > Owner->ParticleStride)
+		{
+			return;
+		}
+
+		FParticleMeshPayload* Payload = reinterpret_cast<FParticleMeshPayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
+		Payload->InitialMeshScale = StartMeshScale.GetValue();
+		Payload->MeshScale = Payload->InitialMeshScale;
+		Payload->MeshRotation = StartMeshRotation.GetValue();
+		Payload->MeshRotationRate = MeshRotationRate.GetValue();
+	}
+
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override
+	{
+		if (!Owner || Offset < 0 || Offset + static_cast<int32>(sizeof(FParticleMeshPayload)) > Owner->ParticleStride)
+		{
+			return;
+		}
+
+		struct
+		{
+			FParticleEmitterInstance& Owner;
+			int32 Offset;
+			float DeltaTime;
+		} Context{ *Owner, Offset, DeltaTime };
+
+		BEGIN_UPDATE_LOOP
+			FParticleMeshPayload* Payload = reinterpret_cast<FParticleMeshPayload*>(ParticleBase + CurrentOffset);
+			Payload->MeshRotation += Payload->MeshRotationRate * DeltaTime;
+		END_UPDATE_LOOP
 	}
 	
 	EParticleRenderType GetRenderType() const override

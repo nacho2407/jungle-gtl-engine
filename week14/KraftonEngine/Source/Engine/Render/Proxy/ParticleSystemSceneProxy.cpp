@@ -192,7 +192,7 @@ void FParticleSystemSceneProxy::RebuildMeshParticleGeometry()
 
 		for (int32 ParticleIndex = 0; ParticleIndex < ActiveCount; ++ParticleIndex)
 		{
-			const FBaseParticle& Particle = Data.GetParticle(ParticleIndex);
+			const FBaseParticle& Particle = Data.GetParticle(Instance->ParticleIndices[ParticleIndex]);
 			if (!Particle.bAlive) continue;
 
 			for (const FStaticMeshSection& MeshSection : MeshAsset->Sections)
@@ -206,6 +206,10 @@ void FParticleSystemSceneProxy::RebuildMeshParticleGeometry()
 
 				if (const FParticleMeshPayload* Payload = MeshInstance->GetParticlePayload<FParticleMeshPayload>(ParticleIndex))
 				{
+					Transform.Scale = FVector(
+						Transform.Scale.X * Payload->MeshScale.X,
+						Transform.Scale.Y * Payload->MeshScale.Y,
+						Transform.Scale.Z * Payload->MeshScale.Z);
 					Transform.RotationEuler += Payload->MeshRotation;
 				}
 

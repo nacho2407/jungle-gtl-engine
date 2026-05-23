@@ -4,6 +4,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleHelper.h"
 #include "Particles/Module/ParticleModule.h"
+#include "Particles/Module/ParticleModuleTypeDataBase.h"
 
 FParticleEmitterInstance::~FParticleEmitterInstance()
 {
@@ -285,6 +286,14 @@ void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float Sp
 		return;
 	}
 
+	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->GetTypeDataModule())
+	{
+		if (TypeDataModule->IsSpawnModule())
+		{
+			TypeDataModule->Spawn(this, PayloadOffset, SpawnTime, Particle);
+		}
+	}
+
 	for (UParticleModule* Module : CurrentLODLevel->GetModules())
 	{
 		if (Module && Module->IsSpawnModule())
@@ -300,6 +309,15 @@ void FParticleEmitterInstance::RunUpdateModules(float DeltaTime)
 	{
 		return;
 	}
+
+	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->GetTypeDataModule())
+	{
+		if (TypeDataModule->IsUpdateModule())
+		{
+			TypeDataModule->Update(this, PayloadOffset, DeltaTime);
+		}
+	}
+
 	for(UParticleModule* Module : CurrentLODLevel->GetModules())
 	{
 		if (Module && Module->IsUpdateModule())

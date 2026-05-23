@@ -736,6 +736,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Component\Particle\ParticleSystemComponent.h" />
+    <ClInclude Include="Source\Engine\Math\Distribution.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleTypeDataBase.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleHelper.h" />
