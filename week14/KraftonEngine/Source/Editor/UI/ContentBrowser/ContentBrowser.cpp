@@ -428,6 +428,9 @@ void FEditorContentBrowserWidget::RefreshContent()
 				case EAssetPackageType::AnimGraph:
 					Element = std::make_shared<AnimGraphElement>();
 					break;
+				case EAssetPackageType::ParticleSystem:
+					Element = std::make_shared<ParticleSystemElement>();
+					break;
 				default:
 					Element = std::make_shared<ContentBrowserElement>();
 					break;
