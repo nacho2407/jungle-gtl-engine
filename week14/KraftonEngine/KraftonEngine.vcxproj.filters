@@ -746,6 +746,9 @@
     <ClCompile Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.cpp">
       <Filter>Source\Editor\Viewport\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.cpp">
+      <Filter>Source\Editor\Viewport\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.cpp">
       <Filter>Source\Editor\Viewport\Asset</Filter>
     </ClCompile>
@@ -1749,6 +1752,9 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.h">
+      <Filter>Source\Editor\Viewport\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.h">
       <Filter>Source\Editor\Viewport\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.h">

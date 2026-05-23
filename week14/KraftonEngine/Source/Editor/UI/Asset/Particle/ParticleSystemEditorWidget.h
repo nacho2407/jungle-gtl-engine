@@ -1,24 +1,29 @@
 #pragma once
 
+#include "Editor/Viewport/Asset/ParticleSystemEditorViewportClient.h"
 #include "Editor/UI/Asset/AssetEditorWidget.h"
+#include "Object/FName.h"
 
 struct ImVec2;
 struct FPropertyValue;
+class AActor;
 class UObject;
 class UParticleEmitter;
 class UParticleLODLevel;
 class UParticleModule;
 class UParticleSystem;
+class UParticleSystemComponent;
 
 class FParticleSystemEditorWidget : public FAssetEditorWidget
 {
 public:
-	FParticleSystemEditorWidget() = default;
+	FParticleSystemEditorWidget();
 
 	bool CanEdit(UObject* Object) const override;
 	void Open(UObject* Object) override;
 	void Close() override;
 	void Tick(float DeltaTime) override;
+	void CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const override;
 	void Render(float DeltaTime) override;
 
 private:
@@ -65,13 +70,22 @@ private:
 	const UParticleModule* GetSelectedModule(const UParticleSystem* ParticleSystem) const;
 	FEditorLayoutSizes CalculateLayoutSizes(const ImVec2& Available) const;
 	void RenderToolbar();
-	void RenderViewportPanel(const ImVec2& Size) const;
+	void RenderViewportPanel(const ImVec2& Size);
 	void RenderDetailsPanel(const ImVec2& Size) const;
 	void RenderEmittersPanel(const ImVec2& Size);
 	void RenderCurveEditorPanel(const ImVec2& Size) const;
 	void RenderObjectProperties(const UObject* Object) const;
 	void RenderPropertyValueReadOnly(const FPropertyValue& PropertyValue) const;
+	void CreatePreviewWorld();
+	void DestroyPreviewWorld();
+	void RestartPreviewSimulation();
 
 private:
 	FEditorViewState ViewState;
+	FParticleSystemEditorViewportClient ViewportClient;
+	AActor* PreviewActor = nullptr;
+	UParticleSystemComponent* PreviewParticleComponent = nullptr;
+	uint32 InstanceId = 0;
+	FName PreviewWorldHandle = FName::None;
+	FString WindowIdSuffix;
 };

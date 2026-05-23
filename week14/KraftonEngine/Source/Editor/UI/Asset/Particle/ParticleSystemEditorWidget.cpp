@@ -1,10 +1,18 @@
 #include "ParticleSystemEditorWidget.h"
 
+#include "Component/Light/DirectionalLightComponent.h"
+#include "Component/Particle/ParticleSystemComponent.h"
 #include "Core/Property/SoftObjectProperty.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/Light/DirectionalLightActor.h"
 #include "Object/Object.h"
 #include "Particles/Module/ParticleModule.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
 #include "Particles/ParticleSystem.h"
+#include "Render/Scene/FScene.h"
+#include "Runtime/Engine.h"
+#include "Slate/SlateApplication.h"
+#include "Viewport/Viewport.h"
 
 #include <algorithm>
 #include <cstdarg>
@@ -218,6 +226,8 @@ namespace
 	}
 }
 
+static uint32 GNextParticleSystemEditorInstanceId = 0;
+
 struct FParticleSystemEditorWidget::FEditorLayoutSizes
 {
 	float LeftWidth = 0.0f;
@@ -225,6 +235,14 @@ struct FParticleSystemEditorWidget::FEditorLayoutSizes
 	float TopHeight = 0.0f;
 	float BottomHeight = 0.0f;
 };
+
+FParticleSystemEditorWidget::FParticleSystemEditorWidget()
+	: InstanceId(GNextParticleSystemEditorInstanceId++)
+{
+	const FString Id = std::to_string(InstanceId);
+	PreviewWorldHandle = FName("ParticleSystemEditorPreview_" + Id);
+	WindowIdSuffix = "###ParticleSystemEditor_" + Id;
+}
 
 bool FParticleSystemEditorWidget::CanEdit(UObject* Object) const
 {
@@ -238,30 +256,56 @@ void FParticleSystemEditorWidget::Open(UObject* Object)
 		return;
 	}
 
+	DestroyPreviewWorld();
 	FAssetEditorWidget::Open(Object);
 	ResetEditorState();
+	CreatePreviewWorld();
 }
 
 void FParticleSystemEditorWidget::Close()
 {
 	ResetEditorState();
+	DestroyPreviewWorld();
 	FAssetEditorWidget::Close();
 }
 
 void FParticleSystemEditorWidget::Tick(float DeltaTime)
 {
-	if (!IsOpen() || !ViewState.bPreviewPlaying)
+	if (!IsOpen())
 	{
 		return;
 	}
 
+	if (ViewportClient.IsRenderable())
+	{
+		ViewportClient.Tick(DeltaTime);
+	}
+
 	if (ViewState.bRestartPreviewRequested)
 	{
-		ViewState.PreviewTime = 0.0f;
+		RestartPreviewSimulation();
 		ViewState.bRestartPreviewRequested = false;
 	}
 
+	if (!ViewState.bPreviewPlaying)
+	{
+		return;
+	}
+
+	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
+	{
+		PreviewWorld->Tick(DeltaTime, ELevelTick::LEVELTICK_All);
+	}
+
 	ViewState.PreviewTime += DeltaTime;
+}
+
+void FParticleSystemEditorWidget::CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const
+{
+	if (IsOpen())
+	{
+		OutClients.push_back(const_cast<FParticleSystemEditorViewportClient*>(&ViewportClient));
+	}
 }
 
 void FParticleSystemEditorWidget::Render(float DeltaTime)
@@ -277,7 +321,12 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
 
 	bool bWindowOpen = true;
 	FString VisibleTitle = GetParticleSystemTitle(ParticleSystem, IsDirty());
-	FString WindowTitle = VisibleTitle + "###ParticleSystemEditor";
+	FString WindowTitle = VisibleTitle + WindowIdSuffix;
+	ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_None;
+	if (ViewportClient.IsMouseOverViewport())
+	{
+		WindowFlags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
+	}
 
 	ImGui::SetNextWindowSize(ImVec2(1280.0f, 720.0f), ImGuiCond_Once);
 	if (ConsumeFocusRequest())
@@ -285,7 +334,7 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
 		ImGui::SetNextWindowFocus();
 	}
 
-	if (!ImGui::Begin(WindowTitle.c_str(), &bWindowOpen))
+	if (!ImGui::Begin(WindowTitle.c_str(), &bWindowOpen, WindowFlags))
 	{
 		ImGui::End();
 		if (!bWindowOpen)
@@ -293,6 +342,11 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
 			Close();
 		}
 		return;
+	}
+
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+	{
+		FSlateApplication::Get().BringViewportToFront(&ViewportClient);
 	}
 
 	RenderToolbar();
@@ -606,40 +660,131 @@ void FParticleSystemEditorWidget::RenderToolbar()
 	ImGui::EndChild();
 }
 
-void FParticleSystemEditorWidget::RenderViewportPanel(const ImVec2& Size) const
+void FParticleSystemEditorWidget::RenderViewportPanel(const ImVec2& Size)
 {
 	ImGui::BeginChild("##ParticleViewportPanel", Size, ImGuiChildFlags_Borders);
 	DrawPanelHeader("Viewport");
 
-	const ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
-	const ImVec2 CanvasMin = ImGui::GetCursorScreenPos();
-	const ImVec2 CanvasMax(CanvasMin.x + CanvasSize.x, CanvasMin.y + CanvasSize.y);
-	ImGui::InvisibleButton("##ParticlePreviewViewport", CanvasSize);
+	ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
+	if (ViewportSize.x <= 0.0f || ViewportSize.y <= 0.0f)
+	{
+		ImGui::EndChild();
+		return;
+	}
 
+	ImVec2 ViewportPos = ImGui::GetCursorScreenPos();
+	ViewportClient.SetViewportRect(ViewportPos.x, ViewportPos.y, ViewportSize.x, ViewportSize.y);
+
+	FViewport* VP = ViewportClient.GetViewport();
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
-	DrawList->AddRectFilled(CanvasMin, CanvasMax, IM_COL32(75, 77, 77, 255));
-
-	const float GridStep = 48.0f;
-	for (float X = CanvasMin.x; X < CanvasMax.x; X += GridStep)
+	if (VP)
 	{
-		DrawList->AddLine(ImVec2(X, CanvasMin.y), ImVec2(X, CanvasMax.y), IM_COL32(92, 94, 94, 110));
+		VP->RequestResize(static_cast<uint32>((std::max)(ViewportSize.x, 1.0f)), static_cast<uint32>((std::max)(ViewportSize.y, 1.0f)));
+		ViewportClient.NotifyViewportResized(static_cast<int32>(ViewportSize.x), static_cast<int32>(ViewportSize.y));
+
+		if (VP->GetSRV())
+		{
+			ImGui::Image((ImTextureID)VP->GetSRV(), ViewportSize);
+		}
+		else
+		{
+			ImGui::Dummy(ViewportSize);
+		}
+		FSlateApplication::Get().SetViewportImGuiHovered(&ViewportClient, ImGui::IsItemHovered());
 	}
-	for (float Y = CanvasMin.y; Y < CanvasMax.y; Y += GridStep)
+	else
 	{
-		DrawList->AddLine(ImVec2(CanvasMin.x, Y), ImVec2(CanvasMax.x, Y), IM_COL32(92, 94, 94, 110));
+		ImGui::InvisibleButton("##ParticlePreviewViewport", ViewportSize);
+		const ImVec2 CanvasMax(ViewportPos.x + ViewportSize.x, ViewportPos.y + ViewportSize.y);
+		DrawList->AddRectFilled(ViewportPos, CanvasMax, IM_COL32(75, 77, 77, 255));
 	}
 
-	const ImVec2 Center((CanvasMin.x + CanvasMax.x) * 0.5f, (CanvasMin.y + CanvasMax.y) * 0.5f);
-	DrawList->AddCircle(Center, 34.0f, IM_COL32(0, 112, 255, 255), 36, 2.0f);
-	DrawList->AddLine(ImVec2(Center.x - 54.0f, Center.y), ImVec2(Center.x + 54.0f, Center.y), IM_COL32(0, 112, 255, 255), 2.0f);
-	DrawList->AddLine(ImVec2(Center.x, Center.y - 54.0f), ImVec2(Center.x, Center.y + 54.0f), IM_COL32(0, 112, 255, 255), 2.0f);
+	const ImVec2 CanvasMax(ViewportPos.x + ViewportSize.x, ViewportPos.y + ViewportSize.y);
+	DrawList->AddRectFilled(ImVec2(ViewportPos.x + 8.0f, ViewportPos.y + 8.0f), ImVec2(ViewportPos.x + 50.0f, ViewportPos.y + 30.0f), IM_COL32(26, 27, 30, 190), 8.0f);
+	DrawList->AddText(ImVec2(ViewportPos.x + 18.0f, ViewportPos.y + 11.0f), IM_COL32(230, 234, 240, 255), "View");
+	DrawList->AddRectFilled(ImVec2(ViewportPos.x + 58.0f, ViewportPos.y + 8.0f), ImVec2(ViewportPos.x + 100.0f, ViewportPos.y + 30.0f), IM_COL32(26, 27, 30, 190), 8.0f);
+	DrawList->AddText(ImVec2(ViewportPos.x + 68.0f, ViewportPos.y + 11.0f), IM_COL32(230, 234, 240, 255), "Time");
+	DrawList->AddText(ImVec2(ViewportPos.x + 12.0f, CanvasMax.y - 28.0f), IM_COL32(255, 80, 50, 255), "X");
+	DrawList->AddText(ImVec2(ViewportPos.x + 42.0f, CanvasMax.y - 28.0f), IM_COL32(90, 220, 90, 255), "Y");
+	DrawList->AddText(ImVec2(ViewportPos.x + 28.0f, CanvasMax.y - 54.0f), IM_COL32(80, 130, 255, 255), "Z");
 
-	DrawList->AddText(ImVec2(CanvasMin.x + 12.0f, CanvasMin.y + 10.0f), IM_COL32(230, 234, 240, 255), "View");
-	DrawList->AddText(ImVec2(CanvasMin.x + 58.0f, CanvasMin.y + 10.0f), IM_COL32(230, 234, 240, 255), "Time");
-	DrawList->AddText(ImVec2(CanvasMin.x + 12.0f, CanvasMax.y - 28.0f), IM_COL32(255, 80, 50, 255), "X");
-	DrawList->AddText(ImVec2(CanvasMin.x + 42.0f, CanvasMax.y - 28.0f), IM_COL32(90, 220, 90, 255), "Y");
-	DrawList->AddText(ImVec2(CanvasMin.x + 28.0f, CanvasMax.y - 54.0f), IM_COL32(80, 130, 255, 255), "Z");
 	ImGui::EndChild();
+}
+
+void FParticleSystemEditorWidget::CreatePreviewWorld()
+{
+	if (!GEngine || !GetParticleSystem())
+	{
+		return;
+	}
+
+	FWorldContext& WorldContext = GEngine->CreateWorldContext(EWorldType::EditorPreview, PreviewWorldHandle);
+	WorldContext.World->SetWorldType(EWorldType::EditorPreview);
+	WorldContext.World->InitWorld();
+
+	PreviewActor = WorldContext.World->SpawnActor<AActor>();
+	PreviewParticleComponent = PreviewActor->AddComponent<UParticleSystemComponent>();
+	PreviewParticleComponent->SetTemplate(GetParticleSystem());
+	PreviewParticleComponent->Activate();
+	PreviewActor->SetRootComponent(PreviewParticleComponent);
+	PreviewActor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+
+	ADirectionalLightActor* LightActor = WorldContext.World->SpawnActor<ADirectionalLightActor>();
+	LightActor->InitDefaultComponents();
+	LightActor->SetActorRotation(FVector(0.0f, 45.0f, -45.0f));
+	if (UDirectionalLightComponent* LightComp = LightActor->GetComponentByClass<UDirectionalLightComponent>())
+	{
+		LightComp->SetShadowBias(0.0f);
+		LightComp->PushToScene();
+	}
+
+	ViewportClient.Initialize(GEngine->GetRenderer().GetFD3DDevice().GetDevice(), 512, 512);
+	ViewportClient.SetPreviewWorld(WorldContext.World);
+	ViewportClient.SetPreviewActor(PreviewActor);
+	ViewportClient.SetPreviewParticleComponent(PreviewParticleComponent);
+	ViewportClient.ResetCameraToPreviewBounds();
+
+	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
+	WorldContext.World->BeginPlay();
+
+	FSlateApplication::Get().RegisterViewport(&ViewportClient);
+}
+
+void FParticleSystemEditorWidget::DestroyPreviewWorld()
+{
+	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
+	{
+		PreviewWorld->SetEditorPOVProvider(nullptr);
+		FScene& PreviewScene = PreviewWorld->GetScene();
+		if (GEngine)
+		{
+			GEngine->GetRenderer().GetResources().ReleaseShadowResourcesForScene(&PreviewScene);
+		}
+
+		if (GEngine && PreviewWorldHandle.IsValid())
+		{
+			GEngine->DestroyWorldContext(PreviewWorldHandle);
+		}
+	}
+
+	FSlateApplication::Get().UnregisterViewport(&ViewportClient);
+	ViewportClient.Release();
+	PreviewActor = nullptr;
+	PreviewParticleComponent = nullptr;
+}
+
+void FParticleSystemEditorWidget::RestartPreviewSimulation()
+{
+	ViewState.PreviewTime = 0.0f;
+
+	if (!PreviewParticleComponent)
+	{
+		return;
+	}
+
+	PreviewParticleComponent->ResetSystem();
+	PreviewParticleComponent->Activate();
+	PreviewParticleComponent->MarkRenderStateDirty();
 }
 
 void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size) const
@@ -919,6 +1064,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 						MutableModules.push_back(NewModule);
 						SelectModule(EmitterIndex, DisplayLODIndex, static_cast<int32>(MutableModules.size()) - 1);
 						MarkDirty();
+						RestartPreviewSimulation();
 					};
 
 					if (ImGui::MenuItem("Lifetime"))
@@ -986,6 +1132,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 						std::swap(Modules[ModuleIndex], Modules[ModuleIndex - 1]);
 						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex - 1);
 						MarkDirty();
+						RestartPreviewSimulation();
 						bModuleListMutated = true;
 					}
 					else if (Action.bMoveDown && ModuleIndex + 1 < static_cast<int32>(Modules.size()))
@@ -993,6 +1140,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 						std::swap(Modules[ModuleIndex], Modules[ModuleIndex + 1]);
 						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex + 1);
 						MarkDirty();
+						RestartPreviewSimulation();
 						bModuleListMutated = true;
 					}
 					else if (Action.bDelete && !bDeleteLocked)
@@ -1010,6 +1158,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 							SelectModule(EmitterIndex, DisplayLODIndex, NewModuleIndex);
 						}
 						MarkDirty();
+						RestartPreviewSimulation();
 						bModuleListMutated = true;
 					}
 

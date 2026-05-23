@@ -454,6 +454,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\ViewportCameraTransform.cpp" />
     <ClCompile Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\Level\FLevelViewportLayout.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
@@ -799,6 +800,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportCameraTransform.h" />
     <ClInclude Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\Level\FLevelViewportLayout.h" />
     <ClInclude Include="Source\Editor\Viewport\Level\LevelEditorViewportClient.h" />
