@@ -196,10 +196,7 @@ namespace
 
 	ImU32 GetModuleRowTextColor(const UParticleModule* Module)
 	{
-		if (Cast<UParticleModuleRequired>(Module))
-		{
-			return IM_COL32(24, 25, 26, 255);
-		}
+		(void)Module;
 		return IM_COL32(235, 238, 242, 255);
 	}
 
@@ -386,6 +383,11 @@ FParticleSystemEditorWidget::FParticleSystemEditorWidget()
 	const FString Id = std::to_string(InstanceId);
 	PreviewWorldHandle = FName("ParticleSystemEditorPreview_" + Id);
 	WindowIdSuffix = "###ParticleSystemEditor_" + Id;
+}
+
+FParticleSystemEditorWidget::~FParticleSystemEditorWidget()
+{
+	DestroyPreviewWorld();
 }
 
 bool FParticleSystemEditorWidget::CanEdit(UObject* Object) const
@@ -932,9 +934,19 @@ void FParticleSystemEditorWidget::CreatePreviewWorld()
 
 void FParticleSystemEditorWidget::DestroyPreviewWorld()
 {
-	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
+	UWorld* PreviewWorld = ViewportClient.GetPreviewWorld();
+	if (PreviewWorld)
 	{
 		PreviewWorld->SetEditorPOVProvider(nullptr);
+	}
+
+	FSlateApplication::Get().UnregisterViewport(&ViewportClient);
+	ViewportClient.Release();
+	PreviewActor = nullptr;
+	PreviewParticleComponent = nullptr;
+
+	if (PreviewWorld)
+	{
 		FScene& PreviewScene = PreviewWorld->GetScene();
 		if (GEngine)
 		{
@@ -946,11 +958,6 @@ void FParticleSystemEditorWidget::DestroyPreviewWorld()
 			GEngine->DestroyWorldContext(PreviewWorldHandle);
 		}
 	}
-
-	FSlateApplication::Get().UnregisterViewport(&ViewportClient);
-	ViewportClient.Release();
-	PreviewActor = nullptr;
-	PreviewParticleComponent = nullptr;
 }
 
 void FParticleSystemEditorWidget::RestartPreviewSimulation()
@@ -1323,7 +1330,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 	auto CalculateEmitterColumnHeight = [&](UParticleEmitter* Emitter)
 	{
-		float Height = Style.WindowPadding.y * 2.0f + EmitterHeaderHeight + Style.ItemSpacing.y;
+		float Height = EmitterHeaderHeight + Style.ItemSpacing.y;
 		if (!Emitter)
 		{
 			return Height + ImGui::GetTextLineHeightWithSpacing();
@@ -1345,9 +1352,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		return Height + Style.ItemSpacing.y;
 	};
 
-	const bool bNeedsHorizontalScroll = EmitterColumnsWidth > ImGui::GetContentRegionAvail().x;
-	const float VisibleColumnHeight = (std::max)(1.0f, ImGui::GetContentRegionAvail().y - Style.ItemSpacing.y - (bNeedsHorizontalScroll ? Style.ScrollbarSize : 0.0f));
-	float EmitterColumnHeight = VisibleColumnHeight;
+	float EmitterColumnHeight = 1.0f;
 	for (UParticleEmitter* Emitter : Emitters)
 	{
 		EmitterColumnHeight = (std::max)(EmitterColumnHeight, CalculateEmitterColumnHeight(Emitter));
@@ -1361,6 +1366,153 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		const EParticleRenderType RenderType = GetLODRenderType(LODLevel);
 		ImGui::PushID(EmitterIndex);
 		ImGui::BeginChild("##EmitterColumn", ImVec2(EmitterColumnWidth, EmitterColumnHeight), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+		auto AddModule = [&](UParticleModule* NewModule)
+		{
+			if (!LODLevel || !NewModule)
+			{
+				return;
+			}
+
+			TArray<UParticleModule*>& MutableModules = LODLevel->GetMutableModules();
+			MutableModules.push_back(NewModule);
+			SelectModule(EmitterIndex, DisplayLODIndex, static_cast<int32>(MutableModules.size()) - 1);
+			MarkDirty();
+			RestartPreviewSimulation();
+		};
+
+		auto SetTypeDataModule = [&](UParticleModuleTypeDataBase* NewTypeDataModule)
+		{
+			if (!LODLevel)
+			{
+				return;
+			}
+
+			if (UParticleModuleTypeDataBase* ExistingTypeDataModule = LODLevel->GetTypeDataModule())
+			{
+				UObjectManager::Get().DestroyObject(ExistingTypeDataModule);
+			}
+
+			LODLevel->SetTypeDataModule(NewTypeDataModule);
+			if (NewTypeDataModule)
+			{
+				SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
+			}
+			else
+			{
+				SelectLOD(EmitterIndex, DisplayLODIndex);
+			}
+			MarkDirty();
+			RestartPreviewSimulation();
+		};
+
+		auto RenderUnavailableCategory = [](const char* Label)
+		{
+			if (ImGui::BeginMenu(Label))
+			{
+				ImGui::BeginDisabled();
+				ImGui::MenuItem("No modules available");
+				ImGui::EndDisabled();
+				ImGui::EndMenu();
+			}
+		};
+
+		auto RenderAddModuleMenu = [&]()
+		{
+			RenderUnavailableCategory("Emitter");
+			RenderUnavailableCategory("Particle System");
+
+			if (ImGui::BeginMenu("TypeData"))
+			{
+				if (ImGui::MenuItem("Sprite"))
+				{
+					SetTypeDataModule(nullptr);
+				}
+				if (ImGui::MenuItem("Mesh"))
+				{
+					SetTypeDataModule(UObjectManager::Get().CreateObject<UParticleModuleTypeDataMesh>());
+				}
+				if (ImGui::MenuItem("Ribbon"))
+				{
+					SetTypeDataModule(UObjectManager::Get().CreateObject<UParticleModuleTypeDataRibbon>());
+				}
+				if (ImGui::MenuItem("Beam"))
+				{
+					SetTypeDataModule(UObjectManager::Get().CreateObject<UParticleModuleTypeDataBeam>());
+				}
+				ImGui::EndMenu();
+			}
+
+			RenderUnavailableCategory("Acceleration");
+			RenderUnavailableCategory("Attraction");
+			RenderUnavailableCategory("Collision");
+
+			if (ImGui::BeginMenu("Color"))
+			{
+				if (ImGui::MenuItem("Initial Color"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleColor>());
+				}
+				ImGui::EndMenu();
+			}
+
+			RenderUnavailableCategory("Event");
+
+			if (ImGui::BeginMenu("Lifetime"))
+			{
+				if (ImGui::MenuItem("Lifetime"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleLifetime>());
+				}
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Location"))
+			{
+				if (ImGui::MenuItem("Initial Location"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleLocation>());
+				}
+				ImGui::EndMenu();
+			}
+
+			RenderUnavailableCategory("Rotation");
+			RenderUnavailableCategory("Rotation Rate");
+			RenderUnavailableCategory("Orbit");
+			RenderUnavailableCategory("Orientation");
+
+			if (ImGui::BeginMenu("Size"))
+			{
+				if (ImGui::MenuItem("Initial Size"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleSize>());
+				}
+				ImGui::EndMenu();
+			}
+
+			RenderUnavailableCategory("Spawn");
+			RenderUnavailableCategory("SubUV");
+			RenderUnavailableCategory("Vector Field");
+
+			if (ImGui::BeginMenu("Velocity"))
+			{
+				if (ImGui::MenuItem("Initial Velocity"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleVelocity>());
+				}
+				ImGui::EndMenu();
+			}
+		};
+
+		if (LODLevel && ImGui::IsWindowHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+		{
+			ImGui::OpenPopup("##ParticleEmitterContextMenu");
+		}
+		if (LODLevel && ImGui::BeginPopup("##ParticleEmitterContextMenu"))
+		{
+			RenderAddModuleMenu();
+			ImGui::EndPopup();
+		}
 
 		const ImVec2 HeaderMin = ImGui::GetCursorScreenPos();
 		const ImVec2 HeaderMax(HeaderMin.x + ImGui::GetContentRegionAvail().x, HeaderMin.y + EmitterHeaderHeight);
@@ -1423,44 +1575,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				}
 				if (ImGui::BeginPopup("##AddParticleModulePopup"))
 				{
-					auto AddModule = [&](UParticleModule* NewModule)
-					{
-						if (!NewModule)
-						{
-							return;
-						}
-						TArray<UParticleModule*>& MutableModules = LODLevel->GetMutableModules();
-						MutableModules.push_back(NewModule);
-						SelectModule(EmitterIndex, DisplayLODIndex, static_cast<int32>(MutableModules.size()) - 1);
-						MarkDirty();
-						RestartPreviewSimulation();
-					};
-
-					if (ImGui::MenuItem("Lifetime"))
-					{
-						AddModule(UObjectManager::Get().CreateObject<UParticleModuleLifetime>());
-					}
-					if (ImGui::MenuItem("Initial Location"))
-					{
-						AddModule(UObjectManager::Get().CreateObject<UParticleModuleLocation>());
-					}
-					if (ImGui::MenuItem("Initial Velocity"))
-					{
-						AddModule(UObjectManager::Get().CreateObject<UParticleModuleVelocity>());
-					}
-					if (ImGui::MenuItem("Initial Color"))
-					{
-						AddModule(UObjectManager::Get().CreateObject<UParticleModuleColor>());
-					}
-					if (ImGui::MenuItem("Initial Size"))
-					{
-						AddModule(UObjectManager::Get().CreateObject<UParticleModuleSize>());
-					}
-					ImGui::Separator();
-					ImGui::BeginDisabled();
-					ImGui::MenuItem("Required", nullptr, false, false);
-					ImGui::MenuItem("Spawn", nullptr, false, false);
-					ImGui::EndDisabled();
+					RenderAddModuleMenu();
 					ImGui::EndPopup();
 				}
 				ImGui::Dummy(ImVec2(0.0f, 3.0f));

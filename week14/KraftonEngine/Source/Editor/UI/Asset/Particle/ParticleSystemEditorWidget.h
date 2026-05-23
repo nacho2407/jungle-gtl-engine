@@ -18,8 +18,10 @@ class FParticleSystemEditorWidget : public FAssetEditorWidget
 {
 public:
 	FParticleSystemEditorWidget();
+	~FParticleSystemEditorWidget() override;
 
 	bool CanEdit(UObject* Object) const override;
+	bool AllowsMultipleInstances() const override { return true; }
 	void Open(UObject* Object) override;
 	void Close() override;
 	void Tick(float DeltaTime) override;
