@@ -815,12 +815,22 @@ void FParticleSystemEditorWidget::RenderToolbar()
 			ClearDirty();
 		}
 	}
+	ImGui::SameLine();
+
+	if (ImGui::Button("Add Emitter", ImVec2(96.0f, 0.0f)))
+	{
+		if (ParticleSystem->AddDefaultEmitter())
+		{
+			const int32 NewEmitterIndex = static_cast<int32>(ParticleSystem->GetEmitters().size()) - 1;
+			SelectEmitter(NewEmitterIndex);
+			MarkDirty();
+			RestartPreviewSimulation();
+		}
+	}
 	ImGui::EndDisabled();
 	ImGui::SameLine();
 
 	ImGui::BeginDisabled();
-	ImGui::Button("Add Emitter", ImVec2(96.0f, 0.0f));
-	ImGui::SameLine();
 	ImGui::Button("Add LOD", ImVec2(76.0f, 0.0f));
 	ImGui::SameLine();
 	ImGui::Button("Bounds", ImVec2(72.0f, 0.0f));

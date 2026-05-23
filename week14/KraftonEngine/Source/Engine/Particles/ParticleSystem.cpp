@@ -227,6 +227,13 @@ void UParticleSystem::AddEmitter(UParticleEmitter* Emitter)
 	Emitters.push_back(Emitter);
 }
 
+UParticleEmitter* UParticleSystem::AddDefaultEmitter()
+{
+	UParticleEmitter* Emitter = CreateSpriteEmitter();
+	AddEmitter(Emitter);
+	return Emitter;
+}
+
 void UParticleSystem::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
