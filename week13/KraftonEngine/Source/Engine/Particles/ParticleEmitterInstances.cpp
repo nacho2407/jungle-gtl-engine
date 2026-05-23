@@ -4,8 +4,9 @@
 #include "Particles/ParticleModule.h"
 #include "Particles/ParticleModuleRequired.h"
 #include "Particles/ParticleEmitter.h"
-#include "Particles/ParticleSystemComponent.h"
+#include "Component/Primitive/ParticleSystemComponent.h"
 #include "Particles/Spawn/ParticleModuleSpawn.h"
+#include "Particles/TypeData/ParticleModuleTypeDataBase.h"
 
 #include "Materials/Material.h"
 #include "Profiling/Stats/Stats.h"

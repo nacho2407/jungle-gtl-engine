@@ -62,7 +62,7 @@ struct FParticleEmitterInstance
     bool bFakeBurstsWhenSpawningSupressed = false;
     bool bEmitterIsDone = false;
 
-    int32 SortMode = PSORTMODE_None;
+    int32 SortMode = 0;
 
     uint8* ParticleData = nullptr;
     uint16* ParticleIndices = nullptr;

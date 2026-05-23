@@ -25,6 +25,8 @@ public:
     void InitializeSystem();
     void ResetSystem();
 
+	bool IsGameWorld() const { return true; }
+
     FPrimitiveSceneProxy* CreateSceneProxy() override;
     void                  UpdateWorldAABB() const override;
     void                  PostEditProperty(const char* PropertyName) override;

@@ -1,8 +1,11 @@
 #include "Particles/ParticleLODLevel.h"
 
+#include "Particles/Lifetime/ParticleModuleLifetime.h"
+#include "Particles/Location/ParticleModuleLocation.h"
 #include "Particles/ParticleModule.h"
 #include "Particles/ParticleModuleRequired.h"
 #include "Particles/Spawn/ParticleModuleSpawn.h"
+#include "Particles/Velocity/ParticleModuleVelocity.h"
 
 #include <algorithm>
 
@@ -48,23 +51,13 @@ void UParticleLODLevel::UpdateModuleLists()
 
 		if (Cast<UParticleModuleLifetime>(Module) ||
 			Cast<UParticleModuleLocation>(Module) ||
-			Cast<UParticleModuleVelocity>(Module) ||
-			Cast<UParticleModuleColor>(Module) ||
-			Cast<UParticleModuleSize>(Module) ||
-			Cast<UParticleModuleCameraOffset>(Module) ||
-			Cast<UParticleModuleOrbit>(Module))
+			Cast<UParticleModuleVelocity>(Module))
 		{
 			SpawnModules.push_back(Module);
 		}
 
-		if (Cast<UParticleModuleSizeScaleBySpeed>(Module))
-		{
-			UpdateModules.push_back(Module);
-		}
-
-		if (Cast<UParticleModuleOrbit>(Module))
-		{
-			OrbitModules.push_back(Module);
-		}
+		// TODO: Add module list classification when these modules are implemented:
+		// UParticleModuleColor, UParticleModuleSize, UParticleModuleCameraOffset,
+		// UParticleModuleOrbit, UParticleModuleSizeScaleBySpeed.
 	}
 }

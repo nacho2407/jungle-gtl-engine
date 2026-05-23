@@ -1,7 +1,8 @@
-#include "Particle/ParticleEmitter.h"
+﻿#include "Particle/ParticleEmitter.h"
 
 #include "Particles/ParticleModule.h"
 #include "Serialization/Archive.h"
+#include "Particles/TypeData/ParticleModuleTypeDataBase.h"
 
 UParticleLODLevel* UParticleEmitter::GetLODLevel(int32 LODIndex) const
 {
@@ -121,18 +122,14 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 		{
 			AddModuleOffsetToAllLODs(ModuleIndex, static_cast<uint32>(ParticleSize));
 
-			if (Cast<UParticleModuleCameraOffset>(ParticleModule))
-			{
-				CameraPayloadOffset = ParticleSize;
-			}
-			if (Cast<UParticleModuleOrbit>(ParticleModule))
-			{
-				OrbitModuleOffset = ParticleSize;
-			}
-			if (Cast<UParticleModuleLight>(ParticleModule))
-			{
-				LightDataOffset = ParticleSize;
-			}
+			// TODO: Set CameraPayloadOffset and OrbitModuleOffset when
+			// UParticleModuleCameraOffset and UParticleModuleOrbit are implemented.
+			// TODO: Add payload handling when UParticleModuleColor,
+			// UParticleModuleSize, and UParticleModuleSizeScaleBySpeed are implemented.
+			//if (Cast<UParticleModuleLight>(ParticleModule))
+			//{
+			//	LightDataOffset = ParticleSize;
+			//}
 
 			ParticleSize += ReqBytes;
 		}
@@ -144,11 +141,11 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 			ReqInstanceBytes += InstanceBytes;
 		}
 
-		if (ParticleModule->RequiresRandomSeedInstancePayload())
-		{
-			AddModuleRandomSeedOffsetToAllLODs(ModuleIndex, static_cast<uint32>(ReqInstanceBytes));
-			ReqInstanceBytes += sizeof(FParticleRandomSeedInstancePayload);
-		}
+		//if (ParticleModule->RequiresRandomSeedInstancePayload())
+		//{
+		//	AddModuleRandomSeedOffsetToAllLODs(ModuleIndex, static_cast<uint32>(ReqInstanceBytes));
+		//	ReqInstanceBytes += sizeof(FParticleRandomSeedInstancePayload);
+		//}
 	}
 }
 
