@@ -1,173 +1,8 @@
-﻿#include "Particle/ParticleSystemComponent.h"
+#include "Particle/ParticleSystemComponent.h"
 
 #include "GameFramework/World.h"
-
-namespace
-{
-	// 사용되지 않는 선언 컴파일 경고 방지용. 구현 후 삭제할 것
-	void ParticleNoOp(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-	{
-		(void)Owner;
-		(void)Offset;
-		(void)DeltaTime;
-	}
-}
-
-void UParticleModuleRequired::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleRequired::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleSpawn::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleSpawn::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleLifetime::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleLifetime::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleLocation::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleLocation::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleVelocity::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleVelocity::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleColor::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleColor::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleSize::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleSize::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleCollision::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleTypeDataBase::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleTypeDataBase::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleTypeDataBase::Build()
-{
-}
-
-FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(
-	UParticleEmitter* InEmitterTemplate,
-	IParticleEmitterInstanceOwner& InOwner)
-{
-    FParticleEmitterInstance* Instance = new FParticleEmitterInstance(InOwner);
-	Instance->SpriteTemplate = InEmitterTemplate;
-	return Instance;
-}
-
-FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
-{
-	(void)InEmitterInstance;
-	return nullptr;
-}
-
-int32 UParticleModuleTypeDataBase::GetRequiredPayloadSize() const
-{
-	return 0;
-}
-
-void UParticleEmitter::CacheEmitterModuleInfo()
-{
-	ParticleSize = CalculateTotalPayloadSize();
-}
-
-TArray<int32> UParticleEmitter::CalculateTotalPayloadSize() const
-{
-	TArray<int32> Result;
-	Result.reserve(LODLevels.size());
-
-	for (const UParticleLODLevel* LODLevel : LODLevels)
-	{
-		int32 PayloadSize = 0;
-		if (LODLevel != nullptr && LODLevel->TypeDataModule != nullptr)
-		{
-			PayloadSize += LODLevel->TypeDataModule->GetRequiredPayloadSize();
-		}
-
-		Result.push_back(static_cast<int32>(sizeof(FBaseParticle)) + PayloadSize);
-	}
-
-	return Result;
-}
-
-void FParticleEmitterInstance::Tick(float DeltaTime)
-{
-	(void)DeltaTime;
-
-	if (CurrentLODLevel == nullptr || !CurrentLODLevel->bEnabled)
-	{
-		return;
-	}
-
-	for (UParticleModule* Module : CurrentLODLevel->Modules)
-	{
-		if (Module != nullptr)
-		{
-			Module->Update(this, 0, DeltaTime);
-		}
-	}
-}
+#include "Particle/ParticleEmitterInstanceOwner.h"
+#include "Particle/ParticleEventManager.h"
 
 class UParticleSystemComponent::FInstanceOwner : public IParticleEmitterInstanceOwner
 {
@@ -177,14 +12,16 @@ public:
 	{
 	}
 
-	UWorld* GetWorld() const override 
+	UWorld* GetWorld() const override
 	{
 		return Component != nullptr ? Component->GetWorld() : nullptr;
 	}
+
 	FVector GetWorldLocation() const override
 	{
 		return Component != nullptr ? Component->GetWorldLocation() : FVector::ZeroVector;
 	}
+
 	FMatrix GetComponentToWorld() const override
 	{
 		return Component != nullptr ? Component->GetWorldMatrix() : FMatrix::Identity;
@@ -197,6 +34,7 @@ public:
 			Component->SpawnEvents.push_back(Event);
 		}
 	}
+
 	void AddDeathEvent(const FParticleEventDeathData& Event) override
 	{
 		if (Component != nullptr)
@@ -204,6 +42,7 @@ public:
 			Component->DeathEvents.push_back(Event);
 		}
 	}
+
 	void AddCollisionEvent(const FParticleEventCollideData& Event) override
 	{
 		if (Component != nullptr)
@@ -211,6 +50,7 @@ public:
 			Component->CollisionEvents.push_back(Event);
 		}
 	}
+
 	void AddBurstEvent(const FParticleEventBurstData& Event) override
 	{
 		if (Component != nullptr)
@@ -379,28 +219,4 @@ void UParticleSystemComponent::CreateEmitterInstances()
 			EmitterInstances.push_back(Instance);
 		}
 	}
-}
-
-void AParticleEventManager::HandleParticleSpawnEvents(UParticleSystemComponent* Component, const TArray<FParticleEventSpawnData>& InSpawnEvents)
-{
-	(void)Component;
-	(void)InSpawnEvents;
-}
-
-void AParticleEventManager::HandleParticleDeathEvents(UParticleSystemComponent* Component, const TArray<FParticleEventDeathData>& InDeathEvents)
-{
-	(void)Component;
-	(void)InDeathEvents;
-}
-
-void AParticleEventManager::HandleParticleCollisionEvents(UParticleSystemComponent* Component, const TArray<FParticleEventCollideData>& InCollisionEvents)
-{
-	(void)Component;
-	(void)InCollisionEvents;
-}
-
-void AParticleEventManager::HandleParticleBurstEvents(UParticleSystemComponent* Component, const TArray<FParticleEventBurstData>& InBurstEvents)
-{
-	(void)Component;
-	(void)InBurstEvents;
 }

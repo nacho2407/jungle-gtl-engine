@@ -806,6 +806,9 @@
     <ClCompile Include="Source\Engine\Object\Function.cpp" />
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Object\Property.cpp" />
+    <ClCompile Include="Source\Engine\Particle\ParticleEmitterInstance.cpp" />
+    <ClCompile Include="Source\Engine\Particle\ParticleEventManager.cpp" />
+    <ClCompile Include="Source\Engine\Particle\ParticleModules.cpp" />
     <ClCompile Include="Source\Engine\Particle\ParticleSystemComponent.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
     <ClCompile Include="Source\Engine\Render\FontBatcher.cpp" />
@@ -1197,6 +1200,9 @@
     <ClInclude Include="Source\Engine\Object\ObjectPtr.h" />
     <ClInclude Include="Source\Engine\Object\Property.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleAsset.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleEmitterInstance.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleEmitterInstanceOwner.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleEventManager.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleModules.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleSystemComponent.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleTypes.h" />
