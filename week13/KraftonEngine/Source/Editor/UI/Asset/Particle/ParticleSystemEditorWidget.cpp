@@ -28,6 +28,8 @@
 #include "GameFramework/World.h"
 #include "GameFramework/WorldContext.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
+#include "Editor/UI/Util/EditorTextureManager.h"
+#include "Platform/Paths.h"
 #include "Runtime/Engine.h"
 #include "Slate/SlateApplication.h"
 #include "Object/Reflection/ObjectFactory.h"
@@ -236,6 +238,49 @@ namespace
         const ImVec2 Size = ImGui::CalcTextSize(Text);
         DrawList->AddText(ImVec2((Min.x + Max.x - Size.x) * 0.5f, (Min.y + Max.y - Size.y) * 0.5f), PSE::DimText, Text);
     }
+
+    // Content/Editor/ToolIcons/<filename> 의 아이콘을 캐시된 SRV 로 가져온다.
+    // FEditorTextureManager가 내부 캐시를 관리해서 중복 로드는 발생하지 않음.
+    ID3D11ShaderResourceView* LoadToolIcon(const wchar_t* FileName)
+    {
+        const std::wstring Wide = FPaths::Combine(FPaths::AssetDir(), L"Editor/ToolIcons/") + FileName;
+        return FEditorTextureManager::Get().GetOrLoadIcon(FPaths::ToUtf8(Wide));
+    }
+
+    // 아이콘 버튼 + 텍스트 폴백 + 비활성 상태 시각화 + 툴팁을 한 번에 처리.
+    // 클릭 시 true 반환. 비활성 상태에서는 표시만 흐려지고 클릭은 무시됨.
+    bool IconToolButton(
+        const char*               Id,
+        ID3D11ShaderResourceView* Icon,
+        const char*               FallbackLabel,
+        const char*               Tooltip,
+        bool                      bEnabled,
+        float                     IconSize)
+    {
+        if (!bEnabled)
+        {
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.4f);
+        }
+        bool bClicked = false;
+        if (Icon)
+        {
+            bClicked = ImGui::ImageButton(Id, reinterpret_cast<ImTextureID>(Icon), ImVec2(IconSize, IconSize));
+        }
+        else
+        {
+            bClicked = ImGui::Button(FallbackLabel, ImVec2(IconSize + 8.0f, IconSize + 8.0f));
+        }
+        if (!bEnabled)
+        {
+            ImGui::PopStyleVar();
+            bClicked = false;
+        }
+        if (Tooltip && ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("%s", Tooltip);
+        }
+        return bClicked;
+    }
 }
 
 static uint32 GNextParticleSystemEditorInstanceId = 0;
@@ -382,7 +427,11 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
     }
 
     ImGui::PushStyleColor(ImGuiCol_WindowBg, PSE::WindowBg);
-    ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_MenuBar;
+    // NoScrollbar/NoScrollWithMouse — 에디터는 내부 패널 단위로 스크롤되므로
+    // 바깥 윈도우 자체는 스크롤바가 절대 나타나지 않아야 한다.
+    ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_MenuBar |
+                                   ImGuiWindowFlags_NoScrollbar |
+                                   ImGuiWindowFlags_NoScrollWithMouse;
     if (ViewportClient.IsMouseOverViewport())
     {
         WindowFlags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
@@ -827,83 +876,180 @@ void FParticleSystemEditorWidget::RenderMenuBar()
 
     if (ImGui::BeginMenu("File"))
     {
-        if (ImGui::MenuItem("Save", "Ctrl+S", false, IsDirty()))
-        {
-            SaveAsset();
-        }
+        if (ImGui::MenuItem("Save", "Ctrl+S", false, IsDirty())) SaveAsset();
+        ImGui::MenuItem("Save As...", nullptr, false, false);
         ImGui::Separator();
-        if (ImGui::MenuItem("Close"))
-        {
-            Close();
-        }
+        if (ImGui::MenuItem("Close")) Close();
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Edit"))
+    {
+        ImGui::MenuItem("Undo", "Ctrl+Z", false, false);
+        ImGui::MenuItem("Redo", "Ctrl+Y", false, false);
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Asset"))
+    {
+        ImGui::MenuItem("Find in Content Browser", nullptr, false, false);
+        ImGui::MenuItem("Reimport", nullptr, false, false);
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Window"))
+    {
+        ImGui::MenuItem("Preview",      nullptr, true, false);
+        ImGui::MenuItem("Emitters",     nullptr, true, false);
+        ImGui::MenuItem("Details",      nullptr, true, false);
+        ImGui::MenuItem("Curve Editor", nullptr, true, false);
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Help"))
+    {
+        ImGui::MenuItem("Documentation", nullptr, false, false);
         ImGui::EndMenu();
     }
 
     ImGui::EndMenuBar();
 }
 
-// ── 툴바 (살아있는 버튼만) ─────────────────────────────────────────────────
+// ── 툴바 (Content/Editor/ToolIcons/ 아이콘 사용, 가로 스크롤 지원) ─────────
 void FParticleSystemEditorWidget::RenderToolbar()
 {
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(9.0f, 5.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 4.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, 4.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3.0f, 3.0f));
+    ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.12f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(1.0f, 1.0f, 1.0f, 0.22f));
 
-    auto Tool = [](const char* Label, const char* Tip, bool bEnabled = true) -> bool
+    constexpr float IconSize  = 28.0f;
+    // 높이 = WindowPadding y*2 + (icon + FramePadding y*2) + 가로 스크롤바.
+    //      = 2*2 + (28 + 2*4) + 14 = 54px.
+    constexpr float ToolbarH  = 54.0f;
+
+    // child 내부의 기본 WindowPadding(8,8)이 그대로면 세로 스크롤바가 항상 생긴다.
+    // 가로 스크롤바만 필요할 때만 보이도록 padding을 최소화.
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));
+    if (ImGui::BeginChild("##PSEToolbar", ImVec2(0.0f, ToolbarH), false,
+                          ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoBackground))
     {
-        if (!bEnabled)
+        auto Group = []()
         {
-            ImGui::BeginDisabled();
-        }
-        const bool bPressed = ImGui::Button(Label);
-        if (!bEnabled)
+            const ImVec2 Pos = ImGui::GetCursorScreenPos();
+            ImGui::GetWindowDrawList()->AddLine(
+                ImVec2(Pos.x + 4.0f, Pos.y + 4.0f),
+                ImVec2(Pos.x + 4.0f, Pos.y + 32.0f),
+                PSE::Border32
+            );
+            ImGui::Dummy(ImVec2(8.0f, 0.0f));
+            ImGui::SameLine();
+        };
+
+        // 그룹 1: 에셋.
+        if (IconToolButton("##Save",
+                           LoadToolIcon(L"SaveCurrent.png"),
+                           "Save", "Save the particle system (Ctrl+S)", IsDirty(), IconSize))
         {
-            ImGui::EndDisabled();
-        }
-        if (Tip && ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("%s", Tip);
+            SaveAsset();
         }
         ImGui::SameLine();
-        return bPressed;
-    };
-
-    auto Group = []()
-    {
-        const ImVec2 Pos = ImGui::GetCursorScreenPos();
-        ImGui::GetWindowDrawList()->AddLine(
-            ImVec2(Pos.x + 3.0f, Pos.y + 3.0f),
-            ImVec2(Pos.x + 3.0f, Pos.y + 23.0f),
-            PSE::Border32
-        );
-        ImGui::Dummy(ImVec2(7.0f, 0.0f));
+        IconToolButton("##FindCB",
+                       LoadToolIcon(L"ContentBrowser.png"),
+                       "Find", "Find this asset in the Content Browser (not implemented)", false, IconSize);
         ImGui::SameLine();
-    };
+        Group();
 
-    if (Tool("Save", "Save the particle system (Ctrl+S)", IsDirty()))
-    {
-        SaveAsset();
-    }
-    Group();
-
-    if (Tool("Restart Sim", "Restart the preview simulation"))
-    {
-        RestartPreviewSimulation();
-    }
-    if (Tool(bSimulating ? "Pause" : "Play", "Toggle preview simulation"))
-    {
-        bSimulating = !bSimulating;
-        if (PreviewPSC)
+        // 그룹 2: 시뮬레이션.
+        if (IconToolButton("##RestartSim",
+                           LoadToolIcon(L"icon_Cascade_RestartSim_40x.png"),
+                           "RSim", "Restart the preview simulation", true, IconSize))
         {
-            if (bSimulating) PreviewPSC->Activate();
-            else             PreviewPSC->Deactivate();
+            RestartPreviewSimulation();
         }
-    }
-    if (Tool("Frame", "Frame preview camera on emitters (F)", ViewportClient.IsRenderable()))
-    {
-        ViewportClient.ResetCameraToPreviewBounds();
-    }
+        ImGui::SameLine();
+        if (IconToolButton("##RestartLvl",
+                           LoadToolIcon(L"icon_Cascade_RestartInLevel_40x.png"),
+                           "RLvl",
+                           "Restart all level instances of this particle system\n"
+                           "(re-runs ResetSystem on every UParticleSystemComponent referencing this asset)",
+                           GetParticleSystem() != nullptr, IconSize))
+        {
+            RefreshExternalComponents(GetParticleSystem());
+            RestartPreviewSimulation();
+        }
+        ImGui::SameLine();
+        Group();
 
+        // 그룹 3: 편집 이력.
+        IconToolButton("##Undo",
+                       LoadToolIcon(L"icon_Generic_Undo_40x.png"),
+                       "Undo", "Undo (not implemented — no transaction system yet)", false, IconSize);
+        ImGui::SameLine();
+        IconToolButton("##Redo",
+                       LoadToolIcon(L"icon_Generic_Redo_40x.png"),
+                       "Redo", "Redo (not implemented — no transaction system yet)", false, IconSize);
+        ImGui::SameLine();
+        Group();
+
+        // 그룹 4: 뷰포트 옵션.
+        IconToolButton("##Thumb",
+                       LoadToolIcon(L"icon_Cascade_Thumbnail_40x.png"),
+                       "Thmb", "Capture thumbnail from preview (not implemented)", false, IconSize);
+        ImGui::SameLine();
+        IconToolButton("##Bounds",
+                       LoadToolIcon(L"icon_Cascade_Bounds_40x.png"),
+                       "Bnds", "Toggle bounds display (not implemented)", false, IconSize);
+        ImGui::SameLine();
+        IconToolButton("##Axis",
+                       LoadToolIcon(L"icon_Cascade_Axis_40x.png"),
+                       "Axis", "Toggle origin axis display (not implemented)", false, IconSize);
+        ImGui::SameLine();
+        IconToolButton("##BG",
+                       LoadToolIcon(L"icon_Cascade_Color_40x.png"),
+                       "BG", "Set preview background color (not implemented)", false, IconSize);
+        ImGui::SameLine();
+        Group();
+
+        // 그룹 5: LOD.
+        IconToolButton("##RegenLOD1",
+                       LoadToolIcon(L"icon_Cascade_RegenLOD1_40x.png"),
+                       "RL1", "Regenerate lowest LOD from highest (not implemented)", false, IconSize);
+        ImGui::SameLine();
+        IconToolButton("##RegenLOD2",
+                       LoadToolIcon(L"icon_Cascade_RegenLOD2_40x.png"),
+                       "RL2", "Regenerate highest LOD from lowest (not implemented)", false, IconSize);
+        ImGui::SameLine();
+        IconToolButton("##LowestLOD",
+                       LoadToolIcon(L"icon_Cascade_LowestLOD_40x.png"),
+                       "LowL", "Jump to lowest LOD (not implemented)", false, IconSize);
+        ImGui::SameLine();
+        IconToolButton("##LowerLOD",
+                       LoadToolIcon(L"icon_Cascade_LowerLOD_40x.png"),
+                       "Lwr", "Jump to next lower LOD (not implemented)", false, IconSize);
+        ImGui::SameLine();
+        IconToolButton("##HigherLOD",
+                       LoadToolIcon(L"icon_Cascade_HigherLOD_40x.png"),
+                       "Hgr", "Jump to next higher LOD (not implemented)", false, IconSize);
+        ImGui::SameLine();
+        IconToolButton("##HighestLOD",
+                       LoadToolIcon(L"icon_Cascade_HighestLOD_40x.png"),
+                       "HghL", "Jump to highest LOD (not implemented)", false, IconSize);
+        ImGui::SameLine();
+        IconToolButton("##AddLOD1",
+                       LoadToolIcon(L"icon_Cascade_AddLOD1_40x.png"),
+                       "+L1", "Add LOD before the current (not implemented)", false, IconSize);
+        ImGui::SameLine();
+        IconToolButton("##AddLOD2",
+                       LoadToolIcon(L"icon_Cascade_AddLOD2_40x.png"),
+                       "+L2", "Add LOD after the current (not implemented)", false, IconSize);
+        ImGui::SameLine();
+        IconToolButton("##DeleteLOD",
+                       LoadToolIcon(L"icon_Cascade_DeleteLOD_40x.png"),
+                       "-LOD", "Delete current LOD (not implemented)", false, IconSize);
+    }
+    ImGui::EndChild();
+    ImGui::PopStyleVar(); // WindowPadding
+
+    ImGui::PopStyleColor(3);
     ImGui::PopStyleVar(3);
 }
 
@@ -970,6 +1116,14 @@ void FParticleSystemEditorWidget::RenderViewportPanel(float Width, float Height)
 
     if (BeginPanel("##PSEViewport", "Preview", Width, Height, Context))
     {
+        // 레퍼런스 Cascade의 View/Time 탭. 현재는 시각용 placeholder.
+        if (ImGui::BeginTabBar("##PSEViewportTabs", ImGuiTabBarFlags_None))
+        {
+            if (ImGui::BeginTabItem("View")) { ImGui::EndTabItem(); }
+            if (ImGui::BeginTabItem("Time")) { ImGui::EndTabItem(); }
+            ImGui::EndTabBar();
+        }
+
         const ImVec2 CanvasMin  = ImGui::GetCursorScreenPos();
         ImVec2       CanvasSize = ImGui::GetContentRegionAvail();
         CanvasSize.y            = (std::max)(CanvasSize.y, 32.0f);
@@ -1095,6 +1249,19 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         MarkDirty();
                         RestartPreviewSimulation();
                     }
+
+                    // Mesh emitter 표시 — 레퍼런스 Cascade의 "Mesh Data" 헤더와 동일한 위치.
+                    if (Emitter && Emitter->bUseMeshInstance)
+                    {
+                        ImDrawList*  DL  = ImGui::GetWindowDrawList();
+                        const ImVec2 Pos = ImGui::GetCursorScreenPos();
+                        const float  W   = ImGui::GetContentRegionAvail().x;
+                        const float  H   = ImGui::GetTextLineHeight() + 4.0f;
+                        DL->AddRectFilled(Pos, ImVec2(Pos.x + W, Pos.y + H), IM_COL32(60, 70, 90, 255), 3.0f);
+                        DL->AddText(ImVec2(Pos.x + 6.0f, Pos.y + 2.0f), PSE::HeaderText, "Mesh Data");
+                        ImGui::Dummy(ImVec2(W, H + 2.0f));
+                    }
+
                     ImGui::Separator();
 
                     TArray<FEmitterModuleEntry> ModuleList;
@@ -1107,9 +1274,75 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         const FEmitterModuleEntry& Entry     = ModuleList[ModuleIndex];
                         const bool                 bSelected = bEmitterSelected && (SelectedModuleIndex == ModuleIndex);
 
+                        UParticleLODLevel* LOD0Probe = Emitter ? Emitter->GetLODLevel(0) : nullptr;
+                        const bool bIsCoreSlot = LOD0Probe && (
+                            Entry.Module == LOD0Probe->RequiredModule ||
+                            Entry.Module == LOD0Probe->SpawnModule ||
+                            Entry.Module == static_cast<UParticleModule*>(LOD0Probe->TypeDataModule));
+
+                        // 좌측 enable 토글 아이콘 (Required/Spawn/TypeData는 토글 의미 없음 → 비활성).
+                        ImDrawList*  DL  = ImGui::GetWindowDrawList();
+                        const ImVec2 IconPos = ImGui::GetCursorScreenPos();
+                        constexpr float IconSize = 14.0f;
+                        const bool bModEnabled = Entry.Module && (Entry.Module->bEnabled != 0);
+                        const ImU32 IconCol = bIsCoreSlot
+                            ? IM_COL32(110, 115, 125, 200)
+                            : (bModEnabled ? PSE::Accent : IM_COL32(80, 84, 92, 255));
+                        DL->AddRectFilled(IconPos,
+                            ImVec2(IconPos.x + IconSize, IconPos.y + IconSize),
+                            IconCol, 2.0f);
+                        if (bModEnabled)
+                        {
+                            // 체크 표시 비슷한 시각 신호.
+                            DL->AddLine(
+                                ImVec2(IconPos.x + 3.0f, IconPos.y + IconSize * 0.55f),
+                                ImVec2(IconPos.x + IconSize * 0.42f, IconPos.y + IconSize - 3.0f),
+                                IM_COL32(255, 255, 255, 230), 1.6f);
+                            DL->AddLine(
+                                ImVec2(IconPos.x + IconSize * 0.42f, IconPos.y + IconSize - 3.0f),
+                                ImVec2(IconPos.x + IconSize - 2.0f, IconPos.y + 3.0f),
+                                IM_COL32(255, 255, 255, 230), 1.6f);
+                        }
+                        ImGui::InvisibleButton("##enableicon", ImVec2(IconSize, IconSize));
+                        if (!bIsCoreSlot && ImGui::IsItemClicked() && Entry.Module)
+                        {
+                            Entry.Module->bEnabled = bModEnabled ? 0 : 1;
+                            MarkDirty();
+                            RestartPreviewSimulation();
+                        }
+                        if (ImGui::IsItemHovered())
+                        {
+                            ImGui::SetTooltip(bIsCoreSlot
+                                ? "Required/Spawn/TypeData are always enabled"
+                                : (bModEnabled ? "Disable module" : "Enable module"));
+                        }
+                        ImGui::SameLine(0.0f, 4.0f);
+
                         if (ImGui::Selectable(Entry.Name, bSelected))
                         {
                             SelectEmitter(EmitterIndex, ModuleIndex);
+                        }
+
+                        // 우측 curve 표시 아이콘 — 모듈이 distribution 커브를 노출하는지 시각 신호.
+                        // 현재는 데이터 없음 → 모두 회색 outline.
+                        const ImVec2 RowMin = ImGui::GetItemRectMin();
+                        const ImVec2 RowMax = ImGui::GetItemRectMax();
+                        const ImVec2 CurveIconMin(RowMax.x - IconSize - 2.0f, RowMin.y + 1.0f);
+                        const ImVec2 CurveIconMax(RowMax.x - 2.0f, RowMin.y + 1.0f + IconSize);
+                        DL->AddRect(CurveIconMin, CurveIconMax, IM_COL32(90, 95, 105, 200), 2.0f);
+                        // 미니 sin 형태 폴리라인.
+                        const float CW = CurveIconMax.x - CurveIconMin.x;
+                        const float CH = CurveIconMax.y - CurveIconMin.y;
+                        for (int32 i = 0; i < 6; ++i)
+                        {
+                            const float T0 = static_cast<float>(i) / 6.0f;
+                            const float T1 = static_cast<float>(i + 1) / 6.0f;
+                            const float Y0 = CurveIconMin.y + CH * (0.5f + 0.35f * (i % 2 == 0 ? -1.0f : 1.0f));
+                            const float Y1 = CurveIconMin.y + CH * (0.5f + 0.35f * ((i + 1) % 2 == 0 ? -1.0f : 1.0f));
+                            DL->AddLine(
+                                ImVec2(CurveIconMin.x + CW * T0, Y0),
+                                ImVec2(CurveIconMin.x + CW * T1, Y1),
+                                IM_COL32(110, 115, 125, 180), 1.0f);
                         }
                         if (ImGui::BeginPopupContextItem("##ModuleCtx"))
                         {
@@ -1296,21 +1529,99 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
 
     if (BeginPanel("##PSEProperties", "Details", Width, Height, Context.c_str()))
     {
+        // 상단 검색창 — 레퍼런스 Cascade의 Details 검색 상자. 현재는 시각용.
+        ImGui::SetNextItemWidth(-1.0f);
+        ImGui::InputTextWithHint("##PSEPropSearch", "Search", PropertySearch, sizeof(PropertySearch));
+        ImGui::Spacing();
+
         // 위젯이 패널 폭을 다 먹어 라벨이 잘리는 일이 없도록 우측에 160px를 라벨 영역으로 남긴다.
         ImGui::PushItemWidth(-160.0f);
 
         if (SelectedEmitterIndex < 0)
         {
-            // 파티클 시스템 자체 — read-only 요약만.
-            ImGui::TextColored(PSE::DimTextV, "Source Path");
-            ImGui::TextWrapped("%s", ParticleSystem && !ParticleSystem->GetSourcePath().empty()
-                ? ParticleSystem->GetSourcePath().c_str() : "(unsaved)");
-            ImGui::Spacing();
-            ImGui::TextColored(PSE::DimTextV, "Emitter Count");
-            ImGui::Text("%d", ParticleSystem ? static_cast<int32>(ParticleSystem->GetEmitters().size()) : 0);
-            ImGui::Spacing();
-            ImGui::TextColored(PSE::DimTextV, "Status");
-            ImGui::Text("%s", IsDirty() ? "Modified" : "Saved");
+            // ── Particle System ──
+            ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+            if (ImGui::CollapsingHeader("Particle System"))
+            {
+                ImGui::TextColored(PSE::DimTextV, "Source Path");
+                ImGui::TextWrapped("%s", ParticleSystem && !ParticleSystem->GetSourcePath().empty()
+                    ? ParticleSystem->GetSourcePath().c_str() : "(unsaved)");
+
+                ImGui::TextColored(PSE::DimTextV, "Emitters: %d",
+                    ParticleSystem ? static_cast<int32>(ParticleSystem->GetEmitters().size()) : 0);
+                ImGui::TextColored(PSE::DimTextV, "Status: %s", IsDirty() ? "Modified" : "Saved");
+
+                // 레퍼런스 Cascade에 노출되는 시스템 단위 필드들 — 엔진에 아직 미구현이라 placeholder.
+                ImGui::BeginDisabled();
+                int   SysUpdateMode    = 0;
+                float UpdateTimeFPS    = 60.0f;
+                float WarmupTime       = 0.0f;
+                float WarmupTickRate   = 0.0f;
+                bool  bOrientZ         = false;
+                float SecondsInactive  = 0.0f;
+                ImGui::Combo("System Update Mode", &SysUpdateMode, "EPSUM_RealTime\0EPSUM_FixedTime\0\0");
+                ImGui::DragFloat("Update Time FPS",          &UpdateTimeFPS, 1.0f, 1.0f, 240.0f);
+                ImGui::DragFloat("Warmup Time",              &WarmupTime,    0.05f, 0.0f, 1000.0f);
+                ImGui::DragFloat("Warmup Tick Rate",         &WarmupTickRate,0.05f, 0.0f, 1000.0f);
+                ImGui::Checkbox ("Orient ZAxis Toward Camera", &bOrientZ);
+                ImGui::DragFloat("Seconds Before Inactive",  &SecondsInactive,0.1f, 0.0f, 1000.0f);
+                ImGui::EndDisabled();
+            }
+
+            // ── Thumbnail ──
+            if (ImGui::CollapsingHeader("Thumbnail"))
+            {
+                ImGui::BeginDisabled();
+                float ThumbWarmup = 1.0f;
+                bool  bRealtime   = false;
+                ImGui::DragFloat("Thumbnail Warmup", &ThumbWarmup, 0.1f, 0.0f, 60.0f);
+                ImGui::Checkbox ("Use Realtime Thumbnail", &bRealtime);
+                ImGui::EndDisabled();
+            }
+
+            // ── LOD ──
+            ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+            if (ImGui::CollapsingHeader("LOD"))
+            {
+                ImGui::BeginDisabled();
+                float CheckTime = 0.25f;
+                int   Method    = 0;
+                ImGui::DragFloat("LOD Distance Check Time", &CheckTime, 0.05f, 0.0f, 10.0f);
+                ImGui::Combo("LOD Method", &Method,
+                    "PARTICLESYSTEMLODMETHOD_Automatic\0"
+                    "PARTICLESYSTEMLODMETHOD_DirectSet\0"
+                    "PARTICLESYSTEMLODMETHOD_ActivateAutomatic\0\0");
+                ImGui::EndDisabled();
+
+                // LODDistances는 실제 UPROPERTY → 편집 가능.
+                if (ParticleSystem)
+                {
+                    TArray<float>& Dist = ParticleSystem->LODDistances;
+                    ImGui::Text("LOD Distances (%d)", static_cast<int32>(Dist.size()));
+                    bool bDistChanged = false;
+                    int32 RemoveAt = -1;
+                    for (int32 i = 0; i < static_cast<int32>(Dist.size()); ++i)
+                    {
+                        ImGui::PushID(i);
+                        char Lbl[24]; std::snprintf(Lbl, sizeof(Lbl), "[%d]", i);
+                        bDistChanged |= ImGui::DragFloat(Lbl, &Dist[i], 1.0f, 0.0f, 100000.0f);
+                        ImGui::SameLine();
+                        if (ImGui::SmallButton("x")) { RemoveAt = i; }
+                        ImGui::PopID();
+                    }
+                    if (RemoveAt >= 0)
+                    {
+                        Dist.erase(Dist.begin() + RemoveAt);
+                        bDistChanged = true;
+                    }
+                    if (ImGui::SmallButton("+ Distance"))
+                    {
+                        Dist.push_back(Dist.empty() ? 1000.0f : Dist.back() * 2.0f);
+                        bDistChanged = true;
+                    }
+                    if (bDistChanged) MarkDirty();
+                }
+            }
         }
         else if (!SelectedModule)
         {
@@ -1735,6 +2046,127 @@ void FParticleSystemEditorWidget::RenderCurveEditorPanel(float Width, float Heig
 
     if (BeginPanel("##PSECurveEditor", "Curve Editor", Width, Height, Context))
     {
+        // ── 상단 툴바 — Cascade Curve Editor 아이콘 (모두 미구현이라 disabled, 가로 스크롤 지원) ──
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 2.0f));
+        ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.12f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(1.0f, 1.0f, 1.0f, 0.22f));
+
+        constexpr float CurveIconSize = 22.0f;
+        // 높이 = WindowPadding y*2 + (icon + FramePadding y*2) + 가로 스크롤바.
+        //      = 2*2 + (22 + 2*4) + 14 = 48px.
+        constexpr float CurveToolbarH = 48.0f;
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));
+        if (ImGui::BeginChild("##PSECurveToolbar", ImVec2(0.0f, CurveToolbarH), false,
+                              ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoBackground))
+        {
+            struct FCurveBtn { const wchar_t* Icon; const char* Fallback; const char* Tip; };
+            const FCurveBtn ViewBtns[] = {
+                { L"icon_CurveEditor_Horizontal_40x.png",  "H",   "Fit horizontal" },
+                { L"icon_CurveEditor_Vertical_40x.png",    "V",   "Fit vertical" },
+                { L"icon_CurveEditor_ShowAll_40x.png",     "All", "Fit all" },
+                { L"icon_CurveEditor_ZoomToFit_40x.png",   "Sel", "Fit selected" },
+                { L"icon_CurveEditor_Pan_40x.png",         "Pan", "Pan mode" },
+                { L"icon_CurveEditor_Zoom_40x.png",        "Zm",  "Zoom mode" },
+            };
+            for (const auto& B : ViewBtns)
+            {
+                IconToolButton(B.Tip, LoadToolIcon(B.Icon), B.Fallback, B.Tip, false, CurveIconSize);
+                ImGui::SameLine();
+            }
+
+            // 구분자.
+            const ImVec2 SepPos = ImGui::GetCursorScreenPos();
+            ImGui::GetWindowDrawList()->AddLine(
+                ImVec2(SepPos.x + 3.0f, SepPos.y + 3.0f),
+                ImVec2(SepPos.x + 3.0f, SepPos.y + 25.0f),
+                PSE::Border32);
+            ImGui::Dummy(ImVec2(7.0f, 0.0f));
+            ImGui::SameLine();
+
+            const FCurveBtn TanBtns[] = {
+                { L"icon_CurveEditor_Auto_40x.png",        "A",  "Auto tangent" },
+                { L"icon_CurveEditor_AutoClamped_40x.png", "AC", "Auto/Clamped tangent" },
+                { L"icon_CurveEditor_User_40x.png",        "U",  "User tangent" },
+                { L"icon_CurveEditor_Break_40x.png",       "Br", "Break tangent" },
+                { L"icon_CurveEditor_Linear_40x.png",      "Ln", "Linear" },
+                { L"icon_CurveEditor_Constant_40x.png",    "Cn", "Constant" },
+                { L"icon_CurveEditor_Flatten_40x.png",     "Fl", "Flatten" },
+                { L"icon_CurveEditor_Straighten_40x.png",  "St", "Straighten" },
+            };
+            for (const auto& B : TanBtns)
+            {
+                IconToolButton(B.Tip, LoadToolIcon(B.Icon), B.Fallback, B.Tip, false, CurveIconSize);
+                ImGui::SameLine();
+            }
+
+            // 구분자 + Create/Delete.
+            const ImVec2 SepPos2 = ImGui::GetCursorScreenPos();
+            ImGui::GetWindowDrawList()->AddLine(
+                ImVec2(SepPos2.x + 3.0f, SepPos2.y + 3.0f),
+                ImVec2(SepPos2.x + 3.0f, SepPos2.y + 25.0f),
+                PSE::Border32);
+            ImGui::Dummy(ImVec2(7.0f, 0.0f));
+            ImGui::SameLine();
+
+            IconToolButton("Create", LoadToolIcon(L"icon_CurveEditor_Create_40x.png"),
+                           "+", "Create curve (not implemented)", false, CurveIconSize);
+            ImGui::SameLine();
+            IconToolButton("Delete", LoadToolIcon(L"icon_CurveEditor_DeleteTab_40x.png"),
+                           "x", "Delete curve (not implemented)", false, CurveIconSize);
+        }
+        ImGui::EndChild();
+        ImGui::PopStyleVar(); // WindowPadding
+
+        ImGui::PopStyleColor(3);
+        ImGui::PopStyleVar(2);
+        ImGui::Spacing();
+
+        // ── 좌측 트랙 목록 + 우측 그래프 캔버스 ──
+        constexpr float TrackListW = 140.0f;
+        if (ImGui::BeginChild("##PSECurveTracks", ImVec2(TrackListW, 0.0f), true))
+        {
+            if (!SelectedEntry)
+            {
+                ImGui::TextColored(PSE::DimTextV, "Select a\nmodule");
+            }
+            else
+            {
+                // 현재는 모듈에 FRawDistribution 필드가 없어 실제 트랙이 없음.
+                // 레퍼런스 UI 파리티를 위해 자주 쓰이는 트랙명 placeholder를 노출.
+                const char* TrackNames[] = {
+                    "ColorOverLife", "AlphaOverLife", "LifeMultiplier",
+                    "SizeMultiplier", "VelocityMultiplier"
+                };
+                for (int32 i = 0; i < IM_ARRAYSIZE(TrackNames); ++i)
+                {
+                    ImGui::PushID(i);
+                    ImDrawList*  DL  = ImGui::GetWindowDrawList();
+                    const ImVec2 Pos = ImGui::GetCursorScreenPos();
+                    constexpr float Sw = 8.0f;
+                    // RGB 채널 표시 박스 — Cascade의 작은 색 사각형 3개를 모사.
+                    DL->AddRectFilled(ImVec2(Pos.x, Pos.y + 3.0f),
+                                      ImVec2(Pos.x + Sw, Pos.y + 3.0f + Sw),
+                                      IM_COL32(214, 90, 90, 200));
+                    DL->AddRectFilled(ImVec2(Pos.x + Sw + 2.0f, Pos.y + 3.0f),
+                                      ImVec2(Pos.x + 2 * Sw + 2.0f, Pos.y + 3.0f + Sw),
+                                      IM_COL32(96, 196, 96, 200));
+                    DL->AddRectFilled(ImVec2(Pos.x + 2 * (Sw + 2.0f), Pos.y + 3.0f),
+                                      ImVec2(Pos.x + 3 * Sw + 4.0f, Pos.y + 3.0f + Sw),
+                                      IM_COL32(96, 140, 226, 200));
+                    ImGui::Dummy(ImVec2(3 * Sw + 8.0f, Sw + 2.0f));
+                    ImGui::SameLine();
+                    ImGui::TextColored(PSE::DimTextV, "%s", TrackNames[i]);
+                    ImGui::PopID();
+                }
+            }
+        }
+        ImGui::EndChild();
+
+        ImGui::SameLine();
+
         const ImVec2 CanvasMin  = ImGui::GetCursorScreenPos();
         const ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
         const ImVec2 CanvasMax(CanvasMin.x + CanvasSize.x, CanvasMin.y + CanvasSize.y);

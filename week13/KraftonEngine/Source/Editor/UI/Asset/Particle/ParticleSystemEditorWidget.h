@@ -78,6 +78,9 @@ private:
     char  EmitterNameBuf[128] = {};
     int32 EmitterNameBufFor   = -1;
 
+    // Details 패널 상단의 속성 검색 입력. 현재는 시각용 placeholder.
+    char  PropertySearch[128] = {};
+
     FParticleSystemEditorViewportClient ViewportClient;
     FName                               PreviewWorldHandle = FName::None;
     UParticleSystemComponent*           PreviewPSC         = nullptr;
