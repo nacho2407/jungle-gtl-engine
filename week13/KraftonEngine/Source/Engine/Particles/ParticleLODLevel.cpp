@@ -5,11 +5,49 @@
 #include "Particles/ParticleModule.h"
 #include "Particles/ParticleModuleRequired.h"
 #include "Particles/Spawn/ParticleModuleSpawn.h"
+#include "Particles/TypeData/ParticleModuleTypeDataBase.h"
 #include "Particles/Velocity/ParticleModuleVelocity.h"
 #include "Particles/Size/ParticleModuleSize.h"
 #include "Particles/Color/ParticleModuleColor.h"
 
+#include "Object/Reflection/ObjectFactory.h"
+#include "Serialization/Archive.h"
+
 #include <algorithm>
+
+namespace
+{
+	// 모듈 한 슬롯을 (ClassName, [payload]) 형태로 직렬화한다. ClassName 으로 ObjectFactory
+	// 디스패치를 해서 적절한 구체 클래스를 만들어준 뒤 해당 인스턴스의 Serialize 를 호출.
+	// 로드 시 클래스 미등록/타입 mismatch면 슬롯은 nullptr로 두고 다음으로 넘어간다.
+	template<class T>
+	void SerializeOwnedModule(FArchive& Ar, T*& Module, UObject* Outer)
+	{
+		FString ClassName = (Ar.IsSaving() && Module)
+			? FString(Module->GetClass()->GetName())
+			: FString("None");
+		Ar << ClassName;
+
+		if (Ar.IsLoading())
+		{
+			Module = nullptr;
+			if (!ClassName.empty() && ClassName != "None")
+			{
+				UObject* Created = FObjectFactory::Get().Create(ClassName, Outer);
+				Module = Cast<T>(Created);
+				if (!Module && Created)
+				{
+					UObjectManager::Get().DestroyObject(Created);
+				}
+			}
+		}
+
+		if (Module)
+		{
+			Module->Serialize(Ar);
+		}
+	}
+}
 
 int32 UParticleLODLevel::CalculateMaxActiveParticleCount() const
 {
@@ -61,5 +99,42 @@ void UParticleLODLevel::UpdateModuleLists()
 		{
 			UpdateModules.push_back(Module);
 		}
+	}
+}
+
+void UParticleLODLevel::Serialize(FArchive& Ar)
+{
+	int32 Version = 0;
+	Ar << Version;
+
+	Ar << Level;
+
+	bool bSavedEnabled = bEnabled;
+	Ar << bSavedEnabled;
+	if (Ar.IsLoading()) bEnabled = bSavedEnabled;
+
+	SerializeOwnedModule(Ar, RequiredModule, this);
+	SerializeOwnedModule(Ar, SpawnModule, this);
+	SerializeOwnedModule(Ar, TypeDataModule, this);
+
+	uint32 ModuleCount = Ar.IsSaving() ? static_cast<uint32>(Modules.size()) : 0;
+	Ar << ModuleCount;
+
+	if (Ar.IsLoading())
+	{
+		Modules.clear();
+		Modules.resize(ModuleCount, nullptr);
+	}
+
+	for (uint32 i = 0; i < ModuleCount; ++i)
+	{
+		UParticleModule* M = Ar.IsSaving() ? Modules[i] : nullptr;
+		SerializeOwnedModule(Ar, M, this);
+		if (Ar.IsLoading()) Modules[i] = M;
+	}
+
+	if (Ar.IsLoading())
+	{
+		UpdateModuleLists();
 	}
 }

@@ -1,5 +1,7 @@
 ﻿#include "ParticleModule.h"
 
+#include "Serialization/Archive.h"
+
 const FTransform& UParticleModule::FContext::GetTransform() const
 {
 	return FTransform();
@@ -53,6 +55,32 @@ void UParticleModule::RefreshModule()
 EModuleType UParticleModule::GetModuleType() const
 {
 	return EModuleType();
+}
+
+void UParticleModule::Serialize(FArchive& Ar)
+{
+	// 의도적으로 Super::Serialize 호출 안 함 — UObject가 ObjectName을 쓰는데,
+	// 모듈은 ObjectFactory로 재생성될 때 새 이름을 받으므로 디스크에 박힌 옛 이름은
+	// 무의미하고 충돌만 일으킨다.
+
+	int32 Version = 0;
+	Ar << Version;
+
+	bool bE = bEnabled;
+	bool bS = bSpawnModule;
+	bool bU = bUpdateModule;
+	bool bF = bFinalUpdateModule;
+	Ar << bE;
+	Ar << bS;
+	Ar << bU;
+	Ar << bF;
+	if (Ar.IsLoading())
+	{
+		bEnabled           = bE ? 1 : 0;
+		bSpawnModule       = bS ? 1 : 0;
+		bUpdateModule      = bU ? 1 : 0;
+		bFinalUpdateModule = bF ? 1 : 0;
+	}
 }
 
 #if WITH_EDITOR

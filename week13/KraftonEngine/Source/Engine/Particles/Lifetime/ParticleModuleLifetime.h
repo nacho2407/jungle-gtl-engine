@@ -29,6 +29,8 @@ public:
 	float GetLifetimeValue(const FContext& Context, float InTime, UObject* Data = NULL) override;
 	//~ End UParticleModuleLifetimeBase Interface
 
+	virtual void Serialize(FArchive& Ar) override;
+
 #if WITH_EDITOR
 	virtual void	PostEditChangeProperty(const FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR

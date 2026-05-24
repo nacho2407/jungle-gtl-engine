@@ -24,6 +24,8 @@ public:
 	*/
 	virtual void Spawn(const FSpawnContext& Context) override;
 
+	virtual void Serialize(FArchive& Ar) override;
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(const FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR

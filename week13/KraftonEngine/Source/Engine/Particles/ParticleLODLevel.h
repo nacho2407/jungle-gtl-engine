@@ -41,4 +41,6 @@ public:
 
 	void UpdateModuleLists();
 	int32 CalculateMaxActiveParticleCount() const;
+
+	void Serialize(FArchive& Ar) override;
 };
