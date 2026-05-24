@@ -106,14 +106,16 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 // ============================================================
 // SelectEffectiveShader — ViewMode에 따른 UberLit 셰이더 변형 선택
 // ============================================================
-FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode, bool bUseSkeletalVertexFactory, bool bWeightBoneHeatMap)
+FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode,
+	bool bUseSkeletalVertexFactory, bool bUseInstancedVertexFactory, bool bWeightBoneHeatMap)
 {
 	if (ProxyShader != FShaderManager::Get().GetOrCreate(EShaderPath::UberLit))
 		return ProxyShader;
 
-	const EUberLitDefines::EVertexFactory VertexFactory = bUseSkeletalVertexFactory
-		? EUberLitDefines::EVertexFactory::SkeletalMesh
-		: EUberLitDefines::EVertexFactory::StaticMesh;
+	const EUberLitDefines::EVertexFactory VertexFactory =
+		bUseSkeletalVertexFactory ? EUberLitDefines::EVertexFactory::SkeletalMesh :
+		bUseInstancedVertexFactory ? EUberLitDefines::EVertexFactory::InstancedStaticMesh :
+		EUberLitDefines::EVertexFactory::StaticMesh;
 
 	switch (ViewMode)
 	{
@@ -127,8 +129,12 @@ FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewM
 	case EViewMode::LightCulling:
 		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Phong, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap);
 	default:
-		return bUseSkeletalVertexFactory
-			? FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Default, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap)
+		return (bUseSkeletalVertexFactory || bUseInstancedVertexFactory)
+			? FShaderManager::Get().GetOrCreateUberLitPermutation(
+				EUberLitDefines::ELightingModel::Default,
+				VertexFactory,
+				EShaderErrorMode::Notification,
+				bWeightBoneHeatMap)
 			: ProxyShader;
 	}
 }
@@ -513,7 +519,7 @@ void FDrawCommandBuilder::BuildCommandForSection(FScene& Scene, const FPrimitive
 	FShader* SectionShader = (Section.Material && Section.Material->GetShader())
 		? Section.Material->GetShader()
 		: Proxy.GetShader();
-	FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, BuildCtx.bGPUSkinning, BuildCtx.bWeightBoneHeatMap);
+	FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, BuildCtx.bGPUSkinning, false, BuildCtx.bWeightBoneHeatMap);
 
 	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(Pass, CollectViewMode);
 
@@ -569,22 +575,13 @@ void FDrawCommandBuilder::BuildParticleCommandForSection(FScene& Scene, const FP
 	if (Section.IndexCount == 0) return;
 	if (!Buffer.IB) return;
 
+	const bool bInstanced = Buffer.IsInstanced();
+
 	FShader* SectionShader = (Section.Material && Section.Material->GetShader())
 		? Section.Material->GetShader()
 		: Proxy.GetShader();
 
-	if (Buffer.IsInstanced())
-	{
-		SectionShader = FShaderManager::Get().GetOrCreate(EShaderPath::MeshParticleInstanced);
-	}
-	else
-	{
-		SectionShader = (Section.Material && Section.Material->GetShader())
-			? Section.Material->GetShader()
-			: Proxy.GetShader();
-	}
-
-	FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, false, false);
+	FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, false, bInstanced, false);
 
 	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(Pass, CollectViewMode);
 

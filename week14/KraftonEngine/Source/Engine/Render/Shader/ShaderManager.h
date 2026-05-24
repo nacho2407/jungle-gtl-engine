@@ -91,7 +91,6 @@ namespace EShaderPath
 	inline constexpr const char* UberLit = "Shaders/Geometry/UberLit.hlsl";
 	inline constexpr const char* Decal = "Shaders/Geometry/Decal.hlsl";
 	inline constexpr const char* Particle = "Shaders/Geometry/Particle.hlsl";
-	inline constexpr const char* MeshParticleInstanced = "Shaders/Geometry/MeshParticleInstanced.hlsl";
 
 	inline constexpr const char* Editor = "Shaders/Editor/Editor.hlsl";
 	inline constexpr const char* Gizmo = "Shaders/Editor/Gizmo.hlsl";
@@ -143,7 +142,8 @@ namespace EShadowDepthDefines
 		const D3D_SHADER_MACRO* Defines = 
 			(VF == EVertexFactory::SkeletalMesh) ? SkeletalMesh : StaticMesh;
 		const char* VSEntry =
-			(VF == EVertexFactory::SkeletalMesh) ? EntryPoint::SkeletalMeshVS : EntryPoint::StaticMeshVS;
+			(VF == EVertexFactory::SkeletalMesh) ? EntryPoint::SkeletalMeshVS :
+			EntryPoint::StaticMeshVS;
 		return FShaderKey(EShaderPath::ShadowDepth, Defines, VSEntry, EntryPoint::PS);
 	}
 
@@ -154,6 +154,7 @@ namespace EUberLitDefines
 	{
 		inline constexpr const char* StaticMeshVS = "VS_StaticMesh";
 		inline constexpr const char* SkeletalMeshVS = "VS_SkeletalMesh";
+		inline constexpr const char* InstancedStaticMeshVS = "VS_InstancedStaticMesh";
 		inline constexpr const char* PS = "PS";
 	}
 
@@ -170,6 +171,7 @@ namespace EUberLitDefines
 	{
 		StaticMesh,
 		SkeletalMesh,
+		InstancedStaticMesh,
 	};
 
 	inline const D3D_SHADER_MACRO Default[] = { {"LIGHTING_MODEL_PHONG", "1"}, {nullptr, nullptr} };
@@ -212,9 +214,10 @@ namespace EUberLitDefines
 
 	inline FShaderKey MakePermutationKey(ELightingModel LightingModel, EVertexFactory VertexFactory, bool bWeightBoneHeatMap = false)
 	{
-		const char* VSEntryPoint = VertexFactory == EVertexFactory::SkeletalMesh
-			? EntryPoint::SkeletalMeshVS
-			: EntryPoint::StaticMeshVS;
+		const char* VSEntryPoint =
+			VertexFactory == EVertexFactory::SkeletalMesh ? EntryPoint::SkeletalMeshVS :
+			VertexFactory == EVertexFactory::InstancedStaticMesh ? EntryPoint::InstancedStaticMeshVS :
+			EntryPoint::StaticMeshVS;
 		return FShaderKey(EShaderPath::UberLit, GetDefines(LightingModel, VertexFactory, bWeightBoneHeatMap), VSEntryPoint, EntryPoint::PS);
 	}
 }
