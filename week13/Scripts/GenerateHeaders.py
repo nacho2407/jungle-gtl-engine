@@ -44,6 +44,15 @@ UENUM_RE = re.compile(
 ENUM_SENTINELS = {"COUNT", "MAX", "ActiveCount", "Num", "NUM", "Count"}
 
 
+def is_enum_sentinel(entry_name: str) -> bool:
+    """Match exact sentinel name or a trailing '_SENTINEL' suffix (e.g. PSA_MAX, ELT_NUM)."""
+    if entry_name in ENUM_SENTINELS:
+        return True
+    if "_" in entry_name and entry_name.rsplit("_", 1)[-1] in ENUM_SENTINELS:
+        return True
+    return False
+
+
 @dataclass(frozen=True)
 class ReflectedEnum:
     name: str
@@ -323,7 +332,7 @@ def parse_uenums(header: Path, scan_text: str) -> dict[str, ReflectedEnum]:
             entry_name = strip_enum_value(raw_entry)
             if not entry_name:
                 continue
-            if entry_name in ENUM_SENTINELS:
+            if is_enum_sentinel(entry_name):
                 break
             entries.append(entry_name)
 
@@ -528,12 +537,20 @@ def cpp_float_literal(value: str) -> str:
     literal = value.strip()
     if not literal:
         return "0.0f"
-    if literal.endswith(("f", "F")):
+
+    # Normalize an existing f/F suffix in place so "1f" (invalid C++) becomes "1.0f".
+    has_f_suffix = literal.endswith(("f", "F"))
+    suffix = literal[-1] if has_f_suffix else "f"
+    core = literal[:-1] if has_f_suffix else literal
+
+    # Preserve non-literal C++ expressions such as named constants or function calls.
+    if not re.match(r"^[+-]?(?:(?:\d+\.\d*)|(?:\.\d+)|(?:\d+))(?:[eE][+-]?\d+)?$", core):
         return literal
-    # Preserve non-literal C++ expressions such as constants or function calls.
-    if not re.match(r"^[+-]?(?:(?:\d+\.\d*)|(?:\.\d+)|(?:\d+))(?:[eE][+-]?\d+)?$", literal):
-        return literal
-    return f"{literal}f"
+
+    # Integer literals (no dot, no exponent) need ".0" before the f suffix; "0f" is invalid C++.
+    if "." not in core and "e" not in core and "E" not in core:
+        core = f"{core}.0"
+    return f"{core}{suffix}"
 
 
 def infer_allowed_class(asset_type: str | None, explicit_allowed_class: str | None) -> str | None:
@@ -658,9 +675,14 @@ def get_array_element_property_type(prop: ReflectedProperty) -> str | None:
             return "ClassRef"
         if get_tobjectptr_inner_type(element_cpp_type) or (element_cpp_type.endswith("*") and not element_cpp_type.endswith("char*")):
             return "ObjectRef"
-        if prop.struct_type or (prop.metadata and any(key == "struct" or key == "structtype" for key, _ in prop.metadata)):
+        # Primitive types must resolve via TYPE_MAP before the Struct fallback so that
+        # `TArray<float>` is not mis-classified when struct_type happens to be set elsewhere.
+        mapped = TYPE_MAP.get(element_cpp_type)
+        if mapped:
+            return mapped
+        if (prop.struct_type and prop.struct_type != "nullptr") or (prop.metadata and any(key == "struct" or key == "structtype" for key, _ in prop.metadata)):
             return "Struct"
-        return TYPE_MAP.get(element_cpp_type)
+        return None
     return None
 
 
@@ -1141,6 +1163,12 @@ def parse_ufunctions(
             if function_index < 0:
                 break
 
+            # Skip identifier-extended macros like UFUNCTION_DEPRECATED — exact-name only.
+            after_name = function_index + len("UFUNCTION")
+            if after_name < len(body) and (body[after_name].isalnum() or body[after_name] == "_"):
+                cursor = after_name
+                continue
+
             paren_start = body.find("(", function_index)
             if paren_start < 0:
                 warnings.append(f"{class_name}: malformed UFUNCTION without metadata list")
@@ -1292,6 +1320,12 @@ def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum], known_str
             prop_index = body.find("UPROPERTY", cursor)
             if prop_index < 0:
                 break
+
+            # Skip identifier-extended macros like UPROPERTY_DEPRECATED — exact-name only.
+            after_name = prop_index + len("UPROPERTY")
+            if after_name < len(body) and (body[after_name].isalnum() or body[after_name] == "_"):
+                cursor = after_name
+                continue
 
             paren_start = body.find("(", prop_index)
             if paren_start < 0:
@@ -2383,11 +2417,107 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Generated include root. Defaults to <root>/Intermediate/Generated.",
     )
+    parser.add_argument(
+        "--self-test",
+        action="store_true",
+        help="Run internal regression tests for the codegen primitives and exit.",
+    )
     return parser.parse_args()
+
+
+def run_self_tests() -> int:
+    """Regression tests for codegen primitives that have historically broken builds.
+
+    Add a case here whenever a codegen bug escapes to the C++ compiler. The cost
+    of one assertion line is much lower than the cost of a build-time discovery.
+    """
+    failures: list[str] = []
+
+    def check(label: str, got: object, expected: object) -> None:
+        if got != expected:
+            failures.append(f"{label}: expected {expected!r}, got {got!r}")
+
+    # cpp_float_literal — int metadata like Min=0 must not become invalid "0f".
+    check("cpp_float_literal('0')", cpp_float_literal("0"), "0.0f")
+    check("cpp_float_literal('1')", cpp_float_literal("1"), "1.0f")
+    check("cpp_float_literal('-1')", cpp_float_literal("-1"), "-1.0f")
+    check("cpp_float_literal('+2')", cpp_float_literal("+2"), "+2.0f")
+    check("cpp_float_literal('0.5')", cpp_float_literal("0.5"), "0.5f")
+    check("cpp_float_literal('.5')", cpp_float_literal(".5"), ".5f")
+    check("cpp_float_literal('5.')", cpp_float_literal("5."), "5.f")
+    check("cpp_float_literal('1e3')", cpp_float_literal("1e3"), "1e3f")
+    check("cpp_float_literal('1.5E-3')", cpp_float_literal("1.5E-3"), "1.5E-3f")
+    check("cpp_float_literal('0.0f')", cpp_float_literal("0.0f"), "0.0f")
+    check("cpp_float_literal('1.0F')", cpp_float_literal("1.0F"), "1.0F")
+    # Invalid integer+f suffix (e.g. user writes Min=1f) must normalize to "1.0f".
+    check("cpp_float_literal('1f')", cpp_float_literal("1f"), "1.0f")
+    check("cpp_float_literal('0F')", cpp_float_literal("0F"), "0.0F")
+    check("cpp_float_literal('-2f')", cpp_float_literal("-2f"), "-2.0f")
+    check("cpp_float_literal('')", cpp_float_literal(""), "0.0f")
+    check("cpp_float_literal('M_PI')", cpp_float_literal("M_PI"), "M_PI")
+    check("cpp_float_literal('FMath::PI')", cpp_float_literal("FMath::PI"), "FMath::PI")
+    check("cpp_float_literal(' 2 ')", cpp_float_literal(" 2 "), "2.0f")
+
+    # get_array_element_property_type — TArray<float> must report Float, not Struct.
+    def array_prop(cpp_type: str, struct_type: str = "nullptr", metadata: tuple = ()) -> ReflectedProperty:
+        return ReflectedProperty(
+            owner="UTest", cpp_type=cpp_type,
+            member_name="X", display_name="X", category="Test",
+            property_type="Array", flags="PF_None",
+            metadata=metadata,
+            min_value="0.0f", max_value="0.0f", speed_value="0.1f",
+            enum_type_name=None, struct_type=struct_type,
+            asset_type=None, allowed_class=None,
+        )
+
+    check("TArray<float>", get_array_element_property_type(array_prop("TArray<float>")), "Float")
+    check("TArray<int32>", get_array_element_property_type(array_prop("TArray<int32>")), "Int")
+    check("TArray<FString>", get_array_element_property_type(array_prop("TArray<FString>")), "String")
+    check(
+        "TArray<FMyStruct> with struct_type",
+        get_array_element_property_type(array_prop("TArray<FMyStruct>", struct_type="FMyStruct::StaticStruct()")),
+        "Struct",
+    )
+    # Unknown primitive (no TYPE_MAP entry, no struct_type) must return None — not Struct.
+    check("TArray<int64> (unmapped)", get_array_element_property_type(array_prop("TArray<int64>")), None)
+
+    # find_ufunction_declaration — inline body must consume past the matching brace.
+    inline_body = " bool IsVisible() const { return bIsVisible; }\n void Next();"
+    result = find_ufunction_declaration(inline_body, 0)
+    check("inline body decl text", result and result[0], "bool IsVisible() const")
+    check("inline body cursor lands after '}'", result and inline_body[result[1] - 1], "}")
+
+    plain_decl = " void Foo(int x);\n void Bar();"
+    result = find_ufunction_declaration(plain_decl, 0)
+    check("plain decl text", result and result[0], "void Foo(int x)")
+    check("plain decl cursor at ';'", result and plain_decl[result[1] - 1], ";")
+
+    template_param = " TArray<int> GetItems() const;\n"
+    result = find_ufunction_declaration(template_param, 0)
+    check("template return parses", result and result[0], "TArray<int> GetItems() const")
+
+    # is_enum_sentinel — exact and suffix matches.
+    check("is_enum_sentinel('MAX')", is_enum_sentinel("MAX"), True)
+    check("is_enum_sentinel('PSA_MAX')", is_enum_sentinel("PSA_MAX"), True)
+    check("is_enum_sentinel('ELT_NUM')", is_enum_sentinel("ELT_NUM"), True)
+    check("is_enum_sentinel('MaxValue')", is_enum_sentinel("MaxValue"), False)
+    check("is_enum_sentinel('PSA_FacingCameraPosition')", is_enum_sentinel("PSA_FacingCameraPosition"), False)
+    check("is_enum_sentinel('ActiveCount')", is_enum_sentinel("ActiveCount"), True)
+    check("is_enum_sentinel('PSA_ActiveCount')", is_enum_sentinel("PSA_ActiveCount"), True)
+
+    if failures:
+        print("SELF-TEST FAILURES:")
+        for failure in failures:
+            print(f"  - {failure}")
+        return 1
+    print("self-test: all checks passed")
+    return 0
 
 
 def main() -> int:
     args = parse_args()
+    if args.self_test:
+        return run_self_tests()
     root = args.root.resolve() if args.root else Path(__file__).resolve().parents[1]
     source_dir = (args.source_dir or root / "Source").resolve()
     generated_root = (args.generated_root or root / "Intermediate" / "Generated").resolve()
