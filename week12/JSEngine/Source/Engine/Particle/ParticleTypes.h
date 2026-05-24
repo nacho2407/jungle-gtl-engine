@@ -12,18 +12,20 @@ namespace ERHIFeatureLevel
 	};
 }
 
+UENUM()
 enum class EParticleSortMode
 {
-	None,
-	ViewDepthBackToFront,
-	ViewDepthFrontToBack,
-	RelativeTime,
+	None UMETA(DisplayName = "None"),
+	ViewDepthBackToFront UMETA(DisplayName = "View Depth Back To Front"),
+	ViewDepthFrontToBack UMETA(DisplayName = "View Depth Front To Back"),
+	RelativeTime UMETA(DisplayName = "Relative Time"),
 };
 
+UENUM()
 enum class EParticleCoordinateSpace
 {
-	Local,
-	World,
+	Local UMETA(DisplayName = "Local"),
+	World UMETA(DisplayName = "World"),
 };
 
 enum class EDynamicEmitterType

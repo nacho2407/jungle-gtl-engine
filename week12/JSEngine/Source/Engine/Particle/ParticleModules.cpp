@@ -1,108 +1,104 @@
-#include "Particle/ParticleModules.h"
+﻿#include "Particle/ParticleModules.h"
 
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
 
-namespace
+int32 UParticleModule::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
 {
-	// 사용되지 않는 선언 컴파일 경고 방지용. 구현 후 삭제할 것
-	void ParticleNoOp(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-	{
-		(void)Owner;
-		(void)Offset;
-		(void)DeltaTime;
-	}
+	(void)TypeData;
+	return 0;
 }
 
-void UParticleModuleRequired::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+int32 UParticleModule::RequiredBytesPerInstance(UParticleModuleTypeDataBase* TypeData) const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	(void)TypeData;
+	return 0;
 }
 
-void UParticleModuleRequired::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModule::IsSpawnRateModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return false;
 }
 
-void UParticleModuleSpawn::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModule::IsSpawnModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return false;
 }
 
-void UParticleModuleSpawn::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModule::IsUpdateModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return false;
 }
 
-void UParticleModuleLifetime::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+void UParticleModule::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	(void)Owner;
+	(void)Offset;
+	(void)DeltaTime;
 }
 
-void UParticleModuleLifetime::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+void UParticleModule::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	(void)Owner;
+	(void)Offset;
+	(void)DeltaTime;
 }
 
-void UParticleModuleLocation::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleSpawn::IsSpawnRateModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
-void UParticleModuleLocation::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+UParticleModuleLifetime::UParticleModuleLifetime()
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	Lifetime.Constant = 1.0f;
+	Lifetime.Min = 1.0f;
+	Lifetime.Max = 1.0f;
 }
 
-void UParticleModuleVelocity::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleLifetime::IsSpawnModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
-void UParticleModuleVelocity::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleLocation::IsSpawnModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
-void UParticleModuleColor::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleVelocity::IsSpawnModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
-void UParticleModuleColor::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+UParticleModuleColor::UParticleModuleColor()
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	StartColor.Constant = FColor::White();
+	StartColor.Min = FColor::White();
+	StartColor.Max = FColor::White();
 }
 
-void UParticleModuleSize::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleColor::IsSpawnModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
-void UParticleModuleSize::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+UParticleModuleSize::UParticleModuleSize()
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	StartSize.Constant = FVector::OneVector;
+	StartSize.Min = FVector::OneVector;
+	StartSize.Max = FVector::OneVector;
 }
 
-void UParticleModuleCollision::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleSize::IsSpawnModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
-void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleCollision::IsUpdateModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleTypeDataBase::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleTypeDataBase::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
 void UParticleModuleTypeDataBase::Build()
