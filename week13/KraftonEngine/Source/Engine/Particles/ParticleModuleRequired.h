@@ -17,6 +17,7 @@ class UMaterial;
  *	PSA_TypeSpecific	- Use the alignment method indicated in the type data module.
  *	PSA_FacingCameraDistanceBlend - Blends between PSA_FacingCameraPosition and PSA_Square over specified distance.
  */
+UENUM()
 enum EParticleScreenAlignment : int
 {
 	PSA_FacingCameraPosition,
@@ -29,6 +30,7 @@ enum EParticleScreenAlignment : int
 	PSA_MAX,
 };
 
+UENUM()
 enum EParticleSortMode : int
 {
 	PSORTMODE_None,
@@ -66,16 +68,28 @@ public:
 	uint8 bKillOnDeactivate : 1;
 	uint8 bKillOnCompleted : 1;
 
+	UPROPERTY(Edit, Save, Category = "Emitter", DisplayName = "Emitter Duration", Min = "0.0", Speed = "0.1")
 	float EmitterDuration = 0.0f;
+
+	UPROPERTY(Edit, Save, Category = "Emitter", DisplayName = "Emitter Loops", Min = "0")
 	int32 EmitterLoops = 0;
 
+	UPROPERTY(Edit, Save, Category = "Rendering", DisplayName = "Screen Alignment")
 	EParticleScreenAlignment ScreenAlignment = PSA_FacingCameraPosition;
+
+	UPROPERTY(Edit, Save, Category = "Rendering", DisplayName = "Sort Mode")
 	EParticleSortMode SortMode = PSORTMODE_None;
 
+	UPROPERTY(Edit, Save, Category = "SubUV", DisplayName = "Sub Images Horizontal", Min = "1")
 	int32 SubImages_Horizontal = 1;
+
+	UPROPERTY(Edit, Save, Category = "SubUV", DisplayName = "Sub Images Vertical", Min = "1")
 	int32 SubImages_Vertical = 1;
 
+	UPROPERTY(Edit, Save, Category = "Spawn", DisplayName = "Spawn Rate", Min = "0.0", Speed = "0.1")
 	float SpawnRate = 10.0f;
+
+	UPROPERTY(Edit, Save, Category = "Spawn", DisplayName = "Burst List")
 	TArray<FParticleBurst> BurstList;
 
 	UPROPERTY(Edit, Save, Category = "Rendering", DisplayName = "Use Max Draw Count")
@@ -84,8 +98,13 @@ public:
 	UPROPERTY(Edit, Save, Category = "Rendering", DisplayName = "Max Draw Count", Min = 0, Speed = 1)
 	int32 MaxDrawCount = 0;
 
+	UPROPERTY(Edit, Save, Category = "Emitter", DisplayName = "Emitter Delay", Min = "0.0", Speed = "0.01")
 	float EmitterDelay = 0.1f;
+
+	UPROPERTY(Edit, Save, Category = "Emitter", DisplayName = "Emitter Duration Low", Min = "0.0", Speed = "0.01")
 	float EmitterDurationLow = 0.1f;
+
+	UPROPERTY(Edit, Save, Category = "Emitter", DisplayName = "Delay First Loop Only")
 	bool bDelayFirstLoopOnly = false;
 };
 

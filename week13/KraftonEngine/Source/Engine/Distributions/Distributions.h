@@ -1,12 +1,17 @@
 ﻿#pragma once
 #include "Core/Types/CoreTypes.h"
+#include "Object/Reflection/ObjectMacros.h"
+#include "Object/Reflection/UStruct.h"
 #include "Math/MathUtils.h"
+
+#include "Source/Engine/Distributions/Distributions.generated.h"
 
 class FArchive;
 
 /**
  * Operation to perform when looking up a value.
  */
+UENUM()
 enum ERawDistributionOperation
 {
 	RDO_Uninitialized,
@@ -150,8 +155,11 @@ struct FDistributionLookupTable
 /**
  * Raw distribution used to quickly sample distributions at runtime.
  */
+USTRUCT()
 struct FRawDistribution
 {
+	GENERATED_BODY()
+
 	FRawDistribution()
 	{
 

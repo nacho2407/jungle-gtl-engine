@@ -70,9 +70,12 @@ public:
 
 	UParticleLODLevel* GetLODLevel(int32 LODIndex) const;
 
+	UFUNCTION(Pure, Category="Particle")
 	bool IsEnabled() const { return bEnabled; }
+	UFUNCTION(Callable, Exec, Category="Particle")
 	void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
 
+	UFUNCTION(Pure, Category="Particle")
 	float GetQualityLevelSpawnRateMult() const { return QualityLevelSpawnRateScale; }
 
 public:
@@ -99,10 +102,16 @@ public:
 	int32 CameraPayloadOffset = 0;
 	int32 OrbitModuleOffset = 0;
 
+	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Use Legacy Spawning Behavior")
 	bool bUseLegacySpawningBehavior = false;
 
+	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Initial Allocation Count", Min="0")
 	int32 InitialAllocationCount = 0;
+
+	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Quality Level Spawn Rate Scale", Min="0.0", Speed="0.05")
 	float QualityLevelSpawnRateScale = 1.0f;
+
+	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Pivot Offset")
 	FVector PivotOffset = FVector::ZeroVector;
 
 private:
