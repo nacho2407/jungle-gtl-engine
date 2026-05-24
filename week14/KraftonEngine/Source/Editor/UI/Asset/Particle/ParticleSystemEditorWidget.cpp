@@ -7,6 +7,7 @@
 #include "GameFramework/Light/DirectionalLightActor.h"
 #include "Object/Object.h"
 #include "Particles/Module/ParticleModule.h"
+#include "Particles/Module/ParticleModuleCollision.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemManager.h"
@@ -454,6 +455,7 @@ namespace
 		if (Cast<UParticleModuleVelocity>(Module)) return "Initial Velocity";
 		if (Cast<UParticleModuleColor>(Module)) return "Initial Color";
 		if (Cast<UParticleModuleSize>(Module)) return "Initial Size";
+		if (Cast<UParticleModuleCollision>(Module)) return "Collision";
 		return Module->GetClass()->GetName();
 	}
 
@@ -1567,7 +1569,15 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 			RenderUnavailableCategory("Acceleration");
 			RenderUnavailableCategory("Attraction");
-			RenderUnavailableCategory("Collision");
+
+			if (ImGui::BeginMenu("Collision"))
+			{
+				if (ImGui::MenuItem("Collision"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleCollision>());
+				}
+				ImGui::EndMenu();
+			}
 
 			if (ImGui::BeginMenu("Color"))
 			{

@@ -154,6 +154,12 @@ void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 		}
 	END_UPDATE_LOOP
 
+	RunUpdateModules(DeltaTime);
+	CompactDeadParticles();
+}
+
+void FParticleEmitterInstance::CompactDeadParticles()
+{
 	for (int32 ParticleIndex = 0; ParticleIndex < this->ActiveParticles;)
 	{
 		FBaseParticle& Particle = GetParticle(ParticleIndex);
@@ -165,8 +171,6 @@ void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 
 		++ParticleIndex;
 	}
-
-	RunUpdateModules(DeltaTime);
 }
 
 void FParticleEmitterInstance::KillParticle(int32 ParticleIndex)

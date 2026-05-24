@@ -98,6 +98,7 @@ protected:
 	virtual void InitializeParticle(FBaseParticle& Particle);
 	virtual void UpdateParticles(float DeltaTime);
 	virtual void KillParticle(int32 ParticleIndex);
+	void CompactDeadParticles();
 
 	void AllocateParticleData(int32 InMaxActiveParticles);
 	void ReleaseParticleData();
