@@ -1,9 +1,18 @@
 #include "PostProcessRenderPass.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/ShaderPaths.h"
+#include "Render/Scene/RenderBus.h"
 
 namespace
 {
+    bool IsDebugViewMode(EViewMode ViewMode)
+    {
+        return ViewMode == EViewMode::Normal ||
+            ViewMode == EViewMode::Heatmap ||
+            ViewMode == EViewMode::BoneWeightHeatmap ||
+            ViewMode == EViewMode::Depth;
+    }
+
     FShaderProgram* GetPostProcessProgram()
     {
         FShaderStageKey VSKey;
@@ -30,6 +39,13 @@ bool FPostProcessRenderPass::Release()
 
 bool FPostProcessRenderPass::Begin(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        OutSRV = PrevPassSRV;
+        OutRTV = PrevPassRTV;
+        return true;
+    }
+
     const bool bGammaCorrection = Context->RenderBus->GetShowFlags().bGammaCorrection;
     const bool bVignetteEnabled = Context->RenderBus->GetVignetteIntensity() > 0.001f;
 
@@ -91,6 +107,9 @@ bool FPostProcessRenderPass::Begin(const FRenderPassContext* Context)
 
 bool FPostProcessRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+        return true;
+
     if (!Context->RenderBus->GetShowFlags().bGammaCorrection &&
         Context->RenderBus->GetVignetteIntensity() <= 0.001f)
         return true;
@@ -100,6 +119,9 @@ bool FPostProcessRenderPass::DrawCommand(const FRenderPassContext* Context)
 
 bool FPostProcessRenderPass::End(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+        return true;
+
     if (!Context->RenderBus->GetShowFlags().bGammaCorrection &&
         Context->RenderBus->GetVignetteIntensity() <= 0.001f)
         return true;

@@ -13,6 +13,7 @@ cbuffer FrameBuffer : register(b0)
 {
     row_major float4x4 View;
     row_major float4x4 Projection;
+    row_major float4x4 InvViewProjection;
     float3 CameraPosition;
     float IsOrthographic;
     float3 WireframeRGB;
@@ -20,6 +21,16 @@ cbuffer FrameBuffer : register(b0)
     float2 ViewportSize;
     float NearZ;
     float FarZ;
+}
+
+float3 ReconstructWorldPosition(float2 pixelPos, float rawDepth)
+{
+    float2 uv = (pixelPos + 0.5f) / max(ViewportSize, float2(1.0f, 1.0f));
+    float2 ndc = uv * 2.0f - 1.0f;
+    ndc.y = -ndc.y;
+
+    float4 world = mul(float4(ndc, rawDepth, 1.0f), InvViewProjection);
+    return world.xyz / max(abs(world.w), 1e-6f);
 }
 
 cbuffer PerObjectBuffer : register(b1)

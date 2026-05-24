@@ -1,0 +1,17 @@
+﻿{
+    "Name": "AdditiveDecalMat",
+    "ShaderType" : "Decal",
+    "BlendState": {
+        "BlendEnable": true,
+        "SrcColor": "One",
+        "DestColor": "One",
+        "ColorOp": "Add",
+        "SrcAlpha": "One",
+        "DestAlpha": "Zero",
+        "AlphaOp": "Add",
+        "WriteMask": 15
+    },
+    "Params": [
+        { "Name": "DiffuseMap", "Type": "Texture", "Value": "Asset/Texture/water.png" }
+    ]
+}

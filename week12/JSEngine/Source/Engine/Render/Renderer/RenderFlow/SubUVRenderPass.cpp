@@ -2,6 +2,17 @@
 #include "Render/SubUVBatcher.h"
 #include "Render/Scene/RenderBus.h"
 
+namespace
+{
+    bool IsDebugViewMode(EViewMode ViewMode)
+    {
+        return ViewMode == EViewMode::Normal ||
+            ViewMode == EViewMode::Heatmap ||
+            ViewMode == EViewMode::BoneWeightHeatmap ||
+            ViewMode == EViewMode::Depth;
+    }
+}
+
 bool FSubUVRenderPass::Initialize()
 {
     return true;
@@ -14,6 +25,13 @@ bool FSubUVRenderPass::Release()
 
 bool FSubUVRenderPass::Begin(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        OutSRV = PrevPassSRV;
+        OutRTV = PrevPassRTV;
+        return true;
+    }
+
     ID3D11RenderTargetView* RTV = PrevPassRTV;
     ID3D11DepthStencilView* DSV = Context->RenderTargets->DepthStencilView;
     Context->DeviceContext->OMSetRenderTargets(1, &RTV, DSV);
@@ -25,6 +43,11 @@ bool FSubUVRenderPass::Begin(const FRenderPassContext* Context)
 
 bool FSubUVRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        return true;
+    }
+
     if (Context->SubUVBatcher == nullptr)
     {
         return true;

@@ -7,6 +7,14 @@
 
 namespace
 {
+    bool IsDebugViewMode(EViewMode ViewMode)
+    {
+        return ViewMode == EViewMode::Normal ||
+            ViewMode == EViewMode::Heatmap ||
+            ViewMode == EViewMode::BoneWeightHeatmap ||
+            ViewMode == EViewMode::Depth;
+    }
+
     FShaderProgram* GetDepthLessShaderProgram(const FRenderCommand& Cmd)
     {
         if (!Cmd.Material)
@@ -47,6 +55,12 @@ bool FDepthLessRenderPass::Release()
 
 bool FDepthLessRenderPass::Begin(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        OutSRV = PrevPassSRV;
+        OutRTV = PrevPassRTV;
+        return true;
+    }
 
     ID3D11RenderTargetView* RTV = PrevPassRTV;
     ID3D11DepthStencilView* DSV = Context->RenderTargets->DepthStencilView;
@@ -64,6 +78,11 @@ bool FDepthLessRenderPass::Begin(const FRenderPassContext* Context)
 
 bool FDepthLessRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        return true;
+    }
+
     const TArray<FRenderCommand>& Commands = Context->RenderBus->GetCommands(ERenderPass::DepthLess);
     if (Commands.empty())
     {

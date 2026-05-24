@@ -3,6 +3,17 @@
 #include "Render/FontBatcher.h"
 #include "Render/Scene/RenderBus.h"
 
+namespace
+{
+    bool IsDebugViewMode(EViewMode ViewMode)
+    {
+        return ViewMode == EViewMode::Normal ||
+            ViewMode == EViewMode::Heatmap ||
+            ViewMode == EViewMode::BoneWeightHeatmap ||
+            ViewMode == EViewMode::Depth;
+    }
+}
+
 bool FFontRenderPass::Initialize()
 {
     return true;
@@ -15,6 +26,13 @@ bool FFontRenderPass::Release()
 
 bool FFontRenderPass::Begin(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        OutSRV = PrevPassSRV;
+        OutRTV = PrevPassRTV;
+        return true;
+    }
+
     ID3D11RenderTargetView* RTV = PrevPassRTV;
     ID3D11DepthStencilView* DSV = Context->RenderTargets->DepthStencilView;
     Context->DeviceContext->OMSetRenderTargets(1, &RTV, DSV);
@@ -26,6 +44,11 @@ bool FFontRenderPass::Begin(const FRenderPassContext* Context)
 
 bool FFontRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
+    {
+        return true;
+    }
+
     if (Context->FontBatcher == nullptr)
     {
         return true;

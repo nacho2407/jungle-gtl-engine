@@ -2,12 +2,102 @@
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
+#include "Render/Resource/ShadowAtlasManager.h"
 #include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/VertexFactoryTypes.h"
 #include "Core/ResourceManager.h"
+#include "Component/PostProcess/Light/LightComponent.h"
 
 namespace
 {
+    bool ShouldSkipDecalPass(EViewMode ViewMode)
+    {
+        switch (ViewMode)
+        {
+        case EViewMode::Lit_Gouraud:
+        case EViewMode::Lit_Lambert:
+        case EViewMode::Lit_BlinnPhong:
+            return false;
+        default:
+            return true;
+        }
+    }
+
+    uint32 BuildDecalPermutationKey(const FRenderPassContext* Context, const UMaterialInterface* Material)
+    {
+        uint32 PermutationKey = (uint32)ELightingModel::Unlit;
+        switch (Context->RenderBus->GetViewMode())
+        {
+        case EViewMode::Lit_Gouraud:
+            PermutationKey = (uint32)ELightingModel::Gouraud;
+            break;
+        case EViewMode::Lit_Lambert:
+            PermutationKey = (uint32)ELightingModel::Lambert;
+            break;
+        case EViewMode::Lit_BlinnPhong:
+            PermutationKey = (uint32)ELightingModel::BlinnPhong;
+            break;
+        default:
+            break;
+        }
+
+        if (Context->RenderBus->GetLightCullMode() == ELightCullMode::Clustered)
+        {
+            PermutationKey |= (uint32)EShaderFeature::ClusterCull;
+        }
+        else if (Context->RenderBus->GetLightCullMode() == ELightCullMode::Tiled)
+        {
+            PermutationKey |= (uint32)EShaderFeature::TileCull;
+        }
+
+        bool bShadowApplied = false;
+        for (const FShadowLightRequest& Request : Context->RenderBus->ShadowLightRequests)
+        {
+            if (!Request.bCastShadows || !Request.LightComponent)
+            {
+                continue;
+            }
+            if (Request.Type != EShadowLightType::SLT_Directional)
+            {
+                continue;
+            }
+
+            ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
+            if (!LightComp)
+            {
+                continue;
+            }
+
+            switch (LightComp->GetShadowMapType())
+            {
+            case EShadowMap::CSM:
+                PermutationKey |= (uint32)EShaderFeature::ShadowCSM;
+                bShadowApplied = true;
+                break;
+            case EShadowMap::PSM:
+                PermutationKey |= (uint32)EShaderFeature::ShadowPSM;
+                bShadowApplied = true;
+                break;
+            default:
+                break;
+            }
+            break;
+        }
+
+        if (bShadowApplied && Context->RenderBus->GetShadowFilterMode() == EShadowFilter::VSM)
+        {
+            PermutationKey |= (uint32)EShaderFeature::ShadowVSM;
+        }
+
+        if (Material)
+        {
+            if (Material->HasDiffuseMap()) PermutationKey |= (uint32)EShaderFeature::HasDiffuseMap;
+            if (Material->HasSpecularMap()) PermutationKey |= (uint32)EShaderFeature::HasSpecularMap;
+        }
+
+        return PermutationKey;
+    }
+
     FShaderProgram* GetDecalShaderProgram(const FRenderCommand& Cmd, uint32 PermutationKey)
     {
         if (!Cmd.Material)
@@ -37,6 +127,27 @@ namespace
             Macros.data(),
             &VertexFactoryDesc.VertexLayout);
     }
+
+    void BindDecalLightingResources(const FRenderPassContext* Context)
+    {
+        ID3D11SamplerState* ShadowSampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Shadow);
+        Context->DeviceContext->PSSetSamplers(1, 1, &ShadowSampler);
+
+        ID3D11ShaderResourceView* ShadowSRV = FShadowAtlasManager::Get().GetSRV();
+        Context->DeviceContext->PSSetShaderResources(10, 1, &ShadowSRV);
+
+        ID3D11ShaderResourceView* VSMSRV = FShadowAtlasManager::Get().GetVarianceSRV();
+        Context->DeviceContext->PSSetShaderResources(11, 1, &VSMSRV);
+
+        ID3D11ShaderResourceView* PointShadowCubeSRV = FShadowAtlasManager::Get().GetCubeSRV();
+        Context->DeviceContext->PSSetShaderResources(12, 1, &PointShadowCubeSRV);
+
+        ID3D11ShaderResourceView* ShadowInfoSRVs[] = {
+            Context->RenderResources->LightShadowIndexBuffer.GetSRV(),
+            Context->RenderResources->AtlasShadowBuffer.GetSRV(),
+        };
+        Context->DeviceContext->PSSetShaderResources(14, 2, ShadowInfoSRVs);
+    }
 }
 
 bool FDecalRenderPass::Initialize()
@@ -51,19 +162,24 @@ bool FDecalRenderPass::Release()
 
 bool FDecalRenderPass::Begin(const FRenderPassContext* Context)
 {
+    const TArray<FRenderCommand>& Commands = Context->RenderBus->GetCommands(ERenderPass::Decal);
+    if (Commands.empty() || ShouldSkipDecalPass(Context->RenderBus->GetViewMode()))
+    {
+        OutSRV = PrevPassSRV;
+        OutRTV = PrevPassRTV;
+        return true;
+    }
+
     const FRenderTargetSet* RenderTargets = Context->RenderTargets;
-    ID3D11RenderTargetView* RTVs[3] = {
-        RenderTargets->SceneColorRTV,
-        RenderTargets->SceneNormalRTV,
-        RenderTargets->SceneWorldPosRTV
-    };
+    ID3D11RenderTargetView* RTV = RenderTargets->SceneColorRTV;
     ID3D11DepthStencilView* DSV = RenderTargets->DepthStencilView;
 
-    Context->DeviceContext->OMSetRenderTargets(ARRAYSIZE(RTVs), RTVs, DSV);
+    Context->DeviceContext->OMSetRenderTargets(1, &RTV, DSV);
     OutSRV = RenderTargets->SceneColorSRV;
     OutRTV = RenderTargets->SceneColorRTV;
 
     Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    BindDecalLightingResources(Context);
     return true;
 }
 
@@ -72,7 +188,7 @@ bool FDecalRenderPass::DrawCommand(const FRenderPassContext* Context)
     const FRenderBus* RenderBus = Context->RenderBus;
     const TArray<FRenderCommand>& Commands = RenderBus->GetCommands(ERenderPass::Decal);
 
-    if (Commands.empty())
+    if (Commands.empty() || ShouldSkipDecalPass(RenderBus->GetViewMode()))
     {
         return true;
     }
@@ -103,22 +219,9 @@ bool FDecalRenderPass::DrawCommand(const FRenderPassContext* Context)
             return false;
         }
 
-		uint32 PermutationKey = (uint32)ELightingModel::Unlit;
-		switch (Context->RenderBus->GetViewMode())
-		{
-		case EViewMode::Lit_Gouraud:
-			PermutationKey = (uint32)ELightingModel::Gouraud;
-			break;
-		case EViewMode::Lit_Lambert:
-			PermutationKey = (uint32)ELightingModel::Lambert;
-			break;
-		case EViewMode::Lit_BlinnPhong:
-			PermutationKey = (uint32)ELightingModel::BlinnPhong;
-			break;
-		}
-
         if (Cmd.Material)
         {
+            const uint32 PermutationKey = BuildDecalPermutationKey(Context, Cmd.Material);
             FShaderProgram* Program = GetDecalShaderProgram(Cmd, PermutationKey);
             if (!Program)
             {
@@ -128,6 +231,14 @@ bool FDecalRenderPass::DrawCommand(const FRenderPassContext* Context)
             Program->Bind(Context->DeviceContext);
             Cmd.Material->BindRenderStates(Context->DeviceContext);
             Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
+
+            Context->RenderResources->ProjectionDecalConstantBuffer.Update(
+                Context->DeviceContext,
+                &Cmd.Constants.Decal,
+                sizeof(FProjectionDecalConstants));
+            ID3D11Buffer* DecalBuffer = Context->RenderResources->ProjectionDecalConstantBuffer.GetBuffer();
+            Context->DeviceContext->PSSetConstantBuffers(8, 1, &DecalBuffer);
+
             BindVertexFactoryResources(
                 Context->DeviceContext,
                 Cmd.VertexFactoryType,

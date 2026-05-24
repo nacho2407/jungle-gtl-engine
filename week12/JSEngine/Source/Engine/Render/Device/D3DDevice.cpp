@@ -66,12 +66,10 @@ void FD3DDevice::BeginViewportFrame(FRenderTargetSet& InRenderTargetSet)
     if (InRenderTargetSet.SceneColorRTV && InRenderTargetSet.SelectionMaskRTV && InRenderTargetSet.DepthStencilView)
     {
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneColorRTV, ClearColor);
-        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneNormalRTV, ClearNormal);
-        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneViewModeRTV, ClearColor);
+        DeviceContext->ClearRenderTargetView(InRenderTargetSet.DebugViewModeRTV, ClearColor);
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneFogRTV, ClearColor);
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneSandervistanRTV, ClearColor);
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.ScenePostProcessRTV, ClearColor);
-        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneWorldPosRTV, ClearColor);
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneFXAARTV, ClearColor);
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SelectionMaskRTV, ClearMask);
         DeviceContext->ClearDepthStencilView(InRenderTargetSet.DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);

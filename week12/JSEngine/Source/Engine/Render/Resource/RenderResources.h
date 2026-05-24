@@ -16,7 +16,8 @@ struct FRenderResources
 	FConstantBuffer BoneMatrixConstantBuffer;       // b5 (GPU Skinning bone matrices)
 	FConstantBuffer EmptyBoneMatrixConstantBuffer;  // b5 fallback (BoneCount = 0)
 	FConstantBuffer BoneWeightHeatmapConstantBuffer; // b6
-    FConstantBuffer ViewModeResolveConstantBuffer;        // b7
+    FConstantBuffer DebugViewModeResolveConstantBuffer;   // b7
+	FConstantBuffer ProjectionDecalConstantBuffer;   // b8
     FConstantBuffer FogPassConstantBuffer;          // b9
 	FConstantBuffer FXAAConstantBuffer;             // b10
 	FConstantBuffer VSMConstantBuffer;				// b11
@@ -29,10 +30,6 @@ struct FRenderResources
 	FStructuredBuffer LightShadowIndexBuffer;      // t14 (uint, indexed by light index)
     FStructuredBuffer AtlasShadowBuffer;           // t15 (FShadowAtlasConstants)
 
-
-	// Compute Shader에서는 UAV로 바인딩하기 때문에 Slot이 달라질 수 있습니다.
-    FStructuredBuffer DecalStructuredBuffer;        // t8 (FDecalInfo)
-													// t9 DecalTextures
 	FStructuredBuffer LightStructuredBuffer;		// t4 (FLightInfo)
 	FStructuredBuffer LightCulledIndexBuffer;		// t5 (LightCulledIndex) (uint)
 	FStructuredBuffer LightTileBuffer;				// t6 (LightTile) (uint2) 

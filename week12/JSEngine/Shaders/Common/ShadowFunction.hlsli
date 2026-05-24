@@ -118,6 +118,173 @@ float ComputeShadowVSM(
     return pMax;
 }
 
+float GetCascadeSplitFarValue(uint CascadeIndex)
+{
+    return (CascadeIndex == 0) ? CascadeSplitFar.x :
+           (CascadeIndex == 1) ? CascadeSplitFar.y :
+           (CascadeIndex == 2) ? CascadeSplitFar.z :
+                                 CascadeSplitFar.w;
+}
+
+float GetCameraDepthForCSM(float3 WorldPos)
+{
+    float4 ViewPos = mul(float4(WorldPos, 1.0f), View);
+    return ViewPos.x;
+}
+
+uint SelectDirectionalCascade(float CameraDepth)
+{
+    for (uint i = 0; i < DirectionalCascadeCount; ++i)
+    {
+        if (CameraDepth <= GetCascadeSplitFarValue(i))
+        {
+            return i;
+        }
+    }
+
+    return MAX_DIRECTIONAL_CASCADE_COUNT;
+}
+
+float ComputeShadowBias(float LightSpaceZ, float ConstantBias, float SlopeScaleBias)
+{
+    float dz_dx = ddx(LightSpaceZ);
+    float dz_dy = ddy(LightSpaceZ);
+    float slope = max(abs(dz_dx), abs(dz_dy));
+    return ConstantBias + slope * SlopeScaleBias;
+}
+
+float3 ComputeShadowCoordCascade(float4 WorldPos, int CascadeIndex)
+{
+    FAtlasShadowData ShadowData = AtlasShadowDatas[DirectionalShadowStartIndex + CascadeIndex];
+    float4 ShadowCoord = mul(WorldPos, ShadowData.ShadowViewProj);
+
+    if (abs(ShadowCoord.w) < 1e-5f)
+    {
+        return 1.0f;
+    }
+
+    return ShadowCoord.xyz / ShadowCoord.w;
+}
+
+bool IsShadowCoordOutside(float3 ProjCoords)
+{
+    float2 ShadowUV = float2(
+        ProjCoords.x * 0.5f + 0.5f,
+        -ProjCoords.y * 0.5f + 0.5f
+    );
+
+    return ShadowUV.x < 0.0f || ShadowUV.x > 1.0f ||
+        ShadowUV.y < 0.0f || ShadowUV.y > 1.0f ||
+        ProjCoords.z < 0.0f || ProjCoords.z > 1.0f;
+}
+
+#ifdef SHADOW_MAP_CSM
+float CalculateDirectionalShadow(
+    float4 WorldPos,
+    SamplerComparisonState ShadowSamplerState,
+    Texture2D DirectionalShadowMap,
+    SamplerState LinearSampler,
+    Texture2D DirectionalVSMMap)
+{
+    if (DirectionalCascadeCount == 0)
+    {
+        return 1.0f;
+    }
+
+    float CameraDepth = GetCameraDepthForCSM(WorldPos.xyz);
+    uint CascadeIndex = SelectDirectionalCascade(CameraDepth);
+
+    if (CascadeIndex >= DirectionalCascadeCount)
+    {
+        return 1.0f;
+    }
+
+    const float BlendAreaRatio = 0.1f;
+    float CascadeFar = GetCascadeSplitFarValue(CascadeIndex);
+    float CascadeNear = (CascadeIndex == 0) ? 0.0f : GetCascadeSplitFarValue(CascadeIndex - 1);
+    float BlendWidth = (CascadeFar - CascadeNear) * BlendAreaRatio;
+    float BlendFactor = saturate((CameraDepth - (CascadeFar - BlendWidth)) / BlendWidth);
+
+    float3 ProjCoords = ComputeShadowCoordCascade(WorldPos, CascadeIndex);
+    if (IsShadowCoordOutside(ProjCoords))
+    {
+        return 1.0f;
+    }
+
+    FAtlasShadowData CascadeShadowData = AtlasShadowDatas[DirectionalShadowStartIndex + CascadeIndex];
+    float TotalBias = ComputeShadowBias(ProjCoords.z, CascadeShadowData.ConstantBias, CascadeShadowData.SlopedBias);
+
+#if SHADOW_MAP_VSM
+    float ShadowFactor = ComputeShadowVSM(ProjCoords, CascadeShadowData.ScaleOffset, DirectionalVSMMap, LinearSampler, 0.0001f);
+#else
+    float ShadowFactor = ComputeShadowPCF(ProjCoords, CascadeShadowData.ScaleOffset, (int)CascadeShadowData.ShadowSoftness, ShadowSamplerState, DirectionalShadowMap, TotalBias);
+#endif
+
+    if (CascadeIndex < DirectionalCascadeCount - 1)
+    {
+        int NextCascade = CascadeIndex + 1;
+        float3 NextCascadeProjCoords = ComputeShadowCoordCascade(WorldPos, NextCascade);
+        FAtlasShadowData NextCascadeShadowData = AtlasShadowDatas[DirectionalShadowStartIndex + NextCascade];
+        float NextTotalBias = ComputeShadowBias(NextCascadeProjCoords.z, NextCascadeShadowData.ConstantBias, NextCascadeShadowData.SlopedBias);
+
+#if SHADOW_MAP_VSM
+        float NextCascadeShadowFactor = ComputeShadowVSM(NextCascadeProjCoords, NextCascadeShadowData.ScaleOffset, DirectionalVSMMap, LinearSampler, 0.0001f);
+#else
+        float NextCascadeShadowFactor = ComputeShadowPCF(NextCascadeProjCoords, NextCascadeShadowData.ScaleOffset, (int)NextCascadeShadowData.ShadowSoftness, ShadowSamplerState, DirectionalShadowMap, NextTotalBias);
+#endif
+        ShadowFactor = lerp(ShadowFactor, NextCascadeShadowFactor, BlendFactor);
+    }
+
+    return ShadowFactor;
+}
+#elif SHADOW_MAP_PSM
+float CalculateDirectionalShadow(
+    float4 WorldPos,
+    SamplerComparisonState ShadowSamplerState,
+    Texture2D DirectionalShadowMap,
+    SamplerState LinearSampler,
+    Texture2D DirectionalVSMMap)
+{
+    float4 CamClip = mul(WorldPos, VirtualViewProj);
+    if (abs(CamClip.w) < 1e-5f)
+    {
+        return 1.0f;
+    }
+
+    float3 Post = CamClip.xyz / CamClip.w;
+    float4 ShadowCoord = mul(float4(Post, 1.0f), ShadowViewProj);
+    if (abs(ShadowCoord.w) < 1e-5f)
+    {
+        return 1.0f;
+    }
+
+    float3 ProjCoords = ShadowCoord.xyz / ShadowCoord.w;
+    if (IsShadowCoordOutside(ProjCoords))
+    {
+        return 1.0f;
+    }
+
+    FAtlasShadowData ShadowData = AtlasShadowDatas[DirectionalShadowStartIndex];
+    float TotalBias = ComputeShadowBias(ProjCoords.z, ShadowData.ConstantBias, ShadowData.SlopedBias);
+
+#if SHADOW_MAP_VSM
+    return ComputeShadowVSM(ProjCoords, ShadowData.ScaleOffset, DirectionalVSMMap, LinearSampler, 0.0001f);
+#else
+    return ComputeShadowPCF(ProjCoords, ShadowData.ScaleOffset, (int)ShadowData.ShadowSoftness, ShadowSamplerState, DirectionalShadowMap, TotalBias);
+#endif
+}
+#else
+float CalculateDirectionalShadow(
+    float4 WorldPos,
+    SamplerComparisonState ShadowSamplerState,
+    Texture2D DirectionalShadowMap,
+    SamplerState LinearSampler,
+    Texture2D DirectionalVSMMap)
+{
+    return 1.0f;
+}
+#endif
+
 
 float ComputeShadowAtlas(
     uint lightIndex,
