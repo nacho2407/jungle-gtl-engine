@@ -190,11 +190,11 @@
           "AnimGraphAssetPath" : "",
           "AnimInstanceData" : {
             "AnimationAssetPath" : "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_ahri_skin14_recall.anm.animseq",
-            "CurrentTime" : 1.231276,
+            "CurrentTime" : 1.331070,
             "ObjectName" : "UAnimSingleNodeInstance_40",
             "PlayRate" : 1.000000,
             "Playing" : true,
-            "PreviousTime" : 1.229824,
+            "PreviousTime" : 1.323772,
             "Type" : "UAnimSingleNodeInstance",
             "bAutoPlay" : true,
             "bLooping" : false
@@ -223,7 +223,7 @@
           },
           "ScrollU" : 0.000000,
           "ScrollV" : 0.000000,
-          "SkeletalMeshPath" : "C:/Users/Jungle/Desktop/Jungle_Project/Jungle_Week12_Team4/JSEngine/Asset\\SkeletalMesh\\Bin\\Ahri.bin",
+          "SkeletalMeshPath" : "C:/Users/Jungle/Desktop/Jungle_Project/Jungle_Week12_Team4/JSEngine/Asset/SkeletalMesh/Bin/Ahri.bin",
           "SkinningMode" : 1,
           "Tags" : [],
           "Type" : "USkeletalMeshComponent",
@@ -247,7 +247,7 @@
     }],
   "ClassName" : "UWorld",
   "Name" : "Ahri30",
-  "NextUUID" : 1694,
+  "NextUUID" : 1713,
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,

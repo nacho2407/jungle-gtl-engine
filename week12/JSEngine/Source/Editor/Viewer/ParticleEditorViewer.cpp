@@ -479,6 +479,70 @@ void FParticleEditorViewer::MoveModule(int32 FromIndex, int32 ToIndex)
 	RestartSimulation();
 }
 
+void FParticleEditorViewer::MoveModuleToEmitter(int32 ModuleIndex, int32 TargetEmitterIndex)
+{
+	UParticleLODLevel* SourceLOD = GetSelectedLODLevel();
+	if (!ParticleSystem || !SourceLOD)
+	{
+		return;
+	}
+
+	if (ModuleIndex < 0 || ModuleIndex >= static_cast<int32>(SourceLOD->Modules.size()))
+	{
+		return;
+	}
+
+	if (TargetEmitterIndex < 0 || TargetEmitterIndex >= static_cast<int32>(ParticleSystem->Emitters.size()))
+	{
+		return;
+	}
+
+	const int32 SourceEmitterIndex = SelectedEmitterIndex;
+	if (SourceEmitterIndex == TargetEmitterIndex)
+	{
+		return;
+	}
+
+	UParticleEmitter* SourceEmitter = GetSelectedEmitter();
+	UParticleEmitter* TargetEmitter = ParticleSystem->Emitters[TargetEmitterIndex];
+	if (!SourceEmitter || !TargetEmitter)
+	{
+		return;
+	}
+
+	const int32 TargetLODIndex = SelectedLODIndex >= 0 ? SelectedLODIndex : 0;
+	while (static_cast<int32>(TargetEmitter->LODLevels.size()) <= TargetLODIndex)
+	{
+		UParticleLODLevel* NewLOD = CreateDefaultLODLevel(static_cast<int32>(TargetEmitter->LODLevels.size()));
+		if (!NewLOD)
+		{
+			return;
+		}
+		TargetEmitter->LODLevels.push_back(NewLOD);
+	}
+
+	UParticleLODLevel* TargetLOD = TargetEmitter->LODLevels[TargetLODIndex];
+	if (!TargetLOD)
+	{
+		return;
+	}
+
+	UParticleModule* Module = SourceLOD->Modules[ModuleIndex];
+	SourceLOD->Modules.erase(SourceLOD->Modules.begin() + ModuleIndex);
+	TargetLOD->Modules.push_back(Module);
+
+	SourceEmitter->CacheEmitterModuleInfo();
+	TargetEmitter->CacheEmitterModuleInfo();
+
+	SelectionType = EParticleEditorSelectionType::Module;
+	SelectedEmitterIndex = TargetEmitterIndex;
+	SelectedLODIndex = TargetLODIndex;
+	SelectedModuleIndex = static_cast<int32>(TargetLOD->Modules.size()) - 1;
+
+	MarkDirty();
+	RestartSimulation();
+}
+
 // Ctrl + 드래그로 Source Emitter에서 Target Emitter로 모듈 복사
 void FParticleEditorViewer::CopyModuleToEmitter(int32 ModuleIndex, int32 TargetEmitterIndex)
 {

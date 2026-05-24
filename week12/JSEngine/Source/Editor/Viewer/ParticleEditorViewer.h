@@ -104,6 +104,7 @@ public:
 	void AddModule(UClass* ModuleClass);
 	void DeleteSelectedModule();
 	void MoveModule(int32 FromIndex, int32 ToIndex);
+	void MoveModuleToEmitter(int32 ModuleIndex, int32 TargetEmitterIndex);
 	void CopyModuleToEmitter(int32 ModuleIndex, int32 TargetEmitterIndex);
 
 	// Toolbar Actions ────────────────────────────────────────────────────────────
