@@ -37,8 +37,7 @@ cbuffer UberConstants : register(b3)
     AmbientLightInfo AmbientLight;
     DirectionalLightInfo DirectionalLight;
     uint LightCount;
-    uint DecalCount;
-    float2 Padding;
+    float3 Padding;
 };
 
 StructuredBuffer<LightInfo> Lights : register(t4);

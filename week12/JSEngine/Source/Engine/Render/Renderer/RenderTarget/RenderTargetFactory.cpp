@@ -12,16 +12,6 @@ FRenderTarget FRenderTargetFactory::CreateSceneColor(ID3D11Device* Device, uint3
 }
 
 
-FRenderTarget FRenderTargetFactory::CreateSceneNormal(ID3D11Device* Device, uint32 InWidth, uint32 InHeight)
-{
-    return FRenderTargetBuilder()
-        .SetSize(InWidth, InHeight)
-        .SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT)
-        .WithRTV()
-        .WithSRV()
-        .Build(Device);
-}
-
 FRenderTarget FRenderTargetFactory::CreateSelectionMask(ID3D11Device* Device, uint32 InWidth, uint32 InHeight)
 {
     return FRenderTargetBuilder()
@@ -32,7 +22,7 @@ FRenderTarget FRenderTargetFactory::CreateSelectionMask(ID3D11Device* Device, ui
         .Build(Device);
 }
 
-FRenderTarget FRenderTargetFactory::CreateSceneLight(ID3D11Device* Device, uint32 InWidth, uint32 InHeight)
+FRenderTarget FRenderTargetFactory::CreateDebugViewMode(ID3D11Device* Device, uint32 InWidth, uint32 InHeight)
 {
     return FRenderTargetBuilder()
         .SetSize(InWidth, InHeight)
@@ -67,16 +57,6 @@ FRenderTarget FRenderTargetFactory::CreateScenePostProcess(ID3D11Device* Device,
     return FRenderTargetBuilder()
         .SetSize(InWidth, InHeight)
         .SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT)
-        .WithRTV()
-        .WithSRV()
-        .Build(Device);
-}
-
-FRenderTarget FRenderTargetFactory::CreateSceneWorldPos(ID3D11Device* Device, uint32 InWidth, uint32 InHeight)
-{
-    return FRenderTargetBuilder()
-        .SetSize(InWidth, InHeight)
-        .SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT)  // 더 정확하게 하고 싶으면 DXGI_FORMAT_R32G32B32A32_FLOAT
         .WithRTV()
         .WithSRV()
         .Build(Device);

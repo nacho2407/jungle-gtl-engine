@@ -132,7 +132,7 @@ public:
             SkeletalVertexLayout
         };
         static const FVertexFactoryDesc DecalDesc = {
-            FShaderPaths::MaterialDecal,
+            FShaderPaths::MaterialUberLit,
             FShaderPaths::DepthPrepass,
             FShaderPaths::Shadow,
             FShaderPaths::EditorSelectionMask,

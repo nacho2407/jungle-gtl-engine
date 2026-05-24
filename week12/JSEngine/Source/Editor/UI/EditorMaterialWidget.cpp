@@ -471,6 +471,46 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 	SelectedMaterialPtr->GatherAllParams(DisplayParams);
 	bool bIsInstanced = SelectedMaterialPtr->IsA<UMaterialInstance>();
 
+	auto SaveSelectedMaterial = [this]()
+	{
+		if (!EditorEngine || !SelectedMaterialPtr)
+		{
+			return;
+		}
+		if (UMaterialInstance* Instance = Cast<UMaterialInstance>(SelectedMaterialPtr))
+		{
+			EditorEngine->GetAssetService().SaveMaterialInstance(SelectedMaterialPtr->GetFilePath(), Instance);
+		}
+		else if (UMaterial* Material = Cast<UMaterial>(SelectedMaterialPtr))
+		{
+			FResourceManager::Get().SerializeMaterial(SelectedMaterialPtr->GetFilePath(), Material);
+		}
+	};
+
+	const char* BlendModeLabels[] = { "Opaque", "Translucent" };
+	int BlendModeIndex = SelectedMaterialPtr->GetBlendMode() == EMaterialBlendMode::Translucent ? 1 : 0;
+	ImGui::SetNextItemWidth(180.0f);
+	if (ImGui::Combo("Blend Mode", &BlendModeIndex, BlendModeLabels, 2))
+	{
+		SelectedMaterialPtr->SetBlendMode(BlendModeIndex == 1 ? EMaterialBlendMode::Translucent : EMaterialBlendMode::Opaque);
+		SaveSelectedMaterial();
+	}
+
+	const char* BlendPresetLabels[] = { "Custom", "AlphaBlend", "Additive", "Multiply" };
+	int PresetIndex = 0;
+	const FMaterialBlendStateDesc CurrentBlendDesc = SelectedMaterialPtr->GetBlendStateDesc();
+	if (CurrentBlendDesc == MakeAlphaBlendStateDesc()) PresetIndex = 1;
+	else if (CurrentBlendDesc == MakeAdditiveBlendStateDesc()) PresetIndex = 2;
+	else if (CurrentBlendDesc == MakeMultiplyBlendStateDesc()) PresetIndex = 3;
+	ImGui::SetNextItemWidth(180.0f);
+	if (ImGui::Combo("Blend Preset", &PresetIndex, BlendPresetLabels, 4) && PresetIndex != 0)
+	{
+		if (PresetIndex == 1) SelectedMaterialPtr->SetBlendStateDesc(MakeAlphaBlendStateDesc());
+		else if (PresetIndex == 2) SelectedMaterialPtr->SetBlendStateDesc(MakeAdditiveBlendStateDesc());
+		else if (PresetIndex == 3) SelectedMaterialPtr->SetBlendStateDesc(MakeMultiplyBlendStateDesc());
+		SaveSelectedMaterial();
+	}
+
 	if (!bIsInstanced)
 	{
 		ImGui::TextDisabled("Create Instance to edit material parameters.");

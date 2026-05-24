@@ -145,6 +145,7 @@ public:
 	ID3D11SamplerState* GetOrCreateSamplerState(ESamplerType Type, ID3D11Device* Device = nullptr);
 	ID3D11DepthStencilState* GetOrCreateDepthStencilState(EDepthStencilType Type, ID3D11Device* Device = nullptr);
 	ID3D11BlendState* GetOrCreateBlendState(EBlendType Type, ID3D11Device* Device = nullptr);
+	ID3D11BlendState* GetOrCreateBlendState(const FMaterialBlendStateDesc& Desc, ID3D11Device* Device = nullptr);
 	ID3D11RasterizerState* GetOrCreateRasterizerState(ERasterizerType Type, ID3D11Device* Device = nullptr);
 
 	size_t GetMaterialMemorySize() const;

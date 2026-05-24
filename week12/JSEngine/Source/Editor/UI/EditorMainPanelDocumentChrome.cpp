@@ -66,27 +66,32 @@ void FEditorMainPanel::RenderActiveDocumentToolbar()
 
 		if (Viewer)
 		{
-			if (Viewer->GetTabKind() != EEditorTabKind::ParticleViewer)
-			{
-				ImGui::TextDisabled(Viewer->GetViewerLabel());
-				ImGui::SameLine();
-				ImGui::TextUnformatted(Viewer->GetFileName().c_str());
-			}
+			const float TextY = (ToolbarHeight - ImGui::GetTextLineHeight()) * 0.5f;
+			ImGui::SetCursorPos(ImVec2(14.0f, TextY));
+			ImGui::TextDisabled(Viewer->GetViewerLabel());
+			ImGui::SameLine(0.0f, 14.0f);
+			ImGui::TextUnformatted(Viewer->GetFileName().c_str());
 		}
 		else if (ActiveTab && ActiveTab->Id.Kind == EEditorTabKind::RuntimeUIPreview)
 		{
+			const float TextY = (ToolbarHeight - ImGui::GetTextLineHeight()) * 0.5f;
+			ImGui::SetCursorPos(ImVec2(14.0f, TextY));
 			ImGui::TextDisabled("Runtime UI Preview");
-			ImGui::SameLine();
+			ImGui::SameLine(0.0f, 14.0f);
 			ImGui::TextUnformatted(Widgets.RuntimeUIPreviewWidget.GetPreviewDocumentPath().c_str());
 		}
 		else if (ActiveTab && ActiveTab->Id.Kind == EEditorTabKind::AnimGraphEditor)
 		{
+			const float TextY = (ToolbarHeight - ImGui::GetTextLineHeight()) * 0.5f;
+			ImGui::SetCursorPos(ImVec2(14.0f, TextY));
 			ImGui::TextDisabled("Anim Graph");
-			ImGui::SameLine();
+			ImGui::SameLine(0.0f, 14.0f);
 			ImGui::TextUnformatted(Widgets.AnimGraphWidget.GetEditingPath().c_str());
 		}
 		else
 		{
+			const float TextY = (ToolbarHeight - ImGui::GetTextLineHeight()) * 0.5f;
+			ImGui::SetCursorPos(ImVec2(14.0f, TextY));
 			ImGui::TextDisabled("No active document");
 		}
 	}

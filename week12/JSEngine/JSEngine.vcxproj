@@ -815,6 +815,9 @@
     <ClCompile Include="Source\Engine\Object\Function.cpp" />
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Object\Property.cpp" />
+    <ClCompile Include="Source\Engine\Particle\ParticleEmitterInstance.cpp" />
+    <ClCompile Include="Source\Engine\Particle\ParticleEventManager.cpp" />
+    <ClCompile Include="Source\Engine\Particle\ParticleModules.cpp" />
     <ClCompile Include="Source\Engine\Particle\ParticleSystemComponent.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
     <ClCompile Include="Source\Engine\Render\FontBatcher.cpp" />
@@ -831,7 +834,8 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DebugViewModeResolvePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeMeshRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.cpp" />
@@ -1209,6 +1213,9 @@
     <ClInclude Include="Source\Engine\Object\ObjectPtr.h" />
     <ClInclude Include="Source\Engine\Object\Property.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleAsset.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleEmitterInstance.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleEmitterInstanceOwner.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleEventManager.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleModules.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleSystemComponent.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleTypes.h" />
@@ -1232,7 +1239,8 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DebugViewModeResolvePass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeMeshRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.h" />
@@ -1347,7 +1355,9 @@
   <ItemGroup>
     <None Include="Shaders\Atmosphere\HeightFogPixelShader.hlsl" />
     <None Include="Shaders\Common\Common.hlsli" />
+    <None Include="Shaders\Common\LightCulling.hlsli" />
     <None Include="Shaders\Common\Lighting.hlsli" />
+    <None Include="Shaders\Common\NormalMapping.hlsli" />
     <None Include="Shaders\Common\ShadowFunction.hlsli" />
     <None Include="Shaders\Common\SkeletalSkinning.hlsli" />
     <None Include="Shaders\Compute\HiZDownsample.hlsl" />
@@ -1364,7 +1374,8 @@
     <None Include="Shaders\Material\UberLit.hlsl" />
     <None Include="Shaders\PostProcess\FXAAPass.hlsl" />
     <None Include="Shaders\PostProcess\FogPass.hlsl" />
-    <None Include="Shaders\PostProcess\LightPass.hlsl" />
+    <None Include="Shaders\EditorDebug\ViewModeMesh.hlsl" />
+    <None Include="Shaders\PostProcess\DebugViewModeResolve.hlsl" />
     <None Include="Shaders\PostProcess\Outline.hlsl" />
     <None Include="Shaders\PostProcess\PostProcess.hlsl" />
     <None Include="Shaders\PostProcess\SandervistanPass.hlsl" />

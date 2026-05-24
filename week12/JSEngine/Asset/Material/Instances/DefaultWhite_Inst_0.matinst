@@ -1,0 +1,20 @@
+{
+        "BlendMode" : "Translucent",
+        "BlendState" : {
+          "AlphaOp" : "Add",
+          "BlendEnable" : true,
+          "ColorOp" : "Add",
+          "DestAlpha" : "Zero",
+          "DestColor" : "InvSrcAlpha",
+          "SrcAlpha" : "One",
+          "SrcColor" : "SrcAlpha",
+          "WriteMask" : 15
+        },
+        "Name" : "Asset/Material/Instances/DefaultWhite_Inst_0.matinst",
+        "OverridedParams" : [{
+            "Name" : "Opacity",
+            "Type" : "Float",
+            "Value" : -2.830000
+          }],
+        "Parent" : "DefaultWhite"
+      }

@@ -21,6 +21,8 @@ namespace
 {
 	constexpr const char* ParticleModuleDragPayload = "ParticleModule";
 	constexpr const char* ParticleEmitterDragPayload = "ParticleEmitter";
+	constexpr float EmitterNodeWidth = 220.0f;
+	constexpr float EmitterSeparatorGap = 10.0f;
 
 	struct FParticleModuleDragPayload
 	{
@@ -41,7 +43,7 @@ namespace
 	bool DrawParticleModuleClassMenu(FParticleEditorViewer* Viewer);
 	void DrawViewModeMenuItems(FParticleEditorViewer* Viewer);
 	bool DrawPopupButton(const char* Label, const char* PopupId);
-	bool DrawRoundToolbarButton(const char* Id, const char* Label, const char* Tooltip, float Diameter);
+	bool DrawRoundedToolbarButton(const char* Id, const char* Label, const char* Tooltip, const ImVec2& Size);
 	void DrawParticlePanelTitle(const char* Title, const char* Subtitle);
 	void DrawParticleDetailsSection(const char* Title);
 	void DrawParticleDetailsText(const char* Label, const char* Value);
@@ -79,6 +81,9 @@ void FParticleEditorViewerWidget::RenderContent(float DeltaTime)
 	ImGui::PushID(ParticleViewer);
 
 	const float SplitterThickness = 4.0f;
+	const float SplitterSideGap = 6.0f;
+	const float SplitterTotalWidth = SplitterThickness + SplitterSideGap * 2.0f;
+
 	const float MinColumnWidth = std::min(220.0f, std::max(80.0f, (FullSize.x - SplitterThickness) * 0.25f));
 	const float MinPanelHeight = std::min(140.0f, std::max(60.0f, (FullSize.y - SplitterThickness) * 0.25f));
 	EmitterPanelWidthRatio = std::clamp(EmitterPanelWidthRatio, 0.2f, 0.85f);
@@ -98,12 +103,7 @@ void FParticleEditorViewerWidget::RenderContent(float DeltaTime)
 		RenderViewportPanel(SceneViewport, SRV, ImGui::GetContentRegionAvail());
 		if (BeginViewportToolbar(false))
 		{
-			FEditorMainPanel& MainPanel = EditorEngine->GetMainPanel();
 			ImGui::PushID(ParticleViewer);
-			MainPanel.RenderViewerTransformToolbarControls(ParticleViewer);
-			ImGui::SameLine(0.0f, 10.0f);
-			ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-			ImGui::SameLine(0.0f, 10.0f);
 			RenderViewportOptions(ParticleViewer);
 			ImGui::PopID();
 			EndViewportToolbar();
@@ -129,7 +129,7 @@ void FParticleEditorViewerWidget::RenderContent(float DeltaTime)
 	ImGui::Button("##ParticleVerticalSplitter", ImVec2(SplitterThickness, FullSize.y));
 	if (ImGui::IsItemActive())
 	{
-		RightWidth = std::clamp(RightWidth - ImGui::GetIO().MouseDelta.x, MinColumnWidth, std::max(MinColumnWidth, FullSize.x - MinColumnWidth - SplitterThickness));
+		RightWidth = std::clamp(RightWidth - ImGui::GetIO().MouseDelta.x, MinColumnWidth, std::max(MinColumnWidth, FullSize.x - MinColumnWidth - SplitterTotalWidth));
 		EmitterPanelWidthRatio = RightWidth / FullSize.x;
 	}
 	ImGui::SameLine();
@@ -511,7 +511,7 @@ void FParticleEditorViewerWidget::RenderToolbar(FParticleEditorViewer* Viewer)
 
 void FParticleEditorViewerWidget::RenderViewportOptions(FParticleEditorViewer* Viewer)
 {
-	if (DrawRoundToolbarButton("ParticleViewportView", "View", "View", 26.0f))
+	if (DrawRoundedToolbarButton("ParticleViewportView", "View", "View", ImVec2(50.0f, 26.0f)))
 	{
 		ImGui::OpenPopup("##ParticleViewportViewPopup");
 	}
@@ -552,7 +552,7 @@ void FParticleEditorViewerWidget::RenderViewportOptions(FParticleEditorViewer* V
 		ImGui::EndPopup();
 	}
 	ImGui::SameLine(0.0f, 6.0f);
-	if (DrawRoundToolbarButton("ParticleViewportTime", "Time", "Time", 26.0f))
+	if (DrawRoundedToolbarButton("ParticleViewportTime", "Time", "Time", ImVec2(52.0f, 26.0f)))
 	{
 		ImGui::OpenPopup("##ParticleViewportTimePopup");
 	}
@@ -723,14 +723,15 @@ void FParticleEditorViewerWidget::RenderEmitterPanel(FParticleEditorViewer* View
 		}
 	}
 
-	if (ImGui::BeginTable("##ParticleEmitterColumns", std::max(1, static_cast<int32>(ParticleSystem->Emitters.size())), ImGuiTableFlags_Resizable))
+	const int32 EmitterCount = static_cast<int32>(ParticleSystem->Emitters.size());
+	if (EmitterCount > 0 && ImGui::BeginTable("##ParticleEmitterColumns", EmitterCount, ImGuiTableFlags_SizingFixedFit))
 	{
-		for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(ParticleSystem->Emitters.size()); ++EmitterIndex)
+		for (int32 EmitterIndex = 0; EmitterIndex < EmitterCount; ++EmitterIndex)
 		{
-			ImGui::TableSetupColumn(("Emitter " + std::to_string(EmitterIndex)).c_str(), ImGuiTableColumnFlags_WidthFixed, 220.0f);
+			ImGui::TableSetupColumn(("Emitter " + std::to_string(EmitterIndex)).c_str(), ImGuiTableColumnFlags_WidthFixed, EmitterNodeWidth + EmitterSeparatorGap);
 		}
 		ImGui::TableNextRow();
-		for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(ParticleSystem->Emitters.size()); ++EmitterIndex)
+		for (int32 EmitterIndex = 0; EmitterIndex < EmitterCount; ++EmitterIndex)
 		{
 			ImGui::TableSetColumnIndex(EmitterIndex);
 			ImGui::PushID(EmitterIndex);
@@ -908,9 +909,13 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 		 Viewer->GetSelectionType() == EParticleEditorSelectionType::Module);
 
 	const ImVec2 CardStart = ImGui::GetCursorScreenPos();
-	const float CardWidth = std::max(190.0f, ImGui::GetContentRegionAvail().x);
+	const float CardWidth = EmitterNodeWidth;
 	const float HeaderHeight = 86.0f;
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	const float SeparatorX = CardStart.x + CardWidth + EmitterSeparatorGap * 0.5f;
+	const float SeparatorBottom = ImGui::GetWindowPos().y + ImGui::GetWindowHeight() - ImGui::GetStyle().WindowPadding.y;
+
+	DrawList->AddLine(ImVec2(SeparatorX, CardStart.y), ImVec2(SeparatorX, SeparatorBottom), IM_COL32(58, 60, 68, 255), 1.0f);
 	DrawList->AddRectFilled(CardStart, ImVec2(CardStart.x + CardWidth, CardStart.y + HeaderHeight), IM_COL32(33, 34, 38, 255), 4.0f);
 	DrawList->AddRect(CardStart, ImVec2(CardStart.x + CardWidth, CardStart.y + HeaderHeight), IM_COL32(75, 75, 82, 255), 4.0f);
 
@@ -918,6 +923,11 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 	if (ImGui::IsItemClicked())
 	{
 		Viewer->SelectEmitter(EmitterIndex);
+	}
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+	{
+		Viewer->SelectEmitter(EmitterIndex);
+		Viewer->SelectLOD(LODIndex);
 	}
 	if (ImGui::BeginDragDropTarget())
 	{
@@ -953,6 +963,11 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 		if (ImGui::MenuItem("Add Emitter"))
 		{
 			Viewer->AddEmitter();
+		}
+		if (LOD && ImGui::BeginMenu("Add Module"))
+		{
+			DrawParticleModuleClassMenu(Viewer);
+			ImGui::EndMenu();
 		}
 		ImGui::EndPopup();
 	}
@@ -1333,23 +1348,21 @@ namespace
 		return true;
 	}
 
-	bool DrawRoundToolbarButton(const char* Id, const char* Label, const char* Tooltip, float Diameter)
+	bool DrawRoundedToolbarButton(const char* Id, const char* Label, const char* Tooltip, const ImVec2& Size)
 	{
 		ImGui::PushID(Id);
-		const ImVec2 Size(Diameter, Diameter);
-		const bool bPressed = ImGui::InvisibleButton("##RoundToolbarButton", Size);
+		const bool bPressed = ImGui::InvisibleButton("##RoundedToolbarButton", Size);
 		const bool bHovered = ImGui::IsItemHovered();
 		const bool bActive = ImGui::IsItemActive();
 		const ImVec2 Min = ImGui::GetItemRectMin();
 		const ImVec2 Max = ImGui::GetItemRectMax();
 		const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
-		const float Radius = Diameter * 0.5f;
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
 		const ImU32 FillColor = bActive ? IM_COL32(56, 104, 174, 232) : (bHovered ? IM_COL32(52, 58, 70, 220) : IM_COL32(28, 31, 38, 190));
 		const ImU32 BorderColor = bHovered ? IM_COL32(190, 205, 238, 255) : IM_COL32(112, 120, 138, 230);
-		DrawList->AddCircleFilled(Center, Radius, FillColor, 32);
-		DrawList->AddCircle(Center, Radius - 0.5f, BorderColor, 32, 1.0f);
+		DrawList->AddRectFilled(Min, Max, FillColor, 8.0f);
+		DrawList->AddRect(Min, Max, BorderColor, 8.0f, 0, 1.0f);
 
 		const ImVec2 TextSize = ImGui::CalcTextSize(Label);
 		DrawList->AddText(ImVec2(Center.x - TextSize.x * 0.5f, Center.y - TextSize.y * 0.5f), ImGui::GetColorU32(ImGuiCol_Text), Label);
@@ -1412,22 +1425,33 @@ namespace
 		const ImVec2 RowStart = ImGui::GetCursorScreenPos();
 		const float RowHeight = ImGui::GetTextLineHeight() + 6.0f;
 		const float TextLeftPadding = 12.0f;
-		const float RowWidth = std::max(180.0f, ImGui::GetContentRegionAvail().x);
+		const float RowWidth = std::max(1.0f, ImGui::GetContentRegionAvail().x - EmitterSeparatorGap);
+		const ImVec2 RowEnd(RowStart.x + RowWidth, RowStart.y + RowHeight);
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 		if ((BackgroundColor & IM_COL32_A_MASK) != 0)
 		{
-			ImGui::GetWindowDrawList()->AddRectFilled(
+			DrawList->AddRectFilled(
 				RowStart,
-				ImVec2(RowStart.x + RowWidth, RowStart.y + RowHeight),
+				RowEnd,
 				BackgroundColor,
 				3.0f);
 		}
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
-		const bool bPressed = ImGui::Selectable("##SelectableModuleRow", bSelected, ImGuiSelectableFlags_SpanAvailWidth, ImVec2(0.0f, RowHeight));
+		const bool bPressed = ImGui::InvisibleButton("##SelectableModuleRow", ImVec2(RowWidth, RowHeight));
 		ImGui::PopStyleVar();
 
+		if (bSelected || ImGui::IsItemHovered())
+		{
+			const ImU32 StateColor = ImGui::GetColorU32(
+				bSelected
+					? ImVec4(0.22f, 0.33f, 0.55f, 0.78f)
+					: ImVec4(0.22f, 0.24f, 0.30f, 0.42f));
+			DrawList->AddRectFilled(RowStart, RowEnd, StateColor, 3.0f);
+		}
+
 		const ImVec2 TextSize = ImGui::CalcTextSize(Label);
-		ImGui::GetWindowDrawList()->AddText(
+		DrawList->AddText(
 			ImVec2(RowStart.x + TextLeftPadding, RowStart.y + (RowHeight - TextSize.y) * 0.5f),
 			ImGui::GetColorU32(ImGuiCol_Text),
 			Label);
@@ -1498,15 +1522,27 @@ namespace
 				const FParticleModuleDragPayload* DragPayload = static_cast<const FParticleModuleDragPayload*>(Payload->Data);
 				if (DragPayload)
 				{
-					Viewer->SelectEmitter(DragPayload->EmitterIndex);
-					Viewer->SelectLOD(DragPayload->LODIndex);
-					if (ImGui::GetIO().KeyCtrl)
+					const bool bSameModuleList =
+						Type == EParticleEditorSelectionType::Module &&
+						DragPayload->EmitterIndex == EmitterIndex &&
+						DragPayload->LODIndex == LODIndex;
+					if (bSameModuleList && !ImGui::GetIO().KeyCtrl)
 					{
-						Viewer->CopyModuleToEmitter(DragPayload->ModuleIndex, EmitterIndex);
+						Viewer->SelectEmitterModule(EmitterIndex, LODIndex, DragPayload->ModuleIndex);
+						Viewer->MoveModule(DragPayload->ModuleIndex, ModuleIndex);
 					}
 					else
 					{
-						Viewer->MoveModuleToEmitter(DragPayload->ModuleIndex, EmitterIndex);
+						Viewer->SelectEmitter(DragPayload->EmitterIndex);
+						Viewer->SelectLOD(DragPayload->LODIndex);
+						if (ImGui::GetIO().KeyCtrl)
+						{
+							Viewer->CopyModuleToEmitter(DragPayload->ModuleIndex, EmitterIndex);
+						}
+						else
+						{
+							Viewer->MoveModuleToEmitter(DragPayload->ModuleIndex, EmitterIndex);
+						}
 					}
 				}
 			}

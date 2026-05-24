@@ -1,4 +1,15 @@
-﻿{
+{
+        "BlendMode" : "Opaque",
+        "BlendState" : {
+          "AlphaOp" : "Add",
+          "BlendEnable" : false,
+          "ColorOp" : "Add",
+          "DestAlpha" : "Zero",
+          "DestColor" : "Zero",
+          "SrcAlpha" : "One",
+          "SrcColor" : "One",
+          "WriteMask" : 15
+        },
         "ImportedName" : "裤子",
         "Name" : "LumineModel_Mat_11",
         "Params" : [{
@@ -10,13 +21,13 @@
             "Type" : "Vector3",
             "Value" : [0.800000, 0.800000, 0.800000]
           }, {
-            "Name" : "SpecularColor",
-            "Type" : "Vector3",
-            "Value" : [0.500000, 0.500000, 0.500000]
-          }, {
             "Name" : "ScrollUV",
             "Type" : "Vector2",
             "Value" : [0.000000, 0.000000]
+          }, {
+            "Name" : "SpecularColor",
+            "Type" : "Vector3",
+            "Value" : [0.500000, 0.500000, 0.500000]
           }, {
             "Name" : "DiffuseMap",
             "Type" : "Texture",
@@ -26,6 +37,10 @@
             "Type" : "Vector3",
             "Value" : [0.000000, 0.000000, 0.000000]
           }, {
+            "Name" : "AmbientMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
             "Name" : "Shininess",
             "Type" : "Float",
             "Value" : 201.339569
@@ -33,6 +48,18 @@
             "Name" : "Opacity",
             "Type" : "Float",
             "Value" : 1.000000
+          }, {
+            "Name" : "SpecularMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
+            "Name" : "EmissiveMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
+            "Name" : "BumpMap",
+            "Type" : "Texture",
+            "Value" : ""
           }, {
             "Name" : "bHasDiffuseMap",
             "Type" : "Bool",

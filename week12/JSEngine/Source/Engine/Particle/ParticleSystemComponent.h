@@ -1,63 +1,22 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/PrimitiveComponent.h"
-#include "GameFramework/AActor.h"
 #include "Particle/ParticleAsset.h"
+#include "Particle/ParticleEmitterInstance.h"
 
+#include <memory>
+
+class AParticleEventManager;
 class UWorld;
 
-class IParticleEmitterInstanceOwner
-{
-public:
-	virtual ~IParticleEmitterInstanceOwner() = default;
-	virtual class UParticleSystemComponent* GetParticleSystemComponent() = 0;
-};
-
-class FParticleEmitterInstance
-{
-public:
-	virtual ~FParticleEmitterInstance() = default;
-
-	UParticleEmitter* SpriteTemplate = nullptr;
-	UParticleSystemComponent* Component = nullptr;
-
-	int32 CurrentLODLevelIndex = 0;
-	UParticleLODLevel* CurrentLODLevel = nullptr;
-
-	uint8* ParticleData = nullptr;
-	int32 ParticleStride = 0;
-	int32 ActiveParticles = 0;
-	int32 MaxActiveParticles = 0;
-
-	virtual void Tick(float DeltaTime);
-};
-
-class FParticleMeshEmitterInstance : public FParticleEmitterInstance
-{
-};
-
-class FParticleBeamEmitterInstance : public FParticleEmitterInstance
-{
-};
-
-class FParticleTrailsEmitterInstance : public FParticleEmitterInstance
-{
-};
-
-class FParticleRibbonEmitterInstance : public FParticleTrailsEmitterInstance
-{
-};
-
 UCLASS(SpawnableComponent, DisplayName = "Particle System Component", Category = "Effects")
-class UParticleSystemComponent : public UPrimitiveComponent, public IParticleEmitterInstanceOwner
+class UParticleSystemComponent : public UPrimitiveComponent
 {
 public:
 	GENERATED_BODY(UParticleSystemComponent, UPrimitiveComponent)
 
 	UParticleSystemComponent();
 	~UParticleSystemComponent() override;
-
-	UParticleSystemComponent* GetParticleSystemComponent() override { return this; }
 
 	UParticleSystem* Template = nullptr;
 	TArray<FParticleEmitterInstance*> EmitterInstances;
@@ -69,7 +28,7 @@ public:
 	TArray<FParticleEventBurstData> BurstEvents;
 
 	void SetTemplate(UParticleSystem* InTemplate);
-	void SetEventManager(class AParticleEventManager* InEventManager) { EventManager = InEventManager; }
+	void SetEventManager(AParticleEventManager* InEventManager) { EventManager = InEventManager; }
 	UWorld* GetWorld() const;
 
 	void TickComponent(float DeltaTime) override;
@@ -91,16 +50,7 @@ private:
 	void CreateEmitterInstances();
 
 	AParticleEventManager* EventManager = nullptr;
-};
 
-UCLASS()
-class AParticleEventManager : public AActor
-{
-public:
-	GENERATED_BODY(AParticleEventManager, AActor)
-
-	void HandleParticleSpawnEvents(UParticleSystemComponent* Component, const TArray<FParticleEventSpawnData>& InSpawnEvents);
-	void HandleParticleDeathEvents(UParticleSystemComponent* Component, const TArray<FParticleEventDeathData>& InDeathEvents);
-	void HandleParticleCollisionEvents(UParticleSystemComponent* Component, const TArray<FParticleEventCollideData>& InCollisionEvents);
-	void HandleParticleBurstEvents(UParticleSystemComponent* Component, const TArray<FParticleEventBurstData>& InBurstEvents);
+	class FInstanceOwner;
+	std::unique_ptr<FInstanceOwner> InstanceOwner;
 };

@@ -45,11 +45,14 @@ enum class EPrimitiveType
 	MAX
 };
 
+// Draw Command가 어떠한 pass에 속해야하는지를 표시
+// NOTE: DepthPre, Shadow 등 일부 pass는 엔진에 의해 자동적으로 DrawCommand 수집이 이루어지므로 ERenderPass로 지정할 수 없음
 enum class ERenderPass : uint32
 {
 	Opaque,
 	Decal,
-	Light,
+	ViewModeMesh,
+	DebugViewModeResolve,
 	Fog,
 	Sandervistan,
 	FXAA,

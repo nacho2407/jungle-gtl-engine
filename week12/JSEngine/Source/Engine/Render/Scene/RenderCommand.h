@@ -86,7 +86,8 @@ struct FPerObjectConstants
 struct FFrameConstants
 {
 	FMatrix View;          
-	FMatrix Projection;    
+	FMatrix Projection;
+	FMatrix InvViewProjection;
 	FVector CameraPosition;
 	float bIsOrthographic = 0.0f; // 0: Perspective, 1: Orthographic
 	FVector WireframeColor;
@@ -204,16 +205,13 @@ struct FUberConstants
 	FAmbientLightInfo AmbientLight;
 	FDirectionalLightInfo DirectionalLight;
 	uint32 LightCount;
-	uint32 DecalCount;
-	float Padding[2];
+	float Padding[3];
 };
 
-struct FDecalInfo
+struct FProjectionDecalConstants
 {
 	FMatrix InvDecalWorld;
 	FVector4 ColorTint;
-	uint32 TextureIndex;
-	float Padding[3];
 };
 
 struct FGizmoConstants
@@ -403,13 +401,10 @@ struct FLightData
 	float	Padding[3];
 };
 
-struct FLightPassConstants 
+struct FDebugViewModeResolveConstants
 {
-	FVector CameraWorldPos;
-	uint32	LightCount;
-	uint32	ViewMode;		// 4 bytes (필요시 더 압축해서 보냅니다.)
-	uint32	WorldLit;		// 4 bytes
-	float	Padding[2];		// 8 bytes
+	uint32	ViewMode = 0;
+	float	Padding[3] = { 0.0f, 0.0f, 0.0f };
 };
 
 struct FEditorPickingConstants
@@ -471,8 +466,8 @@ struct FRenderCommand
 		FBillboardConstants Billboard;  // ← 추가
 		FFogConstants Fog;
 		FFXAAConstants FXAA;
-		FLightPassConstants Light;
-		FDecalInfo Decal;
+		FDebugViewModeResolveConstants DebugViewModeResolve;
+		FProjectionDecalConstants Decal;
 	} Constants;
 
 	ERenderCommandType Type = ERenderCommandType::Primitive;

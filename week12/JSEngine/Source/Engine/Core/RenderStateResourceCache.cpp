@@ -2,6 +2,40 @@
 
 #include "Core/Logging/Log.h"
 
+namespace
+{
+	D3D11_BLEND ToD3DBlend(EBlendOption Option)
+	{
+		switch (Option)
+		{
+		case EBlendOption::Zero: return D3D11_BLEND_ZERO;
+		case EBlendOption::One: return D3D11_BLEND_ONE;
+		case EBlendOption::SrcColor: return D3D11_BLEND_SRC_COLOR;
+		case EBlendOption::InvSrcColor: return D3D11_BLEND_INV_SRC_COLOR;
+		case EBlendOption::SrcAlpha: return D3D11_BLEND_SRC_ALPHA;
+		case EBlendOption::InvSrcAlpha: return D3D11_BLEND_INV_SRC_ALPHA;
+		case EBlendOption::DestAlpha: return D3D11_BLEND_DEST_ALPHA;
+		case EBlendOption::InvDestAlpha: return D3D11_BLEND_INV_DEST_ALPHA;
+		case EBlendOption::DestColor: return D3D11_BLEND_DEST_COLOR;
+		case EBlendOption::InvDestColor: return D3D11_BLEND_INV_DEST_COLOR;
+		default: return D3D11_BLEND_ONE;
+		}
+	}
+
+	D3D11_BLEND_OP ToD3DBlendOp(EBlendOp Op)
+	{
+		switch (Op)
+		{
+		case EBlendOp::Add: return D3D11_BLEND_OP_ADD;
+		case EBlendOp::Subtract: return D3D11_BLEND_OP_SUBTRACT;
+		case EBlendOp::RevSubtract: return D3D11_BLEND_OP_REV_SUBTRACT;
+		case EBlendOp::Min: return D3D11_BLEND_OP_MIN;
+		case EBlendOp::Max: return D3D11_BLEND_OP_MAX;
+		default: return D3D11_BLEND_OP_ADD;
+		}
+	}
+}
+
 ID3D11SamplerState* FRenderStateResourceCache::GetOrCreateSamplerState(ESamplerType Type, ID3D11Device* Device)
 {
 	if (Device == nullptr)
@@ -202,6 +236,41 @@ ID3D11BlendState* FRenderStateResourceCache::GetOrCreateBlendState(EBlendType Ty
 	return BlendState.Get();
 }
 
+ID3D11BlendState* FRenderStateResourceCache::GetOrCreateBlendState(const FMaterialBlendStateDesc& InDesc, ID3D11Device* Device)
+{
+	if (Device == nullptr)
+	{
+		return nullptr;
+	}
+
+	auto It = MaterialBlendStates.find(InDesc);
+	if (It != MaterialBlendStates.end())
+	{
+		return It->second.Get();
+	}
+
+	D3D11_BLEND_DESC Desc = {};
+	Desc.RenderTarget[0].BlendEnable = InDesc.bBlendEnable ? TRUE : FALSE;
+	Desc.RenderTarget[0].SrcBlend = ToD3DBlend(InDesc.SrcColor);
+	Desc.RenderTarget[0].DestBlend = ToD3DBlend(InDesc.DestColor);
+	Desc.RenderTarget[0].BlendOp = ToD3DBlendOp(InDesc.ColorOp);
+	Desc.RenderTarget[0].SrcBlendAlpha = ToD3DBlend(InDesc.SrcAlpha);
+	Desc.RenderTarget[0].DestBlendAlpha = ToD3DBlend(InDesc.DestAlpha);
+	Desc.RenderTarget[0].BlendOpAlpha = ToD3DBlendOp(InDesc.AlphaOp);
+	Desc.RenderTarget[0].RenderTargetWriteMask = InDesc.WriteMask;
+
+	TComPtr<ID3D11BlendState> BlendState;
+	HRESULT hr = Device->CreateBlendState(&Desc, &BlendState);
+	if (FAILED(hr))
+	{
+		UE_LOG_ERROR("Failed to create material blend state");
+		return nullptr;
+	}
+
+	MaterialBlendStates[InDesc] = BlendState;
+	return BlendState.Get();
+}
+
 ID3D11RasterizerState* FRenderStateResourceCache::GetOrCreateRasterizerState(ERasterizerType Type, ID3D11Device* Device)
 {
 	if (Device == nullptr)
@@ -252,5 +321,6 @@ void FRenderStateResourceCache::Release()
 	SamplerStates.clear();
 	DepthStencilStates.clear();
 	BlendStates.clear();
+	MaterialBlendStates.clear();
 	RasterizerStates.clear();
 }

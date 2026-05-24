@@ -4,7 +4,8 @@
 
 class FFXAARenderPass;
 class FFogRenderPass;
-class FLightRenderPass;
+class FDebugViewModeResolvePass;
+class FViewModeMeshRenderPass;
 class FDecalRenderPass;
 class FFontRenderPass;
 class FSubUVRenderPass;
@@ -39,8 +40,10 @@ private:
 	std::shared_ptr<FLightCullingPass> LightCullingPass;
 	std::shared_ptr<FShadowPass> ShadowPass;
 	std::shared_ptr<FOpaqueRenderPass> OpaqueRenderPass;
+	std::shared_ptr<FDecalRenderPass> DecalRenderPass;
     std::shared_ptr<FVSMConversionRenderPass> VSMConversionRenderPass;
-    std::shared_ptr<FLightRenderPass> LightRenderPass;
+    std::shared_ptr<FViewModeMeshRenderPass> ViewModeMeshRenderPass;
+    std::shared_ptr<FDebugViewModeResolvePass> DebugViewModeResolvePass;
     std::shared_ptr<FFogRenderPass> FogRenderPass;
     std::shared_ptr<FFXAARenderPass> FXAARenderPass;
     std::shared_ptr<FFontRenderPass> FontRenderPass;

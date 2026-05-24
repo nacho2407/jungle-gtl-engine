@@ -1,9 +1,11 @@
-#pragma once
+﻿#pragma once
 
 namespace FShaderPaths
 {
 	inline constexpr const char* MaterialUberLit = "Shaders/Material/UberLit.hlsl";
+	inline constexpr const char* MaterialUberTranslucent = "Shaders/Material/UberTranslucent.hlsl";
 	inline constexpr const char* MaterialDecal = "Shaders/Material/Decal.hlsl";
+	inline constexpr const char* EditorDebugViewModeMesh = "Shaders/EditorDebug/ViewModeMesh.hlsl";
 
 	inline constexpr const char* UIFont = "Shaders/UI/Font.hlsl";
 	inline constexpr const char* UILine = "Shaders/UI/Line.hlsl";
@@ -22,7 +24,7 @@ namespace FShaderPaths
 	inline constexpr const char* VSMShadow = "Shaders/Shadow/VSMShadow.hlsl";
 	inline constexpr const char* VSMBlurCompute = "Shaders/Shadow/VSMBlurComputeShader.hlsl";
 
-	inline constexpr const char* PostProcessLight = "Shaders/PostProcess/LightPass.hlsl";
+	inline constexpr const char* PostProcessDebugViewModeResolve = "Shaders/PostProcess/DebugViewModeResolve.hlsl";
 	inline constexpr const char* PostProcessFog = "Shaders/PostProcess/FogPass.hlsl";
 	inline constexpr const char* PostProcessSandervistan = "Shaders/PostProcess/SandervistanPass.hlsl";
 	inline constexpr const char* PostProcessFXAA = "Shaders/PostProcess/FXAAPass.hlsl";
