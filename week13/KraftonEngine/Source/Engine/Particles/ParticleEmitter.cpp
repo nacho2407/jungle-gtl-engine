@@ -158,25 +158,75 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 
 void UParticleEmitter::Serialize(FArchive& Ar)
 {
-	int32 Version = 0;
+	// 버전 1: bEnabled/bUseMeshInstance만 저장하고 로드 시 DefaultSpriteEmitter로 리셋되던
+	//          이전 포맷. 모듈 편집이 디스크에 들어가지 않아 사실상 사용 불가.
+	// 버전 2: 이름/피벗/초기 할당량 + LODLevels 전부를 직렬화. 모듈은 LODLevel 내부에서
+	//          ClassName 디스패치로 재생성.
+	int32 Version = 2;
 	Ar << Version;
 
-	bool bSerializedEnabled         = bEnabled;
-	bool bSerializedUseMeshInstance = bUseMeshInstance;
-
-	Ar << bSerializedEnabled;
-	Ar << bSerializedUseMeshInstance;
+	bool bSavedEnabled         = bEnabled;
+	bool bSavedUseMeshInstance = bUseMeshInstance;
+	Ar << bSavedEnabled;
+	Ar << bSavedUseMeshInstance;
 
 	if (Ar.IsLoading())
 	{
-		bUseMeshInstance = bSerializedUseMeshInstance;
+		bEnabled         = bSavedEnabled;
+		bUseMeshInstance = bSavedUseMeshInstance;
+	}
 
-		if (!bUseMeshInstance)
+	if (Version < 2)
+	{
+		// 옛 포맷: 모듈 데이터가 없으므로 기본 이미터 구축으로 폴백.
+		if (Ar.IsLoading() && !bUseMeshInstance)
 		{
 			InitializeDefaultSpriteEmitter();
 		}
+		return;
+	}
 
-		SetEnabled(bSerializedEnabled);
+	Ar << EmitterName;
+	Ar << InitialAllocationCount;
+	Ar << QualityLevelSpawnRateScale;
+	Ar << PivotOffset;
+
+	uint32 LODCount = Ar.IsSaving() ? static_cast<uint32>(LODLevels.size()) : 0;
+	Ar << LODCount;
+
+	if (Ar.IsLoading())
+	{
+		LODLevels.clear();
+		LODLevels.resize(LODCount, nullptr);
+	}
+
+	for (uint32 i = 0; i < LODCount; ++i)
+	{
+		bool bValid = Ar.IsSaving() ? (LODLevels[i] != nullptr) : false;
+		Ar << bValid;
+		if (!bValid)
+		{
+			continue;
+		}
+
+		if (Ar.IsLoading())
+		{
+			LODLevels[i] = UObjectManager::Get().CreateObject<UParticleLODLevel>(this);
+		}
+		LODLevels[i]->Serialize(Ar);
+	}
+
+	if (Ar.IsLoading())
+	{
+		if (LODLevels.empty() && !bUseMeshInstance)
+		{
+			// 파일에 LOD가 없으면 기본 스프라이트 이미터로 채워서 항상 유효한 상태 유지.
+			InitializeDefaultSpriteEmitter();
+		}
+		else
+		{
+			CacheEmitterModuleInfo();
+		}
 	}
 }
 

@@ -103,6 +103,10 @@ public:
 	 *	INCLUDING bounding box cacluations!
 	 */
 	virtual void	FinalUpdate(const FUpdateContext& Context);
+
+	// 모듈 자체 상태(bEnabled 등의 phase 비트)를 직렬화. 서브클래스는 super를 호출 후
+	// 자기 필드를 이어 쓴다.
+	virtual void	Serialize(FArchive& Ar) override;
 	// Returns the number of bytes that the module requires in the particle payload block. (particle 별 필요 바이트 라고 함)
 	virtual uint32	RequiredBytes(UParticleModuleTypeDataBase* TypeData);
 	// Returns the number of bytes the module requires in the emitters 'per-instance' data block.

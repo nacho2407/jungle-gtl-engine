@@ -1,5 +1,7 @@
 ﻿#include "ParticleModuleSpawn.h"
 
+#include "Serialization/Archive.h"
+
 bool UParticleModuleSpawn::GetSpawnAmount(const FSpawnContext& Context, int32 Offset, float OldLeftover, float DeltaTime, int32& OutNumber, float& OutRate)
 {
 	OutRate = SpawnRate * SpawnRateScale;
@@ -42,3 +44,16 @@ void UParticleModuleSpawn::PostEditChangeProperty(const FPropertyChangedEvent& P
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 #endif
+
+void UParticleModuleSpawn::Serialize(FArchive& Ar)
+{
+	UParticleModule::Serialize(Ar);
+
+	int32 Version = 0;
+	Ar << Version;
+
+	Ar << SpawnRate;
+	Ar << SpawnRateScale;
+	Ar << BurstScale;
+	Ar << BurstList;
+}

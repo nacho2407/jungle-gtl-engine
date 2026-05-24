@@ -39,3 +39,26 @@ void UParticleModuleVelocity::PostEditChangeProperty(const FPropertyChangedEvent
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 #endif
+
+#include "Serialization/Archive.h"
+
+void UParticleModuleVelocity::Serialize(FArchive& Ar)
+{
+	UParticleModule::Serialize(Ar);
+
+	int32 Version = 0;
+	Ar << Version;
+
+	Ar << MinVelocity;
+	Ar << MaxVelocity;
+
+	bool bWS = bInWorldSpace;
+	bool bOS = bApplyOwnerScale;
+	Ar << bWS;
+	Ar << bOS;
+	if (Ar.IsLoading())
+	{
+		bInWorldSpace    = bWS ? 1 : 0;
+		bApplyOwnerScale = bOS ? 1 : 0;
+	}
+}

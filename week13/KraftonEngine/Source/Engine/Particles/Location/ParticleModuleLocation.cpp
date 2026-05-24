@@ -14,3 +14,15 @@ void UParticleModuleLocation::PostEditChangeProperty(const FPropertyChangedEvent
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 #endif
+
+#include "Serialization/Archive.h"
+
+void UParticleModuleLocation::Serialize(FArchive& Ar)
+{
+	UParticleModule::Serialize(Ar);
+
+	int32 Version = 0;
+	Ar << Version;
+
+	Ar << StartLocation;
+}

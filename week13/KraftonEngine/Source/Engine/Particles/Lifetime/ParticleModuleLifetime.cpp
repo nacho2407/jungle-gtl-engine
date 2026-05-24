@@ -29,3 +29,16 @@ void UParticleModuleLifetime::PostEditChangeProperty(const FPropertyChangedEvent
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 #endif
+
+#include "Serialization/Archive.h"
+
+void UParticleModuleLifetime::Serialize(FArchive& Ar)
+{
+	UParticleModule::Serialize(Ar);
+
+	int32 Version = 0;
+	Ar << Version;
+
+	Ar << LifetimeMin;
+	Ar << LifetimeMax;
+}

@@ -15,3 +15,15 @@ void UParticleModuleSize::PostEditChangeProperty(const FPropertyChangedEvent& Pr
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 #endif
+
+#include "Serialization/Archive.h"
+
+void UParticleModuleSize::Serialize(FArchive& Ar)
+{
+	UParticleModule::Serialize(Ar);
+
+	int32 Version = 0;
+	Ar << Version;
+
+	Ar << StartSize;
+}

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Editor/UI/Asset/AssetEditorWidget.h"
 #include "Object/FName.h"
@@ -7,6 +7,7 @@
 class UParticleSystem;
 class UParticleSystemComponent;
 class UParticleModule;
+struct FParticleBurst;
 
 class FParticleSystemEditorWidget : public FAssetEditorWidget
 {
@@ -34,8 +35,12 @@ private:
 
     void AddEmitter();
     void DeleteSelectedEmitter();
+    void DuplicateEmitter(int32 SourceIndex);
+    void DeleteSelectedModule();
     void SyncEmitterUIState();
     void RestartPreviewSimulation();
+    void HandleKeyboardShortcuts();
+    void RefreshExternalComponents(class UParticleSystem* Template);
 
     void RenderMenuBar();
     void RenderToolbar();
@@ -45,8 +50,7 @@ private:
     void RenderPropertiesPanel(float Width, float Height);
     void RenderCurveEditorPanel(float Width, float Height);
     void RenderModuleProperties(UParticleModule* Module);
-
-    void ResetPreviewComponent();
+    void RenderBurstList(TArray<FParticleBurst>& Bursts);
 
 private:
     FString WindowTitle    = "Particle System Editor";
@@ -60,24 +64,22 @@ private:
     int32 SelectedEmitterIndex = -1;
     int32 SelectedModuleIndex  = -1;
 
-    // 프리뷰 시뮬레이션 상태 (뷰포트 트랜스포트 바와 연결).
+    // 툴바 Play/Pause와 연결되는 시뮬레이션 상태.
     bool  bSimulating = false;
     float PreviewTime = 0.0f;
 
-    // 프리뷰 렌더 타깃. 파티클 뷰포트 클라이언트를 붙여 이 핸들을 채우면
-    // 별도 수정 없이 곧바로 프리뷰가 표시된다.
-    void* PreviewTextureHandle = nullptr;
-
     // 드래그 가능한 레이아웃 분할 비율.
-    float ColumnRatio   = 0.46f;   // 좌(프리뷰+프로퍼티) 폭 비율
-    float LeftRowRatio  = 0.56f;   // 좌측에서 프리뷰 높이 비율
-    float RightRowRatio = 0.58f;   // 우측에서 이미터 높이 비율
+    float ColumnRatio   = 0.50f;
+    float LeftRowRatio  = 0.45f;   // 좌측: 프리뷰는 작게, Details를 크게(스크롤 회피).
+    float RightRowRatio = 0.55f;   // 우측: 이미터 cascade를 커브보다 넓게.
 
+    // 이미터 이름 InputText 버퍼. 선택이 바뀔 때만 모델에서 다시 채워서
+    // 사용자가 입력 중인 글자가 매 프레임 덮어써지지 않게 한다.
+    char  EmitterNameBuf[128] = {};
+    int32 EmitterNameBufFor   = -1;
 
-    // 커브 트랙 가시성 (선택된 모듈의 커브 수만큼 사용).
-    bool CurveTrackVisible[4] = { true, true, true, true };
-
-    char PropertySearch[128] = {};
+    // Details 패널 상단의 속성 검색 입력. 현재는 시각용 placeholder.
+    char  PropertySearch[128] = {};
 
     FParticleSystemEditorViewportClient ViewportClient;
     FName                               PreviewWorldHandle = FName::None;

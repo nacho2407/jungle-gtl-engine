@@ -52,6 +52,7 @@ public:
 	void SetMaterial(UMaterial* InMaterial);
 	void ResolveMaterialFromSlot();
 	void PostEditProperty(const char* PropertyName) override;
+	void Serialize(FArchive& Ar) override;
 
 	UPROPERTY(Edit, Save, Category = "Rendering", DisplayName = "Material", AssetType = "Material")
 	FSoftObjectPtr MaterialSlot = "None";
