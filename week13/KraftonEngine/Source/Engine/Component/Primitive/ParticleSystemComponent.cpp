@@ -321,6 +321,13 @@ void UParticleSystemComponent::BuildEmitterInstances()
             continue;
         }
 
+        // Disabled emitter must not spawn or render. Without this skip,
+        // toggling bEnabled in the asset editor has no visible effect.
+        if (!Emitter->IsEnabled())
+        {
+            continue;
+        }
+
         if (!Emitter->HasValidLOD0())
         {
             Emitter->InitializeDefaultSpriteEmitter();
