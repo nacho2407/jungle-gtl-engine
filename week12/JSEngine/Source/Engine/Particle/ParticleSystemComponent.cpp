@@ -1,8 +1,18 @@
 ﻿#include "Particle/ParticleSystemComponent.h"
 
+#include "Core/Paths.h"
+#include "Core/ResourceManager.h"
 #include "GameFramework/World.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
 #include "Particle/ParticleEventManager.h"
+
+namespace
+{
+	bool IsLiveObject(const UObject* Object)
+	{
+		return Object != nullptr && UObjectManager::Get().ContainsObject(Object);
+	}
+}
 
 class UParticleSystemComponent::FInstanceOwner : public IParticleEmitterInstanceOwner
 {
@@ -71,20 +81,81 @@ UParticleSystemComponent::UParticleSystemComponent()
 
 UParticleSystemComponent::~UParticleSystemComponent()
 {
-    ReleaseRenderData();
+	ReleaseRenderData();
 	ReleaseEmitterInstances();
 }
 
 void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 {
-	if (Template == InTemplate)
+	if (ResolvedTemplate == InTemplate)
 	{
 		return;
 	}
 
-	Template = InTemplate;
+	ResolvedTemplate = InTemplate;
+	Template.SetPath(InTemplate ? InTemplate->GetAssetPath() : FString());
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
+}
+
+void UParticleSystemComponent::SetTemplateAsset(const TSoftObjectPtr<UParticleSystem>& InTemplate)
+{
+	Template = InTemplate;
+	ResolvedTemplate = nullptr;
+	ReleaseEmitterInstances();
+	CreateEmitterInstances();
+}
+
+void UParticleSystemComponent::SetTemplatePath(const FString& InPath)
+{
+	Template.SetPath(FPaths::Normalize(InPath));
+	ResolvedTemplate = nullptr;
+	ReleaseEmitterInstances();
+	CreateEmitterInstances();
+}
+
+UParticleSystem* UParticleSystemComponent::GetTemplate()
+{
+	if (ResolvedTemplate)
+	{
+		return ResolvedTemplate;
+	}
+
+	const FString Path = FPaths::Normalize(Template.GetPath());
+	if (Path.empty())
+	{
+		return nullptr;
+	}
+
+	ResolvedTemplate = FResourceManager::Get().LoadParticleSystem(Path);
+	return ResolvedTemplate;
+}
+
+const UParticleSystem* UParticleSystemComponent::GetTemplate() const
+{
+	return const_cast<UParticleSystemComponent*>(this)->GetTemplate();
+}
+
+void UParticleSystemComponent::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+	if (Ar.IsLoading())
+	{
+		ResolvedTemplate = nullptr;
+		ReleaseEmitterInstances();
+		CreateEmitterInstances();
+	}
+}
+
+void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
+{
+	Super::PostEditProperty(PropertyName);
+	if (PropertyName && FString(PropertyName) == "Template")
+	{
+		ResolvedTemplate = nullptr;
+		ReleaseEmitterInstances();
+		CreateEmitterInstances();
+	}
 }
 
 UWorld* UParticleSystemComponent::GetWorld() const
@@ -128,12 +199,18 @@ void UParticleSystemComponent::PackRenderData()
 	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(EmitterInstances.size()); ++EmitterIndex)
 	{
 		FParticleEmitterInstance* Instance = EmitterInstances[EmitterIndex];
-		if (Instance == nullptr || Instance->CurrentLODLevel == nullptr || Instance->CurrentLODLevel->TypeDataModule == nullptr)
+		if (Instance == nullptr || !IsLiveObject(Instance->CurrentLODLevel))
 		{
 			continue;
 		}
 
-		FDynamicEmitterDataBase* RenderData = Instance->CurrentLODLevel->TypeDataModule->GetDynamicRenderData(Instance);
+		UParticleModuleTypeDataBase* TypeDataModule = Instance->CurrentLODLevel->TypeDataModule;
+		if (!IsLiveObject(TypeDataModule))
+		{
+			continue;
+		}
+
+		FDynamicEmitterDataBase* RenderData = TypeDataModule->GetDynamicRenderData(Instance);
 		if (RenderData != nullptr)
 		{
 			RenderData->EmitterIndex = EmitterIndex;
@@ -186,14 +263,15 @@ void UParticleSystemComponent::ReleaseRenderData()
 
 void UParticleSystemComponent::CreateEmitterInstances()
 {
-	if (Template == nullptr)
+	UParticleSystem* ParticleSystem = GetTemplate();
+	if (ParticleSystem == nullptr)
 	{
 		return;
 	}
 
-	for (UParticleEmitter* EmitterTemplate : Template->Emitters)
+	for (UParticleEmitter* EmitterTemplate : ParticleSystem->Emitters)
 	{
-		if (EmitterTemplate == nullptr)
+		if (!IsLiveObject(EmitterTemplate))
 		{
 			continue;
 		}
@@ -201,7 +279,9 @@ void UParticleSystemComponent::CreateEmitterInstances()
 		EmitterTemplate->CacheEmitterModuleInfo();
 
 		UParticleLODLevel* LODLevel = EmitterTemplate->LODLevels.empty() ? nullptr : EmitterTemplate->LODLevels[0];
-		UParticleModuleTypeDataBase* TypeData = LODLevel != nullptr ? LODLevel->TypeDataModule : nullptr;
+		UParticleModuleTypeDataBase* TypeData = IsLiveObject(LODLevel) && IsLiveObject(LODLevel->TypeDataModule)
+			? LODLevel->TypeDataModule
+			: nullptr;
 
 		if (TypeData == nullptr)
 		{

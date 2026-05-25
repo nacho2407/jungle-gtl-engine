@@ -54,6 +54,7 @@ public:
 	void OpenRuntimeUIPreviewAsset(const FString& RmlPath = "");
 	void OpenViewer(FEditorViewer* Viewer);
 	bool ChangeViewerTarget(FEditorViewer* Viewer, const FString& NewFileName);
+	bool RevealContentBrowserAsset(const FString& AssetPath);
 	void RequestDockViewer(FEditorViewer* Viewer);
 	void RenderViewerToolbarControls(FEditorViewer* Viewer);
 	void RenderViewerTransformToolbarControls(FEditorViewer* Viewer);
@@ -61,12 +62,7 @@ public:
 	void FlushOpenViewerWidgets();
 	void CloseViewer(FEditorViewer* Viewer);
 	void FlushClosedViewerWidgets();
-	void OpenCurveFromActorSequence(
-		UCurveFloatAsset* Curve,
-		UActorSequenceComponent* SequenceComp,
-		const FString& SourceLabel,
-		const FString& SourcePath = "",
-		int32 InitialSelectedKeyIndex = -1);
+	void OpenCurveFromActorSequence(UCurveFloatAsset* Curve, UActorSequenceComponent* SequenceComp, const FString& SourceLabel, const FString& SourcePath = "", int32 InitialSelectedKeyIndex = -1);
 	void OpenActorSequencer(UActorSequenceComponent* SequenceComp);
 	void PushFooterLog(const FString& Message);
 	void RequestPIEViewportInputFocus();

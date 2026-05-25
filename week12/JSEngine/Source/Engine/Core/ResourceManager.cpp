@@ -10,6 +10,7 @@
 #include "Core/SkeletalMeshLoadService.h"
 #include "Core/StaticMeshLoadService.h"
 #include "Object/Object.h"
+#include "Particle/ParticleAsset.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -173,6 +174,32 @@ namespace
 		}
 
 		SkeletalMeshes.clear();
+	}
+
+	void DestroyUniqueParticleSystems(TMap<FString, UParticleSystem*>& ParticleSystems)
+	{
+		TArray<UParticleSystem*> UniqueParticleSystems;
+		UniqueParticleSystems.reserve(ParticleSystems.size());
+
+		for (auto& [Path, ParticleSystem] : ParticleSystems)
+		{
+			if (!ParticleSystem)
+			{
+				continue;
+			}
+
+			if (std::find(UniqueParticleSystems.begin(), UniqueParticleSystems.end(), ParticleSystem) == UniqueParticleSystems.end())
+			{
+				UniqueParticleSystems.push_back(ParticleSystem);
+			}
+		}
+
+		for (UParticleSystem* ParticleSystem : UniqueParticleSystems)
+		{
+			UObjectManager::Get().DestroyObject(ParticleSystem);
+		}
+
+		ParticleSystems.clear();
 	}
 }
 
@@ -439,6 +466,7 @@ void FResourceManager::ClearDiscoveredResourceLists(bool bClearAtlasCache)
 	MaterialFilePaths.clear();
 	SubUVFilePaths.clear();
 	CurveFilePaths.clear();
+	ParticleSystemFilePaths.clear();
 	SkeletalMeshFilePaths.clear();
 	AnimSequenceFilePaths.clear();
 	AnimationFbxSourceFilePaths.clear();
@@ -470,6 +498,10 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 	else if (FAssetPathPolicy::IsAnimSequenceAssetPath(FPaths::ToUtf8(FilePath.generic_wstring())))
 	{
 		AnimSequenceFilePaths.push_back(RelativePath);
+	}
+	else if (FAssetPathPolicy::IsParticleSystemAssetPath(FPaths::ToUtf8(FilePath.generic_wstring())))
+	{
+		ParticleSystemFilePaths.push_back(RelativePath);
 	}
 	else if (Extension == L".bin")
 	{
@@ -767,6 +799,7 @@ void FResourceManager::ReleaseGPUResources()
 
 	DestroyUniqueSkeletalMeshes(SkeletalMeshMap);
 	DestroyUniqueAnimSequences(AnimSequenceMap);
+	DestroyUniqueParticleSystems(ParticleSystemMap);
 
 	DefaultWhiteTexture.Reset();
 	CachedDevice.Reset();
@@ -1522,6 +1555,78 @@ UAnimSequence* FResourceManager::FindAnimSequence(const FString& Path) const
 TArray<FString> FResourceManager::GetAnimSequencePaths() const
 {
 	return AnimSequenceFilePaths;
+}
+
+UParticleSystem* FResourceManager::LoadParticleSystem(const FString& Path)
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	if (UParticleSystem* FoundParticleSystem = FindParticleSystem(NormalizedPath))
+	{
+		return FoundParticleSystem;
+	}
+
+	UParticleSystem* LoadedParticleSystem = ParticleSystemAssetLoader.Load(NormalizedPath);
+	if (!LoadedParticleSystem)
+	{
+		UE_LOG_WARNING("[ParticleSystemLoad] Failed to load particle system: %s", NormalizedPath.c_str());
+		return nullptr;
+	}
+
+	LoadedParticleSystem->SetAssetPath(NormalizedPath);
+	ParticleSystemMap[NormalizedPath] = LoadedParticleSystem;
+
+	if (std::find(ParticleSystemFilePaths.begin(), ParticleSystemFilePaths.end(), NormalizedPath) == ParticleSystemFilePaths.end())
+	{
+		ParticleSystemFilePaths.push_back(NormalizedPath);
+	}
+
+	return LoadedParticleSystem;
+}
+
+UParticleSystem* FResourceManager::FindParticleSystem(const FString& Path) const
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	auto It = ParticleSystemMap.find(NormalizedPath);
+	return It != ParticleSystemMap.end() ? It->second : nullptr;
+}
+
+bool FResourceManager::SaveParticleSystem(const FString& Path, const UParticleSystem* ParticleSystem)
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	if (!ParticleSystemAssetLoader.Save(NormalizedPath, ParticleSystem))
+	{
+		return false;
+	}
+
+	if (ParticleSystem)
+	{
+		for (auto It = ParticleSystemMap.begin(); It != ParticleSystemMap.end();)
+		{
+			if (It->second == ParticleSystem && It->first != NormalizedPath)
+			{
+				It = ParticleSystemMap.erase(It);
+			}
+			else
+			{
+				++It;
+			}
+		}
+
+		ParticleSystemMap[NormalizedPath] = const_cast<UParticleSystem*>(ParticleSystem);
+		const_cast<UParticleSystem*>(ParticleSystem)->SetAssetPath(NormalizedPath);
+	}
+
+	if (std::find(ParticleSystemFilePaths.begin(), ParticleSystemFilePaths.end(), NormalizedPath) == ParticleSystemFilePaths.end())
+	{
+		ParticleSystemFilePaths.push_back(NormalizedPath);
+	}
+
+	return true;
+}
+
+TArray<FString> FResourceManager::GetParticleSystemPaths() const
+{
+	return ParticleSystemFilePaths;
 }
 
 namespace

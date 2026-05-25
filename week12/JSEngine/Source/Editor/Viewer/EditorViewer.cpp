@@ -12,6 +12,8 @@ void FEditorViewer::Init(
 	UWorld* InWorld,
 	FSelectionManager* InSelectionManager)
 {
+	EditorEngine = InEditor;
+
 	FEditorViewportClient& Client = GetClient();
 
 	Viewport.SetClient(&Client);
@@ -63,6 +65,7 @@ void FEditorViewer::Shutdown()
 	// UEditorEngine::Shutdown can destroy the preview world before viewer shutdown.
 	// Keep this base cleanup limited to pointers owned by the viewport wrapper.
 	Viewport.SetClient(nullptr);
+	EditorEngine = nullptr;
 }
 
 void FEditorViewer::Tick(float DeltaTime)

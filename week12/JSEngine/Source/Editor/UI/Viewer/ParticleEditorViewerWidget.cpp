@@ -1,6 +1,7 @@
 ﻿#include "ParticleEditorViewerWidget.h"
 
 #include "Core/Reflection/ReflectionRegistry.h"
+#include "Core/Paths.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/UI/EditorMainPanelViewportToolbarHelpers.h"
@@ -16,6 +17,9 @@
 
 #include <algorithm>
 #include <cstring>
+#include <filesystem>
+#include <Windows.h>
+#include <commdlg.h>
 
 namespace
 {
@@ -37,6 +41,8 @@ struct FParticleEmitterDragPayload
 };
 
 FParticleEditorViewer* AsParticleViewer(FEditorViewer* Viewer);
+HWND ResolveSaveDialogOwnerWindow(const UEditorEngine* EditorEngine);
+bool OpenParticleSaveFileDialog(HWND OwnerWindow, const FParticleEditorViewer* Viewer, FString& OutFilePath);
 const char* GetSelectionLabel(EParticleEditorSelectionType Type);
 const char* GetObjectLabel(const UObject* Object);
 void GetParticleModuleClasses(TArray<UClass*>& OutClasses);
@@ -167,9 +173,13 @@ void FParticleEditorViewerWidget::RenderMenuBar(FParticleEditorViewer* Viewer)
 	{
 		if (ImGui::BeginPopup("##ParticleFileMenu"))
 		{
-			if (ImGui::MenuItem("Save", "Ctrl+S", false, Viewer->IsDirty()))
+			if (ImGui::MenuItem("Save As", "Ctrl+S", false, Viewer->GetParticleSystem() != nullptr))
 			{
-				Viewer->Save();
+				FString SavePath;
+				if (OpenParticleSaveFileDialog(ResolveSaveDialogOwnerWindow(EditorEngine), Viewer, SavePath))
+				{
+					Viewer->SaveAs(SavePath);
+				}
 			}
 			ImGui::EndPopup();
 		}
@@ -335,8 +345,14 @@ void FParticleEditorViewerWidget::RenderToolbar(FParticleEditorViewer* Viewer)
 		ImGui::SameLine();
 	};
 
-	DrawVisibleButton("Save", CascadeSaveIcon.Get(), "Save", Viewer->IsDirty(), nullptr, bHiddenSave, [&]()
-					  { Viewer->Save(); });
+	DrawVisibleButton("Save", CascadeSaveIcon.Get(), "Save As", Viewer->GetParticleSystem() != nullptr, nullptr, bHiddenSave, [&]()
+					  {
+						  FString SavePath;
+						  if (OpenParticleSaveFileDialog(ResolveSaveDialogOwnerWindow(EditorEngine), Viewer, SavePath))
+						  {
+							  Viewer->SaveAs(SavePath);
+						  }
+					  });
 	DrawVisibleButton("Find", CascadeFindIcon.Get(), "Find in Content Browser", true, nullptr, bHiddenFind, [&]()
 					  { Viewer->FindInContentBrowser(); });
 	DrawSeparatorIfFits();
@@ -422,8 +438,14 @@ void FParticleEditorViewerWidget::RenderToolbar(FParticleEditorViewer* Viewer)
 		bool bNeedsSeparator = false;
 		if (bHiddenSave)
 		{
-			DrawOverflowButton("OverflowSave", CascadeSaveIcon.Get(), "Save", Viewer->IsDirty(), "Save", [&]()
-							   { Viewer->Save(); });
+			DrawOverflowButton("OverflowSave", CascadeSaveIcon.Get(), "Save As", Viewer->GetParticleSystem() != nullptr, "Save As", [&]()
+							   {
+								   FString SavePath;
+								   if (OpenParticleSaveFileDialog(ResolveSaveDialogOwnerWindow(EditorEngine), Viewer, SavePath))
+								   {
+									   Viewer->SaveAs(SavePath);
+								   }
+							   });
 			bNeedsSeparator = true;
 		}
 		if (bHiddenFind)
@@ -773,21 +795,22 @@ void FParticleEditorViewerWidget::RenderEmitterPanel(FParticleEditorViewer* View
 
 	// 패널에 남은 빈 공간 전체를 덮는 투명 버튼 생성
 	const ImVec2 Avail = ImGui::GetContentRegionAvail();
-    if (Avail.x > 0.0f && Avail.y > 0.0f)
-    {
-        ImGui::InvisibleButton("##EmitterPanelEmptySpace", Avail);
-        if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
-        {
-            ImGui::OpenPopup("ParticleEmitterPanelContext");
-        }
-    }
+	if (Avail.x > 0.0f && Avail.y > 0.0f)
+	{
+		ImGui::InvisibleButton("##EmitterPanelEmptySpace", Avail);
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+		{
+			ImGui::OpenPopup("ParticleEmitterPanelContext");
+		}
+	}
 
-    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && !ImGui::IsAnyItemHovered())
-    {
-        ImGui::OpenPopup("ParticleEmitterPanelContext");
-    }
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup)
+		&& ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+	{
+		ImGui::OpenPopup("ParticleEmitterPanelContext");
+	}
 
-    RenderEmitterContextMenu(Viewer);
+	RenderEmitterContextMenu(Viewer);
 }
 
 void FParticleEditorViewerWidget::RenderEmitterContextMenu(FParticleEditorViewer* Viewer)
@@ -795,20 +818,19 @@ void FParticleEditorViewerWidget::RenderEmitterContextMenu(FParticleEditorViewer
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 6.0f));
 
-	// Emitter Card가 있는 영역을 제외한 빈 배경에서만 열립니다.
 	if (ImGui::BeginPopup("ParticleEmitterPanelContext"))
-    {
-        if (ImGui::MenuItem("Add Emitter"))
-        {
-            Viewer->AddEmitter();
-        }
-        if (Viewer->GetSelectedEmitterIndex() >= 0 && Viewer->GetSelectedLODLevel() != nullptr && ImGui::BeginMenu("Add Module"))
-        {
-            DrawParticleModuleClassMenu(Viewer);
-            ImGui::EndMenu();
-        }
-        ImGui::EndPopup();
-    }
+	{
+		if (ImGui::MenuItem("Add Emitter"))
+		{
+			Viewer->AddEmitter();
+		}
+		if (Viewer->GetSelectedEmitterIndex() >= 0 && Viewer->GetSelectedLODLevel() != nullptr && ImGui::BeginMenu("Add Module"))
+		{
+			DrawParticleModuleClassMenu(Viewer);
+			ImGui::EndMenu();
+		}
+		ImGui::EndPopup();
+	}
 
 	ImGui::PopStyleVar(2);
 }
@@ -1412,6 +1434,94 @@ FParticleEditorViewer* AsParticleViewer(FEditorViewer* Viewer)
 			   : nullptr;
 }
 
+HWND ResolveSaveDialogOwnerWindow(const UEditorEngine* EditorEngine)
+{
+	if (EditorEngine && EditorEngine->GetWindow())
+	{
+		return EditorEngine->GetWindow()->GetHWND();
+	}
+
+	if (const ImGuiViewport* MainViewport = ImGui::GetMainViewport())
+	{
+		if (MainViewport->PlatformHandleRaw)
+		{
+			return static_cast<HWND>(MainViewport->PlatformHandleRaw);
+		}
+	}
+
+	return ::GetActiveWindow();
+}
+
+bool OpenParticleSaveFileDialog(HWND OwnerWindow, const FParticleEditorViewer* Viewer, FString& OutFilePath)
+{
+	OutFilePath.clear();
+
+	constexpr DWORD ParticleDialogPathBufferLength = 32768;
+	WCHAR FileBuffer[ParticleDialogPathBufferLength] = {};
+	std::filesystem::path InitialDirectory = std::filesystem::path(FPaths::ToAbsolute(L"Asset/Particle")).lexically_normal();
+	std::error_code ErrorCode;
+	if (!std::filesystem::exists(InitialDirectory, ErrorCode) || !std::filesystem::is_directory(InitialDirectory, ErrorCode))
+	{
+		InitialDirectory = std::filesystem::path(FPaths::RootDir()).lexically_normal();
+	}
+
+	const FString CurrentFileName = Viewer ? FPaths::Normalize(Viewer->GetFileName()) : FString();
+	if (!CurrentFileName.empty())
+	{
+		std::filesystem::path CurrentAbsolutePath = std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(CurrentFileName))).lexically_normal();
+		if (!CurrentAbsolutePath.parent_path().empty())
+		{
+			InitialDirectory = CurrentAbsolutePath.parent_path();
+		}
+		wcsncpy_s(FileBuffer, CurrentAbsolutePath.wstring().c_str(), _TRUNCATE);
+	}
+
+	OPENFILENAMEW DialogDesc = {};
+	DialogDesc.lStructSize = sizeof(DialogDesc);
+	DialogDesc.hwndOwner = OwnerWindow;
+	DialogDesc.lpstrFilter = L"Particle System (*.particle)\0*.particle\0All Files (*.*)\0*.*\0";
+	DialogDesc.lpstrFile = FileBuffer;
+	DialogDesc.nMaxFile = ParticleDialogPathBufferLength;
+	const std::wstring InitialDirectoryText = InitialDirectory.wstring();
+	DialogDesc.lpstrInitialDir = InitialDirectoryText.c_str();
+	DialogDesc.lpstrDefExt = L"particle";
+	DialogDesc.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+
+	if (!GetSaveFileNameW(&DialogDesc))
+	{
+		const DWORD DialogError = CommDlgExtendedError();
+		if (DialogError != 0)
+		{
+			WCHAR DebugMessage[128] = {};
+			swprintf_s(DebugMessage, L"Particle Save As dialog failed. CommDlgExtendedError=0x%08X\n", DialogError);
+			OutputDebugStringW(DebugMessage);
+		}
+		return false;
+	}
+
+	std::filesystem::path PickedPath(FileBuffer);
+	if (PickedPath.extension().empty())
+	{
+		PickedPath.replace_extension(L".particle");
+	}
+
+	const std::filesystem::path RootPath(FPaths::RootDir());
+	std::error_code RelativeErrorCode;
+	std::filesystem::path RelativePath = std::filesystem::relative(PickedPath, RootPath, RelativeErrorCode);
+	if (!RelativeErrorCode && !RelativePath.empty())
+	{
+		const std::wstring RelativeText = RelativePath.generic_wstring();
+		if (RelativeText != L".." && RelativeText.rfind(L"../", 0) != 0)
+		{
+			OutFilePath = FPaths::Normalize(FPaths::ToUtf8(RelativeText));
+			return true;
+		}
+	}
+
+	OutFilePath = FPaths::Normalize(FPaths::ToUtf8(PickedPath.generic_wstring()));
+	return !OutFilePath.empty();
+}
+
 const char* GetSelectionLabel(EParticleEditorSelectionType Type)
 {
 	switch (Type)
@@ -1551,17 +1661,16 @@ bool DrawRoundedToolbarButton(const char* Id, const char* Label, const char* Too
 	ImGui::PushID(Id);
 	const bool bPressed = ImGui::InvisibleButton("##RoundedToolbarButton", Size);
 	const bool bHovered = ImGui::IsItemHovered();
-	const bool bActive = ImGui::IsItemActive();
 	const ImVec2 Min = ImGui::GetItemRectMin();
 	const ImVec2 Max = ImGui::GetItemRectMax();
 	const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
-	const ImU32 FillColor = bActive ? IM_COL32(56, 104, 174, 232) : (bHovered ? IM_COL32(52, 58, 70, 220) : IM_COL32(28, 31, 38, 190));
-	DrawList->AddRectFilled(Min, Max, FillColor, 8.0f);
-
 	const ImVec2 TextSize = ImGui::CalcTextSize(Label);
-	DrawList->AddText(ImVec2(Center.x - TextSize.x * 0.5f, Center.y - TextSize.y * 0.5f), ImGui::GetColorU32(ImGuiCol_Text), Label);
+	DrawList->AddText(
+		ImVec2(Center.x - TextSize.x * 0.5f, Center.y - TextSize.y * 0.5f),
+		ImGui::GetColorU32(bHovered ? ImGuiCol_Text : ImGuiCol_TextDisabled),
+		Label);
 
 	if (bHovered && Tooltip && Tooltip[0] != '\0')
 	{

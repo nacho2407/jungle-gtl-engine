@@ -7,6 +7,11 @@
 
 namespace
 {
+	bool IsLiveObject(const UObject* Object)
+	{
+		return Object != nullptr && UObjectManager::Get().ContainsObject(Object);
+	}
+
 	int32 AlignParticleBytes(int32 Value)
 	{
 		return ParticleHelper::AlignParticleSize(Value);
@@ -239,19 +244,31 @@ bool UParticleModuleCollision::IsUpdateModule() const
 
 UParticleLODLevel::~UParticleLODLevel()
 {
-	UObjectManager::Get().DestroyObject(RequiredModule);
+	if (IsLiveObject(RequiredModule))
+	{
+		UObjectManager::Get().DestroyObject(RequiredModule);
+	}
 	RequiredModule = nullptr;
 
-	UObjectManager::Get().DestroyObject(SpawnModule);
+	if (IsLiveObject(SpawnModule))
+	{
+		UObjectManager::Get().DestroyObject(SpawnModule);
+	}
 	SpawnModule = nullptr;
 
 	for (UParticleModule* Module : Modules)
 	{
-		UObjectManager::Get().DestroyObject(Module);
+		if (Module != RequiredModule && Module != SpawnModule && Module != TypeDataModule && IsLiveObject(Module))
+		{
+			UObjectManager::Get().DestroyObject(Module);
+		}
 	}
 	Modules.clear();
 
-	UObjectManager::Get().DestroyObject(TypeDataModule);
+	if (IsLiveObject(TypeDataModule))
+	{
+		UObjectManager::Get().DestroyObject(TypeDataModule);
+	}
 	TypeDataModule = nullptr;
 }
 
@@ -259,7 +276,10 @@ UParticleEmitter::~UParticleEmitter()
 {
 	for (UParticleLODLevel* LODLevel : LODLevels)
 	{
-		UObjectManager::Get().DestroyObject(LODLevel);
+		if (IsLiveObject(LODLevel))
+		{
+			UObjectManager::Get().DestroyObject(LODLevel);
+		}
 	}
 	LODLevels.clear();
 }
@@ -268,7 +288,10 @@ UParticleSystem::~UParticleSystem()
 {
 	for (UParticleEmitter* Emitter : Emitters)
 	{
-		UObjectManager::Get().DestroyObject(Emitter);
+		if (IsLiveObject(Emitter))
+		{
+			UObjectManager::Get().DestroyObject(Emitter);
+		}
 	}
 	Emitters.clear();
 }

@@ -3,12 +3,14 @@
 #include "Particle/ParticleSystemComponent.h"
 #include "Core/ResourceManager.h"
 #include "Core/Paths.h"
+#include "Editor/EditorEngine.h"
+#include "Editor/UI/EditorMainPanel.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
 
 #include <algorithm>
 
-// 파일명 저장 → 기존 Selection 정리 → ParticleSystem Asset 로드 → PreviewActor의 ParticleSystemComponent에 템플릿 설정 → 시뮬레이션 재시작
+// 파일명 설정 → 기존 선택 및 프리뷰를 초기화 → 새로운 Particle 에셋을 로드하여 시뮬레이션 재시작
 bool FParticleEditorViewer::ChangeTarget(const FString& InFileName)
 {
 	SetFileName(InFileName);
@@ -48,6 +50,7 @@ const char* FParticleEditorViewer::GetViewerLabel() const
 	return "Particle System Viewer";
 }
 
+// 부모 틱 실행 → 실시간 실행 모드일 경우 프리뷰 컴포넌트에 틱 전송
 void FParticleEditorViewer::Tick(float DeltaTime)
 {
 	FEditorViewer::Tick(DeltaTime);
@@ -58,6 +61,7 @@ void FParticleEditorViewer::Tick(float DeltaTime)
 	}
 }
 
+// 프리뷰 액터 및 선택 상태 해제 → Particle System 메모리 정리
 void FParticleEditorViewer::Shutdown()
 {
 	ClearParticlePreview();
@@ -72,6 +76,7 @@ void FParticleEditorViewer::Shutdown()
 	FEditorViewer::Shutdown();
 }
 
+// 프리뷰 컴포넌트의 템플릿을 현재 Particle System으로 갱신 → 시뮬레이션 재시작
 void FParticleEditorViewer::RestartSimulation()
 {
 	if (!PreviewComponent || !UObjectManager::Get().ContainsObject(PreviewComponent) || !ParticleSystem)
@@ -84,11 +89,13 @@ void FParticleEditorViewer::RestartSimulation()
 	PreviewComponent->ResetParticles();
 }
 
+// Particle 시뮬레이션 재시작 → 레벨 재생 효과를 구현 (RestartSimulation과 동일)
 void FParticleEditorViewer::RestartLevel()
 {
 	RestartSimulation();
 }
 
+// 현재 뷰어의 선택 대상을 Particle System 최상단으로 설정 → 하위(Emitter, LOD 등) 선택 상태 초기화
 void FParticleEditorViewer::SelectParticleSystem()
 {
 	if (!ParticleSystem)
@@ -280,6 +287,7 @@ UParticleModuleTypeDataBase* FParticleEditorViewer::GetSelectedTypeDataModule() 
 	return LOD ? LOD->TypeDataModule : nullptr;
 }
 
+// 현재 Enum 선택 상태(SelectionType)에 맞춰 활성화된 UObject 기반 인스턴스의 포인터를 동적으로 반환합니다.
 UObject* FParticleEditorViewer::GetSelectedObject() const
 {
 	switch (SelectionType)
@@ -320,22 +328,25 @@ UObject* FParticleEditorViewer::GetSelectedObject() const
 	}
 }
 
+// Viewer의 실시간 시뮬레이션(Realtime) 렌더링 모드 활성화 여부를 설정합니다.
 void FParticleEditorViewer::SetRealtime(bool bInRealtime)
 {
 	Client.SetRealtime(bInRealtime);
 }
 
+// Viewer의 렌더링 뷰 모드(Wireframe, Lit 등)를 설정합니다.
 void FParticleEditorViewer::SetViewMode(EViewMode InViewMode)
 {
 	Client.SetViewMode(InViewMode);
 }
 
+// 현재 Viewer에 적용된 렌더링 뷰 모드 값을 반환합니다.
 EViewMode FParticleEditorViewer::GetViewMode() const
 {
 	return Client.GetViewMode();
 }
 
-// Emitter 추가 → 기본 LOD + RequiredModule 같이 세팅 → 시뮬레이션 재시작
+// Particle System에 기본 LOD와 Module이 포함된 새 Emitter를 생성하여 추가하고 시뮬레이션을 재시작합니다.
 void FParticleEditorViewer::AddEmitter()
 {
 	if (!ParticleSystem)
@@ -365,6 +376,7 @@ void FParticleEditorViewer::AddEmitter()
 	RestartSimulation();
 }
 
+// 현재 선택된 Emitter를 Particle System에서 제거한 뒤 메모리를 해제하고 선택 상태를 갱신합니다.
 void FParticleEditorViewer::DeleteSelectedEmitter()
 {
 	if (!ParticleSystem)
@@ -397,7 +409,7 @@ void FParticleEditorViewer::DeleteSelectedEmitter()
 	RestartSimulation();
 }
 
-// 왼쪽 클릭 + 드래그로 Emitter 이동
+// Particle System 내에서 Emitter의 순서를 변경(이동)하고 변경된 인덱스에 맞게 선택 상태를 갱신합니다.
 void FParticleEditorViewer::MoveEmitter(int32 FromIndex, int32 ToIndex)
 {
 	if (!ParticleSystem)
@@ -424,7 +436,7 @@ void FParticleEditorViewer::MoveEmitter(int32 FromIndex, int32 ToIndex)
 	RestartSimulation();
 }
 
-// 오른쪽 클릭으로 Emitter Context Menu에 접근해 Module 추가
+// 전달받은 Module 클래스 타입에 맞춰 Module을 생성한 뒤, 현재 선택된 LOD의 알맞은 슬롯(Required, Spawn 등) 또는 배열에 추가합니다.
 void FParticleEditorViewer::AddModule(UClass* ModuleClass)
 {
 	UParticleLODLevel* LOD = GetSelectedLODLevel();
@@ -453,7 +465,7 @@ void FParticleEditorViewer::AddModule(UClass* ModuleClass)
 	}
 	else if (UParticleModuleSpawn* SpawnModule = Cast<UParticleModuleSpawn>(Module))
 	{
-		// Spawn rate provider는 LOD의 특수 모듈이므로 일반 Modules 배열에 넣지 않음!
+		// Spawn rate provider는 LOD의 특수 Module이므로 일반 Modules 배열에 넣지 않음!
 		UObjectManager::Get().DestroyObject(LOD->SpawnModule);
 		SelectionType = EParticleEditorSelectionType::SpawnModule;
 		LOD->SpawnModule = SpawnModule;
@@ -482,7 +494,7 @@ void FParticleEditorViewer::AddModule(UClass* ModuleClass)
 	RestartSimulation();
 }
 
-// 왼쪽 클릭 드래그로 Source Emitter에서 Target Emitter로 모듈 이동
+// 현재 선택된 LOD 내에서 일반 Particle Module들의 순서를 변경(이동)합니다.
 void FParticleEditorViewer::MoveModule(int32 FromIndex, int32 ToIndex)
 {
 	UParticleLODLevel* LOD = GetSelectedLODLevel();
@@ -513,6 +525,7 @@ void FParticleEditorViewer::MoveModule(int32 FromIndex, int32 ToIndex)
 	RestartSimulation();
 }
 
+// 특정 Module을 현재 Emitter에서 제거하고 지정된 타겟 Emitter의 LOD 내부로 이동시킵니다.
 void FParticleEditorViewer::MoveModuleToEmitter(int32 ModuleIndex, int32 TargetEmitterIndex)
 {
 	UParticleLODLevel* SourceLOD = GetSelectedLODLevel();
@@ -577,7 +590,7 @@ void FParticleEditorViewer::MoveModuleToEmitter(int32 ModuleIndex, int32 TargetE
 	RestartSimulation();
 }
 
-// Ctrl + 드래그로 Source Emitter에서 Target Emitter로 모듈 복사
+// 특정 Module을 복제하여 지정된 타겟 Emitter의 LOD에 새롭게 추가(복사)합니다.
 void FParticleEditorViewer::CopyModuleToEmitter(int32 ModuleIndex, int32 TargetEmitterIndex)
 {
 	UParticleLODLevel* SourceLOD = GetSelectedLODLevel();
@@ -636,7 +649,7 @@ void FParticleEditorViewer::CopyModuleToEmitter(int32 ModuleIndex, int32 TargetE
 	RestartSimulation();
 }
 
-// Delete 키로 선택된 모듈 삭제
+// 현재 선택된 Module을 LOD에서 제거 및 메모리 해제 후 선택 인덱스와 시뮬레이션을 갱신합니다.
 void FParticleEditorViewer::DeleteSelectedModule()
 {
 	UParticleLODLevel* LOD = GetSelectedLODLevel();
@@ -665,12 +678,34 @@ void FParticleEditorViewer::DeleteSelectedModule()
 	RestartSimulation();
 }
 
+// 현재 편집 중인 Particle System의 변경 사항을 로드했던 파일 경로에 직렬화하여 덮어쓰기로 저장합니다.
 bool FParticleEditorViewer::Save()
 {
-	// TODO: Particle Serializer 연결 전까지 Fals 반환
-	return false;
+	if (!ParticleSystem)
+	{
+		return false;
+	}
+
+	const FString Path = FPaths::Normalize(GetFileName());
+	if (Path.empty())
+	{
+		return false;
+	}
+
+	if (!FResourceManager::Get().SaveParticleSystem(Path, ParticleSystem))
+	{
+		return false;
+	}
+
+	ParticleSystem->SetAssetPath(Path);
+
+	bOwnsParticleSystem = false;
+	bDirty = false;
+
+	return true;
 }
 
+// 새로운 파일 경로를 인자로 받아 현재 Particle System 에셋을 직렬화하여 저장합니다.
 bool FParticleEditorViewer::SaveAs(const FString& InFileName)
 {
 	if (InFileName.empty())
@@ -682,13 +717,29 @@ bool FParticleEditorViewer::SaveAs(const FString& InFileName)
 	return Save();
 }
 
+// 콘텐츠 브라우저에서 현재 편집 중인 Particle System 에셋의 위치를 찾아 강조 표시합니다.
 void FParticleEditorViewer::FindInContentBrowser()
 {
-	const FString& CurrentFileName = GetFileName();
-	(void)CurrentFileName;
-	// TODO: Content Browser service 연결 후 현재 ParticleSystem asset 선택
+	FString TargetPath = FPaths::Normalize(GetFileName());
+	if (TargetPath.empty() && ParticleSystem)
+	{
+		TargetPath = FPaths::Normalize(ParticleSystem->GetAssetPath());
+	}
+	if (TargetPath.empty())
+	{
+		return;
+	}
+
+	UEditorEngine* EditorEngine = GetEditorEngine();
+	if (!EditorEngine)
+	{
+		return;
+	}
+
+	EditorEngine->GetMainPanel().RevealContentBrowserAsset(TargetPath);
 }
 
+// 현재 선택된 Emitter에 새로운 LOD 레벨을 생성하여 추가하고 선택 상태를 갱신합니다.
 void FParticleEditorViewer::AddLOD()
 {
 	UParticleEmitter* Emitter = GetSelectedEmitter();
@@ -714,6 +765,7 @@ void FParticleEditorViewer::AddLOD()
 	RestartSimulation();
 }
 
+// 현재 선택된 Emitter에서 지정한 인덱스의 LOD 레벨을 제거하고 메모리를 해제합니다 (최소 1개 이상은 유지).
 void FParticleEditorViewer::RemoveLOD(int32 LODIndex)
 {
 	UParticleEmitter* Emitter = GetSelectedEmitter();
@@ -739,6 +791,7 @@ void FParticleEditorViewer::RemoveLOD(int32 LODIndex)
 	RestartSimulation();
 }
 
+// 현재 Emitter에서 디테일이 가장 높은 최상단(인덱스 0) LOD 레벨을 선택합니다.
 void FParticleEditorViewer::SetHighestLOD()
 {
 	UParticleEmitter* Emitter = GetSelectedEmitter();
@@ -752,6 +805,7 @@ void FParticleEditorViewer::SetHighestLOD()
 	SelectionType = EParticleEditorSelectionType::LODLevel;
 }
 
+// 현재 Emitter에서 디테일이 가장 낮은 최하단(마지막 인덱스) LOD 레벨을 선택합니다.
 void FParticleEditorViewer::SetLowestLOD()
 {
 	UParticleEmitter* Emitter = GetSelectedEmitter();
@@ -765,6 +819,7 @@ void FParticleEditorViewer::SetLowestLOD()
 	SelectionType = EParticleEditorSelectionType::LODLevel;
 }
 
+// 현재 선택된 LOD 레벨보다 한 단계 디테일이 낮은(인덱스 증가) LOD로 선택 대상을 변경합니다.
 void FParticleEditorViewer::SelectLowerLOD()
 {
 	UParticleEmitter* Emitter = GetSelectedEmitter();
@@ -778,6 +833,7 @@ void FParticleEditorViewer::SelectLowerLOD()
 	SelectionType = EParticleEditorSelectionType::LODLevel;
 }
 
+// 현재 선택된 LOD 레벨보다 한 단계 디테일이 높은(인덱스 감소) LOD로 선택 대상을 변경합니다.
 void FParticleEditorViewer::SelectUpperLOD()
 {
 	UParticleEmitter* Emitter = GetSelectedEmitter();
@@ -791,6 +847,7 @@ void FParticleEditorViewer::SelectUpperLOD()
 	SelectionType = EParticleEditorSelectionType::LODLevel;
 }
 
+// 뷰어 월드에 배치된 프리뷰 액터와 Particle 컴포넌트를 소거하여 렌더링 상태를 완전 초기화합니다.
 void FParticleEditorViewer::ClearParticlePreview()
 {
 	if (PreviewComponent && UObjectManager::Get().ContainsObject(PreviewComponent))
@@ -815,6 +872,7 @@ void FParticleEditorViewer::ClearParticlePreview()
 	PreviewWorld = nullptr;
 }
 
+// Emitter, LOD, Module에 대한 모든 선택 인덱스와 타입을 초기화하여 아무것도 선택되지 않은 상태로 만듭니다.
 void FParticleEditorViewer::ClearParticleSelection()
 {
 	SelectedEmitterIndex = -1;
@@ -823,6 +881,7 @@ void FParticleEditorViewer::ClearParticleSelection()
 	SelectionType = EParticleEditorSelectionType::None;
 }
 
+// 뷰어 포커스 월드에 임시 액터를 스폰하고, 현재 Particle System을 시각적으로 렌더링할 Particle 컴포넌트를 부착합니다.
 bool FParticleEditorViewer::CreatePreviewComponent()
 {
 	if (PreviewComponent && UObjectManager::Get().ContainsObject(PreviewComponent))
@@ -862,9 +921,9 @@ bool FParticleEditorViewer::CreatePreviewComponent()
 	return true;
 }
 
+// Resource Manager를 통해 지정된 경로의 Particle 에셋을 로드하고, 성공 시 첫 번째 Emitter를 기본 선택 상태로 만듭니다.
 bool FParticleEditorViewer::LoadParticleSystemAsset(const FString& InFileName)
 {
-	(void)InFileName;
 	ParticleSystem = nullptr;
 	bOwnsParticleSystem = false;
 
@@ -873,18 +932,38 @@ bool FParticleEditorViewer::LoadParticleSystemAsset(const FString& InFileName)
 		return false;
 	}
 
-	// TODO: Particle Serializer 연결 전까지 기본 ParticleSystem 생성
-	// ParticleSystem = FResourceManager::Get().LoadParticleSystem(InFileName);
+	ParticleSystem = FResourceManager::Get().LoadParticleSystem(InFileName);
+	if (!ParticleSystem)
+	{
+		return false;
+	}
 
-	return false;
+	bOwnsParticleSystem = false;
+	bDirty = false;
+
+	if (!ParticleSystem->Emitters.empty())
+	{
+		SelectionType = EParticleEditorSelectionType::Emitter;
+		SelectedEmitterIndex = 0;
+		SelectedLODIndex = ParticleSystem->Emitters[0] && !ParticleSystem->Emitters[0]->LODLevels.empty() ? 0 : -1;
+		SelectedModuleIndex = -1;
+	}
+	else
+	{
+		ClearParticleSelection();
+	}
+
+	return true;
 }
 
+// 로드된 Particle System이 없을 경우 빈 에셋을 방지하기 위해 뷰어 소유의 기본 Particle System과 초기 Emitter를 강제로 생성합니다.
 void FParticleEditorViewer::EnsureDefaultParticleSystem()
 {
 	if (!ParticleSystem)
 	{
 		ParticleSystem = NewObject<UParticleSystem>();
 		bOwnsParticleSystem = true;
+		ParticleSystem->SetAssetPath(FPaths::Normalize(GetFileName()));
 	}
 
 	if (ParticleSystem && ParticleSystem->Emitters.empty())
@@ -906,6 +985,7 @@ void FParticleEditorViewer::EnsureDefaultParticleSystem()
 	}
 }
 
+// 지정된 레벨 인덱스를 기반으로 Particle 렌더링에 필수적인 Module(Required, Spawn, TypeData)이 세팅된 새 LOD 레벨 객체를 생성하여 반환합니다.
 UParticleLODLevel* FParticleEditorViewer::CreateDefaultLODLevel(int32 Level)
 {
 	UParticleLODLevel* LOD = NewObject<UParticleLODLevel>();

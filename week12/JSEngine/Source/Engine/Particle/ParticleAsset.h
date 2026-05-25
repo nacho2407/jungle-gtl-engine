@@ -34,12 +34,21 @@ public:
 	GENERATED_BODY(UParticleLODLevel, UObject)
 	~UParticleLODLevel() override;
 
+	UPROPERTY()
 	int32 Level = 0;
+	UPROPERTY()
 	bool bEnabled = true;
 
+	UPROPERTY(ReferenceType = RuntimeObject)
 	UParticleModuleRequired* RequiredModule = nullptr;
+
+	UPROPERTY(ReferenceType = RuntimeObject)
 	UParticleModuleSpawn* SpawnModule = nullptr;
+
+	UPROPERTY(ReferenceType = RuntimeObject)
 	TArray<UParticleModule*> Modules;
+
+	UPROPERTY(ReferenceType = RuntimeObject)
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
 };
 
@@ -49,8 +58,10 @@ class UParticleEmitter : public UObject
 public:
 	GENERATED_BODY(UParticleEmitter, UObject)
 	~UParticleEmitter() override;
-
+	
+	UPROPERTY(ReferenceType = RuntimeObject)
 	TArray<UParticleLODLevel*> LODLevels;
+
 	TArray<FParticleLODLevelRuntimeCache> LODLevelRuntimeCaches;
 
 	void CacheEmitterModuleInfo();
@@ -67,6 +78,13 @@ class UParticleSystem : public UObject
 public:
 	GENERATED_BODY(UParticleSystem, UObject)
 	~UParticleSystem() override;
-
+	
+	UPROPERTY(ReferenceType = RuntimeObject)
 	TArray<UParticleEmitter*> Emitters;
+
+	void SetAssetPath(const FString& InPath) { AssetPath = InPath; }
+	const FString& GetAssetPath() const { return AssetPath; }
+
+private:
+	FString AssetPath;
 };

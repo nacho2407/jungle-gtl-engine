@@ -126,10 +126,12 @@ public:
 	bool IsDirty() const { return bDirty; }
 
 private:
+	// State Clear
 	void ClearParticlePreview();
 	void ClearParticleSelection();
 	bool CreatePreviewComponent();
 
+	// Load & Create Asset
 	bool LoadParticleSystemAsset(const FString& InFileName);
 	void EnsureDefaultParticleSystem();
 	UParticleLODLevel* CreateDefaultLODLevel(int32 Level);

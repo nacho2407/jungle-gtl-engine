@@ -1,0 +1,251 @@
+{
+        "AssetType" : "UParticleSystem",
+        "Format" : "JSEngine.ObjectGraph",
+        "Objects" : [{
+            "Id" : 1,
+            "ObjectName" : "UParticleSystem_0",
+            "Properties" : {
+              "Emitters" : [2, 3, 4]
+            },
+            "Type" : "UParticleSystem"
+          }, {
+            "Id" : 2,
+            "ObjectName" : "UParticleEmitter_0",
+            "Properties" : {
+              "LODLevels" : [5]
+            },
+            "Type" : "UParticleEmitter"
+          }, {
+            "Id" : 3,
+            "ObjectName" : "UParticleEmitter_1",
+            "Properties" : {
+              "LODLevels" : [6]
+            },
+            "Type" : "UParticleEmitter"
+          }, {
+            "Id" : 4,
+            "ObjectName" : "UParticleEmitter_2",
+            "Properties" : {
+              "LODLevels" : [7]
+            },
+            "Type" : "UParticleEmitter"
+          }, {
+            "Id" : 5,
+            "ObjectName" : "UParticleLODLevel_0",
+            "Properties" : {
+              "Level" : 0,
+              "Modules" : [],
+              "RequiredModule" : 8,
+              "SpawnModule" : 9,
+              "TypeDataModule" : 10,
+              "bEnabled" : true
+            },
+            "Type" : "UParticleLODLevel"
+          }, {
+            "Id" : 6,
+            "ObjectName" : "UParticleLODLevel_1",
+            "Properties" : {
+              "Level" : 0,
+              "Modules" : [13],
+              "RequiredModule" : 11,
+              "SpawnModule" : 12,
+              "TypeDataModule" : 14,
+              "bEnabled" : true
+            },
+            "Type" : "UParticleLODLevel"
+          }, {
+            "Id" : 7,
+            "ObjectName" : "UParticleLODLevel_2",
+            "Properties" : {
+              "Level" : 0,
+              "Modules" : [],
+              "RequiredModule" : 15,
+              "SpawnModule" : 16,
+              "TypeDataModule" : 17,
+              "bEnabled" : true
+            },
+            "Type" : "UParticleLODLevel"
+          }, {
+            "Id" : 8,
+            "ObjectName" : "UParticleModuleRequired_0",
+            "Properties" : {
+              "BoundsScale" : 1.000000,
+              "CoordinateSpace" : 0,
+              "EmitterDuration" : 5.000000,
+              "FixedBoundsMax" : {
+                "X" : 100.000000,
+                "Y" : 100.000000,
+                "Z" : 100.000000
+              },
+              "FixedBoundsMin" : {
+                "X" : -100.000000,
+                "Y" : -100.000000,
+                "Z" : -100.000000
+              },
+              "Material" : "",
+              "MaxEmitterLoops" : 0,
+              "MaxParticles" : 1000,
+              "RandomSeed" : 1,
+              "SortMode" : 1,
+              "bEmitterLoops" : true,
+              "bResetSeedOnEmitterLoop" : true,
+              "bUseFixedBounds" : false,
+              "bUseSeededRandom" : false
+            },
+            "Type" : "UParticleModuleRequired"
+          }, {
+            "Id" : 9,
+            "ObjectName" : "UParticleModuleSpawn_0",
+            "Properties" : {
+              "BurstCount" : 0,
+              "BurstTime" : 0.000000,
+              "RateScale" : 1.000000,
+              "SpawnRate" : 10.000000,
+              "bProcessBurst" : false,
+              "bProcessSpawnRate" : true
+            },
+            "Type" : "UParticleModuleSpawn"
+          }, {
+            "Id" : 10,
+            "ObjectName" : "UParticleModuleTypeDataBase_0",
+            "Properties" : {
+
+            },
+            "Type" : "UParticleModuleTypeDataBase"
+          }, {
+            "Id" : 11,
+            "ObjectName" : "UParticleModuleRequired_1",
+            "Properties" : {
+              "BoundsScale" : 1.000000,
+              "CoordinateSpace" : 0,
+              "EmitterDuration" : 5.000000,
+              "FixedBoundsMax" : {
+                "X" : 100.000000,
+                "Y" : 100.000000,
+                "Z" : 100.000000
+              },
+              "FixedBoundsMin" : {
+                "X" : -100.000000,
+                "Y" : -100.000000,
+                "Z" : -100.000000
+              },
+              "Material" : "",
+              "MaxEmitterLoops" : 0,
+              "MaxParticles" : 1000,
+              "RandomSeed" : 1,
+              "SortMode" : 1,
+              "bEmitterLoops" : true,
+              "bResetSeedOnEmitterLoop" : true,
+              "bUseFixedBounds" : false,
+              "bUseSeededRandom" : false
+            },
+            "Type" : "UParticleModuleRequired"
+          }, {
+            "Id" : 12,
+            "ObjectName" : "UParticleModuleSpawn_1",
+            "Properties" : {
+              "BurstCount" : 0,
+              "BurstTime" : 0.000000,
+              "RateScale" : 1.000000,
+              "SpawnRate" : 10.000000,
+              "bProcessBurst" : false,
+              "bProcessSpawnRate" : true
+            },
+            "Type" : "UParticleModuleSpawn"
+          }, {
+            "Id" : 13,
+            "ObjectName" : "UParticleModuleColor_0",
+            "Properties" : {
+              "StartColor" : {
+                "Constant" : {
+                  "A" : 1.000000,
+                  "B" : 1.000000,
+                  "G" : 1.000000,
+                  "R" : 1.000000
+                },
+                "CurveA" : "",
+                "CurveB" : "",
+                "CurveG" : "",
+                "CurveR" : "",
+                "Max" : {
+                  "A" : 1.000000,
+                  "B" : 1.000000,
+                  "G" : 1.000000,
+                  "R" : 1.000000
+                },
+                "MaxCurveA" : "",
+                "MaxCurveB" : "",
+                "MaxCurveG" : "",
+                "MaxCurveR" : "",
+                "Min" : {
+                  "A" : 1.000000,
+                  "B" : 1.000000,
+                  "G" : 1.000000,
+                  "R" : 1.000000
+                },
+                "MinCurveA" : "",
+                "MinCurveB" : "",
+                "MinCurveG" : "",
+                "MinCurveR" : "",
+                "Mode" : 0
+              }
+            },
+            "Type" : "UParticleModuleColor"
+          }, {
+            "Id" : 14,
+            "ObjectName" : "UParticleModuleTypeDataBase_1",
+            "Properties" : {
+
+            },
+            "Type" : "UParticleModuleTypeDataBase"
+          }, {
+            "Id" : 15,
+            "ObjectName" : "UParticleModuleRequired_2",
+            "Properties" : {
+              "BoundsScale" : 1.000000,
+              "CoordinateSpace" : 0,
+              "EmitterDuration" : 5.000000,
+              "FixedBoundsMax" : {
+                "X" : 100.000000,
+                "Y" : 100.000000,
+                "Z" : 100.000000
+              },
+              "FixedBoundsMin" : {
+                "X" : -100.000000,
+                "Y" : -100.000000,
+                "Z" : -100.000000
+              },
+              "Material" : "",
+              "MaxEmitterLoops" : 0,
+              "MaxParticles" : 1000,
+              "RandomSeed" : 1,
+              "SortMode" : 1,
+              "bEmitterLoops" : true,
+              "bResetSeedOnEmitterLoop" : true,
+              "bUseFixedBounds" : false,
+              "bUseSeededRandom" : false
+            },
+            "Type" : "UParticleModuleRequired"
+          }, {
+            "Id" : 16,
+            "ObjectName" : "UParticleModuleSpawn_2",
+            "Properties" : {
+              "BurstCount" : 0,
+              "BurstTime" : 0.000000,
+              "RateScale" : 1.000000,
+              "SpawnRate" : 10.000000,
+              "bProcessBurst" : false,
+              "bProcessSpawnRate" : true
+            },
+            "Type" : "UParticleModuleSpawn"
+          }, {
+            "Id" : 17,
+            "ObjectName" : "UParticleModuleTypeDataBase_2",
+            "Properties" : {
+
+            },
+            "Type" : "UParticleModuleTypeDataBase"
+          }],
+        "RootObjectId" : 1,
+        "Version" : 1
+      }

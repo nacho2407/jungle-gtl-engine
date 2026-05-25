@@ -1,4 +1,4 @@
-#include "Core/AssetPathPolicy.h"
+﻿#include "Core/AssetPathPolicy.h"
 
 #include "Core/Paths.h"
 
@@ -52,6 +52,41 @@ bool FAssetPathPolicy::IsAnimSequenceAssetPath(const FString& Path)
 	std::wstring Extension = FsPath.extension().wstring();
 	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
 	return Extension == L".animseq" || Extension == L".sequence";
+}
+
+bool FAssetPathPolicy::IsParticleSystemAssetPath(const FString& Path)
+{
+	FString NormalizedPath = FPaths::Normalize(Path);
+	std::transform(
+		NormalizedPath.begin(),
+		NormalizedPath.end(),
+		NormalizedPath.begin(),
+		[](unsigned char Ch)
+		{
+			return static_cast<char>(std::tolower(Ch));
+		});
+	if (NormalizedPath == ".particle" || NormalizedPath == "particle")
+	{
+		return true;
+	}
+
+	std::filesystem::path FsPath(FPaths::ToWide(NormalizedPath));
+	std::wstring Extension = FsPath.extension().wstring();
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
+	return Extension == L".particle";
+}
+
+FString FAssetPathPolicy::MakeParticleSystemAssetPath(const FString& NameOrSourcePath)
+{
+	std::filesystem::path SourceFsPath(FPaths::ToWide(FPaths::Normalize(NameOrSourcePath)));
+	std::filesystem::path FileName = SourceFsPath.has_extension() ? SourceFsPath.stem() : SourceFsPath.filename();
+	if (FileName.empty())
+	{
+		FileName = L"ParticleSystem";
+	}
+
+	FileName += L".particle";
+	return FPaths::ToUtf8((std::filesystem::path(L"Asset") / L"Particle" / FileName).generic_wstring());
 }
 
 FString FAssetPathPolicy::MakeImportedAnimSequenceAssetPath(const FString& SourcePath, const FString& StackName)

@@ -906,6 +906,7 @@
     <ClCompile Include="Source\Engine\Serialization\ActorSerialization.cpp" />
     <ClCompile Include="Source\Engine\Serialization\JsonReader.cpp" />
     <ClCompile Include="Source\Engine\Serialization\JsonWriter.cpp" />
+    <ClCompile Include="Source\Engine\Serialization\ObjectGraphSerializer.cpp" />
     <ClCompile Include="Source\Engine\Serialization\PrefabManager.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitter.cpp" />
@@ -1314,6 +1315,7 @@
     <ClInclude Include="Source\Engine\Serialization\JsonReader.h" />
     <ClInclude Include="Source\Engine\Serialization\JsonWriter.h" />
     <ClInclude Include="Source\Engine\Serialization\MemoryWriter.h" />
+    <ClInclude Include="Source\Engine\Serialization\ObjectGraphSerializer.h" />
     <ClInclude Include="Source\Engine\Serialization\PrefabManager.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
     <ClInclude Include="Source\Engine\Slate\ISlateViewport.h" />

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/PrimitiveComponent.h"
 #include "Particle/ParticleAsset.h"
@@ -18,7 +18,9 @@ public:
 	UParticleSystemComponent();
 	~UParticleSystemComponent() override;
 
-	UParticleSystem* Template = nullptr;
+	UPROPERTY(DisplayName = "Template", ReferenceType = Asset)
+	TSoftObjectPtr<UParticleSystem> Template;
+
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
 
@@ -28,8 +30,15 @@ public:
 	TArray<FParticleEventBurstData> BurstEvents;
 
 	void SetTemplate(UParticleSystem* InTemplate);
+	void SetTemplateAsset(const TSoftObjectPtr<UParticleSystem>& InTemplate);
+	void SetTemplatePath(const FString& InPath);
+	UParticleSystem* GetTemplate();
+	const UParticleSystem* GetTemplate() const;
 	void SetEventManager(AParticleEventManager* InEventManager) { EventManager = InEventManager; }
 	UWorld* GetWorld() const;
+
+	void Serialize(FArchive& Ar) override;
+	void PostEditProperty(const char* PropertyName) override;
 
 	void TickComponent(float DeltaTime) override;
 	void FinalizeTickComponent();
@@ -50,6 +59,7 @@ private:
 	void CreateEmitterInstances();
 
 	AParticleEventManager* EventManager = nullptr;
+	UParticleSystem* ResolvedTemplate = nullptr;
 
 	class FInstanceOwner;
 	std::unique_ptr<FInstanceOwner> InstanceOwner;

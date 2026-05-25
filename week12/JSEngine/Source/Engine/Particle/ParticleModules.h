@@ -3,13 +3,13 @@
 #include "Object/Object.h"
 #include "Particle/ParticleDistributions.h"
 #include "Particle/ParticleTypes.h"
+#include "Asset/StaticMesh.h"
 #include "Render/Resource/Material.h"
 
 class FParticleEmitterInstance;
 class IParticleEmitterInstanceOwner;
 class UParticleEmitter;
 class UParticleModuleTypeDataBase;
-class UStaticMesh;
 
 UCLASS(Abstract)
 class UParticleModule : public UObject
@@ -211,7 +211,8 @@ class UParticleModuleTypeDataMesh : public UParticleModuleTypeDataBase
 public:
 	GENERATED_BODY(UParticleModuleTypeDataMesh, UParticleModuleTypeDataBase)
 
-	UStaticMesh* Mesh = nullptr;
+	UPROPERTY(DisplayName = "Mesh", ReferenceType = Asset)
+	TSoftObjectPtr<UStaticMesh> Mesh;
 };
 
 UCLASS()
