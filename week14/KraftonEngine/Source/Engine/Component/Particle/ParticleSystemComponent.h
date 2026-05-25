@@ -29,6 +29,7 @@ public:
 	void PostEditProperty(const char* PropertyName) override;
 
 	const TArray<FParticleEmitterInstance*>& GetEmitterInstances() const { return EmitterInstances; }
+	int32 GetCurrentLODIndex() const { return CurrentLODIndex; }
 
 protected:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
@@ -40,6 +41,7 @@ private:
 
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 	TObjectPtr<UParticleSystem> ParticleSystem;
+	int32 CurrentLODIndex = 0;
 
 	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Particle System", AssetType="UParticleSystem")
 	FSoftObjectPtr ParticleSystemPath = "None";
