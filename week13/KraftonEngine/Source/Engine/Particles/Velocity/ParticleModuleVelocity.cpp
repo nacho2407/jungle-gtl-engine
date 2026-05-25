@@ -40,7 +40,8 @@ void UParticleModuleVelocity::Spawn(const FSpawnContext& Context)
 	}
 
 	Vel *= OwnerScale;
-	// Radial Velocity 계산 추가 예정
+	// Context.GetDistributionData() 는 현재 GetValue 내에서 안 쓰고 있음
+	Vel += FromOrigin * StartVelocityRadial.GetValue(Context.Owner.EmitterTime) * OwnerScale;
 	Particle.Velocity += Vel;
 	Particle.BaseVelocity += Vel;
 }
