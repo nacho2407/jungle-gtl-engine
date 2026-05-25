@@ -8,22 +8,10 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
 #include "Mesh/MeshManager.h"
-#include "Particles/ParticleSystem.h"
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Particles/Module/ParticleModule.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
-
-#include <algorithm>
-
-namespace
-{
-	EParticleRenderType GetEmitterRenderType(const FParticleEmitterInstance* Instance)
-	{
-		const UParticleLODLevel* LODLevel = Instance ? Instance->GetCurrentLODLevel() : nullptr;
-		const UParticleModuleTypeDataBase* TypeData = LODLevel ? LODLevel->GetTypeDataModule() : nullptr;
-		return TypeData ? TypeData->GetRenderType() : EParticleRenderType::Sprite;
-	}
-}
+#include "Render/Proxy/ParticleDynamicEmitterData.h"
 
 FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
@@ -58,13 +46,174 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
 	if (!bVisible) return;
 
-	ClearDrawBatches();
-	MeshInstances.clear();
+	ResetDynamicGeometry();
 
-	RebuildSpriteParticleGeometry(Frame);
-	RebuildRibbonParticleGeometry(Frame);
-	RebuildBeamParticleGeometry(Frame);
-	RebuildMeshParticleGeometry();
+	UParticleSystemComponent* Component = GetParticleSystemComponent();
+	if (!Component) return;
+
+	BuildDynamicEmitters(Frame, Component->GetEmitterInstances());
+	FinalizeDynamicGeometry();
+}
+
+void FParticleSystemSceneProxy::ResetDynamicGeometry()
+{
+	ClearDrawBatches();
+	SpriteGeometry.Clear();
+	SpriteIndexCount = 0;
+	MeshGeometry.Clear();
+	MeshInstances.clear();
+	MeshIndexCount = 0;
+}
+
+void FParticleSystemSceneProxy::BuildDynamicEmitters(const FFrameContext& Frame, const TArray<FParticleEmitterInstance*>& Instances)
+{
+	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(Instances.size()); ++EmitterIndex)
+	{
+		FParticleEmitterInstance* Instance = Instances[EmitterIndex];
+		if (!Instance) continue;
+
+		AppendEmitter(Frame, EmitterIndex, BuildEmitterSource(Instance));
+	}
+}
+
+FDynamicEmitterReplayDataBase FParticleSystemSceneProxy::BuildEmitterSource(FParticleEmitterInstance* Instance) const
+{
+	FDynamicEmitterReplayDataBase Source;
+	Source.Instance = Instance;
+	Source.Material = ResolveEmitterMaterial(Instance);
+	Source.RenderType = GetEmitterRenderType(Instance);
+	return Source;
+}
+
+void FParticleSystemSceneProxy::AppendEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source)
+{
+	switch (Source.RenderType)
+	{
+		case EParticleRenderType::Sprite:
+			AppendSpriteEmitter(Frame, EmitterIndex, Source);
+			break;
+
+		case EParticleRenderType::Ribbon:
+			AppendRibbonEmitter(Frame, EmitterIndex, Source);
+			break;
+
+		case EParticleRenderType::Beam:
+			AppendBeamEmitter(Frame, EmitterIndex, Source);
+			break;
+
+		case EParticleRenderType::Mesh:
+			AppendMeshEmitter(EmitterIndex, Source);
+			break;
+
+		default:
+			break;
+	}
+}
+
+void FParticleSystemSceneProxy::FinalizeDynamicGeometry()
+{
+	SpriteIndexCount = SpriteGeometry.GetIndexCount();
+
+	if (MeshInstances.empty())
+	{
+		MeshIndexCount = 0;
+
+		for (FParticleDrawBatch& Batch : DrawBatches)
+		{
+			if (Batch.Type == EParticleRenderType::Mesh)
+			{
+				Batch.Sections.clear();
+				Batch.InstanceCount = 0;
+			}
+		}
+	}
+}
+
+void FParticleSystemSceneProxy::AppendSpriteEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source)
+{
+	FParticleDrawBatch& Batch = FindOrAddDrawBatch(EParticleRenderType::Sprite);
+	const uint32 FirstIndex = SpriteGeometry.GetIndexCount();
+
+	FDynamicSpriteEmitterData DynamicData(EmitterIndex, Source, true);
+	const uint32 IndexCount = DynamicData.BuildDynamicVertexData(Frame, SpriteGeometry);
+	if (IndexCount > 0)
+	{
+		Batch.Sections.push_back({ Source.Material, FirstIndex, IndexCount });
+	}
+}
+
+void FParticleSystemSceneProxy::AppendRibbonEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source)
+{
+	FParticleDrawBatch& Batch = FindOrAddDrawBatch(EParticleRenderType::Ribbon);
+	const uint32 FirstIndex = SpriteGeometry.GetIndexCount();
+
+	FDynamicRibbonEmitterData DynamicData(EmitterIndex, Source);
+	const uint32 IndexCount = DynamicData.BuildDynamicVertexData(Frame, SpriteGeometry);
+	if (IndexCount > 0)
+	{
+		Batch.Sections.push_back({ Source.Material, FirstIndex, IndexCount });
+	}
+}
+
+void FParticleSystemSceneProxy::AppendBeamEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source)
+{
+	FParticleDrawBatch& Batch = FindOrAddDrawBatch(EParticleRenderType::Beam);
+	const uint32 FirstIndex = SpriteGeometry.GetIndexCount();
+
+	FDynamicBeamEmitterData DynamicData(EmitterIndex, Source);
+	const uint32 IndexCount = DynamicData.BuildDynamicVertexData(Frame, SpriteGeometry);
+	if (IndexCount > 0)
+	{
+		Batch.Sections.push_back({ Source.Material, FirstIndex, IndexCount });
+	}
+}
+
+void FParticleSystemSceneProxy::AppendMeshEmitter(int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source)
+{
+	FParticleMeshEmitterInstance* MeshInstance = dynamic_cast<FParticleMeshEmitterInstance*>(Source.Instance);
+	if (!MeshInstance || !MeshInstance->TypeDataModule) return;
+
+	UParticleModuleTypeDataMesh* TypeData = MeshInstance->TypeDataModule;
+
+	UStaticMesh* Mesh = ResolveTypeDataMesh(TypeData);
+	FStaticMesh* MeshAsset = Mesh ? Mesh->GetStaticMeshAsset() : nullptr;
+	if (!MeshAsset || MeshAsset->Vertices.empty() || MeshAsset->Indices.empty()) return;
+
+	FParticleDrawBatch& Batch = FindOrAddMeshDrawBatch(Mesh);
+
+	if (Batch.Sections.empty())
+	{
+		const TArray<FStaticMaterial>& StaticMaterials = Mesh->GetStaticMaterials();
+
+		for (const FStaticMeshSection& MeshSection : MeshAsset->Sections)
+		{
+			const uint32 IndexCount = MeshSection.NumTriangles * 3;
+			if (IndexCount == 0) continue;
+
+			UMaterialInterface* Material = nullptr;
+			const int32 MaterialIndex = MeshSection.MaterialIndex;
+			if (MaterialIndex >= 0 && MaterialIndex < static_cast<int32>(StaticMaterials.size()))
+			{
+				Material = StaticMaterials[MaterialIndex].MaterialInterface;
+			}
+
+			if (!Material)
+			{
+				Material = Source.Material;
+			}
+
+			Batch.Sections.push_back({
+				Material,
+				MeshSection.FirstIndex,
+				IndexCount
+			});
+
+			MeshIndexCount += IndexCount;
+		}
+	}
+
+	FDynamicMeshEmitterData DynamicData(EmitterIndex, Source, MeshInstance);
+	Batch.InstanceCount += DynamicData.BuildDynamicVertexData(MeshInstances);
 }
 
 bool FParticleSystemSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context,
@@ -87,7 +236,7 @@ bool FParticleSystemSceneProxy::PrepareParticleDrawBuffer(const FParticleDrawBat
 	if (!Device || !Context) return false;
 
 	OutBuffer = {};
-	
+
 	switch (Batch.Type)
 	{
 	case EParticleRenderType::Sprite:
@@ -145,202 +294,6 @@ bool FParticleSystemSceneProxy::PrepareParticleDrawBuffer(const FParticleDrawBat
 
 	default:
 		return false;
-	}
-}
-
-void FParticleSystemSceneProxy::RebuildSpriteParticleGeometry(const FFrameContext& Frame)
-{
-	SpriteGeometry.Clear();
-	SpriteIndexCount = 0;
-
-	RebuildSpriteLikeParticleGeometry(Frame, EParticleRenderType::Sprite, true);
-}
-
-void FParticleSystemSceneProxy::RebuildRibbonParticleGeometry(const FFrameContext& Frame)
-{
-	RebuildSpriteLikeParticleGeometry(Frame, EParticleRenderType::Ribbon, false);
-}
-
-void FParticleSystemSceneProxy::RebuildBeamParticleGeometry(const FFrameContext& Frame)
-{
-	RebuildSpriteLikeParticleGeometry(Frame, EParticleRenderType::Beam, false);
-}
-
-void FParticleSystemSceneProxy::RebuildSpriteLikeParticleGeometry(const FFrameContext& Frame, EParticleRenderType RenderType, bool bDepthSort)
-{
-	FParticleDrawBatch& Batch = FindOrAddDrawBatch(RenderType);
-	Batch.Sections.clear();
-
-	UParticleSystemComponent* Component = GetParticleSystemComponent();
-	if (!Component) return;
-
-	const TArray<FParticleEmitterInstance*>& Instances = Component->GetEmitterInstances();
-
-	for (FParticleEmitterInstance* Instance : Instances)
-	{
-		if (!Instance) continue;
-		if (GetEmitterRenderType(Instance) != RenderType) continue;
-
-		const uint32 FirstIndex = SpriteGeometry.GetIndexCount();
-
-		const int32 ActiveCount = Instance->GetActiveParticleCount();
-		const FParticleDataContainer& Data = Instance->GetParticleDataContainer();
-		const uint16* ParticleIndices = Instance->ParticleIndices;
-		if (!ParticleIndices) continue;
-
-		if (!bDepthSort)
-		{
-			for (int32 Index = 0; Index < ActiveCount; ++Index)
-			{
-				const FBaseParticle& Particle = Data.GetParticle(ParticleIndices[Index]);
-				if (!Particle.bAlive) continue;
-
-				SpriteGeometry.AddParticleQuad(Particle, Frame.CameraRight, Frame.CameraUp);
-			}
-		}
-		else
-		{
-			TArray<uint16> RenderOrder;
-			RenderOrder.reserve(ActiveCount);
-			for (int32 Index = 0; Index < ActiveCount; ++Index)
-			{
-				const uint16 ParticleSlot = ParticleIndices[Index];
-				const FBaseParticle& Particle = Data.GetParticle(ParticleSlot);
-				if (!Particle.bAlive) continue;
-
-				RenderOrder.push_back(ParticleSlot);
-			}
-
-			std::sort(RenderOrder.begin(), RenderOrder.end(),
-				[&Data, &Frame](uint16 A, uint16 B)
-				{
-					const FBaseParticle& ParticleA = Data.GetParticle(A);
-					const FBaseParticle& ParticleB = Data.GetParticle(B);
-
-					const float DepthA = (ParticleA.Position - Frame.CameraPosition).Dot(Frame.CameraForward);
-					const float DepthB = (ParticleB.Position - Frame.CameraPosition).Dot(Frame.CameraForward);
-					return DepthA > DepthB;
-				});
-
-			for (uint16 ParticleSlot : RenderOrder)
-			{
-				SpriteGeometry.AddParticleQuad(Data.GetParticle(ParticleSlot), Frame.CameraRight, Frame.CameraUp);
-			}
-		}
-
-		const uint32 IndexCount = SpriteGeometry.GetIndexCount() - FirstIndex;
-		if (IndexCount > 0)
-		{
-			Batch.Sections.push_back({ ResolveEmitterMaterial(Instance), FirstIndex, IndexCount });
-		}
-	}
-
-	SpriteIndexCount = SpriteGeometry.GetIndexCount();
-
-	if (SpriteIndexCount == 0)
-	{
-		Batch.Sections.clear();
-	}
-}
-
-void FParticleSystemSceneProxy::RebuildMeshParticleGeometry()
-{
-	MeshGeometry.Clear();
-	MeshInstances.clear();
-	MeshIndexCount = 0;
-
-	UParticleSystemComponent* Component = GetParticleSystemComponent();
-	if (!Component) return;
-
-	const TArray<FParticleEmitterInstance*>& Instances = Component->GetEmitterInstances();
-
-	for (FParticleEmitterInstance* Instance : Instances)
-	{
-		if (!Instance) continue;
-		if (GetEmitterRenderType(Instance) != EParticleRenderType::Mesh) continue;
-
-		FParticleMeshEmitterInstance* MeshInstance = dynamic_cast<FParticleMeshEmitterInstance*>(Instance);
-
-		if (!MeshInstance || !MeshInstance->TypeDataModule) continue;
-
-		UParticleModuleTypeDataMesh* TypeData = MeshInstance->TypeDataModule;
-
-		UStaticMesh* Mesh = ResolveTypeDataMesh(TypeData);
-		FStaticMesh* MeshAsset = Mesh ? Mesh->GetStaticMeshAsset() : nullptr;
-		if (!MeshAsset || MeshAsset->Vertices.empty() || MeshAsset->Indices.empty()) continue;
-
-		FParticleDrawBatch& Batch = FindOrAddMeshDrawBatch(Mesh);
-
-		if (Batch.Sections.empty())
-		{
-			const TArray<FStaticMaterial>& StaticMaterials = Mesh->GetStaticMaterials();
-
-			for (const FStaticMeshSection& MeshSection : MeshAsset->Sections)
-			{
-				const uint32 IndexCount = MeshSection.NumTriangles * 3;
-				if (IndexCount == 0) continue;
-
-				UMaterialInterface* Material = nullptr;
-				const int32 MaterialIndex = MeshSection.MaterialIndex;
-				if (MaterialIndex >= 0 && MaterialIndex < static_cast<int32>(StaticMaterials.size()))
-				{
-					Material = StaticMaterials[MaterialIndex].MaterialInterface;
-				}
-
-				if (!Material)
-				{
-					Material = ResolveEmitterMaterial(Instance);
-				}
-
-				Batch.Sections.push_back({
-					Material,
-					MeshSection.FirstIndex,
-					IndexCount
-				});
-
-				MeshIndexCount += IndexCount;
-			}
-		}
-
-		const int32 ActiveCount = Instance->GetActiveParticleCount();
-		const FParticleDataContainer& Data = Instance->GetParticleDataContainer();
-
-		for (int32 ParticleIndex = 0; ParticleIndex < ActiveCount; ++ParticleIndex)
-		{
-			const FBaseParticle& Particle = Data.GetParticle(Instance->ParticleIndices[ParticleIndex]);
-			if (!Particle.bAlive) continue;
-
-			FMeshParticleTransform Transform;
-			Transform.Position = Particle.Position;
-			Transform.Scale = Particle.Size;
-			Transform.RotationEuler = FVector(0, 0, Particle.Rotation);
-
-			if (const FParticleMeshPayload* Payload = MeshInstance->GetParticlePayload<FParticleMeshPayload>(ParticleIndex))
-			{
-				Transform.Scale = FVector(
-					Transform.Scale.X * Payload->MeshScale.X,
-					Transform.Scale.Y * Payload->MeshScale.Y,
-					Transform.Scale.Z * Payload->MeshScale.Z);
-				Transform.RotationEuler += Payload->MeshRotation;
-			}
-
-			MeshInstances.push_back(MakeMeshParticleInstanceData(Transform, Particle.Color));
-			++Batch.InstanceCount;
-		}
-	}
-
-	if (MeshInstances.empty())
-	{
-		MeshIndexCount = 0;
-
-		for (FParticleDrawBatch& Batch : DrawBatches)
-		{
-			if (Batch.Type == EParticleRenderType::Mesh)
-			{
-				Batch.Sections.clear();
-				Batch.InstanceCount = 0;
-			}
-		}
 	}
 }
 
