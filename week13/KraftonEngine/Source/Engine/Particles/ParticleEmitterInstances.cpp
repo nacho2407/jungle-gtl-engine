@@ -3330,9 +3330,9 @@ void FParticleTrailsEmitterInstance_Base::KillParticles()
 
 		const bool bInactiveTimedOut =
 			bEnableInactiveTimeTracking &&
-			LastTickTime > 0.0f &&
+			SecondsSinceCreation != 0.0f &&
 			(Particle.OneOverMaxLifetime > 0.0f) &&
-			((RunningTime - LastTickTime) > (1.0f / Particle.OneOverMaxLifetime));
+			((SecondsSinceCreation - LastTickTime) > (1.0f / Particle.OneOverMaxLifetime));
 
 		if (Particle.RelativeTime <= 1.0f && !bInactiveTimedOut && !TRAIL_EMITTER_IS_FORCEKILL(TrailData->Flags))
 		{
