@@ -171,13 +171,6 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 		return false;
 	}
 
-	if (ModifierData)
-	{
-		ModifierData->UpdatePosition(BeamData->SourcePoint);
-		ModifierData->UpdateTangent(BeamData->SourceTangent, false);
-		ModifierData->UpdateStrength(BeamData->SourceStrength);
-	}
-
 	return true;
 }
 

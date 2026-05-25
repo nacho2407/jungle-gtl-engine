@@ -124,13 +124,6 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 		return false;
 	}
 
-	if (ModifierData)
-	{
-		ModifierData->UpdatePosition(BeamData->TargetPoint);
-		ModifierData->UpdateTangent(BeamData->TargetTangent, false);
-		ModifierData->UpdateStrength(BeamData->TargetStrength);
-	}
-
 	return true;
 }
 

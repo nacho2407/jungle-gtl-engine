@@ -1,6 +1,10 @@
 #include "Particles/Beam/ParticleModuleBeamNoise.h"
 
+#include "Particles/ParticleEmitterInstances.h"
+#include "Particles/TypeData/ParticleModuleTypeDataBeam2.h"
 #include "Serialization/Archive.h"
+
+#include <algorithm>
 
 UParticleModuleBeamNoise::UParticleModuleBeamNoise()
 	: bLowFreq_Enabled(false)
@@ -25,17 +29,94 @@ void UParticleModuleBeamNoise::InitializeDefaults()
 
 void UParticleModuleBeamNoise::Spawn(const FSpawnContext& Context)
 {
-	// UE original responsibility: seed low-frequency noise payload arrays.
-	// Missing Jungle foundation: full beam noise payload arrays are allocated by TypeData,
-	// but the UE noise evolution code has not been ported yet.
-	// System to connect later: ParticleBeamModules.cpp BeamNoise::Spawn.
+	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(&Context.Owner);
+	if (!BeamInst || !BeamInst->BeamTypeData || !bLowFreq_Enabled)
+	{
+		return;
+	}
+
+	int32 CurrentOffset = Context.Owner.TypeDataOffset;
+	FBeam2TypeDataPayload* BeamData = nullptr;
+	FVector* InterpolatedPoints = nullptr;
+	float* NoiseRate = nullptr;
+	float* NoiseDeltaTime = nullptr;
+	FVector* TargetNoisePoints = nullptr;
+	FVector* NextNoisePoints = nullptr;
+	float* TaperValues = nullptr;
+	float* NoiseDistanceScale = nullptr;
+	FBeamParticleModifierPayloadData* SourceModifier = nullptr;
+	FBeamParticleModifierPayloadData* TargetModifier = nullptr;
+	BeamInst->BeamTypeData->GetDataPointers(&Context.Owner, reinterpret_cast<const uint8*>(Context.ParticleBase), CurrentOffset,
+		BeamData, InterpolatedPoints, NoiseRate, NoiseDeltaTime, TargetNoisePoints, NextNoisePoints,
+		TaperValues, NoiseDistanceScale, SourceModifier, TargetModifier);
+
+	if (!BeamData)
+	{
+		return;
+	}
+
+	const int32 NoiseCount = std::max(0, Frequency) + 1;
+	BEAM2_TYPEDATA_SETFREQUENCY(BeamData->Lock_Max_NumNoisePoints, std::max(0, Frequency));
+	if (NoiseRate)
+	{
+		*NoiseRate = 0.0f;
+	}
+	if (NoiseDeltaTime)
+	{
+		*NoiseDeltaTime = 0.0f;
+	}
+	if (TargetNoisePoints)
+	{
+		for (int32 NoiseIndex = 0; NoiseIndex < NoiseCount; ++NoiseIndex)
+		{
+			const float Alpha = NoiseCount > 1 ? static_cast<float>(NoiseIndex) / static_cast<float>(NoiseCount - 1) : 0.0f;
+			const FVector Range = NoiseRange.GetValue(Context.Owner.EmitterTime + Alpha, Context.GetDistributionData());
+			TargetNoisePoints[NoiseIndex] = Range;
+			if (NextNoisePoints)
+			{
+				NextNoisePoints[NoiseIndex] = Range;
+			}
+		}
+	}
+	if (NoiseDistanceScale)
+	{
+		*NoiseDistanceScale = 1.0f;
+	}
 }
 
 void UParticleModuleBeamNoise::Update(const FUpdateContext& Context)
 {
-	// UE original responsibility: advance beam noise points, rates, deltas and distance scale.
-	// Missing Jungle foundation: Cascade noise interpolation payload evolution path.
-	// System to connect later: ParticleBeamModules.cpp BeamNoise::Update.
+	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(&Context.Owner);
+	if (!BeamInst || !BeamInst->BeamTypeData || !bLowFreq_Enabled)
+	{
+		return;
+	}
+
+	BEGIN_UPDATE_LOOP;
+	int32 CurrentOffset = Context.Owner.TypeDataOffset;
+	FBeam2TypeDataPayload* BeamData = nullptr;
+	FVector* InterpolatedPoints = nullptr;
+	float* NoiseRate = nullptr;
+	float* NoiseDeltaTime = nullptr;
+	FVector* TargetNoisePoints = nullptr;
+	FVector* NextNoisePoints = nullptr;
+	float* TaperValues = nullptr;
+	float* NoiseDistanceScale = nullptr;
+	FBeamParticleModifierPayloadData* SourceModifier = nullptr;
+	FBeamParticleModifierPayloadData* TargetModifier = nullptr;
+	BeamInst->BeamTypeData->GetDataPointers(&Context.Owner, ParticleBase, CurrentOffset,
+		BeamData, InterpolatedPoints, NoiseRate, NoiseDeltaTime, TargetNoisePoints, NextNoisePoints,
+		TaperValues, NoiseDistanceScale, SourceModifier, TargetModifier);
+
+	if (NoiseDeltaTime)
+	{
+		*NoiseDeltaTime += Context.DeltaTime;
+	}
+	if (NoiseRate)
+	{
+		*NoiseRate = NoiseLockTime > 0.0f ? std::min(1.0f, *NoiseDeltaTime / NoiseLockTime) : 1.0f;
+	}
+	END_UPDATE_LOOP;
 }
 
 void UParticleModuleBeamNoise::GetNoiseRange(FVector& NoiseMin, FVector& NoiseMax)

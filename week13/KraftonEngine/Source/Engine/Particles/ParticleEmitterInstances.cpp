@@ -2409,6 +2409,36 @@ namespace
 			Values.resize(Index + 1, DefaultValue);
 		}
 	}
+
+	FBeam2TypeDataPayload* GetActiveBeamPayloadByIndex(FParticleBeam2EmitterInstance& BeamInst, int32 BeamIndex)
+	{
+		if (BeamIndex < 0 || BeamIndex >= BeamInst.ActiveParticles || !BeamInst.BeamTypeData)
+		{
+			return nullptr;
+		}
+
+		FBaseParticle* Particle = BeamInst.GetParticle(BeamIndex);
+		if (!Particle)
+		{
+			return nullptr;
+		}
+
+		int32 CurrentOffset = BeamInst.TypeDataOffset;
+		FBeam2TypeDataPayload* BeamData = nullptr;
+		FVector* InterpolatedPoints = nullptr;
+		float* NoiseRate = nullptr;
+		float* NoiseDeltaTime = nullptr;
+		FVector* TargetNoisePoints = nullptr;
+		FVector* NextNoisePoints = nullptr;
+		float* TaperValues = nullptr;
+		float* NoiseDistanceScale = nullptr;
+		FBeamParticleModifierPayloadData* SourceModifier = nullptr;
+		FBeamParticleModifierPayloadData* TargetModifier = nullptr;
+		BeamInst.BeamTypeData->GetDataPointers(&BeamInst, reinterpret_cast<const uint8*>(Particle), CurrentOffset,
+			BeamData, InterpolatedPoints, NoiseRate, NoiseDeltaTime, TargetNoisePoints, NextNoisePoints,
+			TaperValues, NoiseDistanceScale, SourceModifier, TargetModifier);
+		return BeamData;
+	}
 }
 
 void FParticleBeam2EmitterInstance::InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent)
@@ -2588,13 +2618,18 @@ void FParticleBeam2EmitterInstance::DetermineVertexAndTriangleCount()
 	VertexCount = 0;
 	TriangleCount = 0;
 	BeamTrianglesPerSheet.clear();
+	const int32 Sheets = BeamTypeData ? std::max(1, BeamTypeData->Sheets) : 1;
 	for (int32 i = 0; i < ActiveParticles; ++i)
 	{
 		DECLARE_PARTICLE(Particle, ParticleData + ParticleStride * ParticleIndices[i]);
 		FBeam2TypeDataPayload* BeamData = reinterpret_cast<FBeam2TypeDataPayload*>(reinterpret_cast<uint8*>(&Particle) + TypeDataOffset);
-		TriangleCount += BeamData->TriangleCount;
-		VertexCount += (BeamData->Steps + 1) * 2 * (BeamTypeData ? std::max(1, BeamTypeData->Sheets) : 1);
 		BeamTrianglesPerSheet.push_back(BeamData->TriangleCount);
+		if (BeamData->TriangleCount <= 0)
+		{
+			continue;
+		}
+		TriangleCount += BeamData->TriangleCount * Sheets;
+		VertexCount += (BeamData->TriangleCount + 2) * Sheets;
 	}
 }
 
@@ -2664,12 +2699,83 @@ void FParticleBeam2EmitterInstance::KillParticles()
 }
 
 void FParticleBeam2EmitterInstance::SetBeamEndPoint(FVector NewEndPoint) { SetBeamTargetPoint(NewEndPoint, 0); }
-void FParticleBeam2EmitterInstance::SetBeamSourcePoint(FVector NewSourcePoint, int32 SourceIndex) { EnsureIndexedValue(UserSetSourceArray, SourceIndex, FVector::ZeroVector); if (SourceIndex >= 0) UserSetSourceArray[SourceIndex] = NewSourcePoint; }
-void FParticleBeam2EmitterInstance::SetBeamSourceTangent(FVector NewTangentPoint, int32 SourceIndex) { EnsureIndexedValue(UserSetSourceTangentArray, SourceIndex, FVector::ZeroVector); if (SourceIndex >= 0) UserSetSourceTangentArray[SourceIndex] = NewTangentPoint; }
-void FParticleBeam2EmitterInstance::SetBeamSourceStrength(float NewSourceStrength, int32 SourceIndex) { EnsureIndexedValue(UserSetSourceStrengthArray, SourceIndex, 0.0f); if (SourceIndex >= 0) UserSetSourceStrengthArray[SourceIndex] = NewSourceStrength; }
-void FParticleBeam2EmitterInstance::SetBeamTargetPoint(FVector NewTargetPoint, int32 TargetIndex) { EnsureIndexedValue(UserSetTargetArray, TargetIndex, FVector::ZeroVector); if (TargetIndex >= 0) UserSetTargetArray[TargetIndex] = NewTargetPoint; }
-void FParticleBeam2EmitterInstance::SetBeamTargetTangent(FVector NewTangentPoint, int32 TargetIndex) { EnsureIndexedValue(UserSetTargetTangentArray, TargetIndex, FVector::ZeroVector); if (TargetIndex >= 0) UserSetTargetTangentArray[TargetIndex] = NewTangentPoint; }
-void FParticleBeam2EmitterInstance::SetBeamTargetStrength(float NewTargetStrength, int32 TargetIndex) { EnsureIndexedValue(UserSetTargetStrengthArray, TargetIndex, 0.0f); if (TargetIndex >= 0) UserSetTargetStrengthArray[TargetIndex] = NewTargetStrength; }
+void FParticleBeam2EmitterInstance::SetBeamSourcePoint(FVector NewSourcePoint, int32 SourceIndex)
+{
+	EnsureIndexedValue(UserSetSourceArray, SourceIndex, FVector::ZeroVector);
+	if (SourceIndex >= 0)
+	{
+		UserSetSourceArray[SourceIndex] = NewSourcePoint;
+		if (FBeam2TypeDataPayload* BeamData = GetActiveBeamPayloadByIndex(*this, SourceIndex))
+		{
+			BeamData->SourcePoint = NewSourcePoint;
+		}
+	}
+}
+
+void FParticleBeam2EmitterInstance::SetBeamSourceTangent(FVector NewTangentPoint, int32 SourceIndex)
+{
+	EnsureIndexedValue(UserSetSourceTangentArray, SourceIndex, FVector::ZeroVector);
+	if (SourceIndex >= 0)
+	{
+		UserSetSourceTangentArray[SourceIndex] = NewTangentPoint;
+		if (FBeam2TypeDataPayload* BeamData = GetActiveBeamPayloadByIndex(*this, SourceIndex))
+		{
+			BeamData->SourceTangent = NewTangentPoint;
+		}
+	}
+}
+
+void FParticleBeam2EmitterInstance::SetBeamSourceStrength(float NewSourceStrength, int32 SourceIndex)
+{
+	EnsureIndexedValue(UserSetSourceStrengthArray, SourceIndex, 0.0f);
+	if (SourceIndex >= 0)
+	{
+		UserSetSourceStrengthArray[SourceIndex] = NewSourceStrength;
+		if (FBeam2TypeDataPayload* BeamData = GetActiveBeamPayloadByIndex(*this, SourceIndex))
+		{
+			BeamData->SourceStrength = NewSourceStrength;
+		}
+	}
+}
+
+void FParticleBeam2EmitterInstance::SetBeamTargetPoint(FVector NewTargetPoint, int32 TargetIndex)
+{
+	EnsureIndexedValue(UserSetTargetArray, TargetIndex, FVector::ZeroVector);
+	if (TargetIndex >= 0)
+	{
+		UserSetTargetArray[TargetIndex] = NewTargetPoint;
+		if (FBeam2TypeDataPayload* BeamData = GetActiveBeamPayloadByIndex(*this, TargetIndex))
+		{
+			BeamData->TargetPoint = NewTargetPoint;
+		}
+	}
+}
+
+void FParticleBeam2EmitterInstance::SetBeamTargetTangent(FVector NewTangentPoint, int32 TargetIndex)
+{
+	EnsureIndexedValue(UserSetTargetTangentArray, TargetIndex, FVector::ZeroVector);
+	if (TargetIndex >= 0)
+	{
+		UserSetTargetTangentArray[TargetIndex] = NewTangentPoint;
+		if (FBeam2TypeDataPayload* BeamData = GetActiveBeamPayloadByIndex(*this, TargetIndex))
+		{
+			BeamData->TargetTangent = NewTangentPoint;
+		}
+	}
+}
+
+void FParticleBeam2EmitterInstance::SetBeamTargetStrength(float NewTargetStrength, int32 TargetIndex)
+{
+	EnsureIndexedValue(UserSetTargetStrengthArray, TargetIndex, 0.0f);
+	if (TargetIndex >= 0)
+	{
+		UserSetTargetStrengthArray[TargetIndex] = NewTargetStrength;
+		if (FBeam2TypeDataPayload* BeamData = GetActiveBeamPayloadByIndex(*this, TargetIndex))
+		{
+			BeamData->TargetStrength = NewTargetStrength;
+		}
+	}
+}
 
 bool FParticleBeam2EmitterInstance::GetBeamEndPoint(FVector& OutEndPoint) const { return GetBeamTargetPoint(0, OutEndPoint); }
 bool FParticleBeam2EmitterInstance::GetBeamSourcePoint(int32 SourceIndex, FVector& OutSourcePoint) const { if (SourceIndex >= 0 && SourceIndex < static_cast<int32>(UserSetSourceArray.size())) { OutSourcePoint = UserSetSourceArray[SourceIndex]; return true; } return false; }
@@ -2761,50 +2867,10 @@ bool FParticleBeam2EmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase
 	BeamData.NoiseLockRadius = BeamModule_Noise ? BeamModule_Noise->NoiseLockRadius : 0.0f;
 	BeamData.NoiseTension = BeamModule_Noise ? BeamModule_Noise->NoiseTension : 0.0f;
 
-	BeamData.IndexCount = 0;
-	if (BeamTypeData)
-	{
-		for (int32 BeamIndex = 0; BeamIndex < ActiveParticles; ++BeamIndex)
-		{
-			DECLARE_PARTICLE(Particle, ParticleData + ParticleStride * ParticleIndices[BeamIndex]);
-
-			int32 CurrentOffset = TypeDataOffset;
-			FBeam2TypeDataPayload* Payload = nullptr;
-			FVector* InterpolatedPoints = nullptr;
-			float* NoiseRate = nullptr;
-			float* NoiseDeltaTime = nullptr;
-			FVector* TargetNoisePoints = nullptr;
-			FVector* NextNoisePoints = nullptr;
-			float* TaperValues = nullptr;
-			float* NoiseDistanceScale = nullptr;
-			FBeamParticleModifierPayloadData* SourceModifier = nullptr;
-			FBeamParticleModifierPayloadData* TargetModifier = nullptr;
-
-			BeamTypeData->GetDataPointers(this, reinterpret_cast<const uint8*>(&Particle), CurrentOffset,
-				Payload, InterpolatedPoints, NoiseRate, NoiseDeltaTime, TargetNoisePoints, NextNoisePoints,
-				TaperValues, NoiseDistanceScale, SourceModifier, TargetModifier);
-
-			if (Payload && Payload->TriangleCount > 0)
-			{
-				if (BeamData.IndexCount == 0)
-				{
-					BeamData.IndexCount = 2;
-				}
-				BeamData.IndexCount += Payload->TriangleCount * BeamData.Sheets;
-				BeamData.IndexCount += ((BeamData.Sheets - 1) * 4);
-				if (BeamIndex > 0)
-				{
-					BeamData.IndexCount += 4;
-				}
-			}
-		}
-	}
-
-	if (BeamData.IndexCount == 0)
-	{
-		BeamData.IndexCount = TriangleCount * 3;
-	}
-
+	// UE source stores beam/trail as strips with degenerate joins. Jungle's CPU
+	// adapter keeps the UE logical point/sheet generation, then converts only the
+	// final emitted index stream to triangle-list indices.
+	BeamData.IndexCount = TriangleCount * 3;
 	BeamData.IndexStride = (BeamData.IndexCount > 15000) ? sizeof(uint32) : sizeof(uint16);
 	return true;
 }
@@ -2883,10 +2949,40 @@ bool FParticleTrailsEmitterInstance_Base::AddParticleHelper(int32 InTrailIdx, in
 
 void FParticleTrailsEmitterInstance_Base::Tick_RecalculateTangents(float DeltaTime, UParticleLODLevel* CurrentLODLevel)
 {
-	// UE original responsibility: walk trail linked lists and recalculate previous/current
-	// tangents when requested by type data.
-	// Missing Jungle foundation: full trail tangent smoothing port from ParticleTrail2EmitterInstance.cpp.
-	// System to connect later: UE Tick_RecalculateTangents body.
+	for (int32 TrailIdx = 0; TrailIdx < MaxTrailCount; ++TrailIdx)
+	{
+		int32 StartIndex = INDEX_NONE;
+		FRibbonTypeDataPayload* TrailData = nullptr;
+		FBaseParticle* Particle = nullptr;
+		GetTrailStart<FRibbonTypeDataPayload>(TrailIdx, StartIndex, TrailData, Particle);
+		while (Particle && TrailData)
+		{
+			const int32 PrevIndex = TRAIL_EMITTER_GET_PREV(TrailData->Flags);
+			const int32 NextIndex = TRAIL_EMITTER_GET_NEXT(TrailData->Flags);
+			FBaseParticle* PrevParticle = (PrevIndex != TRAIL_EMITTER_NULL_PREV && PrevIndex != INDEX_NONE) ? GetParticleDirect(PrevIndex) : nullptr;
+			FBaseParticle* NextParticle = (NextIndex != TRAIL_EMITTER_NULL_NEXT && NextIndex != INDEX_NONE) ? GetParticleDirect(NextIndex) : nullptr;
+
+			if (PrevParticle && NextParticle)
+			{
+				TrailData->Tangent = (NextParticle->Location - PrevParticle->Location).GetSafeNormal(1.0e-6f, TrailData->Tangent);
+			}
+			else if (NextParticle)
+			{
+				TrailData->Tangent = (NextParticle->Location - Particle->Location).GetSafeNormal(1.0e-6f, TrailData->Tangent);
+			}
+			else if (PrevParticle)
+			{
+				TrailData->Tangent = (Particle->Location - PrevParticle->Location).GetSafeNormal(1.0e-6f, TrailData->Tangent);
+			}
+
+			if (NextIndex == TRAIL_EMITTER_NULL_NEXT || NextIndex == INDEX_NONE)
+			{
+				break;
+			}
+			Particle = GetParticleDirect(NextIndex);
+			TrailData = Particle ? reinterpret_cast<FRibbonTypeDataPayload*>(reinterpret_cast<uint8*>(Particle) + TypeDataOffset) : nullptr;
+		}
+	}
 }
 
 void FParticleTrailsEmitterInstance_Base::UpdateBoundingBox(float DeltaTime)
@@ -2988,21 +3084,61 @@ bool FParticleTrailsEmitterInstance_Base::GetParticleInTrail(bool bSkipStartingP
 		return false;
 	}
 
-	int32 NextIndex = (InGetDirection == GET_Next) ? TRAIL_EMITTER_GET_NEXT(InStartingTrailData->Flags) : TRAIL_EMITTER_GET_PREV(InStartingTrailData->Flags);
-	if (!bSkipStartingParticle)
+	auto MatchesOption = [](FTrailsBaseTypeDataPayload* Data, EGetTrailParticleOption Option)
 	{
-		OutParticle = InStartingFromParticle;
-		OutTrailData = InStartingTrailData;
+		if (!Data)
+		{
+			return false;
+		}
+		switch (Option)
+		{
+		case GET_Any:
+			return true;
+		case GET_Spawned:
+			return !Data->bInterpolatedSpawn;
+		case GET_Interpolated:
+			return Data->bInterpolatedSpawn != 0;
+		case GET_Start:
+			return TRAIL_EMITTER_IS_START(Data->Flags);
+		case GET_End:
+			return TRAIL_EMITTER_IS_END(Data->Flags) || TRAIL_EMITTER_IS_ONLY(Data->Flags);
+		default:
+			return false;
+		}
+	};
+
+	const int32 NullIndex = (InGetDirection == GET_Next) ? TRAIL_EMITTER_NULL_NEXT : TRAIL_EMITTER_NULL_PREV;
+	FBaseParticle* CurrentParticle = InStartingFromParticle;
+	FTrailsBaseTypeDataPayload* CurrentTrailData = InStartingTrailData;
+
+	if (!bSkipStartingParticle && MatchesOption(CurrentTrailData, InGetOption))
+	{
+		OutParticle = CurrentParticle;
+		OutTrailData = CurrentTrailData;
 		return true;
 	}
-	const int32 NullIndex = (InGetDirection == GET_Next) ? TRAIL_EMITTER_NULL_NEXT : TRAIL_EMITTER_NULL_PREV;
-	if (NextIndex == NullIndex || NextIndex == INDEX_NONE)
+
+	while (CurrentTrailData)
 	{
-		return false;
+		const int32 NextIndex = (InGetDirection == GET_Next)
+			? TRAIL_EMITTER_GET_NEXT(CurrentTrailData->Flags)
+			: TRAIL_EMITTER_GET_PREV(CurrentTrailData->Flags);
+		if (NextIndex == NullIndex || NextIndex == INDEX_NONE)
+		{
+			return false;
+		}
+
+		CurrentParticle = GetParticleDirect(NextIndex);
+		CurrentTrailData = CurrentParticle ? reinterpret_cast<FTrailsBaseTypeDataPayload*>(reinterpret_cast<uint8*>(CurrentParticle) + TypeDataOffset) : nullptr;
+		if (MatchesOption(CurrentTrailData, InGetOption))
+		{
+			OutParticle = CurrentParticle;
+			OutTrailData = CurrentTrailData;
+			return true;
+		}
 	}
-	OutParticle = GetParticleDirect(NextIndex);
-	OutTrailData = OutParticle ? reinterpret_cast<FTrailsBaseTypeDataPayload*>(reinterpret_cast<uint8*>(OutParticle) + TypeDataOffset) : nullptr;
-	return OutParticle && OutTrailData;
+
+	return false;
 }
 
 void FParticleRibbonEmitterInstance::InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent)
@@ -3212,22 +3348,55 @@ void FParticleRibbonEmitterInstance::DetermineVertexAndTriangleCount()
 {
 	VertexCount = 0;
 	TriangleCount = 0;
+	const int32 Sheets = TrailTypeData ? std::max(1, TrailTypeData->SheetsPerTrail) : 1;
+	const int32 MaxTessellation = TrailTypeData ? std::max(1, TrailTypeData->MaxTessellationBetweenParticles) : 1;
+	const float DistanceStep = TrailTypeData ? TrailTypeData->DistanceTessellationStepSize : 0.0f;
+	const float TangentScalar = TrailTypeData && TrailTypeData->bEnableTangentDiffInterpScale ? TrailTypeData->TangentTessellationScalar : 0.0f;
+
 	for (int32 TrailIdx = 0; TrailIdx < MaxTrailCount; ++TrailIdx)
 	{
 		int32 StartIndex = INDEX_NONE;
 		FRibbonTypeDataPayload* TrailData = nullptr;
 		FBaseParticle* Particle = nullptr;
 		GetTrailStart<FRibbonTypeDataPayload>(TrailIdx, StartIndex, TrailData, Particle);
+		if (!Particle || !TrailData)
+		{
+			continue;
+		}
+
+		int32 TrailPointCount = 1;
 		while (Particle && TrailData)
 		{
-			const int32 InterpCount = std::max(1, TrailData->RenderingInterpCount);
-			VertexCount += InterpCount * 2 * (TrailTypeData ? std::max(1, TrailTypeData->SheetsPerTrail) : 1);
-			TriangleCount += std::max(0, InterpCount - 1) * 2 * (TrailTypeData ? std::max(1, TrailTypeData->SheetsPerTrail) : 1);
 			const int32 NextIndex = TRAIL_EMITTER_GET_NEXT(TrailData->Flags);
 			if (NextIndex == TRAIL_EMITTER_NULL_NEXT || NextIndex == INDEX_NONE) break;
-			Particle = GetParticleDirect(NextIndex);
-			TrailData = Particle ? reinterpret_cast<FRibbonTypeDataPayload*>(reinterpret_cast<uint8*>(Particle) + TypeDataOffset) : nullptr;
+			FBaseParticle* NextParticle = GetParticleDirect(NextIndex);
+			FRibbonTypeDataPayload* NextTrailData = NextParticle ? reinterpret_cast<FRibbonTypeDataPayload*>(reinterpret_cast<uint8*>(NextParticle) + TypeDataOffset) : nullptr;
+			if (!NextParticle || !NextTrailData)
+			{
+				break;
+			}
+
+			int32 RenderingInterpCount = 1;
+			if (DistanceStep > 0.0f)
+			{
+				const float SegmentDistance = FVector::Distance(Particle->Location, NextParticle->Location);
+				RenderingInterpCount = std::max(RenderingInterpCount, static_cast<int32>(std::ceil(SegmentDistance / DistanceStep)));
+			}
+			if (TangentScalar > 0.0f)
+			{
+				const float TangentDiff = (TrailData->Tangent.GetSafeNormal(1.0e-6f, FVector::XAxisVector) -
+					NextTrailData->Tangent.GetSafeNormal(1.0e-6f, FVector::XAxisVector)).Length();
+				RenderingInterpCount = std::max(RenderingInterpCount, static_cast<int32>(std::ceil(TangentDiff * TangentScalar)));
+			}
+			TrailData->RenderingInterpCount = std::max(1, std::min(MaxTessellation, RenderingInterpCount));
+			TrailPointCount += TrailData->RenderingInterpCount;
+
+			Particle = NextParticle;
+			TrailData = NextTrailData;
 		}
+
+		VertexCount += TrailPointCount * 2 * Sheets;
+		TriangleCount += std::max(0, TrailPointCount - 1) * 2 * Sheets;
 	}
 }
 
