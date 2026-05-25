@@ -192,6 +192,7 @@ namespace
 		const FBaseParticle& Particle,
 		const FBeam2TypeDataPayload& BeamData,
 		bool bUseNoise,
+		bool bUseInterpolatedPath,
 		TArray<FVector>& OutCenters,
 		TArray<float>& OutTapers)
 	{
@@ -210,12 +211,32 @@ namespace
 			? reinterpret_cast<const FVector*>(reinterpret_cast<const uint8*>(&Particle) + Source.TargetNoisePointsOffset)
 			: nullptr;
 
+		TArray<FVector> InterpPath;
+		if (bUseInterpolatedPath && InterpPoints && Source.InterpolationPoints > 0)
+		{
+			InterpPath.reserve(Source.InterpolationPoints + 2);
+			InterpPath.push_back(BeamData.SourcePoint);
+			const int32 InterpCount = std::min(Source.InterpolationPoints, std::max(0, BeamData.InterpolationSteps));
+			for (int32 InterpIndex = 0; InterpIndex < InterpCount; ++InterpIndex)
+			{
+				InterpPath.push_back(InterpPoints[InterpIndex]);
+			}
+			InterpPath.push_back(EndPoint);
+		}
+
 		for (int32 PointIndex = 0; PointIndex < PointCount; ++PointIndex)
 		{
 			const float Alpha = PointCount > 1 ? static_cast<float>(PointIndex) / static_cast<float>(PointCount - 1) : 0.0f;
 			FVector Center = FVector::Lerp(BeamData.SourcePoint, EndPoint, Alpha);
 
-			if (InterpPoints && PointIndex > 0 && PointIndex <= Source.InterpolationPoints)
+			if (!InterpPath.empty())
+			{
+				const float PathPosition = Alpha * static_cast<float>(InterpPath.size() - 1);
+				const int32 SegmentIndex = std::min(static_cast<int32>(InterpPath.size()) - 2, std::max(0, static_cast<int32>(std::floor(PathPosition))));
+				const float SegmentAlpha = PathPosition - static_cast<float>(SegmentIndex);
+				Center = FVector::Lerp(InterpPath[SegmentIndex], InterpPath[SegmentIndex + 1], SegmentAlpha);
+			}
+			else if (InterpPoints && PointIndex > 0 && PointIndex <= Source.InterpolationPoints)
 			{
 				Center = InterpPoints[PointIndex - 1];
 				if (!bLocked)
@@ -371,7 +392,7 @@ int32 FDynamicBeam2EmitterData::FillVertexData_NoNoise()
 			continue;
 		}
 
-		BuildBeamCenters(Source, *Particle, *BeamData, false, Centers, Tapers);
+		BuildBeamCenters(Source, *Particle, *BeamData, false, true, Centers, Tapers);
 		for (int32 SheetIndex = 0; SheetIndex < std::max(1, Source.Sheets); ++SheetIndex)
 		{
 			AppendBeamSheet(Source, *Particle, Centers, Tapers, SheetIndex, Staging.Vertices, Staging.Indices);
@@ -397,7 +418,7 @@ int32 FDynamicBeam2EmitterData::FillData_Noise()
 			continue;
 		}
 
-		BuildBeamCenters(Source, *Particle, *BeamData, true, Centers, Tapers);
+		BuildBeamCenters(Source, *Particle, *BeamData, true, false, Centers, Tapers);
 		for (int32 SheetIndex = 0; SheetIndex < std::max(1, Source.Sheets); ++SheetIndex)
 		{
 			AppendBeamSheet(Source, *Particle, Centers, Tapers, SheetIndex, Staging.Vertices, Staging.Indices);
@@ -409,10 +430,28 @@ int32 FDynamicBeam2EmitterData::FillData_Noise()
 
 int32 FDynamicBeam2EmitterData::FillData_InterpolatedNoise()
 {
-	// UE keeps a distinct path for interpolation + noise. The Jungle adapter uses
-	// the same read-only replay payloads and applies both interpolation points and
-	// noise samples in BuildBeamCenters, leaving RHI buffer layout out of this layer.
-	return FillData_Noise();
+	TArray<FVector> Centers;
+	TArray<float> Tapers;
+	FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
+	const int32 InitialVertexCount = static_cast<int32>(Staging.Vertices.size());
+
+	for (int32 ActiveIndex = 0; ActiveIndex < Source.ActiveParticleCount; ++ActiveIndex)
+	{
+		const FBaseParticle* Particle = GetReplayActiveParticle(Source, ActiveIndex);
+		const FBeam2TypeDataPayload* BeamData = GetReplayPayload<FBeam2TypeDataPayload>(Source, Particle, Source.BeamDataOffset);
+		if (!Particle || !BeamData)
+		{
+			continue;
+		}
+
+		BuildBeamCenters(Source, *Particle, *BeamData, true, true, Centers, Tapers);
+		for (int32 SheetIndex = 0; SheetIndex < std::max(1, Source.Sheets); ++SheetIndex)
+		{
+			AppendBeamSheet(Source, *Particle, Centers, Tapers, SheetIndex, Staging.Vertices, Staging.Indices);
+		}
+	}
+
+	return static_cast<int32>(Staging.Vertices.size()) - InitialVertexCount;
 }
 
 void FDynamicTrailsEmitterData::DoBufferFill()

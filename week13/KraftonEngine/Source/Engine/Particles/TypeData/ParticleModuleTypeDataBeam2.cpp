@@ -25,7 +25,7 @@ namespace
 
 	FVector GetBeamEmitterLocation(const FParticleEmitterInstance& Owner)
 	{
-		return Owner.Component ? Owner.Component->GetWorldLocation() : Owner.Location;
+		return Owner.Component ? Owner.Component->GetWorldLocation() : FVector::ZeroVector;
 	}
 
 	FVector CubicInterpVector(const FVector& P0, const FVector& T0, const FVector& P1, const FVector& T1, float Alpha)
@@ -490,17 +490,8 @@ void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
 		SourceTangent *= BeamData->SourceStrength;
 		TargetTangent *= BeamData->TargetStrength;
 		const float InvTess = 1.0f / static_cast<float>(InterpolationPoints);
-		int32 InterpIndex = 0;
-		for (; InterpIndex < std::min(InterpSteps, InterpolationPoints); ++InterpIndex)
-		{
-			InterpolatedPoints[InterpIndex] = CubicInterpVector(
-				BeamData->SourcePoint,
-				SourceTangent,
-				BeamData->TargetPoint,
-				TargetTangent,
-				InvTess * static_cast<float>(InterpIndex + 1));
-		}
-		for (; InterpIndex < InterpSteps; ++InterpIndex)
+		const int32 SafeInterpSteps = std::min(InterpSteps, InterpolationPoints);
+		for (int32 InterpIndex = 0; InterpIndex < SafeInterpSteps; ++InterpIndex)
 		{
 			InterpolatedPoints[InterpIndex] = CubicInterpVector(
 				BeamData->SourcePoint,

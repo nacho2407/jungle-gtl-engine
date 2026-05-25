@@ -16,10 +16,6 @@ namespace
 		return FVector::XAxisVector;
 	}
 
-	FVector GetBeamEmitterLocation(const FParticleBeam2EmitterInstance* BeamInst)
-	{
-		return (BeamInst && BeamInst->Component) ? BeamInst->Component->GetWorldLocation() : FVector::ZeroVector;
-	}
 }
 
 UParticleModuleBeamSource::UParticleModuleBeamSource()
@@ -184,8 +180,9 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 	// parameters, emitter instance lookup, and selected source particles.
 	// Jungle does not expose those foundations yet, so these methods are
 	// intentionally stubbed. Do not fall back to Default distribution,
-	// Owner.Location, or any substitute source.
+	// emitter transform, or any substitute source.
 	if (SourceMethod == PEB2STM_Actor ||
+		SourceMethod == PEB2STM_Emitter ||
 		SourceMethod == PEB2STM_Particle)
 	{
 		return false;
@@ -201,9 +198,6 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 				BeamInst->GetBeamSourcePoint(0, BeamData->SourcePoint);
 			}
 		}
-		break;
-	case PEB2STM_Emitter:
-		if (bSpawning || !bLockSource) BeamData->SourcePoint = GetBeamEmitterLocation(BeamInst);
 		break;
 	case PEB2STM_Default:
 		if (bSpawning || !bLockSource) BeamData->SourcePoint = Source.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());

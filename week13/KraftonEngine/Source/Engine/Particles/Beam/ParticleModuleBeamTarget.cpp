@@ -131,7 +131,7 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 	// component parameters, emitter instance lookup, and selected source
 	// particles. Jungle does not expose those foundations yet, so these methods
 	// are intentionally stubbed. Do not fall back to Default distribution,
-	// Owner.Location, or any substitute target.
+	// emitter transform, or any substitute target.
 	if (TargetMethod == PEB2STM_Actor ||
 		TargetMethod == PEB2STM_Emitter ||
 		TargetMethod == PEB2STM_Particle)

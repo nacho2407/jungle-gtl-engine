@@ -69,6 +69,7 @@ void UParticleSystemComponent::ResetSystem()
 {
     ClearRenderData();
     ClearEmitterInstances();
+	CachedWorldTimeSeconds = 0.0f;
 
     bInitialized = false;
 
@@ -256,6 +257,8 @@ void UParticleSystemComponent::TickComponent(
     {
         InitializeSystem();
     }
+
+	CachedWorldTimeSeconds += DeltaTime;
 
 	int32 CalculatedLODIndex = 0;
 	if (Template.Get() && !Template->LODDistances.empty())
