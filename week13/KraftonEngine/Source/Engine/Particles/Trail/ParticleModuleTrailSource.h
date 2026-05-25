@@ -33,6 +33,7 @@ public:
 	UParticleModuleTrailSource();
 	void InitializeDefaults();
 	void Serialize(FArchive& Ar) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	bool ResolveSourceOffset(int32 InTrailIdx, FParticleEmitterInstance* InEmitterInst, FVector& OutSourceOffset);
 };

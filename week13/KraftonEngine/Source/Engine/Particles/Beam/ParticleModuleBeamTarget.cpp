@@ -1,4 +1,5 @@
 #include "Particles/Beam/ParticleModuleBeamTarget.h"
+#include "Object/GarbageCollection.h"
 
 #include "Particles/ParticleEmitterInstances.h"
 #include "Particles/TypeData/ParticleModuleTypeDataBeam2.h"
@@ -221,6 +222,14 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 	}
 
 	return true;
+}
+
+void UParticleModuleBeamTarget::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UParticleModuleBeamBase::AddReferencedObjects(Collector);
+	Target.AddReferencedObjects(Collector);
+	TargetTangent.AddReferencedObjects(Collector);
+	TargetStrength.AddReferencedObjects(Collector);
 }
 
 void UParticleModuleBeamTarget::Serialize(FArchive& Ar)

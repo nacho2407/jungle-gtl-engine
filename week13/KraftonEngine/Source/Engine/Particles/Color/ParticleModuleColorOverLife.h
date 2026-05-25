@@ -27,6 +27,7 @@ public:
 	virtual void Update(const FUpdateContext& Context) override;
 
 	virtual void Serialize(FArchive& Ar) override;
+	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(const FPropertyChangedEvent& PropertyChangedEvent) override;

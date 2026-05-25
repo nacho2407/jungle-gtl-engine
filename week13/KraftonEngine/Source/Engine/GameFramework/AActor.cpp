@@ -532,10 +532,10 @@ void AActor::AddReferencedObjects(FReferenceCollector& Collector)
 
     for (UActorComponent* Component : OwnedComponents)
     {
-        Collector.AddReferencedObject(Component);
+        Collector.AddReferencedObject(Component, "AActor.OwnedComponents");
     }
 
-    Collector.AddReferencedObject(RootComponent);
+    Collector.AddReferencedObject(RootComponent, "AActor.RootComponent");
 }
 
 void AActor::BeginDestroy()

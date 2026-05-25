@@ -70,7 +70,7 @@ void FParticleSystemSceneProxy::AddReferencedObjects(FReferenceCollector& Collec
 	{
 		if (BufferPtr)
 		{
-			Collector.AddReferencedObject(BufferPtr->Material);
+			Collector.AddReferencedObject(BufferPtr->Material, "FParticleSystemSceneProxy.EmitterBuffer.Material");
 		}
 	}
 	for (FDynamicEmitterDataBase* EmitterData : CachedEmitterData)
@@ -80,11 +80,14 @@ void FParticleSystemSceneProxy::AddReferencedObjects(FReferenceCollector& Collec
 			continue;
 		}
 		const FDynamicEmitterReplayDataBase& Source = EmitterData->GetSource();
-		if (Source.eEmitterType == EDynamicEmitterType::Sprite || Source.eEmitterType == EDynamicEmitterType::Mesh)
+		if (Source.eEmitterType == EDynamicEmitterType::Sprite ||
+			Source.eEmitterType == EDynamicEmitterType::Mesh ||
+			Source.eEmitterType == EDynamicEmitterType::Beam ||
+			Source.eEmitterType == EDynamicEmitterType::Ribbon)
 		{
 			const FDynamicSpriteEmitterReplayDataBase& SpriteSource = static_cast<const FDynamicSpriteEmitterReplayDataBase&>(Source);
-			Collector.AddReferencedObject(SpriteSource.Material);
-			Collector.AddReferencedObject(SpriteSource.RequiredModule);
+			Collector.AddReferencedObject(SpriteSource.Material, "FParticleSystemSceneProxy.DynamicData.Material");
+			Collector.AddReferencedObject(SpriteSource.RequiredModule, "FParticleSystemSceneProxy.DynamicData.RequiredModule");
 		}
 	}
 }

@@ -5,6 +5,8 @@
 #include "Core/Types/EngineTypes.h"
 #include "Math/RandomStream.h"
 
+class FReferenceCollector;
+
 #include "Source/Engine/Distributions/DistributionFloat.generated.h"
 
 UCLASS(abstract)
@@ -76,6 +78,8 @@ public:
 	bool IsCreated() const { return Distribution != nullptr; }
 
 	float GetValue(float Time = 0.0f, UObject* Data = nullptr, struct FRandomStream* InRandomStream = nullptr) const;
+
+	void AddReferencedObjects(FReferenceCollector& Collector) const;
 
 	bool Serialize(FArchive& Ar);
 

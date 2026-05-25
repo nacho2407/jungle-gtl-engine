@@ -41,6 +41,7 @@ void FStructProperty::AddReferencedObjects(void* ValuePtr, FReferenceCollector& 
     for (const FProperty* Child : Children)
     {
         if (!Child) continue;
+        FScopedReferenceName ChildReferenceScope(Collector, Child->Name);
         Child->AddReferencedObjects(Child->GetValuePtrFor(ValuePtr), Collector);
     }
 }

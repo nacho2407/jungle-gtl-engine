@@ -1,4 +1,5 @@
-﻿#include "ParticleModuleColorOverLife.h"
+﻿#include "Object/GarbageCollection.h"
+#include "ParticleModuleColorOverLife.h"
 #include "Particles/ParticleHelper.h"
 #include "Particles/ParticleEmitterInstances.h"
 #include "Serialization/Archive.h"
@@ -58,6 +59,13 @@ void UParticleModuleColorOverLife::Update(const FUpdateContext& Context)
 		}
 	}
 	END_UPDATE_LOOP
+}
+
+void UParticleModuleColorOverLife::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UParticleModuleColorBase::AddReferencedObjects(Collector);
+	ColorOverLife.AddReferencedObjects(Collector);
+	AlphaOverLife.AddReferencedObjects(Collector);
 }
 
 void UParticleModuleColorOverLife::Serialize(FArchive& Ar)

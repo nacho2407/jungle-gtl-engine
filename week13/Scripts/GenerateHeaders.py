@@ -1644,13 +1644,22 @@ def find_reflected_headers(
         reflected_decls: list[tuple[str, str, str | None, int | None]] = []
         for match in REFLECTED_DECL_RE.finditer(scan_text):
             class_name = match.group("name")
+            super_name = match.group("super")
             brace_start = scan_text.find("{", match.end())
             if brace_start < 0:
-                reflected_decls.append((match.group("kind"), class_name, match.group("super"), None))
+                reflected_decls.append((match.group("kind"), class_name, super_name, None))
                 continue
             brace_end = find_matching(scan_text, brace_start, "{", "}")
             line = find_generated_body_line(scan_text, brace_start + 1, brace_end) if brace_end >= 0 else None
-            reflected_decls.append((match.group("kind"), class_name, match.group("super"), line))
+            reflected_decls.append((match.group("kind"), class_name, super_name, line))
+
+        for kind, class_name, super_name, _ in reflected_decls:
+            if kind == "STRUCT" and super_name:
+                super_short_name = super_name.rsplit("::", 1)[-1]
+                if super_name not in known_structs and super_short_name not in known_structs:
+                    warnings.append(
+                        f"{header.relative_to(root)}: error: {class_name}: USTRUCT super '{super_name}' is not reflected"
+                    )
 
         declarations = [name for _, name, _, _ in reflected_decls]
         properties_by_class, property_warnings = parse_uproperties(scan_text, enums, known_structs)
@@ -1748,6 +1757,19 @@ def render_generated_header(item: ReflectedHeader, root: Path) -> str:
                     "    static FClassRegistrar s_Registrar; \\",
                     "    static UClass* StaticClass() { return &StaticClassInstance; } \\",
                     "    UClass* GetClass() const override { return StaticClass(); } \\",
+                    "    static void RegisterProperties(UStruct* Struct); \\",
+                    "    static void RegisterFunctions(UStruct* Struct);",
+                    "",
+                ]
+            )
+        elif reflected_type.kind == "STRUCT" and reflected_type.super_name:
+            lines.extend(
+                [
+                    f"#define {macro_name} \\",
+                    f"    using Super = {reflected_type.super_name}; \\",
+                    "    static UStruct StaticStructInstance; \\",
+                    "    static FStructRegistrar s_StructRegistrar; \\",
+                    "    static UStruct* StaticStruct() { return &StaticStructInstance; } \\",
                     "    static void RegisterProperties(UStruct* Struct); \\",
                     "    static void RegisterFunctions(UStruct* Struct);",
                     "",
@@ -2185,10 +2207,11 @@ def get_class_flags_expr(reflected_type: ReflectedType) -> str:
 def render_type_registration(reflected_type: ReflectedType) -> str:
     if reflected_type.kind == "STRUCT":
         struct_name = reflected_type.name
+        super_expr = f"&{reflected_type.super_name}::StaticStructInstance" if reflected_type.super_name else "nullptr"
         return (
             f"UStruct {struct_name}::StaticStructInstance(\n"
             f"\t\"{struct_name}\",\n"
-            "\tnullptr,\n"
+            f"\t{super_expr},\n"
             f"\tsizeof({struct_name})\n"
             ");\n"
             f"FStructRegistrar {struct_name}::s_StructRegistrar(&{struct_name}::StaticStructInstance);\n"
@@ -2537,6 +2560,34 @@ def run_self_tests() -> int:
     template_param = " TArray<int> GetItems() const;\n"
     result = find_ufunction_declaration(template_param, 0)
     check("template return parses", result and result[0], "TArray<int> GetItems() const")
+
+    # USTRUCT inheritance must be preserved in generated metadata; otherwise
+    # FStructProperty traversal cannot include inherited reflected fields.
+    fake_struct = ReflectedType(
+        kind="STRUCT",
+        name="FChildStruct",
+        super_name="FBaseStruct",
+        generated_body_line=42,
+        properties=tuple(),
+        functions=tuple(),
+    )
+    fake_header = ReflectedHeader(
+        header=Path("/Project/Source/Test/FChildStruct.h"),
+        generated_header=Path("/Project/Intermediate/Generated/Source/Test/FChildStruct.generated.h"),
+        file_id="Source_Test_FChildStruct_h",
+        class_names=("FChildStruct",),
+        types=(fake_struct,),
+    )
+    check(
+        "USTRUCT generated header emits Super alias",
+        "using Super = FBaseStruct" in render_generated_header(fake_header, Path("/Project")),
+        True,
+    )
+    check(
+        "USTRUCT registration keeps reflected super",
+        "&FBaseStruct::StaticStructInstance" in render_type_registration(fake_struct),
+        True,
+    )
 
     # is_enum_sentinel — exact and suffix matches.
     check("is_enum_sentinel('MAX')", is_enum_sentinel("MAX"), True)

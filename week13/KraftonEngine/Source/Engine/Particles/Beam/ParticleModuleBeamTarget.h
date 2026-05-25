@@ -38,6 +38,7 @@ public:
 	void Spawn(const FSpawnContext& Context) override;
 	void Update(const FUpdateContext& Context) override;
 	void Serialize(FArchive& Ar) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	void GetDataPointers(FParticleEmitterInstance* Owner, const uint8* ParticleBase,
 		int32& CurrentOffset,

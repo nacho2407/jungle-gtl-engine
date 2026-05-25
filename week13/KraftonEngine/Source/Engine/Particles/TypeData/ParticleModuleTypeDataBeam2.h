@@ -74,6 +74,7 @@ public:
 	void Update(const FUpdateContext& Context) override;
 	uint32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) override;
 	void Serialize(FArchive& Ar) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	FParticleEmitterInstance* CreateInstance(UParticleEmitter* InEmitterParent, UParticleSystemComponent& InComponent) override;
 	void CacheModuleInfo(UParticleEmitter* Emitter) override;

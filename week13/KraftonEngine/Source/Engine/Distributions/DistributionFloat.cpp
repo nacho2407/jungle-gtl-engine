@@ -2,6 +2,7 @@
 #include "Math/RandomStream.h"
 #include "Serialization/Archive.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Object/GarbageCollection.h"
 #include <cstdlib>
 
 void UDistributionFloat::Serialize(FArchive& Ar)
@@ -26,6 +27,12 @@ float UDistributionFloatUniform::GetValue(float Time, UObject* Data, FRandomStre
 {
 	float Alpha = (InRandomStream ? InRandomStream->FRand() : (float)rand() / (float)RAND_MAX);
 	return FMath::Lerp(Min, Max, Alpha);
+}
+
+
+void FRawDistributionFloat::AddReferencedObjects(FReferenceCollector& Collector) const
+{
+	Collector.AddReferencedObject(Distribution, "FRawDistributionFloat.Distribution");
 }
 
 float FRawDistributionFloat::GetValue(float Time, UObject* Data, FRandomStream* InRandomStream) const
@@ -59,7 +66,7 @@ bool FRawDistributionFloat::Serialize(FArchive& Ar)
 		Distribution = nullptr;
 		if (!ClassName.empty() && ClassName != "None")
 		{
-			UObject* Created = FObjectFactory::Get().Create(ClassName, Ar.IsSaving() ? nullptr : nullptr); // Outer will be set by caller or during create
+			UObject* Created = FObjectFactory::Get().Create(ClassName, nullptr); // Outer will be set by caller or during create
 			Distribution = Cast<UDistributionFloat>(Created);
 		}
 	}

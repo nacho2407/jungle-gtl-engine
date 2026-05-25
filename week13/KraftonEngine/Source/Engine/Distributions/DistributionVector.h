@@ -4,6 +4,8 @@
 #include "Object/Reflection/ObjectMacros.h"
 #include "Core/Types/EngineTypes.h"
 
+class FReferenceCollector;
+
 #include "Source/Engine/Distributions/DistributionVector.generated.h"
 
 UCLASS(abstract)
@@ -91,6 +93,8 @@ public:
 	 * \return 
 	 */
 	FVector GetValue(float Time = 0.0f, UObject* Data = nullptr, struct FRandomStream* InRandomStream = nullptr) const;
+
+	void AddReferencedObjects(FReferenceCollector& Collector) const;
 
 	bool Serialize(FArchive& Ar);
 

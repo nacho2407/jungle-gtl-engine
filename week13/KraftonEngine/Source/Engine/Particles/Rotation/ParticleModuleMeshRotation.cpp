@@ -1,4 +1,5 @@
 #include "Particles/Rotation/ParticleModuleMeshRotation.h"
+#include "Object/GarbageCollection.h"
 
 #include "Component/Primitive/ParticleSystemComponent.h"
 #include "Particles/ParticleEmitterInstances.h"
@@ -29,6 +30,12 @@ void UParticleModuleMeshRotation::Spawn(const FSpawnContext& Context)
 	}
 	Payload->InitRotation = Rotation * 360.0f;
 	Payload->Rotation += Payload->InitRotation;
+}
+
+void UParticleModuleMeshRotation::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UParticleModule::AddReferencedObjects(Collector);
+	StartRotation.AddReferencedObjects(Collector);
 }
 
 void UParticleModuleMeshRotation::Serialize(FArchive& Ar)

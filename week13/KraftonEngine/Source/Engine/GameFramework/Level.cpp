@@ -80,7 +80,7 @@ void ULevel::AddReferencedObjects(FReferenceCollector& Collector)
     {
         if (Actor)
         {
-            Collector.AddReferencedObject(Actor);
+            Collector.AddReferencedObject(Actor, "ULevel.Actors");
         }
     }
 }

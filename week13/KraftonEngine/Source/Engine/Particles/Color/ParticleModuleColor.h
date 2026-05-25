@@ -22,6 +22,7 @@ public:
 	virtual void Spawn(const FSpawnContext& Context) override;
 
 	virtual void Serialize(FArchive& Ar) override;
+	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 #if WITH_EDITOR
 	virtual	void PostEditChangeProperty(const FPropertyChangedEvent& PropertyChangedEvent) override;

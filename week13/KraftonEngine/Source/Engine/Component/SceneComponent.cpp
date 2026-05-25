@@ -448,7 +448,7 @@ void USceneComponent::AddReferencedObjects(FReferenceCollector& Collector)
 
     for (USceneComponent* Child : ChildComponents)
     {
-        Collector.AddReferencedObject(Child);
+        Collector.AddReferencedObject(Child, "USceneComponent.ChildComponents");
     }
 }
 

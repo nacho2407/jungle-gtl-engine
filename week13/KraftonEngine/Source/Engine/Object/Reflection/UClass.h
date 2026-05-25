@@ -99,12 +99,17 @@ public:
 			return;
 		}
 
-		for (const FPendingClassFlags& Pending : GetPendingFlags())
+		TArray<FPendingClassFlags>& PendingFlags = GetPendingFlags();
+		for (auto It = PendingFlags.begin(); It != PendingFlags.end(); )
 		{
+			const FPendingClassFlags& Pending = *It;
 			if (Pending.ClassName && std::strcmp(Pending.ClassName, Class->GetName()) == 0)
 			{
 				Class->AddClassFlags(Pending.Flags);
+				It = PendingFlags.erase(It);
+				continue;
 			}
+			++It;
 		}
 	}
 

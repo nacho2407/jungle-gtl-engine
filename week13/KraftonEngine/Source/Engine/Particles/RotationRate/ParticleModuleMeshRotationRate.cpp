@@ -1,4 +1,5 @@
 #include "Particles/RotationRate/ParticleModuleMeshRotationRate.h"
+#include "Object/GarbageCollection.h"
 
 #include "Particles/ParticleEmitterInstances.h"
 #include "Serialization/Archive.h"
@@ -20,6 +21,12 @@ void UParticleModuleMeshRotationRate::Spawn(const FSpawnContext& Context)
 	const FVector StartRate = StartRotationRate.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData()) * 360.0f;
 	Payload->RotationRateBase += StartRate;
 	Payload->RotationRate += StartRate;
+}
+
+void UParticleModuleMeshRotationRate::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UParticleModule::AddReferencedObjects(Collector);
+	StartRotationRate.AddReferencedObjects(Collector);
 }
 
 void UParticleModuleMeshRotationRate::Serialize(FArchive& Ar)

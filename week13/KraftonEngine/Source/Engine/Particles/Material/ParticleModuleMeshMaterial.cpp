@@ -1,5 +1,6 @@
 #include "Particles/Material/ParticleModuleMeshMaterial.h"
-
+#include "Object/GarbageCollection.h"
+#include "Materials/Material.h"
 #include "Serialization/Archive.h"
 
 UParticleModuleMeshMaterial::UParticleModuleMeshMaterial()
@@ -14,6 +15,15 @@ void UParticleModuleMeshMaterial::ResolveMaterials()
 	// Missing Jungle foundation: material slot resolution by static-mesh section.
 	// System to connect later: StaticMesh section material lookup plus ParticleSystemComponent
 	// material override array.
+}
+
+void UParticleModuleMeshMaterial::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UParticleModule::AddReferencedObjects(Collector);
+	for (UMaterial* Material : MeshMaterials)
+	{
+		Collector.AddReferencedObject(Material, "UParticleModuleMeshMaterial.MeshMaterials");
+	}
 }
 
 void UParticleModuleMeshMaterial::Serialize(FArchive& Ar)

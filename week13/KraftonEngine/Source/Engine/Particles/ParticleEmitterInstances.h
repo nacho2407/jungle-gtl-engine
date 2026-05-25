@@ -13,6 +13,7 @@
 #include "Particles/Event/ParticleModuleEventGenerator.h"
 
 class UParticleSystemComponent;
+class FReferenceCollector;
 class UMaterial;
 class UParticleModuleTypeDataMesh;
 class UParticleModuleTypeDataBeam2;
@@ -118,6 +119,7 @@ struct FParticleEmitterInstance
     virtual void InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent);
     virtual void Init();
     virtual void FreeResources();
+    virtual void AddReferencedObjects(FReferenceCollector& Collector);
 
     virtual bool Resize(int32 NewMaxActiveParticles, bool bSetMaxActiveCount = true);
 
@@ -249,6 +251,7 @@ struct FParticleMeshEmitterInstance : public FParticleEmitterInstance
 
     void InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent) override;
     void Init() override;
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
     bool Resize(int32 NewMaxActiveParticles, bool bSetMaxActiveCount = true) override;
     uint32 RequiredBytes() override;
     void Tick(float DeltaTime, bool bSuppressSpawning) override;
@@ -320,6 +323,7 @@ struct FParticleBeam2EmitterInstance : public FParticleEmitterInstance
 
     void InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent) override;
     void Init() override;
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
     void Tick(float DeltaTime, bool bSuppressSpawning) override;
     void Tick_ModulePostUpdate(float DeltaTime, UParticleLODLevel* CurrentLODLevel) override;
     void SetCurrentLODIndex(int32 InLODIndex, bool bInFullyProcess) override;
@@ -436,6 +440,7 @@ struct FParticleRibbonEmitterInstance : public FParticleTrailsEmitterInstance_Ba
     int32 HeadOnlyParticles = 0;
 
     void InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent) override;
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
     void Tick_RecalculateTangents(float DeltaTime, UParticleLODLevel* CurrentLODLevel) override;
     bool GetSpawnPerUnitAmount(float DeltaTime, int32 InTrailIdx, int32& OutCount, float& OutRate);
     void GetParticleLifetimeAndSize(int32 InTrailIdx, const FBaseParticle* InParticle, bool bInNoLivingParticles, float& OutOneOverMaxLifetime, float& OutSize);

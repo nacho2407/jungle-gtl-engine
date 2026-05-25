@@ -1,4 +1,5 @@
 #include "Particles/TypeData/ParticleModuleTypeDataBeam2.h"
+#include "Object/GarbageCollection.h"
 
 #include "Particles/Beam/ParticleModuleBeamModifier.h"
 #include "Particles/Beam/ParticleModuleBeamNoise.h"
@@ -604,6 +605,14 @@ void UParticleModuleTypeDataBeam2::GetNoiseRange(FVector& NoiseMin, FVector& Noi
 {
 	NoiseMin = FVector::ZeroVector;
 	NoiseMax = FVector::ZeroVector;
+}
+
+void UParticleModuleTypeDataBeam2::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UParticleModuleTypeDataBase::AddReferencedObjects(Collector);
+	Distance.AddReferencedObjects(Collector);
+	TaperFactor.AddReferencedObjects(Collector);
+	TaperScale.AddReferencedObjects(Collector);
 }
 
 void UParticleModuleTypeDataBeam2::Serialize(FArchive& Ar)

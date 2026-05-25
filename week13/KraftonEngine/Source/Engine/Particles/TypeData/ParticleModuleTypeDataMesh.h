@@ -106,4 +106,5 @@ public:
 	bool IsAMeshEmitter() const override { return true; }
 	bool IsMotionBlurEnabled() const;
 	void Serialize(FArchive& Ar) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 };

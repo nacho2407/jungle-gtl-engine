@@ -1,4 +1,5 @@
 #include "Particles/TypeData/ParticleModuleTypeDataMesh.h"
+#include "Object/GarbageCollection.h"
 
 #include "Asset/AssetRegistry.h"
 #include "Mesh/MeshManager.h"
@@ -124,6 +125,13 @@ FParticleEmitterInstance* UParticleModuleTypeDataMesh::CreateInstance(UParticleE
 bool UParticleModuleTypeDataMesh::IsMotionBlurEnabled() const
 {
 	return bOverrideDefaultMotionBlurSettings ? bEnableMotionBlur : false;
+}
+
+void UParticleModuleTypeDataMesh::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UParticleModuleTypeDataBase::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(Mesh, "UParticleModuleTypeDataMesh.Mesh");
+	RollPitchYawRange.AddReferencedObjects(Collector);
 }
 
 void UParticleModuleTypeDataMesh::Serialize(FArchive& Ar)

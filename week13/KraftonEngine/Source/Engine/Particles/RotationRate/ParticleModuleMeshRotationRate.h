@@ -16,4 +16,5 @@ public:
 	UParticleModuleMeshRotationRate();
 	void Spawn(const FSpawnContext& Context) override;
 	void Serialize(FArchive& Ar) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 };

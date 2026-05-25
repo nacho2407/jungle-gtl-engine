@@ -1,4 +1,5 @@
 #include "Particles/Trail/ParticleModuleTrailSource.h"
+#include "Object/GarbageCollection.h"
 
 #include "Serialization/Archive.h"
 
@@ -43,6 +44,12 @@ bool UParticleModuleTrailSource::ResolveSourceOffset(int32 InTrailIdx, FParticle
 	default:
 		return false;
 	}
+}
+
+void UParticleModuleTrailSource::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UParticleModuleTrailBase::AddReferencedObjects(Collector);
+	SourceStrength.AddReferencedObjects(Collector);
 }
 
 void UParticleModuleTrailSource::Serialize(FArchive& Ar)

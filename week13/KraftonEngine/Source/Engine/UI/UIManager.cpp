@@ -1,4 +1,5 @@
 #include "UI/UIManager.h"
+#include "Object/GarbageCollection.h"
 
 #include "Core/Logging/Log.h"
 #include "Input/InputSystem.h"

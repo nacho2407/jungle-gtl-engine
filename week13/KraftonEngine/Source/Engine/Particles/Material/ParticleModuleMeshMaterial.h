@@ -19,5 +19,6 @@ public:
 	UParticleModuleMeshMaterial();
 	EModuleType GetModuleType() const override { return EPMT_General; }
 	void Serialize(FArchive& Ar) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 	void ResolveMaterials();
 };

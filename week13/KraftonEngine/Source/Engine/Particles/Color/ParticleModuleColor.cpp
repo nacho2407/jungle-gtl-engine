@@ -1,4 +1,5 @@
-﻿#include "ParticleModuleColor.h"
+﻿#include "Object/GarbageCollection.h"
+#include "ParticleModuleColor.h"
 #include "Particles/ParticleHelper.h"
 #include "Particles/ParticleEmitterInstances.h"
 
@@ -23,6 +24,13 @@ void UParticleModuleColor::PostEditChangeProperty(const FPropertyChangedEvent& P
 #endif
 
 #include "Serialization/Archive.h"
+
+void UParticleModuleColor::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UParticleModuleColorBase::AddReferencedObjects(Collector);
+	StartColor.AddReferencedObjects(Collector);
+	StartAlpha.AddReferencedObjects(Collector);
+}
 
 void UParticleModuleColor::Serialize(FArchive& Ar)
 {

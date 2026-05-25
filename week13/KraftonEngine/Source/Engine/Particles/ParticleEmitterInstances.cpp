@@ -24,6 +24,7 @@
 #include "Mesh/Static/StaticMesh.h"
 #include "Math/Rotator.h"
 #include "Profiling/Stats/Stats.h"
+#include "Object/GarbageCollection.h"
 
 #include <algorithm>
 #include <cassert>
@@ -166,6 +167,14 @@ namespace
 FParticleEmitterInstance::~FParticleEmitterInstance()
 {
 	FreeResources();
+}
+
+
+void FParticleEmitterInstance::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	Collector.AddReferencedObject(SpriteTemplate, "FParticleEmitterInstance.SpriteTemplate");
+	Collector.AddReferencedObject(CurrentLODLevel, "FParticleEmitterInstance.CurrentLODLevel");
+	Collector.AddReferencedObject(CurrentMaterial, "FParticleEmitterInstance.CurrentMaterial");
 }
 
 void FParticleEmitterInstance::InitParameters(
@@ -2199,6 +2208,17 @@ bool FParticleSpriteEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBas
 	return true;
 }
 
+
+void FParticleMeshEmitterInstance::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	FParticleEmitterInstance::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(MeshTypeData, "FParticleMeshEmitterInstance.MeshTypeData");
+	for (UMaterial* Material : CurrentMaterials)
+	{
+		Collector.AddReferencedObject(Material, "FParticleMeshEmitterInstance.CurrentMaterials");
+	}
+}
+
 void FParticleMeshEmitterInstance::InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent)
 {
 	FParticleEmitterInstance::InitParameters(InTemplate, InComponent);
@@ -2650,6 +2670,18 @@ namespace
 			TaperValues, NoiseDistanceScale, SourceModifier, TargetModifier);
 		return BeamData;
 	}
+}
+
+
+void FParticleBeam2EmitterInstance::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	FParticleEmitterInstance::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(BeamTypeData, "FParticleBeam2EmitterInstance.BeamTypeData");
+	Collector.AddReferencedObject(BeamModule_Source, "FParticleBeam2EmitterInstance.BeamModule_Source");
+	Collector.AddReferencedObject(BeamModule_Target, "FParticleBeam2EmitterInstance.BeamModule_Target");
+	Collector.AddReferencedObject(BeamModule_Noise, "FParticleBeam2EmitterInstance.BeamModule_Noise");
+	Collector.AddReferencedObject(BeamModule_SourceModifier, "FParticleBeam2EmitterInstance.BeamModule_SourceModifier");
+	Collector.AddReferencedObject(BeamModule_TargetModifier, "FParticleBeam2EmitterInstance.BeamModule_TargetModifier");
 }
 
 void FParticleBeam2EmitterInstance::InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent)
@@ -3679,6 +3711,15 @@ bool FParticleTrailsEmitterInstance_Base::GetParticleInTrail(bool bSkipStartingP
 	}
 
 	return false;
+}
+
+
+void FParticleRibbonEmitterInstance::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	FParticleTrailsEmitterInstance_Base::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(TrailTypeData, "FParticleRibbonEmitterInstance.TrailTypeData");
+	Collector.AddReferencedObject(SpawnPerUnitModule, "FParticleRibbonEmitterInstance.SpawnPerUnitModule");
+	Collector.AddReferencedObject(SourceModule, "FParticleRibbonEmitterInstance.SourceModule");
 }
 
 void FParticleRibbonEmitterInstance::InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent)

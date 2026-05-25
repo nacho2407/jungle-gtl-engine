@@ -1,4 +1,5 @@
-﻿#include "ParticleModuleLocation.h"
+﻿#include "Object/GarbageCollection.h"
+#include "ParticleModuleLocation.h"
 #include "Particles/ParticleHelper.h"
 #include "Particles/ParticleEmitterInstances.h"
 #include "Core/Logging/Log.h"
@@ -26,6 +27,12 @@ void UParticleModuleLocation::PostEditChangeProperty(const FPropertyChangedEvent
 #endif
 
 #include "Serialization/Archive.h"
+
+void UParticleModuleLocation::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UParticleModuleLocationBase::AddReferencedObjects(Collector);
+	StartLocation.AddReferencedObjects(Collector);
+}
 
 void UParticleModuleLocation::Serialize(FArchive& Ar)
 {

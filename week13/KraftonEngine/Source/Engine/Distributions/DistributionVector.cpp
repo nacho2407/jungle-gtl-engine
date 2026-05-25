@@ -2,6 +2,7 @@
 #include "Math/RandomStream.h"
 #include "Serialization/Archive.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Object/GarbageCollection.h"
 #include <cstdlib>
 
 void UDistributionVector::Serialize(FArchive& Ar)
@@ -40,6 +41,12 @@ FVector UDistributionVectorUniform::GetValue(float Time, UObject* Data, FRandomS
 	Result.Y = FMath::Lerp(Min.Y, Max.Y, AlphaY);
 	Result.Z = FMath::Lerp(Min.Z, Max.Z, AlphaZ);
 	return Result;
+}
+
+
+void FRawDistributionVector::AddReferencedObjects(FReferenceCollector& Collector) const
+{
+	Collector.AddReferencedObject(Distribution, "FRawDistributionVector.Distribution");
 }
 
 FVector FRawDistributionVector::GetValue(float Time, UObject* Data, FRandomStream* InRandomStream) const

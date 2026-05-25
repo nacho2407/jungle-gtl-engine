@@ -38,6 +38,7 @@ public:
 	void Update(const FUpdateContext& Context) override;
 	uint32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) override;
 	void Serialize(FArchive& Ar) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	void GetDataPointers(FParticleEmitterInstance* Owner, const uint8* ParticleBase,
 		int32& CurrentOffset,

@@ -9,7 +9,31 @@
 
 #include <algorithm>
 
-void FReferenceCollector::AddReferencedObject(UObject* Object)
+namespace
+{
+    FString DescribeObjectForGC(const UObject* Object)
+    {
+        if (!Object)
+        {
+            return FString("<null>");
+        }
+
+        FString Result;
+        if (Object->GetClass() && Object->GetClass()->GetName())
+        {
+            Result += Object->GetClass()->GetName();
+        }
+        else
+        {
+            Result += "UObject";
+        }
+        Result += " ";
+        Result += Object->GetName();
+        return Result;
+    }
+}
+
+void FReferenceCollector::AddReferencedObject(UObject* Object, const char* ReferenceName)
 {
     if (!IsValid(Object))
     {
@@ -21,7 +45,11 @@ void FReferenceCollector::AddReferencedObject(UObject* Object)
         return;
     }
 
-    Stack.push_back(Object);
+    Stack.push_back(FGCReferenceEdge{
+        Object,
+        Referencer,
+        ReferenceName ? ReferenceName : CurrentReferenceName
+    });
 }
 
 FGCObject::FGCObject()
@@ -42,6 +70,7 @@ void FGarbageCollector::CollectGarbage()
     }
 
     bIsCollecting = true;
+    LastReferenceEdges.clear();
 
     MarkAllObjectsUnreachable();
     MarkRoots();
@@ -52,6 +81,12 @@ void FGarbageCollector::CollectGarbage()
 
 void FGarbageCollector::MarkObject(UObject* Object)
 {
+    MarkObjectFromEdge(FGCReferenceEdge{ Object, nullptr, "DirectMark" });
+}
+
+void FGarbageCollector::MarkObjectFromEdge(const FGCReferenceEdge& Edge)
+{
+    UObject* Object = Edge.Object;
     if (!IsAliveObject(Object))
     {
         return;
@@ -62,17 +97,19 @@ void FGarbageCollector::MarkObject(UObject* Object)
         return;
     }
 
+    LastReferenceEdges[Object] = Edge;
+
     Object->SetFlags(RF_Marked);
     Object->ClearFlags(RF_Unreachable);
 
-    FReferenceCollector Collector;
+    FReferenceCollector Collector(Object);
     Object->AddReferencedObjects(Collector);
 
     while (!Collector.Stack.empty())
     {
-        UObject* ReferencedObject = Collector.Stack.back();
+        FGCReferenceEdge ReferencedEdge = Collector.Stack.back();
         Collector.Stack.pop_back();
-        MarkObject(ReferencedObject);
+        MarkObjectFromEdge(ReferencedEdge);
     }
 }
 
@@ -121,7 +158,7 @@ void FGarbageCollector::MarkRoots()
     {
         if (Object && Object->IsRooted() && !Object->IsPendingKill())
         {
-            Collector.AddReferencedObject(Object);
+            Collector.AddReferencedObject(Object, "RootSet");
         }
     }
 
@@ -135,11 +172,71 @@ void FGarbageCollector::MarkRoots()
 
     while (!Collector.Stack.empty())
     {
-        UObject* Object = Collector.Stack.back();
+        FGCReferenceEdge Edge = Collector.Stack.back();
         Collector.Stack.pop_back();
 
-        MarkObject(Object);
+        if (!Edge.ReferenceName)
+        {
+            Edge.ReferenceName = "ExternalRoot";
+        }
+
+        MarkObjectFromEdge(Edge);
     }
+}
+
+bool FGarbageCollector::GetLastReferenceChain(UObject* Object, TArray<FString>& OutChain) const
+{
+    OutChain.clear();
+
+    if (!Object)
+    {
+        return false;
+    }
+
+    auto It = LastReferenceEdges.find(Object);
+    if (It == LastReferenceEdges.end())
+    {
+        return false;
+    }
+
+    TArray<FString> ReverseChain;
+    TSet<UObject*> Visited;
+    UObject* Current = Object;
+
+    while (Current)
+    {
+        if (Visited.find(Current) != Visited.end())
+        {
+            ReverseChain.push_back(FString("<cycle in GC reference chain>"));
+            break;
+        }
+        Visited.insert(Current);
+
+        auto EdgeIt = LastReferenceEdges.find(Current);
+        if (EdgeIt == LastReferenceEdges.end())
+        {
+            ReverseChain.push_back(DescribeObjectForGC(Current));
+            break;
+        }
+
+        const FGCReferenceEdge& Edge = EdgeIt->second;
+        FString Line = DescribeObjectForGC(Current);
+        if (Edge.ReferenceName && Edge.ReferenceName[0])
+        {
+            Line += " <= ";
+            Line += Edge.ReferenceName;
+        }
+        ReverseChain.push_back(Line);
+
+        Current = Edge.Referencer;
+    }
+
+    for (auto RevIt = ReverseChain.rbegin(); RevIt != ReverseChain.rend(); ++RevIt)
+    {
+        OutChain.push_back(*RevIt);
+    }
+
+    return !OutChain.empty();
 }
 
 void FGarbageCollector::Sweep()

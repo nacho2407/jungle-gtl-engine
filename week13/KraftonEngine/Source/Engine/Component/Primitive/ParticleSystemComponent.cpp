@@ -355,11 +355,39 @@ void UParticleSystemComponent::AddReferencedObjects(FReferenceCollector& Collect
 {
     UPrimitiveComponent::AddReferencedObjects(Collector);
 
-    Collector.AddReferencedObject(Template.Get());
+    Collector.AddReferencedObject(Template.Get(), "UParticleSystemComponent.Template");
 
     for (UMaterial* Material : EmitterMaterials)
     {
-        Collector.AddReferencedObject(Material);
+        Collector.AddReferencedObject(Material, "UParticleSystemComponent.EmitterMaterials");
+    }
+
+    for (FParticleEmitterInstance* Instance : EmitterInstances)
+    {
+        if (Instance)
+        {
+            Instance->AddReferencedObjects(Collector);
+        }
+    }
+
+    for (FDynamicEmitterDataBase* Data : EmitterRenderData)
+    {
+        if (!Data)
+        {
+            continue;
+        }
+
+        const FDynamicEmitterReplayDataBase& Source = Data->GetSource();
+        if (Source.eEmitterType == EDynamicEmitterType::Sprite ||
+            Source.eEmitterType == EDynamicEmitterType::Mesh ||
+            Source.eEmitterType == EDynamicEmitterType::Beam ||
+            Source.eEmitterType == EDynamicEmitterType::Ribbon)
+        {
+            const FDynamicSpriteEmitterReplayDataBase& SpriteSource =
+                static_cast<const FDynamicSpriteEmitterReplayDataBase&>(Source);
+            Collector.AddReferencedObject(SpriteSource.Material, "UParticleSystemComponent.DynamicData.Material");
+            Collector.AddReferencedObject(SpriteSource.RequiredModule, "UParticleSystemComponent.DynamicData.RequiredModule");
+        }
     }
 }
 

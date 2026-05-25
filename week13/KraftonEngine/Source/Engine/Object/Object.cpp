@@ -80,9 +80,9 @@ UObject* UObject::DuplicateWithArchiveContext(UObject* NewOuter, FDuplicateArchi
 
 void UObject::Serialize(FArchive& Ar)
 {
+	(void)Ar;
 	// 기본 UObject는 직렬화할 상태 없음.
-	// UUID/InternalIndex/Name은 직렬화 금지 (복제 시 새로 발급).
-	Ar << ObjectName;
+	// UUID/InternalIndex/ObjectName은 런타임 identity이므로 복제/저장 경로에서 덮어쓰지 않는다.
 }
 
 void UObject::SerializeProperties(FArchive& Ar, uint32 RequiredFlags)
@@ -200,6 +200,7 @@ void UObject::AddReferencedObjects(FReferenceCollector& Collector)
         {
             continue;
         }
+        FScopedReferenceName PropertyScope(Collector, Property->Name);
         Property->AddReferencedObjects(Property->GetValuePtrFor(this), Collector);
     }
 }

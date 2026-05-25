@@ -1,4 +1,5 @@
-﻿#include "ParticleModuleVelocity.h"
+﻿#include "Object/GarbageCollection.h"
+#include "ParticleModuleVelocity.h"
 #include "Particles/ParticleHelper.h"
 #include "Particles/ParticleEmitterInstances.h"
 #include "Component/Primitive/ParticleSystemComponent.h"
@@ -54,6 +55,13 @@ void UParticleModuleVelocity::PostEditChangeProperty(const FPropertyChangedEvent
 #endif
 
 #include "Serialization/Archive.h"
+
+void UParticleModuleVelocity::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UParticleModuleVelocityBase::AddReferencedObjects(Collector);
+	StartVelocity.AddReferencedObjects(Collector);
+	StartVelocityRadial.AddReferencedObjects(Collector);
+}
 
 void UParticleModuleVelocity::Serialize(FArchive& Ar)
 {

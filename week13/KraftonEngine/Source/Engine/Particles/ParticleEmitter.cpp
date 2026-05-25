@@ -475,7 +475,7 @@ void UParticleEmitter::InitializeDefaultSpriteEmitter()
 		Constant->Constant = FVector(1, 1, 1);
 	}
 
-	Color->StartAlpha.Distribution = UObjectManager::Get().CreateObject<UDistributionFloatConstant>();
+	Color->StartAlpha.Distribution = UObjectManager::Get().CreateObject<UDistributionFloatConstant>(Color);
 	if (UDistributionFloatConstant* Constant = Cast<UDistributionFloatConstant>(Color->StartAlpha.Distribution))
 	{
 		Constant->Constant = 1.0f;

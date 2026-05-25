@@ -1,4 +1,5 @@
-﻿#include "ParticleModuleSize.h"
+﻿#include "Object/GarbageCollection.h"
+#include "ParticleModuleSize.h"
 #include "Particles/ParticleHelper.h"
 #include "Particles/ParticleEmitterInstances.h"
 
@@ -21,6 +22,12 @@ void UParticleModuleSize::PostEditChangeProperty(const FPropertyChangedEvent& Pr
 #endif
 
 #include "Serialization/Archive.h"
+
+void UParticleModuleSize::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UParticleModuleSizeBase::AddReferencedObjects(Collector);
+	StartSize.AddReferencedObjects(Collector);
+}
 
 void UParticleModuleSize::Serialize(FArchive& Ar)
 {

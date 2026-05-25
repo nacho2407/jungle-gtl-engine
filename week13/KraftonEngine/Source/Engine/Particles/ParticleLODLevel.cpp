@@ -164,27 +164,28 @@ void UParticleLODLevel::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UObject::AddReferencedObjects(Collector);
 
-    Collector.AddReferencedObject(RequiredModule);
-    Collector.AddReferencedObject(SpawnModule);
-    Collector.AddReferencedObject(TypeDataModule);
+    Collector.AddReferencedObject(RequiredModule, "UParticleLODLevel.RequiredModule");
+    Collector.AddReferencedObject(SpawnModule, "UParticleLODLevel.SpawnModule");
+    Collector.AddReferencedObject(TypeDataModule, "UParticleLODLevel.TypeDataModule");
+    Collector.AddReferencedObject(EventGenerator, "UParticleLODLevel.EventGenerator");
 
     for (UParticleModule* Module : Modules)
     {
-        Collector.AddReferencedObject(Module);
+        Collector.AddReferencedObject(Module, "UParticleLODLevel.Modules");
     }
 
     for (UParticleModule* Module : SpawnModules)
     {
-        Collector.AddReferencedObject(Module);
+        Collector.AddReferencedObject(Module, "UParticleLODLevel.Modules");
     }
 
     for (UParticleModule* Module : UpdateModules)
     {
-        Collector.AddReferencedObject(Module);
+        Collector.AddReferencedObject(Module, "UParticleLODLevel.Modules");
     }
 
     for (UParticleModule* Module : OrbitModules)
     {
-        Collector.AddReferencedObject(Module);
+        Collector.AddReferencedObject(Module, "UParticleLODLevel.Modules");
     }
 }

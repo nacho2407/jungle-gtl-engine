@@ -1,4 +1,5 @@
 #include "Particles/Beam/ParticleModuleBeamModifier.h"
+#include "Object/GarbageCollection.h"
 
 #include "Particles/ParticleEmitterInstances.h"
 #include "Serialization/Archive.h"
@@ -88,6 +89,14 @@ void UParticleModuleBeamModifier::GetDataPointerOffsets(FParticleEmitterInstance
 	SourceModifierOffset = ModifierType == PEB2MT_Source ? CurrentOffset : INDEX_NONE;
 	TargetModifierOffset = ModifierType == PEB2MT_Target ? CurrentOffset : INDEX_NONE;
 	CurrentOffset += sizeof(FBeamParticleModifierPayloadData);
+}
+
+void UParticleModuleBeamModifier::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UParticleModuleBeamBase::AddReferencedObjects(Collector);
+	Position.AddReferencedObjects(Collector);
+	Tangent.AddReferencedObjects(Collector);
+	Strength.AddReferencedObjects(Collector);
 }
 
 void UParticleModuleBeamModifier::Serialize(FArchive& Ar)
