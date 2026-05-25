@@ -226,11 +226,21 @@ void UParticleSystemComponent::TickComponent(
         InitializeSystem();
     }
 
+	int32 TargetLODIndex = PendingLODLevel;
+
     for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(EmitterInstances.size()); ++EmitterIndex)
     {
         FParticleEmitterInstance* Instance = EmitterInstances[EmitterIndex];
         if (Instance)
         {
+			if (Instance->SpriteTemplate)
+			{
+				int32 MaxLODCount = static_cast<int32>(Instance->SpriteTemplate->GetLODLevels().size());
+				int32 ResolvedLOD = std::clamp(TargetLODIndex, 0, MaxLODCount - 1);
+
+				Instance->SetCurrentLODIndex(ResolvedLOD, false);
+			}
+
             Instance->Tick(DeltaTime, false);
             Instance->Tick_MaterialOverrides(EmitterIndex);
         }
