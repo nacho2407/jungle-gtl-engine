@@ -1,4 +1,4 @@
-#include "Object/Property.h"
+﻿#include "Object/Property.h"
 
 #include "Animation/AnimSequence.h"
 #include "Asset/SkeletalMesh.h"
@@ -9,6 +9,7 @@
 #include "Core/ResourceManager.h"
 #include "Object/Class.h"
 #include "Object/Object.h"
+#include "Particle/ParticleAsset.h"
 #include "Render/Resource/Material.h"
 #include "Serialization/Archive.h"
 
@@ -446,6 +447,11 @@ namespace
 			return FPaths::Normalize(AnimSequence->GetAssetPath());
 		}
 
+		if (UParticleSystem* ParticleSystem = Cast<UParticleSystem>(Object))
+		{
+			return FPaths::Normalize(ParticleSystem->GetAssetPath());
+		}
+
 		return Object->GetName();
 	}
 
@@ -474,6 +480,11 @@ namespace
 		if (IsClassChildOf(ExpectedClass, UAnimationAsset::StaticClass()))
 		{
 			return FResourceManager::Get().LoadAnimSequence(Path);
+		}
+
+		if (IsClassChildOf(ExpectedClass, UParticleSystem::StaticClass()))
+		{
+			return FResourceManager::Get().LoadParticleSystem(Path);
 		}
 
 		return nullptr;

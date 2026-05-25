@@ -15,17 +15,17 @@ struct ID3D11Debug;
 struct FRenderTargetSet
 {
 	ID3D11RenderTargetView* SceneColorRTV = nullptr;
-    ID3D11ShaderResourceView* SceneColorSRV = nullptr;
-    ID3D11RenderTargetView* DebugViewModeRTV = nullptr;
-    ID3D11ShaderResourceView* DebugViewModeSRV = nullptr;
-    ID3D11RenderTargetView*       SceneFogRTV = nullptr;
-    ID3D11ShaderResourceView* SceneFogSRV = nullptr;
-    ID3D11RenderTargetView* SceneSandervistanRTV = nullptr;
-    ID3D11ShaderResourceView* SceneSandervistanSRV = nullptr;
-    ID3D11RenderTargetView* ScenePostProcessRTV = nullptr;
-    ID3D11ShaderResourceView* ScenePostProcessSRV = nullptr;
-    ID3D11RenderTargetView*       SceneFXAARTV = nullptr;
-    ID3D11ShaderResourceView*     SceneFXAASRV = nullptr;
+	ID3D11ShaderResourceView* SceneColorSRV = nullptr;
+	ID3D11RenderTargetView* DebugViewModeRTV = nullptr;
+	ID3D11ShaderResourceView* DebugViewModeSRV = nullptr;
+	ID3D11RenderTargetView* SceneFogRTV = nullptr;
+	ID3D11ShaderResourceView* SceneFogSRV = nullptr;
+	ID3D11RenderTargetView* SceneSandervistanRTV = nullptr;
+	ID3D11ShaderResourceView* SceneSandervistanSRV = nullptr;
+	ID3D11RenderTargetView* ScenePostProcessRTV = nullptr;
+	ID3D11ShaderResourceView* ScenePostProcessSRV = nullptr;
+	ID3D11RenderTargetView* SceneFXAARTV = nullptr;
+	ID3D11ShaderResourceView* SceneFXAASRV = nullptr;
 	ID3D11RenderTargetView* SelectionMaskRTV = nullptr;
 	ID3D11ShaderResourceView* SelectionMaskSRV = nullptr;
 	ID3D11Texture2D* EditorIdPickTexture = nullptr;
@@ -34,8 +34,8 @@ struct FRenderTargetSet
 	ID3D11Texture2D* EditorIdPickReadbackTexture = nullptr;
 	ID3D11RenderTargetView* EditorIdPickDebugRTV = nullptr;
 	ID3D11ShaderResourceView* EditorIdPickDebugSRV = nullptr;
-    ID3D11DepthStencilView*   DepthStencilView = nullptr;
-    ID3D11ShaderResourceView* SceneDepthSRV = nullptr;
+	ID3D11DepthStencilView* DepthStencilView = nullptr;
+	ID3D11ShaderResourceView* SceneDepthSRV = nullptr;
 
 
 	float Width = 0.0f;
@@ -97,7 +97,7 @@ public:
 
 	// 단일 Viewport 개선 중 임시 함수
 	// 입력 RenderTarget 에 대한 BeginFrame 설정 수행
-	void BeginViewportFrame(FRenderTargetSet& InRenderTargetSet);
+	void BeginViewportFrame(FRenderTargetSet& InRenderTargetSet, const float* ClearColorOverride = nullptr);
 
 	void OnResizeViewport(int width, int height);
 
@@ -118,4 +118,3 @@ public:
 	float GetViewportHeight() const { return ViewportInfo.Height; }
 	FRenderTargetSet GetBackBufferRenderTargets() const;
 };
-

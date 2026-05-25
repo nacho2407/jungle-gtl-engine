@@ -434,7 +434,14 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
 		SceneViewport.SetRenderTargetSet(&ViewportResource.GetView());
 
 		// 3. Begin
-		Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets());
+		const FColor& ViewerBackgroundColor = static_cast<FViewerViewportClient*>(VC)->GetBackgroundColor();
+		const float ViewerClearColor[4] = {
+			ViewerBackgroundColor.R,
+			ViewerBackgroundColor.G,
+			ViewerBackgroundColor.B,
+			ViewerBackgroundColor.A
+		};
+		Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets(), ViewerClearColor);
 
 		// 4. Bus 세팅
 		Bus.Clear();

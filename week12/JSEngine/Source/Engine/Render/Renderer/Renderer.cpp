@@ -509,9 +509,9 @@ void FRenderer::BeginFrame()
 	}
 }
 
-void FRenderer::BeginViewportFrame(FRenderTargetSet InRenderTargetSet)
+void FRenderer::BeginViewportFrame(FRenderTargetSet InRenderTargetSet, const float* ClearColorOverride)
 {
-	Device.BeginViewportFrame(InRenderTargetSet);
+	Device.BeginViewportFrame(InRenderTargetSet, ClearColorOverride);
 	UseViewportRenderTargets(InRenderTargetSet);
 }
 

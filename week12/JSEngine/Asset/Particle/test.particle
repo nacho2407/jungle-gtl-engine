@@ -1,0 +1,80 @@
+{
+        "AssetType" : "UParticleSystem",
+        "Format" : "JSEngine.ObjectGraph",
+        "Objects" : [{
+            "Id" : 1,
+            "ObjectName" : "UParticleSystem_0",
+            "Properties" : {
+              "Emitters" : [2]
+            },
+            "Type" : "UParticleSystem"
+          }, {
+            "Id" : 2,
+            "ObjectName" : "UParticleEmitter_2",
+            "Properties" : {
+              "LODLevels" : [3]
+            },
+            "Type" : "UParticleEmitter"
+          }, {
+            "Id" : 3,
+            "ObjectName" : "UParticleLODLevel_2",
+            "Properties" : {
+              "Level" : 0,
+              "Modules" : [],
+              "RequiredModule" : 4,
+              "SpawnModule" : 5,
+              "TypeDataModule" : 6,
+              "bEnabled" : true
+            },
+            "Type" : "UParticleLODLevel"
+          }, {
+            "Id" : 4,
+            "ObjectName" : "UParticleModuleRequired_2",
+            "Properties" : {
+              "BoundsScale" : 1.000000,
+              "CoordinateSpace" : 0,
+              "EmitterDuration" : 5.000000,
+              "FixedBoundsMax" : {
+                "X" : 100.000000,
+                "Y" : 100.000000,
+                "Z" : 100.000000
+              },
+              "FixedBoundsMin" : {
+                "X" : -100.000000,
+                "Y" : -100.000000,
+                "Z" : -100.000000
+              },
+              "Material" : "",
+              "MaxEmitterLoops" : 0,
+              "MaxParticles" : 1000,
+              "RandomSeed" : 1,
+              "SortMode" : 1,
+              "bEmitterLoops" : true,
+              "bResetSeedOnEmitterLoop" : true,
+              "bUseFixedBounds" : false,
+              "bUseSeededRandom" : false
+            },
+            "Type" : "UParticleModuleRequired"
+          }, {
+            "Id" : 5,
+            "ObjectName" : "UParticleModuleSpawn_2",
+            "Properties" : {
+              "BurstCount" : 0,
+              "BurstTime" : 0.000000,
+              "RateScale" : 1.000000,
+              "SpawnRate" : 10.000000,
+              "bProcessBurst" : false,
+              "bProcessSpawnRate" : true
+            },
+            "Type" : "UParticleModuleSpawn"
+          }, {
+            "Id" : 6,
+            "ObjectName" : "UParticleModuleTypeDataBase_2",
+            "Properties" : {
+
+            },
+            "Type" : "UParticleModuleTypeDataBase"
+          }],
+        "RootObjectId" : 1,
+        "Version" : 1
+      }

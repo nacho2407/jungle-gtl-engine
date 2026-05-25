@@ -12,6 +12,11 @@
 
 namespace
 {
+	bool IsLiveObject(const UObject* Object)
+	{
+		return Object != nullptr && UObjectManager::Get().ContainsObject(Object);
+	}
+
 	int32 AlignParticleBytes(int32 Value)
 	{
 		return ParticleHelper::AlignParticleSize(Value);
@@ -88,12 +93,23 @@ namespace
 		}
 
 		UParticleModuleTypeDataBase* TypeData = Cache.TypeDataModule;
+		if (TypeData != nullptr && TypeData->bEnabled)
+		{
+			const int32 TypeDataPayloadSize = TypeData->GetRequiredPayloadSize();
+			if (TypeDataPayloadSize > 0)
+			{
+				ParticleBytes = AlignParticleBytes(ParticleBytes);
+				ParticleBytes += TypeDataPayloadSize;
+			}
+
+			AddInstancePayloadOffset(Cache, TypeData, TypeData, InstancePayloadSize);
+		}
 
 		if (Cache.SpawnModule == nullptr)
 		{
 			for (UParticleModule* Module : LODLevel->Modules)
 			{
-				if (Module != nullptr && Module->IsSpawnRateModule())
+				if (Module != nullptr && Module->bEnabled && Module->IsSpawnRateModule())
 				{
 					Cache.SpawnModule = Cast<UParticleModuleSpawn>(Module);
 					break;
@@ -101,17 +117,21 @@ namespace
 			}
 		}
 
-		// 모든 특수 모듈의 payload offset도 실제 실행 모듈 list와 같은 시작 주소 map에 넣어둠(별도 분리 안함)
-		AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
-		AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
-		AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
-		AddInstancePayloadOffset(Cache, Cache.SpawnModule, TypeData, InstancePayloadSize);
-		AddParticlePayloadOffset(Cache, Cache.TypeDataModule, TypeData, ParticleBytes);
-		AddInstancePayloadOffset(Cache, Cache.TypeDataModule, TypeData, InstancePayloadSize);
+		// Required / SpawnModule은 Modules 배열과 별개의 특수 모듈이므로 먼저 offset만 계산
+		if (Cache.RequiredModule != nullptr && Cache.RequiredModule->bEnabled)
+		{
+			AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
+			AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
+		}
+		if (Cache.SpawnModule != nullptr && Cache.SpawnModule->bEnabled)
+		{
+			AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
+			AddInstancePayloadOffset(Cache, Cache.SpawnModule, TypeData, InstancePayloadSize);
+		}
 
 		for (UParticleModule* Module : LODLevel->Modules)
 		{
-			if (Module == nullptr || Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
+			if (Module == nullptr || !Module->bEnabled || Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
 			{
 				continue;
 			}
@@ -312,19 +332,31 @@ bool UParticleModuleCollision::IsUpdateModule() const
 
 UParticleLODLevel::~UParticleLODLevel()
 {
-	UObjectManager::Get().DestroyObject(RequiredModule);
+	if (IsLiveObject(RequiredModule))
+	{
+		UObjectManager::Get().DestroyObject(RequiredModule);
+	}
 	RequiredModule = nullptr;
 
-	UObjectManager::Get().DestroyObject(SpawnModule);
+	if (IsLiveObject(SpawnModule))
+	{
+		UObjectManager::Get().DestroyObject(SpawnModule);
+	}
 	SpawnModule = nullptr;
 
 	for (UParticleModule* Module : Modules)
 	{
-		UObjectManager::Get().DestroyObject(Module);
+		if (Module != RequiredModule && Module != SpawnModule && Module != TypeDataModule && IsLiveObject(Module))
+		{
+			UObjectManager::Get().DestroyObject(Module);
+		}
 	}
 	Modules.clear();
 
-	UObjectManager::Get().DestroyObject(TypeDataModule);
+	if (IsLiveObject(TypeDataModule))
+	{
+		UObjectManager::Get().DestroyObject(TypeDataModule);
+	}
 	TypeDataModule = nullptr;
 }
 
@@ -332,7 +364,10 @@ UParticleEmitter::~UParticleEmitter()
 {
 	for (UParticleLODLevel* LODLevel : LODLevels)
 	{
-		UObjectManager::Get().DestroyObject(LODLevel);
+		if (IsLiveObject(LODLevel))
+		{
+			UObjectManager::Get().DestroyObject(LODLevel);
+		}
 	}
 	LODLevels.clear();
 }
@@ -347,7 +382,10 @@ UParticleSystem::~UParticleSystem()
 {
 	for (UParticleEmitter* Emitter : Emitters)
 	{
-		UObjectManager::Get().DestroyObject(Emitter);
+		if (IsLiveObject(Emitter))
+		{
+			UObjectManager::Get().DestroyObject(Emitter);
+		}
 	}
 	Emitters.clear();
 }

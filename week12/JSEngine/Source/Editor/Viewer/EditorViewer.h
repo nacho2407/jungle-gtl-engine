@@ -40,9 +40,11 @@ public:
 	void SetFileName(const FString& InFileName) { FileName = InFileName; }
 
 protected:
+	UEditorEngine* GetEditorEngine() const { return EditorEngine; }
 	void ClearBaseSelection();
 
 private:
 	FSceneViewport Viewport;
 	FString FileName;
+	UEditorEngine* EditorEngine = nullptr;
 };

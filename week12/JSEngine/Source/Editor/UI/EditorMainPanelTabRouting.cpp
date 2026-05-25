@@ -88,7 +88,8 @@ FEditorViewerWidget* FEditorMainPanel::FindViewerWidgetForTab(const FEditorTabId
 {
 	if (TabId.Kind != EEditorTabKind::SkeletalMeshViewer &&
 		TabId.Kind != EEditorTabKind::StaticMeshViewer &&
-		TabId.Kind != EEditorTabKind::AnimSequenceViewer)
+		TabId.Kind != EEditorTabKind::AnimSequenceViewer &&
+		TabId.Kind != EEditorTabKind::ParticleViewer)
 	{
 		return nullptr;
 	}

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "Particle/ParticleModules.h"
@@ -34,12 +34,23 @@ public:
 	GENERATED_BODY(UParticleLODLevel, UObject)
 	~UParticleLODLevel() override;
 
+	UPROPERTY(DisplayName = "Level")
 	int32 Level = 0;
+	UPROPERTY(DisplayName = "Enabled")
 	bool bEnabled = true;
+	UPROPERTY(DisplayName = "Solo")
+	bool bSolo = false;
 
+	UPROPERTY(ReferenceType = RuntimeObject)
 	UParticleModuleRequired* RequiredModule = nullptr;
+
+	UPROPERTY(ReferenceType = RuntimeObject)
 	UParticleModuleSpawn* SpawnModule = nullptr;
+
+	UPROPERTY(ReferenceType = RuntimeObject)
 	TArray<UParticleModule*> Modules;
+
+	UPROPERTY(ReferenceType = RuntimeObject)
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
 };
 
@@ -50,7 +61,9 @@ public:
 	GENERATED_BODY(UParticleEmitter, UObject)
 	~UParticleEmitter() override;
 
+	UPROPERTY(ReferenceType = RuntimeObject)
 	TArray<UParticleLODLevel*> LODLevels;
+
 	TArray<FParticleLODLevelRuntimeCache> LODLevelRuntimeCaches;
 
 	void CacheEmitterModuleInfo();
@@ -69,9 +82,16 @@ public:
 	UParticleSystem();
 	~UParticleSystem() override;
 
+	UPROPERTY(ReferenceType = RuntimeObject)
 	TArray<UParticleEmitter*> Emitters;
 
 	// 거리 기반 LOD 시스템을 위한 LOD 거리 설정. LOD 0은 항상 0.0f로 설정되어야 함에 유의!
 	UPROPERTY(DisplayName = "LOD Distances")
 	TArray<float> LODDistances;
+
+	void SetAssetPath(const FString& InPath) { AssetPath = InPath; }
+	const FString& GetAssetPath() const { return AssetPath; }
+
+private:
+	FString AssetPath;
 };

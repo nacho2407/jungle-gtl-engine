@@ -9,6 +9,7 @@
 #include "Animation/AnimSequence.h"
 #include "Asset/CurveFloatAsset.h"
 #include "Asset/StaticMesh.h"
+#include "Core/AssetPathPolicy.h"
 #include "Engine/Core/EditorResourcePaths.h"
 #include "Core/ResourceManager.h"
 #include "Runtime/Script/ScriptManager.h"
@@ -442,6 +443,39 @@ bool FEditorContentBrowserWidget::ConsumeReleasedDragPayload(FString& OutPayload
 	return bReleased;
 }
 
+bool FEditorContentBrowserWidget::RevealAsset(const FString& AssetPath)
+{
+	if (AssetPath.empty())
+	{
+		return false;
+	}
+
+	std::filesystem::path TargetPath = FPaths::ToWide(AssetPath);
+	if (!TargetPath.is_absolute())
+	{
+		TargetPath = RootPath / TargetPath;
+	}
+	TargetPath = TargetPath.lexically_normal();
+
+	std::error_code Ec;
+	const bool bTargetIsDirectory = std::filesystem::exists(TargetPath, Ec) && std::filesystem::is_directory(TargetPath, Ec);
+	const std::filesystem::path TargetDirectory = bTargetIsDirectory ? TargetPath : TargetPath.parent_path();
+	if (TargetDirectory.empty())
+	{
+		return false;
+	}
+	if (!IsProjectRootPath(TargetDirectory) && !IsPathAllowed(TargetDirectory))
+	{
+		return false;
+	}
+
+	SearchFilter.clear();
+	NavigateTo(TargetDirectory);
+	SelectedPath = TargetPath;
+	PendingRevealPath = TargetPath;
+	return true;
+}
+
 void FEditorContentBrowserWidget::DrawBrowserContents()
 {
 	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) && ImGui::IsMouseClicked(3))
@@ -478,7 +512,10 @@ void FEditorContentBrowserWidget::DrawBrowserContents()
 		if (ImGui::BeginChild("##ContentBrowserFolders", ImVec2(0.0f, 0.0f), false))
 		{
 			DrawDirectoryNode(RootNode);
-			PendingRevealPath.clear();
+			if (PendingRevealPath == CurrentPath)
+			{
+				PendingRevealPath.clear();
+			}
 		}
 		ImGui::EndChild();
 
@@ -998,10 +1035,18 @@ void FEditorContentBrowserWidget::DrawContentGrid()
 void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, const ImVec2& TileSize)
 {
 	ImGui::PushID(FPaths::ToUtf8(Item.Path.wstring()).c_str());
-	const bool bSelected = SelectedPath == Item.Path;
+	const bool bPendingReveal = PendingRevealPath == Item.Path;
+	const bool bSelected = SelectedPath == Item.Path || bPendingReveal;
 	if (ImGui::Selectable("##ContentTile", bSelected, 0, TileSize))
 	{
 		SelectedPath = Item.Path;
+	}
+	if (bPendingReveal)
+	{
+		SelectedPath = Item.Path;
+		ImGui::SetScrollHereX(0.5f);
+		ImGui::SetScrollHereY(0.5f);
+		PendingRevealPath.clear();
 	}
 
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
@@ -2325,7 +2370,7 @@ bool FEditorContentBrowserWidget::IsSequenceAsset(const FString& Extension) cons
 
 bool FEditorContentBrowserWidget::IsParticleAsset(const FString& Extension) const
 {
-	return Extension == ".particle";
+	return FAssetPathPolicy::IsParticleSystemAssetPath(Extension);
 }
 
 bool FEditorContentBrowserWidget::IsAnimGraphAsset(const FString& Extension) const
