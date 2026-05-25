@@ -107,6 +107,23 @@ void FWorldPrimitivePickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
  */
 bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
+	return RaycastInternal(Ray, 3.402823466e+38F, OutHitResult, OutActor);
+}
+
+bool FWorldPrimitivePickingBVH::Linecast(const FVector& Start, const FVector& End, FHitResult& OutHitResult, AActor*& OutActor) const
+{
+	FVector Dir = End - Start;
+	const float MaxDistance = Dir.Length();
+	if (MaxDistance < 1e-6f)
+	{
+		return false;
+	}
+	Dir /= MaxDistance;
+	return RaycastInternal({ Start, Dir }, MaxDistance, OutHitResult, OutActor);
+}
+
+bool FWorldPrimitivePickingBVH::RaycastInternal(const FRay& Ray, float MaxDistance, FHitResult& OutHitResult, AActor*& OutActor) const
+{
 	struct FTraversalEntry
 	{
 		int32 NodeIndex = -1;
@@ -121,11 +138,18 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 		return false;
 	}
 
+	OutHitResult.Distance = MaxDistance;
+
 	float RootTMin = 0.0f;
 	float RootTMax = 0.0f;
 
 	//루트 노드에 대해 AABB 검사 후 실패했다면, picking될 가능성이 없을 테니 바로 return.
 	if (!FRayUtils::IntersectRayAABB(Ray, Nodes[0].Bounds.Min, Nodes[0].Bounds.Max, RootTMin, RootTMax))
+	{
+		return false;
+	}
+
+	if (RootTMin > MaxDistance)
 	{
 		return false;
 	}
@@ -213,7 +237,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 				}
 			}
 
-			//정렬된 후보들을 순서대로 실제 폴리곤 단위의 정밀 충돌 검사를 시작합니다.
+			//정렬된 후보들을 순세대로 실제 폴리곤 단위의 정밀 충돌 검사를 시작합니다.
 			//여기서부터 narrow phase, mesh BVH입니다.
 			for (int32 EntryIndex = 0; EntryIndex < PrimitiveEntryCount; ++EntryIndex)
 			{

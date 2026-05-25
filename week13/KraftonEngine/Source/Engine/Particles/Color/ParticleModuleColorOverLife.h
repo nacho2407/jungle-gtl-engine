@@ -10,6 +10,7 @@ class UParticleModuleColorOverLife : public UParticleModuleColorBase
 {
 public:
 	GENERATED_BODY()
+	UParticleModuleColorOverLife();
 
 	/** The color to apply to the particle, as a function of the particle RelativeTime. */
 	UPROPERTY(EditAnywhere, Category = "Color")
@@ -31,5 +32,4 @@ public:
 	virtual void PostEditChangeProperty(const FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
-	UParticleModuleColorOverLife();
 };

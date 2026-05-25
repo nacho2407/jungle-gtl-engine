@@ -1,4 +1,5 @@
 #include "Materials/Graph/MaterialHlslGenerator.h"
+#include "Render/Types/RenderConstants.h"
 
 #include <algorithm>
 #include <cctype>
@@ -191,10 +192,16 @@ namespace
 	// 알 수 없는 pin 이름이면 그대로 두고 ConvertExpr가 처리하도록 위임.
 	bool ApplyOutputPinSwizzle(const FString& PinName, FString& InOutExpr, EMaterialGraphPinType& InOutType)
 	{
-		if (PinName == "R") { InOutExpr = "(" + InOutExpr + ").r"; InOutType = EMaterialGraphPinType::Float; return true; }
-		if (PinName == "G") { InOutExpr = "(" + InOutExpr + ").g"; InOutType = EMaterialGraphPinType::Float; return true; }
-		if (PinName == "B") { InOutExpr = "(" + InOutExpr + ").b"; InOutType = EMaterialGraphPinType::Float; return true; }
-		if (PinName == "A") { InOutExpr = "(" + InOutExpr + ").a"; InOutType = EMaterialGraphPinType::Float; return true; }
+		auto Scalar = [&](const char* Sw)
+		{
+			InOutExpr = "(" + InOutExpr + ")" + Sw;
+			InOutType = EMaterialGraphPinType::Float;
+			return true;
+		};
+		if (PinName == "R" || PinName == "Param1") return Scalar(".r");
+		if (PinName == "G" || PinName == "Param2") return Scalar(".g");
+		if (PinName == "B" || PinName == "Param3") return Scalar(".b");
+		if (PinName == "A" || PinName == "Param4") return Scalar(".a");
 		if (PinName == "RGB") { InOutExpr = "(" + InOutExpr + ").rgb"; InOutType = EMaterialGraphPinType::Float3; return true; }
 		return false;
 	}
@@ -231,8 +238,8 @@ namespace
 	class FHlslBuildContext
 	{
 	public:
-		FHlslBuildContext(const FMaterialGraph& InGraph, FMaterialCompileResult& InResult)
-			: Graph(InGraph), Result(InResult) {}
+		FHlslBuildContext(const FMaterialGraph& InGraph, FMaterialCompileResult& InResult, uint32 InPerMaterialSlot)
+			: Graph(InGraph), Result(InResult), PerMaterialSlot(InPerMaterialSlot) {}
 
 		FEmittedNode Emit(const FMaterialGraphNode& Node)
 		{
@@ -465,6 +472,30 @@ namespace
 				ResultType = EMaterialGraphPinType::Float3;
 				break;
 			}
+			case EMaterialGraphNodeType::ParticleSubUV:
+			{
+				// Cols × Rows 아틀라스에서 SubImageIndex(∈[0,1))를 정수 프레임으로 변환,
+				// row/col을 계산해서 셀 내 UV 좌표(Input.UV0)를 합성.
+				const int32 Cols = std::max(1, static_cast<int32>(Node.Value.X));
+				const int32 Rows = std::max(1, static_cast<int32>(Node.Value.Y));
+				const int32 Total = Cols * Rows;
+				char Buf[256];
+				std::snprintf(Buf, sizeof(Buf),
+					"((float2(fmod(floor(Input.SubImageIndex * %d), %d), "
+					"floor(Input.SubImageIndex * %d / %d)) + Input.UV0) "
+					"* float2(1.0f/%d, 1.0f/%d))",
+					Total, Cols, Total, Cols, Cols, Rows);
+				RhsExpr = Buf;
+				ResultType = EMaterialGraphPinType::Float2;
+				break;
+			}
+			case EMaterialGraphNodeType::DynamicParameter:
+			{
+				// 풀 Float4 값. 출력 pin 이름(Param1~4/RGBA)에 따라 swizzle helper가 분배.
+				RhsExpr = "Input.DynamicParam";
+				ResultType = EMaterialGraphPinType::Float4;
+				break;
+			}
 			case EMaterialGraphNodeType::Output:
 			default:
 				break;
@@ -635,7 +666,7 @@ namespace
 			if (Params.empty()) return FString();
 
 			std::stringstream SS;
-			SS << "cbuffer PerMaterial : register(b2)\n";
+			SS << "cbuffer PerMaterial : register(b" << PerMaterialSlot << ")\n";
 			SS << "{\n";
 			uint32 PadIndex = 0;
 			for (const auto& Pair : Params)
@@ -677,6 +708,7 @@ namespace
 	private:
 		const FMaterialGraph&                Graph;
 		FMaterialCompileResult&              Result;
+		uint32                               PerMaterialSlot = ECBSlot::PerShader0;
 		TMap<uint32, FEmittedNode>           Emitted;
 		TArray<FString>                      BodyLines;
 		TMap<FString, FParamDecl>            Params;
@@ -739,7 +771,9 @@ namespace
 		}
 		else
 		{
-			ColorExpr    = OutputInputExpr(Context, Graph, *Output, "Color",    "float3(1, 1, 1)",  EMaterialGraphPinType::Float3, EMaterialGraphPinType::Float3, Result);
+			// 파티클은 PS에서 Color + Emissive를 더하므로, Color 미연결 시 (1,1,1)이면 흰색이 깔리는 버그.
+			// 둘 다 0이 자연스러움 — 사용자가 둘 중 한쪽에만 연결해도 의도대로 결과가 나옴.
+			ColorExpr    = OutputInputExpr(Context, Graph, *Output, "Color",    "float3(0, 0, 0)",  EMaterialGraphPinType::Float3, EMaterialGraphPinType::Float3, Result);
 			EmissiveExpr = OutputInputExpr(Context, Graph, *Output, "Emissive", "float3(0, 0, 0)",  EMaterialGraphPinType::Float3, EMaterialGraphPinType::Float3, Result);
 			OpacityExpr  = OutputInputExpr(Context, Graph, *Output, "Opacity",  "1.0f",             EMaterialGraphPinType::Float,  EMaterialGraphPinType::Float,  Result);
 			UVOffsetExpr = OutputInputExpr(Context, Graph, *Output, "UVOffset", "float2(0, 0)",     EMaterialGraphPinType::Float2, EMaterialGraphPinType::Float2, Result);
@@ -783,7 +817,9 @@ namespace
 		SS << "    float2 UV2;\n";
 		SS << "    float4 ParticleColor;\n";
 		SS << "    float4 VertexColor;\n";
-		SS << "    float Time;\n";
+		SS << "    float  Time;\n";
+		SS << "    float  SubImageIndex;\n";
+		SS << "    float4 DynamicParam;\n";
 		SS << "};\n\n";
 		SS << "struct FMaterialResult\n";
 		SS << "{\n";
@@ -812,9 +848,11 @@ namespace
 		return R"(
 struct PS_Input_MaterialParticle
 {
-    float4 position : SV_POSITION;
-    float2 texcoord : TEXCOORD0;
-    float4 color : COLOR;
+    float4 position       : SV_POSITION;
+    float2 texcoord       : TEXCOORD0;
+    float4 color          : COLOR;
+    float  subImageIndex  : TEXCOORD1;
+    float4 dynamicParam   : TEXCOORD2;
 };
 
 PS_Input_MaterialParticle VS(VS_Input_ParticleQuad quad, VS_Input_ParticleInstance inst)
@@ -832,21 +870,25 @@ PS_Input_MaterialParticle VS(VS_Input_ParticleQuad quad, VS_Input_ParticleInstan
                     + FrameCameraUp * rotUV.y * inst.size;
 
     PS_Input_MaterialParticle output;
-    output.position = mul(float4(worldPos, 1.0f), mul(View, Projection));
-    output.texcoord = quad.cornerUV + 0.5f;
-    output.color = inst.color;
+    output.position       = mul(float4(worldPos, 1.0f), mul(View, Projection));
+    output.texcoord       = quad.cornerUV + 0.5f;
+    output.color          = inst.color;
+    output.subImageIndex  = inst.subImageIndex;
+    output.dynamicParam   = inst.dynamicParam;
     return output;
 }
 
 float4 PS(PS_Input_MaterialParticle input) : SV_TARGET
 {
     FMaterialPixelInput MaterialInput;
-    MaterialInput.UV0 = input.texcoord;
-    MaterialInput.UV1 = float2(0, 0);
-    MaterialInput.UV2 = float2(0, 0);
+    MaterialInput.UV0           = input.texcoord;
+    MaterialInput.UV1           = float2(0, 0);
+    MaterialInput.UV2           = float2(0, 0);
     MaterialInput.ParticleColor = input.color;
-    MaterialInput.VertexColor = input.color;
-    MaterialInput.Time = Time;
+    MaterialInput.VertexColor   = input.color;
+    MaterialInput.Time          = Time;
+    MaterialInput.SubImageIndex = input.subImageIndex;
+    MaterialInput.DynamicParam  = input.dynamicParam;
 
     FMaterialResult Result = EvaluateMaterial(MaterialInput);
     float4 FinalColor = float4(Result.Color + Result.Emissive, Result.Opacity);
@@ -861,10 +903,12 @@ float4 PS(PS_Input_MaterialParticle input) : SV_TARGET
 		return R"(
 struct PS_Input_MaterialMeshParticle
 {
-    float4 position : SV_POSITION;
-    float3 normal : NORMAL;
-    float2 texcoord : TEXCOORD0;
-    float4 color : COLOR;
+    float4 position       : SV_POSITION;
+    float3 normal         : NORMAL;
+    float2 texcoord       : TEXCOORD0;
+    float4 color          : COLOR;
+    float  subImageIndex  : TEXCOORD1;
+    float4 dynamicParam   : TEXCOORD2;
 };
 
 PS_Input_MaterialMeshParticle VS(VS_Input_PNCT vert, VS_Input_MeshParticleInstance inst)
@@ -873,22 +917,26 @@ PS_Input_MaterialMeshParticle VS(VS_Input_PNCT vert, VS_Input_MeshParticleInstan
     float3 worldNormal = mul(float4(vert.normal, 0.0f), inst.transform).xyz;
 
     PS_Input_MaterialMeshParticle output;
-    output.position = mul(worldPos, mul(View, Projection));
-    output.normal = normalize(worldNormal);
-    output.texcoord = vert.texcoord;
-    output.color = vert.color * inst.color;
+    output.position       = mul(worldPos, mul(View, Projection));
+    output.normal         = normalize(worldNormal);
+    output.texcoord       = vert.texcoord;
+    output.color          = vert.color * inst.color;
+    output.subImageIndex  = inst.subImageIndex;
+    output.dynamicParam   = inst.dynamicParam;
     return output;
 }
 
 float4 PS(PS_Input_MaterialMeshParticle input) : SV_TARGET
 {
     FMaterialPixelInput MaterialInput;
-    MaterialInput.UV0 = input.texcoord;
-    MaterialInput.UV1 = float2(0, 0);
-    MaterialInput.UV2 = float2(0, 0);
+    MaterialInput.UV0           = input.texcoord;
+    MaterialInput.UV1           = float2(0, 0);
+    MaterialInput.UV2           = float2(0, 0);
     MaterialInput.ParticleColor = input.color;
-    MaterialInput.VertexColor = input.color;
-    MaterialInput.Time = Time;
+    MaterialInput.VertexColor   = input.color;
+    MaterialInput.Time          = Time;
+    MaterialInput.SubImageIndex = input.subImageIndex;
+    MaterialInput.DynamicParam  = input.dynamicParam;
 
     FMaterialResult Result = EvaluateMaterial(MaterialInput);
     float4 FinalColor = float4(Result.Color + Result.Emissive, Result.Opacity);
@@ -930,12 +978,14 @@ struct MaterialSurfacePSOutput
 MaterialSurfacePSOutput PS(MaterialSurfaceVSOutput input)
 {
     FMaterialPixelInput MaterialInput;
-    MaterialInput.UV0 = input.texcoord;
-    MaterialInput.UV1 = float2(0, 0);
-    MaterialInput.UV2 = float2(0, 0);
+    MaterialInput.UV0           = input.texcoord;
+    MaterialInput.UV1           = float2(0, 0);
+    MaterialInput.UV2           = float2(0, 0);
     MaterialInput.ParticleColor = float4(1, 1, 1, 1);
-    MaterialInput.VertexColor = input.color;
-    MaterialInput.Time = Time;
+    MaterialInput.VertexColor   = input.color;
+    MaterialInput.Time          = Time;
+    MaterialInput.SubImageIndex = 0.0f;
+    MaterialInput.DynamicParam  = float4(0, 0, 0, 0);
 
     FMaterialResult Result = EvaluateMaterial(MaterialInput);
     MaterialSurfacePSOutput Output;
@@ -958,12 +1008,14 @@ PS_Input_UV VS(uint vertexID : SV_VertexID)
 float4 PS(PS_Input_UV input) : SV_TARGET
 {
     FMaterialPixelInput MaterialInput;
-    MaterialInput.UV0 = input.uv;
-    MaterialInput.UV1 = float2(0, 0);
-    MaterialInput.UV2 = float2(0, 0);
+    MaterialInput.UV0           = input.uv;
+    MaterialInput.UV1           = float2(0, 0);
+    MaterialInput.UV2           = float2(0, 0);
     MaterialInput.ParticleColor = float4(1, 1, 1, 1);
-    MaterialInput.VertexColor = float4(1, 1, 1, 1);
-    MaterialInput.Time = Time;
+    MaterialInput.VertexColor   = float4(1, 1, 1, 1);
+    MaterialInput.Time          = Time;
+    MaterialInput.SubImageIndex = 0.0f;
+    MaterialInput.DynamicParam  = float4(0, 0, 0, 0);
 
     FMaterialResult Result = EvaluateMaterial(MaterialInput);
     return float4(Result.Color + Result.Emissive, Result.Opacity);
@@ -977,7 +1029,12 @@ bool FMaterialHlslGenerator::Generate(const FMaterialGraph& Graph, const FMateri
 	FString Guid = Options.MaterialGuid.empty() ? "Material" : SanitizeIdentifier(Options.MaterialGuid);
 	OutResult.GeneratedShaderPath = "Shaders/Generated/Materials/" + Guid + "_" + ToString(Options.Domain) + ".hlsl";
 
-	FHlslBuildContext Context(Graph, OutResult);
+	// ParticleSprite는 ParticleFrameCB가 b2를 점유하므로 PerMaterial은 b3로 밀어야 충돌이 없음.
+	const uint32 PerMaterialSlot = (Options.Domain == EMaterialDomain::ParticleSprite)
+		? ECBSlot::PerShader1   // b3
+		: ECBSlot::PerShader0;  // b2
+
+	FHlslBuildContext Context(Graph, OutResult, PerMaterialSlot);
 	const FString EvaluateMaterial = BuildEvaluateMaterial(Graph, Context, Options.Domain, OutResult);
 
 	if (!OutResult.Errors.empty())

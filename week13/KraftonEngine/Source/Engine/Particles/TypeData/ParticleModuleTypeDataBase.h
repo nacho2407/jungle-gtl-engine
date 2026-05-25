@@ -2,7 +2,7 @@
 #include "Particles/ParticleModule.h"
 
 class UParticleEmitter;
-class IParticleEmitterInstanceOwner;
+class UParticleSystemComponent;
 struct FParticleEmitterInstance;
 
 #include "Source/Engine/Particles/TypeData/ParticleModuleTypeDataBase.generated.h"
@@ -15,7 +15,9 @@ public:
 
 	virtual FParticleEmitterInstance* CreateInstance(
 		UParticleEmitter* InEmitter,
-		IParticleEmitterInstanceOwner& InOwner);
+		UParticleSystemComponent& InComponent);
+
+	virtual void CacheModuleInfo(UParticleEmitter* Emitter);
 
 	virtual EModuleType	GetModuleType() const override { return EPMT_TypeData; }
 

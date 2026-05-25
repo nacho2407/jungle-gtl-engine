@@ -124,6 +124,8 @@ namespace
 		{
 		// 파티클 인스턴스가 있어야만 의미가 있는 입력
 		case EMaterialGraphNodeType::ParticleColor:
+		case EMaterialGraphNodeType::ParticleSubUV:
+		case EMaterialGraphNodeType::DynamicParameter:
 			return Domain == EMaterialDomain::ParticleSprite
 			    || Domain == EMaterialDomain::ParticleMesh;
 
@@ -453,6 +455,9 @@ void FMaterialEditorWidget::RenderNodeBody(FMaterialGraphNode& Node)
 	case EMaterialGraphNodeType::ConstantBiasScale:
 		ImGui::TextDisabled("B:%.2f  S:%.2f", Node.Value.X, Node.Value.Y);
 		break;
+	case EMaterialGraphNodeType::ParticleSubUV:
+		ImGui::TextDisabled("%dx%d", static_cast<int32>(Node.Value.X), static_cast<int32>(Node.Value.Y));
+		break;
 	default:
 		break;
 	}
@@ -548,6 +553,8 @@ void FMaterialEditorWidget::RenderAddNodeMenu(FMaterialGraph& Graph, EMaterialDo
 			AddItem(EMaterialGraphNodeType::Time);
 			AddItem(EMaterialGraphNodeType::ParticleColor);
 			AddItem(EMaterialGraphNodeType::VertexColor);
+			AddItem(EMaterialGraphNodeType::ParticleSubUV);
+			AddItem(EMaterialGraphNodeType::DynamicParameter);
 			ImGui::EndMenu();
 		}
 		ImGui::Separator();
@@ -876,6 +883,15 @@ void FMaterialEditorWidget::RenderInspector(UMaterial* Material, uint32 Selected
 		bChanged |= ImGui::DragFloat("Scale", &Node->Value.Y, 0.01f);
 		ImGui::TextDisabled("Result = (V + Bias) * Scale");
 		break;
+	case EMaterialGraphNodeType::ParticleSubUV:
+	{
+		int32 Cols = static_cast<int32>(Node->Value.X);
+		int32 Rows = static_cast<int32>(Node->Value.Y);
+		if (ImGui::DragInt("Cols", &Cols, 0.1f, 1, 64)) { Node->Value.X = static_cast<float>(Cols); bChanged = true; }
+		if (ImGui::DragInt("Rows", &Rows, 0.1f, 1, 64)) { Node->Value.Y = static_cast<float>(Rows); bChanged = true; }
+		ImGui::TextDisabled("Atlas %dx%d = %d frames. SubImageIndex = RelativeTime.", Cols, Rows, Cols * Rows);
+		break;
+	}
 	case EMaterialGraphNodeType::ComponentMask:
 		if (InputString("Mask", Node->Mask, 16))
 		{

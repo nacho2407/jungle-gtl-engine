@@ -104,6 +104,7 @@ public:
 
 	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Use Legacy Spawning Behavior")
 	bool bUseLegacySpawningBehavior = false;
+	bool bMeshRotationActive = false;
 
 	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Initial Allocation Count", Min="0")
 	int32 InitialAllocationCount = 0;

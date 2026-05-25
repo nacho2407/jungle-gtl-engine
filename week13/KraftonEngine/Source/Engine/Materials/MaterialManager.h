@@ -26,6 +26,7 @@ namespace MatKeys
 	static constexpr const char* Graph = "Graph";
 	static constexpr const char* Compiled = "Compiled";
 	static constexpr const char* GraphHash = "GraphHash";
+	static constexpr const char* GeneratorVersion = "GeneratorVersion";
 	static constexpr const char* Parameters = "Parameters";
 	static constexpr const char* Textures = "Textures";
 }

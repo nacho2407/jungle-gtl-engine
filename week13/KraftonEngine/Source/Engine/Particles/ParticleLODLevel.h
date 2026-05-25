@@ -5,6 +5,7 @@ class UParticleModuleRequired;
 class UParticleModule;
 class UParticleModuleSpawn;
 class UParticleModuleTypeDataBase;
+class UParticleModuleEventGenerator;
 
 #include "Source/Engine/Particles/ParticleLODLevel.generated.h"
 
@@ -13,6 +14,9 @@ class UParticleLODLevel : public UObject
 {
 public:
 	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = Event)
+	UParticleModuleEventGenerator* EventGenerator = nullptr;
 
 	UPROPERTY(Edit, Save, Category="LOD", DisplayName="Level")
 	int32 Level = 0;

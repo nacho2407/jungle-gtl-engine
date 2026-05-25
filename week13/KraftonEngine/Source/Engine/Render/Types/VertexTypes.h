@@ -63,17 +63,20 @@ struct FParticleQuadVertex
 
 struct FParticleSpriteInstance
 {
-	FVector  Position;
-	float    Size;
-	FVector4 Color;
-	float    Rotation;
-	float    Pad[3];
+	FVector  Position;          // INSTANCE_POSITION
+	float    Size;              // INSTANCE_SIZE
+	FVector4 Color;             // INSTANCE_COLOR
+	float    Rotation;          // INSTANCE_ROTATION
+	float    SubImageIndex;     // INSTANCE_SUBIMAGE  — RelativeTime [0,1). 아틀라스 행/열은 머티리얼 그래프가 알고 있음.
+	FVector4 DynamicParam;      // INSTANCE_DYNAMICPARAM — 사용자 정의 4채널.
 };
 
 struct FMeshParticleInstanceVertex
 {
 	FMatrix  Transform;
 	FVector4 Color;
+	float    SubImageIndex;
+	FVector4 DynamicParam;
 };
 
 template<typename VertexType>

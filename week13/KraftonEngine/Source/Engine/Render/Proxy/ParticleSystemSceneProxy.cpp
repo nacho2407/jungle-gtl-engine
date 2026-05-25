@@ -12,6 +12,7 @@
 #include "Engine/Profiling/Stats/ParticleStats.h"
 #include "Object/Object.h"
 #include "Object/GarbageCollection.h"
+#include <cstring>
 
 
 struct FParticleFrameConstants
@@ -49,9 +50,9 @@ FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* I
 	: FPrimitiveSceneProxy(InComponent)
 {
 	ProxyFlags |= EPrimitiveProxyFlags::PerViewportUpdate
-	            | EPrimitiveProxyFlags::Particle;
-	ProxyFlags &= ~(EPrimitiveProxyFlags::SupportsOutline
-	              | EPrimitiveProxyFlags::ShowAABB);
+	            | EPrimitiveProxyFlags::Particle
+	            | EPrimitiveProxyFlags::ShowAABB; // bBoundingVolume 토글 시 AABB 표시 자격.
+	ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
 }
 
 
@@ -211,15 +212,28 @@ void FParticleSystemSceneProxy::BuildQuadGeometry(ID3D11Device* Device)
 
 void FParticleSystemSceneProxy::EnsureEmitterBuffers(ID3D11Device* Device, int32 EmitterCount)
 {
+	for (int32 i = 0; i < EmitterCount && i < static_cast<int32>(EmitterBuffers.size()); ++i)
+	{
+		if (!EmitterBuffers[i] || i >= static_cast<int32>(CachedEmitterData.size()) || !CachedEmitterData[i])
+		{
+			continue;
+		}
+
+		const uint32 RequiredStride = static_cast<uint32>(CachedEmitterData[i]->GetDynamicVertexStride());
+		if (EmitterBuffers[i]->InstanceVB.GetStride() != RequiredStride)
+		{
+			EmitterBuffers[i]->InstanceVB.Create(Device, 64, RequiredStride);
+		}
+	}
+
 	const int32 Current = static_cast<int32>(EmitterBuffers.size());
 	if (Current >= EmitterCount) return;
 
 	for (int32 i = Current; i < EmitterCount; ++i)
 	{
 		const uint32 InstanceStride =
-			(i < static_cast<int32>(CachedEmitterData.size()) && CachedEmitterData[i] &&
-			 CachedEmitterData[i]->GetSource().eEmitterType == EDynamicEmitterType::Mesh)
-			? sizeof(FMeshParticleInstanceVertex)
+			(i < static_cast<int32>(CachedEmitterData.size()) && CachedEmitterData[i])
+			? static_cast<uint32>(CachedEmitterData[i]->GetDynamicVertexStride())
 			: sizeof(FParticleSpriteInstance);
 
 		auto Buf = std::make_unique<FEmitterRenderBuffer>();
@@ -242,12 +256,19 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 	}
 
 	OutBuffer.ActiveParticleCount = Count;
+	OutBuffer.DynamicVertexCount  = 0;
+	OutBuffer.DynamicIndexCount   = 0;
 	OutBuffer.EmitterType         = Source.eEmitterType;
 	OutBuffer.BlendMode           = Source.BlendMode;
+	OutBuffer.Material            = nullptr;
+	OutBuffer.EmitterMeshBuffer   = nullptr;
+	OutBuffer.StagingIndices.clear();
 	OutBuffer.StagingBuffer.resize(Count * Stride);
 
 	if (Source.eEmitterType == EDynamicEmitterType::Sprite
-	 || Source.eEmitterType == EDynamicEmitterType::Mesh)
+	 || Source.eEmitterType == EDynamicEmitterType::Mesh
+	 || Source.eEmitterType == EDynamicEmitterType::Beam
+	 || Source.eEmitterType == EDynamicEmitterType::Ribbon)
 	{
 		const auto& SpriteSource =
 			static_cast<const FDynamicSpriteEmitterReplayDataBase&>(Source);
@@ -264,6 +285,40 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 			if (!OutBuffer.EmitterMeshBuffer)
 				UE_LOG("[ParticleProxy] FillStagingBuffer: MeshBuffer is null on Mesh emitter");
 		}
+	}
+
+	if (Source.eEmitterType == EDynamicEmitterType::Beam
+	 || Source.eEmitterType == EDynamicEmitterType::Ribbon)
+	{
+		const TArray<FParticleBeamTrailVertex>* BuiltVertices = nullptr;
+		const TArray<uint32>* BuiltIndices = nullptr;
+
+		if (Source.eEmitterType == EDynamicEmitterType::Beam)
+		{
+			const auto& BeamData = static_cast<const FDynamicBeam2EmitterData&>(EmitterData);
+			BuiltVertices = &BeamData.GetBuiltVertices();
+			BuiltIndices = &BeamData.GetBuiltIndices();
+		}
+		else
+		{
+			const auto& RibbonData = static_cast<const FDynamicRibbonEmitterData&>(EmitterData);
+			BuiltVertices = &RibbonData.GetBuiltVertices();
+			BuiltIndices = &RibbonData.GetBuiltIndices();
+		}
+
+		const int32 VertexCount = BuiltVertices ? static_cast<int32>(BuiltVertices->size()) : 0;
+		const int32 IndexCount = BuiltIndices ? static_cast<int32>(BuiltIndices->size()) : 0;
+		OutBuffer.ActiveParticleCount = Source.ActiveParticleCount;
+		OutBuffer.DynamicVertexCount = VertexCount;
+		OutBuffer.DynamicIndexCount = IndexCount;
+		OutBuffer.StagingBuffer.resize(VertexCount * Stride);
+		OutBuffer.StagingIndices = BuiltIndices ? *BuiltIndices : TArray<uint32>();
+
+		if (VertexCount > 0)
+		{
+			memcpy(OutBuffer.StagingBuffer.data(), BuiltVertices->data(), VertexCount * Stride);
+		}
+		return;
 	}
 
 	if (Count == 0) return;
@@ -295,6 +350,10 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 			Inst->Size     = P->Size.X * Source.Scale.X;
 			Inst->Color    = P->Color.ToVector4();
 			Inst->Rotation = P->Rotation;
+			// 라이프타임 진행도를 그대로 흘려보냄. 머티리얼 그래프의 ParticleSubUV가 Rows/Cols로 정수 프레임 변환.
+			Inst->SubImageIndex = P->RelativeTime;
+			// 모듈이 아직 없으므로 기본값. 0이어야 `pow(x, DP.r + 1)` 같은 패턴에서 자연스러움.
+			Inst->DynamicParam = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 	}
 	else if (Source.eEmitterType == EDynamicEmitterType::Mesh)
@@ -337,6 +396,8 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 
 			Inst->Transform = WorldTM;
 			Inst->Color     = P->Color.ToVector4();
+			Inst->SubImageIndex = P->RelativeTime;
+			Inst->DynamicParam  = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 	}
 }
@@ -357,7 +418,7 @@ void FParticleSystemSceneProxy::SubmitEmitter(
 		break;
 	case EDynamicEmitterType::Ribbon:
 	case EDynamicEmitterType::Beam:
-		// TODO: 구현 예정
+		SubmitBeamTrailEmitter(Buffer, Device, Context, Frame, OutCmdList);
 		break;
 	}
 }
@@ -427,7 +488,9 @@ void FParticleSystemSceneProxy::SubmitSpriteEmitter(
     {
         Buffer.Material->FlushDirtyBuffers(Device, Context);
 
-        Cmd.Bindings.PerShaderCB[0] = Buffer.Material->GetGPUBufferBySlot(ECBSlot::PerShader0);
+        // ParticleSprite 빌보드 확장은 카메라 축이 필요. ParticleFrameCB(b2)는 반드시 묶고,
+        // 머티리얼 파라미터 PerMaterial은 b3로 분리한다(generator도 ParticleSprite 도메인에서 PerMaterial을 b3로 emit).
+        Cmd.Bindings.PerShaderCB[0] = &Buffer.ParticleFrameCB;
         Cmd.Bindings.PerShaderCB[1] = Buffer.Material->GetGPUBufferBySlot(ECBSlot::PerShader1);
 
         const ID3D11ShaderResourceView* const* MatSRVs       = Buffer.Material->GetCachedSRVs();
@@ -444,6 +507,86 @@ void FParticleSystemSceneProxy::SubmitSpriteEmitter(
     {
         Cmd.Bindings.PerShaderCB[0] = &Buffer.ParticleFrameCB;
     }
+
+	Cmd.BuildSortKey();
+	PARTICLE_STATS_ADD_DRAW_CALL();
+}
+
+
+void FParticleSystemSceneProxy::SubmitBeamTrailEmitter(
+	FEmitterRenderBuffer& Buffer,
+	ID3D11Device* Device, ID3D11DeviceContext* Context,
+	const FFrameContext& Frame, FDrawCommandList& OutCmdList)
+{
+	if (Buffer.DynamicVertexCount <= 0 || Buffer.DynamicIndexCount <= 0)
+	{
+		return;
+	}
+
+	Buffer.InstanceVB.EnsureCapacity(Device, static_cast<uint32>(Buffer.DynamicVertexCount));
+	Buffer.DynamicIB.EnsureCapacity(Device, static_cast<uint32>(Buffer.DynamicIndexCount));
+
+	if (!Buffer.InstanceVB.Update(Context, Buffer.StagingBuffer.data(),
+		static_cast<uint32>(Buffer.DynamicVertexCount)))
+	{
+		UE_LOG("[ParticleProxy] SubmitBeamTrailEmitter: vertex upload failed (vertices=%d)", Buffer.DynamicVertexCount);
+		return;
+	}
+
+	if (!Buffer.DynamicIB.Update(Context, Buffer.StagingIndices.data(),
+		static_cast<uint32>(Buffer.DynamicIndexCount)))
+	{
+		UE_LOG("[ParticleProxy] SubmitBeamTrailEmitter: index upload failed (indices=%d)", Buffer.DynamicIndexCount);
+		return;
+	}
+
+	FShader* Shader = FShaderManager::Get().GetOrCreate(EShaderPath::ParticleBeamTrail);
+	if (!Shader)
+	{
+		UE_LOG("[ParticleProxy] SubmitBeamTrailEmitter: ParticleBeamTrail shader not found (%s)", EShaderPath::ParticleBeamTrail);
+		return;
+	}
+
+	const FParticleRenderState RS = ResolveParticleRenderState(Buffer.BlendMode);
+
+	FDrawCommand& Cmd = OutCmdList.AddCommand();
+	Cmd.Shader = Shader;
+	if (Buffer.Material)
+	{
+		Cmd.Pass                     = Buffer.Material->GetRenderPass();
+		Cmd.RenderState.Blend        = Buffer.Material->GetBlendState();
+		Cmd.RenderState.DepthStencil = Buffer.Material->GetDepthStencilState();
+		Cmd.RenderState.Rasterizer   = Buffer.Material->GetRasterizerState();
+	}
+	else
+	{
+		Cmd.Pass                     = RS.Pass;
+		Cmd.RenderState.Blend        = RS.Blend;
+		Cmd.RenderState.DepthStencil = RS.DepthStencil;
+		Cmd.RenderState.Rasterizer   = ERasterizerState::SolidNoCull;
+	}
+
+	Cmd.Buffer.VB         = Buffer.InstanceVB.GetBuffer();
+	Cmd.Buffer.VBStride   = sizeof(FParticleBeamTrailVertex);
+	Cmd.Buffer.IB         = Buffer.DynamicIB.GetBuffer();
+	Cmd.Buffer.IndexCount = static_cast<uint32>(Buffer.DynamicIndexCount);
+
+	if (Buffer.Material)
+	{
+		Buffer.Material->FlushDirtyBuffers(Device, Context);
+
+		Cmd.Bindings.PerShaderCB[0] = Buffer.Material->GetGPUBufferBySlot(ECBSlot::PerShader0);
+		Cmd.Bindings.PerShaderCB[1] = Buffer.Material->GetGPUBufferBySlot(ECBSlot::PerShader1);
+
+		const ID3D11ShaderResourceView* const* MatSRVs = Buffer.Material->GetCachedSRVs();
+		ID3D11ShaderResourceView* FallbackWhite = FMaterialManager::Get().GetFallbackWhiteSRV();
+
+		for (int32 Slot = 0; Slot < static_cast<int32>(EMaterialTextureSlot::Max); ++Slot)
+		{
+			Cmd.Bindings.SRVs[Slot] = MatSRVs[Slot] ? const_cast<ID3D11ShaderResourceView*>(MatSRVs[Slot])
+				: FallbackWhite;
+		}
+	}
 
 	Cmd.BuildSortKey();
 	PARTICLE_STATS_ADD_DRAW_CALL();

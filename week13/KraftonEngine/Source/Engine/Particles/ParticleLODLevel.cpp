@@ -1,4 +1,4 @@
-#include "Particles/ParticleLODLevel.h"
+﻿#include "Particles/ParticleLODLevel.h"
 
 #include "Particles/Lifetime/ParticleModuleLifetime.h"
 #include "Particles/Location/ParticleModuleLocation.h"
@@ -10,6 +10,7 @@
 #include "Particles/Size/ParticleModuleSize.h"
 #include "Particles/Color/ParticleModuleColor.h"
 #include "Particles/Color/ParticleModuleColorOverLife.h"
+#include "Particles/Event/ParticleModuleEventGenerator.h"
 
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -94,6 +95,14 @@ void UParticleLODLevel::UpdateModuleLists()
 			continue;
 		}
 
+		// UE Cascade keeps Beam/Trail special modules out of the generic sprite
+		// spawn/update loops. Their TypeData emitter instances call them in the
+		// source/target/noise/modifier or trail-source order.
+		if (Module->GetModuleType() == EPMT_Beam || Module->GetModuleType() == EPMT_Trail)
+		{
+			continue;
+		}
+
 		if (Module->bSpawnModule)
 		{
 			SpawnModules.push_back(Module);
@@ -101,6 +110,15 @@ void UParticleLODLevel::UpdateModuleLists()
 		if (Module->bUpdateModule)
 		{
 			UpdateModules.push_back(Module);
+		}
+
+		if (Module->IsA<UParticleModuleTypeDataBase>())
+		{
+			TypeDataModule = Cast<UParticleModuleTypeDataBase>(Module);
+		}
+		else if (Module->IsA<UParticleModuleEventGenerator>())
+		{
+			EventGenerator = Cast<UParticleModuleEventGenerator>(Module);
 		}
 	}
 }
