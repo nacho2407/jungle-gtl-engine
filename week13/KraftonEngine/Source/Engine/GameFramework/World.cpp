@@ -219,6 +219,13 @@ bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor
 	return WorldPrimitivePickingBVH.Raycast(Ray, OutHitResult, OutActor);
 }
 
+bool UWorld::LinecastPrimitives(const FVector& Start, const FVector& End, FHitResult& OutHitResult, AActor*& OutActor) const
+{
+	//혹시라도 BVH 트리가 업데이트 되지 않았다면 업데이트
+	WorldPrimitivePickingBVH.EnsureBuilt(GetActors());
+	return WorldPrimitivePickingBVH.Linecast(Start, End, OutHitResult, OutActor);
+}
+
 bool UWorld::PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 	ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
 {

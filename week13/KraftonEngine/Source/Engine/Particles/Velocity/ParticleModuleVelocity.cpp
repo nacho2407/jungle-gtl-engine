@@ -57,7 +57,7 @@ void UParticleModuleVelocity::PostEditChangeProperty(const FPropertyChangedEvent
 
 void UParticleModuleVelocity::Serialize(FArchive& Ar)
 {
-	UParticleModule::Serialize(Ar);
+	Super::Serialize(Ar);
 
 	int32 Version = 1;
 	Ar << Version;

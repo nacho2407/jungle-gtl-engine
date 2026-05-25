@@ -20,8 +20,12 @@ public:
 	void EnsureBuilt(const TArray<AActor*>& Actors);
 	//트리를 순회해 가장 가까운 primitive hit 결과를 찾습니다.
 	bool Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
+	//두 지점 사이의 가장 가까운 primitive hit 결과를 찾습니다.
+	bool Linecast(const FVector& Start, const FVector& End, FHitResult& OutHitResult, AActor*& OutActor) const;
 
 private:
+	bool RaycastInternal(const FRay& Ray, float MaxDistance, FHitResult& OutHitResult, AActor*& OutActor) const;
+
 	struct FLeaf
 	{
 		FBoundingBox Bounds;

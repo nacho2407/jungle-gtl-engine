@@ -16,6 +16,8 @@
 #include "Particles/Spawn/ParticleModuleSpawn.h"
 #include "Particles/TypeData/ParticleModuleTypeDataBase.h"
 #include "Particles/Velocity/ParticleModuleVelocity.h"
+#include "Particles/Event/ParticleModuleEventGenerator.h"
+#include "Particles/Collision/ParticleModuleCollision.h"
 #include "Materials/Material.h"
 #include "Materials/Graph/MaterialGraphAsset.h"
 #include "Materials/MaterialManager.h"
@@ -165,6 +167,8 @@ namespace
         if (Cast<UParticleModuleVelocity>(Module)) return "Velocity";
         if (Cast<UParticleModuleSize>(Module))     return "Size";
         if (Cast<UParticleModuleColorOverLife>(Module)) return "Color Over Life";
+		if (Cast<UParticleModuleEventGenerator>(Module)) return "Event Generator";
+		if (Cast< UParticleModuleCollision>(Module)) return "Collision";
         if (Cast<UParticleModuleColor>(Module))    return "Color";
         return "Module";
     }
@@ -1035,6 +1039,23 @@ void FParticleSystemEditorWidget::DuplicateEmitter(int32 SourceIndex)
                 N->bClampAlpha = X->bClampAlpha;
                 NewModule = N;
             }
+			else if (auto* X = Cast<UParticleModuleEventGenerator>(M))
+			{
+				auto* N = UObjectManager::Get().CreateObject<UParticleModuleEventGenerator>(DstLOD);
+				N->bGenerateCollisionEvents = X->bGenerateCollisionEvents;
+				N->bGenerateDeathEvents = X->bGenerateDeathEvents;
+				N->bGenerateSpawnEvents = X->bGenerateSpawnEvents;
+				NewModule = N;
+			}
+			else if (auto* X = Cast<UParticleModuleCollision>(M))
+			{
+				auto* N = UObjectManager::Get().CreateObject<UParticleModuleCollision>(DstLOD);
+				N->Radius = X->Radius;
+				N->Restitution = X->Restitution;
+				N->bKillOnCollision = X->bKillOnCollision;
+				NewModule = N;
+			}
+
             if (NewModule)
             {
                 NewModule->bEnabled = M->bEnabled;
@@ -2334,7 +2355,22 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                             L->UpdateModuleLists();
                             return true;
                         });
-
+						AddItem("Event Generator", [](bool bQuery, UParticleLODLevel* L)
+							{
+								if (bQuery) return HasModuleOfType<UParticleModuleEventGenerator>(L);
+								auto* N = UObjectManager::Get().CreateObject<UParticleModuleEventGenerator>(L);
+								L->Modules.push_back(N);
+								L->UpdateModuleLists();
+								return true;
+							});
+						AddItem("Collision", [](bool bQuery, UParticleLODLevel* L)
+							{
+								if (bQuery) return HasModuleOfType<UParticleModuleCollision>(L);
+								auto* N = UObjectManager::Get().CreateObject<UParticleModuleCollision>(L);
+								L->Modules.push_back(N);
+								L->UpdateModuleLists();
+								return true;
+							});
                         ImGui::EndPopup();
                     }
                 }
@@ -2853,6 +2889,32 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             { Color->bClampAlpha = bClamp ? 1 : 0; bChanged = true; }
         }
     }
+	else if (UParticleModuleEventGenerator* Generator = Cast<UParticleModuleEventGenerator>(Module))
+	{
+		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+		if (ImGui::CollapsingHeader("Event"))
+		{
+			bool bGenerateCollisionEvents = Generator->bGenerateCollisionEvents;
+			if (ImGui::Checkbox("Generate Collision Event", &bGenerateCollisionEvents))
+			{
+				Generator->bGenerateCollisionEvents = bGenerateCollisionEvents;
+				bChanged = true;
+			}
+		}
+	}
+	else if (UParticleModuleCollision* Collision = Cast<UParticleModuleCollision>(Module))
+	{
+		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+		if (ImGui::CollapsingHeader("Collision"))
+		{
+			bool bKillOnCollision = Collision->bKillOnCollision;
+			if (ImGui::Checkbox("Kill On Collision", &bKillOnCollision))
+			{
+				Collision->bKillOnCollision = bKillOnCollision;
+				bChanged = true;
+			}
+		}
+	}
     else if (Cast<UParticleModuleTypeDataBase>(Module))
     {
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
