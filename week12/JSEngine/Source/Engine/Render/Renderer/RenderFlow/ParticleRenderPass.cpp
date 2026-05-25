@@ -142,16 +142,6 @@ namespace
         const float Height = std::max(std::fabs(Particle.Size.Y), 0.001f);
         const float HalfW = Width * 0.5f;
         const float HalfH = Height * 0.5f;
-        
-        // TODO: Instancing 검증용 임시 scatter. Core spawn location 확인 후 제거.
-        // NOTE: Location module 구현 전까지는 테스트용으로 놔두겠습니다 -태현-
-        /*
-        const uint32 Hash = InstanceIndex * 1664525u + 1013904223u;
-        const float OffsetX = (static_cast<float>(Hash & 0xFFu) / 255.0f - 0.5f) * 30.0f;
-        const float OffsetY = (static_cast<float>((Hash >> 8) & 0xFFu) / 255.0f - 0.5f) * 30.0f;
-        const float OffsetZ = (static_cast<float>((Hash >> 16) & 0xFFu) / 255.0f - 0.5f) * 30.0f;
-        WorldLocation += FVector(OffsetX, OffsetY, OffsetZ);
-        */
 
         // TODO: FBaseParticle::Rotation 반영
         Instances.push_back({
