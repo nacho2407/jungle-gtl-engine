@@ -4,6 +4,8 @@
 #include "Particles/TypeData/ParticleModuleTypeDataBeam2.h"
 #include "Serialization/Archive.h"
 
+#include <cmath>
+
 UParticleModuleBeamTarget::UParticleModuleBeamTarget()
 	: bTargetAbsolute(false)
 	, bLockTarget(false)
@@ -110,6 +112,7 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 	FBeamParticleModifierPayloadData* ModifierData)
 {
 	if (!BeamData) return false;
+	FBaseParticle& Particle = *reinterpret_cast<FBaseParticle*>(const_cast<uint8*>(ParticleBase));
 
 	// UE resolves Actor / Emitter / Particle target methods through named
 	// component parameters, emitter instance lookup, and selected source
@@ -123,20 +126,76 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 		return false;
 	}
 
-	switch (TargetMethod)
+	if (bSpawning || !bLockTarget)
 	{
-	case PEB2STM_UserSet:
-		if (bSpawning || !bLockTarget) BeamInst->GetBeamTargetPoint(ParticleIndex, BeamData->TargetPoint);
-		if (bSpawning || !bLockTargetTangent) BeamInst->GetBeamTargetTangent(ParticleIndex, BeamData->TargetTangent);
-		if (bSpawning || !bLockTargetStrength) BeamInst->GetBeamTargetStrength(ParticleIndex, BeamData->TargetStrength);
-		break;
-	case PEB2STM_Default:
-		if (bSpawning || !bLockTarget) BeamData->TargetPoint = Target.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-		if (bSpawning || !bLockTargetTangent) BeamData->TargetTangent = TargetTangent.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-		if (bSpawning || !bLockTargetStrength) BeamData->TargetStrength = TargetStrength.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-		break;
-	default:
-		return false;
+		bool bSetTarget = false;
+		if (BeamInst->BeamTypeData && BeamInst->BeamTypeData->BeamMethod == PEB2M_Distance)
+		{
+			float BeamDistance = BeamInst->BeamTypeData->Distance.GetValue(Particle.RelativeTime, Context.GetDistributionData());
+			if (std::fabs(BeamDistance) < 1.0e-4f)
+			{
+				BeamDistance = 0.001f;
+			}
+			FVector Direction = FVector::XAxisVector;
+			BeamData->TargetPoint = BeamData->SourcePoint + Direction * BeamDistance;
+			bSetTarget = true;
+		}
+
+		if (!bSetTarget)
+		{
+			switch (TargetMethod)
+			{
+			case PEB2STM_UserSet:
+				BeamInst->GetBeamTargetPoint(ParticleIndex, BeamData->TargetPoint);
+				bSetTarget = true;
+				break;
+			case PEB2STM_Default:
+				BeamData->TargetPoint = Target.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+				bSetTarget = true;
+				break;
+			default:
+				return false;
+			}
+		}
+	}
+
+	if (bSpawning || !bLockTargetTangent)
+	{
+		bool bSetTargetTangent = false;
+		switch (TargetTangentMethod)
+		{
+		case PEB2STTM_Direct:
+		case PEB2STTM_Emitter:
+			BeamData->TargetTangent = FVector::XAxisVector;
+			bSetTargetTangent = true;
+			break;
+		case PEB2STTM_UserSet:
+			BeamInst->GetBeamTargetTangent(ParticleIndex, BeamData->TargetTangent);
+			bSetTargetTangent = true;
+			break;
+		case PEB2STTM_Distribution:
+			BeamData->TargetTangent = TargetTangent.GetValue(Particle.RelativeTime, Context.GetDistributionData());
+			bSetTargetTangent = true;
+			break;
+		}
+		if (!bSetTargetTangent)
+		{
+			BeamData->TargetTangent = TargetTangent.GetValue(Particle.RelativeTime, Context.GetDistributionData());
+		}
+	}
+
+	if (bSpawning || !bLockTargetStrength)
+	{
+		bool bSetTargetStrength = false;
+		if (TargetTangentMethod == PEB2STTM_UserSet)
+		{
+			BeamInst->GetBeamTargetStrength(ParticleIndex, BeamData->TargetStrength);
+			bSetTargetStrength = true;
+		}
+		if (!bSetTargetStrength)
+		{
+			BeamData->TargetStrength = TargetStrength.GetValue(Particle.RelativeTime, Context.GetDistributionData());
+		}
 	}
 
 	return true;

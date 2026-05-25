@@ -66,6 +66,16 @@ void UParticleModuleBeamSource::Spawn(const FSpawnContext& Context)
 	// If this engine increments ActiveParticles at a different point,
 	// fix SpawnParticles ordering instead of compensating in this module.
 	ResolveSourceData(Context, BeamInst, BeamData, reinterpret_cast<const uint8*>(Context.ParticleBase), CurrentOffset, Context.Owner.ActiveParticles, true, SourceModifier);
+
+	if (BeamData)
+	{
+		Context.ParticleBase->Location = BeamData->SourcePoint - BeamInst->PositionOffsetThisTick;
+		BeamData->Lock_Max_NumNoisePoints = 0;
+		BeamData->StepSize = 0.0;
+		BeamData->Steps = 0;
+		BeamData->TravelRatio = 0.0f;
+		BeamData->TriangleCount = 0;
+	}
 }
 
 void UParticleModuleBeamSource::Update(const FUpdateContext& Context)
@@ -167,16 +177,52 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 	{
 	case PEB2STM_UserSet:
 		if (bSpawning || !bLockSource) BeamInst->GetBeamSourcePoint(ParticleIndex, BeamData->SourcePoint);
-		if (bSpawning || !bLockSourceTangent) BeamInst->GetBeamSourceTangent(ParticleIndex, BeamData->SourceTangent);
-		if (bSpawning || !bLockSourceStrength) BeamInst->GetBeamSourceStrength(ParticleIndex, BeamData->SourceStrength);
 		break;
 	case PEB2STM_Default:
 		if (bSpawning || !bLockSource) BeamData->SourcePoint = Source.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-		if (bSpawning || !bLockSourceTangent) BeamData->SourceTangent = SourceTangent.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-		if (bSpawning || !bLockSourceStrength) BeamData->SourceStrength = SourceStrength.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
 		break;
 	default:
 		return false;
+	}
+
+	if (bSpawning || !bLockSourceTangent)
+	{
+		bool bSetSourceTangent = false;
+		switch (SourceTangentMethod)
+		{
+		case PEB2STTM_Direct:
+		case PEB2STTM_Emitter:
+			BeamData->SourceTangent = FVector::XAxisVector;
+			bSetSourceTangent = true;
+			break;
+		case PEB2STTM_UserSet:
+			BeamInst->GetBeamSourceTangent(ParticleIndex, BeamData->SourceTangent);
+			bSetSourceTangent = true;
+			break;
+		case PEB2STTM_Distribution:
+			BeamData->SourceTangent = SourceTangent.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+			bSetSourceTangent = true;
+			break;
+		}
+
+		if (!bSetSourceTangent)
+		{
+			BeamData->SourceTangent = SourceTangent.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+		}
+	}
+
+	if (bSpawning || !bLockSourceStrength)
+	{
+		bool bSetSourceStrength = false;
+		if (SourceTangentMethod == PEB2STTM_UserSet)
+		{
+			BeamInst->GetBeamSourceStrength(ParticleIndex, BeamData->SourceStrength);
+			bSetSourceStrength = true;
+		}
+		if (!bSetSourceStrength)
+		{
+			BeamData->SourceStrength = SourceStrength.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+		}
 	}
 
 	return true;

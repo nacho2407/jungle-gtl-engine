@@ -254,7 +254,7 @@ void UParticleModuleTypeDataBeam2::Spawn(const FSpawnContext& Context)
 	{
 		BeamData->SourcePoint = Context.Owner.Location;
 		BeamData->SourceTangent = FVector::XAxisVector;
-		BeamData->SourceStrength = 0.0f;
+		BeamData->SourceStrength = 1.0f;
 	}
 
 	if (!bHasTargetModule && BeamMethod == PEB2M_Distance)
@@ -262,7 +262,7 @@ void UParticleModuleTypeDataBeam2::Spawn(const FSpawnContext& Context)
 		const float BeamDistance = Distance.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
 		BeamData->TargetPoint = BeamData->SourcePoint + FVector(BeamDistance, 0.0f, 0.0f);
 		BeamData->TargetTangent = -FVector::XAxisVector;
-		BeamData->TargetStrength = 0.0f;
+		BeamData->TargetStrength = 1.0f;
 	}
 
 	BeamData->Lock_Max_NumNoisePoints = 0;
@@ -284,6 +284,26 @@ void UParticleModuleTypeDataBeam2::Spawn(const FSpawnContext& Context)
 		TargetModifier->UpdatePosition(BeamData->TargetPoint);
 		TargetModifier->UpdateTangent(BeamData->TargetTangent, bTargetTangentAbsolute);
 		TargetModifier->UpdateStrength(BeamData->TargetStrength);
+	}
+
+	if (TaperValues && TaperMethod != PEBTM_None)
+	{
+		int32 TaperCount = InterpolationPoints ? (InterpolationPoints + 1) : 2;
+		if (BeamInst && BeamInst->BeamModule_Noise && BeamInst->BeamModule_Noise->bLowFreq_Enabled)
+		{
+			const int32 Freq = BEAM2_TYPEDATA_FREQUENCY(BeamData->Lock_Max_NumNoisePoints);
+			const int32 NoiseTessellation = BeamInst->BeamModule_Noise->NoiseTessellation ? BeamInst->BeamModule_Noise->NoiseTessellation : 1;
+			TaperCount = (Freq + 1) * NoiseTessellation;
+		}
+
+		const float Increment = TaperCount > 1 ? 1.0f / static_cast<float>(TaperCount - 1) : 0.0f;
+		for (int32 TaperIndex = 0; TaperIndex < TaperCount; ++TaperIndex)
+		{
+			const float CurrStep = static_cast<float>(TaperIndex) * Increment;
+			TaperValues[TaperIndex] =
+				TaperFactor.GetValue(CurrStep, Context.GetDistributionData()) *
+				TaperScale.GetValue(CurrStep, Context.GetDistributionData());
+		}
 	}
 
 	BEAM2_TYPEDATA_SETLOCKED(BeamData->Lock_Max_NumNoisePoints, Speed <= 0.0f);
@@ -436,7 +456,15 @@ void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
 
 		if (NoiseDistanceScale)
 		{
-			*NoiseDistanceScale = 1.0f;
+			if (BeamNoise->FrequencyDistance > 0.0f && Freq > 0)
+			{
+				const float Delta = static_cast<float>(Count) / static_cast<float>(Freq);
+				*NoiseDistanceScale = BeamNoise->NoiseScale.GetValue(Delta, Context.GetDistributionData());
+			}
+			else
+			{
+				*NoiseDistanceScale = 1.0f;
+			}
 		}
 	}
 
@@ -448,7 +476,7 @@ void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
 		SourceTangent *= BeamData->SourceStrength;
 		TargetTangent *= BeamData->TargetStrength;
 		const float InvTess = 1.0f / static_cast<float>(InterpolationPoints);
-		for (int32 InterpIndex = 0; InterpIndex < InterpolationPoints; ++InterpIndex)
+		for (int32 InterpIndex = 0; InterpIndex < std::min(InterpSteps, InterpolationPoints); ++InterpIndex)
 		{
 			InterpolatedPoints[InterpIndex] = CubicInterpVector(
 				BeamData->SourcePoint,
@@ -491,21 +519,6 @@ void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
 		}
 	}
 
-	if (TaperValues)
-	{
-		int32 TaperCount = BeamData->Steps + 1;
-		int32 DummyOffset = Context.Owner.TypeDataOffset;
-		int32 DummyBeamOffset, DummyInterpOffset, DummyNoiseRate, DummyNoiseDelta, DummyTargetNoise, DummyNextNoise, DummyTaperOffset, DummyNoiseScale;
-		GetDataPointerOffsets(&Context.Owner, ParticleBase, DummyOffset, DummyBeamOffset, DummyInterpOffset, DummyNoiseRate, DummyNoiseDelta, DummyTargetNoise, DummyNextNoise, TaperCount, DummyTaperOffset, DummyNoiseScale);
-
-		for (int32 TaperIndex = 0; TaperIndex < TaperCount; ++TaperIndex)
-		{
-			const float Alpha = TaperCount > 1 ? static_cast<float>(TaperIndex) / static_cast<float>(TaperCount - 1) : 0.0f;
-			const float Factor = TaperFactor.GetValue(Alpha, Context.GetDistributionData());
-			const float Scale = TaperScale.GetValue(Alpha, Context.GetDistributionData());
-			TaperValues[TaperIndex] = (TaperMethod == PEBTM_None) ? 1.0f : Factor * Scale;
-		}
-	}
 	END_UPDATE_LOOP;
 }
 
