@@ -1,9 +1,18 @@
 ﻿#include "Particle/ParticleSystemComponent.h"
 
+#include "Camera/ViewportCamera.h"
 #include "GameFramework/World.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
 #include "Particle/ParticleEventManager.h"
+#include "Particle/ParticleAsset.h"
+#include "Particle/ParticleEmitterInstance.h"
+#include <algorithm>
+#include <cstring>
+#include <memory>
 
+// EmitterInstance에서 Component를 직접 참조해서 강하게 결합하는 문제를 해결하기 위해
+// Component의 일부 기능만 인터페이스로 제공하는 InstanceOwner를 EmitterInstance에 넘긴다
+// 위치를 보고 의문이 들 수 있지만 UE도 여기에 위치함
 class UParticleSystemComponent::FInstanceOwner : public IParticleEmitterInstanceOwner
 {
 public:
@@ -31,7 +40,7 @@ public:
 	{
 		if (Component != nullptr)
 		{
-			Component->SpawnEvents.push_back(Event);
+			Component->ReportEventSpawn(Event);
 		}
 	}
 
@@ -39,7 +48,7 @@ public:
 	{
 		if (Component != nullptr)
 		{
-			Component->DeathEvents.push_back(Event);
+			Component->ReportEventDeath(Event);
 		}
 	}
 
@@ -47,7 +56,7 @@ public:
 	{
 		if (Component != nullptr)
 		{
-			Component->CollisionEvents.push_back(Event);
+			Component->ReportEventCollision(Event);
 		}
 	}
 
@@ -55,7 +64,7 @@ public:
 	{
 		if (Component != nullptr)
 		{
-			Component->BurstEvents.push_back(Event);
+			Component->ReportEventBurst(Event);
 		}
 	}
 
@@ -75,6 +84,26 @@ UParticleSystemComponent::~UParticleSystemComponent()
 	ReleaseEmitterInstances();
 }
 
+void UParticleSystemComponent::Serialize(FArchive& Ar)
+{
+	UPrimitiveComponent::Serialize(Ar);
+
+	if (Ar.IsLoading())
+	{
+		ResolveTemplateAssetReference();
+	}
+}
+
+void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
+{
+	UPrimitiveComponent::PostEditProperty(PropertyName);
+
+	if (PropertyName != nullptr && std::strcmp(PropertyName, "TemplateAssetPath") == 0)
+	{
+		ResolveTemplateAssetReference();
+	}
+}
+
 void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 {
 	if (Template == InTemplate)
@@ -83,8 +112,30 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 	}
 
 	Template = InTemplate;
+	// Template 변경 
+	// -> 기존 Emitter Instance 모두 해제 
+	// -> 새 Template 기준으로 EmitterIntsnace 생성
+	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
+
+	// TODO: SetTemplate() 호출 시 TemplateAssetPath를 갱신해야하는가..?
+    // 갱신 가능하면 SetTemplate() 안에서 SoftObjectPath 동기화
+    // 불가능하면 Editor Property 경유로만 Template 설정되도록 명시
+}
+
+void UParticleSystemComponent::ResolveTemplateAssetReference()
+{
+	if (TemplateAssetPath.IsNull())
+	{
+		SetTemplate(nullptr);
+		return;
+	}
+
+	// Asset 담당자의 ParticleSystem Load API가 들어오기 전까지는
+    // 기존 Template을 nullptr로 덮어쓰지 않는다.
+    // TODO: Asset 담당자 API 연동 후:
+    // SetTemplate(ResourceManager.LoadParticleSystem(TemplateAssetPath.GetPath()));
 }
 
 UWorld* UParticleSystemComponent::GetWorld() const
@@ -94,6 +145,13 @@ UWorld* UParticleSystemComponent::GetWorld() const
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
+	SpawnEvents.clear();
+	DeathEvents.clear();
+	CollisionEvents.clear();
+	BurstEvents.clear();
+
+	UpdateLODLevel();
+
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		if (Instance != nullptr)
@@ -102,23 +160,60 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		}
 	}
 
+	// Render Data 수집
 	PackRenderData();
+	
+	// Tick이 끝날 때 Event를 처리
+    FinalizeTickComponent();
 }
 
 void UParticleSystemComponent::FinalizeTickComponent()
 {
-	if (EventManager != nullptr)
+	if (!SpawnEvents.empty() || !DeathEvents.empty() || !CollisionEvents.empty() || !BurstEvents.empty())
 	{
-		if (!SpawnEvents.empty()) EventManager->HandleParticleSpawnEvents(this, SpawnEvents);
-		if (!DeathEvents.empty()) EventManager->HandleParticleDeathEvents(this, DeathEvents);
-		if (!CollisionEvents.empty()) EventManager->HandleParticleCollisionEvents(this, CollisionEvents);
-		if (!BurstEvents.empty()) EventManager->HandleParticleBurstEvents(this, BurstEvents);
+		AParticleEventManager* DispatchManager = EventManager;
+		if (DispatchManager == nullptr)
+		{
+			UWorld* World = GetWorld();
+			DispatchManager = World != nullptr ? World->GetOrCreateParticleEventManager() : nullptr;
+
+			// Caching ParticleEventManager
+            EventManager = DispatchManager;
+		}
+
+		if (DispatchManager != nullptr)
+		{
+			if (!SpawnEvents.empty()) DispatchManager->HandleParticleSpawnEvents(this, SpawnEvents);
+			if (!DeathEvents.empty()) DispatchManager->HandleParticleDeathEvents(this, DeathEvents);
+			if (!CollisionEvents.empty()) DispatchManager->HandleParticleCollisionEvents(this, CollisionEvents);
+			if (!BurstEvents.empty()) DispatchManager->HandleParticleBurstEvents(this, BurstEvents);
+		}
 	}
 
 	SpawnEvents.clear();
 	DeathEvents.clear();
 	CollisionEvents.clear();
 	BurstEvents.clear();
+}
+
+void UParticleSystemComponent::ReportEventSpawn(const FParticleEventSpawnData& Event)
+{
+	SpawnEvents.push_back(Event);
+}
+
+void UParticleSystemComponent::ReportEventDeath(const FParticleEventDeathData& Event)
+{
+	DeathEvents.push_back(Event);
+}
+
+void UParticleSystemComponent::ReportEventCollision(const FParticleEventCollideData& Event)
+{
+	CollisionEvents.push_back(Event);
+}
+
+void UParticleSystemComponent::ReportEventBurst(const FParticleEventBurstData& Event)
+{
+	BurstEvents.push_back(Event);
 }
 
 void UParticleSystemComponent::PackRenderData()
@@ -142,20 +237,32 @@ void UParticleSystemComponent::PackRenderData()
 	}
 }
 
+const FDynamicEmitterDataBase* UParticleSystemComponent::GetEmitterRenderDataSnapshot(int32 SnapshotIndex) const
+{
+	if (SnapshotIndex < 0 || SnapshotIndex >= static_cast<int32>(EmitterRenderData.size()))
+	{
+		return nullptr;
+	}
+
+	return EmitterRenderData[SnapshotIndex];
+}
+
 void UParticleSystemComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();
 
 	const FVector Center = GetWorldLocation();
-	const FVector Extent(1.0f, 1.0f, 1.0f);
-	WorldAABB.Expand(Center - Extent);
-	WorldAABB.Expand(Center + Extent);
+    const FVector Extent(1.0f, 1.0f, 1.0f);
+    WorldAABB.Expand(Center - Extent);
+    WorldAABB.Expand(Center + Extent);
+	// TODO: 모든 emitter 타입의 bounds snapshot 계약이 정해지면 PSC 단위 경계를 계산한다.
 }
 
 bool UParticleSystemComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 {
 	(void)Ray;
 	(void)OutHitResult;
+	// TODO: 모든 emitter 타입의 picking snapshot 계약이 정해지면 PSC 단위 raycast를 구현한다.
 	return false;
 }
 
@@ -184,6 +291,79 @@ void UParticleSystemComponent::ReleaseRenderData()
 	EmitterRenderData.clear();
 }
 
+int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const
+{
+	if (Template == nullptr || EmitterTemplate == nullptr || EmitterTemplate->LODLevels.size() <= 1)
+	{
+		return 0;
+	}
+
+	// 현재 World에 활성화된 Camera 정보를 가져온다
+	const UWorld* World = GetWorld();
+	const FViewportCamera* ActiveCamera = World != nullptr ? World->GetActiveCamera() : nullptr;
+	if (ActiveCamera == nullptr)
+	{
+		return 0;
+	}
+
+	// ParticleSystem Asset의 LOD가 3이라고 하더라도, 특정 Emitter의 LOD가 1이라면 1을 적용.	
+	const int32 ThresholdCount = std::min(
+		static_cast<int32>(EmitterTemplate->LODLevels.size()),
+		static_cast<int32>(Template->LODDistances.size()));
+	if (ThresholdCount <= 1)
+	{
+		return 0;
+	}
+
+	const float Distance = FVector::Distance(GetWorldLocation(), ActiveCamera->GetLocation());
+	float PreviousThreshold = Template->LODDistances[0];
+	int32 SelectedIndex = 0;
+
+	// EmitterTemplate과 ParticleSystem의 LODDistance중 더 작은 Lod count를 선택한다.
+	// 순회하면서 거리를 체크, Threshold보다 더 멀리있다면 갱신, 아니라면 해당 구간이므로 LOD 인덱스 확정 후 반환.
+	for (int32 LODIndex = 1; LODIndex < ThresholdCount; ++LODIndex)
+	{
+		const float Threshold = Template->LODDistances[LODIndex];
+		if (Threshold < 0.0f || Threshold < PreviousThreshold)
+		{
+			// 잘못된 LOD 거리 데이터 이후의 전환은 사용하지 않음.
+			break;
+		}
+
+		if (Distance < Threshold)
+		{
+			break;
+		}
+
+		SelectedIndex = LODIndex;
+		PreviousThreshold = Threshold;
+	}
+
+	return SelectedIndex;
+}
+
+void UParticleSystemComponent::UpdateLODLevel()
+{
+    // TODO: 현재 방식은 거리 기반 LOD 선택 구현
+    // CurrentLODLevelIndex 갱신
+	// LOD 변경 시 EmitterInstance 재생성
+	// 기존 Particle 유지형 LOD 전환은 미구현
+
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance != nullptr &&
+			Instance->SpriteTemplate != nullptr &&
+			Instance->CurrentLODLevelIndex != SelectLODLevelIndex(Instance->SpriteTemplate))
+		{
+			// 선택 LOD가 바뀌면 TypeData 종류와 payload layout도 달라질 수 있으므로 모든 instance를 다시 생성
+			ReleaseRenderData();
+			ReleaseEmitterInstances();
+			CreateEmitterInstances();
+			return;
+		}
+	}
+}
+
 void UParticleSystemComponent::CreateEmitterInstances()
 {
 	if (Template == nullptr)
@@ -200,7 +380,9 @@ void UParticleSystemComponent::CreateEmitterInstances()
 
 		EmitterTemplate->CacheEmitterModuleInfo();
 
-		UParticleLODLevel* LODLevel = EmitterTemplate->LODLevels.empty() ? nullptr : EmitterTemplate->LODLevels[0];
+		// LOD 기반으로 Particle LOD Level 및 TypeData를 가져온다
+		const int32 LODIndex = SelectLODLevelIndex(EmitterTemplate);
+		UParticleLODLevel* LODLevel = EmitterTemplate->LODLevels.empty() ? nullptr : EmitterTemplate->LODLevels[LODIndex];
 		UParticleModuleTypeDataBase* TypeData = LODLevel != nullptr ? LODLevel->TypeDataModule : nullptr;
 
 		if (TypeData == nullptr)
@@ -212,7 +394,7 @@ void UParticleSystemComponent::CreateEmitterInstances()
 			? TypeData->CreateInstance(EmitterTemplate, *InstanceOwner)
 			: new FParticleEmitterInstance(*InstanceOwner);
 
-		if (Instance != nullptr && Instance->Init(EmitterTemplate, 0))
+		if (Instance != nullptr && Instance->Init(EmitterTemplate, LODIndex))
 		{
 			EmitterInstances.push_back(Instance);
 		}

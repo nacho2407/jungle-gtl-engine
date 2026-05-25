@@ -363,7 +363,12 @@ void FEditorViewerWidget::RenderDetachedDocumentChrome(bool& bDockRequested, boo
 	ID3D11ShaderResourceView* HomeIcon = EditorEngine
 		? EditorEngine->GetMainPanel().GetHomeIconResource()
 		: nullptr;
-	DrawHomeChromeIcon(ImGui::GetForegroundDrawList(), HomeIcon, HomeMin, HomeMax, bHomeHovered);
+	DrawList->PushClipRect(
+		WindowPos,
+		ImVec2(WindowPos.x + WindowSize.x, WindowPos.y + WindowSize.y),
+		false);
+	DrawHomeChromeIcon(DrawList, HomeIcon, HomeMin, HomeMax, bHomeHovered);
+	DrawList->PopClipRect();
 	AddChromeRect(
 		ChromeRects,
 		ChromeRectCount,

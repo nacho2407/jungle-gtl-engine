@@ -9,6 +9,7 @@
 
 class UCameraComponent;
 class FViewportCamera;
+class AParticleEventManager;
 
 struct FWorldGameModeSettings
 {
@@ -72,6 +73,7 @@ public:
 	void BeginPlay();      // Triggers BeginPlay on all actors
 	void Tick(float DeltaTime);  // Drives the game loop every frame
 	void EndPlay(EEndPlayReason::Type EndPlayReason); // Cleanup before world is destroyed
+	AParticleEventManager* GetOrCreateParticleEventManager();
 
 	/** @brief Rebuild the world BVH and bounds snapshot from all current primitives. */
 	void RebuildSpatialIndex();
@@ -123,6 +125,8 @@ private:
 	FWorldGameModeSettings GameModeSettings;
 	ULevel* PersistentLevel = nullptr;
 	FViewportCamera* ActiveCamera = nullptr;
+	// TODO: Particle event manager의 엔진 전역/WorldSettings 소유 정책이 정해지면 이 임시 world 소유 경로를 교체한다.
+	AParticleEventManager* ParticleEventManager = nullptr;
 	FWorldSpatialIndex SpatialIndex;
 	bool bHasBegunPlay = false;
 

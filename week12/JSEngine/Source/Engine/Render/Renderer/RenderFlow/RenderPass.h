@@ -3,6 +3,7 @@
 #include "Render/Renderer/Renderer.h"
 
 class UMaterial;
+class UMaterialInterface;
 
 class FBaseRenderPass
 {
@@ -35,6 +36,16 @@ protected:
 	virtual bool End(const FRenderPassContext* Context) = 0;
 
 	void CheckOverrideViewMode(const FRenderPassContext* Context);
+	bool IsDebugViewMode(EViewMode ViewMode) const;
+	uint32 GetLightingModelPermutationKey(EViewMode ViewMode) const;
+	uint32 GetLightCullingPermutationKey(const FRenderPassContext* Context) const;
+	uint32 GetShadowMapPermutationKey(const FRenderPassContext* Context, bool bIncludeCascadeVis = false) const;
+	uint32 GetTexturePermutationKey(
+		const UMaterialInterface* Material,
+		bool bIncludeNormalMap = true,
+		bool bIncludeSpecularMap = true,
+		bool bIncludeEmissiveMap = true,
+		bool bIncludeAlphaMask = true) const;
 
 protected:
 	// 현재 Pass 출력용 최종 View

@@ -214,12 +214,17 @@ void FEditorMainPanel::RenderEditorTabStrip()
 		const ImVec2 HomeIconMax(
 			HomeIconMin.x + HomeTabWidth,
 			TabStripPos.y + TabStripHeight);
+		DrawList->PushClipRect(
+			MainViewport->WorkPos,
+			ImVec2(MainViewport->WorkPos.x + MainViewport->WorkSize.x, MainViewport->WorkPos.y + MainViewport->WorkSize.y),
+			false);
 		DrawMainHomeIcon(
-			ImGui::GetForegroundDrawList(),
+			DrawList,
 			IconResources.HomeIcon,
 			HomeIconMin,
 			HomeIconMax,
 			bHomeHovered || ImGui::IsMouseHoveringRect(HomeIconMin, HomeIconMax));
+		DrawList->PopClipRect();
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !Tabs.empty())
 		{
 			ActivateEditorTab(Tabs[0].Id);
