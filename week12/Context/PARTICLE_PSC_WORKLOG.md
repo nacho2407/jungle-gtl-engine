@@ -94,3 +94,70 @@
 - Deferred TODO: Replace the uniform PSC distance interval with ParticleSystem asset-owned LOD distance settings once the Asset contract provides them.
 - Deferred TODO: Exercise a populated multi-LOD ParticleSystem in runtime/editor preview once a loadable ParticleSystem template path is connected or a test template fixture is available.
 - Next step: Validate runtime LOD switching with populated LOD templates after a usable ParticleSystem template source is available, or proceed with another approved PSC/Mesh task.
+
+## 2026-05-25 - Post-Core integration follow-up scope analysis
+
+- Branch / HEAD: `feat/PSC` / `27a6570`
+- Completed step: Reviewed the currently merged Particle Core surface and adjacent StaticMesh/Particle Viewer integration points to identify additional PSC/Mesh work that does not cross Asset or Renderer ownership.
+- Changed files: `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: Analysis only; inspected `main` at `467c630`, current PSC head, StaticMesh loading/component patterns, Particle Viewer template creation, and Core emitter runtime behavior.
+- Findings: `UParticleModuleTypeDataMesh::MeshAssetPath` is reflected but no code resolves an edited path into its runtime `UStaticMesh* Mesh`; `SetStaticMesh()` currently has no caller in the particle path, so mesh snapshot generation remains unreachable through the existing Particle Viewer editing flow.
+- Findings: `UStaticMeshComponent` already establishes the acceptable narrow runtime resolution pattern through `FResourceManager::Get().LoadStaticMesh()`, so Mesh TypeData can add an equivalent property-edit resolution point without defining ParticleSystem asset serialization policy.
+- Findings: Particle Viewer supplies an in-memory `UParticleSystem` template through `PreviewComponent->SetTemplate()`, so PSC/LOD control paths can be exercised there once runtime particles are produced.
+- Blocked boundary: Current Core `FParticleEmitterInstance::Tick()` updates modules only and does not activate/spawn particles, so validating non-empty `FDynamicMeshEmitterData::InstanceVertices` or visual LOD transitions remains blocked by Core runtime progress.
+- Deferred TODO: Leave ParticleSystem asset loading/serialization and asset-owned LOD distance data to the Asset owner.
+- Deferred TODO: Leave mesh snapshot draw consumption and GPU renderer wiring to the Renderer owner.
+- Next step: Add `UParticleModuleTypeDataMesh` runtime StaticMesh resolution for `MeshAssetPath` edits using the existing StaticMesh resource-loading contract, after approval.
+
+## 2026-05-25 - Mesh snapshot-backed PSC bounds and raycast
+
+- Branch / HEAD: `feat/PSC` / `27a6570`
+- Completed step: Replaced the placeholder PSC bounds and picking behavior with Mesh render snapshot-backed calculations.
+- Changed files: `JSEngine/Source/Engine/Particle/ParticleSystemComponent.cpp`, `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: `JSEngine.sln` builds successfully for `Debug|x64`; `git diff --check` reported no whitespace errors.
+- Added behavior: `UpdateWorldAABB()` now merges each mesh particle instance's transformed `UStaticMesh` local bounds from `FDynamicMeshEmitterData`, instead of exposing a fixed unit box.
+- Added behavior: `RaycastMesh()` now intersects rays against the same snapshotted mesh instances, uses per-instance transformed mesh geometry, and returns the closest world-space hit result.
+- Boundary: Bounds and picking intentionally consume the mesh render snapshot rather than traversing through Mesh TypeData, matching the renderer-facing snapshot ownership rule.
+- Blocked boundary: `AParticleEventManager` cannot be usefully implemented from PSC alone because Core currently exposes queue callbacks but does not emit spawn, death, collision, or burst events, and no event dispatch contract is supplied for the manager.
+- Remaining TODO: Add `UParticleModuleTypeDataMesh` runtime StaticMesh resolution for `MeshAssetPath` edits so mesh snapshot creation is reachable from the existing editor path.
+- Remaining TODO: Implement or integrate event production only through the Particle Core-owned lifecycle once its spawning, death, and collision behavior is available.
+- Next step: Add Mesh TypeData runtime StaticMesh resolution for editable `MeshAssetPath`, after approval.
+
+## 2026-05-25 - LOD distance contract correction analysis
+
+- Branch / HEAD: `feat/PSC` / `27a6570`
+- Completed step: Compared the current PSC interval-based LOD selection with the bundled Cascade reference implementation and corrected the design conclusion.
+- Changed files: `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: Analysis only; inspected Cascade uses of `ParticleSystem->LODDistances`, including initialization, insertion, copying, and editor `SetLODLevel()` control.
+- Findings: Cascade stores customizable per-LOD thresholds on `UParticleSystem::LODDistances`; the `LODIndex * 2500.0f` expression is only a generated default value, not the runtime data model.
+- Findings: The current `UParticleSystemComponent::LODDistanceInterval` supports only evenly spaced automatic selection and therefore is an interim fallback, not a sufficient Unreal-style LOD authoring contract.
+- Boundary: Introducing persisted `UParticleSystem` LOD distance fields or serialization from PSC would define Asset-owned policy, which remains outside this task until the Asset owner supplies or approves that contract.
+- Candidate within PSC scope: Once an Asset-owned `LODDistances` public API exists, update automatic selection to consume its per-LOD thresholds and expose a component-side/manual LOD override path for editor preview and runtime forcing.
+- Remaining TODO: Replace or demote `LODDistanceInterval` after the ParticleSystem LOD distance contract is supplied.
+- Next step: Confirm with the Asset owner whether `UParticleSystem::LODDistances` and LOD selection mode are being added to the asset contract; continue independent Mesh TypeData runtime resolution work in the meantime, after approval.
+
+## 2026-05-25 - PSC soft ParticleSystem loader compatibility analysis
+
+- Branch / HEAD: `feat/PSC` / `27a6570`
+- Completed step: Verified the intended handoff between the Scene-persisted PSC soft reference and the Asset-owned ParticleSystem loader path.
+- Changed files: `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: Analysis only; inspected `TSoftObjectPtr` property serialization, existing StaticMesh/SkeletalMesh component resolution patterns, `FParticleSystemAssetLoader`, `FResourceManager`, and the reflected Particle asset classes.
+- Findings: `UParticleSystemComponent::TemplateAssetPath` is compatible as the Scene-side reference contract because reflection stores only its asset path while runtime `Template` is resolved separately, matching existing mesh component design.
+- Findings: The handoff is not connected yet: `FParticleSystemAssetLoader` declares `Load()`/`Save()` but its implementation file is empty, `FResourceManager` exposes no `LoadParticleSystem()` API, and PSC therefore correctly stops at `ResolveTemplateAssetReference()`'s Asset integration TODO.
+- Findings: `UParticleSystem::Emitters`, `UParticleEmitter::LODLevels`, and `UParticleLODLevel` module slots/arrays currently have no reflected properties, so the loader header's reflection-unification TODO cannot persist the asset graph without additional Asset-side reflection work or explicit serialization.
+- Required Asset handoff: The Asset owner should serialize the ParticleSystem graph plus `UParticleSystem::LODDistances`, publish a stable `LoadParticleSystem(Path)` resolution route (preferably through `FResourceManager`), and expose a persistent asset path on loaded ParticleSystem objects if PSC editor assignment must synchronize its soft reference.
+- Boundary: PSC must serialize only `TemplateAssetPath` and later call the public asset resolution route from `ResolveTemplateAssetReference()`; it must not serialize nested ParticleSystem contents or define the loader format.
+- Remaining TODO: Connect `ResolveTemplateAssetReference()` to the public ParticleSystem loading API once supplied, and replace the interim component `LODDistanceInterval` with asset-owned `LODDistances` consumption.
+- Next step: Share the required Asset handoff contract with the Asset owner; continue an independently approved PSC/Mesh task while that API is being implemented.
+
+## 2026-05-25 - PSC bounds and raycast partial-implementation rollback
+
+- Branch / HEAD: `feat/PSC` / `27a6570`
+- Completed step: Removed the Mesh-only implementation from PSC-wide bounds and raycast entry points after identifying that it silently omitted Sprite and mixed-emitter systems.
+- Changed files: `JSEngine/Source/Engine/Particle/ParticleSystemComponent.cpp`, `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: `JSEngine.sln` builds successfully for `Debug|x64`; `git diff --check` reported no whitespace errors.
+- Correction: `UpdateWorldAABB()` now resets the unsupported PSC bound rather than returning either an arbitrary unit box or incomplete Mesh-only bounds.
+- Correction: `RaycastMesh()` now remains unsupported rather than returning hits only for Mesh emitter snapshots through a component-wide API.
+- Boundary: Accurate PSC bounds and picking require a contract covering every renderable emitter snapshot type; implementing only Mesh behavior here is not valid for the component.
+- Remaining TODO: Implement PSC-wide bounds/picking only once Sprite and Mesh snapshot contracts can both be consumed without modifying renderer-owned draw behavior.
+- Next step: Continue an independently approved PSC/Mesh integration step after this rollback is verified.

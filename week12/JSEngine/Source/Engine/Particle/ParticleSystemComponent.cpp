@@ -197,15 +197,17 @@ void UParticleSystemComponent::UpdateWorldAABB() const
 	WorldAABB.Reset();
 
 	const FVector Center = GetWorldLocation();
-	const FVector Extent(1.0f, 1.0f, 1.0f);
-	WorldAABB.Expand(Center - Extent);
-	WorldAABB.Expand(Center + Extent);
+    const FVector Extent(1.0f, 1.0f, 1.0f);
+    WorldAABB.Expand(Center - Extent);
+    WorldAABB.Expand(Center + Extent);
+	// TODO: 모든 emitter 타입의 bounds snapshot 계약이 정해지면 PSC 단위 경계를 계산한다.
 }
 
 bool UParticleSystemComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 {
 	(void)Ray;
 	(void)OutHitResult;
+	// TODO: 모든 emitter 타입의 picking snapshot 계약이 정해지면 PSC 단위 raycast를 구현한다.
 	return false;
 }
 
