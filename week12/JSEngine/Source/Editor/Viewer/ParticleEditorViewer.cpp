@@ -7,8 +7,64 @@
 #include "Editor/UI/EditorMainPanel.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
+#include "Serialization/ObjectGraphSerializer.h"
 
 #include <algorithm>
+
+namespace
+{
+	void CollectParticleGraphObjects(UObject* Object, TArray<UObject*>& OutObjects)
+	{
+		if (!Object || std::find(OutObjects.begin(), OutObjects.end(), Object) != OutObjects.end())
+		{
+			return;
+		}
+
+		OutObjects.push_back(Object);
+
+		if (UParticleSystem* ParticleSystem = Cast<UParticleSystem>(Object))
+		{
+			for (UParticleEmitter* Emitter : ParticleSystem->Emitters)
+			{
+				CollectParticleGraphObjects(Emitter, OutObjects);
+			}
+			return;
+		}
+
+		if (UParticleEmitter* Emitter = Cast<UParticleEmitter>(Object))
+		{
+			for (UParticleLODLevel* LOD : Emitter->LODLevels)
+			{
+				CollectParticleGraphObjects(LOD, OutObjects);
+			}
+			return;
+		}
+
+		if (UParticleLODLevel* LOD = Cast<UParticleLODLevel>(Object))
+		{
+			CollectParticleGraphObjects(LOD->RequiredModule, OutObjects);
+			CollectParticleGraphObjects(LOD->SpawnModule, OutObjects);
+			CollectParticleGraphObjects(LOD->TypeDataModule, OutObjects);
+			for (UParticleModule* Module : LOD->Modules)
+			{
+				CollectParticleGraphObjects(Module, OutObjects);
+			}
+		}
+	}
+
+	void DestroyParticleGraphChildren(UParticleSystem* ParticleSystem)
+	{
+		TArray<UObject*> Objects;
+		CollectParticleGraphObjects(ParticleSystem, Objects);
+		for (UObject* Object : Objects)
+		{
+			if (Object && Object != ParticleSystem && UObjectManager::Get().ContainsObject(Object))
+			{
+				UObjectManager::Get().DestroyObject(Object);
+			}
+		}
+	}
+}
 
 // 파일명 설정 → 기존 선택 및 프리뷰를 초기화 → 새로운 Particle 에셋을 로드하여 시뮬레이션 재시작
 bool FParticleEditorViewer::ChangeTarget(const FString& InFileName)
@@ -37,6 +93,8 @@ bool FParticleEditorViewer::ChangeTarget(const FString& InFileName)
 	}
 
 	RestartSimulation();
+	RefreshSavedSnapshot();
+	ClearUndoHistory();
 	return true;
 }
 
@@ -74,6 +132,175 @@ void FParticleEditorViewer::Shutdown()
 	ParticleSystem = nullptr;
 	bOwnsParticleSystem = false;
 	FEditorViewer::Shutdown();
+}
+
+bool FParticleEditorViewer::CaptureParticleSnapshot(FString& OutSnapshot) const
+{
+	OutSnapshot.clear();
+	if (!ParticleSystem)
+	{
+		return false;
+	}
+
+	FObjectGraphSerializer Serializer;
+	return Serializer.SaveToString(ParticleSystem, "UParticleSystem", OutSnapshot);
+}
+
+bool FParticleEditorViewer::RestoreParticleSnapshot(const FString& Snapshot)
+{
+	if (Snapshot.empty() || !ParticleSystem || bRestoringParticleSnapshot)
+	{
+		return false;
+	}
+
+	FObjectGraphSerializer Serializer;
+	UParticleSystem* SnapshotParticleSystem = Cast<UParticleSystem>(Serializer.LoadFromString(Snapshot, "UParticleSystem"));
+	if (!SnapshotParticleSystem)
+	{
+		return false;
+	}
+
+	bRestoringParticleSnapshot = true;
+
+	const FString AssetPath = FPaths::Normalize(GetFileName().empty() ? ParticleSystem->GetAssetPath() : GetFileName());
+	DestroyParticleGraphChildren(ParticleSystem);
+	ParticleSystem->CopyPropertiesFrom(SnapshotParticleSystem);
+	SnapshotParticleSystem->Emitters.clear();
+	ParticleSystem->SetAssetPath(AssetPath);
+	UObjectManager::Get().DestroyObject(SnapshotParticleSystem);
+	CacheAllEmitters();
+	ClearParticleSelection();
+	if (ParticleSystem && !ParticleSystem->Emitters.empty())
+	{
+		SelectEmitter(0);
+	}
+	RestartSimulation();
+
+	bRestoringParticleSnapshot = false;
+	return true;
+}
+
+void FParticleEditorViewer::RefreshSavedSnapshot()
+{
+	CaptureParticleSnapshot(SavedSnapshot);
+	bDirty = false;
+}
+
+void FParticleEditorViewer::ClearUndoHistory()
+{
+	UndoSnapshots.clear();
+	RedoSnapshots.clear();
+}
+
+void FParticleEditorViewer::CaptureUndoSnapshot(const char* Reason)
+{
+	(void)Reason;
+	if (bRestoringParticleSnapshot)
+	{
+		return;
+	}
+
+	FString Snapshot;
+	if (!CaptureParticleSnapshot(Snapshot) || Snapshot.empty())
+	{
+		return;
+	}
+
+	if (!UndoSnapshots.empty() && UndoSnapshots.back() == Snapshot)
+	{
+		return;
+	}
+
+	UndoSnapshots.push_back(std::move(Snapshot));
+	if (static_cast<int32>(UndoSnapshots.size()) > MaxParticleUndoSnapshots)
+	{
+		UndoSnapshots.erase(UndoSnapshots.begin());
+	}
+	RedoSnapshots.clear();
+}
+
+bool FParticleEditorViewer::Undo()
+{
+	if (UndoSnapshots.empty())
+	{
+		return false;
+	}
+
+	FString CurrentSnapshot;
+	CaptureParticleSnapshot(CurrentSnapshot);
+	if (!CurrentSnapshot.empty())
+	{
+		RedoSnapshots.push_back(std::move(CurrentSnapshot));
+		if (static_cast<int32>(RedoSnapshots.size()) > MaxParticleUndoSnapshots)
+		{
+			RedoSnapshots.erase(RedoSnapshots.begin());
+		}
+	}
+
+	FString Snapshot = std::move(UndoSnapshots.back());
+	UndoSnapshots.pop_back();
+	if (!RestoreParticleSnapshot(Snapshot))
+	{
+		return false;
+	}
+
+	bDirty = SavedSnapshot.empty() || Snapshot != SavedSnapshot;
+	return true;
+}
+
+bool FParticleEditorViewer::Redo()
+{
+	if (RedoSnapshots.empty())
+	{
+		return false;
+	}
+
+	FString CurrentSnapshot;
+	CaptureParticleSnapshot(CurrentSnapshot);
+	if (!CurrentSnapshot.empty())
+	{
+		UndoSnapshots.push_back(std::move(CurrentSnapshot));
+		if (static_cast<int32>(UndoSnapshots.size()) > MaxParticleUndoSnapshots)
+		{
+			UndoSnapshots.erase(UndoSnapshots.begin());
+		}
+	}
+
+	FString Snapshot = std::move(RedoSnapshots.back());
+	RedoSnapshots.pop_back();
+	if (!RestoreParticleSnapshot(Snapshot))
+	{
+		return false;
+	}
+
+	bDirty = SavedSnapshot.empty() || Snapshot != SavedSnapshot;
+	return true;
+}
+
+void FParticleEditorViewer::DiscardUnsavedChanges()
+{
+	if (!SavedSnapshot.empty())
+	{
+		RestoreParticleSnapshot(SavedSnapshot);
+	}
+	ClearUndoHistory();
+	bDirty = false;
+}
+
+void FParticleEditorViewer::CacheAllEmitters()
+{
+	if (!ParticleSystem)
+	{
+		return;
+	}
+
+	for (UParticleEmitter* Emitter : ParticleSystem->Emitters)
+	{
+		if (Emitter)
+		{
+			Emitter->CacheEmitterModuleInfo();
+		}
+	}
 }
 
 // 프리뷰 컴포넌트의 템플릿을 현재 Particle System으로 갱신 → 시뮬레이션 재시작
@@ -354,6 +581,8 @@ void FParticleEditorViewer::AddEmitter()
 		return;
 	}
 
+	CaptureUndoSnapshot("AddEmitter");
+
 	UParticleEmitter* Emitter = NewObject<UParticleEmitter>();
 	UParticleLODLevel* LOD = CreateDefaultLODLevel(0);
 	if (!Emitter || !LOD)
@@ -389,6 +618,8 @@ void FParticleEditorViewer::DeleteSelectedEmitter()
 		return;
 	}
 
+	CaptureUndoSnapshot("DeleteEmitter");
+
 	UParticleEmitter* Emitter = ParticleSystem->Emitters[SelectedEmitterIndex];
 	ParticleSystem->Emitters.erase(ParticleSystem->Emitters.begin() + SelectedEmitterIndex);
 	UObjectManager::Get().DestroyObject(Emitter);
@@ -409,6 +640,22 @@ void FParticleEditorViewer::DeleteSelectedEmitter()
 	RestartSimulation();
 }
 
+void FParticleEditorViewer::DeleteSelection()
+{
+	switch (SelectionType)
+	{
+	case EParticleEditorSelectionType::Module:
+		DeleteSelectedModule();
+		break;
+	case EParticleEditorSelectionType::Emitter:
+	case EParticleEditorSelectionType::LODLevel:
+		DeleteSelectedEmitter();
+		break;
+	default:
+		break;
+	}
+}
+
 // Particle System 내에서 Emitter의 순서를 변경(이동)하고 변경된 인덱스에 맞게 선택 상태를 갱신합니다.
 void FParticleEditorViewer::MoveEmitter(int32 FromIndex, int32 ToIndex)
 {
@@ -422,6 +669,8 @@ void FParticleEditorViewer::MoveEmitter(int32 FromIndex, int32 ToIndex)
 	{
 		return;
 	}
+
+	CaptureUndoSnapshot("MoveEmitter");
 
 	UParticleEmitter* Emitter = ParticleSystem->Emitters[FromIndex];
 	ParticleSystem->Emitters.erase(ParticleSystem->Emitters.begin() + FromIndex);
@@ -449,6 +698,8 @@ void FParticleEditorViewer::AddModule(UClass* ModuleClass)
 	{
 		return;
 	}
+
+	CaptureUndoSnapshot("AddModule");
 
 	UParticleModule* Module = Cast<UParticleModule>(NewObject(ModuleClass));
 	if (!Module)
@@ -509,6 +760,8 @@ void FParticleEditorViewer::MoveModule(int32 FromIndex, int32 ToIndex)
 		return;
 	}
 
+	CaptureUndoSnapshot("MoveModule");
+
 	UParticleModule* Module = LOD->Modules[FromIndex];
 	LOD->Modules.erase(LOD->Modules.begin() + FromIndex);
 	LOD->Modules.insert(LOD->Modules.begin() + ToIndex, Module);
@@ -549,6 +802,8 @@ void FParticleEditorViewer::MoveModuleToEmitter(int32 ModuleIndex, int32 TargetE
 	{
 		return;
 	}
+
+	CaptureUndoSnapshot("MoveModuleToEmitter");
 
 	UParticleEmitter* SourceEmitter = GetSelectedEmitter();
 	UParticleEmitter* TargetEmitter = ParticleSystem->Emitters[TargetEmitterIndex];
@@ -609,6 +864,8 @@ void FParticleEditorViewer::CopyModuleToEmitter(int32 ModuleIndex, int32 TargetE
 		return;
 	}
 
+	CaptureUndoSnapshot("CopyModuleToEmitter");
+
 	UParticleEmitter* TargetEmitter = ParticleSystem->Emitters[TargetEmitterIndex];
 	if (!TargetEmitter)
 	{
@@ -658,6 +915,8 @@ void FParticleEditorViewer::DeleteSelectedModule()
 		return;
 	}
 
+	CaptureUndoSnapshot("DeleteModule");
+
 	UParticleModule* Module = LOD->Modules[SelectedModuleIndex];
 	LOD->Modules.erase(LOD->Modules.begin() + SelectedModuleIndex);
 	UObjectManager::Get().DestroyObject(Module);
@@ -700,7 +959,7 @@ bool FParticleEditorViewer::Save()
 	ParticleSystem->SetAssetPath(Path);
 
 	bOwnsParticleSystem = false;
-	bDirty = false;
+	RefreshSavedSnapshot();
 
 	return true;
 }
@@ -713,8 +972,20 @@ bool FParticleEditorViewer::SaveAs(const FString& InFileName)
 		return false;
 	}
 
+	const FString OldFileName = GetFileName();
 	SetFileName(FPaths::Normalize(InFileName));
-	return Save();
+	const bool bSaved = Save();
+	if (!bSaved)
+	{
+		SetFileName(OldFileName);
+		return false;
+	}
+
+	if (UEditorEngine* EditorEngine = GetEditorEngine())
+	{
+		EditorEngine->GetMainPanel().RefreshViewerTabAfterFileNameChange(this, OldFileName);
+	}
+	return true;
 }
 
 // 콘텐츠 브라우저에서 현재 편집 중인 Particle System 에셋의 위치를 찾아 강조 표시합니다.
@@ -754,6 +1025,8 @@ void FParticleEditorViewer::AddLOD()
 		return;
 	}
 
+	CaptureUndoSnapshot("AddLOD");
+
 	Emitter->LODLevels.push_back(LOD);
 	Emitter->CacheEmitterModuleInfo();
 
@@ -778,6 +1051,8 @@ void FParticleEditorViewer::RemoveLOD(int32 LODIndex)
 	{
 		return;
 	}
+
+	CaptureUndoSnapshot("RemoveLOD");
 
 	UParticleLODLevel* RemovedLOD = Emitter->LODLevels[LODIndex];
 	Emitter->LODLevels.erase(Emitter->LODLevels.begin() + LODIndex);

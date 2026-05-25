@@ -686,6 +686,7 @@ bool FEditorViewerWidget::BeginViewportToolbar(bool bDrawToolbarBackground)
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, bDrawToolbarBackground ? 1.0f : 0.0f);
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, bDrawToolbarBackground ? ImVec4(0.12f, 0.13f, 0.16f, 0.92f) : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.22f, 0.26f, 0.95f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f, 0.29f, 0.35f, 1.0f));
@@ -704,7 +705,7 @@ bool FEditorViewerWidget::BeginViewportToolbar(bool bDrawToolbarBackground)
 	{
 		ImGui::End();
 		ImGui::PopStyleColor(4);
-		ImGui::PopStyleVar(4);
+		ImGui::PopStyleVar(5);
 		return false;
 	}
 
@@ -719,7 +720,7 @@ void FEditorViewerWidget::EndViewportToolbar()
 {
 	ImGui::End();
 	ImGui::PopStyleColor(4);
-	ImGui::PopStyleVar(4);
+	ImGui::PopStyleVar(5);
 }
 
 void FEditorViewerWidget::RenderDefaultViewportToolbar()

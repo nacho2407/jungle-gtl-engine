@@ -34,10 +34,12 @@ public:
 	GENERATED_BODY(UParticleLODLevel, UObject)
 	~UParticleLODLevel() override;
 
-	UPROPERTY()
+	UPROPERTY(DisplayName = "Level")
 	int32 Level = 0;
-	UPROPERTY()
+	UPROPERTY(DisplayName = "Enabled")
 	bool bEnabled = true;
+	UPROPERTY(DisplayName = "Solo")
+	bool bSolo = false;
 
 	UPROPERTY(ReferenceType = RuntimeObject)
 	UParticleModuleRequired* RequiredModule = nullptr;

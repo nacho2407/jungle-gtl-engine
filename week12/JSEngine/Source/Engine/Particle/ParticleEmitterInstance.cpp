@@ -388,7 +388,7 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 
 	for (UParticleModule* Module : CurrentRuntimeCache->UpdateModules)
 	{
-		if (Module != nullptr)
+		if (Module != nullptr && Module->bEnabled)
 		{
 			const int32 Offset = CurrentRuntimeCache->GetParticlePayloadOffset(Module);
 			Module->Update(this, Offset, DeltaTime);

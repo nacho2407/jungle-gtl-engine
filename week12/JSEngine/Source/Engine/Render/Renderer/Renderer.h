@@ -26,88 +26,88 @@ class AActor;
  */
 struct FViewportRenderResource
 {
-    TComPtr<ID3D11Texture2D> ColorTex;
-    TComPtr<ID3D11RenderTargetView> ColorRTV;
-    TComPtr<ID3D11ShaderResourceView> ColorSRV;
+	TComPtr<ID3D11Texture2D> ColorTex;
+	TComPtr<ID3D11RenderTargetView> ColorRTV;
+	TComPtr<ID3D11ShaderResourceView> ColorSRV;
 
-    TComPtr<ID3D11Texture2D> DebugViewModeTex;
-    TComPtr<ID3D11RenderTargetView> DebugViewModeRTV;
-    TComPtr<ID3D11ShaderResourceView> DebugViewModeSRV;
+	TComPtr<ID3D11Texture2D> DebugViewModeTex;
+	TComPtr<ID3D11RenderTargetView> DebugViewModeRTV;
+	TComPtr<ID3D11ShaderResourceView> DebugViewModeSRV;
 
-    TComPtr<ID3D11Texture2D> FogTex;
-    TComPtr<ID3D11RenderTargetView> FogRTV;
-    TComPtr<ID3D11ShaderResourceView> FogSRV;
+	TComPtr<ID3D11Texture2D> FogTex;
+	TComPtr<ID3D11RenderTargetView> FogRTV;
+	TComPtr<ID3D11ShaderResourceView> FogSRV;
 
 	TComPtr<ID3D11Texture2D> SandervistanTex;
-    TComPtr<ID3D11RenderTargetView> SandervistanRTV;
-    TComPtr<ID3D11ShaderResourceView> SandervistanSRV;
+	TComPtr<ID3D11RenderTargetView> SandervistanRTV;
+	TComPtr<ID3D11ShaderResourceView> SandervistanSRV;
 
-    TComPtr<ID3D11Texture2D> PostProcessTex;
-    TComPtr<ID3D11RenderTargetView> PostProcessRTV;
-    TComPtr<ID3D11ShaderResourceView> PostProcessSRV;
+	TComPtr<ID3D11Texture2D> PostProcessTex;
+	TComPtr<ID3D11RenderTargetView> PostProcessRTV;
+	TComPtr<ID3D11ShaderResourceView> PostProcessSRV;
 
-    TComPtr<ID3D11Texture2D> FXAATex;
-    TComPtr<ID3D11RenderTargetView> FXAARTV;
-    TComPtr<ID3D11ShaderResourceView> FXAASRV;
+	TComPtr<ID3D11Texture2D> FXAATex;
+	TComPtr<ID3D11RenderTargetView> FXAARTV;
+	TComPtr<ID3D11ShaderResourceView> FXAASRV;
 
-    TComPtr<ID3D11Texture2D> SelectionMaskTex;
-    TComPtr<ID3D11RenderTargetView> SelectionMaskRTV;
-    TComPtr<ID3D11ShaderResourceView> SelectionMaskSRV;
+	TComPtr<ID3D11Texture2D> SelectionMaskTex;
+	TComPtr<ID3D11RenderTargetView> SelectionMaskRTV;
+	TComPtr<ID3D11ShaderResourceView> SelectionMaskSRV;
 
-    TComPtr<ID3D11Texture2D> EditorIdPickTex;
-    TComPtr<ID3D11RenderTargetView> EditorIdPickRTV;
-    TComPtr<ID3D11ShaderResourceView> EditorIdPickSRV;
-    TComPtr<ID3D11Texture2D> EditorIdPickReadbackTex;
-    TComPtr<ID3D11Texture2D> EditorIdPickDebugTex;
-    TComPtr<ID3D11RenderTargetView> EditorIdPickDebugRTV;
-    TComPtr<ID3D11ShaderResourceView> EditorIdPickDebugSRV;
+	TComPtr<ID3D11Texture2D> EditorIdPickTex;
+	TComPtr<ID3D11RenderTargetView> EditorIdPickRTV;
+	TComPtr<ID3D11ShaderResourceView> EditorIdPickSRV;
+	TComPtr<ID3D11Texture2D> EditorIdPickReadbackTex;
+	TComPtr<ID3D11Texture2D> EditorIdPickDebugTex;
+	TComPtr<ID3D11RenderTargetView> EditorIdPickDebugRTV;
+	TComPtr<ID3D11ShaderResourceView> EditorIdPickDebugSRV;
 
-    TComPtr<ID3D11Texture2D> DepthTex;
-    TComPtr<ID3D11DepthStencilView> DepthStencilView;
-    TComPtr<ID3D11ShaderResourceView> DepthStencilSRV;
+	TComPtr<ID3D11Texture2D> DepthTex;
+	TComPtr<ID3D11DepthStencilView> DepthStencilView;
+	TComPtr<ID3D11ShaderResourceView> DepthStencilSRV;
 
 	TComPtr<ID3D11Texture2D> VSMDepthTexture;
-    TComPtr<ID3D11DepthStencilView> VSMDepthStencilView;
-    TComPtr<ID3D11ShaderResourceView> VSMDepthStencilSRV;
+	TComPtr<ID3D11DepthStencilView> VSMDepthStencilView;
+	TComPtr<ID3D11ShaderResourceView> VSMDepthStencilSRV;
 
-    uint32 Width = 0;
-    uint32 Height = 0;
+	uint32 Width = 0;
+	uint32 Height = 0;
 
-    FRenderTargetSet RenderTargetSet;
+	FRenderTargetSet RenderTargetSet;
 
 	FRenderTargetSet& GetView()
-    {
-        RenderTargetSet.SceneColorRTV = ColorRTV.Get();
-        RenderTargetSet.SceneColorSRV = ColorSRV.Get();
+	{
+		RenderTargetSet.SceneColorRTV = ColorRTV.Get();
+		RenderTargetSet.SceneColorSRV = ColorSRV.Get();
 
-        RenderTargetSet.DebugViewModeRTV = DebugViewModeRTV.Get();
-        RenderTargetSet.DebugViewModeSRV = DebugViewModeSRV.Get();
+		RenderTargetSet.DebugViewModeRTV = DebugViewModeRTV.Get();
+		RenderTargetSet.DebugViewModeSRV = DebugViewModeSRV.Get();
 
-        RenderTargetSet.SceneFogRTV = FogRTV.Get();
-        RenderTargetSet.SceneFogSRV = FogSRV.Get();
+		RenderTargetSet.SceneFogRTV = FogRTV.Get();
+		RenderTargetSet.SceneFogSRV = FogSRV.Get();
 
 		RenderTargetSet.SceneSandervistanRTV = SandervistanRTV.Get();
-        RenderTargetSet.SceneSandervistanSRV = SandervistanSRV.Get();
+		RenderTargetSet.SceneSandervistanSRV = SandervistanSRV.Get();
 
 		RenderTargetSet.ScenePostProcessRTV = PostProcessRTV.Get();
-        RenderTargetSet.ScenePostProcessSRV = PostProcessSRV.Get();
+		RenderTargetSet.ScenePostProcessSRV = PostProcessSRV.Get();
 
-        RenderTargetSet.SceneFXAARTV = FXAARTV.Get();
-        RenderTargetSet.SceneFXAASRV = FXAASRV.Get();
+		RenderTargetSet.SceneFXAARTV = FXAARTV.Get();
+		RenderTargetSet.SceneFXAASRV = FXAASRV.Get();
 
-        RenderTargetSet.SceneDepthSRV = DepthStencilSRV.Get();
-        RenderTargetSet.SelectionMaskRTV = SelectionMaskRTV.Get();
-        RenderTargetSet.SelectionMaskSRV = SelectionMaskSRV.Get();
-        RenderTargetSet.EditorIdPickTexture = EditorIdPickTex.Get();
-        RenderTargetSet.EditorIdPickRTV = EditorIdPickRTV.Get();
-        RenderTargetSet.EditorIdPickSRV = EditorIdPickSRV.Get();
-        RenderTargetSet.EditorIdPickReadbackTexture = EditorIdPickReadbackTex.Get();
-        RenderTargetSet.EditorIdPickDebugRTV = EditorIdPickDebugRTV.Get();
-        RenderTargetSet.EditorIdPickDebugSRV = EditorIdPickDebugSRV.Get();
-        RenderTargetSet.DepthStencilView = DepthStencilView.Get();
-        RenderTargetSet.Width = static_cast<float>(Width);
-        RenderTargetSet.Height = static_cast<float>(Height);
-        return RenderTargetSet;
+		RenderTargetSet.SceneDepthSRV = DepthStencilSRV.Get();
+		RenderTargetSet.SelectionMaskRTV = SelectionMaskRTV.Get();
+		RenderTargetSet.SelectionMaskSRV = SelectionMaskSRV.Get();
+		RenderTargetSet.EditorIdPickTexture = EditorIdPickTex.Get();
+		RenderTargetSet.EditorIdPickRTV = EditorIdPickRTV.Get();
+		RenderTargetSet.EditorIdPickSRV = EditorIdPickSRV.Get();
+		RenderTargetSet.EditorIdPickReadbackTexture = EditorIdPickReadbackTex.Get();
+		RenderTargetSet.EditorIdPickDebugRTV = EditorIdPickDebugRTV.Get();
+		RenderTargetSet.EditorIdPickDebugSRV = EditorIdPickDebugSRV.Get();
+		RenderTargetSet.DepthStencilView = DepthStencilView.Get();
+		RenderTargetSet.Width = static_cast<float>(Width);
+		RenderTargetSet.Height = static_cast<float>(Height);
+		return RenderTargetSet;
 	}
 
 };
@@ -138,38 +138,38 @@ public:
 	void PrepareBatchers(const FRenderBus& InRenderBus);
 	void BeginFrame();
 	// Viewport 로부터 RTV, SRV 등 정보를 받아서 세팅
-    void BeginViewportFrame(FRenderTargetSet InRenderTargetSet);
-    FRenderTargetSet BeginGameFrame(uint32 Width, uint32 Height);
+	void BeginViewportFrame(FRenderTargetSet InRenderTargetSet, const float* ClearColorOverride = nullptr);
+	FRenderTargetSet BeginGameFrame(uint32 Width, uint32 Height);
 	void Render(const FRenderBus& InRenderBus);
-    void RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewportRenderResource& Resource, TArray<AActor*>& OutActors);
-    void CompositeCurrentSceneToBackBuffer();
-    void RenderScreenOverlays(const FRenderBus& InRenderBus, bool bTargetBackBuffer);
+	void RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewportRenderResource& Resource, TArray<AActor*>& OutActors);
+	void CompositeCurrentSceneToBackBuffer();
+	void RenderScreenOverlays(const FRenderBus& InRenderBus, bool bTargetBackBuffer);
 	void EndFrame();
 	void UseBackBufferRenderTargets();
 	
-    void UseViewportRenderTargets(FRenderTargetSet InRenderTargetSet);
+	void UseViewportRenderTargets(FRenderTargetSet InRenderTargetSet);
 	void InvalidateSceneFinalTargets();
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
 
 	const ID3D11RenderTargetView*   GetCurrentSceneRTV() const { return SceneFinalRTV.Get(); }
-    const ID3D11ShaderResourceView* GetCurrentSceneSRV() const { return SceneFinalSRV.Get(); }
+	const ID3D11ShaderResourceView* GetCurrentSceneSRV() const { return SceneFinalSRV.Get(); }
 
 	// 현재는 Resource 를 Handle 이 아니라, 고정된 4개의 Viewport 에 대한 Index 를 통해 관리
 	// 추가로 VP 를 받아서 원래 해당하는 Resource 를 찾아야하는데 현재는 Index 로 찾는 중
-    FViewportRenderResource& AcquireViewportResource(uint32 W, uint32 H, int32 Index);
-    FViewportRenderResource& AcquireViewerViewportResource(uint32 Index, uint32 W, uint32 H);
-    void InitializeViewportResource(uint32 Width, uint32 Height, int32 Index);
-    void ReleaseViewportResource(int32 Index);
+	FViewportRenderResource& AcquireViewportResource(uint32 W, uint32 H, int32 Index);
+	FViewportRenderResource& AcquireViewerViewportResource(uint32 Index, uint32 W, uint32 H);
+	void InitializeViewportResource(uint32 Width, uint32 Height, int32 Index);
+	void ReleaseViewportResource(int32 Index);
 	FViewportRenderResource& AcquirePreviewResource(uint32 W, uint32 H);
 	void ReleasePreviewResource();
 
 private:
 	void InitializeRenderResource(FViewportRenderResource& Res, uint32 Width, uint32 Height);
-    void InitializeEditorIdPickResource(FViewportRenderResource& Res, uint32 Width, uint32 Height);
+	void InitializeEditorIdPickResource(FViewportRenderResource& Res, uint32 Width, uint32 Height);
 	void ReleaseRenderResource(FViewportRenderResource& Res);
-    void ReleaseEditorIdPickResource(FViewportRenderResource& Res);
+	void ReleaseEditorIdPickResource(FViewportRenderResource& Res);
 
 	void InitializePassRenderStates();
 	void InitializePassBatchers();
@@ -182,8 +182,7 @@ private:
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
 
 	// 기본 패스 실행기 — SetupRenderState + DrawCommand 루프
-    void ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand>& Commands, const FRenderBus& Bus,
-                            ID3D11DeviceContext* Context);
+	void ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
 	// LineBatcher Flush 공통 — EditorConstants 업데이트 + EditorShader 바인딩
 	void FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context);
@@ -202,7 +201,7 @@ private:
 
 	/** 모든 Render Pass 를 관리할 객체 */
 	FRenderPipeline RenderPipeline;
-    std::shared_ptr<FRenderPassContext> RenderPassContext;
+	std::shared_ptr<FRenderPassContext> RenderPassContext;
 
 	// 패스별 커맨드 정렬이 필요한 경우 정렬된 복사본 반환, 아니면 원본 참조
 	const TArray<FRenderCommand>& GetAlignedCommands(ERenderPass Pass, const TArray<FRenderCommand>& Commands);
@@ -215,12 +214,12 @@ private:
 
 	// FinalRTV 는 Render Pass 구성에 따라 달라지므로 Renderer 내에서 보관
 	TComPtr<ID3D11RenderTargetView> SceneFinalRTV = nullptr;
-    TComPtr<ID3D11ShaderResourceView> SceneFinalSRV = nullptr;
+	TComPtr<ID3D11ShaderResourceView> SceneFinalSRV = nullptr;
 	constexpr static uint32 MaxRTVCount = 3;
 
 	// 지금은 4개 Viewport 고정 존재 상황이라 다음과 같이 처리
 	FViewportRenderResource ViewportResources[4];
-    TArray<std::unique_ptr<FViewportRenderResource>> ViewerViewportResources;
+	TArray<std::unique_ptr<FViewportRenderResource>> ViewerViewportResources;
 	FViewportRenderResource PreviewResource;
-    FViewportRenderResource GameFrameResource;
+	FViewportRenderResource GameFrameResource;
 };

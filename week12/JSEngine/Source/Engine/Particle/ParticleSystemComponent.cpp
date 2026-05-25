@@ -12,6 +12,13 @@ namespace
 	{
 		return Object != nullptr && UObjectManager::Get().ContainsObject(Object);
 	}
+
+	bool IsSoloParticleInstance(const FParticleEmitterInstance* Instance)
+	{
+		return Instance != nullptr &&
+			IsLiveObject(Instance->CurrentLODLevel) &&
+			Instance->CurrentLODLevel->bSolo;
+	}
 }
 
 class UParticleSystemComponent::FInstanceOwner : public IParticleEmitterInstanceOwner
@@ -165,10 +172,24 @@ UWorld* UParticleSystemComponent::GetWorld() const
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
+	bool bHasSoloEmitter = false;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (IsSoloParticleInstance(Instance))
+		{
+			bHasSoloEmitter = true;
+			break;
+		}
+	}
+
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		if (Instance != nullptr)
 		{
+			if (bHasSoloEmitter && !IsSoloParticleInstance(Instance))
+			{
+				continue;
+			}
 			Instance->Tick(DeltaTime);
 		}
 	}
@@ -196,6 +217,16 @@ void UParticleSystemComponent::PackRenderData()
 {
 	ReleaseRenderData();
 
+	bool bHasSoloEmitter = false;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (IsSoloParticleInstance(Instance))
+		{
+			bHasSoloEmitter = true;
+			break;
+		}
+	}
+
 	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(EmitterInstances.size()); ++EmitterIndex)
 	{
 		FParticleEmitterInstance* Instance = EmitterInstances[EmitterIndex];
@@ -203,9 +234,13 @@ void UParticleSystemComponent::PackRenderData()
 		{
 			continue;
 		}
+		if (!Instance->CurrentLODLevel->bEnabled || (bHasSoloEmitter && !Instance->CurrentLODLevel->bSolo))
+		{
+			continue;
+		}
 
 		UParticleModuleTypeDataBase* TypeDataModule = Instance->CurrentLODLevel->TypeDataModule;
-		if (!IsLiveObject(TypeDataModule))
+		if (!IsLiveObject(TypeDataModule) || !TypeDataModule->bEnabled)
 		{
 			continue;
 		}

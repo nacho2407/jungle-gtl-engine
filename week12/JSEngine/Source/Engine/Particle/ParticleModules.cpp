@@ -88,7 +88,7 @@ namespace
 		}
 
 		UParticleModuleTypeDataBase* TypeData = Cache.TypeDataModule;
-		if (TypeData != nullptr)
+		if (TypeData != nullptr && TypeData->bEnabled)
 		{
 			const int32 TypeDataPayloadSize = TypeData->GetRequiredPayloadSize();
 			if (TypeDataPayloadSize > 0)
@@ -104,7 +104,7 @@ namespace
 		{
 			for (UParticleModule* Module : LODLevel->Modules)
 			{
-				if (Module != nullptr && Module->IsSpawnRateModule())
+				if (Module != nullptr && Module->bEnabled && Module->IsSpawnRateModule())
 				{
 					Cache.SpawnModule = Cast<UParticleModuleSpawn>(Module);
 					break;
@@ -113,14 +113,20 @@ namespace
 		}
 
 		// Required / SpawnModule은 Modules 배열과 별개의 특수 모듈이므로 먼저 offset만 계산
-		AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
-		AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
-		AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
-		AddInstancePayloadOffset(Cache, Cache.SpawnModule, TypeData, InstancePayloadSize);
+		if (Cache.RequiredModule != nullptr && Cache.RequiredModule->bEnabled)
+		{
+			AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
+			AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
+		}
+		if (Cache.SpawnModule != nullptr && Cache.SpawnModule->bEnabled)
+		{
+			AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
+			AddInstancePayloadOffset(Cache, Cache.SpawnModule, TypeData, InstancePayloadSize);
+		}
 
 		for (UParticleModule* Module : LODLevel->Modules)
 		{
-			if (Module == nullptr || Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
+			if (Module == nullptr || !Module->bEnabled || Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
 			{
 				continue;
 			}

@@ -148,6 +148,23 @@ bool FEditorMainPanel::ChangeViewerTarget(FEditorViewer* Viewer, const FString& 
 	return true;
 }
 
+void FEditorMainPanel::RefreshViewerTabAfterFileNameChange(FEditorViewer* Viewer, const FString& OldFileName)
+{
+	if (!Viewer)
+	{
+		return;
+	}
+
+	const FEditorTabId OldTabId = MakeEditorViewerTabId(OldFileName, Viewer);
+	const FEditorTabId NewTabId = MakeEditorViewerTabId(Viewer->GetFileName(), Viewer);
+	const FString NewLabel = MakeEditorViewerTabLabel(Viewer->GetFileName());
+	if (!EditorTabs.ReplaceTab(OldTabId, NewTabId, NewLabel))
+	{
+		EditorTabs.OpenOrFocusTab(NewTabId, NewLabel);
+	}
+	EditorTabs.SetActiveTab(NewTabId);
+}
+
 void FEditorMainPanel::FlushOpenViewerWidgets()
 {
 	auto& V = Widgets.ViewerWindowWidgets;

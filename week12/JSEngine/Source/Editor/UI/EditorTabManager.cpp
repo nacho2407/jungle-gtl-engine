@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorTabManager.h"
+﻿#include "Editor/UI/EditorTabManager.h"
 
 #include <algorithm>
 #include <cctype>
@@ -7,25 +7,30 @@
 
 namespace
 {
-    FString GetLowerExtension(const FString& Path)
-    {
-        const size_t DotIndex = Path.find_last_of('.');
-        if (DotIndex == FString::npos)
-        {
-            return FString();
-        }
+	FString GetLowerExtension(const FString& Path)
+	{
+		const size_t DotIndex = Path.find_last_of('.');
+		if (DotIndex == FString::npos)
+		{
+			return FString();
+		}
 
-        FString Extension = Path.substr(DotIndex);
-        std::transform(Extension.begin(), Extension.end(), Extension.begin(),
-            [](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
-        return Extension;
-    }
+		FString Extension = Path.substr(DotIndex);
+		std::transform(Extension.begin(), Extension.end(), Extension.begin(),
+			[](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
+		return Extension;
+	}
 
-    bool IsAnimSequenceViewerPath(const FString& Path)
-    {
-        const FString Extension = GetLowerExtension(Path);
-        return Extension == ".animseq" || Extension == ".sequence";
-    }
+	bool IsAnimSequenceViewerPath(const FString& Path)
+	{
+		const FString Extension = GetLowerExtension(Path);
+		return Extension == ".animseq" || Extension == ".sequence";
+	}
+
+	bool IsParticleViewerPath(const FString& Path)
+	{
+		return GetLowerExtension(Path) == ".particle";
+	}
 }
 
 bool FEditorTabId::Matches(const FEditorTabId& Other) const
@@ -36,9 +41,18 @@ bool FEditorTabId::Matches(const FEditorTabId& Other) const
 FEditorTabId MakeEditorViewerTabId(const FString& ViewerFileName, const void* FallbackAddress)
 {
 	FEditorTabId TabId;
-	TabId.Kind = IsAnimSequenceViewerPath(ViewerFileName)
-		? EEditorTabKind::AnimSequenceViewer
-		: EEditorTabKind::SkeletalMeshViewer;
+	if (IsParticleViewerPath(ViewerFileName))
+	{
+		TabId.Kind = EEditorTabKind::ParticleViewer;
+	}
+	else if (IsAnimSequenceViewerPath(ViewerFileName))
+	{
+		TabId.Kind = EEditorTabKind::AnimSequenceViewer;
+	}
+	else
+	{
+		TabId.Kind = EEditorTabKind::SkeletalMeshViewer;
+	}
 	TabId.PayloadId = ViewerFileName;
 	if (TabId.PayloadId.empty() && FallbackAddress)
 	{
@@ -57,10 +71,19 @@ FString MakeEditorViewerTabLabel(const FString& ViewerFileName)
 	}
 
 	const bool bAnimSequence = IsAnimSequenceViewerPath(ViewerFileName);
+	const bool bParticle = IsParticleViewerPath(ViewerFileName);
 
 	const size_t SlashIndex = ViewerFileName.find_last_of("/\\");
 	FString FileName = SlashIndex == FString::npos ? ViewerFileName : ViewerFileName.substr(SlashIndex + 1);
-	return bAnimSequence ? FString("Anim: ") + FileName : FileName;
+	if (bAnimSequence)
+	{
+		return FString("Anim: ") + FileName;
+	}
+	if (bParticle)
+	{
+		return FString("Particle: ") + FileName;
+	}
+	return FileName;
 }
 
 FEditorTabId MakeRuntimeUIPreviewTabId()

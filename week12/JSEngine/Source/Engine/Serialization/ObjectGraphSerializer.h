@@ -27,7 +27,9 @@ class FObjectGraphSerializer
 {
 public:
 	bool SaveToFile(const FString& Path, UObject* RootObject, const FString& AssetType);
+	bool SaveToString(UObject* RootObject, const FString& AssetType, FString& OutJson);
 	UObject* LoadFromFile(const FString& Path, const FString& ExpectedRootType);
+	UObject* LoadFromString(const FString& Content, const FString& ExpectedRootType);
 
 private:
 	void Clear();

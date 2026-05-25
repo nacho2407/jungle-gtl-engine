@@ -91,6 +91,9 @@ public:
 	void SetShowGrid(bool bInShowGrid) { Client.SetShowGrid(bInShowGrid); }
 	bool IsShowGrid() const { return Client.IsShowGrid(); }
 
+	void SetShowAxis(bool bInShowAxis) { Client.SetShowAxis(bInShowAxis); }
+	bool IsShowAxis() const { return Client.IsShowAxis(); }
+
 	void SetShowBounds(bool bInShowBounds) { Client.SetShowBounds(bInShowBounds); }
 	bool IsShowBounds() const { return Client.IsShowBounds(); }
 
@@ -103,6 +106,7 @@ public:
 	// Emitter Controls ────────────────────────────────────────────────────────────
 	void AddEmitter();
 	void DeleteSelectedEmitter();
+	void DeleteSelection();
 	void MoveEmitter(int32 FromIndex, int32 ToIndex);
 
 	void AddModule(UClass* ModuleClass);
@@ -114,7 +118,16 @@ public:
 	// Toolbar Actions ────────────────────────────────────────────────────────────
 	bool Save();
 	bool SaveAs(const FString& InFileName);
+
 	void FindInContentBrowser();
+
+	bool Undo();
+	bool Redo();
+	bool CanUndo() const { return !UndoSnapshots.empty(); }
+	bool CanRedo() const { return !RedoSnapshots.empty(); }
+	void CaptureUndoSnapshot(const char* Reason = nullptr);
+	void DiscardUnsavedChanges();
+
 	void AddLOD();
 	void RemoveLOD(int32 LODIndex);
 	void SetHighestLOD();
@@ -135,6 +148,11 @@ private:
 	bool LoadParticleSystemAsset(const FString& InFileName);
 	void EnsureDefaultParticleSystem();
 	UParticleLODLevel* CreateDefaultLODLevel(int32 Level);
+	bool CaptureParticleSnapshot(FString& OutSnapshot) const;
+	bool RestoreParticleSnapshot(const FString& Snapshot);
+	void RefreshSavedSnapshot();
+	void ClearUndoHistory();
+	void CacheAllEmitters();
 
 private:
 	FParticleViewerViewportClient Client;
@@ -156,4 +174,11 @@ private:
 	bool bPlaying = true;
 	bool bLooping = true;
 	bool bDirty = false;
+
+	// Undo & Redo
+	bool bRestoringParticleSnapshot = false;
+	FString SavedSnapshot;
+	TArray<FString> UndoSnapshots;
+	TArray<FString> RedoSnapshots;
+	static constexpr int32 MaxParticleUndoSnapshots = 50;
 };

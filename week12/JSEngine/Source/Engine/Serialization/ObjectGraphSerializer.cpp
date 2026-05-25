@@ -79,10 +79,44 @@ void FObjectGraphReferenceResolver::Clear()
 
 bool FObjectGraphSerializer::SaveToFile(const FString& Path, UObject* RootObject, const FString& AssetType)
 {
-	Clear();
-
 	const FString NormalizedPath = FPaths::Normalize(Path);
-	if (NormalizedPath.empty() || !RootObject)
+	if (NormalizedPath.empty())
+	{
+		return false;
+	}
+
+	FString Content;
+	if (!SaveToString(RootObject, AssetType, Content))
+	{
+		return false;
+	}
+
+	const std::filesystem::path FilePath(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)));
+	std::error_code ErrorCode;
+	std::filesystem::create_directories(FilePath.parent_path(), ErrorCode);
+	if (ErrorCode)
+	{
+		UE_LOG_ERROR("[ObjectGraphSerializer] Failed to create directory: %s", NormalizedPath.c_str());
+		return false;
+	}
+
+	std::ofstream OutFile(FilePath);
+	if (!OutFile.is_open())
+	{
+		UE_LOG_ERROR("[ObjectGraphSerializer] Failed to open file for writing: %s", NormalizedPath.c_str());
+		return false;
+	}
+
+	OutFile << Content;
+	return true;
+}
+
+bool FObjectGraphSerializer::SaveToString(UObject* RootObject, const FString& AssetType, FString& OutJson)
+{
+	Clear();
+	OutJson.clear();
+
+	if (!RootObject)
 	{
 		return false;
 	}
@@ -123,30 +157,12 @@ bool FObjectGraphSerializer::SaveToFile(const FString& Path, UObject* RootObject
 		ObjectArray.append(ObjectJson);
 	}
 
-	const std::filesystem::path FilePath(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)));
-	std::error_code ErrorCode;
-	std::filesystem::create_directories(FilePath.parent_path(), ErrorCode);
-	if (ErrorCode)
-	{
-		UE_LOG_ERROR("[ObjectGraphSerializer] Failed to create directory: %s", NormalizedPath.c_str());
-		return false;
-	}
-
-	std::ofstream OutFile(FilePath);
-	if (!OutFile.is_open())
-	{
-		UE_LOG_ERROR("[ObjectGraphSerializer] Failed to open file for writing: %s", NormalizedPath.c_str());
-		return false;
-	}
-
-	OutFile << Root.dump(4);
+	OutJson = Root.dump(4);
 	return true;
 }
 
 UObject* FObjectGraphSerializer::LoadFromFile(const FString& Path, const FString& ExpectedRootType)
 {
-	Clear();
-
 	const FString NormalizedPath = FPaths::Normalize(Path);
 	if (NormalizedPath.empty())
 	{
@@ -161,34 +177,41 @@ UObject* FObjectGraphSerializer::LoadFromFile(const FString& Path, const FString
 	}
 
 	const FString FileContent((std::istreambuf_iterator<char>(InFile)), std::istreambuf_iterator<char>());
-	json::JSON Root = json::JSON::Load(FileContent);
+	return LoadFromString(FileContent, ExpectedRootType);
+}
+
+UObject* FObjectGraphSerializer::LoadFromString(const FString& Content, const FString& ExpectedRootType)
+{
+	Clear();
+
+	json::JSON Root = json::JSON::Load(Content);
 	if (Root.JSONType() != json::JSON::Class::Object)
 	{
-		UE_LOG_ERROR("[ObjectGraphSerializer] Invalid json object graph: %s", NormalizedPath.c_str());
+		UE_LOG_ERROR("[ObjectGraphSerializer] Invalid json object graph content");
 		return nullptr;
 	}
 
 	if (GetJsonString(Root, "Format") != ObjectGraphFormatName)
 	{
-		UE_LOG_ERROR("[ObjectGraphSerializer] Unsupported object graph format: %s", NormalizedPath.c_str());
+		UE_LOG_ERROR("[ObjectGraphSerializer] Unsupported object graph format");
 		return nullptr;
 	}
 
 	if (GetJsonInt(Root, "Version") != ObjectGraphFormatVersion)
 	{
-		UE_LOG_ERROR("[ObjectGraphSerializer] Unsupported object graph version: %s", NormalizedPath.c_str());
+		UE_LOG_ERROR("[ObjectGraphSerializer] Unsupported object graph version");
 		return nullptr;
 	}
 
 	if (!ExpectedRootType.empty() && GetJsonString(Root, "AssetType") != ExpectedRootType)
 	{
-		UE_LOG_ERROR("[ObjectGraphSerializer] Unexpected asset type: %s", NormalizedPath.c_str());
+		UE_LOG_ERROR("[ObjectGraphSerializer] Unexpected asset type");
 		return nullptr;
 	}
 
 	if (!Root.hasKey("Objects") || Root["Objects"].JSONType() != json::JSON::Class::Array)
 	{
-		UE_LOG_ERROR("[ObjectGraphSerializer] Missing object table: %s", NormalizedPath.c_str());
+		UE_LOG_ERROR("[ObjectGraphSerializer] Missing object table");
 		return nullptr;
 	}
 
@@ -255,7 +278,7 @@ UObject* FObjectGraphSerializer::LoadFromFile(const FString& Path, const FString
 	if (!RootObject)
 	{
 		DestroyCreatedObjects(UntypedRootObject, UntypedRootObject != nullptr);
-		UE_LOG_ERROR("[ObjectGraphSerializer] Failed to resolve root object: %s", NormalizedPath.c_str());
+		UE_LOG_ERROR("[ObjectGraphSerializer] Failed to resolve root object");
 		return nullptr;
 	}
 

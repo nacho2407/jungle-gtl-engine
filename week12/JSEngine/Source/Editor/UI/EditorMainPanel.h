@@ -16,6 +16,7 @@ class UActorSequenceComponent;
 class UCurveFloatAsset;
 class FWindowsWindow;
 class FEditorViewer;
+class FParticleEditorViewer;
 struct ID3D11Device;
 
 class FEditorMainPanel
@@ -54,6 +55,7 @@ public:
 	void OpenRuntimeUIPreviewAsset(const FString& RmlPath = "");
 	void OpenViewer(FEditorViewer* Viewer);
 	bool ChangeViewerTarget(FEditorViewer* Viewer, const FString& NewFileName);
+	void RefreshViewerTabAfterFileNameChange(FEditorViewer* Viewer, const FString& OldFileName);
 	bool RevealContentBrowserAsset(const FString& AssetPath);
 	void RequestDockViewer(FEditorViewer* Viewer);
 	void RenderViewerToolbarControls(FEditorViewer* Viewer);
@@ -113,10 +115,12 @@ private:
 	void ActivateEditorTab(const FEditorTabId& TabId);
 	bool RequestCloseEditorTab(const FEditorTabId& TabId);
 	void RequestDetachEditorTab(const FEditorTabId& TabId, bool bDetached);
+	FParticleEditorViewer* FindParticleViewerForTab(const FEditorTabId& TabId) const;
 	FEditorTabId GetInputRoutingTabId() const;
 
 	// Layout and viewport rendering
 	void RenderEditorTabStrip();
+	void RenderPendingParticleClosePrompt();
 	void RenderEditorToolbar();
 	void RenderActiveDocumentToolbar();
 	void RenderDockSpace();
@@ -184,4 +188,7 @@ private:
 	FEditorMainPanelRuntimeUIDrawCallbackState RuntimeUIDrawState;
 	FEditorFooterLogSystem FooterLogSystem;
 	FEditorMainPanelViewportIconResources IconResources;
+	FEditorTabId PendingParticleCloseTabId;
+	bool bHasPendingParticleClosePrompt = false;
+	bool bBypassParticleClosePrompt = false;
 };

@@ -17,6 +17,9 @@ class UParticleModule : public UObject
 public:
 	GENERATED_BODY(UParticleModule, UObject)
 
+	UPROPERTY(DisplayName = "Enabled")
+	bool bEnabled = true;
+
 	virtual int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const;
 	virtual int32 RequiredBytesPerInstance(UParticleModuleTypeDataBase* TypeData) const;
 	virtual bool IsSpawnRateModule() const;
@@ -26,7 +29,7 @@ public:
 	virtual void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime);
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Required Module")
 class UParticleModuleRequired : public UParticleModule
 {
 public:
@@ -79,7 +82,7 @@ public:
  * @brief particle을 생성 정보를 담고 있는 모듈. 사실 Required에 통합해도 되기는 하지만,
  *        Cascade 스타일을 따라 별도의 모듈로 분리합니다.
  */
-UCLASS()
+UCLASS(Placeable, DisplayName = "Spawn Module")
 class UParticleModuleSpawn : public UParticleModule
 {
 public:
@@ -109,7 +112,7 @@ public:
 	float BurstTime = 0.0f;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Lifetime Module")
 class UParticleModuleLifetime : public UParticleModule
 {
 public:
@@ -123,7 +126,7 @@ public:
 	FParticleFloatDistribution Lifetime;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Location Module")
 class UParticleModuleLocation : public UParticleModule
 {
 public:
@@ -135,7 +138,7 @@ public:
 	FParticleVectorDistribution StartLocation;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Velocity Module")
 class UParticleModuleVelocity : public UParticleModule
 {
 public:
@@ -147,7 +150,7 @@ public:
 	FParticleVectorDistribution StartVelocity;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Color Module")
 class UParticleModuleColor : public UParticleModule
 {
 public:
@@ -161,7 +164,7 @@ public:
 	FParticleColorDistribution StartColor;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Size Module")
 class UParticleModuleSize : public UParticleModule
 {
 public:
@@ -175,7 +178,7 @@ public:
 	FParticleVectorDistribution StartSize;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Collision Module")
 class UParticleModuleCollision : public UParticleModule
 {
 public:
@@ -186,7 +189,7 @@ public:
 
 // NOTE: Type-DataBase가 아니라 TypeData-Base 입니다.
 //       ㄴ SELECT UParticleModuleTypeDataBase FROM UParticleModule WHERE type = 'sprite'
-UCLASS()
+UCLASS(Placeable, DisplayName = "Type Data Module")
 class UParticleModuleTypeDataBase : public UParticleModule
 {
 public:

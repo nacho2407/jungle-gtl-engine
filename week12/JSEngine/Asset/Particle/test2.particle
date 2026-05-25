@@ -38,7 +38,8 @@
               "RequiredModule" : 8,
               "SpawnModule" : 9,
               "TypeDataModule" : 10,
-              "bEnabled" : true
+              "bEnabled" : true,
+              "bSolo" : false
             },
             "Type" : "UParticleLODLevel"
           }, {
@@ -46,11 +47,12 @@
             "ObjectName" : "UParticleLODLevel_1",
             "Properties" : {
               "Level" : 0,
-              "Modules" : [13],
+              "Modules" : [13, 14],
               "RequiredModule" : 11,
               "SpawnModule" : 12,
-              "TypeDataModule" : 14,
-              "bEnabled" : true
+              "TypeDataModule" : 15,
+              "bEnabled" : true,
+              "bSolo" : false
             },
             "Type" : "UParticleLODLevel"
           }, {
@@ -58,11 +60,12 @@
             "ObjectName" : "UParticleLODLevel_2",
             "Properties" : {
               "Level" : 0,
-              "Modules" : [],
-              "RequiredModule" : 15,
-              "SpawnModule" : 16,
-              "TypeDataModule" : 17,
-              "bEnabled" : true
+              "Modules" : [18],
+              "RequiredModule" : 16,
+              "SpawnModule" : 17,
+              "TypeDataModule" : 19,
+              "bEnabled" : true,
+              "bSolo" : false
             },
             "Type" : "UParticleLODLevel"
           }, {
@@ -88,6 +91,7 @@
               "RandomSeed" : 1,
               "SortMode" : 1,
               "bEmitterLoops" : true,
+              "bEnabled" : true,
               "bResetSeedOnEmitterLoop" : true,
               "bUseFixedBounds" : false,
               "bUseSeededRandom" : false
@@ -101,6 +105,7 @@
               "BurstTime" : 0.000000,
               "RateScale" : 1.000000,
               "SpawnRate" : 10.000000,
+              "bEnabled" : true,
               "bProcessBurst" : false,
               "bProcessSpawnRate" : true
             },
@@ -109,7 +114,7 @@
             "Id" : 10,
             "ObjectName" : "UParticleModuleTypeDataBase_0",
             "Properties" : {
-
+              "bEnabled" : true
             },
             "Type" : "UParticleModuleTypeDataBase"
           }, {
@@ -135,6 +140,7 @@
               "RandomSeed" : 1,
               "SortMode" : 1,
               "bEmitterLoops" : true,
+              "bEnabled" : true,
               "bResetSeedOnEmitterLoop" : true,
               "bUseFixedBounds" : false,
               "bUseSeededRandom" : false
@@ -148,6 +154,7 @@
               "BurstTime" : 0.000000,
               "RateScale" : 1.000000,
               "SpawnRate" : 10.000000,
+              "bEnabled" : true,
               "bProcessBurst" : false,
               "bProcessSpawnRate" : true
             },
@@ -188,18 +195,35 @@
                 "MinCurveG" : "",
                 "MinCurveR" : "",
                 "Mode" : 0
-              }
+              },
+              "bEnabled" : true
             },
             "Type" : "UParticleModuleColor"
           }, {
             "Id" : 14,
+            "ObjectName" : "UParticleModuleLifetime_0",
+            "Properties" : {
+              "Lifetime" : {
+                "Constant" : 1.000000,
+                "Curve" : "",
+                "Max" : 1.000000,
+                "MaxCurve" : "",
+                "Min" : 1.000000,
+                "MinCurve" : "",
+                "Mode" : 0
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleLifetime"
+          }, {
+            "Id" : 15,
             "ObjectName" : "UParticleModuleTypeDataBase_1",
             "Properties" : {
-
+              "bEnabled" : true
             },
             "Type" : "UParticleModuleTypeDataBase"
           }, {
-            "Id" : 15,
+            "Id" : 16,
             "ObjectName" : "UParticleModuleRequired_2",
             "Properties" : {
               "BoundsScale" : 1.000000,
@@ -221,28 +245,46 @@
               "RandomSeed" : 1,
               "SortMode" : 1,
               "bEmitterLoops" : true,
+              "bEnabled" : true,
               "bResetSeedOnEmitterLoop" : true,
               "bUseFixedBounds" : false,
               "bUseSeededRandom" : false
             },
             "Type" : "UParticleModuleRequired"
           }, {
-            "Id" : 16,
+            "Id" : 17,
             "ObjectName" : "UParticleModuleSpawn_2",
             "Properties" : {
               "BurstCount" : 0,
               "BurstTime" : 0.000000,
               "RateScale" : 1.000000,
               "SpawnRate" : 10.000000,
+              "bEnabled" : true,
               "bProcessBurst" : false,
               "bProcessSpawnRate" : true
             },
             "Type" : "UParticleModuleSpawn"
           }, {
-            "Id" : 17,
+            "Id" : 18,
+            "ObjectName" : "UParticleModuleLifetime_0",
+            "Properties" : {
+              "Lifetime" : {
+                "Constant" : 1.000000,
+                "Curve" : "",
+                "Max" : 1.000000,
+                "MaxCurve" : "",
+                "Min" : 1.000000,
+                "MinCurve" : "",
+                "Mode" : 0
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleLifetime"
+          }, {
+            "Id" : 19,
             "ObjectName" : "UParticleModuleTypeDataBase_2",
             "Properties" : {
-
+              "bEnabled" : true
             },
             "Type" : "UParticleModuleTypeDataBase"
           }],
