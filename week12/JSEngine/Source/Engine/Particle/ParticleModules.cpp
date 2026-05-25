@@ -1,5 +1,6 @@
 ﻿#include "Particle/ParticleModules.h"
 
+#include "Core/ResourceManager.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
@@ -146,7 +147,15 @@ namespace
 		return Context;
 	}
 
+	// TODO: Owned Particle Data 부모 클래스로 빼기
 	uint8* GetAlignedSnapshotParticleData(FDynamicSpriteEmitterData& RenderData)
+	{
+		return RenderData.OwnedParticleData.empty()
+			? nullptr
+			: ParticleHelper::AlignParticlePointer(RenderData.OwnedParticleData.data());
+	}
+
+	uint8* GetAlignedSnapshotParticleData(FDynamicMeshEmitterData& RenderData)
 	{
 		return RenderData.OwnedParticleData.empty()
 			? nullptr
@@ -354,8 +363,9 @@ FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(
 
 FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
 {
-    // TypeDataBase에서는 Sprite용 Render Data임에 유의. 다른 렌더러는 별도의 Render Data가 필요
+    /** TypeDataBase에서는 Sprite용 Render Data임에 유의. 다른 렌더러는 별도의 Render Data가 필요*/
 
+	// EmitterInstance 유효성 체크
 	if (InEmitterInstance == nullptr ||
 		InEmitterInstance->ActiveParticles <= 0 ||
 		InEmitterInstance->ParticleData == nullptr ||
@@ -366,6 +376,7 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 		return nullptr;
 	}
 
+	// Particle Count & Bytes
 	const int32 ActiveParticleCount = InEmitterInstance->ActiveParticles;
 	const int32 ParticleStride = InEmitterInstance->ParticleStride;
 	const size_t ParticleDataBytes =
@@ -445,6 +456,108 @@ int32 UParticleModuleTypeDataBase::RequiredBytes(UParticleModuleTypeDataBase* Ty
 int32 UParticleModuleTypeDataBase::GetRequiredPayloadSize() const
 {
 	return 0;
+}
+
+FParticleEmitterInstance* UParticleModuleTypeDataMesh::CreateInstance(
+	UParticleEmitter* InEmitterTemplate,
+	IParticleEmitterInstanceOwner& InOwner)
+{
+	FParticleMeshEmitterInstance* Instance = new FParticleMeshEmitterInstance(InOwner);
+	Instance->SpriteTemplate = InEmitterTemplate;
+	return Instance;
+}
+
+FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
+{
+	// EmitterIntsance 유효성 검사
+	if (InEmitterInstance == nullptr ||
+		GetStaticMesh() == nullptr ||
+		InEmitterInstance->ActiveParticles <= 0 ||
+		InEmitterInstance->ParticleData == nullptr ||
+		InEmitterInstance->ParticleIndices == nullptr ||
+		InEmitterInstance->ParticleStride <= 0 ||
+		InEmitterInstance->CurrentRuntimeCache == nullptr)
+	{
+		return nullptr;
+	}
+
+	// Particle Count
+	const int32 ActiveParticleCount = InEmitterInstance->ActiveParticles;
+	const int32 ParticleStride = InEmitterInstance->ParticleStride;
+	const size_t ParticleDataBytes = static_cast<size_t>(ActiveParticleCount) * static_cast<size_t>(ParticleStride);
+	const size_t ParticleIndexBytes = static_cast<size_t>(ActiveParticleCount) * sizeof(uint16);
+	const size_t SnapshotLogicalBytes = ParticleDataBytes + ParticleIndexBytes;
+
+	// Mesh
+	FDynamicMeshEmitterData* RenderData = new FDynamicMeshEmitterData();
+	RenderData->Mesh = GetStaticMesh();
+
+	// Particle Data, Indices
+	RenderData->OwnedParticleData.resize(ParticleDataBytes + ParticleHelper::ParticleAlignment);
+	RenderData->OwnedParticleIndices.resize(static_cast<size_t>(ActiveParticleCount));
+
+	uint8* SnapshotParticleData = GetAlignedSnapshotParticleData(*RenderData);
+	if (SnapshotParticleData == nullptr)
+	{
+		delete RenderData;
+		return nullptr;
+	}
+
+	// Require Module
+	const UParticleModuleRequired* RequiredModule = InEmitterInstance->CurrentRuntimeCache->RequiredModule;
+
+	// Sort Mode
+	RenderData->ReplayData.SortMode = RequiredModule != nullptr
+		? RequiredModule->SortMode
+		: EParticleSortMode::ViewDepthBackToFront;
+
+	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticleCount; ++ActiveIndex)
+	{
+		const int32 SourcePhysicalIndex = InEmitterInstance->ParticleIndices[ActiveIndex];
+		const uint8* SourceParticleData =
+			InEmitterInstance->ParticleData + static_cast<size_t>(SourcePhysicalIndex) * ParticleStride;
+		uint8* DestinationParticleData = SnapshotParticleData + static_cast<size_t>(ActiveIndex) * ParticleStride;
+
+		// renderer가 simulation memory를 직접 읽지 않도록 payload까지 포함한 particle stride 전체를 snapshot에 복사
+		std::memcpy(DestinationParticleData, SourceParticleData, static_cast<size_t>(ParticleStride));
+		RenderData->OwnedParticleIndices[ActiveIndex] = static_cast<uint16>(ActiveIndex);
+	}
+	// ReplayData
+	RenderData->ReplayData.ActiveParticleCount = ActiveParticleCount;
+	RenderData->ReplayData.ParticleStride = ParticleStride;
+	RenderData->ReplayData.Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+
+	// renderer가 raw particle의 위치를 render space로 해석할 수 있도록 좌표계 메타데이터를 전달
+	RenderData->ReplayData.ComponentToWorld = InEmitterInstance->GetOwner().GetComponentToWorld();
+	RenderData->ReplayData.CoordinateSpace = RequiredModule != nullptr
+		? RequiredModule->CoordinateSpace
+		: EParticleCoordinateSpace::Local;
+
+	// TODO: 중앙 renderer가 Mesh instance transform을 생성할 때 Mesh Particle의 회전 축과 정렬 정책을 반영한다.
+	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);
+	RenderData->ReplayData.DataContainer.ParticleDataNumBytes = static_cast<int32>(ParticleDataBytes);
+	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = ActiveParticleCount;
+	RenderData->ReplayData.DataContainer.ParticleData = SnapshotParticleData;
+	RenderData->ReplayData.DataContainer.ParticleIndices = RenderData->OwnedParticleIndices.data();
+
+	return RenderData;
+}
+
+void UParticleModuleTypeDataMesh::SetStaticMesh(UStaticMesh* InStaticMesh)
+{
+	Mesh = InStaticMesh;
+	MeshAssetPath.SetPath(Mesh != nullptr ? Mesh->GetAssetPathFileName() : FString());
+}
+
+void UParticleModuleTypeDataMesh::PostEditProperty(const char* PropertyName)
+{
+	UParticleModuleTypeDataBase::PostEditProperty(PropertyName);
+
+	if (PropertyName != nullptr && std::strcmp(PropertyName, "MeshAssetPath") == 0)
+	{
+		const FString RequestedPath = MeshAssetPath.GetPath();
+		SetStaticMesh(RequestedPath.empty() ? nullptr : FResourceManager::Get().LoadStaticMesh(RequestedPath));
+	}
 }
 
 int32 FParticleLODLevelRuntimeCache::GetParticlePayloadOffset(UParticleModule* Module) const

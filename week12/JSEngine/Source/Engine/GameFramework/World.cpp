@@ -4,6 +4,7 @@
 #include "Core/Reflection/ReflectionRegistry.h"
 #include "Core/Logging/Log.h"
 #include "GameFramework/PlayerController.h"
+#include "Particle/ParticleEventManager.h"
 
 #include <algorithm>
 
@@ -17,6 +18,12 @@ UWorld::UWorld()
 UWorld::~UWorld()
 {
 	SpatialIndex.Clear();
+	if (ParticleEventManager != nullptr)
+	{
+		ParticleEventManager->SetWorld(nullptr);
+		UObjectManager::Get().DestroyObject(ParticleEventManager);
+		ParticleEventManager = nullptr;
+	}
 	UObjectManager::Get().DestroyObject(PersistentLevel);
 }
 
@@ -127,6 +134,16 @@ void UWorld::EndPlay(EEndPlayReason::Type EndPlayReason)
 		bHasBegunPlay = false;
 		PersistentLevel->EndPlay(EndPlayReason);
 	}
+}
+
+AParticleEventManager* UWorld::GetOrCreateParticleEventManager()
+{
+	if (ParticleEventManager == nullptr)
+	{
+		ParticleEventManager = SpawnActor<AParticleEventManager>();
+	}
+
+	return ParticleEventManager;
 }
 
 void UWorld::RebuildSpatialIndex()

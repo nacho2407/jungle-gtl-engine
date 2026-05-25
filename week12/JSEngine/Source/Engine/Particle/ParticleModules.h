@@ -1,6 +1,8 @@
 ﻿#pragma once
 
+#include "Asset/StaticMesh.h"
 #include "Object/Object.h"
+#include "Object/ObjectPtr.h"
 #include "Particle/ParticleDistributions.h"
 #include "Particle/ParticleTypes.h"
 #include "Render/Resource/Material.h"
@@ -9,7 +11,6 @@ class FParticleEmitterInstance;
 class IParticleEmitterInstanceOwner;
 class UParticleEmitter;
 class UParticleModuleTypeDataBase;
-class UStaticMesh;
 
 UCLASS(Abstract)
 class UParticleModule : public UObject
@@ -216,6 +217,20 @@ class UParticleModuleTypeDataMesh : public UParticleModuleTypeDataBase
 public:
 	GENERATED_BODY(UParticleModuleTypeDataMesh, UParticleModuleTypeDataBase)
 
+	FParticleEmitterInstance* CreateInstance(
+		UParticleEmitter* InEmitterTemplate,
+		IParticleEmitterInstanceOwner& InOwner) override;
+	FDynamicEmitterDataBase* GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance) override;
+	void PostEditProperty(const char* PropertyName) override;
+
+	void SetStaticMesh(UStaticMesh* InStaticMesh);
+	UStaticMesh* GetStaticMesh() const { return Mesh; }
+
+	// TODO: ParticleSystem Asset 역직렬화 계약이 확정되면 이 경로를 런타임 Mesh로 복구한다.
+	UPROPERTY(DisplayName = "Static Mesh")
+	TSoftObjectPtr<UStaticMesh> MeshAssetPath;
+
+private:
 	UStaticMesh* Mesh = nullptr;
 };
 

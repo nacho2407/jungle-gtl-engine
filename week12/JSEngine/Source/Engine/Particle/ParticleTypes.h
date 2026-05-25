@@ -3,6 +3,7 @@
 #include "Core/CoreMinimal.h"
 
 class UMaterialInterface;
+class UStaticMesh;
 class UParticleModuleRequired;
 
 UENUM()
@@ -182,6 +183,14 @@ struct FDynamicSpriteEmitterData : public FDynamicSpriteEmitterDataBase
 struct FDynamicMeshEmitterData : public FDynamicEmitterDataBase
 {
 	FDynamicMeshEmitterReplayDataBase ReplayData;
+
+	// StaticMesh asset들은 ResourceManager가 소유
+	// renderer는 TypeData를 다시 조회하지 않고 이 snapshot의 Mesh 참조를 소비
+	UStaticMesh* Mesh = nullptr;
+
+	// ReplayData.DataContainer가 참조하는 현재 프레임 Mesh particle snapshot 소유 버퍼
+	TArray<uint8> OwnedParticleData;
+	TArray<uint16> OwnedParticleIndices;
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }
 };
