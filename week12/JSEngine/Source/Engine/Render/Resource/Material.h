@@ -187,6 +187,7 @@ public:
 	virtual const FString& GetPixelShaderEntryPoint() const = 0;
 	virtual EMaterialBlendMode GetBlendMode() const = 0;
 	virtual const FMaterialBlendStateDesc& GetBlendStateDesc() const = 0;
+	virtual void SetShaderType(EMaterialShaderType InShaderType) = 0;
 	virtual void SetBlendMode(EMaterialBlendMode InBlendMode) = 0;
 	virtual void SetBlendStateDesc(const FMaterialBlendStateDesc& InDesc) = 0;
 	
@@ -318,7 +319,7 @@ public:
 	}
 	void SetBlendStateDesc(const FMaterialBlendStateDesc& InDesc) override { BlendStateDesc = InDesc; }
 
-	void SetShaderType(EMaterialShaderType InShaderType)
+	void SetShaderType(EMaterialShaderType InShaderType) override
 	{
 		ShaderType = InShaderType;
 	}
@@ -370,6 +371,8 @@ public:
 	UMaterial* Parent = nullptr;
 
 	TMap<FString, FMaterialParamValue> OverridedParams;
+	bool bOverrideShaderType = false;
+	EMaterialShaderType ShaderTypeOverride = EMaterialShaderType::SurfaceLit;
 	bool bOverrideBlendMode = false;
 	EMaterialBlendMode BlendModeOverride = EMaterialBlendMode::Opaque;
 	bool bOverrideBlendState = false;
@@ -457,7 +460,7 @@ public:
 	bool HasAlphaMask() const override { return Parent ? Parent->HasAlphaMask() : false; }
 	EMaterialShaderType GetShaderType() const override
 	{
-		return Parent ? Parent->GetShaderType() : EMaterialShaderType::SurfaceLit;
+		return bOverrideShaderType ? ShaderTypeOverride : (Parent ? Parent->GetShaderType() : EMaterialShaderType::SurfaceLit);
 	}
 	const FString& GetPixelShaderPath() const override
 	{
@@ -475,6 +478,11 @@ public:
 	{
 		static const FMaterialBlendStateDesc DefaultDesc = MakeOpaqueBlendStateDesc();
 		return bOverrideBlendState ? BlendStateDescOverride : (Parent ? Parent->GetBlendStateDesc() : DefaultDesc);
+	}
+	void SetShaderType(EMaterialShaderType InShaderType) override
+	{
+		bOverrideShaderType = true;
+		ShaderTypeOverride = InShaderType;
 	}
 	void SetBlendMode(EMaterialBlendMode InBlendMode) override
 	{
@@ -532,14 +540,14 @@ public:
 
 inline ERenderPass ResolveMaterialRenderPass(const UMaterialInterface* Material)
 {
-	return Material && Material->GetBlendMode() == EMaterialBlendMode::Translucent
+	return Material && IsTransparentMaterialShaderType(Material->GetShaderType())
 		? ERenderPass::Translucent
 		: ERenderPass::Opaque;
 }
 
 inline EDepthStencilType ResolveMaterialDepthPolicy(const UMaterialInterface* Material)
 {
-	return Material && Material->GetBlendMode() == EMaterialBlendMode::Translucent
+	return Material && IsTransparentMaterialShaderType(Material->GetShaderType())
 		? EDepthStencilType::DepthReadOnly
 		: EDepthStencilType::Default;
 }

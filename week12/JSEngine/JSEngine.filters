@@ -132,7 +132,7 @@
     <FxCompile Include="Shaders\Material\UberLit.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\UI\SubUV.hlsl">
+    <FxCompile Include="Shaders\VFX\SubUV.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

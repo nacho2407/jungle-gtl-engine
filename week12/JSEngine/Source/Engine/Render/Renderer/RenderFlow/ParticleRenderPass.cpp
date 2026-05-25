@@ -36,12 +36,12 @@ namespace
         };
 
         FShaderStageKey VSKey;
-        VSKey.FilePath = "Shaders/UI/ParticleSprite.hlsl";
+        VSKey.FilePath = FShaderPaths::VFXParticle;
         VSKey.EntryPoint = "VS";
         VSKey.Target = "vs_5_0";
 
         FShaderStageKey PSKey;
-        PSKey.FilePath = "Shaders/UI/ParticleSprite.hlsl";
+        PSKey.FilePath = FShaderPaths::VFXParticle;
         PSKey.EntryPoint = "PS";
         PSKey.Target = "ps_5_0";
 

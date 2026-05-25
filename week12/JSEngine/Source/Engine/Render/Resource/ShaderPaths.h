@@ -9,8 +9,10 @@ namespace FShaderPaths
 
 	inline constexpr const char* UIFont = "Shaders/UI/Font.hlsl";
 	inline constexpr const char* UILine = "Shaders/UI/Line.hlsl";
-	inline constexpr const char* UISubUV = "Shaders/UI/SubUV.hlsl";
 	inline constexpr const char* UIScreenOverlay = "Shaders/UI/ScreenOverlay.hlsl";
+
+	inline constexpr const char* VFXSubUV = "Shaders/VFX/SubUV.hlsl";
+	inline constexpr const char* VFXParticle = "Shaders/VFX/ParticleSprite.hlsl";
 
 	inline constexpr const char* EditorGizmo = "Shaders/EditorDebug/Gizmo.hlsl";
 	inline constexpr const char* EditorPrimitive = "Shaders/EditorDebug/Primitive.hlsl";

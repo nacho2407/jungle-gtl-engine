@@ -31,6 +31,9 @@
     <Filter Include="Shaders\UI">
       <UniqueIdentifier>{e798a64b-b801-a905-d8c6-b3dfffd27f4f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\VFX">
+      <UniqueIdentifier>{f133a848-e1ee-e207-28d6-27e04b7f582c}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source">
       <UniqueIdentifier>{68b9826e-a6c9-e4e4-9aa1-ada62dab4606}</UniqueIdentifier>
     </Filter>
@@ -80,7 +83,7 @@
       <UniqueIdentifier>{4166810a-6d5e-80b0-9178-961c38a55278}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\Viewport\Viewer">
-      <UniqueIdentifier>{0f49f98d-38ea-4f09-95eb-75f6fcda7902}</UniqueIdentifier>
+      <UniqueIdentifier>{06ced7f3-e9f1-f318-bf85-475db79c0921}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine">
       <UniqueIdentifier>{aae0e8af-36dd-8f57-8b6a-4868597c575d}</UniqueIdentifier>
@@ -924,6 +927,9 @@
     <ClCompile Include="Source\Engine\Render\Renderer\DefaultRenderPipeline.cpp">
       <Filter>Source\Engine\Render\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DebugViewModeResolvePass.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DecalRenderPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
@@ -954,13 +960,10 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DebugViewModeResolvePass.cpp">
-      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeMeshRenderPass.cpp">
-      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ParticleRenderPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.cpp">
@@ -994,6 +997,9 @@
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeMeshRenderPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilBuilder.cpp">
@@ -2065,6 +2071,9 @@
     <ClInclude Include="Source\Engine\Render\Renderer\IRenderPipeline.h">
       <Filter>Source\Engine\Render\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DebugViewModeResolvePass.h">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DecalRenderPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
@@ -2095,13 +2104,10 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DebugViewModeResolvePass.h">
-      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeMeshRenderPass.h">
-      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ParticleRenderPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.h">
@@ -2135,6 +2141,9 @@
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.h">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeMeshRenderPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilBuilder.h">
@@ -2485,22 +2494,25 @@
     <None Include="Shaders\EditorDebug\SelectionMask.hlsl">
       <Filter>Shaders\EditorDebug</Filter>
     </None>
+    <None Include="Shaders\EditorDebug\ViewModeMesh.hlsl">
+      <Filter>Shaders\EditorDebug</Filter>
+    </None>
     <None Include="Shaders\Material\Decal.hlsl">
       <Filter>Shaders\Material</Filter>
     </None>
     <None Include="Shaders\Material\UberLit.hlsl">
       <Filter>Shaders\Material</Filter>
     </None>
+    <None Include="Shaders\Material\UberTranslucent.hlsl">
+      <Filter>Shaders\Material</Filter>
+    </None>
+    <None Include="Shaders\PostProcess\DebugViewModeResolve.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </None>
     <None Include="Shaders\PostProcess\FXAAPass.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </None>
     <None Include="Shaders\PostProcess\FogPass.hlsl">
-      <Filter>Shaders\PostProcess</Filter>
-    </None>
-    <None Include="Shaders\EditorDebug\ViewModeMesh.hlsl">
-      <Filter>Shaders\EditorDebug</Filter>
-    </None>
-    <None Include="Shaders\PostProcess\DebugViewModeResolve.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </None>
     <None Include="Shaders\PostProcess\Outline.hlsl">
@@ -2527,11 +2539,17 @@
     <None Include="Shaders\UI\Line.hlsl">
       <Filter>Shaders\UI</Filter>
     </None>
+    <None Include="Shaders\UI\ParticleSprite.hlsl">
+      <Filter>Shaders\UI</Filter>
+    </None>
     <None Include="Shaders\UI\ScreenOverlay.hlsl">
       <Filter>Shaders\UI</Filter>
     </None>
-    <None Include="Shaders\UI\SubUV.hlsl">
-      <Filter>Shaders\UI</Filter>
+    <None Include="Shaders\VFX\ParticleSprite.hlsl">
+      <Filter>Shaders\VFX</Filter>
+    </None>
+    <None Include="Shaders\VFX\SubUV.hlsl">
+      <Filter>Shaders\VFX</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

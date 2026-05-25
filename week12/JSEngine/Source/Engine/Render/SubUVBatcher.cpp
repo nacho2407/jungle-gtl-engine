@@ -20,12 +20,12 @@ namespace
 		};
 
 		FShaderStageKey VSKey;
-		VSKey.FilePath = "Shaders/UI/SubUV.hlsl";
+		VSKey.FilePath = FShaderPaths::VFXSubUV;
 		VSKey.EntryPoint = "VS";
 		VSKey.Target = "vs_5_0";
 
 		FShaderStageKey PSKey;
-		PSKey.FilePath = "Shaders/UI/SubUV.hlsl";
+		PSKey.FilePath = FShaderPaths::VFXSubUV;
 		PSKey.EntryPoint = "PS";
 		PSKey.Target = "ps_5_0";
 
@@ -49,7 +49,7 @@ void FSubUVBatcher::Create(ID3D11Device* InDevice)
 	UMaterial* SubUVMaterial = FResourceManager::Get().GetMaterial("SubUVMat");
 	if (!SubUVMaterial)
 	{
-		SubUVMaterial = FResourceManager::Get().GetOrCreateMaterial("SubUVMat", "Asset/Material/SubUVMat.mat", EMaterialShaderType::UISubUV);
+		SubUVMaterial = FResourceManager::Get().GetOrCreateMaterial("SubUVMat", "Asset/Material/SubUVMat.mat", EMaterialShaderType::VFXSubUV);
 	}
 	if (!SubUVMaterial)
 	{

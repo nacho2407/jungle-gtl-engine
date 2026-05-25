@@ -747,7 +747,7 @@ ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(
 			Cmd.SectionIndexCount = Section.IndexCount;
 			Cmd.PerObjectConstants = FPerObjectConstants(World, FColor::White().ToVector4());
 			Cmd.WorldAABB = FAABB::TransformAABB(Bounds, World);
-			Bus.AddCommand(ERenderPass::Opaque, Cmd);
+			Bus.AddCommand(ResolveMaterialRenderPass(Cmd.Material), Cmd);
 		}
 	}
 	else
@@ -761,7 +761,7 @@ ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(
 		Cmd.SectionIndexCount = static_cast<uint32>(MeshData->Indices.size());
 		Cmd.PerObjectConstants = FPerObjectConstants(World, FColor::White().ToVector4());
 		Cmd.WorldAABB = FAABB::TransformAABB(Bounds, World);
-		Bus.AddCommand(ERenderPass::Opaque, Cmd);
+		Bus.AddCommand(ResolveMaterialRenderPass(Cmd.Material), Cmd);
 	}
 
 	Renderer.PrepareBatchers(Bus);

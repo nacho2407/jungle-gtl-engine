@@ -453,6 +453,10 @@ bool FMaterialSerializationService::SerializeMaterialInstance(const FString& Mat
 	Root["Parent"] = (MaterialInstance->Parent && !MaterialInstance->Parent->GetFilePath().empty())
 		? FPaths::Normalize(MaterialInstance->Parent->GetFilePath())
 		: (MaterialInstance->Parent ? MaterialInstance->Parent->Name : "");
+	if (MaterialInstance->bOverrideShaderType)
+	{
+		Root["ShaderType"] = ToString(MaterialInstance->GetShaderType());
+	}
 	if (MaterialInstance->bOverrideBlendMode)
 	{
 		Root["BlendMode"] = ToString(MaterialInstance->GetBlendMode());
@@ -525,6 +529,14 @@ bool FMaterialSerializationService::DeserializeMaterial(const FString& MatFilePa
 		}
 
 		UMaterialInstance* MatInstance = ResourceManager.CreateMaterialInstance(InstancePath, ParentMat);
+		if (Root.hasKey("ShaderType"))
+		{
+			EMaterialShaderType ShaderType = EMaterialShaderType::SurfaceLit;
+			if (TryParseMaterialShaderType(Root["ShaderType"].ToString(), ShaderType))
+			{
+				MatInstance->SetShaderType(ShaderType);
+			}
+		}
 		if (Root.hasKey("BlendMode"))
 		{
 			EMaterialBlendMode BlendMode = EMaterialBlendMode::Opaque;
@@ -566,7 +578,9 @@ bool FMaterialSerializationService::DeserializeMaterial(const FString& MatFilePa
 	}
 	Material->SetBlendMode(BlendMode);
 	const FMaterialBlendStateDesc DefaultBlendState =
-		(ShaderType == EMaterialShaderType::Decal || BlendMode == EMaterialBlendMode::Translucent)
+		(ShaderType == EMaterialShaderType::Decal
+			|| IsTransparentMaterialShaderType(ShaderType)
+			|| BlendMode == EMaterialBlendMode::Translucent)
 		? MakeAlphaBlendStateDesc()
 		: MakeOpaqueBlendStateDesc();
 	Material->SetBlendStateDesc(Root.hasKey("BlendState")

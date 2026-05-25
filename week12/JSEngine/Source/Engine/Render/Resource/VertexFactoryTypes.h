@@ -171,7 +171,7 @@ public:
             PrimitiveVertexLayout
         };
         static const FVertexFactoryDesc TexturedQuadDesc = {
-            FShaderPaths::UISubUV,
+            FShaderPaths::VFXSubUV,
             FShaderPaths::DepthPrepass,
             FShaderPaths::Shadow,
             FShaderPaths::EditorSelectionMask,

@@ -489,10 +489,55 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 
 	const char* BlendModeLabels[] = { "Opaque", "Translucent" };
 	int BlendModeIndex = SelectedMaterialPtr->GetBlendMode() == EMaterialBlendMode::Translucent ? 1 : 0;
+
+	{
+		const bool bMaterialInstance = SelectedMaterialPtr->IsA<UMaterialInstance>();
+		const char* ShaderTypeLabels[] = { "SurfaceLit", "Translucent", "Decal" };
+		int ShaderTypeIndex = 0;
+		if (SelectedMaterialPtr->GetShaderType() == EMaterialShaderType::Translucent)
+		{
+			ShaderTypeIndex = 1;
+		}
+		else if (SelectedMaterialPtr->GetShaderType() == EMaterialShaderType::Decal)
+		{
+			ShaderTypeIndex = 2;
+		}
+
+		ImGui::SetNextItemWidth(180.0f);
+		if (ImGui::Combo("Shader Type", &ShaderTypeIndex, ShaderTypeLabels, 3))
+		{
+			if (ShaderTypeIndex == 1)
+			{
+				SelectedMaterialPtr->SetShaderType(EMaterialShaderType::Translucent);
+				SelectedMaterialPtr->SetBlendMode(EMaterialBlendMode::Translucent);
+				if (!SelectedMaterialPtr->GetBlendStateDesc().bBlendEnable)
+				{
+					SelectedMaterialPtr->SetBlendStateDesc(MakeAlphaBlendStateDesc());
+				}
+			}
+			else if (ShaderTypeIndex == 2)
+			{
+				SelectedMaterialPtr->SetShaderType(EMaterialShaderType::Decal);
+			}
+			else
+			{
+				SelectedMaterialPtr->SetShaderType(EMaterialShaderType::SurfaceLit);
+				SelectedMaterialPtr->SetBlendMode(EMaterialBlendMode::Opaque);
+			}
+			SaveSelectedMaterial();
+		}
+
+		if (bMaterialInstance)
+		{
+			ImGui::TextDisabled("Overrides instance shader routing.");
+		}
+	}
+
 	ImGui::SetNextItemWidth(180.0f);
 	if (ImGui::Combo("Blend Mode", &BlendModeIndex, BlendModeLabels, 2))
 	{
 		SelectedMaterialPtr->SetBlendMode(BlendModeIndex == 1 ? EMaterialBlendMode::Translucent : EMaterialBlendMode::Opaque);
+		SelectedMaterialPtr->SetShaderType(BlendModeIndex == 1 ? EMaterialShaderType::Translucent : EMaterialShaderType::SurfaceLit);
 		SaveSelectedMaterial();
 	}
 
