@@ -93,7 +93,16 @@ public:
 
 	UParticleModuleTypeDataMesh();
 	void CreateDistribution();
+
+	// Unreal responsibility:
+	// TypeData owns a UStaticMesh asset reference. In this engine, FAssetRegistry
+	// exposes the selectable asset path and FMeshManager owns loaded UStaticMesh
+	// objects. This function resolves the reference from those asset/cache layers
+	// only. It must not create renderer/D3D resources.
 	void ResolveMeshFromPath();
+
+	UStaticMesh* GetStaticMesh();
+
 	FParticleEmitterInstance* CreateInstance(UParticleEmitter* InEmitterParent, UParticleSystemComponent& InComponent) override;
 	bool IsAMeshEmitter() const override { return true; }
 	bool IsMotionBlurEnabled() const;
