@@ -84,3 +84,106 @@ struct FDynamicMeshEmitterData : FDynamicSpriteEmitterDataBase
 	int32 GetDynamicVertexStride() const override { return sizeof(FMeshParticleInstanceVertex); }
 };
 
+struct FParticleBeamTrailVertex
+{
+	FVector Position = FVector::ZeroVector;
+	FVector OldPosition = FVector::ZeroVector;
+	FVector2 TexCoord = FVector2(0.0f, 0.0f);
+	FLinearColor Color = FLinearColor::White();
+};
+
+struct FDynamicBeam2EmitterReplayData : FDynamicSpriteEmitterReplayDataBase
+{
+	int32 VertexCount = 0;
+	int32 IndexCount = 0;
+	int32 IndexStride = sizeof(uint32);
+	TArray<int32> TrianglesPerSheet;
+	int32 UpVectorStepSize = 0;
+
+	int32 BeamDataOffset = -1;
+	int32 InterpolatedPointsOffset = -1;
+	int32 NoiseRateOffset = -1;
+	int32 NoiseDeltaTimeOffset = -1;
+	int32 TargetNoisePointsOffset = -1;
+	int32 NextNoisePointsOffset = -1;
+	int32 TaperValuesOffset = -1;
+	int32 NoiseDistanceScaleOffset = -1;
+
+	bool bLowFreqNoise_Enabled = false;
+	bool bHighFreqNoise_Enabled = false;
+	bool bSmoothNoise_Enabled = false;
+	bool bUseSource = false;
+	bool bUseTarget = false;
+	bool bTargetNoise = false;
+	int32 Sheets = 1;
+	int32 Frequency = 1;
+	int32 NoiseTessellation = 1;
+	float NoiseRangeScale = 1.0f;
+	float NoiseTangentStrength = 0.0f;
+	FVector NoiseSpeed = FVector::ZeroVector;
+	float NoiseLockTime = 0.0f;
+	float NoiseLockRadius = 0.0f;
+	float NoiseTension = 0.0f;
+
+	int32 TextureTile = 0;
+	float TextureTileDistance = 0.0f;
+	uint8 TaperMethod = 0;
+	int32 InterpolationPoints = 0;
+
+	bool bRenderGeometry = true;
+	bool bRenderDirectLine = false;
+	bool bRenderLines = false;
+	bool bRenderTessellation = false;
+};
+
+struct FDynamicBeam2EmitterData : FDynamicSpriteEmitterDataBase
+{
+	static const uint32 MaxBeams = 2 * 1024;
+	static const uint32 MaxInterpolationPoints = 250;
+	static const uint32 MaxNoiseFrequency = 250;
+
+	FDynamicBeam2EmitterReplayData Source;
+	TArray<FParticleBeamTrailVertex> Vertices;
+	TArray<uint32> Indices;
+
+	FDynamicBeam2EmitterData() { Source.eEmitterType = EDynamicEmitterType::Beam; }
+	const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
+	int32 GetDynamicVertexStride() const override { return sizeof(FParticleBeamTrailVertex); }
+	void BuildMeshData();
+};
+
+struct FDynamicTrailsEmitterReplayData : FDynamicSpriteEmitterReplayDataBase
+{
+	int32 PrimitiveCount = 0;
+	int32 VertexCount = 0;
+	int32 IndexCount = 0;
+	int32 IndexStride = sizeof(uint32);
+	int32 TrailDataOffset = -1;
+	int32 MaxActiveParticleCount = 0;
+	int32 TrailCount = 1;
+	int32 Sheets = 1;
+};
+
+struct FDynamicRibbonEmitterReplayData : FDynamicTrailsEmitterReplayData
+{
+	int32 MaxTessellationBetweenParticles = 0;
+};
+
+struct FDynamicRibbonEmitterData : FDynamicSpriteEmitterDataBase
+{
+	FDynamicRibbonEmitterReplayData Source;
+	TArray<FParticleBeamTrailVertex> Vertices;
+	TArray<uint32> Indices;
+	uint32 RenderAxisOption : 2;
+
+	FDynamicRibbonEmitterData()
+		: RenderAxisOption(0)
+	{
+		Source.eEmitterType = EDynamicEmitterType::Ribbon;
+	}
+
+	const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
+	int32 GetDynamicVertexStride() const override { return sizeof(FParticleBeamTrailVertex); }
+	void BuildMeshData();
+};
+

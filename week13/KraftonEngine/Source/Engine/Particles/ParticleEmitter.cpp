@@ -167,6 +167,8 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 
 	if (HighTypeData)
 	{
+		HighTypeData->CacheModuleInfo(this);
+
 		const int32 ReqBytes = static_cast<int32>(HighTypeData->RequiredBytes(nullptr));
 		if (ReqBytes > 0)
 		{

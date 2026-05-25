@@ -79,6 +79,149 @@ struct FMeshMotionBlurPayloadData
 	float PayloadPrevCameraOffset = 0.0f;
 };
 
+//
+// TypeDataBeam2 payload
+//
+#define BEAM2_TYPEDATA_LOCKED_MASK					0x80000000
+#define BEAM2_TYPEDATA_LOCKED(x)					(((x) & BEAM2_TYPEDATA_LOCKED_MASK) != 0)
+#define BEAM2_TYPEDATA_SETLOCKED(x, Locked)			((x) = (Locked) ? ((x) | BEAM2_TYPEDATA_LOCKED_MASK) : ((x) & ~BEAM2_TYPEDATA_LOCKED_MASK))
+
+#define BEAM2_TYPEDATA_FREQUENCY_MASK				0x00fff000
+#define BEAM2_TYPEDATA_FREQUENCY_SHIFT				12
+#define BEAM2_TYPEDATA_FREQUENCY(x)					(((x) & BEAM2_TYPEDATA_FREQUENCY_MASK) >> BEAM2_TYPEDATA_FREQUENCY_SHIFT)
+#define BEAM2_TYPEDATA_SETFREQUENCY(x, Freq)		((x) = (((x) & ~BEAM2_TYPEDATA_FREQUENCY_MASK) | ((Freq) << BEAM2_TYPEDATA_FREQUENCY_SHIFT)))
+
+struct FBeam2TypeDataPayload
+{
+	FVector SourcePoint = FVector::ZeroVector;
+	FVector SourceTangent = FVector::XAxisVector;
+	float SourceStrength = 0.0f;
+
+	FVector TargetPoint = FVector::ZeroVector;
+	FVector TargetTangent = FVector::XAxisVector;
+	float TargetStrength = 0.0f;
+
+	int32 Lock_Max_NumNoisePoints = 0;
+	int32 InterpolationSteps = 0;
+	FVector Direction = FVector::XAxisVector;
+	double StepSize = 0.0;
+	int32 Steps = 0;
+	float TravelRatio = 0.0f;
+	int32 TriangleCount = 0;
+	int32 Flags = 0;
+};
+
+struct FBeamParticleSourceTargetPayloadData
+{
+	int32 ParticleIndex = INDEX_NONE;
+};
+
+struct FBeamParticleSourceBranchPayloadData
+{
+	int32 NoiseIndex = INDEX_NONE;
+};
+
+struct FBeamParticleModifierPayloadData
+{
+	uint32 bModifyPosition : 1;
+	uint32 bScalePosition : 1;
+	uint32 bModifyTangent : 1;
+	uint32 bScaleTangent : 1;
+	uint32 bModifyStrength : 1;
+	uint32 bScaleStrength : 1;
+	FVector Position = FVector::ZeroVector;
+	FVector Tangent = FVector::ZeroVector;
+	float Strength = 0.0f;
+
+	FBeamParticleModifierPayloadData()
+		: bModifyPosition(false)
+		, bScalePosition(false)
+		, bModifyTangent(false)
+		, bScaleTangent(false)
+		, bModifyStrength(false)
+		, bScaleStrength(false)
+	{
+	}
+
+	void UpdatePosition(FVector& Value)
+	{
+		if (bModifyPosition)
+		{
+			Value = bScalePosition ? (Value * Position) : (Value + Position);
+		}
+	}
+
+	void UpdateTangent(FVector& Value, bool bAbsolute)
+	{
+		if (bModifyTangent)
+		{
+			// Unreal rotates relative tangent modifiers into the current tangent basis.
+			// Jungle currently lacks the exact FVector::FindBetweenNormals helper, so
+			// the absolute branch is exact and the relative branch is left as the UE
+			// adapter point instead of replacing it with unrelated lookup logic.
+			const FVector ModTangent = bAbsolute ? Tangent : Tangent;
+			Value = bScaleTangent ? (Value * ModTangent) : (Value + ModTangent);
+		}
+	}
+
+	void UpdateStrength(float& Value)
+	{
+		if (bModifyStrength)
+		{
+			Value = bScaleStrength ? (Value * Strength) : (Value + Strength);
+		}
+	}
+};
+
+#define TRAIL_EMITTER_FLAG_MASK				0xf0000000
+#define TRAIL_EMITTER_FORCEKILL			0x00000000
+#define TRAIL_EMITTER_DEADTRAIL			0x10000000
+#define TRAIL_EMITTER_MIDDLE				0x20000000
+#define TRAIL_EMITTER_START				0x40000000
+#define TRAIL_EMITTER_END					0x80000000
+#define TRAIL_EMITTER_ONLY					(TRAIL_EMITTER_START | TRAIL_EMITTER_END)
+#define TRAIL_EMITTER_PREV_MASK			0x0fffc000
+#define TRAIL_EMITTER_PREV_SHIFT			14
+#define TRAIL_EMITTER_NEXT_MASK			0x00003fff
+#define TRAIL_EMITTER_NEXT_SHIFT			0
+#define TRAIL_EMITTER_IS_START(x)			(((x) & TRAIL_EMITTER_START) != 0)
+#define TRAIL_EMITTER_IS_END(x)			(((x) & TRAIL_EMITTER_END) != 0)
+#define TRAIL_EMITTER_IS_ONLY(x)			(((x) & TRAIL_EMITTER_ONLY) == TRAIL_EMITTER_ONLY)
+#define TRAIL_EMITTER_IS_MIDDLE(x)			(((x) & TRAIL_EMITTER_FLAG_MASK) == TRAIL_EMITTER_MIDDLE)
+#define TRAIL_EMITTER_IS_DEADTRAIL(x)		(((x) & TRAIL_EMITTER_DEADTRAIL) != 0)
+#define TRAIL_EMITTER_SET_PREV(x, Prev)		((x) = (((x) & ~TRAIL_EMITTER_PREV_MASK) | (((Prev) << TRAIL_EMITTER_PREV_SHIFT) & TRAIL_EMITTER_PREV_MASK)))
+#define TRAIL_EMITTER_SET_NEXT(x, Next)		((x) = (((x) & ~TRAIL_EMITTER_NEXT_MASK) | (((Next) << TRAIL_EMITTER_NEXT_SHIFT) & TRAIL_EMITTER_NEXT_MASK)))
+#define TRAIL_EMITTER_GET_PREV(x)			(((x) & TRAIL_EMITTER_PREV_MASK) >> TRAIL_EMITTER_PREV_SHIFT)
+#define TRAIL_EMITTER_GET_NEXT(x)			(((x) & TRAIL_EMITTER_NEXT_MASK) >> TRAIL_EMITTER_NEXT_SHIFT)
+
+struct FTrailsBaseTypeDataPayload
+{
+	int32 Flags = TRAIL_EMITTER_ONLY;
+	int32 TrailIndex = INDEX_NONE;
+	int32 TriangleCount = 0;
+	float SpawnTime = 0.0f;
+	float SpawnDelta = 0.0f;
+	float TiledU = 0.0f;
+	int32 SpawnedTessellationPoints = 0;
+	int32 RenderingInterpCount = 1;
+	float PinchScaleFactor = 1.0f;
+	uint32 bInterpolatedSpawn : 1;
+	uint32 bMovementSpawned : 1;
+
+	FTrailsBaseTypeDataPayload()
+		: bInterpolatedSpawn(false)
+		, bMovementSpawned(false)
+	{
+	}
+};
+
+struct FRibbonTypeDataPayload : public FTrailsBaseTypeDataPayload
+{
+	FVector Tangent = FVector::XAxisVector;
+	FVector Up = FVector::ZAxisVector;
+	int32 SourceIndex = INDEX_NONE;
+};
+
 struct FParticleEventInstancePayload
 {
 	bool bSpawnEventsPresent = false;

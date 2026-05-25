@@ -6,7 +6,17 @@
 #include "Particles/ParticleEmitter.h"
 #include "Component/Primitive/ParticleSystemComponent.h"
 #include "Particles/Spawn/ParticleModuleSpawn.h"
+#include "Particles/Spawn/ParticleModuleSpawnPerUnit.h"
 #include "Particles/TypeData/ParticleModuleTypeDataBase.h"
+#include "Particles/TypeData/ParticleModuleTypeDataMesh.h"
+#include "Particles/TypeData/ParticleModuleTypeDataBeam2.h"
+#include "Particles/TypeData/ParticleModuleTypeDataRibbon.h"
+#include "Particles/Beam/ParticleModuleBeamSource.h"
+#include "Particles/Beam/ParticleModuleBeamTarget.h"
+#include "Particles/Beam/ParticleModuleBeamNoise.h"
+#include "Particles/Beam/ParticleModuleBeamModifier.h"
+#include "Particles/Trail/ParticleModuleTrailSource.h"
+#include "Particles/Material/ParticleModuleMeshMaterial.h"
 
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
@@ -2100,6 +2110,20 @@ bool FParticleSpriteEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBas
 	return true;
 }
 
+void FParticleMeshEmitterInstance::InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent)
+{
+	FParticleEmitterInstance::InitParameters(InTemplate, InComponent);
+	MeshTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataMesh>(CurrentLODLevel->TypeDataModule) : nullptr;
+	bMeshRotationActive = MeshTypeData ? MeshTypeData->bEnableMeshRotation : false;
+	bMotionBlurEnabled = MeshTypeData ? MeshTypeData->IsMotionBlurEnabled() : false;
+}
+
+void FParticleMeshEmitterInstance::Init()
+{
+	FParticleEmitterInstance::Init();
+	MeshTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataMesh>(CurrentLODLevel->TypeDataModule) : MeshTypeData;
+}
+
 uint32 FParticleMeshEmitterInstance::RequiredBytes()
 {
 	uint32 Bytes = FParticleEmitterInstance::RequiredBytes();
@@ -2201,39 +2225,11 @@ void FParticleMeshEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 
 void FParticleMeshEmitterInstance::UpdateBoundingBox(float DeltaTime)
 {
-	// Phase1 has no static mesh bounds, so keep the base integrator/bounds path.
+	// UE original responsibility: include static mesh bounds transformed by mesh rotation,
+	// camera-facing and axis-lock options.
+	// Missing Jungle foundation: UStaticMesh render/physics bounds on particle TypeData.
+	// System to connect later: StaticMesh bounds adapter, then keep UE UpdateBoundingBox order.
 	FParticleEmitterInstance::UpdateBoundingBox(DeltaTime);
-}
-
-void FParticleMeshEmitterInstance::PreSpawn(
-	FBaseParticle* Particle,
-	const FVector& InitialLocation,
-	const FVector& InitialVelocity)
-{
-	FParticleEmitterInstance::PreSpawn(Particle, InitialLocation, InitialVelocity);
-
-	uint8* ParticleBase = reinterpret_cast<uint8*>(Particle);
-
-	if (MeshRotationOffset > 0)
-	{
-		FMeshRotationPayloadData& RotationPayload =
-			*reinterpret_cast<FMeshRotationPayloadData*>(ParticleBase + MeshRotationOffset);
-		RotationPayload.InitialOrientation = FVector::ZeroVector;
-		RotationPayload.Rotation = FVector::ZeroVector;
-		RotationPayload.CurContinuousRotation = FVector::ZeroVector;
-		RotationPayload.RotationRateBase = FVector::ZeroVector;
-		RotationPayload.RotationRate = FVector::ZeroVector;
-	}
-
-	if (MeshMotionBlurOffset > 0)
-	{
-		FMeshMotionBlurPayloadData& MotionBlurPayload =
-			*reinterpret_cast<FMeshMotionBlurPayloadData*>(ParticleBase + MeshMotionBlurOffset);
-		MotionBlurPayload.BaseParticlePrevVelocity = InitialVelocity;
-		MotionBlurPayload.BaseParticlePrevSize = Particle->Size;
-		MotionBlurPayload.BaseParticlePrevRotation = Particle->Rotation;
-		MotionBlurPayload.PayloadPrevRotation = FVector::ZeroVector;
-	}
 }
 
 void FParticleMeshEmitterInstance::PostSpawn(
@@ -2243,15 +2239,82 @@ void FParticleMeshEmitterInstance::PostSpawn(
 {
 	FParticleEmitterInstance::PostSpawn(Particle, InterpolationPercentage, SpawnTime);
 
+	uint8* ParticleBase = reinterpret_cast<uint8*>(Particle);
+	if (MeshRotationOffset > 0)
+	{
+		FMeshRotationPayloadData& RotationPayload =
+			*reinterpret_cast<FMeshRotationPayloadData*>(ParticleBase + MeshRotationOffset);
+		RotationPayload.InitialOrientation = MeshTypeData ? MeshTypeData->RollPitchYawRange.GetValue(EmitterTime, Component) : FVector::ZeroVector;
+		RotationPayload.Rotation = RotationPayload.InitialOrientation + RotationPayload.InitRotation;
+		RotationPayload.CurContinuousRotation = FVector::ZeroVector;
+
+		// UE original responsibility: velocity/away-from-center alignment, camera-facing,
+		// axis-lock, bApplyParticleRotationAsSpin and bFaceCameraDirectionRatherThanPosition.
+		// Missing Jungle foundation: view/camera-facing basis calculation in mesh particle
+		// dynamic path.
+		// System to connect later: port UE mesh orientation helper at render-replay boundary.
+	}
+
 	if (MeshMotionBlurOffset > 0)
 	{
-		uint8* ParticleBase = reinterpret_cast<uint8*>(Particle);
 		FMeshMotionBlurPayloadData& MotionBlurPayload =
 			*reinterpret_cast<FMeshMotionBlurPayloadData*>(ParticleBase + MeshMotionBlurOffset);
 		MotionBlurPayload.BaseParticlePrevVelocity = Particle->Velocity;
 		MotionBlurPayload.BaseParticlePrevSize = Particle->Size;
 		MotionBlurPayload.BaseParticlePrevRotation = Particle->Rotation;
 	}
+}
+
+void FParticleMeshEmitterInstance::Tick_MaterialOverrides(int32 EmitterIndex)
+{
+	FParticleEmitterInstance::Tick_MaterialOverrides(EmitterIndex);
+	CurrentMaterials.clear();
+}
+
+void FParticleMeshEmitterInstance::SetMeshMaterials(const TArray<UMaterial*>& InMaterials)
+{
+	CurrentMaterials = InMaterials;
+}
+
+void FParticleMeshEmitterInstance::GetMeshMaterials(TArray<UMaterial*>& OutMaterials, const UParticleLODLevel* LODLevel, bool bLogWarnings) const
+{
+	OutMaterials.clear();
+	if (!CurrentMaterials.empty())
+	{
+		OutMaterials = CurrentMaterials;
+		return;
+	}
+
+	if (LODLevel)
+	{
+		for (UParticleModule* Module : LODLevel->Modules)
+		{
+			if (UParticleModuleMeshMaterial* MeshMaterialModule = Cast<UParticleModuleMeshMaterial>(Module))
+			{
+				if (!MeshMaterialModule->MeshMaterials.empty())
+				{
+					OutMaterials = MeshMaterialModule->MeshMaterials;
+					return;
+				}
+			}
+		}
+	}
+
+	if (MeshTypeData && MeshTypeData->bOverrideMaterial && CurrentMaterial)
+	{
+		OutMaterials.push_back(CurrentMaterial);
+		return;
+	}
+
+	if (CurrentMaterial)
+	{
+		OutMaterials.push_back(CurrentMaterial);
+	}
+
+	// UE original responsibility: append static mesh section materials after checking
+	// component/material/type-data overrides.
+	// Missing Jungle foundation: StaticMesh section material adapter on TypeData mesh asset.
+	// System to connect later: UStaticMesh material slot access.
 }
 
 FDynamicEmitterDataBase* FParticleMeshEmitterInstance::GetDynamicData(bool bSelected)
@@ -2298,6 +2361,702 @@ bool FParticleMeshEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase&
 	MeshData.OrbitModuleOffset = OrbitModuleOffset;
 	MeshData.CameraPayloadOffset = CameraPayloadOffset;
 	MeshData.bUseLocalSpace = GetCurrentLODLevelChecked()->RequiredModule->bUseLocalSpace;
+	// UE original responsibility: choose static mesh LOD using bUseStaticMeshLODs and LODSizeScale.
+	// Missing Jungle foundation: view-dependent mesh particle LOD size calculation.
+	// System to connect later: StaticMesh LOD selector before FDynamicMeshEmitterData upload.
 
+	return true;
+}
+
+namespace
+{
+	template <typename T>
+	void EnsureIndexedValue(TArray<T>& Values, int32 Index, const T& DefaultValue)
+	{
+		if (Index < 0)
+		{
+			return;
+		}
+		if (static_cast<int32>(Values.size()) <= Index)
+		{
+			Values.resize(Index + 1, DefaultValue);
+		}
+	}
+}
+
+void FParticleBeam2EmitterInstance::InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent)
+{
+	FParticleEmitterInstance::InitParameters(InTemplate, InComponent);
+	bIsBeam = true;
+	BeamTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataBeam2>(CurrentLODLevel->TypeDataModule) : nullptr;
+}
+
+void FParticleBeam2EmitterInstance::Init()
+{
+	FParticleEmitterInstance::Init();
+	BeamTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataBeam2>(CurrentLODLevel->TypeDataModule) : BeamTypeData;
+	FirstEmission = true;
+	TickCount = 0;
+	BeamCount = 0;
+	SetupBeamModifierModulesOffsets();
+}
+
+void FParticleBeam2EmitterInstance::SetCurrentLODIndex(int32 InLODIndex, bool bInFullyProcess)
+{
+	FParticleEmitterInstance::SetCurrentLODIndex(InLODIndex, bInFullyProcess);
+	BeamTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataBeam2>(CurrentLODLevel->TypeDataModule) : BeamTypeData;
+	SetupBeamModifierModulesOffsets();
+}
+
+void FParticleBeam2EmitterInstance::SetupBeamModifierModulesOffsets()
+{
+	const int32 LODIndex = CurrentLODLevelIndex;
+	if (BeamTypeData)
+	{
+		BeamModule_Source = LODIndex < static_cast<int32>(BeamTypeData->LOD_BeamModule_Source.size()) ? BeamTypeData->LOD_BeamModule_Source[LODIndex] : nullptr;
+		BeamModule_Target = LODIndex < static_cast<int32>(BeamTypeData->LOD_BeamModule_Target.size()) ? BeamTypeData->LOD_BeamModule_Target[LODIndex] : nullptr;
+		BeamModule_Noise = LODIndex < static_cast<int32>(BeamTypeData->LOD_BeamModule_Noise.size()) ? BeamTypeData->LOD_BeamModule_Noise[LODIndex] : nullptr;
+		BeamModule_SourceModifier = LODIndex < static_cast<int32>(BeamTypeData->LOD_BeamModule_SourceModifier.size()) ? BeamTypeData->LOD_BeamModule_SourceModifier[LODIndex] : nullptr;
+		BeamModule_TargetModifier = LODIndex < static_cast<int32>(BeamTypeData->LOD_BeamModule_TargetModifier.size()) ? BeamTypeData->LOD_BeamModule_TargetModifier[LODIndex] : nullptr;
+		BeamMethod = BeamTypeData->BeamMethod;
+	}
+	BeamModule_SourceModifier_Offset = BeamModule_SourceModifier ? static_cast<int32>(GetModuleDataOffset(BeamModule_SourceModifier)) : INDEX_NONE;
+	BeamModule_TargetModifier_Offset = BeamModule_TargetModifier ? static_cast<int32>(GetModuleDataOffset(BeamModule_TargetModifier)) : INDEX_NONE;
+}
+
+uint32 FParticleBeam2EmitterInstance::RequiredBytes()
+{
+	uint32 Bytes = FParticleEmitterInstance::RequiredBytes();
+	if (BeamTypeData)
+	{
+		Bytes += BeamTypeData->RequiredBytes(BeamTypeData);
+	}
+	return Bytes;
+}
+
+void FParticleBeam2EmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
+{
+	if (bEmitterIsDone)
+	{
+		return;
+	}
+
+	UParticleLODLevel* LODLevel = GetCurrentLODLevelChecked();
+	const float EmitterDelay = Tick_EmitterTimeSetup(DeltaTime, LODLevel);
+	if (bEnabled)
+	{
+		KillParticles();
+		float Rate = 0.0f;
+		int32 Burst = 0;
+		float BurstTime = 0.0f;
+		if (!bSuppressSpawning && LODLevel->SpawnModule)
+		{
+			Rate = LODLevel->SpawnModule->SpawnRate * LODLevel->SpawnModule->SpawnRateScale;
+			Burst = 0;
+		}
+		SpawnFraction = SpawnBeamParticles(SpawnFraction, Rate, DeltaTime, Burst, BurstTime);
+		ResetParticleParameters(DeltaTime);
+		Tick_ModuleUpdate(DeltaTime, LODLevel);
+		Tick_ModulePostUpdate(DeltaTime, LODLevel);
+		UpdateBoundingBox(DeltaTime);
+		Tick_ModuleFinalUpdate(DeltaTime, LODLevel);
+		CheckEmitterFinished();
+		IsRenderDataDirty = 1;
+	}
+	else
+	{
+		FakeBursts();
+	}
+	EmitterTime += EmitterDelay;
+	LastDeltaTime = DeltaTime;
+	++TickCount;
+}
+
+float FParticleBeam2EmitterInstance::SpawnBeamParticles(float OldLeftover, float Rate, float DeltaTime, int32 Burst, float BurstTime)
+{
+	if (!BeamTypeData)
+	{
+		return OldLeftover;
+	}
+
+	const int32 MaxBeamCount = std::max(1, BeamTypeData->MaxBeamCount);
+	int32 Number = std::max(0, MaxBeamCount - ActiveParticles);
+	if (!BeamTypeData->bAlwaysOn)
+	{
+		const float ParticlesToSpawn = Rate * DeltaTime + OldLeftover;
+		Number = std::min(Number, static_cast<int32>(std::floor(ParticlesToSpawn)) + Burst);
+		OldLeftover = ParticlesToSpawn - std::floor(ParticlesToSpawn);
+	}
+	else
+	{
+		OldLeftover = 0.0f;
+	}
+
+	if (Number > 0)
+	{
+		SpawnParticles(Number, DeltaTime, Number > 0 ? DeltaTime / static_cast<float>(Number) : 0.0f, Location, FVector::ZeroVector, nullptr);
+	}
+
+	BeamCount = ActiveParticles;
+	return OldLeftover;
+}
+
+void FParticleBeam2EmitterInstance::PostSpawn(FBaseParticle* Particle, float InterpolationPercentage, float SpawnTime)
+{
+	if (BeamModule_Source && BeamModule_Source->bEnabled)
+	{
+		BeamModule_Source->Spawn({ *this, static_cast<int32>(GetModuleDataOffset(BeamModule_Source)), SpawnTime, Particle });
+	}
+	if (BeamModule_SourceModifier && BeamModule_SourceModifier->bEnabled)
+	{
+		BeamModule_SourceModifier->Spawn({ *this, static_cast<int32>(GetModuleDataOffset(BeamModule_SourceModifier)), SpawnTime, Particle });
+	}
+	if (BeamModule_Target && BeamModule_Target->bEnabled)
+	{
+		BeamModule_Target->Spawn({ *this, static_cast<int32>(GetModuleDataOffset(BeamModule_Target)), SpawnTime, Particle });
+	}
+	if (BeamModule_TargetModifier && BeamModule_TargetModifier->bEnabled)
+	{
+		BeamModule_TargetModifier->Spawn({ *this, static_cast<int32>(GetModuleDataOffset(BeamModule_TargetModifier)), SpawnTime, Particle });
+	}
+	if (BeamModule_Noise && BeamModule_Noise->bEnabled)
+	{
+		BeamModule_Noise->Spawn({ *this, static_cast<int32>(GetModuleDataOffset(BeamModule_Noise)), SpawnTime, Particle });
+	}
+	if (BeamTypeData && BeamTypeData->bEnabled)
+	{
+		BeamTypeData->Spawn({ *this, TypeDataOffset, SpawnTime, Particle });
+	}
+	FParticleEmitterInstance::PostSpawn(Particle, InterpolationPercentage, SpawnTime);
+}
+
+void FParticleBeam2EmitterInstance::Tick_ModulePostUpdate(float DeltaTime, UParticleLODLevel* CurrentLODLevel)
+{
+	if (BeamModule_Source && BeamModule_Source->bEnabled) BeamModule_Source->Update({ *this, static_cast<int32>(GetModuleDataOffset(BeamModule_Source)), DeltaTime });
+	if (BeamModule_SourceModifier && BeamModule_SourceModifier->bEnabled) BeamModule_SourceModifier->Update({ *this, static_cast<int32>(GetModuleDataOffset(BeamModule_SourceModifier)), DeltaTime });
+	if (BeamModule_Target && BeamModule_Target->bEnabled) BeamModule_Target->Update({ *this, static_cast<int32>(GetModuleDataOffset(BeamModule_Target)), DeltaTime });
+	if (BeamModule_TargetModifier && BeamModule_TargetModifier->bEnabled) BeamModule_TargetModifier->Update({ *this, static_cast<int32>(GetModuleDataOffset(BeamModule_TargetModifier)), DeltaTime });
+	if (BeamModule_Noise && BeamModule_Noise->bEnabled) BeamModule_Noise->Update({ *this, static_cast<int32>(GetModuleDataOffset(BeamModule_Noise)), DeltaTime });
+	if (BeamTypeData && BeamTypeData->bEnabled) BeamTypeData->Update({ *this, TypeDataOffset, DeltaTime });
+	FParticleEmitterInstance::Tick_ModulePostUpdate(DeltaTime, CurrentLODLevel);
+}
+
+void FParticleBeam2EmitterInstance::ResolveSource()
+{
+	// UE original responsibility: resolve Actor/Emitter/Particle/Name lookup for beam sources.
+	// Current support: Default source/target, UserSet source/target, Distance beam.
+	// Current unsupported: Actor lookup, Emitter lookup, Particle lookup, Branch beam.
+	// System to connect later: component instance parameters and emitter name lookup.
+}
+
+void FParticleBeam2EmitterInstance::ResolveTarget()
+{
+	// UE original responsibility: resolve Actor/Emitter/Particle/Name lookup for beam targets.
+	// Current support: Default source/target, UserSet source/target, Distance beam.
+	// Current unsupported: Actor lookup, Emitter lookup, Particle lookup, Branch beam.
+	// System to connect later: component instance parameters and emitter name lookup.
+}
+
+void FParticleBeam2EmitterInstance::DetermineVertexAndTriangleCount()
+{
+	VertexCount = 0;
+	TriangleCount = 0;
+	BeamTrianglesPerSheet.clear();
+	for (int32 i = 0; i < ActiveParticles; ++i)
+	{
+		DECLARE_PARTICLE(Particle, ParticleData + ParticleStride * ParticleIndices[i]);
+		FBeam2TypeDataPayload* BeamData = reinterpret_cast<FBeam2TypeDataPayload*>(reinterpret_cast<uint8*>(&Particle) + TypeDataOffset);
+		TriangleCount += BeamData->TriangleCount;
+		VertexCount += (BeamData->Steps + 1) * 2 * (BeamTypeData ? std::max(1, BeamTypeData->Sheets) : 1);
+		BeamTrianglesPerSheet.push_back(BeamData->TriangleCount);
+	}
+}
+
+void FParticleBeam2EmitterInstance::UpdateBoundingBox(float DeltaTime)
+{
+	FParticleEmitterInstance::UpdateBoundingBox(DeltaTime);
+}
+
+void FParticleBeam2EmitterInstance::ForceUpdateBoundingBox()
+{
+	UpdateBoundingBox(0.0f);
+}
+
+void FParticleBeam2EmitterInstance::KillParticles()
+{
+	FParticleEmitterInstance::KillParticles();
+	BeamCount = ActiveParticles;
+}
+
+void FParticleBeam2EmitterInstance::SetBeamEndPoint(FVector NewEndPoint) { SetBeamTargetPoint(NewEndPoint, 0); }
+void FParticleBeam2EmitterInstance::SetBeamSourcePoint(FVector NewSourcePoint, int32 SourceIndex) { EnsureIndexedValue(UserSetSourceArray, SourceIndex, FVector::ZeroVector); if (SourceIndex >= 0) UserSetSourceArray[SourceIndex] = NewSourcePoint; }
+void FParticleBeam2EmitterInstance::SetBeamSourceTangent(FVector NewTangentPoint, int32 SourceIndex) { EnsureIndexedValue(UserSetSourceTangentArray, SourceIndex, FVector::ZeroVector); if (SourceIndex >= 0) UserSetSourceTangentArray[SourceIndex] = NewTangentPoint; }
+void FParticleBeam2EmitterInstance::SetBeamSourceStrength(float NewSourceStrength, int32 SourceIndex) { EnsureIndexedValue(UserSetSourceStrengthArray, SourceIndex, 0.0f); if (SourceIndex >= 0) UserSetSourceStrengthArray[SourceIndex] = NewSourceStrength; }
+void FParticleBeam2EmitterInstance::SetBeamTargetPoint(FVector NewTargetPoint, int32 TargetIndex) { EnsureIndexedValue(UserSetTargetArray, TargetIndex, FVector::ZeroVector); if (TargetIndex >= 0) UserSetTargetArray[TargetIndex] = NewTargetPoint; }
+void FParticleBeam2EmitterInstance::SetBeamTargetTangent(FVector NewTangentPoint, int32 TargetIndex) { EnsureIndexedValue(UserSetTargetTangentArray, TargetIndex, FVector::ZeroVector); if (TargetIndex >= 0) UserSetTargetTangentArray[TargetIndex] = NewTangentPoint; }
+void FParticleBeam2EmitterInstance::SetBeamTargetStrength(float NewTargetStrength, int32 TargetIndex) { EnsureIndexedValue(UserSetTargetStrengthArray, TargetIndex, 0.0f); if (TargetIndex >= 0) UserSetTargetStrengthArray[TargetIndex] = NewTargetStrength; }
+
+bool FParticleBeam2EmitterInstance::GetBeamEndPoint(FVector& OutEndPoint) const { return GetBeamTargetPoint(0, OutEndPoint); }
+bool FParticleBeam2EmitterInstance::GetBeamSourcePoint(int32 SourceIndex, FVector& OutSourcePoint) const { if (SourceIndex >= 0 && SourceIndex < static_cast<int32>(UserSetSourceArray.size())) { OutSourcePoint = UserSetSourceArray[SourceIndex]; return true; } return false; }
+bool FParticleBeam2EmitterInstance::GetBeamSourceTangent(int32 SourceIndex, FVector& OutTangentPoint) const { if (SourceIndex >= 0 && SourceIndex < static_cast<int32>(UserSetSourceTangentArray.size())) { OutTangentPoint = UserSetSourceTangentArray[SourceIndex]; return true; } return false; }
+bool FParticleBeam2EmitterInstance::GetBeamSourceStrength(int32 SourceIndex, float& OutSourceStrength) const { if (SourceIndex >= 0 && SourceIndex < static_cast<int32>(UserSetSourceStrengthArray.size())) { OutSourceStrength = UserSetSourceStrengthArray[SourceIndex]; return true; } return false; }
+bool FParticleBeam2EmitterInstance::GetBeamTargetPoint(int32 TargetIndex, FVector& OutTargetPoint) const { if (TargetIndex >= 0 && TargetIndex < static_cast<int32>(UserSetTargetArray.size())) { OutTargetPoint = UserSetTargetArray[TargetIndex]; return true; } return false; }
+bool FParticleBeam2EmitterInstance::GetBeamTargetTangent(int32 TargetIndex, FVector& OutTangentPoint) const { if (TargetIndex >= 0 && TargetIndex < static_cast<int32>(UserSetTargetTangentArray.size())) { OutTangentPoint = UserSetTargetTangentArray[TargetIndex]; return true; } return false; }
+bool FParticleBeam2EmitterInstance::GetBeamTargetStrength(int32 TargetIndex, float& OutTargetStrength) const { if (TargetIndex >= 0 && TargetIndex < static_cast<int32>(UserSetTargetStrengthArray.size())) { OutTargetStrength = UserSetTargetStrengthArray[TargetIndex]; return true; } return false; }
+
+void FParticleBeam2EmitterInstance::ApplyWorldOffset(FVector InOffset, bool bWorldShift)
+{
+	FParticleEmitterInstance::ApplyWorldOffset(InOffset, bWorldShift);
+	for (FVector& Source : UserSetSourceArray) Source += InOffset;
+	for (FVector& Target : UserSetTargetArray) Target += InOffset;
+}
+
+UMaterial* FParticleBeam2EmitterInstance::GetCurrentMaterial()
+{
+	return FParticleEmitterInstance::GetCurrentMaterial();
+}
+
+FDynamicEmitterDataBase* FParticleBeam2EmitterInstance::GetDynamicData(bool bSelected)
+{
+	FDynamicBeam2EmitterData* Data = new FDynamicBeam2EmitterData();
+	if (!FillReplayData(Data->Source))
+	{
+		delete Data;
+		return nullptr;
+	}
+	Data->BuildMeshData();
+	return Data;
+}
+
+bool FParticleBeam2EmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& OutData)
+{
+	if (!IsReplayType(OutData, EDynamicEmitterType::Beam)) return false;
+	if (!FParticleEmitterInstance::FillReplayData(OutData)) return false;
+	FDynamicBeam2EmitterReplayData& BeamData = static_cast<FDynamicBeam2EmitterReplayData&>(OutData);
+	DetermineVertexAndTriangleCount();
+	BeamData.Material = GetCurrentMaterial();
+	BeamData.VertexCount = VertexCount;
+	BeamData.IndexCount = TriangleCount * 3;
+	BeamData.TrianglesPerSheet = BeamTrianglesPerSheet;
+	BeamData.BeamDataOffset = TypeDataOffset;
+	BeamData.Sheets = BeamTypeData ? std::max(1, BeamTypeData->Sheets) : 1;
+	BeamData.InterpolationPoints = BeamTypeData ? BeamTypeData->InterpolationPoints : 0;
+	BeamData.TextureTile = BeamTypeData ? BeamTypeData->TextureTile : 1;
+	BeamData.TextureTileDistance = BeamTypeData ? BeamTypeData->TextureTileDistance : 0.0f;
+	BeamData.TaperMethod = BeamTypeData ? static_cast<uint8>(BeamTypeData->TaperMethod) : 0;
+	return true;
+}
+
+FParticleTrailsEmitterInstance_Base::FParticleTrailsEmitterInstance_Base()
+	: bDeadTrailsOnDeactivate(false)
+	, bFirstUpdate(true)
+	, bEnableInactiveTimeTracking(false)
+{
+	for (int32 TrailIdx = 0; TrailIdx < 128; ++TrailIdx)
+	{
+		CurrentStartIndices[TrailIdx] = INDEX_NONE;
+		CurrentEndIndices[TrailIdx] = INDEX_NONE;
+	}
+}
+
+void FParticleTrailsEmitterInstance_Base::InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent)
+{
+	FParticleEmitterInstance::InitParameters(InTemplate, InComponent);
+}
+
+void FParticleTrailsEmitterInstance_Base::Init()
+{
+	FParticleEmitterInstance::Init();
+	RunningTime = 0.0f;
+	LastTickTime = 0.0f;
+	bFirstUpdate = true;
+}
+
+void FParticleTrailsEmitterInstance_Base::Tick(float DeltaTime, bool bSuppressSpawning)
+{
+	FParticleEmitterInstance::Tick(DeltaTime, bSuppressSpawning);
+	Tick_RecalculateTangents(DeltaTime, CurrentLODLevel);
+}
+
+bool FParticleTrailsEmitterInstance_Base::AddParticleHelper(int32 InTrailIdx, int32 StartParticleIndex, FTrailsBaseTypeDataPayload* StartTrailData, int32 ParticleIndex, FTrailsBaseTypeDataPayload* TrailData)
+{
+	if (!TrailData)
+	{
+		return false;
+	}
+
+	TrailData->TrailIndex = InTrailIdx;
+	if (StartTrailData && StartParticleIndex != INDEX_NONE)
+	{
+		TrailData->Flags = TRAIL_EMITTER_START;
+		TRAIL_EMITTER_SET_NEXT(TrailData->Flags, StartParticleIndex);
+		StartTrailData->Flags &= ~TRAIL_EMITTER_START;
+		StartTrailData->Flags |= TRAIL_EMITTER_MIDDLE;
+		TRAIL_EMITTER_SET_PREV(StartTrailData->Flags, ParticleIndex);
+		SetStartIndex(InTrailIdx, ParticleIndex);
+		if (CurrentEndIndices[InTrailIdx] == INDEX_NONE)
+		{
+			SetEndIndex(InTrailIdx, StartParticleIndex);
+		}
+	}
+	else
+	{
+		TrailData->Flags = TRAIL_EMITTER_ONLY;
+		SetStartIndex(InTrailIdx, ParticleIndex);
+		SetEndIndex(InTrailIdx, ParticleIndex);
+		++TrailCount;
+	}
+	return true;
+}
+
+void FParticleTrailsEmitterInstance_Base::Tick_RecalculateTangents(float DeltaTime, UParticleLODLevel* CurrentLODLevel)
+{
+	// UE original responsibility: walk trail linked lists and recalculate previous/current
+	// tangents when requested by type data.
+	// Missing Jungle foundation: full trail tangent smoothing port from ParticleTrail2EmitterInstance.cpp.
+	// System to connect later: UE Tick_RecalculateTangents body.
+}
+
+void FParticleTrailsEmitterInstance_Base::UpdateBoundingBox(float DeltaTime)
+{
+	FParticleEmitterInstance::UpdateBoundingBox(DeltaTime);
+}
+
+void FParticleTrailsEmitterInstance_Base::ForceUpdateBoundingBox()
+{
+	UpdateBoundingBox(0.0f);
+}
+
+void FParticleTrailsEmitterInstance_Base::KillParticles()
+{
+	FParticleEmitterInstance::KillParticles();
+}
+
+void FParticleTrailsEmitterInstance_Base::KillParticles(int32 InTrailIdx, int32 InKillCount)
+{
+	int32 EndIndex = INDEX_NONE;
+	FTrailsBaseTypeDataPayload* EndTrailData = nullptr;
+	FBaseParticle* EndParticle = nullptr;
+	GetTrailEnd<FTrailsBaseTypeDataPayload>(InTrailIdx, EndIndex, EndTrailData, EndParticle);
+	while (InKillCount-- > 0 && EndIndex != INDEX_NONE)
+	{
+		SetDeadIndex(InTrailIdx, EndIndex);
+		for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticles; ++ActiveIndex)
+		{
+			if (ParticleIndices[ActiveIndex] == EndIndex)
+			{
+				KillParticle(ActiveIndex);
+				break;
+			}
+		}
+		GetTrailEnd<FTrailsBaseTypeDataPayload>(InTrailIdx, EndIndex, EndTrailData, EndParticle);
+	}
+}
+
+void FParticleTrailsEmitterInstance_Base::UpdateSourceData(float DeltaTime, bool bFirstTime)
+{
+	(void)DeltaTime;
+	(void)bFirstTime;
+}
+
+void FParticleTrailsEmitterInstance_Base::SetStartIndex(int32 TrailIndex, int32 ParticleIndex)
+{
+	if (TrailIndex >= 0 && TrailIndex < 128)
+	{
+		CurrentStartIndices[TrailIndex] = ParticleIndex;
+		if (CurrentEndIndices[TrailIndex] == ParticleIndex)
+		{
+			CurrentEndIndices[TrailIndex] = INDEX_NONE;
+		}
+	}
+}
+
+void FParticleTrailsEmitterInstance_Base::SetEndIndex(int32 TrailIndex, int32 ParticleIndex)
+{
+	if (TrailIndex >= 0 && TrailIndex < 128)
+	{
+		CurrentEndIndices[TrailIndex] = ParticleIndex;
+		if (CurrentStartIndices[TrailIndex] == ParticleIndex)
+		{
+			CurrentStartIndices[TrailIndex] = INDEX_NONE;
+		}
+	}
+}
+
+void FParticleTrailsEmitterInstance_Base::SetDeadIndex(int32 TrailIndex, int32 ParticleIndex)
+{
+	if (TrailIndex >= 0 && TrailIndex < 128)
+	{
+		if (CurrentStartIndices[TrailIndex] == ParticleIndex) CurrentStartIndices[TrailIndex] = INDEX_NONE;
+		if (CurrentEndIndices[TrailIndex] == ParticleIndex) CurrentEndIndices[TrailIndex] = INDEX_NONE;
+	}
+}
+
+void FParticleTrailsEmitterInstance_Base::ClearIndices(int32 TrailIndex, int32 ParticleIndex)
+{
+	SetDeadIndex(TrailIndex, ParticleIndex);
+}
+
+bool FParticleTrailsEmitterInstance_Base::GetParticleInTrail(bool bSkipStartingParticle, FBaseParticle* InStartingFromParticle, FTrailsBaseTypeDataPayload* InStartingTrailData, EGetTrailDirection InGetDirection, EGetTrailParticleOption InGetOption, FBaseParticle*& OutParticle, FTrailsBaseTypeDataPayload*& OutTrailData)
+{
+	OutParticle = nullptr;
+	OutTrailData = nullptr;
+	if (!InStartingTrailData)
+	{
+		return false;
+	}
+
+	int32 NextIndex = (InGetDirection == GET_Next) ? TRAIL_EMITTER_GET_NEXT(InStartingTrailData->Flags) : TRAIL_EMITTER_GET_PREV(InStartingTrailData->Flags);
+	if (!bSkipStartingParticle)
+	{
+		OutParticle = InStartingFromParticle;
+		OutTrailData = InStartingTrailData;
+		return true;
+	}
+	if (NextIndex == 0 || NextIndex == INDEX_NONE)
+	{
+		return false;
+	}
+	OutParticle = GetParticleDirect(NextIndex);
+	OutTrailData = OutParticle ? reinterpret_cast<FTrailsBaseTypeDataPayload*>(reinterpret_cast<uint8*>(OutParticle) + TypeDataOffset) : nullptr;
+	return OutParticle && OutTrailData;
+}
+
+void FParticleRibbonEmitterInstance::InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent)
+{
+	FParticleTrailsEmitterInstance_Base::InitParameters(InTemplate, InComponent);
+	TrailTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataRibbon>(CurrentLODLevel->TypeDataModule) : nullptr;
+	SetupTrailModules();
+	const int32 Count = TrailTypeData ? std::max(1, TrailTypeData->MaxTrailCount) : 1;
+	MaxTrailCount = Count;
+	CurrentSourcePosition.resize(Count, Location);
+	LastSourcePosition.resize(Count, Location);
+	CurrentSourceRotation.resize(Count, FQuat::Identity);
+	LastSourceRotation.resize(Count, FQuat::Identity);
+	CurrentSourceUp.resize(Count, FVector::ZAxisVector);
+	LastSourceUp.resize(Count, FVector::ZAxisVector);
+	CurrentSourceTangent.resize(Count, FVector::XAxisVector);
+	LastSourceTangent.resize(Count, FVector::XAxisVector);
+	CurrentSourceTangentStrength.resize(Count, 0.0f);
+	LastSourceTangentStrength.resize(Count, 0.0f);
+	SourceDistanceTraveled.resize(Count, 0.0f);
+	TiledUDistanceTraveled.resize(Count, 0.0f);
+	TrailSpawnTimes.resize(Count, 0.0f);
+	LastSpawnTime.resize(Count, 0.0f);
+	SourceIndices.resize(Count, INDEX_NONE);
+	SourceTimes.resize(Count, 0.0f);
+	LastSourceTimes.resize(Count, 0.0f);
+	CurrentLifetimes.resize(Count, 1.0f);
+	CurrentSizes.resize(Count, 1.0f);
+}
+
+void FParticleRibbonEmitterInstance::SetupTrailModules()
+{
+	SpawnPerUnitModule = nullptr;
+	SourceModule = nullptr;
+	UParticleLODLevel* LODLevel = GetCurrentLODLevelChecked();
+	for (UParticleModule* Module : LODLevel->Modules)
+	{
+		if (!SpawnPerUnitModule) SpawnPerUnitModule = Cast<UParticleModuleSpawnPerUnit>(Module);
+		if (!SourceModule) SourceModule = Cast<UParticleModuleTrailSource>(Module);
+	}
+	TrailModule_Source_Offset = SourceModule ? static_cast<int32>(GetModuleDataOffset(SourceModule)) : INDEX_NONE;
+}
+
+float FParticleRibbonEmitterInstance::Spawn(float DeltaTime)
+{
+	const bool bProcessSpawnRate = Spawn_Source(DeltaTime);
+	return bProcessSpawnRate ? Spawn_RateAndBurst(DeltaTime) : SpawnFraction;
+}
+
+bool FParticleRibbonEmitterInstance::Spawn_Source(float DeltaTime)
+{
+	UpdateSourceData(DeltaTime, bFirstUpdate);
+	bool bProcessSpawnRate = false;
+	for (int32 TrailIdx = 0; TrailIdx < MaxTrailCount; ++TrailIdx)
+	{
+		int32 SpawnCount = 0;
+		float SpawnRate = 0.0f;
+		GetSpawnPerUnitAmount(DeltaTime, TrailIdx, SpawnCount, SpawnRate);
+		if (TrailTypeData && TrailTypeData->bSpawnInitialParticle && bFirstUpdate)
+		{
+			SpawnCount = std::max(SpawnCount, 1);
+		}
+		if (SpawnCount <= 0)
+		{
+			continue;
+		}
+		if (ActiveParticles + SpawnCount >= MaxActiveParticles)
+		{
+			Resize(ActiveParticles + SpawnCount + 1);
+		}
+		for (int32 SpawnIdx = 0; SpawnIdx < SpawnCount; ++SpawnIdx)
+		{
+			const float Alpha = static_cast<float>(SpawnIdx + 1) / static_cast<float>(SpawnCount);
+			const FVector SpawnPosition = FVector::Lerp(LastSourcePosition[TrailIdx], CurrentSourcePosition[TrailIdx], Alpha);
+			const int32 ParticleIndex = ParticleIndices[ActiveParticles];
+			FBaseParticle* Particle = GetParticleDirect(ParticleIndex);
+			PreSpawn(Particle, SpawnPosition, FVector::ZeroVector);
+			FParticleEmitterInstance::PostSpawn(Particle, Alpha, DeltaTime);
+			FRibbonTypeDataPayload* TrailData = reinterpret_cast<FRibbonTypeDataPayload*>(reinterpret_cast<uint8*>(Particle) + TypeDataOffset);
+			TrailData->Tangent = CurrentSourceTangent[TrailIdx];
+			TrailData->Up = CurrentSourceUp[TrailIdx];
+			TrailData->SourceIndex = SourceIndices[TrailIdx];
+			TrailData->SpawnDelta = DeltaTime;
+			TrailData->TiledU = TiledUDistanceTraveled[TrailIdx];
+			int32 StartIndex = INDEX_NONE;
+			FRibbonTypeDataPayload* StartTrailData = nullptr;
+			FBaseParticle* StartParticle = nullptr;
+			GetTrailStart<FRibbonTypeDataPayload>(TrailIdx, StartIndex, StartTrailData, StartParticle);
+			AddParticleHelper(TrailIdx, StartIndex, StartTrailData, ParticleIndex, TrailData);
+			++ActiveParticles;
+		}
+	}
+	bFirstUpdate = false;
+	return bProcessSpawnRate;
+}
+
+float FParticleRibbonEmitterInstance::Spawn_RateAndBurst(float DeltaTime)
+{
+	// UE original responsibility: spawn ribbon particles from Required/Spawn module rate and
+	// burst time slicing after source spawning.
+	// Missing Jungle foundation: full Cascade trail source distribution and spawn-rate/burst
+	// slicing port for ribbons.
+	// System to connect later: ParticleTrail2EmitterInstance::Spawn_RateAndBurst body.
+	return SpawnFraction;
+}
+
+bool FParticleRibbonEmitterInstance::GetSpawnPerUnitAmount(float DeltaTime, int32 InTrailIdx, int32& OutCount, float& OutRate)
+{
+	OutCount = 0;
+	OutRate = 0.0f;
+	if (!SpawnPerUnitModule || InTrailIdx < 0 || InTrailIdx >= static_cast<int32>(SourceDistanceTraveled.size()))
+	{
+		return false;
+	}
+
+	const float Distance = FVector::Distance(LastSourcePosition[InTrailIdx], CurrentSourcePosition[InTrailIdx]);
+	const float UnitScalar = SpawnPerUnitModule->UnitScalar != 0.0f ? SpawnPerUnitModule->UnitScalar : 1.0f;
+	const float SpawnDistance = SpawnPerUnitModule->SpawnPerUnit > 0.0f ? UnitScalar / SpawnPerUnitModule->SpawnPerUnit : 0.0f;
+	float Accumulated = SourceDistanceTraveled[InTrailIdx] + Distance;
+	if (SpawnDistance > 0.0f)
+	{
+		OutCount = static_cast<int32>(Accumulated / SpawnDistance);
+		Accumulated -= static_cast<float>(OutCount) * SpawnDistance;
+		OutRate = DeltaTime > 0.0f ? static_cast<float>(OutCount) / DeltaTime : 0.0f;
+	}
+	SourceDistanceTraveled[InTrailIdx] = Accumulated;
+	return OutCount > 0;
+}
+
+void FParticleRibbonEmitterInstance::UpdateSourceData(float DeltaTime, bool bFirstTime)
+{
+	for (int32 TrailIdx = 0; TrailIdx < MaxTrailCount; ++TrailIdx)
+	{
+		LastSourcePosition[TrailIdx] = CurrentSourcePosition[TrailIdx];
+		LastSourceRotation[TrailIdx] = CurrentSourceRotation[TrailIdx];
+		LastSourceUp[TrailIdx] = CurrentSourceUp[TrailIdx];
+		LastSourceTangent[TrailIdx] = CurrentSourceTangent[TrailIdx];
+		LastSourceTangentStrength[TrailIdx] = CurrentSourceTangentStrength[TrailIdx];
+		ResolveSourcePoint(TrailIdx, CurrentSourcePosition[TrailIdx], CurrentSourceRotation[TrailIdx], CurrentSourceUp[TrailIdx], CurrentSourceTangent[TrailIdx], CurrentSourceTangentStrength[TrailIdx]);
+	}
+}
+
+void FParticleRibbonEmitterInstance::ResolveSource()
+{
+	// UE original responsibility: resolve Actor/Emitter/Particle/default trail source.
+	// Missing Jungle foundation: Actor lookup, Emitter lookup, Particle lookup.
+	// System to connect later: component instance parameters and emitter source mapping.
+}
+
+bool FParticleRibbonEmitterInstance::ResolveSourcePoint(int32 InTrailIdx, FVector& OutPosition, FQuat& OutRotation, FVector& OutUp, FVector& OutTangent, float& OutTangentStrength)
+{
+	OutPosition = Location;
+	OutRotation = FQuat::Identity;
+	OutUp = FVector::ZAxisVector;
+	OutTangent = FVector::XAxisVector;
+	OutTangentStrength = SourceModule ? SourceModule->SourceStrength.GetValue(EmitterTime, Component) : 0.0f;
+	if (SourceModule && SourceModule->SourceMethod != PET2SRCM_Default)
+	{
+		// UE original responsibility: Actor/Particle source lookup for ribbon trails.
+		// Missing Jungle foundation: Actor lookup and particle source emitter lookup.
+		// System to connect later: ParticleTrailModules.cpp TrailSource adapter.
+	}
+	return true;
+}
+
+void FParticleRibbonEmitterInstance::GetParticleLifetimeAndSize(int32 InTrailIdx, const FBaseParticle* InParticle, bool bInNoLivingParticles, float& OutOneOverMaxLifetime, float& OutSize)
+{
+	OutOneOverMaxLifetime = InTrailIdx < static_cast<int32>(CurrentLifetimes.size()) && CurrentLifetimes[InTrailIdx] > 0.0f ? 1.0f / CurrentLifetimes[InTrailIdx] : 1.0f;
+	OutSize = InTrailIdx < static_cast<int32>(CurrentSizes.size()) ? CurrentSizes[InTrailIdx] : 1.0f;
+}
+
+void FParticleRibbonEmitterInstance::Tick_RecalculateTangents(float DeltaTime, UParticleLODLevel* CurrentLODLevel)
+{
+	FParticleTrailsEmitterInstance_Base::Tick_RecalculateTangents(DeltaTime, CurrentLODLevel);
+}
+
+void FParticleRibbonEmitterInstance::DetermineVertexAndTriangleCount()
+{
+	VertexCount = 0;
+	TriangleCount = 0;
+	for (int32 TrailIdx = 0; TrailIdx < MaxTrailCount; ++TrailIdx)
+	{
+		int32 StartIndex = INDEX_NONE;
+		FRibbonTypeDataPayload* TrailData = nullptr;
+		FBaseParticle* Particle = nullptr;
+		GetTrailStart<FRibbonTypeDataPayload>(TrailIdx, StartIndex, TrailData, Particle);
+		while (Particle && TrailData)
+		{
+			const int32 InterpCount = std::max(1, TrailData->RenderingInterpCount);
+			VertexCount += InterpCount * 2 * (TrailTypeData ? std::max(1, TrailTypeData->SheetsPerTrail) : 1);
+			TriangleCount += std::max(0, InterpCount - 1) * 2 * (TrailTypeData ? std::max(1, TrailTypeData->SheetsPerTrail) : 1);
+			const int32 NextIndex = TRAIL_EMITTER_GET_NEXT(TrailData->Flags);
+			if (NextIndex == 0 || NextIndex == INDEX_NONE) break;
+			Particle = GetParticleDirect(NextIndex);
+			TrailData = Particle ? reinterpret_cast<FRibbonTypeDataPayload*>(reinterpret_cast<uint8*>(Particle) + TypeDataOffset) : nullptr;
+		}
+	}
+}
+
+bool FParticleRibbonEmitterInstance::IsDynamicDataRequired() const
+{
+	return FParticleEmitterInstance::IsDynamicDataRequired();
+}
+
+FDynamicEmitterDataBase* FParticleRibbonEmitterInstance::GetDynamicData(bool bSelected)
+{
+	FDynamicRibbonEmitterData* Data = new FDynamicRibbonEmitterData();
+	if (!FillReplayData(Data->Source))
+	{
+		delete Data;
+		return nullptr;
+	}
+	Data->BuildMeshData();
+	return Data;
+}
+
+void FParticleRibbonEmitterInstance::ApplyWorldOffset(FVector InOffset, bool bWorldShift)
+{
+	FParticleTrailsEmitterInstance_Base::ApplyWorldOffset(InOffset, bWorldShift);
+	for (FVector& Position : CurrentSourcePosition) Position += InOffset;
+	for (FVector& Position : LastSourcePosition) Position += InOffset;
+}
+
+bool FParticleRibbonEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& OutData)
+{
+	if (!IsReplayType(OutData, EDynamicEmitterType::Ribbon)) return false;
+	if (!FParticleEmitterInstance::FillReplayData(OutData)) return false;
+	FDynamicRibbonEmitterReplayData& RibbonData = static_cast<FDynamicRibbonEmitterReplayData&>(OutData);
+	DetermineVertexAndTriangleCount();
+	RibbonData.Material = GetCurrentMaterial();
+	RibbonData.VertexCount = VertexCount;
+	RibbonData.PrimitiveCount = TriangleCount;
+	RibbonData.IndexCount = TriangleCount * 3;
+	RibbonData.TrailDataOffset = TypeDataOffset;
+	RibbonData.MaxActiveParticleCount = MaxActiveParticles;
+	RibbonData.TrailCount = TrailCount;
+	RibbonData.Sheets = TrailTypeData ? std::max(1, TrailTypeData->SheetsPerTrail) : 1;
+	RibbonData.MaxTessellationBetweenParticles = TrailTypeData ? TrailTypeData->MaxTessellationBetweenParticles : 0;
 	return true;
 }
