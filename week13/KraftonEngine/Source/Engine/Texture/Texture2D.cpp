@@ -4,6 +4,7 @@
 #include "Core/Logging/Log.h"
 #include "Platform/Paths.h"
 #include "WICTextureLoader.h"
+#include "DDSTextureLoader.h"
 #include "stb_image.h"
 
 #include <algorithm>
@@ -119,13 +120,23 @@ UTexture2D* UTexture2D::LoadFromCached(const FString& FilePath, ETextureColorSpa
 
 namespace
 {
-	// .tga 같이 WIC 가 native 로 못 까는 확장자를 구분.
-	bool IsStbHandledExtension(const FString& FilePath)
+	std::wstring LowerExtension(const FString& FilePath)
 	{
 		std::wstring Ext = std::filesystem::path(FPaths::ToWide(FilePath)).extension().wstring();
 		std::transform(Ext.begin(), Ext.end(), Ext.begin(),
 			[](wchar_t c) { return static_cast<wchar_t>(std::towlower(c)); });
-		return Ext == L".tga";
+		return Ext;
+	}
+
+	// .tga 같이 WIC 가 native 로 못 까는 확장자를 구분.
+	bool IsStbHandledExtension(const FString& FilePath)
+	{
+		return LowerExtension(FilePath) == L".tga";
+	}
+
+	bool IsDdsExtension(const FString& FilePath)
+	{
+		return LowerExtension(FilePath) == L".dds";
 	}
 }
 
@@ -137,6 +148,47 @@ bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device, ETe
 	}
 
 	std::wstring WidePath = FPaths::ToWide(FilePath);
+
+	// DDS — DirectXTK의 DDSTextureLoader. WIC와 별도 경로.
+	if (IsDdsExtension(FilePath))
+	{
+		const auto DdsFlags = (InColorSpace == ETextureColorSpace::SRGB)
+			? DirectX::DDS_LOADER_FORCE_SRGB
+			: DirectX::DDS_LOADER_IGNORE_SRGB;
+
+		ID3D11Resource* Resource = nullptr;
+		HRESULT hr = DirectX::CreateDDSTextureFromFileEx(
+			Device, WidePath.c_str(),
+			0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE,
+			0, 0, DdsFlags,
+			&Resource, &SRV);
+
+		if (FAILED(hr))
+		{
+			UE_LOG("Failed to load DDS texture: %s", FilePath.c_str());
+			return false;
+		}
+
+		if (Resource)
+		{
+			TrackedTextureMemory = MemoryStats::CalculateTextureMemory(Resource);
+			ID3D11Texture2D* Tex2D = nullptr;
+			if (SUCCEEDED(Resource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&Tex2D)))
+			{
+				D3D11_TEXTURE2D_DESC Desc;
+				Tex2D->GetDesc(&Desc);
+				Width = Desc.Width;
+				Height = Desc.Height;
+				Tex2D->Release();
+			}
+			if (TrackedTextureMemory > 0) MemoryStats::AddTextureMemory(TrackedTextureMemory);
+			Resource->Release();
+		}
+
+		SourceFilePath = FilePath;
+		ColorSpace = InColorSpace;
+		return true;
+	}
 
 	const auto LoadFlags = (InColorSpace == ETextureColorSpace::SRGB)
 		? DirectX::WIC_LOADER_FORCE_SRGB

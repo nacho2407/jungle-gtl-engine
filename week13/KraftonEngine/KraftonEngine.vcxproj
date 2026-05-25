@@ -421,6 +421,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimationTransportBar.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\CameraShake\CameraShakeEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp" />
@@ -556,8 +557,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Core\Types\PropertyTypes.cpp" />
     <ClCompile Include="Source\Engine\Debug\DebugDrawQueue.cpp" />
     <ClCompile Include="Source\Engine\Debug\DrawDebugHelpers.cpp" />
-    <ClCompile Include="Source\Engine\Distributions\Distributions.cpp" />
     <ClCompile Include="Source\Engine\Distributions\DistributionVector.cpp" />
+    <ClCompile Include="Source\Engine\Distributions\Distributions.cpp" />
     <ClCompile Include="Source\Engine\FloatCurve\FloatCurveAsset.cpp" />
     <ClCompile Include="Source\Engine\FloatCurve\FloatCurveManager.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
@@ -595,6 +596,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Lua\LuaScriptManager.cpp" />
     <ClCompile Include="Source\Engine\Materials\Material.cpp" />
     <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp" />
+    <ClCompile Include="Source\Engine\Materials\Graph\MaterialGraphAsset.cpp" />
+    <ClCompile Include="Source\Engine\Materials\Graph\MaterialGraphCompiler.cpp" />
+    <ClCompile Include="Source\Engine\Materials\Graph\MaterialHlslGenerator.cpp" />
     <ClCompile Include="Source\Engine\Math\FloatCurve.cpp" />
     <ClCompile Include="Source\Engine\Math\Matrix.cpp" />
     <ClCompile Include="Source\Engine\Math\Quat.cpp" />
@@ -776,6 +780,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\UI\Asset\Animation\MorphCurveEditObject.h" />
     <ClInclude Include="Source\Editor\UI\Asset\CameraShake\CameraShakeEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h" />
@@ -935,8 +940,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Core\Types\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Debug\DebugDrawQueue.h" />
     <ClInclude Include="Source\Engine\Debug\DrawDebugHelpers.h" />
-    <ClInclude Include="Source\Engine\Distributions\Distributions.h" />
+    <ClInclude Include="Source\Engine\Distributions\Distribution.h" />
     <ClInclude Include="Source\Engine\Distributions\DistributionVector.h" />
+    <ClInclude Include="Source\Engine\Distributions\Distributions.h" />
     <ClInclude Include="Source\Engine\FloatCurve\FloatCurveAsset.h" />
     <ClInclude Include="Source\Engine\FloatCurve\FloatCurveManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
@@ -978,6 +984,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Lua\LuaScriptManager.h" />
     <ClInclude Include="Source\Engine\Materials\Material.h" />
     <ClInclude Include="Source\Engine\Materials\MaterialManager.h" />
+    <ClInclude Include="Source\Engine\Materials\Graph\MaterialGraphAsset.h" />
+    <ClInclude Include="Source\Engine\Materials\Graph\MaterialGraphCompiler.h" />
+    <ClInclude Include="Source\Engine\Materials\Graph\MaterialGraphTypes.h" />
+    <ClInclude Include="Source\Engine\Materials\Graph\MaterialHlslGenerator.h" />
     <ClInclude Include="Source\Engine\Math\FloatCurve.h" />
     <ClInclude Include="Source\Engine\Math\MathUtils.h" />
     <ClInclude Include="Source\Engine\Math\Matrix.h" />

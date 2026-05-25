@@ -67,6 +67,9 @@
     <Filter Include="Source\Editor\UI\Asset\Curve">
       <UniqueIdentifier>{a9a5d4ee-210d-8455-10fc-cd6653ca56e6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\UI\Asset\Material">
+      <UniqueIdentifier>{994177d8-b52e-61fd-e3e8-c510233e7128}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\UI\Asset\Mesh">
       <UniqueIdentifier>{5084842c-4071-bc7f-36a2-4a3bf67026e8}</UniqueIdentifier>
     </Filter>
@@ -196,6 +199,9 @@
     <Filter Include="Source\Engine\Debug">
       <UniqueIdentifier>{94a820a1-1cf9-b142-f9b6-735eff25a3ee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Distributions">
+      <UniqueIdentifier>{ada6b7fb-5123-35b0-e82d-e8e1630a7b2a}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\FloatCurve">
       <UniqueIdentifier>{de49fb56-b8a9-9a15-719d-7136fdb8ccd8}</UniqueIdentifier>
     </Filter>
@@ -228,6 +234,9 @@
     </Filter>
     <Filter Include="Source\Engine\Materials">
       <UniqueIdentifier>{0d06ac75-3073-6c4d-1a46-4fbda12823ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Materials\Graph">
+      <UniqueIdentifier>{98085b6f-23e3-1b56-ba7c-eb77b3e9c7fc}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Math">
       <UniqueIdentifier>{46de3e62-85b2-9f3b-da45-712c96b11891}</UniqueIdentifier>
@@ -695,6 +704,9 @@
     <ClCompile Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Curve</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\Material</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Mesh</Filter>
     </ClCompile>
@@ -1100,6 +1112,12 @@
     <ClCompile Include="Source\Engine\Debug\DrawDebugHelpers.cpp">
       <Filter>Source\Engine\Debug</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Distributions\DistributionVector.cpp">
+      <Filter>Source\Engine\Distributions</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Distributions\Distributions.cpp">
+      <Filter>Source\Engine\Distributions</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\FloatCurve\FloatCurveAsset.cpp">
       <Filter>Source\Engine\FloatCurve</Filter>
     </ClCompile>
@@ -1210,6 +1228,15 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp">
       <Filter>Source\Engine\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Materials\Graph\MaterialGraphAsset.cpp">
+      <Filter>Source\Engine\Materials\Graph</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Materials\Graph\MaterialGraphCompiler.cpp">
+      <Filter>Source\Engine\Materials\Graph</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Materials\Graph\MaterialHlslGenerator.cpp">
+      <Filter>Source\Engine\Materials\Graph</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Math\FloatCurve.cpp">
       <Filter>Source\Engine\Math</Filter>
@@ -1668,8 +1695,6 @@
     <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp">
       <Filter>Intermediate\Generated</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Distributions\DistributionVector.cpp" />
-    <ClCompile Include="Source\Engine\Distributions\Distributions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1749,6 +1774,9 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Curve</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset\Material</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Mesh</Filter>
@@ -2227,6 +2255,15 @@
     <ClInclude Include="Source\Engine\Debug\DrawDebugHelpers.h">
       <Filter>Source\Engine\Debug</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Distributions\Distribution.h">
+      <Filter>Source\Engine\Distributions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Distributions\DistributionVector.h">
+      <Filter>Source\Engine\Distributions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Distributions\Distributions.h">
+      <Filter>Source\Engine\Distributions</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\FloatCurve\FloatCurveAsset.h">
       <Filter>Source\Engine\FloatCurve</Filter>
     </ClInclude>
@@ -2349,6 +2386,18 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Materials\MaterialManager.h">
       <Filter>Source\Engine\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Materials\Graph\MaterialGraphAsset.h">
+      <Filter>Source\Engine\Materials\Graph</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Materials\Graph\MaterialGraphCompiler.h">
+      <Filter>Source\Engine\Materials\Graph</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Materials\Graph\MaterialGraphTypes.h">
+      <Filter>Source\Engine\Materials\Graph</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Materials\Graph\MaterialHlslGenerator.h">
+      <Filter>Source\Engine\Materials\Graph</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\FloatCurve.h">
       <Filter>Source\Engine\Math</Filter>
@@ -4612,8 +4661,6 @@
     <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp">
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Distributions\DistributionVector.h" />
-    <ClInclude Include="Source\Engine\Distributions\Distributions.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

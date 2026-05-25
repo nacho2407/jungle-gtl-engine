@@ -80,9 +80,17 @@ void FMaterialConstantBuffer::Release()
 
 UMaterial::~UMaterial()
 {
+	ResetRuntimeData();
+}
+
+void UMaterial::ResetRuntimeData()
+{
 	for (auto& Pair : ConstantBufferMap)
 	{
-		Pair.second->Release();
+		if (Pair.second)
+		{
+			Pair.second->Release();
+		}
 	}
 	ConstantBufferMap.clear();
 
@@ -90,6 +98,16 @@ UMaterial::~UMaterial()
 	{
 		Pair.second = nullptr;
 	}
+	TextureParameters.clear();
+
+	for (int32 i = 0; i < static_cast<int32>(EMaterialTextureSlot::Max); ++i)
+	{
+		CachedSRVs[i] = nullptr;
+	}
+
+	Template = nullptr;
+	TransientShader = nullptr;
+	PerShaderOverride = FConstantBufferBinding{};
 }
 
 void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTemplate,
@@ -99,6 +117,8 @@ void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTempl
 	ERasterizerState InRaster,
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers)
 {
+	ResetRuntimeData();
+
 	PathFileName = InPathFileName;
 	Template = InTemplate;
 	RenderPass = InRenderPass;
@@ -111,6 +131,11 @@ void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTempl
 
 bool UMaterial::SetParameter(const FString& Name, const void* Data, uint32 Size)
 {
+	if (!Template)
+	{
+		return false;
+	}
+
 	FMaterialParameterInfo Info;
 	if (!Template->GetParameterInfo(Name, Info)) {
 		return false;

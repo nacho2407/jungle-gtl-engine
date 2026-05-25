@@ -8,6 +8,7 @@
 #include "Render/Resource/Buffer.h"
 #include "Render/Types/MaterialTextureSlot.h"
 #include "Render/Types/RenderConstants.h"
+#include "Materials/Graph/MaterialGraphTypes.h"
 #include "Source/Engine/Materials/Material.generated.h"
 #include <memory>
 
@@ -76,8 +77,13 @@ class UMaterial : public UObject
 {
 private:
 	FString PathFileName;// 어떤 Material인지 판별하는 고유 이름
-	uint32 MaterialInstanceID; // 고유 ID
-	FMaterialTemplate* Template; // 공유
+	FString SourcePath;
+	FString MaterialGuid;
+	FString GeneratedShaderPath;
+	EMaterialDomain Domain = EMaterialDomain::Surface;
+	FMaterialGraph Graph;
+	uint32 MaterialInstanceID = 0; // 고유 ID
+	FMaterialTemplate* Template = nullptr; // 공유
 
 	// 렌더링 상태 정보 (인스턴스별)
 	ERenderPass RenderPass = ERenderPass::Opaque;
@@ -101,6 +107,7 @@ private:
 public:
 	GENERATED_BODY()
 	~UMaterial() override;
+	void ResetRuntimeData();
 
 	void Create(const FString& InPathFileName, FMaterialTemplate* InTemplate,
 		ERenderPass InRenderPass,
@@ -111,7 +118,7 @@ public:
 
 	const uint8* GetRawPtr(const FString& BufferName, uint32 Offset) const;
 
-	const TMap<FString, FMaterialParameterInfo*> GetParameterInfo() const { return Template->GetParameterInfo(); }
+	const TMap<FString, FMaterialParameterInfo*> GetParameterInfo() const { return Template ? Template->GetParameterInfo() : TMap<FString, FMaterialParameterInfo*>(); }
 
 	bool SetScalarParameter(const FString& ParamName, float Value);
 	bool SetVector3Parameter(const FString& ParamName, const FVector& Value);
@@ -152,6 +159,17 @@ public:
 
 	const FString& GetAssetPathFileName() const { return PathFileName; }
 	void SetAssetPathFileName(const FString& InPath) { PathFileName = InPath; }
+	const FString& GetSourcePath() const { return SourcePath; }
+	void SetSourcePath(const FString& InPath) { SourcePath = InPath; }
+	const FString& GetMaterialGuid() const { return MaterialGuid; }
+	void SetMaterialGuid(const FString& InGuid) { MaterialGuid = InGuid; }
+	EMaterialDomain GetDomain() const { return Domain; }
+	void SetDomain(EMaterialDomain InDomain) { Domain = InDomain; }
+	const FString& GetGeneratedShaderPath() const { return GeneratedShaderPath; }
+	void SetGeneratedShaderPath(const FString& InPath) { GeneratedShaderPath = InPath; }
+	FMaterialGraph& GetGraph() { return Graph; }
+	const FMaterialGraph& GetGraph() const { return Graph; }
+	void SetGraph(const FMaterialGraph& InGraph) { Graph = InGraph; }
 	void Serialize(FArchive& Ar);//>>>>>Manager가 위임
 
 	FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const

@@ -23,6 +23,8 @@
 #include "Asset/AssetRegistry.h"
 #include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
+#include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 
 #include <algorithm>
 #include <chrono>
@@ -799,6 +801,22 @@ void SkeletonElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 void MaterialElement::OnLeftClicked(ContentBrowserContext& Context)
 {
 	MaterialInspector = { ContentItem.Path };
+}
+
+void MaterialElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
+
+	const FString MatPath =
+		FPaths::ToUtf8(ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring());
+
+	if (UMaterial* Material = FMaterialManager::Get().GetOrCreateMaterial(MatPath))
+	{
+		Context.EditorEngine->OpenAssetEditorForObject(Material);
+	}
 }
 
 void MaterialElement::RenderDetail()

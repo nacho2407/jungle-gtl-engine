@@ -16,14 +16,22 @@
 #include "Particles/TypeData/ParticleModuleTypeDataBase.h"
 #include "Particles/Velocity/ParticleModuleVelocity.h"
 #include "Materials/Material.h"
+#include "Materials/Graph/MaterialGraphAsset.h"
 #include "Materials/MaterialManager.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <random>
 
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Component/Primitive/ParticleSystemComponent.h"
+#include "Editor/EditorEngine.h"
+#include "Editor/Subsystem/AssetFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "GameFramework/WorldContext.h"
@@ -245,6 +253,72 @@ namespace
     {
         const std::wstring Wide = FPaths::Combine(FPaths::AssetDir(), L"Editor/ToolIcons/") + FileName;
         return FEditorTextureManager::Get().GetOrLoadIcon(FPaths::ToUtf8(Wide));
+    }
+
+    FString MakeMaterialGuid()
+    {
+        std::random_device Rd;
+        std::mt19937_64    Gen(Rd());
+        const uint64       A = Gen();
+        const uint64       B = static_cast<uint64>(std::chrono::steady_clock::now().time_since_epoch().count());
+        char               Buffer[40];
+        std::snprintf(
+            Buffer,
+            sizeof(Buffer),
+            "%016llX%016llX",
+            static_cast<unsigned long long>(A),
+            static_cast<unsigned long long>(B)
+        );
+        return Buffer;
+    }
+
+    FString SanitizeFileStem(FString Stem)
+    {
+        if (Stem.empty())
+        {
+            return "Material";
+        }
+
+        for (char& Ch : Stem)
+        {
+            const bool bAlphaNum = (Ch >= '0' && Ch <= '9') || (Ch >= 'A' && Ch <= 'Z') || (Ch >= 'a' && Ch <= 'z');
+            if (!bAlphaNum && Ch != '_' && Ch != '-')
+            {
+                Ch = '_';
+            }
+        }
+        return Stem;
+    }
+
+    std::filesystem::path ToProjectPath(const FString& Path)
+    {
+        std::filesystem::path Result(FPaths::ToWide(Path));
+        if (Result.is_relative())
+        {
+            Result = std::filesystem::path(FPaths::RootDir()) / Result;
+        }
+        return Result.lexically_normal();
+    }
+
+    std::filesystem::path BuildUniqueMaterialPath(const std::filesystem::path& Directory, const FString& Stem)
+    {
+        int32 Suffix = 0;
+        for (;;)
+        {
+            FString CandidateStem = Stem;
+            if (Suffix > 0)
+            {
+                CandidateStem += "_";
+                CandidateStem += std::to_string(Suffix);
+            }
+
+            std::filesystem::path Candidate = Directory / (FPaths::ToWide(CandidateStem) + L".mat");
+            if (!std::filesystem::exists(Candidate))
+            {
+                return Candidate;
+            }
+            ++Suffix;
+        }
     }
 
     // 아이콘 버튼 + 텍스트 폴백 + 비활성 상태 시각화 + 툴팁을 한 번에 처리.
@@ -862,6 +936,110 @@ void FParticleSystemEditorWidget::HandleKeyboardShortcuts()
         if (ViewportClient.IsRenderable())
         {
             ViewportClient.ResetCameraToPreviewBounds();
+        }
+    }
+}
+
+void FParticleSystemEditorWidget::OpenMaterialForRequired(UParticleModuleRequired* Required)
+{
+    if (!Required || !EditorEngine)
+    {
+        return;
+    }
+
+    Required->ResolveMaterialFromSlot();
+    UMaterial* Material = Required->Material;
+    if (!Material && !Required->MaterialSlot.IsNull() && Required->MaterialSlot != "None")
+    {
+        Material = FMaterialManager::Get().GetOrCreateMaterial(Required->MaterialSlot.ToString());
+    }
+
+    if (Material)
+    {
+        EditorEngine->OpenAssetEditorForObject(Material);
+    }
+}
+
+void FParticleSystemEditorWidget::DuplicateMaterialForRequired(UParticleModuleRequired* Required)
+{
+    if (!Required)
+    {
+        return;
+    }
+
+    FString       CreatedPath;
+    const FString SourceSlot    = Required->MaterialSlot.ToString();
+    const bool    bHasSource    = !Required->MaterialSlot.IsNull() && !SourceSlot.empty() && SourceSlot != "None";
+    const FString EmitterSuffix = SelectedEmitterIndex >= 0 ? FString("Emitter") + std::to_string(SelectedEmitterIndex)
+    : FString("Emitter");
+
+    if (bHasSource)
+    {
+        const std::filesystem::path SourcePath = ToProjectPath(SourceSlot);
+        if (std::filesystem::exists(SourcePath))
+        {
+            const FString               SourceStem = FPaths::ToUtf8(SourcePath.stem().wstring());
+            const FString               TargetStem = SanitizeFileStem(SourceStem + "_" + EmitterSuffix);
+            const std::filesystem::path TargetPath = BuildUniqueMaterialPath(SourcePath.parent_path(), TargetStem);
+            const FString               ProjectRelativePath = FPaths::ToUtf8(
+                TargetPath.lexically_relative(FPaths::RootDir()).generic_wstring()
+            );
+            const FString NewGuid = MakeMaterialGuid();
+
+            std::ifstream InFile(SourcePath);
+            FString       Content((std::istreambuf_iterator<char>(InFile)), std::istreambuf_iterator<char>());
+            json::JSON    Root = json::JSON::Load(Content);
+            if (Root.IsNull() || !Root.hasKey(MatKeys::Graph))
+            {
+                Root = MaterialGraphAsset::MakeDefaultMaterialJson(ProjectRelativePath, NewGuid);
+            }
+            else
+            {
+                Root[MatKeys::Version]                       = 2;
+                Root[MatKeys::MaterialGuid]                  = NewGuid;
+                Root[MatKeys::PathFileName]                  = ProjectRelativePath;
+                Root[MatKeys::GeneratedShaderPath]           = "";
+                Root[MatKeys::ShaderPath]                    = "";
+                Root[MatKeys::Compiled]                      = json::Object();
+                Root[MatKeys::Compiled][MatKeys::GraphHash]  = "";
+                Root[MatKeys::Compiled][MatKeys::Parameters] = json::Object();
+                Root[MatKeys::Compiled][MatKeys::Textures]   = json::Object();
+            }
+
+            std::ofstream OutFile(TargetPath);
+            if (OutFile.is_open())
+            {
+                OutFile << Root.dump();
+                CreatedPath = ProjectRelativePath;
+            }
+        }
+    }
+
+    if (CreatedPath.empty())
+    {
+        const std::wstring MaterialDir = FPaths::Combine(FPaths::AssetDir(), L"Material");
+        FPaths::CreateDir(MaterialDir);
+        const FString AssetName = SanitizeFileStem(FString("Material_") + EmitterSuffix);
+        if (!FAssetFactory::CreateMaterial(FPaths::ToUtf8(MaterialDir), AssetName, CreatedPath))
+        {
+            return;
+        }
+        CreatedPath = FPaths::MakeProjectRelative(CreatedPath);
+    }
+
+    Required->MaterialSlot = CreatedPath;
+    Required->ResolveMaterialFromSlot();
+    FMaterialManager::Get().ScanMaterialAssets();
+
+    MarkDirty();
+    RestartPreviewSimulation();
+
+    if (EditorEngine)
+    {
+        EditorEngine->RefreshContentBrowser();
+        if (UMaterial* Material = FMaterialManager::Get().GetOrCreateMaterial(CreatedPath))
+        {
+            EditorEngine->OpenAssetEditorForObject(Material);
         }
     }
 }
@@ -1747,6 +1925,16 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                 if (bSelected) ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
+        }
+        if (ImGui::Button("Open Material"))
+        {
+            OpenMaterialForRequired(Required);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Duplicate Material For This Emitter"))
+        {
+            DuplicateMaterialForRequired(Required);
+            bMaterialDirty = true;
         }
         ImGui::Spacing();
 

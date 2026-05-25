@@ -5,6 +5,7 @@
 #include "Materials/Material.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Notification.h"
+#include <cstring>
 #include <iostream>
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -362,6 +363,10 @@ void FShader::ExtractCBufferInfo(ID3DBlob* ShaderBlob, TMap<FString, FMaterialPa
 			auto* Var = CB->GetVariableByIndex(j);
 			D3D11_SHADER_VARIABLE_DESC VarDesc;
 			Var->GetDesc(&VarDesc);
+			if (VarDesc.Name && std::strncmp(VarDesc.Name, "_Pad", 4) == 0)
+			{
+				continue;
+			}
 
 			FMaterialParameterInfo* Info = new FMaterialParameterInfo();
 			Info->BufferName = BufferName;

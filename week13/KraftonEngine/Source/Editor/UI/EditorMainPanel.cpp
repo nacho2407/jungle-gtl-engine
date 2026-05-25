@@ -25,6 +25,7 @@
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "Editor/UI/Asset/Mesh/StaticMeshEditorWidget.h"
 #include "Editor/UI/Asset/Animation/AnimGraphEditorWidget.h"
+#include "Editor/UI/Asset/Material/MaterialEditorWidget.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -93,12 +94,14 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	ContentBrowserWidget.Initialize(InEditorEngine, InRenderer.GetFD3DDevice().GetDevice());
 	ShadowMapDebugWidget.Initialize(InEditorEngine);
 	AnimationDebugWidget.Initialize(InEditorEngine);
-
+    AssetEditorManager.Initialize(InEditorEngine);
+    
 	AssetEditorManager.RegisterEditor<FFloatCurveEditorWidget>();
 	AssetEditorManager.RegisterEditor<FCameraShakeEditorWidget>();
 	AssetEditorManager.RegisterEditor<FMeshEditorWidget>();
 	AssetEditorManager.RegisterEditor<FStaticMeshEditorWidget>();
 	AssetEditorManager.RegisterEditor<FAnimGraphEditorWidget>();
+    AssetEditorManager.RegisterEditor<FMaterialEditorWidget>();
 	AssetEditorManager.RegisterEditor<FParticleSystemEditorWidget>();
 }
 

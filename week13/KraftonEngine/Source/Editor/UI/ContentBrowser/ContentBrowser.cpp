@@ -11,6 +11,8 @@
 #include "Editor/UI/Util/EditorTextureManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
+#include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 #include "Mesh/MeshManager.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemManager.h"
@@ -604,6 +606,22 @@ void FEditorContentBrowserWidget::DrawContents()
 						if (UParticleSystem* ParticleSystemAsset = FParticleSystemManager::Get().Load(CreatedPath))
 						{
 							BrowserContext.EditorEngine->OpenAssetEditorForObject(ParticleSystemAsset);
+						}
+					}
+				}
+			}
+			if (ImGui::MenuItem("Material"))
+			{
+				FString CreatedPath;
+				if (FAssetFactory::CreateMaterial(FPaths::ToUtf8(BrowserContext.CurrentPath), "NewMaterial", CreatedPath))
+				{
+					Refresh();
+					if (BrowserContext.EditorEngine)
+					{
+						const FString MatPath = FPaths::MakeProjectRelative(CreatedPath);
+						if (UMaterial* Material = FMaterialManager::Get().GetOrCreateMaterial(MatPath))
+						{
+							BrowserContext.EditorEngine->OpenAssetEditorForObject(Material);
 						}
 					}
 				}
