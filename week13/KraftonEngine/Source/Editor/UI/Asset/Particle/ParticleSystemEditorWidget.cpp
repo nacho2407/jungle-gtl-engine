@@ -2176,7 +2176,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                             {
                                 ModuleToDuplicateHigher = ModuleIndex;
                             }
-                            if (ImGui::MenuItem("상위에서 공유", nullptr, false, bIsSubLOD && !bIsShared))
+                            if (ImGui::MenuItem("상위에서 공유", nullptr, false, bIsSubLOD))
                             {
                                 ModuleToShareHigher = ModuleIndex;
                             }

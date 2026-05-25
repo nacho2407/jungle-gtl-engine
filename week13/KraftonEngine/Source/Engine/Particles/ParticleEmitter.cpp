@@ -11,6 +11,71 @@
 #include "Spawn/ParticleModuleSpawn.h"
 #include "Velocity/ParticleModuleVelocity.h"
 
+namespace
+{
+    void ApplySharedModule(UParticleModule*& Target, UParticleModule* Shared)
+    {
+        if (!Shared || Target == Shared)
+        {
+            return;
+        }
+        if (Target)
+        {
+            UObjectManager::Get().DestroyObject(Target);
+        }
+        Target = Shared;
+    }
+
+    void SerializeLODShareFlags(FArchive& Ar, UParticleLODLevel* LOD, UParticleLODLevel* HigherLOD)
+    {
+        bool bShareRequired = Ar.IsSaving() && LOD && HigherLOD && LOD->RequiredModule == HigherLOD->RequiredModule;
+        Ar << bShareRequired;
+        if (Ar.IsLoading() && bShareRequired && LOD && HigherLOD)
+        {
+            UParticleModule* Target = LOD->RequiredModule;
+            ApplySharedModule(Target, HigherLOD->RequiredModule);
+            LOD->RequiredModule = Cast<UParticleModuleRequired>(Target);
+        }
+
+        bool bShareSpawn = Ar.IsSaving() && LOD && HigherLOD && LOD->SpawnModule == HigherLOD->SpawnModule;
+        Ar << bShareSpawn;
+        if (Ar.IsLoading() && bShareSpawn && LOD && HigherLOD)
+        {
+            UParticleModule* Target = LOD->SpawnModule;
+            ApplySharedModule(Target, HigherLOD->SpawnModule);
+            LOD->SpawnModule = Cast<UParticleModuleSpawn>(Target);
+        }
+
+        bool bShareTypeData = Ar.IsSaving() && LOD && HigherLOD && LOD->TypeDataModule == HigherLOD->TypeDataModule;
+        Ar << bShareTypeData;
+        if (Ar.IsLoading() && bShareTypeData && LOD && HigherLOD)
+        {
+            UParticleModule* Target = static_cast<UParticleModule*>(LOD->TypeDataModule);
+            ApplySharedModule(Target, static_cast<UParticleModule*>(HigherLOD->TypeDataModule));
+            LOD->TypeDataModule = Cast<UParticleModuleTypeDataBase>(Target);
+        }
+
+        uint32 ModuleCount = Ar.IsSaving() && LOD ? static_cast<uint32>(LOD->Modules.size()) : 0;
+        Ar << ModuleCount;
+        for (uint32 ModuleIndex = 0; ModuleIndex < ModuleCount; ++ModuleIndex)
+        {
+            bool bShareModule = Ar.IsSaving() && LOD && HigherLOD && ModuleIndex < HigherLOD->Modules.size() && LOD->
+            Modules[ModuleIndex] == HigherLOD->Modules[ModuleIndex];
+            Ar << bShareModule;
+            if (Ar.IsLoading() && bShareModule && LOD && HigherLOD && ModuleIndex < LOD->Modules.size() && ModuleIndex <
+                HigherLOD->Modules.size())
+            {
+                ApplySharedModule(LOD->Modules[ModuleIndex], HigherLOD->Modules[ModuleIndex]);
+            }
+        }
+
+        if (Ar.IsLoading() && LOD)
+        {
+            LOD->UpdateModuleLists();
+        }
+    }
+}
+
 UParticleLODLevel* UParticleEmitter::GetLODLevel(int32 LODIndex) const
 {
 	if (LODIndex < 0 || LODIndex >= static_cast<int32>(LODLevels.size()))
@@ -160,9 +225,9 @@ void UParticleEmitter::Serialize(FArchive& Ar)
 {
 	// 버전 1: bEnabled/bUseMeshInstance만 저장하고 로드 시 DefaultSpriteEmitter로 리셋되던
 	//          이전 포맷. 모듈 편집이 디스크에 들어가지 않아 사실상 사용 불가.
-	// 버전 2: 이름/피벗/초기 할당량 + LODLevels 전부를 직렬화. 모듈은 LODLevel 내부에서
-	//          ClassName 디스패치로 재생성.
-	int32 Version = 2;
+    // 버전 2: 이름/피벗/초기 할당량 + LODLevels 전부를 직렬화.
+    // 버전 3: sub-LOD 모듈 공유 포인터를 저장/복원.
+    int32 Version = 3;
 	Ar << Version;
 
 	bool bSavedEnabled         = bEnabled;
@@ -214,6 +279,11 @@ void UParticleEmitter::Serialize(FArchive& Ar)
 			LODLevels[i] = UObjectManager::Get().CreateObject<UParticleLODLevel>(this);
 		}
 		LODLevels[i]->Serialize(Ar);
+        if (Version >= 3)
+        {
+            UParticleLODLevel* HigherLOD = i > 0 ? LODLevels[i - 1] : nullptr;
+            SerializeLODShareFlags(Ar, LODLevels[i], HigherLOD);
+        }
 	}
 
 	if (Ar.IsLoading())
