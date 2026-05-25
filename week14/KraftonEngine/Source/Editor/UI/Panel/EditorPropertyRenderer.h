@@ -10,6 +10,7 @@ struct FEditorPropertyRenderOptions
 	bool bDispatchChange = true;
 	FString PropertyPath;
 	USceneComponent* EditedSceneComponent = nullptr;
+	int32 IndentLevel = 0;
 };
 
 class FEditorPropertyRenderer

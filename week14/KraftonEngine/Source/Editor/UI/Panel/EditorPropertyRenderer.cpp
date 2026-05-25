@@ -38,6 +38,8 @@
 
 namespace
 {
+	constexpr float StructChildIndentWidth = 8.0f;
+
 	bool IsFbxFilePath(const FString& Path)
 	{
 		std::filesystem::path FilePath(FPaths::ToWide(Path));
@@ -823,19 +825,23 @@ bool FEditorPropertyRenderer::RenderStructPropertyWidget(FPropertyValue& Prop, F
 		TArray<FPropertyValue> ChildProps;
 		Prop.GetStructChildren(ChildProps);
 
-		ImGui::Indent(8.0f);
-
 		for (int32 ci = 0; ci < (int32)ChildProps.size(); ++ci)
 		{
 			ImGui::PushID(ci);
 
 			FPropertyValue& ChildProp = ChildProps[ci];
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
 			ImGui::AlignTextToFramePadding();
+			const float ChildIndent = static_cast<float>(Options.IndentLevel + 1) * StructChildIndentWidth;
+			ImGui::Indent(ChildIndent);
 			ImGui::TextUnformatted(GetPropertyDisplayName(ChildProp));
-			ImGui::SameLine(120.0f);
+			ImGui::Unindent(ChildIndent);
+			ImGui::TableSetColumnIndex(1);
 			ImGui::SetNextItemWidth(-1);
 
 			FEditorPropertyRenderOptions ChildOptions = Options;
+			ChildOptions.IndentLevel = Options.IndentLevel + 1;
 			ChildOptions.PropertyPath = MakePropertyPath(Options.PropertyPath, ChildProp.GetName());
 			int32 ChildIdx = ci;
 			if (RenderPropertyWidget(ChildProps, ChildIdx, ChildOptions))
@@ -844,8 +850,6 @@ bool FEditorPropertyRenderer::RenderStructPropertyWidget(FPropertyValue& Prop, F
 			}
 			ImGui::PopID();
 		}
-
-		ImGui::Unindent(8.0f);
 		ImGui::TreePop();
 	}
 
