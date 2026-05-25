@@ -18,9 +18,9 @@
 
 namespace
 {
-constexpr float DetachedHomeAreaWidth = 82.0f;
-constexpr float DetachedHomeIconSize = 62.0f;
-constexpr float DetachedHomeCircleRadius = 34.0f;
+constexpr float DetachedHomeAreaWidth = 76.0f;
+constexpr float DetachedHomeIconSize = 48.0f;
+constexpr float DetachedHomeCircleRadius = 0.0f;
 
 void SetOpaqueBlendStateCallback(const ImDrawList*, const ImDrawCmd* Cmd)
 {
@@ -129,11 +129,14 @@ void DrawHomeChromeIcon(
 		Min,
 		Max,
 		ImGui::GetColorU32(bHovered ? ImVec4(0.095f, 0.102f, 0.125f, 1.0f) : ImVec4(0.055f, 0.060f, 0.072f, 1.0f)));
-	DrawList->AddCircleFilled(
-		Center,
-		DetachedHomeCircleRadius,
-		ImGui::GetColorU32(bHovered ? ImVec4(0.13f, 0.14f, 0.17f, 1.0f) : ImVec4(0.075f, 0.080f, 0.095f, 1.0f)),
-		68);
+	if (DetachedHomeCircleRadius > 0.0f)
+	{
+		DrawList->AddCircleFilled(
+			Center,
+			DetachedHomeCircleRadius,
+			ImGui::GetColorU32(bHovered ? ImVec4(0.13f, 0.14f, 0.17f, 1.0f) : ImVec4(0.075f, 0.080f, 0.095f, 1.0f)),
+			68);
+	}
 	if (HomeIcon)
 	{
 		const ImVec2 IconMin(Center.x - DetachedHomeIconSize * 0.5f, Center.y - DetachedHomeIconSize * 0.5f);
@@ -145,12 +148,15 @@ void DrawHomeChromeIcon(
 		const ImU32 HomeColor = ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f));
 		DrawList->AddText(ImVec2(Center.x - 7.0f, Center.y - 7.0f), HomeColor, "JS");
 	}
-	DrawList->AddCircle(
-		Center,
-		DetachedHomeCircleRadius,
-		ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f)),
-		68,
-		1.8f);
+	if (DetachedHomeCircleRadius > 0.0f)
+	{
+		DrawList->AddCircle(
+			Center,
+			DetachedHomeCircleRadius,
+			ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f)),
+			68,
+			1.8f);
+	}
 }
 
 ImGui_ImplWin32_CustomChromeRect MakeChromeRect(const ImVec2& Min, const ImVec2& Max, const ImVec2& WindowPos)
@@ -283,6 +289,7 @@ void FEditorViewerWidget::Render(float DeltaTime)
 	FString WindowName = GetWindowName();
 	bool bDockRequested = false;
 	bool bCloseRequested = false;
+	bool bDockedByDrag = false;
 
 	// Detached document는 borderless secondary viewport로 띄우고,
 	// Win32 backend에 titlebar hit-test 정보를 넘겨 native window처럼 움직이게 한다.
@@ -297,20 +304,20 @@ void FEditorViewerWidget::Render(float DeltaTime)
 	}
 	constexpr ImGuiWindowFlags WindowFlags =
 		ImGuiWindowFlags_MenuBar |
-		ImGuiWindowFlags_NoTitleBar |
 		ImGuiWindowFlags_NoCollapse;
 	if (ImGui::Begin(WindowName.c_str(), &bOpen, WindowFlags))
 	{
 		RenderDetachedDocumentChrome(bDockRequested, bCloseRequested);
 		RenderDetachedDocumentToolbar(bDockRequested);
 		RenderContent(DeltaTime);
+		bDockedByDrag = ImGui::IsWindowDocked();
 	}
 	ImGui::End();
 
 	ImGui::PopStyleColor(4);
 	ImGui::PopStyleVar(5);
 
-	if (bDockRequested)
+	if (bDockRequested || bDockedByDrag)
 	{
 		EditorEngine->GetMainPanel().RequestDockViewer(Viewer);
 		return;
@@ -334,7 +341,7 @@ void FEditorViewerWidget::RenderDetachedDocumentChrome(bool& bDockRequested, boo
 		return;
 	}
 
-	constexpr float WindowButtonWidth = 48.0f;
+	constexpr float WindowButtonWidth = 42.0f;
 	constexpr float TitleBarHeight = FEditorChromeMetrics::ApplicationTitleBarHeight;
 	constexpr float MenuStartX = DetachedHomeAreaWidth;
 
@@ -347,10 +354,11 @@ void FEditorViewerWidget::RenderDetachedDocumentChrome(bool& bDockRequested, boo
 	int ChromeRectCount = 0;
 
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
-	const ImVec2 HomeMin(WindowPos.x, WindowPos.y);
+	const ImVec2 MenuBarMin = ImGui::GetCursorScreenPos();
+	const ImVec2 HomeMin(WindowPos.x, MenuBarMin.y);
 	const ImVec2 HomeMax(
 		WindowPos.x + DetachedHomeAreaWidth,
-		WindowPos.y + TitleBarHeight + FEditorChromeMetrics::DocumentToolbarHeight);
+		MenuBarMin.y + TitleBarHeight + FEditorChromeMetrics::DocumentToolbarHeight);
 	const bool bHomeHovered = ImGui::IsMouseHoveringRect(HomeMin, HomeMax);
 	ID3D11ShaderResourceView* HomeIcon = EditorEngine
 		? EditorEngine->GetMainPanel().GetHomeIconResource()
@@ -423,7 +431,7 @@ void FEditorViewerWidget::RenderDetachedDocumentChrome(bool& bDockRequested, boo
 	{
 		if (FSkeletalAssetEditorViewer* SkeletalViewer = AsSkeletalAssetViewer(Viewer))
 		{
-			FSkeletalViewerShowFlags& ShowFlags = SkeletalViewer->GetClient().GetShowFlags();
+			FSkeletalMeshViewerShowFlags& ShowFlags = SkeletalViewer->GetClient().GetShowFlags();
 			ImGui::MenuItem("Bones", nullptr, &ShowFlags.bShowBones);
 			ImGui::MenuItem("Bounding Box", nullptr, &ShowFlags.bShowBoundingBox);
 			ImGui::MenuItem("Outline", nullptr, &ShowFlags.bShowOutline);
@@ -462,12 +470,13 @@ void FEditorViewerWidget::RenderDetachedDocumentChrome(bool& bDockRequested, boo
 		"Minimize",
 		ButtonSize,
 		ImVec4(0.14f, 0.16f, 0.20f, 1.0f),
-		ImVec4(0.18f, 0.20f, 0.25f, 1.0f),
-		[](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
-		{
-			const float Y = (Min.y + Max.y) * 0.5f + 4.0f;
-			InDrawList->AddLine(ImVec2(Min.x + 17.0f, Y), ImVec2(Max.x - 17.0f, Y), Color, 1.6f);
-		}))
+				ImVec4(0.18f, 0.20f, 0.25f, 1.0f),
+				[](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
+				{
+					const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
+					const float HalfWidth = 7.0f;
+					InDrawList->AddLine(ImVec2(Center.x - HalfWidth, Center.y + 4.0f), ImVec2(Center.x + HalfWidth, Center.y + 4.0f), Color, 1.6f);
+				}))
 	{
 		if (ViewportHwnd)
 		{
@@ -483,11 +492,13 @@ void FEditorViewerWidget::RenderDetachedDocumentChrome(bool& bDockRequested, boo
 		ButtonSize,
 		ImVec4(0.14f, 0.16f, 0.20f, 1.0f),
 		ImVec4(0.18f, 0.20f, 0.25f, 1.0f),
-		[ViewportHwnd](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
-		{
-			const bool bMaximized = IsViewportMaximized(ViewportHwnd);
-			const ImVec2 A(Min.x + 17.0f, Min.y + 12.0f);
-			const ImVec2 B(Max.x - 17.0f, Max.y - 12.0f);
+				[ViewportHwnd](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
+				{
+					const bool bMaximized = IsViewportMaximized(ViewportHwnd);
+					const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
+					const float HalfSize = 7.0f;
+					const ImVec2 A(Center.x - HalfSize, Center.y - HalfSize);
+					const ImVec2 B(Center.x + HalfSize, Center.y + HalfSize);
 			if (bMaximized)
 			{
 				InDrawList->AddRect(ImVec2(A.x + 3.0f, A.y), ImVec2(B.x + 3.0f, B.y - 3.0f), Color, 0.0f, 0, 1.4f);
@@ -512,8 +523,10 @@ void FEditorViewerWidget::RenderDetachedDocumentChrome(bool& bDockRequested, boo
 		ImVec4(0.46f, 0.10f, 0.13f, 1.0f),
 		[](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
 		{
-			InDrawList->AddLine(ImVec2(Min.x + 17.0f, Min.y + 12.0f), ImVec2(Max.x - 17.0f, Max.y - 12.0f), Color, 1.6f);
-			InDrawList->AddLine(ImVec2(Max.x - 17.0f, Min.y + 12.0f), ImVec2(Min.x + 17.0f, Max.y - 12.0f), Color, 1.6f);
+			const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
+			const float HalfSize = 7.0f;
+			InDrawList->AddLine(ImVec2(Center.x - HalfSize, Center.y - HalfSize), ImVec2(Center.x + HalfSize, Center.y + HalfSize), Color, 1.6f);
+			InDrawList->AddLine(ImVec2(Center.x + HalfSize, Center.y - HalfSize), ImVec2(Center.x - HalfSize, Center.y + HalfSize), Color, 1.6f);
 		}))
 	{
 		bCloseRequested = true;
@@ -557,8 +570,6 @@ void FEditorViewerWidget::RenderDetachedDocumentToolbar(bool& bDockRequested)
 	{
 		bDockRequested = true;
 	}
-	ImGui::SameLine(0.0f, 12.0f);
-	EditorEngine->GetMainPanel().RenderViewerToolbarControls(Viewer);
 	ImGui::EndChild();
 }
 
@@ -591,6 +602,15 @@ void FEditorViewerWidget::RenderContent(float DeltaTime)
 	}
 
 	RenderViewportPanel(SceneViewport, SRV, ImGui::GetContentRegionAvail());
+	RenderDefaultViewportToolbar();
+}
+
+void FEditorViewerWidget::RenderDefaultViewportToolbarContents()
+{
+	if (EditorEngine && Viewer)
+	{
+		EditorEngine->GetMainPanel().RenderViewerToolbarControls(Viewer);
+	}
 }
 
 void FEditorViewerWidget::RenderViewportPanel(FSceneViewport& SceneViewport, ID3D11ShaderResourceView* SRV, const ImVec2& Size)
@@ -635,7 +655,78 @@ void FEditorViewerWidget::RenderViewportPanel(FSceneViewport& SceneViewport, ID3
 	DrawList->AddImage((ImTextureID)SRV, Min, Max);
 	DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
 
+	constexpr float ToolbarHeight = 34.0f;
+	if (auto* Client = SceneViewport.GetClient())
+	{
+		Client->SetViewportInputDeadZoneTop(ToolbarHeight);
+	}
+
+	LastViewportToolbarX = Min.x;
+	LastViewportToolbarY = Min.y;
+	LastViewportToolbarWidth = std::max(1.0f, ViewSize.x);
+	LastViewportToolbarHeight = ToolbarHeight;
+	bHasLastViewportToolbarRect = true;
+
 	ImGui::EndChild();
 }
 
+bool FEditorViewerWidget::BeginViewportToolbar(bool bDrawToolbarBackground)
+{
+	if (!bHasLastViewportToolbarRect)
+	{
+		return false;
+	}
 
+	char ToolbarWindowName[96];
+	snprintf(ToolbarWindowName, sizeof(ToolbarWindowName), "##ViewerViewportToolbarOverlay_%p", static_cast<void*>(this));
+
+	ImGui::SetNextWindowPos(ImVec2(LastViewportToolbarX, LastViewportToolbarY), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(LastViewportToolbarWidth, LastViewportToolbarHeight), ImGuiCond_Always);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 4.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, bDrawToolbarBackground ? ImVec4(0.12f, 0.13f, 0.16f, 0.92f) : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.22f, 0.26f, 0.95f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f, 0.29f, 0.35f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.16f, 0.30f, 0.53f, 1.0f));
+	constexpr ImGuiWindowFlags ToolbarFlags =
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoScrollWithMouse |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoDocking |
+		ImGuiWindowFlags_NoNav |
+		ImGuiWindowFlags_NoFocusOnAppearing;
+	if (!ImGui::Begin(ToolbarWindowName, nullptr, ToolbarFlags))
+	{
+		ImGui::End();
+		ImGui::PopStyleColor(4);
+		ImGui::PopStyleVar(4);
+		return false;
+	}
+
+	const float CenteredCursorY = std::max(
+		ImGui::GetCursorPosY(),
+		(LastViewportToolbarHeight - ImGui::GetFrameHeight()) * 0.5f + 1.0f);
+	ImGui::SetCursorPosY(CenteredCursorY);
+	return true;
+}
+
+void FEditorViewerWidget::EndViewportToolbar()
+{
+	ImGui::End();
+	ImGui::PopStyleColor(4);
+	ImGui::PopStyleVar(4);
+}
+
+void FEditorViewerWidget::RenderDefaultViewportToolbar()
+{
+	if (BeginViewportToolbar(true))
+	{
+		RenderDefaultViewportToolbarContents();
+		EndViewportToolbar();
+	}
+}

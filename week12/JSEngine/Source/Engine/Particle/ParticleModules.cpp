@@ -240,6 +240,40 @@ bool UParticleModuleCollision::IsUpdateModule() const
 	return true;
 }
 
+UParticleLODLevel::~UParticleLODLevel()
+{
+	UObjectManager::Get().DestroyObject(RequiredModule);
+	RequiredModule = nullptr;
+
+	for (UParticleModule* Module : Modules)
+	{
+		UObjectManager::Get().DestroyObject(Module);
+	}
+	Modules.clear();
+
+	UObjectManager::Get().DestroyObject(TypeDataModule);
+	TypeDataModule = nullptr;
+}
+
+UParticleEmitter::~UParticleEmitter()
+{
+	for (UParticleLODLevel* LODLevel : LODLevels)
+	{
+		UObjectManager::Get().DestroyObject(LODLevel);
+	}
+	LODLevels.clear();
+	ParticleSize.clear();
+}
+
+UParticleSystem::~UParticleSystem()
+{
+	for (UParticleEmitter* Emitter : Emitters)
+	{
+		UObjectManager::Get().DestroyObject(Emitter);
+	}
+	Emitters.clear();
+}
+
 void UParticleModuleTypeDataBase::Build()
 {
 }

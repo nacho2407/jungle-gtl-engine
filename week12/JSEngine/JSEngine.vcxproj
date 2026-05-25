@@ -666,7 +666,15 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Viewport\SkeletalMeshViewportClient.cpp">
+    <ClCompile Include="Source\Editor\Viewport\Viewer\ParticleViewerViewportClient.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\Viewer\SkeletalMeshViewerViewportClient.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\Viewer\ViewerViewportClient.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -699,6 +707,7 @@
     <ClCompile Include="Source\Engine\Asset\FileUtils.cpp" />
     <ClCompile Include="Source\Engine\Asset\FontAtlasLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\ObjLoader.cpp" />
+    <ClCompile Include="Source\Engine\Asset\ParticleSystemAssetLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\SkeletalMesh.cpp" />
     <ClCompile Include="Source\Engine\Asset\StaticMesh.cpp" />
     <ClCompile Include="Source\Engine\Asset\StaticMeshSimplifier.cpp" />
@@ -1027,7 +1036,9 @@
     <ClInclude Include="Source\Editor\Viewport\EditorViewportPIEController.h" />
     <ClInclude Include="Source\Editor\Viewport\FSceneViewport.h" />
     <ClInclude Include="Source\Editor\Viewport\SEditorViewport.h" />
-    <ClInclude Include="Source\Editor\Viewport\SkeletalMeshViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\Viewer\ParticleViewerViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\Viewer\SkeletalMeshViewerViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\Viewer\ViewerViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h" />
     <ClInclude Include="Source\Engine\Animation\ActorSequence.h" />
     <ClInclude Include="Source\Engine\Animation\AnimGraphAsset.h" />
@@ -1055,6 +1066,7 @@
     <ClInclude Include="Source\Engine\Asset\IAssetLoader.h" />
     <ClInclude Include="Source\Engine\Asset\ObjLoader.h" />
     <ClInclude Include="Source\Engine\Asset\ObjRawTypes.h" />
+    <ClInclude Include="Source\Engine\Asset\ParticleSystemAssetLoader.h" />
     <ClInclude Include="Source\Engine\Asset\SkeletalMesh.h" />
     <ClInclude Include="Source\Engine\Asset\SkeletalMeshTypes.h" />
     <ClInclude Include="Source\Engine\Asset\StaticMesh.h" />

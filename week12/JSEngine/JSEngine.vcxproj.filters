@@ -79,6 +79,9 @@
     <Filter Include="Source\Editor\Viewport">
       <UniqueIdentifier>{4166810a-6d5e-80b0-9178-961c38a55278}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Viewport\Viewer">
+      <UniqueIdentifier>{0f49f98d-38ea-4f09-95eb-75f6fcda7902}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine">
       <UniqueIdentifier>{aae0e8af-36dd-8f57-8b6a-4868597c575d}</UniqueIdentifier>
     </Filter>
@@ -483,8 +486,14 @@
     <ClCompile Include="Source\Editor\Viewport\FSceneViewport.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Viewport\SkeletalMeshViewportClient.cpp">
-      <Filter>Source\Editor\Viewport</Filter>
+    <ClCompile Include="Source\Editor\Viewport\Viewer\ParticleViewerViewportClient.cpp">
+      <Filter>Source\Editor\Viewport\Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\Viewer\SkeletalMeshViewerViewportClient.cpp">
+      <Filter>Source\Editor\Viewport\Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\Viewer\ViewerViewportClient.cpp">
+      <Filter>Source\Editor\Viewport\Viewer</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\ViewportLayout.cpp">
       <Filter>Source\Editor\Viewport</Filter>
@@ -562,6 +571,9 @@
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\ObjLoader.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\ParticleSystemAssetLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\SkeletalMesh.cpp">
@@ -1462,8 +1474,14 @@
     <ClInclude Include="Source\Editor\Viewport\SEditorViewport.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Viewport\SkeletalMeshViewportClient.h">
-      <Filter>Source\Editor\Viewport</Filter>
+    <ClInclude Include="Source\Editor\Viewport\Viewer\ParticleViewerViewportClient.h">
+      <Filter>Source\Editor\Viewport\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\Viewer\SkeletalMeshViewerViewportClient.h">
+      <Filter>Source\Editor\Viewport\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\Viewer\ViewerViewportClient.h">
+      <Filter>Source\Editor\Viewport\Viewer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h">
       <Filter>Source\Editor\Viewport</Filter>
@@ -1544,6 +1562,9 @@
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\ObjRawTypes.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\ParticleSystemAssetLoader.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\SkeletalMesh.h">

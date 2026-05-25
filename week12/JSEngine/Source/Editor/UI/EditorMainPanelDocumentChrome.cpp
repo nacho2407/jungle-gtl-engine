@@ -66,22 +66,32 @@ void FEditorMainPanel::RenderActiveDocumentToolbar()
 
 		if (Viewer)
 		{
-			RenderViewerToolbarControls(Viewer);
+			const float TextY = (ToolbarHeight - ImGui::GetTextLineHeight()) * 0.5f;
+			ImGui::SetCursorPos(ImVec2(14.0f, TextY));
+			ImGui::TextDisabled(Viewer->GetViewerLabel());
+			ImGui::SameLine(0.0f, 14.0f);
+			ImGui::TextUnformatted(Viewer->GetFileName().c_str());
 		}
 		else if (ActiveTab && ActiveTab->Id.Kind == EEditorTabKind::RuntimeUIPreview)
 		{
+			const float TextY = (ToolbarHeight - ImGui::GetTextLineHeight()) * 0.5f;
+			ImGui::SetCursorPos(ImVec2(14.0f, TextY));
 			ImGui::TextDisabled("Runtime UI Preview");
-			ImGui::SameLine();
+			ImGui::SameLine(0.0f, 14.0f);
 			ImGui::TextUnformatted(Widgets.RuntimeUIPreviewWidget.GetPreviewDocumentPath().c_str());
 		}
 		else if (ActiveTab && ActiveTab->Id.Kind == EEditorTabKind::AnimGraphEditor)
 		{
+			const float TextY = (ToolbarHeight - ImGui::GetTextLineHeight()) * 0.5f;
+			ImGui::SetCursorPos(ImVec2(14.0f, TextY));
 			ImGui::TextDisabled("Anim Graph");
-			ImGui::SameLine();
+			ImGui::SameLine(0.0f, 14.0f);
 			ImGui::TextUnformatted(Widgets.AnimGraphWidget.GetEditingPath().c_str());
 		}
 		else
 		{
+			const float TextY = (ToolbarHeight - ImGui::GetTextLineHeight()) * 0.5f;
+			ImGui::SetCursorPos(ImVec2(14.0f, TextY));
 			ImGui::TextDisabled("No active document");
 		}
 	}
@@ -102,53 +112,11 @@ void FEditorMainPanel::RenderViewerToolbarControls(FEditorViewer* Viewer)
 	FEditorViewportClient* Client = &Viewer->GetClient();
 	FEditorViewportState* ViewportState = Client ? Client->GetViewportState() : nullptr;
 	FSkeletalAssetEditorViewer* SkeletalViewer = AsSkeletalAssetViewer(Viewer);
-	FSkeletalViewerShowFlags* ShowFlags = SkeletalViewer ? &SkeletalViewer->GetClient().GetShowFlags() : nullptr;
+	FSkeletalMeshViewerShowFlags* ShowFlags = SkeletalViewer ? &SkeletalViewer->GetClient().GetShowFlags() : nullptr;
+
+	RenderViewerTransformToolbarControls(Viewer);
 
 	ImGui::PushID(Viewer);
-	if (DrawViewportIconButton(
-		"##ViewerSelectModeShared",
-		EEditorMainPanelViewportToolIcon::Select,
-		"Q",
-		"Select (Q / 1)",
-		Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Select,
-		true))
-	{
-		Client->RequestSetSelectMode();
-	}
-	ImGui::SameLine();
-	if (DrawViewportIconButton(
-		"##ViewerTranslateModeShared",
-		EEditorMainPanelViewportToolIcon::Translate,
-		"W",
-		"Translate (W / 2)",
-		Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Translate,
-		true))
-	{
-		Client->RequestSetTranslateMode();
-	}
-	ImGui::SameLine();
-	if (DrawViewportIconButton(
-		"##ViewerRotateModeShared",
-		EEditorMainPanelViewportToolIcon::Rotate,
-		"E",
-		"Rotate (E / 3)",
-		Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Rotate,
-		true))
-	{
-		Client->RequestSetRotateMode();
-	}
-	ImGui::SameLine();
-	if (DrawViewportIconButton(
-		"##ViewerScaleModeShared",
-		EEditorMainPanelViewportToolIcon::Scale,
-		"R",
-		"Scale (R / 4)",
-		Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Scale,
-		true))
-	{
-		Client->RequestSetScaleMode();
-	}
-
 	ImGui::SameLine(0.0f, 10.0f);
 	char TypeButtonLabel[64];
 	snprintf(
@@ -275,6 +243,61 @@ void FEditorMainPanel::RenderViewerToolbarControls(FEditorViewer* Viewer)
 	ImGui::PopID();
 }
 
+void FEditorMainPanel::RenderViewerTransformToolbarControls(FEditorViewer* Viewer)
+{
+	if (!Viewer)
+	{
+		return;
+	}
+
+	FEditorViewportClient* Client = &Viewer->GetClient();
+	ImGui::PushID(Viewer);
+	if (DrawViewportIconButton(
+		"##ViewerSelectModeShared",
+		EEditorMainPanelViewportToolIcon::Select,
+		"Q",
+		"Select (Q / 1)",
+		Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Select,
+		true))
+	{
+		Client->RequestSetSelectMode();
+	}
+	ImGui::SameLine();
+	if (DrawViewportIconButton(
+		"##ViewerTranslateModeShared",
+		EEditorMainPanelViewportToolIcon::Translate,
+		"W",
+		"Translate (W / 2)",
+		Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Translate,
+		true))
+	{
+		Client->RequestSetTranslateMode();
+	}
+	ImGui::SameLine();
+	if (DrawViewportIconButton(
+		"##ViewerRotateModeShared",
+		EEditorMainPanelViewportToolIcon::Rotate,
+		"E",
+		"Rotate (E / 3)",
+		Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Rotate,
+		true))
+	{
+		Client->RequestSetRotateMode();
+	}
+	ImGui::SameLine();
+	if (DrawViewportIconButton(
+		"##ViewerScaleModeShared",
+		EEditorMainPanelViewportToolIcon::Scale,
+		"R",
+		"Scale (R / 4)",
+		Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Scale,
+		true))
+	{
+		Client->RequestSetScaleMode();
+	}
+	ImGui::PopID();
+}
+
 bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 {
 	const FEditorTabEntry* ActiveTab = EditorTabs.GetActiveTab();
@@ -385,7 +408,7 @@ bool FEditorMainPanel::RenderActiveDocumentMainMenu()
 				ImGui::Separator();
 				if (FSkeletalAssetEditorViewer* SkeletalViewer = AsSkeletalAssetViewer(Viewer))
 				{
-					FSkeletalViewerShowFlags& ShowFlags = SkeletalViewer->GetClient().GetShowFlags();
+					FSkeletalMeshViewerShowFlags& ShowFlags = SkeletalViewer->GetClient().GetShowFlags();
 					ImGui::MenuItem("Skeletal Mesh", nullptr, &ShowFlags.bShowSkeletalMesh);
 					ImGui::MenuItem("Bones", nullptr, &ShowFlags.bShowBones);
 					ImGui::BeginDisabled(!ShowFlags.bShowBones);

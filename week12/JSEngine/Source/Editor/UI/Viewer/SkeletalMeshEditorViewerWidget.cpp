@@ -69,6 +69,7 @@ void FSkeletalMeshEditorViewerWidget::RenderContent(float DeltaTime)
 	ImGui::SameLine();
 
 	RenderViewportPanel(SceneViewport, SRV, ImVec2(CenterWidth, 0.0f));
+	RenderDefaultViewportToolbar();
 
 	ImGui::SameLine();
 	ImGui::Button("##right_splitter", ImVec2(2.0f, -1.0f));

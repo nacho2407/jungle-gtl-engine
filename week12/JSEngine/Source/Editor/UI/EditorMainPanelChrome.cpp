@@ -17,76 +17,76 @@
 
 namespace
 {
-constexpr float WindowButtonWidth = 48.0f;
-constexpr float HomeChromeWidth = 76.0f;
+	constexpr float WindowButtonWidth = 42.0f;
+	constexpr float HomeChromeWidth = 76.0f;
 
-std::string WideToUtf8(const wchar_t* Text)
-{
-	if (!Text || Text[0] == L'\0')
+	std::string WideToUtf8(const wchar_t* Text)
 	{
-		return {};
+		if (!Text || Text[0] == L'\0')
+		{
+			return {};
+		}
+
+		const int RequiredSize = WideCharToMultiByte(CP_UTF8, 0, Text, -1, nullptr, 0, nullptr, nullptr);
+		if (RequiredSize <= 1)
+		{
+			return {};
+		}
+
+		std::string Result(static_cast<size_t>(RequiredSize), '\0');
+		WideCharToMultiByte(CP_UTF8, 0, Text, -1, Result.data(), RequiredSize, nullptr, nullptr);
+		Result.pop_back();
+		return Result;
 	}
 
-	const int RequiredSize = WideCharToMultiByte(CP_UTF8, 0, Text, -1, nullptr, 0, nullptr, nullptr);
-	if (RequiredSize <= 1)
+	FWindowHitTestRect MakeHitTestRect(const ImVec2& Min, const ImVec2& Max, const ImVec2& ViewportPos)
 	{
-		return {};
+		FWindowHitTestRect Rect;
+		Rect.Left = static_cast<int32>(Min.x - ViewportPos.x);
+		Rect.Top = static_cast<int32>(Min.y - ViewportPos.y);
+		Rect.Right = static_cast<int32>(Max.x - ViewportPos.x);
+		Rect.Bottom = static_cast<int32>(Max.y - ViewportPos.y);
+		return Rect;
 	}
 
-	std::string Result(static_cast<size_t>(RequiredSize), '\0');
-	WideCharToMultiByte(CP_UTF8, 0, Text, -1, Result.data(), RequiredSize, nullptr, nullptr);
-	Result.pop_back();
-	return Result;
-}
-
-FWindowHitTestRect MakeHitTestRect(const ImVec2& Min, const ImVec2& Max, const ImVec2& ViewportPos)
-{
-	FWindowHitTestRect Rect;
-	Rect.Left = static_cast<int32>(Min.x - ViewportPos.x);
-	Rect.Top = static_cast<int32>(Min.y - ViewportPos.y);
-	Rect.Right = static_cast<int32>(Max.x - ViewportPos.x);
-	Rect.Bottom = static_cast<int32>(Max.y - ViewportPos.y);
-	return Rect;
-}
-
-void AddItemHitRect(TArray<FWindowHitTestRect>& Rects, const ImVec2& ViewportPos)
-{
-	Rects.push_back(MakeHitTestRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ViewportPos));
-}
-
-bool DrawWindowButton(
-	const char* Id,
-	const char* Tooltip,
-	const ImVec2& Size,
-	const ImVec4& HoverColor,
-	const ImVec4& ActiveColor,
-	const std::function<void(ImDrawList*, const ImVec2&, const ImVec2&, ImU32)>& DrawIcon)
-{
-	ImGui::PushID(Id);
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, HoverColor);
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ActiveColor);
-
-	const bool bClicked = ImGui::InvisibleButton("##Button", Size);
-	const bool bHovered = ImGui::IsItemHovered();
-	const bool bActive = ImGui::IsItemActive();
-	const ImVec2 Min = ImGui::GetItemRectMin();
-	const ImVec2 Max = ImGui::GetItemRectMax();
-	const ImU32 BgColor = ImGui::GetColorU32(
-		bActive ? ActiveColor : (bHovered ? HoverColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f)));
-	ImDrawList* DrawList = ImGui::GetWindowDrawList();
-	DrawList->AddRectFilled(Min, Max, BgColor, 0.0f);
-	DrawIcon(DrawList, Min, Max, ImGui::GetColorU32(ImVec4(0.82f, 0.85f, 0.90f, 1.0f)));
-
-	if (bHovered && Tooltip)
+	void AddItemHitRect(TArray<FWindowHitTestRect>& Rects, const ImVec2& ViewportPos)
 	{
-		ImGui::SetTooltip("%s", Tooltip);
+		Rects.push_back(MakeHitTestRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ViewportPos));
 	}
 
-	ImGui::PopStyleColor(3);
-	ImGui::PopID();
-	return bClicked;
-}
+	bool DrawWindowButton(
+		const char* Id,
+		const char* Tooltip,
+		const ImVec2& Size,
+		const ImVec4& HoverColor,
+		const ImVec4& ActiveColor,
+		const std::function<void(ImDrawList*, const ImVec2&, const ImVec2&, ImU32)>& DrawIcon)
+	{
+		ImGui::PushID(Id);
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, HoverColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ActiveColor);
+
+		const bool bClicked = ImGui::InvisibleButton("##Button", Size);
+		const bool bHovered = ImGui::IsItemHovered();
+		const bool bActive = ImGui::IsItemActive();
+		const ImVec2 Min = ImGui::GetItemRectMin();
+		const ImVec2 Max = ImGui::GetItemRectMax();
+		const ImU32 BgColor = ImGui::GetColorU32(
+			bActive ? ActiveColor : (bHovered ? HoverColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f)));
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		DrawList->AddRectFilled(Min, Max, BgColor, 0.0f);
+		DrawIcon(DrawList, Min, Max, ImGui::GetColorU32(ImVec4(0.82f, 0.85f, 0.90f, 1.0f)));
+
+		if (bHovered && Tooltip)
+		{
+			ImGui::SetTooltip("%s", Tooltip);
+		}
+
+		ImGui::PopStyleColor(3);
+		ImGui::PopID();
+		return bClicked;
+	}
 }
 
 void FEditorMainPanel::RenderApplicationChrome(float DeltaTime)
@@ -170,8 +170,9 @@ void FEditorMainPanel::RenderApplicationChrome(float DeltaTime)
 				ImVec4(0.18f, 0.20f, 0.25f, 1.0f),
 				[](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
 				{
-					const float Y = (Min.y + Max.y) * 0.5f + 4.0f;
-					InDrawList->AddLine(ImVec2(Min.x + 17.0f, Y), ImVec2(Max.x - 17.0f, Y), Color, 1.6f);
+					const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
+					const float HalfWidth = 7.0f;
+					InDrawList->AddLine(ImVec2(Center.x - HalfWidth, Center.y + 4.0f), ImVec2(Center.x + HalfWidth, Center.y + 4.0f), Color, 1.6f);
 				}))
 			{
 				if (Window)
@@ -191,8 +192,10 @@ void FEditorMainPanel::RenderApplicationChrome(float DeltaTime)
 				[this](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
 				{
 					const bool bMaximized = Window && Window->IsWindowMaximized();
-					const ImVec2 A(Min.x + 17.0f, Min.y + 12.0f);
-					const ImVec2 B(Max.x - 17.0f, Max.y - 12.0f);
+					const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
+					const float HalfSize = 7.0f;
+					const ImVec2 A(Center.x - HalfSize, Center.y - HalfSize);
+					const ImVec2 B(Center.x + HalfSize, Center.y + HalfSize);
 					if (bMaximized)
 					{
 						InDrawList->AddRect(ImVec2(A.x + 3.0f, A.y), ImVec2(B.x + 3.0f, B.y - 3.0f), Color, 0.0f, 0, 1.4f);
@@ -220,8 +223,10 @@ void FEditorMainPanel::RenderApplicationChrome(float DeltaTime)
 				ImVec4(0.46f, 0.10f, 0.13f, 1.0f),
 				[](ImDrawList* InDrawList, const ImVec2& Min, const ImVec2& Max, ImU32 Color)
 				{
-					InDrawList->AddLine(ImVec2(Min.x + 17.0f, Min.y + 12.0f), ImVec2(Max.x - 17.0f, Max.y - 12.0f), Color, 1.6f);
-					InDrawList->AddLine(ImVec2(Max.x - 17.0f, Min.y + 12.0f), ImVec2(Min.x + 17.0f, Max.y - 12.0f), Color, 1.6f);
+					const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
+					const float HalfSize = 7.0f;
+					InDrawList->AddLine(ImVec2(Center.x - HalfSize, Center.y - HalfSize), ImVec2(Center.x + HalfSize, Center.y + HalfSize), Color, 1.6f);
+					InDrawList->AddLine(ImVec2(Center.x + HalfSize, Center.y - HalfSize), ImVec2(Center.x - HalfSize, Center.y + HalfSize), Color, 1.6f);
 				}))
 			{
 				if (Window)
