@@ -8,8 +8,16 @@ class UParticleModule;
 class UParticleSystemComponent;
 class UParticleModuleRequired;
 class UParticleModuleTypeDataBase;
+class UParticleEmitter;
 
 #include "Source/Engine/Particles/ParticleSystem.generated.h"
+
+enum class EParticleModuleEditState : uint8
+{
+	InheritedLocked = 0,
+	Duplicated,
+	Shared,
+};
 
 UCLASS()
 class UParticleLODLevel : public UObject
@@ -22,11 +30,18 @@ public:
 	bool IsEnabled() const { return bEnabled; }
 	const TArray<UParticleModule*>& GetModules() const { return Modules; }
 	TArray<UParticleModule*>& GetMutableModules() { return Modules; }
+	const TArray<EParticleModuleEditState>& GetModuleEditStates() const { return ModuleEditStates; }
+	TArray<EParticleModuleEditState>& GetMutableModuleEditStates() { return ModuleEditStates; }
 	UParticleModuleTypeDataBase* GetTypeDataModule() const { return TypeDataModule; }
+	EParticleModuleEditState GetModuleEditState(int32 ModuleIndex) const;
+	UParticleModule* ResolveModule(int32 ModuleIndex, const UParticleEmitter* OwnerEmitter) const;
 
 	void SetLevel(int32 InLevel) { Level = InLevel; }
 	void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
 	void SetTypeDataModule(UParticleModuleTypeDataBase* InTypeDataModule) { TypeDataModule = InTypeDataModule; }
+	void SetModuleEditState(int32 ModuleIndex, EParticleModuleEditState State);
+	void NormalizeModuleEditStates(EParticleModuleEditState DefaultState);
+	void SetAllModuleEditStates(EParticleModuleEditState State);
 
 	void Serialize(FArchive& Ar) override;
 
@@ -36,6 +51,19 @@ public:
 		for (UParticleModule* Module : Modules)
 		{
 			if (T* TypedModule = dynamic_cast<T*>(Module))
+			{
+				return TypedModule;
+			}
+		}
+		return nullptr;
+	}
+
+	template<typename T>
+	T* FindResolvedModule(const UParticleEmitter* OwnerEmitter) const
+	{
+		for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
+		{
+			if (T* TypedModule = dynamic_cast<T*>(ResolveModule(ModuleIndex, OwnerEmitter)))
 			{
 				return TypedModule;
 			}
@@ -54,6 +82,7 @@ private:
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
 	UPROPERTY(Edit, Save, Instanced, Category="Particle|LOD", DisplayName="Modules", AllowedClass=UParticleModule)
 	TArray<UParticleModule*> Modules;
+	TArray<EParticleModuleEditState> ModuleEditStates;
 };
 
 class UParticleEmitter : public UObject
@@ -70,12 +99,10 @@ public:
 	int32 GetMaxActiveParticles() const { return MaxActiveParticles; }
 	float GetEmitterDuration() const { return EmitterDuration; }
 	bool IsLooping() const { return bLooping; }
-	bool IsEnabled() const { return bEnabled; }
 
 	void SetMaxActiveParticles(int32 InMaxActiveParticles) { MaxActiveParticles = InMaxActiveParticles; }
 	void SetEmitterDuration(float InEmitterDuration) { EmitterDuration = InEmitterDuration; }
 	void SetLooping(bool bInLooping) { bLooping = bInLooping; }
-	void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
 	void AddLODLevel(UParticleLODLevel* LODLevel);
 
 	void Serialize(FArchive& Ar) override;
@@ -86,7 +113,6 @@ private:
 	int32 MaxActiveParticles = 100;
 	float EmitterDuration = 1.0f;
 	bool bLooping = true;
-	bool bEnabled = true;
 };
 
 UCLASS()

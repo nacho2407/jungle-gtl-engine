@@ -8,6 +8,7 @@
 #include "GameFramework/Light/DirectionalLightActor.h"
 #include "Object/Object.h"
 #include "Object/ObjectIterator.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include "Particles/Module/ParticleModule.h"
 #include "Particles/Module/ParticleModuleCollision.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
@@ -51,6 +52,9 @@ namespace
 		bool bSelect = false;
 		bool bDelete = false;
 		bool bRefresh = false;
+		bool bDuplicateFromHigher = false;
+		bool bShareFromHigher = false;
+		bool bDuplicateFromHighest = false;
 		bool bContextMenuOpen = false;
 	};
 
@@ -226,6 +230,22 @@ namespace
 		return (std::max)(FirstMovableIndex, (std::min)(InsertIndex, ModuleCount));
 	}
 
+	bool CanDirectEditModulesInLOD(int32 LODIndex)
+	{
+		return LODIndex == 0;
+	}
+
+	const char* GetModuleEditStateLabel(EParticleModuleEditState State)
+	{
+		switch (State)
+		{
+		case EParticleModuleEditState::InheritedLocked: return "Inherited Locked";
+		case EParticleModuleEditState::Duplicated: return "Duplicated";
+		case EParticleModuleEditState::Shared: return "Shared";
+		default: return "Unknown";
+		}
+	}
+
 	ImU32 GetModuleRowBackgroundColor(const UParticleModule* Module, bool bSelected)
 	{
 		if (Cast<UParticleModuleRequired>(Module))
@@ -239,20 +259,63 @@ namespace
 		return bSelected ? IM_COL32(78, 82, 92, 255) : IM_COL32(29, 30, 35, 255);
 	}
 
-	ImU32 GetModuleRowTextColor(const UParticleModule* Module)
+	ImU32 GetModuleRowTextColor(const UParticleModule* Module, bool bDirectEditLocked)
 	{
 		(void)Module;
+		if (bDirectEditLocked)
+		{
+			return IM_COL32(255, 255, 255, 255);
+		}
 		return IM_COL32(235, 238, 242, 255);
 	}
 
-	void DrawModuleRow(const char* Label, bool bSelected, const UParticleModule* Module)
+	void DrawLockedModuleRowOverlay(ImDrawList* DrawList, const ImVec2& Pos, float Width)
+	{
+		const ImVec2 Max(Pos.x + Width, Pos.y + ModuleRowHeight);
+		DrawList->AddRectFilled(Pos, Max, IM_COL32(0, 0, 0, 42));
+
+		for (float X = Pos.x - ModuleRowHeight; X < Pos.x + Width; X += 7.0f)
+		{
+			const ImVec2 LineStart(X, Pos.y + ModuleRowHeight);
+			const ImVec2 LineEnd(X + ModuleRowHeight, Pos.y);
+			DrawList->AddLine(
+				LineStart,
+				LineEnd,
+				IM_COL32(5, 8, 12, 220),
+				2.0f);
+			DrawList->AddLine(
+				ImVec2(LineStart.x + 1.0f, LineStart.y),
+				ImVec2(LineEnd.x + 1.0f, LineEnd.y),
+				IM_COL32(0, 245, 255, 210),
+				1.0f);
+		}
+
+		for (float X = Pos.x + 3.0f; X < Pos.x + Width; X += 18.0f)
+		{
+			const float Y = Pos.y + 3.0f + static_cast<int32>(X - Pos.x) % 11;
+			DrawList->AddRectFilled(
+				ImVec2(X, Y),
+				ImVec2((std::min)(X + 5.0f, Pos.x + Width), (std::min)(Y + 2.0f, Max.y)),
+				IM_COL32(255, 255, 255, 120));
+		}
+	}
+
+	void DrawModuleRow(const char* Label, bool bSelected, const UParticleModule* Module, bool bDirectEditLocked = false)
 	{
 		const ImVec2 Pos = ImGui::GetCursorScreenPos();
 		const float Width = ImGui::GetContentRegionAvail().x;
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 		const ImU32 BackgroundColor = GetModuleRowBackgroundColor(Module, bSelected);
-		const ImU32 TextColor = GetModuleRowTextColor(Module);
+		const ImU32 TextColor = GetModuleRowTextColor(Module, bDirectEditLocked);
 		DrawList->AddRectFilled(Pos, ImVec2(Pos.x + Width, Pos.y + ModuleRowHeight), BackgroundColor);
+		if (bDirectEditLocked)
+		{
+			DrawLockedModuleRowOverlay(DrawList, Pos, Width);
+			const ImVec2 TextPos(Pos.x + 8.0f, Pos.y + 4.0f);
+			DrawList->AddText(ImVec2(TextPos.x + 1.0f, TextPos.y + 1.0f), IM_COL32(0, 0, 0, 220), Label);
+			DrawList->AddText(TextPos, TextColor, Label);
+			return;
+		}
 		DrawList->AddText(ImVec2(Pos.x + 8.0f, Pos.y + 4.0f), TextColor, Label);
 	}
 
@@ -307,7 +370,13 @@ namespace
 		}
 	}
 
-	void RenderModuleContextMenu(FModuleRowAction& Action, bool bCanDelete, const ImVec2& RowMin, const ImVec2& RowMax)
+	void RenderModuleContextMenu(
+		FModuleRowAction& Action,
+		bool bCanDelete,
+		bool bCanOverrideFromHigher,
+		bool bCanOverrideFromHighest,
+		const ImVec2& RowMin,
+		const ImVec2& RowMax)
 	{
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsMouseHoveringRect(RowMin, RowMax))
 		{
@@ -331,13 +400,31 @@ namespace
 				Action.bRefresh = true;
 			}
 
+			ImGui::BeginDisabled(!bCanOverrideFromHigher);
+			if (ImGui::MenuItem("Duplicate From Higher"))
+			{
+				Action.bDuplicateFromHigher = true;
+			}
+			if (ImGui::MenuItem("Share From Higher"))
+			{
+				Action.bShareFromHigher = true;
+			}
+			ImGui::EndDisabled();
+
+			ImGui::BeginDisabled(!bCanOverrideFromHighest);
+			if (ImGui::MenuItem("Duplicate From Highest"))
+			{
+				Action.bDuplicateFromHighest = true;
+			}
+			ImGui::EndDisabled();
+
 			ImGui::EndPopup();
 		}
 	}
 
-	bool SelectableModuleRow(const char* Label, bool bSelected, const UParticleModule* Module = nullptr)
+	bool SelectableModuleRow(const char* Label, bool bSelected, const UParticleModule* Module = nullptr, bool bDirectEditLocked = false)
 	{
-		DrawModuleRow(Label, bSelected, Module);
+		DrawModuleRow(Label, bSelected, Module, bDirectEditLocked);
 		return ImGui::InvisibleButton("##ModuleRow", ImVec2(ImGui::GetContentRegionAvail().x, ModuleRowHeight));
 	}
 
@@ -351,6 +438,9 @@ namespace
 		const UParticleModule* Module,
 		bool bSelected,
 		bool bCanDelete,
+		bool bDirectEditLocked,
+		bool bCanOverrideFromHigher,
+		bool bCanOverrideFromHighest,
 		const FParticleModuleDragPayload* DragPayload,
 		FParticleModuleDropRequest* DropRequest,
 		int32 TargetEmitterIndex,
@@ -363,10 +453,10 @@ namespace
 		const ImVec2 Pos = ImGui::GetCursorScreenPos();
 		const float Width = ImGui::GetContentRegionAvail().x;
 
-		DrawModuleRow(Label, bSelected, Module);
+		DrawModuleRow(Label, bSelected, Module, bDirectEditLocked);
 		ImGui::SetCursorScreenPos(Pos);
 		Action.bSelect = ImGui::InvisibleButton("##SelectModuleRow", ImVec2(Width, ModuleRowHeight));
-		RenderModuleContextMenu(Action, bCanDelete, Pos, ImVec2(Pos.x + Width, Pos.y + ModuleRowHeight));
+		RenderModuleContextMenu(Action, bCanDelete, bCanOverrideFromHigher, bCanOverrideFromHighest, Pos, ImVec2(Pos.x + Width, Pos.y + ModuleRowHeight));
 		if (DragPayload)
 		{
 			StartModuleDragSource(*DragPayload, Label);
@@ -566,7 +656,47 @@ namespace
 		FMemoryArchive Reader(Writer.GetBuffer(), /*bInIsSaving=*/false);
 		DuplicatedEmitter->Serialize(Reader);
 		DuplicatedEmitter->SetFName(UniqueName);
+
+		const TArray<UParticleLODLevel*>& SourceLODLevels = SourceEmitter->GetLODLevels();
+		TArray<UParticleLODLevel*>& DuplicatedLODLevels = DuplicatedEmitter->GetMutableLODLevels();
+		const int32 LODCopyCount = (std::min)(static_cast<int32>(SourceLODLevels.size()), static_cast<int32>(DuplicatedLODLevels.size()));
+		for (int32 LODIndex = 0; LODIndex < LODCopyCount; ++LODIndex)
+		{
+			if (!SourceLODLevels[LODIndex] || !DuplicatedLODLevels[LODIndex])
+			{
+				continue;
+			}
+
+			DuplicatedLODLevels[LODIndex]->GetMutableModuleEditStates() = SourceLODLevels[LODIndex]->GetModuleEditStates();
+			DuplicatedLODLevels[LODIndex]->NormalizeModuleEditStates(LODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+		}
 		return DuplicatedEmitter;
+	}
+
+	UParticleModule* DuplicateParticleModule(UParticleModule* SourceModule)
+	{
+		if (!SourceModule)
+		{
+			return nullptr;
+		}
+
+		UObject* NewObject = FObjectFactory::Get().Create(SourceModule->GetClass()->GetName(), nullptr);
+		UParticleModule* DuplicatedModule = Cast<UParticleModule>(NewObject);
+		if (!DuplicatedModule)
+		{
+			if (NewObject)
+			{
+				UObjectManager::Get().DestroyObject(NewObject);
+			}
+			return nullptr;
+		}
+
+		FMemoryArchive Writer(/*bInIsSaving=*/true);
+		SourceModule->SerializeProperties(Writer, PF_Save);
+
+		FMemoryArchive Reader(Writer.GetBuffer(), /*bInIsSaving=*/false);
+		DuplicatedModule->SerializeProperties(Reader, PF_Save);
+		return DuplicatedModule;
 	}
 
 	UParticleLODLevel* CreateEditorDefaultLODLevel(const UParticleEmitter* Emitter)
@@ -594,6 +724,7 @@ namespace
 		LODLevel->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleVelocity>());
 		LODLevel->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleColor>());
 		LODLevel->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleSize>());
+		LODLevel->SetAllModuleEditStates(EParticleModuleEditState::Duplicated);
 		return LODLevel;
 	}
 
@@ -617,6 +748,8 @@ namespace
 		FMemoryArchive Reader(Writer.GetBuffer(), /*bInIsSaving=*/false);
 		DuplicatedLODLevel->Serialize(Reader);
 		DuplicatedLODLevel->SetFName(UniqueName);
+		DuplicatedLODLevel->GetMutableModuleEditStates() = SourceLODLevel->GetModuleEditStates();
+		DuplicatedLODLevel->NormalizeModuleEditStates(EParticleModuleEditState::InheritedLocked);
 		return DuplicatedLODLevel;
 	}
 
@@ -987,7 +1120,7 @@ void FParticleSystemEditorWidget::SelectParticleSystem()
 
 void FParticleSystemEditorWidget::SelectEmitter(int32 EmitterIndex)
 {
-	const int32 CurrentLODIndex = (std::max)(0, ViewState.Selection.LODIndex);
+	const int32 CurrentLODIndex = GetCurrentSystemLODIndex(GetParticleSystem());
 	ViewState.Selection.Kind = ESelectionKind::Emitter;
 	ViewState.Selection.EmitterIndex = EmitterIndex;
 	ViewState.Selection.LODIndex = CurrentLODIndex;
@@ -998,7 +1131,7 @@ void FParticleSystemEditorWidget::SelectLOD(int32 EmitterIndex, int32 LODIndex)
 {
 	ViewState.Selection.Kind = ESelectionKind::LOD;
 	ViewState.Selection.EmitterIndex = EmitterIndex;
-	ViewState.Selection.LODIndex = LODIndex;
+	ViewState.Selection.LODIndex = ClampSystemLODIndex(GetParticleSystem(), LODIndex);
 	ViewState.Selection.ModuleIndex = NoModuleIndex;
 }
 
@@ -1006,7 +1139,7 @@ void FParticleSystemEditorWidget::SelectModule(int32 EmitterIndex, int32 LODInde
 {
 	ViewState.Selection.Kind = ESelectionKind::Module;
 	ViewState.Selection.EmitterIndex = EmitterIndex;
-	ViewState.Selection.LODIndex = LODIndex;
+	ViewState.Selection.LODIndex = ClampSystemLODIndex(GetParticleSystem(), LODIndex);
 	ViewState.Selection.ModuleIndex = ModuleIndex;
 }
 
@@ -1098,6 +1231,7 @@ bool FParticleSystemEditorWidget::AddLODToSystem(bool bInsertAfterCurrent)
 
 		NewLODLevel->SetLevel(InsertIndex);
 		NewLODLevel->SetEnabled(true);
+		NewLODLevel->SetAllModuleEditStates(InsertIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
 		const int32 EmitterInsertIndex = (std::max)(0, (std::min)(InsertIndex, static_cast<int32>(LODLevels.size())));
 		LODLevels.insert(LODLevels.begin() + EmitterInsertIndex, NewLODLevel);
 	}
@@ -1163,6 +1297,7 @@ bool FParticleSystemEditorWidget::RegenerateLowestLOD(bool bDuplicateHighest)
 
 		NewLowestLOD->SetLevel(LowestLODIndex);
 		NewLowestLOD->SetEnabled(true);
+		NewLowestLOD->SetAllModuleEditStates(EParticleModuleEditState::InheritedLocked);
 		if (LowestLODIndex < static_cast<int32>(LODLevels.size()))
 		{
 			UParticleLODLevel* RemovedLOD = LODLevels[LowestLODIndex];
@@ -1285,15 +1420,9 @@ const char* FParticleSystemEditorWidget::GetSelectionKindLabel() const
 	}
 }
 
-int32 FParticleSystemEditorWidget::GetDisplayLODIndex(const UParticleEmitter* Emitter) const
+int32 FParticleSystemEditorWidget::GetCurrentSystemLODIndex(const UParticleSystem* ParticleSystem) const
 {
-	if (!Emitter || Emitter->GetLODLevels().empty())
-	{
-		return 0;
-	}
-
-	const int32 LODCount = static_cast<int32>(Emitter->GetLODLevels().size());
-	return (std::max)(0, (std::min)(ViewState.Selection.LODIndex, LODCount - 1));
+	return ClampSystemLODIndex(ParticleSystem, ViewState.Selection.LODIndex);
 }
 
 const UParticleEmitter* FParticleSystemEditorWidget::GetSelectedEmitter(const UParticleSystem* ParticleSystem) const
@@ -1321,12 +1450,18 @@ const UParticleLODLevel* FParticleSystemEditorWidget::GetSelectedLODLevel(const 
 		return nullptr;
 	}
 
-	return Emitter->GetLODLevel(GetDisplayLODIndex(Emitter));
+	return Emitter->GetLODLevel(GetCurrentSystemLODIndex(ParticleSystem));
 }
 
 const UParticleModule* FParticleSystemEditorWidget::GetSelectedModule(const UParticleSystem* ParticleSystem) const
 {
 	if (ViewState.Selection.Kind != ESelectionKind::Module)
+	{
+		return nullptr;
+	}
+
+	const UParticleEmitter* Emitter = GetSelectedEmitter(ParticleSystem);
+	if (!Emitter)
 	{
 		return nullptr;
 	}
@@ -1349,7 +1484,7 @@ const UParticleModule* FParticleSystemEditorWidget::GetSelectedModule(const UPar
 		return nullptr;
 	}
 
-	return Modules[ModuleIndex];
+	return LODLevel->ResolveModule(ModuleIndex, Emitter);
 }
 
 FParticleSystemEditorWidget::FEditorLayoutSizes FParticleSystemEditorWidget::CalculateLayoutSizes(const ImVec2& Available) const
@@ -1424,7 +1559,7 @@ void FParticleSystemEditorWidget::RenderToolbar()
 	ImGui::EndDisabled();
 
 	const int32 LODCount = ParticleSystem ? ParticleSystem->GetLODCount() : 0;
-	const int32 CurrentLODIndex = ParticleSystem ? ClampSystemLODIndex(ParticleSystem, ViewState.Selection.LODIndex) : 0;
+	const int32 CurrentLODIndex = GetCurrentSystemLODIndex(ParticleSystem);
 	const bool bCanUseLODControls = bCanAddLOD && LODCount > 0;
 	const bool bCanDeleteLOD = bCanUseLODControls && LODCount > 1;
 
@@ -1740,6 +1875,12 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 	UParticleModule* SelectedModule = const_cast<UParticleModule*>(GetSelectedModule(ParticleSystem));
 	if (SelectedModule && DrawDetailsCategoryHeader("Module"))
 	{
+		const int32 CurrentLODIndex = GetCurrentSystemLODIndex(ParticleSystem);
+		const bool bTypeDataSelection = ViewState.Selection.ModuleIndex == TypeDataModuleIndex;
+		const EParticleModuleEditState ModuleEditState = (!bTypeDataSelection && SelectedLOD)
+			? SelectedLOD->GetModuleEditState(ViewState.Selection.ModuleIndex)
+			: (CurrentLODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+		const bool bModuleReadOnly = !CanDirectEditModulesInLOD(CurrentLODIndex) && (bTypeDataSelection || ModuleEditState == EParticleModuleEditState::InheritedLocked);
 		if (BeginDetailsTable("##ParticleModuleSummaryTable"))
 		{
 			const UParticleModuleTypeDataBase* TypeDataModule = Cast<UParticleModuleTypeDataBase>(SelectedModule);
@@ -1748,10 +1889,12 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 			DrawDetailRow("Spawn Module", SelectedModule->IsSpawnModule() ? "true" : "false");
 			DrawDetailRow("Update Module", SelectedModule->IsUpdateModule() ? "true" : "false");
 			DrawDetailRow("Source", ViewState.Selection.ModuleIndex == TypeDataModuleIndex ? "LOD TypeDataModule" : "LOD Modules[]");
+			DrawDetailRow("Edit State", bTypeDataSelection ? "TypeData" : GetModuleEditStateLabel(ModuleEditState));
+			DrawDetailRow("Editable", bModuleReadOnly ? "false" : "true");
 			EndDetailsTable();
 		}
 		ImGui::Separator();
-		if (RenderObjectProperties(SelectedModule))
+		if (RenderObjectProperties(SelectedModule, bModuleReadOnly))
 		{
 			ApplyEditedObjectSideEffects(SelectedModule);
 			MarkDirty();
@@ -1761,7 +1904,7 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 	ImGui::EndChild();
 }
 
-bool FParticleSystemEditorWidget::RenderObjectProperties(UObject* Object)
+bool FParticleSystemEditorWidget::RenderObjectProperties(UObject* Object, bool bReadOnly)
 {
 	if (!Object)
 	{
@@ -1833,8 +1976,16 @@ bool FParticleSystemEditorWidget::RenderObjectProperties(UObject* Object)
 
 			FEditorPropertyRenderOptions Options;
 			Options.bDispatchChange = false;
+			if (bReadOnly)
+			{
+				ImGui::BeginDisabled();
+			}
 			const bool bChanged = PropertyRenderer.RenderPropertyWidget(Properties, Index, Options);
-			if (bChanged)
+			if (bReadOnly)
+			{
+				ImGui::EndDisabled();
+			}
+			if (!bReadOnly && bChanged)
 			{
 				bAnyChanged = true;
 				if (PropertyValue.Property)
@@ -1910,7 +2061,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			return Height + ImGui::GetTextLineHeightWithSpacing();
 		}
 
-		UParticleLODLevel* LODLevel = Emitter->GetLODLevel(GetDisplayLODIndex(Emitter));
+		UParticleLODLevel* LODLevel = Emitter->GetLODLevel(GetCurrentSystemLODIndex(ParticleSystem));
 		if (LODLevel)
 		{
 			Height += ModuleRowHeight + Style.ItemSpacing.y;
@@ -1935,21 +2086,29 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(Emitters.size()); ++EmitterIndex)
 	{
 		UParticleEmitter* Emitter = Emitters[EmitterIndex];
-		const int32 DisplayLODIndex = GetDisplayLODIndex(Emitter);
+		const int32 DisplayLODIndex = GetCurrentSystemLODIndex(ParticleSystem);
 		UParticleLODLevel* LODLevel = Emitter ? Emitter->GetLODLevel(DisplayLODIndex) : nullptr;
+		if (LODLevel)
+		{
+			LODLevel->NormalizeModuleEditStates(DisplayLODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+		}
 		const EParticleRenderType RenderType = GetLODRenderType(LODLevel);
+		const bool bCanDirectEditModules = CanDirectEditModulesInLOD(DisplayLODIndex);
+		const bool bModuleDirectEditLocked = !bCanDirectEditModules;
 		ImGui::PushID(EmitterIndex);
 		ImGui::BeginChild("##EmitterColumn", ImVec2(EmitterColumnWidth, EmitterColumnHeight), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
 		auto AddModule = [&](UParticleModule* NewModule)
 		{
-			if (!LODLevel || !NewModule)
+			if (!bCanDirectEditModules || !LODLevel || !NewModule)
 			{
 				return;
 			}
 
 			TArray<UParticleModule*>& MutableModules = LODLevel->GetMutableModules();
 			MutableModules.push_back(NewModule);
+			LODLevel->GetMutableModuleEditStates().push_back(EParticleModuleEditState::Duplicated);
+			LODLevel->NormalizeModuleEditStates(EParticleModuleEditState::Duplicated);
 			SelectModule(EmitterIndex, DisplayLODIndex, static_cast<int32>(MutableModules.size()) - 1);
 			MarkDirty();
 			RefreshParticleSystemComponents();
@@ -1957,7 +2116,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 		auto SetTypeDataModule = [&](UParticleModuleTypeDataBase* NewTypeDataModule)
 		{
-			if (!LODLevel)
+			if (!bCanDirectEditModules || !LODLevel)
 			{
 				return;
 			}
@@ -2049,6 +2208,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				ImGui::EndMenu();
 			}
 
+			ImGui::BeginDisabled(!bCanDirectEditModules);
 			if (ImGui::BeginMenu("TypeData"))
 			{
 				ImGui::TextDisabled("TYPEDATA");
@@ -2140,6 +2300,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				}
 				ImGui::EndMenu();
 			}
+			ImGui::EndDisabled();
 		};
 
 		auto MoveDroppedModule = [&](const FParticleModuleDropRequest& DropRequest)
@@ -2177,6 +2338,10 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 			TArray<UParticleModule*>& SourceModules = SourceLODLevel->GetMutableModules();
 			TArray<UParticleModule*>& TargetModules = TargetLODLevel->GetMutableModules();
+			SourceLODLevel->NormalizeModuleEditStates(Payload.LODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+			TargetLODLevel->NormalizeModuleEditStates(DropRequest.TargetLODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+			TArray<EParticleModuleEditState>& SourceEditStates = SourceLODLevel->GetMutableModuleEditStates();
+			TArray<EParticleModuleEditState>& TargetEditStates = TargetLODLevel->GetMutableModuleEditStates();
 			auto SourceIt = SourceModules.end();
 			if (Payload.ModuleIndex >= 0 && Payload.ModuleIndex < static_cast<int32>(SourceModules.size()) &&
 				SourceModules[Payload.ModuleIndex] == Payload.Module)
@@ -2201,15 +2366,115 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			}
 
 			UParticleModule* MovedModule = *SourceIt;
+			const EParticleModuleEditState MovedEditState = SourceModuleIndex >= 0 && SourceModuleIndex < static_cast<int32>(SourceEditStates.size())
+				? SourceEditStates[SourceModuleIndex]
+				: EParticleModuleEditState::Duplicated;
 			SourceModules.erase(SourceIt);
+			if (SourceModuleIndex >= 0 && SourceModuleIndex < static_cast<int32>(SourceEditStates.size()))
+			{
+				SourceEditStates.erase(SourceEditStates.begin() + SourceModuleIndex);
+			}
 			if (bSameLOD && SourceModuleIndex < TargetInsertIndex)
 			{
 				--TargetInsertIndex;
 			}
 			TargetInsertIndex = ClampModuleInsertIndex(TargetModules, TargetInsertIndex);
 			TargetModules.insert(TargetModules.begin() + TargetInsertIndex, MovedModule);
+			TargetEditStates.insert(TargetEditStates.begin() + TargetInsertIndex, MovedEditState);
+			SourceLODLevel->NormalizeModuleEditStates(Payload.LODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+			TargetLODLevel->NormalizeModuleEditStates(DropRequest.TargetLODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
 
 			SelectModule(DropRequest.TargetEmitterIndex, DropRequest.TargetLODIndex, TargetInsertIndex);
+			MarkDirty();
+			RefreshParticleSystemComponents();
+			return true;
+		};
+
+		auto GetModuleFromLOD = [&](int32 SourceLODIndex, int32 ModuleIndex) -> UParticleModule*
+		{
+			if (!Emitter || SourceLODIndex < 0)
+			{
+				return nullptr;
+			}
+
+			UParticleLODLevel* SourceLODLevel = Emitter->GetLODLevel(SourceLODIndex);
+			if (!SourceLODLevel)
+			{
+				return nullptr;
+			}
+
+			return SourceLODLevel->ResolveModule(ModuleIndex, Emitter);
+		};
+
+		auto ReplaceModuleFromSource = [&](int32 ModuleIndex, int32 SourceLODIndex, EParticleModuleEditState NewEditState) -> bool
+		{
+			if (!LODLevel)
+			{
+				return false;
+			}
+
+			TArray<UParticleModule*>& TargetModules = LODLevel->GetMutableModules();
+			if (ModuleIndex < 0 || ModuleIndex >= static_cast<int32>(TargetModules.size()))
+			{
+				return false;
+			}
+
+			UParticleModule* SourceModule = GetModuleFromLOD(SourceLODIndex, ModuleIndex);
+			if (!SourceModule)
+			{
+				return false;
+			}
+
+			TArray<EParticleModuleEditState>& ModuleEditStates = LODLevel->GetMutableModuleEditStates();
+			LODLevel->NormalizeModuleEditStates(DisplayLODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+			const EParticleModuleEditState OldEditState = LODLevel->GetModuleEditState(ModuleIndex);
+			UParticleModule* OldModule = TargetModules[ModuleIndex];
+
+			if (NewEditState == EParticleModuleEditState::Shared)
+			{
+				if (!OldModule || OldModule == SourceModule)
+				{
+					UParticleModule* LocalPlaceholder = DuplicateParticleModule(SourceModule);
+					if (!LocalPlaceholder)
+					{
+						return false;
+					}
+
+					TargetModules[ModuleIndex] = LocalPlaceholder;
+				}
+
+				if (ModuleIndex >= 0 && ModuleIndex < static_cast<int32>(ModuleEditStates.size()))
+				{
+					ModuleEditStates[ModuleIndex] = EParticleModuleEditState::Shared;
+				}
+
+				SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex);
+				ApplyEditedObjectSideEffects(SourceModule);
+				MarkDirty();
+				RefreshParticleSystemComponents();
+				return true;
+			}
+
+			UParticleModule* ReplacementModule = DuplicateParticleModule(SourceModule);
+			if (!ReplacementModule)
+			{
+				return false;
+			}
+
+			TargetModules[ModuleIndex] = ReplacementModule;
+			if (ModuleIndex >= 0 && ModuleIndex < static_cast<int32>(ModuleEditStates.size()))
+			{
+				ModuleEditStates[ModuleIndex] = NewEditState;
+			}
+
+			const bool bOldModuleWasSharedSource = OldEditState == EParticleModuleEditState::Shared && OldModule == SourceModule;
+			if (OldModule && OldModule != ReplacementModule && !bOldModuleWasSharedSource)
+			{
+				UObjectManager::Get().DestroyObject(OldModule);
+			}
+
+			SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex);
+			ApplyEditedObjectSideEffects(ReplacementModule);
 			MarkDirty();
 			RefreshParticleSystemComponents();
 			return true;
@@ -2265,9 +2530,9 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			const bool bEnableHovered = ImGui::IsItemHovered();
 			const bool bEnableActive = ImGui::IsItemActive();
 			bHeaderButtonHovered |= bEnableHovered;
-			if (bEnableClicked)
+			if (bEnableClicked && LODLevel)
 			{
-				Emitter->SetEnabled(!Emitter->IsEnabled());
+				LODLevel->SetEnabled(!LODLevel->IsEnabled());
 				SelectEmitter(EmitterIndex);
 				MarkDirty();
 				RefreshParticleSystemComponents();
@@ -2278,7 +2543,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				: (bEnableHovered ? IM_COL32(62, 66, 72, 255) : IM_COL32(28, 30, 34, 255));
 			DrawList->AddRectFilled(EnableButtonPos, EnableButtonMax, EnableFillColor, 1.0f);
 			DrawList->AddRect(EnableButtonPos, EnableButtonMax, IM_COL32(10, 11, 13, 255), 1.0f);
-			if (Emitter->IsEnabled())
+			if (LODLevel && LODLevel->IsEnabled())
 			{
 				DrawList->AddLine(ImVec2(EnableButtonPos.x + 3.0f, EnableButtonPos.y + 7.0f), ImVec2(EnableButtonPos.x + 6.0f, EnableButtonPos.y + 10.0f), IM_COL32(232, 236, 240, 255), 1.5f);
 				DrawList->AddLine(ImVec2(EnableButtonPos.x + 6.0f, EnableButtonPos.y + 10.0f), ImVec2(EnableButtonPos.x + 11.0f, EnableButtonPos.y + 4.0f), IM_COL32(232, 236, 240, 255), 1.5f);
@@ -2333,13 +2598,13 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				{
 					ImGui::PushID(TypeDataModuleIndex);
 					FModuleRowAction TypeDataAction;
-					if (SelectableModuleRow(TypeDataLabel, IsModuleSelected(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex), TypeDataModule))
+					if (SelectableModuleRow(TypeDataLabel, IsModuleSelected(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex), TypeDataModule, bModuleDirectEditLocked))
 					{
 						SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
 					}
-					RenderModuleContextMenu(TypeDataAction, true, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+					RenderModuleContextMenu(TypeDataAction, bCanDirectEditModules, false, false, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
 					bModuleContextMenuOpen |= TypeDataAction.bContextMenuOpen;
-					if (TypeDataAction.bDelete)
+					if (TypeDataAction.bDelete && bCanDirectEditModules)
 					{
 						SetTypeDataModule(nullptr);
 					}
@@ -2348,35 +2613,48 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 						SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
 						RefreshParticleSystemComponents();
 					}
-					AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, 0, 0);
+					if (bCanDirectEditModules)
+					{
+						AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, 0, 0);
+					}
 					ImGui::PopID();
 				}
 				else
 				{
 					ImGui::PushID(TypeDataModuleIndex);
-					if (SelectableModuleRow(TypeDataLabel, IsLODSelected(EmitterIndex, DisplayLODIndex)))
+					if (SelectableModuleRow(TypeDataLabel, IsLODSelected(EmitterIndex, DisplayLODIndex), nullptr, bModuleDirectEditLocked))
 					{
 						SelectLOD(EmitterIndex, DisplayLODIndex);
 					}
-					AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, 0, 0);
+					if (bCanDirectEditModules)
+					{
+						AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, 0, 0);
+					}
 					ImGui::PopID();
 				}
 
 				bool bModuleListMutated = false;
 				for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
 				{
-					UParticleModule* Module = Modules[ModuleIndex];
+					UParticleModule* Module = LODLevel->ResolveModule(ModuleIndex, Emitter);
+					const EParticleModuleEditState ModuleEditState = LODLevel->GetModuleEditState(ModuleIndex);
+					const bool bModuleInheritedLocked = !bCanDirectEditModules && ModuleEditState == EParticleModuleEditState::InheritedLocked;
+					const bool bHasHigherModule = DisplayLODIndex > 0 && GetModuleFromLOD(DisplayLODIndex - 1, ModuleIndex) != nullptr;
+					const bool bHasHighestModule = DisplayLODIndex > 0 && GetModuleFromLOD(0, ModuleIndex) != nullptr;
 					const bool bDeleteLocked = IsModuleDeleteLocked(Module);
 					const bool bOrderLocked = IsModuleOrderLocked(Module);
 					ImGui::PushID(ModuleIndex);
-					FParticleModuleDragPayload DragPayload{ EmitterIndex, DisplayLODIndex, ModuleIndex, Module };
+					FParticleModuleDragPayload DragPayload{ EmitterIndex, DisplayLODIndex, ModuleIndex, Modules[ModuleIndex] };
 					const FModuleRowAction Action = EditableModuleRow(
 						GetModuleDisplayName(Module),
 						Module,
 						IsModuleSelected(EmitterIndex, DisplayLODIndex, ModuleIndex),
-						!bDeleteLocked,
-						bOrderLocked ? nullptr : &DragPayload,
-						&DropRequest,
+						bCanDirectEditModules && !bDeleteLocked,
+						bModuleInheritedLocked,
+						bModuleInheritedLocked && bHasHigherModule,
+						bModuleInheritedLocked && bHasHighestModule,
+						(bCanDirectEditModules && !bOrderLocked) ? &DragPayload : nullptr,
+						bCanDirectEditModules ? &DropRequest : nullptr,
 						EmitterIndex,
 						DisplayLODIndex,
 						ModuleIndex,
@@ -2388,10 +2666,16 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 					bModuleContextMenuOpen |= Action.bContextMenuOpen;
 					ImGui::PopID();
 
-					if (Action.bDelete && !bDeleteLocked)
+					if (Action.bDelete && bCanDirectEditModules && !bDeleteLocked)
 					{
 						UParticleModule* RemovedModule = Modules[ModuleIndex];
 						Modules.erase(Modules.begin() + ModuleIndex);
+						TArray<EParticleModuleEditState>& ModuleEditStates = LODLevel->GetMutableModuleEditStates();
+						if (ModuleIndex >= 0 && ModuleIndex < static_cast<int32>(ModuleEditStates.size()))
+						{
+							ModuleEditStates.erase(ModuleEditStates.begin() + ModuleIndex);
+						}
+						LODLevel->NormalizeModuleEditStates(DisplayLODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
 						UObjectManager::Get().DestroyObject(RemovedModule);
 						if (Modules.empty())
 						{
@@ -2411,6 +2695,18 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex);
 						RefreshParticleSystemComponents();
 					}
+					else if (Action.bDuplicateFromHigher)
+					{
+						bModuleListMutated = ReplaceModuleFromSource(ModuleIndex, DisplayLODIndex - 1, EParticleModuleEditState::Duplicated);
+					}
+					else if (Action.bShareFromHigher)
+					{
+						bModuleListMutated = ReplaceModuleFromSource(ModuleIndex, DisplayLODIndex - 1, EParticleModuleEditState::Shared);
+					}
+					else if (Action.bDuplicateFromHighest)
+					{
+						bModuleListMutated = ReplaceModuleFromSource(ModuleIndex, 0, EParticleModuleEditState::Duplicated);
+					}
 
 					if (bModuleListMutated)
 					{
@@ -2419,11 +2715,14 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				}
 
 				ImGui::InvisibleButton("##ModuleDropTail", ImVec2(ImGui::GetContentRegionAvail().x, (std::max)(ModuleDropTargetHeight, ImGui::GetContentRegionAvail().y)));
-				AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, static_cast<int32>(Modules.size()), static_cast<int32>(Modules.size()));
-				MoveDroppedModule(DropRequest);
+				if (bCanDirectEditModules)
+				{
+					AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, static_cast<int32>(Modules.size()), static_cast<int32>(Modules.size()));
+					MoveDroppedModule(DropRequest);
+				}
 			}
 
-			if (LODLevel && ImGui::IsWindowHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !bModuleContextMenuOpen)
+			if (LODLevel && bCanDirectEditModules && ImGui::IsWindowHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !bModuleContextMenuOpen)
 			{
 				ImGui::OpenPopup("##ParticleEmitterContextMenu");
 			}
@@ -2452,6 +2751,10 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			{
 				const int32 TargetIndex = DuplicateEmitterIndex + 1;
 				MutableEmitters.insert(MutableEmitters.begin() + TargetIndex, DuplicatedEmitter);
+				if (ViewState.SoloEmitterIndex >= TargetIndex)
+				{
+					++ViewState.SoloEmitterIndex;
+				}
 				ParticleSystem->NormalizeLODLevels();
 				SelectEmitter(TargetIndex);
 				MarkDirty();
@@ -2467,6 +2770,14 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			UParticleEmitter* RemovedEmitter = MutableEmitters[DeleteEmitterIndex];
 			MutableEmitters.erase(MutableEmitters.begin() + DeleteEmitterIndex);
 			UObjectManager::Get().DestroyObject(RemovedEmitter);
+			if (ViewState.SoloEmitterIndex == DeleteEmitterIndex)
+			{
+				ViewState.SoloEmitterIndex = -1;
+			}
+			else if (ViewState.SoloEmitterIndex > DeleteEmitterIndex)
+			{
+				--ViewState.SoloEmitterIndex;
+			}
 			ParticleSystem->NormalizeLODLevels();
 
 			if (MutableEmitters.empty())
@@ -2496,6 +2807,10 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			{
 				MutableEmitters.erase(MutableEmitters.begin() + AppendedIndex);
 				MutableEmitters.insert(MutableEmitters.begin() + TargetIndex, NewEmitter);
+				if (ViewState.SoloEmitterIndex >= TargetIndex && ViewState.SoloEmitterIndex < AppendedIndex)
+				{
+					++ViewState.SoloEmitterIndex;
+				}
 			}
 
 			ParticleSystem->NormalizeLODLevels();

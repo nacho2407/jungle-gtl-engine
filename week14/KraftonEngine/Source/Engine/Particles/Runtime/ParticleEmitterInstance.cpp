@@ -69,12 +69,19 @@ void FParticleEmitterInstance::SetLODLevelIndex(int32 LODLevelIndex)
 
 	int32 NewLODLevelIndex = (std::max)(0, (std::min)(LODLevelIndex, LODCount - 1));
 	UParticleLODLevel* NewLODLevel = SpriteTemplate->GetLODLevel(NewLODLevelIndex);
+	if (NewLODLevel && !NewLODLevel->IsEnabled())
+	{
+		CurrentLODLevelIndex = NewLODLevelIndex;
+		CurrentLODLevel = NewLODLevel;
+		return;
+	}
+
 	if (!CanUseLODLevel(NewLODLevel))
 	{
 		for (int32 CandidateIndex = NewLODLevelIndex - 1; CandidateIndex >= 0; --CandidateIndex)
 		{
 			UParticleLODLevel* CandidateLODLevel = SpriteTemplate->GetLODLevel(CandidateIndex);
-			if (CanUseLODLevel(CandidateLODLevel))
+			if (CandidateLODLevel && CandidateLODLevel->IsEnabled() && CanUseLODLevel(CandidateLODLevel))
 			{
 				NewLODLevelIndex = CandidateIndex;
 				NewLODLevel = CandidateLODLevel;
@@ -323,18 +330,18 @@ const FBaseParticle& FParticleEmitterInstance::GetParticleBySlot(int32 ParticleS
 
 UParticleModuleRequired* FParticleEmitterInstance::GetRequiredModule() const
 {
-	return CurrentLODLevel ? CurrentLODLevel->FindModule<UParticleModuleRequired>() : nullptr;
+	return CurrentLODLevel ? CurrentLODLevel->FindResolvedModule<UParticleModuleRequired>(SpriteTemplate) : nullptr;
 }
 
 UParticleModuleSpawn* FParticleEmitterInstance::GetSpawnModule() const
 {
-	return CurrentLODLevel ? CurrentLODLevel->FindModule<UParticleModuleSpawn>() : nullptr;
+	return CurrentLODLevel ? CurrentLODLevel->FindResolvedModule<UParticleModuleSpawn>(SpriteTemplate) : nullptr;
 
 }
 
 bool FParticleEmitterInstance::CanUseLODLevel(const UParticleLODLevel* LODLevel) const
 {
-	if (!LODLevel || !LODLevel->IsEnabled())
+	if (!LODLevel)
 	{
 		return false;
 	}
@@ -367,8 +374,10 @@ void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float Sp
 		}
 	}
 
-	for (UParticleModule* Module : CurrentLODLevel->GetModules())
+	const TArray<UParticleModule*>& Modules = CurrentLODLevel->GetModules();
+	for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
 	{
+		UParticleModule* Module = CurrentLODLevel->ResolveModule(ModuleIndex, SpriteTemplate);
 		if (Module && Module->IsSpawnModule())
 		{
 			Module->Spawn(this, PayloadOffset, SpawnTime, Particle);
@@ -391,8 +400,10 @@ void FParticleEmitterInstance::RunUpdateModules(float DeltaTime)
 		}
 	}
 
-	for(UParticleModule* Module : CurrentLODLevel->GetModules())
+	const TArray<UParticleModule*>& Modules = CurrentLODLevel->GetModules();
+	for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
 	{
+		UParticleModule* Module = CurrentLODLevel->ResolveModule(ModuleIndex, SpriteTemplate);
 		if (Module && Module->IsUpdateModule())
 		{
 			Module->Update(this, PayloadOffset, DeltaTime);

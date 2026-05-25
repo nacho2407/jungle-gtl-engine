@@ -52,6 +52,7 @@ namespace
 		LODLevel->GetMutableModules().push_back(VelocityModule);
 		LODLevel->GetMutableModules().push_back(ColorModule);
 		LODLevel->GetMutableModules().push_back(SizeModule);
+		LODLevel->SetAllModuleEditStates(EParticleModuleEditState::Duplicated);
 
 		return LODLevel;
 	}
@@ -121,6 +122,8 @@ namespace
 		FMemoryArchive Reader(Writer.GetBuffer(), /*bInIsSaving=*/false);
 		DuplicatedLODLevel->Serialize(Reader);
 		DuplicatedLODLevel->SetFName(UniqueName);
+		DuplicatedLODLevel->GetMutableModuleEditStates() = SourceLODLevel->GetModuleEditStates();
+		DuplicatedLODLevel->NormalizeModuleEditStates(EParticleModuleEditState::InheritedLocked);
 		return DuplicatedLODLevel;
 	}
 }
@@ -135,12 +138,84 @@ UParticleLODLevel::~UParticleLODLevel()
 		delete Module;
 	}
 	Modules.clear();
+	ModuleEditStates.clear();
 }
 
 void UParticleLODLevel::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
 	SerializeProperties(Ar, PF_Save);
+	Ar << ModuleEditStates;
+	NormalizeModuleEditStates(Level == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+}
+
+EParticleModuleEditState UParticleLODLevel::GetModuleEditState(int32 ModuleIndex) const
+{
+	if (ModuleIndex < 0 || ModuleIndex >= static_cast<int32>(ModuleEditStates.size()))
+	{
+		return Level == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked;
+	}
+
+	return ModuleEditStates[ModuleIndex];
+}
+
+UParticleModule* UParticleLODLevel::ResolveModule(int32 ModuleIndex, const UParticleEmitter* OwnerEmitter) const
+{
+	if (ModuleIndex < 0 || ModuleIndex >= static_cast<int32>(Modules.size()))
+	{
+		return nullptr;
+	}
+
+	if (GetModuleEditState(ModuleIndex) != EParticleModuleEditState::Shared || !OwnerEmitter)
+	{
+		return Modules[ModuleIndex];
+	}
+
+	for (int32 SourceLODIndex = Level - 1; SourceLODIndex >= 0; --SourceLODIndex)
+	{
+		const UParticleLODLevel* SourceLODLevel = OwnerEmitter->GetLODLevel(SourceLODIndex);
+		if (!SourceLODLevel || SourceLODLevel == this)
+		{
+			continue;
+		}
+
+		UParticleModule* SourceModule = SourceLODLevel->ResolveModule(ModuleIndex, OwnerEmitter);
+		if (SourceModule)
+		{
+			return SourceModule;
+		}
+	}
+
+	return Modules[ModuleIndex];
+}
+
+void UParticleLODLevel::SetModuleEditState(int32 ModuleIndex, EParticleModuleEditState State)
+{
+	NormalizeModuleEditStates(Level == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+	if (ModuleIndex < 0 || ModuleIndex >= static_cast<int32>(ModuleEditStates.size()))
+	{
+		return;
+	}
+
+	ModuleEditStates[ModuleIndex] = State;
+}
+
+void UParticleLODLevel::NormalizeModuleEditStates(EParticleModuleEditState DefaultState)
+{
+	const int32 ModuleCount = static_cast<int32>(Modules.size());
+	if (static_cast<int32>(ModuleEditStates.size()) > ModuleCount)
+	{
+		ModuleEditStates.resize(ModuleCount);
+	}
+	else if (static_cast<int32>(ModuleEditStates.size()) < ModuleCount)
+	{
+		ModuleEditStates.resize(ModuleCount, DefaultState);
+	}
+}
+
+void UParticleLODLevel::SetAllModuleEditStates(EParticleModuleEditState State)
+{
+	ModuleEditStates.assign(Modules.size(), State);
 }
 
 UParticleEmitter::~UParticleEmitter()
@@ -195,7 +270,6 @@ void UParticleEmitter::Serialize(FArchive& Ar)
 	Ar << MaxActiveParticles;
 	Ar << EmitterDuration;
 	Ar << bLooping;
-	Ar << bEnabled;
 
 	uint32 LODLevelCount = Ar.IsSaving() ? static_cast<uint32>(LODLevels.size()) : 0;
 	Ar << LODLevelCount;
@@ -355,6 +429,8 @@ void UParticleSystem::NormalizeEmitterLODLevels(UParticleEmitter* Emitter)
 		{
 			break;
 		}
+		NewLODLevel->SetLevel(static_cast<int32>(LODLevels.size()));
+		NewLODLevel->SetAllModuleEditStates(EParticleModuleEditState::InheritedLocked);
 		LODLevels.push_back(NewLODLevel);
 	}
 
@@ -370,6 +446,7 @@ void UParticleSystem::NormalizeEmitterLODLevels(UParticleEmitter* Emitter)
 		if (LODLevels[Index])
 		{
 			LODLevels[Index]->SetLevel(Index);
+			LODLevels[Index]->NormalizeModuleEditStates(Index == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
 		}
 	}
 }
