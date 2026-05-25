@@ -1,5 +1,8 @@
 ﻿#include "Particle/ParticleModules.h"
 
+#include "Asset/CurveColorAsset.h"
+#include "Asset/CurveFloatAsset.h"
+#include "Asset/CurveVectorAsset.h"
 #include "Core/ResourceManager.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
@@ -189,6 +192,130 @@ namespace
 			: Particle.OldLocation;
 	}
 } // namespace
+
+namespace
+{
+	float GetDistributionEvalTime(const FParticleDistributionContext& Context)
+	{
+		return Context.RelativeTime;
+	}
+
+	UCurveFloatAsset* ResolveFloatCurve(const TSoftObjectPtr<UCurveFloatAsset>& Curve)
+	{
+		const FString& Path = Curve.GetPath();
+		return Path.empty() ? nullptr : FResourceManager::Get().LoadFloatCurve(Path);
+	}
+
+	UCurveVectorAsset* ResolveVectorCurve(const TSoftObjectPtr<UCurveVectorAsset>& Curve)
+	{
+		const FString& Path = Curve.GetPath();
+		return Path.empty() ? nullptr : FResourceManager::Get().LoadVectorCurve(Path);
+	}
+
+	UCurveColorAsset* ResolveColorCurve(const TSoftObjectPtr<UCurveColorAsset>& Curve)
+	{
+		const FString& Path = Curve.GetPath();
+		return Path.empty() ? nullptr : FResourceManager::Get().LoadColorCurve(Path);
+	}
+
+	float EvaluateFloatCurveOrFallback(const TSoftObjectPtr<UCurveFloatAsset>& Curve, float Time, float Fallback)
+	{
+		UCurveFloatAsset* CurveAsset = ResolveFloatCurve(Curve);
+		return CurveAsset ? CurveAsset->Evaluate(Time) : Fallback;
+	}
+
+	FVector EvaluateVectorCurveOrFallback(const TSoftObjectPtr<UCurveVectorAsset>& Curve, float Time, const FVector& Fallback)
+	{
+		UCurveVectorAsset* CurveAsset = ResolveVectorCurve(Curve);
+		return CurveAsset ? CurveAsset->Evaluate(Time) : Fallback;
+	}
+
+	FColor EvaluateColorCurveOrFallback(const TSoftObjectPtr<UCurveColorAsset>& Curve, float Time, const FColor& Fallback)
+	{
+		UCurveColorAsset* CurveAsset = ResolveColorCurve(Curve);
+		return CurveAsset ? CurveAsset->Evaluate(Time) : Fallback;
+	}
+}
+
+float EvaluateParticleFloat(const FParticleFloatDistribution& Distribution, const FParticleDistributionContext& Context)
+{
+	const float Time = GetDistributionEvalTime(Context);
+	switch (Distribution.Mode)
+	{
+	case EParticleDistributionMode::RandomRange:
+		return Context.RandomStream
+			? Context.RandomStream->GetRange(Distribution.Min, Distribution.Max)
+			: Distribution.Min;
+	case EParticleDistributionMode::Curve:
+		return EvaluateFloatCurveOrFallback(Distribution.Curve, Time, Distribution.Constant);
+	case EParticleDistributionMode::RandomRangeCurve:
+	{
+		const float MinValue = EvaluateFloatCurveOrFallback(Distribution.MinCurve, Time, Distribution.Min);
+		const float MaxValue = EvaluateFloatCurveOrFallback(Distribution.MaxCurve, Time, Distribution.Max);
+		return Context.RandomStream
+			? Context.RandomStream->GetRange(MinValue, MaxValue)
+			: MinValue;
+	}
+	case EParticleDistributionMode::Constant:
+	default:
+		return Distribution.Constant;
+	}
+}
+
+FVector EvaluateParticleVector(const FParticleVectorDistribution& Distribution, const FParticleDistributionContext& Context)
+{
+	const float Time = GetDistributionEvalTime(Context);
+	switch (Distribution.Mode)
+	{
+	case EParticleDistributionMode::RandomRange:
+		return Context.RandomStream
+			? FVector(
+				Context.RandomStream->GetRange(Distribution.Min.X, Distribution.Max.X),
+				Context.RandomStream->GetRange(Distribution.Min.Y, Distribution.Max.Y),
+				Context.RandomStream->GetRange(Distribution.Min.Z, Distribution.Max.Z))
+			: Distribution.Min;
+	case EParticleDistributionMode::Curve:
+		return EvaluateVectorCurveOrFallback(Distribution.Curve, Time, Distribution.Constant);
+	case EParticleDistributionMode::RandomRangeCurve:
+	{
+		const FVector MinValue = EvaluateVectorCurveOrFallback(Distribution.MinCurve, Time, Distribution.Min);
+		const FVector MaxValue = EvaluateVectorCurveOrFallback(Distribution.MaxCurve, Time, Distribution.Max);
+		const float Alpha = Context.RandomStream ? Context.RandomStream->GetFraction() : 0.0f;
+		return FVector::Lerp(MinValue, MaxValue, Alpha);
+	}
+	case EParticleDistributionMode::Constant:
+	default:
+		return Distribution.Constant;
+	}
+}
+
+FColor EvaluateParticleColor(const FParticleColorDistribution& Distribution, const FParticleDistributionContext& Context)
+{
+	const float Time = GetDistributionEvalTime(Context);
+	switch (Distribution.Mode)
+	{
+	case EParticleDistributionMode::RandomRange:
+		return Context.RandomStream
+			? FColor(
+				Context.RandomStream->GetRange(Distribution.Min.R, Distribution.Max.R),
+				Context.RandomStream->GetRange(Distribution.Min.G, Distribution.Max.G),
+				Context.RandomStream->GetRange(Distribution.Min.B, Distribution.Max.B),
+				Context.RandomStream->GetRange(Distribution.Min.A, Distribution.Max.A))
+			: Distribution.Min;
+	case EParticleDistributionMode::Curve:
+		return EvaluateColorCurveOrFallback(Distribution.Curve, Time, Distribution.Constant);
+	case EParticleDistributionMode::RandomRangeCurve:
+	{
+		const FColor MinValue = EvaluateColorCurveOrFallback(Distribution.MinCurve, Time, Distribution.Min);
+		const FColor MaxValue = EvaluateColorCurveOrFallback(Distribution.MaxCurve, Time, Distribution.Max);
+		const float Alpha = Context.RandomStream ? Context.RandomStream->GetFraction() : 0.0f;
+		return FColor::Lerp(MinValue, MaxValue, Alpha);
+	}
+	case EParticleDistributionMode::Constant:
+	default:
+		return Distribution.Constant;
+	}
+}
 
 int32 UParticleModule::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
 {

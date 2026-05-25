@@ -549,7 +549,13 @@
     <ClCompile Include="Source\Engine\Asset\CurveAssetLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\CurveColorAsset.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Asset\CurveFloatAsset.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\CurveVectorAsset.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\FBX\FbxImporter.cpp">
@@ -1549,7 +1555,13 @@
     <ClInclude Include="Source\Engine\Asset\CurveAssetLoader.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\CurveColorAsset.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Asset\CurveFloatAsset.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\CurveVectorAsset.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\FBX\FbxImporter.h">

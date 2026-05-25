@@ -214,7 +214,7 @@ public:
  *        sprite emitter가 기본 emitter 타입이고, TypeData 모듈은 기본 sprite emitter가 아닌 다른 타입으로 바꿀 때 붙는 모듈입니다.
  */
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Mesh Type Data")
 class UParticleModuleTypeDataMesh : public UParticleModuleTypeDataBase
 {
 public:
@@ -237,14 +237,14 @@ private:
 	UStaticMesh* Mesh = nullptr;
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Ribbon Type Data")
 class UParticleModuleTypeDataRibbon : public UParticleModuleTypeDataBase
 {
 public:
 	GENERATED_BODY(UParticleModuleTypeDataRibbon, UParticleModuleTypeDataBase)
 };
 
-UCLASS()
+UCLASS(Placeable, DisplayName = "Beam Type Data")
 class UParticleModuleTypeDataBeam : public UParticleModuleTypeDataBase
 {
 public:

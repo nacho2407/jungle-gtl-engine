@@ -36,6 +36,8 @@ class FStaticMeshLoadService;
 class FSkeletalMeshLoadService;
 class FFbxMaterialLoadService;
 class UAnimSequence;
+class UCurveColorAsset;
+class UCurveVectorAsset;
 class UParticleSystem;
 
 // 리소스를 관리하는 싱글턴: 텍스처, 쉐이더, 머티리얼, 메시 등 다양한 리소스의 로드/캐싱/관리 기능을 제공합니다.
@@ -119,10 +121,20 @@ public:
 	FFbxMeshContentInfo InspectFbxMeshContent(const FString& Path);
 	bool SaveSkeletalMesh(USkeletalMesh* Mesh); // 에디터에서 socket 등 mesh data 변경 후 writable cache(.bin)에 저장.
 
-	// Cruve
+	// Curve
 	UCurveFloatAsset* LoadCurve(const FString& Path);
+	UCurveFloatAsset* LoadFloatCurve(const FString& Path);
+	UCurveVectorAsset* LoadVectorCurve(const FString& Path);
+	UCurveColorAsset* LoadColorCurve(const FString& Path);
+
 	UCurveFloatAsset* FindCurve(const FString& Path) const;
+	UCurveFloatAsset* FindFloatCurve(const FString& Path) const;
+	UCurveVectorAsset* FindVectorCurve(const FString& Path) const;
+	UCurveColorAsset* FindColorCurve(const FString& Path) const;
+
 	bool SaveCurve(const FString& Path, const UCurveFloatAsset* Curve);
+	bool SaveCurve(const FString& Path, const UCurveVectorAsset* Curve);
+	bool SaveCurve(const FString& Path, const UCurveColorAsset* Curve);
 	TArray<FString> GetCurvePaths() const;
 
 	// Animation Sequence

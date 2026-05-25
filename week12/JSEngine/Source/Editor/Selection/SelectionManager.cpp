@@ -242,20 +242,20 @@ void FSelectionManager::EndBatchUpdate()
 
 void FSelectionManager::OnActorDestroyed(AActor* Actor)
 {
-    if (!Actor)
-    {
-        return;
-    }
+	if (!Actor)
+	{
+		return;
+	}
 
 	ValidateSelection();
 
 	auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
-    if (It != SelectedActors.end())
-    {
-        SelectedActors.erase(It);
+	if (It != SelectedActors.end())
+	{
+		SelectedActors.erase(It);
 
-        RequestGizmoSync();
-    }
+		RequestGizmoSync();
+	}
 
 	if (SelectedComponent && SelectedComponent->GetOwner() == Actor)
 	{
@@ -285,13 +285,44 @@ void FSelectionManager::SyncGizmo()
 	if (USceneComponent* SceneComponent = Cast<USceneComponent>(SelectedComponent))
 	{
 		Gizmo->SetSelectedActors(nullptr);
+
+		if (!SceneComponent)
+		{
+			Gizmo->Deactivate();
+			return;
+		}
+
 		Gizmo->SetProxy(std::make_shared<FComponentTransformProxy>(SceneComponent));
 	}
 	else if (Primary)
 	{
 		std::shared_ptr<FActorTransformProxy> ActorTransformProxy = std::make_shared<FActorTransformProxy>();
-        for (AActor* Actor : SelectedActors)
-	        ActorTransformProxy->AddTarget(Actor);
+
+		bool bHasTransformTarget = false;
+
+		for (AActor* Actor : SelectedActors)
+		{
+			if (!Actor)
+			{
+				continue;
+			}
+
+			USceneComponent* RootComponent = Actor->GetRootComponent();
+			if (!RootComponent)
+			{
+				continue;
+			}
+
+			ActorTransformProxy->AddTarget(Actor);
+			bHasTransformTarget = true;
+		}
+
+		if (!bHasTransformTarget)
+		{
+			Gizmo->SetSelectedActors(nullptr);
+			Gizmo->Deactivate();
+			return;
+		}
 
 		Gizmo->SetProxy(ActorTransformProxy);
 		Gizmo->SetSelectedActors(&SelectedActors);

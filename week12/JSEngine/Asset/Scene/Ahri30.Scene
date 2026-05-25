@@ -190,11 +190,11 @@
           "AnimGraphAssetPath" : "",
           "AnimInstanceData" : {
             "AnimationAssetPath" : "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_ahri_skin14_recall.anm.animseq",
-            "CurrentTime" : 1.331070,
+            "CurrentTime" : 8.666667,
             "ObjectName" : "UAnimSingleNodeInstance_40",
             "PlayRate" : 1.000000,
-            "Playing" : true,
-            "PreviousTime" : 1.323772,
+            "Playing" : false,
+            "PreviousTime" : 8.662935,
             "Type" : "UAnimSingleNodeInstance",
             "bAutoPlay" : true,
             "bLooping" : false
@@ -247,7 +247,7 @@
     }],
   "ClassName" : "UWorld",
   "Name" : "Ahri30",
-  "NextUUID" : 1713,
+  "NextUUID" : 1767,
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,

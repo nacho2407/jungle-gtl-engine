@@ -91,11 +91,87 @@ namespace
 		OutMax = Center + Extent;
 	}
 
-	void ExpandBoundsByParticle(FAABB& Bounds, const FBaseParticle& Particle)
+	struct FFloatRange
 	{
-		const FVector HalfExtent = AbsVector(Particle.Size) * 0.5f;
-		Bounds.Expand(Particle.Location - HalfExtent);
-		Bounds.Expand(Particle.Location + HalfExtent);
+		float Min = 0.0f;
+		float Max = 0.0f;
+	};
+
+	struct FVectorRange
+	{
+		FVector Min = FVector::ZeroVector;
+		FVector Max = FVector::ZeroVector;
+	};
+
+	FFloatRange GetFloatDistributionRange(const FParticleFloatDistribution& Distribution)
+	{
+		switch (Distribution.Mode)
+		{
+		case EParticleDistributionMode::RandomRange:
+		case EParticleDistributionMode::RandomRangeCurve:
+			return { std::min(Distribution.Min, Distribution.Max), std::max(Distribution.Min, Distribution.Max) };
+		case EParticleDistributionMode::Curve:
+		case EParticleDistributionMode::Constant:
+		default:
+			return { Distribution.Constant, Distribution.Constant };
+		}
+	}
+
+	FVectorRange GetVectorDistributionRange(const FParticleVectorDistribution& Distribution)
+	{
+		switch (Distribution.Mode)
+		{
+		case EParticleDistributionMode::RandomRange:
+		case EParticleDistributionMode::RandomRangeCurve:
+			return { FVector::Min(Distribution.Min, Distribution.Max), FVector::Max(Distribution.Min, Distribution.Max) };
+		case EParticleDistributionMode::Curve:
+		case EParticleDistributionMode::Constant:
+		default:
+			return { Distribution.Constant, Distribution.Constant };
+		}
+	}
+
+	void ExpandDeterministicParticleBounds(FAABB& Bounds, const FParticleLODLevelRuntimeCache& Cache)
+	{
+		FFloatRange LifetimeRange{ 1.0f, 1.0f };
+		FVectorRange LocationRange{ FVector::ZeroVector, FVector::ZeroVector };
+		FVectorRange VelocityRange{ FVector::ZeroVector, FVector::ZeroVector };
+		FVectorRange SizeRange{ FVector::OneVector, FVector::OneVector };
+
+		for (UParticleModule* Module : Cache.SpawnModules)
+		{
+			if (Module == nullptr || !Module->bEnabled)
+			{
+				continue;
+			}
+
+			if (const UParticleModuleLifetime* LifetimeModule = Cast<UParticleModuleLifetime>(Module))
+			{
+				LifetimeRange = GetFloatDistributionRange(LifetimeModule->Lifetime);
+			}
+			else if (const UParticleModuleLocation* LocationModule = Cast<UParticleModuleLocation>(Module))
+			{
+				LocationRange = GetVectorDistributionRange(LocationModule->StartLocation);
+			}
+			else if (const UParticleModuleVelocity* VelocityModule = Cast<UParticleModuleVelocity>(Module))
+			{
+				VelocityRange = GetVectorDistributionRange(VelocityModule->StartVelocity);
+			}
+			else if (const UParticleModuleSize* SizeModule = Cast<UParticleModuleSize>(Module))
+			{
+				SizeRange = GetVectorDistributionRange(SizeModule->StartSize);
+			}
+		}
+
+		const float MaxLifetime = std::max(LifetimeRange.Max, 0.0f);
+		const FVector TravelMin = VelocityRange.Min * MaxLifetime;
+		const FVector TravelMax = VelocityRange.Max * MaxLifetime;
+		const FVector HalfSize = FVector::Max(AbsVector(SizeRange.Min), AbsVector(SizeRange.Max)) * 0.5f;
+
+		Bounds.Expand(LocationRange.Min - HalfSize);
+		Bounds.Expand(LocationRange.Max + HalfSize);
+		Bounds.Expand(LocationRange.Min + FVector::Min(TravelMin, TravelMax) - HalfSize);
+		Bounds.Expand(LocationRange.Max + FVector::Max(TravelMin, TravelMax) + HalfSize);
 	}
 }
 
@@ -136,7 +212,7 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLev
 
 	int32 RequestedMaxParticles = CurrentRuntimeCache->RequiredModule != nullptr
 		? CurrentRuntimeCache->RequiredModule->MaxParticles
-        : 1; // clamp를 위해 최소값 1로 설정
+		: 1; // clamp를 위해 최소값 1로 설정
 	if (RequestedMaxParticles > MaxParticleIndexValue)
 	{
 		UE_LOG_WARNING(
@@ -538,19 +614,8 @@ void FParticleEmitterInstance::CalculateLocalBounds(FVector& OutMin, FVector& Ou
 		return;
 	}
 
-	if (ActiveParticles <= 0)
-	{
-		SetZeroBounds(OutMin, OutMax);
-		return;
-	}
-
 	FAABB Bounds;
-	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticles; ++ActiveIndex)
-    {
-        // Size는 particle 중심 기준 전체 크기로 보고, bounds에는 절반 크기만큼 확장해서 반영
-		ExpandBoundsByParticle(Bounds, GetParticleByActiveIndex(ActiveIndex));
-	}
-
+	ExpandDeterministicParticleBounds(Bounds, *CurrentRuntimeCache);
 	if (!Bounds.IsValid())
 	{
 		SetZeroBounds(OutMin, OutMax);
