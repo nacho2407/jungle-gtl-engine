@@ -7,7 +7,8 @@ void UParticleSystem::Serialize(FArchive& Ar)
 {
     int32 Version = 0;
     Ar << Version;
-
+    Ar << LODDistances;
+    
     if (Ar.IsLoading())
     {
         Emitters.clear();

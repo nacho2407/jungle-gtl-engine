@@ -200,6 +200,58 @@ namespace
         BuildEmitterModuleListAt(Emitter, 0, OutList);
     }
 
+    int32 GetParticleSystemLODCount(UParticleSystem* ParticleSystem)
+    {
+        int32 LODCount = 0;
+        if (ParticleSystem)
+        {
+            for (UParticleEmitter* Emitter : ParticleSystem->GetEmitters())
+            {
+                if (!Emitter) continue;
+                LODCount = (std::max)(LODCount, static_cast<int32>(Emitter->GetLODLevels().size()));
+            }
+            if (LODCount <= 0)
+            {
+                LODCount = static_cast<int32>(ParticleSystem->LODDistances.size());
+            }
+        }
+        return (std::max)(LODCount, 1);
+    }
+
+    void SyncParticleSystemLODDistances(UParticleSystem* ParticleSystem)
+    {
+        if (!ParticleSystem) return;
+
+        const int32 LODCount = GetParticleSystemLODCount(ParticleSystem);
+        TArray<float>& Dist = ParticleSystem->LODDistances;
+
+        if (Dist.empty())
+        {
+            Dist.push_back(0.0f);
+        }
+        if (LODCount > 1
+            && static_cast<int32>(Dist.size()) == LODCount - 1
+            && Dist[0] > 0.0f)
+        {
+            Dist.insert(Dist.begin(), 0.0f);
+        }
+        while (static_cast<int32>(Dist.size()) < LODCount)
+        {
+            const float Prev = Dist.empty() ? 0.0f : Dist.back();
+            Dist.push_back(Prev > 0.0f ? Prev * 2.0f : 1000.0f);
+        }
+        if (static_cast<int32>(Dist.size()) > LODCount)
+        {
+            Dist.resize(LODCount);
+        }
+
+        Dist[0] = 0.0f;
+        for (float& Value : Dist)
+        {
+            Value = (std::max)(0.0f, Value);
+        }
+    }
+
     // SelectedLODIndex의 같은-위치 모듈이 상위(LODIndex-1) LOD의 같은-위치 모듈과
     // 동일 포인터인지 검사한다. 동일하면 "공유 중"이므로 sub-LOD에서 편집 금지.
     bool IsModuleSharedWithHigher(UParticleEmitter* Emitter, int32 LODIndex, int32 ModuleIndex)
@@ -787,8 +839,8 @@ void FParticleSystemEditorWidget::AddEmitter()
     // 시스템에 sub-LOD가 이미 있다면, 새 이미터에도 같은 수의 LOD를 만들어준다 — 각 추가 LOD는
     // 직전 LOD의 모듈 포인터를 그대로 공유 (Cascade 규약).
     {
-        const int32 TargetLODCount =
-            static_cast<int32>(ParticleSystem->LODDistances.size()) + 1;
+        SyncParticleSystemLODDistances(ParticleSystem);
+        const int32 TargetLODCount = GetParticleSystemLODCount(ParticleSystem);
         while (static_cast<int32>(NewEmitter->GetLODLevels().size()) < TargetLODCount)
         {
             UParticleLODLevel* Last = NewEmitter->GetLODLevels().back();
@@ -1048,19 +1100,22 @@ void FParticleSystemEditorWidget::AddLODAfterSelected()
 {
     UParticleSystem* PS = GetParticleSystem();
     if (!PS) return;
+    SyncParticleSystemLODDistances(PS);
 
-    // 시스템 단위 LODDistances 에 항목 추가 — 새 LOD 의 활성 거리.
+    // 시스템 단위 LODDistances 에 항목 추가 — 인덱스가 LOD 레벨과 1:1로 대응한다.
     const int32 InsertLODIndex = SelectedLODIndex + 1;
-    const float DefaultDist = PS->LODDistances.empty()
-        ? 1000.0f
-        : PS->LODDistances.back() * 2.0f;
-    if (InsertLODIndex - 1 >= static_cast<int32>(PS->LODDistances.size()))
+    const float PrevDist = InsertLODIndex > 0 && InsertLODIndex - 1 < static_cast<int32>(PS->LODDistances.size())
+        ? PS->LODDistances[InsertLODIndex - 1] : 0.0f;
+    const float NextDist = InsertLODIndex < static_cast<int32>(PS->LODDistances.size())
+        ? PS->LODDistances[InsertLODIndex] : (PrevDist > 0.0f ? PrevDist * 2.0f : 1000.0f);
+    const float DefaultDist = NextDist > PrevDist ? (PrevDist + NextDist) * 0.5f : (PrevDist > 0.0f ? PrevDist * 2.0f : 1000.0f);
+    if (InsertLODIndex >= static_cast<int32>(PS->LODDistances.size()))
     {
         PS->LODDistances.push_back(DefaultDist);
     }
     else
     {
-        PS->LODDistances.insert(PS->LODDistances.begin() + (InsertLODIndex - 1), DefaultDist);
+        PS->LODDistances.insert(PS->LODDistances.begin() + InsertLODIndex, DefaultDist);
     }
 
     // 각 이미터에 새 LODLevel 을 동일 InsertLODIndex 위치에 끼워넣는다.
@@ -1104,6 +1159,7 @@ void FParticleSystemEditorWidget::RemoveLODAt(int32 LODIndex)
     if (LODIndex <= 0) return; // LOD 0 은 삭제 불가.
     UParticleSystem* PS = GetParticleSystem();
     if (!PS) return;
+    SyncParticleSystemLODDistances(PS);
 
     // 우선 어떤 모듈을 "이 LOD가 유일하게 보유" 하는지 모든 emitter 에 걸쳐 미리 수집.
     // sharing 관계를 잃지 않으려면, 다른 어떤 LOD 슬롯에서도 참조되지 않는 포인터만 destroy.
@@ -1157,11 +1213,9 @@ void FParticleSystemEditorWidget::RemoveLODAt(int32 LODIndex)
         }
     }
 
-    // 거리 배열에서 해당 항목 제거 (LOD N의 거리는 LODDistances[N-1] 에 해당).
-    const int32 DistIndex = LODIndex - 1;
-    if (DistIndex >= 0 && DistIndex < static_cast<int32>(PS->LODDistances.size()))
+    if (LODIndex < static_cast<int32>(PS->LODDistances.size()))
     {
-        PS->LODDistances.erase(PS->LODDistances.begin() + DistIndex);
+        PS->LODDistances.erase(PS->LODDistances.begin() + LODIndex);
     }
 
     SelectLOD((std::max)(0, LODIndex - 1));
@@ -1315,6 +1369,7 @@ void FParticleSystemEditorWidget::DuplicateModuleFromHighestLOD(UParticleEmitter
 void FParticleSystemEditorWidget::SyncEmitterUIState()
 {
     UParticleSystem* ParticleSystem = GetParticleSystem();
+    SyncParticleSystemLODDistances(ParticleSystem);
 
     const int32 EmitterCount = ParticleSystem ? static_cast<int32>(ParticleSystem->GetEmitters().size()) : 0;
 
@@ -1627,9 +1682,7 @@ void FParticleSystemEditorWidget::RenderToolbar()
         Group();
 
         // 그룹 5: LOD. RegenLOD 만 미구현, 나머지는 모두 작동.
-        const int32 PSLODCount = GetParticleSystem()
-            ? static_cast<int32>(GetParticleSystem()->LODDistances.size()) + 1
-            : 1;
+        const int32 PSLODCount = GetParticleSystemLODCount(GetParticleSystem());
 
         IconToolButton("##RegenLOD1",
                        LoadToolIcon(L"icon_Cascade_RegenLOD1_40x.png"),
@@ -1826,10 +1879,8 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
     UParticleSystem* ParticleSystem = GetParticleSystem();
     const int32      EmitterCount   = ParticleSystem ? static_cast<int32>(ParticleSystem->GetEmitters().size()) : 0;
 
-    // 시스템 단위 LOD 카운트 — LODDistances 크기 + 1 (LOD 0은 항상 distance=0).
-    const int32 LODCount = ParticleSystem
-        ? static_cast<int32>(ParticleSystem->LODDistances.size()) + 1
-        : 1;
+    // 시스템 단위 LOD 카운트 — LODDistances와 LODLevels가 같은 인덱스를 공유한다.
+    const int32 LODCount = GetParticleSystemLODCount(ParticleSystem);
 
     // SelectedLODIndex 범위 검증.
     if (SelectedLODIndex < 0)         SelectedLODIndex = 0;
@@ -1875,14 +1926,14 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
         if (!bCanRemove) ImGui::EndDisabled();
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Remove the current LOD (LOD 0 cannot be removed)");
 
-        // sub-LOD 의 활성 거리 편집 — LOD N (N>0) 거리는 LODDistances[N-1].
+        // sub-LOD 의 활성 거리 편집 — LOD N (N>0) 거리는 LODDistances[N].
         if (SelectedLODIndex > 0 && ParticleSystem)
         {
             ImGui::SameLine();
             ImGui::TextColored(PSE::DimTextV, "Distance");
             ImGui::SameLine();
             ImGui::SetNextItemWidth(100.0f);
-            const int32 DistIdx = SelectedLODIndex - 1;
+            const int32 DistIdx = SelectedLODIndex;
             if (DistIdx < static_cast<int32>(ParticleSystem->LODDistances.size()))
             {
                 float Dist = ParticleSystem->LODDistances[DistIdx];
@@ -2405,6 +2456,7 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
                 // LODDistances는 실제 UPROPERTY → 편집 가능.
                 if (ParticleSystem)
                 {
+                    SyncParticleSystemLODDistances(ParticleSystem);
                     TArray<float>& Dist = ParticleSystem->LODDistances;
                     ImGui::Text("LOD Distances (%d)", static_cast<int32>(Dist.size()));
                     bool bDistChanged = false;
@@ -2412,21 +2464,32 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
                     for (int32 i = 0; i < static_cast<int32>(Dist.size()); ++i)
                     {
                         ImGui::PushID(i);
-                        char Lbl[24]; std::snprintf(Lbl, sizeof(Lbl), "[%d]", i);
-                        bDistChanged |= ImGui::DragFloat(Lbl, &Dist[i], 1.0f, 0.0f, 100000.0f);
-                        ImGui::SameLine();
-                        if (ImGui::SmallButton("x")) { RemoveAt = i; }
+                        char Lbl[24]; std::snprintf(Lbl, sizeof(Lbl), "LOD %d", i);
+                        if (i == 0) ImGui::BeginDisabled();
+                        float Value = Dist[i];
+                        if (ImGui::DragFloat(Lbl, &Value, 1.0f, 0.0f, 100000.0f))
+                        {
+                            Dist[i] = (std::max)(0.0f, Value);
+                            bDistChanged = true;
+                        }
+                        if (i == 0) ImGui::EndDisabled();
+                        if (i > 0)
+                        {
+                            ImGui::SameLine();
+                            if (ImGui::SmallButton("x")) { RemoveAt = i; }
+                        }
                         ImGui::PopID();
                     }
-                    if (RemoveAt >= 0)
+                    if (RemoveAt > 0)
                     {
-                        Dist.erase(Dist.begin() + RemoveAt);
-                        bDistChanged = true;
+                        RemoveLODAt(RemoveAt);
+                        bDistChanged = false;
                     }
-                    if (ImGui::SmallButton("+ Distance"))
+                    if (ImGui::SmallButton("+ LOD"))
                     {
-                        Dist.push_back(Dist.empty() ? 1000.0f : Dist.back() * 2.0f);
-                        bDistChanged = true;
+                        SelectLOD(GetParticleSystemLODCount(ParticleSystem) - 1);
+                        AddLODAfterSelected();
+                        bDistChanged = false;
                     }
                     if (bDistChanged) MarkDirty();
                 }

@@ -87,7 +87,7 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		return;
 	}
 
-	float DistToCamera = FVector::DistSquared(Frame.CameraPosition, Comp->GetWorldLocation());
+	float DistToCamera = FVector::Distance(Frame.CameraPosition, Comp->GetWorldLocation());
 	Comp->SetCachedDistanceToCamera(DistToCamera);
 
 	const TArray<FDynamicEmitterDataBase*>& EmitterList = Comp->GetEmitterRenderData();
