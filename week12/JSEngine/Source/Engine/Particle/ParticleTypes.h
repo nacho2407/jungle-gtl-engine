@@ -172,10 +172,11 @@ struct FDynamicSpriteEmitterData : public FDynamicSpriteEmitterDataBase
 
 struct FDynamicMeshEmitterData : public FDynamicSpriteEmitterDataBase
 {
+	FDynamicMeshEmitterReplayDataBase ReplayData;
+
 	// StaticMesh asset들은 ResourceManager가 소유
 	UStaticMesh* Mesh = nullptr;
 	TArray<FMeshParticleInstanceVertex> InstanceVertices;
-	FDynamicMeshEmitterReplayDataBase ReplayData;
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }
 	void Render(ID3D11DeviceContext* Context) override { (void)Context; }

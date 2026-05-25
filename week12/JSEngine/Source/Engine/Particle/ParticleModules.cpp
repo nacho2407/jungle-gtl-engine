@@ -351,8 +351,9 @@ FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(
 
 FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
 {
-    // TypeDataBase에서는 Sprite용 Render Data임에 유의. 다른 렌더러는 별도의 Render Data가 필요
+    /** TypeDataBase에서는 Sprite용 Render Data임에 유의. 다른 렌더러는 별도의 Render Data가 필요*/
 
+	// EmitterInstance 유효성 체크
 	if (InEmitterInstance == nullptr ||
 		InEmitterInstance->ActiveParticles <= 0 ||
 		InEmitterInstance->ParticleData == nullptr ||
@@ -363,6 +364,7 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 		return nullptr;
 	}
 
+	// Particle Count & Bytes
 	const int32 ActiveParticleCount = InEmitterInstance->ActiveParticles;
 	const int32 ParticleStride = InEmitterInstance->ParticleStride;
 	const int32 ParticleDataBytes = ActiveParticleCount * ParticleStride;
@@ -435,29 +437,33 @@ FParticleEmitterInstance* UParticleModuleTypeDataMesh::CreateInstance(
 
 FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
 {
-	if (InEmitterInstance == nullptr || GetStaticMesh() == nullptr)
+	// EmitterIntsance 유효성 검사
+	if (InEmitterInstance == nullptr ||
+		GetStaticMesh() == nullptr ||
+		InEmitterInstance->ActiveParticles <= 0 ||
+		InEmitterInstance->ParticleData == nullptr ||
+		InEmitterInstance->ParticleIndices == nullptr ||
+		InEmitterInstance->ParticleStride <= 0 ||
+		InEmitterInstance->CurrentRuntimeCache == nullptr)
 	{
 		return nullptr;
 	}
 
-	// Mesh Emitter Render Data 생성
+	// Mesh
 	FDynamicMeshEmitterData* RenderData = new FDynamicMeshEmitterData();
 	RenderData->Mesh = GetStaticMesh();
 	RenderData->ReplayData.ParticleStride = static_cast<int32>(sizeof(FMeshParticleInstanceVertex));
 
-	// Runtime Cache 참조해서 RequiredModule 채우기
-	const UParticleModuleRequired* RequiredModule = InEmitterInstance->CurrentRuntimeCache != nullptr
-		? InEmitterInstance->CurrentRuntimeCache->RequiredModule
-		: nullptr;
+	// Require Module
+	const UParticleModuleRequired* RequiredModule = InEmitterInstance->CurrentRuntimeCache->RequiredModule;
 
 	// Sort Mode
-	if (RequiredModule != nullptr)
-	{
-		RenderData->ReplayData.SortMode = RequiredModule->SortMode;
-	}
+	RenderData->ReplayData.SortMode = RequiredModule != nullptr
+		? RequiredModule->SortMode
+		: EParticleSortMode::ViewDepthBackToFront;
 
-	// Active Particle Count 만큼 공간 할당 후 데이터를 채운다.
-	const int32 ActiveParticleCount = InEmitterInstance->GetActiveParticleCount();
+	// Particle Count
+	const int32 ActiveParticleCount = InEmitterInstance->ActiveParticles;
 	RenderData->InstanceVertices.reserve(ActiveParticleCount);
 
 	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticleCount; ++ActiveIndex)
@@ -465,6 +471,7 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 		const FBaseParticle& Particle = InEmitterInstance->GetParticleByActiveIndex(ActiveIndex);
 
 		FMeshParticleInstanceVertex InstanceVertex;
+        // TODO: Mesh Particle의 회전 축과 정렬 정책이 합의되면 Particle.Rotation을 Transform에 반영한다.
 		InstanceVertex.Transform =
 			FMatrix::MakeScale(Particle.Size) *
 			FMatrix::MakeTranslation(Particle.Location);
@@ -474,7 +481,6 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 			InstanceVertex.Transform *= InEmitterInstance->GetOwner().GetComponentToWorld();
 		}
 
-		// TODO: Mesh Particle의 회전 축과 정렬 정책이 합의되면 Particle.Rotation을 Transform에 반영한다.
 		InstanceVertex.Color = Particle.Color.ToVector4();
 		RenderData->InstanceVertices.push_back(InstanceVertex);
 	}

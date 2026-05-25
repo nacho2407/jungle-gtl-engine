@@ -252,3 +252,26 @@
 - Boundary: The self-test intentionally does not cover collision event production, Sprite renderer consumption, or ParticleSystem asset serialization/loading; only the manual console command remains after verification.
 - Remaining TODO: Particle Viewer Mesh/LOD authoring UI and asset-owned serialization remain external integration work; renderer snapshot consumption remains renderer-owned.
 - Next step: Discard the temporary console self-test code after the requested investigation, or retain it for further manual regression checks.
+
+## 2026-05-25 - Mesh snapshot alignment with Core sprite snapshot contract
+
+- Branch / HEAD: `feat/PSC` / `c62b827` (uncommitted step changes)
+- Completed step: Aligned `UParticleModuleTypeDataMesh::GetDynamicRenderData()` eligibility checks and replay metadata fallback with the newly merged Core Sprite snapshot implementation.
+- Changed files: `JSEngine/Source/Engine/Particle/ParticleModules.cpp`, `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: `JSEngine.sln` builds successfully for `Debug|x64`; `git diff --check` reported no whitespace errors. The build included an existing uncommitted `JSEngine/Source/Engine/Particle/ParticleTypes.h` member-order change that was not modified by this step.
+- Added behavior: Mesh snapshot creation now requires a resolved Mesh, active particles, valid simulation particle/index memory, a positive simulation stride, and an initialized runtime cache; empty or invalid emitter state returns no render snapshot.
+- Preserved contract: Mesh snapshots continue to carry `UStaticMesh*` and `InstanceVertices` only for per-particle rendering, with instance stride metadata and existing local-space component transform application; Sprite packed `DataContainer` is not reused for Mesh.
+- Added behavior: Mesh replay sort mode now explicitly falls back to `ViewDepthBackToFront` when no Required module is available, matching the Base snapshot default.
+- Remaining TODO: Renderer-owned draw/GPU buffer consumption, Particle Viewer Mesh/LOD authoring, and ParticleSystem asset serialization/loading remain outside PSC ownership.
+- Next step: Hand off the Mesh snapshot for renderer consumption or proceed with a separately approved PSC integration step.
+
+## 2026-05-25 - Mesh render snapshot field-completeness audit
+
+- Branch / HEAD: `feat/PSC` / `c62b827` (uncommitted step changes)
+- Completed step: Audited the Mesh snapshot fields against the merged Sprite snapshot contract, PSC ownership, and available renderer-facing types without changing production code or existing comments.
+- Changed files: `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: Static inspection confirmed PSC assigns `EmitterIndex`; `FDynamicMeshEmitterReplayDataBase` constructs the Mesh emitter type; Mesh packing assigns `Mesh`, instance vertex transforms/colors, `ActiveParticleCount`, instance vertex stride, and `SortMode`.
+- Finding: No required Mesh-owned render data is omitted under the current public contract. Sprite `DataContainer` holds copied simulation-stride particle memory, while Mesh render state is carried by `FDynamicMeshEmitterData::Mesh` and `InstanceVertices`.
+- Boundary: `Rotation` application remains the existing unresolved Mesh alignment TODO; the renderer still owns eventual consumption of Mesh snapshot data.
+- Remaining TODO: Do not populate Sprite-style `DataContainer` for Mesh unless the renderer owner publishes a new shared consumption contract.
+- Next step: Continue with renderer handoff or another separately approved PSC task.
