@@ -11,6 +11,13 @@ class UParticleModuleTypeDataBase;
 
 #include "Source/Engine/Particles/ParticleSystem.generated.h"
 
+enum class EParticleModuleEditState : uint8
+{
+	InheritedLocked = 0,
+	Duplicated,
+	Shared,
+};
+
 UCLASS()
 class UParticleLODLevel : public UObject
 {
@@ -22,11 +29,17 @@ public:
 	bool IsEnabled() const { return bEnabled; }
 	const TArray<UParticleModule*>& GetModules() const { return Modules; }
 	TArray<UParticleModule*>& GetMutableModules() { return Modules; }
+	const TArray<EParticleModuleEditState>& GetModuleEditStates() const { return ModuleEditStates; }
+	TArray<EParticleModuleEditState>& GetMutableModuleEditStates() { return ModuleEditStates; }
 	UParticleModuleTypeDataBase* GetTypeDataModule() const { return TypeDataModule; }
+	EParticleModuleEditState GetModuleEditState(int32 ModuleIndex) const;
 
 	void SetLevel(int32 InLevel) { Level = InLevel; }
 	void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
 	void SetTypeDataModule(UParticleModuleTypeDataBase* InTypeDataModule) { TypeDataModule = InTypeDataModule; }
+	void SetModuleEditState(int32 ModuleIndex, EParticleModuleEditState State);
+	void NormalizeModuleEditStates(EParticleModuleEditState DefaultState);
+	void SetAllModuleEditStates(EParticleModuleEditState State);
 
 	void Serialize(FArchive& Ar) override;
 
@@ -54,6 +67,7 @@ private:
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
 	UPROPERTY(Edit, Save, Instanced, Category="Particle|LOD", DisplayName="Modules", AllowedClass=UParticleModule)
 	TArray<UParticleModule*> Modules;
+	TArray<EParticleModuleEditState> ModuleEditStates;
 };
 
 class UParticleEmitter : public UObject

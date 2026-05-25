@@ -52,6 +52,7 @@ namespace
 		LODLevel->GetMutableModules().push_back(VelocityModule);
 		LODLevel->GetMutableModules().push_back(ColorModule);
 		LODLevel->GetMutableModules().push_back(SizeModule);
+		LODLevel->SetAllModuleEditStates(EParticleModuleEditState::Duplicated);
 
 		return LODLevel;
 	}
@@ -121,6 +122,8 @@ namespace
 		FMemoryArchive Reader(Writer.GetBuffer(), /*bInIsSaving=*/false);
 		DuplicatedLODLevel->Serialize(Reader);
 		DuplicatedLODLevel->SetFName(UniqueName);
+		DuplicatedLODLevel->GetMutableModuleEditStates() = SourceLODLevel->GetModuleEditStates();
+		DuplicatedLODLevel->NormalizeModuleEditStates(EParticleModuleEditState::InheritedLocked);
 		return DuplicatedLODLevel;
 	}
 }
@@ -130,17 +133,62 @@ UParticleLODLevel::~UParticleLODLevel()
 	delete TypeDataModule;
 	TypeDataModule = nullptr;
 
-	for (UParticleModule* Module : Modules)
+	for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
 	{
-		delete Module;
+		if (GetModuleEditState(ModuleIndex) == EParticleModuleEditState::Shared)
+		{
+			continue;
+		}
+		delete Modules[ModuleIndex];
 	}
 	Modules.clear();
+	ModuleEditStates.clear();
 }
 
 void UParticleLODLevel::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
 	SerializeProperties(Ar, PF_Save);
+	NormalizeModuleEditStates(Level == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+}
+
+EParticleModuleEditState UParticleLODLevel::GetModuleEditState(int32 ModuleIndex) const
+{
+	if (ModuleIndex < 0 || ModuleIndex >= static_cast<int32>(ModuleEditStates.size()))
+	{
+		return Level == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked;
+	}
+
+	return ModuleEditStates[ModuleIndex];
+}
+
+void UParticleLODLevel::SetModuleEditState(int32 ModuleIndex, EParticleModuleEditState State)
+{
+	NormalizeModuleEditStates(Level == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+	if (ModuleIndex < 0 || ModuleIndex >= static_cast<int32>(ModuleEditStates.size()))
+	{
+		return;
+	}
+
+	ModuleEditStates[ModuleIndex] = State;
+}
+
+void UParticleLODLevel::NormalizeModuleEditStates(EParticleModuleEditState DefaultState)
+{
+	const int32 ModuleCount = static_cast<int32>(Modules.size());
+	if (static_cast<int32>(ModuleEditStates.size()) > ModuleCount)
+	{
+		ModuleEditStates.resize(ModuleCount);
+	}
+	else if (static_cast<int32>(ModuleEditStates.size()) < ModuleCount)
+	{
+		ModuleEditStates.resize(ModuleCount, DefaultState);
+	}
+}
+
+void UParticleLODLevel::SetAllModuleEditStates(EParticleModuleEditState State)
+{
+	ModuleEditStates.assign(Modules.size(), State);
 }
 
 UParticleEmitter::~UParticleEmitter()
@@ -354,6 +402,8 @@ void UParticleSystem::NormalizeEmitterLODLevels(UParticleEmitter* Emitter)
 		{
 			break;
 		}
+		NewLODLevel->SetLevel(static_cast<int32>(LODLevels.size()));
+		NewLODLevel->SetAllModuleEditStates(EParticleModuleEditState::InheritedLocked);
 		LODLevels.push_back(NewLODLevel);
 	}
 
@@ -369,6 +419,7 @@ void UParticleSystem::NormalizeEmitterLODLevels(UParticleEmitter* Emitter)
 		if (LODLevels[Index])
 		{
 			LODLevels[Index]->SetLevel(Index);
+			LODLevels[Index]->NormalizeModuleEditStates(Index == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
 		}
 	}
 }

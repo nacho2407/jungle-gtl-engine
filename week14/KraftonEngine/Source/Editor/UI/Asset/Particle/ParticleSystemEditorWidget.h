@@ -87,7 +87,7 @@ private:
 	void RenderDetailsPanel(const ImVec2& Size);
 	void RenderEmittersPanel(const ImVec2& Size);
 	void RenderCurveEditorPanel(const ImVec2& Size) const;
-	bool RenderObjectProperties(UObject* Object);
+	bool RenderObjectProperties(UObject* Object, bool bReadOnly = false);
 	void ApplyEditedObjectSideEffects(UObject* Object);
 	void CreatePreviewWorld();
 	void DestroyPreviewWorld();
