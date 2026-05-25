@@ -3,12 +3,19 @@
 #include "Component/PrimitiveComponent.h"
 #include "Object/Ptr/ObjectPtr.h"
 #include "Object/Ptr/SoftObjectPtr.h"
+#include "Particles/Runtime/ParticleCollisionEvent.h"
 
 #include "Source/Engine/Component/Particle/ParticleSystemComponent.generated.h"
 
 struct FParticleEmitterInstance;
 class UParticleEmitter;
 class UParticleSystem;
+class UParticleSystemComponent;
+
+DECLARE_MULTICAST_DELEGATE_TwoParams(
+	FParticleCollideEventSignature,
+	UParticleSystemComponent* /*ParticleSystemComponent*/,
+	const FParticleCollisionEventPayload& /*CollisionEvent*/);
 
 UCLASS()
 class UParticleSystemComponent : public UPrimitiveComponent
@@ -33,6 +40,9 @@ public:
 	int32 GetCurrentLODIndex() const { return CurrentLODIndex; }
 	void SetPreviewSoloEmitterIndex(int32 InEmitterIndex);
 	int32 GetPreviewSoloEmitterIndex() const { return PreviewSoloEmitterIndex; }
+	void BroadcastParticleCollisionEvent(const FParticleCollisionEventPayload& Event);
+
+	FParticleCollideEventSignature OnParticleCollideEvent;
 
 protected:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;

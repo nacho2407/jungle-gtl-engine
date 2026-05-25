@@ -30,6 +30,7 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 		return;
 	}
 
+	CollisionEventQueue.clear();
 	EmitterTime += DeltaTime;
 
 	const float Duration = SpriteTemplate->GetEmitterDuration();
@@ -103,6 +104,7 @@ void FParticleEmitterInstance::Reset()
 	ParticleCounter = 0;
 	SpawnFraction = 0.0f;
 	EmitterTime = 0.0f;
+	CollisionEventQueue.clear();
 	bActive = true;
 }
 
@@ -195,6 +197,13 @@ void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 	END_UPDATE_LOOP
 
 	RunUpdateModules(DeltaTime);
+	if (Component && bIsEventGenerator)
+	{
+		for (const FParticleCollisionEventPayload& Event : CollisionEventQueue)
+		{
+			Component->BroadcastParticleCollisionEvent(Event);
+		}
+	}
 	CompactDeadParticles();
 }
 

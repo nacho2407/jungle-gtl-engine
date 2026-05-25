@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Particles/Runtime/ParticleCollisionEvent.h"
 #include "Particles/Runtime/ParticleRuntimeTypes.h"
 
 class UParticleEmitter;
@@ -33,6 +34,8 @@ struct FParticleEmitterInstance
 	int32 GetActiveParticleCount() const { return ActiveParticles; }
 	int32 GetMaxParticleCount() const { return MaxActiveParticles; }
 	float GetEmitterTime() const { return EmitterTime; }
+	const TArray<FParticleCollisionEventPayload>& GetCollisionEventQueue() const { return CollisionEventQueue; }
+	TArray<FParticleCollisionEventPayload>& GetMutableCollisionEventQueue() { return CollisionEventQueue; }
 
 	template<typename T>
 	T* GetParticlePayload(int32 ParticleIndex)
@@ -93,6 +96,8 @@ struct FParticleEmitterInstance
 	uint32 ParticleCounter = 0;
 	int32 MaxActiveParticles = 0;
 	float SpawnFraction = 0.0f;
+	bool bIsEventGenerator = false;
+	TArray<FParticleCollisionEventPayload> CollisionEventQueue;
 
 protected:
 	virtual int32 SpawnParticles(float DeltaTime);
