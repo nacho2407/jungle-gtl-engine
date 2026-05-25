@@ -78,8 +78,8 @@ UParticleSystemComponent::UParticleSystemComponent()
 
 UParticleSystemComponent::~UParticleSystemComponent()
 {
+    ReleaseRenderData();
 	ReleaseEmitterInstances();
-	ReleaseRenderData();
 }
 
 void UParticleSystemComponent::Serialize(FArchive& Ar)

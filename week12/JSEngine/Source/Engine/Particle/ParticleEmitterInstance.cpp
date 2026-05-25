@@ -7,6 +7,8 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
+#include <cstdint>
 #include <cstring>
 #include <limits>
 #include <new>
@@ -20,14 +22,47 @@ namespace
 		return ParticleHelper::AlignParticleSize(Value);
 	}
 
-	uint32 GetInitialRandomSeed(const UParticleModuleRequired* RequiredModule)
+	uint32 FoldToNonZeroSeed(uint64 Value)
+	{
+		Value ^= Value >> 33;
+		Value *= 0xff51afd7ed558ccdull;
+		Value ^= Value >> 33;
+		Value *= 0xc4ceb9fe1a85ec53ull;
+		Value ^= Value >> 33;
+
+		const uint32 Seed = static_cast<uint32>(Value ^ (Value >> 32));
+		return Seed != 0u ? Seed : 1u;
+	}
+
+	uint32 MakeRuntimeRandomSeed(const void* EmitterTemplate, const void* Instance)
+	{
+		static uint32 RuntimeSeedCounter = 0u;
+
+		const uint64 TimeSeed = static_cast<uint64>(
+			std::chrono::high_resolution_clock::now().time_since_epoch().count());
+		const uint64 CounterSeed = static_cast<uint64>(++RuntimeSeedCounter);
+		const uint64 EmitterSeed = static_cast<uint64>(reinterpret_cast<std::uintptr_t>(EmitterTemplate));
+		const uint64 InstanceSeed = static_cast<uint64>(reinterpret_cast<std::uintptr_t>(Instance));
+
+		// 같은 프레임에 여러 emitter instance가 생성되어도 seed가 겹치지 않도록 시간, counter, pointer 값을 섞습니다.
+		return FoldToNonZeroSeed(
+			TimeSeed ^
+			(CounterSeed * 0x9e3779b97f4a7c15ull) ^
+			(EmitterSeed + 0xbf58476d1ce4e5b9ull) ^
+			(InstanceSeed + 0x94d049bb133111ebull));
+	}
+
+	uint32 GetInitialRandomSeed(
+		const UParticleModuleRequired* RequiredModule,
+		const void* EmitterTemplate,
+		const void* Instance)
 	{
 		if (RequiredModule != nullptr && RequiredModule->bUseSeededRandom)
 		{
 			return static_cast<uint32>(std::max(RequiredModule->RandomSeed, 1));
 		}
 
-		return 1u;
+		return MakeRuntimeRandomSeed(EmitterTemplate, Instance);
 	}
 }
 
@@ -60,7 +95,6 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLev
 		return false;
 	}
 
-	ParticleSize = CurrentRuntimeCache->ParticleSize;
 	ParticleStride = CurrentRuntimeCache->ParticleStride > 0
 		? CurrentRuntimeCache->ParticleStride
 		: AlignParticleBytes(static_cast<int32>(sizeof(FBaseParticle)));
@@ -85,7 +119,7 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLev
 		return false;
 	}
 
-	RandomStream.Initialize(GetInitialRandomSeed(CurrentRuntimeCache->RequiredModule));
+	RandomStream.Initialize(GetInitialRandomSeed(CurrentRuntimeCache->RequiredModule, SpriteTemplate, this));
 	Reset();
 	return true;
 }
@@ -134,7 +168,6 @@ void FParticleEmitterInstance::Release()
 	CurrentLODLevelIndex = 0;
 	SpriteTemplate = nullptr;
 
-	ParticleSize = 0;
 	ParticleStride = 0;
 	PayloadOffset = 0;
 	InstancePayloadSize = 0;
@@ -332,6 +365,7 @@ void FParticleEmitterInstance::CalculateLocalBounds(FVector& OutMin, FVector& Ou
 
 void FParticleEmitterInstance::CalculateWorldBounds(FVector& OutMin, FVector& OutMax) const
 {
+	// TODO: skeleton만 들어간 상태라 정상 구현은 아님. 이후 반드시 수정 예정!!!
 	CalculateLocalBounds(OutMin, OutMax);
 	if (!UsesLocalSpace())
 	{

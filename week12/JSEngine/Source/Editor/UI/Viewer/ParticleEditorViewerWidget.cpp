@@ -810,9 +810,9 @@ void FParticleEditorViewerWidget::RenderDetailsPanel(FParticleEditorViewer* View
 		ImGui::Text("LOD Count");
 		ImGui::SameLine(150.0f);
 		ImGui::Text("%d", static_cast<int32>(Emitter->LODLevels.size()));
-		ImGui::Text("Payload Entries");
+		ImGui::Text("Runtime Caches");
 		ImGui::SameLine(150.0f);
-		ImGui::Text("%d", static_cast<int32>(Emitter->ParticleSize.size()));
+		ImGui::Text("%d", static_cast<int32>(Emitter->LODLevelRuntimeCaches.size()));
 		return;
 	}
 
@@ -833,6 +833,31 @@ void FParticleEditorViewerWidget::RenderDetailsPanel(FParticleEditorViewer* View
 			Viewer->RestartSimulation();
 		}
 		if (ImGui::Checkbox("Emitter Loops", &Required->bEmitterLoops))
+		{
+			Viewer->MarkDirty();
+			Viewer->RestartSimulation();
+		}
+		ImGui::PopItemWidth();
+		return;
+	}
+
+	if (UParticleModuleSpawn* Spawn = Cast<UParticleModuleSpawn>(SelectedObject))
+	{
+		DrawParticleDetailsSection("Spawn Module");
+		ImGui::PushItemWidth(-1.0f);
+		if (ImGui::InputFloat("Spawn Rate", &Spawn->SpawnRate, 1.0f, 10.0f, "%.3f"))
+		{
+			Spawn->SpawnRate = std::max(0.0f, Spawn->SpawnRate);
+			Viewer->MarkDirty();
+			Viewer->RestartSimulation();
+		}
+		if (ImGui::InputFloat("Rate Scale", &Spawn->RateScale, 0.1f, 1.0f, "%.3f"))
+		{
+			Spawn->RateScale = std::max(0.0f, Spawn->RateScale);
+			Viewer->MarkDirty();
+			Viewer->RestartSimulation();
+		}
+		if (ImGui::Checkbox("Process Spawn Rate", &Spawn->bProcessSpawnRate))
 		{
 			Viewer->MarkDirty();
 			Viewer->RestartSimulation();
@@ -905,6 +930,7 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 		(Viewer->GetSelectionType() == EParticleEditorSelectionType::Emitter ||
 		 Viewer->GetSelectionType() == EParticleEditorSelectionType::LODLevel ||
 		 Viewer->GetSelectionType() == EParticleEditorSelectionType::RequiredModule ||
+		 Viewer->GetSelectionType() == EParticleEditorSelectionType::SpawnModule ||
 		 Viewer->GetSelectionType() == EParticleEditorSelectionType::TypeDataModule ||
 		 Viewer->GetSelectionType() == EParticleEditorSelectionType::Module);
 
@@ -1030,6 +1056,18 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 			IM_COL32(244, 232, 156, 62));
 	}
 
+	if (LOD->SpawnModule)
+	{
+		DrawSelectableModuleRow(
+			Viewer,
+			"Spawn Module",
+			EParticleEditorSelectionType::SpawnModule,
+			EmitterIndex,
+			LODIndex,
+			-1,
+			IM_COL32(244, 150, 150, 58));
+	}
+
 	for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(LOD->Modules.size()); ++ModuleIndex)
 	{
 		UParticleModule* Module = LOD->Modules[ModuleIndex];
@@ -1111,6 +1149,24 @@ void FParticleEditorViewerWidget::DrawLODNode(FParticleEditorViewer* Viewer, int
 				Viewer->SelectEmitter(EmitterIndex);
 				Viewer->SelectLOD(LODIndex);
 				Viewer->SelectRequiredModule();
+			}
+		}
+
+		if (LOD && LOD->SpawnModule)
+		{
+			ImGuiTreeNodeFlags SpawnFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+			if (Viewer->GetSelectionType() == EParticleEditorSelectionType::SpawnModule &&
+				Viewer->GetSelectedEmitterIndex() == EmitterIndex &&
+				Viewer->GetSelectedLODIndex() == LODIndex)
+			{
+				SpawnFlags |= ImGuiTreeNodeFlags_Selected;
+			}
+			ImGui::TreeNodeEx("Spawn", SpawnFlags, "Spawn");
+			if (ImGui::IsItemClicked())
+			{
+				Viewer->SelectEmitter(EmitterIndex);
+				Viewer->SelectLOD(LODIndex);
+				Viewer->SelectSpawnModule();
 			}
 		}
 
@@ -1231,6 +1287,7 @@ namespace
 		case EParticleEditorSelectionType::Emitter: return "Emitter";
 		case EParticleEditorSelectionType::LODLevel: return "LOD Level";
 		case EParticleEditorSelectionType::RequiredModule: return "Required Module";
+		case EParticleEditorSelectionType::SpawnModule: return "Spawn Module";
 		case EParticleEditorSelectionType::TypeDataModule: return "Type Data Module";
 		case EParticleEditorSelectionType::Module: return "Module";
 		case EParticleEditorSelectionType::None:
@@ -1464,6 +1521,9 @@ namespace
 			{
 			case EParticleEditorSelectionType::RequiredModule:
 				Viewer->SelectRequiredModule();
+				break;
+			case EParticleEditorSelectionType::SpawnModule:
+				Viewer->SelectSpawnModule();
 				break;
 			case EParticleEditorSelectionType::TypeDataModule:
 				Viewer->SelectTypeDataModule();

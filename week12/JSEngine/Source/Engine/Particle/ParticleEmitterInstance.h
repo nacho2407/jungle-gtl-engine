@@ -37,7 +37,6 @@ public:
 	uint16* ParticleIndices = nullptr;
 	uint8* InstanceData = nullptr;
 
-	int32 ParticleSize = 0;
 	int32 ParticleStride = 0;
 	int32 PayloadOffset = 0;
 	int32 InstancePayloadSize = 0;
