@@ -1,7 +1,26 @@
 #include "DistributionFloat.h"
 #include "Math/RandomStream.h"
 #include "Serialization/Archive.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include <cstdlib>
+
+void UDistributionFloat::Serialize(FArchive& Ar)
+{
+	UObject::Serialize(Ar);
+}
+
+void UDistributionFloatConstant::Serialize(FArchive& Ar)
+{
+	UDistributionFloat::Serialize(Ar);
+	Ar << Constant;
+}
+
+void UDistributionFloatUniform::Serialize(FArchive& Ar)
+{
+	UDistributionFloat::Serialize(Ar);
+	Ar << Min;
+	Ar << Max;
+}
 
 float UDistributionFloatUniform::GetValue(float Time, UObject* Data, FRandomStream* InRandomStream) const
 {
@@ -30,11 +49,25 @@ bool FRawDistributionFloat::Serialize(FArchive& Ar)
 	Ar << MinValue;
 	Ar << MaxValue;
 
-	UObject* Obj = Distribution;
-	Ar.SerializeObjectReference(Obj);
+	FString ClassName = (Ar.IsSaving() && Distribution)
+		? FString(Distribution->GetClass()->GetName())
+		: FString("None");
+	Ar << ClassName;
+
 	if (Ar.IsLoading())
 	{
-		Distribution = Cast<UDistributionFloat>(Obj);
+		Distribution = nullptr;
+		if (!ClassName.empty() && ClassName != "None")
+		{
+			UObject* Created = FObjectFactory::Get().Create(ClassName, Ar.IsSaving() ? nullptr : nullptr); // Outer will be set by caller or during create
+			Distribution = Cast<UDistributionFloat>(Created);
+		}
 	}
+
+	if (Distribution)
+	{
+		Distribution->Serialize(Ar);
+	}
+
 	return true;
 }

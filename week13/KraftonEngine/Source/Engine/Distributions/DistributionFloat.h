@@ -16,6 +16,8 @@ public:
 	virtual float GetValue(float Time = 0.f, UObject* Data = NULL, struct FRandomStream* InRandomStream = NULL) const { return 0.f; }
 
 	virtual void GetRange(float& OutMin, float& OutMax) const { OutMin = OutMax = 0.f; }
+
+	virtual void Serialize(FArchive& Ar) override;
 };
 
 UCLASS()
@@ -29,6 +31,8 @@ public:
 
 	virtual float GetValue(float Time = 0.f, UObject* Data = NULL, struct FRandomStream* InRandomStream = NULL) const override { return Constant; }
 	virtual void GetRange(float& OutMin, float& OutMax) const override { OutMin = OutMax = Constant; }
+
+	virtual void Serialize(FArchive& Ar) override;
 
 	UDistributionFloatConstant() : Constant(0.f) {}
 };
@@ -47,6 +51,8 @@ public:
 
 	virtual float GetValue(float Time = 0.f, UObject* Data = NULL, struct FRandomStream* InRandomStream = NULL) const override;
 	virtual void GetRange(float& OutMin, float& OutMax) const override { OutMin = Min; OutMax = Max; }
+
+	virtual void Serialize(FArchive& Ar) override;
 
 	UDistributionFloatUniform() : Min(0.f), Max(0.f) {}
 };

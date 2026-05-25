@@ -15,6 +15,8 @@ public:
 	virtual FVector GetValue(float Time = 0.0f, UObject* Data = nullptr, struct FRandomStream* InRandomStream = nullptr) const { return FVector::ZeroVector; }
 
 	virtual void GetRange(FVector& OutMin, FVector& OutMax) const override { OutMin = OutMax = FVector::ZeroVector; }
+
+	virtual void Serialize(FArchive& Ar) override;
 };
 
 UCLASS()
@@ -28,6 +30,8 @@ public:
 
 	virtual FVector GetValue(float Time = 0.0f, UObject* Data = nullptr, struct FRandomStream* InRandomStream = nullptr) const override { return Constant; }
 	virtual void GetRange(FVector& OutMin, FVector& OutMax) const override { OutMin = OutMax = Constant; }
+
+	virtual void Serialize(FArchive& Ar) override;
 
 	UDistributionVectorConstant() : Constant(FVector::ZeroVector) {}
 };
@@ -49,6 +53,8 @@ public:
 
 	virtual FVector GetValue(float Time = 0.f, UObject* Data = NULL, struct FRandomStream* InRandomStream = NULL) const override;
 	virtual void GetRange(FVector& OutMin, FVector& OutMax) const override { OutMin = Min; OutMax = Max; }
+
+	virtual void Serialize(FArchive& Ar) override;
 
 	UDistributionVectorUniform() : Min(FVector::ZeroVector), Max(FVector::ZeroVector) {}
 };
