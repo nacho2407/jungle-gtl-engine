@@ -34,6 +34,7 @@ public:
 
 	UParticleModuleBeamTarget();
 	void InitializeDefaults();
+	uint32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) override;
 	void Spawn(const FSpawnContext& Context) override;
 	void Update(const FUpdateContext& Context) override;
 	void Serialize(FArchive& Ar) override;

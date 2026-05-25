@@ -28,7 +28,8 @@ uint32 UParticleModuleBeamSource::RequiredBytes(UParticleModuleTypeDataBase* Typ
 	{
 		Size += sizeof(FBeamParticleSourceTargetPayloadData);
 	}
-	if (SourceMethod == PEB2STM_Emitter)
+	UParticleModuleTypeDataBeam2* BeamTD = Cast<UParticleModuleTypeDataBeam2>(TypeData);
+	if (BeamTD && BeamTD->BeamMethod == PEB2M_Branch)
 	{
 		Size += sizeof(FBeamParticleSourceBranchPayloadData);
 	}
@@ -69,6 +70,11 @@ void UParticleModuleBeamSource::Spawn(const FSpawnContext& Context)
 
 void UParticleModuleBeamSource::Update(const FUpdateContext& Context)
 {
+	if (bLockSource && bLockSourceTangent && bLockSourceStrength)
+	{
+		return;
+	}
+
 	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(&Context.Owner);
 	if (!BeamInst || !BeamInst->BeamTypeData)
 	{
@@ -109,7 +115,8 @@ void UParticleModuleBeamSource::GetDataPointers(FParticleEmitterInstance* Owner,
 		ParticleSource = reinterpret_cast<FBeamParticleSourceTargetPayloadData*>(const_cast<uint8*>(ParticleBase) + CurrentOffset);
 		CurrentOffset += sizeof(FBeamParticleSourceTargetPayloadData);
 	}
-	if (SourceMethod == PEB2STM_Emitter)
+	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(Owner);
+	if (BeamInst && BeamInst->BeamTypeData && BeamInst->BeamTypeData->BeamMethod == PEB2M_Branch)
 	{
 		BranchSource = reinterpret_cast<FBeamParticleSourceBranchPayloadData*>(const_cast<uint8*>(ParticleBase) + CurrentOffset);
 		CurrentOffset += sizeof(FBeamParticleSourceBranchPayloadData);
@@ -126,7 +133,8 @@ void UParticleModuleBeamSource::GetDataPointerOffsets(FParticleEmitterInstance* 
 		ParticleSourceOffset = CurrentOffset;
 		CurrentOffset += sizeof(FBeamParticleSourceTargetPayloadData);
 	}
-	if (SourceMethod == PEB2STM_Emitter)
+	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(Owner);
+	if (BeamInst && BeamInst->BeamTypeData && BeamInst->BeamTypeData->BeamMethod == PEB2M_Branch)
 	{
 		BranchSourceOffset = CurrentOffset;
 		CurrentOffset += sizeof(FBeamParticleSourceBranchPayloadData);
@@ -158,14 +166,14 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 	switch (SourceMethod)
 	{
 	case PEB2STM_UserSet:
-		BeamInst->GetBeamSourcePoint(ParticleIndex, BeamData->SourcePoint);
-		BeamInst->GetBeamSourceTangent(ParticleIndex, BeamData->SourceTangent);
-		BeamInst->GetBeamSourceStrength(ParticleIndex, BeamData->SourceStrength);
+		if (bSpawning || !bLockSource) BeamInst->GetBeamSourcePoint(ParticleIndex, BeamData->SourcePoint);
+		if (bSpawning || !bLockSourceTangent) BeamInst->GetBeamSourceTangent(ParticleIndex, BeamData->SourceTangent);
+		if (bSpawning || !bLockSourceStrength) BeamInst->GetBeamSourceStrength(ParticleIndex, BeamData->SourceStrength);
 		break;
 	case PEB2STM_Default:
-		BeamData->SourcePoint = Source.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-		BeamData->SourceTangent = SourceTangent.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-		BeamData->SourceStrength = SourceStrength.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+		if (bSpawning || !bLockSource) BeamData->SourcePoint = Source.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+		if (bSpawning || !bLockSourceTangent) BeamData->SourceTangent = SourceTangent.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+		if (bSpawning || !bLockSourceStrength) BeamData->SourceStrength = SourceStrength.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
 		break;
 	default:
 		return false;

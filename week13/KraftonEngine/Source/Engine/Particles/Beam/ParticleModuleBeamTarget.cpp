@@ -21,6 +21,16 @@ void UParticleModuleBeamTarget::InitializeDefaults()
 	TargetTangentMethod = PEB2STTM_Direct;
 }
 
+uint32 UParticleModuleBeamTarget::RequiredBytes(UParticleModuleTypeDataBase* TypeData)
+{
+	uint32 Size = 0;
+	if (TargetMethod == PEB2STM_Particle)
+	{
+		Size += sizeof(FBeamParticleSourceTargetPayloadData);
+	}
+	return Size;
+}
+
 void UParticleModuleBeamTarget::Spawn(const FSpawnContext& Context)
 {
 	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(&Context.Owner);
@@ -52,6 +62,11 @@ void UParticleModuleBeamTarget::Spawn(const FSpawnContext& Context)
 
 void UParticleModuleBeamTarget::Update(const FUpdateContext& Context)
 {
+	if (bLockTarget && bLockTargetTangent && bLockTargetStrength)
+	{
+		return;
+	}
+
 	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(&Context.Owner);
 	if (!BeamInst || !BeamInst->BeamTypeData) return;
 
@@ -111,14 +126,14 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 	switch (TargetMethod)
 	{
 	case PEB2STM_UserSet:
-		BeamInst->GetBeamTargetPoint(ParticleIndex, BeamData->TargetPoint);
-		BeamInst->GetBeamTargetTangent(ParticleIndex, BeamData->TargetTangent);
-		BeamInst->GetBeamTargetStrength(ParticleIndex, BeamData->TargetStrength);
+		if (bSpawning || !bLockTarget) BeamInst->GetBeamTargetPoint(ParticleIndex, BeamData->TargetPoint);
+		if (bSpawning || !bLockTargetTangent) BeamInst->GetBeamTargetTangent(ParticleIndex, BeamData->TargetTangent);
+		if (bSpawning || !bLockTargetStrength) BeamInst->GetBeamTargetStrength(ParticleIndex, BeamData->TargetStrength);
 		break;
 	case PEB2STM_Default:
-		BeamData->TargetPoint = Target.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-		BeamData->TargetTangent = TargetTangent.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-		BeamData->TargetStrength = TargetStrength.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+		if (bSpawning || !bLockTarget) BeamData->TargetPoint = Target.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+		if (bSpawning || !bLockTargetTangent) BeamData->TargetTangent = TargetTangent.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+		if (bSpawning || !bLockTargetStrength) BeamData->TargetStrength = TargetStrength.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
 		break;
 	default:
 		return false;
