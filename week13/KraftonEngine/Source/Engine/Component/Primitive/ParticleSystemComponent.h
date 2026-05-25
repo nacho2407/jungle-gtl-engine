@@ -40,7 +40,7 @@ public:
     const TArray<FParticleEmitterInstance*>& GetEmitterInstances() const { return EmitterInstances; }
     const TArray<FDynamicEmitterDataBase*>&  GetEmitterRenderData() const { return EmitterRenderData; }
 
-	void SetPendingLODLevel(int32 InLOD) { PendingLODLevel = InLOD; }
+	void SetCachedDistanceToCamera(float InDist) { CachedDistanceToCamera = InDist; }
 
 private:
     void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
@@ -66,6 +66,6 @@ private:
     TArray<UMaterial*>                EmitterMaterials;
 
     bool bInitialized = false;
-
-	int32 PendingLODLevel = 0;
+	
+	float CachedDistanceToCamera = 0.0f;
 };

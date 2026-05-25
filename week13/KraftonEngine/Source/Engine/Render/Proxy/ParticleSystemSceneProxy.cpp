@@ -87,7 +87,8 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		return;
 	}
 
-	Comp->SetPendingLODLevel(static_cast<int32>(CurrentLOD));
+	float DistToCamera = FVector::DistSquared(Frame.CameraPosition, Comp->GetWorldLocation());
+	Comp->SetCachedDistanceToCamera(DistToCamera);
 
 	const TArray<FDynamicEmitterDataBase*>& EmitterList = Comp->GetEmitterRenderData();
 	CachedEmitterData.clear();
@@ -112,11 +113,6 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		}
 
 		const FDynamicEmitterReplayDataBase& Source = EmitterData->GetSource();
-
-		if (Source.BlendMode == EParticleBlendMode::Additive)
-		{
-			continue;
-		}
 
 		if (Source.eEmitterType == EDynamicEmitterType::Sprite ||
 			Source.eEmitterType == EDynamicEmitterType::Mesh)
