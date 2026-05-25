@@ -366,7 +366,8 @@ void FEditorRenderPipeline::RenderPreviewViewport(IEditorPreviewViewportClient* 
 		VC->NotifyViewportResized(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
 	}
 
-	const float ClearColor[4] = { 0.12f, 0.12f, 0.13f, 1.0f };
+	// 클리어 색은 뷰포트별 RenderOptions 의 BackgroundColor 를 우선 사용.
+	const float* ClearColor = VC->GetRenderOptions().BackgroundColor;
 	VP->BeginRender(Ctx, ClearColor);
 
 	FMinimalViewInfo POV;
@@ -387,6 +388,28 @@ void FEditorRenderPipeline::RenderPreviewViewport(IEditorPreviewViewportClient* 
 	Builder.BeginCollect(Frame);
 
 	Collector.Collect(World, Frame, Output);
+
+	// 레벨 파이프라인과 동일하게 프리뷰에서도 ShowFlags 의 Grid / WorldAxis / BoundingVolume
+	// 이 동작하도록 디버그 수집을 수행. 프리뷰는 선택 개념이 없으므로 AABB 는 visible proxy
+	// 전체에 대해 직접 제출 (Level 의 SelectionCommands 우회).
+	{
+		const FShowFlags& Flags = Frame.RenderOptions.ShowFlags;
+		Collector.CollectGrid(Frame.RenderOptions.GridSpacing, Frame.RenderOptions.GridHalfLineCount, Scene);
+		Collector.CollectDebugDraw(Frame, Scene);
+
+		if (Flags.bBoundingVolume)
+		{
+			for (FPrimitiveSceneProxy* Proxy : Output.RenderableProxies)
+			{
+				if (Proxy && Proxy->HasProxyFlag(EPrimitiveProxyFlags::ShowAABB))
+				{
+					const FBoundingBox& B = Proxy->GetCachedBounds();
+					Scene.AddDebugAABB(B.Min, B.Max, FColor::White());
+				}
+			}
+		}
+	}
+
 	Builder.BuildCommands(Frame, &Scene, Output);
 
 	Renderer.Render(Frame, World, Scene);

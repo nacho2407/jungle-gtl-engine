@@ -49,10 +49,31 @@ private:
     void RemoveLODAt(int32 LODIndex);
     void SelectLOD(int32 LODIndex);
 
+    // Regenerate — 모든 이미터에서 src LOD 의 모듈을 dst LOD 로 deep-clone 한 뒤
+    // spawn rate / spawn rate scale 을 SpawnRateScale 만큼 곱한다. (Cascade와 동일.)
+    void RegenerateLOD(int32 SrcLODIndex, int32 DstLODIndex, float SpawnRateScale);
+
     // 모듈 sharing 관리 — sub-LOD에서만 의미 있음.
     void DuplicateModuleFromHigherLOD(class UParticleEmitter* Emitter, int32 LODIndex, int32 ModuleIndex);
     void ShareModuleFromHigherLOD(class UParticleEmitter* Emitter, int32 LODIndex, int32 ModuleIndex);
     void DuplicateModuleFromHighestLOD(class UParticleEmitter* Emitter, int32 LODIndex, int32 ModuleIndex);
+
+    // 드래그앤드롭 이동. LOD 0 의 Modules 배열 인덱스 기준 — 구조 변경이므로 모든 LOD에
+    // 동일 인덱스로 동기 적용. SrcEmitter == DstEmitter 면 단순 재정렬.
+    void MoveModule(int32 SrcEmitterIndex, int32 SrcArrayIndex, int32 DstEmitterIndex, int32 DstArrayIndex);
+    void MoveEmitter(int32 SrcEmitterIndex, int32 DstEmitterIndex);
+
+    // Undo / Redo — 구조적 변경(Add/Delete/Duplicate Emitter/Module/LOD) 단위로 스냅샷.
+    void PushUndoSnapshot();
+    void Undo();
+    void Redo();
+    void RestoreFromSnapshot(const TArray<uint8>& Buffer);
+
+    // 부가 기능.
+    void SaveThumbnail();
+    void SaveAssetAs(const FString& NewAssetName);
+    void ReimportAsset();
+    void FindInContentBrowser();
 
     void RenderMenuBar();
     void RenderToolbar();
@@ -96,6 +117,53 @@ private:
 
     // Details 패널 상단의 속성 검색 입력. 현재는 시각용 placeholder.
     char  PropertySearch[128] = {};
+
+    // Window 메뉴로 토글되는 패널 가시성.
+    bool bShowPreviewPanel   = true;
+    bool bShowEmittersPanel  = true;
+    bool bShowDetailsPanel   = true;
+    bool bShowCurvePanel     = true;
+
+    // Save As 팝업 입력.
+    char SaveAsNameBuf[128] = {};
+    bool bSaveAsPopupRequested = false;
+
+    // 배경색 팝업 진입 신호.
+    bool bBgColorPopupRequested = false;
+
+    // Find in Content Browser 팝업 진입 신호.
+    bool bFindCBPopupRequested = false;
+
+    // 범용 Undo — 활성 위젯이 바뀔 때 pre-edit 상태를 캐시. 편집 종료 시 스택에 push.
+    // bPushPending 은 "활성이 풀린 다음 프레임에 IsDirty 검사 후 push" — 같은 프레임의
+    // 위젯 핸들러(예: InvisibleButton+IsItemClicked) 가 MarkDirty 를 늦게 호출해도 놓치지
+    // 않게 한 프레임 지연시켜 처리.
+    TArray<uint8> PreEditSnapshot;
+    bool          bPreEditCached       = false;
+    bool          bWasAnyItemActive    = false;
+    bool          bPushPending         = false;
+
+    // Drag-drop "현재 활성 drop zone" 추적 (1 frame lag) — 가장 가까운 zone 만 펼치고
+    // 강조선을 그리기 위함. (Em, Slot) 의미:
+    //   Em<0                : 활성 없음
+    //   Em>=0, Slot>=0      : 해당 emitter 의 Modules[Slot] 자리 갭 zone
+    //   Em>=0, Slot==SlotAppendSentinel  : 모듈 리스트 끝 append zone
+    //   Em>=0, Slot==SlotEmitterColSentinel : emitter 컬럼 헤더 zone
+    static constexpr int32 SlotAppendSentinel    = 0x7FFFFFFE;
+    static constexpr int32 SlotEmitterColSentinel = 0x7FFFFFFD;
+    int32 ActiveDropEmitter  = -1;
+    int32 ActiveDropSlot     = -1;
+    int32 PendingDropEmitter = -1;
+    int32 PendingDropSlot    = -1;
+
+    // 구조적 변경 단위 Undo/Redo 스택 (전체 ParticleSystem 직렬화 스냅샷).
+    TArray<TArray<uint8>> UndoStack;
+    TArray<TArray<uint8>> RedoStack;
+    static constexpr int32 MaxUndoStackSize = 50;
+
+    // 커브 에디터의 상호작용 모드 상태 (시각용).
+    enum class ECurveInteractionMode : uint8 { Pan, Zoom };
+    ECurveInteractionMode CurveMode = ECurveInteractionMode::Pan;
 
     FParticleSystemEditorViewportClient ViewportClient;
     FName                               PreviewWorldHandle = FName::None;

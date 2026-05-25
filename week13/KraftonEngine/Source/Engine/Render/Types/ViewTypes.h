@@ -111,4 +111,7 @@ struct FViewportRenderOptions
 	// Mesh editor bone weight visualization
 	bool bWeightBoneHeatMap = false;
 	int32 WeightBoneHeatMapBoneIndex = -1;
+
+	// 프리뷰 RT clear color (RGBA, 0..1). 에디터 프리뷰 파이프라인이 이 값을 클리어에 사용.
+	float BackgroundColor[4] = { 0.12f, 0.12f, 0.13f, 1.0f };
 };

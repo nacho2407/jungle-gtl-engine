@@ -48,9 +48,9 @@ FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* I
 	: FPrimitiveSceneProxy(InComponent)
 {
 	ProxyFlags |= EPrimitiveProxyFlags::PerViewportUpdate
-	            | EPrimitiveProxyFlags::Particle;
-	ProxyFlags &= ~(EPrimitiveProxyFlags::SupportsOutline
-	              | EPrimitiveProxyFlags::ShowAABB);
+	            | EPrimitiveProxyFlags::Particle
+	            | EPrimitiveProxyFlags::ShowAABB; // bBoundingVolume 토글 시 AABB 표시 자격.
+	ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
 }
 
 
