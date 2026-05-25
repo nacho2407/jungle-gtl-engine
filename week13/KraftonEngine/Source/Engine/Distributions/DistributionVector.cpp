@@ -1,5 +1,6 @@
-#include "DistributionVector.h"
+﻿#include "DistributionVector.h"
 #include "Math/RandomStream.h"
+#include "Serialization/Archive.h"
 #include <cstdlib>
 
 FVector UDistributionVectorUniform::GetValue(float Time, UObject* Data, FRandomStream* InRandomStream) const
@@ -34,4 +35,21 @@ FVector FRawDistributionVector::GetValue(float Time, UObject* Data, FRandomStrea
 		return Distribution->GetValue(Time, Data, InRandomStream);
 	}
 	return FVector::ZeroVector;
+}
+
+bool FRawDistributionVector::Serialize(FArchive& Ar)
+{
+	FRawDistribution::Serialize(Ar);
+	Ar << MinValue;
+	Ar << MaxValue;
+	Ar << MinValueVec;
+	Ar << MaxValueVec;
+
+	UObject* Obj = Distribution;
+	Ar.SerializeObjectReference(Obj);
+	if (Ar.IsLoading())
+	{
+		Distribution = Cast<UDistributionVector>(Obj);
+	}
+	return true;
 }

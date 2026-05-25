@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Distributions.h"
 #include "Distribution.h"
 #include "Object/Reflection/ObjectMacros.h"
@@ -12,7 +12,7 @@ class UDistributionVector : public UDistribution
 public:
 	GENERATED_BODY()
 
-	virtual FVector GetValue(float Time = 0.f, UObject* Data = NULL, struct FRandomStream* InRandomStream = NULL) const { return FVector::ZeroVector; }
+	virtual FVector GetValue(float Time = 0.0f, UObject* Data = nullptr, struct FRandomStream* InRandomStream = nullptr) const { return FVector::ZeroVector; }
 
 	virtual void GetRange(FVector& OutMin, FVector& OutMax) const override { OutMin = OutMax = FVector::ZeroVector; }
 };
@@ -26,7 +26,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "DistributionVectorConstant")
 	FVector Constant;
 
-	virtual FVector GetValue(float Time = 0.f, UObject* Data = NULL, struct FRandomStream* InRandomStream = NULL) const override { return Constant; }
+	virtual FVector GetValue(float Time = 0.0f, UObject* Data = nullptr, struct FRandomStream* InRandomStream = nullptr) const override { return Constant; }
 	virtual void GetRange(FVector& OutMin, FVector& OutMax) const override { OutMin = OutMax = Constant; }
 
 	UDistributionVectorConstant() : Constant(FVector::ZeroVector) {}
@@ -78,6 +78,8 @@ public:
 	bool IsCreated() const { return Distribution != nullptr; }
 
 	FVector GetValue(float Time = 0.0f, UObject* Data = nullptr, struct FRandomStream* InRandomStream = nullptr) const;
+
+	bool Serialize(FArchive& Ar);
 
 	FRawDistributionVector()
 		: MinValue(0)

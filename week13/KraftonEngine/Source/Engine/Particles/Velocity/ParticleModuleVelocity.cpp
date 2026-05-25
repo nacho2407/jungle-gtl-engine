@@ -1,6 +1,7 @@
 ﻿#include "ParticleModuleVelocity.h"
 #include "Particles/ParticleHelper.h"
 #include "Particles/ParticleEmitterInstances.h"
+#include "Component/Primitive/ParticleSystemComponent.h"
 #include "Math/MathUtils.h"
 #include <cstdlib>
 
@@ -8,14 +9,7 @@ void UParticleModuleVelocity::Spawn(const FSpawnContext& Context)
 {
 	SPAWN_INIT;
 	
-	float AlphaX = (float)rand() / (float)RAND_MAX;
-	float AlphaY = (float)rand() / (float)RAND_MAX;
-	float AlphaZ = (float)rand() / (float)RAND_MAX;
-
-	FVector Vel;
-	Vel.X = FMath::Lerp(MinVelocity.X, MaxVelocity.X, AlphaX);
-	Vel.Y = FMath::Lerp(MinVelocity.Y, MaxVelocity.Y, AlphaY);
-	Vel.Z = FMath::Lerp(MinVelocity.Z, MaxVelocity.Z, AlphaZ);
+	FVector Vel = StartVelocity.GetValue(Context.Owner.EmitterTime, Context.Owner.Component);
 
 	FVector FromOrigin = (Particle.Location - Context.Owner.EmitterToSimulation.GetOrigin()).GetSafeNormal();
 
@@ -64,11 +58,30 @@ void UParticleModuleVelocity::Serialize(FArchive& Ar)
 {
 	UParticleModule::Serialize(Ar);
 
-	int32 Version = 0;
+	int32 Version = 1;
 	Ar << Version;
 
-	Ar << MinVelocity;
-	Ar << MaxVelocity;
+	if (Version < 1)
+	{
+		FVector MinVelocity, MaxVelocity;
+		Ar << MinVelocity;
+		Ar << MaxVelocity;
+
+		if (Ar.IsLoading())
+		{
+			StartVelocity.Distribution = UObjectManager::Get().CreateObject<UDistributionVectorUniform>(this);
+			if (UDistributionVectorUniform* Uniform = Cast<UDistributionVectorUniform>(StartVelocity.Distribution))
+			{
+				Uniform->Min = MinVelocity;
+				Uniform->Max = MaxVelocity;
+			}
+		}
+	}
+	else
+	{
+		StartVelocity.Serialize(Ar);
+		StartVelocityRadial.Serialize(Ar);
+	}
 
 	bool bWS = bInWorldSpace;
 	bool bOS = bApplyOwnerScale;

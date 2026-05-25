@@ -1,4 +1,19 @@
 ﻿#include "Distributions.h"
+#include "Serialization/Archive.h"
+#include "Object/Object.h"
+
+bool FRawDistribution::Serialize(FArchive& Ar)
+{
+	Ar << LookupTable.TimeScale;
+	Ar << LookupTable.TimeBias;
+	Ar << LookupTable.Values;
+	Ar << LookupTable.Op;
+	Ar << LookupTable.EntryCount;
+	Ar << LookupTable.EntryStride;
+	Ar << LookupTable.SubEntryStride;
+	Ar << LookupTable.LockFlag;
+	return true;
+}
 
 void FRawDistribution::GetValue(float Time, float* Value, int32 NumCoords, int32 Extreme, FRandomStream* InRandomStream) const
 {

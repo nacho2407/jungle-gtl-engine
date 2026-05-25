@@ -79,6 +79,7 @@ struct FVector {
 	FVector operator*(const FVector& Other) const;
 	FVector operator*(float Scalar) const;
 	FVector operator/(float Scalar) const;
+	FVector operator-() const;
 
 	FVector& operator+=(const FVector& Other);
 	FVector& operator-=(const FVector& Other);
