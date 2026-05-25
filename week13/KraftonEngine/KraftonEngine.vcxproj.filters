@@ -2594,9 +2594,6 @@
     <ClInclude Include="Source\Engine\Particles\DynamicEmitterData.h">
       <Filter>Source\Engine\Particles</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Particles\ParticleDynamicData.h">
-      <Filter>Source\Engine\Particles</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Particles\ParticleEmitter.generated.h">
       <Filter>Source\Engine\Particles</Filter>
     </ClInclude>
