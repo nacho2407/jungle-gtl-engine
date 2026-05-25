@@ -65,6 +65,38 @@ namespace
 
 		return MakeRuntimeRandomSeed(EmitterTemplate, Instance);
 	}
+
+	FVector AbsVector(const FVector& Value)
+	{
+		return FVector(std::fabs(Value.X), std::fabs(Value.Y), std::fabs(Value.Z));
+	}
+
+	void SetZeroBounds(FVector& OutMin, FVector& OutMax)
+	{
+		OutMin = FVector::ZeroVector;
+		OutMax = FVector::ZeroVector;
+	}
+
+	void CalculateScaledFixedBounds(
+		const UParticleModuleRequired& RequiredModule,
+		FVector& OutMin,
+		FVector& OutMax)
+	{
+		const FVector RawMin = FVector::Min(RequiredModule.FixedBoundsMin, RequiredModule.FixedBoundsMax);
+		const FVector RawMax = FVector::Max(RequiredModule.FixedBoundsMin, RequiredModule.FixedBoundsMax);
+		const FVector Center = (RawMin + RawMax) * 0.5f;
+		const FVector Extent = (RawMax - RawMin) * (0.5f * std::max(RequiredModule.BoundsScale, 0.0f));
+
+		OutMin = Center - Extent;
+		OutMax = Center + Extent;
+	}
+
+	void ExpandBoundsByParticle(FAABB& Bounds, const FBaseParticle& Particle)
+	{
+		const FVector HalfExtent = AbsVector(Particle.Size) * 0.5f;
+		Bounds.Expand(Particle.Location - HalfExtent);
+		Bounds.Expand(Particle.Location + HalfExtent);
+	}
 }
 
 FParticleEmitterInstance::~FParticleEmitterInstance()
@@ -502,26 +534,45 @@ void FParticleEmitterInstance::CalculateLocalBounds(FVector& OutMin, FVector& Ou
 		: nullptr;
 	if (RequiredModule != nullptr && RequiredModule->bUseFixedBounds)
 	{
-		OutMin = RequiredModule->FixedBoundsMin * RequiredModule->BoundsScale;
-		OutMax = RequiredModule->FixedBoundsMax * RequiredModule->BoundsScale;
+		CalculateScaledFixedBounds(*RequiredModule, OutMin, OutMax);
 		return;
 	}
 
-	OutMin = FVector::ZeroVector;
-	OutMax = FVector::ZeroVector;
+	if (ActiveParticles <= 0)
+	{
+		SetZeroBounds(OutMin, OutMax);
+		return;
+	}
+
+	FAABB Bounds;
+	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticles; ++ActiveIndex)
+    {
+        // Size는 particle 중심 기준 전체 크기로 보고, bounds에는 절반 크기만큼 확장해서 반영
+		ExpandBoundsByParticle(Bounds, GetParticleByActiveIndex(ActiveIndex));
+	}
+
+	if (!Bounds.IsValid())
+	{
+		SetZeroBounds(OutMin, OutMax);
+		return;
+	}
+
+	OutMin = Bounds.Min;
+	OutMax = Bounds.Max;
 }
 
 void FParticleEmitterInstance::CalculateWorldBounds(FVector& OutMin, FVector& OutMax) const
 {
-	// TODO: skeleton만 들어간 상태라 정상 구현은 아님. 이후 반드시 수정 예정!!!
 	CalculateLocalBounds(OutMin, OutMax);
 	if (!UsesLocalSpace())
 	{
 		return;
 	}
 
-	OutMin = Owner.GetComponentToWorld().TransformPosition(OutMin);
-	OutMax = Owner.GetComponentToWorld().TransformPosition(OutMax);
+	const FAABB LocalBounds(OutMin, OutMax);
+	const FAABB WorldBounds = FAABB::TransformAABB(LocalBounds, Owner.GetComponentToWorld());
+	OutMin = WorldBounds.Min;
+	OutMax = WorldBounds.Max;
 }
 
 void FParticleEmitterInstance::Tick(float DeltaTime)
