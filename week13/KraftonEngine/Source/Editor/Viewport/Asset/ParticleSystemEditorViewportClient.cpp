@@ -13,6 +13,8 @@
 
 void FParticleSystemEditorViewportClient::Initialize(ID3D11Device* Device, uint32 Width, uint32 Height)
 {
+    RenderOptions.ShowFlags.bGrid = false;
+
     Viewport = new FViewport();
     Viewport->Initialize(Device, Width, Height);
     Viewport->SetClient(this);
