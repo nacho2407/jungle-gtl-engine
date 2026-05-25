@@ -17,18 +17,36 @@ void UParticleModuleVelocity::Spawn(const FSpawnContext& Context)
 	Vel.Y = FMath::Lerp(MinVelocity.Y, MaxVelocity.Y, AlphaY);
 	Vel.Z = FMath::Lerp(MinVelocity.Z, MaxVelocity.Z, AlphaZ);
 
-	if (bApplyOwnerScale)
+	FVector FromOrigin = (Particle.Location - Context.Owner.EmitterToSimulation.GetOrigin()).GetSafeNormal();
+
+	FVector OwnerScale = FVector::OneVector;
+	if (bApplyOwnerScale == true)
 	{
-		Vel *= Context.GetTransform().Scale;
-	}
-	
-	if (bInWorldSpace)
-	{
-		// Min, Max Velocity 를 World 공간 속도로 해석 -> 이를 Local Space 로 변환해서 Particle 에 누적
-		FMatrix WorldToSimulation = Context.Owner.SimulationToWorld.GetInverse();
-		Vel = WorldToSimulation.TransformVector(Vel);
+		OwnerScale = Context.GetTransform().Scale;
 	}
 
+	UParticleLODLevel* LODLevel = Context.Owner.GetCurrentLODLevelChecked();
+	if (LODLevel->RequiredModule->bUseLocalSpace)
+	{
+		if (bInWorldSpace == true)
+		{
+			// Min, Max Velocity 를 World 공간 속도로 해석 -> 이를 Local Space 로 변환해서 Particle 에 누적
+			FMatrix WorldToSimulation = Context.Owner.SimulationToWorld.GetInverse();
+			Vel = WorldToSimulation.TransformVector(Vel);
+		}
+		else
+		{
+			// Emitter Space != Simulation Space 가정
+			Vel = Context.Owner.EmitterToSimulation.TransformVector(Vel);
+		}
+	}
+	else if (bInWorldSpace == false)
+	{
+		Vel = Context.Owner.EmitterToSimulation.TransformVector(Vel);
+	}
+
+	Vel *= OwnerScale;
+	// Radial Velocity 계산 추가 예정
 	Particle.Velocity += Vel;
 	Particle.BaseVelocity += Vel;
 }

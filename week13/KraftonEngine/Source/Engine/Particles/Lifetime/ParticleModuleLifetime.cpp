@@ -9,8 +9,20 @@ void UParticleModuleLifetime::Spawn(const FSpawnContext& Context)
 	SPAWN_INIT;
 	float Alpha = (float)rand() / (float)RAND_MAX;
 	float Lifetime = FMath::Lerp(LifetimeMin, LifetimeMax, Alpha);
-	Particle.OneOverMaxLifetime = (Lifetime > 0.0f) ? (1.0f / Lifetime) : 0.0f;
-	Particle.RelativeTime = 0.0f;
+
+	if (Particle.OneOverMaxLifetime > 0.f)
+	{
+		// 다른 모듈이 Lifetime 을 수정한 상태
+		float CurrentLifetime = 1.f / Particle.OneOverMaxLifetime;
+		Particle.OneOverMaxLifetime = 1.f / (Lifetime + CurrentLifetime);
+	}
+	else
+	{
+		Particle.OneOverMaxLifetime = (Lifetime > 0.0f) ? (1.0f / Lifetime) : 0.0f;
+	}
+
+	// 1.0f 보다 크다면 이미 다른 모듈이 해당 파티클을 죽인 상태라고 볼 수 있음
+	Particle.RelativeTime = Particle.RelativeTime > 1.0f ? Particle.RelativeTime : Context.SpawnTime * Particle.OneOverMaxLifetime;
 }
 
 float UParticleModuleLifetime::GetMaxLifetime()
