@@ -626,8 +626,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Object\FName.cpp" />
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Object\UUIDGenerator.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Collision\ParticleModuleCollision.cpp" />
     <ClCompile Include="Source\Engine\Particles\Color\ParticleModuleColorOverLife.cpp" />
     <ClCompile Include="Source\Engine\Particles\DynamicEmitterData.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Event\ParticleModuleEventGenerator.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleEmitter.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleEmitterInstances.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleHelper.cpp" />
@@ -1032,8 +1034,12 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Object\Reflection\ObjectMacros.h" />
     <ClInclude Include="Source\Engine\Object\Reflection\UClass.h" />
     <ClInclude Include="Source\Engine\Object\Reflection\UStruct.h" />
+    <ClInclude Include="Source\Engine\Particles\Collision\ParticleModuleCollision.h" />
+    <ClInclude Include="Source\Engine\Particles\Collision\ParticleModuleCollisionBase.h" />
     <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColorOverLife.h" />
     <ClInclude Include="Source\Engine\Particles\DynamicEmitterData.h" />
+    <ClInclude Include="Source\Engine\Particles\Event\ParticleModuleEventBase.h" />
+    <ClInclude Include="Source\Engine\Particles\Event\ParticleModuleEventGenerator.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleDynamicData.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleEmitter.generated.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleEmitter.h" />

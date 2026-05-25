@@ -9,6 +9,7 @@
 #include "Particles/ParticleEmitter.h"
 #include "Particles/DynamicEmitterData.h"
 #include "Particles/ParticleModule.h"
+#include "Particles/Event/ParticleModuleEventGenerator.h"
 
 class UParticleSystemComponent;
 class UMaterial;
