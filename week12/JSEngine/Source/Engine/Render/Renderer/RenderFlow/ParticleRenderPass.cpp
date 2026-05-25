@@ -200,9 +200,38 @@ bool FParticleRenderPass::DrawCommand(const FRenderPassContext* Context)
         return true;
     }
 
-    ClearBatch();
+    if (!EnsureQuadBuffers(Context))
+    {
+        return false;
+    }
+
+    FShaderProgram* Program = GetParticleSpriteShaderProgram();
+    if (Program == nullptr)
+    {
+        return false;
+    }
+
+    Program->Bind(Context->DeviceContext);
+
+    ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::DepthReadOnly);
+    ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::AlphaBlend);
+    ID3D11RasterizerState* RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(
+        Context->RenderBus->GetViewMode() == EViewMode::Wireframe ? ERasterizerType::WireFrame : ERasterizerType::SolidBackCull);
+    ID3D11SamplerState* Sampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Linear);
+    Context->DeviceContext->OMSetDepthStencilState(DepthState, 0);
+    Context->DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
+    Context->DeviceContext->RSSetState(RasterizerState);
+    Context->DeviceContext->PSSetSamplers(0, 1, &Sampler);
+
+    uint32 Strides[2] = { sizeof(FParticleSpriteQuadVertex), sizeof(FParticleSpriteInstanceData) };
+    uint32 Offsets[2] = { 0, 0 };
+    ID3D11Buffer* VertexBuffers[2] = { QuadVertexBuffer.Get(), nullptr };
+    ID3D11Buffer* IndexBufferPtr = IndexBuffer.Get();
+
     for (const FRenderCommand& Cmd : Commands)
     {
+        ClearBatch();
+
         const FDynamicEmitterReplayDataBase* ReplayData = Cmd.ParticleReplayData;
         if (ReplayData == nullptr || ReplayData->eEmitterType != EDynamicEmitterType::Sprite)
         {
@@ -228,49 +257,37 @@ bool FParticleRenderPass::DrawCommand(const FRenderPassContext* Context)
                     Instances);
             }
         }
+
+        if (Instances.empty())
+        {
+            continue;
+        }
+
+        if (!EnsureInstanceBuffer(Context, static_cast<uint32>(Instances.size())))
+        {
+            return false;
+        }
+
+        D3D11_MAPPED_SUBRESOURCE Mapped = {};
+        if (FAILED(Context->DeviceContext->Map(InstanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+        {
+            return false;
+        }
+        std::memcpy(Mapped.pData, Instances.data(), sizeof(FParticleSpriteInstanceData) * Instances.size());
+        Context->DeviceContext->Unmap(InstanceBuffer.Get(), 0);
+
+        ID3D11ShaderResourceView* DefaultDiffuseSRV = FResourceManager::Get().GetDefaultWhiteSRV();
+        Context->DeviceContext->PSSetShaderResources(0, 1, &DefaultDiffuseSRV);
+        if (Cmd.Material != nullptr)
+        {
+            Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
+        }
+
+        VertexBuffers[1] = InstanceBuffer.Get();
+        Context->DeviceContext->IASetVertexBuffers(0, 2, VertexBuffers, Strides, Offsets);
+        Context->DeviceContext->IASetIndexBuffer(IndexBufferPtr, DXGI_FORMAT_R32_UINT, 0);
+        Context->DeviceContext->DrawIndexedInstanced(6, static_cast<uint32>(Instances.size()), 0, 0, 0);
     }
-
-    if (Instances.empty())
-    {
-        return true;
-    }
-
-    if (!EnsureQuadBuffers(Context) || !EnsureInstanceBuffer(Context, static_cast<uint32>(Instances.size())))
-    {
-        return false;
-    }
-
-    D3D11_MAPPED_SUBRESOURCE Mapped = {};
-    if (FAILED(Context->DeviceContext->Map(InstanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
-    {
-        return false;
-    }
-    std::memcpy(Mapped.pData, Instances.data(), sizeof(FParticleSpriteInstanceData) * Instances.size());
-    Context->DeviceContext->Unmap(InstanceBuffer.Get(), 0);
-
-    FShaderProgram* Program = GetParticleSpriteShaderProgram();
-    if (Program == nullptr)
-    {
-        return false;
-    }
-
-    Program->Bind(Context->DeviceContext);
-
-    ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::DepthReadOnly);
-    ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::AlphaBlend);
-    ID3D11RasterizerState* RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(
-        Context->RenderBus->GetViewMode() == EViewMode::Wireframe ? ERasterizerType::WireFrame : ERasterizerType::SolidBackCull);
-    Context->DeviceContext->OMSetDepthStencilState(DepthState, 0);
-    Context->DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
-    Context->DeviceContext->RSSetState(RasterizerState);
-
-    uint32 Strides[2] = { sizeof(FParticleSpriteQuadVertex), sizeof(FParticleSpriteInstanceData) };
-    uint32 Offsets[2] = { 0, 0 };
-    ID3D11Buffer* VertexBuffers[2] = { QuadVertexBuffer.Get(), InstanceBuffer.Get() };
-    ID3D11Buffer* IndexBufferPtr = IndexBuffer.Get();
-    Context->DeviceContext->IASetVertexBuffers(0, 2, VertexBuffers, Strides, Offsets);
-    Context->DeviceContext->IASetIndexBuffer(IndexBufferPtr, DXGI_FORMAT_R32_UINT, 0);
-    Context->DeviceContext->DrawIndexedInstanced(6, static_cast<uint32>(Instances.size()), 0, 0, 0);
     return true;
 }
 

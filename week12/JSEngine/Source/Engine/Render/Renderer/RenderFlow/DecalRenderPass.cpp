@@ -29,6 +29,11 @@ namespace
         {
             return nullptr;
         }
+        if (Cmd.Material->GetShaderType() == EMaterialShaderType::None)
+        {
+            UE_LOG_WARNING("[Render] ShaderType None material cannot be drawn by DecalRenderPass: %s", Cmd.Material->GetName().c_str());
+            return nullptr;
+        }
 
         const FVertexFactoryDesc& VertexFactoryDesc = FVertexFactoryRegistry::Get(Cmd.VertexFactoryType);
 
