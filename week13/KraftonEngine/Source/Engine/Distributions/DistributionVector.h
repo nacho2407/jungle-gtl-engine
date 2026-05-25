@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Distributions.h"
 #include "Distribution.h"
 #include "Object/Reflection/ObjectMacros.h"
@@ -83,6 +83,13 @@ public:
 	/** Whether the distribution data has been cooked or the object itself is available */
 	bool IsCreated() const { return Distribution != nullptr; }
 
+	/**
+	 * 
+	 * \param Time
+	 * \param Data: Distribution Data
+	 * \param InRandomStream
+	 * \return 
+	 */
 	FVector GetValue(float Time = 0.0f, UObject* Data = nullptr, struct FRandomStream* InRandomStream = nullptr) const;
 
 	bool Serialize(FArchive& Ar);

@@ -5,10 +5,13 @@
 void UParticleModuleColor::Spawn(const FSpawnContext& Context)
 {
 	SPAWN_INIT;
-	Particle.BaseColor.R = StartColor.R / 255.0f;
-	Particle.BaseColor.G = StartColor.G / 255.0f;
-	Particle.BaseColor.B = StartColor.B / 255.0f;
-	Particle.BaseColor.A = StartAlpha;
+	FVector Color = StartColor.GetValue(Context.Owner.EmitterTime);
+	float Alpha = StartAlpha.GetValue(Context.Owner.EmitterTime);
+
+	Particle.BaseColor.R = Color.R;
+	Particle.BaseColor.G = Color.G;
+	Particle.BaseColor.B = Color.B;
+	Particle.BaseColor.A = Alpha;
 	Particle.Color = Particle.BaseColor;
 }
 
@@ -30,8 +33,8 @@ void UParticleModuleColor::Serialize(FArchive& Ar)
 
 	// FColor는 trivially copyable (uint32 R,G,B,A) — generic template으로 한 번에 쓰면
 	// 엔디안 문제만 없으면 안전하다.
-	Ar << StartColor;
-	Ar << StartAlpha;
+	StartColor.Serialize(Ar);
+	StartAlpha.Serialize(Ar);
 
 	bool bClamp = bClampAlpha;
 	Ar << bClamp;

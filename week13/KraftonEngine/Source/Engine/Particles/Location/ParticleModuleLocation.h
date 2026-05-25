@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "ParticleModuleLocationBase.h"
-
+#include "Distributions/DistributionVector.h"
 #include "Source/Engine/Particles/Location/ParticleModuleLocation.generated.h"
 
 UCLASS()
@@ -16,7 +16,7 @@ public:
 	 *	Retrieved using the EmitterTime at the spawn of the particle.
 	 */
 	UPROPERTY(EditAnywhere, Category = "Location")
-	FVector StartLocation;
+	struct FRawDistributionVector StartLocation;
 
 	/*
 	Spawn

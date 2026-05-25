@@ -1,4 +1,4 @@
-#include "ParticleSystemEditorWidget.h"
+﻿#include "ParticleSystemEditorWidget.h"
 
 #include "imgui.h"
 #include "Object/Object.h"
@@ -2777,7 +2777,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Location"))
         {
-            bChanged |= ImGui::DragFloat3("Start Location", Location->StartLocation.Data, 0.1f);
+			DrawRawDistributionVector("Start Location", Location->StartLocation, bChanged, Location);
         }
     }
     else if (UParticleModuleVelocity* Velocity = Cast<UParticleModuleVelocity>(Module))
@@ -2794,7 +2794,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Size"))
         {
-            bChanged |= ImGui::DragFloat3("Start Size", Size->StartSize.Data, 0.05f, 0.0f, 10000.0f);
+			DrawRawDistributionVector("Start Size", Size->StartSize, bChanged, Size);
         }
     }
     else if (UParticleModuleColor* Color = Cast<UParticleModuleColor>(Module))
@@ -2802,19 +2802,8 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Color"))
         {
-            float ColorRGB[3] = {
-                Color->StartColor.R / 255.0f,
-                Color->StartColor.G / 255.0f,
-                Color->StartColor.B / 255.0f,
-            };
-            if (ImGui::ColorEdit3("Start Color", ColorRGB))
-            {
-                Color->StartColor.R = static_cast<uint32>(Clamp01(ColorRGB[0], 0.0f, 1.0f) * 255.0f);
-                Color->StartColor.G = static_cast<uint32>(Clamp01(ColorRGB[1], 0.0f, 1.0f) * 255.0f);
-                Color->StartColor.B = static_cast<uint32>(Clamp01(ColorRGB[2], 0.0f, 1.0f) * 255.0f);
-                bChanged = true;
-            }
-            bChanged |= ImGui::DragFloat("Start Alpha", &Color->StartAlpha, 0.01f, 0.0f, 1.0f);
+			DrawRawDistributionVector("Start Color", Color->StartColor, bChanged, Color);
+			DrawRawDistributionFloat("Start Alpha", Color->StartAlpha, bChanged, Color);
             bool bClamp = Color->bClampAlpha;
             if (ImGui::Checkbox("Clamp Alpha", &bClamp))
             { Color->bClampAlpha = bClamp ? 1 : 0; bChanged = true; }
