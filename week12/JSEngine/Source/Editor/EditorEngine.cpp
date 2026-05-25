@@ -1292,6 +1292,7 @@ void UEditorEngine::CloseScene()
 			ViewportClient->DestroyCamera();
 			ViewportClient->SetWorld(nullptr);
 		}
+		ViewerPtr->Shutdown();
 	}
 
 	Viewers.clear();
