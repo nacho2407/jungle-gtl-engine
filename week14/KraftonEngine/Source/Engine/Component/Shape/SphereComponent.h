@@ -15,7 +15,6 @@ public:
 	float GetScaledSphereRadius() const;
 	float GetUnscaledSphereRadius() const { return SphereRadius; }
 
-	void ContributeSelectedVisuals(FScene& Scene) const override;
 	void UpdateWorldAABB() const override;
 	void PostEditProperty(const char* PropertyName) override;
 protected:

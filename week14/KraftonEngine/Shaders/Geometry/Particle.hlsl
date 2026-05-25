@@ -17,7 +17,7 @@ PS_Input_Particle VS(VS_Input_PCUV input)
 
 float4 PS(PS_Input_Particle input) : SV_TARGET
 {
-    float4 tex = DiffuseTexture.Sample(LinearClampSampler, input.texcoord);
+    float4 tex = DiffuseTexture.Sample(LinearWrapSampler, input.texcoord);
     float4 color = tex * input.color;
     color.rgb = ApplyHeightFog(color.rgb, input.worldPos);
     return color;

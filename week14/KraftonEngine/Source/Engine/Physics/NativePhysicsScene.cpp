@@ -1,10 +1,12 @@
 #include "Physics/NativePhysicsScene.h"
 #include "Collision/Math/CollisionMath.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/ShapeComponent.h"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 
 #include <algorithm>
+#include <cmath>
 
 void FNativePhysicsScene::Initialize(UWorld* InWorld)
 {
@@ -482,4 +484,41 @@ bool FNativePhysicsScene::RaycastByObjectTypes(const FVector& Start, const FVect
 			const uint32 Bit = 1u << static_cast<uint32>(Comp->GetCollisionObjectType());
 			return (Bit & ObjectTypeMask) != 0;
 		}, OutHit);
+}
+
+bool FNativePhysicsScene::SphereSweepShapeComponents(const FVector& Start, const FVector& Dir, float MaxDist, float Radius,
+	FHitResult& OutHit, ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
+{
+	if (MaxDist <= 0.0f || Radius < 0.0f)
+	{
+		return false;
+	}
+
+	float ClosestDist = MaxDist;
+	bool bFound = false;
+
+	for (UPrimitiveComponent* Comp : RegisteredComponents)
+	{
+		if (!Comp) continue;
+		UShapeComponent* Shape = Cast<UShapeComponent>(Comp);
+		if (!Shape) continue;
+		if (IgnoreActor && Comp->GetOwner() == IgnoreActor) continue;
+		if (Comp->GetCollisionResponseToChannel(TraceChannel) != ECollisionResponse::Block) continue;
+
+		FHitResult CandidateHit;
+		if (!FCollisionMath::SweepSphereShapeComponent(Start, Dir, MaxDist, Radius, Shape, CandidateHit))
+		{
+			continue;
+		}
+		if (CandidateHit.Distance >= ClosestDist)
+		{
+			continue;
+		}
+
+		ClosestDist = CandidateHit.Distance;
+		bFound = true;
+		OutHit = CandidateHit;
+	}
+
+	return bFound;
 }

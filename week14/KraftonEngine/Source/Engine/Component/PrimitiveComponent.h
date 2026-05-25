@@ -66,6 +66,7 @@ public:
 	void EndPlay() override;
 
 	void PostEditProperty(const char* PropertyName) override;
+	void SetRelativeScale(const FVector& NewScale) override;
 
 	virtual FMeshBuffer* GetMeshBuffer() const { return nullptr; }
 	virtual FMeshDataView GetMeshDataView() const { return {}; }

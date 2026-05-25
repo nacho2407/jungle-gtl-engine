@@ -38,7 +38,9 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 
 		FVector Direction = Move / MoveDistance;
 		FHitResult Hit;
-		if (!World->PhysicsRaycast(Particle->OldPosition, Direction, MoveDistance, Hit, TraceChannel, IgnoreActor))
+		const float SweepRadius = SphereRadius > 0.0f ? SphereRadius : 0.0f;
+
+		if (!World->PhysicsSphereSweepShapeComponents(Particle->OldPosition, Direction, MoveDistance, SweepRadius, Hit, TraceChannel, IgnoreActor))
 		{
 			continue;
 		}
@@ -54,7 +56,8 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 		}
 		Normal.Normalize();
 
-		Particle->Position = Hit.WorldHitLocation + Normal * Radius;
+		const float PositionBias = Bias > 0.0f ? Bias : 0.0f;
+		Particle->Position = Hit.WorldHitLocation + Normal * PositionBias;
 
 		if (Response == EParticleCollisionResponse::Kill)
 		{
