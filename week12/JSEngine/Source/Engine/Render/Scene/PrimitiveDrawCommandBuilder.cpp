@@ -19,6 +19,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "Particle/ParticleSystemComponent.h"
+
 namespace
 {
 	void BuildBoneMatrixConstants(const USkeletalMeshComponent* SkeletalMeshComp, FBoneMatrixConstants& OutConstants)
@@ -536,6 +538,49 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
 			AddSurfaceCommandByMaterial(RenderBus, ViewMode, Cmd);
 		}
+		return true;
+	}
+	    
+	case EPrimitiveType::EPT_ParticleSystem:
+	{
+	    if (!ShowFlags.bParticle) return true;
+	    
+	    UParticleSystemComponent* ParticleComp = static_cast<UParticleSystemComponent*>(Primitive);
+	    const int32 SnapshotCount = ParticleComp->GetEmitterRenderDataSnapshotCount();
+	
+	    for (int32 SnapshotIndex = 0; SnapshotIndex < SnapshotCount; ++SnapshotIndex)
+	    {
+	        const FDynamicEmitterDataBase* EmitterData = ParticleComp->GetEmitterRenderDataSnapshot(SnapshotIndex);
+	        if (EmitterData == nullptr)
+	        {
+	            continue;
+	        }
+
+	        const FDynamicEmitterReplayDataBase& ReplayData = EmitterData->GetSource();
+	        if (EmitterData->GetEmitterType() != EDynamicEmitterType::Sprite || ReplayData.ActiveParticleCount <= 0)
+	        {
+	            continue;
+	        }
+	        
+	        FRenderCommand Cmd = {};
+	        Cmd.Type = ERenderCommandType::Particle;
+	        Cmd.SourcePrimitive = ParticleComp;
+	        Cmd.Material = EmitterData->Material;
+	        Cmd.ParticleEmitterData = EmitterData;
+	        Cmd.ParticleReplayData = &ReplayData;
+	        Cmd.PerObjectConstants = FPerObjectConstants{ FMatrix::Identity, FColor::White().ToVector4() };
+	        Cmd.WorldAABB = ParticleComp->GetWorldAABB();
+	        Cmd.Constants.Particle.ComponentToWorld = EmitterData->ComponentToWorld;
+	        Cmd.Constants.Particle.CameraRight = RenderBus.GetCameraRight();
+	        Cmd.Constants.Particle.CameraUp = RenderBus.GetCameraUp();
+	        Cmd.Constants.Particle.EmitterType = static_cast<uint32>(EmitterData->GetEmitterType());
+	        Cmd.Constants.Particle.CoordinateSpace = static_cast<uint32>(ReplayData.CoordinateSpace);
+	        Cmd.Constants.Particle.ActiveParticleCount = static_cast<uint32>(ReplayData.ActiveParticleCount);
+	        Cmd.Constants.Particle.bUseLocalSpace = ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local ? 1u : 0u;
+
+	        RenderBus.AddCommand(ERenderPass::Particle, Cmd);
+	    }
+
 		return true;
 	}
 

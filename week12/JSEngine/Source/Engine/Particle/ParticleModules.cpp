@@ -561,12 +561,11 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 	RenderData->ReplayData.SortMode = RequiredModule != nullptr
 		? RequiredModule->SortMode
 		: EParticleSortMode::ViewDepthBackToFront;
-	RenderData->ReplayData.Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
-	RenderData->ReplayData.MaterialInterface = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+	RenderData->Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
 
 	// snapshot의 Location / OldLocation은 이미 world space이므로 renderer가 component transform을 다시 적용하면 안 됨!
 	RenderData->ReplayData.CoordinateSpace = EParticleCoordinateSpace::World;
-	RenderData->ReplayData.ComponentToWorld = FMatrix::Identity;
+	RenderData->ComponentToWorld = FMatrix::Identity;
 	RenderData->ReplayData.Scale = FVector::OneVector;
 
 	// renderer가 설정을 읽기 위한 단순 참조용 포인터. renderer 쪽에서 수정 금지!
@@ -661,10 +660,10 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	// ReplayData
 	RenderData->ReplayData.ActiveParticleCount = ActiveParticleCount;
 	RenderData->ReplayData.ParticleStride = ParticleStride;
-	RenderData->ReplayData.Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+	RenderData->Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
 
 	// renderer가 raw particle의 위치를 render space로 해석할 수 있도록 좌표계 메타데이터를 전달
-	RenderData->ReplayData.ComponentToWorld = InEmitterInstance->GetOwner().GetComponentToWorld();
+	RenderData->ComponentToWorld = InEmitterInstance->GetOwner().GetComponentToWorld();
 	RenderData->ReplayData.CoordinateSpace = RequiredModule != nullptr
 		? RequiredModule->CoordinateSpace
 		: EParticleCoordinateSpace::Local;

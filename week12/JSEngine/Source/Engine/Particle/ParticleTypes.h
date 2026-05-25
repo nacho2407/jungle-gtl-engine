@@ -104,8 +104,6 @@ struct FDynamicEmitterReplayDataBase
 	int32 ParticleStride = 0;
 	FParticleDataContainer DataContainer;
 
-	UMaterialInterface* Material = nullptr;
-	FMatrix ComponentToWorld = FMatrix::Identity;
 	EParticleCoordinateSpace CoordinateSpace = EParticleCoordinateSpace::Local;
 	FVector Scale = FVector::OneVector;
 	EParticleSortMode SortMode = EParticleSortMode::ViewDepthBackToFront;
@@ -138,7 +136,6 @@ struct FDynamicSpriteEmitterReplayDataBase : public FDynamicEmitterReplayDataBas
 {
 	FDynamicSpriteEmitterReplayDataBase() { eEmitterType = EDynamicEmitterType::Sprite; }
 
-	UMaterialInterface* MaterialInterface = nullptr;
 	UParticleModuleRequired* RequiredModule = nullptr;
 };
 
@@ -162,6 +159,8 @@ struct FDynamicEmitterDataBase
 	virtual ~FDynamicEmitterDataBase() = default;
 
 	int32 EmitterIndex = -1;
+	UMaterialInterface* Material = nullptr;
+	FMatrix ComponentToWorld = FMatrix::Identity;
 
 	virtual const FDynamicEmitterReplayDataBase& GetSource() const = 0;
 	EDynamicEmitterType GetEmitterType() const { return GetSource().eEmitterType; }

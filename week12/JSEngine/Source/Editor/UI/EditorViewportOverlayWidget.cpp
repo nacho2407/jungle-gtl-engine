@@ -323,6 +323,7 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
     ImGui::Text("Show");
     ImGui::Checkbox("Primitives", &Settings.ShowFlags.bPrimitives);
     ImGui::Checkbox("Skeletal Mesh", &Settings.ShowFlags.bSkeletalMesh);
+    ImGui::Checkbox("Particle", &Settings.ShowFlags.bParticle);
     ImGui::Checkbox("BillboardText", &Settings.ShowFlags.bBillboardText);
 	ImGui::Checkbox("Axis", &Settings.ShowFlags.bAxis);
     ImGui::Checkbox("Grid", &Settings.ShowFlags.bGrid);
