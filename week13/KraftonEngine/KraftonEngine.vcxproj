@@ -557,6 +557,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Core\Types\PropertyTypes.cpp" />
     <ClCompile Include="Source\Engine\Debug\DebugDrawQueue.cpp" />
     <ClCompile Include="Source\Engine\Debug\DrawDebugHelpers.cpp" />
+    <ClCompile Include="Source\Engine\Distributions\DistributionFloat.cpp" />
     <ClCompile Include="Source\Engine\Distributions\DistributionVector.cpp" />
     <ClCompile Include="Source\Engine\Distributions\Distributions.cpp" />
     <ClCompile Include="Source\Engine\FloatCurve\FloatCurveAsset.cpp" />
@@ -942,6 +943,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Debug\DebugDrawQueue.h" />
     <ClInclude Include="Source\Engine\Debug\DrawDebugHelpers.h" />
     <ClInclude Include="Source\Engine\Distributions\Distribution.h" />
+    <ClInclude Include="Source\Engine\Distributions\DistributionFloat.h" />
     <ClInclude Include="Source\Engine\Distributions\DistributionVector.h" />
     <ClInclude Include="Source\Engine\Distributions\Distributions.h" />
     <ClInclude Include="Source\Engine\FloatCurve\FloatCurveAsset.h" />

@@ -1,6 +1,27 @@
-#include "DistributionVector.h"
+﻿#include "DistributionVector.h"
 #include "Math/RandomStream.h"
+#include "Serialization/Archive.h"
+#include "Object/Reflection/ObjectFactory.h"
 #include <cstdlib>
+
+void UDistributionVector::Serialize(FArchive& Ar)
+{
+	UObject::Serialize(Ar);
+}
+
+void UDistributionVectorConstant::Serialize(FArchive& Ar)
+{
+	UDistributionVector::Serialize(Ar);
+	Ar << Constant;
+}
+
+void UDistributionVectorUniform::Serialize(FArchive& Ar)
+{
+	UDistributionVector::Serialize(Ar);
+	Ar << Min;
+	Ar << Max;
+	Ar << bLockAxes;
+}
 
 FVector UDistributionVectorUniform::GetValue(float Time, UObject* Data, FRandomStream* InRandomStream) const
 {
@@ -34,4 +55,35 @@ FVector FRawDistributionVector::GetValue(float Time, UObject* Data, FRandomStrea
 		return Distribution->GetValue(Time, Data, InRandomStream);
 	}
 	return FVector::ZeroVector;
+}
+
+bool FRawDistributionVector::Serialize(FArchive& Ar)
+{
+	FRawDistribution::Serialize(Ar);
+	Ar << MinValue;
+	Ar << MaxValue;
+	Ar << MinValueVec;
+	Ar << MaxValueVec;
+
+	FString ClassName = (Ar.IsSaving() && Distribution)
+		? FString(Distribution->GetClass()->GetName())
+		: FString("None");
+	Ar << ClassName;
+
+	if (Ar.IsLoading())
+	{
+		Distribution = nullptr;
+		if (!ClassName.empty() && ClassName != "None")
+		{
+			UObject* Created = FObjectFactory::Get().Create(ClassName, nullptr);
+			Distribution = Cast<UDistributionVector>(Created);
+		}
+	}
+
+	if (Distribution)
+	{
+		Distribution->Serialize(Ar);
+	}
+
+	return true;
 }

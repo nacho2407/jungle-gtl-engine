@@ -171,6 +171,15 @@ FVector FVector::operator/(float Scalar) const {
 	return ret;
 }
 
+FVector FVector::operator-() const
+{
+	FVector ret;
+	ret.X = -X;
+	ret.Y = -Y;
+	ret.Z = -Z;
+	return ret;
+}
+
 FVector& FVector::operator+=(const FVector& Other) {
 	*this = *this + Other;
 	return *this;

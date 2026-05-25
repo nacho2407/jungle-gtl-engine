@@ -342,8 +342,20 @@ void UParticleEmitter::InitializeDefaultSpriteEmitter()
 	Velocity->bSpawnModule       = true;
 	Velocity->bUpdateModule      = false;
 	Velocity->bFinalUpdateModule = false;
-	Velocity->MinVelocity        = FVector(0.0f, 0.f, 20.0f);
-	Velocity->MaxVelocity        = FVector(0.0f, 0.f, 80.0f);
+
+	Velocity->StartVelocity.Distribution = UObjectManager::Get().CreateObject<UDistributionVectorUniform>(Velocity);
+	if (UDistributionVectorUniform* Uniform = Cast<UDistributionVectorUniform>(Velocity->StartVelocity.Distribution))
+	{
+		Uniform->Min = FVector(0.0f, 0.f, 20.0f);
+		Uniform->Max = FVector(0.0f, 0.f, 80.0f);
+	}
+
+	Velocity->StartVelocityRadial.Distribution = UObjectManager::Get().CreateObject<UDistributionFloatUniform>(Velocity);
+	if (UDistributionFloatUniform* Uniform = Cast<UDistributionFloatUniform>(Velocity->StartVelocityRadial.Distribution))
+	{
+		Uniform->Min = 0.0f;
+		Uniform->Max = 0.0f;
+	}
 
 	LOD->Modules.push_back(Velocity);
 
