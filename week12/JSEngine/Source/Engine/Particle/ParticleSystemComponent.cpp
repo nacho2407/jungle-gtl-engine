@@ -110,6 +110,9 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 	}
 
 	Template = InTemplate;
+	// Template 변경 
+	// -> 기존 Emitter Instance 모두 해제 
+	// -> 새 Template 기준으로 EmitterIntsnace 생성
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
 }
@@ -141,7 +144,11 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		}
 	}
 
+	// Render Data 수집
 	PackRenderData();
+	
+	// Tick이 끝날 때 Event를 처리
+    FinalizeTickComponent();
 }
 
 void UParticleSystemComponent::FinalizeTickComponent()

@@ -13,10 +13,10 @@ struct FParticleEventBurstData;
 struct FDynamicEmitterDataBase;
 struct FParticleEventCollideData;
 
-/******************************************************
+/******************************************************************
 * Particle System 런타임 객체 관리 컴포넌트
-* Particle System이 Asset이라면 PSC는 UParticleSystem을 복제해서 Runtime에
-******************************************************/
+* Particle System이 Asset이라면 PSC는 Asset을 참조하는 개별 Instance
+*******************************************************************/
 UCLASS(SpawnableComponent, DisplayName = "Particle System Component", Category = "Effects")
 class UParticleSystemComponent : public UPrimitiveComponent
 {
