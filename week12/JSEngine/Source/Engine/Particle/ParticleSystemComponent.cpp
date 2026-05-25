@@ -203,20 +203,22 @@ void UParticleSystemComponent::CreateEmitterInstances()
 		UParticleLODLevel* LODLevel = EmitterTemplate->LODLevels.empty() ? nullptr : EmitterTemplate->LODLevels[0];
 		UParticleModuleTypeDataBase* TypeData = LODLevel != nullptr ? LODLevel->TypeDataModule : nullptr;
 
+		if (TypeData == nullptr)
+		{
+			UE_LOG_WARNING("[Particle] Emitter has no TypeDataModule. Falling back to base particle emitter instance.");
+		}
+
 		FParticleEmitterInstance* Instance = TypeData != nullptr
 			? TypeData->CreateInstance(EmitterTemplate, *InstanceOwner)
 			: new FParticleEmitterInstance(*InstanceOwner);
 
-		if (Instance != nullptr)
+		if (Instance != nullptr && Instance->Init(EmitterTemplate, 0))
 		{
-			Instance->SpriteTemplate = EmitterTemplate;
-			Instance->CurrentLODLevelIndex = 0;
-			Instance->CurrentLODLevel = LODLevel;
-			Instance->ParticleStride = EmitterTemplate->ParticleSize.empty() ? static_cast<int32>(sizeof(FBaseParticle)) : EmitterTemplate->ParticleSize[0];
-			Instance->MaxActiveParticles = LODLevel != nullptr && LODLevel->RequiredModule != nullptr
-				? LODLevel->RequiredModule->MaxParticles
-				: 0;
 			EmitterInstances.push_back(Instance);
+		}
+		else
+		{
+			delete Instance;
 		}
 	}
 }
