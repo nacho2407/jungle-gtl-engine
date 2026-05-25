@@ -197,7 +197,6 @@ class UParticleModuleTypeDataBase : public UParticleModule
 public:
 	GENERATED_BODY(UParticleModuleTypeDataBase, UParticleModule)
 
-	virtual void Build();
 	virtual FParticleEmitterInstance* CreateInstance(
 		UParticleEmitter* InEmitterTemplate,
 		IParticleEmitterInstanceOwner& InOwner);

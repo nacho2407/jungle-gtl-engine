@@ -152,6 +152,13 @@ namespace
 			? nullptr
 			: ParticleHelper::AlignParticlePointer(RenderData.OwnedParticleData.data());
 	}
+
+	FVector GetParticleOldLocationForRender(const FParticleEmitterInstance& EmitterInstance, const FBaseParticle& Particle)
+	{
+		return EmitterInstance.UsesLocalSpace()
+			? EmitterInstance.GetOwner().GetComponentToWorld().TransformPosition(Particle.OldLocation)
+			: Particle.OldLocation;
+	}
 } // namespace
 
 int32 UParticleModule::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
@@ -336,10 +343,6 @@ UParticleSystem::~UParticleSystem()
 	Emitters.clear();
 }
 
-void UParticleModuleTypeDataBase::Build()
-{
-}
-
 FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(
 	UParticleEmitter* InEmitterTemplate,
 	IParticleEmitterInstanceOwner& InOwner)
@@ -400,6 +403,7 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 		const FBaseParticle& SourceParticle = *reinterpret_cast<const FBaseParticle*>(SourceParticleData);
 		FBaseParticle& SnapshotParticle = *reinterpret_cast<FBaseParticle*>(DestinationParticleData);
 		SnapshotParticle.Location = InEmitterInstance->GetParticleLocationForRender(SourceParticle);
+		SnapshotParticle.OldLocation = GetParticleOldLocationForRender(*InEmitterInstance, SourceParticle);
 		RenderData->OwnedParticleIndices[ActiveIndex] = static_cast<uint16>(ActiveIndex);
 	}
 
@@ -410,7 +414,13 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 	RenderData->ReplayData.SortMode = RequiredModule != nullptr
 		? RequiredModule->SortMode
 		: EParticleSortMode::ViewDepthBackToFront;
+	RenderData->ReplayData.Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
 	RenderData->ReplayData.MaterialInterface = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+
+	// snapshot의 Location / OldLocation은 이미 world space이므로 renderer가 component transform을 다시 적용하면 안 됨!
+	RenderData->ReplayData.CoordinateSpace = EParticleCoordinateSpace::World;
+	RenderData->ReplayData.ComponentToWorld = FMatrix::Identity;
+	RenderData->ReplayData.Scale = FVector::OneVector;
 
 	// renderer가 설정을 읽기 위한 단순 참조용 포인터. renderer 쪽에서 수정 금지!
 	RenderData->ReplayData.RequiredModule = RequiredModule;
