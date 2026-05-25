@@ -1,4 +1,4 @@
-#include "ShaderManager.h"
+﻿#include "ShaderManager.h"
 #include "Platform/Paths.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Notification.h"
@@ -171,10 +171,10 @@ FShader* FShaderManager::GetOrCreateShadowDepthPermutation(EShadowDepthDefines::
 }
 
 FShader* FShaderManager::GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel LightingModel,
-	EUberLitDefines::EVertexFactory VertexFactory, EShaderErrorMode ErrorMode, bool bWeightBoneHeatMap)
+	EUberLitDefines::EVertexFactory VertexFactory, EShaderErrorMode ErrorMode, bool bWeightBoneHeatMap, bool bApplyFog)
 {
-	const D3D_SHADER_MACRO* Defines = EUberLitDefines::GetDefines(LightingModel, VertexFactory, bWeightBoneHeatMap);
-	return PreCompile(EUberLitDefines::MakePermutationKey(LightingModel, VertexFactory, bWeightBoneHeatMap), Defines, ErrorMode);
+	const D3D_SHADER_MACRO* Defines = EUberLitDefines::GetDefines(LightingModel, VertexFactory, bWeightBoneHeatMap, bApplyFog);
+	return PreCompile(EUberLitDefines::MakePermutationKey(LightingModel, VertexFactory, bWeightBoneHeatMap, bApplyFog), Defines, ErrorMode);
 }
 
 // ============================================================

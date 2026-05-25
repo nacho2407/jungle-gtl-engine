@@ -81,7 +81,7 @@ private:
 	void EmitLineCommand(FLineGeometry& Lines, FShader* Shader, const FDrawCommandRenderState& RS);
 	void ApplyMaterialRenderState(FDrawCommandRenderState& OutState, const UMaterialInterface* Mat, const FDrawCommandRenderState& BaseState);
 	FShader* SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode,
-		bool bUseSkeletalVertexFactory, bool bUseInstancedVertexFactory, bool bWeightBoneHeatMap);
+		bool bUseSkeletalVertexFactory, bool bUseInstancedVertexFactory, bool bWeightBoneHeatMap, bool bApplyFog);
 
 	FConstantBuffer* GetPerObjectCBForProxy(FScene* Scene, const FPrimitiveSceneProxy& Proxy);
 	void EnsurePerObjectCBPoolCapacity(FScene* Scene, uint32 RequiredCount);
