@@ -8,6 +8,7 @@ class UParticleModule;
 class UParticleSystemComponent;
 class UParticleModuleRequired;
 class UParticleModuleTypeDataBase;
+class UParticleEmitter;
 
 #include "Source/Engine/Particles/ParticleSystem.generated.h"
 
@@ -33,6 +34,7 @@ public:
 	TArray<EParticleModuleEditState>& GetMutableModuleEditStates() { return ModuleEditStates; }
 	UParticleModuleTypeDataBase* GetTypeDataModule() const { return TypeDataModule; }
 	EParticleModuleEditState GetModuleEditState(int32 ModuleIndex) const;
+	UParticleModule* ResolveModule(int32 ModuleIndex, const UParticleEmitter* OwnerEmitter) const;
 
 	void SetLevel(int32 InLevel) { Level = InLevel; }
 	void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
@@ -49,6 +51,19 @@ public:
 		for (UParticleModule* Module : Modules)
 		{
 			if (T* TypedModule = dynamic_cast<T*>(Module))
+			{
+				return TypedModule;
+			}
+		}
+		return nullptr;
+	}
+
+	template<typename T>
+	T* FindResolvedModule(const UParticleEmitter* OwnerEmitter) const
+	{
+		for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
+		{
+			if (T* TypedModule = dynamic_cast<T*>(ResolveModule(ModuleIndex, OwnerEmitter)))
 			{
 				return TypedModule;
 			}

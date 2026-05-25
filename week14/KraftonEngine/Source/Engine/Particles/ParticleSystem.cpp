@@ -133,13 +133,9 @@ UParticleLODLevel::~UParticleLODLevel()
 	delete TypeDataModule;
 	TypeDataModule = nullptr;
 
-	for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
+	for (UParticleModule* Module : Modules)
 	{
-		if (GetModuleEditState(ModuleIndex) == EParticleModuleEditState::Shared)
-		{
-			continue;
-		}
-		delete Modules[ModuleIndex];
+		delete Module;
 	}
 	Modules.clear();
 	ModuleEditStates.clear();
@@ -149,6 +145,7 @@ void UParticleLODLevel::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
 	SerializeProperties(Ar, PF_Save);
+	Ar << ModuleEditStates;
 	NormalizeModuleEditStates(Level == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
 }
 
@@ -160,6 +157,36 @@ EParticleModuleEditState UParticleLODLevel::GetModuleEditState(int32 ModuleIndex
 	}
 
 	return ModuleEditStates[ModuleIndex];
+}
+
+UParticleModule* UParticleLODLevel::ResolveModule(int32 ModuleIndex, const UParticleEmitter* OwnerEmitter) const
+{
+	if (ModuleIndex < 0 || ModuleIndex >= static_cast<int32>(Modules.size()))
+	{
+		return nullptr;
+	}
+
+	if (GetModuleEditState(ModuleIndex) != EParticleModuleEditState::Shared || !OwnerEmitter)
+	{
+		return Modules[ModuleIndex];
+	}
+
+	for (int32 SourceLODIndex = Level - 1; SourceLODIndex >= 0; --SourceLODIndex)
+	{
+		const UParticleLODLevel* SourceLODLevel = OwnerEmitter->GetLODLevel(SourceLODIndex);
+		if (!SourceLODLevel || SourceLODLevel == this)
+		{
+			continue;
+		}
+
+		UParticleModule* SourceModule = SourceLODLevel->ResolveModule(ModuleIndex, OwnerEmitter);
+		if (SourceModule)
+		{
+			return SourceModule;
+		}
+	}
+
+	return Modules[ModuleIndex];
 }
 
 void UParticleLODLevel::SetModuleEditState(int32 ModuleIndex, EParticleModuleEditState State)
