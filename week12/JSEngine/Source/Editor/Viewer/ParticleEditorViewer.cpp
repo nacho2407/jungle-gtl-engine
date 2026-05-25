@@ -159,6 +159,20 @@ void FParticleEditorViewer::SelectRequiredModule()
 	SelectedModuleIndex = -1;
 }
 
+void FParticleEditorViewer::SelectSpawnModule()
+{
+	UParticleLODLevel* LOD = GetSelectedLODLevel();
+	if (!LOD || !LOD->SpawnModule)
+	{
+		SelectionType = LOD ? EParticleEditorSelectionType::LODLevel : EParticleEditorSelectionType::None;
+		SelectedModuleIndex = -1;
+		return;
+	}
+
+	SelectionType = EParticleEditorSelectionType::SpawnModule;
+	SelectedModuleIndex = -1;
+}
+
 void FParticleEditorViewer::SelectTypeDataModule()
 {
 	UParticleLODLevel* LOD = GetSelectedLODLevel();
@@ -254,6 +268,12 @@ UParticleModuleRequired* FParticleEditorViewer::GetSelectedRequiredModule() cons
 	return LOD ? LOD->RequiredModule : nullptr;
 }
 
+UParticleModuleSpawn* FParticleEditorViewer::GetSelectedSpawnModule() const
+{
+	UParticleLODLevel* LOD = GetSelectedLODLevel();
+	return LOD ? LOD->SpawnModule : nullptr;
+}
+
 UParticleModuleTypeDataBase* FParticleEditorViewer::GetSelectedTypeDataModule() const
 {
 	UParticleLODLevel* LOD = GetSelectedLODLevel();
@@ -277,6 +297,12 @@ UObject* FParticleEditorViewer::GetSelectedObject() const
 	{
 		UParticleLODLevel* LOD = GetSelectedLODLevel();
 		return LOD ? LOD->RequiredModule : nullptr;
+	}
+
+	case EParticleEditorSelectionType::SpawnModule:
+	{
+		UParticleLODLevel* LOD = GetSelectedLODLevel();
+		return LOD ? LOD->SpawnModule : nullptr;
 	}
 
 	case EParticleEditorSelectionType::TypeDataModule:
@@ -423,6 +449,14 @@ void FParticleEditorViewer::AddModule(UClass* ModuleClass)
 		UObjectManager::Get().DestroyObject(LOD->RequiredModule);
 		SelectionType = EParticleEditorSelectionType::RequiredModule;
 		LOD->RequiredModule = RequiredModule;
+		SelectedModuleIndex = -1;
+	}
+	else if (UParticleModuleSpawn* SpawnModule = Cast<UParticleModuleSpawn>(Module))
+	{
+		// Spawn rate provider는 LOD의 특수 모듈이므로 일반 Modules 배열에 넣지 않음!
+		UObjectManager::Get().DestroyObject(LOD->SpawnModule);
+		SelectionType = EParticleEditorSelectionType::SpawnModule;
+		LOD->SpawnModule = SpawnModule;
 		SelectedModuleIndex = -1;
 	}
 	else if (UParticleModuleTypeDataBase* TypeDataModule = Cast<UParticleModuleTypeDataBase>(Module))
@@ -883,6 +917,7 @@ UParticleLODLevel* FParticleEditorViewer::CreateDefaultLODLevel(int32 Level)
 	LOD->Level = Level;
 	LOD->bEnabled = true;
 	LOD->RequiredModule = NewObject<UParticleModuleRequired>();
-	LOD->TypeDataModule = nullptr; // Note: 실제 Module이 정해졌을 때 생성
+	LOD->SpawnModule = NewObject<UParticleModuleSpawn>();
+	LOD->TypeDataModule = NewObject<UParticleModuleTypeDataBase>();
 	return LOD;
 }

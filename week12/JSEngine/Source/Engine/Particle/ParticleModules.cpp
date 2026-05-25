@@ -1,114 +1,249 @@
-#include "Particle/ParticleModules.h"
+﻿#include "Particle/ParticleModules.h"
 
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
+#include "Particle/ParticleHelper.h"
 
 namespace
 {
-	// 사용되지 않는 선언 컴파일 경고 방지용. 구현 후 삭제할 것
-	void ParticleNoOp(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+	int32 AlignParticleBytes(int32 Value)
 	{
-		(void)Owner;
-		(void)Offset;
-		(void)DeltaTime;
+		return ParticleHelper::AlignParticleSize(Value);
+	}
+
+	void AddParticlePayloadOffset(
+		FParticleLODLevelRuntimeCache& Cache,
+		UParticleModule* Module,
+		UParticleModuleTypeDataBase* TypeData,
+		int32& InOutParticleBytes)
+	{
+		if (Module == nullptr)
+		{
+			return;
+		}
+
+		const int32 RequiredBytes = Module->RequiredBytes(TypeData);
+		if (RequiredBytes <= 0)
+		{
+			return;
+		}
+
+		InOutParticleBytes = AlignParticleBytes(InOutParticleBytes);
+		Cache.ModulePayloadOffsets[Module] = InOutParticleBytes;
+		InOutParticleBytes += RequiredBytes;
+	}
+
+	void AddInstancePayloadOffset(
+		FParticleLODLevelRuntimeCache& Cache,
+		UParticleModule* Module,
+		UParticleModuleTypeDataBase* TypeData,
+		int32& InOutInstancePayloadSize)
+	{
+		if (Module == nullptr)
+		{
+			return;
+		}
+
+		const int32 RequiredBytes = Module->RequiredBytesPerInstance(TypeData);
+		if (RequiredBytes <= 0)
+		{
+			return;
+		}
+
+		InOutInstancePayloadSize = AlignParticleBytes(InOutInstancePayloadSize);
+		Cache.ModuleInstanceOffsets[Module] = InOutInstancePayloadSize;
+		InOutInstancePayloadSize += RequiredBytes;
+	}
+
+	FParticleLODLevelRuntimeCache BuildLODLevelRuntimeCache(const UParticleLODLevel* LODLevel)
+	{
+		FParticleLODLevelRuntimeCache Cache;
+		Cache.PayloadOffset = AlignParticleBytes(static_cast<int32>(sizeof(FBaseParticle)));
+
+		int32 ParticleBytes = Cache.PayloadOffset;
+		int32 InstancePayloadSize = 0;
+
+		if (LODLevel == nullptr)
+		{
+			Cache.ParticleStride = AlignParticleBytes(ParticleBytes);
+			Cache.InstancePayloadSize = AlignParticleBytes(InstancePayloadSize);
+			return Cache;
+		}
+
+		Cache.RequiredModule = LODLevel->RequiredModule;
+		Cache.SpawnModule = LODLevel->SpawnModule;
+		Cache.TypeDataModule = LODLevel->TypeDataModule;
+
+		if (!LODLevel->bEnabled)
+		{
+			Cache.ParticleStride = AlignParticleBytes(ParticleBytes);
+			Cache.InstancePayloadSize = AlignParticleBytes(InstancePayloadSize);
+			return Cache;
+		}
+
+		UParticleModuleTypeDataBase* TypeData = Cache.TypeDataModule;
+		if (TypeData != nullptr)
+		{
+			const int32 TypeDataPayloadSize = TypeData->GetRequiredPayloadSize();
+			if (TypeDataPayloadSize > 0)
+			{
+				ParticleBytes = AlignParticleBytes(ParticleBytes);
+				ParticleBytes += TypeDataPayloadSize;
+			}
+
+			AddInstancePayloadOffset(Cache, TypeData, TypeData, InstancePayloadSize);
+		}
+
+		if (Cache.SpawnModule == nullptr)
+		{
+			for (UParticleModule* Module : LODLevel->Modules)
+			{
+				if (Module != nullptr && Module->IsSpawnRateModule())
+				{
+					Cache.SpawnModule = Cast<UParticleModuleSpawn>(Module);
+					break;
+				}
+			}
+		}
+
+		// Required / SpawnModule은 Modules 배열과 별개의 특수 모듈이므로 먼저 offset만 계산
+		AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
+		AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
+		AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
+		AddInstancePayloadOffset(Cache, Cache.SpawnModule, TypeData, InstancePayloadSize);
+
+		for (UParticleModule* Module : LODLevel->Modules)
+		{
+			if (Module == nullptr || Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
+			{
+				continue;
+			}
+
+			if (Module->IsSpawnModule())
+			{
+				Cache.SpawnModules.push_back(Module);
+			}
+
+			if (Module->IsUpdateModule())
+			{
+				Cache.UpdateModules.push_back(Module);
+			}
+
+			AddParticlePayloadOffset(Cache, Module, TypeData, ParticleBytes);
+			AddInstancePayloadOffset(Cache, Module, TypeData, InstancePayloadSize);
+		}
+
+		Cache.ParticleStride = AlignParticleBytes(ParticleBytes);
+		Cache.InstancePayloadSize = AlignParticleBytes(InstancePayloadSize);
+		return Cache;
 	}
 }
 
-void UParticleModuleRequired::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+int32 UParticleModule::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	(void)TypeData;
+	return 0;
 }
 
-void UParticleModuleRequired::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+int32 UParticleModule::RequiredBytesPerInstance(UParticleModuleTypeDataBase* TypeData) const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	(void)TypeData;
+	return 0;
 }
 
-void UParticleModuleSpawn::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModule::IsSpawnRateModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return false;
 }
 
-void UParticleModuleSpawn::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModule::IsSpawnModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return false;
 }
 
-void UParticleModuleLifetime::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModule::IsUpdateModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return false;
 }
 
-void UParticleModuleLifetime::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+void UParticleModule::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	(void)Owner;
+	(void)Offset;
+	(void)DeltaTime;
 }
 
-void UParticleModuleLocation::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+void UParticleModule::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	(void)Owner;
+	(void)Offset;
+	(void)DeltaTime;
 }
 
-void UParticleModuleLocation::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleSpawn::IsSpawnRateModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
-void UParticleModuleVelocity::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+UParticleModuleLifetime::UParticleModuleLifetime()
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	Lifetime.Constant = 1.0f;
+	Lifetime.Min = 1.0f;
+	Lifetime.Max = 1.0f;
 }
 
-void UParticleModuleVelocity::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleLifetime::IsSpawnModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
-void UParticleModuleColor::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleLocation::IsSpawnModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
-void UParticleModuleColor::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleVelocity::IsSpawnModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
-void UParticleModuleSize::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+UParticleModuleColor::UParticleModuleColor()
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	StartColor.Constant = FColor::White();
+	StartColor.Min = FColor::White();
+	StartColor.Max = FColor::White();
 }
 
-void UParticleModuleSize::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleColor::IsSpawnModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
-void UParticleModuleCollision::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+UParticleModuleSize::UParticleModuleSize()
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	StartSize.Constant = FVector::OneVector;
+	StartSize.Min = FVector::OneVector;
+	StartSize.Max = FVector::OneVector;
 }
 
-void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleSize::IsSpawnModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
-void UParticleModuleTypeDataBase::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+bool UParticleModuleCollision::IsUpdateModule() const
 {
-	ParticleNoOp(Owner, Offset, DeltaTime);
-}
-
-void UParticleModuleTypeDataBase::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
-{
-	ParticleNoOp(Owner, Offset, DeltaTime);
+	return true;
 }
 
 UParticleLODLevel::~UParticleLODLevel()
 {
 	UObjectManager::Get().DestroyObject(RequiredModule);
 	RequiredModule = nullptr;
+
+	UObjectManager::Get().DestroyObject(SpawnModule);
+	SpawnModule = nullptr;
 
 	for (UParticleModule* Module : Modules)
 	{
@@ -127,7 +262,6 @@ UParticleEmitter::~UParticleEmitter()
 		UObjectManager::Get().DestroyObject(LODLevel);
 	}
 	LODLevels.clear();
-	ParticleSize.clear();
 }
 
 UParticleSystem::~UParticleSystem()
@@ -163,9 +297,28 @@ int32 UParticleModuleTypeDataBase::GetRequiredPayloadSize() const
 	return 0;
 }
 
+int32 FParticleLODLevelRuntimeCache::GetParticlePayloadOffset(UParticleModule* Module) const
+{
+	const auto It = ModulePayloadOffsets.find(Module);
+	return It != ModulePayloadOffsets.end() ? It->second : -1;
+}
+
+int32 FParticleLODLevelRuntimeCache::GetInstancePayloadOffset(UParticleModule* Module) const
+{
+	const auto It = ModuleInstanceOffsets.find(Module);
+	return It != ModuleInstanceOffsets.end() ? It->second : -1;
+}
+
 void UParticleEmitter::CacheEmitterModuleInfo()
 {
-	ParticleSize = CalculateTotalPayloadSize();
+	LODLevelRuntimeCaches.clear();
+	LODLevelRuntimeCaches.reserve(LODLevels.size());
+
+	for (const UParticleLODLevel* LODLevel : LODLevels)
+	{
+		FParticleLODLevelRuntimeCache Cache = BuildLODLevelRuntimeCache(LODLevel);
+		LODLevelRuntimeCaches.push_back(Cache);
+	}
 }
 
 TArray<int32> UParticleEmitter::CalculateTotalPayloadSize() const
@@ -175,14 +328,38 @@ TArray<int32> UParticleEmitter::CalculateTotalPayloadSize() const
 
 	for (const UParticleLODLevel* LODLevel : LODLevels)
 	{
-		int32 PayloadSize = 0;
-		if (LODLevel != nullptr && LODLevel->TypeDataModule != nullptr)
-		{
-			PayloadSize += LODLevel->TypeDataModule->GetRequiredPayloadSize();
-		}
-
-		Result.push_back(static_cast<int32>(sizeof(FBaseParticle)) + PayloadSize);
+		Result.push_back(BuildLODLevelRuntimeCache(LODLevel).ParticleStride);
 	}
 
 	return Result;
+}
+
+FParticleLODLevelRuntimeCache* UParticleEmitter::GetLODLevelRuntimeCache(int32 LODIndex)
+{
+	if (LODIndex < 0 || LODIndex >= static_cast<int32>(LODLevelRuntimeCaches.size()))
+	{
+		return nullptr;
+	}
+
+	return &LODLevelRuntimeCaches[LODIndex];
+}
+
+const FParticleLODLevelRuntimeCache* UParticleEmitter::GetLODLevelRuntimeCache(int32 LODIndex) const
+{
+	if (LODIndex < 0 || LODIndex >= static_cast<int32>(LODLevelRuntimeCaches.size()))
+	{
+		return nullptr;
+	}
+
+	return &LODLevelRuntimeCaches[LODIndex];
+}
+
+FParticleLODLevelRuntimeCache* UParticleEmitter::GetLOD0RuntimeCache()
+{
+	return GetLODLevelRuntimeCache(0);
+}
+
+const FParticleLODLevelRuntimeCache* UParticleEmitter::GetLOD0RuntimeCache() const
+{
+	return GetLODLevelRuntimeCache(0);
 }
