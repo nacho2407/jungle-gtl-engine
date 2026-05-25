@@ -71,8 +71,8 @@ UParticleSystemComponent::UParticleSystemComponent()
 
 UParticleSystemComponent::~UParticleSystemComponent()
 {
+    ReleaseRenderData();
 	ReleaseEmitterInstances();
-	ReleaseRenderData();
 }
 
 void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)

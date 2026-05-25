@@ -9,7 +9,6 @@
  */
 struct FParticleLODLevelRuntimeCache
 {
-	int32 ParticleSize = 0;
 	int32 ParticleStride = 0;
 	int32 PayloadOffset = 0;
 	int32 InstancePayloadSize = 0;

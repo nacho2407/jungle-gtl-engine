@@ -16,7 +16,7 @@ namespace
 		FParticleLODLevelRuntimeCache& Cache,
 		UParticleModule* Module,
 		UParticleModuleTypeDataBase* TypeData,
-		int32& InOutParticleSize)
+		int32& InOutParticleBytes)
 	{
 		if (Module == nullptr)
 		{
@@ -29,9 +29,9 @@ namespace
 			return;
 		}
 
-		InOutParticleSize = AlignParticleBytes(InOutParticleSize);
-		Cache.ModulePayloadOffsets[Module] = InOutParticleSize;
-		InOutParticleSize += RequiredBytes;
+		InOutParticleBytes = AlignParticleBytes(InOutParticleBytes);
+		Cache.ModulePayloadOffsets[Module] = InOutParticleBytes;
+		InOutParticleBytes += RequiredBytes;
 	}
 
 	void AddInstancePayloadOffset(
@@ -61,13 +61,12 @@ namespace
 		FParticleLODLevelRuntimeCache Cache;
 		Cache.PayloadOffset = AlignParticleBytes(static_cast<int32>(sizeof(FBaseParticle)));
 
-		int32 ParticleSize = Cache.PayloadOffset;
+		int32 ParticleBytes = Cache.PayloadOffset;
 		int32 InstancePayloadSize = 0;
 
 		if (LODLevel == nullptr)
 		{
-			Cache.ParticleSize = ParticleSize;
-			Cache.ParticleStride = AlignParticleBytes(ParticleSize);
+			Cache.ParticleStride = AlignParticleBytes(ParticleBytes);
 			Cache.InstancePayloadSize = AlignParticleBytes(InstancePayloadSize);
 			return Cache;
 		}
@@ -78,8 +77,7 @@ namespace
 
 		if (!LODLevel->bEnabled)
 		{
-			Cache.ParticleSize = ParticleSize;
-			Cache.ParticleStride = AlignParticleBytes(ParticleSize);
+			Cache.ParticleStride = AlignParticleBytes(ParticleBytes);
 			Cache.InstancePayloadSize = AlignParticleBytes(InstancePayloadSize);
 			return Cache;
 		}
@@ -90,8 +88,8 @@ namespace
 			const int32 TypeDataPayloadSize = TypeData->GetRequiredPayloadSize();
 			if (TypeDataPayloadSize > 0)
 			{
-				ParticleSize = AlignParticleBytes(ParticleSize);
-				ParticleSize += TypeDataPayloadSize;
+				ParticleBytes = AlignParticleBytes(ParticleBytes);
+				ParticleBytes += TypeDataPayloadSize;
 			}
 
 			AddInstancePayloadOffset(Cache, TypeData, TypeData, InstancePayloadSize);
@@ -110,9 +108,9 @@ namespace
 		}
 
 		// Required / SpawnModule은 Modules 배열과 별개의 특수 모듈이므로 먼저 offset만 계산
-		AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleSize);
+		AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
 		AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
-		AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleSize);
+		AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
 		AddInstancePayloadOffset(Cache, Cache.SpawnModule, TypeData, InstancePayloadSize);
 
 		for (UParticleModule* Module : LODLevel->Modules)
@@ -132,12 +130,11 @@ namespace
 				Cache.UpdateModules.push_back(Module);
 			}
 
-			AddParticlePayloadOffset(Cache, Module, TypeData, ParticleSize);
+			AddParticlePayloadOffset(Cache, Module, TypeData, ParticleBytes);
 			AddInstancePayloadOffset(Cache, Module, TypeData, InstancePayloadSize);
 		}
 
-		Cache.ParticleSize = ParticleSize;
-		Cache.ParticleStride = AlignParticleBytes(ParticleSize);
+		Cache.ParticleStride = AlignParticleBytes(ParticleBytes);
 		Cache.InstancePayloadSize = AlignParticleBytes(InstancePayloadSize);
 		return Cache;
 	}

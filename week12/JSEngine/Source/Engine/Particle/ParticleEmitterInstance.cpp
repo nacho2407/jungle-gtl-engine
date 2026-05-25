@@ -95,7 +95,6 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLev
 		return false;
 	}
 
-	ParticleSize = CurrentRuntimeCache->ParticleSize;
 	ParticleStride = CurrentRuntimeCache->ParticleStride > 0
 		? CurrentRuntimeCache->ParticleStride
 		: AlignParticleBytes(static_cast<int32>(sizeof(FBaseParticle)));
@@ -169,7 +168,6 @@ void FParticleEmitterInstance::Release()
 	CurrentLODLevelIndex = 0;
 	SpriteTemplate = nullptr;
 
-	ParticleSize = 0;
 	ParticleStride = 0;
 	PayloadOffset = 0;
 	InstancePayloadSize = 0;
@@ -367,6 +365,7 @@ void FParticleEmitterInstance::CalculateLocalBounds(FVector& OutMin, FVector& Ou
 
 void FParticleEmitterInstance::CalculateWorldBounds(FVector& OutMin, FVector& OutMax) const
 {
+	// TODO: skeleton만 들어간 상태라 정상 구현은 아님. 이후 반드시 수정 예정!!!
 	CalculateLocalBounds(OutMin, OutMax);
 	if (!UsesLocalSpace())
 	{
