@@ -1,10 +1,12 @@
 ﻿#include "Particle/ParticleSystemComponent.h"
 
+#include "Camera/ViewportCamera.h"
 #include "GameFramework/World.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
 #include "Particle/ParticleEventManager.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
+#include <algorithm>
 #include <cstring>
 #include <memory>
 
@@ -136,6 +138,8 @@ UWorld* UParticleSystemComponent::GetWorld() const
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
+	UpdateLODLevel();
+
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		if (Instance != nullptr)
@@ -230,6 +234,45 @@ void UParticleSystemComponent::ReleaseRenderData()
 	EmitterRenderData.clear();
 }
 
+int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const
+{
+	if (EmitterTemplate == nullptr || EmitterTemplate->LODLevels.size() <= 1 || LODDistanceInterval <= 0.0f)
+	{
+		return 0;
+	}
+
+	// 현재 World에 활성화된 Camera 정보를 가져온다
+	const UWorld* World = GetWorld();
+	const FViewportCamera* ActiveCamera = World != nullptr ? World->GetActiveCamera() : nullptr;
+	if (ActiveCamera == nullptr)
+	{
+		return 0;
+	}
+
+	// Camera와 ParicleSystemComponent간 거리 계산
+	// 임시로 1000 단위로 LOD 레벨을 확장한다. [0, LODLevels.size())로 범위 제한.
+	const float Distance = FVector::Distance(GetWorldLocation(), ActiveCamera->GetLocation());
+	const int32 SelectedIndex = static_cast<int32>(Distance / LODDistanceInterval);
+	return std::clamp(SelectedIndex, 0, static_cast<int32>(EmitterTemplate->LODLevels.size()) - 1);
+}
+
+void UParticleSystemComponent::UpdateLODLevel()
+{
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance != nullptr &&
+			Instance->SpriteTemplate != nullptr &&
+			Instance->CurrentLODLevelIndex != SelectLODLevelIndex(Instance->SpriteTemplate))
+		{
+			// 선택 LOD가 바뀌면 TypeData 종류와 payload layout도 달라질 수 있으므로 모든 instance를 다시 생성
+			ReleaseRenderData();
+			ReleaseEmitterInstances();
+			CreateEmitterInstances();
+			return;
+		}
+	}
+}
+
 void UParticleSystemComponent::CreateEmitterInstances()
 {
 	if (Template == nullptr)
@@ -246,9 +289,9 @@ void UParticleSystemComponent::CreateEmitterInstances()
 
 		EmitterTemplate->CacheEmitterModuleInfo();
 
-		// TODO: 거리기반으로 LOD 선택가능한 로직으로 변경
-		// 현재는 무조건 0번 LOD 선택
-		UParticleLODLevel* LODLevel = EmitterTemplate->LODLevels.empty() ? nullptr : EmitterTemplate->LODLevels[0];
+		// LOD 기반으로 Particle LOD Level 및 TypeData를 가져온다
+		const int32 LODIndex = SelectLODLevelIndex(EmitterTemplate);
+		UParticleLODLevel* LODLevel = EmitterTemplate->LODLevels.empty() ? nullptr : EmitterTemplate->LODLevels[LODIndex];
 		UParticleModuleTypeDataBase* TypeData = LODLevel != nullptr ? LODLevel->TypeDataModule : nullptr;
 
 		if (TypeData == nullptr)
@@ -260,7 +303,7 @@ void UParticleSystemComponent::CreateEmitterInstances()
 			? TypeData->CreateInstance(EmitterTemplate, *InstanceOwner)
 			: new FParticleEmitterInstance(*InstanceOwner);
 
-		if (Instance != nullptr && Instance->Init(EmitterTemplate, 0))
+		if (Instance != nullptr && Instance->Init(EmitterTemplate, LODIndex))
 		{
 			EmitterInstances.push_back(Instance);
 		}

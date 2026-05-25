@@ -81,3 +81,16 @@
 - Remaining TODO: Implement distance-based LOD selection with safe emitter reinitialization when the selected LOD changes.
 - Remaining TODO: Keep ParticleSystem asset resolution limited to the existing Asset-loader TODO until the loader contract is provided.
 - Next step: Implement distance-based `UParticleLODLevel` selection through PSC-managed reinitialization, after approval.
+
+## 2026-05-25 - PSC distance-based LOD selection and safe transition
+
+- Branch / HEAD: `feat/PSC` / `35da487`
+- Completed step: Implemented component-managed distance-based LOD selection and safe emitter recreation when the active LOD changes.
+- Changed files: `JSEngine/Source/Engine/Particle/ParticleSystemComponent.h`, `JSEngine/Source/Engine/Particle/ParticleSystemComponent.cpp`, `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: `JSEngine.sln` builds successfully for `Debug|x64`; reflection generation registers `UParticleSystemComponent::LODDistanceInterval`; `git diff --check` reported no whitespace errors.
+- Added behavior: PSC exposes a Scene-persisted `LOD Distance Interval` and selects each emitter LOD using the distance between the component and the world's active camera.
+- Added behavior: A missing active camera, a non-positive interval, or an emitter with one LOD keeps LOD 0 active.
+- Added behavior: When a selected LOD changes, PSC releases render snapshots and recreates emitter instances through `TypeDataModule->CreateInstance()` followed by `Instance->Init(EmitterTemplate, LODIndex)`, so LOD-specific TypeData and payload layouts are re-established by Core.
+- Deferred TODO: Replace the uniform PSC distance interval with ParticleSystem asset-owned LOD distance settings once the Asset contract provides them.
+- Deferred TODO: Exercise a populated multi-LOD ParticleSystem in runtime/editor preview once a loadable ParticleSystem template path is connected or a test template fixture is available.
+- Next step: Validate runtime LOD switching with populated LOD templates after a usable ParticleSystem template source is available, or proceed with another approved PSC/Mesh task.

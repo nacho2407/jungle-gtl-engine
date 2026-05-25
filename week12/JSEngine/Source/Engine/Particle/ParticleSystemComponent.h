@@ -51,6 +51,8 @@ private:
 	void CreateEmitterInstances();
 	void ReleaseEmitterInstances();
 	void ReleaseRenderData();
+	int32 SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const;
+	void UpdateLODLevel();
 	// Particle Asset Template Reference 설정
     void ResolveTemplateAssetReference();
 
@@ -61,6 +63,10 @@ private:
 
 	UPROPERTY(DisplayName = "Particle System")
     TSoftObjectPtr<UParticleSystem> TemplateAssetPath;
+
+	// TODO: ParticleSystem Asset의 LOD 거리 계약이 정해지면 컴포넌트 균등 간격 대신 해당 설정을 사용한다.
+	UPROPERTY(DisplayName = "LOD Distance Interval", Min = 0.0f, Speed = 10.0f)
+	float LODDistanceInterval = 1000.0f;
 
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
