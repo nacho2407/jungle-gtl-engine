@@ -2769,6 +2769,7 @@ void FParticleBeam2EmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning
 		{
 			FirstEmission = false;
 		}
+		++TickCount;
 	}
 	else
 	{
@@ -2777,7 +2778,6 @@ void FParticleBeam2EmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning
 	EmitterTime += CurrentDelay;
 	PositionOffsetThisTick = FVector::ZeroVector;
 	LastDeltaTime = DeltaTime;
-	++TickCount;
 }
 
 float FParticleBeam2EmitterInstance::SpawnBeamParticles(float OldLeftover, float Rate, float DeltaTime, int32 Burst, float BurstTime)

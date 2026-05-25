@@ -2,7 +2,25 @@
 
 #include "Particles/ParticleEmitterInstances.h"
 #include "Particles/TypeData/ParticleModuleTypeDataBeam2.h"
+#include "Component/Primitive/ParticleSystemComponent.h"
 #include "Serialization/Archive.h"
+
+namespace
+{
+	FVector GetBeamEmitterXAxis(const FParticleBeam2EmitterInstance* BeamInst)
+	{
+		if (BeamInst && BeamInst->Component)
+		{
+			return BeamInst->Component->GetWorldMatrix().TransformVector(FVector::XAxisVector).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+		}
+		return FVector::XAxisVector;
+	}
+
+	FVector GetBeamEmitterLocation(const FParticleBeam2EmitterInstance* BeamInst)
+	{
+		return (BeamInst && BeamInst->Component) ? BeamInst->Component->GetWorldLocation() : FVector::ZeroVector;
+	}
+}
 
 UParticleModuleBeamSource::UParticleModuleBeamSource()
 	: bSourceAbsolute(false)
@@ -160,14 +178,14 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 	{
 		return false;
 	}
+	FBaseParticle& Particle = *reinterpret_cast<FBaseParticle*>(const_cast<uint8*>(ParticleBase));
 
-	// UE resolves Actor / Emitter / Particle source methods through named
-	// component parameters, emitter instance lookup, and selected source
-	// particles. Jungle does not expose those foundations yet, so these methods
-	// are intentionally stubbed. Do not fall back to Default distribution,
+	// UE resolves Actor / Particle source methods through named component
+	// parameters, emitter instance lookup, and selected source particles.
+	// Jungle does not expose those foundations yet, so these methods are
+	// intentionally stubbed. Do not fall back to Default distribution,
 	// Owner.Location, or any substitute source.
 	if (SourceMethod == PEB2STM_Actor ||
-		SourceMethod == PEB2STM_Emitter ||
 		SourceMethod == PEB2STM_Particle)
 	{
 		return false;
@@ -176,7 +194,16 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 	switch (SourceMethod)
 	{
 	case PEB2STM_UserSet:
-		if (bSpawning || !bLockSource) BeamInst->GetBeamSourcePoint(ParticleIndex, BeamData->SourcePoint);
+		if (bSpawning || !bLockSource)
+		{
+			if (!BeamInst->GetBeamSourcePoint(ParticleIndex, BeamData->SourcePoint))
+			{
+				BeamInst->GetBeamSourcePoint(0, BeamData->SourcePoint);
+			}
+		}
+		break;
+	case PEB2STM_Emitter:
+		if (bSpawning || !bLockSource) BeamData->SourcePoint = GetBeamEmitterLocation(BeamInst);
 		break;
 	case PEB2STM_Default:
 		if (bSpawning || !bLockSource) BeamData->SourcePoint = Source.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
@@ -192,22 +219,25 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 		{
 		case PEB2STTM_Direct:
 		case PEB2STTM_Emitter:
-			BeamData->SourceTangent = FVector::XAxisVector;
+			BeamData->SourceTangent = GetBeamEmitterXAxis(BeamInst);
 			bSetSourceTangent = true;
 			break;
 		case PEB2STTM_UserSet:
-			BeamInst->GetBeamSourceTangent(ParticleIndex, BeamData->SourceTangent);
-			bSetSourceTangent = true;
+			if (BeamInst->GetBeamSourceTangent(ParticleIndex, BeamData->SourceTangent) ||
+				BeamInst->GetBeamSourceTangent(0, BeamData->SourceTangent))
+			{
+				bSetSourceTangent = true;
+			}
 			break;
 		case PEB2STTM_Distribution:
-			BeamData->SourceTangent = SourceTangent.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+			BeamData->SourceTangent = SourceTangent.GetValue(Particle.RelativeTime, Context.GetDistributionData());
 			bSetSourceTangent = true;
 			break;
 		}
 
 		if (!bSetSourceTangent)
 		{
-			BeamData->SourceTangent = SourceTangent.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+			BeamData->SourceTangent = SourceTangent.GetValue(Particle.RelativeTime, Context.GetDistributionData());
 		}
 	}
 
@@ -216,12 +246,15 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 		bool bSetSourceStrength = false;
 		if (SourceTangentMethod == PEB2STTM_UserSet)
 		{
-			BeamInst->GetBeamSourceStrength(ParticleIndex, BeamData->SourceStrength);
-			bSetSourceStrength = true;
+			if (BeamInst->GetBeamSourceStrength(ParticleIndex, BeamData->SourceStrength) ||
+				BeamInst->GetBeamSourceStrength(0, BeamData->SourceStrength))
+			{
+				bSetSourceStrength = true;
+			}
 		}
 		if (!bSetSourceStrength)
 		{
-			BeamData->SourceStrength = SourceStrength.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+			BeamData->SourceStrength = SourceStrength.GetValue(Particle.RelativeTime, Context.GetDistributionData());
 		}
 	}
 

@@ -6,6 +6,7 @@
 #include "Particles/Beam/ParticleModuleBeamTarget.h"
 #include "Particles/ParticleEmitter.h"
 #include "Particles/ParticleEmitterInstances.h"
+#include "Component/Primitive/ParticleSystemComponent.h"
 #include "Serialization/Archive.h"
 
 #include <algorithm>
@@ -13,6 +14,20 @@
 
 namespace
 {
+	FVector GetBeamEmitterXAxis(const FParticleEmitterInstance& Owner)
+	{
+		if (Owner.Component)
+		{
+			return Owner.Component->GetWorldMatrix().TransformVector(FVector::XAxisVector).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+		}
+		return FVector::XAxisVector;
+	}
+
+	FVector GetBeamEmitterLocation(const FParticleEmitterInstance& Owner)
+	{
+		return Owner.Component ? Owner.Component->GetWorldLocation() : Owner.Location;
+	}
+
 	FVector CubicInterpVector(const FVector& P0, const FVector& T0, const FVector& P1, const FVector& T1, float Alpha)
 	{
 		const float A2 = Alpha * Alpha;
@@ -252,16 +267,17 @@ void UParticleModuleTypeDataBeam2::Spawn(const FSpawnContext& Context)
 
 	if (!bHasSourceModule)
 	{
-		BeamData->SourcePoint = Context.Owner.Location;
-		BeamData->SourceTangent = FVector::XAxisVector;
+		BeamData->SourcePoint = GetBeamEmitterLocation(Context.Owner);
+		BeamData->SourceTangent = GetBeamEmitterXAxis(Context.Owner);
 		BeamData->SourceStrength = 1.0f;
 	}
 
 	if (!bHasTargetModule && BeamMethod == PEB2M_Distance)
 	{
 		const float BeamDistance = Distance.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-		BeamData->TargetPoint = BeamData->SourcePoint + FVector(BeamDistance, 0.0f, 0.0f);
-		BeamData->TargetTangent = -FVector::XAxisVector;
+		FVector Direction = GetBeamEmitterXAxis(Context.Owner);
+		BeamData->TargetPoint = BeamData->SourcePoint + Direction * BeamDistance;
+		BeamData->TargetTangent = -Direction;
 		BeamData->TargetStrength = 1.0f;
 	}
 
@@ -306,8 +322,6 @@ void UParticleModuleTypeDataBeam2::Spawn(const FSpawnContext& Context)
 		}
 	}
 
-	BEAM2_TYPEDATA_SETLOCKED(BeamData->Lock_Max_NumNoisePoints, Speed <= 0.0f);
-	Context.ParticleBase->Location = Speed > 0.0f ? BeamData->SourcePoint : BeamData->TargetPoint;
 }
 
 void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
@@ -341,14 +355,14 @@ void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
 
 	if (BeamInst && !BeamInst->BeamModule_Source)
 	{
-		BeamData->SourcePoint = Context.Owner.Location;
-		BeamData->SourceTangent = FVector::XAxisVector;
+		BeamData->SourcePoint = GetBeamEmitterLocation(Context.Owner);
+		BeamData->SourceTangent = GetBeamEmitterXAxis(Context.Owner);
 	}
 
 	if (BeamInst && !BeamInst->BeamModule_Target && BeamInst->BeamMethod == PEB2M_Distance)
 	{
 		const float TotalDistance = Distance.GetValue(Particle.RelativeTime, Context.GetDistributionData());
-		FVector Direction = FVector::XAxisVector;
+		FVector Direction = GetBeamEmitterXAxis(Context.Owner);
 		BeamData->TargetPoint = BeamData->SourcePoint + Direction * TotalDistance;
 		BeamData->TargetTangent = -Direction;
 	}
@@ -476,7 +490,17 @@ void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
 		SourceTangent *= BeamData->SourceStrength;
 		TargetTangent *= BeamData->TargetStrength;
 		const float InvTess = 1.0f / static_cast<float>(InterpolationPoints);
-		for (int32 InterpIndex = 0; InterpIndex < std::min(InterpSteps, InterpolationPoints); ++InterpIndex)
+		int32 InterpIndex = 0;
+		for (; InterpIndex < std::min(InterpSteps, InterpolationPoints); ++InterpIndex)
+		{
+			InterpolatedPoints[InterpIndex] = CubicInterpVector(
+				BeamData->SourcePoint,
+				SourceTangent,
+				BeamData->TargetPoint,
+				TargetTangent,
+				InvTess * static_cast<float>(InterpIndex + 1));
+		}
+		for (; InterpIndex < InterpolationPoints; ++InterpIndex)
 		{
 			InterpolatedPoints[InterpIndex] = CubicInterpVector(
 				BeamData->SourcePoint,

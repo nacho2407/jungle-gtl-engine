@@ -2,9 +2,22 @@
 
 #include "Particles/ParticleEmitterInstances.h"
 #include "Particles/TypeData/ParticleModuleTypeDataBeam2.h"
+#include "Component/Primitive/ParticleSystemComponent.h"
 #include "Serialization/Archive.h"
 
 #include <cmath>
+
+namespace
+{
+	FVector GetBeamEmitterXAxis(const FParticleBeam2EmitterInstance* BeamInst)
+	{
+		if (BeamInst && BeamInst->Component)
+		{
+			return BeamInst->Component->GetWorldMatrix().TransformVector(FVector::XAxisVector).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+		}
+		return FVector::XAxisVector;
+	}
+}
 
 UParticleModuleBeamTarget::UParticleModuleBeamTarget()
 	: bTargetAbsolute(false)
@@ -136,7 +149,7 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 			{
 				BeamDistance = 0.001f;
 			}
-			FVector Direction = FVector::XAxisVector;
+			FVector Direction = GetBeamEmitterXAxis(BeamInst);
 			BeamData->TargetPoint = BeamData->SourcePoint + Direction * BeamDistance;
 			bSetTarget = true;
 		}
@@ -146,8 +159,11 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 			switch (TargetMethod)
 			{
 			case PEB2STM_UserSet:
-				BeamInst->GetBeamTargetPoint(ParticleIndex, BeamData->TargetPoint);
-				bSetTarget = true;
+				if (BeamInst->GetBeamTargetPoint(ParticleIndex, BeamData->TargetPoint) ||
+					BeamInst->GetBeamTargetPoint(0, BeamData->TargetPoint))
+				{
+					bSetTarget = true;
+				}
 				break;
 			case PEB2STM_Default:
 				BeamData->TargetPoint = Target.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
@@ -166,12 +182,15 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 		{
 		case PEB2STTM_Direct:
 		case PEB2STTM_Emitter:
-			BeamData->TargetTangent = FVector::XAxisVector;
+			BeamData->TargetTangent = GetBeamEmitterXAxis(BeamInst);
 			bSetTargetTangent = true;
 			break;
 		case PEB2STTM_UserSet:
-			BeamInst->GetBeamTargetTangent(ParticleIndex, BeamData->TargetTangent);
-			bSetTargetTangent = true;
+			if (BeamInst->GetBeamTargetTangent(ParticleIndex, BeamData->TargetTangent) ||
+				BeamInst->GetBeamTargetTangent(0, BeamData->TargetTangent))
+			{
+				bSetTargetTangent = true;
+			}
 			break;
 		case PEB2STTM_Distribution:
 			BeamData->TargetTangent = TargetTangent.GetValue(Particle.RelativeTime, Context.GetDistributionData());
@@ -189,8 +208,11 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 		bool bSetTargetStrength = false;
 		if (TargetTangentMethod == PEB2STTM_UserSet)
 		{
-			BeamInst->GetBeamTargetStrength(ParticleIndex, BeamData->TargetStrength);
-			bSetTargetStrength = true;
+			if (BeamInst->GetBeamTargetStrength(ParticleIndex, BeamData->TargetStrength) ||
+				BeamInst->GetBeamTargetStrength(0, BeamData->TargetStrength))
+			{
+				bSetTargetStrength = true;
+			}
 		}
 		if (!bSetTargetStrength)
 		{
