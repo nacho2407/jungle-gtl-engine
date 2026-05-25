@@ -2592,7 +2592,6 @@ bool FParticleMeshEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase&
 		MeshData.LockedAxis = FVector::ZAxisVector;
 	}
 
-	MeshData.bEnableMotionBlur = bMotionBlurEnabled;
 	MeshData.SubUVDataOffset = SubUVDataOffset;
 	MeshData.DynamicParameterDataOffset = DynamicParameterDataOffset;
 	MeshData.LightDataOffset = LightDataOffset;

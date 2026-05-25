@@ -66,8 +66,8 @@ struct FMeshRotationPayloadData
 	FVector  InitRotation = FVector::ZeroVector;
 	FVector Rotation = FVector::ZeroVector;
 	FVector CurContinuousRotation = FVector::ZeroVector;
-	FVector RotationRateBase = FVector::ZeroVector;
 	FVector RotationRate = FVector::ZeroVector;
+	FVector RotationRateBase = FVector::ZeroVector;
 };
 
 struct FMeshMotionBlurPayloadData
