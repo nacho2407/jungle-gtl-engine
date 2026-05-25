@@ -66,6 +66,12 @@ private:
 	void SelectEmitter(int32 EmitterIndex);
 	void SelectLOD(int32 EmitterIndex, int32 LODIndex);
 	void SelectModule(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex);
+	bool SelectLODByIndex(int32 LODIndex);
+	bool SelectAdjacentLOD(int32 Direction);
+	bool SelectExtremeLOD(bool bLowest);
+	bool AddLODToSystem(bool bInsertAfterCurrent);
+	bool RegenerateLowestLOD(bool bDuplicateHighest);
+	bool DeleteSelectedLOD();
 	bool IsEmitterSelected(int32 EmitterIndex) const;
 	bool IsLODSelected(int32 EmitterIndex, int32 LODIndex) const;
 	bool IsModuleSelected(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex) const;

@@ -31,6 +31,7 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 
 void UParticleSystemComponent::ResetSystem()
 {
+	CurrentLODIndex = 0;
 	ClearEmitterInstances();
 	InitializeEmitterInstances();
 }
@@ -117,6 +118,11 @@ void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 	FMinimalViewInfo POV;
 	const bool bHasViewLocation = GetWorld() && GetWorld()->GetActivePOV(POV);
+	if (bHasViewLocation && ParticleSystem)
+	{
+		const float Distance = FVector::Distance(GetWorldLocation(), POV.Location);
+		CurrentLODIndex = ParticleSystem->SelectLODLevelIndex(Distance);
+	}
 
 	bool bAnyEmitterTicked = false;
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
@@ -126,11 +132,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 			continue;
 		}
 
-		if (bHasViewLocation)
-		{
-			Instance->UpdateLOD(POV.Location);
-		}
-
+		Instance->SetLODLevelIndex(CurrentLODIndex);
 		Instance->Tick(DeltaTime);
 		bAnyEmitterTicked = true;
 	}

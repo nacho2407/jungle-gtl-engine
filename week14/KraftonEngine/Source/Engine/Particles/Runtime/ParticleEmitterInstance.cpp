@@ -6,6 +6,8 @@
 #include "Particles/Module/ParticleModule.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
 
+#include <algorithm>
+
 FParticleEmitterInstance::~FParticleEmitterInstance()
 {
 	ReleaseParticleData();
@@ -51,22 +53,36 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	UpdateParticles(DeltaTime);
 }
 
-void FParticleEmitterInstance::UpdateLOD(const FVector& ViewLocation)
+void FParticleEmitterInstance::SetLODLevelIndex(int32 LODLevelIndex)
 {
-	if (!SpriteTemplate || !Component)
+	if (!SpriteTemplate)
 	{
 		return;
 	}
 
-	const float Distance = FVector::Distance(Component->GetWorldLocation(), ViewLocation);
-	const int32 NewLODLevelIndex = SpriteTemplate->SelectLODLevelIndex(Distance);
-	if (NewLODLevelIndex == CurrentLODLevelIndex)
+	const int32 LODCount = static_cast<int32>(SpriteTemplate->GetLODLevels().size());
+	if (LODCount <= 0)
 	{
 		return;
 	}
 
+	int32 NewLODLevelIndex = (std::max)(0, (std::min)(LODLevelIndex, LODCount - 1));
 	UParticleLODLevel* NewLODLevel = SpriteTemplate->GetLODLevel(NewLODLevelIndex);
 	if (!CanUseLODLevel(NewLODLevel))
+	{
+		for (int32 CandidateIndex = NewLODLevelIndex - 1; CandidateIndex >= 0; --CandidateIndex)
+		{
+			UParticleLODLevel* CandidateLODLevel = SpriteTemplate->GetLODLevel(CandidateIndex);
+			if (CanUseLODLevel(CandidateLODLevel))
+			{
+				NewLODLevelIndex = CandidateIndex;
+				NewLODLevel = CandidateLODLevel;
+				break;
+			}
+		}
+	}
+
+	if (!CanUseLODLevel(NewLODLevel) || NewLODLevelIndex == CurrentLODLevelIndex)
 	{
 		return;
 	}
@@ -309,7 +325,7 @@ UParticleModuleSpawn* FParticleEmitterInstance::GetSpawnModule() const
 
 bool FParticleEmitterInstance::CanUseLODLevel(const UParticleLODLevel* LODLevel) const
 {
-	if (!LODLevel)
+	if (!LODLevel || !LODLevel->IsEnabled())
 	{
 		return false;
 	}

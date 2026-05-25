@@ -15,7 +15,7 @@ struct FParticleEmitterInstance
 	virtual void Init(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent);
 	virtual void Tick(float DeltaTime);
 	virtual void Reset();
-	void UpdateLOD(const FVector& ViewLocation);
+	void SetLODLevelIndex(int32 LODLevelIndex);
 
 	bool IsActive() const { return bActive; }
 	void SetActive(bool bInActive) { bActive = bInActive; }

@@ -5,6 +5,7 @@
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Serialization/Archive.h"
+#include "Serialization/MemoryArchive.h"
 
 namespace
 {
@@ -21,10 +22,9 @@ namespace
 
 	UParticleLODLevel* CreateDefaultLODLevel(float EmitterDuration, bool bLooping, float SpawnRate, float Lifetime, const FVector& StartLocation, const FVector& StartVelocity, const FVector& StartSize, const FVector4& StartColor, const FVector4& EndColor)
 	{
-	UParticleLODLevel* LODLevel = UObjectManager::Get().CreateObject<UParticleLODLevel>();
-	LODLevel->SetLevel(0);
-	LODLevel->SetEnabled(true);
-	LODLevel->SetDistance(0.0f);
+		UParticleLODLevel* LODLevel = UObjectManager::Get().CreateObject<UParticleLODLevel>();
+		LODLevel->SetLevel(0);
+		LODLevel->SetEnabled(true);
 
 		UParticleModuleSpawn* SpawnModule = UObjectManager::Get().CreateObject<UParticleModuleSpawn>();
 		SpawnModule->SpawnRate = SpawnRate;
@@ -100,6 +100,29 @@ namespace
 		Emitter->AddLODLevel(LODLevel);
 		return Emitter;
 	}
+
+	UParticleLODLevel* DuplicateLODLevel(UParticleLODLevel* SourceLODLevel)
+	{
+		if (!SourceLODLevel)
+		{
+			return nullptr;
+		}
+
+		FMemoryArchive Writer(/*bInIsSaving=*/true);
+		SourceLODLevel->Serialize(Writer);
+
+		UParticleLODLevel* DuplicatedLODLevel = UObjectManager::Get().CreateObject<UParticleLODLevel>();
+		if (!DuplicatedLODLevel)
+		{
+			return nullptr;
+		}
+
+		const FName UniqueName = DuplicatedLODLevel->GetFName();
+		FMemoryArchive Reader(Writer.GetBuffer(), /*bInIsSaving=*/false);
+		DuplicatedLODLevel->Serialize(Reader);
+		DuplicatedLODLevel->SetFName(UniqueName);
+		return DuplicatedLODLevel;
+	}
 }
 
 UParticleLODLevel::~UParticleLODLevel()
@@ -153,30 +176,6 @@ UParticleLODLevel* UParticleEmitter::GetLODLevel(int32 Index) const
 	}
 
 	return LODLevels[Index];
-}
-
-int32 UParticleEmitter::SelectLODLevelIndex(float Distance) const
-{
-	int32 BestIndex = -1;
-	float BestDistance = -1.0f;
-
-	for (int32 Index = 0; Index < static_cast<int32>(LODLevels.size()); ++Index)
-	{
-		const UParticleLODLevel* LODLevel = LODLevels[Index];
-		if (!LODLevel || !LODLevel->IsEnabled())
-		{
-			continue;
-		}
-
-		const float LODDistance = LODLevel->GetDistance();
-		if (Distance >= LODDistance && LODDistance >= BestDistance)
-		{
-			BestIndex = Index;
-			BestDistance = LODDistance;
-		}
-	}
-
-	return BestIndex >= 0 ? BestIndex : 0;
 }
 
 void UParticleEmitter::AddLODLevel(UParticleLODLevel* LODLevel)
@@ -238,8 +237,14 @@ void UParticleSystem::InitializeDefaultEmitters()
 		return;
 	}
 
+	if (LODDistances.empty())
+	{
+		LODDistances.push_back(0.0f);
+	}
+
 	AddEmitter(CreateSpriteEmitter());
 	AddEmitter(CreateMeshEmitter());
+	NormalizeLODLevels();
 }
 
 void UParticleSystem::AddEmitter(UParticleEmitter* Emitter)
@@ -249,6 +254,7 @@ void UParticleSystem::AddEmitter(UParticleEmitter* Emitter)
 		return;
 	}
 
+	NormalizeEmitterLODLevels(Emitter);
 	Emitters.push_back(Emitter);
 }
 
@@ -259,11 +265,120 @@ UParticleEmitter* UParticleSystem::AddDefaultEmitter()
 	return Emitter;
 }
 
+float UParticleSystem::GetLODDistance(int32 Index) const
+{
+	if (Index < 0 || Index >= static_cast<int32>(LODDistances.size()))
+	{
+		return 0.0f;
+	}
+
+	return LODDistances[Index];
+}
+
+int32 UParticleSystem::SelectLODLevelIndex(float Distance) const
+{
+	if (LODDistances.empty())
+	{
+		return 0;
+	}
+
+	int32 BestIndex = 0;
+	float BestDistance = -1.0f;
+	for (int32 Index = 0; Index < static_cast<int32>(LODDistances.size()); ++Index)
+	{
+		const float LODDistance = LODDistances[Index];
+		if (Distance >= LODDistance && LODDistance >= BestDistance)
+		{
+			BestIndex = Index;
+			BestDistance = LODDistance;
+		}
+	}
+
+	return BestIndex;
+}
+
+void UParticleSystem::NormalizeLODLevels()
+{
+	if (LODDistances.empty())
+	{
+		LODDistances.push_back(0.0f);
+	}
+
+	LODDistances[0] = 0.0f;
+	for (int32 Index = 1; Index < static_cast<int32>(LODDistances.size()); ++Index)
+	{
+		if (LODDistances[Index] <= LODDistances[Index - 1])
+		{
+			LODDistances[Index] = LODDistances[Index - 1] + 1000.0f;
+		}
+	}
+
+	for (UParticleEmitter* Emitter : Emitters)
+	{
+		NormalizeEmitterLODLevels(Emitter);
+	}
+}
+
+void UParticleSystem::NormalizeEmitterLODLevels(UParticleEmitter* Emitter)
+{
+	if (!Emitter)
+	{
+		return;
+	}
+
+	if (LODDistances.empty())
+	{
+		LODDistances.push_back(0.0f);
+	}
+
+	TArray<UParticleLODLevel*>& LODLevels = Emitter->GetMutableLODLevels();
+	while (LODLevels.empty())
+	{
+		LODLevels.push_back(CreateDefaultLODLevel(
+			Emitter->GetEmitterDuration(),
+			Emitter->IsLooping(),
+			10.0f,
+			1.0f,
+			FVector::ZeroVector,
+			FVector(0.0f, 100.0f, 0.0f),
+			FVector(10.0f, 10.0f, 1.0f),
+			FVector4(1.0f, 1.0f, 1.0f, 1.0f),
+			FVector4(1.0f, 1.0f, 1.0f, 0.0f)));
+	}
+
+	while (static_cast<int32>(LODLevels.size()) < static_cast<int32>(LODDistances.size()))
+	{
+		UParticleLODLevel* SourceLODLevel = LODLevels.back();
+		UParticleLODLevel* NewLODLevel = DuplicateLODLevel(SourceLODLevel);
+		if (!NewLODLevel)
+		{
+			break;
+		}
+		LODLevels.push_back(NewLODLevel);
+	}
+
+	while (static_cast<int32>(LODLevels.size()) > static_cast<int32>(LODDistances.size()))
+	{
+		UParticleLODLevel* RemovedLODLevel = LODLevels.back();
+		LODLevels.pop_back();
+		delete RemovedLODLevel;
+	}
+
+	for (int32 Index = 0; Index < static_cast<int32>(LODLevels.size()); ++Index)
+	{
+		if (LODLevels[Index])
+		{
+			LODLevels[Index]->SetLevel(Index);
+		}
+	}
+}
+
 void UParticleSystem::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
 
 	Ar << AssetPathFileName;
+	Ar << LODDistances;
 
 	uint32 EmitterCount = Ar.IsSaving() ? static_cast<uint32>(Emitters.size()) : 0;
 	Ar << EmitterCount;
@@ -287,5 +402,10 @@ void UParticleSystem::Serialize(FArchive& Ar)
 		{
 			Emitters.push_back(Emitter);
 		}
+	}
+
+	if (Ar.IsLoading())
+	{
+		NormalizeLODLevels();
 	}
 }

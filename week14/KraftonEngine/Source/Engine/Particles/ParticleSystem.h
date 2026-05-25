@@ -23,12 +23,10 @@ public:
 	const TArray<UParticleModule*>& GetModules() const { return Modules; }
 	TArray<UParticleModule*>& GetMutableModules() { return Modules; }
 	UParticleModuleTypeDataBase* GetTypeDataModule() const { return TypeDataModule; }
-	float GetDistance() const { return Distance; }
 
 	void SetLevel(int32 InLevel) { Level = InLevel; }
 	void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
 	void SetTypeDataModule(UParticleModuleTypeDataBase* InTypeDataModule) { TypeDataModule = InTypeDataModule; }
-	void SetDistance(float InDistance) { Distance = InDistance; }
 
 	void Serialize(FArchive& Ar) override;
 
@@ -50,8 +48,6 @@ private:
 	int32 Level = 0;
 	UPROPERTY(Edit, Save, Category="Particle|LOD", DisplayName="Enabled")
 	bool bEnabled = true;
-	UPROPERTY(Edit, Save, Category="Particle|LOD", DisplayName="Distance", Min=0.0f, Speed=1.0f)
-	float Distance = 0.0f;
 
 	UParticleModuleRequired* RequiredModule = nullptr;
 	UPROPERTY(Edit, Save, Instanced, Category="Particle|LOD", DisplayName="Type Data", AllowedClass=UParticleModuleTypeDataBase)
@@ -70,7 +66,6 @@ public:
 	const TArray<UParticleLODLevel*>& GetLODLevels() const { return LODLevels; }
 	TArray<UParticleLODLevel*>& GetMutableLODLevels() { return LODLevels; }
 	UParticleLODLevel* GetLODLevel(int32 Index = 0) const;
-	int32 SelectLODLevelIndex(float Distance) const;
 
 	int32 GetMaxActiveParticles() const { return MaxActiveParticles; }
 	float GetEmitterDuration() const { return EmitterDuration; }
@@ -103,6 +98,13 @@ public:
 
 	const TArray<UParticleEmitter*>& GetEmitters() const { return Emitters; }
 	TArray<UParticleEmitter*>& GetMutableEmitters() { return Emitters; }
+	const TArray<float>& GetLODDistances() const { return LODDistances; }
+	TArray<float>& GetMutableLODDistances() { return LODDistances; }
+	int32 GetLODCount() const { return static_cast<int32>(LODDistances.size()); }
+	float GetLODDistance(int32 Index) const;
+	int32 SelectLODLevelIndex(float Distance) const;
+	void NormalizeLODLevels();
+
 	void AddEmitter(UParticleEmitter* Emitter);
 	UParticleEmitter* AddDefaultEmitter();
 
@@ -112,6 +114,9 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 private:
+	void NormalizeEmitterLODLevels(UParticleEmitter* Emitter);
+
 	TArray<UParticleEmitter*> Emitters;
+	TArray<float> LODDistances = { 0.0f };
 	FString AssetPathFileName = "None";
 };
