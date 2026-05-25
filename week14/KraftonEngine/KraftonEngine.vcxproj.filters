@@ -705,6 +705,9 @@
     <ClCompile Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.cpp">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyRenderer.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyWidget.cpp">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
@@ -1708,6 +1711,9 @@
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyRenderer.h">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyWidget.h">

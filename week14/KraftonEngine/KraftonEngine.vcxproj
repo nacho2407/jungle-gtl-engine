@@ -441,6 +441,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\UI\Panel\EditorMaterialInspector.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyRenderer.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorSceneWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorStatWidget.cpp" />
@@ -789,6 +790,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\UI\Panel\EditorMaterialInspector.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyRenderer.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorSceneWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorStatWidget.h" />
