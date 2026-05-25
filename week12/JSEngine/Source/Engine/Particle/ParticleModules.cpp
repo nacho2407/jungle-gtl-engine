@@ -298,6 +298,12 @@ int32 UParticleModuleTypeDataBase::GetRequiredPayloadSize() const
 	return 0;
 }
 
+void UParticleModuleTypeDataMesh::SetStaticMesh(UStaticMesh* InStaticMesh)
+{
+	Mesh = InStaticMesh;
+	MeshAssetPath.SetPath(Mesh != nullptr ? Mesh->GetAssetPathFileName() : FString());
+}
+
 int32 FParticleLODLevelRuntimeCache::GetParticlePayloadOffset(UParticleModule* Module) const
 {
 	const auto It = ModulePayloadOffsets.find(Module);

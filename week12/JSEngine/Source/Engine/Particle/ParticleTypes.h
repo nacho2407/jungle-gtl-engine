@@ -3,6 +3,7 @@
 #include "Core/CoreMinimal.h"
 
 struct ID3D11DeviceContext;
+class UStaticMesh;
 
 namespace ERHIFeatureLevel
 {
@@ -164,6 +165,9 @@ struct FDynamicSpriteEmitterData : public FDynamicSpriteEmitterDataBase
 
 struct FDynamicMeshEmitterData : public FDynamicSpriteEmitterDataBase
 {
+	// StaticMesh asset들은 ResourceManager가 소유
+	UStaticMesh* Mesh = nullptr;
+	TArray<FMeshParticleInstanceVertex> InstanceVertices;
 	FDynamicMeshEmitterReplayDataBase ReplayData;
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }

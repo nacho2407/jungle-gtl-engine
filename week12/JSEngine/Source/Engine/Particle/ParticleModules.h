@@ -1,6 +1,8 @@
 ﻿#pragma once
 
+#include "Asset/StaticMesh.h"
 #include "Object/Object.h"
+#include "Object/ObjectPtr.h"
 #include "Particle/ParticleDistributions.h"
 #include "Particle/ParticleTypes.h"
 #include "Render/Resource/Material.h"
@@ -9,7 +11,6 @@ class FParticleEmitterInstance;
 class IParticleEmitterInstanceOwner;
 class UParticleEmitter;
 class UParticleModuleTypeDataBase;
-class UStaticMesh;
 
 UCLASS(Abstract)
 class UParticleModule : public UObject
@@ -211,6 +212,14 @@ class UParticleModuleTypeDataMesh : public UParticleModuleTypeDataBase
 public:
 	GENERATED_BODY(UParticleModuleTypeDataMesh, UParticleModuleTypeDataBase)
 
+	void SetStaticMesh(UStaticMesh* InStaticMesh);
+	UStaticMesh* GetStaticMesh() const { return Mesh; }
+
+	// TODO: Particle System Asset 담당자가 Deserialize할 때 이곳에 Mesh 경로를 넣는다.
+	UPROPERTY(DisplayName = "Static Mesh")
+	TSoftObjectPtr<UStaticMesh> MeshAssetPath;
+
+private:
 	UStaticMesh* Mesh = nullptr;
 };
 
