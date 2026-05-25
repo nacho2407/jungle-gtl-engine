@@ -191,7 +191,6 @@ public:
 };
 
 // NOTE: Type-DataBase가 아니라 TypeData-Base 입니다.
-//       ㄴ SELECT UParticleModuleTypeDataBase FROM UParticleModule WHERE type = 'sprite'
 UCLASS()
 class UParticleModuleTypeDataBase : public UParticleModule
 {
