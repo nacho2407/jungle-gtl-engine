@@ -117,6 +117,10 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 	// -> 새 Template 기준으로 EmitterIntsnace 생성
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
+
+	// TODO: SetTemplate() 호출 시 TemplateAssetPath를 갱신해야하는가..?
+    // 갱신 가능하면 SetTemplate() 안에서 SoftObjectPath 동기화
+    // 불가능하면 Editor Property 경유로만 Template 설정되도록 명시
 }
 
 void UParticleSystemComponent::ResolveTemplateAssetReference()
@@ -127,8 +131,10 @@ void UParticleSystemComponent::ResolveTemplateAssetReference()
 		return;
 	}
 
-	// TODO: ParticleSystem Asset 로더가 완성되면 TemplateAssetPath 경로로 로드한 템플릿을 SetTemplate에 전달한다.
-	SetTemplate(nullptr);
+	// Asset 담당자의 ParticleSystem Load API가 들어오기 전까지는
+    // 기존 Template을 nullptr로 덮어쓰지 않는다.
+    // TODO: Asset 담당자 API 연동 후:
+    // SetTemplate(ResourceManager.LoadParticleSystem(TemplateAssetPath.GetPath()));
 }
 
 UWorld* UParticleSystemComponent::GetWorld() const
@@ -332,6 +338,11 @@ int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* Emit
 
 void UParticleSystemComponent::UpdateLODLevel()
 {
+    // TODO: 현재 방식은 거리 기반 LOD 선택 구현
+    // CurrentLODLevelIndex 갱신
+	// LOD 변경 시 EmitterInstance 재생성
+	// 기존 Particle 유지형 LOD 전환은 미구현
+
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		if (Instance != nullptr &&
