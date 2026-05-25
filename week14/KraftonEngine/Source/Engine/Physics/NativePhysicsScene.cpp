@@ -2,12 +2,8 @@
 #include "Collision/Math/CollisionMath.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ShapeComponent.h"
-#include "Component/Shape/BoxComponent.h"
-#include "Component/Shape/SphereComponent.h"
-#include "Component/Shape/CapsuleComponent.h"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
-#include "Math/Quat.h"
 
 #include <algorithm>
 #include <cmath>
@@ -462,232 +458,6 @@ namespace
 
 		return bFound;
 	}
-
-	bool RaySphere(const FVector& Start, const FVector& Dir, float MaxDist, const FVector& Center, float Radius,
-		float& OutDistance, FVector& OutNormal)
-	{
-		if (Radius < 0.0f)
-		{
-			return false;
-		}
-
-		const FVector LocalStart = Start - Center;
-		const float B = LocalStart.Dot(Dir);
-		const float C = LocalStart.Dot(LocalStart) - Radius * Radius;
-		if (C <= 0.0f)
-		{
-			OutDistance = 0.0f;
-			OutNormal = LocalStart;
-			if (OutNormal.Length() <= 1.0e-4f)
-			{
-				OutNormal = FVector::UpVector;
-			}
-			OutNormal.Normalize();
-			return true;
-		}
-
-		const float Discriminant = B * B - C;
-		if (Discriminant < 0.0f)
-		{
-			return false;
-		}
-
-		const float T = -B - std::sqrt(Discriminant);
-		if (T < 0.0f || T > MaxDist)
-		{
-			return false;
-		}
-
-		OutDistance = T;
-		OutNormal = Start + Dir * T - Center;
-		if (OutNormal.Length() <= 1.0e-4f)
-		{
-			OutNormal = FVector::UpVector;
-		}
-		OutNormal.Normalize();
-		return true;
-	}
-
-	bool RayExpandedOrientedBox(const FVector& Start, const FVector& Dir, float MaxDist, const UBoxComponent* Box,
-		float Radius, float& OutDistance, FVector& OutNormal)
-	{
-		const FQuat WorldRot = Box->GetWorldMatrix().ToQuat();
-		const FQuat InvWorldRot = WorldRot.Inverse();
-		const FVector LocalStart = InvWorldRot.RotateVector(Start - Box->GetWorldLocation());
-		const FVector LocalDir = InvWorldRot.RotateVector(Dir);
-		const FVector Ext = Box->GetScaledBoxExtent() + FVector(Radius, Radius, Radius);
-
-		const FVector Min = Ext * -1.0f;
-		const FVector Max = Ext;
-		float TEnter = 0.0f;
-		float TExit = MaxDist;
-		FVector EnterNormal = FVector::ZeroVector;
-
-		auto TestAxis = [&](float StartValue, float DirValue, float MinValue, float MaxValue, const FVector& NegativeNormal, const FVector& PositiveNormal) -> bool
-		{
-			if (std::abs(DirValue) <= 1.0e-6f)
-			{
-				return StartValue >= MinValue && StartValue <= MaxValue;
-			}
-
-			float T1 = (MinValue - StartValue) / DirValue;
-			float T2 = (MaxValue - StartValue) / DirValue;
-			FVector AxisNormal = NegativeNormal;
-			if (T1 > T2)
-			{
-				std::swap(T1, T2);
-				AxisNormal = PositiveNormal;
-			}
-
-			if (T1 > TEnter)
-			{
-				TEnter = T1;
-				EnterNormal = AxisNormal;
-			}
-			if (T2 < TExit)
-			{
-				TExit = T2;
-			}
-
-			return TEnter <= TExit;
-		};
-
-		if (!TestAxis(Start.X, Dir.X, Min.X, Max.X, FVector(-1.0f, 0.0f, 0.0f), FVector(1.0f, 0.0f, 0.0f))) return false;
-		if (!TestAxis(Start.Y, Dir.Y, Min.Y, Max.Y, FVector(0.0f, -1.0f, 0.0f), FVector(0.0f, 1.0f, 0.0f))) return false;
-		if (!TestAxis(Start.Z, Dir.Z, Min.Z, Max.Z, FVector(0.0f, 0.0f, -1.0f), FVector(0.0f, 0.0f, 1.0f))) return false;
-
-		if (TExit < 0.0f || TEnter > MaxDist)
-		{
-			return false;
-		}
-
-		OutDistance = TEnter > 0.0f ? TEnter : 0.0f;
-		OutNormal = WorldRot.RotateVector(EnterNormal);
-		if (OutNormal.Length() <= 1.0e-4f)
-		{
-			OutNormal = Start + Dir * OutDistance - Box->GetWorldLocation();
-			if (OutNormal.Length() <= 1.0e-4f)
-			{
-				OutNormal = FVector::UpVector;
-			}
-			OutNormal.Normalize();
-		}
-		return true;
-	}
-
-	bool RayVerticalCapsuleLocal(const FVector& LocalStart, const FVector& LocalDir, float MaxDist,
-		float SegmentHalfLength, float Radius, float& OutDistance, FVector& OutLocalNormal)
-	{
-		bool bFound = false;
-		float Closest = MaxDist;
-		FVector BestNormal = FVector::UpVector;
-
-		const float A = LocalDir.X * LocalDir.X + LocalDir.Y * LocalDir.Y;
-		const float B = LocalStart.X * LocalDir.X + LocalStart.Y * LocalDir.Y;
-		const float C = LocalStart.X * LocalStart.X + LocalStart.Y * LocalStart.Y - Radius * Radius;
-		if (C <= 0.0f && LocalStart.Z >= -SegmentHalfLength && LocalStart.Z <= SegmentHalfLength)
-		{
-			OutDistance = 0.0f;
-			OutLocalNormal = FVector(LocalStart.X, LocalStart.Y, 0.0f);
-			if (OutLocalNormal.Length() <= 1.0e-4f)
-			{
-				OutLocalNormal = FVector::UpVector;
-			}
-			OutLocalNormal.Normalize();
-			return true;
-		}
-
-		if (A > 1.0e-6f)
-		{
-			const float Disc = B * B - A * C;
-			if (Disc >= 0.0f)
-			{
-				const float SqrtDisc = std::sqrt(Disc);
-				const float InvA = 1.0f / A;
-				const float Candidates[2] = { (-B - SqrtDisc) * InvA, (-B + SqrtDisc) * InvA };
-				for (float T : Candidates)
-				{
-					const float Z = LocalStart.Z + LocalDir.Z * T;
-					if (T >= 0.0f && T <= Closest && Z >= -SegmentHalfLength && Z <= SegmentHalfLength)
-					{
-						Closest = T;
-						BestNormal = FVector(LocalStart.X + LocalDir.X * T, LocalStart.Y + LocalDir.Y * T, 0.0f);
-						if (BestNormal.Length() <= 1.0e-4f)
-						{
-							BestNormal = FVector::UpVector;
-						}
-						BestNormal.Normalize();
-						bFound = true;
-					}
-				}
-			}
-		}
-
-		auto TestCap = [&](const FVector& Center)
-		{
-			float T = MaxDist;
-			FVector Normal = FVector::ZeroVector;
-			if (RaySphere(LocalStart, LocalDir, Closest, Center, Radius, T, Normal) && T <= Closest)
-			{
-				Closest = T;
-				BestNormal = Normal;
-				bFound = true;
-			}
-		};
-
-		TestCap(FVector(0.0f, 0.0f, SegmentHalfLength));
-		TestCap(FVector(0.0f, 0.0f, -SegmentHalfLength));
-
-		if (!bFound)
-		{
-			return false;
-		}
-
-		OutDistance = Closest;
-		OutLocalNormal = BestNormal;
-		return true;
-	}
-
-	bool SweepShapeComponent(const FVector& Start, const FVector& Dir, float MaxDist, float Radius,
-		UShapeComponent* Shape, float& OutDistance, FVector& OutNormal)
-	{
-		if (USphereComponent* Sphere = Cast<USphereComponent>(Shape))
-		{
-			return RaySphere(Start, Dir, MaxDist, Sphere->GetWorldLocation(),
-				Sphere->GetScaledSphereRadius() + Radius, OutDistance, OutNormal);
-		}
-
-		if (UBoxComponent* Box = Cast<UBoxComponent>(Shape))
-		{
-			return RayExpandedOrientedBox(Start, Dir, MaxDist, Box, Radius, OutDistance, OutNormal);
-		}
-
-		if (UCapsuleComponent* Capsule = Cast<UCapsuleComponent>(Shape))
-		{
-			const FQuat WorldRot = Capsule->GetWorldMatrix().ToQuat();
-			const FQuat InvWorldRot = WorldRot.Inverse();
-			const FVector LocalStart = InvWorldRot.RotateVector(Start - Capsule->GetWorldLocation());
-			const FVector LocalDir = InvWorldRot.RotateVector(Dir);
-			const float CapsuleRadius = Capsule->GetScaledCapsuleRadius();
-			const float SegmentHalfLength = (std::max)(0.0f, Capsule->GetScaledCapsuleHalfHeight() - CapsuleRadius);
-
-			FVector LocalNormal = FVector::ZeroVector;
-			if (!RayVerticalCapsuleLocal(LocalStart, LocalDir, MaxDist, SegmentHalfLength, CapsuleRadius + Radius, OutDistance, LocalNormal))
-			{
-				return false;
-			}
-
-			OutNormal = WorldRot.RotateVector(LocalNormal);
-			if (OutNormal.Length() <= 1.0e-4f)
-			{
-				OutNormal = FVector::UpVector;
-			}
-			OutNormal.Normalize();
-			return true;
-		}
-
-		return false;
-	}
 }
 
 bool FNativePhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
@@ -735,27 +505,19 @@ bool FNativePhysicsScene::SphereSweepShapeComponents(const FVector& Start, const
 		if (IgnoreActor && Comp->GetOwner() == IgnoreActor) continue;
 		if (Comp->GetCollisionResponseToChannel(TraceChannel) != ECollisionResponse::Block) continue;
 
-		float HitDistance = MaxDist;
-		FVector HitNormal = FVector::ZeroVector;
-		if (!SweepShapeComponent(Start, Dir, MaxDist, Radius, Shape, HitDistance, HitNormal))
+		FHitResult CandidateHit;
+		if (!FCollisionMath::SweepSphereShapeComponent(Start, Dir, MaxDist, Radius, Shape, CandidateHit))
 		{
 			continue;
 		}
-		if (HitDistance >= ClosestDist)
+		if (CandidateHit.Distance >= ClosestDist)
 		{
 			continue;
 		}
 
-		ClosestDist = HitDistance;
+		ClosestDist = CandidateHit.Distance;
 		bFound = true;
-
-		OutHit.bHit = true;
-		OutHit.Distance = HitDistance;
-		OutHit.HitComponent = Comp;
-		OutHit.HitActor = Comp->GetOwner();
-		OutHit.WorldHitLocation = Start + Dir * HitDistance;
-		OutHit.ImpactNormal = HitNormal;
-		OutHit.WorldNormal = HitNormal;
+		OutHit = CandidateHit;
 	}
 
 	return bFound;
