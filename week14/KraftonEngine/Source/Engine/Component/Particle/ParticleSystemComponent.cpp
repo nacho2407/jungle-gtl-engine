@@ -132,6 +132,12 @@ void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 			continue;
 		}
 
+		const UParticleEmitter* Emitter = Instance->GetTemplate();
+		if (!Emitter || !Emitter->IsEnabled())
+		{
+			continue;
+		}
+
 		Instance->SetLODLevelIndex(CurrentLODIndex);
 		Instance->Tick(DeltaTime);
 		bAnyEmitterTicked = true;
@@ -141,6 +147,21 @@ void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	{
 		MarkProxyDirty(EDirtyFlag::Mesh);
 	}
+}
+
+void UParticleSystemComponent::SetPreviewSoloEmitterIndex(int32 InEmitterIndex)
+{
+	PreviewSoloEmitterIndex = InEmitterIndex >= 0 ? InEmitterIndex : -1;
+}
+
+bool UParticleSystemComponent::ShouldCreateEmitterInstance(int32 EmitterIndex, const UParticleEmitter* Emitter) const
+{
+	if (!Emitter || !Emitter->IsEnabled())
+	{
+		return false;
+	}
+
+	return PreviewSoloEmitterIndex < 0 || PreviewSoloEmitterIndex == EmitterIndex;
 }
 
 void UParticleSystemComponent::InitializeEmitterInstances()
@@ -153,9 +174,10 @@ void UParticleSystemComponent::InitializeEmitterInstances()
 	const TArray<UParticleEmitter*>& Emitters = ParticleSystem->GetEmitters();
 	EmitterInstances.reserve(Emitters.size());
 
-	for (UParticleEmitter* Emitter : Emitters)
+	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(Emitters.size()); ++EmitterIndex)
 	{
-		if (!Emitter)
+		UParticleEmitter* Emitter = Emitters[EmitterIndex];
+		if (!ShouldCreateEmitterInstance(EmitterIndex, Emitter))
 		{
 			continue;
 		}

@@ -932,8 +932,14 @@ void FParticleSystemEditorWidget::ValidateSelectionState(const UParticleSystem* 
 	const TArray<UParticleEmitter*>& Emitters = ParticleSystem->GetEmitters();
 	if (Emitters.empty())
 	{
+		ViewState.SoloEmitterIndex = -1;
 		SelectParticleSystem();
 		return;
+	}
+
+	if (ViewState.SoloEmitterIndex >= static_cast<int32>(Emitters.size()))
+	{
+		ViewState.SoloEmitterIndex = -1;
 	}
 
 	FEditorSelectionState& Selection = ViewState.Selection;
@@ -1559,6 +1565,8 @@ void FParticleSystemEditorWidget::CreatePreviewWorld()
 	PreviewActor = WorldContext.World->SpawnActor<AActor>();
 	PreviewParticleComponent = PreviewActor->AddComponent<UParticleSystemComponent>();
 	PreviewParticleComponent->SetTemplate(GetParticleSystem());
+	PreviewParticleComponent->SetPreviewSoloEmitterIndex(ViewState.SoloEmitterIndex);
+	PreviewParticleComponent->ResetSystem();
 	PreviewParticleComponent->Activate();
 	PreviewActor->SetRootComponent(PreviewParticleComponent);
 	PreviewActor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
@@ -1621,6 +1629,7 @@ void FParticleSystemEditorWidget::RestartPreviewSimulation()
 		return;
 	}
 
+	PreviewParticleComponent->SetPreviewSoloEmitterIndex(ViewState.SoloEmitterIndex);
 	PreviewParticleComponent->ResetSystem();
 	PreviewParticleComponent->Activate();
 	PreviewParticleComponent->MarkRenderStateDirty();
@@ -1645,6 +1654,10 @@ void FParticleSystemEditorWidget::RefreshParticleSystemComponents()
 		}
 
 		const bool bWasActive = Component->IsActive();
+		if (Component == PreviewParticleComponent)
+		{
+			Component->SetPreviewSoloEmitterIndex(ViewState.SoloEmitterIndex);
+		}
 		Component->ResetSystem();
 		if (bWasActive)
 		{
@@ -2203,11 +2216,12 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		};
 
 		const ImVec2 HeaderMin = ImGui::GetCursorScreenPos();
-		const ImVec2 HeaderMax(HeaderMin.x + ImGui::GetContentRegionAvail().x, HeaderMin.y + EmitterHeaderHeight);
+		const float HeaderWidth = ImGui::GetContentRegionAvail().x;
+		const ImVec2 HeaderMax(HeaderMin.x + HeaderWidth, HeaderMin.y + EmitterHeaderHeight);
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 		DrawList->AddRectFilled(HeaderMin, HeaderMax, IsEmitterSelected(EmitterIndex) ? IM_COL32(74, 76, 83, 255) : IM_COL32(55, 56, 61, 255));
 		char Header[64];
-		std::snprintf(Header, sizeof(Header), "Emitter %d", EmitterIndex);
+		std::snprintf(Header, sizeof(Header), "Particle Emitter");
 		DrawList->AddText(ImVec2(HeaderMin.x + 8.0f, HeaderMin.y + 7.0f), IM_COL32(240, 242, 245, 255), Header);
 		if (Emitter)
 		{
@@ -2216,10 +2230,95 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			DrawList->AddText(ImVec2(HeaderMax.x - 36.0f, HeaderMin.y + 30.0f), IM_COL32(230, 234, 238, 255), CountLabel);
 		}
 
-		if (ImGui::InvisibleButton("##EmitterHeader", ImVec2(ImGui::GetContentRegionAvail().x, EmitterHeaderHeight)))
+		bool bHeaderButtonHovered = false;
+		if (Emitter)
+		{
+			const float SmallButtonSize = 14.0f;
+			const float SmallButtonGap = 4.0f;
+			const float SmallButtonY = HeaderMin.y + 31.0f;
+			auto DrawSmallSquareButton = [&](const char* Id, const ImVec2& Pos, ImU32 NormalColor, ImU32 HoverColor, ImU32 ActiveColor, const char* Label, ImU32 TextColor)
+			{
+				ImGui::SetCursorScreenPos(Pos);
+				ImGui::InvisibleButton(Id, ImVec2(SmallButtonSize, SmallButtonSize));
+				const bool bClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+				const bool bHovered = ImGui::IsItemHovered();
+				const bool bActive = ImGui::IsItemActive();
+				const ImU32 FillColor = bActive ? ActiveColor : (bHovered ? HoverColor : NormalColor);
+				const ImVec2 Max(Pos.x + SmallButtonSize, Pos.y + SmallButtonSize);
+				DrawList->AddRectFilled(Pos, Max, FillColor, 1.0f);
+				DrawList->AddRect(Pos, Max, IM_COL32(8, 9, 11, 255), 1.0f);
+				if (Label && Label[0] != '\0')
+				{
+					const ImVec2 TextSize = ImGui::CalcTextSize(Label);
+					DrawList->AddText(
+						ImVec2(Pos.x + (SmallButtonSize - TextSize.x) * 0.5f, Pos.y + (SmallButtonSize - TextSize.y) * 0.5f - 1.0f),
+						TextColor,
+						Label);
+				}
+				return bClicked;
+			};
+
+			const ImVec2 EnableButtonPos(HeaderMin.x + 8.0f, SmallButtonY);
+			ImGui::SetCursorScreenPos(EnableButtonPos);
+			ImGui::InvisibleButton("##EmitterEnabled", ImVec2(SmallButtonSize, SmallButtonSize));
+			const bool bEnableClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+			const bool bEnableHovered = ImGui::IsItemHovered();
+			const bool bEnableActive = ImGui::IsItemActive();
+			bHeaderButtonHovered |= bEnableHovered;
+			if (bEnableClicked)
+			{
+				Emitter->SetEnabled(!Emitter->IsEnabled());
+				SelectEmitter(EmitterIndex);
+				MarkDirty();
+				RefreshParticleSystemComponents();
+			}
+			const ImVec2 EnableButtonMax(EnableButtonPos.x + SmallButtonSize, EnableButtonPos.y + SmallButtonSize);
+			const ImU32 EnableFillColor = bEnableActive
+				? IM_COL32(48, 52, 57, 255)
+				: (bEnableHovered ? IM_COL32(62, 66, 72, 255) : IM_COL32(28, 30, 34, 255));
+			DrawList->AddRectFilled(EnableButtonPos, EnableButtonMax, EnableFillColor, 1.0f);
+			DrawList->AddRect(EnableButtonPos, EnableButtonMax, IM_COL32(10, 11, 13, 255), 1.0f);
+			if (Emitter->IsEnabled())
+			{
+				DrawList->AddLine(ImVec2(EnableButtonPos.x + 3.0f, EnableButtonPos.y + 7.0f), ImVec2(EnableButtonPos.x + 6.0f, EnableButtonPos.y + 10.0f), IM_COL32(232, 236, 240, 255), 1.5f);
+				DrawList->AddLine(ImVec2(EnableButtonPos.x + 6.0f, EnableButtonPos.y + 10.0f), ImVec2(EnableButtonPos.x + 11.0f, EnableButtonPos.y + 4.0f), IM_COL32(232, 236, 240, 255), 1.5f);
+			}
+
+			const ImVec2 TempButtonPos(EnableButtonPos.x + SmallButtonSize + SmallButtonGap, SmallButtonY);
+			DrawSmallSquareButton(
+				"##EmitterTempButton",
+				TempButtonPos,
+				IM_COL32(196, 210, 22, 255),
+				IM_COL32(226, 240, 34, 255),
+				IM_COL32(156, 170, 12, 255),
+				"",
+				IM_COL32(0, 0, 0, 0));
+			bHeaderButtonHovered |= ImGui::IsItemHovered();
+
+			const bool bSoloActive = ViewState.SoloEmitterIndex == EmitterIndex;
+			const ImVec2 SoloButtonPos(TempButtonPos.x + SmallButtonSize + SmallButtonGap, SmallButtonY);
+			if (DrawSmallSquareButton(
+				"##EmitterSolo",
+				SoloButtonPos,
+				bSoloActive ? IM_COL32(58, 101, 135, 255) : IM_COL32(86, 112, 126, 255),
+				bSoloActive ? IM_COL32(70, 120, 160, 255) : IM_COL32(100, 130, 146, 255),
+				bSoloActive ? IM_COL32(42, 82, 112, 255) : IM_COL32(70, 96, 112, 255),
+				"S",
+				IM_COL32(222, 236, 246, 255)))
+			{
+				ViewState.SoloEmitterIndex = bSoloActive ? -1 : EmitterIndex;
+				SelectEmitter(EmitterIndex);
+				RestartPreviewSimulation();
+			}
+			bHeaderButtonHovered |= ImGui::IsItemHovered();
+		}
+
+		if (ImGui::IsMouseHoveringRect(HeaderMin, HeaderMax) && !bHeaderButtonHovered && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 		{
 			SelectEmitter(EmitterIndex);
 		}
+		ImGui::SetCursorScreenPos(HeaderMin);
+		ImGui::Dummy(ImVec2(HeaderWidth, EmitterHeaderHeight));
 
 		if (Emitter)
 		{
