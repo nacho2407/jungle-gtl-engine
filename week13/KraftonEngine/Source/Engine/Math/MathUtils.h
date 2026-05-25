@@ -111,6 +111,12 @@ namespace FMath
 		Result.i = (Temp.i & 0xff800000) | (GSRandSeed & 0x007fffff);
 		return Fractional(Result.f);
 	}
+
+	[[nodiscard]] static float FRand()
+	{
+		// 현재는 SRand 가 FRand 의 구현과 같아서 재활용 (향후 바꿔야할 경우를 위해 분리는 해둠)
+		return SRand();
+	}
 }
 
 // 기존 매크로 호환 — 이행 완료 후 제거

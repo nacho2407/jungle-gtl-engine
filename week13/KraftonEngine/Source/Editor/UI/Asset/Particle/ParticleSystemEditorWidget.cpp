@@ -19,6 +19,9 @@
 #include "Materials/Graph/MaterialGraphAsset.h"
 #include "Materials/MaterialManager.h"
 
+#include "Engine/Distributions/DistributionVector.h"
+#include "Engine/Distributions/DistributionFloat.h"
+
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
@@ -63,6 +66,78 @@ namespace
         constexpr ImU32 GridMajor  = IM_COL32(52, 55, 64, 255);
 
         const ImVec4 DimTextV = ImVec4(0.478f, 0.502f, 0.549f, 1.0f);
+    }
+
+    void DrawRawDistributionVector(const char* Label, FRawDistributionVector& Raw, bool& bChanged, UObject* Outer)
+    {
+        if (ImGui::TreeNode(Label))
+        {
+            const char* TypeStr = "None";
+            if (Cast<UDistributionVectorConstant>(Raw.Distribution))TypeStr = "Constant";
+            else if (Cast<UDistributionVectorUniform>(Raw.Distribution)) TypeStr = "Uniform";
+
+            if (ImGui::BeginCombo("Type", TypeStr))
+            {
+                if (ImGui::Selectable("Constant", TypeStr == "Constant"))
+                {
+                    Raw.Distribution = UObjectManager::Get().CreateObject<UDistributionVectorConstant>(Outer);
+                    bChanged = true;
+                }
+                if (ImGui::Selectable("Uniform", TypeStr == "Uniform"))
+                {
+                    Raw.Distribution = UObjectManager::Get().CreateObject<UDistributionVectorUniform>(Outer);
+                    bChanged = true;
+                }
+                ImGui::EndCombo();
+            }
+
+            if (UDistributionVectorConstant* Constant = Cast<UDistributionVectorConstant>(Raw.Distribution))
+            {
+                bChanged |= ImGui::DragFloat3("Value", Constant->Constant.Data, 0.5f);
+            }
+            else if (UDistributionVectorUniform* Uniform = Cast<UDistributionVectorUniform>(Raw.Distribution))
+            {
+                bChanged |= ImGui::DragFloat3("Min", Uniform->Min.Data, 0.5f);
+                bChanged |= ImGui::DragFloat3("Max", Uniform->Max.Data, 0.5f);
+            }
+            ImGui::TreePop();
+        }
+    }
+
+    void DrawRawDistributionFloat(const char* Label, FRawDistributionFloat& Raw, bool& bChanged, UObject* Outer)
+    {
+        if (ImGui::TreeNode(Label))
+        {
+            const char* TypeStr = "None";
+            if (Cast<UDistributionFloatConstant>(Raw.Distribution)) TypeStr = "Constant";
+            else if (Cast<UDistributionFloatUniform>(Raw.Distribution)) TypeStr = "Uniform";
+
+            if (ImGui::BeginCombo("Type", TypeStr))
+            {
+                if (ImGui::Selectable("Constant", TypeStr == "Constant"))
+                {
+                    Raw.Distribution = UObjectManager::Get().CreateObject<UDistributionFloatConstant>(Outer);
+                    bChanged = true;
+                }
+                if (ImGui::Selectable("Uniform", TypeStr == "Uniform"))
+                {
+                    Raw.Distribution = UObjectManager::Get().CreateObject<UDistributionFloatUniform>(Outer);
+                    bChanged = true;
+                }
+                ImGui::EndCombo();
+            }
+
+            if (UDistributionFloatConstant* Constant = Cast<UDistributionFloatConstant>(Raw.Distribution))
+            {
+                bChanged |= ImGui::DragFloat("Value", &Constant->Constant, 0.5f);
+            }
+            else if (UDistributionFloatUniform* Uniform = Cast<UDistributionFloatUniform>(Raw.Distribution))
+            {
+                bChanged |= ImGui::DragFloat("Min", &Uniform->Min, 0.5f);
+                bChanged |= ImGui::DragFloat("Max", &Uniform->Max, 0.5f);
+            }
+            ImGui::TreePop();
+        }
     }
 
     float Clamp01(float V, float Lo, float Hi)
@@ -799,8 +874,8 @@ void FParticleSystemEditorWidget::DuplicateEmitter(int32 SourceIndex)
             else if (auto* X = Cast<UParticleModuleVelocity>(M))
             {
                 auto* N = UObjectManager::Get().CreateObject<UParticleModuleVelocity>(DstLOD);
-                N->MinVelocity = X->MinVelocity;
-                N->MaxVelocity = X->MaxVelocity;
+                N->StartVelocity = X->StartVelocity;
+                N->StartVelocityRadial = X->StartVelocityRadial;
                 NewModule = N;
             }
             else if (auto* X = Cast<UParticleModuleSize>(M))
@@ -1219,7 +1294,6 @@ void FParticleSystemEditorWidget::RenderToolbar()
         IconToolButton("##AddLOD2",
                        LoadToolIcon(L"icon_Cascade_AddLOD2_40x.png"),
                        "+L2", "Add LOD after the current (not implemented)", false, IconSize);
-        ImGui::SameLine();
         IconToolButton("##DeleteLOD",
                        LoadToolIcon(L"icon_Cascade_DeleteLOD_40x.png"),
                        "-LOD", "Delete current LOD (not implemented)", false, IconSize);
@@ -2081,8 +2155,8 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Velocity"))
         {
-            bChanged |= ImGui::DragFloat3("Min", Velocity->MinVelocity.Data, 0.5f);
-            bChanged |= ImGui::DragFloat3("Max", Velocity->MaxVelocity.Data, 0.5f);
+            DrawRawDistributionVector("Start Velocity", Velocity->StartVelocity, bChanged, Velocity);
+            DrawRawDistributionFloat("Start Velocity Radial", Velocity->StartVelocityRadial, bChanged, Velocity);
         }
     }
     else if (UParticleModuleSize* Size = Cast<UParticleModuleSize>(Module))
