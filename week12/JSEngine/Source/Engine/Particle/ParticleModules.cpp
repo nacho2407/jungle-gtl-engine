@@ -245,6 +245,9 @@ UParticleLODLevel::~UParticleLODLevel()
 	UObjectManager::Get().DestroyObject(RequiredModule);
 	RequiredModule = nullptr;
 
+	UObjectManager::Get().DestroyObject(SpawnModule);
+	SpawnModule = nullptr;
+
 	for (UParticleModule* Module : Modules)
 	{
 		UObjectManager::Get().DestroyObject(Module);
