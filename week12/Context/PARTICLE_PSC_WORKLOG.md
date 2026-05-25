@@ -202,3 +202,16 @@
 - Boundary: This does not invent particle lifecycle production; Core must still call the existing `IParticleEmitterInstanceOwner::Add*Event()` hooks at real spawn/death/collision/burst points.
 - Remaining TODO: Replace the temporary world-owned manager location if an engine-wide or WorldSettings-owned Particle Event Manager policy is introduced.
 - Next step: Hand the `ReportEvent*()`/`IParticleEmitterInstanceOwner::Add*Event()` production hook contract to Core, or proceed with another approved PSC/Mesh integration step.
+
+## 2026-05-25 - Post-Core Mesh TypeData runtime resolution and snapshot access
+
+- Branch / HEAD: `feat/PSC` / `5828aba` (uncommitted step changes)
+- Completed step: Connected editable Mesh TypeData soft references to runtime StaticMesh resolution and exposed a read-only PSC render snapshot inspection boundary.
+- Changed files: `JSEngine/Source/Engine/Particle/ParticleModules.h`, `JSEngine/Source/Engine/Particle/ParticleModules.cpp`, `JSEngine/Source/Engine/Particle/ParticleSystemComponent.h`, `JSEngine/Source/Engine/Particle/ParticleSystemComponent.cpp`, `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: `JSEngine.sln` builds successfully for `Debug|x64`; `git diff --check` reported no whitespace errors.
+- Added behavior: `UParticleModuleTypeDataMesh::PostEditProperty()` resolves `MeshAssetPath` through `FResourceManager::LoadStaticMesh()` using the established StaticMesh component runtime pattern; an empty or unresolved path clears the runtime mesh.
+- Added contract: PSC exposes snapshot count and per-index `const FDynamicEmitterDataBase*` lookup so integration tests and future renderer-owned consumption can inspect packed data without mutating PSC-owned storage.
+- Boundary: This step does not add Particle Viewer TypeData editing UI, ParticleSystem asset deserialization, or renderer draw/GPU snapshot consumption.
+- Remaining TODO: Replace PSC interval-based LOD selection with `UParticleSystem::LODDistances` consumption and validate Core-produced spawn/death/burst forwarding.
+- Remaining TODO: Add the approved `particle test` runtime self-test only after the LOD/event integration step is completed.
+- Next step: Implement Asset-owned LOD threshold selection and lifecycle event integration verification, after approval.

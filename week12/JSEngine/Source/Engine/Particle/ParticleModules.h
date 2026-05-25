@@ -217,6 +217,7 @@ public:
 		UParticleEmitter* InEmitterTemplate,
 		IParticleEmitterInstanceOwner& InOwner) override;
 	FDynamicEmitterDataBase* GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance) override;
+	void PostEditProperty(const char* PropertyName) override;
 
 	void SetStaticMesh(UStaticMesh* InStaticMesh);
 	UStaticMesh* GetStaticMesh() const { return Mesh; }

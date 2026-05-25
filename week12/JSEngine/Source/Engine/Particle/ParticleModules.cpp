@@ -1,9 +1,12 @@
 ﻿#include "Particle/ParticleModules.h"
 
+#include "Core/ResourceManager.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
 #include "Particle/ParticleHelper.h"
+
+#include <cstring>
 
 namespace
 {
@@ -364,6 +367,21 @@ void UParticleModuleTypeDataMesh::SetStaticMesh(UStaticMesh* InStaticMesh)
 {
 	Mesh = InStaticMesh;
 	MeshAssetPath.SetPath(Mesh != nullptr ? Mesh->GetAssetPathFileName() : FString());
+}
+
+void UParticleModuleTypeDataMesh::PostEditProperty(const char* PropertyName)
+{
+	UParticleModuleTypeDataBase::PostEditProperty(PropertyName);
+
+	if (PropertyName == nullptr || std::strcmp(PropertyName, "MeshAssetPath") != 0)
+	{
+		return;
+	}
+
+	const FString RequestedPath = MeshAssetPath.GetPath();
+	SetStaticMesh(RequestedPath.empty()
+		? nullptr
+		: FResourceManager::Get().LoadStaticMesh(RequestedPath));
 }
 
 int32 FParticleLODLevelRuntimeCache::GetParticlePayloadOffset(UParticleModule* Module) const

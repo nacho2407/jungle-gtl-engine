@@ -225,6 +225,16 @@ void UParticleSystemComponent::PackRenderData()
 	}
 }
 
+const FDynamicEmitterDataBase* UParticleSystemComponent::GetEmitterRenderDataSnapshot(int32 SnapshotIndex) const
+{
+	if (SnapshotIndex < 0 || SnapshotIndex >= static_cast<int32>(EmitterRenderData.size()))
+	{
+		return nullptr;
+	}
+
+	return EmitterRenderData[SnapshotIndex];
+}
+
 void UParticleSystemComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();

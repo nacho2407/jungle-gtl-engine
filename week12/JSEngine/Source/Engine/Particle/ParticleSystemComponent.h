@@ -46,6 +46,8 @@ public:
 	void TickComponent(float DeltaTime) override;
 	void FinalizeTickComponent();
 	void PackRenderData();
+	int32 GetEmitterRenderDataSnapshotCount() const { return static_cast<int32>(EmitterRenderData.size()); }
+	const FDynamicEmitterDataBase* GetEmitterRenderDataSnapshot(int32 SnapshotIndex) const;
 
 	// --- Particle Event Section ---
 	void ReportEventSpawn(const FParticleEventSpawnData& Event);
