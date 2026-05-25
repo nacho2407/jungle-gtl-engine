@@ -9,6 +9,7 @@
 #include "Particles/Velocity/ParticleModuleVelocity.h"
 #include "Particles/Size/ParticleModuleSize.h"
 #include "Particles/Color/ParticleModuleColor.h"
+#include "Particles/Color/ParticleModuleColorOverLife.h"
 
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"

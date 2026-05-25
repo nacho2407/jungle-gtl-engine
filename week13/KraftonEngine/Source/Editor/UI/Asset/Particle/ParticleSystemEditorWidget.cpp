@@ -9,6 +9,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemManager.h"
 #include "Particles/Color/ParticleModuleColor.h"
+#include "Particles/Color/ParticleModuleColorOverLife.h"
 #include "Particles/Lifetime/ParticleModuleLifetime.h"
 #include "Particles/Location/ParticleModuleLocation.h"
 #include "Particles/Size/ParticleModuleSize.h"
@@ -163,6 +164,7 @@ namespace
         if (Cast<UParticleModuleLocation>(Module)) return "Location";
         if (Cast<UParticleModuleVelocity>(Module)) return "Velocity";
         if (Cast<UParticleModuleSize>(Module))     return "Size";
+        if (Cast<UParticleModuleColorOverLife>(Module)) return "Color Over Life";
         if (Cast<UParticleModuleColor>(Module))    return "Color";
         return "Module";
     }
@@ -1001,6 +1003,14 @@ void FParticleSystemEditorWidget::DuplicateEmitter(int32 SourceIndex)
             {
                 auto* N = UObjectManager::Get().CreateObject<UParticleModuleSize>(DstLOD);
                 N->StartSize = X->StartSize;
+                NewModule = N;
+            }
+            else if (auto* X = Cast<UParticleModuleColorOverLife>(M))
+            {
+                auto* N = UObjectManager::Get().CreateObject<UParticleModuleColorOverLife>(DstLOD);
+                N->ColorOverLife = X->ColorOverLife;
+                N->AlphaOverLife = X->AlphaOverLife;
+                N->bClampAlpha = X->bClampAlpha;
                 NewModule = N;
             }
             else if (auto* X = Cast<UParticleModuleColor>(M))
@@ -2302,6 +2312,14 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                             L->UpdateModuleLists();
                             return true;
                         });
+                        AddItem("Color Over Life", [](bool bQuery, UParticleLODLevel* L)
+                        {
+                            if (bQuery) return HasModuleOfType<UParticleModuleColorOverLife>(L);
+                            auto* N = UObjectManager::Get().CreateObject<UParticleModuleColorOverLife>(L);
+                            L->Modules.push_back(N);
+                            L->UpdateModuleLists();
+                            return true;
+                        });
 
                         ImGui::EndPopup();
                     }
@@ -2795,6 +2813,18 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         if (ImGui::CollapsingHeader("Size"))
         {
 			DrawRawDistributionVector("Start Size", Size->StartSize, bChanged, Size);
+        }
+    }
+    else if (UParticleModuleColorOverLife* ColorOverLife = Cast<UParticleModuleColorOverLife>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Color"))
+        {
+            DrawRawDistributionVector("Color Over Life", ColorOverLife->ColorOverLife, bChanged, ColorOverLife);
+            DrawRawDistributionFloat("Alpha Over Life", ColorOverLife->AlphaOverLife, bChanged, ColorOverLife);
+            bool bClamp = ColorOverLife->bClampAlpha;
+            if (ImGui::Checkbox("Clamp Alpha", &bClamp))
+            { ColorOverLife->bClampAlpha = bClamp ? 1 : 0; bChanged = true; }
         }
     }
     else if (UParticleModuleColor* Color = Cast<UParticleModuleColor>(Module))

@@ -10,6 +10,7 @@
 #include "Size/ParticleModuleSize.h"
 #include "Spawn/ParticleModuleSpawn.h"
 #include "Velocity/ParticleModuleVelocity.h"
+#include "Color/ParticleModuleColorOverLife.h"
 
 namespace
 {
@@ -434,7 +435,7 @@ void UParticleEmitter::InitializeDefaultSpriteEmitter()
 	if (UDistributionVectorUniform* Uniform = Cast<UDistributionVectorUniform>(Size->StartSize.Distribution))
 	{
 		Uniform->Min = FVector(0.0f, 0.f, 0.0f);
-		Uniform->Max = FVector(0.0f, 0.f, 0.0f);
+		Uniform->Max = FVector(50.0f, 50.f, 50.0f);
 	}
 
 	LOD->Modules.push_back(Size);
