@@ -4449,4 +4449,9 @@
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Common\Fog.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </None>
+  </ItemGroup>
 </Project>
