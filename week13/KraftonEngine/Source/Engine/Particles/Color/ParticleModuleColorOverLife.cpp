@@ -1,6 +1,7 @@
 ﻿#include "ParticleModuleColorOverLife.h"
 #include "Particles/ParticleHelper.h"
 #include "Particles/ParticleEmitterInstances.h"
+#include "Serialization/Archive.h"
 
 UParticleModuleColorOverLife::UParticleModuleColorOverLife()
 {
@@ -14,6 +15,21 @@ void UParticleModuleColorOverLife::Spawn(const FSpawnContext& Context)
 	SPAWN_INIT;
 	
 	// 초기 색상 설정
+	// UE5 기준 PostInitProperties 에서 처리하는데 현재 프로젝트에는 없으므로 임시 처리
+	if (!ColorOverLife.Distribution)
+	{
+		UDistributionVectorConstant* ConstantColor = UObjectManager::Get().CreateObject<UDistributionVectorConstant>(this);
+		ConstantColor->Constant = FVector(1, 1, 1);  // default value
+		ColorOverLife.Distribution = ConstantColor;
+	}
+
+	if (!AlphaOverLife.Distribution)
+	{
+		UDistributionFloatConstant* ConstantAlpha = UObjectManager::Get().CreateObject<UDistributionFloatConstant>(this);
+		ConstantAlpha->Constant = 1.0f;
+		AlphaOverLife.Distribution = ConstantAlpha;
+	}
+
 	FVector Color = ColorOverLife.GetValue(0.0f);
 	float Alpha = AlphaOverLife.GetValue(0.0f);
 
@@ -43,8 +59,6 @@ void UParticleModuleColorOverLife::Update(const FUpdateContext& Context)
 	}
 	END_UPDATE_LOOP
 }
-
-#include "Serialization/Archive.h"
 
 void UParticleModuleColorOverLife::Serialize(FArchive& Ar)
 {
