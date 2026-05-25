@@ -57,7 +57,7 @@ private:
 	void AppendSpriteEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
 	void AppendRibbonEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
 	void AppendBeamEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
-	void AppendMeshEmitter(int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
+	void AppendMeshEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
 
 	void ClearDrawBatches()
 	{
@@ -70,6 +70,7 @@ private:
 
 	UMaterialInterface* ResolveEmitterMaterial(const FParticleEmitterInstance* Instance) const;
 	UStaticMesh* ResolveTypeDataMesh(UParticleModuleTypeDataMesh* TypeData) const;
+	bool ShouldSortMeshParticles(const FParticleDrawBatch& Batch, UMaterialInterface* FallbackMaterial) const;
 	UParticleSystemComponent* GetParticleSystemComponent() const;
 
 private:

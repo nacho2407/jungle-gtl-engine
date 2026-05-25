@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
@@ -38,7 +38,7 @@ struct FDynamicSpriteEmitterDataBase : public FDynamicEmitterDataBase
 	FDynamicSpriteEmitterDataBase(int32 InEmitterIndex, const FDynamicEmitterReplayDataBase& InSource, bool bInDepthSort);
 
 	void GatherAliveParticleIndices(TArray<uint16>& OutRenderOrder) const;
-	void SortSpriteParticles(const FFrameContext& Frame, TArray<uint16>& RenderOrder) const;
+	virtual void SortParticleRenderOrder(const FFrameContext& Frame, TArray<uint16>& RenderOrder) const;
 	uint32 BuildDynamicVertexData(const FFrameContext& Frame, FSpriteParticleGeometry& OutGeometry) const;
 
 	bool bDepthSort = false;
@@ -56,6 +56,7 @@ struct FDynamicRibbonEmitterData : public FDynamicSpriteEmitterDataBase
 	FDynamicRibbonEmitterData(int32 InEmitterIndex, const FDynamicEmitterReplayDataBase& InSource);
 
 	int32 GetDynamicVertexStride() const override;
+	void SortParticleRenderOrder(const FFrameContext& Frame, TArray<uint16>& RenderOrder) const override;
 };
 
 struct FDynamicBeamEmitterData : public FDynamicSpriteEmitterDataBase
@@ -63,6 +64,7 @@ struct FDynamicBeamEmitterData : public FDynamicSpriteEmitterDataBase
 	FDynamicBeamEmitterData(int32 InEmitterIndex, const FDynamicEmitterReplayDataBase& InSource);
 
 	int32 GetDynamicVertexStride() const override;
+	void SortParticleRenderOrder(const FFrameContext& Frame, TArray<uint16>& RenderOrder) const override;
 };
 
 struct FDynamicMeshEmitterData : public FDynamicEmitterDataBase
@@ -70,7 +72,7 @@ struct FDynamicMeshEmitterData : public FDynamicEmitterDataBase
 	FDynamicMeshEmitterData(int32 InEmitterIndex, const FDynamicEmitterReplayDataBase& InSource, FParticleMeshEmitterInstance* InMeshInstance);
 
 	int32 GetDynamicVertexStride() const override;
-	uint32 BuildDynamicVertexData(TArray<FMeshParticleInstanceData>& OutInstances) const;
+	uint32 BuildDynamicVertexData(const FFrameContext& Frame, TArray<FMeshParticleInstanceData>& OutInstances, bool bSortByViewDistance) const;
 
 	FParticleMeshEmitterInstance* MeshInstance = nullptr;
 };

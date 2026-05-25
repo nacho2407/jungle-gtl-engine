@@ -6,6 +6,32 @@
 
 #include <algorithm>
 
+namespace
+{
+	template<typename PayloadType>
+	const PayloadType* GetParticlePayloadBySlot(const FParticleEmitterInstance* Instance, uint16 ParticleSlot)
+	{
+		if (!Instance || !Instance->ParticleData || Instance->PayloadOffset < 0)
+		{
+			return nullptr;
+		}
+
+		const int32 PayloadEnd = Instance->PayloadOffset + static_cast<int32>(sizeof(PayloadType));
+		if (PayloadEnd > Instance->ParticleStride)
+		{
+			return nullptr;
+		}
+
+		return reinterpret_cast<const PayloadType*>(
+			Instance->ParticleData + ParticleSlot * Instance->ParticleStride + Instance->PayloadOffset);
+	}
+
+	float GetViewDepth(const FBaseParticle& Particle, const FFrameContext& Frame)
+	{
+		return (Particle.Position - Frame.CameraPosition).Dot(Frame.CameraForward);
+	}
+}
+
 EParticleRenderType GetEmitterRenderType(const FParticleEmitterInstance* Instance)
 {
 	const UParticleLODLevel* LODLevel = Instance ? Instance->GetCurrentLODLevel() : nullptr;
@@ -51,7 +77,7 @@ void FDynamicSpriteEmitterDataBase::GatherAliveParticleIndices(TArray<uint16>& O
 	}
 }
 
-void FDynamicSpriteEmitterDataBase::SortSpriteParticles(const FFrameContext& Frame, TArray<uint16>& RenderOrder) const
+void FDynamicSpriteEmitterDataBase::SortParticleRenderOrder(const FFrameContext& Frame, TArray<uint16>& RenderOrder) const
 {
 	if (!bDepthSort || RenderOrder.size() < 2) return;
 
@@ -61,9 +87,8 @@ void FDynamicSpriteEmitterDataBase::SortSpriteParticles(const FFrameContext& Fra
 		{
 			const FBaseParticle& ParticleA = Data.GetParticle(A);
 			const FBaseParticle& ParticleB = Data.GetParticle(B);
-
-			const float DepthA = (ParticleA.Position - Frame.CameraPosition).Dot(Frame.CameraForward);
-			const float DepthB = (ParticleB.Position - Frame.CameraPosition).Dot(Frame.CameraForward);
+			const float DepthA = GetViewDepth(ParticleA, Frame);
+			const float DepthB = GetViewDepth(ParticleB, Frame);
 			return DepthA > DepthB;
 		});
 }
@@ -74,7 +99,7 @@ uint32 FDynamicSpriteEmitterDataBase::BuildDynamicVertexData(const FFrameContext
 
 	TArray<uint16> RenderOrder;
 	GatherAliveParticleIndices(RenderOrder);
-	SortSpriteParticles(Frame, RenderOrder);
+	SortParticleRenderOrder(Frame, RenderOrder);
 
 	const FParticleDataContainer& Data = Source.Instance->GetParticleDataContainer();
 	const uint32 FirstIndex = OutGeometry.GetIndexCount();
@@ -106,6 +131,35 @@ int32 FDynamicRibbonEmitterData::GetDynamicVertexStride() const
 	return sizeof(FParticleSpriteVertex);
 }
 
+void FDynamicRibbonEmitterData::SortParticleRenderOrder(const FFrameContext& Frame, TArray<uint16>& RenderOrder) const
+{
+	(void)Frame;
+	if (!Source.Instance || RenderOrder.size() < 2) return;
+
+	const FParticleDataContainer& Data = Source.Instance->GetParticleDataContainer();
+	std::sort(RenderOrder.begin(), RenderOrder.end(),
+		[this, &Data](uint16 A, uint16 B)
+		{
+			const FRibbonParticlePayload* PayloadA = GetParticlePayloadBySlot<FRibbonParticlePayload>(Source.Instance, A);
+			const FRibbonParticlePayload* PayloadB = GetParticlePayloadBySlot<FRibbonParticlePayload>(Source.Instance, B);
+			const uint16 RibbonIdA = PayloadA ? PayloadA->RibbonId : 0;
+			const uint16 RibbonIdB = PayloadB ? PayloadB->RibbonId : 0;
+			if (RibbonIdA != RibbonIdB)
+			{
+				return RibbonIdA < RibbonIdB;
+			}
+
+			const FBaseParticle& ParticleA = Data.GetParticle(A);
+			const FBaseParticle& ParticleB = Data.GetParticle(B);
+			if (ParticleA.Age != ParticleB.Age)
+			{
+				return ParticleA.Age > ParticleB.Age;
+			}
+
+			return ParticleA.FrameIndex < ParticleB.FrameIndex;
+		});
+}
+
 FDynamicBeamEmitterData::FDynamicBeamEmitterData(int32 InEmitterIndex, const FDynamicEmitterReplayDataBase& InSource)
 	: FDynamicSpriteEmitterDataBase(InEmitterIndex, InSource, false)
 {
@@ -114,6 +168,28 @@ FDynamicBeamEmitterData::FDynamicBeamEmitterData(int32 InEmitterIndex, const FDy
 int32 FDynamicBeamEmitterData::GetDynamicVertexStride() const
 {
 	return sizeof(FParticleSpriteVertex);
+}
+
+void FDynamicBeamEmitterData::SortParticleRenderOrder(const FFrameContext& Frame, TArray<uint16>& RenderOrder) const
+{
+	(void)Frame;
+	if (!Source.Instance || RenderOrder.size() < 2) return;
+
+	const FParticleDataContainer& Data = Source.Instance->GetParticleDataContainer();
+	std::sort(RenderOrder.begin(), RenderOrder.end(),
+		[this, &Data](uint16 A, uint16 B)
+		{
+			const FBeamParticlePayload* PayloadA = GetParticlePayloadBySlot<FBeamParticlePayload>(Source.Instance, A);
+			const FBeamParticlePayload* PayloadB = GetParticlePayloadBySlot<FBeamParticlePayload>(Source.Instance, B);
+			const uint16 BeamIndexA = PayloadA ? PayloadA->BeamIndex : 0;
+			const uint16 BeamIndexB = PayloadB ? PayloadB->BeamIndex : 0;
+			if (BeamIndexA != BeamIndexB)
+			{
+				return BeamIndexA < BeamIndexB;
+			}
+
+			return Data.GetParticle(A).FrameIndex < Data.GetParticle(B).FrameIndex;
+		});
 }
 
 FDynamicMeshEmitterData::FDynamicMeshEmitterData(int32 InEmitterIndex, const FDynamicEmitterReplayDataBase& InSource, FParticleMeshEmitterInstance* InMeshInstance)
@@ -127,7 +203,7 @@ int32 FDynamicMeshEmitterData::GetDynamicVertexStride() const
 	return sizeof(FMeshParticleInstanceData);
 }
 
-uint32 FDynamicMeshEmitterData::BuildDynamicVertexData(TArray<FMeshParticleInstanceData>& OutInstances) const
+uint32 FDynamicMeshEmitterData::BuildDynamicVertexData(const FFrameContext& Frame, TArray<FMeshParticleInstanceData>& OutInstances, bool bSortByViewDistance) const
 {
 	if (!Source.Instance || !Source.Instance->ParticleIndices || !MeshInstance) return 0;
 
@@ -135,10 +211,31 @@ uint32 FDynamicMeshEmitterData::BuildDynamicVertexData(TArray<FMeshParticleInsta
 	const int32 ActiveCount = Source.Instance->GetActiveParticleCount();
 	const FParticleDataContainer& Data = Source.Instance->GetParticleDataContainer();
 
+	TArray<int32> RenderOrder;
+	RenderOrder.reserve(ActiveCount);
 	for (int32 ParticleIndex = 0; ParticleIndex < ActiveCount; ++ParticleIndex)
 	{
+		const uint16 ParticleSlot = Source.Instance->ParticleIndices[ParticleIndex];
+		if (Data.GetParticle(ParticleSlot).bAlive)
+		{
+			RenderOrder.push_back(ParticleIndex);
+		}
+	}
+
+	if (bSortByViewDistance && RenderOrder.size() > 1)
+	{
+		std::sort(RenderOrder.begin(), RenderOrder.end(),
+			[this, &Data, &Frame](int32 A, int32 B)
+			{
+				const FBaseParticle& ParticleA = Data.GetParticle(Source.Instance->ParticleIndices[A]);
+				const FBaseParticle& ParticleB = Data.GetParticle(Source.Instance->ParticleIndices[B]);
+				return GetViewDepth(ParticleA, Frame) > GetViewDepth(ParticleB, Frame);
+			});
+	}
+
+	for (int32 ParticleIndex : RenderOrder)
+	{
 		const FBaseParticle& Particle = Data.GetParticle(Source.Instance->ParticleIndices[ParticleIndex]);
-		if (!Particle.bAlive) continue;
 
 		FMeshParticleTransform Transform;
 		Transform.Position = Particle.Position;

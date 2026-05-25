@@ -102,7 +102,7 @@ void FParticleSystemSceneProxy::AppendEmitter(const FFrameContext& Frame, int32 
 			break;
 
 		case EParticleRenderType::Mesh:
-			AppendMeshEmitter(EmitterIndex, Source);
+			AppendMeshEmitter(Frame, EmitterIndex, Source);
 			break;
 
 		default:
@@ -168,7 +168,7 @@ void FParticleSystemSceneProxy::AppendBeamEmitter(const FFrameContext& Frame, in
 	}
 }
 
-void FParticleSystemSceneProxy::AppendMeshEmitter(int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source)
+void FParticleSystemSceneProxy::AppendMeshEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source)
 {
 	FParticleMeshEmitterInstance* MeshInstance = dynamic_cast<FParticleMeshEmitterInstance*>(Source.Instance);
 	if (!MeshInstance || !MeshInstance->TypeDataModule) return;
@@ -213,7 +213,7 @@ void FParticleSystemSceneProxy::AppendMeshEmitter(int32 EmitterIndex, const FDyn
 	}
 
 	FDynamicMeshEmitterData DynamicData(EmitterIndex, Source, MeshInstance);
-	Batch.InstanceCount += DynamicData.BuildDynamicVertexData(MeshInstances);
+	Batch.InstanceCount += DynamicData.BuildDynamicVertexData(Frame, MeshInstances, ShouldSortMeshParticles(Batch, Source.Material));
 }
 
 bool FParticleSystemSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context,
@@ -384,6 +384,19 @@ UStaticMesh* FParticleSystemSceneProxy::ResolveTypeDataMesh(UParticleModuleTypeD
 	}
 
 	return LoadedMesh;
+}
+
+bool FParticleSystemSceneProxy::ShouldSortMeshParticles(const FParticleDrawBatch& Batch, UMaterialInterface* FallbackMaterial) const
+{
+	for (const FMeshSectionDraw& Section : Batch.Sections)
+	{
+		if (Section.Material && Section.Material->GetBlendState() != EBlendState::Opaque)
+		{
+			return true;
+		}
+	}
+
+	return FallbackMaterial && FallbackMaterial->GetBlendState() != EBlendState::Opaque;
 }
 
 UParticleSystemComponent* FParticleSystemSceneProxy::GetParticleSystemComponent() const
