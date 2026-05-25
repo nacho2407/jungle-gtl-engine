@@ -81,7 +81,6 @@ public:
 	uint8 bOverrideMaterial : 1;
 	uint8 bOverrideDefaultMotionBlurSettings : 1;
 	uint8 bEnableMotionBlur : 1;
-	uint8 bEnableMeshRotation : 1;
 	FRawDistributionVector RollPitchYawRange;
 	EParticleAxisLock AxisLockOption = EPAL_NONE;
 	uint8 bCameraFacing : 1;

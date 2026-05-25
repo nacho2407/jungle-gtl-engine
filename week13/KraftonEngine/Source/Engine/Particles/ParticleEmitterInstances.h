@@ -248,6 +248,7 @@ struct FParticleMeshEmitterInstance : public FParticleEmitterInstance
 
     void InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent) override;
     void Init() override;
+    bool Resize(int32 NewMaxActiveParticles, bool bSetMaxActiveCount = true) override;
     uint32 RequiredBytes() override;
     void Tick(float DeltaTime, bool bSuppressSpawning) override;
     void UpdateBoundingBox(float DeltaTime) override;

@@ -2114,7 +2114,7 @@ void FParticleMeshEmitterInstance::InitParameters(UParticleEmitter* InTemplate, 
 {
 	FParticleEmitterInstance::InitParameters(InTemplate, InComponent);
 	MeshTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataMesh>(CurrentLODLevel->TypeDataModule) : nullptr;
-	bMeshRotationActive = MeshTypeData ? MeshTypeData->bEnableMeshRotation : false;
+	bMeshRotationActive = InTemplate ? InTemplate->bMeshRotationActive : false;
 	bMotionBlurEnabled = MeshTypeData ? MeshTypeData->IsMotionBlurEnabled() : false;
 }
 
@@ -2122,6 +2122,26 @@ void FParticleMeshEmitterInstance::Init()
 {
 	FParticleEmitterInstance::Init();
 	MeshTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataMesh>(CurrentLODLevel->TypeDataModule) : MeshTypeData;
+}
+
+bool FParticleMeshEmitterInstance::Resize(int32 NewMaxActiveParticles, bool bSetMaxActiveCount)
+{
+	const int32 OldMaxActiveParticles = MaxActiveParticles;
+	if (FParticleEmitterInstance::Resize(NewMaxActiveParticles, bSetMaxActiveCount))
+	{
+		if (bMeshRotationActive && MeshRotationOffset > 0)
+		{
+			for (int32 i = OldMaxActiveParticles; i < NewMaxActiveParticles; ++i)
+			{
+				DECLARE_PARTICLE(Particle, ParticleData + ParticleStride * ParticleIndices[i]);
+				FMeshRotationPayloadData* Payload =
+					reinterpret_cast<FMeshRotationPayloadData*>(reinterpret_cast<uint8*>(&Particle) + MeshRotationOffset);
+				Payload->RotationRateBase = FVector::ZeroVector;
+			}
+		}
+		return true;
+	}
+	return false;
 }
 
 uint32 FParticleMeshEmitterInstance::RequiredBytes()
@@ -2352,8 +2372,15 @@ bool FParticleMeshEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase&
 		static_cast<FDynamicMeshEmitterReplayData&>(OutData);
 
 	MeshData.Material = GetCurrentMaterial();
+	MeshData.SubUVInterpMethod = GetCurrentLODLevelChecked()->RequiredModule ? 0 : 0;
+	MeshData.SubImages_Horizontal = GetCurrentLODLevelChecked()->RequiredModule ? GetCurrentLODLevelChecked()->RequiredModule->SubImages_Horizontal : 1;
+	MeshData.SubImages_Vertical = GetCurrentLODLevelChecked()->RequiredModule ? GetCurrentLODLevelChecked()->RequiredModule->SubImages_Vertical : 1;
+	MeshData.bScaleUV = false;
 	MeshData.MeshRotationOffset = MeshRotationOffset;
 	MeshData.MeshMotionBlurOffset = MeshMotionBlurOffset;
+	MeshData.MeshAlignment = MeshTypeData ? static_cast<uint8>(MeshTypeData->MeshAlignment) : 0;
+	MeshData.bMeshRotationActive = bMeshRotationActive;
+	MeshData.LockedAxis = FVector::XAxisVector;
 	MeshData.bEnableMotionBlur = bMotionBlurEnabled;
 	MeshData.SubUVDataOffset = SubUVDataOffset;
 	MeshData.DynamicParameterDataOffset = DynamicParameterDataOffset;
@@ -2537,7 +2564,6 @@ void FParticleBeam2EmitterInstance::Tick_ModulePostUpdate(float DeltaTime, UPart
 	if (BeamModule_Target && BeamModule_Target->bEnabled) BeamModule_Target->Update({ *this, static_cast<int32>(GetModuleDataOffset(BeamModule_Target)), DeltaTime });
 	if (BeamModule_TargetModifier && BeamModule_TargetModifier->bEnabled) BeamModule_TargetModifier->Update({ *this, static_cast<int32>(GetModuleDataOffset(BeamModule_TargetModifier)), DeltaTime });
 	if (BeamModule_Noise && BeamModule_Noise->bEnabled) BeamModule_Noise->Update({ *this, static_cast<int32>(GetModuleDataOffset(BeamModule_Noise)), DeltaTime });
-	if (BeamTypeData && BeamTypeData->bEnabled) BeamTypeData->Update({ *this, TypeDataOffset, DeltaTime });
 	FParticleEmitterInstance::Tick_ModulePostUpdate(DeltaTime, CurrentLODLevel);
 }
 
@@ -2826,8 +2852,8 @@ bool FParticleTrailsEmitterInstance_Base::AddParticleHelper(int32 InTrailIdx, in
 	if (!StartTrailData || StartParticleIndex == INDEX_NONE)
 	{
 		TrailData->Flags = TRAIL_EMITTER_ONLY;
-		TRAIL_EMITTER_SET_PREV(TrailData->Flags, 0);
-		TRAIL_EMITTER_SET_NEXT(TrailData->Flags, 0);
+		TrailData->Flags = TRAIL_EMITTER_SET_PREV(TrailData->Flags, TRAIL_EMITTER_NULL_PREV);
+		TrailData->Flags = TRAIL_EMITTER_SET_NEXT(TrailData->Flags, TRAIL_EMITTER_NULL_NEXT);
 		SetStartIndex(InTrailIdx, ParticleIndex);
 		SetEndIndex(InTrailIdx, ParticleIndex);
 		++TrailCount;
@@ -2836,23 +2862,21 @@ bool FParticleTrailsEmitterInstance_Base::AddParticleHelper(int32 InTrailIdx, in
 
 	if (TRAIL_EMITTER_IS_ONLY(StartTrailData->Flags))
 	{
-		StartTrailData->Flags &= ~TRAIL_EMITTER_START;
-		StartTrailData->Flags |= TRAIL_EMITTER_END;
-		TRAIL_EMITTER_SET_PREV(StartTrailData->Flags, ParticleIndex);
-		TRAIL_EMITTER_SET_NEXT(StartTrailData->Flags, 0);
+		StartTrailData->Flags = TRAIL_EMITTER_SET_END(StartTrailData->Flags);
+		StartTrailData->Flags = TRAIL_EMITTER_SET_PREV(StartTrailData->Flags, ParticleIndex);
+		StartTrailData->Flags = TRAIL_EMITTER_SET_NEXT(StartTrailData->Flags, TRAIL_EMITTER_NULL_NEXT);
 		SetEndIndex(InTrailIdx, StartParticleIndex);
 	}
 	else
 	{
-		StartTrailData->Flags &= ~TRAIL_EMITTER_START;
-		StartTrailData->Flags |= TRAIL_EMITTER_MIDDLE;
-		TRAIL_EMITTER_SET_PREV(StartTrailData->Flags, ParticleIndex);
+		StartTrailData->Flags = TRAIL_EMITTER_SET_MIDDLE(StartTrailData->Flags);
+		StartTrailData->Flags = TRAIL_EMITTER_SET_PREV(StartTrailData->Flags, ParticleIndex);
 		ClearIndices(InTrailIdx, StartParticleIndex);
 	}
 
-	TrailData->Flags = TRAIL_EMITTER_START;
-	TRAIL_EMITTER_SET_PREV(TrailData->Flags, 0);
-	TRAIL_EMITTER_SET_NEXT(TrailData->Flags, StartParticleIndex);
+	TrailData->Flags = TRAIL_EMITTER_SET_START(0);
+	TrailData->Flags = TRAIL_EMITTER_SET_PREV(TrailData->Flags, TRAIL_EMITTER_NULL_PREV);
+	TrailData->Flags = TRAIL_EMITTER_SET_NEXT(TrailData->Flags, StartParticleIndex);
 	SetStartIndex(InTrailIdx, ParticleIndex);
 	return true;
 }
@@ -2971,7 +2995,8 @@ bool FParticleTrailsEmitterInstance_Base::GetParticleInTrail(bool bSkipStartingP
 		OutTrailData = InStartingTrailData;
 		return true;
 	}
-	if (NextIndex == 0 || NextIndex == INDEX_NONE)
+	const int32 NullIndex = (InGetDirection == GET_Next) ? TRAIL_EMITTER_NULL_NEXT : TRAIL_EMITTER_NULL_PREV;
+	if (NextIndex == NullIndex || NextIndex == INDEX_NONE)
 	{
 		return false;
 	}
@@ -3199,7 +3224,7 @@ void FParticleRibbonEmitterInstance::DetermineVertexAndTriangleCount()
 			VertexCount += InterpCount * 2 * (TrailTypeData ? std::max(1, TrailTypeData->SheetsPerTrail) : 1);
 			TriangleCount += std::max(0, InterpCount - 1) * 2 * (TrailTypeData ? std::max(1, TrailTypeData->SheetsPerTrail) : 1);
 			const int32 NextIndex = TRAIL_EMITTER_GET_NEXT(TrailData->Flags);
-			if (NextIndex == 0 || NextIndex == INDEX_NONE) break;
+			if (NextIndex == TRAIL_EMITTER_NULL_NEXT || NextIndex == INDEX_NONE) break;
 			Particle = GetParticleDirect(NextIndex);
 			TrailData = Particle ? reinterpret_cast<FRibbonTypeDataPayload*>(reinterpret_cast<uint8*>(Particle) + TypeDataOffset) : nullptr;
 		}

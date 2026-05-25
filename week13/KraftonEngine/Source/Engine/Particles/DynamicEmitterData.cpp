@@ -62,10 +62,10 @@ void FDynamicBeam2EmitterData::BuildMeshData()
 {
     Vertices.clear();
     Indices.clear();
-    DoBufferFill_Stub();
+    DoBufferFill();
 }
 
-void FDynamicBeam2EmitterData::DoBufferFill_Stub()
+void FDynamicBeam2EmitterData::DoBufferFill()
 {
     // UE original responsibility:
     // FDynamicBeam2EmitterData::DoBufferFill chooses the correct Beam path and
@@ -78,26 +78,26 @@ void FDynamicBeam2EmitterData::DoBufferFill_Stub()
     //
     // Keep this boundary. Do not replace it with a simplified quad builder.
 
-    FillIndexData_Stub();
+    FillIndexData();
 
     if (Source.bLowFreqNoise_Enabled)
     {
         if (Source.InterpolationPoints > 0)
         {
-            FillData_InterpolatedNoise_Stub();
+            FillData_InterpolatedNoise();
         }
         else
         {
-            FillData_Noise_Stub();
+            FillData_Noise();
         }
     }
     else
     {
-        FillVertexData_NoNoise_Stub();
+        FillVertexData_NoNoise();
     }
 }
 
-int32 FDynamicBeam2EmitterData::FillIndexData_Stub()
+int32 FDynamicBeam2EmitterData::FillIndexData()
 {
     // UE original responsibility:
     // Build the beam/trail strip index stream, including sheets and degenerate
@@ -106,7 +106,7 @@ int32 FDynamicBeam2EmitterData::FillIndexData_Stub()
     return 0;
 }
 
-int32 FDynamicBeam2EmitterData::FillVertexData_NoNoise_Stub()
+int32 FDynamicBeam2EmitterData::FillVertexData_NoNoise()
 {
     // UE original responsibility:
     // Fill beam vertices for the no-noise path using SourcePoint/TargetPoint,
@@ -115,7 +115,7 @@ int32 FDynamicBeam2EmitterData::FillVertexData_NoNoise_Stub()
     return 0;
 }
 
-int32 FDynamicBeam2EmitterData::FillData_Noise_Stub()
+int32 FDynamicBeam2EmitterData::FillData_Noise()
 {
     // UE original responsibility:
     // Fill beam vertices for low-frequency noise path using TargetNoisePoints,
@@ -125,7 +125,7 @@ int32 FDynamicBeam2EmitterData::FillData_Noise_Stub()
     return 0;
 }
 
-int32 FDynamicBeam2EmitterData::FillData_InterpolatedNoise_Stub()
+int32 FDynamicBeam2EmitterData::FillData_InterpolatedNoise()
 {
     // UE original responsibility:
     // Fill beam vertices for interpolated + noise path. This is not equivalent
@@ -134,40 +134,41 @@ int32 FDynamicBeam2EmitterData::FillData_InterpolatedNoise_Stub()
     return 0;
 }
 
+void FDynamicTrailsEmitterData::DoBufferFill()
+{
+    // UE original responsibility:
+    // FDynamicTrailsEmitterData::DoBufferFill checks async buffer inputs and calls
+    // FillIndexData then FillVertexData. Jungle's CPU staging arrays stand in for
+    // the missing FAsyncBufferFillData/RHI layer, and simulation payload is read-only here.
+    FillIndexData();
+    FillVertexData();
+}
+
+int32 FDynamicTrailsEmitterData::FillIndexData()
+{
+    // UE original responsibility:
+    // Build the shared trail strip index stream from linked-list payload flags.
+    // Missing Jungle foundation: exact beam-trail index writer and RHI async buffer.
+    // System to connect later: ParticleSystemRender.cpp FDynamicTrailsEmitterData::FillIndexData.
+    return 0;
+}
+
+int32 FDynamicTrailsEmitterData::FillVertexData()
+{
+    // UE original responsibility:
+    // Base trail vertex fill entry point, overridden by Ribbon/AnimTrail dynamic data.
+    // Missing Jungle foundation: shared trail render fill path.
+    return 0;
+}
+
 void FDynamicRibbonEmitterData::BuildMeshData()
 {
     Vertices.clear();
     Indices.clear();
-    DoBufferFill_Stub();
+    DoBufferFill();
 }
 
-void FDynamicRibbonEmitterData::DoBufferFill_Stub()
-{
-    // UE original responsibility:
-    // FDynamicRibbonEmitterData walks the replay snapshot trail linked-list and
-    // calls FillIndexData / FillVertexData variants according to tessellation,
-    // render axis, sheets, and tangent interpolation.
-    //
-    // Missing Jungle foundation:
-    // beam-trail vertex factory, render-axis adapter, exact trail index writer,
-    // and RHI dynamic buffer fill.
-    //
-    // Keep this boundary. Do not replace it with a segment-quad simplification.
-
-    FillIndexData_Stub();
-    FillVertexData_Stub();
-}
-
-int32 FDynamicRibbonEmitterData::FillIndexData_Stub()
-{
-    // UE original responsibility:
-    // Build the ribbon strip index stream from trail START/NEXT payload links,
-    // including sheets and degenerate joins.
-    // TODO(Cascade port): port UE ribbon FillIndexData semantics.
-    return 0;
-}
-
-int32 FDynamicRibbonEmitterData::FillVertexData_Stub()
+int32 FDynamicRibbonEmitterData::FillVertexData()
 {
     // UE original responsibility:
     // Fill ribbon vertices from trail payload, RenderingInterpCount, Tangent,
@@ -176,7 +177,7 @@ int32 FDynamicRibbonEmitterData::FillVertexData_Stub()
     return 0;
 }
 
-int32 FDynamicRibbonEmitterData::FillInterpolatedVertexData_Stub()
+int32 FDynamicRibbonEmitterData::FillInterpolatedVertexData()
 {
     // UE original responsibility:
     // Fill tessellated ribbon vertices with tangent/cubic interpolation between

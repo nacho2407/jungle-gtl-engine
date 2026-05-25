@@ -70,7 +70,6 @@ UParticleModuleTypeDataMesh::UParticleModuleTypeDataMesh()
 	, bOverrideMaterial(false)
 	, bOverrideDefaultMotionBlurSettings(false)
 	, bEnableMotionBlur(false)
-	, bEnableMeshRotation(true)
 	, bCameraFacing(false)
 	, bApplyParticleRotationAsSpin(false)
 	, bFaceCameraDirectionRatherThanPosition(false)
@@ -150,8 +149,7 @@ void UParticleModuleTypeDataMesh::Serialize(FArchive& Ar)
 	bool OverrideMaterial = bOverrideMaterial;
 	bool OverrideDefaultMotionBlurSettings = bOverrideDefaultMotionBlurSettings;
 	bool EnableMotionBlur = bEnableMotionBlur;
-	bool EnableMeshRotation = bEnableMeshRotation;
-	Ar << OverrideMaterial << OverrideDefaultMotionBlurSettings << EnableMotionBlur << EnableMeshRotation;
+	Ar << OverrideMaterial << OverrideDefaultMotionBlurSettings << EnableMotionBlur;
 
 	RollPitchYawRange.Serialize(Ar);
 	Ar << reinterpret_cast<int32&>(AxisLockOption);
@@ -175,7 +173,6 @@ void UParticleModuleTypeDataMesh::Serialize(FArchive& Ar)
 		bOverrideMaterial = OverrideMaterial;
 		bOverrideDefaultMotionBlurSettings = OverrideDefaultMotionBlurSettings;
 		bEnableMotionBlur = EnableMotionBlur;
-		bEnableMeshRotation = EnableMeshRotation;
 		bCameraFacing = CameraFacing;
 		bApplyParticleRotationAsSpin = ApplyParticleRotationAsSpin;
 		bFaceCameraDirectionRatherThanPosition = FaceCameraDirectionRatherThanPosition;

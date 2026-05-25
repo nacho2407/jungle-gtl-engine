@@ -2,9 +2,12 @@
 
 #include "Core/Types/CoreTypes.h"
 #include "Core/Types/EngineTypes.h"
+#include "Math/Quat.h"
 #include "Math/Vector.h"
 #include "Math/RandomStream.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
 
 #ifndef INDEX_NONE
@@ -155,11 +158,23 @@ struct FBeamParticleModifierPayloadData
 	{
 		if (bModifyTangent)
 		{
-			// Unreal rotates relative tangent modifiers into the current tangent basis.
-			// Jungle currently lacks the exact FVector::FindBetweenNormals helper, so
-			// the absolute branch is exact and the relative branch is left as the UE
-			// adapter point instead of replacing it with unrelated lookup logic.
-			const FVector ModTangent = bAbsolute ? Tangent : Tangent;
+			FVector ModTangent = Tangent;
+			if (!bAbsolute)
+			{
+				const FVector From = FVector::XAxisVector;
+				const FVector To = Value.GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+				float Dot = From.Dot(To);
+				Dot = Dot < -1.0f ? -1.0f : (Dot > 1.0f ? 1.0f : Dot);
+				if (Dot < -0.9999f)
+				{
+					ModTangent = FQuat::FromAxisAngle(FVector::YAxisVector, 3.14159265358979323846f).RotateVector(Tangent);
+				}
+				else if (Dot < 0.9999f)
+				{
+					const FVector Axis = From.Cross(To).GetSafeNormal(1.0e-6f, FVector::ZAxisVector);
+					ModTangent = FQuat::FromAxisAngle(Axis, std::acos(Dot)).RotateVector(Tangent);
+				}
+			}
 			Value = bScaleTangent ? (Value * ModTangent) : (Value + ModTangent);
 		}
 	}
@@ -173,26 +188,50 @@ struct FBeamParticleModifierPayloadData
 	}
 };
 
-#define TRAIL_EMITTER_FLAG_MASK				0xf0000000
-#define TRAIL_EMITTER_FORCEKILL			0x00000000
-#define TRAIL_EMITTER_DEADTRAIL			0x10000000
-#define TRAIL_EMITTER_MIDDLE				0x20000000
-#define TRAIL_EMITTER_START				0x40000000
-#define TRAIL_EMITTER_END					0x80000000
-#define TRAIL_EMITTER_ONLY					(TRAIL_EMITTER_START | TRAIL_EMITTER_END)
+#define TRAIL_EMITTER_FLAG_FORCEKILL	0x00000000
+#define TRAIL_EMITTER_FLAG_DEADTRAIL	0x10000000
+#define TRAIL_EMITTER_FLAG_MIDDLE		0x20000000
+#define TRAIL_EMITTER_FLAG_START		0x40000000
+#define TRAIL_EMITTER_FLAG_END			0x80000000
+#define TRAIL_EMITTER_FLAG_MASK			0xf0000000
 #define TRAIL_EMITTER_PREV_MASK			0x0fffc000
-#define TRAIL_EMITTER_PREV_SHIFT			14
+#define TRAIL_EMITTER_PREV_SHIFT		14
 #define TRAIL_EMITTER_NEXT_MASK			0x00003fff
-#define TRAIL_EMITTER_NEXT_SHIFT			0
-#define TRAIL_EMITTER_IS_START(x)			(((x) & TRAIL_EMITTER_START) != 0)
-#define TRAIL_EMITTER_IS_END(x)			(((x) & TRAIL_EMITTER_END) != 0)
-#define TRAIL_EMITTER_IS_ONLY(x)			(((x) & TRAIL_EMITTER_ONLY) == TRAIL_EMITTER_ONLY)
-#define TRAIL_EMITTER_IS_MIDDLE(x)			(((x) & TRAIL_EMITTER_FLAG_MASK) == TRAIL_EMITTER_MIDDLE)
-#define TRAIL_EMITTER_IS_DEADTRAIL(x)		(((x) & TRAIL_EMITTER_DEADTRAIL) != 0)
-#define TRAIL_EMITTER_SET_PREV(x, Prev)		((x) = (((x) & ~TRAIL_EMITTER_PREV_MASK) | (((Prev) << TRAIL_EMITTER_PREV_SHIFT) & TRAIL_EMITTER_PREV_MASK)))
-#define TRAIL_EMITTER_SET_NEXT(x, Next)		((x) = (((x) & ~TRAIL_EMITTER_NEXT_MASK) | (((Next) << TRAIL_EMITTER_NEXT_SHIFT) & TRAIL_EMITTER_NEXT_MASK)))
-#define TRAIL_EMITTER_GET_PREV(x)			(((x) & TRAIL_EMITTER_PREV_MASK) >> TRAIL_EMITTER_PREV_SHIFT)
-#define TRAIL_EMITTER_GET_NEXT(x)			(((x) & TRAIL_EMITTER_NEXT_MASK) >> TRAIL_EMITTER_NEXT_SHIFT)
+#define TRAIL_EMITTER_NEXT_SHIFT		0
+
+#define TRAIL_EMITTER_NULL_PREV			(TRAIL_EMITTER_PREV_MASK >> TRAIL_EMITTER_PREV_SHIFT)
+#define TRAIL_EMITTER_NULL_NEXT			(TRAIL_EMITTER_NEXT_MASK >> TRAIL_EMITTER_NEXT_SHIFT)
+
+#define TRAIL_EMITTER_CHECK_FLAG(val, mask, flag)				(((val) & (mask)) == (flag))
+#define TRAIL_EMITTER_SET_FLAG(val, mask, flag)					(((val) & ~(mask)) | (flag))
+#define TRAIL_EMITTER_GET_PREVNEXT(val, mask, shift)			(((val) & (mask)) >> (shift))
+#define TRAIL_EMITTER_SET_PREVNEXT(val, mask, shift, setval)	(((val) & ~(mask)) | (((setval) << (shift)) & (mask)))
+
+#define TRAIL_EMITTER_IS_START(index)		TRAIL_EMITTER_CHECK_FLAG(index, TRAIL_EMITTER_FLAG_MASK, TRAIL_EMITTER_FLAG_START)
+#define TRAIL_EMITTER_SET_START(index)		TRAIL_EMITTER_SET_FLAG(index, TRAIL_EMITTER_FLAG_MASK, TRAIL_EMITTER_FLAG_START)
+#define TRAIL_EMITTER_IS_END(index)			TRAIL_EMITTER_CHECK_FLAG(index, TRAIL_EMITTER_FLAG_MASK, TRAIL_EMITTER_FLAG_END)
+#define TRAIL_EMITTER_SET_END(index)		TRAIL_EMITTER_SET_FLAG(index, TRAIL_EMITTER_FLAG_MASK, TRAIL_EMITTER_FLAG_END)
+#define TRAIL_EMITTER_IS_MIDDLE(index)		TRAIL_EMITTER_CHECK_FLAG(index, TRAIL_EMITTER_FLAG_MASK, TRAIL_EMITTER_FLAG_MIDDLE)
+#define TRAIL_EMITTER_SET_MIDDLE(index)		TRAIL_EMITTER_SET_FLAG(index, TRAIL_EMITTER_FLAG_MASK, TRAIL_EMITTER_FLAG_MIDDLE)
+#define TRAIL_EMITTER_IS_ONLY(index)		(TRAIL_EMITTER_CHECK_FLAG(index, TRAIL_EMITTER_FLAG_MASK, TRAIL_EMITTER_FLAG_START) && (TRAIL_EMITTER_GET_NEXT(index) == TRAIL_EMITTER_NULL_NEXT))
+#define TRAIL_EMITTER_SET_ONLY(index)		TRAIL_EMITTER_SET_FLAG(index, TRAIL_EMITTER_FLAG_MASK, TRAIL_EMITTER_FLAG_START)
+#define TRAIL_EMITTER_IS_FORCEKILL(index)	TRAIL_EMITTER_CHECK_FLAG(index, TRAIL_EMITTER_FLAG_MASK, TRAIL_EMITTER_FLAG_FORCEKILL)
+#define TRAIL_EMITTER_SET_FORCEKILL(index)	TRAIL_EMITTER_SET_FLAG(index, TRAIL_EMITTER_FLAG_MASK, TRAIL_EMITTER_FLAG_FORCEKILL)
+#define TRAIL_EMITTER_IS_DEADTRAIL(index)	TRAIL_EMITTER_CHECK_FLAG(index, TRAIL_EMITTER_FLAG_MASK, TRAIL_EMITTER_FLAG_DEADTRAIL)
+#define TRAIL_EMITTER_SET_DEADTRAIL(index)	TRAIL_EMITTER_SET_FLAG(index, TRAIL_EMITTER_FLAG_MASK, TRAIL_EMITTER_FLAG_DEADTRAIL)
+#define TRAIL_EMITTER_IS_HEAD(index)		(TRAIL_EMITTER_IS_START(index) || TRAIL_EMITTER_IS_DEADTRAIL(index))
+#define TRAIL_EMITTER_IS_HEADONLY(index)	((TRAIL_EMITTER_IS_START(index) || TRAIL_EMITTER_IS_DEADTRAIL(index)) && (TRAIL_EMITTER_GET_NEXT(index) == TRAIL_EMITTER_NULL_NEXT))
+#define TRAIL_EMITTER_GET_PREV(index)		TRAIL_EMITTER_GET_PREVNEXT(index, TRAIL_EMITTER_PREV_MASK, TRAIL_EMITTER_PREV_SHIFT)
+#define TRAIL_EMITTER_SET_PREV(index, prev)	TRAIL_EMITTER_SET_PREVNEXT(index, TRAIL_EMITTER_PREV_MASK, TRAIL_EMITTER_PREV_SHIFT, prev)
+#define TRAIL_EMITTER_GET_NEXT(index)		TRAIL_EMITTER_GET_PREVNEXT(index, TRAIL_EMITTER_NEXT_MASK, TRAIL_EMITTER_NEXT_SHIFT)
+#define TRAIL_EMITTER_SET_NEXT(index, next)	TRAIL_EMITTER_SET_PREVNEXT(index, TRAIL_EMITTER_NEXT_MASK, TRAIL_EMITTER_NEXT_SHIFT, next)
+
+#define TRAIL_EMITTER_FORCEKILL		TRAIL_EMITTER_FLAG_FORCEKILL
+#define TRAIL_EMITTER_DEADTRAIL		TRAIL_EMITTER_FLAG_DEADTRAIL
+#define TRAIL_EMITTER_MIDDLE		TRAIL_EMITTER_FLAG_MIDDLE
+#define TRAIL_EMITTER_START			TRAIL_EMITTER_FLAG_START
+#define TRAIL_EMITTER_END			TRAIL_EMITTER_FLAG_END
+#define TRAIL_EMITTER_ONLY			TRAIL_EMITTER_SET_NEXT(TRAIL_EMITTER_SET_PREV(TRAIL_EMITTER_SET_ONLY(0), TRAIL_EMITTER_NULL_PREV), TRAIL_EMITTER_NULL_NEXT)
 
 struct FTrailsBaseTypeDataPayload
 {

@@ -46,8 +46,15 @@ struct FDynamicSpriteEmitterReplayDataBase : FDynamicEmitterReplayDataBase
 
 struct FDynamicMeshEmitterReplayData : FDynamicSpriteEmitterReplayDataBase
 {
+	int32 SubUVInterpMethod = 0;
+	int32 SubImages_Horizontal = 0;
+	int32 SubImages_Vertical = 0;
+	bool bScaleUV = false;
 	int32 MeshRotationOffset  = 0;
 	int32 MeshMotionBlurOffset = 0;
+	uint8 MeshAlignment = 0;
+	bool bMeshRotationActive = false;
+	FVector LockedAxis = FVector::XAxisVector;
 	bool  bEnableMotionBlur   = false;
 };
 
@@ -84,9 +91,17 @@ struct FDynamicMeshEmitterData : FDynamicSpriteEmitterDataBase
 struct FParticleBeamTrailVertex
 {
 	FVector Position = FVector::ZeroVector;
+	float RelativeTime = 0.0f;
 	FVector OldPosition = FVector::ZeroVector;
-	FVector2 TexCoord = FVector2(0.0f, 0.0f);
+	float ParticleId = 0.0f;
+	FVector2 Size = FVector2(0.0f, 0.0f);
+	float Rotation = 0.0f;
+	float SubImageIndex = 0.0f;
 	FLinearColor Color = FLinearColor::White();
+	float Tex_U = 0.0f;
+	float Tex_V = 0.0f;
+	float Tex_U2 = 0.0f;
+	float Tex_V2 = 0.0f;
 };
 
 struct FDynamicBeam2EmitterReplayData : FDynamicSpriteEmitterReplayDataBase
@@ -150,14 +165,11 @@ struct FDynamicBeam2EmitterData : FDynamicSpriteEmitterDataBase
 
 	void BuildMeshData();
 
-	// Unreal FDynamicBeam2EmitterData responsibility slots.
-	// RHI/async-buffer structures are not present in Jungle yet, so these fill
-	// Jungle CPU staging arrays or remain stubs without changing simulation state.
-	int32 FillIndexData_Stub();
-	int32 FillVertexData_NoNoise_Stub();
-	int32 FillData_Noise_Stub();
-	int32 FillData_InterpolatedNoise_Stub();
-	void DoBufferFill_Stub();
+	int32 FillIndexData();
+	int32 FillVertexData_NoNoise();
+	int32 FillData_Noise();
+	int32 FillData_InterpolatedNoise();
+	void DoBufferFill();
 };
 
 struct FDynamicTrailsEmitterReplayData : FDynamicSpriteEmitterReplayDataBase
@@ -177,7 +189,38 @@ struct FDynamicRibbonEmitterReplayData : FDynamicTrailsEmitterReplayData
 	int32 MaxTessellationBetweenParticles = 0;
 };
 
-struct FDynamicRibbonEmitterData : FDynamicSpriteEmitterDataBase
+struct FDynamicTrailsEmitterData : FDynamicSpriteEmitterDataBase
+{
+	FDynamicTrailsEmitterReplayData* SourcePointer = nullptr;
+	int32 LastFramePreRendered = -1;
+	uint32 bClipSourceSegement : 1;
+	uint32 bRenderGeometry : 1;
+	uint32 bRenderParticles : 1;
+	uint32 bRenderTangents : 1;
+	uint32 bRenderTessellation : 1;
+	uint32 bTextureTileDistance : 1;
+	float DistanceTessellationStepSize = 12.5f;
+	float TangentTessellationScalar = 25.0f;
+	float TextureTileDistance = 0.0f;
+
+	FDynamicTrailsEmitterData()
+		: bClipSourceSegement(false)
+		, bRenderGeometry(true)
+		, bRenderParticles(false)
+		, bRenderTangents(false)
+		, bRenderTessellation(false)
+		, bTextureTileDistance(false)
+	{
+	}
+
+	const FDynamicEmitterReplayDataBase& GetSource() const override { return *SourcePointer; }
+	int32 GetDynamicVertexStride() const override { return sizeof(FParticleBeamTrailVertex); }
+	int32 FillIndexData();
+	virtual int32 FillVertexData();
+	void DoBufferFill();
+};
+
+struct FDynamicRibbonEmitterData : FDynamicTrailsEmitterData
 {
 	FDynamicRibbonEmitterReplayData Source;
 	TArray<FParticleBeamTrailVertex> Vertices;
@@ -188,18 +231,13 @@ struct FDynamicRibbonEmitterData : FDynamicSpriteEmitterDataBase
 		: RenderAxisOption(0)
 	{
 		Source.eEmitterType = EDynamicEmitterType::Ribbon;
+		SourcePointer = &Source;
 	}
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
 	int32 GetDynamicVertexStride() const override { return sizeof(FParticleBeamTrailVertex); }
 
 	void BuildMeshData();
-
-	// Unreal FDynamicRibbonEmitterData responsibility slots.
-	// These preserve the original renderer function boundaries while the
-	// missing beam-trail vertex factory/RHI fill path remains stubbed.
-	int32 FillIndexData_Stub();
-	int32 FillVertexData_Stub();
-	int32 FillInterpolatedVertexData_Stub();
-	void DoBufferFill_Stub();
+	int32 FillVertexData() override;
+	int32 FillInterpolatedVertexData();
 };

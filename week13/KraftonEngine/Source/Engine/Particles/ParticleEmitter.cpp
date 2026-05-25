@@ -11,6 +11,8 @@
 #include "Spawn/ParticleModuleSpawn.h"
 #include "Velocity/ParticleModuleVelocity.h"
 #include "Color/ParticleModuleColorOverLife.h"
+#include "Particles/Rotation/ParticleModuleMeshRotation.h"
+#include "Particles/RotationRate/ParticleModuleMeshRotationRate.h"
 
 namespace
 {
@@ -148,6 +150,7 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 
 	TypeDataOffset = 0;
 	TypeDataInstanceOffset = -1;
+	bMeshRotationActive = false;
 
 	for (UParticleLODLevel* LODLevel : LODLevels)
 	{
@@ -190,6 +193,11 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 		if (!ParticleModule)
 		{
 			continue;
+		}
+
+		if (Cast<UParticleModuleMeshRotation>(ParticleModule) || Cast<UParticleModuleMeshRotationRate>(ParticleModule))
+		{
+			bMeshRotationActive = true;
 		}
 
 		const int32 ReqBytes = static_cast<int32>(ParticleModule->RequiredBytes(HighTypeData));
