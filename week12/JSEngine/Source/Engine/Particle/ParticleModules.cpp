@@ -373,15 +373,11 @@ void UParticleModuleTypeDataMesh::PostEditProperty(const char* PropertyName)
 {
 	UParticleModuleTypeDataBase::PostEditProperty(PropertyName);
 
-	if (PropertyName == nullptr || std::strcmp(PropertyName, "MeshAssetPath") != 0)
+	if (PropertyName != nullptr || std::strcmp(PropertyName, "MeshAssetPath") == 0)
 	{
-		return;
+        const FString RequestedPath = MeshAssetPath.GetPath();
+        SetStaticMesh(RequestedPath.empty() ? nullptr : FResourceManager::Get().LoadStaticMesh(RequestedPath));
 	}
-
-	const FString RequestedPath = MeshAssetPath.GetPath();
-	SetStaticMesh(RequestedPath.empty()
-		? nullptr
-		: FResourceManager::Get().LoadStaticMesh(RequestedPath));
 }
 
 int32 FParticleLODLevelRuntimeCache::GetParticlePayloadOffset(UParticleModule* Module) const

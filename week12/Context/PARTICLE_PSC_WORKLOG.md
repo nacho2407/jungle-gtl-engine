@@ -215,3 +215,28 @@
 - Remaining TODO: Replace PSC interval-based LOD selection with `UParticleSystem::LODDistances` consumption and validate Core-produced spawn/death/burst forwarding.
 - Remaining TODO: Add the approved `particle test` runtime self-test only after the LOD/event integration step is completed.
 - Next step: Implement Asset-owned LOD threshold selection and lifecycle event integration verification, after approval.
+
+## 2026-05-25 - Asset-owned LOD selection and lifecycle event integration check
+
+- Branch / HEAD: `feat/PSC` / `5828aba` (uncommitted step changes)
+- Completed step: Replaced PSC-local interval selection with ParticleSystem-owned LOD thresholds and verified the merged Core event production path still reaches PSC dispatch.
+- Changed files: `JSEngine/Source/Engine/Particle/ParticleSystemComponent.h`, `JSEngine/Source/Engine/Particle/ParticleSystemComponent.cpp`, `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: `JSEngine.sln` builds successfully for `Debug|x64`; `git diff --check` reported no whitespace errors; static inspection confirmed Core spawn/death/burst calls flow through `IParticleEmitterInstanceOwner`, PSC queues, and `AParticleEventManager` broadcasts.
+- Added behavior: Automatic LOD selection consumes `UParticleSystem::LODDistances`; a missing camera, missing next threshold, or single-LOD emitter remains at LOD 0.
+- Added behavior: Selection can advance only through available emitter/threshold pairs, and stops at a negative or decreasing subsequent threshold so malformed asset data cannot cause further transitions.
+- Removed interim contract: `UParticleSystemComponent::LODDistanceInterval` is no longer exposed or consumed now that the asset-owned distance surface exists.
+- Boundary: This step does not add LOD authoring UI or serialization policy, lifecycle receiver routing, or collision-event generation.
+- Remaining TODO: Keep ParticleSystem asset resolution at the existing Asset-loader TODO until the public loader contract is supplied.
+- Remaining TODO: Add and run the approved `particle test` console self-test for Mesh snapshot, LOD transition, and spawn/death/burst dispatch behavior.
+- Next step: Implement the runtime console self-test fixture and command, after approval.
+
+## 2026-05-25 - Mesh TypeData property callback review
+
+- Branch / HEAD: `feat/PSC` / `5828aba` (uncommitted step changes)
+- Completed step: Reviewed the current `UParticleModuleTypeDataMesh::PostEditProperty()` callback shape against the existing StaticMesh component property-resolution pattern.
+- Changed files: `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: Analysis only; inspected the current Mesh TypeData implementation, `UObject::PostEditProperty()` contract, and `UStaticMeshComponent::PostEditProperty()`.
+- Findings: Resolving `MeshAssetPath` in `UParticleModuleTypeDataMesh::PostEditProperty()` is the correct runtime editing boundary and does not define ParticleSystem asset serialization policy.
+- Findings: The current conditional `if (PropertyName || std::strcmp(PropertyName, "MeshAssetPath") == 0)` is invalid because any non-null property name enters the reload path and a null property name reaches `std::strcmp()` with a null pointer.
+- Remaining TODO: Restore the guarded `MeshAssetPath` equality check before relying on this runtime resolution path.
+- Next step: Correct the Mesh TypeData property-name guard after approval, then resume the approved runtime self-test step.

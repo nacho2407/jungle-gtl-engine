@@ -281,7 +281,7 @@ void UParticleSystemComponent::ReleaseRenderData()
 
 int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const
 {
-	if (EmitterTemplate == nullptr || EmitterTemplate->LODLevels.size() <= 1 || LODDistanceInterval <= 0.0f)
+	if (Template == nullptr || EmitterTemplate == nullptr || EmitterTemplate->LODLevels.size() <= 1)
 	{
 		return 0;
 	}
@@ -294,11 +294,38 @@ int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* Emit
 		return 0;
 	}
 
-	// Camera와 ParicleSystemComponent간 거리 계산
-	// 임시로 1000 단위로 LOD 레벨을 확장한다. [0, LODLevels.size())로 범위 제한.
+	// ParticleSystem Asset의 LOD가 3이라고 하더라도, 특정 Emitter의 LOD가 1이라면 1을 적용.	
+	const int32 ThresholdCount = std::min(
+		static_cast<int32>(EmitterTemplate->LODLevels.size()),
+		static_cast<int32>(Template->LODDistances.size()));
+	if (ThresholdCount <= 1)
+	{
+		return 0;
+	}
+
 	const float Distance = FVector::Distance(GetWorldLocation(), ActiveCamera->GetLocation());
-	const int32 SelectedIndex = static_cast<int32>(Distance / LODDistanceInterval);
-	return std::clamp(SelectedIndex, 0, static_cast<int32>(EmitterTemplate->LODLevels.size()) - 1);
+	float PreviousThreshold = Template->LODDistances[0];
+	int32 SelectedIndex = 0;
+
+	for (int32 LODIndex = 1; LODIndex < ThresholdCount; ++LODIndex)
+	{
+		const float Threshold = Template->LODDistances[LODIndex];
+		if (Threshold < 0.0f || Threshold < PreviousThreshold)
+		{
+			// 잘못된 LOD 거리 데이터 이후의 전환은 사용하지 않음.
+			break;
+		}
+
+		if (Distance < Threshold)
+		{
+			break;
+		}
+
+		SelectedIndex = LODIndex;
+		PreviousThreshold = Threshold;
+	}
+
+	return SelectedIndex;
 }
 
 void UParticleSystemComponent::UpdateLODLevel()
