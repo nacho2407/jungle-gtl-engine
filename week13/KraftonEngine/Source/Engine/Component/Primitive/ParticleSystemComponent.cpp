@@ -4,6 +4,7 @@
 #include "Particles/ParticleEmitterInstances.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemManager.h"
+#include "Particles/TypeData/ParticleModuleTypeDataBase.h"
 #include "Render/Proxy/ParticleSystemSceneProxy.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
@@ -68,6 +69,7 @@ void UParticleSystemComponent::ResetSystem()
 {
     ClearRenderData();
     ClearEmitterInstances();
+	CachedWorldTimeSeconds = 0.0f;
 
     bInitialized = false;
 
@@ -256,6 +258,8 @@ void UParticleSystemComponent::TickComponent(
         InitializeSystem();
     }
 
+	CachedWorldTimeSeconds += DeltaTime;
+
 	int32 CalculatedLODIndex = 0;
 	if (Template.Get() && !Template->LODDistances.empty())
 	{
@@ -391,11 +395,19 @@ void UParticleSystemComponent::BuildEmitterInstances()
         Emitter->CacheEmitterModuleInfo();
 
         FParticleEmitterInstance* Instance = nullptr;
-        if (Emitter->bUseMeshInstance)
+        if (UParticleLODLevel* LODLevel = Emitter->GetLODLevel(0))
+        {
+            if (LODLevel->TypeDataModule)
+            {
+                Instance = LODLevel->TypeDataModule->CreateInstance(Emitter, *this);
+            }
+        }
+
+        if (!Instance && Emitter->bUseMeshInstance)
         {
             Instance = new FParticleMeshEmitterInstance();
         }
-        else
+        else if (!Instance)
         {
             Instance = new FParticleSpriteEmitterInstance();
         }

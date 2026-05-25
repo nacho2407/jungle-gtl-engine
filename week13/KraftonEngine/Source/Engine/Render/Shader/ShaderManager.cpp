@@ -40,6 +40,26 @@ namespace
 		static_cast<uint32>(sizeof(ParticleMeshInputLayout) / sizeof(ParticleMeshInputLayout[0]))
 	};
 
+	const D3D11_INPUT_ELEMENT_DESC ParticleBeamTrailInputLayout[] =
+	{
+		{ "POSITION",       0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,                            D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "RELATIVE_TIME",  0, DXGI_FORMAT_R32_FLOAT,          0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "OLD_POSITION",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "PARTICLE_ID",    0, DXGI_FORMAT_R32_FLOAT,          0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "SIZE",           0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "ROTATION",       0, DXGI_FORMAT_R32_FLOAT,          0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "SUBIMAGE_INDEX", 0, DXGI_FORMAT_R32_FLOAT,          0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR",          0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD",       0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD",       1, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	const FShaderInputLayoutDesc ParticleBeamTrailLayoutDesc =
+	{
+		ParticleBeamTrailInputLayout,
+		static_cast<uint32>(sizeof(ParticleBeamTrailInputLayout) / sizeof(ParticleBeamTrailInputLayout[0]))
+	};
+
 	const FShaderInputLayoutDesc* GetExplicitInputLayoutDesc(const FShaderKey& Key)
 	{
 		switch (Key.VertexFactory)
@@ -59,6 +79,10 @@ namespace
 		if (Key.Path == EShaderPath::ParticleMesh)
 		{
 			return &ParticleMeshLayoutDesc;
+		}
+		if (Key.Path == EShaderPath::ParticleBeamTrail)
+		{
+			return &ParticleBeamTrailLayoutDesc;
 		}
 		return nullptr;
 	}

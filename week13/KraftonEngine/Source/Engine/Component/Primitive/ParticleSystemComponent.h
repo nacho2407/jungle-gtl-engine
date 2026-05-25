@@ -114,6 +114,7 @@ public:
     const TArray<FDynamicEmitterDataBase*>&  GetEmitterRenderData() const { return EmitterRenderData; }
 
 	void SetCachedDistanceToCamera(float InDist) { CachedDistanceToCamera = InDist; }
+	float GetWorldTimeSeconds() const { return CachedWorldTimeSeconds; }
 
 	FParticleCollisionSignature OnParticleCollide;
 	TArray<FParticleEventCollideData> CollisionEvents;
@@ -154,4 +155,5 @@ private:
     bool bInitialized = false;
 	
 	float CachedDistanceToCamera = 0.0f;
+	float CachedWorldTimeSeconds = 0.0f;
 };

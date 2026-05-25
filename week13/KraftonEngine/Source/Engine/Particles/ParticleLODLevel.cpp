@@ -93,6 +93,14 @@ void UParticleLODLevel::UpdateModuleLists()
 			continue;
 		}
 
+		// UE Cascade keeps Beam/Trail special modules out of the generic sprite
+		// spawn/update loops. Their TypeData emitter instances call them in the
+		// source/target/noise/modifier or trail-source order.
+		if (Module->GetModuleType() == EPMT_Beam || Module->GetModuleType() == EPMT_Trail)
+		{
+			continue;
+		}
+
 		if (Module->bSpawnModule)
 		{
 			SpawnModules.push_back(Module);
