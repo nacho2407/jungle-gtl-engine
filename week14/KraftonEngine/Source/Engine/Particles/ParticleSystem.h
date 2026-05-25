@@ -91,9 +91,12 @@ private:
 	bool bLooping = true;
 };
 
+UCLASS()
 class UParticleSystem : public UObject
 {
 public:
+	GENERATED_BODY()
+
 	~UParticleSystem() override;
 
 	void InitializeDefaultEmitters();

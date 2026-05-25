@@ -809,9 +809,21 @@ void ParticleSystemElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	}
 }
 
-void MaterialElement::OnLeftClicked(ContentBrowserContext& Context)
+void MaterialElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 {
-	MaterialInspector = { ContentItem.Path };
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
+
+	const FString PackagePath = FPaths::ToUtf8(
+		ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
+	);
+
+	if (UMaterial* Material = FMaterialManager::Get().GetOrCreateMaterial(PackagePath))
+	{
+		Context.EditorEngine->OpenAssetEditorForObject(Material);
+	}
 }
 
 void MaterialElement::RenderDetail()
