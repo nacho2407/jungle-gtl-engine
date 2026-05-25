@@ -623,6 +623,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Mesh\Skeletal\SkeletalMesh.cpp" />
     <ClCompile Include="Source\Engine\Mesh\Static\StaticMesh.cpp" />
     <ClCompile Include="Source\Engine\Object\FName.cpp" />
+    <ClCompile Include="Source\Engine\Object\GarbageCollection.cpp" />
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Object\UUIDGenerator.cpp" />
     <ClCompile Include="Source\Engine\Particles\DynamicEmitterData.cpp" />
@@ -1019,6 +1020,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Mesh\Static\StaticMesh.h" />
     <ClInclude Include="Source\Engine\Mesh\Static\StaticMeshAsset.h" />
     <ClInclude Include="Source\Engine\Object\FName.h" />
+    <ClInclude Include="Source\Engine\Object\GarbageCollection.h" />
     <ClInclude Include="Source\Engine\Object\Object.h" />
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
     <ClInclude Include="Source\Engine\Object\UUIDGenerator.h" />
@@ -1040,6 +1042,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Particles\ParticleMemory.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleModule.generated.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleModule.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleModuleRequired.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleSystem.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleSystemManager.h" />
     <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColor.h" />

@@ -1310,6 +1310,9 @@
     <ClCompile Include="Source\Engine\Object\FName.cpp">
       <Filter>Source\Engine\Object</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Object\GarbageCollection.cpp">
+      <Filter>Source\Engine\Object</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Object\Object.cpp">
       <Filter>Source\Engine\Object</Filter>
     </ClCompile>
@@ -2490,6 +2493,9 @@
       <Filter>Source\Engine\Mesh\Static</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\FName.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\GarbageCollection.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\Object.h">

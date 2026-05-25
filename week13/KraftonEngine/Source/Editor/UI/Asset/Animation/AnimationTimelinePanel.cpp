@@ -1638,15 +1638,15 @@ bool FAnimationTimelinePanel::RenderMorphDetails(
 		SelectedKey = &Curve.Curve.Keys[InOutSelectedMorphKeyIndex];
 	}
 
-	static UMorphCurveEditObject* sMorphEditObject = nullptr;
-	if (!IsValid(sMorphEditObject))
+	static UMorphCurveEditObject* MorphEditObject = nullptr;
+	if (!IsValid(MorphEditObject))
 	{
-		sMorphEditObject = UObjectManager::Get().CreateObject<UMorphCurveEditObject>();
+		MorphEditObject = UObjectManager::Get().CreateObject<UMorphCurveEditObject>();
 	}
 
-	if (sMorphEditObject)
+	if (MorphEditObject)
 	{
-		sMorphEditObject->LoadFrom(Curve, SelectedKey, Seq->GetPlayLength());
+		MorphEditObject->LoadFrom(Curve, SelectedKey, Seq->GetPlayLength());
 
 		ImGui::Dummy(ImVec2(0, 6));
 		ImGui::Separator();

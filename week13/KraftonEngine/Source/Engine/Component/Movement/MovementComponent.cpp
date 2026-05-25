@@ -6,6 +6,7 @@
 #include "Serialization/Archive.h"
 
 #include <cstring>
+#include <Object/GarbageCollection.h>
 
 // Base movement logic only; concrete movement types should be added instead.
 HIDE_FROM_COMPONENT_LIST(UMovementComponent)
