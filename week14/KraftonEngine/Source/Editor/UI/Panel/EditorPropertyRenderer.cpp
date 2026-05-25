@@ -860,35 +860,31 @@ bool FEditorPropertyRenderer::RenderStructPropertyWidget(FPropertyValue& Prop, F
 		TArray<FPropertyValue> ChildProps;
 		Prop.GetStructChildren(ChildProps);
 
-		if (BeginPropertyChildTable("##StructPropertyTable"))
+		for (int32 ci = 0; ci < (int32)ChildProps.size(); ++ci)
 		{
-			for (int32 ci = 0; ci < (int32)ChildProps.size(); ++ci)
+			ImGui::PushID(ci);
+
+			FPropertyValue& ChildProp = ChildProps[ci];
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::AlignTextToFramePadding();
+			const float ChildIndent = static_cast<float>(Options.IndentLevel + 1) * StructChildIndentWidth;
+			ImGui::Indent(ChildIndent);
+			DrawPropertyTableLabel(GetPropertyDisplayName(ChildProp));
+			ImGui::Unindent(ChildIndent);
+
+			ImGui::TableSetColumnIndex(1);
+			ImGui::SetNextItemWidth(-1);
+
+			FEditorPropertyRenderOptions ChildOptions = Options;
+			ChildOptions.IndentLevel = Options.IndentLevel + 1;
+			ChildOptions.PropertyPath = MakePropertyPath(Options.PropertyPath, ChildProp.GetName());
+			int32 ChildIdx = ci;
+			if (RenderPropertyWidget(ChildProps, ChildIdx, ChildOptions))
 			{
-				ImGui::PushID(ci);
-
-				FPropertyValue& ChildProp = ChildProps[ci];
-				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0);
-				ImGui::AlignTextToFramePadding();
-				const float ChildIndent = static_cast<float>(Options.IndentLevel) * StructChildIndentWidth;
-				ImGui::Indent(ChildIndent);
-				DrawPropertyTableLabel(GetPropertyDisplayName(ChildProp));
-				ImGui::Unindent(ChildIndent);
-
-				ImGui::TableSetColumnIndex(1);
-				ImGui::SetNextItemWidth(-1);
-
-				FEditorPropertyRenderOptions ChildOptions = Options;
-				ChildOptions.IndentLevel = Options.IndentLevel + 1;
-				ChildOptions.PropertyPath = MakePropertyPath(Options.PropertyPath, ChildProp.GetName());
-				int32 ChildIdx = ci;
-				if (RenderPropertyWidget(ChildProps, ChildIdx, ChildOptions))
-				{
-					bChanged = true;
-				}
-				ImGui::PopID();
+				bChanged = true;
 			}
-			EndPropertyChildTable();
+			ImGui::PopID();
 		}
 		ImGui::TreePop();
 	}
