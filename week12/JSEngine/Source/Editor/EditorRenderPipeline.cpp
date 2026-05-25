@@ -1,6 +1,7 @@
 ﻿#include "EditorRenderPipeline.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Viewer/ParticleEditorViewer.h"
 #include "Editor/Viewer/SkeletalMeshEditorViewer.h"
 #include "Editor/Viewport/Viewer/ViewerViewportClient.h"
 #include "Camera/PlayerCameraManager.h"
@@ -16,6 +17,7 @@
 #include "Engine/Component/GizmoComponent.h"
 #include "Engine/Component/SkeletalMeshComponent.h"
 #include "GameFramework/PrimitiveActors.h"
+#include "Particle/ParticleSystemComponent.h"
 #include "Asset/StaticMesh.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Resource/Material.h"
@@ -41,6 +43,15 @@ namespace
 			return static_cast<const FSkeletalAssetEditorViewer*>(Viewer);
 		}
 		return nullptr;
+	}
+
+	const FParticleEditorViewer* AsParticleEditorViewer(const FEditorViewer* Viewer)
+	{
+		if (!Viewer || Viewer->GetTabKind() != EEditorTabKind::ParticleViewer)
+		{
+			return nullptr;
+		}
+		return static_cast<const FParticleEditorViewer*>(Viewer);
 	}
 
 	void ApplyPIECameraViewEffectsToBus(APlayerController* PlayerController, FRenderBus& Bus)
@@ -598,6 +609,33 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
 						BoundsCmd.Constants.AABB.Max = Bounds.Max;
 						BoundsCmd.Constants.AABB.Color = FColor::White();
 						Bus.AddCommand(ERenderPass::Editor, BoundsCmd);
+					}
+				}
+			}
+		}
+
+		if (ShowFlags.bBoundingVolume)
+		{
+			if (const FParticleEditorViewer* ParticleViewer = AsParticleEditorViewer(Viewers[i].get()))
+			{
+				if (const UParticleSystemComponent* ParticleComp = ParticleViewer->GetPreviewComponent())
+				{
+					const FAABB& Bounds = ParticleComp->GetWorldAABB();
+					if (Bounds.IsValid())
+					{
+						FRenderCommand BoxCmd = {};
+						BoxCmd.Type = ERenderCommandType::DebugBox;
+						BoxCmd.Constants.AABB.Min = Bounds.Min;
+						BoxCmd.Constants.AABB.Max = Bounds.Max;
+						BoxCmd.Constants.AABB.Color = FColor(240, 219, 79);
+						Bus.AddCommand(ERenderPass::Editor, BoxCmd);
+
+						FRenderCommand SphereCmd = {};
+						SphereCmd.Type = ERenderCommandType::DebugSphere;
+						SphereCmd.Constants.Sphere.Center = Bounds.GetCenter();
+						SphereCmd.Constants.Sphere.Radius = std::max(Bounds.GetExtent().Size(), 1.0f);
+						SphereCmd.Constants.Sphere.Color = FColor(80, 180, 255);
+						Bus.AddCommand(ERenderPass::Editor, SphereCmd);
 					}
 				}
 			}

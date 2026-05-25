@@ -216,7 +216,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	PackRenderData();
 	
 	// Tick이 끝날 때 Event를 처리
-    FinalizeTickComponent();
+	FinalizeTickComponent();
 }
 
 void UParticleSystemComponent::FinalizeTickComponent()
@@ -230,7 +230,7 @@ void UParticleSystemComponent::FinalizeTickComponent()
 			DispatchManager = World != nullptr ? World->GetOrCreateParticleEventManager() : nullptr;
 
 			// Caching ParticleEventManager
-            EventManager = DispatchManager;
+			EventManager = DispatchManager;
 		}
 
 		if (DispatchManager != nullptr)
@@ -323,11 +323,31 @@ void UParticleSystemComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();
 
-	const FVector Center = GetWorldLocation();
-    const FVector Extent(1.0f, 1.0f, 1.0f);
-    WorldAABB.Expand(Center - Extent);
-    WorldAABB.Expand(Center + Extent);
-	// TODO: 모든 emitter 타입의 bounds snapshot 계약이 정해지면 PSC 단위 경계를 계산한다.
+	for (const FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (!Instance || !IsLiveObject(Instance->CurrentLODLevel) || !Instance->CurrentLODLevel->bEnabled)
+		{
+			continue;
+		}
+
+		FVector Min;
+		FVector Max;
+		Instance->CalculateWorldBounds(Min, Max);
+		const FAABB EmitterBounds(Min, Max);
+
+		if (EmitterBounds.IsValid())
+		{
+			WorldAABB.Merge(EmitterBounds);
+		}
+	}
+
+	if (!WorldAABB.IsValid())
+	{
+		const FVector Center = GetWorldLocation();
+		const FVector Extent(1.0f, 1.0f, 1.0f);
+		WorldAABB.Expand(Center - Extent);
+		WorldAABB.Expand(Center + Extent);
+	}
 }
 
 bool UParticleSystemComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
@@ -417,8 +437,8 @@ int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* Emit
 
 void UParticleSystemComponent::UpdateLODLevel()
 {
-    // TODO: 현재 방식은 거리 기반 LOD 선택 구현
-    // CurrentLODLevelIndex 갱신
+	// TODO: 현재 방식은 거리 기반 LOD 선택 구현
+	// CurrentLODLevelIndex 갱신
 	// LOD 변경 시 EmitterInstance 재생성
 	// 기존 Particle 유지형 LOD 전환은 미구현
 

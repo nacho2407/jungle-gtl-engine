@@ -1225,6 +1225,11 @@ void FRenderer::InitializePassBatchers()
 			{
 				EditorLineBatcher.AddAABB(FBoundingBox{ Cmd.Constants.AABB.Min, Cmd.Constants.AABB.Max }, Cmd.Constants.AABB.Color);
 			}
+			else if (Cmd.Type == ERenderCommandType::DebugSphere)
+			{
+				const auto& S = Cmd.Constants.Sphere;
+				EditorLineBatcher.AddWireSphere(S.Center, S.Radius, S.Color.ToVector4(), 24);
+			}
 			else if (Cmd.Type == ERenderCommandType::DebugOBB)
 			{
 				EditorLineBatcher.AddOBB(FOBB{ Cmd.Constants.OBB.Center, Cmd.Constants.OBB.Extents, Cmd.Constants.OBB.Rotation }, Cmd.Constants.OBB.Color);

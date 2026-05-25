@@ -11,6 +11,9 @@
 #include "Editor/Viewer/ParticleEditorViewer.h"
 #include "Editor/Viewport/FSceneViewport.h"
 #include "Engine/Core/EditorResourcePaths.h"
+#include "Asset/CurveColorAsset.h"
+#include "Asset/CurveFloatAsset.h"
+#include "Asset/CurveVectorAsset.h"
 #include "Object/Class.h"
 #include "Object/Property.h"
 #include "Particle/ParticleAsset.h"
@@ -19,6 +22,8 @@
 #include "WICTextureLoader.h"
 
 #include <algorithm>
+#include <cctype>
+#include <cfloat>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -34,6 +39,7 @@ constexpr const char* ParticleEmitterDragPayload = "ParticleEmitter";
 constexpr float EmitterNodeWidth = 198.0f;
 constexpr float EmitterSeparatorGap = 10.0f;
 constexpr int32 MaxParticleDragSelectionCount = 64;
+constexpr ImU32 ParticleSelectionOutlineColor = IM_COL32(240, 219, 79, 255);
 
 struct FParticleModuleDragPayload
 {
@@ -70,7 +76,11 @@ bool DrawRoundedToolbarButton(const char* Id, const char* Label, const char* Too
 bool DrawCascadeGraphButton(const char* Id, const ImVec2& Size, bool bActive);
 float ChooseParticleCurveGridStep(float PixelsPerUnit, float TargetPixels);
 bool DrawParticleCurveToolbarButton(const char* Id, ID3D11ShaderResourceView* Icon, const char* Label, bool bActive, bool bEnabled = true);
-void DrawParticleCurveToolbarSeparator();
+void DrawParticleCurveToolbarSeparator(const char* Id);
+bool DrawSearchableAssetPathCombo(const char* Label, const FString& Current, const TArray<FString>& Options, FString& OutSelectedPath);
+bool PassesAssetSearchFilter(const FString& Path, const char* Filter);
+void PushAssetComboStyle();
+void PopAssetComboStyle();
 bool DrawCurrentLODToolbarInput(FParticleEditorViewer* Viewer, ID3D11ShaderResourceView* Icon, const ImVec2& IconSize, const ImVec2& Size);
 void DrawParticlePanelTitle(const char* Title, const char* Subtitle);
 void DrawParticleDetailsSection(const char* Title);
@@ -88,7 +98,6 @@ bool RenderParticleObjectPtrWidget(const FProperty& Property, void* ValuePtr, co
 bool RenderParticleSoftObjectPtrWidget(const FProperty& Property, void* ValuePtr, const char* Label, UEditorEngine* EditorEngine);
 bool RenderParticleArrayPropertyWidget(FParticleEditorViewer* Viewer, UObject* Object, const FProperty& Property, void* ValuePtr, UEditorEngine* EditorEngine, bool& bUndoCaptured);
 bool RenderParticleStructPropertyWidget(FParticleEditorViewer* Viewer, UObject* Object, const FProperty& Property, void* ValuePtr, const char* Label, UEditorEngine* EditorEngine, bool& bUndoCaptured);
-
 UParticleLODLevel* ResolveParticleLOD(FParticleEditorViewer* Viewer, int32 EmitterIndex, int32 LODIndex);
 UParticleModule* ResolveParticleModule(FParticleEditorViewer* Viewer, EParticleEditorSelectionType Type, int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex);
 void SelectParticleModuleTarget(FParticleEditorViewer* Viewer, EParticleEditorSelectionType Type, int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex);
@@ -967,16 +976,16 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
 	ImGui::BeginChild(
 		"ParticleCurveToolbar",
-		ImVec2(0.0f, 70.0f),
+		ImVec2(0.0f, 66.0f),
 		false,
 		ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-	constexpr float CurveToolbarItemGap = 4.0f;
+	constexpr float CurveToolbarItemGap = 2.0f;
 	DrawParticleCurveToolbarButton("HorizontalFit", ToolbarIcons.CurveHorizontalIcon.Get(), "Horizontal", false, Module != nullptr);
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
 	DrawParticleCurveToolbarButton("VerticalFit", ToolbarIcons.CurveVerticalIcon.Get(), "Vertical", false, Module != nullptr);
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
-	if (DrawParticleCurveToolbarButton("FitCurve", ToolbarIcons.CurveFitIcon.Get(), "Fit", true, Module != nullptr))
+	if (DrawParticleCurveToolbarButton("FitCurve", ToolbarIcons.CurveFitIcon.Get(), "Fit", false, Module != nullptr))
 	{
 		CurveState.CanvasPanTime = 0.0f;
 		CurveState.CanvasPanValue = 0.0f;
@@ -984,11 +993,17 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 		CurveState.CanvasZoomY = 1.0f;
 	}
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
-	DrawParticleCurveToolbarButton("PanCurve", ToolbarIcons.CurvePanIcon.Get(), "Pan", true, true);
+	if (DrawParticleCurveToolbarButton("PanCurve", ToolbarIcons.CurvePanIcon.Get(), "Pan", CurveState.ActiveTool == ECurveEditorTool::Pan, true))
+	{
+		CurveState.ActiveTool = ECurveEditorTool::Pan;
+	}
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
-	DrawParticleCurveToolbarButton("ZoomCurve", ToolbarIcons.CurveZoomIcon.Get(), "Zoom", false, true);
+	if (DrawParticleCurveToolbarButton("ZoomCurve", ToolbarIcons.CurveZoomIcon.Get(), "Zoom", CurveState.ActiveTool == ECurveEditorTool::Zoom, true))
+	{
+		CurveState.ActiveTool = ECurveEditorTool::Zoom;
+	}
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
-	DrawParticleCurveToolbarSeparator();
+	DrawParticleCurveToolbarSeparator("CurveEditTangents");
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
 	DrawParticleCurveToolbarButton("AutoCurve", ToolbarIcons.CurveAutoIcon.Get(), "Auto", false, Module != nullptr);
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
@@ -1002,7 +1017,7 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
 	DrawParticleCurveToolbarButton("ConstantCurve", ToolbarIcons.CurveConstantIcon.Get(), "Constant", false, Module != nullptr);
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
-	DrawParticleCurveToolbarSeparator();
+	DrawParticleCurveToolbarSeparator("CurveEditInterpolation");
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
 	DrawParticleCurveToolbarButton("FlattenCurve", ToolbarIcons.CurveFlattenIcon.Get(), "Flatten", false, Module != nullptr);
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
@@ -1010,7 +1025,7 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
 	DrawParticleCurveToolbarButton("ShowAllCurve", ToolbarIcons.CurveShowAllIcon.Get(), "Show All", false, Module != nullptr);
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
-	DrawParticleCurveToolbarSeparator();
+	DrawParticleCurveToolbarSeparator("CurveEditDisplay");
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
 	DrawParticleCurveToolbarButton("CreateCurve", ToolbarIcons.CurveCreateIcon.Get(), "Create", false, Module != nullptr);
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
@@ -1077,10 +1092,29 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 	const ImGuiIO& IO = ImGui::GetIO();
 	if (bGraphDragging)
 	{
-		CurveState.CanvasPanTime -= IO.MouseDelta.x / std::max(1.0f, PixelsPerTime);
-		CurveState.CanvasPanValue += IO.MouseDelta.y / std::max(1.0f, PixelsPerValue);
-		FirstTime = BaseFirstTime + CurveState.CanvasPanTime;
-		ValueMax = BaseValueMax + CurveState.CanvasPanValue;
+		if (CurveState.ActiveTool == ECurveEditorTool::Zoom)
+		{
+			const ImVec2 Mouse = IO.MousePos;
+			const float AnchorTime = FirstTime + (Mouse.x - GraphStart.x) / std::max(1.0f, PixelsPerTime);
+			const float AnchorValue = ValueMax - (Mouse.y - GraphStart.y) / std::max(1.0f, PixelsPerValue);
+			const float ZoomFactorX = std::pow(1.01f, IO.MouseDelta.x);
+			const float ZoomFactorY = std::pow(1.01f, -IO.MouseDelta.y);
+			CurveState.CanvasZoomX = std::clamp(CurveState.CanvasZoomX * ZoomFactorX, 0.25f, 8.0f);
+			CurveState.CanvasZoomY = std::clamp(CurveState.CanvasZoomY * ZoomFactorY, 0.35f, 8.0f);
+			PixelsPerTime = BasePixelsPerTime * CurveState.CanvasZoomX;
+			PixelsPerValue = BasePixelsPerValue * CurveState.CanvasZoomY;
+			FirstTime = AnchorTime - (Mouse.x - GraphStart.x) / std::max(1.0f, PixelsPerTime);
+			ValueMax = AnchorValue + (Mouse.y - GraphStart.y) / std::max(1.0f, PixelsPerValue);
+			CurveState.CanvasPanTime = FirstTime - BaseFirstTime;
+			CurveState.CanvasPanValue = ValueMax - BaseValueMax;
+		}
+		else
+		{
+			CurveState.CanvasPanTime -= IO.MouseDelta.x / std::max(1.0f, PixelsPerTime);
+			CurveState.CanvasPanValue += IO.MouseDelta.y / std::max(1.0f, PixelsPerValue);
+			FirstTime = BaseFirstTime + CurveState.CanvasPanTime;
+			ValueMax = BaseValueMax + CurveState.CanvasPanValue;
+		}
 	}
 	if (bGraphHovered && std::fabs(IO.MouseWheel) > 0.0f)
 	{
@@ -1111,15 +1145,17 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 		CurveState.CanvasPanValue = ValueMax - BaseValueMax;
 	}
 
-	DrawList->AddRectFilled(CanvasStart, ChannelEnd, IM_COL32(145, 145, 145, 255), 0.0f);
+	DrawList->AddRectFilled(CanvasStart, ChannelEnd, IM_COL32(33, 34, 38, 255), 0.0f);
+	DrawList->AddRectFilled(CanvasStart, ImVec2(ChannelEnd.x, CanvasStart.y + 32.0f), IM_COL32(42, 44, 51, 255), 0.0f);
+	DrawList->AddRect(CanvasStart, ChannelEnd, IM_COL32(75, 75, 82, 255), 0.0f);
 	DrawList->AddRectFilled(GraphStart, CanvasEnd, IM_COL32(48, 48, 48, 255), 0.0f);
-	DrawList->AddLine(ImVec2(ChannelEnd.x, CanvasStart.y), ImVec2(ChannelEnd.x, CanvasEnd.y), IM_COL32(205, 205, 205, 255), 1.0f);
+	DrawList->AddLine(ImVec2(ChannelEnd.x, CanvasStart.y), ImVec2(ChannelEnd.x, CanvasEnd.y), IM_COL32(78, 80, 88, 255), 1.0f);
 
 	const float HeaderHeight = 32.0f;
 	const char* ChannelName = Module ? GetObjectLabel(Module) : "Select Curve Source";
 	DrawList->AddText(
 		ImVec2(CanvasStart.x + 6.0f, CanvasStart.y + 7.0f),
-		Module ? IM_COL32(255, 255, 255, 255) : IM_COL32(214, 214, 214, 255),
+		Module ? IM_COL32(236, 236, 238, 255) : IM_COL32(166, 170, 180, 255),
 		ChannelName);
 
 	if (Module)
@@ -1176,7 +1212,10 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 	DrawList->AddRect(CanvasStart, CanvasEnd, IM_COL32(82, 82, 82, 255), 0.0f);
 	if (bGraphHovered)
 	{
-		ImGui::SetMouseCursor(bGraphDragging ? ImGuiMouseCursor_ResizeAll : ImGuiMouseCursor_Hand);
+		ImGui::SetMouseCursor(
+			CurveState.ActiveTool == ECurveEditorTool::Zoom
+				? ImGuiMouseCursor_ResizeAll
+				: (bGraphDragging ? ImGuiMouseCursor_ResizeAll : ImGuiMouseCursor_Hand));
 	}
 }
 
@@ -1334,7 +1373,25 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 	if (ImGui::Button("S##EmitterSolo", SoloSize) && LOD)
 	{
 		Viewer->CaptureUndoSnapshot("EditEmitterSolo");
-		LOD->bSolo = !LOD->bSolo;
+		const bool bNewSolo = !LOD->bSolo;
+		if (UParticleSystem* ParticleSystem = Viewer->GetParticleSystem())
+		{
+			for (UParticleEmitter* OtherEmitter : ParticleSystem->Emitters)
+			{
+				if (!OtherEmitter)
+				{
+					continue;
+				}
+				for (UParticleLODLevel* OtherLOD : OtherEmitter->LODLevels)
+				{
+					if (OtherLOD)
+					{
+						OtherLOD->bSolo = false;
+					}
+				}
+			}
+		}
+		LOD->bSolo = bNewSolo;
 		Viewer->SelectEmitter(EmitterIndex);
 		Viewer->SelectLOD(LODIndex);
 		Viewer->MarkDirty();
@@ -1480,7 +1537,7 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 		const ImVec2 PanelMax(PanelMin.x + ImGui::GetWindowWidth(), PanelMin.y + ImGui::GetWindowHeight());
 		ImDrawList* OutlineDrawList = IsAnyPopupOpen() ? DrawList : ImGui::GetForegroundDrawList();
 		OutlineDrawList->PushClipRect(PanelMin, PanelMax, true);
-		OutlineDrawList->AddRect(CardStart, CardEnd, IM_COL32(240, 219, 79, 255), 0.0f, 0, 2.0f);
+		OutlineDrawList->AddRect(CardStart, CardEnd, ParticleSelectionOutlineColor, 0.0f, 0, 2.0f);
 		OutlineDrawList->PopClipRect();
 	}
 }
@@ -2207,6 +2264,7 @@ bool RenderParticleObjectPtrWidget(const FProperty& Property, void* ValuePtr, co
 										 : FString("<None>");
 
 		bool bChanged = false;
+		PushAssetComboStyle();
 		if (ImGui::BeginCombo(Label, CurrentLabel.c_str()))
 		{
 			if (ImGui::Selectable("<None>", CurrentMaterial == nullptr))
@@ -2233,6 +2291,7 @@ bool RenderParticleObjectPtrWidget(const FProperty& Property, void* ValuePtr, co
 			}
 			ImGui::EndCombo();
 		}
+		PopAssetComboStyle();
 		return bChanged;
 	}
 
@@ -2257,7 +2316,9 @@ bool RenderParticleSoftObjectPtrWidget(const FProperty& Property, void* ValuePtr
 		{
 			Options = &EditorEngine->GetAssetService().GetStaticMeshAssetPaths();
 		}
-		else if (Property.ObjectClass->IsChildOf(UCurveFloatAsset::StaticClass()))
+		else if (Property.ObjectClass->IsChildOf(UCurveFloatAsset::StaticClass()) ||
+				 Property.ObjectClass->IsChildOf(UCurveVectorAsset::StaticClass()) ||
+				 Property.ObjectClass->IsChildOf(UCurveColorAsset::StaticClass()))
 		{
 			LocalOptions = FResourceManager::Get().GetCurvePaths();
 			Options = &LocalOptions;
@@ -2272,27 +2333,11 @@ bool RenderParticleSoftObjectPtrWidget(const FProperty& Property, void* ValuePtr
 	bool bChanged = false;
 	if (Options && !Options->empty())
 	{
-		if (ImGui::BeginCombo(Label, Current.empty() ? "<None>" : Current.c_str()))
+		FString SelectedPath;
+		if (DrawSearchableAssetPathCombo(Label, Current, *Options, SelectedPath))
 		{
-			if (ImGui::Selectable("<None>", Current.empty()))
-			{
-				Property.SoftObjectOps->SetPath(ValuePtr, FString());
-				bChanged = true;
-			}
-			for (const FString& Path : *Options)
-			{
-				const bool bSelected = Current == Path;
-				if (ImGui::Selectable(Path.c_str(), bSelected))
-				{
-					Property.SoftObjectOps->SetPath(ValuePtr, Path);
-					bChanged = true;
-				}
-				if (bSelected)
-				{
-					ImGui::SetItemDefaultFocus();
-				}
-			}
-			ImGui::EndCombo();
+			Property.SoftObjectOps->SetPath(ValuePtr, SelectedPath);
+			bChanged = true;
 		}
 	}
 	else
@@ -2641,9 +2686,9 @@ bool DrawParticleCurveToolbarButton(const char* Id, ID3D11ShaderResourceView* Ic
 		ImGui::BeginDisabled();
 	}
 
-	constexpr float ButtonWidth = 62.0f;
-	constexpr float ButtonHeight = 62.0f;
-	constexpr float IconSize = 42.0f;
+	constexpr float ButtonWidth = 56.0f;
+	constexpr float ButtonHeight = 58.0f;
+	constexpr float IconSize = 38.0f;
 	const float SmallFontSize = ImGui::GetFontSize() * 0.78f;
 	const ImVec2 LabelSize = Label
 							   ? ImGui::GetFont()->CalcTextSizeA(SmallFontSize, 1000.0f, 0.0f, Label)
@@ -2661,9 +2706,9 @@ bool DrawParticleCurveToolbarButton(const char* Id, ID3D11ShaderResourceView* Ic
 		DrawList->AddRectFilled(
 			Min,
 			Max,
-			bActive ? IM_COL32(236, 128, 20, 255) : IM_COL32(63, 63, 63, 255),
+			bActive ? IM_COL32(58, 53, 23, 255) : IM_COL32(63, 63, 63, 255),
 			1.0f);
-		DrawList->AddRect(Min, Max, bActive ? IM_COL32(255, 175, 65, 255) : IM_COL32(92, 92, 92, 255), 1.0f);
+		DrawList->AddRect(Min, Max, bActive ? ParticleSelectionOutlineColor : IM_COL32(92, 92, 92, 255), 1.0f, 0, bActive ? 2.0f : 1.0f);
 	}
 
 	const ImVec2 IconMin(Min.x + (ButtonSize.x - IconMinSize.x) * 0.5f, Min.y + 1.0f);
@@ -2685,7 +2730,7 @@ bool DrawParticleCurveToolbarButton(const char* Id, ID3D11ShaderResourceView* Ic
 	if (Label)
 	{
 		const float LabelX = Min.x + std::max(0.0f, (ButtonSize.x - LabelSize.x) * 0.5f);
-		const float LabelY = Min.y + 45.0f;
+		const float LabelY = Min.y + 41.0f;
 		DrawList->AddText(
 			ImGui::GetFont(),
 			SmallFontSize,
@@ -2707,12 +2752,97 @@ bool DrawParticleCurveToolbarButton(const char* Id, ID3D11ShaderResourceView* Ic
 	return bEnabled && bPressed;
 }
 
-void DrawParticleCurveToolbarSeparator()
+void DrawParticleCurveToolbarSeparator(const char* Id)
 {
+	ImGui::PushID(Id);
 	const ImVec2 Pos = ImGui::GetCursorScreenPos();
-	ImGui::InvisibleButton("##ParticleCurveToolbarSeparator", ImVec2(6.0f, 62.0f));
+	ImGui::InvisibleButton("##ParticleCurveToolbarSeparator", ImVec2(5.0f, 58.0f));
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
-	DrawList->AddLine(ImVec2(Pos.x + 2.0f, Pos.y + 6.0f), ImVec2(Pos.x + 2.0f, Pos.y + 56.0f), IM_COL32(70, 70, 70, 255), 1.0f);
+	DrawList->AddLine(ImVec2(Pos.x + 2.0f, Pos.y + 5.0f), ImVec2(Pos.x + 2.0f, Pos.y + 53.0f), IM_COL32(70, 70, 70, 255), 1.0f);
+	ImGui::PopID();
+}
+
+bool PassesAssetSearchFilter(const FString& Path, const char* Filter)
+{
+	if (!Filter || Filter[0] == '\0')
+	{
+		return true;
+	}
+
+	FString LowerPath = Path;
+	FString LowerFilter = Filter;
+	std::transform(
+		LowerPath.begin(),
+		LowerPath.end(),
+		LowerPath.begin(),
+		[](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
+	std::transform(
+		LowerFilter.begin(),
+		LowerFilter.end(),
+		LowerFilter.begin(),
+		[](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
+	return LowerPath.find(LowerFilter) != FString::npos;
+}
+
+void PushAssetComboStyle()
+{
+	ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.10f, 0.115f, 0.135f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.16f, 0.18f, 0.22f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.19f, 0.215f, 0.26f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.13f, 0.145f, 0.17f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.20f, 0.22f, 0.26f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.22f, 0.25f, 0.32f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.25f, 0.29f, 0.37f, 1.0f));
+}
+
+void PopAssetComboStyle()
+{
+	ImGui::PopStyleColor(7);
+}
+
+bool DrawSearchableAssetPathCombo(const char* Label, const FString& Current, const TArray<FString>& Options, FString& OutSelectedPath)
+{
+	bool bChanged = false;
+	static char SearchBuffer[128] = {};
+
+	ImGui::PushID(Label);
+	PushAssetComboStyle();
+	if (ImGui::BeginCombo(Label, Current.empty() ? "<None>" : Current.c_str()))
+	{
+		ImGui::SetNextItemWidth(-1.0f);
+		ImGui::InputTextWithHint("##AssetSearch", "Search...", SearchBuffer, sizeof(SearchBuffer));
+		ImGui::Separator();
+
+		if (ImGui::Selectable("<None>", Current.empty()))
+		{
+			OutSelectedPath.clear();
+			bChanged = true;
+		}
+
+		for (const FString& Path : Options)
+		{
+			if (!PassesAssetSearchFilter(Path, SearchBuffer))
+			{
+				continue;
+			}
+
+			const bool bSelected = Current == Path;
+			if (ImGui::Selectable(Path.c_str(), bSelected))
+			{
+				OutSelectedPath = Path;
+				bChanged = true;
+			}
+			if (bSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+	PopAssetComboStyle();
+	ImGui::PopID();
+
+	return bChanged;
 }
 
 bool DrawCurrentLODToolbarInput(FParticleEditorViewer* Viewer, ID3D11ShaderResourceView* Icon, const ImVec2& IconSize, const ImVec2& Size)

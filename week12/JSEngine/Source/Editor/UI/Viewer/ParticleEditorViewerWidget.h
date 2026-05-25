@@ -24,6 +24,12 @@ private:
 		float BottomPanelHeightRatio = 0.5f;
 	};
 
+	enum class ECurveEditorTool
+	{
+		Pan,
+		Zoom
+	};
+
 	struct FCurveEditorState
 	{
 		EParticleEditorSelectionType Type = EParticleEditorSelectionType::None;
@@ -34,6 +40,7 @@ private:
 		float CanvasPanValue = 0.0f;
 		float CanvasZoomX = 1.0f;
 		float CanvasZoomY = 1.0f;
+		ECurveEditorTool ActiveTool = ECurveEditorTool::Pan;
 
 		void Clear()
 		{
