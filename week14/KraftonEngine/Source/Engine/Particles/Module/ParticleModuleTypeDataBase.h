@@ -41,6 +41,7 @@ struct FRibbonParticlePayload
 	FVector PreviousPosition = FVector::ZeroVector;
 	float Width = 1.0f;
 	float Twist = 0.0f;
+	uint16 RibbonId = 0;
 	uint16 SourceParticleIndex = 0;
 	uint16 NextParticleIndex = 0;
 };
@@ -243,6 +244,7 @@ public:
 		Payload->PreviousPosition = Particle.Position;
 		Payload->Width = StartWidth.GetValue();
 		Payload->Twist = StartTwist.GetValue();
+		Payload->RibbonId = 0;
 		Payload->SourceParticleIndex = static_cast<uint16>(Particle.FrameIndex & 0xffff);
 		Payload->NextParticleIndex = 0xffff;
 	}

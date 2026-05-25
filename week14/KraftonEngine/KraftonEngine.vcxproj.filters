@@ -1582,6 +1582,7 @@
     <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleCollision.cpp" />
     <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\ParticleDynamicEmitterData.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\MeshParticleGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\FogPass.cpp" />
@@ -4444,6 +4445,7 @@
     <ClInclude Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.h" />
     <ClInclude Include="Source\Engine\Particles\Runtime\ParticleRuntimeTypes.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\ParticleDynamicEmitterData.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleCollision.h" />

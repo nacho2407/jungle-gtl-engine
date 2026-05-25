@@ -8,6 +8,7 @@
 
 class UStaticMesh;
 class UParticleSystemComponent;
+struct FDynamicEmitterReplayDataBase;
 struct FParticleEmitterInstance;
 
 struct FParticleGeometrySection
@@ -47,8 +48,16 @@ public:
 		FDrawCommandBuffer& OutBuffer) const;
 
 private:
-	void RebuildSpriteParticleGeometry(const FFrameContext& Frame);
-	void RebuildMeshParticleGeometry();
+	void ResetDynamicGeometry();
+	void BuildDynamicEmitters(const FFrameContext& Frame, const TArray<FParticleEmitterInstance*>& Instances);
+	FDynamicEmitterReplayDataBase BuildEmitterSource(FParticleEmitterInstance* Instance) const;
+	void AppendEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
+	void FinalizeDynamicGeometry();
+
+	void AppendSpriteEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
+	void AppendRibbonEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
+	void AppendBeamEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
+	void AppendMeshEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
 
 	void ClearDrawBatches()
 	{
@@ -61,6 +70,7 @@ private:
 
 	UMaterialInterface* ResolveEmitterMaterial(const FParticleEmitterInstance* Instance) const;
 	UStaticMesh* ResolveTypeDataMesh(UParticleModuleTypeDataMesh* TypeData) const;
+	bool ShouldSortMeshParticles(const FParticleDrawBatch& Batch, UMaterialInterface* FallbackMaterial) const;
 	UParticleSystemComponent* GetParticleSystemComponent() const;
 
 private:
