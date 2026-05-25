@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Editor/UI/Panel/EditorPropertyRenderer.h"
 #include "Editor/Viewport/Asset/ParticleSystemEditorViewportClient.h"
 #include "Editor/UI/Asset/AssetEditorWidget.h"
 #include "Object/FName.h"
@@ -80,7 +81,6 @@ private:
 	void RenderEmittersPanel(const ImVec2& Size);
 	void RenderCurveEditorPanel(const ImVec2& Size) const;
 	bool RenderObjectProperties(UObject* Object);
-	bool RenderPropertyValueEditor(FPropertyValue& PropertyValue);
 	void ApplyEditedObjectSideEffects(UObject* Object);
 	void CreatePreviewWorld();
 	void DestroyPreviewWorld();
@@ -89,6 +89,7 @@ private:
 
 private:
 	FEditorViewState ViewState;
+	FEditorPropertyRenderer PropertyRenderer;
 	FParticleSystemEditorViewportClient ViewportClient;
 	AActor* PreviewActor = nullptr;
 	UParticleSystemComponent* PreviewParticleComponent = nullptr;

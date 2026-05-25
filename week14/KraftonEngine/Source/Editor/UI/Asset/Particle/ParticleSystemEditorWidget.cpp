@@ -394,19 +394,6 @@ namespace
 		DrawDetailRow(Label, Buffer);
 	}
 
-	bool StringContains(const FString& Value, const char* Needle)
-	{
-		return Needle && Value.find(Needle) != FString::npos;
-	}
-
-	bool IsColorLikeProperty(const FPropertyValue& PropertyValue)
-	{
-		const FString Name = PropertyValue.GetName() ? PropertyValue.GetName() : "";
-		const FString DisplayName = PropertyValue.GetDisplayName() ? PropertyValue.GetDisplayName() : "";
-		const FString Category = PropertyValue.GetCategory() ? PropertyValue.GetCategory() : "";
-		return StringContains(Name, "Color") || StringContains(DisplayName, "Color") || StringContains(Category, "Color");
-	}
-
 	const char* GetRenderTypeLabel(EParticleRenderType RenderType)
 	{
 		switch (RenderType)
@@ -1234,7 +1221,9 @@ bool FParticleSystemEditorWidget::RenderObjectProperties(UObject* Object)
 			ImGui::TableSetColumnIndex(1);
 			ImGui::SetNextItemWidth(-1.0f);
 
-			const bool bChanged = RenderPropertyValueEditor(PropertyValue);
+			FEditorPropertyRenderOptions Options;
+			Options.bDispatchChange = false;
+			const bool bChanged = PropertyRenderer.RenderPropertyWidget(Properties, Index, Options);
 			if (bChanged)
 			{
 				bAnyChanged = true;
@@ -1249,191 +1238,6 @@ bool FParticleSystemEditorWidget::RenderObjectProperties(UObject* Object)
 	}
 
 	return bAnyChanged;
-}
-
-bool FParticleSystemEditorWidget::RenderPropertyValueEditor(FPropertyValue& PropertyValue)
-{
-	void* ValuePtr = PropertyValue.GetValuePtr();
-	if (!ValuePtr)
-	{
-		return false;
-	}
-
-	bool bChanged = false;
-	const bool bReadOnly = PropertyValue.Property && (PropertyValue.Property->Flags & PF_ReadOnly) != 0;
-	if (bReadOnly)
-	{
-		ImGui::BeginDisabled();
-	}
-
-	switch (PropertyValue.GetType())
-	{
-	case EPropertyType::Bool:
-		bChanged = ImGui::Checkbox("##Value", static_cast<bool*>(ValuePtr));
-		break;
-	case EPropertyType::ByteBool:
-	{
-		uint8* Value = static_cast<uint8*>(ValuePtr);
-		bool bValue = *Value != 0;
-		if (ImGui::Checkbox("##Value", &bValue))
-		{
-			*Value = bValue ? 1 : 0;
-			bChanged = true;
-		}
-		break;
-	}
-	case EPropertyType::Int:
-	{
-		int32* Value = static_cast<int32*>(ValuePtr);
-		const float Min = PropertyValue.GetMin();
-		const float Max = PropertyValue.GetMax();
-		if (Min != 0.0f || Max != 0.0f)
-		{
-			bChanged = ImGui::DragInt("##Value", Value, PropertyValue.GetSpeed(), static_cast<int32>(Min), static_cast<int32>(Max));
-		}
-		else
-		{
-			bChanged = ImGui::DragInt("##Value", Value, PropertyValue.GetSpeed());
-		}
-		break;
-	}
-	case EPropertyType::Float:
-	{
-		float* Value = static_cast<float*>(ValuePtr);
-		const float Min = PropertyValue.GetMin();
-		const float Max = PropertyValue.GetMax();
-		if (Min != 0.0f || Max != 0.0f)
-		{
-			bChanged = ImGui::DragFloat("##Value", Value, PropertyValue.GetSpeed(), Min, Max, "%.4f");
-		}
-		else
-		{
-			bChanged = ImGui::DragFloat("##Value", Value, PropertyValue.GetSpeed());
-		}
-		break;
-	}
-	case EPropertyType::Vec3:
-	{
-		float* Value = static_cast<float*>(ValuePtr);
-		bChanged = ImGui::DragFloat3("##Value", Value, PropertyValue.GetSpeed());
-		break;
-	}
-	case EPropertyType::Vec4:
-	case EPropertyType::Color4:
-	{
-		float* Value = static_cast<float*>(ValuePtr);
-		if (PropertyValue.GetType() == EPropertyType::Color4 || IsColorLikeProperty(PropertyValue))
-		{
-			bChanged = ImGui::ColorEdit4("##Value", Value);
-		}
-		else
-		{
-			bChanged = ImGui::DragFloat4("##Value", Value, PropertyValue.GetSpeed());
-		}
-		break;
-	}
-	case EPropertyType::String:
-	{
-		FString* Value = static_cast<FString*>(ValuePtr);
-		char Buffer[256];
-		strncpy_s(Buffer, sizeof(Buffer), Value->c_str(), _TRUNCATE);
-		if (ImGui::InputText("##Value", Buffer, sizeof(Buffer)))
-		{
-			*Value = Buffer;
-			bChanged = true;
-		}
-		break;
-	}
-	case EPropertyType::Name:
-	{
-		FName* Value = static_cast<FName*>(ValuePtr);
-		const FString CurrentValue = Value->ToString();
-		char Buffer[256];
-		strncpy_s(Buffer, sizeof(Buffer), CurrentValue.c_str(), _TRUNCATE);
-		if (ImGui::InputText("##Value", Buffer, sizeof(Buffer)))
-		{
-			*Value = FName(FString(Buffer));
-			bChanged = true;
-		}
-		break;
-	}
-	case EPropertyType::Enum:
-	{
-		const FEnum* EnumType = PropertyValue.GetEnumType();
-		if (EnumType && EnumType->GetNames() && EnumType->GetCount() > 0)
-		{
-			int32 Value = 0;
-			std::memcpy(&Value, ValuePtr, EnumType->GetSize());
-			const char* Preview = (Value >= 0 && static_cast<uint32>(Value) < EnumType->GetCount())
-				? EnumType->GetNames()[Value]
-				: "Unknown";
-			if (ImGui::BeginCombo("##Value", Preview))
-			{
-				for (uint32 EnumIndex = 0; EnumIndex < EnumType->GetCount(); ++EnumIndex)
-				{
-					const bool bSelected = Value == static_cast<int32>(EnumIndex);
-					if (ImGui::Selectable(EnumType->GetNames()[EnumIndex], bSelected))
-					{
-						const int32 NewValue = static_cast<int32>(EnumIndex);
-						std::memcpy(ValuePtr, &NewValue, EnumType->GetSize());
-						bChanged = true;
-					}
-					if (bSelected)
-					{
-						ImGui::SetItemDefaultFocus();
-					}
-				}
-				ImGui::EndCombo();
-			}
-		}
-		else
-		{
-			ImGui::TextDisabled("(unknown enum)");
-		}
-		break;
-	}
-	case EPropertyType::SoftObjectRef:
-	{
-		const FSoftObjectProperty* SoftObjectProperty = PropertyValue.Property ? PropertyValue.Property->AsSoftObjectProperty() : nullptr;
-		const FString Path = SoftObjectProperty ? SoftObjectProperty->GetPathFromValuePtr(ValuePtr) : FString("None");
-		char Buffer[512];
-		strncpy_s(Buffer, sizeof(Buffer), Path.c_str(), _TRUNCATE);
-		if (SoftObjectProperty && ImGui::InputText("##Value", Buffer, sizeof(Buffer)))
-		{
-			SoftObjectProperty->SetPathFromValuePtr(ValuePtr, FString(Buffer));
-			bChanged = true;
-		}
-		break;
-	}
-	case EPropertyType::ObjectRef:
-	{
-		UObject* ObjectValue = *static_cast<UObject**>(ValuePtr);
-		ImGui::TextDisabled("%s", ObjectValue ? ObjectValue->GetName().c_str() : "None");
-		break;
-	}
-	case EPropertyType::Array:
-		ImGui::TextDisabled("(array)");
-		break;
-	case EPropertyType::Struct:
-		ImGui::TextDisabled("(struct)");
-		break;
-	case EPropertyType::ClassRef:
-		ImGui::TextDisabled("(class)");
-		break;
-	case EPropertyType::Rotator:
-		ImGui::TextDisabled("(rotator)");
-		break;
-	default:
-		ImGui::TextDisabled("(unsupported)");
-		break;
-	}
-
-	if (bReadOnly)
-	{
-		ImGui::EndDisabled();
-	}
-
-	return bChanged && !bReadOnly;
 }
 
 void FParticleSystemEditorWidget::ApplyEditedObjectSideEffects(UObject* Object)
