@@ -6,6 +6,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
 #include "Object/Object.h"
+#include "Object/ObjectIterator.h"
 #include "Particles/Module/ParticleModule.h"
 #include "Particles/Module/ParticleModuleCollision.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
@@ -14,6 +15,7 @@
 #include "Render/Scene/FScene.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "Runtime/Engine.h"
+#include "Serialization/MemoryArchive.h"
 #include "Slate/SlateApplication.h"
 #include "Viewport/Viewport.h"
 
@@ -457,6 +459,29 @@ namespace
 		if (Cast<UParticleModuleSize>(Module)) return "Initial Size";
 		if (Cast<UParticleModuleCollision>(Module)) return "Collision";
 		return Module->GetClass()->GetName();
+	}
+
+	UParticleEmitter* DuplicateParticleEmitter(UParticleEmitter* SourceEmitter)
+	{
+		if (!SourceEmitter)
+		{
+			return nullptr;
+		}
+
+		FMemoryArchive Writer(/*bInIsSaving=*/true);
+		SourceEmitter->Serialize(Writer);
+
+		UParticleEmitter* DuplicatedEmitter = UObjectManager::Get().CreateObject<UParticleEmitter>();
+		if (!DuplicatedEmitter)
+		{
+			return nullptr;
+		}
+
+		const FName UniqueName = DuplicatedEmitter->GetFName();
+		FMemoryArchive Reader(Writer.GetBuffer(), /*bInIsSaving=*/false);
+		DuplicatedEmitter->Serialize(Reader);
+		DuplicatedEmitter->SetFName(UniqueName);
+		return DuplicatedEmitter;
 	}
 
 	FString GetParticleSystemTitle(const UParticleSystem* ParticleSystem, bool bDirty)
@@ -1076,6 +1101,38 @@ void FParticleSystemEditorWidget::RestartPreviewSimulation()
 	PreviewParticleComponent->MarkRenderStateDirty();
 }
 
+void FParticleSystemEditorWidget::RefreshParticleSystemComponents()
+{
+	ViewState.PreviewTime = 0.0f;
+
+	UParticleSystem* ParticleSystem = GetParticleSystem();
+	if (!ParticleSystem)
+	{
+		return;
+	}
+
+	for (TObjectIterator<UParticleSystemComponent> It; It; ++It)
+	{
+		UParticleSystemComponent* Component = *It;
+		if (!Component || Component->GetTemplate() != ParticleSystem)
+		{
+			continue;
+		}
+
+		const bool bWasActive = Component->IsActive();
+		Component->ResetSystem();
+		if (bWasActive)
+		{
+			Component->Activate();
+		}
+		else
+		{
+			Component->Deactivate();
+		}
+		Component->MarkRenderStateDirty();
+	}
+}
+
 void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 {
 	ImGui::BeginChild("##ParticleDetailsPanel", Size, ImGuiChildFlags_Borders);
@@ -1138,7 +1195,7 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 		{
 			ApplyEditedObjectSideEffects(SelectedModule);
 			MarkDirty();
-			RestartPreviewSimulation();
+			RefreshParticleSystemComponents();
 		}
 	}
 	ImGui::EndChild();
@@ -1457,6 +1514,8 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 	bool bSelectParticleSystemRequested = false;
 	int32 DefaultEmitterInsertIndex = -1;
+	int32 DuplicateEmitterIndex = -1;
+	int32 DeleteEmitterIndex = -1;
 
 	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(Emitters.size()); ++EmitterIndex)
 	{
@@ -1478,7 +1537,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			MutableModules.push_back(NewModule);
 			SelectModule(EmitterIndex, DisplayLODIndex, static_cast<int32>(MutableModules.size()) - 1);
 			MarkDirty();
-			RestartPreviewSimulation();
+			RefreshParticleSystemComponents();
 		};
 
 		auto SetTypeDataModule = [&](UParticleModuleTypeDataBase* NewTypeDataModule)
@@ -1503,7 +1562,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				SelectLOD(EmitterIndex, DisplayLODIndex);
 			}
 			MarkDirty();
-			RestartPreviewSimulation();
+			RefreshParticleSystemComponents();
 		};
 
 		auto RenderUnavailableCategory = [](const char* Label)
@@ -1519,7 +1578,36 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 		auto RenderAddModuleMenu = [&]()
 		{
-			RenderUnavailableCategory("Emitter");
+			if (ImGui::BeginMenu("Emitter"))
+			{
+				ImGui::TextDisabled("EMITTER");
+				ImGui::Separator();
+
+				ImGui::BeginDisabled();
+				ImGui::MenuItem("Rename Emitter");
+				ImGui::EndDisabled();
+
+				if (ImGui::MenuItem("Duplicate Emitter"))
+				{
+					DuplicateEmitterIndex = EmitterIndex;
+				}
+
+				ImGui::BeginDisabled();
+				ImGui::MenuItem("Duplicate and Share Emitter");
+				ImGui::EndDisabled();
+
+				if (ImGui::MenuItem("Delete Emitter"))
+				{
+					DeleteEmitterIndex = EmitterIndex;
+				}
+
+				ImGui::BeginDisabled();
+				ImGui::MenuItem("Export Emitter");
+				ImGui::MenuItem("Export All");
+				ImGui::EndDisabled();
+
+				ImGui::EndMenu();
+			}
 
 			if (ImGui::BeginMenu("Particle System"))
 			{
@@ -1548,6 +1636,9 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 			if (ImGui::BeginMenu("TypeData"))
 			{
+				ImGui::TextDisabled("TYPEDATA");
+				ImGui::Separator();
+
 				if (ImGui::MenuItem("Sprite"))
 				{
 					SetTypeDataModule(nullptr);
@@ -1705,7 +1796,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 			SelectModule(DropRequest.TargetEmitterIndex, DropRequest.TargetLODIndex, TargetInsertIndex);
 			MarkDirty();
-			RestartPreviewSimulation();
+			RefreshParticleSystemComponents();
 			return true;
 		};
 
@@ -1754,7 +1845,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 					else if (TypeDataAction.bRefresh)
 					{
 						SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
-						RestartPreviewSimulation();
+						RefreshParticleSystemComponents();
 					}
 					AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, 0, 0);
 					ImGui::PopID();
@@ -1811,13 +1902,13 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 							SelectModule(EmitterIndex, DisplayLODIndex, NewModuleIndex);
 						}
 						MarkDirty();
-						RestartPreviewSimulation();
+						RefreshParticleSystemComponents();
 						bModuleListMutated = true;
 					}
 					else if (Action.bRefresh)
 					{
 						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex);
-						RestartPreviewSimulation();
+						RefreshParticleSystemComponents();
 					}
 
 					if (bModuleListMutated)
@@ -1850,7 +1941,46 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		}
 	}
 
-	if (DefaultEmitterInsertIndex >= 0)
+	if (DuplicateEmitterIndex >= 0)
+	{
+		TArray<UParticleEmitter*>& MutableEmitters = ParticleSystem->GetMutableEmitters();
+		if (DuplicateEmitterIndex < static_cast<int32>(MutableEmitters.size()))
+		{
+			UParticleEmitter* DuplicatedEmitter = DuplicateParticleEmitter(MutableEmitters[DuplicateEmitterIndex]);
+			if (DuplicatedEmitter)
+			{
+				const int32 TargetIndex = DuplicateEmitterIndex + 1;
+				MutableEmitters.insert(MutableEmitters.begin() + TargetIndex, DuplicatedEmitter);
+				SelectEmitter(TargetIndex);
+				MarkDirty();
+				RefreshParticleSystemComponents();
+			}
+		}
+	}
+	else if (DeleteEmitterIndex >= 0)
+	{
+		TArray<UParticleEmitter*>& MutableEmitters = ParticleSystem->GetMutableEmitters();
+		if (DeleteEmitterIndex < static_cast<int32>(MutableEmitters.size()))
+		{
+			UParticleEmitter* RemovedEmitter = MutableEmitters[DeleteEmitterIndex];
+			MutableEmitters.erase(MutableEmitters.begin() + DeleteEmitterIndex);
+			UObjectManager::Get().DestroyObject(RemovedEmitter);
+
+			if (MutableEmitters.empty())
+			{
+				SelectParticleSystem();
+			}
+			else
+			{
+				const int32 NewEmitterIndex = (std::min)(DeleteEmitterIndex, static_cast<int32>(MutableEmitters.size()) - 1);
+				SelectEmitter(NewEmitterIndex);
+			}
+
+			MarkDirty();
+			RefreshParticleSystemComponents();
+		}
+	}
+	else if (DefaultEmitterInsertIndex >= 0)
 	{
 		TArray<UParticleEmitter*>& MutableEmitters = ParticleSystem->GetMutableEmitters();
 		const int32 OldEmitterCount = static_cast<int32>(MutableEmitters.size());
@@ -1867,7 +1997,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 			SelectLOD(TargetIndex, 0);
 			MarkDirty();
-			RestartPreviewSimulation();
+			RefreshParticleSystemComponents();
 		}
 	}
 	else if (bSelectParticleSystemRequested)

@@ -85,6 +85,7 @@ private:
 	void CreatePreviewWorld();
 	void DestroyPreviewWorld();
 	void RestartPreviewSimulation();
+	void RefreshParticleSystemComponents();
 
 private:
 	FEditorViewState ViewState;
