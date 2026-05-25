@@ -1,9 +1,105 @@
 ﻿#include "ParticleSystem.h"
 
+#include "Materials/MaterialManager.h"
 #include "Particles/Module/ParticleModule.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Serialization/Archive.h"
+
+namespace
+{
+	UParticleModuleRequired* CreateDefaultRequiredModule(float EmitterDuration, bool bLooping)
+	{
+		UParticleModuleRequired* RequiredModule = UObjectManager::Get().CreateObject<UParticleModuleRequired>();
+		UMaterialInterface* Material = FMaterialManager::Get().GetOrCreateMaterialInterface("Content/Material/Editor/DefaultParticleSprite.mat");
+		RequiredModule->Material = Material;
+		RequiredModule->MaterialPath = "Content/Material/Editor/DefaultParticleSprite.mat";
+		RequiredModule->EmitterDuration = EmitterDuration;
+		RequiredModule->bLooping = bLooping;
+		return RequiredModule;
+	}
+
+	UParticleLODLevel* CreateDefaultLODLevel(float EmitterDuration, bool bLooping, float SpawnRate, float Lifetime, const FVector& StartLocation, const FVector& StartVelocity, const FVector& StartSize, const FVector4& StartColor, const FVector4& EndColor)
+	{
+		UParticleLODLevel* LODLevel = UObjectManager::Get().CreateObject<UParticleLODLevel>();
+		LODLevel->SetLevel(0);
+		LODLevel->SetEnabled(true);
+
+		UParticleModuleSpawn* SpawnModule = UObjectManager::Get().CreateObject<UParticleModuleSpawn>();
+		SpawnModule->SpawnRate = SpawnRate;
+
+		UParticleModuleLifetime* LifetimeModule = UObjectManager::Get().CreateObject<UParticleModuleLifetime>();
+		LifetimeModule->Lifetime = Lifetime;
+
+		UParticleModuleLocation* LocationModule = UObjectManager::Get().CreateObject<UParticleModuleLocation>();
+		LocationModule->StartLocation = StartLocation;
+
+		UParticleModuleVelocity* VelocityModule = UObjectManager::Get().CreateObject<UParticleModuleVelocity>();
+		VelocityModule->StartVelocity = StartVelocity;
+
+		UParticleModuleColor* ColorModule = UObjectManager::Get().CreateObject<UParticleModuleColor>();
+		ColorModule->StartColor = StartColor;
+		ColorModule->EndColor = EndColor;
+
+		UParticleModuleSize* SizeModule = UObjectManager::Get().CreateObject<UParticleModuleSize>();
+		SizeModule->StartSize = StartSize;
+
+		LODLevel->GetMutableModules().push_back(CreateDefaultRequiredModule(EmitterDuration, bLooping));
+		LODLevel->GetMutableModules().push_back(SpawnModule);
+		LODLevel->GetMutableModules().push_back(LifetimeModule);
+		LODLevel->GetMutableModules().push_back(LocationModule);
+		LODLevel->GetMutableModules().push_back(VelocityModule);
+		LODLevel->GetMutableModules().push_back(ColorModule);
+		LODLevel->GetMutableModules().push_back(SizeModule);
+
+		return LODLevel;
+	}
+
+	UParticleEmitter* CreateSpriteEmitter()
+	{
+		UParticleEmitter* Emitter = UObjectManager::Get().CreateObject<UParticleEmitter>();
+		Emitter->SetMaxActiveParticles(100);
+		Emitter->SetEmitterDuration(1.0f);
+		Emitter->SetLooping(true);
+		Emitter->AddLODLevel(CreateDefaultLODLevel(
+			Emitter->GetEmitterDuration(),
+			Emitter->IsLooping(),
+			18.0f,
+			1.0f,
+			FVector(-24.0f, 0.0f, 0.0f),
+			FVector(0.0f, 90.0f, 20.0f),
+			FVector(10.0f, 10.0f, 1.0f),
+			FVector4(1.0f, 0.72f, 0.28f, 1.0f),
+			FVector4(0.35f, 0.35f, 0.35f, 0.0f)));
+		return Emitter;
+	}
+
+	UParticleEmitter* CreateMeshEmitter()
+	{
+		UParticleEmitter* Emitter = UObjectManager::Get().CreateObject<UParticleEmitter>();
+		Emitter->SetMaxActiveParticles(48);
+		Emitter->SetEmitterDuration(1.6f);
+		Emitter->SetLooping(false);
+
+		UParticleLODLevel* LODLevel = CreateDefaultLODLevel(
+			Emitter->GetEmitterDuration(),
+			Emitter->IsLooping(),
+			7.0f,
+			1.6f,
+			FVector(28.0f, 0.0f, 12.0f),
+			FVector(0.0f, 55.0f, 80.0f),
+			FVector(4.0f, 4.0f, 4.0f),
+			FVector4(0.55f, 0.78f, 1.0f, 1.0f),
+			FVector4(0.10f, 0.16f, 0.24f, 0.0f));
+
+		UParticleModuleTypeDataMesh* MeshTypeData = UObjectManager::Get().CreateObject<UParticleModuleTypeDataMesh>();
+		MeshTypeData->MeshPath = "Content/Data/BasicShape/Cylinder_StaticMesh.uasset";
+		LODLevel->SetTypeDataModule(MeshTypeData);
+
+		Emitter->AddLODLevel(LODLevel);
+		return Emitter;
+	}
+}
 
 UParticleLODLevel::~UParticleLODLevel()
 {
@@ -112,25 +208,13 @@ UParticleSystem::~UParticleSystem()
 
 void UParticleSystem::InitializeDefaultEmitters()
 {
-	UParticleEmitter* DefaultEmitter = UObjectManager::Get().CreateObject<UParticleEmitter>();
-	DefaultEmitter->SetMaxActiveParticles(100);
-	DefaultEmitter->SetEmitterDuration(1.0f);
-	DefaultEmitter->SetLooping(true);
+	if (!Emitters.empty())
+	{
+		return;
+	}
 
-	UParticleLODLevel* DefaultLOD = UObjectManager::Get().CreateObject<UParticleLODLevel>();
-	DefaultLOD->SetLevel(0);
-	DefaultLOD->SetEnabled(true);
-
-	//모듈 확인용 임시 코드
-	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleLifetime>());
-	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleLocation>());
-	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleVelocity>());
-	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleColor>());
-	DefaultLOD->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleSize>());
-
-	DefaultEmitter->AddLODLevel(DefaultLOD);
-
-	AddEmitter(DefaultEmitter);
+	AddEmitter(CreateSpriteEmitter());
+	AddEmitter(CreateMeshEmitter());
 }
 
 void UParticleSystem::AddEmitter(UParticleEmitter* Emitter)
@@ -141,6 +225,13 @@ void UParticleSystem::AddEmitter(UParticleEmitter* Emitter)
 	}
 
 	Emitters.push_back(Emitter);
+}
+
+UParticleEmitter* UParticleSystem::AddDefaultEmitter()
+{
+	UParticleEmitter* Emitter = CreateSpriteEmitter();
+	AddEmitter(Emitter);
+	return Emitter;
 }
 
 void UParticleSystem::Serialize(FArchive& Ar)

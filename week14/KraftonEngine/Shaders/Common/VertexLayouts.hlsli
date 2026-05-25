@@ -32,6 +32,21 @@ struct VS_Input_PNCTT
     float4 tangent : TANGENT;
 };
 
+struct VS_Input_PNCTT_Instanced
+{
+    float3 position : POSITION;
+    float3 normal : NORMAL;
+    float4 color : COLOR;
+    float2 texcoord : TEXCOORD;
+    float4 tangent : TANGENT;
+    
+    float4 world0 : INSTANCEWORLD0;
+    float4 world1 : INSTANCEWORLD1;
+    float4 world2 : INSTANCEWORLD2;
+    float4 world3 : INSTANCEWORLD3;
+    float4 instanceColor : INSTANCECOLOR;
+};
+
 // 나도 이러고 싶지 않았다.
 struct VS_Input_PNCTTBB
 {
@@ -56,6 +71,14 @@ struct VS_Input_PT
 struct VS_Input_P
 {
     float3 position : POSITION;
+};
+
+// Particle (Position + Normal + TexCoord)
+struct VS_Input_PCUV
+{
+    float3 position : POSITION;
+    float4 color : COLOR;
+    float2 texcoord : TEXCOORD;
 };
 
 // ============================================================
@@ -119,6 +142,13 @@ struct PS_Input_Shadow
 {
     float4 position : SV_POSITION;
     float  depth    : TEXCOORD0;    // VSM용 normalized depth
+};
+
+struct PS_Input_ColorTex
+{
+    float4 position : SV_POSITION;
+    float4 color : COLOR;
+    float2 texcoord : TEXCOORD;
 };
 
 #endif // VERTEX_LAYOUTS_HLSL

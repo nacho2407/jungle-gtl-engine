@@ -1,19 +1,31 @@
 #pragma once
 
+#include "Editor/Viewport/Asset/ParticleSystemEditorViewportClient.h"
 #include "Editor/UI/Asset/AssetEditorWidget.h"
+#include "Object/FName.h"
 
 struct ImVec2;
+struct FPropertyValue;
+class AActor;
+class UObject;
+class UParticleEmitter;
+class UParticleLODLevel;
+class UParticleModule;
 class UParticleSystem;
+class UParticleSystemComponent;
 
 class FParticleSystemEditorWidget : public FAssetEditorWidget
 {
 public:
-	FParticleSystemEditorWidget() = default;
+	FParticleSystemEditorWidget();
+	~FParticleSystemEditorWidget() override;
 
 	bool CanEdit(UObject* Object) const override;
+	bool AllowsMultipleInstances() const override { return true; }
 	void Open(UObject* Object) override;
 	void Close() override;
 	void Tick(float DeltaTime) override;
+	void CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const override;
 	void Render(float DeltaTime) override;
 
 private:
@@ -41,6 +53,9 @@ private:
 		bool bPreviewPlaying = true;
 		bool bRestartPreviewRequested = false;
 		float PreviewTime = 0.0f;
+		float MainSplitRatio = 0.52f;
+		float ViewportDetailsSplitRatio = 0.58f;
+		float EmittersCurveSplitRatio = 0.58f;
 	};
 
 	UParticleSystem* GetParticleSystem() const;
@@ -49,17 +64,34 @@ private:
 	void SelectParticleSystem();
 	void SelectEmitter(int32 EmitterIndex);
 	void SelectLOD(int32 EmitterIndex, int32 LODIndex);
-	void SelectModule(int32 EmitterIndex, int32 ModuleIndex);
+	void SelectModule(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex);
 	bool IsEmitterSelected(int32 EmitterIndex) const;
-	bool IsModuleSelected(int32 EmitterIndex, int32 ModuleIndex) const;
+	bool IsLODSelected(int32 EmitterIndex, int32 LODIndex) const;
+	bool IsModuleSelected(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex) const;
 	const char* GetSelectionKindLabel() const;
+	int32 GetDisplayLODIndex(const UParticleEmitter* Emitter) const;
+	const UParticleEmitter* GetSelectedEmitter(const UParticleSystem* ParticleSystem) const;
+	const UParticleLODLevel* GetSelectedLODLevel(const UParticleSystem* ParticleSystem) const;
+	const UParticleModule* GetSelectedModule(const UParticleSystem* ParticleSystem) const;
 	FEditorLayoutSizes CalculateLayoutSizes(const ImVec2& Available) const;
 	void RenderToolbar();
-	void RenderViewportPanel(const ImVec2& Size) const;
-	void RenderDetailsPanel(const ImVec2& Size) const;
+	void RenderViewportPanel(const ImVec2& Size);
+	void RenderDetailsPanel(const ImVec2& Size);
 	void RenderEmittersPanel(const ImVec2& Size);
 	void RenderCurveEditorPanel(const ImVec2& Size) const;
+	bool RenderObjectProperties(UObject* Object);
+	bool RenderPropertyValueEditor(FPropertyValue& PropertyValue);
+	void ApplyEditedObjectSideEffects(UObject* Object);
+	void CreatePreviewWorld();
+	void DestroyPreviewWorld();
+	void RestartPreviewSimulation();
 
 private:
 	FEditorViewState ViewState;
+	FParticleSystemEditorViewportClient ViewportClient;
+	AActor* PreviewActor = nullptr;
+	UParticleSystemComponent* PreviewParticleComponent = nullptr;
+	uint32 InstanceId = 0;
+	FName PreviewWorldHandle = FName::None;
+	FString WindowIdSuffix;
 };

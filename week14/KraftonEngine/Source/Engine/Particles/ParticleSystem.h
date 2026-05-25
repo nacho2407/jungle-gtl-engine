@@ -96,6 +96,7 @@ public:
 	const TArray<UParticleEmitter*>& GetEmitters() const { return Emitters; }
 	TArray<UParticleEmitter*>& GetMutableEmitters() { return Emitters; }
 	void AddEmitter(UParticleEmitter* Emitter);
+	UParticleEmitter* AddDefaultEmitter();
 
 	void SetAssetPathFileName(const FString& InPathFileName) { AssetPathFileName = InPathFileName; }
 	const FString& GetAssetPathFileName() const { return AssetPathFileName; }

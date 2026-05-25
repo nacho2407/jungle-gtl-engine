@@ -1,4 +1,4 @@
-#include "ContentBrowserElement.h"
+﻿#include "ContentBrowserElement.h"
 
 #include "Asset/AssetPackage.h"
 #include "Editor/EditorEngine.h"
@@ -20,6 +20,8 @@
 #include "Animation/AnimationManager.h"
 #include "Animation/Skeleton/Skeleton.h"
 #include "Animation/Skeleton/SkeletonManager.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemManager.h"
 #include "Asset/AssetRegistry.h"
 #include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
@@ -790,6 +792,20 @@ void SkeletonElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	{
 		FMeshEditorWidget::ClearImportDurationForAsset(Mesh->GetAssetPathFileName());
 		Context.EditorEngine->OpenAssetEditorForObject(Mesh);
+	}
+}
+
+void ParticleSystemElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
+
+	const FString FilePath = FPaths::ToUtf8(ContentItem.Path.wstring());
+	if (UParticleSystem* Particle = FParticleSystemManager::Get().Load(FilePath))
+	{
+		Context.EditorEngine->OpenAssetEditorForObject(Particle);
 	}
 }
 

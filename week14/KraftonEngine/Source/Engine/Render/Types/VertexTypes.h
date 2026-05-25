@@ -23,6 +23,13 @@ struct FTextureVertex
 	FVector2 TexCoord;
 };
 
+struct FParticleSpriteVertex
+{
+	FVector Position;
+	FVector4 Color;
+	FVector2 UV;
+};
+
 // Position + Normal + Color + UV (StaticMesh GPU용 정점 형식)
 struct FVertexPNCT
 {

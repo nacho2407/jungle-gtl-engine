@@ -2,7 +2,9 @@
 
 #include "Component/Particle/ParticleSystemComponent.h"
 #include "Particles/ParticleSystem.h"
+#include "Particles/ParticleHelper.h"
 #include "Particles/Module/ParticleModule.h"
+#include "Particles/Module/ParticleModuleTypeDataBase.h"
 
 FParticleEmitterInstance::~FParticleEmitterInstance()
 {
@@ -51,10 +53,10 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 
 void FParticleEmitterInstance::Reset()
 {
-	for (int32 Index = 0; Index < ActiveParticles; ++Index)
+	for (int32 Index = 0; Index < MaxActiveParticles; ++Index)
 	{
-		GetParticle(Index).bAlive = false;
-		ParticleIndices[Index] = 0;
+		GetParticleBySlot(Index).bAlive = false;
+		ParticleIndices[Index] = static_cast<uint16>(Index);
 	}
 
 	ActiveParticles = 0;
@@ -82,11 +84,19 @@ int32 FParticleEmitterInstance::SpawnParticles(float DeltaTime)
 	int32 SpawnedCount = 0;
 	for (int32 Index = 0; Index < SpawnCount; ++Index)
 	{
-		FBaseParticle* Particle = SpawnParticle();
-		if (!Particle)
+		if (!ParticleData || ActiveParticles >= MaxActiveParticles)
 		{
 			break;
 		}
+
+		const int32 ParticleListIndex = ActiveParticles++;
+		const int32 ParticleSlot = ParticleIndices[ParticleListIndex];
+
+		uint8* ParticleData = this->ParticleData + ParticleSlot * ParticleStride;
+		FBaseParticle* Particle = reinterpret_cast<FBaseParticle*>(ParticleData);
+
+		*Particle = FBaseParticle();
+		Particle->bAlive = true;
 
 		InitializeParticle(*Particle);
 		++ParticleCounter;
@@ -120,22 +130,45 @@ void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle)
 
 void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 {
-	for (int32 ParticleIndex = 0; ParticleIndex < ActiveParticles;)
+	struct
+	{
+		FParticleEmitterInstance& Owner;
+		int32 Offset;
+		float DeltaTime;
+	} Context{ *this, 0, DeltaTime };
+
+	BEGIN_UPDATE_LOOP
+		Particle->Age += DeltaTime;
+
+		if (Particle->Age >= Particle->Lifetime)
+		{
+			Particle->bAlive = false;
+		}
+
+		if (Particle->bAlive)
+		{
+			Particle->OldPosition = Particle->Position;
+			Particle->Position += Particle->Velocity * DeltaTime;
+			Particle->Rotation += Particle->RotationRate * DeltaTime;
+			Particle->RelativeTime = Particle->Age * Particle->OneOverMaxLifetime;
+		}
+	END_UPDATE_LOOP
+
+	RunUpdateModules(DeltaTime);
+	CompactDeadParticles();
+}
+
+void FParticleEmitterInstance::CompactDeadParticles()
+{
+	for (int32 ParticleIndex = 0; ParticleIndex < this->ActiveParticles;)
 	{
 		FBaseParticle& Particle = GetParticle(ParticleIndex);
-		Particle.Age += DeltaTime;
-
-		if (Particle.Age >= Particle.Lifetime)
+		if (!Particle.bAlive)
 		{
 			KillParticle(ParticleIndex);
 			continue;
 		}
 
-		Particle.OldPosition = Particle.Position;
-		Particle.Position += Particle.Velocity * DeltaTime;
-		Particle.Rotation += Particle.RotationRate * DeltaTime;
-		Particle.RelativeTime = Particle.Age * Particle.OneOverMaxLifetime;
-		RunUpdateModules(Particle, DeltaTime);
 		++ParticleIndex;
 	}
 }
@@ -147,18 +180,17 @@ void FParticleEmitterInstance::KillParticle(int32 ParticleIndex)
 		return;
 	}
 
+	const int32 ParticleSlot = ParticleIndices[ParticleIndex];
 	const int32 LastParticleIndex = ActiveParticles - 1;
-	GetParticle(ParticleIndex).bAlive = false;
+	GetParticleBySlot(ParticleSlot).bAlive = false;
 
 	if (ParticleIndex != LastParticleIndex)
 	{
-		GetParticle(ParticleIndex) = GetParticle(LastParticleIndex);
-		ParticleIndices[ParticleIndex] = static_cast<uint16>(ParticleIndex);
+		ParticleIndices[ParticleIndex] = ParticleIndices[LastParticleIndex];
 	}
 
-	GetParticle(LastParticleIndex).bAlive = false;
-	ParticleIndices[LastParticleIndex] = 0;
 	--ActiveParticles;
+	ParticleIndices[ActiveParticles] = static_cast<uint16>(ParticleSlot);
 }
 
 void FParticleEmitterInstance::AllocateParticleData(int32 InMaxActiveParticles)
@@ -211,10 +243,10 @@ FBaseParticle* FParticleEmitterInstance::SpawnParticle()
 		return nullptr;
 	}
 
-	const int32 ParticleIndex = ActiveParticles++;
-	ParticleIndices[ParticleIndex] = static_cast<uint16>(ParticleIndex);
+	const int32 ParticleListIndex = ActiveParticles++;
+	const int32 ParticleSlot = ParticleIndices[ParticleListIndex];
 
-	FBaseParticle& Particle = GetParticle(ParticleIndex);
+	FBaseParticle& Particle = GetParticleBySlot(ParticleSlot);
 	Particle = FBaseParticle();
 	Particle.bAlive = true;
 	return &Particle;
@@ -222,12 +254,22 @@ FBaseParticle* FParticleEmitterInstance::SpawnParticle()
 
 FBaseParticle& FParticleEmitterInstance::GetParticle(int32 ParticleIndex)
 {
-	return *reinterpret_cast<FBaseParticle*>(ParticleData + ParticleIndex * ParticleStride);
+	return GetParticleBySlot(ParticleIndices[ParticleIndex]);
 }
 
 const FBaseParticle& FParticleEmitterInstance::GetParticle(int32 ParticleIndex) const
 {
-	return *reinterpret_cast<const FBaseParticle*>(ParticleData + ParticleIndex * ParticleStride);
+	return GetParticleBySlot(ParticleIndices[ParticleIndex]);
+}
+
+FBaseParticle& FParticleEmitterInstance::GetParticleBySlot(int32 ParticleSlot)
+{
+	return *reinterpret_cast<FBaseParticle*>(ParticleData + ParticleSlot * ParticleStride);
+}
+
+const FBaseParticle& FParticleEmitterInstance::GetParticleBySlot(int32 ParticleSlot) const
+{
+	return *reinterpret_cast<const FBaseParticle*>(ParticleData + ParticleSlot * ParticleStride);
 }
 
 UParticleModuleRequired* FParticleEmitterInstance::GetRequiredModule() const
@@ -248,6 +290,14 @@ void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float Sp
 		return;
 	}
 
+	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->GetTypeDataModule())
+	{
+		if (TypeDataModule->IsSpawnModule())
+		{
+			TypeDataModule->Spawn(this, PayloadOffset, SpawnTime, Particle);
+		}
+	}
+
 	for (UParticleModule* Module : CurrentLODLevel->GetModules())
 	{
 		if (Module && Module->IsSpawnModule())
@@ -257,17 +307,26 @@ void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float Sp
 	}
 }
 
-void FParticleEmitterInstance::RunUpdateModules(FBaseParticle& Particle, float DeltaTime)
+void FParticleEmitterInstance::RunUpdateModules(float DeltaTime)
 {
 	if (!CurrentLODLevel)
 	{
 		return;
 	}
+
+	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->GetTypeDataModule())
+	{
+		if (TypeDataModule->IsUpdateModule())
+		{
+			TypeDataModule->Update(this, PayloadOffset, DeltaTime);
+		}
+	}
+
 	for(UParticleModule* Module : CurrentLODLevel->GetModules())
 	{
 		if (Module && Module->IsUpdateModule())
 		{
-			Module->Update(this, PayloadOffset, DeltaTime, Particle);
+			Module->Update(this, PayloadOffset, DeltaTime);
 		}
 	}
 }

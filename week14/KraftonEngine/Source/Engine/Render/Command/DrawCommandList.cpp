@@ -223,10 +223,32 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd,
 	// --- Geometry (VB + IB) ---
 	if (Cmd.Buffer.HasBuffers())
 	{
-		if (bForce || Cmd.Buffer.VB != Cache.Buffer.VB || Cmd.Buffer.VBStride != Cache.Buffer.VBStride)
+		const bool bVertexBindingChanged = bForce ||
+			Cmd.Buffer.VB != Cache.Buffer.VB ||
+			Cmd.Buffer.VBStride != Cache.Buffer.VBStride ||
+			Cmd.Buffer.InstanceVB != Cache.Buffer.InstanceVB ||
+			Cmd.Buffer.InstanceStride != Cache.Buffer.InstanceStride ||
+			Cmd.Buffer.IsInstanced() != Cache.Buffer.IsInstanced();
+
+		if (bVertexBindingChanged)
 		{
-			uint32 Offset = 0;
-			Ctx->IASetVertexBuffers(0, 1, &Cmd.Buffer.VB, &Cmd.Buffer.VBStride, &Offset);
+			if (Cmd.Buffer.IsInstanced())
+			{
+				ID3D11Buffer* Buffers[2] = { Cmd.Buffer.VB, Cmd.Buffer.InstanceVB };
+				uint32 Strides[2] = { Cmd.Buffer.VBStride, Cmd.Buffer.InstanceStride };
+				uint32 Offsets[2] = { 0, 0 };
+				Ctx->IASetVertexBuffers(0, 2, Buffers, Strides, Offsets);
+			}
+			else
+			{
+				ID3D11Buffer* NullBuffer = nullptr;
+				uint32 NullStride = 0;
+				uint32 NullOffset = 0;
+				Ctx->IASetVertexBuffers(1, 1, &NullBuffer, &NullStride, &NullOffset);
+
+				uint32 Offset = 0;
+				Ctx->IASetVertexBuffers(0, 1, &Cmd.Buffer.VB, &Cmd.Buffer.VBStride, &Offset);
+			}
 		}
 		if (bForce || Cmd.Buffer.IB != Cache.Buffer.IB)
 		{
@@ -299,11 +321,26 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd,
 	// --- Draw ---
 	if (Cmd.Buffer.IndexCount > 0)
 	{
-		Ctx->DrawIndexed(Cmd.Buffer.IndexCount, Cmd.Buffer.FirstIndex, Cmd.Buffer.BaseVertex);
+		if (Cmd.Buffer.IsInstanced())
+		{
+			Ctx->DrawIndexedInstanced(Cmd.Buffer.IndexCount, Cmd.Buffer.InstanceCount,
+				Cmd.Buffer.FirstIndex, Cmd.Buffer.BaseVertex, Cmd.Buffer.FirstInstance);
+		}
+		else
+		{
+			Ctx->DrawIndexed(Cmd.Buffer.IndexCount, Cmd.Buffer.FirstIndex, Cmd.Buffer.BaseVertex);
+		}
 	}
 	else if (Cmd.Buffer.VertexCount > 0)
 	{
-		Ctx->Draw(Cmd.Buffer.VertexCount, 0);
+		if (Cmd.Buffer.IsInstanced())
+		{
+			Ctx->DrawInstanced(Cmd.Buffer.VertexCount, Cmd.Buffer.InstanceCount, 0, 0);
+		}
+		else
+		{
+			Ctx->Draw(Cmd.Buffer.VertexCount, 0);
+		}
 	}
 
 	FDrawCallStats::Increment();

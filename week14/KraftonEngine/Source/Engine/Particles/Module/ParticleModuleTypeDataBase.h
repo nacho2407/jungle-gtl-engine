@@ -2,6 +2,7 @@
 
 #include "ParticleModule.h"
 #include "Object/Ptr/SoftObjectPtr.h"
+#include "Math/Distribution.h"
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 
 #include "Source/Engine/Particles/Module/ParticleModuleTypeDataBase.generated.h"
@@ -125,14 +126,67 @@ class UParticleModuleTypeDataMesh : public UParticleModuleTypeDataBase
 {
 public:
 	GENERATED_BODY()
+	UParticleModuleTypeDataMesh()
+	{
+		StartMeshScale.Constant = FVector::OneVector;
+		StartMeshScale.MinValue = FVector::OneVector;
+		StartMeshScale.MaxValue = FVector::OneVector;
+	}
+
 	UStaticMesh* Mesh = nullptr;
 
 	UPROPERTY(Edit, Save, Category="Particle|TypeData|Mesh", DisplayName="Mesh", AssetType="StaticMesh")
 	FSoftObjectPtr MeshPath = "None";
 
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Mesh", DisplayName="Start Mesh Scale", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector StartMeshScale;
+
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Mesh", DisplayName="Start Mesh Rotation", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector StartMeshRotation;
+
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Mesh", DisplayName="Mesh Rotation Rate", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector MeshRotationRate;
+
+	bool IsSpawnModule() const override { return true; }
+	bool IsUpdateModule() const override { return true; }
+
 	FParticleEmitterInstance* CreateInstance(UParticleEmitter* Emitter, UParticleSystemComponent* Component) override
 	{
 		return new FParticleMeshEmitterInstance(Emitter, Component, this);
+	}
+
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
+	{
+		if (!Owner || Offset < 0 || Offset + static_cast<int32>(sizeof(FParticleMeshPayload)) > Owner->ParticleStride)
+		{
+			return;
+		}
+
+		FParticleMeshPayload* Payload = reinterpret_cast<FParticleMeshPayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
+		Payload->InitialMeshScale = StartMeshScale.GetValue();
+		Payload->MeshScale = Payload->InitialMeshScale;
+		Payload->MeshRotation = StartMeshRotation.GetValue();
+		Payload->MeshRotationRate = MeshRotationRate.GetValue();
+	}
+
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override
+	{
+		if (!Owner || Offset < 0 || Offset + static_cast<int32>(sizeof(FParticleMeshPayload)) > Owner->ParticleStride)
+		{
+			return;
+		}
+
+		struct
+		{
+			FParticleEmitterInstance& Owner;
+			int32 Offset;
+			float DeltaTime;
+		} Context{ *Owner, Offset, DeltaTime };
+
+		BEGIN_UPDATE_LOOP
+			FParticleMeshPayload* Payload = reinterpret_cast<FParticleMeshPayload*>(ParticleBase + CurrentOffset);
+			Payload->MeshRotation += Payload->MeshRotationRate * DeltaTime;
+		END_UPDATE_LOOP
 	}
 	
 	EParticleRenderType GetRenderType() const override
@@ -151,14 +205,67 @@ class UParticleModuleTypeDataRibbon : public UParticleModuleTypeDataBase
 {
 public:
 	GENERATED_BODY()
+	UParticleModuleTypeDataRibbon()
+	{
+		StartWidth.Constant = 1.0f;
+		StartWidth.MinValue = 1.0f;
+		StartWidth.MaxValue = 1.0f;
+	}
+
 	UPROPERTY(Edit, Save, Category="Particle|TypeData|Ribbon", DisplayName="Tessellation Factor", Min=0.0f, Speed=0.1f)
 	float TessellationFactor = 1.0f;
 	UPROPERTY(Edit, Save, Category="Particle|TypeData|Ribbon", DisplayName="Use Trail Smoothing")
 	bool bUseTrailSmoothing = true;
 
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Ribbon", DisplayName="Start Width", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat StartWidth;
+
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Ribbon", DisplayName="Start Twist", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat StartTwist;
+
+	bool IsSpawnModule() const override { return true; }
+	bool IsUpdateModule() const override { return true; }
+
 	FParticleEmitterInstance* CreateInstance(UParticleEmitter* Emitter, UParticleSystemComponent* Component) override
 	{
 		return new FParticleRibbonEmitterInstance(Emitter, Component, this);
+	}
+
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
+	{
+		if (!Owner || Offset < 0 || Offset + static_cast<int32>(sizeof(FRibbonParticlePayload)) > Owner->ParticleStride)
+		{
+			return;
+		}
+
+		FRibbonParticlePayload* Payload = reinterpret_cast<FRibbonParticlePayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
+		Payload->SourcePosition = Particle.Position;
+		Payload->PreviousPosition = Particle.Position;
+		Payload->Width = StartWidth.GetValue();
+		Payload->Twist = StartTwist.GetValue();
+		Payload->SourceParticleIndex = static_cast<uint16>(Particle.FrameIndex & 0xffff);
+		Payload->NextParticleIndex = 0xffff;
+	}
+
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override
+	{
+		if (!Owner || Offset < 0 || Offset + static_cast<int32>(sizeof(FRibbonParticlePayload)) > Owner->ParticleStride)
+		{
+			return;
+		}
+
+		struct
+		{
+			FParticleEmitterInstance& Owner;
+			int32 Offset;
+			float DeltaTime;
+		} Context{ *Owner, Offset, DeltaTime };
+
+		BEGIN_UPDATE_LOOP
+			FRibbonParticlePayload* Payload = reinterpret_cast<FRibbonParticlePayload*>(ParticleBase + CurrentOffset);
+			Payload->PreviousPosition = Payload->SourcePosition;
+			Payload->SourcePosition = Particle->Position;
+		END_UPDATE_LOOP
 	}
 
 	EParticleRenderType GetRenderType() const override
@@ -177,14 +284,59 @@ class UParticleModuleTypeDataBeam : public UParticleModuleTypeDataBase
 {
 public:
 	GENERATED_BODY()
+	UParticleModuleTypeDataBeam()
+	{
+		TargetPoint.Constant = FVector(100.0f, 0.0f, 0.0f);
+		TargetPoint.MinValue = FVector(100.0f, 0.0f, 0.0f);
+		TargetPoint.MaxValue = FVector(100.0f, 0.0f, 0.0f);
+	}
+
 	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Max Beam Count", Min=1.0f, Speed=1.0f)
 	int32 MaxBeamCount = 1;
 	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Interpolation Points", Min=0.0f, Speed=1.0f)
 	int32 InterpolationPoints = 10;
 
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Source Point", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector SourcePoint;
+
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Target Point", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector TargetPoint;
+
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Source Tangent", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector SourceTangent;
+
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Target Tangent", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector TargetTangent;
+
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Source Strength", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat SourceStrength;
+
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Target Strength", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat TargetStrength;
+
+	bool IsSpawnModule() const override { return true; }
+
 	FParticleEmitterInstance* CreateInstance(UParticleEmitter* Emitter, UParticleSystemComponent* Component) override
 	{
 		return new FParticleBeamEmitterInstance(Emitter, Component, this);
+	}
+
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
+	{
+		if (!Owner || Offset < 0 || Offset + static_cast<int32>(sizeof(FBeamParticlePayload)) > Owner->ParticleStride)
+		{
+			return;
+		}
+
+		FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
+		Payload->SourcePoint = Particle.Position + SourcePoint.GetValue();
+		Payload->TargetPoint = Particle.Position + TargetPoint.GetValue();
+		Payload->SourceTangent = SourceTangent.GetValue();
+		Payload->TargetTangent = TargetTangent.GetValue();
+		Payload->SourceStrength = SourceStrength.GetValue();
+		Payload->TargetStrength = TargetStrength.GetValue();
+		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
+		Payload->BeamIndex = static_cast<uint16>(MaxBeamCount > 0 ? Particle.FrameIndex % static_cast<uint32>(MaxBeamCount) : 0);
 	}
 
 	EParticleRenderType GetRenderType() const override

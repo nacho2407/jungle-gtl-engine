@@ -9,6 +9,7 @@
 class FPassRenderStateTable;
 class FTextRenderSceneProxy;
 class FSkeletalMeshSceneProxy;
+class FParticleSystemSceneProxy;
 class FScene;
 class UMaterialInterface;
 struct FCollectOutput;
@@ -56,11 +57,14 @@ private:
 	void BuildProxyCommands(const FFrameContext& Frame, FScene& Scene, const FCollectOutput& Output);
 	void BuildDecalCommands(FScene& Scene, FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, const FCollectOutput& Output);
 	void BuildMeshCommands(FScene& Scene, const FPrimitiveSceneProxy* Proxy);
+	void BuildParticleCommands(FScene& Scene, const FParticleSystemSceneProxy* Proxy);
 	void BuildSelectionCommands(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume, FScene& Scene);
 
 	bool PrepareProxyCommandBuildContext(FScene& Scene, const FPrimitiveSceneProxy& Proxy, FProxyCommandBuildContext& OutBuildCtx);
 	void BuildCommandForSection(FScene& Scene, const FPrimitiveSceneProxy& Proxy, const FMeshSectionDraw& Section,
 		ERenderPass Pass, const FProxyCommandBuildContext& BuildCtx);
+	void BuildParticleCommandForSection(FScene& Scene, const FParticleSystemSceneProxy& Proxy, const FDrawCommandBuffer& Buffer,
+		const FMeshSectionDraw& Section, ERenderPass Pass, FConstantBuffer* PerObjCB);
 
 	// Scene 경량 데이터 → 동적 지오메트리 → FDrawCommand
 	void BuildDynamicCommands(const FFrameContext& Frame, const FScene* Scene);
@@ -76,7 +80,8 @@ private:
 	// 공통 헬퍼
 	void EmitLineCommand(FLineGeometry& Lines, FShader* Shader, const FDrawCommandRenderState& RS);
 	void ApplyMaterialRenderState(FDrawCommandRenderState& OutState, const UMaterialInterface* Mat, const FDrawCommandRenderState& BaseState);
-	FShader* SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode, bool bUseSkeletalVertexFactory, bool bWeightBoneHeatMap);
+	FShader* SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode,
+		bool bUseSkeletalVertexFactory, bool bUseInstancedVertexFactory, bool bWeightBoneHeatMap);
 
 	FConstantBuffer* GetPerObjectCBForProxy(FScene* Scene, const FPrimitiveSceneProxy& Proxy);
 	void EnsurePerObjectCBPoolCapacity(FScene* Scene, uint32 RequiredCount);

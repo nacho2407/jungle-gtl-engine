@@ -30,6 +30,7 @@ enum class EPrimitiveProxyFlags : uint16
 	BoneDebug		= 1 << 8,		// 본 디버그 프록시 (본 위치/방향 표시)
 	StaticMesh		= 1 << 9,
 	SkeletalMesh	= 1 << 10,
+	ParticleSystem	= 1 << 11,
 };
 
 inline EPrimitiveProxyFlags  operator|(EPrimitiveProxyFlags A, EPrimitiveProxyFlags B)  { return static_cast<EPrimitiveProxyFlags>(static_cast<uint16>(A) | static_cast<uint16>(B)); }

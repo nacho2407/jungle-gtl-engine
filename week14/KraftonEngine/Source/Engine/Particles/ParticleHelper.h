@@ -4,14 +4,25 @@
 // ParticleStride : particle 하나의 byte 크기
 // ActiveParticles : 현재 살아있는 particle 수
 
+#define DECLARE_PARTICLE_PTR(Name, Address) \
+	FBaseParticle* Name = (FBaseParticle*)(Address);
 
-#define DECLARE_PARTICLE_PTR(ParticleName, ParticleData) \
-	FBaseParticle* ParticleName = reinterpret_cast<FBaseParticle*>(ParticleData)
 #define BEGIN_UPDATE_LOOP \
-	for(int32 ParticleIndex = 0; ParticleIndex < ActiveParticles; ++ParticleIndex) \
-	{\
-		FBaseParticle& Particle = *ParticlePtr;
+	{ \
+		int32& ActiveParticles = Context.Owner.ActiveParticles; \
+		int32 Offset = Context.Offset; \
+		uint32 CurrentOffset = Offset; \
+		float DeltaTime = Context.DeltaTime; \
+		uint8* ParticleData = Context.Owner.ParticleData; \
+		const uint32 ParticleStride = Context.Owner.ParticleStride; \
+		uint16* ParticleIndices = Context.Owner.ParticleIndices; \
+		for (int32 ParticleIndex = ActiveParticles - 1; ParticleIndex >= 0; --ParticleIndex) \
+		{ \
+			const int32 CurrentIndex = ParticleIndices[ParticleIndex]; \
+			uint8* ParticleBase = ParticleData + CurrentIndex * ParticleStride; \
+			DECLARE_PARTICLE_PTR(Particle, ParticleBase)
 	
 #define END_UPDATE_LOOP \
-		ParticleData += ParticleStride; \
+			CurrentOffset = Offset; \
+		} \
 	}

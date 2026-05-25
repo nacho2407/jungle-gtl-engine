@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Core/Types/ClassTypes.h"
 #include "Editor/UI/ContentBrowser/ContentBrowserContext.h"
 #include "ContentItem.h"
@@ -134,6 +134,16 @@ public:
 protected:
 	const char* GetTypeLabel() const override { return "Skeleton"; }
 	uint32 GetAccentColor() const override { return IM_COL32(180, 130, 255, 255); }
+};
+
+class ParticleSystemElement final : public ContentBrowserElement
+{
+public:
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
+
+protected:
+	const char* GetTypeLabel() const override { return "Particle System"; }
+	uint32 GetAccentColor() const override { return IM_COL32(255, 120, 120, 255); }
 };
 
 class PNGElement final : public ContentBrowserElement

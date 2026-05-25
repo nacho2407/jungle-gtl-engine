@@ -22,6 +22,7 @@ struct FParticleEmitterInstance
 	UParticleEmitter* GetTemplate() const { return SpriteTemplate; }
 	UParticleSystemComponent* GetComponent() const { return Component; }
 	UParticleLODLevel* GetCurrentLODLevel() const { return CurrentLODLevel; }
+	UParticleModuleRequired* GetRequiredModule() const;
 
 	const FParticleDataContainer& GetParticleData() const { return ParticleDataContainer; }
 	FParticleDataContainer& GetMutableParticleData() { return ParticleDataContainer; }
@@ -35,21 +36,43 @@ struct FParticleEmitterInstance
 	template<typename T>
 	T* GetParticlePayload(int32 ParticleIndex)
 	{
-		if (!ParticleData || ParticleIndex < 0 || ParticleIndex >= ActiveParticles)
-		{
-			return nullptr;
-		}
-		return reinterpret_cast<T*>(ParticleData + ParticleIndex * ParticleStride + PayloadOffset);
+		return GetParticlePayload<T>(ParticleIndex, PayloadOffset);
 	}
 
 	template<typename T>
-	const T* GetParticlePayload(int32 ParticleIndex) const
+	T* GetParticlePayload(int32 ParticleIndex, int32 Offset)
 	{
 		if (!ParticleData || ParticleIndex < 0 || ParticleIndex >= ActiveParticles)
 		{
 			return nullptr;
 		}
-		return reinterpret_cast<const T*>(ParticleData + ParticleIndex * ParticleStride + PayloadOffset);
+		if (Offset < 0 || Offset + static_cast<int32>(sizeof(T)) > ParticleStride)
+		{
+			return nullptr;
+		}
+		const int32 ParticleSlot = ParticleIndices[ParticleIndex];
+		return reinterpret_cast<T*>(ParticleData + ParticleSlot * ParticleStride + Offset);
+	}
+
+	template<typename T>
+	const T* GetParticlePayload(int32 ParticleIndex) const
+	{
+		return GetParticlePayload<T>(ParticleIndex, PayloadOffset);
+	}
+
+	template<typename T>
+	const T* GetParticlePayload(int32 ParticleIndex, int32 Offset) const
+	{
+		if (!ParticleData || ParticleIndex < 0 || ParticleIndex >= ActiveParticles)
+		{
+			return nullptr;
+		}
+		if (Offset < 0 || Offset + static_cast<int32>(sizeof(T)) > ParticleStride)
+		{
+			return nullptr;
+		}
+		const int32 ParticleSlot = ParticleIndices[ParticleIndex];
+		return reinterpret_cast<const T*>(ParticleData + ParticleSlot * ParticleStride + Offset);
 	}
 
 	UParticleEmitter* SpriteTemplate = nullptr;
@@ -75,18 +98,20 @@ protected:
 	virtual void InitializeParticle(FBaseParticle& Particle);
 	virtual void UpdateParticles(float DeltaTime);
 	virtual void KillParticle(int32 ParticleIndex);
+	void CompactDeadParticles();
 
 	void AllocateParticleData(int32 InMaxActiveParticles);
 	void ReleaseParticleData();
 	FBaseParticle* SpawnParticle();
 	FBaseParticle& GetParticle(int32 ParticleIndex);
 	const FBaseParticle& GetParticle(int32 ParticleIndex) const;
+	FBaseParticle& GetParticleBySlot(int32 ParticleSlot);
+	const FBaseParticle& GetParticleBySlot(int32 ParticleSlot) const;
 
-	UParticleModuleRequired* GetRequiredModule() const;
 	UParticleModuleSpawn* GetSpawnModule() const;
 
 	void RunSpawnModules(FBaseParticle& Particle, float SpawnTime);
-	void RunUpdateModules(FBaseParticle& Particle, float DeltaTime);
+	void RunUpdateModules(float DeltaTime);
 
 	int32 MemBlockSize = 0;
 	int32 ParticleDataNumBytes = 0;

@@ -15,9 +15,13 @@ void FDirectoryWatcher::Initialize()
 	WatchThread = std::thread(&FDirectoryWatcher::WatchThreadFunc, this);
 }
 
+FDirectoryWatcher::~FDirectoryWatcher()
+{
+	Shutdown();
+}
+
 void FDirectoryWatcher::Shutdown()
 {
-	if (!bRunning) return;
 	bRunning = false;
 
 	if (StopEvent)

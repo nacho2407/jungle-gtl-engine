@@ -1,31 +1,194 @@
-#include "ParticleSystemEditorWidget.h"
+﻿#include "ParticleSystemEditorWidget.h"
 
+#include "Component/Light/DirectionalLightComponent.h"
+#include "Component/Particle/ParticleSystemComponent.h"
+#include "Core/Property/SoftObjectProperty.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/Light/DirectionalLightActor.h"
 #include "Object/Object.h"
+#include "Particles/Module/ParticleModule.h"
+#include "Particles/Module/ParticleModuleCollision.h"
+#include "Particles/Module/ParticleModuleTypeDataBase.h"
 #include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemManager.h"
+#include "Render/Scene/FScene.h"
+#include "Render/Types/MinimalViewInfo.h"
+#include "Runtime/Engine.h"
+#include "Slate/SlateApplication.h"
+#include "Viewport/Viewport.h"
 
 #include <algorithm>
+#include <cstdarg>
 #include <cstdio>
+#include <cstring>
 #include <imgui.h>
+#include <utility>
 
 namespace
 {
 	constexpr float MinColumnWidth = 360.0f;
 	constexpr float MinViewportHeight = 220.0f;
 	constexpr float MinDetailsHeight = 160.0f;
+	constexpr float MinEmittersHeight = 180.0f;
+	constexpr float MinCurveEditorHeight = 140.0f;
+	constexpr float SplitterThickness = 6.0f;
 	constexpr float ToolbarHeight = 34.0f;
 	constexpr float EmitterColumnWidth = 176.0f;
 	constexpr float EmitterHeaderHeight = 58.0f;
 	constexpr float ModuleRowHeight = 24.0f;
-	constexpr int32 RequiredModuleIndex = -1;
-	constexpr int32 SpawnModuleIndex = -2;
-	constexpr int32 LifetimeModuleIndex = -3;
-	constexpr int32 InitialSizeModuleIndex = -4;
-	constexpr int32 InitialColorModuleIndex = -5;
+	constexpr float ModuleDropTargetHeight = 8.0f;
+	constexpr int32 NoModuleIndex = -1;
+	constexpr int32 TypeDataModuleIndex = -2;
+	constexpr const char* ParticleModuleDragPayloadType = "ParticleModuleDragPayload";
 
-	void DrawPanelHeader(const char* Label)
+	struct FModuleRowAction
+	{
+		bool bSelect = false;
+		bool bDelete = false;
+		bool bRefresh = false;
+		bool bContextMenuOpen = false;
+	};
+
+	struct FParticleModuleDragPayload
+	{
+		int32 EmitterIndex = -1;
+		int32 LODIndex = -1;
+		int32 ModuleIndex = -1;
+		UParticleModule* Module = nullptr;
+	};
+
+	struct FParticleModuleDropRequest
+	{
+		bool bRequested = false;
+		FParticleModuleDragPayload Payload;
+		int32 TargetEmitterIndex = -1;
+		int32 TargetLODIndex = -1;
+		int32 TargetInsertIndex = 0;
+	};
+
+	float ClampFloat(float Value, float MinValue, float MaxValue)
+	{
+		return (std::max)(MinValue, (std::min)(Value, MaxValue));
+	}
+
+	float CalculateSplitLeadingSize(float TotalSize, float Ratio, float MinLeadingSize, float MinTrailingSize)
+	{
+		TotalSize = (std::max)(TotalSize, 1.0f);
+		if (TotalSize >= MinLeadingSize + MinTrailingSize)
+		{
+			return ClampFloat(TotalSize * Ratio, MinLeadingSize, TotalSize - MinTrailingSize);
+		}
+
+		if (TotalSize > 2.0f)
+		{
+			return ClampFloat(TotalSize * Ratio, 1.0f, TotalSize - 1.0f);
+		}
+
+		return (std::max)(1.0f, TotalSize * 0.5f);
+	}
+
+	float CalculateSplitRatio(float LeadingSize, float TotalSize, float MinLeadingSize, float MinTrailingSize)
+	{
+		TotalSize = (std::max)(TotalSize, 1.0f);
+		const float ClampedLeadingSize = CalculateSplitLeadingSize(TotalSize, LeadingSize / TotalSize, MinLeadingSize, MinTrailingSize);
+		return ClampedLeadingSize / TotalSize;
+	}
+
+	bool DrawSplitterHandle(const char* Id, const ImVec2& Size, bool bVertical)
+	{
+		ImGui::InvisibleButton(Id, Size);
+		const bool bHovered = ImGui::IsItemHovered();
+		const bool bActive = ImGui::IsItemActive();
+		if (bHovered || bActive)
+		{
+			ImGui::SetMouseCursor(bVertical ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS);
+		}
+
+		const ImVec2 Min = ImGui::GetItemRectMin();
+		const ImVec2 Max = ImGui::GetItemRectMax();
+		const ImU32 Color = ImGui::GetColorU32(bActive ? ImGuiCol_SeparatorActive : (bHovered ? ImGuiCol_SeparatorHovered : ImGuiCol_Separator));
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		if (bVertical)
+		{
+			const float X = (Min.x + Max.x) * 0.5f;
+			DrawList->AddLine(ImVec2(X, Min.y), ImVec2(X, Max.y), Color, 2.0f);
+		}
+		else
+		{
+			const float Y = (Min.y + Max.y) * 0.5f;
+			DrawList->AddLine(ImVec2(Min.x, Y), ImVec2(Max.x, Y), Color, 2.0f);
+		}
+
+		return bActive;
+	}
+
+	ImVec2 ProjectWorldAxisToViewport(const FVector& Axis, const FMinimalViewInfo& POV)
+	{
+		const FVector CameraRight = POV.Rotation.GetRightVector();
+		const FVector CameraUp = POV.Rotation.GetUpVector();
+		return ImVec2(Axis.Dot(CameraRight), -Axis.Dot(CameraUp));
+	}
+
+	void DrawViewportAxisGizmo(ImDrawList* DrawList, const ImVec2& ViewportPos, const ImVec2& ViewportSize, FParticleSystemEditorViewportClient& ViewportClient)
+	{
+		FMinimalViewInfo POV;
+		if (!ViewportClient.GetCameraView(POV))
+		{
+			return;
+		}
+
+		const float AxisLength = (std::max)(20.0f, (std::min)(30.0f, (std::min)(ViewportSize.x, ViewportSize.y) * 0.01f));
+		const float Padding = AxisLength + 25.0f;
+		const ImVec2 Origin(ViewportPos.x + Padding, ViewportPos.y + ViewportSize.y - Padding);
+		const FVector CameraForward = POV.Rotation.GetForwardVector();
+
+		struct FAxisDrawInfo
+		{
+			const char* Label = "";
+			FVector Direction;
+			ImU32 Color = 0;
+			ImVec2 End;
+			float Depth = 0.0f;
+		};
+
+		FAxisDrawInfo Axes[3] =
+		{
+			{ "X", FVector::XAxisVector, IM_COL32(255, 70, 55, 255), ImVec2(), 0.0f },
+			{ "Y", FVector::YAxisVector, IM_COL32(105, 220, 70, 255), ImVec2(), 0.0f },
+			{ "Z", FVector::ZAxisVector, IM_COL32(70, 135, 255, 255), ImVec2(), 0.0f },
+		};
+
+		for (FAxisDrawInfo& Axis : Axes)
+		{
+			const ImVec2 Projected = ProjectWorldAxisToViewport(Axis.Direction, POV);
+			Axis.End = ImVec2(Origin.x + Projected.x * AxisLength, Origin.y + Projected.y * AxisLength);
+			Axis.Depth = Axis.Direction.Dot(CameraForward);
+		}
+
+		std::sort(Axes, Axes + 3, [](const FAxisDrawInfo& A, const FAxisDrawInfo& B)
+		{
+			return A.Depth > B.Depth;
+		});
+
+		DrawList->AddCircleFilled(Origin, 3.0f, IM_COL32(22, 24, 26, 255));
+		for (const FAxisDrawInfo& Axis : Axes)
+		{
+			DrawList->AddLine(Origin, Axis.End, Axis.Color, 2.0f);
+			DrawList->AddCircleFilled(Axis.End, 2.5f, Axis.Color);
+
+			const ImVec2 LabelDir(Axis.End.x - Origin.x, Axis.End.y - Origin.y);
+			const float LabelLen = std::sqrt(LabelDir.x * LabelDir.x + LabelDir.y * LabelDir.y);
+			const ImVec2 LabelOffset = LabelLen > 1.0f
+				? ImVec2((LabelDir.x / LabelLen) * 15.0f, (LabelDir.y / LabelLen) * 15.0f)
+				: ImVec2(4.0f, -10.0f);
+			DrawList->AddText(ImVec2(Axis.End.x + LabelOffset.x - 4.0f, Axis.End.y + LabelOffset.y - 6.0f), Axis.Color, Axis.Label);
+		}
+	}
+
+	void DrawPanelHeader(const char* Label, float MinWidth = 0.0f)
 	{
 		const ImVec2 Pos = ImGui::GetCursorScreenPos();
-		const float Width = ImGui::GetContentRegionAvail().x;
+		const float Width = (std::max)(ImGui::GetContentRegionAvail().x, MinWidth);
 		const float Height = 24.0f;
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 		DrawList->AddRectFilled(Pos, ImVec2(Pos.x + Width, Pos.y + Height), IM_COL32(34, 34, 36, 255));
@@ -33,21 +196,267 @@ namespace
 		ImGui::Dummy(ImVec2(Width, Height + 4.0f));
 	}
 
-	void DrawModuleRow(const char* Label, bool bSelected, ImU32 AccentColor)
+	bool IsModuleOrderLocked(const UParticleModule* Module)
+	{
+		return Cast<UParticleModuleRequired>(Module) || Cast<UParticleModuleSpawn>(Module);
+	}
+
+	int32 GetFirstMovableModuleIndex(const TArray<UParticleModule*>& Modules)
+	{
+		int32 FirstMovableIndex = 0;
+		for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
+		{
+			if (IsModuleOrderLocked(Modules[ModuleIndex]))
+			{
+				FirstMovableIndex = (std::max)(FirstMovableIndex, ModuleIndex + 1);
+			}
+		}
+		return FirstMovableIndex;
+	}
+
+	int32 ClampModuleInsertIndex(const TArray<UParticleModule*>& Modules, int32 InsertIndex)
+	{
+		const int32 FirstMovableIndex = GetFirstMovableModuleIndex(Modules);
+		const int32 ModuleCount = static_cast<int32>(Modules.size());
+		return (std::max)(FirstMovableIndex, (std::min)(InsertIndex, ModuleCount));
+	}
+
+	ImU32 GetModuleRowBackgroundColor(const UParticleModule* Module, bool bSelected)
+	{
+		if (Cast<UParticleModuleRequired>(Module))
+		{
+			return bSelected ? IM_COL32(205, 205, 112, 255) : IM_COL32(188, 190, 88, 255);
+		}
+		if (Cast<UParticleModuleSpawn>(Module))
+		{
+			return bSelected ? IM_COL32(210, 112, 112, 255) : IM_COL32(188, 92, 92, 255);
+		}
+		return bSelected ? IM_COL32(78, 82, 92, 255) : IM_COL32(29, 30, 35, 255);
+	}
+
+	ImU32 GetModuleRowTextColor(const UParticleModule* Module)
+	{
+		(void)Module;
+		return IM_COL32(235, 238, 242, 255);
+	}
+
+	void DrawModuleRow(const char* Label, bool bSelected, const UParticleModule* Module)
 	{
 		const ImVec2 Pos = ImGui::GetCursorScreenPos();
 		const float Width = ImGui::GetContentRegionAvail().x;
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
-		const ImU32 BackgroundColor = bSelected ? IM_COL32(78, 82, 92, 255) : IM_COL32(29, 30, 35, 255);
+		const ImU32 BackgroundColor = GetModuleRowBackgroundColor(Module, bSelected);
+		const ImU32 TextColor = GetModuleRowTextColor(Module);
 		DrawList->AddRectFilled(Pos, ImVec2(Pos.x + Width, Pos.y + ModuleRowHeight), BackgroundColor);
-		DrawList->AddRectFilled(Pos, ImVec2(Pos.x + 4.0f, Pos.y + ModuleRowHeight), AccentColor);
-		DrawList->AddText(ImVec2(Pos.x + 10.0f, Pos.y + 4.0f), IM_COL32(235, 238, 242, 255), Label);
+		DrawList->AddText(ImVec2(Pos.x + 8.0f, Pos.y + 4.0f), TextColor, Label);
 	}
 
-	bool SelectableModuleRow(const char* Label, bool bSelected, ImU32 AccentColor)
+	void StartModuleDragSource(const FParticleModuleDragPayload& DragPayload, const char* Label)
 	{
-		DrawModuleRow(Label, bSelected, AccentColor);
-		return ImGui::InvisibleButton(Label, ImVec2(ImGui::GetContentRegionAvail().x, ModuleRowHeight));
+		if (!DragPayload.Module || IsModuleOrderLocked(DragPayload.Module))
+		{
+			return;
+		}
+
+		if (ImGui::BeginDragDropSource())
+		{
+			ImGui::SetDragDropPayload(ParticleModuleDragPayloadType, &DragPayload, sizeof(DragPayload));
+			ImGui::TextUnformatted(Label);
+			ImGui::EndDragDropSource();
+		}
+	}
+
+	void AcceptModuleDropTarget(
+		FParticleModuleDropRequest& DropRequest,
+		int32 TargetEmitterIndex,
+		int32 TargetLODIndex,
+		int32 InsertBeforeIndex,
+		int32 InsertAfterIndex)
+	{
+		const ImVec2 TargetMin = ImGui::GetItemRectMin();
+		const ImVec2 TargetMax = ImGui::GetItemRectMax();
+		const bool bDropAfter = ImGui::GetIO().MousePos.y > (TargetMin.y + TargetMax.y) * 0.5f;
+		const int32 TargetInsertIndex = bDropAfter ? InsertAfterIndex : InsertBeforeIndex;
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(ParticleModuleDragPayloadType, ImGuiDragDropFlags_AcceptBeforeDelivery))
+			{
+				const float DropY = bDropAfter ? TargetMax.y : TargetMin.y;
+				ImGui::GetWindowDrawList()->AddLine(
+					ImVec2(TargetMin.x, DropY),
+					ImVec2(TargetMax.x, DropY),
+					IM_COL32(120, 180, 255, 255),
+					2.0f);
+
+				if (Payload->IsDelivery() && Payload->DataSize == sizeof(FParticleModuleDragPayload))
+				{
+					DropRequest.bRequested = true;
+					DropRequest.Payload = *static_cast<const FParticleModuleDragPayload*>(Payload->Data);
+					DropRequest.TargetEmitterIndex = TargetEmitterIndex;
+					DropRequest.TargetLODIndex = TargetLODIndex;
+					DropRequest.TargetInsertIndex = TargetInsertIndex;
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+	}
+
+	void RenderModuleContextMenu(FModuleRowAction& Action, bool bCanDelete, const ImVec2& RowMin, const ImVec2& RowMax)
+	{
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsMouseHoveringRect(RowMin, RowMax))
+		{
+			ImGui::OpenPopup("##ModuleContextMenu");
+			Action.bContextMenuOpen = true;
+		}
+
+		if (ImGui::BeginPopup("##ModuleContextMenu"))
+		{
+			Action.bContextMenuOpen = true;
+
+			ImGui::BeginDisabled(!bCanDelete);
+			if (ImGui::MenuItem("Delete Module"))
+			{
+				Action.bDelete = true;
+			}
+			ImGui::EndDisabled();
+
+			if (ImGui::MenuItem("Refresh Module"))
+			{
+				Action.bRefresh = true;
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+
+	bool SelectableModuleRow(const char* Label, bool bSelected, const UParticleModule* Module = nullptr)
+	{
+		DrawModuleRow(Label, bSelected, Module);
+		return ImGui::InvisibleButton("##ModuleRow", ImVec2(ImGui::GetContentRegionAvail().x, ModuleRowHeight));
+	}
+
+	bool IsModuleDeleteLocked(const UParticleModule* Module)
+	{
+		return Cast<UParticleModuleRequired>(Module) || Cast<UParticleModuleSpawn>(Module);
+	}
+
+	FModuleRowAction EditableModuleRow(
+		const char* Label,
+		const UParticleModule* Module,
+		bool bSelected,
+		bool bCanDelete,
+		const FParticleModuleDragPayload* DragPayload,
+		FParticleModuleDropRequest* DropRequest,
+		int32 TargetEmitterIndex,
+		int32 TargetLODIndex,
+		int32 InsertBeforeIndex,
+		int32 InsertAfterIndex)
+	{
+		FModuleRowAction Action;
+
+		const ImVec2 Pos = ImGui::GetCursorScreenPos();
+		const float Width = ImGui::GetContentRegionAvail().x;
+
+		DrawModuleRow(Label, bSelected, Module);
+		ImGui::SetCursorScreenPos(Pos);
+		Action.bSelect = ImGui::InvisibleButton("##SelectModuleRow", ImVec2(Width, ModuleRowHeight));
+		RenderModuleContextMenu(Action, bCanDelete, Pos, ImVec2(Pos.x + Width, Pos.y + ModuleRowHeight));
+		if (DragPayload)
+		{
+			StartModuleDragSource(*DragPayload, Label);
+		}
+		if (DropRequest)
+		{
+			AcceptModuleDropTarget(*DropRequest, TargetEmitterIndex, TargetLODIndex, InsertBeforeIndex, InsertAfterIndex);
+		}
+
+		ImGui::SetCursorScreenPos(ImVec2(Pos.x, Pos.y + ModuleRowHeight));
+		return Action;
+	}
+
+	void DrawDetailRow(const char* Label, const char* Value)
+	{
+		ImGui::TextUnformatted(Label);
+		ImGui::SameLine(180.0f);
+		ImGui::TextDisabled("%s", Value ? Value : "");
+	}
+
+	void DrawDetailRowF(const char* Label, const char* Format, ...)
+	{
+		char Buffer[256];
+		va_list Args;
+		va_start(Args, Format);
+		std::vsnprintf(Buffer, sizeof(Buffer), Format, Args);
+		va_end(Args);
+		DrawDetailRow(Label, Buffer);
+	}
+
+	bool StringContains(const FString& Value, const char* Needle)
+	{
+		return Needle && Value.find(Needle) != FString::npos;
+	}
+
+	bool IsColorLikeProperty(const FPropertyValue& PropertyValue)
+	{
+		const FString Name = PropertyValue.GetName() ? PropertyValue.GetName() : "";
+		const FString DisplayName = PropertyValue.GetDisplayName() ? PropertyValue.GetDisplayName() : "";
+		const FString Category = PropertyValue.GetCategory() ? PropertyValue.GetCategory() : "";
+		return StringContains(Name, "Color") || StringContains(DisplayName, "Color") || StringContains(Category, "Color");
+	}
+
+	const char* GetRenderTypeLabel(EParticleRenderType RenderType)
+	{
+		switch (RenderType)
+		{
+		case EParticleRenderType::Sprite: return "Sprite";
+		case EParticleRenderType::Mesh: return "Mesh";
+		case EParticleRenderType::Ribbon: return "Ribbon";
+		case EParticleRenderType::Beam: return "Beam";
+		case EParticleRenderType::GPU: return "GPU";
+		default: return "Unknown";
+		}
+	}
+
+	EParticleRenderType GetLODRenderType(const UParticleLODLevel* LODLevel)
+	{
+		const UParticleModuleTypeDataBase* TypeDataModule = LODLevel ? LODLevel->GetTypeDataModule() : nullptr;
+		return TypeDataModule ? TypeDataModule->GetRenderType() : EParticleRenderType::Sprite;
+	}
+
+	const char* GetTypeDataDisplayName(const UParticleModuleTypeDataBase* TypeDataModule)
+	{
+		if (!TypeDataModule)
+		{
+			return "";
+		}
+
+		switch (TypeDataModule->GetRenderType())
+		{
+		case EParticleRenderType::Sprite: return "";
+		case EParticleRenderType::Mesh: return "Mesh Data";
+		case EParticleRenderType::Ribbon: return "Ribbon Data";
+		case EParticleRenderType::Beam: return "Beam Data";
+		case EParticleRenderType::GPU: return "GPU Sprites";
+		default: return TypeDataModule->GetClass()->GetName();
+		}
+	}
+
+	const char* GetModuleDisplayName(const UParticleModule* Module)
+	{
+		if (!Module)
+		{
+			return "(null module)";
+		}
+		if (Cast<UParticleModuleRequired>(Module)) return "Required";
+		if (Cast<UParticleModuleSpawn>(Module)) return "Spawn";
+		if (Cast<UParticleModuleLifetime>(Module)) return "Lifetime";
+		if (Cast<UParticleModuleLocation>(Module)) return "Initial Location";
+		if (Cast<UParticleModuleVelocity>(Module)) return "Initial Velocity";
+		if (Cast<UParticleModuleColor>(Module)) return "Initial Color";
+		if (Cast<UParticleModuleSize>(Module)) return "Initial Size";
+		if (Cast<UParticleModuleCollision>(Module)) return "Collision";
+		return Module->GetClass()->GetName();
 	}
 
 	FString GetParticleSystemTitle(const UParticleSystem* ParticleSystem, bool bDirty)
@@ -70,13 +479,30 @@ namespace
 	}
 }
 
+static uint32 GNextParticleSystemEditorInstanceId = 0;
+
 struct FParticleSystemEditorWidget::FEditorLayoutSizes
 {
 	float LeftWidth = 0.0f;
 	float RightWidth = 0.0f;
-	float TopHeight = 0.0f;
-	float BottomHeight = 0.0f;
+	float ViewportHeight = 0.0f;
+	float DetailsHeight = 0.0f;
+	float EmittersHeight = 0.0f;
+	float CurveEditorHeight = 0.0f;
 };
+
+FParticleSystemEditorWidget::FParticleSystemEditorWidget()
+	: InstanceId(GNextParticleSystemEditorInstanceId++)
+{
+	const FString Id = std::to_string(InstanceId);
+	PreviewWorldHandle = FName("ParticleSystemEditorPreview_" + Id);
+	WindowIdSuffix = "###ParticleSystemEditor_" + Id;
+}
+
+FParticleSystemEditorWidget::~FParticleSystemEditorWidget()
+{
+	DestroyPreviewWorld();
+}
 
 bool FParticleSystemEditorWidget::CanEdit(UObject* Object) const
 {
@@ -90,30 +516,56 @@ void FParticleSystemEditorWidget::Open(UObject* Object)
 		return;
 	}
 
+	DestroyPreviewWorld();
 	FAssetEditorWidget::Open(Object);
 	ResetEditorState();
+	CreatePreviewWorld();
 }
 
 void FParticleSystemEditorWidget::Close()
 {
 	ResetEditorState();
+	DestroyPreviewWorld();
 	FAssetEditorWidget::Close();
 }
 
 void FParticleSystemEditorWidget::Tick(float DeltaTime)
 {
-	if (!IsOpen() || !ViewState.bPreviewPlaying)
+	if (!IsOpen())
 	{
 		return;
 	}
 
+	if (ViewportClient.IsRenderable())
+	{
+		ViewportClient.Tick(DeltaTime);
+	}
+
 	if (ViewState.bRestartPreviewRequested)
 	{
-		ViewState.PreviewTime = 0.0f;
+		RestartPreviewSimulation();
 		ViewState.bRestartPreviewRequested = false;
 	}
 
+	if (!ViewState.bPreviewPlaying)
+	{
+		return;
+	}
+
+	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
+	{
+		PreviewWorld->Tick(DeltaTime, ELevelTick::LEVELTICK_All);
+	}
+
 	ViewState.PreviewTime += DeltaTime;
+}
+
+void FParticleSystemEditorWidget::CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const
+{
+	if (IsOpen())
+	{
+		OutClients.push_back(const_cast<FParticleSystemEditorViewportClient*>(&ViewportClient));
+	}
 }
 
 void FParticleSystemEditorWidget::Render(float DeltaTime)
@@ -129,7 +581,12 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
 
 	bool bWindowOpen = true;
 	FString VisibleTitle = GetParticleSystemTitle(ParticleSystem, IsDirty());
-	FString WindowTitle = VisibleTitle + "###ParticleSystemEditor";
+	FString WindowTitle = VisibleTitle + WindowIdSuffix;
+	ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_None;
+	if (ViewportClient.IsMouseOverViewport())
+	{
+		WindowFlags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
+	}
 
 	ImGui::SetNextWindowSize(ImVec2(1280.0f, 720.0f), ImGuiCond_Once);
 	if (ConsumeFocusRequest())
@@ -137,7 +594,7 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
 		ImGui::SetNextWindowFocus();
 	}
 
-	if (!ImGui::Begin(WindowTitle.c_str(), &bWindowOpen))
+	if (!ImGui::Begin(WindowTitle.c_str(), &bWindowOpen, WindowFlags))
 	{
 		ImGui::End();
 		if (!bWindowOpen)
@@ -147,27 +604,57 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
 		return;
 	}
 
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+	{
+		FSlateApplication::Get().BringViewportToFront(&ViewportClient);
+	}
+
 	RenderToolbar();
 	ImGui::Separator();
 
-	const ImGuiStyle& Style = ImGui::GetStyle();
 	const ImVec2 Available = ImGui::GetContentRegionAvail();
 	const FEditorLayoutSizes Layout = CalculateLayoutSizes(Available);
 
 	ImGui::BeginChild("##ParticleEditorLeftColumn", ImVec2(Layout.LeftWidth, 0.0f), ImGuiChildFlags_None);
-	RenderViewportPanel(ImVec2(0.0f, Layout.TopHeight));
-	ImGui::Dummy(ImVec2(0.0f, Style.ItemSpacing.y));
-	RenderDetailsPanel(ImVec2(0.0f, Layout.BottomHeight));
+	RenderViewportPanel(ImVec2(0.0f, Layout.ViewportHeight));
+	const float LeftSplitTotalHeight = Layout.ViewportHeight + Layout.DetailsHeight;
+	if (DrawSplitterHandle("##ParticleViewportDetailsSplitter", ImVec2(ImGui::GetContentRegionAvail().x, SplitterThickness), false))
+	{
+		ViewState.ViewportDetailsSplitRatio = CalculateSplitRatio(
+			Layout.ViewportHeight + ImGui::GetIO().MouseDelta.y,
+			LeftSplitTotalHeight,
+			MinViewportHeight,
+			MinDetailsHeight);
+	}
+	RenderDetailsPanel(ImVec2(0.0f, Layout.DetailsHeight));
 	ImGui::EndChild();
 
-	ImGui::SameLine();
+	ImGui::SameLine(0.0f, 0.0f);
+	const float MainSplitTotalWidth = Layout.LeftWidth + Layout.RightWidth;
+	if (DrawSplitterHandle("##ParticleEditorMainSplitter", ImVec2(SplitterThickness, ImGui::GetContentRegionAvail().y), true))
+	{
+		ViewState.MainSplitRatio = CalculateSplitRatio(
+			Layout.LeftWidth + ImGui::GetIO().MouseDelta.x,
+			MainSplitTotalWidth,
+			MinColumnWidth,
+			MinColumnWidth);
+	}
 
+	ImGui::SameLine(0.0f, 0.0f);
 	ImGui::BeginChild("##ParticleEditorRightColumn", ImVec2(Layout.RightWidth, 0.0f), ImGuiChildFlags_None);
 	if (ViewState.bShowCurveEditor)
 	{
-		RenderEmittersPanel(ImVec2(0.0f, Layout.TopHeight));
-		ImGui::Dummy(ImVec2(0.0f, Style.ItemSpacing.y));
-		RenderCurveEditorPanel(ImVec2(0.0f, Layout.BottomHeight));
+		RenderEmittersPanel(ImVec2(0.0f, Layout.EmittersHeight));
+		const float RightSplitTotalHeight = Layout.EmittersHeight + Layout.CurveEditorHeight;
+		if (DrawSplitterHandle("##ParticleEmittersCurveSplitter", ImVec2(ImGui::GetContentRegionAvail().x, SplitterThickness), false))
+		{
+			ViewState.EmittersCurveSplitRatio = CalculateSplitRatio(
+				Layout.EmittersHeight + ImGui::GetIO().MouseDelta.y,
+				RightSplitTotalHeight,
+				MinEmittersHeight,
+				MinCurveEditorHeight);
+		}
+		RenderCurveEditorPanel(ImVec2(0.0f, Layout.CurveEditorHeight));
 	}
 	else
 	{
@@ -243,9 +730,14 @@ void FParticleSystemEditorWidget::ValidateSelectionState(const UParticleSystem* 
 
 	const UParticleLODLevel* LODLevel = Emitter->GetLODLevel(Selection.LODIndex);
 	const int32 ModuleCount = LODLevel ? static_cast<int32>(LODLevel->GetModules().size()) : 0;
-	if (Selection.Kind == ESelectionKind::Module && Selection.ModuleIndex >= ModuleCount)
+	if (Selection.Kind == ESelectionKind::Module)
 	{
-		SelectModule(Selection.EmitterIndex, RequiredModuleIndex);
+		const bool bValidTypeDataSelection = Selection.ModuleIndex == TypeDataModuleIndex && LODLevel && LODLevel->GetTypeDataModule();
+		const bool bValidModuleSelection = Selection.ModuleIndex >= 0 && Selection.ModuleIndex < ModuleCount;
+		if (!bValidTypeDataSelection && !bValidModuleSelection)
+		{
+			SelectEmitter(Selection.EmitterIndex);
+		}
 	}
 }
 
@@ -259,7 +751,7 @@ void FParticleSystemEditorWidget::SelectEmitter(int32 EmitterIndex)
 	ViewState.Selection.Kind = ESelectionKind::Emitter;
 	ViewState.Selection.EmitterIndex = EmitterIndex;
 	ViewState.Selection.LODIndex = 0;
-	ViewState.Selection.ModuleIndex = RequiredModuleIndex;
+	ViewState.Selection.ModuleIndex = NoModuleIndex;
 }
 
 void FParticleSystemEditorWidget::SelectLOD(int32 EmitterIndex, int32 LODIndex)
@@ -267,13 +759,14 @@ void FParticleSystemEditorWidget::SelectLOD(int32 EmitterIndex, int32 LODIndex)
 	ViewState.Selection.Kind = ESelectionKind::LOD;
 	ViewState.Selection.EmitterIndex = EmitterIndex;
 	ViewState.Selection.LODIndex = LODIndex;
-	ViewState.Selection.ModuleIndex = RequiredModuleIndex;
+	ViewState.Selection.ModuleIndex = NoModuleIndex;
 }
 
-void FParticleSystemEditorWidget::SelectModule(int32 EmitterIndex, int32 ModuleIndex)
+void FParticleSystemEditorWidget::SelectModule(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex)
 {
 	ViewState.Selection.Kind = ESelectionKind::Module;
 	ViewState.Selection.EmitterIndex = EmitterIndex;
+	ViewState.Selection.LODIndex = LODIndex;
 	ViewState.Selection.ModuleIndex = ModuleIndex;
 }
 
@@ -284,11 +777,20 @@ bool FParticleSystemEditorWidget::IsEmitterSelected(int32 EmitterIndex) const
 		(Selection.Kind == ESelectionKind::Emitter || Selection.Kind == ESelectionKind::LOD || Selection.Kind == ESelectionKind::Module);
 }
 
-bool FParticleSystemEditorWidget::IsModuleSelected(int32 EmitterIndex, int32 ModuleIndex) const
+bool FParticleSystemEditorWidget::IsLODSelected(int32 EmitterIndex, int32 LODIndex) const
+{
+	const FEditorSelectionState& Selection = ViewState.Selection;
+	return Selection.EmitterIndex == EmitterIndex &&
+		Selection.LODIndex == LODIndex &&
+		(Selection.Kind == ESelectionKind::LOD || Selection.Kind == ESelectionKind::Module);
+}
+
+bool FParticleSystemEditorWidget::IsModuleSelected(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex) const
 {
 	const FEditorSelectionState& Selection = ViewState.Selection;
 	return Selection.Kind == ESelectionKind::Module &&
 		Selection.EmitterIndex == EmitterIndex &&
+		Selection.LODIndex == LODIndex &&
 		Selection.ModuleIndex == ModuleIndex;
 }
 
@@ -304,40 +806,101 @@ const char* FParticleSystemEditorWidget::GetSelectionKindLabel() const
 	}
 }
 
+int32 FParticleSystemEditorWidget::GetDisplayLODIndex(const UParticleEmitter* Emitter) const
+{
+	if (!Emitter || Emitter->GetLODLevels().empty())
+	{
+		return 0;
+	}
+
+	const int32 LODCount = static_cast<int32>(Emitter->GetLODLevels().size());
+	return (std::max)(0, (std::min)(ViewState.Selection.LODIndex, LODCount - 1));
+}
+
+const UParticleEmitter* FParticleSystemEditorWidget::GetSelectedEmitter(const UParticleSystem* ParticleSystem) const
+{
+	if (!ParticleSystem)
+	{
+		return nullptr;
+	}
+
+	const TArray<UParticleEmitter*>& Emitters = ParticleSystem->GetEmitters();
+	const int32 EmitterIndex = ViewState.Selection.EmitterIndex;
+	if (EmitterIndex < 0 || EmitterIndex >= static_cast<int32>(Emitters.size()))
+	{
+		return nullptr;
+	}
+
+	return Emitters[EmitterIndex];
+}
+
+const UParticleLODLevel* FParticleSystemEditorWidget::GetSelectedLODLevel(const UParticleSystem* ParticleSystem) const
+{
+	const UParticleEmitter* Emitter = GetSelectedEmitter(ParticleSystem);
+	if (!Emitter)
+	{
+		return nullptr;
+	}
+
+	return Emitter->GetLODLevel(GetDisplayLODIndex(Emitter));
+}
+
+const UParticleModule* FParticleSystemEditorWidget::GetSelectedModule(const UParticleSystem* ParticleSystem) const
+{
+	if (ViewState.Selection.Kind != ESelectionKind::Module)
+	{
+		return nullptr;
+	}
+
+	const UParticleLODLevel* LODLevel = GetSelectedLODLevel(ParticleSystem);
+	if (!LODLevel)
+	{
+		return nullptr;
+	}
+
+	if (ViewState.Selection.ModuleIndex == TypeDataModuleIndex)
+	{
+		return LODLevel->GetTypeDataModule();
+	}
+
+	const TArray<UParticleModule*>& Modules = LODLevel->GetModules();
+	const int32 ModuleIndex = ViewState.Selection.ModuleIndex;
+	if (ModuleIndex < 0 || ModuleIndex >= static_cast<int32>(Modules.size()))
+	{
+		return nullptr;
+	}
+
+	return Modules[ModuleIndex];
+}
+
 FParticleSystemEditorWidget::FEditorLayoutSizes FParticleSystemEditorWidget::CalculateLayoutSizes(const ImVec2& Available) const
 {
 	const ImGuiStyle& Style = ImGui::GetStyle();
-	const float Gap = Style.ItemSpacing.x;
 	const float AvailableWidth = (std::max)(Available.x, 1.0f);
 	const float AvailableHeight = (std::max)(Available.y, 1.0f);
 
 	FEditorLayoutSizes Layout;
-	if (AvailableWidth >= MinColumnWidth * 2.0f + Gap)
+
+	const float HorizontalSplitTotal = (std::max)(1.0f, AvailableWidth - SplitterThickness);
+	Layout.LeftWidth = CalculateSplitLeadingSize(HorizontalSplitTotal, ViewState.MainSplitRatio, MinColumnWidth, MinColumnWidth);
+	Layout.RightWidth = (std::max)(1.0f, HorizontalSplitTotal - Layout.LeftWidth);
+
+	const float VerticalSplitterGap = SplitterThickness + Style.ItemSpacing.y * 2.0f;
+	const float LeftSplitTotalHeight = (std::max)(1.0f, AvailableHeight - VerticalSplitterGap);
+	Layout.ViewportHeight = CalculateSplitLeadingSize(LeftSplitTotalHeight, ViewState.ViewportDetailsSplitRatio, MinViewportHeight, MinDetailsHeight);
+	Layout.DetailsHeight = (std::max)(1.0f, LeftSplitTotalHeight - Layout.ViewportHeight);
+
+	if (ViewState.bShowCurveEditor)
 	{
-		Layout.LeftWidth = AvailableWidth * 0.52f;
-		const float MaxLeftWidth = AvailableWidth - MinColumnWidth - Gap;
-		Layout.LeftWidth = (std::max)(MinColumnWidth, (std::min)(Layout.LeftWidth, MaxLeftWidth));
+		const float RightSplitTotalHeight = (std::max)(1.0f, AvailableHeight - VerticalSplitterGap);
+		Layout.EmittersHeight = CalculateSplitLeadingSize(RightSplitTotalHeight, ViewState.EmittersCurveSplitRatio, MinEmittersHeight, MinCurveEditorHeight);
+		Layout.CurveEditorHeight = (std::max)(1.0f, RightSplitTotalHeight - Layout.EmittersHeight);
 	}
 	else
 	{
-		Layout.LeftWidth = (std::max)(1.0f, (AvailableWidth - Gap) * 0.5f);
+		Layout.EmittersHeight = AvailableHeight;
+		Layout.CurveEditorHeight = 0.0f;
 	}
-
-	Layout.RightWidth = (std::max)(1.0f, AvailableWidth - Layout.LeftWidth - Gap);
-
-	const float VerticalGap = Style.ItemSpacing.y * 2.0f;
-	const float UsableHeight = (std::max)(1.0f, AvailableHeight - VerticalGap);
-	if (UsableHeight >= MinViewportHeight + MinDetailsHeight)
-	{
-		Layout.TopHeight = UsableHeight * 0.58f;
-		const float MaxTopHeight = UsableHeight - MinDetailsHeight;
-		Layout.TopHeight = (std::max)(MinViewportHeight, (std::min)(Layout.TopHeight, MaxTopHeight));
-	}
-	else
-	{
-		Layout.TopHeight = (std::max)(1.0f, UsableHeight * 0.58f);
-	}
-	Layout.BottomHeight = (std::max)(1.0f, UsableHeight - Layout.TopHeight);
 
 	return Layout;
 }
@@ -364,11 +927,19 @@ void FParticleSystemEditorWidget::RenderToolbar()
 	ImGui::SameLine(0.0f, 18.0f);
 	ImGui::Checkbox("Curve", &ViewState.bShowCurveEditor);
 	ImGui::SameLine(0.0f, 18.0f);
+	UParticleSystem* ParticleSystem = GetParticleSystem();
+	ImGui::BeginDisabled(ParticleSystem == nullptr);
+	if (ImGui::Button("Save", ImVec2(62.0f, 0.0f)))
+	{
+		if (FParticleSystemManager::Get().Save(ParticleSystem))
+		{
+			ClearDirty();
+		}
+	}
+	ImGui::EndDisabled();
+	ImGui::SameLine();
+
 	ImGui::BeginDisabled();
-	ImGui::Button("Save", ImVec2(62.0f, 0.0f));
-	ImGui::SameLine();
-	ImGui::Button("Add Emitter", ImVec2(96.0f, 0.0f));
-	ImGui::SameLine();
 	ImGui::Button("Add LOD", ImVec2(76.0f, 0.0f));
 	ImGui::SameLine();
 	ImGui::Button("Bounds", ImVec2(72.0f, 0.0f));
@@ -376,48 +947,141 @@ void FParticleSystemEditorWidget::RenderToolbar()
 	ImGui::EndChild();
 }
 
-void FParticleSystemEditorWidget::RenderViewportPanel(const ImVec2& Size) const
+void FParticleSystemEditorWidget::RenderViewportPanel(const ImVec2& Size)
 {
 	ImGui::BeginChild("##ParticleViewportPanel", Size, ImGuiChildFlags_Borders);
 	DrawPanelHeader("Viewport");
 
-	const ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
-	const ImVec2 CanvasMin = ImGui::GetCursorScreenPos();
-	const ImVec2 CanvasMax(CanvasMin.x + CanvasSize.x, CanvasMin.y + CanvasSize.y);
-	ImGui::InvisibleButton("##ParticlePreviewViewport", CanvasSize);
+	ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
+	if (ViewportSize.x <= 0.0f || ViewportSize.y <= 0.0f)
+	{
+		ImGui::EndChild();
+		return;
+	}
 
+	ImVec2 ViewportPos = ImGui::GetCursorScreenPos();
+	ViewportClient.SetViewportRect(ViewportPos.x, ViewportPos.y, ViewportSize.x, ViewportSize.y);
+
+	FViewport* VP = ViewportClient.GetViewport();
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
-	DrawList->AddRectFilled(CanvasMin, CanvasMax, IM_COL32(75, 77, 77, 255));
-
-	const float GridStep = 48.0f;
-	for (float X = CanvasMin.x; X < CanvasMax.x; X += GridStep)
+	if (VP)
 	{
-		DrawList->AddLine(ImVec2(X, CanvasMin.y), ImVec2(X, CanvasMax.y), IM_COL32(92, 94, 94, 110));
+		VP->RequestResize(static_cast<uint32>((std::max)(ViewportSize.x, 1.0f)), static_cast<uint32>((std::max)(ViewportSize.y, 1.0f)));
+		ViewportClient.NotifyViewportResized(static_cast<int32>(ViewportSize.x), static_cast<int32>(ViewportSize.y));
+
+		if (VP->GetSRV())
+		{
+			ImGui::Image((ImTextureID)VP->GetSRV(), ViewportSize);
+		}
+		else
+		{
+			ImGui::Dummy(ViewportSize);
+		}
+		FSlateApplication::Get().SetViewportImGuiHovered(&ViewportClient, ImGui::IsItemHovered());
 	}
-	for (float Y = CanvasMin.y; Y < CanvasMax.y; Y += GridStep)
+	else
 	{
-		DrawList->AddLine(ImVec2(CanvasMin.x, Y), ImVec2(CanvasMax.x, Y), IM_COL32(92, 94, 94, 110));
+		ImGui::InvisibleButton("##ParticlePreviewViewport", ViewportSize);
+		const ImVec2 CanvasMax(ViewportPos.x + ViewportSize.x, ViewportPos.y + ViewportSize.y);
+		DrawList->AddRectFilled(ViewportPos, CanvasMax, IM_COL32(75, 77, 77, 255));
 	}
 
-	const ImVec2 Center((CanvasMin.x + CanvasMax.x) * 0.5f, (CanvasMin.y + CanvasMax.y) * 0.5f);
-	DrawList->AddCircle(Center, 34.0f, IM_COL32(0, 112, 255, 255), 36, 2.0f);
-	DrawList->AddLine(ImVec2(Center.x - 54.0f, Center.y), ImVec2(Center.x + 54.0f, Center.y), IM_COL32(0, 112, 255, 255), 2.0f);
-	DrawList->AddLine(ImVec2(Center.x, Center.y - 54.0f), ImVec2(Center.x, Center.y + 54.0f), IM_COL32(0, 112, 255, 255), 2.0f);
+	DrawList->AddRectFilled(ImVec2(ViewportPos.x + 8.0f, ViewportPos.y + 8.0f), ImVec2(ViewportPos.x + 50.0f, ViewportPos.y + 30.0f), IM_COL32(26, 27, 30, 190), 8.0f);
+	DrawList->AddText(ImVec2(ViewportPos.x + 18.0f, ViewportPos.y + 11.0f), IM_COL32(230, 234, 240, 255), "View");
+	DrawList->AddRectFilled(ImVec2(ViewportPos.x + 58.0f, ViewportPos.y + 8.0f), ImVec2(ViewportPos.x + 100.0f, ViewportPos.y + 30.0f), IM_COL32(26, 27, 30, 190), 8.0f);
+	DrawList->AddText(ImVec2(ViewportPos.x + 68.0f, ViewportPos.y + 11.0f), IM_COL32(230, 234, 240, 255), "Time");
+	DrawViewportAxisGizmo(DrawList, ViewportPos, ViewportSize, ViewportClient);
 
-	DrawList->AddText(ImVec2(CanvasMin.x + 12.0f, CanvasMin.y + 10.0f), IM_COL32(230, 234, 240, 255), "View");
-	DrawList->AddText(ImVec2(CanvasMin.x + 58.0f, CanvasMin.y + 10.0f), IM_COL32(230, 234, 240, 255), "Time");
-	DrawList->AddText(ImVec2(CanvasMin.x + 12.0f, CanvasMax.y - 28.0f), IM_COL32(255, 80, 50, 255), "X");
-	DrawList->AddText(ImVec2(CanvasMin.x + 42.0f, CanvasMax.y - 28.0f), IM_COL32(90, 220, 90, 255), "Y");
-	DrawList->AddText(ImVec2(CanvasMin.x + 28.0f, CanvasMax.y - 54.0f), IM_COL32(80, 130, 255, 255), "Z");
 	ImGui::EndChild();
 }
 
-void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size) const
+void FParticleSystemEditorWidget::CreatePreviewWorld()
+{
+	if (!GEngine || !GetParticleSystem())
+	{
+		return;
+	}
+
+	FWorldContext& WorldContext = GEngine->CreateWorldContext(EWorldType::EditorPreview, PreviewWorldHandle);
+	WorldContext.World->SetWorldType(EWorldType::EditorPreview);
+	WorldContext.World->InitWorld();
+
+	PreviewActor = WorldContext.World->SpawnActor<AActor>();
+	PreviewParticleComponent = PreviewActor->AddComponent<UParticleSystemComponent>();
+	PreviewParticleComponent->SetTemplate(GetParticleSystem());
+	PreviewParticleComponent->Activate();
+	PreviewActor->SetRootComponent(PreviewParticleComponent);
+	PreviewActor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+
+	ADirectionalLightActor* LightActor = WorldContext.World->SpawnActor<ADirectionalLightActor>();
+	LightActor->InitDefaultComponents();
+	LightActor->SetActorRotation(FVector(0.0f, 45.0f, -45.0f));
+	if (UDirectionalLightComponent* LightComp = LightActor->GetComponentByClass<UDirectionalLightComponent>())
+	{
+		LightComp->SetShadowBias(0.0f);
+		LightComp->PushToScene();
+	}
+
+	ViewportClient.Initialize(GEngine->GetRenderer().GetFD3DDevice().GetDevice(), 512, 512);
+	ViewportClient.SetPreviewWorld(WorldContext.World);
+	ViewportClient.SetPreviewActor(PreviewActor);
+	ViewportClient.SetPreviewParticleComponent(PreviewParticleComponent);
+	ViewportClient.ResetCameraToPreviewBounds();
+
+	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
+	WorldContext.World->BeginPlay();
+
+	FSlateApplication::Get().RegisterViewport(&ViewportClient);
+}
+
+void FParticleSystemEditorWidget::DestroyPreviewWorld()
+{
+	UWorld* PreviewWorld = ViewportClient.GetPreviewWorld();
+	if (PreviewWorld)
+	{
+		PreviewWorld->SetEditorPOVProvider(nullptr);
+	}
+
+	FSlateApplication::Get().UnregisterViewport(&ViewportClient);
+	ViewportClient.Release();
+	PreviewActor = nullptr;
+	PreviewParticleComponent = nullptr;
+
+	if (PreviewWorld)
+	{
+		FScene& PreviewScene = PreviewWorld->GetScene();
+		if (GEngine)
+		{
+			GEngine->GetRenderer().GetResources().ReleaseShadowResourcesForScene(&PreviewScene);
+		}
+
+		if (GEngine && PreviewWorldHandle.IsValid())
+		{
+			GEngine->DestroyWorldContext(PreviewWorldHandle);
+		}
+	}
+}
+
+void FParticleSystemEditorWidget::RestartPreviewSimulation()
+{
+	ViewState.PreviewTime = 0.0f;
+
+	if (!PreviewParticleComponent)
+	{
+		return;
+	}
+
+	PreviewParticleComponent->ResetSystem();
+	PreviewParticleComponent->Activate();
+	PreviewParticleComponent->MarkRenderStateDirty();
+}
+
+void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 {
 	ImGui::BeginChild("##ParticleDetailsPanel", Size, ImGuiChildFlags_Borders);
 	DrawPanelHeader("Details");
 
-	const UParticleSystem* ParticleSystem = GetParticleSystem();
+	UParticleSystem* ParticleSystem = GetParticleSystem();
 	if (!ParticleSystem)
 	{
 		ImGui::TextDisabled("No particle system selected.");
@@ -425,43 +1089,332 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size) const
 		return;
 	}
 
-	ImGui::Text("Asset: %s", ParticleSystem->GetAssetPathFileName().c_str());
-	ImGui::Text("Emitters: %d", static_cast<int32>(ParticleSystem->GetEmitters().size()));
-	ImGui::Separator();
 	if (ImGui::CollapsingHeader("Particle System", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		ImGui::Text("Update Time FPS");
-		ImGui::SameLine(180.0f);
-		ImGui::TextDisabled("60.0");
-		ImGui::Text("Warmup Time");
-		ImGui::SameLine(180.0f);
-		ImGui::TextDisabled("0.0");
+		DrawDetailRow("Asset", ParticleSystem->GetAssetPathFileName().c_str());
+		DrawDetailRowF("Emitters", "%d", static_cast<int32>(ParticleSystem->GetEmitters().size()));
 	}
 	if (ImGui::CollapsingHeader("Selection", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		const FEditorSelectionState& Selection = ViewState.Selection;
-		ImGui::Text("Selected Emitter");
-		ImGui::SameLine(180.0f);
-		ImGui::TextDisabled("%d", Selection.EmitterIndex);
-		ImGui::Text("Selected LOD");
-		ImGui::SameLine(180.0f);
-		ImGui::TextDisabled("%d", Selection.LODIndex);
-		ImGui::Text("Selected Module");
-		ImGui::SameLine(180.0f);
-		ImGui::TextDisabled("%d", Selection.ModuleIndex);
-		ImGui::Text("Selection Type");
-		ImGui::SameLine(180.0f);
-		ImGui::TextDisabled("%s", GetSelectionKindLabel());
+		DrawDetailRow("Selection Type", GetSelectionKindLabel());
+		DrawDetailRowF("Selected Emitter", "%d", Selection.EmitterIndex);
+		DrawDetailRowF("Selected LOD", "%d", Selection.LODIndex);
+		DrawDetailRowF("Selected Module", "%d", Selection.ModuleIndex);
+	}
+
+	const UParticleEmitter* SelectedEmitter = GetSelectedEmitter(ParticleSystem);
+	if (SelectedEmitter && ImGui::CollapsingHeader("Emitter", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		DrawDetailRowF("Max Active Particles", "%d", SelectedEmitter->GetMaxActiveParticles());
+		DrawDetailRowF("Emitter Duration", "%.3f", SelectedEmitter->GetEmitterDuration());
+		DrawDetailRow("Looping", SelectedEmitter->IsLooping() ? "true" : "false");
+		DrawDetailRowF("LOD Count", "%d", static_cast<int32>(SelectedEmitter->GetLODLevels().size()));
+	}
+
+	const UParticleLODLevel* SelectedLOD = GetSelectedLODLevel(ParticleSystem);
+	if (SelectedLOD && ImGui::CollapsingHeader("LOD", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		const UParticleModuleTypeDataBase* TypeDataModule = SelectedLOD->GetTypeDataModule();
+		DrawDetailRowF("Level", "%d", SelectedLOD->GetLevel());
+		DrawDetailRow("Enabled", SelectedLOD->IsEnabled() ? "true" : "false");
+		DrawDetailRow("Render Type", GetRenderTypeLabel(GetLODRenderType(SelectedLOD)));
+		DrawDetailRow("Type Data", GetTypeDataDisplayName(TypeDataModule));
+		DrawDetailRowF("Payload Size", "%d", TypeDataModule ? TypeDataModule->GetParticlePayloadSize() : 0);
+		DrawDetailRowF("Module Count", "%d", static_cast<int32>(SelectedLOD->GetModules().size()));
+	}
+
+	UParticleModule* SelectedModule = const_cast<UParticleModule*>(GetSelectedModule(ParticleSystem));
+	if (SelectedModule && ImGui::CollapsingHeader("Module", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		const UParticleModuleTypeDataBase* TypeDataModule = Cast<UParticleModuleTypeDataBase>(SelectedModule);
+		DrawDetailRow("Name", TypeDataModule ? GetTypeDataDisplayName(TypeDataModule) : GetModuleDisplayName(SelectedModule));
+		DrawDetailRow("Class", SelectedModule->GetClass()->GetName());
+		DrawDetailRow("Spawn Module", SelectedModule->IsSpawnModule() ? "true" : "false");
+		DrawDetailRow("Update Module", SelectedModule->IsUpdateModule() ? "true" : "false");
+		DrawDetailRow("Source", ViewState.Selection.ModuleIndex == TypeDataModuleIndex ? "LOD TypeDataModule" : "LOD Modules[]");
+		ImGui::Separator();
+		if (RenderObjectProperties(SelectedModule))
+		{
+			ApplyEditedObjectSideEffects(SelectedModule);
+			MarkDirty();
+			RestartPreviewSimulation();
+		}
 	}
 	ImGui::EndChild();
+}
+
+bool FParticleSystemEditorWidget::RenderObjectProperties(UObject* Object)
+{
+	if (!Object)
+	{
+		ImGui::TextDisabled("No object properties.");
+		return false;
+	}
+
+	TArray<FPropertyValue> Properties;
+	Object->GetEditableProperties(Properties);
+	if (Properties.empty())
+	{
+		ImGui::TextDisabled("No editable properties.");
+		return false;
+	}
+
+	bool bAnyChanged = false;
+	if (ImGui::BeginTable("##ParticleObjectProperties", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV))
+	{
+		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 180.0f);
+		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+
+		for (int32 Index = 0; Index < static_cast<int32>(Properties.size()); ++Index)
+		{
+			FPropertyValue& PropertyValue = Properties[Index];
+			ImGui::PushID(Index);
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextUnformatted(PropertyValue.GetDisplayName());
+			ImGui::TableSetColumnIndex(1);
+			ImGui::SetNextItemWidth(-1.0f);
+
+			const bool bChanged = RenderPropertyValueEditor(PropertyValue);
+			if (bChanged)
+			{
+				bAnyChanged = true;
+				if (PropertyValue.Property)
+				{
+					Object->PostEditProperty(PropertyValue.Property->Name);
+				}
+			}
+			ImGui::PopID();
+		}
+		ImGui::EndTable();
+	}
+
+	return bAnyChanged;
+}
+
+bool FParticleSystemEditorWidget::RenderPropertyValueEditor(FPropertyValue& PropertyValue)
+{
+	void* ValuePtr = PropertyValue.GetValuePtr();
+	if (!ValuePtr)
+	{
+		return false;
+	}
+
+	bool bChanged = false;
+	const bool bReadOnly = PropertyValue.Property && (PropertyValue.Property->Flags & PF_ReadOnly) != 0;
+	if (bReadOnly)
+	{
+		ImGui::BeginDisabled();
+	}
+
+	switch (PropertyValue.GetType())
+	{
+	case EPropertyType::Bool:
+		bChanged = ImGui::Checkbox("##Value", static_cast<bool*>(ValuePtr));
+		break;
+	case EPropertyType::ByteBool:
+	{
+		uint8* Value = static_cast<uint8*>(ValuePtr);
+		bool bValue = *Value != 0;
+		if (ImGui::Checkbox("##Value", &bValue))
+		{
+			*Value = bValue ? 1 : 0;
+			bChanged = true;
+		}
+		break;
+	}
+	case EPropertyType::Int:
+	{
+		int32* Value = static_cast<int32*>(ValuePtr);
+		const float Min = PropertyValue.GetMin();
+		const float Max = PropertyValue.GetMax();
+		if (Min != 0.0f || Max != 0.0f)
+		{
+			bChanged = ImGui::DragInt("##Value", Value, PropertyValue.GetSpeed(), static_cast<int32>(Min), static_cast<int32>(Max));
+		}
+		else
+		{
+			bChanged = ImGui::DragInt("##Value", Value, PropertyValue.GetSpeed());
+		}
+		break;
+	}
+	case EPropertyType::Float:
+	{
+		float* Value = static_cast<float*>(ValuePtr);
+		const float Min = PropertyValue.GetMin();
+		const float Max = PropertyValue.GetMax();
+		if (Min != 0.0f || Max != 0.0f)
+		{
+			bChanged = ImGui::DragFloat("##Value", Value, PropertyValue.GetSpeed(), Min, Max, "%.4f");
+		}
+		else
+		{
+			bChanged = ImGui::DragFloat("##Value", Value, PropertyValue.GetSpeed());
+		}
+		break;
+	}
+	case EPropertyType::Vec3:
+	{
+		float* Value = static_cast<float*>(ValuePtr);
+		bChanged = ImGui::DragFloat3("##Value", Value, PropertyValue.GetSpeed());
+		break;
+	}
+	case EPropertyType::Vec4:
+	case EPropertyType::Color4:
+	{
+		float* Value = static_cast<float*>(ValuePtr);
+		if (PropertyValue.GetType() == EPropertyType::Color4 || IsColorLikeProperty(PropertyValue))
+		{
+			bChanged = ImGui::ColorEdit4("##Value", Value);
+		}
+		else
+		{
+			bChanged = ImGui::DragFloat4("##Value", Value, PropertyValue.GetSpeed());
+		}
+		break;
+	}
+	case EPropertyType::String:
+	{
+		FString* Value = static_cast<FString*>(ValuePtr);
+		char Buffer[256];
+		strncpy_s(Buffer, sizeof(Buffer), Value->c_str(), _TRUNCATE);
+		if (ImGui::InputText("##Value", Buffer, sizeof(Buffer)))
+		{
+			*Value = Buffer;
+			bChanged = true;
+		}
+		break;
+	}
+	case EPropertyType::Name:
+	{
+		FName* Value = static_cast<FName*>(ValuePtr);
+		const FString CurrentValue = Value->ToString();
+		char Buffer[256];
+		strncpy_s(Buffer, sizeof(Buffer), CurrentValue.c_str(), _TRUNCATE);
+		if (ImGui::InputText("##Value", Buffer, sizeof(Buffer)))
+		{
+			*Value = FName(FString(Buffer));
+			bChanged = true;
+		}
+		break;
+	}
+	case EPropertyType::Enum:
+	{
+		const FEnum* EnumType = PropertyValue.GetEnumType();
+		if (EnumType && EnumType->GetNames() && EnumType->GetCount() > 0)
+		{
+			int32 Value = 0;
+			std::memcpy(&Value, ValuePtr, EnumType->GetSize());
+			const char* Preview = (Value >= 0 && static_cast<uint32>(Value) < EnumType->GetCount())
+				? EnumType->GetNames()[Value]
+				: "Unknown";
+			if (ImGui::BeginCombo("##Value", Preview))
+			{
+				for (uint32 EnumIndex = 0; EnumIndex < EnumType->GetCount(); ++EnumIndex)
+				{
+					const bool bSelected = Value == static_cast<int32>(EnumIndex);
+					if (ImGui::Selectable(EnumType->GetNames()[EnumIndex], bSelected))
+					{
+						const int32 NewValue = static_cast<int32>(EnumIndex);
+						std::memcpy(ValuePtr, &NewValue, EnumType->GetSize());
+						bChanged = true;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+		}
+		else
+		{
+			ImGui::TextDisabled("(unknown enum)");
+		}
+		break;
+	}
+	case EPropertyType::SoftObjectRef:
+	{
+		const FSoftObjectProperty* SoftObjectProperty = PropertyValue.Property ? PropertyValue.Property->AsSoftObjectProperty() : nullptr;
+		const FString Path = SoftObjectProperty ? SoftObjectProperty->GetPathFromValuePtr(ValuePtr) : FString("None");
+		char Buffer[512];
+		strncpy_s(Buffer, sizeof(Buffer), Path.c_str(), _TRUNCATE);
+		if (SoftObjectProperty && ImGui::InputText("##Value", Buffer, sizeof(Buffer)))
+		{
+			SoftObjectProperty->SetPathFromValuePtr(ValuePtr, FString(Buffer));
+			bChanged = true;
+		}
+		break;
+	}
+	case EPropertyType::ObjectRef:
+	{
+		UObject* ObjectValue = *static_cast<UObject**>(ValuePtr);
+		ImGui::TextDisabled("%s", ObjectValue ? ObjectValue->GetName().c_str() : "None");
+		break;
+	}
+	case EPropertyType::Array:
+		ImGui::TextDisabled("(array)");
+		break;
+	case EPropertyType::Struct:
+		ImGui::TextDisabled("(struct)");
+		break;
+	case EPropertyType::ClassRef:
+		ImGui::TextDisabled("(class)");
+		break;
+	case EPropertyType::Rotator:
+		ImGui::TextDisabled("(rotator)");
+		break;
+	default:
+		ImGui::TextDisabled("(unsupported)");
+		break;
+	}
+
+	if (bReadOnly)
+	{
+		ImGui::EndDisabled();
+	}
+
+	return bChanged && !bReadOnly;
+}
+
+void FParticleSystemEditorWidget::ApplyEditedObjectSideEffects(UObject* Object)
+{
+	if (!Object)
+	{
+		return;
+	}
+
+	if (UParticleModuleRequired* RequiredModule = Cast<UParticleModuleRequired>(Object))
+	{
+		RequiredModule->Material = nullptr;
+		if (UParticleEmitter* Emitter = const_cast<UParticleEmitter*>(GetSelectedEmitter(GetParticleSystem())))
+		{
+			Emitter->SetEmitterDuration(RequiredModule->EmitterDuration);
+			Emitter->SetLooping(RequiredModule->bLooping);
+		}
+	}
+
+	if (UParticleModuleTypeDataMesh* MeshTypeData = Cast<UParticleModuleTypeDataMesh>(Object))
+	{
+		MeshTypeData->Mesh = nullptr;
+	}
 }
 
 void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 {
 	ImGui::BeginChild("##ParticleEmittersPanel", Size, ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
-	DrawPanelHeader("Emitters");
 
 	UParticleSystem* ParticleSystem = GetParticleSystem();
+	const ImGuiStyle& Style = ImGui::GetStyle();
+	const TArray<UParticleEmitter*>* EmittersPtr = ParticleSystem ? &ParticleSystem->GetEmitters() : nullptr;
+	const int32 EmitterCount = EmittersPtr ? static_cast<int32>(EmittersPtr->size()) : 0;
+	const float EmitterColumnsWidth = EmitterCount > 0
+		? EmitterColumnWidth * static_cast<float>(EmitterCount) + Style.ItemSpacing.x * static_cast<float>((std::max)(0, EmitterCount - 1))
+		: 0.0f;
+	DrawPanelHeader("Emitters", EmitterColumnsWidth);
+
 	if (!ParticleSystem)
 	{
 		ImGui::TextDisabled("No particle system selected.");
@@ -477,11 +1430,284 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		return;
 	}
 
+	auto CalculateEmitterColumnHeight = [&](UParticleEmitter* Emitter)
+	{
+		float Height = EmitterHeaderHeight + Style.ItemSpacing.y;
+		if (!Emitter)
+		{
+			return Height + ImGui::GetTextLineHeightWithSpacing();
+		}
+
+		UParticleLODLevel* LODLevel = Emitter->GetLODLevel(GetDisplayLODIndex(Emitter));
+		if (LODLevel)
+		{
+			Height += ModuleRowHeight + Style.ItemSpacing.y;
+			Height += static_cast<float>(LODLevel->GetModules().size()) * ModuleRowHeight;
+			Height += ModuleDropTargetHeight;
+		}
+
+		return Height + Style.ItemSpacing.y;
+	};
+
+	float EmitterColumnHeight = 1.0f;
+	for (UParticleEmitter* Emitter : Emitters)
+	{
+		EmitterColumnHeight = (std::max)(EmitterColumnHeight, CalculateEmitterColumnHeight(Emitter));
+	}
+
+	bool bSelectParticleSystemRequested = false;
+	int32 DefaultEmitterInsertIndex = -1;
+
 	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(Emitters.size()); ++EmitterIndex)
 	{
 		UParticleEmitter* Emitter = Emitters[EmitterIndex];
+		const int32 DisplayLODIndex = GetDisplayLODIndex(Emitter);
+		UParticleLODLevel* LODLevel = Emitter ? Emitter->GetLODLevel(DisplayLODIndex) : nullptr;
+		const EParticleRenderType RenderType = GetLODRenderType(LODLevel);
 		ImGui::PushID(EmitterIndex);
-		ImGui::BeginChild("##EmitterColumn", ImVec2(EmitterColumnWidth, 0.0f), true);
+		ImGui::BeginChild("##EmitterColumn", ImVec2(EmitterColumnWidth, EmitterColumnHeight), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+		auto AddModule = [&](UParticleModule* NewModule)
+		{
+			if (!LODLevel || !NewModule)
+			{
+				return;
+			}
+
+			TArray<UParticleModule*>& MutableModules = LODLevel->GetMutableModules();
+			MutableModules.push_back(NewModule);
+			SelectModule(EmitterIndex, DisplayLODIndex, static_cast<int32>(MutableModules.size()) - 1);
+			MarkDirty();
+			RestartPreviewSimulation();
+		};
+
+		auto SetTypeDataModule = [&](UParticleModuleTypeDataBase* NewTypeDataModule)
+		{
+			if (!LODLevel)
+			{
+				return;
+			}
+
+			if (UParticleModuleTypeDataBase* ExistingTypeDataModule = LODLevel->GetTypeDataModule())
+			{
+				UObjectManager::Get().DestroyObject(ExistingTypeDataModule);
+			}
+
+			LODLevel->SetTypeDataModule(NewTypeDataModule);
+			if (NewTypeDataModule)
+			{
+				SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
+			}
+			else
+			{
+				SelectLOD(EmitterIndex, DisplayLODIndex);
+			}
+			MarkDirty();
+			RestartPreviewSimulation();
+		};
+
+		auto RenderUnavailableCategory = [](const char* Label)
+		{
+			if (ImGui::BeginMenu(Label))
+			{
+				ImGui::BeginDisabled();
+				ImGui::MenuItem("No modules available");
+				ImGui::EndDisabled();
+				ImGui::EndMenu();
+			}
+		};
+
+		auto RenderAddModuleMenu = [&]()
+		{
+			RenderUnavailableCategory("Emitter");
+
+			if (ImGui::BeginMenu("Particle System"))
+			{
+				ImGui::TextDisabled("PARTICLE SYSTEM");
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Select Particle System"))
+				{
+					bSelectParticleSystemRequested = true;
+				}
+				if (ImGui::MenuItem("Add New Emitter Before"))
+				{
+					DefaultEmitterInsertIndex = EmitterIndex;
+				}
+				if (ImGui::MenuItem("Add New Emitter After"))
+				{
+					DefaultEmitterInsertIndex = EmitterIndex + 1;
+				}
+
+				ImGui::BeginDisabled();
+				ImGui::MenuItem("Remove Duplicate Modules");
+				ImGui::EndDisabled();
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("TypeData"))
+			{
+				if (ImGui::MenuItem("Sprite"))
+				{
+					SetTypeDataModule(nullptr);
+				}
+				if (ImGui::MenuItem("Mesh"))
+				{
+					SetTypeDataModule(UObjectManager::Get().CreateObject<UParticleModuleTypeDataMesh>());
+				}
+				if (ImGui::MenuItem("Ribbon"))
+				{
+					SetTypeDataModule(UObjectManager::Get().CreateObject<UParticleModuleTypeDataRibbon>());
+				}
+				if (ImGui::MenuItem("Beam"))
+				{
+					SetTypeDataModule(UObjectManager::Get().CreateObject<UParticleModuleTypeDataBeam>());
+				}
+				ImGui::EndMenu();
+			}
+
+			RenderUnavailableCategory("Acceleration");
+			RenderUnavailableCategory("Attraction");
+
+			if (ImGui::BeginMenu("Collision"))
+			{
+				if (ImGui::MenuItem("Collision"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleCollision>());
+				}
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Color"))
+			{
+				if (ImGui::MenuItem("Initial Color"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleColor>());
+				}
+				ImGui::EndMenu();
+			}
+
+			RenderUnavailableCategory("Event");
+
+			if (ImGui::BeginMenu("Lifetime"))
+			{
+				if (ImGui::MenuItem("Lifetime"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleLifetime>());
+				}
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Location"))
+			{
+				if (ImGui::MenuItem("Initial Location"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleLocation>());
+				}
+				ImGui::EndMenu();
+			}
+
+			RenderUnavailableCategory("Rotation");
+			RenderUnavailableCategory("Rotation Rate");
+			RenderUnavailableCategory("Orbit");
+			RenderUnavailableCategory("Orientation");
+
+			if (ImGui::BeginMenu("Size"))
+			{
+				if (ImGui::MenuItem("Initial Size"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleSize>());
+				}
+				ImGui::EndMenu();
+			}
+
+			RenderUnavailableCategory("Spawn");
+			RenderUnavailableCategory("SubUV");
+			RenderUnavailableCategory("Vector Field");
+
+			if (ImGui::BeginMenu("Velocity"))
+			{
+				if (ImGui::MenuItem("Initial Velocity"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleVelocity>());
+				}
+				ImGui::EndMenu();
+			}
+		};
+
+		auto MoveDroppedModule = [&](const FParticleModuleDropRequest& DropRequest)
+		{
+			if (!DropRequest.bRequested)
+			{
+				return false;
+			}
+
+			const FParticleModuleDragPayload& Payload = DropRequest.Payload;
+			if (!Payload.Module || IsModuleOrderLocked(Payload.Module))
+			{
+				return false;
+			}
+
+			if (Payload.EmitterIndex < 0 || Payload.EmitterIndex >= static_cast<int32>(Emitters.size()) ||
+				DropRequest.TargetEmitterIndex < 0 || DropRequest.TargetEmitterIndex >= static_cast<int32>(Emitters.size()))
+			{
+				return false;
+			}
+
+			UParticleEmitter* SourceEmitter = Emitters[Payload.EmitterIndex];
+			UParticleEmitter* TargetEmitter = Emitters[DropRequest.TargetEmitterIndex];
+			if (!SourceEmitter || !TargetEmitter)
+			{
+				return false;
+			}
+
+			UParticleLODLevel* SourceLODLevel = SourceEmitter->GetLODLevel(Payload.LODIndex);
+			UParticleLODLevel* TargetLODLevel = TargetEmitter->GetLODLevel(DropRequest.TargetLODIndex);
+			if (!SourceLODLevel || !TargetLODLevel)
+			{
+				return false;
+			}
+
+			TArray<UParticleModule*>& SourceModules = SourceLODLevel->GetMutableModules();
+			TArray<UParticleModule*>& TargetModules = TargetLODLevel->GetMutableModules();
+			auto SourceIt = SourceModules.end();
+			if (Payload.ModuleIndex >= 0 && Payload.ModuleIndex < static_cast<int32>(SourceModules.size()) &&
+				SourceModules[Payload.ModuleIndex] == Payload.Module)
+			{
+				SourceIt = SourceModules.begin() + Payload.ModuleIndex;
+			}
+			else
+			{
+				SourceIt = std::find(SourceModules.begin(), SourceModules.end(), Payload.Module);
+			}
+			if (SourceIt == SourceModules.end() || IsModuleOrderLocked(*SourceIt))
+			{
+				return false;
+			}
+
+			const bool bSameLOD = SourceLODLevel == TargetLODLevel;
+			const int32 SourceModuleIndex = static_cast<int32>(SourceIt - SourceModules.begin());
+			int32 TargetInsertIndex = ClampModuleInsertIndex(TargetModules, DropRequest.TargetInsertIndex);
+			if (bSameLOD && (TargetInsertIndex == SourceModuleIndex || TargetInsertIndex == SourceModuleIndex + 1))
+			{
+				return false;
+			}
+
+			UParticleModule* MovedModule = *SourceIt;
+			SourceModules.erase(SourceIt);
+			if (bSameLOD && SourceModuleIndex < TargetInsertIndex)
+			{
+				--TargetInsertIndex;
+			}
+			TargetInsertIndex = ClampModuleInsertIndex(TargetModules, TargetInsertIndex);
+			TargetModules.insert(TargetModules.begin() + TargetInsertIndex, MovedModule);
+
+			SelectModule(DropRequest.TargetEmitterIndex, DropRequest.TargetLODIndex, TargetInsertIndex);
+			MarkDirty();
+			RestartPreviewSimulation();
+			return true;
+		};
 
 		const ImVec2 HeaderMin = ImGui::GetCursorScreenPos();
 		const ImVec2 HeaderMax(HeaderMin.x + ImGui::GetContentRegionAvail().x, HeaderMin.y + EmitterHeaderHeight);
@@ -490,7 +1716,6 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		char Header[64];
 		std::snprintf(Header, sizeof(Header), "Emitter %d", EmitterIndex);
 		DrawList->AddText(ImVec2(HeaderMin.x + 8.0f, HeaderMin.y + 7.0f), IM_COL32(240, 242, 245, 255), Header);
-		DrawList->AddText(ImVec2(HeaderMin.x + 8.0f, HeaderMin.y + 30.0f), IM_COL32(160, 210, 255, 255), "Sprite");
 		if (Emitter)
 		{
 			char CountLabel[32];
@@ -505,51 +1730,151 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 		if (Emitter)
 		{
-			const UParticleLODLevel* LODLevel = Emitter->GetLODLevel(ViewState.Selection.LODIndex);
+			bool bModuleContextMenuOpen = false;
 			if (LODLevel)
 			{
-				SelectableModuleRow("Required", IsModuleSelected(EmitterIndex, RequiredModuleIndex), IM_COL32(190, 190, 92, 255));
-				if (ImGui::IsItemClicked())
+				FParticleModuleDropRequest DropRequest;
+				TArray<UParticleModule*>& Modules = LODLevel->GetMutableModules();
+				const UParticleModuleTypeDataBase* TypeDataModule = LODLevel->GetTypeDataModule();
+				const char* TypeDataLabel = TypeDataModule ? GetTypeDataDisplayName(TypeDataModule) : GetRenderTypeLabel(RenderType);
+				if (TypeDataModule)
 				{
-					SelectModule(EmitterIndex, RequiredModuleIndex);
+					ImGui::PushID(TypeDataModuleIndex);
+					FModuleRowAction TypeDataAction;
+					if (SelectableModuleRow(TypeDataLabel, IsModuleSelected(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex), TypeDataModule))
+					{
+						SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
+					}
+					RenderModuleContextMenu(TypeDataAction, true, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+					bModuleContextMenuOpen |= TypeDataAction.bContextMenuOpen;
+					if (TypeDataAction.bDelete)
+					{
+						SetTypeDataModule(nullptr);
+					}
+					else if (TypeDataAction.bRefresh)
+					{
+						SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
+						RestartPreviewSimulation();
+					}
+					AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, 0, 0);
+					ImGui::PopID();
+				}
+				else
+				{
+					ImGui::PushID(TypeDataModuleIndex);
+					if (SelectableModuleRow(TypeDataLabel, IsLODSelected(EmitterIndex, DisplayLODIndex)))
+					{
+						SelectLOD(EmitterIndex, DisplayLODIndex);
+					}
+					AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, 0, 0);
+					ImGui::PopID();
 				}
 
-				if (SelectableModuleRow("Spawn", IsModuleSelected(EmitterIndex, SpawnModuleIndex), IM_COL32(200, 92, 92, 255)))
-				{
-					SelectModule(EmitterIndex, SpawnModuleIndex);
-				}
-				if (SelectableModuleRow("Lifetime", IsModuleSelected(EmitterIndex, LifetimeModuleIndex), IM_COL32(88, 92, 105, 255)))
-				{
-					SelectModule(EmitterIndex, LifetimeModuleIndex);
-				}
-				if (SelectableModuleRow("Initial Size", IsModuleSelected(EmitterIndex, InitialSizeModuleIndex), IM_COL32(88, 92, 105, 255)))
-				{
-					SelectModule(EmitterIndex, InitialSizeModuleIndex);
-				}
-				if (SelectableModuleRow("Initial Color", IsModuleSelected(EmitterIndex, InitialColorModuleIndex), IM_COL32(88, 140, 88, 255)))
-				{
-					SelectModule(EmitterIndex, InitialColorModuleIndex);
-				}
-
-				const TArray<UParticleModule*>& Modules = LODLevel->GetModules();
+				bool bModuleListMutated = false;
 				for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
 				{
-					char ModuleLabel[64];
-					std::snprintf(ModuleLabel, sizeof(ModuleLabel), "Module %d", ModuleIndex);
-					if (SelectableModuleRow(ModuleLabel, IsModuleSelected(EmitterIndex, ModuleIndex), IM_COL32(92, 120, 180, 255)))
+					UParticleModule* Module = Modules[ModuleIndex];
+					const bool bDeleteLocked = IsModuleDeleteLocked(Module);
+					const bool bOrderLocked = IsModuleOrderLocked(Module);
+					ImGui::PushID(ModuleIndex);
+					FParticleModuleDragPayload DragPayload{ EmitterIndex, DisplayLODIndex, ModuleIndex, Module };
+					const FModuleRowAction Action = EditableModuleRow(
+						GetModuleDisplayName(Module),
+						Module,
+						IsModuleSelected(EmitterIndex, DisplayLODIndex, ModuleIndex),
+						!bDeleteLocked,
+						bOrderLocked ? nullptr : &DragPayload,
+						&DropRequest,
+						EmitterIndex,
+						DisplayLODIndex,
+						ModuleIndex,
+						ModuleIndex + 1);
+					if (Action.bSelect)
 					{
-						SelectModule(EmitterIndex, ModuleIndex);
+						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex);
+					}
+					bModuleContextMenuOpen |= Action.bContextMenuOpen;
+					ImGui::PopID();
+
+					if (Action.bDelete && !bDeleteLocked)
+					{
+						UParticleModule* RemovedModule = Modules[ModuleIndex];
+						Modules.erase(Modules.begin() + ModuleIndex);
+						UObjectManager::Get().DestroyObject(RemovedModule);
+						if (Modules.empty())
+						{
+							SelectLOD(EmitterIndex, DisplayLODIndex);
+						}
+						else
+						{
+							const int32 NewModuleIndex = (std::min)(ModuleIndex, static_cast<int32>(Modules.size()) - 1);
+							SelectModule(EmitterIndex, DisplayLODIndex, NewModuleIndex);
+						}
+						MarkDirty();
+						RestartPreviewSimulation();
+						bModuleListMutated = true;
+					}
+					else if (Action.bRefresh)
+					{
+						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex);
+						RestartPreviewSimulation();
+					}
+
+					if (bModuleListMutated)
+					{
+						break;
 					}
 				}
+
+				ImGui::InvisibleButton("##ModuleDropTail", ImVec2(ImGui::GetContentRegionAvail().x, (std::max)(ModuleDropTargetHeight, ImGui::GetContentRegionAvail().y)));
+				AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, static_cast<int32>(Modules.size()), static_cast<int32>(Modules.size()));
+				MoveDroppedModule(DropRequest);
+			}
+
+			if (LODLevel && ImGui::IsWindowHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !bModuleContextMenuOpen)
+			{
+				ImGui::OpenPopup("##ParticleEmitterContextMenu");
+			}
+			if (LODLevel && ImGui::BeginPopup("##ParticleEmitterContextMenu"))
+			{
+				RenderAddModuleMenu();
+				ImGui::EndPopup();
 			}
 		}
 
 		ImGui::EndChild();
 		ImGui::PopID();
-		ImGui::SameLine();
+		if (EmitterIndex + 1 < static_cast<int32>(Emitters.size()))
+		{
+			ImGui::SameLine();
+		}
 	}
 
-	ImGui::NewLine();
+	if (DefaultEmitterInsertIndex >= 0)
+	{
+		TArray<UParticleEmitter*>& MutableEmitters = ParticleSystem->GetMutableEmitters();
+		const int32 OldEmitterCount = static_cast<int32>(MutableEmitters.size());
+		UParticleEmitter* NewEmitter = ParticleSystem->AddDefaultEmitter();
+		if (NewEmitter && !MutableEmitters.empty())
+		{
+			const int32 AppendedIndex = static_cast<int32>(MutableEmitters.size()) - 1;
+			const int32 TargetIndex = (std::max)(0, (std::min)(DefaultEmitterInsertIndex, OldEmitterCount));
+			if (TargetIndex != AppendedIndex)
+			{
+				MutableEmitters.erase(MutableEmitters.begin() + AppendedIndex);
+				MutableEmitters.insert(MutableEmitters.begin() + TargetIndex, NewEmitter);
+			}
+
+			SelectLOD(TargetIndex, 0);
+			MarkDirty();
+			RestartPreviewSimulation();
+		}
+	}
+	else if (bSelectParticleSystemRequested)
+	{
+		SelectParticleSystem();
+	}
+
 	ImGui::EndChild();
 }
 

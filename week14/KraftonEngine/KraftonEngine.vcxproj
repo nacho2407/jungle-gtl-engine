@@ -408,6 +408,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Engine\Component\Particle\ParticleSystemComponent.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleCollision.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleSystem.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleSystemManager.cpp" />
     <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
@@ -459,6 +460,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\ViewportCameraTransform.cpp" />
     <ClCompile Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\Level\FLevelViewportLayout.cpp" />
     <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
@@ -648,6 +650,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\FontGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\LineGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Geometry\MeshParticleGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp" />
@@ -739,7 +742,9 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Component\Particle\ParticleSystemComponent.h" />
+    <ClInclude Include="Source\Engine\Math\Distribution.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h" />
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleCollision.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleTypeDataBase.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleHelper.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleSystem.h" />
@@ -804,6 +809,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportCameraTransform.h" />
     <ClInclude Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\Level\FLevelViewportLayout.h" />
     <ClInclude Include="Source\Editor\Viewport\Level\LevelEditorViewportClient.h" />
@@ -1037,6 +1043,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\FontGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\LineGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Geometry\MeshParticleGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h" />
